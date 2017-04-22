@@ -33,6 +33,7 @@
   DebugLib
   UnitTestLib
   UnitTestAssertLib
+  PrintLib
 
 [Guids]
 
