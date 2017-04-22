@@ -59,6 +59,7 @@
   UefiBootServicesTableLib
   UefiLib
   PrintLib
+  ReportStatusCodeLib                           # MSCHANGE UEFI_890
 
 [Protocols]
   gEfiPciIoProtocolGuid                       ## TO_START

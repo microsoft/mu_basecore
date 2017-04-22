@@ -790,6 +790,10 @@ NvmExpressPassThru (
       DEBUG_CODE_END();
     }
   } else {
+    // MS_CHANGE BEGIN UEFI_890
+    ReportStatusCode((EFI_ERROR_MAJOR | EFI_ERROR_CODE), (EFI_IO_BUS_SCSI | EFI_IOB_EC_INTERFACE_ERROR));
+    // MS_CHANGE END UEFI_890
+  
     //
     // Timeout occurs for an NVMe command. Reset the controller to abort the
     // outstanding commands.

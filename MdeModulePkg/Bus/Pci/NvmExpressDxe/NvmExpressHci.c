@@ -14,6 +14,7 @@
 **/
 
 #include "NvmExpress.h"
+#include <Guid/NVMeEventGroup.h>
 
 #define NVME_SHUTDOWN_PROCESS_TIMEOUT 45
 
@@ -489,6 +490,9 @@ NvmeDisableController (
 
   if (Index == 0) {
     Status = EFI_DEVICE_ERROR;
+    // MS_CHANGE BEGIN UEFI_890
+    ReportStatusCode((EFI_ERROR_MAJOR | EFI_ERROR_CODE), (EFI_IO_BUS_SCSI | EFI_IOB_EC_INTERFACE_ERROR));
+    // MS_CHANGE END UEFI_890
   }
 
   DEBUG ((EFI_D_INFO, "NVMe controller is disabled with status [%r].\n", Status));
@@ -559,6 +563,9 @@ NvmeEnableController (
 
   if (Index == 0) {
     Status = EFI_TIMEOUT;
+    // MS_CHANGE BEGIN UEFI_890
+    ReportStatusCode((EFI_ERROR_MAJOR | EFI_ERROR_CODE), (EFI_IO_BUS_SCSI | EFI_IOB_EC_INTERFACE_ERROR));
+    // MS_CHANGE END UEFI_890
   }
 
   DEBUG ((EFI_D_INFO, "NVMe controller is enabled with status [%r].\n", Status));
@@ -1219,7 +1226,7 @@ NvmeUnregisterShutdownNotification (
 {
   EFI_STATUS                      Status;
   EFI_RESET_NOTIFICATION_PROTOCOL *ResetNotify;
-
+        ReportStatusCode((EFI_ERROR_MAJOR | EFI_ERROR_CODE), (EFI_IO_BUS_SCSI | EFI_IOB_EC_INTERFACE_ERROR));
   mNvmeControllerNumber--;
   if (mNvmeControllerNumber == 0) {
     Status = gBS->LocateProtocol (&gEfiResetNotificationProtocolGuid, NULL, (VOID **) &ResetNotify);
