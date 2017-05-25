@@ -8,6 +8,7 @@
 **/
 
 #include "NvmExpress.h"
+#include <Guid/NVMeEventGroup.h>
 
 #define NVME_SHUTDOWN_PROCESS_TIMEOUT  45
 
@@ -401,6 +402,8 @@ NvmeEnableController (
   UINT32      Index;
   UINT8       Timeout;
 
+  EfiEventGroupSignal (&gNVMeEnableStartEventGroupGuid);
+
   //
   // Enable the controller.
   // CC.AMS, CC.MPS and CC.CSS are all set to 0.
@@ -412,7 +415,7 @@ NvmeEnableController (
 
   Status = WriteNvmeControllerConfiguration (Private, &Cc);
   if (EFI_ERROR (Status)) {
-    return Status;
+    goto Cleanup;
   }
 
   //
@@ -434,7 +437,7 @@ NvmeEnableController (
     Status = ReadNvmeControllerStatus (Private, &Csts);
 
     if (EFI_ERROR (Status)) {
-      return Status;
+      goto Cleanup;
     }
 
     if (Csts.Rdy) {
@@ -451,6 +454,9 @@ NvmeEnableController (
   }
 
   DEBUG ((DEBUG_INFO, "NVMe controller is enabled with status [%r].\n", Status));
+
+Cleanup:
+  EfiEventGroupSignal (&gNVMeEnableCompleteEventGroupGuid);
   return Status;
 }
 
