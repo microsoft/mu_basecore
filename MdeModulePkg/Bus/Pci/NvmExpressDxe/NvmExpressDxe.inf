@@ -41,8 +41,15 @@
   NvmExpressHci.h
   NvmExpressPassthru.c
 
+## MSChange [BEGIN]
+[Guids]
+  gNVMeEnableStartEventGroupGuid
+  gNVMeEnableCompleteEventGroupGuid
+## MSChange [END]
+
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec    ## MSCHANGE for event
 
 [LibraryClasses]
   BaseMemoryLib
