@@ -43,8 +43,13 @@
   NvmExpressMediaSanitize.c # MU_CHANGE - Add Media Sanitize
   NvmExpressMediaSanitize.h # MU_CHANGE - Add Madia Sanitize
 
+[Guids]
+  gNVMeEnableStartEventGroupGuid
+  gNVMeEnableCompleteEventGroupGuid
+
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
 
 [LibraryClasses]
   BaseMemoryLib
