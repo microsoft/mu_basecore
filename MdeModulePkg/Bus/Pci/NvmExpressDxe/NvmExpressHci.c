@@ -400,6 +400,9 @@ NvmeEnableController (
   UINT32      Index;
   UINT8       Timeout;
 
+  // MSCHANGE - BEGIN
+  EfiEventGroupSignal (&gNVMeEnableStartEventGroupGuid);
+  // MSCHANGE - END
   //
   // Enable the controller.
   // CC.AMS, CC.MPS and CC.CSS are all set to 0.
@@ -411,7 +414,9 @@ NvmeEnableController (
 
   Status = WriteNvmeControllerConfiguration (Private, &Cc);
   if (EFI_ERROR (Status)) {
-    return Status;
+    // MSCHANGE - BEGIN
+    goto Cleanup;
+    // MSCHANGE - END
   }
 
   //
@@ -433,7 +438,9 @@ NvmeEnableController (
     Status = ReadNvmeControllerStatus (Private, &Csts);
 
     if (EFI_ERROR (Status)) {
-      return Status;
+      // MSCHANGE - BEGIN
+      goto Cleanup;
+      // MSCHANGE - END
     }
 
     if (Csts.Rdy) {
@@ -450,6 +457,11 @@ NvmeEnableController (
   }
 
   DEBUG ((DEBUG_INFO, "NVMe controller is enabled with status [%r].\n", Status));
+
+  // MSCHANGE - BEGIN
+Cleanup:
+  EfiEventGroupSignal (&gNVMeEnableCompleteEventGroupGuid);
+  // MSCHANGE - END
   return Status;
 }
 

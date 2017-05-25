@@ -57,6 +57,11 @@ extern EFI_COMPONENT_NAME_PROTOCOL                gNvmExpressComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL               gNvmExpressComponentName2;
 extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gNvmExpressDriverSupportedEfiVersion;
 
+// MSCHANGE - BEGIN
+extern EFI_GUID  gNVMeEnableStartEventGroupGuid;
+extern EFI_GUID  gNVMeEnableCompleteEventGroupGuid;
+// MSCHANGE - END
+
 #define PCI_CLASS_MASS_STORAGE_NVM  0x08                // mass storage sub-class non-volatile memory.
 #define PCI_IF_NVMHCI               0x02                // mass storage programming interface NVMHCI.
 
