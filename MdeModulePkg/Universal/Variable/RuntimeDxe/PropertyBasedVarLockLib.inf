@@ -1,0 +1,39 @@
+## @file PropertyBasedVarLockLib.inf
+# This is an implementation of the EDKII variable lock interface
+# that leverages variable properties to enforce the lock.
+#
+##
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+# MS_CHANGE_90369: Separate the logic for VarLock from VarCheck.
+
+
+[Defines]
+  INF_VERSION         = 0x00010017
+  BASE_NAME           = PropertyBasedVarLockLib
+  FILE_GUID           = 8355E9A8-973C-4815-812A-1794E03421CB
+  VERSION_STRING      = 1.0
+  MODULE_TYPE         = DXE_RUNTIME_DRIVER
+  LIBRARY_CLASS       = NULL|DXE_RUNTIME_DRIVER DXE_SMM_DRIVER
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+
+[Sources]
+  PropertyBasedVarLock.c
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+
+[LibraryClasses]
+  DebugLib
