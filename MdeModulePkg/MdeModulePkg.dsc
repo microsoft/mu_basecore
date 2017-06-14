@@ -472,12 +472,14 @@
       NULL|MdeModulePkg/Library/VarCheckUefiLib/VarCheckUefiLib.inf
       NULL|MdeModulePkg/Library/VarCheckHiiLib/VarCheckHiiLib.inf
       NULL|MdeModulePkg/Library/VarCheckPcdLib/VarCheckPcdLib.inf
+      NULL|MdeModulePkg/Universal/Variable/RuntimeDxe/PropertyBasedVarLockLib.inf     ## MS_CHANGE
   }
   MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf {
     <LibraryClasses>
       NULL|MdeModulePkg/Library/VarCheckUefiLib/VarCheckUefiLib.inf
       NULL|MdeModulePkg/Library/VarCheckHiiLib/VarCheckHiiLib.inf
       NULL|MdeModulePkg/Library/VarCheckPcdLib/VarCheckPcdLib.inf
+      NULL|MdeModulePkg/Universal/Variable/RuntimeDxe/PropertyBasedVarLockLib.inf     ## MS_CHANGE
   }
   MdeModulePkg/Universal/Variable/RuntimeDxe/VariableSmmRuntimeDxe.inf
   MdeModulePkg/Library/SmmReportStatusCodeLib/SmmReportStatusCodeLib.inf
