@@ -226,8 +226,8 @@ DumpTpmBuffer (
 {
   UINTN                           DebugBufferCount, Index;
 
-  // JBB TODO: Don't even evaluate if below required debugging level.
-  // JBB TODO: Pass in max buffer size? Format nicely?
+  // TODO: Don't even evaluate if below required debugging level.
+  // TODO: Pass in max buffer size? Format nicely?
 
   // Determine max buffer size.
   DebugBufferCount = MIN( BufferSize, MAX_TPM_BUFFER_DUMP );
