@@ -34,6 +34,27 @@ typedef struct {
   TPM_STCLEAR_FLAGS    Flags;
 } TPM_RSP_GET_CAPABILITY_STCLEAR_FLAGS;
 
+// MS_CHANGE [BEGIN] - Support retrieving raw capability info from TPM 1.2.
+typedef struct {
+  TPM_STRUCTURE_TAG                 tag;
+  TPM_VERSION                       version;
+  UINT16                            specLevel;
+  UINT8                             errataRev;
+  UINT8                             tpmVendorID[4];
+  UINT16                            vendorSpecificSize;
+  // The buffer must be provided immediately after this structure.
+  // UINT8                             vendorSpecific[];
+} TPM_RSP_CAP_VERSION_INFO;
+
+typedef struct {
+  TPM_RSP_COMMAND_HDR         Hdr;
+  UINT32                      ResponseSize;
+  TPM_RSP_CAP_VERSION_INFO    Info;
+  // Allocate a buffer sufficiently large for most vendor data.
+  UINT8                       VendorSpecificData[1024];
+} TPM_RSP_GET_CAPABILITY_VERSION_INFO;
+// MS_CHANGE [END]
+
 #pragma pack()
 
 /**
@@ -129,3 +150,76 @@ Tpm12GetCapabilityFlagVolatile (
 
   return Status;
 }
+
+// MS_CHANGE [BEGIN] - Support retrieving raw capability info from TPM 1.2.
+/**
+Get TPM version from capability.
+
+@param[out] TpmVersion    A pointer to a TPM_VERSION structure to hold the base version info.
+@param[out] TpmMfg        [Optional] A UINT32 that will contain a big-endian encoding of the 4-byte mfg ID.
+                          (eg. for "TPM ", TpmMfg[0] == 'T', TpmMfg[1] == 'P', etc)
+@param[in,out]  VendorSpecificSize  [Optional] On input, the size of the buffer pointed to by VendorSpecificBuffer.
+                                    On output, the number of bytes copied into the buffer.
+@param[out]     VendorSpecificBuffer  [Optional] A caller-allocated buffer containing the vendor-specific data.
+
+@retval EFI_SUCCESS      Operation completed successfully.
+@retval EFI_DEVICE_ERROR The command was unsuccessful.
+
+**/
+EFI_STATUS
+EFIAPI
+Tpm12GetCapabilityFirmwareVersion (
+  OUT     TPM_VERSION   *TpmVersion,
+  OUT     UINT32        *TpmMfg OPTIONAL,
+  IN OUT  UINT16        *VendorSpecificSize OPTIONAL,
+  OUT     UINT8         *VendorSpecificBuffer OPTIONAL
+  )
+{
+  EFI_STATUS                            Status;
+  TPM_CMD_GET_CAPABILITY                Command;
+  TPM_RSP_GET_CAPABILITY_VERSION_INFO   Response;   // This structure is 1KB+
+  UINT32                                Length;
+
+  //
+  // send Tpm command TPM_ORD_GetCapability
+  //
+  Command.Hdr.tag            = SwapBytes16 (TPM_TAG_RQU_COMMAND);
+  Command.Hdr.paramSize      = SwapBytes32 (OFFSET_OF(TPM_CMD_GET_CAPABILITY, CapabilityFlag));
+  Command.Hdr.ordinal        = SwapBytes32 (TPM_ORD_GetCapability);
+  Command.Capability         = SwapBytes32 (TPM_CAP_VERSION_VAL);
+  Command.CapabilityFlagSize = 0;                                   // We won't use the sub-capability.
+  Length = sizeof (Response);
+  Status = Tpm12SubmitCommand (sizeof (Command), (UINT8 *)&Command, &Length, (UINT8 *)&Response);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if (SwapBytes32 (Response.Hdr.returnCode) != TPM_SUCCESS) {
+    DEBUG ((DEBUG_VERBOSE, "Tpm12GetCapabilityFirmwareVersion: Response Code error! 0x%08x\r\n", SwapBytes32 (Response.Hdr.returnCode)));
+    return EFI_DEVICE_ERROR;
+  }
+
+  // Now we know we've got good data.
+  // Copy the version data.
+  CopyMem (TpmVersion, &Response.Info.version, sizeof (*TpmVersion));
+  if (TpmMfg != NULL) {
+    CopyMem ((UINT8*)TpmMfg, &Response.Info.tpmVendorID[0], sizeof (*TpmMfg));
+  }
+
+  // Now we need to see whether we've got enough buffer to hold the vendor-specific data.
+  if (VendorSpecificSize != NULL && VendorSpecificBuffer != NULL) {
+    if (*VendorSpecificSize >= Response.Info.vendorSpecificSize) {
+      // Yes, we can hold all of the data. Set the size and copy the data.
+      *VendorSpecificSize = Response.Info.vendorSpecificSize;
+      CopyMem (VendorSpecificBuffer, &Response.VendorSpecificData[0], *VendorSpecificSize);
+    }
+    else {
+      // No, we cannot hold all of the data. Set the size and return the error.
+      *VendorSpecificSize = Response.Info.vendorSpecificSize;
+      Status = EFI_BUFFER_TOO_SMALL;
+    }
+  }
+
+  return Status;
+}
+// MS_CHANGE [END]
