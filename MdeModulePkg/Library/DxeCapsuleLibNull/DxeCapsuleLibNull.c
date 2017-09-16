@@ -91,20 +91,3 @@ ProcessCapsules (
 {
   return EFI_UNSUPPORTED;
 }
-
-/**
-  MS_CHANGE: System Table capsule support
-
-  Library function used to look thru the hob list
-  and locate and process system table capsules.
-
-**/
-VOID
-EFIAPI
-LocateAndProcessSystemTableCapsules (
-  VOID
-  )
-{
-  //MSCHANGE
-}
-
