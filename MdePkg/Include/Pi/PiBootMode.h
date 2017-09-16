@@ -31,9 +31,6 @@ typedef UINT32  EFI_BOOT_MODE;
 #define BOOT_ON_S2_RESUME                             0x10
 #define BOOT_ON_S3_RESUME                             0x11
 #define BOOT_ON_FLASH_UPDATE                          0x12
-// MS_CHANGE_208194
-#define BOOT_ON_SYSTEM_TABLE_CAPSULE                  0x13
-// END
 #define BOOT_IN_RECOVERY_MODE                         0x20
 
 #endif
