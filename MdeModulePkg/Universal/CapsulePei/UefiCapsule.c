@@ -799,12 +799,11 @@ BuildMemoryResourceDescriptor (
 
 
 
-// MSCHANGE [BEGIN?] - Subhash, was this modified?
+// MSCHANGE [BEGIN?] - was this modified?
 EFI_STATUS
 EFIAPI
 AreCapsulesStaged(
-IN BOOLEAN *UpdateCapsules,
-IN BOOLEAN *SystemTableCapsules
+IN BOOLEAN *UpdateCapsules
 )
 {
   EFI_STATUS                       Status;
@@ -812,16 +811,14 @@ IN BOOLEAN *SystemTableCapsules
   EFI_PEI_READ_ONLY_VARIABLE2_PPI  *PPIVariableServices;
   EFI_PHYSICAL_ADDRESS             CapsuleDataPtr64 = 0;
 
-  if ((UpdateCapsules == NULL) || (SystemTableCapsules == NULL))
+  if (UpdateCapsules == NULL)
   {
     DEBUG((DEBUG_ERROR, __FUNCTION__ " Invalid parameters.  Inputs can't be NULL\n"));
     ASSERT(UpdateCapsules != NULL);
-    ASSERT(SystemTableCapsules != NULL);
     return EFI_INVALID_PARAMETER;
   }
 
   *UpdateCapsules = FALSE;
-  *SystemTableCapsules = FALSE;
 
   Status = PeiServicesLocatePpi(
     &gEfiPeiReadOnlyVariable2PpiGuid,
@@ -849,21 +846,6 @@ IN BOOLEAN *SystemTableCapsules
   if (!EFI_ERROR(Status))
   {
     *UpdateCapsules = TRUE;
-  }
-
-  //Check for System Table Capsule
-  Size = sizeof(CapsuleDataPtr64);
-  Status = PPIVariableServices->GetVariable(
-    PPIVariableServices,
-    EFI_SYSTEM_TABLE_CAPSULE_VARIABLE_NAME,
-    &gEfiCapsuleVendorGuid,
-    NULL,
-    &Size,
-    (VOID *)&CapsuleDataPtr64
-  );
-  if (!EFI_ERROR(Status))
-  {
-    *SystemTableCapsules = TRUE;
   }
 
   return EFI_SUCCESS;
@@ -980,72 +962,6 @@ GetScatterGatherHeadEntries(
     Index++;
   } //end of while for update capsules
 
-  // Becaues of system security Update capsules are treated differently
-  // than system table capsules.   Update capsules are capsules that don't
-  // have populate system table flag set.  System table capsules do have
-  // that flag set.  To support the system securty differences the RT capsule update
-  // service will use a different set of variables.  
-
-  //setup var name buffer for system table capsules
-  Index = 0;  //reset to 0 for iterating system table capsules
-  CapsuleVarName[0] = 0;
-  StrCpyS(CapsuleVarName, sizeof(CapsuleVarName) / sizeof(CHAR16), EFI_SYSTEM_TABLE_CAPSULE_VARIABLE_NAME);
-  TempVarName = CapsuleVarName + StrLen(CapsuleVarName);
-  while (ValidIndex < MAX_SG_LIST_HEADS)  //loop until we exceed supported SG lists or until we break from other conditions
-  {
-    if (Index != 0)
-    {
-        UnicodeValueToStringS (
-          TempVarName,
-          sizeof (CapsuleVarName) - ((UINTN)TempVarName - (UINTN)CapsuleVarName),
-          0,
-          Index,
-          0
-          );
-    }
-    Size = sizeof(CapsuleDataPtr64);
-    Status = PPIVariableServices->GetVariable(
-      PPIVariableServices,
-      CapsuleVarName,
-      &gEfiCapsuleVendorGuid,
-      NULL,
-      &Size,
-      (VOID *)&CapsuleDataPtr64
-    );
-
-    if (EFI_ERROR(Status))
-    {
-      if (Status != EFI_NOT_FOUND)
-      {
-        DEBUG((DEBUG_ERROR, "Unexpected error getting Capsule Update variable.  Status = %r\n"));
-      }
-      //stop processing once we hit error or not found 
-      break;
-    }
-
-    //
-    // If this BlockList has been linked before, skip this variable
-    //
-    Flag = FALSE;
-    for (TempIndex = 0; TempIndex < ValidIndex; TempIndex++)
-    {
-      if (TempList[TempIndex] == CapsuleDataPtr64)
-      {
-        Flag = TRUE;
-        break;
-        //already linked - skip it
-      }
-    }
-    if (Flag) {
-      Index++;
-      continue; //go get next SG list head variable
-    }
-
-    //add it to the cached list
-    TempList[ValidIndex++] = CapsuleDataPtr64;
-    Index++;
-  } //end of while for System Table Capsules
-
     //done getting all SG list 
   if (ValidIndex == 0)
   {
@@ -1117,9 +1033,7 @@ CapsuleCoalesce (
   // capsule update, then return normally.
   //
   Status = PeiServicesGetBootMode (&BootMode);
-// MS_CHANGE_208194
-  if (EFI_ERROR(Status) || ((BootMode != BOOT_ON_FLASH_UPDATE) && (BootMode != BOOT_ON_SYSTEM_TABLE_CAPSULE))) {
-// END MS_CHANGE_208194
+  if (EFI_ERROR(Status) || (BootMode != BOOT_ON_FLASH_UPDATE)) {
     DEBUG ((EFI_D_ERROR, "Boot mode is not correct for capsule update path.\n"));
     Status = EFI_NOT_FOUND;
     goto Done;
@@ -1133,7 +1047,7 @@ CapsuleCoalesce (
     goto Done;
   }
 
-// MSCHANGE [END?] - Subhash?
+// MSCHANGE [END?]
 
   MemoryResource = BuildMemoryResourceDescriptor ();
 
@@ -1210,10 +1124,9 @@ CheckCapsuleUpdate (
   )
 {
   EFI_STATUS  Status;
-// MSCHANGE [BEGIN?] - Subhash
+// MSCHANGE [BEGIN?]
   BOOLEAN Update;
-  BOOLEAN SystemTable;
-  Status = AreCapsulesStaged(&Update, &SystemTable);
+  Status = AreCapsulesStaged(&Update);
   //Only want update capsules here
   if (!EFI_ERROR(Status))
   {
@@ -1225,7 +1138,7 @@ CheckCapsuleUpdate (
       Status = EFI_NOT_FOUND;  
     }
   }
-// MSCHANGE [END?] - Subhash
+// MSCHANGE [END?]
   return Status;
 }
 /**

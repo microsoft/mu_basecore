@@ -88,14 +88,4 @@ ProcessCapsules (
   VOID
   );
 
-/**
-MS_CHANGE: System Table capsule support
-
-Library function used to look thru the hob list, locate and
-process system table capsules
-**/
-VOID
-EFIAPI
-LocateAndProcessSystemTableCapsules();
-
 #endif
