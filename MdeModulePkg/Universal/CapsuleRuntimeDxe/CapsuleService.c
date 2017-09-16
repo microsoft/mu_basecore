@@ -11,6 +11,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "CapsuleService.h"
+// MS_CHANGE_161994
+#include <Guid/EventGroup.h>
+// END_MS_CHANGE_161994
 
 #include <Library/ResetUtilityLib.h>                  // MS_CHANGE_250018 - ResetSystem refactoring.
 
@@ -18,6 +21,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // Handle for the installation of Capsule Architecture Protocol.
 //
 EFI_HANDLE  mNewHandle = NULL;
+
+// MS_CHANGE_161994
+//
+// Support locking capsule interface.  
+//
+BOOLEAN     mAfterLocked = FALSE;
+// END MS_CHANGE_161994
 
 //
 // The times of calling UpdateCapsule ()
@@ -73,11 +83,6 @@ UpdateCapsule (
   BOOLEAN                   InitiateReset;
   CHAR16                    CapsuleVarName[30];
   CHAR16                    *TempVarName;
-// MS_CHANGE_208194
-  BOOLEAN                   SystemTableCapsule;
-
-  SystemTableCapsule = FALSE;
-// END MS_CHANGE_208194
 
   //
   // Check if platform support Capsule In RAM or not.
@@ -93,6 +98,13 @@ UpdateCapsule (
   if (CapsuleCount < 1) {
     return EFI_INVALID_PARAMETER;
   }
+
+// MS_CHANGE_161994
+  if (mAfterLocked) {
+    DEBUG((DEBUG_INFO, "Capsule Interface Locked\n."));
+    return EFI_UNSUPPORTED;
+  }
+// END MS_CHANGE_161994
 
   NeedReset         = FALSE;
   InitiateReset     = FALSE;
@@ -133,18 +145,6 @@ UpdateCapsule (
         return Status;
       }
     }
-
-// MS_CHANGE_208194
-    //
-    // Track if we have a system table capsule.
-    //
-      if (((CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET) != 0) &&
-        ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) != 0)) {
-
-        SystemTableCapsule = TRUE;
-      }
-// END MS_CHANGE_208194
-    
   }
 
   //
@@ -199,35 +199,6 @@ UpdateCapsule (
 
   CapsuleCacheWriteBack (ScatterGatherList);
 
-// MS_CHANGE_208194
-  //
-  // If we have a system table capsule, set a variable so when boot mode is 
-  // configured after reset, we are aware that a system table capsule is present.
-  //
-  if (SystemTableCapsule != FALSE) {
-    Status = EfiSetVariable(EFI_SYSTEM_TABLE_CAPSULE_VARIABLE_NAME,
-                            &gEfiCapsuleVendorGuid,
-                            EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS,
-                            sizeof(UINTN),
-                            (VOID*)&ScatterGatherList);
-
-    if (EFI_ERROR(Status)) {
-      DEBUG((DEBUG_ERROR, __FUNCTION__ ": failed to write test capsule variable (%r)\n", Status));
-    } else {
-      //
-      // Firmware that encounters a capsule which has the CAPSULE_FLAGS_INITIATE_RESET Flag set in its header
-      // will initiate a reset of the platform which is compatible with the passed-in capsule request and will 
-      // not return back to the caller.
-      //
-      if (InitiateReset) {
-        ResetSystemWithSubtype(EfiResetWarm, &gCapsuleArmedResetGuid);
-      }
-    }
-
-    goto Cleanup;
-  }
-// END MS_CHANGE_208194
-  
   //
   // Construct variable name CapsuleUpdateData, CapsuleUpdateData1, CapsuleUpdateData2...
   // if user calls UpdateCapsule multiple times.
@@ -272,9 +243,6 @@ UpdateCapsule (
      }
   }
 
-// MS_CHANGE_208194
-Cleanup:
-// END MS_CHANGE_208194
   return Status;
 }
 
@@ -397,6 +365,27 @@ QueryCapsuleCapabilities (
   return EFI_SUCCESS;
 }
 
+// MS_CHANGE_161994
+/**
+
+LockCapsuleInterface - Event handler  
+- locks the capsule interface so no input is accepted.
+
+@param[in]  Event     Event whose notification function is being invoked
+@param[in]  Context   Pointer to the notification function's context
+
+**/
+VOID
+EFIAPI
+LockCapsuleInterface(
+IN      EFI_EVENT                 Event,
+IN      VOID                      *Context
+)
+{
+    mAfterLocked = TRUE;
+    DEBUG((DEBUG_INFO, "Capsule Interface Locked!!\nMS_CHANGE_161994\n"));
+}
+// END MS_CHANGE_161994
 
 /**
 
@@ -416,6 +405,9 @@ CapsuleServiceInitialize (
   )
 {
   EFI_STATUS  Status;
+// MS_CHANGE_161994
+  EFI_EVENT   Event;
+// END MS_CHANGE_161994
 
   mMaxSizePopulateCapsule = PcdGet32(PcdMaxSizePopulateCapsule);
   mMaxSizeNonPopulateCapsule = PcdGet32(PcdMaxSizeNonPopulateCapsule);
@@ -446,6 +438,17 @@ CapsuleServiceInitialize (
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
+
+// MS_CHANGE_161994 - add lock support
+  Status = gBS->CreateEventEx(
+    EVT_NOTIFY_SIGNAL,
+    TPL_NOTIFY,
+    LockCapsuleInterface,
+    NULL,
+    &gEfiEventExitBootServicesGuid,
+    &Event
+    );
+// END MS_CHANGE_161994
 
   return Status;
 }
