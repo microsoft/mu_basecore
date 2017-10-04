@@ -33,7 +33,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <IndustryStandard/Tpm20.h>
 
-#define MAX_TPM_BUFFER_DUMP       80      // If printing an entire buffer, only print up to MAX bytes.
+#define MAX_TPM_BUFFER_DUMP       240     // If printing an entire buffer, only print up to MAX bytes.
 
 #pragma pack(1)
 
@@ -45,6 +45,14 @@ typedef struct {
   UINT32                    AuthorizationSize;
   TPMS_AUTH_COMMAND         AuthSessionPcr;
 } TPM2_PCR_COMMON_COMMAND;
+
+typedef struct {
+  TPM2_COMMAND_HEADER       Header;
+  TPMI_RH_HIERARCHY_AUTH    AuthHandle;
+  UINT32                    AuthorizationSize;
+  TPMS_AUTH_COMMAND         AuthSession;
+  TPM2B_AUTH                NewAuth;
+} TPM2_HIERARCHY_CHANGE_AUTH_COMMAND;
 
 #pragma pack()
 
@@ -409,6 +417,104 @@ DumpTpmPcrCommand (
 
 
 /**
+  This function dumps a TPM2B_DIGEST structure.
+
+  @param[in]  IsCommand       Indicates that the auth session structure starts with a session handle.
+  @param[in]  AuthSessionPtr  Pointer to the auth session to be printed.
+
+**/
+STATIC
+VOID
+Dump2bDigest (
+  IN UINTN                DebugLevel,
+  IN CHAR8                *Preamble OPTIONAL,
+  IN CONST TPM2B_DIGEST   *Digest
+  )
+{
+  DumpTpmBuffer( DebugLevel, Preamble, SwapBytes16( Digest->size ), Digest->buffer );
+  return;
+} // Dump2bDigest()
+
+
+/**
+  This function dumps an AuthSession structure from a command or response.
+
+  @param[in]  IsCommand       Indicates that the auth session structure starts with a session handle.
+  @param[in]  AuthSessionPtr  Pointer to the auth session to be printed.
+
+**/
+STATIC
+VOID
+DumpAuthSession (
+  IN BOOLEAN        IsCommand,
+  IN CONST UINT8    *AuthSession
+  )
+{
+  CONST UINT8         *FloatingPtr;
+  CONST TPM2B_DIGEST  *Digest;
+
+  FloatingPtr = AuthSession;
+
+  DEBUG(( DEBUG_INFO, "== Auth Session ==\n" ));
+
+  // If we're pointing to a command auth session,
+  // we need to print the session handle.
+  if (IsCommand) {
+    DEBUG(( DEBUG_INFO, "- SHand:  0x%8X\n", SwapBytes32( *(UINT32*)FloatingPtr ) ));
+    FloatingPtr += sizeof( UINT32 );
+  }
+
+  // Print the common parts of an auth session.
+  Digest = (TPM2B_DIGEST*)FloatingPtr;
+  Dump2bDigest( DEBUG_INFO, "- Nonce:  ", Digest );
+  FloatingPtr += sizeof( UINT16 ) + SwapBytes16( Digest->size );      // Add the size field and the digest size.
+
+  DEBUG(( DEBUG_INFO, "- Attr:   0x%2X\n", *(UINT8*)FloatingPtr ));
+  FloatingPtr++;
+
+  Digest = (TPM2B_DIGEST*)FloatingPtr;
+  Dump2bDigest( DEBUG_INFO, "- HMAC:   ", Digest );
+
+  return;
+} // DumpAuthSession()
+
+
+/**
+  This function dumps additional information about TPM PCR Extend
+  and Event operations.
+
+  @param[in]  InputBlockSize  Size of the input buffer.
+  @param[in]  InputBlock      Pointer to the input buffer itself.
+
+**/
+STATIC
+VOID
+DumpTpmChangeHierarchyCommand (
+  IN UINT32         InputBlockSize,
+  IN CONST UINT8    *InputBlock
+  )
+{
+  CONST TPM2_HIERARCHY_CHANGE_AUTH_COMMAND    *ChangeAuthCommand;
+  CONST TPM2B_DIGEST                          *Digest;
+
+  // Start the debugging by mapping some stuff.
+  ChangeAuthCommand  = (TPM2_HIERARCHY_CHANGE_AUTH_COMMAND*)InputBlock;
+
+  // Print the auth handle (the handle being authorized against).
+  DEBUG(( DEBUG_INFO, "- AHand:  0x%8X\n", SwapBytes32( ChangeAuthCommand->AuthHandle ) ));
+
+  // Print the auth session.
+  DumpAuthSession( TRUE, (UINT8*)&ChangeAuthCommand->AuthSession );
+
+  // Print the new auth.
+  Digest = (TPM2B_DIGEST*)(InputBlock + OFFSET_OF( TPM2_HIERARCHY_CHANGE_AUTH_COMMAND, AuthSession ) + SwapBytes32( ChangeAuthCommand->AuthorizationSize ));
+  Dump2bDigest( DEBUG_INFO, "- NAuth:  ", Digest );
+
+  return;
+} // DumpTpmChangeHierarchyCommand()
+
+
+/**
   This function dumps as much information as possible about
   a command being sent to the TPM for maximum user-readability.
 
@@ -455,12 +561,16 @@ DumpTpmInputBlock (
       DumpTpmPcrCommand( NativeCode, InputBlockSize, InputBlock );
       break;
 
+    case TPM_CC_HierarchyChangeAuth:
+      DumpTpmChangeHierarchyCommand( InputBlockSize, InputBlock );
+      break;
+
     default:
       break;
   }
 
   // If verbose, dump all of the buffer contents for deeper analysis.
-  DumpTpmBuffer( DEBUG_VERBOSE, "DATA:     ", InputBlockSize, InputBlock );
+  DumpTpmBuffer( DEBUG_INFO, "DATA:     ", InputBlockSize, InputBlock );
 
   return;
 } // DumpTpmInputBlock()
@@ -498,7 +608,7 @@ DumpTpmOutputBlock (
   DEBUG(( DEBUG_INFO, "Size:     %d (0x%X)\n", NativeSize, NativeSize ));
 
   // If verbose, dump all of the buffer contents for deeper analysis.
-  DumpTpmBuffer( DEBUG_VERBOSE, "DATA:     ", OutputBlockSize, OutputBlock );
+  DumpTpmBuffer( DEBUG_INFO, "DATA:     ", OutputBlockSize, OutputBlock );
 
   DEBUG(( DEBUG_INFO, "=== END TPM COMMAND ===\n\n" ));
 
