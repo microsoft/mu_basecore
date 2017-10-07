@@ -1040,9 +1040,10 @@ VariableServiceInitialize (
   // Install the Variable Filter protocol on a new handle. Continue on if
   // this fails.
   //
+  VariableHandle = NULL;
   mVariableFilterProtocol.SetVariableFilter = VariableServiceSetVariableFilter;
   Status = gSmst->SmmInstallProtocolInterface (
-                                        &mVariableHandle,
+                                        &VariableHandle,
                                         &gEfiVariableFilterProtocolGuid,
                                         EFI_NATIVE_INTERFACE,
                                         &mVariableFilterProtocol
