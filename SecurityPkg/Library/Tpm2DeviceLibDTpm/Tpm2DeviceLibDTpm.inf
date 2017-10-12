@@ -52,6 +52,9 @@
   TimerLib
   DebugLib
   Tpm2DebugLib         ## MS_CHANGE
+  PcdLib
 
 [Pcd]
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmBaseAddress            ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpmInterfaceSelector      ## CONSUMES ## MS_CHANGE
+

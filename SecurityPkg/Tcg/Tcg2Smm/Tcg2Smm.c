@@ -41,6 +41,8 @@ GetPtpInterface (
   IN VOID *Register
   )
 {
+  // MS_CHANGE [BEGIN]: Use the PCD rather than accessing the DID directly.
+#if 0
   PTP_CRB_INTERFACE_IDENTIFIER  InterfaceId;
   PTP_FIFO_INTERFACE_CAPABILITY InterfaceCapability;
 
@@ -71,6 +73,17 @@ GetPtpInterface (
   // No Ptp interface available
   //
   return PtpInterfaceMax;
+#endif
+  UINT8                 SelectedInterface;
+  PTP_INTERFACE_TYPE    Result = PtpInterfaceTis;   // Assume TIS for compatibility.
+
+  SelectedInterface = PcdGet8( PcdTpmInterfaceSelector );
+  if (SelectedInterface == PTP_INTERFACE_IDENTIFIER_INTERFACE_SELECTOR_CRB) {
+    Result = PtpInterfaceCrb;
+  }
+
+  return Result;
+  // MS_CHANGE [BEGIN]
 }
 
 EFI_TPM2_ACPI_TABLE  mTpm2AcpiTemplate = {

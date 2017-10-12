@@ -289,6 +289,13 @@
   # @ValidList  0x80000003 | 0x010D0000
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice|0x010D0000|UINT32|0x00000007
 
+  ## MS_CHANGE
+  ## This fixed at build flag tells the TPM stack which physical interface the device is configured for
+  # Legal values are:
+  # 0x00    - FIFO/TIS Mode
+  # 0x01    - CRB Mode
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpmInterfaceSelector|0x00|UINT8|0x00000009
+
 [PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## Image verification policy for OptionRom. Only following values are valid:<BR><BR>
   #  NOTE: Do NOT use 0x5 and 0x2 since it violates the UEFI specification and has been removed.<BR>

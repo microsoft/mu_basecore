@@ -83,6 +83,7 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTcgPhysicalPresenceInterfaceVer  ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableRev                 ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmPlatformClass                 ## SOMETIMES_CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpmInterfaceSelector         ## CONSUMES ## MS_CHANGE
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2CurrentIrqNum            ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2PossibleIrqNumBuf        ## CONSUMES
 
