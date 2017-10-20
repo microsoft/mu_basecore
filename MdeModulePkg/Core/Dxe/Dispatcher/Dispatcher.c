@@ -418,6 +418,7 @@ CoreDispatcher (
     //
     // If the dispatcher is running don't let it be restarted.
     //
+    PERF_FUNCTION_END (); // MS_CHANGE
     return EFI_ALREADY_STARTED;
   }
 
@@ -432,6 +433,7 @@ CoreDispatcher (
              &DxeDispatchEvent
              );
   if (EFI_ERROR (Status)) {
+    PERF_FUNCTION_END (); // MS_CHANGE
     return Status;
   }
 
