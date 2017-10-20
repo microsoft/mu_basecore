@@ -27,6 +27,7 @@
   SOR   - Schedule On Request - Don't schedule if this bit is set.
 
 Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -414,6 +415,7 @@ CoreDispatcher (
     //
     // If the dispatcher is running don't let it be restarted.
     //
+    PERF_FUNCTION_END (); // MU_CHANGE
     return EFI_ALREADY_STARTED;
   }
 
@@ -428,6 +430,7 @@ CoreDispatcher (
              &DxeDispatchEvent
              );
   if (EFI_ERROR (Status)) {
+    PERF_FUNCTION_END (); // MU_CHANGE
     return Status;
   }
 
