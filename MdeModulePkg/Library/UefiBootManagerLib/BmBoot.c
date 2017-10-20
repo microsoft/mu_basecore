@@ -1778,7 +1778,7 @@ EfiBootManagerBoot (
   VOID                      *FileBuffer;
   UINTN                     FileSize;
   EFI_BOOT_LOGO_PROTOCOL    *BootLogo;
-  EFI_EVENT                 LegacyBootEvent;
+  // EFI_EVENT                 LegacyBootEvent; // MS_CHANGE
 
   if (BootOption == NULL) {
     return;
@@ -1846,7 +1846,8 @@ EfiBootManagerBoot (
     BmRepairAllControllers (0);
   }
 
-  PERF_START_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber);
+  // PERF_START_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber); // MS_CHANGE
+  PERF_INMODULE_BEGIN (PERF_VERBOSITY_STANDARD, "BdsAttempt"); // MS_CHANGE
 
   //
   // 5. Adjust the different type memory page number just before booting
@@ -1975,9 +1976,14 @@ EfiBootManagerBoot (
   //
   // Write boot to OS performance data for UEFI boot
   //
-  PERF_CODE (
-    BmEndOfBdsPerfCode (NULL, NULL);
-  );
+  // MS_CHANGE begin
+  // PERF_CODE (
+  //   BmEndOfBdsPerfCode (NULL, NULL);
+  // );
+  PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "BdsAttempt"); // MS_CHANGE
+  PERF_CROSSMODULE_END (PERF_VERBOSITY_LOW, "BDS"); // MS_CHANGE: begin is in MdeModulePkg\Universal\BdsDxe\BdsEntry.c
+  PERF_CROSSMODULE_BEGIN (PERF_VERBOSITY_LOW, "BDS"); // MS_CHANGE: keep logging BDS in case we'll re-enter this function late
+  // MS_CHANGE end
 
   REPORT_STATUS_CODE (EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderStart));
 
@@ -1990,7 +1996,7 @@ EfiBootManagerBoot (
     //
     BmReportLoadFailure (EFI_SW_DXE_BS_EC_BOOT_OPTION_FAILED, Status);
   }
-  PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber);
+  // PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber); // MS_CHANGE
 
   //
   // Destroy the RAM disk

@@ -49,7 +49,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/OemTpm2InitLib.h>
 // MSChange [END]
 
-#define PERF_ID_TCG2_DXE  0x3120
+// #define PERF_ID_TCG2_DXE  0x3120 // MS_CHANGE
 
 typedef struct {
   CHAR16                                 *VariableName;
@@ -2375,7 +2375,8 @@ OnReadyToBoot (
   EFI_STATUS                        Status;
   TPM_PCRINDEX                      PcrIndex;
 
-  PERF_START_EX (mImageHandle, "EventRec", "Tcg2Dxe", 0, PERF_ID_TCG2_DXE);
+  // PERF_START_EX (mImageHandle, "EventRec", "Tcg2Dxe", 0, PERF_ID_TCG2_DXE); // MS_CHANGE
+  PERF_FUNCTION_BEGIN (PERF_VERBOSITY_STANDARD); // MS_CHANGE
 
   // MS_CHANGE_23086
   // MSChange [BEGIN] - Call OEM init hook.
@@ -2468,7 +2469,8 @@ OnReadyToBoot (
   // Increase boot attempt counter.
   //
   mBootAttempts++;
-  PERF_END_EX (mImageHandle, "EventRec", "Tcg2Dxe", 0, PERF_ID_TCG2_DXE + 1);
+  // PERF_END_EX (mImageHandle, "EventRec", "Tcg2Dxe", 0, PERF_ID_TCG2_DXE + 1); // MS_CHANGE
+  PERF_FUNCTION_END (PERF_VERBOSITY_STANDARD); // MS_CHANGE
 }
 
 /**
