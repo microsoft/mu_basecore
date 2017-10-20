@@ -4,6 +4,7 @@
 Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015 Hewlett Packard Enterprise Development LP<BR>
+Copyright (c) Microsoft Corporation<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -68,7 +69,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DxeServicesLib.h>
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/CapsuleLib.h>
-#include <Library/PerformanceLib.h>
+// #include <Library/PerformanceLib.h> // MU_CHANGE
 #include <Library/HiiLib.h>
 
 #if !defined (EFI_REMOVABLE_MEDIA_FILE_NAME)
