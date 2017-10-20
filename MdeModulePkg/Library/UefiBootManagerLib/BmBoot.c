@@ -4,6 +4,7 @@
 Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 Copyright (c) 2011 - 2021, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015-2021 Hewlett Packard Enterprise Development LP<BR>
+Copyright (c) Microsoft Corporation<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -1869,8 +1870,8 @@ EfiBootManagerBoot (
   VOID                       *FileBuffer;
   UINTN                      FileSize;
   EFI_BOOT_LOGO_PROTOCOL     *BootLogo;
-  EFI_EVENT                  LegacyBootEvent;
-  UINTN                      ReportStatusCodeData[2];  // MU_CHANGE
+  // EFI_EVENT                  LegacyBootEvent;       // MU_CHANGE
+  UINTN  ReportStatusCodeData[2];                      // MU_CHANGE
 
   if (BootOption == NULL) {
     return;
@@ -1936,7 +1937,8 @@ EfiBootManagerBoot (
     BmRepairAllControllers (0);
   }
 
-  PERF_START_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32)OptionNumber);
+  // PERF_START_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber); // MU_CHANGE
+  PERF_INMODULE_BEGIN ("BdsAttempt"); // MU_CHANGE
 
   //
   // 5. Adjust the different type memory page number just before booting
@@ -2040,19 +2042,19 @@ EfiBootManagerBoot (
     if (mBmLegacyBoot != NULL) {
       //
       // Write boot to OS performance data for legacy boot.
-      //
-      PERF_CODE (
-        //
-        // Create an event to be signalled when Legacy Boot occurs to write performance data.
-        //
-        Status = EfiCreateEventLegacyBootEx (
-                   TPL_NOTIFY,
-                   BmEndOfBdsPerfCode,
-                   NULL,
-                   &LegacyBootEvent
-                   );
-        ASSERT_EFI_ERROR (Status);
-        );
+      // MU_CHANGE commented this out
+      // PERF_CODE (
+      //   //
+      //   // Create an event to be signalled when Legacy Boot occurs to write performance data.
+      //   //
+      //   Status = EfiCreateEventLegacyBootEx(
+      //              TPL_NOTIFY,
+      //              BmEndOfBdsPerfCode,
+      //              NULL,
+      //              &LegacyBootEvent
+      //              );
+      //   ASSERT_EFI_ERROR (Status);
+      // );
 
       mBmLegacyBoot (BootOption);
     } else {
@@ -2087,9 +2089,14 @@ EfiBootManagerBoot (
   //
   // Write boot to OS performance data for UEFI boot
   //
-  PERF_CODE (
-    BmEndOfBdsPerfCode (NULL, NULL);
-    );
+  // MU_CHANGE begin
+  // PERF_CODE (
+  //   BmEndOfBdsPerfCode (NULL, NULL);
+  // );
+  PERF_INMODULE_END ("BdsAttempt"); // MU_CHANGE
+  PERF_CROSSMODULE_END ("BDS");     // MU_CHANGE: begin is in MdeModulePkg\Universal\BdsDxe\BdsEntry.c
+  PERF_CROSSMODULE_BEGIN ("BDS");   // MU_CHANGE: keep logging BDS in case we'll re-enter this function late
+  // MU_CHANGE end
 
   REPORT_STATUS_CODE (EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderStart));
 
@@ -2114,7 +2121,7 @@ EfiBootManagerBoot (
     REPORT_STATUS_CODE (EFI_PROGRESS_CODE, (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_PC_BOOT_OPTION_COMPLETE)); // MU_CHANGE
   }
 
-  PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32)OptionNumber);
+  // PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber); // MU_CHANGE
 
   //
   // Clear the Watchdog Timer after the image returns

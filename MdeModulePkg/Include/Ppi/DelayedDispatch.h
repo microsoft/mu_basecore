@@ -3,7 +3,7 @@
   PPI that allows a Pei module to request a callback after a minumum
   delay.
 
-  Copyright (c) Microsoft Corporation.
+  Copyright (c) Microsoft Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/

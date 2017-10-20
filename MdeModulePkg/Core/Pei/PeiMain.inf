@@ -7,6 +7,7 @@
 # 3) Handoff control to DxeIpl to load DXE core and enter DXE phase.
 #
 # Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) Microsoft Corporation<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -80,8 +81,8 @@
   gStatusCodeCallbackGuid
   gEdkiiMigratedFvInfoGuid                      ## SOMETIMES_PRODUCES     ## HOB
   gEdkiiMigrationInfoGuid                       ## SOMETIMES_CONSUMES     ## HOB
+  gEfiFirmwarePerformanceGuid    # MU_CHANGE_161871 - needed to build SEC perf HOB
   gEfiDelayedDispatchTableGuid   # MU_CHANGE
-  gPerfDelayedDispatchEndOfPei   # MU_CHANGE
 
 [Ppis]
   gEfiPeiStatusCodePpiGuid                      ## SOMETIMES_CONSUMES # PeiReportStatusService is not ready if this PPI doesn't exist
@@ -104,6 +105,7 @@
   gEfiPeiReset2PpiGuid                          ## SOMETIMES_CONSUMES
   gEfiSecHobDataPpiGuid                         ## SOMETIMES_CONSUMES
   gEfiPeiCoreFvLocationPpiGuid                  ## SOMETIMES_CONSUMES
+  gPeiSecPerformancePpiGuid  # MU_CHANGE_161871 - needed to build SEC perf HOB
   gEfiDelayedDispatchPpiGuid # MU_CHANGE
   gEfiEndOfPeiSignalPpiGuid  # MU_CHANGE
 
