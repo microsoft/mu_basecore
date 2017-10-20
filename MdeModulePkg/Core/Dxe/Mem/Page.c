@@ -786,7 +786,8 @@ CoreConvertPagesEx (
     //
     if (ChangingType && (NewType != EfiConventionalMemory)) {
       if (Entry->End < End) {
-        DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ConvertPages: range %lx - %lx covers multiple entries\n", Start, End));
+        // MS_CHANGE: remove this debug print since within debug print there is another allocate pages call
+        // DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ConvertPages: range %lx - %lx covers multiple entries\n", Start, End));
         return EFI_NOT_FOUND;
       }
     }

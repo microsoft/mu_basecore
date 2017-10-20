@@ -1800,6 +1800,8 @@ CoreStartImage (
   //
   Status = Image->Status;
 
+  PERF_ENTRYPOINT_END (Handle); // MS_CHANGE
+
   //
   // If the image returned an error, or if the image is an application
   // unload it
