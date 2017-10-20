@@ -65,7 +65,7 @@
   UefiLib
   Tpm2DeviceLib
   HashLib
-  PerformanceLib
+  Performance2Lib  ## MS_CHANGE
   ReportStatusCodeLib
   Tcg2PhysicalPresenceLib
   PeCoffLib

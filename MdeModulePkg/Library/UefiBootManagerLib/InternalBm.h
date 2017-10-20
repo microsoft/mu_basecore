@@ -64,14 +64,13 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/HobLib.h>
 #include <Library/BaseLib.h>
 #include <Library/DevicePathLib.h>
-#include <Library/PerformanceLib.h>
+#include <Library/Performance2Lib.h> // MS_CHANGE
 #include <Library/PcdLib.h>
 #include <Library/PeCoffGetEntryPointLib.h>
 #include <Library/UefiBootManagerLib.h>
 #include <Library/DxeServicesLib.h>
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/CapsuleLib.h>
-#include <Library/PerformanceLib.h>
 #include <Library/HiiLib.h>
 
 #if !defined (EFI_REMOVABLE_MEDIA_FILE_NAME)

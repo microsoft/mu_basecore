@@ -1,6 +1,6 @@
 /** @file
   Pei Core Main Entry Point
-  
+
 Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -54,7 +54,7 @@ EFI_PEI_SERVICES  gPs = {
   PeiFfsFindNextFile,
   PeiFfsFindSectionData,
 
-  PeiInstallPeiMemory,      
+  PeiInstallPeiMemory,
   PeiAllocatePages,
   PeiAllocatePool,
   (EFI_PEI_COPY_MEM)CopyMem,
@@ -78,7 +78,7 @@ EFI_PEI_SERVICES  gPs = {
 
 /**
   Shadow PeiCore module from flash to installed memory.
-  
+
   @param PrivateData    PeiCore's private data structure
 
   @return PeiCore function address after shadowing.
@@ -267,7 +267,7 @@ PeiCore (
       // Indicate that PeiCore reenter
       //
       OldCoreData->PeimDispatcherReenter = TRUE;
-      
+
       if (PcdGet64(PcdLoadModuleAtFixAddressEnable) != 0 && (OldCoreData->HobList.HandoffInformationTable->BootMode != BOOT_ON_S3_RESUME)) {
         //
         // if Loading Module at Fixed Address is enabled, allocate the PEI code memory range usage bit map array.
@@ -290,7 +290,7 @@ PeiCore (
       // PEI Core has now been shadowed to memory.  Restart PEI Core in memory.
       //
       OldCoreData->ShadowedPeiCore (SecCoreData, PpiList, OldCoreData);
-      
+
       //
       // Should never reach here.
       //
@@ -310,13 +310,13 @@ PeiCore (
 
     CpuIo = (VOID*)PrivateData.ServiceTableShadow.CpuIo;
     PciCfg = (VOID*)PrivateData.ServiceTableShadow.PciCfg;
-    
+
     CopyMem (&PrivateData.ServiceTableShadow, &gPs, sizeof (gPs));
-    
+
     PrivateData.ServiceTableShadow.CpuIo  = CpuIo;
     PrivateData.ServiceTableShadow.PciCfg = PciCfg;
   }
-  
+
   //
   // Cache a pointer to the PEI Services Table that is either in temporary memory or permanent memory
   //
@@ -363,35 +363,39 @@ PeiCore (
     ASSERT (PrivateData.FileHandles != NULL);
   }
   InitializePpiServices      (&PrivateData,    OldCoreData);
-  
+
   //
-  // Update performance measurements 
+  // Update performance measurements
   //
   if (OldCoreData == NULL) {
-    PERF_START (NULL, "SEC", NULL, 1);
-    PERF_END   (NULL, "SEC", NULL, 0);
+    // PERF_START (NULL, "SEC", NULL, 1); // MS_CHANGE
+    // PERF_END   (NULL, "SEC", NULL, 0); // MS_CHANGE
 
     //
     // If first pass, start performance measurement.
     //
-    PERF_START (NULL,"PEI",    NULL, 0);
-    PERF_START (NULL,"PreMem", NULL, 0);
+    // PERF_START (NULL,"PEI",    NULL, 0); // MS_CHANGE
+    // PERF_START (NULL,"PreMem", NULL, 0); // MS_CHANGE
+    PERF_CROSSMODULE_BEGIN (PERF_VERBOSITY_LOW, "PEI"); // MS_CHANGE
+    PERF_INMODULE_BEGIN (PERF_VERBOSITY_STANDARD, "PreMem"); // MS_CHANGE
 
   } else {
-    PERF_END   (NULL,"PreMem",  NULL, 0);
-    PERF_START (NULL,"PostMem", NULL, 0);
+    // PERF_END   (NULL,"PreMem",  NULL, 0); // MS_CHANGE
+    // PERF_START (NULL,"PostMem", NULL, 0); // MS_CHANGE
+    PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "PreMem"); // MS_CHANGE
+    PERF_INMODULE_BEGIN (PERF_VERBOSITY_STANDARD, "PostMem"); // MS_CHANGE
   }
 
   //
   // Complete PEI Core Service initialization
-  //  
+  //
   InitializeSecurityServices (&PrivateData.Ps, OldCoreData);
   InitializeDispatcherData   (&PrivateData,    OldCoreData, SecCoreData);
   InitializeImageServices    (&PrivateData,    OldCoreData);
 
   //
   // Perform PEI Core Phase specific actions
-  //  
+  //
   if (OldCoreData == NULL) {
     //
     // Report Status Code EFI_SW_PC_INIT
@@ -400,14 +404,14 @@ PeiCore (
       EFI_PROGRESS_CODE,
       (EFI_SOFTWARE_PEI_CORE | EFI_SW_PC_INIT)
       );
-      
+
     //
     // If SEC provided the PpiList, process it.
     //
     if (PpiList != NULL) {
       ProcessPpiListFromSec ((CONST EFI_PEI_SERVICES **) &PrivateData.Ps, PpiList);
     }
-    
+
 // MS_CHANGE_161871
     //
     // MSCHANGE: Build Hob for SEC performance data.
@@ -450,7 +454,8 @@ PeiCore (
     //
     // Alert any listeners that there is permanent memory available
     //
-    PERF_START (NULL,"DisMem", NULL, 0);
+    // PERF_START (NULL,"DisMem", NULL, 0); // MS_CHANGE
+    PERF_INMODULE_BEGIN (PERF_VERBOSITY_STANDARD, "DisMem"); // MS_CHANGE
     Status = PeiServicesInstallPpi (&mMemoryDiscoveredPpi);
 
     //
@@ -458,7 +463,8 @@ PeiCore (
     //
     ProcessNotifyList (&PrivateData);
 
-    PERF_END (NULL,"DisMem", NULL, 0);
+    // PERF_END (NULL,"DisMem", NULL, 0); // MS_CHANGE
+    PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "DisMem"); // MS_CHANGE
   }
 
   //
@@ -476,7 +482,8 @@ PeiCore (
   //
   // Measure PEI Core execution time.
   //
-  PERF_END (NULL, "PostMem", NULL, 0);
+  // PERF_END (NULL, "PostMem", NULL, 0); // MS_CHANGE
+  PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "PostMem"); // MS_CHANGE
 
   //
   // Lookup DXE IPL PPI

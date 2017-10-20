@@ -62,7 +62,7 @@
   MemoryAllocationLib
   PcdLib
   SmmCorePlatformHookLib
-  PerformanceLib
+  Performance2Lib     ## MS_CHANGE
   TimerLib
   HobLib
   SmmMemLib

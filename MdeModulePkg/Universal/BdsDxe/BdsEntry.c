@@ -733,8 +733,10 @@ BdsEntry (
   //
   // Insert the performance probe
   //
-  PERF_END (NULL, "DXE", NULL, 0);
-  PERF_START (NULL, "BDS", NULL, 0);
+  // PERF_END (NULL, "DXE", NULL, 0); // MS_CHANGE
+  PERF_CROSSMODULE_END (PERF_VERBOSITY_LOW, "DXE"); // MS_CHANGE
+  // PERF_START (NULL, "BDS", NULL, 0); // MS_CHANGE
+  PERF_CROSSMODULE_BEGIN (PERF_VERBOSITY_LOW, "BDS"); // MS_CHANGE
   DEBUG ((EFI_D_INFO, "[Bds] Entry...\n"));
   PlatformBootManagerBdsEntry ();             // MSCHANGE 00076 - Signal start of BDS
 
@@ -900,9 +902,11 @@ BdsEntry (
   // > Signal ReadyToLock event
   // > Authentication action: 1. connect Auth devices; 2. Identify auto logon user.
   //
-  PERF_START (NULL, "PlatformBootManagerBeforeConsole", "BDS", 0);
+  // PERF_START (NULL, "PlatformBootManagerBeforeConsole", "BDS", 0); // MS_CHANGE
+  PERF_INMODULE_BEGIN (PERF_VERBOSITY_STANDARD, "PlatformBootManagerBeforeConsole"); // MS_CHANGE
   PlatformBootManagerBeforeConsole ();
-  PERF_END   (NULL, "PlatformBootManagerBeforeConsole", "BDS", 0);
+  // PERF_END   (NULL, "PlatformBootManagerBeforeConsole", "BDS", 0); // MS_CHANGE
+  PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "PlatformBootManagerBeforeConsole"); // MS_CHANGE
 
   //
   // Initialize hotkey service
@@ -919,7 +923,8 @@ BdsEntry (
   //
   // Connect consoles
   //
-  PERF_START (NULL, "EfiBootManagerConnectAllDefaultConsoles", "BDS", 0);
+  // PERF_START (NULL, "EfiBootManagerConnectAllDefaultConsoles", "BDS", 0); // MS_CHANGE
+  PERF_INMODULE_BEGIN (PERF_VERBOSITY_STANDARD, "EfiBootManagerConnectAllDefaultConsoles"); // MS_CHANGE
   if (PcdGetBool (PcdConInConnectOnDemand)) {
     EfiBootManagerConnectConsoleVariable (ConOut);
     EfiBootManagerConnectConsoleVariable (ErrOut);
@@ -929,7 +934,8 @@ BdsEntry (
   } else {
     EfiBootManagerConnectAllDefaultConsoles ();
   }
-  PERF_END   (NULL, "EfiBootManagerConnectAllDefaultConsoles", "BDS", 0);
+  // PERF_END   (NULL, "EfiBootManagerConnectAllDefaultConsoles", "BDS", 0); // MS_CHANGE
+  PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "EfiBootManagerConnectAllDefaultConsoles"); // MS_CHANGE
 
   //
   // Do the platform specific action after the console is ready
@@ -941,10 +947,13 @@ BdsEntry (
   // > Connect certain devices
   // > Dispatch aditional option roms
   // > Special boot: e.g.: USB boot, enter UI
-  // 
-  PERF_START (NULL, "PlatformBootManagerAfterConsole", "BDS", 0);
+  //
+  // PERF_START (NULL, "PlatformBootManagerAfterConsole", "BDS", 0); // MS_CHANGE
+  PERF_INMODULE_BEGIN (PERF_VERBOSITY_STANDARD, "PlatformBootManagerAfterConsole"); // MS_CHANGE
   PlatformBootManagerAfterConsole ();
-  PERF_END   (NULL, "PlatformBootManagerAfterConsole", "BDS", 0);
+  // PERF_END   (NULL, "PlatformBootManagerAfterConsole", "BDS", 0); // MS_CHANGE
+  PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "PlatformBootManagerAfterConsole"); // MS_CHANGE
+
   //
   // Boot to Boot Manager Menu when EFI_OS_INDICATIONS_BOOT_TO_FW_UI is set. Skip HotkeyBoot
   //
@@ -1037,9 +1046,11 @@ BdsEntry (
     //
     // Execute Key####
     //
-    PERF_START (NULL, "BdsWait", "BDS", 0);
+    // PERF_START (NULL, "BdsWait", "BDS", 0); // MS_CHANGE
+    PERF_INMODULE_BEGIN (PERF_VERBOSITY_STANDARD, "BdsWait"); // MS_CHANGE
     BdsWait (HotkeyTriggered);
-    PERF_END   (NULL, "BdsWait", "BDS", 0);
+    // PERF_END   (NULL, "BdsWait", "BDS", 0); // MS_CHANGE
+    PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "BdsWait"); // MS_CHANGE
 
     //
     // BdsReadKeys() can be removed after all keyboard drivers invoke callback in timer callback.

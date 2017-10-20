@@ -109,7 +109,7 @@ BmFindBootOptionInVariable (
   EFI_BOOT_MANAGER_LOAD_OPTION *BootOptions;
   UINTN                        BootOptionCount;
   UINTN                        Index;
-  
+
   OptionNumber = LoadOptionNumberUnassigned;
 
   //
@@ -233,7 +233,7 @@ BmAdjustFvFilePath (
       break;
     }
   }
-  
+
   if (FvHandles != NULL) {
     FreePool (FvHandles);
   }
@@ -242,7 +242,7 @@ BmAdjustFvFilePath (
 
 /**
   Check if it's a Device Path pointing to FV file.
-  
+
   The function doesn't garentee the device path points to existing FV file.
 
   @param  DevicePath     Input device path.
@@ -471,13 +471,13 @@ BmMatchUsbWwid (
 }
 
 /**
-  Find a USB device which match the specified short-form device path start with 
+  Find a USB device which match the specified short-form device path start with
   USB Class or USB WWID device path. If ParentDevicePath is NULL, this function
   will search in all USB devices of the platform. If ParentDevicePath is not NULL,
   this function will only search in its child devices.
 
   @param DevicePath           The device path that contains USB Class or USB WWID device path.
-  @param ParentDevicePathSize The length of the device path before the USB Class or 
+  @param ParentDevicePathSize The length of the device path before the USB Class or
                               USB WWID device path.
   @param UsbIoHandleCount     A pointer to the count of the returned USB IO handles.
 
@@ -499,7 +499,7 @@ BmFindUsbDevice (
   UINTN                     Index;
   BOOLEAN                   Matched;
 
-  ASSERT (UsbIoHandleCount != NULL);  
+  ASSERT (UsbIoHandleCount != NULL);
 
   //
   // Get all UsbIo Handles.
@@ -655,7 +655,7 @@ BmExpandFileDevicePath (
   UINTN                           MediaType;
   EFI_DEVICE_PATH_PROTOCOL        *NextFullPath;
   BOOLEAN                         GetNext;
-  
+
   EfiBootManagerConnectAll ();
   Status = gBS->LocateHandleBuffer (ByProtocol, &gEfiSimpleFileSystemProtocolGuid, NULL, &HandleCount, &Handles);
   if (EFI_ERROR (Status)) {
@@ -780,7 +780,7 @@ BmCachePartitionDevicePath (
 {
   EFI_DEVICE_PATH_PROTOCOL        *TempDevicePath;
   UINTN                           Count;
-  
+
   if (BmMatchDevicePaths (*CachedDevicePath, DevicePath)) {
     TempDevicePath = *CachedDevicePath;
     *CachedDevicePath = BmDelPartMatchInstance (*CachedDevicePath, DevicePath);
@@ -1670,12 +1670,12 @@ BmIsBootManagerMenuFilePath (
 /**
   Attempt to boot the EFI boot option. This routine sets L"BootCurent" and
   also signals the EFI ready to boot event. If the device path for the option
-  starts with a BBS device path a legacy boot is attempted via the registered 
-  gLegacyBoot function. Short form device paths are also supported via this 
+  starts with a BBS device path a legacy boot is attempted via the registered
+  gLegacyBoot function. Short form device paths are also supported via this
   rountine. A device path starting with MEDIA_HARDDRIVE_DP, MSG_USB_WWID_DP,
   MSG_USB_CLASS_DP gets expaned out to find the first device that matches.
-  If the BootOption Device Path fails the removable media boot algorithm 
-  is attempted (\EFI\BOOTIA32.EFI, \EFI\BOOTX64.EFI,... only one file type 
+  If the BootOption Device Path fails the removable media boot algorithm
+  is attempted (\EFI\BOOTIA32.EFI, \EFI\BOOTX64.EFI,... only one file type
   is tried per processor type)
 
   @param  BootOption    Boot Option to try and boot.
@@ -1704,7 +1704,7 @@ EfiBootManagerBoot (
   VOID                      *FileBuffer;
   UINTN                     FileSize;
   EFI_BOOT_LOGO_PROTOCOL    *BootLogo;
-  EFI_EVENT                 LegacyBootEvent;
+  // EFI_EVENT                 LegacyBootEvent; // MS_CHANGE
 
   if (BootOption == NULL) {
     return;
@@ -1772,7 +1772,8 @@ EfiBootManagerBoot (
     BmRepairAllControllers (0);
   }
 
-  PERF_START_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber);
+  // PERF_START_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber); // MS_CHANGE
+  PERF_INMODULE_BEGIN (PERF_VERBOSITY_STANDARD, "BdsAttempt"); // MS_CHANGE
 
   //
   // 5. Adjust the different type memory page number just before booting
@@ -1849,28 +1850,32 @@ EfiBootManagerBoot (
       //
       // Write boot to OS performance data for legacy boot.
       //
-      PERF_CODE (
-        //
-        // Create an event to be signalled when Legacy Boot occurs to write performance data.
-        //
-        Status = EfiCreateEventLegacyBootEx(
-                   TPL_NOTIFY,
-                   BmEndOfBdsPerfCode,
-                   NULL, 
-                   &LegacyBootEvent
-                   );
-        ASSERT_EFI_ERROR (Status);
-      );
+      // MS_CHANGE: we don't use this method of perf reporting
+      // MS_CHANGE Begin     
+      // PERF_CODE (
+      //   //
+      //   // Create an event to be signalled when Legacy Boot occurs to write performance data.
+      //   //
+      //   Status = EfiCreateEventLegacyBootEx(
+      //              TPL_NOTIFY,
+      //              BmEndOfBdsPerfCode,
+      //              NULL, 
+      //              &LegacyBootEvent
+      //              );
+      //   ASSERT_EFI_ERROR (Status);
+      // );
+      // MS_CHANGE End
 
       mBmLegacyBoot (BootOption);
     } else {
       BootOption->Status = EFI_UNSUPPORTED;
     }
 
-    PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber);
+    // PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber); // MS_CHANGE
+    PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "BdsAttempt"); // MS_CHANGE
     return;
   }
- 
+
   //
   // Provide the image with its load options
   //
@@ -1895,9 +1900,14 @@ EfiBootManagerBoot (
   //
   // Write boot to OS performance data for UEFI boot
   //
-  PERF_CODE (
-    BmEndOfBdsPerfCode (NULL, NULL);
-  );
+  // MS_CHANGE begin
+  // PERF_CODE (
+  //   BmEndOfBdsPerfCode (NULL, NULL);
+  // );
+  PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "BdsAttempt"); // MS_CHANGE
+  PERF_CROSSMODULE_END (PERF_VERBOSITY_LOW, "BDS"); // MS_CHANGE: begin is in MdeModulePkg\Universal\BdsDxe\BdsEntry.c
+  PERF_CROSSMODULE_BEGIN (PERF_VERBOSITY_LOW, "BDS"); // MS_CHANGE: keep logging BDS in case we'll re-enter this function late
+  // MS_CHANGE end
 
   REPORT_STATUS_CODE (EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderStart));
 
@@ -1913,7 +1923,7 @@ EfiBootManagerBoot (
       (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_EC_BOOT_OPTION_FAILED)
       );
   }
-  PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber);
+  // PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber); // MS_CHANGE
 
   //
   // Destroy the RAM disk
@@ -2023,7 +2033,7 @@ BmMatchPartitionDevicePathNode (
   3. Non-BlockIo SimpleFileSystem - The boot option points to a device supporting
                                     SimpleFileSystem Protocol, but not supporting BlockIo
                                     protocol.
-  4. LoadFile                     - The boot option points to the media supporting 
+  4. LoadFile                     - The boot option points to the media supporting
                                     LoadFile protocol.
   Reference: UEFI Spec chapter 3.3 Boot Option Variables Default Boot Behavior
 
@@ -2248,7 +2258,7 @@ EfiBootManagerRefreshAllBootOption (
   // Remove invalid EFI boot options from NV
   //
   for (Index = 0; Index < NvBootOptionCount; Index++) {
-    if (((DevicePathType (NvBootOptions[Index].FilePath) != BBS_DEVICE_PATH) || 
+    if (((DevicePathType (NvBootOptions[Index].FilePath) != BBS_DEVICE_PATH) ||
          (DevicePathSubType (NvBootOptions[Index].FilePath) != BBS_BBS_DP)
         ) && BmIsAutoCreateBootOption (&NvBootOptions[Index])
        ) {
@@ -2434,7 +2444,7 @@ EfiBootManagerGetBootManagerMenu (
   UINTN                        BootOptionCount;
   EFI_BOOT_MANAGER_LOAD_OPTION *BootOptions;
   UINTN                        Index;
-  
+
   BootOptions = EfiBootManagerGetLoadOptions (&BootOptionCount, LoadOptionTypeBoot);
 
   for (Index = 0; Index < BootOptionCount; Index++) {

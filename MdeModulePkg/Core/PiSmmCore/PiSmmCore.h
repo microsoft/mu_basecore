@@ -57,7 +57,7 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/PcdLib.h>
 #include <Library/SmmCorePlatformHookLib.h>
-#include <Library/PerformanceLib.h>
+#include <Library/Performance2Lib.h> // MS_CHANGE
 #include <Library/TimerLib.h>
 #include <Library/HobLib.h>
 #include <Library/SmmMemLib.h>

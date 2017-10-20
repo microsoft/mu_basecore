@@ -722,23 +722,23 @@ EfiBootManagerConnectAllDefaultConsoles (
   if (!EFI_ERROR (Status)) {
     OneConnected = TRUE;
   }
-  PERF_START (NULL, "ConOutReady", "BDS", 1);
-  PERF_END   (NULL, "ConOutReady", "BDS", 0);
+  // PERF_START (NULL, "ConOutReady", "BDS", 1); // MS_CHANGE
+  // PERF_END   (NULL, "ConOutReady", "BDS", 0); // MS_CHANGE
 
   
   Status = EfiBootManagerConnectConsoleVariable (ConIn);
   if (!EFI_ERROR (Status)) {
     OneConnected = TRUE;
   }
-  PERF_START (NULL, "ConInReady", "BDS", 1);
-  PERF_END   (NULL, "ConInReady", "BDS", 0);
+  // PERF_START (NULL, "ConInReady", "BDS", 1); // MS_CHANGE
+  // PERF_END   (NULL, "ConInReady", "BDS", 0); // MS_CHANGE
 
   Status = EfiBootManagerConnectConsoleVariable (ErrOut);
   if (!EFI_ERROR (Status)) {
     OneConnected = TRUE;
   }
-  PERF_START (NULL, "ErrOutReady", "BDS", 1);
-  PERF_END   (NULL, "ErrOutReady", "BDS", 0);
+  // PERF_START (NULL, "ErrOutReady", "BDS", 1); // MS_CHANGE
+  // PERF_END   (NULL, "ErrOutReady", "BDS", 0); // MS_CHANGE
 
   SystemTableUpdated = FALSE;
   //

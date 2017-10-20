@@ -76,7 +76,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/UefiLib.h>
 #include <Library/BaseLib.h>
 #include <Library/HobLib.h>
-#include <Library/PerformanceLib.h>
+#include <Library/Performance2Lib.h> // MS_CHANGE
 #include <Library/UefiDecompressLib.h>
 #include <Library/ExtractGuidedSectionLib.h>
 #include <Library/CacheMaintenanceLib.h>

@@ -81,6 +81,7 @@
   DebugLib
   DebugAgentLib
   PeiServicesTablePointerLib
+  Performance2Lib  ## MS_CHANGE
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
   ArmMmuLib

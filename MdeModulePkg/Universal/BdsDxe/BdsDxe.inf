@@ -59,6 +59,7 @@
   PlatformBootManagerLib
   PcdLib
   PrintLib
+  Performance2Lib  ## MS_CHANGE
 
 [Guids]
   gEfiGlobalVariableGuid                        ## SOMETIMES_PRODUCES ## Variable:L"BootNext" (The number of next boot option)

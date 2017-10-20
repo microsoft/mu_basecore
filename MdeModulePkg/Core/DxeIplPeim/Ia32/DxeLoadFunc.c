@@ -73,7 +73,7 @@ Create4GPageTablesIa32Pae (
   IN EFI_PHYSICAL_ADDRESS   StackBase,
   IN UINTN                  StackSize
   )
-{  
+{
   UINT8                                         PhysicalAddressBits;
   EFI_PHYSICAL_ADDRESS                          PhysicalAddress;
   UINTN                                         IndexOfPdpEntries;
@@ -112,7 +112,7 @@ Create4GPageTablesIa32Pae (
     //
     // Each Directory Pointer entries points to a page of Page Directory entires.
     // So allocate space for them and fill them in in the IndexOfPageDirectoryEntries loop.
-    //       
+    //
     PageDirectoryEntry = (VOID *) PageAddress;
     PageAddress += SIZE_4KB;
 
@@ -320,7 +320,9 @@ HandOffToDxeCore (
     //
     // End of PEI phase signal
     //
+    PERF_EVENTSIGNAL_BEGIN (PERF_VERBOSITY_STANDARD, &gEndOfPeiSignalPpi); // MS_CHANGE
     Status = PeiServicesInstallPpi (&gEndOfPeiSignalPpi);
+    PERF_EVENTSIGNAL_END (PERF_VERBOSITY_STANDARD, &gEndOfPeiSignalPpi); // MS_CHANGE
     ASSERT_EFI_ERROR (Status);
 
     AsmWriteCr3 (PageTables);

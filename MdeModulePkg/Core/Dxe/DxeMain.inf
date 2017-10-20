@@ -83,7 +83,7 @@
   BaseMemoryLib
   CacheMaintenanceLib
   UefiDecompressLib
-  PerformanceLib
+  Performance2Lib            ## MS_CHANGE
   HobLib
   BaseLib
   UefiLib

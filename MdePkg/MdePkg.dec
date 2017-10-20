@@ -113,6 +113,10 @@
   ##  @libraryclass  Provides services to log the execution times and retrieve them later.
   PerformanceLib|Include/Library/PerformanceLib.h
 
+  ## MS_CHANGE
+  ##  @libraryclass  Provides services to log the execution times and retrieve them later.
+  Performance2Lib|Include/Library/Performance2Lib.h
+
   ##  @libraryclass  Provides a service to retrieve a pointer to the PEI Services Table.
   PeiServicesTablePointerLib|Include/Library/PeiServicesTablePointerLib.h
 
@@ -793,26 +797,6 @@
   gWindowsUxCapsuleGuid          = { 0x3b8c8162, 0x188c, 0x46a4, { 0xae, 0xc9, 0xbe, 0x43, 0xf1, 0xd6, 0x56, 0x97}}
 
   #
-  # MS_CHANGE
-  # Performance Guids
-  gPerfGpioInitToRootPortInit       = { 0xcf9ce040, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  gPerfBoardInit                    = { 0xcf9ce041, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  gPerfDelayedDispatchEndOfPei      = { 0xcf9ce042, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  #  E                              = { 0xcf9ce043, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  #   S                             = { 0xcf9ce044, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  #    E                            = { 0xcf9ce045, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  #     R                           = { 0xcf9ce046, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  #      V                          = { 0xcf9ce047, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  # R     E                         = { 0xcf9ce048, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  #  E     D                        = { 0xcf9ce049, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  #   S                             = { 0xcf9ce04a, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  #    E                            = { 0xcf9ce04b, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  #     R                           = { 0xcf9ce04c, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  #      V                          = { 0xcf9ce04d, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  #       E                         = { 0xcf9ce04e, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-  # Reserved for new perf events    = { 0xcf9ce04f, 0x5a9b, 0x11e7, {0xa5, 0x28, 0xd8, 0x97, 0xba, 0xd6, 0xea, 0xd8}}
-
-
 [Guids.IA32, Guids.X64]
   ## Include/Guid/Cper.h
   gEfiIa32X64ErrorTypeCacheCheckGuid = { 0xA55701F5, 0xE3EF, 0x43de, { 0xAC, 0x72, 0x24, 0x9B, 0x57, 0x3F, 0xAD, 0x2C }}
@@ -1795,7 +1779,7 @@
 
   ## Include/Protocol/Tls.h
   gEfiTlsProtocolGuid                 = { 0xca959f, 0x6cfa, 0x4db1, {0x95, 0xbc, 0xe4, 0x6c, 0x47, 0x51, 0x43, 0x90 }}
-  
+
   ## Include/Protocol/TlsConfig.h
   gEfiTlsConfigurationProtocolGuid    = { 0x1682fe44, 0xbd7a, 0x4407, { 0xb7, 0xc7, 0xdc, 0xa3, 0x7c, 0xa3, 0x92, 0x2d }}
 
@@ -2263,6 +2247,32 @@
   #  The required memory space is decided by the value of PcdMaximumGuidedExtractHandler.
   # @Prompt Memory Address of GuidedExtractHandler Table.
   gEfiMdePkgTokenSpaceGuid.PcdGuidedExtractHandlerTableAddress|0x1000000|UINT64|0x30001015
+
+  ## This value is used to control Performance2Lib logging verbosity.
+  #  Bits 1-0 - Performance logging verbosity:
+  #               0 - Performance logging turned off.
+  #               1 - Low verbosity performance logging.
+  #               2 - Standard verbosity performance logging.
+  #               3 - High verbosity performance logging.
+  #  Bits 7-2 - Reserved
+  # @Prompt Performance Logging Verbosity.
+  gEfiMdePkgTokenSpaceGuid.PcdPerformance2LibraryVerbosityLevel|0|UINT8|0x00000031
+
+  ## The mask is used to control Performance2Lib core logging functionality.
+  #  Core logging is only performed if PcdPerformance2LibraryVerbosity is non-zero.
+  #  BIT0 - 1 - Enable Entrypoint Logging.
+  #         0 - Disable Entrypoint Logging.
+  #  BIT1 - 1 - Enable Load Image logging.
+  #         0 - Disable Load Image Logging.
+  #  BIT2 - 1 - Enable Binding Support logging.
+  #         0 - Disable Binding Support Logging.
+  #  BIT3 - 1 - Enable Binding Start logging.
+  #         0 - Disable Binding Start Logging.
+  #  BIT4 - 1 - Enable Binding Stop logging.
+  #         0 - Disable Binding Stop Logging.
+  #  Bits 7-5 - Reserved
+  # @Prompt Performance Core Logging Functionality.
+  gEfiMdePkgTokenSpaceGuid.PcdPerformance2LibraryCoreFunctionalityMask|0|UINT8|0x00000032
 
 [PcdsFixedAtBuild.IPF, PcdsPatchableInModule.IPF]
   ## The base address of IO port space for IA64 arch.

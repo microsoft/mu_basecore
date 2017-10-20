@@ -644,7 +644,8 @@ SmmEntryPoint (
   VOID                        *CommunicationBuffer;
   UINTN                       BufferSize;
 
-  PERF_START (NULL, "SMM", NULL, 0) ;
+  // MS_CHANGE: Perf2 doesn't support perf tracing SMI handlers, only drivers
+  // PERF_START (NULL, "SMM", NULL, 0) ; // MS_CHANGE
 
   //
   // Update SMST with contents of the SmmEntryContext structure
@@ -739,7 +740,7 @@ SmmEntryPoint (
     gSmmCorePrivate->InSmm = FALSE;
   }
 
-  PERF_END (NULL, "SMM", NULL, 0) ;
+  // PERF_END (NULL, "SMM", NULL, 0) ; // MS_CHANGE
 }
 
 /**

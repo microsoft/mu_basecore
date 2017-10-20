@@ -335,13 +335,13 @@ CoreSchedule (
       CoreReleaseDispatcherLock ();
 
       DEBUG ((DEBUG_DISPATCH, "Schedule FFS(%g) - EFI_SUCCESS\n", DriverName));
-      
+
       return EFI_SUCCESS;
     }
   }
-  
+
   DEBUG ((DEBUG_DISPATCH, "Schedule FFS(%g) - EFI_NOT_FOUND\n", DriverName));
-  
+
   return EFI_NOT_FOUND;
 }
 
@@ -418,12 +418,14 @@ CoreDispatcher (
   EFI_CORE_DRIVER_ENTRY           *DriverEntry;
   BOOLEAN                         ReadyToRun;
   EFI_EVENT                       DxeDispatchEvent;
-  
+
+  PERF_FUNCTION_BEGIN (PERF_VERBOSITY_STANDARD); // MS_CHANGE
 
   if (gDispatcherRunning) {
     //
     // If the dispatcher is running don't let it be restarted.
     //
+    PERF_FUNCTION_END (PERF_VERBOSITY_STANDARD); // MS_CHANGE
     return EFI_ALREADY_STARTED;
   }
 
@@ -438,6 +440,7 @@ CoreDispatcher (
              &DxeDispatchEvent
              );
   if (EFI_ERROR (Status)) {
+    PERF_FUNCTION_END (PERF_VERBOSITY_STANDARD); // MS_CHANGE
     return Status;
   }
 
@@ -511,10 +514,10 @@ CoreDispatcher (
 
       CoreReleaseDispatcherLock ();
 
- 
+
       if (DriverEntry->IsFvImage) {
         //
-        // Produce a firmware volume block protocol for FvImage so it gets dispatched from. 
+        // Produce a firmware volume block protocol for FvImage so it gets dispatched from.
         //
         Status = CoreProcessFvImageFile (DriverEntry->Fv, DriverEntry->FvHandle, &DriverEntry->FileName);
       } else {
@@ -525,9 +528,9 @@ CoreDispatcher (
           sizeof (DriverEntry->ImageHandle)
           );
         ASSERT (DriverEntry->ImageHandle != NULL);
-  
+
         Status = CoreStartImage (DriverEntry->ImageHandle, NULL, NULL);
-  
+
         REPORT_STATUS_CODE_WITH_EXTENDED_DATA (
           EFI_PROGRESS_CODE,
           (EFI_SOFTWARE_DXE_CORE | EFI_SW_PC_INIT_END),
@@ -583,6 +586,8 @@ CoreDispatcher (
   CoreCloseEvent (DxeDispatchEvent);
 
   gDispatcherRunning = FALSE;
+
+  PERF_FUNCTION_END (PERF_VERBOSITY_STANDARD); // MS_CHANGE
 
   return ReturnStatus;
 }
@@ -689,17 +694,17 @@ FvHasBeenProcessed (
 
 /**
   Remember that Fv protocol on FvHandle has had it's drivers placed on the
-  mDiscoveredList. This fucntion adds entries on the mFvHandleList if new 
+  mDiscoveredList. This fucntion adds entries on the mFvHandleList if new
   entry is different from one in mFvHandleList by checking FvImage Guid.
   Items are never removed/freed from the mFvHandleList.
 
   @param  FvHandle              The handle of a FV that has been processed
 
   @return A point to new added FvHandle entry. If FvHandle with the same FvImage guid
-          has been added, NULL will return. 
+          has been added, NULL will return.
 
 **/
-KNOWN_HANDLE * 
+KNOWN_HANDLE *
 FvIsBeingProcesssed (
   IN  EFI_HANDLE    FvHandle
   )
@@ -1244,7 +1249,7 @@ CoreFwVolEventProtocolNotify (
     KnownHandle = FvIsBeingProcesssed (FvHandle);
     if (KnownHandle == NULL) {
       //
-      // The FV with the same FV name guid has already been processed. 
+      // The FV with the same FV name guid has already been processed.
       // So lets skip it!
       //
       continue;
@@ -1334,7 +1339,7 @@ CoreFwVolEventProtocolNotify (
             if (!EFI_ERROR (Status)) {
               //
               // If SMM depex section is found, this FV image is invalid to be supported.
-              // ASSERT FALSE to report this FV image.  
+              // ASSERT FALSE to report this FV image.
               //
               FreePool (DepexBuffer);
               ASSERT (FALSE);
@@ -1356,7 +1361,7 @@ CoreFwVolEventProtocolNotify (
                            );
             if (EFI_ERROR (Status)) {
               //
-              // If no depex section, produce a firmware volume block protocol for it so it gets dispatched from. 
+              // If no depex section, produce a firmware volume block protocol for it so it gets dispatched from.
               //
               CoreProcessFvImageFile (Fv, FvHandle, &NameGuid);
             } else {
@@ -1437,6 +1442,7 @@ CoreInitializeDispatcher (
   VOID
   )
 {
+  PERF_FUNCTION_BEGIN (PERF_VERBOSITY_STANDARD); // MS_CHANGE
   mFwVolEvent = EfiCreateProtocolNotifyEvent (
                   &gEfiFirmwareVolume2ProtocolGuid,
                   TPL_CALLBACK,
@@ -1444,6 +1450,7 @@ CoreInitializeDispatcher (
                   NULL,
                   &mFwVolEventRegistration
                   );
+  PERF_FUNCTION_END (PERF_VERBOSITY_STANDARD); // MS_CHANGE
 }
 
 //

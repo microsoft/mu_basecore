@@ -1,0 +1,82 @@
+## @ file
+# DXE Core Performance Library
+#
+# Copyright (c) 2017, Microsoft Corporation
+#
+# All rights reserved.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+#  and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# This library provides helper functions to create performance timing events.
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  BASE_NAME                      = DxeCorePerformance2Lib
+  FILE_GUID                      = F6DC26C0-0E34-40A9-B872-090DA118920E
+  VERSION_STRING                 = 1.0
+  MODULE_TYPE                    = DXE_CORE
+  LIBRARY_CLASS                  = Performance2Lib|DXE_CORE
+  CONSTRUCTOR                    = DxeCorePerformanceLibConstructor
+#
+# The following information is for reference only and not required by the build tools.
+#
+# VALID_ARCHITECTURES = IA32 X64
+#
+
+[LibraryClasses]
+  MemoryAllocationLib
+  UefiBootServicesTableLib
+  BaseMemoryLib
+  DebugLib
+  BaseLib
+  PcdLib
+  TimerLib
+  HobLib
+  ReportStatusCodeLib
+  LocalApicLib
+  UefiLib
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  UefiCpuPkg/UefiCpuPkg.dec
+  PerformancePkg/PerformancePkg.dec
+
+[Pcd]
+  gEfiMdePkgTokenSpaceGuid.PcdPerformance2LibraryVerbosityLevel        # CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdPerformance2LibraryCoreFunctionalityMask # CONSUMES
+
+[Sources]
+  DxeCorePerformance2Lib.c
+  CommonPerfHelperFunctions.c
+
+[Protocols]
+  gEfiLoadedImageProtocolGuid                   ## SOMETIMES_CONSUMES
+  gEfiDriverBindingProtocolGuid                 ## SOMETIMES_CONSUMES
+  gEfiComponentName2ProtocolGuid                ## SOMETIMES_CONSUMES
+  gEfiComponentNameProtocolGuid                 ## SOMETIMES_CONSUMES
+
+[Guids]
+  gEfiFirmwarePerformanceGuid                   ## SOMETIMES_PRODUCES # StatusCode Data
+  gPeiPerformanceHobGuid                        ## SOMETIMES_CONSUMES ## HOB
+  gPerformance2ProtocolGuid                     ## SOMETIMES_PRODUCES # Install Protocol Interfaces
+  gZeroGuid                                     ## SOMETIMES_CONSUMES ## GUID
+  gEfiEndOfDxeEventGroupGuid                    ## SOMETIMES_CONSUMES ## Event

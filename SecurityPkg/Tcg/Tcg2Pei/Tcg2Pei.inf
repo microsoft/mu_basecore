@@ -56,7 +56,7 @@
   PeiServicesTablePointerLib
   Tpm2DeviceLib
   HashLib
-  PerformanceLib
+  Performance2Lib  ## MS_CHANGE
   MemoryAllocationLib
   ReportStatusCodeLib
 ## MS_CHANGE_23086

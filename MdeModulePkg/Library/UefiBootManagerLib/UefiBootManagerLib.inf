@@ -56,7 +56,7 @@
   PrintLib
   BaseMemoryLib
   DevicePathLib
-  PerformanceLib
+  Performance2Lib  ## MS_CHANGE
   PeCoffGetEntryPointLib
   UefiBootServicesTableLib
   UefiRuntimeServicesTableLib
@@ -64,7 +64,6 @@
   MemoryAllocationLib
   DxeServicesLib
   ReportStatusCodeLib
-  PerformanceLib
   HiiLib
   SortLib
 

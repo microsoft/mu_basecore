@@ -77,6 +77,7 @@
   ResetSystemLib|MdeModulePkg/Library/BaseResetSystemLibNull/BaseResetSystemLibNull.inf
   OemTpm2InitLib|SecurityPkg/Library/OemTpm2InitLibNull/OemTpm2InitLib.inf               ## MS_CHANGE_?
   SourceDebugEnabledLib|SourceLevelDebugPkg/Library/SourceDebugEnabled/SourceDebugEnabledLib.inf ## MS_CHANGE_?
+  Performance2Lib|MdePkg/Library/BasePerformance2LibNull/BasePerformance2LibNull.inf # MS_CHANGE
   
 ##MSCHANGE Begin
   ## NOTE: This is a temporary shim to resolve a build error while a more permanent solution is tested!
