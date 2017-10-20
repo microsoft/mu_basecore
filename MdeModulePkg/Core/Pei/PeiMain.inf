@@ -82,6 +82,7 @@
   gEdkiiMigratedFvInfoGuid                      ## SOMETIMES_PRODUCES     ## HOB
   gEdkiiMigrationInfoGuid                       ## SOMETIMES_CONSUMES     ## HOB
   gEfiDelayedDispatchTableGuid                  ## SOMETIMES_PRODUCES     ## HOB
+  gEfiFirmwarePerformanceGuid                   # MU_CHANGE_161871 - needed to build SEC perf HOB
 
 [Ppis]
   gEfiPeiStatusCodePpiGuid                      ## SOMETIMES_CONSUMES # PeiReportStatusService is not ready if this PPI doesn't exist
@@ -107,6 +108,7 @@
   gEdkiiPeiMigrateTempRamPpiGuid                ## PRODUCES
   gEfiPeiDelayedDispatchPpiGuid                 ## PRODUCES
   gEfiEndOfPeiSignalPpiGuid                     ## CONSUMES
+  gPeiSecPerformancePpiGuid                     # MU_CHANGE_161871 - needed to build SEC perf HOB
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPeiStackSize                  ## CONSUMES
