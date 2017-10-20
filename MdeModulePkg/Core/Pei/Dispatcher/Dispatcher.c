@@ -10,6 +10,7 @@ Copyright (c) 2017, Microsoft Corporation.
 **/
 
 #include "PeiMain.h"
+#include <Library/Performance2Lib.h> // MS_CHANGE
 
 //MS_CHANGE Delayed Dispatch begin
 /**
@@ -249,24 +250,30 @@ PeiDelayedDispatchWaitOnUniqueId (
     IN EFI_DELAYED_DISPATCH_PPI       *This,
     IN EFI_GUID                       *UniqueId
 ) {
+    PERF_FUNCTION_BEGIN(PERF_VERBOSITY_STANDARD);
     DELAYED_DISPATCH_TABLE    *DelayedDispatchTable;
 
     // Get delayed dispatch table
     DelayedDispatchTable = GetDelayedDispatchTable();
     if (NULL == DelayedDispatchTable) {
+      PERF_FUNCTION_END(PERF_VERBOSITY_STANDARD);
       return EFI_UNSUPPORTED;
     }
 
     if ((NULL == UniqueId) || (IsZeroGuid(UniqueId))) {
         ASSERT(FALSE);
+        PERF_FUNCTION_END(PERF_VERBOSITY_STANDARD);
         return EFI_UNSUPPORTED;
     }
 
     DEBUG((DEBUG_INFO,"Delayed dispatch on %g. Count=%d, DispatchCount=%d\n",UniqueId,DelayedDispatchTable->Count, DelayedDispatchTable->DispCount));
-    PERF_START_EX (UniqueId, "PEIM", NULL, 0, 0);
+    // PERF_START_EX (UniqueId, "PEIM", NULL, 0, 0); // MS_CHANGE
+    PERF_EVENTSIGNAL_BEGIN (PERF_VERBOSITY_STANDARD,UniqueId);
     DelayedDispatchDispatcher(DelayedDispatchTable,UniqueId);
-    PERF_END_EX (UniqueId, "PEIM", NULL, 0, 0);
+    // PERF_END_EX (UniqueId, "PEIM", NULL, 0, 0); // MS_CHANGE
+    PERF_EVENTSIGNAL_END (PERF_VERBOSITY_STANDARD,UniqueId);
 
+    PERF_FUNCTION_END(PERF_VERBOSITY_STANDARD);
     return EFI_SUCCESS;
 }
 
@@ -297,12 +304,12 @@ PeiDelayedDispatchOnEndOfPei (
       return EFI_UNSUPPORTED;
     }
 
-    PERF_START_EX (&gPerfDelayedDispatchEndOfPei, "PEIM", NULL, 0, 0);
+    PERF_INMODULE_BEGIN (PERF_VERBOSITY_STANDARD, "PerfDelayedDispatchEndOfPei");
     while (DelayedDispatchTable->Count > 0) {
         DelayedDispatchDispatcher(DelayedDispatchTable, NULL);
     }
     DEBUG((DEBUG_ERROR, __FUNCTION__ " Count of dispatch cycles is %d\n",DelayedDispatchTable->DispCount));
-    PERF_END_EX (&gPerfDelayedDispatchEndOfPei, "PEIM", NULL, 0, 0);
+    PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "PerfDelayedDispatchEndOfPei");
 
     return EFI_SUCCESS;
 }
@@ -1712,7 +1719,9 @@ PeiDispatcher (
   EFI_PEI_FILE_HANDLE                 SaveCurrentFileHandle;
   EFI_FV_FILE_INFO                    FvFileInfo;
   PEI_CORE_FV_HANDLE                  *CoreFvHandle;
-  EFI_HOB_GUID_TYPE                   *GuidHob;                            // MSCHANGE
+  EFI_HOB_GUID_TYPE                   *GuidHob;                           // MSCHANGE
+
+  PERF_FUNCTION_BEGIN(PERF_VERBOSITY_STANDARD);                           // MS_CHANGE
 
   PeiServices = (CONST EFI_PEI_SERVICES **) &Private->Ps;
   PeimEntryPoint = NULL;
@@ -1756,6 +1765,7 @@ PeiDispatcher (
           Private->CurrentFileHandle   = PeimFileHandle;
           Private->CurrentPeimFvCount  = Index1;
           Private->CurrentPeimCount    = Index2;
+          PERF_LOADIMAGE_BEGIN (); // MS_CHANGE
           Status = PeiLoadImage (
                     (CONST EFI_PEI_SERVICES **) &Private->Ps,
                     PeimFileHandle,
@@ -1764,6 +1774,7 @@ PeiDispatcher (
                     &AuthenticationState
                     );
           if (Status == EFI_SUCCESS) {
+            PERF_LOADIMAGE_END (PeimFileHandle); // MS_CHANGE
             //
             // PEIM_STATE_REGISTER_FOR_SHADOW move to PEIM_STATE_DONE
             //
@@ -1870,6 +1881,7 @@ PeiDispatcher (
               //
               // For PEIM driver, Load its entry point
               //
+              PERF_LOADIMAGE_BEGIN (); // MS_CHANGE
               Status = PeiLoadImage (
                          PeiServices,
                          PeimFileHandle,
@@ -1878,6 +1890,7 @@ PeiDispatcher (
                          &AuthenticationState
                          );
               if (Status == EFI_SUCCESS) {
+                PERF_LOADIMAGE_END (PeimFileHandle); // MS_CHANGE
                 //
                 // The PEIM has its dependencies satisfied, and its entry point
                 // has been found, so invoke it.
@@ -1953,6 +1966,7 @@ PeiDispatcher (
                 //
                 // Load PEIM into Memory for Register for shadow PEIM.
                 //
+                PERF_LOADIMAGE_BEGIN (); // MS_CHANGE
                 Status = PeiLoadImage (
                            PeiServices,
                            PeimFileHandle,
@@ -1961,12 +1975,15 @@ PeiDispatcher (
                            &AuthenticationState
                            );
                 if (Status == EFI_SUCCESS) {
+                  PERF_LOADIMAGE_END (PeimFileHandle); // MS_CHANGE
                   PeimEntryPoint = (EFI_PEIM_ENTRY_POINT2)(UINTN)EntryPoint;
                 }
               }
               ASSERT (PeimEntryPoint != NULL);
+              PERF_ENTRYPOINT_BEGIN (PeimFileHandle); // MS_CHANGE
               PeimEntryPoint (PeimFileHandle, (const EFI_PEI_SERVICES **) PeiServices);
-              //PERF_END (PeiServices, L"PEIM", PeimFileHandle, 0);
+              //PERF_END (PeiServices, L"PEIM", PeimFileHandle, 0); // MS_CHANGE
+              PERF_ENTRYPOINT_END (PeimFileHandle); // MS_CHANGE
 
               //
               // PEIM_STATE_REGISTER_FOR_SHADOW move to PEIM_STATE_DONE
@@ -2015,7 +2032,7 @@ PeiDispatcher (
     //  as it will fail the next time too (nothing has changed).
     //
   } while (Private->PeimNeedingDispatch && Private->PeimDispatchOnThisPass);
-
+  PERF_FUNCTION_END(PERF_VERBOSITY_STANDARD);             // MS_CHANGE
 }
 
 /**
