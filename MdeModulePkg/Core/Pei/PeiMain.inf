@@ -81,7 +81,6 @@
   gEdkiiMigratedFvInfoGuid                      ## SOMETIMES_PRODUCES     ## HOB
   gEfiFirmwarePerformanceGuid # MS_CHANGE_161871 - needed to build SEC perf HOB
   gEfiDelayedDispatchTableGuid   # MSCHANGE
-  gPerfDelayedDispatchEndOfPei   # MS_CHANGE
 
 [Ppis]
   gEfiPeiStatusCodePpiGuid                      ## SOMETIMES_CONSUMES # PeiReportStatusService is not ready if this PPI doesn't exist
