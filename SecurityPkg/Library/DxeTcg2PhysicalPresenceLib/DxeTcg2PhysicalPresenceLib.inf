@@ -55,6 +55,7 @@
   HobLib
   Tpm2CommandLib
   Tcg2PpVendorLib
+  Tcg2PhysicalPresencePromptLib       ## MS_CHANGE
 
 [Protocols]
   gEfiTcg2ProtocolGuid                 ## SOMETIMES_CONSUMES
