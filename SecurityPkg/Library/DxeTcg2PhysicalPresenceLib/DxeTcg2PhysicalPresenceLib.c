@@ -36,20 +36,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Guid/Tcg2PhysicalPresenceData.h>
 #include <Library/Tpm2CommandLib.h>
 #include <Library/Tcg2PhysicalPresenceLib.h>
+#include <Library/Tcg2PhysicalPresencePromptLib.h>    // MS_CHANGE
 #include <Library/Tcg2PpVendorLib.h>
 
 #define CONFIRM_BUFFER_SIZE         4096
 
 EFI_HII_HANDLE mTcg2PpStringPackHandle;
-
-// MS_CHANGE_70401
-// MSChange [BEGIN] - We now hand the full string off to a helper function to display the user confirmation dialog.
-BOOLEAN
-PromptForUserConfirmation (
-  IN  CHAR16    *PromptString
-  );
-// MSChange [END]
-
 
 /**
   Get string by string id from HII Interface.
@@ -266,6 +258,8 @@ Tcg2ExecutePhysicalPresence (
 }
 
 
+// MS_CHANGE [BEGIN] - Move this code out of the business for processing requests.
+#if (0)
 /**
   Read the specified key for user confirmation.
 
@@ -307,6 +301,8 @@ Tcg2ReadUserKey (
   
   return FALSE;
 }
+#endif
+// MS_CHANGE [END]
 
 /**
   Fill Buffer With BootHashAlg.
@@ -390,7 +386,7 @@ Tcg2UserConfirm (
   EFI_TCG2_BOOT_SERVICE_CAPABILITY  ProtocolCapability;
   UINT32                            CurrentPCRBanks;
   EFI_STATUS                        Status;
-
+  
   TmpStr2     = NULL;
   CautionKey  = FALSE;
   NoPpiInfo   = FALSE;
@@ -503,7 +499,7 @@ Tcg2UserConfirm (
       FreePool (TmpStr1);      
 
       break;
-      
+
     case TCG2_PHYSICAL_PRESENCE_ENABLE_BLOCK_SID:
       TmpStr2 = Tcg2PhysicalPresenceGetStringById (STRING_TOKEN (TCG_STORAGE_ENABLE_BLOCK_SID));
 
@@ -612,10 +608,10 @@ Tcg2UserConfirm (
  
    @param[in]  TcgPpData                 EFI Tcg2 Physical Presence request data. 
    @param[in]  Flags                     The physical presence interface flags.
-   @param[out] RequestConfirmed            If the physical presence operation command required user confirm from UI.
-                                             True, it indicates the command doesn't require user confirm, or already confirmed 
-                                                   in last boot cycle by user.
-                                             False, it indicates the command need user confirm from UI.
+   @param[out] RequestConfirmed          If the physical presence operation command required user confirm from UI.
+                                           True, it indicates the command doesn't require user confirm, or already confirmed 
+                                                 in last boot cycle by user.
+                                           False, it indicates the command need user confirm from UI.
 
    @retval  TRUE        Physical Presence operation command is valid.
    @retval  FALSE       Physical Presence operation command is invalid.
@@ -630,7 +626,7 @@ Tcg2HaveValidTpmRequest  (
 {
   EFI_TCG2_PROTOCOL                 *Tcg2Protocol;
   EFI_STATUS                        Status;
-  BOOLEAN  IsRequestValid;
+  BOOLEAN                           IsRequestValid;
 
   *RequestConfirmed = FALSE;
 
@@ -759,7 +755,7 @@ Tcg2HaveValidTpmRequest  (
   TcgPpData variable is external input, so this function will validate
   its data structure to be valid value.
 
-  @param[in] PlatformAuth         platform auth value. NULL means no platform auth change.
+  @param[in]      PlatformAuth      platform auth value. NULL means no platform auth change.
   @param[in, out] TcgPpData         Pointer to the physical presence NV variable.
   @param[in, out] Flags             Pointer to the physical presence interface flags.
 **/
@@ -960,10 +956,10 @@ Tcg2PhysicalPresenceLibProcessRequest (
                                      TCG2_PHYSICAL_PRESENCE_FLAGS_VARIABLE,
                                      &gEfiTcg2PhysicalPresenceGuid
                                      );
-  if (EFI_ERROR (Status)) {
+    if (EFI_ERROR (Status)) {
       DEBUG ((EFI_D_ERROR, "[TPM2] Error when lock variable %s, Status = %r\n", TCG2_PHYSICAL_PRESENCE_FLAGS_VARIABLE, Status));
       ASSERT_EFI_ERROR (Status);
-  }
+    }
   }
   
   //
@@ -1051,7 +1047,6 @@ Tcg2PhysicalPresenceLibProcessRequest (
   DEBUG ((EFI_D_INFO, "[TPM2] PPResponse = %x (LastPPRequest=%x, Flags=%x)\n", TcgPpData.PPResponse, TcgPpData.LastPPRequest, PpiFlags.PPFlags));
 
 }
-
 
 /**
   Check if the pending TPM request needs user input to confirm.
@@ -1241,10 +1236,10 @@ Tcg2PhysicalPresenceLibSubmitRequestToPreOSFunction (
                     DataSize,
                     &PpData
                     );
-  if (EFI_ERROR (Status)) { 
-    DEBUG ((EFI_D_ERROR, "[TPM2] Set PP variable failure! Status = %r\n", Status));
-    return TCG_PP_SUBMIT_REQUEST_TO_PREOS_GENERAL_FAILURE;
-  }
+    if (EFI_ERROR (Status)) { 
+      DEBUG ((EFI_D_ERROR, "[TPM2] Set PP variable failure! Status = %r\n", Status));
+      return TCG_PP_SUBMIT_REQUEST_TO_PREOS_GENERAL_FAILURE;
+    }
   }
 
   if (OperationRequest >= TCG2_PHYSICAL_PRESENCE_VENDOR_SPECIFIC_OPERATION) {
