@@ -98,6 +98,11 @@
   ##  for measurements that may have been made prior to driver initialization
   #
   Tcg2PreUefiEventLogLib|Include/Library/Tcg2PreUefiEventLogLib.h
+
+  ##  @libraryclass  This library provides platform abstractions for prompting
+  #   a user with Physical Presence requests
+  #
+  Tcg2PhysicalPresencePromptLib|Include/Library/Tcg2PhysicalPresencePromptLib.h
 ## MU_CHANGE END
 
 [Guids]

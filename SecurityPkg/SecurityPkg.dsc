@@ -53,7 +53,7 @@
   TpmMeasurementLib|SecurityPkg/Library/DxeTpmMeasurementLib/DxeTpmMeasurementLib.inf
   Tpm12CommandLib|SecurityPkg/Library/Tpm12CommandLib/Tpm12CommandLib.inf
   Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
-  Tcg2PhysicalPresenceLib|SecurityPkg/Library/DxeTcg2PhysicalPresenceLib/DxeTcg2PhysicalPresenceLib.inf   ## MS_CHANGE_TEMP - Workaround for build errors.
+  Tcg2PhysicalPresenceLib|SecurityPkg/Library/DxeTcg2PhysicalPresenceLib/DxeTcg2PhysicalPresenceLib.inf
   TcgPpVendorLib|SecurityPkg/Library/TcgPpVendorLibNull/TcgPpVendorLibNull.inf
   Tcg2PpVendorLib|SecurityPkg/Library/Tcg2PpVendorLibNull/Tcg2PpVendorLibNull.inf
   Tpm2DebugLib|SecurityPkg/Library/Tpm2DebugLib/Tpm2DebugLibNull.inf             ## MS_CHANGE
@@ -129,6 +129,7 @@
   Tpm12DeviceLib|SecurityPkg/Library/Tpm12DeviceLibTcg/Tpm12DeviceLibTcg.inf
   Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibTcg2/Tpm2DeviceLibTcg2.inf
   FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
+  Tcg2PhysicalPresencePromptLib|SecurityPkg/Library/Tcg2PhysicalPresencePromptLib/Tcg2PhysicalPresencePromptLibConsole.inf   ## MS_CHANGE
 
 [LibraryClasses.common.UEFI_DRIVER, LibraryClasses.common.DXE_RUNTIME_DRIVER, LibraryClasses.common.DXE_SAL_DRIVER,]
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
@@ -323,10 +324,10 @@
       PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
   }
   # MS_CHANGE - We don't use this.
-  #SecurityPkg/Tcg/Tcg2Config/Tcg2ConfigDxe.inf {
-  #  <LibraryClasses>
-  #    Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibTcg2/Tpm2DeviceLibTcg2.inf
-  #}
+  SecurityPkg/Tcg/Tcg2Config/Tcg2ConfigDxe.inf {
+    <LibraryClasses>
+      Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibTcg2/Tpm2DeviceLibTcg2.inf
+  }
 
   #
   # Hash2
@@ -353,9 +354,8 @@
   #
   # Opal Password solution
   #
-  ## MS_CHANGE_TEMP - Workaround for build errors.
-  ## SecurityPkg/Tcg/Opal/OpalPassword/OpalPasswordDxe.inf
-  SecurityPkg/Tcg/Opal/OpalPassword/OpalPasswordPei.inf
+  SecurityPkg/Tcg/Opal/OpalPasswordDxe/OpalPasswordDxe.inf
+  SecurityPkg/Tcg/Opal/OpalPasswordSmm/OpalPasswordSmm.inf
 
   #
   # HDD Password solution
