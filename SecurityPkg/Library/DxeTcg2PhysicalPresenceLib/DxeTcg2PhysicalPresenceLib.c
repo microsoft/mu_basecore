@@ -30,6 +30,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Guid/Tcg2PhysicalPresenceData.h>
 #include <Library/Tpm2CommandLib.h>
 #include <Library/Tcg2PhysicalPresenceLib.h>
+#include <Library/Tcg2PhysicalPresencePromptLib.h>    // MU_CHANGE
 #include <Library/Tcg2PpVendorLib.h>
 
 #define CONFIRM_BUFFER_SIZE  4096
@@ -251,6 +252,9 @@ Tcg2ExecutePhysicalPresence (
   }
 }
 
+// MU_CHANGE [BEGIN] - Move this code out of the business for processing requests.
+#if (0)
+
 /**
   Read the specified key for user confirmation.
 
@@ -294,6 +298,9 @@ Tcg2ReadUserKey (
 
   return FALSE;
 }
+
+#endif
+// MU_CHANGE [END]
 
 /**
   Fill Buffer With BootHashAlg.
@@ -587,9 +594,9 @@ Tcg2UserConfirm (
   FreePool (ConfirmText);
   HiiRemovePackages (mTcg2PpStringPackHandle);
 
-  if (Tcg2ReadUserKey (CautionKey)) {
-    return TRUE;
-  }
+  // if (Tcg2ReadUserKey (CautionKey)) {
+  //   return TRUE;
+  // }
 
   return FALSE;
 }
@@ -915,12 +922,16 @@ Tcg2PhysicalPresenceLibProcessRequest (
   IN      TPM2B_AUTH  *PlatformAuth  OPTIONAL
   )
 {
-  EFI_STATUS                        Status;
-  UINTN                             DataSize;
-  EFI_TCG2_PHYSICAL_PRESENCE        TcgPpData;
-  EDKII_VARIABLE_LOCK_PROTOCOL      *VariableLockProtocol;
+  EFI_STATUS                  Status;
+  UINTN                       DataSize;
+  EFI_TCG2_PHYSICAL_PRESENCE  TcgPpData;
+  // EDKII_VARIABLE_LOCK_PROTOCOL      *VariableLockProtocol;  // MU_CHANGE
   EFI_TCG2_PHYSICAL_PRESENCE_FLAGS  PpiFlags;
 
+  // MU_CHANGE_212735
+  // MU_CHANGE [BEGIN]
+
+  /*
   //
   // This flags variable controls whether physical presence is required for TPM command.
   // It should be protected from malicious software. We set it as read-only variable here.
@@ -945,6 +956,8 @@ Tcg2PhysicalPresenceLibProcessRequest (
     DEBUG ((DEBUG_INFO, "S4 Resume, Skip TPM PP process!\n"));
     return;
   }
+  */
+  // MU_CHANGE [END]
 
   //
   // Initialize physical presence flags.
@@ -958,6 +971,10 @@ Tcg2PhysicalPresenceLibProcessRequest (
                     &PpiFlags
                     );
   if (EFI_ERROR (Status)) {
+    // MU_CHANGE_212735
+    // MU_CHANGE [BEGIN]
+
+    /*
     PpiFlags.PPFlags = PcdGet32 (PcdTcg2PhysicalPresenceFlags);
     Status           = gRT->SetVariable (
                               TCG2_PHYSICAL_PRESENCE_FLAGS_VARIABLE,
@@ -970,8 +987,11 @@ Tcg2PhysicalPresenceLibProcessRequest (
       DEBUG ((DEBUG_ERROR, "[TPM2] Set physical presence flag failed, Status = %r\n", Status));
       return;
     }
-
     DEBUG ((DEBUG_INFO, "[TPM2] Initial physical presence flags value is 0x%x\n", PpiFlags.PPFlags));
+    */
+
+    return;
+    // MU_CHANGE [END]
   }
 
   //
@@ -987,6 +1007,11 @@ Tcg2PhysicalPresenceLibProcessRequest (
                     );
   if (EFI_ERROR (Status)) {
     ZeroMem ((VOID *)&TcgPpData, sizeof (TcgPpData));
+    // MU_CHANGE_212735
+    // MU_CHANGE [BEGIN]
+
+    /*
+    ZeroMem ((VOID*)&TcgPpData, sizeof (TcgPpData));
     DataSize = sizeof (EFI_TCG2_PHYSICAL_PRESENCE);
     Status   = gRT->SetVariable (
                       TCG2_PHYSICAL_PRESENCE_VARIABLE,
@@ -999,6 +1024,10 @@ Tcg2PhysicalPresenceLibProcessRequest (
       DEBUG ((DEBUG_ERROR, "[TPM2] Set physical presence variable failed, Status = %r\n", Status));
       return;
     }
+    */
+
+    return;
+    // MU_CHANGE [END]
   }
 
   DEBUG ((DEBUG_INFO, "[TPM2] Flags=%x, PPRequest=%x (LastPPRequest=%x)\n", PpiFlags.PPFlags, TcgPpData.PPRequest, TcgPpData.LastPPRequest));
