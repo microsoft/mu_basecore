@@ -231,6 +231,15 @@
   #SecurityPkg/UserIdentification/UsbCredentialProviderDxe/UsbCredentialProviderDxe.inf
   #SecurityPkg/UserIdentification/UserIdentifyManagerDxe/UserIdentifyManagerDxe.inf
   SecurityPkg/UserIdentification/UserProfileManagerDxe/UserProfileManagerDxe.inf
+  SecurityPkg/Library/DxeTpmMeasurementLib/DxeTpmMeasurementLib.inf
+  SecurityPkg/Library/OemTpm2InitLibNull/OemTpm2InitLib.inf
+  SecurityPkg/Library/PlatformSecureLibNull/PlatformSecureLibNull.inf
+  SecurityPkg/Library/Tcg2PpVendorLibNull/Tcg2PpVendorLibNull.inf
+  SecurityPkg/Library/TcgPpVendorLibNull/TcgPpVendorLibNull.inf
+  SecurityPkg/Library/TempPreUefiEventLogLib/TempPreUefiEventLogLib.inf
+  SecurityPkg/Library/Tpm2DebugLib/Tpm2DebugLibNull.inf
+  SecurityPkg/Library/TrEEPpVendorLibNull/TrEEPpVendorLibNull.inf
+  SecurityPkg/Library/Tcg2PhysicalPresencePromptLib/Tcg2PhysicalPresencePromptLibConsole.inf
 ## MSCHANGE END
 
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
