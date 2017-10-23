@@ -260,6 +260,7 @@
   SecurityPkg/Library/TcgPpVendorLibNull/TcgPpVendorLibNull.inf
   SecurityPkg/Library/TempPreUefiEventLogLib/TempPreUefiEventLogLib.inf
   SecurityPkg/Library/Tpm2DebugLib/Tpm2DebugLibNull.inf
+  SecurityPkg/Library/TrEEPpVendorLibNull/TrEEPpVendorLibNull.inf
   SecurityPkg/Library/Tcg2PhysicalPresencePromptLib/Tcg2PhysicalPresencePromptLibConsole.inf
 ## MSCHANGE END
 
