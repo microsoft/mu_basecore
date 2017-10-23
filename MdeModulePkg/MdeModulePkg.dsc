@@ -246,6 +246,22 @@
   MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
   MdeModulePkg/Logo/Logo.inf
   #MdeModulePkg/Logo/LogoDxe.inf
+  MdeModulePkg/Library/BaseSortLib/BaseSortLib.inf
+  MdeModulePkg/Library/BaseUefiResetSystemLibNull/BaseUefiResetSystemLibNull.inf
+  MdeModulePkg/Library/BootMaintenanceManagerUiLib/BootMaintenanceManagerUiLib.inf
+  MdeModulePkg/Library/BootManagerUiLib/BootManagerUiLib.inf
+  MdeModulePkg/Library/CustomizedDisplayLib/CustomizedDisplayLib.inf
+  MdeModulePkg/Library/DebugAgentLibNull/DebugAgentLibNull.inf
+  MdeModulePkg/Library/DeviceManagerUiLib/DeviceManagerUiLib.inf
+  MdeModulePkg/Library/DxeTcpIoLib/DxeTcpIoLib.inf
+  MdeModulePkg/Library/LockBoxNullLib/LockBoxNullLib.inf
+  MdeModulePkg/Library/PciHostBridgeLibNull/PciHostBridgeLibNull.inf
+  MdeModulePkg/Library/PiSmmCoreSmmServicesTableLib/PiSmmCoreSmmServicesTableLib.inf
+  MdeModulePkg/Library/ResetHelperLib/DxeResetHelperLib.inf
+  MdeModulePkg/Library/ResetHelperLib/PeiResetHelperLib.inf
+  MdeModulePkg/Library/ResetSystemCoreLib/DxeRuntimeResetSystemCoreLib.inf
+  MdeModulePkg/Library/ResetSystemCoreLib/PeiResetSystemCoreLib.inf
+  MdeModulePkg/Library/UefiHiiServicesLib/UefiHiiServicesLib.inf
 ## MSCHANGE END
 
   MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
