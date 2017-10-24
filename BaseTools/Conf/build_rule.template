@@ -155,6 +155,25 @@
 
     <Command>
 
+[MS-ARMx-Assembly-Code-File.COMMON.COMMON]
+    <InputFile.MSFT>
+        ?.masm, ?.Masm, ?.MASM
+
+    <ExtraDependency>
+        $(MAKE_FILE)
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
+
+    <Command.MSFT>
+        "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i
+        # The C pre-processor is used to insert code snippets in assembly from preprocessor macros.  Unfortunately
+        # the preprocessor doesn't also insert CR/LF and Microsoft's assembler expects each instruction to be on its own
+        # line.  We search and replace a special string (__CR__) with CR.
+        type ${d_path}(+)${s_base}.i | python -c "import sys; print sys.stdin.read().replace('__CR__','\n')" > ${d_path}(+)${s_base}.ii
+        Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
+        "$(ASM)" $(ASM_FLAGS) -o ${dst} $(INC) ${d_path}(+)${s_base}.iii
+
 [Assembly-Code-File.COMMON.COMMON]
     <InputFile.MSFT, InputFile.INTEL>
         ?.asm, ?.Asm, ?.ASM
