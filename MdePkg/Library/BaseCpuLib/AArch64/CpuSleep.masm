@@ -1,0 +1,16 @@
+
+    AREA    |.text|,ALIGN=8,CODE,READONLY
+
+    EXPORT CpuSleep
+
+// VOID
+// EFIAPI
+// CpuSleep (
+//   VOID
+//   );
+CpuSleep PROC
+    wfi
+    ret
+CpuSleep ENDP
+
+	END
