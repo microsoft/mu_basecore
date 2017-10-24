@@ -616,12 +616,16 @@
   Math64.c
 
   AArch64/MemoryFence.S             | GCC
+  AArch64/MemoryFence.masm           | MSFT
   AArch64/SwitchStack.S             | GCC
+  AArch64/SwitchStack.masm           | MSFT
   AArch64/EnableInterrupts.S        | GCC
   AArch64/DisableInterrupts.S       | GCC
   AArch64/GetInterruptsState.S      | GCC
   AArch64/SetJumpLongJump.S         | GCC
+  AArch64/SetJumpLongJump.masm       | MSFT
   AArch64/CpuBreakpoint.S           | GCC
+  AArch64/CpuBreakpoint.masm         | MSFT
 
   AArch64/MemoryFence.asm           | MSFT
   AArch64/SwitchStack.asm           | MSFT
