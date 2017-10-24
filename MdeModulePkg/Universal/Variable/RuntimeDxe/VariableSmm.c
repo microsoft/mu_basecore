@@ -1018,6 +1018,24 @@ VariableServiceInitialize (
                     );
   ASSERT_EFI_ERROR (Status);
 
+  // MS_CHANGE_197781
+  //
+  // Install the Variable Filter protocol on the same handle. 
+  //
+  mVariableFilterProtocol.SetVariableFilter = VariableServiceSetVariableFilter;
+  Status = gSmst->SmmInstallProtocolInterface (
+                    &VariableHandle,
+                    &gEfiVariableFilterProtocolGuid,
+                    EFI_NATIVE_INTERFACE,
+                    &mVariableFilterProtocol
+                    );
+  if (EFI_ERROR(Status) != FALSE) {
+    DEBUG((DEBUG_INFO, __FUNCTION__ ": failed to install variable filter protocol (%r)\n", Status));
+  }
+  ASSERT_EFI_ERROR (Status);
+  // END
+
+
   mVariableBufferPayloadSize = GetMaxVariableSize () +
                                OFFSET_OF (SMM_VARIABLE_COMMUNICATE_VAR_CHECK_VARIABLE_PROPERTY, Name) - GetVariableHeaderSize ();
 
@@ -1035,24 +1053,6 @@ VariableServiceInitialize (
   Status = gSmst->SmiHandlerRegister (SmmVariableHandler, &gEfiSmmVariableProtocolGuid, &VariableHandle);
   ASSERT_EFI_ERROR (Status);
 
-// MS_CHANGE_197781
-  //
-  // Install the Variable Filter protocol on a new handle. Continue on if
-  // this fails.
-  //
-  VariableHandle = NULL;
-  mVariableFilterProtocol.SetVariableFilter = VariableServiceSetVariableFilter;
-  Status = gSmst->SmmInstallProtocolInterface (
-                                        &VariableHandle,
-                                        &gEfiVariableFilterProtocolGuid,
-                                        EFI_NATIVE_INTERFACE,
-                                        &mVariableFilterProtocol
-                                        );
-  
-  if (EFI_ERROR(Status) != FALSE) {
-    DEBUG((DEBUG_INFO, __FUNCTION__ ": failed to install variable filter protocol (%r)\n", Status));
-  }
-// END
 
   //
   // Notify the variable wrapper driver the variable service is ready
