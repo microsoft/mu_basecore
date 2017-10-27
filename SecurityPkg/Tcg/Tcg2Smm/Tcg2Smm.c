@@ -158,7 +158,7 @@ PhysicalPresenceCallback (
   return EFI_SUCCESS;
 }
 
-
+#if 0 // MS_CHANGE Begin - MemoryClear SMI handler not used
 /**
   Software SMI callback for MemoryClear which is called from ACPI method.
 
@@ -232,6 +232,7 @@ MemoryClearCallback (
 
   return EFI_SUCCESS;
 }
+#endif 0 // MS_CHANGE Begin - MemoryClear SMI handler not used
 
 /**
   Notification for SMM ReadyToLock protocol.
@@ -321,6 +322,7 @@ InitializeTcgCommon (
   }
   mPpSoftwareSmi = SwContext.SwSmiInputValue;
 
+  #if 0 // MS_CHANGE Begin - MemoryClear SMI handler is not used
   SwContext.SwSmiInputValue = (UINTN) -1;
   Status = SwDispatch->Register (SwDispatch, MemoryClearCallback, &SwContext, &McSwHandle);
   ASSERT_EFI_ERROR (Status);
@@ -329,6 +331,7 @@ InitializeTcgCommon (
     goto Cleanup;
   }
   mMcSoftwareSmi = SwContext.SwSmiInputValue;
+  #endif // MS_CHANGE End
 
   //
   // Locate SmmVariableProtocol.
