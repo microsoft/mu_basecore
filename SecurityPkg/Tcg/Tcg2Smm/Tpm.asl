@@ -240,6 +240,7 @@ DefinitionBlock (
 
       Method (PTS, 1, Serialized)
       {
+        #if 0 // MS_CHANGE Begin - Remove MOR auto-detect from TPM.PTS
         //
         // Detect Sx state for MOR, only S4, S5 need to handle
         //
@@ -261,6 +262,7 @@ DefinitionBlock (
             Store (MCIN, IOPN)
           }
         }
+        #endif // MS_CHANGE End
         Return (0)
       }
 
@@ -446,6 +448,7 @@ DefinitionBlock (
         Return (1)
       }
 
+      #if 0 // MS_CHANGE Begin - Remove support for _DSM Memory Clear
       Method (TMCI, 2, Serialized, 0, IntObj, {UnknownObj, UnknownObj}) // IntObj, PkgObj
       {
         //
@@ -482,6 +485,7 @@ DefinitionBlock (
         }
         Return (1)
       }
+      #endif // MS_CHANGE End
 
       Method (_DSM, 4, Serialized, 0, UnknownObj, {BuffObj, IntObj, IntObj, PkgObj})
       {
@@ -502,6 +506,8 @@ DefinitionBlock (
           Return (TPPI (Arg2, Arg3))
         }
 
+        // MS_CHANGE Begin - Remove support for _DSM memory clear
+        /*
         //
         // TCG Memory Clear Interface
         //
@@ -509,6 +515,8 @@ DefinitionBlock (
         {
           Return (TMCI (Arg2, Arg3))
         }
+        */
+        // MS_CHANGE End
 
         Return (Buffer () {0})
       }
