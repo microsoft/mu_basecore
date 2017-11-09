@@ -79,6 +79,7 @@
   gEfiFirmwareFileSystem3Guid
   gEfiFirmwarePerformanceGuid # MS_CHANGE_161871 - needed to build SEC perf HOB
   gEfiDelayedDispatchTableGuid   # MSCHANGE
+  gPerfDelayedDispatchEndOfPei   # MS_CHANGE
 
 [Ppis]
   gEfiPeiStatusCodePpiGuid                      ## SOMETIMES_CONSUMES # PeiReportStatusService is not ready if this PPI doesn't exist
@@ -115,6 +116,9 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdShadowPeimOnS3Boot                      ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdShadowPeimOnBoot                        ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdInitValueInTempStack                    ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxDelayUs               ## CONSUMES  // MS_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchCompletionTimeoutUs      ## CONSUMES  // MS_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxEntries               ## CONSUMES  // MS_CHANGE
 
 # [BootMode]
 # S3_RESUME             ## SOMETIMES_CONSUMES

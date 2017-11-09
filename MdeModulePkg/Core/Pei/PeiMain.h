@@ -11,8 +11,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <PiPei.h>
 #include <Ppi/DxeIpl.h>
-#include <Ppi/DelayedDispatch.h>    //MSCHANGE
-#include <Ppi/EndOfPeiPhase.h>      //MSCHANGE
+#include <Ppi/DelayedDispatch.h>    //MS_CHANGE
+#include <Ppi/EndOfPeiPhase.h>      //MS_CHANGE
 #include <Ppi/MemoryDiscovered.h>
 #include <Ppi/StatusCode.h>
 #include <Ppi/Reset.h>
@@ -43,7 +43,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <IndustryStandard/PeImage.h>
 #include <Library/PeiServicesTablePointerLib.h>
 #include <Library/MemoryAllocationLib.h>
-#include <Library/TimerLib.h>       // MSCHANGE
+#include <Library/TimerLib.h>       // MS_CHANGE
 #include <Guid/FirmwareFileSystem2.h>
 #include <Guid/FirmwareFileSystem3.h>
 #include <Guid/AprioriFileName.h>
@@ -210,22 +210,27 @@ EFI_STATUS
 
 #define PEI_CORE_HANDLE_SIGNATURE  SIGNATURE_32('P','e','i','C')
 
-//MSCHANGE Start
-#define MAX_DELAYED_DISPATCH_ENTRIES 8
+//MS_CHANGE Start
+
+#pragma pack (push, 1)
 
 typedef struct {
-    UINT64                        TimeEnd;
-    UINT64                        Context;
-    EFI_DELAYED_DISPATCH_FUNCTION Function;
-    UINT32                        usDelay;
+  EFI_GUID                      UniqueId;
+  UINT64                        Context;
+  EFI_DELAYED_DISPATCH_FUNCTION Function;
+  UINT32                        DispatchTime;
+  UINT32                        usDelay;
 } DELAYED_DISPATCH_ENTRY;
 
 typedef struct {
-    UINT32                        Count;
-    UINT32                        DispCount;
-    DELAYED_DISPATCH_ENTRY        Entry[MAX_DELAYED_DISPATCH_ENTRIES];
+  UINT32                        Count;
+  UINT32                        DispCount;
+  DELAYED_DISPATCH_ENTRY        Entry[1]; // Actual size based on PCD PcdDelayedDispatchMaxEntries;
 } DELAYED_DISPATCH_TABLE;
-//MSCHANGE End
+
+#pragma pack (pop)
+
+//MS_CHANGE End
 
 ///
 /// Pei Core private data structure instance
@@ -328,7 +333,7 @@ struct _PEI_CORE_INSTANCE {
   //
   HOLE_MEMORY_DATA                  HoleData[HOLE_MAX_NUMBER];
 
-  DELAYED_DISPATCH_TABLE            *DelayedDispatchTable;    // MSCHANGE
+  DELAYED_DISPATCH_TABLE            *DelayedDispatchTable;    // MS_CHANGE
 };
 
 ///
@@ -1885,7 +1890,7 @@ PeiReinitializeFv (
   IN  PEI_CORE_INSTANCE           *PrivateData
   );
 
-// MSCHANGE Start
+// MS_CHANGE Start
 /**
  * Delayed Dispatch Ppi function
  *
@@ -1899,9 +1904,10 @@ PeiReinitializeFv (
 EFI_STATUS
 EFIAPI
 PeiDelayedDispatchRegister (
-    IN  EFI_DELAYED_DISPATCH_PPI       *This,
+    IN  EFI_DELAYED_DISPATCH_PPI      *This,
     IN  EFI_DELAYED_DISPATCH_FUNCTION  Function,
     IN  UINT64                         Context,
+    IN  EFI_GUID                      *UniqueId,
     IN  UINT32                         Delay
 );
 
@@ -1912,11 +1918,10 @@ PeiDelayedDispatchRegister (
  */
 EFI_STATUS
 EFIAPI
-PeiDelayedDispatchOnEndOfPei (
-    IN EFI_PEI_SERVICES                   **PeiServices,
-    IN EFI_PEI_NOTIFY_DESCRIPTOR          *NotifyDesc,
-    IN VOID                               *Ppi
+PeiDelayedDispatchWaitOnUniqueId (
+    IN EFI_DELAYED_DISPATCH_PPI       *This,
+    IN EFI_GUID                       *UniqueId
 );
-// MSCHANGE End
+// MS_CHANGE End
 
 #endif
