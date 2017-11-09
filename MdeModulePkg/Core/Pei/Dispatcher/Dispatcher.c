@@ -11,8 +11,38 @@ Copyright (c) 2017, Microsoft Corporation.
 
 #include "PeiMain.h"
 
-//MSCHANGE Delayed Dispatch begin
-EFI_DELAYED_DISPATCH_PPI           mDelayedDispatchPpi = {PeiDelayedDispatchRegister};
+//MS_CHANGE Delayed Dispatch begin
+/**
+ * DelayedDispatchDispatcher
+ *
+ * Delayed Dispach cycle (ie one pass) through each entry, calling functions when their
+ * time has expired.  When UniqueId is specified, if there are any of the specified entries
+ * in the dispatch queue during dispatch, repeat the DelayedDispatch cycle.
+ *
+ * @param DelayedDispatchTable  Pointer to dispatch table
+ * @param OPTIONAL              UniqueId used to insure particular time is met.
+ *
+ * @return BOOLEAN
+ */
+BOOLEAN
+DelayedDispatchDispatcher (IN DELAYED_DISPATCH_TABLE *DelayedDispatchTable,
+                           IN EFI_GUID               *UniqueId           OPTIONAL
+);
+
+/**
+ * Delayed Dispatch Notify function for EndoPei
+ *
+ * @return EFI_STATUS EFIAPI
+ */
+EFI_STATUS
+EFIAPI
+PeiDelayedDispatchOnEndOfPei (
+    IN EFI_PEI_SERVICES                   **PeiServices,
+    IN EFI_PEI_NOTIFY_DESCRIPTOR          *NotifyDesc,
+    IN VOID                               *Ppi
+);
+
+EFI_DELAYED_DISPATCH_PPI           mDelayedDispatchPpi = {PeiDelayedDispatchRegister,PeiDelayedDispatchWaitOnUniqueId};
 EFI_PEI_PPI_DESCRIPTOR             mDelayedDispatchDesc = {
       (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
       &gEfiDelayedDispatchPpiGuid,
@@ -26,11 +56,36 @@ EFI_PEI_NOTIFY_DESCRIPTOR          mDelayedDispatchNotifyDesc = {
 };
 
 /**
+ * GetDelayedDispatchTable
+ *
+ * @param  None
+ *
+ *
+ * @return DELAYED_DISPATCH_TABLE*
+ */
+DELAYED_DISPATCH_TABLE*
+GetDelayedDispatchTable()
+{
+  EFI_HOB_GUID_TYPE   *GuidHob;
+
+  GuidHob = GetFirstGuidHob(&gEfiDelayedDispatchTableGuid);
+  if (NULL == GuidHob)
+  {
+    DEBUG((DEBUG_ERROR, "Delayed Dispatch PPI ERROR - Delayed Dispatch Hob not available.\n"));
+    ASSERT(FALSE);
+    return NULL;
+  }
+
+  return (DELAYED_DISPATCH_TABLE*)GET_GUID_HOB_DATA(GuidHob);
+}
+
+/**
  * Delayed Dispatch Register.  Register for a callback after a minimum delay
  *
  * @param This            - PPI address
  * @param Function        - Function to be dispatched when the time expires
  * @param Context         - 64 bit value context to be passed to Function
+ * @param UniqueId        - Used with WaitOnUniqueId.
  * @param Delay           - Minimum delay in microseconds.
  *
  * @return EFI_STATUS EFIAPI
@@ -41,75 +96,138 @@ PeiDelayedDispatchRegister (
     IN  EFI_DELAYED_DISPATCH_PPI      *This,
     IN  EFI_DELAYED_DISPATCH_FUNCTION  Function,
     IN  UINT64                         Context,
+    IN  EFI_GUID                      *UniqueId   OPTIONAL,
     IN  UINT32                         Delay
 ) {
-    EFI_HOB_GUID_TYPE         *GuidHob;
     DELAYED_DISPATCH_TABLE    *DelayedDispatchTable;
+    DELAYED_DISPATCH_ENTRY    *Entry;
 
-    GuidHob = GetFirstGuidHob(&gEfiDelayedDispatchTableGuid);
-    DEBUG((DEBUG_INFO,__FUNCTION__ " Hob=%p\n",GuidHob));
-    if (NULL != GuidHob) {
-      DelayedDispatchTable = (DELAYED_DISPATCH_TABLE *)(GET_GUID_HOB_DATA(GuidHob));
-      if (DelayedDispatchTable->Count > (MAX_DELAYED_DISPATCH_ENTRIES - 1)) {
-        return EFI_OUT_OF_RESOURCES;
-      }
-      if ((NULL == Function) || (0 == Delay) || (NULL == This)) {
-        return EFI_INVALID_PARAMETER;
-      }
-
-      DelayedDispatchTable->Entry[DelayedDispatchTable->Count].Function = Function;
-      DelayedDispatchTable->Entry[DelayedDispatchTable->Count].Context = Context;
-      DelayedDispatchTable->Entry[DelayedDispatchTable->Count].TimeEnd =
-          GetTimeInNanoSecond (GetPerformanceCounter ()) +
-          Delay * 1000;                         // Convert usDelay to ns
-      DelayedDispatchTable->Entry[DelayedDispatchTable->Count].usDelay = Delay;
-      DelayedDispatchTable->Count++;
-      return EFI_SUCCESS;
+    // Check input parameters
+    if ((NULL == Function) || (Delay > FixedPcdGet32(PcdDelayedDispatchMaxDelayUs)) || (NULL == This)) {
+      DEBUG((DEBUG_ERROR, __FUNCTION__ " Invalid parameter\n"));
+      return EFI_INVALID_PARAMETER;
     }
-    DEBUG((DEBUG_ERROR,__FUNCTION__ " Delayed Dispatch Hob not available.\n"));
-    ASSERT(FALSE);
-    return EFI_UNSUPPORTED;
+
+    // Get delayed dispatch table
+    DelayedDispatchTable = GetDelayedDispatchTable();
+    if (NULL == DelayedDispatchTable) {
+      DEBUG((DEBUG_ERROR, __FUNCTION__ " Unable to locate dispatch table\n"));
+      return EFI_UNSUPPORTED;
+    }
+
+    // Check for available entry slots
+    if (DelayedDispatchTable->Count >= FixedPcdGet32(PcdDelayedDispatchMaxEntries)) {
+      ASSERT(DelayedDispatchTable->Count < FixedPcdGet32(PcdDelayedDispatchMaxEntries));
+      DEBUG((DEBUG_ERROR, __FUNCTION__ " Too many entries requested\n"));
+      return EFI_OUT_OF_RESOURCES;
+    }
+    Entry = &(DelayedDispatchTable->Entry[DelayedDispatchTable->Count]);
+    Entry->Function = Function;
+    Entry->Context = Context;
+    Entry->DispatchTime = GET_TIME_IN_US() + Delay;
+    if (NULL != UniqueId) {
+        CopyGuid(&Entry->UniqueId, UniqueId);
+    } else {
+        ZeroMem (&Entry->UniqueId, sizeof (EFI_GUID));
+    }
+    Entry->usDelay = Delay;
+    DelayedDispatchTable->Count++;
+
+    DEBUG((DEBUG_INFO, __FUNCTION__ " Adding dispatch Entry\n"));
+    DEBUG((DEBUG_INFO, "    Requested Delay = %d\n", Delay));
+    DEBUG((DEBUG_INFO, "    Trigger Time = %d\n", Entry->DispatchTime));
+    DEBUG((DEBUG_INFO, "    Context = 0x%08lx\n", Entry->Context));
+    DEBUG((DEBUG_INFO, "    Function = %p\n", Entry->Function));
+    DEBUG((DEBUG_INFO, "    GuidHandle = %g\n", &(Entry->UniqueId)));
+
+    if (0 == Delay) {   // Force early dispatch point
+       DelayedDispatchDispatcher(DelayedDispatchTable, NULL);
+    }
+
+    return EFI_SUCCESS;
 }
 
+/**
+ * DelayedDispatchDispatcher
+ *
+ * Delayed Dispach cycle (ie one pass) through each entry, calling functions when their
+ * time has expired.  When UniqueId is specified, if there are any of the specified entries
+ * in the dispatch queue during dispatch, repeat the DelayedDispatch cycle.
+ *
+ * @param DelayedDispatchTable  Pointer to dispatch table
+ * @param OPTIONAL              UniqueId used to insure particular time is met.
+ *
+ * @return BOOLEAN
+ */
 BOOLEAN
-DelayedDispatchDispatcher (IN DELAYED_DISPATCH_TABLE *DelayedDispatchTable) {
+DelayedDispatchDispatcher (IN DELAYED_DISPATCH_TABLE *DelayedDispatchTable,
+                           IN EFI_GUID               *UniqueId           OPTIONAL
+) {
 
-    BOOLEAN   Dispatched = FALSE;
-    UINT64    TimeCurrent;
-    UINTN     Index1;
+    BOOLEAN                    Dispatched = FALSE;
+    UINT32                     TimeCurrent;
+    UINT32                     MaxDispatchTime;
+    UINTN                      Index1;
+    BOOLEAN                    UniqueIdPresent;
+    DELAYED_DISPATCH_ENTRY    *Entry;
 
-    if (DelayedDispatchTable->Count > 0) {
+    UniqueIdPresent = TRUE;
+    MaxDispatchTime = GET_TIME_IN_US() + FixedPcdGet32(PcdDelayedDispatchCompletionTimeoutUs);
+    while ((DelayedDispatchTable->Count > 0) && (UniqueIdPresent)) {
+        UniqueIdPresent = FALSE;
         DelayedDispatchTable->DispCount++;
+
+        // If dispatching is messed up, clear DelayedDispatchTable and exit.
+        TimeCurrent =  GET_TIME_IN_US();
+        if (TimeCurrent > MaxDispatchTime) {
+            DEBUG(( DEBUG_ERROR, __FUNCTION__" - DelayedDispatch Completion timeout!\n" ));
+            ReportStatusCode((EFI_ERROR_MAJOR | EFI_ERROR_CODE), (EFI_SOFTWARE_PEI_CORE | EFI_SW_EC_ABORTED ));
+            ASSERT( FALSE );
+            DelayedDispatchTable->Count = 0;
+            break;
+        }
+
+        // Check each entry in the table for possible dispatch
         for (Index1 = 0; Index1 < DelayedDispatchTable->Count;) {
-            TimeCurrent = GetTimeInNanoSecond (GetPerformanceCounter ());
-            if (DelayedDispatchTable->Entry[Index1].TimeEnd <= TimeCurrent) {
+            Entry = &(DelayedDispatchTable->Entry[Index1]);
+            // If UniqueId is present, insure there is an additional check of the table.
+            if (NULL != UniqueId) {
+                if (CompareGuid(UniqueId, &Entry->UniqueId)) {
+                    UniqueIdPresent = TRUE;
+                }
+            }
+            TimeCurrent =  GET_TIME_IN_US();
+            if (TimeCurrent >= Entry->DispatchTime) {
                 // Time expired, invoked the function
                 DEBUG((DEBUG_ERROR,
-                        "Delayed dispatch entry %d @ %p, Target=%ld, Act=%ld Disp=%d\n",
+                        "Delayed dispatch entry %d @ %p, Target=%d, Act=%d Disp=%d\n",
                         Index1,
-                        DelayedDispatchTable->Entry[Index1].Function,
-                        DelayedDispatchTable->Entry[Index1].TimeEnd,
+                        Entry->Function,
+                        Entry->DispatchTime,
                         TimeCurrent,
                         DelayedDispatchTable->DispCount));
                 Dispatched = TRUE;
-                DelayedDispatchTable->Entry[Index1].usDelay = 0;
-                DelayedDispatchTable->Entry[Index1].Function (
-                        &DelayedDispatchTable->Entry[Index1].Context,
-                        &DelayedDispatchTable->Entry[Index1].usDelay);
-
-                if (0 == DelayedDispatchTable->Entry[Index1].usDelay) {
+                Entry->usDelay = 0;
+                Entry->Function (
+                        &Entry->Context,
+                        &Entry->usDelay);
+                DEBUG((DEBUG_ERROR,"Delayed dispatch Function returned delay=%d\n",Entry->usDelay));
+                if (0 == Entry->usDelay) {
                     // NewTime = 0 = delete this entry from the table
                     DelayedDispatchTable->Count--;
-                    CopyMem (&DelayedDispatchTable->Entry[Index1],
-                             &DelayedDispatchTable->Entry[Index1+1],
-                             sizeof(DelayedDispatchTable->Entry[Index1]) * (DelayedDispatchTable->Count - Index1));
+                    CopyMem (Entry,Entry+1,sizeof(DELAYED_DISPATCH_ENTRY) * (DelayedDispatchTable->Count - Index1));
                 } else {
-                    // NewTime != 0 - update the time from us to TimeEnd time
-                    DelayedDispatchTable->Entry[Index1].TimeEnd =
-                        GetTimeInNanoSecond (GetPerformanceCounter ()) +
-                        DelayedDispatchTable->Entry[Index1].usDelay * 1000;  // Convert usDelay to ns
+                    if (Entry->usDelay > FixedPcdGet32(PcdDelayedDispatchMaxDelayUs)) {
+                        DEBUG((DEBUG_ERROR,__FUNCTION__ " Illegal new delay %d requested\n",Entry->usDelay));
+                        ASSERT(FALSE);
+                        Entry->usDelay = FixedPcdGet32(PcdDelayedDispatchMaxDelayUs);
+                    }
+                    // NewTime != 0 - update the time from us to Dispatch time
+                    Entry->DispatchTime =  GET_TIME_IN_US() + Entry->usDelay;
                     Index1++;
                 }
+            } else {
+                Index1++;
             }
         }
     }
@@ -117,7 +235,44 @@ DelayedDispatchDispatcher (IN DELAYED_DISPATCH_TABLE *DelayedDispatchTable) {
 }
 
 /**
-  DelayedDispatch End of PEI callback function. This is the last change before entering DXE and OS when S3 resume.
+ * Delayed Dispatch Wait for a particular entry. Insure that any dispatch entry that contains
+ * the UniqueId is complete before returning.
+ *
+ * @param[in] This          - Pointer to DelayedDispatch PPI.
+ * @param[in] UniqueId      - Pointer to UniqueId Guid.
+ *
+ * @return EFI_STATUS EFIAPI
+ */
+EFI_STATUS
+EFIAPI
+PeiDelayedDispatchWaitOnUniqueId (
+    IN EFI_DELAYED_DISPATCH_PPI       *This,
+    IN EFI_GUID                       *UniqueId
+) {
+    DELAYED_DISPATCH_TABLE    *DelayedDispatchTable;
+
+    // Get delayed dispatch table
+    DelayedDispatchTable = GetDelayedDispatchTable();
+    if (NULL == DelayedDispatchTable) {
+      return EFI_UNSUPPORTED;
+    }
+
+    if ((NULL == UniqueId) || (IsZeroGuid(UniqueId))) {
+        ASSERT(FALSE);
+        return EFI_UNSUPPORTED;
+    }
+
+    DEBUG((DEBUG_INFO,"Delayed dispatch on %g. Count=%d, DispatchCount=%d\n",UniqueId,DelayedDispatchTable->Count, DelayedDispatchTable->DispCount));
+    PERF_START_EX (UniqueId, "PEIM", NULL, 0, 0);
+    DelayedDispatchDispatcher(DelayedDispatchTable,UniqueId);
+    PERF_END_EX (UniqueId, "PEIM", NULL, 0, 0);
+
+    return EFI_SUCCESS;
+}
+
+/**
+  DelayedDispatch End of PEI callback function. Insure that all of the delayed dispatch
+  entries are complete before exiting PEI.
 
   @param[in] PeiServices   - Pointer to PEI Services Table.
   @param[in] NotifyDesc    - Pointer to the descriptor for the Notification event that
@@ -134,20 +289,24 @@ PeiDelayedDispatchOnEndOfPei (
   IN VOID                               *Ppi
   )
 {
-    EFI_HOB_GUID_TYPE               *GuidHob;
-    DELAYED_DISPATCH_TABLE          *DelayedDispatchTable;
+    DELAYED_DISPATCH_TABLE    *DelayedDispatchTable;
 
-    GuidHob = GetFirstGuidHob(&gEfiDelayedDispatchTableGuid);
-    if (NULL != GuidHob) {
-        DelayedDispatchTable = (DELAYED_DISPATCH_TABLE *)(GET_GUID_HOB_DATA(GuidHob));
-        DEBUG((DEBUG_INFO,"Delayed dispatch on EndOfPei. Count=%d, DispatchCount=%d\n",DelayedDispatchTable->Count, DelayedDispatchTable->DispCount));
-        while (DelayedDispatchTable->Count > 0) {
-            DelayedDispatchDispatcher(DelayedDispatchTable);
-        }
+    // Get delayed dispatch table
+    DelayedDispatchTable = GetDelayedDispatchTable();
+    if (NULL == DelayedDispatchTable) {
+      return EFI_UNSUPPORTED;
     }
+
+    PERF_START_EX (&gPerfDelayedDispatchEndOfPei, "PEIM", NULL, 0, 0);
+    while (DelayedDispatchTable->Count > 0) {
+        DelayedDispatchDispatcher(DelayedDispatchTable, NULL);
+    }
+    DEBUG((DEBUG_ERROR, __FUNCTION__ " Count of dispatch cycles is %d\n",DelayedDispatchTable->DispCount));
+    PERF_END_EX (&gPerfDelayedDispatchEndOfPei, "PEIM", NULL, 0, 0);
+
     return EFI_SUCCESS;
 }
-//MSCHANGE Delayed Dispatch end
+//MS_CHANGE Delayed Dispatch end
 
 /**
 
@@ -1134,15 +1293,16 @@ PeiDispatcher (
     if (NULL != GuidHob) {
       Private->DelayedDispatchTable = (DELAYED_DISPATCH_TABLE *)(GET_GUID_HOB_DATA(GuidHob));
     } else {
-      Private->DelayedDispatchTable = BuildGuidHob (&gEfiDelayedDispatchTableGuid,sizeof(DELAYED_DISPATCH_TABLE));
+      UINT32 TableSize = sizeof(DELAYED_DISPATCH_TABLE) + ((FixedPcdGet32(PcdDelayedDispatchMaxEntries) - 1) * sizeof(DELAYED_DISPATCH_ENTRY));
+      Private->DelayedDispatchTable = BuildGuidHob (&gEfiDelayedDispatchTableGuid,TableSize);
       if (NULL != Private->DelayedDispatchTable) {
-        ZeroMem (Private->DelayedDispatchTable, sizeof (DELAYED_DISPATCH_TABLE));
+        ZeroMem (Private->DelayedDispatchTable, TableSize);
         Status = PeiServicesInstallPpi(&mDelayedDispatchDesc);
         ASSERT_EFI_ERROR (Status);
         Status = PeiServicesNotifyPpi (&mDelayedDispatchNotifyDesc);
         ASSERT_EFI_ERROR (Status);
       }
-    }                                                                    // MSCHANGE End
+    }                                                                    // MS_CHANGE End
   }
 
   if ((Private->PeiMemoryInstalled) && (Private->HobList.HandoffInformationTable->BootMode != BOOT_ON_S3_RESUME || PcdGetBool (PcdShadowPeimOnS3Boot))) {
@@ -1385,7 +1545,7 @@ PeiDispatcher (
 
         // MSCHANGE Start - Dispatch pending delalyed dispatch requests
         if (NULL != Private->DelayedDispatchTable) {
-            if (DelayedDispatchDispatcher (Private->DelayedDispatchTable)) {
+            if (DelayedDispatchDispatcher (Private->DelayedDispatchTable, NULL)) {
                 ProcessDispatchNotifyList(Private);
             }
         }

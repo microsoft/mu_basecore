@@ -380,7 +380,7 @@
 
   ## Include/Guid/EndofS3Resume.h
   gEdkiiEndOfS3ResumeGuid = { 0x96f5296d, 0x05f7, 0x4f3c, {0x84, 0x67, 0xe4, 0x56, 0x89, 0x0e, 0x0c, 0xb5 } }
-  
+
 ## MSCHANGE BEGIN
   #
   # Guids for NVMe Timeout Events
@@ -951,6 +951,18 @@
   # @Prompt Error Code for SetVariable failure.
   # @ValidList  0x80000006 | 0x03058002
   gEfiMdeModulePkgTokenSpaceGuid.PcdErrorCodeSetVariable|0x03058002|UINT32|0x30001040
+
+  ## Delayed Dispatch Maximum Delay in us  // MS_CHANGE
+  # Maximum delay for any particular delay request - 5 seconds
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxDelayUs|5000000|UINT32|0x3000104A
+
+  ## Delayed Dispatch timeout in us  // MS_CHANGE
+  # Maximum delay when waiting for completion (ie EndOfPei) - 10 seconds
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchCompletionTimeoutUs|10000000|UINT32|0x3000104B
+
+  ## Delayed Dispatch Max Entries    //MS_CHANGE
+  # Maximum number of delayed dispatch entries
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxEntries|8|UINT32|0x30001056
 
   ## Mask to control the NULL address detection in code for different phases.
   #  If enabled, accessing NULL address in UEFI or SMM code can be caught.<BR><BR>
