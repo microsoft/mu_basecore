@@ -87,8 +87,8 @@ SMM_CORE_SMI_HANDLERS  mSmmCoreSmiHandlers[] = {
   { SmmExitBootServicesHandler, &gEfiEventExitBootServicesGuid,      NULL, FALSE },
   { SmmReadyToBootHandler,      &gEfiEventReadyToBootGuid,           NULL, FALSE },
   { SmmEndOfDxeHandler,         &gEfiEndOfDxeEventGroupGuid,         NULL, TRUE },
-  { SmmS3SmmInitDoneHandler,    &gEdkiiS3SmmInitDoneGuid,            NULL, FALSE },
-  { SmmEndOfS3ResumeHandler,    &gEdkiiEndOfS3ResumeGuid,            NULL, FALSE },
+  // { SmmS3SmmInitDoneHandler,    &gEdkiiS3SmmInitDoneGuid,            NULL, FALSE },    // MS_CHANGE - Drop unnecessary SMI handler.
+  // { SmmEndOfS3ResumeHandler,    &gEdkiiSmmEndOfS3ResumeProtocolGuid, NULL, FALSE },    // MS_CHANGE - Drop unnecessary SMI handler.
   { NULL,                       NULL,                                NULL, FALSE }
 };
 
