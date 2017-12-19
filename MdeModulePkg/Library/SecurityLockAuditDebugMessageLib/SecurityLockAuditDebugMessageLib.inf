@@ -1,0 +1,28 @@
+##
+#
+# Library that implements logging and reporting for security locks
+# Using DebugLib
+#
+#
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = SecurityLockAuditDebugMessageLib
+  FILE_GUID                      = 459d0456-d6be-458e-9cc8-e9b21745f9aa
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = SecurityLockAuditLib
+
+[Sources.common]
+  SecurityLockAuditDebugMessageLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
