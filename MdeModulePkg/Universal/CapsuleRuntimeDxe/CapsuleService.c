@@ -25,6 +25,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // MS_CHANGE_161994
 #include <Guid/EventGroup.h>
 // END_MS_CHANGE_161994
+#include <Library/SecurityLockAuditLib.h> //MSCHANGE
 
 #include <Library/DebugLib.h>
 #include <Library/PcdLib.h>
@@ -400,6 +401,7 @@ IN      VOID                      *Context
 )
 {
     mAfterLocked = TRUE;
+    SECURITY_LOCK_REPORT_EVENT("Lock Capsule Interface", SOFTWARE_LOCK); //MSCHANGE
     DEBUG((DEBUG_INFO, "Capsule Interface Locked!!\nMS_CHANGE_161994\n"));
 }
 // END MS_CHANGE_161994
