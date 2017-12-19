@@ -51,6 +51,7 @@
   DxeServicesLib
   PcdLib
   ReportStatusCodeLib
+  SecurityLockAuditLib  #MSCHANGE
 
 [Protocols]
   gEfiSmmBase2ProtocolGuid                      ## PRODUCES
