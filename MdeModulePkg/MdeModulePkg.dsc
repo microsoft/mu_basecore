@@ -27,6 +27,7 @@
   DxeCoreEntryPoint|MdePkg/Library/DxeCoreEntryPoint/DxeCoreEntryPoint.inf
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
   UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
+  SecurityLockAuditLib|MdeModulePkg/Library/SecurityLockAuditDebugMessageLib/SecurityLockAuditDebugMessageLib.inf ##MSCHANGE
   #
   # Basic
   #
@@ -223,6 +224,8 @@
   MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
   MdeModulePkg/Logo/Logo.inf
   #MdeModulePkg/Logo/LogoDxe.inf
+  MdeModulePkg/Library/SecurityLockAuditDebugMessageLib/SecurityLockAuditDebugMessageLib.inf
+  MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf
 ## MSCHANGE END
 
   MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
