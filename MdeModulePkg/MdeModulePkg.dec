@@ -154,6 +154,10 @@
   #
   VariablePolicyHelperLib|Include/Library/VariablePolicyHelperLib.h
 
+  ##  @libraryclass  Provides a way for logging security locks
+  #
+  SecurityLockAuditLib|Include/Library/SecurityLockAuditLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
