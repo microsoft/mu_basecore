@@ -65,6 +65,7 @@
   BaseMemoryLib
   CacheMaintenanceLib
   ResetUtilityLib                        ## MS_CHANGE
+  SecurityLockAuditLib                   ## MS_CHANGE
 
 [LibraryClasses.X64]
   UefiLib

@@ -14,6 +14,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // MS_CHANGE_161994
 #include <Guid/EventGroup.h>
 // END_MS_CHANGE_161994
+#include <Library/SecurityLockAuditLib.h> // MSCHANGE
 
 #include <Library/ResetUtilityLib.h>                  // MS_CHANGE_250018 - ResetSystem refactoring.
 
@@ -391,6 +392,7 @@ LockCapsuleInterface (
   )
 {
   mAfterLocked = TRUE;
+  SECURITY_LOCK_REPORT_EVENT ("Lock Capsule Interface", SOFTWARE_LOCK);  // MSCHANGE
   DEBUG ((DEBUG_INFO, "Capsule Interface Locked!!\nMS_CHANGE_161994\n"));
 }
 

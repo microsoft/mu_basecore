@@ -47,6 +47,7 @@
   PcdLib
   ReportStatusCodeLib
   SafeIntLib
+  SecurityLockAuditLib  #MSCHANGE
 
 [Protocols]
   gEfiSmmBase2ProtocolGuid                      ## PRODUCES
