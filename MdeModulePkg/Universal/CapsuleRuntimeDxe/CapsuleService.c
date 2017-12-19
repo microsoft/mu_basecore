@@ -4,16 +4,18 @@
   It installs the Capsule Architectural Protocol defined in PI1.0a to signify
   the capsule runtime services are ready.
 
-Copyright (c) 2006 - 2020, Intel Corporation. All rights reserved.<BR>
-Copyright (c) Microsoft Corporation.
-
-SPDX-License-Identifier: BSD-2-Clause-Patent
+  Copyright (c) 2006 - 2020, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "CapsuleService.h"
-
-#include <Library/ResetUtilityLib.h>                  // MU_CHANGE - ResetSystem refactoring.
+// MU_CHANGE [BEGIN]
+#include <Guid/EventGroup.h>                // MU_CHANGE - 161994
+#include <Library/SecurityLockAuditLib.h>
+#include <Library/ResetUtilityLib.h>        // MU_CHANGE - ResetSystem refactoring.
+// MU_CHANGE [END]
 
 //
 // Handle for the installation of Capsule Architecture Protocol.
@@ -383,6 +385,31 @@ QueryCapsuleCapabilities (
   return EFI_SUCCESS;
 }
 
+// MU_CHANGE [BEGIN] - 161994
+
+/**
+
+LockCapsuleInterface - Event handler
+- locks the capsule interface so no input is accepted.
+
+@param[in]  Event     Event whose notification function is being invoked
+@param[in]  Context   Pointer to the notification function's context
+
+**/
+VOID
+EFIAPI
+LockCapsuleInterface (
+  IN      EFI_EVENT  Event,
+  IN      VOID       *Context
+  )
+{
+  mAfterLocked = TRUE;
+  SECURITY_LOCK_REPORT_EVENT ("Lock Capsule Interface", SOFTWARE_LOCK);
+  DEBUG ((DEBUG_INFO, "Capsule Interface Locked!!\nMU_CHANGE 161994\n"));
+}
+
+// MU_CHANGE [END] - 161994
+
 /**
 
   This code installs UEFI capsule runtime service.
@@ -445,7 +472,7 @@ CapsuleServiceInitialize (
                   &gEfiEventExitBootServicesGuid,
                   &Event
                   );
-    // MU_CHANGE [END] - 161994
+  // MU_CHANGE [END] - 161994
 
   return Status;
 }

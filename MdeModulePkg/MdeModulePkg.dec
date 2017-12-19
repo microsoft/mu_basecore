@@ -164,6 +164,10 @@
   #
   VariableFlashInfoLib|Include/Library/VariableFlashInfoLib.h
 
+  ##  @libraryclass  Provides a way for logging security locks
+  #
+  SecurityLockAuditLib|Include/Library/SecurityLockAuditLib.h
+
   ##  @libraryclass   Memory Attribute Table support logic for tracking and reporting
   #                   runtime images
   #
