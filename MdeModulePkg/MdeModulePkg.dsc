@@ -27,6 +27,7 @@
   DxeCoreEntryPoint|MdePkg/Library/DxeCoreEntryPoint/DxeCoreEntryPoint.inf
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
   UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
+  SecurityLockAuditLib|MdeModulePkg/Library/SecurityLockAuditDebugMessageLib/SecurityLockAuditDebugMessageLib.inf ##MSCHANGE
   #
   # Basic
   #
@@ -236,6 +237,8 @@
   MdeModulePkg/Library/ResetSystemCoreLib/DxeRuntimeResetSystemCoreLib.inf
   MdeModulePkg/Library/ResetSystemCoreLib/PeiResetSystemCoreLib.inf
   MdeModulePkg/Library/UefiHiiServicesLib/UefiHiiServicesLib.inf
+  MdeModulePkg/Library/SecurityLockAuditDebugMessageLib/SecurityLockAuditDebugMessageLib.inf
+  MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf
 ## MSCHANGE END
 
   MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
