@@ -61,6 +61,7 @@
   BaseLib
   PrintLib
   BaseMemoryLib
+  SecurityLockAuditLib                   ## MS_CHANGE
 
 [LibraryClasses.X64]
   UefiLib
