@@ -1,0 +1,26 @@
+##
+#
+#  Null library for security lock logging that does nothing but meet compile requirements
+#
+#
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = SecurityLockAuditLibNull
+  FILE_GUID                      = 1d333a6a-90a7-45cb-9897-0a172ee35066
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = SecurityLockAuditLib
+
+[Sources.common]
+  SecurityLockAuditLibNull.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  BaseLib
