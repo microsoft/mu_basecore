@@ -4,16 +4,18 @@
   It installs the Capsule Architectural Protocol defined in PI1.0a to signify
   the capsule runtime services are ready.
 
-Copyright (c) 2006 - 2020, Intel Corporation. All rights reserved.<BR>
-Copyright (c) Microsoft Corporation.
-
-SPDX-License-Identifier: BSD-2-Clause-Patent
+  Copyright (c) 2006 - 2020, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "CapsuleService.h"
-
-#include <Library/ResetUtilityLib.h>                  // MU_CHANGE - ResetSystem refactoring.
+// MU_CHANGE [BEGIN]
+#include <Guid/EventGroup.h>                // MU_CHANGE - 161994
+#include <Library/SecurityLockAuditLib.h>
+#include <Library/ResetUtilityLib.h>        // MU_CHANGE - ResetSystem refactoring.
+// MU_CHANGE [END]
 
 //
 // Handle for the installation of Capsule Architecture Protocol.
@@ -470,7 +472,7 @@ CapsuleServiceInitialize (
                   &gEfiEventExitBootServicesGuid,
                   &Event
                   );
-    // MU_CHANGE [END] - 161994
+  // MU_CHANGE [END] - 161994
 
   return Status;
 }
