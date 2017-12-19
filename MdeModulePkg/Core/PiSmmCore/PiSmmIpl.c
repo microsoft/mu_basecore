@@ -34,6 +34,8 @@
 #include <Library/PcdLib.h>
 #include <Library/ReportStatusCodeLib.h>
 
+#include <Library/SecurityLockAuditLib.h> //MSCHANGE
+
 #include "PiSmmCorePrivateData.h"
 
 #define SMRAM_CAPABILITIES  (EFI_MEMORY_WB | EFI_MEMORY_UC)
@@ -780,6 +782,7 @@ SmmIplReadyToLockEventNotify (
   // Lock the SMRAM (Note: Locking SMRAM may not be supported on all platforms)
   //
   mSmmAccess->Lock (mSmmAccess);
+  SECURITY_LOCK_REPORT_EVENT("Lock SMRAM", HARDWARE_LOCK); //MSCHANGE
 
   //
   // Close protocol and event notification events that do not apply after the
