@@ -67,6 +67,7 @@
   CacheMaintenanceLib
   VariablePolicyHelperLib
   ResetUtilityLib                        ## MU_CHANGE
+  SecurityLockAuditLib                   ## MU_CHANGE
 
 [LibraryClasses.X64]
   UefiLib

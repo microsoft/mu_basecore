@@ -2,7 +2,7 @@
 #  This module provide an SMM CIS compliant implementation of SMM IPL.
 #
 #  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
-#
+#  Copyright (c) Microsoft Corporation.<BR>
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -47,6 +47,7 @@
   PcdLib
   ReportStatusCodeLib
   SafeIntLib
+  SecurityLockAuditLib  # MU_CHANGE
 
 [Protocols]
   gEfiSmmBase2ProtocolGuid                      ## PRODUCES
