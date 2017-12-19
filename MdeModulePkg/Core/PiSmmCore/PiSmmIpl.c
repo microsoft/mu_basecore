@@ -2,6 +2,7 @@
   SMM IPL that produces SMM related runtime protocols and load the SMM Core into SMRAM
 
   Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -34,8 +35,11 @@
 #include <Library/UefiRuntimeLib.h>
 #include <Library/PcdLib.h>
 #include <Library/ReportStatusCodeLib.h>
-#include "PiSmmCorePrivateData.h"
+
+#include <Library/SecurityLockAuditLib.h> // MU_CHANGE
 #include <Library/SafeIntLib.h>
+
+#include "PiSmmCorePrivateData.h" // MU_CHANGE
 
 #define SMRAM_CAPABILITIES  (EFI_MEMORY_WB | EFI_MEMORY_UC)
 
@@ -867,6 +871,7 @@ SmmIplReadyToLockEventNotify (
   // Lock the SMRAM (Note: Locking SMRAM may not be supported on all platforms)
   //
   mSmmAccess->Lock (mSmmAccess);
+  SECURITY_LOCK_REPORT_EVENT ("Lock SMRAM", HARDWARE_LOCK); // MU_CHANGE
 
   //
   // Close protocol and event notification events that do not apply after the
