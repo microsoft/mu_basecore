@@ -610,7 +610,9 @@ UpdateHID (
 
         CopyMem(DataPtr, Hid, TPM_HID_ACPI_SIZE);
       }
-      DEBUG((DEBUG_INFO, "TPM2 ACPI _HID is patched to %a\n", DataPtr));
+      // MSChange: this line prints out data with the null-termination removed, can cause page fault
+      //           and then a machine check
+      //DEBUG((DEBUG_INFO, "TPM2 ACPI _HID is patched to %a\n", DataPtr));
 
       return Status;
     }
