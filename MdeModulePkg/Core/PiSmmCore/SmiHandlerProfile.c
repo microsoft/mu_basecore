@@ -47,6 +47,12 @@ RegisterSmiHandlerProfileHandler(
   VOID
   );
 
+// MS_CHANGE - Include profiler SMI in the profile itself.
+VOID
+BuildSmiHandlerProfileDatabase(
+  VOID
+  );
+
 /**
   Retrieves and returns a pointer to the entry point to a PE/COFF image that has been loaded
   into system memory with the PE/COFF Loader Library functions.
@@ -476,6 +482,9 @@ SmmReadyToLockInSmiHandlerProfile (
   IN EFI_HANDLE      Handle
   )
 {
+  // MS_CHANGE - Include profiler SMI in the profile itself.
+  RegisterSmiHandlerProfileHandler();
+
   //
   // Dump all image
   //
@@ -509,7 +518,8 @@ SmmReadyToLockInSmiHandlerProfile (
 
   DEBUG ((DEBUG_INFO, "\n"));
 
-  RegisterSmiHandlerProfileHandler();
+  // MS_CHANGE - Include profiler SMI in the profile itself.
+  BuildSmiHandlerProfileDatabase();
 
   if (mImageStruct != NULL) {
     FreePool(mImageStruct);
@@ -1032,7 +1042,8 @@ RegisterSmiHandlerProfileHandler (
                     );
   ASSERT_EFI_ERROR (Status);
 
-  BuildSmiHandlerProfileDatabase();
+  // MS_CHANGE - Include profiler SMI in the profile itself.
+  // BuildSmiHandlerProfileDatabase();
 }
 
 /**
