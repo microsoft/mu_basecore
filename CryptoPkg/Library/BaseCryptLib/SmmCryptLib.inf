@@ -46,7 +46,9 @@
   Hash/CryptDispatchApMm.c
   Hmac/CryptHmac.c
   Kdf/CryptHkdf.c
-  Cipher/CryptAes.c
+  # MU_CHANGE - Start - Keep deprecated AES support disabled for this BaseCryptLib instance.
+  Cipher/CryptAesNull.c
+  # MU_CHANGE - End - Keep deprecated AES support disabled for this BaseCryptLib instance.
   Cipher/CryptAeadAesGcmNull.c
   Cipher/CryptCamellia.c
   Pk/CryptRsaBasic.c
