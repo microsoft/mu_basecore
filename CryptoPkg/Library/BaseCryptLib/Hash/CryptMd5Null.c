@@ -1,6 +1,8 @@
-/** @file
+/** @file -- CryptMd5Null.c
+MS_CHANGE_162948
+MSChange [ALL] - Deprecated version of CryptMd5.c
 
-MD5 Digest Wrapper Null Implementation.
+MD5 Digest Wrapper Implementation over OpenSSL.
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 SPDX-License-Identifier: BSD-2-Clause-Patent
