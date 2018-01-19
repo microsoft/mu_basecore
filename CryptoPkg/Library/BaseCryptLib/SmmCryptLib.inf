@@ -45,8 +45,8 @@
   Hash/CryptDispatchApMm.c
   Hmac/CryptHmac.c
   Kdf/CryptHkdf.c
-  Cipher/CryptAes.c
-  Cipher/CryptAeadAesGcmNull.c
+  Cipher/CryptAesNull.c       ## MS_CHANGE_162948 - MSChange - Remove support for deprecated crypto.
+  Cipher/CryptAeadAesGcmNull.c 
   Pk/CryptRsaBasic.c
   Pk/CryptRsaExtNull.c
   Pk/CryptPkcs1Oaep.c
@@ -94,6 +94,7 @@
   PrintLib
   MmServicesTableLib
   SynchronizationLib
+
 
 #
 # Remove these [BuildOptions] after this library is cleaned up
