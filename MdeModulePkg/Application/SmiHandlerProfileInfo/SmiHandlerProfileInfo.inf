@@ -11,7 +11,8 @@
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = SmiHandlerProfileInfo
+  #BASE_NAME                      = SmiHandlerProfileInfo    ## MS_CHANGE - Rename app to be picked up by build scripts.
+  BASE_NAME                      = SmiHandlerProfileAuditTestApp
   MODULE_UNI_FILE                = SmiHandlerProfileInfo.uni
   FILE_GUID                      = 611EA796-8DF8-4BB6-91FE-6540ED70DC66
   MODULE_TYPE                    = UEFI_APPLICATION
