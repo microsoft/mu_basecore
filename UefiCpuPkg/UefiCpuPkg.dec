@@ -92,13 +92,10 @@
 
   ## Include/Protocol/SmMonitorInit.h
   gEfiSmMonitorInitProtocolGuid  = { 0x228f344d, 0xb3de, 0x43bb, { 0xa4, 0xd7, 0xea, 0x20, 0xb, 0x1b, 0x14, 0x82 }}
-
-[Protocols.RISCV64]
+  #MSCHANGE - Add support for testing Smm protections
   #
-  # Protocols defined for RISC-V systems
-  #
-  ## Include/Protocol/RiscVBootProtocol.h
-  gRiscVEfiBootProtocolGuid  = { 0xccd15fec, 0x6f73, 0x4eec, { 0x83, 0x95, 0x3e, 0x69, 0xe4, 0xb9, 0x40, 0xbf }}
+  ## Include/Protocol/SmmExceptionTestProtocol.h
+  gSmmExceptionTestProtocolGuid   = { 0xb76383a1, 0x0e70, 0x4a3f, { 0x86, 0xb4, 0xc6, 0x13, 0x4c, 0x8e, 0x57, 0x23 }}
 
 #
 # [Error.gUefiCpuPkgTokenSpaceGuid]
@@ -171,7 +168,6 @@
   #   FALSE - SMM Feature Control MSR will not be locked.<BR>
   # @Prompt Lock SMM Feature Control MSR.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmFeatureControlMsrLock|TRUE|BOOLEAN|0x3213210B
-
   ## Indicates if SMRR will be enabled.<BR><BR>
   #   TRUE  - SMRR will be enabled.<BR>
   #   FALSE - SMRR will not be enabled.<BR>
@@ -183,6 +179,11 @@
   #   FALSE - SmmFeatureControl will not be enabled.<BR>
   # @Prompt Support SmmFeatureControl.
   gUefiCpuPkgTokenSpaceGuid.PcdSmmFeatureControlEnable|TRUE|BOOLEAN|0x32132110
+  ## MS_CHANGE
+  ## If TRUE, Install the protocol to communicate to the Smm Exception 
+  # handler so automated testing can be performed. 
+  # 
+  gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionTestModeSupport|FALSE|BOOLEAN|0x00000021
 
   ## Indicates if SMM perf logging in APs will be enabled.<BR><BR>
   #   TRUE  - SMM perf logging in APs will be enabled.<BR>
@@ -213,6 +214,10 @@
   ## Size of teh area of memory where the SEV-ES work area block lives.
   # @Prompt Configure the SEV-ES work area base
   gUefiCpuPkgTokenSpaceGuid.PcdSevEsWorkAreaSize|0x0|UINT32|0x30002006
+  ## MS_CHANGE
+  ## If TRUE, the default Cpu Exception Handler in SMM will reboot 
+  # This handler state can be changed by using the Exception Test Protocol
+  gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionRebootInsteadOfHaltDefault|TRUE|BOOLEAN|0x00000020
 
   ## Determining APs' first-time wakeup by SIPI or INIT-SIPI-SIPI.
   # Following a power-up or RESET of an MP system, The APs complete a
