@@ -84,6 +84,9 @@
   CpuPageTableLib
   MmSaveStateLib
   SmmCpuSyncLib
+  MmMemoryProtectionHobLib                   ## MU_CHANGE
+  PanicLib                                   ## MU_CHANGE
+  HwResetSystemLib                           ## MU_CHANGE - Use HwResetSystemLib
 
 [Protocols]
   gEfiSmmConfigurationProtocolGuid         ## PRODUCES
@@ -94,6 +97,7 @@
   gEfiMmMpProtocolGuid                     ## PRODUCES
   gEdkiiSmmCpuRendezvousProtocolGuid       ## PRODUCES
   gEfiSmmVariableProtocolGuid              ## CONSUMES
+  gSmmExceptionTestProtocolGuid            ## PRODUCES ## MU_CHANGE
 
 [Guids]
   gEfiAcpiVariableGuid                     ## SOMETIMES_CONSUMES ## HOB # it is used for S3 boot.
@@ -116,6 +120,7 @@
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmFeatureControlMsrLock         ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode         ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdSmmApPerfLogEnable                  ## CONSUMES
+  gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionTestModeSupport         # MU_CHANGE
 
 [Pcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmProfileSize                   ## SOMETIMES_CONSUMES
@@ -125,6 +130,8 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask    ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
   gEfiMdePkgTokenSpaceGuid.PcdControlFlowEnforcementPropertyMask        ## CONSUMES
+  gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionRebootInsteadOfHaltDefault   ## CONSUMES ## MU_CHANGE
+
 
 [FixedPcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmMpTokenCountPerChunk               ## CONSUMES
