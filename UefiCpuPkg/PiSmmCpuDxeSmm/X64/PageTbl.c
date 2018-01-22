@@ -1079,8 +1079,10 @@ SmiPFHandler (
   if (mCpuSmmRestrictedMemoryAccess && (PFAddress >= LShiftU64 (1, (mPhysicalAddressBits - 1)))) {
     DumpCpuContext (InterruptType, SystemContext);
     DEBUG ((DEBUG_ERROR, "Do not support address 0x%lx by processor!\n", PFAddress));
-    CpuDeadLoop ();
-    goto Exit;
+    // MSCHANGE - Allow system to reset instead of halt in test mode.
+    goto HaltOrReboot;
+    // CpuDeadLoop ();
+    // goto Exit;
   }
 
   //
@@ -1124,8 +1126,10 @@ SmiPFHandler (
       }
     }
 
-    CpuDeadLoop ();
-    goto Exit;
+    // MSCHANGE - Allow system to reset instead of halt in test mode.
+    goto HaltOrReboot;
+    // CpuDeadLoop ();
+    // goto Exit;
   }
 
   //
@@ -1140,8 +1144,10 @@ SmiPFHandler (
       DEBUG_CODE (
         DumpModuleInfoByIp (*(UINTN *)(UINTN)SystemContext.SystemContextX64->Rsp);
         );
-      CpuDeadLoop ();
-      goto Exit;
+      // MSCHANGE - Allow system to reset instead of halt in test mode.
+      goto HaltOrReboot;
+      // CpuDeadLoop ();
+      // goto Exit;
     }
 
     //
@@ -1161,8 +1167,10 @@ SmiPFHandler (
         goto Exit;
       }
 
-      CpuDeadLoop ();
-      goto Exit;
+      // MSCHANGE - Allow system to reset instead of halt in test mode.
+      goto HaltOrReboot;
+      // CpuDeadLoop ();
+      // goto Exit;
     }
 
     if (mCpuSmmRestrictedMemoryAccess && IsSmmCommBufferForbiddenAddress (PFAddress)) {
@@ -1171,8 +1179,10 @@ SmiPFHandler (
       DEBUG_CODE (
         DumpModuleInfoByIp ((UINTN)SystemContext.SystemContextX64->Rip);
         );
-      CpuDeadLoop ();
-      goto Exit;
+      // MU_CHANGE - Allow system to reset instead of halt in test mode.
+      goto HaltOrReboot;
+      // CpuDeadLoop ();
+      // goto Exit;
     }
   }
 
@@ -1185,8 +1195,22 @@ SmiPFHandler (
     SmiDefaultPFHandler ();
   }
 
+  // MSCHANGE [BEGIN] - Allow system to reset instead of halt in test mode.
+  goto Exit;
+
+HaltOrReboot:
+  if (mSmmRebootOnException) {
+    DEBUG ((DEBUG_ERROR, __FUNCTION__ " - Reboot here in test mode.\n"));
+    ResetWarm ();
+    CpuDeadLoop ();
+  } else {
+    CpuDeadLoop ();
+  }
+
 Exit:
   ReleaseSpinLock (mPFLock);
+  return;
+  // MSCHANGE [END]
 }
 
 /**
