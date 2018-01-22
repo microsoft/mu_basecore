@@ -199,6 +199,11 @@ typedef struct {
 
 #define INVALID_APIC_ID  0xFFFFFFFFFFFFFFFFULL
 
+typedef UINT32 SMM_CPU_ARRIVAL_EXCEPTIONS;
+#define ARRIVAL_EXCEPTION_BLOCKED       0x1
+#define ARRIVAL_EXCEPTION_DELAYED       0x2
+#define ARRIVAL_EXCEPTION_SMI_DISABLED  0x4
+
 //
 // Wrapper used to convert EFI_AP_PROCEDURE2 and EFI_AP_PROCEDURE.
 //
@@ -302,6 +307,7 @@ EFIAPI
 EnableCet (
   VOID
   );
+extern BOOLEAN  mSmmRebootOnException;                     // MS_CHANGE
 
 //
 // SMM CPU Protocol function prototypes.
