@@ -8,6 +8,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
+#include <Library/UefiResetSystemLib.h> // MSCHANGE - Allow system to reset instead of halt in test mode.
+
 #include "PiSmmCpuDxeSmm.h"
 
 #define PAGE_TABLE_PAGES            8
@@ -18,6 +20,11 @@ BOOLEAN                             m1GPageTableSupport = FALSE;
 BOOLEAN                             mCpuSmmStaticPageTable;
 BOOLEAN                             m5LevelPagingSupport;
 X86_ASSEMBLY_PATCH_LABEL            gPatch5LevelPagingSupport;
+
+// MSCHANGE [BEGIN] - Add flag to enable "test mode" for the SMM protections.
+//                    NOTE: "Test mode" will only be enabled in DEBUG builds.
+extern BOOLEAN                      gSmmRebootOnException;
+// MSCHANGE [END]
 
 /**
   Disable CET.
@@ -975,8 +982,10 @@ SmiPFHandler (
   if (mCpuSmmStaticPageTable && (PFAddress >= LShiftU64 (1, (mPhysicalAddressBits - 1)))) {
     DumpCpuContext (InterruptType, SystemContext);
     DEBUG ((DEBUG_ERROR, "Do not support address 0x%lx by processor!\n", PFAddress));
-    CpuDeadLoop ();
-    goto Exit;
+    // MSCHANGE - Allow system to reset instead of halt in test mode.
+    goto HaltOrReboot;
+    //CpuDeadLoop ();
+    //goto Exit;
   }
 
   //
@@ -1010,8 +1019,10 @@ SmiPFHandler (
         goto Exit;
       }
     }
-    CpuDeadLoop ();
-    goto Exit;
+    // MSCHANGE - Allow system to reset instead of halt in test mode.
+    goto HaltOrReboot;
+    //CpuDeadLoop ();
+    //goto Exit;
   }
 
   //
@@ -1025,8 +1036,10 @@ SmiPFHandler (
       DEBUG_CODE (
         DumpModuleInfoByIp (*(UINTN *)(UINTN)SystemContext.SystemContextX64->Rsp);
       );
-      CpuDeadLoop ();
-      goto Exit;
+      // MSCHANGE - Allow system to reset instead of halt in test mode.
+      goto HaltOrReboot;
+      //CpuDeadLoop ();
+      //goto Exit;
     }
 
     //
@@ -1045,8 +1058,10 @@ SmiPFHandler (
         goto Exit;
       }
 
-      CpuDeadLoop ();
-      goto Exit;
+      // MSCHANGE - Allow system to reset instead of halt in test mode.
+      goto HaltOrReboot;
+      //CpuDeadLoop ();
+      //goto Exit;
     }
 
     if (mCpuSmmStaticPageTable && IsSmmCommBufferForbiddenAddress (PFAddress)) {
@@ -1069,8 +1084,23 @@ SmiPFHandler (
     SmiDefaultPFHandler ();
   }
 
+  // MSCHANGE [BEGIN] - Allow system to reset instead of halt in test mode.
+  goto Exit;
+
+HaltOrReboot:
+  if (gSmmRebootOnException) {
+    DEBUG ((DEBUG_ERROR, __FUNCTION__" - Reboot here in test mode.\n"));
+    LibResetSystem (EfiResetWarm, EFI_SUCCESS, 0, NULL);
+    CpuDeadLoop ();
+  }
+  else {
+    CpuDeadLoop ();
+  }
+
 Exit:
   ReleaseSpinLock (mPFLock);
+  return;
+  // MSCHANGE [END]
 }
 
 /**
