@@ -78,6 +78,40 @@ EDKII_SMM_MEMORY_ATTRIBUTE_PROTOCOL  mSmmMemoryAttribute = {
   EdkiiSmmClearMemoryAttributes
 };
 
+//
+// MU_CHANGE [BEGIN] - Add flag to enable "test mode" for the SMM protections.
+//                     NOTE: "Test mode" will only be enabled in DEBUG builds.
+// Flag to indicate exception handling should be in test mode.
+// This will cause exceptions to reset the system and/or log
+// additional telemetry.
+//
+
+/**
+  Enable exception handling test mode.
+
+  NOTE: This should only work on debug builds, otherwise return EFI_UNSUPPORTED.
+
+  @retval EFI_SUCCESS            Test mode enabled.
+  @retval EFI_UNSUPPORTED        Test mode could not be enabled.
+
+**/
+EFI_STATUS
+EFIAPI
+EnableSmmExceptionTestMode (
+  VOID
+  );
+
+//
+// Protocol for other drivers to enable test mode.
+//
+SMM_EXCEPTION_TEST_PROTOCOL  mSmmExceptionTestProtocol = {
+  EnableSmmExceptionTestMode
+};
+EFI_HANDLE                   mSmmExceptionTestProtocolHandle = NULL;
+
+BOOLEAN  mSmmRebootOnException = TRUE;
+// MU_CHANGE [END]
+
 EFI_CPU_INTERRUPT_HANDLER  mExternalVectorTable[EXCEPTION_VECTOR_NUMBER];
 
 volatile BOOLEAN  *mSmmInitialized = NULL;
@@ -758,6 +792,8 @@ PiSmmCpuEntryCommon (
 
   PERF_FUNCTION_BEGIN ();
 
+  mSmmRebootOnException = PcdGetBool (PcdSmmExceptionRebootInsteadOfHaltDefault); // MS_CHANGE
+
   //
   // Initialize address fixup
   //
@@ -1249,6 +1285,21 @@ PiSmmCpuEntryCommon (
   ASSERT_EFI_ERROR (Status);
 
   //
+  // MU_CHANGE [BEGIN] - Add flag to enable "test mode" for the SMM protections.
+  //                    NOTE: "Test mode" will only be enabled in DEBUG builds.
+  if (FeaturePcdGet (PcdSmmExceptionTestModeSupport)) {
+    Status = gMmst->MmInstallProtocolInterface (
+                      &mSmmExceptionTestProtocolHandle,
+                      &gSmmExceptionTestProtocolGuid,
+                      EFI_NATIVE_INTERFACE,
+                      &mSmmExceptionTestProtocol
+                      );
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // MU_CHANGE [END]
+
+  //
   // Initialize SMM CPU Services Support
   //
   Status = InitializeSmmCpuServices (mSmmCpuHandle);
@@ -1536,3 +1587,34 @@ PerformPreTasks (
 {
   RestoreSmmConfigurationInS3 ();
 }
+
+// MU_CHANGE [BEGIN] - Add flag to enable "test mode" for the SMM protections.
+//                    NOTE: "Test mode" will only be enabled in DEBUG builds.
+
+/**
+  Enable exception handling test mode.
+
+  NOTE: This should only work on debug builds, otherwise return EFI_UNSUPPORTED.
+
+  @retval EFI_SUCCESS            Test mode enabled.
+  @retval EFI_UNSUPPORTED        Test mode could not be enabled.
+
+**/
+EFI_STATUS
+EFIAPI
+EnableSmmExceptionTestMode (
+  VOID
+  )
+{
+  EFI_STATUS  Status = EFI_UNSUPPORTED;
+
+  if (FeaturePcdGet (PcdSmmExceptionTestModeSupport)) {
+    DEBUG ((DEBUG_INFO, "%a - Test mode enabled!\n", __func__));
+    mSmmRebootOnException = TRUE;
+    Status                = EFI_SUCCESS;
+  }
+
+  return Status;
+}
+
+// MU_CHANGE [END]

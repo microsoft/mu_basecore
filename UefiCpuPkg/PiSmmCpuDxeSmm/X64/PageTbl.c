@@ -1,12 +1,15 @@
 /** @file
 Page Fault (#PF) handler for X64 processors
 
+Copyright (c) Microsoft Corporation.
 Copyright (c) 2009 - 2024, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
+
+#include <Library/ResetSystemLib.h> // MU_CHANGE - Allow system to reset instead of halt in test mode.
 
 #include "PiSmmCpuCommon.h"
 
@@ -739,8 +742,11 @@ SmiPFHandler (
   if (PFAddress >= LShiftU64 (1, (mPhysicalAddressBits - 1))) {
     DumpCpuContext (InterruptType, SystemContext);
     DEBUG ((DEBUG_ERROR, "Do not support address 0x%lx by processor!\n", PFAddress));
-    CpuDeadLoop ();
-    goto Exit;
+    // MU_CHANGE [BEGIN] - Allow system to reset instead of halt in test mode.
+    goto HaltOrReboot;
+    // CpuDeadLoop ();
+    // goto Exit;
+    // MU_CHANGE [END] - Allow system to reset instead of halt in test mode.
   }
 
   //
@@ -784,8 +790,11 @@ SmiPFHandler (
       }
     }
 
-    CpuDeadLoop ();
-    goto Exit;
+    // MU_CHANGE [BEGIN] - Allow system to reset instead of halt in test mode.
+    goto HaltOrReboot;
+    // CpuDeadLoop ();
+    // goto Exit;
+    // MU_CHANGE [END] - Allow system to reset instead of halt in test mode.
   }
 
   //
@@ -800,8 +809,11 @@ SmiPFHandler (
       DEBUG_CODE (
         DumpModuleInfoByIp (*(UINTN *)(UINTN)SystemContext.SystemContextX64->Rsp);
         );
-      CpuDeadLoop ();
-      goto Exit;
+      // MU_CHANGE [BEGIN] - Allow system to reset instead of halt in test mode.
+      goto HaltOrReboot;
+      // CpuDeadLoop ();
+      // goto Exit;
+      // MU_CHANGE [END] - Allow system to reset instead of halt in test mode.
     }
 
     //
@@ -821,12 +833,18 @@ SmiPFHandler (
         goto Exit;
       }
 
-      CpuDeadLoop ();
-      goto Exit;
+      // MU_CHANGE [BEGIN] - Allow system to reset instead of halt in test mode.
+      goto HaltOrReboot;
+      // CpuDeadLoop ();
+      // goto Exit;
+      // MU_CHANGE [END] - Allow system to reset instead of halt in test mode.
     }
 
     if (IsSmmCommBufferForbiddenAddress (PFAddress)) {
       DEBUG ((DEBUG_ERROR, "Access SMM communication forbidden address (0x%lx)!\n", PFAddress));
+      // MU_CHANGE [BEGIN] - Allow system to reset instead of halt in test mode.
+      goto HaltOrReboot;
+      // MU_CHANGE [END] - Allow system to reset instead of halt in test mode.
     }
   }
 
@@ -847,11 +865,28 @@ SmiPFHandler (
     DEBUG_CODE (
       DumpModuleInfoByIp ((UINTN)SystemContext.SystemContextX64->Rip);
       );
+    // MU_CHANGE [BEGIN] - Allow system to reset instead of halt in test mode.
+    goto HaltOrReboot;
+    // CpuDeadLoop ();
+    // MU_CHANGE [END] - Allow system to reset instead of halt in test mode.
+  }
+
+  // MU_CHNAGE [BEGIN] - Allow system to reset instead of halt in test mode.
+  goto Exit;
+
+HaltOrReboot:
+  if (mSmmRebootOnException) {
+    DEBUG ((DEBUG_ERROR, "%a - Reboot here in test mode.\n", __func__));
+    ResetWarm ();
+    CpuDeadLoop ();
+  } else {
     CpuDeadLoop ();
   }
 
 Exit:
   ReleaseSpinLock (mPFLock);
+  return;
+  // MU_CHNAGE [END] - Allow system to reset instead of halt in test mode.
 }
 
 /**
