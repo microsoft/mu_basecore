@@ -20,6 +20,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/SmmReadyToLock.h>
 #include <Protocol/SmmCpuService.h>
 #include <Protocol/SmmMemoryAttribute.h>
+#include <Protocol/SmmExceptionTestProtocol.h>
 
 #include <Guid/AcpiS3Context.h>
 #include <Guid/MemoryAttributesTable.h>
