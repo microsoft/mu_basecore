@@ -1331,7 +1331,11 @@ GenSmmPageTable (
     }
   }
 
-  if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0) {
+  // MU_CHANGE START
+  // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0) {
+  if (gMmMps.NullPointerDetectionPolicy) {
+  // MU_CHANGE END
+
     //
     // Mark [0, 4k] as non-present
     //
@@ -1491,7 +1495,10 @@ IfReadOnlyPageTableNeeded (
   //      BIT3: SMM pool guard enabled
   //  - SMM profile feature enabled
   //
-  if (((PcdGet8 (PcdHeapGuardPropertyMask) & (BIT3 | BIT2)) != 0) ||
+  // MU_CHANGE START
+  // if (((PcdGet8 (PcdHeapGuardPropertyMask) & (BIT3 | BIT2)) != 0) ||
+      ((gMmMps.HeapGuardPolicy.Fields.MmPageGuard | gMmMps.HeapGuardPolicy.Fields.MmPoolGuard) != 0) || // MU_CHANGE
+      // MU_CHANGE END
       mSmmProfileEnabled)
   {
     return FALSE;
