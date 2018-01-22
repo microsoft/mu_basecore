@@ -4,6 +4,7 @@ Agent Module to load other modules to deploy SMM Entry Vector for X86 CPU.
 Copyright (c) 2009 - 2023, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 Copyright (C) 2023 - 2024 Advanced Micro Devices, Inc. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation.
 
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -126,6 +127,39 @@ SPIN_LOCK  *mConfigSmmCodeAccessCheckLock = NULL;
 //
 EFI_SMRAM_DESCRIPTOR  *mSmmCpuSmramRanges;
 UINTN                 mSmmCpuSmramRangeCount;
+//
+// MU_CHANGE [BEGIN] - Add flag to enable "test mode" for the SMM protections.
+//                     NOTE: "Test mode" will only be enabled in DEBUG builds.
+// Flag to indicate exception handling should be in test mode.
+// This will cause exceptions to reset the system and/or log
+// additional telemetry.
+//
+
+/**
+  Enable exception handling test mode.
+
+  NOTE: This should only work on debug builds, otherwise return EFI_UNSUPPORTED.
+
+  @retval EFI_SUCCESS            Test mode enabled.
+  @retval EFI_UNSUPPORTED        Test mode could not be enabled.
+
+**/
+EFI_STATUS
+EFIAPI
+EnableSmmExceptionTestMode (
+  VOID
+  );
+
+//
+// Protocol for other drivers to enable test mode.
+//
+SMM_EXCEPTION_TEST_PROTOCOL  mSmmExceptionTestProtocol = {
+  EnableSmmExceptionTestMode
+};
+EFI_HANDLE                   mSmmExceptionTestProtocolHandle = NULL;
+
+BOOLEAN  mSmmRebootOnException = TRUE;
+// MU_CHANGE [END]
 
 UINT8  mPhysicalAddressBits;
 
@@ -874,6 +908,8 @@ PiCpuSmmEntry (
     EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_CU_HP_PC_SMM_INIT
     );
 
+  mSmmRebootOnException = PcdGetBool (PcdSmmExceptionRebootInsteadOfHaltDefault); // MS_CHANGE
+
   //
   // Find out SMRR Base and SMRR Size
   //
@@ -1298,6 +1334,20 @@ PiCpuSmmEntry (
                     &mSmmCpu
                     );
   ASSERT_EFI_ERROR (Status);
+
+  // MU_CHANGE [BEGIN] - Add flag to enable "test mode" for the SMM protections.
+  //                    NOTE: "Test mode" will only be enabled in DEBUG builds.
+  if (FeaturePcdGet (PcdSmmExceptionTestModeSupport)) {
+    Status = gSmst->SmmInstallProtocolInterface (
+                      &mSmmExceptionTestProtocolHandle,
+                      &gSmmExceptionTestProtocolGuid,
+                      EFI_NATIVE_INTERFACE,
+                      &mSmmExceptionTestProtocol
+                      );
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // MU_CHANGE [END]
 
   //
   // Install the SMM Memory Attribute Protocol into SMM protocol database
@@ -1745,3 +1795,34 @@ PerformPreTasks (
 {
   RestoreSmmConfigurationInS3 ();
 }
+
+// MU_CHANGE [BEGIN] - Add flag to enable "test mode" for the SMM protections.
+//                    NOTE: "Test mode" will only be enabled in DEBUG builds.
+
+/**
+  Enable exception handling test mode.
+
+  NOTE: This should only work on debug builds, otherwise return EFI_UNSUPPORTED.
+
+  @retval EFI_SUCCESS            Test mode enabled.
+  @retval EFI_UNSUPPORTED        Test mode could not be enabled.
+
+**/
+EFI_STATUS
+EFIAPI
+EnableSmmExceptionTestMode (
+  VOID
+  )
+{
+  EFI_STATUS  Status = EFI_UNSUPPORTED;
+
+  if (FeaturePcdGet (PcdSmmExceptionTestModeSupport)) {
+    DEBUG ((DEBUG_INFO, "%a - Test mode enabled!\n", __func__));
+    mSmmRebootOnException = TRUE;
+    Status                = EFI_SUCCESS;
+  }
+
+  return Status;
+}
+
+// MU_CHANGE [END]
