@@ -121,6 +121,46 @@ SPIN_LOCK                *mConfigSmmCodeAccessCheckLock = NULL;
 //
 EFI_SMRAM_DESCRIPTOR     *mSmmCpuSmramRanges;
 UINTN                    mSmmCpuSmramRangeCount;
+//
+// MSCHANGE [BEGIN] - Add flag to enable "test mode" for the SMM protections.
+//                    NOTE: "Test mode" will only be enabled in DEBUG builds.
+// Flag to indicate exception handling should be in test mode.
+// This will cause exceptions to reset the system and/or log
+// additional telemetry.
+//
+
+/**
+  Enable exception handling test mode.
+
+  NOTE: This should only work on debug builds, otherwise return EFI_UNSUPPORTED.
+
+  @retval EFI_SUCCESS            Test mode enabled.
+  @retval EFI_UNSUPPORTED        Test mode could not be enabled.
+
+**/
+EFI_STATUS
+EnableSmmExceptionTestMode (
+  VOID
+  );
+
+//
+// Protocol for other drivers to enable test mode.
+//
+SMM_EXCEPTION_TEST_PROTOCOL mSmmExceptionTestProtocol = {
+  EnableSmmExceptionTestMode
+};
+EFI_HANDLE                  mSmmExceptionTestProtocolHandle = NULL;
+
+// TODO: Currently, this is built-in in DEBUG *and* RELEASE.
+//        Need to figure out how to only enable test mode in DEBUG.
+#ifndef SHIP_MODE
+BOOLEAN                  gSmmRebootOnException = FALSE;       // Default to false and allow test mode to transition.
+#define EXCEPTION_TEST_MODE_SUPPORTED     1
+#else
+BOOLEAN                  gSmmRebootOnException = TRUE;        // Default to true so that systems in the field reboot rather than halt.
+#define EXCEPTION_TEST_MODE_SUPPORTED     0
+#endif
+// MSCHANGE [END]
 
 UINT8                    mPhysicalAddressBits;
 
@@ -987,6 +1027,19 @@ PiCpuSmmEntry (
                     );
   ASSERT_EFI_ERROR (Status);
 
+  // MSCHANGE [BEGIN] - Add flag to enable "test mode" for the SMM protections.
+  //                    NOTE: "Test mode" will only be enabled in DEBUG builds.
+#if EXCEPTION_TEST_MODE_SUPPORTED
+  Status = gSmst->SmmInstallProtocolInterface (
+                    &mSmmExceptionTestProtocolHandle,
+                    &gSmmExceptionTestProtocolGuid,
+                    EFI_NATIVE_INTERFACE,
+                    &mSmmExceptionTestProtocol
+                    );
+  ASSERT_EFI_ERROR (Status);
+#endif
+  // MSCHANGE [END]
+
   //
   // Install the SMM Memory Attribute Protocol into SMM protocol database
   //
@@ -1468,3 +1521,31 @@ PerformPreTasks (
 {
   RestoreSmmConfigurationInS3 ();
 }
+
+// MSCHANGE [BEGIN] - Add flag to enable "test mode" for the SMM protections.
+//                    NOTE: "Test mode" will only be enabled in DEBUG builds.
+/**
+  Enable exception handling test mode.
+
+  NOTE: This should only work on debug builds, otherwise return EFI_UNSUPPORTED.
+
+  @retval EFI_SUCCESS            Test mode enabled.
+  @retval EFI_UNSUPPORTED        Test mode could not be enabled.
+
+**/
+EFI_STATUS
+EnableSmmExceptionTestMode (
+  VOID
+  )
+{
+  EFI_STATUS  Status = EFI_UNSUPPORTED;
+
+#if EXCEPTION_TEST_MODE_SUPPORTED
+  DEBUG ((EFI_D_INFO, __FUNCTION__" - Test mode enabled!\n"));
+  gSmmRebootOnException = TRUE;
+  Status = EFI_SUCCESS;
+#endif
+
+  return Status;
+}
+// MSCHANGE [END]
