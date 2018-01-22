@@ -105,6 +105,7 @@
   gEfiMpServiceProtocolGuid                ## CONSUMES
   gEfiSmmConfigurationProtocolGuid         ## PRODUCES
   gEfiSmmCpuProtocolGuid                   ## PRODUCES
+  gSmmExceptionTestProtocolGuid            ## PRODUCES ## MS_CHANGE
   gEfiSmmReadyToLockProtocolGuid           ## NOTIFY
   gEfiSmmCpuServiceProtocolGuid            ## PRODUCES
   gEdkiiSmmMemoryAttributeProtocolGuid     ## PRODUCES
@@ -126,6 +127,7 @@
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmProfileRingBuffer             ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmFeatureControlMsrLock         ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode         ## CONSUMES
+  gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionTestModeSupport         ## CONSUMES ## MS_CHANGE
 
 [Pcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuMaxLogicalProcessorNumber        ## SOMETIMES_CONSUMES
@@ -143,6 +145,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask    ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
   gEfiMdePkgTokenSpaceGuid.PcdControlFlowEnforcementPropertyMask        ## CONSUMES
+  gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionRebootInsteadOfHaltDefault   ## CONSUMES ## MS_CHANGE
 
 [FixedPcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmMpTokenCountPerChunk               ## CONSUMES
