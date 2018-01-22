@@ -21,6 +21,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/SmmCpuService.h>
 #include <Protocol/SmmMemoryAttribute.h>
 #include <Protocol/MmMp.h>
+#include <Protocol/SmmExceptionTestProtocol.h>    // MU_CHANGE - Add support for testing SMM page protections
 
 #include <Guid/AcpiS3Context.h>
 #include <Guid/MemoryAttributesTable.h>
@@ -192,6 +193,13 @@ typedef struct {
 
 #define INVALID_APIC_ID  0xFFFFFFFFFFFFFFFFULL
 
+// MU_CHANGE [BEGIN]
+typedef UINT32 SMM_CPU_ARRIVAL_EXCEPTIONS;
+#define ARRIVAL_EXCEPTION_BLOCKED       0x1
+#define ARRIVAL_EXCEPTION_DELAYED       0x2
+#define ARRIVAL_EXCEPTION_SMI_DISABLED  0x4
+// MU_CHANGE [END]
+
 //
 // Wrapper used to convert EFI_AP_PROCEDURE2 and EFI_AP_PROCEDURE.
 //
@@ -295,6 +303,8 @@ EFIAPI
 EnableCet (
   VOID
   );
+
+extern BOOLEAN  mSmmRebootOnException;    // MU_CHANGE
 
 //
 // SMM CPU Protocol function prototypes.
