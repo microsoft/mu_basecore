@@ -4,6 +4,7 @@ Agent Module to load other modules to deploy SMM Entry Vector for X86 CPU.
 Copyright (c) 2009 - 2024, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 Copyright (C) 2023 - 2024 Advanced Micro Devices, Inc. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation.
 
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -371,7 +372,6 @@ PiCpuSmmEntry (
                                         );
   ASSERT_EFI_ERROR (Status);
 
-  //
   // Expose address of CPU Hot Plug Data structure if CPU hot plug is supported.
   //
   if (FeaturePcdGet (PcdCpuHotPlugSupport)) {
