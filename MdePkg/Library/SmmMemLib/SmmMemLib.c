@@ -171,7 +171,7 @@ SmmIsBufferOutsideSmmValid (
     if (!InValidCommunicationRegion) {
       DEBUG ((
         EFI_D_ERROR,
-        "SmmIsBufferOutsideSmmValid: Not in ValidCommunicationRegion: Buffer (0x%lx) - Length (0x%lx), ",
+        "SmmIsBufferOutsideSmmValid: Not in ValidCommunicationRegion: Buffer (0x%lx) - Length (0x%lx)\n", // MSCHANGE
         Buffer,
         Length
         ));
