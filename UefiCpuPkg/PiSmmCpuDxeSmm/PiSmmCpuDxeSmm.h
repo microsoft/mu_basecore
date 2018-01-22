@@ -21,6 +21,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/SmmCpuService.h>
 #include <Protocol/SmmMemoryAttribute.h>
 #include <Protocol/MmMp.h>
+#include <Protocol/SmmExceptionTestProtocol.h>
 
 #include <Guid/AcpiS3Context.h>
 #include <Guid/MemoryAttributesTable.h>
@@ -268,6 +269,8 @@ extern EFI_MM_MP_PROTOCOL     mSmmMp;
 /// The mode of the CPU at the time an SMI occurs
 ///
 extern UINT8  mSmmSaveStateRegisterLma;
+
+extern BOOLEAN                      mSmmRebootOnException;
 
 //
 // SMM CPU Protocol function prototypes.
