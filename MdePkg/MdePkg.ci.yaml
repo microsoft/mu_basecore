@@ -105,6 +105,7 @@
             # MU_CHANGE Ignore StackCookie libs for toolchains that don't support it.
             "MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf",
             "MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf",
+            "MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf",   # MU_CHANGE - Ignore intrinsics for toolchains that don't support it.
         ],
         "DscPath": "MdePkg.dsc"
     },
