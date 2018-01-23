@@ -23,6 +23,7 @@ LIBRARY_CLASS   = UnitTestLib|DXE_DRIVER UEFI_APPLICATION
   DebugLib
   MemoryAllocationLib
   BaseMemoryLib
+  BaseLib
   UefiRuntimeServicesTableLib
   UefiLib
   UnitTestLogLib
