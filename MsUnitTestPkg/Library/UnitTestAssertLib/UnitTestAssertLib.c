@@ -74,8 +74,8 @@ BOOLEAN
 EFIAPI
 UnitTestAssertEqual (
   IN UNIT_TEST_FRAMEWORK_HANDLE Framework,
-  IN UINTN                      ValueA,
-  IN UINTN                      ValueB,
+  IN UINT64                     ValueA,
+  IN UINT64                     ValueB,
   IN CONST CHAR8                *FunctionName,
   IN UINTN                      LineNumber,
   IN CONST CHAR8                *DescriptionA,
@@ -117,8 +117,8 @@ BOOLEAN
 EFIAPI
 UnitTestAssertNotEqual (
   IN UNIT_TEST_FRAMEWORK_HANDLE Framework,
-  IN UINTN                      ValueA,
-  IN UINTN                      ValueB,
+  IN UINT64                     ValueA,
+  IN UINT64                     ValueB,
   IN CONST CHAR8                *FunctionName,
   IN UINTN                      LineNumber,
   IN CONST CHAR8                *DescriptionA,

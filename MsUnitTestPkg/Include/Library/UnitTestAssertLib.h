@@ -18,13 +18,13 @@ Copyright (c) 2016, Microsoft Corporation. All rights reserved.<BR>
   if(!UnitTestAssertFalse( Framework, (Expression), __FUNCTION__, __LINE__, #Expression )) { return UNIT_TEST_ERROR_TEST_FAILED;}
 
 #define UT_ASSERT_EQUAL(ValueA, ValueB)           \
-  if(!UnitTestAssertEqual( Framework, (UINTN)ValueA, (UINTN)ValueB, __FUNCTION__, __LINE__, #ValueA, #ValueB )) { return UNIT_TEST_ERROR_TEST_FAILED;}
+  if(!UnitTestAssertEqual( Framework, (UINT64)ValueA, (UINT64)ValueB, __FUNCTION__, __LINE__, #ValueA, #ValueB )) { return UNIT_TEST_ERROR_TEST_FAILED;}
 
 #define UT_ASSERT_MEM_EQUAL(ValueA, ValueB, Length) \
   if(!UnitTestAssertMemEqual( Framework, (UINTN)ValueA, (UINTN)ValueB, (UINTN)Length, __FUNCTION__, __LINE__, #ValueA, #ValueB )) { return UNIT_TEST_ERROR_TEST_FAILED;}
 
 #define UT_ASSERT_NOT_EQUAL(ValueA, ValueB)       \
-  if(!UnitTestAssertNotEqual( Framework, ValueA, ValueB, __FUNCTION__, __LINE__, #ValueA, #ValueB )) { return UNIT_TEST_ERROR_TEST_FAILED;}
+  if(!UnitTestAssertNotEqual( Framework, (UINT64)ValueA, (UINT64)ValueB, __FUNCTION__, __LINE__, #ValueA, #ValueB )) { return UNIT_TEST_ERROR_TEST_FAILED;}
 
 #define UT_ASSERT_NOT_EFI_ERROR(Status)           \
   if(!UnitTestAssertNotEfiError( Framework, Status, __FUNCTION__, __LINE__, #Status )) { return UNIT_TEST_ERROR_TEST_FAILED;}
@@ -70,8 +70,8 @@ BOOLEAN
 EFIAPI
 UnitTestAssertEqual (
   IN UNIT_TEST_FRAMEWORK_HANDLE Framework,
-  IN UINTN                      ValueA,
-  IN UINTN                      ValueB,
+  IN UINT64                     ValueA,
+  IN UINT64                     ValueB,
   IN CONST CHAR8                *FunctionName,
   IN UINTN                      LineNumber,
   IN CONST CHAR8                *DescriptionA,
@@ -95,8 +95,8 @@ BOOLEAN
 EFIAPI
 UnitTestAssertNotEqual (
   IN UNIT_TEST_FRAMEWORK_HANDLE Framework,
-  IN UINTN                      ValueA,
-  IN UINTN                      ValueB,
+  IN UINT64                     ValueA,
+  IN UINT64                     ValueB,
   IN CONST CHAR8                *FunctionName,
   IN UINTN                      LineNumber,
   IN CONST CHAR8                *DescriptionA,
