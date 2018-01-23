@@ -273,6 +273,7 @@ UhcControlTransfer (
   StatusReg   = UhcDev->UsbHostControllerBaseAddress + USBSTS;
 
   PktID       = INPUT_PACKET_ID;
+  DataMap = NULL;
 
   RequestMap  = NULL;
 
@@ -542,6 +543,7 @@ UhcBulkTransfer (
   PtrTD             = NULL;
   PtrFirstTD        = NULL;
   PtrPreTD          = NULL;
+  DataMap           = NULL; //vs2017
   DataLen           = 0;
 
   ShortPacketEnable = FALSE;

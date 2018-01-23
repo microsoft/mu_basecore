@@ -30,6 +30,7 @@ UfsPeimAllocMemBlock (
 
   TempPtr = NULL;
   Block   = NULL;
+  Mapping = NULL;
 
   Status = PeiServicesAllocatePool (sizeof(UFS_PEIM_MEM_BLOCK), &TempPtr);
   if (EFI_ERROR (Status)) {
