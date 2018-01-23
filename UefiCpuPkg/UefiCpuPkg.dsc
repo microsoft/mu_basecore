@@ -56,6 +56,15 @@
   PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
   PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
   TpmMeasurementLib|MdeModulePkg/Library/TpmMeasurementLibNull/TpmMeasurementLibNull.inf
+  UefiResetSystemLib|MdeModulePkg/Library/BaseUefiResetSystemLibNull/BaseUefiResetSystemLibNull.inf ##MSCHANGE
+
+##MSCHANGE Begin
+!if $(TARGET) == DEBUG
+  #if debug is enabled provide StackCookie support lib so that we can link to /GS exports
+  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
+  NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+!endif
+##MSCHANGE End
 
 [LibraryClasses.common.SEC]
   PlatformSecLib|UefiCpuPkg/Library/PlatformSecLibNull/PlatformSecLibNull.inf
@@ -101,6 +110,12 @@
 #
 
 [Components]
+## MSCHANGE BEGIN
+  #UefiCpuPkg/Feature/Capsule/MicrocodeCapsuleTxt/Microcode/Microcode.inf
+  #UefiCpuPkg/ResetVector/FixupVtf/Vtf.inf
+  #UefiCpuPkg/ResetVector/Vtf0/Vtf0.inf
+  UefiCpuPkg/ResetVector/Vtf0/Bin/ResetVector.inf
+## MSCHANGE END
   UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe.inf
   UefiCpuPkg/CpuIoPei/CpuIoPei.inf
   UefiCpuPkg/Library/SecPeiDxeTimerLibUefiCpu/SecPeiDxeTimerLibUefiCpu.inf

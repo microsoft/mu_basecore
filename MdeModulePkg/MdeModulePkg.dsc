@@ -98,6 +98,14 @@
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
   DisplayUpdateProgressLib|MdeModulePkg/Library/DisplayUpdateProgressLibGraphics/DisplayUpdateProgressLibGraphics.inf
 
+##MSCHANGE Begin
+!if $(TARGET) == DEBUG
+  #if debug is enabled provide StackCookie support lib so that we can link to /GS exports
+  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
+  NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+!endif
+##MSCHANGE End
+
 [LibraryClasses.EBC.PEIM]
   IoLib|MdePkg/Library/PeiIoLibCpuIo/PeiIoLibCpuIo.inf
 
@@ -210,6 +218,12 @@
   MdeModulePkg/Application/HelloWorld/HelloWorld.inf
   MdeModulePkg/Application/DumpDynPcd/DumpDynPcd.inf
   MdeModulePkg/Application/MemoryProfileInfo/MemoryProfileInfo.inf
+## MSCHANGE BEGIN
+  MdeModulePkg/Library/DxeHttpLib/DxeHttpLib.inf
+  MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+  MdeModulePkg/Logo/Logo.inf
+  #MdeModulePkg/Logo/LogoDxe.inf
+## MSCHANGE END
 
   MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
   MdeModulePkg/Logo/Logo.inf

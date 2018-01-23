@@ -46,7 +46,16 @@
   ##  @libraryclass  Provides interfaces on how to access TPM 2.0 hardware device.
   #
   Tpm2DeviceLib|Include/Library/Tpm2DeviceLib.h
+## MU_CHANGE BEGIN
+  ##  @libraryclass  This library contains helper functions to perform a detailed debugging of
+  ##  TPM transactions
+  #
+  Tpm2DebugLib|Include/Library/Tpm2DebugLib.h
 
+  ##  @libraryclass  Oem library hooks for additional TPM 2.0 initialization
+  #
+  OemTpm2InitLib|Include/Library/OemTpm2InitLib.h
+## MU_CHANGE END
   ##  @libraryclass  Provides interfaces for other modules to send TPM 1.2 command.
   #
   Tpm12CommandLib|Include/Library/Tpm12CommandLib.h
@@ -83,6 +92,13 @@
   ## @libraryclass  Provides interfaces to access variable root key.
   #
   VariableKeyLib|Include/Library/VariableKeyLib.h
+
+## MU_CHANGE BEGIN
+  ##  @libraryclass  This library can be used to publish TPM EventLog entries 
+  ##  for measurements that may have been made prior to driver initialization
+  #
+  Tcg2PreUefiEventLogLib|Include/Library/Tcg2PreUefiEventLogLib.h
+## MU_CHANGE END
 
 [Guids]
   ## Security package token space guid.

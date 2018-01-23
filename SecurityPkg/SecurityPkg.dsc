@@ -53,7 +53,7 @@
   TpmMeasurementLib|SecurityPkg/Library/DxeTpmMeasurementLib/DxeTpmMeasurementLib.inf
   Tpm12CommandLib|SecurityPkg/Library/Tpm12CommandLib/Tpm12CommandLib.inf
   Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
-  Tcg2PhysicalPresenceLib|SecurityPkg/Library/DxeTcg2PhysicalPresenceLib/DxeTcg2PhysicalPresenceLib.inf
+  Tcg2PhysicalPresenceLib|SecurityPkg/Library/DxeTcg2PhysicalPresenceLib/DxeTcg2PhysicalPresenceLib.inf   ## MS_CHANGE_TEMP - Workaround for build errors.
   TcgPpVendorLib|SecurityPkg/Library/TcgPpVendorLibNull/TcgPpVendorLibNull.inf
   Tcg2PpVendorLib|SecurityPkg/Library/Tcg2PpVendorLibNull/Tcg2PpVendorLibNull.inf
   Tpm2DebugLib|SecurityPkg/Library/Tpm2DebugLib/Tpm2DebugLibNull.inf             ## MS_CHANGE
@@ -71,6 +71,17 @@
   RpmcLib|SecurityPkg/Library/RpmcLibNull/RpmcLibNull.inf
   OemTpm2InitLib|SecurityPkg/Library/OemTpm2InitLibNull/OemTpm2InitLib.inf               ## MS_CHANGE_?
   SourceDebugEnabledLib|SourceLevelDebugPkg/Library/SourceDebugEnabled/SourceDebugEnabledLib.inf ## MS_CHANGE_?
+  
+##MSCHANGE Begin
+  ## NOTE: This is a temporary shim to resolve a build error while a more permanent solution is tested!
+  Tcg2PreUefiEventLogLib|SecurityPkg/Library/TempPreUefiEventLogLib/TempPreUefiEventLogLib.inf    ## MS_CHANGE_TEMP
+
+!if $(TARGET) == DEBUG
+  #if debug is enabled provide StackCookie support lib so that we can link to /GS exports
+  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
+  NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+!endif
+##MSCHANGE End
 
 [LibraryClasses.ARM]
   #
@@ -311,10 +322,11 @@
       NULL|SecurityPkg/Library/HashInstanceLibSm3/HashInstanceLibSm3.inf
       PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
   }
-  SecurityPkg/Tcg/Tcg2Config/Tcg2ConfigDxe.inf {
-    <LibraryClasses>
-      Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibTcg2/Tpm2DeviceLibTcg2.inf
-  }
+  # MS_CHANGE - We don't use this.
+  #SecurityPkg/Tcg/Tcg2Config/Tcg2ConfigDxe.inf {
+  #  <LibraryClasses>
+  #    Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibTcg2/Tpm2DeviceLibTcg2.inf
+  #}
 
   #
   # Hash2
@@ -341,7 +353,8 @@
   #
   # Opal Password solution
   #
-  SecurityPkg/Tcg/Opal/OpalPassword/OpalPasswordDxe.inf
+  ## MS_CHANGE_TEMP - Workaround for build errors.
+  ## SecurityPkg/Tcg/Opal/OpalPassword/OpalPasswordDxe.inf
   SecurityPkg/Tcg/Opal/OpalPassword/OpalPasswordPei.inf
 
   #
