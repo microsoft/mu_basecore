@@ -52,7 +52,16 @@
   ##  @libraryclass  Provides interfaces on how to access TPM 2.0 hardware device.
   #
   Tpm2DeviceLib|Include/Library/Tpm2DeviceLib.h
+## MSCHANGE BEGIN
+  ##  @libraryclass  This library contains helper functions to perform a detailed debugging of
+  ##  TPM transactions
+  #
+  Tpm2DebugLib|Include/Library/Tpm2DebugLib.h
 
+  ##  @libraryclass  Oem library hooks for additional TPM 2.0 initialization
+  #
+  OemTpm2InitLib|Include/Library/OemTpm2InitLib.h
+## MSCHANGE END
   ##  @libraryclass  Provides interfaces for other modules to send TPM 1.2 command.
   #
   Tpm12CommandLib|Include/Library/Tpm12CommandLib.h
@@ -73,7 +82,12 @@
   ##  @libraryclass  Handle TPM 2.0 physical presence request from OS.
   #
   Tcg2PhysicalPresenceLib|Include/Library/Tcg2PhysicalPresenceLib.h
-
+## MSCHANGE BEGIN
+  ##  @libraryclass  This library can be used to publish TPM EventLog entries 
+  ##  for measurements that may have been made prior to driver initialization
+  #
+  Tcg2PreUefiEventLogLib|Include/Library/Tcg2PreUefiEventLogLib.h
+## MSCHANGE END
   ## @libraryclass  Provides interfaces about TCG storage generic commond.
   #
   TcgStorageCoreLib|Include/Library/TcgStorageCoreLib.h
