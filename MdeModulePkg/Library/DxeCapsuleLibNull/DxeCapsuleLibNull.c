@@ -99,6 +99,6 @@ LocateAndProcessSystemTableCapsules (
   VOID
   )
 {
-  return EFI_UNSUPPORTED;
+  //MSCHANGE
 }
 

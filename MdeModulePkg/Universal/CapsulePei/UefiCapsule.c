@@ -924,7 +924,7 @@ GetScatterGatherHeadEntries(
   {
     if (Index != 0)
     {
-      UnicodeValueToString(TempVarName, 0, Index, 0);
+      UnicodeValueToStringS(TempVarName, (sizeof(CapsuleVarName) - ((StrLen(CapsuleVarName) + 1) * sizeof(CHAR16))), 0, Index, 0); //MSCHANGE
     }
     Size = sizeof(CapsuleDataPtr64);
     Status = PPIVariableServices->GetVariable(
