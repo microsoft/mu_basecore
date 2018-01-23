@@ -30,6 +30,7 @@ SdPeimAllocMemBlock (
 
   TempPtr = NULL;
   Block   = NULL;
+  Mapping = NULL; // MS_CHANGE for vs2017
 
   Status = PeiServicesAllocatePool (sizeof (SD_PEIM_MEM_BLOCK), &TempPtr);
   if (EFI_ERROR (Status)) {
