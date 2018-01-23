@@ -635,7 +635,7 @@ UpdateTestFromSave (
     Test->Result = MatchingTest->Result;
 
     Test->FailureType = MatchingTest->FailureType;
-    StrnCpy(&Test->FailureMessage[0], &MatchingTest->FailureMessage[0], UNIT_TEST_TESTFAILUREMSG_LENGTH);
+    StrnCpyS(&Test->FailureMessage[0], UNIT_TEST_TESTFAILUREMSG_LENGTH, &MatchingTest->FailureMessage[0], UNIT_TEST_TESTFAILUREMSG_LENGTH);
 
     // If there is a log string associated, grab that.
     // We can tell that there's a log string because the "size" will be larger than
@@ -776,7 +776,7 @@ SerializeState (
       // Save the result.
       TestSaveData->Result = UnitTest->Result;
       TestSaveData->FailureType = UnitTest->FailureType;
-      StrnCpy(&TestSaveData->FailureMessage[0], &UnitTest->FailureMessage[0], UNIT_TEST_TESTFAILUREMSG_LENGTH);
+      StrnCpyS(&TestSaveData->FailureMessage[0], UNIT_TEST_TESTFAILUREMSG_LENGTH, &UnitTest->FailureMessage[0], UNIT_TEST_TESTFAILUREMSG_LENGTH);
 
       
       // If there is a log, save the log.
