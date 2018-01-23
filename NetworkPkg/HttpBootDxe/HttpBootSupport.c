@@ -1196,6 +1196,8 @@ HttpBootCheckImageType (
   CHAR8                 *FilePath;
   CHAR8                 *FilePost;
 
+  FilePath = NULL;  //vs2017
+
   if (Uri == NULL || UriParser == NULL || ImageType == NULL) {
     return EFI_INVALID_PARAMETER;
   }

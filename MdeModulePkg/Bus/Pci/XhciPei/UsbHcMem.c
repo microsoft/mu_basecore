@@ -31,6 +31,8 @@ UsbHcAllocMemBlock (
   UINTN                 PageNumber;
   EFI_PHYSICAL_ADDRESS  TempPtr;
 
+  Mapping = NULL;  //mschange vs2017
+
   PageNumber = EFI_SIZE_TO_PAGES (sizeof (USBHC_MEM_BLOCK));
   Status = PeiServicesAllocatePages (
              EfiBootServicesData,
