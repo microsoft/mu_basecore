@@ -5445,6 +5445,7 @@ HiiConfigRoutingRouteConfig (
   Database        = NULL;
   AccessProgress  = NULL;
   EfiVarStoreInfo = NULL;
+  DevicePath      = NULL; // MS_CHANGE vs2017
   IsEfiVarstore   = FALSE;
 
   //

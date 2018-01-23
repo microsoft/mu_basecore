@@ -1296,6 +1296,8 @@ SmmInstallImageRecord (
   UINTN                      Index;
   EFI_SMM_DRIVER_ENTRY       DriverEntry;
 
+  HandleBuffer = NULL; // MS_CHANGE for vs2017
+
   Status = SmmLocateHandleBuffer (
              ByProtocol,
              &gEfiLoadedImageProtocolGuid,
@@ -1332,7 +1334,9 @@ SmmInstallImageRecord (
     SmmInsertImageRecord (&DriverEntry);
   }
 
-  FreePool (HandleBuffer);
+  if (HandleBuffer != NULL) {
+    FreePool (HandleBuffer);
+  }                                                      // MS_CHANGE
 }
 
 /**
