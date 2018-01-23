@@ -1426,6 +1426,8 @@ SmmInstallImageRecord (
   UINTN                       Index;
   EFI_SMM_DRIVER_ENTRY        DriverEntry;
 
+  HandleBuffer = NULL; //vs2017
+
   Status = SmmLocateHandleBuffer (
              ByProtocol,
              &gEfiLoadedImageProtocolGuid,
@@ -1460,8 +1462,7 @@ SmmInstallImageRecord (
     DriverEntry.NumberOfPage = EFI_SIZE_TO_PAGES((UINTN)LoadedImage->ImageSize);
     SmmInsertImageRecord (&DriverEntry);
   }
-
-  FreePool (HandleBuffer);
+  if(HandleBuffer != NULL) {  FreePool (HandleBuffer); }
 }
 
 /**
