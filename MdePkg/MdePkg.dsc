@@ -33,6 +33,9 @@
   gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress|0xE0000000
 
 [Components]
+## MSCHANGE BEGIN
+  MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
+## MSCHANGE END
   MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
   MdePkg/Library/BaseCpuLib/BaseCpuLib.inf
   MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
@@ -141,9 +144,10 @@
   MdePkg/Library/BaseS3StallLib/BaseS3StallLib.inf
   MdePkg/Library/SmmMemLib/SmmMemLib.inf
   MdePkg/Library/SmmIoLib/SmmIoLib.inf
-  ## MS_CHANGE_?
-  BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
-  BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+  ##MSCHANGE Begin
+  MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
+  MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+  ##MSCHANGE End
   MdePkg/Library/BaseRngLib/BaseRngLib.inf
   MdePkg/Library/SmmPciExpressLib/SmmPciExpressLib.inf
   MdePkg/Library/SmiHandlerProfileLibNull/SmiHandlerProfileLibNull.inf
