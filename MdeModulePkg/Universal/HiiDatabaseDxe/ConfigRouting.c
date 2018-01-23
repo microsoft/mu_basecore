@@ -5288,6 +5288,7 @@ HiiConfigRoutingRouteConfig (
   Database       = NULL;
   AccessProgress = NULL;
   EfiVarStoreInfo= NULL;
+  DevicePath     = NULL;
   IsEfiVarstore  = FALSE;
 
   //
