@@ -21,7 +21,18 @@
   Include
 
 [LibraryClasses]
- 
+
+  ## @libraryclass Provides a unit test framework
+  #
+  UnitTestLib|Include\Library\UnitTestLib.h
+
+  ## @libraryclass Provide unit test assert helpers
+  #
+  UnitTestAssertLib|Include\Library\UnitTestAssertLib.h
+
+  ## @libraryclass Provide unit test logging
+  #
+  UnitTestLogLib|Include\Library\UnitTestLogLib.h
 
 [Guids]
 
