@@ -280,6 +280,7 @@ UhcControlTransfer (
   StatusReg   = UhcDev->UsbHostControllerBaseAddress + USBSTS;
 
   PktID       = INPUT_PACKET_ID;
+  DataMap = NULL;
 
   if (Request == NULL || TransferResult == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -547,6 +548,7 @@ UhcBulkTransfer (
   PtrTD             = NULL;
   PtrFirstTD        = NULL;
   PtrPreTD          = NULL;
+  DataMap           = NULL; //vs2017
   DataLen           = 0;
 
   ShortPacketEnable = FALSE;

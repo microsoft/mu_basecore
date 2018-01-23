@@ -2743,6 +2743,10 @@ UefiMain(
   CHAR16  ShortName[100];
   ShortName[0] = L'\0';
 
+  ConversionTestSuite = NULL;
+  AdditionSubtractionTestSuite = NULL;
+  MultiplicationTestSuite = NULL; 
+
   UnicodeSPrint(&ShortName[0], sizeof(ShortName), L"%a", gEfiCallerBaseName);
   DEBUG((DEBUG_INFO, "%s v%s\n", UNIT_TEST_APP_NAME, UNIT_TEST_APP_VERSION));
 
