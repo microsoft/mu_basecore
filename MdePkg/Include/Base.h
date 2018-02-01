@@ -635,6 +635,80 @@ typedef __builtin_va_list VA_LIST;
 
   #endif
 
+// MS_CHANGE START
+// VA macros for Visual Studio
+// This comes from the VS header:
+//   Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\<version>\include\vadefs.h
+#elif defined (_MSC_VER)
+
+//
+// Microsoft compilers
+//
+typedef char *VA_LIST;
+
+#define _ADDRESSOF(v)  (&(v))
+
+  #if defined _M_ARM
+#define _VA_ALIGN  4
+#define _SLOTSIZEOF(t)   ((sizeof(t) + _VA_ALIGN - 1) & ~(_VA_ALIGN - 1))
+#define _APALIGN(t, ap)  (((VA_LIST)0 - (ap)) & (__alignof(t) - 1))
+  #elif defined _M_ARM64
+#define _VA_ALIGN  8
+#define _SLOTSIZEOF(t)   ((sizeof(t) + _VA_ALIGN - 1) & ~(_VA_ALIGN - 1))
+#define _APALIGN(t, ap)  (((VA_LIST)0 - (ap)) & (__alignof(t) - 1))
+  #else
+#define _SLOTSIZEOF(t)   (sizeof(t))
+#define _APALIGN(t, ap)  (__alignof(t))
+  #endif
+
+  #if defined _M_IX86
+
+#define _INTSIZEOF(n)  ((sizeof(n) + sizeof(int) - 1) & ~(sizeof(int) - 1))
+
+#define VA_START(ap, v)  ((void)(ap = (VA_LIST)_ADDRESSOF(v) + _INTSIZEOF(v)))
+#define VA_ARG(ap, t)    (*(t*)((ap += _INTSIZEOF(t)) - _INTSIZEOF(t)))
+#define VA_END(ap)       ((void)(ap = (VA_LIST)0))
+
+  #elif defined _M_ARM
+
+#define VA_START(ap, v)  ((void)(ap = (VA_LIST)_ADDRESSOF(v) + _SLOTSIZEOF(v)))
+#define VA_ARG(ap, t)    (*(t*)((ap += _SLOTSIZEOF(t) + _APALIGN(t,ap)) - _SLOTSIZEOF(t)))
+#define VA_END(ap)       ((void)(ap = (VA_LIST)0))
+
+  #elif defined _M_ARM64
+
+void __cdecl
+__va_start (
+  VA_LIST *,
+  ...
+  );
+
+#define VA_START(ap, v)  ((void)(__va_start(&ap, _ADDRESSOF(v), _SLOTSIZEOF(v), __alignof(v), _ADDRESSOF(v))))
+#define VA_ARG(ap, t)                                                 \
+    ((sizeof(t) > (2 * sizeof(__int64)))                                   \
+        ? **(t**)((ap += sizeof(__int64)) - sizeof(__int64))               \
+        : *(t*)((ap += _SLOTSIZEOF(t) + _APALIGN(t,ap)) - _SLOTSIZEOF(t)))
+#define VA_END(ap)  ((void)(ap = (VA_LIST)0))
+
+  #elif defined _M_X64
+
+void __cdecl
+__va_start (
+  VA_LIST *,
+  ...
+  );
+
+#define VA_START(ap, x)  ((void)(__va_start(&ap, x)))
+#define VA_ARG(ap, t)                                               \
+    ((sizeof(t) > sizeof(__int64) || (sizeof(t) & (sizeof(t) - 1)) != 0) \
+        ? **(t**)((ap += sizeof(__int64)) - sizeof(__int64))             \
+        :  *(t* )((ap += sizeof(__int64)) - sizeof(__int64)))
+#define VA_END(ap)  ((void)(ap = (VA_LIST)0))
+
+  #endif
+
+#define VA_COPY(destination, source)  ((destination) = (source))
+// MS_CHANGE END
 #else
 ///
 /// Variable used to traverse the list of arguments. This type can vary by
