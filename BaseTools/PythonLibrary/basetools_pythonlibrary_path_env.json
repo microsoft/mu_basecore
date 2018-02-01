@@ -1,0 +1,4 @@
+{
+  "scope": "global",
+  "flags": ["set_pypath"]
+}
