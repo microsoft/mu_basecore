@@ -5,6 +5,9 @@ tags/
 *.pyc
 *.bak
 
+# Ignore SelfDescribingEnvironment artifacts.
+*_extdep/
+
 # Ignore unused UDK PKGs.
 /ArmPkg/
 /ArmPlatformPkg/
