@@ -1,0 +1,5 @@
+{
+  "scope": "global",
+  "flags": ["set_build_var"],
+  "var_name": "EDK2_BASE_TOOLS_DIR"
+}
