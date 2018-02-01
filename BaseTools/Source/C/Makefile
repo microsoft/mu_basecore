@@ -33,7 +33,9 @@ APPLICATIONS = \
   TianoCompress \
   VolInfo \
   BootSectImage \
-  DevicePath
+  DevicePath \
+  GenFmpCap \
+  GenMsPayloadHeader
 
 all: libs apps install
 
