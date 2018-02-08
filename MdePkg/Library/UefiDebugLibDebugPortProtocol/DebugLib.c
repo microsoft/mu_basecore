@@ -290,7 +290,7 @@ DebugAssert (
     // MS_CHANGE BEGIN UEFI_810
     if ((PcdGet8(PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_BREAKPOINT_ENABLED) != 0) {
       CpuBreakpoint ();
-    } 
+    }
 
     if ((PcdGet8(PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_DEADLOOP_ENABLED) != 0) {
       CpuDeadLoop ();
