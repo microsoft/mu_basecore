@@ -48,7 +48,6 @@ from datetime import date
 import time
 import copy
 import csv
-import io
 import time
 import pkgutil
 import importlib
@@ -56,6 +55,10 @@ from UefiBuild import UefiBuilder
 import Tests.BaseTestLib
 from Tests.XmlArtifact import XmlOutput
 import ShellEnvironment
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 logfile = None
 loghandle = None
@@ -161,7 +164,7 @@ class PlatformBuilder(UefiBuilder):
         #To optimize add directories within the cared about directories that should be ignored. . Be sure to use / instead of \
         logging.debug("Comparing HEAD with %s" % CompareBranch)
         cmd = "git diff --name-only HEAD.." + CompareBranch
-        outp = io.BytesIO()            # git command outputs 8-bit characters rather than unicode
+        outp = StringIO()            # git command outputs 8-bit characters rather than unicode
         rc = self.RunCmd(cmd, outstream=outp)
         if(rc == 0):
             logging.debug("git diff command returned successfully!")
@@ -170,9 +173,11 @@ class PlatformBuilder(UefiBuilder):
             return -1
         if(outp.getvalue() is None):
             logging.debug("No files listed in diff")
+            outp.close()
             return 0
 
         files = outp.getvalue().split()
+        outp.close()
         for a in files:
             file = a.decode(sys.getdefaultencoding())
             for b in IncludeDir:
