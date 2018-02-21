@@ -119,6 +119,7 @@ class ConfMgmt():
             ret = RunCmd(cmd, outstream=a)
             if(ret != 0):
                 self.Logger.critical("Failed in VsWhere %d to get install dir" % ret)
+                a.close()
                 return ret
             p1 = a.getvalue().strip()
             a.close()
