@@ -178,8 +178,7 @@ class PlatformBuilder(UefiBuilder):
 
         files = outp.getvalue().split()
         outp.close()
-        for a in files:
-            file = a.decode(sys.getdefaultencoding())
+        for file in files:
             for b in IncludeDir:
                 if file.startswith(b):
                     ignoreIt = False
