@@ -241,22 +241,22 @@ class UefiBuilder(object):
         ret = 0
 
         #Create size report if build reporting is on
-        if(self.env.GetValue("BUILDREPORTING") == "TRUE"):
+        # if(self.env.GetValue("BUILDREPORTING") == "TRUE"):
           
-            cmd = "python.exe"
-            cmd += " " + os.path.join(self.env.GetValue("MS_PYTHON_TOOLS_PATH"), "FdSizeReport", "FdSizeReportGenerator.py")
-            cmd += " -l " + os.path.join(self.env.GetValue("BUILD_OUT_TEMP"), "FD_REPORT_VISUALIZATION.LOG") 
-            cmd += " -o " + self.env.GetValue("FDSIZEREPORT_FILE")
-            cmd += " -i " + self.env.GetValue("BUILDREPORT_FILE")
-            if(self.env.GetValue("FLASH_DEFINITION") is not None):
-                cmd += " -f " + self.mws.join(self.ws, self.env.GetValue("FLASH_DEFINITION"))
-            cmd += " -w " + self.ws
-            if(self.env.GetValue("PRODUCT_NAME")):
-                cmd += " --product " + self.env.GetValue("PRODUCT_NAME")
-            if(self.env.GetBuildValue("BUILDID_STRING")):
-                cmd += " --fwVersion " + self.env.GetBuildValue("BUILDID_STRING")
-            cmd += " --debug"
-            self.RunCmd(cmd)
+        #     cmd = "python.exe"
+        #     cmd += " " + os.path.join(self.env.GetValue("MS_PYTHON_TOOLS_PATH"), "FdSizeReport", "FdSizeReportGenerator.py")
+        #     cmd += " -l " + os.path.join(self.env.GetValue("BUILD_OUT_TEMP"), "FD_REPORT_VISUALIZATION.LOG")
+        #     cmd += " -o " + self.env.GetValue("FDSIZEREPORT_FILE")
+        #     cmd += " -i " + self.env.GetValue("BUILDREPORT_FILE")
+        #     if(self.env.GetValue("FLASH_DEFINITION") is not None):
+        #         cmd += " -f " + self.mws.join(self.ws, self.env.GetValue("FLASH_DEFINITION"))
+        #     cmd += " -w " + self.ws
+        #     if(self.env.GetValue("PRODUCT_NAME")):
+        #         cmd += " --product " + self.env.GetValue("PRODUCT_NAME")
+        #     if(self.env.GetBuildValue("BUILDID_STRING")):
+        #         cmd += " --fwVersion " + self.env.GetBuildValue("BUILDID_STRING")
+        #     cmd += " --debug"
+        #     self.RunCmd(cmd)
 
         #
         # Run the plaform post-build steps.
