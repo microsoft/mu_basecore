@@ -13,10 +13,10 @@ except ImportError:
 
 class ConfMgmt():
     
-    def __init__(self):
+    def __init__(self, OverrideConf=False):
         self.Logger = logging.getLogger("ConfMgmt")
         self.env = ShellEnvironment.GetBuildVars()
-        self.__PopulateConf()
+        self.__PopulateConf(OverrideConf)
 
     #
     # Compare the version of the existing conf file to the template file
@@ -46,7 +46,7 @@ class ConfMgmt():
                     
         
 
-    def __PopulateConf(self):
+    def __PopulateConf(self, OverrideConf):
         ws = self.env.GetValue("WORKSPACE")
         #Copy Conf template files to conf if not present
         target = os.path.join(ws, "Conf", "target.txt")
@@ -97,6 +97,10 @@ class ConfMgmt():
             if(not os.path.isfile(outfiles[x])):
                 #file doesn't exist.  copy template
                 self.Logger.debug("%s file not found.  Creating from Template file %s" % (outfiles[x], TemplateFilePath ))
+                shutil.copy2(TemplateFilePath, outfiles[x])
+
+            elif(OverrideConf):
+                self.Logger.debug("%s file replaced as requested" % outfiles[x])
                 shutil.copy2(TemplateFilePath, outfiles[x])
             else:
                 #Both file exists.  Do a quick version check
