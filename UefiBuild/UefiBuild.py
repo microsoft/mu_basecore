@@ -30,7 +30,7 @@ class UefiBuilder(object):
         self.ShowHelpOnly = False
         self.OutputBuildEnvBeforeBuildToFile = None
         self.Clean = False
-        self.CleanConf = True
+        self.UpdateConf = False
         if(BuildConfigFile != None):
             self.BuildConfig = BuildConfigFile
         else:
@@ -54,7 +54,7 @@ class UefiBuilder(object):
             #clean
             if(self.Clean == True):
                 logging.critical("Cleaning")
-                ret = self.CleanTree(self.CleanConf)
+                ret = self.CleanTree()
                 if(ret != 0):
                     logging.critical("Clean failed")
                     return ret
@@ -283,8 +283,9 @@ class UefiBuilder(object):
             logging.critical("Parse custom config file failed")
             return ret
 
-        ShellEnvironment.GetEnvironment().set_shell_var("PACKAGES_PATH", self.pp)
-        ShellEnvironment.GetBuildVars().SetValue("PACKAGES_PATH", self.pp, "Set in SetEnv")
+        if(self.pp is not None):
+            ShellEnvironment.GetEnvironment().set_shell_var("PACKAGES_PATH", self.pp)
+            ShellEnvironment.GetBuildVars().SetValue("PACKAGES_PATH", self.pp, "Set in SetEnv")
 
         #process platform parameters defined in platform build file
         ret = self.SetPlatformEnv()
@@ -296,7 +297,7 @@ class UefiBuilder(object):
         self.SetBasicDefaults()
 
         #Handle all the template files for workspace/conf 
-        e = ConfMgmt.ConfMgmt()
+        e = ConfMgmt.ConfMgmt(self.UpdateConf)
 
         #parse target file
         ret = self.ParseTargetFile()
@@ -503,6 +504,9 @@ class UefiBuilder(object):
         print(" --skippostbuild             - Skip postbuild process")
         print(" --FlashRom                  - Flash rom after build.  Only works with single target")
         print(" --FlashOnly                 - Flash rom.  Rom must be built previously.  Only works with single target")
+        print(" --UpdateConf                - Update Conf.  Builders Conf files will be replaced with latest template files")
+        print(" --Clean                     - Clean.  Remove all old build artifacts and intermediate files")
+        print(" --CleanOnly                 - Clean Only.  Do clean operation and don't build just exit.")
 
     #
     # Parse args looking for the help flag
@@ -537,11 +541,10 @@ class UefiBuilder(object):
                     self.FlashImage = True
                 elif(a.upper() == "--FLASHROM"):
                     self.FlashImage = True
+                elif(a.upper() == "--UPDATECONF"):
+                    self.UpdateConf = True
                 elif(a.upper() == "--CLEAN"):
                     self.Clean = True
-                elif(a.upper() == "--CLEANALL"):
-                    self.Clean = True
-                    self.CleanConf = True
                 elif(a.upper() == "--CLEANONLY"):
                     self.Clean = True
                     self.SkipBuild = True
