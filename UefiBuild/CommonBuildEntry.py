@@ -53,7 +53,7 @@ def minimum_env_init(my_workspace_path, my_project_scope):
 
     # Check the Python version against minimums.
     cur_py = "%d.%d.%d" % sys.version_info[:3]
-    soft_min_py = "3.0"
+    soft_min_py = "3.6"
     hard_min_py = "2.7"
     if version_compare(hard_min_py, cur_py) > 0:
         raise RuntimeError("Please upgrade Python! Current version is %s. Minimum is %s." % (cur_py, hard_min_py))
