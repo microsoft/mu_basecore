@@ -43,7 +43,7 @@ class SelfDescribingEnvironment(object):
     self.paths = None
     self.extdeps = None
 
-  def gather_env_files(self, ext_strings, base_path):
+  def _gather_env_files(self, ext_strings, base_path):
     # Make sure that the search extension matches easily.
     search_files = tuple(ext_string.lower() for ext_string in ext_strings)
 
@@ -76,27 +76,65 @@ class SelfDescribingEnvironment(object):
     #
     # First, we need to get all of the files that describe our environment.
     #
-    env_files = self.gather_env_files(('path_env', 'ext_dep'), self.workspace)
+    env_files = self._gather_env_files(('path_env', 'ext_dep'), self.workspace)
 
     #
     # Now that the files have been found, load them, sort them, and filter them
     # so they can be applied to the environment.
     #
+    def _sort_and_filter_descriptors(class_type, file_list, scopes):
+      all_descriptors = tuple(class_type(desc_file).descriptor_contents for desc_file in file_list)
+
+      known_ids = {}
+      active_overrides = {}
+      final_list = []
+
+      for scope in scopes:
+        for descriptor in all_descriptors:
+          # If this descriptor isn't in the current scope, we can ignore it for now.
+          if descriptor['scope'].lower() != scope.lower():
+            continue
+
+          cur_file = descriptor['descriptor_file']
+
+          # If this descriptor has an ID, we need to check for overrides and collisions.
+          if 'id' in descriptor:
+            cur_id = descriptor['id'].lower()
+
+            # First, check for overrides. There's no reason to process this file if it's being overridden.
+            if cur_id in active_overrides:
+              logging.debug("Descriptor '%s' is being overridden by descriptor '%s' based on ID '%s'." % (cur_file, active_overrides[cur_id], cur_id))
+              continue
+
+            # Next, check for ID collisions.
+            if cur_id in known_ids:
+              raise RuntimeError(
+                "Descriptor '%s' shares the same ID '%s' with descriptor '%s'." % (cur_file, cur_id, known_ids[cur_id])
+                )
+
+            # Finally, we can add this file to the known IDs list.
+            known_ids[cur_id] = cur_file
+
+          # If we're still processing, we can add this descriptor to the output.
+          logging.debug("Adding descriptor '%s' to the environment with scope '%s'." % (cur_file, scope))
+          final_list.append(descriptor)
+
+          # Finally, check to see whether this descriptor overrides anything else.
+          if 'override_id' in descriptor:
+            cur_override_id = descriptor['override_id'].lower()
+            # If we're attempting to override someting that's already been processed,
+            # we should spit out a warning of sort.
+            if cur_override_id in known_ids:
+              logging.warning("Descriptor '%s' is trying to override iID '%s', but it's already been processed." % (cur_file, cur_override_id))
+            active_overrides[cur_override_id] = descriptor['descriptor_file']
+
+      return tuple(final_list)
+
     if 'path_env' in env_files:
-      all_path_descriptors = tuple(EDF.PathEnvDescriptor(env_file).descriptor_contents for env_file in env_files['path_env'])
-      
-      # Now, filter and sort based on the available scopes.
-      self.paths = ()
-      for scope in self.scopes:
-        self.paths = self.paths + tuple(pd for pd in all_path_descriptors if pd['scope'].lower() == scope.lower())
+      self.paths = _sort_and_filter_descriptors(EDF.PathEnvDescriptor, env_files['path_env'], self.scopes)
 
     if 'ext_dep' in env_files:
-      all_extdep_descriptors = tuple(EDF.ExternDepDescriptor(env_file).descriptor_contents for env_file in env_files['ext_dep'])
-
-      # Now, filter and sort based on the available scopes.
-      self.extdeps = ()
-      for scope in self.scopes:
-        self.extdeps = self.extdeps + tuple(edd for edd in all_extdep_descriptors if edd['scope'].lower() == scope.lower())
+      self.extdeps = _sort_and_filter_descriptors(EDF.ExternDepDescriptor, env_files['ext_dep'], self.scopes)
 
     return self
 
