@@ -13,6 +13,36 @@ from Uefi.EdkII.Parsers.TargetTxtParser import *
 from Uefi.EdkII.Parsers.DscParser import *
 from UtilityFunctions import RunCmd
 
+from yapsy.PluginManager import PluginManagerSingleton
+import yapsy.UefiBuildPluginTypes as UefiBuildPluginTypes
+
+class HelperFunctions(object):
+    def __init__(self):
+        self.RegisteredFunctions = {}
+
+    #
+    # Function to logging.debug all registered functions and their source path
+    #
+    def DebugLogRegisteredFunctions(self):
+        logging.debug("Logging all Registered Helper Functions:")
+        for name, file in self.RegisteredFunctions.items():
+            logging.debug("  Function %s registered from file %s", name, file)
+        logging.debug("Finished logging %d functions", len(self.RegisteredFunctions))
+
+    #
+    # Plugins that want to register a helper function should call
+    # this routine for each function
+    #
+    # @param name[in]: name of function
+    # @param function[in] function being registered
+    # @param filepath[in] filepath registering function.  used for tracking and debug purposes
+    #
+    def Register(self, name, function, filepath):
+        if(name in self.RegisteredFunctions.keys()):
+            raise Exception("Function %s already registered from plugin file %s.  Can't register again from %s" % (name, self.RegisteredFunctions[name], filepath))
+        setattr(self, name, function)
+        self.RegisteredFunctions[name] = filepath        
+
 
 class UefiBuilder(object):
 
@@ -31,11 +61,22 @@ class UefiBuilder(object):
         self.OutputBuildEnvBeforeBuildToFile = None
         self.Clean = False
         self.UpdateConf = False
+        self.PluginPaths = self.ws
+        self.Helper = HelperFunctions()
         if(BuildConfigFile != None):
             self.BuildConfig = BuildConfigFile
         else:
             self.BuildConfig = os.path.join(self.ws, "BuildConfig.conf")
         self.RunCmd = RunCmd
+        #
+        # Map Plugin Filters based on type to category.  This way the Build system can ensure its using the correct plugin types in the
+        # correct places
+        #
+        PluginManagerSingleton.get().setCategoriesFilter(
+            {
+            "UefiBuild":UefiBuildPluginTypes.IUefiBuildPlugin,
+            "Helper": UefiBuildPluginTypes.IUefiHelperPlugin
+            })
         
         
 
@@ -58,6 +99,20 @@ class UefiBuilder(object):
                 if(ret != 0):
                     logging.critical("Clean failed")
                     return ret
+
+            #load plugins
+            PluginManagerSingleton.get().setPluginPlaces(self.PluginPaths.split(";"))
+            # Load all plugins
+            PluginManagerSingleton.get().collectPlugins()
+
+            #
+            #Load Helpers
+            #
+            for pluginInfo in PluginManagerSingleton.get().getPluginsOfCategory("Helper"):
+                logging.debug("Helper Plugin Register: %s" % pluginInfo.name)
+                pluginInfo.plugin_object.RegisterHelpers(self.Helper)
+
+            self.Helper.DebugLogRegisteredFunctions()
             
             #prebuild
             if(self.SkipPreBuild == True):
@@ -92,9 +147,6 @@ class UefiBuilder(object):
                 if(ret != 0):
                     logging.critical("Build failed")
                     return ret
-                
-                #Copy PDBs over to flat dir for symbol server transfer
-                self.FlattenPdb()
 
             #postbuild
             if(self.SkipPostBuild == True):
@@ -119,43 +171,14 @@ class UefiBuilder(object):
             return -1
 
         return 0
-
-    def FlattenPdb(self):
-        #Debug/Release
-        BuildType = self.env.GetValue("TARGET")
-        #Path to Build output
-        BuildPath = self.env.GetValue(BuildType + "_BUILD_OUTPUT_BASE")
-        #Path to where the PDBs will be stored
-        PDBpath = os.path.join(BuildPath, "PDB")
-
-        IgnorePdbs = ['vc1']  #make lower case
-
-        try:
-            if not os.path.isdir(PDBpath):
-                os.mkdir(PDBpath)
-        except:
-            logging.critical("Error making PDB directory")
-
-        logging.critical("Copying PDBs to flat directory")
-        for dirpath, dirnames, filenames in os.walk(BuildPath):
-            if PDBpath in dirpath:
-                continue
-            for filename in filenames:
-                fnl = filename.strip().lower()
-                if(fnl.endswith(".pdb")):
-                    if(any(e for e in IgnorePdbs if e in fnl)):
-                        logging.debug("Flatten PDB - Ignore Pdb: %s" % filename)
-                    else:
-                        shutil.copy(os.path.join(dirpath, filename), os.path.join(PDBpath, filename))
                     
 
     def CleanTree(self, RemoveConfTemplateFilesToo=False):
         ret = 0
         #loop thru each build target set.  
-        BuildType = self.env.GetValue("TARGET")
-        logging.critical("Cleaning All Output for %s Build" % BuildType)
+        logging.critical("Cleaning All Output for Build")
 
-        d = self.env.GetValue(BuildType + "_BUILD_OUTPUT_BASE")
+        d = self.env.GetValue("BUILD_OUTPUT_BASE")
         if(os.path.isdir(d)):
             logging.debug("Removing [%s]", d)
             # if the folder is opened in Explorer do not fail the entire Rebuild
@@ -229,39 +252,58 @@ class UefiBuilder(object):
 
     def PreBuild(self):
         logging.critical("Running Pre Build")
+        #
+        # Run the plaform pre-build steps.
+        #
+        ret = self.PlatformPreBuild()
 
-        return self.PlatformPreBuild()
+        if(ret != 0):
+            logging.critical("PlatformPreBuild failed %d" % ret)
+            return ret
+        #
+        # run all loaded UefiBuild Plugins
+        #
+        for pluginInfo in PluginManagerSingleton.get().getPluginsOfCategory("UefiBuild"):
+            
+            rc = pluginInfo.plugin_object.do_pre_build(self)
+            if(rc != 0):
+                if(rc is None):
+                    logging.error("Plugin Failed: %s returned NoneType" % pluginInfo.name)
+                    ret = -1
+                else:
+                    logging.error("Plugin Failed: %s returned %d" % (pluginInfo.name, rc))
+                    ret = rc
+            else:
+                logging.debug("Plugin Success: %s" % pluginInfo.name)
+        return ret
 
         
 
     def PostBuild(self):
         logging.critical("Running Post Build")
-
-        # Default to a successful return value.
-        ret = 0
-
-        #Create size report if build reporting is on
-        # if(self.env.GetValue("BUILDREPORTING") == "TRUE"):
-          
-        #     cmd = "python.exe"
-        #     cmd += " " + os.path.join(self.env.GetValue("MS_PYTHON_TOOLS_PATH"), "FdSizeReport", "FdSizeReportGenerator.py")
-        #     cmd += " -l " + os.path.join(self.env.GetValue("BUILD_OUT_TEMP"), "FD_REPORT_VISUALIZATION.LOG")
-        #     cmd += " -o " + self.env.GetValue("FDSIZEREPORT_FILE")
-        #     cmd += " -i " + self.env.GetValue("BUILDREPORT_FILE")
-        #     if(self.env.GetValue("FLASH_DEFINITION") is not None):
-        #         cmd += " -f " + self.mws.join(self.ws, self.env.GetValue("FLASH_DEFINITION"))
-        #     cmd += " -w " + self.ws
-        #     if(self.env.GetValue("PRODUCT_NAME")):
-        #         cmd += " --product " + self.env.GetValue("PRODUCT_NAME")
-        #     if(self.env.GetBuildValue("BUILDID_STRING")):
-        #         cmd += " --fwVersion " + self.env.GetBuildValue("BUILDID_STRING")
-        #     cmd += " --debug"
-        #     self.RunCmd(cmd)
-
         #
         # Run the plaform post-build steps.
         #
         ret = self.PlatformPostBuild()
+
+        if(ret != 0):
+            logging.critical("PlatformPostBuild failed %d" % ret)
+            return ret
+
+        #
+        # run all loaded UefiBuild Plugins
+        #
+        for pluginInfo in PluginManagerSingleton.get().getPluginsOfCategory("UefiBuild"):
+            rc = pluginInfo.plugin_object.do_post_build(self)
+            if(rc != 0):
+                if(rc is None):
+                    logging.error("Plugin Failed: %s returned NoneType" % pluginInfo.name)
+                    ret = -1
+                else:
+                    logging.error("Plugin Failed: %s returned %d" % (pluginInfo.name, rc))
+                    ret = rc
+            else:
+                logging.debug("Plugin Success: %s" % pluginInfo.name)
 
         return ret
     
@@ -326,7 +368,7 @@ class UefiBuilder(object):
         self.env.SetValue("BUILD_OUT_TEMP", os.path.join(self.ws, self.env.GetValue("OUTPUT_DIRECTORY")), "Computed in SetEnv")
         
         target = self.env.GetValue("TARGET")
-        self.env.SetValue(target.strip() + "_BUILD_OUTPUT_BASE", os.path.join(self.env.GetValue("BUILD_OUT_TEMP"), target + "_" + self.env.GetValue("TOOL_CHAIN_TAG")), "Computed in SetEnv")
+        self.env.SetValue("BUILD_OUTPUT_BASE", os.path.join(self.env.GetValue("BUILD_OUT_TEMP"), target + "_" + self.env.GetValue("TOOL_CHAIN_TAG")), "Computed in SetEnv")
 
         #We have our build target now.  Give platform build one more chance for target specific settings.
         ret = self.SetPlatformEnvAfterTarget()
@@ -335,9 +377,7 @@ class UefiBuilder(object):
             return ret
 
         #set the build report file
-        self.env.SetValue("BUILDREPORT_FILE", os.path.join(self.env.GetValue(target + "_BUILD_OUTPUT_BASE"), "BUILD_REPORT.TXT"), True)
-        #set the FdReportVisualization file
-        self.env.SetValue("FDSIZEREPORT_FILE", os.path.join(self.env.GetValue(target + "_BUILD_OUTPUT_BASE"), "FD_REPORT.HTML"), True)
+        self.env.SetValue("BUILDREPORT_FILE", os.path.join(self.env.GetValue("BUILD_OUTPUT_BASE"), "BUILD_REPORT.TXT"), True)
         
         #set environment variables for the build process
         os.environ["EFI_SOURCE"] = self.ws

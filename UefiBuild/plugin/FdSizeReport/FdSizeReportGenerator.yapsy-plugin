@@ -1,0 +1,9 @@
+[Core]
+Name = Fd Size Report Generator
+Module = FdSizeReportGenerator
+
+[Documentation]
+Author = Sean Brogan - Microsoft
+Version = 1.0
+Website = Put Github here
+Description = Fd Size Report Generator Build Plugin 
