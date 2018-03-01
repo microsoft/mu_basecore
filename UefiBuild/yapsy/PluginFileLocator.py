@@ -423,7 +423,7 @@ class PluginFileLocator(IPluginLocator):
 						# print("... with analyzer %s" % analyzer.name)
 						# eliminate the obvious non plugin files
 						if not analyzer.isValidPlugin(filename):
-							log.debug("%s is not a valid plugin for strategy %s" % (filename, analyzer.name))
+							#too much info  log.debug("%s is not a valid plugin for strategy %s" % (filename, analyzer.name))
 							continue
 						candidate_infofile = os.path.join(dirpath, filename)
 						if candidate_infofile in _discovered:

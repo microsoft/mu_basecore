@@ -27,7 +27,8 @@ class FlattenPdbs(UefiBuildPluginTypes.IUefiBuildPlugin):
                 fnl = filename.strip().lower()
                 if(fnl.endswith(".pdb")):
                     if(any(e for e in IgnorePdbs if e in fnl)):
-                        logging.debug("Flatten PDB - Ignore Pdb: %s" % filename)
+                        # too much info. logging.debug("Flatten PDB - Ignore Pdb: %s" % filename)
+                        pass
                     else:
                         shutil.copy(os.path.join(dirpath, filename), os.path.join(PDBpath, filename))
         return 0
