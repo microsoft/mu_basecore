@@ -1,0 +1,8 @@
+{
+  "scope": "corebuild",
+  "type": "nuget",
+  "name": "iasl",
+  "source": "https://windowspartners.pkgs.visualstudio.com/_packaging/iasl/nuget/v3/index.json",
+  "version": "20180209",
+  "flags": ["set_path"]
+}

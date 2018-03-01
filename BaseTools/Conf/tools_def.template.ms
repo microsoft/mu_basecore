@@ -29,8 +29,9 @@
 # 1.14 - Created VSLATESTx86 for supporting latest VS version
 # 1.15 - Added ARM,ARM64 proper for prerelease of VS2017 tools.
 # 1.16 - Changed /DEBUG to FULL mode for VS2017+
+# 1.17 - Asl compilers should be on the path
 
-#!VERSION=1.16
+#!VERSION=1.17
 
 IDENTIFIER = Default TOOL_CHAIN_CONF
 
@@ -67,7 +68,7 @@ DEFINE WINSDKx86_BIN    = c:\Program Files (x86)\Microsoft SDKs\Windows\DEF(WINS
 #current ASL doesn't compile with ms asl.exe
 #C:\Program Files (x86)\Windows Kits\8.1\Tools\x64\ACPIVerify
 
-DEFINE WIN_IASL_BIN            = ENV(IASL_PREFIX)\iasl.exe
+DEFINE WIN_IASL_BIN            = iasl.exe
 DEFINE WIN_ASL_BIN             = asl.exe
 
 DEFINE IASL_FLAGS              =

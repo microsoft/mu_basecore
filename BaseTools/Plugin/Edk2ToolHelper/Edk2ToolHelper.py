@@ -2,6 +2,7 @@ import yapsy.UefiBuildPluginTypes as UefiBuildPluginTypes
 import logging
 import os
 from UtilityFunctions import RunCmd
+from UtilityFunctions import RunPythonScript
 from UtilityFunctions import CatalogSignWithSignTool
 import shutil
 import datetime
@@ -15,11 +16,6 @@ class Edk2ToolHelper(UefiBuildPluginTypes.IUefiHelperPlugin):
         obj.Register("PackageWindowsCapsuleFiles", Edk2ToolHelper.PackageWindowsCapsuleFiles, fp)
         obj.Register("PackageFmpCapsuleHeader", Edk2ToolHelper.PackageFmpCapsuleHeader, fp)
         obj.Register("PackageCapsuleHeader", Edk2ToolHelper.PackageCapsuleHeader, fp)
-
-    @staticmethod
-    def __GetEdk2BaseToolsPythonScriptsPath():
-        fp = os.path.abspath(__file__)
-        return os.path.normpath(os.path.join(os.path.dirname(fp), "..", "..", "Scripts"))
 
 
     ##
@@ -70,8 +66,7 @@ class Edk2ToolHelper(UefiBuildPluginTypes.IUefiHelperPlugin):
         TempOutDir = os.path.join(os.path.dirname(os.path.abspath(OutputBin)), "_Temp_FmpImageAuth_" + str(datetime.datetime.now().time()).replace(":", "_"))
         logging.debug("Temp Output dir for FmpImageAuth: %s" % TempOutDir)
         os.mkdir(TempOutDir)
-        toolpath = os.path.join(Edk2ToolHelper.__GetEdk2BaseToolsPythonScriptsPath(), "GenFmpImageAuth.py")
-        cmd = "python.exe " + toolpath
+        cmd =  "GenFmpImageAuth.py"
         cmd = cmd + " -o " + OutputBin
         cmd = cmd + " -p " + InputBin + " -m 1"
         cmd = cmd + " --debug"
@@ -91,9 +86,9 @@ class Edk2ToolHelper(UefiBuildPluginTypes.IUefiHelperPlugin):
             cmd = cmd + " --pfxfile " + DevPfxFilePath
             if( DevPfxPassword is not None):
                 cmd += " --pfxpass " + DevPfxPassword
-            ret = RunCmd(cmd, workingdir=TempOutDir)
+            ret = RunPythonScript(cmd, workingdir=TempOutDir)
             #delete the temp dir
-            #shutil.rmtree(TempOutDir, ignore_errors=True)
+            shutil.rmtree(TempOutDir, ignore_errors=True)
         else:
             #production
             logging.debug("FmpImageAuth is Production signed")
@@ -101,7 +96,7 @@ class Edk2ToolHelper(UefiBuildPluginTypes.IUefiHelperPlugin):
             if(DetachedSignatureFile is None):
                 logging.debug("FmpImageAuth Step1: Make ToBeSigned file for production") 
                 cmd = cmd + " --production"  
-                ret = RunCmd(cmd, workingdir=TempOutDir)
+                ret = RunPythonScript(cmd, workingdir=TempOutDir)
                 if(ret != 0):
                     raise Exception("GenFmpImageAuth Failed production signing: step 1.  Errorcode %d" % ret)
                 #now we have a file to sign at 
@@ -113,7 +108,7 @@ class Edk2ToolHelper(UefiBuildPluginTypes.IUefiHelperPlugin):
             else:
                 logging.debug("FmpImageAuth Step3: Final Packaging of production signed")
                 cmd = cmd + " --production -s " + DetachedSignatureFile
-                ret = RunCmd(cmd, workingdir=TempOutDir)
+                ret = RunPythonScript(cmd, workingdir=TempOutDir)
                 #delete the temp dir
                 shutil.rmtree(TempOutDir, ignore_errors=True)
 
@@ -153,14 +148,13 @@ class Edk2ToolHelper(UefiBuildPluginTypes.IUefiHelperPlugin):
         CatFileName = os.path.realpath(os.path.join(OutputFolder, ProductName + ".cat"))
 
         #Make INF
-        toolpath = os.path.join(Edk2ToolHelper.__GetEdk2BaseToolsPythonScriptsPath(), "CreateWindowsInf.py")
-        cmd = "python.exe " + toolpath
+        cmd = "CreateWindowsInf.py"
         cmd = cmd + " " + ProductName + " " + CapsuleVersion_DotString + " " + ProductFmpGuid
         cmd = cmd + " " + CapsuleFileName + " " + CapsuleVersion_HexString + " " + ProductFwProvider + " " + ProductFwMfgName
         cmd = cmd + " " + ProductFwDesc
         if (Rollback):
           cmd = cmd + " rollback"
-        ret = RunCmd(cmd, workingdir=OutputFolder)
+        ret = RunPythonScript(cmd, workingdir=OutputFolder)
         if(ret != 0):
             raise Exception("CreateWindowsInf Failed with errorcode %d" % ret)
 
