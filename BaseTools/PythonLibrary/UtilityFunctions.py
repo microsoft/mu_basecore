@@ -113,6 +113,39 @@ def RunCmd(cmd, capture=True, workingdir=None, outfile=None, outstream=None):
     return c.returncode
 
 ####
+# Run a python script and print the output to the log file
+# This is the public function that should be used to execute python scripts from the shell in python environment. 
+# The python script will be located using the path as if it was an executable.  
+#
+# @param cmd - cmd string to run including parameters
+# @param capture - boolean to determine if caller wants the output captured in any format.
+# @param workingdir - path to set to the working directory before running the command.
+# @param outfile - capture output to file of given path.
+# @param outstream - capture output to a stream.  
+#
+# @return returncode of called cmd
+####
+def RunPythonScript(cmd, capture=True, workingdir=None, outfile=None, outstream=None):
+    #locate python file on path
+    logging.debug("RunPythonScript: %s" % cmd)
+    pythonfile = os.path.normpath(cmd.split()[0])
+    if(os.path.isabs(pythonfile)):
+        logging.debug("Python Script was given as absolute path: %s" % pythonfile)
+    elif(os.path.isfile(os.path.join(os.getcwd(),pythonfile))):
+        pythonfile = os.path.join(os.getcwd(), pythonfile)
+        logging.debug("Python Script was given as relative path: %s" % pythonfile)
+    else:
+        #loop thru path environment variable
+        for a in os.getenv("PATH").split(";"):
+            a = os.path.normpath(a)
+            if os.path.isfile(os.path.join(a, pythonfile)):
+                pythonfile = os.path.join(a, pythonfile)
+                logging.debug("Python Script was found on the path: %s" % pythonfile)
+                break
+    cmd = "python.exe " + pythonfile + " " + ' '.join(cmd.split()[1:])
+    return RunCmd(cmd, capture=capture, workingdir=workingdir, outfile=outfile, outstream=outstream)
+            
+####
 # Locally Sign input file using Windows SDK signtool.  This will use a local Pfx file.  
 # WARNING!!! : This should not be used for production signing as that process should follow stronger security practices (HSM / smart cards / etc)
 # 

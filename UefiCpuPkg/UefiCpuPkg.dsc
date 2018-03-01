@@ -120,7 +120,6 @@
   #UefiCpuPkg/ResetVector/FixupVtf/Vtf.inf
   #UefiCpuPkg/ResetVector/Vtf0/Vtf0.inf
   UefiCpuPkg/ResetVector/Vtf0/Bin/ResetVector.inf
-  UefiCpuPkg/Feature/Capsule/Library/MicrocodeFlashAccessLibNull/MicrocodeFlashAccessLibNull.inf
   UefiCpuPkg/Library/CpuCommonFeaturesLib/CpuCommonFeaturesLib.inf
 ## MSCHANGE END
   UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe.inf
