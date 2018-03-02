@@ -149,6 +149,14 @@
   MdePkg/Library/SmmPciExpressLib/SmmPciExpressLib.inf
   MdePkg/Library/SmiHandlerProfileLibNull/SmiHandlerProfileLibNull.inf
 
+
+
+# MS_CHANGE Begin
+[Components.IA32]
+  # For VS2017 support link the VsIntrinsicLib into all 32 bit modules
+  MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf
+# MS_CHANGE End
+
 [Components.EBC]
   MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
   MdePkg/Library/UefiRuntimeLib/UefiRuntimeLib.inf
