@@ -16,9 +16,6 @@ BuildConfig.conf
 /Common/MU_TIANO
 /Silicon
 
-# Ignore SelfDescribingEnvironment artifacts.
-*_extdep/
-
 # Ignore unused UDK PKGs.
 /ArmPkg/
 /ArmPlatformPkg/
