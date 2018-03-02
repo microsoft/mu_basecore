@@ -4,6 +4,7 @@ tags/
 .DS_Store
 *.pyc
 *.bak
+BuildConfig.conf
 
 # Ignore SelfDescribingEnvironment artifacts.
 *_extdep/

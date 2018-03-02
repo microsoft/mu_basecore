@@ -177,6 +177,14 @@
   # MdePkg/UnitTests/IntSafeLib/IntSafeLibUnitTests.inf
   # MS_CHANGE End
 
+
+
+# MS_CHANGE Begin
+[Components.IA32]
+  # For VS2017 support link the VsIntrinsicLib into all 32 bit modules
+  MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf
+# MS_CHANGE End
+
 [Components.IPF]
   MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
   MdePkg/Library/BasePalLibNull/BasePalLibNull.inf
