@@ -28,6 +28,7 @@
 ##
 import os
 import json
+import sys
 
 
 class PathEnv(object):
@@ -78,6 +79,28 @@ class DescriptorFile(object):
         if name_required in self.descriptor_contents['flags']:
           if 'var_name' not in self.descriptor_contents:
             raise ValueError("File '%s' has a flag requesting a var, but does not provide 'var_name'!" % self.file_path)
+    
+    # clean up each string item for more reliable processing
+    for (k,v) in self.descriptor_contents.items():
+      if(self.is_string(v)):
+        self.descriptor_contents[k] = self.sanitize_string(v)
+    
+  #
+  # Check if input is a string type
+  #
+  def is_string(self, s):
+    # if we use Python 3
+    if (sys.version_info[0] >= 3):
+        return isinstance(s, str)
+    # we use Python 2
+    return isinstance(s, basestring)
+
+  #
+  # Clean up a string "value" in the descriptor file.
+  #
+  def sanitize_string(self, s):
+    # Perform any actions needed to clean the string.
+    return s.strip()
 
 
 class PathEnvDescriptor(DescriptorFile):
@@ -104,3 +127,20 @@ class ExternDepDescriptor(DescriptorFile):
     for required_field in ('scope', 'type', 'name', 'source', 'version'):
       if required_field not in self.descriptor_contents:
         raise ValueError("File '%s' missing required field '%s'!" % (self.file_path, required_field))
+
+class PluginDescriptor(DescriptorFile):
+  def __init__(self, file_path):
+    super(PluginDescriptor, self).__init__(file_path)
+
+    #
+    # Validate file contents.
+    #
+    # Make sure that the required fields are present.
+    for required_field in ('scope', 'name', 'module'):
+      if required_field not in self.descriptor_contents:
+        raise ValueError("File '%s' missing required field '%s'!" % (self.file_path, required_field))
+      
+    # Make sure the module item doesn't have .py on the end
+    if(self.descriptor_contents["module"].lower().endswith(".py")):
+        self.descriptor_contents["module"] = self.descriptor_contents["module"][:-3]  #remove last 3 chars
+

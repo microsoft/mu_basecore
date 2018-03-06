@@ -54,7 +54,7 @@ import importlib
 from UefiBuild import UefiBuilder
 import Tests.BaseTestLib
 from Tests.XmlArtifact import XmlOutput
-import ShellEnvironment
+import SelfDescribingEnvironment
 try:
     from StringIO import StringIO
 except ImportError:
@@ -68,8 +68,8 @@ loghandle = None
 #
 class PlatformBuilder(UefiBuilder):
 
-    def __init__(self, workspace, packagespath, args, ignore = None, buildvars = None):
-        UefiBuilder.__init__(self, workspace, packagespath, args)
+    def __init__(self, workspace, packagespath, pluginlist, args, ignore = None, buildvars = None):
+        UefiBuilder.__init__(self, workspace, packagespath, pluginlist, args)
         self.ignorelist = ignore
         if buildvars:
             self.env = buildvars
@@ -291,7 +291,7 @@ def SetLogFile(filename, loghandle = None):
 #
 # main script function.  Setup logging and init the platform builder and go
 #
-def main(my_workspace_path):
+def main(my_workspace_path, my_project_scope):
     global ws, pp, Test_List, logfile, loghandle, IgnoreList
 
     ws = my_workspace_path
@@ -325,6 +325,11 @@ def main(my_workspace_path):
     summary_log = Summary()
     #Generate consumable XML object
     xml_artifact = XmlOutput()
+
+    # The SDE should have already been initialized.
+    # This call *should* only return the handles to the
+    # pre-initialized environment objects.
+    (build_env, shell_env) = SelfDescribingEnvironment.BootstrapEnvironment(my_workspace_path, my_project_scope)
 
     #Setup the main console logger differently if VSMODE is on.  
     # This allows more debug messages out
@@ -407,7 +412,7 @@ def main(my_workspace_path):
         logfile,loghandle = SetLogFile("BUILDLOG_" + File_Suffix + ".txt", loghandle)
 
         #Build platform
-        PB = PlatformBuilder(ws, pp, sys.argv, IgnoreList)
+        PB = PlatformBuilder(ws, pp, build_env.plugins, sys.argv, IgnoreList)
         starttime = time.time()
         retcode = PB.Go()
         if not "--skipbuild" in str(sys.argv).lower():
@@ -468,10 +473,10 @@ def main(my_workspace_path):
             temp_argv.append("ACTIVE_PLATFORM="+File)
 
             # Override the global build vars so each is local to the builder.
-            local_build_vars = copy.copy(ShellEnvironment.GetBuildVars())
+            local_build_vars = copy.copy(shell_env.build_var_dict)
 
             #Build Platform
-            PB = PlatformBuilder(ws, pp, temp_argv, IgnoreList, local_build_vars)
+            PB = PlatformBuilder(ws, pp, build_env.plugins, temp_argv, IgnoreList, local_build_vars)
             starttime = time.time()
             retcode = PB.Go()
             if not "--skipbuild" in str(sys.argv).lower():

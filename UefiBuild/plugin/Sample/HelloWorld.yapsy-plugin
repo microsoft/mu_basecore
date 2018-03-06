@@ -1,9 +1,0 @@
-[Core]
-Name = Hello World Uefi Build Plugin
-Module = HelloWorld
-
-[Documentation]
-Author = Sean Brogan
-Version = 1.0
-Website = ""
-Description = Sample Uefi build plug in
