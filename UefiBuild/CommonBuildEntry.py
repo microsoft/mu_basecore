@@ -164,7 +164,7 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
     #
     # Now we can actually kick off a build.
     #
-    PB = PlatformBuilder(my_workspace_path, my_module_pkg_paths, sys.argv)
+    PB = PlatformBuilder(my_workspace_path, my_module_pkg_paths, build_env.plugins, sys.argv)
     retcode = PB.Go()
 
     if(retcode != 0):

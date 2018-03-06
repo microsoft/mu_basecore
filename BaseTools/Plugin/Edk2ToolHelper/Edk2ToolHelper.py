@@ -1,4 +1,4 @@
-import yapsy.UefiBuildPluginTypes as UefiBuildPluginTypes
+import PluginManager
 import logging
 import os
 from UtilityFunctions import RunCmd
@@ -7,7 +7,7 @@ from UtilityFunctions import CatalogSignWithSignTool
 import shutil
 import datetime
 
-class Edk2ToolHelper(UefiBuildPluginTypes.IUefiHelperPlugin):
+class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
 
     def RegisterHelpers(self, obj):
         fp = os.path.abspath(__file__)
