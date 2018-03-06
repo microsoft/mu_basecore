@@ -1,7 +1,7 @@
-import yapsy.UefiBuildPluginTypes as UefiBuildPluginTypes
+import PluginManager
 import logging
 
-class HelloWorld(UefiBuildPluginTypes.IUefiBuildPlugin):
+class HelloWorld(PluginManager.IUefiBuildPlugin):
 
     def do_post_build(self, thebuilder):
         t = "PLUGIN HelloWorld: Hello World! - Post Build Plugin Hook"

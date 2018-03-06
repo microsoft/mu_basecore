@@ -1,9 +1,0 @@
-[Core]
-Name = Edk2Tool
-Module = Edk2ToolHelper
-
-[Documentation]
-Author = Sean Brogan
-Version = 1.0
-Website = ""
-Description = Provides python helper functions for the UEFI build environment to call edk2 base tools
