@@ -1,4 +1,4 @@
-import yapsy.UefiBuildPluginTypes as UefiBuildPluginTypes
+import PluginManager
 import logging
 import os
 from UtilityFunctions import RunCmd
