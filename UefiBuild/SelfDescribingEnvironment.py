@@ -42,6 +42,7 @@ class SelfDescribingEnvironment(object):
 
     self.paths = None
     self.extdeps = None
+    self.plugins = None
 
   def _gather_env_files(self, ext_strings, base_path):
     # Make sure that the search extension matches easily.
@@ -76,7 +77,7 @@ class SelfDescribingEnvironment(object):
     #
     # First, we need to get all of the files that describe our environment.
     #
-    env_files = self._gather_env_files(('path_env', 'ext_dep'), self.workspace)
+    env_files = self._gather_env_files(('path_env', 'ext_dep', 'plug_in'), self.workspace)
 
     #
     # Now that the files have been found, load them, sort them, and filter them
@@ -136,6 +137,9 @@ class SelfDescribingEnvironment(object):
     if 'ext_dep' in env_files:
       self.extdeps = _sort_and_filter_descriptors(EDF.ExternDepDescriptor, env_files['ext_dep'], self.scopes)
 
+    if 'plug_in' in env_files:
+      self.plugins = _sort_and_filter_descriptors(EDF.PluginDescriptor, env_files['plug_in'], self.scopes)
+
     return self
 
   # This is a generator to reduce code duplication when wrapping the pathenv objects.
@@ -185,11 +189,6 @@ class SelfDescribingEnvironment(object):
       if not extdep.verify():
         extdep.clean()
         extdep.fetch()
-
-      # Process any associated flags and add download to path
-      # if needed.
-      # if extdep.flags is not None:
-      #   self._apply_descriptor_object_to_env(extdep, env_object)
 
   def clean_extdeps(self, env_object):
     for extdep in self._get_extdeps():

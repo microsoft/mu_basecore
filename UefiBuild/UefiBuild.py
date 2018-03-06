@@ -13,40 +13,11 @@ from Uefi.EdkII.Parsers.TargetTxtParser import *
 from Uefi.EdkII.Parsers.DscParser import *
 from UtilityFunctions import RunCmd
 
-from yapsy.PluginManager import PluginManagerSingleton
-import yapsy.UefiBuildPluginTypes as UefiBuildPluginTypes
-
-class HelperFunctions(object):
-    def __init__(self):
-        self.RegisteredFunctions = {}
-
-    #
-    # Function to logging.debug all registered functions and their source path
-    #
-    def DebugLogRegisteredFunctions(self):
-        logging.debug("Logging all Registered Helper Functions:")
-        for name, file in self.RegisteredFunctions.items():
-            logging.debug("  Function %s registered from file %s", name, file)
-        logging.debug("Finished logging %d functions", len(self.RegisteredFunctions))
-
-    #
-    # Plugins that want to register a helper function should call
-    # this routine for each function
-    #
-    # @param name[in]: name of function
-    # @param function[in] function being registered
-    # @param filepath[in] filepath registering function.  used for tracking and debug purposes
-    #
-    def Register(self, name, function, filepath):
-        if(name in self.RegisteredFunctions.keys()):
-            raise Exception("Function %s already registered from plugin file %s.  Can't register again from %s" % (name, self.RegisteredFunctions[name], filepath))
-        setattr(self, name, function)
-        self.RegisteredFunctions[name] = filepath        
-
+import PluginManager
 
 class UefiBuilder(object):
 
-    def __init__(self, WorkSpace, PackagesPath, args, BuildConfigFile=None):
+    def __init__(self, WorkSpace, PackagesPath, pluginlist, args, BuildConfigFile=None):
         self.env = ShellEnvironment.GetBuildVars()
         self.mws = MultipleWorkspace()
         self.mws.setWs(WorkSpace, PackagesPath)
@@ -61,22 +32,16 @@ class UefiBuilder(object):
         self.OutputBuildEnvBeforeBuildToFile = None
         self.Clean = False
         self.UpdateConf = False
-        self.PluginPaths = self.ws
-        self.Helper = HelperFunctions()
+        self.Helper = PluginManager.HelperFunctions()
+        self.PluginManager = PluginManager.PluginManager()
         if(BuildConfigFile != None):
             self.BuildConfig = BuildConfigFile
         else:
             self.BuildConfig = os.path.join(self.ws, "BuildConfig.conf")
         self.RunCmd = RunCmd
-        #
-        # Map Plugin Filters based on type to category.  This way the Build system can ensure its using the correct plugin types in the
-        # correct places
-        #
-        PluginManagerSingleton.get().setCategoriesFilter(
-            {
-            "UefiBuild":UefiBuildPluginTypes.IUefiBuildPlugin,
-            "Helper": UefiBuildPluginTypes.IUefiHelperPlugin
-            })
+
+        self.PluginManager.SetListOfEnvironmentDescriptors(pluginlist)
+
         
         
 
@@ -100,17 +65,12 @@ class UefiBuilder(object):
                     logging.critical("Clean failed")
                     return ret
 
-            #load plugins
-            PluginManagerSingleton.get().setPluginPlaces(self.PluginPaths.split(";"))
-            # Load all plugins
-            PluginManagerSingleton.get().collectPlugins()
-
             #
             #Load Helpers
             #
-            for pluginInfo in PluginManagerSingleton.get().getPluginsOfCategory("Helper"):
-                logging.debug("Helper Plugin Register: %s" % pluginInfo.name)
-                pluginInfo.plugin_object.RegisterHelpers(self.Helper)
+            for Descriptor in self.PluginManager.GetPluginsOfClass(PluginManager.IUefiHelperPlugin):
+                logging.debug("Helper Plugin Register: %s", Descriptor.Name)
+                Descriptor.Obj.RegisterHelpers(self.Helper)
 
             self.Helper.DebugLogRegisteredFunctions()
             
@@ -263,18 +223,18 @@ class UefiBuilder(object):
         #
         # run all loaded UefiBuild Plugins
         #
-        for pluginInfo in PluginManagerSingleton.get().getPluginsOfCategory("UefiBuild"):
+        for Descriptor in self.PluginManager.GetPluginsOfClass(PluginManager.IUefiBuildPlugin):
             
-            rc = pluginInfo.plugin_object.do_pre_build(self)
+            rc = Descriptor.Obj.do_pre_build(self)
             if(rc != 0):
                 if(rc is None):
-                    logging.error("Plugin Failed: %s returned NoneType" % pluginInfo.name)
+                    logging.error("Plugin Failed: %s returned NoneType" % Descriptor.Name)
                     ret = -1
                 else:
-                    logging.error("Plugin Failed: %s returned %d" % (pluginInfo.name, rc))
+                    logging.error("Plugin Failed: %s returned %d" % (Descriptor.Name, rc))
                     ret = rc
             else:
-                logging.debug("Plugin Success: %s" % pluginInfo.name)
+                logging.debug("Plugin Success: %s" % Descriptor.Name)
         return ret
 
         
@@ -293,17 +253,18 @@ class UefiBuilder(object):
         #
         # run all loaded UefiBuild Plugins
         #
-        for pluginInfo in PluginManagerSingleton.get().getPluginsOfCategory("UefiBuild"):
-            rc = pluginInfo.plugin_object.do_post_build(self)
+        for Descriptor in self.PluginManager.GetPluginsOfClass(PluginManager.IUefiBuildPlugin):
+            
+            rc = Descriptor.Obj.do_post_build(self)
             if(rc != 0):
                 if(rc is None):
-                    logging.error("Plugin Failed: %s returned NoneType" % pluginInfo.name)
+                    logging.error("Plugin Failed: %s returned NoneType" % Descriptor.Name)
                     ret = -1
                 else:
-                    logging.error("Plugin Failed: %s returned %d" % (pluginInfo.name, rc))
+                    logging.error("Plugin Failed: %s returned %d" % (Descriptor.Name, rc))
                     ret = rc
             else:
-                logging.debug("Plugin Success: %s" % pluginInfo.name)
+                logging.debug("Plugin Success: %s" % Descriptor.Name)
 
         return ret
     

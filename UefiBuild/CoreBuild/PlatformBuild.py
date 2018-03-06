@@ -43,4 +43,4 @@ if __name__ == '__main__':
         default_logger.removeHandler(default_logger.handlers[0])
 
     # Finally, jump to the main routine.
-    PlatformBuildWorker.main(WORKSPACE_PATH)
+    PlatformBuildWorker.main(WORKSPACE_PATH, PROJECT_SCOPE)

@@ -1,9 +1,0 @@
-[Core]
-Name = Flatten Pdbs Uefi Build Plugin
-Module = FlattenPdbs
-
-[Documentation]
-Author = Sean Brogan
-Version = 1.0
-Website = ""
-Description = UEFI Build Plugin to copy all PDBs post build to a single file for bulk upload to symbol server
