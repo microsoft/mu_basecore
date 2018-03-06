@@ -1,0 +1,5 @@
+{
+  "scope": "global",
+  "name": "Flatten Pdbs Uefi Build Plugin",
+  "module": "FlattenPdbs"
+}

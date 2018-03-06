@@ -1,9 +1,9 @@
-import yapsy.UefiBuildPluginTypes as UefiBuildPluginTypes
+import PluginManager
 import logging
 import shutil
 import os
 
-class FlattenPdbs(UefiBuildPluginTypes.IUefiBuildPlugin):
+class FlattenPdbs(PluginManager.IUefiBuildPlugin):
 
     def do_post_build(self, thebuilder):
         #Path to Build output

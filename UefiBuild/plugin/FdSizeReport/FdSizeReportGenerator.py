@@ -40,9 +40,9 @@ from decimal import Decimal
 #
 #
 try: 
-    import yapsy.UefiBuildPluginTypes as UefiBuildPluginTypes
+    import PluginManager
 
-    class FdSizeReportGenerator(UefiBuildPluginTypes.IUefiBuildPlugin):
+    class FdSizeReportGenerator(PluginManager.IUefiBuildPlugin):
 
         def do_post_build(self, thebuilder):
 
@@ -364,7 +364,7 @@ class FlashReportParser(object):
             #loop thru all modules in all FVs to find all matches
             for fv in self.FdRegions:
                 for modinfv in fv.FvModuleList:
-                    logging.debug("Comparing against mod %s" % modinfv.Name)
+                    #to much output logging.debug("Comparing against mod %s" % modinfv.Name)
                     if(ms.Name.lower() == modinfv.Name.lower()):
                         #possible match
                         logging.debug("Name Match.  P1 %s p2 %s" % (ms.InfPath.lower().replace("/", "\\"), modinfv.Path.lower().replace("/", "\\")))
