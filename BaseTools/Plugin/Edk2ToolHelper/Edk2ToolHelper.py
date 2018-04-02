@@ -13,7 +13,6 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
         fp = os.path.abspath(__file__)
         obj.Register("PackageMsFmpHeader", Edk2ToolHelper.PackageMsFmpHeader, fp)
         obj.Register("PackageFmpImageAuth", Edk2ToolHelper.PackageFmpImageAuth, fp)
-        obj.Register("PackageWindowsCapsuleFiles", Edk2ToolHelper.PackageWindowsCapsuleFiles, fp)
         obj.Register("PackageFmpCapsuleHeader", Edk2ToolHelper.PackageFmpCapsuleHeader, fp)
         obj.Register("PackageCapsuleHeader", Edk2ToolHelper.PackageCapsuleHeader, fp)
 
