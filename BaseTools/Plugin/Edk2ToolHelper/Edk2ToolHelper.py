@@ -13,7 +13,6 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
         fp = os.path.abspath(__file__)
         obj.Register("PackageMsFmpHeader", Edk2ToolHelper.PackageMsFmpHeader, fp)
         obj.Register("PackageFmpImageAuth", Edk2ToolHelper.PackageFmpImageAuth, fp)
-        obj.Register("PackageWindowsCapsuleFiles", Edk2ToolHelper.PackageWindowsCapsuleFiles, fp)
         obj.Register("PackageFmpCapsuleHeader", Edk2ToolHelper.PackageFmpCapsuleHeader, fp)
         obj.Register("PackageCapsuleHeader", Edk2ToolHelper.PackageCapsuleHeader, fp)
 
@@ -140,46 +139,4 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
         ret = RunCmd(cmd)
         if(ret != 0):
             raise Exception("GenFv Failed with errorcode" % ret)
-        return ret 
-
-    @staticmethod
-    def PackageWindowsCapsuleFiles(OutputFolder, ProductName, ProductFmpGuid, CapsuleVersion_DotString, CapsuleVersion_HexString, ProductFwProvider, ProductFwMfgName, ProductFwDesc, CapsuleFileName, PfxFile=None, PfxPass=None, Rollback=False):
-        logging.debug("CapsulePackage: Create Windows Capsule Files")
-        CatFileName = os.path.realpath(os.path.join(OutputFolder, ProductName + ".cat"))
-
-        #Make INF
-        cmd = "CreateWindowsInf.py"
-        cmd = cmd + " " + ProductName + " " + CapsuleVersion_DotString + " " + ProductFmpGuid
-        cmd = cmd + " " + CapsuleFileName + " " + CapsuleVersion_HexString + " " + ProductFwProvider + " " + ProductFwMfgName
-        cmd = cmd + " " + ProductFwDesc
-        if (Rollback):
-          cmd = cmd + " rollback"
-        ret = RunPythonScript(cmd, workingdir=OutputFolder)
-        if(ret != 0):
-            raise Exception("CreateWindowsInf Failed with errorcode %d" % ret)
-
-        #Find Signtool 
-        SignToolPath = os.path.join(os.getenv("ProgramFiles(x86)"), "Windows Kits", "10", "bin", "x64", "signtool.exe")
-        if not os.path.exists(SignToolPath):
-            SignToolPath = SignToolPath.replace('10', '8.1')
-        if not os.path.exists(SignToolPath):
-            raise Exception("Can't find signtool on this machine.")
-        
-        #Find Inf2Cat tool
-        Inf2CatToolPath = os.path.join(os.getenv("ProgramFiles(x86)"), "Windows Kits", "10", "bin", "x86", "Inf2Cat.exe")
-        if not os.path.exists(Inf2CatToolPath):
-            raise Exception("Can't find Inf2Cat on this machine.  Please install the Windows 10 WDK - https://developer.microsoft.com/en-us/windows/hardware/windows-driver-kit")
-        
-        #Make Cat file
-        cmd = Inf2CatToolPath + " /driver:. /os:10_X64 /verbose"
-        ret = RunCmd(cmd, workingdir=OutputFolder)
-        if(ret != 0):
-            raise Exception("Creating Cat file Failed with errorcode %d" % ret)
-
-        if(PfxFile is not None):
-            #dev sign the cat file
-            ret = CatalogSignWithSignTool(SignToolPath, CatFileName, PfxFile, PfxPass)
-            if(ret != 0):
-                raise Exception("Signing Cat file Failed with errorcode %d" % ret)
-        
         return ret 
