@@ -25,11 +25,6 @@ LIST_ENTRY                          mPagePool = INITIALIZE_LIST_HEAD_VARIABLE (m
 BOOLEAN                             m1GPageTableSupport = FALSE;
 BOOLEAN                             mCpuSmmStaticPageTable;
 
-// MSCHANGE [BEGIN] - Add flag to enable "test mode" for the SMM protections.
-//                    NOTE: "Test mode" will only be enabled in DEBUG builds.
-extern BOOLEAN                      gSmmRebootOnException;
-// MSCHANGE [END]
-
 /**
   Check if 1-GByte pages is supported by processor or not.
 
@@ -916,7 +911,7 @@ SmiPFHandler (
   goto Exit;
 
 HaltOrReboot:
-  if (gSmmRebootOnException) {
+  if (mSmmRebootOnException) {
     DEBUG ((DEBUG_ERROR, __FUNCTION__" - Reboot here in test mode.\n"));
     LibResetSystem (EfiResetWarm, EFI_SUCCESS, 0, NULL);
     CpuDeadLoop ();
