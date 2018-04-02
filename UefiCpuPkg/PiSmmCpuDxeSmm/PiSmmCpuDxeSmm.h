@@ -233,6 +233,8 @@ extern EFI_SMM_CPU_PROTOCOL   mSmmCpu;
 ///
 extern UINT8  mSmmSaveStateRegisterLma;
 
+extern BOOLEAN                      mSmmRebootOnException;
+
 //
 // SMM CPU Protocol function prototypes.
 //
