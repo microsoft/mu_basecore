@@ -79,7 +79,7 @@ typedef struct {
 #if defined (MDE_CPU_ARM)
 
 typedef struct {
-  UINT32    R3;  ///< A copy of R13.
+  UINT32    R3;   ///< A copy of R13.
   UINT32    R4;
   UINT32    R5;
   UINT32    R6;
@@ -4692,6 +4692,20 @@ LongJump (
   IN      UINTN                     Value
   );
 
+// MS_CHANGE: Start
+
+/**
+  Enables CPU interrupts and then waits for an interrupt to arrive.
+
+**/
+VOID
+EFIAPI
+EnableInterruptsAndSleep (
+  VOID
+  );
+
+// MS_CHANGE
+
 /**
   Enables CPU interrupts.
 
@@ -5025,21 +5039,21 @@ AsmRmpAdjust (
 ///
 typedef union {
   struct {
-    UINT32    CF         : 1; ///< Carry Flag.
-    UINT32    Reserved_0 : 1; ///< Reserved.
-    UINT32    PF         : 1; ///< Parity Flag.
-    UINT32    Reserved_1 : 1; ///< Reserved.
-    UINT32    AF         : 1; ///< Auxiliary Carry Flag.
-    UINT32    Reserved_2 : 1; ///< Reserved.
-    UINT32    ZF         : 1; ///< Zero Flag.
-    UINT32    SF         : 1; ///< Sign Flag.
-    UINT32    TF         : 1; ///< Trap Flag.
-    UINT32    IF         : 1; ///< Interrupt Enable Flag.
-    UINT32    DF         : 1; ///< Direction Flag.
-    UINT32    OF         : 1; ///< Overflow Flag.
-    UINT32    IOPL       : 2; ///< I/O Privilege Level.
-    UINT32    NT         : 1; ///< Nested Task.
-    UINT32    Reserved_3 : 1; ///< Reserved.
+    UINT32    CF         : 1;   ///< Carry Flag.
+    UINT32    Reserved_0 : 1;   ///< Reserved.
+    UINT32    PF         : 1;   ///< Parity Flag.
+    UINT32    Reserved_1 : 1;   ///< Reserved.
+    UINT32    AF         : 1;   ///< Auxiliary Carry Flag.
+    UINT32    Reserved_2 : 1;   ///< Reserved.
+    UINT32    ZF         : 1;   ///< Zero Flag.
+    UINT32    SF         : 1;   ///< Sign Flag.
+    UINT32    TF         : 1;   ///< Trap Flag.
+    UINT32    IF         : 1;   ///< Interrupt Enable Flag.
+    UINT32    DF         : 1;   ///< Direction Flag.
+    UINT32    OF         : 1;   ///< Overflow Flag.
+    UINT32    IOPL       : 2;   ///< I/O Privilege Level.
+    UINT32    NT         : 1;   ///< Nested Task.
+    UINT32    Reserved_3 : 1;   ///< Reserved.
   } Bits;
   UINT16    Uint16;
 } IA32_FLAGS16;
@@ -5051,28 +5065,28 @@ typedef union {
 ///
 typedef union {
   struct {
-    UINT32    CF         : 1;  ///< Carry Flag.
-    UINT32    Reserved_0 : 1;  ///< Reserved.
-    UINT32    PF         : 1;  ///< Parity Flag.
-    UINT32    Reserved_1 : 1;  ///< Reserved.
-    UINT32    AF         : 1;  ///< Auxiliary Carry Flag.
-    UINT32    Reserved_2 : 1;  ///< Reserved.
-    UINT32    ZF         : 1;  ///< Zero Flag.
-    UINT32    SF         : 1;  ///< Sign Flag.
-    UINT32    TF         : 1;  ///< Trap Flag.
-    UINT32    IF         : 1;  ///< Interrupt Enable Flag.
-    UINT32    DF         : 1;  ///< Direction Flag.
-    UINT32    OF         : 1;  ///< Overflow Flag.
-    UINT32    IOPL       : 2;  ///< I/O Privilege Level.
-    UINT32    NT         : 1;  ///< Nested Task.
-    UINT32    Reserved_3 : 1;  ///< Reserved.
-    UINT32    RF         : 1;  ///< Resume Flag.
-    UINT32    VM         : 1;  ///< Virtual 8086 Mode.
-    UINT32    AC         : 1;  ///< Alignment Check.
-    UINT32    VIF        : 1;  ///< Virtual Interrupt Flag.
-    UINT32    VIP        : 1;  ///< Virtual Interrupt Pending.
-    UINT32    ID         : 1;  ///< ID Flag.
-    UINT32    Reserved_4 : 10; ///< Reserved.
+    UINT32    CF         : 1;    ///< Carry Flag.
+    UINT32    Reserved_0 : 1;    ///< Reserved.
+    UINT32    PF         : 1;    ///< Parity Flag.
+    UINT32    Reserved_1 : 1;    ///< Reserved.
+    UINT32    AF         : 1;    ///< Auxiliary Carry Flag.
+    UINT32    Reserved_2 : 1;    ///< Reserved.
+    UINT32    ZF         : 1;    ///< Zero Flag.
+    UINT32    SF         : 1;    ///< Sign Flag.
+    UINT32    TF         : 1;    ///< Trap Flag.
+    UINT32    IF         : 1;    ///< Interrupt Enable Flag.
+    UINT32    DF         : 1;    ///< Direction Flag.
+    UINT32    OF         : 1;    ///< Overflow Flag.
+    UINT32    IOPL       : 2;    ///< I/O Privilege Level.
+    UINT32    NT         : 1;    ///< Nested Task.
+    UINT32    Reserved_3 : 1;    ///< Reserved.
+    UINT32    RF         : 1;    ///< Resume Flag.
+    UINT32    VM         : 1;    ///< Virtual 8086 Mode.
+    UINT32    AC         : 1;    ///< Alignment Check.
+    UINT32    VIF        : 1;    ///< Virtual Interrupt Flag.
+    UINT32    VIP        : 1;    ///< Virtual Interrupt Pending.
+    UINT32    ID         : 1;    ///< ID Flag.
+    UINT32    Reserved_4 : 10;   ///< Reserved.
   } Bits;
   UINTN    UintN;
 } IA32_EFLAGS32;
@@ -5084,20 +5098,20 @@ typedef union {
 ///
 typedef union {
   struct {
-    UINT32    PE         : 1;  ///< Protection Enable.
-    UINT32    MP         : 1;  ///< Monitor Coprocessor.
-    UINT32    EM         : 1;  ///< Emulation.
-    UINT32    TS         : 1;  ///< Task Switched.
-    UINT32    ET         : 1;  ///< Extension Type.
-    UINT32    NE         : 1;  ///< Numeric Error.
-    UINT32    Reserved_0 : 10; ///< Reserved.
-    UINT32    WP         : 1;  ///< Write Protect.
-    UINT32    Reserved_1 : 1;  ///< Reserved.
-    UINT32    AM         : 1;  ///< Alignment Mask.
-    UINT32    Reserved_2 : 10; ///< Reserved.
-    UINT32    NW         : 1;  ///< Mot Write-through.
-    UINT32    CD         : 1;  ///< Cache Disable.
-    UINT32    PG         : 1;  ///< Paging.
+    UINT32    PE         : 1;    ///< Protection Enable.
+    UINT32    MP         : 1;    ///< Monitor Coprocessor.
+    UINT32    EM         : 1;    ///< Emulation.
+    UINT32    TS         : 1;    ///< Task Switched.
+    UINT32    ET         : 1;    ///< Extension Type.
+    UINT32    NE         : 1;    ///< Numeric Error.
+    UINT32    Reserved_0 : 10;   ///< Reserved.
+    UINT32    WP         : 1;    ///< Write Protect.
+    UINT32    Reserved_1 : 1;    ///< Reserved.
+    UINT32    AM         : 1;    ///< Alignment Mask.
+    UINT32    Reserved_2 : 10;   ///< Reserved.
+    UINT32    NW         : 1;    ///< Mot Write-through.
+    UINT32    CD         : 1;    ///< Cache Disable.
+    UINT32    PG         : 1;    ///< Paging.
   } Bits;
   UINTN    UintN;
 } IA32_CR0;
@@ -5109,34 +5123,34 @@ typedef union {
 ///
 typedef union {
   struct {
-    UINT32    VME        : 1; ///< Virtual-8086 Mode Extensions.
-    UINT32    PVI        : 1; ///< Protected-Mode Virtual Interrupts.
-    UINT32    TSD        : 1; ///< Time Stamp Disable.
-    UINT32    DE         : 1; ///< Debugging Extensions.
-    UINT32    PSE        : 1; ///< Page Size Extensions.
-    UINT32    PAE        : 1; ///< Physical Address Extension.
-    UINT32    MCE        : 1; ///< Machine Check Enable.
-    UINT32    PGE        : 1; ///< Page Global Enable.
-    UINT32    PCE        : 1; ///< Performance Monitoring Counter
-                              ///< Enable.
-    UINT32    OSFXSR     : 1; ///< Operating System Support for
-                              ///< FXSAVE and FXRSTOR instructions
-    UINT32    OSXMMEXCPT : 1; ///< Operating System Support for
-                              ///< Unmasked SIMD Floating Point
-                              ///< Exceptions.
-    UINT32    UMIP       : 1; ///< User-Mode Instruction Prevention.
-    UINT32    LA57       : 1; ///< Linear Address 57bit.
-    UINT32    VMXE       : 1; ///< VMX Enable.
-    UINT32    SMXE       : 1; ///< SMX Enable.
-    UINT32    Reserved_3 : 1; ///< Reserved.
-    UINT32    FSGSBASE   : 1; ///< FSGSBASE Enable.
-    UINT32    PCIDE      : 1; ///< PCID Enable.
-    UINT32    OSXSAVE    : 1; ///< XSAVE and Processor Extended States Enable.
-    UINT32    Reserved_4 : 1; ///< Reserved.
-    UINT32    SMEP       : 1; ///< SMEP Enable.
-    UINT32    SMAP       : 1; ///< SMAP Enable.
-    UINT32    PKE        : 1; ///< Protection-Key Enable.
-    UINT32    Reserved_5 : 9; ///< Reserved.
+    UINT32    VME        : 1;   ///< Virtual-8086 Mode Extensions.
+    UINT32    PVI        : 1;   ///< Protected-Mode Virtual Interrupts.
+    UINT32    TSD        : 1;   ///< Time Stamp Disable.
+    UINT32    DE         : 1;   ///< Debugging Extensions.
+    UINT32    PSE        : 1;   ///< Page Size Extensions.
+    UINT32    PAE        : 1;   ///< Physical Address Extension.
+    UINT32    MCE        : 1;   ///< Machine Check Enable.
+    UINT32    PGE        : 1;   ///< Page Global Enable.
+    UINT32    PCE        : 1;   ///< Performance Monitoring Counter
+                                ///< Enable.
+    UINT32    OSFXSR     : 1;   ///< Operating System Support for
+                                ///< FXSAVE and FXRSTOR instructions
+    UINT32    OSXMMEXCPT : 1;   ///< Operating System Support for
+                                ///< Unmasked SIMD Floating Point
+                                ///< Exceptions.
+    UINT32    UMIP       : 1;   ///< User-Mode Instruction Prevention.
+    UINT32    LA57       : 1;   ///< Linear Address 57bit.
+    UINT32    VMXE       : 1;   ///< VMX Enable.
+    UINT32    SMXE       : 1;   ///< SMX Enable.
+    UINT32    Reserved_3 : 1;   ///< Reserved.
+    UINT32    FSGSBASE   : 1;   ///< FSGSBASE Enable.
+    UINT32    PCIDE      : 1;   ///< PCID Enable.
+    UINT32    OSXSAVE    : 1;   ///< XSAVE and Processor Extended States Enable.
+    UINT32    Reserved_4 : 1;   ///< Reserved.
+    UINT32    SMEP       : 1;   ///< SMEP Enable.
+    UINT32    SMAP       : 1;   ///< SMAP Enable.
+    UINT32    PKE        : 1;   ///< Protection-Key Enable.
+    UINT32    Reserved_5 : 9;   ///< Reserved.
   } Bits;
   UINTN    UintN;
 } IA32_CR4;
@@ -5188,11 +5202,11 @@ typedef struct {
 ///
 typedef union {
   struct {
-    UINT32    OffsetLow  : 16; ///< Offset bits 15..0.
-    UINT32    Selector   : 16; ///< Selector.
-    UINT32    Reserved_0 : 8;  ///< Reserved.
-    UINT32    GateType   : 8;  ///< Gate Type.  See #defines above.
-    UINT32    OffsetHigh : 16; ///< Offset bits 31..16.
+    UINT32    OffsetLow  : 16;     ///< Offset bits 15..0.
+    UINT32    Selector   : 16;     ///< Selector.
+    UINT32    Reserved_0 : 8;      ///< Reserved.
+    UINT32    GateType   : 8;      ///< Gate Type.  See #defines above.
+    UINT32    OffsetHigh : 16;     ///< Offset bits 31..16.
   } Bits;
   UINT64    Uint64;
 } IA32_IDT_GATE_DESCRIPTOR;
@@ -5244,18 +5258,18 @@ typedef struct {
 
 typedef union {
   struct {
-    UINT32    LimitLow    : 16; ///< Segment Limit 15..00
-    UINT32    BaseLow     : 16; ///< Base Address  15..00
-    UINT32    BaseMid     : 8;  ///< Base Address  23..16
-    UINT32    Type        : 4;  ///< Type (1 0 B 1)
-    UINT32    Reserved_43 : 1;  ///< 0
-    UINT32    DPL         : 2;  ///< Descriptor Privilege Level
-    UINT32    P           : 1;  ///< Segment Present
-    UINT32    LimitHigh   : 4;  ///< Segment Limit 19..16
-    UINT32    AVL         : 1;  ///< Available for use by system software
-    UINT32    Reserved_52 : 2;  ///< 0 0
-    UINT32    G           : 1;  ///< Granularity
-    UINT32    BaseHigh    : 8;  ///< Base Address 31..24
+    UINT32    LimitLow    : 16;     ///< Segment Limit 15..00
+    UINT32    BaseLow     : 16;     ///< Base Address  15..00
+    UINT32    BaseMid     : 8;      ///< Base Address  23..16
+    UINT32    Type        : 4;      ///< Type (1 0 B 1)
+    UINT32    Reserved_43 : 1;      ///< 0
+    UINT32    DPL         : 2;      ///< Descriptor Privilege Level
+    UINT32    P           : 1;      ///< Segment Present
+    UINT32    LimitHigh   : 4;      ///< Segment Limit 19..16
+    UINT32    AVL         : 1;      ///< Available for use by system software
+    UINT32    Reserved_52 : 2;      ///< 0 0
+    UINT32    G           : 1;      ///< Granularity
+    UINT32    BaseHigh    : 8;      ///< Base Address 31..24
   } Bits;
   UINT64    Uint64;
 } IA32_TSS_DESCRIPTOR;
@@ -5269,13 +5283,13 @@ typedef union {
 ///
 typedef union {
   struct {
-    UINT32    OffsetLow   : 16; ///< Offset bits 15..0.
-    UINT32    Selector    : 16; ///< Selector.
-    UINT32    Reserved_0  : 8;  ///< Reserved.
-    UINT32    GateType    : 8;  ///< Gate Type.  See #defines above.
-    UINT32    OffsetHigh  : 16; ///< Offset bits 31..16.
-    UINT32    OffsetUpper : 32; ///< Offset bits 63..32.
-    UINT32    Reserved_1  : 32; ///< Reserved.
+    UINT32    OffsetLow   : 16;     ///< Offset bits 15..0.
+    UINT32    Selector    : 16;     ///< Selector.
+    UINT32    Reserved_0  : 8;      ///< Reserved.
+    UINT32    GateType    : 8;      ///< Gate Type.  See #defines above.
+    UINT32    OffsetHigh  : 16;     ///< Offset bits 31..16.
+    UINT32    OffsetUpper : 32;     ///< Offset bits 63..32.
+    UINT32    Reserved_1  : 32;     ///< Reserved.
   } Bits;
   struct {
     UINT64    Uint64;
@@ -5301,20 +5315,20 @@ typedef struct {
 
 typedef union {
   struct {
-    UINT32    LimitLow    : 16; ///< Segment Limit 15..00
-    UINT32    BaseLow     : 16; ///< Base Address  15..00
-    UINT32    BaseMidl    : 8;  ///< Base Address  23..16
-    UINT32    Type        : 4;  ///< Type (1 0 B 1)
-    UINT32    Reserved_43 : 1;  ///< 0
-    UINT32    DPL         : 2;  ///< Descriptor Privilege Level
-    UINT32    P           : 1;  ///< Segment Present
-    UINT32    LimitHigh   : 4;  ///< Segment Limit 19..16
-    UINT32    AVL         : 1;  ///< Available for use by system software
-    UINT32    Reserved_52 : 2;  ///< 0 0
-    UINT32    G           : 1;  ///< Granularity
-    UINT32    BaseMidh    : 8;  ///< Base Address  31..24
-    UINT32    BaseHigh    : 32; ///< Base Address  63..32
-    UINT32    Reserved_96 : 32; ///< Reserved
+    UINT32    LimitLow    : 16;     ///< Segment Limit 15..00
+    UINT32    BaseLow     : 16;     ///< Base Address  15..00
+    UINT32    BaseMidl    : 8;      ///< Base Address  23..16
+    UINT32    Type        : 4;      ///< Type (1 0 B 1)
+    UINT32    Reserved_43 : 1;      ///< 0
+    UINT32    DPL         : 2;      ///< Descriptor Privilege Level
+    UINT32    P           : 1;      ///< Segment Present
+    UINT32    LimitHigh   : 4;      ///< Segment Limit 19..16
+    UINT32    AVL         : 1;      ///< Available for use by system software
+    UINT32    Reserved_52 : 2;      ///< 0 0
+    UINT32    G           : 1;      ///< Granularity
+    UINT32    BaseMidh    : 8;      ///< Base Address  31..24
+    UINT32    BaseHigh    : 32;     ///< Base Address  63..32
+    UINT32    Reserved_96 : 32;     ///< Reserved
   } Bits;
   struct {
     UINT64    Uint64;

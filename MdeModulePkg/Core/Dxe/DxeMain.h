@@ -36,6 +36,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/Security2.h>
 #include <Protocol/Reset.h>
 #include <Protocol/Cpu.h>
+#include <Protocol/Cpu2.h>           // MS_CHANGE
 #include <Protocol/Metronome.h>
 #include <Protocol/FirmwareVolumeBlock.h>
 #include <Protocol/Capsule.h>
@@ -263,6 +264,7 @@ extern EFI_DECOMPRESS_PROTOCOL  gEfiDecompress;
 
 extern EFI_RUNTIME_ARCH_PROTOCOL         *gRuntime;
 extern EFI_CPU_ARCH_PROTOCOL             *gCpu;
+extern EFI_CPU2_PROTOCOL                 *gCpu2;                        // MS_CHANGE
 extern EFI_WATCHDOG_TIMER_ARCH_PROTOCOL  *gWatchdogTimer;
 extern EFI_METRONOME_ARCH_PROTOCOL       *gMetronome;
 extern EFI_TIMER_ARCH_PROTOCOL           *gTimer;
@@ -271,7 +273,7 @@ extern EFI_SECURITY2_ARCH_PROTOCOL       *gSecurity2;
 extern EFI_BDS_ARCH_PROTOCOL             *gBds;
 extern EFI_SMM_BASE2_PROTOCOL            *gSmmBase2;
 
-extern EFI_TPL  gEfiCurrentTpl;
+extern volatile EFI_TPL  gEfiCurrentTpl;                                // MS_CHANGE
 
 extern EFI_GUID                   *gDxeCoreFileName;
 extern EFI_LOADED_IMAGE_PROTOCOL  *gDxeCoreLoadedImage;

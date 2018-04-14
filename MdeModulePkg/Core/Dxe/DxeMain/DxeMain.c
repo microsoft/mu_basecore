@@ -19,6 +19,7 @@ EFI_HANDLE  mDecompressHandle = NULL;
 EFI_SECURITY_ARCH_PROTOCOL        *gSecurity      = NULL;
 EFI_SECURITY2_ARCH_PROTOCOL       *gSecurity2     = NULL;
 EFI_CPU_ARCH_PROTOCOL             *gCpu           = NULL;
+EFI_CPU2_PROTOCOL                 *gCpu2          = NULL;    // MS_CHANGE
 EFI_METRONOME_ARCH_PROTOCOL       *gMetronome     = NULL;
 EFI_TIMER_ARCH_PROTOCOL           *gTimer         = NULL;
 EFI_BDS_ARCH_PROTOCOL             *gBds           = NULL;
