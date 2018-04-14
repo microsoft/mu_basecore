@@ -196,5 +196,10 @@
   # @Prompt RTC Target Register address
   gPcAtChipsetPkgTokenSpaceGuid.PcdRtcTargetRegister|0x71|UINT8|0x0000001F
 
+[PcdsFixedAtBuild]
+  ## Defines the UART base address.
+  # @Prompt UART IO Port Base Address
+  gPcAtChipsetPkgTokenSpaceGuid.PcdUartIoPortBaseAddress         |0x3F8|UINT16|0x00000020     ## MS_CHANGE
+
 [UserExtensions.TianoCore."ExtraFiles"]
   PcAtChipsetPkgExtra.uni
