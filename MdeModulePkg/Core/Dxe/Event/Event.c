@@ -13,7 +13,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 ///
 /// gEfiCurrentTpl - Current Task priority level
 ///
-EFI_TPL  gEfiCurrentTpl = TPL_APPLICATION;
+volatile EFI_TPL  gEfiCurrentTpl = TPL_APPLICATION;    // MS_CHANGE
 
 ///
 /// gEventQueueLock - Protects the event queues
@@ -28,7 +28,7 @@ LIST_ENTRY  gEventQueue[TPL_HIGH_LEVEL + 1];
 ///
 /// gEventPending - A bitmask of the EventQueues that are pending
 ///
-UINTN  gEventPending = 0;
+volatile UINTN  gEventPending = 0;                     // MS_CHANGE
 
 ///
 /// gEventSignalQueue - A list of events to signal based on EventGroup type
@@ -183,6 +183,8 @@ CoreDispatchEventNotifies (
     // Notify this event
     //
     ASSERT (Event->NotifyFunction != NULL);
+    ASSERT (gEfiCurrentTpl == Event->NotifyTpl);  // MS_CHANGE
+
     Event->NotifyFunction (Event, Event->NotifyContext);
 
     //
@@ -318,6 +320,8 @@ CoreCreateEventEx (
   OUT EFI_EVENT        *Event
   )
 {
+  /*
+  // MS_CHANGE: Supporting all TPLs
   //
   // If it's a notify type of event, check for invalid NotifyTpl
   //
@@ -329,6 +333,7 @@ CoreCreateEventEx (
       return EFI_INVALID_PARAMETER;
     }
   }
+  */
 
   return CoreCreateEventInternal (Type, NotifyTpl, NotifyFunction, NotifyContext, EventGroup, Event);
 }
@@ -651,9 +656,11 @@ CoreWaitForEvent (
   //
   // Can only WaitForEvent at TPL_APPLICATION
   //
-  if (gEfiCurrentTpl != TPL_APPLICATION) {
-    return EFI_UNSUPPORTED;
-  }
+  // MS_CHANGE - START
+  // if (gEfiCurrentTpl != TPL_APPLICATION) {
+  //  return EFI_UNSUPPORTED;                    // MS_CHANGE: Supporting all TPLs
+  // }
+  // MS_CHANGE - END
 
   if (NumberOfEvents == 0) {
     return EFI_INVALID_PARAMETER;
@@ -679,10 +686,22 @@ CoreWaitForEvent (
       }
     }
 
-    //
-    // Signal the Idle event
-    //
-    CoreSignalEvent (gIdleLoopEvent);
+    // MS_CHANGE: Start
+    if ((gCpu != NULL) && (gCpu2 != NULL)) {
+      // None of the events checked above are ready/signaled yet,
+      // disable interrupts before checking for all pending events
+      gCpu->DisableInterrupt (gCpu);
+
+      if (((UINTN)HighBitSet64 (gEventPending)) > gEfiCurrentTpl) {
+        // There are pending events, enable interrupts for these events to be processed
+        gCpu->EnableInterrupt (gCpu);
+      } else {
+        // No events are pending, enable interrupts, sleep the CPU and wait for an interrupt
+        gCpu2->EnableAndForWaitInterrupt (gCpu2);
+      }
+    }
+
+    // MS_CHANGE
   }
 }
 
