@@ -182,6 +182,7 @@
   gEfiVariableArchProtocolGuid                  ## CONSUMES
   gEfiCapsuleArchProtocolGuid                   ## CONSUMES
   gEfiWatchdogTimerArchProtocolGuid             ## CONSUMES
+  gEfiCpu2ProtocolGuid                          ## SOMETIMES_CONSUMES        ## MS_CHANGE
 
 [FeaturePcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdFrameworkCompatibilitySupport	   ## CONSUMES

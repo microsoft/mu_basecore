@@ -13,10 +13,10 @@ except ImportError:
 
 class ConfMgmt():
     
-    def __init__(self, OverrideConf=False):
+    def __init__(self, OverrideConf, AdditionalTemplateConfDir):
         self.Logger = logging.getLogger("ConfMgmt")
         self.env = ShellEnvironment.GetBuildVars()
-        self.__PopulateConf(OverrideConf)
+        self.__PopulateConf(OverrideConf, AdditionalTemplateConfDir)
 
     #
     # Compare the version of the existing conf file to the template file
@@ -46,7 +46,7 @@ class ConfMgmt():
                     
         
 
-    def __PopulateConf(self, OverrideConf):
+    def __PopulateConf(self, OverrideConf, AdditionalTemplateConfDir):
         ws = self.env.GetValue("WORKSPACE")
         #Copy Conf template files to conf if not present
         target = os.path.join(ws, "Conf", "target.txt")
@@ -72,19 +72,30 @@ class ConfMgmt():
             TemplateFilePath = ""
             ConfFilePath = outfiles[x]
 
-            #
-            # Get MS templates if they exist
-            #
-            fp = os.path.join(self.env.GetValue("EDK2_BASE_TOOLS_DIR"), tfiles[x] + ".ms")
-            if os.path.isfile(fp):
-                TemplateFilePath = fp
 
             #
-            # Check to see if found yet
+            # Get the Override template if it exist
             #
-            fp = os.path.join(self.env.GetValue("EDK2_BASE_TOOLS_DIR"), tfiles[x])
-            if TemplateFilePath == "" and os.path.isfile(fp):
-                TemplateFilePath = fp
+            if(AdditionalTemplateConfDir is not None):
+                fp = os.path.join(AdditionalTemplateConfDir, tfiles[x] + ".ms")
+                if os.path.isfile(fp):
+                    TemplateFilePath = fp
+
+            #
+            # If not found above try MS templates
+            #
+            if(TemplateFilePath == ""):
+                fp = os.path.join(self.env.GetValue("EDK2_BASE_TOOLS_DIR"), tfiles[x] + ".ms")
+                if os.path.isfile(fp):
+                    TemplateFilePath = fp
+
+            #
+            # If not found above try TianoCore Template
+            #
+            if(TemplateFilePath == ""):
+                fp = os.path.join(self.env.GetValue("EDK2_BASE_TOOLS_DIR"), tfiles[x])
+                if TemplateFilePath == "" and os.path.isfile(fp):
+                    TemplateFilePath = fp
 
             #
             # Check to see if found yet -- No more options so now we are broken
@@ -92,6 +103,8 @@ class ConfMgmt():
             if(TemplateFilePath == ""):  
                 self.Logger.critical("Failed to find Template file for %s" % outfiles[x])
                 raise Exception("Template File Missing" , outfiles[x])
+            else:
+                self.Logger.debug("Conf file template: [%s]", TemplateFilePath)
 
             #Check to see if we need the template
             if(not os.path.isfile(outfiles[x])):

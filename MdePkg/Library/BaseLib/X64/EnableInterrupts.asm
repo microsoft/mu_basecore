@@ -35,4 +35,17 @@ EnableInterrupts    PROC
     ret
 EnableInterrupts    ENDP
 
+;------------------------------------------------------------------------------
+; VOID
+; EFIAPI
+; EnableInterruptsAndSleep (
+;   VOID
+;   );
+;------------------------------------------------------------------------------
+EnableInterruptsAndSleep    PROC
+    sti
+    hlt
+    ret
+EnableInterruptsAndSleep    ENDP
+
     END

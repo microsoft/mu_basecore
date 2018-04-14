@@ -4935,6 +4935,19 @@ LongJump (
   );
 
 
+// MS_CHANGE: Start
+/**
+  Enables CPU interrupts and then waits for an interrupt to arrive.
+
+**/
+VOID
+EFIAPI
+EnableInterruptsAndSleep (
+  VOID
+  );
+// MS_CHANGE
+
+
 /**
   Enables CPU interrupts.
 

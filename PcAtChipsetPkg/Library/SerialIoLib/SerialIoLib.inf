@@ -23,6 +23,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  PcAtChipsetPkg/PcAtChipsetPkg.dec     ## MS_CHANGE
 
 [LibraryClasses]
   BaseLib
@@ -31,3 +32,5 @@
 [Sources]
   SerialPortLib.c
 
+[Pcd]
+  gPcAtChipsetPkgTokenSpaceGuid.PcdUartIoPortBaseAddress        ## CONSUMES    ## MS_CHANGE
