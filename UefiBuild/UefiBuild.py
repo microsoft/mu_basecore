@@ -299,8 +299,12 @@ class UefiBuilder(object):
         #set some basic defaults 
         self.SetBasicDefaults()
 
-        #Handle all the template files for workspace/conf 
-        e = ConfMgmt.ConfMgmt(self.UpdateConf)
+        #Handle all the template files for workspace/conf/ Allow override 
+        TemplatesForConf = self.env.GetValue("CONF_TEMPLATE_DIR")
+        if(TemplatesForConf is not None):
+            TemplatesForConf = self.mws.join(self.ws, TemplatesForConf)
+            logging.debug("Platform defined override for Template Conf Files: %s", TemplatesForConf)
+        e = ConfMgmt.ConfMgmt(self.UpdateConf, TemplatesForConf)
 
         #parse target file
         ret = self.ParseTargetFile()
