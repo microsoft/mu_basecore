@@ -1852,8 +1852,8 @@ EfiBootManagerBoot (
   VOID                       *FileBuffer;
   UINTN                      FileSize;
   EFI_BOOT_LOGO_PROTOCOL     *BootLogo;
-
   // EFI_EVENT                 LegacyBootEvent; // MS_CHANGE
+  UINTN  ReportStatusCodeData[2];                      // MS_CHANGE
 
   if (BootOption == NULL) {
     return;
@@ -1951,10 +1951,26 @@ EfiBootManagerBoot (
     FilePath = NULL;
     EfiBootManagerConnectDevicePath (BootOption->FilePath, NULL);
     FileBuffer = BmGetNextLoadOptionBuffer (LoadOptionTypeBoot, BootOption->FilePath, &FilePath, &FileSize);
+
+    // MS_CHANGE: Start
+    // REPORT_STATUS_CODE (EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderLoad));
+    ReportStatusCodeData[0] = (FilePath != NULL) ? (UINTN)FilePath : (UINTN)(BootOption->FilePath);
+    ReportStatusCodeData[1] = OptionNumber;
+
+    REPORT_STATUS_CODE_EX (
+      EFI_PROGRESS_CODE,
+      PcdGet32 (PcdProgressCodeOsLoaderLoad),
+      0,
+      NULL,
+      NULL,
+      ReportStatusCodeData,
+      sizeof (ReportStatusCodeData)
+      );
+    // MS_CHANGE
+
     if (FileBuffer != NULL) {
       RamDiskDevicePath = BmGetRamDiskDevicePath (FilePath);
 
-      REPORT_STATUS_CODE (EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderLoad));
       Status = gBS->LoadImage (
                       TRUE,
                       gImageHandle,
@@ -2084,6 +2100,8 @@ EfiBootManagerBoot (
     // Report Status Code with the failure status to indicate that boot failure
     //
     BmReportLoadFailure (EFI_SW_DXE_BS_EC_BOOT_OPTION_FAILED, Status);
+  } else {
+    REPORT_STATUS_CODE (EFI_PROGRESS_CODE, (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_PC_BOOT_OPTION_COMPLETE));    // MS_CHANGE
   }
 
   // PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber); // MS_CHANGE
