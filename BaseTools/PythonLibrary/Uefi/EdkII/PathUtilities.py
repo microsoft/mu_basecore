@@ -1,5 +1,6 @@
 import os
 import logging
+import fnmatch
 
 #
 # Class to help convert from absolute path to EDK2 build path
@@ -65,30 +66,39 @@ class Edk2Path(object):
     # @ret Name of Package that the module is in. 
     def GetContainingPackage(self, InputPath):
         logging.debug("GetContainingPackage: %s" % InputPath)
-        previous = None
-        rp = InputPath.split(os.path.sep)
-        rp.reverse()
-        i = 0
 
-        #loop in reverse to find the package
-        while i < len(rp):
-            x = rp[i]
-            if x.lower().endswith("pkg"):
-                logging.debug("Found using pkg heuristic")
-                return x
+        dirpathprevious = os.path.dirname(InputPath)
+        dirpath = os.path.dirname(InputPath)
+        while( dirpath is not None):
+            #
+            # if at the root of a packagepath return the previous dir.  
+            # this catches cases where a package has no DEC
+            #
+            if(dirpath in self.PackagePathList):
+                a = os.path.basename(dirpathprevious)
+                logging.debug("Reached Package Path.  Using previous directory: %s" % a)
+                return a
+            #
+            # if at the root of the workspace return the previous dir.
+            # this catches cases where a package has no DEC
+            #
+            if(dirpath == self.WorkspacePath):
+                a = os.path.basename(dirpathprevious)
+                logging.debug("Reached Workspace Path.  Using previous directory: %s" % a)
+                return a
+            #
+            # Check for a DEC file in this folder
+            # if here then return the directory name as the "package"
+            #
+            for f in os.listdir(dirpath):
+                if fnmatch.fnmatch(f, '*.dec'):
+                    a = os.path.basename(dirpath)
+                    logging.debug("Found DEC file at %s.  Pkg is: %s", dirpath, a)
+                    return a
+            
+            dirpathprevious = dirpath
+            dirpath = os.path.dirname(dirpath)
 
-            #to catch cases where the package doesn't end with PKG
-            #if current path equals the workspace or a packagepath then assume
-            # the package is 1 level deeper (stored previous)
-            fp = InputPath.rsplit(os.path.sep, i)[0]
-            if(fp in self.PackagePathList):
-                logging.debug("Reached Package Path.  Using previous directory: %s" % previous)
-                return previous
-            if(fp == self.WorkspacePath):
-                logging.debug("Reached Workspace Path.  Using previous directory: %s" % previous)
-                return previous
-            previous = x
-            i+= 1
         logging.error("Failed to find containing package for %s" % InputPath)
         logging.info("PackagePath is: %s" % ";".join(self.PackagePathList))
         logging.info("Workspace path is : %s" % self.WorkspacePath)
