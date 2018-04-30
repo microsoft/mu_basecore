@@ -35,6 +35,29 @@ typedef struct {
   TPM2B_AUTH                NewAuth;
 } TPM2_HIERARCHY_CHANGE_AUTH_COMMAND;
 
+typedef struct {
+  TPM2_COMMAND_HEADER       Header;
+  TPMI_SH_POLICY            PolicySession;
+  TPML_DIGEST               HashList;
+} TPM2_POLICY_OR_COMMAND;
+
+typedef struct {
+  TPM2_COMMAND_HEADER       Header;
+  TPMI_DH_OBJECT            TpmKey;
+  TPMI_DH_ENTITY            Bind;
+  TPM2B_NONCE               NonceCaller;
+  TPM2B_ENCRYPTED_SECRET    Salt;
+  TPM_SE                    SessionType;
+  TPMT_SYM_DEF              Symmetric;
+  TPMI_ALG_HASH             AuthHash;
+} TPM2_START_AUTH_SESSION_COMMAND;
+
+typedef struct {
+  TPM2_RESPONSE_HEADER      Header;
+  TPMI_SH_AUTH_SESSION      SessionHandle;
+  TPM2B_NONCE               NonceTPM;
+} TPM2_START_AUTH_SESSION_RESPONSE;
+
 #pragma pack()
 
 typedef struct {
@@ -194,6 +217,8 @@ TPM2_CODE_STRING    ResponseCodeStrings[] = {
 };
 UINTN   ResponseCodeStringsCount = sizeof( ResponseCodeStrings ) / sizeof( ResponseCodeStrings[0] );
 
+UINT32  mLastCommandSent = 0;
+
 
 /**
   This simple function will dump up to MAX_TPM_BUFFER_DUMP bytes
@@ -320,6 +345,77 @@ GetTpm2ResponseString (
 
 
 /**
+  This function dumps a TPM2B_DIGEST structure.
+
+  @param[in]  IsCommand       Indicates that the auth session structure starts with a session handle.
+  @param[in]  AuthSessionPtr  Pointer to the auth session to be printed.
+
+**/
+STATIC
+VOID
+Dump2bDigest (
+  IN UINTN                DebugLevel,
+  IN CHAR8                *Preamble OPTIONAL,
+  IN CONST TPM2B_DIGEST   *Digest
+  )
+{
+  UINT16    DigestSize;
+
+  DigestSize = SwapBytes16( Digest->size );
+  if (DigestSize) {
+    DumpTpmBuffer( DebugLevel, Preamble, SwapBytes16( Digest->size ), Digest->buffer );
+  }
+  else {
+    DEBUG(( DebugLevel, "%a<EMPTY>\n", Preamble ));
+  }
+  return;
+} // Dump2bDigest()
+
+
+/**
+  This function dumps an AuthSession structure from a command or response.
+
+  @param[in]  IsCommand       Indicates that the auth session structure starts with a session handle.
+  @param[in]  AuthSessionPtr  Pointer to the auth session to be printed.
+
+**/
+STATIC
+VOID
+DumpAuthSession (
+  IN BOOLEAN        IsCommand,
+  IN CONST UINT8    *AuthSession
+  )
+{
+  CONST UINT8         *FloatingPtr;
+  CONST TPM2B_DIGEST  *Digest;
+
+  FloatingPtr = AuthSession;
+
+  DEBUG(( DEBUG_INFO, "== Auth Session ==\n" ));
+
+  // If we're pointing to a command auth session,
+  // we need to print the session handle.
+  if (IsCommand) {
+    DEBUG(( DEBUG_INFO, "- SHand:  0x%8X\n", SwapBytes32( *(UINT32*)FloatingPtr ) ));
+    FloatingPtr += sizeof( UINT32 );
+  }
+
+  // Print the common parts of an auth session.
+  Digest = (TPM2B_DIGEST*)FloatingPtr;
+  Dump2bDigest( DEBUG_INFO, "- Nonce:  ", Digest );
+  FloatingPtr += sizeof( UINT16 ) + SwapBytes16( Digest->size );      // Add the size field and the digest size.
+
+  DEBUG(( DEBUG_INFO, "- Attr:   0x%2X\n", *FloatingPtr ));
+  FloatingPtr++;
+
+  Digest = (TPM2B_DIGEST*)FloatingPtr;
+  Dump2bDigest( DEBUG_INFO, "- HMAC:   ", Digest );
+
+  return;
+} // DumpAuthSession()
+
+
+/**
   This function dumps additional information about TPM PCR Extend
   and Event operations.
 
@@ -398,71 +494,7 @@ DumpTpmPcrCommand (
 
 
 /**
-  This function dumps a TPM2B_DIGEST structure.
-
-  @param[in]  IsCommand       Indicates that the auth session structure starts with a session handle.
-  @param[in]  AuthSessionPtr  Pointer to the auth session to be printed.
-
-**/
-STATIC
-VOID
-Dump2bDigest (
-  IN UINTN                DebugLevel,
-  IN CHAR8                *Preamble OPTIONAL,
-  IN CONST TPM2B_DIGEST   *Digest
-  )
-{
-  DumpTpmBuffer( DebugLevel, Preamble, SwapBytes16( Digest->size ), Digest->buffer );
-  return;
-} // Dump2bDigest()
-
-
-/**
-  This function dumps an AuthSession structure from a command or response.
-
-  @param[in]  IsCommand       Indicates that the auth session structure starts with a session handle.
-  @param[in]  AuthSessionPtr  Pointer to the auth session to be printed.
-
-**/
-STATIC
-VOID
-DumpAuthSession (
-  IN BOOLEAN        IsCommand,
-  IN CONST UINT8    *AuthSession
-  )
-{
-  CONST UINT8         *FloatingPtr;
-  CONST TPM2B_DIGEST  *Digest;
-
-  FloatingPtr = AuthSession;
-
-  DEBUG(( DEBUG_INFO, "== Auth Session ==\n" ));
-
-  // If we're pointing to a command auth session,
-  // we need to print the session handle.
-  if (IsCommand) {
-    DEBUG(( DEBUG_INFO, "- SHand:  0x%8X\n", SwapBytes32( *(UINT32*)FloatingPtr ) ));
-    FloatingPtr += sizeof( UINT32 );
-  }
-
-  // Print the common parts of an auth session.
-  Digest = (TPM2B_DIGEST*)FloatingPtr;
-  Dump2bDigest( DEBUG_INFO, "- Nonce:  ", Digest );
-  FloatingPtr += sizeof( UINT16 ) + SwapBytes16( Digest->size );      // Add the size field and the digest size.
-
-  DEBUG(( DEBUG_INFO, "- Attr:   0x%2X\n", *(UINT8*)FloatingPtr ));
-  FloatingPtr++;
-
-  Digest = (TPM2B_DIGEST*)FloatingPtr;
-  Dump2bDigest( DEBUG_INFO, "- HMAC:   ", Digest );
-
-  return;
-} // DumpAuthSession()
-
-
-/**
-  This function dumps additional information about TPM PCR Extend
-  and Event operations.
+  This function dumps additional information about TPM Hierarchy Change Auth operations.
 
   @param[in]  InputBlockSize  Size of the input buffer.
   @param[in]  InputBlock      Pointer to the input buffer itself.
@@ -470,7 +502,7 @@ DumpAuthSession (
 **/
 STATIC
 VOID
-DumpTpmChangeHierarchyCommand (
+DumpTpmHierarchyChangeAuthCommand (
   IN UINT32         InputBlockSize,
   IN CONST UINT8    *InputBlock
   )
@@ -492,7 +524,119 @@ DumpTpmChangeHierarchyCommand (
   Dump2bDigest( DEBUG_INFO, "- NAuth:  ", Digest );
 
   return;
-} // DumpTpmChangeHierarchyCommand()
+} // DumpTpmHierarchyChangeAuthCommand()
+
+
+/**
+  This function dumps additional information about Policy OR operations.
+
+  @param[in]  InputBlockSize  Size of the input buffer.
+  @param[in]  InputBlock      Pointer to the input buffer itself.
+
+**/
+STATIC
+VOID
+DumpTpmPolicyOrCommand (
+  IN UINT32         InputBlockSize,
+  IN CONST UINT8    *InputBlock
+  )
+{
+  CONST TPM2_POLICY_OR_COMMAND    *PolicyOrCommand;
+  CONST TPM2B_DIGEST              *Digest;
+  UINT32                          Index;
+
+  // Start the debugging by mapping some stuff.
+  PolicyOrCommand  = (TPM2_POLICY_OR_COMMAND*)InputBlock;
+
+  // Print the policy session token.
+  DEBUG(( DEBUG_INFO, "- PSess:  0x%8X\n", SwapBytes32( PolicyOrCommand->PolicySession ) ));
+
+  // Print out all of the digests.
+  Digest = &PolicyOrCommand->HashList.digests[0];
+  for (Index = 0; Index < SwapBytes32( PolicyOrCommand->HashList.count ); Index++) {
+    Dump2bDigest( DEBUG_INFO, "- Digest: ", Digest );
+    // Add the size field and the digest size.
+    Digest = (TPM2B_DIGEST*)((UINT8*)Digest + sizeof( UINT16 ) + SwapBytes16( Digest->size ));
+  }
+
+  return;
+} // DumpTpmPolicyOrCommand()
+
+
+/**
+  This function dumps additional information about Start Auth Session operations.
+
+  @param[in]  InputBlockSize  Size of the input buffer.
+  @param[in]  InputBlock      Pointer to the input buffer itself.
+
+**/
+STATIC
+VOID
+DumpTpmStartAuthSessionCommand (
+  IN UINT32         InputBlockSize,
+  IN CONST UINT8    *InputBlock
+  )
+{
+  CONST UINT8                             *FloatingPtr;
+  CONST TPM2_START_AUTH_SESSION_COMMAND   *StartAuthSessionCommand;
+  CONST TPM2B_DIGEST                      *Digest;
+
+  // Start the debugging by mapping some stuff.
+  StartAuthSessionCommand  = (TPM2_START_AUTH_SESSION_COMMAND*)InputBlock;
+
+  // Print as many of the simple fields as possible.
+  DEBUG(( DEBUG_INFO, "- TpmKey: 0x%8X\n", SwapBytes32( StartAuthSessionCommand->TpmKey ) ));
+  DEBUG(( DEBUG_INFO, "- Bind:   0x%8X\n", SwapBytes32( StartAuthSessionCommand->Bind ) ));
+  Digest = (TPM2B_DIGEST*)&StartAuthSessionCommand->NonceCaller;
+  Dump2bDigest( DEBUG_INFO, "- NonceC: ", Digest );
+  // Add the size field and the digest size.
+  FloatingPtr = (UINT8*)Digest + sizeof( UINT16 ) + SwapBytes16( Digest->size );
+
+  // Skip the Salt for now.
+  Digest = (TPM2B_DIGEST*)FloatingPtr;
+  Dump2bDigest( DEBUG_INFO, "- Salt:  ", Digest );
+  FloatingPtr += sizeof( UINT16 ) + SwapBytes16( Digest->size );
+
+  // Print the remaining things.
+  DEBUG(( DEBUG_INFO, "- SesTyp: 0x%2X\n", *FloatingPtr ));
+  FloatingPtr++;
+
+  // Skip Symmetric for now.
+  // NOTE: Symmetric is an interpreted structure, so just jump to the end.
+  FloatingPtr = InputBlock + (InputBlockSize - sizeof( UINT16 ));
+  DEBUG(( DEBUG_INFO, "- AHash:  0x%4X\n", SwapBytes16( *(UINT16*)FloatingPtr ) ));
+
+  return;
+} // DumpTpmStartAuthSessionCommand()
+
+
+/**
+  This function dumps additional information about Start Auth Session operations.
+
+  @param[in]  OutputBlockSize  Size of the output buffer.
+  @param[in]  OutputBlock      Pointer to the output buffer itself.
+
+**/
+STATIC
+VOID
+DumpTpmStartAuthSessionResponse (
+  IN UINT32         OutputBlockSize,
+  IN CONST UINT8    *OutputBlock
+  )
+{
+  CONST TPM2_START_AUTH_SESSION_RESPONSE  *StartAuthSessionResponse;
+  CONST TPM2B_DIGEST                      *Digest;
+
+  // Start the debugging by mapping some stuff.
+  StartAuthSessionResponse  = (TPM2_START_AUTH_SESSION_RESPONSE*)OutputBlock;
+
+  // Dump the handle and the nonce.
+  DEBUG(( DEBUG_INFO, "- SHand:  0x%8X\n", SwapBytes32( StartAuthSessionResponse->SessionHandle ) ));
+  Digest = (TPM2B_DIGEST*)&StartAuthSessionResponse->NonceTPM;
+  Dump2bDigest( DEBUG_INFO, "- NonceT: ", Digest );
+
+  return;
+} // DumpTpmStartAuthSessionResponse()
 
 
 /**
@@ -543,7 +687,15 @@ DumpTpmInputBlock (
       break;
 
     case TPM_CC_HierarchyChangeAuth:
-      DumpTpmChangeHierarchyCommand( InputBlockSize, InputBlock );
+      DumpTpmHierarchyChangeAuthCommand( InputBlockSize, InputBlock );
+      break;
+
+    case TPM_CC_PolicyOR:
+      DumpTpmPolicyOrCommand( InputBlockSize, InputBlock );
+      break;
+
+    case TPM_CC_StartAuthSession:
+      DumpTpmStartAuthSessionCommand( InputBlockSize, InputBlock );
       break;
 
     default:
@@ -551,7 +703,10 @@ DumpTpmInputBlock (
   }
 
   // If verbose, dump all of the buffer contents for deeper analysis.
-  DumpTpmBuffer( DEBUG_INFO, "DATA:     ", InputBlockSize, InputBlock );
+  DumpTpmBuffer( DEBUG_INFO, "DATA:     ", MIN( InputBlockSize, NativeSize ), InputBlock );
+
+  // Update the last command sent so that response parsing can have some context.
+  mLastCommandSent = NativeCode;
 
   return;
 } // DumpTpmInputBlock()
@@ -588,8 +743,21 @@ DumpTpmOutputBlock (
   DEBUG(( DEBUG_INFO, "Tag:      0x%04X\n", NativeTag ));
   DEBUG(( DEBUG_INFO, "Size:     %d (0x%X)\n", NativeSize, NativeSize ));
 
+  // Debug anything else based on the Command context.
+  if (mLastCommandSent != 0x00) {
+    switch (mLastCommandSent)
+    {
+      case TPM_CC_StartAuthSession:
+        DumpTpmStartAuthSessionResponse( OutputBlockSize, OutputBlock );
+        break;
+
+      default:
+        break;
+    }
+  }
+
   // If verbose, dump all of the buffer contents for deeper analysis.
-  DumpTpmBuffer( DEBUG_INFO, "DATA:     ", OutputBlockSize, OutputBlock );
+  DumpTpmBuffer( DEBUG_INFO, "DATA:     ", MIN( OutputBlockSize, NativeSize ), OutputBlock );
 
   DEBUG(( DEBUG_INFO, "=== END TPM COMMAND ===\n\n" ));
 
