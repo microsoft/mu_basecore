@@ -91,7 +91,7 @@ def main():
         logging.debug("No output file specified.  Using default. AuthPayload.FmImageAuth")
         options.OutputFile = "AuthPayload.FmImageAuth"
 
-    if(not gPhase3PackageOnly):
+    if(not gPhase3PackageOnly and not options.ProductionSign):
         #must have a pfx file
         if not options.PfxPath:
             logging.critical("No Pfx File given.")
