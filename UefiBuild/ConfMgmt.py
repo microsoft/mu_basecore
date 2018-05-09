@@ -127,19 +127,42 @@ class ConfMgmt():
             x = x + 1
         #end of while loop
 
+    #
+    # Use VsWhere tool to find visual studio tools
+    #
+    # return tuple of (error code, string value)
+    #
+    def FindWithVsWhere(self, products=None):
+        cmd = "VsWhere -latest -nologo -property installationPath"
+        if(products is not None):
+            cmd += " -products " + products
+        a = StringIO()
+        ret = RunCmd(cmd, outstream=a)
+        if(ret != 0):
+            self.Logger.error("Failed in VsWhere %d to get install dir" % ret)
+            a.close()
+            return (ret, None)
+        p1 = a.getvalue().strip()
+        a.close()
+        if( len(p1.strip()) > 0):
+            return (0, p1)
+        return (ret, None)
+
     def ToolsDefConfigure(self):
         Tag = self.env.GetValue("TOOL_CHAIN_TAG")
         if (Tag is not None) and (Tag.upper().startswith("VSLATEST")):
+            p1 = None
             self.Logger.debug("Must find latest VS toolchain")
-            cmd = "VsWhere -latest -nologo -property installationPath"
-            a = StringIO()
-            ret = RunCmd(cmd, outstream=a)
-            if(ret != 0):
-                self.Logger.critical("Failed in VsWhere %d to get install dir" % ret)
-                a.close()
-                return ret
-            p1 = a.getvalue().strip()
-            a.close()
+            for p in [None, "Microsoft.VisualStudio.Product.BuildTools", "*"]:
+                (rc, path) = self.FindWithVsWhere(p)
+                if rc == 0 and path is not None:
+                    self.Logger.debug("Found VS instance using products = %s", p)
+                    p1 = path
+                    break
+            if(p1 is None):
+                self.Logger.critical("Failed to find valid VSLatest instance")
+                return -6
+            
             self.Logger.debug("VS150INSTALLPATH is %s" % p1)
             os.environ["VS150INSTALLPATH"] = p1
             #now get vc version
