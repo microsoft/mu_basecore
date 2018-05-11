@@ -19,6 +19,7 @@ class InfParser(HashFileParser):
         self.GuidsUsed = []
         self.PpisUsed = []
         self.PcdsUsed = []
+        self.Sources = []
         self.Path = ""
 
     def ParseFile(self, filepath):
@@ -38,6 +39,7 @@ class InfParser(HashFileParser):
         InGuidsSection = False
         InPpiSection = False
         InPcdSection = False
+        InSourcesSection = False
 
         for l in self.Lines:
             l = self.StripComment(l)
@@ -110,6 +112,14 @@ class InfParser(HashFileParser):
                 else:
                    self.PpisUsed.append(l.partition("|")[0].strip())
                    continue
+
+            elif InSourcesSection:
+                if l.strip()[0] == '[':
+                   InSourcesSection = False
+                else:
+                   self.Sources.append(l.partition("|")[0].strip())
+                   continue
+
             # check for different sections
             if l.strip().lower().startswith('[defines'):
                 InDefinesSection = True
@@ -131,5 +141,8 @@ class InfParser(HashFileParser):
 
             elif l.strip().lower().startswith('[pcd') or l.strip().lower().startswith('[patchpcd') or l.strip().lower().startswith('[fixedpcd') or l.strip().lower().startswith('[featurepcd'):
                 InPcdSection = True
+
+            elif l.strip().lower().startswith('[sources'):
+                InSourcesSection = True
 
         self.Parsed = True
