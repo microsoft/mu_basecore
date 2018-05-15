@@ -124,8 +124,13 @@ class BaseParser(object):
             v = self.LocalVars.get(token)
             self.Logger.debug("Trying to replace %s" % retoken)
             if(v != None):
-                self.Logger.debug("with %s  [From Local Vars]"% v.upper())
-                result = result.replace(retoken, v.upper(), 1)
+                #
+                # fixme: This should just be a workaround!!!!!
+                #
+                if (v.upper() == "TRUE" or v.upper() == "FALSE"):
+                    v = v.upper()
+                self.Logger.debug("with %s  [From Local Vars]"% v)
+                result = result.replace(retoken, v, 1)
             else:
                 #use the passed in Env
                 v = self.InputVars.get(token)
@@ -136,8 +141,13 @@ class BaseParser(object):
                     #just skip it because we need to support ifdef
                 else:
                     #found in the Env
-                    self.Logger.debug("with %s [From Input Vars]" % v.upper())
-                    result = result.replace(retoken, v.upper(), 1)
+                    #
+                    # fixme: This should just be a workaround!!!!!
+                    #
+                    if (v.upper() == "TRUE" or v.upper() == "FALSE"):
+                        v = v.upper()
+                    self.Logger.debug("with %s [From Input Vars]" % v)
+                    result = result.replace(retoken, v, 1)
 
             index = end+1
             rep = rep -1
