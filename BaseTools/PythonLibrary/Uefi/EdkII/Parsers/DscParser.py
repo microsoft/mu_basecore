@@ -49,23 +49,8 @@ class DscParser(HashFileParser):
             self.Logger.debug("FullSection: %s" % self.CurrentFullSection)
             return (li, [])
 
-        #process line based on section we are in
-        if(self.CurrentSection == "DEFINES") or (self.CurrentSection == "BUILDOPTIONS"):
-            if li.count("=") >= 1:
-                tokens = li.split("=", 1)
-                leftside = tokens[0].split()
-                if(len(leftside) == 2):
-                    left = leftside[1]
-                else:
-                    left = leftside[0]
-                right = tokens[1].strip()
-                    
-                self.LocalVars[left] = right
-                self.Logger.debug("Key,values found:  %s = %s"%(left, right))
-                return (li, [])
-
         #process line in x64 components    
-        elif(self.CurrentFullSection.upper() == "COMPONENTS.X64"):
+        if(self.CurrentFullSection.upper() == "COMPONENTS.X64"):
             if(self.ParsingInBuildOption > 0):
                 if(".inf" in li.lower()):
                     p = self.ParseInfPathLib(li)
@@ -150,6 +135,64 @@ class DscParser(HashFileParser):
         else:
             return (li, [])
 
+    def __ParseDefineLine(self, Line):
+        l = self.StripComment(Line).strip()
+        if(len(l) < 1):
+            return ("", [])
+        
+        #this line needs to be here to resolve any symbols inside the !include lines, if any
+        li = self.ReplaceVariables(l)
+        if(self.ProcessConditional(li)):
+            #was a conditional
+            ## Other parser returns li, [].  Need to figure out which is right
+            return ("", [])
+        
+        #not conditional keep procesing
+
+        #check if conditional is active
+        if(not self.InActiveCode()):
+            return ("", [])
+
+        #check for include file and import lines from file
+        if(li.strip().lower().startswith("!include")):
+            #include line.
+            toks= li.split()
+            self.Logger.debug("Opening Include File %s" % os.path.join(self.RootPath, toks[1]))
+            sp = self.FindPath(toks[1])
+            lf = open(sp, "r")
+            loc = lf.readlines()
+            lf.close()
+            return ("", loc)
+
+        #check for new section
+        (IsNew, Section) = self.ParseNewSection(li)
+        if(IsNew):
+            self.CurrentSection = Section.upper()
+            self.Logger.debug("New Section: %s" % self.CurrentSection)
+            self.Logger.debug("FullSection: %s" % self.CurrentFullSection)
+            return (li, [])
+
+        #process line based on section we are in
+        if(self.CurrentSection == "DEFINES") or (self.CurrentSection == "BUILDOPTIONS"):
+            if li.count("=") >= 1:
+                tokens = li.split("=", 1)
+                leftside = tokens[0].split()
+                if(len(leftside) == 2):
+                    left = leftside[1]
+                else:
+                    left = leftside[0]
+                right = tokens[1].strip()
+                    
+                self.LocalVars[left] = right
+                self.Logger.debug("Key,values found:  %s = %s"%(left, right))
+
+                #iterate through the existed LocalVars and try to resolve the symbols
+                for var in self.LocalVars:
+                    self.LocalVars[var] = self.ReplaceVariables(self.LocalVars[var])
+                return (li, [])        
+        else:
+            return (li, [])
+
     def ParseInfPathLib(self, line):
         if(line.count("|") > 0):
             l = []
@@ -175,12 +218,28 @@ class DscParser(HashFileParser):
                 if(len(line) > 0):
                     self.Lines.append(line)
                 self.__ProcessMore(add)
+
+    def __ProcessDefines(self, lines):
+        if(len(lines) > 0):
+            for l in lines:
+                (line, add) = self.__ParseDefineLine(l)
+                self.__ProcessDefines(add)
+
+    def ResetParserState(self):
+        #
+        #add more DSC parser based state reset here, if necessary
+        #
+        super(DscParser, self).ResetParserState()
             
     def ParseFile(self, filepath):
         self.Logger.debug("Parsing file: %s" % filepath)
         f = open(os.path.join(filepath), "r")
         #expand all the lines and include other files
-        self.__ProcessMore(f.readlines())
+        file_lines = f.readlines()
+        self.__ProcessDefines(file_lines)
+        #reset the parser state before processing more 
+        self.ResetParserState()
+        self.__ProcessMore(file_lines)
         f.close()
         self.Parsed = True        
 

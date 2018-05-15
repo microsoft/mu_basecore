@@ -276,6 +276,11 @@ class BaseParser(object):
         
         return gu.upper()
 
+    def ResetParserState(self):
+        self.ConditionalStack = []
+        self.CurrentSection = ''
+        self.CurrentFullSection = ''
+        self.Parsed = False
 
 #
 # Base Class for Edk2 build files that use # for comments
