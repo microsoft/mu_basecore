@@ -468,7 +468,7 @@ InternalIsDecimalDigitCharacter (
   IN      CHAR16                    Char
   );
 
-
+#if 0  // MSCHANGE [Begin]
 /**
   Convert a Unicode character to upper case only if
   it maps to a valid small-case ASCII character.
@@ -489,7 +489,7 @@ EFIAPI
 InternalCharToUpper (
   IN      CHAR16                    Char
   );
-
+#endif // MSCHANGE [End]
 
 /**
   Convert a Unicode character to numerical value.
@@ -551,7 +551,7 @@ InternalAsciiIsDecimalDigitCharacter (
   IN      CHAR8                     Char
   );
 
-
+#if 0 // MSCHANGE [Begin]
 /**
   Converts a lowercase Ascii character to upper one.
 
@@ -570,7 +570,7 @@ EFIAPI
 InternalBaseLibAsciiToUpper (
   IN      CHAR8                     Chr
   );
-
+#endif // MSCHANGE [End]
 
 /**
   Check if a ASCII character is a hexadecimal character.

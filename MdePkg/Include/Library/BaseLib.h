@@ -2720,6 +2720,97 @@ AsciiStrnToUnicodeStrS (
   OUT     UINTN                     *DestinationLength
   );
 
+// MSCHANGE [begine] Add Base64 encoding, CharToUpper, and AsciiToUpper
+
+
+/**
+  Convert a Unicode character to upper case only if
+  it maps to a valid small-case ASCII character.
+
+  This function only deals with Unicode characters
+  which maps to a valid small-case ASCII character, i.e.
+  L'a' to L'z'. For other Unicode character, the input character
+  is returned directly.
+
+  @param  Char  The character to convert.
+
+  @return The uppercase value of Ascii character if in the range L'a' to L'z'
+  @retval Unchanged        Otherwise.
+
+**/
+CHAR16
+EFIAPI
+CharToUpper (
+  IN  CHAR16    Chr
+  );
+
+/**
+  Converts a lowercase Ascii character to upper.
+
+  If Chr is lowercase Ascii character, then converts it to upper one.
+
+  @param  Chr   one Ascii character
+
+  @return The uppercase value of Ascii character if in the range 'a' to 'z'
+  @retval Unchanged        Otherwise.
+
+**/
+CHAR8
+EFIAPI
+AsciiToUpper (
+  IN      CHAR8                     Chr
+  );
+
+/**
+ * Convert binary data to a b64 encoded ascii string
+ *
+ *
+ * @param dataPtr     Input UINT8 data
+ * @param dataLen     Number of UINT8 bytes of data
+ * @param asciiPtr    Pointer to output string buffer.
+ *                    Caller is responsible for passing in buffer of asciiSize
+ * @param asciiSize   Size of ascii buffer.  Set to 0 to get the size needed
+ *
+ * @return EFI_STATUS EFI_SUCCESS             ascii buffer filled in.
+ *                    EFI_INVALID_PARAMETER   dataPtr NULL, asciiSize NULL, dataLen 0.
+ *                    EFI_INVALID_PARAMETER   asciiPtr NULL and asciiSize != 0
+ *                    EFI_BUFFER_TOO_SMALL    asciiSize too small - asciiize set to required size
+ */
+RETURN_STATUS
+EFIAPI
+Base64Encode (
+  IN  CONST UINT8  *dataPtr,
+  IN        UINTN   dataLen,
+  OUT       CHAR8  *asciiPtr  OPTIONAL,
+  IN        UINTN  *asciiSize
+  );
+
+/**
+ * Convert b64 ascii string to binary data
+ *
+ *
+ * @param dataPtr     Input ASCII characters
+ * @param dataLen     Number of ASCII characters
+ * @param binPtr      Pointer to output buffer.
+ *                    Caller is responsible for passing in buffer of binSize
+ * @param binSize     0 to get the size needed
+ *
+ * @return EFI_STATUS EFI_SUCCESS             binary buffer filled in.
+ *                    EFI_INVALID_PARAMETER   dataPtr NULL, binSize NULL, dataLen 0.
+ *                    EFI_INVALID_PARAMETER   binPtr NULL and binSize != 0
+ *                    EFI_INVALID_PARAMETER   Invalid character in input stream
+ *                    EFI_BUFFER_TOO_SMALL    Buffer length too small - binSize set to required size;
+ */
+RETURN_STATUS
+EFIAPI
+Base64Decode (
+  IN  CONST CHAR8  *dataPtr,
+  IN        UINTN   dataLen,
+  OUT       UINT8  *binPtr  OPTIONAL,
+  IN        UINTN  *binSize
+  );
+// MSCHANGE [End]
+
 /**
   Converts an 8-bit value to an 8-bit BCD value.
 
