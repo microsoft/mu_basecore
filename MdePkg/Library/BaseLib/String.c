@@ -552,15 +552,12 @@ InternalIsDecimalDigitCharacter (
 **/
 CHAR16
 EFIAPI
-InternalCharToUpper (
-  IN      CHAR16                    Char
+CharToUpper (                        // MSCHANGE
+  IN  CHAR16    Chr
   )
 {
-  if (Char >= L'a' && Char <= L'z') {
-    return (CHAR16) (Char - (L'a' - L'A'));
-  }
 
-  return Char;
+  return (CHAR16) ((Chr >= L'a' && Chr <= L'z') ? Chr - (L'a' - L'A') : Chr);   //MSCHANGE
 }
 
 /**
@@ -586,7 +583,7 @@ InternalHexCharToUintn (
     return Char - L'0';
   }
 
-  return (10 + InternalCharToUpper (Char) - L'A');
+  return (10 + CharToUpper (Char) - L'A');
 }
 
 /**
@@ -1181,7 +1178,7 @@ AsciiStrCmp (
 **/
 CHAR8
 EFIAPI
-InternalBaseLibAsciiToUpper (
+AsciiToUpper (                    // MSCHANGE
   IN      CHAR8                     Chr
   )
 {
@@ -1211,7 +1208,7 @@ InternalAsciiHexCharToUintn (
     return Char - '0';
   }
 
-  return (10 + InternalBaseLibAsciiToUpper (Char) - 'A');
+  return (10 + AsciiToUpper (Char) - 'A');
 }
 
 
@@ -1260,13 +1257,13 @@ AsciiStriCmp (
   ASSERT (AsciiStrSize (FirstString));
   ASSERT (AsciiStrSize (SecondString));
 
-  UpperFirstString  = InternalBaseLibAsciiToUpper (*FirstString);
-  UpperSecondString = InternalBaseLibAsciiToUpper (*SecondString);
+  UpperFirstString  = AsciiToUpper (*FirstString);
+  UpperSecondString = AsciiToUpper (*SecondString);
   while ((*FirstString != '\0') && (UpperFirstString == UpperSecondString)) {
     FirstString++;
     SecondString++;
-    UpperFirstString  = InternalBaseLibAsciiToUpper (*FirstString);
-    UpperSecondString = InternalBaseLibAsciiToUpper (*SecondString);
+    UpperFirstString  = AsciiToUpper (*FirstString);
+    UpperSecondString = AsciiToUpper (*SecondString);
   }
 
   return UpperFirstString - UpperSecondString;
@@ -1762,6 +1759,276 @@ AsciiStrToUnicodeStr (
 }
 
 #endif
+
+// MSCHANGE [Begin]
+// The basis for Base64 encoding is RFC 4686 https://tools.ietf.org/html/rfc4648
+//
+// RFC 4686 has a number of MAY and SHOULD cases.  This implementation chooses
+// the more restrictive versions for security concerns (see RFC 4686 section 3.3).
+
+// A invalid character, if encountered during the decode operation, causes the data
+// to be rejected. In addition, the '=' padding character is only allowed at the end
+// of the Base64 encoded string.
+
+#define BAD_V  99
+
+STATIC CHAR8 encoding_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                "abcdefghijklmnopqrstuvwxyz"
+                                "0123456789+/";
+
+STATIC UINT8 decoding_table[] = {
+       /* Valid characters ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/                                                  */
+       /*                  Also, set '=' as a zero for decoding                                                                              */
+       /*        0    ,  1,      2,      3,      4,      5,      6,      7,      8,      9,      a,      b,      c,      d,      e,      f   */
+             BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,   //   0
+             BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,   //  10
+             BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,     62,  BAD_V,  BAD_V,  BAD_V,     63,   //  20
+                52,     53,     54,     55,     56,     57,     58,     59,     60,     61,  BAD_V,  BAD_V,  BAD_V,      0,  BAD_V,  BAD_V,   //  30
+             BAD_V,      0,      1,      2,      3,      4,      5,      6,      7,      8,      9,     10,     11,     12,     13,     14,   //  40
+                15,     16,     17,     18,     19,     20,     21,     22,     23,     24,     25,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,   //  50
+             BAD_V,     26,     27,     28,     29,     30,     31,     32,     33,     34,     35,     36,     37,     38,     39,     40,   //  60
+                41,     42,     43,     44,     45,     46,     47,     48,     49,     50,     51,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,   //  70
+             BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,   //  80
+             BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,   //  90
+             BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,   //  a0
+             BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,   //  b0
+             BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,   //  c0
+             BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,   //  d0
+             BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,   //  d0
+             BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V,  BAD_V    //  f0
+};
+
+/**
+ * Convert binary data to a Base64 encoded ascii string
+ *
+ *
+ * @param dataPtr     Input UINT8 data
+ * @param dataLen     Number of UINT8 bytes of data
+ * @param asciiPtr    Pointer to output string buffer.
+ *                    Caller is responsible for passing in buffer of asciiSize
+ * @param asciiSize   Size of ascii buffer.  Set to 0 to get the size needed
+ *
+ * @return RETURN_STATUS RETURN_SUCCESS             ascii buffer filled in.
+ *                    RETURN_INVALID_PARAMETER   dataPtr NULL, asciiSize NULL, dataLen 0.
+ *                    RETURN_INVALID_PARAMETER   asciiPtr NULL and asciiSize != 0
+ *                    RETURN_BUFFER_TOO_SMALL    asciiSize too small - asciiize set to required size
+ */
+RETURN_STATUS
+Base64Encode (
+  IN  CONST UINT8  *dataPtr,
+  IN        UINTN   dataLen,
+  OUT       CHAR8  *asciiPtr   OPTIONAL,
+  IN        UINTN  *asciiSize) {
+
+    UINTN          requiredSize;
+    UINTN          left;
+    CONST UINT8   *inptr;
+    CHAR8         *outptr;
+
+    // Check pointers, and datalen is valid
+    if ((dataPtr == NULL) || (asciiSize == NULL)) {
+        DEBUG((DEBUG_ERROR,"dataPtr=%p, binSize=%p\n", dataPtr, asciiSize));
+        return RETURN_INVALID_PARAMETER;
+    }
+
+    if (dataLen == 0) {                   // Allow for RFC 4648 test vector 1
+        if (*asciiSize < 1) {
+            *asciiSize = 1;
+            return RETURN_BUFFER_TOO_SMALL;
+        }
+        *asciiSize = 1;
+        *asciiPtr = '\0';
+        return RETURN_SUCCESS;
+    }
+
+    requiredSize = ((dataLen + 2) / 3) * 4 + 1; // 4 ascii per 3 bytes + NULL
+    if ((asciiPtr == NULL) || *asciiSize < requiredSize) {
+        *asciiSize = requiredSize;
+        return RETURN_BUFFER_TOO_SMALL;
+    }
+
+    left = dataLen;
+    outptr = asciiPtr;
+    inptr  = dataPtr;
+
+    // Encoding 24 bits (three bytes) into 4 ascii characters
+    while (left >= 3) {
+       *outptr++ = encoding_table[( inptr[0] & 0xfc) >> 2 ];  // Get first 6 bits
+       *outptr++ = encoding_table[((inptr[0] & 0x03) << 4) +
+                                  ((inptr[1] & 0xf0) >> 4)];  // Get second 6 bits
+       *outptr++ = encoding_table[((inptr[1] & 0x0f) << 2) +
+                                  ((inptr[2] & 0xc0) >> 6)];  // Get third 6 bits
+       *outptr++ = encoding_table[( inptr[2] & 0x3f)];       // Get fourth 6 bits
+       left -= 3;
+       inptr += 3;
+    }
+
+    // Handle the remainder, and add padding '=' characters as necessary.
+    switch (left) {
+    case 0:
+        // No bytes left, done.
+        break;
+    case 1:
+        // One more data byte, two pad characters
+        *outptr++ = encoding_table[( inptr[0] & 0xfc) >> 2];  // Get first 6 bits
+        *outptr++ = encoding_table[((inptr[0] & 0x03) << 4)]; // Get last 2 bits
+        *outptr++ = '=';                                      // 2 pad characters
+        *outptr++ = '=';
+        break;
+    case 2:
+        // Two more data bytes, and one pad character
+        *outptr++ = encoding_table[( inptr[0] & 0xfc) >> 2];  // Get first 6 bits
+        *outptr++ = encoding_table[((inptr[0] & 0x03) << 4) +
+                                   ((inptr[1] & 0xf0) >> 4)]; // Get second 6 bits
+        *outptr++ = encoding_table[((inptr[1] & 0x0f) << 2)]; // get last 4 bits
+        *outptr++ = '=';                                      // 1 pad character
+        break;
+    }
+    *outptr = '\0';     // Add terminating NULL
+    return RETURN_SUCCESS;
+}
+
+/**
+ * Convert Base64 ascii string to binary data
+ *
+ *
+ * @param dataPtr     Input ASCII characters
+ * @param dataLen     Number of ASCII characters
+ * @param binPtr      Pointer to output buffer.
+ *                    Caller is responsible for passing in buffer of at least binSize
+ * @param binSize     0 to get the size needed. Set to bytes stored on return
+ *
+ * @return RETURN_STATUS RETURN_SUCCESS             binary buffer filled in.
+ *                    RETURN_INVALID_PARAMETER   dataPtr NULL, binSize NULL.
+ *                    RETURN_INVALID_PARAMETER   binPtr NULL and binSize != 0
+ *                    RETURN_INVALID_PARAMETER   Invalid character in input stream
+ *                    RETURN_BUFFER_TOO_SMALL    Buffer length too small - binSize set to required size;
+ */
+RETURN_STATUS
+EFIAPI
+Base64Decode (
+  IN  CONST CHAR8  *dataPtr,
+  IN        UINTN   dataLen,
+  OUT       UINT8  *binPtr   OPTIONAL,
+  IN        UINTN  *binSize
+  )
+{
+
+    UINT8   *binData;
+    UINT32   Value;
+    CHAR8    chr;
+    INTN     bufferSize;
+    UINTN    indx;
+    UINTN    ondx;
+    UINTN    icnt;
+    UINTN    actualDataLen;
+
+
+    // Check pointers are not NULL
+    if ((dataPtr == NULL) || (binSize == NULL)) {
+        DEBUG((DEBUG_ERROR, "dataPtr=%p, binSize=%\n", dataPtr, binSize));
+        return RETURN_INVALID_PARAMETER;
+    }
+
+    actualDataLen = 0;
+    bufferSize = 0;
+    // Determine the actual number of valid characters in the string.
+    // All invalid characters. except selected white space characters,
+    // will cause the Base64 string to be rejected. White space to allow
+    // properly formatted XML will be ignored.
+    //
+    // See section 3.3 of RFC 4648.
+    //
+    for (indx = 0; indx < dataLen; indx++) {
+        if (dataPtr[indx] == '=') {
+            actualDataLen++;             // '=' is part of the quantum
+            bufferSize--;
+            // Only two '=' characters can be valid.
+            if (bufferSize < -2) {
+                DEBUG((DEBUG_ERROR, "dataPtr=%p, Invalid = at %d\n", dataPtr, indx));
+                return RETURN_INVALID_PARAMETER;
+            }
+        } else {
+            chr = dataPtr[indx];
+            if (BAD_V != decoding_table[chr]) {
+                // The '=' characters are only valid at the end, so any
+                // valid character after an '=', will be flagged as an error.
+                if (bufferSize < 0) {
+                    DEBUG((DEBUG_ERROR, "dataPtr=%p, Invalid character %c at %d\n", dataPtr, chr, indx));
+                    return RETURN_INVALID_PARAMETER;
+                }
+                actualDataLen++;
+            } else {
+                // The reset of the decoder will ignore all invalid characters allowed here.
+                // Ignoring selected white space is useful.  In this case, the decoder will
+                // ignore ' ', '\t', '\n', and '\r'.
+                if ((chr != ' ') &&
+                    (chr != '\t') &&
+                    (chr != '\n') &&
+                    (chr != '\r')) {
+                    DEBUG((DEBUG_ERROR, "dataPtr=%p, Invalid character %c at %d\n", dataPtr, chr, indx));
+                    return RETURN_INVALID_PARAMETER;
+                }
+            }
+        }
+    }
+
+    // The Base64 character string must be a multiple of 4 character quantums.
+    if (actualDataLen % 4 != 0) {
+        DEBUG((DEBUG_ERROR,"dataPtr=%p, Invalid data length %d\n", dataPtr, actualDataLen));
+        return RETURN_INVALID_PARAMETER;
+    }
+
+    bufferSize += actualDataLen / 4 * 3;
+    if (bufferSize < 0) {
+        DEBUG((DEBUG_ERROR,"bufferSize(%d) is wrong.\n", bufferSize));
+        return RETURN_DEVICE_ERROR;
+    }
+
+    if ((binPtr == NULL) || (*binSize < (UINTN) bufferSize)) { // bufferSize is >= 0
+       *binSize = bufferSize;
+        return RETURN_BUFFER_TOO_SMALL;
+    }
+
+    // If no decodable characters, return a size of zero. RFC 4686 test vector 1.
+    if (actualDataLen == 0) {
+        *binSize = 0;
+        return RETURN_SUCCESS;
+    }
+
+    binData = binPtr;
+
+    // Input data is verified to be a multiple of 4 valid charcters.  Process four
+    // characters at a time. Uncounted (ie. invalid)  characters will be ignored.
+    for (indx = 0, ondx = 0; (indx < dataLen) && (ondx < *binSize); ) {
+        Value = 0;
+
+        // Get 24 bits of data from 4 input characters, each character representing 6 bits
+        for (icnt = 0; icnt < 4; icnt++) {
+            do {
+                chr = decoding_table[dataPtr[indx++]];   // '=' decodes as 0x00
+            } while (chr == BAD_V);
+            Value <<= 6;
+            Value |= chr;
+        }
+
+        // Store 3 bytes of binary data (24 bits)
+        *binData++ = (UINT8) (Value >> 16);
+        ondx++;
+
+        // Due to the '=' special cases for the two bytes at the end,
+        // we have to check the length and not store the padding data
+        if (ondx++ < *binSize) {
+            *binData++ = (UINT8) (Value >>  8);
+        }
+        if (ondx++ < *binSize) {
+            *binData++ = (UINT8) Value;
+        }
+    }
+
+    return RETURN_SUCCESS;
+}
+// MSCHANGE [End]
 
 /**
   Converts an 8-bit value to an 8-bit BCD value.
