@@ -1876,24 +1876,25 @@ EfiBootManagerBoot (
     FilePath = NULL;
     EfiBootManagerConnectDevicePath (BootOption->FilePath, NULL);
     FileBuffer = BmGetNextLoadOptionBuffer (LoadOptionTypeBoot, BootOption->FilePath, &FilePath, &FileSize);
+
+    // MS_CHANGE: Start
+    //REPORT_STATUS_CODE (EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderLoad));
+    ReportStatusCodeData[0] = (FilePath != NULL) ? (UINTN)FilePath : (UINTN)(BootOption->FilePath);
+    ReportStatusCodeData[1] = OptionNumber;
+
+    REPORT_STATUS_CODE_EX (
+      EFI_PROGRESS_CODE,
+      PcdGet32 (PcdProgressCodeOsLoaderLoad),
+      0,
+      NULL,
+      NULL,
+      ReportStatusCodeData,
+      sizeof(ReportStatusCodeData)
+      );
+    // MS_CHANGE
+
     if (FileBuffer != NULL) {
       RamDiskDevicePath = BmGetRamDiskDevicePath (FilePath);
-
-      // MS_CHANGE: Start
-      //REPORT_STATUS_CODE (EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderLoad));
-      ReportStatusCodeData[0] = (UINTN)FilePath;
-      ReportStatusCodeData[1] = OptionNumber;
-
-      REPORT_STATUS_CODE_EX (
-        EFI_PROGRESS_CODE,
-        PcdGet32 (PcdProgressCodeOsLoaderLoad),
-        0,
-        NULL,
-        NULL,
-        ReportStatusCodeData,
-        sizeof(ReportStatusCodeData)
-        );
-      // MS_CHANGE
 
       Status = gBS->LoadImage (
                       TRUE,
