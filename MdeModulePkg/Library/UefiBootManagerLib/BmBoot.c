@@ -1839,13 +1839,31 @@ EfiBootManagerBoot (
     }
 
     if (EFI_ERROR (Status)) {
+      // MS_CHANGE: Start
       //
       // Report Status Code to indicate that the failure to load boot option
       //
+      /*
       REPORT_STATUS_CODE (
         EFI_ERROR_CODE | EFI_ERROR_MINOR,
         (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_EC_BOOT_OPTION_LOAD_ERROR)
         );
+      */
+
+      ReportStatusCodeData[0] = (FilePath != NULL) ? (UINTN)FilePath : (UINTN)(BootOption->FilePath);
+      ReportStatusCodeData[1] = Status;
+
+      REPORT_STATUS_CODE_EX (
+        EFI_ERROR_CODE | EFI_ERROR_MINOR,
+        (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_EC_BOOT_OPTION_LOAD_ERROR),
+        0,
+        NULL,
+        NULL,
+        ReportStatusCodeData,
+        sizeof(ReportStatusCodeData)
+        );
+      // MS_CHANGE
+
       BootOption->Status = Status;
       //
       // Destroy the RAM disk
