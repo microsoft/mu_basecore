@@ -323,6 +323,7 @@ UnicodeToUpper (
   return (Chr >= L'a' && Chr <= L'z') ? Chr - (L'a' - L'A') : Chr;
 }
 
+#if 0 // MSCHANGE [Begin]
 /**
 
   Convert the character to upper case.
@@ -338,7 +339,7 @@ AsciiToUpper (
 {
   return (Chr >= 'a' && Chr <= 'z') ? Chr - ('a' - 'A') : Chr;
 }
-
+#endif  // MSCHANGE [End]
 /**
   Compare the Unicode and Ascii string pointed by String to the string pointed by String2.
 
