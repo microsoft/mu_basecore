@@ -45,6 +45,7 @@ def main():
     parser.add_option("-s", dest="DetachedSignature", help="Detached Signature file (production signed phase 3 step only)", default=None)
     parser.add_option("--pfxfile", dest="PfxPath", help="Path to PFX file for dev signing", default=None)
     parser.add_option("--pfxpass", dest="PfxPass", help="Optional - PFX password for dev signing with PFX cert", default=None)
+    parser.add_option("--eku", dest="Eku", help="Option -specify EKU value to pass to signtool if required", default=None)
     parser.add_option("--SignTool", dest="SignToolPath", help="Path to signtool.exe")
     #Turn on dubug level logging
     parser.add_option("--debug", action="store_true", dest="debug", help="turn on debug logging level for file log",  default=False)
@@ -146,7 +147,8 @@ def main():
                 FileToSign,  
                 options.DetachedSignature, 
                 options.PfxPath, 
-                PfxPass=options.PfxPass
+                PfxPass=options.PfxPass,
+                Eku=options.Eku
                 )
 
             if ret != 0:

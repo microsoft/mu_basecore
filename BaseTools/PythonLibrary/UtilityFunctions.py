@@ -151,7 +151,7 @@ def RunPythonScript(cmd, capture=True, workingdir=None, outfile=None, outstream=
 # 
 #  Signing is in format specified by UEFI authentacted variables 
 ####
-def DetachedSignWithSignTool(SignToolPath, ToSignFilePath, SignatureOutputFile, PfxFilePath, PfxPass=None, Oid="1.2.840.113549.1.7.2"):
+def DetachedSignWithSignTool(SignToolPath, ToSignFilePath, SignatureOutputFile, PfxFilePath, PfxPass=None, Oid="1.2.840.113549.1.7.2", Eku=None):
 
     #check signtool path
     if not os.path.exists(SignToolPath):
@@ -163,6 +163,8 @@ def DetachedSignWithSignTool(SignToolPath, ToSignFilePath, SignatureOutputFile, 
     #Signtool parameters from https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/secure-boot-key-generation-and-signing-using-hsm--example
     # Search for "Secure Boot Key Generation and Signing Using HSM"
     cmd = SignToolPath + ' sign /fd sha256 /p7ce DetachedSignedData /p7co ' + Oid + ' /p7 "' + OutputDir + '" /f "' + PfxFilePath + '"'
+    if Eku is not None:
+        cmd += ' /u ' + Eku 
     if PfxPass is not None:
         #add password if set
         cmd = cmd + ' /p ' + PfxPass
