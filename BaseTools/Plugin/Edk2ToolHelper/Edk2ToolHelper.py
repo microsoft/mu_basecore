@@ -57,7 +57,7 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
     # 
     ##
     @staticmethod
-    def PackageFmpImageAuth(InputBin, OutputBin, DevPfxFilePath = None, DevPfxPassword = None, DetachedSignatureFile = None):
+    def PackageFmpImageAuth(InputBin, OutputBin, DevPfxFilePath = None, DevPfxPassword = None, DetachedSignatureFile = None, Eku = None):
         logging.debug("CapsulePackage: Fmp Image Auth Header/Signing")
   
         #temp output dir is in the outputbin folder
@@ -85,6 +85,8 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
             cmd = cmd + " --pfxfile " + DevPfxFilePath
             if( DevPfxPassword is not None):
                 cmd += " --pfxpass " + DevPfxPassword
+            if (Eku is not None):
+                cmd += " --eku " + Eku
             ret = RunPythonScript(cmd, workingdir=TempOutDir)
             #delete the temp dir
             shutil.rmtree(TempOutDir, ignore_errors=True)
