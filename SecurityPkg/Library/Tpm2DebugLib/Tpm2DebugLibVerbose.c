@@ -722,7 +722,7 @@ DumpTpmInputBlock (
   }
 
   // If verbose, dump all of the buffer contents for deeper analysis.
-  DumpTpmBuffer( DEBUG_INFO, "DATA:     ", InputBlockSize, InputBlock );
+  DumpTpmBuffer( DEBUG_INFO, "DATA:     ", MIN( InputBlockSize, NativeSize ), InputBlock );
 
   // Update the last command sent so that response parsing can have some context.
   mLastCommandSent = NativeCode;
@@ -776,7 +776,7 @@ DumpTpmOutputBlock (
   }
 
   // If verbose, dump all of the buffer contents for deeper analysis.
-  DumpTpmBuffer( DEBUG_INFO, "DATA:     ", OutputBlockSize, OutputBlock );
+  DumpTpmBuffer( DEBUG_INFO, "DATA:     ", MIN( OutputBlockSize, NativeSize ), OutputBlock );
 
   DEBUG(( DEBUG_INFO, "=== END TPM COMMAND ===\n\n" ));
 
