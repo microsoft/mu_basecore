@@ -11,6 +11,14 @@ class CatGeneratorTest(unittest.TestCase):
     o = CatGenerator("x64", "win10")
     self.assertEqual(o.OperatingSystem, "10")
 
+  def test_10_OS(self):
+    o = CatGenerator("x64", "10")
+    self.assertEqual(o.OperatingSystem, "10")
+
+  def test_win10Server_OS(self):
+    o = CatGenerator("x64", "Server10")
+    self.assertEqual(o.OperatingSystem, "Server10")
+
   def test_invalid_OS(self):
     with self.assertRaises(ValueError):
       CatGenerator("x64", "Invalid Junk")
@@ -26,6 +34,14 @@ class CatGeneratorTest(unittest.TestCase):
   def test_arm_arch(self):
     o = CatGenerator("arm", "win10")
     self.assertEqual(o.Arch, "ARM")
+
+  def test_arm64_arch(self):
+    o = CatGenerator("arm64", "win10")
+    self.assertEqual(o.Arch, "ARM64")
+
+  def test_aarch64_arch(self):
+    o = CatGenerator("aarch64", "win10")
+    self.assertEqual(o.Arch, "ARM64")
   
   def test_invalid_arch(self):
     with self.assertRaises(ValueError):
