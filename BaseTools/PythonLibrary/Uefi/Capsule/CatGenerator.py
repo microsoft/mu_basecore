@@ -21,6 +21,8 @@ class CatGenerator(object):
       self._arch = "X64"
     elif(value == "arm"):
       self._arch = "ARM"
+    elif(value == "arm64") or (value == "aarch64"):  #support UEFI defined aarch64 value as well
+      self._arch = "ARM64"
     else:
       logging.critical("Unsupported Architecture: %s", value)
       raise ValueError("Unsupported Architecture")
@@ -34,6 +36,8 @@ class CatGenerator(object):
     value = value.lower()
     if(value == "win10") or (value == "10"):
       self._operatingsystem = "10"
+    elif(value == "server10"):
+      self._operatingsystem = "Server10"
     else:
       logging.critical("Unsupported Operating System: %s", value)
       raise ValueError("Unsupported Operating System")
