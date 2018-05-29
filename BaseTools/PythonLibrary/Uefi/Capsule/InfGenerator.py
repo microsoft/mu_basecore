@@ -3,7 +3,6 @@ import logging
 import datetime
 import re
 import uuid
-from UtilityFunctions import RunCmd
 
 
 #####
@@ -74,7 +73,12 @@ REG_DWORD     = 0x00010001
   HKLM,SYSTEM\CurrentControlSet\Control\FirmwareResources\{{{EsrtGuid}}},Policy,%REG_DWORD%,1
   """
 
-  SUPPORTED_ARCH = ['amd64', 'arm']
+  SUPPORTED_ARCH = { 'amd64': 'amd64',
+                     'x64':'amd64', 
+                     'arm': 'arm', 
+                     'arm64': 'ARM64', 
+                     'aarch64': 'ARM64'
+  }
 
   def __init__(self, name_string, provider, esrt_guid, arch, description_string, version_string, version_hex):
     self.Name = name_string
@@ -167,11 +171,11 @@ REG_DWORD     = 0x00010001
 
   @Arch.setter
   def Arch(self, value):
-    value = value.lower()
-    if(value not in InfGenerator.SUPPORTED_ARCH):
+    key = value.lower()
+    if(key not in InfGenerator.SUPPORTED_ARCH.keys()):
       logging.critical("Arch invalid: '%s'", value)
       raise ValueError("Unsupported Architecture")
-    self._arch = value
+    self._arch = InfGenerator.SUPPORTED_ARCH[key]
 
   @property
   def Date(self):
