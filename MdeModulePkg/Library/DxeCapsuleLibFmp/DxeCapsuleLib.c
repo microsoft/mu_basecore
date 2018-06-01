@@ -1615,6 +1615,26 @@ ProcessCapsuleImage (
   return ProcessThisCapsuleImage (CapsuleHeader, NULL, NULL);
 }
 
+/** MU_CHANGE - START
+  The firmware implements to process the capsule image.
+
+  @param  CapsuleHeader         Points to a capsule header.
+
+  @retval EFI_SUCESS            Process Capsule Image successfully.
+  @retval EFI_UNSUPPORTED       Capsule image is not supported by the firmware.
+  @retval EFI_DEVICE_ERROR      Something went wrong staging the capsule
+**/
+EFI_STATUS
+EFIAPI
+StageCapsuleImage (
+  IN EFI_CAPSULE_HEADER  *CapsuleHeader
+  )
+{
+  return EFI_SUCCESS;
+}
+
+// MU_CHANGE - END
+
 /**
   Callback function executed when the EndOfDxe event group is signaled.
 
