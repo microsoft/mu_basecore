@@ -178,6 +178,15 @@ UpdateCapsule (
       if ((CapsuleHeader->Flags & CAPSULE_FLAGS_INITIATE_RESET) != 0) {
         InitiateReset = TRUE;
       }
+
+      // MU_CHANGE - Stage Runtime Capsules (in case special handling is needed)
+      // To persist across reset.
+      Status = StageCapsuleImage (CapsuleHeader);
+      if (EFI_ERROR (Status)) {
+        return Status;
+      }
+
+      // MU_CHANGE - End
     }
   }
 
