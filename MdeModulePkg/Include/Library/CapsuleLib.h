@@ -50,6 +50,27 @@ ProcessCapsuleImage (
   IN EFI_CAPSULE_HEADER  *CapsuleHeader
   );
 
+// MSChange - Add a routine to allow firmware-specific handling for capsules
+//           that need to persist across reset.
+
+/**
+  The firmware-specific implementation that stages the capsule image
+  for processing after reset if it recognized the format of this capsule
+  image.
+
+  Caution: This function may receive untrusted input.
+
+  @param  CapsuleHeader    Pointer to the UEFI capsule image to be processed.
+
+  @retval EFI_SUCESS       Capsule Image processed successfully.
+  @retval EFI_UNSUPPORTED  Capsule image is not supported by the firmware.
+**/
+EFI_STATUS
+EFIAPI
+StageCapsuleImage (
+  IN EFI_CAPSULE_HEADER  *CapsuleHeader
+  );
+
 /**
 
   This routine is called to process capsules.

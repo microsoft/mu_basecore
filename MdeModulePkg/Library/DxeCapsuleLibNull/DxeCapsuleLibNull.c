@@ -2,6 +2,7 @@
   Null Dxe Capsule Library instance does nothing and returns unsupport status.
 
 Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
+Copyright (C) Microsoft Corporation. All rights reserved.
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -167,3 +168,25 @@ CoDRemoveTempFile (
 {
   return EFI_UNSUPPORTED;
 }
+
+// MU_CHANGE [BEGIN] - Provide simpler interface without assumptions of staging medium.
+
+/**
+  The firmware implements to process the capsule image.
+
+  @param  CapsuleHeader         Points to a capsule header.
+
+  @retval EFI_SUCESS            Process Capsule Image successfully.
+  @retval EFI_UNSUPPORTED       Capsule image is not supported by the firmware.
+  @retval EFI_DEVICE_ERROR      Something went wrong staging the capsule
+**/
+EFI_STATUS
+EFIAPI
+StageCapsuleImage (
+  IN EFI_CAPSULE_HEADER  *CapsuleHeader
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+// MU_CHANGE [END] - Provide simpler interface without assumptions of staging medium.
