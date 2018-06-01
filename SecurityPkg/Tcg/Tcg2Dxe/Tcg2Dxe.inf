@@ -70,6 +70,7 @@
 ## MSChange [BEGIN] - Add the OemTpm2InitLib
   OemTpm2InitLib
 ## MSChange [END]
+  PcdLib  # MU_CHANGE
 
 [Guids]
   ## SOMETIMES_CONSUMES     ## Variable:L"SecureBoot"
@@ -112,6 +113,7 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableRev                         ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLaml                        ## PRODUCES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLasa                        ## PRODUCES
+  gEfiSecurityPkgTokenSpaceGuid.TcgMeasureBootStringsInPcr4                 ## CONSUMES # MU_CHANGE
 
 [Depex]
   # According to PcdTpm2AcpiTableRev definition in SecurityPkg.dec
