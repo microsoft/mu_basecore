@@ -176,6 +176,15 @@ UpdateCapsule (
       if ((CapsuleHeader->Flags & CAPSULE_FLAGS_INITIATE_RESET) != 0) {
         InitiateReset = TRUE;
       }
+
+      // MSChange - Stage Runtime Capsules (in case special handling is needed)
+      // To persist across reset.
+      Status = StageCapsuleImage (CapsuleHeader);
+      if (EFI_ERROR (Status)) {
+        return Status;
+      }
+
+      // MSChange - End
     }
   }
 
