@@ -70,6 +70,7 @@
 ## MSChange [BEGIN] - Add the OemTpm2InitLib
   OemTpm2InitLib
 ## MSChange [END]
+  PcdLib  #mschange - missing
 
 [Guids]
   ## SOMETIMES_CONSUMES     ## Variable:L"SecureBoot"
@@ -108,6 +109,7 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2NumberOfPCRBanks                     ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTcgLogAreaMinLen                         ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2FinalLogAreaLen                      ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.TcgMeasureBootStringsInPcr4                 ## CONSUMES #mschange
 
 [Depex]
   TRUE
