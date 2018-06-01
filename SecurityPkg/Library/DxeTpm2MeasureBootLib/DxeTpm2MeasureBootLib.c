@@ -36,6 +36,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/FirmwareVolumeBlock.h>
 
 #include <Guid/MeasuredFvHob.h>
+#include <Ppi/FirmwareVolumeInfoMeasurementExcluded.h> //mschange for excludedFvHob support
+#include <Guid/ExcludedFvHob.h> //Mschange
+
 
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
@@ -60,6 +63,8 @@ UINTN                             mTcg2ImageSize;
 //
 EFI_HANDLE                        mTcg2CacheMeasuredHandle  = NULL;
 MEASURED_HOB_DATA                 *mTcg2MeasuredHobData     = NULL;
+EXCLUDED_HOB_DATA                 *mExcludedFvHobData       = NULL;  //mschange
+
 
 /**
   Reads contents of a PE/COFF image in memory buffer.
@@ -587,6 +592,20 @@ DxeTpm2MeasureBootHandler (
           break;
         }
       }
+      //was not found in measured list.  Now check exclude list -- mschange
+      if( (ApplicationRequired == FALSE) && (mExcludedFvHobData != NULL))
+      {
+        for (Index = 0; Index < mExcludedFvHobData->Num; Index++) {
+          if(mExcludedFvHobData->ExcludedFvs[Index].FvBase == FvAddress) {
+            //
+            // Cache measured FV for next measurement
+            //
+            mTcg2CacheMeasuredHandle = Handle;
+            ApplicationRequired  = TRUE;
+            break;
+          }
+        }
+      }  //-- mschange end
     }
   }
 
@@ -693,6 +712,12 @@ DxeTpm2MeasureBootLibConstructor (
 
   if (GuidHob != NULL) {
     mTcg2MeasuredHobData = GET_GUID_HOB_DATA (GuidHob);
+  }
+  //mschange - Get excluded fv list if present
+  GuidHob = GetFirstGuidHob (&gExcludedFvHobGuid);
+
+  if (GuidHob != NULL) {
+    mExcludedFvHobData = GET_GUID_HOB_DATA (GuidHob);
   }
 
   return RegisterSecurity2Handler (
