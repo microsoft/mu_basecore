@@ -2505,15 +2505,20 @@ OnReadyToBoot (
       DEBUG ((DEBUG_ERROR, "Boot Variables not Measured. Error!\n"));
     }
 
-    //
-    // 1. This is the first boot attempt.
-    //
-    Status = TcgMeasureAction (
-               4,
-               EFI_CALLING_EFI_APPLICATION
-               );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a not Measured. Error!\n", EFI_CALLING_EFI_APPLICATION));
+    if (PcdGetBool (TcgMeasureBootStringsInPcr4)) {
+      // MU_CHANGE for some platform uefi compat
+      //
+      // 1. This is the first boot attempt.
+      //
+      Status = TcgMeasureAction (
+                 4,
+                 EFI_CALLING_EFI_APPLICATION
+                 );
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a not Measured. Error!\n", EFI_CALLING_EFI_APPLICATION));
+      }
+    } else {
+      DEBUG ((DEBUG_WARN, "Tcg2Dxe PCD set to skip Measure Boot String in PCR4\n"));
     }
 
     //
@@ -2539,27 +2544,33 @@ OnReadyToBoot (
     // 5. Read & Measure variable. BootOrder already measured.
     //
   } else {
-    //
-    // 6. Not first attempt, meaning a return from last attempt
-    //
-    Status = TcgMeasureAction (
-               4,
-               EFI_RETURNING_FROM_EFI_APPLICATION
-               );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a not Measured. Error!\n", EFI_RETURNING_FROM_EFI_APPLICATION));
-    }
+    if (PcdGetBool (TcgMeasureBootStringsInPcr4)) {
+      // MU_CHANGE for platform uefi compat
+      //
+      // 6. Not first attempt, meaning a return from last attempt
+      //
+      Status = TcgMeasureAction (
+                 4,
+                 EFI_RETURNING_FROM_EFI_APPLICATION
+                 );
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a not Measured. Error!\n", EFI_RETURNING_FROM_EFI_APPLICATION));
+      }
 
-    //
-    // 7. Next boot attempt, measure "Calling EFI Application from Boot Option" again
-    // TCG PC Client PFP spec Section 2.4.4.5 Step 4
-    //
-    Status = TcgMeasureAction (
-               4,
-               EFI_CALLING_EFI_APPLICATION
-               );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a not Measured. Error!\n", EFI_CALLING_EFI_APPLICATION));
+      //
+      // 7. Next boot attempt, measure "Calling EFI Application from Boot Option" again
+      // TCG PC Client PFP spec Section 2.4.4.5 Step 4
+      //
+      Status = TcgMeasureAction (
+                 4,
+                 EFI_CALLING_EFI_APPLICATION
+                 );
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a not Measured. Error!\n", EFI_CALLING_EFI_APPLICATION));
+      }
+    } else {
+      // MU_CHANGE
+      DEBUG ((DEBUG_WARN, "Tcg2Dxe PCD set to skip Measure Boot String in PCR4\n"));
     }
   }
 
