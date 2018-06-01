@@ -58,6 +58,7 @@
 
 [Guids]
   gMeasuredFvHobGuid                    ## SOMETIMES_CONSUMES ## HOB
+  gExcludedFvHobGuid                    ## SOMETIMES_CONSUMES ## HOB  # mschange
 
 [Protocols]
   gEfiTcg2ProtocolGuid                  ## SOMETIMES_CONSUMES
