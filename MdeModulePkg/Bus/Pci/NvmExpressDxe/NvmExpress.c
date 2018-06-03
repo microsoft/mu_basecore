@@ -665,14 +665,23 @@ ProcessAsyncTaskList (
         // Free the resources allocated before cmd submission
         //
         if (AsyncRequest->MapData != NULL) {
+          // MS_CHANGE - Add extra debugging for IOMMU error tracking.
+          DEBUG ((DEBUG_VERBOSE, "%a - Unmapping Data Buffer:\n", __FUNCTION__));
+          DEBUG ((DEBUG_VERBOSE, "\tMapData - 0x%lx\n", AsyncRequest->MapData));
           PciIo->Unmap (PciIo, AsyncRequest->MapData);
         }
 
         if (AsyncRequest->MapMeta != NULL) {
+          // MS_CHANGE - Add extra debugging for IOMMU error tracking.
+          DEBUG ((DEBUG_VERBOSE, "%a - Unmapping MetaData Buffer:\n", __FUNCTION__));
+          DEBUG ((DEBUG_VERBOSE, "\tMapMeta - 0x%lx\n", AsyncRequest->MapMeta));
           PciIo->Unmap (PciIo, AsyncRequest->MapMeta);
         }
 
         if (AsyncRequest->MapPrpList != NULL) {
+          // MS_CHANGE - Add extra debugging for IOMMU error tracking.
+          DEBUG ((DEBUG_VERBOSE, "%a - Unmapping PrpList Buffer:\n", __FUNCTION__));
+          DEBUG ((DEBUG_VERBOSE, "\tPrpListMapping - 0x%lx\n", AsyncRequest->MapPrpList));
           PciIo->Unmap (PciIo, AsyncRequest->MapPrpList);
         }
 
