@@ -212,8 +212,9 @@ UsbHubCtrlClearTTBuffer (
 **/
 EFI_STATUS
 UsbHubCtrlGetSuperSpeedHubDesc (
-  IN  USB_DEVICE          *HubDev,
-  OUT VOID                *Buf
+  IN  USB_DEVICE              *HubDev,
+  // MS_CHANGE - Fix buffer overflow causing stack corruption.
+  OUT EFI_USB_HUB_DESCRIPTOR  *Buf
   )
 {
   EFI_STATUS              Status;
@@ -229,7 +230,8 @@ UsbHubCtrlGetSuperSpeedHubDesc (
              (UINT16) (USB_DESC_TYPE_HUB_SUPER_SPEED << 8),
              0,
              Buf,
-             32
+             // MS_CHANGE - Fix buffer overflow causing stack corruption.
+             sizeof(EFI_USB_HUB_DESCRIPTOR)
              );
 
   return Status;
