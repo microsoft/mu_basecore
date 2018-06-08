@@ -281,7 +281,7 @@
   ## @libraryclass provides helper functions to prevent integer overflow during
   #                type conversion, addition, subtraction, and multiplication.
   ##
-  IntSafeLib|Include/Library/IntSafeLib.h
+  IntSafeLib|Include/Library/SafeIntLib.h
 ## MS_CHANGE END
 
 [LibraryClasses.IPF]
@@ -793,6 +793,12 @@
   gWindowsUxCapsuleGuid          = { 0x3b8c8162, 0x188c, 0x46a4, { 0xae, 0xc9, 0xbe, 0x43, 0xf1, 0xd6, 0x56, 0x97}}
 
   #
+  # MS_CHANGE_250018
+  # Guid to use for gRT->ResetSystem() to indicate the type of reset that is being performed.
+  #
+  gCapsuleArmedResetGuid            = {0xc6b4eea7, 0xfce2, 0x4625, {0x9c, 0x4f, 0xc4, 0xb0, 0x82, 0x37, 0xae, 0x23}}
+  gCapsuleUpdateCompleteResetGuid   = {0x5d512714, 0xa4df, 0x4e46, {0xb6, 0xc7, 0xbc, 0x9f, 0x97, 0x9d, 0x59, 0xa0}}
+
 [Guids.IA32, Guids.X64]
   ## Include/Guid/Cper.h
   gEfiIa32X64ErrorTypeCacheCheckGuid = { 0xA55701F5, 0xE3EF, 0x43de, { 0xAC, 0x72, 0x24, 0x9B, 0x57, 0x3F, 0xAD, 0x2C }}

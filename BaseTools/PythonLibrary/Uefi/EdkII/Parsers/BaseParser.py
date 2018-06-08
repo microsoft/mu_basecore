@@ -32,6 +32,9 @@ class BaseParser(object):
         return self
 
     def FindPath(self, *p):
+        # NOTE: Some of this logic should be replaced
+        #       with the path resolution from Edk2Module code.
+
         Path = os.path.join(self.RootPath, *p)
         if not os.path.exists(Path):
             for Pkg in self.PPs:
