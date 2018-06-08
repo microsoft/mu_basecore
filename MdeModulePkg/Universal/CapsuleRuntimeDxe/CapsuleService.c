@@ -23,7 +23,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // END_MS_CHANGE_161994
 #include <Library/SecurityLockAuditLib.h> //MSCHANGE
 
-#include <Library/ResetHelperLib.h>                  // MS_CHANGE_250018 - ResetSystem refactoring.
+#include <Library/ResetUtilityLib.h>                  // MS_CHANGE_250018 - ResetSystem refactoring.
 
 //
 // Handle for the installation of Capsule Architecture Protocol.
@@ -246,7 +246,7 @@ UpdateCapsule (
        // not return back to the caller.
        //
        // MS_CHANGE_250018 - ResetSystem refactoring.
-       ResetSystemWithSubtype( EfiResetWarm, &gCapsuleArmedResetGuid );
+       ResetPlatformSpecificGuid( &gCapsuleArmedResetGuid );
      }
   }
 

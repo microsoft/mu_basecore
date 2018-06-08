@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
-#include <Library/UefiResetSystemLib.h> // MSCHANGE - Allow system to reset instead of halt in test mode.
+#include <Library/ResetSystemLib.h> // MSCHANGE - Allow system to reset instead of halt in test mode.
 
 #include "PiSmmCpuDxeSmm.h"
 
@@ -948,7 +948,7 @@ SmiPFHandler (
 HaltOrReboot:
   if (mSmmRebootOnException) {
     DEBUG ((DEBUG_ERROR, __FUNCTION__" - Reboot here in test mode.\n"));
-    LibResetSystem (EfiResetWarm, EFI_SUCCESS, 0, NULL);
+    ResetWarm();
     CpuDeadLoop ();
   }
   else {
