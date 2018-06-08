@@ -60,19 +60,7 @@
   ##  @libraryclass  Provide platform specific hooks.
   #
   PlatformHookLib|Include/Library/PlatformHookLib.h
-## MSCHANGE BEGIN
-  ##  @libraryclass  Primary library for all resets
-  #
-  ResetSystemCoreLib|Include/Library/ResetSystemCoreLib.h
-
-  ##  @libraryclass  This library describes various helper functions for resetting the system.
-  #
-  ResetHelperLib|Include/Library/ResetHelperLib.h
-
-  ##  @libraryclass  This library describes a unified interface to the entire ResetSystem architecture
-  #
-  UefiResetSystemLib.h|Include/Library/UefiResetSystemLib.h
-## MSCHANGE END
+  
   ##  @libraryclass  Provide platform specific hooks for SMM core.
   #
   SmmCorePlatformHookLib|Include/Library/SmmCorePlatformHookLib.h
