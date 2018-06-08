@@ -37,7 +37,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/BaseLib.h>
 #include <Library/PrintLib.h>
 #include <Library/BaseMemoryLib.h>
-#include <Library/ResetHelperLib.h>                  // MS_CHANGE_250018 - ResetSystem refactoring.
+#include <Library/ResetUtilityLib.h>                  // MS_CHANGE_250018 - ResetSystem refactoring.
 //
 // Handle for the installation of Capsule Architecture Protocol.
 //
@@ -262,11 +262,11 @@ UpdateCapsule (
      if(InitiateReset) {
        //
        // Firmware that encounters a capsule which has the CAPSULE_FLAGS_INITIATE_RESET Flag set in its header
-       // will initiate a reset of the platform which is compatible with the passed-in capsule request and will 
+       // will initiate a reset of the platform which is compatible with the passed-in capsule request and will
        // not return back to the caller.
        //
        // MS_CHANGE_250018 - ResetSystem refactoring.
-       ResetSystemWithSubtype( EfiResetWarm, &gCapsuleArmedResetGuid );
+       ResetPlatformSpecificGuid( &gCapsuleArmedResetGuid );
      }
   }
 

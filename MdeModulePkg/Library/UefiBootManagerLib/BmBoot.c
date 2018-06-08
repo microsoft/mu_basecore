@@ -45,7 +45,8 @@ BmEndOfBdsPerfCode (
   //
   // Record the performance data for End of BDS
   //
-  PERF_END(NULL, "BDS", NULL, 0);
+  // MS_CHANGE - We don't use this method of perf reporting.
+  // PERF_END(NULL, "BDS", NULL, 0);
 
   return ;
 }

@@ -35,5 +35,6 @@
   MdeModulePkg/MdeModulePkg.dec
 
 [LibraryClasses]
-  UefiRuntimeLib
+  # UefiRuntimeLib                ## MS_CHANGE - This shouldn't require RuntimeLib.
+  UefiRuntimeServicesTableLib     ## MS_CHANGE - This shouldn't require RuntimeLib.
 

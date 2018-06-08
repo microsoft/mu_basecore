@@ -62,7 +62,7 @@
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
   NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
 !endif
-  IntSafeLib|MdePkg/Library/IntSafeLib/IntSafeLib.inf
+  SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
 ##MSCHANGE End
 [PcdsFixedAtBuild]
   gPerformancePkgTokenSpaceGuid.PcdMaxPeiPerformanceLogSize|4096 # MS_CHANGE
@@ -76,7 +76,7 @@
   PerformancePkg/Library/DxePerformance2Lib/DxePerformance2Lib.inf # MS_CHANGE
 
 [Components]
-  PerformancePkg/Dp_App/Dp.inf
+  #PerformancePkg/Dp_App/Dp.inf             ## MS_CHANGE - Doesn't build and this whole package is being deprecated soon.
   PerformancePkg/Application/FbptDump/FbptDump.inf
 
 [BuildOptions]

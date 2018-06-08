@@ -80,7 +80,7 @@
   MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
   MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
   MdePkg/Library/BasePerformanceLibNull/BasePerformanceLibNull.inf
-  MdePkg/Library/BasePerformance2LibNull/BasePerformance2LibNull.inf
+  MdePkg/Library/BasePerformance2LibNull/BasePerformance2LibNull.inf                 ## MS_CHANGE
   MdePkg/Library/BasePostCodeLibDebug/BasePostCodeLibDebug.inf
   MdePkg/Library/BasePostCodeLibPort80/BasePostCodeLibPort80.inf
   MdePkg/Library/BasePrintLib/BasePrintLib.inf
@@ -91,6 +91,10 @@
   MdePkg/Library/BaseUefiDecompressLib/BaseUefiDecompressLib.inf
   MdePkg/Library/BaseSmbusLibNull/BaseSmbusLibNull.inf
   MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
+
+  # MS_CHANGE Begin
+  # MdePkg/UnitTests/SafeIntLib/SafeIntLibUnitTests.inf
+  # MS_CHANGE End
 
   MdePkg/Library/DxeCoreEntryPoint/DxeCoreEntryPoint.inf
   MdePkg/Library/DxeCoreHobLib/DxeCoreHobLib.inf
@@ -171,11 +175,6 @@
   MdePkg/Library/BaseRngLib/BaseRngLib.inf
   MdePkg/Library/SmmPciExpressLib/SmmPciExpressLib.inf
   MdePkg/Library/SmiHandlerProfileLibNull/SmiHandlerProfileLibNull.inf
-
-  # MS_CHANGE Begin
-  MdePkg/Library/IntSafeLib/IntSafeLib.inf
-  # MdePkg/UnitTests/IntSafeLib/IntSafeLibUnitTests.inf
-  # MS_CHANGE End
 
 
 

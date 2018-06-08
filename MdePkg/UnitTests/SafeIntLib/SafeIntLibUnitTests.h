@@ -1,6 +1,6 @@
 /**
 @file
-UEFI Shell based application for unit testing the IntSafeLib.
+UEFI Shell based application for unit testing the SafeIntLib.
 
 
 Copyright (c) 2017, Microsoft Corporation
@@ -35,7 +35,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <UnitTestTypes.h>
 #include <Library/UnitTestLib.h>
 #include <Library/UnitTestAssertLib.h>
-#include <Library/IntSafeLib.h>
+#include <Library/SafeIntLib.h>
 
 UNIT_TEST_STATUS
 EFIAPI

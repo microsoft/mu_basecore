@@ -12,6 +12,9 @@ IgnoreList = [  "nt32pkg.dsc",                      #NT32 pkg requires windows h
                 "ArmCrashDumpDxe.dsc",               ## 
                 "ArmPkg.dsc",
                 "ArmPlatformPkg.dsc",
+                "ArmVirtQemu.dsc",                  ## Requires OvmfPkg, which we don't want yet.
+                "ArmVirtQemuKernel.dsc",            ## Requires OvmfPkg, which we don't want yet.
+                "ArmVirtXen.dsc",                   ## Requires OvmfPkg, which we don't want yet.
                 "EmbeddedPkg.dsc",
                 "MsSampleFmpDevicePkg.dsc",         #Sample package requires user input to build
                 "MicrocodeCapsulePdb.dsc",          #Not buildable
