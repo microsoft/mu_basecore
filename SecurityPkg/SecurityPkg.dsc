@@ -107,7 +107,6 @@
   Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibDTpm/Tpm2DeviceLibDTpm.inf
   Tcg2PhysicalPresenceLib|SecurityPkg/Library/PeiTcg2PhysicalPresenceLib/PeiTcg2PhysicalPresenceLib.inf
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
-  ResetHelperLib|MdeModulePkg/Library/ResetHelperLib/PeiResetHelperLib.inf             ## MS_CHANGE
 
 [LibraryClasses.common.DXE_DRIVER]
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
@@ -228,7 +227,6 @@
   SecurityPkg/Library/TcgPpVendorLibNull/TcgPpVendorLibNull.inf
   SecurityPkg/Library/TempPreUefiEventLogLib/TempPreUefiEventLogLib.inf
   SecurityPkg/Library/Tpm2DebugLib/Tpm2DebugLibNull.inf
-  SecurityPkg/Library/TrEEPpVendorLibNull/TrEEPpVendorLibNull.inf
   SecurityPkg/Library/Tcg2PhysicalPresencePromptLib/Tcg2PhysicalPresencePromptLibConsole.inf
 ## MSCHANGE END
 
@@ -312,8 +310,8 @@
   #
   # Opal Password solution
   #
-  SecurityPkg/Tcg/Opal/OpalPasswordDxe/OpalPasswordDxe.inf
-  SecurityPkg/Tcg/Opal/OpalPasswordSmm/OpalPasswordSmm.inf
+  SecurityPkg/Tcg/Opal/OpalPassword/OpalPasswordDxe.inf
+  SecurityPkg/Tcg/Opal/OpalPassword/OpalPasswordPei.inf
 
   #
   # HDD Password solution
