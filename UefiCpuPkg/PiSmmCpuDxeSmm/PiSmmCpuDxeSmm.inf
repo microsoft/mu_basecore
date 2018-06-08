@@ -98,7 +98,7 @@
   ReportStatusCodeLib
   SmmCpuFeaturesLib
   PeCoffGetEntryPointLib
-  UefiResetSystemLib    ## MSCHANGE - Allow system to reset instead of halt in test mode.
+  HwResetSystemLib                         ## MSCHANGE - Allow system to reset instead of halt in test mode.
 
 [Protocols]
   gEfiSmmAccess2ProtocolGuid               ## CONSUMES
