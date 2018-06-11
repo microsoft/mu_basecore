@@ -233,6 +233,8 @@ class DscParser(HashFileParser):
             
     def ParseFile(self, filepath):
         self.Logger.debug("Parsing file: %s" % filepath)
+        self.TargetFile = os.path.abspath(filepath)
+        self.TargetFilePath = os.path.dirname(self.TargetFile)
         f = open(os.path.join(filepath), "r")
         #expand all the lines and include other files
         file_lines = f.readlines()
