@@ -14,6 +14,8 @@ class BaseParser(object):
         self.ConditionalStack = []
         self.RootPath = ""
         self.PPs = []
+        self.TargetFile = None
+        self.TargetFilePath = None
         
 
     #
@@ -35,20 +37,26 @@ class BaseParser(object):
         # NOTE: Some of this logic should be replaced
         #       with the path resolution from Edk2Module code.
 
+        # If the absolute path exists, return it.
         Path = os.path.join(self.RootPath, *p)
-        if not os.path.exists(Path):
-            for Pkg in self.PPs:
-                Path = os.path.join(self.RootPath,Pkg, *p)
-                if os.path.exists(Path):
-                    return Path
-            Path = os.path.join(self.RootPath, *p)
-             
-        else:
+        if os.path.exists(Path):
             return Path
 
-        # log invalid file path
-        self.Logger.error("Invalid file path %s" % Path)
+        # If that fails, check a path relative to the target file.
+        if self.TargetFilePath is not None:
+            Path = os.path.join(self.TargetFilePath, *p)
+            if os.path.exists(Path):
+                return Path
 
+        # If that fails, check in every possible Pkg path.
+        for Pkg in self.PPs:
+            Path = os.path.join(self.RootPath,Pkg, *p)
+            if os.path.exists(Path):
+                return Path
+
+        # log invalid file path
+        Path = os.path.join(self.RootPath, *p)
+        self.Logger.error("Invalid file path %s" % Path)
         return Path
 
 
