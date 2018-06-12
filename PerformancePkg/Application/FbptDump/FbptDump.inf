@@ -1,0 +1,38 @@
+## @file FbptDump.inf
+# This user-facing application dumps FBPT into a file.
+#
+##
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION         = 0x00010017
+  BASE_NAME           = FbptDump
+  FILE_GUID           = CBA0E029-EE38-41F4-9D01-759AFA4B82BE
+  VERSION_STRING      = 1.0
+  MODULE_TYPE         = UEFI_APPLICATION
+  ENTRY_POINT         = FbptDumpEntryPoint
+
+
+[Sources]
+  FbptDump.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ShellPkg/ShellPkg.dec
+
+[LibraryClasses]
+  ShellLib
+  UefiApplicationEntryPoint
+  PrintLib
+  DebugLib
+  UefiBootServicesTableLib
+  UefiLib
+  SafeIntLib
+
+[Protocols]
+  gEfiAcpiSdtProtocolGuid
+  gEfiSmbiosProtocolGuid
