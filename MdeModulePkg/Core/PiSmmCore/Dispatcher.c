@@ -666,18 +666,27 @@ SmmLoadImage (
   // Print the load address and the PDB file name if it is available
   //
 
-  DEBUG_CODE_BEGIN ();
+  // MS_CHANGE_304324
+  // DEBUG_CODE_BEGIN ();
+  // END
 
   UINTN  Index;
   UINTN  StartIndex;
   CHAR8  EfiFileName[256];
 
-  DEBUG ((
-    DEBUG_INFO | DEBUG_LOAD,
-    "Loading SMM driver at 0x%11p EntryPoint=0x%11p ",
-    (VOID *)(UINTN)ImageContext.ImageAddress,
-    FUNCTION_ENTRY_POINT (ImageContext.EntryPoint)
-    ));
+  // MS_CHANGE_304324
+  if (DebugCodeEnabled ()) {
+    DEBUG ((
+      DEBUG_INFO | DEBUG_LOAD,
+      "Loading SMM driver at 0x%11p EntryPoint=0x%11p ",
+      (VOID *)(UINTN)ImageContext.ImageAddress,
+      FUNCTION_ENTRY_POINT (ImageContext.EntryPoint)
+      ));
+  } else {
+    DEBUG ((DEBUG_ERROR | DEBUG_LOAD, "Loading SMM driver "));
+  }
+
+  // END
 
   //
   // Print Module Name by Pdb file path.
@@ -715,10 +724,14 @@ SmmLoadImage (
       EfiFileName[Index] = 0;
     }
 
-    DEBUG ((DEBUG_INFO | DEBUG_LOAD, "%a", EfiFileName));   // &Image->ImageContext.PdbPointer[StartIndex]));
+    DEBUG ((DEBUG_ERROR | DEBUG_LOAD, "%a", EfiFileName));  // &Image->ImageContext.PdbPointer[StartIndex]));  // MS_CHANGE_304324
   }
 
-  DEBUG ((DEBUG_INFO | DEBUG_LOAD, "\n"));
+  DEBUG ((DEBUG_ERROR | DEBUG_LOAD, "\n"));                                                                    // MS_CHANGE_304324
+
+  // MS_CHANGE_304324
+  // DEBUG_CODE_END ();
+  // END
 
   // MS_CHANGE_?
   Status = PeCoffLoaderGetSecurityCookieAddress (&ImageContext, &SecurityCookieAddress);

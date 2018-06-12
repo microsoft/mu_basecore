@@ -1744,14 +1744,17 @@ PxeBcDhcp4Dora (
   AsciiPrint ("\n");
 
 ON_EXIT:
-  if (EFI_ERROR (Status)) {
-    Dhcp4->Stop (Dhcp4);
-    Dhcp4->Configure (Dhcp4, NULL);
-  } else {
-    ZeroMem (&Config, sizeof (EFI_DHCP4_CONFIG_DATA));
-    Dhcp4->Configure (Dhcp4, &Config);
-    Private->IsAddressOk = TRUE;
-  }
+  if (!Private->DEADBEEF) {
+    // MS_CHANGE_162958
+    if (EFI_ERROR (Status)) {
+      Dhcp4->Stop (Dhcp4);
+      Dhcp4->Configure (Dhcp4, NULL);
+    } else {
+      ZeroMem (&Config, sizeof (EFI_DHCP4_CONFIG_DATA));
+      Dhcp4->Configure (Dhcp4, &Config);
+      Private->IsAddressOk = TRUE;
+    }
+  }                                    // MS_CHANGE_162958
 
   return Status;
 }

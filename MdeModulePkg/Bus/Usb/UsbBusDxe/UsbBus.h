@@ -188,6 +188,7 @@ struct _USB_DEVICE {
   USB_INTERFACE                         *ParentIf;
   UINT8                                 ParentPort; // Start at 0
   UINT8                                 Tier;
+  BOOLEAN                               Connected; // MS_CHANGE_166714
   BOOLEAN                               DisconnectFail;
 };
 
@@ -228,6 +229,7 @@ struct _USB_INTERFACE {
   // connected to EHCI.
   //
   UINT8                       MaxSpeed;
+  volatile UINT8              PollCount;       // MS_CHANGE_168923
 };
 
 //

@@ -738,17 +738,20 @@ SmmVariableHandler (
       break;
 
     case SMM_VARIABLE_FUNCTION_LOCK_VARIABLE:
-      if (mEndOfDxe) {
-        Status = EFI_ACCESS_DENIED;
-      } else {
-        VariableToLock = (SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE *)SmmVariableFunctionHeader->Data;
-        Status         = VariableLockRequestToLock (
-                           NULL,
-                           VariableToLock->Name,
-                           &VariableToLock->Guid
-                           );
-      }
-
+      // MS_CHANGE_90369
+      // MSChange [BEGIN] - Don't block these requests outright after EndOfDxe.
+      // Give the library a chance to evaluate which requests should be allowed.
+      // if (mEndOfDxe) {
+      // Status = EFI_ACCESS_DENIED;
+      // } else {
+      VariableToLock = (SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE *)SmmVariableFunctionHeader->Data;
+      Status         = VariableLockRequestToLock (
+                         NULL,
+                         VariableToLock->Name,
+                         &VariableToLock->Guid
+                         );
+      // }
+      // MSChange [END]
       break;
     case SMM_VARIABLE_FUNCTION_VAR_CHECK_VARIABLE_PROPERTY_SET:
       if (mEndOfDxe) {

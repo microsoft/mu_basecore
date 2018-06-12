@@ -1009,3 +1009,32 @@ UsbIoClearFeature (
 
   return Status;
 }
+
+// MS_CHANGE_291137
+
+/**
+  Update the device's descriptor information.
+
+  @param  UsbDev                The Usb device.
+
+**/
+VOID
+UsbUpdateDescriptors (
+  IN USB_DEVICE  *UsbDev
+  )
+{
+  EFI_USB_CONFIG_DESCRIPTOR  *ConfDesc;
+  EFI_USB_DEVICE_DESCRIPTOR  DevDesc;
+  UINT8                      Index;
+  EFI_STATUS                 Status;
+
+  Status = UsbCtrlGetDesc (UsbDev, USB_DESC_TYPE_DEVICE, 0, 0, &DevDesc, sizeof (EFI_USB_DEVICE_DESCRIPTOR));
+  for (Index = 0; Index < DevDesc.NumConfigurations; Index++) {
+    ConfDesc = UsbGetOneConfig (UsbDev, Index);
+    FreePool (ConfDesc);
+  }
+
+  return;
+}
+
+// END
