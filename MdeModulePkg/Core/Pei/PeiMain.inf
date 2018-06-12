@@ -66,6 +66,7 @@
   PeCoffLib
   PeiServicesTablePointerLib
   PcdLib
+  TimerLib                             ## MS_CHANGE
 
 [Guids]
   gPeiAprioriFileNameGuid       ## SOMETIMES_CONSUMES   ## File
@@ -78,6 +79,7 @@
   gEfiFirmwareFileSystem3Guid
   gStatusCodeCallbackGuid
   gEdkiiMigratedFvInfoGuid                      ## SOMETIMES_PRODUCES     ## HOB
+  gEfiFirmwarePerformanceGuid # MS_CHANGE_161871 - needed to build SEC perf HOB
   gEfiDelayedDispatchTableGuid   # MSCHANGE
   gPerfDelayedDispatchEndOfPei   # MS_CHANGE
 
@@ -102,7 +104,9 @@
   gEfiPeiReset2PpiGuid                          ## SOMETIMES_CONSUMES
   gEfiSecHobDataPpiGuid                         ## SOMETIMES_CONSUMES
   gEfiPeiCoreFvLocationPpiGuid                  ## SOMETIMES_CONSUMES
+  gPeiSecPerformancePpiGuid #MS_CHANGE_161871 - needed to build SEC perf HOB
   gEfiDelayedDispatchPpiGuid # MSCHANGE
+  gEfiEndOfPeiSignalPpiGuid  # MSCHANGE
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPeiStackSize                  ## CONSUMES

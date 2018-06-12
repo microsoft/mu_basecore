@@ -604,6 +604,12 @@ PeiLoadImageLoadImage (
   UINT16                      Machine;
   EFI_SECTION_TYPE            SearchType1;
   EFI_SECTION_TYPE            SearchType2;
+// MS_CHANGE_304324
+  CHAR8                       *AsciiString;
+  CHAR8                       EfiFileName[512];
+  INT32                       Index;
+  INT32                       StartIndex;
+// END
 
   *EntryPoint          = 0;
   ImageSize            = 0;
@@ -690,23 +696,19 @@ PeiLoadImageLoadImage (
     *ImageSizeArg = ImageSize;
   }
 
-  DEBUG_CODE_BEGIN ();
-    CHAR8                              *AsciiString;
-    CHAR8                              EfiFileName[512];
-    INT32                              Index;
-    INT32                              StartIndex;
-
+// MS_CHANGE_304324
+  // DEBUG_CODE_BEGIN ();
+// END
     //
     // Print debug message: Loading PEIM at 0x12345678 EntryPoint=0x12345688 Driver.efi
     //
-    if (Machine != EFI_IMAGE_MACHINE_IA64) {
-      DEBUG ((EFI_D_INFO | EFI_D_LOAD, "Loading PEIM at 0x%11p EntryPoint=0x%11p ", (VOID *)(UINTN)ImageAddress, (VOID *)(UINTN)*EntryPoint));
+// MS_CHANGE_304324
+    if (DebugCodeEnabled()) {
+      DEBUG((EFI_D_INFO | EFI_D_LOAD, "Loading PEIM at 0x%11p EntryPoint=0x%11p ", (VOID *)(UINTN)ImageAddress, (VOID *)(UINTN)*EntryPoint));
     } else {
-      //
-      // For IPF Image, the real entry point should be print.
-      //
-      DEBUG ((EFI_D_INFO | EFI_D_LOAD, "Loading PEIM at 0x%11p EntryPoint=0x%11p ", (VOID *)(UINTN)ImageAddress, (VOID *)(UINTN)(*(UINT64 *)(UINTN)*EntryPoint)));
+      DEBUG((EFI_D_ERROR | EFI_D_LOAD, "Loading PEIM "));
     }
+// END
 
     //
     // Print Module Name by PeImage PDB file name.
@@ -744,12 +746,14 @@ PeiLoadImageLoadImage (
         EfiFileName[Index] = 0;
       }
 
-      DEBUG ((EFI_D_INFO | EFI_D_LOAD, "%a", EfiFileName));
+      DEBUG((EFI_D_ERROR | EFI_D_LOAD, "%a", EfiFileName));        // MS_CHANGE_304324
     }
 
-  DEBUG_CODE_END ();
+// MS_CHANGE_304324
+    // DEBUG_CODE_END ();
+// END
 
-  DEBUG ((EFI_D_INFO | EFI_D_LOAD, "\n"));
+    DEBUG((EFI_D_ERROR | EFI_D_LOAD, "\n"));                       // MS_CHANGE_304324
 
   return EFI_SUCCESS;
 
