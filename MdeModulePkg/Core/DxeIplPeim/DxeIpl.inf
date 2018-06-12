@@ -69,8 +69,8 @@
   PcdLib
   MemoryAllocationLib
   BaseMemoryLib
-  ExtractGuidedSectionLib
-  UefiDecompressLib
+#  ExtractGuidedSectionLib ## MS_CHANGE_190466
+#  UefiDecompressLib ## MS_CHANGE_190466
   ReportStatusCodeLib
   PeiServicesLib
   HobLib

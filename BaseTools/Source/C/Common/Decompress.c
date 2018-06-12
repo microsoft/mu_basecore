@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
+#include <stdint.h>  //MSCHANGE TO SUPPORT VS2015 - MS_CHANGE_?
 #include "Decompress.h"
 
 //

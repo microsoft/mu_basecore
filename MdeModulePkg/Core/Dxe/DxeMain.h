@@ -93,7 +93,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/DxeServicesLib.h>
 #include <Library/DebugAgentLib.h>
 #include <Library/CpuExceptionHandlerLib.h>
-
+#include <Library/BaseBinSecurityLib.h>          // MS_CHANGE_?
 
 //
 // attributes for reserved memory before it is promoted to system memory

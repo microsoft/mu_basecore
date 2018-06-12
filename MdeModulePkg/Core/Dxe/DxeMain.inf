@@ -102,6 +102,8 @@
   DebugAgentLib
   CpuExceptionHandlerLib
   PcdLib
+  BaseBinSecurityLib         ## MS_CHANGE_?
+
 
 [Guids]
   gEfiEventMemoryMapChangeGuid                  ## PRODUCES             ## Event

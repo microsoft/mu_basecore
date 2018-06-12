@@ -38,6 +38,13 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 ///
 #define EFI_CAPSULE_VARIABLE_NAME L"CapsuleUpdateData"
 
+// MS_CHANGE_208194
+///
+/// Name of system table capsule variable.
+/// 
+#define EFI_SYSTEM_TABLE_CAPSULE_VARIABLE_NAME L"SystemTableCapsuleData"
+// END
+
 ///
 /// The data structure of the capsule guid hob entry.
 /// Note: EDKII implementation has discarded this structure and used

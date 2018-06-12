@@ -14,6 +14,14 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include "PeiMain.h"
 
+// MS_CHANGE_161871
+// MSCHANGE - Include these in order to build the performance HOB here instead of
+//            FirmwarePerformancePei. Necessary because Firmware firmwarePerformancePei
+//            is loaded postmem when CAR is gone.
+#include <Ppi/SecPerformance.h>
+#include <Guid/FirmwarePerformance.h>
+// END
+
 EFI_PEI_PPI_DESCRIPTOR mMemoryDiscoveredPpi = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
   &gEfiPeiMemoryDiscoveredPpiGuid,
@@ -155,6 +163,11 @@ PeiCore (
   EFI_HOB_HANDOFF_INFO_TABLE  *HandoffInformationTable;
   EFI_PEI_TEMPORARY_RAM_DONE_PPI *TemporaryRamDonePpi;
   UINTN                       Index;
+// MS_CHANGE_161871
+  // MSCHANGE - Build the performance HOB here instead of FirmwarePerformancePei.
+  FIRMWARE_SEC_PERFORMANCE    Performance;
+  PEI_SEC_PERFORMANCE_PPI     *SecPerf;
+// END
 
   //
   // Retrieve context passed into PEI Core
@@ -207,6 +220,8 @@ PeiCore (
         OldCoreData->FileGuid             = (EFI_GUID *) ((UINT8 *) OldCoreData->FileGuid - OldCoreData->HeapOffset);
         OldCoreData->FileHandles          = (EFI_PEI_FILE_HANDLE *) ((UINT8 *) OldCoreData->FileHandles - OldCoreData->HeapOffset);
       }
+
+      OldCoreData->DelayedDispatchTable = NULL;  // MSCHANGE - Force relocating the dispatch table
 
       //
       // Fixup for PeiService's address
@@ -321,6 +336,7 @@ PeiCore (
   // Initialize PEI Core Services
   //
   InitializeMemoryServices   (&PrivateData,    SecCoreData, OldCoreData);
+
   if (OldCoreData == NULL) {
     //
     // Initialize PEI Core Private Data Buffer
@@ -390,6 +406,29 @@ PeiCore (
     if (PpiList != NULL) {
       ProcessPpiListFromSec ((CONST EFI_PEI_SERVICES **) &PrivateData.Ps, PpiList);
     }
+    
+// MS_CHANGE_161871
+    //
+    // MSCHANGE: Build Hob for SEC performance data.
+    //
+    Status = PeiServicesLocatePpi (
+               &gPeiSecPerformancePpiGuid,
+               0,
+               NULL,
+               (VOID **) &SecPerf
+               );
+    if (!EFI_ERROR (Status)) {
+      Status = SecPerf->GetPerformance ((CONST EFI_PEI_SERVICES **)&PrivateData.Ps, SecPerf, &Performance);
+      if (!EFI_ERROR (Status)) {
+        BuildGuidDataHob (
+          &gEfiFirmwarePerformanceGuid,
+          &Performance,
+          sizeof (FIRMWARE_SEC_PERFORMANCE)
+        );
+        DEBUG((DEBUG_ERROR, "SEC Performance Hob ResetEnd = %ld\n", Performance.ResetEnd));
+      }
+    }
+// END
   } else {
     //
     // Try to locate Temporary RAM Done Ppi.

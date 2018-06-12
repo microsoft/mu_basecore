@@ -12,6 +12,8 @@
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
+  Copyright (c) 2016, Microsoft Corporation
+
 **/
 
 #ifndef _EFI_NVM_EXPRESS_H_
@@ -290,7 +292,6 @@ typedef struct {
 typedef struct {
   UINT32                                   Signature;
   LIST_ENTRY                               Link;
-
   EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET *Packet;
   UINT16                                   CommandId;
   VOID                                     *MapPrpList;
@@ -300,6 +301,37 @@ typedef struct {
   VOID                                     *MapMeta;
   EFI_EVENT                                CallerEvent;
 } NVME_PASS_THRU_ASYNC_REQ;
+
+// MS_CHANGE_165952
+// MSChange [BEGIN]
+//
+// Controller list entry used to maintain a linked list of controllers.
+//
+#define NVME_CONTROLLER_LIST_ENTRY_SIGNATURE SIGNATURE_32 ('C','T','L','R')
+#define NVM_CONTROLLER_LIST_ENTRY_FROM_LINK(a)  CR (a, NVME_CONTROLLER_LIST_ENTRY, Entry, NVME_CONTROLLER_LIST_ENTRY_SIGNATURE)
+
+typedef struct _NVME_CONTROLLER_LIST_ENTRY {
+  UINT32     Signature;
+  LIST_ENTRY Entry;
+  NVME_CONTROLLER_PRIVATE_DATA* Controller;
+} NVME_CONTROLLER_LIST_ENTRY, *PNVME_CONTROLLER_LIST_ENTRY;
+
+//
+// Head of the controller list.
+//
+extern LIST_ENTRY ControllerListHead;
+
+VOID
+RemoveControllerEntryFromList (
+  IN NVME_CONTROLLER_PRIVATE_DATA *Private
+  );
+
+VOID
+AddControllerEntryToList (
+  IN NVME_CONTROLLER_PRIVATE_DATA *Private
+  );
+
+// MSChange [END]
 
 #define NVME_PASS_THRU_ASYNC_REQ_FROM_THIS(a) \
   CR (a,                                                 \
