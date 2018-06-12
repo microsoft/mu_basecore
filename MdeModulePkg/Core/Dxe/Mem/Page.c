@@ -775,7 +775,7 @@ CoreConvertPagesEx (
     }
 
     if (Link == &gMemoryMap) {
-      DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ConvertPages: failed to find range %lx - %lx\n", Start, End));
+      DEBUG ((DEBUG_PAGE, "ConvertPages: failed to find range %lx - %lx\n", Start, End));  // MS_CHANGE_316852
       return EFI_NOT_FOUND;
     }
 
@@ -815,11 +815,11 @@ CoreConvertPagesEx (
       // Debug code - verify conversion is allowed
       //
       if (!((NewType == EfiConventionalMemory) ? 1 : 0) ^ ((Entry->Type == EfiConventionalMemory) ? 1 : 0)) {
-        DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ConvertPages: Incompatible memory types, "));
+        DEBUG ((DEBUG_PAGE, "ConvertPages: Incompatible memory types, "));       // MS_CHANGE_316852
         if (Entry->Type == EfiConventionalMemory) {
-          DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "the pages to free have been freed\n"));
+          DEBUG ((DEBUG_PAGE, "the pages to free have been freed\n"));           // MS_CHANGE_316852
         } else {
-          DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "the pages to allocate have been allocated\n"));
+          DEBUG ((DEBUG_PAGE, "the pages to allocate have been allocated\n"));   // MS_CHANGE_316852
         }
 
         return EFI_NOT_FOUND;
@@ -2092,7 +2092,7 @@ CoreAllocatePoolPages (
   // Convert it to boot services data
   //
   if (Start == 0) {
-    DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "AllocatePoolPages: failed to allocate %d pages\n", (UINT32)NumberOfPages));
+    DEBUG ((DEBUG_PAGE, "AllocatePoolPages: failed to allocate %d pages\n", (UINT32)NumberOfPages));      // MS_CHANGE_316852
   } else {
     if (NeedGuard) {
       CoreConvertPagesWithGuard (Start, NumberOfPages, PoolType);
@@ -2158,13 +2158,13 @@ CoreTerminateMemoryMap (
           ASSERT (Entry->Type != EfiACPIReclaimMemory);
           ASSERT (Entry->Type != EfiACPIMemoryNVS);
           if ((Entry->Start & (RUNTIME_PAGE_ALLOCATION_GRANULARITY - 1)) != 0) {
-            DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ExitBootServices: A RUNTIME memory entry is not on a proper alignment.\n"));
+            DEBUG ((DEBUG_PAGE, "ExitBootServices: A RUNTIME memory entry is not on a proper alignment.\n"));    // MS_CHANGE_316852
             Status =  EFI_INVALID_PARAMETER;
             goto Done;
           }
 
           if (((Entry->End + 1) & (RUNTIME_PAGE_ALLOCATION_GRANULARITY - 1)) != 0) {
-            DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ExitBootServices: A RUNTIME memory entry is not on a proper alignment.\n"));
+            DEBUG ((DEBUG_PAGE, "ExitBootServices: A RUNTIME memory entry is not on a proper alignment.\n"));    // MS_CHANGE_316852
             Status =  EFI_INVALID_PARAMETER;
             goto Done;
           }

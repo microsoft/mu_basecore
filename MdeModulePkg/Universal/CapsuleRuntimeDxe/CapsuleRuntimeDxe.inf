@@ -76,6 +76,7 @@
   gEfiCapsuleVendorGuid
   gEfiFmpCapsuleGuid                            ## SOMETIMES_CONSUMES   ## GUID # FMP capsule GUID
   gCapsuleArmedResetGuid
+  gEfiEventExitBootServicesGuid                 ## MS_CHANGE_161994 - add lock support
 
 [Protocols]
   gEfiCapsuleArchProtocolGuid                   ## PRODUCES

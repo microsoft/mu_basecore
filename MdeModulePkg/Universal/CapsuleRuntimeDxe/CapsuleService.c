@@ -11,6 +11,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "CapsuleService.h"
+// MS_CHANGE_161994
+#include <Guid/EventGroup.h>
+// END_MS_CHANGE_161994
 
 #include <Library/ResetUtilityLib.h>                  // MS_CHANGE_250018 - ResetSystem refactoring.
 
@@ -18,6 +21,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // Handle for the installation of Capsule Architecture Protocol.
 //
 EFI_HANDLE  mNewHandle = NULL;
+
+// MS_CHANGE_161994
+//
+// Support locking capsule interface.
+//
+BOOLEAN  mAfterLocked = FALSE;
+// END MS_CHANGE_161994
 
 //
 // The times of calling UpdateCapsule ()
@@ -88,6 +98,14 @@ UpdateCapsule (
   if (CapsuleCount < 1) {
     return EFI_INVALID_PARAMETER;
   }
+
+  // MS_CHANGE_161994
+  if (mAfterLocked) {
+    DEBUG ((DEBUG_INFO, "Capsule Interface Locked\n."));
+    return EFI_UNSUPPORTED;
+  }
+
+  // END MS_CHANGE_161994
 
   NeedReset         = FALSE;
   InitiateReset     = FALSE;
@@ -354,6 +372,30 @@ QueryCapsuleCapabilities (
   return EFI_SUCCESS;
 }
 
+// MS_CHANGE_161994
+
+/**
+
+LockCapsuleInterface - Event handler
+- locks the capsule interface so no input is accepted.
+
+@param[in]  Event     Event whose notification function is being invoked
+@param[in]  Context   Pointer to the notification function's context
+
+**/
+VOID
+EFIAPI
+LockCapsuleInterface (
+  IN      EFI_EVENT  Event,
+  IN      VOID       *Context
+  )
+{
+  mAfterLocked = TRUE;
+  DEBUG ((DEBUG_INFO, "Capsule Interface Locked!!\nMS_CHANGE_161994\n"));
+}
+
+// END MS_CHANGE_161994
+
 /**
 
   This code installs UEFI capsule runtime service.
@@ -372,6 +414,10 @@ CapsuleServiceInitialize (
   )
 {
   EFI_STATUS  Status;
+  // MS_CHANGE_161994
+  EFI_EVENT  Event;
+
+  // END MS_CHANGE_161994
 
   mMaxSizePopulateCapsule    = PcdGet32 (PcdMaxSizePopulateCapsule);
   mMaxSizeNonPopulateCapsule = PcdGet32 (PcdMaxSizeNonPopulateCapsule);
@@ -402,6 +448,17 @@ CapsuleServiceInitialize (
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
+
+  // MS_CHANGE_161994 - add lock support
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_NOTIFY,
+                  LockCapsuleInterface,
+                  NULL,
+                  &gEfiEventExitBootServicesGuid,
+                  &Event
+                  );
+  // END MS_CHANGE_161994
 
   return Status;
 }

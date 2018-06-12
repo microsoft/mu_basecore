@@ -998,6 +998,23 @@ UsbRootHubInit (
 
   if (EFI_ERROR (Status)) {
     gBS->CloseEvent (HubIf->HubNotify);
+    // MS_CHANGE_168923
+  } else {
+    // MSCHANGE Add USB Hub Enumeration delay
+    EFI_TPL  OldTpl;
+
+    OldTpl = gBS->RaiseTPL (TPL_HIGH_LEVEL);
+    gBS->RestoreTPL (TPL_APPLICATION);
+
+    while (HubIf->PollCount < 6) {
+      // 6 * (USB_ROOTHUB_POLL_INTERVAL 100 ms)
+    }
+
+    if (OldTpl > TPL_APPLICATION) {
+      gBS->RaiseTPL (OldTpl);
+    }
+
+    // END
   }
 
   return Status;
