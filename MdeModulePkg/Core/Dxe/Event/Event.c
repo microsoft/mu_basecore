@@ -692,7 +692,7 @@ CoreWaitForEvent (
       // disable interrupts before checking for all pending events
       gCpu->DisableInterrupt (gCpu);
 
-      if (((UINTN)HighBitSet64 (gEventPending)) > gEfiCurrentTpl) {
+      if ((gEventPending != 0) && (((UINTN)HighBitSet64 (gEventPending)) > gEfiCurrentTpl)) {
         // There are pending events, enable interrupts for these events to be processed
         gCpu->EnableInterrupt (gCpu);
       } else {
