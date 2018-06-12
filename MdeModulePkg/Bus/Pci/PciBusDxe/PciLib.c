@@ -999,6 +999,7 @@ PciScanBus (
   EFI_HPC_STATE                     State;
   UINT64                            PciAddress;
   EFI_HPC_PADDING_ATTRIBUTES        Attributes;
+  VOID                              *DescriptorsBuffer = NULL;  // MS_CHANGE
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *Descriptors;
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *NextDescriptors;
   UINT16                            BusRange;
@@ -1134,7 +1135,7 @@ PciScanBus (
                                           PciDevice->DevicePath,
                                           PciAddress,
                                           &State,
-                                          (VOID **) &Descriptors,
+                                          &DescriptorsBuffer,     // MS_CHANGE
                                           &Attributes
                                           );
 
@@ -1142,6 +1143,7 @@ PciScanBus (
                 return Status;
               }
 
+              Descriptors = (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR*)DescriptorsBuffer;   // MS_CHANGE
               BusRange = 0;
               NextDescriptors = Descriptors;
               Status = PciGetBusRange (
@@ -1151,7 +1153,11 @@ PciScanBus (
                         &BusRange
                         );
 
-              FreePool (Descriptors);
+              // MS_CHANGE [BEGIN]
+              FreePool (DescriptorsBuffer);
+              DescriptorsBuffer = NULL;
+              Descriptors = NULL;
+              // MS_CHANGE [END]
 
               if (!EFI_ERROR (Status)) {
                 BusPadding = TRUE;

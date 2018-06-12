@@ -25,6 +25,8 @@ CONST EFI_PEI_PPI_DESCRIPTOR mDxeIplPpiList = {
   (VOID *) &mDxeIplPpi
 };
 
+// MS_CHANGE_190466
+#if 0
 CONST EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI mCustomGuidedSectionExtractionPpi = {
   CustomGuidedSectionExtract
 };
@@ -38,6 +40,8 @@ CONST EFI_PEI_PPI_DESCRIPTOR mDecompressPpiList = {
   &gEfiPeiDecompressPpiGuid,
   (VOID *) &mDecompressPpi
 };
+#endif
+// END
 
 CONST EFI_PEI_PPI_DESCRIPTOR gEndOfPeiSignalPpi = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
@@ -149,6 +153,8 @@ InstallIplPermanentMemoryPpis (
   )
 {
   EFI_STATUS                    Status;
+// MS_CHANGE_190466
+#if 0
   EFI_GUID                      *ExtractHandlerGuidTable;
   UINTN                         ExtractHandlerNumber;
   EFI_PEI_PPI_DESCRIPTOR        *GuidPpi;
@@ -178,7 +184,9 @@ InstallIplPermanentMemoryPpis (
   //
   Status = PeiServicesInstallPpi (&mDecompressPpiList);
   ASSERT_EFI_ERROR(Status);
-
+#endif
+  Status = EFI_SUCCESS;
+// END
   return Status;
 }
 
@@ -509,8 +517,8 @@ DxeIplFindDxeCore (
   }
 }
 
-
-
+// MS_CHANGE_190466
+#if 0
 /**
   The ExtractSection() function processes the input section and
   returns a pointer to the section contents. If the section being
@@ -789,6 +797,8 @@ Decompress (
 
   return EFI_SUCCESS;
 }
+#endif
+// END
 
 
 /**

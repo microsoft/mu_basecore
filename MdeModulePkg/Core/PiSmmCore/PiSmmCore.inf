@@ -60,6 +60,7 @@
   PerformanceLib
   HobLib
   SmmMemLib
+  BaseBinSecurityLib  ## MS_CHANGE_?
 
 [Protocols]
   gEfiDxeSmmReadyToLockProtocolGuid             ## UNDEFINED # SmiHandlerRegister

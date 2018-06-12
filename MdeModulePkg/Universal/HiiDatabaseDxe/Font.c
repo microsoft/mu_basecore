@@ -698,6 +698,12 @@ FindGlyphBlock (
       (UINT8 *) FontPackage->FontPkgHdr + 3 * sizeof (UINT32),
       sizeof (EFI_HII_GLYPH_INFO)
       );
+// MS_CHANGE_186972
+    //BaseLine = (UINT16) (LocalCell.Height + LocalCell.OffsetY);
+    //if (MinOffsetY > LocalCell.OffsetY) {
+      //MinOffsetY = LocalCell.OffsetY;
+    //}
+// END
   }
 
   BlockPtr    = FontPackage->GlyphBlock;
@@ -2051,7 +2057,12 @@ HiiStringToImage (
     if ((Flags & EFI_HII_DIRECT_TO_SCREEN) == EFI_HII_DIRECT_TO_SCREEN) {
       BltBuffer = NULL;
       if (RowInfo[RowIndex].LineWidth != 0) {
+        // Fill in the current background
+// MS_CHANGE_185410
+        UINT32 Bkgnd = Background.Blue | Background.Green << 8 | Background.Red << 16;
         BltBuffer = AllocatePool (RowInfo[RowIndex].LineWidth * RowInfo[RowIndex].LineHeight * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
+        SetMem32 (BltBuffer,RowInfo[RowIndex].LineWidth * RowInfo[RowIndex].LineHeight * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL),Bkgnd);
+// END
         if (BltBuffer == NULL) {
           Status = EFI_OUT_OF_RESOURCES;
           goto Exit;
@@ -2171,6 +2182,10 @@ NextLine:
     //
     // Recalculate the start point of Y axis to draw multi-lines with the order of top-to-down
     //
+
+// MS_CHANGE_165675
+    // BltX = 0;
+// END
     BltY += RowInfo[RowIndex].LineHeight;
 
     RowIndex++;
