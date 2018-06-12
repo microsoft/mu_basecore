@@ -98,6 +98,8 @@
   ## SOMETIMES_CONSUMES
   ## SOMETIMES_PRODUCES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask
+  ## MS_CHANGE_? - Update PCR order, add PCD, enable deallocate *and* allocate.
+  gEfiSecurityPkgTokenSpaceGuid.PcdForceReallocatePcrBanks             ## CONSUMES
 
 [Depex]
   gEfiPeiMasterBootModePpiGuid
