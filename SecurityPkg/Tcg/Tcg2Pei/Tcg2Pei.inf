@@ -44,6 +44,7 @@
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
   SecurityPkg/SecurityPkg.dec
+  SourceLevelDebugPkg/SourceLevelDebugPkg.dec   ## MS_CHANGE_?
 
 [LibraryClasses]
   HobLib
@@ -58,7 +59,18 @@
   PerformanceLib
   MemoryAllocationLib
   ReportStatusCodeLib
+## MS_CHANGE_23086
+## MSChange [BEGIN] - Add the OemTpm2InitLib
+  OemTpm2InitLib
+## MSChange [END]
   ResetSystemLib
+## MS_CHANGE_103691
+## MSChange [BEGIN] - Add the Tcg2PreUefiEventLogLib
+  Tcg2PreUefiEventLogLib
+## MSChange [END]
+## MS_CHANGE [BEGIN] - Add the SourceDebugEnabledLib
+  SourceDebugEnabledLib  # MSCHANGE - runtime check if source debug is enabled
+## MS_CHANGE [END]
 
 [Guids]
   gTcgEventEntryHobGuid                                                ## PRODUCES               ## HOB
@@ -89,8 +101,11 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask
 
 [Depex]
-  gEfiPeiMasterBootModePpiGuid AND
-  gEfiTpmDeviceSelectedGuid
+  gEfiPeiMasterBootModePpiGuid
+## MS_CHANGE_65026
+## MSChange [BEGIN] - Remove the requirement on gEfiTpmDeviceSelectedGuid.
+  #   The TrEEConfigPeim module was replaced with build-time PCDs.
+## MSChange [END]
 
 [UserExtensions.TianoCore."ExtraFiles"]
   Tcg2PeiExtra.uni

@@ -1804,7 +1804,9 @@ EfiBootManagerBoot (
     DEBUG ((EFI_D_INFO, "[Bds] Booting Boot Manager Menu.\n"));
     BmStopHotkeyService (NULL, NULL);
   } else {
+    EfiEventGroupSignal (&gEfiEventPreReadyToBootGuid);    // MSCHANGE
     EfiSignalEventReadyToBoot();
+    EfiEventGroupSignal (&gEfiEventPostReadyToBootGuid);   // MSCHANGE
     //
     // Report Status Code to indicate ReadyToBoot was signalled
     //
@@ -2439,7 +2441,10 @@ BmRegisterBootManagerMenu (
     EfiBootManagerFreeLoadOptions (BootOptions, BootOptionCount);
     );
 
-  return EfiBootManagerAddLoadOptionVariable (BootOption, 0);
+  if (!EFI_ERROR(Status) && (PcdGetBool(PcdBootManagerInBootOrder))) {      // MSCHANGE
+      Status = EfiBootManagerAddLoadOptionVariable(BootOption, 0);          // MSCHANGE
+  }                                                                         // MSCHANGE
+  return Status;                                                            // MSCHANGE
 }
 
 /**

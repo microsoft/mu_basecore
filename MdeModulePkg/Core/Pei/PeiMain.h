@@ -17,6 +17,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include <PiPei.h>
 #include <Ppi/DxeIpl.h>
+#include <Ppi/DelayedDispatch.h>    //MSCHANGE
+#include <Ppi/EndOfPeiPhase.h>      //MSCHANGE
 #include <Ppi/MemoryDiscovered.h>
 #include <Ppi/StatusCode.h>
 #include <Ppi/Reset.h>
@@ -47,6 +49,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <IndustryStandard/PeImage.h>
 #include <Library/PeiServicesTablePointerLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/TimerLib.h>       // MSCHANGE
 #include <Guid/FirmwareFileSystem2.h>
 #include <Guid/FirmwareFileSystem3.h>
 #include <Guid/AprioriFileName.h>
@@ -213,6 +216,23 @@ EFI_STATUS
 
 #define PEI_CORE_HANDLE_SIGNATURE  SIGNATURE_32('P','e','i','C')
 
+//MSCHANGE Start
+#define MAX_DELAYED_DISPATCH_ENTRIES 8
+
+typedef struct {
+    UINT64                        TimeEnd;
+    UINT64                        Context;
+    EFI_DELAYED_DISPATCH_FUNCTION Function;
+    UINT32                        usDelay;
+} DELAYED_DISPATCH_ENTRY;
+
+typedef struct {
+    UINT32                        Count;
+    UINT32                        DispCount;
+    DELAYED_DISPATCH_ENTRY        Entry[MAX_DELAYED_DISPATCH_ENTRIES];
+} DELAYED_DISPATCH_TABLE;
+//MSCHANGE End
+
 ///
 /// Pei Core private data structure instance
 ///
@@ -310,9 +330,11 @@ struct _PEI_CORE_INSTANCE {
 
   //
   // Temp Memory Range is not covered by PeiTempMem and Stack.
-  // Those Memory Range will be migrated into physical memory.
+  // Those Memory Range will be migrated into phisical memory. 
   //
   HOLE_MEMORY_DATA                  HoleData[HOLE_MAX_NUMBER];
+
+  DELAYED_DISPATCH_TABLE            *DelayedDispatchTable;    // MSCHANGE
 };
 
 ///
@@ -320,7 +342,6 @@ struct _PEI_CORE_INSTANCE {
 ///
 #define PEI_CORE_INSTANCE_FROM_PS_THIS(a) \
   CR(a, PEI_CORE_INSTANCE, Ps, PEI_CORE_HANDLE_SIGNATURE)
-
 ///
 /// Union of temporarily used function pointers (to save stack space)
 ///
@@ -1870,5 +1891,39 @@ VOID
 PeiReinitializeFv (
   IN  PEI_CORE_INSTANCE           *PrivateData
   );
+
+// MSCHANGE Start
+/**
+ * Delayed Dispatch Ppi function
+ *
+ * @param This
+ * @param Function
+ * @param Context
+ * @param Delay
+ *
+ * @return EFI_STATUS EFIAPI
+ */
+EFI_STATUS
+EFIAPI
+PeiDelayedDispatchRegister (
+    IN  EFI_DELAYED_DISPATCH_PPI       *This,
+    IN  EFI_DELAYED_DISPATCH_FUNCTION  Function,
+    IN  UINT64                         Context,
+    IN  UINT32                         Delay
+);
+
+/**
+ * Delayed Dispatch Notify function
+ *
+ * @return EFI_STATUS EFIAPI
+ */
+EFI_STATUS
+EFIAPI
+PeiDelayedDispatchOnEndOfPei (
+    IN EFI_PEI_SERVICES                   **PeiServices,
+    IN EFI_PEI_NOTIFY_DESCRIPTOR          *NotifyDesc,
+    IN VOID                               *Ppi
+);
+// MSCHANGE End
 
 #endif
