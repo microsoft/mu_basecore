@@ -62,6 +62,7 @@
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
   NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
 !endif
+  IntSafeLib|MdePkg/Library/IntSafeLib/IntSafeLib.inf
 ##MSCHANGE End
 [PcdsFixedAtBuild]
   gPerformancePkgTokenSpaceGuid.PcdMaxPeiPerformanceLogSize|4096 # MS_CHANGE
@@ -76,6 +77,7 @@
 
 [Components]
   PerformancePkg/Dp_App/Dp.inf
+  PerformancePkg/Application/FbptDump/FbptDump.inf
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
