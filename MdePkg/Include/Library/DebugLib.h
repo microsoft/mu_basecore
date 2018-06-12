@@ -38,6 +38,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define DEBUG_INFO      0x00000040  // Informational debug messages
 #define DEBUG_DISPATCH  0x00000080  // PEI/DXE/SMM Dispatchers
 #define DEBUG_VARIABLE  0x00000100  // Variable
+#define DEBUG_SMI       0x00000200  // MS_CHANGE_141550: Added for SMI audting options.
 #define DEBUG_BM        0x00000400  // Boot Manager
 #define DEBUG_BLKIO     0x00001000  // BlkIo Driver
 #define DEBUG_NET       0x00004000  // Network Io Driver
@@ -62,6 +63,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define EFI_D_INFO      DEBUG_INFO
 #define EFI_D_DISPATCH  DEBUG_DISPATCH
 #define EFI_D_VARIABLE  DEBUG_VARIABLE
+#define EFI_D_SMI       DEBUG_SMI  // MS_CHANGE_141550: Added for SMI audting options.
 #define EFI_D_BM        DEBUG_BM
 #define EFI_D_BLKIO     DEBUG_BLKIO
 #define EFI_D_NET       DEBUG_NET
@@ -93,6 +95,59 @@ DebugPrint (
   IN  CONST CHAR8  *Format,
   ...
   );
+
+/**
+MS_CHANGE_?
+// MSCHANGE Added DebugDumpMemory
+  Dumps memory formatted.
+
+  Dumps the memory as hex bytes with ASCII text to the right
+
+  @param  Address      The address of the memory to dump.
+  @param  Length       The length of the region to dump.
+  @param  Flags        PrintAddress, PrintOffset etc
+
+**/
+#define DEBUG_DM_PRINT_ADDRESS 0x001     // Print Address
+#define DEBUG_DM_PRINT_OFFSET  0x002     // Print Address as Offset
+#define DEBUG_DM_PRINT_ASCII   0x004     // Print ASCII text
+
+VOID
+EFIAPI
+DebugDumpMemory (
+  IN  UINTN         ErrorLevel,
+  IN  CONST VOID   *Address,
+  IN  UINTN         Length,
+  IN  UINT32        Flags
+  );
+
+/**
+MS_CHANGE_?
+MSCHANGE - To split the DebugPrint into two one taking va_list and one with var args
+Prints a debug message to the debug output device if the specified error level is enabled.
+
+If any bit in ErrorLevel is also set in DebugPrintErrorLevelLib function
+GetDebugPrintErrorLevel (), then print the message specified by Format and the
+associated variable argument list to the debug output device.
+
+If Format is NULL, then ASSERT().
+
+If the length of the message string specificed by Format is larger than the maximum allowable
+record length, then directly return and not print it.
+
+@param  ErrorLevel    The error level of the debug message.
+@param  Format        Format string for the debug message to print.
+@param  VaListMarker  VA_LIST marker for the variable argument list.
+
+**/
+VOID
+EFIAPI
+DebugPrintValist(
+IN  UINTN        ErrorLevel,
+IN  CONST CHAR8  *Format,
+VA_LIST          VaListMarker
+);
+// END
 
 
 /**
@@ -369,6 +424,20 @@ DebugPrintLevelEnabled (
 #else
   #define DEBUG(Expression)
 #endif
+
+// MS_CHANGE_?
+//MSCHANGE - add macro
+#if !defined(MDEPKG_NDEBUG)      
+#define DEBUG_BUFFER(PrintLevel, Buffer, BufferLength, Flags)        \
+    do {                                                             \
+      if (DebugPrintLevelEnabled (PrintLevel)) {                                    \
+        DebugDumpMemory (PrintLevel, Buffer, BufferLength, Flags);  \
+      }                                                              \
+    } while (FALSE)
+#else
+#define DEBUG_BUFFER(PrintLevel, Buffer, BufferLength, Flags)
+#endif
+
 
 /**
   Macro that calls DebugAssert() if an EFI_STATUS evaluates to an error code.

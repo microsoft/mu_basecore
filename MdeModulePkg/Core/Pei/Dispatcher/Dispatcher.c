@@ -5,9 +5,149 @@ Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
+Copyright (c) 2017, Microsoft Corporation.
+
 **/
 
 #include "PeiMain.h"
+
+//MSCHANGE Delayed Dispatch begin
+EFI_DELAYED_DISPATCH_PPI           mDelayedDispatchPpi = {PeiDelayedDispatchRegister};
+EFI_PEI_PPI_DESCRIPTOR             mDelayedDispatchDesc = {
+      (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
+      &gEfiDelayedDispatchPpiGuid,
+      &mDelayedDispatchPpi
+};
+
+EFI_PEI_NOTIFY_DESCRIPTOR          mDelayedDispatchNotifyDesc = {
+    EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST,
+    &gEfiEndOfPeiSignalPpiGuid,
+    PeiDelayedDispatchOnEndOfPei
+};
+
+/**
+ * Delayed Dispatch Register.  Register for a callback after a minimum delay
+ *
+ * @param This            - PPI address
+ * @param Function        - Function to be dispatched when the time expires
+ * @param Context         - 64 bit value context to be passed to Function
+ * @param Delay           - Minimum delay in microseconds.
+ *
+ * @return EFI_STATUS EFIAPI
+ */
+EFI_STATUS
+EFIAPI
+PeiDelayedDispatchRegister (
+    IN  EFI_DELAYED_DISPATCH_PPI      *This,
+    IN  EFI_DELAYED_DISPATCH_FUNCTION  Function,
+    IN  UINT64                         Context,
+    IN  UINT32                         Delay
+) {
+    EFI_HOB_GUID_TYPE         *GuidHob;
+    DELAYED_DISPATCH_TABLE    *DelayedDispatchTable;
+
+    GuidHob = GetFirstGuidHob(&gEfiDelayedDispatchTableGuid);
+    DEBUG((DEBUG_INFO,__FUNCTION__ " Hob=%p\n",GuidHob));
+    if (NULL != GuidHob) {
+      DelayedDispatchTable = (DELAYED_DISPATCH_TABLE *)(GET_GUID_HOB_DATA(GuidHob));
+      if (DelayedDispatchTable->Count > (MAX_DELAYED_DISPATCH_ENTRIES - 1)) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+      if ((NULL == Function) || (0 == Delay) || (NULL == This)) {
+        return EFI_INVALID_PARAMETER;
+      }
+
+      DelayedDispatchTable->Entry[DelayedDispatchTable->Count].Function = Function;
+      DelayedDispatchTable->Entry[DelayedDispatchTable->Count].Context = Context;
+      DelayedDispatchTable->Entry[DelayedDispatchTable->Count].TimeEnd =
+          GetTimeInNanoSecond (GetPerformanceCounter ()) +
+          Delay * 1000;                         // Convert usDelay to ns
+      DelayedDispatchTable->Entry[DelayedDispatchTable->Count].usDelay = Delay;
+      DelayedDispatchTable->Count++;
+      return EFI_SUCCESS;
+    }
+    DEBUG((DEBUG_ERROR,__FUNCTION__ " Delayed Dispatch Hob not available.\n"));
+    ASSERT(FALSE);
+    return EFI_UNSUPPORTED;
+}
+
+BOOLEAN
+DelayedDispatchDispatcher (IN DELAYED_DISPATCH_TABLE *DelayedDispatchTable) {
+
+    BOOLEAN   Dispatched = FALSE;
+    UINT64    TimeCurrent;
+    UINTN     Index1;
+
+    if (DelayedDispatchTable->Count > 0) {
+        DelayedDispatchTable->DispCount++;
+        for (Index1 = 0; Index1 < DelayedDispatchTable->Count;) {
+            TimeCurrent = GetTimeInNanoSecond (GetPerformanceCounter ());
+            if (DelayedDispatchTable->Entry[Index1].TimeEnd <= TimeCurrent) {
+                // Time expired, invoked the function
+                DEBUG((DEBUG_ERROR,
+                        "Delayed dispatch entry %d @ %p, Target=%ld, Act=%ld Disp=%d\n",
+                        Index1,
+                        DelayedDispatchTable->Entry[Index1].Function,
+                        DelayedDispatchTable->Entry[Index1].TimeEnd,
+                        TimeCurrent,
+                        DelayedDispatchTable->DispCount));
+                Dispatched = TRUE;
+                DelayedDispatchTable->Entry[Index1].usDelay = 0;
+                DelayedDispatchTable->Entry[Index1].Function (
+                        &DelayedDispatchTable->Entry[Index1].Context,
+                        &DelayedDispatchTable->Entry[Index1].usDelay);
+
+                if (0 == DelayedDispatchTable->Entry[Index1].usDelay) {
+                    // NewTime = 0 = delete this entry from the table
+                    DelayedDispatchTable->Count--;
+                    CopyMem (&DelayedDispatchTable->Entry[Index1],
+                             &DelayedDispatchTable->Entry[Index1+1],
+                             sizeof(DelayedDispatchTable->Entry[Index1]) * (DelayedDispatchTable->Count - Index1));
+                } else {
+                    // NewTime != 0 - update the time from us to TimeEnd time
+                    DelayedDispatchTable->Entry[Index1].TimeEnd =
+                        GetTimeInNanoSecond (GetPerformanceCounter ()) +
+                        DelayedDispatchTable->Entry[Index1].usDelay * 1000;  // Convert usDelay to ns
+                    Index1++;
+                }
+            }
+        }
+    }
+    return Dispatched;
+}
+
+/**
+  DelayedDispatch End of PEI callback function. This is the last change before entering DXE and OS when S3 resume.
+
+  @param[in] PeiServices   - Pointer to PEI Services Table.
+  @param[in] NotifyDesc    - Pointer to the descriptor for the Notification event that
+                             caused this function to execute.
+  @param[in] Ppi           - Pointer to the PPI data associated with this function.
+
+  @retval EFI_STATUS       - Always return EFI_SUCCESS
+**/
+EFI_STATUS
+EFIAPI
+PeiDelayedDispatchOnEndOfPei (
+  IN EFI_PEI_SERVICES                   **PeiServices,
+  IN EFI_PEI_NOTIFY_DESCRIPTOR          *NotifyDesc,
+  IN VOID                               *Ppi
+  )
+{
+    EFI_HOB_GUID_TYPE               *GuidHob;
+    DELAYED_DISPATCH_TABLE          *DelayedDispatchTable;
+
+    GuidHob = GetFirstGuidHob(&gEfiDelayedDispatchTableGuid);
+    if (NULL != GuidHob) {
+        DelayedDispatchTable = (DELAYED_DISPATCH_TABLE *)(GET_GUID_HOB_DATA(GuidHob));
+        DEBUG((DEBUG_INFO,"Delayed dispatch on EndOfPei. Count=%d, DispatchCount=%d\n",DelayedDispatchTable->Count, DelayedDispatchTable->DispCount));
+        while (DelayedDispatchTable->Count > 0) {
+            DelayedDispatchDispatcher(DelayedDispatchTable);
+        }
+    }
+    return EFI_SUCCESS;
+}
+//MSCHANGE Delayed Dispatch end
 
 /**
 
@@ -982,11 +1122,28 @@ PeiDispatcher (
   EFI_PEI_FILE_HANDLE                 SaveCurrentFileHandle;
   EFI_FV_FILE_INFO                    FvFileInfo;
   PEI_CORE_FV_HANDLE                  *CoreFvHandle;
+  EFI_HOB_GUID_TYPE                   *GuidHob;                            // MSCHANGE
 
   PeiServices = (CONST EFI_PEI_SERVICES **) &Private->Ps;
   PeimEntryPoint = NULL;
   PeimFileHandle = NULL;
   EntryPoint     = 0;
+
+  if (NULL == Private->DelayedDispatchTable) {                            // MSCHANGE Start
+    GuidHob = GetFirstGuidHob(&gEfiDelayedDispatchTableGuid);
+    if (NULL != GuidHob) {
+      Private->DelayedDispatchTable = (DELAYED_DISPATCH_TABLE *)(GET_GUID_HOB_DATA(GuidHob));
+    } else {
+      Private->DelayedDispatchTable = BuildGuidHob (&gEfiDelayedDispatchTableGuid,sizeof(DELAYED_DISPATCH_TABLE));
+      if (NULL != Private->DelayedDispatchTable) {
+        ZeroMem (Private->DelayedDispatchTable, sizeof (DELAYED_DISPATCH_TABLE));
+        Status = PeiServicesInstallPpi(&mDelayedDispatchDesc);
+        ASSERT_EFI_ERROR (Status);
+        Status = PeiServicesNotifyPpi (&mDelayedDispatchNotifyDesc);
+        ASSERT_EFI_ERROR (Status);
+      }
+    }                                                                    // MSCHANGE End
+  }
 
   if ((Private->PeiMemoryInstalled) && (Private->HobList.HandoffInformationTable->BootMode != BOOT_ON_S3_RESUME || PcdGetBool (PcdShadowPeimOnS3Boot))) {
     //
@@ -1225,6 +1382,14 @@ PeiDispatcher (
             }
           }
         }
+
+        // MSCHANGE Start - Dispatch pending delalyed dispatch requests
+        if (NULL != Private->DelayedDispatchTable) {
+            if (DelayedDispatchDispatcher (Private->DelayedDispatchTable)) {
+                ProcessDispatchNotifyList(Private);
+            }
+        }
+        // MSCHANGE end
       }
 
       //

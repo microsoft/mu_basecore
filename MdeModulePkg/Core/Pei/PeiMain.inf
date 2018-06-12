@@ -66,6 +66,7 @@
   PeCoffLib
   PeiServicesTablePointerLib
   PcdLib
+  TimerLib                             ## MS_CHANGE
 
 [Guids]
   gPeiAprioriFileNameGuid       ## SOMETIMES_CONSUMES   ## File
@@ -76,6 +77,8 @@
   ## CONSUMES   ## UNDEFINED # Locate PPI
   ## CONSUMES   ## GUID      # Used to compare with FV's file system GUID and get the FV's file system format
   gEfiFirmwareFileSystem3Guid
+  gEfiFirmwarePerformanceGuid # MS_CHANGE_161871 - needed to build SEC perf HOB
+  gEfiDelayedDispatchTableGuid   # MSCHANGE
 
 [Ppis]
   gEfiPeiStatusCodePpiGuid                      ## SOMETIMES_CONSUMES # PeiReportStatusService is not ready if this PPI doesn't exist
@@ -98,6 +101,9 @@
   gEfiPeiReset2PpiGuid                          ## SOMETIMES_CONSUMES
   gEfiSecHobDataPpiGuid                         ## SOMETIMES_CONSUMES
   gEfiPeiCoreFvLocationPpiGuid                  ## SOMETIMES_CONSUMES
+  gPeiSecPerformancePpiGuid #MS_CHANGE_161871 - needed to build SEC perf HOB
+  gEfiDelayedDispatchPpiGuid # MSCHANGE
+  gEfiEndOfPeiSignalPpiGuid  # MSCHANGE
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPeiStackSize                  ## CONSUMES
