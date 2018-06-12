@@ -2,6 +2,7 @@
   Null Dxe Capsule Library instance does nothing and returns unsupport status.
 
 Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2016, Microsoft Corporation<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -79,6 +80,22 @@ ProcessCapsuleImage (
 EFI_STATUS
 EFIAPI
 ProcessCapsules (
+  VOID
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+/**
+  MS_CHANGE: System Table capsule support
+
+  Library function used to look thru the hob list
+  and locate and process system table capsules.
+
+**/
+VOID
+EFIAPI
+LocateAndProcessSystemTableCapsules (
   VOID
   )
 {

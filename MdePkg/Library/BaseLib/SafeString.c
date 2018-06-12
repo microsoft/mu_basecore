@@ -138,7 +138,7 @@ StrnLenS (
   while (String[Length] != 0) {
     if (Length >= MaxSize - 1) {
       return MaxSize;
-    }
+  }
     Length++;
   }
   return Length;
@@ -1723,7 +1723,7 @@ AsciiStrnLenS (
   while (String[Length] != 0) {
     if (Length >= MaxSize - 1) {
       return MaxSize;
-    }
+  }
     Length++;
   }
   return Length;

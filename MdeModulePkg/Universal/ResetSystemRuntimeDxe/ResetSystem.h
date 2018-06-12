@@ -6,6 +6,8 @@
 
 **/
 
+#error MS_CHANGE - Do not use. Eliminated as part of ResetSystem refactor.
+
 #ifndef _RESET_SYSTEM_H_
 #define _RESET_SYSTEM_H_
 

@@ -3,6 +3,7 @@
   This library class defines a set of interfaces for how to process capsule image updates.
 
 Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2016, Microsoft Corporation<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -80,5 +81,15 @@ EFIAPI
 ProcessCapsules (
   VOID
   );
+
+/**
+MS_CHANGE: System Table capsule support
+
+Library function used to look thru the hob list, locate and
+process system table capsules
+**/
+VOID
+EFIAPI
+LocateAndProcessSystemTableCapsules();
 
 #endif
