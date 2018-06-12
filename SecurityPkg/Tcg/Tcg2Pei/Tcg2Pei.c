@@ -43,7 +43,20 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // MSChange [BEGIN] - Add the OemTpm2InitLib
 #include <Library/OemTpm2InitLib.h>
 // MSChange [END]
-#define PERF_ID_TCG2_PEI  0x3080
+// MS_CHANGE_131467
+// MSChange [BEGIN] - Move to 256-bit PCRs.
+#include <Library/Tcg2PreUefiEventLogLib.h>
+// MSChange [END]
+// MS_CHANGE_217204
+#include <Library/SourceDebugEnabledLib.h>
+
+#define MSFT_SOURCE_DEBUG_ENABLED_STRING "Microsoft UEFI Source Debug Enabled"
+// END
+
+// MS_CHANGE_? (Changeset 14205)
+// MSChange [BEGIN] - This perf token needs to be distinct from the one MRC uses.
+#define PERF_ID_TCG2_PEI  0x3480
+// MSChange [END]
 
 typedef struct {
   EFI_GUID                   *EventGuid;
@@ -227,13 +240,20 @@ SyncPcrAllocationsAndPcrMask (
   UINT32                            Tpm2PcrMask;
   UINT32                            NewTpm2PcrMask;
 
-  DEBUG ((EFI_D_ERROR, "SyncPcrAllocationsAndPcrMask!\n"));
+  DEBUG ((EFI_D_VERBOSE, __FUNCTION__"()\n"));     // MS_CHANGE_?
 
   //
   // Determine the current TPM support and the Platform PCR mask.
   //
   Status = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &TpmActivePcrBanks);
-  ASSERT_EFI_ERROR (Status);
+  // MS_CHANGE_?
+  if (EFI_ERROR (Status))
+  {
+    DEBUG ((EFI_D_ERROR, __FUNCTION__" - Failed to determine TPM capabilities!\n"));
+    ASSERT_EFI_ERROR (Status);
+    return;
+  }
+  // END
 
   Tpm2PcrMask = PcdGet32 (PcdTpm2HashMask);
   if (Tpm2PcrMask == 0) {
@@ -463,6 +483,40 @@ MeasureCRTMVersion (
            (UINT8*)PcdGetPtr (PcdFirmwareVersionString)
            );
 }
+
+// MS_CHANGE_217204
+/**
+Measure Source Debug Enabled.
+
+@retval EFI_SUCCESS           Operation completed successfully.
+@retval EFI_OUT_OF_RESOURCES  No enough memory to log the new event.
+@retval EFI_DEVICE_ERROR      The command was unsuccessful.
+
+**/
+EFI_STATUS
+MeasureSourceDebugEnabled (
+  VOID
+  )
+{
+  CHAR8* String;
+  TCG_PCR_EVENT_HDR TcgEventHdr;
+
+  //
+  // Use FirmwareVersion string to represent CRTM version.
+  // OEMs should get real CRTM version string and measure it.
+  //
+
+  String = MSFT_SOURCE_DEBUG_ENABLED_STRING;
+  TcgEventHdr.PCRIndex = 7;
+  TcgEventHdr.EventType = EV_EFI_ACTION;
+  TcgEventHdr.EventSize = (UINT32)sizeof(MSFT_SOURCE_DEBUG_ENABLED_STRING);
+  return HashLogExtendEvent(0,
+                            (UINT8*)String,
+                            TcgEventHdr.EventSize,
+                            &TcgEventHdr,
+                            (UINT8*)String);
+}
+// END
 
 /**
   Get the FvName from the FV header.
@@ -852,6 +906,22 @@ PeimEntryMP (
 {
   EFI_STATUS                        Status;
 
+  // MS_CHANGE_103691
+  // MSChange [BEGIN] - Add support for measurements extended before Tcg2 stack is available.
+  CreateTcg2PreUefiEventLogEntries ();
+  // MSChange [END]
+
+// MS_CHANGE_217204
+  //
+  // Passing zero to IsSourceDebugEnabled as the InitType. The PEI version of
+  // the library does not use the InitType parameter, so zero is as a good a
+  // value as any other.
+  //
+  if (IsSourceDebugEnabled(0) != FALSE) {
+    Status = MeasureSourceDebugEnabled();
+  }
+// END
+
   if (PcdGet8 (PcdTpm2ScrtmPolicy) == 1) {
     Status = MeasureCRTMVersion ();
   }
@@ -980,6 +1050,11 @@ PeimEntryMA (
         Status = Tpm2Startup (TPM_SU_CLEAR);
       }
       if (EFI_ERROR (Status) ) {
+        // MS_CHANGE_58957
+        // MSChange [BEGIN] - Make sure that TPM2_Startup() can report an error.
+        DEBUG ((DEBUG_ERROR, "Tcg2Pei::PeimEntryMA - TPM failed Startup!\n"));
+        ASSERT_EFI_ERROR(Status);
+        // MSChange [END]
         goto Done;
       }
     }
@@ -1012,6 +1087,10 @@ PeimEntryMA (
       if (PcdGet8 (PcdTpm2SelfTestPolicy) == 1) {
         Status = Tpm2SelfTest (NO);
         if (EFI_ERROR (Status)) {
+          // MS_CHANGE_58957
+          // MSChange [BEGIN] - Make sure that TPM2_Startup() can report an error.
+          DEBUG ((DEBUG_ERROR, "Tcg2Pei::PeimEntryMA - TPM failed SelfTest!\n"));
+          // MSChange [END]
           goto Done;
         }
       }

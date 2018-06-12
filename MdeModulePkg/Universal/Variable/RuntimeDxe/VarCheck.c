@@ -3,6 +3,8 @@
   and variable lock protocol based on VarCheckLib.
 
 Copyright (c) 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2016, Microsoft Corporation
+
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -25,6 +27,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
                                 already been signaled.
   @retval EFI_OUT_OF_RESOURCES  There is not enough resource to hold the lock request.
 **/
+// MS_CHANGE_90369
+// MSChange [BEGIN] - Remove the default implementation of VariableLockRequestToLock.
+// We override it in our own VarCheckMsVar lib.
+/**
 EFI_STATUS
 EFIAPI
 VariableLockRequestToLock (
@@ -56,6 +62,8 @@ VariableLockRequestToLock (
 
   return Status;
 }
+**/
+// MSChange [END]
 
 /**
   Register SetVariable check handler.

@@ -425,6 +425,12 @@ EfiPxeBcDhcp (
 
   Status                  = EFI_SUCCESS;
   Private                 = PXEBC_PRIVATE_DATA_FROM_PXEBC (This);
+// MS_CHANGE_162958
+  if (Private->DEADBEEF) {
+      return EFI_DEVICE_ERROR;
+  }
+// END
+
   Mode                    = Private->PxeBc.Mode;
   Mode->IcmpErrorReceived = FALSE;
   Private->Function       = EFI_PXE_BASE_CODE_FUNCTION_DHCP;
@@ -460,14 +466,16 @@ EfiPxeBcDhcp (
     Status = PxeBcDhcp4Dora (Private, Private->Dhcp4);
   }
 
-  //
-  // Reconfigure the UDP instance with the default configuration.
-  //
-  if (Mode->UsingIpv6) {
-    Private->Udp6Read->Configure (Private->Udp6Read, &Private->Udp6CfgData);
-  } else {
-    Private->Udp4Read->Configure (Private->Udp4Read, &Private->Udp4CfgData);
-  }
+  if (!Private->DEADBEEF) {            // MS_CHANGE_162958
+    //
+    // Reconfigure the UDP instance with the default configuration.
+    //
+    if (Mode->UsingIpv6) {
+      Private->Udp6Read->Configure (Private->Udp6Read, &Private->Udp6CfgData);
+    } else {
+      Private->Udp4Read->Configure (Private->Udp4Read, &Private->Udp4CfgData);
+    }
+  }                                    // MS_CHANGE_162958
   //
   // Dhcp(), Discover(), and Mtftp() set the IP filter, and return with the IP
   // receive filter list emptied and the filter set to EFI_PXE_BASE_CODE_IP_FILTER_STATION_IP.
@@ -998,18 +1006,24 @@ EfiPxeBcMtftp (
     break;
   }
 
-  if (Status == EFI_ICMP_ERROR) {
-    Mode->IcmpErrorReceived = TRUE;
-  }
-
-  //
-  // Reconfigure the UDP instance with the default configuration.
-  //
-  if (Mode->UsingIpv6) {
-    Private->Udp6Read->Configure (Private->Udp6Read, &Private->Udp6CfgData);
+// MS_CHANGE_162958
+  if (Private->DEADBEEF) {
+      Status = EFI_DEVICE_ERROR;
   } else {
-    Private->Udp4Read->Configure (Private->Udp4Read, &Private->Udp4CfgData);
-  }
+// END
+    if (Status == EFI_ICMP_ERROR) {
+      Mode->IcmpErrorReceived = TRUE;
+    }
+
+    //
+    // Reconfigure the UDP instance with the default configuration.
+    //
+    if (Mode->UsingIpv6) {
+      Private->Udp6Read->Configure (Private->Udp6Read, &Private->Udp6CfgData);
+    } else {
+      Private->Udp4Read->Configure (Private->Udp4Read, &Private->Udp4CfgData);
+    }
+  }                                    // MS_CHANGE_162958
   //
   // Dhcp(), Discover(), and Mtftp() set the IP filter, and return with the IP
   // receive filter list emptied and the filter set to EFI_PXE_BASE_CODE_IP_FILTER_STATION_IP.

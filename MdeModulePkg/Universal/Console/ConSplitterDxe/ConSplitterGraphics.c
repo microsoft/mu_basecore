@@ -616,7 +616,8 @@ TextOutSetMode (
   Private->TextOutMode.Mode          = (INT32) ModeNumber;
   Private->TextOutMode.CursorColumn  = 0;
   Private->TextOutMode.CursorRow     = 0;
-  Private->TextOutMode.CursorVisible = TRUE;
-
+  // MS_CHANGE_?
+  // MSCHANGE - Initialize the console with the cursor not visible.
+  Private->TextOutMode.CursorVisible = FALSE;
   return;
 }
