@@ -44,6 +44,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PerformanceLib.h>
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/Tcg2PhysicalPresenceLib.h>
+// MS_CHANGE_23086
+// MSChange [BEGIN] - Add the OemTpm2InitLib
+#include <Library/OemTpm2InitLib.h>
+// MSChange [END]
 
 #define PERF_ID_TCG2_DXE  0x3120
 
@@ -2251,6 +2255,17 @@ OnReadyToBoot (
   TPM_PCRINDEX                      PcrIndex;
 
   PERF_START_EX (mImageHandle, "EventRec", "Tcg2Dxe", 0, PERF_ID_TCG2_DXE);
+
+  // MS_CHANGE_23086
+  // MSChange [BEGIN] - Call OEM init hook.
+  Status = OemTpm2InitDxeReadyToBootEvent (mBootAttempts);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((EFI_D_ERROR, "OemTpm2InitDxeReadyToBootEvent returned %r. Aborting measurements!\n", Status));
+    mBootAttempts++;
+    return;
+  }
+  // MSChange [END]
+
   if (mBootAttempts == 0) {
 
     //
@@ -2581,6 +2596,7 @@ DriverEntry (
   // Get supported PCR and current Active PCRs
   //
   Status = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &ActivePCRBanks);
+  DEBUG ((EFI_D_INFO, "TpmHashAlgorithmBitmap = 0x%X, ActivePCRBanks = 0x%X\n", TpmHashAlgorithmBitmap, ActivePCRBanks));   // MS_CHANGE
   ASSERT_EFI_ERROR (Status);
 
   mTcgDxeData.BsCap.HashAlgorithmBitmap = TpmHashAlgorithmBitmap & PcdGet32 (PcdTcg2HashAlgorithmBitmap);
@@ -2618,6 +2634,15 @@ DriverEntry (
   DEBUG ((EFI_D_INFO, "Tcg2.HashAlgorithmBitmap - 0x%08x\n", mTcgDxeData.BsCap.HashAlgorithmBitmap));
   DEBUG ((EFI_D_INFO, "Tcg2.NumberOfPCRBanks      - 0x%08x\n", mTcgDxeData.BsCap.NumberOfPCRBanks));
   DEBUG ((EFI_D_INFO, "Tcg2.ActivePcrBanks        - 0x%08x\n", mTcgDxeData.BsCap.ActivePcrBanks));
+
+  // MS_CHANGE_23086
+  // MSChange [BEGIN] - Call OEM init hook.
+  Status = OemTpm2InitDxeEntryPreRegistration (&mTcgDxeData.BsCap);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((EFI_D_ERROR, "OemTpm2InitDxeEntryPreRegistration returned %r. Aborting DXE init!\n", Status));
+    return Status;
+  }
+  // MSChange [END]
 
   if (mTcgDxeData.BsCap.TPMPresentFlag) {
     //

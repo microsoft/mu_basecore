@@ -716,16 +716,20 @@ SmmVariableHandler (
       break;
 
     case SMM_VARIABLE_FUNCTION_LOCK_VARIABLE:
-      if (mEndOfDxe) {
-        Status = EFI_ACCESS_DENIED;
-      } else {
+      // MS_CHANGE_90369
+      // MSChange [BEGIN] - Don't block these requests outright after EndOfDxe.
+      // Give the library a chance to evaluate which requests should be allowed.
+      // if (mEndOfDxe) {
+        // Status = EFI_ACCESS_DENIED;
+      // } else {
         VariableToLock = (SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE *) SmmVariableFunctionHeader->Data;
         Status = VariableLockRequestToLock (
                    NULL,
                    VariableToLock->Name,
                    &VariableToLock->Guid
                    );
-      }
+      // }
+      // MSChange [END]
       break;
     case SMM_VARIABLE_FUNCTION_VAR_CHECK_VARIABLE_PROPERTY_SET:
       if (mEndOfDxe) {
@@ -927,7 +931,6 @@ SmmFtwNotificationEvent (
   return EFI_SUCCESS;
 }
 
-
 /**
   Variable Driver main entry point. The Variable driver places the 4 EFI
   runtime services in the EFI System Table and installs arch protocols
@@ -974,6 +977,7 @@ MmVariableServiceInitialize (
                     );
   ASSERT_EFI_ERROR (Status);
 
+
   mVariableBufferPayloadSize = GetMaxVariableSize () +
                                OFFSET_OF (SMM_VARIABLE_COMMUNICATE_VAR_CHECK_VARIABLE_PROPERTY, Name) - GetVariableHeaderSize ();
 
@@ -990,6 +994,7 @@ MmVariableServiceInitialize (
   VariableHandle = NULL;
   Status = gMmst->MmiHandlerRegister (SmmVariableHandler, &gEfiSmmVariableProtocolGuid, &VariableHandle);
   ASSERT_EFI_ERROR (Status);
+
 
   //
   // Notify the variable wrapper driver the variable service is ready

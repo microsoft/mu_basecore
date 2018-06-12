@@ -42,10 +42,17 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 // Default value
 //
+// MS_CHANGE [BEGIN]
+#define TCG2_BIOS_TPM_MANAGEMENT_FLAG_DEFAULT  (TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_TURN_OFF | \
+                                                TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_CHANGE_EPS | \
+                                                TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_CHANGE_PCRS)
+/*
 #define TCG2_BIOS_TPM_MANAGEMENT_FLAG_DEFAULT  (TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_TURN_OFF | \
                                                 TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_CLEAR | \
                                                 TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_CHANGE_EPS | \
                                                 TCG2_BIOS_TPM_MANAGEMENT_FLAG_PP_REQUIRED_FOR_CHANGE_PCRS)
+*/
+// MS_CHANGE [END]
 
 //
 // Default value
