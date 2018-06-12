@@ -3,6 +3,8 @@
 #
 # Copyright (c) 2009 - 2020, Intel Corporation. All rights reserved.<BR>
 # (C) Copyright 2015-2020 Hewlett Packard Enterprise Development LP<BR>
+# Copyright (c) Microsoft Corporation
+#
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -69,6 +71,7 @@
   RpmcLib|SecurityPkg/Library/RpmcLibNull/RpmcLibNull.inf
   TcgEventLogRecordLib|SecurityPkg/Library/TcgEventLogRecordLib/TcgEventLogRecordLib.inf
   OemTpm2InitLib|SecurityPkg/Library/OemTpm2InitLibNull/OemTpm2InitLib.inf               ## MS_CHANGE_?
+  SourceDebugEnabledLib|SourceLevelDebugPkg/Library/SourceDebugEnabled/SourceDebugEnabledLib.inf ## MS_CHANGE_?
 
 ## MU_CHANGE [BEGIN]
 [LibraryClasses.X64, LibraryClasses.IA32]
@@ -261,7 +264,13 @@
   SecurityPkg/Library/OemTpm2InitLibNull/OemTpm2InitLibVendorNull.inf
   SecurityPkg/Library/Tpm2DebugLib/Tpm2DebugLibSimple.inf
   SecurityPkg/Library/Tpm2DebugLib/Tpm2DebugLibVerbose.inf
+  SecurityPkg/Library/DxeTpmMeasurementLib/DxeTpmMeasurementLib.inf
+  SecurityPkg/Library/PlatformSecureLibNull/PlatformSecureLibNull.inf
+  SecurityPkg/Library/Tcg2PpVendorLibNull/Tcg2PpVendorLibNull.inf
+  SecurityPkg/Library/TcgPpVendorLibNull/TcgPpVendorLibNull.inf
+  SecurityPkg/Library/TempPreUefiEventLogLib/TempPreUefiEventLogLib.inf
   SecurityPkg/Library/Tpm2DebugLib/Tpm2DebugLibNull.inf
+  SecurityPkg/Library/Tcg2PhysicalPresencePromptLib/Tcg2PhysicalPresencePromptLibConsole.inf
 ## MSCHANGE END
 
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]

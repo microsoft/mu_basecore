@@ -277,6 +277,7 @@ Output1bitPixel (
   CopyRgbToGopPixel (&PaletteValue[0], &Palette->PaletteValue[0], 1);
   CopyRgbToGopPixel (&PaletteValue[1], &Palette->PaletteValue[1], 1);
   FreePool (Palette);
+  Palette = NULL;                                     // MSChange - Make sure to manage this pointer safely. MS_CHANGE_?
 
   //
   // Convert the pixel from one bit to corresponding color.
@@ -366,6 +367,7 @@ Output4bitPixel (
   ZeroMem (PaletteValue, sizeof (PaletteValue));
   CopyRgbToGopPixel (PaletteValue, Palette->PaletteValue, MIN (PaletteNum, ARRAY_SIZE (PaletteValue)));
   FreePool (Palette);
+  Palette = NULL;                                     // MSChange - Make sure to manage this pointer safely. MS_CHANGE_?
 
   //
   // Convert the pixel from 4 bit to corresponding color.
@@ -443,6 +445,7 @@ Output8bitPixel (
   ZeroMem (PaletteValue, sizeof (PaletteValue));
   CopyRgbToGopPixel (PaletteValue, Palette->PaletteValue, MIN (PaletteNum, ARRAY_SIZE (PaletteValue)));
   FreePool (Palette);
+  Palette = NULL;                                     // MSChange - Make sure to manage this pointer safely. MS_CHANGE_?
 
   //
   // Convert the pixel from 8 bits to corresponding color.

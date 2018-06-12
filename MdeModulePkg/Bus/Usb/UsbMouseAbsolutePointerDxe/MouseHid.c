@@ -187,7 +187,7 @@ ParseHidItem (
         //
         UsbMouse->PrivateData.ButtonDetected = TRUE;
       }
-  }
+    }
     return;
 
   case HID_ITEM_TYPE_LOCAL:
