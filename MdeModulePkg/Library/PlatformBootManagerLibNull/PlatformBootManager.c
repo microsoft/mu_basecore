@@ -74,3 +74,66 @@ PlatformBootManagerUnableToBoot (
 {
   return;
 }
+
+/**   MSCHANGE begin
+   Do Platform specific action required at start of BDS
+
+**/
+VOID
+EFIAPI
+PlatformBootManagerBdsEntry (
+  VOID
+  )
+{
+  return;
+}
+
+/**
+ProcessBootCompletion
+*/
+VOID
+EFIAPI
+PlatformBootManagerProcessBootCompletion (
+  IN EFI_BOOT_MANAGER_LOAD_OPTION  *BootOption
+  )
+{
+  return;
+}
+
+/**
+ HardKeyBoot
+*/
+VOID
+EFIAPI
+PlatformBootManagerPriorityBoot (
+  UINT16  **BootNext
+  )
+{
+  return;
+}
+
+/**
+ BDS Deadloop - error, unable to boot any boot option
+*/
+VOID
+EFIAPI
+PlatformBootManagerDeadloop (
+  VOID
+  )
+{
+  return;
+}
+
+/**
+  OnDemandConInCOnnect
+ */
+VOID
+EFIAPI
+PlatformBootManagerOnDemandConInConnect (
+  VOID
+  )
+{
+  return;
+}
+
+/**   MSCHANGE end */

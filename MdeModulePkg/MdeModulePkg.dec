@@ -1771,6 +1771,13 @@
   # @Prompt Reset on memory type information change.
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|TRUE|BOOLEAN|0x00010056
 
+  ## MSCHANGE
+  ## Indicates if the Boot Manager should be in the Boot Order list.<BR><BR>            ## MSCHANGE
+  #   TRUE  - Add Boot Manager to boot order.<BR>                                       ## MSCHANGE
+  #   FALSE - Does not add Boot Manager to boot order.<BR>                              ## MSCHANGE
+  # @Prompt Store Boot Manager in BootOrder.                                            ## MSCHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerInBootOrder|TRUE|BOOLEAN|0x0001007A      ## MSCHANGE
+
   ## Indicates if the BDS supports Platform Recovery.<BR><BR>
   #   TRUE  - BDS supports Platform Recovery.<BR>
   #   FALSE - BDS does not support Platform Recovery.<BR>

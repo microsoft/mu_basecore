@@ -317,7 +317,7 @@ PcRtcInit (
     Time.Hour       = RTC_INIT_HOUR;
     Time.Day        = RTC_INIT_DAY;
     Time.Month      = RTC_INIT_MONTH;
-    Time.Year       = PcdGet16 (PcdMinimalValidYear);
+    Time.Year       = RTC_INIT_YEAR;   // MS_CHANGE_162988
     Time.Nanosecond = 0;
     Time.TimeZone   = EFI_UNSPECIFIED_TIMEZONE;
     Time.Daylight   = 0;

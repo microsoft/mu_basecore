@@ -219,6 +219,7 @@ struct _PXEBC_PRIVATE_DATA {
   UINT32                     OfferNum;
   UINT32                     OfferCount[PxeOfferTypeMax];
   UINT32                     OfferIndex[PxeOfferTypeMax][PXEBC_OFFER_MAX_NUM];
+  BOOLEAN                    DEADBEEF;                     // MS_CHANGE_162958
 };
 
 extern EFI_PXE_BASE_CODE_PROTOCOL           gPxeBcProtocolTemplate;
