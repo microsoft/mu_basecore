@@ -313,6 +313,11 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeFvVerificationPass|0x0303100A|UINT32|0x00010030
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeFvVerificationFail|0x0303100B|UINT32|0x00010031
 
+  ## MS_CHANGE_?
+  ## This fixed at build flag tells the TPM stack whether to update the TPM allocation if a
+  #  mismatch is found between PcdTpm2HashMask and the active banks.
+  gEfiSecurityPkgTokenSpaceGuid.PcdForceReallocatePcrBanks|TRUE|BOOLEAN|0x0000000A
+
 [PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## Image verification policy for OptionRom. Only following values are valid:<BR><BR>
   #  NOTE: Do NOT use 0x5 and 0x2 since it violates the UEFI specification and has been removed.<BR>
