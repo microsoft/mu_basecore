@@ -613,10 +613,11 @@ TextOutSetMode (
   // been checked in ConSplitterTextOutSetCursorPosition. And (0, 0) should
   // always be supported.
   //
-  Private->TextOutMode.Mode          = (INT32)ModeNumber;
-  Private->TextOutMode.CursorColumn  = 0;
-  Private->TextOutMode.CursorRow     = 0;
-  Private->TextOutMode.CursorVisible = TRUE;
-
+  Private->TextOutMode.Mode         = (INT32)ModeNumber;
+  Private->TextOutMode.CursorColumn = 0;
+  Private->TextOutMode.CursorRow    = 0;
+  // MS_CHANGE_?
+  // MSCHANGE - Initialize the console with the cursor not visible.
+  Private->TextOutMode.CursorVisible = FALSE;
   return;
 }

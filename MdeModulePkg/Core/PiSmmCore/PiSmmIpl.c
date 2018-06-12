@@ -1125,7 +1125,14 @@ ExecuteSmmCoreFromSmram (
   //
   // Print debug message showing SMM Core load address.
   //
-  DEBUG ((DEBUG_INFO, "SMM IPL loading SMM Core at SMRAM address %p\n", (VOID *)(UINTN)ImageContext.ImageAddress));
+  // MS_CHANGE_304324
+  if (DebugCodeEnabled ()) {
+    DEBUG ((DEBUG_INFO, "SMM IPL loading SMM Core at SMRAM address %p\n", (VOID *)(UINTN)ImageContext.ImageAddress));
+  } else {
+    DEBUG ((DEBUG_ERROR, "SMM IPL loading SMM Core (PiSmmCore.efi)\n"));
+  }
+
+  // END
 
   //
   // Load the image to our new buffer
