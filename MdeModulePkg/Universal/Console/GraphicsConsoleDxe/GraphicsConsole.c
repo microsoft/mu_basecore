@@ -52,6 +52,10 @@ EFI_HII_DATABASE_PROTOCOL   *mHiiDatabase;
 EFI_HII_FONT_PROTOCOL       *mHiiFont;
 EFI_HII_HANDLE              mHiiHandle;
 VOID                        *mHiiRegistration;
+// MS_CHANGE_?
+// MSCHANGE - Maintain seamless screen from PEI logo display
+static BOOLEAN              mClearScreen = FALSE;
+
 
 EFI_GUID             mFontPackageListGuid = {0xf5f219d3, 0x7006, 0x4648, {0xac, 0x8d, 0xd6, 0x1d, 0xfb, 0x7b, 0xc6, 0xad}};
 
@@ -1388,8 +1392,11 @@ GraphicsConsoleConOutSetMode (
       //
       // The current graphics mode is correct, so simply clear the entire display
       //
-      Status = GraphicsOutput->Blt (
-                          GraphicsOutput,
+	  // MS_CHANGE_?
+      // MSCHANGE - Don't clear screen first time through to maintain
+      //            seamless screen from PEI logo display.
+      if (mClearScreen != FALSE) {
+          Status = GraphicsOutput->Blt (GraphicsOutput,
                           &mGraphicsEfiColors[0],
                           EfiBltVideoFill,
                           0,
@@ -1400,6 +1407,8 @@ GraphicsConsoleConOutSetMode (
                           ModeData->GopHeight,
                           0
                           );
+	  }
+	  // END
     }
   } else if (FeaturePcdGet (PcdUgaConsumeSupport)) {
     //
@@ -1464,6 +1473,9 @@ GraphicsConsoleConOutSetMode (
   Status = EFI_SUCCESS;
 
 Done:
+  // MS_CHANGE_?
+  // MSCHANGE - Used to prevent screen clear first time through.
+  mClearScreen = TRUE;
   gBS->RestoreTPL (OldTpl);
   return Status;
 }

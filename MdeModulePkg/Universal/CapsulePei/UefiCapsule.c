@@ -1050,7 +1050,7 @@ CapsuleCoalesce (
   // capsule update, then return normally.
   //
   Status = PeiServicesGetBootMode (&BootMode);
-  if (EFI_ERROR (Status) || (BootMode != BOOT_ON_FLASH_UPDATE)) {
+  if (EFI_ERROR(Status) || (BootMode != BOOT_ON_FLASH_UPDATE)) {
     DEBUG ((DEBUG_ERROR, "Boot mode is not correct for capsule update path.\n"));
     Status = EFI_NOT_FOUND;
     goto Done;
