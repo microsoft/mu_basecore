@@ -282,7 +282,7 @@ SyncPcrAllocationsAndPcrMask (
   EFI_STATUS                        Status;
   EFI_TCG2_EVENT_ALGORITHM_BITMAP   TpmHashAlgorithmBitmap;
   UINT32                            TpmActivePcrBanks;
-  UINT32                            NewTpmActivePcrBanks;
+  // UINT32                            NewTpmActivePcrBanks;   // MS_CHANGE_? - Update PCR order, add PCD, enable deallocate *and* allocate.
   UINT32                            Tpm2PcrMask;
   UINT32                            NewTpm2PcrMask;
 
@@ -320,6 +320,8 @@ SyncPcrAllocationsAndPcrMask (
   // If there are active PCR banks that are not supported by the Platform mask,
   // update the TPM allocations and reboot the machine.
   //
+  /*
+  // MS_CHANGE_? - Update PCR order, add PCD, enable deallocate *and* allocate.
   if ((TpmActivePcrBanks & Tpm2PcrMask) != TpmActivePcrBanks) {
     NewTpmActivePcrBanks = TpmActivePcrBanks & Tpm2PcrMask;
 
@@ -342,6 +344,7 @@ SyncPcrAllocationsAndPcrMask (
       ResetCold();
     }
   }
+  */
 
   //
   // If there are any PCRs that claim support in the Platform mask that are
@@ -358,6 +361,28 @@ SyncPcrAllocationsAndPcrMask (
 
     Status = PcdSet32S (PcdTpm2HashMask, NewTpm2PcrMask);
     ASSERT_EFI_ERROR (Status);
+    Tpm2PcrMask = NewTpm2PcrMask;
+  }
+
+  //
+  // If there are active PCR banks that are not supported by the Platform mask,
+  // update the TPM allocations and reboot the machine.
+  // MS_CHANGE_? - Update PCR order, add PCD, enable deallocate *and* allocate.
+  //
+  if (Tpm2PcrMask != TpmActivePcrBanks && FixedPcdGetBool( PcdForceReallocatePcrBanks )) {
+    DEBUG ((EFI_D_INFO, "%a - Reallocating PCR banks from 0x%X to 0x%X.\n", __FUNCTION__, TpmActivePcrBanks, Tpm2PcrMask));
+    Status = Tpm2PcrAllocateBanks (NULL, (UINT32)TpmHashAlgorithmBitmap, Tpm2PcrMask);
+    if (EFI_ERROR (Status)) {
+      //
+      // We can't do much here, but we hope that this doesn't happen.
+      //
+      DEBUG ((EFI_D_ERROR, "%a - Failed to reallocate PCRs!\n", __FUNCTION__));
+      ASSERT_EFI_ERROR (Status);
+    }
+    //
+    // Need reset system, since we just called Tpm2PcrAllocateBanks().
+    //
+    ResetCold();
   }
 }
 
