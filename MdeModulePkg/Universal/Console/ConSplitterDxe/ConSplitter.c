@@ -1390,6 +1390,10 @@ ConSplitterConOutDriverBindingStart (
   //
   mConOut.TextOutMode.Mode = 0xFF;
 
+  // MS_CHANGE_?
+  // MSCHANGE - Force the initial state of TextOut device to CursorInvisible.
+  TextOut->Mode->CursorVisible = FALSE;
+
   //
   // If both ConOut and StdErr incorporate the same Text Out device,
   // their MaxMode and QueryData should be the intersection of both.
@@ -1905,7 +1909,10 @@ ConSplitterTextInAddDevice (
   //
   // Extra CheckEvent added to reduce the double CheckEvent().
   //
-  gBS->CheckEvent (TextIn->WaitForKey);
+  // MS_CHANGE_?
+  // MSchange - this check-event triggers the Surface on-screen keyboard to auto-activate when it shouldn't since
+  //            no one is actually waiting on a key input event.
+  //gBS->CheckEvent (TextIn->WaitForKey);
 
   return EFI_SUCCESS;
 }
@@ -2042,7 +2049,10 @@ ConSplitterTextInExAddDevice (
   //
   // Extra CheckEvent added to reduce the double CheckEvent().
   //
-  gBS->CheckEvent (TextInEx->WaitForKeyEx);
+  // MS_CHANGE_?
+  // MSchange - this check-event triggers the Surface on-screen keyboard to auto-activate when it shouldn't since
+  //            no one is actually waiting on a key input event.
+  //gBS->CheckEvent (TextInEx->WaitForKeyEx);
 
   return EFI_SUCCESS;
 }
@@ -3649,6 +3659,14 @@ ConSplitterTextInWaitForKey (
 
   Private = (TEXT_IN_SPLITTER_PRIVATE_DATA *) Context;
 
+// MS_CHANGE_162381
+  if (!mConInIsConnect && PcdGetBool (PcdConInConnectOnDemand)) {
+    DEBUG ((EFI_D_INFO, "Connect ConIn in first WaitForKey in Lazy ConIn mode.\n"));
+    gBS->SignalEvent (Private->ConnectConInEvent);
+    mConInIsConnect = TRUE;
+  }
+// END
+
   if (Private->KeyEventSignalState) {
     //
     // If KeyEventSignalState is flagged before, and not cleared by Reset() or ReadKeyStroke()
@@ -4972,7 +4990,9 @@ ConSplitterTextOutClearScreen (
   //
   Private->TextOutMode.CursorColumn = 0;
   Private->TextOutMode.CursorRow    = 0;
-  Private->TextOutMode.CursorVisible = TRUE;
+  // MS_CHANGE_?
+  // MSCHANGE - Default to cursor not visible
+  Private->TextOutMode.CursorVisible = FALSE;
 
   return ReturnStatus;
 }

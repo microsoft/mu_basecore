@@ -253,6 +253,7 @@ PartitionInstallElToritoChildHandles (
       ZeroMem (&PartitionInfo, sizeof (EFI_PARTITION_INFO_PROTOCOL));
       PartitionInfo.Revision = EFI_PARTITION_INFO_PROTOCOL_REVISION;
       PartitionInfo.Type     = PARTITION_TYPE_OTHER;
+      PartitionInfo.System   = FALSE;                  // MS_CHANGE
 
       Status = PartitionInstallChildHandle (
                 This,

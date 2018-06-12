@@ -59,6 +59,13 @@ IsDevicePathValid (
   UINTN Size;
   UINTN NodeLength;
 
+// MS_CHANGE_161843
+  // Handle some quick parameter validation.
+  if (DevicePath == NULL || (MaxSize > 0 && MaxSize < END_DEVICE_PATH_LENGTH)) {
+    return FALSE;
+  }
+// END
+
   ASSERT (DevicePath != NULL);
 
   if (MaxSize == 0) {

@@ -50,6 +50,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/PerformanceLib.h>
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/Tcg2PhysicalPresenceLib.h>
+// MS_CHANGE_23086
+// MSChange [BEGIN] - Add the OemTpm2InitLib
+#include <Library/OemTpm2InitLib.h>
+// MSChange [END]
 
 #define PERF_ID_TCG2_DXE  0x3120
 
@@ -1585,17 +1589,17 @@ SetupEventLog (
           // Log EfiStartupLocalityEvent as the second Event
           //   TCG PC Client PFP spec. Section 9.3.4.3 Startup Locality Event
           //
-          Status = TcgDxeLogEvent (
-                     mTcg2EventInfo[Index].LogFormat,
+        Status = TcgDxeLogEvent (
+                   mTcg2EventInfo[Index].LogFormat,
                      &NoActionEvent,
                      sizeof(NoActionEvent.PCRIndex) + sizeof(NoActionEvent.EventType) + GetDigestListBinSize (&NoActionEvent.Digests) + sizeof(NoActionEvent.EventSize),
                      (UINT8 *)&StartupLocalityEvent,
                      sizeof(StartupLocalityEvent)
-                     );
+                   );
 
-        }
       }
     }
+  }
   }
 
   //
@@ -1738,7 +1742,7 @@ SetupEventLog (
 EFI_STATUS
 TcgMeasureAction (
   IN      TPM_PCRINDEX       PCRIndex,
-  IN      CHAR8              *String
+  IN      CHAR8                     *String
   )
 {
   TCG_PCR_EVENT_HDR                 TcgEvent;
@@ -2257,6 +2261,17 @@ OnReadyToBoot (
   TPM_PCRINDEX                      PcrIndex;
 
   PERF_START_EX (mImageHandle, "EventRec", "Tcg2Dxe", 0, PERF_ID_TCG2_DXE);
+
+  // MS_CHANGE_23086
+  // MSChange [BEGIN] - Call OEM init hook.
+  Status = OemTpm2InitDxeReadyToBootEvent (mBootAttempts);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((EFI_D_ERROR, "OemTpm2InitDxeReadyToBootEvent returned %r. Aborting measurements!\n", Status));
+    mBootAttempts++;
+    return;
+  }
+  // MSChange [END]
+
   if (mBootAttempts == 0) {
 
     //
@@ -2314,10 +2329,10 @@ OnReadyToBoot (
     //
     Status = TcgMeasureAction (
                4,
-               EFI_RETURNING_FROM_EFI_APPLICATOIN
+               EFI_RETURNING_FROM_EFI_APPLICATION      // MSCHANGE - Spelling
                );
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "%a not Measured. Error!\n", EFI_RETURNING_FROM_EFI_APPLICATOIN));
+      DEBUG ((EFI_D_ERROR, "%a not Measured. Error!\n", EFI_RETURNING_FROM_EFI_APPLICATION));    // MSCHANGE - Spelling
     }
 
     //
@@ -2330,7 +2345,7 @@ OnReadyToBoot (
                );
     if (EFI_ERROR (Status)) {
       DEBUG ((EFI_D_ERROR, "%a not Measured. Error!\n", EFI_CALLING_EFI_APPLICATION));
-    }
+  }
   }
 
   DEBUG ((EFI_D_INFO, "TPM2 Tcg2Dxe Measure Data when ReadyToBoot\n"));
@@ -2590,6 +2605,7 @@ DriverEntry (
   // Get supported PCR and current Active PCRs
   //
   Status = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &ActivePCRBanks);
+  DEBUG ((EFI_D_ERROR, "TpmHashAlgorithmBitmap = 0x%X, ActivePCRBanks = 0x%X\n", TpmHashAlgorithmBitmap, ActivePCRBanks));   // MS_CHANGE
   ASSERT_EFI_ERROR (Status);
 
   mTcgDxeData.BsCap.HashAlgorithmBitmap = TpmHashAlgorithmBitmap & PcdGet32 (PcdTcg2HashAlgorithmBitmap);
@@ -2627,6 +2643,15 @@ DriverEntry (
   DEBUG ((EFI_D_INFO, "Tcg2.HashAlgorithmBitmap - 0x%08x\n", mTcgDxeData.BsCap.HashAlgorithmBitmap));
   DEBUG ((EFI_D_INFO, "Tcg2.NumberOfPCRBanks      - 0x%08x\n", mTcgDxeData.BsCap.NumberOfPCRBanks));
   DEBUG ((EFI_D_INFO, "Tcg2.ActivePcrBanks        - 0x%08x\n", mTcgDxeData.BsCap.ActivePcrBanks));
+
+  // MS_CHANGE_23086
+  // MSChange [BEGIN] - Call OEM init hook.
+  Status = OemTpm2InitDxeEntryPreRegistration (&mTcgDxeData.BsCap);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((EFI_D_ERROR, "OemTpm2InitDxeEntryPreRegistration returned %r. Aborting DXE init!\n", Status));
+    return Status;
+  }
+  // MSChange [END]
 
   if (mTcgDxeData.BsCap.TPMPresentFlag) {
     //
@@ -2687,3 +2712,17 @@ DriverEntry (
 
   return Status;
 }
+
+
+// MS_CHANGE_?
+// MSChange [BEGIN] - For unknown reasons, there's a linker error with DxeTcg2PhyicalPresenceLib, even
+//                    though the surrounding functions aren't invoked from this driver. This
+//                    is here just to get the linker to shut up and shouldn't affect anything. (Sidebar: I hate this.)
+BOOLEAN
+PromptForUserConfirmation (
+  IN  CHAR16    *PromptString
+  )
+{
+  return FALSE;
+}
+// MSChange [END]

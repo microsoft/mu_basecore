@@ -88,6 +88,7 @@
   gEdkiiSmmVarCheckProtocolGuid                 ## PRODUCES
   gEfiTcgProtocolGuid                           ## SOMETIMES_CONSUMES
   gEfiTcg2ProtocolGuid                          ## SOMETIMES_CONSUMES
+  gEfiVariableFilterProtocolGuid                ## PRODUCES # MS_CHANGE_197781
 
 [Guids]
   ## SOMETIMES_CONSUMES   ## GUID # Signature of Variable store header

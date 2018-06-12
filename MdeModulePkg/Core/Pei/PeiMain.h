@@ -17,6 +17,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include <PiPei.h>
 #include <Ppi/DxeIpl.h>
+#include <Ppi/DelayedDispatch.h>    //MSCHANGE
+#include <Ppi/EndOfPeiPhase.h>      //MSCHANGE
 #include <Ppi/MemoryDiscovered.h>
 #include <Ppi/StatusCode.h>
 #include <Ppi/Reset.h>
@@ -46,6 +48,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <IndustryStandard/PeImage.h>
 #include <Library/PeiServicesTablePointerLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/TimerLib.h>       // MSCHANGE
 #include <Guid/FirmwareFileSystem2.h>
 #include <Guid/FirmwareFileSystem3.h>
 #include <Guid/AprioriFileName.h>
@@ -88,7 +91,7 @@ typedef struct {
   INTN                    LastDispatchedInstall;
   ///
   /// index of last dispatched notify in Notify link list.
-  /// 
+  ///
   INTN                    LastDispatchedNotify;
   ///
   /// Ppi database has the PcdPeiCoreMaxPpiSupported number of entries.
@@ -157,7 +160,7 @@ typedef struct _PEI_CORE_INSTANCE  PEI_CORE_INSTANCE;
 
 /**
   Function Pointer type for PeiCore function.
-  @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size 
+  @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size
                          and location of temporary RAM, the stack location and the BFV location.
   @param PpiList         Points to a list of one or more PPI descriptors to be installed initially by the PEI core.
                          An empty PPI list consists of a single descriptor with the end-tag
@@ -178,23 +181,40 @@ EFI_STATUS
 
 #define PEI_CORE_HANDLE_SIGNATURE  SIGNATURE_32('P','e','i','C')
 
+//MSCHANGE Start
+#define MAX_DELAYED_DISPATCH_ENTRIES 8
+
+typedef struct {
+    UINT64                        TimeEnd;
+    UINT64                        Context;
+    EFI_DELAYED_DISPATCH_FUNCTION Function;
+    UINT32                        usDelay;
+} DELAYED_DISPATCH_ENTRY;
+
+typedef struct {
+    UINT32                        Count;
+    UINT32                        DispCount;
+    DELAYED_DISPATCH_ENTRY        Entry[MAX_DELAYED_DISPATCH_ENTRIES];
+} DELAYED_DISPATCH_TABLE;
+//MSCHANGE End
+
 ///
 /// Pei Core private data structure instance
 ///
 struct _PEI_CORE_INSTANCE {
   UINTN                              Signature;
-  
+
   ///
   /// Point to ServiceTableShadow
   ///
   EFI_PEI_SERVICES                   *Ps;
   PEI_PPI_DATABASE                   PpiData;
-  
+
   ///
   /// The count of FVs which contains FFS and could be dispatched by PeiCore.
   ///
   UINTN                              FvCount;
-  
+
   ///
   /// Pointer to the buffer with the PcdPeiCoreMaxFvSupported number of entries.
   /// Each entry is for one FV which contains FFS and could be dispatched by PeiCore.
@@ -207,7 +227,7 @@ struct _PEI_CORE_INSTANCE {
   ///
   PEI_CORE_UNKNOW_FORMAT_FV_INFO     *UnknownFvInfo;
   UINTN                              UnknownFvInfoCount;
-  
+
   ///
   /// Pointer to the buffer with the PcdPeiCoreMaxPeimPerFv number of entries.
   ///
@@ -240,15 +260,15 @@ struct _PEI_CORE_INSTANCE {
   PEICORE_FUNCTION_POINTER           ShadowedPeiCore;
   CACHE_SECTION_DATA                 CacheSection;
   //
-  // For Loading modules at fixed address feature to cache the top address below which the 
-  // Runtime code, boot time code and PEI memory will be placed. Please note that the offset between this field 
-  // and  Ps should not be changed since maybe user could get this top address by using the offet to Ps. 
+  // For Loading modules at fixed address feature to cache the top address below which the
+  // Runtime code, boot time code and PEI memory will be placed. Please note that the offset between this field
+  // and  Ps should not be changed since maybe user could get this top address by using the offet to Ps.
   //
   EFI_PHYSICAL_ADDRESS               LoadModuleAtFixAddressTopAddress;
   //
   // The field is define for Loading modules at fixed address feature to tracker the PEI code
   // memory range usage. It is a bit mapped array in which every bit indicates the correspoding memory page
-  // available or not. 
+  // available or not.
   //
   UINT64                            *PeiCodeMemoryRangeUsageBitMap;
   //
@@ -267,9 +287,11 @@ struct _PEI_CORE_INSTANCE {
 
   //
   // Temp Memory Range is not covered by PeiTempMem and Stack.
-  // Those Memory Range will be migrated into physical memory.
+  // Those Memory Range will be migrated into phisical memory. 
   //
   HOLE_MEMORY_DATA                  HoleData[HOLE_MAX_NUMBER];
+
+  DELAYED_DISPATCH_TABLE            *DelayedDispatchTable;    // MSCHANGE
 };
 
 ///
@@ -277,7 +299,6 @@ struct _PEI_CORE_INSTANCE {
 ///
 #define PEI_CORE_INSTANCE_FROM_PS_THIS(a) \
   CR(a, PEI_CORE_INSTANCE, Ps, PEI_CORE_HANDLE_SIGNATURE)
-
 ///
 /// Union of temporarily used function pointers (to save stack space)
 ///
@@ -307,7 +328,7 @@ typedef struct {
   with the old core data.
 
 
-  @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size 
+  @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size
                          and location of temporary RAM, the stack location and the BFV location.
   @param PpiList         Points to a list of one or more PPI descriptors to be installed initially by the PEI core.
                          An empty PPI list consists of a single descriptor with the end-tag
@@ -415,7 +436,7 @@ DepexSatisfied (
   Initialize PPI services.
 
   @param PrivateData     Pointer to the PEI Core data.
-  @param OldCoreData     Pointer to old PEI Core data. 
+  @param OldCoreData     Pointer to old PEI Core data.
                          NULL if being run in non-permament memory mode.
 
 **/
@@ -429,7 +450,7 @@ InitializePpiServices (
 
   Migrate the Hob list from the temporary memory to PEI installed memory.
 
-  @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size 
+  @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size
                          and location of temporary RAM, the stack location and the BFV location.
   @param PrivateData     Pointer to PeiCore's private data structure.
 
@@ -847,7 +868,7 @@ PeiFfsFindNextVolume (
   Initialize the memory services.
 
   @param PrivateData     PeiCore's private data structure
-  @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size 
+  @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size
                          and location of temporary RAM, the stack location and the BFV location.
   @param OldCoreData     Pointer to the PEI Core data.
                          NULL if being run in non-permament memory mode.
@@ -1158,7 +1179,7 @@ PeiFfsGetFileInfo (
 
 **/
 EFI_STATUS
-EFIAPI 
+EFIAPI
 PeiFfsGetFileInfo2 (
   IN EFI_PEI_FILE_HANDLE  FileHandle,
   OUT EFI_FV_FILE_INFO2   *FileInfo
@@ -1269,7 +1290,7 @@ SecurityPpiNotifyCallback (
   @retval EFI_OUT_OF_RESOURCES  Can not allocate page when aligning FV image
   @retval EFI_SECURITY_VIOLATION Image is illegal
   @retval Others                Can not find EFI_SECTION_FIRMWARE_VOLUME_IMAGE section
-  
+
 **/
 EFI_STATUS
 ProcessFvFile (
@@ -1277,15 +1298,15 @@ ProcessFvFile (
   IN  PEI_CORE_FV_HANDLE          *ParentFvCoreHandle,
   IN  EFI_PEI_FILE_HANDLE         ParentFvFileHandle
   );
-  
+
 /**
   Get instance of PEI_CORE_FV_HANDLE for next volume according to given index.
-  
+
   This routine also will install FvInfo ppi for FV hob in PI ways.
-  
+
   @param Private    Pointer of PEI_CORE_INSTANCE
   @param Instance   The index of FV want to be searched.
-  
+
   @return Instance of PEI_CORE_FV_HANDLE.
 **/
 PEI_CORE_FV_HANDLE *
@@ -1293,19 +1314,19 @@ FindNextCoreFvHandle (
   IN PEI_CORE_INSTANCE  *Private,
   IN UINTN              Instance
   );
-    
+
 //
 // Default EFI_PEI_CPU_IO_PPI support for EFI_PEI_SERVICES table when PeiCore initialization.
-//    
+//
 
 /**
   Memory-based read services.
-  
-  This function is to perform the Memory Access Read service based on installed 
-  instance of the EFI_PEI_CPU_IO_PPI. 
-  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then 
-  return EFI_NOT_YET_AVAILABLE. 
-   
+
+  This function is to perform the Memory Access Read service based on installed
+  instance of the EFI_PEI_CPU_IO_PPI.
+  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then
+  return EFI_NOT_YET_AVAILABLE.
+
   @param  PeiServices           An indirect pointer to the PEI Services Table
                                 published by the PEI Foundation.
   @param  This                  Pointer to local data for the interface.
@@ -1315,7 +1336,7 @@ FindNextCoreFvHandle (
   @param  Buffer                A pointer to the buffer of data.
 
   @retval EFI_SUCCESS           The function completed successfully.
-  @retval EFI_NOT_YET_AVAILABLE The service has not been installed.     
+  @retval EFI_NOT_YET_AVAILABLE The service has not been installed.
 **/
 EFI_STATUS
 EFIAPI
@@ -1327,15 +1348,15 @@ PeiDefaultMemRead (
   IN  UINTN                             Count,
   IN  OUT VOID                          *Buffer
   );
-  
+
 /**
   Memory-based write services.
-   
-  This function is to perform the Memory Access Write service based on installed 
-  instance of the EFI_PEI_CPU_IO_PPI. 
-  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then 
-  return EFI_NOT_YET_AVAILABLE. 
-   
+
+  This function is to perform the Memory Access Write service based on installed
+  instance of the EFI_PEI_CPU_IO_PPI.
+  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then
+  return EFI_NOT_YET_AVAILABLE.
+
   @param  PeiServices           An indirect pointer to the PEI Services Table
                                 published by the PEI Foundation.
   @param  This                  Pointer to local data for the interface.
@@ -1345,7 +1366,7 @@ PeiDefaultMemRead (
   @param  Buffer                A pointer to the buffer of data.
 
   @retval EFI_SUCCESS           The function completed successfully.
-  @retval EFI_NOT_YET_AVAILABLE The service has not been installed.     
+  @retval EFI_NOT_YET_AVAILABLE The service has not been installed.
 **/
 EFI_STATUS
 EFIAPI
@@ -1357,14 +1378,14 @@ PeiDefaultMemWrite (
   IN  UINTN                             Count,
   IN  OUT VOID                          *Buffer
   );
-  
+
 /**
   IO-based read services.
-  
+
   This function is to perform the IO-base read service for the EFI_PEI_CPU_IO_PPI.
-  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then 
-  return EFI_NOT_YET_AVAILABLE. 
-  
+  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then
+  return EFI_NOT_YET_AVAILABLE.
+
   @param  PeiServices           An indirect pointer to the PEI Services Table
                                 published by the PEI Foundation.
   @param  This                  Pointer to local data for the interface.
@@ -1386,14 +1407,14 @@ PeiDefaultIoRead (
   IN      UINTN                           Count,
   IN OUT  VOID                            *Buffer
   );
-  
+
 /**
   IO-based write services.
-  
+
   This function is to perform the IO-base write service for the EFI_PEI_CPU_IO_PPI.
-  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then 
-  return EFI_NOT_YET_AVAILABLE. 
-  
+  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then
+  return EFI_NOT_YET_AVAILABLE.
+
   @param  PeiServices           An indirect pointer to the PEI Services Table
                                 published by the PEI Foundation.
   @param  This                  Pointer to local data for the interface.
@@ -1415,13 +1436,13 @@ PeiDefaultIoWrite (
   IN      UINTN                           Count,
   IN OUT  VOID                            *Buffer
   );
-  
+
 /**
   8-bit I/O read operations.
-  
-  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then 
+
+  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then
   return 0.
-  
+
   @param  PeiServices    An indirect pointer to the PEI Services Table published by the PEI Foundation.
   @param  This           Pointer to local data for the interface.
   @param  Address        The physical address of the access.
@@ -1435,13 +1456,13 @@ PeiDefaultIoRead8 (
   IN  CONST EFI_PEI_CPU_IO_PPI    *This,
   IN  UINT64                      Address
   );
-  
+
 /**
   Reads an 16-bit I/O port.
-  
-  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then 
+
+  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then
   return 0.
-  
+
   @param  PeiServices    An indirect pointer to the PEI Services Table published by the PEI Foundation.
   @param  This           Pointer to local data for the interface.
   @param  Address        The physical address of the access.
@@ -1455,13 +1476,13 @@ PeiDefaultIoRead16 (
   IN  CONST EFI_PEI_CPU_IO_PPI    *This,
   IN  UINT64                      Address
   );
-  
+
 /**
   Reads an 32-bit I/O port.
-  
-  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then 
+
+  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then
   return 0.
-  
+
   @param  PeiServices    An indirect pointer to the PEI Services Table published by the PEI Foundation.
   @param  This           Pointer to local data for the interface.
   @param  Address        The physical address of the access.
@@ -1475,13 +1496,13 @@ PeiDefaultIoRead32 (
   IN  CONST EFI_PEI_CPU_IO_PPI    *This,
   IN  UINT64                      Address
   );
-  
+
 /**
   Reads an 64-bit I/O port.
-  
-  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then 
+
+  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then
   return 0.
-  
+
   @param  PeiServices    An indirect pointer to the PEI Services Table published by the PEI Foundation.
   @param  This           Pointer to local data for the interface.
   @param  Address        The physical address of the access.
@@ -1495,7 +1516,7 @@ PeiDefaultIoRead64 (
   IN  CONST EFI_PEI_CPU_IO_PPI    *This,
   IN  UINT64                      Address
   );
-  
+
 /**
   8-bit I/O write operations.
 
@@ -1512,7 +1533,7 @@ PeiDefaultIoWrite8 (
   IN  UINT64                      Address,
   IN  UINT8                       Data
   );
-  
+
 /**
   16-bit I/O write operations.
 
@@ -1529,7 +1550,7 @@ PeiDefaultIoWrite16 (
   IN  UINT64                      Address,
   IN  UINT16                      Data
   );
-  
+
 /**
   32-bit I/O write operations.
 
@@ -1546,7 +1567,7 @@ PeiDefaultIoWrite32 (
   IN  UINT64                      Address,
   IN  UINT32                      Data
   );
-  
+
 /**
   64-bit I/O write operations.
 
@@ -1563,13 +1584,13 @@ PeiDefaultIoWrite64 (
   IN  UINT64                      Address,
   IN  UINT64                      Data
   );
-  
+
 /**
   8-bit memory read operations.
 
-  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then 
+  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then
   return 0.
-  
+
   @param  PeiServices    An indirect pointer to the PEI Services Table published by the PEI Foundation.
   @param  This           Pointer to local data for the interface.
   @param  Address        The physical address of the access.
@@ -1584,13 +1605,13 @@ PeiDefaultMemRead8 (
   IN  CONST EFI_PEI_CPU_IO_PPI    *This,
   IN  UINT64                      Address
   );
-  
+
 /**
   16-bit memory read operations.
 
-  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then 
+  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then
   return 0.
-  
+
   @param  PeiServices    An indirect pointer to the PEI Services Table published by the PEI Foundation.
   @param  This           Pointer to local data for the interface.
   @param  Address        The physical address of the access.
@@ -1605,13 +1626,13 @@ PeiDefaultMemRead16 (
   IN  CONST EFI_PEI_CPU_IO_PPI    *This,
   IN  UINT64                      Address
   );
-  
+
 /**
   32-bit memory read operations.
 
-  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then 
+  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then
   return 0.
-  
+
   @param  PeiServices    An indirect pointer to the PEI Services Table published by the PEI Foundation.
   @param  This           Pointer to local data for the interface.
   @param  Address        The physical address of the access.
@@ -1626,13 +1647,13 @@ PeiDefaultMemRead32 (
   IN  CONST EFI_PEI_CPU_IO_PPI    *This,
   IN  UINT64                      Address
   );
-  
+
 /**
   64-bit memory read operations.
 
-  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then 
+  If the EFI_PEI_CPU_IO_PPI is not installed by platform/chipset PEIM, then
   return 0.
-  
+
   @param  PeiServices    An indirect pointer to the PEI Services Table published by the PEI Foundation.
   @param  This           Pointer to local data for the interface.
   @param  Address        The physical address of the access.
@@ -1647,7 +1668,7 @@ PeiDefaultMemRead64 (
   IN  CONST EFI_PEI_CPU_IO_PPI    *This,
   IN  UINT64                      Address
   );
-  
+
 /**
   8-bit memory write operations.
 
@@ -1665,7 +1686,7 @@ PeiDefaultMemWrite8 (
   IN  UINT64                        Address,
   IN  UINT8                         Data
   );
-  
+
 /**
   16-bit memory write operations.
 
@@ -1701,7 +1722,7 @@ PeiDefaultMemWrite32 (
   IN  UINT64                        Address,
   IN  UINT32                        Data
   );
-  
+
 /**
   64-bit memory write operations.
 
@@ -1719,19 +1740,19 @@ PeiDefaultMemWrite64 (
   IN  UINT64                        Address,
   IN  UINT64                        Data
   );
-  
-extern EFI_PEI_CPU_IO_PPI gPeiDefaultCpuIoPpi;                                        
+
+extern EFI_PEI_CPU_IO_PPI gPeiDefaultCpuIoPpi;
 
 //
 // Default EFI_PEI_PCI_CFG2_PPI support for EFI_PEI_SERVICES table when PeiCore initialization.
-// 
+//
 
 /**
   Reads from a given location in the PCI configuration space.
 
-  If the EFI_PEI_PCI_CFG2_PPI is not installed by platform/chipset PEIM, then 
-  return EFI_NOT_YET_AVAILABLE. 
-  
+  If the EFI_PEI_PCI_CFG2_PPI is not installed by platform/chipset PEIM, then
+  return EFI_NOT_YET_AVAILABLE.
+
   @param  PeiServices     An indirect pointer to the PEI Services Table published by the PEI Foundation.
   @param  This            Pointer to local data for the interface.
   @param  Width           The width of the access. Enumerated in bytes.
@@ -1743,7 +1764,7 @@ extern EFI_PEI_CPU_IO_PPI gPeiDefaultCpuIoPpi;
   @retval EFI_SUCCESS           The function completed successfully.
   @retval EFI_INVALID_PARAMETER The invalid access width.
   @retval EFI_NOT_YET_AVAILABLE If the EFI_PEI_PCI_CFG2_PPI is not installed by platform/chipset PEIM.
-  
+
 **/
 EFI_STATUS
 EFIAPI
@@ -1754,13 +1775,13 @@ PeiDefaultPciCfg2Read (
   IN        UINT64                    Address,
   IN OUT    VOID                      *Buffer
   );
-  
+
 /**
   Write to a given location in the PCI configuration space.
 
-  If the EFI_PEI_PCI_CFG2_PPI is not installed by platform/chipset PEIM, then 
-  return EFI_NOT_YET_AVAILABLE. 
-  
+  If the EFI_PEI_PCI_CFG2_PPI is not installed by platform/chipset PEIM, then
+  return EFI_NOT_YET_AVAILABLE.
+
   @param  PeiServices     An indirect pointer to the PEI Services Table published by the PEI Foundation.
   @param  This            Pointer to local data for the interface.
   @param  Width           The width of the access. Enumerated in bytes.
@@ -1782,7 +1803,7 @@ PeiDefaultPciCfg2Write (
   IN        UINT64                    Address,
   IN OUT    VOID                      *Buffer
   );
-  
+
 /**
   This function performs a read-modify-write operation on the contents from a given
   location in the PCI configuration space.
@@ -1811,21 +1832,55 @@ PeiDefaultPciCfg2Modify (
   IN        UINT64                    Address,
   IN        VOID                      *SetBits,
   IN        VOID                      *ClearBits
-  );    
-  
+  );
+
 extern EFI_PEI_PCI_CFG2_PPI gPeiDefaultPciCfg2Ppi;
 
 /**
   After PeiCore image is shadowed into permanent memory, all build-in FvPpi should
-  be re-installed with the instance in permanent memory and all cached FvPpi pointers in 
+  be re-installed with the instance in permanent memory and all cached FvPpi pointers in
   PrivateData->Fv[] array should be fixed up to be pointed to the one in permanent
   memory.
-  
+
   @param PrivateData   Pointer to PEI_CORE_INSTANCE.
-**/  
+**/
 VOID
 PeiReinitializeFv (
   IN  PEI_CORE_INSTANCE           *PrivateData
   );
-      
+
+// MSCHANGE Start
+/**
+ * Delayed Dispatch Ppi function
+ *
+ * @param This
+ * @param Function
+ * @param Context
+ * @param Delay
+ *
+ * @return EFI_STATUS EFIAPI
+ */
+EFI_STATUS
+EFIAPI
+PeiDelayedDispatchRegister (
+    IN  EFI_DELAYED_DISPATCH_PPI       *This,
+    IN  EFI_DELAYED_DISPATCH_FUNCTION  Function,
+    IN  UINT64                         Context,
+    IN  UINT32                         Delay
+);
+
+/**
+ * Delayed Dispatch Notify function
+ *
+ * @return EFI_STATUS EFIAPI
+ */
+EFI_STATUS
+EFIAPI
+PeiDelayedDispatchOnEndOfPei (
+    IN EFI_PEI_SERVICES                   **PeiServices,
+    IN EFI_PEI_NOTIFY_DESCRIPTOR          *NotifyDesc,
+    IN VOID                               *Ppi
+);
+// MSCHANGE End
+
 #endif

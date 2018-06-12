@@ -5,6 +5,8 @@
   the capsule runtime services are ready.
 
 Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2016, Microsoft Corporation
+
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -31,6 +33,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/BaseLib.h>
 #include <Library/PrintLib.h>
 #include <Library/BaseMemoryLib.h>
+#include <Library/ResetHelperLib.h>                  // MS_CHANGE_250018 - ResetSystem refactoring.
 //
 // Handle for the installation of Capsule Architecture Protocol.
 //
@@ -99,7 +102,12 @@ UpdateCapsule (
   BOOLEAN                   InitiateReset;
   CHAR16                    CapsuleVarName[30];
   CHAR16                    *TempVarName;  
-  
+// MS_CHANGE_208194
+  BOOLEAN                   SystemTableCapsule;
+
+  SystemTableCapsule = FALSE;
+// END MS_CHANGE_208194
+
   //
   // Capsule Count can't be less than one.
   //
@@ -146,6 +154,18 @@ UpdateCapsule (
         return Status;
       }
     }
+
+// MS_CHANGE_208194
+    //
+    // Track if we have a system table capsule.
+    //
+      if (((CapsuleHeader->Flags & CAPSULE_FLAGS_PERSIST_ACROSS_RESET) != 0) &&
+        ((CapsuleHeader->Flags & CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE) != 0)) {
+
+        SystemTableCapsule = TRUE;
+      }
+// END MS_CHANGE_208194
+    
   }
 
   //
@@ -198,6 +218,35 @@ UpdateCapsule (
     return EFI_UNSUPPORTED;
   }
 
+// MS_CHANGE_208194
+  //
+  // If we have a system table capsule, set a variable so when boot mode is 
+  // configured after reset, we are aware that a system table capsule is present.
+  //
+  if (SystemTableCapsule != FALSE) {
+    Status = EfiSetVariable(EFI_SYSTEM_TABLE_CAPSULE_VARIABLE_NAME,
+                            &gEfiCapsuleVendorGuid,
+                            EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS,
+                            sizeof(UINTN),
+                            (VOID*)&ScatterGatherList);
+
+    if (EFI_ERROR(Status)) {
+      DEBUG((DEBUG_ERROR, __FUNCTION__ ": failed to write test capsule variable (%r)\n", Status));
+    } else {
+      //
+      // Firmware that encounters a capsule which has the CAPSULE_FLAGS_INITIATE_RESET Flag set in its header
+      // will initiate a reset of the platform which is compatible with the passed-in capsule request and will 
+      // not return back to the caller.
+      //
+      if (InitiateReset) {
+        ResetSystemWithSubtype(EfiResetWarm, &gCapsuleArmedResetGuid);
+      }
+    }
+
+    goto Cleanup;
+  }
+// END MS_CHANGE_208194
+  
   //
   // Construct variable name CapsuleUpdateData, CapsuleUpdateData1, CapsuleUpdateData2...
   // if user calls UpdateCapsule multiple times.
@@ -237,9 +286,14 @@ UpdateCapsule (
        // will initiate a reset of the platform which is compatible with the passed-in capsule request and will 
        // not return back to the caller.
        //
-       EfiResetSystem (EfiResetWarm, EFI_SUCCESS, 0, NULL);
+       // MS_CHANGE_250018 - ResetSystem refactoring.
+       ResetSystemWithSubtype( EfiResetWarm, &gCapsuleArmedResetGuid );
      }
   }
+
+// MS_CHANGE_208194
+Cleanup:
+// END MS_CHANGE_208194
   return Status;
 }
 
@@ -359,7 +413,6 @@ QueryCapsuleCapabilities (
 
   return EFI_SUCCESS;
 }
-
 
 /**
 

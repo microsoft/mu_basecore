@@ -1,5 +1,5 @@
 /** @file
-  Platform Boot Manager library definition. A platform can implement 
+  Platform Boot Manager library definition. A platform can implement
   instances to support platform-specific behavior.
 
 Copyright (c) 2011 - 2015, Intel Corporation. All rights reserved.<BR>
@@ -59,4 +59,52 @@ PlatformBootManagerWaitCallback (
   UINT16          TimeoutRemain
   );
 
+
+/**   MSCHANGE begin
+   Do Platform specific action required at start of BDS
+
+**/
+VOID
+EFIAPI
+PlatformBootManagerBdsEntry (
+  VOID
+  );
+
+/**
+ProcessBootCompletion
+*/
+VOID
+EFIAPI
+PlatformBootManagerProcessBootCompletion (
+  IN EFI_BOOT_MANAGER_LOAD_OPTION *BootOption
+  );
+
+/**
+ HardKeyBoot
+*/
+VOID
+EFIAPI
+PlatformBootManagerPriorityBoot (
+  UINT16 **BootNext
+  );
+
+/**
+ BDS Deadloop - error, unable to boot any boot option
+*/
+VOID
+EFIAPI
+PlatformBootManagerDeadloop (
+  VOID
+  );
+
+/**
+  OnDemandConInCOnnect
+ */
+VOID
+EFIAPI
+PlatformBootManagerOnDemandConInConnect (
+  VOID
+  );
+
+/**   MSCHANGE end */
 #endif

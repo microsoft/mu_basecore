@@ -67,6 +67,7 @@
   HobLib
   SmmMemLib
   DxeServicesLib
+  BaseBinSecurityLib  ## MS_CHANGE_?
 
 [Protocols]
   gEfiDxeSmmReadyToLockProtocolGuid             ## UNDEFINED # SmiHandlerRegister
