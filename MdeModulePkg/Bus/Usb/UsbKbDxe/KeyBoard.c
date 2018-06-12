@@ -1195,7 +1195,7 @@ KeyboardHandler (
       //
       KeyDescriptor = GetKeyDescriptor (UsbKeyboardDevice, CurKeyCodeBuffer[Index]);
       if (KeyDescriptor == NULL) {
-        continue;
+        return EFI_INVALID_PARAMETER;           // MS_CHANGE_168925
       }
 
       if ((KeyDescriptor->Modifier == EFI_NUM_LOCK_MODIFIER) || (KeyDescriptor->Modifier == EFI_CAPS_LOCK_MODIFIER)) {
@@ -1273,7 +1273,7 @@ USBParseKey (
 
     KeyDescriptor = GetKeyDescriptor (UsbKeyboardDevice, UsbKey.KeyCode);
     if (KeyDescriptor == NULL) {
-      continue;
+      return EFI_INVALID_PARAMETER;       // MS_CHANGE_168925
     }
 
     if (!UsbKey.Down) {
@@ -1585,7 +1585,7 @@ UsbKeyCodeToEfiInputKey (
   //
   KeyDescriptor = GetKeyDescriptor (UsbKeyboardDevice, KeyCode);
   if (KeyDescriptor == NULL) {
-    return EFI_DEVICE_ERROR;
+    return EFI_INVALID_PARAMETER;       // MS_CHANGE_168925
   }
 
   if (KeyDescriptor->Modifier == EFI_NS_KEY_MODIFIER) {

@@ -1168,6 +1168,8 @@ XhcCheckUrbResult (
       continue;
     }
 
+    CheckedUrb->Ring->RingDequeue = TRBPtr;         // MS_CHANGE_274185
+
     switch (EvtTrb->Completecode) {
       case TRB_COMPLETION_STALL_ERROR:
         CheckedUrb->Result  |= EFI_USB_ERR_STALL;
@@ -1205,9 +1207,11 @@ XhcCheckUrbResult (
 
       case TRB_COMPLETION_SHORT_PACKET:
       case TRB_COMPLETION_SUCCESS:
-        if (EvtTrb->Completecode == TRB_COMPLETION_SHORT_PACKET) {
-          DEBUG ((DEBUG_VERBOSE, "XhcCheckUrbResult: short packet happens!\n"));
-        }
+        // MS_CHANGE_161866
+        // if (EvtTrb->Completecode == TRB_COMPLETION_SHORT_PACKET) {
+        // DEBUG ((DEBUG_VERBOSE, "XhcCheckUrbResult: short packet happens!\n"));
+        // }
+        // END
 
         TRBType = (UINT8)(TRBPtr->Type);
         if ((TRBType == TRB_TYPE_DATA_STAGE) ||
@@ -2013,6 +2017,7 @@ XhcSyncTrsRing (
 
   if (TrsTrb != TrsRing->RingEnqueue) {
     TrsRing->RingEnqueue = TrsTrb;
+    ASSERT (TrsTrb != TrsRing->RingDequeue);           // MS_CHANGE_274185
   }
 
   //
@@ -3519,6 +3524,12 @@ XhcSetTrDequeuePointer (
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "XhcSetTrDequeuePointer: Set TR Dequeue Pointer Failed, Status = %r\n", Status));
   }
+  // MS_CHANGE_274185
+  else {
+    Urb->Ring->RingDequeue = Urb->Ring->RingEnqueue;
+  }
+
+  // END
 
   return Status;
 }

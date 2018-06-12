@@ -63,8 +63,25 @@ extern PC_RTC_MODULE_GLOBALS  mModuleGlobal;
 #define RTC_INIT_SECOND  0
 #define RTC_INIT_MINUTE  0
 #define RTC_INIT_HOUR    0
-#define RTC_INIT_DAY     1
-#define RTC_INIT_MONTH   1
+// MS_CHANGE_162988
+// MSChange - base the default date on the build date midnight.  Since we are in PST/PDT, if anyone between here and the international date line
+//                       tries to use this UEFI within 6 hours, they might go in the future.
+#define RTC_INIT_DAY    ( ((__DATE__)[5] - '0') +  ( (((__DATE__)[4] >= '0') && ((__DATE__)[4] <= '3') ) ? (((__DATE__)[4] - '0') * 10) : 0 ) )
+#define RTC_INIT_MONTH  ( (__DATE__[0] == 'F') ? 2  : (\
+                          (__DATE__[0] == 'S') ? 9  : (\
+                          (__DATE__[0] == 'O') ? 10 : (\
+                          (__DATE__[0] == 'N') ? 11 : (\
+                          (__DATE__[0] == 'D') ? 12 : (\
+                          (__DATE__[2] == 'l') ? 7  : (\
+                          (__DATE__[2] == 'g') ? 8  : (\
+                          (__DATE__[2] == 'y') ? 5  : (\
+                          (__DATE__[1] == 'p') ? 4  : (\
+                          (__DATE__[1] == 'u') ? 6  : (\
+                          (__DATE__[0] == 'J') ? 1  : (\
+                          3))))))))))))
+
+#define RTC_INIT_YEAR  (((__DATE__)[7] - '0')*1000 + ((__DATE__)[8] - '0')*100 + ((__DATE__)[9] - '0')*10 + ((__DATE__)[10] - '0'))
+// END
 
 #pragma pack(1)
 //
