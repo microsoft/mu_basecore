@@ -15,9 +15,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Ppi/EndOfPeiPhase.h>
 #include <Ppi/MemoryDiscovered.h>
 #include <Ppi/ReadOnlyVariable2.h>
-#include <Ppi/Decompress.h>
+// MS_CHANGE_190466
+// #include <Ppi/Decompress.h>
+// END
 #include <Ppi/FirmwareVolumeInfo.h>
-#include <Ppi/GuidedSectionExtraction.h>
+// MS_CHANGE_190466
+// #include <Ppi/GuidedSectionExtraction.h>
+// END
 #include <Ppi/LoadFile.h>
 #include <Ppi/S3Resume2.h>
 #include <Ppi/RecoveryModule.h>
@@ -34,8 +38,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/HobLib.h>
 #include <Library/PeiServicesLib.h>
 #include <Library/ReportStatusCodeLib.h>
-#include <Library/UefiDecompressLib.h>
-#include <Library/ExtractGuidedSectionLib.h>
+// MS_CHANGE_190466
+// #include <Library/UefiDecompressLib.h>
+// #include <Library/ExtractGuidedSectionLib.h>
+// END
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PcdLib.h>
@@ -134,6 +140,9 @@ UpdateStackHob (
   IN UINT64                Length
   );
 
+// MS_CHANGE_190466
+#if 0
+
 /**
   The ExtractSection() function processes the input section and
   returns a pointer to the section contents. If the section being
@@ -226,5 +235,8 @@ Decompress (
   OUT       VOID                     **OutputBuffer,
   OUT       UINTN                    *OutputSize
   );
+
+#endif
+// END
 
 #endif

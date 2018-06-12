@@ -1507,7 +1507,7 @@ ON_ERROR:
   }
 
   if (FirstStart && (Private != NULL)) {
-    FreePool (Private);
+    Private->DEADBEEF = TRUE;          // MS_CHANGE_162958
   }
 
   return Status;
@@ -1633,7 +1633,7 @@ PxeBcStop (
            &gEfiCallerIdGuid,
            &Private->Id
            );
-    FreePool (Private);
+    Private->DEADBEEF = TRUE;          // MS_CHANGE_162958
   }
 
   return EFI_SUCCESS;
