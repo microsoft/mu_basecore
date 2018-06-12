@@ -240,6 +240,81 @@ IsHashAlgSupportedInHashAlgorithmMask(
 }
 
 /**
+  MSCHANGE
+  Check if DigestList has an entry for HashAlg.
+
+  @param DigestList         Digest list.
+  @param HashAlg            Hash algorithm id.
+
+  @retval TRUE  Match found.
+  @retval FALSE No match found.
+**/
+BOOLEAN
+CheckDigestListForHashAlg(
+  IN TPML_DIGEST_VALUES *DigestList,
+  IN TPM_ALG_ID         HashAlg
+  )
+{
+  UINT32      Index;
+
+  for (Index = 0; Index < DigestList->count; Index++) {
+    if (DigestList->digests[Index].hashAlg == HashAlg) {
+      DEBUG ((DEBUG_INFO, "Hash alg 0x%x found in DigestList.\n", HashAlg));
+      return TRUE;
+    }
+  }
+
+  DEBUG ((DEBUG_INFO, "Hash alg 0x%x not found in DigestList.\n", HashAlg));
+  return FALSE;
+}
+
+/**
+  MSCHANGE
+  Check if all hash algorithms supported in HashAlgorithmMask are 
+  present in the DigestList.
+
+  @param DigestList         Digest list.
+  @param HashAlgorithmMask  Bitfield of allowed hash algorithms.
+
+  @retval TRUE  All hash algorithms present.
+  @retval FALSE Some hash algorithms not present.
+**/
+BOOLEAN
+IsDigestListInSyncWithHashAlgorithmMask(
+  IN TPML_DIGEST_VALUES *DigestList,
+  IN UINT32             HashAlgorithmMask
+  )
+{
+  if ((HashAlgorithmMask & HASH_ALG_SHA1) != 0) {
+    if(!CheckDigestListForHashAlg(DigestList, TPM_ALG_SHA1)) {
+       return FALSE;
+    }
+  }
+  if ((HashAlgorithmMask & HASH_ALG_SHA256) != 0) {
+    if(!CheckDigestListForHashAlg(DigestList, TPM_ALG_SHA256)) {
+       return FALSE;
+    }
+  }
+  if ((HashAlgorithmMask & HASH_ALG_SHA384) != 0) {
+    if(!CheckDigestListForHashAlg(DigestList, TPM_ALG_SHA384)) {
+       return FALSE;
+    }
+  }
+  if ((HashAlgorithmMask & HASH_ALG_SHA512) != 0) {
+    if(!CheckDigestListForHashAlg(DigestList, TPM_ALG_SHA512)) {
+       return FALSE;
+    }
+  }
+  if ((HashAlgorithmMask & HASH_ALG_SM3_256) != 0) {
+    if(!CheckDigestListForHashAlg(DigestList, TPM_ALG_SM3_256)) {
+       return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
   Copy TPML_DIGEST_VALUES into a buffer
 
   @param[in,out] Buffer             Buffer to hold copied TPML_DIGEST_VALUES compact binary.
