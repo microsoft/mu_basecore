@@ -1,0 +1,42 @@
+## @file
+# Library to support booting to USB on the next boot
+# This instance uses the industry standard usb class boot option. 
+# 
+#
+# @copyright
+# Copyright (c) 2016 Microsoft Corporation. All rights reserved
+#
+# @par Specification Reference:
+#
+##
+
+
+[Defines]
+INF_VERSION     = 0x00010017
+BASE_NAME       = UnitTestBootUsbClassLib
+FILE_GUID       = DFADE2A2-DB69-47DE-A37A-40FB6D52E844
+VERSION_STRING  = 1.0
+MODULE_TYPE     = DXE_DRIVER
+LIBRARY_CLASS   = UnitTestBootUsbLib|UEFI_APPLICATION
+
+
+[LibraryClasses]
+  DebugLib
+  UefiRuntimeServicesTableLib
+  MemoryAllocationLib
+  DevicePathLib
+  UefiBootManagerLib
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  MsUnitTestPkg/MsUnitTestPkg.dec
+
+
+[Guids]
+  gEfiGlobalVariableGuid                      ## CONSUMES ## Used to probe boot options and set BootNext.
+
+
+[Sources]
+  UnitTestBootUsb.c

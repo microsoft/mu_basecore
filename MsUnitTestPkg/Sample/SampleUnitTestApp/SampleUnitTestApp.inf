@@ -1,0 +1,41 @@
+## @file
+## Copyright (c) 2016, Microsoft Corporation. All rights reserved.<BR>
+##
+
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = SampleUnitTestApp
+  FILE_GUID                      = 9E8F461A-17E1-4312-B49C-E66F0A88EA8B
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = SampleUnitTestApp
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
+#
+
+[Sources]
+  SampleUnitTestApp.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MsUnitTestPkg/MsUnitTestPkg.dec
+
+[Protocols]
+
+
+[LibraryClasses]
+  BaseLib
+  UefiApplicationEntryPoint
+  DebugLib
+  UnitTestLib
+  UnitTestAssertLib
+
+[Guids]
+
+
+
+
