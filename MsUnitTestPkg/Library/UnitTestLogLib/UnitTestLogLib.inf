@@ -1,0 +1,43 @@
+## @file
+# Library to support Logging in the Unit Tests
+# 
+#
+# @copyright
+# Copyright (c) 2016 Microsoft Corporation. All rights reserved
+#
+#
+##
+
+
+[Defines]
+INF_VERSION     = 0x00010017
+BASE_NAME       = UnitTestLogLib
+FILE_GUID       = D5F2DF71-6378-4E17-AE59-AE4109D34B5A
+VERSION_STRING  = 1.0
+MODULE_TYPE     = DXE_DRIVER
+LIBRARY_CLASS   = UnitTestLib|DXE_DRIVER UEFI_APPLICATION
+
+[LibraryClasses]
+  DebugLib
+  MemoryAllocationLib
+  BaseMemoryLib
+  BaseLib
+  UefiLib
+  PrintLib
+  PcdLib
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MsUnitTestPkg/MsUnitTestPkg.dec
+
+
+[Guids]
+
+
+[Sources]
+  UnitTestLogLib.c
+
+[Pcd]
+  gMsUnitTestPkgTokenSpaceGuid.UnitTestLogLevel   ## CONSUMES
+
