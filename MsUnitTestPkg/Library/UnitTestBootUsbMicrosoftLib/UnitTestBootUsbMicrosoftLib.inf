@@ -1,0 +1,41 @@
+## @file
+# Library to support booting to USB on the next boot
+# This instance uses a Microsoft UEFI internal/private boot option to do that. 
+# 
+#
+# @copyright
+# Copyright (c) 2016 Microsoft Corporation. All rights reserved
+#
+# @par Specification Reference:
+#
+##
+
+
+[Defines]
+INF_VERSION     = 0x00010017
+BASE_NAME       = UnitTestBootUsbMicrosoftLib
+FILE_GUID       = A56FB4AA-479F-46FB-916B-300EBC47B964
+VERSION_STRING  = 1.0
+MODULE_TYPE     = DXE_DRIVER
+LIBRARY_CLASS   = UnitTestBootUsbLib|UEFI_APPLICATION
+
+
+[LibraryClasses]
+  DebugLib
+  UefiRuntimeServicesTableLib
+  MemoryAllocationLib
+  BaseLib
+  PrintLib
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MsUnitTestPkg/MsUnitTestPkg.dec
+
+
+[Guids]
+  gEfiGlobalVariableGuid                      ## CONSUMES ## Used to probe boot options and set BootNext.
+
+
+[Sources]
+  UnitTestBootUsb.c
