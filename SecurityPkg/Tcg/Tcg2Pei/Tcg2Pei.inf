@@ -59,6 +59,10 @@
 ## MU_CHANGE [BEGIN] - Add the OemTpm2InitLib
   OemTpm2InitLib
 ## MU_CHANGE [END]
+## MU_CHANGE_103691
+## MU_CHANGE [BEGIN] - Add the Tcg2PreUefiEventLogLib
+  Tcg2PreUefiEventLogLib
+## MU_CHANGE [END]
 
 [Guids]
   gTcgEventEntryHobGuid                                                ## PRODUCES               ## HOB
@@ -91,10 +95,15 @@
   ## SOMETIMES_PRODUCES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashAlgorithmBitmap                  ## CONSUMES
+  ## MU_CHANGE - Update PCR order, add PCD, enable deallocate *and* allocate.
+  gEfiSecurityPkgTokenSpaceGuid.PcdForceReallocatePcrBanks             ## CONSUMES
 
 [Depex]
-  gEfiPeiMasterBootModePpiGuid AND
-  gEfiTpmDeviceSelectedGuid
+  gEfiPeiMasterBootModePpiGuid
+## MU_CHANGE_65026
+## MU_CHANGE [BEGIN] - Remove the requirement on gEfiTpmDeviceSelectedGuid.
+  #   The TrEEConfigPeim module was replaced with build-time PCDs.
+## MU_CHANGE [END]
 
 [UserExtensions.TianoCore."ExtraFiles"]
   Tcg2PeiExtra.uni
