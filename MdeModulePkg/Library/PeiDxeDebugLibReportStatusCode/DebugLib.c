@@ -28,6 +28,8 @@
 #include <Library/DebugPrintErrorLevelLib.h>
 
 /**
+  MS_CHANGE_?
+  MSCHANGE - To split the DebugPrint into two one taking va_list and one with var args
   Prints a debug message to the debug output device if the specified error level is enabled.
 
   If any bit in ErrorLevel is also set in DebugPrintErrorLevelLib function
@@ -53,10 +55,48 @@ DebugPrint (
   ...
   )
 {
+  VA_LIST         Marker;
+
+  ASSERT(Format != NULL);
+
+  VA_START(Marker, Format);
+  DebugPrintValist(ErrorLevel, Format, Marker);
+  VA_END(Marker);
+
+}
+
+/**
+  MS_CHANGE_?
+  MSCHANGE - To split the DebugPrint into two one taking va_list and one with var args
+  Prints a debug message to the debug output device if the specified error level is enabled.
+
+  If any bit in ErrorLevel is also set in DebugPrintErrorLevelLib function 
+  GetDebugPrintErrorLevel (), then print the message specified by Format and the 
+  associated variable argument list to the debug output device.
+
+  If Format is NULL, then ASSERT().
+
+  If the length of the message string specificed by Format is larger than the maximum allowable
+  record length, then directly return and not print it.
+
+  @param  ErrorLevel    The error level of the debug message.
+  @param  Format        Format string for the debug message to print.
+  @param  VaListMarker  VA_LIST marker for the variable argument list.
+
+**/
+VOID
+EFIAPI
+DebugPrintValist (
+  IN  UINTN        ErrorLevel,
+  IN  CONST CHAR8  *Format,
+  VA_LIST          VaListMarker
+  )
+{
   UINT64          Buffer[(EFI_STATUS_CODE_DATA_MAX_SIZE / sizeof (UINT64)) + 1];
   EFI_DEBUG_INFO  *DebugInfo;
   UINTN           TotalSize;
-  VA_LIST         VaListMarker;
+  //MSCHANGE - To split the DebugPrint into two one taking va_list and one with var args
+  //VA_LIST         VaListMarker;    // MS_CHANGE_?
   BASE_LIST       BaseListMarker;
   CHAR8           *FormatString;
   BOOLEAN         Long;
@@ -125,7 +165,8 @@ DebugPrint (
   // of format in DEBUG string, which is followed by the DEBUG format string.
   // Here we will process the variable arguments and pack them in this area.
   //
-  VA_START (VaListMarker, Format);
+  //MSCHANGE - To split the DebugPrint into two one taking va_list and one with var args
+  //VA_START (VaListMarker, Format);   // MS_CHANGE_?
 
   //
   // Use the actual format string.
@@ -219,7 +260,8 @@ DebugPrint (
       return;
     }
   }
-  VA_END (VaListMarker);
+  //MSCHANGE - To split the DebugPrint into two one taking va_list and one with var args
+  // VA_END (VaListMarker);      // MS_CHANGE_?
 
   //
   // Send the DebugInfo record
@@ -233,6 +275,117 @@ DebugPrint (
     DebugInfo,
     TotalSize
     );
+}
+
+/**
+// MS_CHANGE_?
+// MSCHANGE Added DebugDumpMemory
+  Dumps memory formatted.
+
+  Dumps the memory as hex bytes.  Other additional options 
+  are controled with the Flags parameter.
+
+
+  @param  Address      The address of the memory to dump.
+  @param  Length       The length of the region to dump.
+  @param  Flags        PrintAddress, PrintOffset etc
+
+**/
+
+VOID
+EFIAPI
+DebugDumpMemory (
+  IN  UINTN         ErrorLevel,
+  IN  CONST VOID   *Address,
+  IN  UINTN         Length,
+  IN  UINT32        Flags
+  ) 
+{
+  UINTN       Indx;
+  UINT8      *p;
+  CHAR8       Txt[17]; // 16 characters, and a NULL
+
+  p = (UINT8 *) Address;
+
+  Txt[16] = '\0';
+  Indx = 0;
+  while(Indx < Length)
+  {
+    UINTN LoopLen = ((Length - Indx) >= 16) ? 16 : (Length - Indx);
+    if (0 == (Indx % 16))  // first time and every 16 bytes thereafter
+    {
+      if (Flags & DEBUG_DM_PRINT_ADDRESS)
+      {
+        DebugPrint(ErrorLevel, "\n0x%16.16X:  ", p);
+      }
+      else if (Flags & DEBUG_DM_PRINT_OFFSET)
+      {
+        DebugPrint(ErrorLevel, "\n0x%8.8X:  ", (p - (UINT8 *)Address));
+      }
+      else
+      {
+        DebugPrint(ErrorLevel, "\n");
+      }
+
+      //Get all Ascii Chars if Ascii flag for the next 16 or less
+      if (Flags & DEBUG_DM_PRINT_ASCII)
+      {
+        SetMem(Txt, sizeof(Txt) - 1, ' ');
+        for (UINTN I = (Indx % 16); I < LoopLen; I++)
+        {
+          CHAR8* c = p + I;
+          Txt[I] = ((*c >= 0x20) && (*c <= 0x7e)) ? *c : '.';
+        }
+      }
+    }  //first pass -- done only at (index % 16 == 0)
+
+    if (LoopLen == 16)
+    {
+      DebugPrint(ErrorLevel, "%02X %02X %02X %02X %02X %02X %02X %02X - ", *(p), *(p + 1), *(p + 2), *(p + 3), *(p + 4), *(p + 5), *(p + 6), *(p + 7));
+      DebugPrint(ErrorLevel, "%02X %02X %02X %02X %02X %02X %02X %02X ", *(p + 8), *(p + 9), *(p + 10), *(p + 11), *(p + 12), *(p + 13), *(p + 14), *(p + 15));
+      Indx += 16;
+      p += 16;
+    } 
+    else
+    {
+      if ((Indx % 16) == 7)
+      {
+        DebugPrint(ErrorLevel, "%02X - ", *(p));
+      }
+      else
+      {
+        DebugPrint(ErrorLevel, "%02X ", *(p));
+      }
+      Indx++;
+      p++;
+    }
+      
+    //end of line and/or end of buffer
+    if (((Indx % 16) == 0) || (Indx == Length))
+    {
+
+      //special case where we need to print out a few blank spaces because our length
+      //was not evenly divisible by 16
+      if (Flags & DEBUG_DM_PRINT_ASCII)
+      {
+        if ((Indx % 16) != 0)
+        {
+          //figure out how many spaces to print
+          CHAR8 empty[48]; //(15 bytes * 3 chars) + 2 (for -) + 1 (\0)
+          UINTN endchar = ((16 - (Indx % 16)) * 3);
+          SetMem(empty, 47, ' ');
+          if ((Indx % 16) <= 8)
+          {
+            endchar += 2;
+          }
+          empty[endchar] = '\0';  //null terminate
+          DebugPrint(ErrorLevel, "%a", empty);
+        }
+        DebugPrint(ErrorLevel, "  *%a*", Txt);   // print the txt
+      }
+    }
+  }  //End while loop
+  DebugPrint(ErrorLevel, "\n");
 }
 
 /**

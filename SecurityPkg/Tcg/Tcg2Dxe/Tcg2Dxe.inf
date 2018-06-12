@@ -15,6 +15,8 @@
 #  buffer overflow, integer overflow.
 #
 # Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2016, Microsoft Corporation
+#
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution. The full text of the license may be found at
@@ -67,6 +69,10 @@
   ReportStatusCodeLib
   Tcg2PhysicalPresenceLib
   PeCoffLib
+## MS_CHANGE_23086
+## MSChange [BEGIN] - Add the OemTpm2InitLib
+  OemTpm2InitLib
+## MSChange [END]
 
 [Guids]
   ## SOMETIMES_CONSUMES     ## Variable:L"SecureBoot"

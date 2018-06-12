@@ -1072,7 +1072,7 @@ StrnCpy (
 #endif // !defined (DISABLE_NEW_DEPRECATED_INTERFACES)
 
 /**
-  Returns the length of a Null-terminated Unicode string.
+  Returns the length of a Null-terminated Unicode string, NOT including NULL terminator.  MS_CHANGE
 
   This function returns the number of Unicode characters in the Null-terminated
   Unicode string specified by String.

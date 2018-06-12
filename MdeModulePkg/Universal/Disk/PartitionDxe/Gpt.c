@@ -396,9 +396,7 @@ PartitionInstallGptChildHandles (
     ZeroMem (&PartitionInfo, sizeof (EFI_PARTITION_INFO_PROTOCOL));
     PartitionInfo.Revision = EFI_PARTITION_INFO_PROTOCOL_REVISION;
     PartitionInfo.Type     = PARTITION_TYPE_GPT;
-    if (CompareGuid (&Entry->PartitionTypeGUID, &gEfiPartTypeSystemPartGuid)) {
-      PartitionInfo.System = 1;
-    }
+    PartitionInfo.System   = CompareGuid(&Entry->PartitionTypeGUID, &gEfiPartTypeSystemPartGuid);   // MS_CHANGE
     CopyMem (&PartitionInfo.Info.Gpt, Entry, sizeof (EFI_PARTITION_ENTRY));
 
     DEBUG ((EFI_D_INFO, " Index : %d\n", (UINT32) Index));

@@ -56,6 +56,11 @@ PxeBcMtftp6CheckPacket (
   EFI_STATUS                          Status;
 
   Private   = (PXEBC_PRIVATE_DATA *) Token->Context;
+// MS_CHANGE_162958
+  if (Private->DEADBEEF) {
+      return EFI_DEVICE_ERROR;
+  }
+// END
   Callback  = Private->PxeBcCallback;
   Status    = EFI_SUCCESS;
 
@@ -148,6 +153,11 @@ PxeBcMtftp6GetFileSize (
   OptCnt                    = 1;
   Config->InitialServerPort = PXEBC_BS_DOWNLOAD_PORT;
 
+// MS_CHANGE_162958
+  if (Private->DEADBEEF) {
+      return EFI_DEVICE_ERROR;
+  }
+// END
   Status = Mtftp6->Configure (Mtftp6, Config);
   if (EFI_ERROR (Status)) {
     return Status;
@@ -279,6 +289,11 @@ PxeBcMtftp6ReadFile (
   UINT8                               WindowsizeBuf[10];
   EFI_STATUS                          Status;
 
+// MS_CHANGE_162958
+  if (Private->DEADBEEF) {
+      return EFI_DEVICE_ERROR;
+  }
+// END
   Status                    = EFI_DEVICE_ERROR;
   Mtftp6                    = Private->Mtftp6;
   OptCnt                    = 0;
@@ -330,8 +345,12 @@ PxeBcMtftp6ReadFile (
   //
   *BufferSize = Token.BufferSize;
 
-  Mtftp6->Configure (Mtftp6, NULL);
-
+  //MSCHANGE -- don't trust Mtftp6 after a surprise removal
+// MS_CHANGE_162958
+  if (!Private->DEADBEEF) {
+    Mtftp6->Configure (Mtftp6, NULL);
+  }
+// END
   return Status;
 }
 
@@ -370,6 +389,12 @@ PxeBcMtftp6WriteFile (
   UINT8                               OptBuf[128];
   EFI_STATUS                          Status;
 
+  //MSCHANGE
+// MS_CHANGE_162958
+  if (Private->DEADBEEF) {
+      return EFI_DEVICE_ERROR;
+  }
+// END
   Status                    = EFI_DEVICE_ERROR;
   Mtftp6                    = Private->Mtftp6;
   OptCnt                    = 0;
@@ -405,7 +430,12 @@ PxeBcMtftp6WriteFile (
   //
   *BufferSize = Token.BufferSize;
 
-  Mtftp6->Configure (Mtftp6, NULL);
+  //MSCHANGE -- don't trust Mtftp6 after a surprise removal
+// MS_CHANGE_162958
+  if (!Private->DEADBEEF) {
+    Mtftp6->Configure (Mtftp6, NULL);
+  }
+// END
 
   return Status;
 }
@@ -497,8 +527,12 @@ PxeBcMtftp6ReadDirectory (
   // Get the real size of received buffer.
   //
   *BufferSize = Token.BufferSize;
-
-  Mtftp6->Configure (Mtftp6, NULL);
+  //MSCHANGE
+// MS_CHANGE_162958
+  if (!Private->DEADBEEF) {
+      Mtftp6->Configure(Mtftp6, NULL);
+  }
+// END
 
   return Status;
 }
@@ -536,6 +570,13 @@ PxeBcMtftp4CheckPacket (
   EFI_STATUS                          Status;
 
   Private   = (PXEBC_PRIVATE_DATA *) Token->Context;
+
+  //MSCHANGE
+// MS_CHANGE_162958
+  if (Private->DEADBEEF) {
+      return EFI_DEVICE_ERROR;
+  }
+// END
   Callback  = Private->PxeBcCallback;
   Status    = EFI_SUCCESS;
 
@@ -617,6 +658,13 @@ PxeBcMtftp4GetFileSize (
   UINTN               OptBufSize;
   UINT32              OptCnt;
   EFI_STATUS          Status;
+
+  //MSCHANGE
+// MS_CHANGE_162958
+  if (Private->DEADBEEF) {
+      return EFI_DEVICE_ERROR;
+  }
+// END
 
   *BufferSize               = 0;
   Status                    = EFI_DEVICE_ERROR;
@@ -759,6 +807,12 @@ PxeBcMtftp4ReadFile (
   UINT8               WindowsizeBuf[10];
   EFI_STATUS          Status;
 
+  //MSCHANGE
+// MS_CHANGE_162958
+  if (Private->DEADBEEF) {
+      return EFI_DEVICE_ERROR;
+  }
+// END
   Status                    = EFI_DEVICE_ERROR;
   Mtftp4                    = Private->Mtftp4;
   OptCnt                    = 0;
@@ -809,7 +863,12 @@ PxeBcMtftp4ReadFile (
   //
   *BufferSize = Token.BufferSize;
 
-  Mtftp4->Configure (Mtftp4, NULL);
+  //MSCHANGE -- don't trust Mtftp6 after a surprise removal
+// MS_CHANGE_162958
+  if (!Private->DEADBEEF) {
+    Mtftp4->Configure (Mtftp4, NULL);
+  }
+// END
 
   return Status;
 }
@@ -849,6 +908,12 @@ PxeBcMtftp4WriteFile (
   UINT8               OptBuf[128];
   EFI_STATUS          Status;
 
+  //MSCHANGE
+// MS_CHANGE_162958
+  if (Private->DEADBEEF) {
+      return EFI_DEVICE_ERROR;
+  }
+// END
   Status                    = EFI_DEVICE_ERROR;
   Mtftp4                    = Private->Mtftp4;
   OptCnt                    = 0;
@@ -884,7 +949,12 @@ PxeBcMtftp4WriteFile (
   //
   *BufferSize = Token.BufferSize;
 
-  Mtftp4->Configure (Mtftp4, NULL);
+  //MSCHANGE -- don't trust Mtftp6 after a surprise removal
+// MS_CHANGE_162958
+  if (!Private->DEADBEEF) {
+    Mtftp4->Configure (Mtftp4, NULL);
+  }
+// END
 
   return Status;
 }
@@ -927,6 +997,12 @@ PxeBcMtftp4ReadDirectory (
   UINT8               WindowsizeBuf[10];
   EFI_STATUS          Status;
 
+  //MSCHANGE
+// MS_CHANGE_162958
+  if (Private->DEADBEEF) {
+      return EFI_DEVICE_ERROR;
+  }
+// END
   Status                    = EFI_DEVICE_ERROR;
   Mtftp4                    = Private->Mtftp4;
   OptCnt                    = 0;
@@ -977,7 +1053,12 @@ PxeBcMtftp4ReadDirectory (
   //
   *BufferSize = Token.BufferSize;
 
-  Mtftp4->Configure (Mtftp4, NULL);
+  //MSCHANGE
+// MS_CHANGE_162958
+  if (!Private->DEADBEEF) {
+    Mtftp4->Configure(Mtftp4, NULL);
+  }
+// END
 
   return Status;
 }

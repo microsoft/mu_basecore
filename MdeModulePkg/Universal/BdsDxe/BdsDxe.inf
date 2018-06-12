@@ -101,6 +101,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdConInConnectOnDemand              ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdErrorCodeSetVariable              ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdTestKeyUsed                       ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPlatformRecoverySupported         ## CONSUMES  ## MSCHANGE
 
 [Depex]
   TRUE
