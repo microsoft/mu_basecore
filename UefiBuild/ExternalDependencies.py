@@ -95,6 +95,7 @@ class ExternalDependency(object):
 class NugetDependency(ExternalDependency):
   global_cache_path = None
 
+  @staticmethod
   def normalize_version(version):
     version_parts = tuple(int(num) for num in version.split('.'))
     if len(version_parts) > 4:
