@@ -203,8 +203,38 @@
         # The C pre-processor is used to insert code snippets in assembly from preprocessor macros.  Unfortunately
         # the preprocessor doesn't also insert CR/LF and Microsoft's assembler expects each instruction to be on its own
         # line.  We search and replace a special string (__CR__) with CR.
-        type ${d_path}(+)${s_base}.i | python -c "import sys; print sys.stdin.read().replace('__CR__','\n')" > ${d_path}(+)${s_base}.ii
+        type ${d_path}(+)${s_base}.i | python -c "import sys; print (sys.stdin.read().replace('__CR__','\n'))" > ${d_path}(+)${s_base}.ii
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
+        "$(ASM)" $(ASM_FLAGS) -o ${dst} $(INC) ${d_path}(+)${s_base}.iii
+
+[Assembly-Code-File.COMMON.ARM,Assembly-Code-File.COMMON.AARCH64]
+    # Remove --convert-hex for ARM as it breaks MSFT assemblers
+    <InputFile.MSFT, InputFile.INTEL, InputFile.RVCT>
+        ?.asm, ?.Asm, ?.ASM
+
+    <InputFile.GCC, InputFile.GCCLD>
+        ?.S, ?.s
+
+    <ExtraDependency>
+        $(MAKE_FILE)
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
+
+    <Command.INTEL>
+        "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i
+        Trim --source-code --convert-hex --trim-long -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
+        "$(ASM)" /Fo${dst} $(ASM_FLAGS) /I${s_path} $(INC) ${d_path}(+)${s_base}.iii
+
+    <Command.MSFT>
+        "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i
+        Trim --source-code --trim-long -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
+        "$(ASM)" /Fo${dst} $(ASM_FLAGS) /I${s_path} $(INC) ${d_path}(+)${s_base}.iii
+
+    <Command.GCC, Command.GCCLD, Command.RVCT>
+        "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i
+        Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
+        # For RVCTCYGWIN ASM_FLAGS must be first to work around pathing issues
         "$(ASM)" $(ASM_FLAGS) -o ${dst} $(INC) ${d_path}(+)${s_base}.iii
 
 [Assembly-Code-File.COMMON.COMMON]
