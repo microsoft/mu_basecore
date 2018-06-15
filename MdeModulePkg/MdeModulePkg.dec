@@ -43,6 +43,10 @@
   ##  @libraryclass  Business logic for storing and testing variable policies
   VariablePolicyLib|Include/Library/VariablePolicyLib.h
 
+  ## MS_CHANGE - Differentiate between architectural reset and HW reset.
+  ##  @libraryclass  Defines a set of methods to reset whole system.
+  HwResetSystemLib|Include/Library/ResetSystemLib.h
+
   ##  @libraryclass  Defines a set of helper functions for resetting the system.
   ResetUtilityLib|Include/Library/ResetUtilityLib.h
 
