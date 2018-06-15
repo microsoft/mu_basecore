@@ -30,7 +30,7 @@ IgnoreList = [  "nt32pkg.dsc",                      #NT32 pkg requires windows h
                 "logodxe.inf",                      #Temporarily ignored due to idf file
                 "opalpassworddxe.inf",              #Temproarily ignored awaiting refactor
                 "tcg2configdxe.inf",                #Temproarily ignored awaiting refactor
-                "IntSafeLibUnitTests.inf",          #Ignore this unit test for now, in future we'll ignore all of them
+                "SafeIntLibUnitTests.inf",          #Ignore this unit test for now, in future we'll ignore all of them
                 "ArmMmuLib",                        #Remove this once ArmPkg is added to code tree
                 "ArmPkg/ArmPkg.dec"                 #Remove this once ArmPkg is added to code tree
 ]
