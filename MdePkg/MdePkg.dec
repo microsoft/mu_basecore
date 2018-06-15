@@ -277,13 +277,6 @@
   ##  @libraryclass  Provides services to log the SMI handler registration.
   SmiHandlerProfileLib|Include/Library/SmiHandlerProfileLib.h
 
-## MS_CHANGE BEGIN
-  ## @libraryclass provides helper functions to prevent integer overflow during
-  #                type conversion, addition, subtraction, and multiplication.
-  ##
-  IntSafeLib|Include/Library/SafeIntLib.h
-## MS_CHANGE END
-
 [LibraryClasses.IPF]
   ##  @libraryclass  The SAL Library provides a service to make a SAL CALL.
   SalLib|Include/Library/SalLib.h
