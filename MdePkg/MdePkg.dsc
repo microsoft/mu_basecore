@@ -69,10 +69,6 @@
   MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
   MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
-  # MS_CHANGE Begin
-  # MdePkg/UnitTests/SafeIntLib/SafeIntLibUnitTests.inf
-  # MS_CHANGE End
-
   MdePkg/Library/DxeCoreEntryPoint/DxeCoreEntryPoint.inf
   MdePkg/Library/DxeCoreHobLib/DxeCoreHobLib.inf
   MdePkg/Library/DxeExtractGuidedSectionLib/DxeExtractGuidedSectionLib.inf
