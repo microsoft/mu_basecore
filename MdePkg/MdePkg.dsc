@@ -57,6 +57,7 @@
 [Components]
 ## MSCHANGE BEGIN
   MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
+  MdePkg/Library/DxeRuntimeDebugLibSerialPort/DxeRuntimeDebugLibSerialPort.inf
 ## MSCHANGE END
   MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
   MdePkg/Library/BaseCpuLib/BaseCpuLib.inf
@@ -91,10 +92,6 @@
   MdePkg/Library/BaseUefiDecompressLib/BaseUefiDecompressLib.inf
   MdePkg/Library/BaseSmbusLibNull/BaseSmbusLibNull.inf
   MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
-
-  # MS_CHANGE Begin
-  # MdePkg/UnitTests/SafeIntLib/SafeIntLibUnitTests.inf
-  # MS_CHANGE End
 
   MdePkg/Library/DxeCoreEntryPoint/DxeCoreEntryPoint.inf
   MdePkg/Library/DxeCoreHobLib/DxeCoreHobLib.inf

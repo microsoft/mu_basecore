@@ -76,7 +76,6 @@
   PerformancePkg/Library/DxePerformance2Lib/DxePerformance2Lib.inf # MS_CHANGE
 
 [Components]
-  #PerformancePkg/Dp_App/Dp.inf             ## MS_CHANGE - Doesn't build and this whole package is being deprecated soon.
   PerformancePkg/Application/FbptDump/FbptDump.inf
 
 [BuildOptions]
