@@ -136,6 +136,4 @@ PlatformBootManagerOnDemandConInConnect (
 {
   return;
 }
-
 /**   MSCHANGE end */
-
