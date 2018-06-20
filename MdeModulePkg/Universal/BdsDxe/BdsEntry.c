@@ -1126,8 +1126,6 @@ BdsEntry (
   DEBUG ((DEBUG_ERROR, "[Bds] Unable to boot!\n"));
   PlatformBootManagerUnableToBoot ();
 
-  PlatformBootManagerDeadloop ();    // MSCHANGE
-
   CpuDeadLoop ();
 }
 
