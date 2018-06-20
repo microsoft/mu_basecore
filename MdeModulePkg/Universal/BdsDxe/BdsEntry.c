@@ -1115,10 +1115,12 @@ BdsEntry (
       ProcessLoadOptions (LoadOptions, LoadOptionCount);
       EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
     } else if (PlatformDefaultBootOptionValid) {
+      // MU_CHANGE TCBZ2523 - Bds should NEVER boot anything the platform has not specified.
+      //
       //
       // When platform recovery is not enabled, still boot to platform default file path.
       //
-      PlatformDefaultBootOptionValid = EfiBootManagerProcessLoadOption (&PlatformDefaultBootOption) == EFI_SUCCESS;
+      // PlatformDefaultBootOptionValid = EfiBootManagerProcessLoadOption (&PlatformDefaultBootOption) == EFI_SUCCESS;
     }
   }
 
@@ -1128,8 +1130,6 @@ BdsEntry (
 
   DEBUG ((DEBUG_ERROR, "[Bds] Unable to boot!\n"));
   PlatformBootManagerUnableToBoot ();
-
-  PlatformBootManagerDeadloop ();    // MSCHANGE
 
   CpuDeadLoop ();
 }
