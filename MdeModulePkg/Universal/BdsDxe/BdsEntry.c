@@ -1066,8 +1066,6 @@ BdsEntry (
   DEBUG ((EFI_D_ERROR, "[Bds] Unable to boot!\n"));
   PlatformBootManagerUnableToBoot ();
 
-  PlatformBootManagerDeadloop ();    // MSCHANGE
-
   CpuDeadLoop ();
 }
 
