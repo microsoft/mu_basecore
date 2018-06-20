@@ -657,34 +657,7 @@ BdsBootManagerMenuLoop (
   IN EFI_BOOT_MANAGER_LOAD_OPTION *BootManagerMenu
   )
 {
-  EFI_INPUT_KEY Key;
-
-  //
-  // Normally BdsDxe does not print anything to the system console, but this is
-  // a last resort -- the end-user will likely not see any DEBUG messages
-  // logged in this situation.
-  //
-  // AsciiPrint() will NULL-check gST->ConOut internally. We check gST->ConIn
-  // here to see if it makes sense to request and wait for a keypress.
-  //
-  if (gST->ConIn != NULL) {
-    AsciiPrint (
-      "%a: No bootable option or device was found.\n"
-      "%a: Press any key to enter the Boot Manager Menu.\n",
-      gEfiCallerBaseName,
-      gEfiCallerBaseName
-      );
-    BdsWaitForSingleEvent (gST->ConIn->WaitForKey, 0);
-
-    //
-    // Drain any queued keys.
-    //
-    while (!EFI_ERROR (gST->ConIn->ReadKeyStroke (gST->ConIn, &Key))) {
-      //
-      // just throw away Key
-      //
-    }
-  }
+  PlatformBootManagerUnableToBoot();       // MS_CHANGE
 
   for (;;) {
     EfiBootManagerBoot (BootManagerMenu);
@@ -1114,16 +1087,14 @@ BdsEntry (
     EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
   }
 
+  DEBUG ((EFI_D_ERROR, "[Bds] Unable to boot!\n"));
+
   //
   // If BootManagerMenu is available, fall back to it indefinitely.
   //
   if (BootManagerMenuStatus != EFI_NOT_FOUND) {
     BdsBootManagerMenuLoop (&BootManagerMenu);
   }
-
-  DEBUG ((EFI_D_ERROR, "[Bds] Unable to boot!\n"));
-
-  PlatformBootManagerDeadloop ();    // MSCHANGE
 
   CpuDeadLoop ();
 }

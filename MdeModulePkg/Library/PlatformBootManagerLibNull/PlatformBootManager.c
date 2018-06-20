@@ -117,5 +117,16 @@ PlatformBootManagerOnDemandConInConnect (
   ) {
 }
 
+/**
+ This is called from BDS right before going into front page 
+ when no bootable devices/options found
+*/
+VOID
+EFIAPI
+PlatformBootManagerUnableToBoot (
+    VOID
+    ) {
+}
+
 /**   MSCHANGE end */
 
