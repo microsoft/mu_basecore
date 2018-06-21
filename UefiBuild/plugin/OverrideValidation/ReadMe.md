@@ -25,7 +25,7 @@ When used in the plugin capacity this plugin will do its override linkage valida
 
 
 ### Command Line Tool
-When used as a command line tool, this tool takes the absolute path of workspace as well as the absolute path of overridden module's inf file and then gerenate a screenprint line for users to include in overriding modules in order to create override linkage. Check the required parameters by using the -h option for command line argument details. 
+When used as a command line tool, this tool takes the absolute path of workspace (the root directory of Devices repo) as well as the absolute path of overridden module's inf file and then gerenate a screenprint line for users to include in overriding modules in order to create override linkage. Check the required parameters by using the -h option for command line argument details. 
 
 
 ### Example
@@ -50,11 +50,14 @@ State:        3/4
 Overrides
 ----------------------------------------------------------------
 
-MdePkg/Library/BaseMemoryLibOptDxe/BaseMemoryLibOptDxe.inf
+OVERRIDER: MdePkg/Library/BaseMemoryLibOptDxe/BaseMemoryLibOptDxe.inf
+ORIGINALS:
 	+ MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | SUCCESS | 2 days
 
-PlatformNamePkg/Library/NvmConfigLib/NvmConfigLib.inf
+OVERRIDER: PlatformNamePkg/Library/NvmConfigLib/NvmConfigLib.inf
+ORIGINALS:
 	+ MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe.inf | MISMATCH | 35 days
+	|	Current State: 62929532257365b261080b7e7b1c4e7a | Last Fingerprint: dc9f5e3af1efbac6cf5485b672291903
 	+ MdePkg/Library/BaseMemoryLibOptDxe/BaseMemoryLibOptDxe.inf | SUCCESS | 0 days
 		+ MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | SUCCESS | 2 days
 

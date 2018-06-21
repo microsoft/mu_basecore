@@ -82,6 +82,8 @@ try:
                 self.path = path
                 self.status = status
                 self.age = age
+                self.expect_hash = ''
+                self.entry_hash = ''
                 self.reflist = []
 
         # Check and see if there is any line in the inf files that follows the pattern below:
@@ -240,13 +242,16 @@ try:
                 return result
 
             # Step 5: Calculate the hash of overridden module and compare with our record in the overriding module
-            result = self.override_hash_compare(thebuilder, EntryVersion, EntryHash, fullpath)
+            res_tuple = self.override_hash_compare(thebuilder, EntryVersion, EntryHash, fullpath)
+            result = res_tuple.get('result')
+            m_node.expect_hash = res_tuple.get('hash_val')
     
             # Step 6: House keeping
             # Process the path to workspace/package path based add it to the parent node
             overridden_rel_path = thebuilder.mws.relpath(fullpath, thebuilder.ws).replace('\\', '/')
             date_delta = datetime.utcnow() - EntryTimestamp
         
+            m_node.entry_hash = EntryHash
             m_node.path = overridden_rel_path
             m_node.status = result
             m_node.age = date_delta.days
@@ -254,7 +259,7 @@ try:
             if (result == self.OverrideResult.OR_ALL_GOOD):
                 status[0] = status[0] + 1
             else:
-                logging.error("Inf Override Hash Error: %s" %(self.OverrideResult.GetErrStr(result)))
+                logging.error("Inf Override Hash Error: %s, expecting %s, has %s" %(self.OverrideResult.GetErrStr(result), m_node.expect_hash, m_node.entry_hash))
 
             # Step 7: Do depth-first-search for cascaded modules
             m_result = self.override_detect_process(thebuilder, fullpath, filelist, m_node, status)
@@ -272,6 +277,7 @@ try:
         # fullpath: the absolute path to the overriden module's inf file
         def override_hash_compare(self, thebuilder, version, hash, fullpath):
             result = self.OverrideResult.OR_ALL_GOOD
+            hash_val = ''
         
             # Error out the unknown version
             if (version == FORMAT_VERSION_1[0]):
@@ -281,7 +287,7 @@ try:
             else:
                 # Should not happen
                 result = self.OverrideResult.OR_VER_UNRECOG
-            return result
+            return {'result':result, 'hash_val':hash_val}
         # END: override_hash_compare(self, thebuilder, version, hash, fullpath)
 
         # Print the log after override validation is complete
@@ -313,7 +319,8 @@ try:
                 for node in modulelist:
                     # Pass in a "stack" into the function for loop detection while doing dfs
                     stack = []
-                    log.write("%s\n" %(node.path))
+                    log.write("OVERRIDER: %s\n" %(node.path))
+                    log.write("ORIGINALS:\n")
                     self.node_dfs(thebuilder, node, stack, log)
                     log.write("\n")
 
@@ -334,8 +341,12 @@ try:
             for m_node in node.reflist:
                 list_len = len(stack)
                 str = "\t"*list_len+"+ %s | %s | %d days\n" %(m_node.path, self.OverrideResult.GetErrStr(m_node.status), m_node.age)
-                if (m_node.status == self.OverrideResult.OR_ALL_GOOD) or (m_node.status == self.OverrideResult.OR_FILE_CHANGE):
+                if (m_node.status == self.OverrideResult.OR_ALL_GOOD):
                     log.write(str)
+                    self.node_dfs(thebuilder, m_node, stack, log)
+                elif (m_node.status == self.OverrideResult.OR_FILE_CHANGE):
+                    log.write(str)
+                    log.write("\t"*list_len+"| \tCurrent State: %s | Last Fingerprint: %s\n" %(m_node.expect_hash, m_node.entry_hash))
                     self.node_dfs(thebuilder, m_node, stack, log)
                 else:
                     log.write("\t"*list_len+"+ %s\n" %(self.OverrideResult.GetErrStr(m_node.status)))
@@ -376,8 +387,9 @@ except ImportError:
 # path: the absolute path to the module's inf file
 def ModuleHashCal(path):
 
-    fileList = []
-    fileList.append(path)
+    sourcefileList = []
+    binaryfileList = []
+    sourcefileList.append(path)
 
     # Find the specific line of Sources section
     folderpath = os.path.dirname(path)
@@ -388,13 +400,24 @@ def ModuleHashCal(path):
     
     # Add all referenced source files in addtion to our inf file list
     for source in ip.Sources:
-        fileList.append(os.path.normpath(os.path.join(folderpath, source)))
+        sourcefileList.append(os.path.normpath(os.path.join(folderpath, source)))
+
+    # Add all referenced binary files to our binary file list
+    for binary in ip.Binaries:
+        binaryfileList.append(os.path.normpath(os.path.join(folderpath, binary)))
 
     hash_obj = hashlib.md5()
-    for file in fileList:
-        #print('Calculated: %s' %(file)) #Debug only
-        with open(file, 'rb') as entry:
+    for sfile in sourcefileList:
+        #print('Calculated: %s' %(sfile)) #Debug only
+        with open(sfile, 'rb') as entry:
+            # replace \r\n with \n to take care of line terminators
+            hash_obj.update(entry.read().replace(b'\r\n', b'\n'))
+    
+    for bfile in binaryfileList:
+        #print('Calculated: %s' %(bfile)) #Debug only
+        with open(bfile, 'rb') as entry:
             hash_obj.update(entry.read())
+
     result = hash_obj.hexdigest()
     return result
 
@@ -413,11 +436,18 @@ def path_parse():
         )
 
     Paths = parser.parse_args()
+    # pre-process the parsed paths to abspath
+    Paths.WorkSpace = os.path.abspath(Paths.WorkSpace)
+    Paths.ModulePath = os.path.abspath(Paths.ModulePath)
+
     if not os.path.isdir(Paths.WorkSpace):
         raise RuntimeError("Workspace path is invalid.")
-    if not os.path.isfile(os.path.abspath(Paths.ModulePath)):
+    if not os.path.isfile(Paths.ModulePath):
         raise RuntimeError("Module path is invalid.")
-    if not os.path.abspath(Paths.ModulePath).lower().startswith(os.path.abspath(Paths.WorkSpace).lower() + os.sep):
+    # Needs to strip os.sep is to take care of the root path case
+    # For a folder, this will do nothing on a formatted abspath
+    # For a drive root, this will rip off the os.sep
+    if not os.path.normcase(Paths.ModulePath).startswith(os.path.normcase(Paths.WorkSpace.strip(os.sep)) + os.sep):
         raise RuntimeError("Module is not within specified Workspace.")
 
     return Paths
