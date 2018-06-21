@@ -21,6 +21,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define DEBUG_AGENT_INIT_DXE_LOAD             10
 #define DEBUG_AGENT_INIT_DXE_UNLOAD           11
 #define DEBUG_AGENT_INIT_THUNK_PEI_IA32TOX64  12
+#define DEBUG_AGENT_INIT_REINITIALIZE         13      // MS_CHANGE
 
 //
 // Context for DEBUG_AGENT_INIT_POSTMEM_SEC

@@ -1721,18 +1721,6 @@ CoreStartImage (
     Image->Status  = Image->EntryPoint (ImageHandle, Image->Info.SystemTable);
 
     //
-    // Add some debug information if the image returned with error.
-    // This make the user aware and check if the driver image have already released
-    // all the resource in this situation.
-    //
-    DEBUG_CODE_BEGIN ();
-    if (EFI_ERROR (Image->Status)) {
-      DEBUG ((DEBUG_ERROR, "Error: Image at %11p start failed: %r\n", Image->Info.ImageBase, Image->Status));
-    }
-
-    DEBUG_CODE_END ();
-
-    //
     // If the image returns, exit it through Exit()
     //
     CoreExit (ImageHandle, Image->Status, 0, NULL);
@@ -1865,6 +1853,33 @@ CoreExit (
     Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
+
+  // MS_CHANGE: Start
+  //
+  // Re-initialize the debug agent after an EFI application has run
+  // This is in case a boot loader has hooked the same debugging interrupts
+  // that the EFI debugger is using and doesn't restore them.  This misbehavior
+  // results in crashes if one of the hooked interrupts runs.
+  // Note:
+  //      This is not a general purpose solution, an app or boot loader could hook
+  //      other interrupts and crash once the image is unloaded.
+  //
+  if (Image->ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION) {
+    InitializeDebugAgent (DEBUG_AGENT_INIT_REINITIALIZE, NULL, NULL);
+  }
+
+  //
+  // Add some debug information if the image returned with error.
+  // This make the user aware and check if the driver image have already released
+  // all the resource in this situation.
+  //
+  DEBUG_CODE_BEGIN ();
+  if (EFI_ERROR (Image->Status)) {
+    DEBUG ((DEBUG_ERROR, "Error: Image at %11p start failed: %r\n", Image->Info.ImageBase, Image->Status));
+  }
+
+  DEBUG_CODE_END ();
+  // MS_CHANGE
 
   if (!Image->Started) {
     //
