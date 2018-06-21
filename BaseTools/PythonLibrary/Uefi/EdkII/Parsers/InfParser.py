@@ -20,6 +20,7 @@ class InfParser(HashFileParser):
         self.PpisUsed = []
         self.PcdsUsed = []
         self.Sources = []
+        self.Binaries = []
         self.Path = ""
 
     def ParseFile(self, filepath):
@@ -40,6 +41,7 @@ class InfParser(HashFileParser):
         InPpiSection = False
         InPcdSection = False
         InSourcesSection = False
+        InBinariesSection = False
 
         for l in self.Lines:
             l = self.StripComment(l)
@@ -120,6 +122,13 @@ class InfParser(HashFileParser):
                    self.Sources.append(l.partition("|")[0].strip())
                    continue
 
+            elif InBinariesSection:
+                if l.strip()[0] == '[':
+                   InBinariesSection = False
+                else:
+                   self.Binaries.append(l.partition("|")[0].strip())
+                   continue
+
             # check for different sections
             if l.strip().lower().startswith('[defines'):
                 InDefinesSection = True
@@ -144,5 +153,8 @@ class InfParser(HashFileParser):
 
             elif l.strip().lower().startswith('[sources'):
                 InSourcesSection = True
+
+            elif l.strip().lower().startswith('[binaries'):
+                InBinariesSection = True
 
         self.Parsed = True
