@@ -96,3 +96,45 @@ ResetPlatformSpecific (
 {
   gRT->ResetSystem (EfiResetPlatformSpecific, EFI_SUCCESS, DataSize, ResetData);
 }
+
+// MS_CHANGE [BEGIN] - Move EfiResetSystem out of UefiRuntimeLib and into ResetSystemLib.
+/**
+  This service is a wrapper for the UEFI Runtime Service ResetSystem().
+
+  The ResetSystem()function resets the entire platform, including all processors and devices,and reboots the system.
+  Calling this interface with ResetType of EfiResetCold causes a system-wide reset. This sets all circuitry within
+  the system to its initial state. This type of reset is asynchronous to system operation and operates without regard
+  to cycle boundaries. EfiResetCold is tantamount to a system power cycle.
+  Calling this interface with ResetType of EfiResetWarm causes a system-wide initialization. The processors are set to
+  their initial state, and pending cycles are not corrupted. If the system does not support this reset type, then an
+  EfiResetCold must be performed.
+  Calling this interface with ResetType of EfiResetShutdown causes the system to enter a power state equivalent to the
+  ACPI G2/S5 or G3 states. If the system does not support this reset type, then when the system is rebooted, it should
+  exhibit the EfiResetCold attributes.
+  The platform may optionally log the parameters from any non-normal reset that occurs.
+  The ResetSystem() function does not return.
+
+  @param  ResetType   The type of reset to perform.
+  @param  ResetStatus The status code for the reset. If the system reset is part of a normal operation, the status code
+                      would be EFI_SUCCESS. If the system reset is due to some type of failure the most appropriate EFI
+                      Status code would be used.
+  @param  DataSizeThe size, in bytes, of ResetData.
+  @param  ResetData   For a ResetType of EfiResetCold, EfiResetWarm, or EfiResetShutdown the data buffer starts with a
+                      Null-terminated Unicode string, optionally followed by additional binary data. The string is a
+                      description that the caller may use to further indicate the reason for the system reset. ResetData
+                      is only valid if ResetStatus is something other then EFI_SUCCESS. This pointer must be a physical
+                      address. For a ResetType of EfiResetPlatformSpecific the data buffer also starts with a Null-terminated
+                      string that is followed by an EFI_GUID that describes the specific type of reset to perform.
+**/
+VOID
+EFIAPI
+EfiResetSystem (
+  IN EFI_RESET_TYPE               ResetType,
+  IN EFI_STATUS                   ResetStatus,
+  IN UINTN                        DataSize,
+  IN VOID                         *ResetData OPTIONAL
+  )
+{
+  gRT->ResetSystem (ResetType, ResetStatus, DataSize, ResetData);
+}
+// MS_CHANGE [END] - Move EfiResetSystem out of UefiRuntimeLib and into ResetSystemLib.
