@@ -248,7 +248,7 @@ UpdateCapsule (
        // not return back to the caller.
        //
        // MS_CHANGE_250018 - ResetSystem refactoring.
-       ResetPlatformSpecificGuid( &gCapsuleArmedResetGuid );
+       ResetSystemWithSubtype( EfiResetWarm, &gCapsuleArmedResetGuid );
      }
   }
 
