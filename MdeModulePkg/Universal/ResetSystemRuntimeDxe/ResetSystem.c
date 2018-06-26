@@ -331,7 +331,8 @@ ResetSystem (
       //
       //Process capsules across a system reset.
       //
-      DoS3();
+      // MS_CHANGE - This is *not* Core functionality!
+      // DoS3();
     }
 
     ResetWarm ();
