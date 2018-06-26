@@ -37,3 +37,6 @@
 [LibraryClasses]
   PeiServicesLib
 
+## MS_CHANGE - Make sure that any consumer has the architectural support.
+[Depex]
+  gEfiPeiReset2PpiGuid

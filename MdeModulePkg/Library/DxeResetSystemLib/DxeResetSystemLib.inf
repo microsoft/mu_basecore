@@ -38,3 +38,6 @@
   # UefiRuntimeLib                ## MS_CHANGE - This shouldn't require RuntimeLib.
   UefiRuntimeServicesTableLib     ## MS_CHANGE - This shouldn't require RuntimeLib.
 
+## MS_CHANGE - Make sure that any consumer has the architectural support.
+[Depex]
+  gEfiResetArchProtocolGuid

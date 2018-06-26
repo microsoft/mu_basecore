@@ -266,7 +266,8 @@ ResetSystem (
   }
 
   mResetNotifyDepth++;
-  DEBUG ((DEBUG_INFO, "DXE ResetSystem2: Reset call depth = %d.\n", mResetNotifyDepth));
+  // MS_CHANGE - Add more info to the debug.
+  DEBUG ((DEBUG_INFO, "DXE ResetSystem2: ResetType %s, Call Depth = %d.\n", mResetTypeStr[ResetType], mResetNotifyDepth));
 
   if (mResetNotifyDepth <= MAX_RESET_NOTIFY_DEPTH) {
     if (!EfiAtRuntime ()) {
@@ -328,7 +329,8 @@ ResetSystem (
       //
       //Process capsules across a system reset.
       //
-      DoS3();
+      // MS_CHANGE - This is *not* Core functionality!
+      // DoS3();
     }
 
     ResetWarm ();

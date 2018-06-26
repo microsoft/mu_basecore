@@ -19,10 +19,46 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/ResetSystemLib.h>
 
+// MS_CHANGE - Fix TianoCore compile bug.
+#pragma pack(1)
+
 typedef struct {
   CHAR16 NullTerminator;
   GUID   ResetSubtype;
 } RESET_UTILITY_GUID_SPECIFIC_RESET_DATA;
+
+// MS_CHANGE - Fix TianoCore compile bug.
+#pragma pack()
+
+// MS_CHANGE [BEGIN] - Make it easier to reset with a default type.
+/**
+  Simple helper to reset the system with a subtype GUID, and a default
+  to fall back on (that isn't necessarily EfiResetPlatformSpecific).
+
+  @param[in]  ResetType     The default EFI_RESET_TYPE of the reset.
+  @param[in]  ResetSubtype  GUID pointer for the reset subtype to be used.
+
+  @retval     Pointer to the GUIDed reset data structure. Structure is
+              SIMPLE_GUIDED_RESET_DATA_SIZE in size.
+
+**/
+VOID
+EFIAPI
+ResetSystemWithSubtype (
+  IN EFI_RESET_TYPE     ResetType,
+  IN CONST  GUID        *ResetSubtype
+  )
+{
+  RESET_UTILITY_GUID_SPECIFIC_RESET_DATA  ResetData;
+  UINT8                                   *GuidBuffer;
+
+  ResetData.NullTerminator = CHAR_NULL;
+  GuidBuffer = (UINT8*)&ResetData + OFFSET_OF(RESET_UTILITY_GUID_SPECIFIC_RESET_DATA, ResetSubtype);
+  CopyGuid ((EFI_GUID*)GuidBuffer, ResetSubtype);
+
+  EfiResetSystem (ResetType, EFI_SUCCESS, sizeof (ResetData), &ResetData);
+} // ResetSystemWithSubtype()
+// MS_CHANGE [END] - Make it easier to reset with a default type.
 
 /**
   This is a shorthand helper function to reset with a subtype so that
@@ -46,11 +82,14 @@ ResetPlatformSpecificGuid (
   IN CONST  GUID        *ResetSubtype
   )
 {
-  RESET_UTILITY_GUID_SPECIFIC_RESET_DATA  ResetData;
+  // MS_CHANGE [BEGIN] - Make it easier to reset with a default type.
+  // RESET_UTILITY_GUID_SPECIFIC_RESET_DATA  ResetData;
 
-  ResetData.NullTerminator = CHAR_NULL;
-  CopyGuid (&ResetData.ResetSubtype, ResetSubtype);
-  ResetPlatformSpecific (sizeof (ResetData), &ResetData);
+  // ResetData.NullTerminator = CHAR_NULL;
+  // CopyGuid (&ResetData.ResetSubtype, ResetSubtype);
+  // ResetPlatformSpecific (sizeof (ResetData), &ResetData);
+  ResetSystemWithSubtype (EfiResetPlatformSpecific, ResetSubtype);
+  // MS_CHANGE [END] - Make it easier to reset with a default type.
 }
 
 /**
