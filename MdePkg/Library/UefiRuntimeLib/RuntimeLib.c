@@ -192,7 +192,7 @@ EfiGoneVirtual (
   return mEfiGoneVirtual;
 }
 
-
+// MS_CHANGE [BEGIN] - Move EfiResetSystem out of UefiRuntimeLib and into ResetSystemLib.
 /**
   This service is a wrapper for the UEFI Runtime Service ResetSystem().
 
@@ -222,17 +222,18 @@ EfiGoneVirtual (
                       that is followed by a physical VOID * to an EFI_CAPSULE_HEADER.
 
 **/
-VOID
-EFIAPI
-EfiResetSystem (
-  IN EFI_RESET_TYPE               ResetType,
-  IN EFI_STATUS                   ResetStatus,
-  IN UINTN                        DataSize,
-  IN VOID                         *ResetData OPTIONAL
-  )
-{
-  mInternalRT->ResetSystem (ResetType, ResetStatus, DataSize, ResetData);
-}
+// VOID
+// EFIAPI
+// EfiResetSystem (
+//   IN EFI_RESET_TYPE               ResetType,
+//   IN EFI_STATUS                   ResetStatus,
+//   IN UINTN                        DataSize,
+//   IN VOID                         *ResetData OPTIONAL
+//   )
+// {
+//   mInternalRT->ResetSystem (ResetType, ResetStatus, DataSize, ResetData);
+// }
+// MS_CHANGE [END] - Move EfiResetSystem out of UefiRuntimeLib and into ResetSystemLib.
 
 
 /**
