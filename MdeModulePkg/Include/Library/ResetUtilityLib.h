@@ -16,6 +16,26 @@
 #ifndef _RESET_UTILITY_LIB_H_
 #define _RESET_UTILITY_LIB_H_
 
+// MS_CHANGE [BEGIN] - Make it easier to reset with a default type.
+/**
+  Simple helper to reset the system with a subtype GUID, and a default
+  to fall back on (that isn't necessarily EfiResetPlatformSpecific).
+
+  @param[in]  ResetType     The default EFI_RESET_TYPE of the reset.
+  @param[in]  ResetSubtype  GUID pointer for the reset subtype to be used.
+
+  @retval     Pointer to the GUIDed reset data structure. Structure is
+              SIMPLE_GUIDED_RESET_DATA_SIZE in size.
+
+**/
+VOID
+EFIAPI
+ResetSystemWithSubtype (
+  IN EFI_RESET_TYPE     ResetType,
+  IN CONST  GUID        *ResetSubtype
+  );
+// MS_CHANGE [END] - Make it easier to reset with a default type.
+
 /**
   This is a shorthand helper function to reset with a subtype so that
   the caller doesn't have to bother with a function that has half a dozen
