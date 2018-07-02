@@ -10,7 +10,8 @@
 ;------------------------------------------------------------------------------
 
   EXPORT GetInterruptState
-  AREA BaseLib_LowLevel, CODE, READONLY
+; MS_CHANGE: change area name to |.text| and add an ALIGN directive
+  AREA |.text|, ALIGN=2, CODE, READONLY
 
 DAIF_RD_IRQ_BIT     EQU     (1 << 7)
 

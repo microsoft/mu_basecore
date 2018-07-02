@@ -9,7 +9,8 @@
 ;------------------------------------------------------------------------------
 
   EXPORT MemoryFence
-  AREA BaseLib_LowLevel, CODE, READONLY
+; MS_CHANGE: change area name to |.text| and add an ALIGN directive
+  AREA |.text|, ALIGN=2, CODE, READONLY
 
 ;/**
 ;  Used to serialize load and store operations.
