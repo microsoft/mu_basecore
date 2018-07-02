@@ -7,22 +7,9 @@
 
   EXPORT SetJump
   EXPORT InternalLongJump
-  AREA BaseLib_LowLevel, CODE, READONLY
+; MS_CHANGE: change area name to |.text| and add an ALIGN directive
+  AREA |.text|, ALIGN=3, CODE, READONLY
 
-#define GPR_LAYOUT                          \
-        REG_PAIR (x19, x20,  #0);           \
-        REG_PAIR (x21, x22, #16);           \
-        REG_PAIR (x23, x24, #32);           \
-        REG_PAIR (x25, x26, #48);           \
-        REG_PAIR (x27, x28, #64);           \
-        REG_PAIR (x29, x30, #80);/*FP, LR*/ \
-        REG_ONE  (x16,      #96) /*IP0*/
-
-#define FPR_LAYOUT                       \
-        REG_PAIR ( d8,  d9, #104);       \
-        REG_PAIR (d10, d11, #120);       \
-        REG_PAIR (d12, d13, #136);       \
-        REG_PAIR (d14, d15, #152);
 
 ;/**
 ;  Saves the current CPU context that can be restored with a call to LongJump() and returns 0.#
@@ -43,6 +30,7 @@
 ;  IN      BASE_LIBRARY_JUMP_BUFFER  *JumpBuffer  // X0
 ;  );
 ;
+; MS_CHANGE: do not use the pre-processor macro as it doesn't work with VS ARM Assembler
 SetJump
 #ifndef MDEPKG_NDEBUG
         stp     x29, x30, [sp, #-32]!
@@ -53,12 +41,17 @@ SetJump
         ldp     x29, x30, [sp], #32
 #endif
         mov     x16, sp // use IP0 so save SP
-#define REG_PAIR(REG1, REG2, OFFS)      stp REG1, REG2, [x0, OFFS]
-#define REG_ONE(REG1, OFFS)             str REG1, [x0, OFFS]
-        GPR_LAYOUT
-        FPR_LAYOUT
-#undef REG_PAIR
-#undef REG_ONE
+        stp x19, x20, [x0, #0]
+        stp x21, x22, [x0, #16]
+        stp x23, x24, [x0, #32]
+        stp x25, x26, [x0, #48]
+        stp x27, x28, [x0, #64]
+        stp x29, x30, [x0, #80]
+        str x16, [x0, #96]
+        stp  d8,  d9, [x0, #112]
+        stp d10, d11, [x0, #128]
+        stp d12, d13, [x0, #144]
+        stp d14, d15, [x0, #160]
         mov     x0, #0
         ret
 
@@ -80,13 +73,19 @@ SetJump
 ;  IN      UINTN                     Value         // X1
 ;  );
 ;
+; MS_CHANGE: do not use the pre-processor macro as it doesn't work with VS ARM Assembler
 InternalLongJump
-#define REG_PAIR(REG1, REG2, OFFS)      ldp REG1, REG2, [x0, OFFS]
-#define REG_ONE(REG1, OFFS)             ldr REG1, [x0, OFFS]
-        GPR_LAYOUT
-        FPR_LAYOUT
-#undef REG_PAIR
-#undef REG_ONE
+        ldp x19, x20, [x0,  #0]
+        ldp x21, x22, [x0, #16]
+        ldp x23, x24, [x0, #32]
+        ldp x25, x26, [x0, #48]
+        ldp x27, x28, [x0, #64]
+        ldp x29, x30, [x0, #80]
+        ldr x16, [x0, #96]
+        ldp  d8,  d9, [x0, #112]
+        ldp d10, d11, [x0, #128]
+        ldp d12, d13, [x0, #144]
+        ldp d14, d15, [x0, #160]
         mov     sp, x16
         cmp     x1, #0
         mov     x0, #1
