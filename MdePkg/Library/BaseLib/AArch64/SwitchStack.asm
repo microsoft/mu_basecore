@@ -9,7 +9,8 @@
 
   EXPORT InternalSwitchStackAsm
   EXPORT CpuPause
-  AREA BaseLib_LowLevel, CODE, READONLY
+; MS_CHANGE: change area name to |.text| and add an ALIGN directive
+  AREA |.text|, ALIGN=5, CODE, READONLY
 
 ;/**
 ;
