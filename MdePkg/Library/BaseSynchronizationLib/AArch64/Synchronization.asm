@@ -12,7 +12,8 @@
   EXPORT InternalSyncCompareExchange64
   EXPORT InternalSyncIncrement
   EXPORT InternalSyncDecrement
-  AREA BaseSynchronizationLib_LowLevel, CODE, READONLY
+; MS_CHANGE: change area name to |.text| and add an ALIGN directive
+  AREA |.text|, ALIGN=3, CODE, READONLY
 
 ;/**
 ;  Performs an atomic compare exchange operation on a 16-bit unsigned integer.
