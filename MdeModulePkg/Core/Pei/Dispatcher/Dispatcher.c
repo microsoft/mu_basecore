@@ -16,6 +16,7 @@ Copyright (c) 2017, Microsoft Corporation.
 **/
 
 #include "PeiMain.h"
+#include <Library/Performance2Lib.h> // MS_CHANGE
 
 //MS_CHANGE Delayed Dispatch begin
 /**
@@ -255,26 +256,30 @@ PeiDelayedDispatchWaitOnUniqueId (
     IN EFI_DELAYED_DISPATCH_PPI       *This,
     IN EFI_GUID                       *UniqueId
 ) {
+    PERF_FUNCTION_BEGIN(PERF_VERBOSITY_STANDARD);
     DELAYED_DISPATCH_TABLE    *DelayedDispatchTable;
 
     // Get delayed dispatch table
     DelayedDispatchTable = GetDelayedDispatchTable();
     if (NULL == DelayedDispatchTable) {
+      PERF_FUNCTION_END(PERF_VERBOSITY_STANDARD);
       return EFI_UNSUPPORTED;
     }
 
     if ((NULL == UniqueId) || (IsZeroGuid(UniqueId))) {
         ASSERT(FALSE);
+        PERF_FUNCTION_END(PERF_VERBOSITY_STANDARD);
         return EFI_UNSUPPORTED;
     }
 
     DEBUG((DEBUG_INFO,"Delayed dispatch on %g. Count=%d, DispatchCount=%d\n",UniqueId,DelayedDispatchTable->Count, DelayedDispatchTable->DispCount));
     // PERF_START_EX (UniqueId, "PEIM", NULL, 0, 0); // MS_CHANGE
-    PERF_ENTRYPOINT_BEGIN (UniqueId); // MS_CHANGE TODO: check if this actually works
+    PERF_EVENTSIGNAL_BEGIN (PERF_VERBOSITY_STANDARD,UniqueId);
     DelayedDispatchDispatcher(DelayedDispatchTable,UniqueId);
     // PERF_END_EX (UniqueId, "PEIM", NULL, 0, 0); // MS_CHANGE
-    PERF_ENTRYPOINT_END (UniqueId); // MS_CHANGE
+    PERF_EVENTSIGNAL_END (PERF_VERBOSITY_STANDARD,UniqueId);
 
+    PERF_FUNCTION_END(PERF_VERBOSITY_STANDARD);
     return EFI_SUCCESS;
 }
 
@@ -1262,7 +1267,9 @@ PeiDispatcher (
   EFI_PEI_FILE_HANDLE                 SaveCurrentFileHandle;
   EFI_FV_FILE_INFO                    FvFileInfo;
   PEI_CORE_FV_HANDLE                  *CoreFvHandle;
-  EFI_HOB_GUID_TYPE                   *GuidHob;                            // MSCHANGE
+  EFI_HOB_GUID_TYPE                   *GuidHob;                           // MSCHANGE
+
+  PERF_FUNCTION_BEGIN(PERF_VERBOSITY_STANDARD);                           // MS_CHANGE
 
   PeiServices = (CONST EFI_PEI_SERVICES **) &Private->Ps;
   PeimEntryPoint = NULL;
@@ -1569,7 +1576,7 @@ PeiDispatcher (
     //  as it will fail the next time too (nothing has changed).
     //
   } while (Private->PeimNeedingDispatch && Private->PeimDispatchOnThisPass);
-
+  PERF_FUNCTION_END(PERF_VERBOSITY_STANDARD);             // MS_CHANGE
 }
 
 /**
