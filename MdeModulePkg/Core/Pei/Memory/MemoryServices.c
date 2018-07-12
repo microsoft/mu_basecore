@@ -807,8 +807,15 @@ PeiAllocatePool (
              (UINT16)(sizeof (EFI_HOB_MEMORY_POOL) + Size),
              (VOID **)&Hob
              );
-  ASSERT_EFI_ERROR (Status);
-  *Buffer = Hob+1;  
-
+// MS_CHANGE BEGIN
+// Allocator should be resilient, leave error handling for callers;
+// Return NULL pointer instead of asserting.
+  // ASSERT_EFI_ERROR (Status);
+  if (EFI_ERROR(Status)) {
+    *Buffer = NULL;
+  } else {
+    *Buffer = Hob+1;
+  }
+// MS_CHANGE END
   return Status;
 }
