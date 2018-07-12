@@ -902,7 +902,10 @@ PeiAllocatePool (
              (UINT16)(sizeof (EFI_HOB_MEMORY_POOL) + Size),
              (VOID **)&Hob
              );
-  ASSERT_EFI_ERROR (Status);
+
+  // MU_CHANGE
+  // Allocator should be resilient, leave error handling for callers.
+  // ASSERT_EFI_ERROR (Status);
 
   if (EFI_ERROR (Status)) {
     *Buffer = NULL;
