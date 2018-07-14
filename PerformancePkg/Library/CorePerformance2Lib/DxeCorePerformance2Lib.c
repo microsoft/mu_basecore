@@ -78,6 +78,7 @@ GetModuleGuidFromHandle (
   EFI_GUID                    *TempGuid;
   BOOLEAN                     ModuleGuidIsGet;
   MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *FvFilePath;
+  UINT64                      Signature;
 
   Status = EFI_INVALID_PARAMETER;
   LoadedImage     = NULL;
@@ -146,8 +147,12 @@ GetModuleGuidFromHandle (
   if (ModuleGuid != NULL) {
     CopyMem (ModuleGuid, TempGuid, sizeof(EFI_GUID));
     if (CompareGuid(TempGuid, &gZeroGuid) && (Handle != NULL) && !ModuleGuidIsGet) {
-        // Handle is GUID
-        CopyMem (ModuleGuid, (EFI_GUID *) Handle, sizeof(EFI_GUID));
+        //
+        // Copy a signature string UNKNHNDL into upper 8 bytes and the handle address into lower
+        //
+        *((UINT64 *)ModuleGuid) = (UINT64) Handle;
+        Signature = SIGNATURE_64 ('U', 'N', 'K', 'N', 'H', 'N', 'D', 'L');
+        CopyMem (((UINT8 *)ModuleGuid) + sizeof(UINT64), &Signature, sizeof(Signature));
     }
   }
 
@@ -384,20 +389,14 @@ CreatePerformanceMeasurement (
       if (CallerIdentifier == NULL) {
         return EFI_INVALID_PARAMETER;
       }
-      if (mFpdtDataIsReported) {
-        //
-        // GUID event
-        //
-        FpdtRecordPtr.RecordHeader->Type = GUID_EVENT_TYPE;
-        GetModuleGuidFromHandle((EFI_HANDLE) CallerIdentifier, &ModuleGuid);
-        CopyMem(&FpdtRecordPtr.GuidEvent->Guid, &ModuleGuid, sizeof(EFI_GUID));
-      } else {
-        //
-        // Handle event
-        //
-        FpdtRecordPtr.RecordHeader->Type = HANDLE_EVENT_TYPE;
-        FpdtRecordPtr.HandleEvent->Handle = (UINT64) CallerIdentifier;
-      }
+
+      //
+      // GUID event
+      //
+      FpdtRecordPtr.RecordHeader->Type = GUID_EVENT_TYPE;
+      GetModuleGuidFromHandle((EFI_HANDLE) CallerIdentifier, &ModuleGuid);
+      CopyMem(&FpdtRecordPtr.GuidEvent->Guid, &ModuleGuid, sizeof(EFI_GUID));
+
       FpdtRecordPtr.RecordHeader->Length  = sizeof(GUID_EVENT_RECORD);
       FpdtRecordPtr.GuidEvent->ProgressID = PerfId;
       FpdtRecordPtr.GuidEvent->ApicID     = GetApicId();
@@ -424,20 +423,14 @@ CreatePerformanceMeasurement (
       if (CallerIdentifier == NULL) {
         return EFI_INVALID_PARAMETER;
       }
-      if (mFpdtDataIsReported) {
-        //
-        // GUID Qword event
-        //
-        FpdtRecordPtr.RecordHeader->Type = GUID_QWORD_EVENT_TYPE;
-        GetModuleGuidFromHandle((EFI_HANDLE) CallerIdentifier, &ModuleGuid);
-        CopyMem(&FpdtRecordPtr.GuidQwordEvent->Guid, &ModuleGuid, sizeof(EFI_GUID));
-      } else {
-        //
-        // Handle Qword event
-        //
-        FpdtRecordPtr.RecordHeader->Type = HANDLE_QWORD_EVENT_TYPE;
-        FpdtRecordPtr.HandleQwordEvent->Handle = (UINT64) CallerIdentifier;
-      }
+
+      //
+      // GUID Qword event
+      //
+      FpdtRecordPtr.RecordHeader->Type = GUID_QWORD_EVENT_TYPE;
+      GetModuleGuidFromHandle((EFI_HANDLE) CallerIdentifier, &ModuleGuid);
+      CopyMem(&FpdtRecordPtr.GuidQwordEvent->Guid, &ModuleGuid, sizeof(EFI_GUID));
+
       FpdtRecordPtr.RecordHeader->Length        = sizeof(GUID_QWORD_EVENT_RECORD);
       FpdtRecordPtr.GuidQwordEvent->ProgressID  = PerfId;
       FpdtRecordPtr.GuidQwordEvent->ApicID      = GetApicId();
@@ -456,20 +449,14 @@ CreatePerformanceMeasurement (
       if (CallerIdentifier == NULL || Address == 0) {
         return EFI_INVALID_PARAMETER;
       }
-      if (mFpdtDataIsReported) {
-        //
-        // GUID Qword event
-        //
-        FpdtRecordPtr.RecordHeader->Type = GUID_QWORD_EVENT_TYPE;
-        GetModuleGuidFromHandle((EFI_HANDLE) CallerIdentifier, &ModuleGuid);
-        CopyMem (&FpdtRecordPtr.GuidQwordEvent->Guid, &ModuleGuid, sizeof(EFI_GUID));
-      } else {
-        //
-        // Handle Qword event
-        //
-        FpdtRecordPtr.RecordHeader->Type = HANDLE_QWORD_EVENT_TYPE;
-        FpdtRecordPtr.HandleQwordEvent->Handle = (UINT64) CallerIdentifier;
-      }
+
+      //
+      // GUID Qword event
+      //
+      FpdtRecordPtr.RecordHeader->Type = GUID_QWORD_EVENT_TYPE;
+      GetModuleGuidFromHandle((EFI_HANDLE) CallerIdentifier, &ModuleGuid);
+      CopyMem (&FpdtRecordPtr.GuidQwordEvent->Guid, &ModuleGuid, sizeof(EFI_GUID));
+
       FpdtRecordPtr.RecordHeader->Length        = sizeof(GUID_QWORD_EVENT_RECORD);
       FpdtRecordPtr.GuidQwordEvent->ProgressID  = PerfId;
       FpdtRecordPtr.GuidQwordEvent->ApicID      = GetApicId();
@@ -484,20 +471,14 @@ CreatePerformanceMeasurement (
       if (CallerIdentifier == NULL || Address == 0) {
         return EFI_INVALID_PARAMETER;
       }
-      if (mFpdtDataIsReported) {
-        //
-        // GUID Qword String event
-        //
-        FpdtRecordPtr.RecordHeader->Type = GUID_QWORD_STRING_EVENT_TYPE;
-        GetModuleGuidFromHandle ((EFI_HANDLE) CallerIdentifier, &ModuleGuid);
-        CopyMem(&FpdtRecordPtr.GuidQwordStringEvent->Guid, &ModuleGuid, sizeof(EFI_GUID));
-      } else {
-        //
-        // Handle Qword String event
-        //
-        FpdtRecordPtr.RecordHeader->Type = HANDLE_QWORD_STRING_EVENT_TYPE;
-        FpdtRecordPtr.HandleQwordStringEvent->Handle = (UINT64) CallerIdentifier;
-      }
+
+      //
+      // GUID Qword String event
+      //
+      FpdtRecordPtr.RecordHeader->Type = GUID_QWORD_STRING_EVENT_TYPE;
+      GetModuleGuidFromHandle ((EFI_HANDLE) CallerIdentifier, &ModuleGuid);
+      CopyMem(&FpdtRecordPtr.GuidQwordStringEvent->Guid, &ModuleGuid, sizeof(EFI_GUID));
+
       FpdtRecordPtr.GuidQwordStringEvent->ProgressID  = PerfId;
       FpdtRecordPtr.GuidQwordStringEvent->ApicID      = GetApicId();
       FpdtRecordPtr.GuidQwordStringEvent->Timestamp   = GetTimeInNanoSecond(Ticker);
@@ -607,8 +588,6 @@ ReportBufferedRecords (
   UINT8                            *PerfBuffer;
   PEI_CORE_PERFORMANCE_HOB_HEADER  *FirmwarePerformanceHob;
   EFI_HOB_GUID_TYPE                *GuidHob;
-  FPDT_RECORD_PTR                  FpdtRecordPtr;
-  EFI_GUID                         ModuleGuid;
 
   GuidHob = GetFirstGuidHob (&gPeiPerformanceHobGuid);
   if (GuidHob != NULL) {
@@ -636,68 +615,6 @@ ReportBufferedRecords (
         );
     }
   }
-
-  FpdtRecordPtr.RecordHeader = (EFI_ACPI_5_0_FPDT_PERFORMANCE_RECORD_HEADER *) mPerformancePointer;
-
-  //
-  // Make sure that Guid and Handle record types have the same sizes, Guid and Handle fields line up, sizes add up correctly,
-  // and that the Reserved field is at the correct location. Performing the checks once above the for loop to save time
-  //
-  ASSERT(sizeof(GUID_EVENT_RECORD) == sizeof(HANDLE_EVENT_RECORD));
-  ASSERT(((UINT8*)&FpdtRecordPtr.HandleEvent->Handle) == ((UINT8*)&FpdtRecordPtr.GuidEvent->Guid));
-  ASSERT(((UINT8*)&FpdtRecordPtr.HandleEvent->Reserved) == (((UINT8*)&FpdtRecordPtr.GuidEvent->Guid) + sizeof(FpdtRecordPtr.HandleEvent->Handle)));
-  ASSERT((sizeof(FpdtRecordPtr.HandleEvent->Handle) + sizeof(FpdtRecordPtr.HandleEvent->Reserved)) == sizeof(FpdtRecordPtr.GuidEvent->Guid));
-
-  ASSERT(sizeof(GUID_QWORD_EVENT_RECORD) == sizeof(HANDLE_QWORD_EVENT_RECORD));
-  ASSERT(((UINT8*)&FpdtRecordPtr.HandleQwordEvent->Handle) == ((UINT8*)&FpdtRecordPtr.GuidQwordEvent->Guid));
-  ASSERT(((UINT8*)&FpdtRecordPtr.HandleQwordEvent->Reserved) == (((UINT8*)&FpdtRecordPtr.GuidQwordEvent->Guid) + sizeof(FpdtRecordPtr.HandleQwordEvent->Handle)));
-  ASSERT((sizeof(FpdtRecordPtr.HandleQwordEvent->Handle) + sizeof(FpdtRecordPtr.HandleQwordEvent->Reserved)) == sizeof(FpdtRecordPtr.GuidQwordEvent->Guid));
-
-  ASSERT(sizeof(GUID_QWORD_STRING_EVENT_RECORD) == sizeof(HANDLE_QWORD_STRING_EVENT_RECORD));
-  ASSERT(((UINT8*)&FpdtRecordPtr.HandleQwordStringEvent->Handle) == ((UINT8*)&FpdtRecordPtr.GuidQwordStringEvent->Guid));
-  ASSERT(((UINT8*)&FpdtRecordPtr.HandleQwordStringEvent->Reserved) == (((UINT8*)&FpdtRecordPtr.GuidQwordStringEvent->Guid) + sizeof(FpdtRecordPtr.HandleQwordStringEvent->Handle)));
-  ASSERT((sizeof(FpdtRecordPtr.HandleQwordStringEvent->Handle) + sizeof(FpdtRecordPtr.HandleQwordStringEvent->Reserved)) == sizeof(FpdtRecordPtr.GuidQwordStringEvent->Guid));
-
-  PERF_INMODULE_BEGIN (PERF_VERBOSITY_STANDARD, "HandleToGuidConversion");
-  while (((UINT8 *) FpdtRecordPtr.RecordHeader) < (mPerformancePointer + mPerformanceLength)) {
-    //
-    // Replace handle with guid and adjust the record type
-    //
-    if (FpdtRecordPtr.RecordHeader->Type == HANDLE_EVENT_TYPE) {
-      FpdtRecordPtr.RecordHeader->Type = GUID_EVENT_TYPE;
-      // In IA32 casting UINT64 field Handle into EFI_HANDLE causes a warning
-      // This is ok since we stored 32-bit handles into the Handle field earlier during boot
-      #pragma warning(suppress: 4305)
-      GetModuleGuidFromHandle((EFI_HANDLE) FpdtRecordPtr.HandleEvent->Handle, &ModuleGuid);
-      CopyMem(&FpdtRecordPtr.GuidEvent->Guid, &ModuleGuid, sizeof(EFI_GUID));
-    } else if (FpdtRecordPtr.RecordHeader->Type == HANDLE_QWORD_EVENT_TYPE) {
-      FpdtRecordPtr.RecordHeader->Type = GUID_QWORD_EVENT_TYPE;
-      #pragma warning(suppress: 4305)
-      GetModuleGuidFromHandle((EFI_HANDLE) FpdtRecordPtr.HandleQwordEvent->Handle, &ModuleGuid);
-      CopyMem(&FpdtRecordPtr.GuidQwordEvent->Guid, &ModuleGuid, sizeof(EFI_GUID));
-    } else if (FpdtRecordPtr.RecordHeader->Type == HANDLE_QWORD_STRING_EVENT_TYPE) {
-      FpdtRecordPtr.RecordHeader->Type = GUID_QWORD_STRING_EVENT_TYPE;
-      #pragma warning(suppress: 4305)
-      GetModuleGuidFromHandle((EFI_HANDLE) FpdtRecordPtr.HandleQwordStringEvent->Handle, &ModuleGuid);
-      CopyMem(&FpdtRecordPtr.GuidQwordStringEvent->Guid, &ModuleGuid, sizeof(EFI_GUID));
-    }
-
-    //
-    // Check for 0-length record
-    //
-    if (FpdtRecordPtr.RecordHeader->Length == 0) {
-      DEBUG((DEBUG_ERROR, "DxeCorePerformanceLib - %a - Found perf record with 0 length!\n", __FUNCTION__));
-      ASSERT(FALSE);
-      //
-      // In a release build we'll break out of the loop
-      //
-      FpdtRecordPtr.RecordHeader = (EFI_ACPI_5_0_FPDT_PERFORMANCE_RECORD_HEADER *) (mPerformancePointer + mPerformanceLength);
-    } else {
-      FpdtRecordPtr.RecordHeader = (EFI_ACPI_5_0_FPDT_PERFORMANCE_RECORD_HEADER *) (((UINT8 *) FpdtRecordPtr.RecordHeader) + FpdtRecordPtr.RecordHeader->Length);
-    }
-  }
-
-  PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "HandleToGuidConversion");
 
   PerfBuffer = mPerformancePointer;
 

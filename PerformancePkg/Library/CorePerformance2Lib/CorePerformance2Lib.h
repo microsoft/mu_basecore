@@ -52,13 +52,6 @@ This library provides helper functions to create performance timing events.
 #define GUID_QWORD_STRING_EVENT_TYPE  0x2004
 
 //
-// Intermediate record types
-//
-#define HANDLE_EVENT_TYPE               0x9010
-#define HANDLE_QWORD_EVENT_TYPE         0xA003
-#define HANDLE_QWORD_STRING_EVENT_TYPE  0xA004
-
-//
 // Data structures for performance records
 //
 #pragma pack(1)
@@ -200,98 +193,6 @@ typedef struct {
   //
   CHAR8                                       String[];
 } GUID_QWORD_STRING_EVENT_RECORD;
-
-//
-// Handle Record types (for temp storage)
-// The size and layout, apart from GUID replaced w/ Handle and a Reserved field, should be same
-// as the GUID version of the event record
-//
-typedef struct {
-  EFI_ACPI_5_0_FPDT_PERFORMANCE_RECORD_HEADER Header;
-  //
-  // Progress Identifier
-  //
-  UINT16                                      ProgressID;
-  //
-  // APIC ID for the processor in the system used as a timestamp clock source.
-  //
-  UINT32                                      ApicID;
-  //
-  // 64-bit value describing elapsed time since the most recent deassertion of processor reset.
-  //
-  UINT64                                      Timestamp;
-  //
-  // Handle address
-  //
-  UINT64                                      Handle;
-  //
-  // This reserved UINT64 is padding, so that Handle and Reserved take up the same amount of space as
-  // the Guid field in the appropriate GUID record type
-  //
-  UINT64                                      Reserved;
-} HANDLE_EVENT_RECORD;
-
-typedef struct {
-  EFI_ACPI_5_0_FPDT_PERFORMANCE_RECORD_HEADER Header;
-  //
-  // Progress Identifier
-  //
-  UINT16                                      ProgressID;
-  //
-  // APIC ID for the processor in the system used as a timestamp clock source.
-  //
-  UINT32                                      ApicID;
-  //
-  // 64-bit value describing elapsed time since the most recent deassertion of processor reset.
-  //
-  UINT64                                      Timestamp;
-  //
-  // Handle address
-  //
-  UINT64                                      Handle;
-  //
-  // This reserved UINT64 is padding, so that Handle and Reserved take up the same amount of space as
-  // the Guid field in the appropriate GUID record type
-  //
-  UINT64                                      Reserved;
-  //
-  // Qword of misc data, meaning depends on the ProgressId
-  //
-  UINT64                                      Qword;
-} HANDLE_QWORD_EVENT_RECORD;
-
-typedef struct {
-  EFI_ACPI_5_0_FPDT_PERFORMANCE_RECORD_HEADER Header;
-  //
-  // Progress Identifier
-  //
-  UINT16                                      ProgressID;
-  //
-  // APIC ID for the processor in the system used as a timestamp clock source.
-  //
-  UINT32                                      ApicID;
-  //
-  // 64-bit value describing elapsed time since the most recent deassertion of processor reset.
-  //
-  UINT64                                      Timestamp;
-  //
-  // Handle address
-  //
-  UINT64                                      Handle;
-  //
-  // This reserved UINT64 is padding, so that Handle and Reserved take up the same amount of space as
-  // the Guid field in the appropriate GUID record type
-  //
-  UINT64                                      Reserved;
-  //
-  // Qword of misc data, meaning depends on the ProgressId
-  //
-  UINT64                                      Qword;
-  //
-  // String describing the record
-  //
-  CHAR8                                       String[];
-} HANDLE_QWORD_STRING_EVENT_RECORD;
 #pragma pack()
 
 //
@@ -304,9 +205,6 @@ typedef union {
   DUAL_GUID_STRING_EVENT_RECORD                *DualGuidStringEvent;
   GUID_QWORD_EVENT_RECORD                      *GuidQwordEvent;
   GUID_QWORD_STRING_EVENT_RECORD               *GuidQwordStringEvent;
-  HANDLE_EVENT_RECORD                          *HandleEvent;
-  HANDLE_QWORD_EVENT_RECORD                    *HandleQwordEvent;
-  HANDLE_QWORD_STRING_EVENT_RECORD             *HandleQwordStringEvent;
 } FPDT_RECORD_PTR;
 
 //
