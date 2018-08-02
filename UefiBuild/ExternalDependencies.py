@@ -176,7 +176,7 @@ class NugetDependency(ExternalDependency):
     cmd += ["-ExcludeVersion"]
     cmd += ["-Version", self.version]
     # cmd += ["-DirectDownload", "-NoCache"]  #avoid cache -- not sure this is good
-    cmd += ["-NonInteractive"]
+    #cmd += ["-NonInteractive"]
     cmd += ["-Verbosity", "detailed"]
     cmd += ["-OutputDirectory", '"'+temp_directory+'"']
     cmd_string = " ".join(cmd)
