@@ -133,7 +133,7 @@ class ConfMgmt():
     # return tuple of (error code, string value)
     #
     def FindWithVsWhere(self, products=None):
-        cmd = "VsWhere -latest -nologo -property installationPath"
+        cmd = "VsWhere -latest -nologo -all -property installationPath"
         if(products is not None):
             cmd += " -products " + products
         a = StringIO()
