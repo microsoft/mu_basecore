@@ -33,6 +33,18 @@
   #
   UnitTestLogLib|Include\Library\UnitTestLogLib.h
 
+  ## @libraryclass Provides a unit test result report
+  #
+  UnitTestResultReportLib|Include\Library\UnitTestResultReportLib.h
+
+  ## @libraryclass Allows the platform to boot from USB on the next boot.
+  #
+  UnitTestBootUsbLib|Include\Library\UnitTestBootUsbLib.h
+
+  ## @libraryclass Allows save and restore unit test internal state
+  #
+  UnitTestPersistenceLib|Include\Library\UnitTestPersistenceLib.h
+
 [Guids]
 
   ## Microsoft Unit Test Package token space guid
