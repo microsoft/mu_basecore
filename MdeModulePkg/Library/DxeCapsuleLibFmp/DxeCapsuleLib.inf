@@ -4,6 +4,7 @@
 #  Capsule library instance for DXE_DRIVER module types.
 #
 #  Copyright (c) 2016 - 2019, Intel Corporation. All rights reserved.<BR>
+#  Copyright (C) Microsoft Corporation. All rights reserved.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -35,6 +36,8 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  ## MS_CHANGE - CapsuleResetLib
+  MsCorePkg/MsCorePkg.dec
 
 [LibraryClasses]
   BaseLib
@@ -51,6 +54,7 @@
   DisplayUpdateProgressLib
   FileHandleLib
   UefiBootManagerLib
+  CapsuleResetLib               ## MS_CHANGE - We use a library implementation of this whole flow, to enable platform configuration.
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleMax                               ## CONSUMES
