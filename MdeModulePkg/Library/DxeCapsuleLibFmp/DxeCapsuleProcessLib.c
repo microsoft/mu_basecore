@@ -34,6 +34,8 @@
 #include <Library/HobLib.h>
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/CapsuleLib.h>
+#include <Library/DisplayUpdateProgressLib.h> // MS_CHANGE - Update_Image_Progress needs to refer to a helper for display.
+#include <Library/CapsuleResetLib.h>          // MS_CHANGE - We use a library implementation of this whole flow, to enable platform configuration.
 
 #include <IndustryStandard/WindowsUxCapsule.h>
 
@@ -372,7 +374,9 @@ ProcessTheseCapsules (
     //
     // Display Capsule not found. Display the default string.
     //
-    Print (L"Updating the firmware ......\r\n");
+    // MS_CHANGE - Printing to the screen is unacceptable in production FW.
+    // Even if the graphics capsule didn't exist.
+    // Print (L"Updating the firmware ......\r\n");
   }
 
   //
@@ -447,10 +451,12 @@ DoResetSystem (
   VOID
   )
 {
-  UINTN                         Index;
+  // UINTN                         Index;  // MS_CHANGE - We use a library implementation of this whole flow, to enable platform configuration.
 
   REPORT_STATUS_CODE(EFI_PROGRESS_CODE, (EFI_SOFTWARE | PcdGet32(PcdStatusCodeSubClassCapsule) | PcdGet32(PcdCapsuleStatusCodeResettingSystem)));
 
+  // MS_CHANGE [BEGIN] - We use a library implementation of this whole flow, to enable platform configuration.
+  /*
   Print(L"Capsule Request Cold Reboot.\n");
   DEBUG((DEBUG_INFO, "Capsule Request Cold Reboot."));
 
@@ -463,6 +469,9 @@ DoResetSystem (
   gRT->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL);
 
   CpuDeadLoop();
+  */
+  ResetAfterCapsuleUpdate();
+  // MS_CHANGE [END]
 }
 
 /**
@@ -503,6 +512,11 @@ ProcessCapsules (
 {
   EFI_STATUS                    Status;
 
+  // MS_CHANGE [BEGIN]
+  // TEMP CHANGE - BDS is not currently wired to call this twice
+  //                and 1) we block embedded drivers and 2) this all falls
+  //                within our trust model, so we can execute in a single pass.
+  /*
   if (!mDxeCapsuleLibEndOfDxe) {
     Status = ProcessTheseCapsules(TRUE);
 
@@ -514,13 +528,59 @@ ProcessCapsules (
       DoResetSystem();
     }
   } else {
-    Status = ProcessTheseCapsules(FALSE);
+  */
+    // Status = ProcessTheseCapsules(FALSE);
+    Status = ProcessTheseCapsules(TRUE);
     //
     // Reboot System if required after all capsule processed
     //
     if (mNeedReset) {
       DoResetSystem();
     }
-  }
+  // }
+  // MS_CHANGE [END]
   return Status;
 }
+
+// MS_CHANGE [BEGIN] - This implementation is BootServices/Runtime specific.
+//                     Move most business logic into specific Dxe vs RuntimeDxe libs.
+/**
+  Function indicate the current completion progress of the firmware
+  update. Platform may override with own specific progress function.
+
+  @param[in]  Completion    A value between 1 and 100 indicating the current completion progress of the firmware update
+
+  @retval EFI_SUCESS    Input capsule is a correct FMP capsule.
+**/
+EFI_STATUS
+EFIAPI
+Update_Image_Progress (
+  IN UINTN  Completion
+  )
+{
+  EFI_STATUS                            Status;
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL_UNION   Color;
+
+  Color.Raw = (UINT32)((Completion >> 8) & 0xFFFFFF);
+  Completion &= 0xFF;  //only the lower 8bits matter for percentage.
+
+  DEBUG((DEBUG_INFO, "Update Progress - %d%%\n", Completion));
+
+  if (Completion > 100) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //PET WATCHDOG
+  //cancel watchdog
+  gBS->SetWatchdogTimer(0x0000, 0x0000, 0x0000, NULL);
+  if (Completion != 100)
+  {
+    //start watchdog
+    gBS->SetWatchdogTimer((UINTN)PcdGet8(PcdCapsuleUpdateWatchdogTimeInSeconds), 0x0000, 0x00, NULL);
+  }
+
+  Status = DisplayUpdateProgress(Completion, &Color);
+
+  return Status;
+}
+// MS_CHANGE [END]
