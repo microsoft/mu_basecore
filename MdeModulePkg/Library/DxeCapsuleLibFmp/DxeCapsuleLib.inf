@@ -39,6 +39,10 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  ## MS_CHANGE - TEMP: Add this for now before moving PcdCapsuleUpdateWatchdogTimeInSeconds to MdeModulePkg.
+  MsCapsuleUpdatePkg/MsCapsuleUpdatePkg.dec
+  ## MS_CHANGE - CapsuleResetLib
+  MsCorePkg/MsCorePkg.dec
 
 [LibraryClasses]
   BaseLib
@@ -53,6 +57,8 @@
   HobLib
   BmpSupportLib
   DisplayUpdateProgressLib
+  UefiBootManagerLib            ## MS_CHANGE - Enable ConnectAll before capsule processing.
+  CapsuleResetLib               ## MS_CHANGE - We use a library implementation of this whole flow, to enable platform configuration.
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleMax                               ## CONSUMES
@@ -65,6 +71,9 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleStatusCodeUpdateFirmwareSuccess   ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleStatusCodeUpdateFirmwareFailed    ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleStatusCodeResettingSystem         ## CONSUMES
+
+  ## MS_CHANGE - TEMP: Add this for now before moving PcdCapsuleUpdateWatchdogTimeInSeconds to MdeModulePkg.
+  gMsCapsuleUpdatePkgTokenSpaceGuid.PcdCapsuleUpdateWatchdogTimeInSeconds
 
 [Protocols]
   gEsrtManagementProtocolGuid                   ## CONSUMES

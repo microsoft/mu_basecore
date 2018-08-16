@@ -33,6 +33,7 @@
 #include <Library/DebugLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DxeServicesTableLib.h>
+#include <Library/UefiBootManagerLib.h>         // MSCHANGE - Support ConnectAll after loading.
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/MemoryAllocationLib.h>
@@ -236,6 +237,16 @@ ValidateFmpCapsule (
     return EFI_INVALID_PARAMETER;
   }
   FmpCapsuleHeaderSize = sizeof(EFI_FIRMWARE_MANAGEMENT_CAPSULE_HEADER) + sizeof(UINT64)*ItemNum;
+
+  // MS_CHANGE [BEGIN]
+  // Currently we do not support Embedded Drivers.
+  // This opens up concerns about validating the driver as we can't trust secure boot chain (pk)
+  if (FmpCapsuleHeader->EmbeddedDriverCount != 0)
+  {
+    DEBUG((DEBUG_ERROR, "%a - FMP Capsule contains an embedded driver.  This is not supported by this implementation\n", __FUNCTION__));
+    return EFI_UNSUPPORTED;
+  }
+  // MS_CHANGE [END]
 
   // Check ItemOffsetList
   for (Index = 0; Index < ItemNum; Index++) {
@@ -1151,9 +1162,17 @@ ProcessFmpCapsuleImage (
   BOOLEAN                                       NotReady;
   BOOLEAN                                       Abort;
 
-  if (!IsFmpCapsuleGuid(&CapsuleHeader->CapsuleGuid)) {
-    return ProcessFmpCapsuleImage ((EFI_CAPSULE_HEADER *)((UINTN)CapsuleHeader + CapsuleHeader->HeaderSize), ResetRequired);
+  // MS_CHANGE [BEGIN]
+  // Validate the capsule (perhaps again) before processing in case some one calls
+  // ProcessFmpCapsuleImage() before or without calling ValidateFmpCapsule()
+  // if (!IsFmpCapsuleGuid(&CapsuleHeader->CapsuleGuid)) {
+  //   return ProcessFmpCapsuleImage ((EFI_CAPSULE_HEADER *)((UINTN)CapsuleHeader + CapsuleHeader->HeaderSize), ResetRequired);
+  // }
+  Status = ValidateFmpCapsule(CapsuleHeader, NULL);
+  if (EFI_ERROR(Status)) {
+    return Status;
   }
+  // MS_CHANGE [END]
 
   NotReady = FALSE;
   Abort = FALSE;
@@ -1175,6 +1194,14 @@ ProcessFmpCapsuleImage (
   if (ItemNum == 0) {
     return EFI_SUCCESS;
   }
+
+  // MS_CHANGE [BEGIN]
+  // ConnectAll to ensure
+  //    All the communication protocol required by driver in capsule installed
+  //    All FMP protocols are installed
+  //
+  EfiBootManagerConnectAll();
+  // MS_CHANGE [END]
 
   //
   // 1. Try to load & start all the drivers within capsule
@@ -1199,6 +1226,15 @@ ProcessFmpCapsuleImage (
       return Status;
     }
   }
+
+  // MS_CHANGE [BEGIN]
+  // Connnect all again to connect drivers within capsule
+  //
+  if (FmpCapsuleHeader->EmbeddedDriverCount > 0)
+  {
+    EfiBootManagerConnectAll();
+  }
+  // MS_CHANGE [END]
 
   //
   // 2. Route payload to right FMP instance
