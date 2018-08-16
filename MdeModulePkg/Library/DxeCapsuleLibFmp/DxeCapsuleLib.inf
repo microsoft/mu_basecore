@@ -4,6 +4,7 @@
 #  Capsule library instance for DXE_DRIVER module types.
 #
 #  Copyright (c) 2016 - 2021, Intel Corporation. All rights reserved.<BR>
+#  Copyright (C) Microsoft Corporation. All rights reserved.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -52,6 +53,8 @@
   FileHandleLib
   UefiBootManagerLib
   VariablePolicyHelperLib
+  ResetUtilityLib               ## MU_CHANGE - Use the enhanced reset subtype.
+  CapsulePersistLib             ## MU_CHANGE - Enable Capsule Persist Lib.
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleMax                               ## CONSUMES
@@ -97,6 +100,7 @@
   ## SOMETIMES_PRODUCES ## Variable:L"BootNext"
   gEfiGlobalVariableGuid
   gEdkiiCapsuleOnDiskNameGuid             ## SOMETIMES_CONSUMES ## GUID
+  gCapsuleUpdateCompleteResetGuid         ## MU_CHANGE - Use the enhanced reset subtype.
 
 [Depex]
   gEfiVariableWriteArchProtocolGuid

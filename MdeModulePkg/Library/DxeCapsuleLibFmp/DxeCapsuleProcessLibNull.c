@@ -68,3 +68,25 @@ ProcessCapsules (
 {
   return EFI_UNSUPPORTED;
 }
+
+// MS_CHANGE [BEGIN] - This implementation is BootServices/Runtime specific.
+//                     Move most business logic into specific Dxe vs RuntimeDxe libs.
+
+/**
+  Function indicate the current completion progress of the firmware
+  update. Platform may override with own specific progress function.
+
+  @param[in]  Completion    A value between 1 and 100 indicating the current completion progress of the firmware update
+
+  @retval EFI_SUCESS    Input capsule is a correct FMP capsule.
+**/
+EFI_STATUS
+EFIAPI
+Update_Image_Progress (
+  IN UINTN  Completion
+  )
+{
+  return EFI_SUCCESS;
+}
+
+// MS_CHANGE [END]
