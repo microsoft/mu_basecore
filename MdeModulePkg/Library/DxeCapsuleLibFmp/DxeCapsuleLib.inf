@@ -53,6 +53,8 @@
   FileHandleLib
   UefiBootManagerLib
   VariablePolicyHelperLib
+  ResetUtilityLib               ## MU_CHANGE - Use the enhanced reset subtype.
+  CapsulePersistLib             ## MU_CHANGE - Enable Capsule Persist Lib.
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleMax                               ## CONSUMES
@@ -99,6 +101,7 @@
   ## SOMETIMES_PRODUCES ## Variable:L"BootNext"
   gEfiGlobalVariableGuid
   gEdkiiCapsuleOnDiskNameGuid             ## SOMETIMES_CONSUMES ## GUID
+  gCapsuleUpdateCompleteResetGuid         ## MU_CHANGE - Use the enhanced reset subtype.
 
 [Depex]
   gEfiVariableWriteArchProtocolGuid
