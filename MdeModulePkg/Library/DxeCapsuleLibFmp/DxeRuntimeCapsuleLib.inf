@@ -49,6 +49,7 @@
   PrintLib
   HobLib
   BmpSupportLib
+  UefiBootManagerLib   ## MS_CHANGE - Enable ConnectAll before capsule processing.
 
 
 [Protocols]
