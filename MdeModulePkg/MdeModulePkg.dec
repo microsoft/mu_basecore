@@ -187,6 +187,13 @@
   ## @libraryclass  This library is used to report memory type information change
   ##                across a reboot.
   MemoryTypeInformationChangeLib|Include/Library/MemoryTypeInformationChangeLib.h
+  
+  ## MU_CHANGE
+  ##  @libraryclass  A public library interface for persisting Capsules across reset.
+  #     This provides platform-defined support for persistence on architectures
+  #     that may not support "persist in RAM" across a reset.
+  #
+  CapsulePersistLib|Include/Library/CapsulePersistLib.h
 
   ## MU_CHANGE - Add DeviceStateLib to MdeModulePkg
   ## @libraryclass Provides a way to store and update the current device state
