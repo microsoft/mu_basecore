@@ -1,0 +1,36 @@
+## @file CapsulePersistLibNull.inf
+# A null implementation of the CapsulePersistLib 
+#
+##
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+
+[Defines]
+  INF_VERSION         = 0x00010017
+  BASE_NAME           = CapsulePersistLibNull
+  FILE_GUID           = 96AAE710-21AB-4881-9D92-8AD19479BB36
+  VERSION_STRING      = 1.0
+  MODULE_TYPE         = DXE_RUNTIME_DRIVER
+  LIBRARY_CLASS       = CapsulePersistLib
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+
+[Sources]
+  CapsulePersistLibNull.c
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+
+[LibraryClasses]
+
