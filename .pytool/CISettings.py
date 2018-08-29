@@ -45,10 +45,6 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                 "PcAtChipsetPkg",
                 "SecurityPkg",
                 "UefiCpuPkg",
-                "FmpDevicePkg",
-                "ShellPkg",
-                "FatPkg",
-                "CryptoPkg",
                 "UnitTestFrameworkPkg"
                 )
 
@@ -138,10 +134,6 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         If no RequiredSubmodules return an empty iterable
         '''
         rs = []
-        rs.append(RequiredSubmodule(
-            "ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3", False))
-        rs.append(RequiredSubmodule(
-            "CryptoPkg/Library/OpensslLib/openssl", False))
         rs.append(RequiredSubmodule(
             "UnitTestFrameworkPkg/Library/CmockaLib/cmocka", False))
         return rs
