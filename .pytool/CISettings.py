@@ -49,23 +49,14 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         ''' return iterable of edk2 packages supported by this build.
         These should be edk2 workspace relative paths '''
 
-        return ("ArmVirtPkg",
-                "DynamicTablesPkg",
-                "EmulatorPkg",
-                "MdePkg",
+        return ("MdePkg",
                 "MdeModulePkg",
                 "NetworkPkg",
                 "PcAtChipsetPkg",
                 "SecurityPkg",
                 "UefiCpuPkg",
-                "FmpDevicePkg",
-                "ShellPkg",
                 "StandaloneMmPkg",
-                "FatPkg",
-                "CryptoPkg",
-                "UnitTestFrameworkPkg",
-                "OvmfPkg",
-                "RedfishPkg"
+                "UnitTestFrameworkPkg"
                 )
 
     def GetArchitecturesSupported(self):
@@ -74,8 +65,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                 "IA32",
                 "X64",
                 "ARM",
-                "AARCH64",
-                "RISCV64")
+                "AARCH64")
 
     def GetTargetsSupported(self):
         ''' return iterable of edk2 target tags supported by this build '''
@@ -175,10 +165,6 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         '''
         rs = []
         rs.append(RequiredSubmodule(
-            "ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3", False))
-        rs.append(RequiredSubmodule(
-            "CryptoPkg/Library/OpensslLib/openssl", False))
-        rs.append(RequiredSubmodule(
             "UnitTestFrameworkPkg/Library/CmockaLib/cmocka", False))
         rs.append(RequiredSubmodule(
             "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma", False))
@@ -186,8 +172,6 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
             "MdeModulePkg/Library/BrotliCustomDecompressLib/brotli", False))
         rs.append(RequiredSubmodule(
             "BaseTools/Source/C/BrotliCompress/brotli", False))
-        rs.append(RequiredSubmodule(
-            "RedfishPkg/Library/JsonLib/jansson", False))
         return rs
 
     def GetName(self):
