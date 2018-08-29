@@ -11,6 +11,7 @@ on the TianoCore wiki.
 
 | Package              | Windows VS2019 (IA32/X64)| Ubuntu GCC (IA32/X64/ARM/AARCH64) | Known Issues |
 | :----                | :-----                   | :----                             | :---         |
+<<<<<<< HEAD
 | ArmPkg               |                    | :heavy_check_mark: |
 | ArmPlatformPkg       |                    | :heavy_check_mark: |
 | ArmVirtPkg           | SEE PACKAGE README | SEE PACKAGE README |
@@ -22,18 +23,15 @@ on the TianoCore wiki.
 | FmpDevicePkg         | :heavy_check_mark: | :heavy_check_mark: |
 | IntelFsp2Pkg         |
 | IntelFsp2WrapperPkg  |
+=======
+>>>>>>> ee8ecc6957 (Remove unneeded files and references to truncated packages.)
 | MdeModulePkg         | :heavy_check_mark: | :heavy_check_mark: | DxeIpl dependency on ArmPkg, Depends on StandaloneMmPkg, Spell checking in audit mode
 | MdePkg               | :heavy_check_mark: | :heavy_check_mark: | Spell checking in audit mode
 | NetworkPkg           | :heavy_check_mark: | :heavy_check_mark: | Spell checking in audit mode
-| OvmfPkg              | SEE PACKAGE README | SEE PACKAGE README | Spell checking in audit mode
 | PcAtChipsetPkg       | :heavy_check_mark: | :heavy_check_mark: |
 | SecurityPkg          | :heavy_check_mark: | :heavy_check_mark: | Spell checking in audit mode
-| ShellPkg             | :heavy_check_mark: | :heavy_check_mark: | Spell checking in audit mode, 3 modules are not being built by DSC
-| SignedCapsulePkg     |
-| SourceLevelDebugPkg  |
 | StandaloneMmPkg      | :heavy_check_mark: | :heavy_check_mark: |
 | UefiCpuPkg           | :heavy_check_mark: | :heavy_check_mark: | Spell checking in audit mode, 2 binary modules not being built by DSC
-| UefiPayloadPkg       |
 | UnitTestFrameworkPkg | :heavy_check_mark: | :heavy_check_mark: |
 
 For more detailed status look at the test results of the latest CI run on the
