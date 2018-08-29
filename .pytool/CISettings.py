@@ -40,20 +40,13 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         ''' return iterable of edk2 packages supported by this build.
         These should be edk2 workspace relative paths '''
 
-        return ("ArmVirtPkg",
-                "EmulatorPkg",
-                "MdePkg",
+        return ("MdePkg",
                 "MdeModulePkg",
                 "NetworkPkg",
                 "PcAtChipsetPkg",
                 "SecurityPkg",
                 "UefiCpuPkg",
-                "FmpDevicePkg",
-                "ShellPkg",
-                "FatPkg",
-                "CryptoPkg",
-                "UnitTestFrameworkPkg",
-                "OvmfPkg"
+                "UnitTestFrameworkPkg"
                 )
 
     def GetArchitecturesSupported(self):
@@ -143,10 +136,6 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         If no RequiredSubmodules return an empty iterable
         '''
         rs = []
-        rs.append(RequiredSubmodule(
-            "ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3", False))
-        rs.append(RequiredSubmodule(
-            "CryptoPkg/Library/OpensslLib/openssl", False))
         rs.append(RequiredSubmodule(
             "UnitTestFrameworkPkg/Library/CmockaLib/cmocka", False))
         rs.append(RequiredSubmodule(

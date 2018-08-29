@@ -33,14 +33,11 @@ jobs:
         Build.Pkgs: 'NetworkPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
       TARGET_OTHER:
-        Build.Pkgs: 'PcAtChipsetPkg,ShellPkg'
+        Build.Pkgs: 'PcAtChipsetPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
-      TARGET_FMP_FAT_TEST:
-        Build.Pkgs: 'FmpDevicePkg,FatPkg,UnitTestFrameworkPkg'
+      TARGET_TEST:
+        Build.Pkgs: 'UnitTestFrameworkPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-      TARGET_CRYPTO:
-        Build.Pkgs: 'CryptoPkg'
-        Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
       TARGET_SECURITY:
         Build.Pkgs: 'SecurityPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
