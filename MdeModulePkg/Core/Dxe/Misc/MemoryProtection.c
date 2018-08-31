@@ -38,6 +38,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/SimpleFileSystem.h>
+#include <Protocol/HeapGuardDebug.h> // MS_CHANGE
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
@@ -65,6 +66,11 @@ UINT32  mImageProtectionPolicy;
 extern LIST_ENTRY  mGcdMemorySpaceMap;
 
 STATIC LIST_ENTRY  mProtectedImageRecordList;
+// MS_CHANGE - START
+STATIC HEAP_GUARD_DEBUG_PROTOCOL  mHeapGuardDebug = {
+  IsGuardPage
+};
+// MS_CHANGE - END
 
 /**
   Sort code section in image record, based upon CodeSegmentBase from low to high.
@@ -1197,6 +1203,23 @@ CoreInitializeMemoryProtection (
                );
     ASSERT_EFI_ERROR (Status);
   }
+
+  //
+  // MSCHANGE START
+  // Install protocol for validating Heap Guard if Heap Guard is turned on
+  //
+  if (PcdGet8 (PcdHeapGuardPropertyMask)) {
+    EFI_HANDLE  HgBmHandle = NULL;
+    Status = CoreInstallMultipleProtocolInterfaces (
+               &HgBmHandle,
+               &gHeapGuardDebugProtocolGuid,
+               &mHeapGuardDebug,
+               NULL
+               );
+    DEBUG ((DEBUG_INFO, "Installed gHeapGuardDebugProtocolGuid - %r\n", Status));
+  }
+
+  // MSCHANGE END
 
   return;
 }
