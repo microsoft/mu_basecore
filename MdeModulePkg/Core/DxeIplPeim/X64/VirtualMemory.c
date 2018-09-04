@@ -755,7 +755,8 @@ CreateIdentityMappingPageTables (
   //
   EnablePageTableProtection ((UINTN)PageMap, TRUE);
 
-  if (PcdGetBool (PcdSetNxForStack)) {
+  // MSCHANGE #1116
+  if (PcdGetBool (PcdSetNxForStack) || (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0)) {
     EnableExecuteDisableBit ();
   }
 
