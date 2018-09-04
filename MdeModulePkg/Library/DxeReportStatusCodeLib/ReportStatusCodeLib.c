@@ -507,13 +507,20 @@ ReportStatusCodeEx (
   gBS->RestoreTPL (Tpl);
 
   StatusCodeData = NULL;
-  if (Tpl <= TPL_NOTIFY) {
+  // MSCHANGE START  #1114
+  if (ExtendedDataSize <= (MAX_EXTENDED_DATA_SIZE - sizeof (EFI_STATUS_CODE_DATA))) {
     //
-    // Allocate space for the Status Code Header and its buffer
+    // Use Buffer instead of allocating if possible.
+    //
+    StatusCodeData = (EFI_STATUS_CODE_DATA  *)Buffer;
+  }
+  else if (Tpl <= TPL_NOTIFY){
+    //
+    // If Buffer is not big enough, allocate space for the Status Code Header and its buffer
     //
     gBS->AllocatePool (EfiBootServicesData, sizeof (EFI_STATUS_CODE_DATA) + ExtendedDataSize, (VOID **)&StatusCodeData);
   }
-
+  // MSCHANGE END
   if (StatusCodeData == NULL) {
     //
     // If a buffer could not be allocated, then see if the local variable Buffer can be used

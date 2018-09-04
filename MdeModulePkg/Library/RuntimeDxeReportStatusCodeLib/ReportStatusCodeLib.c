@@ -638,18 +638,27 @@ ReportStatusCodeEx (
     }
     StatusCodeData = (EFI_STATUS_CODE_DATA *) StatusCodeBuffer;
   } else  {
-    if (gBS == NULL || gBS->AllocatePool == NULL || gBS->FreePool == NULL) {
-      return EFI_UNSUPPORTED;
-    }
+    // MSCHANGE Begin - Only use AllocatePool for larger ExtendedData
+    //  DebugLib sets the mazimum extended data size to 200 bytes. This
+    //  will always fit into the StatusCodeBuffer with a size of 516 bytes (((0x200 / 8) + 1) * sizeof(UINT64))
+    //  guaranteeing that debug prints will not have an AllocatePool during procesing
+    if (sizeof (EFI_STATUS_CODE_DATA) + ExtendedDataSize > MAX_EXTENDED_DATA_SIZE) {
+      if (gBS == NULL || gBS->AllocatePool == NULL || gBS->FreePool == NULL) {
+        return EFI_UNSUPPORTED;
+      }
 
-    //
-    // Allocate space for the Status Code Header and its buffer
-    //
-    StatusCodeData = NULL;
-    gBS->AllocatePool (EfiBootServicesData, sizeof (EFI_STATUS_CODE_DATA) + ExtendedDataSize, (VOID **)&StatusCodeData);
-    if (StatusCodeData == NULL) {
-      return EFI_OUT_OF_RESOURCES;
+      //
+      // Allocate space for the Status Code Header and its buffer
+      //
+      StatusCodeData = NULL;
+      gBS->AllocatePool (EfiBootServicesData, sizeof (EFI_STATUS_CODE_DATA) + ExtendedDataSize, (VOID **)&StatusCodeData);
+      if (StatusCodeData == NULL) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+    } else {
+      StatusCodeData = (EFI_STATUS_CODE_DATA *) StatusCodeBuffer;
     }
+    // MSCHANGE End
   }
 
   //
@@ -680,7 +689,7 @@ ReportStatusCodeEx (
   //
   // Free the allocated buffer
   //
-  if (!mHaveExitedBootServices) {
+  if (!mHaveExitedBootServices && (StatusCodeData != (EFI_STATUS_CODE_DATA *) StatusCodeBuffer)) { // MSCHANGE
     gBS->FreePool (StatusCodeData);
   }
 

@@ -256,7 +256,7 @@ DebugPrintValist (
     // If the converted BASE_LIST is larger than the 12 * sizeof (UINT64) allocated bytes, then return
     //
     if ((CHAR8 *)BaseListMarker > FormatString) {
-      VA_END (VaListMarker);
+      // VA_END (VaListMarker); // MS_CHANGE_?
       return;
     }
   }
