@@ -27,7 +27,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-  IntelFrameworkPkg/IntelFrameworkPkg.dec
+  #IntelFrameworkPkg/IntelFrameworkPkg.dec   ## MS_CHANGE
   PcAtChipsetPkg/PcAtChipsetPkg.dec
 
 [LibraryClasses]
