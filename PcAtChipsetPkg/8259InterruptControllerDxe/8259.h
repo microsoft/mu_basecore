@@ -9,7 +9,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #ifndef _8259_H__
 #define _8259_H__
 
-#include <FrameworkDxe.h>
+// #include <FrameworkDxe.h>  // MS_CHANGE - Remove requirements on the IntelFrameworkPkg. This isn't used, anyway.
 
 #include <Protocol/Legacy8259.h>
 #include <Protocol/PciIo.h>
