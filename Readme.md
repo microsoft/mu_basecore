@@ -1,8 +1,8 @@
-# MsUEFI
+# Project Mu Basecore
 
 ## Copyright
 
-Copyright (c) 2016, Microsoft Corporation
+Copyright (c) 2016-2018, Microsoft Corporation
 
 All rights reserved. Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
@@ -12,7 +12,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 ## About
 
-Microsoft UEFI repo for open source contributions.
+This repo contains the most fundemental pieces of the Project Mu source. For full documentation, please see the Project Mu [parent repo](https://github.com/Microsoft/mu).
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 
