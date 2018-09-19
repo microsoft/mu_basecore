@@ -1,0 +1,28 @@
+## @file
+# NULL library for UnitTestBootUsb
+# 
+#
+# @copyright
+# Copyright (c) 2018 Microsoft Corporation. All rights reserved
+#
+##
+
+
+[Defines]
+INF_VERSION     = 0x00010017
+BASE_NAME       = UnitTestBootUsbClassLib
+FILE_GUID       = f143e75d-76e1-4040-b134-8f4f0bd5e3bd
+VERSION_STRING  = 1.0
+MODULE_TYPE     = DXE_DRIVER
+LIBRARY_CLASS   = UnitTestBootUsbLib
+
+
+[LibraryClasses]
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[Guids]
+
+[Sources]
+  UnitTestBootUsb.c
