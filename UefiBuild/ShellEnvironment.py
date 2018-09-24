@@ -50,7 +50,7 @@ class ShellEnvironment(object):
   def set_path(self, path_elements):
     logging.debug("Overriding PATH with new value.")
     self.global_path = list(path_elements)
-    os.environ["PATH"] = ";".join(path_elements)
+    os.environ["PATH"] = os.pathsep.join(path_elements)
     self.export_environment()
 
   def set_pypath(self, path_elements):
@@ -101,15 +101,15 @@ class ShellEnvironment(object):
     path = os.environ.get('PATH', "")
     # Filter removes empty elements.
     # List creates an actual list rather than a generator.
-    self.global_path = list(filter(None, path.split(';')))  # Filter removes empty strings.
+    self.global_path = list(filter(None, path.split(os.pathsep)))  # Filter removes empty strings.
 
     # Record the PYTHONPATH elements of the current environment.
     # When reading PYTHONPATH, try reading the live path from sys.
     self.global_pypath = sys.path
 
   def export_environment(self):
-    os.environ["PATH"] = ";".join(self.global_path)
-    os.environ["PYTHONPATH"] = ";".join(self.global_pypath)
+    os.environ["PATH"] = os.pathsep.join(self.global_path)
+    os.environ["PYTHONPATH"] = os.pathsep.join(self.global_pypath)
     sys.path = self.global_pypath
 
   def log_environment(self):
