@@ -16,7 +16,7 @@ WORKSPACE_PATH = os.path.dirname(os.path.dirname(SCRIPT_PATH))
 PROJECT_SCOPE = ('corebuild',)
 
 # MODULE_PKGS = ('SM_UDK', "SM_UDK_INTERNAL", "SURF_KBL", "SM_INTEL_KBL")
-# MODULE_PKG_PATHS = ";".join(os.path.join(WORKSPACE_PATH, pkg_name) for pkg_name in MODULE_PKGS)
+# MODULE_PKG_PATHS = os.pathsep.join(os.path.join(WORKSPACE_PATH, pkg_name) for pkg_name in MODULE_PKGS)
 #
 #==========================================================================
 #

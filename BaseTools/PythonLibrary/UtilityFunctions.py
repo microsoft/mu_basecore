@@ -136,7 +136,7 @@ def RunPythonScript(cmd, capture=True, workingdir=None, outfile=None, outstream=
         logging.debug("Python Script was given as relative path: %s" % pythonfile)
     else:
         #loop thru path environment variable
-        for a in os.getenv("PATH").split(";"):
+        for a in os.getenv("PATH").split(os.pathsep):
             a = os.path.normpath(a)
             if os.path.isfile(os.path.join(a, pythonfile)):
                 pythonfile = os.path.join(a, pythonfile)

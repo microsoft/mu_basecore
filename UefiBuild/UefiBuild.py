@@ -444,7 +444,7 @@ class UefiBuilder(object):
         if(os.path.isfile(self.mws.join(self.ws, self.env.GetValue("ACTIVE_PLATFORM")))):
              #parse DSC File
             logging.debug("Parse Active Platform DSC file")
-            dscp = DscParser().SetBaseAbsPath(self.ws).SetPackagePaths(self.pp.split(";")).SetInputVars(self.env.GetAllBuildKeyValues())
+            dscp = DscParser().SetBaseAbsPath(self.ws).SetPackagePaths(self.pp.split(os.pathsep)).SetInputVars(self.env.GetAllBuildKeyValues())
             pa = self.mws.join(self.ws, self.env.GetValue("ACTIVE_PLATFORM"))
             dscp.ParseFile(pa)
             for key,value in dscp.LocalVars.items():
