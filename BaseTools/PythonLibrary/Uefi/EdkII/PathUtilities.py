@@ -100,7 +100,7 @@ class Edk2Path(object):
             dirpath = os.path.dirname(dirpath)
 
         logging.error("Failed to find containing package for %s" % InputPath)
-        logging.info("PackagePath is: %s" % ";".join(self.PackagePathList))
+        logging.info("PackagePath is: %s" % os.pathsep.join(self.PackagePathList))
         logging.info("Workspace path is : %s" % self.WorkspacePath)
         return None
 
