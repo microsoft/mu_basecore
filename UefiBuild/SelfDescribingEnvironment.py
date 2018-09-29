@@ -38,7 +38,20 @@ class SelfDescribingEnvironment(object):
     super(SelfDescribingEnvironment, self).__init__()
 
     self.workspace = workspace_path
-    self.scopes = scopes + ('global',)
+
+    # Determine the final set of scopes.
+    # Start with the provided set.
+    self.scopes = scopes
+    # Add any OS-specific scope.
+    if os.name == 'nt':
+      self.scopes += ('global-win',)
+    elif os.name == 'posix':
+      self.scopes += ('global-nix',)
+    # Add the global scope.
+    self.scopes += ('global',)
+    # Validate that all scopes are unique.
+    if len(self.scopes) != len(set(self.scopes)):
+      raise ValueError("All scopes must be unique!")
 
     self.paths = None
     self.extdeps = None
