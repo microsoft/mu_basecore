@@ -1,8 +1,8 @@
 {
-  "scope": "global",
+  "scope": "global-win",
   "type": "nuget",
   "name": "nasm",
-  "source": "https://windowspartners.pkgs.visualstudio.com/_packaging/nasm/nuget/v3/index.json",
+  "source": "https://pkgs.dev.azure.com/projectmu/_packaging/mu_packages/nuget/v3/index.json",
   "version": "2.13.03",
   "flags": ["set_shell_var"],
   "var_name": "NASM_PREFIX"
