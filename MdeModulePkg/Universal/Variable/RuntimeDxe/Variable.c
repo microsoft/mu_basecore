@@ -29,7 +29,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 
 #include "Variable.h"
-#include <Protocol/VariableFilter.h>            // MS_CHANGE_197781
 
 VARIABLE_MODULE_GLOBAL  *mVariableModuleGlobal;
 
@@ -65,15 +64,6 @@ BOOLEAN                mReclaimedAtRuntime    = FALSE;
 /// In the implementation, DXE is regarded as untrusted, and SMM is trusted.
 ///
 VAR_CHECK_REQUEST_SOURCE mRequestSource       = VarCheckFromUntrusted;
-
-// MS_CHANGE_197781
-///
-/// Pointer to a variable filter. If non-NULL, the get/set
-/// variable routines will delegate handling to the filter for
-/// requests that match the filter's GUID.
-///
-EFI_VARIABLE_FILTER_INTERFACE* mVariableFilter = NULL;
-// END
 
 //
 // It will record the current boot error flag before EndOfDxe.
@@ -2844,23 +2834,6 @@ VariableServiceGetVariable (
 
   AcquireLockOnlyAtBootTime(&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
 
-// MS_CHANGE_197781
-  //
-  // If a filter is set and it claims the supplied VendorGuid, give this
-  // request to the filter.
-  //
-  if (mVariableFilter != NULL) {
-    if (CompareGuid(VendorGuid, &mVariableFilter->FilterGuid) != FALSE) {
-      Status = mVariableFilter->FilterGetVariable(VariableName,
-                                                  VendorGuid,
-                                                  Attributes,
-                                                  DataSize,
-                                                  Data);
-      goto Done;
-    }
-  }
-// END
-
   Status = FindVariable (VariableName, VendorGuid, &Variable, &mVariableModuleGlobal->VariableGlobal, FALSE);
   if (Variable.CurrPtr == NULL || EFI_ERROR (Status)) {
     goto Done;
@@ -3294,24 +3267,6 @@ VariableServiceSetVariable (
       }
     }
   }
-
-// MS_CHANGE_197781
-  //
-  // If a filter is set and it claims the supplied VendorGuid, give this
-  // request to the filter.
-  //
-  if (mVariableFilter != NULL) {
-    if (CompareGuid(VendorGuid, &mVariableFilter->FilterGuid) != FALSE) {
-      Status = mVariableFilter->FilterSetVariable(VariableName,
-                                                  VendorGuid,
-                                                  Attributes,
-                                                  DataSize,
-                                                  Data);
-
-      return Status;
-    }
-  }
-// END
 
   //
   // Special Handling for MOR Lock variable.

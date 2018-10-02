@@ -30,7 +30,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/SmmFaultTolerantWrite.h>
 #include <Protocol/SmmEndOfDxe.h>
 #include <Protocol/SmmVarCheck.h>
-#include <Protocol/VariableFilter.h>      // MS_CHANGE_197781
 
 #include <Library/SmmServicesTableLib.h>
 #include <Library/SmmMemLib.h>
@@ -46,10 +45,6 @@ UINT8                                                *mVariableBufferPayload = N
 UINTN                                                mVariableBufferPayloadSize;
 extern BOOLEAN                                       mEndOfDxe;
 extern VAR_CHECK_REQUEST_SOURCE                      mRequestSource;
-// MS_CHANGE_197781
-EFI_VARIABLE_FILTER_PROTOCOL                         mVariableFilterProtocol;
-extern EFI_VARIABLE_FILTER_INTERFACE*                mVariableFilter;
-// END
 
 /**
   SecureBoot Hook for SetVariable.
@@ -931,61 +926,6 @@ SmmFtwNotificationEvent (
   return EFI_SUCCESS;
 }
 
-// MS_CHANGE_197781
-/**
-  Sets a filter that variable services calls when conditions are satisfied.
-
-  @param[in] Filter         Supplies a pointer to the interface structure.
-
-  @retval EFI_SUCCESS       Variable filter successfully set. 
-  @retval EFI_UNSUPPORTED   Variable filter has already been set.
-  @retval EFI_INVALID_PARAMETER if the supplied Filter is not initialized correctly.
-  @retval EFI_OUT_OF_RESOURCES if required memory cannot be allocated.
-
-**/
-EFI_STATUS
-EFIAPI
-VariableServiceSetVariableFilter (
-  IN EFI_VARIABLE_FILTER_INTERFACE* Filter
-  )
-{
-
-  EFI_STATUS Status;
-
-  DEBUG((DEBUG_INFO, __FUNCTION__ ": enter... Filter:0x%p\n", Filter));
-
-  AcquireLockOnlyAtBootTime(&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
-
-  if (Filter == NULL) {
-    Status = EFI_INVALID_PARAMETER;
-    goto Cleanup;
-  }
-
-  if (Filter->FilterGetVariable == NULL || Filter->FilterSetVariable == NULL) {
-    Status = EFI_INVALID_PARAMETER;
-    goto Cleanup;
-  }
-
-  if (mVariableFilter != NULL) {
-    Status = EFI_UNSUPPORTED;
-    goto Cleanup;
-  }
-
-  mVariableFilter = AllocatePool(sizeof(*mVariableFilter));
-  if (mVariableFilter == NULL) {
-    Status = EFI_OUT_OF_RESOURCES;
-    goto Cleanup;
-  }
-
-  CopyMem(mVariableFilter, Filter, sizeof(*mVariableFilter));
-  Status = EFI_SUCCESS;
-
-Cleanup:
-  ReleaseLockOnlyAtBootTime(&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
-  return Status;
-}
-// END
-
 /**
   Variable Driver main entry point. The Variable driver places the 4 EFI
   runtime services in the EFI System Table and installs arch protocols
@@ -1035,23 +975,6 @@ VariableServiceInitialize (
                     &mSmmVarCheck
                     );
   ASSERT_EFI_ERROR (Status);
-
-  // MS_CHANGE_197781
-  //
-  // Install the Variable Filter protocol on the same handle. 
-  //
-  mVariableFilterProtocol.SetVariableFilter = VariableServiceSetVariableFilter;
-  Status = gSmst->SmmInstallProtocolInterface (
-                    &VariableHandle,
-                    &gEfiVariableFilterProtocolGuid,
-                    EFI_NATIVE_INTERFACE,
-                    &mVariableFilterProtocol
-                    );
-  if (EFI_ERROR(Status) != FALSE) {
-    DEBUG((DEBUG_INFO, __FUNCTION__ ": failed to install variable filter protocol (%r)\n", Status));
-  }
-  ASSERT_EFI_ERROR (Status);
-  // END
 
 
   mVariableBufferPayloadSize = GetMaxVariableSize () +
