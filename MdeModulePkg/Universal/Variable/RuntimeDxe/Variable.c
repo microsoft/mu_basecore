@@ -283,6 +283,53 @@ UpdateVariableStore (
   return EFI_SUCCESS;
 }
 
+// MU_CHANGE [BEGIN] Deleted hw error records should not count towards the hw error record space quota
+///
+/// The purpose of this routine is to make the deleted HwErrRec to be counted against CommonVariable quota
+/// This is routine is to be called upon deletion of HwErrRec variables and initialization
+///
+STATIC
+VOID
+DeletedHwErrRecToCommonQuota (
+  VARIABLE_HEADER  *VarHeaderPtr
+  )
+{
+  VARIABLE_HEADER  *NextVariable;
+  UINTN            VariableSize;
+
+  // Sanity check first
+  if (VarHeaderPtr == NULL) {
+    return;
+  }
+
+  // HwErrRecs all have non-volatile attributes, thus checking the target variable attribute should be legit
+  // Only removed the deleted variable size to normal variable total size quota
+  if (((VarHeaderPtr->Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) == 0) ||
+      ((VarHeaderPtr->State | VAR_DELETED) != VAR_DELETED))
+  {
+    return;
+  }
+
+  NextVariable = GetNextVariablePtr (VarHeaderPtr, mVariableModuleGlobal->VariableGlobal.AuthFormat);
+  VariableSize = (UINTN)NextVariable - (UINTN)VarHeaderPtr;
+
+  if (mVariableModuleGlobal->HwErrVariableTotalSize > VariableSize) {
+    mVariableModuleGlobal->HwErrVariableTotalSize -= VariableSize;
+  } else {
+    mVariableModuleGlobal->HwErrVariableTotalSize = 0;
+  }
+
+  // Size addition should not be an issue
+  // 1. CommonVariableTotalSize and VariableSize should reflect the variables that are
+  // already on the flash. This sum should not exceed the PcdFlashNvStorageVariableSize;
+  // 2. CommonVariableTotalSize will exceed its corresponding maximum quota, but the next
+  // common variable write or next boot will clean up the deleted HwErrRec and make sure
+  // variable service (Common or HwErrRec) can continue normally.
+  mVariableModuleGlobal->CommonVariableTotalSize += VariableSize;
+}
+
+// MU_CHANGE [END]
+
 /**
   Record variable error flag.
 
@@ -1889,6 +1936,10 @@ UpdateVariable (
         if (!EFI_ERROR (Status)) {
           if (!Variable->Volatile) {
             CacheVariable->InDeletedTransitionPtr->State = State;
+            // MU_CHANGE Starts: Deleted hw error records should not count towards the hw error record space quota
+            // Variable marked as deleted, check if this is HwErrRec, if so, count this variable as a common variable
+            DeletedHwErrRecToCommonQuota (Variable->InDeletedTransitionPtr);
+            // MU_CHANGE Ends
           }
         } else {
           goto Done;
@@ -1911,6 +1962,10 @@ UpdateVariable (
         UpdateVariableInfo (VariableName, VendorGuid, Variable->Volatile, FALSE, FALSE, TRUE, FALSE, &gVariableInfo);
         if (!Variable->Volatile) {
           CacheVariable->CurrPtr->State = State;
+          // MU_CHANGE Starts: Deleted hw error records should not count towards the hw error record space quota
+          // Variable marked as deleted, check if this is HwErrRec, if so, count this variable as a common variable
+          DeletedHwErrRecToCommonQuota (Variable->CurrPtr);
+          // MU_CHANGE Ends
           FlushHobVariableToFlash (VariableName, VendorGuid);
         }
       }
@@ -2146,11 +2201,25 @@ UpdateVariable (
     }
 
     if (  (  ((Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) != 0)
-          && ((VarSize + mVariableModuleGlobal->HwErrVariableTotalSize) > PcdGet32 (PcdHwErrStorageSize)))
+             // MU_CHANGE Starts: HwError record should return out of resources if the entire storage is running out
+          && (  ((VarSize + mVariableModuleGlobal->HwErrVariableTotalSize) > PcdGet32 (PcdHwErrStorageSize))
+             || ((VarSize + mVariableModuleGlobal->HwErrVariableTotalSize + mVariableModuleGlobal->CommonVariableTotalSize) > (PcdGet32 (PcdHwErrStorageSize) + mVariableModuleGlobal->CommonVariableSpace))))
+          // MU_CHANGE Ends
        || (IsCommonVariable && ((VarSize + mVariableModuleGlobal->CommonVariableTotalSize) > mVariableModuleGlobal->CommonVariableSpace))
        || (IsCommonVariable && AtRuntime () && ((VarSize + mVariableModuleGlobal->CommonVariableTotalSize) > mVariableModuleGlobal->CommonRuntimeVariableSpace))
        || (IsCommonUserVariable && ((VarSize + mVariableModuleGlobal->CommonUserVariableTotalSize) > mVariableModuleGlobal->CommonMaxUserVariableSpace)))
     {
+      // MU_CHANGE Starts: HwError record quota state should not trigger variable store reclaim
+      if (  ((Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) != 0)
+         && (  ((VarSize + mVariableModuleGlobal->HwErrVariableTotalSize) > PcdGet32 (PcdHwErrStorageSize))
+            || ((VarSize + mVariableModuleGlobal->HwErrVariableTotalSize + mVariableModuleGlobal->CommonVariableTotalSize) > (PcdGet32 (PcdHwErrStorageSize) + mVariableModuleGlobal->CommonVariableSpace))))
+      {
+        // Either the HwErrVariable quota runs out or the entire variable storage is full, out of resources error should be returned here.
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Done;
+      }
+
+      // MU_CHANGE Ends
       if (AtRuntime ()) {
         // MU_CHANGE [BEGIN] 279849
         // MU_CHANGE -- Allow reclaim once at Runtime.
@@ -2359,6 +2428,11 @@ UpdateVariable (
         if (!Variable->Volatile) {
           CacheVariable->InDeletedTransitionPtr->State = State;
         }
+
+        // MU_CHANGE Starts: Deleted hw error records should not count towards the hw error record space quota
+        // Variable marked as deleted, check if this is HwErrRec, if so, count this variable as a common variable
+        DeletedHwErrRecToCommonQuota (Variable->InDeletedTransitionPtr);
+        // MU_CHANGE Ends
       } else {
         goto Done;
       }
@@ -2378,6 +2452,10 @@ UpdateVariable (
                );
     if (!EFI_ERROR (Status) && !Variable->Volatile) {
       CacheVariable->CurrPtr->State = State;
+      // MU_CHANGE Starts: Deleted hw error records should not count towards the hw error record space quota
+      // Variable marked as deleted, check if this is HwErrRec, if so, count this variable as a common variable
+      DeletedHwErrRecToCommonQuota (Variable->CurrPtr);
+      // MU_CHANGE Ends
     }
   }
 
@@ -3077,10 +3155,19 @@ VariableServiceQueryVariableInfoInternal (
       // since the space occupied by variables not marked with
       // VAR_ADDED is not allowed to be reclaimed in Runtime.
       //
-      if ((Variable->Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) == EFI_VARIABLE_HARDWARE_ERROR_RECORD) {
-        HwErrVariableTotalSize += VariableSize;
-      } else {
+      // MU_CHANGE Starts: Deleted hw error records should not count towards the hw error record space quota
+      // When computing total variable size, HwErrRec marked as Deleted should be treated as a common variable
+      if (((Variable->Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) == EFI_VARIABLE_HARDWARE_ERROR_RECORD) &&
+          ((Variable->State | VAR_DELETED) == VAR_DELETED))
+      {
         CommonVariableTotalSize += VariableSize;
+      } else {
+        // MU_CHANGE Ends
+        if ((Variable->Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) == EFI_VARIABLE_HARDWARE_ERROR_RECORD) {
+          HwErrVariableTotalSize += VariableSize;
+        } else {
+          CommonVariableTotalSize += VariableSize;
+        }
       }
     } else {
       //
@@ -3256,9 +3343,10 @@ ReclaimForOS (
   VOID
   )
 {
-  EFI_STATUS      Status;
-  UINTN           RemainingCommonRuntimeVariableSpace;
-  UINTN           RemainingHwErrVariableSpace;
+  EFI_STATUS  Status;
+  UINTN       RemainingCommonRuntimeVariableSpace;
+  // MU_CHANGE Starts: HwError record quota state should not trigger variable store reclaim
+  // UINTN                          RemainingHwErrVariableSpace;
   static BOOLEAN  Reclaimed; // MU_CHANGE: Use lowercase static for static lifetime
 
   //
@@ -3278,16 +3366,19 @@ ReclaimForOS (
     RemainingCommonRuntimeVariableSpace = mVariableModuleGlobal->CommonRuntimeVariableSpace - mVariableModuleGlobal->CommonVariableTotalSize;
   }
 
-  RemainingHwErrVariableSpace = PcdGet32 (PcdHwErrStorageSize) - mVariableModuleGlobal->HwErrVariableTotalSize;
+  // RemainingHwErrVariableSpace = PcdGet32 (PcdHwErrStorageSize) - mVariableModuleGlobal->HwErrVariableTotalSize;
 
   //
   // Check if the free area is below a threshold.
   //
   if (((RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxVariableSize) ||
-       (RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxAuthVariableSize)) ||
-      ((PcdGet32 (PcdHwErrStorageSize) != 0) &&
-       (RemainingHwErrVariableSpace < PcdGet32 (PcdMaxHardwareErrorVariableSize))))
+       // MU_CHANGE Starts: HwError record quata state should not trigger variable store reclaim
+       // (RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxAuthVariableSize)) ||
+       (RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxAuthVariableSize)))
   {
+    // ((PcdGet32 (PcdHwErrStorageSize) != 0) &&
+    // (RemainingHwErrVariableSpace < PcdGet32 (PcdMaxHardwareErrorVariableSize)))){
+    // MU_CHANGE Ends
     Status = Reclaim (
                mVariableModuleGlobal->VariableGlobal.NonVolatileVariableBase,
                &mVariableModuleGlobal->NonVolatileLastVariableOffset,
