@@ -284,7 +284,7 @@ class NugetSupport(object):
         self.TempFileToDelete.append(self.NuPackageFile)
         return ret
 
-    def Push(self, nuPackage):
+    def Push(self, nuPackage, apikey):
         if(not os.path.isfile(nuPackage)):
             raise Exception("Invalid file path for NuPkg file")
         logging.debug("Pushing %s file to server %s" % (nuPackage, self.ConfigData["server_url"]))
@@ -293,7 +293,7 @@ class NugetSupport(object):
         cmd += ["-Verbosity", "detailed"]
         # cmd += ["-NonInteractive"]
         cmd += ["-Source", self.ConfigData["server_url"]]
-        cmd += ["-ApiKey", "VSTS"]
+        cmd += ["-ApiKey", apikey]
         cmd_string = " ".join(cmd)
         ret = RunCmd(cmd_string)
 
@@ -335,10 +335,12 @@ def GatherArguments():
     parser.add_argument('--ReleaseNotesText', dest="ReleaseNotes", help="<Optional>Release Notes String", required=False)
     parser.add_argument('--InputFolderPath', dest="InputFolderPath", help="<Required>Relative or Absolute Path to folder containing content to pack.  All content will be added but the folder will not", required=True)
     parser.add_argument('--Copyright', dest="Copyright", help="<Optional>Change the Copyright string")
+    parser.add_argument('--ApiKey', dest="ApiKey", help="<Optional>Api key to use. Default is 'VSTS' which will invoke interactive login", default="VSTS")
 
   elif(args.op.lower() == "push"):
       parser.add_argument("--ConfigFilePath", dest="ConfigFilePath", help="<Required>Path to config file", required=True)
       parser.add_argument('--PackageFile', dest="PackageFile", help="<Required>Path To Package File", required=True)
+      parser.add_argument('--ApiKey', dest="ApiKey", help="<Optional>Api key to use. Default is 'VSTS' which will invoke interactive login", default="VSTS")
 
   if(args.op.lower() == "pack"):
     parser.add_argument('--OutputFolderPath', dest="OutputFolderPath", help="<Optional>Output folder where nupkg will be saved.  Default is cwd", default=os.getcwd())
@@ -457,7 +459,7 @@ def main():
         if(not os.path.isfile(NuPkgFilePath)):
             logging.critical("NuPkgFilePath is not valid file.  %s" % NuPkgFilePath)
             raise Exception("Invalid Pkg File.  File doesn't exist")
-        ret = nu.Push(NuPkgFilePath)
+        ret = nu.Push(NuPkgFilePath, args.ApiKey)
 
 
     nu.LogObject()
