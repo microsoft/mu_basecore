@@ -1,10 +1,21 @@
 # NugetPublishing
 
-Tool to help create and publish nuget package for Project Mu resources
+Tool to help create and publish nuget packages for Project Mu resources
 
 ## Usage
 
-See NugetPublishing.py -h
+See NugetPublishing.py -h  
+  
+
+## Authentication
+
+For publishing most service providers require authentication.  The **--ApiKey** parameter allows the caller to supply a unique key for authorization.  There are numerous ways to authenticate. 
+For example
+* Azure Dev Ops:
+  * VSTS credential manager.  In an interactive session a dialog will popup for the user to login
+  * Tokens can also be used as the API key.  Go to your account page to generate a token that can push packages
+* NuGet.org
+  * Must use an API key.  Go to your account page and generate a key.  
 
 ## Example: Creating new config file for first use
 
@@ -21,6 +32,6 @@ Using an existing config file publish a new iasl.exe.  See the example file **ia
 6. Open cmd prompt in the NugetPublishing dir
 7. Pack and push (here is my example command. )
   ```cmd
-  NugetProducerSupport.py --Operation PackAndPush --ConfigFilePath iasl.config.json --Version 20180209.0.0 --InputFolderPath "C:\temp\iasl-win-20180209\new"
+  NugetProducerSupport.py --Operation PackAndPush --ConfigFilePath iasl.config.json --Version 20180209.0.0 --InputFolderPath "C:\temp\iasl-win-20180209\new"  --ApiKey <your key here>
   ```
 
