@@ -1,9 +1,11 @@
 ## @file VarDict.py
-# This module contains code for the old EnvDict.
-# Why is it here... and renamed? Why do you ask so many questions?
+# This module contains code for a special overridable dictionary.  
+# This stores most of the build configuration data and allows 
+# extensive config sharing for the build process, pre-build, and 
+# post-build.  
 #
 ##
-# Copyright (c) 2017, Microsoft Corporation
+# Copyright (c) 2018, Microsoft Corporation
 #
 # All rights reserved.
 # Redistribution and use in source and binary forms, with or without
