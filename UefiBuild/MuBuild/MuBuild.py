@@ -188,7 +188,7 @@ if __name__ == '__main__':
                 ShellEnvironment.CheckpointBuildVars()
                 env = ShellEnvironment.GetBuildVars()
             
-                env.SetValue("TARGET", target, "Platform Hardcoded",)
+                env.SetValue("TARGET", target, "MuBuild.py before RunBuildPlugin",)
                 (testcasename, testclassname) = Descriptor.Obj.GetTestName(pkgToRunOn, env)
                 tc = ts.create_new_testcase(testcasename, testclassname)
                 try:

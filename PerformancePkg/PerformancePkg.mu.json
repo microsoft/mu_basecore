@@ -1,0 +1,18 @@
+{
+    "DscCheckConfig": {
+        "IgnoreInf": [
+        ]
+    },
+    "DependencyConfig": {
+        "AcceptableDependencies": [
+            "PerformancePkg/PerformancePkg.dec",
+            "MdePkg/MdePkg.dec",
+            "MdeModulePkg/MdeModulePkg.dec",
+            "MsUnitTestPkg/MsUnitTestPkg.dec",
+            "UefiCpuPkg/UefiCpuPkg.dec"
+        ], 
+        "IgnoreInf": {
+
+        }
+    }  
+}

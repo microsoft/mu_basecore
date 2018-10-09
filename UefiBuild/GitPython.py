@@ -61,19 +61,18 @@ class Repo(object):
     def checkout(self,branch):
         return_buffer = StringIO()
         cmd = "git checkout %s" % branch
-        print(cmd)
         ret = RunCmd(cmd, workingdir=self._path,outstream=return_buffer)
 
         p1 = return_buffer.getvalue().strip()
         if ret != 0:
-            print(p1)
+            logging.debug(p1)
             return False
 
         return True
 
     @classmethod
     def clone_from(self,url, to_path, progress=None, env=None,shallow =False, **kwargs):
-        print("Cloning {0} into {1}".format(url,to_path))
+        logging.debug("Cloning {0} into {1}".format(url,to_path))
         #make sure we get the commit if 
         # use run command from utilities
         cmd = ""

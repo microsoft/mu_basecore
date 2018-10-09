@@ -29,6 +29,11 @@
     ],
     "ArchSupported": [
         "IA32",
-        "X64"
+        "X64",
+        "AARCH64"
+    ],
+    "Targets": [
+        "DEBUG",
+        "RELEASE"
     ]
 }
