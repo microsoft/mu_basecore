@@ -1,0 +1,5 @@
+{
+    "scope": "project_mu",
+    "name": "Compiler Plugin",
+    "module": "Compiler_plugin"
+  }

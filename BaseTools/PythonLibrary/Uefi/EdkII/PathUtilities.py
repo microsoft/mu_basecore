@@ -7,14 +7,50 @@ import fnmatch
 # using workspace and packagepath variables
 #
 class Edk2Path(object):
+
+    #
+    # ws - absolute path or cwd relative to workspace
+    # packagepathlist - list of packages path.  Absolute path list or workspace relative path
+    #
     def __init__(self, ws, packagepathlist):
         self.WorkspacePath = ws
-        self.PackagePathList = packagepathlist
+        if( not os.path.isabs(ws)):
+            self.WorkspacePath =  os.path.abspath(os.path.join(os.getcwd(), ws))
+
+        if(not os.path.isdir(self.WorkspacePath)):
+            logging.error("Workspace path invalid.  {0}".format(ws))
+            raise Exception("Workspace path invalid.  {0}".format(ws))
+        
+        # Set PackagePath
+        self.PackagePathList = list()
+        for a in packagepathlist:
+            if(os.path.isabs(a)):
+                self.PackagePathList.append(a)
+            else:
+                #see if workspace relative
+                wsr = os.path.join(ws, a)
+                if(os.path.isdir(wsr)):
+                    self.PackagePathList.append(wsr)
+                else:
+                    #assume current working dir relative.  Will catch invalid dir when checking whole list
+                    self.PackagePathList.append(os.path.abspath(os.path.join(os.getcwd(), a)))
+                    
+        error = False
+        for a in self.PackagePathList:
+            if(not os.path.isdir(a)):
+                logging.error("Invalid package path entry {0}".format(a))
+                error = True
+
+        #report error
+        if(error):
+            raise Exception("Invalid package path directory(s)")
 
 
     def GetEdk2RelativePathFromAbsolutePath(self, abspath):
         relpath = None
         found = False
+        if abspath is None:
+            return None
         for a in self.PackagePathList:
             stripped = abspath.lower().partition(a.lower())[2]
             if stripped:  
@@ -36,7 +72,8 @@ class Edk2Path(object):
                 logging.debug("AbsolutePath: %s found in Workspace: %s" % (abspath, self.WorkspacePath))
             
         if(found):
-            return relpath.lstrip(os.sep)
+            relpath = relpath.replace(os.sep, "/")
+            return relpath.lstrip("/")
 
         #didn't find the path for conversion. 
         logging.error("Failed to convert AbsPath to Edk2Relative Path")
@@ -44,6 +81,7 @@ class Edk2Path(object):
         return None
     
     def GetAbsolutePathOnThisSytemFromEdk2RelativePath(self, relpath):
+        relpath = relpath.replace("/", os.sep)
         abspath = os.path.join(self.WorkspacePath, relpath)
         if os.path.exists(abspath):
             return abspath

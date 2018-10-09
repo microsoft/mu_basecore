@@ -9,6 +9,9 @@ BuildConfig.conf
 # Ignore SelfDescribingEnvironment artifacts.
 *_extdep/
 
+.vscode/
+/temp_modules
+
 # Ignore unused UDK PKGs.
 /AppPkg/
 /ArmPkg/
