@@ -1,9 +1,9 @@
 {
-    "DscCheckConfig": {
+    "DSCCheck": {
         "IgnoreInf": [
         ]
     },
-    "DependencyConfig": {
+    "DependencyCheck": {
         "AcceptableDependencies": [
             "MdePkg/MdePkg.dec",
             "MsUnitTestPkg/MsUnitTestPkg.dec"

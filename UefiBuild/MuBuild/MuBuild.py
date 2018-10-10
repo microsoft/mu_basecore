@@ -264,7 +264,9 @@ if __name__ == '__main__':
             if Descriptor.Obj.IsTargetDependent() and "Targets" in mu_config:
                 targets = mu_config["Targets"]
 
-
+            #merge the repo level and package level
+            pkg_configuration = merge_config(mu_config,pkg_config,Descriptor.descriptor)
+            
             for target in targets:
                 logging.info("Running {0} {1}".format(Descriptor.Name,target))
                 total_num +=1

@@ -1,9 +1,9 @@
 {
-    "DscCheckConfig": {
-        "IgnoreInf": [
-        ]
+    "CompilerPlugin": {
+        "skip":false,
+        "IgnoreInf": []
     },
-    "DependencyConfig": {
+    "DependencyCheck":{
         "AcceptableDependencies": [
             "MdePkg/MdePkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",
@@ -11,6 +11,7 @@
         ], 
         "IgnoreInf": {
 
-        }
-    }  
+        },
+        "skip": false
+    }
 }

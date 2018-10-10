@@ -9,12 +9,6 @@
 
     # Other Repos that are dependencies
     "Dependencies": [
-        {
-            "Path": "Silicon/Arm/Tiano",
-            "Url": "https://github.com/Microsoft/mu_silicon_arm_tiano.git",
-            "Branch": "release/20180529"
-        #    "Commit": "*"
-        }
     ],
 
     # Edk2 style PackagesPath for resolving dependencies - Note since this is CoreBuild the workspace is the same as root and there is no need for pp
@@ -40,5 +34,11 @@
     "Targets": [
         "DEBUG",
         "RELEASE"
-    ]
+    ],
+    "DependencyCheck": {
+        "skip":true
+    },
+    "DSCCheck" : {
+        "Skip":true
+    }
 }

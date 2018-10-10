@@ -250,7 +250,6 @@ def check_package_confg(name,config,pluginList):
     def _mu_error(message):
         raise Exception("Package {0} Config Error: {1}".format(name,message))
 
-    logging.warning("CHECKING THE PKG_CONFIG")
     config_rules = {
         "required": {
         },
