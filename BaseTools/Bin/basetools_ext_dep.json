@@ -1,7 +1,7 @@
 {
   "scope": "global-win",
   "type": "nuget",
-  "name": "Basetools-Win32",
+  "name": "Mu-Basetools-Win32",
   "source": "https://api.nuget.org/v3/index.json",
   "version": "0.27306.1",
   "flags": ["set_shell_var", "set_path"],
