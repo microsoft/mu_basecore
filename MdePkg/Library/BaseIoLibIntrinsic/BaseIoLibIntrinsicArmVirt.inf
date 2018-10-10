@@ -31,6 +31,9 @@
 [Sources.ARM]
   IoLibArmVirt.c
   Arm/ArmVirtMmio.S       | GCC
+  # MU_CHANGE start
+  Arm/ArmVirtMmio.asm     | MSFT
+  # MU_CHANGE end
 
 [Sources.AARCH64]
   IoLibArmVirt.c
