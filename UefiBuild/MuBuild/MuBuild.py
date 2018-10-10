@@ -39,8 +39,6 @@ PL_PATH = os.path.join(os.path.dirname(SDE_PATH), "BaseTools", "PythonLibrary")
 sys.path.append(SDE_PATH)
 sys.path.append(PL_PATH)
 
-#BASECORE_PATH = os.path.dirname(SDE_PATH) # we assume that 
-
 import SelfDescribingEnvironment
 import PluginManager
 from MuJunitReport import MuJunitReport
@@ -96,28 +94,28 @@ if __name__ == '__main__':
     MuLogging.clean_build_logs(WORKSPACE_PATH)
     MuLogging.setup_logging(WORKSPACE_PATH)
 
-    DepList = list()
-    #Check Dependencies for Repo
-    if "Dependencies" in mu_config:
-        DepList.extend(RepoResolver.resolve(WORKSPACE_PATH,mu_config["Dependencies"]))
-    
     #Get scopes from config file
     if "Scopes" in mu_config:
         PROJECT_SCOPES += tuple(mu_config["Scopes"])
 
+    # SET PACKAGE PATH
+    #     
     # Get Package Path from config file
     pplist = list()
+    if(mu_config["RelativeWorkspaceRoot"] != ""):
+        #this package is not at workspace root. 
+        # Add self
+        pplist.append(os.path.dirname(mu_config_filepath))
+    
     #Include packages from the config file
     if "PackagesPath" in mu_config:
         for a in mu_config["PackagesPath"]:
-            # special entry that puts the directory of the repo config file in the package path list
-            if(a.lower() == 'self'):
-                pplist.append(os.path.dirname(mu_config_filepath))
-            else:
-                pplist.append(a)
+            pplist.append(a)
 
-    #add any deps to package path
-    pplist.extend(DepList)
+    #Check Dependencies for Repo
+    if "Dependencies" in mu_config:
+        pplist.extend(RepoResolver.resolve(WORKSPACE_PATH,mu_config["Dependencies"]))
+
 
 
     #make Edk2Path object to handle all path operations 
