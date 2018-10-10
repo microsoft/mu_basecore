@@ -58,9 +58,9 @@ SecurityLockReportEvent (
   UINTN LockNameCount = sizeof(mLockName)/sizeof(mLockName[0]);
 
   if (LockTypeIndex < LockNameCount) {
-      DEBUG ((DEBUG_ERROR, "SecurityLock::LockType: %a, Module: %g, Function: %a, Output: %a\n", mLockName[LockTypeIndex], *Module, Function, LockEventText));
+      DEBUG ((DEBUG_ERROR, "SecurityLock::LockType: %a, Module: %g, Function: %a, Output: %a\n", mLockName[LockTypeIndex], Module, Function, LockEventText));
   }
   else {
-      DEBUG ((DEBUG_ERROR, "SecurityLock::LockType: %d, Module: %g, Function: %a, Output: %a\n", LockType, *Module, Function, LockEventText));
+      DEBUG ((DEBUG_ERROR, "SecurityLock::LockType: %d, Module: %g, Function: %a, Output: %a\n", LockType, Module, Function, LockEventText));
   }
 }
