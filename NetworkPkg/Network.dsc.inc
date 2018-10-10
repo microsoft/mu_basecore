@@ -9,7 +9,6 @@
 #
 # Copyright (c) 2019 - 2020, Intel Corporation. All rights reserved.<BR>
 # Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
-# Copyright (c) 2022, Loongson Technology Corporation Limited. All rights reserved.<BR>
 #
 #    SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -23,6 +22,13 @@
   # PLATFORMX64_ENABLE is set to TRUE when PEI is IA32 and DXE is X64 platform
   #
   DEFINE PLATFORMX64_ENABLE = FALSE
+!endif
+
+!ifndef PLATFORMARM_ENABLE # MU_CHANGE - put ARM behind a flag to avoid breaks
+  #
+  # PLATFORMARM_ENABLE is set to TRUE when ARM building is ok, such as in GCC
+  #
+  DEFINE PLATFORMARM_ENABLE = FALSE
 !endif
 
 [PcdsFixedAtBuild]
@@ -39,7 +45,12 @@
 !include NetworkPkg/NetworkComponents.dsc.inc
 
 !else
-[Components.IA32, Components.X64, Components.ARM, Components.AARCH64, Components.RISCV64, Components.LOONGARCH64]
+[Components.IA32, Components.X64, Components.AARCH64, Components.RISCV64]
 !include NetworkPkg/NetworkComponents.dsc.inc
 
+!endif
+
+!if $(PLATFORMARM_ENABLE) == TRUE # MU_CHANGE - put ARM behind a flag to avoid breaks
+[Components.ARM]
+  !include NetworkPkg/NetworkComponents.dsc.inc
 !endif
