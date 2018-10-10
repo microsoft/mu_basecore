@@ -13,7 +13,9 @@
   PLATFORM_VERSION               = 0.90
   DSC_SPECIFICATION              = 0x00010005
   OUTPUT_DIRECTORY               = Build/UefiCpu
-  SUPPORTED_ARCHITECTURES        = IA32|X64
+  # MU_CHANGE START
+  SUPPORTED_ARCHITECTURES        = IA32|X64|AARCH64|ARM
+  # MU_CHANGE END
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
@@ -139,11 +141,19 @@ HwResetSystemLib|MdeModulePkg/Library/BaseResetSystemLibNull/BaseResetSystemLibN
 # Drivers/Libraries within this package
 #
 
+# MU_CHANGE START
+[Components.X64, Components.IA32]
+  UefiCpuPkg/CpuIoPei/CpuIoPei.inf
+  UefiCpuPkg/Library/CpuCommonFeaturesLib/CpuCommonFeaturesLib.inf
+  UefiCpuPkg/Application/Cpuid/Cpuid.inf
+
 [Components]
   UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe.inf
-  UefiCpuPkg/CpuIoPei/CpuIoPei.inf
+  #UefiCpuPkg/CpuIoPei/CpuIoPei.inf                           # MU_CHANGE - Move to X64, IA32 section.
   UefiCpuPkg/Library/SecPeiDxeTimerLibUefiCpu/SecPeiDxeTimerLibUefiCpu.inf
-  UefiCpuPkg/Application/Cpuid/Cpuid.inf
+  #UefiCpuPkg/Application/Cpuid/Cpuid.inf                     # MU_CHANGE - Move to X64, IA32 section.
+[Components.IA32, Components.X64]
+# MU_CHANGE END
   UefiCpuPkg/Library/CpuTimerLib/BaseCpuTimerLib.inf
   UefiCpuPkg/Library/CpuCacheInfoLib/PeiCpuCacheInfoLib.inf
   UefiCpuPkg/Library/CpuCacheInfoLib/DxeCpuCacheInfoLib.inf
