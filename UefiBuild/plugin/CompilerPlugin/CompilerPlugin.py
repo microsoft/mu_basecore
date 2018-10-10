@@ -33,7 +33,7 @@ from UefiBuild import UefiBuilder
 import os
 import sys
 
-class Compiler_plugin(IMuBuildPlugin):
+class CompilerPlugin(IMuBuildPlugin):
 
 
     def GetTestName(self, packagename, environment):

@@ -215,6 +215,9 @@ class IMuBuildPlugin(object):
     def IsTargetDependent(self):
         return False
 
+    def ValidateConfig(self,config):
+        pass
+
     #
     # Walks a directory for all items ending in certain extension
     # Default is to walk all of workspace

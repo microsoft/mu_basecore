@@ -67,16 +67,16 @@ class DSCCheck(IMuBuildPlugin):
         INFFiles = [Edk2pathObj.GetEdk2RelativePathFromAbsolutePath(x) for x in INFFiles]  #make edk2relative path so can compare with DSC
 
         #remove ignores
-        if( "DscCheckConfig" in pkgconfig):
-            if "IgnoreInf" in pkgconfig["DscCheckConfig"]:
-                for a in pkgconfig["DscCheckConfig"]["IgnoreInf"]:
-                    a = a.lower().replace(os.sep, "/")
-                    try:
-                        tc.LogStdOut("Ignoring INF {0}".format(a))
-                        INFFiles.remove(a)
-                    except:
-                        tc.LogStdError("DscCheckConfig.IgnoreInf -> {0} not found in filesystem.  Invalid ignore file".format(a))
-                        logging.info("DscCheckConfig.IgnoreInf -> {0} not found in filesystem.  Invalid ignore file".format(a))
+    
+        if "IgnoreInf" in pkgconfig:
+            for a in pkgconfig["IgnoreInf"]:
+                a = a.lower().replace(os.sep, "/")
+                try:
+                    tc.LogStdOut("Ignoring INF {0}".format(a))
+                    INFFiles.remove(a)
+                except:
+                    tc.LogStdError("DscCheckConfig.IgnoreInf -> {0} not found in filesystem.  Invalid ignore file".format(a))
+                    logging.info("DscCheckConfig.IgnoreInf -> {0} not found in filesystem.  Invalid ignore file".format(a))
 
         #DSC Parser
         #self.dp = Dsc()

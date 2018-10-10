@@ -47,6 +47,8 @@ import ShellEnvironment
 import MuLogging
 from Uefi.EdkII.PathUtilities import Edk2Path
 import RepoResolver
+import ConfigValidator
+
 
 PROJECT_SCOPES = ("project_mu",)
 TEMP_MODULE_DIR = "temp_modules"
@@ -70,8 +72,62 @@ def get_mu_config():
     parser.add_argument (
     '-p', '--pkg','--pkg-dir', dest = 'pkg', required = False, type=str,help = 'The package or folder you want to test/compile relative to the Mu Config'
     )
+    parser.add_argument (
+    '-check-config', '--cc', dest = 'check_config', required = False, action="store_true",help = 'The package or folder you want to test/compile relative to the Mu Config'
+    )
     args, sys.argv = parser.parse_known_args() 
     return args
+
+class CaseInsensitiveDict(dict):
+    @classmethod
+    def _k(cls, key):
+        return key.lower() if isinstance(key, str) else key
+
+    def __init__(self, *args, **kwargs):
+        super(CaseInsensitiveDict, self).__init__(*args, **kwargs)
+        self._convert_keys()
+    def __getitem__(self, key):
+        return super(CaseInsensitiveDict, self).__getitem__(self.__class__._k(key))
+    def __setitem__(self, key, value):
+        super(CaseInsensitiveDict, self).__setitem__(self.__class__._k(key), value)
+    def __delitem__(self, key):
+        return super(CaseInsensitiveDict, self).__delitem__(self.__class__._k(key))
+    def __contains__(self, key):
+        return super(CaseInsensitiveDict, self).__contains__(self.__class__._k(key))
+    def has_key(self, key):
+        return super(CaseInsensitiveDict, self).has_key(self.__class__._k(key))
+    def pop(self, key, *args, **kwargs):
+        return super(CaseInsensitiveDict, self).pop(self.__class__._k(key), *args, **kwargs)
+    def get(self, key, *args, **kwargs):
+        return super(CaseInsensitiveDict, self).get(self.__class__._k(key), *args, **kwargs)
+    def setdefault(self, key, *args, **kwargs):
+        return super(CaseInsensitiveDict, self).setdefault(self.__class__._k(key), *args, **kwargs)
+    def update(self, E={}, **F):
+        super(CaseInsensitiveDict, self).update(self.__class__(E))
+        super(CaseInsensitiveDict, self).update(self.__class__(**F))
+    def _convert_keys(self):
+        for k in list(self.keys()):
+            v = super(CaseInsensitiveDict, self).pop(k)
+            self.__setitem__(k, v)
+
+def merge_config(mu_config,pkg_config,descriptor={}):
+    plugin_name = ""
+    config = CaseInsensitiveDict()
+    if "module" in descriptor:
+        plugin_name = descriptor["module"]
+    if "config_name" in descriptor:
+        plugin_name = descriptor["config_name"]
+    
+    if plugin_name == "":
+        return config
+
+    if plugin_name in mu_config:
+        config.update(mu_config[plugin_name])
+    
+    if plugin_name in pkg_config:
+        config.update(pkg_config[plugin_name])
+
+    return config
 
 #
 # Main driver of Project Mu Builds
@@ -82,6 +138,7 @@ if __name__ == '__main__':
     buildArgs = get_mu_config()
     mu_config_filepath = os.path.abspath(buildArgs.mu_config)
     mu_pk_path = buildArgs.pkg
+    mu_should_check_configs = buildArgs.check_config
 
     if mu_config_filepath is None or not os.path.isfile(mu_config_filepath):
         raise Exception("Invalid path to mu.json file for build: ", mu_config_filepath)
@@ -177,6 +234,10 @@ if __name__ == '__main__':
     pluginManager.SetListOfEnvironmentDescriptors(build_env.plugins)
     helper = PluginManager.HelperFunctions()
     helper.LoadFromPluginManager(pluginManager)
+    pluginList = pluginManager.GetPluginsOfClass(PluginManager.IMuBuildPlugin)
+
+    if mu_should_check_configs:
+        ConfigValidator.check_mu_confg(mu_config,WORKSPACE_PATH,pluginList)
 
     for pkgToRunOn in packageList:
         #
@@ -191,11 +252,13 @@ if __name__ == '__main__':
         pkg_config_file = edk2path.GetAbsolutePathOnThisSytemFromEdk2RelativePath(os.path.join(pkgToRunOn, pkgToRunOn + ".mu.json"))
         if(pkg_config_file):
             pkg_config = json.loads(strip_json_from_file(pkg_config_file))
+            if mu_should_check_configs:
+                ConfigValidator.check_package_confg(pkgToRunOn,pkg_config,pluginList)
         else:
             logging.info("No Pkg Config file for {0}".format(pkgToRunOn))
             pkg_config = dict()
 
-        for Descriptor in pluginManager.GetPluginsOfClass(PluginManager.IMuBuildPlugin):
+        for Descriptor in pluginList:
             #Get our targets
             targets = ["DEBUG"]
             if Descriptor.Obj.IsTargetDependent() and "Targets" in mu_config:
@@ -211,6 +274,12 @@ if __name__ == '__main__':
                 env.SetValue("TARGET", target, "MuBuild.py before RunBuildPlugin",)
                 (testcasename, testclassname) = Descriptor.Obj.GetTestName(pkgToRunOn, env)
                 tc = ts.create_new_testcase(testcasename, testclassname)
+
+                #Check if need to skip this particular plugin
+                if "skip" in pkg_configuration and pkg_configuration["skip"]:
+                    tc.SetSkipped()
+                    logging.critical("  ->Test Skipped! %s" % Descriptor.Name)
+                    continue
                 try:
                     #   - package is the edk2 path to package.  This means workspace/packagepath relative.  
                     #   - edk2path object configured with workspace and packages path

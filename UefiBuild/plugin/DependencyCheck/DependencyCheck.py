@@ -61,16 +61,9 @@ class DependencyCheck(IMuBuildPlugin):
         INFFiles = [x.lower() for x in INFFiles]
         INFFiles = [Edk2pathObj.GetEdk2RelativePathFromAbsolutePath(x) for x in INFFiles]  #make edk2relative path so can compare with Ignore List
 
-        #Check for dep config
-        if( "DependencyConfig" not in pkgconfig):
-            logging.critical("Invalid Pkg Config file.  Missing Required DependencyConfig element.")
-            tc.SetError("Invalid Pkg Config File.", "DEPENDENCYCHECK_ERROR")
-            tc.LogStdError("Package Config File Invalid. Missing Required DependencyConfig element.")
-            return -1
-
         # Remove ignored INFs
-        if "IgnoreInf" in pkgconfig["DependencyConfig"]:
-            for a in pkgconfig["DependencyConfig"]["IgnoreInf"]:
+        if "IgnoreInf" in pkgconfig:
+            for a in pkgconfig["IgnoreInf"]:
                 a = a.lower().replace(os.sep, "/")
                 try:
                     INFFiles.remove(a)
@@ -85,12 +78,12 @@ class DependencyCheck(IMuBuildPlugin):
             ip.SetBaseAbsPath(Edk2pathObj.WorkspacePath).SetPackagePaths(Edk2pathObj.PackagePathList).ParseFile(file)
 
             for p in ip.PackagesUsed:
-                if p not in pkgconfig["DependencyConfig"]["AcceptableDependencies"]:
+                if p not in pkgconfig["AcceptableDependencies"]:
                     logging.error("Dependency Check: Invalid Dependency INF: {0} depends on pkg {1}".format(file, p))
                     tc.LogStdError("Dependency Check: Invalid Dependency INF: {0} depends on pkg {1}".format(file, p))
                     overall_status += 1
 
-        for a in pkgconfig["DependencyConfig"]["AcceptableDependencies"]:
+        for a in pkgconfig["AcceptableDependencies"]:
             tc.LogStdOut("Acceptable Package Dependency: {0}".format(a))
 
         # If XML object exists, add results
