@@ -1,7 +1,7 @@
 {
   "scope": "global-win",
   "type": "nuget",
-  "name": "nasm",
+  "name": "mu_nasm",
   "source": "https://api.nuget.org/v3/index.json",
   "version": "2.13.03",
   "flags": ["set_shell_var"],
