@@ -1,5 +1,5 @@
 ## @file ConfigValidator.py
-# This module contains support for Outputting Junit xml.
+# This module contains support for validating .mu.json config files
 #
 # Used to support CI/CD and exporting test results for other tools.
 # This does test report generation without being a test runner. 

@@ -73,7 +73,7 @@ def get_mu_config():
     '-p', '--pkg','--pkg-dir', dest = 'pkg', required = False, type=str,help = 'The package or folder you want to test/compile relative to the Mu Config'
     )
     parser.add_argument (
-    '-check-config', '--cc', dest = 'check_config', required = False, action="store_true",help = 'The package or folder you want to test/compile relative to the Mu Config'
+    '-check-config', '--cc', dest = 'check_config', required = False, action="store_true",help = 'A flag that tells the system to throw exceptions when there are errors in .mu.json config files'
     )
     args, sys.argv = parser.parse_known_args() 
     return args
@@ -249,23 +249,27 @@ if __name__ == '__main__':
         ShellEnvironment.CheckpointBuildVars()
         env = ShellEnvironment.GetBuildVars()
 
+        # load the package level .mu.json
         pkg_config_file = edk2path.GetAbsolutePathOnThisSytemFromEdk2RelativePath(os.path.join(pkgToRunOn, pkgToRunOn + ".mu.json"))
         if(pkg_config_file):
             pkg_config = json.loads(strip_json_from_file(pkg_config_file))
-            if mu_should_check_configs:
-                ConfigValidator.check_package_confg(pkgToRunOn,pkg_config,pluginList)
         else:
             logging.info("No Pkg Config file for {0}".format(pkgToRunOn))
             pkg_config = dict()
+        
+        #merge the repo level and package level
+        pkg_configuration = merge_config(mu_config,pkg_config,Descriptor.descriptor)
+
+        #check the resulting configuration
+        if mu_should_check_configs:
+            ConfigValidator.check_package_confg(pkgToRunOn,pkg_config,pluginList)
 
         for Descriptor in pluginList:
             #Get our targets
             targets = ["DEBUG"]
             if Descriptor.Obj.IsTargetDependent() and "Targets" in mu_config:
                 targets = mu_config["Targets"]
-
-            #merge the repo level and package level
-            pkg_configuration = merge_config(mu_config,pkg_config,Descriptor.descriptor)
+            
             
             for target in targets:
                 logging.info("Running {0} {1}".format(Descriptor.Name,target))
