@@ -256,9 +256,6 @@ if __name__ == '__main__':
         else:
             logging.info("No Pkg Config file for {0}".format(pkgToRunOn))
             pkg_config = dict()
-        
-        #merge the repo level and package level
-        pkg_configuration = merge_config(mu_config,pkg_config,Descriptor.descriptor)
 
         #check the resulting configuration
         if mu_should_check_configs:
@@ -281,8 +278,11 @@ if __name__ == '__main__':
                 (testcasename, testclassname) = Descriptor.Obj.GetTestName(pkgToRunOn, env)
                 tc = ts.create_new_testcase(testcasename, testclassname)
 
+                #merge the repo level and package level for this specific plugin
+                pkg_plugin_configuration = merge_config(mu_config,pkg_config,pluginList)
+
                 #Check if need to skip this particular plugin
-                if "skip" in pkg_configuration and pkg_configuration["skip"]:
+                if "skip" in pkg_plugin_configuration and pkg_plugin_configuration["skip"]:
                     tc.SetSkipped()
                     logging.critical("  ->Test Skipped! %s" % Descriptor.Name)
                     continue
