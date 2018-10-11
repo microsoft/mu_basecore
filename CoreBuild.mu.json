@@ -51,6 +51,6 @@
         "skip":true
     },
     "DSCCheck" : {
-        "Skip":true
+        "skip":true
     }
 }

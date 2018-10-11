@@ -279,7 +279,7 @@ if __name__ == '__main__':
                 tc = ts.create_new_testcase(testcasename, testclassname)
 
                 #merge the repo level and package level for this specific plugin
-                pkg_plugin_configuration = merge_config(mu_config,pkg_config,pluginList)
+                pkg_plugin_configuration = merge_config(mu_config,pkg_config,Descriptor.descriptor)
 
                 #Check if need to skip this particular plugin
                 if "skip" in pkg_plugin_configuration and pkg_plugin_configuration["skip"]:
