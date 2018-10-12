@@ -652,6 +652,8 @@ HiiNewImage (
     return EFI_NOT_FOUND;
   }
 
+  EfiAcquireLock (&mHiiDatabaseLock);
+
   NewBlockSize = sizeof (EFI_HII_IIBT_IMAGE_24BIT_BLOCK) - sizeof (EFI_HII_RGB_PIXEL) +
                  BITMAP_LEN_24_BIT ((UINT32) Image->Width, Image->Height);
 
@@ -674,6 +676,7 @@ HiiNewImage (
     //
     ImageBlocks = AllocatePool (ImagePackage->ImageBlockSize + NewBlockSize);
     if (ImageBlocks == NULL) {
+      EfiReleaseLock (&mHiiDatabaseLock);
       return EFI_OUT_OF_RESOURCES;
     }
     //
@@ -707,6 +710,7 @@ HiiNewImage (
     //
     ImagePackage = (HII_IMAGE_PACKAGE_INSTANCE *) AllocateZeroPool (sizeof (HII_IMAGE_PACKAGE_INSTANCE));
     if (ImagePackage == NULL) {
+      EfiReleaseLock (&mHiiDatabaseLock);
       return EFI_OUT_OF_RESOURCES;
     }
     //
@@ -735,6 +739,7 @@ HiiNewImage (
     ImagePackage->ImageBlock = AllocateZeroPool (NewBlockSize + sizeof (EFI_HII_IIBT_END_BLOCK));
     if (ImagePackage->ImageBlock == NULL) {
       FreePool (ImagePackage);
+      EfiReleaseLock (&mHiiDatabaseLock);
       return EFI_OUT_OF_RESOURCES;
     }
     ImageBlocks = ImagePackage->ImageBlock;
@@ -771,6 +776,8 @@ HiiNewImage (
   if (gExportAfterReadyToBoot) {
     HiiGetDatabaseInfo(&Private->HiiDatabase);
   }
+
+  EfiReleaseLock (&mHiiDatabaseLock);
 
   return EFI_SUCCESS;
 }
@@ -1067,6 +1074,8 @@ HiiSetImage (
     return EFI_NOT_FOUND;
   }
 
+  EfiAcquireLock (&mHiiDatabaseLock);
+
   //
   // Get the size of original image block. Use some common block code here
   // since the definition of some structures is the same.
@@ -1111,6 +1120,7 @@ HiiSetImage (
                      );
     break;
   default:
+    EfiReleaseLock (&mHiiDatabaseLock);
     return EFI_NOT_FOUND;
   }
 
@@ -1124,6 +1134,7 @@ HiiSetImage (
   //
   ImageBlocks = AllocateZeroPool (ImagePackage->ImageBlockSize + NewBlockSize - OldBlockSize);
   if (ImageBlocks == NULL) {
+    EfiReleaseLock (&mHiiDatabaseLock);
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -1161,6 +1172,7 @@ HiiSetImage (
     HiiGetDatabaseInfo(&Private->HiiDatabase);
   }
 
+  EfiReleaseLock (&mHiiDatabaseLock);
   return EFI_SUCCESS;
 
 }
