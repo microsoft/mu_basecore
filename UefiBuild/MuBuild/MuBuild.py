@@ -72,9 +72,6 @@ def get_mu_config():
     parser.add_argument (
     '-p', '--pkg','--pkg-dir', dest = 'pkg', required = False, type=str,help = 'The package or folder you want to test/compile relative to the Mu Config'
     )
-    parser.add_argument (
-    '-check-config', '--cc', dest = 'check_config', required = False, action="store_true",help = 'A flag that tells the system to throw exceptions when there are errors in .mu.json config files'
-    )
     args, sys.argv = parser.parse_known_args() 
     return args
 
@@ -138,8 +135,7 @@ if __name__ == '__main__':
     buildArgs = get_mu_config()
     mu_config_filepath = os.path.abspath(buildArgs.mu_config)
     mu_pk_path = buildArgs.pkg
-    mu_should_check_configs = buildArgs.check_config
-
+    
     if mu_config_filepath is None or not os.path.isfile(mu_config_filepath):
         raise Exception("Invalid path to mu.json file for build: ", mu_config_filepath)
     
@@ -235,9 +231,9 @@ if __name__ == '__main__':
     helper = PluginManager.HelperFunctions()
     helper.LoadFromPluginManager(pluginManager)
     pluginList = pluginManager.GetPluginsOfClass(PluginManager.IMuBuildPlugin)
-
-    if mu_should_check_configs:
-        ConfigValidator.check_mu_confg(mu_config,WORKSPACE_PATH,pluginList)
+    
+    # Check to make sure our configuration is valid
+    ConfigValidator.check_mu_confg(mu_config,WORKSPACE_PATH,pluginList)
 
     for pkgToRunOn in packageList:
         #
@@ -258,8 +254,7 @@ if __name__ == '__main__':
             pkg_config = dict()
 
         #check the resulting configuration
-        if mu_should_check_configs:
-            ConfigValidator.check_package_confg(pkgToRunOn,pkg_config,pluginList)
+        ConfigValidator.check_package_confg(pkgToRunOn,pkg_config,pluginList)
 
         for Descriptor in pluginList:
             #Get our targets

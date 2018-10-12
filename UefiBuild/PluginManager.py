@@ -215,7 +215,11 @@ class IMuBuildPlugin(object):
     def IsTargetDependent(self):
         return False
 
+    ##
+    # Validates a configurations package .mu.json
+    ##
     def ValidateConfig(self,config):
+        # raise an exception if error is found
         pass
 
     #
