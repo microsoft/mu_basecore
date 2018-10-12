@@ -50,19 +50,6 @@ def resolve(WORKSPACE_PATH,dependencies):
 
     return packages
 
-##
-# finds the module requested from the workspace- we assume that it is here at some point
-def find_module(ws,module, url):
-    currentDir = ws
-    if os.path.isfile(currentDir):
-        currentDir = os.path.dirname(currentDir)
-    #only look if it explicitly exists in the workspace
-    lookingPath = os.path.join(currentDir,module)
-    if os.path.isdir(lookingPath):
-        return lookingPath
-    else:
-        return None
-
 #Gets the details of a particular repo
 
 def get_details(abs_file_system_path):

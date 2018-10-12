@@ -218,7 +218,9 @@ class IMuBuildPlugin(object):
     ##
     # Validates a configurations package .mu.json
     ##
-    def ValidateConfig(self,config):
+
+    def ValidateConfig(self,config,name=""):
+        #rather than doing the validation in the plugin - perhaps the plugin can return their required list and their optional list
         # raise an exception if error is found
         pass
 
@@ -292,7 +294,7 @@ class IMuBuildPlugin(object):
             if dscFile is None and jsonFile is None:
                 raise Exception()
         except:
-            logging.error("UNABLE TO FIND PACKAGE {0}".format(pkg))
+            logging.error("UNABLE TO FIND PACKAGE {0}".format(folderpath))
             return None
 
 

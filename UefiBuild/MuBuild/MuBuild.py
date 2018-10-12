@@ -30,6 +30,7 @@ import os
 import sys
 import logging
 import json
+import traceback
 import argparse
 
 #get path to self and then find SDE path and PythonLibrary path
@@ -232,50 +233,57 @@ if __name__ == '__main__':
             
             
             for target in targets:
-                logging.info("Running {0} {1}".format(Descriptor.Name,target))
+                logging.info("---Running {2}: {0} {1}".format(Descriptor.Name,target,pkgToRunOn))
                 total_num +=1
                 ShellEnvironment.CheckpointBuildVars()
                 env = ShellEnvironment.GetBuildVars()
             
-                env.SetValue("TARGET", target, "MuBuild.py before RunBuildPlugin",)
+                env.SetValue("TARGET", target, "MuBuild.py before RunBuildPlugin")
                 (testcasename, testclassname) = Descriptor.Obj.GetTestName(pkgToRunOn, env)
                 tc = ts.create_new_testcase(testcasename, testclassname)
 
                 #merge the repo level and package level for this specific plugin
                 pkg_plugin_configuration = merge_config(mu_config,pkg_config,Descriptor.descriptor)
 
+                #perhaps we should ask the validator to run on the 
+
                 #Check if need to skip this particular plugin
                 if "skip" in pkg_plugin_configuration and pkg_plugin_configuration["skip"]:
                     tc.SetSkipped()
                     logging.critical("  ->Test Skipped! %s" % Descriptor.Name)
-                    continue
-                try:
-                    #   - package is the edk2 path to package.  This means workspace/packagepath relative.  
-                    #   - edk2path object configured with workspace and packages path
-                    #   - any additional command line args
-                    #   - RepoConfig Object (dict) for the build
-                    #   - PkgConfig Object (dict)
-                    #   - EnvConfig Object 
-                    #   - Plugin Manager Instance
-                    #   - Plugin Helper Obj Instance
-                    #   - testcase Object used for outputing junit results
-                    rc = Descriptor.Obj.RunBuildPlugin(pkgToRunOn, edk2path, sys.argv, mu_config, pkg_config, env, pluginManager, helper, tc)
-                except Exception as exp:
-                    logging.critical(exp)
-                    tc.SetError("Exception: {0}".format(exp), "UNEXPECTED EXCEPTION")
-                    rc = 1
-
-                if(rc != 0):
-                    failure_num += 1
-                    if(rc is None):
-                        logging.error("Test Failed: %s returned NoneType" % Descriptor.Name)
-                    else:
-                        logging.error("Test Failed: %s returned %d" % (Descriptor.Name, rc))
                 else:
-                    logging.info("Test Success {0} {1}".format(Descriptor.Name,target))
+                    try:
+                        #   - package is the edk2 path to package.  This means workspace/packagepath relative.  
+                        #   - edk2path object configured with workspace and packages path
+                        #   - any additional command line args
+                        #   - RepoConfig Object (dict) for the build
+                        #   - PkgConfig Object (dict)
+                        #   - EnvConfig Object 
+                        #   - Plugin Manager Instance
+                        #   - Plugin Helper Obj Instance
+                        #   - testcase Object used for outputing junit results
+                        rc = Descriptor.Obj.RunBuildPlugin(pkgToRunOn, edk2path, sys.argv, mu_config, pkg_plugin_configuration, env, pluginManager, helper, tc)
+                    except Exception as exp:
+                        exc_type, exc_value, exc_traceback = sys.exc_info()
+                        logging.critical("EXCEPTION: {0}".format(exp))
+                        exceptionPrint = traceback.format_exception(type(exp), exp,exc_traceback)
+                        logging.critical(" ".join(exceptionPrint))
+                        tc.SetError("Exception: {0}".format(exp), "UNEXPECTED EXCEPTION")
+                        rc = 1
+                        
+
+                    if(rc != 0):
+                        failure_num += 1
+                        if(rc is None):
+                            logging.error("Test Failed: %s returned NoneType" % Descriptor.Name)
+                        else:
+                            logging.error("Test Failed: %s returned %d" % (Descriptor.Name, rc))
+                    else:
+                        logging.info("Test Success {0} {1}".format(Descriptor.Name,target))
            
                 #revert to the checkpoint we created previously
                 ShellEnvironment.RevertBuildVars()
+            #finished target loop
         #Finished plugin loop
         
         MuLogging.stop_logging(loghandle) #stop the logging for this particularbuild file

@@ -78,13 +78,13 @@ class DependencyCheck(IMuBuildPlugin):
             ip.SetBaseAbsPath(Edk2pathObj.WorkspacePath).SetPackagePaths(Edk2pathObj.PackagePathList).ParseFile(file)
 
             for p in ip.PackagesUsed:
-                if p not in pkgconfig["AcceptableDependencies"]:
+                if "AcceptableDependencies" in pkgconfig and p not in pkgconfig["AcceptableDependencies"]:
                     logging.error("Dependency Check: Invalid Dependency INF: {0} depends on pkg {1}".format(file, p))
                     tc.LogStdError("Dependency Check: Invalid Dependency INF: {0} depends on pkg {1}".format(file, p))
                     overall_status += 1
-
-        for a in pkgconfig["AcceptableDependencies"]:
-            tc.LogStdOut("Acceptable Package Dependency: {0}".format(a))
+        if "AcceptableDependencies" in pkgconfig:
+            for a in pkgconfig["AcceptableDependencies"]:
+                tc.LogStdOut("Acceptable Package Dependency: {0}".format(a))
 
         # If XML object exists, add results
         if overall_status is not 0:
@@ -92,4 +92,10 @@ class DependencyCheck(IMuBuildPlugin):
         else:
             tc.SetSuccess()
         return overall_status
+    
+    def ValidateConfig(self, config, name):
+        validOptions = ["AcceptableDependencies", "skip", "IgnoreInf"]
+        for key in config:
+            if key not in validOptions:
+                raise Exception("Invalid config option {0} in {1}".format(key,name))
 

@@ -42,9 +42,11 @@ def setup_logging(workspace, filename=None, loghandle = None):
     if loghandle is not None:
         stop_logging(loghandle)
 
+    logging_level = logging.DEBUG
     
     if filename is None:
         filename = "BUILDLOG_MASTER.txt"
+        logging_level = logging.INFO
     
     #setup logger
     logger = logging.getLogger('')
@@ -66,7 +68,7 @@ def setup_logging(workspace, filename=None, loghandle = None):
     #Create master file logger
     fileformatter = logging.Formatter("%(levelname)s - %(message)s")
     filelogger = logging.FileHandler(filename=(logfile), mode='w')
-    filelogger.setLevel(logging.DEBUG)
+    filelogger.setLevel(logging_level)
     filelogger.setFormatter(fileformatter)
     logger.addHandler(filelogger)
     logging.info("Log Started: " + datetime.strftime(datetime.now(), "%A, %B %d, %Y %I:%M%p" ))

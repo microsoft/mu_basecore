@@ -77,7 +77,7 @@ def check_mu_confg(config,workspace,pluginList):
     def _mu_error(message):
         raise Exception("Mu Config Error: {0}".format(message))
 
-    def _is_valid_dir(path):
+    def _is_valid_dir(path,name):
         path = os.path.join(workspace,path)
         if not os.path.isdir(path):
             _mu_error("{0} isn't a valid directory".format(path))
@@ -91,20 +91,20 @@ def check_mu_confg(config,workspace,pluginList):
             #The url wasn't valid
             return False
     
-    def _check_packages(packages):
+    def _check_packages(packages,name):
         for package in packages:            
             path = os.path.join(workspace,package)
             if not os.path.isdir(path):
                 _mu_error("{0} isn't a valid package to build".format(path))
         return True
 
-    def _is_valid_arch(targets):
+    def _is_valid_arch(targets,name):
         valid_targets = ["AARCH64","IA32","X64"]
         for target in targets:
             if not target in valid_targets:
                 _mu_error("{0} is not a valid target".format(target))
 
-    def _check_dependencies(dependencies):
+    def _check_dependencies(dependencies,name):
         valid_attributes = ["Path","Url","Branch","Commit"]
         for dependency in dependencies:
             # check to make sure we have a path
@@ -192,7 +192,7 @@ def check_mu_confg(config,workspace,pluginList):
 
         if "validator" in config_rules["required"][rule]:
             validator = config_rules["required"][rule]["validator"]
-            validator(config[rule])
+            validator(config[rule], "Base Mu.json")
 
     # check optional types
     for rule in config_rules["optional"]:
@@ -207,7 +207,7 @@ def check_mu_confg(config,workspace,pluginList):
 
         if "validator" in config_rules["optional"][rule]:
             validator = config_rules["optional"][rule]["validator"]
-            validator(config[rule])
+            validator(config[rule],"Base mu.json")
     
     #check to make sure we don't have any stray keys in there
     for rule in config:
@@ -215,8 +215,6 @@ def check_mu_confg(config,workspace,pluginList):
             _mu_error("Unknown parameter {0} is unexpected".format(rule))
             
     return True
-
-    #raise Exception("The mu config is incorrect")
 
 '''
 {
@@ -266,6 +264,7 @@ def check_package_confg(name,config,pluginList):
             plugin_name = plugin.descriptor["module"]
         if "config_name" in plugin.descriptor:
             plugin_name = plugin.descriptor["config_name"]
+        # add the validator
         config_rules["optional"][plugin_name] = {
             "validator" : plugin.Obj.ValidateConfig
         }
@@ -283,7 +282,7 @@ def check_package_confg(name,config,pluginList):
 
         if "validator" in config_rules["required"][rule]:
             validator = config_rules["required"][rule]["validator"]
-            validator(config[rule])
+            validator(config[rule],name)
 
     # check optional types
     for rule in config_rules["optional"]:
@@ -298,7 +297,7 @@ def check_package_confg(name,config,pluginList):
 
         if "validator" in config_rules["optional"][rule]:
             validator = config_rules["optional"][rule]["validator"]
-            validator(config[rule])
+            validator(config[rule],name)
     
     #check to make sure we don't have any stray keys in there
     for rule in config:
