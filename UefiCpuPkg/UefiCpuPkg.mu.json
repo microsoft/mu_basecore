@@ -1,11 +1,11 @@
 {
-    "DscCheckConfig": {
+    "DSCCheck": {
         "IgnoreInf": [
             "ueficpupkg/resetvector/fixupvtf/vtf.inf",
             "ueficpupkg/resetvector/vtf0/vtf0.inf"
         ]
     },
-    "DependencyConfig": {
+    "DependencyCheck": {
         "AcceptableDependencies": [
             "MdePkg/MdePkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",

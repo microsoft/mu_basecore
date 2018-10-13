@@ -1,15 +1,22 @@
 {
-    "DscCheckConfig": {
-        "IgnoreInf": [
-        ]
+    "CompilerPlugin": {
+        "skip":true,
+        "IgnoreInf": []
     },
-    "DependencyConfig": {
+    "DSCCheck": {
+        "IgnoreInf": [
+        ],
+        "skip":true
+        
+    },
+    "DependencyCheck": {
         "AcceptableDependencies": [
             "MdePkg/MdePkg.dec",
             "MsUnitTestPkg/MsUnitTestPkg.dec"
         ], 
         "IgnoreInf": {
 
-        }
+        },
+        "skip":false
     }  
 }

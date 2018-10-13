@@ -46,5 +46,11 @@
     "Targets": [
         "DEBUG",
         "RELEASE"
-    ]
+    ],
+    "DependencyCheck": {
+        "skip":true
+    },
+    "DSCCheck" : {
+        "skip":true
+    }
 }
