@@ -95,7 +95,7 @@ def RunCmd(cmd, capture=True, workingdir=None, outfile=None, outstream=None):
     logging.info("------------------------------------------------")
     logging.info("--------------Cmd Output Starting---------------")
     logging.info("------------------------------------------------")
-    c = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=workingdir)
+    c = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=workingdir, shell=True)
     if(capture):
         outr = PropagatingThread(target=reader, args=(outfile, outstream, c.stdout,))
         outr.start()
