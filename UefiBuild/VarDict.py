@@ -1,9 +1,11 @@
 ## @file VarDict.py
-# This module contains code for the old EnvDict.
-# Why is it here... and renamed? Why do you ask so many questions?
+# This module contains code for a special overridable dictionary.  
+# This stores most of the build configuration data and allows 
+# extensive config sharing for the build process, pre-build, and 
+# post-build.  
 #
 ##
-# Copyright (c) 2017, Microsoft Corporation
+# Copyright (c) 2018, Microsoft Corporation
 #
 # All rights reserved.
 # Redistribution and use in source and binary forms, with or without
@@ -46,8 +48,11 @@ class EnvEntry(object):
     # Function used to override the value if option allows it
     #
     def SetValue(self, value, comment, overridable = False):
+        if (value == self.Value):
+            return True
+
         if(not self.Overrideable):
-            logging.debug("Can't set value [%s] as it isn't overrideable" % value)
+            logging.debug("Can't set value [%s] as it isn't overrideable. Previous comment %s" % (value,self.Comment))
             return False
 
         self.Value = value
@@ -70,7 +75,14 @@ class VarDict(object):
     def __copy__(self):
         new_copy = VarDict()
         new_copy.Logger = self.Logger
-        new_copy.Dstore = self.Dstore.copy()
+
+        new_copy.Dstore = {}
+        for key in self.Dstore:
+            entry = self.GetEntry(key)
+            value = entry.Value
+            comment = entry.Comment
+            override = entry.Overrideable
+            new_copy.SetValue(key,value,comment,override)
         return new_copy
 
 
@@ -88,6 +100,7 @@ class VarDict(object):
         key = k.upper()
         en = self.GetEntry(key)
         value = str(v)
+        self.Logger.debug("Trying to set key %s to value %s" % (k, v))
         if(en == None):
             #new entry
             en = EnvEntry(value, comment, overridable)

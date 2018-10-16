@@ -57,10 +57,10 @@
 ##MSCHANGE End
 
 [Components]
-  PcAtChipsetPkg/8254TimerDxe/8254Timer.inf
+  #MU_CHANGE -  needs intel framework https://github.com/Microsoft/mu/issues/34  PcAtChipsetPkg/8254TimerDxe/8254Timer.inf
   PcAtChipsetPkg/HpetTimerDxe/HpetTimerDxe.inf
   PcAtChipsetPkg/8259InterruptControllerDxe/8259.inf
-  PcAtChipsetPkg/IsaAcpiDxe/IsaAcpi.inf
+  #MU_CHANGE - needs intel framework https://github.com/Microsoft/mu/issues/34 PcAtChipsetPkg/IsaAcpiDxe/IsaAcpi.inf
   PcAtChipsetPkg/Library/SerialIoLib/SerialIoLib.inf
   PcAtChipsetPkg/Library/ResetSystemLib/ResetSystemLib.inf
   PcAtChipsetPkg/Library/BaseIoApicLib/BaseIoApicLib.inf
