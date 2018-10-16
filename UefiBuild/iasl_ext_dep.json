@@ -1,5 +1,5 @@
 {
-  "scope": "global-win",
+  "scope": "corebuild",
   "type": "nuget",
   "name": "iasl",
   "source": "https://api.nuget.org/v3/index.json",

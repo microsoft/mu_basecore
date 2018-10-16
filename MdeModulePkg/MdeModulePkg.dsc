@@ -126,7 +126,7 @@
   HobLib|MdePkg/Library/DxeCoreHobLib/DxeCoreHobLib.inf
   MemoryAllocationLib|MdeModulePkg/Library/DxeCoreMemoryAllocationLib/DxeCoreMemoryAllocationLib.inf
   ExtractGuidedSectionLib|MdePkg/Library/DxeExtractGuidedSectionLib/DxeExtractGuidedSectionLib.inf
-  ## MS_CHANGE_?
+  ## MS_CHANGE
   BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
 
 [LibraryClasses.common.DXE_DRIVER]
@@ -134,7 +134,7 @@
   LockBoxLib|MdeModulePkg/Library/SmmLockBoxLib/SmmLockBoxDxeLib.inf
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
   ExtractGuidedSectionLib|MdePkg/Library/DxeExtractGuidedSectionLib/DxeExtractGuidedSectionLib.inf
-  CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibFmp/DxeCapsuleLib.inf
+  #MU_CHANGE CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibFmp/DxeCapsuleLib.inf
 
 [LibraryClasses.common.DXE_RUNTIME_DRIVER]
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
@@ -149,7 +149,7 @@
   SmmServicesTableLib|MdeModulePkg/Library/PiSmmCoreSmmServicesTableLib/PiSmmCoreSmmServicesTableLib.inf
   SmmCorePlatformHookLib|MdeModulePkg/Library/SmmCorePlatformHookLibNull/SmmCorePlatformHookLibNull.inf
   SmmMemLib|MdePkg/Library/SmmMemLib/SmmMemLib.inf
-  ## MS_CHANGE_?
+  ## MS_CHANGE
   BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
 
 [LibraryClasses.common.DXE_SMM_DRIVER]
@@ -222,7 +222,7 @@
   MdeModulePkg/Library/DxeHttpLib/DxeHttpLib.inf
   MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
   MdeModulePkg/Logo/Logo.inf
-  #MdeModulePkg/Logo/LogoDxe.inf
+  #MU_CHANGE - Doesn't build https://github.com/Microsoft/mu/issues/35 MdeModulePkg/Logo/LogoDxe.inf
   MdeModulePkg/Library/BaseSortLib/BaseSortLib.inf
   MdeModulePkg/Library/BootMaintenanceManagerUiLib/BootMaintenanceManagerUiLib.inf
   MdeModulePkg/Library/BootManagerUiLib/BootManagerUiLib.inf
@@ -440,7 +440,7 @@
 
   MdeModulePkg/Application/CapsuleApp/CapsuleApp.inf
   MdeModulePkg/Library/FmpAuthenticationLibNull/FmpAuthenticationLibNull.inf
-  MdeModulePkg/Library/DxeCapsuleLibFmp/DxeCapsuleLib.inf
+  # MU_CHANGE - Avoid build error MdeModulePkg/Library/DxeCapsuleLibFmp/DxeCapsuleLib.inf
   MdeModulePkg/Library/DxeCapsuleLibFmp/DxeRuntimeCapsuleLib.inf
 
 [Components.IA32, Components.X64, Components.AARCH64]
