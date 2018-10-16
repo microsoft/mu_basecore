@@ -40,7 +40,6 @@ class ShellEnvironment(object):
 
     self.global_path = None
     self.global_pypath = None
-    self.build_var_dict = GetBuildVars()
 
     self.import_environment()
 
@@ -83,11 +82,11 @@ class ShellEnvironment(object):
       self.export_environment()
 
   def get_build_var(self, var_name):
-    return self.build_var_dict.GetValue(var_name)
+    return GetBuildVars().GetValue(var_name)
 
   def set_build_var(self, var_name, var_data):
     logging.debug("Updating BUILD VAR element '%s': '%s'." % (var_name, var_data))
-    self.build_var_dict.SetValue(var_name, var_data, '', overridable=True)
+    GetBuildVars().SetValue(var_name, var_data, '', overridable=True)
 
   def get_shell_var(self, var_name):
     return os.environ.get(var_name, None)
@@ -128,11 +127,31 @@ def GetEnvironment():
     rootEnvironment = ShellEnvironment()
   return rootEnvironment
 
+  if len(rootVarDict) == 0:
+    rootVarDict.append(VarDict.VarDict())
+  return rootVarDict[0]
 
-rootVarDict = None
+
+rootVarDict = list()
 def GetBuildVars():
   global rootVarDict
 
-  if not rootVarDict:
-    rootVarDict = VarDict.VarDict()
-  return rootVarDict
+  if len(rootVarDict) == 0:
+    rootVarDict.append(VarDict.VarDict())
+  return rootVarDict[-1]
+
+def CheckpointBuildVars():
+  global rootVarDict
+  import copy
+  newBuildVars = copy.copy(GetBuildVars())
+  rootVarDict.append(newBuildVars)
+  logging.debug("Created checkpoint {0} for build vars".format(len(rootVarDict)))
+
+def RevertBuildVars():
+  global rootVarDict
+  rootVarDict.pop()
+  logging.debug("Reverting to checkpoint {0} for build vars".format(len(rootVarDict)))
+
+def ClearEnvironment():
+  global rootEnvironment
+  rootEnvironment = None

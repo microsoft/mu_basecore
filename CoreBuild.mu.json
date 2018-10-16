@@ -1,0 +1,55 @@
+{
+    "Name": "Project Mu BaseCore Repo CI Build",
+
+    "GroupName": "BaseCore",
+    #Workspace path relative to this file
+    "RelativeWorkspaceRoot": "",
+
+    "Scopes": ["corebuild"],
+
+    # Other Repos that are dependencies
+    "Dependencies": [
+        {
+            "Path": "Silicon/Arm/Tiano",
+            "Url": "https://github.com/Microsoft/mu_silicon_arm_tiano.git",
+            "Branch": "release/20180529"
+        #    "Commit": "*"
+        },
+        {
+            "Path": "Common/Tiano",
+            "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
+            "Branch": "release/20180529"
+        #    "Commit": "*"
+        }
+    ],
+
+    # Edk2 style PackagesPath for resolving dependencies - Note since this is CoreBuild the workspace is the same as root and there is no need for pp
+    "PackagesPath": [
+    ],
+
+    # Packages in this repo
+    "Packages":[
+        "MdeModulePkg",
+        "MdePkg",
+        "MsUnitTestPkg",
+        "NetworkPkg",
+        "PcAtChipsetPkg",
+        "PerformancePkg",
+        "SecurityPkg",
+        "UefiCpuPkg"
+    ],
+    "ArchSupported": [
+        "IA32",
+        "X64"
+    ],
+    "Targets": [
+        "DEBUG",
+        "RELEASE"
+    ],
+    "DependencyCheck": {
+        "skip":true
+    },
+    "DSCCheck" : {
+        "skip":false
+    }
+}
