@@ -1,0 +1,20 @@
+{
+    "CompilerPlugin": {
+        "IgnoreInf": []
+    },
+    "DependencyCheck": {
+        "AcceptableDependencies": [
+            "PcAtChipsetPkg/PcAtChipsetPkg.dec",
+            "MdePkg/MdePkg.dec",
+            "MdeModulePkg/MdeModulePkg.dec",
+            "MsUnitTestPkg/MsUnitTestPkg.dec"
+        ], 
+        "IgnoreInf": []
+    },
+    "DSCCheck": {
+        "IgnoreInf": [
+            "PcAtChipsetPkg/8254TimerDxe/8254Timer.inf", #https://github.com/Microsoft/mu/issues/34
+            "PcAtChipsetPkg/IsaAcpiDxe/IsaAcpi.inf"      #https://github.com/Microsoft/mu/issues/34
+        ]
+    } 
+}
