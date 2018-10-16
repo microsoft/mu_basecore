@@ -1,0 +1,17 @@
+{
+    "CompilerPlugin": {
+        "IgnoreInf": []
+    },
+    "DependencyCheck": {
+        "AcceptableDependencies": [
+            "NetworkPkg/NetworkPkg.dec",
+            "MdePkg/MdePkg.dec",
+            "MdeModulePkg/MdeModulePkg.dec",
+            "MsUnitTestPkg/MsUnitTestPkg.dec"
+        ], 
+        "IgnoreInf": []
+    },
+    "DSCCheck": {
+        "IgnoreInf": []
+    }
+}
