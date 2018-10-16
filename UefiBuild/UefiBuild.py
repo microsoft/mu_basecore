@@ -1,3 +1,35 @@
+## @file UefiBuild.py
+# This module contains code that supports the Tianocore Edk2 build system
+# This class is designed to be subclassed by a platform to allow
+# more extensive and custom behavior. 
+#
+# TODO: more docs
+#
+##
+# Copyright (c) 2018, Microsoft Corporation
+#
+# All rights reserved.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##
+
+
 import logging
 from MultipleWorkspace import *
 import ConfMgmt
@@ -17,12 +49,16 @@ import PluginManager
 
 class UefiBuilder(object):
 
-    def __init__(self, WorkSpace, PackagesPath, pluginlist, args, BuildConfigFile=None):
+    ##
+    #
+    # 
+    # - PackagesPath - os.pathsep string containing packages path
+    def __init__(self, WorkSpace, PackagesPath, PInManager, PInHelper, args, BuildConfigFile=None):
         self.env = ShellEnvironment.GetBuildVars()
         self.mws = MultipleWorkspace()
         self.mws.setWs(WorkSpace, PackagesPath)
         self.ws = WorkSpace
-        self.pp = PackagesPath
+        self.pp = PackagesPath  #string using os.pathsep
         self.Args = args
         self.SkipBuild = False
         self.SkipPreBuild = False
@@ -32,18 +68,13 @@ class UefiBuilder(object):
         self.OutputBuildEnvBeforeBuildToFile = None
         self.Clean = False
         self.UpdateConf = False
-        self.Helper = PluginManager.HelperFunctions()
-        self.PluginManager = PluginManager.PluginManager()
+        self.Helper = PInHelper
+        self.PluginManager = PInManager
         if(BuildConfigFile != None):
             self.BuildConfig = BuildConfigFile
         else:
             self.BuildConfig = os.path.join(self.ws, "BuildConfig.conf")
         self.RunCmd = RunCmd
-
-        self.PluginManager.SetListOfEnvironmentDescriptors(pluginlist)
-
-        
-        
 
     def Go(self):
         try:
@@ -52,6 +83,8 @@ class UefiBuilder(object):
                 self.ShowHelp()
                 return 0
 
+            self.Helper.DebugLogRegisteredFunctions()
+            
             ret = self.SetEnv()
             if(ret != 0):
                 logging.critical("SetEnv failed")
@@ -64,15 +97,6 @@ class UefiBuilder(object):
                 if(ret != 0):
                     logging.critical("Clean failed")
                     return ret
-
-            #
-            #Load Helpers
-            #
-            for Descriptor in self.PluginManager.GetPluginsOfClass(PluginManager.IUefiHelperPlugin):
-                logging.debug("Helper Plugin Register: %s", Descriptor.Name)
-                Descriptor.Obj.RegisterHelpers(self.Helper)
-
-            self.Helper.DebugLogRegisteredFunctions()
             
             #prebuild
             if(self.SkipPreBuild == True):
@@ -237,12 +261,10 @@ class UefiBuilder(object):
                 logging.debug("Plugin Success: %s" % Descriptor.Name)
         return ret
 
-        
-
     def PostBuild(self):
         logging.critical("Running Post Build")
         #
-        # Run the plaform post-build steps.
+        # Run the platform post-build steps.
         #
         ret = self.PlatformPostBuild()
 
@@ -441,12 +463,12 @@ class UefiBuilder(object):
     # be used in the build.  This makes it so we don't have to define things twice
     #
     def ParseDscFile(self):
-        if(os.path.isfile(self.mws.join(self.ws, self.env.GetValue("ACTIVE_PLATFORM")))):
+        dsc_file_path = self.mws.join(self.ws, self.env.GetValue("ACTIVE_PLATFORM"))
+        if(os.path.isfile(dsc_file_path)):
              #parse DSC File
-            logging.debug("Parse Active Platform DSC file")
+            logging.debug("Parse Active Platform DSC file: {0}".format(dsc_file_path))
             dscp = DscParser().SetBaseAbsPath(self.ws).SetPackagePaths(self.pp.split(os.pathsep)).SetInputVars(self.env.GetAllBuildKeyValues())
-            pa = self.mws.join(self.ws, self.env.GetValue("ACTIVE_PLATFORM"))
-            dscp.ParseFile(pa)
+            dscp.ParseFile(dsc_file_path)
             for key,value in dscp.LocalVars.items():
                 #set env as overrideable
                 self.env.SetValue(key, value, "From Platform DSC File", True)
@@ -470,7 +492,7 @@ class UefiBuilder(object):
         if(os.path.isfile(self.mws.join(self.ws, self.env.GetValue("FLASH_DEFINITION")))):
             #parse the FDF file- fdf files have similar syntax to DSC and therefore parser works for both.
             logging.debug("Parse Active Flash Definition (FDF) file")
-            fdfp = DscParser().SetBaseAbsPath(self.ws).SetPackagePaths(self.pp.split(";")).SetInputVars(self.env.GetAllBuildKeyValues())
+            fdfp = DscParser().SetBaseAbsPath(self.ws).SetPackagePaths(self.pp.split(os.pathsep)).SetInputVars(self.env.GetAllBuildKeyValues())
             pa = self.mws.join(self.ws, self.env.GetValue("FLASH_DEFINITION"))
             fdfp.ParseFile(pa)
             for key, value in fdfp.LocalVars.items():
@@ -566,29 +588,4 @@ class UefiBuilder(object):
                 logging.critical("Unknown build parameter!!  Parameter: %s" % a)
                 return -1
         return 0
-
-    #
-    # Function used to wait for file to exits before continuing.
-    # Will loop until either timeout or file exists
-    # @param filepath       file to wait for
-    # @param timeout        max number of minutes to wait
-    #
-    def WaitOnBuildFile(self, filepath, timeout):
-        #
-        StartTime = datetime.now()
-        EndTime = StartTime + timedelta(seconds=(timeout*60))
-        logging.critical("Waiting up to %d minutes for file: %s" % (timeout, filepath))
-        logging.critical("Time Now: " + datetime.strftime(StartTime, "%A, %B %d, %Y %I:%M%p" ))
-        logging.critical("Timeout:  " + datetime.strftime(EndTime, "%A, %B %d, %Y %I:%M%p" ))
-        while(True):
-            if(os.path.isfile(filepath)):
-                logging.debug("File Found!")
-                return 0
-            delta = datetime.now() - StartTime
-            if(delta.seconds > (timeout *60)):
-                logging.critical("Timeout waiting on %s" % filepath)
-                return -100
-            ms = divmod(delta.seconds, 60)
-            logging.debug("File not found yet. Time: {0[0]:02}:{0[1]:02} ".format(divmod(delta.seconds, 60)))
-            time.sleep(20)
 
