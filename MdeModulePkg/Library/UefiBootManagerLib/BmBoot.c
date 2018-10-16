@@ -1922,7 +1922,7 @@ EfiBootManagerBoot (
   }
 
   // PERF_START_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber); // MS_CHANGE
-  PERF_INMODULE_BEGIN (PERF_VERBOSITY_STANDARD, "BdsAttempt"); // MS_CHANGE
+  PERF_INMODULE_BEGIN ("BdsAttempt"); // MS_CHANGE
 
   //
   // 5. Adjust the different type memory page number just before booting
@@ -2025,19 +2025,19 @@ EfiBootManagerBoot (
     if (mBmLegacyBoot != NULL) {
       //
       // Write boot to OS performance data for legacy boot.
-      //
-      PERF_CODE (
-        //
-        // Create an event to be signalled when Legacy Boot occurs to write performance data.
-        //
-        Status = EfiCreateEventLegacyBootEx (
-                   TPL_NOTIFY,
-                   BmEndOfBdsPerfCode,
-                   NULL,
-                   &LegacyBootEvent
-                   );
-        ASSERT_EFI_ERROR (Status);
-        );
+      // MS_CHANGE commented this out
+      // PERF_CODE (
+      //   //
+      //   // Create an event to be signalled when Legacy Boot occurs to write performance data.
+      //   //
+      //   Status = EfiCreateEventLegacyBootEx(
+      //              TPL_NOTIFY,
+      //              BmEndOfBdsPerfCode,
+      //              NULL,
+      //              &LegacyBootEvent
+      //              );
+      //   ASSERT_EFI_ERROR (Status);
+      // );
 
       mBmLegacyBoot (BootOption);
     } else {
@@ -2076,9 +2076,9 @@ EfiBootManagerBoot (
   // PERF_CODE (
   //   BmEndOfBdsPerfCode (NULL, NULL);
   // );
-  PERF_INMODULE_END (PERF_VERBOSITY_STANDARD, "BdsAttempt"); // MS_CHANGE
-  PERF_CROSSMODULE_END (PERF_VERBOSITY_LOW, "BDS");          // MS_CHANGE: begin is in MdeModulePkg\Universal\BdsDxe\BdsEntry.c
-  PERF_CROSSMODULE_BEGIN (PERF_VERBOSITY_LOW, "BDS");        // MS_CHANGE: keep logging BDS in case we'll re-enter this function late
+  PERF_INMODULE_END ("BdsAttempt"); // MS_CHANGE
+  PERF_CROSSMODULE_END ("BDS");     // MS_CHANGE: begin is in MdeModulePkg\Universal\BdsDxe\BdsEntry.c
+  PERF_CROSSMODULE_BEGIN ("BDS");   // MS_CHANGE: keep logging BDS in case we'll re-enter this function late
   // MS_CHANGE end
 
   REPORT_STATUS_CODE (EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderStart));
