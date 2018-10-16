@@ -1950,7 +1950,7 @@ Base64Decode (
             }
         } else {
             chr = dataPtr[indx];
-            if (BAD_V != decoding_table[chr]) {
+            if (BAD_V != decoding_table[(UINT8) chr]) {
                 // The '=' characters are only valid at the end, so any
                 // valid character after an '=', will be flagged as an error.
                 if (bufferSize < 0) {
@@ -2006,7 +2006,7 @@ Base64Decode (
         // Get 24 bits of data from 4 input characters, each character representing 6 bits
         for (icnt = 0; icnt < 4; icnt++) {
             do {
-                chr = decoding_table[dataPtr[indx++]];   // '=' decodes as 0x00
+                chr = decoding_table[(UINT8) dataPtr[indx++]];   // '=' decodes as 0x00
             } while (chr == BAD_V);
             Value <<= 6;
             Value |= chr;
