@@ -156,6 +156,11 @@ try:
             if (list_path in filelist):
                 return result
 
+            # Check for file existence, fail otherwise.
+            if not os.path.isfile(filepath):
+                logging.error("File '%s' could not be found!" % filepath)
+                return self.OverrideResult.OR_FILE_NOT_FOUND
+
             # Loop detection happen here by adding the visited module into stack
             filelist.append(list_path)
 
