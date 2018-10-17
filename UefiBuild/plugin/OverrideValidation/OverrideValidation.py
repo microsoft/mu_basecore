@@ -52,11 +52,12 @@ try:
     class OverrideValidation(PluginManager.IUefiBuildPlugin):
 
         class OverrideResult(object):
-            OR_ALL_GOOD = 0
-            OR_FILE_CHANGE = 1
-            OR_VER_UNRECOG = 2
-            OR_INVALID_FORMAT = 3
-            OR_FILE_NOT_FOUND = 4
+            OR_ALL_GOOD             = 0
+            OR_FILE_CHANGE          = 1
+            OR_VER_UNRECOG          = 2
+            OR_INVALID_FORMAT       = 3
+            OR_DSC_INF_NOT_FOUND    = 4
+            OR_TARGET_INF_NOT_FOUND = 5
 
             @classmethod
             def GetErrStr (cls, errcode):
@@ -69,7 +70,9 @@ try:
                     str = 'INVALID_VERSION'
                 elif (errcode == cls.OR_INVALID_FORMAT):
                     str = 'INVALID_FORMAT'
-                elif (errcode == cls.OR_FILE_NOT_FOUND):
+                elif (errcode == cls.OR_DSC_INF_NOT_FOUND):
+                    str = 'FILE_NOT_FOUND'
+                elif (errcode == cls.OR_TARGET_INF_NOT_FOUND):
                     str = 'FILE_NOT_FOUND'
                 else:
                     str = 'UNKNOWN'
@@ -133,8 +136,9 @@ try:
                     modulelist.append(modulenode)
 
                 if m_result != self.OverrideResult.OR_ALL_GOOD:
-                    result = m_result
-                    logging.error("At File %s" %(file))
+                    if m_result != self.OverrideResult.OR_DSC_INF_NOT_FOUND:
+                        result = m_result
+                    logging.error("Override processing error %s in file %s." % (self.OverrideResult.GetErrStr(m_result), file))
 
             self.override_log_print(thebuilder, modulelist, status)
 
@@ -158,8 +162,7 @@ try:
 
             # Check for file existence, fail otherwise.
             if not os.path.isfile(filepath):
-                logging.error("File '%s' could not be found!" % filepath)
-                return self.OverrideResult.OR_FILE_NOT_FOUND
+                return self.OverrideResult.OR_DSC_INF_NOT_FOUND
 
             # Loop detection happen here by adding the visited module into stack
             filelist.append(list_path)
@@ -230,7 +233,8 @@ try:
             # Search overridden module in workspace
             if not os.path.isfile(fullpath):
                 logging.error("Inf Overridden File Not Found in Workspace or Packages_Path: %s" %(overriddenpath))
-                result = self.OverrideResult.OR_FILE_NOT_FOUND
+                result = self.OverrideResult.OR_TARGET_INF_NOT_FOUND
+                m_node.path = overriddenpath
                 m_node.status = result
                 return result
 
@@ -354,7 +358,7 @@ try:
                     log.write("\t"*list_len+"| \tCurrent State: %s | Last Fingerprint: %s\n" %(m_node.expect_hash, m_node.entry_hash))
                     self.node_dfs(thebuilder, m_node, stack, log)
                 else:
-                    log.write("\t"*list_len+"+ %s\n" %(self.OverrideResult.GetErrStr(m_node.status)))
+                    log.write("\t"*list_len+"+ %s | %s\n" % (m_node.path, self.OverrideResult.GetErrStr(m_node.status)))
 
             stack.remove(fullpath)
         # END: node_dfs(self, thebuilder, node, stack, log)
