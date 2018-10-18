@@ -1164,14 +1164,15 @@ ProcessFmpCapsuleImage (
   // MS_CHANGE [BEGIN]
   // Validate the capsule (perhaps again) before processing in case some one calls
   // ProcessFmpCapsuleImage() before or without calling ValidateFmpCapsule()
-  // if (!IsFmpCapsuleGuid(&CapsuleHeader->CapsuleGuid)) {
-  //   return ProcessFmpCapsuleImage ((EFI_CAPSULE_HEADER *)((UINTN)CapsuleHeader + CapsuleHeader->HeaderSize), ResetRequired);
-  // }
   Status = ValidateFmpCapsule(CapsuleHeader, NULL);
   if (EFI_ERROR(Status)) {
     return Status;
   }
   // MS_CHANGE [END]
+
+  if (!IsFmpCapsuleGuid(&CapsuleHeader->CapsuleGuid)) {
+    return ProcessFmpCapsuleImage ((EFI_CAPSULE_HEADER *)((UINTN)CapsuleHeader + CapsuleHeader->HeaderSize), ResetRequired);
+  }
 
   NotReady = FALSE;
   Abort = FALSE;
