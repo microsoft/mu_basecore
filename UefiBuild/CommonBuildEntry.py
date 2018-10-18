@@ -32,7 +32,7 @@ import logging
 import subprocess
 from datetime import datetime
 import SelfDescribingEnvironment
-
+import PluginManager
 
 # Simplified Comparison Function borrowed from StackOverflow...
 # https://stackoverflow.com/questions/1714027/version-number-comparison
@@ -232,13 +232,21 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
             raise RuntimeError("Validation failed.")
     except:
         raise RuntimeError("Environment is not in a state to build! Please run '--UPDATE'.")
+
+    #Load plugins
+    pluginManager = PluginManager.PluginManager()
+    pluginManager.SetListOfEnvironmentDescriptors(build_env.plugins)
+    helper = PluginManager.HelperFunctions()
+    helper.LoadFromPluginManager(pluginManager)
+    pluginList = pluginManager.GetPluginsOfClass(PluginManager.IMuBuildPlugin)
+
     # NOTE: This implicitly assumes that the PlatformBuild script path is in PYTHONPATH.
     from PlatformBuildWorker import PlatformBuilder
 
     #
     # Now we can actually kick off a build.
     #
-    PB = PlatformBuilder(my_workspace_path, my_module_pkg_paths, build_env.plugins, sys.argv)
+    PB = PlatformBuilder(my_workspace_path, my_module_pkg_paths, pluginManager, helper, sys.argv)
     retcode = PB.Go()
 
     if(retcode != 0):
