@@ -101,13 +101,16 @@ class TestPolicyTreeSolo(unittest.TestCase):
   def test_policy_command_code(self):
     expected_result_1 = bytearray.fromhex("940CFB4217BB1EDCF7FB41937CA974AA68E698AB78B8124B070113E211FD46FC")
     expected_result_2 = bytearray.fromhex("C4DFABCEDA8DE836C95661952892B1DEF7203AFB46FEFEC43FFCFC93BE540730")
+    expected_result_3 = bytearray.fromhex("1D2DC485E177DDD0A40A344913CEEB420CAA093C42587D2E1B132B157CCB5DB0")
 
     test1 = PolicyTreeSolo(PolicyCommandCode("TPM_CC_ClearControl"))
     test2 = PolicyTreeSolo(PolicyCommandCode("TPM_CC_Clear"))
+    test3 = PolicyTreeSolo(PolicyCommandCode("TPM_CC_NV_UndefineSpaceSpecial"))
 
     phash = PolicyHasher('sha256')
     self.assertEqual(test1.get_policy(phash), expected_result_1)
     self.assertEqual(test2.get_policy(phash), expected_result_2)
+    self.assertEqual(test3.get_policy(phash), expected_result_3)
 
   def test_policy_locality(self):
     expected_result = bytearray.fromhex("07039B45BAF2CC169B0D84AF7C53FD1622B033DF0A5DCDA66360AA99E54947CD")
