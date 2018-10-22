@@ -202,7 +202,7 @@ if __name__ == '__main__':
     pluginList = pluginManager.GetPluginsOfClass(PluginManager.IMuBuildPlugin)
     
     # Check to make sure our configuration is valid
-    ConfigValidator.check_mu_confg(mu_config,WORKSPACE_PATH,pluginList)
+    ConfigValidator.check_mu_confg(mu_config,edk2path,pluginList)
 
     for pkgToRunOn in packageList:
         #

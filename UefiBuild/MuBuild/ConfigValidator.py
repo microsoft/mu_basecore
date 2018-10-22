@@ -73,7 +73,8 @@ Example MU CONFIG FILE
 
 
 #Checks the top level MU Config
-def check_mu_confg(config,workspace,pluginList):
+def check_mu_confg(config,edk2path,pluginList):
+    workspace = edk2path.WorkspacePath
     def _mu_error(message):
         raise Exception("Mu Config Error: {0}".format(message))
 
@@ -92,10 +93,10 @@ def check_mu_confg(config,workspace,pluginList):
             return False
     
     def _check_packages(packages,name):
-        for package in packages:            
-            path = os.path.join(workspace,package)
-            if not os.path.isdir(path):
-                _mu_error("{0} isn't a valid package to build".format(path))
+        for package in packages:
+            path = edk2path.GetAbsolutePathOnThisSytemFromEdk2RelativePath(package)
+            if path is None or not os.path.isdir(path):
+                _mu_error("{0} isn't a valid package to build".format(package))
         return True
 
     def _is_valid_arch(targets,name):
