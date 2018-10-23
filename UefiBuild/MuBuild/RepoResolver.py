@@ -42,6 +42,7 @@ def resolve(WORKSPACE_PATH,dependencies):
         else:
             #get it
             os.makedirs(fsp)
+            logging.critical("Cloning repo: {0}".format(a["Url"]))
             clone_repo(fsp, a)
         #print out details
         packages.append(fsp)
