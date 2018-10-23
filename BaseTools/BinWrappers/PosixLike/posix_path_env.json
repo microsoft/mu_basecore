@@ -1,4 +1,0 @@
-{
-  "scope": "global-nix",
-  "flags": ["set_path"]
-}
