@@ -1,9 +1,8 @@
 ## @file Utf8Test.py
-# This tool supports checking markdown files for encoding issues.  All
-# markdown files must be valid utf-8 
+# This tool supports checking files for encoding issues.  
+# file encoding is controlled by the EncodingMap but most
+# are set to utf-8 
 #
-# Tool is callable as a cmdline tool and the EncodingCheck class is importable 
-# to leverage the same functionality in a DocBuild
 #
 ##
 # Copyright (c) 2018, Microsoft Corporation
@@ -34,7 +33,6 @@
 import os
 import logging
 from PluginManager import IMuBuildPlugin
-from Uefi.EdkII.Parsers.DscParser import *
 
 ##
 # map 
@@ -45,8 +43,13 @@ EcodingMap = {
     ".c": 'utf-8',
     ".h": 'utf-8',
     ".asm": 'utf-8',
+    ".masm": 'utf-8',
+    ".nasm": 'utf-8',
+    ".s": 'utf-8',
     ".inf": 'utf-8',
-    ".uni": 'utf-8'
+    ".asl": 'utf-8',
+    ".uni": 'utf-8',
+    ".py": 'utf-8'
 }
 
 class CharEncodingCheck(IMuBuildPlugin):
@@ -116,3 +119,9 @@ class CharEncodingCheck(IMuBuildPlugin):
             return False
 
         return True
+
+    def ValidateConfig(self, config, name):
+        validOptions = ["IgnoreFiles", "skip"]
+        for key in config:
+            if key not in validOptions:
+                raise Exception("Invalid config option {0} in {1}".format(key,name))
