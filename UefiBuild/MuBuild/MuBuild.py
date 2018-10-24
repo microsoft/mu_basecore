@@ -62,17 +62,17 @@ def strip_json_from_file(filepath):
         lines = f.readlines()
         out = ""
         for a in lines:
+            l = len(a)
             a = a.partition("#")[0]
             a = a.rstrip()
-            out += a
+            rem = l - len(a)
+            out += a + (" " * rem) + "\n"
         return out
 
 def get_mu_config():
     parser = argparse.ArgumentParser(description='Run the Mu Build')
     parser.add_argument ('-c', '--mu_config', dest = 'mu_config', required = True, type=str, help ='Provide the Mu config relative to the current working directory')
-    parser.add_argument (
-    '-p', '--pkg','--pkg-dir', dest = 'pkg', required = False, type=str,help = 'The package or folder you want to test/compile relative to the Mu Config'
-    )
+    parser.add_argument ('-p', '--pkg','--pkg-dir', dest='pkglist', nargs="+", type=str, help = 'A package or folder you want to test (abs path or cwd relative).  Can list multiple by doing -p <pkg1> <pkg2> <pkg3>', default=[])
     args, sys.argv = parser.parse_known_args() 
     return args
 
@@ -103,7 +103,6 @@ if __name__ == '__main__':
     #Parse command line arguments
     buildArgs = get_mu_config()
     mu_config_filepath = os.path.abspath(buildArgs.mu_config)
-    mu_pk_path = buildArgs.pkg
     
     if mu_config_filepath is None or not os.path.isfile(mu_config_filepath):
         raise Exception("Invalid path to mu.json file for build: ", mu_config_filepath)
@@ -149,33 +148,32 @@ if __name__ == '__main__':
     
     #which package to build
     packageList = mu_config["Packages"]
-
     #
-    # If mu pk path supplied lets see if its a file system path
+    # If mu pk list supplied lets see if they are a file system path
     # If so convert to edk2 relative path
     #
     #
-    if mu_pk_path:
+    if(len(buildArgs.pkglist) > 0):
+        packageList = []  #clear it
+
+    for mu_pk_path in buildArgs.pkglist:
         #if abs path lets convert
         if os.path.isabs(mu_pk_path):
             temp = edk2path.GetEdk2RelativePathFromAbsolutePath(mu_pk_path)
             if(temp is not None):
-                mu_pk_path = temp
+                packageList.append(temp)
+            else:
+                logging.critical("pkg-dir invalid absolute path: {0}".format(mu_pk_path))
+                raise Exception("Invalid Package Path")
         else: 
             #Check if relative path
             temp = os.path.join(os.getcwd(), mu_pk_path)
             temp = edk2path.GetEdk2RelativePathFromAbsolutePath(temp)
             if(temp is not None):
-                mu_pk_path = temp
-
-    # if a package is specified lets confirm its valid
-    if mu_pk_path:
-        if mu_pk_path in packageList:
-            packageList = [mu_pk_path]
-
-        else:
-            logging.critical("Supplied Package {0} not Found".format(mu_pk_path))
-            raise Exception("Supplied Package {0} not Found".format(mu_pk_path))
+                packageList.append(temp)
+            else:
+                logging.critical("pkg-dir invalid relative path: {0}".format(mu_pk_path))
+                raise Exception("Invalid Package Path")
     
     # Bring up the common minimum environment.
     (build_env, shell_env) = SelfDescribingEnvironment.BootstrapEnvironment(edk2path.WorkspacePath, PROJECT_SCOPES)
@@ -233,7 +231,7 @@ if __name__ == '__main__':
             
             
             for target in targets:
-                logging.info("---Running {2}: {0} {1}".format(Descriptor.Name,target,pkgToRunOn))
+                logging.critical("---Running {2}: {0} {1}".format(Descriptor.Name,target,pkgToRunOn))
                 total_num +=1
                 ShellEnvironment.CheckpointBuildVars()
                 env = ShellEnvironment.GetBuildVars()
