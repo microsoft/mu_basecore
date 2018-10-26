@@ -402,7 +402,7 @@ DebugDumpMemory (
         SetMem(Txt, sizeof(Txt) - 1, ' ');
         for (UINTN I = (Indx % 16); I < LoopLen; I++)
         {
-          CHAR8* c = p + I;
+          CHAR8* c = (CHAR8*) (p + I);
           Txt[I] = ((*c >= 0x20) && (*c <= 0x7e)) ? *c : '.';
         }
       }
