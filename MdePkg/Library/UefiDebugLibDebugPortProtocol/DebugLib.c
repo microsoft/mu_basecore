@@ -280,8 +280,15 @@ DebugAssert (
     UefiDebugLibDebugPortProtocolWrite (Buffer, AsciiStrLen (Buffer));
 
     //
-    // Generate a Breakpoint, DeadLoop, or NOP based on PCD settings
+    // Generate an Assertion Break, Breakpoint, DeadLoop, or NOP based on PCD settings
     //
+    // MU_CHANGE BEGIN BREAKASSERT
+    if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_BREAKASSERT_ENABLED) != 0) {
+      CpuBreakAssert ();
+    }
+
+    // MU_CHANGE END BREAKASSERT
+
     // MS_CHANGE BEGIN UEFI_810
     if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_BREAKPOINT_ENABLED) != 0) {
       CpuBreakpoint ();
