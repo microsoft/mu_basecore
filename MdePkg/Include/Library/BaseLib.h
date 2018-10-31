@@ -4852,6 +4852,23 @@ CpuBreakpoint (
   VOID
   );
 
+// MU_CHANGE BEGIN BREAKASSERT
+
+/**
+  Generates a debugger assertion break on the CPU.
+
+  This does a special break into the debugger such that the debugger knows
+  that the code running has hit an assertion, not a generic breakpoint.
+
+**/
+VOID
+EFIAPI
+CpuBreakAssert (
+  VOID
+  );
+
+// MU_CHANGE END BREAKASSERT
+
 /**
   Executes an infinite loop.
 
