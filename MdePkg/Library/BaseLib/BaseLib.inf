@@ -351,6 +351,7 @@
   X64/Lfence.nasm
 
   X64/CpuBreakpoint.c | MSFT
+  X64/CpuBreakAssert.c | MSFT
   X64/WriteMsr64.c | MSFT
   X64/ReadMsr64.c | MSFT
   X64/RdRand.nasm| MSFT
@@ -607,6 +608,7 @@
   AArch64/SetJumpLongJump.asm       | MSFT
   AArch64/CpuBreakpoint.asm         | MSFT
   AArch64/SpeculationBarrier.asm    | MSFT
+  AArch64/CpuBreakAssert.c          | MSFT
 
 [Packages]
   MdePkg/MdePkg.dec
