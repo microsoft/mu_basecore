@@ -222,6 +222,7 @@
   X64/Lfence.nasm
 
   X64/CpuBreakpoint.c | MSFT
+  X64/CpuBreakAssert.c | MSFT ## MS)CHANGE
   X64/WriteMsr64.c | MSFT
   X64/ReadMsr64.c | MSFT
   X64/CpuPause.nasm| MSFT
@@ -387,6 +388,7 @@
   AArch64/SetJumpLongJump.asm       | MSFT
   AArch64/CpuBreakpoint.asm         | MSFT
   AArch64/SpeculationBarrier.asm    | MSFT
+  AArch64/CpuBreakAssert.c          | MSFT ## MS_CHANGE
 
 [Sources.RISCV64]
   Math64.c
