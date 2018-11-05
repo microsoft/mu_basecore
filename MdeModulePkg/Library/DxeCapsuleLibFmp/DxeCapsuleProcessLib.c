@@ -30,7 +30,7 @@
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/CapsuleLib.h>
 #include <Library/DisplayUpdateProgressLib.h>
-#include <Library/CapsuleResetLib.h>          // MS_CHANGE - We use a library implementation of this whole flow, to enable platform configuration.
+#include <Library/ResetUtilityLib.h>            // MU_CHANGE - Use the enhanced reset subtype.
 
 #include <IndustryStandard/WindowsUxCapsule.h>
 
@@ -626,12 +626,13 @@ DoResetSystem (
   DEBUG((DEBUG_INFO, "Capsule Request Cold Reboot."));
 
   REPORT_STATUS_CODE(EFI_PROGRESS_CODE, (EFI_SOFTWARE | PcdGet32(PcdStatusCodeSubClassCapsule) | PcdGet32(PcdCapsuleStatusCodeResettingSystem)));
-  // MS_CHANGE [BEGIN] - We use a library implementation of this whole flow, to enable platform configuration.
-  // gRT->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL);
 
-  // CpuDeadLoop();
-  ResetAfterCapsuleUpdate();
-  // MS_CHANGE [END]
+  // MU_CHANGE - Use the enhanced reset subtype so that this reset can be filtered/handled
+  //             in a platform-specific way.
+  // gRT->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL);
+  ResetSystemWithSubtype( EfiResetCold, &gCapsuleUpdateCompleteResetGuid );
+
+  CpuDeadLoop();
 }
 
 /**
