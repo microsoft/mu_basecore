@@ -35,8 +35,6 @@
   MdeModulePkg/MdeModulePkg.dec
   ## MS_CHANGE - TEMP: Add this for now before moving PcdCapsuleUpdateWatchdogTimeInSeconds to MdeModulePkg.
   MsCapsuleUpdatePkg/MsCapsuleUpdatePkg.dec
-  ## MS_CHANGE - CapsuleResetLib
-  MsCorePkg/MsCorePkg.dec
 
 [LibraryClasses]
   BaseLib
@@ -52,7 +50,7 @@
   BmpSupportLib
   DisplayUpdateProgressLib
   UefiBootManagerLib            ## MS_CHANGE - Enable ConnectAll before capsule processing.
-  CapsuleResetLib               ## MS_CHANGE - We use a library implementation of this whole flow, to enable platform configuration.
+  ResetUtilityLib               ## MU_CHANGE - Use the enhanced reset subtype.
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleMax                               ## CONSUMES
@@ -83,6 +81,7 @@
   gEfiCapsuleReportGuid
   gEfiCapsuleVendorGuid                   ## SOMETIMES_CONSUMES ## Variable:L"CapsuleUpdateData"
   gEfiEndOfDxeEventGroupGuid              ## CONSUMES ## Event
+  gCapsuleUpdateCompleteResetGuid         ## MU_CHANGE - Use the enhanced reset subtype.
 
 [Depex]
   gEfiVariableWriteArchProtocolGuid
