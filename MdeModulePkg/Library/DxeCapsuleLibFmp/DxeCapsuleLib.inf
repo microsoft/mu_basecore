@@ -36,8 +36,6 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
-  ## MS_CHANGE - CapsuleResetLib
-  MsCorePkg/MsCorePkg.dec
 
 [LibraryClasses]
   BaseLib
@@ -54,7 +52,7 @@
   DisplayUpdateProgressLib
   FileHandleLib
   UefiBootManagerLib
-  CapsuleResetLib               ## MS_CHANGE - We use a library implementation of this whole flow, to enable platform configuration.
+  ResetUtilityLib               ## MU_CHANGE - Use the enhanced reset subtype.
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleMax                               ## CONSUMES
@@ -97,6 +95,7 @@
   ## SOMETIMES_PRODUCES ## Variable:L"BootNext"
   gEfiGlobalVariableGuid
   gEdkiiCapsuleOnDiskNameGuid             ## SOMETIMES_CONSUMES ## GUID
+  gCapsuleUpdateCompleteResetGuid         ## MU_CHANGE - Use the enhanced reset subtype.
 
 [Depex]
   gEfiVariableWriteArchProtocolGuid
