@@ -158,9 +158,17 @@
   #
   VariablePolicyHelperLib|Include/Library/VariablePolicyHelperLib.h
 
+  ## MS_CHANGE
   ##  @libraryclass  Provides a way for logging security locks
   #
   SecurityLockAuditLib|Include/Library/SecurityLockAuditLib.h
+
+  ## MU_CHANGE
+  ##  @libraryclass  A public library interface for persisting Capsules across reset.
+  #     This provides platform-defined support for persistence on architectures
+  #     that may not support "persist in RAM" across a reset.
+  #
+  CapsulePersistLib|Include/Library/CapsulePersistLib.h
 
 [Guids]
   ## MdeModule package token space guid
