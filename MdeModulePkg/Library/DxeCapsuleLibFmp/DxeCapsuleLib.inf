@@ -33,8 +33,6 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
-  ## MS_CHANGE - TEMP: Add this for now before moving PcdCapsuleUpdateWatchdogTimeInSeconds to MdeModulePkg.
-  MsCapsuleUpdatePkg/MsCapsuleUpdatePkg.dec
 
 [LibraryClasses]
   BaseLib
@@ -63,9 +61,6 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleStatusCodeUpdateFirmwareSuccess   ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleStatusCodeUpdateFirmwareFailed    ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleStatusCodeResettingSystem         ## CONSUMES
-
-  ## MS_CHANGE - TEMP: Add this for now before moving PcdCapsuleUpdateWatchdogTimeInSeconds to MdeModulePkg.
-  gMsCapsuleUpdatePkgTokenSpaceGuid.PcdCapsuleUpdateWatchdogTimeInSeconds
 
 [Protocols]
   gEsrtManagementProtocolGuid                   ## CONSUMES
