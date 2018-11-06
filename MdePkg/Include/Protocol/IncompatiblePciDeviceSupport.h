@@ -78,6 +78,17 @@
     0xeb23f55a, 0x7863, 0x4ac2, {0x8d, 0x3d, 0x95, 0x65, 0x35, 0xde, 0x03, 0x75} \
   }
 
+// MS_CHANGE begin
+///
+/// Extension to Acpi10.h for describing the ROM BAR as the incompatible BAR.
+///
+/// Specifying the ROM bar as incompatible indicates to the PciBusDxe driver to
+/// ignore the ROM BAR altogether.  Currently, ACPI only defines 0x01-0x03 for
+/// MEM, IO, BUS.
+///
+#define INCOMPATIBLE_ACPI_ADDRESS_SPACE_TYPE_ROM  0x0F
+// MS_CHANGE end
+
 ///
 /// Forward declaration for EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL
 ///
