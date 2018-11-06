@@ -300,10 +300,14 @@ ProcessOptionRom (
     }
 
     if ((Temp->RomSize != 0) && (Temp->RomSize <= MaxLength)) {
-      //
-      // Load and process the option rom
-      //
-      LoadOpRomImage (Temp, RomBase);
+      if (!Temp->IgnoreROM) {
+        // MS_CHANGE
+        DEBUG ((DEBUG_INFO, "Loading option rom from device at BDF=%d/%d/%d\n", Temp->BusNumber, Temp->DeviceNumber, Temp->FunctionNumber)); // MS_CHANGE
+        //                                                   // MS_CHANGE
+        // Load and process the option rom                   // MS_CHANGE
+        //                                                   // MS_CHANGE
+        LoadOpRomImage (Temp, RomBase);                      // MS_CHANGE
+      }                                                      // MS_CHANGE
     }
 
     CurrentLink = CurrentLink->ForwardLink;
