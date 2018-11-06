@@ -230,6 +230,7 @@
   MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf
   MdeModulePkg/Universal/Variable/RuntimeDxe/PropertyBasedVarLockLib.inf
 ## MSCHANGE END
+  MdeModulePkg/Library/CapsulePersistLibNull/CapsulePersistLibNull.inf      ## MU_CHANGE
 
   MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
   MdeModulePkg/Logo/Logo.inf
