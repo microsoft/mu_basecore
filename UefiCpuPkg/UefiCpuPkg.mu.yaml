@@ -12,8 +12,8 @@
     },
     "DSCCheck": {
         "IgnoreInf": [
-            "ueficpupkg/resetvector/fixupvtf/vtf.inf",
-            "ueficpupkg/resetvector/vtf0/vtf0.inf"
+            "UefiCpuPkg/ResetVector/FixupVtf/Vtf.inf",
+            "UefiCpuPkg/ResetVector/Vtf0/Vtf0.inf"
         ]
     }
 }
