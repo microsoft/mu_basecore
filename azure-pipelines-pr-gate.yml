@@ -1,30 +1,50 @@
+#Use matrix to speed up the build process
+strategy:
+  matrix:
+    TARGET_MDE:
+      Build.Pkgs: 'MdePkg MdeModulePkg'
+    TARGET_OTHER:
+      Build.Pkgs: 'MsUnitTestPkg NetworkPkg PcAtChipsetPkg'
+    TARGET_SECURITY_CPU:
+      Build.Pkgs: 'SecurityPkg UefiCpuPkg'
+
+workspace:
+  clean: all
 
 steps:
-- task: DeleteFiles@1
-  inputs:
-    sourceFolder: $(Build.SourcesDirectory)
-    contents: '**'
-
 - checkout: self
   clean: true
   
 - task: UsePythonVersion@0
   inputs:
-    versionSpec: '3.7'
+    versionSpec: '3.7.x'
     architecture: 'x64'
+
+- script: python -m pip install --upgrade pip
+  displayName: 'Install/Upgrade pip'
+
+- script: python -m pip install --upgrade mu_bootstrap
+  displayName: 'Install/Upgrade mu_bootstrap'
+
+#Bootstrap repo
+- task: CmdLine@1
+  displayName: 'bootstrap repo'
+  inputs:
+    filename: mu_bootstrap
+    arguments: '-c ci.mu.yaml'
 
 # Python Script
 # Run a Python script.
 - task: PythonScript@0
   inputs:
     scriptSource: 'filePath' # Options: filePath, inline
-    scriptPath: UefiBuild\MuBuild\MuBuild.py # Required when scriptSource == FilePath
+    scriptPath: MU_BUILD\UefiBuild\MuBuild\MuBuild.py # Required when scriptSource == FilePath
     #script: # Required when scriptSource == Inline
-    arguments: -c CoreBuild.mu.json # Optional
+    arguments: -c ci.mu.yaml --force-git -p $(Build.Pkgs) # Optional
     #pythonInterpreter: # Optional
     #workingDirectory: # Optional
     #failOnStderr: false # Optional
-  displayName: Build and Test
+  displayName: Build and Test $(Build.Pkgs)
 
 
 # Publish Test Results to Azure Pipelines/TFS
@@ -51,7 +71,7 @@ steps:
   condition: succeededOrFailed()
   inputs:
     pathtoPublish: 'Build/BuildLogs' 
-    artifactName: 'Build Logs' 
+    artifactName: 'Build Logs $(Build.Pkgs)' 
     #publishLocation: 'Container' # Options: container, filePath
     #targetPath: # Required when publishLocation == FilePath
     #parallel: false # Optional
