@@ -10,13 +10,18 @@
     # Other Repos that are dependencies
     "Dependencies": [
         {
-            "Path": "Silicon/Arm/Tiano",
+            "Path": "MU_BUILD",
+            "Url": "https://github.com/Microsoft/mu_build.git",
+            "Branch": "release/201808"
+        },
+        {
+            "Path": "Silicon/Arm/TIANO",
             "Url": "https://github.com/Microsoft/mu_silicon_arm_tiano.git",
             "Branch": "release/20180529"
         #    "Commit": "*"
         },
         {
-            "Path": "Common/Tiano",
+            "Path": "Common/TIANO",
             "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
             "Branch": "release/20180529"
         #    "Commit": "*"
@@ -34,7 +39,6 @@
         "MsUnitTestPkg",
         "NetworkPkg",
         "PcAtChipsetPkg",
-        "PerformancePkg",
         "SecurityPkg",
         "UefiCpuPkg"
     ],
