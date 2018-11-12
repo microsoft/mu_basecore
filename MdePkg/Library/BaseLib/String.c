@@ -1208,7 +1208,7 @@ InternalAsciiHexCharToUintn (
     return Char - '0';
   }
 
-  return (10 + AsciiToUpper (Char) - 'A');
+  return (10 + AsciiToUpper (Char) - 'A'); //MS_CHANGE use AsciiToUpper instead of InteralAsciiToUpper
 }
 
 
@@ -1257,13 +1257,13 @@ AsciiStriCmp (
   ASSERT (AsciiStrSize (FirstString));
   ASSERT (AsciiStrSize (SecondString));
 
-  UpperFirstString  = AsciiToUpper (*FirstString);
-  UpperSecondString = AsciiToUpper (*SecondString);
+  UpperFirstString  = AsciiToUpper (*FirstString); //MS_CHANGE use AsciiToUpper instead of InteralAsciiToUpper
+  UpperSecondString = AsciiToUpper (*SecondString);//MS_CHANGE use AsciiToUpper instead of InteralAsciiToUpper
   while ((*FirstString != '\0') && (*SecondString != '\0') && (UpperFirstString == UpperSecondString)) {
     FirstString++;
     SecondString++;
-    UpperFirstString  = AsciiToUpper (*FirstString);
-    UpperSecondString = AsciiToUpper (*SecondString);
+    UpperFirstString  = AsciiToUpper (*FirstString); //MS_CHANGE use AsciiToUpper instead of InteralAsciiToUpper
+    UpperSecondString = AsciiToUpper (*SecondString); //MS_CHANGE use AsciiToUpper instead of InteralAsciiToUpper
   }
 
   return UpperFirstString - UpperSecondString;

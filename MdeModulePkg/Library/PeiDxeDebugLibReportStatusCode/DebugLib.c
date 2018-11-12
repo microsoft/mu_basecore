@@ -55,6 +55,7 @@ DebugPrint (
   ...
   )
 {
+  //MS_CHANGE - START
   VA_LIST         Marker;
 
   ASSERT(Format != NULL);
@@ -62,6 +63,7 @@ DebugPrint (
   VA_START(Marker, Format);
   DebugPrintValist(ErrorLevel, Format, Marker);
   VA_END(Marker);
+  //MS_CHANGE - END
 
 }
 

@@ -36,6 +36,7 @@ ASM_PFX(EnableInterrupts):
     sti
     ret
 
+; MS_CHANGE - START
 ;------------------------------------------------------------------------------
 ; VOID
 ; EFIAPI
@@ -48,3 +49,4 @@ ASM_PFX(EnableInterruptsAndSleep):
     sti
     hlt
     ret
+; MS_CHANGE - END
