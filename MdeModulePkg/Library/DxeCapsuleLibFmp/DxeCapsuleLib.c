@@ -1552,7 +1552,7 @@ ProcessCapsuleImage (
   return ProcessThisCapsuleImage (CapsuleHeader, NULL);
 }
 
-/**
+/** MS_CHANGE - START
   The firmware implements to process the capsule image.
 
   @param  CapsuleHeader         Points to a capsule header.
@@ -1569,6 +1569,7 @@ StageCapsuleImage(
 {
   return EFI_SUCCESS;
 }
+// MS_CHANGE - END
 
 /**
   Callback function executed when the EndOfDxe event group is signaled.

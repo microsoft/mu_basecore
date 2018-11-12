@@ -182,9 +182,9 @@ EndofPeiSignalNotifyCallBack (
   UINT32                                                HobIndex;                  // MS_CHANGE
   EFI_STATUS                                            Status;                    // MS_CHANGE
 
-  MeasuredHobData = NULL;
-  ExcludedHobData = NULL;
-  MeasurementExcludedFvPpi = NULL;
+  MeasuredHobData = NULL; 
+  ExcludedHobData = NULL;         // MS_CHANGE
+  MeasurementExcludedFvPpi = NULL;// MS_CHANGE
 
   PERF_CALLBACK_BEGIN (&gEfiEndOfPeiSignalPpiGuid);
 
@@ -213,7 +213,7 @@ EndofPeiSignalNotifyCallBack (
     CopyMem (&MeasuredHobData->MeasuredFvBuf[mMeasuredBaseFvIndex] , mMeasuredChildFvInfo, sizeof(EFI_PLATFORM_FIRMWARE_BLOB) * (mMeasuredChildFvIndex));
   }
 
-  //
+  // MS_CHANGE - START
   // Create a guid hob to save all excluded FVs for DXE - mschange start
   //
 
@@ -287,7 +287,7 @@ EndofPeiSignalNotifyCallBack (
     }
   }  //Done with Excluded Fv Hob - mschange end
 
-
+  //MS_CHANGE - END
   PERF_CALLBACK_END (&gEfiEndOfPeiSignalPpiGuid);
 
   return EFI_SUCCESS;
@@ -809,7 +809,7 @@ MeasureMainBios (
   EFI_FV_INFO                       VolumeInfo;
   EFI_PEI_FIRMWARE_VOLUME_PPI       *FvPpi;
 
-  PERF_FUNCTION_BEGIN ();
+  PERF_FUNCTION_BEGIN (); // MS_CHANGE
 
   //
   // Only measure BFV at the very beginning. Other parts of Static Core Root of
@@ -840,7 +840,7 @@ MeasureMainBios (
 
   Status = MeasureFvImage ((EFI_PHYSICAL_ADDRESS) (UINTN) VolumeInfo.FvStart, VolumeInfo.FvSize);
 
-  PERF_FUNCTION_END ();
+  PERF_FUNCTION_END (); //MS_CHANGE
 
   return Status;
 }

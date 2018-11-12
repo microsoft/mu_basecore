@@ -19,7 +19,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #define NO_MAPPING  (VOID *) (UINTN) -1
 
-#define RESOURCE_VALID(Resource) ((Resource)->Base <= (Resource)->Limit)
+#define RESOURCE_VALID(Resource) ((Resource)->Base <= (Resource)->Limit) //MS_CHANGE
 
 //
 // Lookup table for increment values based on transfer widths
@@ -122,26 +122,26 @@ CreateRootBridge (
   //
   // Make sure Mem and MemAbove4G apertures are valid
   //
-  if (RESOURCE_VALID (&Bridge->Mem)) {
-    ASSERT (Bridge->Mem.Limit < SIZE_4GB);
+  if (RESOURCE_VALID (&Bridge->Mem)) { //MS_CHANGE use macro
+    ASSERT (Bridge->Mem.Limit < SIZE_4GB); //MS_CHANGE use assert
     if (Bridge->Mem.Limit >= SIZE_4GB) {
       return NULL;
     }
   }
-  if (RESOURCE_VALID (&Bridge->MemAbove4G)) {
-    ASSERT (Bridge->MemAbove4G.Base >= SIZE_4GB);
+  if (RESOURCE_VALID (&Bridge->MemAbove4G)) { //MS_CHANGE use macro
+    ASSERT (Bridge->MemAbove4G.Base >= SIZE_4GB); //MS_CHANGE use assert
     if (Bridge->MemAbove4G.Base < SIZE_4GB) {
       return NULL;
     }
   }
-  if (RESOURCE_VALID (&Bridge->PMem)) {
-    ASSERT (Bridge->PMem.Limit < SIZE_4GB);
+  if (RESOURCE_VALID (&Bridge->PMem)) { //MS_CHANGE use macro
+    ASSERT (Bridge->PMem.Limit < SIZE_4GB); //MS_CHANGE use assert
     if (Bridge->PMem.Limit >= SIZE_4GB) {
       return NULL;
     }
   }
-  if (RESOURCE_VALID (&Bridge->PMemAbove4G)) {
-    ASSERT (Bridge->PMemAbove4G.Base >= SIZE_4GB);
+  if (RESOURCE_VALID (&Bridge->PMemAbove4G)) { //MS_CHANGE use macro
+    ASSERT (Bridge->PMemAbove4G.Base >= SIZE_4GB); //MS_CHANGE use assert
     if (Bridge->PMemAbove4G.Base < SIZE_4GB) {
       return NULL;
     }
@@ -319,7 +319,7 @@ RootBridgeIoCheckParameter (
   UINT64                                       Base;
   UINT64                                       Limit;
   UINT32                                       Size;
-  UINT64                                       Length;
+  UINT64                                       Length; //MS_CHANGE
 
   //
   // Check to see if Buffer is NULL
@@ -346,12 +346,15 @@ RootBridgeIoCheckParameter (
   Width = (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH) (Width & 0x03);
   Size  = 1 << Width;
 
+  //MS_CHANGE - START
   //
   // Make sure (Count * Size) doesn't exceed MAX_UINT64
   //
   if (Count > DivU64x32 (MAX_UINT64, Size)) {
     return EFI_INVALID_PARAMETER;
   }
+
+  //MS_CHANGE - END
 
   //
   // Check to see if Address is aligned
@@ -360,6 +363,7 @@ RootBridgeIoCheckParameter (
     return EFI_UNSUPPORTED;
   }
 
+  //MS_CHANGE - START
   //
   // Make sure (Address + Count * Size) doesn't exceed MAX_UINT64
   //
@@ -367,6 +371,7 @@ RootBridgeIoCheckParameter (
   if (Address > MAX_UINT64 - Length) {
     return EFI_INVALID_PARAMETER;
   }
+  //MS_CHANGE - END
 
   RootBridge = ROOT_BRIDGE_FROM_THIS (This);
 
@@ -386,7 +391,7 @@ RootBridgeIoCheckParameter (
     //
     // Allow Legacy IO access
     //
-    if (Address + Length <= 0x1000) {
+    if (Address + Length <= 0x1000) { //MS_CHANGE uses length
       if ((RootBridge->Attributes & (
            EFI_PCI_ATTRIBUTE_ISA_IO | EFI_PCI_ATTRIBUTE_VGA_PALETTE_IO | EFI_PCI_ATTRIBUTE_VGA_IO |
            EFI_PCI_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_ATTRIBUTE_IDE_SECONDARY_IO |
@@ -400,7 +405,7 @@ RootBridgeIoCheckParameter (
     //
     // Allow Legacy MMIO access
     //
-    if ((Address >= 0xA0000) && (Address + Length) <= 0xC0000) {
+    if ((Address >= 0xA0000) && (Address + Length) <= 0xC0000) { //MS_CHANGE - uses length instead of MultU64x32
       if ((RootBridge->Attributes & EFI_PCI_ATTRIBUTE_VGA_MEMORY) != 0) {
         return EFI_SUCCESS;
       }
@@ -412,12 +417,14 @@ RootBridgeIoCheckParameter (
     if ((Address >= RootBridge->Mem.Base) && (Address + Length <= RootBridge->Mem.Limit + 1)) {
       Base  = RootBridge->Mem.Base;
       Limit = RootBridge->Mem.Limit;
-    } else if ((Address >= RootBridge->PMem.Base) && (Address + Length <= RootBridge->PMem.Limit + 1)) {
+    } //MS_CHANGE - START
+    else if ((Address >= RootBridge->PMem.Base) && (Address + Length <= RootBridge->PMem.Limit + 1)) {
       Base  = RootBridge->PMem.Base;
       Limit = RootBridge->PMem.Limit;
     } else if ((Address >= RootBridge->MemAbove4G.Base) && (Address + Length <= RootBridge->MemAbove4G.Limit + 1)) {
       Base  = RootBridge->MemAbove4G.Base;
       Limit = RootBridge->MemAbove4G.Limit;
+    //MS_CHANGE - END
     } else {
       Base  = RootBridge->PMemAbove4G.Base;
       Limit = RootBridge->PMemAbove4G.Limit;
@@ -447,7 +454,7 @@ RootBridgeIoCheckParameter (
       return EFI_INVALID_PARAMETER;
   }
 
-  if (Address + Length > Limit + 1) {
+  if (Address + Length > Limit + 1) { //MS_CHANGE - uses length instead of MultU64x32
     return EFI_INVALID_PARAMETER;
   }
 
@@ -1267,7 +1274,7 @@ RootBridgeIoMap (
 
   RootBridge = ROOT_BRIDGE_FROM_THIS (This);
 
-  if (mIoMmu != NULL) {
+  if (mIoMmu != NULL) { //MS_CHANGE renamed to mIoMmu from mIoMmuProtocol
     if (!RootBridge->DmaAbove4G) {
       //
       // Clear 64bit support
@@ -1276,7 +1283,7 @@ RootBridgeIoMap (
         Operation = (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION) (Operation - EfiPciOperationBusMasterRead64);
       }
     }
-    Status = mIoMmu->Map (
+    Status = mIoMmu->Map ( //MS_CHANGE renamed to mIoMmu from mIoMmuProtocol
                        mIoMmu,
                        (EDKII_IOMMU_OPERATION) Operation,
                        HostAddress,
@@ -1412,7 +1419,7 @@ RootBridgeIoUnmap (
   EFI_STATUS                Status;
 
   if (mIoMmu != NULL) {
-    Status = mIoMmu->Unmap (
+    Status = mIoMmu->Unmap ( //MS_CHANGE renamed to mIoMmu from mIoMmuProtocol
                        mIoMmu,
                        Mapping
                        );

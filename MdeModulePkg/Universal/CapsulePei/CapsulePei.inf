@@ -50,7 +50,7 @@
   BaseLib
   HobLib
   BaseMemoryLib
-  MemoryAllocationLib
+  MemoryAllocationLib ## MS_CHANGE
   PeiServicesLib
   PeimEntryPoint
   DebugLib

@@ -99,7 +99,7 @@ NvmeShutdownController(
   IN NVME_CONTROLLER_PRIVATE_DATA *Private,
   IN BOOLEAN Normal
 );
-// END
+//MS_CHANGE - END
 
 #endif
 
