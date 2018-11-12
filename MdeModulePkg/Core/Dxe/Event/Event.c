@@ -677,9 +677,11 @@ CoreWaitForEvent (
   //
   // Can only WaitForEvent at TPL_APPLICATION
   //
+  //MS_CHANGE - START
   //if (gEfiCurrentTpl != TPL_APPLICATION) {
   //  return EFI_UNSUPPORTED;                    // MS_CHANGE: Supporting all TPLs
   //}
+  //MS_CHANGE - END
 
   if (NumberOfEvents == 0) {
     return EFI_INVALID_PARAMETER;

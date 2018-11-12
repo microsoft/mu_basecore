@@ -176,7 +176,7 @@ ParseFfs (
   UINT8                         NumberofMatchingVfrBin;
   UINTN                         *VfrBinBaseAddress;
 
-  VfrBinBaseAddress = NULL; //vs2017
+  VfrBinBaseAddress = NULL; //MS_CHANGE for vs2017
 
   Status = Fv2->ReadFile (
                   Fv2,
