@@ -223,7 +223,7 @@ PeCoffLoaderGetImageInfo (
   IN OUT PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
   );
 
-// MS_CHANGE_?
+// MS_CHANGE_? START
 /**
 Retrieves the address of the SecurityCookie from the PE/COFF image.
 

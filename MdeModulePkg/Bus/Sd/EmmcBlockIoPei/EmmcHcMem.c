@@ -30,7 +30,7 @@ EmmcPeimAllocMemBlock (
 
   TempPtr = NULL;
   Block   = NULL;
-  Mapping = NULL; //vs2017
+  Mapping = NULL; //MS_CHANGE vs2017
 
   Status = PeiServicesAllocatePool (sizeof(EMMC_PEIM_MEM_BLOCK), &TempPtr);
   if (EFI_ERROR (Status)) {
