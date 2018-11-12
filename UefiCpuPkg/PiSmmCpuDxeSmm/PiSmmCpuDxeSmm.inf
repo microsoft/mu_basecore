@@ -98,14 +98,14 @@
   ReportStatusCodeLib
   SmmCpuFeaturesLib
   PeCoffGetEntryPointLib
-  HwResetSystemLib                         ## MSCHANGE - Allow system to reset instead of halt in test mode.
+  HwResetSystemLib                         ## MS_CHANGE - Allow system to reset instead of halt in test mode.
 
 [Protocols]
   gEfiSmmAccess2ProtocolGuid               ## CONSUMES
   gEfiMpServiceProtocolGuid                ## CONSUMES
   gEfiSmmConfigurationProtocolGuid         ## PRODUCES
   gEfiSmmCpuProtocolGuid                   ## PRODUCES
-  gSmmExceptionTestProtocolGuid            ## PRODUCES
+  gSmmExceptionTestProtocolGuid            ## PRODUCES ## MS_CHANGE
   gEfiSmmReadyToLockProtocolGuid           ## NOTIFY
   gEfiSmmCpuServiceProtocolGuid            ## PRODUCES
   gEdkiiSmmMemoryAttributeProtocolGuid     ## PRODUCES
@@ -125,7 +125,7 @@
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmProfileEnable                 ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmProfileRingBuffer             ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmFeatureControlMsrLock         ## CONSUMES
-  gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionTestModeSupport         ## CONSUMES
+  gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionTestModeSupport         ## CONSUMES ## MS_CHANGE
 
 [Pcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuMaxLogicalProcessorNumber        ## SOMETIMES_CONSUMES
@@ -142,7 +142,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask    ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
   gEfiMdePkgTokenSpaceGuid.PcdControlFlowEnforcementPropertyMask        ## CONSUMES
-  gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionRebootInsteadOfHaltDefault   ## CONSUMES
+  gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionRebootInsteadOfHaltDefault   ## CONSUMES ## MS_CHANGE
 
 [FixedPcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmMpTokenCountPerChunk               ## CONSUMES

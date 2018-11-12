@@ -148,7 +148,7 @@
   # @Prompt Lock SMM Feature Control MSR.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmFeatureControlMsrLock|TRUE|BOOLEAN|0x3213210B
 
-
+  ## MS_CHANGE
   ## If TRUE, Install the protocol to communicate to the Smm Exception 
   # handler so automated testing can be performed. 
   # 
@@ -170,6 +170,7 @@
   # @Prompt Specify the count of pre allocated SMM MP tokens per chunk.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmMpTokenCountPerChunk|64|UINT32|0x30002002
 
+  ## MS_CHANGE
   ## If TRUE, the default Cpu Exception Handler in SMM will reboot 
   # This handler state can be changed by using the Exception Test Protocol
   gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionRebootInsteadOfHaltDefault|TRUE|BOOLEAN|0x00000020

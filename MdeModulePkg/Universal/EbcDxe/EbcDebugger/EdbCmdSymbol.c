@@ -558,7 +558,7 @@ DebuggerUnloadSymbol (
   UINTN      Index;
   VOID       *BufferPtr;
 
-  BufferPtr = NULL;
+  BufferPtr = NULL; //MS_CHANGE vs2017
 
   //
   // Check the argument
@@ -695,7 +695,7 @@ DebuggerLoadCode (
   CHAR16     *FileName;
   CHAR16     *MapFileName;
 
-  Buffer = NULL; //vs2017
+  Buffer = NULL; //MS_CHANGE for vs2017
 
   //
   // Check the argument
@@ -790,7 +790,7 @@ DebuggerUnloadCode (
   EFI_STATUS Status;
   VOID       *BufferPtr;
 
-  BufferPtr = NULL; //vs2017
+  BufferPtr = NULL; //MS_CHANGE for vs2017
   //
   // Check the argument
   //

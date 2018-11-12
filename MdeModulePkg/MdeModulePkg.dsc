@@ -229,8 +229,8 @@
   MdeModulePkg/Library/SecurityLockAuditDebugMessageLib/SecurityLockAuditDebugMessageLib.inf
   MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf
   MdeModulePkg/Universal/Variable/RuntimeDxe/PropertyBasedVarLockLib.inf
-## MSCHANGE END
   MdeModulePkg/Library/CapsulePersistLibNull/CapsulePersistLibNull.inf      ## MU_CHANGE
+## MSCHANGE END
 
   MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
   MdeModulePkg/Logo/Logo.inf

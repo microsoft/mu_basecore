@@ -398,7 +398,7 @@ CpuSetMemoryAttributes (
   // to avoid unnecessary computing.
   //
   if (mIsFlushingGCD) {
-    DEBUG((DEBUG_VERBOSE, "  Flushing GCD\n"));
+    DEBUG((DEBUG_VERBOSE, "  Flushing GCD\n")); //MS_CHANGE VERBOSE from INFO
     return EFI_SUCCESS;
   }
 
