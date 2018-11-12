@@ -14,7 +14,7 @@
 **/
 
 #include "NvmExpress.h"
-#include <Guid/NVMeEventGroup.h>
+#include <Guid/NVMeEventGroup.h> //MS_CHANGE
 
 #define NVME_SHUTDOWN_PROCESS_TIMEOUT 45
 
@@ -1135,7 +1135,9 @@ NvmeUnregisterShutdownNotification (
 {
   EFI_STATUS                      Status;
   EFI_RESET_NOTIFICATION_PROTOCOL *ResetNotify;
-        ReportStatusCode((EFI_ERROR_MAJOR | EFI_ERROR_CODE), (EFI_IO_BUS_SCSI | EFI_IOB_EC_INTERFACE_ERROR));
+  //MS_CHANGE - BEGIN
+  ReportStatusCode((EFI_ERROR_MAJOR | EFI_ERROR_CODE), (EFI_IO_BUS_SCSI | EFI_IOB_EC_INTERFACE_ERROR));
+  //MS_CHANGE - END
   mNvmeControllerNumber--;
   if (mNvmeControllerNumber == 0) {
     Status = gBS->LocateProtocol (&gEfiResetNotificationProtocolGuid, NULL, (VOID **) &ResetNotify);
