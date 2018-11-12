@@ -138,7 +138,7 @@
   # @Prompt Lock SMM Feature Control MSR.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmFeatureControlMsrLock|TRUE|BOOLEAN|0x3213210B
 
-
+  ## MS_CHANGE
   ## If TRUE, Install the protocol to communicate to the Smm Exception 
   # handler so automated testing can be performed. 
   # 
@@ -156,6 +156,7 @@
   # @Prompt Specify size of good stack of exception which need switching stack.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize|2048|UINT32|0x30002001
 
+  ## MS_CHANGE
   ## If TRUE, the default Cpu Exception Handler in SMM will reboot 
   # This handler state can be changed by using the Exception Test Protocol
   gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionRebootInsteadOfHaltDefault|TRUE|BOOLEAN|0x00000020
