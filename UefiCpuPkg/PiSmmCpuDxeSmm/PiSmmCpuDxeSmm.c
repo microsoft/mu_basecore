@@ -607,7 +607,7 @@ PiCpuSmmEntry (
     EFI_COMPUTING_UNIT_HOST_PROCESSOR | EFI_CU_HP_PC_SMM_INIT
     );
 
-  mSmmRebootOnException = PcdGetBool(PcdSmmExceptionRebootInsteadOfHaltDefault); 
+  mSmmRebootOnException = PcdGetBool(PcdSmmExceptionRebootInsteadOfHaltDefault); //MS_CHANGE
 
   //
   // Find out SMRR Base and SMRR Size

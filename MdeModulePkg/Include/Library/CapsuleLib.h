@@ -66,7 +66,7 @@ ProcessCapsuleImage (
 **/
 EFI_STATUS
 EFIAPI
-StageCapsuleImage (
+StageCapsuleImage ( 
   IN EFI_CAPSULE_HEADER *CapsuleHeader
   );
 
