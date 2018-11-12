@@ -2472,7 +2472,7 @@ OnReadyToBoot (
         DEBUG ((EFI_D_ERROR, "%a not Measured. Error!\n", EFI_CALLING_EFI_APPLICATION));
       }
     }  
-    else 
+    else  //MS_CHANGE
     {
       DEBUG ((DEBUG_WARN, "Tcg2Dxe PCD set to skip Measure Boot String in PCR4\n"));
     }

@@ -517,7 +517,7 @@ MnpTransmit (
   UINT32            PktLen;
   EFI_TPL           OldTpl;
 
-  PktBuf = NULL; //vs2017
+  PktBuf = NULL; //MS_CHANGE for vs2017
 
   if ((This == NULL) || (Token == NULL)) {
     return EFI_INVALID_PARAMETER;

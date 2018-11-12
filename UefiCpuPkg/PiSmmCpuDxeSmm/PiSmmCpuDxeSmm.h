@@ -21,7 +21,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/SmmCpuService.h>
 #include <Protocol/SmmMemoryAttribute.h>
 #include <Protocol/MmMp.h>
-#include <Protocol/SmmExceptionTestProtocol.h>
+#include <Protocol/SmmExceptionTestProtocol.h> // MS_CHANGE
 
 #include <Guid/AcpiS3Context.h>
 #include <Guid/MemoryAttributesTable.h>
@@ -270,7 +270,7 @@ extern EFI_MM_MP_PROTOCOL     mSmmMp;
 ///
 extern UINT8  mSmmSaveStateRegisterLma;
 
-extern BOOLEAN                      mSmmRebootOnException;
+extern BOOLEAN                      mSmmRebootOnException; //MS_CHANGE
 
 //
 // SMM CPU Protocol function prototypes.
