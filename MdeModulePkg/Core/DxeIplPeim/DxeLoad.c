@@ -186,7 +186,7 @@ InstallIplPermanentMemoryPpis (
   ASSERT_EFI_ERROR(Status);
 #endif
   Status = EFI_SUCCESS;
-// END
+// MS_CHANGE - END
   return Status;
 }
 

@@ -1946,7 +1946,7 @@ EfiBootManagerBoot (
     if (mBmLegacyBoot != NULL) {
       //
       // Write boot to OS performance data for legacy boot.
-      //
+      // MS_CHANGE commented this out
       // PERF_CODE (
       //   //
       //   // Create an event to be signalled when Legacy Boot occurs to write performance data.

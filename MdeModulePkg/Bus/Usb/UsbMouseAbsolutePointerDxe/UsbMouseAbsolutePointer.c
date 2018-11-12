@@ -843,7 +843,7 @@ OnMouseInterruptComplete (
   if (DataLength > 3) {
     UsbMouseAbsolutePointerDevice->State.CurrentZ =
       MIN (
-        MAX ((INT64) UsbMouseAbsolutePointerDevice->State.CurrentZ + *((INT8 *) Data + 3),
+        MAX ((INT64) UsbMouseAbsolutePointerDevice->State.CurrentZ + *((INT8 *) Data + 3), //MS_CHANGE changed to +3 from +1
              (INT64) UsbMouseAbsolutePointerDevice->Mode.AbsoluteMinZ),
         (INT64) UsbMouseAbsolutePointerDevice->Mode.AbsoluteMaxZ
         );

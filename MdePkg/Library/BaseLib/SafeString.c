@@ -882,7 +882,7 @@ StrHexToUintnS (
     String++;
   }
 
-  if (CharToUpper (*String) == L'X') {
+  if (CharToUpper (*String) == L'X') { //MS_CHANGE use CharToUpper instead of InteralCharToUpper
     if (*(String - 1) != L'0') {
       *Data = 0;
       return RETURN_SUCCESS;
@@ -1008,7 +1008,7 @@ StrHexToUint64S (
     String++;
   }
 
-  if (CharToUpper (*String) == L'X') {
+  if (CharToUpper (*String) == L'X') { //MS_CHANGE use CharToUpper instead of InteralCharToUpper
     if (*(String - 1) != L'0') {
       *Data = 0;
       return RETURN_SUCCESS;

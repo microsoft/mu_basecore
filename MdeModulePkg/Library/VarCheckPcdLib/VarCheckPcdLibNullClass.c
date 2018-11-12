@@ -413,7 +413,7 @@ LocateVarCheckPcdBin (
   VAR_CHECK_PCD_VARIABLE_HEADER     *VarCheckPcdBin;
   UINTN                             VarCheckPcdBinSize;
 
-  VarCheckPcdBin = NULL; //vs2017
+  VarCheckPcdBin = NULL; //MS_CHANGE for vs2017
 
   //
   // Search the VarCheckPcdBin from the first RAW section of current FFS.

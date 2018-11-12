@@ -38,7 +38,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/SimpleFileSystem.h>
-#include <Protocol/HeapGuardDebug.h>
+#include <Protocol/HeapGuardDebug.h> // MS_CHANGE
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
@@ -66,10 +66,11 @@ UINT32   mImageProtectionPolicy;
 extern LIST_ENTRY         mGcdMemorySpaceMap;
 
 STATIC LIST_ENTRY         mProtectedImageRecordList;
-
+//MS_CHANGE - START
 STATIC HEAP_GUARD_DEBUG_PROTOCOL mHeapGuardDebug = {
   IsGuardPage
 };
+// MS_CHANGE - END
 
 /**
   Sort code section in image record, based upon CodeSegmentBase from low to high.

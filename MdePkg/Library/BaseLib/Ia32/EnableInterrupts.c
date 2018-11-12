@@ -24,7 +24,7 @@ EnableInterrupts (
   }
 }
 
-
+//MS_CHANGE - START
 /**
   Enables CPU interrupts and then waits for an interrupt to arrive.
 
@@ -40,4 +40,4 @@ EnableInterruptsAndSleep (
     hlt
   }
 }
-
+//MS_CHANGE - END
