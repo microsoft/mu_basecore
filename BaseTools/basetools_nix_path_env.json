@@ -1,0 +1,5 @@
+{
+  "scope": "global-nix",
+  "flags": ["set_shell_var"],
+  "var_name": "EDK_TOOLS_PATH"
+}
