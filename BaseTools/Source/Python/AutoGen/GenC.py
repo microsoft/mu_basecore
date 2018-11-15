@@ -13,7 +13,6 @@
 
 ## Import Modules
 #
-from __future__ import absolute_import
 import string
 import collections
 import struct
@@ -937,7 +936,7 @@ def CreateModulePcdCode(Info, AutoGenC, AutoGenH, Pcd):
         if Info.IsLibrary:
             PcdList = Info.LibraryPcdList
         else:
-            PcdList = Info.ModulePcdList + Info.LibraryPcdList
+            PcdList = list(Info.ModulePcdList) + list(Info.LibraryPcdList)
         PcdExCNameTest = 0
         for PcdModule in PcdList:
             if PcdModule.Type in PCD_DYNAMIC_EX_TYPE_SET and Pcd.TokenCName == PcdModule.TokenCName:
@@ -971,7 +970,7 @@ def CreateModulePcdCode(Info, AutoGenC, AutoGenH, Pcd):
                 AutoGenH.Append('#define %s(Value)  LibPcdSetEx%sS(&%s, %s, (Value))\n' % (SetModeStatusName, DatumSizeLib, Pcd.TokenSpaceGuidCName, PcdTokenName))
     elif Pcd.Type in PCD_DYNAMIC_TYPE_SET:
         PcdCNameTest = 0
-        for PcdModule in Info.LibraryPcdList + Info.ModulePcdList:
+        for PcdModule in list(Info.LibraryPcdList) + list(Info.ModulePcdList):
             if PcdModule.Type in PCD_DYNAMIC_TYPE_SET and Pcd.TokenCName == PcdModule.TokenCName:
                 PcdCNameTest += 1
             # get out early once we found > 1...
@@ -1012,53 +1011,25 @@ def CreateModulePcdCode(Info, AutoGenC, AutoGenH, Pcd):
                     Value = Value[:-1]
                 ValueNumber = int (Value, 0)
             except:
-                EdkLogger.error("build", AUTOGEN_ERROR,
+                try:
+                    ValueNumber = int(Value.lstrip('0'))
+                except:
+                    EdkLogger.error("build", AUTOGEN_ERROR,
                                 "PCD value is not valid dec or hex number for datum type [%s] of PCD %s.%s" % (Pcd.DatumType, Pcd.TokenSpaceGuidCName, TokenCName),
                                 ExtraData="[%s]" % str(Info))
-            if Pcd.DatumType == TAB_UINT64:
-                if ValueNumber < 0:
-                    EdkLogger.error("build", AUTOGEN_ERROR,
-                                    "PCD can't be set to negative value for datum type [%s] of PCD %s.%s" % (Pcd.DatumType, Pcd.TokenSpaceGuidCName, TokenCName),
-                                    ExtraData="[%s]" % str(Info))
-                elif ValueNumber >= 0x10000000000000000:
-                    EdkLogger.error("build", AUTOGEN_ERROR,
-                                    "Too large PCD value for datum type [%s] of PCD %s.%s" % (Pcd.DatumType, Pcd.TokenSpaceGuidCName, TokenCName),
-                                    ExtraData="[%s]" % str(Info))
-                if not Value.endswith('ULL'):
-                    Value += 'ULL'
-            elif Pcd.DatumType == TAB_UINT32:
-                if ValueNumber < 0:
-                    EdkLogger.error("build", AUTOGEN_ERROR,
-                                    "PCD can't be set to negative value for datum type [%s] of PCD %s.%s" % (Pcd.DatumType, Pcd.TokenSpaceGuidCName, TokenCName),
-                                    ExtraData="[%s]" % str(Info))
-                elif ValueNumber >= 0x100000000:
-                    EdkLogger.error("build", AUTOGEN_ERROR,
-                                    "Too large PCD value for datum type [%s] of PCD %s.%s" % (Pcd.DatumType, Pcd.TokenSpaceGuidCName, TokenCName),
-                                    ExtraData="[%s]" % str(Info))
-                if not Value.endswith('U'):
-                    Value += 'U'
-            elif Pcd.DatumType == TAB_UINT16:
-                if ValueNumber < 0:
-                    EdkLogger.error("build", AUTOGEN_ERROR,
-                                    "PCD can't be set to negative value for datum type [%s] of PCD %s.%s" % (Pcd.DatumType, Pcd.TokenSpaceGuidCName, TokenCName),
-                                    ExtraData="[%s]" % str(Info))
-                elif ValueNumber >= 0x10000:
-                    EdkLogger.error("build", AUTOGEN_ERROR,
-                                    "Too large PCD value for datum type [%s] of PCD %s.%s" % (Pcd.DatumType, Pcd.TokenSpaceGuidCName, TokenCName),
-                                    ExtraData="[%s]" % str(Info))
-                if not Value.endswith('U'):
-                    Value += 'U'
-            elif Pcd.DatumType == TAB_UINT8:
-                if ValueNumber < 0:
-                    EdkLogger.error("build", AUTOGEN_ERROR,
-                                    "PCD can't be set to negative value for datum type [%s] of PCD %s.%s" % (Pcd.DatumType, Pcd.TokenSpaceGuidCName, TokenCName),
-                                    ExtraData="[%s]" % str(Info))
-                elif ValueNumber >= 0x100:
-                    EdkLogger.error("build", AUTOGEN_ERROR,
-                                    "Too large PCD value for datum type [%s] of PCD %s.%s" % (Pcd.DatumType, Pcd.TokenSpaceGuidCName, TokenCName),
-                                    ExtraData="[%s]" % str(Info))
-                if not Value.endswith('U'):
-                    Value += 'U'
+            if ValueNumber < 0:
+                EdkLogger.error("build", AUTOGEN_ERROR,
+                                "PCD can't be set to negative value for datum type [%s] of PCD %s.%s" % (Pcd.DatumType, Pcd.TokenSpaceGuidCName, TokenCName),
+                                ExtraData="[%s]" % str(Info))
+            elif ValueNumber > MAX_VAL_TYPE[Pcd.DatumType]:
+                EdkLogger.error("build", AUTOGEN_ERROR,
+                                "Too large PCD value for datum type [%s] of PCD %s.%s" % (Pcd.DatumType, Pcd.TokenSpaceGuidCName, TokenCName),
+                                ExtraData="[%s]" % str(Info))
+            if Pcd.DatumType == TAB_UINT64 and not Value.endswith('ULL'):
+                Value += 'ULL'
+            elif Pcd.DatumType != TAB_UINT64 and not Value.endswith('U'):
+                Value += 'U'
+
         if Pcd.DatumType not in TAB_PCD_NUMERIC_TYPES:
             if not Pcd.MaxDatumSize:
                 EdkLogger.error("build", AUTOGEN_ERROR,
@@ -1082,7 +1053,7 @@ def CreateModulePcdCode(Info, AutoGenC, AutoGenH, Pcd):
                     else:
                         NewValue = NewValue + str(ord(Value[Index]) % 0x100) + ', '
                 if Unicode:
-                    ArraySize = ArraySize / 2
+                    ArraySize = ArraySize // 2
                 Value = NewValue + '0 }'
             if ArraySize < ValueSize:
                 if Pcd.MaxSizeUserSet:
@@ -1092,7 +1063,7 @@ def CreateModulePcdCode(Info, AutoGenC, AutoGenH, Pcd):
                 else:
                     ArraySize = Pcd.GetPcdSize()
                     if Unicode:
-                        ArraySize = ArraySize / 2
+                        ArraySize = ArraySize // 2
             Array = '[%d]' % ArraySize
         #
         # skip casting for fixed at build since it breaks ARM assembly.
@@ -1329,7 +1300,7 @@ def CreateLibraryPcdCode(Info, AutoGenC, AutoGenH, Pcd):
         AutoGenH.Append('//#define %s  ASSERT(FALSE)  // It is not allowed to set value for a FIXED_AT_BUILD PCD\n' % SetModeName)
 
         ConstFixedPcd = False
-        if PcdItemType == TAB_PCDS_FIXED_AT_BUILD and (key in Info.ConstPcd or (Info.IsLibrary and not Info._ReferenceModules)):
+        if PcdItemType == TAB_PCDS_FIXED_AT_BUILD and (key in Info.ConstPcd or (Info.IsLibrary and not Info.ReferenceModules)):
             ConstFixedPcd = True
             if key in Info.ConstPcd:
                 Pcd.DefaultValue = Info.ConstPcd[key]
@@ -1827,7 +1798,7 @@ def CreateIdfFileCode(Info, AutoGenC, StringH, IdfGenCFlag, IdfGenBinBuffer):
                                 TempBuffer += Buffer
                             elif File.Ext.upper() == '.JPG':
                                 ImageType, = struct.unpack('4s', Buffer[6:10])
-                                if ImageType != 'JFIF':
+                                if ImageType != b'JFIF':
                                     EdkLogger.error("build", FILE_TYPE_MISMATCH, "The file %s is not a standard JPG file." % File.Path)
                                 TempBuffer = pack('B', EFI_HII_IIBT_IMAGE_JPEG)
                                 TempBuffer += pack('I', len(Buffer))
@@ -1927,7 +1898,7 @@ def CreateIdfFileCode(Info, AutoGenC, StringH, IdfGenCFlag, IdfGenBinBuffer):
 
 def BmpImageDecoder(File, Buffer, PaletteIndex, TransParent):
     ImageType, = struct.unpack('2s', Buffer[0:2])
-    if ImageType!= 'BM': # BMP file type is 'BM'
+    if ImageType!= b'BM': # BMP file type is 'BM'
         EdkLogger.error("build", FILE_TYPE_MISMATCH, "The file %s is not a standard BMP file." % File.Path)
     BMP_IMAGE_HEADER = collections.namedtuple('BMP_IMAGE_HEADER', ['bfSize', 'bfReserved1', 'bfReserved2', 'bfOffBits', 'biSize', 'biWidth', 'biHeight', 'biPlanes', 'biBitCount', 'biCompression', 'biSizeImage', 'biXPelsPerMeter', 'biYPelsPerMeter', 'biClrUsed', 'biClrImportant'])
     BMP_IMAGE_HEADER_STRUCT = struct.Struct('IHHIIIIHHIIIIII')
@@ -1951,7 +1922,7 @@ def BmpImageDecoder(File, Buffer, PaletteIndex, TransParent):
         else:
             ImageBuffer = pack('B', EFI_HII_IIBT_IMAGE_1BIT)
         ImageBuffer += pack('B', PaletteIndex)
-        Width = (BmpHeader.biWidth + 7)/8
+        Width = (BmpHeader.biWidth + 7)//8
         if BmpHeader.bfOffBits > BMP_IMAGE_HEADER_STRUCT.size + 2:
             PaletteBuffer = Buffer[BMP_IMAGE_HEADER_STRUCT.size + 2 : BmpHeader.bfOffBits]
     elif BmpHeader.biBitCount == 4:
@@ -1960,7 +1931,7 @@ def BmpImageDecoder(File, Buffer, PaletteIndex, TransParent):
         else:
             ImageBuffer = pack('B', EFI_HII_IIBT_IMAGE_4BIT)
         ImageBuffer += pack('B', PaletteIndex)
-        Width = (BmpHeader.biWidth + 1)/2
+        Width = (BmpHeader.biWidth + 1)//2
         if BmpHeader.bfOffBits > BMP_IMAGE_HEADER_STRUCT.size + 2:
             PaletteBuffer = Buffer[BMP_IMAGE_HEADER_STRUCT.size + 2 : BmpHeader.bfOffBits]
     elif BmpHeader.biBitCount == 8:
@@ -1999,7 +1970,7 @@ def BmpImageDecoder(File, Buffer, PaletteIndex, TransParent):
         for Index in range(0, len(PaletteBuffer)):
             if Index % 4 == 3:
                 continue
-            PaletteTemp += PaletteBuffer[Index]
+            PaletteTemp += bytes([PaletteBuffer[Index]])
         PaletteBuffer = PaletteTemp[1:]
     return ImageBuffer, PaletteBuffer
 
@@ -2097,7 +2068,7 @@ def CreateCode(Info, AutoGenC, AutoGenH, StringH, UniGenCFlag, UniGenBinBuffer, 
             if Guid in Info.Module.GetGuidsUsedByPcd():
                 continue
             GuidMacros.append('#define %s %s' % (Guid, Info.Module.Guids[Guid]))
-        for Guid, Value in Info.Module.Protocols.items() + Info.Module.Ppis.items():
+        for Guid, Value in list(Info.Module.Protocols.items()) + list(Info.Module.Ppis.items()):
             GuidMacros.append('#define %s %s' % (Guid, Value))
         # supports FixedAtBuild and FeaturePcd usage in VFR file
         if Info.VfrFileList and Info.ModulePcdList:

@@ -14,7 +14,6 @@
 ##
 # Import Modules
 #
-from __future__ import print_function
 import Common.LongFilePathOs as os
 import re
 import copy
@@ -318,7 +317,7 @@ class BuildRule:
     #   @param  LineIndex           The line number from which the parsing will begin
     #   @param  SupportedFamily     The list of supported tool chain families
     #
-    def __init__(self, File=None, Content=None, LineIndex=0, SupportedFamily=["MSFT", "INTEL", "GCC", "RVCT"]):
+    def __init__(self, File=None, Content=None, LineIndex=0, SupportedFamily=[TAB_COMPILER_MSFT, "INTEL", "GCC", "RVCT"]):
         self.RuleFile = File
         # Read build rules from file if it's not none
         if File is not None:
@@ -530,26 +529,24 @@ class BuildRule:
     #
     #   @param  LineIndex   The line index of build rule text
     #
-    def ParseInputFile(self, LineIndex):
+    def ParseInputFileSubSection(self, LineIndex):
         FileList = [File.strip() for File in self.RuleContent[LineIndex].split(",")]
         for ToolChainFamily in self._FamilyList:
-            InputFiles = self._RuleInfo[ToolChainFamily, self._State]
-            if InputFiles is None:
-                InputFiles = []
-                self._RuleInfo[ToolChainFamily, self._State] = InputFiles
-            InputFiles.extend(FileList)
+            if self._RuleInfo[ToolChainFamily, self._State] is None:
+                self._RuleInfo[ToolChainFamily, self._State] = []
+            self._RuleInfo[ToolChainFamily, self._State].extend(FileList)
 
     ## Parse <ExtraDependency> sub-section
+    ## Parse <OutputFile> sub-section
+    ## Parse <Command> sub-section
     #
     #   @param  LineIndex   The line index of build rule text
     #
-    def ParseCommon(self, LineIndex):
+    def ParseCommonSubSection(self, LineIndex):
         for ToolChainFamily in self._FamilyList:
-            Items = self._RuleInfo[ToolChainFamily, self._State]
-            if Items is None:
-                Items = []
-                self._RuleInfo[ToolChainFamily, self._State] = Items
-            Items.append(self.RuleContent[LineIndex])
+            if self._RuleInfo[ToolChainFamily, self._State] is None:
+                self._RuleInfo[ToolChainFamily, self._State] = []
+            self._RuleInfo[ToolChainFamily, self._State].append(self.RuleContent[LineIndex])
 
     ## Get a build rule via [] operator
     #
@@ -584,10 +581,10 @@ class BuildRule:
         _Section           : ParseSection,
         _SubSectionHeader  : ParseSubSectionHeader,
         _SubSection        : ParseSubSection,
-        _InputFile         : ParseInputFile,
-        _OutputFile        : ParseCommon,
-        _ExtraDependency   : ParseCommon,
-        _Command           : ParseCommon,
+        _InputFile         : ParseInputFileSubSection,
+        _OutputFile        : ParseCommonSubSection,
+        _ExtraDependency   : ParseCommonSubSection,
+        _Command           : ParseCommonSubSection,
         _UnknownSection    : SkipSection,
     }
 
@@ -598,17 +595,17 @@ if __name__ == '__main__':
     EdkLogger.Initialize()
     if len(sys.argv) > 1:
         Br = BuildRule(sys.argv[1])
-        print(str(Br[".c", SUP_MODULE_DXE_DRIVER, "IA32", "MSFT"][1]))
+        print(str(Br[".c", SUP_MODULE_DXE_DRIVER, "IA32", TAB_COMPILER_MSFT][1]))
         print()
         print(str(Br[".c", SUP_MODULE_DXE_DRIVER, "IA32", "INTEL"][1]))
         print()
         print(str(Br[".c", SUP_MODULE_DXE_DRIVER, "IA32", "GCC"][1]))
         print()
-        print(str(Br[".ac", "ACPI_TABLE", "IA32", "MSFT"][1]))
+        print(str(Br[".ac", "ACPI_TABLE", "IA32", TAB_COMPILER_MSFT][1]))
         print()
         print(str(Br[".h", "ACPI_TABLE", "IA32", "INTEL"][1]))
         print()
-        print(str(Br[".ac", "ACPI_TABLE", "IA32", "MSFT"][1]))
+        print(str(Br[".ac", "ACPI_TABLE", "IA32", TAB_COMPILER_MSFT][1]))
         print()
         print(str(Br[".s", SUP_MODULE_SEC, "IPF", "COMMON"][1]))
         print()

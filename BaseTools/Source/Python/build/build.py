@@ -16,17 +16,15 @@
 ##
 # Import Modules
 #
-from __future__ import print_function
 import Common.LongFilePathOs as os
 import re
-from io import BytesIO
+from io import StringIO
 import sys
 import glob
 import time
 import platform
 import traceback
 import encodings.ascii
-import itertools
 import multiprocessing
 
 from struct import *
@@ -244,8 +242,8 @@ def ReadMessage(From, To, ExitFlag):
         # read one line a time
         Line = From.readline()
         # empty string means "end"
-        if Line is not None and Line != "":
-            To(Line.rstrip())
+        if Line is not None and Line != b"":
+            To(Line.rstrip().decode(encoding='utf-8', errors='ignore'))
         else:
             break
         if ExitFlag.isSet():
@@ -505,7 +503,7 @@ class BuildTask:
 
                 # get all pending tasks
                 BuildTask._PendingQueueLock.acquire()
-                BuildObjectList = BuildTask._PendingQueue.keys()
+                BuildObjectList = list(BuildTask._PendingQueue.keys())
                 #
                 # check if their dependency is resolved, and if true, move them
                 # into ready queue
@@ -726,7 +724,7 @@ class PeImageInfo():
         self.OutputDir        = OutputDir
         self.DebugDir         = DebugDir
         self.Image            = ImageClass
-        self.Image.Size       = (self.Image.Size / 0x1000 + 1) * 0x1000
+        self.Image.Size       = (self.Image.Size // 0x1000 + 1) * 0x1000
 
 ## The class implementing the EDK2 build process
 #
@@ -933,7 +931,7 @@ class Build():
             if TAB_TOD_DEFINES_FAMILY not in ToolDefinition or Tool not in ToolDefinition[TAB_TOD_DEFINES_FAMILY] \
                or not ToolDefinition[TAB_TOD_DEFINES_FAMILY][Tool]:
                 EdkLogger.warn("build", "No tool chain family found in configuration for %s. Default to MSFT." % Tool)
-                ToolChainFamily.append("MSFT")
+                ToolChainFamily.append(TAB_COMPILER_MSFT)
             else:
                 ToolChainFamily.append(ToolDefinition[TAB_TOD_DEFINES_FAMILY][Tool])
         self.ToolChainFamily = ToolChainFamily
@@ -1006,7 +1004,7 @@ class Build():
         else:
             self.Db.InitDatabase()
             self.Db_Flag = True
-            Platform = self.Db._MapPlatform(str(self.PlatformFile))
+            Platform = self.Db.MapPlatform(str(self.PlatformFile))
             self.Prebuild = str(Platform.Prebuild)
         if self.Prebuild:
             PrebuildList = []
@@ -1045,7 +1043,7 @@ class Build():
         if 'POSTBUILD' in GlobalData.gCommandLineDefines:
             self.Postbuild = GlobalData.gCommandLineDefines.get('POSTBUILD')
         else:
-            Platform = self.Db._MapPlatform(str(self.PlatformFile))
+            Platform = self.Db.MapPlatform(str(self.PlatformFile))
             self.Postbuild = str(Platform.Postbuild)
         if self.Postbuild:
             PostbuildList = []
@@ -1173,9 +1171,9 @@ class Build():
                 f = open(PrebuildEnvFile)
                 envs = f.readlines()
                 f.close()
-                envs = itertools.imap(lambda l: l.split('=', 1), envs)
-                envs = itertools.ifilter(lambda l: len(l) == 2, envs)
-                envs = itertools.imap(lambda l: [i.strip() for i in l], envs)
+                envs = map(lambda l: l.split('=', 1), envs)
+                envs = filter(lambda l: len(l) == 2, envs)
+                envs = map(lambda l: [i.strip() for i in l], envs)
                 os.environ.update(dict(envs))
             EdkLogger.info("\n- Prebuild Done -\n")
 
@@ -1599,7 +1597,7 @@ class Build():
                         RtModuleList[Module.MetaFile] = ImageInfo
                         #IPF runtime driver needs to be at 2 page alignment.
                         if IsIpfPlatform and ImageInfo.Image.Size % 0x2000 != 0:
-                            ImageInfo.Image.Size = (ImageInfo.Image.Size / 0x2000 + 1) * 0x2000
+                            ImageInfo.Image.Size = (ImageInfo.Image.Size // 0x2000 + 1) * 0x2000
                         RtSize += ImageInfo.Image.Size
                     elif Module.ModuleType in [SUP_MODULE_SMM_CORE, SUP_MODULE_DXE_SMM_DRIVER, SUP_MODULE_MM_STANDALONE, SUP_MODULE_MM_CORE_STANDALONE]:
                         SmmModuleList[Module.MetaFile] = ImageInfo
@@ -1668,21 +1666,21 @@ class Build():
             for PcdInfo in PcdTable:
                 ReturnValue = 0
                 if PcdInfo[0] == TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_PEI_PAGE_SIZE:
-                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_PEI_PAGE_SIZE_DATA_TYPE, str (PeiSize / 0x1000))
+                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_PEI_PAGE_SIZE_DATA_TYPE, str (PeiSize // 0x1000))
                 elif PcdInfo[0] == TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_DXE_PAGE_SIZE:
-                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_DXE_PAGE_SIZE_DATA_TYPE, str (BtSize / 0x1000))
+                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_DXE_PAGE_SIZE_DATA_TYPE, str (BtSize // 0x1000))
                 elif PcdInfo[0] == TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_RUNTIME_PAGE_SIZE:
-                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_RUNTIME_PAGE_SIZE_DATA_TYPE, str (RtSize / 0x1000))
+                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_RUNTIME_PAGE_SIZE_DATA_TYPE, str (RtSize // 0x1000))
                 elif PcdInfo[0] == TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_SMM_PAGE_SIZE and len (SmmModuleList) > 0:
-                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_SMM_PAGE_SIZE_DATA_TYPE, str (SmmSize / 0x1000))
+                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_SMM_PAGE_SIZE_DATA_TYPE, str (SmmSize // 0x1000))
                 if ReturnValue != 0:
                     EdkLogger.error("build", PARAMETER_INVALID, "Patch PCD value failed", ExtraData=ErrorInfo)
 
-        MapBuffer.write('PEI_CODE_PAGE_NUMBER      = 0x%x\n' % (PeiSize / 0x1000))
-        MapBuffer.write('BOOT_CODE_PAGE_NUMBER     = 0x%x\n' % (BtSize / 0x1000))
-        MapBuffer.write('RUNTIME_CODE_PAGE_NUMBER  = 0x%x\n' % (RtSize / 0x1000))
+        MapBuffer.write('PEI_CODE_PAGE_NUMBER      = 0x%x\n' % (PeiSize // 0x1000))
+        MapBuffer.write('BOOT_CODE_PAGE_NUMBER     = 0x%x\n' % (BtSize // 0x1000))
+        MapBuffer.write('RUNTIME_CODE_PAGE_NUMBER  = 0x%x\n' % (RtSize // 0x1000))
         if len (SmmModuleList) > 0:
-            MapBuffer.write('SMM_CODE_PAGE_NUMBER      = 0x%x\n' % (SmmSize / 0x1000))
+            MapBuffer.write('SMM_CODE_PAGE_NUMBER      = 0x%x\n' % (SmmSize // 0x1000))
 
         PeiBaseAddr = TopMemoryAddress - RtSize - BtSize
         BtBaseAddr  = TopMemoryAddress - RtSize
@@ -1782,7 +1780,7 @@ class Build():
                             if not Ma.IsLibrary:
                                 ModuleList[Ma.Guid.upper()] = Ma
 
-                    MapBuffer = BytesIO('')
+                    MapBuffer = StringIO('')
                     if self.LoadFixAddress != 0:
                         #
                         # Rebase module to the preferred memory address before GenFds
@@ -1940,7 +1938,7 @@ class Build():
                             if not Ma.IsLibrary:
                                 ModuleList[Ma.Guid.upper()] = Ma
 
-                    MapBuffer = BytesIO('')
+                    MapBuffer = StringIO('')
                     if self.LoadFixAddress != 0:
                         #
                         # Rebase module to the preferred memory address before GenFds
@@ -2127,7 +2125,7 @@ class Build():
                     #
                     # Rebase module to the preferred memory address before GenFds
                     #
-                    MapBuffer = BytesIO('')
+                    MapBuffer = StringIO('')
                     if self.LoadFixAddress != 0:
                         self._CollectModuleMapBuffer(MapBuffer, ModuleList)
 
@@ -2179,7 +2177,7 @@ class Build():
 
                     # Look through the tool definitions for GUIDed tools
                     guidAttribs = []
-                    for (attrib, value) in self.ToolDef.ToolsDefTxtDictionary.iteritems():
+                    for (attrib, value) in self.ToolDef.ToolsDefTxtDictionary.items():
                         if attrib.upper().endswith('_GUID'):
                             split = attrib.split('_')
                             thisPrefix = '_'.join(split[0:3]) + '_'

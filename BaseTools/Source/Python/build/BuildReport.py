@@ -28,7 +28,7 @@ import hashlib
 import subprocess
 import threading
 from datetime import datetime
-from io import BytesIO
+from io import StringIO
 from Common import EdkLogger
 from Common.Misc import SaveFileOnChange
 from Common.Misc import GuidStructureByteArrayToGuidString
@@ -79,7 +79,7 @@ gGlueLibEntryPoint = re.compile(r"__EDKII_GLUE_MODULE_ENTRY_POINT__\s*=\s*(\w+)"
 gLineMaxLength = 120
 
 ## Tags for end of line in report
-gEndOfLine = "\r\n"
+gEndOfLine = "\n"
 
 ## Tags for section start, end and separator
 gSectionStart = ">" + "=" * (gLineMaxLength - 2) + "<"
@@ -600,7 +600,7 @@ class ModuleReport(object):
             # Collect all module used PCD set: module INF referenced directly or indirectly.
             # It also saves module INF default values of them in case they exist.
             #
-            for Pcd in M.ModulePcdList + M.LibraryPcdList:
+            for Pcd in list(M.ModulePcdList) + list(M.LibraryPcdList):
                 self.ModulePcdSet.setdefault((Pcd.TokenCName, Pcd.TokenSpaceGuidCName, Pcd.Type), (Pcd.InfDefaultValue, Pcd.DefaultValue))
 
         self.LibraryReport = None
@@ -634,14 +634,14 @@ class ModuleReport(object):
         FwReportFileName = os.path.join(self._BuildDir, "DEBUG", self.ModuleName + ".txt")
         if os.path.isfile(FwReportFileName):
             try:
-                FileContents = open(FwReportFileName).read()
+                FileContents = open(FwReportFileName, 'r').read()
                 Match = gModuleSizePattern.search(FileContents)
                 if Match:
                     self.Size = int(Match.group(1))
 
                 Match = gTimeStampPattern.search(FileContents)
                 if Match:
-                    self.BuildTimeStamp = datetime.fromtimestamp(int(Match.group(1)))
+                    self.BuildTimeStamp = datetime.utcfromtimestamp(int(Match.group(1)))
             except IOError:
                 EdkLogger.warn(None, "Fail to read report file", FwReportFileName)
 
@@ -726,8 +726,8 @@ def ReadMessage(From, To, ExitFlag):
         # read one line a time
         Line = From.readline()
         # empty string means "end"
-        if Line is not None and Line != "":
-            To(Line.rstrip())
+        if Line is not None and Line != b"":
+            To(Line.rstrip().decode(encoding='utf-8', errors='ignore'))
         else:
             break
         if ExitFlag.isSet():
@@ -819,6 +819,9 @@ class PcdReport(object):
                             break
 
                 PcdList = self.AllPcds.setdefault(Pcd.TokenSpaceGuidCName, {}).setdefault(Pcd.Type, [])
+                UnusedPcdList = self.UnusedPcds.setdefault(Pcd.TokenSpaceGuidCName, {}).setdefault(Pcd.Type, [])
+                if Pcd in UnusedPcdList:
+                    UnusedPcdList.remove(Pcd)
                 if Pcd not in PcdList and Pcd not in UnusedPcdFullList:
                     UnusedPcdFullList.append(Pcd)
                 if len(Pcd.TokenCName) > self.MaxLen:
@@ -850,7 +853,7 @@ class PcdReport(object):
                 #
                 # Collect module override PCDs
                 #
-                for ModulePcd in Module.M.ModulePcdList + Module.M.LibraryPcdList:
+                for ModulePcd in list(Module.M.ModulePcdList) + list(Module.M.LibraryPcdList):
                     TokenCName = ModulePcd.TokenCName
                     TokenSpaceGuid = ModulePcd.TokenSpaceGuidCName
                     ModuleDefault = ModulePcd.DefaultValue
@@ -885,7 +888,17 @@ class PcdReport(object):
             if self.ConditionalPcds:
                 self.GenerateReportDetail(File, ModulePcdSet, 1)
             if self.UnusedPcds:
-                self.GenerateReportDetail(File, ModulePcdSet, 2)
+                IsEmpty = True
+                for Token in self.UnusedPcds:
+                    TokenDict = self.UnusedPcds[Token]
+                    for Type in TokenDict:
+                        if TokenDict[Type]:
+                            IsEmpty = False
+                            break
+                    if not IsEmpty:
+                        break
+                if not IsEmpty:
+                    self.GenerateReportDetail(File, ModulePcdSet, 2)
         self.GenerateReportDetail(File, ModulePcdSet)
 
     ##
@@ -979,12 +992,21 @@ class PcdReport(object):
                 PcdValue = DecDefaultValue
                 if DscDefaultValue:
                     PcdValue = DscDefaultValue
-                Pcd.DefaultValue = PcdValue
+                #The DefaultValue of StructurePcd already be the latest, no need to update.
+                if not self.IsStructurePcd(Pcd.TokenCName, Pcd.TokenSpaceGuidCName):
+                    Pcd.DefaultValue = PcdValue
                 if ModulePcdSet is not None:
                     if (Pcd.TokenCName, Pcd.TokenSpaceGuidCName, Type) not in ModulePcdSet:
                         continue
                     InfDefaultValue, PcdValue = ModulePcdSet[Pcd.TokenCName, Pcd.TokenSpaceGuidCName, Type]
-                    Pcd.DefaultValue = PcdValue
+                    #The DefaultValue of StructurePcd already be the latest, no need to update.
+                    if not self.IsStructurePcd(Pcd.TokenCName, Pcd.TokenSpaceGuidCName):
+                        Pcd.DefaultValue = PcdValue
+                    if InfDefaultValue:
+                        try:
+                            InfDefaultValue = ValueExpressionEx(InfDefaultValue, Pcd.DatumType, self._GuidDict)(True)
+                        except BadExpression as InfDefaultValue:
+                            EdkLogger.error('BuildReport', FORMAT_INVALID, "PCD Value: %s, Type: %s" % (InfDefaultValue, Pcd.DatumType))
                     if InfDefaultValue == "":
                         InfDefaultValue = None
 
@@ -995,7 +1017,9 @@ class PcdReport(object):
                             if pcd[2]:
                                 continue
                             PcdValue = pcd[3]
-                            Pcd.DefaultValue = PcdValue
+                            #The DefaultValue of StructurePcd already be the latest, no need to update.
+                            if not self.IsStructurePcd(Pcd.TokenCName, Pcd.TokenSpaceGuidCName):
+                                Pcd.DefaultValue = PcdValue
                             BuildOptionMatch = True
                             break
 
@@ -1006,8 +1030,11 @@ class PcdReport(object):
                     First = False
 
 
-                if Pcd.DatumType in TAB_PCD_CLEAN_NUMERIC_TYPES:
-                    PcdValueNumber = int(PcdValue.strip(), 0)
+                if Pcd.DatumType in TAB_PCD_NUMERIC_TYPES:
+                    try:
+                        PcdValueNumber = int(PcdValue.strip(), 0)
+                    except:
+                        PcdValueNumber = int(PcdValue.lstrip('0'))
                     if DecDefaultValue is None:
                         DecMatch = True
                     else:
@@ -1023,7 +1050,10 @@ class PcdReport(object):
                     if DscDefaultValue is None:
                         DscMatch = True
                     else:
-                        DscDefaultValueNumber = int(DscDefaultValue.strip(), 0)
+                        try:
+                            DscDefaultValueNumber = int(DscDefaultValue.strip(), 0)
+                        except:
+                            DscDefaultValueNumber = int(DscDefaultValue.lstrip('0'))
                         DscMatch = (DscDefaultValueNumber == PcdValueNumber)
                 else:
                     if DecDefaultValue is None:
@@ -1042,7 +1072,7 @@ class PcdReport(object):
                         DscMatch = (DscDefaultValue.strip() == PcdValue.strip())
 
                 IsStructure = False
-                if GlobalData.gStructurePcd and (self.Arch in GlobalData.gStructurePcd) and ((Pcd.TokenCName, Pcd.TokenSpaceGuidCName) in GlobalData.gStructurePcd[self.Arch]):
+                if self.IsStructurePcd(Pcd.TokenCName, Pcd.TokenSpaceGuidCName):
                     IsStructure = True
                     if TypeName in ('DYNVPD', 'DEXVPD'):
                         SkuInfoList = Pcd.SkuInfoList
@@ -1055,37 +1085,48 @@ class PcdReport(object):
                         DecMatch = False
                     elif Pcd.SkuOverrideValues:
                         DscOverride = False
-                        if not Pcd.SkuInfoList:
-                            OverrideValues = Pcd.SkuOverrideValues
-                            if OverrideValues:
-                                Keys = OverrideValues.keys()
-                                Data = OverrideValues[Keys[0]]
-                                Struct = Data.values()[0]
-                                DscOverride = self.ParseStruct(Struct)
+                        if Pcd.DefaultFromDSC:
+                            DscOverride = True
                         else:
-                            SkuList = sorted(Pcd.SkuInfoList.keys())
-                            for Sku in SkuList:
-                                SkuInfo = Pcd.SkuInfoList[Sku]
-                                if TypeName in ('DYNHII', 'DEXHII'):
-                                    if SkuInfo.DefaultStoreDict:
-                                        DefaultStoreList = sorted(SkuInfo.DefaultStoreDict.keys())
-                                        for DefaultStore in DefaultStoreList:
-                                            OverrideValues = Pcd.SkuOverrideValues[Sku]
-                                            DscOverride = self.ParseStruct(OverrideValues[DefaultStore])
-                                            if DscOverride:
-                                                break
-                                else:
-                                    OverrideValues = Pcd.SkuOverrideValues[Sku]
+                            DictLen = 0
+                            for item in Pcd.SkuOverrideValues:
+                                DictLen += len(Pcd.SkuOverrideValues[item])
+                            if not DictLen:
+                                DscOverride = False
+                            else:
+                                if not Pcd.SkuInfoList:
+                                    OverrideValues = Pcd.SkuOverrideValues
                                     if OverrideValues:
-                                        Keys = OverrideValues.keys()
-                                        OverrideFieldStruct = self.OverrideFieldValue(Pcd, OverrideValues[Keys[0]])
-                                        DscOverride = self.ParseStruct(OverrideFieldStruct)
-                                if DscOverride:
-                                    break
+                                        Keys = list(OverrideValues.keys())
+                                        Data = OverrideValues[Keys[0]]
+                                        Struct = list(Data.values())
+                                        DscOverride = self.ParseStruct(Struct[0])
+                                else:
+                                    SkuList = sorted(Pcd.SkuInfoList.keys())
+                                    for Sku in SkuList:
+                                        SkuInfo = Pcd.SkuInfoList[Sku]
+                                        if TypeName in ('DYNHII', 'DEXHII'):
+                                            if SkuInfo.DefaultStoreDict:
+                                                DefaultStoreList = sorted(SkuInfo.DefaultStoreDict.keys())
+                                                for DefaultStore in DefaultStoreList:
+                                                    OverrideValues = Pcd.SkuOverrideValues[Sku]
+                                                    DscOverride = self.ParseStruct(OverrideValues[DefaultStore])
+                                                    if DscOverride:
+                                                        break
+                                        else:
+                                            OverrideValues = Pcd.SkuOverrideValues[Sku]
+                                            if OverrideValues:
+                                                Keys = list(OverrideValues.keys())
+                                                OverrideFieldStruct = self.OverrideFieldValue(Pcd, OverrideValues[Keys[0]])
+                                                DscOverride = self.ParseStruct(OverrideFieldStruct)
+                                        if DscOverride:
+                                            break
                         if DscOverride:
                             DscDefaultValue = True
                             DscMatch = True
                             DecMatch = False
+                        else:
+                            DecMatch = True
                     else:
                         DscDefaultValue = True
                         DscMatch = True
@@ -1094,6 +1135,15 @@ class PcdReport(object):
                 #
                 # Report PCD item according to their override relationship
                 #
+                if Pcd.DatumType == 'BOOLEAN':
+                    if DscDefaultValue:
+                        DscDefaultValue = str(int(DscDefaultValue, 0))
+                    if DecDefaultValue:
+                        DecDefaultValue = str(int(DecDefaultValue, 0))
+                    if InfDefaultValue:
+                        InfDefaultValue = str(int(InfDefaultValue, 0))
+                    if Pcd.DefaultValue:
+                        Pcd.DefaultValue = str(int(Pcd.DefaultValue, 0))
                 if DecMatch:
                     self.PrintPcdValue(File, Pcd, PcdTokenCName, TypeName, IsStructure, DscMatch, DscDefaultValBak, InfMatch, InfDefaultValue, DecMatch, DecDefaultValue, '  ')
                 elif InfDefaultValue and InfMatch:
@@ -1118,9 +1168,14 @@ class PcdReport(object):
                         ModuleOverride = self.ModulePcdOverride.get((Pcd.TokenCName, Pcd.TokenSpaceGuidCName), {})
                         for ModulePath in ModuleOverride:
                             ModuleDefault = ModuleOverride[ModulePath]
-                            if Pcd.DatumType in TAB_PCD_CLEAN_NUMERIC_TYPES:
-                                ModulePcdDefaultValueNumber = int(ModuleDefault.strip(), 0)
+                            if Pcd.DatumType in TAB_PCD_NUMERIC_TYPES:
+                                try:
+                                    ModulePcdDefaultValueNumber = int(ModuleDefault.strip(), 0)
+                                except:
+                                    ModulePcdDefaultValueNumber = int(ModuleDefault.lstrip('0'))
                                 Match = (ModulePcdDefaultValueNumber == PcdValueNumber)
+                                if Pcd.DatumType == 'BOOLEAN':
+                                    ModuleDefault = str(ModulePcdDefaultValueNumber)
                             else:
                                 Match = (ModuleDefault.strip() == PcdValue.strip())
                             if Match:
@@ -1196,7 +1251,10 @@ class PcdReport(object):
                     if Value.startswith(('0x', '0X')):
                         Value = '{} ({:d})'.format(Value, int(Value, 0))
                     else:
-                        Value = "0x{:X} ({})".format(int(Value, 0), Value)
+                        try:
+                            Value = "0x{:X} ({})".format(int(Value, 0), Value)
+                        except:
+                            Value = "0x{:X} ({})".format(int(Value.lstrip('0')), Value)
                 FileWrite(File, '    %*s = %s' % (self.MaxLen + 19, 'DEC DEFAULT', Value))
             if IsStructure:
                 self.PrintStructureInfo(File, Pcd.DefaultValues)
@@ -1221,11 +1279,12 @@ class PcdReport(object):
             if IsStructure:
                 OverrideValues = Pcd.SkuOverrideValues
                 if OverrideValues:
-                    Keys = OverrideValues.keys()
+                    Keys = list(OverrideValues.keys())
                     Data = OverrideValues[Keys[0]]
-                    Struct = Data.values()[0]
-                    OverrideFieldStruct = self.OverrideFieldValue(Pcd, Struct)
-                    self.PrintStructureInfo(File, OverrideFieldStruct)
+                    Struct = list(Data.values())
+                    if Struct:
+                        OverrideFieldStruct = self.OverrideFieldValue(Pcd, Struct[0])
+                        self.PrintStructureInfo(File, OverrideFieldStruct)
             self.PrintPcdDefault(File, Pcd, IsStructure, DscMatch, DscDefaultValue, InfMatch, InfDefaultValue, DecMatch, DecDefaultValue)
         else:
             FirstPrint = True
@@ -1239,6 +1298,8 @@ class PcdReport(object):
                         for DefaultStore in DefaultStoreList:
                             Value = SkuInfo.DefaultStoreDict[DefaultStore]
                             IsByteArray, ArrayList = ByteArrayForamt(Value)
+                            if Pcd.DatumType == 'BOOLEAN':
+                                Value = str(int(Value, 0))
                             if FirstPrint:
                                 FirstPrint = False
                                 if IsByteArray:
@@ -1301,6 +1362,8 @@ class PcdReport(object):
                 else:
                     Value = SkuInfo.DefaultValue
                     IsByteArray, ArrayList = ByteArrayForamt(Value)
+                    if Pcd.DatumType == 'BOOLEAN':
+                        Value = str(int(Value, 0))
                     if FirstPrint:
                         FirstPrint = False
                         if IsByteArray:
@@ -1343,7 +1406,7 @@ class PcdReport(object):
                     if IsStructure:
                         OverrideValues = Pcd.SkuOverrideValues[Sku]
                         if OverrideValues:
-                            Keys = OverrideValues.keys()
+                            Keys = list(OverrideValues.keys())
                             OverrideFieldStruct = self.OverrideFieldValue(Pcd, OverrideValues[Keys[0]])
                             self.PrintStructureInfo(File, OverrideFieldStruct)
                     self.PrintPcdDefault(File, Pcd, IsStructure, DscMatch, DscDefaultValue, InfMatch, InfDefaultValue, DecMatch, DecDefaultValue)
@@ -1404,6 +1467,12 @@ class PcdReport(object):
                 return valuelist
             else:
                 return value
+
+    def IsStructurePcd(self, PcdToken, PcdTokenSpaceGuid):
+        if GlobalData.gStructurePcd and (self.Arch in GlobalData.gStructurePcd) and ((PcdToken, PcdTokenSpaceGuid) in GlobalData.gStructurePcd[self.Arch]):
+            return True
+        else:
+            return False
 
 ##
 # Reports platform and module Prediction information
@@ -1569,7 +1638,7 @@ class PredictionReport(object):
         TempFile.close()
 
         try:
-            from Eot.Eot import Eot
+            from Eot.EotMain import Eot
 
             #
             # Invoke EOT tool and echo its runtime performance
@@ -2201,7 +2270,7 @@ class BuildReport(object):
     def GenerateReport(self, BuildDuration, AutoGenTime, MakeTime, GenFdsTime):
         if self.ReportFile:
             try:
-                File = BytesIO('')
+                File = StringIO('')
                 for (Wa, MaList) in self.ReportList:
                     PlatformReport(Wa, MaList, self.ReportType).GenerateReport(File, BuildDuration, AutoGenTime, MakeTime, GenFdsTime, self.ReportType)
                 Content = FileLinesSplit(File.getvalue(), gLineMaxLength)

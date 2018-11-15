@@ -15,7 +15,6 @@
 ##
 # Import Modules
 #
-from __future__ import absolute_import
 from struct import *
 from .GenFdsGlobalVariable import GenFdsGlobalVariable
 from io import BytesIO
@@ -58,8 +57,8 @@ class Region(RegionClassObject):
                 PadByte = pack('B', 0xFF)
             else:
                 PadByte = pack('B', 0)
-            PadData = ''.join(PadByte for i in xrange(0, Size))
-            Buffer.write(PadData)
+            for i in range(0, Size):
+                Buffer.write(PadByte)
 
     ## AddToBuffer()
     #
@@ -124,11 +123,11 @@ class Region(RegionClassObject):
                         #
                         self.BlockInfoOfRegion(BlockSizeList, FvObj)
                         self.FvAddress = self.FvAddress + FvOffset
-                        FvAlignValue = self.GetFvAlignValue(FvObj.FvAlignment)
+                        FvAlignValue = GenFdsGlobalVariable.GetAlignment(FvObj.FvAlignment)
                         if self.FvAddress % FvAlignValue != 0:
                             EdkLogger.error("GenFds", GENFDS_ERROR,
                                             "FV (%s) is NOT %s Aligned!" % (FvObj.UiFvName, FvObj.FvAlignment))
-                        FvBuffer = BytesIO('')
+                        FvBuffer = BytesIO()
                         FvBaseAddress = '0x%X' % self.FvAddress
                         BlockSize = None
                         BlockNum = None
@@ -277,25 +276,6 @@ class Region(RegionClassObject):
             GenFdsGlobalVariable.InfLogger('   Region Name = None')
             self.PadBuffer(Buffer, ErasePolarity, Size)
 
-    def GetFvAlignValue(self, Str):
-        AlignValue = 1
-        Granu = 1
-        Str = Str.strip().upper()
-        if Str.endswith('K'):
-            Granu = 1024
-            Str = Str[:-1]
-        elif Str.endswith('M'):
-            Granu = 1024 * 1024
-            Str = Str[:-1]
-        elif Str.endswith('G'):
-            Granu = 1024 * 1024 * 1024
-            Str = Str[:-1]
-        else:
-            pass
-
-        AlignValue = int(Str) * Granu
-        return AlignValue
-
     ## BlockSizeOfRegion()
     #
     #   @param  BlockSizeList        List of block information
@@ -316,7 +296,7 @@ class Region(RegionClassObject):
             else:
                 # region ended within current blocks
                 if self.Offset + self.Size <= End:
-                    ExpectedList.append((BlockSize, (RemindingSize + BlockSize - 1) / BlockSize))
+                    ExpectedList.append((BlockSize, (RemindingSize + BlockSize - 1) // BlockSize))
                     break
                 # region not ended yet
                 else:
@@ -325,7 +305,7 @@ class Region(RegionClassObject):
                         UsedBlockNum = BlockNum
                     # region started in middle of current blocks
                     else:
-                        UsedBlockNum = (End - self.Offset) / BlockSize
+                        UsedBlockNum = (End - self.Offset) // BlockSize
                     Start = End
                     ExpectedList.append((BlockSize, UsedBlockNum))
                     RemindingSize -= BlockSize * UsedBlockNum

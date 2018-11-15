@@ -13,7 +13,6 @@
 
 ## Import Modules
 #
-from __future__ import absolute_import
 import Common.LongFilePathOs as os
 import sys
 import string
@@ -27,6 +26,7 @@ from Common.StringUtils import *
 from .BuildEngine import *
 import Common.GlobalData as GlobalData
 from collections import OrderedDict
+from Common.DataType import TAB_COMPILER_MSFT
 
 ## Regular expression for finding header file inclusions
 gIncludePattern = re.compile(r"^[ \t]*#?[ \t]*include(?:[ \t]*(?:\\(?:\r\n|\r|\n))*[ \t]*)*(?:\(?[\"<]?[ \t]*)([-\w.\\/() \t]+)(?:[ \t]*[\">]?\)?)", re.MULTILINE | re.UNICODE | re.IGNORECASE)
@@ -166,7 +166,7 @@ class BuildFile(object):
         "gmake" :   "include"
     }
 
-    _INC_FLAG_ = {"MSFT" : "/I", "GCC" : "-I", "INTEL" : "-I", "RVCT" : "-I"}
+    _INC_FLAG_ = {TAB_COMPILER_MSFT : "/I", "GCC" : "-I", "INTEL" : "-I", "RVCT" : "-I"}
 
     ## Constructor of BuildFile
     #
@@ -454,7 +454,8 @@ cleanlib:
         self.FfsOutputFileList = []
 
     # Compose a dict object containing information used to do replacement in template
-    def _CreateTemplateDict(self):
+    @property
+    def _TemplateDict(self):
         if self._FileType not in self._SEP_:
             EdkLogger.error("build", PARAMETER_INVALID, "Invalid Makefile type [%s]" % self._FileType,
                             ExtraData="[%s]" % str(self._AutoGenObject))
@@ -490,7 +491,7 @@ cleanlib:
             # EdkII modules always use "_ModuleEntryPoint" as entry point
             ImageEntryPoint = "_ModuleEntryPoint"
 
-        for k, v in MyAgo.Module.Defines.iteritems():
+        for k, v in MyAgo.Module.Defines.items():
             if k not in MyAgo.Macros:
                 MyAgo.Macros[k] = v
 
@@ -502,7 +503,7 @@ cleanlib:
             MyAgo.Macros['IMAGE_ENTRY_POINT'] = ImageEntryPoint
 
         PCI_COMPRESS_Flag = False
-        for k, v in MyAgo.Module.Defines.iteritems():
+        for k, v in MyAgo.Module.Defines.items():
             if 'PCI_COMPRESS' == k and 'TRUE' == v:
                 PCI_COMPRESS_Flag = True
 
@@ -653,7 +654,7 @@ cleanlib:
             "module_relative_directory" : MyAgo.SourceDir,
             "module_dir"                : mws.join (self.Macros["WORKSPACE"], MyAgo.SourceDir),
             "package_relative_directory": package_rel_dir,
-            "module_extra_defines"      : ["%s = %s" % (k, v) for k, v in MyAgo.Module.Defines.iteritems()],
+            "module_extra_defines"      : ["%s = %s" % (k, v) for k, v in MyAgo.Module.Defines.items()],
 
             "architecture"              : MyAgo.Arch,
             "toolchain_tag"             : MyAgo.ToolChain,
@@ -667,8 +668,8 @@ cleanlib:
             "separator"                 : Separator,
             "module_tool_definitions"   : ToolsDef,
 
-            "shell_command_code"        : self._SHELL_CMD_[self._FileType].keys(),
-            "shell_command"             : self._SHELL_CMD_[self._FileType].values(),
+            "shell_command_code"        : list(self._SHELL_CMD_[self._FileType].keys()),
+            "shell_command"             : list(self._SHELL_CMD_[self._FileType].values()),
 
             "module_entry_point"        : ModuleEntryPoint,
             "image_entry_point"         : ImageEntryPoint,
@@ -798,14 +799,14 @@ cleanlib:
                                     Tool = Flag
                                     break
                         if Tool:
-                            if 'PATH' not in self._AutoGenObject._BuildOption[Tool]:
+                            if 'PATH' not in self._AutoGenObject.BuildOption[Tool]:
                                 EdkLogger.error("build", AUTOGEN_ERROR, "%s_PATH doesn't exist in %s ToolChain and %s Arch." %(Tool, self._AutoGenObject.ToolChain, self._AutoGenObject.Arch), ExtraData="[%s]" % str(self._AutoGenObject))
-                            SingleCommandLength += len(self._AutoGenObject._BuildOption[Tool]['PATH'])
+                            SingleCommandLength += len(self._AutoGenObject.BuildOption[Tool]['PATH'])
                             for item in SingleCommandList[1:]:
                                 if FlagDict[Tool]['Macro'] in item:
-                                    if 'FLAGS' not in self._AutoGenObject._BuildOption[Tool]:
+                                    if 'FLAGS' not in self._AutoGenObject.BuildOption[Tool]:
                                         EdkLogger.error("build", AUTOGEN_ERROR, "%s_FLAGS doesn't exist in %s ToolChain and %s Arch." %(Tool, self._AutoGenObject.ToolChain, self._AutoGenObject.Arch), ExtraData="[%s]" % str(self._AutoGenObject))
-                                    Str = self._AutoGenObject._BuildOption[Tool]['FLAGS']
+                                    Str = self._AutoGenObject.BuildOption[Tool]['FLAGS']
                                     for Option in self._AutoGenObject.BuildOption:
                                         for Attr in self._AutoGenObject.BuildOption[Option]:
                                             if Str.find(Option + '_' + Attr) != -1:
@@ -820,7 +821,7 @@ cleanlib:
                                             break
                                     SingleCommandLength += len(Str)
                                 elif '$(INC)' in item:
-                                    SingleCommandLength += self._AutoGenObject.IncludePathLength + len(IncPrefix) * len(self._AutoGenObject._IncludePathList)
+                                    SingleCommandLength += self._AutoGenObject.IncludePathLength + len(IncPrefix) * len(self._AutoGenObject.IncludePathList)
                                 elif item.find('$(') != -1:
                                     Str = item
                                     for Option in self._AutoGenObject.BuildOption:
@@ -846,7 +847,7 @@ cleanlib:
                         Key = Flag + '_RESP'
                         RespMacro = FlagDict[Flag]['Macro'].replace('FLAGS', 'RESP')
                         Value = self._AutoGenObject.BuildOption[Flag]['FLAGS']
-                        for inc in self._AutoGenObject._IncludePathList:
+                        for inc in self._AutoGenObject.IncludePathList:
                             Value += ' ' + IncPrefix + inc
                         for Option in self._AutoGenObject.BuildOption:
                             for Attr in self._AutoGenObject.BuildOption[Option]:
@@ -916,7 +917,7 @@ cleanlib:
         #
         # Extract common files list in the dependency files
         #
-        for File in DepSet:
+        for File in sorted(DepSet, key=lambda x: str(x)):
             self.CommonFileDependency.append(self.PlaceMacro(File.Path, self.Macros))
 
         for File in FileDependencyDict:
@@ -925,11 +926,11 @@ cleanlib:
                 continue
             NewDepSet = set(FileDependencyDict[File])
             NewDepSet -= DepSet
-            FileDependencyDict[File] = ["$(COMMON_DEPS)"] + list(NewDepSet)
+            FileDependencyDict[File] = ["$(COMMON_DEPS)"] + sorted(NewDepSet, key=lambda x: str(x))
 
         # Convert target description object to target string in makefile
         for Type in self._AutoGenObject.Targets:
-            for T in self._AutoGenObject.Targets[Type]:
+            for T in sorted(self._AutoGenObject.Targets[Type], key=lambda x: str(x)):
                 # Generate related macros if needed
                 if T.GenFileListMacro and T.FileListMacro not in self.FileListMacros:
                     self.FileListMacros[T.FileListMacro] = []
@@ -1030,7 +1031,7 @@ cleanlib:
                 CurrentFileDependencyList = DepDb[F]
             else:
                 try:
-                    Fd = open(F.Path, 'r')
+                    Fd = open(F.Path, 'rb')
                 except BaseException as X:
                     EdkLogger.error("build", FILE_OPEN_FAILURE, ExtraData=F.Path + "\n\t" + str(X))
 
@@ -1040,8 +1041,14 @@ cleanlib:
                     continue
 
                 if FileContent[0] == 0xff or FileContent[0] == 0xfe:
-                    FileContent = unicode(FileContent, "utf-16")
-                IncludedFileList = gIncludePattern.findall(FileContent)
+                    FileContent = str(FileContent, encoding="utf-16")
+                    IncludedFileList = gIncludePattern.findall(FileContent)
+                else:
+                    try:
+                        FileContent = str(FileContent, encoding="utf-8")
+                        IncludedFileList = gIncludePattern.findall(FileContent)
+                    except:
+                        continue
 
                 for Inc in IncludedFileList:
                     Inc = Inc.strip()
@@ -1090,11 +1097,9 @@ cleanlib:
         DependencySet.update(ForceList)
         if File in DependencySet:
             DependencySet.remove(File)
-        DependencyList = list(DependencySet)  # remove duplicate ones
+        DependencyList = sorted(DependencySet, key=lambda x: str(x))  # remove duplicate ones
 
         return DependencyList
-
-    _TemplateDict = property(_CreateTemplateDict)
 
 ## CustomMakefile class
 #
@@ -1204,7 +1209,8 @@ ${BEGIN}\t-@${create_directory_command}\n${END}\
         self.IntermediateDirectoryList = ["$(DEBUG_DIR)", "$(OUTPUT_DIR)"]
 
     # Compose a dict object containing information used to do replacement in template
-    def _CreateTemplateDict(self):
+    @property
+    def _TemplateDict(self):
         Separator = self._SEP_[self._FileType]
         MyAgo = self._AutoGenObject
         if self._FileType not in MyAgo.CustomMakefile:
@@ -1268,16 +1274,14 @@ ${BEGIN}\t-@${create_directory_command}\n${END}\
             "separator"                 : Separator,
             "module_tool_definitions"   : ToolsDef,
 
-            "shell_command_code"        : self._SHELL_CMD_[self._FileType].keys(),
-            "shell_command"             : self._SHELL_CMD_[self._FileType].values(),
+            "shell_command_code"        : list(self._SHELL_CMD_[self._FileType].keys()),
+            "shell_command"             : list(self._SHELL_CMD_[self._FileType].values()),
 
             "create_directory_command"  : self.GetCreateDirectoryCommand(self.IntermediateDirectoryList),
             "custom_makefile_content"   : CustomMakefile
         }
 
         return MakefileTemplateDict
-
-    _TemplateDict = property(_CreateTemplateDict)
 
 ## PlatformMakefile class
 #
@@ -1395,7 +1399,8 @@ cleanlib:
         self.LibraryMakeCommandList = []
 
     # Compose a dict object containing information used to do replacement in template
-    def _CreateTemplateDict(self):
+    @property
+    def _TemplateDict(self):
         Separator = self._SEP_[self._FileType]
 
         MyAgo = self._AutoGenObject
@@ -1443,8 +1448,8 @@ cleanlib:
 
             "toolchain_tag"             : MyAgo.ToolChain,
             "build_target"              : MyAgo.BuildTarget,
-            "shell_command_code"        : self._SHELL_CMD_[self._FileType].keys(),
-            "shell_command"             : self._SHELL_CMD_[self._FileType].values(),
+            "shell_command_code"        : list(self._SHELL_CMD_[self._FileType].keys()),
+            "shell_command"             : list(self._SHELL_CMD_[self._FileType].values()),
             "build_architecture_list"   : MyAgo.Arch,
             "architecture"              : MyAgo.Arch,
             "separator"                 : Separator,
@@ -1480,8 +1485,6 @@ cleanlib:
                 DirList.append(os.path.join(self._AutoGenObject.BuildDir, LibraryAutoGen.BuildDir))
         return DirList
 
-    _TemplateDict = property(_CreateTemplateDict)
-
 ## TopLevelMakefile class
 #
 #  This class encapsules makefie and its generation for entrance makefile. It
@@ -1501,7 +1504,8 @@ class TopLevelMakefile(BuildFile):
         self.IntermediateDirectoryList = []
 
     # Compose a dict object containing information used to do replacement in template
-    def _CreateTemplateDict(self):
+    @property
+    def _TemplateDict(self):
         Separator = self._SEP_[self._FileType]
 
         # any platform autogen object is ok because we just need common information
@@ -1580,8 +1584,8 @@ class TopLevelMakefile(BuildFile):
 
             "toolchain_tag"             : MyAgo.ToolChain,
             "build_target"              : MyAgo.BuildTarget,
-            "shell_command_code"        : self._SHELL_CMD_[self._FileType].keys(),
-            "shell_command"             : self._SHELL_CMD_[self._FileType].values(),
+            "shell_command_code"        : list(self._SHELL_CMD_[self._FileType].keys()),
+            "shell_command"             : list(self._SHELL_CMD_[self._FileType].values()),
             'arch'                      : list(MyAgo.ArchList),
             "build_architecture_list"   : ','.join(MyAgo.ArchList),
             "separator"                 : Separator,
@@ -1620,8 +1624,6 @@ class TopLevelMakefile(BuildFile):
             if not LibraryAutoGen.IsBinaryModule:
                 DirList.append(os.path.join(self._AutoGenObject.BuildDir, LibraryAutoGen.BuildDir))
         return DirList
-
-    _TemplateDict = property(_CreateTemplateDict)
 
 # This acts like the main() function for the script, unless it is 'import'ed into another script.
 if __name__ == '__main__':

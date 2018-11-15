@@ -14,9 +14,9 @@
 from __future__ import absolute_import
 import Common.LongFilePathOs as os
 from CommonDataClass.DataClass import *
-from .EccToolError import *
+from Ecc.EccToolError import *
 from Common.MultipleWorkspace import MultipleWorkspace as mws
-from . import EccGlobalData
+from Ecc import EccGlobalData
 import re
 ## Get the inlcude path list for a source file
 #
@@ -113,7 +113,7 @@ def ParseHeaderCommentSection(CommentList, FileName = None):
     #
     Last = 0
     HeaderCommentStage = HEADER_COMMENT_NOT_STARTED
-    for Index in xrange(len(CommentList)-1, 0, -1):
+    for Index in range(len(CommentList) - 1, 0, -1):
         Line = CommentList[Index][0]
         if _IsCopyrightLine(Line):
             Last = Index

@@ -19,7 +19,6 @@
 '''
 Pkcs7Sign
 '''
-from __future__ import print_function
 
 import os
 import sys
@@ -76,8 +75,9 @@ if __name__ == '__main__':
   #
   # Create command line argument parser object
   #
-  parser = argparse.ArgumentParser(prog=__prog__, version=__version__, usage=__usage__, description=__copyright__, conflict_handler='resolve')
+  parser = argparse.ArgumentParser(prog=__prog__, usage=__usage__, description=__copyright__, conflict_handler='resolve')
   group = parser.add_mutually_exclusive_group(required=True)
+  group.add_argument("--version", action='version', version=__version__)
   group.add_argument("-e", action="store_true", dest='Encode', help='encode file')
   group.add_argument("-d", action="store_true", dest='Decode', help='decode file')
   parser.add_argument("-o", "--output", dest='OutputFile', type=str, metavar='filename', help="specify the output filename", required=True)
@@ -121,7 +121,7 @@ if __name__ == '__main__':
   if Process.returncode != 0:
     print('ERROR: Open SSL command not available.  Please verify PATH or set OPENSSL_PATH')
     sys.exit(Process.returncode)
-  print(Version[0])
+  print(Version[0].decode())
 
   #
   # Read input file into a buffer and save input filename
@@ -141,11 +141,11 @@ if __name__ == '__main__':
 
   try:
     if args.MonotonicCountStr.upper().startswith('0X'):
-      args.MonotonicCountValue = (long)(args.MonotonicCountStr, 16)
+      args.MonotonicCountValue = (int)(args.MonotonicCountStr, 16)
     else:
-      args.MonotonicCountValue = (long)(args.MonotonicCountStr)
+      args.MonotonicCountValue = (int)(args.MonotonicCountStr)
   except:
-    args.MonotonicCountValue = (long)(0)
+    args.MonotonicCountValue = (int)(0)
 
   if args.Encode:
     #
@@ -251,9 +251,9 @@ if __name__ == '__main__':
       sys.exit(1)
     else:
       if args.SignatureSizeStr.upper().startswith('0X'):
-        SignatureSize = (long)(args.SignatureSizeStr, 16)
+        SignatureSize = (int)(args.SignatureSizeStr, 16)
       else:
-        SignatureSize = (long)(args.SignatureSizeStr)
+        SignatureSize = (int)(args.SignatureSizeStr)
     if SignatureSize < 0:
         print("ERROR: The value of option --signature-size can't be set to negative value!")
         sys.exit(1)

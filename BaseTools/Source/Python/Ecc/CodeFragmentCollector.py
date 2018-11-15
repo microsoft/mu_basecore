@@ -22,14 +22,14 @@ import re
 import Common.LongFilePathOs as os
 import sys
 
-import antlr3
-from .CLexer import CLexer
-from .CParser import CParser
+import antlr4
+from Ecc.CLexer import CLexer
+from Ecc.CParser import CParser
 
-from . import FileProfile
-from .CodeFragment import Comment
-from .CodeFragment import PP_Directive
-from .ParserWarning import Warning
+from Ecc import FileProfile
+from Ecc.CodeFragment import Comment
+from Ecc.CodeFragment import PP_Directive
+from Ecc.ParserWarning import Warning
 
 
 ##define T_CHAR_SPACE                ' '
@@ -499,13 +499,14 @@ class CodeFragmentCollector:
     def ParseFile(self):
         self.PreprocessFile()
         # restore from ListOfList to ListOfString
+        # print(self.Profile.FileLinesList)
         self.Profile.FileLinesList = ["".join(list) for list in self.Profile.FileLinesList]
         FileStringContents = ''
         for fileLine in self.Profile.FileLinesList:
             FileStringContents += fileLine
-        cStream = antlr3.StringStream(FileStringContents)
+        cStream = antlr4.InputStream(FileStringContents)
         lexer = CLexer(cStream)
-        tStream = antlr3.CommonTokenStream(lexer)
+        tStream = antlr4.CommonTokenStream(lexer)
         parser = CParser(tStream)
         parser.translation_unit()
 
@@ -516,9 +517,9 @@ class CodeFragmentCollector:
         FileStringContents = ''
         for fileLine in self.Profile.FileLinesList:
             FileStringContents += fileLine
-        cStream = antlr3.StringStream(FileStringContents)
+        cStream = antlr4.InputStream(FileStringContents)
         lexer = CLexer(cStream)
-        tStream = antlr3.CommonTokenStream(lexer)
+        tStream = antlr4.CommonTokenStream(lexer)
         parser = CParser(tStream)
         parser.translation_unit()
 

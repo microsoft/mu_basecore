@@ -19,7 +19,7 @@ GenDEC
 import os
 import stat
 import codecs
-import md5
+from hashlib import md5
 from Core.FileHook import __FileHookOpen__
 from Library.Parsing import GenSection
 from Library.CommentGenerating import GenHeaderCommentSection
@@ -585,17 +585,17 @@ def GenPackageUNIEncodeFile(PackageObject, UniFileHeader = '', Encoding=TAB_ENCO
 
     ContainerFile = GetUniFileName(os.path.dirname(PackageObject.GetFullPath()), PackageObject.GetBaseName())
 
-    Content = UniFileHeader + '\r\n'
-    Content += '\r\n'
+    Content = UniFileHeader + '\n'
+    Content += '\n'
 
-    Content += FormatUniEntry('#string ' + TAB_DEC_PACKAGE_ABSTRACT, PackageObject.GetAbstract(), ContainerFile) + '\r\n'
+    Content += FormatUniEntry('#string ' + TAB_DEC_PACKAGE_ABSTRACT, PackageObject.GetAbstract(), ContainerFile) + '\n'
 
     Content += FormatUniEntry('#string ' + TAB_DEC_PACKAGE_DESCRIPTION, PackageObject.GetDescription(), ContainerFile) \
-    + '\r\n'
+    + '\n'
 
-    Content += FormatUniEntry('#string ' + TAB_DEC_BINARY_ABSTRACT, BinaryAbstract, ContainerFile) + '\r\n'
+    Content += FormatUniEntry('#string ' + TAB_DEC_BINARY_ABSTRACT, BinaryAbstract, ContainerFile) + '\n'
 
-    Content += FormatUniEntry('#string ' + TAB_DEC_BINARY_DESCRIPTION, BinaryDescription, ContainerFile) + '\r\n'
+    Content += FormatUniEntry('#string ' + TAB_DEC_BINARY_DESCRIPTION, BinaryDescription, ContainerFile) + '\n'
 
     PromptGenList = []
     HelpTextGenList = []
@@ -612,7 +612,7 @@ def GenPackageUNIEncodeFile(PackageObject, UniFileHeader = '', Encoding=TAB_ENCO
             if (PcdPromptStrName, Lang) not in PromptGenList:
                 TokenValueList.append((Lang, PromptStr))
                 PromptGenList.append((PcdPromptStrName, Lang))
-        PromptString = FormatUniEntry(PcdPromptStrName, TokenValueList, ContainerFile) + '\r\n'
+        PromptString = FormatUniEntry(PcdPromptStrName, TokenValueList, ContainerFile) + '\n'
         if PromptString not in Content:
             Content += PromptString
 
@@ -628,7 +628,7 @@ def GenPackageUNIEncodeFile(PackageObject, UniFileHeader = '', Encoding=TAB_ENCO
             if (PcdHelpStrName, Lang) not in HelpTextGenList:
                 TokenValueList.append((Lang, HelpStr))
                 HelpTextGenList.append((PcdHelpStrName, Lang))
-        HelpTextString = FormatUniEntry(PcdHelpStrName, TokenValueList, ContainerFile) + '\r\n'
+        HelpTextString = FormatUniEntry(PcdHelpStrName, TokenValueList, ContainerFile) + '\n'
         if HelpTextString not in Content:
             Content += HelpTextString
 
@@ -639,14 +639,14 @@ def GenPackageUNIEncodeFile(PackageObject, UniFileHeader = '', Encoding=TAB_ENCO
                 PcdErrStrName = '#string ' + TAB_STR_TOKENCNAME + TAB_UNDERLINE_SPLIT + Pcd.GetTokenSpaceGuidCName() \
                     + TAB_UNDERLINE_SPLIT + TAB_STR_TOKENERR \
                     + TAB_UNDERLINE_SPLIT + ErrorNo[2:]
-                PcdErrString = FormatUniEntry(PcdErrStrName, PcdError.GetErrorMessageList(), ContainerFile) + '\r\n'
+                PcdErrString = FormatUniEntry(PcdErrStrName, PcdError.GetErrorMessageList(), ContainerFile) + '\n'
                 if PcdErrString not in Content:
                     Content += PcdErrString
 
     File = codecs.open(ContainerFile, 'w', Encoding)
     File.write(u'\uFEFF' + Content)
     File.stream.close()
-    Md5Sigature = md5.new(__FileHookOpen__(str(ContainerFile), 'rb').read())
+    Md5Sigature = md5(__FileHookOpen__(str(ContainerFile), 'rb').read())
     Md5Sum = Md5Sigature.hexdigest()
     if (ContainerFile, Md5Sum) not in PackageObject.FileList:
         PackageObject.FileList.append((ContainerFile, Md5Sum))

@@ -15,13 +15,11 @@
 ##
 # Import Modules
 #
-from __future__ import print_function
-from __future__ import absolute_import
 import Common.LongFilePathOs as os
 import re
 import time
 import copy
-import md5
+from hashlib import md5
 
 import Common.EdkLogger as EdkLogger
 import Common.GlobalData as GlobalData
@@ -141,7 +139,7 @@ class MetaFileParser(object):
         if FilePath in Class.MetaFiles:
             return Class.MetaFiles[FilePath]
         else:
-            ParserObject = super(MetaFileParser, Class).__new__(Class)
+            ParserObject = super().__new__(Class)
             Class.MetaFiles[FilePath] = ParserObject
             return ParserObject
 
@@ -213,11 +211,13 @@ class MetaFileParser(object):
         self._PostProcessed = True
 
     ## Get the parse complete flag
-    def _GetFinished(self):
+    @property
+    def Finished(self):
         return self._Finished
 
     ## Set the complete flag
-    def _SetFinished(self, Value):
+    @Finished.setter
+    def Finished(self, Value):
         self._Finished = Value
 
     ## Remove records that do not match given Filter Arch
@@ -416,7 +416,9 @@ class MetaFileParser(object):
                 )
     def GetValidExpression(self, TokenSpaceGuid, PcdCName):
         return self._Table.GetValidExpression(TokenSpaceGuid, PcdCName)
-    def _GetMacros(self):
+
+    @property
+    def _Macros(self):
         Macros = {}
         Macros.update(self._FileLocalMacros)
         Macros.update(self._GetApplicableSectionMacro())
@@ -478,9 +480,6 @@ class MetaFileParser(object):
         return Macros
 
     _SectionParser = {}
-    Finished = property(_GetFinished, _SetFinished)
-    _Macros = property(_GetMacros)
-
 
 ## INF file parser class
 #
@@ -1252,7 +1251,8 @@ class DscParser(MetaFileParser):
                 )
 
     ## Override parent's method since we'll do all macro replacements in parser
-    def _GetMacros(self):
+    @property
+    def _Macros(self):
         Macros = {}
         Macros.update(self._FileLocalMacros)
         Macros.update(self._GetApplicableSectionMacro())
@@ -1611,6 +1611,10 @@ class DscParser(MetaFileParser):
 
         ValList, Valid, Index = AnalyzeDscPcd(self._ValueList[2], self._ItemType)
         if not Valid:
+            if self._ItemType in (MODEL_PCD_DYNAMIC_DEFAULT, MODEL_PCD_DYNAMIC_EX_DEFAULT, MODEL_PCD_FIXED_AT_BUILD, MODEL_PCD_PATCHABLE_IN_MODULE):
+                if ValList[1] != TAB_VOID and ValList[2]:
+                    EdkLogger.error('build', FORMAT_INVALID, "Pcd format incorrect. Only VOID* type PCD need the maxsize info.", File=self._FileWithError,
+                                    Line=self._LineIndex + 1, ExtraData="%s.%s|%s" % (self._ValueList[0], self._ValueList[1], self._ValueList[2]))
             EdkLogger.error('build', FORMAT_INVALID, "Pcd format incorrect.", File=self._FileWithError, Line=self._LineIndex + 1,
                             ExtraData="%s.%s|%s" % (self._ValueList[0], self._ValueList[1], self._ValueList[2]))
         PcdValue = ValList[Index]
@@ -1668,8 +1672,6 @@ class DscParser(MetaFileParser):
         MODEL_META_DATA_SECTION_HEADER                  :   MetaFileParser._SectionHeaderParser,
         MODEL_META_DATA_SUBSECTION_HEADER               :   _SubsectionHeaderParser,
     }
-
-    _Macros = property(_GetMacros)
 
 ## DEC file parser class
 #
@@ -1929,10 +1931,10 @@ class DecParser(MetaFileParser):
                     return
 
                 if self._include_flag:
-                    self._ValueList[1] = "<HeaderFiles>_" + md5.new(self._CurrentLine).hexdigest()
+                    self._ValueList[1] = "<HeaderFiles>_" + md5(self._CurrentLine.encode('utf-8')).hexdigest()
                     self._ValueList[2] = self._CurrentLine
                 if self._package_flag and "}" != self._CurrentLine:
-                    self._ValueList[1] = "<Packages>_" + md5.new(self._CurrentLine).hexdigest()
+                    self._ValueList[1] = "<Packages>_" + md5(self._CurrentLine.encode('utf-8')).hexdigest()
                     self._ValueList[2] = self._CurrentLine
                 if self._CurrentLine == "}":
                     self._package_flag = False

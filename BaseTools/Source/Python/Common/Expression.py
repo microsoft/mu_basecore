@@ -12,12 +12,10 @@
 
 ## Import Modules
 #
-from __future__ import print_function
-from __future__ import absolute_import
 from Common.GlobalData import *
 from CommonDataClass.Exceptions import BadExpression
 from CommonDataClass.Exceptions import WrnExpression
-from .Misc import GuidStringToGuidStructureString, ParseFieldValue, IsFieldValueAnArray
+from .Misc import GuidStringToGuidStructureString, ParseFieldValue
 import Common.EdkLogger as EdkLogger
 import copy
 from Common.DataType import *
@@ -29,7 +27,7 @@ ERR_MATCH               = 'No matching right parenthesis.'
 ERR_STRING_TOKEN        = 'Bad string token: [%s].'
 ERR_MACRO_TOKEN         = 'Bad macro token: [%s].'
 ERR_EMPTY_TOKEN         = 'Empty token is not allowed.'
-ERR_PCD_RESOLVE         = 'PCD token cannot be resolved: [%s].'
+ERR_PCD_RESOLVE         = 'The PCD should be FeatureFlag type or FixedAtBuild type: [%s].'
 ERR_VALID_TOKEN         = 'No more valid token found from rest of string: [%s].'
 ERR_EXPR_TYPE           = 'Different types found in expression.'
 ERR_OPERATOR_UNSUPPORT  = 'Unsupported operator: [%s]'
@@ -138,11 +136,11 @@ def BuildOptionValue(PcdValue, GuidDict):
         InputValue = 'L"' + PcdValue[1:] + '"'
     else:
         InputValue = PcdValue
-    if IsFieldValueAnArray(InputValue):
-        try:
-            PcdValue = ValueExpressionEx(InputValue, TAB_VOID, GuidDict)(True)
-        except:
-            pass
+    try:
+        PcdValue = ValueExpressionEx(InputValue, TAB_VOID, GuidDict)(True)
+    except:
+        pass
+
     return PcdValue
 
 ## ReplaceExprMacro
@@ -206,7 +204,7 @@ SupportedInMacroList = ['TARGET', 'TOOL_CHAIN_TAG', 'ARCH', 'FAMILY']
 
 class BaseExpression(object):
     def __init__(self, *args, **kwargs):
-        super(BaseExpression, self).__init__()
+        super().__init__()
 
     # Check if current token matches the operators given from parameter
     def _IsOperator(self, OpSet):
@@ -326,7 +324,7 @@ class ValueExpression(BaseExpression):
         return Val
 
     def __init__(self, Expression, SymbolTable={}):
-        super(ValueExpression, self).__init__(self, Expression, SymbolTable)
+        super().__init__(self, Expression, SymbolTable)
         self._NoProcess = False
         if not isinstance(Expression, type('')):
             self._Expr = Expression
@@ -427,6 +425,13 @@ class ValueExpression(BaseExpression):
                 else:
                     Val = Val3
                 continue
+            #
+            # PEP 238 -- Changing the Division Operator
+            # x/y to return a reasonable approximation of the mathematical result of the division ("true division")
+            # x//y to return the floor ("floor division")
+            #
+            if Op == '/':
+                Op = '//'
             try:
                 Val = self.Eval(Op, Val, EvalFunc())
             except WrnExpression as Warn:
@@ -788,7 +793,7 @@ class ValueExpression(BaseExpression):
         OpToken = ''
         for Ch in Expr:
             if Ch in self.NonLetterOpLst:
-                if '!' == Ch and OpToken:
+                if Ch in ['!', '~'] and OpToken:
                     break
                 self._Idx += 1
                 OpToken += Ch
@@ -900,7 +905,7 @@ class ValueExpressionEx(ValueExpression):
                     if TmpValue.bit_length() == 0:
                         PcdValue = '{0x00}'
                     else:
-                        for I in range((TmpValue.bit_length() + 7) / 8):
+                        for I in range((TmpValue.bit_length() + 7) // 8):
                             TmpList.append('0x%02x' % ((TmpValue >> I * 8) & 0xff))
                         PcdValue = '{' + ', '.join(TmpList) + '}'
                 except:
@@ -1028,7 +1033,7 @@ class ValueExpressionEx(ValueExpression):
 if __name__ == '__main__':
     pass
     while True:
-        input = raw_input('Input expr: ')
+        input = input('Input expr: ')
         if input in 'qQ':
             break
         try:

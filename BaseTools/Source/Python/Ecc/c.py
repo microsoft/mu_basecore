@@ -17,14 +17,14 @@ import sys
 import Common.LongFilePathOs as os
 import re
 import string
-from . import CodeFragmentCollector
-from . import FileProfile
+from Ecc import CodeFragmentCollector
+from Ecc import FileProfile
 from CommonDataClass import DataClass
-from . import Database
+from Ecc import Database
 from Common import EdkLogger
-from .EccToolError import *
-from . import EccGlobalData
-from . import MetaDataParser
+from Ecc.EccToolError import *
+from Ecc import EccGlobalData
+from Ecc import MetaDataParser
 
 IncludeFileListDict = {}
 AllIncludeFileListDict = {}
@@ -35,7 +35,7 @@ IgnoredKeywordList = ['EFI_ERROR']
 
 def GetIgnoredDirListPattern():
     skipList = list(EccGlobalData.gConfig.SkipDirList) + ['.svn']
-    DirString = string.join(skipList, '|')
+    DirString = '|'.join(skipList)
     p = re.compile(r'.*[\\/](?:%s)[\\/]?.*' % DirString)
     return p
 
@@ -963,7 +963,7 @@ def StripComments(Str):
             ListFromStr[Index] = ' '
             Index += 1
         # check for // comment
-        elif ListFromStr[Index] == '/' and ListFromStr[Index + 1] == '/' and ListFromStr[Index + 2] != '\n':
+        elif ListFromStr[Index] == '/' and ListFromStr[Index + 1] == '/':
             InComment = True
             DoubleSlashComment = True
 
@@ -1297,7 +1297,7 @@ def CheckFuncLayoutReturnType(FullFileName):
         Result0 = Result[0]
         if Result0.upper().startswith('STATIC'):
             Result0 = Result0[6:].strip()
-        Index = Result0.find(ReturnType)
+        Index = Result0.find(TypeStart)
         if Index != 0 or Result[3] != 0:
             PrintErrorMsg(ERROR_C_FUNCTION_LAYOUT_CHECK_RETURN_TYPE, '[%s] Return Type should appear at the start of line' % FuncName, 'Function', Result[1])
 

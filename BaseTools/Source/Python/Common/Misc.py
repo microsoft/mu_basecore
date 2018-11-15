@@ -14,7 +14,6 @@
 ##
 # Import Modules
 #
-from __future__ import absolute_import
 import Common.LongFilePathOs as os
 import sys
 import string
@@ -25,8 +24,8 @@ import pickle
 import array
 import shutil
 from struct import pack
-from UserDict import IterableUserDict
-from UserList import UserList
+from collections import UserDict as IterableUserDict
+from collections import OrderedDict
 
 from Common import EdkLogger as EdkLogger
 from Common import GlobalData as GlobalData
@@ -38,6 +37,7 @@ from Common.LongFilePathSupport import OpenLongFilePath as open
 from Common.MultipleWorkspace import MultipleWorkspace as mws
 import uuid
 from CommonDataClass.Exceptions import BadExpression
+from Common.caching import cached_property
 import subprocess
 ## Regular expression used to find out place holders in string template
 gPlaceholderPattern = re.compile("\$\{([^$()\s]+)\}", re.MULTILINE | re.UNICODE)
@@ -360,6 +360,8 @@ def GuidStructureByteArrayToGuidString(GuidValue):
 #   @retval     string      The GUID value in xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx format
 #
 def GuidStructureStringToGuidString(GuidValue):
+    if not GlobalData.gGuidCFormatPattern.match(GuidValue):
+        return ''
     guidValueString = GuidValue.lower().replace("{", "").replace("}", "").replace(" ", "").replace(";", "")
     guidValueList = guidValueString.split(",")
     if len(guidValueList) != 11:
@@ -452,13 +454,16 @@ def RemoveDirectory(Directory, Recursively=False):
 #   @retval     False           If the file content is the same
 #
 def SaveFileOnChange(File, Content, IsBinaryFile=True):
-    if not IsBinaryFile:
-        Content = Content.replace("\n", os.linesep)
-
     if os.path.exists(File):
         try:
-            if Content == open(File, "rb").read():
-                return False
+            if isinstance(Content, bytes):
+                with open(File, "rb") as f:
+                    if Content == f.read():
+                        return False
+            else:
+                with open(File, "r") as f:
+                    if Content == f.read():
+                        return False
         except:
             EdkLogger.error(None, FILE_OPEN_FAILURE, ExtraData=File)
 
@@ -472,19 +477,12 @@ def SaveFileOnChange(File, Content, IsBinaryFile=True):
             EdkLogger.error(None, PERMISSION_FAILURE, "Do not have write permission on directory %s" % DirName)
 
     try:
-        if GlobalData.gIsWindows:
-            try:
-                from .PyUtility import SaveFileToDisk
-                if not SaveFileToDisk(File, Content):
-                    EdkLogger.error(None, FILE_CREATE_FAILURE, ExtraData=File)
-            except:
-                Fd = open(File, "wb")
+        if isinstance(Content, bytes):
+            with open(File, "wb") as Fd:
                 Fd.write(Content)
-                Fd.close()
         else:
-            Fd = open(File, "wb")
-            Fd.write(Content)
-            Fd.close()
+            with open(File, "w") as Fd:
+                Fd.write(Content)
     except IOError as X:
         EdkLogger.error(None, FILE_CREATE_FAILURE, ExtraData='IOError %s' % X)
 
@@ -643,7 +641,7 @@ def RealPath2(File, Dir='', OverrideDir=''):
 #
 def GuidValue(CName, PackageList, Inffile = None):
     for P in PackageList:
-        GuidKeys = P.Guids.keys()
+        GuidKeys = list(P.Guids.keys())
         if Inffile and P._PrivateGuids:
             if not Inffile.startswith(P.MetaFile.Dir):
                 GuidKeys = [x for x in P.Guids if x not in P._PrivateGuids]
@@ -662,7 +660,7 @@ def GuidValue(CName, PackageList, Inffile = None):
 #
 def ProtocolValue(CName, PackageList, Inffile = None):
     for P in PackageList:
-        ProtocolKeys = P.Protocols.keys()
+        ProtocolKeys = list(P.Protocols.keys())
         if Inffile and P._PrivateProtocols:
             if not Inffile.startswith(P.MetaFile.Dir):
                 ProtocolKeys = [x for x in P.Protocols if x not in P._PrivateProtocols]
@@ -681,7 +679,7 @@ def ProtocolValue(CName, PackageList, Inffile = None):
 #
 def PpiValue(CName, PackageList, Inffile = None):
     for P in PackageList:
-        PpiKeys = P.Ppis.keys()
+        PpiKeys = list(P.Ppis.keys())
         if Inffile and P._PrivatePpis:
             if not Inffile.startswith(P.MetaFile.Dir):
                 PpiKeys = [x for x in P.Ppis if x not in P._PrivatePpis]
@@ -977,7 +975,7 @@ class sdict(IterableUserDict):
 
     ## append support
     def append(self, sdict):
-        for key in sdict:
+        for key in sdict.keys():
             if key not in self._key_list:
                 self._key_list.append(key)
             IterableUserDict.__setitem__(self, key, sdict[key])
@@ -1017,11 +1015,11 @@ class sdict(IterableUserDict):
 
     ## Keys interation support
     def iterkeys(self):
-        return iter(self.keys())
+        return self.keys()
 
     ## Values interation support
     def itervalues(self):
-        return iter(self.values())
+        return self.values()
 
     ## Return value related to a key, and remove the (key, value) from the dict
     def pop(self, key, *dv):
@@ -1030,7 +1028,7 @@ class sdict(IterableUserDict):
             value = self[key]
             self.__delitem__(key)
         elif len(dv) != 0 :
-            value = kv[0]
+            value = dv[0]
         return value
 
     ## Return (key, value) pair, and remove the (key, value) from the dict
@@ -1294,12 +1292,12 @@ def ParseDevPathValue (Value):
     if err:
         raise BadExpression("DevicePath: %s" % str(err))
     Size = len(out.split())
-    out = ','.join(out.split())
+    out = ','.join(out.decode(encoding='utf-8', errors='ignore').split())
     return '{' + out + '}', Size
 
 def ParseFieldValue (Value):
     if isinstance(Value, type(0)):
-        return Value, (Value.bit_length() + 7) / 8
+        return Value, (Value.bit_length() + 7) // 8
     if not isinstance(Value, type('')):
         raise BadExpression('Type %s is %s' %(Value, type(Value)))
     Value = Value.strip()
@@ -1327,13 +1325,13 @@ def ParseFieldValue (Value):
         Value = Value.split('(', 1)[1][:-1].strip()
         if Value[0] == '{' and Value[-1] == '}':
             TmpValue = GuidStructureStringToGuidString(Value)
-            if len(TmpValue) == 0:
+            if not TmpValue:
                 raise BadExpression("Invalid GUID value string %s" % Value)
             Value = TmpValue
         if Value[0] == '"' and Value[-1] == '"':
             Value = Value[1:-1]
         try:
-            Value = "'" + uuid.UUID(Value).get_bytes_le() + "'"
+            Value = "{" + ','.join([str(i) for i in uuid.UUID(Value).bytes_le]) + "}"
         except ValueError as Message:
             raise BadExpression(Message)
         Value, Size = ParseFieldValue(Value)
@@ -1414,15 +1412,18 @@ def ParseFieldValue (Value):
         Value = Value.strip().strip('"')
         return ParseDevPathValue(Value)
     if Value.lower().startswith('0x'):
-        Value = int(Value, 16)
+        try:
+            Value = int(Value, 16)
+        except:
+            raise BadExpression("invalid hex value: %s" % Value)
         if Value == 0:
             return 0, 1
-        return Value, (Value.bit_length() + 7) / 8
+        return Value, (Value.bit_length() + 7) // 8
     if Value[0].isdigit():
         Value = int(Value, 10)
         if Value == 0:
             return 0, 1
-        return Value, (Value.bit_length() + 7) / 8
+        return Value, (Value.bit_length() + 7) // 8
     if Value.lower() == 'true':
         return 1, 1
     if Value.lower() == 'false':
@@ -1432,9 +1433,9 @@ def ParseFieldValue (Value):
 ## AnalyzeDscPcd
 #
 #  Analyze DSC PCD value, since there is no data type info in DSC
-#  This fuction is used to match functions (AnalyzePcdData) used for retrieving PCD value from database
+#  This function is used to match functions (AnalyzePcdData) used for retrieving PCD value from database
 #  1. Feature flag: TokenSpace.PcdCName|PcdValue
-#  2. Fix and Patch:TokenSpace.PcdCName|PcdValue[|MaxSize]
+#  2. Fix and Patch:TokenSpace.PcdCName|PcdValue[|VOID*[|MaxSize]]
 #  3. Dynamic default:
 #     TokenSpace.PcdCName|PcdValue[|VOID*[|MaxSize]]
 #     TokenSpace.PcdCName|PcdValue
@@ -1442,7 +1443,7 @@ def ParseFieldValue (Value):
 #     TokenSpace.PcdCName|VpdOffset[|VpdValue]
 #     TokenSpace.PcdCName|VpdOffset[|MaxSize[|VpdValue]]
 #  5. Dynamic HII:
-#     TokenSpace.PcdCName|HiiString|VaiableGuid|VariableOffset[|HiiValue]
+#     TokenSpace.PcdCName|HiiString|VariableGuid|VariableOffset[|HiiValue]
 #  PCD value needs to be located in such kind of string, and the PCD value might be an expression in which
 #    there might have "|" operator, also in string value.
 #
@@ -1458,50 +1459,33 @@ def AnalyzeDscPcd(Setting, PcdType, DataType=''):
     FieldList = AnalyzePcdExpression(Setting)
 
     IsValid = True
-    if PcdType in (MODEL_PCD_FIXED_AT_BUILD, MODEL_PCD_PATCHABLE_IN_MODULE, MODEL_PCD_FEATURE_FLAG):
+    if PcdType in (MODEL_PCD_FIXED_AT_BUILD, MODEL_PCD_PATCHABLE_IN_MODULE, MODEL_PCD_DYNAMIC_DEFAULT, MODEL_PCD_DYNAMIC_EX_DEFAULT):
         Value = FieldList[0]
         Size = ''
-        if len(FieldList) > 1:
-            if FieldList[1].upper().startswith("0X") or FieldList[1].isdigit():
-                Size = FieldList[1]
+        if len(FieldList) > 1 and FieldList[1]:
+            DataType = FieldList[1]
+            if FieldList[1] != TAB_VOID:
+                IsValid = False
+        if len(FieldList) > 2:
+            Size = FieldList[2]
+        if IsValid:
+            if DataType == "":
+                IsValid = (len(FieldList) <= 1)
             else:
-                DataType = FieldList[1]
+                IsValid = (len(FieldList) <= 3)
 
-        if len(FieldList) > 2:
-            Size = FieldList[2]
-        if DataType == "":
-            IsValid = (len(FieldList) <= 1)
-        else:
-            IsValid = (len(FieldList) <= 3)
-#         Value, Size = ParseFieldValue(Value)
         if Size:
             try:
                 int(Size, 16) if Size.upper().startswith("0X") else int(Size)
             except:
                 IsValid = False
                 Size = -1
-        return [str(Value), '', str(Size)], IsValid, 0
-    elif PcdType in (MODEL_PCD_DYNAMIC_DEFAULT, MODEL_PCD_DYNAMIC_EX_DEFAULT):
+        return [str(Value), DataType, str(Size)], IsValid, 0
+    elif PcdType == MODEL_PCD_FEATURE_FLAG:
         Value = FieldList[0]
-        Size = Type = ''
-        if len(FieldList) > 1:
-            Type = FieldList[1]
-        else:
-            Type = DataType
-        if len(FieldList) > 2:
-            Size = FieldList[2]
-        if DataType == "":
-            IsValid = (len(FieldList) <= 1)
-        else:
-            IsValid = (len(FieldList) <= 3)
-
-        if Size:
-            try:
-                int(Size, 16) if Size.upper().startswith("0X") else int(Size)
-            except:
-                IsValid = False
-                Size = -1
-        return [Value, Type, str(Size)], IsValid, 0
+        Size = ''
+        IsValid = (len(FieldList) <= 1)
+        return [Value, DataType, str(Size)], IsValid, 0
     elif PcdType in (MODEL_PCD_DYNAMIC_VPD, MODEL_PCD_DYNAMIC_EX_VPD):
         VpdOffset = FieldList[0]
         Value = Size = ''
@@ -1525,6 +1509,7 @@ def AnalyzeDscPcd(Setting, PcdType, DataType=''):
                 Size = -1
         return [VpdOffset, str(Size), Value], IsValid, 2
     elif PcdType in (MODEL_PCD_DYNAMIC_HII, MODEL_PCD_DYNAMIC_EX_HII):
+        IsValid = (3 <= len(FieldList) <= 5)
         HiiString = FieldList[0]
         Guid = Offset = Value = Attribute = ''
         if len(FieldList) > 1:
@@ -1533,9 +1518,10 @@ def AnalyzeDscPcd(Setting, PcdType, DataType=''):
             Offset = FieldList[2]
         if len(FieldList) > 3:
             Value = FieldList[3]
+            if not Value:
+                IsValid = False
         if len(FieldList) > 4:
             Attribute = FieldList[4]
-        IsValid = (3 <= len(FieldList) <= 5)
         return [HiiString, Guid, Offset, Value, Attribute], IsValid, 3
     return [], False, 0
 
@@ -1599,10 +1585,18 @@ def CheckPcdDatum(Type, Value):
                           ", FALSE, False, false, 0x0, 0x00, 0" % (Value, Type)
     elif Type in [TAB_UINT8, TAB_UINT16, TAB_UINT32, TAB_UINT64]:
         try:
-            Value = long(Value, 0)
+            Val = int(Value, 0)
         except:
-            return False, "Invalid value [%s] of type [%s];"\
-                          " must be a hexadecimal, decimal or octal in C language format." % (Value, Type)
+            try:
+                Val = int(Value.lstrip('0'))
+            except:
+                return False, "Invalid value [%s] of type [%s];" \
+                              " must be a hexadecimal, decimal or octal in C language format." % (Value, Type)
+        if Val > MAX_VAL_TYPE[Type]:
+            return False, "Too large PCD value[%s] for datum type [%s]" % (Value, Type)
+        if Val < 0:
+            return False, "PCD can't be set to negative value[%s] for datum type [%s]" % (Value, Type)
+
     else:
         return True, "StructurePcd"
 
@@ -1640,7 +1634,7 @@ def SplitOption(OptionString):
 def CommonPath(PathList):
     P1 = min(PathList).split(os.path.sep)
     P2 = max(PathList).split(os.path.sep)
-    for Index in xrange(min(len(P1), len(P2))):
+    for Index in range(min(len(P1), len(P2))):
         if P1[Index] != P2[Index]:
             return os.path.sep.join(P1[:Index])
     return os.path.sep.join(P1)
@@ -1734,8 +1728,6 @@ class PathClass(object):
         self.ToolCode = ToolCode
         self.ToolChainFamily = ToolChainFamily
 
-        self._Key = None
-
     ## Convert the object of this class to a string
     #
     #  Convert member Path of the class to a string
@@ -1788,12 +1780,12 @@ class PathClass(object):
     def __hash__(self):
         return hash(self.Path)
 
-    def _GetFileKey(self):
-        if self._Key is None:
-            self._Key = self.Path.upper()   # + self.ToolChainFamily + self.TagName + self.ToolCode + self.Target
-        return self._Key
+    @cached_property
+    def Key(self):
+        return self.Path.upper()
 
-    def _GetTimeStamp(self):
+    @property
+    def TimeStamp(self):
         return os.stat(self.Path)[8]
 
     def Validate(self, Type='', CaseSensitive=True):
@@ -1832,9 +1824,6 @@ class PathClass(object):
             self.Path = os.path.join(RealRoot, RealFile)
         return ErrorCode, ErrorInfo
 
-    Key = property(_GetFileKey)
-    TimeStamp = property(_GetTimeStamp)
-
 ## Parse PE image to get the required PE informaion.
 #
 class PeImageClass():
@@ -1870,7 +1859,7 @@ class PeImageClass():
         ByteArray = array.array('B')
         ByteArray.fromfile(PeObject, 4)
         # PE signature should be 'PE\0\0'
-        if ByteArray.tostring() != 'PE\0\0':
+        if ByteArray.tostring() != b'PE\0\0':
             self.ErrorInfo = self.FileName + ' has no valid PE signature PE00'
             return
 
@@ -1944,8 +1933,8 @@ class DefaultStore():
         for sid, name in self.DefaultStores.values():
             if sid == minid:
                 return name
-class SkuClass():
 
+class SkuClass():
     DEFAULT = 0
     SINGLE = 1
     MULTIPLE =2
@@ -1962,17 +1951,17 @@ class SkuClass():
                             ExtraData = "SKU-ID [%s] value %s exceeds the max value of UINT64"
                                       % (SkuName, SkuId))
 
-        self.AvailableSkuIds = sdict()
+        self.AvailableSkuIds = OrderedDict()
         self.SkuIdSet = []
         self.SkuIdNumberSet = []
         self.SkuData = SkuIds
-        self.__SkuInherit = {}
-        self.__SkuIdentifier = SkuIdentifier
+        self._SkuInherit = {}
+        self._SkuIdentifier = SkuIdentifier
         if SkuIdentifier == '' or SkuIdentifier is None:
             self.SkuIdSet = ['DEFAULT']
             self.SkuIdNumberSet = ['0U']
         elif SkuIdentifier == 'ALL':
-            self.SkuIdSet = SkuIds.keys()
+            self.SkuIdSet = list(SkuIds.keys())
             self.SkuIdNumberSet = [num[0].strip() + 'U' for num in SkuIds.values()]
         else:
             r = SkuIdentifier.split('|')
@@ -1991,7 +1980,7 @@ class SkuClass():
                 EdkLogger.error("build", PARAMETER_INVALID,
                             ExtraData="SKU-ID [%s] is not supported by the platform. [Valid SKU-ID: %s]"
                                       % (each, " | ".join(SkuIds.keys())))
-        if self.SkuUsageType != self.SINGLE:
+        if self.SkuUsageType != SkuClass.SINGLE:
             self.AvailableSkuIds.update({'DEFAULT':0, 'COMMON':0})
         if self.SkuIdSet:
             GlobalData.gSkuids = (self.SkuIdSet)
@@ -2005,11 +1994,11 @@ class SkuClass():
                 GlobalData.gSkuids.sort()
 
     def GetNextSkuId(self, skuname):
-        if not self.__SkuInherit:
-            self.__SkuInherit = {}
+        if not self._SkuInherit:
+            self._SkuInherit = {}
             for item in self.SkuData.values():
-                self.__SkuInherit[item[1]]=item[2] if item[2] else "DEFAULT"
-        return self.__SkuInherit.get(skuname, "DEFAULT")
+                self._SkuInherit[item[1]]=item[2] if item[2] else "DEFAULT"
+        return self._SkuInherit.get(skuname, "DEFAULT")
 
     def GetSkuChain(self, sku):
         if sku == "DEFAULT":
@@ -2039,55 +2028,45 @@ class SkuClass():
 
         return skuorder
 
-    def __SkuUsageType(self):
-
-        if self.__SkuIdentifier.upper() == "ALL":
+    @property
+    def SkuUsageType(self):
+        if self._SkuIdentifier.upper() == "ALL":
             return SkuClass.MULTIPLE
 
         if len(self.SkuIdSet) == 1:
             if self.SkuIdSet[0] == 'DEFAULT':
                 return SkuClass.DEFAULT
-            else:
-                return SkuClass.SINGLE
-        elif len(self.SkuIdSet) == 2:
-            if 'DEFAULT' in self.SkuIdSet:
-                return SkuClass.SINGLE
-            else:
-                return SkuClass.MULTIPLE
-        else:
-            return SkuClass.MULTIPLE
-    def DumpSkuIdArrary(self):
+            return SkuClass.SINGLE
+        if len(self.SkuIdSet) == 2 and 'DEFAULT' in self.SkuIdSet:
+            return SkuClass.SINGLE
+        return SkuClass.MULTIPLE
 
-        ArrayStrList = []
+    def DumpSkuIdArrary(self):
         if self.SkuUsageType == SkuClass.SINGLE:
-            ArrayStr = "{0x0}"
-        else:
-            for skuname in self.AvailableSkuIds:
-                if skuname == "COMMON":
-                    continue
-                while skuname != "DEFAULT":
-                    ArrayStrList.append(hex(int(self.AvailableSkuIds[skuname])))
-                    skuname = self.GetNextSkuId(skuname)
-                ArrayStrList.append("0x0")
-            ArrayStr = "{" + ",".join(ArrayStrList) +  "}"
-        return ArrayStr
-    def __GetAvailableSkuIds(self):
+            return "{0x0}"
+        ArrayStrList = []
+        for skuname in self.AvailableSkuIds:
+            if skuname == "COMMON":
+                continue
+            while skuname != "DEFAULT":
+                ArrayStrList.append(hex(int(self.AvailableSkuIds[skuname])))
+                skuname = self.GetNextSkuId(skuname)
+            ArrayStrList.append("0x0")
+        return "{{{myList}}}".format(myList=",".join(ArrayStrList))
+
+    @property
+    def AvailableSkuIdSet(self):
         return self.AvailableSkuIds
 
-    def __GetSystemSkuID(self):
-        if self.__SkuUsageType() == SkuClass.SINGLE:
+    @property
+    def SystemSkuId(self):
+        if self.SkuUsageType == SkuClass.SINGLE:
             if len(self.SkuIdSet) == 1:
                 return self.SkuIdSet[0]
             else:
                 return self.SkuIdSet[0] if self.SkuIdSet[0] != 'DEFAULT' else self.SkuIdSet[1]
         else:
             return 'DEFAULT'
-    def __GetAvailableSkuIdNumber(self):
-        return self.SkuIdNumberSet
-    SystemSkuId = property(__GetSystemSkuID)
-    AvailableSkuIdSet = property(__GetAvailableSkuIds)
-    SkuUsageType = property(__SkuUsageType)
-    AvailableSkuIdNumSet = property(__GetAvailableSkuIdNumber)
 
 #
 # Pack a registry format GUID
@@ -2102,7 +2081,7 @@ def PackRegistryFormatGuid(Guid):
 #   @retval     Value    The integer value that the input represents
 #
 def GetIntegerValue(Input):
-    if type(Input) in (int, long):
+    if isinstance(Input, int):
         return Input
     String = Input
     if String.endswith("U"):

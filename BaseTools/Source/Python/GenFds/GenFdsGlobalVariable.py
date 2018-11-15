@@ -15,7 +15,6 @@
 ##
 # Import Modules
 #
-from __future__ import print_function
 import Common.LongFilePathOs as os
 import sys
 import subprocess
@@ -66,8 +65,8 @@ class GenFdsGlobalVariable:
     FixedLoadAddress = False
     PlatformName = ''
 
-    BuildRuleFamily = "MSFT"
-    ToolChainFamily = "MSFT"
+    BuildRuleFamily = DataType.TAB_COMPILER_MSFT
+    ToolChainFamily = DataType.TAB_COMPILER_MSFT
     __BuildRuleDatabase = None
     GuidToolDefinition = {}
     FfsCmdDict = {}
@@ -512,14 +511,15 @@ class GenFdsGlobalVariable:
 
     @staticmethod
     def GetAlignment (AlignString):
-        if AlignString is None:
+        if not AlignString:
             return 0
-        if AlignString in ("1K", "2K", "4K", "8K", "16K", "32K", "64K", "128K", "256K", "512K"):
+        if AlignString.endswith('K'):
             return int (AlignString.rstrip('K')) * 1024
-        elif AlignString in ("1M", "2M", "4M", "8M", "16M"):
+        if AlignString.endswith('M'):
             return int (AlignString.rstrip('M')) * 1024 * 1024
-        else:
-            return int (AlignString)
+        if AlignString.endswith('G'):
+            return int (AlignString.rstrip('G')) * 1024 * 1024 * 1024
+        return int (AlignString)
 
     @staticmethod
     def GenerateFfs(Output, Input, Type, Guid, Fixed=False, CheckSum=False, Align=None,
@@ -590,23 +590,6 @@ class GenFdsGlobalVariable:
             Cmd += ("-i", I)
 
         GenFdsGlobalVariable.CallExternalTool(Cmd, "Failed to generate FV")
-
-    @staticmethod
-    def GenerateVtf(Output, Input, BaseAddress=None, FvSize=None):
-        if not GenFdsGlobalVariable.NeedsUpdate(Output, Input):
-            return
-        GenFdsGlobalVariable.DebugLogger(EdkLogger.DEBUG_5, "%s needs update because of newer %s" % (Output, Input))
-
-        Cmd = ["GenVtf"]
-        if BaseAddress and FvSize \
-            and len(BaseAddress) == len(FvSize):
-            for I in range(0, len(BaseAddress)):
-                Cmd += ("-r", BaseAddress[I], "-s", FvSize[I])
-        Cmd += ("-o", Output)
-        for F in Input:
-            Cmd += ("-f", F)
-
-        GenFdsGlobalVariable.CallExternalTool(Cmd, "Failed to generate VTF")
 
     @staticmethod
     def GenerateFirmwareImage(Output, Input, Type="efi", SubType=None, Zero=False,
@@ -737,8 +720,8 @@ class GenFdsGlobalVariable:
             return
         if PopenObject.returncode != 0 or GenFdsGlobalVariable.VerboseMode or GenFdsGlobalVariable.DebugLevel != -1:
             GenFdsGlobalVariable.InfLogger ("Return Value = %d" % PopenObject.returncode)
-            GenFdsGlobalVariable.InfLogger (out)
-            GenFdsGlobalVariable.InfLogger (error)
+            GenFdsGlobalVariable.InfLogger (out.decode(encoding='utf-8',errors='ignore'))
+            GenFdsGlobalVariable.InfLogger (error.decode(encoding='utf-8', errors='ignore'))
             if PopenObject.returncode != 0:
                 print("###", cmd)
                 EdkLogger.error("GenFds", COMMAND_FAILURE, errorMess)

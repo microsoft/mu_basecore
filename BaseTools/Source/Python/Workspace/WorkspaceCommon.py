@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #
 
-from __future__ import absolute_import
 from collections import OrderedDict, defaultdict
 from Common.DataType import SUP_MODULE_USER_DEFINED
 from .BuildClassObject import LibraryClassObject
@@ -21,10 +20,14 @@ from Common.BuildToolError import RESOURCE_NOT_AVAILABLE
 from Common.BuildToolError import OPTION_MISSING
 from Common.BuildToolError import BUILD_ERROR
 
-class OrderedListDict(OrderedDict, defaultdict):
+class OrderedListDict(OrderedDict):
     def __init__(self, *args, **kwargs):
-        super(OrderedListDict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.default_factory = list
+
+    def __missing__(self, key):
+        self[key] = Value = self.default_factory()
+        return Value
 
 ## Get all packages from platform for specified arch, target and toolchain
 #

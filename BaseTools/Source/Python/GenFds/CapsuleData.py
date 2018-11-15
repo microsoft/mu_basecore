@@ -15,7 +15,6 @@
 ##
 # Import Modules
 #
-from __future__ import absolute_import
 from . import Ffs
 from .GenFdsGlobalVariable import GenFdsGlobalVariable
 from io import BytesIO
@@ -83,7 +82,7 @@ class CapsuleFv (CapsuleData):
         if self.FvName.find('.fv') == -1:
             if self.FvName.upper() in GenFdsGlobalVariable.FdfParser.Profile.FvDict:
                 FvObj = GenFdsGlobalVariable.FdfParser.Profile.FvDict[self.FvName.upper()]
-                FdBuffer = BytesIO('')
+                FdBuffer = BytesIO()
                 FvObj.CapsuleName = self.CapsuleName
                 FvFile = FvObj.AddToBuffer(FdBuffer)
                 FvObj.CapsuleName = None
@@ -230,7 +229,7 @@ class CapsulePayload(CapsuleData):
                        )
         if AuthData:
             Buffer += pack('QIHH', AuthData[0], AuthData[1], AuthData[2], AuthData[3])
-            Buffer += uuid.UUID(AuthData[4]).get_bytes_le()
+            Buffer += uuid.UUID(AuthData[4]).bytes_le
 
         #
         # Append file content to the structure

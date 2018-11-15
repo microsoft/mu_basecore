@@ -12,7 +12,6 @@
 
 # # Import Modules
 #
-from __future__ import print_function
 from Common.GlobalData import *
 from CommonDataClass.Exceptions import BadExpression
 from CommonDataClass.Exceptions import WrnExpression
@@ -26,7 +25,7 @@ ERR_MATCH = 'No matching right parenthesis.'
 ERR_STRING_TOKEN = 'Bad string token: [%s].'
 ERR_MACRO_TOKEN = 'Bad macro token: [%s].'
 ERR_EMPTY_TOKEN = 'Empty token is not allowed.'
-ERR_PCD_RESOLVE = 'PCD token cannot be resolved: [%s].'
+ERR_PCD_RESOLVE = 'The PCD should be FeatureFlag type or FixedAtBuild type: [%s].'
 ERR_VALID_TOKEN = 'No more valid token found from rest of string: [%s].'
 ERR_EXPR_TYPE = 'Different types found in expression.'
 ERR_OPERATOR_UNSUPPORT = 'Unsupported operator: [%s]'
@@ -348,7 +347,7 @@ class RangeExpression(BaseExpression):
 
 
     def __init__(self, Expression, PcdDataType, SymbolTable = {}):
-        super(RangeExpression, self).__init__(self, Expression, PcdDataType, SymbolTable)
+        super().__init__(self, Expression, PcdDataType, SymbolTable)
         self._NoProcess = False
         if not isinstance(Expression, type('')):
             self._Expr = Expression

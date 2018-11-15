@@ -1,7 +1,7 @@
 ## @file
 # Windows makefile for Base Tools project build.
 #
-# Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -15,24 +15,24 @@
 !ERROR "BASE_TOOLS_PATH is not set! Please run toolsetup.bat first!"
 !ENDIF
 
-SUBDIRS = $(BASE_TOOLS_PATH)\Source\C $(BASE_TOOLS_PATH)\Source\Python
+SUBDIRS = $(BASE_TOOLS_PATH)\Source\C
 
-all: c python
+all: c
 
 c :
-  @$(BASE_TOOLS_PATH)\Source\C\Makefiles\NmakeSubdirs.bat all $(BASE_TOOLS_PATH)\Source\C
+  @$(PYTHON3) $(BASE_TOOLS_PATH)\Source\C\Makefiles\NmakeSubdirs.py  all $(BASE_TOOLS_PATH)\Source\C
 
 python:
-  @$(BASE_TOOLS_PATH)\Source\C\Makefiles\NmakeSubdirs.bat all $(BASE_TOOLS_PATH)\Source\Python
+  @$(PYTHON3) $(BASE_TOOLS_PATH)\Source\C\Makefiles\NmakeSubdirs.py  all $(BASE_TOOLS_PATH)\Source\Python
 
 subdirs: $(SUBDIRS)
-  @$(BASE_TOOLS_PATH)\Source\C\Makefiles\NmakeSubdirs.bat all $**
+  @$(PYTHON3) $(BASE_TOOLS_PATH)\Source\C\Makefiles\NmakeSubdirs.py  all $**
 
 .PHONY: clean
 clean:
-  @$(BASE_TOOLS_PATH)\Source\C\Makefiles\NmakeSubdirs.bat clean $(SUBDIRS)
+  $(PYTHON3) $(BASE_TOOLS_PATH)\Source\C\Makefiles\NmakeSubdirs.py clean $(SUBDIRS)
 
 .PHONY: cleanall
 cleanall:
-  @$(BASE_TOOLS_PATH)\Source\C\Makefiles\NmakeSubdirs.bat cleanall $(SUBDIRS)
+  $(PYTHON3) $(BASE_TOOLS_PATH)\Source\C\Makefiles\NmakeSubdirs.py  cleanall $(SUBDIRS)
 

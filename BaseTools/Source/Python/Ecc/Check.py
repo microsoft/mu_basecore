@@ -15,10 +15,10 @@ import Common.LongFilePathOs as os
 import re
 from CommonDataClass.DataClass import *
 import Common.DataType as DT
-from .EccToolError import *
-from .MetaDataParser import ParseHeaderCommentSection
-from . import EccGlobalData
-from . import c
+from Ecc.EccToolError import *
+from Ecc.MetaDataParser import ParseHeaderCommentSection
+from Ecc import EccGlobalData
+from Ecc import c
 from Common.LongFilePathSupport import OpenLongFilePath as open
 from Common.MultipleWorkspace import MultipleWorkspace as mws
 
@@ -223,7 +223,7 @@ class Check(object):
                     IndexOfLine = 0
                     for Line in op:
                         IndexOfLine += 1
-                        if not Line.endswith('\r\n'):
+                        if not bytes.decode(Line).endswith('\r\n'):
                             OtherMsg = "File %s has invalid line ending at line %s" % (Record[1], IndexOfLine)
                             EccGlobalData.gDb.TblReport.Insert(ERROR_GENERAL_CHECK_INVALID_LINE_ENDING, OtherMsg=OtherMsg, BelongsToTable='File', BelongsToItem=Record[0])
 
@@ -235,7 +235,7 @@ class Check(object):
             RecordSet = EccGlobalData.gDb.TblFile.Exec(SqlCommand)
             for Record in RecordSet:
                 if Record[2].upper() not in EccGlobalData.gConfig.BinaryExtList:
-                    op = open(Record[1], 'rb').readlines()
+                    op = open(Record[1], 'r').readlines()
                     IndexOfLine = 0
                     for Line in op:
                         IndexOfLine += 1
