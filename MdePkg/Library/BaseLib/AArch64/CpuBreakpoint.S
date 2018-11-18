@@ -32,6 +32,7 @@ GCC_ASM_EXPORT(CpuBreakpoint)
 #  VOID
 #  );
 #
+# MS_CHANGE: Change svc to brk for KdDxe support
 ASM_PFX(CpuBreakpoint):
-    brk   0xf000    # MS_CHANGE: Change svc to brk for KdDxe support
+    brk   0xf000
     ret
