@@ -26,8 +26,8 @@ import datetime
 import struct
 import subprocess
 import uuid
-from UtilityFunctions import RunCmd
-from UtilityFunctions import DetachedSignWithSignTool
+from edk2toollib.utility_functions import RunCmd
+from edk2toollib.utility_functions import DetachedSignWithSignTool
 
 
 gPhase3PackageOnly = False
@@ -168,7 +168,7 @@ def main():
     #package the final output (phase 3)
     wcugSize = os.path.getsize(options.DetachedSignature)
     logging.debug("PKCS7 Signed Data is size: " + str(wcugSize))
-    wcugSize = wcugSize + 4 + 2 + 2 + 16;  # matches the hdr + guid below
+    wcugSize = wcugSize + 4 + 2 + 2 + 16  # matches the hdr + guid below
 
     #
     #Header layout and structures defined in UEFI 2.4 Errata B.
