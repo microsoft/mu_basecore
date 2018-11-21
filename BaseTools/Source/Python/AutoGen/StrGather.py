@@ -530,12 +530,17 @@ def SearchString(UniObjectClass, FileList, IsCompatibleMode):
         return UniObjectClass
 
     for File in FileList:
-        if os.path.isfile(File):
-            Lines = open(File, 'r')
-            for Line in Lines:
-                for StrName in STRING_TOKEN.findall(Line):
-                    EdkLogger.debug(EdkLogger.DEBUG_5, "Found string identifier: " + StrName)
-                    UniObjectClass.SetStringReferenced(StrName)
+        # MU_CHANGE - Add extra debugging to improve error identification.
+        try:
+            if os.path.isfile(File):
+                Lines = open(File, 'r')
+                for Line in Lines:
+                    for StrName in STRING_TOKEN.findall(Line):
+                        EdkLogger.debug(EdkLogger.DEBUG_5, "Found string identifier: " + StrName)
+                        UniObjectClass.SetStringReferenced(StrName)
+        except: #MU_CHANGE
+            EdkLogger.error("UnicodeStringGather", AUTOGEN_ERROR, "SearchString: Error while processing file", File=File, RaiseError=False)
+            raise
 
     UniObjectClass.ReToken()
 

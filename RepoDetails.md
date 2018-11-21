@@ -38,8 +38,11 @@ Please follow the general Project Mu Pull Request process.  [More Details](https
 
 ## Builds
 
-run MuBuild.py -c corebuild.mu.json
-
+```cmd
+pip install mu_build
+mu_build -c corebuild.mu.json
+```
+[More info](https://github.com/microsoft/mu_pip_build)
 ## Copyright & License
 
 Copyright (c) 2016-2018, Microsoft Corporation
