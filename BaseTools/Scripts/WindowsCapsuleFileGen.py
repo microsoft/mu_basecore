@@ -36,14 +36,9 @@ import logging
 import argparse
 import datetime
 
-#Add PythonLibrary base to path for import
-sp = os.path.dirname(os.path.realpath(sys.argv[0]))
-sys.path.append(os.path.join(os.path.dirname(sp), "PythonLibrary"))
-
-
-from Uefi.Capsule.CatGenerator import *
-from Uefi.Capsule.InfGenerator import *
-from UtilityFunctions import CatalogSignWithSignTool
+from MuPythonLibrary.Uefi.Capsule.CatGenerator import *
+from MuPythonLibrary.Uefi.Capsule.InfGenerator import *
+from MuPythonLibrary.UtilityFunctions import CatalogSignWithSignTool
 
 def main():
     parser = argparse.ArgumentParser(description='Generate Windows Firmware Update Platform Files for Capsules')

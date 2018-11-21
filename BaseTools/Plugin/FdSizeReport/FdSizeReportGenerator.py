@@ -40,8 +40,8 @@ from decimal import Decimal
 # To do this the plugin class is only defined if in the build environment where the plugin classes are importable. 
 #
 #
-try: 
-    import PluginManager
+try:
+    from MuEnvironment import PluginManager
 
     class FdSizeReportGenerator(PluginManager.IUefiBuildPlugin):
 

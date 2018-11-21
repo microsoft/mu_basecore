@@ -25,7 +25,7 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
 ### 
-import PluginManager
+from MuEnvironment import PluginManager
 import logging
 
 class HelloWorld(PluginManager.IUefiBuildPlugin):
