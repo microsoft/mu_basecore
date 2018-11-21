@@ -1,11 +1,12 @@
-import PluginManager
+from MuEnvironment import PluginManager
 import logging
 import os
-from UtilityFunctions import RunCmd
-from UtilityFunctions import RunPythonScript
-from UtilityFunctions import CatalogSignWithSignTool
+from MuPythonLibrary.UtilityFunctions import RunCmd
+from MuPythonLibrary.UtilityFunctions import RunPythonScript
+from MuPythonLibrary.UtilityFunctions import CatalogSignWithSignTool
 import shutil
 import datetime
+
 
 class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
 
@@ -32,10 +33,10 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
     @staticmethod
     def PackageMsFmpHeader(InputBin, OutputBin, VersionInt, LsvInt, DepList = []):
         logging.debug("CapsulePackage: Fmp Header")
-        cmd = "genmspayloadheader.exe -o " + OutputBin
-        cmd = cmd + " --version " + hex(VersionInt).rstrip("L")
-        cmd = cmd + " --lsv " + hex(LsvInt)
-        cmd = cmd + " -p " + InputBin + " -v"
+        params = "-o " + OutputBin
+        params = params + " --version " + hex(VersionInt).rstrip("L")
+        params = params + " --lsv " + hex(LsvInt)
+        params = params + " -p " + InputBin + " -v"
         #append depedency if supplied
         for dep in DepList:
             depGuid = dep[0]
@@ -43,8 +44,8 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
             depMinVer = hex(dep[2])
             depFlag = hex(dep[3])
             logging.debug("Adding a Dependency:\n\tFMP Guid: %s \nt\tFmp Descriptor Index: %d \n\tFmp DepVersion: %s \n\tFmp Flags: %s\n" % (depGuid, depIndex, depMinVer, depFlag))
-            cmd += " --dep " + depGuid + " " + str(depIndex) + " " + depMinVer + " " + depFlag
-        ret = RunCmd(cmd)
+            params += " --dep " + depGuid + " " + str(depIndex) + " " + depMinVer + " " + depFlag
+        ret = RunCmd("genmspayloadheader.exe", params)
         if(ret != 0):
             raise Exception("GenMsPayloadHeader Failed with errorcode %d" % ret)
         return ret
@@ -66,10 +67,10 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
         logging.debug("Temp Output dir for FmpImageAuth: %s" % TempOutDir)
         os.mkdir(TempOutDir)
         cmd =  "GenFmpImageAuth.py"
-        cmd = cmd + " -o " + OutputBin
-        cmd = cmd + " -p " + InputBin + " -m 1"
-        cmd = cmd + " --debug"
-        cmd = cmd + " -l " + os.path.join(TempOutDir, "GenFmpImageAuth_Log.log")
+        params = "-o " + OutputBin
+        params = params + " -p " + InputBin + " -m 1"
+        params = params + " --debug"
+        params = params + " -l " + os.path.join(TempOutDir, "GenFmpImageAuth_Log.log")
         if(DevPfxFilePath is not None):
             logging.debug("FmpImageAuth is dev signed. Do entire process in 1 step locally.")
 
@@ -80,14 +81,14 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
             if not os.path.exists(SignToolPath):
                 raise Exception("Can't find signtool on this machine.")
 
-            cmd = cmd + " --SignTool \"" + SignToolPath + "\""
+            params = params + " --SignTool \"" + SignToolPath + "\""
 
-            cmd = cmd + " --pfxfile " + DevPfxFilePath
+            params = params + " --pfxfile " + DevPfxFilePath
             if( DevPfxPassword is not None):
-                cmd += " --pfxpass " + DevPfxPassword
+                params += " --pfxpass " + DevPfxPassword
             if (Eku is not None):
-                cmd += " --eku " + Eku
-            ret = RunPythonScript(cmd, workingdir=TempOutDir)
+                params += " --eku " + Eku
+            ret = RunPythonScript(cmd, params, workingdir=TempOutDir)
             #delete the temp dir
             shutil.rmtree(TempOutDir, ignore_errors=True)
         else:
@@ -96,8 +97,8 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
 
             if(DetachedSignatureFile is None):
                 logging.debug("FmpImageAuth Step1: Make ToBeSigned file for production") 
-                cmd = cmd + " --production"  
-                ret = RunPythonScript(cmd, workingdir=TempOutDir)
+                params = params + " --production"  
+                ret = RunPythonScript(cmd, params, workingdir=TempOutDir)
                 if(ret != 0):
                     raise Exception("GenFmpImageAuth Failed production signing: step 1.  Errorcode %d" % ret)
                 #now we have a file to sign at 
@@ -108,8 +109,8 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
             
             else:
                 logging.debug("FmpImageAuth Step3: Final Packaging of production signed")
-                cmd = cmd + " --production -s " + DetachedSignatureFile
-                ret = RunPythonScript(cmd, workingdir=TempOutDir)
+                params = params + " --production -s " + DetachedSignatureFile
+                ret = RunPythonScript(cmd, params, workingdir=TempOutDir)
                 #delete the temp dir
                 shutil.rmtree(TempOutDir, ignore_errors=True)
 
@@ -120,9 +121,9 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
     @staticmethod
     def PackageFmpCapsuleHeader(InputBin, OutputBin, FmpGuid):
         logging.debug("CapsulePackage: Fmp Capsule Header")
-        cmd = "genfmpcap.exe -o " + OutputBin
-        cmd = cmd + " -p " + InputBin + " " + FmpGuid + " 1 0 -V"
-        ret = RunCmd(cmd)
+        params = "-o " + OutputBin
+        params = params + " -p " + InputBin + " " + FmpGuid + " 1 0 -V"
+        ret = RunCmd("genfmpcap.exe", params)
         if(ret != 0):
             raise Exception("GenFmpCap Failed with errorcode" % ret)
         return ret
@@ -133,12 +134,12 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
         if(FmpDeviceGuid == None):
             logging.debug("CapsulePackage: Using default industry standard FMP guid")
             FmpDeviceGuid = "6dcbd5ed-e82d-4c44-bda1-7194199ad92a"
-            
-        cmd = "genfv -o " + OutputBin
-        cmd = cmd + " -g " + FmpDeviceGuid
-        cmd = cmd + " --capsule -v -f " + InputBin
-        cmd = cmd + " --capFlag PersistAcrossReset --capFlag InitiateReset"
-        ret = RunCmd(cmd)
+
+        params = "-o " + OutputBin
+        params = params + " -g " + FmpDeviceGuid
+        params = params + " --capsule -v -f " + InputBin
+        params = params + " --capFlag PersistAcrossReset --capFlag InitiateReset"
+        ret = RunCmd("genfv", params)
         if(ret != 0):
             raise Exception("GenFv Failed with errorcode" % ret)
-        return ret 
+        return ret

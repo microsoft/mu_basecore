@@ -526,6 +526,7 @@ def SearchString(UniObjectClass, FileList, IsCompatibleMode):
         return UniObjectClass
 
     for File in FileList:
+        # MU_CHANGE - Add extra debugging to improve error identification.
         try:
             if os.path.isfile(File):
                 Lines = open(File, 'r')
