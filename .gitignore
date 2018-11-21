@@ -11,6 +11,10 @@ BuildConfig.conf
 
 .vscode/
 
+# Ignore cloned dependencies
+/Common/TIANO
+/Silicon
+
 # Ignore unused UDK PKGs.
 /ArmPkg/
 /ArmPlatformPkg/

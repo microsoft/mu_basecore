@@ -1,0 +1,423 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible">
+    <title>FD Size and Module Analysis</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.15/css/dataTables.bootstrap.min.css" />
+    <style>
+        div.attribution {
+            border: 1px solid #ddd;
+            background-color: #bbb;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <h1>Firmware FD Size & Module Analysis</h1>
+        <ul class="nav nav-tabs">
+            <li class="active"><a data-toggle="tab" href="#tabs-1">Basic Info</a></li>
+            <li><a data-toggle="tab" href="#tabs-2">Flash Layout and Usage</a></li>
+            <li><a data-toggle="tab" href="#tabs-3">Modules</a></li>
+            <li><a data-toggle="tab" href="#tabs-4">Messages</a></li>
+            <li><a data-toggle="tab" href="#tabs-5">About</a></li>
+        </ul>
+        <div class="tab-content">
+            <div id="tabs-1" class="tab-pane fade in active">
+                <h2>Product: <span id='ProductName'></span></h2>
+                <h2>Version: <span id='ProductVersion'></span></h2>
+                <h2>Date Collected: <span id='RunDate'></span></h2>
+                <h2>FD Name: <span id='FdName'></span></h2>
+                <h2>Base Address:  <span id='FdBase'></span></h2>
+                <h2>Size:  <span id='FdSize'></span></h2>
+            </div>
+            <div id="tabs-2" class="tab-pane">
+                <h2>Flash Usage</h2>
+                <div class="row">
+                    <div class="col-md-5">
+                        <canvas id="StackedChartId"></canvas>
+                        <ul id="fvtablist" class="nav nav-tabs" style="padding-top: 20px"></ul>
+                        <div id="fvtab" class="tab-content"></div>
+                    </div>
+                    <div class="col-md-7">
+                        <table id="fdrinfo" class="table table-striped table-bordered table-hover" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Offset/System Address</th>
+                                    <th>Size</th>
+                                    <th>Name/Description</th>
+                                    <th>Used Space (%)</th>
+                                    <th>Free Space (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <p></p>
+                <div id="EmbeddedFVPie"></div>
+            </div>
+            <div id="tabs-3" class="tab-pane">
+                <h2>Module List</h2>
+                <table id="modinfo" class="table table-striped table-bordered table-hover" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Size</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div id="tabs-4" class="tab-pane">
+                <h2>Tool Messges</h2>
+                <div id="messages">
+                    <ol></ol>
+                </div>
+            </div>
+            <div id="tabs-5" class="tab-pane">
+                <div class="row">
+                    <div class="col-xs-7">
+                        <p></p>
+                        <p>
+                            Fd Report Template Version: <span id="ReportTemplateVersion">1.00</span><br />
+                            Fd Report Tool Version: <span id='ReportToolVersion'></span><br />
+                        </p>
+                        <h3>License</h3>
+                        <hr />
+                        <div id="ToolLicenseContent">
+                            <p>
+                                <span class="copyright">Copyright (c) Microsoft Corporation. All rights reserved.</span><br />
+                                <span class="license">
+                                    SPDX-License-Identifier: BSD-2-Clause-Patent
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div id="AttributionListWrapper" class="col-xs-5">
+                        <h3>External Licenses</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var EmbeddedJd = %TO_BE_FILLED_IN_BY_PYTHON_SCRIPT%;
+    </script>
+
+    <!-- Javascript libraries -->
+    <script type="text/javascript" charset="utf8" src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/bootstrap.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.bundle.min.js"></script>
+
+    <!-- Add javascript here -->
+    <script>
+        var MODULE_TABLE_OFFSET = 350;  //Space needed for other stuff besides the Table
+
+        $(document).ready(function () {
+            $('span#ProductName').text(EmbeddedJd.ProductName);
+            $('span#ProductVersion').text(EmbeddedJd.ProductVersion);
+            $('#RunDate').text(EmbeddedJd.DateCollected);
+            $('span#FdName').text(EmbeddedJd.fdName);
+            $('span#FdSize').text(EmbeddedJd.fdSize);
+            $('span#FdBase').text(EmbeddedJd.fdBase);
+            $('span#ReportToolVersion').text(EmbeddedJd.FdSizeReportGeneratorVersion);
+
+            //To support tabs and correct column width we need this change
+            $('a[data-toggle="tab"][href="#tabs-3"]').on('shown.bs.tab', function (e) {
+                $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+            });
+            $('a[data-toggle="tab"][href="#tabs-2"]').on('shown.bs.tab', function (e) {
+                $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+            });
+
+            //table for fd layout
+            var fTable = $('table#fdrinfo').dataTable({
+                "aaData": EmbeddedJd.fdRegions,
+                "paginate": false,
+                "autoWidth": false,
+                "sort": false,
+                "info": false,
+                "searching": false,
+                "fnCreatedRow": function (nRow, row, iDataIndex) {
+                    if (row.used == '' || row.nested == "True") {
+                        $(nRow).toggleClass('small');
+                    } else {
+                        if (row.usedPercentage != 'NA') {
+                            var percent = parseFloat(row.usedPercentage.slice(0, -1));
+                            if (percent > 85.0) {
+                                $(nRow).addClass("danger");
+                            } else if (percent > 65.0) {
+                                $(nRow).addClass("warning");
+                            } else {
+                                $(nRow).addClass("success");
+                            }
+                        }
+                    }
+                },
+                "aoColumnDefs": [
+                    { "mData": "description", "aTargets": [2] },
+                    {
+                        "aTargets": [0], "mData": "systemAddress",
+                        "mRender": function (source, type, row) {
+                            if (row.nested == "True") {
+                                return "Nested FV - Size Info Not relevant";
+                            }
+                            return "Offset: " + row.baseAddress + "<br />System Address: " + source;
+                        }
+                    },
+                    {
+                        "aTargets": [1], "mData": "size",
+                        "mRender": function (source, type, row) {
+                            return (parseInt(source, 16) / 1024.0).toFixed(1) + "KB";
+                        }
+                    },
+                    {
+                        "mData": "used", "aTargets": [3],
+                        "mRender": function (source, type, row) {
+                            if (parseInt(source, 16) < 1) {
+                                return 'NA';
+                            } else {
+                                return (parseInt(source, 16) / 1024.0).toFixed(1) + "KB <br />(" + row.usedPercentage + ")";
+                            }
+                        }
+                    },
+                    {
+                        "mData": "free",
+                        "aTargets": [4],
+                        "mRender": function (source, type, row) {
+                            if (parseInt(source, 16) < 1) {
+                                return 'NA';
+                            } else {
+                                return (parseInt(source, 16) / 1024.0).toFixed(1) + "KB <br />(" + row.freePercentage + ")";
+                            }
+                        }
+                    }
+                ] //end of column def
+            }); //end of flash layout data table
+
+            //table for modules
+            var mTable = $('table#modinfo').dataTable({
+                "aaData": EmbeddedJd.modules,
+                "paginate": false,
+                "autoWidth": false,
+                "scrollY": ($(window).height() - MODULE_TABLE_OFFSET) + "px",
+                "aaSorting": [[1, "desc"]],
+                "aoColumnDefs": [
+                    {
+                        "mData": "name",
+                        "aTargets": [0]
+                    },
+
+                    {
+                        "mData": "type",
+                        "aTargets": [1]
+                    },
+                    {
+                        "mData": "size",
+                        "aTargets": [2],
+                        "mRender": function (source, type, row) {
+                            if (type == 'display') {
+                                return "<span title='" + row.path + "'>" + (source / 1024.0).toFixed(1) + " KB </span>";
+                            }
+                            return source;
+                        }
+                    }
+                ] //end of column def
+            }); //end of modules table
+
+            //
+            //Write out errors or warnings in the data processing
+            //
+            var FvModList = {};
+            EmbeddedJd.modules.forEach(function (element, index, array) {
+                if (element.FV.length == 0) {
+                    $("div#messages > ol").append("<li>Module: " + element.name + " is not in any FVs!  Might be parsing error with tool or mod not in fv.");
+                }
+                element.FV.forEach(function (e, ind, ar) {
+                    if (FvModList[e] === undefined) {
+                        FvModList[e] = new Array();
+                    }
+                    FvModList[e].push(element);
+                }); //end inner foreach
+            });  //end forEach
+
+            //populate chart of firmware layout (stacked bar graph)
+            var FVC_CAT = [];  //fill in with array of FV names
+            var FVC_AV = [];  //fill in same order available space for each fv
+            var FVC_OC = [];  //fill in same order occupied space for each fv
+            for (i = 0; i < EmbeddedJd.fdRegions.length; i++) {
+                if (EmbeddedJd.fdRegions[i].free == "" || EmbeddedJd.fdRegions[i].nested == "True") {
+                    //skip this fv for the chart
+                } else {
+                    name = EmbeddedJd.fdRegions[i].description.slice(4);  //remove the "FV: ""
+                    FVC_CAT.push(name);
+                    FVC_AV.push((parseInt(EmbeddedJd.fdRegions[i].free, 16) / 1024.0).toFixed(1));
+                    FVC_OC.push((parseInt(EmbeddedJd.fdRegions[i].used, 16) / 1024.0).toFixed(1));
+                }
+            }
+
+            //Create Stacked Bar Chart
+            var StackedCtx = $("#StackedChartId");
+            var BarChartData = {
+                labels: FVC_CAT,
+                datasets: [{
+                    label: 'Used Space',
+                    backgroundColor: "#d44f4f",
+                    data: FVC_OC
+                }, {
+                    label: 'Free Space',
+                    backgroundColor: '#494949',
+                    data: FVC_AV
+                }]
+            };
+            var myBar = new Chart(StackedCtx, {
+                type: 'bar',
+                data: BarChartData,
+                options: {
+                    title: {
+                        display: true,
+                        text: "FV Space"
+                    },
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    responsive: true,
+                    scales: {
+                        xAxes: [{
+                            stacked: true,
+                        }],
+                        yAxes: [{
+                            stacked: true
+                        }]
+                    }
+                }
+            });
+
+            //
+            //for each FV
+            //
+            for (a in FvModList) {
+                fvSizes = GetFvSize(a);
+                var dataForPie = { datasets: [{ data: new Array(), backgroundColor: new Array() }], labels: new Array() };
+                dataForPie.datasets[0].data.push(fvSizes.free / 1024.00);
+                dataForPie.labels.push("Available");
+                dataForPie.datasets[0].backgroundColor.push(MakeRandomColor());
+                var smallentries = 0;
+                var smallentrycount = 0;
+
+                FvModList[a].forEach(function (element, index, array) {
+                    var v = parseFloat(element.size) * 100 / fvSizes.total;
+                    if (v < 1.1) {//if less than 1.1% put it in the small entries list
+                        smallentries += parseFloat(element.size);
+                        smallentrycount++;
+                    } else {
+                        dataForPie.datasets[0].data.push(parseFloat(element.size) / 1024.00);
+                        dataForPie.labels.push(element.name);
+                        dataForPie.datasets[0].backgroundColor.push(MakeRandomColor());
+                    }
+                });
+
+                //add the combined small entry element
+                if (smallentries > 0) {
+                    dataForPie.datasets[0].data.push(smallentries / 1024.00);
+                    dataForPie.labels.push("Small Mods [" + smallentrycount + "]");
+                    dataForPie.datasets[0].backgroundColor.push(MakeRandomColor());
+                }
+
+                var name = a.slice(4);
+                var fvtab_id = 'fvtab_chart_' + name;
+                $("#fvtab").append('<div id="fvtab_chart_' + name + '" class="tab-pane"></div>');
+                $("#fvtablist").append("<li><a data-toggle='tab' href='#fvtab_chart_" + name + "'>" + name + "</a></li>");
+                var htm = '<canvas id="' + name + '" width="200" height="200"></canvas>'
+                $("div#" + fvtab_id).append(htm);
+                var myPieChart = new Chart(name, {
+                    type: 'pie',
+                    data: dataForPie,
+                    options: {
+                        tooltips: {
+                            callbacks: {
+                                label: function (tooltipItem, data) {
+                                    var dataset = data.datasets[tooltipItem.datasetIndex];
+                                    var total = dataset.data.reduce(function (previousValue, currentValue, currentIndex, array) {
+                                        return previousValue + currentValue;
+                                    });
+                                    var currentValue = dataset.data[tooltipItem.index];
+                                    var precentage = Math.floor(((currentValue / total) * 100) + 0.5);
+                                    return data.labels[tooltipItem.index] + ": " + (currentValue).toFixed(1) + "KB (" + precentage + "%" + ")";
+                                }
+                            }
+                        }
+                    }
+                });
+            } //for each FV
+            $('#fvtablist a:first').tab('show'); //set the first one active
+            //
+            // Create Attribution List for all external libraries used
+            //
+            [
+                { Title: "JQuery", Copyright: "Copyright 2017 The jQuery Foundation", Version: $.fn.jquery, LicenseType: "MIT", LicenseLink: "https://jquery.org/license/" },
+                { Title: "DataTables", Copyright: "DataTables designed and created by SpryMedia Ltd Copyright 2007-2017", Version: $.fn.dataTable.version, LicenseType: "MIT", LicenseLink: "https://datatables.net/license/mit" },
+                { Title: "ChartJs", Copyright: "Copyright 2017 Nick Downie", Version: "2.5.0", LicenseType: "MIT", LicenseLink: "http://www.chartjs.org/docs/latest/notes/license.html" },
+                { Title: "BootStrap", Copyright: "Code and documentation copyright 2011-2017 the Bootstrap Authors and Twitter, Inc.", Version: "3.3.7", LicenseType: "MIT", LicenseLink: "https://github.com/twbs/bootstrap/blob/master/LICENSE" }
+            ].forEach(function (element) {
+                $("<div class='attribution'><h4>" + element.Title + "</h4><p>Version: <span class='version'>" + element.Version + "</span><br /><span class='copyright'>" +
+                    element.Copyright + "</span><br />License: <a class='license' href='" + element.LicenseLink + "'>" + element.LicenseType + "</a></p></div>").appendTo("div#AttributionListWrapper");
+            });
+        }); //end on ready
+
+        function GetFvSize(fvname) {
+
+            var retval = {}
+
+            retval.free = 1;
+
+            retval.total = 1;
+
+            for (i = 0; i < EmbeddedJd.fdRegions.length; i++) {
+
+                if (EmbeddedJd.fdRegions[i].description == fvname) {
+
+                    retval.free = parseInt(EmbeddedJd.fdRegions[i].free, 16)
+
+                    retval.total = parseInt(EmbeddedJd.fdRegions[i].size, 16)
+
+                    break;
+
+                }
+
+            }
+            return retval;
+        }
+
+        //
+        // Generate a hex string that is a random color
+        //
+        function MakeRandomColor() {
+            var possible = '0123456789ABCDEF'.split('');
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                color += possible[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        //
+        //To handle scroll tables adjust the height based on the window height. 
+        //
+        $(window).resize(function() {
+            var newH = $(window).height() - MODULE_TABLE_OFFSET;
+            $("#modinfo_wrapper .dataTables_scrollBody").height( newH);
+        });
+
+    </script>
+</body>
+</html>
