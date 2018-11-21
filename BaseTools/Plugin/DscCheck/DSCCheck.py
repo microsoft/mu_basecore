@@ -28,11 +28,11 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-### 
+###
 import logging
-from PluginManager import IMuBuildPlugin
-import os 
-from Uefi.EdkII.Parsers.DscParser import *
+from MuEnvironment.PluginManager import IMuBuildPlugin
+import os
+from MuPythonLibrary.Uefi.EdkII.Parsers.DscParser import *
 
 class DSCCheck(IMuBuildPlugin):
 

@@ -27,14 +27,14 @@
 ##
 ### 
 import logging
-from PluginManager import IMuBuildPlugin
+from MuEnvironment.PluginManager import IMuBuildPlugin
 import copy
 import os
 import time
 from io import StringIO
 
 
-from Uefi.EdkII.Parsers.InfParser import *
+from MuPythonLibrary.Uefi.EdkII.Parsers.InfParser import *
 
 class DependencyCheck(IMuBuildPlugin):
 

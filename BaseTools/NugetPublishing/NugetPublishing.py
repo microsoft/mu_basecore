@@ -32,22 +32,18 @@ import os
 import sys
 import argparse
 import logging
-import json
+import yaml
 import xml.etree.ElementTree as etree
 import threading
 import subprocess
 import shutil
 import datetime
+from MuPythonLibrary.UtilityFunctions import *
 
 SCRIPT_PATH = os.path.abspath(os.path.dirname(__file__))
-UefiBaseToolsPath = os.path.join(os.path.dirname(os.path.dirname(SCRIPT_PATH)), "BaseTools")
 BinToolsPath = os.path.join(os.path.dirname(SCRIPT_PATH), "Bin", "Win32")
 
 os.environ["PATH"] = BinToolsPath + os.pathsep + os.environ["PATH"]
-
-#setup python path for shared python library
-sys.path.append(os.path.join(UefiBaseToolsPath, "PythonLibrary"))
-from UtilityFunctions import *
 
 OPEN_SOURCE_INITIATIVE_URL = "https://opensource.org/licenses/"
 LICENSE_TYPE_SUPPORTED = {
@@ -114,7 +110,7 @@ class NugetSupport(object):
     #
     def ToConfigFile(self, filepath=None):
         if(not self.ConfigChanged):
-            logging.debug("No Config Changes.  Skip Writing json config file")
+            logging.debug("No Config Changes.  Skip Writing config file")
             return 0
         
         if(filepath == None and self.Config == None):
@@ -126,15 +122,15 @@ class NugetSupport(object):
         
 
         with open(filepath, "w") as c:
-            json.dump(self.ConfigData, c, indent=4)
-        logging.debug("Wrote json config file to: %s" % filepath)
+            yaml.dump(self.ConfigData, c, indent=4)
+        logging.debug("Wrote config file to: %s" % filepath)
         self.ConfigChanged = False
         return 0
 
     def FromConfigfile(self, filepath):
         self.Config = filepath
         with open(self.Config, "r") as c:
-            self.ConfigData = json.load(c)
+            self.ConfigData = yaml.safe_load(c)
 
     def SetBasicData(self, authors, license, project, description, server, copyright):
         self.ConfigData["author_string"] = authors
@@ -267,14 +263,13 @@ class NugetSupport(object):
         f.write(xmlstring)
         f.close() 
 
-        #run nuget
-        # NOTE: This is currently Windows-specific.
-        cmd = ["nuget.exe", "pack", nuspec]
+        # run nuget
+        cmd = GetNugetCmd()
+        cmd += ["pack", nuspec]
         cmd += ["-OutputDirectory", '"'+OutputDirectory+'"']
         cmd += ["-Verbosity", "detailed"]
         # cmd += ["-NonInteractive"]
-        cmd_string = " ".join(cmd)
-        ret = RunCmd(cmd_string)
+        ret = RunCmd(cmd[0], " ".join(cmd[1:]))
 
         if(ret != 0):
             logging.error("Failed on nuget commend.  RC = 0x%x" % ret)
@@ -289,13 +284,14 @@ class NugetSupport(object):
             raise Exception("Invalid file path for NuPkg file")
         logging.debug("Pushing %s file to server %s" % (nuPackage, self.ConfigData["server_url"]))
 
-        cmd = ["nuget.exe", "push", nuPackage]
+        cmd = GetNugetCmd()
+        cmd += ["push", nuPackage]
         cmd += ["-Verbosity", "detailed"]
         # cmd += ["-NonInteractive"]
         cmd += ["-Source", self.ConfigData["server_url"]]
         cmd += ["-ApiKey", apikey]
         cmd_string = " ".join(cmd)
-        ret = RunCmd(cmd_string)
+        ret = RunCmd(cmd[0], " ".join(cmd[1:]))
 
         if(ret != 0):
             logging.error("Failed on nuget commend.  RC = 0x%x" % ret)
@@ -375,7 +371,7 @@ def main():
     if(args.Operation.lower() == "new"):
         logging.critical("Generating new nuget configuration...")
         logging.debug("Checking input parameters for new")
-        ConfigFilePath = os.path.join(args.ConfigFileFolderPath, args.Name.strip() + ".config.json")
+        ConfigFilePath = os.path.join(args.ConfigFileFolderPath, args.Name.strip() + ".config.yaml")
 
         if(not os.path.isdir(args.ConfigFileFolderPath)):
             logging.critical("Config File Folder Path doesn't exist.  %s" % args.ConfigFileFolderPath)

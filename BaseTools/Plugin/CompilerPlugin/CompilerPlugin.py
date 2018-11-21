@@ -27,9 +27,9 @@
 ### 
 
 import logging
-from PluginManager import IMuBuildPlugin
+from MuEnvironment.PluginManager import IMuBuildPlugin
 import time
-from UefiBuild import UefiBuilder
+from MuEnvironment.UefiBuild import UefiBuilder
 import os
 import sys
 
