@@ -33,11 +33,10 @@ import re
 import datetime
 import os
 import logging
-import PluginManager
-from Uefi.Capsule.CatGenerator import *
-from Uefi.Capsule.InfGenerator import *
-from UtilityFunctions import CatalogSignWithSignTool
-
+from MuEnvironment import PluginManager
+from MuPythonLibrary.Uefi.Capsule.CatGenerator import *
+from MuPythonLibrary.Uefi.Capsule.InfGenerator import *
+from MuPythonLibrary.UtilityFunctions import CatalogSignWithSignTool
 
 
 class WindowsCapsuleSupportHelper(PluginManager.IUefiHelperPlugin):
