@@ -23,29 +23,15 @@ steps:
 - script: python -m pip install --upgrade pip
   displayName: 'Install/Upgrade pip'
 
-- script: python -m pip install --upgrade mu_bootstrap
-  displayName: 'Install/Upgrade mu_bootstrap'
+- script: pip install -r requirements.txt --upgrade
+  displayName: 'Install/Upgrade mu_build'
 
-#Bootstrap repo
+#Build repo
 - task: CmdLine@1
-  displayName: 'bootstrap repo'
-  inputs:
-    filename: mu_bootstrap
-    arguments: '-c ci.mu.yaml'
-
-# Python Script
-# Run a Python script.
-- task: PythonScript@0
-  inputs:
-    scriptSource: 'filePath' # Options: filePath, inline
-    scriptPath: MU_BUILD\UefiBuild\MuBuild\MuBuild.py # Required when scriptSource == FilePath
-    #script: # Required when scriptSource == Inline
-    arguments: -c ci.mu.yaml --force-git -p $(Build.Pkgs) # Optional
-    #pythonInterpreter: # Optional
-    #workingDirectory: # Optional
-    #failOnStderr: false # Optional
   displayName: Build and Test $(Build.Pkgs)
-
+  inputs:
+    filename: mu_build
+    arguments: -c ci.mu.yaml --force-git -p $(Build.Pkgs) # Optional
 
 # Publish Test Results to Azure Pipelines/TFS
 - task: PublishTestResults@2
