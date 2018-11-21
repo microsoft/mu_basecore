@@ -44,6 +44,9 @@ Abstract:
 #define MaxPE 10
 #define MaxDE 10
 
+// 'function' : format string 'string' requires an argument of type 'type', but variadic argument number has type 'type'
+// https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/c4477?view=vs-2017
+#pragma warning( disable: 4477 )
 
 STATIC
 VOID 
@@ -531,8 +534,8 @@ Returns:
   //Read all driver files
   for (Index = 0; Index < DriverFreeIndex; Index++)
   {
-	  int tread = 0;
-	  int readsize = 0;
+    int inner_tread = 0;       // MS_CHANGE - Don't override local variable name implicitly.
+    int inner_readsize = 0;    // MS_CHANGE - Don't override local variable name implicitly.
 	  FpFile = fopen(DriverFileList[Index].FileName, "rb");
 
 	  if (FpFile == NULL) {
@@ -550,13 +553,13 @@ Returns:
 		  return STATUS_ERROR;
 	  }
 
-	  tread = DriverFileList[Index].DataSize;
+    inner_tread = DriverFileList[Index].DataSize;
 
 	  //read it
-	  readsize = 0;
-	  while (readsize < tread)
+    inner_readsize = 0;
+    while (inner_readsize < inner_tread)
 	  {
-		  readsize += fread((DriverFileList[Index].FileData + readsize), sizeof(UINT8), (tread - readsize), FpFile);
+      inner_readsize += fread((DriverFileList[Index].FileData + inner_readsize), sizeof(UINT8), (inner_tread - inner_readsize), FpFile);
 	  }
 	  fclose(FpFile);
 
