@@ -123,7 +123,7 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
         logging.debug("CapsulePackage: Fmp Capsule Header")
         params = "-o " + OutputBin
         params = params + " -p " + InputBin + " " + FmpGuid + " 1 0 -V"
-        ret = RunCmd("genfmpcap.exe", paramsparams)
+        ret = RunCmd("genfmpcap.exe", params)
         if(ret != 0):
             raise Exception("GenFmpCap Failed with errorcode" % ret)
         return ret
