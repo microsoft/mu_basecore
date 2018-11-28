@@ -348,7 +348,7 @@
   X64/WriteTr.nasm
 
   X64/CpuBreakpoint.c | MSFT
-  X64/CpuBreakAssert.c | MSFT ## MS)CHANGE
+  X64/CpuBreakAssert.c | MSFT ## MS_CHANGE
   X64/WriteMsr64.c | MSFT
   X64/ReadMsr64.c | MSFT
   X64/RdRand.nasm| MSFT
@@ -623,6 +623,7 @@
   AArch64/GetInterruptsState.S      | GCC
   AArch64/SetJumpLongJump.S         | GCC
   AArch64/CpuBreakpoint.S           | GCC
+  AArch64/CpuBreakAssert.S          | GCC ## MS_CHANGE
 
   AArch64/MemoryFence.asm           | MSFT
   AArch64/SwitchStack.asm           | MSFT
