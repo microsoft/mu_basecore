@@ -1,7 +1,7 @@
-## @file Utf8Test.py
-# This tool supports checking files for encoding issues.  
+# @file Utf8Test.py
+# This tool supports checking files for encoding issues.
 # file encoding is controlled by the EncodingMap but most
-# are set to utf-8 
+# are set to utf-8
 #
 #
 ##
@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-### 
+###
 
 
 import os
@@ -35,7 +35,7 @@ import logging
 from MuEnvironment.PluginManager import IMuBuildPlugin
 
 ##
-# map 
+# map
 EcodingMap = {
     ".md": 'utf-8',
     ".dsc": 'utf-8',
@@ -52,23 +52,24 @@ EcodingMap = {
     ".py": 'utf-8'
 }
 
+
 class CharEncodingCheck(IMuBuildPlugin):
 
     def GetTestName(self, packagename, environment):
         return ("MuBuild CharEncodingCheck " + packagename, "MuBuild.CharEncodingCheck." + packagename)
 
-
-    #   - package is the edk2 path to package.  This means workspace/packagepath relative.  
+    #   - package is the edk2 path to package.  This means workspace/packagepath relative.
     #   - edk2path object configured with workspace and packages path
     #   - any additional command line args
     #   - RepoConfig Object (dict) for the build
     #   - PkgConfig Object (dict) for the pkg
-    #   - EnvConfig Object 
+    #   - EnvConfig Object
     #   - Plugin Manager Instance
     #   - Plugin Helper Obj Instance
     #   - testcalass Object used for outputing junit results
-    #
-    def RunBuildPlugin(self, packagename, Edk2pathObj, args, repoconfig, pkgconfig, environment, PLM, PLMHelper, tc):      
+    #   - output_stream the StringIO output stream from this plugin
+
+    def RunBuildPlugin(self, packagename, Edk2pathObj, args, repoconfig, pkgconfig, environment, PLM, PLMHelper, tc, output_stream = None):
         overall_status = 0
         files_tested = 0
 
@@ -81,8 +82,8 @@ class CharEncodingCheck(IMuBuildPlugin):
 
         for (ext, enc) in EcodingMap.items():
             files = self.WalkDirectoryForExtension([ext], abs_pkg_path)
-            files = [Edk2pathObj.GetEdk2RelativePathFromAbsolutePath(x) for x in files]  #make edk2relative path so can process ignores
-            
+            files = [Edk2pathObj.GetEdk2RelativePathFromAbsolutePath(x) for x in files]  # make edk2relative path so can process ignores
+
             if "IgnoreFiles" in pkgconfig:
                 for a in pkgconfig["IgnoreFiles"]:
                     a = a.lower().replace(os.sep, "/")
@@ -108,11 +109,11 @@ class CharEncodingCheck(IMuBuildPlugin):
         else:
             tc.SetSuccess()
         return overall_status
-                
+
     def TestEncodingOk(self, apath, encodingValue):
         try:
-            with open(apath, "rb") as fobj: 
-                a = fobj.read().decode(encodingValue)
+            with open(apath, "rb") as fobj:
+                fobj.read().decode(encodingValue)
         except Exception as exp:
             logging.error("Encoding failure: file: {0} type: {1}".format(apath, encodingValue))
             logging.debug("EXCEPTION: while processing {1} - {0}".format(exp, apath))
@@ -124,4 +125,4 @@ class CharEncodingCheck(IMuBuildPlugin):
         validOptions = ["IgnoreFiles", "skip"]
         for key in config:
             if key not in validOptions:
-                raise Exception("Invalid config option {0} in {1}".format(key,name))
+                raise Exception("Invalid config option {0} in {1}".format(key, name))
