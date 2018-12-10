@@ -1,0 +1,5 @@
+{
+  "scope": "global",
+  "name": "Build Tools Report Generator",
+  "module": "BuildToolsReportGenerator"
+}
