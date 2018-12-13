@@ -395,19 +395,17 @@ GetSectionFromAnyFv  (
   // will locate the FFS faster.
   //
   FvHandle = InternalImageHandleToFvHandle (gImageHandle);
-  if (NULL != FvHandle) {                                   // MS_CHANGE
-    Status = InternalGetSectionFromFv(
-               FvHandle,
-               NameGuid,
-               SectionType,
-               SectionInstance,
-               Buffer,
-               Size
-               );
-    if (!EFI_ERROR (Status)) {
-      return EFI_SUCCESS;
-    }
-  }                                                        // MS_CHANGE
+  Status = InternalGetSectionFromFv (
+             FvHandle,
+             NameGuid,
+             SectionType,
+             SectionInstance,
+             Buffer,
+             Size
+             );
+  if (!EFI_ERROR (Status)) {
+    return EFI_SUCCESS;
+  }
 
   HandleBuffer = NULL;
   Status = gBS->LocateHandleBuffer (
@@ -510,14 +508,8 @@ GetSectionFromFv (
   OUT UINTN                         *Size
     )
 {
-  EFI_HANDLE                    FvHandle; // MS_CHANGE
-
-  FvHandle = InternalImageHandleToFvHandle(gImageHandle); // MS_CHANGE
-  if (NULL == FvHandle) { // MS_CHANGE
-    return EFI_NOT_FOUND; // MS_CHANGE
-  } // MS_CHANGE
-  return InternalGetSectionFromFv(
-           FvHandle, // MS_CHANGE
+  return InternalGetSectionFromFv (
+           InternalImageHandleToFvHandle(gImageHandle),
            NameGuid,
            SectionType,
            SectionInstance,
@@ -578,14 +570,8 @@ GetSectionFromFfs (
   OUT UINTN                         *Size
     )
 {
-  EFI_HANDLE                    FvHandle; //mschange
-
-  FvHandle = InternalImageHandleToFvHandle(gImageHandle); //mschange
-  if (NULL == FvHandle) { //mschange
-    return EFI_NOT_FOUND; //mschange
-  } //mschange
   return InternalGetSectionFromFv(
-           FvHandle, //mschange
+           InternalImageHandleToFvHandle(gImageHandle),
            &gEfiCallerIdGuid,
            SectionType,
            SectionInstance,
@@ -1022,19 +1008,17 @@ GetFileDevicePathFromAnyFv (
   // will locate the FFS faster.
   //
   FvHandle = InternalImageHandleToFvHandle (gImageHandle);
-  if (FvHandle != NULL) {                            // MS_CHANGE
-    Status = InternalGetSectionFromFv(
-               FvHandle,
-               NameGuid,
-               SectionType,
-               SectionInstance,
-               &Buffer,
-               &Size
-               );
-    if (!EFI_ERROR (Status)) {
-      goto Done;
-    }
-  }                                                  // MS_CHANGE
+  Status = InternalGetSectionFromFv (
+             FvHandle,
+             NameGuid,
+             SectionType,
+             SectionInstance,
+             &Buffer,
+             &Size
+             );
+  if (!EFI_ERROR (Status)) {
+    goto Done;
+  }
 
   Status = gBS->LocateHandleBuffer (
                   ByProtocol,
