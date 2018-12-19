@@ -12,8 +12,6 @@
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
-  Copyright (c) 2016, Microsoft Corporation
-
 **/
 
 #ifndef _NVME_HCI_H_
@@ -73,33 +71,6 @@ NvmeIdentifyNamespace (
   IN UINT32                            NamespaceId,
   IN VOID                              *Buffer
   );
-
-// MS_CHANGE_165952
-// defines used for NVMe shutdown
-#define NVME_CC_SHN_NORMAL_SHUTDOWN 1
-#define NVME_CC_SHN_ABRUPT_SHUTDOWN 2
-
-#define NVME_CSTS_SHST_SHUTDOWN_IN_PROCESS 1
-#define NVME_CSTS_SHST_SHUTDOWN_COMPLETED  2
-
-#define NVME_SHUTDOWN_TIMEOUT 45
-
-/**
-This routine is called to properly shutdown the Nvm Express controller per NVMe spec.
-
-@param  Private         Supplies a pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
-@param  Normal          Supplies a boolean that indicates if this is a normal or an abrupt shutdown.
-
-@return EFI_SUCCESS     Successfully enable the controller.
-@return EFI_TIMEOUT     Fail to enable the controller in given time slot.
-
-**/
-EFI_STATUS
-NvmeShutdownController(
-  IN NVME_CONTROLLER_PRIVATE_DATA *Private,
-  IN BOOLEAN Normal
-);
-//MS_CHANGE - END
 
 #endif
 
