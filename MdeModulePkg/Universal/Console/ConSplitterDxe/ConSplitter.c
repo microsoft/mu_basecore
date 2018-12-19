@@ -30,6 +30,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include "ConSplitter.h"
 
+// MU_CHANGE: do not perform set mode during device add flow if the required mode is already set
+BOOLEAN mPerformingDeviceAdd = FALSE;
+
 //
 // Identify if ConIn is connected in PcdConInConnectOnDemand enabled mode.
 // default not connect
@@ -3304,7 +3307,9 @@ ConSplitterTextOutAddDevice (
   // After adding new console device, all existing console devices should be
   // synced to the current shared mode.
   //
+  mPerformingDeviceAdd = TRUE; // MU_CHANGE
   ConsplitterSetConsoleOutMode (Private);
+  mPerformingDeviceAdd = FALSE; // MU_CHANGE
 
   return Status;
 }
@@ -4873,10 +4878,13 @@ ConSplitterTextOutSetMode (
   //
   TextOutModeMap = Private->TextOutModeMap + Private->TextOutListCount * ModeNumber;
   for (Index = 0, ReturnStatus = EFI_SUCCESS; Index < Private->CurrentNumberOfConsoles; Index++) {
-    Status = Private->TextOutList[Index].TextOut->SetMode (
+    // MU_CHANGE: only skip if the flag is true and current mode matches the required one
+    if ((mPerformingDeviceAdd == FALSE) || (TextOutModeMap[Index] != Private->TextOutList[Index].TextOut->Mode->Mode)) {
+      Status = Private->TextOutList[Index].TextOut->SetMode (
                                                     Private->TextOutList[Index].TextOut,
                                                     TextOutModeMap[Index]
                                                     );
+    }
     if (EFI_ERROR (Status)) {
       ReturnStatus = Status;
     }
