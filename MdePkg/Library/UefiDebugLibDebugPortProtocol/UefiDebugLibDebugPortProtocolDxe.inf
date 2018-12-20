@@ -3,6 +3,8 @@
 #
 #  Debug Lib that sends messages to EFI_DEBUGPORT_PROTOCOL.Write.
 #
+#  Copyright (c) 2018, Microsoft Corporation
+#
 #  Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
@@ -22,7 +24,8 @@
   FILE_GUID                      = 102287b4-6b12-4D41-91e1-ebee1f3aa614
   MODULE_TYPE                    = UEFI_DRIVER
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = DebugLib|DXE_CORE DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SMM_DRIVER UEFI_APPLICATION UEFI_DRIVER
+  LIBRARY_CLASS                  = DebugLib|DXE_CORE DXE_DRIVER DXE_SMM_DRIVER UEFI_APPLICATION UEFI_DRIVER  ## MU_CHANGE
+  CONSTRUCTOR                    = DxeDebugLibConstructor                                                    ## MU_CHANGE
 
 
 #
@@ -32,8 +35,7 @@
 
 [Sources]
   DebugLib.c
-
-
+  Dxe/DebugLibConstructor.c                    ## MU_CHANGE
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -44,7 +46,6 @@
   BaseLib
   PcdLib
   PrintLib
-  UefiBootServicesTableLib
   DebugPrintErrorLevelLib
 
 [Protocols]
