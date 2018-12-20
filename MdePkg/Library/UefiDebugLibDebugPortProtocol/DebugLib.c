@@ -1,6 +1,8 @@
 /** @file
   UEFI Debug Library that sends messages to EFI_DEBUGPORT_PROTOCOL.Write.
 
+  Copyright (c) 2018, Microsoft Corporation
+
   Copyright (c) 2015 - 2019, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -296,7 +298,7 @@ DebugAssert (
     // MS_CHANGE BEGIN UEFI_810
     if ((PcdGet8(PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_BREAKPOINT_ENABLED) != 0) {
       CpuBreakpoint ();
-    } 
+    }
 
     if ((PcdGet8(PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_DEADLOOP_ENABLED) != 0) {
       CpuDeadLoop ();
@@ -463,85 +465,88 @@ DebugDumpMemory(
   UINT8      *p;
   CHAR8       Txt[17]; // 16 characters, and a NULL
 
-  p = (UINT8 *)Address;
+  if(!mPostEBS) { //MU_CHANGE
 
-  Txt[16] = '\0';
-  Indx = 0;
-  while (Indx < Length)
-  {
-    UINTN LoopLen = ((Length - Indx) >= 16) ? 16 : (Length - Indx);
-    if (0 == (Indx % 16))  // first time and every 16 bytes thereafter
+    p = (UINT8 *)Address;
+
+    Txt[16] = '\0';
+    Indx = 0;
+    while (Indx < Length)
     {
-      if (Flags & DEBUG_DM_PRINT_ADDRESS)
+      UINTN LoopLen = ((Length - Indx) >= 16) ? 16 : (Length - Indx);
+      if (0 == (Indx % 16))  // first time and every 16 bytes thereafter
       {
-        DebugPrint(ErrorLevel, "\n0x%16.16X:  ", p);
-      }
-      else if (Flags & DEBUG_DM_PRINT_OFFSET)
-      {
-        DebugPrint(ErrorLevel, "\n0x%8.8X:  ", (p - (UINT8 *)Address));
-      }
-      else
-      {
-        DebugPrint(ErrorLevel, "\n");
-      }
-
-      //Get all Ascii Chars if Ascii flag for the next 16 or less
-      if (Flags & DEBUG_DM_PRINT_ASCII)
-      {
-        SetMem(Txt, sizeof(Txt) - 1, ' ');
-        for (UINTN I = (Indx % 16); I < LoopLen; I++)
+        if (Flags & DEBUG_DM_PRINT_ADDRESS)
         {
-          CHAR8* c = (CHAR8*)(p + I);
-          Txt[I] = ((*c >= 0x20) && (*c <= 0x7e)) ? *c : '.';
+          DebugPrint(ErrorLevel, "\n0x%16.16X:  ", p);
         }
-      }
-    }  //first pass -- done only at (index % 16 == 0)
-
-    if (LoopLen == 16)
-    {
-      DebugPrint(ErrorLevel, "%02X %02X %02X %02X %02X %02X %02X %02X - ", *(p), *(p + 1), *(p + 2), *(p + 3), *(p + 4), *(p + 5), *(p + 6), *(p + 7));
-      DebugPrint(ErrorLevel, "%02X %02X %02X %02X %02X %02X %02X %02X ", *(p + 8), *(p + 9), *(p + 10), *(p + 11), *(p + 12), *(p + 13), *(p + 14), *(p + 15));
-      Indx += 16;
-      p += 16;
-    }
-    else
-    {
-      if ((Indx % 16) == 7)
-      {
-        DebugPrint(ErrorLevel, "%02X - ", *(p));
-      }
-      else
-      {
-        DebugPrint(ErrorLevel, "%02X ", *(p));
-      }
-      Indx++;
-      p++;
-    }
-
-    //end of line and/or end of buffer
-    if (((Indx % 16) == 0) || (Indx == Length))
-    {
-
-      //special case where we need to print out a few blank spaces because our length
-      //was not evenly divisible by 16
-      if (Flags & DEBUG_DM_PRINT_ASCII)
-      {
-        if ((Indx % 16) != 0)
+        else if (Flags & DEBUG_DM_PRINT_OFFSET)
         {
-          //figure out how many spaces to print
-          CHAR8 empty[48]; //(15 bytes * 3 chars) + 2 (for -) + 1 (\0)
-          UINTN endchar = ((16 - (Indx % 16)) * 3);
-          SetMem(empty, 47, ' ');
-          if ((Indx % 16) <= 8)
+          DebugPrint(ErrorLevel, "\n0x%8.8X:  ", (p - (UINT8 *)Address));
+        }
+        else
+        {
+          DebugPrint(ErrorLevel, "\n");
+        }
+
+        //Get all Ascii Chars if Ascii flag for the next 16 or less
+        if (Flags & DEBUG_DM_PRINT_ASCII)
+        {
+          SetMem(Txt, sizeof(Txt) - 1, ' ');
+          for (UINTN I = (Indx % 16); I < LoopLen; I++)
           {
-            endchar += 2;
+            CHAR8* c = (CHAR8*)(p + I);
+            Txt[I] = ((*c >= 0x20) && (*c <= 0x7e)) ? *c : '.';
           }
-          empty[endchar] = '\0';  //null terminate
-          DebugPrint(ErrorLevel, "%a", empty);
         }
-        DebugPrint(ErrorLevel, "  *%a*", Txt);   // print the txt
+      }  //first pass -- done only at (index % 16 == 0)
+
+      if (LoopLen == 16)
+      {
+        DebugPrint(ErrorLevel, "%02X %02X %02X %02X %02X %02X %02X %02X - ", *(p), *(p + 1), *(p + 2), *(p + 3), *(p + 4), *(p + 5), *(p + 6), *(p + 7));
+        DebugPrint(ErrorLevel, "%02X %02X %02X %02X %02X %02X %02X %02X ", *(p + 8), *(p + 9), *(p + 10), *(p + 11), *(p + 12), *(p + 13), *(p + 14), *(p + 15));
+        Indx += 16;
+        p += 16;
       }
-    }
-  }  //End while loop
-  DebugPrint(ErrorLevel, "\n");
+      else
+      {
+        if ((Indx % 16) == 7)
+        {
+          DebugPrint(ErrorLevel, "%02X - ", *(p));
+        }
+        else
+        {
+          DebugPrint(ErrorLevel, "%02X ", *(p));
+        }
+        Indx++;
+        p++;
+      }
+
+      //end of line and/or end of buffer
+      if (((Indx % 16) == 0) || (Indx == Length))
+      {
+
+        //special case where we need to print out a few blank spaces because our length
+        //was not evenly divisible by 16
+        if (Flags & DEBUG_DM_PRINT_ASCII)
+        {
+          if ((Indx % 16) != 0)
+          {
+            //figure out how many spaces to print
+            CHAR8 empty[48]; //(15 bytes * 3 chars) + 2 (for -) + 1 (\0)
+            UINTN endchar = ((16 - (Indx % 16)) * 3);
+            SetMem(empty, 47, ' ');
+            if ((Indx % 16) <= 8)
+            {
+              endchar += 2;
+            }
+            empty[endchar] = '\0';  //null terminate
+            DebugPrint(ErrorLevel, "%a", empty);
+          }
+          DebugPrint(ErrorLevel, "  *%a*", Txt);   // print the txt
+        }
+      }
+    }  //End while loop
+    DebugPrint(ErrorLevel, "\n");
+  } //MU_CHANGE
 }
