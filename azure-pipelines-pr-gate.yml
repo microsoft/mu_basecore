@@ -1,12 +1,14 @@
 #Use matrix to speed up the build process
 strategy:
   matrix:
-    TARGET_MDE:
-      Build.Pkgs: 'MdePkg MdeModulePkg'
+    TARGET_MDE_CPU:
+      Build.Pkgs: 'MdePkg UefiCpuPkg'
+    TARGET_MDEMODULE:
+      Build.Pkgs: 'MdeModulePkg'
     TARGET_OTHER:
       Build.Pkgs: 'MsUnitTestPkg NetworkPkg PcAtChipsetPkg'
-    TARGET_SECURITY_CPU:
-      Build.Pkgs: 'SecurityPkg UefiCpuPkg'
+    TARGET_SECURITY:
+      Build.Pkgs: 'SecurityPkg'
 
 workspace:
   clean: all
