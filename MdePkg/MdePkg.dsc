@@ -101,7 +101,6 @@
   MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
   MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
   MdePkg/Library/UefiDebugLibConOut/UefiDebugLibConOut.inf
-  MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf
   MdePkg/Library/UefiDebugLibStdErr/UefiDebugLibStdErr.inf
   MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
   MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibOptionalDevicePathProtocol.inf
