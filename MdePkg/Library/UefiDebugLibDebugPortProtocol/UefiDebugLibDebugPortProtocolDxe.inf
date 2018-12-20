@@ -33,7 +33,6 @@
   DebugLibConstructor.c
 
 
-
 [Packages]
   MdePkg/MdePkg.dec
 
