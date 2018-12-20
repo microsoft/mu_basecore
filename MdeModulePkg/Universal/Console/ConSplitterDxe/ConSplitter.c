@@ -4854,6 +4854,7 @@ ConSplitterTextOutSetMode (
   INT32                           *TextOutModeMap;
   EFI_STATUS                      ReturnStatus;
 
+  Status = EFI_SUCCESS; // MU_CHANGE
   Private = TEXT_OUT_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
 
   //
