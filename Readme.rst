@@ -2,6 +2,10 @@
 Project Mu Basecore Repository
 ==============================
 
+.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/mu_basecore%20PR%20gate?branchName=release/201808
+
+|build_status_windows| Current build status for release/201808
+
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
 
 Code of Conduct
@@ -9,13 +13,13 @@ Code of Conduct
 
 This project has adopted the Microsoft Open Source Code of Conduct https://opensource.microsoft.com/codeofconduct/
 
-For more information see the Code of Conduct FAQ https://opensource.microsoft.com/codeofconduct/faq/ 
+For more information see the Code of Conduct FAQ https://opensource.microsoft.com/codeofconduct/faq/
 or contact `opencode@microsoft.com <mailto:opencode@microsoft.com>`_. with any additional questions or comments.
 
 Contributions
 =============
 
-Contributions are always welcome and encouraged! 
+Contributions are always welcome and encouraged!
 Please open any issues in the Project Mu GitHub tracker and read https://microsoft.github.io/mu/How/contributing/
 
 
