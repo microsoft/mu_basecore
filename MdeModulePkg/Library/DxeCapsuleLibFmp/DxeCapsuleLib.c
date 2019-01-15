@@ -42,6 +42,7 @@
 #include <Library/UefiLib.h>
 #include <Library/PcdLib.h>
 #include <Library/BmpSupportLib.h>
+#include <Library/CapsulePersistLib.h> // MU_CHANGE - Enable Capsule Persist Lib.
 
 #include <Protocol/GraphicsOutput.h>
 #include <Protocol/EsrtManagement.h>
@@ -1567,7 +1568,11 @@ StageCapsuleImage(
   IN EFI_CAPSULE_HEADER *CapsuleHeader
   )
 {
-  return EFI_SUCCESS;
+  if (SupportCapsuleImage(CapsuleHeader) != EFI_SUCCESS) {
+    return EFI_UNSUPPORTED;
+  }
+
+  return PersistCapsule(CapsuleHeader);
 }
 // MS_CHANGE - END
 
