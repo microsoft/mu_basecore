@@ -226,11 +226,46 @@ InitCapsulePtr (
   UINTN                       CapsuleNameCapsuleTotalNumber;
   VOID                        **CapsuleNameCapsulePtr;
   EFI_PHYSICAL_ADDRESS        *CapsuleNameAddress;
+//MU_CHANGE - Enable Capsule Persist Lib.
+  EFI_STATUS                  PersistStatus;
+  UINTN                       PersistedCapsuleBufferSize;
+  EFI_CAPSULE_HEADER          *CurrentPersistedCapsule;
 
   CapsuleNameNumber             = 0;
   CapsuleNameTotalNumber        = 0;
   CapsuleNameCapsuleTotalNumber = 0;
   CapsuleNameCapsulePtr         = NULL;
+  
+  // MU_CHANGE [BEGIN] - Enable Capsule Persist Lib.
+  //
+  // Find all persisted capsules
+  //
+  mPersistedCapsules = NULL;
+  PersistedCapsuleBufferSize = 0;
+  PersistStatus = GetPersistedCapsules(mPersistedCapsules, &PersistedCapsuleBufferSize);
+  if (PersistStatus == EFI_BUFFER_TOO_SMALL) {
+    mPersistedCapsules = AllocatePool(PersistedCapsuleBufferSize);
+    if (mPersistedCapsules != NULL) {
+      //if allocation succeeds, go grab all the capsules. Otherwise, just pass.
+      //maybe the HOB Capsules will still work.
+      PersistStatus = GetPersistedCapsules(mPersistedCapsules, &PersistedCapsuleBufferSize);
+    }
+  }
+
+  //success from first call just means no capsules to look at, and PersistedCapusleBufferSize is 0.
+  //Failure to allocate means mPersistedCapsules = NULL, so no capsules to look at.
+  if (!EFI_ERROR(PersistStatus) && mPersistedCapsules != NULL && PersistedCapsuleBufferSize > 0) {
+    CurrentPersistedCapsule = mPersistedCapsules;
+    while((UINT8 *)CurrentPersistedCapsule < ((UINT8 *)mPersistedCapsules + PersistedCapsuleBufferSize)) {
+      if (CurrentPersistedCapsule->CapsuleImageSize == 0) {
+        //Avoid an infinite loop in the case where corrupted capsule has CapsuleImageSize = 0. 
+        break;
+      }
+      mCapsuleTotalNumber++;
+      CurrentPersistedCapsule = (EFI_CAPSULE_HEADER *)((UINT8 *)CurrentPersistedCapsule + CurrentPersistedCapsule->CapsuleImageSize);
+    }
+  }
+  // MU_CHANGE [END] - Enable Capsule Persist Lib.
 
   //
   // Find all capsule images from hob
@@ -268,6 +303,12 @@ InitCapsulePtr (
   if (mCapsuleStatusArray == NULL) {
     DEBUG ((DEBUG_ERROR, "Allocate mCapsuleStatusArray fail!\n"));
     FreePool (mCapsulePtr);
+//MU_CHANGE - Enable Capsule Persist Lib.
+    if (mPersistedCapsules != NULL) {
+      FreePool(mPersistedCapsules);
+      mPersistedCapsules = NULL;
+    }
+//MU_CHANGE - Enable Capsule Persist Lib End
     mCapsulePtr = NULL;
     mCapsuleTotalNumber = 0;
     return ;
@@ -299,6 +340,20 @@ InitCapsulePtr (
     }
     HobPointer.Raw = GET_NEXT_HOB (HobPointer);
   }
+  
+  // MU_CHANGE [BEGIN] - Enable Capsule Persist Lib.
+  if (!EFI_ERROR(PersistStatus) && mPersistedCapsules != NULL && PersistedCapsuleBufferSize > 0) {
+    CurrentPersistedCapsule = mPersistedCapsules;
+    while((UINT8 *)CurrentPersistedCapsule < ((UINT8 *)mPersistedCapsules + PersistedCapsuleBufferSize)) {
+      if (CurrentPersistedCapsule->CapsuleImageSize == 0) {
+        //Avoid an infinite loop in the case where corrupted capsule has CapsuleImageSize = 0. 
+        break;
+      }
+      mCapsulePtr [Index++] = (VOID *) CurrentPersistedCapsule;
+      CurrentPersistedCapsule = (EFI_CAPSULE_HEADER *)((UINT8 *)CurrentPersistedCapsule + CurrentPersistedCapsule->CapsuleImageSize);
+    }
+  }
+  // MU_CHANGE [END] - Enable Capsule Persist Lib
 
   //
   // Find Capsule On Disk Names

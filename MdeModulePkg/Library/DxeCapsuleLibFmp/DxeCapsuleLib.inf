@@ -53,6 +53,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
   FileHandleLib
   UefiBootManagerLib
   ResetUtilityLib               ## MU_CHANGE - Use the enhanced reset subtype.
+  CapsulePersistLib             ## MU_CHANGE - Enable Capsule Persist Lib.
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleMax                               ## CONSUMES
