@@ -56,6 +56,7 @@
   HobLib
   BmpSupportLib
   UefiBootManagerLib   ## MS_CHANGE - Enable ConnectAll before capsule processing.
+  CapsulePersistLib    ## MU_CHANGE - Enable Capsule Persist Lib.
 
 
 [Protocols]
