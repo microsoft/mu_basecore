@@ -15,11 +15,10 @@
 ##
 # Import Modules
 #
-from __future__ import absolute_import
 from . import Section
 from .GenFdsGlobalVariable import GenFdsGlobalVariable
 import subprocess
-from .Ffs import SectionSuffix
+from .Ffs import Ffs
 import Common.LongFilePathOs as os
 from CommonDataClass.FdfClass import DataSectionClassObject
 from Common.Misc import PeImageClass
@@ -88,9 +87,9 @@ class DataSection (DataSectionClassObject):
             if ImageObj.SectionAlignment < 0x400:
                 self.Alignment = str (ImageObj.SectionAlignment)
             elif ImageObj.SectionAlignment < 0x100000:
-                self.Alignment = str (ImageObj.SectionAlignment / 0x400) + 'K'
+                self.Alignment = str (ImageObj.SectionAlignment // 0x400) + 'K'
             else:
-                self.Alignment = str (ImageObj.SectionAlignment / 0x100000) + 'M'
+                self.Alignment = str (ImageObj.SectionAlignment // 0x100000) + 'M'
 
         NoStrip = True
         if self.SecType in (BINARY_FILE_TYPE_TE, BINARY_FILE_TYPE_PE32):
@@ -121,7 +120,7 @@ class DataSection (DataSectionClassObject):
                 )
             self.SectFileName = TeFile
 
-        OutputFile = os.path.join (OutputPath, ModuleName + SUP_MODULE_SEC + SecNum + SectionSuffix.get(self.SecType))
+        OutputFile = os.path.join (OutputPath, ModuleName + SUP_MODULE_SEC + SecNum + Ffs.SectionSuffix.get(self.SecType))
         OutputFile = os.path.normpath(OutputFile)
         GenFdsGlobalVariable.GenerateSection(OutputFile, [self.SectFileName], Section.Section.SectionType.get(self.SecType), IsMakefile = IsMakefile)
         FileList = [OutputFile]

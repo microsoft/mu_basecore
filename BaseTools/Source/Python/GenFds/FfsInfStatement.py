@@ -16,13 +16,12 @@
 ##
 # Import Modules
 #
-from __future__ import absolute_import
 from . import Rule
 import Common.LongFilePathOs as os
 from io import BytesIO
 from struct import *
 from .GenFdsGlobalVariable import GenFdsGlobalVariable
-from .Ffs import SectionSuffix,FdfFvFileTypeToFileType
+from . import Ffs
 import subprocess
 import sys
 from . import Section
@@ -760,7 +759,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
 
                 SecNum = '%d' %Index
                 GenSecOutputFile= self.__ExtendMacro__(Rule.NameGuid) + \
-                              SectionSuffix[SectionType] + SUP_MODULE_SEC + SecNum
+                              Ffs.Ffs.SectionSuffix[SectionType] + SUP_MODULE_SEC + SecNum
                 Index = Index + 1
                 OutputFile = os.path.join(self.OutputPath, GenSecOutputFile)
                 File = GenFdsGlobalVariable.MacroExtend(File, Dict, self.CurrentArch)
@@ -771,9 +770,9 @@ class FfsInfStatement(FfsInfStatementClassObject):
                     if ImageObj.SectionAlignment < 0x400:
                         self.Alignment = str (ImageObj.SectionAlignment)
                     elif ImageObj.SectionAlignment < 0x100000:
-                        self.Alignment = str (ImageObj.SectionAlignment / 0x400) + 'K'
+                        self.Alignment = str (ImageObj.SectionAlignment // 0x400) + 'K'
                     else:
-                        self.Alignment = str (ImageObj.SectionAlignment / 0x100000) + 'M'
+                        self.Alignment = str (ImageObj.SectionAlignment // 0x100000) + 'M'
 
                 if not NoStrip:
                     FileBeforeStrip = os.path.join(self.OutputPath, ModuleName + '.reloc')
@@ -803,7 +802,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
         else:
             SecNum = '%d' %Index
             GenSecOutputFile= self.__ExtendMacro__(Rule.NameGuid) + \
-                              SectionSuffix[SectionType] + SUP_MODULE_SEC + SecNum
+                              Ffs.Ffs.SectionSuffix[SectionType] + SUP_MODULE_SEC + SecNum
             OutputFile = os.path.join(self.OutputPath, GenSecOutputFile)
             GenSecInputFile = GenFdsGlobalVariable.MacroExtend(GenSecInputFile, Dict, self.CurrentArch)
 
@@ -813,9 +812,9 @@ class FfsInfStatement(FfsInfStatementClassObject):
                 if ImageObj.SectionAlignment < 0x400:
                     self.Alignment = str (ImageObj.SectionAlignment)
                 elif ImageObj.SectionAlignment < 0x100000:
-                    self.Alignment = str (ImageObj.SectionAlignment / 0x400) + 'K'
+                    self.Alignment = str (ImageObj.SectionAlignment // 0x400) + 'K'
                 else:
-                    self.Alignment = str (ImageObj.SectionAlignment / 0x100000) + 'M'
+                    self.Alignment = str (ImageObj.SectionAlignment // 0x100000) + 'M'
 
             if not NoStrip:
                 FileBeforeStrip = os.path.join(self.OutputPath, ModuleName + '.reloc')
@@ -882,7 +881,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
             self.ModuleGuid = RegistryGuidStr
 
             GenFdsGlobalVariable.GenerateFfs(FfsOutput, InputSection,
-                                             FdfFvFileTypeToFileType[Rule.FvFileType],
+                                             Ffs.Ffs.FdfFvFileTypeToFileType[Rule.FvFileType],
                                              self.ModuleGuid, Fixed=Rule.Fixed,
                                              CheckSum=Rule.CheckSum, Align=Rule.Alignment,
                                              SectionAlign=SectionAlignments,
@@ -1055,7 +1054,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
 
         FfsOutput = os.path.join( self.OutputPath, self.ModuleGuid + '.ffs')
         GenFdsGlobalVariable.GenerateFfs(FfsOutput, InputFile,
-                                             FdfFvFileTypeToFileType[Rule.FvFileType],
+                                             Ffs.Ffs.FdfFvFileTypeToFileType[Rule.FvFileType],
                                              self.ModuleGuid, Fixed=Rule.Fixed,
                                              CheckSum=Rule.CheckSum, Align=Rule.Alignment,
                                              SectionAlign=Alignments,
@@ -1074,7 +1073,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
     def __GetBuildOutputMapFileVfrUniInfo(self, VfrUniBaseName):
         MapFileName = os.path.join(self.EfiOutputPath, self.BaseName + ".map")
         EfiFileName = os.path.join(self.EfiOutputPath, self.BaseName + ".efi")
-        return GetVariableOffset(MapFileName, EfiFileName, VfrUniBaseName.values())
+        return GetVariableOffset(MapFileName, EfiFileName, list(VfrUniBaseName.values()))
 
     ## __GenUniVfrOffsetFile() method
     #
@@ -1087,7 +1086,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
     def __GenUniVfrOffsetFile(VfrUniOffsetList, UniVfrOffsetFileName):
 
         # Use a instance of StringIO to cache data
-        fStringIO = BytesIO('')
+        fStringIO = BytesIO()
 
         for Item in VfrUniOffsetList:
             if (Item[0].find("Strings") != -1):
@@ -1097,8 +1096,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
                 # { 0x8913c5e0, 0x33f6, 0x4d86, { 0x9b, 0xf1, 0x43, 0xef, 0x89, 0xfc, 0x6, 0x66 } }
                 #
                 UniGuid = [0xe0, 0xc5, 0x13, 0x89, 0xf6, 0x33, 0x86, 0x4d, 0x9b, 0xf1, 0x43, 0xef, 0x89, 0xfc, 0x6, 0x66]
-                UniGuid = [chr(ItemGuid) for ItemGuid in UniGuid]
-                fStringIO.write(''.join(UniGuid))
+                fStringIO.write(bytes(UniGuid))
                 UniValue = pack ('Q', int (Item[1], 16))
                 fStringIO.write (UniValue)
             else:
@@ -1108,8 +1106,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
                 # { 0xd0bc7cb4, 0x6a47, 0x495f, { 0xaa, 0x11, 0x71, 0x7, 0x46, 0xda, 0x6, 0xa2 } };
                 #
                 VfrGuid = [0xb4, 0x7c, 0xbc, 0xd0, 0x47, 0x6a, 0x5f, 0x49, 0xaa, 0x11, 0x71, 0x7, 0x46, 0xda, 0x6, 0xa2]
-                VfrGuid = [chr(ItemGuid) for ItemGuid in VfrGuid]
-                fStringIO.write(''.join(VfrGuid))
+                fStringIO.write(bytes(VfrGuid))
                 type (Item[1])
                 VfrValue = pack ('Q', int (Item[1], 16))
                 fStringIO.write (VfrValue)

@@ -211,7 +211,7 @@ def TrimPreprocessedFile(Source, Target, ConvertHex, TrimLong):
             else:
                 if LineNumber > (len(NewLines) + 1):
                     for LineIndex in range(len(NewLines), LineNumber-1):
-                        NewLines.append("\n") # MU_CHANGE - TC Bugzilla #1379
+                        NewLines.append(os.linesep)
                 NewLines.append(Line)
             LineNumber = None
             EdkLogger.verbose("Now we have lines: %d" % len(NewLines))
@@ -251,7 +251,7 @@ def TrimPreprocessedFile(Source, Target, ConvertHex, TrimLong):
 
     # save to file
     try:
-        f = open (Target, 'wb')
+        f = open (Target, 'w')
     except:
         EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Target)
     f.writelines(NewLines)
@@ -464,7 +464,7 @@ def GenerateVfrBinSec(ModuleName, DebugDir, OutputFile):
         EdkLogger.error("Trim", FILE_OPEN_FAILURE, "File open failed for %s" %OutputFile, None)
 
     # Use a instance of BytesIO to cache data
-    fStringIO = BytesIO('')
+    fStringIO = BytesIO()
 
     for Item in VfrUniOffsetList:
         if (Item[0].find("Strings") != -1):
@@ -474,8 +474,7 @@ def GenerateVfrBinSec(ModuleName, DebugDir, OutputFile):
             # { 0x8913c5e0, 0x33f6, 0x4d86, { 0x9b, 0xf1, 0x43, 0xef, 0x89, 0xfc, 0x6, 0x66 } }
             #
             UniGuid = [0xe0, 0xc5, 0x13, 0x89, 0xf6, 0x33, 0x86, 0x4d, 0x9b, 0xf1, 0x43, 0xef, 0x89, 0xfc, 0x6, 0x66]
-            UniGuid = [chr(ItemGuid) for ItemGuid in UniGuid]
-            fStringIO.write(''.join(UniGuid))
+            fStringIO.write(bytes(UniGuid))
             UniValue = pack ('Q', int (Item[1], 16))
             fStringIO.write (UniValue)
         else:
@@ -485,9 +484,7 @@ def GenerateVfrBinSec(ModuleName, DebugDir, OutputFile):
             # { 0xd0bc7cb4, 0x6a47, 0x495f, { 0xaa, 0x11, 0x71, 0x7, 0x46, 0xda, 0x6, 0xa2 } };
             #
             VfrGuid = [0xb4, 0x7c, 0xbc, 0xd0, 0x47, 0x6a, 0x5f, 0x49, 0xaa, 0x11, 0x71, 0x7, 0x46, 0xda, 0x6, 0xa2]
-            VfrGuid = [chr(ItemGuid) for ItemGuid in VfrGuid]
-            fStringIO.write(''.join(VfrGuid))
-            type (Item[1])
+            fStringIO.write(bytes(VfrGuid))
             VfrValue = pack ('Q', int (Item[1], 16))
             fStringIO.write (VfrValue)
 
@@ -568,7 +565,7 @@ def TrimEdkSourceCode(Source, Target):
     CreateDirectory(os.path.dirname(Target))
 
     try:
-        f = open (Source, 'rb')
+        f = open (Source, 'r')
     except:
         EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Source)
     # read whole file
@@ -587,7 +584,7 @@ def TrimEdkSourceCode(Source, Target):
         return
 
     try:
-        f = open (Target, 'wb')
+        f = open (Target, 'w')
     except:
         EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Target)
     f.write(NewLines)

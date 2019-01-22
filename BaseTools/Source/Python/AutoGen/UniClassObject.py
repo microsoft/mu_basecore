@@ -16,7 +16,6 @@
 ##
 # Import Modules
 #
-from __future__ import print_function
 import Common.LongFilePathOs as os, codecs, re
 import distutils.util
 import Common.EdkLogger as EdkLogger
@@ -45,18 +44,6 @@ TAB = u'\t'
 BACK_SLASH_PLACEHOLDER = u'\u0006'
 
 gIncludePattern = re.compile("^#include +[\"<]+([^\"< >]+)[>\"]+$", re.MULTILINE | re.UNICODE)
-
-## Convert a python unicode string to a normal string
-#
-# Convert a python unicode string to a normal string
-# UniToStr(u'I am a string') is 'I am a string'
-#
-# @param Uni:  The python unicode string
-#
-# @retval:     The formatted normal string
-#
-def UniToStr(Uni):
-    return repr(Uni)[2:-1]
 
 ## Convert a unicode string to a Hex list
 #
@@ -439,7 +426,7 @@ class UniFileClassObject(object):
                 if EndPos != -1 and EndPos - StartPos == 6 :
                     if g4HexChar.match(Line[StartPos + 2 : EndPos], re.UNICODE):
                         EndStr = Line[EndPos: ]
-                        UniStr = ('\u' + (Line[StartPos + 2 : EndPos])).decode('unicode_escape')
+                        UniStr = Line[StartPos + 2: EndPos]
                         if EndStr.startswith(u'\\x') and len(EndStr) >= 7:
                             if EndStr[6] == u'\\' and g4HexChar.match(EndStr[2 : 6], re.UNICODE):
                                 Line = Line[0 : StartPos] + UniStr + EndStr

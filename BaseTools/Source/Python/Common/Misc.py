@@ -14,7 +14,6 @@
 ##
 # Import Modules
 #
-from __future__ import absolute_import
 import Common.LongFilePathOs as os
 import sys
 import string
@@ -24,10 +23,9 @@ import re
 import pickle
 import array
 import shutil
-from random import sample
 from struct import pack
-from UserDict import IterableUserDict
-from UserList import UserList
+from collections import UserDict as IterableUserDict
+from collections import OrderedDict
 
 from Common import EdkLogger as EdkLogger
 from Common import GlobalData as GlobalData
@@ -50,8 +48,6 @@ addressPatternGeneral = re.compile("^Address[' ']+Publics by Value[' ']+Rva\+Bas
 valuePatternGcc = re.compile('^([\w_\.]+) +([\da-fA-Fx]+) +([\da-fA-Fx]+)$')
 pcdPatternGcc = re.compile('^([\da-fA-Fx]+) +([\da-fA-Fx]+)')
 secReGeneral = re.compile('^([\da-fA-F]+):([\da-fA-F]+) +([\da-fA-F]+)[Hh]? +([.\w\$]+) +(\w+)', re.UNICODE)
-
-StructPattern = re.compile(r'[_a-zA-Z][0-9A-Za-z_]*$')
 
 ## Dictionary used to store file time stamp for quick re-access
 gFileTimeStampCache = {}    # {file path : file time stamp}
@@ -458,13 +454,16 @@ def RemoveDirectory(Directory, Recursively=False):
 #   @retval     False           If the file content is the same
 #
 def SaveFileOnChange(File, Content, IsBinaryFile=True):
-    if not IsBinaryFile:
-        Content = Content.replace("\n", os.linesep)
-
     if os.path.exists(File):
         try:
-            if Content == open(File, "rb").read():
-                return False
+            if isinstance(Content, bytes):
+                with open(File, "rb") as f:
+                    if Content == f.read():
+                        return False
+            else:
+                with open(File, "r") as f:
+                    if Content == f.read():
+                        return False
         except:
             EdkLogger.error(None, FILE_OPEN_FAILURE, ExtraData=File)
 
@@ -478,9 +477,12 @@ def SaveFileOnChange(File, Content, IsBinaryFile=True):
             EdkLogger.error(None, PERMISSION_FAILURE, "Do not have write permission on directory %s" % DirName)
 
     try:
-        Fd = open(File, "wb")
-        Fd.write(Content)
-        Fd.close()
+        if isinstance(Content, bytes):
+            with open(File, "wb") as Fd:
+                Fd.write(Content)
+        else:
+            with open(File, "w") as Fd:
+                Fd.write(Content)
     except IOError as X:
         EdkLogger.error(None, FILE_CREATE_FAILURE, ExtraData='IOError %s' % X)
 
@@ -639,7 +641,7 @@ def RealPath2(File, Dir='', OverrideDir=''):
 #
 def GuidValue(CName, PackageList, Inffile = None):
     for P in PackageList:
-        GuidKeys = P.Guids.keys()
+        GuidKeys = list(P.Guids.keys())
         if Inffile and P._PrivateGuids:
             if not Inffile.startswith(P.MetaFile.Dir):
                 GuidKeys = [x for x in P.Guids if x not in P._PrivateGuids]
@@ -658,7 +660,7 @@ def GuidValue(CName, PackageList, Inffile = None):
 #
 def ProtocolValue(CName, PackageList, Inffile = None):
     for P in PackageList:
-        ProtocolKeys = P.Protocols.keys()
+        ProtocolKeys = list(P.Protocols.keys())
         if Inffile and P._PrivateProtocols:
             if not Inffile.startswith(P.MetaFile.Dir):
                 ProtocolKeys = [x for x in P.Protocols if x not in P._PrivateProtocols]
@@ -677,7 +679,7 @@ def ProtocolValue(CName, PackageList, Inffile = None):
 #
 def PpiValue(CName, PackageList, Inffile = None):
     for P in PackageList:
-        PpiKeys = P.Ppis.keys()
+        PpiKeys = list(P.Ppis.keys())
         if Inffile and P._PrivatePpis:
             if not Inffile.startswith(P.MetaFile.Dir):
                 PpiKeys = [x for x in P.Ppis if x not in P._PrivatePpis]
@@ -973,7 +975,7 @@ class sdict(IterableUserDict):
 
     ## append support
     def append(self, sdict):
-        for key in sdict:
+        for key in sdict.keys():
             if key not in self._key_list:
                 self._key_list.append(key)
             IterableUserDict.__setitem__(self, key, sdict[key])
@@ -1013,11 +1015,11 @@ class sdict(IterableUserDict):
 
     ## Keys interation support
     def iterkeys(self):
-        return iter(self.keys())
+        return self.keys()
 
     ## Values interation support
     def itervalues(self):
-        return iter(self.values())
+        return self.values()
 
     ## Return value related to a key, and remove the (key, value) from the dict
     def pop(self, key, *dv):
@@ -1026,7 +1028,7 @@ class sdict(IterableUserDict):
             value = self[key]
             self.__delitem__(key)
         elif len(dv) != 0 :
-            value = kv[0]
+            value = dv[0]
         return value
 
     ## Return (key, value) pair, and remove the (key, value) from the dict
@@ -1237,8 +1239,7 @@ def IsFieldValueAnArray (Value):
     return False
 
 def AnalyzePcdExpression(Setting):
-    RanStr = ''.join(sample(string.ascii_letters + string.digits, 8))
-    Setting = Setting.replace('\\\\', RanStr).strip()
+    Setting = Setting.strip()
     # There might be escaped quote in a string: \", \\\" , \', \\\'
     Data = Setting
     # There might be '|' in string and in ( ... | ... ), replace it with '-'
@@ -1271,9 +1272,7 @@ def AnalyzePcdExpression(Setting):
             break
         FieldList.append(Setting[StartPos:Pos].strip())
         StartPos = Pos + 1
-    for i, ch in enumerate(FieldList):
-        if RanStr in ch:
-            FieldList[i] = ch.replace(RanStr,'\\\\')
+
     return FieldList
 
 def ParseDevPathValue (Value):
@@ -1293,12 +1292,12 @@ def ParseDevPathValue (Value):
     if err:
         raise BadExpression("DevicePath: %s" % str(err))
     Size = len(out.split())
-    out = ','.join(out.split())
+    out = ','.join(out.decode(encoding='utf-8', errors='ignore').split())
     return '{' + out + '}', Size
 
 def ParseFieldValue (Value):
     if isinstance(Value, type(0)):
-        return Value, (Value.bit_length() + 7) / 8
+        return Value, (Value.bit_length() + 7) // 8
     if not isinstance(Value, type('')):
         raise BadExpression('Type %s is %s' %(Value, type(Value)))
     Value = Value.strip()
@@ -1332,7 +1331,7 @@ def ParseFieldValue (Value):
         if Value[0] == '"' and Value[-1] == '"':
             Value = Value[1:-1]
         try:
-            Value = "'" + uuid.UUID(Value).get_bytes_le() + "'"
+            Value = "{" + ','.join([str(i) for i in uuid.UUID(Value).bytes_le]) + "}"
         except ValueError as Message:
             raise BadExpression(Message)
         Value, Size = ParseFieldValue(Value)
@@ -1419,12 +1418,12 @@ def ParseFieldValue (Value):
             raise BadExpression("invalid hex value: %s" % Value)
         if Value == 0:
             return 0, 1
-        return Value, (Value.bit_length() + 7) / 8
+        return Value, (Value.bit_length() + 7) // 8
     if Value[0].isdigit():
         Value = int(Value, 10)
         if Value == 0:
             return 0, 1
-        return Value, (Value.bit_length() + 7) / 8
+        return Value, (Value.bit_length() + 7) // 8
     if Value.lower() == 'true':
         return 1, 1
     if Value.lower() == 'false':
@@ -1465,7 +1464,7 @@ def AnalyzeDscPcd(Setting, PcdType, DataType=''):
         Size = ''
         if len(FieldList) > 1 and FieldList[1]:
             DataType = FieldList[1]
-            if FieldList[1] != TAB_VOID and StructPattern.match(FieldList[1]) is None:
+            if FieldList[1] != TAB_VOID:
                 IsValid = False
         if len(FieldList) > 2:
             Size = FieldList[2]
@@ -1585,15 +1584,19 @@ def CheckPcdDatum(Type, Value):
             return False, "Invalid value [%s] of type [%s]; must be one of TRUE, True, true, 0x1, 0x01, 1"\
                           ", FALSE, False, false, 0x0, 0x00, 0" % (Value, Type)
     elif Type in [TAB_UINT8, TAB_UINT16, TAB_UINT32, TAB_UINT64]:
-        if Value and int(Value, 0) < 0:
-            return False, "PCD can't be set to negative value[%s] for datum type [%s]" % (Value, Type)
         try:
-            Value = long(Value, 0)
-            if Value > MAX_VAL_TYPE[Type]:
-                return False, "Too large PCD value[%s] for datum type [%s]" % (Value, Type)
+            Val = int(Value, 0)
         except:
-            return False, "Invalid value [%s] of type [%s];"\
-                          " must be a hexadecimal, decimal or octal in C language format." % (Value, Type)
+            try:
+                Val = int(Value.lstrip('0'))
+            except:
+                return False, "Invalid value [%s] of type [%s];" \
+                              " must be a hexadecimal, decimal or octal in C language format." % (Value, Type)
+        if Val > MAX_VAL_TYPE[Type]:
+            return False, "Too large PCD value[%s] for datum type [%s]" % (Value, Type)
+        if Val < 0:
+            return False, "PCD can't be set to negative value[%s] for datum type [%s]" % (Value, Type)
+
     else:
         return True, "StructurePcd"
 
@@ -1631,7 +1634,7 @@ def SplitOption(OptionString):
 def CommonPath(PathList):
     P1 = min(PathList).split(os.path.sep)
     P2 = max(PathList).split(os.path.sep)
-    for Index in xrange(min(len(P1), len(P2))):
+    for Index in range(min(len(P1), len(P2))):
         if P1[Index] != P2[Index]:
             return os.path.sep.join(P1[:Index])
     return os.path.sep.join(P1)
@@ -1856,7 +1859,7 @@ class PeImageClass():
         ByteArray = array.array('B')
         ByteArray.fromfile(PeObject, 4)
         # PE signature should be 'PE\0\0'
-        if ByteArray.tostring() != 'PE\0\0':
+        if ByteArray.tostring() != b'PE\0\0':
             self.ErrorInfo = self.FileName + ' has no valid PE signature PE00'
             return
 
@@ -1948,7 +1951,7 @@ class SkuClass():
                             ExtraData = "SKU-ID [%s] value %s exceeds the max value of UINT64"
                                       % (SkuName, SkuId))
 
-        self.AvailableSkuIds = sdict()
+        self.AvailableSkuIds = OrderedDict()
         self.SkuIdSet = []
         self.SkuIdNumberSet = []
         self.SkuData = SkuIds
@@ -1958,7 +1961,7 @@ class SkuClass():
             self.SkuIdSet = ['DEFAULT']
             self.SkuIdNumberSet = ['0U']
         elif SkuIdentifier == 'ALL':
-            self.SkuIdSet = SkuIds.keys()
+            self.SkuIdSet = list(SkuIds.keys())
             self.SkuIdNumberSet = [num[0].strip() + 'U' for num in SkuIds.values()]
         else:
             r = SkuIdentifier.split('|')
@@ -2078,7 +2081,7 @@ def PackRegistryFormatGuid(Guid):
 #   @retval     Value    The integer value that the input represents
 #
 def GetIntegerValue(Input):
-    if type(Input) in (int, long):
+    if isinstance(Input, int):
         return Input
     String = Input
     if String.endswith("U"):

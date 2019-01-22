@@ -15,7 +15,6 @@
 ##
 # Import Modules
 #
-from __future__ import absolute_import
 import Common.LongFilePathOs as os
 import subprocess
 
@@ -26,6 +25,8 @@ from Common.Misc import SaveFileOnChange
 from Common import EdkLogger
 from Common.BuildToolError import *
 
+T_CHAR_LF = '\n'
+
 ##
 #
 #
@@ -34,9 +35,9 @@ class OPTIONROM (OptionRomClassObject):
     #
     #   @param  self        The object pointer
     #
-    def __init__(self, Name = ""):
+    def __init__(self):
         OptionRomClassObject.__init__(self)
-        self.DriverName = Name
+
 
     ## AddToBuffer()
     #

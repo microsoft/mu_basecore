@@ -15,9 +15,10 @@
 ##
 # Import Modules
 #
-from __future__ import absolute_import
 from . import Section
 from .GenFdsGlobalVariable import GenFdsGlobalVariable
+import subprocess
+from .Ffs import Ffs
 import Common.LongFilePathOs as os
 from CommonDataClass.FdfClass import DepexSectionClassObject
 from AutoGen.GenDepex import DependencyExpression
@@ -44,8 +45,9 @@ class DepexSection (DepexSectionClassObject):
                                                                     GenFdsGlobalVariable.TargetName,
                                                                     GenFdsGlobalVariable.ToolChainTag)
             for Inf in GenFdsGlobalVariable.FdfParser.Profile.InfList:
+                ModuleFile = PathClass(Inf, GenFdsGlobalVariable.WorkSpaceDir)
                 ModuleData = GenFdsGlobalVariable.WorkSpace.BuildObject[
-                                                            PathClass(Inf, GenFdsGlobalVariable.WorkSpaceDir),
+                                                            ModuleFile,
                                                             Arch,
                                                             GenFdsGlobalVariable.TargetName,
                                                             GenFdsGlobalVariable.ToolChainTag

@@ -20,8 +20,6 @@
 ##
 # Import Modules
 #
-from __future__ import print_function
-from __future__ import absolute_import
 import Common.LongFilePathOs as os
 import sys
 import encodings.ascii
@@ -153,10 +151,7 @@ def StartBpdg(InputFileName, MapFileName, VpdFileName, Force):
     EdkLogger.info("- Vpd pcd fixed done! -")
 
 if __name__ == '__main__':
-    try:
-        r = main()
-    except FatalError as e:
-        r = e
+    r = main()
     ## 0-127 is a safe return range, and 1 is a standard default error
     if r < 0 or r > 127: r = 1
     sys.exit(r)

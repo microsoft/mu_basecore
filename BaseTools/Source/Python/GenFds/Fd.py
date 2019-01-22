@@ -15,7 +15,6 @@
 ##
 # Import Modules
 #
-from __future__ import absolute_import
 from . import Region
 from . import Fv
 import Common.LongFilePathOs as os
@@ -75,7 +74,7 @@ class FD(FDClassObject):
                 HasCapsuleRegion = True
                 break
         if HasCapsuleRegion:
-            TempFdBuffer = BytesIO('')
+            TempFdBuffer = BytesIO()
             PreviousRegionStart = -1
             PreviousRegionSize = 1
 
@@ -104,7 +103,7 @@ class FD(FDClassObject):
                 GenFdsGlobalVariable.VerboseLogger('Call each region\'s AddToBuffer function')
                 RegionObj.AddToBuffer (TempFdBuffer, self.BaseAddress, self.BlockSizeList, self.ErasePolarity, GenFdsGlobalVariable.ImageBinDict, self.vtfRawDict, self.DefineVarDict)
 
-        FdBuffer = BytesIO('')
+        FdBuffer = BytesIO()
         PreviousRegionStart = -1
         PreviousRegionSize = 1
         for RegionObj in self.RegionList :

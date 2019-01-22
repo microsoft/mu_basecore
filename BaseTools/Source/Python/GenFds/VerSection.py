@@ -1,7 +1,7 @@
 ## @file
 # process Version section generation
 #
-#  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -15,9 +15,10 @@
 ##
 # Import Modules
 #
-from __future__ import absolute_import
-from .Ffs import SectionSuffix
+from .Ffs import Ffs
+from . import Section
 import Common.LongFilePathOs as os
+import subprocess
 from .GenFdsGlobalVariable import GenFdsGlobalVariable
 from CommonDataClass.FdfClass import VerSectionClassObject
 from Common.LongFilePathSupport import OpenLongFilePath as open
@@ -52,27 +53,29 @@ class VerSection (VerSectionClassObject):
         #
         # Prepare the parameter of GenSection
         #
-        if FfsInf:
+        if FfsInf is not None:
             self.Alignment = FfsInf.__ExtendMacro__(self.Alignment)
             self.BuildNum = FfsInf.__ExtendMacro__(self.BuildNum)
             self.StringData = FfsInf.__ExtendMacro__(self.StringData)
             self.FileName = FfsInf.__ExtendMacro__(self.FileName)
 
         OutputFile = os.path.join(OutputPath,
-                                  ModuleName + SUP_MODULE_SEC + SecNum + SectionSuffix.get('VERSION'))
+                                  ModuleName + SUP_MODULE_SEC + SecNum + Ffs.SectionSuffix.get('VERSION'))
         OutputFile = os.path.normpath(OutputFile)
 
         # Get String Data
         StringData = ''
-        if self.StringData:
+        if self.StringData is not None:
             StringData = self.StringData
-        elif self.FileName:
+        elif self.FileName is not None:
             FileNameStr = GenFdsGlobalVariable.ReplaceWorkspaceMacro(self.FileName)
             FileNameStr = GenFdsGlobalVariable.MacroExtend(FileNameStr, Dict)
             FileObj = open(FileNameStr, 'r')
             StringData = FileObj.read()
             StringData = '"' + StringData + '"'
             FileObj.close()
+        else:
+            StringData = ''
         GenFdsGlobalVariable.GenerateSection(OutputFile, [], 'EFI_SECTION_VERSION',
                                              Ver=StringData, BuildNumber=self.BuildNum, IsMakefile=IsMakefile)
         OutputFileList = []

@@ -10,7 +10,6 @@
 # THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 # WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #
-from __future__ import absolute_import
 from io import BytesIO
 from Common.Misc import *
 from Common.StringUtils import StringToArray
@@ -258,7 +257,7 @@ class DbItemList:
             # Variable length, need to calculate one by one
             #
             assert(Index < len(self.RawDataList))
-            for ItemIndex in xrange(Index):
+            for ItemIndex in range(Index):
                 Offset += len(self.RawDataList[ItemIndex])
         else:
             Offset = self.ItemSize * Index
@@ -292,7 +291,7 @@ class DbItemList:
 
         PackStr = PACK_CODE_BY_SIZE[self.ItemSize]
 
-        Buffer = ''
+        Buffer = bytearray()
         for Datas in self.RawDataList:
             if type(Datas) in (list, tuple):
                 for Data in Datas:
@@ -317,7 +316,7 @@ class DbExMapTblItemList (DbItemList):
         DbItemList.__init__(self, ItemSize, DataList, RawDataList)
 
     def PackData(self):
-        Buffer = ''
+        Buffer = bytearray()
         PackStr = "=LHH"
         for Datas in self.RawDataList:
             Buffer += pack(PackStr,
@@ -345,7 +344,7 @@ class DbComItemList (DbItemList):
             assert(False)
         else:
             assert(Index < len(self.RawDataList))
-            for ItemIndex in xrange(Index):
+            for ItemIndex in range(Index):
                 Offset += len(self.RawDataList[ItemIndex]) * self.ItemSize
 
         return Offset
@@ -366,7 +365,7 @@ class DbComItemList (DbItemList):
     def PackData(self):
         PackStr = PACK_CODE_BY_SIZE[self.ItemSize]
 
-        Buffer = ''
+        Buffer = bytearray()
         for DataList in self.RawDataList:
             for Data in DataList:
                 if type(Data) in (list, tuple):
@@ -387,7 +386,7 @@ class DbVariableTableItemList (DbComItemList):
 
     def PackData(self):
         PackStr = "=LLHHLHH"
-        Buffer = ''
+        Buffer = bytearray()
         for DataList in self.RawDataList:
             for Data in DataList:
                 Buffer += pack(PackStr,
@@ -411,7 +410,7 @@ class DbStringHeadTableItemList(DbItemList):
             # Variable length, need to calculate one by one
             #
             assert(Index < len(self.RawDataList))
-            for ItemIndex in xrange(Index):
+            for ItemIndex in range(Index):
                 Offset += len(self.RawDataList[ItemIndex])
         else:
             for innerIndex in range(Index):
@@ -448,7 +447,7 @@ class DbSkuHeadTableItemList (DbItemList):
 
     def PackData(self):
         PackStr = "=LL"
-        Buffer = ''
+        Buffer = bytearray()
         for Data in self.RawDataList:
             Buffer += pack(PackStr,
                            GetIntegerValue(Data[0]),
@@ -470,7 +469,7 @@ class DbSizeTableItemList (DbItemList):
         return length * self.ItemSize
     def PackData(self):
         PackStr = "=H"
-        Buffer = ''
+        Buffer = bytearray()
         for Data in self.RawDataList:
             Buffer += pack(PackStr,
                            GetIntegerValue(Data[0]))
@@ -495,14 +494,14 @@ class DbStringItemList (DbComItemList):
         assert(len(RawDataList) == len(LenList))
         DataList = []
         # adjust DataList according to the LenList
-        for Index in xrange(len(RawDataList)):
+        for Index in range(len(RawDataList)):
             Len = LenList[Index]
             RawDatas = RawDataList[Index]
             assert(Len >= len(RawDatas))
             ActualDatas = []
-            for i in xrange(len(RawDatas)):
+            for i in range(len(RawDatas)):
                 ActualDatas.append(RawDatas[i])
-            for i in xrange(len(RawDatas), Len):
+            for i in range(len(RawDatas), Len):
                 ActualDatas.append(0)
             DataList.append(ActualDatas)
         self.LenList = LenList
@@ -511,7 +510,7 @@ class DbStringItemList (DbComItemList):
         Offset = 0
 
         assert(Index < len(self.LenList))
-        for ItemIndex in xrange(Index):
+        for ItemIndex in range(Index):
             Offset += self.LenList[ItemIndex]
 
         return Offset
@@ -612,7 +611,7 @@ def BuildExDataBase(Dict):
     DbVardefValueUint32 = DbItemList(4, RawDataList = VardefValueUint32)
     VpdHeadValue = Dict['VPD_DB_VALUE']
     DbVpdHeadValue = DbComItemList(4, RawDataList = VpdHeadValue)
-    ExMapTable = zip(Dict['EXMAPPING_TABLE_EXTOKEN'], Dict['EXMAPPING_TABLE_LOCAL_TOKEN'], Dict['EXMAPPING_TABLE_GUID_INDEX'])
+    ExMapTable = list(zip(Dict['EXMAPPING_TABLE_EXTOKEN'], Dict['EXMAPPING_TABLE_LOCAL_TOKEN'], Dict['EXMAPPING_TABLE_GUID_INDEX']))
     DbExMapTable = DbExMapTblItemList(8, RawDataList = ExMapTable)
     LocalTokenNumberTable = Dict['LOCAL_TOKEN_NUMBER_DB_VALUE']
     DbLocalTokenNumberTable = DbItemList(4, RawDataList = LocalTokenNumberTable)
@@ -646,7 +645,7 @@ def BuildExDataBase(Dict):
     PcdNameOffsetTable = Dict['PCD_NAME_OFFSET']
     DbPcdNameOffsetTable = DbItemList(4, RawDataList = PcdNameOffsetTable)
 
-    SizeTableValue = zip(Dict['SIZE_TABLE_MAXIMUM_LENGTH'], Dict['SIZE_TABLE_CURRENT_LENGTH'])
+    SizeTableValue = list(zip(Dict['SIZE_TABLE_MAXIMUM_LENGTH'], Dict['SIZE_TABLE_CURRENT_LENGTH']))
     DbSizeTableValue = DbSizeTableItemList(2, RawDataList = SizeTableValue)
     InitValueUint16 = Dict['INIT_DB_VALUE_UINT16']
     DbInitValueUint16 = DbComItemList(2, RawDataList = InitValueUint16)
@@ -699,7 +698,7 @@ def BuildExDataBase(Dict):
 
     # Get offset of SkuId table in the database
     SkuIdTableOffset = FixedHeaderLen
-    for DbIndex in xrange(len(DbTotal)):
+    for DbIndex in range(len(DbTotal)):
         if DbTotal[DbIndex] is SkuidValue:
             break
         SkuIdTableOffset += DbItemTotal[DbIndex].GetListSize()
@@ -711,7 +710,7 @@ def BuildExDataBase(Dict):
     for (LocalTokenNumberTableIndex, (Offset, Table)) in enumerate(LocalTokenNumberTable):
         DbIndex = 0
         DbOffset = FixedHeaderLen
-        for DbIndex in xrange(len(DbTotal)):
+        for DbIndex in range(len(DbTotal)):
             if DbTotal[DbIndex] is Table:
                 DbOffset += DbItemTotal[DbIndex].GetInterOffset(Offset)
                 break
@@ -737,7 +736,7 @@ def BuildExDataBase(Dict):
             (VariableHeadGuidIndex, VariableHeadStringIndex, SKUVariableOffset, VariableOffset, VariableRefTable, VariableAttribute) = VariableEntryPerSku[:]
             DbIndex = 0
             DbOffset = FixedHeaderLen
-            for DbIndex in xrange(len(DbTotal)):
+            for DbIndex in range(len(DbTotal)):
                 if DbTotal[DbIndex] is VariableRefTable:
                     DbOffset += DbItemTotal[DbIndex].GetInterOffset(VariableOffset)
                     break
@@ -757,7 +756,7 @@ def BuildExDataBase(Dict):
 
     # calculate various table offset now
     DbTotalLength = FixedHeaderLen
-    for DbIndex in xrange(len(DbItemTotal)):
+    for DbIndex in range(len(DbItemTotal)):
         if DbItemTotal[DbIndex] is DbLocalTokenNumberTable:
             LocalTokenNumberTableOffset = DbTotalLength
         elif DbItemTotal[DbIndex] is DbExMapTable:
@@ -850,7 +849,7 @@ def BuildExDataBase(Dict):
     Index = 0
     for Item in DbItemTotal:
         Index +=1
-        b = Item.PackData()
+        b = bytes(Item.PackData())
         Buffer += b
         if Index == InitTableNum:
             if len(Buffer) % 8:
@@ -918,9 +917,9 @@ def CreatePcdDataBase(PcdDBData):
     totallenbuff = pack("=L", totallen)
     newbuffer = databasebuff[:32]
     for i in range(4):
-        newbuffer += totallenbuff[i]
+        newbuffer += bytes([totallenbuff[i]])
     for i in range(36, totallen):
-        newbuffer += databasebuff[i]
+        newbuffer += bytes([databasebuff[i]])
 
     return newbuffer
 
@@ -963,7 +962,7 @@ def NewCreatePcdDatabasePhaseSpecificAutoGen(Platform, Phase):
             AdditionalAutoGenH, AdditionalAutoGenC, PcdDbBuffer, VarCheckTab = CreatePcdDatabasePhaseSpecificAutoGen (Platform, DynamicPcdSet_Sku[(skuname, skuid)], Phase)
             final_data = ()
             for item in PcdDbBuffer:
-                final_data += unpack("B", item)
+                final_data += unpack("B", bytes([item]))
             PcdDBData[(skuname, skuid)] = (PcdDbBuffer, final_data)
             PcdDriverAutoGenData[(skuname, skuid)] = (AdditionalAutoGenH, AdditionalAutoGenC)
             VarCheckTableData[(skuname, skuid)] = VarCheckTab
@@ -976,7 +975,7 @@ def NewCreatePcdDatabasePhaseSpecificAutoGen(Platform, Phase):
         AdditionalAutoGenH, AdditionalAutoGenC, PcdDbBuffer, VarCheckTab = CreatePcdDatabasePhaseSpecificAutoGen (Platform, {}, Phase)
         final_data = ()
         for item in PcdDbBuffer:
-            final_data += unpack("B", item)
+            final_data += unpack("B", bytes([item]))
         PcdDBData[(TAB_DEFAULT, "0")] = (PcdDbBuffer, final_data)
 
     return AdditionalAutoGenH, AdditionalAutoGenC, CreatePcdDataBase(PcdDBData)
@@ -1349,7 +1348,7 @@ def CreatePcdDatabasePhaseSpecificAutoGen (Platform, DynamicPcdList, Phase):
 
                 DbValueList.append(Sku.DefaultValue)
 
-        Pcd.TokenTypeList = list(set(Pcd.TokenTypeList))
+        Pcd.TokenTypeList = sorted(set(Pcd.TokenTypeList))
         if Pcd.DatumType == TAB_VOID:
             Dict['SIZE_TABLE_CNAME'].append(CName)
             Dict['SIZE_TABLE_GUID'].append(TokenSpaceGuid)
@@ -1450,7 +1449,7 @@ def CreatePcdDatabasePhaseSpecificAutoGen (Platform, DynamicPcdList, Phase):
             Dict['PCD_CNAME_LENGTH'][GeneratedTokenNumber] = len(CNameBinArray.split(","))
 
 
-        Pcd.TokenTypeList = list(set(Pcd.TokenTypeList))
+        Pcd.TokenTypeList = sorted(set(Pcd.TokenTypeList))
 
         # search the Offset and Table, used by LocalTokenNumberTableOffset
         if 'PCD_TYPE_HII' in Pcd.TokenTypeList:

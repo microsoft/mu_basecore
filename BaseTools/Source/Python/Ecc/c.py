@@ -35,7 +35,7 @@ IgnoredKeywordList = ['EFI_ERROR']
 
 def GetIgnoredDirListPattern():
     skipList = list(EccGlobalData.gConfig.SkipDirList) + ['.svn']
-    DirString = string.join(skipList, '|')
+    DirString = '|'.join(skipList)
     p = re.compile(r'.*[\\/](?:%s)[\\/]?.*' % DirString)
     return p
 
@@ -963,7 +963,7 @@ def StripComments(Str):
             ListFromStr[Index] = ' '
             Index += 1
         # check for // comment
-        elif ListFromStr[Index] == '/' and ListFromStr[Index + 1] == '/' and ListFromStr[Index + 2] != '\n':
+        elif ListFromStr[Index] == '/' and ListFromStr[Index + 1] == '/':
             InComment = True
             DoubleSlashComment = True
 
@@ -1297,7 +1297,7 @@ def CheckFuncLayoutReturnType(FullFileName):
         Result0 = Result[0]
         if Result0.upper().startswith('STATIC'):
             Result0 = Result0[6:].strip()
-        Index = Result0.find(ReturnType)
+        Index = Result0.find(TypeStart)
         if Index != 0 or Result[3] != 0:
             PrintErrorMsg(ERROR_C_FUNCTION_LAYOUT_CHECK_RETURN_TYPE, '[%s] Return Type should appear at the start of line' % FuncName, 'Function', Result[1])
 
@@ -2144,7 +2144,7 @@ def CheckBooleanValueComparison(FullFileName):
                     PrintErrorMsg(ERROR_PREDICATE_EXPRESSION_CHECK_BOOLEAN_VALUE, 'Predicate Expression: %s' % Exp, FileTable, Str[2])
 
 
-def CheckHeaderFileData(FullFileName, AllTypedefFun=[]):
+def CheckHeaderFileData(FullFileName):
     ErrorMsgList = []
 
     FileID = GetTableID(FullFileName, ErrorMsgList)
@@ -2160,11 +2160,7 @@ def CheckHeaderFileData(FullFileName, AllTypedefFun=[]):
     ResultSet = Db.TblFile.Exec(SqlStatement)
     for Result in ResultSet:
         if not Result[1].startswith('extern'):
-            for Item in AllTypedefFun:
-                if '(%s)' % Result[1] in Item:
-                    break
-            else:
-                PrintErrorMsg(ERROR_INCLUDE_FILE_CHECK_DATA, 'Variable definition appears in header file', FileTable, Result[0])
+            PrintErrorMsg(ERROR_INCLUDE_FILE_CHECK_DATA, 'Variable definition appears in header file', FileTable, Result[0])
 
     SqlStatement = """ select ID
                        from Function

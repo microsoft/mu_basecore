@@ -47,8 +47,8 @@ def DeCompress(Method, Input):
     Process.communicate()[0]
 
     # Return the beffer of New.bin
-    if os.path.exists('_New.bin'):
-        return open('_New.bin', 'rb').read()
+    if os.path.exists('New.bin'):
+        return open('New.bin', 'rb').read()
 
 
 ## PreProcess() method

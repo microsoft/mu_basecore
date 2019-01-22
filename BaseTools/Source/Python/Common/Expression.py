@@ -12,8 +12,6 @@
 
 ## Import Modules
 #
-from __future__ import print_function
-from __future__ import absolute_import
 from Common.GlobalData import *
 from CommonDataClass.Exceptions import BadExpression
 from CommonDataClass.Exceptions import WrnExpression
@@ -22,8 +20,6 @@ import Common.EdkLogger as EdkLogger
 import copy
 from Common.DataType import *
 import sys
-from random import sample
-import string
 
 ERR_STRING_EXPR         = 'This operator cannot be used in string expression: [%s].'
 ERR_SNYTAX              = 'Syntax error, the rest of expression cannot be evaluated: [%s].'
@@ -57,8 +53,6 @@ PcdPattern = re.compile(r'[_a-zA-Z][0-9A-Za-z_]*\.[_a-zA-Z][0-9A-Za-z_]*$')
 #
 def SplitString(String):
     # There might be escaped quote: "abc\"def\\\"ghi", 'abc\'def\\\'ghi'
-    RanStr = ''.join(sample(string.ascii_letters + string.digits, 8))
-    String = String.replace('\\\\', RanStr).strip()
     RetList = []
     InSingleQuote = False
     InDoubleQuote = False
@@ -91,16 +85,11 @@ def SplitString(String):
         raise BadExpression(ERR_STRING_TOKEN % Item)
     if Item:
         RetList.append(Item)
-    for i, ch in enumerate(RetList):
-        if RanStr in ch:
-            RetList[i] = ch.replace(RanStr,'\\\\')
     return RetList
 
 def SplitPcdValueString(String):
     # There might be escaped comma in GUID() or DEVICE_PATH() or " "
     # or ' ' or L' ' or L" "
-    RanStr = ''.join(sample(string.ascii_letters + string.digits, 8))
-    String = String.replace('\\\\', RanStr).strip()
     RetList = []
     InParenthesis = 0
     InSingleQuote = False
@@ -133,9 +122,6 @@ def SplitPcdValueString(String):
         raise BadExpression(ERR_STRING_TOKEN % Item)
     if Item:
         RetList.append(Item)
-    for i, ch in enumerate(RetList):
-        if RanStr in ch:
-            RetList[i] = ch.replace(RanStr,'\\\\')
     return RetList
 
 def IsValidCName(Str):
@@ -218,7 +204,7 @@ SupportedInMacroList = ['TARGET', 'TOOL_CHAIN_TAG', 'ARCH', 'FAMILY']
 
 class BaseExpression(object):
     def __init__(self, *args, **kwargs):
-        super(BaseExpression, self).__init__()
+        super().__init__()
 
     # Check if current token matches the operators given from parameter
     def _IsOperator(self, OpSet):
@@ -309,8 +295,8 @@ class ValueExpression(BaseExpression):
                 else:
                     raise BadExpression(ERR_EXPR_TYPE)
             if isinstance(Oprand1, type('')) and isinstance(Oprand2, type('')):
-                if ((Oprand1.startswith('L"') or Oprand1.startswith("L'")) and (not Oprand2.startswith('L"')) and (not Oprand2.startswith("L'"))) or \
-                        (((not Oprand1.startswith('L"')) and (not Oprand1.startswith("L'"))) and (Oprand2.startswith('L"') or Oprand2.startswith("L'"))):
+                if (Oprand1.startswith('L"') and not Oprand2.startswith('L"')) or \
+                    (not Oprand1.startswith('L"') and Oprand2.startswith('L"')):
                     raise BadExpression(ERR_STRING_CMP % (Oprand1, Operator, Oprand2))
             if 'in' in Operator and isinstance(Oprand2, type('')):
                 Oprand2 = Oprand2.split()
@@ -338,7 +324,7 @@ class ValueExpression(BaseExpression):
         return Val
 
     def __init__(self, Expression, SymbolTable={}):
-        super(ValueExpression, self).__init__(self, Expression, SymbolTable)
+        super().__init__(self, Expression, SymbolTable)
         self._NoProcess = False
         if not isinstance(Expression, type('')):
             self._Expr = Expression
@@ -402,7 +388,7 @@ class ValueExpression(BaseExpression):
             elif not Val:
                 Val = False
                 RealVal = '""'
-            elif not Val.startswith('L"') and not Val.startswith('{') and not Val.startswith("L'") and not Val.startswith("'"):
+            elif not Val.startswith('L"') and not Val.startswith('{') and not Val.startswith("L'"):
                 Val = True
                 RealVal = '"' + RealVal + '"'
 
@@ -439,6 +425,13 @@ class ValueExpression(BaseExpression):
                 else:
                     Val = Val3
                 continue
+            #
+            # PEP 238 -- Changing the Division Operator
+            # x/y to return a reasonable approximation of the mathematical result of the division ("true division")
+            # x//y to return the floor ("floor division")
+            #
+            if Op == '/':
+                Op = '//'
             try:
                 Val = self.Eval(Op, Val, EvalFunc())
             except WrnExpression as Warn:
@@ -839,8 +832,6 @@ class ValueExpressionEx(ValueExpression):
                 PcdValue = PcdValue.strip()
                 if PcdValue.startswith('{') and PcdValue.endswith('}'):
                     PcdValue = SplitPcdValueString(PcdValue[1:-1])
-                if ERR_STRING_CMP.split(':')[0] in Value.message:
-                    raise BadExpression("Type: %s, Value: %s, %s" % (self.PcdType, PcdValue, Value))
                 if isinstance(PcdValue, type([])):
                     TmpValue = 0
                     Size = 0
@@ -914,7 +905,7 @@ class ValueExpressionEx(ValueExpression):
                     if TmpValue.bit_length() == 0:
                         PcdValue = '{0x00}'
                     else:
-                        for I in range((TmpValue.bit_length() + 7) / 8):
+                        for I in range((TmpValue.bit_length() + 7) // 8):
                             TmpList.append('0x%02x' % ((TmpValue >> I * 8) & 0xff))
                         PcdValue = '{' + ', '.join(TmpList) + '}'
                 except:
@@ -1042,7 +1033,7 @@ class ValueExpressionEx(ValueExpression):
 if __name__ == '__main__':
     pass
     while True:
-        input = raw_input('Input expr: ')
+        input = input('Input expr: ')
         if input in 'qQ':
             break
         try:

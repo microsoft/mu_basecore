@@ -15,19 +15,23 @@
 ##
 # Import Modules
 #
-from __future__ import absolute_import
-from .GenFdsGlobalVariable import GenFdsGlobalVariable, FindExtendTool
+from .GenFdsGlobalVariable import GenFdsGlobalVariable
+from .GenFdsGlobalVariable import FindExtendTool
 from CommonDataClass.FdfClass import CapsuleClassObject
 import Common.LongFilePathOs as os
+import subprocess
 from io import BytesIO
-from Common.Misc import SaveFileOnChange, PackRegistryFormatGuid
+from io import StringIO
+from Common.Misc import SaveFileOnChange
+from Common.Misc import PackRegistryFormatGuid
 import uuid
 from struct import pack
 from Common import EdkLogger
-from Common.BuildToolError import GENFDS_ERROR
-from Common.DataType import TAB_LINE_BREAK
+from Common.BuildToolError import *
 
-WIN_CERT_REVISION = 0x0200
+
+T_CHAR_LF = '\n'
+WIN_CERT_REVISION      = 0x0200
 WIN_CERT_TYPE_EFI_GUID = 0x0EF1
 EFI_CERT_TYPE_PKCS7_GUID = uuid.UUID('{4aafd29d-68df-49ee-8aa9-347d375665a7}')
 EFI_CERT_TYPE_RSA2048_SHA256_GUID = uuid.UUID('{a7717414-c616-4977-9420-844712a735bf}')
@@ -35,7 +39,7 @@ EFI_CERT_TYPE_RSA2048_SHA256_GUID = uuid.UUID('{a7717414-c616-4977-9420-844712a7
 ## create inf file describes what goes into capsule and call GenFv to generate capsule
 #
 #
-class Capsule (CapsuleClassObject):
+class Capsule (CapsuleClassObject) :
     ## The constructor
     #
     #   @param  self        The object pointer
@@ -181,7 +185,7 @@ class Capsule (CapsuleClassObject):
         #
         # The real capsule header structure is 28 bytes
         #
-        Header.write('\x00'*(HdrSize-28))
+        Header.write(b'\x00'*(HdrSize-28))
         Header.write(FwMgrHdr.getvalue())
         Header.write(Content.getvalue())
         #
@@ -206,16 +210,16 @@ class Capsule (CapsuleClassObject):
             return self.GenFmpCapsule()
 
         CapInfFile = self.GenCapInf()
-        CapInfFile.writelines("[files]" + TAB_LINE_BREAK)
+        CapInfFile.writelines("[files]" + T_CHAR_LF)
         CapFileList = []
-        for CapsuleDataObj in self.CapsuleDataList:
+        for CapsuleDataObj in self.CapsuleDataList :
             CapsuleDataObj.CapsuleName = self.CapsuleName
             FileName = CapsuleDataObj.GenCapsuleSubItem()
             CapsuleDataObj.CapsuleName = None
             CapFileList.append(FileName)
             CapInfFile.writelines("EFI_FILE_NAME = " + \
                                    FileName      + \
-                                   TAB_LINE_BREAK)
+                                   T_CHAR_LF)
         SaveFileOnChange(self.CapInfFileName, CapInfFile.getvalue(), False)
         CapInfFile.close()
         #
@@ -243,15 +247,15 @@ class Capsule (CapsuleClassObject):
     def GenCapInf(self):
         self.CapInfFileName = os.path.join(GenFdsGlobalVariable.FvDir,
                                    self.UiCapsuleName +  "_Cap" + '.inf')
-        CapInfFile = BytesIO() #open (self.CapInfFileName , 'w+')
+        CapInfFile = StringIO() #open (self.CapInfFileName , 'w+')
 
-        CapInfFile.writelines("[options]" + TAB_LINE_BREAK)
+        CapInfFile.writelines("[options]" + T_CHAR_LF)
 
         for Item in self.TokensDict:
             CapInfFile.writelines("EFI_"                    + \
                                   Item                      + \
                                   ' = '                     + \
                                   self.TokensDict[Item]     + \
-                                  TAB_LINE_BREAK)
+                                  T_CHAR_LF)
 
         return CapInfFile

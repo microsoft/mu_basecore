@@ -15,11 +15,11 @@
 ##
 # Import Modules
 #
-from __future__ import absolute_import
 from struct import *
 from .GenFdsGlobalVariable import GenFdsGlobalVariable
 from io import BytesIO
 import string
+from CommonDataClass.FdfClass import RegionClassObject
 import Common.LongFilePathOs as os
 from stat import *
 from Common import EdkLogger
@@ -31,20 +31,15 @@ from Common.DataType import BINARY_FILE_TYPE_FV
 ## generate Region
 #
 #
-class Region(object):
+class Region(RegionClassObject):
 
     ## The constructor
     #
     #   @param  self        The object pointer
     #
     def __init__(self):
-        self.Offset = None       # The begin position of the Region
-        self.Size = None         # The Size of the Region
-        self.PcdOffset = None
-        self.PcdSize = None
-        self.SetVarDict = {}
-        self.RegionType = None
-        self.RegionDataList = []
+        RegionClassObject.__init__(self)
+
 
     ## PadBuffer()
     #
@@ -62,8 +57,8 @@ class Region(object):
                 PadByte = pack('B', 0xFF)
             else:
                 PadByte = pack('B', 0)
-            PadData = ''.join(PadByte for i in xrange(0, Size))
-            Buffer.write(PadData)
+            for i in range(0, Size):
+                Buffer.write(PadByte)
 
     ## AddToBuffer()
     #
@@ -132,7 +127,7 @@ class Region(object):
                         if self.FvAddress % FvAlignValue != 0:
                             EdkLogger.error("GenFds", GENFDS_ERROR,
                                             "FV (%s) is NOT %s Aligned!" % (FvObj.UiFvName, FvObj.FvAlignment))
-                        FvBuffer = BytesIO('')
+                        FvBuffer = BytesIO()
                         FvBaseAddress = '0x%X' % self.FvAddress
                         BlockSize = None
                         BlockNum = None
@@ -301,7 +296,7 @@ class Region(object):
             else:
                 # region ended within current blocks
                 if self.Offset + self.Size <= End:
-                    ExpectedList.append((BlockSize, (RemindingSize + BlockSize - 1) / BlockSize))
+                    ExpectedList.append((BlockSize, (RemindingSize + BlockSize - 1) // BlockSize))
                     break
                 # region not ended yet
                 else:
@@ -310,7 +305,7 @@ class Region(object):
                         UsedBlockNum = BlockNum
                     # region started in middle of current blocks
                     else:
-                        UsedBlockNum = (End - self.Offset) / BlockSize
+                        UsedBlockNum = (End - self.Offset) // BlockSize
                     Start = End
                     ExpectedList.append((BlockSize, UsedBlockNum))
                     RemindingSize -= BlockSize * UsedBlockNum

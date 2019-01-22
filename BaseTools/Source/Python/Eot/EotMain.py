@@ -17,7 +17,7 @@
 from __future__ import absolute_import
 import Common.LongFilePathOs as os, time, glob
 import Common.EdkLogger as EdkLogger
-import Eot.EotGlobalData as EotGlobalData
+from Eot import EotGlobalData
 from optparse import OptionParser
 from Common.StringUtils import NormPath
 from Common import BuildToolError
@@ -36,9 +36,10 @@ import struct
 import uuid
 import copy
 import codecs
-from GenFds.AprioriSection import DXE_APRIORI_GUID, PEI_APRIORI_GUID
 
 gGuidStringFormat = "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X"
+gPeiAprioriFileNameGuid = '1b45cc0a-156a-428a-af62-49864da0e6e6'
+gAprioriGuid = 'fc510ee7-ffdc-11d4-bd41-0080c73c8881'
 gIndention = -4
 
 class Image(array):
@@ -401,10 +402,10 @@ class FirmwareVolume(Image):
             if Ffs.Type == 0x05:
                 FfsDxeCoreGuid = FfsID
                 continue
-            if Ffs.Guid.lower() == PEI_APRIORI_GUID.lower():
+            if Ffs.Guid.lower() == gPeiAprioriFileNameGuid:
                 FfsPeiPrioriGuid = FfsID
                 continue
-            if Ffs.Guid.lower() == DXE_APRIORI_GUID.lower():
+            if Ffs.Guid.lower() == gAprioriGuid:
                 FfsDxePrioriGuid = FfsID
                 continue
 
