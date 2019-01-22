@@ -20,8 +20,11 @@ TianoCore/Project Mu Edk2 Build tools
 
 ## Version
 
-====== TODO ======
+BaseTools binaries are versioned based on the Release branch they are associated with (e.g. release/201808, release/201811, etc.). The version format is YYYY.MM.XX where:
 
+* YYYY is the 4-digit year
+* MM is the 2-digit month
+* XX is a point-release in case fixes are required
 
 
 Nuget version is AA.BB.CC
