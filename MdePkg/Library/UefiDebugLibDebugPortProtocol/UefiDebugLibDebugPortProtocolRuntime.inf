@@ -26,6 +26,7 @@
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = DebugLib|DXE_RUNTIME_DRIVER
   CONSTRUCTOR                    = RuntimeDebugLibConstructor
+  DESTRUCTOR                     = RuntimeDebugLibDestructor
 
 
 #
