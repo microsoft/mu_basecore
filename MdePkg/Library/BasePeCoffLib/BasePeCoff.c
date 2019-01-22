@@ -46,6 +46,37 @@ PeCoffLoaderAdjustOffsetForTeImage (
   SectionHeader->PointerToRawData -= TeStrippedOffset;
 }
 
+// MU_CHANGE [BEGIN] - Keep this function while it's used for the stack cookies.
+/**
+  Retrieves the magic value from the PE/COFF header.
+
+  @param  Hdr             The buffer in which to return the PE32, PE32+, or TE header.
+
+  @return EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC - Image is PE32
+  @return EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC - Image is PE32+
+
+**/
+UINT16
+PeCoffLoaderGetPeHeaderMagicValue (
+  IN  EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION  Hdr
+  )
+{
+  //
+  // NOTE: Some versions of Linux ELILO for Itanium have an incorrect magic value
+  //       in the PE/COFF Header.  If the MachineType is Itanium(IA64) and the
+  //       Magic value in the OptionalHeader is  EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC
+  //       then override the returned value to EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC
+  //
+  if (Hdr.Pe32->FileHeader.Machine == IMAGE_FILE_MACHINE_IA64 && Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    return EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+  }
+  //
+  // Return the magic value from the PC/COFF Optional Header
+  //
+  return Hdr.Pe32->OptionalHeader.Magic;
+}
+// MU_CHANGE [END] - Keep this function while it's used for the stack cookies.
+
 /**
   Retrieves the PE or TE Header from a PE/COFF or TE image.
 
