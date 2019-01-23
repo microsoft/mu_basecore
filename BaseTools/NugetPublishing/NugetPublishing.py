@@ -38,6 +38,7 @@ import threading
 import subprocess
 import shutil
 import datetime
+from io import StringIO
 from MuPythonLibrary.UtilityFunctions import *
 
 SCRIPT_PATH = os.path.abspath(os.path.dirname(__file__))
@@ -291,9 +292,19 @@ class NugetSupport(object):
         cmd += ["-Source", self.ConfigData["server_url"]]
         cmd += ["-ApiKey", apikey]
         cmd_string = " ".join(cmd)
-        ret = RunCmd(cmd[0], " ".join(cmd[1:]))
+        output_buffer = StringIO()
+        ret = RunCmd(cmd[0], " ".join(cmd[1:]), outstream=output_buffer)
 
         if(ret != 0):
+            # Rewind the buffer and capture the contents.
+            output_buffer.seek(0)
+            output_contents = output_buffer.read()
+
+            # Check for the API message.
+            if "API key is invalid".lower() in output_contents.lower():
+                logging.critical("API key is invalid. Please use --ApiKey to provide a valid key.")
+
+            # Generic error.
             logging.error("Failed on nuget commend.  RC = 0x%x" % ret)
         
         return ret
