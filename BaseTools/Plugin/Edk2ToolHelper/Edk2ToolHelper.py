@@ -10,6 +10,33 @@ import datetime
 
 class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
 
+    @staticmethod
+    def _LocateLatestWindowsKits():
+        result = None
+
+        # Start with a base path and use it to start locating the ideal directory.
+        base_path = os.path.join(os.getenv("ProgramFiles(x86)"), "Windows Kits")
+
+        # Check for Win 10 kits first.
+        base_10_path = os.path.join(base_path, "10", "bin")
+        if os.path.isdir(base_10_path):
+            # If you can find one of the new kit paths, use it.
+            # Walk backwards to test the most recent kit first.
+            for sub_path in reversed(os.listdir(base_10_path)):
+                if sub_path.startswith("10.") and os.path.isdir(os.path.join(base_10_path, sub_path, "x64")):
+                    result = os.path.join(base_10_path, sub_path, "x64")
+                    break
+
+            # Otherwise, fall back to the legacy path.
+            if not result and os.path.isdir(os.path.join(base_10_path, "x64")):
+                result = os.path.join(base_10_path, "x64")
+
+        # If not, fall back to Win 8.1.
+        elif os.path.isdir(os.path.join(base_path, "8.1", "bin", "x64")):
+            result = os.path.join(base_path, "8.1", "bin", "x64")
+
+        return result
+
     def RegisterHelpers(self, obj):
         fp = os.path.abspath(__file__)
         obj.Register("PackageMsFmpHeader", Edk2ToolHelper.PackageMsFmpHeader, fp)
@@ -74,10 +101,9 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
         if(DevPfxFilePath is not None):
             logging.debug("FmpImageAuth is dev signed. Do entire process in 1 step locally.")
 
-             #Find Signtool 
-            SignToolPath = os.path.join(os.getenv("ProgramFiles(x86)"), "Windows Kits", "8.1", "bin", "x64", "signtool.exe")
-            if not os.path.exists(SignToolPath):
-                SignToolPath = SignToolPath.replace('8.1', '10')
+            #Find Signtool
+            WinKitsPath = Edk2ToolHelper._LocateLatestWindowsKits()
+            SignToolPath = os.path.join(WinKitsPath, "signtool.exe")
             if not os.path.exists(SignToolPath):
                 raise Exception("Can't find signtool on this machine.")
 
