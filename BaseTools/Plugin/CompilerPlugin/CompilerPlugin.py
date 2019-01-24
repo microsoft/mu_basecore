@@ -77,6 +77,7 @@ class CompilerPlugin(IMuBuildPlugin):
                     # seek to the start of the output stream
                     output_stream.seek(0, 0)
                     error_exp = re.compile(r"error C(\d+):")
+                    linker_error_exp = re.compile(r"error LNK(\d+):")
                     warning_exp = re.compile(r"warning C(\d+):")
                     for line in output_stream.readlines():
                         match = error_exp.search(line)
@@ -85,6 +86,9 @@ class CompilerPlugin(IMuBuildPlugin):
                         match = warning_exp.search(line)
                         if match is not None:
                             tc.LogStdOut("Compile: Warning: {0}".format(line))
+                        match = linker_error_exp.search(line)
+                        if match is not None:
+                            tc.LogStdError("Linker: Error: {0}".format(line))
                 # we might fail if uefiBuilder doesn't have the output stream (if we have an older mu_enviroment for whatever reason)
                 except AttributeError:
                     pass  # if we do fail we can ignore it since it just means we can't put more explicit output into the xml

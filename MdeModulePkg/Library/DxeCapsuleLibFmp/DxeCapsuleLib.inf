@@ -55,6 +55,7 @@
   DisplayUpdateProgressLib
   UefiBootManagerLib            ## MS_CHANGE - Enable ConnectAll before capsule processing.
   ResetUtilityLib               ## MU_CHANGE - Use the enhanced reset subtype.
+  CapsulePersistLib             ## MU_CHANGE - Enable Capsule Persist Lib.
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleMax                               ## CONSUMES
