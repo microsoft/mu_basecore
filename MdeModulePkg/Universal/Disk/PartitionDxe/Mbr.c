@@ -230,7 +230,9 @@ PartitionInstallMbrChildHandles (
       ZeroMem (&PartitionInfo, sizeof (EFI_PARTITION_INFO_PROTOCOL));
       PartitionInfo.Revision = EFI_PARTITION_INFO_PROTOCOL_REVISION;
       PartitionInfo.Type     = PARTITION_TYPE_MBR;
-	  PartitionInfo.System   = (BOOLEAN) (Mbr->Partition[Index].OSIndicator == EFI_PARTITION);   // MS_CHANGE
+      if (Mbr->Partition[Index].OSIndicator == EFI_PARTITION) {
+        PartitionInfo.System = 1;
+      }
       CopyMem (&PartitionInfo.Info.Mbr, &Mbr->Partition[Index], sizeof (MBR_PARTITION_RECORD));
 
       Status = PartitionInstallChildHandle (
@@ -300,7 +302,9 @@ PartitionInstallMbrChildHandles (
       ZeroMem (&PartitionInfo, sizeof (EFI_PARTITION_INFO_PROTOCOL));
       PartitionInfo.Revision = EFI_PARTITION_INFO_PROTOCOL_REVISION;
       PartitionInfo.Type     = PARTITION_TYPE_MBR;
-      PartitionInfo.System   = (BOOLEAN) (Mbr->Partition[0].OSIndicator == EFI_PARTITION);    // MS_CHANGE
+      if (Mbr->Partition[0].OSIndicator == EFI_PARTITION) {
+        PartitionInfo.System = 1;
+      }
       CopyMem (&PartitionInfo.Info.Mbr, &Mbr->Partition[0], sizeof (MBR_PARTITION_RECORD));
 
       Status = PartitionInstallChildHandle (
