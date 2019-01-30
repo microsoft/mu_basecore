@@ -68,7 +68,7 @@ def IsValidHex(HexStr):
 #
 def IsValidBoolType(BoolString):
     #
-    # Valid Ture
+    # Valid True
     #
     if BoolString == 'TRUE' or \
        BoolString == 'True' or \
