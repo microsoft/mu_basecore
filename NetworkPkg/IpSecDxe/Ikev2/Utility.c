@@ -2082,7 +2082,7 @@ Ikev2IsSupportAlg (
                                         in bytes.
   @param[out] IsSupportEsn              Output of value about the Extented Sequence
                                         Number is support or not. Only for Child SA.
-  @param[in]  IsChildSa                 If it is ture, the ProposalData is for IKE
+  @param[in]  IsChildSa                 If it is true, the ProposalData is for IKE
                                         SA. Otherwise the proposalData is for Child SA.
 
 **/
