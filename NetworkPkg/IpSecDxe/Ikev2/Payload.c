@@ -380,7 +380,7 @@ Ikev2GenerateCertIdPayload (
                             payload generation.
   @param[in]  NextPayload   The type filled into the Authentication Payload next
                             payload field.
-  @param[in]  IsVerify      If it is TURE, the Authentication payload is used for
+  @param[in]  IsVerify      If it is TRUE, the Authentication payload is used for
                             verification.
 
   @return pointer to IKE Authentication payload for Pre-shared key method.
@@ -621,14 +621,14 @@ EXIT:
 
   This function has two functions. One is creating a local Authentication
   Payload for sending and other is creating the remote Authentication data
-  for verification when the IsVerify is TURE.
+  for verification when the IsVerify is TRUE.
 
   @param[in]  IkeSaSession      Pointer to IKEV2_SA_SESSION related to.
   @param[in]  IdPayload         Pointer to the ID payload to be used for Authentication
                                 payload generation.
   @param[in]  NextPayload       The type filled into the Authentication Payload
                                 next payload field.
-  @param[in]  IsVerify          If it is TURE, the Authentication payload is used
+  @param[in]  IsVerify          If it is TRUE, the Authentication payload is used
                                 for verification.
   @param[in]  UefiPrivateKey    Pointer to the UEFI private key. Ignore it when
                                 verify the authenticate payload.
@@ -1475,7 +1475,7 @@ Ikev2ParserNotifyCookiePayload (
   @param[in]  EncodeType        Specified the Certificate Encodeing which is defined
                                 in RFC 4306.
   @param[in]  IsRequest         To indicate create Certificate Payload or Certificate
-                                Request Payload. If it is TURE, create Certificate
+                                Request Payload. If it is TRUE, create Certificate
                                 Request Payload. Otherwise, create Certificate Payload.
 
   @retval  a Pointer to IKE Payload whose payload buffer containing the Certificate
