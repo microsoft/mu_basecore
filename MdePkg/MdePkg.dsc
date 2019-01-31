@@ -35,7 +35,6 @@
 [Components]
 ## MSCHANGE BEGIN
   MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
-  MdePkg/Library/DxeRuntimeDebugLibSerialPort/DxeRuntimeDebugLibSerialPort.inf
 ## MSCHANGE END
   MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
   MdePkg/Library/BaseCpuLib/BaseCpuLib.inf
