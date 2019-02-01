@@ -158,7 +158,6 @@ DoesCacheExist (
 {
   EFI_DEVICE_PATH_PROTOCOL      *FileDevicePath;
   EFI_STATUS                    Status;
-  EFI_HANDLE                    FileDeviceHandle;
   SHELL_FILE_HANDLE             FileHandle;
 
   // NOTE: This devpath is allocated and must be freed.
@@ -168,7 +167,6 @@ DoesCacheExist (
   // If the file can be opened for reading, it exists.
   // Otherwise, probably not.
   Status = ShellOpenFileByDevicePath( &FileDevicePath,
-                                      &FileDeviceHandle,
                                       &FileHandle,
                                       EFI_FILE_MODE_READ,
                                       0 );
@@ -210,7 +208,6 @@ SaveUnitTestCache (
 {
   EFI_DEVICE_PATH_PROTOCOL      *FileDevicePath;
   EFI_STATUS                    Status;
-  EFI_HANDLE                    FileDeviceHandle;
   SHELL_FILE_HANDLE             FileHandle;
   UINTN                         WriteCount;
 
@@ -230,7 +227,6 @@ SaveUnitTestCache (
   //First lets open the file if it exists so we can delete it...This is the work around for truncation
   //
   Status = ShellOpenFileByDevicePath(&FileDevicePath,
-                                     &FileDeviceHandle,
                                      &FileHandle,
                                      (EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE),
                                      0);
@@ -249,7 +245,6 @@ SaveUnitTestCache (
   // Now that we know the path to the file... let's open it for writing.
   //
   Status = ShellOpenFileByDevicePath( &FileDevicePath,
-                                      &FileDeviceHandle,
                                       &FileHandle,
                                       (EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE),
                                       0 );
@@ -315,7 +310,6 @@ LoadUnitTestCache (
 {
   EFI_STATUS                    Status;
   EFI_DEVICE_PATH_PROTOCOL      *FileDevicePath;
-  EFI_HANDLE                    FileDeviceHandle;
   SHELL_FILE_HANDLE             FileHandle;
   BOOLEAN                       IsFileOpened = FALSE;
   UINT64                        LargeFileSize;
@@ -338,7 +332,6 @@ LoadUnitTestCache (
   // Now that we know the path to the file... let's open it for writing.
   //
   Status = ShellOpenFileByDevicePath( &FileDevicePath,
-                                      &FileDeviceHandle,
                                       &FileHandle,
                                       EFI_FILE_MODE_READ,
                                       0 );
