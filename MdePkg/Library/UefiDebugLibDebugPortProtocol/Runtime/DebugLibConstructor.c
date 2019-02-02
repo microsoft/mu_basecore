@@ -30,12 +30,13 @@
 extern BOOLEAN mPostEBS; 
 extern EFI_SYSTEM_TABLE *mST;
 extern EFI_BOOT_SERVICES *mBS;
-EFI_EVENT mExitBootServicesEvent = NULL;
+STATIC EFI_EVENT mExitBootServicesEvent = NULL; // MU_CHANGE
 
 /**
   This routine sets the Boolean for exit boot servies true
   to prevent DebugPort protocol dereferences when the pointer is nulled
 **/
+STATIC // MU_CHANGE
 VOID
 EFIAPI
 ExitBootServicesCallback (
