@@ -107,7 +107,7 @@
 //
 #pragma warning ( disable : 4206 )
 
-#if _MSC_VER == 1800 || _MSC_VER == 1900 || _MSC_VER >= 1910
+#if _MSC_VER == 1800 || _MSC_VER == 1900
 
 //
 // Disable these warnings for VS2013.
