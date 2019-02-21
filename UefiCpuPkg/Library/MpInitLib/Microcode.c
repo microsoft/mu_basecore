@@ -113,7 +113,10 @@ MicrocodeDetect (
   }
 
   CurrentRevision = GetCurrentMicrocodeSignature ();
-  if (CurrentRevision != 0 && !IsBspCallIn) {
+
+  // MU_CHANGE - The proper uCode is loaded already.  The code to update the
+  //             uCode tries to load the wrong uCode anyway and fails.
+  if (CurrentRevision != 0 /* MU_CHANGE && !IsBspCallIn */) {
     //
     // Skip loading microcode if it has been loaded successfully
     //
