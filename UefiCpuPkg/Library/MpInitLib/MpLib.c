@@ -2038,6 +2038,8 @@ MpInitLibInitialize (
   BufferSize += MonitorFilterSize * MaxLogicalProcessorNumber;
   BufferSize += ApResetVectorSizeBelow1Mb;
   BufferSize  = ALIGN_VALUE (BufferSize, 8);
+  BufferSize += 8;  // MU_CHANGE allow a UINT32 to be at Idtr.Base - sizeof (32 bit pointer) and
+                    //           maintain 8 byte alignment.
   BufferSize += VolatileRegisters.Idtr.Limit + 1;
   BufferSize += sizeof (CPU_MP_DATA);
   BufferSize += (sizeof (CPU_AP_DATA) + sizeof (CPU_INFO_IN_HOB))* MaxLogicalProcessorNumber;
@@ -2056,7 +2058,7 @@ MpInitLibInitialize (
   //    +--------------------+ <-- BackupBufferAddr (CpuMpData->BackupBuffer)
   //         Backup Buffer
   //    +--------------------+
-  //           Padding
+  //           Padding              MU_CHANGE Add 8 bytes for PeiServicesTablePointerLibIdt compatibility
   //    +--------------------+ <-- ApIdtBase (8-byte boundary)
   //           AP IDT          All APs share one separate IDT.
   //    +--------------------+ <-- CpuMpData
@@ -2069,7 +2071,7 @@ MpInitLibInitialize (
   //
   MonitorBuffer               = (UINT8 *)(Buffer + ApStackSize * MaxLogicalProcessorNumber);
   BackupBufferAddr            = (UINTN)MonitorBuffer + MonitorFilterSize * MaxLogicalProcessorNumber;
-  ApIdtBase                   = ALIGN_VALUE (BackupBufferAddr + ApResetVectorSizeBelow1Mb, 8);
+  ApIdtBase                   = ALIGN_VALUE (BackupBufferAddr + ApResetVectorSizeBelow1Mb, 8) + 8; // MU_CHANGE;
   CpuMpData                   = (CPU_MP_DATA *)(ApIdtBase + VolatileRegisters.Idtr.Limit + 1);
   CpuMpData->Buffer           = Buffer;
   CpuMpData->CpuApStackSize   = ApStackSize;
@@ -2106,7 +2108,14 @@ MpInitLibInitialize (
   // Duplicate BSP's IDT to APs.
   // All APs share one separate IDT. So AP can get the address of CpuMpData by using IDTR.BASE + IDTR.LIMIT + 1
   //
-  CopyMem ((VOID *)ApIdtBase, (VOID *)VolatileRegisters.Idtr.Base, VolatileRegisters.Idtr.Limit + 1);
+  // MU_CHANGE - maintain compatibility with PeiServicesTablePointerLibIdt until Silicon code and PeiCore
+  //             deprecate its use. PeiServicesTablePointerLibIdt stores the *PeiServices at Idt.Base - sizeof(32 bit pointer);
+  CopyMem (
+    (VOID *)(ApIdtBase - sizeof (UINT32)),
+    (VOID *)(VolatileRegisters.Idtr.Base - sizeof (UINT32)),
+    VolatileRegisters.Idtr.Limit + 1 + sizeof (UINT32)
+    );
+  // MU_CHANGE
   VolatileRegisters.Idtr.Base = ApIdtBase;
   //
   // Don't pass BSP's TR to APs to avoid AP init failure.
