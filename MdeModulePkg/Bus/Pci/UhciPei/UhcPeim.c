@@ -2843,7 +2843,7 @@ InitializeMemoryManagement (
   IN USB_UHC_DEV           *UhcDev
   )
 {
-  MEMORY_MANAGE_HEADER  *MemoryHeader;
+  MEMORY_MANAGE_HEADER  *MemoryHeader = NULL;     // MU_CHANGE - TCBZ1559
   EFI_STATUS            Status;
   UINTN                 MemPages;
 
@@ -2878,7 +2878,7 @@ UhcAllocatePool (
 {
   MEMORY_MANAGE_HEADER  *MemoryHeader;
   MEMORY_MANAGE_HEADER  *TempHeaderPtr;
-  MEMORY_MANAGE_HEADER  *NewMemoryHeader;
+  MEMORY_MANAGE_HEADER  *NewMemoryHeader = NULL;      // MU_CHANGE - TCBZ1559
   UINTN                 RealAllocSize;
   UINTN                 MemoryBlockSizeInPages;
   EFI_STATUS            Status;
