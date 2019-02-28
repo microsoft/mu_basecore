@@ -2843,6 +2843,9 @@ InitializeMemoryManagement (
   IN USB_UHC_DEV           *UhcDev
   )
 {
+  //
+  // set LocalVariable to suppress incorrect compiler/analyzer warnings
+  //
   MEMORY_MANAGE_HEADER  *MemoryHeader = NULL;     // MU_CHANGE - TCBZ1559
   EFI_STATUS            Status;
   UINTN                 MemPages;
@@ -2878,6 +2881,9 @@ UhcAllocatePool (
 {
   MEMORY_MANAGE_HEADER  *MemoryHeader;
   MEMORY_MANAGE_HEADER  *TempHeaderPtr;
+  //
+  // set LocalVariable to suppress incorrect compiler/analyzer warnings
+  //
   MEMORY_MANAGE_HEADER  *NewMemoryHeader = NULL;      // MU_CHANGE - TCBZ1559
   UINTN                 RealAllocSize;
   UINTN                 MemoryBlockSizeInPages;
