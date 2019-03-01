@@ -564,7 +564,7 @@ Ip6DriverBindingStart (
                   NULL
                   );
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    goto FREE_SERVICE; // MU_CHANGE
   }
 
   //
@@ -573,7 +573,7 @@ Ip6DriverBindingStart (
   //
   Status = Ip6ConfigReadConfigData (IpSb->MacString, &IpSb->Ip6ConfigInstance);
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    goto UNINSTALL_PROTOCOL; // MU_CHANGE
   }
 
   //
@@ -588,7 +588,7 @@ Ip6DriverBindingStart (
                        DataItem->Data.Ptr
                        );
     if (EFI_ERROR(Status) && Status != EFI_NOT_READY) {
-      goto ON_ERROR;
+      goto UNINSTALL_PROTOCOL; // MU_CHANGE
     }
   }
 
@@ -604,7 +604,7 @@ Ip6DriverBindingStart (
                        DataItem->Data.Ptr
                        );
     if (EFI_ERROR(Status)) {
-      goto ON_ERROR;
+      goto UNINSTALL_PROTOCOL; // MU_CHANGE
     }
   }
 
@@ -613,7 +613,7 @@ Ip6DriverBindingStart (
   //
   Status = Ip6ReceiveFrame (Ip6AcceptFrame, IpSb);
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    goto UNINSTALL_PROTOCOL; // MU_CHANGE
   }
 
   //
@@ -625,7 +625,7 @@ Ip6DriverBindingStart (
                   TICKS_PER_MS * IP6_TIMER_INTERVAL_IN_MS
                   );
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    goto UNINSTALL_PROTOCOL; // MU_CHANGE
   }
 
   //
@@ -637,7 +637,7 @@ Ip6DriverBindingStart (
                   TICKS_PER_MS * IP6_ONE_SECOND_IN_MS
                   );
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    goto UNINSTALL_PROTOCOL; // MU_CHANGE
   }
 
   //
@@ -647,7 +647,15 @@ Ip6DriverBindingStart (
 
   return EFI_SUCCESS;
 
-ON_ERROR:
+// MU_CHANGE: Cleanup installed binding protocol on driver binding start failure
+UNINSTALL_PROTOCOL:
+  gBS->UninstallProtocolInterface (
+         ControllerHandle,
+         &gEfiIp6ServiceBindingProtocolGuid,
+         &IpSb->ServiceBinding
+         );
+
+FREE_SERVICE:
   Ip6CleanService (IpSb);
   FreePool (IpSb);
   return Status;

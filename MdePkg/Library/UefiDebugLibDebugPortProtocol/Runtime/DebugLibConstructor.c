@@ -19,6 +19,7 @@
 **/
 
 #include <Uefi.h>
+#include <Library/DebugLib.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 
@@ -28,12 +29,13 @@
 extern BOOLEAN mPostEBS; 
 extern EFI_SYSTEM_TABLE *mST;
 extern EFI_BOOT_SERVICES *mBS;
-EFI_EVENT mExitBootServicesEvent;
+STATIC EFI_EVENT mExitBootServicesEvent = NULL; // MU_CHANGE
 
 /**
   This routine sets the Boolean for exit boot servies true
   to prevent DebugPort protocol dereferences when the pointer is nulled
 **/
+STATIC // MU_CHANGE
 VOID
 EFIAPI
 ExitBootServicesCallback (
@@ -43,6 +45,32 @@ ExitBootServicesCallback (
 {
   mPostEBS = TRUE;
   return;
+}
+
+/**
+* Destructor for Debug Port Protocol Lib. Unregisters EBS callback to prevent
+* function calls on unloaded library
+*
+* @param  ImageHandle   The firmware allocated handle for the EFI image.
+* @param  SystemTable   A pointer to the EFI System Table.
+*
+* @retval EFI_SUCCESS   The constructor always returns EFI_SUCCESS.
+*
+**/
+EFI_STATUS
+EFIAPI
+RuntimeDebugLibDestructor(
+    IN      EFI_HANDLE                ImageHandle,
+    IN      EFI_SYSTEM_TABLE          *SystemTable
+) {
+  EFI_STATUS Status;
+
+  if(mExitBootServicesEvent != NULL) {
+    Status = mBS->CloseEvent(mExitBootServicesEvent);
+    ASSERT_EFI_ERROR (Status);
+  }
+ 
+  return EFI_SUCCESS;
 }
 
 /**
