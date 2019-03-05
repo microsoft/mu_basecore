@@ -1436,10 +1436,12 @@ InternalFindFile (
   UDF_READ_DIRECTORY_INFO         ReadDirInfo;
   BOOLEAN                         Found;
   CHAR16                          FoundFileName[UDF_FILENAME_LENGTH];
+  VOID                            *CompareFileEntry;
+
   //
-  // set LocalVariable to suppress incorrect compiler/analyzer warnings
+  // set CompareFileEntry to suppress incorrect compiler/analyzer warnings
   //
-  VOID                            *CompareFileEntry = NULL;     // MU_CHANGE - TCBZ1559
+  CompareFileEntry = NULL;     // MU_CHANGE - TCBZ1559
 
   //
   // Check if both Parent->FileIdentifierDesc and Icb are NULL.
