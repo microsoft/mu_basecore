@@ -62,9 +62,12 @@ CapsuleCacheWriteBack (
     WriteBackDataCacheRange (Desc, sizeof *Desc);
 
     if (Desc->Length > 0) {
+      // MU_CHANGE
+      // Casting for ARM32
       WriteBackDataCacheRange ((VOID *)(UINTN)Desc->Union.DataBlock,
-                               Desc->Length
+                               (UINTN)Desc->Length
                                );
+      // MU_CHANGE END
       Desc++;
     } else if (Desc->Union.ContinuationPointer > 0) {
       Desc = (EFI_CAPSULE_BLOCK_DESCRIPTOR *)(UINTN)Desc->Union.ContinuationPointer;
