@@ -72,6 +72,9 @@
 [Sources.ARM]
   Synchronization.c
   Arm/Synchronization.asm       | RVCT
+  # MU_CHANGE start
+  Arm/Synchronization.asm       | MSFT
+  # MU_CHANGE end
   Arm/Synchronization.S         | GCC
 
 [Sources.AARCH64]
