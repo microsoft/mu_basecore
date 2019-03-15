@@ -74,6 +74,7 @@
   SourceDebugEnabledLib|SourceLevelDebugPkg/Library/SourceDebugEnabled/SourceDebugEnabledLib.inf ## MS_CHANGE_?
 
   ## MU_CHANGE TEMP
+[LibraryClasses.X64, LibraryClasses.IA32]
   ## NOTE: This is a temporary shim to resolve a build error while a more permanent solution is tested!
   Tcg2PreUefiEventLogLib|SecurityPkg/Library/TempPreUefiEventLogLib/TempPreUefiEventLogLib.inf
 
