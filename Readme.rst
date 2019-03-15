@@ -14,7 +14,7 @@ Branch Changes - release/201811
 Breaking Changes-dev
 --------------------
 
-- None
+- host_specific NuGet feeds require mu-environment 0.3.6
 
 Main Changes-dev
 ----------------
@@ -24,7 +24,7 @@ Main Changes-dev
 Bug Fixes-dev
 -------------
 
-- None
+- ARM and AARCH64 VSLATESTx86 DLINK flags are now being set correctly.
 
 1811_CIBuild Changes
 --------------------
