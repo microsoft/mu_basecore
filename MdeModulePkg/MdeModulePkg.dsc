@@ -468,10 +468,18 @@
   MdeModulePkg/Library/DxeCapsuleLibFmp/DxeCapsuleLib.inf
   MdeModulePkg/Library/DxeCapsuleLibFmp/DxeRuntimeCapsuleLib.inf
 
-[Components.IA32, Components.X64, Components.AARCH64]
+# MU_CHANGE START
+!if $(TOOLCHAIN) != VS2017 and $(TOOLCHAIN) != VS2019
+[Components.AARCH64]
   MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
   MdeModulePkg/Universal/EbcDxe/EbcDebugger.inf
   MdeModulePkg/Universal/EbcDxe/EbcDebuggerConfig.inf
+!endif
+[Components.IA32, Components.X64]
+  MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
+  MdeModulePkg/Universal/EbcDxe/EbcDebugger.inf
+  MdeModulePkg/Universal/EbcDxe/EbcDebuggerConfig.inf
+# MU_CHANGE END
 
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
   MdeModulePkg/Library/BrotliCustomDecompressLib/BrotliCustomDecompressLib.inf
