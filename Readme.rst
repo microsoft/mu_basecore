@@ -26,15 +26,15 @@ Bug Fixes-dev
 
 - None
 
-Build Changes
--------------
+1811_CIBuild Changes
+--------------------
 
 - Restore PeCoffLoaderGetPeHeaderMagicValue() function that's used by stack cookies.
 - Restore the Python3-enabled tools until TianoCore supports both.
 - Python3 changes don't exist in TianoCore yet, so will have to cherry-pick from 201808.
 
-Rebase Changes
---------------
+1811_Rebase Changes
+-------------------
 
 - Drop commit d4c6091a93 for IntSafeLib. Part of TianoCore now.
 - Drop MSCHANGE #1116 in VirtualMemory.c.
