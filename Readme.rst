@@ -2,11 +2,52 @@
 Project Mu Basecore Repository
 ==============================
 
-.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/mu_basecore%20PR%20gate?branchName=release/201808
+.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/mu_basecore%20PR%20gate?branchName=release/201811
 
-|build_status_windows| Current build status for release/201808
+|build_status_windows| Current build status for release/201811
 
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
+
+Branch Changes - release/201811
+===============================
+
+Breaking Changes-dev
+--------------------
+
+- None
+
+Main Changes-dev
+----------------
+
+- None
+
+Bug Fixes-dev
+-------------
+
+- None
+
+Build Changes
+-------------
+
+- Restore PeCoffLoaderGetPeHeaderMagicValue() function that's used by stack cookies.
+- Restore the Python3-enabled tools until TianoCore supports both.
+- Python3 changes don't exist in TianoCore yet, so will have to cherry-pick from 201808.
+
+Rebase Changes
+--------------
+
+- Drop commit d4c6091a93 for IntSafeLib. Part of TianoCore now.
+- Drop MSCHANGE #1116 in VirtualMemory.c.
+- Drop commit 5fa7b18fad for BaseTools move to MU_BUILD.
+
+  - Also drop commit 25366eb33d, which reverts it.
+
+- Drop commit 6cecb105ba for Python3. Most things are similar, but may need a couple tweaks.
+
+  - Also drop commit e5228a0c44, associated BinWrapper changes.
+
+- Drop the Intel RC MTRR commit that we've kept for a while.
+- Update RC file Silicon\Intel\KBL\KabylakeSiliconPkg\SampleCode\Library\PlatformSecLib\PlatformSecLibrary.h with the contents.
 
 Code of Conduct
 ===============
