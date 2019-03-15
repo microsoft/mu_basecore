@@ -22,14 +22,15 @@ Nuget version is AA.BB.CC
 
 ## Process to publish new version of tool
 
-1. Download desired version from nasm.us
-2. Unzip 
+1. Download desired version from nasm.us (Windows .exe and Linux .rpm)
+2. Unzip (unzipping RPM requires 7z)
 3. Make a new folder (for my example I will call it "new")
-4. Copy the assets to publish into this new folder (in this case just nasm.exe and ndisasm.exe)
-5. Run the nasm.exe -v command to see the version.
-6. Open cmd prompt in the NugetPublishing dir
-7. Pack and push
+4. Make proper subfolders for each host. (Details in NugetPublishing/ReadMe.md)
+5. Copy the assets to publish into this new folder (in this case just nasm and ndisasm)
+6. Run the nasm.exe -v command to see the version.
+7. Open cmd prompt in the NugetPublishing dir
+8. Pack and push
   ```cmd
-  NugetProducerSupport.py --Operation PackAndPush --ConfigFilePath Mu-Nasm.config.json --Version <nuget version here> --InputFolderPath <path to newly created folder here>  --ApiKey <your key here>
+  NugetPublishing.py --Operation PackAndPush --ConfigFilePath Mu-Nasm.config.json --Version <nuget version here> --InputFolderPath <path to newly created folder here>  --ApiKey <your key here>
   ```
 
