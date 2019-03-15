@@ -71,7 +71,13 @@
   RpmcLib|SecurityPkg/Library/RpmcLibNull/RpmcLibNull.inf
   OemTpm2InitLib|SecurityPkg/Library/OemTpm2InitLibNull/OemTpm2InitLib.inf               ## MS_CHANGE_?
   SourceDebugEnabledLib|SourceLevelDebugPkg/Library/SourceDebugEnabled/SourceDebugEnabledLib.inf ## MS_CHANGE_?
-  
+
+# MU_CHANGE
+[LibraryClasses.ARM]
+# unresolved external symbol __rt_udiv, __rt_udiv64
+  NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+# MU_CHANGE
+
 ##MSCHANGE Begin
 [LibraryClasses.X64, LibraryClasses.IA32]
   ## NOTE: This is a temporary shim to resolve a build error while a more permanent solution is tested!
