@@ -27,6 +27,7 @@
 ###
 
 import logging
+from MuPythonLibrary.Uefi.EdkII.Parsers.DscParser import DscParser
 from MuEnvironment.PluginManager import IMuBuildPlugin
 from MuEnvironment.UefiBuild import UefiBuilder
 import os
@@ -67,6 +68,22 @@ class CompilerPlugin(IMuBuildPlugin):
             return 0
 
         self._env.SetValue("ACTIVE_PLATFORM", AP_Path, "Set in Compiler Plugin")
+
+        # Parse DSC to check for SUPPORTED_ARCHITECTURES
+        dp = DscParser()
+        dp.SetBaseAbsPath(Edk2pathObj.WorkspacePath)
+        dp.SetPackagePaths(Edk2pathObj.PackagePathList)
+        dp.ParseFile(AP_Path)
+        if "SUPPORTED_ARCHITECTURES" in dp.LocalVars:
+            SUPPORTED_ARCHITECTURES = dp.LocalVars["SUPPORTED_ARCHITECTURES"].split('|')
+            TARGET_ARCHITECTURES = environment.GetValue("TARGET_ARCH").split(' ')
+
+            # Skip if there is no intersection between SUPPORTED_ARCHITECTURES and TARGET_ARCHITECTURES
+            if len(set(SUPPORTED_ARCHITECTURES) & set(TARGET_ARCHITECTURES)) == 0:
+                tc.SetSkipped()
+                tc.LogStdError("No supported architecutres to build")
+                return 0
+
         # WorkSpace, PackagesPath, PInManager, PInHelper, args, BuildConfigFile=None):
         uefiBuilder = UefiBuilder(Edk2pathObj.WorkspacePath, os.pathsep.join(Edk2pathObj.PackagePathList), PLM, PLMHelper, args)
         # do all the steps
