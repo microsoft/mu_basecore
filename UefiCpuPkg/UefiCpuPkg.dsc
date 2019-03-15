@@ -13,7 +13,9 @@
   PLATFORM_VERSION               = 0.90
   DSC_SPECIFICATION              = 0x00010005
   OUTPUT_DIRECTORY               = Build/UefiCpu
-  SUPPORTED_ARCHITECTURES        = IA32|X64
+  # MU_CHANGE START
+  SUPPORTED_ARCHITECTURES        = IA32|X64|AARCH64|ARM
+  # MU_CHANGE END
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
@@ -58,6 +60,7 @@
   TpmMeasurementLib|MdeModulePkg/Library/TpmMeasurementLibNull/TpmMeasurementLibNull.inf
 
 ##MSCHANGE Begin
+[LibraryClasses.X64, LibraryClasses.IA32]
 !if $(TARGET) == DEBUG
   #if debug is enabled provide StackCookie support lib so that we can link to /GS exports
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
@@ -109,17 +112,21 @@ HwResetSystemLib|MdeModulePkg/Library/BaseResetSystemLibNull/BaseResetSystemLibN
 # Drivers/Libraries within this package
 #
 
-[Components]
-## MSCHANGE BEGIN
-  #UefiCpuPkg/Feature/Capsule/MicrocodeCapsuleTxt/Microcode/Microcode.inf
-  #UefiCpuPkg/ResetVector/FixupVtf/Vtf.inf
-  #UefiCpuPkg/ResetVector/Vtf0/Vtf0.inf
-  UefiCpuPkg/ResetVector/Vtf0/Bin/ResetVector.inf
-## MSCHANGE END
-  UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe.inf
+# MU_CHANGE START
+[Components.X64, Components.IA32]
   UefiCpuPkg/CpuIoPei/CpuIoPei.inf
-  UefiCpuPkg/Library/SecPeiDxeTimerLibUefiCpu/SecPeiDxeTimerLibUefiCpu.inf
+  UefiCpuPkg/ResetVector/Vtf0/Bin/ResetVector.inf
+  UefiCpuPkg/Library/CpuCommonFeaturesLib/CpuCommonFeaturesLib.inf
   UefiCpuPkg/Application/Cpuid/Cpuid.inf
+# MU_CHANGE END
+
+[Components]
+  UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe.inf
+  #UefiCpuPkg/CpuIoPei/CpuIoPei.inf                           # MU_CHANGE - Move to X64, IA32 section.
+  UefiCpuPkg/Library/SecPeiDxeTimerLibUefiCpu/SecPeiDxeTimerLibUefiCpu.inf
+  #UefiCpuPkg/Application/Cpuid/Cpuid.inf                     # MU_CHANGE - Move to X64, IA32 section.
+
+[Components.IA32, Components.X64]
   UefiCpuPkg/Library/CpuTimerLib/BaseCpuTimerLib.inf
   UefiCpuPkg/Library/CpuTimerLib/DxeCpuTimerLib.inf
   UefiCpuPkg/Library/CpuTimerLib/PeiCpuTimerLib.inf
