@@ -389,7 +389,7 @@
   MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
   MdeModulePkg/Universal/Disk/UdfDxe/UdfDxe.inf
   MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
-  MdeModulePkg/Universal/Disk/CdExpressPei/CdExpressPei.inf
+  # MdeModulePkg/Universal/Disk/CdExpressPei/CdExpressPei.inf MU_CHANGE due to its size (> 1 MB), this module requires 4 KB section alignment.
   MdeModulePkg/Universal/DriverSampleDxe/DriverSampleDxe.inf
   MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
   MdeModulePkg/Universal/MemoryTest/GenericMemoryTestDxe/GenericMemoryTestDxe.inf

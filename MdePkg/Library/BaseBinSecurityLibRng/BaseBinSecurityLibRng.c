@@ -47,7 +47,7 @@ UINT64 __security_cookie = 0;
 // can find the location of the security cookie
 // with in the binary later
 //
-__declspec(selectany)
+// __declspec(selectany) ??
 EFI_IMAGE_LOAD_CONFIG_DIRECTORY   _load_config_used = {
     sizeof(EFI_IMAGE_LOAD_CONFIG_DIRECTORY),
     0,
@@ -66,7 +66,7 @@ EFI_IMAGE_LOAD_CONFIG_DIRECTORY   _load_config_used = {
     0,
     0,
     0,
-    (UINT64)&__security_cookie,
+    (UINTN)&__security_cookie,
     0,
     0
 };
