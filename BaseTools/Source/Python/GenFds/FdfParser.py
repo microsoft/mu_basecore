@@ -2478,8 +2478,16 @@ class FdfParser:
             if ErrorCode != 0:
                 EdkLogger.error("GenFds", ErrorCode, ExtraData=ErrorInfo)
 
-        if not ffsInf.InfFileName in self.Profile.InfList:
-            self.Profile.InfList.append(ffsInf.InfFileName)
+        # MU_CHANGE Bugzilla 1130 begin
+        # if not ffsInf.InfFileName in self.Profile.InfList:
+        #     self.Profile.InfList.append(ffsInf.InfFileName)
+        NewFileName = ffsInf.InfFileName
+        if ffsInf.OverrideGuid:
+            NewFileName = ProcessDuplicatedInf(PathClass(ffsInf.InfFileName,GenFdsGlobalVariable.WorkSpaceDir), ffsInf.OverrideGuid, GenFdsGlobalVariable.WorkSpaceDir).Path
+
+        if not NewFileName in self.Profile.InfList:
+            self.Profile.InfList.append(NewFileName)
+        #MU_CHANGE Bugzilla 1130 end
             FileLineTuple = GetRealFileLine(self.FileName, self.CurrentLineNumber)
             self.Profile.InfFileLineList.append(FileLineTuple)
             if ffsInf.UseArch:
@@ -4419,8 +4427,16 @@ class FdfParser:
             if ErrorCode != 0:
                 EdkLogger.error("GenFds", ErrorCode, ExtraData=ErrorInfo)
 
-        if not ffsInf.InfFileName in self.Profile.InfList:
-            self.Profile.InfList.append(ffsInf.InfFileName)
+        # MU_CHANGE Bugzilla 1130 begin
+        # if not ffsInf.InfFileName in self.Profile.InfList:
+        #     self.Profile.InfList.append(ffsInf.InfFileName)
+        NewFileName = ffsInf.InfFileName
+        if ffsInf.OverrideGuid:
+            NewFileName = ProcessDuplicatedInf(PathClass(ffsInf.InfFileName, GenFdsGlobalVariable.WorkSpaceDir), ffsInf.OverrideGuid, GenFdsGlobalVariable.WorkSpaceDir).Path
+
+        if not NewFileName in self.Profile.InfList:
+            self.Profile.InfList.append(NewFileName)
+        #MU_CHANGE Bugzilla 1130 end
             FileLineTuple = GetRealFileLine(self.FileName, self.CurrentLineNumber)
             self.Profile.InfFileLineList.append(FileLineTuple)
             if ffsInf.UseArch:
