@@ -314,6 +314,9 @@ _ModuleEntryPoint (
   UINTN                                   TeDataSize;
   EFI_PHYSICAL_ADDRESS                    ImageBase;
 
+  Status = SerialPortInitialize ();
+  ASSERT_EFI_ERROR (Status);
+
   // Get Secure Partition Manager Version Information
   Status = GetSpmVersion ();
   if (EFI_ERROR (Status)) {
