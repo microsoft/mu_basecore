@@ -47,7 +47,7 @@ import string
 from .GenFdsGlobalVariable import GenFdsGlobalVariable
 from Common.BuildToolError import *
 from Common import EdkLogger
-from Common.Misc import PathClass
+from Common.Misc import PathClass, ProcessDuplicatedInf         # MU_CHANGE Bugzilla 1130 - Have to import ProcessDuplicatedInf
 from Common.StringUtils import NormPath
 import Common.GlobalData as GlobalData
 from Common.Expression import *
