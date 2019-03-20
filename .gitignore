@@ -1,7 +1,45 @@
-Build/
+/Build/
 .DS_Store
 *_extdep/
 *.pyc
 __pycache__/
 tags/
 .vscode/
+*.bak
+BuildConfig.conf
+
+# Ignore cloned dependencies
+/Common/TIANO
+/Common/MU_TIANO
+/Silicon
+
+# Packages not ignored:
+# BaseTools
+# MdeModulePkg
+# MdePkg
+# NetworkPkg
+# PcAtChipsetPkg
+# SecurityPkg
+# StandaloneMmPkg
+# UefiCpuPkg
+# UnitTestFrameworkPkg
+
+# Ignore unused UDK PKGs.
+/ArmPkg/
+/ArmPlatformPkg/
+/ArmVirtPkg/
+/Conf/
+/CryptoPkg/
+/DynamicTablesPkg/
+/EmbeddedPkg/
+/EmulatorPkg/
+/FatPkg/
+/FmpDevicePkg/
+/IntelFsp2Pkg/
+/IntelFsp2WrapperPkg/
+/OvmfPkg/
+/RedfishPkg/
+/ShellPkg/
+/SignedCapsulePkg/
+/SourceLevelDebugPkg/
+/UefiPayloadPkg/
