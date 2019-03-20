@@ -1,7 +1,26 @@
-Build/
-.DS_Store
-*_extdep/
-*.pyc
-__pycache__/
+# Ignore build artifacts.
+/Build
 tags/
-.vscode/
+.DS_Store
+*.pyc
+*.bak
+
+# Ignore unused UDK PKGs.
+/ArmPkg/
+/ArmPlatformPkg/
+/ArmVirtPkg/
+/Conf/
+/CryptoPkg/
+/DynamicTablesPkg/
+/EmbeddedPkg/
+/EmulatorPkg/
+/FatPkg/
+/FmpDevicePkg/
+/IntelFsp2Pkg/
+/IntelFsp2WrapperPkg/
+/OvmfPkg/
+/ShellPkg/
+/SignedCapsulePkg/
+/SourceLevelDebugPkg/
+/StandaloneMmPkg/
+/UefiPayloadPkg/
