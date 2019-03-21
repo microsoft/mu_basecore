@@ -2,11 +2,49 @@
 Project Mu Basecore Repository
 ==============================
 
-.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/mu_basecore%20PR%20gate?branchName=release/201808
+.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/mu_basecore%20PR%20gate?branchName=release/201903
 
-|build_status_windows| Current build status for release/201808
+|build_status_windows| Current build status for release/201903
 
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
+
+Branch Changes - release/201903
+===============================
+
+Breaking Changes-dev
+--------------------
+
+- None
+
+Main Changes-dev
+----------------
+
+- None
+
+Bug Fixes-dev
+-------------
+
+- None
+
+1903_CIBuild Changes
+--------------------
+
+- N/A Incomplete.
+
+1903_Rebase Changes
+-------------------
+
+Source Commit from 201811: 713696c6bf
+
+- NvmExpressHci.c - Near the bottom, is this ReportStatusCode in a bad place? Bad merge?
+- SafeString.c - Dropped the custom call to AsciiToUpper(). Replaced with Tiano fix.
+- String.c - Take Tiano implementation of Base64 encode/decode.
+- BmBoot.c - Changed to BmReportLoadFailure() for reporting. Lost some data. Restore if still required.
+- ResetSystemLib.h - Switch from EfiResetSystem to ResetSystem. Make sure everything still works.
+- Trim.py - Make sure the Tiano fix works for what we need with .iii files.
+- *.template.ms - When do we perform this?
+- Make sure bb9faf8d02a7405a163592798a6fa3a18926b18b changes for BaseTools/Source are preserved.
+- Evaluate the effects of dropping 8083ded2580ff01ceaa88fcd2c4a900b195f604e for ResetSystem.
 
 Code of Conduct
 ===============
