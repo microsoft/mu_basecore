@@ -1,13 +1,7 @@
 #
-#  Copyright (c) 2007 - 2015, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 #  Portions copyright (c) 2008 - 2010, Apple Inc. All rights reserved.<BR>
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution.  The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ## Syntax
@@ -62,7 +56,8 @@
 #   $(BIN_DIR)          Common directory for executable files
 #   $(FV_DIR)           Directory to store flash image files
 #   $(INC)              Search path of current module
-#   $(INC_LIST)         A file containing search pathes of current module
+#   $(NASM_INC)         Search nasm file path of current module
+#   $(INC_LIST)         A file containing search paths of current module
 #   $(LIBS)             Static library files of current module
 #   $(<tool>_FLAGS)     Tools flags of current module
 #   $(MODULE_NAME)      Current module name
@@ -113,7 +108,7 @@
 #
 #Increase this version tag any time you want user to get warning about updating this file in the Conf dir.  By default it does not do update existing conf dirs. 
 #
-#!VERSION=1.02
+#!VERSION=1.03
 
 [C-Code-File]
     <InputFile>
@@ -134,7 +129,7 @@
     <Command.MSFT, Command.INTEL>
         "$(CC)" /Fo${dst} $(CC_FLAGS) $(INC) ${src}
 
-    <Command.GCC, Command.GCCLD, Command.RVCT>
+    <Command.GCC, Command.RVCT>
         # For RVCTCYGWIN CC_FLAGS must be first to work around pathing issues
         "$(CC)" $(CC_FLAGS) -c -o ${dst} $(INC) ${src}
 
@@ -151,7 +146,7 @@
     <OutputFile>
         $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
 
-    <Command.GCC, Command.GCCLD, Command.RVCT>
+    <Command.GCC, Command.RVCT>
         "$(CC)" $(CC_FLAGS) $(CC_XIPFLAGS) -c -o ${dst} $(INC) ${src}
 
 [C-Header-File]
@@ -177,7 +172,7 @@
         # The C pre-processor is used to insert code snippets in assembly from preprocessor macros.  Unfortunately
         # the preprocessor doesn't also insert CR/LF and Microsoft's assembler expects each instruction to be on its own
         # line.  We search and replace a special string (__CR__) with CR.
-        type ${d_path}(+)${s_base}.i | python -c "import sys; print (sys.stdin.read().replace('__CR__','\n'))" > ${d_path}(+)${s_base}.ii
+        type ${d_path}(+)${s_base}.i | python -c "import sys; print sys.stdin.read().replace('__CR__','\n')" > ${d_path}(+)${s_base}.ii
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
         "$(ASM)" $(ASM_FLAGS) -o ${dst} $(INC) ${d_path}(+)${s_base}.iii
 
@@ -185,7 +180,7 @@
     <InputFile.MSFT, InputFile.INTEL, InputFile.RVCT>
         ?.asm, ?.Asm, ?.ASM
 
-    <InputFile.GCC, InputFile.GCCLD>
+    <InputFile.GCC>
         ?.S, ?.s
 
     <ExtraDependency>
@@ -199,7 +194,7 @@
         Trim --source-code --convert-hex --trim-long -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
         "$(ASM)" /Fo${dst} $(ASM_FLAGS) /I${s_path} $(INC) ${d_path}(+)${s_base}.iii
 
-    <Command.GCC, Command.GCCLD, Command.RVCT>
+    <Command.GCC, Command.RVCT>
         "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
         # For RVCTCYGWIN ASM_FLAGS must be first to work around pathing issues
@@ -210,7 +205,7 @@
     <InputFile.MSFT, InputFile.INTEL, InputFile.RVCT>
         ?.asm, ?.Asm, ?.ASM
 
-    <InputFile.GCC, InputFile.GCCLD>
+    <InputFile.GCC>
         ?.S, ?.s
 
     <ExtraDependency>
@@ -229,7 +224,7 @@
         Trim --source-code --trim-long -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
         "$(ASM)" /Fo${dst} $(ASM_FLAGS) /I${s_path} $(INC) ${d_path}(+)${s_base}.iii
 
-    <Command.GCC, Command.GCCLD, Command.RVCT>
+    <Command.GCC, Command.RVCT>
         "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
         # For RVCTCYGWIN ASM_FLAGS must be first to work around pathing issues
@@ -248,7 +243,7 @@
     <Command>
         "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
-        "$(NASM)" -I${s_path}(+) $(NASM_FLAGS) -o $dst ${d_path}(+)${s_base}.iii
+        "$(NASM)" -I${s_path}(+) $(NASM_INC) $(NASM_FLAGS) -o $dst ${d_path}(+)${s_base}.iii
 
 [Device-Tree-Source-File]
     <InputFile>
@@ -291,7 +286,7 @@
     <Command.MSFT, Command.INTEL>
         "$(SLINK)" $(SLINK_FLAGS) /OUT:${dst} @$(OBJECT_FILES_LIST)
 
-    <Command.GCC, Command.GCCLD>
+    <Command.GCC>
         $(RM) ${dst}
         "$(SLINK)" cr ${dst} $(SLINK_FLAGS) @$(OBJECT_FILES_LIST)
     
@@ -321,10 +316,6 @@
 
     <Command.GCC>
         "$(DLINK)" -o ${dst} $(DLINK_FLAGS) -Wl,--start-group,@$(STATIC_LIBRARY_FILES_LIST),--end-group $(CC_FLAGS) $(DLINK2_FLAGS)
-        "$(OBJCOPY)" $(OBJCOPY_FLAGS) ${dst}
-
-    <Command.GCCLD>
-        "$(DLINK)" -o ${dst} $(DLINK_FLAGS) --start-group $(DLINK_SPATH) @$(STATIC_LIBRARY_FILES_LIST) --end-group $(DLINK2_FLAGS)
         "$(OBJCOPY)" $(OBJCOPY_FLAGS) ${dst}
 
     <Command.RVCT>
@@ -369,9 +360,6 @@
     <Command.GCC>
         "$(DLINK)" $(DLINK_FLAGS) -Wl,--start-group,@$(STATIC_LIBRARY_FILES_LIST),--end-group $(DLINK2_FLAGS)
 
-    <Command.GCCLD>
-        "$(DLINK)" $(DLINK_FLAGS) --start-group $(DLINK_SPATH) @$(STATIC_LIBRARY_FILES_LIST) --end-group $(DLINK2_FLAGS)
-
     <Command.RVCT>
         "$(DLINK)" $(DLINK_FLAGS) -o ${dst} $(DLINK_SPATH) --via $(STATIC_LIBRARY_FILES_LIST) $(DLINK2_FLAGS)
 
@@ -388,26 +376,26 @@
         ?.dll
 
     <OutputFile>
-        $(DEBUG_DIR)(+)$(MODULE_NAME).efi
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
 
     <Command.MSFT, Command.INTEL, Command.RVCT>
         "$(GENFW)" -e $(MODULE_TYPE) -o ${dst} ${src} $(GENFW_FLAGS)
-        $(CP) ${dst} $(OUTPUT_DIR)
+        $(CP) ${dst} $(DEBUG_DIR)
         $(CP) ${dst} $(BIN_DIR)(+)$(MODULE_NAME_GUID).efi
         -$(CP) $(DEBUG_DIR)(+)*.map $(OUTPUT_DIR)
         -$(CP) $(DEBUG_DIR)(+)*.pdb $(OUTPUT_DIR) 
-    <Command.GCC, Command.GCCLD>
+    <Command.GCC>
         $(CP) ${src} $(DEBUG_DIR)(+)$(MODULE_NAME).debug
         $(OBJCOPY) --strip-unneeded -R .eh_frame ${src}
 
         #
-        #The below 2 lines are only needed for UNIXGCC tool chain, which genereates PE image directly
+        #The below 2 lines are only needed for UNIXGCC tool chain, which generates PE image directly
         #
         -$(OBJCOPY) $(OBJCOPY_ADDDEBUGFLAG) ${src}
         -$(CP) $(DEBUG_DIR)(+)$(MODULE_NAME).debug $(BIN_DIR)(+)$(MODULE_NAME_GUID).debug
 
         "$(GENFW)" -e $(MODULE_TYPE) -o ${dst} ${src} $(GENFW_FLAGS)
-        $(CP) ${dst} $(OUTPUT_DIR)
+        $(CP) ${dst} $(DEBUG_DIR)
         $(CP) ${dst} $(BIN_DIR)(+)$(MODULE_NAME_GUID).efi
         -$(CP) $(DEBUG_DIR)(+)*.map $(OUTPUT_DIR)
         
@@ -417,7 +405,7 @@
         # create symbol file for GDB debug
         -$(DSYMUTIL) ${src}
         "$(GENFW)" -e $(MODULE_TYPE) -o ${dst} $(DEBUG_DIR)(+)$(MODULE_NAME).pecoff $(GENFW_FLAGS)
-        $(CP) ${dst} $(OUTPUT_DIR)
+        $(CP) ${dst} $(DEBUG_DIR)
         $(CP) ${dst} $(BIN_DIR)(+)$(MODULE_NAME_GUID).efi
         -$(CP) $(DEBUG_DIR)(+)*.map $(OUTPUT_DIR)
 
@@ -452,7 +440,7 @@
         Trim --source-code -l -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iiii $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iii 
         "$(ASL)" $(ASL_FLAGS) $(ASL_OUTFLAGS)${dst} $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iiii
 
-    <Command.GCC, Command.GCCLD>
+    <Command.GCC>
         Trim --asl-file -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.i -i $(INC_LIST) ${src}
         "$(ASLPP)" $(ASLPP_FLAGS) $(INC) -I${s_path} $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.i > $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iii
         Trim --source-code -l -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iiii $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iii 
@@ -473,7 +461,7 @@
         "$(ASLDLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(ASLDLINK_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
         "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
 
-    <Command.GCC, Command.GCCLD>
+    <Command.GCC>
         "$(ASLCC)" -c -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(CC_FLAGS) $(ASLCC_FLAGS) $(INC) ${src}
         "$(ASLDLINK)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(ASLDLINK_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
         "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
@@ -493,7 +481,7 @@
         "$(ASLDLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(ASLDLINK_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
         "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
 
-    <Command.GCC, Command.GCCLD>
+    <Command.GCC>
         "$(ASLCC)" -c -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(CC_FLAGS) $(ASLCC_FLAGS) $(INC) ${src}
         "$(ASLDLINK)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(ASLDLINK_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
         "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
@@ -522,7 +510,7 @@
         "$(ASM16)" /nologo /c /omf $(INC) /Fo$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj ${d_path}(+)${s_base}.iii
         "$(ASMLINK)" $(ASMLINK_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj,${dst},,,,
 
-    <Command.GCC, Command.GCCLD>
+    <Command.GCC>
       "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i
       Trim --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
       "$(ASM)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(ASM_FLAGS) $(INC) ${d_path}(+)${s_base}.iii
@@ -581,17 +569,9 @@
     <InputFile>
         ?.efi, ?.Efi, ?.EFI
 
-  # //
-  # // ROYAL_PARK_OVERRIDE: RoyalParkOverrideBegin - RPCO-TBD
-  # //
     <OutputFile>
-        $(OUTPUT_DIR)(+)$(MODULE_NAME).done
 
     <Command>
-        $(CP) ${src} $(OUTPUT_DIR)
-  # //
-  # // ROYAL_PARK_OVERRIDE: RoyalParkOverrideEnd
-  # //
 
 #MSCHANGE
 # Build Rule to support using precompiled 
@@ -709,7 +689,7 @@
         "$(GENFW)" -o $(OUTPUT_DIR)(+)$(MODULE_NAME)hii.rc -g $(MODULE_GUID) --hiipackage $(HII_BINARY_PACKAGES) $(GENFW_FLAGS)
         "$(RC)" /Fo${dst} $(OUTPUT_DIR)(+)$(MODULE_NAME)hii.rc
 
-    <Command.GCC, Command.GCCLD>
+    <Command.GCC>
         "$(GENFW)" -o $(OUTPUT_DIR)(+)$(MODULE_NAME)hii.rc -g $(MODULE_GUID) --hiibinpackage $(HII_BINARY_PACKAGES) $(GENFW_FLAGS)
         "$(RC)" $(RC_FLAGS) $(OUTPUT_DIR)(+)$(MODULE_NAME)hii.rc ${dst}
         

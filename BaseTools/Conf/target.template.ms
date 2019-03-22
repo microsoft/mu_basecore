@@ -1,13 +1,7 @@
 #
-#  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution.  The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 #
 #  ALL Paths are Relative to WORKSPACE
@@ -45,7 +39,7 @@ TARGET                = DEBUG
 #                                               One, or more, of the following, IA32, IPF, X64, EBC, ARM
 #                                               or AArch64.
 #                                               Multiple values can be specified on a single line, using
-#                                               space charaters to separate the values.  These are used
+#                                               space characters to separate the values.  These are used
 #                                               during the parsing of a platform description file, 
 #                                               restricting the build output target(s.)
 #                                               The Build Target ARCH is determined by (precedence high to low):
@@ -67,9 +61,13 @@ TOOL_CHAIN_CONF       = Conf/tools_def.txt
 #                                             used for the build.  The list uses space character separation.
 TOOL_CHAIN_TAG        = VSLATESTx86   
 
-# MAX_CONCURRENT_THREAD_NUMBER  NUMBER  Optional  The number of concurrent threads. Recommend to set this
-#                                                 value to one more than the number of your compurter
-#                                                 cores or CPUs. Less than 2 means disable multithread build.
+# MAX_CONCURRENT_THREAD_NUMBER  NUMBER  Optional  The number of concurrent threads. If not specified or set
+#                                                 to zero, tool automatically detect number of processor
+#                                                 threads. Recommend to set this value to one less than the
+#                                                 number of your computer cores or CPUs. When value set to 1,
+#                                                 means disable multi-thread build, value set to more than 1,
+#                                                 means user specify the thread number to build. Not specify
+#                                                 the default value in this file.
 MAX_CONCURRENT_THREAD_NUMBER = 10
 
 
@@ -77,3 +75,4 @@ MAX_CONCURRENT_THREAD_NUMBER = 10
 #                                     when generating Makefiles. If not specified, the file: 
 #                                     WORKSPACE/Conf/build_rule.txt will be used
 BUILD_RULE_CONF = Conf/build_rule.txt
+
