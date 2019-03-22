@@ -254,6 +254,8 @@
   MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf
   MdeModulePkg/Universal/Variable/RuntimeDxe/PropertyBasedVarLockLib.inf
   MdeModulePkg/Library/CapsulePersistLibNull/CapsulePersistLibNull.inf      ## MU_CHANGE
+  MdeModulePkg/Library/BaseHobLibNull/BaseHobLibNull.inf
+  MdeModulePkg/Library/BaseMemoryAllocationLibNull/BaseMemoryAllocationLibNull.inf
 ## MSCHANGE END
 
   MdeModulePkg/Library/MuVariablePolicyHelperLib/MuVariablePolicyHelperLib.inf   # MU_CHANGE
