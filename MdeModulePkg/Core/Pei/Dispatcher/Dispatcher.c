@@ -1569,7 +1569,7 @@ PeiDispatcher (
         // MSCHANGE Start - Dispatch pending delalyed dispatch requests
         if (NULL != Private->DelayedDispatchTable) {
             if (DelayedDispatchDispatcher (Private->DelayedDispatchTable, NULL)) {
-                ProcessNotifyList(Private);
+                ProcessDispatchNotifyList(Private);
             }
         }
         // MSCHANGE end
