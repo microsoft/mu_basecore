@@ -30,6 +30,7 @@ Bug Fixes-dev
 --------------------
 
 - Move LockBoxLibPei and add Null lib to satisfy modules that aren't IA32 or X64 compatible.
+- Update all references to EfiResetSystem to ResetSystem to match upstream.
 
 1903_Rebase Changes
 -------------------

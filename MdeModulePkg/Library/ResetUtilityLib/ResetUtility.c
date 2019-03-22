@@ -55,7 +55,7 @@ ResetSystemWithSubtype (
     ResetSubtype
     );
 
-  EfiResetSystem (ResetType, EFI_SUCCESS, sizeof (ResetData), &ResetData);
+  ResetSystem (ResetType, EFI_SUCCESS, sizeof (ResetData), &ResetData);
 } // ResetSystemWithSubtype()
 // MS_CHANGE [END] - Make it easier to reset with a default type.
 
