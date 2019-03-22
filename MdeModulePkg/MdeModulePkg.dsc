@@ -496,8 +496,9 @@
   }
 
 !if $(TOOL_CHAIN_TAG) != "XCODE5"
-  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteStandaloneMm.inf
-  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf
+  # MU_CHANGE - Cannot be built without StandaloneMmPkg.
+  # MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteStandaloneMm.inf
+  # MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf
 !endif
 
 [Components.IA32, Components.X64]
