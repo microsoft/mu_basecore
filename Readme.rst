@@ -29,6 +29,7 @@ Bug Fixes-dev
 1903_CIBuild Changes
 --------------------
 
+- Add FaultTolerantWriteStandaloneMm and VariableStandaloneMm to the CI ignore list. Cannot be built without StandaloneMmPkg.
 - Move LockBoxLibPei and add Null lib to satisfy modules that aren't IA32 or X64 compatible.
 - Update all references to EfiResetSystem to ResetSystem to match upstream.
 
