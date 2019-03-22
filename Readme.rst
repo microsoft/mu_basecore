@@ -29,7 +29,7 @@ Bug Fixes-dev
 1903_CIBuild Changes
 --------------------
 
-- N/A Incomplete.
+- Move LockBoxLibPei and add Null lib to satisfy modules that aren't IA32 or X64 compatible.
 
 1903_Rebase Changes
 -------------------
