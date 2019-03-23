@@ -1,9 +1,9 @@
 {
-  "scope": "global-win",
+  "scope": "global",
   "type": "nuget",
-  "name": "Mu-Basetools-Win32",
+  "name": "Mu-Basetools",
   "source": "https://api.nuget.org/v3/index.json",
   "version": "2018.11.0",
-  "flags": ["set_shell_var", "set_path"],
+  "flags": ["set_shell_var", "set_path", "host_specific"],
   "var_name": "EDK_TOOLS_PATH"
 }

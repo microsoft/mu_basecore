@@ -211,7 +211,10 @@ def TrimPreprocessedFile(Source, Target, ConvertHex, TrimLong):
             else:
                 if LineNumber > (len(NewLines) + 1):
                     for LineIndex in range(len(NewLines), LineNumber-1):
-                        NewLines.append(os.linesep)
+                        # MU_CHANGE start
+                        # Double carriage return was causing invalid character in .iii files
+                        NewLines.append("\n")
+                        # MU_CHANGE end
                 NewLines.append(Line)
             LineNumber = None
             EdkLogger.verbose("Now we have lines: %d" % len(NewLines))
