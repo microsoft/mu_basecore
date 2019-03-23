@@ -8,6 +8,18 @@ Project Mu Basecore Repository
 
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
 
+Branch Status - release/201903
+==============================
+
+Status:
+  In Development
+
+Entered Development:
+  2019/03/25
+
+Anticipated Stabilization:
+  May 2019
+
 Branch Changes - release/201903
 ===============================
 
@@ -26,6 +38,16 @@ Bug Fixes-dev
 
 - None
 
+1903_RefBoot Changes
+--------------------
+
+Platform Changes
+- Remove the use of PcdPeiCoreMaxFvSupported, PcdPeiCoreMaxPeimPerFv and PcdPeiCoreMaxPpiSupported in platform code as they have been removed for BZ1405.
+- Add a LibraryClass for MmServicesTableLib to satisfy new library requirement in FaultTolerantWrite.
+- Override ResetSystemLib with RuntimeResetSystemLib in CapsuleRuntimeDxe.
+- Change "COMPONENT_TYPE = Microcode" to "MODULE_TYPE = USER_DEFINED" for ucode modules. All EDK build definitions have been dropped from EDK2.
+- Remove all references to $(EFI_SOURCE). This define is no longer set anywhere.
+
 1903_CIBuild Changes
 --------------------
 
@@ -36,17 +58,17 @@ Bug Fixes-dev
 1903_Rebase Changes
 -------------------
 
-Source Commit from 201811: 713696c6bf
+Source Commit from 201811: 713696c6bfaffbf2481aa13518268725e0c4b30c
 
-- NvmExpressHci.c - Near the bottom, is this ReportStatusCode in a bad place? Bad merge?
-- SafeString.c - Dropped the custom call to AsciiToUpper(). Replaced with Tiano fix.
-- String.c - Take Tiano implementation of Base64 encode/decode.
-- BmBoot.c - Changed to BmReportLoadFailure() for reporting. Lost some data. Restore if still required.
-- ResetSystemLib.h - Switch from EfiResetSystem to ResetSystem. Make sure everything still works.
-- Trim.py - Make sure the Tiano fix works for what we need with .iii files.
 - *.template.ms - When do we perform this?
+- BmBoot.c - Changed to BmReportLoadFailure() for reporting. Lost some data. Restore if still required.
+- NvmExpressHci.c - Near the bottom, is this ReportStatusCode in a bad place? Bad merge?
+- ResetSystemLib.h - Switch from EfiResetSystem to ResetSystem. Make sure everything still works.
 - Make sure bb9faf8d02a7405a163592798a6fa3a18926b18b changes for BaseTools/Source are preserved.
 - Evaluate the effects of dropping 8083ded2580ff01ceaa88fcd2c4a900b195f604e for ResetSystem.
+- Trim.py - TianoCore fix slightly different than Mu fix. Confirmed compatible.
+- String.c - Take Tiano implementation of Base64 encode/decode.
+- SafeString.c - Dropped the custom call to AsciiToUpper(). Replaced with Tiano fix.
 
 Code of Conduct
 ===============
