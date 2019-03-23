@@ -115,47 +115,59 @@ SnpUndi32CallbackMemio (
 
   switch (ReadOrWrite) {
   case PXE_IO_READ:
-    Snp->PciIo->Io.Read (
-                     Snp->PciIo,
-                     Width,
-                     Snp->IoBarIndex,      // BAR 1 (for 32bit regs), IO base address
-                     MemOrPortAddr,
-                     1,                    // count
-                     (VOID *) (UINTN) BufferPtr
-                     );
+    ASSERT(Snp->IoBarIndex < PCI_MAX_BAR); // MU_CHANGE - check the bar is valid
+    if(Snp->IoBarIndex < PCI_MAX_BAR) { // MU_CHANGE - check the bar is valid
+      Snp->PciIo->Io.Read (
+                       Snp->PciIo,
+                       Width,
+                       Snp->IoBarIndex,      // BAR 1 (for 32bit regs), IO base address
+                       MemOrPortAddr,
+                       1,                    // count
+                       (VOID *) (UINTN) BufferPtr
+                       );
+    } // MU_CHANGE
     break;
 
   case PXE_IO_WRITE:
-    Snp->PciIo->Io.Write (
-                     Snp->PciIo,
-                     Width,
-                     Snp->IoBarIndex,      // BAR 1 (for 32bit regs), IO base address
-                     MemOrPortAddr,
-                     1,                    // count
-                     (VOID *) (UINTN) BufferPtr
-                     );
+    ASSERT(Snp->IoBarIndex < PCI_MAX_BAR); // MU_CHANGE - check the bar is valid
+    if(Snp->IoBarIndex < PCI_MAX_BAR) { // MU_CHANGE - check the bar is valid
+      Snp->PciIo->Io.Write (
+                       Snp->PciIo,
+                       Width,
+                       Snp->IoBarIndex,      // BAR 1 (for 32bit regs), IO base address
+                       MemOrPortAddr,
+                       1,                    // count
+                       (VOID *) (UINTN) BufferPtr
+                       );
+    } // MU_CHANGE
     break;
 
   case PXE_MEM_READ:
-    Snp->PciIo->Mem.Read (
-                      Snp->PciIo,
-                      Width,
-                      Snp->MemoryBarIndex,  // BAR 0, Memory base address
-                      MemOrPortAddr,
-                      1,                    // count
-                      (VOID *) (UINTN) BufferPtr
-                      );
+    ASSERT(Snp->MemoryBarIndex < PCI_MAX_BAR); // MU_CHANGE - check the bar is valid
+    if(Snp->MemoryBarIndex < PCI_MAX_BAR) { // MU_CHANGE - check the bar is valid
+      Snp->PciIo->Mem.Read (
+                        Snp->PciIo,
+                        Width,
+                        Snp->MemoryBarIndex,  // BAR 0, Memory base address
+                        MemOrPortAddr,
+                        1,                    // count
+                        (VOID *) (UINTN) BufferPtr
+                        );
+    } // MU_CHANGE
     break;
 
   case PXE_MEM_WRITE:
-    Snp->PciIo->Mem.Write (
-                      Snp->PciIo,
-                      Width,
-                      Snp->MemoryBarIndex,  // BAR 0, Memory base address
-                      MemOrPortAddr,
-                      1,                    // count
-                      (VOID *) (UINTN) BufferPtr
-                      );
+    ASSERT(Snp->MemoryBarIndex < PCI_MAX_BAR); // MU_CHANGE - check the bar is valid
+    if(Snp->MemoryBarIndex < PCI_MAX_BAR) { // MU_CHANGE - check the bar is valid
+      Snp->PciIo->Mem.Write (
+                        Snp->PciIo,
+                        Width,
+                        Snp->MemoryBarIndex,  // BAR 0, Memory base address
+                        MemOrPortAddr,
+                        1,                    // count
+                        (VOID *) (UINTN) BufferPtr
+                        );
+    } // MU_CHANGE
     break;
   }
 
