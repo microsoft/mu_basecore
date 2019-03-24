@@ -1450,6 +1450,11 @@ InternalFindFile (
   VOID                            *CompareFileEntry;
 
   //
+  // set CompareFileEntry to suppress incorrect compiler/analyzer warnings
+  //
+  CompareFileEntry = NULL;     // MU_CHANGE - TCBZ1559
+
+  //
   // Check if both Parent->FileIdentifierDesc and Icb are NULL.
   //
   if ((Parent->FileIdentifierDesc == NULL) && (Icb == NULL)) {
