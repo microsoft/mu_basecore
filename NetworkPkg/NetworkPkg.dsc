@@ -25,6 +25,9 @@
   SKUID_IDENTIFIER               = DEFAULT
 
 [LibraryClasses]
+  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+
+
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
   BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf

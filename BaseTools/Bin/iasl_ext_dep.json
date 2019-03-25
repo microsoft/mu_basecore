@@ -3,6 +3,6 @@
   "type": "nuget",
   "name": "iasl",
   "source": "https://api.nuget.org/v3/index.json",
-  "version": "20181003.0.0",
-  "flags": ["set_path"]
+  "version": "2019.2.0",
+  "flags": ["set_path", "host_specific"]
 }

@@ -116,10 +116,12 @@
 
 ##MSCHANGE Begin
 [LibraryClasses.X64, LibraryClasses.IA32]
+!if $(TOOLCHAIN) == VSLATESTx86
 !if $(TARGET) == DEBUG
   #if debug is enabled provide StackCookie support lib so that we can link to /GS exports
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
   NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+!endif
 !endif
 ##MSCHANGE End
 
@@ -389,7 +391,7 @@
   MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
   MdeModulePkg/Universal/Disk/UdfDxe/UdfDxe.inf
   MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
-  # MdeModulePkg/Universal/Disk/CdExpressPei/CdExpressPei.inf MU_CHANGE due to its size (> 1 MB), this module requires 4 KB section alignment.
+  MdeModulePkg/Universal/Disk/CdExpressPei/CdExpressPei.inf # MU_CHANGE due to its size (> 1 MB), this module requires 4 KB section alignment.
   MdeModulePkg/Universal/DriverSampleDxe/DriverSampleDxe.inf
   MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
   MdeModulePkg/Universal/MemoryTest/GenericMemoryTestDxe/GenericMemoryTestDxe.inf

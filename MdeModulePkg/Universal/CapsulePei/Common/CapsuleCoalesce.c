@@ -333,7 +333,7 @@ ValidateCapsuleIntegrity (
     return NULL;
   }
 
-  DEBUG ((EFI_D_INFO, "Ptr - 0x%lx\n", (UINT64)Ptr)); //MS_CHANGE uint64 cast
+  DEBUG ((EFI_D_INFO, "Ptr - 0x%lx\n", (UINTN)Ptr)); //MS_CHANGE uintn cast
   DEBUG ((EFI_D_INFO, "Ptr->Length - 0x%lx\n", Ptr->Length)); //MS_CHANGE changed to uint64 printout
   DEBUG ((EFI_D_INFO, "Ptr->Union - 0x%lx\n", Ptr->Union.ContinuationPointer)); //MS_CHANGE changed to uint64 printout
   while ((Ptr->Length != 0) || (Ptr->Union.ContinuationPointer != (EFI_PHYSICAL_ADDRESS) (UINTN) NULL)) {
@@ -354,7 +354,7 @@ ValidateCapsuleIntegrity (
       if (!ValidateCapsuleByMemoryResource (MemoryResource, (EFI_PHYSICAL_ADDRESS) (UINTN) Ptr, sizeof (EFI_CAPSULE_BLOCK_DESCRIPTOR))) {
         return NULL;
       }
-      DEBUG ((EFI_D_INFO, "Ptr(C) - 0x%lx\n", (UINT64)Ptr)); //MS_CHANGE uint64 cast
+      DEBUG ((EFI_D_INFO, "Ptr(C) - 0x%lx\n", (UINTN)Ptr)); //MS_CHANGE uintn cast
       DEBUG ((EFI_D_INFO, "Ptr->Length - 0x%lx\n", Ptr->Length)); //MS_CHANGE changed to uint64 printout
       DEBUG ((EFI_D_INFO, "Ptr->Union - 0x%lx\n", Ptr->Union.ContinuationPointer)); //MS_CHANGE changed to uint64 printout
     } else {
@@ -409,7 +409,7 @@ ValidateCapsuleIntegrity (
       if (!ValidateCapsuleByMemoryResource (MemoryResource, (EFI_PHYSICAL_ADDRESS) (UINTN) Ptr, sizeof (EFI_CAPSULE_BLOCK_DESCRIPTOR))) {
         return NULL;
       }
-      DEBUG ((EFI_D_INFO, "Ptr(B) - 0x%lx\n", (UINT64)Ptr)); //MS_CHANGE to uint64
+      DEBUG ((EFI_D_INFO, "Ptr(B) - 0x%lx\n", (UINTN)Ptr)); //MS_CHANGE to uintn
       DEBUG((EFI_D_INFO, "Ptr->Length - 0x%lx\n", Ptr->Length)); //MS_CHANGE to uint64
       DEBUG ((EFI_D_INFO, "Ptr->Union - 0x%lx\n", Ptr->Union.ContinuationPointer)); //MS_CHANGE to uint64
     }

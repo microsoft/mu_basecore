@@ -3779,7 +3779,8 @@ ReclaimForOS(
 {
   EFI_STATUS                     Status;
   UINTN                          RemainingCommonRuntimeVariableSpace;
-  UINTN                          RemainingHwErrVariableSpace;
+  // MS_CHANGE Starts: HwError record quata state should not trigger variable store reclaim
+  // UINTN                          RemainingHwErrVariableSpace;
   STATIC BOOLEAN                 Reclaimed;
 
   //
@@ -3798,13 +3799,12 @@ ReclaimForOS(
     RemainingCommonRuntimeVariableSpace = mVariableModuleGlobal->CommonRuntimeVariableSpace - mVariableModuleGlobal->CommonVariableTotalSize;
   }
 
-  RemainingHwErrVariableSpace = PcdGet32 (PcdHwErrStorageSize) - mVariableModuleGlobal->HwErrVariableTotalSize;
+  // RemainingHwErrVariableSpace = PcdGet32 (PcdHwErrStorageSize) - mVariableModuleGlobal->HwErrVariableTotalSize;
 
   //
   // Check if the free area is below a threshold.
   //
   if (((RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxVariableSize) ||
-      // MS_CHANGE Starts: HwError record quata state should not trigger variable store reclaim
       // (RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxAuthVariableSize)) ||
        (RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxAuthVariableSize))){
       //((PcdGet32 (PcdHwErrStorageSize) != 0) &&
