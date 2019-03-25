@@ -208,7 +208,7 @@ class NugetSupport(object):
         files = package.find("files")
         f = files.find("file")
         f.set("target", self.Name)
-        f.set("src", ContentDir + "\\**\\*.*")
+        f.set("src", ContentDir + "\\**\\*")
 
         if(ReleaseNotesText is not None):
             logging.debug("Make Nuspec Xml - ReleaseNotesText is not none.")
