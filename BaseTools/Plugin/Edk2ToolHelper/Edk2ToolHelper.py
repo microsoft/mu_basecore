@@ -6,6 +6,7 @@ from MuPythonLibrary.UtilityFunctions import RunPythonScript
 from MuPythonLibrary.UtilityFunctions import CatalogSignWithSignTool
 import shutil
 import datetime
+from Common.Edk2.Capsule.FmpPayloadHeader  import FmpPayloadHeaderClass
 
 
 class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
@@ -59,6 +60,20 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
     ##
     @staticmethod
     def PackageMsFmpHeader(InputBin, OutputBin, VersionInt, LsvInt, DepList = []):
+        # TODO: Crash if deps are passed. Return a useful error.
+
+        # Attempt to write the payload to the file.
+        # This would normally
+        with open(InputBin, 'rb') as in_file:
+            payload_data = in_file.read()
+
+            fmp_header = FmpPayloadHeaderClass()
+            fmp_header.FwVersion              = VersionInt
+            fmp_header.LowestSupportedVersion = LsvInt
+            fmp_header.Payload                = payload_data
+
+            # Result = FmpPayloadHeader.Encode ()
+
         logging.debug("CapsulePackage: Fmp Header")
         params = "-o " + OutputBin
         params = params + " --version " + hex(VersionInt).rstrip("L")
