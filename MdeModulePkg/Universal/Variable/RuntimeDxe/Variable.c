@@ -1051,7 +1051,7 @@ Reclaim (
   HwErrVariableTotalSize  = 0;
 
   // MS_CHANGE_? - This may be specific to the MS implementation.
-  DEBUG((DEBUG_INFO, __FUNCTION__" Reclaim variables started.\n"));
+  DEBUG((DEBUG_INFO, "%a Reclaim variables started.\n", __FUNCTION__));
 
   if (IsVolatile || mVariableModuleGlobal->VariableGlobal.EmuNvMode) {
     //
