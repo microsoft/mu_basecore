@@ -653,7 +653,7 @@ SimpleNetworkDriverStart (
     //
     Status = gBS->CreateEventEx (
                     EVT_NOTIFY_SIGNAL,
-                    TPL_NOTIFY,
+                    TPL_CALLBACK, // MU_CHANGE
                     SnpNotifyExitBootServices,
                     Snp,
                     &gEfiEventExitBootServicesGuid,
