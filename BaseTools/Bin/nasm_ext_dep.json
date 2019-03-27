@@ -1,5 +1,5 @@
 {
-  "scope": "global-win",
+  "scope": "global",
   "type": "nuget",
   "name": "mu_nasm",
   "source": "https://api.nuget.org/v3/index.json",

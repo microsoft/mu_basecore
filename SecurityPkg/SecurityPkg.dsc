@@ -233,10 +233,6 @@
   SecurityPkg/Library/DxeDeferImageLoadLib/DxeDeferImageLoadLib.inf
   SecurityPkg/Library/Tpm2DebugLib/Tpm2DebugLibSimple.inf
   SecurityPkg/Library/Tpm2DebugLib/Tpm2DebugLibVerbose.inf
-  #SecurityPkg/UserIdentification/PwdCredentialProviderDxe/PwdCredentialProviderDxe.inf
-  #SecurityPkg/UserIdentification/UsbCredentialProviderDxe/UsbCredentialProviderDxe.inf
-  #SecurityPkg/UserIdentification/UserIdentifyManagerDxe/UserIdentifyManagerDxe.inf
-  SecurityPkg/UserIdentification/UserProfileManagerDxe/UserProfileManagerDxe.inf
   SecurityPkg/Library/DxeTpmMeasurementLib/DxeTpmMeasurementLib.inf
   SecurityPkg/Library/OemTpm2InitLibNull/OemTpm2InitLib.inf
   SecurityPkg/Library/PlatformSecureLibNull/PlatformSecureLibNull.inf
