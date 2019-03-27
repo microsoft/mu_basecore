@@ -1,11 +1,14 @@
 from MuEnvironment import PluginManager
 import logging
 import os
+import uuid
 from MuPythonLibrary.UtilityFunctions import RunCmd
 from MuPythonLibrary.UtilityFunctions import RunPythonScript
 from MuPythonLibrary.UtilityFunctions import CatalogSignWithSignTool
 import shutil
 import datetime
+from Common.Edk2.Capsule.FmpPayloadHeader  import FmpPayloadHeaderClass
+from Common.Uefi.Capsule.FmpCapsuleHeader  import FmpCapsuleHeaderClass
 
 
 class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
@@ -59,23 +62,35 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
     ##
     @staticmethod
     def PackageMsFmpHeader(InputBin, OutputBin, VersionInt, LsvInt, DepList = []):
-        logging.debug("CapsulePackage: Fmp Header")
-        params = "-o " + OutputBin
-        params = params + " --version " + hex(VersionInt).rstrip("L")
-        params = params + " --lsv " + hex(LsvInt)
-        params = params + " -p " + InputBin + " -v"
+        # NOTE: Crash if deps are passed. Return a useful error.
+        # Currently not ported to the new tooling.
+        if len(DepList) > 0:
+            raise RuntimeError("PackageMsFmpHeader has not been ported to support dependencies yet!")
+
         #append depedency if supplied
-        for dep in DepList:
-            depGuid = dep[0]
-            depIndex = int(dep[1])
-            depMinVer = hex(dep[2])
-            depFlag = hex(dep[3])
-            logging.debug("Adding a Dependency:\n\tFMP Guid: %s \nt\tFmp Descriptor Index: %d \n\tFmp DepVersion: %s \n\tFmp Flags: %s\n" % (depGuid, depIndex, depMinVer, depFlag))
-            params += " --dep " + depGuid + " " + str(depIndex) + " " + depMinVer + " " + depFlag
-        ret = RunCmd("genmspayloadheader.exe", params)
-        if(ret != 0):
-            raise Exception("GenMsPayloadHeader Failed with errorcode %d" % ret)
-        return ret
+        # for dep in DepList:
+        #     depGuid = dep[0]
+        #     depIndex = int(dep[1])
+        #     depMinVer = hex(dep[2])
+        #     depFlag = hex(dep[3])
+        #     logging.debug("Adding a Dependency:\n\tFMP Guid: %s \nt\tFmp Descriptor Index: %d \n\tFmp DepVersion: %s \n\tFmp Flags: %s\n" % (depGuid, depIndex, depMinVer, depFlag))
+        #     params += " --dep " + depGuid + " " + str(depIndex) + " " + depMinVer + " " + depFlag
+        #     raise Exception("GenMsPayloadHeader Failed with errorcode %d" % ret)
+
+        # Attempt to write the payload to the file.
+        # This would normally
+        with open(InputBin, 'rb') as in_file:
+            payload_data = in_file.read()
+
+            fmp_header = FmpPayloadHeaderClass()
+            fmp_header.FwVersion              = VersionInt
+            fmp_header.LowestSupportedVersion = LsvInt
+            fmp_header.Payload                = payload_data
+
+            with open(OutputBin, 'wb') as out_file:
+                out_file.write(fmp_header.Encode())
+
+        return 0
 
     ##
     # Function to create binary wrapped with FmpImage Auth using input supplied
@@ -146,13 +161,16 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
 
     @staticmethod
     def PackageFmpCapsuleHeader(InputBin, OutputBin, FmpGuid):
-        logging.debug("CapsulePackage: Fmp Capsule Header")
-        params = "-o " + OutputBin
-        params = params + " -p " + InputBin + " " + FmpGuid + " 1 0 -V"
-        ret = RunCmd("genfmpcap.exe", params)
-        if(ret != 0):
-            raise Exception("GenFmpCap Failed with errorcode" % ret)
-        return ret
+        with open(InputBin, 'rb') as in_file:
+            capsule_data = in_file.read()
+
+            fmp_capsule = FmpCapsuleHeaderClass()
+            fmp_capsule.AddPayload(uuid.UUID(FmpGuid), capsule_data)
+
+            with open(OutputBin, 'wb') as out_file:
+                out_file.write(fmp_capsule.Encode())
+
+        return 0
 
     @staticmethod
     def PackageCapsuleHeader(InputBin, OutputBin, FmpDeviceGuid=None):
