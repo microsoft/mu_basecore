@@ -2697,7 +2697,7 @@ DriverEntry (
 
     Status = gBS->CreateEventEx (
                     EVT_NOTIFY_SIGNAL,
-                    TPL_NOTIFY,
+                    TPL_CALLBACK, // MS_CHANGE
                     OnExitBootServices,
                     NULL,
                     &gEfiEventExitBootServicesGuid,
