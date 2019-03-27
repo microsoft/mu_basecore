@@ -26,7 +26,7 @@ Branch Changes - release/201903
 Breaking Changes-dev
 --------------------
 
-- None
+- Edk2ToolHelper no longer has logic for dependencies. This is easily replaced, but convenient to leave out while GenerateCapsule is being refactored to remove reliance on older compiled tools.
 
 Main Changes-dev
 ----------------
