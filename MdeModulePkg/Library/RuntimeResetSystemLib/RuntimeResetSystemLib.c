@@ -13,7 +13,8 @@
 #include <Library/DebugLib.h>
 
 EFI_EVENT                     mRuntimeResetSystemLibVirtualAddressChangeEvent;
-EFI_RUNTIME_SERVICES          *mInternalRT;
+// MS_CHANGE: localizing the global to avoid name collision with UefiRuntimeLib:
+STATIC EFI_RUNTIME_SERVICES   *mInternalRT;
 
 /**
   This function causes a system-wide reset (cold reset), in which
