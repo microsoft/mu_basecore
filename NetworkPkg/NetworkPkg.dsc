@@ -22,6 +22,10 @@
   DEFINE NETWORK_ISCSI_ENABLE    = TRUE
 
 !include MdePkg/MdeLibs.dsc.inc
+## MU_CHANGE Begin
+[LibraryClasses.ARM, LibraryClasses.AARCH64]
+  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+## MU_CHANGE End
 
 [LibraryClasses]
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
