@@ -813,7 +813,9 @@ IN BOOLEAN *UpdateCapsules
 
   if (UpdateCapsules == NULL)
   {
-    DEBUG((DEBUG_ERROR, __FUNCTION__ " Invalid parameters.  Inputs can't be NULL\n"));
+    // MU_CHANGE START
+    DEBUG((DEBUG_ERROR, "%a Invalid parameters.  Inputs can't be NULL\n", __FUNCTION__));
+    // MU_CHANGE END
     ASSERT(UpdateCapsules != NULL);
     return EFI_INVALID_PARAMETER;
   }
@@ -885,7 +887,9 @@ GetScatterGatherHeadEntries(
 
   if ((ListLength == NULL) || (HeadList == NULL))
   {
-    DEBUG((DEBUG_ERROR, __FUNCTION__ " Invalid parameters.  Inputs can't be NULL\n"));
+    // MU_CHANGE START
+    DEBUG((DEBUG_ERROR, "%a Invalid parameters.  Inputs can't be NULL\n", __FUNCTION__));
+    // MU_CHANGE END
     ASSERT(ListLength != NULL);
     ASSERT(HeadList != NULL);
     return EFI_INVALID_PARAMETER;
@@ -961,7 +965,9 @@ GetScatterGatherHeadEntries(
     //done getting all SG list 
   if (ValidIndex == 0)
   {
-    DEBUG((DEBUG_ERROR, __FUNCTION__ " didn't find any SG lists in variables\n"));
+    // MU_CHANGE START
+    DEBUG((DEBUG_ERROR, "%a didn't find any SG lists in variables\n", __FUNCTION__));
+    // MU_CHANGE END
     return EFI_NOT_FOUND;
   }
 
@@ -973,7 +979,7 @@ GetScatterGatherHeadEntries(
   }
 
   CopyMem(*HeadList, TempList, (ValidIndex) * sizeof(EFI_PHYSICAL_ADDRESS));
-  *ListLength = ValidIndex;  
+  *ListLength = ValidIndex; 
 
   return EFI_SUCCESS;
 }
@@ -1039,7 +1045,9 @@ CapsuleCoalesce (
   Status = GetScatterGatherHeadEntries(&ListLength, &VariableArrayAddress);
   if (EFI_ERROR(Status))
   {
-    DEBUG((DEBUG_ERROR, __FUNCTION__ " failed to get Scatter Gather List Head Entries.  Status = %r\n", Status));
+    // MU_CHANGE START
+    DEBUG((DEBUG_ERROR, "%a failed to get Scatter Gather List Head Entries.  Status = %r\n", __FUNCTION__, Status));
+    // MU_CHANGE END
     goto Done;
   }
 
@@ -1131,7 +1139,7 @@ CheckCapsuleUpdate (
     } 
     else
     {
-      Status = EFI_NOT_FOUND;  
+      Status = EFI_NOT_FOUND; 
     }
   }
 // MSCHANGE [END?]
