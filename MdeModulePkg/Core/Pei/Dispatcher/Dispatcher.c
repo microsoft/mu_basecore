@@ -108,21 +108,27 @@ PeiDelayedDispatchRegister (
 
   // Check input parameters
   if ((NULL == Function) || (Delay > FixedPcdGet32 (PcdDelayedDispatchMaxDelayUs)) || (NULL == This)) {
-    DEBUG ((DEBUG_ERROR, __FUNCTION__ " Invalid parameter\n"));
+    // MU CHANGE START
+    DEBUG ((DEBUG_ERROR, "%a Invalid parameter\n", __FUNCTION__));
+    // MU CHANGE END
     return EFI_INVALID_PARAMETER;
   }
 
   // Get delayed dispatch table
   DelayedDispatchTable = GetDelayedDispatchTable ();
   if (NULL == DelayedDispatchTable) {
-    DEBUG ((DEBUG_ERROR, __FUNCTION__ " Unable to locate dispatch table\n"));
+    // MU CHANGE START
+    DEBUG ((DEBUG_ERROR, "%a Unable to locate dispatch table\n", __FUNCTION__));
+    // MU CHANGE END
     return EFI_UNSUPPORTED;
   }
 
   // Check for available entry slots
   if (DelayedDispatchTable->Count >= FixedPcdGet32 (PcdDelayedDispatchMaxEntries)) {
     ASSERT (DelayedDispatchTable->Count < FixedPcdGet32 (PcdDelayedDispatchMaxEntries));
-    DEBUG ((DEBUG_ERROR, __FUNCTION__ " Too many entries requested\n"));
+    // MU CHANGE START
+    DEBUG ((DEBUG_ERROR, "%a Too many entries requested\n", __FUNCTION__));
+    // MU CHANGE END
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -139,7 +145,9 @@ PeiDelayedDispatchRegister (
   Entry->usDelay = Delay;
   DelayedDispatchTable->Count++;
 
-  DEBUG ((DEBUG_INFO, __FUNCTION__ " Adding dispatch Entry\n"));
+  // MU CHANGE START
+  DEBUG ((DEBUG_INFO, "%a  Adding dispatch Entry\n", __FUNCTION__));
+  // MU CHANGE END
   DEBUG ((DEBUG_INFO, "    Requested Delay = %d\n", Delay));
   DEBUG ((DEBUG_INFO, "    Trigger Time = %d\n", Entry->DispatchTime));
   DEBUG ((DEBUG_INFO, "    Context = 0x%08lx\n", Entry->Context));
@@ -188,7 +196,7 @@ DelayedDispatchDispatcher (
     // If dispatching is messed up, clear DelayedDispatchTable and exit.
     TimeCurrent =  GET_TIME_IN_US ();
     if (TimeCurrent > MaxDispatchTime) {
-      DEBUG ((DEBUG_ERROR, __FUNCTION__ " - DelayedDispatch Completion timeout!\n"));
+      DEBUG ((DEBUG_ERROR, "%a - DelayedDispatch Completion timeout!\n", __FUNCTION__));
       ReportStatusCode ((EFI_ERROR_MAJOR | EFI_ERROR_CODE), (EFI_SOFTWARE_PEI_CORE | EFI_SW_EC_ABORTED));
       ASSERT (FALSE);
       DelayedDispatchTable->Count = 0;
@@ -230,7 +238,7 @@ DelayedDispatchDispatcher (
           CopyMem (Entry, Entry+1, sizeof (DELAYED_DISPATCH_ENTRY) * (DelayedDispatchTable->Count - Index1));
         } else {
           if (Entry->usDelay > FixedPcdGet32 (PcdDelayedDispatchMaxDelayUs)) {
-            DEBUG ((DEBUG_ERROR, __FUNCTION__ " Illegal new delay %d requested\n", Entry->usDelay));
+            DEBUG ((DEBUG_ERROR, "%a Illegal new delay %d requested\n", __FUNCTION__, Entry->usDelay));
             ASSERT (FALSE);
             Entry->usDelay = FixedPcdGet32 (PcdDelayedDispatchMaxDelayUs);
           }
@@ -323,7 +331,9 @@ PeiDelayedDispatchOnEndOfPei (
     DelayedDispatchDispatcher (DelayedDispatchTable, NULL);
   }
 
-  DEBUG ((DEBUG_ERROR, __FUNCTION__ " Count of dispatch cycles is %d\n", DelayedDispatchTable->DispCount));
+  // MU CHANGE START
+  DEBUG ((DEBUG_ERROR, "%a Count of dispatch cycles is %d\n", __FUNCTION__, DelayedDispatchTable->DispCount));
+  // MU CHANGE END
   PERF_INMODULE_END ("PerfDelayedDispatchEndOfPei");
 
   return EFI_SUCCESS;
