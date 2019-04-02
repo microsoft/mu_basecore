@@ -395,7 +395,14 @@
   MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
   MdeModulePkg/Universal/Disk/UdfDxe/UdfDxe.inf
   MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
-  MdeModulePkg/Universal/Disk/CdExpressPei/CdExpressPei.inf
+  # MU_CHANGE START
+  # Adding common-page-size to avoid error:
+  # GenFw: ERROR 3000: CdExpressPei.dll  due to its size (> 1 MB), this module requires 4 KB section alignment.
+  MdeModulePkg/Universal/Disk/CdExpressPei/CdExpressPei.inf {
+      <BuildOptions>
+      GCC:*_*_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x1000
+  }
+  # MU_CHANGE END
   MdeModulePkg/Universal/DriverSampleDxe/DriverSampleDxe.inf
   MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
   MdeModulePkg/Universal/MemoryTest/GenericMemoryTestDxe/GenericMemoryTestDxe.inf
