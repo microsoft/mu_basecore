@@ -2726,17 +2726,3 @@ DriverEntry (
 
   return Status;
 }
-
-
-// MS_CHANGE_?
-// MSChange [BEGIN] - For unknown reasons, there's a linker error with DxeTcg2PhyicalPresenceLib, even
-//                    though the surrounding functions aren't invoked from this driver. This
-//                    is here just to get the linker to shut up and shouldn't affect anything. (Sidebar: I hate this.)
-BOOLEAN
-PromptForUserConfirmation (
-  IN  CHAR16    *PromptString
-  )
-{
-  return FALSE;
-}
-// MSChange [END]
