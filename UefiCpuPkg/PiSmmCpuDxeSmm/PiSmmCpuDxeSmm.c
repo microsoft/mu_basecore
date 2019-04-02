@@ -139,6 +139,7 @@ UINTN                    mSmmCpuSmramRangeCount;
 
 **/
 EFI_STATUS
+EFIAPI // MU_CHANGE
 EnableSmmExceptionTestMode (
   VOID
   );
@@ -1528,6 +1529,7 @@ PerformPreTasks (
 
 **/
 EFI_STATUS
+EFIAPI // MU_CHANGE
 EnableSmmExceptionTestMode (
   VOID
   )
@@ -1536,7 +1538,9 @@ EnableSmmExceptionTestMode (
 
   if (FeaturePcdGet (PcdSmmExceptionTestModeSupport)) 
   {
-    DEBUG ((EFI_D_INFO, __FUNCTION__" - Test mode enabled!\n"));
+    // MU_CHANGE START
+    DEBUG ((EFI_D_INFO, "%a - Test mode enabled!\n", __FUNCTION__));
+    // MU_CHANGE END
     mSmmRebootOnException = TRUE;
     Status = EFI_SUCCESS;
   }
