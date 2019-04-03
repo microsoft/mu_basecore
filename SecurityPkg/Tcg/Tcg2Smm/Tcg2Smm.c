@@ -232,7 +232,7 @@ MemoryClearCallback (
 
   return EFI_SUCCESS;
 }
-#endif 0 // MS_CHANGE Begin - MemoryClear SMI handler not used
+#endif // MS_CHANGE Begin - MemoryClear SMI handler not used
 
 /**
   Notification for SMM ReadyToLock protocol.
