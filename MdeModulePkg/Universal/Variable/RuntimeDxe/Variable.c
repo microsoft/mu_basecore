@@ -602,7 +602,7 @@ Reclaim (
   HwErrVariableTotalSize  = 0;
 
   // MS_CHANGE_? - This may be specific to the MS implementation.
-  DEBUG((DEBUG_INFO, __FUNCTION__" Reclaim variables started.\n"));
+  DEBUG((DEBUG_INFO, "%a Reclaim variables started.\n", __FUNCTION__));
 
   if (IsVolatile || mVariableModuleGlobal->VariableGlobal.EmuNvMode) {
     //
@@ -2104,7 +2104,7 @@ UpdateVariable (
       || (IsCommonVariable && ((VarSize + mVariableModuleGlobal->CommonVariableTotalSize) > mVariableModuleGlobal->CommonVariableSpace))
       || (IsCommonVariable && AtRuntime () && ((VarSize + mVariableModuleGlobal->CommonVariableTotalSize) > mVariableModuleGlobal->CommonRuntimeVariableSpace))
       || (IsCommonUserVariable && ((VarSize + mVariableModuleGlobal->CommonUserVariableTotalSize) > mVariableModuleGlobal->CommonMaxUserVariableSpace))) {
-      // MS_CHANGE Starts: HwError record quata state should not trigger variable store reclaim
+      // MS_CHANGE Starts: HwError record quota state should not trigger variable store reclaim
       if (((Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) != 0)
         &&((VarSize + mVariableModuleGlobal->HwErrVariableTotalSize) > PcdGet32 (PcdHwErrStorageSize))) {
         Status = EFI_OUT_OF_RESOURCES;
@@ -3174,7 +3174,8 @@ ReclaimForOS(
 {
   EFI_STATUS                     Status;
   UINTN                          RemainingCommonRuntimeVariableSpace;
-  UINTN                          RemainingHwErrVariableSpace;
+  // MS_CHANGE Starts: HwError record quota state should not trigger variable store reclaim
+  // UINTN                          RemainingHwErrVariableSpace;
   STATIC BOOLEAN                 Reclaimed;
 
   //
@@ -3193,13 +3194,12 @@ ReclaimForOS(
     RemainingCommonRuntimeVariableSpace = mVariableModuleGlobal->CommonRuntimeVariableSpace - mVariableModuleGlobal->CommonVariableTotalSize;
   }
 
-  RemainingHwErrVariableSpace = PcdGet32 (PcdHwErrStorageSize) - mVariableModuleGlobal->HwErrVariableTotalSize;
+  // RemainingHwErrVariableSpace = PcdGet32 (PcdHwErrStorageSize) - mVariableModuleGlobal->HwErrVariableTotalSize;
 
   //
   // Check if the free area is below a threshold.
   //
   if (((RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxVariableSize) ||
-      // MS_CHANGE Starts: HwError record quata state should not trigger variable store reclaim
       // (RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxAuthVariableSize)) ||
        (RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxAuthVariableSize))){
       //((PcdGet32 (PcdHwErrStorageSize) != 0) &&

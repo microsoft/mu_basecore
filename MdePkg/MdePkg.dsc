@@ -158,8 +158,10 @@
   MdePkg/Library/SmmMemLib/SmmMemLib.inf
   MdePkg/Library/SmmIoLib/SmmIoLib.inf
   ##MSCHANGE Begin
+!if $(TOOLCHAIN) == VSLATESTx86
   MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
   MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+!endif
   ##MSCHANGE End
   MdePkg/Library/BaseRngLib/BaseRngLib.inf
   MdePkg/Library/SmmPciExpressLib/SmmPciExpressLib.inf
@@ -169,9 +171,11 @@
 
 
 # MS_CHANGE Begin
+!if $(TOOLCHAIN) == VSLATESTx86
 [Components.IA32]
   # For VS2017 support link the VsIntrinsicLib into all 32 bit modules
   MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf
+!endif
 # MS_CHANGE End
 
 [Components.EBC]
