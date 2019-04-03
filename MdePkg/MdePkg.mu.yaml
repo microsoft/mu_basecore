@@ -10,6 +10,10 @@
         "IgnoreInf": []
     },
     "DSCCheck": {
-        "IgnoreInf": []
+        "IgnoreInf": [
+            "MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf",
+            "MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf",
+            "MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf"
+        ]
     }
 }
