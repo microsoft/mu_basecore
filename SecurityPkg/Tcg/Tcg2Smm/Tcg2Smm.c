@@ -184,7 +184,7 @@ MemoryClearCallback (
 
   return EFI_SUCCESS;
 }
-#endif 0 // MS_CHANGE Begin - MemoryClear SMI handler not used
+#endif // MS_CHANGE Begin - MemoryClear SMI handler not used
 
 /**
   Find the operation region in TCG ACPI table by given Name and Size,

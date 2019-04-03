@@ -438,7 +438,7 @@ DumpTpmPcrCommand (
   // If this is an unrecognized command, we can't go much further.
   if (Command != TPM_CC_PCR_Extend && Command != TPM_CC_PCR_Event)
   {
-    DEBUG(( DEBUG_WARN, __FUNCTION__" - Unrecognized command! 0x%X\n", Command ));
+    DEBUG(( DEBUG_WARN, "%a - Unrecognized command! 0x%X\n", __FUNCTION__, Command ));
     return;
   }
 
@@ -481,7 +481,7 @@ DumpTpmPcrCommand (
 
         default:
           // This algorithm hasn't been programmed yet. We need to bail.
-          DEBUG(( DEBUG_WARN, __FUNCTION__" - Unknown hash algorithm! 0x%04X\n", SwapBytes16( CurrentDigest->hashAlg ) ));
+          DEBUG(( DEBUG_WARN, "%a - Unknown hash algorithm! 0x%04X\n", __FUNCTION__, SwapBytes16( CurrentDigest->hashAlg ) ));
           // Zero the count so we can get out of here.
           DigestCount = 0;
           break;
@@ -665,7 +665,7 @@ DumpTpmInputBlock (
   // Make sure we've got at least enough data for a valid header.
   if (InputBlockSize < sizeof( *CommHeader ))
   {
-    DEBUG(( DEBUG_WARN, __FUNCTION__" - Invalid buffer size!\n" ));
+    DEBUG(( DEBUG_WARN, "%a - Invalid buffer size!\n", __FUNCTION__));
     return;
   }
 
