@@ -1136,7 +1136,7 @@ SmiPFHandler (
 
 HaltOrReboot:
   if (mSmmRebootOnException) {
-    DEBUG ((DEBUG_ERROR, __FUNCTION__" - Reboot here in test mode.\n"));
+    DEBUG ((DEBUG_ERROR, "%a - Reboot here in test mode.\n", __FUNCTION__));
     ResetWarm();
     CpuDeadLoop ();
   }

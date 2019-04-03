@@ -34,5 +34,5 @@ Nuget version is AA.BB.CC
 7. Pack and push
 
   ```cmd
-  NugetProducerSupport.py --Operation PackAndPush --ConfigFilePath iasl.config.json --Version <nuget version here> --InputFolderPath <path to newly created folder here>  --ApiKey <your key here>
+  NugetPublishing.py --Operation PackAndPush --ConfigFilePath iasl.config.json --Version <nuget version here> --InputFolderPath <path to newly created folder here>  --ApiKey <your key here>
   ```
