@@ -191,9 +191,11 @@
 
 
 # MS_CHANGE Begin
+!if $(TOOLCHAIN) == VS2017 or $(TOOLCHAIN) == VS2019
 [Components.IA32]
   # For VS2017 support link the VsIntrinsicLib into all 32 bit modules
   MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf
+!endif
 # MS_CHANGE End
 
 [Components.EBC]
