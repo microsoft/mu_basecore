@@ -68,10 +68,12 @@
 
 ##MSCHANGE Begin
 !if $(TARGET) == DEBUG
+!if $(TOOLCHAIN) == VSLATESTx86
 [LibraryClasses.X64, LibraryClasses.IA32]
   #if debug is enabled provide StackCookie support lib so that we can link to /GS exports
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
   NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+!endif
 !endif
 ##MSCHANGE End
 
