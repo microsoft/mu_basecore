@@ -16,7 +16,7 @@ CreateTcg2PreUefiEventLogEntries (
   VOID
   )
 {
-  DEBUG(( DEBUG_ERROR, __FUNCTION__" - This is just a shim and should not be used in real builds!!\n" ));
+  DEBUG(( DEBUG_ERROR, "%a - This is just a shim and should not be used in real builds!!\n", __FUNCTION__ ));
   // WE NEED TO FINISH TESTING THE ACTUAL SOLUTION!
   ASSERT( FALSE );
   return;

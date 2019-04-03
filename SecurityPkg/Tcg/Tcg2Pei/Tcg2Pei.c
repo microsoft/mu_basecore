@@ -324,7 +324,7 @@ SyncPcrAllocationsAndPcrMask (
   UINT32                            Tpm2PcrMask;
   UINT32                            NewTpm2PcrMask;
 
-  DEBUG ((EFI_D_VERBOSE, __FUNCTION__"()\n"));     // MS_CHANGE_?
+  DEBUG ((EFI_D_VERBOSE, "%a ()\n", __FUNCTION__));     // MS_CHANGE_?
 
   //
   // Determine the current TPM support and the Platform PCR mask.
@@ -333,7 +333,7 @@ SyncPcrAllocationsAndPcrMask (
   // MS_CHANGE_?
   if (EFI_ERROR (Status))
   {
-    DEBUG ((EFI_D_ERROR, __FUNCTION__" - Failed to determine TPM capabilities!\n"));
+    DEBUG ((EFI_D_ERROR, "%a - Failed to determine TPM capabilities!\n", __FUNCTION__));
     ASSERT_EFI_ERROR (Status);
     return;
   }
