@@ -558,6 +558,7 @@ class ModuleReport(object):
     def __init__(self, M, ReportType):
         self.ModuleName = M.Module.BaseName
         self.ModuleInfPath = M.MetaFile.File
+        self.ModuleArch = M.Arch # MS_CHANGE
         self.FileGuid = M.Guid
         self.Size = 0
         self.BuildTimeStamp = None
@@ -668,6 +669,7 @@ class ModuleReport(object):
 
         FileWrite(File, "Module Summary")
         FileWrite(File, "Module Name:          %s" % self.ModuleName)
+        FileWrite(File, "Module Arch:          %s" % self.ModuleArch) # MS_CHANGE
         FileWrite(File, "Module INF Path:      %s" % self.ModuleInfPath)
         FileWrite(File, "File GUID:            %s" % self.FileGuid)
         if self.Size:
@@ -2281,4 +2283,3 @@ class BuildReport(object):
 # This acts like the main() function for the script, unless it is 'import'ed into another script.
 if __name__ == '__main__':
     pass
-
