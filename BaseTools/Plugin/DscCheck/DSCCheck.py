@@ -64,14 +64,13 @@ class DSCCheck(IMuBuildPlugin):
 
         # Get INF Files
         INFFiles = self.WalkDirectoryForExtension([".inf"], abs_pkg_path)
-        INFFiles = [x.lower() for x in INFFiles]
         INFFiles = [Edk2pathObj.GetEdk2RelativePathFromAbsolutePath(x) for x in INFFiles]  # make edk2relative path so can compare with DSC
 
         # remove ignores
 
         if "IgnoreInf" in pkgconfig:
             for a in pkgconfig["IgnoreInf"]:
-                a = a.lower().replace(os.sep, "/")
+                a = a.replace(os.sep, "/")
                 try:
                     tc.LogStdOut("Ignoring INF {0}".format(a))
                     INFFiles.remove(a)
@@ -89,15 +88,15 @@ class DSCCheck(IMuBuildPlugin):
         dp.ParseFile(wsr_dsc_path)
 
         # lowercase for matching
-        dp.Libs = [x.lower() for x in dp.Libs]
-        dp.ThreeMods = [x.lower() for x in dp.ThreeMods]
-        dp.SixMods = [x.lower() for x in dp.SixMods]
-        dp.OtherMods = [x.lower() for x in dp.OtherMods]
+        # dp.Libs = [x.lower() for x in dp.Libs]
+        # dp.ThreeMods = [x.lower() for x in dp.ThreeMods]
+        # dp.SixMods = [x.lower() for x in dp.SixMods]
+        # dp.OtherMods = [x.lower() for x in dp.OtherMods]
 
         # Check if INF in component section
         for INF in INFFiles:
-            if not any(INF.lower().strip() in x for x in dp.ThreeMods) \
-                    and not any(INF.lower().strip() in x for x in dp.SixMods) and not any(INF.lower().strip() in x for x in dp.OtherMods):
+            if not any(INF.strip() in x for x in dp.ThreeMods) \
+                    and not any(INF.strip() in x for x in dp.SixMods) and not any(INF.strip() in x for x in dp.OtherMods):
                 logging.critical(INF + " not in " + wsr_dsc_path)
                 tc.LogStdError("{0} not in {1}".format(INF, wsr_dsc_path))
                 overall_status = overall_status + 1
