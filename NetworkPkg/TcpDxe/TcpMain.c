@@ -482,6 +482,8 @@ Tcp4Close (
 
   Sock = SOCK_FROM_THIS (This);
 
+  SockFlush (Sock);   // MU_CHANGE
+
   return SockClose (Sock, CloseToken, CloseToken->AbortOnClose);
 }
 
@@ -1016,6 +1018,8 @@ Tcp6Close (
   }
 
   Sock = SOCK_FROM_THIS (This);
+
+  SockFlush (Sock);   // MU_CHANGE
 
   return SockClose (Sock, CloseToken, CloseToken->AbortOnClose);
 }
