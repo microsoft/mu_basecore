@@ -101,7 +101,7 @@ GetStringForFailureType(
   }
   if (Result == mUnknownFailureType)
   {
-    DEBUG((DEBUG_INFO, __FUNCTION__ " Failure Type does not have string defined 0x%X\n", (UINT32)Failure));
+    DEBUG((DEBUG_INFO, "%a Failure Type does not have string defined 0x%X\n", __FUNCTION__, (UINT32)Failure));
   }
 
   return Result;

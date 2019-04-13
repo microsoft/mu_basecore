@@ -64,7 +64,7 @@ GetCacheFileDevicePath (
                                 (VOID**)&LoadedImage );
   if (EFI_ERROR( Status ))
   {
-    DEBUG(( DEBUG_WARN, __FUNCTION__" - Failed to locate DevicePath for loaded image. %r\n", Status ));
+    DEBUG(( DEBUG_WARN, "%a - Failed to locate DevicePath for loaded image. %r\n", __FUNCTION__, Status ));
     return NULL;
   }
 
@@ -81,7 +81,7 @@ GetCacheFileDevicePath (
   // Make sure we didn't get any weird data.
   if (DirectorySlashOffset == 0)
   {
-    DEBUG(( DEBUG_ERROR, __FUNCTION__" - Weird 0-length string when processing app path.\n" ));
+    DEBUG(( DEBUG_ERROR, "%a - Weird 0-length string when processing app path.\n", __FUNCTION__ ));
     goto Exit;
   }
   // Now that we know we have a decent string, let's take a deeper look.
@@ -101,7 +101,7 @@ GetCacheFileDevicePath (
   //
   if (AppPath[DirectorySlashOffset] != L'\\')
   {
-    DEBUG(( DEBUG_ERROR, __FUNCTION__" - Could not find a single directory separator in app path.\n" ));
+    DEBUG(( DEBUG_ERROR, "%a - Could not find a single directory separator in app path.\n", __FUNCTION__ ));
     goto Exit;
   }
 
@@ -181,7 +181,7 @@ DoesCacheExist (
     FreePool( FileDevicePath );
   }
 
-  DEBUG(( DEBUG_VERBOSE, __FUNCTION__" - Returning %d\n", !EFI_ERROR( Status ) ));
+  DEBUG(( DEBUG_VERBOSE, "%a - Returning %d\n", __FUNCTION__, !EFI_ERROR( Status ) ));
 
   return !EFI_ERROR( Status );
 } // DoesCacheExist()
@@ -238,7 +238,7 @@ SaveUnitTestCache (
     Status = ShellDeleteFile(&FileHandle);
     if (EFI_ERROR(Status))
     {
-      DEBUG((DEBUG_ERROR, __FUNCTION__ " failed to delete file %r\n", Status));
+      DEBUG((DEBUG_ERROR, "%a failed to delete file %r\n", __FUNCTION__, Status));
     }
   }
 
@@ -251,7 +251,7 @@ SaveUnitTestCache (
                                       0 );
   if (EFI_ERROR( Status ))
   {
-    DEBUG(( DEBUG_ERROR, __FUNCTION__" - Opening file for writing failed! %r\n", Status ));
+    DEBUG(( DEBUG_ERROR, "%a - Opening file for writing failed! %r\n", __FUNCTION__, Status ));
     goto Exit;
   }
 
@@ -259,18 +259,18 @@ SaveUnitTestCache (
   // Write the data to the file.
   //
   WriteCount = SaveData->BlobSize;
-  DEBUG(( DEBUG_INFO, __FUNCTION__" - Writing %d bytes to file...\n", WriteCount ));
+  DEBUG(( DEBUG_INFO, "%a - Writing %d bytes to file...\n", __FUNCTION__, WriteCount ));
   Status = ShellWriteFile( FileHandle,
                            &WriteCount,
                            SaveData );
 
   if (EFI_ERROR( Status ) || WriteCount != SaveData->BlobSize)
   {
-    DEBUG(( DEBUG_ERROR, __FUNCTION__" - Writing to file failed! %r\n", Status ));
+    DEBUG(( DEBUG_ERROR, "%a - Writing to file failed! %r\n", __FUNCTION__, Status ));
   }
   else
   {
-    DEBUG(( DEBUG_INFO, __FUNCTION__" - SUCCESS!\n" ));
+    DEBUG(( DEBUG_INFO, "%a - SUCCESS!\n", __FUNCTION__ ));
   }
 
   //
@@ -338,7 +338,7 @@ LoadUnitTestCache (
                                       0 );
   if (EFI_ERROR( Status ))
   {
-    DEBUG(( DEBUG_ERROR, __FUNCTION__" - Opening file for writing failed! %r\n", Status ));
+    DEBUG(( DEBUG_ERROR, "%a - Opening file for writing failed! %r\n", __FUNCTION__, Status ));
     goto Exit;
   }
   else
@@ -351,7 +351,7 @@ LoadUnitTestCache (
   Status = ShellGetFileSize( FileHandle, &LargeFileSize );
   if (EFI_ERROR( Status ))
   {
-    DEBUG(( DEBUG_ERROR, __FUNCTION__" - Failed to determine file size! %r\n", Status ));
+    DEBUG(( DEBUG_ERROR, "%a - Failed to determine file size! %r\n", __FUNCTION__, Status ));
     goto Exit;
   }
 
@@ -361,7 +361,7 @@ LoadUnitTestCache (
   Buffer = AllocatePool( FileSize );
   if (Buffer == NULL)
   {
-    DEBUG(( DEBUG_ERROR, __FUNCTION__" - Failed to allocate a pool to hold the file contents! %r\n", Status ));
+    DEBUG(( DEBUG_ERROR, "%a - Failed to allocate a pool to hold the file contents! %r\n", __FUNCTION__, Status ));
     Status = EFI_OUT_OF_RESOURCES;
     goto Exit;
   }
@@ -371,7 +371,7 @@ LoadUnitTestCache (
   Status = ShellReadFile( FileHandle, &FileSize, Buffer );
   if (EFI_ERROR( Status ))
   {
-    DEBUG(( DEBUG_ERROR, __FUNCTION__" - Failed to read the file contents! %r\n", Status ));
+    DEBUG(( DEBUG_ERROR, "%a - Failed to read the file contents! %r\n", __FUNCTION__, Status ));
   }
 
 Exit:
