@@ -39,7 +39,7 @@ SetUsbBootNext (
     UnicodeValueToString(BootOptionIndexChar, 0, (INT64)BootOptionIndex, 1);
 
     // Attempt to retrieve the option.
-    DEBUG(( DEBUG_VERBOSE, __FUNCTION__" - Checking for %s...\n", BootOptionName ));
+    DEBUG(( DEBUG_VERBOSE, "%a - Checking for %s...\n", __FUNCTION__, BootOptionName ));
     VariableSize = OptionBufferSize;
     Status = gRT->GetVariable( BootOptionName,
                                &gEfiGlobalVariableGuid,
@@ -59,7 +59,7 @@ SetUsbBootNext (
       // If you fail to... we've gotta get out of here.
       if (OptionBuffer == NULL)
       {
-        DEBUG(( DEBUG_ERROR, __FUNCTION__" - Failed to allocate memory for Boot option variable %s...\n", BootOptionName ));
+        DEBUG(( DEBUG_ERROR, "%a - Failed to allocate memory for Boot option variable %s...\n", __FUNCTION__, BootOptionName ));
         return EFI_OUT_OF_RESOURCES;
       }
       OptionBufferSize = VariableSize;
@@ -75,7 +75,7 @@ SetUsbBootNext (
     // If we failed to retrieve this option... move on with your life.
     if (EFI_ERROR( Status ))
     {
-      DEBUG(( DEBUG_VERBOSE, __FUNCTION__" - Failed to locate option (%r). Moving on.\n", Status ));
+      DEBUG(( DEBUG_VERBOSE, "%a - Failed to locate option (%r). Moving on.\n", __FUNCTION__, Status ));
       continue;
     }
 
@@ -101,11 +101,11 @@ SetUsbBootNext (
                                (EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE),
                                sizeof( BootOptionIndex ),
                                &BootOptionIndex );
-    DEBUG(( DEBUG_VERBOSE, __FUNCTION__" - Set BootNext Status (%r)\n", Status ));
+    DEBUG(( DEBUG_VERBOSE, "%a - Set BootNext Status (%r)\n", __FUNCTION__, Status ));
   }
   else
   {
-    DEBUG(( DEBUG_WARN, __FUNCTION__" - Could not find generic USB boot option.\n" ));
+    DEBUG(( DEBUG_WARN, "%a - Could not find generic USB boot option.\n", __FUNCTION__ ));
     Status = EFI_NOT_FOUND;
   }
 

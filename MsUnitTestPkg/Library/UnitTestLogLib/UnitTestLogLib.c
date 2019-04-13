@@ -149,7 +149,7 @@ IN UINTN      BufferSize
   //
   if (Test == NULL)
   {
-    DEBUG((DEBUG_ERROR, __FUNCTION__ " called with invalid Test parameter\n"));
+    DEBUG((DEBUG_ERROR, "%a called with invalid Test parameter\n", __FUNCTION__));
     return;
   }
 
