@@ -8,34 +8,38 @@ Project Mu Basecore Repository
 
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
 
+Branch Status - release/201811
+==============================
+
+Abandoned - 2019-04-17
+----------------------
+This branch had a short integration cycle and was only used for development. It was never stabilized and will not be maintained with bugfixes.
+
+Recommend transitioning any content to the next release.
+
 Branch Changes - release/201811
 ===============================
 
-Breaking Changes-dev
+Breaking Changes
 --------------------
-
 - host_specific NuGet feeds require mu-environment 0.3.6
 
-Main Changes-dev
+Main Changes
 ----------------
-
 - None
 
-Bug Fixes-dev
+Bug Fixes
 -------------
-
 - ARM and AARCH64 VSLATESTx86 DLINK flags are now being set correctly.
 
 1811_CIBuild Changes
 --------------------
-
 - Restore PeCoffLoaderGetPeHeaderMagicValue() function that's used by stack cookies.
 - Restore the Python3-enabled tools until TianoCore supports both.
 - Python3 changes don't exist in TianoCore yet, so will have to cherry-pick from 201808.
 
 1811_Rebase Changes
 -------------------
-
 - Drop commit d4c6091a93 for IntSafeLib. Part of TianoCore now.
 - Drop MSCHANGE #1116 in VirtualMemory.c.
 - Drop commit 5fa7b18fad for BaseTools move to MU_BUILD.
