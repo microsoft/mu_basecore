@@ -180,8 +180,11 @@ UpdateImageProgress (
   }
 
   Status = DisplayUpdateProgress (Completion, Color);
+  if (EFI_ERROR(Status)) {
+    DEBUG((DEBUG_WARN, "DisplayUpdateProgress returned %r\n", Status));
+  }
 
-  return Status;
+  return EFI_SUCCESS;
 }
 
 /**
