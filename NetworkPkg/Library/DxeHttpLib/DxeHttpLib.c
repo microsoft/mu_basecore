@@ -2072,6 +2072,8 @@ HttpMappingToStatusCode (
       return HTTP_STATUS_416_REQUESTED_RANGE_NOT_SATISFIED;
     case 417:
       return HTTP_STATUS_417_EXPECTATION_FAILED;
+    case 429:                                    // MU_CHANGE
+      return HTTP_STATUS_429_TOO_MANY_REQUESTS;  // MU_CHANGE
     case 500:
       return HTTP_STATUS_500_INTERNAL_SERVER_ERROR;
     case 501:
