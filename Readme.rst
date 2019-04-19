@@ -31,7 +31,7 @@ Breaking Changes-dev
 Main Changes-dev
 ----------------
 
-- None
+- Modifies DxeCapsuleProcessLib so that UpdateImageProgress() returns success even if DisplayUpdateProgress() returns EFI_ERROR. This allows capsule update to proceed even if there are errors in the progress reporting.
 
 Bug Fixes-dev
 -------------
