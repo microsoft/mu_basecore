@@ -254,7 +254,7 @@ MmIsSchedulable (
         Status = PushBool (FALSE);
       } else {
         DEBUG ((DEBUG_DISPATCH, "  PUSH GUID(%g) = TRUE\n", &DriverGuid));
-        *Iterator = EFI_DEP_REPLACE_TRUE;
+//        *Iterator = EFI_DEP_REPLACE_TRUE;
         Status = PushBool (TRUE);
       }
       if (EFI_ERROR (Status)) {
