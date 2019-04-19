@@ -41,7 +41,8 @@ Bug Fixes-dev
 1903_RefBoot Changes
 --------------------
 
-Platform Changes
+Platform Changes:
+
 - Remove the use of PcdPeiCoreMaxFvSupported, PcdPeiCoreMaxPeimPerFv and PcdPeiCoreMaxPpiSupported in platform code as they have been removed for BZ1405.
 - Add a LibraryClass for MmServicesTableLib to satisfy new library requirement in FaultTolerantWrite.
 - Override ResetSystemLib with RuntimeResetSystemLib in CapsuleRuntimeDxe.
