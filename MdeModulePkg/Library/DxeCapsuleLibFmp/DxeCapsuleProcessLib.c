@@ -206,9 +206,14 @@ UpdateImageProgress (
     }
   }
 
+//MU_CHANGE - Return success on Progress Display Error to allow capsule to proceed in the face of progress errors.
   Status = DisplayUpdateProgress (Completion, Color);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_WARN, "DisplayUpdateProgress returned %r\n", Status));
+  }
 
-  return Status;
+  return EFI_SUCCESS;
+//MU_CHANGE - Return success on Progress Display Error to allow capsule to proceed in the face of progress errors.END
 }
 
 /**
