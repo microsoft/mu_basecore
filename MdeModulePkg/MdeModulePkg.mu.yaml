@@ -13,7 +13,12 @@
     "DSCCheck": {
         "IgnoreInf": [
             "MdeModulePkg/Library/DxeCapsuleLibFmp/DxeCapsuleLib.inf",
-            "MdeModulePkg/Logo/LogoDxe.inf"  # https://github.com/Microsoft/mu/issues/35
+            "MdeModulePkg/Logo/LogoDxe.inf",  # https://github.com/Microsoft/mu/issues/35
+
+            # Not supported without StandaloneMmPkg.
+            "MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteStandaloneMm.inf",
+            "MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf",
+            "MdeModulePkg/Library/UefiVariablePolicyLib/UefiVariablePolicyUnitTest/UefiVariablePolicyUnitTest.inf"
         ]   
     }
 }
