@@ -27,6 +27,7 @@
         "AcceptableDependencies": [
             "MdePkg/MdePkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",
+            "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec", # MU_CHANGE add unit test framework
             "StandaloneMmPkg/StandaloneMmPkg.dec",
             "ArmPkg/ArmPkg.dec"  # this should be fixed by promoting an abstraction
         ],

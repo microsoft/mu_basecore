@@ -1,0 +1,58 @@
+## @file VariablePolicyDxe.inf
+# This protocol allows communication with Variable Policy Engine.
+#
+##
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+
+[Defines]
+  INF_VERSION         = 0x00010017
+  BASE_NAME           = VariablePolicyDxe
+  FILE_GUID           = 054F3AE2-D80C-4DBC-A9BC-06042401FA16
+  VERSION_STRING      = 1.0
+  MODULE_TYPE         = DXE_DRIVER
+  ENTRY_POINT         = VariablePolicyDxeMain
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 AARCH64
+#
+
+
+[Sources]
+  VariablePolicyDxe.c
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiLib
+  BaseLib
+  DebugLib
+  UefiBootServicesTableLib
+  MemoryAllocationLib
+  BaseMemoryLib
+  SafeIntLib
+
+
+[Protocols]
+  gVariablePolicyProtocolGuid         ## PRODUCES
+  gEfiMmCommunicationProtocolGuid     ## CONSUMES
+
+
+[Guids]
+  gEdkiiPiSmmCommunicationRegionTableGuid   ## CONSUMES # Used to locate the shared comm buffer.
+  gVarCheckPolicyLibMmiHandlerGuid          ## CONSUMES # Used to signal MM Communication events.
+
+
+[Depex]
+  gEfiMmCommunicationProtocolGuid AND
+  gEfiVariableWriteArchProtocolGuid

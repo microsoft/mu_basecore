@@ -25,6 +25,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "AuthServiceInternal.h"
 
+#include <Protocol/VariablePolicy.h>
+#include <Library/UefiVariablePolicyLib.h>
+
 //
 // Public Exponent of RSA Key.
 //
@@ -1959,6 +1962,20 @@ VerifyTimeBasedPayload (
   Buffer += Length;
 
   CopyMem (Buffer, PayloadPtr, PayloadSize);
+
+  // MU_CHANGE [BEGIN] - If the VariablePolicy engine is disabled, allow
+  //                    deletion of any authenticated variables. Also allow any variable
+  //                    that authenticates itself (e.g. PK set payloads) without verifying
+  //                    the cert (self-signing is not required).
+  if ((PayloadSize == 0 && (Attributes & EFI_VARIABLE_APPEND_WRITE) == 0) ||
+      AuthVarType == AuthVarTypePayload) {
+    // If the operation type matches, auto-verify when policy enforcement is disabled.
+    if (!IsVariablePolicyEnabled()) {
+      VerifyStatus = TRUE;
+      goto Exit;
+    }
+  }
+  // MU_CHANGE [END]
 
   if (AuthVarType == AuthVarTypePk) {
     //
