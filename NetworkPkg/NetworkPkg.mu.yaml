@@ -8,10 +8,13 @@
             "MdePkg/MdePkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",
             "MsUnitTestPkg/MsUnitTestPkg.dec"
-        ], 
+        ],
         "IgnoreInf": []
     },
     "DSCCheck": {
-        "IgnoreInf": []
+        "IgnoreInf": [
+            "NetworkPkg/SharedTlsDxe/TlsDxe.DEBUG.inf",
+            "NetworkPkg/SharedTlsDxe/TlsDxe.RELEASE.inf"
+        ]
     }
 }
