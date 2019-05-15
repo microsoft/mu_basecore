@@ -1,0 +1,8 @@
+{
+  "scope": "global",
+  "type": "nuget",
+  "name": "Mu-SharedTls",
+  "source": "https://api.nuget.org/v3/index.json",
+  "version": "2019.03.1.2",
+  "flags": []
+}
