@@ -48,6 +48,7 @@
   MemoryAllocationLib
   BaseCryptLib
   PlatformSecureLib
+  UefiVariablePolicyLib
 
 [Guids]
   ## CONSUMES            ## Variable:L"SetupMode"

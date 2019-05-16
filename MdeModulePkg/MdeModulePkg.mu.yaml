@@ -17,7 +17,8 @@
 
             # Not supported without StandaloneMmPkg.
             "MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteStandaloneMm.inf",
-            "MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf"
+            "MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf",
+            "MdeModulePkg/Library/UefiVariablePolicyLib/UefiVariablePolicyUnitTest/UefiVariablePolicyUnitTest.inf"
         ]   
     }
 }
