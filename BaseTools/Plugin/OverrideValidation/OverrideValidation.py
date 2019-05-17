@@ -6,7 +6,7 @@
 # Copyright (c) 2018, Microsoft Corporation
 
 # All rights reserved.
-# Redistribution and use in source and binary forms, with or without 
+# Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 # 1. Redistributions of source code must retain the above copyright notice,
 # this list of conditions and the following disclaimer.
@@ -19,10 +19,10 @@
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 # IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
 # INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
 # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
 
@@ -40,8 +40,8 @@ import hashlib
 FORMAT_VERSION_1 = (1, 4)   #Version 1: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss
 
 #
-# for now i want to keep this file as both a command line tool and a plugin for the Uefi Build system. 
-# To do this the plugin class is only defined if in the build environment where the plugin classes are importable. 
+# for now i want to keep this file as both a command line tool and a plugin for the Uefi Build system.
+# To do this the plugin class is only defined if in the build environment where the plugin classes are importable.
 #
 #
 try:
@@ -102,7 +102,7 @@ try:
                 logging.debug("Override validation all in sync")
             else:
                 logging.error("Override validation failed")
-        
+
             endtime = datetime.now()
             delta = endtime - starttime
             logging.info("---------------------------------------------------------")
@@ -185,7 +185,7 @@ try:
                     if m_result != self.OverrideResult.OR_ALL_GOOD:
                         result = m_result
                         logging.error("At Line %d: %s" %(lineno, Line))
-        
+
             # Revert this visitied indicator after this branch is done searching
             filelist.remove(list_path)
             return result
@@ -254,12 +254,12 @@ try:
             res_tuple = self.override_hash_compare(thebuilder, EntryVersion, EntryHash, fullpath)
             result = res_tuple.get('result')
             m_node.expect_hash = res_tuple.get('hash_val')
-    
+
             # Step 6: House keeping
             # Process the path to workspace/package path based add it to the parent node
             overridden_rel_path = thebuilder.mws.relpath(fullpath, thebuilder.ws).replace('\\', '/')
             date_delta = datetime.utcnow() - EntryTimestamp
-        
+
             m_node.entry_hash = EntryHash
             m_node.path = overridden_rel_path
             m_node.status = result
@@ -287,7 +287,7 @@ try:
         def override_hash_compare(self, thebuilder, version, hash, fullpath):
             result = self.OverrideResult.OR_ALL_GOOD
             hash_val = ''
-        
+
             # Error out the unknown version
             if (version == FORMAT_VERSION_1[0]):
                 hash_val = ModuleHashCal(fullpath)
@@ -312,7 +312,7 @@ try:
             logfile = os.path.normpath(logfile)
             if not os.path.isdir(os.path.dirname(logfile)):
                 os.makedirs(os.path.dirname(logfile))
-            
+
             with open(logfile, 'w') as log:
                 log.write("Platform:     %s\n" %(thebuilder.env.GetValue("PRODUCT_NAME")))
                 log.write("Version:      %s\n" %(thebuilder.env.GetValue("BLD_*_BUILDID_STRING")))
@@ -369,7 +369,9 @@ try:
 
             # Dsc parser is used in this instance
             logging.debug("Parse Active Platform DSC file")
-            dscp = DscParser().SetBaseAbsPath(thebuilder.ws).SetPackagePaths(thebuilder.pp.split(os.pathsep)).SetInputVars(thebuilder.env.GetAllBuildKeyValues())
+            input_vars = thebuilder.env.GetAllBuildKeyValues()
+            input_vars["TARGET"] = thebuilder.env.GetValue("TARGET")
+            dscp = DscParser().SetBaseAbsPath(thebuilder.ws).SetPackagePaths(thebuilder.pp.split(os.pathsep)).SetInputVars(input_vars)
             plat_dsc = thebuilder.env.GetValue("ACTIVE_PLATFORM")
             if (plat_dsc is None):
                 return InfFileList
@@ -406,7 +408,7 @@ def ModuleHashCal(path):
     # Use InfParser to parse sources section
     ip = InfParser()
     ip.ParseFile(path)
-    
+
     # Add all referenced source files in addtion to our inf file list
     for source in ip.Sources:
         sourcefileList.append(os.path.normpath(os.path.join(folderpath, source)))
@@ -421,7 +423,7 @@ def ModuleHashCal(path):
         with open(sfile, 'rb') as entry:
             # replace \r\n with \n to take care of line terminators
             hash_obj.update(entry.read().replace(b'\r\n', b'\n'))
-    
+
     for bfile in binaryfileList:
         #print('Calculated: %s' %(bfile)) #Debug only
         with open(bfile, 'rb') as entry:
@@ -480,11 +482,11 @@ if __name__ == '__main__':
 
     dummy_list = []
     pathtool = Edk2Path(Paths.WorkSpace, dummy_list)
-    
+
     # Use absolute module path to find package path
     pkg_path = pathtool.GetContainingPackage(Paths.ModulePath)
     rel_path = Paths.ModulePath[Paths.ModulePath.find(pkg_path):]
-    
+
     rel_path = rel_path.replace('\\', '/')
     mod_hash = ModuleHashCal(Paths.ModulePath)
     print("Copy and paste the following line(s) to your overrider inf file(s):\n")
