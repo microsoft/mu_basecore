@@ -1160,7 +1160,9 @@ VariableSmmRuntimeInitialize (
   //
   gBS->CreateEventEx (
          EVT_NOTIFY_SIGNAL,
-         TPL_NOTIFY,
+         // MU_CHANGE - Only transition Variable Services to Runtime AFTER all Notify signals
+         //             so that volatile variables are writeable in callbacks.
+         TPL_NOTIFY-1,
          OnExitBootServices,
          NULL,
          &gEfiEventExitBootServicesGuid,
