@@ -119,6 +119,11 @@ IsValidVariablePolicyStructure (
     return FALSE;
   }
 
+  // Check for a valid Max Size.
+  if (NewPolicy->MaxSize == 0) {
+    return FALSE;
+  }
+
   // Check for the valid list of lock policies.
   if (NewPolicy->LockPolicyType != VARIABLE_POLICY_TYPE_NO_LOCK &&
       NewPolicy->LockPolicyType != VARIABLE_POLICY_TYPE_LOCK_NOW &&
