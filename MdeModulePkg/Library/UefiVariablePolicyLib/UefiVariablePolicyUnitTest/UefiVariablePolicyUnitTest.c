@@ -60,9 +60,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // TODO: Add tests for memory leaks?
 
-// TODO VARPOL: Add MinSize/Attribute tests for deleting variables.
-//              Variable deletion should not adhere to a min size.
-
 ///=== TEST DATA ==================================================================================
 
 #pragma pack(push, 1)
@@ -96,7 +93,7 @@ EFI_GUID    mTestGuid3 = TEST_GUID_3;
 
 #define   TEST_POLICY_ATTRIBUTES_NULL     0
 #define   TEST_POLICY_MIN_SIZE_NULL       0
-#define   TEST_POLICY_MAX_SIZE_NULL       0
+#define   TEST_POLICY_MAX_SIZE_NULL       MAX_UINT32
 
 #define   TEST_POLICY_MIN_SIZE_10         10
 #define   TEST_POLICY_MAX_SIZE_200        200
@@ -913,6 +910,35 @@ RegisterShouldRejectInvalidNameCharacters (
 
 UNIT_TEST_STATUS
 EFIAPI
+RegisterShouldRejectBadPolicyConstraints (
+  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
+  IN UNIT_TEST_CONTEXT           Context
+  )
+{
+  SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
+    {
+      VARIABLE_POLICY_ENTRY_REVISION,
+      sizeof(VARIABLE_POLICY_ENTRY) + sizeof(TEST_VAR_1_NAME),
+      sizeof(VARIABLE_POLICY_ENTRY),
+      TEST_GUID_1,
+      TEST_POLICY_MIN_SIZE_NULL,
+      TEST_POLICY_MAX_SIZE_NULL,
+      TEST_POLICY_ATTRIBUTES_NULL,
+      TEST_POLICY_ATTRIBUTES_NULL,
+      VARIABLE_POLICY_TYPE_NO_LOCK
+    },
+    TEST_VAR_1_NAME
+  };
+
+  // Make sure that invalid MAXes are rejected.
+  ValidationPolicy.Header.MaxSize = 0;
+  UT_ASSERT_EQUAL( RegisterVariablePolicy( &ValidationPolicy.Header ), EFI_INVALID_PARAMETER );
+
+  return UNIT_TEST_PASSED;
+} // RegisterShouldRejectBadPolicyConstraints()
+
+UNIT_TEST_STATUS
+EFIAPI
 RegisterShouldRejectUnknownLockPolicies (
   IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
@@ -1194,6 +1220,52 @@ AttributeCantPoliciesShouldBeHonored (
 
   return UNIT_TEST_PASSED;
 } // AttributeCantPoliciesShouldBeHonored()
+
+UNIT_TEST_STATUS
+EFIAPI
+VariablesShouldBeDeletableRegardlessOfSize (
+  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
+  IN UNIT_TEST_CONTEXT           Context
+  )
+{
+  SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
+    {
+      VARIABLE_POLICY_ENTRY_REVISION,
+      sizeof(VARIABLE_POLICY_ENTRY) + sizeof(TEST_VAR_1_NAME),
+      sizeof(VARIABLE_POLICY_ENTRY),
+      TEST_GUID_1,
+      TEST_POLICY_MIN_SIZE_10,
+      TEST_POLICY_MAX_SIZE_NULL,
+      TEST_POLICY_ATTRIBUTES_NULL,
+      EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS,
+      VARIABLE_POLICY_TYPE_NO_LOCK
+    },
+    TEST_VAR_1_NAME
+  };
+  EFI_STATUS  PolicyCheck;
+  UINT8       DummyData[TEST_POLICY_MAX_SIZE_200+1];
+
+  // Create a policy enforcing a minimum variable size.
+  UT_ASSERT_NOT_EFI_ERROR( RegisterVariablePolicy( &ValidationPolicy.Header ) );
+
+  // Make sure that a normal set would fail.
+  PolicyCheck = ValidateSetVariable( TEST_VAR_1_NAME,
+                                    &mTestGuid1,
+                                    VARIABLE_ATTRIBUTE_NV_BS,
+                                    TEST_POLICY_MIN_SIZE_10-1,
+                                    DummyData );
+  UT_ASSERT_STATUS_EQUAL( PolicyCheck, EFI_INVALID_PARAMETER );
+
+  // Now make sure that a delete would succeed.
+  PolicyCheck = ValidateSetVariable( TEST_VAR_1_NAME,
+                                    &mTestGuid1,
+                                    VARIABLE_ATTRIBUTE_NV_BS,
+                                    0,
+                                    NULL );
+  UT_ASSERT_NOT_EFI_ERROR( PolicyCheck );
+
+  return UNIT_TEST_PASSED;
+} // VariablesShouldBeDeletableRegardlessOfSize()
 
 UNIT_TEST_STATUS
 EFIAPI
@@ -2196,6 +2268,9 @@ int main ()
                 L"RegisterShouldRejectInvalidNameCharacters", L"VarPolicy.Policy.InvalidCharacters",
                 RegisterShouldRejectInvalidNameCharacters, LibInitMocked, LibCleanup, NULL );
   AddTestCase( PolicyTests,
+                L"RegisterShouldRejectBadPolicyConstraints", L"VarPolicy.Policy.BadConstraints",
+                RegisterShouldRejectBadPolicyConstraints, LibInitMocked, LibCleanup, NULL );
+  AddTestCase( PolicyTests,
                 L"RegisterShouldRejectUnknownLockPolicies", L"VarPolicy.Policy.BadLocks",
                 RegisterShouldRejectUnknownLockPolicies, LibInitMocked, LibCleanup, NULL );
   AddTestCase( PolicyTests,
@@ -2213,6 +2288,9 @@ int main ()
   AddTestCase( PolicyTests,
                 L"AttributeCantPoliciesShouldBeHonored", L"VarPolicy.Policy.AttrCant",
                 AttributeCantPoliciesShouldBeHonored, LibInitMocked, LibCleanup, NULL );
+  AddTestCase( PolicyTests,
+                L"VariablesShouldBeDeletableRegardlessOfSize", L"VarPolicy.Policy.DeleteIgnoreSize",
+                VariablesShouldBeDeletableRegardlessOfSize, LibInitMocked, LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 L"LockNowPoliciesShouldBeHonored", L"VarPolicy.Policy.VARIABLE_POLICY_TYPE_LOCK_NOW",
                 LockNowPoliciesShouldBeHonored, LibInitMocked, LibCleanup, NULL );
