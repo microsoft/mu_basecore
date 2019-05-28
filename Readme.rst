@@ -34,6 +34,7 @@ Main Changes-dev
 
 - Modifies DxeCapsuleProcessLib so that UpdateImageProgress() returns success even if DisplayUpdateProgress() returns EFI_ERROR. This allows capsule update to proceed even if there are errors in the progress reporting.
 - Integrate VariablePolicy libraries and DXE driver into the Variable Services stack. Include unit tests, even though unit test framework isn't quite in place.
+- Modified FmpAuthenticationLibPkcs7 to utilize the EKU checking capabilities in BaseCryptLib if a PCD (gFmpDevicePkgTokenSpaceGuid.PcdFmpDxeRequiredEKU) is set.
 
 Bug Fixes-dev
 -------------
