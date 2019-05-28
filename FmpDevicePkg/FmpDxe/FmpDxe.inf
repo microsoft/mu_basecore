@@ -71,6 +71,7 @@
   gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceTestKeySha256Digest              ## CONSUMES
   gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceImageTypeIdGuid                  ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdTestKeyUsed                            ## SOMETIMES_PRODUCES
+  gFmpDevicePkgTokenSpaceGuid.PcdFmpDxeRequiredEKU                         ## CONSUMES  ## MU_CHANGE
 
 [Depex]
   gEfiVariableWriteArchProtocolGuid AND gEdkiiVariablePolicyProtocolGuid

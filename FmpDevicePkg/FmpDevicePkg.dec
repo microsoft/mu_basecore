@@ -84,6 +84,18 @@
   # @Prompt SHA-256 hash of PKCS7 test key.
   gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceTestKeySha256Digest|{0x2E, 0x97, 0x89, 0x1B, 0xDB, 0xE7, 0x08, 0xAA,  0x8C, 0xB2, 0x8F, 0xAD, 0x20, 0xA9, 0x83, 0xC7,  0x84, 0x7D, 0x4F, 0xEE, 0x48, 0x25, 0xE9, 0x4D,  0x39, 0xFA, 0x34, 0x9A, 0xB8, 0xB1, 0xC4, 0x26}|VOID*|0x40000009
 
+  ## MU_CHANGE [BEGIN] - Added Pkcs7 EKU value
+  ## This PCD controls the Enhanced Key Usage (EKU) that must be present in the leaf
+  ## signer certificate in order to unlock a device.  The default value is 0, which
+  ## means "do not require an EKU" in the signature to unlock the device for backwards
+  ## compatibility.  Then if the product specific DSC file over-rides this value,
+  ## then the verification code will require that the specified EKU is present in the
+  ## leaf signer.  This allows us to cut down on the number of Certificate Authorities
+  ## (CA's) required, and prevents one product from unlocking another one.
+  ## Setting it to zero or not overriding will skip the check
+  gFmpDevicePkgTokenSpaceGuid.PcdFmpDxeRequiredEKU|"0"|VOID*|0x40000013
+  ## MU_CHANGE [END] - Added Pkcs7 EKU Value
+
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## The color of the progress bar during a firmware update.  Each firmware
   #  device can set its own color.  The default color is white.<BR><BR>
