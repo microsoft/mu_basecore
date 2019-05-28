@@ -31,6 +31,7 @@
   MdeModulePkg/MdeModulePkg.dec
   SecurityPkg/SecurityPkg.dec
   CryptoPkg/CryptoPkg.dec
+  FmpDevicePkg/FmpDevicePkg.dec ## MU_CHANGE
 
 [LibraryClasses]
   BaseLib
@@ -38,6 +39,9 @@
   DebugLib
   MemoryAllocationLib
   BaseCryptLib
+
+[Pcd]
+  gFmpDevicePkgTokenSpaceGuid.PcdFmpDxeRequiredEKU  ## CONSUMES ## MU_CHANGE
 
 [Guids]
   gEfiCertPkcs7Guid        ## CONSUMES   ## GUID
