@@ -67,6 +67,7 @@ FmpAuthenticatedHandlerPkcs7 (
   VOID                                      *P7Data;
   UINTN                                     P7Length;
   VOID                                      *TempBuffer;
+  CONST CHAR8                               *RequiredEKUs[1]; //MU_CHANGE
 
   DEBUG((DEBUG_INFO, "FmpAuthenticatedHandlerPkcs7 - Image: 0x%08x - 0x%08x\n", (UINTN)Image, (UINTN)ImageSize));
 
@@ -99,8 +100,24 @@ FmpAuthenticatedHandlerPkcs7 (
                    (UINT8 *)TempBuffer,
                    ImageSize - Image->AuthInfo.Hdr.dwLength
                    );
+
+  // MU_CHANGE EKU Pkcs7
+  Status = EFI_SUCCESS;
+  RequiredEKUs[0] = (CHAR8*)PcdGetPtr(PcdFmpDxeRequiredEKU);
+  if (CryptoStatus && AsciiStrCmp(RequiredEKUs[0], "0") != 0) {
+      Status = VerifyEKUsInPkcs7Signature(P7Data,
+                                          (UINT32)P7Length,
+                                          RequiredEKUs,
+                                          ARRAY_SIZE(RequiredEKUs),
+                                          TRUE);
+  }
+  else {
+    DEBUG ((DEBUG_WARN, "%a skipping EKU Check\n", __FUNCTION__));
+  }
+  //END MU_CHANGE
+
   FreePool(TempBuffer);
-  if (!CryptoStatus) {
+  if (!CryptoStatus || EFI_ERROR(Status)) { //MU_CHANGE check for Status
     //
     // If PKCS7 signature verification fails, AUTH tested failed bit is set.
     //
@@ -213,4 +230,3 @@ AuthenticateFmpImage (
   //
   return RETURN_UNSUPPORTED;
 }
-
