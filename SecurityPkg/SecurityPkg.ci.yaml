@@ -34,6 +34,9 @@
             "CryptoPkg/CryptoPkg.dec",
             # MU_CHANGE - Measure into PCR7 if Debug is enabled.
             "SourceLevelDebugPkg/SourceLevelDebugPkg.dec",
+            # MU_CHANGE - Only used by FmpAuthenticationLibs that perhaps should move
+            #             to the FmpDevicePkg.
+            "FmpDevicePkg/FmpDevicePkg.dec"
         ],
         # For host based unit tests
         "AcceptableDependencies-HOST_APPLICATION":[],
