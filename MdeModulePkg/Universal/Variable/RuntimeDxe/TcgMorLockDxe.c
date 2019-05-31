@@ -17,7 +17,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/BaseMemoryLib.h>
 #include "Variable.h"
 
-extern EDKII_VARIABLE_LOCK_PROTOCOL     mVariableLock;
+// MU_CHANGE [BEGIN] - Remove VariableLockRequestToLock() in lieu of VariablePolicy.
+#include <Protocol/VariablePolicy.h>
+
+#include <Library/MuVariablePolicyHelperLib.h>
+
+// extern EDKII_VARIABLE_LOCK_PROTOCOL     mVariableLock;
+// MU_CHANGE [END]
 
 /**
   This service is an MOR/MorLock checker handler for the SetVariable().
@@ -80,7 +86,9 @@ MorLockInit (
   //
   // Need set this variable to be read-only to prevent other module set it.
   //
-  VariableLockRequestToLock (&mVariableLock, MEMORY_OVERWRITE_REQUEST_CONTROL_LOCK_NAME, &gEfiMemoryOverwriteRequestControlLockGuid);
+  // MU_CHANGE - Remove VariableLockRequestToLock() in lieu of VariablePolicy.
+  // Will be locked via policies at EndOfDxe.
+  // VariableLockRequestToLock (&mVariableLock, MEMORY_OVERWRITE_REQUEST_CONTROL_LOCK_NAME, &gEfiMemoryOverwriteRequestControlLockGuid);
 
   //
   // The MOR variable can effectively improve platform security only when the
@@ -99,11 +107,13 @@ MorLockInit (
     0,                                      // DataSize
     NULL                                    // Data
     );
-  VariableLockRequestToLock (
-    &mVariableLock,
-    MEMORY_OVERWRITE_REQUEST_VARIABLE_NAME,
-    &gEfiMemoryOverwriteControlDataGuid
-    );
+  // MU_CHANGE - Remove VariableLockRequestToLock() in lieu of VariablePolicy.
+  // Will be locked via policies at EndOfDxe.
+  // VariableLockRequestToLock (
+  //   &mVariableLock,
+  //   MEMORY_OVERWRITE_REQUEST_VARIABLE_NAME,
+  //   &gEfiMemoryOverwriteControlDataGuid
+  //   );
 
   return EFI_SUCCESS;
 }
@@ -118,7 +128,41 @@ MorLockInitAtEndOfDxe (
   VOID
   )
 {
-  //
-  // Do nothing.
-  //
+  // MU_CHANGE [BEGIN] - Remove VariableLockRequestToLock() in lieu of VariablePolicy.
+  EFI_STATUS                        Status;
+  VARIABLE_POLICY_PROTOCOL          *VariablePolicy;
+
+  // First, we obviously need to locate the VariablePolicy protocol.
+  Status = gBS->LocateProtocol( &gVariablePolicyProtocolGuid, NULL, (VOID**)&VariablePolicy );
+  if (EFI_ERROR( Status )) {
+    DEBUG(( DEBUG_ERROR, "%a - Could not locate VariablePolicy protocol! %r\n", __FUNCTION__, Status ));
+    return;
+  }
+
+  // If we're successful, go ahead and set the policies to protect the target variables.
+  Status = RegisterBasicVariablePolicy( VariablePolicy,
+                                        &gEfiMemoryOverwriteRequestControlLockGuid,
+                                        MEMORY_OVERWRITE_REQUEST_CONTROL_LOCK_NAME,
+                                        VARIABLE_POLICY_NO_MIN_SIZE,
+                                        VARIABLE_POLICY_NO_MAX_SIZE,
+                                        VARIABLE_POLICY_NO_MUST_ATTR,
+                                        VARIABLE_POLICY_NO_CANT_ATTR,
+                                        VARIABLE_POLICY_TYPE_LOCK_NOW );
+  if (EFI_ERROR( Status )) {
+    DEBUG(( DEBUG_ERROR, "%a - Could not lock variable %s! %r\n", __FUNCTION__, MEMORY_OVERWRITE_REQUEST_CONTROL_LOCK_NAME, Status ));
+  }
+  Status = RegisterBasicVariablePolicy( VariablePolicy,
+                                        &gEfiMemoryOverwriteControlDataGuid,
+                                        MEMORY_OVERWRITE_REQUEST_VARIABLE_NAME,
+                                        VARIABLE_POLICY_NO_MIN_SIZE,
+                                        VARIABLE_POLICY_NO_MAX_SIZE,
+                                        VARIABLE_POLICY_NO_MUST_ATTR,
+                                        VARIABLE_POLICY_NO_CANT_ATTR,
+                                        VARIABLE_POLICY_TYPE_LOCK_NOW );
+  if (EFI_ERROR( Status )) {
+    DEBUG(( DEBUG_ERROR, "%a - Could not lock variable %s! %r\n", __FUNCTION__, MEMORY_OVERWRITE_REQUEST_VARIABLE_NAME, Status ));
+  }
+
+  return;
+  // MU_CHANGE [END]
 }

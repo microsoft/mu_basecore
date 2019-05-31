@@ -278,59 +278,61 @@ SendCommunicateBuffer (
                                 already been signaled.
   @retval EFI_OUT_OF_RESOURCES  There is not enough resource to hold the lock request.
 **/
-EFI_STATUS
-EFIAPI
-VariableLockRequestToLock (
-  IN CONST EDKII_VARIABLE_LOCK_PROTOCOL *This,
-  IN       CHAR16                       *VariableName,
-  IN       EFI_GUID                     *VendorGuid
-  )
-{
-  EFI_STATUS                                Status;
-  UINTN                                     VariableNameSize;
-  UINTN                                     PayloadSize;
-  SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE    *VariableToLock;
+// MU_CHANGE [BEGIN] - Remove VariableLockRequestToLock() in lieu of VariablePolicy.
+// EFI_STATUS
+// EFIAPI
+// VariableLockRequestToLock (
+//   IN CONST EDKII_VARIABLE_LOCK_PROTOCOL *This,
+//   IN       CHAR16                       *VariableName,
+//   IN       EFI_GUID                     *VendorGuid
+//   )
+// {
+//   EFI_STATUS                                Status;
+//   UINTN                                     VariableNameSize;
+//   UINTN                                     PayloadSize;
+//   SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE    *VariableToLock;
 
-  if (VariableName == NULL || VariableName[0] == 0 || VendorGuid == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
+//   if (VariableName == NULL || VariableName[0] == 0 || VendorGuid == NULL) {
+//     return EFI_INVALID_PARAMETER;
+//   }
 
-  VariableNameSize = StrSize (VariableName);
-  VariableToLock   = NULL;
+//   VariableNameSize = StrSize (VariableName);
+//   VariableToLock   = NULL;
 
-  //
-  // If VariableName exceeds SMM payload limit. Return failure
-  //
-  if (VariableNameSize > mVariableBufferPayloadSize - OFFSET_OF (SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE, Name)) {
-    return EFI_INVALID_PARAMETER;
-  }
+//   //
+//   // If VariableName exceeds SMM payload limit. Return failure
+//   //
+//   if (VariableNameSize > mVariableBufferPayloadSize - OFFSET_OF (SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE, Name)) {
+//     return EFI_INVALID_PARAMETER;
+//   }
 
-  AcquireLockOnlyAtBootTime(&mVariableServicesLock);
+//   AcquireLockOnlyAtBootTime(&mVariableServicesLock);
 
-  //
-  // Init the communicate buffer. The buffer data size is:
-  // SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE + PayloadSize.
-  //
-  PayloadSize = OFFSET_OF (SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE, Name) + VariableNameSize;
-  Status = InitCommunicateBuffer ((VOID **) &VariableToLock, PayloadSize, SMM_VARIABLE_FUNCTION_LOCK_VARIABLE);
-  if (EFI_ERROR (Status)) {
-    goto Done;
-  }
-  ASSERT (VariableToLock != NULL);
+//   //
+//   // Init the communicate buffer. The buffer data size is:
+//   // SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE + PayloadSize.
+//   //
+//   PayloadSize = OFFSET_OF (SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE, Name) + VariableNameSize;
+//   Status = InitCommunicateBuffer ((VOID **) &VariableToLock, PayloadSize, SMM_VARIABLE_FUNCTION_LOCK_VARIABLE);
+//   if (EFI_ERROR (Status)) {
+//     goto Done;
+//   }
+//   ASSERT (VariableToLock != NULL);
 
-  CopyGuid (&VariableToLock->Guid, VendorGuid);
-  VariableToLock->NameSize = VariableNameSize;
-  CopyMem (VariableToLock->Name, VariableName, VariableToLock->NameSize);
+//   CopyGuid (&VariableToLock->Guid, VendorGuid);
+//   VariableToLock->NameSize = VariableNameSize;
+//   CopyMem (VariableToLock->Name, VariableName, VariableToLock->NameSize);
 
-  //
-  // Send data to SMM.
-  //
-  Status = SendCommunicateBuffer (PayloadSize);
+//   //
+//   // Send data to SMM.
+//   //
+//   Status = SendCommunicateBuffer (PayloadSize);
 
-Done:
-  ReleaseLockOnlyAtBootTime (&mVariableServicesLock);
-  return Status;
-}
+// Done:
+//   ReleaseLockOnlyAtBootTime (&mVariableServicesLock);
+//   return Status;
+// }
+// MU_CHANGE [END]
 
 /**
   Register SetVariable check handler.
@@ -1635,14 +1637,15 @@ SmmVariableReady (
                   );
   ASSERT_EFI_ERROR (Status);
 
-  mVariableLock.RequestToLock = VariableLockRequestToLock;
-  Status = gBS->InstallMultipleProtocolInterfaces (
-                  &mHandle,
-                  &gEdkiiVariableLockProtocolGuid,
-                  &mVariableLock,
-                  NULL
-                  );
-  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE - Remove VariableLockRequestToLock() in lieu of VariablePolicy.
+  // mVariableLock.RequestToLock = VariableLockRequestToLock;
+  // Status = gBS->InstallMultipleProtocolInterfaces (
+  //                 &mHandle,
+  //                 &gEdkiiVariableLockProtocolGuid,
+  //                 &mVariableLock,
+  //                 NULL
+  //                 );
+  // ASSERT_EFI_ERROR (Status);
 
   mVarCheck.RegisterSetVariableCheckHandler = VarCheckRegisterSetVariableCheckHandler;
   mVarCheck.VariablePropertySet = VarCheckVariablePropertySet;
@@ -1766,7 +1769,9 @@ VariableSmmRuntimeInitialize (
   //
   gBS->CreateEventEx (
          EVT_NOTIFY_SIGNAL,
-         TPL_NOTIFY,
+         // MU_CHANGE - Only transition Variable Services to Runtime AFTER all Notify and Callback signals
+         //             so that volatile variables are writeable in callbacks.
+         TPL_CALLBACK-1,
          OnExitBootServices,
          NULL,
          &gEfiEventExitBootServicesGuid,
