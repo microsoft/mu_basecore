@@ -54,6 +54,11 @@ typedef struct {
   // CHAR16   Name[]            // Variable Length Field
 } VARIABLE_POLICY_ENTRY;
 
+#define     VARIABLE_POLICY_NO_MIN_SIZE             0
+#define     VARIABLE_POLICY_NO_MAX_SIZE             MAX_UINT32
+#define     VARIABLE_POLICY_NO_MUST_ATTR            0
+#define     VARIABLE_POLICY_NO_CANT_ATTR            0
+
 #define     VARIABLE_POLICY_TYPE_NO_LOCK            0
 #define     VARIABLE_POLICY_TYPE_LOCK_NOW           1
 #define     VARIABLE_POLICY_TYPE_LOCK_ON_CREATE     2

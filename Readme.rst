@@ -27,7 +27,8 @@ Breaking Changes-dev
 --------------------
 
 - Edk2ToolHelper no longer has logic for dependencies. This is easily replaced, but convenient to leave out while GenerateCapsule is being refactored to remove reliance on older compiled tools.
-- VariablePolicy changes in VaraibleSmm and AuthService will require additional libraries in DSC files (e.g. UefiVariablePolicyLib, VarCheckPolicyLib).
+- VariablePolicy changes in VaraibleSmm and AuthService will require additional libraries in DSC files (e.g. UefiVariablePolicyLib, VarCheckPolicyLib, MuVariablePolicyHelperLib).
+- gEdkiiVariableLockProtocolGuid is no longer a component of VariableServices. An alternate implementation is provided in Mu Plus repo, in the MuVarPolicyFoundationDxe driver, but it is recommended that policies be used instead.
 
 Main Changes-dev
 ----------------
