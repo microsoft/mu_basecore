@@ -1,0 +1,36 @@
+## @file MuVariablePolicyHelperLib.inf
+# This library contains helper functions for marshalling and registering
+# new policies with the VariablePolicy infrastructure.
+#
+# This library is currently written against VariablePolicy revision 0x00010000.
+#
+##
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+
+[Defines]
+  INF_VERSION         = 0x00010017
+  BASE_NAME           = MuVariablePolicyHelperLib
+  # MODULE_UNI_FILE   = MuVariablePolicyHelperLib.uni
+  FILE_GUID           = B3C2206B-FDD1-4AED-8352-FC5EC34C5630
+  VERSION_STRING      = 1.0
+  MODULE_TYPE         = BASE
+  LIBRARY_CLASS       = MuVariablePolicyHelperLib
+
+
+[Sources]
+  MuVariablePolicyHelperLib.c
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  MemoryAllocationLib
+  BaseMemoryLib
