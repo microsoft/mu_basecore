@@ -59,6 +59,7 @@
   DxeServicesLib|MdePkg/Library/DxeServicesLib/DxeServicesLib.inf
   DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
   UefiBootManagerLib|MdeModulePkg/Library/UefiBootManagerLib/UefiBootManagerLib.inf
+  UefiVariablePolicyLib|MdeModulePkg/Library/UefiVariablePolicyLib/UefiVariablePolicyLib.inf
   #
   # Generic Modules
   #
@@ -113,6 +114,10 @@
 !endif
 !endif
 ##MSCHANGE End
+
+  # MU_CHANGE [BEGIN]
+  MuVariablePolicyHelperLib|MdeModulePkg/Library/MuVariablePolicyHelperLib/MuVariablePolicyHelperLib.inf
+  # MU_CHANGE [END]
 
 [LibraryClasses.EBC.PEIM]
   IoLib|MdePkg/Library/PeiIoLibCpuIo/PeiIoLibCpuIo.inf
@@ -244,6 +249,8 @@
   MdeModulePkg/Universal/Variable/RuntimeDxe/PropertyBasedVarLockLib.inf
   MdeModulePkg/Library/CapsulePersistLibNull/CapsulePersistLibNull.inf      ## MU_CHANGE
 ## MSCHANGE END
+
+  MdeModulePkg/Library/MuVariablePolicyHelperLib/MuVariablePolicyHelperLib.inf   # MU_CHANGE
 
   MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
   MdeModulePkg/Bus/Pci/PciSioSerialDxe/PciSioSerialDxe.inf
