@@ -78,6 +78,9 @@
   AuthVariableLib
   VarCheckLib
   UefiBootServicesTableLib
+  ## MU_CHANGE - Remove VariableLockRequestToLock() in lieu of VariablePolicy.
+  MuVariablePolicyHelperLib
+  UefiVariablePolicyLib
 
 [Protocols]
   gEfiSmmFirmwareVolumeBlockProtocolGuid        ## CONSUMES
