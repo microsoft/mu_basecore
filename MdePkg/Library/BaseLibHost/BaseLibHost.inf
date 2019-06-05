@@ -1,0 +1,78 @@
+## @file
+#
+# Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
+# This program and the accompanying materials are licensed and made available under
+# the terms and conditions of the BSD License that accompanies this distribution.
+# The full text of the license may be found at
+# http://opensource.org/licenses/bsd-license.php.
+#
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = BaseLibHost
+  FILE_GUID                      = FA4A8DE0-8D55-44AA-8368-07D24BDA6A7D
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = BaseLib
+
+[Sources]
+  Math64.c
+  RShiftU64.c
+  LShiftU64.c
+  ARShiftU64.c
+  MultU64x64.c
+  MultS64x64.c
+  MultU64x32.c
+  DivS64x64Remainder.c
+  DivU64x64Remainder.c
+  DivU64x32Remainder.c
+  DivU64x32.c
+  ModU64x32.c
+  SwapBytes16.c
+  SwapBytes32.c
+  SwapBytes64.c
+  BitField.c
+  GetPowerOfTwo32.c
+  GetPowerOfTwo64.c
+  HighBitSet32.c
+  HighBitSet64.c
+  LowBitSet32.c
+  LowBitSet64.c
+  LRotU32.c
+  LRotU64.c
+  RRotU32.c
+  RRotU64.c
+  SafeString.c
+  String.c
+  CheckSum.c
+  CpuDeadLoop.c
+  LinkedList.c
+  Unaligned.c
+  SetJump.c
+  LongJump.c
+  X86MemoryFenceMsvc.c | MSFT
+  X86MemoryFenceGcc.c | GCC
+  CpuBreakpointMsvc.c | MSFT
+  CpuBreakpointGcc.c | GCC
+  Cpu.c
+  Cache.c
+  X86Cr.c
+  X86RdRand.c
+
+[Sources.Ia32]
+  Ia32/RdRand.nasm
+  Ia32/ReadTsc.nasm
+
+[Sources.X64]
+  X64/RdRand.nasm
+  X64/ReadTsc.nasm
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  BaseMemoryLib
