@@ -2,13 +2,7 @@
   Base Library CPU Functions for all architectures.
 
   Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -52,4 +46,50 @@ SetInterruptState (
   )
 {
   return InterruptState;
+}
+
+/**
+  Uses as a barrier to stop speculative execution.
+
+  Ensures that no later instruction will execute speculatively, until all prior
+  instructions have completed.
+
+**/
+VOID
+EFIAPI
+SpeculationBarrier (
+  VOID
+  )
+{
+}
+
+/**
+  Requests CPU to pause for a short period of time.
+
+  Requests CPU to pause for a short period of time. Typically used in MP
+  systems to prevent memory starvation while waiting for a spin lock.
+
+**/
+VOID
+EFIAPI
+CpuPause (
+  VOID
+  )
+{
+}
+
+/**
+  Performs a serializing operation on all load-from-memory instructions that
+  were issued prior the AsmLfence function.
+
+  Executes a LFENCE instruction. This function is only available on IA-32 and x64.
+
+**/
+VOID
+EFIAPI
+AsmLfence (
+  VOID
+  )
+{
+  return;
 }

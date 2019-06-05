@@ -1,13 +1,7 @@
 /** @file
 
 Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -60,6 +54,35 @@ SetMem32 (
 
 VOID *
 EFIAPI
+SetMem64 (
+  OUT VOID   *Buffer,
+  IN UINTN   Length,
+  IN UINT64  Value
+  )
+{
+  for (; Length != 0; Length--) {
+    ((UINT64*)Buffer)[Length - 1] = Value;
+  }
+  return Buffer;
+}
+
+VOID *
+EFIAPI
+SetMemN (
+  OUT VOID  *Buffer,
+  IN UINTN  Length,
+  IN UINTN  Value
+  )
+{
+  if (sizeof (UINTN) == sizeof (UINT64)) {
+    return SetMem64 (Buffer, Length, (UINT64)Value);
+  } else {
+    return SetMem32 (Buffer, Length, (UINT32)Value);
+  }
+}
+
+VOID *
+EFIAPI
 ZeroMem (
   OUT VOID  *Buffer,
   IN UINTN  Length
@@ -77,7 +100,7 @@ CopyMem (
   IN UINTN       Length
   )
 {
-  memcpy (DestinationBuffer, SourceBuffer, Length);
+  memmove (DestinationBuffer, SourceBuffer, Length);
   return DestinationBuffer;
 }
 
@@ -109,7 +132,7 @@ CopyGuid (
   IN CONST GUID  *SourceGuid
   )
 {
-  memcpy (DestinationGuid, SourceGuid, sizeof(GUID));
+  memmove (DestinationGuid, SourceGuid, sizeof(GUID));
   return DestinationGuid;
 }
 

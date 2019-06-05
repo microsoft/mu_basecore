@@ -1,5 +1,7 @@
 ## @file
 #
+# this is a special build to pass KLEE build, because KLEE cannot use ASM.
+#
 # Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -63,14 +65,8 @@
   X86SegmentNull.c
   X86DisablePaging64Null.c
   SwitchStackNull.c
-
-[Sources.Ia32]
-  Ia32/RdRand.nasm
-  Ia32/ReadTsc.nasm
-
-[Sources.X64]
-  X64/RdRand.nasm
-  X64/ReadTsc.nasm
+  DummyRdRand.c
+  DummyReadTsc.c
 
 [Packages]
   MdePkg/MdePkg.dec
