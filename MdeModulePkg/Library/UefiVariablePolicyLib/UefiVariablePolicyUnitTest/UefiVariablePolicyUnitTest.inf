@@ -47,7 +47,6 @@
 [Packages]
   MdePkg/MdePkg.dec
   UnitTestPkg/UnitTestPkg.dec
-  FutureMdePkg/FutureMdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
   CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec
 
