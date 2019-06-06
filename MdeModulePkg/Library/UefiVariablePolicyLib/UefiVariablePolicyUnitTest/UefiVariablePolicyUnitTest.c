@@ -48,9 +48,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Protocol/VariablePolicy.h>
 #include <Library/UefiVariablePolicyLib.h>
 
-#ifndef INTERNAL_UNIT_TEST
-#error Make sure to build thie with INTERNAL_UNIT_TEST enabled! Otherwise, some important tests may be skipped!
-#endif
+// MU_CHANGE - Turn this off for now. Try to turn it back on with extra build options.
+// #ifndef INTERNAL_UNIT_TEST
+// #error Make sure to build thie with INTERNAL_UNIT_TEST enabled! Otherwise, some important tests may be skipped!
+// #endif
 
 
 #define UNIT_TEST_NAME        L"UEFI Variable Policy UnitTest"
@@ -1943,7 +1944,7 @@ ShouldNotBeAbleToDisablePoliciesTwice (
 
 UNIT_TEST_STATUS
 EFIAPI
-ShouldNotBeAbleToAddNewPoliciesAfterDisabled (
+ShouldBeAbleToAddNewPoliciesAfterDisabled (
   IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
@@ -1969,12 +1970,32 @@ ShouldNotBeAbleToAddNewPoliciesAfterDisabled (
   // Disable the policy enforcement.
   UT_ASSERT_NOT_EFI_ERROR( DisableVariablePolicy() );
 
-  // Make sure that you can't create a new policy.
+  // Make sure that new policy creation still works, it just won't be enforced.
   PolicyCheck = RegisterVariablePolicy( &TestPolicy.Header );
-  UT_ASSERT_TRUE( EFI_ERROR( PolicyCheck ) );
+  UT_ASSERT_NOT_EFI_ERROR( PolicyCheck );
 
   return UNIT_TEST_PASSED;
-} // ShouldNotBeAbleToAddNewPoliciesAfterDisabled()
+} // ShouldBeAbleToAddNewPoliciesAfterDisabled()
+
+UNIT_TEST_STATUS
+EFIAPI
+ShouldBeAbleToLockAfterDisabled (
+  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
+  IN UNIT_TEST_CONTEXT           Context
+  )
+{
+  // Make sure that the policy enforcement is currently enabled.
+  UT_ASSERT_TRUE( IsVariablePolicyEnabled() );
+  // Disable the policy enforcement.
+  UT_ASSERT_NOT_EFI_ERROR( DisableVariablePolicy() );
+
+  // Make sure that we can lock in this state.
+  UT_ASSERT_FALSE( IsVariablePolicyInterfaceLocked() );
+  UT_ASSERT_NOT_EFI_ERROR( LockVariablePolicy() );
+  UT_ASSERT_TRUE( IsVariablePolicyInterfaceLocked() );
+
+  return UNIT_TEST_PASSED;
+} // ShouldBeAbleToLockAfterDisabled()
 
 UNIT_TEST_STATUS
 EFIAPI
@@ -2039,6 +2060,83 @@ ShouldBeAbleToDumpThePolicyTable (
 
   return UNIT_TEST_PASSED;
 } // ShouldBeAbleToDumpThePolicyTable()
+
+UNIT_TEST_STATUS
+EFIAPI
+ShouldBeAbleToDumpThePolicyTableAfterDisabled (
+  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
+  IN UNIT_TEST_CONTEXT           Context
+  )
+{
+  SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
+    {
+      VARIABLE_POLICY_ENTRY_REVISION,
+      sizeof(VARIABLE_POLICY_ENTRY) + sizeof(TEST_VAR_1_NAME),
+      sizeof(VARIABLE_POLICY_ENTRY),
+      TEST_GUID_1,
+      TEST_POLICY_MIN_SIZE_10,
+      TEST_POLICY_MAX_SIZE_200,
+      TEST_POLICY_ATTRIBUTES_NULL,
+      TEST_POLICY_ATTRIBUTES_NULL,
+      VARIABLE_POLICY_TYPE_NO_LOCK
+    },
+    TEST_VAR_1_NAME
+  };
+  SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy2 = {
+    {
+      VARIABLE_POLICY_ENTRY_REVISION,
+      sizeof(VARIABLE_POLICY_ENTRY) + sizeof(TEST_VAR_2_NAME),
+      sizeof(VARIABLE_POLICY_ENTRY),
+      TEST_GUID_2,
+      TEST_POLICY_MIN_SIZE_10,
+      TEST_POLICY_MAX_SIZE_200,
+      TEST_POLICY_ATTRIBUTES_NULL,
+      TEST_POLICY_ATTRIBUTES_NULL,
+      VARIABLE_POLICY_TYPE_NO_LOCK
+    },
+    TEST_VAR_2_NAME
+  };
+  EFI_STATUS  PolicyCheck;
+  UINT32      DumpSize;
+  VOID        *DumpBuffer;
+
+  DumpBuffer = NULL;
+
+  // Register a new policy.
+  UT_ASSERT_NOT_EFI_ERROR( RegisterVariablePolicy( &TestPolicy.Header ) );
+  // Make sure that we can dump the policy.
+  PolicyCheck = DumpVariablePolicy( DumpBuffer, &DumpSize );
+  UT_ASSERT_STATUS_EQUAL( PolicyCheck, EFI_BUFFER_TOO_SMALL );
+  DumpBuffer = AllocatePool( DumpSize );
+  UT_ASSERT_NOT_EFI_ERROR( DumpVariablePolicy( DumpBuffer, &DumpSize ) );
+  UT_ASSERT_MEM_EQUAL( DumpBuffer, &TestPolicy, DumpSize );
+
+  // Clean up from this step.
+  FreePool( DumpBuffer );
+  DumpBuffer = NULL;
+
+  // Now disable the engine.
+  DisableVariablePolicy();
+
+  // Now register a new policy and make sure that both can be dumped.
+  UT_ASSERT_NOT_EFI_ERROR( RegisterVariablePolicy( &TestPolicy2.Header ) );
+  // Make sure that we can dump the policy.
+  PolicyCheck = DumpVariablePolicy( DumpBuffer, &DumpSize );
+  UT_ASSERT_STATUS_EQUAL( PolicyCheck, EFI_BUFFER_TOO_SMALL );
+  DumpBuffer = AllocatePool( DumpSize );
+  UT_ASSERT_NOT_EFI_ERROR( DumpVariablePolicy( DumpBuffer, &DumpSize ) );
+
+  // Finally, make sure that both policies are in the dump.
+  UT_ASSERT_MEM_EQUAL( DumpBuffer, &TestPolicy, sizeof( TestPolicy ) );
+  UT_ASSERT_MEM_EQUAL( (UINT8*)DumpBuffer+sizeof( TestPolicy ),
+                        &TestPolicy2,
+                        sizeof( TestPolicy2 ) );
+
+  // Always put away your toys.
+  FreePool( DumpBuffer );
+
+  return UNIT_TEST_PASSED;
+} // ShouldBeAbleToDumpThePolicyTableAfterDisabled()
 
 
 ///=== TEST ENGINE ================================================================================
@@ -2228,11 +2326,17 @@ int main ()
                 L"Disabling enforcement twice should produce an error", L"VarPolicy.Utility.DisableEnforcementTwice",
                 ShouldNotBeAbleToDisablePoliciesTwice, LibInitMocked, LibCleanup, NULL );
   AddTestCase( UtilityTests,
-                L"Should not be able to add policies after enforcement is disabled", L"VarPolicy.Utility.AddAfterDisable",
-                ShouldNotBeAbleToAddNewPoliciesAfterDisabled, LibInitMocked, LibCleanup, NULL );
+                L"ShouldBeAbleToAddNewPoliciesAfterDisabled", L"VarPolicy.Utility.AddAfterDisable",
+                ShouldBeAbleToAddNewPoliciesAfterDisabled, LibInitMocked, LibCleanup, NULL );
+  AddTestCase( UtilityTests,
+                L"ShouldBeAbleToLockAfterDisabled", L"VarPolicy.Utility.LockAfterDisable",
+                ShouldBeAbleToLockAfterDisabled, LibInitMocked, LibCleanup, NULL );
   AddTestCase( UtilityTests,
                 L"Should be able to dump the policy table", L"VarPolicy.Utility.DumpTable",
                 ShouldBeAbleToDumpThePolicyTable, LibInitMocked, LibCleanup, NULL );
+  AddTestCase( UtilityTests,
+                L"ShouldBeAbleToDumpThePolicyTableAfterDisabled", L"VarPolicy.Utility.DumpTableAfterDisable",
+                ShouldBeAbleToDumpThePolicyTableAfterDisabled, LibInitMocked, LibCleanup, NULL );
 
 
   //
