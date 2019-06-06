@@ -48,9 +48,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Protocol/VariablePolicy.h>
 #include <Library/UefiVariablePolicyLib.h>
 
-#ifndef INTERNAL_UNIT_TEST
-#error Make sure to build thie with INTERNAL_UNIT_TEST enabled! Otherwise, some important tests may be skipped!
-#endif
+// MU_CHANGE - Turn this off for now. Try to turn it back on with extra build options.
+// #ifndef INTERNAL_UNIT_TEST
+// #error Make sure to build thie with INTERNAL_UNIT_TEST enabled! Otherwise, some important tests may be skipped!
+// #endif
 
 
 #define UNIT_TEST_NAME        L"UEFI Variable Policy UnitTest"
