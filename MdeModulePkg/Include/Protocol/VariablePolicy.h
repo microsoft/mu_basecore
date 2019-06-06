@@ -161,6 +161,13 @@ EFI_STATUS
   VOID
   );
 
+
+// Register will return EFI_SUCCESS when disabled.
+// Add a safety need to ASSERT and reboot if ReadyToBoot while disabled and not MfgMode... (wait... basecore... MfgMode)...
+// Check that Lock doesn't return an error when disabled.
+// Write tests around all of this.
+// Copy the Cmocka wrapper lib to the Cmocka package.
+
 typedef struct {
   UINT64                     Revision;
   // TODO VARPOL: Add a function to disable protections for next write.
