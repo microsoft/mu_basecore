@@ -114,7 +114,6 @@ EFI_STATUS
   @retval     EFI_INVALID_PARAMETER   NewPolicy is NULL or is internally inconsistent.
   @retval     EFI_ALREADY_STARTED     An identical matching policy already exists.
   @retval     EFI_WRITE_PROTECTED     The interface has been locked until the next reboot.
-  @retval     EFI_UNSUPPORTED         Policy enforcement has been disabled. No reason to add more policies.
   @retval     EFI_ABORTED             A calculation error has prevented this function from completing.
   @retval     EFI_OUT_OF_RESOURCES    Cannot grow the table to hold any more policies.
 
@@ -162,11 +161,7 @@ EFI_STATUS
   );
 
 
-// Register will return EFI_SUCCESS when disabled.
 // Add a safety need to ASSERT and reboot if ReadyToBoot while disabled and not MfgMode... (wait... basecore... MfgMode)...
-// Check that Lock doesn't return an error when disabled.
-// Write tests around all of this.
-// Copy the Cmocka wrapper lib to the Cmocka package.
 
 typedef struct {
   UINT64                     Revision;
