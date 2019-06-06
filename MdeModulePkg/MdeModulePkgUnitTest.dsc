@@ -62,16 +62,17 @@
 
   OsServiceLib|UnitTestPkg/Library/OsServiceLibHost/OsServiceLibHost.inf
 
-  UnitTestLib|CmockaHostUnitTestPkg/Library/UnitTestLib/UnitTestLibcmocka.inf
-  UnitTestAssertLib|CmockaHostUnitTestPkg/Library/UnitTestAssertLib/UnitTestAssertLibcmocka.inf
+  UnitTestLib|CmockaHostUnitTestPkg/Library/UnitTestLibcmocka/UnitTestLibcmocka.inf
+  UnitTestAssertLib|CmockaHostUnitTestPkg/Library/UnitTestAssertLibcmocka/UnitTestAssertLibcmocka.inf
 
-  NULL|CmockaHostUnitTestPkg/Library/CmockaLib/CmockaLib.inf
+  CmockaLib|CmockaHostUnitTestPkg/Library/CmockaLib/CmockaLib.inf
 
 [LibraryClasses.common.USER_DEFINED]
 
 [Components]
   MdeModulePkg/Library/UefiVariablePolicyLib/UefiVariablePolicyUnitTest/UefiVariablePolicyUnitTest.inf {
     <LibraryClasses>
-      NULL|CmockaHostUnitTestPkg/Library/CmockaLib/CmockaLib.inf
       UefiVariablePolicyLib|MdeModulePkg/Library/UefiVariablePolicyLib/UefiVariablePolicyLib.inf
   }
+
+!include MdePkg/UefiHostTestBuildOption.dsc
