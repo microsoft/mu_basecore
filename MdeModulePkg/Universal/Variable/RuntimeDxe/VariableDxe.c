@@ -22,7 +22,8 @@ EFI_EVENT                           mVirtualAddressChangeEvent = NULL;
 EFI_EVENT                           mFtwRegistration           = NULL;
 VOID                                ***mVarCheckAddressPointer = NULL;
 UINTN                               mVarCheckAddressPointerCount = 0;
-EDKII_VARIABLE_LOCK_PROTOCOL        mVariableLock              = { VariableLockRequestToLock };
+// MU_CHANGE - Remove VariableLockRequestToLock() in lieu of VariablePolicy.
+// EDKII_VARIABLE_LOCK_PROTOCOL        mVariableLock              = { VariableLockRequestToLock };
 EDKII_VAR_CHECK_PROTOCOL            mVarCheck                  = { VarCheckRegisterSetVariableCheckHandler,
                                                                     VarCheckVariablePropertySet,
                                                                     VarCheckVariablePropertyGet };
@@ -498,13 +499,14 @@ VariableServiceInitialize (
   Status = VariableCommonInitialize ();
   ASSERT_EFI_ERROR (Status);
 
-  Status = gBS->InstallMultipleProtocolInterfaces (
-                  &mHandle,
-                  &gEdkiiVariableLockProtocolGuid,
-                  &mVariableLock,
-                  NULL
-                  );
-  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE - Remove VariableLockRequestToLock() in lieu of VariablePolicy.
+  // Status = gBS->InstallMultipleProtocolInterfaces (
+  //                 &mHandle,
+  //                 &gEdkiiVariableLockProtocolGuid,
+  //                 &mVariableLock,
+  //                 NULL
+  //                 );
+  // ASSERT_EFI_ERROR (Status);
 
   Status = gBS->InstallMultipleProtocolInterfaces (
                   &mHandle,

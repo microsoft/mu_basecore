@@ -369,9 +369,6 @@ RegisterVariablePolicy (
   if (mInterfaceLocked) {
     return EFI_WRITE_PROTECTED;
   }
-  if (mProtectionDisabled) {
-    return EFI_UNSUPPORTED;
-  }
 
   if (!IsValidVariablePolicyStructure( NewPolicy )) {
     return EFI_INVALID_PARAMETER;

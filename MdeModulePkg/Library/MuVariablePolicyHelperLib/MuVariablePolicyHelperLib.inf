@@ -1,6 +1,8 @@
-## @file UefiVariablePolicyUnitTest.inf
-# UnitTest for...
-# Business logic for Variable Policy enforcement.
+## @file MuVariablePolicyHelperLib.inf
+# This library contains helper functions for marshalling and registering
+# new policies with the VariablePolicy infrastructure.
+#
+# This library is currently written against VariablePolicy revision 0x00010000.
 #
 ##
 # Copyright (C) Microsoft Corporation
@@ -28,35 +30,26 @@
 
 
 [Defines]
-  INF_VERSION                    = 0x00010006
-  BASE_NAME                      = UefiVariablePolicyUnitTest
-  FILE_GUID                      = 1200A2E4-D756-418C-9768-528C2D181A98
-  MODULE_TYPE                    = USER_DEFINED
-  VERSION_STRING                 = 1.0
+  INF_VERSION         = 0x00010017
+  BASE_NAME           = MuVariablePolicyHelperLib
+  # MODULE_UNI_FILE   = MuVariablePolicyHelperLib.uni
+  FILE_GUID           = B3C2206B-FDD1-4AED-8352-FC5EC34C5630
+  VERSION_STRING      = 1.0
+  MODULE_TYPE         = BASE
+  LIBRARY_CLASS       = MuVariablePolicyHelperLib
 
-#
-# The following information is for reference only and not required by the build tools.
-#
-#  VALID_ARCHITECTURES           = IA32 X64 ARM AARCH64
-#
 
 [Sources]
-  UefiVariablePolicyUnitTest.c
+  MuVariablePolicyHelperLib.c
 
 
 [Packages]
   MdePkg/MdePkg.dec
-  UnitTestPkg/UnitTestPkg.dec
   MdeModulePkg/MdeModulePkg.dec
-  CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec
 
 
 [LibraryClasses]
   BaseLib
   DebugLib
-  UnitTestLib
-  UnitTestAssertLib
-  PrintLib
-  UefiVariablePolicyLib
-  BaseMemoryLib
   MemoryAllocationLib
+  BaseMemoryLib

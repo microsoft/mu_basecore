@@ -54,6 +54,11 @@ typedef struct {
   // CHAR16   Name[]            // Variable Length Field
 } VARIABLE_POLICY_ENTRY;
 
+#define     VARIABLE_POLICY_NO_MIN_SIZE             0
+#define     VARIABLE_POLICY_NO_MAX_SIZE             MAX_UINT32
+#define     VARIABLE_POLICY_NO_MUST_ATTR            0
+#define     VARIABLE_POLICY_NO_CANT_ATTR            0
+
 #define     VARIABLE_POLICY_TYPE_NO_LOCK            0
 #define     VARIABLE_POLICY_TYPE_LOCK_NOW           1
 #define     VARIABLE_POLICY_TYPE_LOCK_ON_CREATE     2
@@ -109,7 +114,6 @@ EFI_STATUS
   @retval     EFI_INVALID_PARAMETER   NewPolicy is NULL or is internally inconsistent.
   @retval     EFI_ALREADY_STARTED     An identical matching policy already exists.
   @retval     EFI_WRITE_PROTECTED     The interface has been locked until the next reboot.
-  @retval     EFI_UNSUPPORTED         Policy enforcement has been disabled. No reason to add more policies.
   @retval     EFI_ABORTED             A calculation error has prevented this function from completing.
   @retval     EFI_OUT_OF_RESOURCES    Cannot grow the table to hold any more policies.
 

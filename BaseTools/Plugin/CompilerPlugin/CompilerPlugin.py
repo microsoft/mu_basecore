@@ -29,6 +29,7 @@
 import logging
 from MuPythonLibrary.Uefi.EdkII.Parsers.DscParser import DscParser
 from MuEnvironment.PluginManager import IMuBuildPlugin
+from MuEnvironment import MuLogging
 from MuEnvironment.UefiBuild import UefiBuilder
 import os
 import re
@@ -89,29 +90,27 @@ class CompilerPlugin(IMuBuildPlugin):
         # do all the steps
         ret = uefiBuilder.Go()
         if ret != 0:  # failure:
+            error_count = ""
             if output_stream is not None:
-                try:
-                    # seek to the start of the output stream
-                    output_stream.seek(0, 0)
-                    error_exp = re.compile(r"error C(\d+):")
-                    linker_error_exp = re.compile(r"error LNK(\d+):")
-                    warning_exp = re.compile(r"warning C(\d+):")
-                    for line in output_stream.readlines():
-                        match = error_exp.search(line)
-                        if match is not None:
-                            tc.LogStdError("Compile: Error: {0}".format(line))
-                        match = warning_exp.search(line)
-                        if match is not None:
-                            tc.LogStdOut("Compile: Warning: {0}".format(line))
-                        match = linker_error_exp.search(line)
-                        if match is not None:
-                            tc.LogStdError("Linker: Error: {0}".format(line))
-                # we might fail if uefiBuilder doesn't have the output stream (if we have an older mu_enviroment for whatever reason)
-                except AttributeError:
-                    pass  # if we do fail we can ignore it since it just means we can't put more explicit output into the xml
-
-            tc.SetFailed("Compile failed for {0}".format(packagename), "Compile_FAILED")
-            tc.LogStdError("{0} Compile failed with error code {1}".format(AP_Path, ret))
+                # seek to the start of the output stream
+                output_stream.seek(0, 0)
+                problems = MuLogging.scan_compiler_output(output_stream)
+                error_count = " with {} errors/warnings".format(len(problems))
+                for level, problem_msg in problems:
+                    if level == logging.ERROR:
+                        message = "Compile: Error: {0}".format(problem_msg)
+                        tc.LogStdError(message)
+                        logging.error(message)
+                    elif level == logging.WARNING:
+                        message = "Compile: Warning: {0}".format(problem_msg)
+                        tc.LogStdError(message)
+                        logging.warning(message)
+                    else:
+                        message = "Compiler is unhappy: {0}".format(problem_msg)
+                        tc.LogStdError(message)
+                        logging.warning(message)
+            tc.SetFailed("Compile failed for {0}".format(packagename) + error_count, "Compile_FAILED")
+            tc.LogStdError("{0} Compile failed with error code {1} ".format(AP_Path, ret))
             return 1
 
         else:
