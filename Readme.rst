@@ -37,6 +37,7 @@ Main Changes-dev
 - Integrate VariablePolicy libraries and DXE driver into the Variable Services stack. Include unit tests, even though unit test framework isn't quite in place.
 - Switched to MuLogging Compiler error/warning parser and added output to console in addition to JUNIT XML
 - Modified FmpAuthenticationLibPkcs7 to utilize the EKU checking capabilities in BaseCryptLib if a PCD (gFmpDevicePkgTokenSpaceGuid.PcdFmpDxeRequiredEKU) is set.
+- Added BmpCheck pre-build plugin that checks for all BMP's included by your FDF for compatibility with UEFI.
 
 Bug Fixes-dev
 -------------
