@@ -87,6 +87,7 @@
   gEfiDiskInfoScsiInterfaceGuid                 ## SOMETIMES_CONSUMES ## GUID
   gEfiDiskInfoSdMmcInterfaceGuid                ## SOMETIMES_CONSUMES ## GUID
   gEfiDiskInfoUfsInterfaceGuid                  ## SOMETIMES_CONSUMES ## GUID
+  gEfiEventPreReadyToBootGuid                   ## PRODUCES   ##MU_CHANGE
   gEfiEventReadyToBootGuid                      # MU_CHANGE
 
 [Protocols]
