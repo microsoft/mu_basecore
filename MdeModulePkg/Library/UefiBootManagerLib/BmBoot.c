@@ -1926,7 +1926,16 @@ EfiBootManagerBoot (
     DEBUG ((DEBUG_INFO, "[Bds] Booting Boot Manager Menu.\n"));
     BmStopHotkeyService (NULL, NULL);
   } else {
+    PERF_EVENT_SIGNAL_BEGIN (&gEfiEventPreReadyToBootGuid); // MU_CHANGE
+    EfiEventGroupSignal (&gEfiEventPreReadyToBootGuid);     // MU_CHANGE
+    PERF_EVENT_SIGNAL_END (&gEfiEventPreReadyToBootGuid);   // MU_CHANGE
+    PERF_EVENT_SIGNAL_BEGIN (&gEfiEventReadyToBootGuid);    // MU_CHANGE
     EfiSignalEventReadyToBoot ();
+    PERF_EVENT_SIGNAL_END (&gEfiEventReadyToBootGuid);       // MU_CHANGE
+    PERF_EVENT_SIGNAL_BEGIN (&gEfiEventPostReadyToBootGuid); // MU_CHANGE
+    EfiEventGroupSignal (&gEfiEventPostReadyToBootGuid);     // MU_CHANGE
+    PERF_EVENT_SIGNAL_END (&gEfiEventPostReadyToBootGuid);   // MU_CHANGE
+
     //
     // Report Status Code to indicate ReadyToBoot was signalled
     //
