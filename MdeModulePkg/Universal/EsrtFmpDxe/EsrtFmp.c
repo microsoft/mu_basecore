@@ -17,6 +17,7 @@
 #include <Library/DebugLib.h>
 #include <Library/PcdLib.h>
 #include <Library/UefiLib.h>
+#include <Library/PerformanceLib.h> // MU_CHANGE
 #include <Protocol/FirmwareManagement.h>
 #include <Guid/EventGroup.h>
 #include <Guid/SystemResourceTable.h>
@@ -504,6 +505,8 @@ EsrtReadyToBootEventNotify (
   EFI_STATUS                 Status;
   EFI_SYSTEM_RESOURCE_TABLE  *Table;
 
+  PERF_CALLBACK_BEGIN (&gEfiEventReadyToBootGuid); // MU_CHANGE
+
   Table = CreateFmpBasedEsrt ();
   if (Table != NULL) {
     //
@@ -525,6 +528,8 @@ EsrtReadyToBootEventNotify (
   // Close the event to prevent it be signalled again.
   //
   gBS->CloseEvent (Event);
+
+  PERF_CALLBACK_END (&gEfiEventReadyToBootGuid); // MU_CHANGE
 }
 
 /**
