@@ -3,6 +3,7 @@ This file contains the entry code to the HII database, which is defined by
 UEFI 2.1 specification.
 
 Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -133,6 +134,8 @@ OnReadyToBoot (
   IN      VOID       *Context
   )
 {
+  PERF_CALLBACK_BEGIN (&gEfiEventReadyToBootGuid); // MU_CHANGE
+
   //
   // When ready to boot, we begin to export the HiiDatabase date.
   // And hook all the possible HiiDatabase change actions to export data.
@@ -142,6 +145,8 @@ OnReadyToBoot (
   gExportAfterReadyToBoot = TRUE;
 
   gBS->CloseEvent (Event);
+
+  PERF_CALLBACK_END (&gEfiEventReadyToBootGuid); // MU_CHANGE
 }
 
 /**
