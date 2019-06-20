@@ -54,6 +54,7 @@
   PcdLib
   UefiRuntimeServicesTableLib
   PrintLib
+  PerformanceLib # MU_CHANGE
 
 [Protocols]
   gEfiDevicePathProtocolGuid                                            ## SOMETIMES_CONSUMES
@@ -86,6 +87,7 @@
   gEfiHiiImageDecoderNameJpegGuid |gEfiMdeModulePkgTokenSpaceGuid.PcdSupportHiiImageProtocol  ## SOMETIMES_CONSUMES ## GUID
   gEfiHiiImageDecoderNamePngGuid  |gEfiMdeModulePkgTokenSpaceGuid.PcdSupportHiiImageProtocol  ## SOMETIMES_CONSUMES ## GUID
   gEdkiiIfrBitVarstoreGuid                                                                    ## SOMETIMES_CONSUMES ## GUID
+  gEfiEventReadyToBootGuid
 
 [Depex]
   TRUE
