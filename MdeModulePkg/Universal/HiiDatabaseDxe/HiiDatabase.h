@@ -2,6 +2,7 @@
 Private structures definitions in HiiDatabase.
 
 Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -40,6 +41,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PcdLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/PrintLib.h>
+#include <Library/PerformanceLib.h> // MU_CHANGE
 
 #define MAX_STRING_LENGTH      1024
 #define MAX_FONT_NAME_LEN      256
