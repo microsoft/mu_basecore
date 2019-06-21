@@ -1181,3 +1181,66 @@ PlatformBootManagerUnableToBoot (
     EfiBootManagerBoot (&BootManagerMenu);
   }
 }
+
+// MU_CHANGE Starts: Project Mu BDS has this function
+
+/**
+  BDS Entry  - DXE phase complete, BDS Entered.
+*/
+VOID
+EFIAPI
+PlatformBootManagerBdsEntry (
+  VOID
+  )
+{
+  return;
+}
+
+/**
+  HardKeyBoot
+
+  @param[in, out]  BootNext  Pointer to BootNext variable. On input, this is
+                             the regular BootNext variable based on boot option,
+                             on output, this pointer might be updated to
+                             different boot option per platform specific business
+                             logic.
+
+**/
+VOID
+EFIAPI
+PlatformBootManagerPriorityBoot (
+  IN OUT UINT16  **BootNext
+  )
+{
+  return;
+}
+
+/**
+  This is called from BDS right before going into front page
+  when no bootable devices/options found
+
+  @param[in]  BootOption  The boot option that is being processed.
+**/
+VOID
+EFIAPI
+PlatformBootManagerProcessBootCompletion (
+  IN EFI_BOOT_MANAGER_LOAD_OPTION  *BootOption
+  )
+{
+  return;
+}
+
+/**
+  OnDemandConInConnect
+
+**/
+VOID
+EFIAPI
+PlatformBootManagerOnDemandConInConnect (
+  VOID
+  )
+{
+  return;
+}
+
+// MU_CHANGE Ends
