@@ -1,3 +1,7 @@
+##
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
 from MuEnvironment import PluginManager
 import logging
 import os
@@ -9,36 +13,10 @@ import shutil
 import datetime
 from Common.Edk2.Capsule.FmpPayloadHeader  import FmpPayloadHeaderClass
 from Common.Uefi.Capsule.FmpCapsuleHeader  import FmpCapsuleHeaderClass
+from MuPythonLibrary.Windows.VsWhereUtilities import FindToolInWinSdk
 
 
 class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
-
-    @staticmethod
-    def _LocateLatestWindowsKits():
-        result = None
-
-        # Start with a base path and use it to start locating the ideal directory.
-        base_path = os.path.join(os.getenv("ProgramFiles(x86)"), "Windows Kits")
-
-        # Check for Win 10 kits first.
-        base_10_path = os.path.join(base_path, "10", "bin")
-        if os.path.isdir(base_10_path):
-            # If you can find one of the new kit paths, use it.
-            # Walk backwards to test the most recent kit first.
-            for sub_path in reversed(os.listdir(base_10_path)):
-                if sub_path.startswith("10.") and os.path.isdir(os.path.join(base_10_path, sub_path, "x64")):
-                    result = os.path.join(base_10_path, sub_path, "x64")
-                    break
-
-            # Otherwise, fall back to the legacy path.
-            if not result and os.path.isdir(os.path.join(base_10_path, "x64")):
-                result = os.path.join(base_10_path, "x64")
-
-        # If not, fall back to Win 8.1.
-        elif os.path.isdir(os.path.join(base_path, "8.1", "bin", "x64")):
-            result = os.path.join(base_path, "8.1", "bin", "x64")
-
-        return result
 
     def RegisterHelpers(self, obj):
         fp = os.path.abspath(__file__)
@@ -54,11 +32,11 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
     # OutputBin: file path to write Output binary to
     # VersionInt: integer parameter for the version
     # LsvInt: Integer parameter for the lowest supported version
-    # DepList: (optional) list of dependences. Dep format is tuple (FmpGuidForDep, FmpIndex, IntFmpMinVersion, IntFlags ) 
-    ### Dep format can change overtime.  Flags can be added for new behavior.  See the version and library implementing behavior.  
-    ### V1 details.  
+    # DepList: (optional) list of dependences. Dep format is tuple (FmpGuidForDep, FmpIndex, IntFmpMinVersion, IntFlags )
+    ### Dep format can change overtime.  Flags can be added for new behavior.  See the version and library implementing behavior.
+    ### V1 details.
     ####Flag bit 0: dep MUST be in system if 1.  Otherwise dep only applied if fmp found in system.
-    ####Flag bit 1: dep version MUST be exact match if 1.  Otherwise dep must be equal or greater than version.    
+    ####Flag bit 1: dep version MUST be exact match if 1.  Otherwise dep must be equal or greater than version.
     ##
     @staticmethod
     def PackageMsFmpHeader(InputBin, OutputBin, VersionInt, LsvInt, DepList = []):
@@ -96,13 +74,13 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
     # Function to create binary wrapped with FmpImage Auth using input supplied
     # InputBin: Input binary to wrap with new fmp image auth header (file path)
     # OutputBin: file path to write final output binary to
-    # DevPfxFilePath: (optional) file path to dev pfx file to sign with.  If not supplied production signing is assumed. 
-    # 
+    # DevPfxFilePath: (optional) file path to dev pfx file to sign with.  If not supplied production signing is assumed.
+    #
     ##
     @staticmethod
     def PackageFmpImageAuth(InputBin, OutputBin, DevPfxFilePath = None, DevPfxPassword = None, DetachedSignatureFile = None, Eku = None):
         logging.debug("CapsulePackage: Fmp Image Auth Header/Signing")
-  
+
         #temp output dir is in the outputbin folder
         ret = 0
         TempOutDir = os.path.join(os.path.dirname(os.path.abspath(OutputBin)), "_Temp_FmpImageAuth_" + str(datetime.datetime.now().time()).replace(":", "_"))
@@ -117,8 +95,7 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
             logging.debug("FmpImageAuth is dev signed. Do entire process in 1 step locally.")
 
             #Find Signtool
-            WinKitsPath = Edk2ToolHelper._LocateLatestWindowsKits()
-            SignToolPath = os.path.join(WinKitsPath, "signtool.exe")
+            SignToolPath = FindToolInWinSdk("signtool.exe")
             if not os.path.exists(SignToolPath):
                 raise Exception("Can't find signtool on this machine.")
 
@@ -137,17 +114,17 @@ class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
             logging.debug("FmpImageAuth is Production signed")
 
             if(DetachedSignatureFile is None):
-                logging.debug("FmpImageAuth Step1: Make ToBeSigned file for production") 
-                params = params + " --production"  
+                logging.debug("FmpImageAuth Step1: Make ToBeSigned file for production")
+                params = params + " --production"
                 ret = RunPythonScript(cmd, params, workingdir=TempOutDir)
                 if(ret != 0):
                     raise Exception("GenFmpImageAuth Failed production signing: step 1.  Errorcode %d" % ret)
-                #now we have a file to sign at 
+                #now we have a file to sign at
                 TBS = os.path.join(os.path.dirname(OutputBin), "payload.Temp.ToBeSigned")
                 if(not os.path.exists(TBS)):
                     raise Exception("GenFmpImageAuth didn't create ToBeSigned file")
                 os.rename(TBS, OutputBin)
-            
+
             else:
                 logging.debug("FmpImageAuth Step3: Final Packaging of production signed")
                 params = params + " --production -s " + DetachedSignatureFile
