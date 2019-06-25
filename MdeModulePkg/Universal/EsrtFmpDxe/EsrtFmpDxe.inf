@@ -57,6 +57,7 @@
   UefiBootServicesTableLib
   DebugLib
   PcdLib
+  PerformanceLib # MU_CHANGE
 
 [Protocols]
   gEfiFirmwareManagementProtocolGuid  ## CONSUMES
