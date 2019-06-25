@@ -1,3 +1,3 @@
 mu_python_library
-mu_environment>=0.3.6
+mu_environment>=0.3.13
 mu_build
