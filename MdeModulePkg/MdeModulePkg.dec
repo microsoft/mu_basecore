@@ -1268,6 +1268,12 @@
   # @Prompt Enable infinite retries during BDS.
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportInfiniteBootRetries|FALSE|BOOLEAN|0x40000152
 
+  # MU_CHANGE - Start - Mitigate potential system brick due to uefi MemoryTypeInformation var changes.
+  ## Maximum total pages that can be reserved by MemoryTypeInfo buckets.
+  # Size in pages. Current default is roughly 1.6GB.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxMemoryTypeInfoPages|0x60000|UINT32|0x40000150
+  # MU_CHANGE - End - Mitigate potential system brick due to uefi MemoryTypeInformation var changes.
+
   ## The value of USB network periodic timer for asynchronous transfers.
   #  The polling interval must be between 1 and 255 (milliseconds).
   #  A value of 0 is invalid and will cause EFI_INVALID_PARAMETER to be returned.
@@ -1275,7 +1281,6 @@
   # @Prompt USB Network periodic timer interval for asynchronous transfers in ms.
   # @ValidRange 0x80000001 | 1 - 255
   gEfiMdeModulePkgTokenSpaceGuid.PcdUsbNetworkPeriodicTimerInterval|16|UINT8|0x30001063
-
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Dynamic type PCD can be registered callback function for Pcd setting action.
   #  PcdMaxPeiPcdCallBackNumberPerPcdEntry indicates the maximum number of callback function
