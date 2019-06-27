@@ -1189,7 +1189,7 @@
   #   FALSE - UEFI Stack Guard will be disabled.<BR>
   # @Prompt Enable UEFI Stack Guard.
   gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard|FALSE|BOOLEAN|0x30001055
-
+  
   ## Indicate debug level of Trace Hub.
   #   0x0 - TraceHubDebugLevelError.<BR>
   #   0x1 - TraceHubDebugLevelErrorWarning.<BR>
@@ -1207,6 +1207,12 @@
   ## Indicate MMIO address where Trace Hub message output to.
   # @Prompt Output MMIO address of Trace Hub message.
   gEfiMdeModulePkgTokenSpaceGuid.PcdTraceHubDebugMmioAddress|0|UINT64|0x30001058
+
+  # MU_CHANGE TCBZ1086 [BEGIN] - Mitigate potential system brick due to uefi MemoryTypeInformation var changes
+  ## Maximum total pages that can be reserved by MemoryTypeInfo buckets.
+  # Size in pages. Current default is roughly 1.6GB.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxMemoryTypeInfoPages            |0x60000|UINT32|0x40000150
+  # MU_CHANGE TCBZ1086 [END]
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Dynamic type PCD can be registered callback function for Pcd setting action.
