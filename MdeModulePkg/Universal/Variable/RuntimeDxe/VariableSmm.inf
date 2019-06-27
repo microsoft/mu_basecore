@@ -82,6 +82,7 @@
   MuVariablePolicyHelperLib
   UefiVariablePolicyLib
   AdvLoggerAccessLib                            ## MU_CHANGE
+  MemoryTypeInfoSecVarCheckLib  # MU_CHANGE TCBZ1086 - Mitigate potential system brick due to UEFI MemoryTypeInformation var changes
 
 [Protocols]
   gEfiSmmFirmwareVolumeBlockProtocolGuid        ## CONSUMES
