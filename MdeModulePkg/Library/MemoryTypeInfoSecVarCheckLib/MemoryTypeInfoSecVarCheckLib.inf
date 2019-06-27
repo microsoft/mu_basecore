@@ -1,0 +1,45 @@
+## @file
+#  NULL class library to register var check handler and variable property set for MemoryTypeInformation variable.
+#
+#  Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
+#  Copyright (C) Microsoft Corporation
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+# MU_CHANGE TCBZ1086 [WHOLE FILE] - Mitigate potential system brick due to uefi MemoryTypeInformation var changes
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = MemoryTypeInfoSecVarCheckLib
+  FILE_GUID                      = C69D75E8-E39F-4F79-9D74-50B8C759D09B
+  MODULE_TYPE                    = DXE_RUNTIME_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = MemoryTypeInfoSecVarCheckLib|DXE_RUNTIME_DRIVER DXE_SMM_DRIVER
+  CONSTRUCTOR                    = MemoryTypeInfoSecVarCheckLibConstructor
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources]
+  MemoryTypeInfoSecVarCheckLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  VarCheckLib
+  SafeIntLib
+
+[Guids]
+  gEfiMemoryTypeInformationGuid  ## CONSUMES ## Variable:L"MemoryTypeInformation"
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxMemoryTypeInfoPages            ## CONSUMES
