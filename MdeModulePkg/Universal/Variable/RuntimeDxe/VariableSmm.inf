@@ -80,6 +80,7 @@
   ## MU_CHANGE - Remove VariableLockRequestToLock() in lieu of VariablePolicy.
   MuVariablePolicyHelperLib
   UefiVariablePolicyLib
+  MemoryTypeInfoSecVarCheckLib  # MU_SEC_TCBZ1086 - Mitigate potential system brick due to UEFI MemoryTypeInformation var changes
 
 [Protocols]
   gEfiSmmFirmwareVolumeBlockProtocolGuid        ## CONSUMES
