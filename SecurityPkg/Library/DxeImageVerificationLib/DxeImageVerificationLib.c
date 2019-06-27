@@ -1458,10 +1458,13 @@ IsAllowedByDb (
             //
             // Here We still need to check if this RootCert's Hash is revoked
             //
+            // MU_SEC_TCBZ1945 [BEGIN] - DBX check may be skipped for RootCert hashes.
+            DbxDataSize = 0;                      // MU_SEC_TCBZ1945 - Make sure to initialize.
             Status   = gRT->GetVariable (EFI_IMAGE_SECURITY_DATABASE1, &gEfiImageSecurityDatabaseGuid, NULL, &DbxDataSize, NULL);
-            if (Status == EFI_BUFFER_TOO_SMALL) {
+            if (Status != EFI_BUFFER_TOO_SMALL) { // MU_SEC_TCBZ1945 - Logic is inverted.
               goto Done;
             }
+            // MU_SEC_TCBZ1945 [END]
             DbxData = (UINT8 *) AllocateZeroPool (DbxDataSize);
             if (DbxData == NULL) {
               goto Done;
