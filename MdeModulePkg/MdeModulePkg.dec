@@ -1177,6 +1177,12 @@
   # @Prompt Enable UEFI Stack Guard.
   gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard|FALSE|BOOLEAN|0x30001055
 
+  # MU_CHANGE TCBZ1086 [BEGIN] - Mitigate potential system brick due to uefi MemoryTypeInformation var changes
+  ## Maximum total pages that can be reserved by MemoryTypeInfo buckets.
+  # Size in pages. Current default is roughly 1.6GB.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxMemoryTypeInfoPages            |0x60000|UINT32|0x40000150
+  # MU_CHANGE TCBZ1086 [END]
+
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Dynamic type PCD can be registered callback function for Pcd setting action.
   #  PcdMaxPeiPcdCallBackNumberPerPcdEntry indicates the maximum number of callback function
