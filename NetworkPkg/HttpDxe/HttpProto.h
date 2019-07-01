@@ -82,6 +82,7 @@ typedef struct {
   EFI_TLS_VERSION               Version;
   EFI_TLS_CONNECTION_END        ConnectionEnd;
   EFI_TLS_VERIFY                VerifyMethod;
+  EFI_TLS_VERIFY_HOST           VerifyHost;   // MU_CHANGE - Proposed fixes for TCBZ960, invalid domain name (CN) accepted.
   EFI_TLS_SESSION_STATE         SessionState;
 } TLS_CONFIG_DATA;
 
