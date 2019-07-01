@@ -631,11 +631,14 @@ TlsConfigureSession (
   //
   HttpInstance->TlsConfigData.ConnectionEnd = EfiTlsClient;
   HttpInstance->TlsConfigData.VerifyMethod = EFI_TLS_VERIFY_PEER;
+  HttpInstance->TlsConfigData.VerifyHost.Flags    = EFI_TLS_VERIFY_FLAG_NO_WILDCARDS;  // MU_CHANGE - Proposed fixes for TCBZ960, invalid domain name (CN) accepted.
+  HttpInstance->TlsConfigData.VerifyHost.HostName = HttpInstance->RemoteHost;          // MU_CHANGE - Proposed fixes for TCBZ960, invalid domain name (CN) accepted.
   HttpInstance->TlsConfigData.SessionState = EfiTlsSessionNotStarted;
 
   //
   // EfiTlsConnectionEnd,
-  // EfiTlsVerifyMethod
+  // EfiTlsVerifyMethod,
+  // EfiTlsVerifyHost,      // MU_CHANGE - Proposed fixes for TCBZ960, invalid domain name (CN) accepted.
   // EfiTlsSessionState
   //
   Status = HttpInstance->Tls->SetSessionData (
@@ -654,6 +657,19 @@ TlsConfigureSession (
                                 &HttpInstance->TlsConfigData.VerifyMethod,
                                 sizeof (EFI_TLS_VERIFY)
                                 );
+
+  // MU_CHANGE [BEGIN] - Proposed fixes for TCBZ960, invalid domain name (CN) accepted. [BEGIN]
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = HttpInstance->Tls->SetSessionData (
+                                HttpInstance->Tls,
+                                EfiTlsVerifyHost,
+                                &HttpInstance->TlsConfigData.VerifyHost,
+                                sizeof (EFI_TLS_VERIFY_HOST)
+                                );
+  // MU_CHANGE [END]
   if (EFI_ERROR (Status)) {
     return Status;
   }
