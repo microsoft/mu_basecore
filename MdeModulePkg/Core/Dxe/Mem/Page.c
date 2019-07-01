@@ -1272,12 +1272,13 @@ CoreInternalAllocatePages (
   IN BOOLEAN                NeedGuard
   )
 {
-  EFI_STATUS      Status;
-  UINT64          Start;
-  UINT64          NumberOfBytes;
-  UINT64          End;
-  UINT64          MaxAddress;
-  UINTN           Alignment;
+  EFI_STATUS       Status;
+  UINT64           Start;
+  UINT64           NumberOfBytes;
+  UINT64           End;
+  UINT64           MaxAddress;
+  UINTN            Alignment;
+  EFI_MEMORY_TYPE  CheckType;           // MU_CHANGE
 
   if ((UINT32)Type >= MaxAllocateType) {
     return EFI_INVALID_PARAMETER;
@@ -1328,6 +1329,7 @@ CoreInternalAllocatePages (
   // if (Start + NumberOfBytes) rolls over 0 or
   // if Start is above MAX_ALLOC_ADDRESS or
   // if End is above MAX_ALLOC_ADDRESS,
+  // if Start..End overlaps any tracked MemoryTypeStatistics range     // MU_CHANGE Patch from Intel
   // return EFI_NOT_FOUND.
   //
   if (Type == AllocateAddress) {
@@ -1343,6 +1345,39 @@ CoreInternalAllocatePages (
         (End > MaxAddress)) {
       return EFI_NOT_FOUND;
     }
+
+    // MU_CHANGE - Begin - Microsoft Patch to prevent AllocateAddress from changing
+    //                     the memory type of 'Special' pages.
+
+    // Problem summary
+
+    /*
+    A driver is allowed to call AllocatePages using an AllocateAddress type.  This type of
+    AllocatePage request the exact physical address if it is not used.  The existing code
+    will allow this request even in 'special' pages.  The problem with this is that the
+    reason to have 'special' pages for OS hibernate/resume is defeated as memory is
+    fragmented.
+    */
+
+    for (CheckType = (EFI_MEMORY_TYPE) 0; CheckType < EfiMaxMemoryType; CheckType++) {
+      if (MemoryType != CheckType &&
+          mMemoryTypeStatistics[CheckType].Special &&
+          mMemoryTypeStatistics[CheckType].NumberOfPages > 0) {
+        if (Start >= mMemoryTypeStatistics[CheckType].BaseAddress &&
+            Start <= mMemoryTypeStatistics[CheckType].MaximumAddress) {
+          return EFI_NOT_FOUND;
+        }
+        if (End >= mMemoryTypeStatistics[CheckType].BaseAddress &&
+            End <= mMemoryTypeStatistics[CheckType].MaximumAddress) {
+          return EFI_NOT_FOUND;
+        }
+        if (Start < mMemoryTypeStatistics[CheckType].BaseAddress &&
+            End   > mMemoryTypeStatistics[CheckType].MaximumAddress) {
+          return EFI_NOT_FOUND;
+        }
+      }
+    }
+    // MU_CHANGE - End - Microsoft Patch
   }
 
   if (Type == AllocateMaxAddress) {
