@@ -5,7 +5,7 @@
     #Workspace path relative to this file
     "RelativeWorkspaceRoot": "",
 
-    "Scopes": ["corebuild"],
+    "Scopes": ["corebuild", "gcc_aarch64_linux", "gcc_arm_linux"],
 
     # Other Repos that are dependencies
     "Dependencies": [
