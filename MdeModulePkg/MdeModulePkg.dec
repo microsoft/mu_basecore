@@ -1036,6 +1036,16 @@
   # See MdeModulePkg/Core/MemoryBins.md for more details.
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBinsEnable|FALSE|BOOLEAN|0x00010080
 
+  ## MU_CHANGE
+  ## Indicates that the system should not automatically enable BME on P2P bridges until a subordinate
+  #  device has its Bus Master Enable bit set by a call to PciIo->SetAttributes.
+  #  Note: Some UEFI drivers are not compliant and do not correctly call SetAttributes before attempting
+  #  DMA operations. For these drivers, this setting will cause a functionality break.
+  #   TRUE  - Defer BME enablement on P2P bridges.
+  #   FALSE - Initialize P2P bridges with BME enabled.
+  # @Prompt Defer BME enablement
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDeferBME|TRUE|BOOLEAN|0x30002050
+
 [PcdsFeatureFlag.IA32, PcdsFeatureFlag.AARCH64, PcdsFeatureFlag.LOONGARCH64]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|FALSE|BOOLEAN|0x0001003a
 
@@ -2405,6 +2415,15 @@
   #  Platforms requiring CRS retry support should set a non-zero value.
   # @Prompt PCI CRS timeout in seconds.
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciCrsTimeoutSeconds|0|UINT32|0x1000002B
+
+  ## MU_CHANGE
+  ## Indicates that the system should disable BME on all Pci2Pci bridges on Exit Boot Services
+  #  Note: Some operating systems and drivers may not expect devices to be in this state, and it
+  #  may cause unexpected behaviors.
+  #   TRUE  - Disable BME on P2P at Exit Boot Services.
+  #   FALSE - Do not disable BME on P2P at Exit Boot Services.
+  # @Prompt Disable BME on Exit Boot Services
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDisableBMEonEBS|TRUE|BOOLEAN|0x30002051
 
 [PcdsPatchableInModule]
   ## Specify memory size with page number for PEI code when
