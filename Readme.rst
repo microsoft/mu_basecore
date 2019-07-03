@@ -38,6 +38,7 @@ Main Changes-dev
 - Switched to MuLogging Compiler error/warning parser and added output to console in addition to JUNIT XML
 - Modified FmpAuthenticationLibPkcs7 to utilize the EKU checking capabilities in BaseCryptLib if a PCD (gFmpDevicePkgTokenSpaceGuid.PcdFmpDxeRequiredEKU) is set.
 - Added BmpCheck pre-build plugin that checks for all BMP's included by your FDF for compatibility with UEFI.
+- Add PCDs (gEfiMdeModulePkgTokenSpaceGuid.PcdDeferBME, gEfiMdeModulePkgTokenSpaceGuid.PcdDisableBMEonEBS) to control how BME is enabled on downstream devices and whether BME is left enabled at OS handoff.
 
 Bug Fixes-dev
 -------------
