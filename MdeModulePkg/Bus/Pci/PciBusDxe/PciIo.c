@@ -1007,6 +1007,17 @@ PciIoMap (
       );
   }
 
+  // MU_CHANGE [BEGIN] - Re-attempt to locate IoMmu protocol, if missing.
+  if (mIoMmuProtocol == NULL) {
+    gBS->LocateProtocol (
+           &gEdkiiIoMmuProtocolGuid,
+           NULL,
+           (VOID **)&mIoMmuProtocol
+           );
+  }
+
+  // MU_CHANGE [END]
+
   if (mIoMmuProtocol != NULL) {
     if (!EFI_ERROR (Status)) {
       switch (Operation) {
@@ -1057,6 +1068,17 @@ PciIoUnmap (
   PCI_IO_DEVICE  *PciIoDevice;
 
   PciIoDevice = PCI_IO_DEVICE_FROM_PCI_IO_THIS (This);
+
+  // MU_CHANGE [BEGIN] - Re-attempt to locate IoMmu protocol, if missing.
+  if (mIoMmuProtocol == NULL) {
+    gBS->LocateProtocol (
+           &gEdkiiIoMmuProtocolGuid,
+           NULL,
+           (VOID **)&mIoMmuProtocol
+           );
+  }
+
+  // MU_CHANGE [END]
 
   if (mIoMmuProtocol != NULL) {
     mIoMmuProtocol->SetAttribute (

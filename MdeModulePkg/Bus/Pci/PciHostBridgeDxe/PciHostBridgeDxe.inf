@@ -39,6 +39,11 @@
   UefiLib
   PciHostBridgeLib
   TimerLib
+  PcdLib                                          ## MU_CHANGE
+  ReportStatusCodeLib                             ## MU_CHANGE
+
+[FeaturePcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRequireIommu  ## MU_CHANGE
 
 [Protocols]
   gEfiCpuIo2ProtocolGuid                          ## CONSUMES
