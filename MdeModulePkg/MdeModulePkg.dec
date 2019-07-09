@@ -975,6 +975,14 @@
   # @Prompt Defer BME enablement
   gEfiMdeModulePkgTokenSpaceGuid.PcdDeferBME|TRUE|BOOLEAN|0x30002050
 
+  ## MU_CHANGE
+  ## Indicates if DMA is allowed before IOMMU protocol install
+  #  If enabled, device wil assert and return EFI_DEVICE_ERROR on any DMA access before IOMMU Protocol Install.<BR><BR>
+  #   TRUE  - IOMMU protocol required for DMA access.<BR>
+  #   FALSE - DMA Access can happen before IOMMU protocol install.<BR>
+  # @Prompt Enable DMA before IOMMU protocol.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRequireIommu|TRUE|BOOLEAN|0x30001057
+
 [PcdsFeatureFlag.IA32, PcdsFeatureFlag.ARM, PcdsFeatureFlag.AARCH64]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|FALSE|BOOLEAN|0x0001003a
 
