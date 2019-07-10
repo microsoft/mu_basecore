@@ -64,7 +64,10 @@ RscHandlerNotification (
                      &RscData->Data
                      );
 
-    Address += (sizeof (RSC_DATA_ENTRY) + RscData->Data.Size);
+    // MU_CHANGE Starts: Account for the HeaderSize field in EFI_STATUS_CODE_DATA
+    // Address += (sizeof (RSC_DATA_ENTRY) + RscData->Data.Size);
+    Address += (sizeof (RSC_DATA_ENTRY) + RscData->Data.Size + RscData->Data.HeaderSize - sizeof(EFI_STATUS_CODE_DATA));
+    // MU_CHANGE Ends
     Address  = ALIGN_VARIABLE (Address);
   }
 
@@ -271,7 +274,10 @@ ReportDispatcher (
     RscData = (RSC_DATA_ENTRY *) (UINTN) CallbackEntry->EndPointer;
     CallbackEntry->EndPointer += sizeof (RSC_DATA_ENTRY);
     if (Data != NULL) {
-      CallbackEntry->EndPointer += Data->Size;
+      // MU_CHANGE Starts: Account for the HeaderSize field in EFI_STATUS_CODE_DATA
+      // CallbackEntry->EndPointer += Data->Size;
+      CallbackEntry->EndPointer += Data->Size + Data->HeaderSize - sizeof(EFI_STATUS_CODE_DATA);
+      // MU_CHANGE Ends
     }
 
     //
@@ -307,6 +313,11 @@ ReportDispatcher (
     }
     if (Data != NULL) {
       CopyMem (&RscData->Data, Data, Data->HeaderSize + Data->Size);
+    // MU_CHANGE Starts: Zero the EFI_STATUS_CODE_DATA field to avoid residual data propagation
+    } else {
+      ZeroMem(&RscData->Data, sizeof(RscData->Data));
+      RscData->Data.HeaderSize = sizeof(RscData->Data);
+    // MU_CHANGE Ends
     }
 
     Status = gBS->SignalEvent (CallbackEntry->Event);
