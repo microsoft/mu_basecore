@@ -1003,6 +1003,7 @@ IsSignatureFoundInDatabase (
 
   Data = (UINT8 *) AllocateZeroPool (DataSize);
   if (Data == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;        // MU_CHANGE - Change the status to be a bit more informative.
     goto Done;
   }
 
@@ -1381,6 +1382,8 @@ IsForbiddenByDbx (
 
   }
 
+  IsForbidden = FALSE;      // MU_CHANGE - At this point, can assume *not* in the database.
+
 Done:
   if (Data != NULL) {
     FreePool (Data);
@@ -1516,6 +1519,11 @@ IsAllowedByDb (
                 DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image is signed and signature is accepted by DB, but its root cert failed the timestamp check.\n"));
               }
             }
+            // MU_CHANGE [BEGIN] - Existing patch never allowed things that weren't found in the dbx.
+            else if (!EFI_ERROR (Status) && !IsFound){
+              VerifyStatus = TRUE;
+            }
+            // MU_CHANGE [END]
 
             goto Done;
           }
