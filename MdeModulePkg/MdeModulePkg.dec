@@ -930,7 +930,9 @@
   #   TRUE  - Export HII data and configuration data.<BR>
   #   FALSE - Does not export HII data and configuration.<BR>
   # @Prompt Enable export HII data and configuration to be used in OS runtime.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdHiiOsRuntimeSupport|TRUE|BOOLEAN|0x00010074
+  # MU_CHANGE: Default PcdHiiOsRuntimeSupport to FALSE
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdHiiOsRuntimeSupport|TRUE|BOOLEAN|0x00010074
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHiiOsRuntimeSupport|FALSE|BOOLEAN|0x00010074
 
   ## Indicates if PS2 mouse does a extended verification during start.
   #  Extended verification will take some performance. It can be set to FALSE for boot performance.<BR><BR>
