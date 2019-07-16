@@ -143,12 +143,12 @@ class Settings(CiBuildSettingsManager, CiSetupSettingsManager, UpdateSettingsMan
             {
                 "Path": "Silicon/Arm/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_silicon_arm_tiano.git",
-                "Branch": "dev/201905"
+                "Branch": "personal/brbarkel/1908_rebase_2"
             },
             {
                 "Path": "Common/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
-                "Branch": "dev/201905"
+                "Branch": "personal/brbarkel/1908_rebase_1"
             }
         ]
 
