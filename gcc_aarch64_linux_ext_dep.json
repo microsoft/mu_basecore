@@ -1,0 +1,11 @@
+{
+  "scope": "gcc_aarch64_linux",
+  "type": "web",
+  "name": "gcc_aarch64_linux",
+  "source": "https://releases.linaro.org/components/toolchain/binaries/7.2-2017.11/aarch64-linux-gnu/gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu.tar.xz",
+  "version": "7.2.1",
+  "compression_type": "tar",
+  "internal_path": "/gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu/",
+  "flags": ["set_shell_var", ],
+  "var_name": "GCC_AARCH_INSTALL"
+}

@@ -1,0 +1,11 @@
+{
+  "scope": "gcc_arm_linux",
+  "type": "web",
+  "name": "gcc_arm_linux",
+  "source": "https://releases.linaro.org/components/toolchain/binaries/6.4-2017.11/arm-linux-gnueabihf/gcc-linaro-6.4.1-2017.11-x86_64_arm-linux-gnueabihf.tar.xz",
+  "version": "7.2.1",
+  "compression_type": "tar",
+  "internal_path": "/gcc-linaro-6.4.1-2017.11-x86_64_arm-linux-gnueabihf/",
+  "flags": ["set_shell_var", ],
+  "var_name": "GCC_ARM_INSTALL"
+}

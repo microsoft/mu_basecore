@@ -11,8 +11,8 @@ strategy:
       Build.Pkgs: 'SecurityPkg'
 
 variables:
-  GCC5_ARM_PREFIX: $(build.sourcesDirectory)/gcc-linaro-6.4.1-2017.11-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
-  GCC5_AARCH64_PREFIX: $(build.sourcesDirectory)/gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
+  GCC_AARCH_PREFIX: bin/aarch64-linux-gnu-
+  GCC_ARM_PREFIX: bin/arm-linux-gnueabihf-
 
 workspace:
   clean: all
@@ -25,18 +25,6 @@ steps:
   inputs:
     versionSpec: '3.7.x'
     architecture: 'x64'
-
-- script: wget https://releases.linaro.org/components/toolchain/binaries/7.2-2017.11/aarch64-linux-gnu/gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu.tar.xz
-  displayName: Downloading gcc-linaro-7.2.1-2017.11-x86_64_aarch64
-
-- script: tar -xf gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu.tar.xz gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu/
-  displayName: Unpacking gcc-linaro-7.2.1-2017.11-x86_64_aarch64
-
-- script: wget https://releases.linaro.org/components/toolchain/binaries/6.4-2017.11/arm-linux-gnueabihf/gcc-linaro-6.4.1-2017.11-x86_64_arm-linux-gnueabihf.tar.xz
-  displayName: Downloading gcc-linaro-6.4.1-2017.11-x86_64_arm
-
-- script: tar -xf gcc-linaro-6.4.1-2017.11-x86_64_arm-linux-gnueabihf.tar.xz
-  displayName: Unpacking gcc-linaro-6.4.1-2017.11-x86_64_arm
 
 - script: pip3 install -r requirements.txt --upgrade
   displayName: 'Install/Upgrade mu_build'

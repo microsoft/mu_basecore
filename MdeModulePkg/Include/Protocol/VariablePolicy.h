@@ -165,8 +165,6 @@ EFI_STATUS
 
 typedef struct {
   UINT64                     Revision;
-  // TODO VARPOL: Add a function to disable protections for next write.
-  //              Lock clears transient states, but locks global state.
   DISABLE_VARIABLE_POLICY    DisableVariablePolicy;
   IS_VARIABLE_POLICY_ENABLED IsVariablePolicyEnabled;
   REGISTER_VARIABLE_POLICY   RegisterVariablePolicy;

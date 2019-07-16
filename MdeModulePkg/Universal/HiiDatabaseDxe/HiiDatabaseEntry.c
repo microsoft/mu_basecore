@@ -140,6 +140,8 @@ OnReadyToBoot (
   IN      VOID                              *Context
   )
 {
+  PERF_CALLBACK_BEGIN(&gEfiEventReadyToBootGuid); // MU_CHANGE
+
   //
   // When ready to boot, we begin to export the HiiDatabase date.
   // And hook all the possible HiiDatabase change actions to export data.
@@ -149,6 +151,8 @@ OnReadyToBoot (
   gExportAfterReadyToBoot = TRUE;
 
   gBS->CloseEvent (Event);
+
+  PERF_CALLBACK_END(&gEfiEventReadyToBootGuid); // MU_CHANGE
 }
 
 /**

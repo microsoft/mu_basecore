@@ -23,22 +23,25 @@ Anticipated Stabilization:
 Branch Changes - release/201903
 ===============================
 
-Breaking Changes-dev
+Breaking Changes
 --------------------
 
 - Edk2ToolHelper no longer has logic for dependencies. This is easily replaced, but convenient to leave out while GenerateCapsule is being refactored to remove reliance on older compiled tools.
 - VariablePolicy changes in VaraibleSmm and AuthService will require additional libraries in DSC files (e.g. UefiVariablePolicyLib, VarCheckPolicyLib, MuVariablePolicyHelperLib).
 - gEdkiiVariableLockProtocolGuid is no longer a component of VariableServices. An alternate implementation is provided in Mu Plus repo, in the MuVarPolicyFoundationDxe driver, but it is recommended that policies be used instead.
 
-Main Changes-dev
+Main Changes
 ----------------
 
 - Modifies DxeCapsuleProcessLib so that UpdateImageProgress() returns success even if DisplayUpdateProgress() returns EFI_ERROR. This allows capsule update to proceed even if there are errors in the progress reporting.
 - Integrate VariablePolicy libraries and DXE driver into the Variable Services stack. Include unit tests, even though unit test framework isn't quite in place.
 - Switched to MuLogging Compiler error/warning parser and added output to console in addition to JUNIT XML
 - Modified FmpAuthenticationLibPkcs7 to utilize the EKU checking capabilities in BaseCryptLib if a PCD (gFmpDevicePkgTokenSpaceGuid.PcdFmpDxeRequiredEKU) is set.
+- Added BmpCheck pre-build plugin that checks for all BMP's included by your FDF for compatibility with UEFI.
+- Add PCDs (gEfiMdeModulePkgTokenSpaceGuid.PcdDeferBME, gEfiMdeModulePkgTokenSpaceGuid.PcdDisableBMEonEBS) to control how BME is enabled on downstream devices and whether BME is left enabled at OS handoff.
+- Add a PCD (gEfiMdeModulePkgTokenSpaceGuid.PcdRequireIommu) to allow a platform to force I/OMMU usage for PCI DMA.
 
-Bug Fixes-dev
+Bug Fixes
 -------------
 
 - None
