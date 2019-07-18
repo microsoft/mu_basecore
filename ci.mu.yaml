@@ -12,13 +12,13 @@
         {
             "Path": "Silicon/Arm/MU_TIANO",
             "Url": "https://github.com/Microsoft/mu_silicon_arm_tiano.git",
-            "Branch": "release/201903"
+            "Branch": "personal/brbarkel/1905_rebase_2"
         #    "Commit": "*"
         },
         {
             "Path": "Common/MU_TIANO",
             "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
-            "Branch": "release/201903"
+            "Branch": "release/201905"
         #    "Commit": "*"
         }
     ],
