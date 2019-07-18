@@ -235,7 +235,6 @@
   MdeModulePkg/Application/DumpDynPcd/DumpDynPcd.inf
   MdeModulePkg/Application/MemoryProfileInfo/MemoryProfileInfo.inf
 ## MSCHANGE BEGIN
-  MdeModulePkg/Library/DxeHttpLib/DxeHttpLib.inf
   MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
   MdeModulePkg/Logo/Logo.inf
   #MU_CHANGE - Doesn't build https://github.com/Microsoft/mu/issues/35 MdeModulePkg/Logo/LogoDxe.inf
@@ -245,7 +244,6 @@
   MdeModulePkg/Library/CustomizedDisplayLib/CustomizedDisplayLib.inf
   MdeModulePkg/Library/DebugAgentLibNull/DebugAgentLibNull.inf
   MdeModulePkg/Library/DeviceManagerUiLib/DeviceManagerUiLib.inf
-  MdeModulePkg/Library/DxeTcpIoLib/DxeTcpIoLib.inf
   MdeModulePkg/Library/LockBoxNullLib/LockBoxNullLib.inf
   MdeModulePkg/Library/PciHostBridgeLibNull/PciHostBridgeLibNull.inf
   MdeModulePkg/Library/PiSmmCoreSmmServicesTableLib/PiSmmCoreSmmServicesTableLib.inf
