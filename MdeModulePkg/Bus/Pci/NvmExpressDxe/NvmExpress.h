@@ -41,9 +41,6 @@
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/ReportStatusCodeLib.h>
 
-// MS_CHANGE BEGIN -- UEFI_890
-#include <Library/ReportStatusCodeLib.h>
-// MS_CHANGE END -- UEFI_890
 
 typedef struct _NVME_CONTROLLER_PRIVATE_DATA NVME_CONTROLLER_PRIVATE_DATA;
 typedef struct _NVME_DEVICE_PRIVATE_DATA     NVME_DEVICE_PRIVATE_DATA;
@@ -56,11 +53,6 @@ extern EFI_DRIVER_BINDING_PROTOCOL                gNvmExpressDriverBinding;
 extern EFI_COMPONENT_NAME_PROTOCOL                gNvmExpressComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL               gNvmExpressComponentName2;
 extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gNvmExpressDriverSupportedEfiVersion;
-
-// MSCHANGE - BEGIN
-extern EFI_GUID                                   gNVMeEnableStartEventGroupGuid;
-extern EFI_GUID                                   gNVMeEnableCompleteEventGroupGuid;
-// MSCHANGE - END
 
 #define PCI_CLASS_MASS_STORAGE_NVM                0x08  // mass storage sub-class non-volatile memory.
 #define PCI_IF_NVMHCI                             0x02  // mass storage programming interface NVMHCI.

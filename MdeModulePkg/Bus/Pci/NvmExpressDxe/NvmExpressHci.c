@@ -1126,9 +1126,7 @@ NvmeUnregisterShutdownNotification (
 {
   EFI_STATUS                      Status;
   EFI_RESET_NOTIFICATION_PROTOCOL *ResetNotify;
-  //MS_CHANGE - BEGIN
-  ReportStatusCode((EFI_ERROR_MAJOR | EFI_ERROR_CODE), (EFI_IO_BUS_SCSI | EFI_IOB_EC_INTERFACE_ERROR));
-  //MS_CHANGE - END
+
   mNvmeControllerNumber--;
   if (mNvmeControllerNumber == 0) {
     Status = gBS->LocateProtocol (&gEfiResetNotificationProtocolGuid, NULL, (VOID **) &ResetNotify);
