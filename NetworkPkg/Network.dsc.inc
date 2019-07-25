@@ -23,6 +23,13 @@
   DEFINE PLATFORMX64_ENABLE = FALSE
 !endif
 
+!ifndef PLATFORMARM_ENABLE # MU_CHANGE - put ARM behind a flag to avoid breaks
+  #
+  # PLATFORMARM_ENABLE is set to TRUE when ARM building is ok, such as in GCC
+  #
+  DEFINE PLATFORMARM_ENABLE = FALSE
+!endif
+
 [PcdsFixedAtBuild]
 !include NetworkPkg/NetworkPcds.dsc.inc
 
@@ -34,7 +41,12 @@
 !include NetworkPkg/NetworkComponents.dsc.inc
 
 !else
-[Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
+[Components.IA32, Components.X64, Components.AARCH64]
 !include NetworkPkg/NetworkComponents.dsc.inc
 
+!endif
+
+!if $(PLATFORMARM_ENABLE) == TRUE # MU_CHANGE - put ARM behind a flag to avoid breaks
+[Components.ARM]
+  !include NetworkPkg/NetworkComponents.dsc.inc
 !endif
