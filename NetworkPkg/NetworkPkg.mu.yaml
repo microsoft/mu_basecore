@@ -12,6 +12,7 @@
         "IgnoreInf": []
     },
     "DSCCheck": {
+        "skip": true,
         "IgnoreInf": [
             "NetworkPkg/SharedTlsDxe/TlsDxe.DEBUG.inf",
             "NetworkPkg/SharedTlsDxe/TlsDxe.RELEASE.inf"
