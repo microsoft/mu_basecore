@@ -19,8 +19,8 @@
 
 [Defines]
   INF_VERSION               = 0x0001001B
-  BASE_NAME                 = SharedTlsDxeDebug
-  FILE_GUID                 = EE3A5D43-5392-45EB-8714-0BB7C26E3CD4
+  BASE_NAME                 = SharedTlsDxeRelease
+  FILE_GUID                 = C1E15908-AB7B-4DA8-8C56-417B0B0D8D5B
   MODULE_TYPE               = UEFI_DRIVER
   VERSION_STRING            = 1.0
   ENTRY_POINT               = TlsDriverEntryPoint
@@ -32,13 +32,13 @@
 
 
 [Binaries.X64]
-  PE32|Mu-SharedTls_extdep/DEBUG/X64/TlsDxe.efi|DEBUG
+  PE32|Mu-SharedNetworking_extdep/RELEASE/X64/TlsDxe.efi|RELEASE
 
 [Binaries.IA32]
-  PE32|Mu-SharedTls_extdep/DEBUG/IA32/TlsDxe.efi|DEBUG
+  PE32|Mu-SharedNetworking_extdep/RELEASE/IA32/TlsDxe.efi|RELEASE
 
 [Binaries.AARCH64]
-  PE32|Mu-SharedTls_extdep/DEBUG/AARCH64/TlsDxe.efi|DEBUG
+  PE32|Mu-SharedNetworking_extdep/RELEASE/AARCH64/TlsDxe.efi|RELEASE
 
 [Packages]
   NetworkPkg/NetworkPkg.dec

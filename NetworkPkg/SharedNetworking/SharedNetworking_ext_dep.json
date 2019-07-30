@@ -1,8 +1,8 @@
 {
   "scope": "global",
   "type": "nuget",
-  "name": "Mu-SharedTls",
+  "name": "Mu-SharedNetworking",
   "source": "https://api.nuget.org/v3/index.json",
-  "version": "2019.03.1.2",
+  "version": "2019.03.1.3",
   "flags": []
 }
