@@ -1,0 +1,93 @@
+workspace:
+  clean: all
+
+trigger: none # will disable CI builds entirely
+
+# Currently don't have the SecMirrorCommon variables
+#variables:
+#- group: SecMirrorCommon
+pool:
+  vmImage: windows-latest
+
+steps:
+- checkout: self
+  clean: true
+
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.9.x'
+    architecture: 'x64'
+
+- script: python -m pip install --upgrade pip
+  displayName: 'Install/Upgrade pip'
+
+- script: pip install -r pip-requirements.txt --upgrade
+  displayName: 'Install/Upgrade mu_build'
+
+# Create a variable
+#- powershell: |
+#    Write-Host "##vso[task.setvariable variable=GIT_CREDS]projectmu:$(secmircom.pat)"
+#- script: |
+#    echo my pipeline variable is $(GIT_CREDS)
+
+# Update dependencies
+- task: CmdLine@1
+  displayName: Setup
+  inputs:
+    filename: stuart_ci_setup
+    arguments: -c NetworkPkg/SharedNetworking/SharedNetworkSettings.py
+
+- task: CmdLine@1
+  displayName: 'Update Dependencies'
+  inputs:
+    filename: stuart_update
+    arguments: -c NetworkPkg/SharedNetworking/SharedNetworkSettings.py
+    failOnStderr: false
+
+# Build and publish
+- task: PythonScript@0
+  displayName: 'Build and Ship'
+  condition: eq(variables.ShouldPublish, 'true')
+  inputs:
+    scriptSource: 'filePath'
+    scriptPath: 'NetworkPkg/SharedNetworking/DriverBuilder.py'
+    arguments: '-c NetworkPkg/SharedNetworking/SharedNetworkSettings.py -nv=$(NugetVersion) --api-key=$(NUGET_API_KEY)'
+    failOnStderr: false
+
+# Build but don't publish
+- task: PythonScript@0
+  displayName: 'Build but do not publish'
+  condition: not(eq(variables.ShouldPublish, 'true'))
+  inputs:
+    scriptSource: 'filePath'
+    scriptPath: 'NetworkPkg/SharedNetworking/DriverBuilder.py'
+    arguments: '-c NetworkPkg/SharedNetworking/SharedNetworkSettings.py --verbose'
+    failOnStderr: false
+
+# Copy the Nuget Package
+- task: CopyFiles@2
+  displayName: 'Copy Nuget Pkg'
+  inputs:
+    contents: 'Build/**.nupkg'
+    targetFolder: $(Build.ArtifactStagingDirectory)
+
+# Copy the TXT file
+- task: CopyFiles@2
+  displayName: 'Copy Build files'
+  inputs:
+    contents: |
+      Build\**\BUILDLOG_*.txt
+      Build\**\BUILDLOG_*.md
+      Build\**\CI_*.txt
+      Build\**\CI_*.md
+      Build\**\TestSuites.xml
+    targetFolder: $(Build.ArtifactStagingDirectory)
+
+# Publish Build Artifacts
+# Publish build artifacts to Azure Artifacts/TFS or a file share
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish NugetPackage'
+  continueOnError: true
+  condition: succeeded()
+  inputs:
+    artifactName: 'Nuget Package'

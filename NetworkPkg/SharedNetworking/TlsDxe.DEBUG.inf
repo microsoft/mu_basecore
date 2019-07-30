@@ -1,0 +1,58 @@
+## @file
+#  This module produces EFI TLS Protocol, EFI TLS Service Binding Protocol and
+#  EFI TLS Configuration Protocol.
+#
+#  This module produces EFI TLS (Transport Layer Security) Protocol and EFI TLS
+#  Service Binding Protocol, to provide TLS services.
+#
+#  Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
+#
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution. The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php.
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#
+##
+
+[Defines]
+  INF_VERSION               = 0x0001001B
+  BASE_NAME                 = SharedTlsDxeDebug
+  FILE_GUID                 = EE3A5D43-5392-45EB-8714-0BB7C26E3CD4
+  MODULE_TYPE               = UEFI_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = TlsDriverEntryPoint
+  UNLOAD_IMAGE              = TlsUnload
+  MODULE_UNI_FILE           = TlsDxe.uni
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64#
+
+
+[Binaries.X64]
+  PE32|Mu-SharedNetworking_extdep/DEBUG/X64/TlsDxe.efi|DEBUG
+
+[Binaries.IA32]
+  PE32|Mu-SharedNetworking_extdep/DEBUG/IA32/TlsDxe.efi|DEBUG
+
+[Binaries.AARCH64]
+  PE32|Mu-SharedNetworking_extdep/DEBUG/AARCH64/TlsDxe.efi|DEBUG
+
+[Packages]
+  NetworkPkg/NetworkPkg.dec
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  CryptoPkg/CryptoPkg.dec
+
+[Protocols]
+  gEfiTlsServiceBindingProtocolGuid          ## PRODUCES
+  gEfiTlsProtocolGuid                        ## PRODUCES
+  gEfiTlsConfigurationProtocolGuid           ## PRODUCES
+
+[UserExtensions.TianoCore."ExtraFiles"]
+  TlsDxeExtra.uni
+
+[Depex]
+  TRUE

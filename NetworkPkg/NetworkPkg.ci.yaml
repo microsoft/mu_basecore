@@ -44,7 +44,25 @@
     },
     "DscCompleteCheck": {
         "DscPath": "NetworkPkg.dsc",
-        "IgnoreInf": []
+        "IgnoreInf": [
+            ## MU_CHANGE Ignore all the SharedNetwork components as this is for binary release
+            "NetworkPkg/SharedNetworking/Dhcp6Dxe.DEBUG.inf",
+            "NetworkPkg/SharedNetworking/Dhcp6Dxe.RELEASE.inf",
+            "NetworkPkg/SharedNetworking/DnsDxe.DEBUG.inf",
+            "NetworkPkg/SharedNetworking/DnsDxe.RELEASE.inf",
+            "NetworkPkg/SharedNetworking/HttpBootDxe.DEBUG.inf",
+            "NetworkPkg/SharedNetworking/HttpBootDxe.RELEASE.inf",
+            "NetworkPkg/SharedNetworking/HttpUtilitiesDxe.DEBUG.inf",
+            "NetworkPkg/SharedNetworking/HttpUtilitiesDxe.RELEASE.inf",
+            "NetworkPkg/SharedNetworking/Ip6Dxe.DEBUG.inf",
+            "NetworkPkg/SharedNetworking/Ip6Dxe.RELEASE.inf",
+            "NetworkPkg/SharedNetworking/TcpDxe.DEBUG.inf",
+            "NetworkPkg/SharedNetworking/TcpDxe.RELEASE.inf",
+            "NetworkPkg/SharedNetworking/TlsDxe.DEBUG.inf",
+            "NetworkPkg/SharedNetworking/TlsDxe.RELEASE.inf",
+            "NetworkPkg/SharedNetworking/Udp6Dxe.DEBUG.inf",
+            "NetworkPkg/SharedNetworking/Udp6Dxe.RELEASE.inf"
+        ]
     },
     "GuidCheck": {
         "IgnoreGuidName": [],
