@@ -573,7 +573,8 @@ ProcessTheseCapsules (
     //
     // We didn't find a hob, so had no errors.
     //
-    DEBUG ((DEBUG_ERROR, "We can not find capsule data in capsule update boot mode.\n"));
+    // MU_CHANGE: switch from error to info below, adjust print string
+    DEBUG ((DEBUG_INFO, "%a - Can not find capsule data\n", __FUNCTION__));
     // mNeedReset = TRUE; // MU_CHANGE - turn off needing the reset
     return EFI_SUCCESS;
   }
