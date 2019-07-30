@@ -1,0 +1,52 @@
+## @file
+#  Implementation of EFI Http Utilities Protocol interfaces.
+#
+#  Copyright (c) 2015, Intel Corporation. All rights reserved.<BR>
+#  (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
+#
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution. The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php.
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#
+##
+
+
+[Defines]
+  INF_VERSION               = 0x0001001B
+  BASE_NAME                 = SharedHttpUtilitiesDxeDebug
+  FILE_GUID                 = 74C271E0-9EA5-49E9-BE65-5D0030EDD819
+  MODULE_TYPE               = UEFI_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = HttpUtilitiesDxeDriverEntryPoint
+  UNLOAD_IMAGE              = HttpUtilitiesDxeUnload
+  MODULE_UNI_FILE           = HttpUtilitiesDxe.uni
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64#
+
+
+[Binaries.X64]
+  PE32|Mu-SharedNetworking_extdep/DEBUG/X64/HttpUtilitiesDxe.efi|DEBUG
+
+[Binaries.IA32]
+  PE32|Mu-SharedNetworking_extdep/DEBUG/IA32/HttpUtilitiesDxe.efi|DEBUG
+
+[Binaries.AARCH64]
+  PE32|Mu-SharedNetworking_extdep/DEBUG/AARCH64/HttpUtilitiesDxe.efi|DEBUG
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[Protocols]
+  gEfiHttpUtilitiesProtocolGuid               ## PRODUCES
+
+[UserExtensions.TianoCore."ExtraFiles"]
+  HttpUtilitiesDxeExtra.uni
+
+[Depex]
+  TRUE

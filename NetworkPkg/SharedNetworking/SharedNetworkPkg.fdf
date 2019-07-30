@@ -1,0 +1,48 @@
+[Defines]
+# These values are included to satisfy the build tool and should not be considered
+# valid values for a product or platform. These values won't apply to the FV that
+# is created once it is incldued in another platform.
+DEFINE FLASH_BASE                                                   = 0xFF600000  #
+DEFINE FLASH_SIZE                                                   = 0x00A00000  #
+DEFINE FLASH_BLOCK_SIZE                                             = 0x00010000  #
+DEFINE FLASH_NUM_BLOCKS                                             = 0x000000A0  #
+
+DEFINE FLASH_REGION_FVDXE_OFFSET                                    = 0x00380000  # Flash addr (0xFF980000)
+DEFINE FLASH_REGION_FVDXE_SIZE                                      = 0x00280000  #
+DEFINE NETWORK_HTTP_BOOT_ENABLE = FALSE
+
+[FV.FVDXE]
+  BlockSize     = $(FLASH_BLOCK_SIZE)
+  FvAlignment        = 16
+  ERASE_POLARITY     = 1
+  MEMORY_MAPPED      = TRUE
+  STICKY_WRITE       = TRUE
+  LOCK_CAP           = TRUE
+  LOCK_STATUS        = TRUE
+  WRITE_DISABLED_CAP = TRUE
+  WRITE_ENABLED_CAP  = TRUE
+  WRITE_STATUS       = TRUE
+  WRITE_LOCK_CAP     = TRUE
+  WRITE_LOCK_STATUS  = TRUE
+  READ_DISABLED_CAP  = TRUE
+  READ_ENABLED_CAP   = TRUE
+  READ_STATUS        = TRUE
+  READ_LOCK_CAP      = TRUE
+  READ_LOCK_STATUS   = TRUE
+
+  !include NetworkPkg/Network.fdf.inc
+
+[Rule.Common.UEFI_DRIVER]
+  FILE DRIVER = $(NAMED_GUID) {
+    DXE_DEPEX DXE_DEPEX Optional       $(INF_OUTPUT)/$(MODULE_NAME).depex
+    PE32      PE32                     $(INF_OUTPUT)/$(MODULE_NAME).efi
+    UI        STRING="$(MODULE_NAME)" Optional
+    VERSION   STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+  }
+[Rule.Common.DXE_DRIVER]
+  FILE DRIVER = $(NAMED_GUID) {
+    DXE_DEPEX DXE_DEPEX Optional       $(INF_OUTPUT)/$(MODULE_NAME).depex
+    PE32      PE32                     $(INF_OUTPUT)/$(MODULE_NAME).efi
+    UI        STRING="$(MODULE_NAME)" Optional
+    VERSION   STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+  }
