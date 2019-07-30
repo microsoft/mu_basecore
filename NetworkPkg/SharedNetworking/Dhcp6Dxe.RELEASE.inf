@@ -1,0 +1,65 @@
+## @file
+#  Client-side DHCPv6 services.
+#
+#  This driver produces EFI DHCPv6 Protocol which is used to get IPv6 addresses
+#  and other configuration parameters from DHCPv6 servers.
+#
+#  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+#  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+#
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution. The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php.
+#
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+##
+
+[Defines]
+  INF_VERSION               = 0x0001001B
+  BASE_NAME                 = SharedDhcp6DxeRelease
+  FILE_GUID                 = FDD67628-D08F-4DDE-98AC-CCF15A979945
+  MODULE_TYPE               = UEFI_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = Dhcp6DriverEntryPoint
+  UNLOAD_IMAGE              = NetLibDefaultUnload
+  MODULE_UNI_FILE           = Dhcp6Dxe.uni
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64#
+
+
+[Binaries.X64]
+  PE32|Mu-SharedNetworking_extdep/RELEASE/X64/Dhcp6Dxe.efi|RELEASE
+
+[Binaries.IA32]
+  PE32|Mu-SharedNetworking_extdep/RELEASE/IA32/Dhcp6Dxe.efi|RELEASE
+
+[Binaries.AARCH64]
+  PE32|Mu-SharedNetworking_extdep/RELEASE/AARCH64/Dhcp6Dxe.efi|RELEASE
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  NetworkPkg/NetworkPkg.dec
+
+[Protocols]
+  gEfiUdp6ServiceBindingProtocolGuid                 ## TO_START
+  gEfiUdp6ProtocolGuid                               ## TO_START
+  gEfiDhcp6ServiceBindingProtocolGuid                ## BY_START
+  gEfiDhcp6ProtocolGuid                              ## BY_START
+  gEfiIp6ConfigProtocolGuid                          ## TO_START
+
+[Guids]
+  gZeroGuid                   ## SOMETIMES_CONSUMES   ## GUID
+
+[Pcd]
+  gEfiNetworkPkgTokenSpaceGuid.PcdDhcp6UidType       ## SOMETIMES_CONSUMES
+
+[UserExtensions.TianoCore."ExtraFiles"]
+  Dhcp6DxeExtra.uni
+
+[Depex]
+  TRUE

@@ -1,0 +1,65 @@
+## @file
+# Implementation of EFI_DNS4_PROTOCOL and EFI_DNS6_PROTOCOL interfaces.
+#
+# Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+#
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution. The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php
+#
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#
+##
+
+[Defines]
+  INF_VERSION               = 0x0001001B
+  BASE_NAME                 = SharedDnsDxeDebug
+  FILE_GUID                 = 5C25C9E0-2391-43AF-9BDF-28118027F20B
+  MODULE_TYPE               = UEFI_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = DnsDriverEntryPoint
+  UNLOAD_IMAGE              = DnsUnload
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64#
+
+
+[Binaries.X64]
+  PE32|Mu-SharedNetworking_extdep/DEBUG/X64/DnsDxe.efi|DEBUG
+
+[Binaries.IA32]
+  PE32|Mu-SharedNetworking_extdep/DEBUG/IA32/DnsDxe.efi|DEBUG
+
+[Binaries.AARCH64]
+  PE32|Mu-SharedNetworking_extdep/DEBUG/AARCH64/DnsDxe.efi|DEBUG
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[Protocols]
+  gEfiDns4ServiceBindingProtocolGuid              ## BY_START
+  gEfiDns4ProtocolGuid                            ## BY_START
+  gEfiUdp4ServiceBindingProtocolGuid              ## TO_START
+  gEfiUdp4ProtocolGuid                            ## TO_START
+  gEfiDhcp4ServiceBindingProtocolGuid             ## SOMETIMES_CONSUMES
+  gEfiDhcp4ProtocolGuid                           ## SOMETIMES_CONSUMES
+  gEfiIp4Config2ProtocolGuid                      ## SOMETIMES_CONSUMES
+  gEfiManagedNetworkServiceBindingProtocolGuid    ## SOMETIMES_CONSUMES
+  gEfiManagedNetworkProtocolGuid                  ## SOMETIMES_CONSUMES
+
+  gEfiDns6ServiceBindingProtocolGuid              ## BY_START
+  gEfiDns6ProtocolGuid                            ## BY_START
+  gEfiUdp6ServiceBindingProtocolGuid              ## TO_START
+  gEfiUdp6ProtocolGuid                            ## TO_START
+  gEfiDhcp6ServiceBindingProtocolGuid             ## SOMETIMES_CONSUMES
+  gEfiDhcp6ProtocolGuid                           ## SOMETIMES_CONSUMES
+
+[UserExtensions.TianoCore."ExtraFiles"]
+  DnsDxeExtra.uni
+
+[Depex]
+  TRUE

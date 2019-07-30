@@ -1,0 +1,9 @@
+{
+  "name": "Mu-SharedNetworking",
+  "author_string": "ProjectMu, TianoCore",
+  "server_url": "https://api.nuget.org/v3/index.json",
+  "project_url": "https://aka.ms/projectmu",
+  "license_url": "https://github.com/Microsoft/mu/blob/master/LICENSE",
+  "description_string": "The SharedNetworking Binary Package for Project Mu",
+  "copyright_string": "Copyright 2019"
+}
