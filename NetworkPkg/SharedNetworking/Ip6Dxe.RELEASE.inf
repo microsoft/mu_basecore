@@ -1,0 +1,73 @@
+## @file
+#  Basic IPv6 packet I/O Service.
+#
+#  This module provides basic network IPv6 packet I/O services which includes support for
+#  Neighbor Discovery Protocol (ND), Multicast Listener Discovery Protocol (MLD),
+#  and a subset of the Internet Control Message Protocol (ICMPv6). This driver
+#  also provides the mechanism to set and get various types of configurations for
+#  the EFI IPv6 network stack.
+#
+#  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+#
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution. The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php.
+#
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+##
+
+
+[Defines]
+  INF_VERSION               = 0x0001001B
+  BASE_NAME                 = SharedIp6DxeRelease
+  FILE_GUID                 = 304903A7-65F6-4526-9026-56D67453AEA5
+  MODULE_TYPE               = UEFI_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = Ip6DriverEntryPoint
+  UNLOAD_IMAGE              = NetLibDefaultUnload
+  MODULE_UNI_FILE           = Ip6Dxe.uni
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64#
+
+
+[Binaries.X64]
+  PE32|Mu-SharedNetworking_extdep/RELEASE/X64/Ip6Dxe.efi|RELEASE
+
+[Binaries.IA32]
+  PE32|Mu-SharedNetworking_extdep/RELEASE/IA32/Ip6Dxe.efi|RELEASE
+
+[Binaries.AARCH64]
+  PE32|Mu-SharedNetworking_extdep/RELEASE/AARCH64/Ip6Dxe.efi|RELEASE
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  NetworkPkg/NetworkPkg.dec
+
+[Protocols]
+  gEfiManagedNetworkServiceBindingProtocolGuid     ## TO_START
+  gEfiManagedNetworkProtocolGuid                   ## TO_START
+  gEfiIp6ServiceBindingProtocolGuid                ## BY_START
+  gEfiIp6ProtocolGuid                              ## BY_START
+  gEfiIp6ConfigProtocolGuid                        ## BY_START
+  gEfiDhcp6ServiceBindingProtocolGuid              ## SOMETIMES_CONSUMES
+  gEfiDhcp6ProtocolGuid                            ## SOMETIMES_CONSUMES
+  gEfiIpSec2ProtocolGuid                           ## SOMETIMES_CONSUMES
+  gEfiHiiConfigAccessProtocolGuid                  ## SOMETIMES_CONSUMES
+
+[Guids]
+  ## SOMETIMES_CONSUMES ## HII
+  gEfiIfrTianoGuid
+  ## SOMETIMES_CONSUMES ## UNDEFINED # HiiIsConfigHdrMatch   mIp6ConfigStorageName
+  ## SOMETIMES_PRODUCES ## UNDEFINED # HiiConstructConfigHdr mIp6ConfigStorageName
+  ## SOMETIMES_PRODUCES ## UNDEFINED # HiiAddPackages        Ip6DxeStrings Ip6ConfigBin
+  ## SOMETIMES_CONSUMES ## UNDEFINED # HiiUpdateForm
+  ## SOMETIMES_CONSUMES ## HII
+  gIp6ConfigNvDataGuid
+
+[Depex]
+  TRUE
