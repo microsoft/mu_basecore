@@ -809,7 +809,7 @@ CoreLoadPeImage (
              (VOID *)(UINTN) Image->ImageContext.ImageAddress,
              FUNCTION_ENTRY_POINT (Image->ImageContext.EntryPoint)));
     } else {
-      DEBUG((DEBUG_ERROR | DEBUG_LOAD, "Loading driver "));
+      DEBUG((DEBUG_LOAD, "Loading driver "));
     }
 // END
 
