@@ -114,7 +114,7 @@
 #
 #Increase this version tag any time you want user to get warning about updating this file in the Conf dir.  By default it does not do update existing conf dirs. 
 #
-#!VERSION=1.02
+#!VERSION=1.03
 
 [C-Code-File]
     <InputFile>
@@ -250,6 +250,20 @@
         "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
         "$(NASM)" -I${s_path}(+) $(NASM_INC) $(NASM_FLAGS) -o $dst ${d_path}(+)${s_base}.iii
+
+[Rusty-Banana-Boat-File]
+    <InputFile>
+        ?.rs
+        ?.RS
+
+    #<ExtraDependency>
+    #    $(MAKE_FILE)
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
+
+    <Command>
+        rustc -l static --emit obj=$dst $src
 
 [Device-Tree-Source-File]
     <InputFile>
