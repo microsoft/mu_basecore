@@ -85,7 +85,9 @@
   # C4090: 'function' : different 'const' qualifiers
   # C4718: 'function call' : recursive call has no side effects, deleting
   #
-  MSFT:*_*_*_CC_FLAGS = /wd4090 /wd4718
+  MSFT:*_*_*_CC_FLAGS = /wd4090 /wd4718 /U_M_ARM /U_M_ARM64  # MU_CHANGE - TCBZ2029
+  MSFT:*_*_ARM64_CC_FLAGS = /D_M_MS_ARM64  # MU_CHANGE - TCBZ2029
+  MSFT:*_*_ARM_CC_FLAGS = /D_M_MS_ARM  # MU_CHANGE - TCBZ2029
 
   # -JCryptoPkg/Include : To disable the use of the system includes provided by RVCT
   # --diag_remark=1     : Reduce severity of "#1-D: last line of file ends without a newline"
