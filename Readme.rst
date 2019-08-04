@@ -48,7 +48,8 @@ Platform Changes:
 1905_CIBuild Changes
 --------------------
 
-- Incomplete
+- Drop unnecessary files from MdeModulePkg.dsc
+- Disable ARM compilation on NetworkPkg.
 
 1905_Rebase Changes
 -------------------
