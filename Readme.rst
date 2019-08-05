@@ -12,13 +12,13 @@ Branch Status - release/201903
 ==============================
 
 Status:
-  In Development
+  Stabilized
 
 Entered Development:
   2019/03/25
 
-Anticipated Stabilization:
-  May 2019
+RC1 Released:
+  2019/07/11
 
 Branch Changes - release/201903
 ===============================
