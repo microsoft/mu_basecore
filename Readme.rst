@@ -50,6 +50,7 @@ Platform Changes:
 
 - Drop unnecessary files from MdeModulePkg.dsc
 - Disable ARM compilation on NetworkPkg.
+- Grab missing build_rule.template.ms change that was messed up in 1905_Rebase.
 
 1905_Rebase Changes
 -------------------
