@@ -108,7 +108,7 @@
 #
 #Increase this version tag any time you want user to get warning about updating this file in the Conf dir.  By default it does not do update existing conf dirs. 
 #
-#!VERSION=1.03
+#!VERSION=1.04
 
 [C-Code-File]
     <InputFile>
@@ -172,7 +172,8 @@
         # The C pre-processor is used to insert code snippets in assembly from preprocessor macros.  Unfortunately
         # the preprocessor doesn't also insert CR/LF and Microsoft's assembler expects each instruction to be on its own
         # line.  We search and replace a special string (__CR__) with CR.
-        type ${d_path}(+)${s_base}.i | python -c "import sys; print sys.stdin.read().replace('__CR__','\n')" > ${d_path}(+)${s_base}.ii
+        # MU_CHANGE - Update for Python3
+        type ${d_path}(+)${s_base}.i | python -c "import sys; print (sys.stdin.read().replace('__CR__','\n'))" > ${d_path}(+)${s_base}.ii
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
         "$(ASM)" $(ASM_FLAGS) -o ${dst} $(INC) ${d_path}(+)${s_base}.iii
 
