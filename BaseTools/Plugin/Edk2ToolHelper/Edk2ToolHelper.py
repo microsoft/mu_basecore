@@ -1,3 +1,7 @@
+##
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
 from MuEnvironment import PluginManager
 import logging
 import os

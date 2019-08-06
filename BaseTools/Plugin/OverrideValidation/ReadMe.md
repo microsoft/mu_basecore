@@ -6,7 +6,6 @@ Module Level Override Validation Plugin and Linkage Creation Command Line Tool
 
 OverrideValidation is a UEFI Build Plugin and Command Line Tool used to create linkage between overriding and overridden modules and parse INF files referenced in platform DSC files during build process and then produce a TXT report of the module overriding status.  The TXT report then allows deeper analysis of the Overriding Hierarchy, the Override Linkage Validity, the Override Linkage Ages, and overall breakdown of usage.
 
-
 ### UEFI Build Plugin
 
 When used in the plugin capacity this plugin will do its override linkage validation work in the do_pre_build function.  This plugin uses the following variables from the build environment:
@@ -17,12 +16,12 @@ When used in the plugin capacity this plugin will do its override linkage valida
  1. PRODUCT_NAME - [OPTIONAL] - should give friendly product name, if not provided, 'None' will be used for the corresponding field
  1. BUILDID_STRING - [OPTIONAL] - should give friendly version string of firmware version, if not provided, 'None' will be used for the corresponding field
 
-
 ### Command Line Tool
 
-When used as a command line tool, this tool takes the absolute path of workspace (the root directory of Devices repo) as well as the absolute path of overridden module's inf file and then generate a screen-print line for users to include in overriding modules in order to create override linkage. Check the required parameters by using the -h option for command line argument details. 
+When used as a command line tool, this tool takes the absolute path of workspace (the root directory of Devices repo) as well as the absolute path of overridden module's inf file and then generate a screen-print line for users to include in overriding modules in order to create override linkage. Check the required parameters by using the -h option for command line argument details.
 
 ### Example
+
 Command to generate an override record:
 
 ``` cmd
@@ -60,13 +59,7 @@ ORIGINALS:
 
 ```
 
-## Copyright
+## Copyright & License
 
-Copyright (c) 2018 Microsoft Corporation
-
-All rights reserved. Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+Copyright (c) Microsoft Corporation. All rights reserved.
+SPDX-License-Identifier: BSD-2-Clause-Patent
