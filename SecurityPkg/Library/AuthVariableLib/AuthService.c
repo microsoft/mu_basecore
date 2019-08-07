@@ -220,10 +220,15 @@ NeedPhysicallyPresent(
   IN     EFI_GUID       *VendorGuid
   )
 {
-  if ((CompareGuid (VendorGuid, &gEfiSecureBootEnableDisableGuid) && (StrCmp (VariableName, EFI_SECURE_BOOT_ENABLE_NAME) == 0))
-    || (CompareGuid (VendorGuid, &gEfiCustomModeEnableGuid) && (StrCmp (VariableName, EFI_CUSTOM_MODE_NAME) == 0))) {
-    return TRUE;
+  // MU_CHANGE [BEGIN] - If the VariablePolicy engine is disabled, allow
+  //                    deletion of any authenticated variables.
+  if (IsVariablePolicyEnabled()) {
+    if ((CompareGuid (VendorGuid, &gEfiSecureBootEnableDisableGuid) && (StrCmp (VariableName, EFI_SECURE_BOOT_ENABLE_NAME) == 0))
+      || (CompareGuid (VendorGuid, &gEfiCustomModeEnableGuid) && (StrCmp (VariableName, EFI_CUSTOM_MODE_NAME) == 0))) {
+      return TRUE;
+    }
   }
+  // MU_CHANGE [END]
 
   return FALSE;
 }
@@ -845,7 +850,8 @@ ProcessVariable (
              &OrgVariableInfo
              );
 
-  if ((!EFI_ERROR (Status)) && IsDeleteAuthVariable (OrgVariableInfo.Attributes, Data, DataSize, Attributes) && UserPhysicalPresent()) {
+  // MU_CHANGE - If the VariablePolicy engine is disabled, allow deletion of any authenticated variables.
+  if ((!EFI_ERROR (Status)) && IsDeleteAuthVariable (OrgVariableInfo.Attributes, Data, DataSize, Attributes) && (UserPhysicalPresent() || !IsVariablePolicyEnabled())) {
     //
     // Allow the delete operation of common authenticated variable(AT or AW) at user physical presence.
     //
