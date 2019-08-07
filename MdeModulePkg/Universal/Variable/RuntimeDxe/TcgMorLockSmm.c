@@ -354,6 +354,12 @@ SetVariableCheckHandlerMor (
     return EFI_SUCCESS;
   }
 
+  // MU_CHANGE [BEGIN] - Permit deletion when policy is disabled.
+  if (!IsVariablePolicyEnabled() && ((Attributes == 0) || (DataSize == 0))) {
+    return EFI_SUCCESS;
+  }
+  // MU_CHANGE [END]
+
   //
   // MorLock variable
   //
