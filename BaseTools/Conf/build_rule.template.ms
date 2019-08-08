@@ -263,7 +263,9 @@
         $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
 
     <Command>
-        rustc -l static --emit obj=$dst $src
+        #rustc -l static --crate-type staticlib --emit obj=$dst $src
+        #rustc --crate-type staticlib --emit obj=$dst $src
+        rustc --crate-type staticlib -C panic=abort --emit obj=$dst $src
 
 [Device-Tree-Source-File]
     <InputFile>
