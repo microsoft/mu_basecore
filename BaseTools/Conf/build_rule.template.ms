@@ -265,7 +265,7 @@
     <Command>
         #rustc -l static --crate-type staticlib --emit obj=$dst $src
         #rustc --crate-type staticlib --emit obj=$dst $src
-        rustc --crate-type staticlib -C panic=abort --emit obj=$dst $src
+        rustc --crate-type staticlib --extern r_efi=$(WORKSPACE)(+)rust_deps(+)libr_efi-db9d34a469cfe624.rlib -C panic=abort --emit obj=$dst $src
 
 [Device-Tree-Source-File]
     <InputFile>
