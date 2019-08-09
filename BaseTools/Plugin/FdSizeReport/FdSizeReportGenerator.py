@@ -21,9 +21,9 @@ from decimal import Decimal
 #
 #
 try:
-    from MuEnvironment import PluginManager
+    from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
 
-    class FdSizeReportGenerator(PluginManager.IUefiBuildPlugin):
+    class FdSizeReportGenerator(IUefiBuildPlugin):
 
         def do_post_build(self, thebuilder):
 
