@@ -1,4 +1,4 @@
-# @file DependencyCheck.py
+# @file dependency_check.py
 # Simple Project Mu Build Plugin to support
 # checking package dependencies for all INFs
 # in a given package.
@@ -9,27 +9,28 @@
 ##
 
 import logging
-from MuEnvironment.PluginManager import IMuBuildPlugin
+from edk2toolext.environment.plugintypes.ci_build_plugin import ICiBuildPlugin
 import os
-from MuPythonLibrary.Uefi.EdkII.Parsers.InfParser import InfParser
+from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
 
 
-class DependencyCheck(IMuBuildPlugin):
+class DependencyCheck(ICiBuildPlugin):
 
     def GetTestName(self, packagename, environment):
-        return ("MuBuild PackageDependency " + packagename, "MuBuild.PackageDependency." + packagename)
-
+        return ("MuBuild PackageDependency " + packagename, packagename + ".PackageDependency")
+    
+    ##
+    # External function of plugin.  This function is used to perform the task of the MuBuild Plugin
+    #
     #   - package is the edk2 path to package.  This means workspace/packagepath relative.
     #   - edk2path object configured with workspace and packages path
-    #   - any additional command line args
-    #   - RepoConfig Object (dict) for the build
     #   - PkgConfig Object (dict) for the pkg
     #   - EnvConfig Object
     #   - Plugin Manager Instance
     #   - Plugin Helper Obj Instance
-    #   - testcase Object used for outputing junit results
-    #   - output_stream the StringIO output stream from this plugin
-    def RunBuildPlugin(self, packagename, Edk2pathObj, args, repoconfig, pkgconfig, environment, PLM, PLMHelper, tc, output_stream = None):
+    #   - Junit Logger
+    #   - output_stream the StringIO output stream from this plugin via logging
+    def RunBuildPlugin(self, packagename, Edk2pathObj, pkgconfig, environment, PLM, PLMHelper, tc, output_stream=None):
         overall_status = 0
 
         # Get current platform
@@ -53,14 +54,19 @@ class DependencyCheck(IMuBuildPlugin):
 
         # For each INF file
         for file in INFFiles:
-            ip = InfParser()
-            ip.SetBaseAbsPath(Edk2pathObj.WorkspacePath).SetPackagePaths(Edk2pathObj.PackagePathList).ParseFile(file)
+            try:
+                ip = InfParser()
+                logging.debug("Parsing " + file)
+                ip.SetBaseAbsPath(Edk2pathObj.WorkspacePath).SetPackagePaths(Edk2pathObj.PackagePathList).ParseFile(file)
 
-            for p in ip.PackagesUsed:
-                if "AcceptableDependencies" in pkgconfig and p not in pkgconfig["AcceptableDependencies"]:
-                    logging.error("Dependency Check: Invalid Dependency INF: {0} depends on pkg {1}".format(file, p))
-                    tc.LogStdError("Dependency Check: Invalid Dependency INF: {0} depends on pkg {1}".format(file, p))
-                    overall_status += 1
+                for p in ip.PackagesUsed:
+                    if "AcceptableDependencies" in pkgconfig and p not in pkgconfig["AcceptableDependencies"]:
+                        logging.error("Dependency Check: Invalid Dependency INF: {0} depends on pkg {1}".format(file, p))
+                        tc.LogStdError("Dependency Check: Invalid Dependency INF: {0} depends on pkg {1}".format(file, p))
+                        overall_status += 1
+            except FileNotFoundError:
+                logging.warning("[DEPENDENCY] We aren't able to read " + file)
+                pass
         if "AcceptableDependencies" in pkgconfig:
             for a in pkgconfig["AcceptableDependencies"]:
                 tc.LogStdOut("Acceptable Package Dependency: {0}".format(a))

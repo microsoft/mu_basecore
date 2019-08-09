@@ -10,27 +10,28 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 import logging
-from MuEnvironment.PluginManager import IMuBuildPlugin
+from edk2toolext.environment.plugintypes.ci_build_plugin import ICiBuildPlugin
 import os
-from MuPythonLibrary.Uefi.EdkII.Parsers.DscParser import DscParser
+from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
 
 
-class DSCCheck(IMuBuildPlugin):
+class DSCCheck(ICiBuildPlugin):
 
     def GetTestName(self, packagename, environment):
-        return ("MuBuild DscCheck " + packagename, "MuBuild.DscCheck." + packagename)
+        return ("MuBuild DscCheck " + packagename, packagename + ".DscCheck")
 
+    ##
+    # External function of plugin.  This function is used to perform the task of the MuBuild Plugin
+    #
     #   - package is the edk2 path to package.  This means workspace/packagepath relative.
     #   - edk2path object configured with workspace and packages path
-    #   - any additional command line args
-    #   - RepoConfig Object (dict) for the build
     #   - PkgConfig Object (dict) for the pkg
     #   - EnvConfig Object
     #   - Plugin Manager Instance
     #   - Plugin Helper Obj Instance
-    #   - testcalass Object used for outputing junit results
-    #   - output_stream the StringIO output stream from this plugin
-    def RunBuildPlugin(self, packagename, Edk2pathObj, args, repoconfig, pkgconfig, environment, PLM, PLMHelper, tc, output_stream = None):
+    #   - Junit Logger
+    #   - output_stream the StringIO output stream from this plugin via logging
+    def RunBuildPlugin(self, packagename, Edk2pathObj, pkgconfig, environment, PLM, PLMHelper, tc, output_stream=None):
         overall_status = 0
 
         abs_pkg_path = Edk2pathObj.GetAbsolutePathOnThisSytemFromEdk2RelativePath(packagename)

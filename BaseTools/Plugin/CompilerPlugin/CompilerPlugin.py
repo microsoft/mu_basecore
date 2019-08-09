@@ -7,36 +7,36 @@
 ##
 
 import logging
-from MuPythonLibrary.Uefi.EdkII.Parsers.DscParser import DscParser
-from MuEnvironment.PluginManager import IMuBuildPlugin
-from MuEnvironment import MuLogging
-from MuEnvironment.UefiBuild import UefiBuilder
+from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
+from edk2toolext.environment.plugintypes.ci_build_plugin import ICiBuildPlugin
+from edk2toolext.environment.uefi_build import UefiBuilder
+from edk2toolext import edk2_logging
 import os
 import re
 
 
-class CompilerPlugin(IMuBuildPlugin):
+class CompilerPlugin(ICiBuildPlugin):
 
     # gets the tests name
     def GetTestName(self, packagename, environment):
         target = environment.GetValue("TARGET")
-        return ("MuBuild Compile " + target + " " + packagename, "MuBuild.CompileCheck." + target + "." + packagename)
+        return ("MuBuild Compile " + target + " " + packagename, packagename + ".CompileCheck." + target)
 
     def IsTargetDependent(self):
         return True
 
+    ##
     # External function of plugin.  This function is used to perform the task of the MuBuild Plugin
+    #
     #   - package is the edk2 path to package.  This means workspace/packagepath relative.
     #   - edk2path object configured with workspace and packages path
-    #   - any additional command line args
-    #   - RepoConfig Object (dict) for the build
-    #   - PkgConfig Object (dict)
+    #   - PkgConfig Object (dict) for the pkg
     #   - EnvConfig Object
     #   - Plugin Manager Instance
     #   - Plugin Helper Obj Instance
-    #   - testcase Object used for outputing junit results
-    #   - output_stream the StringIO output stream from this plugin
-    def RunBuildPlugin(self, packagename, Edk2pathObj, args, repoconfig, pkgconfig, environment, PLM, PLMHelper, tc, output_stream = None):
+    #   - Junit Logger
+    #   - output_stream the StringIO output stream from this plugin via logging
+    def RunBuildPlugin(self, packagename, Edk2pathObj, pkgconfig, environment, PLM, PLMHelper, tc, output_stream=None):
         self._env = environment
         AP = Edk2pathObj.GetAbsolutePathOnThisSytemFromEdk2RelativePath(packagename)
         APDSC = self.get_dsc_name_in_dir(AP)
@@ -65,16 +65,16 @@ class CompilerPlugin(IMuBuildPlugin):
                 tc.LogStdError("No supported architecutres to build")
                 return 0
 
-        # WorkSpace, PackagesPath, PInManager, PInHelper, args, BuildConfigFile=None):
-        uefiBuilder = UefiBuilder(Edk2pathObj.WorkspacePath, os.pathsep.join(Edk2pathObj.PackagePathList), PLM, PLMHelper, args)
+        uefiBuilder = UefiBuilder()
         # do all the steps
-        ret = uefiBuilder.Go()
+        # WorkSpace, PackagesPath, PInHelper, PInManager
+        ret = uefiBuilder.Go(Edk2pathObj.WorkspacePath, os.pathsep.join(Edk2pathObj.PackagePathList), PLMHelper, PLM)
         if ret != 0:  # failure:
             error_count = ""
             if output_stream is not None:
                 # seek to the start of the output stream
                 output_stream.seek(0, 0)
-                problems = MuLogging.scan_compiler_output(output_stream)
+                problems = edk2_logging.scan_compiler_output(output_stream)
                 error_count = " with {} errors/warnings".format(len(problems))
                 for level, problem_msg in problems:
                     if level == logging.ERROR:
