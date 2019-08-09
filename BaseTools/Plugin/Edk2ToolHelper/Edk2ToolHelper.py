@@ -1,22 +1,18 @@
-##
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# SPDX-License-Identifier: BSD-2-Clause-Patent
-##
-from MuEnvironment import PluginManager
+from edk2toolext.environment.plugintypes.uefi_helper_plugin import IUefiHelperPlugin
 import logging
 import os
 import uuid
-from MuPythonLibrary.UtilityFunctions import RunCmd
-from MuPythonLibrary.UtilityFunctions import RunPythonScript
-from MuPythonLibrary.UtilityFunctions import CatalogSignWithSignTool
+from edk2toollib.utility_functions import RunCmd
+from edk2toollib.utility_functions import RunPythonScript
+from edk2toollib.utility_functions import CatalogSignWithSignTool
 import shutil
 import datetime
 from Common.Edk2.Capsule.FmpPayloadHeader  import FmpPayloadHeaderClass
 from Common.Uefi.Capsule.FmpCapsuleHeader  import FmpCapsuleHeaderClass
-from MuPythonLibrary.Windows.VsWhereUtilities import FindToolInWinSdk
+from edk2toollib.windows.locate_tools import FindToolInWinSdk
 
 
-class Edk2ToolHelper(PluginManager.IUefiHelperPlugin):
+class Edk2ToolHelper(IUefiHelperPlugin):
 
     def RegisterHelpers(self, obj):
         fp = os.path.abspath(__file__)

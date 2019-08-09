@@ -158,7 +158,7 @@
   MdePkg/Library/SmmMemLib/SmmMemLib.inf
   MdePkg/Library/SmmIoLib/SmmIoLib.inf
   ##MSCHANGE Begin
-!if $(TOOLCHAIN) == VSLATESTx86
+!if $(TOOLCHAIN) == VS2017 or $(TOOLCHAIN) == VS2019
   MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
   MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
 !endif
@@ -171,7 +171,7 @@
 
 
 # MS_CHANGE Begin
-!if $(TOOLCHAIN) == VSLATESTx86
+!if $(TOOLCHAIN) == VS2017 or $(TOOLCHAIN) == VS2019
 [Components.IA32]
   # For VS2017 support link the VsIntrinsicLib into all 32 bit modules
   MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf

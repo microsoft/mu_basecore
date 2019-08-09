@@ -8,18 +8,29 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ###
-from MuEnvironment import PluginManager
+
 import logging
-from MuPythonLibrary.Uefi.EdkII.PathUtilities import Edk2Path
 import os
-import glob
+import time
 try:
-    from MuPythonLibrary.Uefi.EdkII.Parsers.FdfParser import FdfParser
-    from MuPythonLibrary.Uefi.EdkII.Parsers.DscParser import DscParser
-    from MuPythonLibrary.Uefi import BmpObject
-    from MuPythonLibrary.UtilityFunctions import timing
-except:
+    from edk2toollib.uefi.edk2.path_utilities import Edk2Path
+    from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
+    from edk2toollib.uefi.edk2.parsers.fdf_parser import FdfParser
+    from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
+    from edk2toollib.uefi import bmp_object
+except Exception:
     pass
+
+
+def timing(f):
+    def wrap(*args):
+        time1 = time.time()
+        ret = f(*args)
+        time2 = time.time()
+        logging.debug('{:s} function took {:.3f} ms'.format(f.__name__, (time2-time1)*1000.0))
+
+        return ret
+    return wrap
 
 
 # the tests that we run on the BMP object
@@ -74,7 +85,7 @@ class UefiBmpSupportTests(object):
 
 
 
-class BmpCheckPlugin(PluginManager.IUefiBuildPlugin):
+class BmpCheckPlugin(IUefiBuildPlugin):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
@@ -84,7 +95,7 @@ class BmpCheckPlugin(PluginManager.IUefiBuildPlugin):
         if not os.path.isfile(BmpFilePath):
             return 1
         bmp = open(BmpFilePath, "rb")
-        BmpObj = BmpObject.BmpObject(bmp)
+        BmpObj = bmp_object.BmpObject(bmp)
         bmp.close()
         #run tests
         Tests = UefiBmpSupportTests(BmpObj)

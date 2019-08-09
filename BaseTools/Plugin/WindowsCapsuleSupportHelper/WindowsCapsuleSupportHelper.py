@@ -12,14 +12,14 @@ import re
 import datetime
 import os
 import logging
-from MuEnvironment import PluginManager
-from MuPythonLibrary.Uefi.Capsule.CatGenerator import *
-from MuPythonLibrary.Uefi.Capsule.InfGenerator import *
-from MuPythonLibrary.UtilityFunctions import CatalogSignWithSignTool
-from MuPythonLibrary.Windows.VsWhereUtilities import FindToolInWinSdk
+from edk2toolext.environment.plugintypes.uefi_helper_plugin import IUefiHelperPlugin
+from edk2toollib.windows.capsule.cat_generator import *
+from edk2toollib.windows.capsule.inf_generator import *
+from edk2toollib.utility_functions import CatalogSignWithSignTool
+from edk2toollib.windows.locate_tools import FindToolInWinSdk
 
 
-class WindowsCapsuleSupportHelper(PluginManager.IUefiHelperPlugin):
+class WindowsCapsuleSupportHelper(IUefiHelperPlugin):
 
   def RegisterHelpers(self, obj):
       fp = os.path.abspath(__file__)
