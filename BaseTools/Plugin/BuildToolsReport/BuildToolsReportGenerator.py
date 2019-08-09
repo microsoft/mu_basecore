@@ -9,12 +9,12 @@ import logging
 import json
 
 try:
-    from MuEnvironment import PluginManager
+    from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
 
-    class BuildToolsReportGenerator(PluginManager.IUefiBuildPlugin):
+    class BuildToolsReportGenerator(IUefiBuildPlugin):
         def do_report(self, thebuilder):
             try:
-                from MuEnvironment import VersionAggregator
+                from edk2toolext.environment import version_aggregator
             except ImportError:
                 logging.critical("Loading BuildToolsReportGenerator failed, please update mu_environment pip module")
                 return 0
@@ -25,7 +25,7 @@ try:
                 os.makedirs(os.path.dirname(OutputReport))
 
             Report = BuildToolsReport()
-            Report.MakeReport(VersionAggregator.GetVersionAggregator().GetAggregatedVersionInformation(), OutputReport=OutputReport)
+            Report.MakeReport(version_aggregator.GetVersionAggregator().GetAggregatedVersionInformation(), OutputReport=OutputReport)
 
         def do_pre_build(self, thebuilder):
             self.do_report(thebuilder)

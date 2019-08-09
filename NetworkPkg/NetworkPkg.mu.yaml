@@ -7,7 +7,8 @@
             "NetworkPkg/NetworkPkg.dec",
             "MdePkg/MdePkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",
-            "MsUnitTestPkg/MsUnitTestPkg.dec"
+            "MsUnitTestPkg/MsUnitTestPkg.dec",
+            "CryptoPkg/CryptoPkg.dec"
         ],
         "IgnoreInf": []
     },

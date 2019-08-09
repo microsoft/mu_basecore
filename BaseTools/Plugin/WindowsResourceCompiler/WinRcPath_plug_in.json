@@ -1,0 +1,5 @@
+{
+  "scope": "global-win",
+  "name": "Windows RC Path Support",
+  "module": "WinRcPath"
+}
