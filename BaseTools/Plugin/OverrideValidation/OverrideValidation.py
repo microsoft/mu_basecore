@@ -26,11 +26,11 @@ FORMAT_VERSION_1 = (1, 4)   #Version 1: #OVERRIDE : VERSION | PATH_TO_MODULE | H
 #
 #
 try:
-    from MuEnvironment import PluginManager
-    from MuPythonLibrary.Uefi.EdkII.Parsers.DscParser import *
-    from MuPythonLibrary.Uefi.EdkII.Parsers.InfParser import InfParser
+    from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
+    from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
+    from edk2toollib.uefi.edk2.parsers.dsc_parser import *
 
-    class OverrideValidation(PluginManager.IUefiBuildPlugin):
+    class OverrideValidation(IUefiBuildPlugin):
 
         class OverrideResult(object):
             OR_ALL_GOOD             = 0
@@ -455,8 +455,8 @@ if __name__ == '__main__':
     MUBUILD_PATH = os.path.dirname(os.path.dirname(os.path.dirname(SCRIPT_PATH)))
     PY_LIB_PATH = os.path.join(MUBUILD_PATH, "PythonLibrary")
     sys.path.append(PY_LIB_PATH)
-    from MuPythonLibrary.Uefi.EdkII.Parsers.InfParser import InfParser
-    from MuPythonLibrary.Uefi.EdkII.PathUtilities import Edk2Path
+    from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
+    from edk2toollib.uefi.edk2.path_utilities import Edk2Path
 
     # Parse required paths passed from cmd line arguments
     Paths = path_parse()
