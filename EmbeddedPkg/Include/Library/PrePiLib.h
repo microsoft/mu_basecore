@@ -181,7 +181,8 @@ FfsGetVolumeInfo (
 /**
   Get Fv image from the FV type file, then add FV & FV2 Hob.
 
-  @param FileHandle      File handle of a Fv type file.
+  @param FvFileHandle        File handle of a Fv type file.
+  @param ParentVolumeHandle  Parent volume handle, for filling out FvName field in FV2 Hob
 
   @retval EFI_NOT_FOUND  FV image can't be found.
   @retval EFI_SUCCESS    Successfully to process it.
@@ -190,7 +191,8 @@ FfsGetVolumeInfo (
 EFI_STATUS
 EFIAPI
 FfsProcessFvFile (
-  IN  EFI_PEI_FILE_HANDLE  FvFileHandle
+  IN  EFI_PEI_FILE_HANDLE  FvFileHandle,
+  IN EFI_PEI_FV_HANDLE     ParentVolumeHandle  // MU_CHANGE
   );
 
 /**
@@ -210,22 +212,6 @@ FfsAnyFvFindFirstFile (
   IN  EFI_FV_FILETYPE      FileType,
   OUT EFI_PEI_FV_HANDLE    *VolumeHandle,
   OUT EFI_PEI_FILE_HANDLE  *FileHandle
-  );
-
-/**
-  Get Fv image from the FV type file, then add FV & FV2 Hob.
-
-  @param FileHandle  File handle of a Fv type file.
-
-
-  @retval EFI_NOT_FOUND  FV image can't be found.
-  @retval EFI_SUCCESS    Successfully to process it.
-
-**/
-EFI_STATUS
-EFIAPI
-FfsProcessFvFile (
-  IN  EFI_PEI_FILE_HANDLE  FvFileHandle
   );
 
 /**
