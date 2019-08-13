@@ -11,17 +11,16 @@
 
 import logging
 import os
-import glob
+import time
 try:
-	from edk2toollib.uefi.edk2.path_utilities import Edk2Path
+    from edk2toollib.uefi.edk2.path_utilities import Edk2Path
     from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
     from edk2toollib.uefi.edk2.parsers.fdf_parser import FdfParser
     from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
     from edk2toollib.uefi import bmp_object
-except:
+except Exception:
     pass
 
-import time
 
 def timing(f):
     def wrap(*args):
