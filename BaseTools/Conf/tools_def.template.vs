@@ -10,7 +10,7 @@
 #
 
 #
-#Increase this version tag any time you want user to get warning about updating this file in the Conf dir.  By default it does not do update existing conf dirs. 
+#Increase this version tag any time you want user to get warning about updating this file in the Conf dir.  By default it does not do update existing conf dirs.
 #
 #
 # 1.06 - Updated VS2015 64 dlink flags to set to 4kb aligned for MAT support.  This matches changes needed for vs2013 made earlier
@@ -84,7 +84,7 @@ DEFINE WIN_MS_ASL_BIN          = asl.exe
 DEFINE MS_ASL_OUTFLAGS         = /Fo=
 DEFINE MS_ASL_FLAGS            =
 
-## Why is this different 
+## Why is this different
 DEFINE MSFT_ASLPP_FLAGS        = /nologo /E /C /FIAutoGen.h
 
 
@@ -107,7 +107,7 @@ DEFINE NOOPT_VSCOMMON_CC_FLAGS   = DEF(_VSCOMMON_CC_FLAGS) /Od
 #
 DEFINE _VSCOMMON_DLINK_FLAGS        = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4281 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG:FULL
 
-## 
+##
 DEFINE DEBUG_VSCOMMON_DLINK_FLAGS   = DEF(_VSCOMMON_DLINK_FLAGS)
 DEFINE RELEASE_VSCOMMON_DLINK_FLAGS = DEF(_VSCOMMON_DLINK_FLAGS) /IGNORE:4254
 #https://docs.microsoft.com/en-us/cpp/error-messages/tool-errors/linker-tools-warning-lnk4254?view=vs-2019
@@ -158,7 +158,8 @@ DEFINE NOOPT_VSCOMMON_DLINK_FLAGS   = DEF(_VSCOMMON_DLINK_FLAGS)
 *_VS2017_*_APP_FLAGS       = /nologo /E /TC
 *_VS2017_*_PP_FLAGS        = /nologo /E /TC /FIAutoGen.h
 *_VS2017_*_VFRPP_FLAGS     = /nologo /E /TC /DVFRCOMPILE /FI$(MODULE_NAME)StrDefs.h
-*_VS2017_*_DLINK2_FLAGS    = /WHOLEARCHIVE
+# This is commented out due to the fact that is causes build errors in reference code as well as core code
+# *_VS2017_*_DLINK2_FLAGS    = /WHOLEARCHIVE # MU_CHANGE
 *_VS2017_*_ASM16_PATH      = DEF(VS2017_BIN_IA32)\ml.exe
 
 ##################
@@ -274,7 +275,8 @@ NOOPT_VS2017_AARCH64_DLINK_FLAGS    = DEF(NOOPT_VSCOMMON_DLINK_FLAGS) /RunBelow4
 *_VS2019_*_APP_FLAGS       = /nologo /E /TC
 *_VS2019_*_PP_FLAGS        = /nologo /E /TC /FIAutoGen.h
 *_VS2019_*_VFRPP_FLAGS     = /nologo /E /TC /DVFRCOMPILE /FI$(MODULE_NAME)StrDefs.h
-*_VS2019_*_DLINK2_FLAGS    = /WHOLEARCHIVE
+# This is commented out due to the fact that is causes build errors in reference code as well as core code
+# *_VS2019_*_DLINK2_FLAGS    = /WHOLEARCHIVE # MU_CHANGE
 *_VS2019_*_ASM16_PATH      = DEF(VS2019_BIN_IA32)\ml.exe
 
 ##################
@@ -378,7 +380,7 @@ NOOPT_VS2019_AARCH64_DLINK_FLAGS    = DEF(NOOPT_VSCOMMON_DLINK_FLAGS) /RunBelow4
 #################
 # ASM 16 linker definitions
 #################
-# require it on the path. 
+# require it on the path.
 *_*_*_ASMLINK_PATH                 = link16.exe
 *_*_*_ASMLINK_FLAGS                = /nologo /tiny
 
