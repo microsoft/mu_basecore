@@ -10,6 +10,7 @@
 
 #include <Uefi.h>
 #include <Library/BaseLib.h>
+#include <Library/DebugLib.h>
 #include <Library/BaseMemoryLib.h>
 
 //
@@ -34,6 +35,7 @@ EFI_BOOT_SERVICES     *mDebugBS;
   @param  Context      Pointer to the notification function's context.
 
 **/
+STATIC // MU_CHANGE - changed to static to avoid conflicts
 VOID
 EFIAPI
 ExitBootServicesCallback (
@@ -44,6 +46,32 @@ ExitBootServicesCallback (
   mPostEBS = TRUE;
   return;
 }
+
+/** MU_CHANGE START
+* Destructor for Debug Port Protocol Lib. Unregisters EBS callback to prevent
+* function calls on unloaded library
+*
+* @param  ImageHandle   The firmware allocated handle for the EFI image.
+* @param  SystemTable   A pointer to the EFI System Table.
+*
+* @retval EFI_SUCCESS   The constructor always returns EFI_SUCCESS.
+*
+**/
+EFI_STATUS
+EFIAPI
+RuntimeDebugLibDestructor(
+    IN      EFI_HANDLE                ImageHandle,
+    IN      EFI_SYSTEM_TABLE          *SystemTable
+) {
+  EFI_STATUS Status;
+
+  if(mExitBootServicesEvent != NULL) {
+    Status = mDebugBS->CloseEvent(mExitBootServicesEvent);
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  return EFI_SUCCESS;
+} //MU_CHANGE END
 
 /**
   The constructor gets the pointers to boot services table.
