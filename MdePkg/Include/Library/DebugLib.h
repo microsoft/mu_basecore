@@ -122,34 +122,6 @@ DebugDumpMemory (
   IN  UINT32        Flags
   );
 
-/**
-MS_CHANGE_?
-MSCHANGE - To split the DebugPrint into two one taking va_list and one with var args
-Prints a debug message to the debug output device if the specified error level is enabled.
-
-If any bit in ErrorLevel is also set in DebugPrintErrorLevelLib function
-GetDebugPrintErrorLevel (), then print the message specified by Format and the
-associated variable argument list to the debug output device.
-
-If Format is NULL, then ASSERT().
-
-If the length of the message string specificed by Format is larger than the maximum allowable
-record length, then directly return and not print it.
-
-@param  ErrorLevel    The error level of the debug message.
-@param  Format        Format string for the debug message to print.
-@param  VaListMarker  VA_LIST marker for the variable argument list.
-
-**/
-VOID
-EFIAPI
-DebugPrintValist(
-IN  UINTN        ErrorLevel,
-IN  CONST CHAR8  *Format,
-VA_LIST          VaListMarker
-);
-// END
-
 
 /**
   Prints a debug message to the debug output device if the specified

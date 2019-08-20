@@ -26,7 +26,8 @@ Branch Changes - dev/201905
 Breaking Changes-dev
 --------------------
 
-- None
+- UefiDebugLibDebugPortProtocolRuntime no longer exists and has been merged in with UefiDebugLibDebugPortProtocolDxe
+- UefiDebugLibDebugPortProtocolDxe has been renamed to UefiDebugLibDebugPortProtocol
 
 Main Changes-dev
 ----------------
