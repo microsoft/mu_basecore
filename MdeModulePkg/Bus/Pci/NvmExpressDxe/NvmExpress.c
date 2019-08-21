@@ -681,7 +681,7 @@ ProcessAsyncTaskList (
     }
 
     Private->CqHdbl[QueueId].Cqh++;
-    if (Private->CqHdbl[QueueId].Cqh > NVME_ASYNC_CCQ_SIZE) {
+    if (Private->CqHdbl[QueueId].Cqh > MIN(NVME_ASYNC_CCQ_SIZE, Private->Cap.Mqes)) {  //mu_change - Use Min of controller and device
       Private->CqHdbl[QueueId].Cqh = 0;
       Private->Pt[QueueId] ^= 1;
     }
