@@ -114,7 +114,7 @@
 #
 #Increase this version tag any time you want user to get warning about updating this file in the Conf dir.  By default it does not do update existing conf dirs. 
 #
-#!VERSION=1.03
+#!VERSION=1.04
 
 [C-Code-File]
     <InputFile>
@@ -251,21 +251,26 @@
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
         "$(NASM)" -I${s_path}(+) $(NASM_INC) $(NASM_FLAGS) -o $dst ${d_path}(+)${s_base}.iii
 
-[Rusty-Banana-Boat-File]
+[Rust-To-Obj-File]
     <InputFile>
         ?.rs
-        ?.RS
-
-    #<ExtraDependency>
-    #    $(MAKE_FILE)
 
     <OutputFile>
         $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
 
     <Command>
-        #rustc -l static --crate-type staticlib --emit obj=$dst $src
-        #rustc --crate-type staticlib --emit obj=$dst $src
-        rustc --crate-type staticlib --extern r_efi=$(WORKSPACE)(+)rust_deps(+)libr_efi-db9d34a469cfe624.rlib -C panic=abort --emit obj=$dst $src
+        $(RUSTC) $(RUSTC_FLAGS) ${src} --emit link=${dst}
+
+[Toml-To-Obj-File]
+    <InputFile>
+        ?.toml
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
+
+    <Command>
+        $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${src} -Z unstable-options --out-dir $(OUTPUT_DIR)
+        $(CP) /b $(OUTPUT_DIR)(+)${s_dir}(+)*.lib $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
 
 [Device-Tree-Source-File]
     <InputFile>

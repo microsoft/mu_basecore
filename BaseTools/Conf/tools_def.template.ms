@@ -34,7 +34,7 @@
 # 1.19 - RC.exe from Windows 10 Kit
 # 1.20 - Added debug info to Release Builds
 
-#!VERSION=1.20
+#!VERSION=1.21
 
 IDENTIFIER = Default TOOL_CHAIN_CONF
 
@@ -697,6 +697,24 @@ NOOPT_VSLATESTx86_AARCH64_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /RunBelow4GB /I
 *_*_*_NASM_PATH                = ENV(NASM_PREFIX)\nasm
 # NASMB uses NASM produce a .bin from a .nasmb NASM source file
 *_*_*_NASMB_FLAGS              = -f bin
+
+##################
+# RUSTC definitions
+##################
+*_*_*_RUSTC_PATH            = rustc
+DEBUG_*_X64_RUSTC_FLAGS     = --edition=2018 --target x86_64-pc-windows-msvc -C debuginfo=2 -C panic=abort --crate-type staticlib --sysroot ENV(WORKSPACE)\RustPkg\External\r-efi\target\sysroot --extern r_efi=ENV(WORKSPACE)\RustPkg\External\r-efi\target\x86_64-pc-windows-msvc\debug\libr_efi.rlib
+RELEASE_*_X64_RUSTC_FLAGS   = --edition=2018 --target x86_64-pc-windows-msvc -C opt-level=3 -C panic=abort --crate-type staticlib --sysroot ENV(WORKSPACE)\RustPkg\External\r-efi\target\sysroot --extern r_efi=ENV(WORKSPACE)\RustPkg\External\r-efi\target\x86_64-pc-windows-msvc\release\libr_efi.rlib
+DEBUG_*_IA32_RUSTC_FLAGS    = --edition=2018 --target i686-pc-windows-msvc   -C debuginfo=2 -C panic=abort --crate-type staticlib --sysroot ENV(WORKSPACE)\RustPkg\External\r-efi\target\sysroot --extern r_efi=ENV(WORKSPACE)\RustPkg\External\r-efi\target\i686-pc-windows-msvc\debug\libr_efi.rlib
+RELEASE_*_IA32_RUSTC_FLAGS  = --edition=2018 --target i686-pc-windows-msvc   -C opt-level=3 -C panic=abort --crate-type staticlib --sysroot ENV(WORKSPACE)\RustPkg\External\r-efi\target\sysroot --extern r_efi=ENV(WORKSPACE)\RustPkg\External\r-efi\target\i686-pc-windows-msvc\release\libr_efi.rlib
+
+##################
+# CARGO definitions
+##################
+*_*_*_CARGO_PATH            = cargo
+DEBUG_*_X64_CARGO_FLAGS     = --target x86_64-pc-windows-msvc
+RELEASE_*_X64_CARGO_FLAGS   = --target x86_64-pc-windows-msvc --release
+DEBUG_*_IA32_CARGO_FLAGS    = --target i686-pc-windows-msvc
+RELEASE_*_IA32_CARGO_FLAGS  = --target i686-pc-windows-msvc   --release
 
 #################
 # Build rule order
