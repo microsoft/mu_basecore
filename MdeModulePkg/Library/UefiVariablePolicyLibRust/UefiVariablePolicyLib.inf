@@ -42,7 +42,7 @@
 
 
 [Sources]
-  Cargo.toml
+  UefiVariablePolicyLib.rs
 
 
 [Packages]
