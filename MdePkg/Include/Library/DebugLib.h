@@ -32,6 +32,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define DEBUG_PROPERTY_CLEAR_MEMORY_ENABLED       0x08
 #define DEBUG_PROPERTY_ASSERT_BREAKPOINT_ENABLED  0x10
 #define DEBUG_PROPERTY_ASSERT_DEADLOOP_ENABLED    0x20
+#define DEBUG_PROPERTY_ASSERT_TELEMETRY_ENABLED   0x80 // MU_CHANGE LOGTELEMETRY
 
 //
 // Declare bits for PcdDebugPrintErrorLevel and the ErrorLevel parameter of DebugPrint()
