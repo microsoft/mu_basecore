@@ -252,6 +252,17 @@ BmSetMemoryTypeInformationVariable (
     if (Next != Previous) {
       PreviousMemoryTypeInformation[Index].NumberOfPages = Next;
       MemoryTypeInformationModified                      = TRUE;
+
+      // MU_CHANGE START
+      //
+      // Log telemetry with ReportMemoryTypeInformationChange
+      //
+      ReportMemoryTypeInformationChange (
+        PreviousMemoryTypeInformation[Index].Type,
+        Previous,
+        Next
+        );
+      // MU_CHANGE END
     }
 
     DEBUG ((DEBUG_INFO, "  %02x    %08x  %08x  %08x\n", PreviousMemoryTypeInformation[Index].Type, Previous, Current, Next));
