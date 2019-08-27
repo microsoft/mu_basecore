@@ -20,6 +20,7 @@ from CommonDataClass.FdfClass import FvImageSectionClassObject
 from Common import EdkLogger
 from Common.BuildToolError import *
 from Common.DataType import *
+from Common.MultipleWorkspace import MultipleWorkspace as mws # MU_CHANGE
 
 ## generate FV image section
 #
