@@ -975,6 +975,7 @@ typedef struct {
 #define EFI_SW_EC_PWD_CLR_REQUEST         0x0000000F
 #define EFI_SW_EC_PWD_CLEARED             0x00000010
 #define EFI_SW_EC_EVENT_LOG_FULL          0x00000011
+#define EFI_SW_EC_MEMORY_TYPE_INFORMATION_CHANGE 0x00000012 // MU_CHANGE
 ///@}
 
 //
