@@ -504,6 +504,7 @@ NvmExpressPassThru (
   NVME_SQ                        *Sq;
   NVME_CQ                        *Cq;
   UINT16                         QueueId;
+  UINT16                         QueueSize;
   UINT32                         Bytes;
   UINT16                         Offset;
   EFI_EVENT                      TimerEvent;
@@ -522,6 +523,7 @@ NvmExpressPassThru (
   UINT32                         Data;
   NVME_PASS_THRU_ASYNC_REQ       *AsyncRequest;
   EFI_TPL                        OldTpl;
+
 
   //
   // check the data fields in Packet parameter.
@@ -606,6 +608,9 @@ NvmExpressPassThru (
     //
     DumpNvmePassThruPacket (Packet);
   );
+
+  QueueSize = MIN(NVME_ASYNC_CSQ_SIZE, Private->Cap.Mqes) + 1;  //mu_change - Queuesize should be min of hardware and driver
+
   // MS_CHANGE [END] - Add extra debugging for IOMMU error tracking.
 
   if (Packet->QueueType == NVME_ADMIN_QUEUE) {
@@ -619,7 +624,7 @@ NvmExpressPassThru (
       //
       // Submission queue full check.
       //
-      if ((Private->SqTdbl[QueueId].Sqt + 1) % (NVME_ASYNC_CSQ_SIZE + 1) ==
+      if ((Private->SqTdbl[QueueId].Sqt + 1) % QueueSize ==
           Private->AsyncSqHead) {
         return EFI_NOT_READY;
       }
@@ -797,7 +802,7 @@ NvmExpressPassThru (
   //
   if ((Event != NULL) && (QueueId != 0)) {
     Private->SqTdbl[QueueId].Sqt =
-      (Private->SqTdbl[QueueId].Sqt + 1) % (NVME_ASYNC_CSQ_SIZE + 1);
+      (Private->SqTdbl[QueueId].Sqt + 1) % QueueSize;
   } else {
     Private->SqTdbl[QueueId].Sqt ^= 1;
   }
