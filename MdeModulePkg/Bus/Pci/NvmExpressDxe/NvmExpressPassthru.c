@@ -524,6 +524,7 @@ NvmExpressPassThru (
   NVME_PASS_THRU_ASYNC_REQ       *AsyncRequest;
   EFI_TPL                        OldTpl;
 
+
   //
   // check the data fields in Packet parameter.
   //
@@ -608,6 +609,9 @@ NvmExpressPassThru (
     //
     DumpNvmePassThruPacket (Packet);
   );
+
+  QueueSize = MIN(NVME_ASYNC_CSQ_SIZE, Private->Cap.Mqes) + 1;  //mu_change - Queuesize should be min of hardware and driver
+
   // MS_CHANGE [END] - Add extra debugging for IOMMU error tracking.
 
   if (Packet->QueueType == NVME_ADMIN_QUEUE) {
