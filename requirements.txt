@@ -1,2 +1,2 @@
 edk2-pytool-library
-edk2-pytool-extensions
+edk2-pytool-extensions==0.9.5
