@@ -70,26 +70,7 @@ class CompilerPlugin(ICiBuildPlugin):
         # WorkSpace, PackagesPath, PInHelper, PInManager
         ret = uefiBuilder.Go(Edk2pathObj.WorkspacePath, os.pathsep.join(Edk2pathObj.PackagePathList), PLMHelper, PLM)
         if ret != 0:  # failure:
-            error_count = ""
-            if output_stream is not None:
-                # seek to the start of the output stream
-                output_stream.seek(0, 0)
-                problems = edk2_logging.scan_compiler_output(output_stream)
-                error_count = " with {} errors/warnings".format(len(problems))
-                for level, problem_msg in problems:
-                    if level == logging.ERROR:
-                        message = "Compile: Error: {0}".format(problem_msg)
-                        tc.LogStdError(message)
-                        logging.error(message)
-                    elif level == logging.WARNING:
-                        message = "Compile: Warning: {0}".format(problem_msg)
-                        tc.LogStdError(message)
-                        logging.warning(message)
-                    else:
-                        message = "Compiler is unhappy: {0}".format(problem_msg)
-                        tc.LogStdError(message)
-                        logging.warning(message)
-            tc.SetFailed("Compile failed for {0}".format(packagename) + error_count, "Compile_FAILED")
+            tc.SetFailed("Compile failed for {0}".format(packagename), "Compile_FAILED")
             tc.LogStdError("{0} Compile failed with error code {1} ".format(AP_Path, ret))
             return 1
 
