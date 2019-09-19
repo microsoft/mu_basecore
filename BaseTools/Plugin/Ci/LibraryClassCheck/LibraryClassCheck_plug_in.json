@@ -1,0 +1,5 @@
+{
+    "scope": "corebuild",
+    "name": "Library Class Check Test",
+    "module": "LibraryClassCheck"
+  }

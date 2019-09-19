@@ -1,0 +1,5 @@
+{
+    "scope": "corebuild",
+    "name": "Host Unit Test Dsc Complete Check Test",
+    "module": "HostUnitTestDscCompleteCheck"
+  }

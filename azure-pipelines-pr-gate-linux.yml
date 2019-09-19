@@ -2,11 +2,11 @@
 strategy:
   matrix:
     TARGET_MDE_CPU:
-      Build.Pkgs: 'MdePkg UefiCpuPkg'
+      Build.Pkgs: 'MdePkg,UefiCpuPkg'
     TARGET_MDEMODULE:
       Build.Pkgs: 'MdeModulePkg'
     TARGET_OTHER:
-      Build.Pkgs: 'MsUnitTestPkg NetworkPkg PcAtChipsetPkg'
+      Build.Pkgs: 'MsUnitTestPkg,NetworkPkg,PcAtChipsetPkg'
     TARGET_SECURITY:
       Build.Pkgs: 'SecurityPkg'
 
@@ -27,26 +27,26 @@ steps:
     architecture: 'x64'
 
 - script: pip3 install -r requirements.txt --upgrade
-  displayName: 'Install/Upgrade mu_build'
+  displayName: 'Install/Upgrade pip modules'
 
 #Build repo
 - task: CmdLine@1
   displayName: Setup $(Build.Pkgs)
   inputs:
     filename: stuart_ci_setup
-    arguments: -c CISettings.py --force-git
+    arguments: -c CISettings.py --force-git TOOL_CHAIN_TAG=GCC5
 
 - task: CmdLine@1
   displayName: Update $(Build.Pkgs)
   inputs:
     filename: stuart_update
-    arguments: -c CISettings.py --Tool_Chain GCC5
+    arguments: -c CISettings.py TOOL_CHAIN_TAG=GCC5
 
 - task: CmdLine@1
   displayName: Build and Test $(Build.Pkgs)
   inputs:
     filename: stuart_ci_build
-    arguments: -c CISettings.py --Tool_Chain GCC5 -p $(Build.Pkgs)
+    arguments: -c CISettings.py -p $(Build.Pkgs) TOOL_CHAIN_TAG=GCC5
 
 # Publish Test Results to Azure Pipelines/TFS
 - task: PublishTestResults@2
@@ -76,7 +76,11 @@ steps:
       Build/**/BUILDLOG_*.md
       Build/**/CI_*.txt
       Build/**/CI_*.md
+      Build/**/CISETUP.txt
+      Build/**/SETUPLOG.txt
+      Build/**/UPDATELOG.txt
       Build/**/TestSuites.xml
+      Build/**/BUILD_TOOLS_REPORT.html
       Build/**/OVERRIDELOG.txt
     flattenFolders: true
 

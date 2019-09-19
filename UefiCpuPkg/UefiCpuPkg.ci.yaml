@@ -1,0 +1,44 @@
+{
+    "CompilerPlugin": {
+        "DscPath": "UefiCpuPkg.dsc"
+    },
+    "HostUnitTestCompilerPlugin": {
+        #"DscPath": "UefiCpuPkgTest.dsc",
+    },
+    "HostUnitTestDscCompleteCheck": {
+        #"DscPath": "UefiCpuPkgTest.dsc",
+        "IgnoreInf": []  
+    },
+    "CharEncodingCheck": {
+        "IgnoreFiles": []
+    },
+    "DependencyCheck": {
+        "AcceptableDependencies": [
+            "MdePkg/MdePkg.dec",
+            "MdeModulePkg/MdeModulePkg.dec",
+            "UefiCpuPkg/UefiCpuPkg.dec"
+        ], 
+        "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
+            "MsUnitTestPkg/MsUnitTestPkg.dec",
+            "UefiHostTestPkg/UefiHostTestPkg.dec",
+            "UefiHostUnitTestPkg/UefiHostUnitTestPkg.dec",
+            "CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec"
+        ],
+        "IgnoreInf": []
+    },
+    "DscCompleteCheck": {
+        "DscPath": "UefiCpuPkg.ci.dsc",
+        "IgnoreInf": [
+            "UefiCpuPkg/ResetVector/FixupVtf/Vtf.inf",
+            "UefiCpuPkg/ResetVector/Vtf0/Vtf0.inf"
+        ]
+    },
+    "GuidCheck": {
+        "IgnoreGuidName": ["SecCore", "ResetVector"], # Expected duplication for gEfiFirmwareVolumeTopFileGuid
+        "IgnoreGuidValue": [],
+        "IgnoreFoldersAndFiles": []
+    },
+    "LibraryClassCheck": {
+        "IgnoreHeaderFile": []
+    }
+}

@@ -24,27 +24,27 @@
 
   ## @libraryclass Provides a unit test framework
   #
-  UnitTestLib|Include\Library\UnitTestLib.h
+  UnitTestLib|Include/Library/UnitTestLib.h
 
   ## @libraryclass Provide unit test assert helpers
   #
-  UnitTestAssertLib|Include\Library\UnitTestAssertLib.h
+  UnitTestAssertLib|Include/Library/UnitTestAssertLib.h
 
   ## @libraryclass Provide unit test logging
   #
-  UnitTestLogLib|Include\Library\UnitTestLogLib.h
+  UnitTestLogLib|Include/Library/UnitTestLogLib.h
 
   ## @libraryclass Provides a unit test result report
   #
-  UnitTestResultReportLib|Include\Library\UnitTestResultReportLib.h
+  UnitTestResultReportLib|Include/Library/UnitTestResultReportLib.h
 
   ## @libraryclass Allows the platform to boot from USB on the next boot.
   #
-  UnitTestBootUsbLib|Include\Library\UnitTestBootUsbLib.h
+  UnitTestBootUsbLib|Include/Library/UnitTestBootUsbLib.h
 
   ## @libraryclass Allows save and restore unit test internal state
   #
-  UnitTestPersistenceLib|Include\Library\UnitTestPersistenceLib.h
+  UnitTestPersistenceLib|Include/Library/UnitTestPersistenceLib.h
 
 [Guids]
 
