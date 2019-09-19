@@ -1,0 +1,5 @@
+{
+  "scope": "host-test-win",
+  "name": "Windows Host-Based Unit Test Runner",
+  "module": "HostBasedUnitTestRunner"
+}
