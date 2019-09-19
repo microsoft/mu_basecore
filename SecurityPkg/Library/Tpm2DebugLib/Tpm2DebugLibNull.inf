@@ -11,7 +11,7 @@
 [Defines]
   INF_VERSION         = 0x00010017
   BASE_NAME           = Tpm2DebugLibNull
-  FILE_GUID           = 91493EA7-5F06-426E-B4C6-EF87208CE4EB
+  FILE_GUID           = 97a27b03-286f-4237-a7c3-a09a1b6e6e2d
   MODULE_TYPE         = BASE
   VERSION_STRING      = 1.0
   LIBRARY_CLASS       = Tpm2DebugLib
