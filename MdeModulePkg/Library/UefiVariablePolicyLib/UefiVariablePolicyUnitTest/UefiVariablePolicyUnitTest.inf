@@ -12,7 +12,7 @@
   INF_VERSION                    = 0x00010006
   BASE_NAME                      = UefiVariablePolicyUnitTest
   FILE_GUID                      = 1200A2E4-D756-418C-9768-528C2D181A98
-  MODULE_TYPE                    = USER_DEFINED
+  MODULE_TYPE                    = HOST_APPLICATION
   VERSION_STRING                 = 1.0
 
 #
