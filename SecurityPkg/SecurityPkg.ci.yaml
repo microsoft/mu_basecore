@@ -1,0 +1,46 @@
+{
+    "CompilerPlugin": {
+        "DscPath": "SecurityPkg.dsc"
+    },
+    "HostUnitTestCompilerPlugin": {
+        # remove for now.  "DscPath": "SecurityPkgTest.dsc"
+    },
+    "HostUnitTestDscCompleteCheck": {
+        #"DscPath": "SecurityPkgTest.dsc",
+        "IgnoreInf": []  
+    },
+    "CharEncodingCheck": {
+        "IgnoreFiles": []
+    },
+    "DependencyCheck": {
+        "AcceptableDependencies": [
+            "MdePkg/MdePkg.dec",
+            "MdeModulePkg/MdeModulePkg.dec",
+            "SecurityPkg/SecurityPkg.dec",
+            "CryptoPkg/CryptoPkg.dec", # I don't agree with this.
+            "FmpDevicePkg/FmpDevicePkg.dec", # I don't agree with this
+            "SourceLevelDebugPkg/SourceLevelDebugPkg.dec", # mu should fix this
+        ], 
+        "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
+            "MsUnitTestPkg/MsUnitTestPkg.dec",
+            "UefiHostTestPkg/UefiHostTestPkg.dec",
+            "UefiHostUnitTestPkg/UefiHostUnitTestPkg.dec",
+            "CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec"
+        ],
+        "IgnoreInf": []
+    },
+    "DscCompleteCheck": {
+        "DscPath": "SecurityPkg.dsc",
+        "IgnoreInf": []
+    },
+    "GuidCheck": {
+        "IgnoreGuidName": [
+            "Tpm2InstanceLibDTpm" # matches gEfiTpmDeviceInstanceTpm20DtpmGuid  by design
+            ],
+        "IgnoreGuidValue": ["00000000-0000-0000-0000-000000000000"],
+        "IgnoreFoldersAndFiles": []
+    },
+    "LibraryClassCheck": {
+        "IgnoreHeaderFile": []
+    }
+}

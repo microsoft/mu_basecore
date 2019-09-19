@@ -1,0 +1,53 @@
+{
+    "CompilerPlugin": {
+        "DscPath": "MdeModulePkg.dsc"
+    },
+    "HostUnitTestCompilerPlugin": {
+        #"DscPath": 
+    },
+    "HostUnitTestDscCompleteCheck": {
+        "IgnoreInf": []  
+    },
+    "CharEncodingCheck": {
+        "IgnoreFiles": []
+    },
+    "DependencyCheck": {
+        "AcceptableDependencies": [
+            "MdePkg/MdePkg.dec",
+            "MdeModulePkg/MdeModulePkg.dec",
+            "StandaloneMmPkg/StandaloneMmPkg.dec",
+            "ArmPkg/ArmPkg.dec"  # this should be fixed by promoting an abstraction
+        ],
+        "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
+            "MsUnitTestPkg/MsUnitTestPkg.dec",
+            "UefiHostTestPkg/UefiHostTestPkg.dec",
+            "UefiHostUnitTestPkg/UefiHostUnitTestPkg.dec",
+            "CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec",
+            "UnitTestPkg/UnitTestPkg.dec"
+        ],
+        "IgnoreInf": []
+    },
+    "DscCompleteCheck": {
+        "IgnoreInf": [
+            # Not supported without StandaloneMmPkg.
+            "MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteStandaloneMm.inf",
+            "MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf"
+        ], 
+        "DscPath": "MdeModulePkg.ci.dsc"   
+    },
+    "GuidCheck": {
+        "IgnoreGuidName": [],
+        "IgnoreGuidValue": ["00000000-0000-0000-0000-000000000000"],
+        "IgnoreFoldersAndFiles": [],
+        "IgnoreDuplicates": [
+            "gEdkiiFormBrowserExProtocolGuid=gEfiFormBrowserExProtocolGuid",
+            "gEfiPeiMmAccessPpiGuid=gPeiSmmAccessPpiGuid",
+            "gPeiSmmControlPpiGuid=gEfiPeiMmControlPpiGuid",
+            "gEdkiiSerialPortLibVendorGuid=SerialDxe"  # Is this a bug????
+        ]
+    },
+    "LibraryClassCheck": {
+        "IgnoreLibraryClass": ["HwResetSystemLib"],
+        "IgnoreHeaderFile": []
+    }
+}

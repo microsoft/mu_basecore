@@ -120,6 +120,14 @@
   NetworkPkg/Application/VConfig/VConfig.inf
 
   !include NetworkPkg/Network.dsc.inc
+  #!include NetworkPkg/NetworkLibs.dsc.inc
+  NetworkPkg/Library/DxeDpcLib/DxeDpcLib.inf
+  NetworkPkg/Library/DxeNetLib/DxeNetLib.inf
+  NetworkPkg/Library/DxeIpIoLib/DxeIpIoLib.inf
+  NetworkPkg/Library/DxeUdpIoLib/DxeUdpIoLib.inf
+  NetworkPkg/Library/DxeTcpIoLib/DxeTcpIoLib.inf
+  NetworkPkg/Library/DxeHttpLib/DxeHttpLib.inf
+  !include NetworkPkg/NetworkComponents.dsc.inc
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES

@@ -1,0 +1,40 @@
+{
+    "CompilerPlugin": {
+        #"DscPath": ""
+    },
+    "HostUnitTestCompilerPlugin": {
+        #"DscPath": 
+    },
+    "HostUnitTestDscCompleteCheck": {
+        "IgnoreInf": []  
+    },
+    "CharEncodingCheck": {
+        "IgnoreFiles": []
+    },
+    "DependencyCheck": {
+        "AcceptableDependencies": [
+            "MdePkg/MdePkg.dec",
+            "MdeModulePkg/MdeModulePkg.dec",
+            "MsUnitTestPkg/MsUnitTestPkg.dec"
+        ],
+        "AcceptableDependencies-HOST_APPLICATION":[], # for host based unit tests
+        "AcceptableDependencies-UEFI_APPLICATION": [  # for UEFI shell based tests
+            "ShellPkg/ShellPkg.dec"
+        ],
+        "IgnoreInf": []
+    },
+    "DscCompleteCheck": {
+        "IgnoreInf": [], 
+        #"DscPath": ""   
+    },
+    "GuidCheck": {
+        "IgnoreGuidName": [],
+        "IgnoreGuidValue": [],
+        "IgnoreFoldersAndFiles": [],
+        "IgnoreDuplicates": []
+    },
+    "LibraryClassCheck": {
+        "IgnoreLibraryClass": [],
+        "IgnoreHeaderFile": []
+    }
+}

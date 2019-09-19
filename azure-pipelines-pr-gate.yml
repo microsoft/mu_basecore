@@ -2,11 +2,11 @@
 strategy:
   matrix:
     TARGET_MDE_CPU:
-      Build.Pkgs: 'MdePkg UefiCpuPkg'
+      Build.Pkgs: 'MdePkg,UefiCpuPkg'
     TARGET_MDEMODULE:
       Build.Pkgs: 'MdeModulePkg'
     TARGET_OTHER:
-      Build.Pkgs: 'MsUnitTestPkg NetworkPkg PcAtChipsetPkg'
+      Build.Pkgs: 'MsUnitTestPkg,NetworkPkg,PcAtChipsetPkg'
     TARGET_SECURITY:
       Build.Pkgs: 'SecurityPkg'
 
@@ -22,9 +22,6 @@ steps:
     versionSpec: '3.7.x'
     architecture: 'x64'
 
-- script: python -m pip install --upgrade pip
-  displayName: 'Install/Upgrade pip'
-
 - script: pip install -r requirements.txt --upgrade
   displayName: 'Install/Upgrade pip modules'
 
@@ -33,19 +30,19 @@ steps:
   displayName: Setup $(Build.Pkgs)
   inputs:
     filename: stuart_ci_setup
-    arguments: -c CISettings.py --force-git
+    arguments: -c CISettings.py --force-git TOOL_CHAIN_TAG=VS2017
 
 - task: CmdLine@1
   displayName: Update $(Build.Pkgs)
   inputs:
     filename: stuart_update
-    arguments: -c CISettings.py --Tool_Chain VS2017
+    arguments: -c CISettings.py TOOL_CHAIN_TAG=VS2017
 
 - task: CmdLine@1
   displayName: Build and Test $(Build.Pkgs)
   inputs:
     filename: stuart_ci_build
-    arguments: -c CISettings.py --Tool_Chain VS2017 -p $(Build.Pkgs)
+    arguments: -c CISettings.py -p $(Build.Pkgs) TOOL_CHAIN_TAG=VS2017
 
 # Publish Test Results to Azure Pipelines/TFS
 - task: PublishTestResults@2
@@ -55,7 +52,7 @@ steps:
   inputs:
     testResultsFormat: 'JUnit' # Options: JUnit, NUnit, VSTest, xUnit
     testResultsFiles: 'Build/TestSuites.xml'
-    testRunTitle: "Basecore"
+    testRunTitle: "$(Build.Pkgs)"
     #searchFolder: '$(System.DefaultWorkingDirectory)' # Optional
     mergeTestResults: true # Optional
     #buildPlatform: # Optional
@@ -74,8 +71,12 @@ steps:
       Build\**\BUILDLOG_*.md
       Build\**\CI_*.txt
       Build\**\CI_*.md
+      Build\**\CISETUP.txt
+      Build\**\SETUPLOG.txt
+      Build\**\UPDATE_LOG.txt
       Build\**\TestSuites.xml
-      Build\**\OVERRIDELOG.txt
+      Build\**\BUILD_TOOLS_REPORT.html
+      Build\**\OVERRIDELOG.TXT
     flattenFolders: true
 
 # Publish build artifacts to Azure Artifacts/TFS or a file share
