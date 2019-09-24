@@ -1,40 +1,40 @@
 jobs:
-  - job: linux_build
-    displayName: Linux Build
-    pool:
-      vmImage: ubuntu-16.04
+  # - job: linux_build
+  #   displayName: Linux Build
+  #   pool:
+  #     vmImage: ubuntu-16.04
 
-    workspace:
-      clean: all
+  #   workspace:
+  #     clean: all
 
-    steps:
-    - checkout: self
-      clean: true
+  #   steps:
+  #   - checkout: self
+  #     clean: true
   
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.7.x'
-        architecture: 'x64'
-      displayName: Install correct Python
+  #   - task: UsePythonVersion@0
+  #     inputs:
+  #       versionSpec: '3.7.x'
+  #       architecture: 'x64'
+  #     displayName: Install correct Python
 
-    - bash: sudo apt-get update
-      displayName: Update apt
+  #   - bash: sudo apt-get update
+  #     displayName: Update apt
 
-    - bash: sudo apt-get install gcc g++ make uuid-dev
-      displayName: Install required tools
+  #   - bash: sudo apt-get install gcc g++ make uuid-dev
+  #     displayName: Install required tools
 
-    - script: |
-        echo '##vso[task.setvariable variable=PYTHON_COMMAND]python3'
-      displayName: Force tools build to use new Python
+  #   - script: |
+  #       echo '##vso[task.setvariable variable=PYTHON_COMMAND]python3'
+  #     displayName: Force tools build to use new Python
 
-    - bash: make -C BaseTools
-      workingDirectory: $(Build.Repository.LocalPath)
-      displayName: Build
+  #   - bash: make -C BaseTools
+  #     workingDirectory: $(Build.Repository.LocalPath)
+  #     displayName: Build
 
-    - task: PublishBuildArtifacts@1
-      inputs:
-        pathtoPublish: '$(Build.Repository.LocalPath)/BaseTools/Source/C/bin'
-        artifactName: LinuxOutput
+  #   - task: PublishBuildArtifacts@1
+  #     inputs:
+  #       pathtoPublish: '$(Build.Repository.LocalPath)/BaseTools/Source/C/'
+  #       artifactName: LinuxOutput
 
   - job: windows_build
     displayName: Windows Build
@@ -57,6 +57,9 @@ jobs:
         architecture: 'x64'
       displayName: Install correct Python
 
+    - script: vcvarsx86.bat
+      displayName: Set up for X86 building
+
     - script: |
         echo '##vso[task.setvariable variable=BASE_TOOLS_PATH]$(bt_path)'
         echo '##vso[task.setvariable variable=EDK_TOOLS_PATH]$(bt_path)'
@@ -75,17 +78,17 @@ jobs:
       workingDirectory: $(bt_path)
       displayName: Build
 
-  - job: assemble_package
-    displayName: Assemble Release Package
-    dependsOn:
-    - linux_build
-    - windows_build
-    pool:
-      vmImage: vs2017-win2016
+  # - job: assemble_package
+  #   displayName: Assemble Release Package
+  #   dependsOn:
+  #   - linux_build
+  #   - windows_build
+  #   pool:
+  #     vmImage: vs2017-win2016
 
-    workspace:
-      clean: all
+  #   workspace:
+  #     clean: all
 
-    steps:
-    - script: echo "I am here."
-      displayName: Proof of Life
+  #   steps:
+  #   - script: echo "I am here."
+  #     displayName: Proof of Life
