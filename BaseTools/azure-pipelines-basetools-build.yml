@@ -17,6 +17,9 @@ jobs:
         architecture: 'x64'
       displayName: Install correct Python
 
+    - bash: sudo apt-get update
+      displayName: Update apt
+
     - bash: sudo apt-get install gcc g++ make uuid-dev
       displayName: Install required tools
 
@@ -48,6 +51,9 @@ jobs:
         versionSpec: '3.7.x'
         architecture: 'x64'
       displayName: Install correct Python
+
+    - pwsh: mkdir $(bt_path)\Bin\Win32
+      displayName: Make sure output dir exists
 
     - script: |
         echo '##vso[task.setvariable variable=BASE_TOOLS_PATH]$(bt_path)'
