@@ -57,7 +57,7 @@ jobs:
         architecture: 'x64'
       displayName: Install correct Python
 
-    - script: vcvarsx86.bat
+    - script: vswhere.exe
       displayName: Set up for X86 building
 
     - script: |
