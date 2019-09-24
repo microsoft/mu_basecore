@@ -15,15 +15,18 @@ jobs:
       inputs:
         versionSpec: '3.7.x'
         architecture: 'x64'
+      displayName: Install correct Python
 
-    - bash: sudo apt-get install gcc g++ make
+    - bash: sudo apt-get install gcc g++ make uuid-dev
       displayName: Install required tools
 
     - script: |
         echo '##vso[task.setvariable variable=PYTHON_COMMAND]python3'
+      displayName: Force tools build to use new Python
 
     - bash: make -C BaseTools
       workingDirectory: $(Build.Repository.LocalPath)
+      displayName: Build
 
   - job: windows_build
     displayName: Windows Build
@@ -44,17 +47,24 @@ jobs:
       inputs:
         versionSpec: '3.7.x'
         architecture: 'x64'
+      displayName: Install correct Python
 
     - script: |
         echo '##vso[task.setvariable variable=BASE_TOOLS_PATH]$(bt_path)'
+      displayName: Update path for BASE_TOOLS_PATH
+
+    - script: |
+        echo BASE_TOOLS_PATH is $BASE_TOOLS_PATH
+        echo bt_path is $bt_path
+      displayName: Debug step
 
     - script: toolsetup.bat
-      displayName: Setup for build
       workingDirectory: $(bt_path)
+      displayName: Setup for build
 
     - script: nmake
-      displayName: Build
       workingDirectory: $(bt_path)
+      displayName: Build
 
   - job: assemble_package
     displayName: Assemble Release Package
