@@ -52,17 +52,15 @@ jobs:
         architecture: 'x64'
       displayName: Install correct Python
 
-    - pwsh: mkdir $(bt_path)\Bin\Win32
-      displayName: Make sure output dir exists
-
     - script: |
         echo '##vso[task.setvariable variable=BASE_TOOLS_PATH]$(bt_path)'
+        echo '##vso[task.setvariable variable=EDK_TOOLS_PATH]$(bt_path)'
       displayName: Update path for BASE_TOOLS_PATH
 
     - script: |
-        echo BASE_TOOLS_PATH is %BASE_TOOLS_PATH%
-        echo bt_path is %bt_path%
-      displayName: Debug step
+        mkdir $(bt_path)\Bin\Win32
+        echo '##vso[task.setvariable variable=EDK_TOOLS_BIN]$(bt_path)\Bin\Win32'
+      displayName: Make sure output dir exists
 
     - script: toolsetup.bat
       workingDirectory: $(bt_path)
