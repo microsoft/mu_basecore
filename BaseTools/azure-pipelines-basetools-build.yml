@@ -22,3 +22,14 @@ jobs:
     steps:
     - checkout: self
       clean: true
+
+  - job: assemble_package
+    displayName: Assemble Release Package
+    dependsOn:
+    - linux_build
+    - windows_build
+    pool:
+      vmImage: vs2017-win2016
+
+    workspace:
+      clean: all
