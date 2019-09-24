@@ -16,7 +16,7 @@ jobs:
         versionSpec: '3.7.x'
         architecture: 'x64'
 
-    - bash: apt-get install gcc g++ make
+    - bash: sudo apt-get install gcc g++ make
       displayName: Install required tools
 
     - script: |
@@ -34,7 +34,7 @@ jobs:
       clean: all
 
     variables:
-      bt_path: $(Agent.BuildDirectory)/BaseTools
+      bt_path: $(Agent.BuildDirectory)/s/BaseTools
 
     steps:
     - checkout: self
