@@ -31,6 +31,11 @@ jobs:
       workingDirectory: $(Build.Repository.LocalPath)
       displayName: Build
 
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathtoPublish: '$(Build.Repository.LocalPath)/BaseTools/Source/C/bin'
+        artifactName: LinuxOutput
+
   - job: windows_build
     displayName: Windows Build
     pool:
@@ -66,7 +71,7 @@ jobs:
       workingDirectory: $(bt_path)
       displayName: Setup for build
 
-    - script: nmake
+    - script: nmake.exe
       workingDirectory: $(bt_path)
       displayName: Build
 
