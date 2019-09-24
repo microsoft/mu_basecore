@@ -23,7 +23,7 @@ jobs:
         echo '##vso[task.setvariable variable=PYTHON_COMMAND]python3'
 
     - bash: make -C BaseTools
-      workingDirectory: $(Agent.BuildDirectory)
+      workingDirectory: $(Build.Repository.LocalPath)
 
   - job: windows_build
     displayName: Windows Build
@@ -34,11 +34,16 @@ jobs:
       clean: all
 
     variables:
-      bt_path: $(Agent.BuildDirectory)/s/BaseTools
+      bt_path: $(Build.Repository.LocalPath)\BaseTools
 
     steps:
     - checkout: self
       clean: true
+  
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.7.x'
+        architecture: 'x64'
 
     - script: |
         echo '##vso[task.setvariable variable=BASE_TOOLS_PATH]$(bt_path)'
