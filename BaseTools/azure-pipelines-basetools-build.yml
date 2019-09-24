@@ -10,6 +10,20 @@ jobs:
     steps:
     - checkout: self
       clean: true
+  
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.7.x'
+        architecture: 'x64'
+
+    - bash: apt-get install gcc g++ make
+      displayName: Install required tools
+
+    - script: |
+        echo '##vso[task.setvariable variable=PYTHON_COMMAND]python3'
+
+    - bash: make -C BaseTools
+      workingDirectory: $(Agent.BuildDirectory)
 
   - job: windows_build
     displayName: Windows Build
@@ -19,9 +33,23 @@ jobs:
     workspace:
       clean: all
 
+    variables:
+      bt_path: $(Agent.BuildDirectory)/BaseTools
+
     steps:
     - checkout: self
       clean: true
+
+    - script: |
+        echo '##vso[task.setvariable variable=BASE_TOOLS_PATH]$(bt_path)'
+
+    - script: toolsetup.bat
+      displayName: Setup for build
+      workingDirectory: $(bt_path)
+
+    - script: nmake
+      displayName: Build
+      workingDirectory: $(bt_path)
 
   - job: assemble_package
     displayName: Assemble Release Package
@@ -33,3 +61,7 @@ jobs:
 
     workspace:
       clean: all
+
+    steps:
+    - script: echo "I am here."
+      displayName: Proof of Life
