@@ -54,8 +54,8 @@ jobs:
       displayName: Update path for BASE_TOOLS_PATH
 
     - script: |
-        echo BASE_TOOLS_PATH is $BASE_TOOLS_PATH
-        echo bt_path is $bt_path
+        echo BASE_TOOLS_PATH is %BASE_TOOLS_PATH%
+        echo bt_path is %bt_path%
       displayName: Debug step
 
     - script: toolsetup.bat
