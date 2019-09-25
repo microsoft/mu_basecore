@@ -143,7 +143,7 @@ class Edk2ToolsBuild(Edk2Invocable):
         # We'll need to run 'antlr' after it's built, so we should know where that's going.
         shell_env.append_path(os.path.join(shell_env.get_shell_var('BASE_TOOLS_PATH'), 'Bin', 'Win32'))
 
-        print(os.environ)
+        shell_env.log_environment()
 
         # # Actually build the tools.
         if RunCmd('nmake.exe', None, workingdir=self.PlatformSettings.GetWorkspaceRoot()) != 0:
