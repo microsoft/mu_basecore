@@ -33,7 +33,7 @@ jobs:
 
     - task: PublishBuildArtifacts@1
       inputs:
-        pathtoPublish: '$(Build.Repository.LocalPath)/BaseTools/Source/C/'
+        pathtoPublish: '$(Build.Repository.LocalPath)/BaseTools/Source/C/bin'
         artifactName: LinuxOutput
 
   - job: windows_build
