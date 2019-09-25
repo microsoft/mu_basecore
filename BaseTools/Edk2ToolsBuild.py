@@ -134,7 +134,7 @@ class Edk2ToolsBuild(Edk2Invocable):
         vc_vars = QueryVcVariables(interesting_keys, 'x86', vs_version = 'vs2017')
         for key in vc_vars.keys():
             if key.lower() == 'path':
-                shell_env.append_path(vc_vars[key])
+                shell_env.insert_path(vc_vars[key])
             else:
                 shell_env.set_shell_var(key, vc_vars[key])
 
