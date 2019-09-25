@@ -16,13 +16,14 @@ from edk2toolext.environment.plugintypes.uefi_helper_plugin import HelperFunctio
 from edk2toolext.environment import version_aggregator
 from edk2toolext.environment import self_describing_environment
 from edk2toolext.edk2_invocable import Edk2Invocable
-from edk2toolext.invocables.edk2_setup import SetupSettingsManager
-from edk2toolext.invocables.edk2_platform_build import BuildSettingsManager
+from edk2toolext.invocables.edk2_update import UpdateSettingsManager
+from edk2toollib.utility_functions import RunCmd
+from edk2toollib.windows.locate_tools import QueryVcVariables
 
 PIP_PACKAGES_LIST = ["edk2-pytool-library", "edk2-pytool-extensions", "PyYaml"]
 
 
-class ToolsBuildSettingsManager(SetupSettingsManager, BuildSettingsManager):
+class ToolsBuildSettingsManager(UpdateSettingsManager):
     ''' Platform settings will be accessed through this implementation. '''
 
     def GetActiveScopes(self):
@@ -37,8 +38,18 @@ class ToolsBuildSettingsManager(SetupSettingsManager, BuildSettingsManager):
 
         return WORKSPACE_PATH
 
-    def GetModulePkgsPath(self):
-        raise NotImplementedError()
+    def GetPackagesSupported(self):
+        ''' return iterable of edk2 packages supported by this build.
+        These should be edk2 workspace relative paths '''
+        return []
+
+    def GetArchitecturesSupported(self):
+        ''' return iterable of edk2 architectures supported by this build '''
+        return ['IA32']
+
+    def GetTargetsSupported(self):
+        ''' return iterable of edk2 target tags supported by this build '''
+        return []
 
     def AddCommandLineOptions(self, parserObj):
         ''' Implement in subclass to add command line options to the argparser '''
@@ -57,7 +68,7 @@ class ToolsBuildSettingsManager(SetupSettingsManager, BuildSettingsManager):
         '''
         if loggerType in ('txt', 'md'):
             return None
-        return logging.DEBUG
+        return logging.INFO
 
 
 #
@@ -106,38 +117,34 @@ class Edk2ToolsBuild(Edk2Invocable):
             self.GetWorkspaceRoot(), self.GetActiveScopes())
 
         # # Bind our current execution environment into the shell vars.
-        # ph = os.path.dirname(sys.executable)
-        # if " " in ph:
-        #     ph = '"' + ph + '"'
-        # shell_env.set_shell_var("PYTHON_HOME", ph)
-        # # PYTHON_COMMAND is required to be set for using edk2 python builds.
-        # # todo: work with edk2 to remove the bat file and move to native python calls
-        # pc = sys.executable
-        # if " " in pc:
-        #     pc = '"' + pc + '"'
-        # shell_env.set_shell_var("PYTHON_COMMAND", pc)
+        ph = os.path.dirname(sys.executable)
+        if " " in ph:
+            ph = '"' + ph + '"'
+        shell_env.set_shell_var("PYTHON_HOME", ph)
+        # PYTHON_COMMAND is required to be set for using edk2 python builds.
+        pc = sys.executable
+        if " " in pc:
+            pc = '"' + pc + '"'
+        shell_env.set_shell_var("PYTHON_COMMAND", pc)
 
-        # # Load plugins
-        # logging.log(edk2_logging.SECTION, "Loading Plugins")
-        # pm = plugin_manager.PluginManager()
-        # failedPlugins = pm.SetListOfEnvironmentDescriptors(
-        #     build_env.plugins)
-        # if failedPlugins:
-        #     logging.critical("One or more plugins failed to load. Halting build.")
-        #     for a in failedPlugins:
-        #         logging.error("Failed Plugin: {0}".format(a["name"]))
-        #     raise Exception("One or more plugins failed to load.")
+        # # Update environment with required VCvars.
+        interesting_keys = ["ExtensionSdkDir", "INCLUDE", "LIB"]
+        interesting_keys.extend(["LIBPATH", "Path", "UniversalCRTSdkDir", "UCRTVersion", "WindowsLibPath", "WindowsSdkBinPath"])
+        interesting_keys.extend(["WindowsSdkDir", "WindowsSdkVerBinPath", "WindowsSDKVersion","VCToolsInstallDir"])
+        vc_vars = QueryVcVariables(interesting_keys, 'x86')
+        for key in vc_vars.keys():
+            if key.lower() == 'path':
+                shell_env.append_path(vc_vars[key])
+            else:
+                shell_env.set_shell_var(key, vc_vars[key])
 
-        # helper = HelperFunctions()
-        # if(helper.LoadFromPluginManager(pm) > 0):
-        #     raise Exception("One or more helper plugins failed to load.")
-        # #
-        # # Now we can actually kick off a build.
-        # #
-        # logging.log(edk2_logging.SECTION, "Kicking off build")
-        # return self.PlatformBuilder.Go(self.GetWorkspaceRoot(),
-        #                                self.PlatformSettings.GetModulePkgsPath(),
-        #                                helper, pm)
+        # # Update the EDK_TOOLS_PATH so that new tools are build to the correct location.
+        shell_env.set_shell_var('EDK_TOOLS_PATH', shell_env.get_shell_var('BASE_TOOLS_PATH'))
+        # We'll need to run 'antlr' after it's built, so we should know where that's going.
+        shell_env.append_path(os.path.join(shell_env.get_shell_var('BASE_TOOLS_PATH'), 'Bin', 'Win32'))
+
+        # # Actually build the tools.
+        RunCmd('nmake.exe', None, workingdir=self.PlatformSettings.GetWorkspaceRoot())
 
 
 def main():

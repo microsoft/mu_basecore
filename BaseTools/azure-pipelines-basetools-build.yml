@@ -45,7 +45,7 @@ jobs:
       clean: all
 
     variables:
-      bt_path: $(Build.Repository.LocalPath)\BaseTools
+      build_invocable: $(Build.Repository.LocalPath)\BaseTools\Edk2ToolsBuild.py
 
     steps:
     - checkout: self
@@ -54,29 +54,25 @@ jobs:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.7.x'
+        addToPath: true
         architecture: 'x64'
       displayName: Install correct Python
 
-    - script: vswhere.exe
-      displayName: Set up for X86 building
+    - task: CmdLine@1
+      inputs:
+        filename: stuart_update
+        arguments: -c $(build_invocable)
+      displayName: Update invocable dependencies
 
-    - script: |
-        echo '##vso[task.setvariable variable=BASE_TOOLS_PATH]$(bt_path)'
-        echo '##vso[task.setvariable variable=EDK_TOOLS_PATH]$(bt_path)'
-      displayName: Update path for BASE_TOOLS_PATH
-
-    - script: |
-        mkdir $(bt_path)\Bin\Win32
-        echo '##vso[task.setvariable variable=EDK_TOOLS_BIN]$(bt_path)\Bin\Win32'
-      displayName: Make sure output dir exists
-
-    - script: toolsetup.bat
-      workingDirectory: $(bt_path)
-      displayName: Setup for build
-
-    - script: nmake.exe
-      workingDirectory: $(bt_path)
+    - script: PythonScript@0
+      inputs:
+        scriptSource: $(build_invocable)
       displayName: Build
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathtoPublish: '$(Build.Repository.LocalPath)\BaseTools\Bin\Win32'
+        artifactName: WindowsOutput
 
   # - job: assemble_package
   #   displayName: Assemble Release Package
