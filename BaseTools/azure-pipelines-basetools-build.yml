@@ -69,8 +69,8 @@ jobs:
 
     - task: PythonScript@0
       inputs:
-        type: filePath
-        scriptSource: $(build_invocable)
+        scriptSource: filePath
+        scriptPath: $(build_invocable)
       displayName: Build
 
     - task: PublishBuildArtifacts@1
