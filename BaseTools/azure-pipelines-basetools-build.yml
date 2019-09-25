@@ -64,7 +64,7 @@ jobs:
         arguments: -c $(build_invocable)
       displayName: Update invocable dependencies
 
-    - script: PythonScript@0
+    - task: PythonScript@0
       inputs:
         scriptSource: $(build_invocable)
       displayName: Build
