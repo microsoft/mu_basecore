@@ -58,6 +58,9 @@ jobs:
         architecture: 'x64'
       displayName: Install correct Python
 
+    - script: pip install --upgrade -r $(Build.Repository.LocalPath)\requirements.txt
+      displayName: Install pip requirements
+
     - task: CmdLine@1
       inputs:
         filename: stuart_update
