@@ -68,7 +68,7 @@ class ToolsBuildSettingsManager(UpdateSettingsManager):
         '''
         if loggerType in ('txt', 'md'):
             return None
-        return logging.INFO
+        return logging.DEBUG
 
 
 #
@@ -142,6 +142,8 @@ class Edk2ToolsBuild(Edk2Invocable):
         shell_env.set_shell_var('EDK_TOOLS_PATH', shell_env.get_shell_var('BASE_TOOLS_PATH'))
         # We'll need to run 'antlr' after it's built, so we should know where that's going.
         shell_env.append_path(os.path.join(shell_env.get_shell_var('BASE_TOOLS_PATH'), 'Bin', 'Win32'))
+
+        shell_env.log_environment()
 
         # # Actually build the tools.
         if RunCmd('nmake.exe', None, workingdir=self.PlatformSettings.GetWorkspaceRoot()) != 0:
