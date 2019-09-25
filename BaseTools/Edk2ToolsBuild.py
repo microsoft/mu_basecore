@@ -131,7 +131,7 @@ class Edk2ToolsBuild(Edk2Invocable):
         interesting_keys = ["ExtensionSdkDir", "INCLUDE", "LIB"]
         interesting_keys.extend(["LIBPATH", "Path", "UniversalCRTSdkDir", "UCRTVersion", "WindowsLibPath", "WindowsSdkBinPath"])
         interesting_keys.extend(["WindowsSdkDir", "WindowsSdkVerBinPath", "WindowsSDKVersion","VCToolsInstallDir"])
-        vc_vars = QueryVcVariables(interesting_keys, 'x86')
+        vc_vars = QueryVcVariables(interesting_keys, 'x86', vs_version = 'vs2017')
         for key in vc_vars.keys():
             if key.lower() == 'path':
                 shell_env.append_path(vc_vars[key])
@@ -144,7 +144,8 @@ class Edk2ToolsBuild(Edk2Invocable):
         shell_env.append_path(os.path.join(shell_env.get_shell_var('BASE_TOOLS_PATH'), 'Bin', 'Win32'))
 
         # # Actually build the tools.
-        RunCmd('nmake.exe', None, workingdir=self.PlatformSettings.GetWorkspaceRoot())
+        if RunCmd('nmake.exe', None, workingdir=self.PlatformSettings.GetWorkspaceRoot()) != 0:
+            raise Exception("Failed to build.")
 
 
 def main():
