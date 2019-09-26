@@ -10,6 +10,17 @@
 #  Un-set an option by either commenting out the line, or not setting a value.
 
 #
+# Increase this version tag any time you want user to get warning about updating this file in the Conf dir.  
+# By default it does not update existing conf dirs. 
+#
+# 1.01 - Updating the default tool chain tag to use VS2015
+# 1.02 - Align with TC at 1905 Tag - license change except Tool_chain_tag which is our VSLATEST
+# 1.03 - Change to VS2017
+
+
+#!VERSION=1.03
+
+#
 #  PROPERTY              Type       Use         Description
 #  ----------------      --------   --------    -----------------------------------------------------------
 #  ACTIVE_PLATFORM       Filename   Recommended Specify the WORKSPACE relative Path and Filename
@@ -51,7 +62,7 @@ TOOL_CHAIN_CONF       = Conf/tools_def.txt
 #  TAGNAME               List      Optional   Specify the name(s) of the tools_def.txt TagName to use.
 #                                             If not specified, all applicable TagName tools will be
 #                                             used for the build.  The list uses space character separation.
-TOOL_CHAIN_TAG        = VS2015x86
+TOOL_CHAIN_TAG        = VS2017
 
 # MAX_CONCURRENT_THREAD_NUMBER  NUMBER  Optional  The number of concurrent threads. If not specified or set
 #                                                 to zero, tool automatically detect number of processor
@@ -60,7 +71,7 @@ TOOL_CHAIN_TAG        = VS2015x86
 #                                                 means disable multi-thread build, value set to more than 1,
 #                                                 means user specify the thread number to build. Not specify
 #                                                 the default value in this file.
-# MAX_CONCURRENT_THREAD_NUMBER = 1
+MAX_CONCURRENT_THREAD_NUMBER = 0
 
 
 # BUILD_RULE_CONF  Filename Optional  Specify the file name to use for the build rules that are followed

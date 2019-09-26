@@ -105,6 +105,12 @@
 ## Build Rule Version Number
 #  build_rule_version=0.1
 #
+#
+# 1.01 - Increase this version tag any time you want user to get warning about updating this file in the Conf dir.  By default it does not do update existing conf dirs. 
+# 1.02 - Add MASM for Microsoft ARM assembly files. "MS-ARMx-Assembly-Code-File.COMMON.COMMON" 
+# 1.03 - Align license with TC 1905 release.  Removed preefi and slib.  
+
+#!VERSION=1.03
 
 [C-Code-File]
     <InputFile>
@@ -152,6 +158,25 @@
     <OutputFile>
 
     <Command>
+
+[MS-ARMx-Assembly-Code-File.COMMON.COMMON]
+    <InputFile.MSFT>
+        ?.masm, ?.Masm, ?.MASM
+
+    <ExtraDependency>
+        $(MAKE_FILE)
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
+
+    <Command.MSFT>
+        "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i
+        # The C pre-processor is used to insert code snippets in assembly from preprocessor macros.  Unfortunately
+        # the preprocessor doesn't also insert CR/LF and Microsoft's assembler expects each instruction to be on its own
+        # line.  We search and replace a special string (__CR__) with CR.
+        type ${d_path}(+)${s_base}.i | python -c "import sys; print (sys.stdin.read().replace('__CR__','\n'))" > ${d_path}(+)${s_base}.ii
+        Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
+        "$(ASM)" $(ASM_FLAGS) -o ${dst} $(INC) ${d_path}(+)${s_base}.iii
 
 [Assembly-Code-File.COMMON.COMMON]
     <InputFile.MSFT, InputFile.INTEL, InputFile.RVCT>
@@ -293,6 +318,7 @@
 
     <Command.GCC>
         "$(DLINK)" -o ${dst} $(DLINK_FLAGS) -Wl,--start-group,@$(STATIC_LIBRARY_FILES_LIST),--end-group $(CC_FLAGS) $(DLINK2_FLAGS)
+
         "$(OBJCOPY)" $(OBJCOPY_FLAGS) ${dst}
 
     <Command.RVCT>
@@ -321,7 +347,7 @@
         "$(OBJCOPY)" $(OBJCOPY_FLAGS) ${dst}
 
 
-[Static-Library-File.USER_DEFINED, Static-Library-File.HOST_APPLICATION]
+[Static-Library-File.USER_DEFINED]
     <InputFile>
         *.lib
 
@@ -549,6 +575,40 @@
     <OutputFile>
 
     <Command>
+
+#MSCHANGE
+# Build Rule to support using precompiled 
+# LIB files.  Just copies the LIB from src to output 
+# so the rest of the build system works. 
+#
+[Precompiled-Lib-File]
+    <InputFile>
+        *.slib
+
+    <ExtraDependency>
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).lib
+
+    <Command>
+        -$(CP) ${src} ${dst}
+
+#MSCHANGE
+# Build Rule to support using precompiled
+# EFI files.  Just copies the EFI from src to output
+# so the rest of the build system works.
+#
+[Precompiled-Efi-File]
+    <InputFile>
+        ?.preefi
+
+    <ExtraDependency>
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_base}.efi
+
+    <Command>
+        -$(CP) ${src} ${dst}
 
 [Unicode-Text-File]
     <InputFile>
