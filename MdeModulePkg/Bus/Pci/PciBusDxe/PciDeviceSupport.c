@@ -31,6 +31,13 @@ DisableBmeOnTree (
   PCI_IO_DEVICE   *PciIoDevice;
   UINT16           Command;
 
+  // DisableBME on ExitBootServices should be synchonized with VTd disable - with
+  // DisableBME running before VTd disable.  If the VTd disable code runs at TPL_CALLBACK,
+  // then DisableBME will run before VTd disable.
+  if (!PcdGetBool (PcdDisableBMEonEBS)) {
+    DEBUG((EFI_D_WARN,"%a PCI Bus Master enabled due to PCD setting\n", __FUNCTION__));
+    return;
+  }
 
   CurrentLink = Head->ForwardLink;
   while (CurrentLink != NULL && CurrentLink != Head) {
@@ -93,20 +100,14 @@ InitializePciDevicePool (
   InitializeListHead (&mPciDevicePool);
 
   //MU_CHANGE [Begin] - Disable BME on EBS
-  if (FeaturePcdGet (PcdDisableBMEonEBS)) {
-    // DisableBME on ExitBootServices should be synchonized with VTd disable - with
-    // DisableBME running before VTd disable.  If the VTd disable code runs at TPL_CALLBACK,
-    // then DisableBME will run before VTd disable.
-
-    Status = gBS->CreateEventEx( EVT_NOTIFY_SIGNAL,
-                                 TPL_NOTIFY,
-                                 OnExitBootServices,
-                                 NULL,
-                                 &gEfiEventExitBootServicesGuid,
-                                 &ExitBootServicesEvent );
-    if (EFI_ERROR(Status)) {
-      DEBUG((DEBUG_ERROR,"Unable to create ExitBootServices event. COde=%r\n",Status));
-    }
+  Status = gBS->CreateEventEx( EVT_NOTIFY_SIGNAL,
+                                TPL_NOTIFY,
+                                OnExitBootServices,
+                                NULL,
+                                &gEfiEventExitBootServicesGuid,
+                                &ExitBootServicesEvent );
+  if (EFI_ERROR(Status)) {
+    DEBUG((DEBUG_ERROR,"Unable to create ExitBootServices event. COde=%r\n",Status));
   }
   // MU_CHANGE [End]
 }

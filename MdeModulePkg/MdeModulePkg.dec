@@ -941,15 +941,6 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdDeferBME|TRUE|BOOLEAN|0x30002050
 
   ## MU_CHANGE
-  ## Indicates that the system should disable BME on all Pci2Pci bridges on Exit Boot Services
-  #  Note: Some operating systems and drivers may not expect devices to be in this state, and it
-  #  may cause unexpected behaviors.
-  #   TRUE  - Disable BME on P2P at Exit Boot Services.
-  #   FALSE - Do not disable BME on P2P at Exit Boot Services.
-  # @Prompt Disable BME on Exit Boot Services
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDisableBMEonEBS|TRUE|BOOLEAN|0x30002051
-
-  ## MU_CHANGE
   ## Indicates if DMA is allowed before IOMMU protocol install
   #  If enabled, device wil assert and return EFI_DEVICE_ERROR on any DMA access before IOMMU Protocol Install.<BR><BR>
   #   TRUE  - IOMMU protocol required for DMA access.<BR>
@@ -1784,6 +1775,15 @@
   #   FALSE - BDS does not support Platform Recovery.<BR>
   # @Prompt Support Platform Recovery.
   gEfiMdeModulePkgTokenSpaceGuid.PcdPlatformRecoverySupport|TRUE|BOOLEAN|0x00010078
+
+  ## MU_CHANGE
+  ## Indicates that the system should disable BME on all Pci2Pci bridges on Exit Boot Services
+  #  Note: Some operating systems and drivers may not expect devices to be in this state, and it
+  #  may cause unexpected behaviors.
+  #   TRUE  - Disable BME on P2P at Exit Boot Services.
+  #   FALSE - Do not disable BME on P2P at Exit Boot Services.
+  # @Prompt Disable BME on Exit Boot Services
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDisableBMEonEBS|TRUE|BOOLEAN|0x30002051
 
   ## Specify the foreground color for Subtile text in HII Form Browser. The default value is EFI_BLUE.
   #  Only following values defined in UEFI specification are valid:<BR><BR>
