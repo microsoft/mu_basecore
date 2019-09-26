@@ -3,12 +3,19 @@ strategy:
   matrix:
     TARGET_MDE_CPU:
       Build.Pkgs: 'MdePkg,UefiCpuPkg'
-    TARGET_MDEMODULE:
+      Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
+    TARGET_MDEMODULE_DEBUG:
       Build.Pkgs: 'MdeModulePkg'
+      Build.Targets: 'DEBUG,NO-TARGET'
+    TARGET_MDEMODULE_RELEASE:
+      Build.Pkgs: 'MdeModulePkg'
+      Build.Targets: 'RELEASE'
     TARGET_OTHER:
       Build.Pkgs: 'MsUnitTestPkg,NetworkPkg,PcAtChipsetPkg'
+      Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
     TARGET_SECURITY:
       Build.Pkgs: 'SecurityPkg'
+      Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
 
 workspace:
   clean: all
@@ -16,7 +23,7 @@ workspace:
 steps:
 - checkout: self
   clean: true
-  
+
 - task: UsePythonVersion@0
   inputs:
     versionSpec: '3.7.x'
@@ -30,19 +37,19 @@ steps:
   displayName: Setup $(Build.Pkgs)
   inputs:
     filename: stuart_ci_setup
-    arguments: -c CISettings.py --force-git TOOL_CHAIN_TAG=VS2017
+    arguments: -c CISettings.py -p $(Build.Pkgs) --force-git -t $(Build.Targets) TOOL_CHAIN_TAG=VS2017
 
 - task: CmdLine@1
   displayName: Update $(Build.Pkgs)
   inputs:
     filename: stuart_update
-    arguments: -c CISettings.py TOOL_CHAIN_TAG=VS2017
+    arguments: -c CISettings.py -p $(Build.Pkgs) -t $(Build.Targets) TOOL_CHAIN_TAG=VS2017
 
 - task: CmdLine@1
   displayName: Build and Test $(Build.Pkgs)
   inputs:
     filename: stuart_ci_build
-    arguments: -c CISettings.py -p $(Build.Pkgs) TOOL_CHAIN_TAG=VS2017
+    arguments: -c CISettings.py -p $(Build.Pkgs) -t $(Build.Targets) TOOL_CHAIN_TAG=VS2017
 
 # Publish Test Results to Azure Pipelines/TFS
 - task: PublishTestResults@2
