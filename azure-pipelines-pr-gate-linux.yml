@@ -3,12 +3,19 @@ strategy:
   matrix:
     TARGET_MDE_CPU:
       Build.Pkgs: 'MdePkg,UefiCpuPkg'
-    TARGET_MDEMODULE:
+      Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
+    TARGET_MDEMODULE_DEBUG:
       Build.Pkgs: 'MdeModulePkg'
+      Build.Targets: 'DEBUG,NO-TARGET'
+    TARGET_MDEMODULE_RELEASE:
+      Build.Pkgs: 'MdeModulePkg'
+      Build.Targets: 'RELEASE'
     TARGET_OTHER:
       Build.Pkgs: 'MsUnitTestPkg,NetworkPkg,PcAtChipsetPkg'
+      Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
     TARGET_SECURITY:
       Build.Pkgs: 'SecurityPkg'
+      Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
 
 variables:
   GCC_AARCH_PREFIX: bin/aarch64-linux-gnu-
@@ -34,19 +41,19 @@ steps:
   displayName: Setup $(Build.Pkgs)
   inputs:
     filename: stuart_ci_setup
-    arguments: -c CISettings.py --force-git TOOL_CHAIN_TAG=GCC5
+    arguments: -c CISettings.py -p $(Build.Pkgs) -t $(Build.Targets) --force-git TOOL_CHAIN_TAG=GCC5
 
 - task: CmdLine@1
   displayName: Update $(Build.Pkgs)
   inputs:
     filename: stuart_update
-    arguments: -c CISettings.py TOOL_CHAIN_TAG=GCC5
+    arguments: -c CISettings.py -p $(Build.Pkgs) -t $(Build.Targets) TOOL_CHAIN_TAG=GCC5
 
 - task: CmdLine@1
   displayName: Build and Test $(Build.Pkgs)
   inputs:
     filename: stuart_ci_build
-    arguments: -c CISettings.py -p $(Build.Pkgs) TOOL_CHAIN_TAG=GCC5
+    arguments: -c CISettings.py -p $(Build.Pkgs) -t $(Build.Targets) TOOL_CHAIN_TAG=GCC5
 
 # Publish Test Results to Azure Pipelines/TFS
 - task: PublishTestResults@2
