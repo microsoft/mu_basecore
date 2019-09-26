@@ -1005,11 +1005,11 @@
 
   ## Delayed Dispatch Maximum Delay in us  // MS_CHANGE
   # Maximum delay for any particular delay request - 5 seconds
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxDelayUs|5000000|UINT32|0x30001048
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxDelayUs|5000000|UINT32|0x3000104A
 
   ## Delayed Dispatch timeout in us  // MS_CHANGE
   # Maximum delay when waiting for completion (ie EndOfPei) - 10 seconds
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchCompletionTimeoutUs|10000000|UINT32|0x30001049
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchCompletionTimeoutUs|10000000|UINT32|0x3000104B
 
   ## Delayed Dispatch Max Entries    //MS_CHANGE
   # Maximum number of delayed dispatch entries
