@@ -134,6 +134,8 @@ HwResetSystemLib|MdeModulePkg/Library/BaseResetSystemLibNull/BaseResetSystemLibN
   #UefiCpuPkg/CpuIoPei/CpuIoPei.inf                           # MU_CHANGE - Move to X64, IA32 section.
   UefiCpuPkg/Library/SecPeiDxeTimerLibUefiCpu/SecPeiDxeTimerLibUefiCpu.inf
   #UefiCpuPkg/Application/Cpuid/Cpuid.inf                     # MU_CHANGE - Move to X64, IA32 section.
+
+[Components.IA32, Components.X64]
   UefiCpuPkg/Library/CpuTimerLib/BaseCpuTimerLib.inf
   UefiCpuPkg/Library/CpuTimerLib/DxeCpuTimerLib.inf
   UefiCpuPkg/Library/CpuTimerLib/PeiCpuTimerLib.inf
