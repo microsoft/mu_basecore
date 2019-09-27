@@ -6,9 +6,10 @@ Shared Networking is a packaged versions of networking components from EDK II. S
 
 ## How it works
 
-Since many parts of the network simply publish a protocol (like TlsDxe), it was fairly trivial to compile that into an EFI. This EFI is then downloaded via a NuGet External Dependency (see SharedTls_ext_dep.json). Versions are modified in a similar way to SharedCrypto.
+Since many parts of the network simply publish a protocol (like TlsDxe), it was fairly trivial to compile that into an EFI. This EFI is then downloaded via a NuGet External Dependency (see SharedNetworking_ext_dep.json). Versions are modified in a similar way to SharedCrypto.
 
 ### Versioning
+
 A typical version consists of 4 numbers. The year, the month of the EDK II release, the revision number, and the build number. An example of this would be _2019.03.02.01_, which would translate to EDK II 1903 release, the second revision and the first build.
 This means that there were two code changes within 1903 (either in BaseCryptLib or OpenSSL).
 Release notes will be provided on the NuGet package page and on this repo. Build numbers are reved whenever there needs to be a recompiled binary due to a mistake on our part or a build flag is tweaked.
@@ -28,21 +29,22 @@ One thing to note is that each binary is released for two targets, RELEASE and D
 ### DSC Changes
 
 Parts need to be replaced on a compoenent by component basis. For example, here is how to move over TlsDxe.
-You need to remove the reference to TLSLib since we no longer need it (the only consumer is TlsDxe). Then switch the component to SharedTLS. It looks like this:
+You need to remove the reference to TLSLib since we no longer need it (the only consumer is TlsDxe). Then switch the component to the Shared version of TLS. It looks like this:
 
 ```
 [LibraryClasses.X64]
   #TlsLib|CryptoPkg/Library/TlsLib/TlsLib.inf # remove this line
 
 [Components.X64]
-  NetworkPkg/SharedTlsDxe/TlsDxe.$(TARGET).inf
+  NetworkPkg/SharedNetworking/TlsDxe.$(TARGET).inf
 ```
 
 ### FDF Changes
 
 ```
+
 [FV.FVDXE]
- INF  NetworkPkg/SharedTlsDxe/TlsDxe.$(TARGET).inf # Shared_TLS instead of TlsDxe
+ INF  NetworkPkg/SharedNetworking/TlsDxe.$(TARGET).inf # Shared_TLS instead of TlsDxe
  ...
 ```
 
@@ -50,6 +52,7 @@ You need to remove the reference to TLSLib since we no longer need it (the only 
 
 This way is still under development, so it maybe subject to change.
 In your FDF, add these lines.
+
 ```
 [FV.FVDXE]
 
@@ -58,6 +61,7 @@ FILE FV_IMAGE = {GUID} {
   SECTION UI = "SharedNetworking"
 }
 ```
+
 With {GUID} being a guid you generated. We use E205F779-07E3-4B64-A2E2-EEDE717B0F59.
 {Arch of your platform} being the platform you're using. We currently support IA32, X64, and AARCH64. as supposered values
 You'll also need to remove the networking components that were already in your FDF.

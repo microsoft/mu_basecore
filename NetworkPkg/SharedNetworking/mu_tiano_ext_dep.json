@@ -1,9 +1,0 @@
-{
-  "scope": "sharednetworking_build",
-  "type": "git",
-  "name": "MU_TIANO",
-  "source": "https://dev.azure.com/projectmu/Mu_Security_Private_Release/_git/mu_tiano_plus",
-  "version": "4bdaaed29243f45370520b96551d8676f6a342bf",
-  "flags": [],
-  "url_creds_var": "GIT_CREDS"
-}

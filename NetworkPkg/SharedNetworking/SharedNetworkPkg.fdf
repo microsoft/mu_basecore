@@ -9,6 +9,7 @@ DEFINE FLASH_NUM_BLOCKS                                             = 0x000000A0
 
 DEFINE FLASH_REGION_FVDXE_OFFSET                                    = 0x00380000  # Flash addr (0xFF980000)
 DEFINE FLASH_REGION_FVDXE_SIZE                                      = 0x00280000  #
+DEFINE NETWORK_HTTP_BOOT_ENABLE = FALSE
 
 [FV.FVDXE]
   BlockSize     = $(FLASH_BLOCK_SIZE)
@@ -29,18 +30,7 @@ DEFINE FLASH_REGION_FVDXE_SIZE                                      = 0x00280000
   READ_LOCK_CAP      = TRUE
   READ_LOCK_STATUS   = TRUE
 
-  INF  NetworkPkg/DnsDxe/DnsDxe.inf
-  INF  NetworkPkg/HttpDxe/HttpDxe.inf
-  INF  NetworkPkg/HttpBootDxe/HttpBootDxe.inf
-  INF  NetworkPkg/HttpUtilitiesDxe/HttpUtilitiesDxe.inf
-  INF  NetworkPkg/Ip6Dxe/Ip6Dxe.inf
-  INF  NetworkPkg/TlsDxe/TlsDxe.inf
-  INF  NetworkPkg/Dhcp6Dxe/Dhcp6Dxe.inf
-  #INF  NetworkPkg/IpSecDxe/IpSecDxe.inf
-  INF  NetworkPkg/TcpDxe/TcpDxe.inf
-  INF  NetworkPkg/Udp6Dxe/Udp6Dxe.inf
-  INF  NetworkPkg/Mtftp6Dxe/Mtftp6Dxe.inf
-  #INF  NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf
+  !include NetworkPkg/Network.fdf.inc
 
 [Rule.Common.UEFI_DRIVER]
   FILE DRIVER = $(NAMED_GUID) {
