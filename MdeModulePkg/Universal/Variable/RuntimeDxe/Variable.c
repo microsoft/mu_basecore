@@ -2100,17 +2100,22 @@ UpdateVariable (
       IsCommonUserVariable = IsUserVariable (NextVariable);
     }
     if ((((Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) != 0)
-      && ((VarSize + mVariableModuleGlobal->HwErrVariableTotalSize) > PcdGet32 (PcdHwErrStorageSize)))
+      // MU_CHANGE Starts: HwError record should return out of resources if the entire storage is running out
+      && (((VarSize + mVariableModuleGlobal->HwErrVariableTotalSize) > PcdGet32 (PcdHwErrStorageSize))
+          ||((VarSize + mVariableModuleGlobal->HwErrVariableTotalSize + mVariableModuleGlobal->CommonVariableTotalSize) > (PcdGet32 (PcdHwErrStorageSize) + mVariableModuleGlobal->CommonVariableSpace))))
+      // MU_CHANGE Ends
       || (IsCommonVariable && ((VarSize + mVariableModuleGlobal->CommonVariableTotalSize) > mVariableModuleGlobal->CommonVariableSpace))
       || (IsCommonVariable && AtRuntime () && ((VarSize + mVariableModuleGlobal->CommonVariableTotalSize) > mVariableModuleGlobal->CommonRuntimeVariableSpace))
       || (IsCommonUserVariable && ((VarSize + mVariableModuleGlobal->CommonUserVariableTotalSize) > mVariableModuleGlobal->CommonMaxUserVariableSpace))) {
-      // MS_CHANGE Starts: HwError record quota state should not trigger variable store reclaim
+      // MU_CHANGE Starts: HwError record quota state should not trigger variable store reclaim
       if (((Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) != 0)
-        &&((VarSize + mVariableModuleGlobal->HwErrVariableTotalSize) > PcdGet32 (PcdHwErrStorageSize))) {
+        &&(((VarSize + mVariableModuleGlobal->HwErrVariableTotalSize) > PcdGet32 (PcdHwErrStorageSize))
+          ||((VarSize + mVariableModuleGlobal->HwErrVariableTotalSize + mVariableModuleGlobal->CommonVariableTotalSize) > (PcdGet32 (PcdHwErrStorageSize) + mVariableModuleGlobal->CommonVariableSpace)))) {
+        // Either the HwErrVariable quota runs out or the entire variable storage is full, out of resources error should be returned here.
         Status = EFI_OUT_OF_RESOURCES;
         goto Done;
       }
-      // MS_CHANGE Ends
+      // MU_CHANGE Ends
       if (AtRuntime ()) {
 // MS_CHANGE_279849
         //MSCHANGE -- Allow reclaim once at Runtime.
