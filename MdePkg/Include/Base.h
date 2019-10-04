@@ -648,11 +648,11 @@ typedef char *VA_LIST;
 
 #define _ADDRESSOF(v)  (&(v))
 
-  #if defined _M_ARM
+  #if defined (_M_ARM) || defined (_M_MS_ARM) // MS_CHANGE - BZ2029 due to BaseCryptLib changes
 #define _VA_ALIGN  4
 #define _SLOTSIZEOF(t)   ((sizeof(t) + _VA_ALIGN - 1) & ~(_VA_ALIGN - 1))
 #define _APALIGN(t, ap)  (((VA_LIST)0 - (ap)) & (__alignof(t) - 1))
-  #elif defined _M_ARM64
+  #elif defined (_M_ARM64) || defined (_M_MS_ARM64) // MS_CHANGE - BZ2029 due to BaseCryptLib changes
 #define _VA_ALIGN  8
 #define _SLOTSIZEOF(t)   ((sizeof(t) + _VA_ALIGN - 1) & ~(_VA_ALIGN - 1))
 #define _APALIGN(t, ap)  (((VA_LIST)0 - (ap)) & (__alignof(t) - 1))
@@ -669,13 +669,13 @@ typedef char *VA_LIST;
 #define VA_ARG(ap, t)    (*(t*)((ap += _INTSIZEOF(t)) - _INTSIZEOF(t)))
 #define VA_END(ap)       ((void)(ap = (VA_LIST)0))
 
-  #elif defined _M_ARM
+  #elif defined (_M_ARM) || defined (_M_MS_ARM) // MS_CHANGE - BZ2029 due to BaseCryptLib changes
 
 #define VA_START(ap, v)  ((void)(ap = (VA_LIST)_ADDRESSOF(v) + _SLOTSIZEOF(v)))
 #define VA_ARG(ap, t)    (*(t*)((ap += _SLOTSIZEOF(t) + _APALIGN(t,ap)) - _SLOTSIZEOF(t)))
 #define VA_END(ap)       ((void)(ap = (VA_LIST)0))
 
-  #elif defined _M_ARM64
+  #elif defined (_M_ARM64) || defined (_M_MS_ARM64) // MS_CHANGE - BZ2029 due to BaseCryptLib changes
 
 void __cdecl
 __va_start (
