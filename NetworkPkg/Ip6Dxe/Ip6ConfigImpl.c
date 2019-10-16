@@ -396,24 +396,9 @@ Ip6ConfigReadConfigData (
                     );
     if (EFI_ERROR (Status) || (UINT16) (~NetblockChecksum ((UINT8 *) Variable, (UINT32) VarSize)) != 0) {
       //
-      // GetVariable still error or the variable is corrupted.
-      // Fall back to the default value.
+      // GetVariable error or the variable is corrupted.
       //
-      FreePool (Variable);
-
-      //
-      // Remove the problematic variable and return EFI_NOT_FOUND, a new
-      // variable will be set again.
-      //
-      gRT->SetVariable (
-             VarName,
-             &gEfiIp6ConfigProtocolGuid,
-             IP6_CONFIG_VARIABLE_ATTRIBUTE,
-             0,
-             NULL
-             );
-
-      return EFI_NOT_FOUND;
+      goto Error;
     }
 
     //
@@ -438,7 +423,13 @@ Ip6ConfigReadConfigData (
       if (!DATA_ATTRIB_SET (DataItem->Attribute, DATA_ATTRIB_SIZE_FIXED)) {
         //
         // This data item has variable length data.
+        // Check that the length is contained within the variable before allocating.
         //
+        if (DataRecord.DataSize > VarSize - DataRecord.Offset)
+        {
+          goto Error;
+        }
+
         DataItem->Data.Ptr = AllocatePool (DataRecord.DataSize);
         if (DataItem->Data.Ptr == NULL) {
           //
@@ -460,6 +451,26 @@ Ip6ConfigReadConfigData (
   }
 
   return Status;
+
+Error:
+  //
+  // Fall back to the default value.
+  //
+  FreePool (Variable);
+
+  //
+  // Remove the problematic variable and return EFI_NOT_FOUND, a new
+  // variable will be set again.
+  //
+  gRT->SetVariable (
+         VarName,
+         &gEfiIp6ConfigProtocolGuid,
+         IP6_CONFIG_VARIABLE_ATTRIBUTE,
+         0,
+         NULL
+         );
+
+  return EFI_NOT_FOUND;
 }
 
 /**
