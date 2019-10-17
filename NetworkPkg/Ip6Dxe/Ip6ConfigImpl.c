@@ -389,10 +389,12 @@ Ip6ConfigReadConfigData (
                     Variable
                     );
     if (EFI_ERROR (Status) || (UINT16) (~NetblockChecksum ((UINT8 *) Variable, (UINT32) VarSize)) != 0) {
+      // MU_CHANGE [BEGIN] - Handle the error cleanup code in multiple cases
       //
       // GetVariable error or the variable is corrupted.
       //
       goto Error;
+      // MU_CHAGE [END]
     }
 
     //
@@ -415,6 +417,7 @@ Ip6ConfigReadConfigData (
       }
 
       if (!DATA_ATTRIB_SET (DataItem->Attribute, DATA_ATTRIB_SIZE_FIXED)) {
+        // MU_CHANGE [BEGIN] - Validate the variable data length before allocating and copying
         //
         // This data item has variable length data.
         // Check that the length is contained within the variable before allocating.
@@ -423,6 +426,7 @@ Ip6ConfigReadConfigData (
         {
           goto Error;
         }
+        // MU_CHANGE [END]
 
         DataItem->Data.Ptr = AllocatePool (DataRecord.DataSize);
         if (DataItem->Data.Ptr == NULL) {
@@ -446,6 +450,7 @@ Ip6ConfigReadConfigData (
 
   return Status;
 
+// MU_CHANGE [BEGIN] - Add common error exit cleanup code
 Error:
   //
   // Fall back to the default value.
@@ -465,6 +470,7 @@ Error:
          );
 
   return EFI_NOT_FOUND;
+// MU_CHANGE [END]
 }
 
 /**
