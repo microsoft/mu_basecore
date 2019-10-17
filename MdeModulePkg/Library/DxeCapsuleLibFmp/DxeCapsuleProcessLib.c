@@ -31,6 +31,7 @@
 #include <Library/CapsuleLib.h>
 #include <Library/DisplayUpdateProgressLib.h>
 #include <Library/ResetUtilityLib.h>            // MU_CHANGE - Use the enhanced reset subtype.
+#include <Library/CapsulePersistLib.h>          // MU_CHANGE - Enable Capsule Persist Lib.
 
 #include <IndustryStandard/WindowsUxCapsule.h>
 
@@ -130,6 +131,7 @@ VOID                        **mCapsulePtr;
 CHAR16                      **mCapsuleNamePtr;
 EFI_STATUS                  *mCapsuleStatusArray;
 UINT32                      mCapsuleTotalNumber;
+EFI_CAPSULE_HEADER          *mPersistedCapsules; //MU_CHANGE - Enable Capsule Persist Lib.
 
 /**
   The firmware implements to process the capsule image.
@@ -240,7 +242,7 @@ InitCapsulePtr (
   CapsuleNameTotalNumber        = 0;
   CapsuleNameCapsuleTotalNumber = 0;
   CapsuleNameCapsulePtr         = NULL;
-  
+
   // MU_CHANGE [BEGIN] - Enable Capsule Persist Lib.
   //
   // Find all persisted capsules
@@ -263,7 +265,7 @@ InitCapsulePtr (
     CurrentPersistedCapsule = mPersistedCapsules;
     while((UINT8 *)CurrentPersistedCapsule < ((UINT8 *)mPersistedCapsules + PersistedCapsuleBufferSize)) {
       if (CurrentPersistedCapsule->CapsuleImageSize == 0) {
-        //Avoid an infinite loop in the case where corrupted capsule has CapsuleImageSize = 0. 
+        //Avoid an infinite loop in the case where corrupted capsule has CapsuleImageSize = 0.
         break;
       }
       mCapsuleTotalNumber++;
@@ -345,13 +347,13 @@ InitCapsulePtr (
     }
     HobPointer.Raw = GET_NEXT_HOB (HobPointer);
   }
-  
+
   // MU_CHANGE [BEGIN] - Enable Capsule Persist Lib.
   if (!EFI_ERROR(PersistStatus) && mPersistedCapsules != NULL && PersistedCapsuleBufferSize > 0) {
     CurrentPersistedCapsule = mPersistedCapsules;
     while((UINT8 *)CurrentPersistedCapsule < ((UINT8 *)mPersistedCapsules + PersistedCapsuleBufferSize)) {
       if (CurrentPersistedCapsule->CapsuleImageSize == 0) {
-        //Avoid an infinite loop in the case where corrupted capsule has CapsuleImageSize = 0. 
+        //Avoid an infinite loop in the case where corrupted capsule has CapsuleImageSize = 0.
         break;
       }
       mCapsulePtr [Index++] = (VOID *) CurrentPersistedCapsule;
@@ -573,7 +575,7 @@ ProcessTheseCapsules (
     //
     // MU_CHANGE: switch from error to info below, adjust print string
     DEBUG ((DEBUG_INFO, "%a - Can not find capsule data\n", __FUNCTION__));
-    mNeedReset = TRUE;
+    // mNeedReset = TRUE; // MU_CHANGE - turn off needing the reset
     return EFI_SUCCESS;
   }
 
