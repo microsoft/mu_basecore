@@ -490,6 +490,8 @@
   MdeModulePkg/Library/FmpAuthenticationLibNull/FmpAuthenticationLibNull.inf
   # MU_CHANGE - Avoid build error MdeModulePkg/Library/DxeCapsuleLibFmp/DxeCapsuleLib.inf
   MdeModulePkg/Library/DxeCapsuleLibFmp/DxeRuntimeCapsuleLib.inf
+  # MU_CHANGE - Add DeviceStateLib to MdeModulePkg:
+  MdeModulePkg/Library/DeviceStateLib/DeviceStateLib.inf
 
 # MU_CHANGE START
 !if $(TOOLCHAIN) != VS2017 and $(TOOLCHAIN) != VS2019
