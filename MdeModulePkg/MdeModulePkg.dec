@@ -179,6 +179,11 @@
   ##                across a reboot.
   MemoryTypeInformationChangeLib|Include/Library/MemoryTypeInformationChangeLib.h
 
+  ## MU_CHANGE - Add DeviceStateLib to MdeModulePkg
+  ## @libraryclass Provides a way to store and update the current device state
+  #
+  DeviceStateLib|Include/Library/DeviceStateLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
@@ -2302,6 +2307,11 @@
   # @Prompt GHCB Pool Size
   gEfiMdeModulePkgTokenSpaceGuid.PcdGhcbSize|0|UINT64|0x00030008
 
+  ## MU_CHANGE - Add DeviceStateLib to MdeModulePkg
+  ## This dynamic PCD holds the device state bitmap as described in Include/Library/DeviceStateLib.h
+  # @Prompt Describes device state
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDeviceStateBitmask|0x00000000|UINT32|0x00030009
+  
 [PcdsDynamicEx]
   ## This dynamic PCD enables the default variable setting.
   #  Its value is the default store ID value. The default value is zero as Standard default.
