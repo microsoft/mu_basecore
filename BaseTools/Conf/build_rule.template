@@ -2,6 +2,7 @@
 #  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 #  Portions copyright (c) 2008 - 2010, Apple Inc. All rights reserved.<BR>
 #  Copyright (c) 2020, ARM Ltd. All rights reserved.<BR>
+#  Copyright (c) Microsoft Corporation
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
@@ -108,6 +109,13 @@
 ## Build Rule Version Number
 #  build_rule_version=0.1
 #
+#
+# 1.00 - Increase this version tag any time you want user to get warning about updating this file in the Conf dir.  By default it does not do update existing conf dirs.
+# 1.01 - Add MASM for Microsoft ARM assembly files. "MS-ARMx-Assembly-Code-File.COMMON.COMMON"
+# 2.00 - Add .slib and .efi support in the sources file
+# 2.01 - Add support for DEPS_FLAGS as well as
+
+#!VERSION=2.01
 
 [C-Code-File]
     <InputFile>
@@ -170,8 +178,9 @@
         # The C pre-processor is used to insert code snippets in assembly from preprocessor macros.  Unfortunately
         # the preprocessor doesn't also insert CR/LF and Microsoft's assembler expects each instruction to be on its own
         # line.  We search and replace a special string (__CR__) with CR.
-        type ${d_path}(+)${s_base}.i | python -c "import sys; print sys.stdin.read().replace('__CR__','\n')" > ${d_path}(+)${s_base}.ii
+        type ${d_path}(+)${s_base}.i | python -c "import sys; print (sys.stdin.read().replace('__CR__','\n'))" > ${d_path}(+)${s_base}.ii
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
+        # NOTE- need to review why the command is different.  Missing /Fo and /I options
         "$(ASM)" $(ASM_FLAGS) -o ${dst} $(INC) ${d_path}(+)${s_base}.iii
 
 [Assembly-Code-File.COMMON.COMMON]
@@ -316,10 +325,10 @@
         "$(DLINK)" -o ${dst} $(DLINK_FLAGS) -Wl,--start-group,@$(STATIC_LIBRARY_FILES_LIST),--end-group $(CC_FLAGS) $(DLINK2_FLAGS)
         "$(OBJCOPY)" $(OBJCOPY_FLAGS) ${dst}
 
+
     <Command.XCODE>
         "$(DLINK)" $(DLINK_FLAGS) -o ${dst} $(DLINK_SPATH) -filelist $(STATIC_LIBRARY_FILES_LIST)  $(DLINK2_FLAGS)
-    
-    
+
 [Static-Library-File.SEC.AARCH64, Static-Library-File.PEI_CORE.AARCH64, Static-Library-File.PEIM.AARCH64,Static-Library-File.SEC.ARM, Static-Library-File.PEI_CORE.ARM, Static-Library-File.PEIM.ARM]
     <InputFile>
         *.lib
@@ -351,10 +360,10 @@
     <Command.GCC>
         "$(DLINK)" $(DLINK_FLAGS) -Wl,--start-group,@$(STATIC_LIBRARY_FILES_LIST),--end-group $(DLINK2_FLAGS)
 
+
     <Command.XCODE>
         "$(DLINK)" -o ${dst} $(DLINK_FLAGS)  $(DLINK_SPATH) -filelist $(STATIC_LIBRARY_FILES_LIST)  $(DLINK2_FLAGS)
-      
-      
+
 [Dynamic-Library-File]
     <InputFile>
         ?.dll
@@ -368,7 +377,7 @@
         $(CP) ${dst} $(DEBUG_DIR)
         $(CP) ${dst} $(BIN_DIR)(+)$(MODULE_NAME_GUID).efi
         -$(CP) $(DEBUG_DIR)(+)*.map $(OUTPUT_DIR)
-        -$(CP) $(DEBUG_DIR)(+)*.pdb $(OUTPUT_DIR) 
+        -$(CP) $(DEBUG_DIR)(+)*.pdb $(OUTPUT_DIR)
     <Command.GCC>
         $(CP) ${src} $(DEBUG_DIR)(+)$(MODULE_NAME).debug
         "$(OBJCOPY)" $(OBJCOPY_STRIPFLAG) ${src}
@@ -423,14 +432,14 @@
     <Command.MSFT, Command.INTEL>
         Trim --asl-file --asl-deps -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.i -i $(INC_LIST) ${src}
         "$(ASLPP)" $(DEPS_FLAGS) $(ASLPP_FLAGS) $(INC) /I${s_path} $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.i > $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iii
-        Trim --source-code -l -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iiii $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iii 
+        Trim --source-code -l -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iiii $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iii
         "$(ASL)" $(ASL_FLAGS) $(ASL_OUTFLAGS)${dst} $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iiii
         $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.aml $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.amli
 
     <Command.GCC>
         Trim --asl-file --asl-deps -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.i -i $(INC_LIST) ${src}
         "$(ASLPP)" $(DEPS_FLAGS) $(ASLPP_FLAGS) $(INC) -I${s_path} $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.i > $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iii
-        Trim --source-code -l -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iiii $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iii 
+        Trim --source-code -l -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iiii $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iii
         "$(ASL)" $(ASL_FLAGS) $(ASL_OUTFLAGS)${dst} $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.iiii
         $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.aml $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.amli
 
@@ -489,13 +498,12 @@
         "$(ASLDLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(ASLDLINK_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
         "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
 
-    <Command.XCODE>        
+    <Command.XCODE>
         "$(ASLCC)" $(DEPS_FLAGS) -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj  $(ASLCC_FLAGS) $(DEPS_FLAGS) $(INC) ${src}
         "$(ASLDLINK)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(ASLDLINK_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
         "$(MTOC)" -subsystem $(MODULE_TYPE)  $(MTOC_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff
         "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff $(GENFW_FLAGS)
-      
-      
+
 [Masm16-Code-File]
     <InputFile>
         ?.asm16, ?.Asm16, ?.ASM16, ?.s16, ?.S16
@@ -520,7 +528,7 @@
       Trim --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
       "$(ASM)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(ASM_FLAGS) $(INC) ${d_path}(+)${s_base}.iii
       "$(DLINK)" -o ${dst} $(DLINK_FLAGS) --start-group $(DLINK_SPATH) $(LIBS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj --end-group
-     
+
     <Command.XCODE>
       Trim --asm-file -o ${d_path}(+)${s_base}.i -i $(INC_LIST) ${src}
       "$(PP)" $(DEPS_FLAGS) $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.ii
@@ -528,7 +536,40 @@
       "$(ASM)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(ASM_FLAGS) $(INC) ${d_path}(+)${s_base}.iii
       "$(SLINK)" $(SLINK_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.slib $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
       otool -t $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.slib | hex2bin.py ${dst}
-      
+
+#MSCHANGE
+# Build Rule to support using precompiled
+# LIB files.  Just copies the LIB from src to output
+# so the rest of the build system works.
+#
+[Precompiled-Lib-File]
+    <InputFile>
+        *.slib
+
+    <ExtraDependency>
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).lib
+
+    <Command>
+        -$(CP) ${src} ${dst}
+
+#MSCHANGE
+# Build Rule to support using precompiled
+# EFI files.  Just copies the EFI from src to output
+# so the rest of the build system works.
+#
+[Precompiled-Efi-File]
+    <InputFile>
+        ?.preefi
+
+    <ExtraDependency>
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_base}.efi
+
+    <Command>
+        -$(CP) ${src} ${dst}
 
 [Nasm-to-Binary-Code-File]
     <InputFile>

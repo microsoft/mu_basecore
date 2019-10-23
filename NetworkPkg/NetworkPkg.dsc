@@ -161,4 +161,3 @@
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
-  GCC:*_*_*_CC_FLAGS = -Wno-unused-function # MU_CHANGE to support null TLS
