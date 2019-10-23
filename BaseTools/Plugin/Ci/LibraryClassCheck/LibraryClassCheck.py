@@ -18,8 +18,8 @@ class LibraryClassCheck(ICiBuildPlugin):
 
     Configuration options:
     "LibraryClassCheck": {
-        IgnoreHeaderFile: [],
-        IgnoreLibraryClass: []
+        IgnoreHeaderFile: [],  # Ignore a file found on disk
+        IgnoreLibraryClass: [] # Ignore a declaration found in dec file
     }
     """
 

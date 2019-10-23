@@ -16,7 +16,7 @@ try:
             try:
                 from edk2toolext.environment import version_aggregator
             except ImportError:
-                logging.critical("Loading BuildToolsReportGenerator failed, please update mu_environment pip module")
+                logging.critical("Loading BuildToolsReportGenerator failed, please update your Edk2-PyTool-Extensions")
                 return 0
 
             OutputReport = os.path.join(thebuilder.env.GetValue("BUILD_OUTPUT_BASE"), "BUILD_TOOLS_REPORT")
@@ -41,7 +41,7 @@ except ImportError:
 
 class BuildToolsReport(object):
     MY_FOLDER = os.path.dirname(os.path.realpath(__file__))
-    VERSION = "1.0"
+    VERSION = "1.00"
 
     def __init__(self):
         pass
@@ -52,7 +52,8 @@ class BuildToolsReport(object):
         for key, value in BuildTools.items():
             versions_list.append(value)
         versions_list = sorted(versions_list, key=lambda k: k['type'])
-        json_dict = {"modules": versions_list}
+        json_dict = {"modules": versions_list, 
+                     "PluginVersion": BuildToolsReport.VERSION}
 
         htmlfile = open(OutputReport + ".html", "w")
         jsonfile = open(OutputReport + ".json", "w")

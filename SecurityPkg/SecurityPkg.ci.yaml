@@ -1,13 +1,12 @@
+##
+# CI configuration for SecurityPkg
+#
+# Copyright (c) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
 {
     "CompilerPlugin": {
         "DscPath": "SecurityPkg.dsc"
-    },
-    "HostUnitTestCompilerPlugin": {
-        # remove for now.  "DscPath": "SecurityPkgTest.dsc"
-    },
-    "HostUnitTestDscCompleteCheck": {
-        #"DscPath": "SecurityPkgTest.dsc",
-        "IgnoreInf": []  
     },
     "CharEncodingCheck": {
         "IgnoreFiles": []
@@ -17,16 +16,14 @@
             "MdePkg/MdePkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",
             "SecurityPkg/SecurityPkg.dec",
-            "CryptoPkg/CryptoPkg.dec", # I don't agree with this.
+            "CryptoPkg/CryptoPkg.dec",
             "FmpDevicePkg/FmpDevicePkg.dec", # I don't agree with this
-            "SourceLevelDebugPkg/SourceLevelDebugPkg.dec", # mu should fix this
-        ], 
-        "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
-            "MsUnitTestPkg/MsUnitTestPkg.dec",
-            "UefiHostTestPkg/UefiHostTestPkg.dec",
-            "UefiHostUnitTestPkg/UefiHostUnitTestPkg.dec",
-            "CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec"
+            "SourceLevelDebugPkg/SourceLevelDebugPkg.dec" # mu should fix this
         ],
+        # For host based unit tests
+        "AcceptableDependencies-HOST_APPLICATION":[],
+        # For UEFI shell based apps
+        "AcceptableDependencies-UEFI_APPLICATION":[],
         "IgnoreInf": []
     },
     "DscCompleteCheck": {
@@ -34,13 +31,49 @@
         "IgnoreInf": []
     },
     "GuidCheck": {
-        "IgnoreGuidName": [
-            "Tpm2InstanceLibDTpm" # matches gEfiTpmDeviceInstanceTpm20DtpmGuid  by design
-            ],
+        "IgnoreGuidName": [],
         "IgnoreGuidValue": ["00000000-0000-0000-0000-000000000000"],
-        "IgnoreFoldersAndFiles": []
+        "IgnoreFoldersAndFiles": [],
+        "IgnoreDuplicates": [
+            "Tpm2InstanceLibDTpm=gEfiTpmDeviceInstanceTpm20DtpmGuid", #  by design
+        ]
     },
     "LibraryClassCheck": {
         "IgnoreHeaderFile": []
+    },
+
+    ## options defined ci/Plugin/SpellCheck
+    "SpellCheck": {
+        "skip": True,
+        "IgnoreFiles": [],           # use gitignore syntax to ignore errors in matching files
+        "ExtendWords": [             # words to extend to the dictionary for this package
+            "shortformed", # tpm acpi
+            "autodetect",
+            "blocksid",
+            "comid",
+            "cpinsidpin", #OpalSScV2
+            "ecdsa", # TPM
+            "ecschnorr", # TPM
+            "eisaid", # ACPI
+            "harddisk",
+            "hashall",
+            "hashto",
+            "kek's",
+            "lfanew", # PE/COFF
+            "pcrindex",
+            "pkglength",
+            "ppuser",
+            "preos",
+            "stclear",
+            "toctou",
+            "tpm's",
+            "tpmcmdbuflength",
+            "tpmcommlib",
+            "tpmnvvaluelength",
+            "wrlocked",
+            "xored"
+        ],
+        "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
+        "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)
     }
 }

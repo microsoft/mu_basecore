@@ -1,5 +1,0 @@
-{
-  "scope": "corebuild",
-  "name": "Host Unit Test Compiler Plugin",
-  "module": "HostUnitTestCompilerPlugin"
-}

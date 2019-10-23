@@ -1,5 +1,0 @@
-{
-    "scope": "corebuild",
-    "name": "Char Encoding Check Test",
-    "module": "CharEncodingCheck"
-  }

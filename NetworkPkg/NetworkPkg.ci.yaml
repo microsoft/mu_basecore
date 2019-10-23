@@ -1,13 +1,12 @@
+##
+# CI configuration for NetworkPkg
+#
+# Copyright (c) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
 {
     "CompilerPlugin": {
         "DscPath": "NetworkPkg.dsc"
-    },
-    "HostUnitTestCompilerPlugin": {
-        "DscPath": ""
-    },
-    "HostUnitTestDscCompleteCheck": {
-        "DscPath": "",
-        "IgnoreInf": []  
     },
     "CharEncodingCheck": {
         "IgnoreFiles": []
@@ -17,17 +16,13 @@
             "MdePkg/MdePkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",
             "NetworkPkg/NetworkPkg.dec",
-            "SecurityPkg/SecurityPkg.dec",
             "CryptoPkg/CryptoPkg.dec"
         ], 
-        "AcceptableDependencies-UEFI_APPLICATION":[ # for shell based unit tests
+        # For host based unit tests
+        "AcceptableDependencies-HOST_APPLICATION":[],
+        # For UEFI shell based apps
+        "AcceptableDependencies-UEFI_APPLICATION":[
             "ShellPkg/ShellPkg.dec"
-        ],
-        "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
-            "MsUnitTestPkg/MsUnitTestPkg.dec",
-            "UefiHostTestPkg/UefiHostTestPkg.dec",
-            "UefiHostUnitTestPkg/UefiHostUnitTestPkg.dec",
-            "CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec"
         ],
         "IgnoreInf": []
     },
@@ -61,6 +56,16 @@
     "LibraryClassCheck": {
         "IgnoreHeaderFile": []
     },
+    
+    ## options defined ci/Plugin/SpellCheck
+    "SpellCheck": {
+        "skip": True,
+        "IgnoreFiles": [],           # use gitignore syntax to ignore errors in matching files
+        "ExtendWords": [],           # words to extend to the dictionary for this package
+        "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
+        "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)
+    },
+
     "Defines": {
         "BLD_*_NETWORK_ENABLE": "TRUE",
         "BLD_*_NETWORK_IP4_ENABLE": "TRUE",

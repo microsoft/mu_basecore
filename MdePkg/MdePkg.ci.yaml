@@ -1,39 +1,43 @@
+##
+# CI configuration for MdePkg
+#
+# Copyright (c) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
 {
+    ## options defined ci/Plugin/CompilerPlugin
     "CompilerPlugin": {
         "DscPath": "MdePkg.dsc"
     },
-    "HostUnitTestCompilerPlugin": {
-       # "DscPath": "MdePkgTest.dsc"
-    },
+
+    ## options defined ci/Plugin/CharEncodingCheck
     "CharEncodingCheck": {
         "IgnoreFiles": []
     },
+
+    ## options defined ci/Plugin/DependencyCheck
     "DependencyCheck": {
         "AcceptableDependencies": [
-            "MdePkg/MdePkg.dec",
+            "MdePkg/MdePkg.dec"
         ], 
-        "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
-            "MsUnitTestPkg/MsUnitTestPkg.dec",
-            "UefiHostTestPkg/UefiHostTestPkg.dec",
-            "UefiHostUnitTestPkg/UefiHostUnitTestPkg.dec",
-            "CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec",
-            "SecurityPkg/SecurityPkg.dec", # this should be discussed
-            "CryptoPkg/CryptoPkg.dec"
-        ],
+        # For host based unit tests
+        "AcceptableDependencies-HOST_APPLICATION":[],
+        # For UEFI shell based apps
+        "AcceptableDependencies-UEFI_APPLICATION":[],
         "IgnoreInf": []
     },
+
+    ## options defined ci/Plugin/DscCompleteCheck
     "DscCompleteCheck": {
         "IgnoreInf": [
             # Ignore StackCookie libs for toolchains that don't support it.
             "MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf",
-            "MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf"
+            "MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf",
         ],
-        "DscPath": "MdePkg.ci.dsc"   
+        "DscPath": "MdePkg.dsc"   
     },
-    "HostUnitTestDscCompleteCheck": {
-        #"DscPath": "MdePkgTest.dsc",
-        "IgnoreInf": []
-    },
+
+    ## options defined ci/Plugin/GuidCheck
     "GuidCheck": {
         "IgnoreGuidName": [
             "gEfiFirmwareVolumeTopFileGuid" # sec modules must be set to this guid
@@ -73,7 +77,18 @@
             "gPeiSmmControlPpiGuid=gEfiPeiMmControlPpiGuid"
             ]
     },
+
+    ## options defined ci/Plugin/LibraryClassCheck
     "LibraryClassCheck": {
         "IgnoreHeaderFile": []
+    },
+    
+    ## options defined ci/Plugin/SpellCheck
+    "SpellCheck": {
+        "skip": True,
+        "IgnoreFiles": [],           # use gitignore syntax to ignore errors in matching files
+        "ExtendWords": [],           # words to extend to the dictionary for this package
+        "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
+        "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)
     }
 }

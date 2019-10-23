@@ -1,2 +1,2 @@
 edk2-pytool-library==0.10.*
-edk2-pytool-extensions==0.10.*
+edk2-pytool-extensions==0.12.*

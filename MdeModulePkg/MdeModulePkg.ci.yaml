@@ -1,16 +1,21 @@
+##
+# CI configuration for MdeModulePkg
+#
+# Copyright (c) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
 {
+    ## options defined ci/Plugin/CompilerPlugin
     "CompilerPlugin": {
         "DscPath": "MdeModulePkg.dsc"
     },
-    "HostUnitTestCompilerPlugin": {
-        #"DscPath": 
-    },
-    "HostUnitTestDscCompleteCheck": {
-        "IgnoreInf": []  
-    },
+
+    ## options defined ci/Plugin/CharEncodingCheck
     "CharEncodingCheck": {
         "IgnoreFiles": []
     },
+
+    ## options defined ci/Plugin/DependencyCheck
     "DependencyCheck": {
         "AcceptableDependencies": [
             "MdePkg/MdePkg.dec",
@@ -18,23 +23,26 @@
             "StandaloneMmPkg/StandaloneMmPkg.dec",
             "ArmPkg/ArmPkg.dec"  # this should be fixed by promoting an abstraction
         ],
-        "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
-            "MsUnitTestPkg/MsUnitTestPkg.dec",
-            "UefiHostTestPkg/UefiHostTestPkg.dec",
-            "UefiHostUnitTestPkg/UefiHostUnitTestPkg.dec",
-            "CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec",
-            "UnitTestPkg/UnitTestPkg.dec"
+        # For host based unit tests
+        "AcceptableDependencies-HOST_APPLICATION":[
+            "UnitTestPkg/UnitTestPkg.dec",
+            "CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec"
         ],
+        # For UEFI shell based apps
+        "AcceptableDependencies-UEFI_APPLICATION":[],
         "IgnoreInf": []
     },
+
+    ## options defined ci/Plugin/DscCompleteCheck
     "DscCompleteCheck": {
         "IgnoreInf": [
-            # Not supported without StandaloneMmPkg.
-            "MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteStandaloneMm.inf",
-            "MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf"
-        ], 
-        "DscPath": "MdeModulePkg.ci.dsc"   
+            MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteStandaloneMm.inf,
+            MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf
+        ],
+        "DscPath": "MdeModulePkg.dsc"
     },
+
+    ## options defined ci/Plugin/GuidCheck
     "GuidCheck": {
         "IgnoreGuidName": [],
         "IgnoreGuidValue": ["00000000-0000-0000-0000-000000000000"],
@@ -46,8 +54,34 @@
             "gEdkiiSerialPortLibVendorGuid=SerialDxe"  # Is this a bug????
         ]
     },
+
+    ## options defined ci/Plugin/LibraryClassCheck
     "LibraryClassCheck": {
         "IgnoreLibraryClass": ["HwResetSystemLib"],
         "IgnoreHeaderFile": []
+    },
+
+    ## options defined ci/Plugin/SpellCheck
+    "SpellCheck": {
+        "IgnoreStandardPaths": [     # Standard Plugin defined paths that should be ignore
+            "*.c", "*.asm", "*.h", "*.nasm", "*.s", "*.asl", "*.inf"
+        ],
+        "IgnoreFiles": [             # use gitignore syntax to ignore errors in matching files
+            "Library/LzmaCustomDecompressLib/Sdk/DOC/*"
+        ],
+        "ExtendWords": [           # words to extend to the dictionary for this package
+            "LIGHTGRAY",
+            "DARKGRAY",
+            "LIGHTBLUE",
+            "LIGHTGREEN",
+            "LIGHTCYAN",
+            "LIGHTRED",
+            "LIGHTMAGENTA",
+            "FVMAIN",
+            "VARCHECKPCD",
+            "Getxx",
+            "lzturbo"
+        ],
+        "AdditionalIncludePaths": [] # Additional paths to spell check relative to package root (wildcards supported)
     }
 }

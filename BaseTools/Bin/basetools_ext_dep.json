@@ -1,9 +1,0 @@
-{
-  "scope": "global",
-  "type": "nuget",
-  "name": "Mu-Basetools",
-  "source": "https://api.nuget.org/v3/index.json",
-  "version": "2019.03.1",
-  "flags": ["set_shell_var", "set_path", "host_specific"],
-  "var_name": "EDK_TOOLS_PATH"
-}

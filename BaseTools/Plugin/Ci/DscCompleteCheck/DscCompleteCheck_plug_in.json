@@ -1,5 +1,0 @@
-{
-    "scope": "corebuild",
-    "name": "Dsc Complete Check Test",
-    "module": "DscCompleteCheck"
-  }

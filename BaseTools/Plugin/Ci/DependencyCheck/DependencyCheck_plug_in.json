@@ -1,5 +1,0 @@
-{
-    "scope": "corebuild",
-    "name": "Dependency Check Test",
-    "module": "DependencyCheck"
-  }

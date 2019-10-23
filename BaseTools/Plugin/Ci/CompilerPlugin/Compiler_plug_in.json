@@ -1,5 +1,0 @@
-{
-  "scope": "corebuild",
-  "name": "Compiler Plugin",
-  "module": "CompilerPlugin"
-}

@@ -1,9 +1,0 @@
-{
-  "scope": "global",
-  "type": "nuget",
-  "name": "mu_nasm",
-  "source": "https://api.nuget.org/v3/index.json",
-  "version": "2.14.02",
-  "flags": ["set_shell_var", "host_specific"],
-  "var_name": "NASM_PREFIX"
-}

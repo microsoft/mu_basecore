@@ -1,13 +1,12 @@
+##
+# CI configuration for UefiCpuPkg
+#
+# Copyright (c) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
 {
     "CompilerPlugin": {
         "DscPath": "UefiCpuPkg.dsc"
-    },
-    "HostUnitTestCompilerPlugin": {
-        #"DscPath": "UefiCpuPkgTest.dsc",
-    },
-    "HostUnitTestDscCompleteCheck": {
-        #"DscPath": "UefiCpuPkgTest.dsc",
-        "IgnoreInf": []  
     },
     "CharEncodingCheck": {
         "IgnoreFiles": []
@@ -18,16 +17,14 @@
             "MdeModulePkg/MdeModulePkg.dec",
             "UefiCpuPkg/UefiCpuPkg.dec"
         ], 
-        "AcceptableDependencies-HOST_APPLICATION":[ # for host based unit tests
-            "MsUnitTestPkg/MsUnitTestPkg.dec",
-            "UefiHostTestPkg/UefiHostTestPkg.dec",
-            "UefiHostUnitTestPkg/UefiHostUnitTestPkg.dec",
-            "CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec"
-        ],
+        # For host based unit tests
+        "AcceptableDependencies-HOST_APPLICATION":[],
+        # For UEFI shell based apps
+        "AcceptableDependencies-UEFI_APPLICATION":[],
         "IgnoreInf": []
     },
     "DscCompleteCheck": {
-        "DscPath": "UefiCpuPkg.ci.dsc",
+        "DscPath": "UefiCpuPkg.dsc",
         "IgnoreInf": [
             "UefiCpuPkg/ResetVector/FixupVtf/Vtf.inf",
             "UefiCpuPkg/ResetVector/Vtf0/Vtf0.inf"
@@ -36,9 +33,19 @@
     "GuidCheck": {
         "IgnoreGuidName": ["SecCore", "ResetVector"], # Expected duplication for gEfiFirmwareVolumeTopFileGuid
         "IgnoreGuidValue": [],
-        "IgnoreFoldersAndFiles": []
+        "IgnoreFoldersAndFiles": [],
+        "IgnoreDuplicates": []
     },
     "LibraryClassCheck": {
         "IgnoreHeaderFile": []
+    },
+
+    ## options defined ci/Plugin/SpellCheck
+    "SpellCheck": {
+        "skip": True,
+        "IgnoreFiles": [],           # use gitignore syntax to ignore errors in matching files
+        "ExtendWords": [],           # words to extend to the dictionary for this package
+        "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
+        "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)
     }
 }
