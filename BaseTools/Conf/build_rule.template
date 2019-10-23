@@ -2,6 +2,7 @@
 #  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 #  Portions copyright (c) 2008 - 2010, Apple Inc. All rights reserved.<BR>
 #  Copyright (c) 2020, ARM Ltd. All rights reserved.<BR>
+#  Copyright (c) Microsoft Corporation
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
@@ -108,6 +109,13 @@
 ## Build Rule Version Number
 #  build_rule_version=0.1
 #
+#
+# 1.00 - Increase this version tag any time you want user to get warning about updating this file in the Conf dir.  By default it does not do update existing conf dirs.
+# 1.01 - Add MASM for Microsoft ARM assembly files. "MS-ARMx-Assembly-Code-File.COMMON.COMMON"
+# 2.00 - Add .slib and .efi support in the sources file
+# 2.01 - Add support for DEPS_FLAGS as well as
+
+#!VERSION=2.01
 
 [C-Code-File]
     <InputFile>
@@ -170,8 +178,9 @@
         # The C pre-processor is used to insert code snippets in assembly from preprocessor macros.  Unfortunately
         # the preprocessor doesn't also insert CR/LF and Microsoft's assembler expects each instruction to be on its own
         # line.  We search and replace a special string (__CR__) with CR.
-        type ${d_path}(+)${s_base}.i | python -c "import sys; print sys.stdin.read().replace('__CR__','\n')" > ${d_path}(+)${s_base}.ii
+        type ${d_path}(+)${s_base}.i | python -c "import sys; print (sys.stdin.read().replace('__CR__','\n'))" > ${d_path}(+)${s_base}.ii
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
+        # NOTE- need to review why the command is different.  Missing /Fo and /I options
         "$(ASM)" $(ASM_FLAGS) -o ${dst} $(INC) ${d_path}(+)${s_base}.iii
 
 [Assembly-Code-File.COMMON.COMMON]
@@ -363,7 +372,7 @@
     <Command.XCODE>
         "$(DLINK)" $(DLINK_FLAGS) -o ${dst} $(DLINK_SPATH) -filelist $(STATIC_LIBRARY_FILES_LIST)  $(DLINK2_FLAGS)
 
-
+    
 [Static-Library-File.SEC.AARCH64, Static-Library-File.PEI_CORE.AARCH64, Static-Library-File.PEIM.AARCH64,Static-Library-File.SEC.ARM, Static-Library-File.PEI_CORE.ARM, Static-Library-File.PEIM.ARM]
     <InputFile>
         *.lib
@@ -398,7 +407,7 @@
     <Command.XCODE>
         "$(DLINK)" -o ${dst} $(DLINK_FLAGS)  $(DLINK_SPATH) -filelist $(STATIC_LIBRARY_FILES_LIST)  $(DLINK2_FLAGS)
 
-
+      
 [Dynamic-Library-File]
     <InputFile>
         ?.dll
@@ -539,7 +548,7 @@
         "$(MTOC)" -subsystem $(MODULE_TYPE)  $(MTOC_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff
         "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff $(GENFW_FLAGS)
 
-
+      
 [Masm16-Code-File]
     <InputFile>
         ?.asm16, ?.Asm16, ?.ASM16, ?.s16, ?.S16
@@ -573,6 +582,39 @@
       "$(SLINK)" $(SLINK_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.slib $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
       otool -t $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.slib | hex2bin.py ${dst}
 
+#MU_CHANGE
+# Build Rule to support using precompiled
+# LIB files.  Just copies the LIB from src to output
+# so the rest of the build system works.
+#
+[Precompiled-Lib-File]
+    <InputFile>
+        *.slib
+
+    <ExtraDependency>
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).lib
+
+    <Command>
+        -$(CP) ${src} ${dst}
+
+#MU_CHANGE
+# Build Rule to support using precompiled
+# EFI files.  Just copies the EFI from src to output
+# so the rest of the build system works.
+#
+[Precompiled-Efi-File]
+    <InputFile>
+        ?.preefi
+
+    <ExtraDependency>
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_base}.efi
+
+    <Command>
+        -$(CP) ${src} ${dst}
 
 [Nasm-to-Binary-Code-File]
     <InputFile>
