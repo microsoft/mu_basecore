@@ -15,8 +15,9 @@
 #
 # 2.00 - Initial version with changes for CI
 #      - Change RC path to use plugin
+# 2.10 - Remove WHOLEARCHIVE as this breaks the build for VS2017/VS2019
 #
-#!VERSION=2.00
+#!VERSION=2.10
 
 IDENTIFIER = Default TOOL_CHAIN_CONF
 
@@ -1533,7 +1534,7 @@ NOOPT_VS2015x86_X64_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF
 *_VS2017_*_APP_FLAGS       = /nologo /E /TC
 *_VS2017_*_PP_FLAGS        = /nologo /E /TC /FIAutoGen.h
 *_VS2017_*_VFRPP_FLAGS     = /nologo /E /TC /DVFRCOMPILE /FI$(MODULE_NAME)StrDefs.h
-*_VS2017_*_DLINK2_FLAGS    = /WHOLEARCHIVE
+# *_VS2017_*_DLINK2_FLAGS    = /WHOLEARCHIVE # MU_CHANGE
 *_VS2017_*_ASM16_PATH      = DEF(VS2017_BIN_IA32)\ml.exe
 *_VS2017_*_DEPS_FLAGS      = DEF(MSFT_DEPS_FLAGS)
 ##################
@@ -1691,7 +1692,7 @@ NOOPT_VS2017_AARCH64_DLINK_FLAGS   = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF
 *_VS2019_*_APP_FLAGS       = /nologo /E /TC
 *_VS2019_*_PP_FLAGS        = /nologo /E /TC /FIAutoGen.h
 *_VS2019_*_VFRPP_FLAGS     = /nologo /E /TC /DVFRCOMPILE /FI$(MODULE_NAME)StrDefs.h
-*_VS2019_*_DLINK2_FLAGS    = /WHOLEARCHIVE
+# *_VS2019_*_DLINK2_FLAGS    = /WHOLEARCHIVE # MU_CHANGE
 *_VS2019_*_ASM16_PATH      = DEF(VS2019_BIN_IA32)\ml.exe
 *_VS2019_*_DEPS_FLAGS      = DEF(MSFT_DEPS_FLAGS)
 ##################
@@ -3028,7 +3029,7 @@ RELEASE_XCODE5_X64_CC_FLAGS   = -target x86_64-pc-win32-macho -c    -Os       -W
 #################
 # ASM 16 linker definitions
 #################
-*_*_*_ASMLINK_PATH                 = DEF(WINDDK_BIN16)\link16.exe
+*_*_*_ASMLINK_PATH                 = ENV(LINK_16_PREFIX)link16.exe # MU_CHANGE - change to prefix
 *_*_*_ASMLINK_FLAGS                = /nologo /tiny
 
 ##################
