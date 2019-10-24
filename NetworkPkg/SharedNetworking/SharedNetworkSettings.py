@@ -282,7 +282,9 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
     def _GetNextVersion(self, force_version=None):
         # first get the last version
         # TODO: get the source from the JSON file that configures this
-        old_version = _GetLatestNugetVersion(self.nuget_package_name)
+        old_version_raw = _GetLatestNugetVersion(self.nuget_package_name)
+        old_version = NugetDependency.normalize_version(old_version_raw)
+        logging.info(f"Found old version {old_version}")
         # Get a temporary folder to download the nuget package into
         temp_nuget_path = tempfile.mkdtemp()
         # Download the Nuget Package
@@ -294,7 +296,9 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
         # Get the current hashes of open ssl and ourself
         curr_hashes = _GetCommitHashes(self.ws)
         # Figure out what release branch we are in
-        print(curr_hashes)
+        logging.info(curr_hashes)
+        logging.info("OLD")
+        logging.info(old_hashes)
         current_release = self._GetReleaseForCommit(curr_hashes["MU_BASECORE"])
         # Put that as the first two pieces of our version
         if force_version is not None:
@@ -305,6 +309,8 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
             # Calculate the newest version
             new_version += _GetSubVersions(old_version,
                                            current_release, curr_hashes, old_hashes)
+        # make sure to normalize the version
+        new_version = NugetDependency.normalize_version(new_version)
         if new_version == old_version:
             raise RuntimeError(
                 "We are unable to republish the same version that was published last")

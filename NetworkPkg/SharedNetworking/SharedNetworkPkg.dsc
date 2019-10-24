@@ -25,7 +25,7 @@
   SKUID_IDENTIFIER               = DEFAULT
   FLASH_DEFINITION               = NetworkPkg/SharedNetworking/SharedNetworkPkg.fdf
   !include NetworkPkg/NetworkDefines.dsc.inc
-  NETWORK_TLS_ENABLE = FALSE
+  NETWORK_TLS_ENABLE = TRUE
 
 ## MU_CHANGE Begin
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
@@ -51,7 +51,6 @@
   UefiHiiServicesLib|MdeModulePkg/Library/UefiHiiServicesLib/UefiHiiServicesLib.inf
   UefiBootManagerLib|MdeModulePkg/Library/UefiBootManagerLib/UefiBootManagerLib.inf
   MemoryTypeInformationChangeLib|MdeModulePkg/Library/MemoryTypeInformationChangeLibNull/MemoryTypeInformationChangeLibNull.inf  # MU_CHANGE
-  TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
   PerformanceLib|MdePkg/Library/BasePerformanceLibNull/BasePerformanceLibNull.inf
   PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
   DxeServicesLib|MdePkg/Library/DxeServicesLib/DxeServicesLib.inf
