@@ -1,6 +1,6 @@
 # File templates/pr-gate-build-job.yml
 #
-# template file used to build supported packages.  
+# template file used to build supported packages.
 #
 # Copyright (c) 2019, Microsoft Corporation
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -12,7 +12,7 @@ parameters:
   arch_list: ''
 
 # Build step
-jobs: 
+jobs:
 
 - job: Build_${{ parameters.tool_chain_tag }}
 

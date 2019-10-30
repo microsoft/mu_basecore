@@ -14,8 +14,8 @@ steps:
   inputs:
     versionSpec: '10.x'
     #checkLatest: false # Optional
-  condition: gt(variables.pkg_count, 0)
+  condition: and(gt(variables.pkg_count, 0), succeeded())
 
 - script: npm install -g cspell
   displayName: 'Install cspell npm'
-  condition: gt(variables.pkg_count, 0)
+  condition: and(gt(variables.pkg_count, 0), succeeded())

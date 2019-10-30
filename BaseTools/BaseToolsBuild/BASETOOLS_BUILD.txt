@@ -1,0 +1,198 @@
+INFO - Log Started: Wednesday, October 30, 2019 01:27PM
+SECTION - Init SDE
+DEBUG - --- self_describing_environment.load_workspace()
+DEBUG - Loading workspace: C:\_uefi\mu_ci\mu_basecore\BaseTools
+DEBUG -   Including scopes: global
+DEBUG - Adding descriptor 'C:\_uefi\mu_ci\mu_basecore\BaseTools\basetools_calling_path_env.yaml' to the environment with scope 'global'.
+DEBUG - Adding descriptor 'C:\_uefi\mu_ci\mu_basecore\BaseTools\basetools_path_env.yaml' to the environment with scope 'global'.
+DEBUG - Adding descriptor 'C:\_uefi\mu_ci\mu_basecore\BaseTools\Scripts\basetools_scripts_bin_path_env.json' to the environment with scope 'global'.
+DEBUG - Adding descriptor 'C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\Python\basetool_tiano_python_path_env.yaml' to the environment with scope 'global'.
+DEBUG - Adding descriptor 'C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\nasm_ext_dep.yaml' to the environment with scope 'global'.
+DEBUG - Adding descriptor 'C:\_uefi\mu_ci\mu_basecore\BaseTools\Plugin\BuildToolsReport\BuildToolsReportGenerator_plug_in.yaml' to the environment with scope 'global'.
+DEBUG - Adding descriptor 'C:\_uefi\mu_ci\mu_basecore\BaseTools\Plugin\Edk2ToolHelper\Edk2ToolHelper_plug_in.json' to the environment with scope 'global'.
+DEBUG - Adding descriptor 'C:\_uefi\mu_ci\mu_basecore\BaseTools\Plugin\FdSizeReport\FdSizeReportGenerator_plug_in.json' to the environment with scope 'global'.
+DEBUG - Adding descriptor 'C:\_uefi\mu_ci\mu_basecore\BaseTools\Plugin\FlattenPdbs\FlattenPdbs_plug_in.json' to the environment with scope 'global'.
+DEBUG - Adding descriptor 'C:\_uefi\mu_ci\mu_basecore\BaseTools\Plugin\OverrideValidation\OverrideValidation_plug_in.json' to the environment with scope 'global'.
+DEBUG - Adding descriptor 'C:\_uefi\mu_ci\mu_basecore\BaseTools\Plugin\WindowsCapsuleSupportHelper\WindowsCapsuleSupportHelper_plug_in.json' to the environment with scope 'global'.
+DEBUG - --- self_describing_environment.update_simple_paths()
+DEBUG - --- self_describing_environment.update_extdep_paths()
+DEBUG - Verify 'mu_nasm' returning 'True'.
+DEBUG - Setting up version aggregator
+DEBUG - Getting host info for host: uname_result(system='Windows', node='BRBARKEL-SHSS2W', release='10', version='10.0.19014', machine='AMD64', processor='Intel64 Family 6 Model 158 Stepping 9, GenuineIntel')
+INFO - Computing path for mu_nasm located at C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\mu_nasm_extdep on Host(os='Windows', arch='x86', bit='64')
+INFO - C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\mu_nasm_extdep\Windows-x86-64 was found!
+DEBUG - Verify 'mu_nasm' returning 'True'.
+WARNING - version_aggregator: This mu_nasm:2.14.02 key/value pair was already registered
+DEBUG - Getting host info for host: uname_result(system='Windows', node='BRBARKEL-SHSS2W', release='10', version='10.0.19014', machine='AMD64', processor='Intel64 Family 6 Model 158 Stepping 9, GenuineIntel')
+INFO - Computing path for mu_nasm located at C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\mu_nasm_extdep on Host(os='Windows', arch='x86', bit='64')
+INFO - C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\mu_nasm_extdep\Windows-x86-64 was found!
+DEBUG - Verify 'mu_nasm' returning 'True'.
+WARNING - version_aggregator: This mu_nasm:2.14.02 key/value pair was already registered
+SECTION - Loading Plugins
+DEBUG - Loading Plugin from C:\_uefi\mu_ci\mu_basecore\BaseTools\Plugin\BuildToolsReport\BuildToolsReportGenerator.py
+DEBUG - Loading Plugin from C:\_uefi\mu_ci\mu_basecore\BaseTools\Plugin\Edk2ToolHelper\Edk2ToolHelper.py
+DEBUG - Loading Plugin from C:\_uefi\mu_ci\mu_basecore\BaseTools\Plugin\FdSizeReport\FdSizeReportGenerator.py
+DEBUG - Loading Plugin from C:\_uefi\mu_ci\mu_basecore\BaseTools\Plugin\FlattenPdbs\FlattenPdbs.py
+DEBUG - Loading Plugin from C:\_uefi\mu_ci\mu_basecore\BaseTools\Plugin\OverrideValidation\OverrideValidation.py
+DEBUG - Loading Plugin from C:\_uefi\mu_ci\mu_basecore\BaseTools\Plugin\WindowsCapsuleSupportHelper\WindowsCapsuleSupportHelper.py
+INFO - PLUGIN DESCRIPTOR:Edk2Tool Helper Functions
+DEBUG - Helper Plugin Register: Edk2Tool Helper Functions
+INFO - PLUGIN DESCRIPTOR:Windows Capsule Support Helper Functions
+DEBUG - Helper Plugin Register: Windows Capsule Support Helper Functions
+SECTION - Start Invocable Tool
+INFO - Running Python version: sys.version_info(major=3, minor=7, micro=4, releaselevel='final', serial=0)
+INFO - Cmd to run is: c:\_uefi\mu_ci\ci_env\lib\site-packages\edk2toollib\bin\vswhere.exe -latest -nologo -all -property installationPath -products * -version 15.0,16.0
+INFO - ------------------------------------------------
+INFO - --------------Cmd Output Starting---------------
+INFO - ------------------------------------------------
+INFO - C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise
+INFO - ------------------------------------------------
+INFO - --------------Cmd Output Finished---------------
+INFO - --------- Running Time (mm:ss): 00:00 ----------
+INFO - ------------------------------------------------
+DEBUG - Calling 'C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat x86'
+DEBUG - Var - ExtensionSdkDir = C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs
+DEBUG - Var - INCLUDE = C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\ATLMFC\include;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\ucrt;C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\shared;C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\um;C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\winrt;C:\Program Files (x86)\Windows Kits\10\include\10.0.17763.0\cppwinrt
+DEBUG - Var - LIB = C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\ATLMFC\lib\x86;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\lib\x86;C:\Program Files (x86)\Windows Kits\10\lib\10.0.17763.0\ucrt\x86;C:\Program Files (x86)\Windows Kits\10\lib\10.0.17763.0\um\x86
+DEBUG - Var - LIBPATH = C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\ATLMFC\lib\x86;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\lib\x86;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\lib\x86\store\references;C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.17763.0;C:\Program Files (x86)\Windows Kits\10\References\10.0.17763.0;C:\Windows\Microsoft.NET\Framework\v4.0.30319
+DEBUG - Var - Path = C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\bin\HostX86\x86;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\VC\VCPackages;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\CommonExtensions\Microsoft\TestWindow;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\bin\Roslyn;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Team Tools\Performance Tools;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Common\VSPerfCollectionTools\;C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x86;C:\Program Files (x86)\Windows Kits\10\bin\x86;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\\MSBuild\15.0\bin;C:\Windows\Microsoft.NET\Framework\v4.0.30319;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\;C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\mu_nasm_extdep\Windows-x86-64;C:\_uefi\mu_ci\mu_basecore\BaseTools\Scripts;C:\_uefi\mu_ci\ci_env\Scripts;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Users\brbarkel\AppData\Local\Programs\Python\Python37-32\Scripts\;C:\Users\brbarkel\AppData\Local\Programs\Python\Python37-32\;C:\Users\brbarkel\AppData\Local\Programs\Python\Launcher\;C:\Users\brbarkel\.cargo\bin;C:\Users\brbarkel\AppData\Local\Programs\Python\;C:\Users\brbarkel\AppData\Local\Programs\Python\Python37-32;C:\Users\brbarkel\AppData\Local\Programs\Python\Python37-32\Scripts;C:\Users\brbarkel\AppData\Local\Microsoft\WindowsApps;C:\Users\brbarkel\AppData\Local\Programs\Microsoft VS Code\bin;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja
+DEBUG - Var - UCRTVersion = 10.0.17763.0
+DEBUG - Var - UniversalCRTSdkDir = C:\Program Files (x86)\Windows Kits\10\
+DEBUG - Var - VCToolsInstallDir = C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.16.27023\
+DEBUG - Var - WindowsLibPath = C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.17763.0;C:\Program Files (x86)\Windows Kits\10\References\10.0.17763.0
+DEBUG - Var - WindowsSdkBinPath = C:\Program Files (x86)\Windows Kits\10\bin\
+DEBUG - Var - WindowsSdkDir = C:\Program Files (x86)\Windows Kits\10\
+DEBUG - Var - WindowsSdkVerBinPath = C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\
+DEBUG - Var - WindowsSDKVersion = 10.0.17763.0\
+INFO - Cmd to run is: nmake.exe
+INFO - ------------------------------------------------
+INFO - --------------Cmd Output Starting---------------
+INFO - ------------------------------------------------
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 
+INFO - ######################
+INFO - # Build libraries
+INFO - ######################
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\Common
+INFO - 
+INFO - 
+INFO - ######################
+INFO - # Build executables
+INFO - ######################
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\GenCrc32
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\GenCrc32.exe C:\_uefi\mu_ci\mu_basecore\BaseTools\Lib\Win32\Common.lib GenCrc32.obj
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\GenFv
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\GenFv.exe C:\_uefi\mu_ci\mu_basecore\BaseTools\Lib\Win32\Common.lib RpcRT4.lib GenFv.obj GenFvInternalLib.obj
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\GenFfs
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\GenFfs.exe C:\_uefi\mu_ci\mu_basecore\BaseTools\Lib\Win32\Common.lib GenFfs.obj
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\GenSec
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\GenSec.exe C:\_uefi\mu_ci\mu_basecore\BaseTools\Lib\Win32\Common.lib GenSec.obj
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\BrotliCompress
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\Brotli.exe  tools\brotli.obj common\dictionary.obj common\transform.obj dec\bit_reader.obj dec\decode.obj dec\huffman.obj dec\state.obj enc\backward_references.obj enc\backward_references_hq.obj enc\bit_cost.obj enc\block_splitter.obj enc\brotli_bit_stream.obj enc\cluster.obj enc\compress_fragment.obj enc\compress_fragment_two_pass.obj enc\dictionary_hash.obj enc\encode.obj enc\encoder_dict.obj enc\entropy_encode.obj enc\histogram.obj enc\literal_cost.obj enc\memory.obj enc\metablock.obj enc\static_dict.obj enc\utf8_util.obj
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\GenFw
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\GenFw.exe C:\_uefi\mu_ci\mu_basecore\BaseTools\Lib\Win32\Common.lib GenFw.obj ElfConvert.obj Elf32Convert.obj Elf64Convert.obj
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\EfiRom
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\EfiRom.exe C:\_uefi\mu_ci\mu_basecore\BaseTools\Lib\Win32\Common.lib EfiRom.obj
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\VfrCompile
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\VfrCompile.exe C:\_uefi\mu_ci\mu_basecore\BaseTools\Lib\Win32\Common.lib AParser.obj DLexerBase.obj ATokenBuffer.obj EfiVfrParser.obj VfrLexer.obj VfrSyntax.obj VfrFormPkg.obj VfrError.obj VfrUtilityLib.obj VfrCompiler.obj
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\LzmaCompress
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\LzmaCompress.exe  LzmaCompress.obj Sdk\C\Alloc.obj Sdk\C\LzFind.obj Sdk\C\LzmaDec.obj Sdk\C\LzmaEnc.obj Sdk\C\7zFile.obj Sdk\C\7zStream.obj Sdk\C\Bra86.obj Sdk\C\LzFindMt.obj Sdk\C\Threads.obj
+INFO - 	copy LzmaF86Compress.bat C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\LzmaF86Compress.bat /Y
+INFO -         1 file(s) copied.
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\Split
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\Split.exe C:\_uefi\mu_ci\mu_basecore\BaseTools\Lib\Win32\Common.lib Split.obj
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\DevicePath
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\DevicePath.exe C:\_uefi\mu_ci\mu_basecore\BaseTools\Lib\Win32\Common.lib DevicePath.obj UefiDevicePathLib.obj DevicePathFromText.obj DevicePathUtilities.obj
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\TianoCompress
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\TianoCompress.exe C:\_uefi\mu_ci\mu_basecore\BaseTools\Lib\Win32\Common.lib TianoCompress.obj
+INFO - 
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C\VolInfo
+INFO - 
+INFO - Microsoft (R) Program Maintenance Utility Version 14.16.27027.1
+INFO - Copyright (C) Microsoft Corporation.  All rights reserved.
+INFO - 
+INFO - 	link.exe /nologo /debug /OPT:REF /OPT:ICF=10 /incremental:no /nodefaultlib:libc.lib /out:C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32\VolInfo.exe C:\_uefi\mu_ci\mu_basecore\BaseTools\Lib\Win32\Common.lib VolInfo.obj
+INFO - 
+INFO - 
+INFO - ######################
+INFO - # Install to C:\_uefi\mu_ci\mu_basecore\BaseTools\Lib\Win32
+INFO - # Install to C:\_uefi\mu_ci\mu_basecore\BaseTools\Bin\Win32
+INFO - ######################
+INFO - execute command "nmake all" in directory C:\_uefi\mu_ci\mu_basecore\BaseTools\Source\C
+INFO - 
+INFO - ------------------------------------------------
+INFO - --------------Cmd Output Finished---------------
+INFO - --------- Running Time (mm:ss): 00:05 ----------
+INFO - ------------------------------------------------
+SECTION - Summary
+PROGRESS - Success

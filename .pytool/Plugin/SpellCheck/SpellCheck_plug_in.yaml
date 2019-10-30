@@ -1,0 +1,11 @@
+##
+# CiBuildPlugin used to check spelling
+#
+# Copyright (c) 2019, Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+{
+  "scope": "cibuild",
+  "name": "Spell Check Test",
+  "module": "SpellCheck"
+}
