@@ -48,52 +48,54 @@ jobs:
       artifact: $(linux_artifact_name)
       displayName: Publish To Pipeline
 
-  # - job: windows_build
-  #   displayName: Windows Build
-  #   pool:
-  #     vmImage: windows-latest
+  - job: windows_build
+    displayName: Windows Build
+    pool:
+      vmImage: windows-latest
 
-  #   workspace:
-  #     clean: all
+    workspace:
+      clean: all
 
-  #   steps:
-  #   - checkout: self
-  #     clean: true
+    steps:
+    - checkout: self
+      clean: true
   
-  #   - task: UsePythonVersion@0
-  #     inputs:
-  #       versionSpec: '3.7.x'
-  #       addToPath: true
-  #       architecture: 'x64'
-  #     displayName: Install correct Python
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.7.x'
+        addToPath: true
+        architecture: 'x64'
+      displayName: Install correct Python
 
-  #   - script: pip install -r requirements.txt --upgrade
-  #     displayName: 'Install/Upgrade pip modules'
+    - script: pip install -r requirements.txt --upgrade
+      displayName: 'Install/Upgrade pip modules'
 
-  #   # Set default
-  #   - bash: |
-  #       echo "##vso[task.setvariable variable=pkg_count]${{ 1 }}"
+    # Set default
+    - bash: |
+        echo "##vso[task.setvariable variable=pkg_count]${{ 1 }}"
 
-  #   - task: CmdLine@1
-  #     displayName: Update Environment
-  #     inputs:
-  #       filename: stuart_update
-  #       arguments: -c .pytool/CISettings.py
+    - task: CmdLine@1
+      displayName: Update Environment
+      inputs:
+        filename: stuart_update
+        arguments: -c .pytool/CISettings.py
 
-  #   - template: templates/basetools-build-steps.yml
-  #     parameters:
-  #       tool_chain_tag: 'VS2019'
+    - template: templates/basetools-build-steps.yml
+      parameters:
+        tool_chain_tag: 'VS2019'
 
-  #   - task: PublishBuildArtifacts@1
-  #     inputs:
-  #       pathtoPublish: $(windows_build_output_path)
-  #       artifactName: $(windows_artifact_name)
+    - powershell: Get-ChildItem -Recurse -Include "*_path_env.yaml", "*_path_env.yml" -Path $(windows_build_output_path) | Remove-Item
+      displayName: Remove Unnecessary Files
+
+    - publish: $(windows_build_output_path)
+      artifact: $(windows_artifact_name)
+      displayName: Publish To Pipeline
 
   - job: assemble_package
     displayName: Assemble Release Package
     dependsOn:
     - linux_build
-    # - windows_build
+    - windows_build
     pool:
       vmImage: windows-latest
 
@@ -110,6 +112,14 @@ jobs:
         architecture: 'x64'
       displayName: Install correct Python
 
+    - powershell:
+        $config_source = 'https://raw.githubusercontent.com/microsoft/mu_basecore/$(Build.SourceBranchName)/BaseTools/NugetPublishing/Mu-Basetools.config.json';
+        Write-Host $config_source;
+        $config_dest = $(Build.StagingDirectory)/NugetPackageConfig.json;
+        Write-Host $config_dest;
+        (New-Object System.Net.WebClient).DownloadFile($config_source, $config_dest);
+      displayName: Grab Nuget Config File
+
     - script: pip install edk2-pytool-library==0.10.* edk2-pytool-extensions==0.12.*
       displayName: 'Install/Upgrade pip modules'
 
@@ -118,7 +128,14 @@ jobs:
 
     - powershell:
         mkdir $(Build.StagingDirectory)/$(temp_publication_directory);
-        ls -Recurse $(Pipeline.Workspace);
         mv $(Pipeline.Workspace)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
-        ls -Recurse $(Build.StagingDirectory);
-      displayName: 'Info about stuff'
+        mv $(Pipeline.Workspace)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
+      displayName: Stage Package Files
+
+    - powershell: nuget-publish --Operation Pack --OutputLog $(Build.StagingDirectory)/NugetPackagingLog.txt --ConfigFilePath $(Build.StagingDirectory)/NugetPackageConfig.json --InputFolderPath $(Build.StagingDirectory)/$(temp_publication_directory) --Version $(release_version) --OutputFolderPath $(Build.StagingDirectory)
+
+    - publish: $(Build.StagingDirectory)/NugetPackagingLog.txt 
+      displayName: Save the Package Log
+
+    - publish: $(Build.StagingDirectory)/*.nupkg
+      displayName: Publish the Package
