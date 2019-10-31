@@ -118,6 +118,7 @@ jobs:
 
     - powershell:
         mkdir $(Build.StagingDirectory)/$(temp_publication_directory);
+        ls -Recurse $(Pipeline.Workspace);
         mv $(Pipeline.Workspace)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
         mv $(Pipeline.Workspace)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
       displayName: 'Info about stuff'
