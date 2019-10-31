@@ -110,11 +110,11 @@ jobs:
         architecture: 'x64'
       displayName: Install correct Python
 
-    - script: pip install -r requirements.txt --upgrade
+    - script: pip install edk2-pytool-library==0.10.* edk2-pytool-extensions==0.12.*
       displayName: 'Install/Upgrade pip modules'
 
     - powershell:
-        mkdir $(Build.StagingDirectory)/$(temp_publication_directory)
-        mv $(Build.ArtifactStagingDirectory)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86
-        mv $(Build.ArtifactStagingDirectory)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86
+        mkdir $(Build.StagingDirectory)/$(temp_publication_directory);
+        mv $(Build.ArtifactStagingDirectory)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
+        mv $(Build.ArtifactStagingDirectory)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
       displayName: 'Info about stuff'
