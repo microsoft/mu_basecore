@@ -133,14 +133,15 @@ jobs:
         mv $(Pipeline.Workspace)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
       displayName: Stage Package Files
 
-    - powershell: nuget-publish --Operation Pack --OutputLog $(Build.StagingDirectory)/NugetPackagingLog.txt --ConfigFilePath $(Build.StagingDirectory)/NugetPackageConfig.json --InputFolderPath $(Build.StagingDirectory)/$(temp_publication_directory) --Version $(release_version) --OutputFolderPath $(Build.StagingDirectory)
+    - powershell:
+        mkdir $(Build.StagingDirectory)/PackageOutput
+        nuget-publish --Operation Pack --OutputLog $(Build.StagingDirectory)/NugetPackagingLog.txt --ConfigFilePath $(Build.StagingDirectory)/NugetPackageConfig.json --InputFolderPath $(Build.StagingDirectory)/$(temp_publication_directory) --Version $(release_version) --OutputFolderPath $(Build.StagingDirectory)/PackageOutput
       displayName: Nuget Packaging
 
     - publish: $(Build.StagingDirectory)/NugetPackagingLog.txt
       displayName: Save the Package Log
       artifact: PackageLog
 
-    - publish: $(Build.StagingDirectory)
-      patterns: '*.nupkg'
+    - publish: $(Build.StagingDirectory)/PackageOutput
       displayName: Publish the Package
       artifact: $(package_artifact_name)
