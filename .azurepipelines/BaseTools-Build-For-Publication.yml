@@ -101,6 +101,8 @@ jobs:
       clean: all
 
     steps:
+    - checkout: none
+
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.7.x'
@@ -112,7 +114,7 @@ jobs:
       displayName: 'Install/Upgrade pip modules'
 
     - download: current
-      artifact: $(linux_artifact_name), $(windows_artifact_name)
+      displayName: Grab Artifacts from Builds
 
     - powershell:
         mkdir $(Build.StagingDirectory)/$(temp_publication_directory);
