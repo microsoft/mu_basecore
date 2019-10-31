@@ -42,7 +42,7 @@ jobs:
   - job: windows_build
     displayName: Windows Build
     pool:
-      vmImage: vs2017-win2016
+      vmImage: windows-latest
 
     workspace:
       clean: all
@@ -83,17 +83,30 @@ jobs:
         pathtoPublish: '$(Build.Repository.LocalPath)\BaseTools\Bin\Win32'
         artifactName: WindowsOutput
 
-  # - job: assemble_package
-  #   displayName: Assemble Release Package
-  #   dependsOn:
-  #   - linux_build
-  #   - windows_build
-  #   pool:
-  #     vmImage: vs2017-win2016
+  - job: assemble_package
+    displayName: Assemble Release Package
+    dependsOn:
+    - linux_build
+    - windows_build
+    pool:
+      vmImage: windows-latest
 
-  #   workspace:
-  #     clean: all
+    workspace:
+      clean: all
 
-  #   steps:
-  #   - script: echo "I am here."
-  #     displayName: Proof of Life
+    steps:
+    - checkout: self
+      clean: true
+  
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.7.x'
+        addToPath: true
+        architecture: 'x64'
+      displayName: Install correct Python
+
+    - script: pip install -r requirements.txt --upgrade
+      displayName: 'Install/Upgrade pip modules'
+
+    - script: ls $(Build.ArtifactStaging)
+      displayName: 'Info about stuff'
