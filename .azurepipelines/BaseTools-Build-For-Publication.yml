@@ -1,3 +1,8 @@
+variables:
+  linux_artifact_name: 'LinuxOutput'
+  windows_artifact_name: 'WindowsOutput'
+  temp_publication_directory: 'PackageStaging'
+
 jobs:
   - job: linux_build
     displayName: Linux Build
@@ -37,7 +42,7 @@ jobs:
     - task: PublishBuildArtifacts@1
       inputs:
         pathtoPublish: '$(Build.Repository.LocalPath)/BaseTools/Source/C/bin'
-        artifactName: LinuxOutput
+        artifactName: $(linux_artifact_name)
 
   # - job: windows_build
   #   displayName: Windows Build
@@ -81,7 +86,7 @@ jobs:
   #   - task: PublishBuildArtifacts@1
   #     inputs:
   #       pathtoPublish: '$(Build.Repository.LocalPath)\BaseTools\Bin\Win32'
-  #       artifactName: WindowsOutput
+  #       artifactName: $(windows_artifact_name)
 
   - job: assemble_package
     displayName: Assemble Release Package
@@ -108,5 +113,8 @@ jobs:
     - script: pip install -r requirements.txt --upgrade
       displayName: 'Install/Upgrade pip modules'
 
-    - powershell: Write-Host (ls -r $(Build.ArtifactStagingDirectory))
+    - script:
+        mkdir $(Build.StagingDirectory)/$(temp_publication_directory)
+        mv $(Build.ArifactStagingDirectory)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86
+        mv $(Build.StagingDirectory)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86
       displayName: 'Info about stuff'
