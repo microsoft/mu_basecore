@@ -113,7 +113,7 @@ jobs:
       displayName: Install correct Python
 
     - powershell:
-        $branch_url = '$(Build.SourceBranch)'.replace('refs/heads/', '')
+        $branch_url = '$(Build.SourceBranch)'.replace('refs/heads/', '');
         $config_source = 'https://raw.githubusercontent.com/microsoft/mu_basecore/'+$branch_url+'/BaseTools/NugetPublishing/Mu-Basetools.config.json';
         Write-Host $config_source;
         $config_dest = '$(Build.StagingDirectory)/NugetPackageConfig.json';
