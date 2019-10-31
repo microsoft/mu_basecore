@@ -39,55 +39,55 @@ jobs:
         pathtoPublish: '$(Build.Repository.LocalPath)/BaseTools/Source/C/bin'
         artifactName: LinuxOutput
 
-  - job: windows_build
-    displayName: Windows Build
-    pool:
-      vmImage: windows-latest
+  # - job: windows_build
+  #   displayName: Windows Build
+  #   pool:
+  #     vmImage: windows-latest
 
-    workspace:
-      clean: all
+  #   workspace:
+  #     clean: all
 
-    variables:
-      build_invocable: $(Build.Repository.LocalPath)\BaseTools\Edk2ToolsBuild.py
+  #   variables:
+  #     build_invocable: $(Build.Repository.LocalPath)\BaseTools\Edk2ToolsBuild.py
 
-    steps:
-    - checkout: self
-      clean: true
+  #   steps:
+  #   - checkout: self
+  #     clean: true
   
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.7.x'
-        addToPath: true
-        architecture: 'x64'
-      displayName: Install correct Python
+  #   - task: UsePythonVersion@0
+  #     inputs:
+  #       versionSpec: '3.7.x'
+  #       addToPath: true
+  #       architecture: 'x64'
+  #     displayName: Install correct Python
 
-    - script: pip install -r requirements.txt --upgrade
-      displayName: 'Install/Upgrade pip modules'
+  #   - script: pip install -r requirements.txt --upgrade
+  #     displayName: 'Install/Upgrade pip modules'
 
-    # Set default
-    - bash: |
-        echo "##vso[task.setvariable variable=pkg_count]${{ 1 }}"
+  #   # Set default
+  #   - bash: |
+  #       echo "##vso[task.setvariable variable=pkg_count]${{ 1 }}"
 
-    - task: CmdLine@1
-      displayName: Update Environment
-      inputs:
-        filename: stuart_update
-        arguments: -c .pytool/CISettings.py
+  #   - task: CmdLine@1
+  #     displayName: Update Environment
+  #     inputs:
+  #       filename: stuart_update
+  #       arguments: -c .pytool/CISettings.py
 
-    - template: templates/basetools-build-steps.yml
-      parameters:
-        tool_chain_tag: 'VS2019'
+  #   - template: templates/basetools-build-steps.yml
+  #     parameters:
+  #       tool_chain_tag: 'VS2019'
 
-    - task: PublishBuildArtifacts@1
-      inputs:
-        pathtoPublish: '$(Build.Repository.LocalPath)\BaseTools\Bin\Win32'
-        artifactName: WindowsOutput
+  #   - task: PublishBuildArtifacts@1
+  #     inputs:
+  #       pathtoPublish: '$(Build.Repository.LocalPath)\BaseTools\Bin\Win32'
+  #       artifactName: WindowsOutput
 
   - job: assemble_package
     displayName: Assemble Release Package
     dependsOn:
     - linux_build
-    - windows_build
+    # - windows_build
     pool:
       vmImage: windows-latest
 
