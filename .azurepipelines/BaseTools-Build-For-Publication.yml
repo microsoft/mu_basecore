@@ -113,9 +113,10 @@ jobs:
       displayName: Install correct Python
 
     - powershell:
-        $config_source = 'https://raw.githubusercontent.com/microsoft/mu_basecore/$(Build.SourceBranch)/BaseTools/NugetPublishing/Mu-Basetools.config.json';
+        $branch_url = '$(Build.SourceBranch)'.replace('refs/heads/', '')
+        $config_source = 'https://raw.githubusercontent.com/microsoft/mu_basecore/'+$branch_url+'/BaseTools/NugetPublishing/Mu-Basetools.config.json';
         Write-Host $config_source;
-        $config_dest = $(Build.StagingDirectory)/NugetPackageConfig.json;
+        $config_dest = '$(Build.StagingDirectory)/NugetPackageConfig.json';
         Write-Host $config_dest;
         (New-Object System.Net.WebClient).DownloadFile($config_source, $config_dest);
       displayName: Grab Nuget Config File
