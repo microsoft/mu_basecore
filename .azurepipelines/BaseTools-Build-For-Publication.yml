@@ -2,7 +2,7 @@ jobs:
   - job: linux_build
     displayName: Linux Build
     pool:
-      vmImage: ubuntu-16.04
+      vmImage: ubuntu-latest
 
     workspace:
       clean: all
@@ -17,19 +17,18 @@ jobs:
         architecture: 'x64'
       displayName: Install correct Python
 
-    - bash: sudo apt-get update
-      displayName: Update apt
+    - script: pip install -r requirements.txt --upgrade
+      displayName: 'Install/Upgrade pip modules'
 
-    - bash: sudo apt-get install gcc g++ make uuid-dev
-      displayName: Install required tools
+    - task: CmdLine@1
+      displayName: Update Environment
+      inputs:
+        filename: stuart_update
+        arguments: -c .pytool/CISettings.py
 
-    - script: |
-        echo '##vso[task.setvariable variable=PYTHON_COMMAND]python3'
-      displayName: Force tools build to use new Python
-
-    - bash: make -C BaseTools
-      workingDirectory: $(Build.Repository.LocalPath)
-      displayName: Build
+    - template: templates/basetools-build-steps.yml
+      parameters:
+        tool_chain_tag: 'GCC5'
 
     - task: PublishBuildArtifacts@1
       inputs:
@@ -58,20 +57,18 @@ jobs:
         architecture: 'x64'
       displayName: Install correct Python
 
-    - script: pip install --upgrade -r $(Build.Repository.LocalPath)\requirements.txt
-      displayName: Install pip requirements
+    - script: pip install -r requirements.txt --upgrade
+      displayName: 'Install/Upgrade pip modules'
 
     - task: CmdLine@1
+      displayName: Update Environment
       inputs:
         filename: stuart_update
-        arguments: -c $(build_invocable)
-      displayName: Update invocable dependencies
+        arguments: -c .pytool/CISettings.py
 
-    - task: PythonScript@0
-      inputs:
-        scriptSource: filePath
-        scriptPath: $(build_invocable)
-      displayName: Build
+    - template: templates/basetools-build-steps.yml
+      parameters:
+        tool_chain_tag: 'VS2019'
 
     - task: PublishBuildArtifacts@1
       inputs:

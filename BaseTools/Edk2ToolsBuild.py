@@ -48,7 +48,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         md   == markdown file logging
         '''
         if(loggerType == "con"):
-            return logging.DEBUG
+            return logging.ERROR
         else:
             return logging.DEBUG
 
