@@ -1,5 +1,7 @@
 variables:
+  linux_build_output_path: '$(Build.Repository.LocalPath)/BaseTools/Source/C/bin'
   linux_artifact_name: 'LinuxOutput'
+  windows_build_output_path: ''$(Build.Repository.LocalPath)\BaseTools\Bin\Win32''
   windows_artifact_name: 'WindowsOutput'
   temp_publication_directory: 'PackageStaging'
 
@@ -39,10 +41,12 @@ jobs:
       parameters:
         tool_chain_tag: 'GCC5'
 
-    - task: PublishBuildArtifacts@1
-      inputs:
-        pathtoPublish: '$(Build.Repository.LocalPath)/BaseTools/Source/C/bin'
-        artifactName: $(linux_artifact_name)
+    - powershell: Get-ChildItem -Recurse -Include "*_path_env.yaml", "*_path_env.yml" -Path $(linux_build_output_path) | Remove-Item
+      displayName: Remove Unnecessary Files
+
+    - publish: $(linux_build_output_path)
+      artifact: $(linux_artifact_name)
+      displayName: Publish To Pipeline
 
   # - job: windows_build
   #   displayName: Windows Build
@@ -51,9 +55,6 @@ jobs:
 
   #   workspace:
   #     clean: all
-
-  #   variables:
-  #     build_invocable: $(Build.Repository.LocalPath)\BaseTools\Edk2ToolsBuild.py
 
   #   steps:
   #   - checkout: self
@@ -85,7 +86,7 @@ jobs:
 
   #   - task: PublishBuildArtifacts@1
   #     inputs:
-  #       pathtoPublish: '$(Build.Repository.LocalPath)\BaseTools\Bin\Win32'
+  #       pathtoPublish: $(windows_build_output_path)
   #       artifactName: $(windows_artifact_name)
 
   - job: assemble_package
@@ -100,9 +101,6 @@ jobs:
       clean: all
 
     steps:
-    - checkout: self
-      clean: true
-  
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.7.x'
@@ -113,8 +111,11 @@ jobs:
     - script: pip install edk2-pytool-library==0.10.* edk2-pytool-extensions==0.12.*
       displayName: 'Install/Upgrade pip modules'
 
+    - download: current
+      artifact: $(linux_artifact_name), $(windows_artifact_name)
+
     - powershell:
         mkdir $(Build.StagingDirectory)/$(temp_publication_directory);
-        mv $(Build.ArtifactStagingDirectory)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
-        mv $(Build.ArtifactStagingDirectory)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
+        mv $(Pipeline.Workspace)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
+        mv $(Pipeline.Workspace)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
       displayName: 'Info about stuff'
