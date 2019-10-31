@@ -108,5 +108,5 @@ jobs:
     - script: pip install -r requirements.txt --upgrade
       displayName: 'Install/Upgrade pip modules'
 
-    - powershell: ls -r $(Build.ArtifactStagingDirectory)
+    - script: ls -r $(Build.ArtifactStagingDirectory)
       displayName: 'Info about stuff'
