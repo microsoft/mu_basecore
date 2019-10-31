@@ -76,7 +76,7 @@ jobs:
 
     - template: templates/basetools-build-steps.yml
       parameters:
-        tool_chain_tag: 'VS2019'
+        tool_chain_tag: 'VS2017'
 
     - task: PublishBuildArtifacts@1
       inputs:
