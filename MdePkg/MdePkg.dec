@@ -2165,6 +2165,8 @@
   #  BIT3 - Enable Clear Memory.<BR>
   #  BIT4 - Enable BreakPoint as ASSERT.<BR>
   #  BIT5 - Enable DeadLoop as ASSERT.<BR>
+  #  BIT6 - Enable BreakAssert
+  #  BIT7 - Enable Telemetry on ASSERT.<BR>
   # @Prompt Debug Property.
   # @Expression  0x80000002 | (gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask & 0xC0) == 0
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0|UINT8|0x00000005

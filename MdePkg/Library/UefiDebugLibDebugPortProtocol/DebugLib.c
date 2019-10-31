@@ -23,6 +23,7 @@
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugPrintErrorLevelLib.h>
+#include <Library/MuTelemetryHelperLib.h>
 
 #include <Protocol/DebugPort.h>
 
@@ -35,6 +36,11 @@
 // Define the timeout for EFI_DEBUGPORT_PROTOCOL.Write
 //
 #define WRITE_TIMEOUT 1000
+
+//
+// (MU_CHANGE) Define error code when logging telemetry on release ASSERT
+//
+#define DEBUG_ASSERT_ERROR_CODE 0xF0F0F0F0
 
 // MU_CHANGE START
 //
@@ -207,6 +213,19 @@ DebugAssert (
     //
     // Generate an Assertion Break, Breakpoint, DeadLoop, or NOP based on PCD settings
     //
+    // MU_CHANGE BEGIN LOGTELEMETRY
+    if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_TELEMETRY_ENABLED) != 0) {
+      LogTelemetry (TRUE,
+        NULL,
+        DEBUG_ASSERT_ERROR_CODE,
+        NULL,
+        NULL,
+        *(UINT64*)FileName,
+        (UINT64)LineNumber
+      );
+    }
+    // MU_CHANGE END LOGTELEMETRY
+
     // MU_CHANGE BEGIN BREAKASSERT
     if ((PcdGet8(PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_BREAKASSERT_ENABLED) != 0) {
       CpuBreakAssert ();

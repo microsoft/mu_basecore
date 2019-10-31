@@ -35,11 +35,11 @@
 
 [Sources]
   DebugLib.c
-  Dxe/DebugLibConstructor.c                    ## MU_CHANGE
+  Dxe/DebugLibConstructor.c                     ## MU_CHANGE
 
 [Packages]
   MdePkg/MdePkg.dec
-
+  MsWheaPkg/MsWheaPkg.dec                       ## MU_CHANGE
 
 [LibraryClasses]
   BaseMemoryLib
@@ -47,6 +47,7 @@
   PcdLib
   PrintLib
   DebugPrintErrorLevelLib
+  MuTelemetryHelperLib                          ## MU_CHANGE
 
 [Protocols]
   gEfiDebugPortProtocolGuid                     ## CONSUMES

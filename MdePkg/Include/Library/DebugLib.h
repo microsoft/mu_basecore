@@ -32,6 +32,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define DEBUG_PROPERTY_ASSERT_BREAKPOINT_ENABLED  0x10
 #define DEBUG_PROPERTY_ASSERT_DEADLOOP_ENABLED    0x20
 #define DEBUG_PROPERTY_ASSERT_BREAKASSERT_ENABLED 0x40 // MU_CHANGE BREAKASSERT
+#define DEBUG_PROPERTY_ASSERT_TELEMETRY_ENABLED   0x80
 
 //
 // Declare bits for PcdDebugPrintErrorLevel and the ErrorLevel parameter of DebugPrint()
@@ -347,7 +348,6 @@ DebugPrintLevelEnabled (
       if (DebugAssertEnabled ()) {  \
         if (!(Expression)) {        \
           _ASSERT (Expression);     \
-          ANALYZER_UNREACHABLE ();  \
         }                           \
       }                             \
     } while (FALSE)
