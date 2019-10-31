@@ -115,6 +115,6 @@ jobs:
 
     - powershell:
         mkdir $(Build.StagingDirectory)/$(temp_publication_directory)
-        mv $(Build.ArifactStagingDirectory)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86
-        mv $(Build.StagingDirectory)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86
+        mv $(Build.ArtifactStagingDirectory)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86
+        mv $(Build.ArtifactStagingDirectory)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86
       displayName: 'Info about stuff'
