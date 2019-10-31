@@ -16,6 +16,7 @@
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugPrintErrorLevelLib.h>
+#include <Library/MuTelemetryHelperLib.h>     // MU_CHANGE
 
 #include <Protocol/DebugPort.h>
 
@@ -266,6 +267,11 @@ DebugAssert (
   )
 {
   CHAR8  Buffer[MAX_DEBUG_MESSAGE_LENGTH];
+  // MU_CHANGE BEGIN LOGTELEMETRY
+  UINTN  FileNameLength = AsciiStrLen (FileName) - 2; // We don't care about the extension
+  UINT64 Data1 = 0xFFFFFFFFFFFFFFFF;
+  UINT64 Data2 = 0xFFFFFFFFFFFFFFFF;
+  // MU_CHANGE END LOGTELEMETRY
 
   if (!mPostEBS) {
     //
@@ -287,8 +293,32 @@ DebugAssert (
     UefiDebugLibDebugPortProtocolWrite (Buffer, AsciiStrLen (Buffer));
 
     //
-    // Generate an Assertion Break, Breakpoint, DeadLoop, or NOP based on PCD settings
+    // Generate an Assertion Break, Breakpoint, DeadLoop, or Telemetry based on PCD settings
     //
+    // MU_CHANGE BEGIN LOGTELEMETRY
+    if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_TELEMETRY_ENABLED) != 0) {
+      CopyMem (&Data1, (UINT16*)(&LineNumber), sizeof(UINT16));
+      if (FileNameLength <= 6) { // We can fit everything into Data1
+        CopyMem ((UINT8*)&Data1 + 2, FileName, FileNameLength);
+      } else if (FileNameLength > 6 && FileNameLength <= 14) { // Use all of Data1 and some of Data2
+        CopyMem ((UINT8*)&Data1 + 2, FileName, 6);
+        CopyMem (&Data2, FileName + 6, FileNameLength - 6);
+      } else { // Take the last 14 characters of the file name
+        CopyMem ((UINT8*)&Data1 + 2, FileName + (FileNameLength - 14), 6);
+        CopyMem (&Data2, FileName + (FileNameLength - 8), 8);
+      }
+
+      LogTelemetry (TRUE,
+        NULL,
+        DEBUG_ASSERT_ERROR_CODE,
+        NULL,
+        NULL,
+        Data1,
+        Data2
+      );
+    }
+    // MU_CHANGE END LOGTELEMETRY
+
     // MU_CHANGE BEGIN BREAKASSERT
     if ((PcdGet8(PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_BREAKASSERT_ENABLED) != 0) {
       CpuBreakAssert ();

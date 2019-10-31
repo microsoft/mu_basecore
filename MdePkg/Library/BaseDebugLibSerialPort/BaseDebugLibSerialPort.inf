@@ -28,6 +28,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  MsWheaPkg/MsWheaPkg.dec
 
 [LibraryClasses]
   SerialPortLib
@@ -36,6 +37,7 @@
   PrintLib
   BaseLib
   DebugPrintErrorLevelLib
+  MuTelemetryHelperLib
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdDebugClearMemoryValue  ## SOMETIMES_CONSUMES

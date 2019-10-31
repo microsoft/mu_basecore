@@ -26,6 +26,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define DEBUG_PROPERTY_ASSERT_BREAKPOINT_ENABLED  0x10
 #define DEBUG_PROPERTY_ASSERT_DEADLOOP_ENABLED    0x20
 #define DEBUG_PROPERTY_ASSERT_BREAKASSERT_ENABLED 0x40 // MU_CHANGE BREAKASSERT
+#define DEBUG_PROPERTY_ASSERT_TELEMETRY_ENABLED   0x80
 
 //
 // Declare bits for PcdDebugPrintErrorLevel and the ErrorLevel parameter of DebugPrint()
@@ -51,6 +52,12 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define DEBUG_VERBOSE   0x00400000  // Detailed debug messages that may
                                     // significantly impact boot performance
 #define DEBUG_ERROR     0x80000000  // Error
+
+
+//
+// (MU_CHANGE) Define error code when logging telemetry on release ASSERT
+//
+#define DEBUG_ASSERT_ERROR_CODE 0xF0F0F0F0
 
 //
 // Aliases of debug message mask bits
@@ -363,7 +370,6 @@ DebugPrintLevelEnabled (
       if (DebugAssertEnabled ()) {  \
         if (!(Expression)) {        \
           _ASSERT (Expression);     \
-          ANALYZER_UNREACHABLE ();  \
         }                           \
       }                             \
     } while (FALSE)
