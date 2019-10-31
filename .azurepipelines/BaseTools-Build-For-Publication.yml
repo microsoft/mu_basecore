@@ -1,7 +1,7 @@
 variables:
   linux_build_output_path: '$(Build.Repository.LocalPath)/BaseTools/Source/C/bin'
   linux_artifact_name: 'LinuxOutput'
-  windows_build_output_path: ''$(Build.Repository.LocalPath)\BaseTools\Bin\Win32''
+  windows_build_output_path: '$(Build.Repository.LocalPath)\BaseTools\Bin\Win32'
   windows_artifact_name: 'WindowsOutput'
   temp_publication_directory: 'PackageStaging'
 
