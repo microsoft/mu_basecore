@@ -113,7 +113,7 @@ jobs:
     - script: pip install -r requirements.txt --upgrade
       displayName: 'Install/Upgrade pip modules'
 
-    - script:
+    - powershell:
         mkdir $(Build.StagingDirectory)/$(temp_publication_directory)
         mv $(Build.ArifactStagingDirectory)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86
         mv $(Build.StagingDirectory)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86
