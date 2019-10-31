@@ -118,7 +118,6 @@ jobs:
         $config_source = 'https://raw.githubusercontent.com/microsoft/mu_basecore/'+$branch_url+'/BaseTools/NugetPublishing/Mu-Basetools.config.json';
         Write-Host $config_source;
         $config_dest = '$(Build.StagingDirectory)/NugetPackageConfig.json';
-        Write-Host $config_dest;
         (New-Object System.Net.WebClient).DownloadFile($config_source, $config_dest);
       displayName: Grab Nuget Config File
 
@@ -141,6 +140,7 @@ jobs:
       displayName: Save the Package Log
       artifact: PackageLog
 
-    - publish: $(Build.StagingDirectory)/*.nupkg
+    - publish: $(Build.StagingDirectory)
+      patterns: '*.nupkg'
       displayName: Publish the Package
       artifact: $(package_artifact_name)
