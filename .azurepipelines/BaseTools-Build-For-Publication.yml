@@ -1,3 +1,5 @@
+name: BaseTools_Bin_$(release_version).$(BuildID)
+
 variables:
   linux_build_output_path: '$(Build.Repository.LocalPath)/BaseTools/Source/C/bin'
   linux_artifact_name: 'LinuxOutput'
