@@ -17,96 +17,96 @@ variables:
   package_artifact_name: 'NugetReleasePackage'
 
 jobs:
-  - job: linux_build
-    displayName: Linux Build
-    pool:
-      vmImage: ubuntu-latest
+  # - job: linux_build
+  #   displayName: Linux Build
+  #   pool:
+  #     vmImage: ubuntu-latest
 
-    workspace:
-      clean: all
+  #   workspace:
+  #     clean: all
 
-    steps:
-    - checkout: self
-      clean: true
+  #   steps:
+  #   - checkout: self
+  #     clean: true
   
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.7.x'
-        architecture: 'x64'
-      displayName: Install correct Python
+  #   - task: UsePythonVersion@0
+  #     inputs:
+  #       versionSpec: '3.7.x'
+  #       architecture: 'x64'
+  #     displayName: Install correct Python
 
-    - script: pip install -r requirements.txt --upgrade
-      displayName: 'Install/Upgrade pip modules'
+  #   - script: pip install -r requirements.txt --upgrade
+  #     displayName: 'Install/Upgrade pip modules'
 
-    # Set default
-    - bash: |
-        echo "##vso[task.setvariable variable=pkg_count]${{ 1 }}"
+  #   # Set default
+  #   - bash: |
+  #       echo "##vso[task.setvariable variable=pkg_count]${{ 1 }}"
 
-    - task: CmdLine@1
-      displayName: Update Environment
-      inputs:
-        filename: stuart_update
-        arguments: -c .pytool/CISettings.py
+  #   - task: CmdLine@1
+  #     displayName: Update Environment
+  #     inputs:
+  #       filename: stuart_update
+  #       arguments: -c .pytool/CISettings.py
 
-    - template: templates/basetools-build-steps.yml
-      parameters:
-        tool_chain_tag: 'GCC5'
+  #   - template: templates/basetools-build-steps.yml
+  #     parameters:
+  #       tool_chain_tag: 'GCC5'
 
-    - powershell: Get-ChildItem -Recurse -Include "*_path_env.yaml", "*_path_env.yml" -Path $(linux_build_output_path) | Remove-Item
-      displayName: Remove Unnecessary Files
+  #   - powershell: Get-ChildItem -Recurse -Include "*_path_env.yaml", "*_path_env.yml" -Path $(linux_build_output_path) | Remove-Item
+  #     displayName: Remove Unnecessary Files
 
-    - publish: $(linux_build_output_path)
-      artifact: $(linux_artifact_name)
-      displayName: Publish To Pipeline
+  #   - publish: $(linux_build_output_path)
+  #     artifact: $(linux_artifact_name)
+  #     displayName: Publish To Pipeline
 
-  - job: windows_build
-    displayName: Windows Build
-    pool:
-      vmImage: windows-latest
+  # - job: windows_build
+  #   displayName: Windows Build
+  #   pool:
+  #     vmImage: windows-latest
 
-    workspace:
-      clean: all
+  #   workspace:
+  #     clean: all
 
-    steps:
-    - checkout: self
-      clean: true
+  #   steps:
+  #   - checkout: self
+  #     clean: true
   
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.7.x'
-        addToPath: true
-        architecture: 'x64'
-      displayName: Install correct Python
+  #   - task: UsePythonVersion@0
+  #     inputs:
+  #       versionSpec: '3.7.x'
+  #       addToPath: true
+  #       architecture: 'x64'
+  #     displayName: Install correct Python
 
-    - script: pip install -r requirements.txt --upgrade
-      displayName: 'Install/Upgrade pip modules'
+  #   - script: pip install -r requirements.txt --upgrade
+  #     displayName: 'Install/Upgrade pip modules'
 
-    # Set default
-    - bash: |
-        echo "##vso[task.setvariable variable=pkg_count]${{ 1 }}"
+  #   # Set default
+  #   - bash: |
+  #       echo "##vso[task.setvariable variable=pkg_count]${{ 1 }}"
 
-    - task: CmdLine@1
-      displayName: Update Environment
-      inputs:
-        filename: stuart_update
-        arguments: -c .pytool/CISettings.py
+  #   - task: CmdLine@1
+  #     displayName: Update Environment
+  #     inputs:
+  #       filename: stuart_update
+  #       arguments: -c .pytool/CISettings.py
 
-    - template: templates/basetools-build-steps.yml
-      parameters:
-        tool_chain_tag: 'VS2019'
+  #   - template: templates/basetools-build-steps.yml
+  #     parameters:
+  #       tool_chain_tag: 'VS2019'
 
-    - powershell: Get-ChildItem -Recurse -Include "*_path_env.yaml", "*_path_env.yml" -Path $(windows_build_output_path) | Remove-Item
-      displayName: Remove Unnecessary Files
+  #   - powershell: Get-ChildItem -Recurse -Include "*_path_env.yaml", "*_path_env.yml" -Path $(windows_build_output_path) | Remove-Item
+  #     displayName: Remove Unnecessary Files
 
-    - publish: $(windows_build_output_path)
-      artifact: $(windows_artifact_name)
-      displayName: Publish To Pipeline
+  #   - publish: $(windows_build_output_path)
+  #     artifact: $(windows_artifact_name)
+  #     displayName: Publish To Pipeline
 
   - job: assemble_package
     displayName: Assemble Release Package
     dependsOn:
-    - linux_build
-    - windows_build
+    # - linux_build
+    # - windows_build
     pool:
       vmImage: windows-latest
 
