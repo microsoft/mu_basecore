@@ -7,6 +7,10 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 parameters:
+  github_repo: ''
+  source_branch: ''
+  source_file_path: ''
+  dest_file_path: ''
   display_name: 'Fetch GitHub File'
 
 steps:
