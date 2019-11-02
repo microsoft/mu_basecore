@@ -1,0 +1,21 @@
+# File templates/github-file-fetch.yml
+#
+# Azure Pipelines template to fetch a single file from the top of a given
+# branch in a public GitHub repo.
+#
+# Copyright (C) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+parameters:
+  display_name: 'Fetch GitHub File'
+
+steps:
+  - powershell:
+      # Account for any unnecessary preambles in the branch name.
+      $branch_url = '${{ parameters.source_branch }}'.replace('refs/heads/', '');
+      # Construct final fetch path.
+      $fetch_source = 'https://raw.githubusercontent.com/${{ parameters.github_repo }}/'+$branch_url+'/${{ parameters.source_file_path }}';
+      Write-Host $fetch_source;
+      # Download the file.
+      (New-Object System.Net.WebClient).DownloadFile($fetch_source, ${{ parameters.dest_file_path }});
+    displayName: ${{ parameters.display_name }}

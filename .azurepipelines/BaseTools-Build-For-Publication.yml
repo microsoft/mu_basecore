@@ -123,19 +123,27 @@ jobs:
         architecture: 'x64'
       displayName: Install correct Python
 
-    - powershell:
-        $branch_url = '$(Build.SourceBranch)'.replace('refs/heads/', '');
-        $config_source = 'https://raw.githubusercontent.com/microsoft/mu_basecore/'+$branch_url+'/BaseTools/NugetPublishing/Mu-Basetools.config.json';
-        Write-Host $config_source;
-        $config_dest = '$(Build.StagingDirectory)/NugetPackageConfig.json';
-        (New-Object System.Net.WebClient).DownloadFile($config_source, $config_dest);
-      displayName: Grab Nuget Config File
+    - template: templates/github-file-fetch.yml
+      parameters:
+        github_repo: microsoft/mu_basecore
+        source_branch: $(Build.SourceBranch)
+        source_file_path: requirements.txt
+        dest_file_path: $(Build.StagingDirectory)/requirements.txt
+        display_name: Fetch Pip Requirements
 
-    - script: pip install edk2-pytool-library==0.10.* edk2-pytool-extensions==0.12.*
-      displayName: 'Install/Upgrade pip modules'
+    - script: pip install -r $(Build.StagingDirectory)/requirements.txt --upgrade
+      displayName: 'Install/Upgrade Pip Modules'
 
     - download: current
       displayName: Grab Artifacts from Builds
+
+    - template: templates/github-file-fetch.yml
+      parameters:
+        github_repo: microsoft/mu_basecore
+        source_branch: $(Build.SourceBranch)
+        source_file_path: BaseTools/NugetPublishing/Mu-Basetools.config.json
+        dest_file_path: $(Build.StagingDirectory)/NugetPackageConfig.json
+        display_name: Fetch Nuget Publishing Config
 
     - powershell:
         mkdir $(Build.StagingDirectory)/$(temp_publication_directory);
