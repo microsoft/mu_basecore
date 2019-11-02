@@ -26,8 +26,13 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         ParserObj = argparse.ArgumentParser()
         ParserObj.add_argument("-t", "--tool_chain_tag", dest="tct", default="VS2017",
                                help="Set the toolchain used to compile the build tools")
+        # MU_CHANGE
+        ParserObj.add_argument("-s", "--skip_path_env", dest="skip_env", default=False, action='store_true',
+                               help="Skip the creation of the path_env descriptor file")
         args = ParserObj.parse_args()
         self.tool_chain_tag = args.tct
+        # MU_CHANGE
+        self.skip_path_env = args.skip_env
 
     def GetWorkspaceRoot(self):
         ''' Return the workspace root for initializing the SDE '''
@@ -143,7 +148,9 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             if ret != 0:
                 raise Exception("Failed to build.")
 
-            self.WritePathEnvFile(self.OutputDir)
+            # MU_CHANGE
+            if not self.skip_path_env:
+                self.WritePathEnvFile(self.OutputDir)
             return ret
 
         elif self.tool_chain_tag.lower().startswith("gcc"):
@@ -161,7 +168,9 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             self.OutputDir = os.path.join(
                 shell_env.get_shell_var("EDK_TOOLS_PATH"), "Source", "C", "bin")
 
-            self.WritePathEnvFile(self.OutputDir)
+            # MU_CHANGE
+            if not self.skip_path_env:
+                self.WritePathEnvFile(self.OutputDir)
             return ret
 
         logging.critical("Tool Chain not supported")
