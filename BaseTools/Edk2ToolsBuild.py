@@ -1,6 +1,7 @@
-# @file edk2_platform_build
-# Invocable classs that does a build.
-# Needs a child of UefiBuilder for pre/post build steps.
+# @file Edk2ToolsBuild.py
+# Invocable class that builds the basetool c files.
+#
+# Supports VS2017, VS2019, and GCC5
 ##
 # Copyright (c) Microsoft Corporation
 #
@@ -9,109 +10,92 @@
 import os
 import sys
 import logging
-import pkg_resources
+import argparse
 from edk2toolext import edk2_logging
-from edk2toolext.environment import plugin_manager
-from edk2toolext.environment.plugintypes.uefi_helper_plugin import HelperFunctions
-from edk2toolext.environment import version_aggregator
 from edk2toolext.environment import self_describing_environment
-from edk2toolext.edk2_invocable import Edk2Invocable
-from edk2toolext.invocables.edk2_update import UpdateSettingsManager
+from edk2toolext.base_abstract_invocable import BaseAbstractInvocable
 from edk2toollib.utility_functions import RunCmd
 from edk2toollib.windows.locate_tools import QueryVcVariables
 
-PIP_PACKAGES_LIST = ["edk2-pytool-library", "edk2-pytool-extensions", "PyYaml"]
 
+class Edk2ToolsBuild(BaseAbstractInvocable):
 
-class ToolsBuildSettingsManager(UpdateSettingsManager):
-    ''' Platform settings will be accessed through this implementation. '''
-
-    def GetActiveScopes(self):
-        ''' get scope '''
-        return ()
+    def ParseCommandLineOptions(self):
+        ''' parse arguments '''
+        ParserObj = argparse.ArgumentParser()
+        ParserObj.add_argument("-t", "--tool_chain_tag", dest="tct", default="VS2017",
+                               help="Set the toolchain used to compile the build tools")
+        ParserObj.add_argument("-s", "--skip_path_env", dest="skip_env", default=False, action='store_true',
+                               help="Skip the creation of the path_env descriptor file")
+        args = ParserObj.parse_args()
+        self.tool_chain_tag = args.tct
+        self.skip_path_env = args.skip_env
 
     def GetWorkspaceRoot(self):
-        ''' get WorkspacePath '''
-        SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
-        # WORKSPACE_PATH = os.path.dirname(SCRIPT_PATH)
-        WORKSPACE_PATH = SCRIPT_PATH
+        ''' Return the workspace root for initializing the SDE '''
 
-        return WORKSPACE_PATH
+        # this is the bastools dir...not the traditional EDK2 workspace root
+        return os.path.dirname(os.path.abspath(__file__))
 
-    def GetPackagesSupported(self):
-        ''' return iterable of edk2 packages supported by this build.
-        These should be edk2 workspace relative paths '''
-        return []
+    def GetActiveScopes(self):
+        ''' return tuple containing scopes that should be active for this process '''
 
-    def GetArchitecturesSupported(self):
-        ''' return iterable of edk2 architectures supported by this build '''
-        return ['IA32']
-
-    def GetTargetsSupported(self):
-        ''' return iterable of edk2 target tags supported by this build '''
-        return []
-
-    def AddCommandLineOptions(self, parserObj):
-        ''' Implement in subclass to add command line options to the argparser '''
-        pass
-
-    def RetrieveCommandLineOptions(self, args):
-        '''  Implement in subclass to retrieve command line options from the argparser '''
-        pass
+        # for now don't use scopes
+        return ('global',)
 
     def GetLoggingLevel(self, loggerType):
-        ''' Get the logging level for a given type
+        ''' Get the logging level for a given type (return Logging.Level)
         base == lowest logging level supported
         con  == Screen logging
         txt  == plain text file logging
         md   == markdown file logging
         '''
-        if loggerType in ('txt', 'md'):
-            return None
-        return logging.INFO
+        if(loggerType == "con"):
+            return logging.ERROR
+        else:
+            return logging.DEBUG
 
+    def GetLoggingFolderRelativeToRoot(self):
+        ''' Return a path to folder for log files '''
+        return "BaseToolsBuild"
 
-#
-# Pass in a list of pip package names and they will be printed as well as
-# reported to the global version_aggregator
-def display_pip_package_info(package_list):
-    for package in package_list:
-        version = pkg_resources.get_distribution(package).version
-        logging.info("{0} version: {1}".format(package, version))
-        version_aggregator.GetVersionAggregator().ReportVersion(package, version, version_aggregator.VersionTypes.TOOL)
-
-
-class Edk2ToolsBuild(Edk2Invocable):
-
-    def ParseCommandLineOptions(self):
-        self.PlatformSettings = ToolsBuildSettingsManager()
-        self.Verbose = True
-
-    def AddCommandLineOptions(self, parserObj):
-        ''' adds command line options to the argparser '''
-        pass
-
-    def RetrieveCommandLineOptions(self, args):
-        '''  Retrieve command line options from the argparser '''
-
-        # If PlatformBuilder and PlatformSettings are seperate, give args to PlatformBuilder
-        if self.PlatformBuilder is not self.PlatformSettings:
-            self.PlatformBuilder.RetrieveCommandLineOptions(args)
-
-    def GetSettingsClass(self):
-        '''  Providing ToolsBuildSettingsManager  '''
-        return ToolsBuildSettingsManager
-
-    def GetLoggingLevel(self, loggerType):
-        return self.PlatformSettings.GetLoggingLevel(loggerType)
+    def GetVerifyCheckRequired(self):
+        ''' Will call self_describing_environment.VerifyEnvironment if this returns True '''
+        return True
 
     def GetLoggingFileName(self, loggerType):
-        return None
+        ''' Get the logging file name for the type.
+        Return None if the logger shouldn't be created
+
+        base == lowest logging level supported
+        con  == Screen logging
+        txt  == plain text file logging
+        md   == markdown file logging
+        '''
+        return "BASETOOLS_BUILD"
+
+    def WritePathEnvFile(self, OutputDir):
+        ''' Write a PyTool path env file for future PyTool based edk2 builds'''
+        content = '''##
+# Set shell variable EDK_TOOLS_BIN to this folder
+#
+# Autogenerated by Edk2ToolsBuild.py
+#
+# Copyright (c), Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+{
+  "id": "You-Built-BaseTools",
+  "scope": "edk2-build",
+  "flags": ["set_shell_var", "set_path"],
+  "var_name": "EDK_TOOLS_BIN"
+}
+'''
+        with open(os.path.join(OutputDir, "basetoolsbin_path_env.yaml"), "w") as f:
+            f.write(content)
 
     def Go(self):
         logging.info("Running Python version: " + str(sys.version_info))
-
-        display_pip_package_info(PIP_PACKAGES_LIST)
 
         (build_env, shell_env) = self_describing_environment.BootstrapEnvironment(
             self.GetWorkspaceRoot(), self.GetActiveScopes())
@@ -127,29 +111,58 @@ class Edk2ToolsBuild(Edk2Invocable):
             pc = '"' + pc + '"'
         shell_env.set_shell_var("PYTHON_COMMAND", pc)
 
-        # # Update environment with required VCvars.
-        interesting_keys = ["ExtensionSdkDir", "INCLUDE", "LIB"]
-        interesting_keys.extend(["LIBPATH", "Path", "UniversalCRTSdkDir", "UCRTVersion", "WindowsLibPath", "WindowsSdkBinPath"])
-        interesting_keys.extend(["WindowsSdkDir", "WindowsSdkVerBinPath", "WindowsSDKVersion","VCToolsInstallDir"])
-        vc_vars = QueryVcVariables(interesting_keys, 'x86', vs_version = 'vs2017')
-        for key in vc_vars.keys():
-            if key.lower() == 'path':
-                shell_env.insert_path(vc_vars[key])
-            else:
-                shell_env.set_shell_var(key, vc_vars[key])
+        if self.tool_chain_tag.lower().startswith("vs"):
 
-        # # Update the EDK_TOOLS_PATH so that new tools are build to the correct location.
-        shell_env.set_shell_var('EDK_TOOLS_PATH', shell_env.get_shell_var('BASE_TOOLS_PATH'))
-        # We'll need to run 'antlr' after it's built, so we should know where that's going.
-        shell_env.append_path(os.path.join(shell_env.get_shell_var('BASE_TOOLS_PATH'), 'Bin', 'Win32'))
+            # # Update environment with required VC vars.
+            interesting_keys = ["ExtensionSdkDir", "INCLUDE", "LIB"]
+            interesting_keys.extend(
+                ["LIBPATH", "Path", "UniversalCRTSdkDir", "UCRTVersion", "WindowsLibPath", "WindowsSdkBinPath"])
+            interesting_keys.extend(
+                ["WindowsSdkDir", "WindowsSdkVerBinPath", "WindowsSDKVersion", "VCToolsInstallDir"])
+            vc_vars = QueryVcVariables(
+                interesting_keys, 'x86', vs_version=self.tool_chain_tag.lower())
+            for key in vc_vars.keys():
+                logging.debug(f"Var - {key} = {vc_vars[key]}")
+                if key.lower() == 'path':
+                    shell_env.insert_path(vc_vars[key])
+                else:
+                    shell_env.set_shell_var(key, vc_vars[key])
 
-        # # Actually build the tools.
-        if RunCmd('nmake.exe', None, workingdir=self.PlatformSettings.GetWorkspaceRoot()) != 0:
-            raise Exception("Failed to build.")
+            self.OutputDir = os.path.join(
+                shell_env.get_shell_var("EDK_TOOLS_PATH"), "Bin", "Win32")
+
+            # compiled tools need to be added to path because antlr is referenced
+            shell_env.insert_path(self.OutputDir)
+
+            # Actually build the tools.
+            ret = RunCmd('nmake.exe', None,
+                         workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
+            if ret != 0:
+                raise Exception("Failed to build.")
+
+            if not self.skip_path_env:
+                self.WritePathEnvFile(self.OutputDir)
+            return ret
+
+        elif self.tool_chain_tag.lower().startswith("gcc"):
+            ret = RunCmd("make", "-C .", workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
+            if ret != 0:
+                raise Exception("Failed to build.")
+
+            self.OutputDir = os.path.join(
+                shell_env.get_shell_var("EDK_TOOLS_PATH"), "Source", "C", "bin")
+
+            if not self.skip_path_env:
+                self.WritePathEnvFile(self.OutputDir)
+            return ret
+
+        logging.critical("Tool Chain not supported")
+        return -1
 
 
 def main():
     Edk2ToolsBuild().Invoke()
+
 
 if __name__ == "__main__":
     main()
