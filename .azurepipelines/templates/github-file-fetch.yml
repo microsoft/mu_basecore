@@ -7,10 +7,6 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 parameters:
-  github_repo: ''
-  source_branch: ''
-  source_file_path: ''
-  dest_file_path: ''
   display_name: 'Fetch GitHub File'
 
 steps:
@@ -18,8 +14,8 @@ steps:
       # Account for any unnecessary preambles in the branch name.
       $branch_url = '${{ parameters.source_branch }}'.replace('refs/heads/', '');
       # Construct final fetch path.
-      $fetch_source = 'https://raw.githubusercontent.com/'+${{ parameters.github_repo }}+'/'+$branch_url+'/'+${{ parameters.source_file_path }};
-      Write-Host $fetch_source;
+      # $fetch_source = 'https://raw.githubusercontent.com/'+${{ parameters.github_repo }}+'/'+$branch_url+'/'+${{ parameters.source_file_path }};
+      # Write-Host $fetch_source;
       # Download the file.
       (New-Object System.Net.WebClient).DownloadFile($fetch_source, ${{ parameters.dest_file_path }});
     displayName: ${{ parameters.display_name }}
