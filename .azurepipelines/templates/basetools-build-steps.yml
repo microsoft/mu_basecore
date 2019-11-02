@@ -8,6 +8,7 @@
 ##
 parameters:
   tool_chain_tag: ''
+  extra_parameters: ''   # MU_CHANGE
 
 steps:
 - ${{ if contains(parameters.tool_chain_tag, 'GCC') }}:
@@ -23,7 +24,8 @@ steps:
   displayName: Build Base Tools from source
   inputs:
     filename: python
-    arguments: BaseTools/Edk2ToolsBuild.py -t ${{ parameters.tool_chain_tag }}
+    # MU_CHANGE
+    arguments: BaseTools/Edk2ToolsBuild.py -t ${{ parameters.tool_chain_tag }} ${{ parameters.extra_parameters }}
   condition: and(gt(variables.pkg_count, 0), succeeded())
 
 - task: CopyFiles@2
