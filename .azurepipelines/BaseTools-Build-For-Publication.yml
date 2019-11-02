@@ -15,6 +15,9 @@ variables:
   windows_artifact_name: 'WindowsOutput'
   temp_publication_directory: 'PackageStaging'
   package_artifact_name: 'NugetReleasePackage'
+  # Force at least one package so the basetools-build-steps template runs.
+  # TODO: Clean this up once all the templates land.
+  pkg_count: 1
 
 jobs:
   - job: linux_build
@@ -37,10 +40,6 @@ jobs:
 
     - script: pip install -r requirements.txt --upgrade
       displayName: 'Install/Upgrade pip modules'
-
-    # Set default
-    - bash: |
-        echo "##vso[task.setvariable variable=pkg_count]${{ 1 }}"
 
     - task: CmdLine@1
       displayName: Update Environment
@@ -80,10 +79,6 @@ jobs:
 
     - script: pip install -r requirements.txt --upgrade
       displayName: 'Install/Upgrade pip modules'
-
-    # Set default
-    - bash: |
-        echo "##vso[task.setvariable variable=pkg_count]${{ 1 }}"
 
     - task: CmdLine@1
       displayName: Update Environment
