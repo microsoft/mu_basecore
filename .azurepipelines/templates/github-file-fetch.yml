@@ -12,7 +12,7 @@ parameters:
 steps:
   - powershell:
       $branch_url = '${{ parameters.source_branch }}'.replace('refs/heads/', '');
-      $fetch_source = 'https://raw.githubusercontent.com/'+${{ parameters.github_repo }}+'/'+$branch_url+'/'+${{ parameters.source_file_path }};
+      $fetch_source = 'https://raw.githubusercontent.com/${{ parameters.github_repo }}/'+$branch_url+'/${{ parameters.source_file_path }}';
       Write-Host $fetch_source;
       (New-Object System.Net.WebClient).DownloadFile($fetch_source, ${{ parameters.dest_file_path }});
     displayName: ${{ parameters.display_name }}
