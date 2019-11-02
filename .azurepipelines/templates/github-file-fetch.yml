@@ -13,9 +13,10 @@ steps:
   - powershell:
       # Account for any unnecessary preambles in the branch name.
       $branch_url = '${{ parameters.source_branch }}'.replace('refs/heads/', '');
+      Write-Host $branch_url;
       # Construct final fetch path.
       # $fetch_source = 'https://raw.githubusercontent.com/'+${{ parameters.github_repo }}+'/'+$branch_url+'/'+${{ parameters.source_file_path }};
       # Write-Host $fetch_source;
       # Download the file.
-      (New-Object System.Net.WebClient).DownloadFile($fetch_source, ${{ parameters.dest_file_path }});
+      # (New-Object System.Net.WebClient).DownloadFile($fetch_source, ${{ parameters.dest_file_path }});
     displayName: ${{ parameters.display_name }}
