@@ -158,5 +158,5 @@ jobs:
       displayName: Nuget Packaging
 
     - publish: $(Build.StagingDirectory)/PackageOutput
-      displayName: Publish the Package
+      displayName: Save the Release Package for Publishing
       artifact: $(package_artifact_name)
