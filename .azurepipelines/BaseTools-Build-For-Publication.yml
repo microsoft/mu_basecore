@@ -1,3 +1,11 @@
+# File BaseTools-Build-For-Publication.yml
+#
+# Azure Pipeline to construct the final Nuget package for a binary release
+# of BaseTools.
+#
+# Copyright (C) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
 name: BaseTools_Bin_$(release_version)_$(Rev:r)
 
 variables:
