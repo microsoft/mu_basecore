@@ -15,9 +15,9 @@ import logging
 import argparse
 import datetime
 
-from MuPythonLibrary.Uefi.Capsule.CatGenerator import *
-from MuPythonLibrary.Uefi.Capsule.InfGenerator import *
-from MuPythonLibrary.UtilityFunctions import CatalogSignWithSignTool
+from edk2toollib.windows.capsule.cat_generator import *
+from edk2toollib.windows.capsule.inf_generator import *
+from edk2toollib.utility_functions import CatalogSignWithSignTool
 
 def main():
     parser = argparse.ArgumentParser(description='Generate Windows Firmware Update Platform Files for Capsules')

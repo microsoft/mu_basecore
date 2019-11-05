@@ -26,8 +26,8 @@ import datetime
 import struct
 import subprocess
 import uuid
-from MuPythonLibrary.UtilityFunctions import RunCmd
-from MuPythonLibrary.UtilityFunctions import DetachedSignWithSignTool
+from edk2toollib.utility_functions import RunCmd
+from edk2toollib.utility_functions import DetachedSignWithSignTool
 
 
 gPhase3PackageOnly = False
