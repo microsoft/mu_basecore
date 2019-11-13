@@ -37,11 +37,6 @@
 //
 #define WRITE_TIMEOUT 1000
 
-//
-// (MU_CHANGE) Define error code when logging telemetry on release ASSERT
-//
-#define DEBUG_ASSERT_ERROR_CODE 0xF0F0F0F0
-
 // MU_CHANGE START
 //
 // Used to prevent boot services calls on runtime post exit boot servcies
@@ -190,6 +185,9 @@ DebugAssert (
   )
 {
   CHAR8  Buffer[MAX_DEBUG_MESSAGE_LENGTH];
+  UINT8  FileNameLength = 0; // MU_CHANGE
+  UINT64 Data1 = 0xFFFFFFFFFFFFFFFF;
+  UINT64 Data2 = 0xFFFFFFFFFFFFFFFF;
 
   if(!mPostEBS) { //MU_CHANGE
     //
@@ -215,13 +213,18 @@ DebugAssert (
     //
     // MU_CHANGE BEGIN LOGTELEMETRY
     if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_TELEMETRY_ENABLED) != 0) {
+      CopyMem (&Data2 + 6, (UINT16*)(&LineNumber), sizeof(UINT16));
+      while (*(FileName + FileNameLength) != '\0') {
+        FileNameLength ++;
+      }
+
       LogTelemetry (TRUE,
         NULL,
         DEBUG_ASSERT_ERROR_CODE,
         NULL,
         NULL,
-        *(UINT64*)FileName,
-        (UINT64)LineNumber
+        Data1,
+        Data2
       );
     }
     // MU_CHANGE END LOGTELEMETRY

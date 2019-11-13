@@ -59,6 +59,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
                                     // significantly impact boot performance
 #define DEBUG_ERROR     0x80000000  // Error
 
+
+//
+// (MU_CHANGE) Define error code when logging telemetry on release ASSERT
+//
+#define DEBUG_ASSERT_ERROR_CODE 0xF0F0F0F0
+
 //
 // Aliases of debug message mask bits
 //

@@ -36,6 +36,7 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  MsWheaPkg/MsWheaPkg.dec
 
 [LibraryClasses]
   PcdLib
@@ -43,6 +44,7 @@
   BaseMemoryLib
   BaseLib
   DebugPrintErrorLevelLib
+  MuTelemetryHelperLib
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdDebugClearMemoryValue  ## SOMETIMES_CONSUMES

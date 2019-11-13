@@ -26,6 +26,7 @@
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/PcdLib.h>
 #include <Library/DebugPrintErrorLevelLib.h>
+#include <Library/MuTelemetryHelperLib.h>
 
 /**
   MS_CHANGE_?
@@ -511,6 +512,16 @@ DebugAssert (
   //
   // Generate a Breakpoint, DeadLoop, or NOP based on PCD settings
   //
+  if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_TELEMETRY_ENABLED) != 0) {
+    LogTelemetry (TRUE,
+      NULL,
+      DEBUG_ASSERT_ERROR_CODE,
+      NULL,
+      NULL,
+      *(UINT64*)FileName,
+      (UINT64)LineNumber
+    );
+  }
   if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_BREAKPOINT_ENABLED) != 0) {
     CpuBreakpoint ();
   } else if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_DEADLOOP_ENABLED) != 0) {
