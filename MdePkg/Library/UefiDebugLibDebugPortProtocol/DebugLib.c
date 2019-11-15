@@ -185,9 +185,11 @@ DebugAssert (
   )
 {
   CHAR8  Buffer[MAX_DEBUG_MESSAGE_LENGTH];
-  UINT8  FileNameLength = 0; // MU_CHANGE
+  // MU_CHANGE BEGIN LOGTELEMETRY
+  UINTN  FileNameLength = AsciiStrLen (FileName) - 2; // We don't care about the extension
   UINT64 Data1 = 0xFFFFFFFFFFFFFFFF;
   UINT64 Data2 = 0xFFFFFFFFFFFFFFFF;
+  // MU_CHANGE END LOGTELEMETRY
 
   if(!mPostEBS) { //MU_CHANGE
     //
@@ -209,15 +211,11 @@ DebugAssert (
     UefiDebugLibDebugPortProtocolWrite (Buffer, AsciiStrLen (Buffer));
 
     //
-    // Generate an Assertion Break, Breakpoint, DeadLoop, or NOP based on PCD settings
+    // Generate an Assertion Break, Breakpoint, DeadLoop, or Telemetry based on PCD settings
     //
     // MU_CHANGE BEGIN LOGTELEMETRY
     if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_TELEMETRY_ENABLED) != 0) {
       CopyMem (&Data1, (UINT16*)(&LineNumber), sizeof(UINT16));
-      while (*(FileName + FileNameLength) != '.') { // We don't care about the extension
-        FileNameLength++;
-      }
-
       if (FileNameLength <= 6) { // We can fit everything into Data1
         CopyMem (&Data1 + 2, FileName, FileNameLength);
       } else if (FileNameLength > 6 && FileNameLength <= 14) { // Use all of Data1 and some of Data2
