@@ -35,7 +35,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-
+  MsWheaPkg/MsWheaPkg.dec                       ## MU_CHANGE
 
 [LibraryClasses]
   BaseMemoryLib
@@ -44,6 +44,7 @@
   PrintLib
   UefiBootServicesTableLib
   DebugPrintErrorLevelLib
+  MuTelemetryHelperLib                          ## MU_CHANGE
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdDebugClearMemoryValue   ## SOMETIMES_CONSUMES

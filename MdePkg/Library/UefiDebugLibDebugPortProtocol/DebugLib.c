@@ -23,7 +23,7 @@
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugPrintErrorLevelLib.h>
-#include <Library/MuTelemetryHelperLib.h>
+#include <Library/MuTelemetryHelperLib.h>     // MU_CHANGE
 
 #include <Protocol/DebugPort.h>
 
