@@ -292,6 +292,9 @@ ReportDispatcher (
                       );
         if (NewBuffer != NULL) {
           CallbackEntry->EndPointer = (EFI_PHYSICAL_ADDRESS) (UINTN) NewBuffer + (CallbackEntry->EndPointer - CallbackEntry->StatusCodeDataBuffer);
+          // MU_CHANGE Starts: Zero the EFI_STATUS_CODE_DATA field to avoid residual data propagation
+          RscData = (RSC_DATA_ENTRY *) (UINTN) ((UINTN) NewBuffer + ((UINTN) RscData - CallbackEntry->StatusCodeDataBuffer));
+          // MU_CHANGE Ends
           CallbackEntry->StatusCodeDataBuffer = (EFI_PHYSICAL_ADDRESS) (UINTN) NewBuffer;
           CallbackEntry->BufferSize *= 2;
         }
