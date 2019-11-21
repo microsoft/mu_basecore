@@ -262,12 +262,12 @@ DebugAssert (
   if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_TELEMETRY_ENABLED) != 0) {
     CopyMem (&Data1, (UINT16*)(&LineNumber), sizeof(UINT16));
     if (FileNameLength <= 6) { // We can fit everything into Data1
-      CopyMem (&Data1 + 2, FileName, FileNameLength);
+      CopyMem ((UINT8*)&Data1 + 2, FileName, FileNameLength);
     } else if (FileNameLength > 6 && FileNameLength <= 14) { // Use all of Data1 and some of Data2
-      CopyMem (&Data1 + 2, FileName, 6);
+      CopyMem ((UINT8*)&Data1 + 2, FileName, 6);
       CopyMem (&Data2, FileName + 6, FileNameLength - 6);
     } else { // Take the last 14 characters of the file name
-      CopyMem (&Data1 + 2, FileName + (FileNameLength - 14), 6);
+      CopyMem ((UINT8*)&Data1 + 2, FileName + (FileNameLength - 14), 6);
       CopyMem (&Data2, FileName + (FileNameLength - 8), 8);
     }
 
