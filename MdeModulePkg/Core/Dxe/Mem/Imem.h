@@ -9,6 +9,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #ifndef _IMEM_H_
 #define _IMEM_H_
 
+// MU_CHANGE Start: moved the MEMORY_TYPE_* defines to UefiMultiPhase.h headers - TCBZ2372
 //
 // +---------------------------------------------------+
 // | 0..(EfiMaxMemoryType - 1)    - Normal memory type |
@@ -20,10 +21,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // | 0x80000000..0xFFFFFFFF       - OS reserved        |
 // +---------------------------------------------------+
 //
-#define MEMORY_TYPE_OS_RESERVED_MIN   0x80000000
-#define MEMORY_TYPE_OS_RESERVED_MAX   0xFFFFFFFF
-#define MEMORY_TYPE_OEM_RESERVED_MIN  0x70000000
-#define MEMORY_TYPE_OEM_RESERVED_MAX  0x7FFFFFFF
+// #define MEMORY_TYPE_OS_RESERVED_MIN                 0x80000000
+// #define MEMORY_TYPE_OS_RESERVED_MAX                 0xFFFFFFFF
+// #define MEMORY_TYPE_OEM_RESERVED_MIN                0x70000000
+// #define MEMORY_TYPE_OEM_RESERVED_MAX                0x7FFFFFFF
+// MU_CHANGE End
 
 //
 // MEMORY_MAP_ENTRY
