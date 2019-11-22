@@ -14,6 +14,17 @@
 
 //
 // Enumeration of memory types introduced in UEFI.
+// MU_CHANGE Start: moved the MEMORY_TYPE_* defines into enum from MdeModulePkg\Core\Dxe\Mem\Imem.h - TCBZ2372
+// +---------------------------------------------------+
+// | 0..(EfiMaxMemoryType - 1)    - Normal memory type |
+// +---------------------------------------------------+
+// | EfiMaxMemoryType..0x6FFFFFFF - Invalid            |
+// +---------------------------------------------------+
+// | 0x70000000..0x7FFFFFFF       - OEM reserved       |
+// +---------------------------------------------------+
+// | 0x80000000..0xFFFFFFFF       - OS reserved        |
+// +---------------------------------------------------+
+// MU_CHANGE End
 //
 typedef enum {
   EfiReservedMemoryType,
@@ -31,42 +42,45 @@ typedef enum {
   EfiMemoryMappedIOPortSpace,
   EfiPalCode,
   EfiPersistentMemory,
-  EfiMaxMemoryType
+  EfiMaxMemoryType,
+  // MU_CHANGE Start: moved the MEMORY_TYPE_* defines into enum from MdeModulePkg\Core\Dxe\Mem\Imem.h - TCBZ2372
+  MEMORY_TYPE_OEM_RESERVED_MIN = 0x70000000,
+  MEMORY_TYPE_OEM_RESERVED_MAX = 0x7FFFFFFF,
+  MEMORY_TYPE_OS_RESERVED_MIN  = 0x80000000,
+  MEMORY_TYPE_OS_RESERVED_MAX  = 0xFFFFFFFF
+                                 // MU_CHANGE End
 } EFI_MEMORY_TYPE;
-
 
 //
 // Data structure that precedes all of the standard EFI table types.
 //
 typedef struct {
-  UINT64  Signature;
-  UINT32  Revision;
-  UINT32  HeaderSize;
-  UINT32  CRC32;
-  UINT32  Reserved;
+  UINT64    Signature;
+  UINT32    Revision;
+  UINT32    HeaderSize;
+  UINT32    CRC32;
+  UINT32    Reserved;
 } EFI_TABLE_HEADER;
 
 //
 // Attributes of variable.
 //
-#define EFI_VARIABLE_NON_VOLATILE                 0x00000001
-#define EFI_VARIABLE_BOOTSERVICE_ACCESS           0x00000002
-#define EFI_VARIABLE_RUNTIME_ACCESS               0x00000004
-#define EFI_VARIABLE_HARDWARE_ERROR_RECORD        0x00000008
+#define EFI_VARIABLE_NON_VOLATILE           0x00000001
+#define EFI_VARIABLE_BOOTSERVICE_ACCESS     0x00000002
+#define EFI_VARIABLE_RUNTIME_ACCESS         0x00000004
+#define EFI_VARIABLE_HARDWARE_ERROR_RECORD  0x00000008
 
 //
 // This attribute is identified by the mnemonic 'HR'
 // elsewhere in this specification.
 //
-#define EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS   0x00000010
-
-
+#define EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS  0x00000010
 
 //
 // _WIN_CERTIFICATE.wCertificateType
 //
-#define WIN_CERT_TYPE_EFI_PKCS115   0x0EF0
-#define WIN_CERT_TYPE_EFI_GUID      0x0EF1
+#define WIN_CERT_TYPE_EFI_PKCS115  0x0EF0
+#define WIN_CERT_TYPE_EFI_GUID     0x0EF1
 
 /**
 
@@ -96,10 +110,10 @@ typedef struct {
 
 **/
 typedef struct _WIN_CERTIFICATE {
-  UINT32  dwLength;
-  UINT16  wRevision;
-  UINT16  wCertificateType;
-  //UINT8 bCertificate[ANYSIZE_ARRAY];
+  UINT32    dwLength;
+  UINT16    wRevision;
+  UINT16    wCertificateType;
+  // UINT8 bCertificate[ANYSIZE_ARRAY];
 } WIN_CERTIFICATE;
 
 //
@@ -112,11 +126,10 @@ typedef struct _WIN_CERTIFICATE {
 // WIN_CERTIFICATE_UEFI_GUID.CertData
 //
 typedef struct _EFI_CERT_BLOCK_RSA_2048_SHA256 {
-  EFI_GUID  HashType;
-  UINT8     PublicKey[256];
-  UINT8     Signature[256];
+  EFI_GUID    HashType;
+  UINT8       PublicKey[256];
+  UINT8       Signature[256];
 } EFI_CERT_BLOCK_RSA_2048_SHA256;
-
 
 /**
 
@@ -145,11 +158,10 @@ typedef struct _EFI_CERT_BLOCK_RSA_2048_SHA256 {
 
 **/
 typedef struct _WIN_CERTIFICATE_UEFI_GUID {
-  WIN_CERTIFICATE   Hdr;
-  EFI_GUID          CertType;
-  UINT8             CertData[1];
+  WIN_CERTIFICATE    Hdr;
+  EFI_GUID           CertType;
+  UINT8              CertData[1];
 } WIN_CERTIFICATE_UEFI_GUID;
-
 
 /**
 
@@ -182,11 +194,10 @@ typedef struct _WIN_CERTIFICATE_UEFI_GUID {
 
 **/
 typedef struct _WIN_CERTIFICATE_EFI_PKCS1_15 {
-  WIN_CERTIFICATE Hdr;
-  EFI_GUID        HashAlgorithm;
+  WIN_CERTIFICATE    Hdr;
+  EFI_GUID           HashAlgorithm;
   // UINT8 Signature[ANYSIZE_ARRAY];
 } WIN_CERTIFICATE_EFI_PKCS1_15;
-
 
 /**
 
@@ -218,9 +229,8 @@ typedef struct _WIN_CERTIFICATE_EFI_PKCS1_15 {
 
 **/
 typedef struct {
-  UINT64                      MonotonicCount;
-  WIN_CERTIFICATE_UEFI_GUID   AuthInfo;
+  UINT64                       MonotonicCount;
+  WIN_CERTIFICATE_UEFI_GUID    AuthInfo;
 } EFI_VARIABLE_AUTHENTICATION;
 
 #endif
-
