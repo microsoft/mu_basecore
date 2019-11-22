@@ -446,6 +446,7 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
             ret = self._CollectNuget()
         if ret != 0:
             logging.error("Error occured in post build hook")
+            raise RuntimeError("Error occured in post build hook")
         return ret
 
     def PostFinalBuildHook(self, ret):
@@ -474,7 +475,7 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
         return "NetworkPkg"
 
     def GetArchitecturesSupported(self):
-        return ["IA32", "X64", ]  # "AARCH64"
+        return ["IA32", "X64", "AARCH64"]
 
     def GetTargetsSupported(self):
         return ["DEBUG", "RELEASE"]
@@ -494,12 +495,12 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
             {
                 "Path": "Silicon/Arm/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_silicon_arm_tiano.git",
-                "Branch": "dev/201905"
+                "Branch": "dev/201908"
             },
             {
                 "Path": "Common/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
-                "Branch": "dev/201905"
+                "Branch": "dev/201908"
             }
         ]
 

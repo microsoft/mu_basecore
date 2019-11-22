@@ -67,8 +67,6 @@
   FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
   SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
   IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
-  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
-
 
 ##MSCHANGE Begin
 !if $(TARGET) == DEBUG
@@ -98,6 +96,12 @@
 
 [LibraryClasses.IA32]
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
+
+[LibraryClasses.IA32, LibraryClasses.X64]
+  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
+
+[LibraryClasses.ARM, LibraryClasses.AARCH64]
+  RngLib|SecurityPkg/RandomNumberGenerator/RngDxeLib/RngDxeLib.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
   #
