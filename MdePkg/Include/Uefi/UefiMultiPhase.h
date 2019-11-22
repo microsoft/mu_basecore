@@ -108,7 +108,24 @@ typedef enum {
   /// by a corresponding call to the underlying isolation architecture.
   ///
   EfiUnacceptedMemoryType,
-  EfiMaxMemoryType
+  EfiMaxMemoryType,
+  //
+  // MU_CHANGE Start: moved the MEMORY_TYPE_* defines into enum from MdeModulePkg\Core\Dxe\Mem\Imem.h - TCBZ2372
+  // +---------------------------------------------------+
+  // | 0..(EfiMaxMemoryType - 1)    - Normal memory type |
+  // +---------------------------------------------------+
+  // | EfiMaxMemoryType..0x6FFFFFFF - Invalid            |
+  // +---------------------------------------------------+
+  // | 0x70000000..0x7FFFFFFF       - OEM reserved       |
+  // +---------------------------------------------------+
+  // | 0x80000000..0xFFFFFFFF       - OS reserved        |
+  // +---------------------------------------------------+
+  //
+  MEMORY_TYPE_OEM_RESERVED_MIN = 0x70000000,
+  MEMORY_TYPE_OEM_RESERVED_MAX = 0x7FFFFFFF,
+  MEMORY_TYPE_OS_RESERVED_MIN  = 0x80000000,
+  MEMORY_TYPE_OS_RESERVED_MAX  = 0xFFFFFFFF
+                                 // MU_CHANGE End
 } EFI_MEMORY_TYPE;
 
 ///
