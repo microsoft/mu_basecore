@@ -285,7 +285,7 @@ DeletedHwErrRecToCommonQuota (
     return;
   }
 
-  tNextVariable = GetNextVariablePtr (VarHeaderPtr);
+  tNextVariable = GetNextVariablePtr (VarHeaderPtr, mVariableModuleGlobal->VariableGlobal.AuthFormat);
   tVariableSize = (UINTN) tNextVariable - (UINTN) VarHeaderPtr;
 
   if (mVariableModuleGlobal->HwErrVariableTotalSize > tVariableSize) {
