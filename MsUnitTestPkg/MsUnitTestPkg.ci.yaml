@@ -1,12 +1,12 @@
+## @file
+# CI configuration for MsUnitTestPkg
+#
+# Copyright (c) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
 {
     "CompilerPlugin": {
-        #"DscPath": ""
-    },
-    "HostUnitTestCompilerPlugin": {
-        #"DscPath": 
-    },
-    "HostUnitTestDscCompleteCheck": {
-        "IgnoreInf": []  
+        "Skip": True
     },
     "CharEncodingCheck": {
         "IgnoreFiles": []
@@ -17,15 +17,16 @@
             "MdeModulePkg/MdeModulePkg.dec",
             "MsUnitTestPkg/MsUnitTestPkg.dec"
         ],
-        "AcceptableDependencies-HOST_APPLICATION":[], # for host based unit tests
+        # For host based unit tests
+        "AcceptableDependencies-HOST_APPLICATION":[],
+        # For UEFI shell based apps
         "AcceptableDependencies-UEFI_APPLICATION": [  # for UEFI shell based tests
             "ShellPkg/ShellPkg.dec"
         ],
         "IgnoreInf": []
     },
     "DscCompleteCheck": {
-        "IgnoreInf": [], 
-        #"DscPath": ""   
+        "Skip": True
     },
     "GuidCheck": {
         "IgnoreGuidName": [],
@@ -34,7 +35,15 @@
         "IgnoreDuplicates": []
     },
     "LibraryClassCheck": {
-        "IgnoreLibraryClass": [],
         "IgnoreHeaderFile": []
+    },
+
+    ## options defined ci/Plugin/SpellCheck
+    "SpellCheck": {
+        "AuditOnly": True,           # Fails test but run in AuditOnly mode to collect log
+        "IgnoreFiles": [],           # use gitignore syntax to ignore errors in matching files
+        "ExtendWords": [],           # words to extend to the dictionary for this package
+        "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
+        "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)
     }
 }
