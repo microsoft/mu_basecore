@@ -24,6 +24,8 @@
         "AcceptableDependencies": [
             "MdePkg/MdePkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",
+            # MU_CHANGE - This should be dropped, if possible.
+            # Only used by libraries that aren't included in the DSC, anyway.
             "StandaloneMmPkg/StandaloneMmPkg.dec",
             "ArmPkg/ArmPkg.dec"  # this should be fixed by promoting an abstraction
         ],
@@ -38,7 +40,11 @@
 
     ## options defined ci/Plugin/DscCompleteCheck
     "DscCompleteCheck": {
-        "IgnoreInf": [],
+        "IgnoreInf": [
+            # MU_CHANGE - Cannot be built without StandaloneMmPkg.
+            MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteStandaloneMm.inf,
+            MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf
+        ],
         "DscPath": "MdeModulePkg.dsc"
     },
     ## options defined ci/Plugin/HostUnitTestDscCompleteCheck
@@ -61,6 +67,9 @@
 
     ## options defined ci/Plugin/LibraryClassCheck
     "LibraryClassCheck": {
+        "IgnoreLibraryClass": [
+            "HwResetSystemLib"          # MU_CHANGE - "Virtual" LibraryClass
+        ],
         "IgnoreHeaderFile": []
     },
 

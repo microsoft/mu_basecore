@@ -4,11 +4,13 @@
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
-trigger:
-- master
+# MU_CHANGE BEGIN
+trigger: none
 
 pr:
-- master
+- dev/*
+  release/*
+# MU_CHANGE END
 
 jobs:
 - template: templates/pr-gate-build-job.yml
