@@ -58,7 +58,7 @@ steps:
   condition: not(eq(variables.ShouldPublish, 'true'))
   inputs:
     scriptSource: 'filePath'
-      scriptPath: 'NetworkPkg/SharedNetworking/DriverBuilder.py'
+    scriptPath: 'NetworkPkg/SharedNetworking/DriverBuilder.py'
     arguments: '-c NetworkPkg/SharedNetworking/SharedNetworkSettings.py'
     failOnStderr: false
 
