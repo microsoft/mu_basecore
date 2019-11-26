@@ -1394,6 +1394,12 @@ GuardAllFreedPages (
       TableEntry  = ((UINT64 *)(UINTN)(Tables[Level]))[Indices[Level]];
       Address     = Addresses[Level];
 
+      // MU_CHANGE Starts: keep walking through this level than go up
+      if (TableEntry == 0) {
+        GuardPageNumber = 0;
+        GuardPage       = (UINT64)-1;
+      } else 
+      // MU_CHANGE Ends
       if (Level < GUARDED_HEAP_MAP_TABLE_DEPTH - 1) {
         Level            += 1;
         Tables[Level]     = TableEntry;
