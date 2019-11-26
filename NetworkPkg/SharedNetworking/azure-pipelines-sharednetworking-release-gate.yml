@@ -3,8 +3,9 @@ workspace:
 
 trigger: none # will disable CI builds entirely
 
-variables:
-- group: SecMirrorCommon
+# Currently don't have the SecMirrorCommon variables
+#variables:
+#- group: SecMirrorCommon
 
 steps:
 - checkout: self
@@ -22,34 +23,44 @@ steps:
   displayName: 'Install/Upgrade mu_build'
 
 # Create a variable
-- powershell: |
-    Write-Host "##vso[task.setvariable variable=GIT_CREDS]projectmu:$(secmircom.pat)"
-- script: |
-    echo my pipeline variable is $(GIT_CREDS)
+#- powershell: |
+#    Write-Host "##vso[task.setvariable variable=GIT_CREDS]projectmu:$(secmircom.pat)"
+#- script: |
+#    echo my pipeline variable is $(GIT_CREDS)
 
 # Update dependencies
 - task: CmdLine@1
   displayName: Setup
   inputs:
     filename: stuart_ci_setup
-    arguments: -c NetworkPkg/SharedNetworking/SharedNetworkiSettings.py
+    arguments: -c NetworkPkg/SharedNetworking/SharedNetworkSettings.py
 
 - task: CmdLine@1
   displayName: 'Update Dependencies'
   inputs:
     filename: stuart_update
-    arguments: -c NetworkPkg/SharedNetworking/SharedNetworkiSettings.py --Tool_Chain VS2017
+    arguments: -c NetworkPkg/SharedNetworking/SharedNetworkSettings.py
     failOnStderr: false
-
 
 # Build and publish
 - task: PythonScript@0
   displayName: 'Build and Ship'
+  condition: eq(variables.ShouldPublish, 'true')
   inputs:
     scriptSource: 'filePath'
     scriptPath: 'NetworkPkg/SharedNetworking/DriverBuilder.py'
-    arguments: '-c NetworkPkg/SharedNetworking/SharedNetworkiSettings.py --dump-version --api-key=$(NUGET_API_KEY)'
-    failOnStderr: true
+    arguments: '-c NetworkPkg/SharedNetworking/SharedNetworkSettings.py -nv=$(NugetVersion) --api-key=$(NUGET_API_KEY)'
+    failOnStderr: false
+
+# Build but don't publish
+- task: PythonScript@0
+  displayName: 'Build but do not publish'
+  condition: not(eq(variables.ShouldPublish, 'true'))
+  inputs:
+    scriptSource: 'filePath'
+    scriptPath: 'NetworkPkg/SharedNetworking/DriverBuilder.py'
+    arguments: '-c NetworkPkg/SharedNetworking/SharedNetworkSettings.py'
+    failOnStderr: false
 
 # Copy the Nuget Package
 - task: CopyFiles@2
@@ -57,6 +68,7 @@ steps:
   inputs:
     contents: 'Build/**.nupkg'
     targetFolder: $(Build.ArtifactStagingDirectory)
+
 # Copy the TXT file
 - task: CopyFiles@2
   displayName: 'Copy Build files'
@@ -80,9 +92,12 @@ steps:
 
 # publish to Nuget
 - task: NuGetCommand@2
+  condition: eq(variables.ShouldPublish, 'true')
   inputs:
     command: push
     nuGetFeedType: external
     publishFeedCredentials: 'Uefibot_Mu_SharedCrypto'
-    versioningScheme: byEnvV
+    versioningScheme: byEnvVar
     versionEnvVar: NugetPackageVersion
+    verbosityPush: 'detailed'
+    configuration: 'NetworkPkg/SharedNetworking/SharedNetworking.config.json'
