@@ -32,6 +32,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  MsWheaPkg/MsWheaPkg.dec                               ## MU_CHANGE
 
 [LibraryClasses]
   BaseLib
@@ -40,6 +41,7 @@
   PcdLib
   PrintLib
   SerialPortLib
+  MuTelemetryHelperLib                                  ## MU_CHANGE
 
 [Guids]
   gEfiEventExitBootServicesGuid                         ## CONSUMES ## Event

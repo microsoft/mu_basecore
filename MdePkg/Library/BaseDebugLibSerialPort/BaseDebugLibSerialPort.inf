@@ -28,7 +28,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-  MsWheaPkg/MsWheaPkg.dec
+  MsWheaPkg/MsWheaPkg.dec       ## MU_CHANGE
 
 [LibraryClasses]
   SerialPortLib
@@ -37,7 +37,7 @@
   PrintLib
   BaseLib
   DebugPrintErrorLevelLib
-  MuTelemetryHelperLib
+  MuTelemetryHelperLib          ## MU_CHANGE
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdDebugClearMemoryValue  ## SOMETIMES_CONSUMES

@@ -14,7 +14,7 @@
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugPrintErrorLevelLib.h>
-#include <Library/MuTelemetryHelperLib.h>
+#include <Library/MuTelemetryHelperLib.h>     // MU_CHANGE
 
 //
 // Define the maximum debug and assert message length that this library supports
@@ -324,7 +324,7 @@ DebugAssert (
   CHAR16  Buffer[MAX_DEBUG_MESSAGE_LENGTH];
 
   // MU_CHANGE BEGIN LOGTELEMETRY
-  UINTN                  FileNameLength = AsciiStrLen (FileName) - 2; // We don't care about the extension
+  UINTN                  FileNameLength = AsciiStrLen (FileName) - (2 * sizeof (CHAR8)); // We don't care about the extension
   UINT64                 Data1 = 0xFFFFFFFFFFFFFFFF;
   UINT64                 Data2 = 0xFFFFFFFFFFFFFFFF;
   // MU_CHANGE END LOGTELEMETRY
@@ -350,7 +350,7 @@ DebugAssert (
     }
 
     //
-    // Generate a Breakpoint, DeadLoop, or NOP based on PCD settings
+    // Generate a Breakpoint, DeadLoop, or Telemetry based on PCD settings
     //
     // MU_CHANGE BEGIN LOGTELEMETRY
     if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_TELEMETRY_ENABLED) != 0) {
@@ -364,7 +364,6 @@ DebugAssert (
         CopyMem ((UINT8*)&Data1 + 2, FileName + (FileNameLength - 14), 6);
         CopyMem (&Data2, FileName + (FileNameLength - 8), 8);
       }
-
       LogTelemetry (TRUE,
         NULL,
         DEBUG_ASSERT_ERROR_CODE,

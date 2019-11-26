@@ -37,7 +37,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-  MsWheaPkg/MsWheaPkg.dec
+  MsWheaPkg/MsWheaPkg.dec       ## MU_CHANGE
 
 
 [LibraryClasses]
@@ -46,7 +46,7 @@
   PcdLib
   PrintLib
   DebugPrintErrorLevelLib
-  MuTelemetryHelperLib
+  MuTelemetryHelperLib          ## MU_CHANGE
 
 [Guids]
   gEfiEventExitBootServicesGuid                 ## CONSUMES

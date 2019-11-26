@@ -20,7 +20,7 @@
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/PcdLib.h>
 #include <Library/DebugPrintErrorLevelLib.h>
-#include <Library/MuTelemetryHelperLib.h>
+#include <Library/MuTelemetryHelperLib.h>     // MU_CHANGE
 
 //
 // VA_LIST can not initialize to NULL for all compiler, so we use this to
@@ -497,7 +497,7 @@ DebugAssert (
   UINTN                  DescriptionSize;
 
   // MU_CHANGE BEGIN LOGTELEMETRY
-  UINTN                  FileNameLength = AsciiStrLen (FileName) - 2; // We don't care about the extension
+  UINTN                  FileNameLength = AsciiStrLen (FileName) - (2 * sizeof (CHAR8)); // We don't care about the extension
   UINT64                 Data1 = 0xFFFFFFFFFFFFFFFF;
   UINT64                 Data2 = 0xFFFFFFFFFFFFFFFF;
   // MU_CHANGE END LOGTELEMETRY
@@ -597,7 +597,6 @@ DebugAssert (
       CopyMem ((UINT8*)&Data1 + 2, FileName + (FileNameLength - 14), 6);
       CopyMem (&Data2, FileName + (FileNameLength - 8), 8);
     }
-
     LogTelemetry (TRUE,
       NULL,
       DEBUG_ASSERT_ERROR_CODE,

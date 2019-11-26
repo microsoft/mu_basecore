@@ -37,6 +37,7 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  MsWheaPkg/MsWheaPkg.dec                                   ## MU_CHANGE
 
 [LibraryClasses]
   PcdLib
@@ -45,6 +46,7 @@
   PeiServicesLib
   PeiServicesTablePointerLib
   BaseLib
+  MuTelemetryHelperLib                                      ## MU_CHANGE
 
 [Ppis]
   gEdkiiDebugPpiGuid                                        ## CONSUMES
