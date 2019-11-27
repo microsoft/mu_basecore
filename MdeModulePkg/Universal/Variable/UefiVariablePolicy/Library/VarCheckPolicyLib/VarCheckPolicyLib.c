@@ -49,10 +49,9 @@ VariableServiceGetVariable (
   @param[in,out]  CommBufferSize      All parameters standard to MM communications convention.
 
   @retval     EFI_SUCCESS
+  @retval     EFI_INVALID_PARAMETER   CommBuffer or CommBufferSize is null pointer.
   @retval     EFI_INVALID_PARAMETER   CommBuffer size is wrong.
   @retval     EFI_INVALID_PARAMETER   Revision or signature don't match.
-  @retval     EFI_INVALID_PARAMETER   Command is invalid.
-  @retval     EFI_INVALID_PARAMETER   Other bad parameters.
 
 **/
 STATIC
@@ -93,16 +92,9 @@ VarCheckPolicyLibMmiHandler (
   if (PolicyCommmHeader->Signature != VAR_CHECK_POLICY_COMM_SIG ||
       PolicyCommmHeader->Revision != VAR_CHECK_POLICY_COMM_REVISION) {
     DEBUG(( DEBUG_INFO, "%a - Signature or revision are incorrect!\n", __FUNCTION__ ));
-    return EFI_INVALID_PARAMETER;
-  }
-  // Check the requested command.
-  if (PolicyCommmHeader->Command != VAR_CHECK_POLICY_COMMAND_DISABLE &&
-      PolicyCommmHeader->Command != VAR_CHECK_POLICY_COMMAND_IS_ENABLED &&
-      PolicyCommmHeader->Command != VAR_CHECK_POLICY_COMMAND_REGISTER &&
-      PolicyCommmHeader->Command != VAR_CHECK_POLICY_COMMAND_DUMP &&
-      PolicyCommmHeader->Command != VAR_CHECK_POLICY_COMMAND_LOCK) {
-    DEBUG(( DEBUG_INFO, "%a - Invalid command requested! %d\n", __FUNCTION__, PolicyCommmHeader->Command ));
-    return EFI_INVALID_PARAMETER;
+    // We have verified the buffer is not null and have enough size to hold Result field.
+    PolicyCommmHeader->Result = EFI_INVALID_PARAMETER;
+    return EFI_SUCCESS;
   }
 
   //
@@ -122,7 +114,7 @@ VarCheckPolicyLibMmiHandler (
       ExpectedSize += sizeof(VAR_CHECK_POLICY_COMM_IS_ENABLED_PARAMS);
       if (*CommBufferSize < ExpectedSize) {
         DEBUG(( DEBUG_INFO, "%a - Bad comm buffer size! %d < %d\n", __FUNCTION__, *CommBufferSize, ExpectedSize ));
-        Status = EFI_INVALID_PARAMETER;
+        PolicyCommmHeader->Result = EFI_INVALID_PARAMETER;
         break;
       }
 
@@ -138,7 +130,7 @@ VarCheckPolicyLibMmiHandler (
       ExpectedSize += sizeof(VARIABLE_POLICY_ENTRY);
       if (*CommBufferSize < ExpectedSize) {
         DEBUG(( DEBUG_INFO, "%a - Bad comm buffer size! %d < %d\n", __FUNCTION__, *CommBufferSize, ExpectedSize ));
-        Status = EFI_INVALID_PARAMETER;
+        PolicyCommmHeader->Result = EFI_INVALID_PARAMETER;
         break;
       }
 
@@ -150,7 +142,7 @@ VarCheckPolicyLibMmiHandler (
           EFI_ERROR(SafeUintnAdd(sizeof(VAR_CHECK_POLICY_COMM_HEADER), PolicyEntry->Size, &ExpectedSize)) ||
           *CommBufferSize < ExpectedSize) {
         DEBUG(( DEBUG_INFO, "%a - Bad policy entry contents!\n", __FUNCTION__ ));
-        Status = EFI_INVALID_PARAMETER;
+        PolicyCommmHeader->Result = EFI_INVALID_PARAMETER;
         break;
       }
 
@@ -168,8 +160,8 @@ VarCheckPolicyLibMmiHandler (
       break;
 
     default:
-      // NOTE: This shouldn't ever happen because of the "known command" check above,
-      //       but is here for code-completeness.
+      // Mark unknown requested command as EFI_UNSUPPORTED.
+      DEBUG(( DEBUG_INFO, "%a - Invalid command requested! %d\n", __FUNCTION__, PolicyCommmHeader->Command ));
       PolicyCommmHeader->Result = EFI_UNSUPPORTED;
       break;
   }
