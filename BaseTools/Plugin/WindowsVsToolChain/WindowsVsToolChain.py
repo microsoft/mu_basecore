@@ -22,14 +22,13 @@ class WindowsVsToolChain(IUefiBuildPlugin):
     def do_pre_build(self, thebuilder):
         self.Logger = logging.getLogger("WindowsVsToolChain")
 
-#
+        #
         # VS2017 - Follow VS2017 where there is potential for many versions of the tools.
         # If a specific version is required then the user must set both env variables:
         ## VS150INSTALLPATH:  base install path on system to VC install dir.  Here you will find the VC folder, etc
         ## VS150TOOLVER:      version number for the VC compiler tools
         ## VS2017_PREFIX:     path to MSVC compiler folder with trailing slash (can be used instead of two vars above)
-        if ((thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "VS2017")
-            or (thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "CLANGPDB")):
+        if thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "VS2017":
 
             # check to see if full path already configured
             if shell_environment.GetEnvironment().get_shell_var("VS2017_PREFIX") != None:
@@ -52,8 +51,6 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 prefix = os.path.join(install_path, "VC", "Tools", "MSVC", vc_ver)
                 prefix = prefix + os.path.sep
                 shell_environment.GetEnvironment().set_shell_var("VS2017_PREFIX", prefix)
-                if thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "CLANGPDB":
-                    shell_environment.GetEnvironment().set_shell_var("CLANG_HOST_BIN", prefix + "bin" + os.path.sep + "Hostx86" + os.path.sep + "x86" + os.path.sep + "n")
 
             # now confirm it exists
             if not os.path.exists(shell_environment.GetEnvironment().get_shell_var("VS2017_PREFIX")):
@@ -94,6 +91,38 @@ class WindowsVsToolChain(IUefiBuildPlugin):
             if not os.path.exists(shell_environment.GetEnvironment().get_shell_var("VS2019_PREFIX")):
                 self.Logger.error("Path for VS2019 toolchain is invalid")
                 return -2
+
+        #
+        # CLANGPDB - Locate VS to resolve nmake dependency.  Environment is agnostic to VS version.
+        #
+        elif thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "CLANGPDB":
+
+            install_path = self._get_vs_install_path(None, None)
+            vc_ver = self._get_vc_version(install_path, None)
+
+            if install_path is None or vc_ver is None:
+                self.Logger.error("Failed to configure environment for VS")
+                return -1
+
+            version_aggregator.GetVersionAggregator().ReportVersion(
+                "Visual Studio Install Path", install_path, version_aggregator.VersionTypes.INFO)
+            version_aggregator.GetVersionAggregator().ReportVersion(
+                "VC Version", vc_ver, version_aggregator.VersionTypes.TOOL)
+
+            # make path align with tools_def.txt
+            vs_host = "x86"
+            prefix = os.path.join(install_path, "VC", "Tools", "MSVC", vc_ver)
+            prefix = prefix + os.path.sep
+            clang_host_bin_prefix = prefix + "bin" + os.path.sep + "Host" + vs_host + os.path.sep + vs_host + os.path.sep
+
+            # now confirm it exists
+            if not os.path.exists(clang_host_bin_prefix):
+                self.Logger.error("Path for VS toolchain is invalid")
+                return -2
+
+            # The environment is using nmake (not make) so add "n" to the end of the path.
+            # The rest of the command is derived from definisions in tools.def.
+            shell_environment.GetEnvironment().set_shell_var("CLANG_HOST_BIN", clang_host_bin_prefix + os.path.sep + "n")
 
         return 0
 
