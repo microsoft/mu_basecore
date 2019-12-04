@@ -173,10 +173,10 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
         SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
         WORKSPACE_PATH = os.path.dirname(os.path.dirname(SCRIPT_PATH))
-        REQUIRED_REPOS = ('Common/MU_TIANO',
-                          "Silicon/Arm/MU_TIANO")  # todo fix this
+        REQUIRED_REPOS = ['Common/MU_TIANO',
+                          "Silicon/Arm/MU_TIANO"]  # todo fix this
 
-        MODULE_PKG_PATHS = ";".join(os.path.join(
+        MODULE_PKG_PATHS = os.pathsep.join(os.path.join(
             WORKSPACE_PATH, pkg_name) for pkg_name in REQUIRED_REPOS)
 
         self.OUTPUT_DIR = os.path.join(WORKSPACE_PATH, "Build", ".NugetOutput")
@@ -255,9 +255,8 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
 
     def _GetReleaseForCommit(self, commit_hash: str, n: int = 100):
         if n > 2000:
-            logging.error(
-                "We couldn't find the release branch that we correspond to")
-            raise RuntimeError("Unknown release branch")
+            logging.error("We couldn't find the release branch that we correspond to")
+            return "0.0.0.0"
         git_dir = os.path.dirname(self.sp)
         cmd_args = ["log", '--format="%h %D"', "-n " + str(n)]
         return_buffer = StringIO()
@@ -325,13 +324,9 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
 
     def GetActiveScopes(self):
         ''' get scope '''
-        scopes = ("corebuild", "sharednetworking_build", )
-        if (GetHostInfo().os == "Linux" and
-            "AARCH64" in self.GetArchSupported() and
-            self.ToolChainTagCacheValue is not None and
-                self.ToolChainTagCacheValue.upper().startswith("GCC")):
-
-            scopes += ("gcc_aarch64_linux",)
+        scopes = ("corebuild", "sharednetworking_build", "project_mu" )
+        # if (GetHostInfo().os == "Linux"):
+        #    scopes += ("gcc_aarch64_linux",)
 
         return scopes
 
@@ -446,6 +441,7 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
             ret = self._CollectNuget()
         if ret != 0:
             logging.error("Error occured in post build hook")
+            raise RuntimeError("Error occured in post build hook")
         return ret
 
     def PostFinalBuildHook(self, ret):
@@ -474,7 +470,7 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
         return "NetworkPkg"
 
     def GetArchitecturesSupported(self):
-        return ["IA32", "X64", ]  # "AARCH64"
+        return ["X64", "IA32", "AARCH64"]
 
     def GetTargetsSupported(self):
         return ["DEBUG", "RELEASE"]
@@ -494,12 +490,12 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
             {
                 "Path": "Silicon/Arm/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_silicon_arm_tiano.git",
-                "Branch": "dev/201905"
+                "Branch": "dev/201908"
             },
             {
                 "Path": "Common/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
-                "Branch": "dev/201905"
+                "Branch": "dev/201908"
             }
         ]
 
@@ -516,8 +512,7 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
 
     def RetrieveCommandLineOptions(self, args):
         '''  Retrieve command line options from the argparser '''
-        shell_environment.GetBuildVars().SetValue(
-            "TOOL_CHAIN_TAG", "VS2017", "Set default")
+        shell_environment.GetBuildVars().SetValue("TOOL_CHAIN_TAG", "VS2019", "Set default")
         if args.api_key is not None:
             self.api_key = args.api_key
             print("Using API KEY")

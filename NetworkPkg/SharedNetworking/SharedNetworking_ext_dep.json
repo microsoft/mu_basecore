@@ -3,6 +3,6 @@
   "type": "nuget",
   "name": "Mu-SharedNetworking",
   "source": "https://api.nuget.org/v3/index.json",
-  "version": "2019.5.1.4",
+  "version": "2019.8.1.1-beta",
   "flags": []
 }
