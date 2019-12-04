@@ -28,7 +28,8 @@ class WindowsVsToolChain(IUefiBuildPlugin):
         ## VS150INSTALLPATH:  base install path on system to VC install dir.  Here you will find the VC folder, etc
         ## VS150TOOLVER:      version number for the VC compiler tools
         ## VS2017_PREFIX:     path to MSVC compiler folder with trailing slash (can be used instead of two vars above)
-        if thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "VS2017":
+        if ((thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "VS2017")
+            or (thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "CLANGPDB")):
 
             # check to see if full path already configured
             if shell_environment.GetEnvironment().get_shell_var("VS2017_PREFIX") != None:
@@ -51,6 +52,8 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 prefix = os.path.join(install_path, "VC", "Tools", "MSVC", vc_ver)
                 prefix = prefix + os.path.sep
                 shell_environment.GetEnvironment().set_shell_var("VS2017_PREFIX", prefix)
+                if thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "CLANGPDB":
+                    shell_environment.GetEnvironment().set_shell_var("CLANG_HOST_BIN", prefix + "bin" + os.path.sep + "Hostx86" + os.path.sep + "x86" + os.path.sep + "n")
 
             # now confirm it exists
             if not os.path.exists(shell_environment.GetEnvironment().get_shell_var("VS2017_PREFIX")):
