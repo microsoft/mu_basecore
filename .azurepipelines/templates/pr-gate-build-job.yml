@@ -23,22 +23,22 @@ jobs:
       TARGET_MDE_CPU:
         Build.Pkgs: 'MdePkg,UefiCpuPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
-      # TARGET_MDEMODULE_DEBUG:
-      #   Build.Pkgs: 'MdeModulePkg'
-      #   Build.Targets: 'DEBUG'
-      # TARGET_MDEMODULE_RELEASE:
-      #   Build.Pkgs: 'MdeModulePkg'
-      #   Build.Targets: 'RELEASE,NO-TARGET'
-      # TARGET_NETWORK:
-      #   Build.Pkgs: 'NetworkPkg'
-      #   Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
-      # TARGET_OTHER:
-      #   # MU_CHANGE - Add MsUnitTest pacakge.
-      #   Build.Pkgs: 'MsUnitTestPkg,NetworkPkg,PcAtChipsetPkg'
-      #   Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
-      # TARGET_SECURITY:
-      #   Build.Pkgs: 'SecurityPkg'
-      #   Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
+      TARGET_MDEMODULE_DEBUG:
+        Build.Pkgs: 'MdeModulePkg'
+        Build.Targets: 'DEBUG'
+      TARGET_MDEMODULE_RELEASE:
+        Build.Pkgs: 'MdeModulePkg'
+        Build.Targets: 'RELEASE,NO-TARGET'
+      TARGET_NETWORK:
+        Build.Pkgs: 'NetworkPkg'
+        Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
+      TARGET_OTHER:
+        # MU_CHANGE - Add MsUnitTest pacakge.
+        Build.Pkgs: 'MsUnitTestPkg,NetworkPkg,PcAtChipsetPkg'
+        Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
+      TARGET_SECURITY:
+        Build.Pkgs: 'SecurityPkg'
+        Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
 
   workspace:
     clean: all

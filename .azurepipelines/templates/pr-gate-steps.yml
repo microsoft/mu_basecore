@@ -16,7 +16,7 @@ parameters:
 steps:
 - checkout: self
   clean: true
-  # fetchDepth: 1
+  fetchDepth: 1
 
 - task: UsePythonVersion@0
   inputs:
