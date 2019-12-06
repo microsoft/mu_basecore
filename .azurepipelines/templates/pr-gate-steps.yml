@@ -37,7 +37,7 @@ steps:
 # can't be used for comparison for the PR Eval.
 - powershell:
     $TargetBranch = "$(System.PullRequest.targetBranch)";
-    Write-Host "##vso[task.setvariable variable=pr_compare_branch]origin/" + $TargetBranch.replace('refs/heads/', '');
+    Write-Host "##vso[task.setvariable variable=pr_compare_branch]origin/"$TargetBranch.replace('refs/heads/', '');
   displayName: Workaround for Branch Names
   condition: eq(variables['Build.Reason'], 'PullRequest')
 # MU_CHANGE [END]
