@@ -36,7 +36,7 @@ steps:
 # but looks like "refs/heads/dev/whatever" on DevOps. The DevOps version
 # can't be used for comparison for the PR Eval.
 - powershell:
-    $TargetBranch = $(System.PullRequest.targetBranch);
+    $TargetBranch = "$(System.PullRequest.targetBranch)";
     Write-Host "##vso[task.setvariable variable=pr_compare_branch]origin/" + $TargetBranch.replace('refs/heads/', '');
   displayName: Workaround for Branch Names
   condition: eq(variables['Build.Reason'], 'PullRequest')
