@@ -1,58 +1,3 @@
-<<<<<<< HEAD:RepoDetails.md
-# Project Mu Basecore Repository
-
-??? info "Git Details"
-    Repository Url: {{mu_basecore.url}}  
-    Branch:         {{mu_basecore.branch}}  
-    Commit:         [{{mu_basecore.commit}}]({{mu_basecore.commitlink}})  
-    Commit Date:    {{mu_basecore.date}}
-
-This repository is considered foundational and fundamental to Project Mu. The guiding philosophy is that this any code within this repository should be one or more of the following
-
-* Part of the build system
-* Common to any silicon architecture
-* Part of the "API layer" that contains protocol and library definitions including
-  * Industry Standards
-  * UEFI Specifications
-  * ACPI Specifications
-* Part of the "PI" layer that contains driver dispatch logic, event/signaling logic, or memory management logic
-  * This can also include central technologies like variable services
-
-## More Info
-
-Please see the Project Mu docs (https://github.com/Microsoft/mu) for more information.  
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-## Issues
-
-Please open any issues in the Project Mu GitHub tracker. [More Details](https://microsoft.github.io/mu/How/contributing/)
-
-## Contributing Code or Docs
-
-Please follow the general Project Mu Pull Request process.  [More Details](https://microsoft.github.io/mu/How/contributing/)
-
-* [Code Requirements](/DeveloperDocs/code_requirements)
-* [Doc Requirements](/DeveloperDocs/doc_requirements)
-
-## Builds
-
-```cmd
-pip install mu_build
-mu_build -c corebuild.mu.json
-```
-
-[More info](https://github.com/microsoft/mu_pip_build)
-
-## Copyright & License
-
-Copyright (C) Microsoft Corporation
-SPDX-License-Identifier: BSD-2-Clause-Patent
-
-### Upstream License (TianoCore)
-=======
 ==============================
 Project Mu Basecore Repository
 ==============================
@@ -132,7 +77,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 Upstream License (TianoCore)
 ============================
->>>>>>> origin/release/201911:Readme.rst
 
 Copyright (c) 2019, TianoCore and contributors.  All rights reserved.
 
