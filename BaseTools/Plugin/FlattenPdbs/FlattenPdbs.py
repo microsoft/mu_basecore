@@ -33,8 +33,6 @@ import logging
 import shutil
 import os
 
-# Test change for Pipeline trigger.
-
 class FlattenPdbs(IUefiBuildPlugin):
 
     def do_post_build(self, thebuilder):
