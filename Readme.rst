@@ -1,64 +1,113 @@
+<<<<<<< HEAD:RepoDetails.md
+# Project Mu Basecore Repository
+
+??? info "Git Details"
+    Repository Url: {{mu_basecore.url}}  
+    Branch:         {{mu_basecore.branch}}  
+    Commit:         [{{mu_basecore.commit}}]({{mu_basecore.commitlink}})  
+    Commit Date:    {{mu_basecore.date}}
+
+This repository is considered foundational and fundamental to Project Mu. The guiding philosophy is that this any code within this repository should be one or more of the following
+
+* Part of the build system
+* Common to any silicon architecture
+* Part of the "API layer" that contains protocol and library definitions including
+  * Industry Standards
+  * UEFI Specifications
+  * ACPI Specifications
+* Part of the "PI" layer that contains driver dispatch logic, event/signaling logic, or memory management logic
+  * This can also include central technologies like variable services
+
+## More Info
+
+Please see the Project Mu docs (https://github.com/Microsoft/mu) for more information.  
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+## Issues
+
+Please open any issues in the Project Mu GitHub tracker. [More Details](https://microsoft.github.io/mu/How/contributing/)
+
+## Contributing Code or Docs
+
+Please follow the general Project Mu Pull Request process.  [More Details](https://microsoft.github.io/mu/How/contributing/)
+
+* [Code Requirements](/DeveloperDocs/code_requirements)
+* [Doc Requirements](/DeveloperDocs/doc_requirements)
+
+## Builds
+
+```cmd
+pip install mu_build
+mu_build -c corebuild.mu.json
+```
+
+[More info](https://github.com/microsoft/mu_pip_build)
+
+## Copyright & License
+
+Copyright (C) Microsoft Corporation
+SPDX-License-Identifier: BSD-2-Clause-Patent
+
+### Upstream License (TianoCore)
+=======
 ==============================
 Project Mu Basecore Repository
 ==============================
 
-.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/mu_basecore%20PR%20gate?branchName=dev/201908
+.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/mu_basecore%20PR%20gate?branchName=release/201911
 
-|build_status_windows| Current build status for dev/201908
+|build_status_windows| Current build status for release/201911
 
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
 
-Branch Status - dev/201908
+Branch Status - release/201911
 ==============================
 
 Status:
   In Development
 
 Entered Development:
-  2019/09/26
+  2019/12/5
 
 Anticipated Stabilization:
-  November 2019
+  January 2020
 
-Branch Changes - dev/201908
+Branch Changes - release/201911
 ===============================
 
 Breaking Changes-dev
 --------------------
 
-- None
+- 4k alignment is no longer part of the standard configuration and will need to be added to platform DSCs as a build option
 
 Main Changes-dev
 ----------------
 
-- None
+- The pcd gPcAtChipsetPkgTokenSpaceGuid.PcdRealTimeClockUpdateTimeout was moved from gEfiMdeModulePkgTokenSpaceGuid
 
 Bug Fixes-dev
 -------------
 
 - None
 
-1908_RefBoot Changes
+1911_RefBoot Changes
 --------------------
 
 - Incomplete
 
-1908_CIBuild Changes
+1911_CIBuild Changes
 --------------------
 
 - Incomplete
 
-1908_Rebase Changes
+1911_Rebase Changes
 -------------------
 
-Source Commit from dev/201905: 6a06f4baf35ebe07af2f7c3239c11b00578a7450
+Source Commit from dev/201908: 66b138958e
 
-- gEfiMdeModulePkgTokenSpaceGuid.PcdPlatformRecoverySupported PCD is now gEfiMdeModulePkgTokenSpaceGuid.PcdPlatformRecoverySupport from Tiano.
-- Some behaviors around System Table Capsules may have changed. Might not matter because they were removed later.
-- GraphicsConsoleDxe\GraphicsConsole.c may have reintroduced a screen flash. Need to confirm.
-- Ensure that StageCapsules interface in CapsuleLib doesn't compete with CoDCheckCapsuleOnDiskFlag() interface. Persisted capsule behavior had to be interleaved. Need to confirm functionality.
-- Remove MsCapsuleUpdatePkg package dependency from DxeCapsuleLib.
-- Check for references to mPerformingDeviceAdd in ConSplitter. Replaced by Private->AddingConOutDevice.
 
 Code of Conduct
 ===============
@@ -83,6 +132,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 Upstream License (TianoCore)
 ============================
+>>>>>>> origin/release/201911:Readme.rst
 
 Copyright (c) 2019, TianoCore and contributors.  All rights reserved.
 

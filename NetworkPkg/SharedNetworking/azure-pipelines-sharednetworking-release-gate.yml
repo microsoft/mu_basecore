@@ -6,6 +6,8 @@ trigger: none # will disable CI builds entirely
 # Currently don't have the SecMirrorCommon variables
 #variables:
 #- group: SecMirrorCommon
+pool:
+  vmImage: windows-latest
 
 steps:
 - checkout: self
@@ -58,8 +60,8 @@ steps:
   condition: not(eq(variables.ShouldPublish, 'true'))
   inputs:
     scriptSource: 'filePath'
-      scriptPath: 'NetworkPkg/SharedNetworking/DriverBuilder.py'
-    arguments: '-c NetworkPkg/SharedNetworking/SharedNetworkSettings.py'
+    scriptPath: 'NetworkPkg/SharedNetworking/DriverBuilder.py'
+    arguments: '-c NetworkPkg/SharedNetworking/SharedNetworkSettings.py --verbose'
     failOnStderr: false
 
 # Copy the Nuget Package
@@ -89,15 +91,3 @@ steps:
   condition: succeeded()
   inputs:
     artifactName: 'Nuget Package'
-
-# publish to Nuget
-- task: NuGetCommand@2
-  condition: eq(variables.ShouldPublish, 'true')
-  inputs:
-    command: push
-    nuGetFeedType: external
-    publishFeedCredentials: 'Uefibot_Mu_SharedCrypto'
-    versioningScheme: byEnvVar
-    versionEnvVar: NugetPackageVersion
-    verbosityPush: 'detailed'
-    configuration: 'NetworkPkg/SharedNetworking/SharedNetworking.config.json'

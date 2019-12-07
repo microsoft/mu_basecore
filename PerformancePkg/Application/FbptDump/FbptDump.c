@@ -99,7 +99,7 @@ WriteBufferToFile (
     // If file handle above was opened it will be closed by the delete.
     Status = ShellDeleteFile( &FileHandle );
     if (EFI_ERROR( Status )) {
-      DEBUG ((DEBUG_ERROR, "[%a] failed to delete file %r\n", __FUNCTION__, Status ));
+      DEBUG(( DEBUG_ERROR, __FUNCTION__ " failed to delete file %r\n", Status ));
     }
   }
 
@@ -242,7 +242,7 @@ FbptDumpEntryPoint (
               &Handle
               );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] Unable to locate FPDT\n", __FUNCTION__));
+    DEBUG((DEBUG_ERROR,__FUNCTION__ " Unable to locate FPDT\n"));
     return EFI_NOT_FOUND;
   }
 
@@ -251,7 +251,7 @@ FbptDumpEntryPoint (
   //
   Status = SafeUint64ToUintn (pFPDT->BootPointerRecord.BootPerformanceTablePointer, &FBPTAddress);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] unsafe truncation of BootPerformanceTablePointer\n", __FUNCTION__));
+    DEBUG((DEBUG_ERROR,__FUNCTION__ " unsafe truncation of BootPerformanceTablePointer\n"));
     return EFI_NOT_FOUND;
   }
   pFBPT = (EFI_ACPI_5_0_FPDT_FIRMWARE_BASIC_BOOT_TABLE *) FBPTAddress;
