@@ -10,7 +10,7 @@ trigger: none
 
 pr:
 - dev/*
-  release/*
+- release/*
 # MU_CHANGE END
 
 jobs:
