@@ -17,7 +17,7 @@ trigger: none
 # MU_CHANGE BEGIN
 pr:
 - dev/*
-  release/*
+- release/*
 # MU_CHANGE END
 
 pool:
