@@ -75,12 +75,7 @@ const EFI_GRAPHICS_OUTPUT_BLT_PIXEL_UNION  mLogoDetectionColorMask = {
 // Background color of progress bar.  Grey.
 //
 const EFI_GRAPHICS_OUTPUT_BLT_PIXEL_UNION  mProgressBarBackgroundColor = {
-  {
-    0x80,  // Blue
-    0x80,  // Green
-    0x80,  // Red
-    0x00   // Reserved
-  }
+  .Raw = FixedPcdGet32 (PcdProgressBarBackgroundColor)
 };
 
 //

@@ -1593,6 +1593,10 @@
   # @Prompt Enable Capsule On Disk support.
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleOnDiskSupport|FALSE|BOOLEAN|0x0000002d
 
+  ## This PCD holds the background color of progress bar.
+  # @Prompt Describes background color of progress bar.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdProgressBarBackgroundColor|0x00808080|UINT32|0x0000010B
+
 [PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## This PCD defines the Console output row. The default value is 25 according to UEFI spec.
   #  This PCD could be set to 0 then console output would be at max column and max row.
