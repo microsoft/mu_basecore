@@ -300,6 +300,10 @@
   #  mismatch is found between PcdTpm2HashMask and the active banks.
   gEfiSecurityPkgTokenSpaceGuid.PcdForceReallocatePcrBanks|TRUE|BOOLEAN|0x0000000A
 
+  ## MU_CHANGE
+  ## This is the SMI generation io port used in the Tpm.asl to support the Physical Presence interface.
+  gEfiSecurityPkgTokenSpaceGuid.PcdSmmIoPortNumber|0xB2|UINT32|0x0000000C
+
 [PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## Image verification policy for OptionRom. Only following values are valid:<BR><BR>
   #  NOTE: Do NOT use 0x5 and 0x2 since it violates the UEFI specification and has been removed.<BR>
