@@ -41,10 +41,10 @@ DefinitionBlock (
       //
       // Operational region for Smi port access
       //
-      OperationRegion (SMIP, SystemIO, 0xB2, 1)
+      OperationRegion (SMIP, SystemIO, FixedPcdGet32(PcdSmmIoPortNumber), 1)   // MU_CHANGE
       Field (SMIP, ByteAcc, NoLock, Preserve)
       {
-          IOB2, 8
+          IOPN, 8   // MU_CHANGE
       }
 
       //
@@ -259,7 +259,7 @@ DefinitionBlock (
             //
             // Trigger the SMI interrupt
             //
-            Store (MCIN, IOB2)
+            Store (MCIN, IOPN)    // MU_CHANGE
           }
         }
         #endif // MS_CHANGE End
@@ -361,7 +361,7 @@ DefinitionBlock (
             //
             // Trigger the SMI interrupt
             //
-            Store (PPIN, IOB2)
+            Store (PPIN, IOPN)    // MU_CHANGE
             Return (FRET)
 
 
@@ -392,7 +392,7 @@ DefinitionBlock (
             //
             // Trigger the SMI interrupt
             //
-            Store (PPIN, IOB2)
+            Store (PPIN, IOPN)    // MU_CHANGE
 
             Store (LPPR, Index (TPM3, 0x01))
             Store (PPRP, Index (TPM3, 0x02))
@@ -424,7 +424,7 @@ DefinitionBlock (
             //
             // Trigger the SMI interrupt
             //
-            Store (PPIN, IOB2)
+            Store (PPIN, IOPN)    // MU_CHANGE
             Return (FRET)
           }
           Case (8)
@@ -438,7 +438,7 @@ DefinitionBlock (
             //
             // Trigger the SMI interrupt
             //
-            Store (PPIN, IOB2)
+            Store (PPIN, IOPN)    // MU_CHANGE
 
             Return (FRET)
           }
@@ -478,7 +478,7 @@ DefinitionBlock (
             //
             // Trigger the SMI interrupt
             //
-            Store (MCIN, IOB2)
+            Store (MCIN, IOPN)    // MU_CHANGE
             Return (MRET)
           }
           Default {BreakPoint}

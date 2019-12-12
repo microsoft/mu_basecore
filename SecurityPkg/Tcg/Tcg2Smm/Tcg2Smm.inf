@@ -86,6 +86,7 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdActiveTpmInterfaceType       ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLaml            ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLasa            ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdSmmIoPortNumber              ## CONSUMES MU_CHANGE
 
 [Depex]
   gEfiAcpiTableProtocolGuid AND
