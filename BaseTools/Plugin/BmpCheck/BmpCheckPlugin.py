@@ -112,7 +112,7 @@ class BmpCheckPlugin(IUefiBuildPlugin):
             # this scans the whole build directory for bmp's
             bmp_search_path = os.path.join(thebuilder.ws,"**","*.bmp");
             for found_item in glob.iglob(bmp_search_path, recursive=True):
-              if CheckBpm(found_item):
+              if CheckBmp(found_item):
                 logging.error("{} failed image check".format(found_item))
                 error_count += 1
             return error_count
@@ -134,7 +134,8 @@ class BmpCheckPlugin(IUefiBuildPlugin):
                 self.logger.info("No FDF found- BMP check skipped")
                 return 0
             # parse the DSC and the FDF
-            dp.SetBaseAbsPath(ws).SetPackagePaths(pp).ParseFile(ActiveDsc)  # parse the DSC for build vars
+            dp.SetBaseAbsPath(ws).SetPackagePaths(pp)
+            dp.SetInputVars(thebuilder.env.GetAllBuildKeyValues()).ParseFile(ActiveDsc)  # parse the DSC for build vars
             fp.SetBaseAbsPath(ws).SetPackagePaths(pp)
             fp.SetInputVars(dp.LocalVars).ParseFile(ActiveFdf)  # give FDF parser the vars from DSC
 
@@ -165,5 +166,5 @@ class BmpCheckPlugin(IUefiBuildPlugin):
             return error_count
         except:
             self.logger.warning(
-                "Unable to read the FDF. Please update your Mu Python Pip Package")
+                "Unable to read the FDF. Please update your Edk2-Pytools-* Packages")
             return 0
