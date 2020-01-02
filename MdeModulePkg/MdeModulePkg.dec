@@ -2150,7 +2150,8 @@
   #   TRUE  - ACPI S3 will be enabled.<BR>
   #   FALSE - ACPI S3 will be disabled.<BR>
   # @Prompt ACPI S3 Enable.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiS3Enable|TRUE|BOOLEAN|0x01100000
+  # MU_CHANGE - Default should be FALSE. We don't support S3. TCBZ2442
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiS3Enable|FALSE|BOOLEAN|0x01100000
 
   ## Specify memory size for boot script executor stack usage in S3 phase.
   #  The default size 32K. When changing the value make sure the memory size is large enough
