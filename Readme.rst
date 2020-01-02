@@ -12,13 +12,13 @@ Branch Status - dev/201908
 ==============================
 
 Status:
-  In Development
+  Deprecated
 
 Entered Development:
   2019/09/26
 
-Anticipated Stabilization:
-  November 2019
+Entered Deprecated Status:
+  2019/12/6
 
 Branch Changes - dev/201908
 ===============================
