@@ -268,6 +268,7 @@
   SecurityPkg/Library/TempPreUefiEventLogLib/TempPreUefiEventLogLib.inf
   SecurityPkg/Library/Tpm2DebugLib/Tpm2DebugLibNull.inf
   SecurityPkg/Library/Tcg2PhysicalPresencePromptLib/Tcg2PhysicalPresencePromptLibConsole.inf
+  SecurityPkg/Library/OemTpm2InitLibNull/OemTpm2InitLibVendorNull.inf
 ## MSCHANGE END
 
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
