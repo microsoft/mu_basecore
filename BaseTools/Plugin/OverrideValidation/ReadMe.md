@@ -20,6 +20,8 @@ When used in the plugin capacity this plugin will do its override linkage valida
 
 When used as a command line tool, this tool takes the absolute path of workspace (the root directory of Devices repo) as well as the absolute path of overridden module's inf file and then generate a screen-print line for users to include in overriding modules in order to create override linkage. Check the required parameters by using the -h option for command line argument details.
 
+The override can also be used on the Active Platform DSC or the Flash Definition FDF defined by the DSC.
+
 ### Example
 
 Command to generate an override record:
@@ -58,6 +60,24 @@ ORIGINALS:
   + MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | SUCCESS | 2 days
 
 ```
+
+## Versions
+
+There are two versions of the override format.
+
+### Version 1
+``` cmd
+#Override : 00000001 | MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | cc255d9de141fccbdfca9ad02e0daa47 | 2018-05-09T17-54-17
+```
+
+### Version 2
+``` cmd
+#Override : 00000002 | MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | cc255d9de141fccbdfca9ad02e0daa47 | 2018-05-09T17-54-17 | 575096df6a
+```
+
+Version 2 includes a second hash at the end, which is the git commit that the upstream was last updated.
+This allows to tools to do a `git diff` between what you currently have and what is in the tree.
+It currently only diffs the overridden file (the INF or DSC) and the overriding file.
 
 ## Copyright & License
 

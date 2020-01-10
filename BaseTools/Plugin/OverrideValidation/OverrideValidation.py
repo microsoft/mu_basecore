@@ -10,15 +10,13 @@
 
 import logging
 import os
+import io
 import sys
 from datetime import datetime
 import subprocess
 import argparse
 import hashlib
-
-
-#Tuple for (version, entrycount)
-FORMAT_VERSION_1 = (1, 4)   #Version 1: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss
+from io import StringIO
 
 #
 # for now i want to keep this file as both a command line tool and a plugin for the Uefi Build system.
@@ -28,7 +26,14 @@ FORMAT_VERSION_1 = (1, 4)   #Version 1: #OVERRIDE : VERSION | PATH_TO_MODULE | H
 try:
     from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
     from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
+    from edk2toollib.utility_functions import RunCmd
     from edk2toollib.uefi.edk2.parsers.dsc_parser import *
+
+    #Tuple for (version, entrycount)
+    FORMAT_VERSION_1 = (1, 4)   #Version 1: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss
+    FORMAT_VERSION_2 = (2, 5)   #Version 2: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss | GIT_COMMIT
+    FORMAT_VERSIONS = [FORMAT_VERSION_1, FORMAT_VERSION_2]
+
 
     class OverrideValidation(IUefiBuildPlugin):
 
@@ -201,12 +206,31 @@ try:
                 return result
 
             # Verify this is a known version and has valid number of entries
-            if not ((EntryVersion == FORMAT_VERSION_1[0]) and (len(OverrideEntry) == FORMAT_VERSION_1[1])):
-                logging.error("Inf Override Unrecognized Version or corrupted format in this entry: %s" %(filepath))
+            version_match = False
+            for VERSION_FORMAT in FORMAT_VERSIONS:
+                if len(VERSION_FORMAT) < 2:
+                    logging.warning("Invalid formatted version: " + str(VERSION_FORMAT))
+                    continue
+                if EntryVersion == VERSION_FORMAT[0] and len(OverrideEntry) == VERSION_FORMAT[1]:
+                    version_match = VERSION_FORMAT
+                    break
+            if version_match == False:
+                logging.error(f"Inf Override Unrecognized Version {EntryVersion} or corrupted format ({len(OverrideEntry)}) in this entry: {filepath}")
                 result = self.OverrideResult.OR_VER_UNRECOG
                 m_node.status = result
                 return result
 
+            if version_match[0] == 1:
+                return self.override_process_line_with_version1(thebuilder, filelist, OverrideEntry, m_node, status)
+            elif version_match[0] == 2:
+                return self.override_process_line_with_version2(thebuilder, filelist, OverrideEntry, m_node, status)
+            else:
+                raise ValueError(f"Handler is not provided for {version_match}")
+
+        # END: override_process_line(self, thebuilder, overridecnt, filepath, filelist, modulenode, status)
+
+        def override_process_line_with_version1(self, thebuilder, filelist, OverrideEntry, m_node, status):
+            EntryVersion = 1
             # Step 2: Process the path to overridden module
             # Normalize the path to support different slashes, then strip the initial '\\' to make sure os.path.join will work correctly
             overriddenpath = os.path.normpath(OverrideEntry[1].strip()).strip('\\')
@@ -259,7 +283,26 @@ try:
 
             # The result will be inherited from above function calls
             return result
-        # END: override_process_line(self, thebuilder, overridecnt, filepath, filelist, modulenode, status)
+        # END: override_process_line_version1(self, thebuilder, filelist, OverrideEntry, m_node, status)
+
+        def override_process_line_with_version2(self, thebuilder, filelist, OverrideEntry, m_node, status):
+            ''' #Version 2: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss | GIT_COMMIT '''
+            GitHash = OverrideEntry[4].strip()
+            del OverrideEntry[4]
+            result = self.override_process_line_with_version1(thebuilder, filelist, OverrideEntry, m_node, status)
+            # if we failed, do a diff of the overridden file and show the output
+            if result != self.OverrideResult.OR_ALL_GOOD:
+                overriddenpath = os.path.normpath(OverrideEntry[1].strip()).strip('\\')
+                fullpath = os.path.normpath(thebuilder.mws.join(thebuilder.ws, overriddenpath))
+                logging.error(f"Override diff since last update at commit {GitHash}")
+                GitOutput = io.StringIO()
+                # TODO - let this go to console so we get colors
+                RunCmd("git", f"diff {GitHash} {fullpath}", outstream=GitOutput)
+                GitOutput.seek(0)
+                for line in GitOutput.readlines():
+                    logging.info(line.strip())
+            return result
+        # END: override_process_line_version2(self, thebuilder, filelist, OverrideEntry, m_node, status)
 
         # Check override record against parsed entries
         # version: Override record's version number, normally parsed from the override record line
@@ -357,9 +400,15 @@ try:
             if (plat_dsc is None):
                 return InfFileList
 
+            # Parse the DSC
             pa = thebuilder.mws.join(thebuilder.ws, plat_dsc)
             dscp.ParseFile(pa)
-
+            # Add the DSC itself
+            InfFileList.append(pa)
+            # Add the FDF
+            if "FLASH_DEFINITION" in dscp.LocalVars:
+                fd = thebuilder.mws.join(thebuilder.ws, dscp.LocalVars["FLASH_DEFINITION"])
+                InfFileList.append(fd)
             # Here we collect all the reference libraries, IA-32 modules, x64 modules and other modules
             if (dscp.Parsed) :
                 for lib in dscp.Libs:
@@ -382,23 +431,25 @@ def ModuleHashCal(path):
     sourcefileList = []
     binaryfileList = []
     sourcefileList.append(path)
+    hash_obj = hashlib.md5()
 
     # Find the specific line of Sources section
     folderpath = os.path.dirname(path)
 
-    # Use InfParser to parse sources section
-    ip = InfParser()
-    ip.ParseFile(path)
+    if path.lower().endswith(".inf"):
 
-    # Add all referenced source files in addtion to our inf file list
-    for source in ip.Sources:
-        sourcefileList.append(os.path.normpath(os.path.join(folderpath, source)))
+        # Use InfParser to parse sources section
+        ip = InfParser()
+        ip.ParseFile(path)
 
-    # Add all referenced binary files to our binary file list
-    for binary in ip.Binaries:
-        binaryfileList.append(os.path.normpath(os.path.join(folderpath, binary)))
+        # Add all referenced source files in addtion to our inf file list
+        for source in ip.Sources:
+            sourcefileList.append(os.path.normpath(os.path.join(folderpath, source)))
 
-    hash_obj = hashlib.md5()
+        # Add all referenced binary files to our binary file list
+        for binary in ip.Binaries:
+            binaryfileList.append(os.path.normpath(os.path.join(folderpath, binary)))
+
     for sfile in sourcefileList:
         #print('Calculated: %s' %(sfile)) #Debug only
         with open(sfile, 'rb') as entry:
@@ -413,6 +464,16 @@ def ModuleHashCal(path):
     result = hash_obj.hexdigest()
     return result
 
+def ModuleGitHash(path):
+    abspath_dir = os.path.dirname(os.path.abspath(path))
+    git_stream = StringIO()
+    RunCmd("git", "rev-parse --verify HEAD", workingdir=abspath_dir, outstream=git_stream)
+    git_stream.seek(0)
+    git_hash = git_stream.readline().strip()
+    if git_hash.count(" ") != 0:
+        raise RuntimeError("Unable to get GIT HASH for: " + abspath_dir)
+    return git_hash
+
 # Setup import and argument parser
 def path_parse():
 
@@ -426,11 +487,19 @@ def path_parse():
         '-m', '--modulepath', dest = 'ModulePath', required = True, type=str,
         help = '''Specify the absolute path to your module by passing -m Path/To/Module.inf or --modulepath Path/To/Module.inf.'''
         )
+    parser.add_argument (
+        '-v', '--version', dest = 'Version', default= 1, type=int,
+        help = '''This is the version of the override hash to produce (currently only 1 and 2 are valid)'''
+        )
 
     Paths = parser.parse_args()
     # pre-process the parsed paths to abspath
     Paths.WorkSpace = os.path.abspath(Paths.WorkSpace)
     Paths.ModulePath = os.path.abspath(Paths.ModulePath)
+
+
+    if Paths.Version < 1 or Paths.Version > len(FORMAT_VERSIONS):
+        raise RuntimeError("Version is invalid")
 
     if not os.path.isdir(Paths.WorkSpace):
         raise RuntimeError("Workspace path is invalid.")
@@ -466,5 +535,14 @@ if __name__ == '__main__':
 
     rel_path = rel_path.replace('\\', '/')
     mod_hash = ModuleHashCal(Paths.ModulePath)
-    print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-    print('#Override : %08d | %s | %s | %s' % (FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S")))
+
+    VERSION_INDEX = Paths.Version - 1
+
+    if VERSION_INDEX == 0:
+        print("Copy and paste the following line(s) to your overrider inf file(s):\n")
+        print('#Override : %08d | %s | %s | %s' % (FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S")))
+
+    elif VERSION_INDEX == 1:
+        git_hash = ModuleGitHash(Paths.ModulePath)
+        print("Copy and paste the following line(s) to your overrider inf file(s):\n")
+        print('#Override : %08d | %s | %s | %s | %s' % (FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
