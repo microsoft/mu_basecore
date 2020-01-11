@@ -125,6 +125,7 @@
   gEfiMemoryAttributesTableGuid                 ## SOMETIMES_PRODUCES   ## SystemTable
   gEfiEndOfDxeEventGroupGuid                    ## SOMETIMES_CONSUMES   ## Event
   gEfiHobMemoryAllocStackGuid                   ## SOMETIMES_CONSUMES   ## SystemTable
+  gMuEventPreExitBootServicesGuid               ## PRODUCES             ## Event    // MU_CHANGE
 
 [Ppis]
   gEfiVectorHandoffInfoPpiGuid                  ## UNDEFINED # HOB
