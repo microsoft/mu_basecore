@@ -741,6 +741,16 @@ CoreExitBootServices (
 {
   EFI_STATUS                Status;
 
+  // MU_CHANGE begin
+  // NOTE: This must be before disabling the timer.
+  STATIC BOOLEAN            PreExitBootServicesSignaled = FALSE;
+
+  if (!PreExitBootServicesSignaled) {
+    CoreNotifySignalList (&gMuEventPreExitBootServicesGuid);
+    PreExitBootServicesSignaled = TRUE;
+  }
+  // MU_CHANGE end
+
   //
   // Disable Timer
   //
