@@ -9,6 +9,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #ifndef __EVENT_GROUP_GUID__
 #define __EVENT_GROUP_GUID__
 
+// MU_CHANGE begin
+#define MU_EVENT_GROUP_PRE_EXIT_BOOT_SERVICES \
+  { 0x5f1d7e16, 0x784a, 0x4da2, { 0xb0, 0x84, 0xf8, 0x12, 0xf2, 0x3a, 0x8d, 0xce } }
+
+extern EFI_GUID  gMuEventPreExitBootServicesGuid;
+// MU_CHANGE end
+
 #define EFI_EVENT_GROUP_EXIT_BOOT_SERVICES \
   { 0x27abf055, 0xb1b8, 0x4c26, { 0x80, 0x48, 0x74, 0x8f, 0x37, 0xba, 0xa2, 0xdf } }
 
