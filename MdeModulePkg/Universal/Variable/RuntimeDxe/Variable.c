@@ -384,8 +384,8 @@ RecordVarErrorFlag (
       *VarErrFlag = TempFlag;
       Status =  SynchronizeRuntimeVariableCache (
                   &mVariableModuleGlobal->VariableGlobal.VariableRuntimeCacheContext.VariableRuntimeNvCache,
-                  (UINTN) VarErrFlag - (UINTN) mNvVariableCache + (UINTN) mVariableModuleGlobal->VariableGlobal.NonVolatileVariableBase,
-                  sizeof (TempFlag)
+                  0,                         // MU_CHANGE - BZ 2457
+                  mNvVariableCache->Size     // MU_CHANGE - BZ 2457
                   );
       ASSERT_EFI_ERROR (Status);
     }
