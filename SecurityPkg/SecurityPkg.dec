@@ -94,7 +94,7 @@
   VariableKeyLib|Include/Library/VariableKeyLib.h
 
 ## MU_CHANGE BEGIN
-  ##  @libraryclass  This library can be used to publish TPM EventLog entries 
+  ##  @libraryclass  This library can be used to publish TPM EventLog entries
   ##  for measurements that may have been made prior to driver initialization
   #
   Tcg2PreUefiEventLogLib|Include/Library/Tcg2PreUefiEventLogLib.h
@@ -336,7 +336,7 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmPhysicalPresence|TRUE|BOOLEAN|0x00010001
 
   ## MS_CHANGE - Support mode where Ready To Boot Strings/Events are not measured into
-  ## PCR 4.  
+  ## PCR 4.
   # TRUE - The Platform will measure
   # FALSE -The Platform will not measure those events
   gEfiSecurityPkgTokenSpaceGuid.TcgMeasureBootStringsInPcr4|TRUE|BOOLEAN|0x0000000B
@@ -560,6 +560,16 @@
   ## This PCD records LASA field in TPM2 ACPI table.
   # @Prompt Tpm2AcpiTableLasa LASA field in TPM2 ACPI table.
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLasa|0|UINT64|0x00010023
+
+
+# MU_CHANGE START
+[PcdsFeatureFlag]
+  ## Indicates if the platform will enforce PK's to be self signed when setting the PK with none currently set
+  #   TRUE  - Require PK to be self signed
+  #   FALSE - Does not require PK to be self signed
+  # @Prompt Enforce PK to be self signed
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEnforceSelfsignedPk|FALSE|BOOLEAN|0x00010024
+# MU_CHANGE END
 
 [UserExtensions.TianoCore."ExtraFiles"]
   SecurityPkgExtra.uni
