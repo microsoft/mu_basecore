@@ -150,6 +150,7 @@
   Ia32/CpuIdEx.c | MSFT
   Ia32/CpuId.c | MSFT
   Ia32/CpuBreakpoint.c | MSFT
+  Ia32/CpuBreakAssert.c | MSFT ## MU_CHANGE
   Ia32/ARShiftU64.c | MSFT
   Ia32/EnableCache.c | MSFT
   Ia32/DisableCache.c | MSFT
