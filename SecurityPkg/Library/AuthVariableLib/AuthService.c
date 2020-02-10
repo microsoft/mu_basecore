@@ -761,6 +761,30 @@ ProcessVarWithPk (
                AuthVarTypePk,
                &Del
                );
+  }
+  // MU_CHANGE [BEGIN] - TCBZ2506: Enable Pk to be overridden without a self-signed cert.
+  // We should only take this path if gEfiMdeModulePkgTokenSpaceGuid.PcdEnforceSelfsignedPk is not enabled
+  else if ( !FeaturePcdGet (PcdEnforceSelfsignedPk) && (mPlatformMode == SETUP_MODE) && IsPk ) {
+    // If we are in Setup mode and we are trying to set the PK we should allow an unsigned packet
+    // First we need to see if it is in fact signed, and if so, strip it.
+    // This code assumes that the incoming payload has authenticated signature data.
+    // The caller is responsible for providing some minimal form of auth data.
+    Payload     = (UINT8 *)Data + AUTHINFO2_SIZE (Data);
+    PayloadSize = DataSize - AUTHINFO2_SIZE (Data);
+
+    Status = AuthServiceInternalUpdateVariableWithTimeStamp (
+               VariableName,
+               VendorGuid,
+               Payload,
+               PayloadSize,
+               Attributes,
+               &((EFI_VARIABLE_AUTHENTICATION_2 *)Data)->TimeStamp
+               );
+    if ( EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    // MU_CHANGE [END] - TCBZ2506
   } else {
     //
     // Verify against the certificate in data payload.
