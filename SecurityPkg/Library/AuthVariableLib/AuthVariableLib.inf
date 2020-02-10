@@ -43,6 +43,11 @@
   PlatformSecureLib
   UefiVariablePolicyLib
 
+#MU_CHANGE START TCBZ2506
+[FeaturePcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEnforceSelfsignedPk
+# MU_CHANGE END
+
 [Guids]
   ## CONSUMES            ## Variable:L"SetupMode"
   ## PRODUCES            ## Variable:L"SetupMode"
