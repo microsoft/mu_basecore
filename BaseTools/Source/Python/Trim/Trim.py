@@ -247,7 +247,11 @@ def TrimPreprocessedVfr(Source, Target):
 ## Create a banner for the included ASL file
 #
 # Create a banner to indicate the start and
-# end of the included ASL file
+# end of the included ASL file. Banner looks like:-
+# 
+#   /*************************************
+#   *               @param               *
+#   *************************************/
 #
 # @param Pathname       File pathname to be included in the banner
 #
