@@ -1113,11 +1113,14 @@ BdsEntry (
       LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionTypePlatformRecovery);
       ProcessLoadOptions (LoadOptions, LoadOptionCount);
       EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
-    } else {
+      //    } else {
       //
-      // When platform recovery is not enabled, still boot to platform default file path.
+      // MU_CHANGE TCBZ2523 - Bds should NEVER boot anything the platform has not specified.
       //
-      EfiBootManagerProcessLoadOption (&PlatformDefaultBootOption);
+      //      //
+      //      // When platform recovery is not enabled, still boot to platform default file path.
+      //      //
+      //      EfiBootManagerProcessLoadOption (&PlatformDefaultBootOption);
     }
   }
 
