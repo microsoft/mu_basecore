@@ -244,6 +244,25 @@ def TrimPreprocessedVfr(Source, Target):
     except:
         EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Target)
 
+## MU_CHANGE - Create a banner for the included ASL file
+#
+# Create a banner to indicate the start and
+# end of the included ASL file. Banner looks like:-
+# 
+#   /*************************************
+#   *               @param               *
+#   *************************************/
+#
+# @param Pathname       File pathname to be included in the banner
+#
+def AddIncludeHeader(Pathname):
+    StartLine = "/*" + '*' * (len(Pathname) + 4)
+    EndLine = '*' * (len(Pathname) + 4) + "*/"
+    Banner = '\n' + StartLine
+    Banner += '\n' + ('{0}  {1}  {0}'.format('*', Pathname))
+    Banner += '\n' + EndLine + '\n'
+    return Banner
+
 ## Read the content  ASL file, including ASL included, recursively
 #
 # @param  Source            File to be read
@@ -304,7 +323,9 @@ def DoInclude(Source, Indent='', IncludePathList=[], LocalSearchPath=None):
                 LocalSearchPath = os.path.dirname(IncludeFile)
         CurrentIndent = Indent + Result[0][0]
         IncludedFile = Result[0][1]
+        NewFileContent.append(AddIncludeHeader(IncludedFile+" --START")) #MU_CHANGE
         NewFileContent.extend(DoInclude(IncludedFile, CurrentIndent, IncludePathList, LocalSearchPath))
+        NewFileContent.append(AddIncludeHeader(IncludedFile+" --END")) #MU_CHANGE
         NewFileContent.append("\n")
 
     gIncludedAslFile.pop()
