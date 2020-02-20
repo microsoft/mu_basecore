@@ -1,0 +1,5 @@
+{
+    "scope": "rust",
+    "name": "R-Efi Cargo Pre Build Compile Plugin",
+    "module": "REfiPreBuildPlugin"
+  }
