@@ -26,6 +26,7 @@
             "MdeModulePkg/MdeModulePkg.dec",
             # MU_CHANGE - This should be dropped, if possible.
             # Only used by libraries that aren't included in the DSC, anyway.
+            "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec", # MU_CHANGE add unit test framework
             "StandaloneMmPkg/StandaloneMmPkg.dec",
             "ArmPkg/ArmPkg.dec"  # this should be fixed by promoting an abstraction
         ],
@@ -42,8 +43,9 @@
     "DscCompleteCheck": {
         "IgnoreInf": [
             # MU_CHANGE - Cannot be built without StandaloneMmPkg.
-            MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteStandaloneMm.inf,
-            MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf
+            "MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteStandaloneMm.inf",
+            "MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf",
+            "MdeModulePkg/Library/UefiVariablePolicyLibRust/UefiVariablePolicyLib.inf" # MU_CHANGE don't build rust as the CI agents don't support it yet
         ],
         "DscPath": "MdeModulePkg.dsc"
     },

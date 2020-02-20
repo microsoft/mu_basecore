@@ -114,8 +114,9 @@
 # 1.01 - Add MASM for Microsoft ARM assembly files. "MS-ARMx-Assembly-Code-File.COMMON.COMMON"
 # 2.00 - Add .slib and .efi support in the sources file
 # 2.01 - Add support for DEPS_FLAGS as well as
+# 2.21 - Add Rust Definitions
 
-#!VERSION=2.01
+#!VERSION=2.21
 
 [C-Code-File]
     <InputFile>
@@ -259,6 +260,41 @@
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
         "$(NASM)" -I${s_path}(+) $(NASM_INC) $(NASM_FLAGS) -o $dst ${d_path}(+)${s_base}.iii
 
+# MS_CHANGE START
+[Rust-To-Lib-File]
+    <InputFile>
+        ?.rs
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.lib
+
+    <Command>
+        $(RUSTC) $(RUSTC_FLAGS) ${src} --emit link=${dst}
+
+[Toml-File]
+    <InputFile>
+        ?.toml
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
+
+    <Command>
+        $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
+        $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.a $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME)rust.lib
+
+[Toml-File.RUST_MODULE]
+    <InputFile>
+        ?.toml
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+
+    <Command>
+        $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${src} -Z unstable-options --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
+		$(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+		$(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
+# MS_CHANGE END
+
 [Device-Tree-Source-File]
     <InputFile>
         ?.dts
@@ -303,10 +339,10 @@
     <Command.GCC>
         $(RM) ${dst}
         "$(SLINK)" cr ${dst} $(SLINK_FLAGS) @$(OBJECT_FILES_LIST)
-    
+
     <Command.RVCT>
         "$(SLINK)" $(SLINK_FLAGS) ${dst} --via $(OBJECT_FILES_LIST)
-    
+
     <Command.RVCTCYGWIN>
         # $(OBJECT_FILES_LIST) has wrong paths for cygwin
         "$(SLINK)" $(SLINK_FLAGS) ${dst} $(OBJECT_FILES)
@@ -344,8 +380,8 @@
 
     <Command.XCODE>
         "$(DLINK)" $(DLINK_FLAGS) -o ${dst} $(DLINK_SPATH) -filelist $(STATIC_LIBRARY_FILES_LIST)  $(DLINK2_FLAGS)
-    
-    
+
+
 [Static-Library-File.SEC.AARCH64, Static-Library-File.PEI_CORE.AARCH64, Static-Library-File.PEIM.AARCH64,Static-Library-File.SEC.ARM, Static-Library-File.PEI_CORE.ARM, Static-Library-File.PEIM.ARM]
     <InputFile>
         *.lib
@@ -386,8 +422,8 @@
 
     <Command.XCODE>
         "$(DLINK)" -o ${dst} $(DLINK_FLAGS)  $(DLINK_SPATH) -filelist $(STATIC_LIBRARY_FILES_LIST)  $(DLINK2_FLAGS)
-      
-      
+
+
 [Dynamic-Library-File]
     <InputFile>
         ?.dll
@@ -400,7 +436,7 @@
         $(CP) ${dst} $(DEBUG_DIR)
         $(CP) ${dst} $(BIN_DIR)(+)$(MODULE_NAME_GUID).efi
         -$(CP) $(DEBUG_DIR)(+)*.map $(OUTPUT_DIR)
-        -$(CP) $(DEBUG_DIR)(+)*.pdb $(OUTPUT_DIR) 
+        -$(CP) $(DEBUG_DIR)(+)*.pdb $(OUTPUT_DIR)
     <Command.GCC>
         $(CP) ${src} $(DEBUG_DIR)(+)$(MODULE_NAME).debug
         $(OBJCOPY) --strip-unneeded -R .eh_frame ${src}
@@ -415,7 +451,7 @@
         $(CP) ${dst} $(DEBUG_DIR)
         $(CP) ${dst} $(BIN_DIR)(+)$(MODULE_NAME_GUID).efi
         -$(CP) $(DEBUG_DIR)(+)*.map $(OUTPUT_DIR)
-        
+
     <Command.XCODE>
         # tool to convert Mach-O to PE/COFF
         "$(MTOC)" -subsystem $(MODULE_TYPE)  $(MTOC_FLAGS)  ${src}  $(DEBUG_DIR)(+)$(MODULE_NAME).pecoff
