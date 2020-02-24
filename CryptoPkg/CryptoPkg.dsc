@@ -143,6 +143,7 @@
 
 [LibraryClasses.ARM]
   ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
+
 [LibraryClasses.common.SEC]
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf
 
@@ -239,6 +240,7 @@
   }
 !endif
 
+
 [Components.IA32, Components.X64, Components.AARCH64]
   CryptoPkg/Driver/CryptoDxe.inf {
     <Defines>
@@ -250,7 +252,6 @@
     <Defines>
       FILE_GUID = $(SMM_CRYPTO_DRIVER_FILE_GUID)# MU_CHANGE updated File GUID
   }
-
 ## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
 [Components.IA32, Components.X64, Components.AARCH64]
   CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf {  ## Add unit-test application for the crypto tests.
@@ -277,5 +278,4 @@
   MSFT:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
   INTEL:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
   GCC:*_*_*_CC_FLAGS = -D ENABLE_MD5_DEPRECATED_INTERFACES
-
 !endif
