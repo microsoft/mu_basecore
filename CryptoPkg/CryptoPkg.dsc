@@ -2,9 +2,8 @@
 #  Cryptographic Library Package for UEFI Security Implementation.
 #  PEIM, DXE Driver, and SMM Driver with all crypto services enabled.
 #
-#  Copyright (c) 2009 - 2022, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2009 - 2021, Intel Corporation. All rights reserved.<BR>
 #  Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
-#  Copyright (c) 2022, Loongson Technology Corporation Limited. All rights reserved.<BR>
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -19,7 +18,8 @@
   PLATFORM_GUID                  = E1063286-6C8C-4c25-AEF0-67A9A5B6E6B6
   PLATFORM_VERSION               = 0.98
   DSC_SPECIFICATION              = 0x00010005
-  SUPPORTED_ARCHITECTURES        = IA32|X64|ARM|AARCH64|RISCV64|LOONGARCH64
+  OUTPUT_DIRECTORY               = Build/CryptoPkg
+  SUPPORTED_ARCHITECTURES        = IA32|X64|ARM|AARCH64|RISCV64
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
@@ -127,6 +127,7 @@
 
 [LibraryClasses.AARCH64.DXE_DRIVER, LibraryClasses.ARM.DXE_DRIVER, LibraryClasses.AARCH64.UEFI_APPLICATION, LibraryClasses.ARM.UEFI_APPLICATION]
   RngLib|SecurityPkg/RandomNumberGenerator/RngDxeLib/RngDxeLib.inf
+
 [LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_APPLICATION]
   RngLib|MdePkg/Library/DxeRngLib/DxeRngLib.inf
 
@@ -160,7 +161,6 @@
 
 [LibraryClasses.ARM]
   ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
-
 [LibraryClasses.common.SEC]
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
@@ -198,7 +198,6 @@
   MmServicesTableLib|MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
   MemoryAllocationLib|MdePkg/Library/SmmMemoryAllocationLib/SmmMemoryAllocationLib.inf
   ReportStatusCodeLib|MdeModulePkg/Library/SmmReportStatusCodeLib/SmmReportStatusCodeLib.inf
-  PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf # MU_CHANGE add debug lib
@@ -240,7 +239,6 @@
 #       generated for it, but the binary will not be put into any firmware volume.
 #
 ###################################################################################################
-
 #
 # If profile is TARGET_UNIT_TESTS, then build target-based unit tests
 # using the OpensslLib, BaseCryptLib, and TlsLib with the largest set of
@@ -341,15 +339,7 @@
   CryptoPkg/Library/OpensslLib/OpensslLibFullAccel.inf
 !endif
 
-#
-# If profile is ALL or NONE or MIN_PEI, then build CryptoPei with all supported
-# OpensslLib instances.
-#
-!if $(CRYPTO_SERVICES) in "ALL NONE MIN_PEI"
-[Components.IA32, Components.X64, Components.AARCH64]
-  #
-  # CryptoPei with OpensslLib instance without SSL or EC services
-  #
+[Components.IA32, Components.X64] # MU_CHANGE remove ARM and AARCH64
   CryptoPkg/Driver/CryptoPei.inf {
     <Defines>
       FILE_GUID = $(PEI_CRYPTO_DRIVER_FILE_GUID)  # MU_CHANGE updated File GUID
@@ -367,7 +357,7 @@
     <Defines>
       FILE_GUID = $(SMM_CRYPTO_DRIVER_FILE_GUID)# MU_CHANGE updated File GUID
   }
-  ## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
+## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
 [Components.IA32, Components.X64, Components.AARCH64]
   CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf {  ## Add unit-test application for the crypto tests.
     ## MU_CHANGE [START] add library classes to allow crypto tests to run in uefi shell correctly
@@ -394,4 +384,5 @@
   MSFT:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
   INTEL:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
   GCC:*_*_*_CC_FLAGS = -D ENABLE_MD5_DEPRECATED_INTERFACES
+
 !endif
