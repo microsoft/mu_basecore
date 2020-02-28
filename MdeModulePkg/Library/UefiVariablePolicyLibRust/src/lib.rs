@@ -6,11 +6,13 @@
 
 #![feature(alloc_error_handler)]
 
-// When building for production, will get this from the RustPkg.
-#[cfg(test)]
-extern crate r_efi;
-
 extern crate alloc;
+
+#[cfg(not(test))]
+extern crate uefi_rust_panic_lib;
+
+#[cfg(not(test))]
+extern crate uefi_rust_allocation_lib;
 
 use alloc::slice;
 use alloc::string::String;
@@ -19,59 +21,6 @@ use core::mem;
 use r_efi::efi;
 
 // TODO: Check for truncation in every cast.
-
-
-//=====================================================================================================================
-//
-// NO_STD REQUIRED PREAMBLE STUFF
-// This section is defined entirely to satisfy Rust's no_std requirements.
-//
-use core::panic::PanicInfo;
-use core::alloc::{GlobalAlloc, Layout};
-use core::ffi::c_void;
-
-extern "C" {
-  fn AllocatePool (Size: usize) -> *mut c_void;
-  fn AllocateZeroPool (Size: usize) -> *mut c_void;
-  fn FreePool (Buffer: *mut c_void);
-}
-
-#[cfg(not(test))]
-#[panic_handler]
-#[allow(clippy::empty_loop)]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
-}
-
-#[cfg(not(test))]
-#[alloc_error_handler]
-fn alloc_error_handler(layout: core::alloc::Layout) -> !
-{
-    loop {}
-}
-
-pub struct MyAllocator;
-#[cfg(not(test))]
-unsafe impl GlobalAlloc for MyAllocator {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-      let size = layout.size();
-      let align = layout.align();
-      if align > 8 {
-        return core::ptr::null_mut();
-      }
-
-      unsafe { AllocatePool (size) as *mut u8 }
-    }
-    unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-      unsafe { FreePool (ptr as *mut c_void); }
-    }
-}
-
-#[cfg(not(test))]
-#[global_allocator]
-static ALLOCATOR: MyAllocator = MyAllocator;
-//=====================================================================================================================
-
 
 //=====================================================================================================================
 //
