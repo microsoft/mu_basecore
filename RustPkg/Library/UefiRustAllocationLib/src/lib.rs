@@ -17,8 +17,6 @@
 
 #![cfg_attr(not(test), no_std)]
 
-// #![allow(unused)]
-
 extern crate uefi_rust_panic_lib;
 
 use core::alloc::{GlobalAlloc, Layout};
