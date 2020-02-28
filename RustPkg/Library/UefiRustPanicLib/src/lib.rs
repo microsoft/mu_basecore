@@ -15,8 +15,7 @@
 
 #![cfg_attr(not(test), no_std)]
 
-#![allow(unused)]
-
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
   loop {}
