@@ -15,7 +15,7 @@
 
 #![feature(alloc_error_handler)]
 
-#![cfg_attr(not(test), no_std)]
+#![cfg(no_std)]
 
 extern crate uefi_rust_panic_lib;
 
