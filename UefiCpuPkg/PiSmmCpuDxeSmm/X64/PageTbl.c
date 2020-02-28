@@ -1086,7 +1086,7 @@ SmiPFHandler (
       DEBUG_CODE (
         DumpModuleInfoByIp ((UINTN)SystemContext.SystemContextX64->Rip);
       );
-      // MSCHANGE - Allow system to reset instead of halt in test mode.
+      // MU_CHANGE - Allow system to reset instead of halt in test mode.
       goto HaltOrReboot;
       //CpuDeadLoop ();
       //goto Exit;
