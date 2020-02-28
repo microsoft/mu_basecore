@@ -19,6 +19,5 @@ panic = "abort" # disable stack unwinding on panic
 panic = "abort" # disable stack unwinding on panic
 
 [dependencies]
+r-efi = "2.1.0"
 uefi_rust_panic_lib = { path = "../../Library/UefiRustPanicLib" }
-r-efi = { path = "../../External/r-efi"}
-
