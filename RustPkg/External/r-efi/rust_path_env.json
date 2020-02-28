@@ -1,5 +1,0 @@
-{
-  "scope": "global",
-  "flags": ["set_shell_var"],
-  "var_name": "RUSTPKG_PATH"
-}
