@@ -10,6 +10,8 @@
 #  used for every TPM 2.0 command. Choosing this library means platform uses and
 #  only uses TPM 2.0 DTPM device.
 #
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 # Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -46,6 +48,7 @@
   TimerLib
   DebugLib
   PcdLib
+  Tpm2DebugLib         ## MS_CHANGE
 
 [Pcd]
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmBaseAddress            ## CONSUMES
