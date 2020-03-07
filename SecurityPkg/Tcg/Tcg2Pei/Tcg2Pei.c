@@ -41,6 +41,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/ResetSystemLib.h>
 #include <Library/PrintLib.h>
 
+// MU_CHANGE_23086
+// MU_CHANGE [BEGIN] - Add the OemTpm2InitLib
+#include <Library/OemTpm2InitLib.h>
+// MU_CHANGE [END]
 #define PERF_ID_TCG2_PEI  0x3080
 
 typedef struct {
@@ -252,7 +256,7 @@ EndofPeiSignalNotifyCallBack (
 
 /**
   Make sure that the current PCR allocations, the TPM supported PCRs,
-  PcdTcg2HashAlgorithmBitmap and the PcdTpm2HashMask are all in agreement.
+  and the PcdTpm2HashMask are all in agreement.
 **/
 VOID
 SyncPcrAllocationsAndPcrMask (
@@ -261,7 +265,6 @@ SyncPcrAllocationsAndPcrMask (
 {
   EFI_STATUS                       Status;
   EFI_TCG2_EVENT_ALGORITHM_BITMAP  TpmHashAlgorithmBitmap;
-  EFI_TCG2_EVENT_ALGORITHM_BITMAP  BiosHashAlgorithmBitmap;
   UINT32                           TpmActivePcrBanks;
   UINT32                           NewTpmActivePcrBanks;
   UINT32                           Tpm2PcrMask;
@@ -275,50 +278,33 @@ SyncPcrAllocationsAndPcrMask (
   Status = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &TpmActivePcrBanks);
   ASSERT_EFI_ERROR (Status);
 
-  DEBUG ((DEBUG_INFO, "Tpm2GetCapabilitySupportedAndActivePcrs - TpmHashAlgorithmBitmap: 0x%08x\n", TpmHashAlgorithmBitmap));
-  DEBUG ((DEBUG_INFO, "Tpm2GetCapabilitySupportedAndActivePcrs - TpmActivePcrBanks 0x%08x\n", TpmActivePcrBanks));
-
   Tpm2PcrMask = PcdGet32 (PcdTpm2HashMask);
   if (Tpm2PcrMask == 0) {
     //
-    // If PcdTpm2HashMask is zero, use ActivePcr setting.
-    // Only when PcdTpm2HashMask is initialized to 0, will it be updated to current Active Pcrs.
+    // if PcdTPm2HashMask is zero, use ActivePcr setting
     //
     PcdSet32S (PcdTpm2HashMask, TpmActivePcrBanks);
     Tpm2PcrMask = TpmActivePcrBanks;
   }
 
-  DEBUG ((DEBUG_INFO, "Tpm2PcrMask 0x%08x\n", Tpm2PcrMask));
+  //
+  // Find the intersection of Pcd support and TPM support.
+  // If banks are missing from the TPM support that are in the PCD, update the PCD.
+  // If banks are missing from the PCD that are active in the TPM, reallocate the banks and reboot.
+  //
 
   //
-  // The Active PCRs in the TPM need to be a strict subset of the hashing algorithms supported by BIOS.
+  // If there are active PCR banks that are not supported by the Platform mask,
+  // update the TPM allocations and reboot the machine.
   //
-  // * Find the intersection of Pcd support and TPM active PCRs. If banks are missing from the TPM support
-  // that are in the PCD, update the PCD.
-  // * Find intersection of TPM Active PCRs and BIOS supported algorithms. If there are active PCR banks
-  // that are not supported by the platform, update the TPM allocations and reboot.
-  // Note: When the HashLibBaseCryptoRouter solution is used, the hash algorithm support from BIOS is reported
-  //       by Tcg2HashAlgorithmBitmap, which is populated by HashLib instances at runtime.
-  BiosHashAlgorithmBitmap = PcdGet32 (PcdTcg2HashAlgorithmBitmap);
-  DEBUG ((DEBUG_INFO, "Tcg2HashAlgorithmBitmap: 0x%08x\n", BiosHashAlgorithmBitmap));
-
-  if (((TpmActivePcrBanks & Tpm2PcrMask) != TpmActivePcrBanks) ||
-      ((TpmActivePcrBanks & BiosHashAlgorithmBitmap) != TpmActivePcrBanks))
-  {
-    DEBUG ((DEBUG_INFO, "TpmActivePcrBanks & Tpm2PcrMask = 0x%08x\n", (TpmActivePcrBanks & Tpm2PcrMask)));
-    DEBUG ((DEBUG_INFO, "TpmActivePcrBanks & BiosHashAlgorithmBitmap = 0x%08x\n", (TpmActivePcrBanks & BiosHashAlgorithmBitmap)));
-    NewTpmActivePcrBanks  = TpmActivePcrBanks;
-    NewTpmActivePcrBanks &= Tpm2PcrMask;
-    NewTpmActivePcrBanks &= BiosHashAlgorithmBitmap;
-    DEBUG ((DEBUG_INFO, "NewTpmActivePcrBanks 0x%08x\n", NewTpmActivePcrBanks));
+  if ((TpmActivePcrBanks & Tpm2PcrMask) != TpmActivePcrBanks) {
+    NewTpmActivePcrBanks = TpmActivePcrBanks & Tpm2PcrMask;
 
     DEBUG ((DEBUG_INFO, "%a - Reallocating PCR banks from 0x%X to 0x%X.\n", __func__, TpmActivePcrBanks, NewTpmActivePcrBanks));
-
     if (NewTpmActivePcrBanks == 0) {
       DEBUG ((DEBUG_ERROR, "%a - No viable PCRs active! Please set a less restrictive value for PcdTpm2HashMask!\n", __func__));
       ASSERT (FALSE);
     } else {
-      DEBUG ((DEBUG_ERROR, "Tpm2PcrAllocateBanks (TpmHashAlgorithmBitmap: 0x%08x, NewTpmActivePcrBanks: 0x%08x)\n", TpmHashAlgorithmBitmap, NewTpmActivePcrBanks));
       Status = Tpm2PcrAllocateBanks (NULL, (UINT32)TpmHashAlgorithmBitmap, NewTpmActivePcrBanks);
       if (EFI_ERROR (Status)) {
         //
@@ -349,7 +335,6 @@ SyncPcrAllocationsAndPcrMask (
     }
 
     Status = PcdSet32S (PcdTpm2HashMask, NewTpm2PcrMask);
-    DEBUG ((DEBUG_ERROR, "Set PcdTpm2Hash Mask to 0x%08x\n", NewTpm2PcrMask));
     ASSERT_EFI_ERROR (Status);
   }
 }
@@ -1073,6 +1058,15 @@ PeimEntryMA (
       goto Done;
     }
 
+    // MU_CHANGE_23086
+    // MU_CHANGE [BEGIN] - Call OEM init hook.
+    Status = OemTpm2InitPeiPreStartup (BootMode);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "OemTpm2InitPeiPreStartup returned %r. Aborting PEI init!\n", Status));
+      goto Done;
+    }
+
+    // MU_CHANGE [END]
     S3ErrorReport = FALSE;
     if (PcdGet8 (PcdTpm2InitializationPolicy) == 1) {
       if (BootMode == BOOT_ON_S3_RESUME) {
@@ -1125,6 +1119,15 @@ PeimEntryMA (
       }
     }
 
+    // MU_CHANGE_23086
+    // MU_CHANGE [BEGIN] - Call OEM init hook.
+    Status = OemTpm2InitPeiPostSelfTest (BootMode);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "OemTpm2InitPeiPostSelfTest returned %r. Aborting PEI init!\n", Status));
+      goto Done;
+    }
+
+    // MU_CHANGE [END]
     DEBUG_CODE_BEGIN ();
     //
     // Peek into TPM PCR 00 before any BIOS measurement.
@@ -1140,6 +1143,16 @@ PeimEntryMA (
   }
 
   if (mImageInMemory) {
+    // MU_CHANGE_23086
+    // MU_CHANGE [BEGIN] - Call OEM init hook.
+    Status = OemTpm2InitPeiPreMeasurements ();
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "OemTpm2InitPeiPreMeasurements returned %r. Aborting PEI init!\n", Status));
+      return Status;
+    }
+
+    // MU_CHANGE [END]
+
     Status = PeimEntryMP ((EFI_PEI_SERVICES **)PeiServices);
     return Status;
   }

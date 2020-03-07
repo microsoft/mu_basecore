@@ -45,6 +45,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PerformanceLib.h>
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/Tcg2PhysicalPresenceLib.h>
+// MU_CHANGE_23086
+// MU_CHANGE [BEGIN] - Add the OemTpm2InitLib
+#include <Library/OemTpm2InitLib.h>
+// MU_CHANGE [END]
 
 #define PERF_ID_TCG2_DXE  0x3120
 
@@ -2472,6 +2476,18 @@ OnReadyToBoot (
   TPM_PCRINDEX  PcrIndex;
 
   PERF_START_EX (mImageHandle, "EventRec", "Tcg2Dxe", 0, PERF_ID_TCG2_DXE);
+
+  // MU_CHANGE_23086
+  // MU_CHANGE [BEGIN] - Call OEM init hook.
+  Status = OemTpm2InitDxeReadyToBootEvent (mBootAttempts);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "OemTpm2InitDxeReadyToBootEvent returned %r. Aborting measurements!\n", Status));
+    mBootAttempts++;
+    return;
+  }
+
+  // MU_CHANGE [END]
+
   if (mBootAttempts == 0) {
     //
     // Measure handoff tables.
@@ -2851,6 +2867,16 @@ DriverEntry (
   DEBUG ((DEBUG_INFO, "Tcg2.HashAlgorithmBitmap - 0x%08x\n", mTcgDxeData.BsCap.HashAlgorithmBitmap));
   DEBUG ((DEBUG_INFO, "Tcg2.NumberOfPCRBanks      - 0x%08x\n", mTcgDxeData.BsCap.NumberOfPCRBanks));
   DEBUG ((DEBUG_INFO, "Tcg2.ActivePcrBanks        - 0x%08x\n", mTcgDxeData.BsCap.ActivePcrBanks));
+
+  // MU_CHANGE_23086
+  // MU_CHANGE [BEGIN] - Call OEM init hook.
+  Status = OemTpm2InitDxeEntryPreRegistration (&mTcgDxeData.BsCap);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "OemTpm2InitDxeEntryPreRegistration returned %r. Aborting DXE init!\n", Status));
+    return Status;
+  }
+
+  // MU_CHANGE [END]
 
   if (mTcgDxeData.BsCap.TPMPresentFlag) {
     //
