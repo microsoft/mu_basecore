@@ -47,6 +47,11 @@
   #
   Tpm2DeviceLib|Include/Library/Tpm2DeviceLib.h
 
+  ## MU_CHANGE
+  ##  @libraryclass  Oem library hooks for additional TPM 2.0 initialization
+  #
+  OemTpm2InitLib|Include/Library/OemTpm2InitLib.h
+
   ##  @libraryclass  Provides interfaces for other modules to send TPM 1.2 command.
   #
   Tpm12CommandLib|Include/Library/Tpm12CommandLib.h
