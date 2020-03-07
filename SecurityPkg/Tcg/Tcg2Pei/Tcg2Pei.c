@@ -41,6 +41,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/ResetSystemLib.h>
 #include <Library/PrintLib.h>
 
+// MS_CHANGE_23086
+// MSChange [BEGIN] - Add the OemTpm2InitLib
+#include <Library/OemTpm2InitLib.h>
+// MSChange [END]
 #define PERF_ID_TCG2_PEI  0x3080
 
 typedef struct {
@@ -1041,6 +1045,14 @@ PeimEntryMA (
       goto Done;
     }
 
+    // MS_CHANGE_23086
+    // MSChange [BEGIN] - Call OEM init hook.
+    Status = OemTpm2InitPeiPreStartup (BootMode);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "OemTpm2InitPeiPreStartup returned %r. Aborting PEI init!\n", Status));
+      goto Done;
+    }
+    // MSChange [END]
     S3ErrorReport = FALSE;
     if (PcdGet8 (PcdTpm2InitializationPolicy) == 1) {
       if (BootMode == BOOT_ON_S3_RESUME) {
@@ -1092,6 +1104,15 @@ PeimEntryMA (
       }
     }
 
+    // MS_CHANGE_23086
+    // MSChange [BEGIN] - Call OEM init hook.
+    Status = OemTpm2InitPeiPostSelfTest(BootMode);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "OemTpm2InitPeiPostSelfTest returned %r. Aborting PEI init!\n", Status));
+      goto Done;
+    }
+    // MSChange [END]
+
     //
     // Only install TpmInitializedPpi on success
     //
@@ -1100,6 +1121,15 @@ PeimEntryMA (
   }
 
   if (mImageInMemory) {
+    // MS_CHANGE_23086
+    // MSChange [BEGIN] - Call OEM init hook.
+    Status = OemTpm2InitPeiPreMeasurements ();
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "OemTpm2InitPeiPreMeasurements returned %r. Aborting PEI init!\n", Status));
+      return Status;
+    }
+    // MSChange [END]
+
     Status = PeimEntryMP ((EFI_PEI_SERVICES**)PeiServices);
     return Status;
   }
