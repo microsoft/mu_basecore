@@ -46,7 +46,7 @@ Bug Fixes-dev
 2002_CIBuild Changes
 --------------------
 
-- Incomplete
+- Drop MsUnitTestPkg. Any downstream tests will need to be rebuilt against UnitTestFrameworkPkg.
 
 2002_Rebase Changes
 -------------------

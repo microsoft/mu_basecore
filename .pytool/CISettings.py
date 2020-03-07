@@ -47,8 +47,7 @@ class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsMan
                 "PcAtChipsetPkg",
                 "SecurityPkg",
                 "UefiCpuPkg",
-                "UnitTestFrameworkPkg",
-                "MsUnitTestPkg" # MU_CHANGE
+                "UnitTestFrameworkPkg"
                 )
 
     def GetArchitecturesSupported(self):

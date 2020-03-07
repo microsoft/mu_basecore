@@ -36,8 +36,7 @@ jobs:
         Build.Pkgs: 'PcAtChipsetPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
       TARGET_TEST:
-        # MU_CHANGE - Add MsUnitTest pacakge.
-        Build.Pkgs: 'UnitTestFrameworkPkg,MsUnitTestPkg'
+        Build.Pkgs: 'UnitTestFrameworkPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
       TARGET_SECURITY:
         Build.Pkgs: 'SecurityPkg'
