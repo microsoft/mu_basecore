@@ -55,6 +55,10 @@
   ReportStatusCodeLib
   ResetSystemLib
   PrintLib
+## MS_CHANGE_23086
+## MSChange [BEGIN] - Add the OemTpm2InitLib
+  OemTpm2InitLib
+## MSChange [END]
 
 [Guids]
   gTcgEventEntryHobGuid                                                ## PRODUCES               ## HOB

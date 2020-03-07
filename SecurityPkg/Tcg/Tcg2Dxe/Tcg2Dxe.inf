@@ -17,6 +17,8 @@
 #  buffer overflow, integer overflow.
 #
 # Copyright (c) 2015 - 2019, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2016, Microsoft Corporation
+#
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -64,6 +66,10 @@
   ReportStatusCodeLib
   Tcg2PhysicalPresenceLib
   PeCoffLib
+## MS_CHANGE_23086
+## MSChange [BEGIN] - Add the OemTpm2InitLib
+  OemTpm2InitLib
+## MSChange [END]
 
 [Guids]
   ## SOMETIMES_CONSUMES     ## Variable:L"SecureBoot"
