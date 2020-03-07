@@ -42,6 +42,12 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/ResetSystemLib.h>
 #include <Library/PrintLib.h>
 
+// MU_CHANGE_23086
+// MU_CHANGE [BEGIN] - Add the OemTpm2InitLib
+#include <Library/OemTpm2InitLib.h>
+// MU_CHANGE [END]
+#define PERF_ID_TCG2_PEI  0x3080
+
 typedef struct {
   EFI_GUID                     *EventGuid;
   EFI_TCG2_EVENT_LOG_FORMAT    LogFormat;
@@ -352,7 +358,6 @@ SyncPcrAllocationsAndPcrMask (
     }
 
     Status = PcdSet32S (PcdTpm2HashMask, NewTpm2PcrMask);
-    DEBUG ((DEBUG_ERROR, "Set PcdTpm2Hash Mask to 0x%08x\n", NewTpm2PcrMask));
     ASSERT_EFI_ERROR (Status);
   }
 }
@@ -1076,6 +1081,15 @@ PeimEntryMA (
       goto Done;
     }
 
+    // MU_CHANGE_23086
+    // MU_CHANGE [BEGIN] - Call OEM init hook.
+    Status = OemTpm2InitPeiPreStartup (BootMode);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "OemTpm2InitPeiPreStartup returned %r. Aborting PEI init!\n", Status));
+      goto Done;
+    }
+
+    // MU_CHANGE [END]
     S3ErrorReport = FALSE;
     if (PcdGet8 (PcdTpm2InitializationPolicy) == 1) {
       if (BootMode == BOOT_ON_S3_RESUME) {
@@ -1131,6 +1145,15 @@ PeimEntryMA (
       }
     }
 
+    // MU_CHANGE_23086
+    // MU_CHANGE [BEGIN] - Call OEM init hook.
+    Status = OemTpm2InitPeiPostSelfTest (BootMode);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "OemTpm2InitPeiPostSelfTest returned %r. Aborting PEI init!\n", Status));
+      goto Done;
+    }
+
+    // MU_CHANGE [END]
     DEBUG_CODE_BEGIN ();
     //
     // Peek into TPM PCR 00 before any BIOS measurement.
@@ -1146,6 +1169,16 @@ PeimEntryMA (
   }
 
   if (mImageInMemory) {
+    // MU_CHANGE_23086
+    // MU_CHANGE [BEGIN] - Call OEM init hook.
+    Status = OemTpm2InitPeiPreMeasurements ();
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "OemTpm2InitPeiPreMeasurements returned %r. Aborting PEI init!\n", Status));
+      return Status;
+    }
+
+    // MU_CHANGE [END]
+
     Status = PeimEntryMP ((EFI_PEI_SERVICES **)PeiServices);
     return Status;
   }

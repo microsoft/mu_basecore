@@ -56,6 +56,10 @@
   ResetSystemLib
   PrintLib
   Tpm2HelpLib
+## MU_CHANGE_23086
+## MU_CHANGE [BEGIN] - Add the OemTpm2InitLib
+  OemTpm2InitLib
+## MU_CHANGE [END]
 
 [Guids]
   gTcgEventEntryHobGuid                                                ## PRODUCES               ## HOB
