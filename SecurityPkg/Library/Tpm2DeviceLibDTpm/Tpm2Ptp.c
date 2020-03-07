@@ -16,6 +16,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DebugLib.h>
 #include <Library/Tpm2DeviceLib.h>
 #include <Library/PcdLib.h>
+#include <Library/Tpm2DebugLib.h>         // MS_CHANGE
 
 #include <IndustryStandard/TpmPtp.h>
 #include <IndustryStandard/TpmTis.h>
@@ -152,6 +153,9 @@ PtpCrbTpmCommand (
   UINT32                            Data32;
 
   DEBUG_CODE (
+    // MS_CHANGE [BEGIN]
+    DumpTpmInputBlock( SizeIn, BufferIn );
+    /*
     UINTN  DebugSize;
 
     DEBUG ((EFI_D_VERBOSE, "PtpCrbTpmCommand Send - "));
@@ -170,6 +174,8 @@ PtpCrbTpmCommand (
       }
     }
     DEBUG ((EFI_D_VERBOSE, "\n"));
+    */
+    // MS_CHANGE [END]
   );
   TpmOutSize         = 0;
 
@@ -285,6 +291,8 @@ PtpCrbTpmCommand (
   for (Index = 0; Index < sizeof (TPM2_RESPONSE_HEADER); Index++) {
     BufferOut[Index] = MmioRead8 ((UINTN)&CrbReg->CrbDataBuffer[Index]);
   }
+  // MS_CHANGE [BEGIN]
+  /*
   DEBUG_CODE (
     DEBUG ((EFI_D_VERBOSE, "PtpCrbTpmCommand ReceiveHeader - "));
     for (Index = 0; Index < sizeof (TPM2_RESPONSE_HEADER); Index++) {
@@ -292,6 +300,8 @@ PtpCrbTpmCommand (
     }
     DEBUG ((EFI_D_VERBOSE, "\n"));
   );
+  */
+  // MS_CHANGE [END]
   //
   // Check the response data header (tag, parasize and returncode)
   //
@@ -321,11 +331,16 @@ PtpCrbTpmCommand (
   }
 
   DEBUG_CODE (
+    // MS_CHANGE [BEGIN]
+    DumpTpmOutputBlock( TpmOutSize, BufferOut );
+    /*
     DEBUG ((EFI_D_VERBOSE, "PtpCrbTpmCommand Receive - "));
     for (Index = 0; Index < TpmOutSize; Index++) {
       DEBUG ((EFI_D_VERBOSE, "%02x ", BufferOut[Index]));
     }
     DEBUG ((EFI_D_VERBOSE, "\n"));
+    */
+    // MS_CHANGE [END]
   );
 
 GoReady_Exit:
