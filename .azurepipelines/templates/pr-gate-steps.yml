@@ -53,7 +53,7 @@ steps:
 
 # MU_CHANGE - We use binary BaseTools
 # TEMP: Re-enable local tools build until Nuget package is validated.
-build basetools
+# Build basetools
 - template: basetools-build-steps.yml
   parameters:
     tool_chain_tag: ${{ parameters.tool_chain_tag }}
