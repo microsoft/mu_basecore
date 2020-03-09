@@ -1781,7 +1781,7 @@
   #   TRUE  - Add Boot Manager to boot order.<BR>                                       ## MSCHANGE
   #   FALSE - Does not add Boot Manager to boot order.<BR>                              ## MSCHANGE
   # @Prompt Store Boot Manager in BootOrder.                                            ## MSCHANGE
-  gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerInBootOrder|TRUE|BOOLEAN|0x00010077      ## MSCHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerInBootOrder|TRUE|BOOLEAN|0x0001007A      ## MSCHANGE
 
   ## Indicates if the BDS supports Platform Recovery.<BR><BR>
   #   TRUE  - BDS supports Platform Recovery.<BR>
