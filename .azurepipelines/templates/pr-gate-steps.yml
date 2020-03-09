@@ -52,11 +52,10 @@ steps:
   condition: eq(variables['Build.Reason'], 'PullRequest')
 
 # MU_CHANGE - We use binary BaseTools
-# TEMP: Re-enable local tools build until Nuget package is validated.
-# Build basetools
-- template: basetools-build-steps.yml
-  parameters:
-    tool_chain_tag: ${{ parameters.tool_chain_tag }}
+# build basetools
+# - template: basetools-build-steps.yml
+#   parameters:
+#     tool_chain_tag: ${{ parameters.tool_chain_tag }}
 
 # install spell check prereqs
 - template: spell-check-prereq-steps.yml
