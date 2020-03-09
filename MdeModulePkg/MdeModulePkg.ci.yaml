@@ -51,7 +51,10 @@
     },
     ## options defined ci/Plugin/HostUnitTestDscCompleteCheck
     "HostUnitTestDscCompleteCheck": {
-        "IgnoreInf": [""],
+        "IgnoreInf": [
+            # MU_CHANGE - Rust is currently out of scope for CI.
+            "MdeModulePkg/Library/UefiVariablePolicyLibRust/UefiVariablePolicyUnitTest/UefiVariablePolicyUnitTest.inf"
+        ],
         "DscPath": "Test/MdeModulePkgHostTest.dsc"
     },
 

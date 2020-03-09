@@ -35,7 +35,6 @@
   BaseLib
   DebugLib
   UnitTestLib
-  UnitTestAssertLib
   PrintLib
   UefiVariablePolicyLib
   BaseMemoryLib
