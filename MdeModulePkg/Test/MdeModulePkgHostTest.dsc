@@ -30,3 +30,6 @@
       ResetSystemLib|MdeModulePkg/Library/DxeResetSystemLib/DxeResetSystemLib.inf
       UefiRuntimeServicesTableLib|MdeModulePkg/Library/DxeResetSystemLib/UnitTest/MockUefiRuntimeServicesTableLib.inf
   }
+
+  MdeModulePkg/Library/UefiVariablePolicyLib/UefiVariablePolicyUnitTest/UefiVariablePolicyUnitTest.inf
+  MdeModulePkg/Library/UefiVariablePolicyLibRust/UefiVariablePolicyUnitTest/UefiVariablePolicyUnitTest.inf
