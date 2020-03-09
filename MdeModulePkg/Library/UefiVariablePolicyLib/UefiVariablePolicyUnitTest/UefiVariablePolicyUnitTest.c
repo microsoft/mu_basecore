@@ -41,9 +41,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 ///=== TEST DATA ==================================================================================
 
 #pragma pack(push, 1)
+#define SIMPLE_VARIABLE_POLICY_ENTRY_VAR_NAME_LENGTH    1001    // 1000 characters + terminator.
 typedef struct _SIMPLE_VARIABLE_POLICY_ENTRY {
   VARIABLE_POLICY_ENTRY     Header;
-  CHAR16                    Name[];
+  CHAR16                    Name[SIMPLE_VARIABLE_POLICY_ENTRY_VAR_NAME_LENGTH];
 } SIMPLE_VARIABLE_POLICY_ENTRY;
 #define EXPANDED_VARIABLE_POLICY_ENTRY_VAR_NAME_LENGTH  1001    // 1000 characters + terminator.
 #define EXPANDED_VARIABLE_POLICY_ENTRY_VAR_NAME_SIZE    (EXPANDED_VARIABLE_POLICY_ENTRY_VAR_NAME_LENGTH * sizeof(CHAR16))
