@@ -2133,10 +2133,10 @@ int main ()
                 ShouldBeAbleToInitAndDeinitTheLibrary, NULL, NULL, NULL );
   AddTestCase( ArchTests,
                 "The initialization function fail if called twice without a deinit", "VarPolicy.Arch.InitTwice",
-                ShouldNotBeAbleToInitializeTheLibraryTwice, NULL, LibCleanup, NULL );
+                ShouldNotBeAbleToInitializeTheLibraryTwice, NULL, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( ArchTests,
                 "API functions should be unavailable until library is initialized", "VarPolicy.Arch.UninitApiOff",
-                ApiCommandsShouldNotRespondIfLibIsUninitialized, NULL, LibCleanup, NULL );
+                ApiCommandsShouldNotRespondIfLibIsUninitialized, NULL, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
 
 #ifdef INTERNAL_UNIT_TEST
   Status = CreateUnitTestSuite( &InternalTests, Framework, "Variable Policy Internal Tests", "VarPolicy.Internal", NULL, NULL );
@@ -2148,19 +2148,19 @@ int main ()
   }
   AddTestCase( InternalTests,
                 "Policy matching should use name and GUID", "VarPolicy.Internal.NameGuid",
-                PoliciesShouldMatchByNameAndGuid, LibInitMocked, LibCleanup, NULL );
+                PoliciesShouldMatchByNameAndGuid, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( InternalTests,
                 "# sign wildcards should match digits", "VarPolicy.Internal.WildDigits",
-                WildcardPoliciesShouldMatchDigits, LibInitMocked, LibCleanup, NULL );
+                WildcardPoliciesShouldMatchDigits, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( InternalTests,
                 "Digit wildcards should check edge cases", "VarPolicy.Internal.WildDigitsAdvanced",
-                WildcardPoliciesShouldMatchDigitsAdvanced, LibInitMocked, LibCleanup, NULL );
+                WildcardPoliciesShouldMatchDigitsAdvanced, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( InternalTests,
                 "Empty names should match an entire namespace", "VarPolicy.Internal.WildNamespace",
-                WildcardPoliciesShouldMatchNamespaces, LibInitMocked, LibCleanup, NULL );
+                WildcardPoliciesShouldMatchNamespaces, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( InternalTests,
                 "Match priority should weight correctly based on wildcards", "VarPolicy.Internal.Priorities",
-                MatchPrioritiesShouldFollowRules, LibInitMocked, LibCleanup, NULL );
+                MatchPrioritiesShouldFollowRules, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
 #endif // INTERNAL_UNIT_TEST
 
   Status = CreateUnitTestSuite( &PolicyTests, Framework, "Variable Policy Manipulation Tests", "VarPolicy.Policy", NULL, NULL );
@@ -2172,79 +2172,79 @@ int main ()
   }
   AddTestCase( PolicyTests,
                 "RegisterShouldAllowNamespaceWildcards", "VarPolicy.Policy.AllowNamespace",
-                RegisterShouldAllowNamespaceWildcards, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldAllowNamespaceWildcards, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldAllowStateVarsForNamespaces", "VarPolicy.Policy.AllowStateNamespace",
-                RegisterShouldAllowStateVarsForNamespaces, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldAllowStateVarsForNamespaces, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectNullPointers", "VarPolicy.Policy.NullPointers",
-                RegisterShouldRejectNullPointers, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectNullPointers, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectBadRevisions", "VarPolicy.Policy.BadRevisions",
-                RegisterShouldRejectBadRevisions, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectBadRevisions, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectBadSizes", "VarPolicy.Policy.BadSizes",
-                RegisterShouldRejectBadSizes, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectBadSizes, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectBadOffsets", "VarPolicy.Policy.BadOffsets",
-                RegisterShouldRejectBadOffsets, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectBadOffsets, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectMissingStateStrings", "VarPolicy.Policy.MissingStateString",
-                RegisterShouldRejectMissingStateStrings, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectMissingStateStrings, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectStringsMissingNull", "VarPolicy.Policy.MissingNull",
-                RegisterShouldRejectStringsMissingNull, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectStringsMissingNull, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectMalformedStrings", "VarPolicy.Policy.MalformedStrings",
-                RegisterShouldRejectMalformedStrings, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectMalformedStrings, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectUnpackedPolicies", "VarPolicy.Policy.PolicyPacking",
-                RegisterShouldRejectUnpackedPolicies, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectUnpackedPolicies, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectInvalidNameCharacters", "VarPolicy.Policy.InvalidCharacters",
-                RegisterShouldRejectInvalidNameCharacters, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectInvalidNameCharacters, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectBadPolicyConstraints", "VarPolicy.Policy.BadConstraints",
-                RegisterShouldRejectBadPolicyConstraints, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectBadPolicyConstraints, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectUnknownLockPolicies", "VarPolicy.Policy.BadLocks",
-                RegisterShouldRejectUnknownLockPolicies, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectUnknownLockPolicies, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectPolicesWithTooManyWildcards", "VarPolicy.Policy.TooManyWildcards",
-                RegisterShouldRejectPolicesWithTooManyWildcards, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectPolicesWithTooManyWildcards, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "RegisterShouldRejectDuplicatePolicies", "VarPolicy.Policy.DuplicatePolicies",
-                RegisterShouldRejectDuplicatePolicies, LibInitMocked, LibCleanup, NULL );
+                RegisterShouldRejectDuplicatePolicies, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "Variables that exceed min or max sizes should be rejected", "VarPolicy.Policy.MinMax",
-                MinAndMaxSizePoliciesShouldBeHonored, LibInitMocked, LibCleanup, NULL );
+                MinAndMaxSizePoliciesShouldBeHonored, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "AttributeMustPoliciesShouldBeHonored", "VarPolicy.Policy.AttrMust",
-                AttributeMustPoliciesShouldBeHonored, LibInitMocked, LibCleanup, NULL );
+                AttributeMustPoliciesShouldBeHonored, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "AttributeCantPoliciesShouldBeHonored", "VarPolicy.Policy.AttrCant",
-                AttributeCantPoliciesShouldBeHonored, LibInitMocked, LibCleanup, NULL );
+                AttributeCantPoliciesShouldBeHonored, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "VariablesShouldBeDeletableRegardlessOfSize", "VarPolicy.Policy.DeleteIgnoreSize",
-                VariablesShouldBeDeletableRegardlessOfSize, LibInitMocked, LibCleanup, NULL );
+                VariablesShouldBeDeletableRegardlessOfSize, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "LockNowPoliciesShouldBeHonored", "VarPolicy.Policy.VARIABLE_POLICY_TYPE_LOCK_NOW",
-                LockNowPoliciesShouldBeHonored, LibInitMocked, LibCleanup, NULL );
+                LockNowPoliciesShouldBeHonored, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "LockOnCreatePoliciesShouldBeHonored", "VarPolicy.Policy.VARIABLE_POLICY_TYPE_LOCK_ON_CREATE",
-                LockOnCreatePoliciesShouldBeHonored, LibInitMocked, LibCleanup, NULL );
+                LockOnCreatePoliciesShouldBeHonored, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "LockOnStatePoliciesShouldBeHonored", "VarPolicy.Policy.LockState",
-                LockOnStatePoliciesShouldBeHonored, LibInitMocked, LibCleanup, NULL );
+                LockOnStatePoliciesShouldBeHonored, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "LockOnStatePoliciesShouldApplyToNamespaces", "VarPolicy.Policy.NamespaceLockState",
-                LockOnStatePoliciesShouldApplyToNamespaces, LibInitMocked, LibCleanup, NULL );
+                LockOnStatePoliciesShouldApplyToNamespaces, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "LockOnStateShouldHandleErrorsGracefully", "VarPolicy.Policy.LockStateErrors",
-                LockOnStateShouldHandleErrorsGracefully, LibInitMocked, LibCleanup, NULL );
+                LockOnStateShouldHandleErrorsGracefully, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( PolicyTests,
                 "BestMatchPriorityShouldBeObeyed", "VarPolicy.Policy.BestMatch",
-                BestMatchPriorityShouldBeObeyed, LibInitMocked, LibCleanup, NULL );
+                BestMatchPriorityShouldBeObeyed, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
 
   Status = CreateUnitTestSuite( &UtilityTests, Framework, "Variable Policy Utility Tests", "VarPolicy.Utility", NULL, NULL );
   if (EFI_ERROR( Status ))
@@ -2255,25 +2255,25 @@ int main ()
   }
   AddTestCase( UtilityTests,
                 "API commands that change state should not respond after interface is locked", "VarPolicy.Utility.InterfaceLock",
-                ShouldBeAbleToLockInterface, LibInitMocked, LibCleanup, NULL );
+                ShouldBeAbleToLockInterface, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( UtilityTests,
                 "All policies should pass once enforcement is disabled", "VarPolicy.Utility.DisableEnforcement",
-                ShouldBeAbleToDisablePolicyEnforcement, LibInitMocked, LibCleanup, NULL );
+                ShouldBeAbleToDisablePolicyEnforcement, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( UtilityTests,
                 "Disabling enforcement twice should produce an error", "VarPolicy.Utility.DisableEnforcementTwice",
-                ShouldNotBeAbleToDisablePoliciesTwice, LibInitMocked, LibCleanup, NULL );
+                ShouldNotBeAbleToDisablePoliciesTwice, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( UtilityTests,
                 "ShouldBeAbleToAddNewPoliciesAfterDisabled", "VarPolicy.Utility.AddAfterDisable",
-                ShouldBeAbleToAddNewPoliciesAfterDisabled, LibInitMocked, LibCleanup, NULL );
+                ShouldBeAbleToAddNewPoliciesAfterDisabled, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( UtilityTests,
                 "ShouldBeAbleToLockAfterDisabled", "VarPolicy.Utility.LockAfterDisable",
-                ShouldBeAbleToLockAfterDisabled, LibInitMocked, LibCleanup, NULL );
+                ShouldBeAbleToLockAfterDisabled, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( UtilityTests,
                 "Should be able to dump the policy table", "VarPolicy.Utility.DumpTable",
-                ShouldBeAbleToDumpThePolicyTable, LibInitMocked, LibCleanup, NULL );
+                ShouldBeAbleToDumpThePolicyTable, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
   AddTestCase( UtilityTests,
                 "ShouldBeAbleToDumpThePolicyTableAfterDisabled", "VarPolicy.Utility.DumpTableAfterDisable",
-                ShouldBeAbleToDumpThePolicyTableAfterDisabled, LibInitMocked, LibCleanup, NULL );
+                ShouldBeAbleToDumpThePolicyTableAfterDisabled, (UNIT_TEST_PREREQUISITE)LibInitMocked, (UNIT_TEST_CLEANUP)LibCleanup, NULL );
 
 
   //
