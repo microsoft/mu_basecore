@@ -151,3 +151,12 @@ jobs:
     - publish: $(Build.StagingDirectory)/PackageOutput
       displayName: Save the Release Package for Publishing
       artifact: $(package_artifact_name)
+
+    - task: NuGetAuthenticate@0
+      displayName: 'DevOps NuGet Authenticate'
+    - task: NuGetCommand@2
+      displayName: 'DevOps NuGet Push'
+      inputs:
+          command: 'push'
+          packagesToPush: "$(Build.StagingDirectory)/PackageOutput/**/*.nupkg"
+          publishVstsFeed: 'mu/BaseTools-Binary'
