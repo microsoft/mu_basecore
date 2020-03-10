@@ -40,6 +40,10 @@ class Edk2ToolHelper(IUefiHelperPlugin):
         # Currently not ported to the new tooling.
         if len(DepList) > 0:
             raise RuntimeError("PackageMsFmpHeader has not been ported to support dependencies yet!")
+        # Should not take a capsule whose Version <= LSV
+        if (VersionInt < LsvInt):
+            logging.error("Version number 0x%08x lower than Lowest supported version 0x%08x is not allowed!" % (VersionInt, LsvInt))
+            return -1
 
         #append depedency if supplied
         # for dep in DepList:
