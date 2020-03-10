@@ -112,7 +112,7 @@ $(APPFILE): $(APPLICATION)
 
 PcdGccMakefile = '''
 MAKEROOT ?= $(EDK_TOOLS_PATH)%sSource%sC
-LIBS = -lCommon
+# LIBS = -lCommon #MU_CHANGE - BGZ2586
 '''%(os.sep, os.sep)
 
 variablePattern = re.compile(r'[\t\s]*0[xX][a-fA-F0-9]+$')
