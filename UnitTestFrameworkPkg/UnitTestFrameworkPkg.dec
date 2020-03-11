@@ -17,9 +17,12 @@
 
 [Includes]
   Library/CmockaLib/cmocka/include
+  # MU_CHANGE - With great power comes great responsibility.
+  # Some Mu test collateral expects access to the framework internals.
+  PrivateInclude
 
 [Includes.Common.Private]
-  PrivateInclude
+  #PrivateInclude   # MU_CHANGE - See above.
   Library/CmockaLib/cmocka/include/cmockery
 
 [LibraryClasses.Common.Private]
