@@ -21,9 +21,12 @@
   Library/GoogleTestLib/googletest/googletest/include
   Library/GoogleTestLib/googletest/googlemock/include
   Library/SubhookLib/subhook
+  # MU_CHANGE - With great power comes great responsibility.
+  # Some Mu test collateral expects access to the framework internals.
+  PrivateInclude
 
 [Includes.Common.Private]
-  PrivateInclude
+  #PrivateInclude   # MU_CHANGE - See above.
   Library/CmockaLib/cmocka/include/cmockery
   Library/GoogleTestLib/googletest/googletest
   Library/GoogleTestLib/googletest/googlemock
