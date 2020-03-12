@@ -22,6 +22,8 @@
     ],
     "minWordLength": 5,
     "allowCompoundWords": false,
+    "maxNumberOfProblems": 200,         # MU_CHANGE - Support more failures in a single pass.
+    "maxDuplicateProblems": 200,        # MU_CHANGE - Support more failures in a single pass.
     "ignoreWords": [
         "muchange"
     ],
