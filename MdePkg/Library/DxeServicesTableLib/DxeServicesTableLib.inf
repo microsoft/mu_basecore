@@ -18,7 +18,7 @@
   FILE_GUID                      = baa1baa3-0a8d-402c-8042-985115fae953
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = DxeServicesTableLib|DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SMM_DRIVER UEFI_APPLICATION UEFI_DRIVER SMM_CORE
+  LIBRARY_CLASS                  = DxeServicesTableLib|DXE_DRIVER DXE_CORE DXE_RUNTIME_DRIVER DXE_SMM_DRIVER UEFI_APPLICATION UEFI_DRIVER SMM_CORE
 
   CONSTRUCTOR                    = DxeServicesTableLibConstructor
 

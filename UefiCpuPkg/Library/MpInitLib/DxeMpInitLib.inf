@@ -13,7 +13,7 @@
   FILE_GUID                      = B88F7146-9834-4c55-BFAC-481CC0C33736
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.1
-  LIBRARY_CLASS                  = MpInitLib|DXE_DRIVER
+  LIBRARY_CLASS                  = MpInitLib|DXE_CORE DXE_DRIVER
 
 #
 # The following information is for reference only and not required by the build tools.

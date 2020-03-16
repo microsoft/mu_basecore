@@ -20,7 +20,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 EFI_CORE_PROTOCOL_NOTIFY_ENTRY  mArchProtocols[] = {
   { &gEfiSecurityArchProtocolGuid,         (VOID **)&gSecurity,      NULL, NULL, FALSE },
-  { &gEfiCpuArchProtocolGuid,              (VOID **)&gCpu,           NULL, NULL, FALSE },
+  { &gEfiCpuArchProtocolGuid,              (VOID **)&gCpu,           NULL, NULL, TRUE },
   { &gEfiMetronomeArchProtocolGuid,        (VOID **)&gMetronome,     NULL, NULL, FALSE },
   { &gEfiTimerArchProtocolGuid,            (VOID **)&gTimer,         NULL, NULL, FALSE },
   { &gEfiBdsArchProtocolGuid,              (VOID **)&gBds,           NULL, NULL, FALSE },

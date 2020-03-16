@@ -83,7 +83,7 @@ FIXED_MTRR    mFixedMtrrTable[] = {
 };
 
 
-EFI_CPU_ARCH_PROTOCOL  gCpu = {
+STATIC EFI_CPU_ARCH_PROTOCOL  gCpu = {
   CpuFlushCpuDataCache,
   CpuEnableInterrupt,
   CpuDisableInterrupt,
@@ -1151,9 +1151,10 @@ AddLocalApicMemorySpace (
 **/
 EFI_STATUS
 EFIAPI
-InitializeCpu (
+Explicit_Constructor_CpuDxeLib (
   IN EFI_HANDLE                            ImageHandle,
-  IN EFI_SYSTEM_TABLE                      *SystemTable
+  IN EFI_SYSTEM_TABLE                      *SystemTable,
+  OUT EFI_CPU_ARCH_PROTOCOL               **DxeMain_gCpu
   )
 {
   EFI_STATUS  Status;
@@ -1187,6 +1188,8 @@ InitializeCpu (
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
+
+  *DxeMain_gCpu = &gCpu;
 
   //
   // Refresh GCD memory space map according to MTRR value.

@@ -33,7 +33,7 @@ EFI_SMM_BASE2_PROTOCOL            *gSmmBase2      = NULL;
 //
 // DXE Core Global used to update core loaded image protocol handle
 //
-EFI_GUID                           *gDxeCoreFileName;
+EFI_GUID                           gDxeCoreFileName;
 EFI_LOADED_IMAGE_PROTOCOL          *gDxeCoreLoadedImage;
 
 //
@@ -293,11 +293,28 @@ DxeMain (
   ASSERT_EFI_ERROR (Status);
 
   //
-  // Call constructor for all libraries
+  // Install the DXE Services Table into the EFI System Tables's Configuration Table
+  //
+  Status = CoreInstallConfigurationTable (&gEfiDxeServicesTableGuid, gDxeCoreDS);
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Call constructor for all libraries - except Explicit Constructors
   //
   ProcessLibraryConstructorList (gDxeCoreImageHandle, gDxeCoreST);
   PERF_CROSSMODULE_END   ("PEI");
   PERF_CROSSMODULE_BEGIN ("DXE");
+
+  //
+  // Initialize the Event Services
+  //
+  Status = CoreInitializeEventServices ();
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Initialize Explicit Constructors
+  //
+  Explicit_Constructor_CpuDxeLib (gDxeCoreImageHandle, gDxeCoreST, &gCpu);
 
   //
   // Report DXE Core image information to the PE/COFF Extra Action Library
@@ -314,11 +331,7 @@ DxeMain (
   ImageContext.ImageRead      = PeCoffLoaderImageReadFromMemory;
   PeCoffLoaderRelocateImageExtraAction (&ImageContext);
 
-  //
-  // Install the DXE Services Table into the EFI System Tables's Configuration Table
-  //
-  Status = CoreInstallConfigurationTable (&gEfiDxeServicesTableGuid, gDxeCoreDS);
-  ASSERT_EFI_ERROR (Status);
+  MemoryProtectionCpuArchProtocolNotify (NULL, NULL);
 
   //
   // Install the HOB List into the EFI System Tables's Configuration Table
@@ -415,12 +428,6 @@ DxeMain (
       }
     }
   DEBUG_CODE_END ();
-
-  //
-  // Initialize the Event Services
-  //
-  Status = CoreInitializeEventServices ();
-  ASSERT_EFI_ERROR (Status);
 
   MemoryProfileInstallProtocol ();
 
@@ -714,11 +721,11 @@ CalculateEfiHdrCrc (
   Hdr->CRC32 = 0;
 
   //
-  // If gBS->CalculateCrce32 () == CoreEfiNotAvailableYet () then
+  // If mBootServices.CalculateCrce32 () == CoreEfiNotAvailableYet () then
   //  Crc will come back as zero if we set it to zero here
   //
   Crc = 0;
-  gBS->CalculateCrc32 ((UINT8 *)Hdr, Hdr->HeaderSize, &Crc);
+  mBootServices.CalculateCrc32 ((UINT8 *)Hdr, Hdr->HeaderSize, &Crc);
   Hdr->CRC32 = Crc;
 }
 

@@ -281,7 +281,7 @@ extern EFI_SMM_BASE2_PROTOCOL                   *gSmmBase2;
 
 extern volatile EFI_TPL                         gEfiCurrentTpl;         // MS_CHANGE
 
-extern EFI_GUID                                 *gDxeCoreFileName;
+extern EFI_GUID                                 gDxeCoreFileName;
 extern EFI_LOADED_IMAGE_PROTOCOL                *gDxeCoreLoadedImage;
 
 extern EFI_MEMORY_TYPE_INFORMATION              gMemoryTypeInformation[EfiMaxMemoryType + 1];
@@ -2947,5 +2947,33 @@ MergeMemoryMap (
   IN OUT UINTN                  *MemoryMapSize,
   IN UINTN                      DescriptorSize
   );
+
+/**
+  Constructor for CpuDxe in order to control when it gets initialized
+
+**/
+EFI_STATUS
+EFIAPI
+Explicit_Constructor_CpuDxeLib (
+  IN EFI_HANDLE                            ImageHandle,
+  IN EFI_SYSTEM_TABLE                      *SystemTable,
+  IN EFI_CPU_ARCH_PROTOCOL                 **gCpu
+  );
+
+/**
+  A notification for CPU_ARCH protocol.
+
+  @param[in]  Event                 Event whose notification function is being invoked.
+  @param[in]  Context               Pointer to the notification function's context,
+                                    which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+MemoryProtectionCpuArchProtocolNotify (
+  IN EFI_EVENT                Event,
+  IN VOID                     *Context
+  );
+
 
 #endif

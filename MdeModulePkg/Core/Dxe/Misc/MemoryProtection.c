@@ -973,6 +973,9 @@ MemoryProtectionCpuArchProtocolNotify (
   UINTN                       Index;
 
   DEBUG ((DEBUG_INFO, "MemoryProtectionCpuArchProtocolNotify:\n"));
+
+  ASSERT(gCpu != NULL);
+
   Status = CoreLocateProtocol (&gEfiCpuArchProtocolGuid, NULL, (VOID **)&gCpu);
   if (EFI_ERROR (Status)) {
     goto Done;

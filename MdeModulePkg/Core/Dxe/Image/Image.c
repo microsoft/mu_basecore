@@ -208,7 +208,7 @@ CoreInitializeImageServices (
   DxeCoreImageBaseAddress = DxeCoreHob.MemoryAllocationModule->MemoryAllocationHeader.MemoryBaseAddress;
   DxeCoreImageLength      = DxeCoreHob.MemoryAllocationModule->MemoryAllocationHeader.MemoryLength;
   DxeCoreEntryPoint       = (VOID *) (UINTN) DxeCoreHob.MemoryAllocationModule->EntryPoint;
-  gDxeCoreFileName        = &DxeCoreHob.MemoryAllocationModule->ModuleName;
+  CopyGuid (&gDxeCoreFileName, &DxeCoreHob.MemoryAllocationModule->ModuleName);
 
   //
   // Initialize the fields for an internal driver

@@ -1308,9 +1308,9 @@ CoreFwVolEventProtocolNotify (
             // If this is the DXE core fill in it's DevicePath & DeviceHandle
             //
             if (gDxeCoreLoadedImage->FilePath == NULL) {
-              if (CompareGuid (&NameGuid, gDxeCoreFileName)) {
+              if (CompareGuid (&NameGuid, &gDxeCoreFileName)) {
                 //
-                // Maybe One specail Fv cantains only one DXE_CORE module, so its device path must
+                // Maybe One special Fv contains only one DXE_CORE module, so its device path must
                 // be initialized completely.
                 //
                 EfiInitializeFwVolDevicepathNode (&mFvDevicePath.File, &NameGuid);
