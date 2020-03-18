@@ -17,23 +17,23 @@ Status:
 Entered Development:
   2019/12/5
 
-Anticipated Stabilization:
-  January 2020
+Stabilized:
+  2020/03/18
 
 Branch Changes - release/201911
 ===============================
 
-Breaking Changes-dev
+Breaking Changes
 --------------------
 
 - 4k alignment is no longer part of the standard configuration and will need to be added to platform DSCs as a build option
 
-Main Changes-dev
+Main Changes
 ----------------
 
 - The pcd gPcAtChipsetPkgTokenSpaceGuid.PcdRealTimeClockUpdateTimeout was moved from gEfiMdeModulePkgTokenSpaceGuid
 
-Bug Fixes-dev
+Bug Fixes
 -------------
 
 - None
@@ -41,12 +41,12 @@ Bug Fixes-dev
 1911_RefBoot Changes
 --------------------
 
-- Incomplete
+- None
 
 1911_CIBuild Changes
 --------------------
 
-- Incomplete
+- None
 
 1911_Rebase Changes
 -------------------
