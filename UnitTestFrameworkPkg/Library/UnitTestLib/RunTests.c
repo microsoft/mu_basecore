@@ -162,7 +162,9 @@ RunAllTestSuites (
   //
   // Save current state so if test is started again it doesn't have to run.  It will just report
   //
-  SaveFrameworkState (FrameworkHandle, NULL, 0);
+  // MU_CHANGE TCBZ2612 - Removed from interface.
+  // SaveFrameworkState (FrameworkHandle, NULL, 0);
+  SaveFrameworkState (NULL, 0);
   OutputUnitTestFrameworkReport (FrameworkHandle);
 
   mFrameworkHandle = NULL;
