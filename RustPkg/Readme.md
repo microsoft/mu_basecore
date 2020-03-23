@@ -5,6 +5,7 @@
 ## Notes for the p12_rust branch
 
 `rustup update` - Make sure you've got some good Rust.
+
 `cargo install cargo-xbuild` - Make sure you've got the cross build tools.
 
 `rustup default nightly` - Switch to nightly for certain build features.

@@ -209,7 +209,8 @@ InitUnitTestFramework (
   EFI_STATUS                  Status;
   UNIT_TEST_FRAMEWORK_HANDLE  NewFrameworkHandle;
   UNIT_TEST_FRAMEWORK         *NewFramework;
-  UNIT_TEST_SAVE_HEADER       *SavedState;
+  // MU_CHANGE: [TCBZ2609] Fixed SavedState is not sticky in UnitTestFrameworkPkg
+  // UNIT_TEST_SAVE_HEADER       *SavedState;
 
   Status       = EFI_SUCCESS;
   NewFramework = NULL;
@@ -264,8 +265,9 @@ InitUnitTestFramework (
   // If there is a persisted context, load it now.
   //
   if (DoesCacheExist (NewFrameworkHandle)) {
-    SavedState = (UNIT_TEST_SAVE_HEADER *)NewFramework->SavedState;
-    Status = LoadUnitTestCache (NewFrameworkHandle, &SavedState);
+    // MU_CHANGE: [TCBZ2609] Fixed SavedState is not sticky in UnitTestFrameworkPkg
+    // SavedState = (UNIT_TEST_SAVE_HEADER *)NewFramework->SavedState;
+    Status = LoadUnitTestCache (NewFrameworkHandle,  (UNIT_TEST_SAVE_HEADER**)(&NewFramework->SavedState));
     if (EFI_ERROR (Status)) {
       //
       // Don't actually report it as an error, but emit a warning.
@@ -785,9 +787,7 @@ SerializeState (
 
   Generally called from within a test case prior to quitting or rebooting.
 
-  @param[in]  FrameworkHandle    A handle to the current running framework that
-                                 dispatched the test.  Necessary for recording
-                                 certain test events with the framework.
+  @param[in]  FrameworkHandle    MU_CHANGE TCBZ2612 - Removed from interface.
   @param[in]  ContextToSave      A buffer of test case-specific data to be saved
                                  along with framework state.  Will be passed as
                                  "Context" to the test case upon resume.  This
@@ -808,21 +808,23 @@ SerializeState (
 EFI_STATUS
 EFIAPI
 SaveFrameworkState (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle,
+  // IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle,  MU_CHANGE TCBZ2612 - Removed from interface.
   IN UNIT_TEST_CONTEXT           ContextToSave     OPTIONAL,
   IN UINTN                       ContextToSaveSize
   )
 {
-  EFI_STATUS             Status;
-  UNIT_TEST_SAVE_HEADER  *Header;
+  EFI_STATUS                  Status;
+  UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle;        // MU_CHANGE TCBZ2612 - Removed from interface.
+  UNIT_TEST_SAVE_HEADER       *Header;
 
   Header = NULL;
+  FrameworkHandle = GetActiveFrameworkHandle();       // MU_CHANGE TCBZ2612 - Removed from interface.
 
   //
   // First, let's not make assumptions about the parameters.
   //
-  if (FrameworkHandle == NULL ||
-      (ContextToSave != NULL && ContextToSaveSize == 0) ||
+  // MU_CHANGE TCBZ2612 - Removed from interface.
+  if ((ContextToSave != NULL && ContextToSaveSize == 0) ||
       ContextToSaveSize > MAX_UINT32) {
     return EFI_INVALID_PARAMETER;
   }

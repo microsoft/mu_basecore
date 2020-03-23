@@ -64,10 +64,13 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 vs_vars = locate_tools.QueryVcVariables(
                     interesting_keys, "amd64", vs_version="vs2017")
                 for (k, v) in vs_vars.items():
-                    if k.upper() == "PATH":
-                        shell_env.insert_path(v)
-                    else:
-                        shell_env.set_shell_var(k, v)
+                    # MU_CHANGE: [TCBZ2613] "PATH" variable overloaded that could fail .bat run due to command line too long
+                    # This fix also requires fixes from edk2-pytool-extensions 0.13.2
+                    shell_env.set_shell_var(k, v)
+                    # if k.upper() == "PATH":
+                    #     shell_env.insert_path(v)
+                    # else:
+                    #     shell_env.set_shell_var(k, v)
 
             # now confirm it exists
             if not os.path.exists(shell_environment.GetEnvironment().get_shell_var("VS2017_PREFIX")):
@@ -112,10 +115,13 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 vs_vars = locate_tools.QueryVcVariables(
                     interesting_keys, "amd64", vs_version="vs2019")
                 for (k, v) in vs_vars.items():
-                    if k.upper() == "PATH":
-                        shell_env.insert_path(v)
-                    else:
-                        shell_env.set_shell_var(k, v)
+                    # MU_CHANGE: [TCBZ2613] "PATH" variable overloaded that could fail .bat run due to command line too long
+                    # This fix also requires fixes from edk2-pytool-extensions 0.13.2
+                    shell_env.set_shell_var(k, v)
+                    # if k.upper() == "PATH":
+                    #     shell_env.insert_path(v)
+                    # else:
+                    #     shell_env.set_shell_var(k, v)
 
             # now confirm it exists
             if not os.path.exists(shell_environment.GetEnvironment().get_shell_var("VS2019_PREFIX")):
