@@ -103,7 +103,7 @@ $(APPFILE): $(OBJECTS)
 
 PcdGccMakefile = '''
 MAKEROOT ?= $(EDK_TOOLS_PATH)/Source/C
-# LIBS = -lCommon #MU_CHANGE - Bugzilla 2586
+LIBS = -lCommon
 '''
 
 variablePattern = re.compile(r'[\t\s]*0[xX][a-fA-F0-9]+$')
