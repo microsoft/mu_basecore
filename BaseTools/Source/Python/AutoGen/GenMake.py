@@ -731,7 +731,7 @@ cleanlib:
                     if Dst not in self.ResultFileList:
                         self.ResultFileList.append(Dst)
                     if '%s :' %(Dst) not in self.BuildTargetList:
-                        # MU_CHANGE - Don't require a .map file for custom source types.
+                        # MU_CHANGE - [TCBZ2624] Don't require a .map file for custom source types.
                         # self.BuildTargetList.append("%s : %s" %(Dst,Src))
                         self.BuildTargetList.append("%s :" %(Dst))
                         self.BuildTargetList.append('\t' + self._CP_TEMPLATE_[self._Platform] %{'Src': Src, 'Dst': Dst})
