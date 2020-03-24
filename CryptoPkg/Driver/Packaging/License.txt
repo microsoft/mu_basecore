@@ -1,0 +1,13 @@
+This project contains several licenses. Please refer to microsoft.github.com/mu to read all the licenses included in this package.
+Some of the licenses are included below.
+
+SPDX-License-Identifier: BSD-2-Clause-Patent
+
+The Companies that have contributed:
+
+Copyright (C) Microsoft Corporation.
+Copyright (c) 2004 - 2016, Intel Corporation. All rights reserved.
+Copyright (c) 2008 - 2010, Apple Inc. All rights reserved.
+Copyright (c) 2011 - 2015, ARM Limited. All rights reserved.
+Copyright (c) 2014 - 2015, Linaro Limited. All rights reserved.
+Copyright (c) 2013 - 2015, Red Hat, Inc.
