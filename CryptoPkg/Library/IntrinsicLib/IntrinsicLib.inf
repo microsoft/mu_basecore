@@ -58,6 +58,7 @@
 [LibraryClasses]
   BaseLib
   BaseMemoryLib
+  FltUsedLib # MU_CHANGE
 
 [BuildOptions]
    #

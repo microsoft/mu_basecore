@@ -21,7 +21,7 @@ typedef UINTN size_t;
 
 /* OpenSSL will use floating point support, and C compiler produces the _fltused
    symbol by default. Simply define this symbol here to satisfy the linker. */
-int  GLOBAL_USED  _fltused = 1;
+// int  GLOBAL_USED _fltused = 1; // MU_CHANGE use the handy FltUsedLib instead
 
 /* Sets buffers to a specified character */
 void *

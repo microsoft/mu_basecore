@@ -1,0 +1,9 @@
+{
+    "name": "edk2-basecrypto-driver-bin",
+    "author_string": "ProjectMu, TianoCore",
+    "server_url": "https://pkgs.dev.azure.com/projectmu/mu/_packaging/Mu-Public/nuget/v3/index.json",
+    "project_url": "https://aka.ms/projectmu",
+    "license_url": "https://github.com/Microsoft/mu/blob/master/LICENSE",
+    "description_string": "The precompiled BaseCryptLib instance",
+    "copyright_string": "Copyright 2020"
+  }

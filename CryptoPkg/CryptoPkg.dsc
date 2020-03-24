@@ -23,69 +23,10 @@
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
-  #
-  # Flavor of PEI, DXE, SMM modules to build.
-  # Must be one of ALL, NONE, MIN_PEI, MIN_DXE_MIN_SMM, TARGET_UINT_TESTS.
-  # Default is ALL that is used for package build verification.
-  #   ALL             - Build PEIM, DXE, and SMM drivers.  Protocols and PPIs
-  #                     publish all services.
-  #   NONE            - Build PEIM, DXE, and SMM drivers.  Protocols and PPIs
-  #                     publish no services.  Used to verify compiler/linker
-  #                     optimizations are working correctly.
-  #   MIN_PEI         - Build PEIM with PPI that publishes minimum required
-  #                     services.
-  #   MIN_DXE_MIN_SMM - Build DXE and SMM drivers with Protocols that publish
-  #                     minimum required services.
-  #   TARGET_UNIT_TESTS - Build target-based unit tests
-  #
-  DEFINE CRYPTO_SERVICES = ALL
-!if $(CRYPTO_SERVICES) IN "ALL NONE MIN_PEI MIN_DXE_MIN_SMM TARGET_UNIT_TESTS"
-!else
-  !error CRYPTO_SERVICES must be set to one of ALL NONE MIN_PEI MIN_DXE_MIN_SMM TARGET_UNIT_TESTS.
-!endif
+# MU_CHANGE
+!include CryptoPkg/Driver/Bin/Crypto.inc.dsc
 
-#
-# Define different OUTPUT_DIRECTORY for each CRYPTO_SERVICES profile
-#
-!if $(CRYPTO_SERVICES) == ALL
-  OUTPUT_DIRECTORY             = Build/CryptoPkg/All
-!endif
-!if $(CRYPTO_SERVICES) == NONE
-  OUTPUT_DIRECTORY              = Build/CryptoPkg/None
-!endif
-!if $(CRYPTO_SERVICES) == MIN_PEI
-  OUTPUT_DIRECTORY              = Build/CryptoPkg/MinPei
-!endif
-!if $(CRYPTO_SERVICES) == MIN_DXE_MIN_SMM
-  OUTPUT_DIRECTORY              = Build/CryptoPkg/MinDxeMinSmm
-!endif
-!if $(CRYPTO_SERVICES) == TARGET_UNIT_TESTS
-  OUTPUT_DIRECTORY              = Build/CryptoPkg/TagetUnitTests
-!endif
-
-#
-# Define FILE_GUID names/values for CryptoPei, CryptopDxe, and CryptoSmm
-# drivers that are linked with different OpensslLib instances
-#
-  DEFINE  PEI_CRYPTO_GUID     = C693A250-6B36-49B9-B7F3-7283F8136A72
-  DEFINE  PEI_STD_GUID        = EBD49F5C-6D8B-40D1-A56D-9AFA485A8661
-  DEFINE  PEI_FULL_GUID       = D51FCE59-6860-49C0-9B35-984470735D17
-  DEFINE  PEI_STD_ACCEL_GUID  = DCC9CB49-7BE2-47C6-864E-6DCC932360F9
-  DEFINE  PEI_FULL_ACCEL_GUID = A10827AD-7598-4955-B661-52EE2B62B057
-  DEFINE  DXE_CRYPTO_GUID     = 31C17C54-325D-47D5-8622-888098F10E44
-  DEFINE  DXE_STD_GUID        = ADD6D05A-52A2-437B-98E7-DBFDA89352CD
-  DEFINE  DXE_FULL_GUID       = AA83B296-F6EA-447F-B013-E80E98629CF8
-  DEFINE  DXE_STD_ACCEL_GUID  = 9FBDAD27-910C-4229-9EFF-A93BB5FE18C6
-  DEFINE  DXE_FULL_ACCEL_GUID = 41A491D1-A972-468B-A299-DABF415A43B7
-  DEFINE  SMM_CRYPTO_GUID     = 1A1C9E13-5722-4636-AB73-31328EDE8BAF
-  DEFINE  SMM_STD_GUID        = E4D7D1E3-E886-4412-A442-EFD6F2502DD3
-  DEFINE  SMM_FULL_GUID       = 1930CE7E-6598-48ED-8AB1-EBE7E85EC254
-  DEFINE  SMM_STD_ACCEL_GUID  = 828959D3-CEA6-4B79-B1FC-5AFA0D7F2144
-  DEFINE  SMM_FULL_ACCEL_GUID = C1760694-AB3A-4532-8C6D-52D8F86EB1AA
-
-!if $(CRYPTO_SERVICES) == TARGET_UNIT_TESTS
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgTarget.dsc.inc
-!endif
 
 ################################################################################
 #
@@ -98,18 +39,15 @@
 [LibraryClasses]
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
   BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
-  DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
-  SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
-  SynchronizationLib|MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
-  TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
-  RngLib|MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
-  PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
-  DebugLib|MdeModulePkg/Library/PeiDxeDebugLibReportStatusCode/PeiDxeDebugLibReportStatusCode.inf
-  DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
-  OemHookStatusCodeLib|MdeModulePkg/Library/OemHookStatusCodeLibNull/OemHookStatusCodeLibNull.inf
+  PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
+  DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
+  UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
+  UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
+  BaseCryptLib|CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
+  HmacSha1Lib|CryptoPkg/Library/HmacSha1Lib/HmacSha1LibNull.inf # MU_CHANGE add HmacSha1Lib
+  TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
-  OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
-  IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
+  RngLib|MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
 ##MSCHANGE Begin
   FltUsedLib|MdePkg/Library/FltUsedLib/FltUsedLib.inf
@@ -122,11 +60,11 @@
   PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
 ##MSCHANGE End
-[LibraryClasses.IA32, LibraryClasses.X64, LibraryClasses.AARCH64]
-  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
 
-[LibraryClasses.AARCH64.DXE_DRIVER, LibraryClasses.ARM.DXE_DRIVER, LibraryClasses.AARCH64.UEFI_APPLICATION, LibraryClasses.ARM.UEFI_APPLICATION]
-  RngLib|SecurityPkg/RandomNumberGenerator/RngDxeLib/RngDxeLib.inf
+# MU_CHANGE [BEGIN]
+# Add RNG Libs for ARM
+[LibraryClasses]
+  RngLib|MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
 [LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_APPLICATION]
   RngLib|MdePkg/Library/DxeRngLib/DxeRngLib.inf
@@ -145,7 +83,7 @@
 # MU_CHANGE [END]
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
-  ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
+  #ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf ## MU_CHANGE
   #
   # It is not possible to prevent the ARM compiler for generic intrinsic functions.
   # This library provides the instrinsic functions generate by a given compiler.
@@ -161,6 +99,7 @@
 
 [LibraryClasses.ARM]
   ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
+
 [LibraryClasses.common.SEC]
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
@@ -178,7 +117,6 @@
 
 [LibraryClasses.IA32.PEIM, LibraryClasses.X64.PEIM]
   PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLibIdt/PeiServicesTablePointerLibIdt.inf
-
 
 [LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_APPLICATION] # MU_CHANGE add UEFI Application for UEFI TEsts
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
@@ -356,6 +294,7 @@
       MSFT:*_*_X64_DLINK_FLAGS  = /ALIGN:256
 !endif
 
+
 [Components.IA32, Components.X64, Components.AARCH64]
   CryptoPkg/Driver/CryptoDxe.inf {
     <Defines>
@@ -396,5 +335,4 @@
   MSFT:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
   INTEL:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
   GCC:*_*_*_CC_FLAGS = -D ENABLE_MD5_DEPRECATED_INTERFACES
-
 !endif
