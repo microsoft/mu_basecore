@@ -174,6 +174,7 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
 
         WORKSPACE_PATH = os.path.dirname(os.path.dirname(SCRIPT_PATH))
         REQUIRED_REPOS = ['Common/MU_TIANO',
+                          'Common/MU_PLUS',
                           "Silicon/Arm/MU_TIANO"]  # todo fix this
 
         MODULE_PKG_PATHS = os.pathsep.join(os.path.join(
@@ -324,7 +325,7 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
 
     def GetActiveScopes(self):
         ''' get scope '''
-        scopes = ("corebuild", "sharednetworking_build", "project_mu" )
+        scopes = ("corebuild", "sharednetworking_build", "project_mu", 'edk2-build' )
         # if (GetHostInfo().os == "Linux"):
         #    scopes += ("gcc_aarch64_linux",)
 
@@ -490,12 +491,17 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
             {
                 "Path": "Silicon/Arm/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_silicon_arm_tiano.git",
-                "Branch": "dev/201908"
+                "Branch": "release/201911"
             },
             {
                 "Path": "Common/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
-                "Branch": "dev/201908"
+                "Branch": "release/201911"
+            },
+            {
+                "Path": "Common/MU_PLUS",
+                "Url": "https://github.com/Microsoft/mu_plus.git",
+                "Branch": "release/201911"
             }
         ]
 
@@ -519,3 +525,43 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
         self.nuget_version = args.nug_ver
 
         self.should_dump_version = args.dump_version
+
+
+def main():
+    import argparse
+    import sys
+    import os
+    from edk2toolext.invocables.edk2_update import Edk2Update
+    from edk2toolext.invocables.edk2_ci_setup import Edk2CiBuildSetup
+    from edk2toolext.invocables.edk2_platform_build import Edk2PlatformBuild
+    import DriverBuilder
+    print("Invoking Stuart")
+    print("     ) _     _")
+    print("    ( (^)-~-(^)")
+    print("__,-.\_( 0 0 )__,-.___")
+    print("  'W'   \   /   'W'")
+    print("         >o<")
+    SCRIPT_PATH = os.path.relpath(__file__)
+    parser = argparse.ArgumentParser(add_help=False)
+    parse_group = parser.add_mutually_exclusive_group()
+    parse_group.add_argument("--update", "--UPDATE",
+                             action='store_true', help="Invokes stuart_update")
+    parse_group.add_argument("--setup", "--SETUP",
+                             action='store_true', help="Invokes stuart_setup")
+    args, remaining = parser.parse_known_args()
+    new_args = ["stuart", "-c", SCRIPT_PATH]
+    new_args = new_args + remaining
+    sys.argv = new_args
+    if args.setup:
+        print("Running stuart_ci_setup -c " + SCRIPT_PATH)
+        Edk2CiBuildSetup().Invoke()
+    elif args.update:
+        print("Running stuart_update -c " + SCRIPT_PATH)
+        Edk2Update().Invoke()
+    else:
+        print("Running DriverBuilder -c " + SCRIPT_PATH)
+        DriverBuilder.Edk2BinaryBuild().Invoke()
+
+if __name__ == "__main__":
+    import SharedNetworkSettings
+    SharedNetworkSettings.main()  # otherwise we're in __main__ context
