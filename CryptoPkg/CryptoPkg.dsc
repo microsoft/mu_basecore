@@ -23,27 +23,8 @@
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
-  #
-  # Flavor of PEI, DXE, SMM modules to build.
-  # Must be one of ALL, NONE, MIN_PEI, MIN_DXE_MIN_SMM.
-  # Default is ALL that is used for package build verification.
-  #   PACKAGE         - Package verification build of all components.  Null
-  #                     versions of libraries are used to minimize build times.
-  #   ALL             - Build PEIM, DXE, and SMM drivers.  Protocols and PPIs
-  #                     publish all services.
-  #   NONE            - Build PEIM, DXE, and SMM drivers.  Protocols and PPIs
-  #                     publish no services.  Used to verify compiler/linker
-  #                     optimizations are working correctly.
-  #   MIN_PEI         - Build PEIM with PPI that publishes minimum required
-  #                     services.
-  #   MIN_DXE_MIN_SMM - Build DXE and SMM drivers with Protocols that publish
-  #                     minimum required services.
-  #
-  DEFINE CRYPTO_SERVICES = PACKAGE
-!if $(CRYPTO_SERVICES) IN "PACKAGE ALL NONE MIN_PEI MIN_DXE_MIN_SMM"
-!else
-  !error CRYPTO_SERVICES must be set to one of PACKAGE ALL NONE MIN_PEI MIN_DXE_MIN_SMM.
-!endif
+# MU_CHANGE
+!include CryptoPkg/Driver/Bin/Crypto.inc.dsc
 
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgTarget.dsc.inc
 
@@ -80,8 +61,10 @@
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
 ##MSCHANGE End
 
-[LibraryClasses.AARCH64.DXE_DRIVER, LibraryClasses.ARM.DXE_DRIVER, LibraryClasses.AARCH64.UEFI_APPLICATION, LibraryClasses.ARM.UEFI_APPLICATION]
-  RngLib|SecurityPkg/RandomNumberGenerator/RngDxeLib/RngDxeLib.inf
+# MU_CHANGE [BEGIN]
+# Add RNG Libs for ARM
+[LibraryClasses]
+  RngLib|MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
 [LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_APPLICATION]
   RngLib|MdePkg/Library/DxeRngLib/DxeRngLib.inf
@@ -100,6 +83,8 @@
 # MU_CHANGE [END]
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
+
+  #ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf ## MU_CHANGE
   #
   # It is not possible to prevent the ARM compiler for generic intrinsic functions.
   # This library provides the instrinsic functions generate by a given compiler.
@@ -132,7 +117,6 @@
   OemHookStatusCodeLib|MdeModulePkg/Library/OemHookStatusCodeLibNull/OemHookStatusCodeLibNull.inf
   PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
-
   TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf  #???
   IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf                                          #???
@@ -238,8 +222,6 @@
     <Defines>
       FILE_GUID = $(PEI_CRYPTO_DRIVER_FILE_GUID)  # MU_CHANGE updated File GUID
   }
-!endif
-
 
 [Components.IA32, Components.X64, Components.AARCH64]
   CryptoPkg/Driver/CryptoDxe.inf {
@@ -279,3 +261,8 @@
   INTEL:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
   GCC:*_*_*_CC_FLAGS = -D ENABLE_MD5_DEPRECATED_INTERFACES
 !endif
+#MU_CHANGE START
+[BuildOptions.common.EDKII.DXE_RUNTIME_DRIVER, BuildOptions.common.EDKII.DXE_SMM_DRIVER, BuildOptions.common.EDKII.SMM_CORE, BuildOptions.common.EDKII.DXE_DRIVER]
+  MSFT:*_*_IA32_DLINK_FLAGS = /ALIGN:4096 # enable 4k alignment for MAT and other protections.
+  MSFT:*_*_X64_DLINK_FLAGS = /ALIGN:4096 # enable 4k alignment for MAT and other protections.
+#MU_CHANGE END
