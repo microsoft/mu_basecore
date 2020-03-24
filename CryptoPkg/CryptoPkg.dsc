@@ -23,27 +23,8 @@
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
-  #
-  # Flavor of PEI, DXE, SMM modules to build.
-  # Must be one of ALL, NONE, MIN_PEI, MIN_DXE_MIN_SMM.
-  # Default is ALL that is used for package build verification.
-  #   PACKAGE         - Package verification build of all components.  Null
-  #                     versions of libraries are used to minimize build times.
-  #   ALL             - Build PEIM, DXE, and SMM drivers.  Protocols and PPIs
-  #                     publish all services.
-  #   NONE            - Build PEIM, DXE, and SMM drivers.  Protocols and PPIs
-  #                     publish no services.  Used to verify compiler/linker
-  #                     optimizations are working correctly.
-  #   MIN_PEI         - Build PEIM with PPI that publishes minimum required
-  #                     services.
-  #   MIN_DXE_MIN_SMM - Build DXE and SMM drivers with Protocols that publish
-  #                     minimum required services.
-  #
-  DEFINE CRYPTO_SERVICES = PACKAGE
-!if $(CRYPTO_SERVICES) IN "PACKAGE ALL NONE MIN_PEI MIN_DXE_MIN_SMM"
-!else
-  !error CRYPTO_SERVICES must be set to one of PACKAGE ALL NONE MIN_PEI MIN_DXE_MIN_SMM.
-!endif
+# MU_CHANGE
+!include CryptoPkg/Driver/Packaging/Crypto.inc.dsc
 
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgTarget.dsc.inc
 
@@ -63,18 +44,47 @@
   UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
+  HmacSha1Lib|CryptoPkg/Library/HmacSha1Lib/HmacSha1LibNull.inf # MU_CHANGE add HmacSha1Lib
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
   RngLib|MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
+##MSCHANGE Begin
+  FltUsedLib|MdePkg/Library/FltUsedLib/FltUsedLib.inf
+  BaseBinSecurityLibRng|MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
+  UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLib.inf
+  UnitTestPersistenceLib|UnitTestFrameworkPkg/Library/UnitTestPersistenceLibNull/UnitTestPersistenceLibNull.inf
+  UnitTestBootLib|UnitTestFrameworkPkg/Library/UnitTestBootLibNull/UnitTestBootLibNull.inf
+  UnitTestResultReportLib|UnitTestFrameworkPkg/Library/UnitTestResultReportLib/UnitTestResultReportLibDebugLib.inf
+  UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
+  PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
+  MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
+##MSCHANGE End
 
-[LibraryClasses.AARCH64.DXE_DRIVER, LibraryClasses.ARM.DXE_DRIVER, LibraryClasses.AARCH64.UEFI_APPLICATION, LibraryClasses.ARM.UEFI_APPLICATION]
-  RngLib|SecurityPkg/RandomNumberGenerator/RngDxeLib/RngDxeLib.inf
+# MU_CHANGE [BEGIN]
+# Add RNG Libs for ARM
+[LibraryClasses]
+  RngLib|MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
+[LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_APPLICATION]
+  RngLib|MdePkg/Library/DxeRngLib/DxeRngLib.inf
+
+!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019 ##MSCHANGE
 [LibraryClasses.IA32]
   NULL|MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf
+  ReportStatusCodeLib|MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
+[LibraryClasses.X64, LibraryClasses.IA32]
+  NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+  BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+[LibraryClasses.X64.DXE_CORE, LibraryClasses.X64.UEFI_DRIVER, LibraryClasses.X64.DXE_DRIVER, LibraryClasses.X64.UEFI_APPLICATION]
+  # this is currently X64 only because MSVC doesn't support BaseMemoryLibOptDxe for AARCH64
+  BaseMemoryLib|MdePkg/Library/BaseMemoryLibOptDxe/BaseMemoryLibOptDxe.inf
+!endif ##MSCHANGE
+# MU_CHANGE [END]
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
+
+  ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf ## MU_CHANGE
   #
   # It is not possible to prevent the ARM compiler for generic intrinsic functions.
   # This library provides the instrinsic functions generate by a given compiler.
@@ -96,8 +106,10 @@
 [LibraryClasses.common.DXE_SMM_DRIVER]
   SmmServicesTableLib|MdePkg/Library/SmmServicesTableLib/SmmServicesTableLib.inf
   MemoryAllocationLib|MdePkg/Library/SmmMemoryAllocationLib/SmmMemoryAllocationLib.inf
+  BaseMemoryLib|MdePkg/Library/BaseMemoryLibRepStr/BaseMemoryLibRepStr.inf # MU_CHANGE added to match current platforms
 
-!if $(CRYPTO_SERVICES) IN "ALL NONE MIN_PEI MIN_DXE_MIN_SMM"
+
+!if $(CRYPTO_SERVICES) != "PACKAGE" # MU_CHANGE
 [LibraryClasses]
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
   DebugLib|MdeModulePkg/Library/PeiDxeDebugLibReportStatusCode/PeiDxeDebugLibReportStatusCode.inf
@@ -105,19 +117,18 @@
   OemHookStatusCodeLib|MdeModulePkg/Library/OemHookStatusCodeLibNull/OemHookStatusCodeLibNull.inf
   PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
-  PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
   TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf  #???
   IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf                                          #???
   OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
   IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
+  HmacSha1Lib|CryptoPkg/Library/HmacSha1Lib/HmacSha1Lib.inf # MU_CHANGE add HmacSha1Lib
 
 [LibraryClasses.ARM]
   ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
 
 [LibraryClasses.common.PEIM]
-  PcdLib|MdePkg/Library/PeiPcdLib/PeiPcdLib.inf
   ReportStatusCodeLib|MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/PeiCryptLib.inf
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
@@ -128,15 +139,17 @@
 [LibraryClasses.ARM.PEIM, LibraryClasses.AARCH64.PEIM]
   PeiServicesTablePointerLib|ArmPkg/Library/PeiServicesTablePointerLib/PeiServicesTablePointerLib.inf
 
-[LibraryClasses.common.DXE_DRIVER]
+[LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_APPLICATION] # MU_CHANGE add UEFI Application for UEFI TEsts
   ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
   TlsLib|CryptoPkg/Library/TlsLib/TlsLib.inf
+  DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf # MU_CHANGE add debug lib
 
 [LibraryClasses.common.DXE_SMM_DRIVER]
   ReportStatusCodeLib|MdeModulePkg/Library/SmmReportStatusCodeLib/SmmReportStatusCodeLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
+  DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf # MU_CHANGE add debug lib
 !endif
 
 ################################################################################
@@ -149,74 +162,7 @@
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000000
   gEfiMdePkgTokenSpaceGuid.PcdReportStatusCodePropertyMask|0x06
 
-!if $(CRYPTO_SERVICES) IN "PACKAGE ALL"
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.HmacSha256.Family                        | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Md5.Family                               | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Pkcs.Family                              | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Dh.Family                                | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Random.Family                            | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Rsa.Family                               | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sha1.Family                              | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sha256.Family                            | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sha384.Family                            | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sha512.Family                            | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.X509.Family                              | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Tdes.Family                              | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Aes.Services.GetContextSize              | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Aes.Services.Init                        | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Aes.Services.CbcEncrypt                  | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Aes.Services.CbcDecrypt                  | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Arc4.Family                              | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sm3.Family                               | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Hkdf.Family                              | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Tls.Family                               | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.TlsSet.Family                            | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.TlsGet.Family                            | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-!endif
-
-!if $(CRYPTO_SERVICES) == MIN_PEI
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.HmacSha256.Family               | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sha1.Family                     | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sha256.Family                   | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sha384.Family                   | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sha512.Family                   | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sm3.Family                      | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Rsa.Services.Pkcs1Verify        | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Rsa.Services.New                | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Rsa.Services.Free               | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Rsa.Services.SetKey             | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Pkcs.Services.Pkcs5HashPassword | TRUE
-!endif
-
-!if $(CRYPTO_SERVICES) == MIN_DXE_MIN_SMM
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.HmacSha256.Family                        | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Pkcs.Services.Pkcs1v2Encrypt             | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Pkcs.Services.Pkcs5HashPassword          | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Pkcs.Services.Pkcs7Verify                | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Pkcs.Services.VerifyEKUsInPkcs7Signature | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Pkcs.Services.Pkcs7GetSigners            | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Pkcs.Services.Pkcs7FreeSigners           | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Pkcs.Services.AuthenticodeVerify         | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Random.Family                            | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Rsa.Services.Pkcs1Verify                 | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Rsa.Services.New                         | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Rsa.Services.Free                        | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Rsa.Services.SetKey                      | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Rsa.Services.GetPublicKeyFromX509        | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sha1.Family                              | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sha256.Family                            | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sha256.Services.HashAll                  | FALSE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.X509.Services.GetSubjectName             | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.X509.Services.GetCommonName              | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.X509.Services.GetOrganizationName        | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.X509.Services.GetTBSCert                 | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Tls.Family                               | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.TlsSet.Family                            | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.TlsGet.Family                            | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Aes.Services.Init                        | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Aes.Services.CbcEncrypt                  | TRUE
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Aes.Services.CbcDecrypt                  | TRUE
-!endif
+## MU_CHANGE Remove PCD definitions
 
 ###################################################################################################
 #
@@ -239,12 +185,11 @@
 [Components]
   CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
   CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf
-
+  CryptoPkg/Library/HmacSha1Lib/HmacSha1Lib.inf
+  CryptoPkg/Library/HmacSha1Lib/HmacSha1LibNull.inf
 !if $(CRYPTO_SERVICES) == PACKAGE
 [Components]
-  CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
   CryptoPkg/Library/BaseCryptLib/PeiCryptLib.inf
-  CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
   CryptoPkg/Library/BaseCryptLib/RuntimeCryptLib.inf
   CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
   CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
@@ -256,48 +201,41 @@
 
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/PeiCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/DxeCryptLib.inf
+  # MU_CHANGE START The prebuilt versions of CryptoDriver
+  !include CryptoPkg/Driver/Bin/CryptoPkg.ci.inc.dsc
+  # MU_CHANGE END
+
+# MU_CHANGE START
+[Components.X64, Components.IA32]
+  CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/SmmCryptLib.inf
+# MU_CHANGE END
+
+[Components.X64, Components.IA32]
+  ## MU_CHANGE [BEGIN] Added unit-test application for the VerifyEKUsInPkcs7Signature() function.
+  # Currently this unit test doesn't work for AARCH64
+  CryptoPkg/UnitTests/VerifyPkcs7EkuUnitTestApp/VerifyPkcs7EkuUnitTestApp.inf
+  ## MU_CHANGE [END]
+
 !endif
 
-!if $(CRYPTO_SERVICES) IN "PACKAGE ALL NONE MIN_PEI"
-[Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
+[Components.IA32, Components.X64] # MU_CHANGE remove ARM and AARCH64
   CryptoPkg/Driver/CryptoPei.inf {
     <Defines>
-      !if $(CRYPTO_SERVICES) == ALL
-        FILE_GUID = 8DF53C2E-3380-495F-A8B7-370CFE28E1C6
-      !elseif $(CRYPTO_SERVICES) == NONE
-        FILE_GUID = E5A97EE3-71CC-407F-9DA9-6BE0C8A6C7DF
-      !elseif $(CRYPTO_SERVICES) == MIN_PEI
-        FILE_GUID = 0F5827A9-35FD-4F41-8D38-9BAFCE594D31
-      !endif
+      FILE_GUID = $(PEI_CRYPTO_DRIVER_FILE_GUID)  # MU_CHANGE updated File GUID
   }
-!endif
 
-!if $(CRYPTO_SERVICES) IN "PACKAGE ALL NONE MIN_DXE_MIN_SMM"
 [Components.IA32, Components.X64, Components.AARCH64]
   CryptoPkg/Driver/CryptoDxe.inf {
     <Defines>
-      !if $(CRYPTO_SERVICES) == ALL
-        FILE_GUID = D9444B06-060D-42C5-9344-F04707BE0169
-      !elseif $(CRYPTO_SERVICES) == NONE
-        FILE_GUID = C7A340F4-A6CC-4F95-A2DA-42BEA4C3944A
-      !elseif $(CRYPTO_SERVICES) == MIN_DXE_MIN_SMM
-        FILE_GUID = DDF5BE9E-159A-4B77-B6D7-82B84B5763A2
-      !endif
+      FILE_GUID = $(DXE_CRYPTO_DRIVER_FILE_GUID)  # MU_CHANGE updated File GUID
   }
 
 [Components.IA32, Components.X64]
   CryptoPkg/Driver/CryptoSmm.inf {
     <Defines>
-      !if $(CRYPTO_SERVICES) == ALL
-        FILE_GUID = A3542CE8-77F7-49DC-A834-45D37D2EC1FA
-      !elseif $(CRYPTO_SERVICES) == NONE
-        FILE_GUID = 6DCB3127-01E7-4131-A487-DC77A965A541
-      !elseif $(CRYPTO_SERVICES) == MIN_DXE_MIN_SMM
-        FILE_GUID = 85F7EA15-3A2B-474A-8875-180542CD6BF3
-      !endif
+      FILE_GUID = $(SMM_CRYPTO_DRIVER_FILE_GUID)# MU_CHANGE updated File GUID
   }
-!endif
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
@@ -307,3 +245,8 @@
   GCC:*_*_*_CC_FLAGS = -D ENABLE_MD5_DEPRECATED_INTERFACES
   RVCT:*_*_*_CC_FLAGS = -DENABLE_MD5_DEPRECATED_INTERFACES
 !endif
+#MU_CHANGE START
+[BuildOptions.common.EDKII.DXE_RUNTIME_DRIVER, BuildOptions.common.EDKII.DXE_SMM_DRIVER, BuildOptions.common.EDKII.SMM_CORE, BuildOptions.common.EDKII.DXE_DRIVER] 
+  MSFT:*_*_IA32_DLINK_FLAGS = /ALIGN:4096 # enable 4k alignment for MAT and other protections.
+  MSFT:*_*_X64_DLINK_FLAGS = /ALIGN:4096 # enable 4k alignment for MAT and other protections.
+#MU_CHANGE END
