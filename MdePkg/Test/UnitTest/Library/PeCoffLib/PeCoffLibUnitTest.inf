@@ -1,0 +1,30 @@
+## @file
+# Interface-level Unit Tests for PeCoffLib aimed at BasePeCoffLib.
+# Hopefully are applicable to any implementation of PeCoffLib
+#
+# Copyright (C) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = PeCoffLibUnitTestHost
+  FILE_GUID                      = 0C8CD773-40F4-475C-A2C0-C439E46419B6
+  MODULE_TYPE                    = HOST_APPLICATION
+  VERSION_STRING                 = 1.0
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources]
+  PeCoffLibUnitTest.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  DebugLib
+  UnitTestLib

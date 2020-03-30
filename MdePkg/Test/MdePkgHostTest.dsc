@@ -28,3 +28,5 @@
   #
   MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibHost.inf
   MdePkg/Test/UnitTest/Library/BaseLib/BaseLibUnitTestsHost.inf
+
+  MdePkg/Test/UnitTest/Library/PeCoffLib/PeCoffLibUnitTest.inf
