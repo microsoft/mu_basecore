@@ -1,10 +1,7 @@
-#![crate_type = "staticlib"]
-
 #![allow(unused)]
+#![allow(non_snake_case)]
 
 #![cfg_attr(not(test), no_std)]
-
-#![feature(alloc_error_handler)]
 
 extern crate alloc;
 

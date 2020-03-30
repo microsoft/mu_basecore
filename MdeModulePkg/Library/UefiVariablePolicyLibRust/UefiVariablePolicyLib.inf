@@ -23,7 +23,7 @@
 
 
 [Sources]
-  src/lib.rs
+  Cargo.toml
 
 
 [Packages]

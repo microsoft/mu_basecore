@@ -16,8 +16,9 @@
 #      - Change RC path to use plugin
 # 2.10 - Remove WHOLEARCHIVE as this breaks the build for VS2017/VS2019
 # 2.20 - Added Rusty tools
+# 2.21 - Tweak Rusty tools
 #
-#!VERSION=2.20
+#!VERSION=2.21
 
 IDENTIFIER = Default TOOL_CHAIN_CONF
 
@@ -3178,12 +3179,16 @@ RELEASE_*_IA32_RUSTC_FLAGS  = --edition=2018 --target i686-unknown-uefi   -C opt
 # CARGO definitions
 ##################
 *_*_*_CARGO_PATH            = cargo
-#DEBUG_*_X64_CARGO_FLAGS     = --target x86_64-unknown-uefi
-*_*_X64_CARGO_FLAGS   = --target x86_64-unknown-uefi --release
-#DEBUG_*_IA32_CARGO_FLAGS    = --target i686-unknown-uefi
-*_*_IA32_CARGO_FLAGS  = --target i686-unknown-uefi   --release
+NOOPT_*_X64_CARGO_FLAGS     = 
+#DEBUG_*_X64_CARGO_FLAGS    = --target x86_64-unknown-uefi
+*_*_X64_CARGO_FLAGS         = --target x86_64-unknown-uefi --release
+NOOPT_*_IA32_CARGO_FLAGS    = 
+#DEBUG_*_IA32_CARGO_FLAGS   = --target i686-unknown-uefi
+*_*_IA32_CARGO_FLAGS        = --target i686-unknown-uefi   --release
 
-*_*_*_CARGOXBUILD_NAME	= xbuild
+NOOPT_*_*_CARGO_BUILDCMD     = build
+DEBUG_*_*_CARGO_BUILDCMD     = xbuild
+RELEASE_*_*_CARGO_BUILDCMD   = xbuild
 
 # MS_CHANGE END
 
