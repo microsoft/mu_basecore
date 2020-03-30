@@ -1,5 +1,5 @@
 [package]
-name = "BasePeCoffLibRust"
+name = "base_pe_coff_lib_rust"
 version = "0.1.0"
 authors = ["Bret Barkelew <brbarkel@microsoft.com>"]
 edition = "2018"
@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
   goblin='0.2.0'
+  r-efi='*'

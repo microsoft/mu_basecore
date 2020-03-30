@@ -3,6 +3,8 @@ use std::path::Path;
 use std::env;
 use std::fs;
 
+mod bindings;
+
 fn run () -> error::Result<()> {
     for (i, arg) in env::args().enumerate() {
         if i == 1 {
@@ -17,5 +19,5 @@ fn run () -> error::Result<()> {
 }
 
 fn main() {
-    let result = run();
+    let _result = run();
 }
