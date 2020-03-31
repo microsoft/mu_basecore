@@ -7,11 +7,19 @@ publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[profile.release]
+panic = "abort"
+
+[profile.dev]
+panic = "abort"
+
 [lib]
 name = "UefiVariablePolicyLibRust"
 crate-type = ["staticlib"]
 
 [dependencies]
 r-efi = "2.1.0"
-uefi_rust_panic_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
-uefi_rust_allocation_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
+#uefi_rust_panic_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
+uefi_rust_panic_lib = { path = "../UefiRustPanicLib" }
+#uefi_rust_allocation_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
+uefi_rust_allocation_lib = { path = "../UefiRustAllocationLib" }
