@@ -20,6 +20,7 @@ extern crate uefi_rust_panic_lib;
 extern crate uefi_rust_allocation_lib;
 
 use alloc::vec::Vec;
+use core::fmt;
 use r_efi::efi;
 
 extern "C" {
@@ -69,13 +70,29 @@ pub fn internal_debug_string(level: usize, string: &str) {
   }
 }
 
-// #[macro_export]
-// macro_rules! print {
-//     ($($arg:tt)*) => ($crate::internal_debug_string(format_args!($($arg)*)));
-// }
+struct DebugWriter;
 
-// #[macro_export]
-// macro_rules! println {
-//     () => ($crate::print!("\n"));
-//     ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
-// }
+impl fmt::Write for DebugWriter {
+  fn write_str(&mut self, s: &str) -> fmt::Result {
+    // For now, hard-code what level we're going to use.
+    internal_debug_string(DEBUG_INFO, s);
+    Ok(())
+  }
+}
+
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ($crate::_print(format_args!($($arg)*)));
+}
+
+#[macro_export]
+macro_rules! println {
+    () => ($crate::print!("\n"));
+    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+}
+
+#[doc(hidden)]
+pub fn _print(args: fmt::Arguments) {
+    use core::fmt::Write;
+    DebugWriter{}.write_fmt(args).unwrap();
+}
