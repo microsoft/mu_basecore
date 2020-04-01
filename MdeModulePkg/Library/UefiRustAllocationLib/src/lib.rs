@@ -15,8 +15,9 @@
 
 #![feature(alloc_error_handler)]
 
-#![cfg(no_std)]
+#![cfg_attr(not(test), no_std)]
 
+#[cfg(not(test))]
 extern crate uefi_rust_panic_lib;
 
 use core::alloc::{GlobalAlloc, Layout};
@@ -24,7 +25,6 @@ use core::ffi::c_void;
 
 extern "C" {
   fn AllocatePool (Size: usize) -> *mut c_void;
-  // fn AllocateZeroPool (Size: usize) -> *mut c_void;
   fn FreePool (Buffer: *mut c_void);
 }
 

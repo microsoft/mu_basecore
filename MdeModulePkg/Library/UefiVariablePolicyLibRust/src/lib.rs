@@ -1,10 +1,15 @@
-#![crate_type = "staticlib"]
+// @file -- lib.rs
+// Implementation of the UefiVariablePolicyLib that is written
+// natively in Rust.
+//
+// Copyright (c) Microsoft Corporation.
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
 
 #![allow(unused)]
+#![allow(non_snake_case)]
 
 #![cfg_attr(not(test), no_std)]
-
-#![feature(alloc_error_handler)]
 
 extern crate alloc;
 
@@ -14,11 +19,14 @@ extern crate uefi_rust_panic_lib;
 #[cfg(not(test))]
 extern crate uefi_rust_allocation_lib;
 
+extern crate uefi_rust_print_lib_debug_lib;
+
 use alloc::slice;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::mem;
 use r_efi::efi;
+use uefi_rust_print_lib_debug_lib::println;
 
 // TODO: Check for truncation in every cast.
 

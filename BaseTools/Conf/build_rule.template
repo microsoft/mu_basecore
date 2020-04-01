@@ -115,8 +115,9 @@
 # 2.00 - Add .slib and .efi support in the sources file
 # 2.01 - Add support for DEPS_FLAGS as well as
 # 2.21 - Add Rust Definitions
+# 2.22 - Add more Rust Definitions
 
-#!VERSION=2.21
+#!VERSION=2.22
 
 [C-Code-File]
     <InputFile>
@@ -276,11 +277,10 @@
         ?.toml
 
     <OutputFile>
-        $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).lib
 
     <Command>
-        $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
-        $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.a $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME)rust.lib
+        $(CARGO) $(CARGO_BUILDCMD) $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --out-dir $(OUTPUT_DIR)
 
 [Toml-File.RUST_MODULE]
     <InputFile>
@@ -291,8 +291,8 @@
 
     <Command>
         $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${src} -Z unstable-options --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
-		$(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
-		$(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
+        $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+        $(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
 # MS_CHANGE END
 
 [Device-Tree-Source-File]
