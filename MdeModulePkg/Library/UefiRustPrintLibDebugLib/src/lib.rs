@@ -49,7 +49,7 @@ pub const DEBUG_CACHE     : usize = 0x00200000;
 pub const DEBUG_VERBOSE   : usize = 0x00400000;
 pub const DEBUG_ERROR     : usize = 0x80000000;
 
-pub fn internal_debug_string(level: usize, string: &str) {
+fn internal_debug_string(level: usize, string: &str) {
   // Determine whether we're going to do anything.
   if unsafe { DebugPrintEnabled() } == efi::Boolean::TRUE &&
       unsafe { DebugPrintLevelEnabled(level) } == efi::Boolean::TRUE {
