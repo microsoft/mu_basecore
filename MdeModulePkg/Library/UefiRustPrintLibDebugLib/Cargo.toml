@@ -1,21 +1,23 @@
 [package]
-name = "UefiVariablePolicyLibRust"
+name = "uefi_rust_print_lib_debug_lib"
 version = "0.1.0"
-authors = ["Bret Barkelew <brbarkel@microsoft.com>"]
+authors = ["Bret Barkelew <bret.barkelew@microsoft.com>"]
 edition = "2018"
 publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[profile.release]
-panic = "abort"
-
-[profile.dev]
-panic = "abort"
-
 [lib]
-name = "UefiVariablePolicyLibRust"
-crate-type = ["staticlib"]
+name = "uefi_rust_print_lib_debug_lib"
+crate-type = ["rlib", "staticlib"]
+
+# the profile used for `cargo build`
+[profile.dev]
+panic = "abort" # disable stack unwinding on panic
+
+# the profile used for `cargo build --release`
+[profile.release]
+panic = "abort" # disable stack unwinding on panic
 
 [dependencies]
 r-efi = "2.1.0"
@@ -23,5 +25,3 @@ r-efi = "2.1.0"
 uefi_rust_panic_lib = { path = "../UefiRustPanicLib" }
 #uefi_rust_allocation_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
 uefi_rust_allocation_lib = { path = "../UefiRustAllocationLib" }
-#uefi_rust_print_lib_debug_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
-uefi_rust_print_lib_debug_lib = { path = "../UefiRustPrintLibDebugLib" }

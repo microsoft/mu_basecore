@@ -1,3 +1,11 @@
+// @file -- lib.rs
+// Implementation of the UefiVariablePolicyLib that is written
+// natively in Rust.
+//
+// Copyright (c) Microsoft Corporation.
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+
 #![allow(unused)]
 #![allow(non_snake_case)]
 
@@ -10,6 +18,8 @@ extern crate uefi_rust_panic_lib;
 
 #[cfg(not(test))]
 extern crate uefi_rust_allocation_lib;
+
+extern crate uefi_rust_print_lib_debug_lib;
 
 use alloc::slice;
 use alloc::string::String;
