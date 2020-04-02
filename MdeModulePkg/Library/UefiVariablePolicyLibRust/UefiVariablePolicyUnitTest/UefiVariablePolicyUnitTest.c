@@ -43,9 +43,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 ///=== TEST DATA ==================================================================================
 
 #pragma pack(push, 1)
+#define SIMPLE_VARIABLE_POLICY_ENTRY_VAR_NAME_LENGTH    1001    // 1000 characters + terminator.
 typedef struct _SIMPLE_VARIABLE_POLICY_ENTRY {
   VARIABLE_POLICY_ENTRY     Header;
-  CHAR16                    Name[];
+  CHAR16                    Name[SIMPLE_VARIABLE_POLICY_ENTRY_VAR_NAME_LENGTH];
 } SIMPLE_VARIABLE_POLICY_ENTRY;
 #define EXPANDED_VARIABLE_POLICY_ENTRY_VAR_NAME_LENGTH  1001    // 1000 characters + terminator.
 #define EXPANDED_VARIABLE_POLICY_ENTRY_VAR_NAME_SIZE    (EXPANDED_VARIABLE_POLICY_ENTRY_VAR_NAME_LENGTH * sizeof(CHAR16))
@@ -163,18 +164,20 @@ StubGetVariableNull (
 
 STATIC
 UNIT_TEST_STATUS
+EFIAPI
 LibInitMocked (
-  UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   UNIT_TEST_CONTEXT           Context
   )
 {
-  return EFI_ERROR(InitVariablePolicyLib( StubGetVariableNull )) ? UNIT_TEST_ERROR_PREREQ_NOT_MET : UNIT_TEST_PASSED;
+  return EFI_ERROR(InitVariablePolicyLib( StubGetVariableNull )) ?
+            UNIT_TEST_ERROR_PREREQUISITE_NOT_MET :
+            UNIT_TEST_PASSED;
 }
 
 STATIC
 VOID
+EFIAPI
 LibCleanup (
-  UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   UNIT_TEST_CONTEXT           Context
   )
 {
@@ -189,7 +192,6 @@ LibCleanup (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToInitAndDeinitTheLibrary (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -210,7 +212,6 @@ ShouldBeAbleToInitAndDeinitTheLibrary (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldNotBeAbleToInitializeTheLibraryTwice (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -225,7 +226,6 @@ ShouldNotBeAbleToInitializeTheLibraryTwice (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldFailDeinitWithoutInit (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -238,7 +238,6 @@ ShouldFailDeinitWithoutInit (
 UNIT_TEST_STATUS
 EFIAPI
 ApiCommandsShouldNotRespondIfLibIsUninitialized (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -293,7 +292,6 @@ EvaluatePolicyMatch (
 UNIT_TEST_STATUS
 EFIAPI
 PoliciesShouldMatchByNameAndGuid (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -329,7 +327,6 @@ PoliciesShouldMatchByNameAndGuid (
 UNIT_TEST_STATUS
 EFIAPI
 WildcardPoliciesShouldMatchDigits (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -368,7 +365,6 @@ WildcardPoliciesShouldMatchDigits (
 UNIT_TEST_STATUS
 EFIAPI
 WildcardPoliciesShouldMatchDigitsAdvanced (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -416,7 +412,6 @@ WildcardPoliciesShouldMatchDigitsAdvanced (
 UNIT_TEST_STATUS
 EFIAPI
 WildcardPoliciesShouldMatchNamespaces (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -452,7 +447,6 @@ WildcardPoliciesShouldMatchNamespaces (
 UNIT_TEST_STATUS
 EFIAPI
 MatchPrioritiesShouldFollowRules (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -509,7 +503,6 @@ MatchPrioritiesShouldFollowRules (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldAllowNamespaceWildcards (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -536,7 +529,6 @@ RegisterShouldAllowNamespaceWildcards (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldAllowStateVarsForNamespaces (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -570,7 +562,6 @@ RegisterShouldAllowStateVarsForNamespaces (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectNullPointers (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -581,7 +572,6 @@ RegisterShouldRejectNullPointers (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectBadRevisions (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -609,7 +599,6 @@ RegisterShouldRejectBadRevisions (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectBadSizes (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -637,7 +626,6 @@ RegisterShouldRejectBadSizes (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectBadOffsets (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -685,7 +673,6 @@ RegisterShouldRejectBadOffsets (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectMissingStateStrings (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -726,7 +713,6 @@ RegisterShouldRejectMissingStateStrings (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectStringsMissingNull (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -768,7 +754,6 @@ RegisterShouldRejectStringsMissingNull (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectMalformedStrings (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -810,7 +795,6 @@ RegisterShouldRejectMalformedStrings (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectUnpackedPolicies (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -856,7 +840,6 @@ RegisterShouldRejectUnpackedPolicies (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectInvalidNameCharacters (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -891,7 +874,6 @@ RegisterShouldRejectInvalidNameCharacters (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectBadPolicyConstraints (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -920,7 +902,6 @@ RegisterShouldRejectBadPolicyConstraints (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectUnknownLockPolicies (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -950,7 +931,6 @@ RegisterShouldRejectUnknownLockPolicies (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectPolicesWithTooManyWildcards (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -979,7 +959,6 @@ RegisterShouldRejectPolicesWithTooManyWildcards (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectDuplicatePolicies (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1007,7 +986,6 @@ RegisterShouldRejectDuplicatePolicies (
 UNIT_TEST_STATUS
 EFIAPI
 MinAndMaxSizePoliciesShouldBeHonored (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1070,7 +1048,6 @@ MinAndMaxSizePoliciesShouldBeHonored (
 UNIT_TEST_STATUS
 EFIAPI
 AttributeMustPoliciesShouldBeHonored (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1141,7 +1118,6 @@ AttributeMustPoliciesShouldBeHonored (
 UNIT_TEST_STATUS
 EFIAPI
 AttributeCantPoliciesShouldBeHonored (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1204,7 +1180,6 @@ AttributeCantPoliciesShouldBeHonored (
 UNIT_TEST_STATUS
 EFIAPI
 VariablesShouldBeDeletableRegardlessOfSize (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1250,7 +1225,6 @@ VariablesShouldBeDeletableRegardlessOfSize (
 UNIT_TEST_STATUS
 EFIAPI
 LockNowPoliciesShouldBeHonored (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1297,7 +1271,6 @@ LockNowPoliciesShouldBeHonored (
 UNIT_TEST_STATUS
 EFIAPI
 LockOnCreatePoliciesShouldBeHonored (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1374,7 +1347,6 @@ LockOnCreatePoliciesShouldBeHonored (
 UNIT_TEST_STATUS
 EFIAPI
 LockOnStatePoliciesShouldBeHonored (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1510,7 +1482,6 @@ LockOnStatePoliciesShouldBeHonored (
 UNIT_TEST_STATUS
 EFIAPI
 LockOnStatePoliciesShouldApplyToNamespaces (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1613,7 +1584,6 @@ LockOnStatePoliciesShouldApplyToNamespaces (
 UNIT_TEST_STATUS
 EFIAPI
 LockOnStateShouldHandleErrorsGracefully (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1716,7 +1686,6 @@ LockOnStateShouldHandleErrorsGracefully (
 UNIT_TEST_STATUS
 EFIAPI
 BestMatchPriorityShouldBeObeyed (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1855,7 +1824,6 @@ BestMatchPriorityShouldBeObeyed (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToLockInterface (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1892,7 +1860,6 @@ ShouldBeAbleToLockInterface (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToDisablePolicyEnforcement (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1936,7 +1903,6 @@ ShouldBeAbleToDisablePolicyEnforcement (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldNotBeAbleToDisablePoliciesTwice (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1955,7 +1921,6 @@ ShouldNotBeAbleToDisablePoliciesTwice (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToAddNewPoliciesAfterDisabled (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -1990,7 +1955,6 @@ ShouldBeAbleToAddNewPoliciesAfterDisabled (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToLockAfterDisabled (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -2010,7 +1974,6 @@ ShouldBeAbleToLockAfterDisabled (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToDumpThePolicyTable (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
@@ -2074,7 +2037,6 @@ ShouldBeAbleToDumpThePolicyTable (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToDumpThePolicyTableAfterDisabled (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
   IN UNIT_TEST_CONTEXT           Context
   )
 {
