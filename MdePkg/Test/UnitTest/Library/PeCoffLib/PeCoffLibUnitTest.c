@@ -11,9 +11,20 @@
 #include <Library/DebugLib.h>
 #include <Library/UnitTestLib.h>
 
+#include <stdio.h>
+
 #define UNIT_TEST_APP_NAME     "PeCoffLib UnitTest"
 #define UNIT_TEST_APP_VERSION  "1.0"
 
+
+STATIC
+UINT8*
+InternalReadFile (
+  IN CONST CHAR8    *Filename
+  )
+{
+  return NULL;
+}
 
 /**
   @retval  UNIT_TEST_PASSED             The Unit test has completed and the test
@@ -47,7 +58,7 @@ UnitTestingEntry (
 {
   EFI_STATUS                  Status;
   UNIT_TEST_FRAMEWORK_HANDLE  Fw;
-  UNIT_TEST_SUITE_HANDLE      TempSuite;
+  UNIT_TEST_SUITE_HANDLE      GetImageInfoSuite;
 
   Fw = NULL;
 
@@ -65,15 +76,15 @@ UnitTestingEntry (
   //
   // Populate the B64 Encode Unit Test Suite.
   //
-  Status = CreateUnitTestSuite (&TempSuite, Fw, "Name Me", "PeCoffLib.TempSuite", NULL, NULL);
+  Status = CreateUnitTestSuite (&GetImageInfoSuite, Fw, "Name Me", "PeCoffLib.GetImageInfoSuite", NULL, NULL);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Failed in CreateUnitTestSuite for TempSuite\n"));
+    DEBUG ((DEBUG_ERROR, "Failed in CreateUnitTestSuite for GetImageInfoSuite\n"));
     Status = EFI_OUT_OF_RESOURCES;
     goto EXIT;
   }
 
   // --------------Suite-----------Description--------------Class Name----------Function--------Pre---Post-------------------Context-----------
-  AddTestCase (TempSuite, "Dummy", "Dummy", TempTest, NULL, NULL, NULL);
+  AddTestCase (GetImageInfoSuite, "Dummy", "Dummy", TempTest, NULL, NULL, NULL);
 
   //
   // Execute the tests.

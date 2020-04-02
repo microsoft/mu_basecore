@@ -29,4 +29,14 @@
   MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibHost.inf
   MdePkg/Test/UnitTest/Library/BaseLib/BaseLibUnitTestsHost.inf
 
-  MdePkg/Test/UnitTest/Library/PeCoffLib/PeCoffLibUnitTest.inf
+  MdePkg/Test/UnitTest/Library/PeCoffLib/PeCoffLibUnitTest.inf {
+    <LibraryClasses>
+      PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
+      PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
+  }
+
+  MdePkg/Test/UnitTest/Library/PeCoffLib/PeCoffLibUnitTest2.inf {
+    <LibraryClasses>
+      PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
+      PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
+  }

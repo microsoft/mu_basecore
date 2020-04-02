@@ -8,8 +8,8 @@
 
 [Defines]
   INF_VERSION                    = 0x00010006
-  BASE_NAME                      = PeCoffLibUnitTestHost
-  FILE_GUID                      = 0C8CD773-40F4-475C-A2C0-C439E46419B6
+  BASE_NAME                      = PeCoffLibUnitTestHost2
+  FILE_GUID                      = 237CC329-85B8-4E43-B714-91727F39D228
   MODULE_TYPE                    = HOST_APPLICATION
   VERSION_STRING                 = 1.0
 
