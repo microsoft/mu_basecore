@@ -171,6 +171,48 @@ GetImageInfoShouldPassOnLegitPeImage (
 }
 
 /**
+  @retval  UNIT_TEST_PASSED             The Unit test has completed and the test
+                                        case was successful.
+  @retval  UNIT_TEST_ERROR_TEST_FAILED  A test case assertion has failed.
+**/
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
+GetImageInfoShouldPopulateHeaderMetadata (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  PE_COFF_LOADER_IMAGE_CONTEXT    TestContext;
+  TEST_FILE                       *TestFile;
+
+  UT_ASSERT_NOT_NULL (Context);
+  TestFile = (TEST_FILE*)Context;
+
+  ZeroMem (&TestContext, sizeof (TestContext));
+
+  // Use the libs read function, for consistency.
+  TestContext.ImageRead = PeCoffLoaderImageReadFromMemory;
+  TestContext.Handle    = (VOID*)TestFile->Filedata;
+
+  PeCoffLoaderGetImageInfo (&TestContext);
+
+  // Check for the data we expect.
+  // This is specific to the 64-Bit RngDxe.efi test binary.
+  UT_ASSERT_EQUAL (TestContext.ImageAddress, 0);
+  UT_ASSERT_EQUAL (TestContext.ImageSize, TestFile->Filesize);
+
+  UT_ASSERT_EQUAL (TestContext.DestinationAddress, 0);
+  UT_ASSERT_EQUAL (TestContext.EntryPoint, 0);
+  UT_ASSERT_FALSE (TestContext.RelocationsStripped);
+  UT_ASSERT_FALSE (TestContext.IsTeImage);
+
+  UT_ASSERT_EQUAL (TestContext.Machine, IMAGE_FILE_MACHINE_X64);
+  UT_ASSERT_EQUAL (TestContext.ImageType, EFI_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER);
+
+  return UNIT_TEST_PASSED;
+}
+
+/**
   Initialze the unit test framework, suite, and unit tests for the
   Base64 conversion APIs of BaseLib and run the unit tests.
 
@@ -218,6 +260,7 @@ UnitTestingEntry (
   AddTestCase (GetImageInfoSuite, "GetImageInfoShouldFailOnNull", "FailOnNull", GetImageInfoShouldFailOnNull, NULL, NULL, NULL);
   AddTestCase (GetImageInfoSuite, "GetImageInfoShouldFailOnZeroBuffer", "FailOnEmptyBuffer", GetImageInfoShouldFailOnZeroBuffer, NULL, NULL, NULL);
   AddTestCase (GetImageInfoSuite, "GetImageInfoShouldPassOnLegitPeImage", "PassOnLegitImage", GetImageInfoShouldPassOnLegitPeImage, NULL, NULL, GetTestFile ("RngDxe.efi"));
+  AddTestCase (GetImageInfoSuite, "GetImageInfoShouldPopulateHeaderMetadata", "PopulateMetadata", GetImageInfoShouldPopulateHeaderMetadata, NULL, NULL, GetTestFile ("RngDxe.efi"));
 
   //
   // Execute the tests.
