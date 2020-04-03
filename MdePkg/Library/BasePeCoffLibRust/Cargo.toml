@@ -1,11 +1,26 @@
 [package]
-name = "base_pe_coff_lib_rust"
+name = "BasePeCoffLibRust"
 version = "0.1.0"
 authors = ["Bret Barkelew <brbarkel@microsoft.com>"]
 edition = "2018"
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[profile.release]
+panic = "abort"
+
+[profile.dev]
+panic = "abort"
+
+[lib]
+name = "BasePeCoffLibRust"
+crate-type = ["staticlib"]
+
 [dependencies]
-  goblin='0.2.0'
-  r-efi='*'
+goblin='0.2.0'
+r-efi='*'
+#uefi_rust_panic_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
+uefi_rust_panic_lib = { path = "../../../MdeModulePkg/Library/UefiRustPanicLib" }
+#uefi_rust_print_lib_debug_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
+uefi_rust_print_lib_debug_lib = { path = "../../../MdeModulePkg/Library/UefiRustPrintLibDebugLib" }

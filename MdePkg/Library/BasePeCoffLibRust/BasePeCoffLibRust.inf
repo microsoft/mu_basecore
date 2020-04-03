@@ -1,0 +1,37 @@
+## @file
+#  PE/COFF Loader Library implementation in Rust.
+#
+#  Caution: This module requires additional review when modified.
+#  This library will have external input - PE/COFF image.
+#  This external input must be validated carefully to avoid security issue like
+#  buffer overflow, integer overflow.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = BasePeCoffLibRust
+  FILE_GUID                      = 14BF89CC-5B0F-4A65-B4D1-213EB6FADD94
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = PeCoffLib
+
+
+#
+#  VALID_ARCHITECTURES           = ANY
+#
+
+[Sources]
+  Cargo.toml
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+
+[LibraryClasses]
+  DebugLib
+  # PeCoffExtraActionLib  # TODO_PECOFF - Add this back.
+  BaseMemoryLib

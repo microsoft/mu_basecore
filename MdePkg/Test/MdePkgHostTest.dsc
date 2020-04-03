@@ -37,6 +37,6 @@
 
   MdePkg/Test/UnitTest/Library/PeCoffLib/PeCoffLibUnitTest2.inf {
     <LibraryClasses>
-      PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
+      PeCoffLib|MdePkg/Library/BasePeCoffLibRust/BasePeCoffLibRust.inf
       PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
   }

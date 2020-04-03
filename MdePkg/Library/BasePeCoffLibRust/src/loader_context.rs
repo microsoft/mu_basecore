@@ -1,3 +1,9 @@
+// @file -- loader_context.rs
+//
+// Copyright (c) Microsoft Corporation.
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+
 #![allow(unused)]
 
 #![cfg_attr(not(test), no_std)]
@@ -72,5 +78,11 @@ impl core::fmt::Debug for PeCoffLoaderImageContext {
       .field("hii_resource_data", &self.hii_resource_data)
       .field("context", &self.context)
       .finish()
+  }
+}
+
+impl PeCoffLoaderImageContext {
+  pub unsafe fn from_ffi(ptr: *mut Self) -> &'static mut Self {
+    core::mem::transmute::<*mut Self, &'static mut Self>(ptr)
   }
 }
