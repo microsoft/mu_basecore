@@ -21,7 +21,12 @@ use loader_context::PeCoffLoaderImageContext;
 #[no_mangle]
 #[export_name = "PeCoffLoaderGetImageInfo"]
 pub extern "win64" fn pe_coff_loader_get_image_info(context: *mut PeCoffLoaderImageContext) -> efi::Status {
-  efi::Status::SUCCESS
+  match unsafe { PeCoffLoaderImageContext::from_raw(context) } {
+    Err(_) => efi::Status::INVALID_PARAMETER,
+    Ok(image_context) => {
+      efi::Status::SUCCESS
+    }
+  }
 }
 
 #[no_mangle]

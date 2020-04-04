@@ -82,7 +82,12 @@ impl core::fmt::Debug for PeCoffLoaderImageContext {
 }
 
 impl PeCoffLoaderImageContext {
-  pub unsafe fn from_ffi(ptr: *mut Self) -> &'static mut Self {
-    core::mem::transmute::<*mut Self, &'static mut Self>(ptr)
+  pub unsafe fn from_raw(ptr: *mut Self) -> Result<&'static mut Self, ()> {
+    if ptr.is_null() {
+      Err(())
+    }
+    else {
+      Ok(core::mem::transmute::<*mut Self, &'static mut Self>(ptr))
+    }
   }
 }
