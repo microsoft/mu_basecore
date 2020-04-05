@@ -108,7 +108,13 @@ impl PeCoffLoaderImageContext {
                         buffer.as_mut_ptr() as *mut core::ffi::c_void)
     };
     match result {
-      efi::Status::SUCCESS => Ok(buffer),
+      efi::Status::SUCCESS => {
+        // If we were successful, we *must* set the length before returning.
+        // According to the contract of the function, "size" will be updated
+        // with the bytes actually written.
+        unsafe { buffer.set_len(*size) };
+        Ok(buffer)
+      },
       _ => Err(())
     }
   }
