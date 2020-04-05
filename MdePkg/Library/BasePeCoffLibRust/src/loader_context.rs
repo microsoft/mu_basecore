@@ -86,16 +86,18 @@ impl core::fmt::Debug for PeCoffLoaderImageContext {
 impl PeCoffLoaderImageContext {
   pub unsafe fn from_raw(ptr: *mut Self) -> Result<&'static mut Self, ()> {
     if ptr.is_null() {
+      return Err(())
+    }
+
+    let image_context = core::mem::transmute::<*mut Self, &'static mut Self>(ptr);
+
+    // Make sure that the image_read function is populated.
+    // This is a fundamental assumption of this context interface.
+    if (image_context.image_read as *const ()).is_null() {
       Err(())
     }
     else {
-      let image_context = core::mem::transmute::<*mut Self, &'static mut Self>(ptr);
-      if (image_context.image_read as *const ()).is_null() {
-        Err(())
-      }
-      else {
-        Ok(image_context)
-      }
+      Ok(image_context)
     }
   }
 

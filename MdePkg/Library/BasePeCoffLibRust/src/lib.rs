@@ -29,19 +29,24 @@ use loader_context::PeCoffLoaderImageContext;
 #[no_mangle]
 #[export_name = "PeCoffLoaderGetImageInfo"]
 pub extern "win64" fn pe_coff_loader_get_image_info(context: *mut PeCoffLoaderImageContext) -> efi::Status {
-  match unsafe { PeCoffLoaderImageContext::from_raw(context) } {
-    Err(_) => efi::Status::INVALID_PARAMETER,
-    Ok(image_context) => {
-      let image_contents = match image_context.read_image(0, &mut 0x1380) {
-        Ok(contents) => contents,
-        Err(_) => return efi::Status::INVALID_PARAMETER
-      };
+  // Unwrap and parse the first few bits of things.
+  let image_context = match unsafe { PeCoffLoaderImageContext::from_raw(context) } {
+    Ok(contents) => contents,
+    Err(_) => return efi::Status::INVALID_PARAMETER
+  };
 
-      let pe_image = goblin::pe::PE::parse(&image_contents);
+  let image_contents = match image_context.read_image(0, &mut 0x1380) {
+    Ok(contents) => contents,
+    Err(_) => return efi::Status::INVALID_PARAMETER
+  };
 
-      efi::Status::SUCCESS
-    }
-  }
+  let pe_image = match goblin::pe::PE::parse(&image_contents) {
+    Ok(contents) => contents,
+    Err(_) => return efi::Status::INVALID_PARAMETER
+  };
+  println!("{:#?}", pe_image);
+
+  efi::Status::SUCCESS
 }
 
 #[no_mangle]
