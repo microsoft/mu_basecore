@@ -8,7 +8,9 @@
 
 #![cfg_attr(not(test), no_std)]
 
+use alloc::vec::Vec;
 use r_efi::{efi, base};
+use uefi_rust_print_lib_debug_lib::println;
 
 // typedef
 // RETURN_STATUS
@@ -87,7 +89,27 @@ impl PeCoffLoaderImageContext {
       Err(())
     }
     else {
-      Ok(core::mem::transmute::<*mut Self, &'static mut Self>(ptr))
+      let image_context = core::mem::transmute::<*mut Self, &'static mut Self>(ptr);
+      if (image_context.image_read as *const ()).is_null() {
+        Err(())
+      }
+      else {
+        Ok(image_context)
+      }
+    }
+  }
+
+  pub fn read_image(&self, offset: usize, size: &mut usize) -> Result<Vec<u8>, ()> {
+    let mut buffer = Vec::with_capacity(*size) as Vec<u8>;
+    let result = unsafe {
+      (self.image_read)(self.handle,
+                        offset,
+                        size,
+                        buffer.as_mut_ptr() as *mut core::ffi::c_void)
+    };
+    match result {
+      efi::Status::SUCCESS => Ok(buffer),
+      _ => Err(())
     }
   }
 }

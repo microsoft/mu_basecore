@@ -150,6 +150,34 @@ GetImageInfoShouldFailOnZeroBuffer (
 STATIC
 UNIT_TEST_STATUS
 EFIAPI
+GetImageInfoShouldFailWithoutImageRead (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  PE_COFF_LOADER_IMAGE_CONTEXT    TestContext;
+  TEST_FILE                       *TestFile;
+
+  UT_ASSERT_NOT_NULL (Context);
+  TestFile = (TEST_FILE*)Context;
+
+  ZeroMem (&TestContext, sizeof (TestContext));
+
+  // Set an invalid ImageRead function.
+  TestContext.ImageRead = NULL;
+  TestContext.Handle    = (VOID*)TestFile->Filedata;
+
+  UT_ASSERT_TRUE (EFI_ERROR (PeCoffLoaderGetImageInfo (&TestContext)));
+  return UNIT_TEST_PASSED;
+}
+
+/**
+  @retval  UNIT_TEST_PASSED             The Unit test has completed and the test
+                                        case was successful.
+  @retval  UNIT_TEST_ERROR_TEST_FAILED  A test case assertion has failed.
+**/
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
 GetImageInfoShouldPassOnLegitPeImage (
   IN UNIT_TEST_CONTEXT  Context
   )
@@ -259,6 +287,7 @@ UnitTestingEntry (
   // --------------Suite-----------Description--------------Class Name----------Function--------Pre---Post-------------------Context-----------
   AddTestCase (GetImageInfoSuite, "GetImageInfoShouldFailOnNull", "FailOnNull", GetImageInfoShouldFailOnNull, NULL, NULL, NULL);
   AddTestCase (GetImageInfoSuite, "GetImageInfoShouldFailOnZeroBuffer", "FailOnEmptyBuffer", GetImageInfoShouldFailOnZeroBuffer, NULL, NULL, NULL);
+  AddTestCase (GetImageInfoSuite, "GetImageInfoShouldFailWithoutImageRead", "FailWithoutImageRead", GetImageInfoShouldFailWithoutImageRead, NULL, NULL, GetTestFile ("RngDxe.efi"));
   AddTestCase (GetImageInfoSuite, "GetImageInfoShouldPassOnLegitPeImage", "PassOnLegitImage", GetImageInfoShouldPassOnLegitPeImage, NULL, NULL, GetTestFile ("RngDxe.efi"));
   AddTestCase (GetImageInfoSuite, "GetImageInfoShouldPopulateHeaderMetadata", "PopulateMetadata", GetImageInfoShouldPopulateHeaderMetadata, NULL, NULL, GetTestFile ("RngDxe.efi"));
 

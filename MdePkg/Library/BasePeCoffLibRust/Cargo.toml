@@ -18,9 +18,15 @@ name = "BasePeCoffLibRust"
 crate-type = ["staticlib"]
 
 [dependencies]
-goblin='0.2.0'
-r-efi='*'
+r-efi="*"
 #uefi_rust_panic_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
 uefi_rust_panic_lib = { path = "../../../MdeModulePkg/Library/UefiRustPanicLib" }
+#uefi_rust_allocation_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
+uefi_rust_allocation_lib = { path = "../../../MdeModulePkg/Library/UefiRustAllocationLib" }
 #uefi_rust_print_lib_debug_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
 uefi_rust_print_lib_debug_lib = { path = "../../../MdeModulePkg/Library/UefiRustPrintLibDebugLib" }
+
+[dependencies.goblin]
+version = "0.2.0"
+default-features = false
+features = ["pe32", "pe64"]
