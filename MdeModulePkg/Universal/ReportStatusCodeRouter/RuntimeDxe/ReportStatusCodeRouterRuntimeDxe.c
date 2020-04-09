@@ -240,6 +240,8 @@ ReportDispatcher (
   RSC_DATA_ENTRY                *RscData;
   EFI_STATUS                    Status;
   VOID                          *NewBuffer;
+  // MU_CHANGE: TCBZ2665 Revert the end pointer if this report cannot be executed due to out of resources
+  EFI_PHYSICAL_ADDRESS          FailSafeEndPointer;
 
   //
   // Use atom operation to avoid the reentant of report.
@@ -270,6 +272,8 @@ ReportDispatcher (
     // If callback is registered with TPL lower than TPL_HIGH_LEVEL, event must be signaled at boot time to possibly wait for
     // allowed TPL to report status code. Related data should also be stored in data buffer.
     //
+    // MU_CHANGE: TCBZ2665 Revert the end pointer if this report cannot be executed due to out of resources
+    FailSafeEndPointer = CallbackEntry->EndPointer;
     CallbackEntry->EndPointer  = ALIGN_VARIABLE (CallbackEntry->EndPointer);
     RscData = (RSC_DATA_ENTRY *) (UINTN) CallbackEntry->EndPointer;
     CallbackEntry->EndPointer += sizeof (RSC_DATA_ENTRY);
@@ -295,6 +299,8 @@ ReportDispatcher (
           // MU_CHANGE Starts: Point RscData to reallocated buffer
           RscData = (RSC_DATA_ENTRY *) (UINTN) ((UINTN) NewBuffer + ((UINTN) RscData - CallbackEntry->StatusCodeDataBuffer));
           // MU_CHANGE Ends
+          // MU_CHANGE: TCBZ2665 Revert the end pointer if this report cannot be executed due to out of resources
+          FailSafeEndPointer = (EFI_PHYSICAL_ADDRESS) (UINTN) NewBuffer + (FailSafeEndPointer - CallbackEntry->StatusCodeDataBuffer);
           CallbackEntry->StatusCodeDataBuffer = (EFI_PHYSICAL_ADDRESS) (UINTN) NewBuffer;
           CallbackEntry->BufferSize *= 2;
         }
@@ -305,6 +311,8 @@ ReportDispatcher (
     // If data buffer is used up, do not report for this time.
     //
     if (CallbackEntry->EndPointer > (CallbackEntry->StatusCodeDataBuffer + CallbackEntry->BufferSize)) {
+      // MU_CHANGE: TCBZ2665 Revert the end pointer if this report cannot be executed due to out of resources
+      CallbackEntry->EndPointer = FailSafeEndPointer;
       continue;
     }
 
