@@ -9,15 +9,9 @@
 // Borrows heavily from Philipp Oppermann's blog on Writing an OS in Rust
 // https://os.phil-opp.com/vga-text-mode/
 
-#![cfg_attr(not(test), no_std)]
+#![no_std]
 
 extern crate alloc;
-
-#[cfg(not(test))]
-extern crate uefi_rust_panic_lib;
-
-#[cfg(not(test))]
-extern crate uefi_rust_allocation_lib;
 
 use alloc::vec::Vec;
 use core::fmt;
@@ -49,6 +43,33 @@ pub const DEBUG_CACHE     : usize = 0x00200000;
 pub const DEBUG_VERBOSE   : usize = 0x00400000;
 pub const DEBUG_ERROR     : usize = 0x80000000;
 
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ($crate::_print(format_args!($($arg)*)));
+}
+
+#[macro_export]
+macro_rules! println {
+    () => ($crate::print!("\n"));
+    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+}
+
+#[doc(hidden)]
+pub fn _print(args: fmt::Arguments) {
+    use core::fmt::Write;
+    DebugWriter{}.write_fmt(args).unwrap();
+}
+
+struct DebugWriter;
+
+impl fmt::Write for DebugWriter {
+  fn write_str(&mut self, s: &str) -> fmt::Result {
+    // For now, hard-code what level we're going to use.
+    internal_debug_string(DEBUG_ERROR, s);
+    Ok(())
+  }
+}
+
 fn internal_debug_string(level: usize, string: &str) {
   // Determine whether we're going to do anything.
   if unsafe { DebugPrintEnabled() } == efi::Boolean::TRUE &&
@@ -68,31 +89,4 @@ fn internal_debug_string(level: usize, string: &str) {
 
     unsafe { DebugPrint (level, output_string.as_ptr()) };
   }
-}
-
-struct DebugWriter;
-
-impl fmt::Write for DebugWriter {
-  fn write_str(&mut self, s: &str) -> fmt::Result {
-    // For now, hard-code what level we're going to use.
-    internal_debug_string(DEBUG_INFO, s);
-    Ok(())
-  }
-}
-
-#[macro_export]
-macro_rules! print {
-    ($($arg:tt)*) => ($crate::_print(format_args!($($arg)*)));
-}
-
-#[macro_export]
-macro_rules! println {
-    () => ($crate::print!("\n"));
-    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
-}
-
-#[doc(hidden)]
-pub fn _print(args: fmt::Arguments) {
-    use core::fmt::Write;
-    DebugWriter{}.write_fmt(args).unwrap();
 }

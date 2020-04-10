@@ -1,7 +1,8 @@
 [package]
 name = "uefi_rust_panic_lib"
 version = "0.1.0"
-authors = ["Jiewen Yao <jiewen.yao@intel.com>"]
+authors = ["Jiewen Yao <jiewen.yao@intel.com>",
+           "Bret Barkelew <bret.barkelew@microsoft.com"]
 edition = "2018"
 publish = false
 
@@ -19,3 +20,9 @@ panic = "abort" # disable stack unwinding on panic
 [profile.release]
 panic = "abort" # disable stack unwinding on panic
 
+[dependencies]
+r-efi="*"
+#uefi_rust_allocation_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
+uefi_rust_allocation_lib = { path = "../../../MdeModulePkg/Library/UefiRustAllocationLib" }
+#uefi_rust_print_lib_debug_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
+uefi_rust_print_lib_debug_lib = { path = "../../../MdeModulePkg/Library/UefiRustPrintLibDebugLib" }

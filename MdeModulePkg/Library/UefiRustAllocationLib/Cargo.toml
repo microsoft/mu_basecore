@@ -1,7 +1,8 @@
 [package]
 name = "uefi_rust_allocation_lib"
 version = "0.1.0"
-authors = ["Jiewen Yao <jiewen.yao@intel.com>"]
+authors = ["Jiewen Yao <jiewen.yao@intel.com>",
+           "Bret Barkelew <bret.barkelew@microsoft.com"]
 edition = "2018"
 publish = false
 
@@ -9,15 +10,3 @@ publish = false
 
 [lib]
 name = "uefi_rust_allocation_lib"
-crate-type = ["rlib", "staticlib"]
-
-# the profile used for `cargo build`
-[profile.dev]
-panic = "abort" # disable stack unwinding on panic
-
-# the profile used for `cargo build --release`
-[profile.release]
-panic = "abort" # disable stack unwinding on panic
-
-[dependencies]
-uefi_rust_panic_lib = { path = "../../Library/UefiRustPanicLib" }

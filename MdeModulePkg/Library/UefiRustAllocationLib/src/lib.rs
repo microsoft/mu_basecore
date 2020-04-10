@@ -13,12 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![feature(alloc_error_handler)]
-
-#![cfg_attr(not(test), no_std)]
-
-#[cfg(not(test))]
-extern crate uefi_rust_panic_lib;
+#![no_std]
 
 use core::alloc::{GlobalAlloc, Layout};
 use core::ffi::c_void;
@@ -45,13 +40,5 @@ unsafe impl GlobalAlloc for MyAllocator {
     }
 }
 
-#[cfg(not(test))]
 #[global_allocator]
 static ALLOCATOR: MyAllocator = MyAllocator;
-
-#[cfg(not(test))]
-#[alloc_error_handler]
-fn alloc_error_handler(_layout: core::alloc::Layout) -> !
-{
-    loop {}
-}

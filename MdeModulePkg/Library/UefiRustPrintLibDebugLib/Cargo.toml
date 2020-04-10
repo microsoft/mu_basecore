@@ -9,19 +9,6 @@ publish = false
 
 [lib]
 name = "uefi_rust_print_lib_debug_lib"
-crate-type = ["rlib", "staticlib"]
-
-# the profile used for `cargo build`
-[profile.dev]
-panic = "abort" # disable stack unwinding on panic
-
-# the profile used for `cargo build --release`
-[profile.release]
-panic = "abort" # disable stack unwinding on panic
 
 [dependencies]
 r-efi = "2.1.0"
-#uefi_rust_panic_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
-uefi_rust_panic_lib = { path = "../UefiRustPanicLib" }
-#uefi_rust_allocation_lib = { git = "https://github.com/microsoft/mu_basecore.git", branch = "personal/brbarkel/rust_explosion" }
-uefi_rust_allocation_lib = { path = "../UefiRustAllocationLib" }
