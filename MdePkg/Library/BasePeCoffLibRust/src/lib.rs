@@ -4,22 +4,23 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 
+#![no_std]
 #![allow(unused)]
 #![allow(non_snake_case)]
-
-#![cfg_attr(not(test), no_std)]
 
 // Import EDK2 Libs/Environment
 #[cfg(not(test))]
 extern crate uefi_rust_panic_lib;
 #[cfg(not(test))]
 extern crate uefi_rust_allocation_lib;
+#[cfg(not(test))]
 extern crate uefi_rust_print_lib_debug_lib;
+#[cfg(not(test))]
+use uefi_rust_print_lib_debug_lib::println;
 
 extern crate alloc;
 
 use r_efi::{efi, base};
-use uefi_rust_print_lib_debug_lib::println;
 
 mod loader_context;
 mod bindings;
@@ -44,7 +45,6 @@ pub extern "win64" fn pe_coff_loader_get_image_info(context: *mut PeCoffLoaderIm
     Ok(contents) => contents,
     Err(_) => return efi::Status::INVALID_PARAMETER
   };
-  println!("{:#?}", pe_image);
 
   efi::Status::SUCCESS
 }
@@ -70,6 +70,12 @@ pub extern "win64" fn pe_coff_loader_load_image(context: *mut PeCoffLoaderImageC
   efi::Status::UNSUPPORTED
 }
 
+// TODO: Figure out how to build this in a test environment.
+//       Right now it breaks because CopyMem will be unresolved when linking.
+//       - Need bindings to drop out during test.
+//       OR
+//       - Need to implement at least this function natively.
+#[cfg(not(test))]
 #[no_mangle]
 #[export_name = "PeCoffLoaderImageReadFromMemory"]
 pub extern "win64" fn pe_coff_loader_image_read_from_memory(

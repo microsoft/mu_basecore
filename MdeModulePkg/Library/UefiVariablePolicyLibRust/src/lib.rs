@@ -19,14 +19,16 @@ extern crate uefi_rust_panic_lib;
 #[cfg(not(test))]
 extern crate uefi_rust_allocation_lib;
 
+#[cfg(not(test))]
 extern crate uefi_rust_print_lib_debug_lib;
+#[cfg(not(test))]
+use uefi_rust_print_lib_debug_lib::println;
 
 use alloc::slice;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::mem;
 use r_efi::efi;
-use uefi_rust_print_lib_debug_lib::println;
 
 // TODO: Check for truncation in every cast.
 
