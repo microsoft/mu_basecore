@@ -19,19 +19,19 @@
 #[cfg(not(test))]
 extern crate uefi_rust_allocation_lib;
 #[cfg(not(test))]
-use uefi_rust_print_lib_debug_lib::println;
+use uefi_rust_print_lib_debug_lib::eprintln;
 
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
-  println!("PANIC!: {:#?}", info);
+  eprintln!("PANIC!: {:#?}", info);
   loop {}
 }
 
 #[cfg(not(test))]
 #[alloc_error_handler]
 fn alloc_error_handler(layout: core::alloc::Layout) -> ! {
-    println!("ALLOC ERROR!: {:#?}", layout);
+    eprintln!("ALLOC ERROR!: {:#?}", layout);
     loop {}
 }
 

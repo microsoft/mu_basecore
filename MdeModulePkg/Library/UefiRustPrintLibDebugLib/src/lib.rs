@@ -45,7 +45,7 @@ pub const DEBUG_ERROR     : usize = 0x80000000;
 
 #[macro_export]
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::_print(format_args!($($arg)*)));
+    ($($arg:tt)*) => ($crate::_print($crate::DEBUG_INFO, format_args!($($arg)*)));
 }
 
 #[macro_export]
@@ -54,39 +54,47 @@ macro_rules! println {
     ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
 }
 
-#[doc(hidden)]
-pub fn _print(args: fmt::Arguments) {
-    use core::fmt::Write;
-    DebugWriter{}.write_fmt(args).unwrap();
+#[macro_export]
+macro_rules! eprint {
+    ($($arg:tt)*) => ($crate::_print($crate::DEBUG_ERROR, format_args!($($arg)*)));
 }
 
-struct DebugWriter;
+#[macro_export]
+macro_rules! eprintln {
+    () => ($crate::eprint!("\n"));
+    ($($arg:tt)*) => ($crate::eprint!("{}\n", format_args!($($arg)*)));
+}
+
+#[doc(hidden)]
+pub fn _print(log_level: usize, args: fmt::Arguments) {
+    use core::fmt::Write;
+    DebugWriter{ log_level: log_level }.write_fmt(args).unwrap();
+}
+
+struct DebugWriter {
+  log_level: usize
+}
 
 impl fmt::Write for DebugWriter {
   fn write_str(&mut self, s: &str) -> fmt::Result {
-    // For now, hard-code what level we're going to use.
-    internal_debug_string(DEBUG_ERROR, s);
+    // Determine whether we're going to do anything.
+    if unsafe { DebugPrintEnabled() } == efi::Boolean::TRUE &&
+        unsafe { DebugPrintLevelEnabled(self.log_level) } == efi::Boolean::TRUE {
+      let mut output_string = s.bytes()
+                              .map(|byte| {
+                                match byte {
+                                    // printable ASCII byte or newline
+                                    0x20..=0x7e | b'\n' => byte,
+                                    // not part of printable ASCII range
+                                    _ => 0xfe,
+                                }
+                              })
+                              .collect::<Vec<u8>>();
+      // We must have a NULL-terminator.
+      output_string.push(0x00);
+
+      unsafe { DebugPrint (self.log_level, output_string.as_ptr()) };
+    }
     Ok(())
-  }
-}
-
-fn internal_debug_string(level: usize, string: &str) {
-  // Determine whether we're going to do anything.
-  if unsafe { DebugPrintEnabled() } == efi::Boolean::TRUE &&
-      unsafe { DebugPrintLevelEnabled(level) } == efi::Boolean::TRUE {
-    let mut output_string = string.bytes()
-                            .map(|byte| {
-                              match byte {
-                                  // printable ASCII byte or newline
-                                  0x20..=0x7e | b'\n' => byte,
-                                  // not part of printable ASCII range
-                                  _ => 0xfe,
-                              }
-                            })
-                            .collect::<Vec<u8>>();
-    // We must have a NULL-terminator.
-    output_string.push(0x00);
-
-    unsafe { DebugPrint (level, output_string.as_ptr()) };
   }
 }
