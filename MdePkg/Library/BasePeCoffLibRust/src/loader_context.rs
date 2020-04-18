@@ -446,6 +446,7 @@ mod pe_image_tests {
   use super::*;
   use std::{vec, path::PathBuf};
   use std::fs;
+  use std::slice;
 
   fn get_binary_test_file_path(file_name: &str) -> PathBuf {
     let mut binaries_path = PathBuf::from(".");
@@ -462,7 +463,23 @@ mod pe_image_tests {
       read_size: *mut usize,
       output_buffer: *mut core::ffi::c_void
       ) -> efi::Status {
-    efi::Status::INVALID_PARAMETER
+    if file_handle.is_null() || read_size.is_null() || output_buffer.is_null() {
+      return efi::Status::INVALID_PARAMETER;
+    }
+
+    // NOTE:
+    // All of this implementation is unsafe because the interface
+    // design is unfixably broken. This lib should *not* provide this.
+    // We're just going to replicated what the previous lib did.
+    // let source_path = unsafe { *Box::from_raw(file_handle as *mut &str) };
+    let source_file_name = unsafe { *(file_handle as *const &str) };
+    let source = fs::read(get_binary_test_file_path(source_file_name)).unwrap();
+    unsafe {
+      let mut destination = slice::from_raw_parts_mut(output_buffer as *mut u8, *read_size);
+      destination.copy_from_slice(&source[file_offset..file_offset+*read_size]);
+    }
+
+    efi::Status::SUCCESS
   }
 
   #[test]
@@ -507,16 +524,26 @@ mod pe_image_tests {
   }
 
   #[test]
-  fn should_load_contents_when_created() -> Result<(), ()> {
-    let test_file_name = "RngDxe.efi";
+  fn should_load_contents_when_created() -> Result<(), std::io::Error> {
+    let test_file_name: &str = "RngDxe.efi";
     let mut image_context = PeCoffLoaderImageContext::new(test_file_reader);
-    image_context.handle = Box::into_raw(Box::new(test_file_name)) as *const core::ffi::c_void;
-    image_context.image_size = fs
+    image_context.handle = &test_file_name as *const &str as *const core::ffi::c_void;
+    let file_contents = fs::read(get_binary_test_file_path(test_file_name))?;
+    image_context.image_size = file_contents.len() as u64;
 
     let raw_context_ptr = &mut image_context as *mut PeCoffLoaderImageContext;
 
     unsafe {
-      assert!(EdkiiPeImage::from_raw(raw_context_ptr).is_err());
+      let edkii_image = EdkiiPeImage::from_raw(raw_context_ptr);
+      assert!(edkii_image.is_ok());
+      let edkii_image = edkii_image.unwrap();
+      assert_eq!(edkii_image.ffi_context.image_size as usize, file_contents.len());
+      let image_data = edkii_image.pe_image.as_ref().map(|boxed_image| &**boxed_image);
+      assert!(image_data.is_some());
+      image_data.map(|image_data| {
+        assert_eq!(image_data.contents.len(), file_contents.len());
+        assert_eq!(&image_data.contents[..0x30], &file_contents[..0x30]);
+      });
     }
 
     Ok(())
