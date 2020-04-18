@@ -21,6 +21,7 @@ use uefi_rust_print_lib_debug_lib::println;
 extern crate alloc;
 
 use r_efi::{efi, base};
+use alloc::slice;
 
 mod loader_context;
 mod bindings;
@@ -70,12 +71,6 @@ pub extern "win64" fn pe_coff_loader_load_image(context: *mut PeCoffLoaderImageC
   efi::Status::UNSUPPORTED
 }
 
-// TODO: Figure out how to build this in a test environment.
-//       Right now it breaks because CopyMem will be unresolved when linking.
-//       - Need bindings to drop out during test.
-//       OR
-//       - Need to implement at least this function natively.
-#[cfg(not(test))]
 #[no_mangle]
 #[export_name = "PeCoffLoaderImageReadFromMemory"]
 pub extern "win64" fn pe_coff_loader_image_read_from_memory(
@@ -93,9 +88,9 @@ pub extern "win64" fn pe_coff_loader_image_read_from_memory(
   // design is unfixably broken. This lib should *not* provide this.
   // We're just going to replicated what the previous lib did.
   unsafe {
-    bindings::CopyMem(output_buffer,
-                      file_handle.add(file_offset),
-                      *read_size);
+    let source = slice::from_raw_parts(file_handle as *const u8, file_offset + *read_size);
+    let mut destination = slice::from_raw_parts_mut(output_buffer as *mut u8, *read_size);
+    destination.copy_from_slice(&source[file_offset..file_offset+*read_size]);
   }
 
   efi::Status::SUCCESS
