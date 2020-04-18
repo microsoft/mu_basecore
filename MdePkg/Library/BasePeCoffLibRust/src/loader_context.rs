@@ -4,13 +4,20 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 
+#![cfg_attr(not(test), no_std)]
 #![allow(unused)]
 
-#![cfg_attr(not(test), no_std)]
+// Enable printing in both test and build.
+// Ewwww...
+#[cfg(test)]
+extern crate std;
+#[cfg(test)]
+use std::{println, eprintln};
+#[cfg(not(test))]
+use uefi_rust_print_lib_debug_lib::{println, eprintln};
 
 use alloc::vec::Vec;
 use r_efi::{efi, base};
-use uefi_rust_print_lib_debug_lib::println;
 
 // typedef
 // RETURN_STATUS
