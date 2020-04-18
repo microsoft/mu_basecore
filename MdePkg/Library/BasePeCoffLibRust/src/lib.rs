@@ -26,26 +26,19 @@ use alloc::slice;
 mod loader_context;
 mod bindings;
 
-use loader_context::PeCoffLoaderImageContext;
+use loader_context::{EdkiiPeImage,PeCoffLoaderImageContext};
 
 #[no_mangle]
 #[export_name = "PeCoffLoaderGetImageInfo"]
 pub extern "win64" fn pe_coff_loader_get_image_info(context: *mut PeCoffLoaderImageContext) -> efi::Status {
   // Unwrap and parse the first few bits of things.
-  let image_context = match unsafe { PeCoffLoaderImageContext::from_raw(context) } {
+  let pe_image = match unsafe { EdkiiPeImage::from_raw(context) } {
     Ok(contents) => contents,
     Err(_) => return efi::Status::INVALID_PARAMETER
   };
 
-  let image_contents = match image_context.read_image(0, &mut 0x1380) {
-    Ok(contents) => contents,
-    Err(_) => return efi::Status::INVALID_PARAMETER
-  };
-
-  let pe_image = match goblin::pe::PE::parse(&image_contents) {
-    Ok(contents) => contents,
-    Err(_) => return efi::Status::INVALID_PARAMETER
-  };
+  // At this point, we should have a fully loaded image and be ready to
+  // update any of the data.
 
   efi::Status::SUCCESS
 }
