@@ -36,7 +36,7 @@ type PeCoffLoaderReadFile = extern "win64" fn(_: *const core::ffi::c_void,
 
 #[repr(u32)]
 #[derive(Clone,Copy,Debug,PartialEq)]
-enum PeCoffImageError {
+pub enum PeCoffImageError {
   ImageErrorSuccess = 0,
   ImageErrorImageRead,
   ImageErrorInvalidPeHeaderSignature,
@@ -49,6 +49,13 @@ enum PeCoffImageError {
   ImageErrorFailedRelocation,
   ImageErrorFailedIcacheFlush,
   ImageErrorUnsupported,
+}
+
+impl From<goblin::error::Error> for PeCoffImageError {
+    fn from(err: goblin::error::Error) -> Self {
+      // Let's just say -- for now -- than any Goblin error is an image error.
+      PeCoffImageError::ImageErrorImageRead
+    }
 }
 
 // REF: MdePkg/Include/Library/PeCoffLib.h
@@ -148,23 +155,10 @@ impl PeCoffLoaderImageContext {
       return false;
     }
 
-    // Make sure that at least *some* image_size is set.
-    // This library implementation will require at least a size
-    // hint, or else it will be guaranteed to fail parsing.
-    // TODO: Move this test somewhere else.
-    // if self.image_size == 0 {
-    //   return false;
-    // }
-
-    // Make sure that image_error is a valid enum.
-    // if (self.image_error as u32) > (PeCoffImageError::ImageErrorUnsupported as u32) {
-    //   return false;
-    // }
-
     true
   }
 
-  unsafe fn from_raw(ptr: *mut Self) -> Result<&'static mut Self, ()> {
+  pub unsafe fn from_raw(ptr: *mut Self) -> Result<&'static mut Self, ()> {
     if ptr.is_null() {
       return Err(())
     }
@@ -183,9 +177,14 @@ impl PeCoffLoaderImageContext {
     }
   }
 
-  fn read_image(&self, offset: usize, size: &mut usize) -> Result<Vec<u8>, ()> {
-    let mut buffer = Vec::with_capacity(*size) as Vec<u8>;
-    let mut read_size = *size;
+  fn test_offset(&self, offset: usize) -> bool {
+    let mut test_slice: [u8; 1] = [0];
+    let result = self.read_image_into(offset, &mut test_slice);
+    result.is_ok() && result.unwrap() == test_slice.len()
+  }
+
+  fn read_image_into(&self, offset: usize, buffer: &mut [u8]) -> Result<usize, PeCoffImageError> {
+    let mut read_size = buffer.len();
     let result = unsafe {
       (self.image_read)(self.handle,
                         offset,
@@ -194,20 +193,49 @@ impl PeCoffLoaderImageContext {
     };
     match result {
       efi::Status::SUCCESS => {
-        if read_size <= *size {
-          *size = read_size;
-          // If we were successful, we *must* set the length before returning.
-          // According to the contract of the function, "size" will have been updated
-          // with the bytes actually written.
-          unsafe { buffer.set_len(*size) };
-          Ok(buffer)
+        if read_size <= buffer.len() {
+          Ok(read_size)
         }
         else {
-          Err(())
+          Err(PeCoffImageError::ImageErrorImageRead)
         }
       },
-      _ => Err(())
+      _ => Err(PeCoffImageError::ImageErrorImageRead)
     }
+  }
+
+  fn read_image(&self, offset: usize, size: usize) -> Result<Vec<u8>, PeCoffImageError> {
+    let mut buffer = Vec::with_capacity(size) as Vec<u8>;
+    unsafe { buffer.set_len(size) };
+    let read_size = self.read_image_into(offset, &mut buffer)?;
+
+    // If we were successful, we *must* set the length before returning.
+    // According to the contract of the function, "size" will have been updated
+    // with the bytes actually written.
+    unsafe { buffer.set_len(read_size) };
+    Ok(buffer)
+  }
+
+  pub fn update_info_from_headers(&mut self) -> Result<(), PeCoffImageError> {
+    // let dos_header_buffer = self.read_image(0, Self::DOS_HEADER_SIZE)?;
+    // let dos_header = goblin::pe::header::DosHeader::parse(&dos_header_buffer)?;
+    // if dos_header.signature != goblin::pe::header::DOS_MAGIC {
+    //   return Err(PeCoffImageError::ImageErrorImageRead);
+    // }
+    // self.pe_coff_header_offset = dos_header.pe_pointer;
+
+    // let optional_header_buffer = self.read_image(self.pe_coff_header_offset as usize, Self::OPTIONAL_HEADER_UNION_SIZE)?;
+
+    // SURE,
+    // That's one way to do it, and maybe the most efficient way.
+    // But we're here to do things easily, not efficiently.
+    let file_data = self.read_image(0, self.image_size as usize)?;
+    let pe_metadata = goblin::pe::PE::parse(&file_data)?;
+
+    println!("{:?}", pe_metadata);
+
+    self.image_error = PeCoffImageError::ImageErrorUnsupported;
+    Err(PeCoffImageError::ImageErrorUnsupported)
   }
 }
 
@@ -215,7 +243,9 @@ impl PeCoffLoaderImageContext {
 mod ffi_context_tests {
   use super::*;
   use alloc::vec;
-  use core::mem;
+  use core::{mem, slice};
+  use std::path::PathBuf;
+  use std::fs;
 
   static mut MOCKED_READER_SIZES: Vec<usize> = Vec::new();
   static mut MOCKED_READER_RETURNS: Vec<efi::Status> = Vec::new();
@@ -229,6 +259,40 @@ mod ffi_context_tests {
       *read_size = MOCKED_READER_SIZES.remove(0);
       MOCKED_READER_RETURNS.remove(0)
     }
+  }
+
+  fn get_binary_test_file_path(file_name: &str) -> PathBuf {
+    let mut binaries_path = PathBuf::from(".");
+    binaries_path.push("tests");
+    binaries_path.push("binaries");
+    binaries_path.push(file_name);
+    assert!(binaries_path.is_file(), "{} is not a valid binary file", file_name);
+    binaries_path
+  }
+
+  extern "win64" fn test_file_reader(
+      file_handle: *const core::ffi::c_void,
+      file_offset: usize,
+      read_size: *mut usize,
+      output_buffer: *mut core::ffi::c_void
+      ) -> efi::Status {
+    if file_handle.is_null() || read_size.is_null() || output_buffer.is_null() {
+      return efi::Status::INVALID_PARAMETER;
+    }
+
+    // NOTE:
+    // All of this implementation is unsafe because the interface
+    // design is unfixably broken. This lib should *not* provide this.
+    // We're just going to replicated what the previous lib did.
+    // let source_path = unsafe { *Box::from_raw(file_handle as *mut &str) };
+    let source_file_name = unsafe { *(file_handle as *const &str) };
+    let source = fs::read(get_binary_test_file_path(source_file_name)).unwrap();
+    unsafe {
+      let mut destination = slice::from_raw_parts_mut(output_buffer as *mut u8, *read_size);
+      destination.copy_from_slice(&source[file_offset..file_offset+*read_size]);
+    }
+
+    efi::Status::SUCCESS
   }
 
   #[test]
@@ -284,8 +348,7 @@ mod ffi_context_tests {
       MOCKED_READER_RETURNS.push(efi::Status::INVALID_PARAMETER);
       MOCKED_READER_SIZES.push(10);
     }
-    let mut read_size = 10;
-    assert!(image_context.read_image(0, &mut read_size).is_err());
+    assert!(image_context.read_image(0, 10).is_err());
 
 
     // Test 2, read too much data.
@@ -293,8 +356,7 @@ mod ffi_context_tests {
       MOCKED_READER_RETURNS.push(efi::Status::SUCCESS);
       MOCKED_READER_SIZES.push(20);
     }
-    let mut read_size = 10;
-    let result = image_context.read_image(0, &mut read_size);
+    let result = image_context.read_image(0, 10);
     assert!(result.is_err());
   }
 
@@ -307,10 +369,8 @@ mod ffi_context_tests {
       MOCKED_READER_RETURNS.push(efi::Status::SUCCESS);
       MOCKED_READER_SIZES.push(5);
     }
-    let mut read_size = 10;
-    let result = image_context.read_image(10, &mut read_size);
+   let result = image_context.read_image(10, 10);
     assert!(result.is_ok());
-    assert_eq!(read_size, 5);
     assert_eq!(result.unwrap().len(), 5);
 
     // Test 2, read same data.
@@ -318,234 +378,15 @@ mod ffi_context_tests {
       MOCKED_READER_RETURNS.push(efi::Status::SUCCESS);
       MOCKED_READER_SIZES.push(10);
     }
-    let mut read_size = 10;
-    let result = image_context.read_image(0, &mut read_size);
+    let result = image_context.read_image(0, 10);
     assert!(result.is_ok());
-    assert_eq!(read_size, 10);
     assert_eq!(result.unwrap().len(), 10);
   }
-}
-
-//======================================================
-// PE_IMAGES
-//======================================================
-
-struct PeImage {
-  signature: [u8; 4],
-  // TODO: Figure out how to not parse this multiple times.
-  // metadata: goblin::pe::PE<'a>,
-  contents: Vec<u8>
-}
-
-impl PeImage {
-  const STRUCTURE_SIG: [u8; 4] = [0xDE, 0xAD, 0xBE, 0xEF];
-
-  fn new(contents: Vec<u8>) -> Self {
-    Self {
-      // TODO: Figure out how to replicate SIGNATURE_32()
-      signature: Self::STRUCTURE_SIG,
-      contents: contents
-    }
-  }
-
-  unsafe fn from_archive(ptr: *mut Self) -> Result<Box<Self>, ()> {
-    let bx = Box::from_raw(ptr);
-    if bx.as_ref().signature == PeImage::STRUCTURE_SIG {
-      Ok(bx)
-    }
-    else {
-      // Consume the box again so that memory is not changed on error.
-      // TODO: This may not be necessary -- and may even be wrong -- but I'm being pedantic.
-      let temp = Box::into_raw(bx);
-      Err(())
-    }
-  }
-
-  fn into_archive(bx: Box<Self>) -> Result<*mut Self, ()> {
-    Ok(Box::into_raw(bx))
-  }
-}
-
-impl Drop for PeImage {
-  fn drop(&mut self) {
-    // TODO: Zero the signature.
-    println!("JBB Dropping Metadata");
-  }
-}
-
-pub struct EdkiiPeImage {
-  ffi_context: &'static mut PeCoffLoaderImageContext,
-  pe_image: Option<Box<PeImage>>,
-}
-
-impl EdkiiPeImage {
-  pub unsafe fn from_raw(ptr: *mut PeCoffLoaderImageContext) -> Result<Self, ()> {
-    let ffi_context = unsafe{ PeCoffLoaderImageContext::from_raw(ptr)? };
-
-    // Start creating the resulting image.
-    let mut new_image = Self { ffi_context: ffi_context, pe_image: None };
-
-    // Now that we've got the context, we can figure out whether we've
-    // already parsed this PE image.
-    match new_image.unarchive_image_data() {
-      Ok(_) => Ok(new_image),
-      Err(_) => {
-        let mut read_size = new_image.ffi_context.image_size;
-        let image_contents = new_image.ffi_context.read_image(0, &mut (read_size as usize))?;
-
-        // Make sure that we read the entire image.
-        if read_size != new_image.ffi_context.image_size {
-          return Err(());
-        }
-
-        let pe_image = match goblin::pe::PE::parse(&image_contents) {
-          Ok(parsed_image) => PeImage::new(image_contents),
-          Err(_) => return Err(())
-        };
-        new_image.pe_image = Some(Box::new(pe_image));
-
-        Ok(new_image)
-      }
-    }
-  }
-
-  fn unarchive_image_data(&mut self) -> Result<(), ()> {
-    if self.pe_image.is_some() {
-      return Err(());
-    }
-
-    match self.ffi_context.context {
-      0 => Err(()),
-      _ => {
-        self.pe_image = unsafe { Some(PeImage::from_archive(self.ffi_context.context as *mut PeImage)?) };
-        self.ffi_context.context = 0;
-        Ok(())
-      }
-    }
-  }
-
-  fn archive_image_data(&mut self) -> Result<(), ()> {
-    match self.pe_image.take() {
-      None => Err(()),
-      Some(boxed_metadata) => {
-        match self.ffi_context.context {
-          _ => Err(()),
-          0 => {
-            self.pe_image = None;
-            self.ffi_context.context = PeImage::into_archive(boxed_metadata)? as u64;
-            Ok(())
-          }
-        }
-      }
-    }
-  }
-}
-
-#[cfg(test)]
-mod pe_image_tests {
-  use super::*;
-  use std::{vec, path::PathBuf};
-  use std::fs;
-  use std::slice;
-
-  fn get_binary_test_file_path(file_name: &str) -> PathBuf {
-    let mut binaries_path = PathBuf::from(".");
-    binaries_path.push("tests");
-    binaries_path.push("binaries");
-    binaries_path.push(file_name);
-    assert!(binaries_path.is_file(), "{} is not a valid binary file", file_name);
-    binaries_path
-  }
-
-  extern "win64" fn test_file_reader(
-      file_handle: *const core::ffi::c_void,
-      file_offset: usize,
-      read_size: *mut usize,
-      output_buffer: *mut core::ffi::c_void
-      ) -> efi::Status {
-    if file_handle.is_null() || read_size.is_null() || output_buffer.is_null() {
-      return efi::Status::INVALID_PARAMETER;
-    }
-
-    // NOTE:
-    // All of this implementation is unsafe because the interface
-    // design is unfixably broken. This lib should *not* provide this.
-    // We're just going to replicated what the previous lib did.
-    // let source_path = unsafe { *Box::from_raw(file_handle as *mut &str) };
-    let source_file_name = unsafe { *(file_handle as *const &str) };
-    let source = fs::read(get_binary_test_file_path(source_file_name)).unwrap();
-    unsafe {
-      let mut destination = slice::from_raw_parts_mut(output_buffer as *mut u8, *read_size);
-      destination.copy_from_slice(&source[file_offset..file_offset+*read_size]);
-    }
-
-    efi::Status::SUCCESS
-  }
 
   #[test]
-  fn pe_image_should_archive_and_unarchive() -> Result<(), ()> {
-    let test = vec![0, 30, 15, 45, 16];
-    let boxed_pe_image = Box::new(PeImage::new(test.to_vec()));
-
-    let archived_image = PeImage::into_archive(boxed_pe_image)?;
-    let unarchived_image = unsafe { PeImage::from_archive(archived_image)? };
-
-    assert_eq!(&test, &unarchived_image.as_ref().contents);
-
-    Ok(())
-  }
-
-  #[test]
-  fn pe_image_should_fail_to_unarchive_with_bad_sig() -> Result<(), ()> {
-    let mut boxed_pe_image = Box::new(PeImage::new(vec![0, 30, 15, 45, 16]));
-
-    // Meddle with the primal forces of nature.
-    boxed_pe_image.as_mut().signature = [0xFE, 0xED, 0xF0, 0x0D];
-
-    let archived_image = PeImage::into_archive(boxed_pe_image)?;
-
-    assert!(unsafe { PeImage::from_archive(archived_image) }.is_err());
-
-    // NOTE: This currently leaks memory. Probably should fix that at some point.
-
-    Ok(())
-  }
-
-  #[test]
-  fn from_raw_should_fail_if_no_size_is_provided() -> Result<(), ()> {
+  fn update_info_from_headers_should_return_success_on_valid_image() {
     let mut image_context = PeCoffLoaderImageContext::new(test_file_reader);
-    let raw_context_ptr = &mut image_context as *mut PeCoffLoaderImageContext;
-
-    unsafe {
-      assert!(EdkiiPeImage::from_raw(raw_context_ptr).is_err());
-    }
-
-    Ok(())
-  }
-
-  #[test]
-  fn should_load_contents_when_created() -> Result<(), std::io::Error> {
-    let test_file_name: &str = "RngDxe.efi";
-    let mut image_context = PeCoffLoaderImageContext::new(test_file_reader);
-    image_context.handle = &test_file_name as *const &str as *const core::ffi::c_void;
-    let file_contents = fs::read(get_binary_test_file_path(test_file_name))?;
-    image_context.image_size = file_contents.len() as u64;
-
-    let raw_context_ptr = &mut image_context as *mut PeCoffLoaderImageContext;
-
-    unsafe {
-      let edkii_image = EdkiiPeImage::from_raw(raw_context_ptr);
-      assert!(edkii_image.is_ok());
-      let edkii_image = edkii_image.unwrap();
-      assert_eq!(edkii_image.ffi_context.image_size as usize, file_contents.len());
-      let image_data = edkii_image.pe_image.as_ref().map(|boxed_image| &**boxed_image);
-      assert!(image_data.is_some());
-      image_data.map(|image_data| {
-        assert_eq!(image_data.contents.len(), file_contents.len());
-        assert_eq!(&image_data.contents[..0x30], &file_contents[..0x30]);
-      });
-    }
-
-    Ok(())
+    image_context.handle = &"RngDxe.efi" as *const &str as *const core::ffi::c_void;
+    assert!(image_context.update_info_from_headers().is_ok());
   }
 }
