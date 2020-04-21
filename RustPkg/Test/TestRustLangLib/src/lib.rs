@@ -1,4 +1,5 @@
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +15,6 @@
 
 #![feature(alloc_layout_extra)]
 #![feature(allocator_api)]
-#![feature(core_panic_info)]
 
 #![cfg_attr(not(test), no_std)]
 
@@ -206,7 +206,7 @@ fn release_buffer (test_table : &mut TestTableFixed)
 #[no_mangle]
 #[export_name = "TestBufferDrop"]
 pub extern fn test_buffer_drop (
-    
+
     )
 {
     match get_buffer () {
@@ -238,7 +238,7 @@ pub extern fn test_buffer_borrow (
 #[no_mangle]
 #[export_name = "TestBufferAlloc"]
 pub extern fn test_buffer_alloc (
-    
+
     )
 {
     let layout = unsafe { core::alloc::Layout::from_size_align_unchecked(32, 4) };
