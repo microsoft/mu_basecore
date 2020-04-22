@@ -232,7 +232,7 @@ pub extern fn test_buffer_borrow (
     //test_table2.r#type = 2; // error
 }
 
-use core::alloc::{GlobalAlloc, Layout, Alloc};
+use core::alloc::{GlobalAlloc, Layout, AllocRef};
 
 pub struct MyAllocator;
 

@@ -1,4 +1,5 @@
 // Copyright (c) 2019 Intel Corporation
+// Copyright (c) Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +23,7 @@
 
 extern crate uefi_rust_panic_lib;
 
-use core::alloc::{GlobalAlloc, Layout, Alloc};
+use core::alloc::{GlobalAlloc, Layout, AllocRef};
 use r_efi::efi;
 use r_efi::efi::{Status};
 use core::ffi::c_void;
