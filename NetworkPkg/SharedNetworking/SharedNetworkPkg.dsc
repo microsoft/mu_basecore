@@ -24,8 +24,12 @@
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
   FLASH_DEFINITION               = NetworkPkg/SharedNetworking/SharedNetworkPkg.fdf
-  !include NetworkPkg/NetworkDefines.dsc.inc
+  NETWORK_ENABLE = TRUE
   NETWORK_TLS_ENABLE = TRUE
+  NETWORK_ALLOW_HTTP_CONNECTIONS = TRUE
+  NETWORK_SNP_ENABLE = TRUE
+  !include NetworkPkg/NetworkDefines.dsc.inc
+  
 
 ## MU_CHANGE Begin
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
@@ -67,16 +71,17 @@
   IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
 
 [LibraryClasses.common.DXE_CORE, LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.DXE_RUNTIME_DRIVER, LibraryClasses.common.UEFI_DRIVER]
-    BaseCryptLib|SharedCryptoPkg/Library/CryptLibSharedDriver/DxeCryptLibSharedDriver.inf
-    TlsLib|SharedCryptoPkg/Library/CryptLibSharedDriver/DxeCryptLibSharedDriver.inf
+    # Common\MU_TIANO\CryptoPkg\Library\BaseCryptLibOnProtocolPpi\DxeCryptLib.inf
+    BaseCryptLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/DxeCryptLib.inf
+    TlsLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/DxeCryptLib.inf
 
 [LibraryClasses.common.PEIM]
-    BaseCryptLib|SharedCryptoPkg/Library/CryptLibSharedDriver/PeiCryptLibSharedDriver.inf
-    TlsLib|SharedCryptoPkg/Library/CryptLibSharedDriver/PeiCryptLibSharedDriver.inf
+    BaseCryptLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/PeiCryptLib.inf
+    TlsLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/PeiCryptLib.inf
 
 [LibraryClasses.x64.DXE_SMM_DRIVER, LibraryClasses.x64.SMM_CORE]
-    BaseCryptLib|SharedCryptoPkg/Library/CryptLibSharedDriver/SmmCryptLibSharedDriver.inf
-    TlsLib|SharedCryptoPkg/Library/CryptLibSharedDriver/SmmCryptLibSharedDriver.inf
+    BaseCryptLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/SmmCryptLib.inf
+    TlsLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/SmmCryptLib.inf
 
 ##MSCHANGE Begin
 !if $(TARGET) == DEBUG
