@@ -12,6 +12,7 @@ BuildConfig.conf
 # Ignore cloned dependencies
 /Common/TIANO
 /Common/MU_TIANO
+/Common/MU_PLUS
 /Silicon
 
 # Ignore unused UDK PKGs.

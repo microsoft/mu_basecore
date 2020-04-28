@@ -435,6 +435,7 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
             pass
 
         self.nuget_version = self._GetNextVersion(self.nuget_version)
+
         return 0
 
     def PostBuildHook(self, ret):
@@ -491,17 +492,17 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
             {
                 "Path": "Silicon/Arm/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_silicon_arm_tiano.git",
-                "Branch": "release/201911"
+                "Branch": "release/202002"
             },
             {
                 "Path": "Common/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
-                "Branch": "release/201911"
+                "Branch": "release/202002"
             },
             {
                 "Path": "Common/MU_PLUS",
                 "Url": "https://github.com/Microsoft/mu_plus.git",
-                "Branch": "release/201911"
+                "Branch": "release/202002"
             }
         ]
 
@@ -518,7 +519,7 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
 
     def RetrieveCommandLineOptions(self, args):
         '''  Retrieve command line options from the argparser '''
-        shell_environment.GetBuildVars().SetValue("TOOL_CHAIN_TAG", "VS2019", "Set default")
+        shell_environment.GetBuildVars().SetValue("TOOL_CHAIN_TAG", "VS2017", "Set default")
         if args.api_key is not None:
             self.api_key = args.api_key
             print("Using API KEY")

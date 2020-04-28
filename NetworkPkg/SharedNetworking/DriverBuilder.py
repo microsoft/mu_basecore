@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 import os
+import sys
 import logging
 from edk2toolext.environment import plugin_manager
 from edk2toolext.environment.plugintypes.uefi_helper_plugin import HelperFunctions
@@ -103,6 +104,12 @@ class Edk2BinaryBuild(Edk2Invocable):
         env.SetValue("BUILDREPORTING", "TRUE", "Platform Hardcoded")
         env.SetValue("BUILDREPORT_TYPES",
                      'PCD DEPEX LIBRARY BUILD_FLAGS', "Platform Hardcoded")
+        
+        # make sure python_command is set
+        python_command = sys.executable
+        if " "in python_command:
+            python_command = '"' + python_command + '"'
+        shell_environment.GetEnvironment().set_shell_var("PYTHON_COMMAND", python_command)
 
         # Run pre build hook
         ret += self.PlatformSettings.PreFirstBuildHook()
