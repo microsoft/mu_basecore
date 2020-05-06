@@ -115,8 +115,9 @@
 # 2.00 - Add .slib and .efi support in the sources file
 # 2.01 - Add support for DEPS_FLAGS as well as
 # 2.21 - Add Rust Definitions
+# 2.22 - Remove Rust Definitions. More formal support will be added soon.
 
-#!VERSION=2.21
+#!VERSION=2.22
 
 [C-Code-File]
     <InputFile>
@@ -259,41 +260,6 @@
         "$(PP)" $(DEPS_FLAGS) $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.ii
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
         "$(NASM)" -I${s_path}(+) $(NASM_INC) $(NASM_FLAGS) -o $dst ${d_path}(+)${s_base}.iii
-
-# MS_CHANGE START
-[Rust-To-Lib-File]
-    <InputFile>
-        ?.rs
-
-    <OutputFile>
-        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.lib
-
-    <Command>
-        $(RUSTC) $(RUSTC_FLAGS) ${src} --emit link=${dst}
-
-[Toml-File]
-    <InputFile>
-        ?.toml
-
-    <OutputFile>
-        $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
-
-    <Command>
-        $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
-        $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.a $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME)rust.lib
-
-[Toml-File.RUST_MODULE]
-    <InputFile>
-        ?.toml
-
-    <OutputFile>
-        $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
-
-    <Command>
-        $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${src} -Z unstable-options --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
-		$(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
-		$(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
-# MS_CHANGE END
 
 [Device-Tree-Source-File]
     <InputFile>

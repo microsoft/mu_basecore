@@ -16,8 +16,9 @@
 #      - Change RC path to use plugin
 # 2.10 - Remove WHOLEARCHIVE as this breaks the build for VS2017/VS2019
 # 2.20 - Added Rusty tools
+# 2.21 - Remove Rusty tools. More formal support will be added soon.
 #
-#!VERSION=2.20
+#!VERSION=2.21
 
 IDENTIFIER = Default TOOL_CHAIN_CONF
 
@@ -3159,33 +3160,6 @@ RELEASE_RVCTCYGWIN_ARM_CC_FLAGS  = "$(CCPATH_FLAG)" $(ARCHCC_FLAGS) $(PLATFORM_F
 *_*_*_NASM_PATH                = ENV(NASM_PREFIX)nasm
 # NASMB uses NASM produce a .bin from a .nasmb NASM source file
 *_*_*_NASMB_FLAGS              = -f bin
-
-# MS_CHANGE START
-##################
-# RUSTC definitions
-##################
-*_*_*_RUSTC_PATH            = rustc
-NOOPT_*_X64_RUSTC_FLAGS     = --edition=2018 -C debuginfo=2 -C panic=abort --crate-type staticlib --extern r_efi=ENV(RUSTPKG_PATH)/target/debug/libr_efi.rlib
-#DEBUG_*_X64_RUSTC_FLAGS     = --edition=2018 --target x86_64-unknown-uefi -C debuginfo=2 -C panic=abort --crate-type staticlib --sysroot ENV(RUSTPKG_PATH)/target/sysroot --extern r_efi=ENV(RUSTPKG_PATH)/target/x86_64-unknown-uefi/debug/libr_efi.rlib
-DEBUG_*_X64_RUSTC_FLAGS     = --edition=2018 --target x86_64-unknown-uefi -C debuginfo=2 -C panic=abort --crate-type staticlib --sysroot ENV(RUSTPKG_PATH)/target/sysroot --extern r_efi=ENV(RUSTPKG_PATH)/target/x86_64-unknown-uefi/release/libr_efi.rlib
-RELEASE_*_X64_RUSTC_FLAGS   = --edition=2018 --target x86_64-unknown-uefi -C opt-level=3 -C panic=abort --crate-type staticlib --sysroot ENV(RUSTPKG_PATH)/target/sysroot --extern r_efi=ENV(RUSTPKG_PATH)/target/x86_64-unknown-uefi/release/libr_efi.rlib
-NOOPT_*_IA32_RUSTC_FLAGS    = --edition=2018 -C debuginfo=2 -C panic=abort --crate-type staticlib --extern r_efi=ENV(RUSTPKG_PATH)/target/debug/libr_efi.rlib
-#DEBUG_*_IA32_RUSTC_FLAGS    = --edition=2018 --target i686-unknown-uefi   -C debuginfo=2 -C panic=abort --crate-type staticlib --sysroot ENV(RUSTPKG_PATH)/target/sysroot --extern r_efi=ENV(RUSTPKG_PATH)/target/i686-unknown-uefi/debug/libr_efi.rlib
-DEBUG_*_IA32_RUSTC_FLAGS    = --edition=2018 --target i686-unknown-uefi   -C debuginfo=2 -C panic=abort --crate-type staticlib --sysroot ENV(RUSTPKG_PATH)/target/sysroot --extern r_efi=ENV(RUSTPKG_PATH)/target/i686-unknown-uefi/release/libr_efi.rlib
-RELEASE_*_IA32_RUSTC_FLAGS  = --edition=2018 --target i686-unknown-uefi   -C opt-level=3 -C panic=abort --crate-type staticlib --sysroot ENV(RUSTPKG_PATH)/target/sysroot --extern r_efi=ENV(RUSTPKG_PATH)/target/i686-unknown-uefi/release/libr_efi.rlib
-
-##################
-# CARGO definitions
-##################
-*_*_*_CARGO_PATH            = cargo
-#DEBUG_*_X64_CARGO_FLAGS     = --target x86_64-unknown-uefi
-*_*_X64_CARGO_FLAGS   = --target x86_64-unknown-uefi --release
-#DEBUG_*_IA32_CARGO_FLAGS    = --target i686-unknown-uefi
-*_*_IA32_CARGO_FLAGS  = --target i686-unknown-uefi   --release
-
-*_*_*_CARGOXBUILD_NAME	= xbuild
-
-# MS_CHANGE END
 
 #################
 # Build rule order

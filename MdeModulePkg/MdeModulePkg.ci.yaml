@@ -44,17 +44,12 @@
         "IgnoreInf": [
             # MU_CHANGE - Cannot be built without StandaloneMmPkg.
             "MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteStandaloneMm.inf",
-            "MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf",
-            "MdeModulePkg/Library/UefiVariablePolicyLibRust/UefiVariablePolicyLib.inf" # MU_CHANGE don't build rust as the CI agents don't support it yet
+            "MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf"
         ],
         "DscPath": "MdeModulePkg.dsc"
     },
     ## options defined ci/Plugin/HostUnitTestDscCompleteCheck
     "HostUnitTestDscCompleteCheck": {
-        "IgnoreInf": [
-            # MU_CHANGE - Rust is currently out of scope for CI.
-            "MdeModulePkg/Library/UefiVariablePolicyLibRust/UefiVariablePolicyUnitTest/UefiVariablePolicyUnitTest.inf"
-        ],
         "DscPath": "Test/MdeModulePkgHostTest.dsc"
     },
 
