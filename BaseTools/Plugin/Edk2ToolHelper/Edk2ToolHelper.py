@@ -9,6 +9,7 @@ import shutil
 import datetime
 from Common.Edk2.Capsule.FmpPayloadHeader  import FmpPayloadHeaderClass
 from Common.Uefi.Capsule.FmpCapsuleHeader  import FmpCapsuleHeaderClass
+from Common.Uefi.Capsule.CapsuleDependency  import CapsuleDependencyClass
 from edk2toollib.windows.locate_tools import FindToolInWinSdk
 
 
@@ -28,32 +29,16 @@ class Edk2ToolHelper(IUefiHelperPlugin):
     # OutputBin: file path to write Output binary to
     # VersionInt: integer parameter for the version
     # LsvInt: Integer parameter for the lowest supported version
-    # DepList: (optional) list of dependences. Dep format is tuple (FmpGuidForDep, FmpIndex, IntFmpMinVersion, IntFlags )
-    ### Dep format can change overtime.  Flags can be added for new behavior.  See the version and library implementing behavior.
-    ### V1 details.
-    ####Flag bit 0: dep MUST be in system if 1.  Otherwise dep only applied if fmp found in system.
-    ####Flag bit 1: dep version MUST be exact match if 1.  Otherwise dep must be equal or greater than version.
+    # Depex: (optional) dependency expressions.
+    #   - Format see: https://github.com/tianocore/tianocore.github.io/wiki/Fmp-Capsule-Dependency-Introduction
     ##
     @staticmethod
-    def PackageMsFmpHeader(InputBin, OutputBin, VersionInt, LsvInt, DepList = []):
+    def PackageMsFmpHeader(InputBin, OutputBin, VersionInt, LsvInt, Depex=''):
         # NOTE: Crash if deps are passed. Return a useful error.
-        # Currently not ported to the new tooling.
-        if len(DepList) > 0:
-            raise RuntimeError("PackageMsFmpHeader has not been ported to support dependencies yet!")
         # Should not take a capsule whose Version <= LSV
         if (VersionInt < LsvInt):
             logging.error("Version number 0x%08x lower than Lowest supported version 0x%08x is not allowed!" % (VersionInt, LsvInt))
             return -1
-
-        #append depedency if supplied
-        # for dep in DepList:
-        #     depGuid = dep[0]
-        #     depIndex = int(dep[1])
-        #     depMinVer = hex(dep[2])
-        #     depFlag = hex(dep[3])
-        #     logging.debug("Adding a Dependency:\n\tFMP Guid: %s \nt\tFmp Descriptor Index: %d \n\tFmp DepVersion: %s \n\tFmp Flags: %s\n" % (depGuid, depIndex, depMinVer, depFlag))
-        #     params += " --dep " + depGuid + " " + str(depIndex) + " " + depMinVer + " " + depFlag
-        #     raise Exception("GenMsPayloadHeader Failed with errorcode %d" % ret)
 
         # Attempt to write the payload to the file.
         # This would normally
@@ -65,8 +50,17 @@ class Edk2ToolHelper(IUefiHelperPlugin):
             fmp_header.LowestSupportedVersion = LsvInt
             fmp_header.Payload                = payload_data
 
+            output = fmp_header.Encode()
+
+            #append depedency if supplied
+            if len(Depex) > 0:
+                fmp_depex = CapsuleDependencyClass()
+                fmp_depex.Payload = output
+                fmp_depex.DepexExp = Depex
+                output = fmp_depex.Encode()
+
             with open(OutputBin, 'wb') as out_file:
-                out_file.write(fmp_header.Encode())
+                out_file.write(output)
 
         return 0
 
