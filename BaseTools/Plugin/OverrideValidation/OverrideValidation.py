@@ -294,13 +294,10 @@ try:
             if result != self.OverrideResult.OR_ALL_GOOD:
                 overriddenpath = os.path.normpath(OverrideEntry[1].strip()).strip('\\')
                 fullpath = os.path.normpath(thebuilder.mws.join(thebuilder.ws, overriddenpath))
+                patch = ModuleGitPatch(fullpath, GitHash)
+                # TODO: figure out how to get the log file
                 logging.error(f"Override diff since last update at commit {GitHash}")
-                GitOutput = io.StringIO()
-                # TODO - let this go to console so we get colors
-                RunCmd("git", f"diff {GitHash} {fullpath}", outstream=GitOutput)
-                GitOutput.seek(0)
-                for line in GitOutput.readlines():
-                    logging.info(line.strip())
+                
             return result
         # END: override_process_line_version2(self, thebuilder, filelist, OverrideEntry, m_node, status)
 
@@ -364,7 +361,7 @@ try:
         # Traverse through the collect structure and print log
         # node: Module Node representing the overriding module
         # stack: the stack of paths collected during a dfs for loop detection, should be absolute path and lower case all the time
-        # log: log file object, must be readliy open for file write when called
+        # log: log file object, must be readily open for file write when called
         def node_dfs(self, thebuilder, node, stack, log):
             fullpath = os.path.normpath(thebuilder.mws.join(thebuilder.ws, node.path)).lower()
             if (node.path in stack):
@@ -403,8 +400,8 @@ try:
             # Parse the DSC
             pa = thebuilder.mws.join(thebuilder.ws, plat_dsc)
             dscp.ParseFile(pa)
-            # Add the DSC itself
-            InfFileList.append(pa)
+            # Add the DSC itself (including all the includes)
+            InfFileList.extend(dscp.GetAllDscPaths())
             # Add the FDF
             if "FLASH_DEFINITION" in dscp.LocalVars:
                 fd = thebuilder.mws.join(thebuilder.ws, dscp.LocalVars["FLASH_DEFINITION"])
@@ -424,7 +421,7 @@ try:
 except ImportError:
     pass
 
-# This caluculates the md5 for the inf file as well as all the first order include source files
+# This calculates the md5 for the inf file as well as all the first order include source files
 # path: the absolute path to the module's inf file
 def ModuleHashCal(path):
 
@@ -442,7 +439,7 @@ def ModuleHashCal(path):
         ip = InfParser()
         ip.ParseFile(path)
 
-        # Add all referenced source files in addtion to our inf file list
+        # Add all referenced source files in addition to our inf file list
         for source in ip.Sources:
             sourcefileList.append(os.path.normpath(os.path.join(folderpath, source)))
 
@@ -464,10 +461,27 @@ def ModuleHashCal(path):
     result = hash_obj.hexdigest()
     return result
 
+def ModuleGitPatch(path, git_hash):
+    ''' return a git patch of the given file since the hash '''
+    GitOutput = io.StringIO()
+    # TODO - let this go to console so we get colors
+    path_dir = os.path.dirname(path)
+    ret = RunCmd("git", f"diff {git_hash} {path}", workingdir=path_dir, outstream=GitOutput)
+    if ret != 0:
+        return ""
+    GitOutput.seek(0)
+    result = []
+    for line in GitOutput.readlines():
+        result.append(line.strip())
+    return "\n".join(result)
+
 def ModuleGitHash(path):
+    ''' gets the current git hash of the given directory that path is '''
     abspath_dir = os.path.dirname(os.path.abspath(path))
     git_stream = StringIO()
-    RunCmd("git", "rev-parse --verify HEAD", workingdir=abspath_dir, outstream=git_stream)
+    ret = RunCmd("git", "rev-parse --verify HEAD", workingdir=abspath_dir, outstream=git_stream)
+    if ret != 0:
+        return None
     git_stream.seek(0)
     git_hash = git_stream.readline().strip()
     if git_hash.count(" ") != 0:
