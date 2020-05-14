@@ -118,8 +118,9 @@
 # 2.22 - Remove Rust Definitions. More formal support will be added soon.
 # 2.23 - Add OemData Definitions
 # 2.24 - Add .arc and .ver file type to add .rsrc sections to EFI images.
+# 2.25 - PSYCHE! Rust is back!
 
-#!VERSION=2.24
+#!VERSION=2.25
 
 [C-Code-File]
     <InputFile>
@@ -262,6 +263,40 @@
         "$(PP)" $(DEPS_FLAGS) $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.ii
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
         "$(NASM)" -I${s_path}(+) $(NASM_INC) $(NASM_FLAGS) -o $dst ${d_path}(+)${s_base}.iii
+
+# MS_CHANGE START
+[Rust-To-Lib-File]
+    <InputFile>
+        ?.rs
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.lib
+
+    <Command>
+        $(RUSTC) $(RUSTC_FLAGS) ${src} --emit link=${dst}
+
+[Toml-File]
+    <InputFile>
+        ?.toml
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).lib
+
+    <Command>
+        $(CARGO) $(CARGO_BUILDCMD) $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --out-dir $(OUTPUT_DIR)
+
+[Toml-File.RUST_MODULE]
+    <InputFile>
+        ?.toml
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+
+    <Command>
+        $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${src} -Z unstable-options --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
+        $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+        $(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
+# MS_CHANGE END
 
 [Device-Tree-Source-File]
     <InputFile>
