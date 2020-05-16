@@ -41,7 +41,8 @@ ReportOutput (
 
   Length = AsciiStrLen (Output);
   for (Index = 0; Index < Length; Index += (sizeof (AsciiString) - 1)) {
-    AsciiStrCpyS (AsciiString, sizeof (AsciiString), &Output[Index]);
+    // MU_CHANGE - TCBZ2721: String copy ASSERTs when it shouldn't.
+    AsciiStrnCpyS (AsciiString, sizeof (AsciiString), &Output[Index], sizeof (AsciiString) - 1);
     DEBUG ((DEBUG_INFO, AsciiString));
   }
 }
