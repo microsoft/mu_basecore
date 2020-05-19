@@ -329,7 +329,9 @@ def DoInclude(Source, Indent='', IncludePathList=[], LocalSearchPath=None, Inclu
                     LocalSearchPath = os.path.dirname(IncludeFile)
             CurrentIndent = Indent + Result[0][0]
             IncludedFile = Result[0][1]
+            NewFileContent.append(AddIncludeHeader(IncludedFile+" --START")) #MU_CHANGE
             NewFileContent.extend(DoInclude(IncludedFile, CurrentIndent, IncludePathList, LocalSearchPath,IncludeFileList,filetype))
+            NewFileContent.append(AddIncludeHeader(IncludedFile+" --END")) #MU_CHANGE
             NewFileContent.append("\n")
         elif filetype == "ASM":
             Result = gIncludePattern.findall(Line)
