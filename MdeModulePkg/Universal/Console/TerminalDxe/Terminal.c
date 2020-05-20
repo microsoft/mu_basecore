@@ -788,6 +788,10 @@ TerminalDriverBindingStart (
                   &TerminalDevice->SimpleTextOutput,
                   &gEfiDevicePathProtocolGuid,
                   TerminalDevice->DevicePath,
+                  &gEfiConsoleOutDeviceGuid,
+                  NULL,                                     // Terminal is a ConOut device (picked up by Consplitter).
+                  &gEfiConsoleInDeviceGuid,
+                  NULL,                                     // Terminal is a ConIn device (picked up by Consplitter).
                   NULL
                   );
   if (!EFI_ERROR (Status)) {
@@ -990,6 +994,10 @@ TerminalDriverBindingStop (
                       &TerminalDevice->SimpleTextOutput,
                       &gEfiDevicePathProtocolGuid,
                       TerminalDevice->DevicePath,
+                      &gEfiConsoleOutDeviceGuid,
+                      NULL,
+                      &gEfiConsoleInDeviceGuid,
+                      NULL,
                       NULL
                       );
       if (EFI_ERROR (Status)) {
