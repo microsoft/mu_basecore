@@ -74,6 +74,8 @@
   gEdkiiVT400Guid                               ## SOMETIMES_CONSUMES ## GUID # used with a Vendor-Defined Messaging Device Path
   gEdkiiSCOTermGuid                             ## SOMETIMES_CONSUMES ## GUID # used with a Vendor-Defined Messaging Device Path
   gEdkiiStatusCodeDataTypeVariableGuid          ## SOMETIMES_CONSUMES ## GUID
+  gEfiConsoleOutDeviceGuid                      ## SOMETIMES_CONSUMES ## MU_CHANGE
+  gEfiConsoleInDeviceGuid                       ## SOMETIMES_CONSUMES ## MU_CHANGE
 
 [Protocols]
   gEfiSerialIoProtocolGuid                      ## TO_START
