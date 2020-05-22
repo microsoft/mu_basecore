@@ -34,12 +34,6 @@
 #   0x80000001 | Invalid value provided.
 #
 
-## MS_CHANGE [BEGIN] - Copy from IntelFrameworkPkg. Only used by PcAtChipsetPkg.
-[Protocols]
-  ## Include/Protocol/Legacy8259.h
-  gEfiLegacy8259ProtocolGuid     = { 0x38321dba, 0x4fe0, 0x4e17, { 0x8a, 0xec, 0x41, 0x30, 0x55, 0xea, 0xed, 0xc1 }}
-## MS_CHANGE [END]
-
 [PcdsFeatureFlag]
   ## Indicates the HPET Timer will be configured to use MSI interrupts if the HPET timer supports them, or use I/O APIC interrupts.<BR><BR>
   #   TRUE  - Configures the HPET Timer to use MSI interrupts if the HPET Timer supports them.<BR>
