@@ -595,6 +595,7 @@
   MdeModulePkg/Library/ArmFfaLib/ArmFfaStandaloneMmCoreLib.inf
   MdeModulePkg/Library/ArmFfaLib/ArmFfaStandaloneMmLib.inf
   MdeModulePkg/Library/ArmFfaConsoleDebugLib/ArmFfaConsoleDebugStandaloneMmLib.inf
+  MdeModulePkg/Universal/Apei/HestDxe/HestDxe.inf # MU_CHANGE
 
 [Components.RISCV64]
   MdeModulePkg/Universal/Acpi/AcpiHardwareErrorTableDxe/HardwareErrorSourceTableDxe.inf {

@@ -860,6 +860,11 @@
   ## Include/Protocol/CxlIo.h
   gEdkiiCxlIoProtocolGuid = { 0x8FAC60B2, 0xBBC1, 0x41DE, {0xA7, 0x97, 0x98, 0x75, 0xCD, 0xD3, 0xA8, 0xF8 } }
 
+  ## MU_CHANGE: START Cherry-pick HEST Driver
+  ## ACPI HEST table generation protocol
+  gHestTableProtocolGuid = { 0x705bdcd9, 0x8c47, 0x457e, { 0xad, 0x0d, 0xf7, 0x86, 0xf3, 0x4a, 0x0d, 0x63 } }
+  ## MU_CHANGE END
+
 [PcdsFeatureFlag]
   ## Indicates if the platform can support update capsule across a system reset.<BR><BR>
   #   TRUE  - Supports update capsule across a system reset.<BR>
