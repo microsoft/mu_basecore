@@ -1,0 +1,49 @@
+## @file
+#  Dxe driver that dynamically creates and publishes the HEST table.
+#
+#  This driver creates HEST header and provides protocol service to add
+#  and install the HEST table.
+#  This driver creates HEST header adds HEST error source descriptors and
+#  publishes the table to OS.
+#
+#  Copyright (c) 2020 - 2022, ARM Limited. All rights reserved.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+# MU_CHANGE: Cherry-pick HEST Driver
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001B
+  BASE_NAME                      = HestDxe
+  FILE_GUID                      = 933099a2-ef71-4e00-82aa-a79b1e0a3b38
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = HestInitialize
+
+[Sources.Common]
+  HestDxe.c
+
+[Packages]
+  MdeModulePkg/MdeModulePkg.dec
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  UefiDriverEntryPoint
+  UefiLib
+
+[Protocols]
+  gEfiAcpiTableProtocolGuid         ## PROTOCOL ALWAYS_CONSUMED
+  gHestTableProtocolGuid            ## PRODUCES
+
+[FixedPcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorRevision
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemRevision
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId
+
+[Depex]
+  TRUE

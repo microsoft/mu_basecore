@@ -873,6 +873,11 @@
   gEdkiiGcdSyncCompleteProtocolGuid = { 0x650B7F40, 0x6564, 0x4FA9, { 0x93, 0x75, 0xCD, 0x6B, 0x52, 0x1B, 0x6E, 0x50 }}
   ## MU_CHANGE END
 
+  ## MU_CHANGE: START Cherry-pick HEST Driver
+  ## ACPI HEST table generation protocol
+  gHestTableProtocolGuid = { 0x705bdcd9, 0x8c47, 0x457e, { 0xad, 0x0d, 0xf7, 0x86, 0xf3, 0x4a, 0x0d, 0x63 } }
+  ## MU_CHANGE END
+
 [PcdsFeatureFlag]
   ## Indicates if the platform can support update capsule across a system reset.<BR><BR>
   #   TRUE  - Supports update capsule across a system reset.<BR>
