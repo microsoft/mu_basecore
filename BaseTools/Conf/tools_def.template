@@ -15,8 +15,10 @@
 # 2.00 - Initial version with changes for CI
 #      - Change RC path to use plugin
 # 2.10 - Remove WHOLEARCHIVE as this breaks the build for VS2017/VS2019
+# 2.20 - Added Rusty tools
+# 2.21 - Remove Rusty tools. More formal support will be added soon.
 #
-#!VERSION=2.10
+#!VERSION=2.21
 
 IDENTIFIER = Default TOOL_CHAIN_CONF
 
