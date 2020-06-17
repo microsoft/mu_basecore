@@ -114,8 +114,10 @@
 # 1.01 - Add MASM for Microsoft ARM assembly files. "MS-ARMx-Assembly-Code-File.COMMON.COMMON"
 # 2.00 - Add .slib and .efi support in the sources file
 # 2.01 - Add support for DEPS_FLAGS as well as
+# 2.21 - Add Rust Definitions
+# 2.22 - Remove Rust Definitions. More formal support will be added soon.
 
-#!VERSION=2.01
+#!VERSION=2.22
 
 [C-Code-File]
     <InputFile>
