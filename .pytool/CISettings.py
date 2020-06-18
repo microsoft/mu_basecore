@@ -57,8 +57,7 @@ class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsMan
                 "IA32",
                 "X64",
                 "ARM",
-                "AARCH64",
-                "RISCV64")
+                "AARCH64")
 
     def GetTargetsSupported(self):
         ''' return iterable of edk2 target tags supported by this build '''
