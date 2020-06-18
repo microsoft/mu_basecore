@@ -46,7 +46,7 @@ Bug Fixes-dev
 2005_CIBuild Changes
 --------------------
 
-- Incomplete
+- Drop EDK2 DelayedDispatch while we reconcile the two implementations.
 
 2005_Rebase Changes
 -------------------
