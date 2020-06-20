@@ -16,6 +16,8 @@
 
 Copyright (c) 2010 - 2019, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2018, Linaro, Ltd. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation.  All rights reserved.<BR>         // MU_CHANGE
+
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -26,6 +28,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/MmEndOfDxe.h>
 #include <Protocol/SmmVarCheck.h>
 
+#include <Library/AdvLoggerAccessLib.h>             // MU_CHANGE
 #include <Library/MmServicesTableLib.h>
 #include <Library/VariablePolicyLib.h>
 
@@ -551,13 +554,31 @@ SmmVariableHandler (
         goto EXIT;
       }
 
-      Status = VariableServiceGetVariable (
-                 SmmVariableHeader->Name,
-                 &SmmVariableHeader->Guid,
-                 &SmmVariableHeader->Attributes,
-                 &SmmVariableHeader->DataSize,
-                 (UINT8 *)SmmVariableHeader->Name + SmmVariableHeader->NameSize
-                 );
+      // MU_CHANGE Begin -----------------------------------
+      //
+      // AdvLoggerAccess Hook
+      //
+      if (CompareGuid (&SmmVariableHeader->Guid, &gAdvLoggerAccessGuid)) {
+        Status = AdvLoggerAccessGetVariable (
+                   SmmVariableHeader->Name,
+                   &SmmVariableHeader->Guid,
+                   &SmmVariableHeader->Attributes,
+                   &SmmVariableHeader->DataSize,
+                   (UINT8 *)SmmVariableHeader->Name + SmmVariableHeader->NameSize
+                   );
+      } else {
+        Status = VariableServiceGetVariable (
+                   SmmVariableHeader->Name,
+                   &SmmVariableHeader->Guid,
+                   &SmmVariableHeader->Attributes,
+                   &SmmVariableHeader->DataSize,
+                   (UINT8 *)SmmVariableHeader->Name + SmmVariableHeader->NameSize
+                   );
+      }
+
+      //
+      // MU_CHANGE End ----------------------------------
+
       CopyMem (SmmVariableFunctionHeader->Data, mVariableBufferPayload, CommBufferPayloadSize);
       break;
 
@@ -656,13 +677,24 @@ SmmVariableHandler (
         goto EXIT;
       }
 
-      Status = VariableServiceSetVariable (
-                 SmmVariableHeader->Name,
-                 &SmmVariableHeader->Guid,
-                 SmmVariableHeader->Attributes,
-                 SmmVariableHeader->DataSize,
-                 (UINT8 *)SmmVariableHeader->Name + SmmVariableHeader->NameSize
-                 );
+      // MU_CHANGE Begin -----------------------------------
+      //
+      // AdvLoggerAccess Hook
+      //
+      if (CompareGuid (&SmmVariableHeader->Guid, &gAdvLoggerAccessGuid)) {
+        Status = EFI_ACCESS_DENIED;
+      } else {
+        Status = VariableServiceSetVariable (
+                   SmmVariableHeader->Name,
+                   &SmmVariableHeader->Guid,
+                   SmmVariableHeader->Attributes,
+                   SmmVariableHeader->DataSize,
+                   (UINT8 *)SmmVariableHeader->Name + SmmVariableHeader->NameSize
+                   );
+      }
+
+      //
+      // MU_CHANGE End -------------------------------------
       break;
 
     case SMM_VARIABLE_FUNCTION_QUERY_VARIABLE_INFO:
@@ -716,7 +748,8 @@ SmmVariableHandler (
 
     case SMM_VARIABLE_FUNCTION_EXIT_BOOT_SERVICE:
       mAtRuntime = TRUE;
-      Status     = EFI_SUCCESS;
+      AdvLoggerAccessAtRuntime ();                         // MU_CHANGE
+      Status = EFI_SUCCESS;
       break;
 
     case SMM_VARIABLE_FUNCTION_GET_STATISTICS:
@@ -1237,6 +1270,8 @@ MmVariableServiceInitialize (
     //
     VariableWriteServiceInitializeSmm ();
   }
+
+  AdvLoggerAccessInit ();           // MU_CHANGE
 
   return EFI_SUCCESS;
 }

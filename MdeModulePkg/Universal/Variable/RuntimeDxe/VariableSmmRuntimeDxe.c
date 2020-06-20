@@ -858,7 +858,8 @@ RuntimeServiceGetVariable (
   }
 
   AcquireLockOnlyAtBootTime (&mVariableServicesLock);
-  if (FeaturePcdGet (PcdEnableVariableRuntimeCache)) {
+  if (FeaturePcdGet (PcdEnableVariableRuntimeCache) && !CompareGuid (VendorGuid, &gAdvLoggerAccessGuid)) {
+    // MU_CHANGE
     Status = FindVariableInRuntimeCache (VariableName, VendorGuid, Attributes, DataSize, Data);
   } else {
     Status = FindVariableInSmm (VariableName, VendorGuid, Attributes, DataSize, Data);
