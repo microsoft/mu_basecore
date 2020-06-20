@@ -183,6 +183,11 @@
   #
   DeviceStateLib|Include/Library/DeviceStateLib.h
 
+  ## MU_CHANGE - Add AdvLoggerAccessLib to MdeModulePkg
+  ## @libraryclass Provides an interface for AdvLogger through GetVariable
+  #
+  AdvLoggerAccessLib|Include/Library/AdvLoggerAccessLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
@@ -428,6 +433,12 @@
   gNVMeEnableStartEventGroupGuid = { 0x4754469d, 0x6528, 0x4dfc, {0x84, 0xaa, 0x8c, 0x8a, 0x03, 0xa2, 0x15, 0x8b}}
   # {da383315-906b-486f-80db-847f268451e4}
   gNVMeEnableCompleteEventGroupGuid = { 0xda383315, 0x906b, 0x486f, {0x80, 0xdb, 0x84, 0x7f, 0x26, 0x84, 0x51, 0xe4}}
+
+
+  ## Advanced Logger Variable Guid. This variable guid is used to access the log data via GetVariable.
+  #
+  gAdvLoggerAccessGuid = { 0xa021bf2b, 0x34ed, 0x4a98, {0x85, 0x9c, 0x42, 0x0e, 0xf9, 0x4f, 0x3e, 0x94 }}
+
 ## MSCHANGE END
 
 
