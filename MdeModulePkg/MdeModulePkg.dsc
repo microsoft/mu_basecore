@@ -113,6 +113,7 @@
   VariableFlashInfoLib|MdeModulePkg/Library/BaseVariableFlashInfoLib/BaseVariableFlashInfoLib.inf
   IpmiCommandLib|MdeModulePkg/Library/BaseIpmiCommandLibNull/BaseIpmiCommandLibNull.inf
 
+  AdvLoggerAccessLib|MdeModulePkg/Library/AdvLoggerAccessLibNull/AdvLoggerAccessLib.inf       ## MS_CHANGE
 
 ##MSCHANGE Begin
 [LibraryClasses.common]
@@ -380,6 +381,7 @@
   MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
   MdeModulePkg/Library/DisplayUpdateProgressLibGraphics/DisplayUpdateProgressLibGraphics.inf
   MdeModulePkg/Library/DisplayUpdateProgressLibText/DisplayUpdateProgressLibText.inf
+  MdeModulePkg/Library/AdvLoggerAccessLibNull/AdvLoggerAccessLib.inf              # MU_CHANGE
 
   MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
   MdeModulePkg/Application/BootManagerMenuApp/BootManagerMenuApp.inf
