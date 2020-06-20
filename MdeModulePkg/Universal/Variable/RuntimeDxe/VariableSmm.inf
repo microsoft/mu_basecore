@@ -82,6 +82,7 @@
   UefiBootServicesTableLib
   VariablePolicyLib
   VariablePolicyHelperLib
+  AdvLoggerAccessLib                            ## MU_CHANGE
 
 [Protocols]
   gEfiSmmFirmwareVolumeBlockProtocolGuid        ## CONSUMES
@@ -125,6 +126,7 @@
   ## SOMETIMES_CONSUMES   ## Variable:L"VarErrorFlag"
   ## SOMETIMES_PRODUCES   ## Variable:L"VarErrorFlag"
   gEdkiiVarErrorFlagGuid
+  gAdvLoggerAccessGuid                                               ## CONSUMES   MU_CHANGE
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableSize       ## CONSUMES
