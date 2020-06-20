@@ -1,0 +1,39 @@
+## @file
+#  NULL implementation of the Advanced Logger Access library.
+#
+#  Copyright (c) Microsoft Corporation.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 1.26
+  BASE_NAME                      = AdvLoggerAccessLib
+  MODULE_UNI_FILE                = AdvLoggerAccessLib.uni
+  FILE_GUID                      = f2b61dfb-84d1-4de9-99f0-0bbcc48d1ddc
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = AdvLoggerAccessLib
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 AARCH64
+#
+
+[Sources]
+  AdvLoggerAccessLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+
+[Guids]
+  gAdvLoggerAccessGuid
+
+[Protocols]
+
+[Pcd]
+
+[Depex]
