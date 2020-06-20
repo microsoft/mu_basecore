@@ -794,7 +794,9 @@ RuntimeServiceGetVariable (
   }
 
   AcquireLockOnlyAtBootTime (&mVariableServicesLock);
-  if (mIsRuntimeCacheEnabled) {
+  // MU_CHANGE - Advanced Logger Access
+  if (mIsRuntimeCacheEnabled && !CompareGuid (VendorGuid, &gAdvLoggerAccessGuid)) {
+    // MU_CHANGE
     Status = FindVariableInRuntimeCache (VariableName, VendorGuid, Attributes, DataSize, Data);
   } else {
     Status = FindVariableInSmm (VariableName, VendorGuid, Attributes, DataSize, Data);
