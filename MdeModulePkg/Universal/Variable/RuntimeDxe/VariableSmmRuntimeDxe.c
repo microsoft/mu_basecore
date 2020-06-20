@@ -844,7 +844,7 @@ RuntimeServiceGetVariable (
   }
 
   AcquireLockOnlyAtBootTime (&mVariableServicesLock);
-  if (FeaturePcdGet (PcdEnableVariableRuntimeCache)) {
+  if (FeaturePcdGet (PcdEnableVariableRuntimeCache) && !CompareGuid(VendorGuid, &gAdvLoggerAccessGuid)) { // MU_CHANGE
     Status = FindVariableInRuntimeCache (VariableName, VendorGuid, Attributes, DataSize, Data);
   } else {
     Status = FindVariableInSmm (VariableName, VendorGuid, Attributes, DataSize, Data);
@@ -1336,6 +1336,17 @@ VariableAddressChangeEvent (
   IN VOID                                   *Context
   )
 {
+  //
+  // Init the communicate buffer. The buffer data size is:
+  // SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE.
+  //
+  InitCommunicateBuffer (NULL, 0, SMM_VARIABLE_FUNCTION_ADDRESS_CHANGE_EVENT);
+
+  //
+  // Send data to SMM.
+  //
+  SendCommunicateBuffer (0);
+
   EfiConvertPointer (0x0, (VOID **) &mVariableBuffer);
   EfiConvertPointer (0x0, (VOID **) &mMmCommunication2);
   EfiConvertPointer (EFI_OPTIONAL_PTR, (VOID **) &mVariableRuntimeHobCacheBuffer);

@@ -102,6 +102,7 @@
   ## SOMETIMES_CONSUMES   ## Variable:L"KEK"
   ## SOMETIMES_CONSUMES   ## Variable:L"SecureBoot"
   gEfiGlobalVariableGuid
+  gAdvLoggerAccessGuid    ## CONSUMES      // MU_CHANGE
 
   ## SOMETIMES_CONSUMES   ## Variable:L"db"
   ## SOMETIMES_CONSUMES   ## Variable:L"dbx"
