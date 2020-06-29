@@ -39,8 +39,7 @@ Main Changes-dev
 Bug Fixes-dev
 -------------
 
-- None
-
+- Fix for Tianocore Bugzilla 2753 for extending EBS properly into the TPM
 2002_RefBoot Changes
 --------------------
 
