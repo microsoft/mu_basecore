@@ -15,31 +15,32 @@ Branch Status - release/202002
 ==============================
 
 Status:
-  In Development
+  Stabilized
 
 Entered Development:
   2002/03/05
 
-Anticipated Stabilization:
-  May 2020
+Stabilized:
+  2002/07/06
 
 Branch Changes - release/202002
 ===============================
 
-Breaking Changes-dev
---------------------
-
-- None
-
-Main Changes-dev
+Breaking Changes
 ----------------
 
 - None
 
-Bug Fixes-dev
--------------
+Main Changes
+------------
+
+- None
+
+Bug Fixes
+---------
 
 - Fix for Tianocore Bugzilla 2753 for extending EBS properly into the TPM
+
 2002_RefBoot Changes
 --------------------
 
