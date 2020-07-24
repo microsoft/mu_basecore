@@ -3,6 +3,7 @@
   Layers on top of Firmware Block protocol to produce a file abstraction
   of FV based files.
 
+Copyright (c) Microsoft Corporation.<BR> // MU_SEC_TCBZ1743 - Mitigate potential malicious FV notification from 3rd party code
 Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -696,7 +697,33 @@ NotifyFwVolBlock (
   return;
 }
 
+// MU_SEC_TCBZ1743 [BEGIN] - Mitigate potential malicious FV notification from 3rd party code
+/**
+  Notification function of EFI_END_OF_DXE_EVENT_GROUP_GUID event group.
 
+  This notification function will close the FVB protocol notify event.
+
+  @param  Event        Event whose notification function is being invoked.
+  @param  Context      Pointer to the notification function's context.
+
+**/
+VOID
+EFIAPI
+OnEndOfDxe (
+  EFI_EVENT                       Event,
+  VOID                            *Context
+  )
+{
+  if (gEfiFwVolBlockEvent != NULL) {
+    //
+    // Note that because this event is registered on a protocol notify,
+    // the notify will be removed from the protocol database in CloseEvent()
+    //
+    gBS->CloseEvent (gEfiFwVolBlockEvent);
+  }
+  gBS->CloseEvent (Event);
+}
+// MU_SEC_TCBZ1743 [END] - Mitigate potential malicious FV notification from 3rd party code
 
 /**
   This routine is the driver initialization entry point.  It registers
@@ -716,6 +743,11 @@ FwVolDriverInit (
   IN EFI_SYSTEM_TABLE             *SystemTable
   )
 {
+// MU_SEC_TCBZ1743 [BEGIN] - Mitigate potential malicious FV notification from 3rd party code
+  EFI_STATUS    Status;
+  EFI_EVENT     EndOfDxeEvent;
+// MU_SEC_TCBZ1743 [END] - Mitigate potential malicious FV notification from 3rd party code
+
   gEfiFwVolBlockEvent = EfiCreateProtocolNotifyEvent (
                           &gEfiFirmwareVolumeBlockProtocolGuid,
                           TPL_CALLBACK,
@@ -723,6 +755,19 @@ FwVolDriverInit (
                           NULL,
                           &gEfiFwVolBlockNotifyReg
                           );
+
+// MU_SEC_TCBZ1743 [BEGIN] - Mitigate potential malicious FV notification from 3rd party code
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_CALLBACK,
+                  OnEndOfDxe,
+                  NULL,
+                  &gEfiEndOfDxeEventGroupGuid,
+                  &EndOfDxeEvent
+                  );
+  ASSERT_EFI_ERROR (Status);
+// MU_SEC_TCBZ1743 [END] - Mitigate potential malicious FV notification from 3rd party code
+
   return EFI_SUCCESS;
 }
 
