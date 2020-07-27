@@ -12,6 +12,7 @@
   DxeImageVerificationHandler(), HashPeImageByType(), HashPeImage() function will accept
   untrusted PE/COFF image and validate its data structure within this image buffer before use.
 
+Copyright (c) Microsoft Corporation.<BR> // MU_SEC_TCBZ2214 - Mitigate potential out-of-bound read from AuthData input
 Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -631,7 +632,9 @@ HashPeImageByType (
     //    This field has the fixed offset (+32) in final Authenticode ASN.1 data.
     //    Fixed offset (+32) is calculated based on two bytes of length encoding.
     //
-    if ((*(AuthData + 1) & TWO_BYTE_ENCODE) != TWO_BYTE_ENCODE) {
+// MU_SEC_TCBZ2214 [BEGIN] - Mitigate potential out-of-bound read from AuthData input
+    if (AuthDataSize > 1 && ((*(AuthData + 1) & TWO_BYTE_ENCODE) != TWO_BYTE_ENCODE)) {
+// MU_SEC_TCBZ2214 [END] - Mitigate potential out-of-bound read from AuthData input
       //
       // Only support two bytes of Long Form of Length Encoding.
       //
