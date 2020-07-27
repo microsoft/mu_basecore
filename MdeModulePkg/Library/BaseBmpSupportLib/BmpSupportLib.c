@@ -10,7 +10,9 @@
 
   TranslateBmpToGopBlt() receives untrusted input and performs basic validation.
 
-  Copyright (c) 2016-2017, Microsoft Corporation
+  // MU_SEC_TCBZ1988 [BEGIN] - Mitigate potential potential buffer overflow
+  Copyright (c) Microsoft Corporation.<BR>
+  // MU_SEC_TCBZ1988 [END] - Mitigate potential potential buffer overflow
   Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
 
   All rights reserved.
@@ -233,29 +235,32 @@ TranslateBmpToGopBlt (
     return RETURN_UNSUPPORTED;
   }
 
-  if (BmpHeader->ImageOffset > sizeof (BMP_IMAGE_HEADER)) {
-    switch (BmpHeader->BitPerPixel) {
-    case 1:
-      ColorMapNum = 2;
-      break;
-    case 4:
-      ColorMapNum = 16;
-      break;
-    case 8:
-      ColorMapNum = 256;
-      break;
-    default:
-      ColorMapNum = 0;
-      break;
-    }
-    //
-    // BMP file may has padding data between the bmp header section and the
-    // bmp data section.
-    //
-    if (BmpHeader->ImageOffset - sizeof (BMP_IMAGE_HEADER) < sizeof (BMP_COLOR_MAP) * ColorMapNum) {
-      return RETURN_UNSUPPORTED;
-    }
+  // MU_SEC_TCBZ1988 [BEGIN] - Mitigate potential potential buffer overflow
+  switch (BmpHeader->BitPerPixel) {
+  case 1:
+    ColorMapNum = 2;
+    break;
+  case 4:
+    ColorMapNum = 16;
+    break;
+  case 8:
+    ColorMapNum = 256;
+    break;
+  default:
+    ColorMapNum = 0;
+    break;
   }
+  //
+  // BMP file may have padding data between the bmp header section and the
+  // bmp data section. If a color map is present, it is expected to fit
+  // into the gap between the header and the data. If no color map
+  // is present (ImageOffset equals the image header size), the ColorMapNum = 0
+  // branch will be enforced.
+  //
+  if (BmpHeader->ImageOffset - sizeof (BMP_IMAGE_HEADER) < sizeof (BMP_COLOR_MAP) * ColorMapNum) {
+    return RETURN_UNSUPPORTED;
+  }
+  // MU_SEC_TCBZ1988 [END] - Mitigate potential potential buffer overflow
 
   //
   // Calculate graphics image data address in the image
