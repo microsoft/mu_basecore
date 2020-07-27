@@ -15,6 +15,7 @@
   PeCoffLoaderGetPeHeader() routine will do basic check for PE/COFF header.
   PeCoffLoaderGetImageInfo() routine will do basic check for whole PE/COFF image.
 
+  Copyright (c) Microsoft Corporation.<BR> // MU_SEC_TCBZ1993 - Mitigate potential integer overflow
   Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
   Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
   Portions Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
@@ -1158,7 +1159,9 @@ PeCoffLoaderRelocateImage (
     RelocDir = &Hdr.Te->DataDirectory[0];
   }
 
-  if ((RelocDir != NULL) && (RelocDir->Size > 0)) {
+// MU_SEC_TCBZ1993 [BEGIN] - Mitigate potential integer overflow
+  if ((RelocDir != NULL) && (RelocDir->Size > 0) && (RelocDir->Size - 1 < MAX_UINT32 - RelocDir->VirtualAddress)) {
+// MU_SEC_TCBZ1993 [END] - Mitigate potential integer overflow
     RelocBase = (EFI_IMAGE_BASE_RELOCATION *) PeCoffLoaderImageAddress (ImageContext, RelocDir->VirtualAddress, TeStrippedOffset);
     RelocBaseEnd = (EFI_IMAGE_BASE_RELOCATION *) PeCoffLoaderImageAddress (ImageContext,
                                                                             RelocDir->VirtualAddress + RelocDir->Size - 1,
@@ -1905,7 +1908,9 @@ PeCoffLoaderRelocateImageForRuntime (
   RelocBaseEnd = NULL;
   if (NumberOfRvaAndSizes > EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC) {
     RelocDir      = DataDirectory + EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC;
-    if ((RelocDir != NULL) && (RelocDir->Size > 0)) {
+// MU_SEC_TCBZ1993 [BEGIN] - Mitigate potential integer overflow
+    if ((RelocDir != NULL) && (RelocDir->Size > 0) && (RelocDir->Size - 1 < MAX_UINT32 - RelocDir->VirtualAddress)) {
+// MU_SEC_TCBZ1993 [END] - Mitigate potential integer overflow
       RelocBase     = (EFI_IMAGE_BASE_RELOCATION *) PeCoffLoaderImageAddress (&ImageContext, RelocDir->VirtualAddress, 0);
       RelocBaseEnd  = (EFI_IMAGE_BASE_RELOCATION *) PeCoffLoaderImageAddress (&ImageContext,
                                                                               RelocDir->VirtualAddress + RelocDir->Size - 1,

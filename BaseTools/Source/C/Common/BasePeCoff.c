@@ -2,6 +2,7 @@
 
   Functions to get info and load PE/COFF image.
 
+Copyright (c) Microsoft Corporation.<BR> // MU_SEC_TCBZ1993 - Mitigate potential integer overflow
 Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
 Portions Copyright (c) 2011 - 2013, ARM Ltd. All rights reserved.<BR>
 Portions Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
@@ -641,7 +642,9 @@ Returns:
       //
       if (OptionHeader.Optional32->NumberOfRvaAndSizes > EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC) {
         RelocDir  = &OptionHeader.Optional32->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC];
-        if ((RelocDir != NULL) && (RelocDir->Size > 0)) {
+// MU_SEC_TCBZ1993 [BEGIN] - Mitigate potential integer overflow
+        if ((RelocDir != NULL) && (RelocDir->Size > 0) && (RelocDir->Size - 1 < MAX_UINT32 - RelocDir->VirtualAddress)) {
+// MU_SEC_TCBZ1993 [END] - Mitigate potential integer overflow
           RelocBase = PeCoffLoaderImageAddress (ImageContext, RelocDir->VirtualAddress);
           RelocBaseEnd = PeCoffLoaderImageAddress (
                            ImageContext,
@@ -676,7 +679,9 @@ Returns:
       //
       if (OptionHeader.Optional64->NumberOfRvaAndSizes > EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC) {
         RelocDir  = &OptionHeader.Optional64->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC];
-        if ((RelocDir != NULL) && (RelocDir->Size > 0)) {
+// MU_SEC_TCBZ1993 [BEGIN] - Mitigate potential integer overflow
+        if ((RelocDir != NULL) && (RelocDir->Size > 0) && (RelocDir->Size - 1 < MAX_UINT32 - RelocDir->VirtualAddress)) {
+// MU_SEC_TCBZ1993 [END] - Mitigate potential integer overflow
           RelocBase = PeCoffLoaderImageAddress (ImageContext, RelocDir->VirtualAddress);
           RelocBaseEnd = PeCoffLoaderImageAddress (
                            ImageContext,
