@@ -15,6 +15,7 @@
   Tcg2MeasureGptTable() function will receive untrusted GPT partition table, and parse
   partition data carefully.
 
+Copyright (c) Microsoft Corporation.<BR> // MU_SEC_TCBZ2168 - Mitigate potential out-of-bound read from a malicious GPT disk partition
 Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015 Hewlett Packard Enterprise Development LP<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -168,8 +169,14 @@ Tcg2MeasureGptTable (
                      BlockIo->Media->BlockSize,
                      (UINT8 *)PrimaryHeader
                      );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_ERROR, "Failed to Read Partition Table Header!\n"));
+// MU_SEC_TCBZ2168 [BEGIN] - Mitigate potential out-of-bound read from a malicious GPT disk partition
+  if (EFI_ERROR (Status) ||
+      PrimaryHeader->Header.Signature != EFI_PTAB_HEADER_ID ||
+      PrimaryHeader->PartitionEntryLBA > DivU64x32 (MAX_UINTN, BlockIo->Media->BlockSize) ||
+      PrimaryHeader->SizeOfPartitionEntry != sizeof (EFI_PARTITION_ENTRY) ||
+      PrimaryHeader->NumberOfPartitionEntries > DivU64x32 (MAX_UINTN, PrimaryHeader->SizeOfPartitionEntry)) {
+    DEBUG ((EFI_D_ERROR, "Failed to read Partition Table Header or invalid Partition Table Header!\n"));
+// MU_SEC_TCBZ2168 [END] - Mitigate potential out-of-bound read from a malicious GPT disk partition
     FreePool (PrimaryHeader);
     return EFI_DEVICE_ERROR;
   }
