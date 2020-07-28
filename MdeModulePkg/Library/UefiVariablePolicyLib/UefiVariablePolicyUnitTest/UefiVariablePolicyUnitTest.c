@@ -25,7 +25,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Guid/VariableFormat.h>
 
 #include <Protocol/VariablePolicy.h>
-#include <Library/VariablePolicyLib.h>
+#include <Library/UefiVariablePolicyLib.h>
 
 #ifndef INTERNAL_UNIT_TEST
 #error Make sure to build thie with INTERNAL_UNIT_TEST enabled! Otherwise, some important tests may be skipped!
