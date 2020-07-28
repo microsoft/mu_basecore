@@ -382,26 +382,42 @@ WildcardPoliciesShouldMatchDigits (
     },
     L"Wildcard#VarName##"
   };
-  CHAR16        *CheckVar1Name = L"Wildcard1VarName12";
-  CHAR16        *CheckVar2Name = L"Wildcard2VarName34";
-  CHAR16        *CheckVarBName = L"WildcardBVarName56";
-  CHAR16        *CheckVarFName = L"WildcardFVarName0A";
-  CHAR16        *CheckVarZName = L"WildcardZVarName56";
-  CHAR16        *CheckVarLName = L"WildcardLVarName56";
-  CHAR16        *CheckVarHName = L"Wildcard#VarName56";
+  CHAR16      *ShouldPass1 = L"Wildcard1VarName12";
+  CHAR16      *ShouldPass2 = L"Wildcard2VarName34";
+  CHAR16      *ShouldPass3 = L"WildcardBVarName56";
+  CHAR16      *ShouldPass4 = L"WildcardFVarName0A";
+  CHAR16      *ShouldPass5 = L"WildcardaVarNamebC";
+  CHAR16      *ShouldPass6 = L"WildcardaVarNamed0";
+  
+  CHAR16      *ShouldFail1 = L"WildcardZVarName56";
+  CHAR16      *ShouldFail2 = L"WildcardLVarName56";
+  CHAR16      *ShouldFail3 = L"WildcardDVarName2j";
+  CHAR16      *ShouldFail4 = L"Wildcard2VarNamezz";
+  
+  CHAR16      *ShouldAlsoFail1 = L"Wildcard#VarName56";
+  CHAR16      *ShouldAlsoFail2 = L"WildcardaVarName#6";
+  CHAR16      *ShouldAlsoFail3 = L"WildcardFVarName5#";
+  CHAR16      *ShouldAlsoFail4 = L"WildcardFVarName##";
 
   // Make sure that all hexidecimal sets of wildcard numbers match.
-  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVar1Name, &mTestGuid1, NULL ) );
-  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVar2Name, &mTestGuid1, NULL ) );
-  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarBName, &mTestGuid1, NULL ) );
-  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarFName, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldPass1, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldPass2, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldPass3, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldPass4, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldPass5, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldPass6, &mTestGuid1, NULL ) );
 
   // Make sure that the non-number charaters don't match.
-  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarZName, &mTestGuid1, NULL ) );
-  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarLName, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldFail1, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldFail2, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldFail3, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldFail4, &mTestGuid1, NULL ) );
 
   // Make sure that '#' signs don't match.
-  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarHName, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldAlsoFail1, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldAlsoFail2, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldAlsoFail3, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldAlsoFail4, &mTestGuid1, NULL ) );
 
   return UNIT_TEST_PASSED;
 }
