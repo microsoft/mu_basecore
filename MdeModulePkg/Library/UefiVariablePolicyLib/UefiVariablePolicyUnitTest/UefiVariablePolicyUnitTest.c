@@ -385,14 +385,20 @@ WildcardPoliciesShouldMatchDigits (
   CHAR16        *CheckVar1Name = L"Wildcard1VarName12";
   CHAR16        *CheckVar2Name = L"Wildcard2VarName34";
   CHAR16        *CheckVarBName = L"WildcardBVarName56";
+  CHAR16        *CheckVarFName = L"WildcardFVarName0A";
+  CHAR16        *CheckVarZName = L"WildcardZVarName56";
+  CHAR16        *CheckVarLName = L"WildcardLVarName56";
   CHAR16        *CheckVarHName = L"Wildcard#VarName56";
 
-  // Make sure that two different sets of wildcard numbers match.
+  // Make sure that all hexidecimal sets of wildcard numbers match.
   UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVar1Name, &mTestGuid1, NULL ) );
   UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVar2Name, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarBName, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarFName, &mTestGuid1, NULL ) );
 
   // Make sure that the non-number charaters don't match.
-  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarBName, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarZName, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarLName, &mTestGuid1, NULL ) );
 
   // Make sure that '#' signs don't match.
   UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarHName, &mTestGuid1, NULL ) );
@@ -430,6 +436,12 @@ WildcardPoliciesShouldMatchDigitsAdvanced (
                                       "01234567890123456789012345678901234567890123456789"\
                                       "01234567890123456789012345678901234567890123456789"\
                                       "01234567890123456789012345678901234567890123456789";
+  CHAR16        *CheckValidHexString = L"012345678901234567890123456789012345678901234F6789"\
+                                      "01234567890123456789012345678901234567890123456789"\
+                                      "012345678901ABC56789012345678901234567890123456789"\
+                                      "01234567890123456789012345678901234567890123456789"\
+                                      "012345678901234567890123456789012345678DEADBEEF789"\
+                                      "01234ABCDEF123456789012345678901234567890123456789";
   CHAR16        *CheckLongerString = L"01234567890123456789012345678901234567890123456789"\
                                       "01234567890123456789012345678901234567890123456789"\
                                       "01234567890123456789012345678901234567890123456789"\
@@ -445,6 +457,7 @@ WildcardPoliciesShouldMatchDigitsAdvanced (
 
   // Make sure that the valid one matches and has the expected priority.
   UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckValidString, &mTestGuid1, &MatchPriority ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckValidHexString, &mTestGuid1, &MatchPriority ) );
   UT_ASSERT_EQUAL( MatchPriority, MAX_UINT8 );
 
   return UNIT_TEST_PASSED;
