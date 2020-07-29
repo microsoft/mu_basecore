@@ -185,7 +185,7 @@ typedef struct {
   UINT32    AttributesMustHave;
   UINT32    AttributesCantHave;
   UINT8     LockPolicyType;
-  UINT8     Padding[3];
+  UINT8     Reserved[3];
   // UINT8  LockPolicy[]; // Variable Length Field
   // CHAR16 Name[];       // Variable Length Field
 } VARIABLE_POLICY_ENTRY;
@@ -227,7 +227,7 @@ are self-explanatory.
 typedef struct {
   EFI_GUID  Namespace;
   UINT8     Value;
-  UINT8     Padding;
+  UINT8     Reserved;
   // CHAR16 Name[];   // Variable Length Field
 } VARIABLE_LOCK_ON_VAR_STATE_POLICY;
 ```
