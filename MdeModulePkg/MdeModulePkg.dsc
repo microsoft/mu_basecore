@@ -3,6 +3,7 @@
 #
 # (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
 # Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
+# Copyright (C) Microsoft Corporation
 #
 #    SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -107,6 +108,7 @@
   # MU_CHANGE [BEGIN]
   MuVariablePolicyHelperLib|MdeModulePkg/Library/MuVariablePolicyHelperLib/MuVariablePolicyHelperLib.inf
   # MU_CHANGE [END]
+  MemoryTypeInfoSecVarCheckLib|MdeModulePkg/Library/MemoryTypeInfoSecVarCheckLib/MemoryTypeInfoSecVarCheckLib.inf     # MU_CHANGE TCBZ1086
 
 ##MSCHANGE Begin
 [LibraryClasses.common]
@@ -275,6 +277,7 @@
   MdeModulePkg/Library/BaseMemoryAllocationLibNull/BaseMemoryAllocationLibNull.inf
 
   MdeModulePkg/Library/MuVariablePolicyHelperLib/MuVariablePolicyHelperLib.inf   # MU_CHANGE
+  MdeModulePkg/Library/MemoryTypeInfoSecVarCheckLib/MemoryTypeInfoSecVarCheckLib.inf     # MU_CHANGE TCBZ1086
 
   MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
   MdeModulePkg/Bus/Pci/PciSioSerialDxe/PciSioSerialDxe.inf
