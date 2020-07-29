@@ -272,6 +272,36 @@ exclusive Name strings with wildcards, however, if it occurs, then the
 policy entry that was registered first will be used. After the most
 specific match is selected, all other policies are ignored.
 
+## Available Testing
+
+This functionality is current supported by two kinds of tests: there is a host-based
+unit test for the core business logic (this test accompanies the `UefiVariablePolicyLib`
+implementation that lives in `MdeModulePkg/Library`) and there is a functional test
+for the protocol and its interfaces (this test lives in the Mu Plus repo in the
+`UefiTestingPkg`, but will shortly move to Mu Basecore).
+
+### Host-Based Unit Test
+
+This test:
+
+`MdeModulePkg\Library\UefiVariablePolicyLib\UefiVariablePolicyUnitTest\UefiVariablePolicyUnitTest.inf`
+
+can be run as part of the Host-Based Unit Testing infrastructure provided by EDK2
+PyTools (documented elsewhere). It will test all internal guarantees and is
+where you will find test cases for most of the policy matching and security of the
+Variable Policy Engine.
+
+### Shell-Based Functional Test
+
+This test -- [Variable Policy Functional Unit Test](https://github.com/microsoft/mu_plus/tree/release/202005/UefiTestingPkg/FunctionalSystemTests/VarPolicyUnitTestApp) -- can be built as a
+UEFI Shell application and run to validate that the Variable Policy Engine
+is correctly installed and enforcing policies on the target system.
+
+NOTE: This test _must_ be run prior to calling `DisableVariablePolicy` for all
+test cases to pass. For this reason, it is recommended to run this on a test-built
+FW for complete results, and then again on a production-built FW for release
+results.
+
 ## Use Cases
 
 The below examples are hypothetical scenarios based on real-world requirements
