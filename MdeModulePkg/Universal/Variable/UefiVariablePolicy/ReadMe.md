@@ -41,7 +41,27 @@ At power-on, the Variable Policy Engine is:
 Policy is expected to be clear on power-on. Policy is volatile and not
 preserved across system reset.
 
-## DXE Protocol Functions
+## DXE Protocol
+
+```h
+typedef struct {
+  UINT64                        Revision;
+  DISABLE_VARIABLE_POLICY       DisableVariablePolicy;
+  IS_VARIABLE_POLICY_ENABLED    IsVariablePolicyEnabled;
+  REGISTER_VARIABLE_POLICY      RegisterVariablePolicy;
+  DUMP_VARIABLE_POLICY          DumpVariablePolicy;
+  LOCK_VARIABLE_POLICY          LockVariablePolicy;
+} _VARIABLE_POLICY_PROTOCOL;
+
+typedef _VARIABLE_POLICY_PROTOCOL VARIABLE_POLICY_PROTOCOL;
+
+extern EFI_GUID gVariablePolicyProtocolGuid;
+```
+
+```text
+## Include/Protocol/VariablePolicy.h
+  gVariablePolicyProtocolGuid = { 0x81D1675C, 0x86F6, 0x48DF, { 0xBD, 0x95, 0x9A, 0x6E, 0x4F, 0x09, 0x25, 0xC3 } }
+```
 
 ### DisableVariablePolicy
 
@@ -351,4 +371,4 @@ LockPolicyType        | `VARIABLE_POLICY_TYPE_LOCK_ON_VAR_STATE`
 _Namespace_           | ...
 _Value_               | 1
 _Name_                | "LockBootOrder"
-//Name                | "Boot\#\#\#\#"
+//Name                | "Boot####"
