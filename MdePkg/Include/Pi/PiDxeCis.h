@@ -56,6 +56,7 @@ typedef enum {
   /// system. If all memory has the same reliability, then this bit is not used.
   ///
   EfiGcdMemoryTypeMoreReliable,
+  EfiGcdMemoryTypeUnaccepted,
   EfiGcdMemoryTypeMaximum
 } EFI_GCD_MEMORY_TYPE;
 

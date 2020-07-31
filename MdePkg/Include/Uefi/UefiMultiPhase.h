@@ -103,6 +103,11 @@ typedef enum {
   /// however it happens to also support byte-addressable non-volatility.
   ///
   EfiPersistentMemory,
+  ///
+  /// A memory region that describes system memory that has not been accepted
+  /// by a corresponding call to the underlying isolation architecture.
+  ///
+  EfiUnacceptedMemory,
   EfiMaxMemoryType,
   //
   // MU_CHANGE: moved the MEMORY_TYPE_* defines into enum from MdeModulePkg\Core\Dxe\Mem\Imem.h
