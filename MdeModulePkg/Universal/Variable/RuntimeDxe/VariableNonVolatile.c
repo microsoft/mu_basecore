@@ -320,6 +320,13 @@ InitNonVolatileVariableStore (
   while (IsValidVariableHeader (Variable, GetEndPointer (mNvVariableCache))) {
     NextVariable = GetNextVariablePtr (Variable, mVariableModuleGlobal->VariableGlobal.AuthFormat);
     VariableSize = (UINTN) NextVariable - (UINTN) Variable;
+    //MS_CHANGE Starts: Deleted hw error records should not count towards the hw error record space quota
+    //When computing total variable size, HwErrRec marked as Deleted should be treated as a common variable
+    if (((Variable->Attributes & (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_HARDWARE_ERROR_RECORD)) == (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_HARDWARE_ERROR_RECORD)) &&
+        ((Variable->State | VAR_DELETED) == VAR_DELETED)) {
+      mVariableModuleGlobal->CommonVariableTotalSize += VariableSize;
+    } else
+    //MS_CHANGE Ends
     if ((Variable->Attributes & (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_HARDWARE_ERROR_RECORD)) == (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_HARDWARE_ERROR_RECORD)) {
       mVariableModuleGlobal->HwErrVariableTotalSize += VariableSize;
     } else {
