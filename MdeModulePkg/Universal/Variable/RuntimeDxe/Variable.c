@@ -3209,6 +3209,7 @@ ReclaimForOS(
   // Check if the free area is below a threshold.
   //
   if (((RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxVariableSize) ||
+        // MS_CHANGE Starts: HwError record quata state should not trigger variable store reclaim
       // (RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxAuthVariableSize)) ||
        (RemainingCommonRuntimeVariableSpace < mVariableModuleGlobal->MaxAuthVariableSize))){
       //((PcdGet32 (PcdHwErrStorageSize) != 0) &&
