@@ -36,3 +36,8 @@
   BaseMemoryLib
   MemoryAllocationLib
   SafeIntLib
+
+
+[BuildOptions]
+  MSFT:NOOPT_*_*_CC_FLAGS   = -DINTERNAL_UNIT_TEST
+  GCC:NOOPT_*_*_CC_FLAGS    = -DINTERNAL_UNIT_TEST
