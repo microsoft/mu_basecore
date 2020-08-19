@@ -346,6 +346,7 @@
   MdeModulePkg/Library/DxeSecurityManagementLib/DxeSecurityManagementLib.inf
   MdeModulePkg/Library/OemHookStatusCodeLibNull/OemHookStatusCodeLibNull.inf
   MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
+  MdeModulePkg/Library/PeiReportStatusCodeOnlyLib/PeiReportStatusCodeLib.inf  # mu_change - add
   MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
   MdeModulePkg/Library/RuntimeDxeReportStatusCodeLib/RuntimeDxeReportStatusCodeLib.inf
   MdeModulePkg/Library/RuntimeResetSystemLib/RuntimeResetSystemLib.inf
