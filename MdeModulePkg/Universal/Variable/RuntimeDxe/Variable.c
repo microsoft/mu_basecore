@@ -2457,12 +2457,6 @@ VariableServiceGetVariable (
     goto Done;
   }
 
-  // MU_CHANGE [BEGIN] - TCBZ2062 - Attributes must be set even on EFI_BUFFER_TOO_SMALL.
-  if (Attributes != NULL) {
-    *Attributes = Variable.CurrPtr->Attributes;
-  }
-  // MU_CHANGE [END]
-
   //
   // Get data size
   //
@@ -2476,11 +2470,9 @@ VariableServiceGetVariable (
     }
 
     CopyMem (Data, GetVariableDataPtr (Variable.CurrPtr, mVariableModuleGlobal->VariableGlobal.AuthFormat), VarDataSize);
-    // MU_CHANGE [BEGIN] - TCBZ2062 - Attributes must be set even on EFI_BUFFER_TOO_SMALL.
-    // if (Attributes != NULL) {
-    //   *Attributes = Variable.CurrPtr->Attributes;
-    // }
-    // MU_CHANGE [END]
+    if (Attributes != NULL) {
+      *Attributes = Variable.CurrPtr->Attributes;
+    }
 
     *DataSize = VarDataSize;
     UpdateVariableInfo (VariableName, VendorGuid, Variable.Volatile, TRUE, FALSE, FALSE, FALSE, &gVariableInfo);
