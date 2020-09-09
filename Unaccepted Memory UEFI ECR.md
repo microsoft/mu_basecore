@@ -11,6 +11,7 @@ Sponsors:<br>
 ***Sean Brogan, Microsoft***<br>
 ***Brijesh Singh, AMD***<br>
 ***Thomas Lendacky, AMD***<br>
+***Jiewen Yao, Intel***<br>
 <br>
 **Submission for Review Date: x/xx/2020**<br>
 **Review Approval Date: x/xx/2020**<br>
@@ -43,22 +44,24 @@ Github PR for comments https://github.com/microsoft/mu_basecore/pull/66 <br>
 ### Summary of Changes: 
 - Update Table 29 & 30 to add new type 
 - Update Section 7.2 AllocatePages Related Definitions 
+- Add entry describing unaccepted memory to Appendix R - Glossary
 
 ~~Text Removed~~,  Text Added ***Text Added*** ,  New Sections ***New Section***, Discussion/Mode Edits needed ***DME***
 
+#### 7.2 Memory Allocation Services
 **Table 29. Memory Type Usage before ExitBootServices()**<br>
 | Mnemonic                | Description                                                                                                                                                                                                                                                          |
 |-------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | EfiReservedMemoryType   | Not usable.                                                                                                                                                                                                                                                          |
 | ...                     | ...                                                                                                                                                                                                                                                                  |
-| EfiUnacceptedMemoryType ***Text Added*** | A memory region that represents unaccepted memory, that must be accepted by the guest before it can be used. Unless otherwise noted, all other EFI memory types are accepted. For platforms that support unaccepted memory any physical address ranges not described by the memory map must be treated as unaccepted. ***Text Added*** |
+| EfiUnacceptedMemoryType ***Text Added*** | A memory region that represents unaccepted memory, that must be accepted by the guest before it can be used. Unless otherwise noted, all other EFI memory types are accepted. For platforms that support unaccepted memory, all unaccepted valid memory will be reported as unaccepted in the memory map. Unreported physical address ranges must be treated as not-present memory. ***Text Added*** |
 
 **Table 30. Memory Type Usage after ExitBootServices()**<br>
 | Mnemonic                | Description                                                                                                                                                                                                                                                          |
 |-------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | EfiReservedMemoryType   | Not usable.                                                                                                                                                                                                                                                          |
 | ...                     | ...                                                                                                                                                                                                                                                                  |
-| EfiUnacceptedMemoryType ***Text Added*** | A memory region that represents unaccepted memory, that must be accepted by the guest before it can be used. Unless otherwise noted, all other EFI memory types are accepted. For platforms that support unaccepted memory any physical address ranges not described by the memory map must be treated as unaccepted. ***Text Added*** |
+| EfiUnacceptedMemoryType ***Text Added*** | A memory region that represents unaccepted memory, that must be accepted by the guest before it can be used. Unless otherwise noted, all other EFI memory types are accepted. For platforms that support unaccepted memory, all unaccepted valid memory will be reported as unaccepted in the memory map. Unreported physical address ranges must be treated as not-present memory. ***Text Added*** |
 <br> 
 
 **EFI_BOOT_SERVICES.AllocatePages()**<br>
@@ -143,7 +146,13 @@ typedef UINT64 EFI_PHYSICAL_ADDRESS;
 | EFI_INVALID_PARAMETER  | Memory is NULL.                                                            |
 | EFI_NOT_FOUND          | The requested pages could not be found.                                    |
 
+#### Appendix R - Glossary<br>
+...<br>
+***Text Added***<br>
+**Unaccepted Memory** <br>
+
+Some Virtual Machine platforms, such as AMD SEV-SNP, introduce the concept of memory acceptance, requiring memory to be accepted before it can be used by the guest. This protects against a class of attacks by the virtual machine platform.<br>
+***Text Added***
+
 ### Special Instructions:
 #### Discussions / Opens
-
-1. Do we need any section further describing the semantics of the physical address space not described by the EFI Memory Map and memory acceptance in general? Something like 2.3.4.x for x64?
