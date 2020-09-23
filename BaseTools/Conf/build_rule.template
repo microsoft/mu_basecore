@@ -114,8 +114,10 @@
 # 1.01 - Add MASM for Microsoft ARM assembly files. "MS-ARMx-Assembly-Code-File.COMMON.COMMON"
 # 2.00 - Add .slib and .efi support in the sources file
 # 2.01 - Add support for DEPS_FLAGS as well as
+# 2.23 - Add OemData Definitions
+# 2.24 - Rename OemData to ProductData.
 
-#!VERSION=2.01
+#!VERSION=2.24
 
 [C-Code-File]
     <InputFile>
@@ -372,7 +374,7 @@
     <Command.XCODE>
         "$(DLINK)" $(DLINK_FLAGS) -o ${dst} $(DLINK_SPATH) -filelist $(STATIC_LIBRARY_FILES_LIST)  $(DLINK2_FLAGS)
 
-    
+
 [Static-Library-File.SEC.AARCH64, Static-Library-File.PEI_CORE.AARCH64, Static-Library-File.PEIM.AARCH64,Static-Library-File.SEC.ARM, Static-Library-File.PEI_CORE.ARM, Static-Library-File.PEIM.ARM]
     <InputFile>
         *.lib
@@ -407,7 +409,7 @@
     <Command.XCODE>
         "$(DLINK)" -o ${dst} $(DLINK_FLAGS)  $(DLINK_SPATH) -filelist $(STATIC_LIBRARY_FILES_LIST)  $(DLINK2_FLAGS)
 
-      
+
 [Dynamic-Library-File]
     <InputFile>
         ?.dll
@@ -548,7 +550,44 @@
         "$(MTOC)" -subsystem $(MODULE_TYPE)  $(MTOC_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff
         "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff $(GENFW_FLAGS)
 
-      
+# MU_CHANGE BEGIN
+[C-Code-File-ProductDataIntermediate]
+    <InputFile>
+        ?.productdatac
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.productdatabin.i
+
+    <ExtraDependency>
+        $(MAKE_FILE)
+
+    <Command.MSFT>
+        "$(CC)" /Fo$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(DEPS_FLAGS) /nologo /c /FIAutoGen.h /TC /Dmain=main $(INC) ${src}
+        "$(DLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll /NODEFAULTLIB /ENTRY:main /SUBSYSTEM:CONSOLE $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
+        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.productdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
+
+    <Command.GCC>
+        "$(CC)" $(DEPS_FLAGS) -c -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(CC_FLAGS) -fno-toplevel-reorder -x c $(DEPS_FLAGS) $(INC) ${src}
+        "$(DLINK)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(DLINK_COMMON) -u $(IMAGE_ENTRY_POINT) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(CC_FLAGS)
+        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.productdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
+
+    <Command.CLANGPDB>
+        "$(CC)" $(DEPS_FLAGS) -c -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj -O0 -fkeep-static-consts --language=c $(DEPS_FLAGS) $(INC) ${src}
+        "$(DLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll /NODEFAULTLIB /ENTRY:main /SUBSYSTEM:CONSOLE $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
+        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.productdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
+
+[ProductDataIntermediate-to-ProductDataBin]
+    <InputFile>
+        ?.productdatabin.i
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME).productdatabin
+
+    <Command>
+        ProductDataFormatter $(OUTPUT_DIR)(+)${s_dir} $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME).productdatabin
+
+# MU_CHANGE END
+
 [Masm16-Code-File]
     <InputFile>
         ?.asm16, ?.Asm16, ?.ASM16, ?.s16, ?.S16
