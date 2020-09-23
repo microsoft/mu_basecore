@@ -114,8 +114,9 @@
 # 1.01 - Add MASM for Microsoft ARM assembly files. "MS-ARMx-Assembly-Code-File.COMMON.COMMON"
 # 2.00 - Add .slib and .efi support in the sources file
 # 2.01 - Add support for DEPS_FLAGS as well as
+# 2.23 - Add OemData Definitions
 
-#!VERSION=2.01
+#!VERSION=2.23
 
 [C-Code-File]
     <InputFile>
@@ -326,8 +327,10 @@
         "$(OBJCOPY)" $(OBJCOPY_FLAGS) ${dst}
 
 
+
     <Command.XCODE>
         "$(DLINK)" $(DLINK_FLAGS) -o ${dst} $(DLINK_SPATH) -filelist $(STATIC_LIBRARY_FILES_LIST)  $(DLINK2_FLAGS)
+
 
 [Static-Library-File.SEC.AARCH64, Static-Library-File.PEI_CORE.AARCH64, Static-Library-File.PEIM.AARCH64,Static-Library-File.SEC.ARM, Static-Library-File.PEI_CORE.ARM, Static-Library-File.PEIM.ARM]
     <InputFile>
@@ -361,8 +364,10 @@
         "$(DLINK)" $(DLINK_FLAGS) -Wl,--start-group,@$(STATIC_LIBRARY_FILES_LIST),--end-group $(DLINK2_FLAGS)
 
 
+
     <Command.XCODE>
         "$(DLINK)" -o ${dst} $(DLINK_FLAGS)  $(DLINK_SPATH) -filelist $(STATIC_LIBRARY_FILES_LIST)  $(DLINK2_FLAGS)
+
 
 [Dynamic-Library-File]
     <InputFile>
@@ -392,7 +397,7 @@
         $(CP) ${dst} $(DEBUG_DIR)
         $(CP) ${dst} $(BIN_DIR)(+)$(MODULE_NAME_GUID).efi
         -$(CP) $(DEBUG_DIR)(+)*.map $(OUTPUT_DIR)
-        
+
     <Command.XCODE>
         # tool to convert Mach-O to PE/COFF
         "$(MTOC)" -subsystem $(MODULE_TYPE)  $(MTOC_FLAGS)  ${src}  $(DEBUG_DIR)(+)$(MODULE_NAME).pecoff
@@ -503,6 +508,36 @@
         "$(ASLDLINK)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(ASLDLINK_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
         "$(MTOC)" -subsystem $(MODULE_TYPE)  $(MTOC_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff
         "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff $(GENFW_FLAGS)
+
+# MU_CHANGE BEGIN
+[C-Code-File-OemData]
+    <InputFile>
+        ?.oemdatac
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin
+
+    <ExtraDependency>
+        $(MAKE_FILE)
+
+    <Command.MSFT>
+        "$(CC)" /Fo$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(DEPS_FLAGS) /nologo /c /FIAutoGen.h /TC /Dmain=main $(INC) ${src}
+        "$(DLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll /NODEFAULTLIB /ENTRY:main /SUBSYSTEM:CONSOLE $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
+        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
+        OemDataFormatter $(OUTPUT_DIR)(+)${s_dir}
+
+    <Command.GCC>
+        "$(CC)" $(DEPS_FLAGS) -c -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(CC_FLAGS) -fno-toplevel-reorder -x c $(DEPS_FLAGS) $(INC) ${src}
+        "$(DLINK)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(DLINK_COMMON) -u $(IMAGE_ENTRY_POINT) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(CC_FLAGS)
+        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
+        OemDataFormatter $(OUTPUT_DIR)(+)${s_dir}
+
+    <Command.CLANGPDB>
+        "$(CC)" $(DEPS_FLAGS) -c -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj -O0 -fkeep-static-consts --language=c $(DEPS_FLAGS) $(INC) ${src}
+        "$(DLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll /NODEFAULTLIB /ENTRY:main /SUBSYSTEM:CONSOLE $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
+        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
+        OemDataFormatter $(OUTPUT_DIR)(+)${s_dir}
+# MU_CHANGE END
 
 [Masm16-Code-File]
     <InputFile>
