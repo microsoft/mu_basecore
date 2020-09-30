@@ -948,13 +948,391 @@ Done:
   return Status;
 }
 
+// MU_CHANGE START add functions for getting version information from .rsrc section
 /**
-  Check whether signature is in specified database.
+  Get VERSIONINFO resource resource directory.
+
+  @param[in]  BaseResourceDir     Root resource directory of .rsrc section
+  @param[in]  CurResourceDir      Parent directory to search through
+  @param[out] VersionResDir       VERSIONINFO directory, or NULL if none are found
+
+  @retval EFI_SUCCESS             Finished the search without any error.
+  @retval Others                  Error occurred in the search of directories.
+
+**/
+// TODO: Add error checking
+// i.e. Malware can contain directory cycles, making this spin
+EFI_STATUS
+GetVersionDirectory (
+  IN  EFI_IMAGE_RESOURCE_DIRECTORY  *BaseResourceDir,
+  IN  EFI_IMAGE_RESOURCE_DIRECTORY  *CurResourceDir,
+  OUT EFI_IMAGE_RESOURCE_DIRECTORY  **VersionResDir
+  )
+{
+  UINT16                                 NumEntries;
+  UINT16                                 Index;
+  EFI_STATUS                             Status;
+  EFI_IMAGE_RESOURCE_DIRECTORY_ENTRY     *CurEntry;
+  EFI_IMAGE_RESOURCE_DIRECTORY           *FoundVersionResDir;
+
+  FoundVersionResDir = NULL;
+  NumEntries = CurResourceDir->NumberOfNamedEntries + CurResourceDir->NumberOfIdEntries;
+  CurEntry = (EFI_IMAGE_RESOURCE_DIRECTORY_ENTRY *)(CurResourceDir + 1);
+  for (Index = 0; Index < NumEntries; Index++) {
+    if (!CurEntry->u1.s.NameIsString && CurEntry->u1.Id == EFI_IMAGE_RT_VERSION_ID) {
+      *VersionResDir = (EFI_IMAGE_RESOURCE_DIRECTORY *)((UINT8 *) BaseResourceDir + CurEntry->u2.s.OffsetToDirectory);
+      return EFI_SUCCESS;
+    }
+
+    if (CurEntry->u2.s.DataIsDirectory) {
+      Status = GetVersionDirectory (BaseResourceDir,
+                    (EFI_IMAGE_RESOURCE_DIRECTORY *)((UINT8 *) BaseResourceDir + CurEntry->u2.s.OffsetToDirectory),
+                    &FoundVersionResDir);
+
+      if (EFI_ERROR (Status)) {
+          *VersionResDir = NULL;
+          return Status;
+      }
+
+      if (FoundVersionResDir) {
+        break;
+      }
+    }
+
+    CurEntry++;
+  }
+
+  *VersionResDir = FoundVersionResDir;
+  return EFI_SUCCESS;
+}
+
+/**
+  Get version resource entries from VERSIONINFO directory.
+
+  @param[in]  BaseResourceDir         Root resource directory of .rsrc section
+  @param[in]  CurResourceDir          VERSIONINFO resource directory
+  @param[out] VersionRecordEntries    Struct populated with SBAT data from resource
+
+  @retval EFI_SUCCESS                 Finished without any error.
+  @retval Others                      Error occurred in search through VERSIONINFO directories.
+
+**/
+EFI_STATUS
+GetVersionRecordEntriesFromDirectory (
+  IN EFI_IMAGE_SECTION_HEADER       *RsrcSection,
+  IN  EFI_IMAGE_RESOURCE_DIRECTORY  *BaseResourceDir,
+  IN  EFI_IMAGE_RESOURCE_DIRECTORY  *VersionResourceDir,
+  OUT VERSION_RECORD_ENTRIES        *VersionRecordEntries
+  )
+{
+  EFI_IMAGE_RESOURCE_DIRECTORY_ENTRY   *ParentDir;
+  EFI_IMAGE_RESOURCE_DIRECTORY         *VersionFieldDir;
+  EFI_IMAGE_RESOURCE_DATA_ENTRY        *RTVersionDataEntry;
+  EFI_IMAGE_VS_VERSIONINFO             *VERSIONINFO;
+  EFI_IMAGE_STRING_FILE_INFO           *StringFileInfo;
+  EFI_IMAGE_STRING_TABLE               *StringTable;
+  EFI_IMAGE_STRING_ENTRY               *StringEntry;
+  UINT32                               VersionInfoBytesRead;
+  UINT32                               StringFileInfoBytesRead;
+  UINT32                               StringTableBytesRead;
+  UINT32                               StringEntryPaddingBytes;
+  UINT32                               StringTablePaddingBytes;
+  UINTN                                SzKeyLen;
+  CHAR16                               *StringValue;
+
+
+  ParentDir = (EFI_IMAGE_RESOURCE_DIRECTORY_ENTRY *)(VersionResourceDir + 1);
+  if (!ParentDir->u2.s.DataIsDirectory) {
+    DEBUG ((DEBUG_ERROR, "ParentDir is not a directory\n"));
+    return EFI_NOT_FOUND;
+  }
+
+  VersionFieldDir = (EFI_IMAGE_RESOURCE_DIRECTORY *)((UINT8 *) BaseResourceDir + ParentDir->u2.s.OffsetToDirectory);
+  if (VersionFieldDir->NumberOfIdEntries + VersionFieldDir->NumberOfNamedEntries != 1) {
+    DEBUG ((DEBUG_ERROR, "Multiple Version Field entries\n"));
+    return EFI_NOT_FOUND;
+  }
+
+  RTVersionDataEntry = (EFI_IMAGE_RESOURCE_DATA_ENTRY *)((UINT8 *) BaseResourceDir 
+                        + ((EFI_IMAGE_RESOURCE_DIRECTORY_ENTRY *)(VersionFieldDir + 1))->u2.OffsetToData);
+
+  VERSIONINFO = (EFI_IMAGE_VS_VERSIONINFO *) (
+                  mImageBase + (RTVersionDataEntry->OffsetToData 
+                  - RsrcSection->VirtualAddress + RsrcSection->PointerToRawData));
+  
+  if (VERSIONINFO->FixedFileInfo.Signature != EFI_IMAGE_VS_FIXEDFILEINFO_SIGNATURE) {
+    DEBUG ((DEBUG_ERROR, "Invalid VS_FIXEDFILEINFO Signature\n"));
+    return EFI_NOT_FOUND;
+  }
+
+  VersionRecordEntries->FileVersion[0] = (UINT16) (VERSIONINFO->FixedFileInfo.FileVersionMS >> 16);
+  VersionRecordEntries->FileVersion[1] = (UINT16) (VERSIONINFO->FixedFileInfo.FileVersionMS & 0xffff);
+  VersionRecordEntries->FileVersion[2] = (UINT16) (VERSIONINFO->FixedFileInfo.FileVersionLS >> 16);
+  VersionRecordEntries->FileVersion[3] = (UINT16) (VERSIONINFO->FixedFileInfo.FileVersionLS & 0xffff);  
+  VersionInfoBytesRead = sizeof (EFI_IMAGE_VS_VERSIONINFO) - sizeof (VERSIONINFO->Padding);
+  for (StringFileInfo = (EFI_IMAGE_STRING_FILE_INFO *)(VERSIONINFO + 1);
+       VersionInfoBytesRead < VERSIONINFO->Length;) {
+    if (StringFileInfo->ValueLength != 0) {
+      break;
+    }
+
+    if (StrCmp (StringFileInfo->SzKey, EFI_IMAGE_STRING_FILE_INFO_SZ_KEY) == 0) {
+      StringFileInfoBytesRead = sizeof (EFI_IMAGE_STRING_FILE_INFO) - sizeof (StringFileInfo->Children);
+      for (StringTable = StringFileInfo->Children; StringFileInfoBytesRead < StringFileInfo->Length;) {
+        if (StringTable->ValueLength != 0) {
+          break;
+        }
+
+        StringTableBytesRead = sizeof (EFI_IMAGE_STRING_TABLE) - sizeof (StringTable->Children);
+        for (StringEntry = StringTable->Children; StringTableBytesRead < StringTable->Length;) {
+          if (StringEntry->Type == EFI_IMAGE_VERSION_INFO_TYPE_TEXT) {
+            SzKeyLen = StrLen (StringEntry->SzKey) + 1;
+            StringEntryPaddingBytes = (sizeof (StringEntry->Length)
+                                        + sizeof (StringEntry->ValueLength)
+                                        + sizeof (StringEntry->Type)
+                                        + SzKeyLen * sizeof (CHAR16)) % 4;
+            StringValue = (CHAR16 *)( (UINT8 *)StringEntry->SzKey + SzKeyLen * sizeof (CHAR16) + StringEntryPaddingBytes);
+            if (StrCmp (StringEntry->SzKey, VERSION_RECORD_CERT_COMPANY_NAME_STR) == 0) {
+              VersionRecordEntries->CompanyName = StringValue;
+            } else if (StrCmp (StringEntry->SzKey, VERSION_RECORD_CERT_ORIGINAL_FILENAME_STR) == 0) {
+              VersionRecordEntries->OriginalFilename = StringValue;
+            }
+          }
+
+          StringTablePaddingBytes = StringEntry->Length % 4 ? 2 : 0;
+          StringTableBytesRead += StringEntry->Length + StringTablePaddingBytes;
+          StringEntry = (EFI_IMAGE_STRING_ENTRY *)((UINT8 *) StringEntry + StringEntry->Length + StringTablePaddingBytes);
+        }
+
+        StringFileInfoBytesRead += StringTable->Length;
+        StringTable = (EFI_IMAGE_STRING_TABLE *)((UINT8 *) StringTable + StringTable->Length);
+      }
+    }
+
+    VersionInfoBytesRead += StringFileInfo->Length;
+    StringFileInfo = (EFI_IMAGE_STRING_FILE_INFO *)((UINT8 *) StringFileInfo + StringFileInfo->Length);
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Get version resource entries from PE image. 
+  Caution: This function should only be used after an image signature has been verified by db.
+
+  @param[out] VersionRecordEntries    Struct populated with version information from .rsrc se
+
+  @retval EFI_SUCCESS                 Finished without any error.
+  @retval Others                      Error occurred in search through VERSIONINFO directories.
+
+**/
+EFI_STATUS
+GetVersionRecordEntries (
+  OUT VERSION_RECORD_ENTRIES    *VersionRecordEntries
+  )
+{
+  EFI_IMAGE_SECTION_HEADER             *RsrcSection;
+  EFI_IMAGE_SECTION_HEADER             *Section;
+  EFI_IMAGE_RESOURCE_DIRECTORY         *BaseResourceDir;
+  EFI_IMAGE_RESOURCE_DIRECTORY         *VersionDir;
+  UINTN                                Index;
+
+  RsrcSection = NULL;
+  Section = (EFI_IMAGE_SECTION_HEADER *) (
+              mImageBase +
+              mPeCoffHeaderOffset +
+              sizeof (UINT32) +
+              sizeof (EFI_IMAGE_FILE_HEADER) +
+              mNtHeader.Pe32->FileHeader.SizeOfOptionalHeader
+            );
+  for (Index = 0; Index < mNtHeader.Pe32->FileHeader.NumberOfSections; Index++) {
+    if (AsciiStrCmp (Section->Name, RESOURCE_SECTION_NAME) == 0) {
+      RsrcSection = Section;
+      break;
+    }
+
+    Section++;
+ }
+
+  if (!RsrcSection) {
+    return EFI_NOT_FOUND;
+  }
+
+  BaseResourceDir = (EFI_IMAGE_RESOURCE_DIRECTORY *)((UINT8 *) mImageBase + RsrcSection->PointerToRawData);
+  GetVersionDirectory (BaseResourceDir, BaseResourceDir, &VersionDir);
+  if (!VersionDir) {
+    return EFI_NOT_FOUND;
+  }
+
+  return GetVersionRecordEntriesFromDirectory (RsrcSection, BaseResourceDir, VersionDir, VersionRecordEntries); 
+}
+
+/**
+  Determine if a given image satisfies a given version record cert.
+
+  @param[in]  Cert                  Version record rule to check if image satisfies
+  @param[in]  VersionRecordEntries  Version metadata to check against version record
+  @param[out] isFound               True if given version record cert is satisfied, false otherwise
+
+  @retval EFI_SUCCESS               Finished without any error.
+  @retval EFI_NOT_FOUND             Required Version Record information missing from VersionRecordEntries
+  @retval EFI_INVALID_PARAMETER     Invalid Cert
+
+**/
+EFI_STATUS
+SatisfiesVersionRecord (
+  IN EFI_CERT_VERSION_RECORD    *Cert,
+  IN VERSION_RECORD_ENTRIES     *VersionRecordEntries,
+  OUT BOOLEAN                   *IsFound
+  )
+{
+  UINTN     Index;
+  UINT16    CurCompareRule; 
+
+  if (!Cert) {
+    *IsFound = FALSE;
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (Cert->CompanyNameSize != 0) {
+    if (!VersionRecordEntries || !VersionRecordEntries->CompanyName) {
+      *IsFound = FALSE;
+      return EFI_NOT_FOUND;
+    }
+
+    if (StrCmp (VersionRecordEntries->CompanyName, (CHAR16 *)(Cert + 1)) != 0) {
+      *IsFound = FALSE;
+      return EFI_SUCCESS;
+    }
+  }
+
+  if (Cert->OriginalFilenameSize != 0) {
+    if (!VersionRecordEntries || !VersionRecordEntries->OriginalFilename) {
+      *IsFound = FALSE;
+      return EFI_NOT_FOUND;
+    }
+
+    if (StrCmp (VersionRecordEntries->OriginalFilename, (CHAR16 *)((UINT8 *)(Cert + 1) + Cert->CompanyNameSize)) != 0) {
+      *IsFound = FALSE;
+      return EFI_SUCCESS;
+    }
+  }
+
+  for (Index = 0; Index < sizeof (Cert->FileVersion) / sizeof (Cert->FileVersion[0]); Index++) {
+    switch (Index) {
+    case 0:
+      CurCompareRule = Cert->u1.s1.Rule1;
+      break;
+    
+    case 1:
+      CurCompareRule = Cert->u1.s1.Rule2;
+      break;
+
+    case 2:
+      CurCompareRule = Cert->u1.s1.Rule3;
+      break;
+    
+    case 3:
+      CurCompareRule = Cert->u1.s1.Rule4;
+      break;
+    }
+
+    switch (CurCompareRule) {
+    case VERSION_RECORD_RULE_WILDCARD:
+      continue;
+    
+    case VERSION_RECORD_RULE_EQUAL:
+      if (!VersionRecordEntries) {
+        *IsFound = FALSE;
+        return EFI_NOT_FOUND;
+      }
+
+      if (VersionRecordEntries->FileVersion[Index] != Cert->FileVersion[Index]) {
+        *IsFound = FALSE;
+        return EFI_SUCCESS;
+      }
+      break;
+
+    case VERSION_RECORD_RULE_NOT_EQUAL:
+      if (!VersionRecordEntries) {
+        *IsFound = FALSE;
+        return EFI_NOT_FOUND;
+      }
+
+      if (VersionRecordEntries->FileVersion[Index] == Cert->FileVersion[Index]) {
+        *IsFound = FALSE;
+        return EFI_SUCCESS;
+      }
+      break;
+
+    case VERSION_RECORD_RULE_LESS_THAN:
+      if (!VersionRecordEntries) {
+        *IsFound = FALSE;
+        return EFI_NOT_FOUND;
+      }
+
+      if (VersionRecordEntries->FileVersion[Index] >= Cert->FileVersion[Index]) {
+        *IsFound = FALSE;
+        return EFI_SUCCESS;
+      }
+      break;
+    
+    case VERSION_RECORD_RULE_GREATER_THAN:
+      if (!VersionRecordEntries) {
+        *IsFound = FALSE;
+        return EFI_NOT_FOUND;
+      }
+
+      if (VersionRecordEntries->FileVersion[Index] <= Cert->FileVersion[Index]) {
+        *IsFound = FALSE;
+        return EFI_SUCCESS;
+      }
+      break;
+
+    case VERSION_RECORD_RULE_LEQ:
+      if (!VersionRecordEntries) {
+        *IsFound = FALSE;
+        return EFI_NOT_FOUND;
+      }
+
+      if (VersionRecordEntries->FileVersion[Index] > Cert->FileVersion[Index]) {
+        *IsFound = FALSE;
+        return EFI_SUCCESS;
+      }
+      break;
+
+    case VERSION_RECORD_RULE_GEQ:
+      if (!VersionRecordEntries) {
+        *IsFound = FALSE;
+        return EFI_NOT_FOUND;
+      }
+
+      if (VersionRecordEntries->FileVersion[Index] < Cert->FileVersion[Index]) {
+        *IsFound = FALSE;
+        return EFI_SUCCESS;
+      }
+      break;
+    
+    default:
+      *IsFound = FALSE;
+      DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: Invalid compare rule in version record cert.\n"));
+      return EFI_INVALID_PARAMETER;
+    }
+  }
+
+  *IsFound = TRUE;  
+  return EFI_SUCCESS;
+}
+// MU_CHANGE END add functions for getting version information from .rsrc section
+
+/**
+  Check whether signature is in specified database or satisfies SBAT rule in database.
 
   @param[in]  VariableName        Name of database variable that is searched in.
   @param[in]  Signature           Pointer to signature that is searched for.
   @param[in]  CertType            Pointer to hash algorithm.
   @param[in]  SignatureSize       Size of Signature.
+  @param[in]  VersionRecordEntries         SBAT metadata from .rsrc section, or NULL if none exist // MU_CHANGE -add SBAT metadata param
   @param[out] IsFound             Search result. Only valid if EFI_SUCCESS returned
 
   @retval EFI_SUCCESS             Finished the search without any error.
@@ -963,11 +1341,12 @@ Done:
 **/
 EFI_STATUS
 IsSignatureFoundInDatabase (
-  IN  CHAR16            *VariableName,
-  IN  UINT8             *Signature,
-  IN  EFI_GUID          *CertType,
-  IN  UINTN             SignatureSize,
-  OUT BOOLEAN           *IsFound
+  IN  CHAR16                    *VariableName,
+  IN  UINT8                     *Signature,
+  IN  EFI_GUID                  *CertType,
+  IN  UINTN                     SignatureSize,
+  IN  VERSION_RECORD_ENTRIES    *VersionRecordEntries,  // MU_CHANGE -add SBAT metadata param
+  OUT BOOLEAN                   *IsFound
   )
 {
   EFI_STATUS          Status;
@@ -1001,6 +1380,15 @@ IsSignatureFoundInDatabase (
     return EFI_OUT_OF_RESOURCES;
   }
 
+  // MU_CHANGE START -add SBAT
+  //
+  // Default behavior for db when no version record certs are present
+  //
+  if (CompareGuid (CertType, &gEfiCertVersionRecordResourceGuid) && StrCmp(VariableName, EFI_IMAGE_SECURITY_DATABASE) == 0) {
+    *IsFound = TRUE;
+  }
+  // MU_CHANGE END -add SBAT
+
   Status = gRT->GetVariable (VariableName, &gEfiImageSecurityDatabaseGuid, NULL, &DataSize, Data);
   if (EFI_ERROR (Status)) {
     goto Done;
@@ -1012,23 +1400,44 @@ IsSignatureFoundInDatabase (
   while ((DataSize > 0) && (DataSize >= CertList->SignatureListSize)) {
     CertCount = (CertList->SignatureListSize - sizeof (EFI_SIGNATURE_LIST) - CertList->SignatureHeaderSize) / CertList->SignatureSize;
     Cert      = (EFI_SIGNATURE_DATA *) ((UINT8 *) CertList + sizeof (EFI_SIGNATURE_LIST) + CertList->SignatureHeaderSize);
-    if ((CertList->SignatureSize == sizeof(EFI_SIGNATURE_DATA) - 1 + SignatureSize) && (CompareGuid(&CertList->SignatureType, CertType))) {
+    if (((CertList->SignatureSize == sizeof(EFI_SIGNATURE_DATA) - 1 + SignatureSize) || SignatureSize == 0) && (CompareGuid(&CertList->SignatureType, CertType))) { // MU_CHANGE - add check for SBAT
       for (Index = 0; Index < CertCount; Index++) {
-        if (CompareMem (Cert->SignatureData, Signature, SignatureSize) == 0) {
-          //
-          // Find the signature in database.
-          //
-          *IsFound = TRUE;
-          //
-          // Entries in UEFI_IMAGE_SECURITY_DATABASE that are used to validate image should be measured
-          //
-          if (StrCmp(VariableName, EFI_IMAGE_SECURITY_DATABASE) == 0) {
-            SecureBootHook (VariableName, &gEfiImageSecurityDatabaseGuid, CertList->SignatureSize, Cert);
-          }
-          break;
-        }
+        // MU_CHANGE START add check for SBAT
+        if (CompareGuid (&CertList->SignatureType, &gEfiCertVersionRecordResourceGuid)) {
+          *IsFound = FALSE;
+          Status = SatisfiesVersionRecord ((EFI_CERT_VERSION_RECORD *) &Cert->SignatureData, VersionRecordEntries, IsFound);
+          if (EFI_ERROR (Status)) {
+            if (StrCmp(VariableName, EFI_IMAGE_SECURITY_DATABASE1) == 0) {
+              *IsFound = TRUE;
+            }
 
-        Cert = (EFI_SIGNATURE_DATA *) ((UINT8 *) Cert + CertList->SignatureSize);
+            goto Done;
+          }
+
+          if (*IsFound) {
+            if (StrCmp(VariableName, EFI_IMAGE_SECURITY_DATABASE) == 0) {
+              SecureBootHook (VariableName, &gEfiImageSecurityDatabaseGuid, CertList->SignatureSize, Cert);
+            }
+            break;
+          }
+
+          Cert = (EFI_SIGNATURE_DATA *) ((UINT8 *) Cert + ((EFI_CERT_VERSION_RECORD *) Cert)->RecordSize);
+        } else { // MU_CHANGE END add check for SBAT
+          if (CompareMem (Cert->SignatureData, Signature, SignatureSize) == 0) {
+            //
+            // Find the signature in database.
+            //
+            *IsFound = TRUE;
+            //
+            // Entries in UEFI_IMAGE_SECURITY_DATABASE that are used to validate image should be measured
+            //
+            if (StrCmp(VariableName, EFI_IMAGE_SECURITY_DATABASE) == 0) {
+              SecureBootHook (VariableName, &gEfiImageSecurityDatabaseGuid, CertList->SignatureSize, Cert);
+            }
+            break;
+          }
+          Cert = (EFI_SIGNATURE_DATA *) ((UINT8 *) Cert + CertList->SignatureSize);
+        }
       }
 
       if (*IsFound) {
@@ -1660,6 +2069,8 @@ DxeImageVerificationHandler (
   EFI_STATUS                           HashStatus;
   EFI_STATUS                           DbStatus;
   BOOLEAN                              IsFound;
+  UINTN                                Index; // MU_CHANGE - SBAT
+  VERSION_RECORD_ENTRIES               VersionRecordEntries; // MU_CHANGE - SBAT
 
   SignatureList     = NULL;
   SignatureListSize = 0;
@@ -1669,6 +2080,13 @@ DxeImageVerificationHandler (
   Action            = EFI_IMAGE_EXECUTION_AUTH_UNTESTED;
   IsVerified        = FALSE;
   IsFound           = FALSE;
+  // MU_CHANGE START add SBAT
+  VersionRecordEntries.CompanyName = NULL;
+  VersionRecordEntries.OriginalFilename = NULL;
+  for (Index = 0; Index < sizeof (VersionRecordEntries.FileVersion) / sizeof (VersionRecordEntries.FileVersion[0]); Index++) {
+    VersionRecordEntries.FileVersion[Index] = 0;
+  }
+  // MU_CHANGE END add SBAT
 
   //
   // Check the image type and get policy setting.
@@ -1795,7 +2213,7 @@ DxeImageVerificationHandler (
     if (NumberOfRvaAndSizes > EFI_IMAGE_DIRECTORY_ENTRY_SECURITY) {
       SecDataDir = (EFI_IMAGE_DATA_DIRECTORY *) &mNtHeader.Pe32Plus->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY];
     }
-  }
+  } 
 
   //
   // Start Image Validation.
@@ -1815,8 +2233,10 @@ DxeImageVerificationHandler (
                  mImageDigest,
                  &mCertType,
                  mImageDigestSize,
+                 NULL, // MU_CHANGE add SBAT param
                  &IsFound
                  );
+
     if (EFI_ERROR (DbStatus) || IsFound) {
       //
       // Image Hash is in forbidden database (DBX).
@@ -1830,12 +2250,56 @@ DxeImageVerificationHandler (
                  mImageDigest,
                  &mCertType,
                  mImageDigestSize,
+                 NULL, // MU_CHANGE add SBAT param
                  &IsFound
                  );
     if (!EFI_ERROR (DbStatus) && IsFound) {
       //
       // Image Hash is in allowed database (DB).
       //
+
+      // MU_CHANGE START add SBAT checks
+      //
+      // Check version record certs in dbx and db
+      //
+      GetVersionRecordEntries (&VersionRecordEntries);
+      DbStatus = IsSignatureFoundInDatabase (
+                  EFI_IMAGE_SECURITY_DATABASE1,
+                  NULL,
+                  &gEfiCertVersionRecordResourceGuid,
+                  0,
+                  &VersionRecordEntries,
+                  &IsFound
+                  );
+
+      if (EFI_ERROR (DbStatus)) {
+        DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image %s hash is in DB but does contain required version information.\n", mHashTypeStr));
+        goto Failed;
+      }
+
+      if (IsFound) {
+        DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image %s hash is in DB but violates version record cert in DBX.\n", mHashTypeStr));
+        goto Failed;
+      }
+
+      DbStatus = IsSignatureFoundInDatabase (
+                     EFI_IMAGE_SECURITY_DATABASE,
+                     NULL,
+                     &gEfiCertVersionRecordResourceGuid,
+                     0,
+                     &VersionRecordEntries,
+                     &IsFound
+                     );
+      if (EFI_ERROR (DbStatus)) {
+        DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image %s hash is in DB but does contain required version information.\n", mHashTypeStr));
+        goto Failed;
+      }
+
+      if (!IsFound) {
+        DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image %s hash is in DB but does not satisfy any version record in DB.\n", mHashTypeStr));
+        goto Failed;
+      }
+      // MU_CHANGE END add SBAT checks
       return EFI_SUCCESS;
     }
 
@@ -1931,13 +2395,35 @@ DxeImageVerificationHandler (
                  mImageDigest,
                  &mCertType,
                  mImageDigestSize,
+                 NULL, // MU_CHANGE add SBAT param
                  &IsFound
                  );
+
     if (EFI_ERROR (DbStatus) || IsFound) {
       Action = EFI_IMAGE_EXECUTION_AUTH_SIG_FOUND;
       DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image is signed but %s hash of image is found in DBX.\n", mHashTypeStr));
       IsVerified = FALSE;
       break;
+    } else {
+      GetVersionRecordEntries (&VersionRecordEntries);
+      DbStatus = IsSignatureFoundInDatabase (
+                   EFI_IMAGE_SECURITY_DATABASE1,
+                   NULL,
+                   &gEfiCertVersionRecordResourceGuid,
+                   0,
+                   &VersionRecordEntries,
+                   &IsFound
+                   );
+      if (EFI_ERROR (DbStatus) || IsFound) {
+        Action = EFI_IMAGE_EXECUTION_AUTH_SIG_FOUND;
+        IsVerified = FALSE;
+        if (EFI_ERROR (DbStatus)) {
+          DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image is signed but does not conatain required version information.\n"));
+        } else {
+          DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image is signed but violates version record cert in DBX.\n"));
+        }
+        break;
+      }
     }
 
     if (!IsVerified) {
@@ -1946,13 +2432,35 @@ DxeImageVerificationHandler (
                    mImageDigest,
                    &mCertType,
                    mImageDigestSize,
+                   NULL, // MU_CHANGE add SBAT param
                    &IsFound
                    );
-      if (!EFI_ERROR (DbStatus) && IsFound) {
-        IsVerified = TRUE;
-      } else {
+      // MU_CHANGE START - add SBAT checks
+      if (EFI_ERROR (DbStatus) || !IsFound) {
         DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image is signed but signature is not allowed by DB and %s hash of image is not found in DB/DBX.\n", mHashTypeStr));
+      } else {
+        
+        GetVersionRecordEntries (&VersionRecordEntries);
+        DbStatus = IsSignatureFoundInDatabase (
+                     EFI_IMAGE_SECURITY_DATABASE,
+                     NULL,
+                     &gEfiCertVersionRecordResourceGuid,
+                     0,
+                     &VersionRecordEntries,
+                     &IsFound
+                     );
+        if (!EFI_ERROR (DbStatus) && IsFound) {
+          IsVerified = TRUE;
+        } else {
+          if (EFI_ERROR (DbStatus)) {
+            DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image is signed and is allowed by DB but does not contain required version information.\n"));
+          } else {
+            DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image is signed and is allowed by DB but does not satisfy any version record in DB.\n"));
+          }
+          
+        }
       }
+      // MU_CHANGE END add SBAT checks
     }
   }
 

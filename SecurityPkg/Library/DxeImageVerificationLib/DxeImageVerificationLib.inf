@@ -88,6 +88,7 @@
   gEfiCertX509Sha384Guid                ## SOMETIMES_CONSUMES    ## GUID     # Unique ID for the type of the signature.
   gEfiCertX509Sha512Guid                ## SOMETIMES_CONSUMES    ## GUID     # Unique ID for the type of the signature.
   gEfiCertPkcs7Guid                     ## SOMETIMES_CONSUMES    ## GUID     # Unique ID for the type of the certificate.
+  gEfiCertVersionRecordResourceGuid                      ## SOMETIMES_CONSUMES    ## GUID     # Unique ID for the type of the certificate.
 
 [Pcd]
   gEfiSecurityPkgTokenSpaceGuid.PcdOptionRomImageVerificationPolicy          ## SOMETIMES_CONSUMES

@@ -69,6 +69,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define HASHALG_SHA512                         0x00000004
 #define HASHALG_MAX                            0x00000005
 
+// MU_CHANGE START - add definitions for RSRC for SBAT
+// Section name for Resource section
+//
+#define RESOURCE_SECTION_NAME             ".rsrc"
+#define RESOURCE_SECTION_NAME_LEN         6
+// MU_CHANGE END - add definitions for RSRC for SBAT
+
 //
 // Set max digest size as SHA512 Output (64 bytes) by far
 //
@@ -197,5 +204,19 @@ typedef struct {
   //
   HASH_FINAL               HashFinal;
 } HASH_TABLE;
+
+// MU_CHANGE START - add definitions for versioning for SBAT
+#define VERSION_RECORD_CERT_COMPANY_NAME_STR       L"CompanyName"
+#define VERSION_RECORD_CERT_ORIGINAL_FILENAME_STR  L"OriginalFilename"
+
+//
+// Version Record Information struct
+//
+typedef struct {
+  CHAR16                   *CompanyName;
+  CHAR16                   *OriginalFilename;
+  UINT16                   FileVersion[4];
+} VERSION_RECORD_ENTRIES;
+// MU_CHANGE END - add definitions for versioning for SBAT
 
 #endif

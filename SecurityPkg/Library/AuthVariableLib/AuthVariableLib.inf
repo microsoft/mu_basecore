@@ -90,3 +90,4 @@
   gEfiCertTypeRsa2048Sha256Guid  ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the type of the certificate.
   gEfiCertPkcs7Guid              ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the type of the certificate.
   gEfiCertX509Guid               ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the type of the signature.
+  gEfiCertVersionRecordResourceGuid ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the SBAT rule. ## MU_CHANGE add SBAT resource guid

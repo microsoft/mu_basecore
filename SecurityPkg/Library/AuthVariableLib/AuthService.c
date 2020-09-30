@@ -40,19 +40,20 @@ CONST UINT8 mSha256OidValue[] = { 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02
 // These data are used to perform SignatureList format check while setting PK/KEK variable.
 //
 EFI_SIGNATURE_ITEM mSupportSigItem[] = {
-//{SigType,                       SigHeaderSize,   SigDataSize  }
-  {EFI_CERT_SHA256_GUID,          0,               32           },
-  {EFI_CERT_RSA2048_GUID,         0,               256          },
-  {EFI_CERT_RSA2048_SHA256_GUID,  0,               256          },
-  {EFI_CERT_SHA1_GUID,            0,               20           },
-  {EFI_CERT_RSA2048_SHA1_GUID,    0,               256          },
-  {EFI_CERT_X509_GUID,            0,               ((UINT32) ~0)},
-  {EFI_CERT_SHA224_GUID,          0,               28           },
-  {EFI_CERT_SHA384_GUID,          0,               48           },
-  {EFI_CERT_SHA512_GUID,          0,               64           },
-  {EFI_CERT_X509_SHA256_GUID,     0,               48           },
-  {EFI_CERT_X509_SHA384_GUID,     0,               64           },
-  {EFI_CERT_X509_SHA512_GUID,     0,               80           }
+//{SigType,                                   SigHeaderSize,   SigDataSize  }
+  {EFI_CERT_VERSION_RECORD_RESOURCE_GUID,     0,               ((UINT32) ~0)}, // MU_CHANGE add SBAT as a signature type
+  {EFI_CERT_SHA256_GUID,                      0,               32           },
+  {EFI_CERT_RSA2048_GUID,                     0,               256          },
+  {EFI_CERT_RSA2048_SHA256_GUID,              0,               256          },
+  {EFI_CERT_SHA1_GUID,                        0,               20           },
+  {EFI_CERT_RSA2048_SHA1_GUID,                0,               256          },
+  {EFI_CERT_X509_GUID,                        0,               ((UINT32) ~0)},
+  {EFI_CERT_SHA224_GUID,                      0,               28           },
+  {EFI_CERT_SHA384_GUID,                      0,               48           },
+  {EFI_CERT_SHA512_GUID,                      0,               64           },
+  {EFI_CERT_X509_SHA256_GUID,                 0,               48           },
+  {EFI_CERT_X509_SHA384_GUID,                 0,               64           },
+  {EFI_CERT_X509_SHA512_GUID,                 0,               80           }
 };
 
 /**

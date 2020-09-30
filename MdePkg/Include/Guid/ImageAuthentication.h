@@ -120,7 +120,52 @@ typedef struct {
   EFI_TIME            TimeOfRevocation;
 } EFI_CERT_X509_SHA512;
 
+// MU_CHANGE START - add SBAT version record struct
+typedef struct {
+  UINT16 RecordSize;                // Size of record in bytes
+  UINT16 StrucVersion;              // Version of EFI_CERT_VERSION_RECORD used
+  union {                           // Defines operator used for FileVersion comparison
+    struct {                        // Each rule defines operator to compare certain 16 bit word of fileversion
+      UINT16 Rule1:4;         
+      UINT16 Rule2:4;
+      UINT16 Rule3:4;
+      UINT16 Rule4:4;
+    } s1;
+    UINT16 CompareRule;
+  } u1;
+  UINT8 CompanyNameSize;            // Size of CompanyName in bytes, may be == 0
+  UINT8 OriginalFilenameSize;       // Size of OriginalFilenameSize in bytes, may be == 0
+  UINT16 FileVersion[4];            // Four 16 bit words to encode FileVersion to compare against according to CompareRule
+  /* CHAR16 CompanName[]; */        // Null-terminated CompanyName string, may be null
+  /* CHAR16 OriginalFilename[]; */  // Null-terminated OriginalFilename string, may be null
+  /* UINT8 Padding[]; */            // Enough zeroed bytes such that the struct ends on a 64 bit boundary
+} EFI_CERT_VERSION_RECORD;
+
 #pragma pack()
+
+///
+/// Values for CompareRule member of EFI_CERT_VERISION_RECORD 
+///
+#define VERSION_RECORD_RULE_WILDCARD      0
+#define VERSION_RECORD_RULE_EQUAL         1
+#define VERSION_RECORD_RULE_NOT_EQUAL     2
+#define VERSION_RECORD_RULE_LESS_THAN     3
+#define VERSION_RECORD_RULE_GREATER_THAN  4
+#define VERSION_RECORD_RULE_LEQ           5
+#define VERSION_RECORD_RULE_GEQ           6
+
+#define VERSION_RECORD_RULE_VERSION       1
+
+///
+/// This identifies a signature containing a version record. The SignatureHeader size shall
+/// always be 0. The SignatureSize shall always be 16 (size of SignatureOwner component) +
+/// the size of version record cert.
+///
+#define EFI_CERT_VERSION_RECORD_RESOURCE_GUID \
+  { \
+    0x9124f01f, 0x8e10, 0x4409, {0x8c, 0xda, 0x11, 0x56, 0xf3, 0xc0, 0xd4, 0x80} \
+  }
+// MU_CHANGE END - add SBAT version record struct
 
 ///
 /// This identifies a signature containing a SHA-256 hash. The SignatureHeader size shall
@@ -164,7 +209,7 @@ typedef struct {
   }
 
 ///
-/// TThis identifies a signature containing a RSA-2048 signature of a SHA-1 hash.  The
+/// This identifies a signature containing a RSA-2048 signature of a SHA-1 hash.  The
 /// SignatureHeader size shall always be 0. The SignatureSize shall always be 16 (size of
 /// SignatureOwner component) + 256 bytes.
 ///
@@ -342,5 +387,6 @@ extern EFI_GUID gEfiCertX509Sha256Guid;
 extern EFI_GUID gEfiCertX509Sha384Guid;
 extern EFI_GUID gEfiCertX509Sha512Guid;
 extern EFI_GUID gEfiCertPkcs7Guid;
+extern EFI_GUID gEfiCertVersionRecordResourceGuid; // MU_CHANGE add guid for SBAT
 
 #endif

@@ -708,6 +708,11 @@ typedef struct {
   //
 } EFI_IMAGE_RESOURCE_DIRECTORY;
 
+/// MU_CHANGE add EFI_IMAGE_RT_VERSION_ID
+/// ID of RT_VERSION directory entry
+///
+#define EFI_IMAGE_RT_VERSION_ID 16
+
 ///
 /// Resource directory entry format.
 ///
@@ -745,6 +750,106 @@ typedef struct {
   UINT32  CodePage;
   UINT32  Reserved;
 } EFI_IMAGE_RESOURCE_DATA_ENTRY;
+
+/// MU_CHANGE START add information for .rsrc section
+/// Valid Signature Value for EFI_IMAGE_VS_FIXEDFILEINFO
+///
+#define EFI_IMAGE_VS_FIXEDFILEINFO_SIGNATURE 0xFEEF04BD
+
+///
+/// Version information of EFI image in .rsrc section.
+/// NOTE: Signature, StrucVersion, FileVersionMS, and FileVersionLS are the only relevant fields.
+/// ref: https://docs.microsoft.com/en-us/windows/win32/api/verrsrc/ns-verrsrc-vs_fixedfileinfo
+///
+typedef struct {
+  UINT32   Signature;          ///< Contains the value EFI_IMAGE_VS_FIXEDFILEINFO_SIGNATURE 
+  UINT32   StrucVersion;       ///< Version of EFI_IMAGE_VS_FIXEDFILEINFO.
+  UINT32   FileVersionMS;      ///< Most significant 32 bits of image file version number.
+  UINT32   FileVersionLS;      ///< Least significant 32 buts of image file version number.
+  UINT32   ProductVersionMS;   ///< Most significant 32 bits of image product verison number.
+  UINT32   ProductVersionLS;   ///< Least significant 32 bits of image product version number.
+  UINT32   FileFlagsMask;      ///< Bitmask marking valid bits in FileFlags field.
+  UINT32   FileFlags;          ///< Bitmask to specify boolean attributes of file.
+  UINT32   FileOS;             ///< Specifies OS for which image was designed. 
+  UINT32   FileType;           ///< Specifies general type of image.
+  UINT32   FileSubtype;        ///< Specifies function of file.
+  UINT32   FileDateMS;         ///< Most significant 32 bits of file creation time stamp.
+  UINT32   FileDateLS;         ///< Least significant 32 bits of file creation time stamp.
+} EFI_IMAGE_VS_FIXEDFILEINFO;
+
+///
+/// Value of EFI_IMAGE_STRING_ENTRY Type field to specify StringData is Unicode text 
+///
+#define EFI_IMAGE_VERSION_INFO_TYPE_TEXT 1
+#define EFI_IMAGE_VERSION_INFO_TYPE_BINARY 0
+
+///
+/// String data entry for fields in StringFileInfo.
+/// ref: https://docs.microsoft.com/en-us/windows/win32/menurc/string-str
+///
+typedef struct {
+  UINT16    Length;           ///< Length in bytes of String structure.
+  UINT16    ValueLength;      ///< Size of Value member in 2 byte words.
+  UINT16    Type;             ///< Type of data in string resource.
+  CHAR16    SzKey[1];         ///< Arbitrary, non-empty Unicode string encoded in UTF-16
+  /* UINT16 Padding[] */      ///< Enough UINT16 with value 0 to align Value on 32 bit boundary.
+  /* UINT16 Value[]   */      ///< Null-terminated unicode string.
+} EFI_IMAGE_STRING_ENTRY;
+
+///
+/// String length of EFI_IMAGE_STRING_TABLE SzKey
+///
+#define EFI_IMAGE_STRING_TABLE_SZ_KEY_LEN 9
+
+///
+/// String table that holds strings for StringFileInfo and VarFileInfo,
+///
+typedef struct {
+  UINT16                  Length;                                       ///< Length of StringTable in bytes.
+  UINT16                  ValueLength;                                  ///< Always 0.
+  UINT16                  Type;                                         ///< Type of version resource, 1 for text data, 0 for binary.
+  CHAR16                  SzKey[EFI_IMAGE_STRING_TABLE_SZ_KEY_LEN];     ///< 8-digit hex number stored as Unicode string. 4 MS digits are language id, 4 LS digits represent code page.
+  EFI_IMAGE_STRING_ENTRY  Children[1];                                  ///< Array of one or more EFI_IMAGE_STRING_ENTRY  
+} EFI_IMAGE_STRING_TABLE;
+
+///
+/// SzKey string for StringFileInfo table.
+///
+#define EFI_IMAGE_STRING_FILE_INFO_SZ_KEY L"StringFileInfo"
+#define EFI_IMAGE_STRING_FILE_INFO_SZ_KEY_LEN (sizeof(EFI_IMAGE_STRING_FILE_INFO_SZ_KEY) / sizeof(CHAR16))
+
+///
+/// Table containing arbitrary version information.
+/// ref: https://docs.microsoft.com/en-us/windows/win32/menurc/stringfileinfo
+///
+typedef struct {
+  UINT16   Length;                                              ///< Length of StringFileInfo in bytes.
+  UINT16   ValueLength;                                         ///< Always 0. 
+  UINT16   Type;                                                ///< Type of data in StringFileInfo. 1 for text, 0 for binary data.
+  CHAR16   SzKey[EFI_IMAGE_STRING_FILE_INFO_SZ_KEY_LEN];        ///< The Unicode string L"StringFileInfo"
+  EFI_IMAGE_STRING_TABLE Children[1];                           ///< Array of one or more StringTables
+} EFI_IMAGE_STRING_FILE_INFO;
+
+///
+/// szKey data for EFI_IMAGE_VS_VERSIONINFO
+///
+#define EFI_IMAGE_VERSIONINFO_SZ_KEY L"VS_VERSION_INFO"
+#define EFI_IMAGE_VERSIONINFO_SZ_KEY_LEN (sizeof(EFI_IMAGE_VERSIONINFO_SZ_KEY) / sizeof(CHAR16))
+
+///
+/// Root structure for all version information in .rsrc section.
+/// ref: https://docs.microsoft.com/en-us/windows/win32/menurc/vs-versioninfo
+///
+typedef struct {
+    UINT16                          Length;                                     ///< Length of VS_VERSIONINFO in bytes, not including padding of any children
+    UINT16                          ValueLength;                                ///< Size of VS_FIXEDFILEINFO in bytes
+    UINT16                          Type;                                       ///< Type of data in version resource, 1 for text, 0 for binary data
+    CHAR16                          szKey[EFI_IMAGE_VERSIONINFO_SZ_KEY_LEN];    ///< Unicode string L"VS_VERSION_INFO"
+    UINT16                          Padding;                                    ///< Equals 0
+    EFI_IMAGE_VS_FIXEDFILEINFO      FixedFileInfo;                              ///< FixedFileInfo
+    /* UINT8                        Children[1]; */                             ///< Array of 0 or more STRING_FILE_INFO and 0 or more VAR_FILE_INFO
+} EFI_IMAGE_VS_VERSIONINFO;
+/// MU_CHANGE END add information for .rsrc section
 
 ///
 /// Header format for TE images, defined in the PI Specification, 1.0.
