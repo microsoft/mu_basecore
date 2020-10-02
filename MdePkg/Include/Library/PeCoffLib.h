@@ -229,6 +229,37 @@ PeCoffLoaderGetImageInfo (
   IN OUT PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
   );
 
+// MS_CHANGE_? START
+
+/**
+Retrieves the address of the SecurityCookie from the PE/COFF image.
+
+This function locations the EFI_IMAGE_LOAD_CONFIG_DIRECTORY in the PE/COFF image
+and gets the SecurityCookie field from this structure.  This structure will only
+exist in binaries built with the VS2013/VS2015 compilers without the /GS- flag.
+
+NOTE: Only X64 binaries are supported at the moment
+
+@param  ImageContext              The pointer to the image context structure that
+                                  describes the PE/COFF image that needs to be
+                                  examined by this function.
+@param  SecurityCookieAddress     The pointer that receives the address of the
+                                  security cookie upon successful execution of this function
+
+@retval RETURN_SUCCESS            The information on the PE/COFF image was collected.
+@retval RETURN_INVALID_PARAMETER  ImageContext is NULL.
+@retval RETURN_UNSUPPORTED        The PE/COFF image is not supported.
+
+**/
+RETURN_STATUS
+EFIAPI
+PeCoffLoaderGetSecurityCookieAddress (
+  IN OUT PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext,
+  OUT    UINT64                        **SecurityCookieAddress
+  );
+
+// END
+
 /**
   Applies relocation fixups to a PE/COFF image that was loaded with PeCoffLoaderLoadImage().
 
