@@ -70,6 +70,17 @@
   TcgEventLogRecordLib|SecurityPkg/Library/TcgEventLogRecordLib/TcgEventLogRecordLib.inf
   OemTpm2InitLib|SecurityPkg/Library/OemTpm2InitLibNull/OemTpm2InitLib.inf               ## MS_CHANGE_?
 
+## MU_CHANGE [BEGIN]
+[LibraryClasses.X64, LibraryClasses.IA32]
+!if $(TARGET) == DEBUG
+!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019
+  #if debug is enabled provide StackCookie support lib so that we can link to /GS exports
+  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
+  NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+!endif
+!endif
+## MU_CHANGE [END]
+
 [LibraryClasses.ARM]
   #
   # It is not possible to prevent the ARM compiler for generic intrinsic functions.
