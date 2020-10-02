@@ -100,7 +100,10 @@
   #                  All combinations of Unicode and ASCII strings are supported.
   ##
   PrintLib|Include/Library/PrintLib.h
-
+## MSCHANGE BEGIN
+  ##  @libraryclass  Provides and interface to initialize security cookies
+  BaseBinSecurityLib|Include/Library/BaseBinSecurityLib.h
+## MSCHANGE END
   ##  @libraryclass  Provides an ordered collection data structure.
   OrderedCollectionLib|Include/Library/OrderedCollectionLib.h
 

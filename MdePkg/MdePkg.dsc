@@ -176,6 +176,12 @@
   MdePkg/Library/BaseS3StallLib/BaseS3StallLib.inf
   MdePkg/Library/SmmMemLib/SmmMemLib.inf
   MdePkg/Library/SmmIoLib/SmmIoLib.inf
+  ##MSCHANGE Begin
+!if $(TOOLCHAIN) == VS2017 or $(TOOLCHAIN) == VS2019
+  MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
+  MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+!endif
+  ##MSCHANGE End
   MdePkg/Library/SmmPciExpressLib/SmmPciExpressLib.inf
   MdePkg/Library/SmiHandlerProfileLibNull/SmiHandlerProfileLibNull.inf
   MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
