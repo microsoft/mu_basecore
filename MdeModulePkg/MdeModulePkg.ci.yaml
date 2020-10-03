@@ -91,6 +91,9 @@
 
     ## options defined .pytool/Plugin/LibraryClassCheck
     "LibraryClassCheck": {
+        "IgnoreLibraryClass": [
+            "HwResetSystemLib"          # MU_CHANGE - "Virtual" LibraryClass
+        ],
         "IgnoreHeaderFile": []
     },
 
