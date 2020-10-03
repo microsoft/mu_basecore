@@ -90,6 +90,9 @@
 
     ## options defined ci/Plugin/LibraryClassCheck
     "LibraryClassCheck": {
+        "IgnoreLibraryClass": [
+            "HwResetSystemLib"          # MU_CHANGE - "Virtual" LibraryClass
+        ],
         "IgnoreHeaderFile": []
     },
 

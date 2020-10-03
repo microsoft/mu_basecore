@@ -64,6 +64,7 @@
   PrintLib
   BaseMemoryLib
   CacheMaintenanceLib
+  ResetUtilityLib                        ## MS_CHANGE
 
 [LibraryClasses.X64]
   UefiLib
@@ -74,6 +75,7 @@
   ## SOMETIMES_PRODUCES   ## Variable:L"CapsuleLongModeBuffer" # The long mode buffer used by IA32 Capsule PEIM to call X64 CapsuleCoalesce code to handle >4GB capsule blocks
   gEfiCapsuleVendorGuid
   gEfiFmpCapsuleGuid                            ## SOMETIMES_CONSUMES   ## GUID # FMP capsule GUID
+  gCapsuleArmedResetGuid
 
 [Protocols]
   gEfiCapsuleArchProtocolGuid                   ## PRODUCES
