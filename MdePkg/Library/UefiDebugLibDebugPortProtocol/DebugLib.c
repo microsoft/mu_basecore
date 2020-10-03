@@ -282,11 +282,16 @@ DebugAssert (
     //
     // Generate a Breakpoint, DeadLoop, or NOP based on PCD settings
     //
+    // MS_CHANGE BEGIN UEFI_810
     if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_BREAKPOINT_ENABLED) != 0) {
       CpuBreakpoint ();
-    } else if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_DEADLOOP_ENABLED) != 0) {
+    }
+
+    if ((PcdGet8 (PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_DEADLOOP_ENABLED) != 0) {
       CpuDeadLoop ();
     }
+
+    // MS_CHANGE END UEFI_810
   }
 }
 
