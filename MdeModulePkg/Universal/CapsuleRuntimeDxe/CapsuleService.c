@@ -4,12 +4,15 @@
   It installs the Capsule Architectural Protocol defined in PI1.0a to signify
   the capsule runtime services are ready.
 
-Copyright (c) 2006 - 2020, Intel Corporation. All rights reserved.<BR>
+Copyright (C) Microsoft Corporation. All rights reserved.
+
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "CapsuleService.h"
+
+#include <Library/ResetUtilityLib.h>                  // MS_CHANGE_250018 - ResetSystem refactoring.
 
 //
 // Handle for the installation of Capsule Architecture Protocol.
@@ -221,7 +224,8 @@ UpdateCapsule (
       // will initiate a reset of the platform which is compatible with the passed-in capsule request and will
       // not return back to the caller.
       //
-      EfiResetSystem (EfiResetWarm, EFI_SUCCESS, 0, NULL);
+      // MS_CHANGE_250018 - ResetSystem refactoring.
+      ResetSystemWithSubtype (EfiResetWarm, &gCapsuleArmedResetGuid);
     }
   }
 
