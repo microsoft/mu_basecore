@@ -1,0 +1,5 @@
+{
+  "scope": "global",
+  "name": "Override Validation Pre Build Plugin",
+  "module": "OverrideValidation"
+}
