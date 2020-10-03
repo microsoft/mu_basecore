@@ -11,6 +11,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <PiPei.h>
 #include <Ppi/DxeIpl.h>
+#include <Ppi/DelayedDispatch.h>    // MS_CHANGE
+#include <Ppi/EndOfPeiPhase.h>      // MS_CHANGE
 #include <Ppi/MemoryDiscovered.h>
 #include <Ppi/StatusCode.h>
 #include <Ppi/Reset.h>
@@ -41,6 +43,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <IndustryStandard/PeImage.h>
 #include <Library/PeiServicesTablePointerLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/TimerLib.h>       // MS_CHANGE
 #include <Guid/FirmwareFileSystem2.h>
 #include <Guid/FirmwareFileSystem3.h>
 #include <Guid/AprioriFileName.h>
@@ -207,6 +210,28 @@ EFI_STATUS
 
 #define PEI_CORE_HANDLE_SIGNATURE  SIGNATURE_32('P','e','i','C')
 
+// MS_CHANGE Start
+
+#pragma pack (push, 1)
+
+typedef struct {
+  EFI_GUID                         UniqueId;
+  UINT64                           Context;
+  EFI_DELAYED_DISPATCH_FUNCTION    Function;
+  UINT32                           DispatchTime;
+  UINT32                           usDelay;
+} DELAYED_DISPATCH_ENTRY;
+
+typedef struct {
+  UINT32                    Count;
+  UINT32                    DispCount;
+  DELAYED_DISPATCH_ENTRY    Entry[1];     // Actual size based on PCD PcdDelayedDispatchMaxEntries;
+} DELAYED_DISPATCH_TABLE;
+
+#pragma pack (pop)
+
+// MS_CHANGE End
+
 ///
 /// Pei Core private data structure instance
 ///
@@ -307,6 +332,8 @@ struct _PEI_CORE_INSTANCE {
   // Those Memory Range will be migrated into physical memory.
   //
   HOLE_MEMORY_DATA                  HoleData[HOLE_MAX_NUMBER];
+
+  DELAYED_DISPATCH_TABLE            *DelayedDispatchTable;    // MS_CHANGE
 };
 
 ///
@@ -314,7 +341,6 @@ struct _PEI_CORE_INSTANCE {
 ///
 #define PEI_CORE_INSTANCE_FROM_PS_THIS(a) \
   CR(a, PEI_CORE_INSTANCE, Ps, PEI_CORE_HANDLE_SIGNATURE)
-
 ///
 /// Union of temporarily used function pointers (to save stack space)
 ///
@@ -2037,5 +2063,41 @@ VOID
 PeiReinitializeFv (
   IN  PEI_CORE_INSTANCE  *PrivateData
   );
+
+// MS_CHANGE Start
+
+/**
+ * Delayed Dispatch Ppi function
+ *
+ * @param This
+ * @param Function
+ * @param Context
+ * @param Delay
+ *
+ * @return EFI_STATUS EFIAPI
+ */
+EFI_STATUS
+EFIAPI
+PeiDelayedDispatchRegister (
+  IN  EFI_DELAYED_DISPATCH_PPI       *This,
+  IN  EFI_DELAYED_DISPATCH_FUNCTION  Function,
+  IN  UINT64                         Context,
+  IN  EFI_GUID                       *UniqueId,
+  IN  UINT32                         Delay
+  );
+
+/**
+ * Delayed Dispatch Notify function
+ *
+ * @return EFI_STATUS EFIAPI
+ */
+EFI_STATUS
+EFIAPI
+PeiDelayedDispatchWaitOnUniqueId (
+  IN EFI_DELAYED_DISPATCH_PPI  *This,
+  IN EFI_GUID                  *UniqueId
+  );
+
+// MS_CHANGE End
 
 #endif
