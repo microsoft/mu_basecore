@@ -1,0 +1,9 @@
+{
+    "name": "iasl", 
+    "author_string": "ACPICA.org", 
+    "server_url": "https://api.nuget.org/v3/index.json", 
+    "project_url": "https://www.acpica.org/", 
+    "license_url": "https://www.acpica.org/Licensing", 
+    "description_string": "Open Source ACPI compiler", 
+    "copyright_string": "Copyright (c) 2000 - 2018 Intel Corporation"
+}
