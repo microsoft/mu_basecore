@@ -38,7 +38,7 @@
   PeiServicesLib
   HobLib
   PeimEntryPoint
-  ResetSystemLib
+  HwResetSystemLib                ## MU_CHANGE - Use HW reset from reset arch providers.
   ReportStatusCodeLib
 
 [Ppis]
