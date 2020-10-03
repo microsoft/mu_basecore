@@ -1,0 +1,5 @@
+{
+    "scope": "surfacefamily",
+    "name": "Bmp Image Encoding Check",
+    "module": "BmpCheckPlugin"
+  }
