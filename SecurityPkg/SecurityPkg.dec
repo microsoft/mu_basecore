@@ -97,6 +97,14 @@
   ## @libraryclass  Provides interfaces about firmware TPM measurement.
   #
   TcgEventLogRecordLib|Include/Library/TcgEventLogRecordLib.h
+
+## MU_CHANGE BEGIN
+  ##  @libraryclass  This library can be used to publish TPM EventLog entries
+  ##  for measurements that may have been made prior to driver initialization
+  #
+  Tcg2PreUefiEventLogLib|Include/Library/Tcg2PreUefiEventLogLib.h
+## MU_CHANGE END
+
 [Guids]
   ## Security package token space guid.
   # Include/Guid/SecurityPkgTokenSpace.h
