@@ -298,6 +298,8 @@ EfiGetNextHighMonotonicCount (
   OUT UINT32  *HighCount
   );
 
+// MS_CHANGE [BEGIN] - Move EfiResetSystem out of UefiRuntimeLib and into ResetSystemLib.
+
 /**
   This service is a wrapper for the UEFI Runtime Service ResetSystem().
 
@@ -326,14 +328,15 @@ EfiGetNextHighMonotonicCount (
                       address. For a ResetType of EfiResetPlatformSpecific the data buffer also starts with a Null-terminated
                       string that is followed by an EFI_GUID that describes the specific type of reset to perform.
 **/
-VOID
-EFIAPI
-EfiResetSystem (
-  IN EFI_RESET_TYPE  ResetType,
-  IN EFI_STATUS      ResetStatus,
-  IN UINTN           DataSize,
-  IN VOID            *ResetData OPTIONAL
-  );
+// VOID
+// EFIAPI
+// EfiResetSystem (
+//   IN EFI_RESET_TYPE               ResetType,
+//   IN EFI_STATUS                   ResetStatus,
+//   IN UINTN                        DataSize,
+//   IN VOID                         *ResetData OPTIONAL
+//   );
+// MS_CHANGE [END] - Move EfiResetSystem out of UefiRuntimeLib and into ResetSystemLib.
 
 /**
   This service is a wrapper for the UEFI Runtime Service ConvertPointer().
