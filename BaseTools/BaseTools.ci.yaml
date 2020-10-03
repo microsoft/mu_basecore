@@ -1,0 +1,40 @@
+## @file
+# CI configuration for BaseTools
+#
+# Copyright (c) Microsoft Corporation
+# Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+{
+    ## options defined .pytool/Plugin/LicenseCheck
+    "LicenseCheck": {
+        "skip": True,
+        "IgnoreFiles": []
+    },
+    "EccCheck": {
+        "skip": True,
+    },
+    ## options defined .pytool/Plugin/SpellCheck
+    "SpellCheck": {
+        "AuditOnly": True,           # Fails test but run in AuditOnly mode to collect log
+        "IgnoreStandardPaths": [     # Standard Plugin defined paths that should be ignore
+            "*.c", "*.asm", "*.h", "*.nasm", "*.s", "*.asl", "*.inf"
+        ],
+        # use gitignore syntax to ignore errors in matching files
+        "IgnoreFiles": [
+            "Source/C/BrotliCompress",
+        ],
+        # words to extend to the dictionary for this package
+        "ExtendWords": [],
+        "AdditionalIncludePaths": [] # Additional paths to spell check relative to package root (wildcards supported)
+    },
+
+    ## options defined .pytool/Plugin/MarkdownLintCheck
+    "MarkdownLintCheck": {
+        # package root relative file, folder, or glob pattern to ignore
+        "IgnoreFiles": [
+            "Source/C/BrotliCompress/brotli",
+            "BaseToolsBuild"        # MU_CHANGE - Ignore build logs.
+        ]
+    }
+}

@@ -49,7 +49,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         ''' return iterable of edk2 packages supported by this build.
         These should be edk2 workspace relative paths '''
 
-        return ("CryptoPkg",
+        return ("BaseTools", # MU_CHANGE
                 "MdePkg",
                 "MdeModulePkg",
                 "NetworkPkg",
@@ -57,6 +57,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                 "ShellPkg",
                 "UefiCpuPkg",
                 "StandaloneMmPkg",
+                "CryptoPkg", # MU_CHANGE
                 "UnitTestFrameworkPkg"
                 )
 
@@ -180,7 +181,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         return rs
 
     def GetName(self):
-        return "Edk2"
+        return "Basecore" # MU_CHANGE
 
     def GetDependencies(self):
         return [

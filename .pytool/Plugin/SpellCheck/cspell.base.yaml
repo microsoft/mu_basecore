@@ -28,6 +28,7 @@
         "muchange"
     ],
     "words": [
+        "MU_CHANGE",        # MU_CHANGE for MU_CHANGE
         "MTRRs",
         "Microarchitecture",
         "Goldmont",

@@ -4,13 +4,24 @@
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
+# MU_CHANGE [BEGIN]
 trigger:
-- master
-- stable/*
+- dev/*
+- release/*
+
+schedules:
+- cron: "0 8 * * 0,3"   # Sun/Wed at 1AM Pacific
+  displayName: Sun/Wed Build
+  branches:
+    include:
+    - dev/*
+    - release/*
+  always: true          # Always build, even if no changes
 
 pr:
-- master
-- stable/*
+- dev/*
+- release/*
+# MU_CHANGE [END]
 
 variables:
   - template: templates/defaults.yml
