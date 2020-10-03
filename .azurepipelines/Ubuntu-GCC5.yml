@@ -5,12 +5,24 @@
 # Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
+# MU_CHANGE [BEGIN]
 trigger:
-- master
-- stable/*
+- dev/*
+- release/*
+
+schedules:
+- cron: "30 9 * * 0,3"  # Sun/Wed at 2:30AM Pacific
+  displayName: Sun/Wed Build
+  branches:
+    include:
+    - dev/*
+    - release/*
+  always: true          # Always build, even if no changes
+
 pr:
-- master
-- stable/*
+- dev/*
+- release/*
+# MU_CHANGE [END]
 
 jobs:
 - template: templates/pr-gate-build-job.yml

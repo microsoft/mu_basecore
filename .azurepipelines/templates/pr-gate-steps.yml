@@ -12,25 +12,16 @@ parameters:
   build_pkgs: ''
   build_targets: ''
   build_archs: ''
-  usePythonVersion: ''
-  extra_install_step: []
 
 steps:
-- bash: |
-    echo "##vso[task.prependpath]${HOME}/.local/bin"
-    echo "new PATH=${PATH}"
-  displayName: Set PATH
-  condition: eq('${{ parameters.tool_chain_tag }}', 'GCC5')
-
 - checkout: self
   clean: true
-  fetchDepth: 1
+  # fetchDepth: 1   # MU_CHANGE
 
 - task: UsePythonVersion@0
   inputs:
-    versionSpec: ${{ parameters.usePythonVersion }}
-    architecture: "x64"
-  condition: ne('${{ parameters.usePythonVersion }}', '')
+    versionSpec: '3.9.x'    # MU_CHANGE
+    architecture: 'x64'
 
 - script: pip install -r pip-requirements.txt --upgrade
   displayName: 'Install/Upgrade pip modules'
@@ -40,20 +31,31 @@ steps:
     echo "##vso[task.setvariable variable=pkgs_to_build]${{ parameters.build_pkgs }}"
     echo "##vso[task.setvariable variable=pkg_count]${{ 1 }}"
 
+# MU_CHANGE [BEGIN] - this doesn't work on devops repos
 # Fetch the target branch so that pr_eval can diff them.
 # Seems like azure pipelines/github changed checkout process in nov 2020.
-- script: git fetch origin $(System.PullRequest.targetBranch)
-  displayName: fetch target branch
-  condition: eq(variables['Build.Reason'], 'PullRequest')
+#- script: git fetch origin $(System.PullRequest.targetBranch)
+#  displayName: fetch target branch
+# MU_CHANGE [END]
 
-- ${{ parameters.extra_install_step }}
+# MU_CHANGE [BEGIN] - Workaround an azure pipelines bug.
+# $System.PullRequest.targetBranch looks like "dev/whatever" on GitHub,
+# but looks like "refs/heads/dev/whatever" on DevOps. The DevOps version
+# can't be used for comparison for the PR Eval.
+- powershell:
+    $TargetBranch = "$(System.PullRequest.targetBranch)".replace('refs/heads/', '');
+    Write-Host "##vso[task.setvariable variable=pr_compare_branch]origin/$TargetBranch";
+  displayName: Workaround for Branch Names
+  condition: eq(variables['Build.Reason'], 'PullRequest')
+# MU_CHANGE [END]
 
 # trim the package list if this is a PR
 - task: CmdLine@1
   displayName: Check if ${{ parameters.build_pkgs }} need testing
   inputs:
     filename: stuart_pr_eval
-    arguments: -c .pytool/CISettings.py -p ${{ parameters.build_pkgs }} --pr-target origin/$(System.PullRequest.targetBranch) --output-csv-format-string "##vso[task.setvariable variable=pkgs_to_build;isOutpout=true]{pkgcsv}" --output-count-format-string "##vso[task.setvariable variable=pkg_count;isOutpout=true]{pkgcount}"
+    # MU_CHANGE - Workaround an azure pipelines bug.
+    arguments: -c .pytool/CISettings.py -p ${{ parameters.build_pkgs }} --pr-target $(pr_compare_branch) --output-csv-format-string "##vso[task.setvariable variable=pkgs_to_build;isOutpout=true]{pkgcsv}" --output-count-format-string "##vso[task.setvariable variable=pkg_count;isOutpout=true]{pkgcount}"
   condition: eq(variables['Build.Reason'], 'PullRequest')
 
 # install spell check prereqs
@@ -74,12 +76,14 @@ steps:
     arguments: -c .pytool/CISettings.py -p $(pkgs_to_build) -t ${{ parameters.build_targets}} -a ${{ parameters.build_archs}} TOOL_CHAIN_TAG=${{ parameters.tool_chain_tag}}
   condition: and(gt(variables.pkg_count, 0), succeeded())
 
+# MU_CHANGE [BEGIN] - We use binary BaseTools
 # build basetools
 #   do this after setup and update so that code base dependencies
 #   are all resolved.
-- template: basetools-build-steps.yml
-  parameters:
-    tool_chain_tag: ${{ parameters.tool_chain_tag }}
+# - template: basetools-build-steps.yml
+#   parameters:
+#     tool_chain_tag: ${{ parameters.tool_chain_tag }}
+# MU_CHANGE [END]
 
 - task: CmdLine@1
   displayName: Build and Test ${{ parameters.build_pkgs }} ${{ parameters.build_archs}}
@@ -136,7 +140,6 @@ steps:
       TestSuites.xml
       **/BUILD_TOOLS_REPORT.html
       **/OVERRIDELOG.TXT
-      coverage.xml
     flattenFolders: true
   condition: succeededOrFailed()
 
