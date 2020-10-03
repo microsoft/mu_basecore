@@ -45,6 +45,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // MU_CHANGE [BEGIN] - Add the OemTpm2InitLib
 #include <Library/OemTpm2InitLib.h>
 // MU_CHANGE [END]
+// MU_CHANGE_131467
+// MU_CHANGE [BEGIN] - Move to 256-bit PCRs.
+#include <Library/Tcg2PreUefiEventLogLib.h>
+// MU_CHANGE [END]
 #define PERF_ID_TCG2_PEI  0x3080
 
 typedef struct {
@@ -950,6 +954,11 @@ PeimEntryMP (
   //
   Status = PeiServicesInstallPpi (&mTcgPpiList);
   ASSERT_EFI_ERROR (Status);
+
+  // MU_CHANGE_103691
+  // MU_CHANGE [BEGIN] - Add support for measurements extended before Tcg2 stack is available.
+  CreateTcg2PreUefiEventLogEntries ();
+  // MU_CHANGE [END]
 
   if (PcdGet8 (PcdTpm2ScrtmPolicy) == 1) {
     Status = MeasureCRTMVersion ();

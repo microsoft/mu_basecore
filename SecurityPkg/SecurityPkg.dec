@@ -109,6 +109,11 @@
   #   Hash 2 Service Binding protocol and Hash 2 protocol.
   #
   Hash2CryptoLib|Include/Library/Hash2CryptoLib.h
+
+  ##  @libraryclass  This library can be used to publish TPM EventLog entries
+  ##  for measurements that may have been made prior to driver initialization
+  #
+  Tcg2PreUefiEventLogLib|Include/Library/Tcg2PreUefiEventLogLib.h
   # MU_CHANGE [END]
 
   ##  @libraryclass Perform SPDM (following SPDM spec) and measure data to TPM (following TCG PFP spec).
