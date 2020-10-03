@@ -67,6 +67,7 @@
   NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
 !endif
 !endif
+HwResetSystemLib|MdeModulePkg/Library/BaseResetSystemLibNull/BaseResetSystemLibNull.inf
 ##MSCHANGE End
 
 [LibraryClasses.common.SEC]
