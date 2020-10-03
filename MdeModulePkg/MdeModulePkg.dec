@@ -373,6 +373,10 @@
   ## Include/Guid/PiSmmCommunicationRegionTable.h
   gEdkiiPiSmmCommunicationRegionTableGuid = { 0x4e28ca50, 0xd582, 0x44ac, {0xa1, 0x1f, 0xe3, 0xd5, 0x65, 0x26, 0xdb, 0x34}}
 
+  ## MS_CHANGE Microsoft Delayed Dispatch table GUID
+  ##
+  gEfiDelayedDispatchTableGuid = { 0x4b733449, 0x8eff, 0x488c, {0x92, 0x1a, 0x15, 0x4a, 0xda, 0x25, 0x18, 0x07}}
+
   ## Include/Guid/PiSmmMemoryAttributesTable.h
   gEdkiiPiSmmMemoryAttributesTableGuid = { 0x6b9fd3f7, 0x16df, 0x45e8, {0xbd, 0x39, 0xb9, 0x4a, 0x66, 0x54, 0x1a, 0x5d}}
 
@@ -484,6 +488,9 @@
 
   ## Include/Ppi/SerialPortPei.h
   gPeiSerialPortPpiGuid         =  { 0x490e9d85, 0x8aef, 0x4193, { 0x8e, 0x56, 0xf7, 0x34, 0xa9, 0xff, 0xac, 0x8b}}
+
+  ## Include/Ppi/DelayedDispatch.h     // MSCHANGE
+  gEfiDelayedDispatchPpiGuid    =  { 0x869c711d, 0x649c, 0x44fe, { 0x8b, 0x9e, 0x2c, 0xbb, 0x29, 0x11, 0xc3, 0xe6}}
 
   ## Include/Ppi/UfsHostController.h
   gEdkiiPeiUfsHostControllerPpiGuid  =  { 0xdc54b283, 0x1a77, 0x4cd6, { 0x83, 0xbb, 0xfd, 0xda, 0x46, 0x9a, 0x2e, 0xc6 }}
@@ -993,6 +1000,18 @@
   # @Prompt Error Code for SetVariable failure.
   # @ValidList  0x80000006 | 0x03058002
   gEfiMdeModulePkgTokenSpaceGuid.PcdErrorCodeSetVariable|0x03058002|UINT32|0x30001040
+
+  ## Delayed Dispatch Maximum Delay in us  // MS_CHANGE
+  # Maximum delay for any particular delay request - 5 seconds
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxDelayUs|5000000|UINT32|0x3000104A
+
+  ## Delayed Dispatch timeout in us  // MS_CHANGE
+  # Maximum delay when waiting for completion (ie EndOfPei) - 10 seconds
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchCompletionTimeoutUs|10000000|UINT32|0x3000104B
+
+  ## Delayed Dispatch Max Entries    //MS_CHANGE
+  # Maximum number of delayed dispatch entries
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxEntries|8|UINT32|0x30001056
 
   ## Mask to control the NULL address detection in code for different phases.
   #  If enabled, accessing NULL address in UEFI or SMM code can be caught.<BR><BR>
