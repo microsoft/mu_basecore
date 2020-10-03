@@ -14,9 +14,11 @@
 
 trigger: none
 
+# MU_CHANGE BEGIN
 pr:
-- master
-- stable/*
+- dev/*
+- release/*
+# MU_CHANGE END
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -27,7 +29,7 @@ steps:
 
 - task: UsePythonVersion@0
   inputs:
-    versionSpec: '3.7.x'
+    versionSpec: '3.9.x'  # MU_CHANGE
     architecture: 'x64'
 
 - script: |
