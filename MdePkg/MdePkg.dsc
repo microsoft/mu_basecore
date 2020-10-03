@@ -60,6 +60,8 @@
   MdePkg/Library/BasePostCodeLibPort80/BasePostCodeLibPort80.inf
   MdePkg/Library/BasePrintLib/BasePrintLib.inf
   MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
+  MdePkg/Library/BaseRngLibTimerLib/BaseRngLibTimerLib.inf
+  MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
   MdePkg/Library/BaseSerialPortLibNull/BaseSerialPortLibNull.inf
   MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
   MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
@@ -67,7 +69,6 @@
   MdePkg/Library/BaseUefiDecompressLib/BaseUefiTianoCustomDecompressLib.inf
   MdePkg/Library/BaseSmbusLibNull/BaseSmbusLibNull.inf
   MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
-  MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
   MdePkg/Library/DxeCoreEntryPoint/DxeCoreEntryPoint.inf
   MdePkg/Library/DxeCoreHobLib/DxeCoreHobLib.inf
