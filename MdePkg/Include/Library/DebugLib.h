@@ -94,6 +94,31 @@ DebugPrint (
   ...
   );
 
+/**
+MS_CHANGE_?
+// MSCHANGE Added DebugDumpMemory
+  Dumps memory formatted.
+
+  Dumps the memory as hex bytes with ASCII text to the right
+
+  @param  Address      The address of the memory to dump.
+  @param  Length       The length of the region to dump.
+  @param  Flags        PrintAddress, PrintOffset etc
+
+**/
+#define DEBUG_DM_PRINT_ADDRESS 0x001     // Print Address
+#define DEBUG_DM_PRINT_OFFSET  0x002     // Print Address as Offset
+#define DEBUG_DM_PRINT_ASCII   0x004     // Print ASCII text
+
+VOID
+EFIAPI
+DebugDumpMemory (
+  IN  UINTN         ErrorLevel,
+  IN  CONST VOID   *Address,
+  IN  UINTN         Length,
+  IN  UINT32        Flags
+  );
+
 
 /**
   Prints a debug message to the debug output device if the specified
@@ -395,6 +420,20 @@ UnitTestDebugAssert (
 #else
   #define DEBUG(Expression)
 #endif
+
+// MS_CHANGE_?
+//MSCHANGE - add macro
+#if !defined(MDEPKG_NDEBUG)
+#define DEBUG_BUFFER(PrintLevel, Buffer, BufferLength, Flags)        \
+    do {                                                             \
+      if (DebugPrintLevelEnabled (PrintLevel)) {                                    \
+        DebugDumpMemory (PrintLevel, Buffer, BufferLength, Flags);  \
+      }                                                              \
+    } while (FALSE)
+#else
+#define DEBUG_BUFFER(PrintLevel, Buffer, BufferLength, Flags)
+#endif
+
 
 /**
   Macro that calls DebugAssert() if an EFI_STATUS evaluates to an error code.
