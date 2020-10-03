@@ -1,0 +1,5 @@
+{
+  "scope": "sample",
+  "name": "Hello World Sample Plugin",
+  "module": "HelloWorld"
+}
