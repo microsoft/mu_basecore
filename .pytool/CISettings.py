@@ -9,13 +9,15 @@ import os
 import logging
 from edk2toolext.environment import shell_environment
 from edk2toolext.invocables.edk2_ci_build import CiBuildSettingsManager
+from edk2toolext.invocables.edk2_ci_setup import CiSetupSettingsManager     # MU_CHANGE
 from edk2toolext.invocables.edk2_setup import SetupSettingsManager, RequiredSubmodule
 from edk2toolext.invocables.edk2_update import UpdateSettingsManager
 from edk2toolext.invocables.edk2_pr_eval import PrEvalSettingsManager
 from edk2toollib.utility_functions import GetHostInfo
 
 
-class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManager, PrEvalSettingsManager):
+# MU_CHANGE - Add CiSetupSettingsManager superclass.
+class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManager, PrEvalSettingsManager):
 
     def __init__(self):
         self.ActualPackages = []
@@ -147,14 +149,45 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         return rs
 
     def GetName(self):
-        return "Edk2"
+        # MU_CHANGE
+        return "Basecore"
 
     def GetDependencies(self):
+        # MU_CHANGE BEGIN
+        ''' Return Git Repository Dependendencies
+
+        Return an iterable of dictionary objects with the following fields
+        {
+            Path: <required> Workspace relative path
+            Url: <required> Url of git repo
+            Commit: <optional> Commit to checkout of repo
+            Branch: <optional> Branch to checkout (will checkout most recent commit in branch)
+            Full: <optional> Boolean to do shallow or Full checkout.  (default is False)
+            ReferencePath: <optional> Workspace relative path to git repo to use as "reference"
+        }
+        '''
         return [
+            {
+                "Path": "Silicon/Arm/MU_TIANO",
+                "Url": "https://github.com/Microsoft/mu_silicon_arm_tiano.git",
+                "Branch": "dev/201908"
+            },
+            {
+                "Path": "Common/MU_TIANO",
+                "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
+                "Branch": "dev/201908"
+            }
         ]
+        # MU_CHANGE END
 
     def GetPackagesPath(self):
-        return ()
+        # MU_CHANGE BEGIN
+        ''' Return a list of workspace relative paths that should be mapped as edk2 PackagesPath '''
+        result = []
+        for a in self.GetDependencies():
+            result.append(a["Path"])
+        return result
+        # MU_CHANGE END
 
     def GetWorkspaceRoot(self):
         ''' get WorkspacePath '''

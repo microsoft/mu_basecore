@@ -53,6 +53,7 @@
         "IgnoreHeaderFile": []
     },
     "SpellCheck": {
+        "AuditOnly": True,
         "ExtendWords": [
             "ENUMER", # this is part of an IDE enum
             "PCATCHIPSET",
