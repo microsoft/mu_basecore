@@ -32,7 +32,7 @@
   MdeModulePkg/MdeModulePkg.dec
 
 [LibraryClasses]
-  ResetSystemLib
+  HwResetSystemLib                              ## MU_CHANGE - Use HwResetSystemLib
   UefiRuntimeServicesTableLib
   UefiRuntimeLib
   UefiBootServicesTableLib
