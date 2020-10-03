@@ -483,7 +483,6 @@ class UncrustifyCheck(ICiBuildPlugin):
         for path in rel_file_paths_to_format:
             self._abs_file_paths_to_format.extend(
                 [str(path.resolve()) for path in pathlib.Path(self._abs_package_path).rglob(path)])
-
         # Remove files ignore in the plugin configuration file
         plugin_ignored_files = list(filter(self._get_files_ignored_in_config(), self._abs_file_paths_to_format))
 

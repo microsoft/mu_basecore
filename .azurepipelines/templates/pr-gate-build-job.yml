@@ -34,8 +34,8 @@ jobs:
         Build.Pkgs: 'NetworkPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
       TARGET_OTHER:
-        Build.Pkgs: 'PcAtChipsetPkg,ShellPkg,StandaloneMmPkg'
-        Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        Build.Pkgs: 'PcAtChipsetPkg,ShellPkg,StandaloneMmPkg,BaseTools' # MU_CHANGE add BaseTools
+        Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
       TARGET_TEST:
         Build.Pkgs: 'UnitTestFrameworkPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
