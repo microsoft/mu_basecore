@@ -1,0 +1,9 @@
+{
+    "name": "mu_nasm", 
+    "author_string": "The NASM development team", 
+    "server_url": "https://api.nuget.org/v3/index.json", 
+    "project_url": "http://nasm.us/", 
+    "license_url": "https://opensource.org/licenses/BSD-2-Clause",
+    "description_string": "NASM the netwide assembler packaged for Project Mu", 
+    "copyright_string": "Copyright 2018"
+}
