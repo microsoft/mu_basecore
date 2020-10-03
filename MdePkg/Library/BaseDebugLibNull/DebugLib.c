@@ -34,6 +34,30 @@ DebugPrint (
 {
 }
 
+/**
+// MS_CHANGE_?
+// MSCHANGE Added DebugDumpMemory
+  Dumps memory formatted.
+
+  Dumps the memory as hex bytes with ASCII text to the right
+
+  @param  Address      The address of the memory to dump.
+  @param  Length       The length of the region to dump.
+  @param  Flags        PrintAddress, PrintOffset etc
+
+**/
+
+VOID
+EFIAPI
+DebugDumpMemory (
+  IN  UINTN         ErrorLevel,
+  IN  CONST VOID   *Address,
+  IN  UINTN         Length,
+  IN  UINT32        Flags
+  ) {
+}
+// END
+
 
 /**
   Prints a debug message to the debug output device if the specified
