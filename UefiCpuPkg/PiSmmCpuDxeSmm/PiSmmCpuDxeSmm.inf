@@ -100,7 +100,7 @@
   ReportStatusCodeLib
   SmmCpuFeaturesLib
   PeCoffGetEntryPointLib
-  PerformanceLib
+  HwResetSystemLib                         ## MS_CHANGE - Allow system to reset instead of halt in test mode.
   CpuPageTableLib
   MmSaveStateLib
 

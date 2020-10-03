@@ -8,6 +8,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
+#include <Library/ResetSystemLib.h> // MSCHANGE - Allow system to reset instead of halt in test mode.
+
 #include "PiSmmCpuDxeSmm.h"
 
 #define PAGE_TABLE_PAGES  8
