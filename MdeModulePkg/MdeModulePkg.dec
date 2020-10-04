@@ -2218,7 +2218,7 @@
   ## MU_CHANGE - Add DeviceStateLib to MdeModulePkg
   ## This dynamic PCD holds the device state bitmap as described in Include/Library/DeviceStateLib.h
   # @Prompt Describes device state
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDeviceStateBitmask|0x00000000|UINT32|0x00030007
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDeviceStateBitmask|0x00000000|UINT32|0x00030009
   
 [PcdsDynamicEx]
   ## This dynamic PCD enables the default variable setting.
