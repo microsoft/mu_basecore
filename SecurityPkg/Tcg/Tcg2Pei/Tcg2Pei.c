@@ -680,7 +680,8 @@ MeasureSourceDebugEnabled (
   TcgEventHdr.PCRIndex = 7;
   TcgEventHdr.EventType = EV_EFI_ACTION;
   TcgEventHdr.EventSize = (UINT32)sizeof(MSFT_SOURCE_DEBUG_ENABLED_STRING);
-  return HashLogExtendEvent(0,
+  return HashLogExtendEvent(&mEdkiiTcgPpi,
+                            0,
                             (UINT8*)String,
                             TcgEventHdr.EventSize,
                             &TcgEventHdr,
