@@ -49,7 +49,7 @@ Bug Fixes-dev
 2008_CIBuild Changes
 --------------------
 
-- Incomplete
+- N/A
 
 2008_Rebase Changes
 -------------------
