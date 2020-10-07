@@ -49,7 +49,7 @@
   Pk/CryptRsaBasic.c
   Pk/CryptRsaExtNull.c
   Pk/CryptPkcs1OaepNull.c
-  Pk/CryptPkcs5Pbkdf2Null.c
+  Pk/CryptPkcs5Pbkdf2.c                  ## MU_CHANGE TCBZ2997
   Pk/CryptPkcs7SignNull.c
   Pk/CryptPkcs7VerifyCommon.c
   Pk/CryptPkcs7VerifyRuntime.c
