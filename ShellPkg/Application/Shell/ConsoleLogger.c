@@ -719,12 +719,26 @@ ConsoleLoggerPrintWithPageBreak (
   CONST CHAR16  *LineStart;
   CHAR16        *StringCopy;
   CHAR16        TempChar;
+  INT32         curCol;    // MS_CHANGE
 
   StringCopy = NULL;
   StringCopy = StrnCatGrow (&StringCopy, NULL, String, 0);
   if (StringCopy == NULL) {
     return (EFI_OUT_OF_RESOURCES);
   }
+
+  // MS_CHANGE: Start
+  //
+  // Go through the string and output one line at a time
+  // After each line a check will be made
+  //
+  // To track line breaks caused by string wrapping this needs to
+  // duplicate some of the string printing logic in the graphics
+  // console tracking the current column.  When a line wrap is
+  // detected, stop printing and see if a page break is needed.
+  //
+  curCol = ConsoleInfo->OurConOut.Mode->CursorColumn;
+  // MS_CHANGE
 
   for ( Walker = StringCopy,
         LineStart = StringCopy
@@ -734,9 +748,10 @@ ConsoleLoggerPrintWithPageBreak (
   {
     switch (*Walker) {
       case (CHAR_BACKSPACE):
-        if (ConsoleInfo->OurConOut.Mode->CursorColumn > 0) {
-          ConsoleInfo->OurConOut.Mode->CursorColumn--;
-        }
+        if (curCol > 0) {
+          // MS_CHANGE
+          curCol--;      // MS_CHANGE
+        }                // MS_CHANGE
 
         break;
       case (CHAR_LINEFEED):
@@ -765,24 +780,25 @@ ConsoleLoggerPrintWithPageBreak (
         // increment row count
         //
         ShellInfoObject.ConsoleInfo->RowCounter++;
-        ConsoleInfo->OurConOut.Mode->CursorRow++;
+        // ConsoleInfo->OurConOut.Mode->CursorRow++;  // MS_CHANGE
 
         break;
       case (CHAR_CARRIAGE_RETURN):
         //
         // Move the cursor to the beginning of the current row.
         //
-        ConsoleInfo->OurConOut.Mode->CursorColumn = 0;
+        curCol = 0; // MS_CHANGE
         break;
       default:
         //
         // increment column count
         //
-        ConsoleInfo->OurConOut.Mode->CursorColumn++;
+        curCol++; // MS_CHANGE
         //
         // check if that is the last column
         //
-        if ((INTN)ConsoleInfo->ColsPerScreen == ConsoleInfo->OurConOut.Mode->CursorColumn + 1) {
+        if ((INTN)ConsoleInfo->ColsPerScreen == curCol + 1) {
+          // MS_CHANGE
           //
           // output a line similar to the linefeed character.
           //
@@ -812,8 +828,7 @@ ConsoleLoggerPrintWithPageBreak (
           // increment row count and zero the column
           //
           ShellInfoObject.ConsoleInfo->RowCounter++;
-          ConsoleInfo->OurConOut.Mode->CursorRow++;
-          ConsoleInfo->OurConOut.Mode->CursorColumn = 0;
+          curCol = 0;  // MS_CHANGE
         } // last column on line
 
         break;
