@@ -78,6 +78,12 @@
     "LibraryClassCheck": {
         "IgnoreHeaderFile": []
     },
+    "MarkdownLintCheck": {
+        "AuditOnly": False,          # If True, log all errors and then mark as skipped
+        "IgnoreFiles": [
+            "Library/OpensslLib/openssl"
+        ]            # package root relative file, folder, or glob pattern to ignore
+    },
 
     ## options defined ci/Plugin/SpellCheck
     "SpellCheck": {

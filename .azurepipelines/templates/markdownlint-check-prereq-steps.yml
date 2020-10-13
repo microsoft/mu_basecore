@@ -1,0 +1,18 @@
+## @file
+# File templates/markdownlint-check-prereq-steps.yml
+#
+# template file used to install markdownlint checking prerequisite
+# depends on spell-check-prereq-steps to run first to set the node version
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+parameters:
+  none: ''
+
+steps:
+
+- script: npm install -g markdownlint-cli@0.31.0
+  displayName: "Install markdown linter"
+  condition: and(gt(variables.pkg_count, 0), succeeded())

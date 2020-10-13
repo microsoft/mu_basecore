@@ -91,11 +91,18 @@
             "NOFAILURE",
             "cmockery",
             "DHAVE", # build flag for cmocka in the INF
+            "cmockery",
             "corthon",      # Contact GitHub account in Readme
             "mdkinney",     # Contact GitHub account in Readme
             "spbrogan"      # Contact GitHub account in Readme
         ],
         "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
         "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)
+    },
+
+    ## options defined .pytool/Plugin/MarkdownLintCheck
+    "MarkdownLintCheck": {
+        "IgnoreFiles": [ "Library/CmockaLib/cmocka"  # cmocka is submodule outside of control
+        ]            # package root relative file, folder, or glob pattern to ignore
     }
 }
