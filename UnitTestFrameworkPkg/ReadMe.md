@@ -1380,6 +1380,10 @@ After that, the following commands will set up the build and run the host-based 
 # stuart_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=<GCC5, VS2019, etc.>
 stuart_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2019
 
+# Mu specific step to clone mu repos required for ci check
+# stuart_ci_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=<GCC5, VS2019, etc.>
+stuart_ci_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2019
+
 # Update all binary dependencies
 # stuart_update -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=<GCC5, VS2019, etc.>
 stuart_update -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2019
@@ -1573,7 +1577,7 @@ Code/Test                                   | Location
 Host-Based Unit Tests for a Library/Protocol/PPI/GUID Interface   | If what's being tested is an interface (e.g. a library with a public header file, like DebugLib) and the test is agnostic to a specific implementation, then the test should be scoped to the parent package.<br/>Example: `MdePkg/Test/UnitTest/[Library/Protocol/Ppi/Guid]/`<br/><br/>A real-world example of this is the BaseSafeIntLib test in MdePkg.<br/>`MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibHost.inf`
 Host-Based Unit Tests for a Library/Driver (PEI/DXE/SMM) implementation   | If what's being tested is a specific implementation (e.g. BaseDebugLibSerialPort for DebugLib), then the test should be scoped to the implementation directory itself, in a UnitTest (or GoogleTest) subdirectory.<br/><br/>Module Example: `MdeModulePkg/Universal/EsrtFmpDxe/UnitTest/`<br/>Library Example: `MdePkg/Library/BaseMemoryLib/UnitTest/`<br/>Library Example (GoogleTest): `SecurityPkg/Library/SecureBootVariableLib/GoogleTest/`
 Host-Based Tests for a Functionality or Feature   | If you're writing a functional test that operates at the module level (i.e. if it's more than a single file or library), the test should be located in the package-level Tests directory under the HostFuncTest subdirectory.<br/>For example, if you were writing a test for the entire FMP Device Framework, you might put your test in:<br/>`FmpDevicePkg/Test/HostFuncTest/FmpDeviceFramework`<br/><br/>If the feature spans multiple packages, it's location should be determined by the package owners related to the feature.
-Non-Host-Based (PEI/DXE/SMM/Shell) Tests for a Functionality or Feature   | Similar to Host-Based, if the feature is in one package, should be located in the `*Pkg/Test/[Shell/Dxe/Smm/Pei]Test` directory.<br/><br/>If the feature spans multiple packages, it's location should be determined by the package owners related to the feature.<br/><br/>USAGE EXAMPLES<br/>PEI Example: MP_SERVICE_PPI. Or check MTRR configuration in a notification function.<br/> SMM Example: a test in a protocol callback function. (It is different with the solution that SmmAgent+ShellApp)<br/>DXE Example: a test in a UEFI event call back to check SPI/SMRAM status. <br/> Shell Example: the SMM handler audit test has a shell-based app that interacts with an SMM handler to get information. The SMM paging audit test gathers information about both DXE and SMM. And the SMM paging functional test actually forces errors into SMM via a DXE driver.
+Non-Host-Based (PEI/DXE/SMM/UefiShell) Tests for a Functionality or Feature   | Similar to Host-Based, if the feature is in one package, should be located in the `*Pkg/Test/[UefiShell/Dxe/Smm/Pei]Test` directory.<br/><br/>If the feature spans multiple packages, it's location should be determined by the package owners related to the feature.<br/><br/>USAGE EXAMPLES<br/>PEI Example: MP_SERVICE_PPI. Or check MTRR configuration in a notification function.<br/> SMM Example: a test in a protocol callback function. (It is different with the solution that SmmAgent+ShellApp)<br/>DXE Example: a test in a UEFI event call back to check SPI/SMRAM status. <br/> Shell Example: the SMM handler audit test has a shell-based app that interacts with an SMM handler to get information. The SMM paging audit test gathers information about both DXE and SMM. And the SMM paging functional test actually forces errors into SMM via a DXE driver.
 
 ### Example Directory Tree
 
@@ -1586,7 +1590,7 @@ Non-Host-Based (PEI/DXE/SMM/Shell) Tests for a Functionality or Feature   | Simi
       ComponentYHostGoogleTest.inf    # Host-Based Test for Driver Module
       ComponentYGoogleTest.cpp
     UnitTest/
-      ComponentYHostUnitTest.inf      # Host-Based Test for Driver Module
+      ComponentYUnitTestHost.inf      # Host-Based Test for Driver Module
       ComponentYUnitTest.c
 
   Library/
@@ -1603,8 +1607,8 @@ Non-Host-Based (PEI/DXE/SMM/Shell) Tests for a Functionality or Feature   | Simi
         SpecificLibDxeHostGoogleTest.cpp
         SpecificLibDxeHostGoogleTest.inf
       UnitTest/                      # Host-Based Test for Specific Library Implementation
-        SpecificLibDxeHostUnitTest.c
-        SpecificLibDxeHostUnitTest.inf
+        SpecificLibDxeUnitTest.c
+        SpecificLibDxeUnitTestHost.inf
   Test/
     <Package>HostTest.dsc             # Host-Based Test Apps
     GoogleTest/
@@ -1618,16 +1622,16 @@ Non-Host-Based (PEI/DXE/SMM/Shell) Tests for a Functionality or Feature   | Simi
 
     UnitTest/
       InterfaceX
-        InterfaceXHostUnitTest.inf    # Host-Based App (should be in Test/<Package>HostTest.dsc)
-        InterfaceXPeiUnitTest.inf     # PEIM Target-Based Test (if applicable)
-        InterfaceXDxeUnitTest.inf     # DXE Target-Based Test (if applicable)
-        InterfaceXSmmUnitTest.inf     # SMM Target-Based Test (if applicable)
-        InterfaceXShellUnitTest.inf   # Shell App Target-Based Test (if applicable)
+        InterfaceXUnitTestHost.inf    # Host-Based App (should be in Test/<Package>HostTest.dsc)
+        InterfaceXUnitTestPei.inf     # PEIM Target-Based Test (if applicable)
+        InterfaceXUnitTestDxe.inf     # DXE Target-Based Test (if applicable)
+        InterfaceXUnitTestSmm.inf     # SMM Target-Based Test (if applicable)
+        InterfaceXUnitTestUefiShell.inf # Shell App Target-Based Test (if applicable)
         InterfaceXUnitTest.c          # Test Logic
 
       GeneralPurposeLib/              # Host-Based Test for any implementation of GeneralPurposeLib
         GeneralPurposeLibTest.c
-        GeneralPurposeLibHostUnitTest.inf
+        GeneralPurposeLibUnitTestHost.inf
 
     Mock/
       Include/
