@@ -29,20 +29,80 @@ This change allows PEI to reflect the current state of accepted memory to DXE so
 
 ### References
 
-TODO - How to reference other ECR?
-
-AMD APM Volume 2, Section 15.36 https://www.amd.com/system/files/TechDocs/24593.pdf <br>
-SEV Firmware Specification https://www.amd.com/system/files/TechDocs/56860.pdf <br>
-Github PR for comments https://github.com/microsoft/mu_basecore/pull/66 <br>
+See the following PR for the latest version of this ECR and the corresponding UEFI ECR, at https://github.com/microsoft/mu_basecore/pull/66.
 
 ## Detailed Description of the Change and Special Instructions
 
 ### Summary of Changes:
-- Update Section 5.5 of Platform Initialization Specification, Vol. 3, HOB Code definitions
-- TODO - Changes for GCD
+- Update Section 7.2.4 Platform Initialization Specification, Vol. 2, Services - DXE Services with AddMemorySpace new unaccepted type
+- Update Section 9.8.4 Platform Initialization Specification, Vol. 2, DXE Foundation with Resource Descriptor HOBs Table 2-20 adding a new row describing unaccepted memory
+- Update Section 5.3 Platform Initialization Specification, Vol. 3, HOB Code definitions with PHIT version revision
+- Update Section 5.5 Platform Initialization Specification, Vol. 3, HOB Code definitions with new resource type
 
 ~~Text Removed~~,  Text Added ***Text Added*** ,  New Sections ***New Section***, Discussion/Mode Edits needed ***DME***
 
+#### 7.2.4 Global Coherency Domain Services
+
+**AddMemorySpace()**<br>
+...
+**Parameters**<br>
+
+**GcdMemoryType**<br>
+The type of memory resource being added.  Type EFI_GCD_MEMORY_TYPE is defined in “Related Definitions” below.  The only types allowed are EfiGcdMemoryTypeReserved, EfiGcdMemoryTypeSystemMemory, EfiGcdMemoryTypePersistent, EfiGcdMemoryTypeMoreReliable, EfiGcdMemoryTypeUnaccepted, and EfiGcdMemoryTypeMemoryMappedIo. ***Text Added***<br>
+...
+**Description**<br>
+...
+If GcdMemoryType is not EfiGcdMemoryTypeReserved, EfiGcdMemoryTypeSystemMemory, EfiGcdMemoryTypeMemoryMappedIo, EfiGcdMemoryPersistent, ~~or~~ EfiGcdMemoryTypeMoreReliable or EfiGcdMemoryTypeUnaccepted then EFI_INVALID_PARAMETER is returned. ***Text Added***<br>
+...
+**Related Definitions**<br>
+``` c
+//*******************************************************
+// EFI_GCD_MEMORY_TYPE
+//*******************************************************
+typedef enum {
+  EfiGcdMemoryTypeNonExistent,
+  EfiGcdMemoryTypeReserved,
+  EfiGcdMemoryTypeSystemMemory,
+  EfiGcdMemoryTypeMemoryMappedIo,
+  EfiGcdMemoryTypePersistent,
+  EfiGcdMemoryTypeMoreReliable,
+  EfiGcdMemoryTypeUnaccepted,
+  EfiGcdMemoryTypeMaximum
+} EFI_GCD_MEMORY_TYPE;
+```
+...
+**EfiGcdMemoryTypeMoreReliable**<br>
+A memory region that provides higher reliability relative to other memory in the system. If all memory has the same reliability, then this bit is not used.<br>
+
+***Text Added***<br>
+**EfiGcdMemoryTypeUnaccepted**<br>
+A memory region that is unaccepted. This region must be accepted before it can be converted to system memory.<br>
+***Text Added***
+...
+
+####9.8.4 Resource Descriptor HOBs
+...
+**Table 2-20: Resource Descriptor HOB to GCD Type Mapping**<br>
+| Resource Descriptor   HOB |            | GCD Map                     |          |
+|---------------------------|------------|-----------------------------|----------|
+| Resource Type             | Attributes | Memory Type                 | I/O Type |
+| System Memory             | Present    | Reserved                    |          |
+| …                         | …          | …                           | …        |
+| Memory Reserved           |            | Reserved                    |          |
+| Unaccepted Memory         |            | Unaccepted ***Text Added*** |          |
+| …                         | …          | …                           | …        |
+...
+
+#### 5.3 PHIT HOB
+...
+**Related Definitions**<br>
+``` c
+//*****************************************************
+// Version values
+//*****************************************************
+#define EFI_HOB_HANDOFF_TABLE_VERSION  0x000a // Text Edited
+```
+...
 #### 5.5  Resource Descriptor HOB
 ...
 
@@ -67,16 +127,16 @@ typedef UINT32 EFI_RESOURCE_TYPE;
 ```
 
 The following table describes the fields listed in the above definition.
-| EFI_RESOURCE_SYSTEM_MEMORY | Memory that persists out of the HOB producer phase.                    |
-|------------------------|----------------------------------------------------------------------------|
-| EFI_RESOURCE_MEMORY_MAPPED_IO   | Memory-mapped I/O that is programmed in the HOB producer phase.                                         |
-| EFI_RESOURCE_IO  | Processor I/O space.     |
-| EFI_RESOURCE_FIRMWARE_DEVICE  | Memory-mapped firmware devices.                   |
-| EFI_RESOURCE_MEMORY_MAPPED_IO_PORT  | Memory that is decoded to produce I/O cycles. |
-| EFI_RESOURCE_MEMORY_RESERVED  | Reserved memory address space.                                                            |
-| EFI_RESOURCE_IO_RESERVED          | Reserved I/O address space.                                   |
-| EFI_RESOURCE_MEMORY_UNACCEPTED          | Memory that is unaccepted. ***Text Added***                              |
-| EFI_RESOURCE_MAX_MEMORY_TYPE      | Any reported HOB value of this type or greater should be deemed illegal. This value could increase with successive revisions of this specification, so the “illegality” will also be based upon the revision field of the PHIT HOB |
+| EFI_RESOURCE_SYSTEM_MEMORY         | Memory that persists out of the HOB producer phase.                                                                                                                                                                                |
+|------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| EFI_RESOURCE_MEMORY_MAPPED_IO      | Memory-mapped I/O that is programmed in the HOB producer phase.                                                                                                                                                                    |
+| EFI_RESOURCE_IO                    | Processor I/O space.                                                                                                                                                                                                               |
+| EFI_RESOURCE_FIRMWARE_DEVICE       | Memory-mapped firmware devices.                                                                                                                                                                                                    |
+| EFI_RESOURCE_MEMORY_MAPPED_IO_PORT | Memory that is decoded to produce I/O cycles.                                                                                                                                                                                      |
+| EFI_RESOURCE_MEMORY_RESERVED       | Reserved memory address space.                                                                                                                                                                                                     |
+| EFI_RESOURCE_IO_RESERVED           | Reserved I/O address space.                                                                                                                                                                                                        |
+| EFI_RESOURCE_MEMORY_UNACCEPTED     | Memory that is unaccepted. ***Text Added***                                                                                                                                                                                        |
+| EFI_RESOURCE_MAX_MEMORY_TYPE       | Any reported HOB value of this type or greater should be deemed illegal. This value could increase with successive revisions of this specification, so the “illegality” will also be based upon the revision field of the PHIT HOB |
 
 ### Special Instructions:
 #### Discussions / Opens
