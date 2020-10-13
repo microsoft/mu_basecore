@@ -2,7 +2,7 @@
 UnitTest for...
 Business logic for Variable Policy enforcement.
 
-Copyright (c) Microsoft Corporation. All rights reserved.
+Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -27,21 +27,19 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/VariablePolicy.h>
 #include <Library/UefiVariablePolicyLib.h>
 
-// MU_CHANGE - Turn this off for now. Try to turn it back on with extra build options.
-// #ifndef INTERNAL_UNIT_TEST
-// #error Make sure to build thie with INTERNAL_UNIT_TEST enabled! Otherwise, some important tests may be skipped!
-// #endif
+#ifndef INTERNAL_UNIT_TEST
+#error Make sure to build thie with INTERNAL_UNIT_TEST enabled! Otherwise, some important tests may be skipped!
+#endif
 
 
 #define UNIT_TEST_NAME        "UEFI Variable Policy UnitTest"
 #define UNIT_TEST_VERSION     "0.5"
 
-// TODO: Add tests for memory leaks?
-
 ///=== TEST DATA ==================================================================================
 
 #pragma pack(push, 1)
-#define SIMPLE_VARIABLE_POLICY_ENTRY_VAR_NAME_LENGTH    1001    // 1000 characters + terminator.
+#define SIMPLE_VARIABLE_POLICY_ENTRY_VAR_NAME_LENGTH  1001    // 1000 characters + terminator.
+#define SIMPLE_VARIABLE_POLICY_ENTRY_VAR_NAME_SIZE    (SIMPLE_VARIABLE_POLICY_ENTRY_VAR_NAME_LENGTH * sizeof(CHAR16))
 typedef struct _SIMPLE_VARIABLE_POLICY_ENTRY {
   VARIABLE_POLICY_ENTRY     Header;
   CHAR16                    Name[SIMPLE_VARIABLE_POLICY_ENTRY_VAR_NAME_LENGTH];
@@ -87,6 +85,19 @@ EFI_GUID    mTestGuid3 = TEST_GUID_3;
 
 ///=== HELPER FUNCTIONS ===========================================================================
 
+/**
+  Helper function to initialize a VARIABLE_POLICY_ENTRY structure with a Name and StateName.
+
+  Takes care of all the messy packing.
+
+  @param[in,out]  Entry
+  @param[in]      Name        [Optional]
+  @param[in]      StateName   [Optional]
+
+  @retval     TRUE
+  @retval     FALSE
+
+**/
 STATIC
 BOOLEAN
 InitExpVarPolicyStrings (
@@ -120,6 +131,9 @@ InitExpVarPolicyStrings (
   return TRUE;
 }
 
+/**
+  Mocked version of GetVariable, for testing.
+**/
 EFI_STATUS
 EFIAPI
 StubGetVariableNull (
@@ -144,10 +158,10 @@ StubGetVariableNull (
   MockedData = (VOID*)mock();
   MockedReturn = (EFI_STATUS)mock();
 
-  if (Attributes) {
+  if (Attributes != NULL) {
     *Attributes = MockedAttr;
   }
-  if (Data && !EFI_ERROR(MockedReturn)) {
+  if (Data != NULL && !EFI_ERROR(MockedReturn)) {
     CopyMem( Data, MockedData, MockedDataSize );
   }
 
@@ -160,23 +174,31 @@ StubGetVariableNull (
 // Anything you think might be helpful that isn't a test itself.
 //
 
+/**
+  This is a common setup function that will ensure the library is always initialized
+  with the stubbed GetVariable.
+
+  Not used by all test cases, but by most.
+**/
 STATIC
 UNIT_TEST_STATUS
 EFIAPI
 LibInitMocked (
-  UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
-  return EFI_ERROR(InitVariablePolicyLib( StubGetVariableNull )) ?
-            UNIT_TEST_ERROR_PREREQUISITE_NOT_MET :
-            UNIT_TEST_PASSED;
+  return EFI_ERROR(InitVariablePolicyLib( StubGetVariableNull )) ? UNIT_TEST_ERROR_PREREQUISITE_NOT_MET : UNIT_TEST_PASSED;
 }
 
+/**
+  Common cleanup function to make sure that the library is always de-initialized prior
+  to the next test case.
+*/
 STATIC
 VOID
 EFIAPI
 LibCleanup (
-  UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   DeinitVariablePolicyLib();
@@ -187,10 +209,13 @@ LibCleanup (
 
 ///===== ARCHITECTURAL SUITE ==================================================
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToInitAndDeinitTheLibrary (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EFI_STATUS    Status;
@@ -205,12 +230,15 @@ ShouldBeAbleToInitAndDeinitTheLibrary (
   UT_ASSERT_FALSE( IsVariablePolicyLibInitialized() );
 
   return UNIT_TEST_PASSED;
-} // ShouldBeAbleToInitTheLibrary()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 ShouldNotBeAbleToInitializeTheLibraryTwice (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EFI_STATUS    Status;
@@ -219,24 +247,30 @@ ShouldNotBeAbleToInitializeTheLibraryTwice (
   Status = InitVariablePolicyLib( StubGetVariableNull );
   UT_ASSERT_TRUE( EFI_ERROR( Status ) );
   return UNIT_TEST_PASSED;
-} // ShouldNotBeAbleToInitializeTheLibraryTwice()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 ShouldFailDeinitWithoutInit (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EFI_STATUS    Status;
   Status = DeinitVariablePolicyLib();
   UT_ASSERT_TRUE( EFI_ERROR( Status ) );
   return UNIT_TEST_PASSED;
-} // ShouldFailDeinitWithoutInit()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 ApiCommandsShouldNotRespondIfLibIsUninitialized (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
@@ -272,7 +306,7 @@ ApiCommandsShouldNotRespondIfLibIsUninitialized (
                                                  DummyData ) ) );
 
   return UNIT_TEST_PASSED;
-} // ApiCommandsShouldNotRespondIfLibIsUninitialized()
+}
 
 
 ///===== INTERNAL FUNCTION SUITE ==============================================
@@ -287,10 +321,13 @@ EvaluatePolicyMatch (
   OUT       UINT8                   *MatchPriority    OPTIONAL
   );
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 PoliciesShouldMatchByNameAndGuid (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   MatchCheckPolicy = {
@@ -320,12 +357,15 @@ PoliciesShouldMatchByNameAndGuid (
   UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVar1Name, &mTestGuid1, NULL ) );
 
   return UNIT_TEST_PASSED;
-} // PoliciesShouldMatchByNameAndGuid()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 WildcardPoliciesShouldMatchDigits (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   MatchCheckPolicy = {
@@ -342,28 +382,53 @@ WildcardPoliciesShouldMatchDigits (
     },
     L"Wildcard#VarName##"
   };
-  CHAR16        *CheckVar1Name = L"Wildcard1VarName12";
-  CHAR16        *CheckVar2Name = L"Wildcard2VarName34";
-  CHAR16        *CheckVarBName = L"WildcardBVarName56";
-  CHAR16        *CheckVarHName = L"Wildcard#VarName56";
+  CHAR16      *ShouldPass1 = L"Wildcard1VarName12";
+  CHAR16      *ShouldPass2 = L"Wildcard2VarName34";
+  CHAR16      *ShouldPass3 = L"WildcardBVarName56";
+  CHAR16      *ShouldPass4 = L"WildcardFVarName0A";
+  CHAR16      *ShouldPass5 = L"WildcardaVarNamebC";
+  CHAR16      *ShouldPass6 = L"WildcardaVarNamed0";
+  
+  CHAR16      *ShouldFail1 = L"WildcardZVarName56";
+  CHAR16      *ShouldFail2 = L"WildcardLVarName56";
+  CHAR16      *ShouldFail3 = L"WildcardDVarName2j";
+  CHAR16      *ShouldFail4 = L"Wildcard2VarNamezz";
+  
+  CHAR16      *ShouldAlsoFail1 = L"Wildcard#VarName56";
+  CHAR16      *ShouldAlsoFail2 = L"WildcardaVarName#6";
+  CHAR16      *ShouldAlsoFail3 = L"WildcardFVarName5#";
+  CHAR16      *ShouldAlsoFail4 = L"WildcardFVarName##";
 
-  // Make sure that two different sets of wildcard numbers match.
-  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVar1Name, &mTestGuid1, NULL ) );
-  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVar2Name, &mTestGuid1, NULL ) );
+  // Make sure that all hexidecimal sets of wildcard numbers match.
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldPass1, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldPass2, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldPass3, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldPass4, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldPass5, &mTestGuid1, NULL ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldPass6, &mTestGuid1, NULL ) );
 
   // Make sure that the non-number charaters don't match.
-  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarBName, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldFail1, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldFail2, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldFail3, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldFail4, &mTestGuid1, NULL ) );
 
   // Make sure that '#' signs don't match.
-  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckVarHName, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldAlsoFail1, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldAlsoFail2, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldAlsoFail3, &mTestGuid1, NULL ) );
+  UT_ASSERT_FALSE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, ShouldAlsoFail4, &mTestGuid1, NULL ) );
 
   return UNIT_TEST_PASSED;
-} // WildcardPoliciesShouldMatchDigits()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 WildcardPoliciesShouldMatchDigitsAdvanced (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   MatchCheckPolicy = {
@@ -387,6 +452,12 @@ WildcardPoliciesShouldMatchDigitsAdvanced (
                                       "01234567890123456789012345678901234567890123456789"\
                                       "01234567890123456789012345678901234567890123456789"\
                                       "01234567890123456789012345678901234567890123456789";
+  CHAR16        *CheckValidHexString = L"012345678901234567890123456789012345678901234F6789"\
+                                      "01234567890123456789012345678901234567890123456789"\
+                                      "012345678901ABC56789012345678901234567890123456789"\
+                                      "01234567890123456789012345678901234567890123456789"\
+                                      "012345678901234567890123456789012345678DEADBEEF789"\
+                                      "01234ABCDEF123456789012345678901234567890123456789";
   CHAR16        *CheckLongerString = L"01234567890123456789012345678901234567890123456789"\
                                       "01234567890123456789012345678901234567890123456789"\
                                       "01234567890123456789012345678901234567890123456789"\
@@ -402,15 +473,19 @@ WildcardPoliciesShouldMatchDigitsAdvanced (
 
   // Make sure that the valid one matches and has the expected priority.
   UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckValidString, &mTestGuid1, &MatchPriority ) );
+  UT_ASSERT_TRUE( EvaluatePolicyMatch( &MatchCheckPolicy.Header, CheckValidHexString, &mTestGuid1, &MatchPriority ) );
   UT_ASSERT_EQUAL( MatchPriority, MAX_UINT8 );
 
   return UNIT_TEST_PASSED;
-} // WildcardPoliciesShouldMatchDigitsAdvanced()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 WildcardPoliciesShouldMatchNamespaces (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   VARIABLE_POLICY_ENTRY   MatchCheckPolicy = {
@@ -440,12 +515,15 @@ WildcardPoliciesShouldMatchNamespaces (
 
 
   return UNIT_TEST_PASSED;
-} // WildcardPoliciesShouldMatchNamespaces()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 MatchPrioritiesShouldFollowRules (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   MatchCheckPolicy = {
@@ -491,17 +569,20 @@ MatchPrioritiesShouldFollowRules (
   UT_ASSERT_EQUAL( MatchPriority, MAX_UINT8 );
 
   return UNIT_TEST_PASSED;
-} // MatchPrioritiesShouldFollowRules()
+}
 
 #endif // INTERNAL_UNIT_TEST
 
 
 ///=== POLICY MANIPULATION SUITE ==============================================
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldAllowNamespaceWildcards (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -522,12 +603,15 @@ RegisterShouldAllowNamespaceWildcards (
   UT_ASSERT_NOT_EFI_ERROR( RegisterVariablePolicy( &ValidationPolicy.Header ) );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldAllowNamespaceWildcards()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldAllowStateVarsForNamespaces (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -555,22 +639,28 @@ RegisterShouldAllowStateVarsForNamespaces (
   UT_ASSERT_NOT_EFI_ERROR( RegisterVariablePolicy( &ValidationPolicy.Header ) );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldAllowStateVarsForNamespaces()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectNullPointers (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   UT_ASSERT_EQUAL( RegisterVariablePolicy( NULL ), EFI_INVALID_PARAMETER );
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectNullPointers()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectBadRevisions (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -592,12 +682,15 @@ RegisterShouldRejectBadRevisions (
   UT_ASSERT_EQUAL( RegisterVariablePolicy( &ValidationPolicy.Header ), EFI_INVALID_PARAMETER );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectBadRevisions()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectBadSizes (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -619,12 +712,15 @@ RegisterShouldRejectBadSizes (
   UT_ASSERT_EQUAL( RegisterVariablePolicy( &ValidationPolicy.Header ), EFI_INVALID_PARAMETER );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectBadSizes()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectBadOffsets (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -666,12 +762,15 @@ RegisterShouldRejectBadOffsets (
   UT_ASSERT_EQUAL( RegisterVariablePolicy( &ValidationPolicy.Header ), EFI_INVALID_PARAMETER );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectBadOffsets()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectMissingStateStrings (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -706,12 +805,15 @@ RegisterShouldRejectMissingStateStrings (
   UT_ASSERT_EQUAL( RegisterVariablePolicy( &ValidationPolicy.Header ), EFI_INVALID_PARAMETER );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectMissingStateStrings()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectStringsMissingNull (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -747,12 +849,15 @@ RegisterShouldRejectStringsMissingNull (
   UT_ASSERT_EQUAL( RegisterVariablePolicy( &ValidationPolicy.Header ), EFI_INVALID_PARAMETER );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectStringsMissingNull()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectMalformedStrings (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -788,12 +893,15 @@ RegisterShouldRejectMalformedStrings (
   UT_ASSERT_EQUAL( RegisterVariablePolicy( &ValidationPolicy.Header ), EFI_INVALID_PARAMETER );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectMalformedStrings()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectUnpackedPolicies (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -833,12 +941,15 @@ RegisterShouldRejectUnpackedPolicies (
   UT_ASSERT_EQUAL( RegisterVariablePolicy( &ValidationPolicy.Header ), EFI_INVALID_PARAMETER );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectUnpackedPolicies()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectInvalidNameCharacters (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   // EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -864,15 +975,17 @@ RegisterShouldRejectInvalidNameCharacters (
 
   // Currently, there are no known invalid characters.
   // '#' in LockPolicy->Name are taken as literal.
-  // TODO: Determine whether any characters should be considered invalid.
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectInvalidNameCharacters()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectBadPolicyConstraints (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -895,12 +1008,15 @@ RegisterShouldRejectBadPolicyConstraints (
   UT_ASSERT_EQUAL( RegisterVariablePolicy( &ValidationPolicy.Header ), EFI_INVALID_PARAMETER );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectBadPolicyConstraints()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectUnknownLockPolicies (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -924,12 +1040,15 @@ RegisterShouldRejectUnknownLockPolicies (
   UT_ASSERT_EQUAL( RegisterVariablePolicy( &ValidationPolicy.Header ), EFI_INVALID_PARAMETER );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectUnknownLockPolicies()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectPolicesWithTooManyWildcards (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -948,16 +1067,18 @@ RegisterShouldRejectPolicesWithTooManyWildcards (
   };
 
   // 300 Hashes is currently larger than the possible maximum match priority.
-  // TODO: Determine whether this test can be made valid for the interface as a whole.
   UT_ASSERT_EQUAL( RegisterVariablePolicy( &ValidationPolicy.Header ), EFI_INVALID_PARAMETER );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectPolicesWithTooManyWildcards()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectDuplicatePolicies (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -979,12 +1100,15 @@ RegisterShouldRejectDuplicatePolicies (
   UT_ASSERT_STATUS_EQUAL( RegisterVariablePolicy( &ValidationPolicy.Header ), EFI_ALREADY_STARTED );
 
   return UNIT_TEST_PASSED;
-} // RegisterShouldRejectDuplicatePolicies()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 MinAndMaxSizePoliciesShouldBeHonored (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1041,12 +1165,15 @@ MinAndMaxSizePoliciesShouldBeHonored (
   UT_ASSERT_NOT_EFI_ERROR( PolicyCheck );
 
   return UNIT_TEST_PASSED;
-} // MinAndMaxSizePoliciesShouldBeHonored()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 AttributeMustPoliciesShouldBeHonored (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1111,12 +1238,15 @@ AttributeMustPoliciesShouldBeHonored (
   UT_ASSERT_NOT_EFI_ERROR( PolicyCheck );
 
   return UNIT_TEST_PASSED;
-} // AttributeMustPoliciesShouldBeHonored()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 AttributeCantPoliciesShouldBeHonored (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1173,12 +1303,15 @@ AttributeCantPoliciesShouldBeHonored (
   UT_ASSERT_NOT_EFI_ERROR( PolicyCheck );
 
   return UNIT_TEST_PASSED;
-} // AttributeCantPoliciesShouldBeHonored()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 VariablesShouldBeDeletableRegardlessOfSize (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1218,12 +1351,15 @@ VariablesShouldBeDeletableRegardlessOfSize (
   UT_ASSERT_NOT_EFI_ERROR( PolicyCheck );
 
   return UNIT_TEST_PASSED;
-} // VariablesShouldBeDeletableRegardlessOfSize()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 LockNowPoliciesShouldBeHonored (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1264,12 +1400,15 @@ LockNowPoliciesShouldBeHonored (
   UT_ASSERT_TRUE( EFI_ERROR( PolicyCheck ) );
 
   return UNIT_TEST_PASSED;
-} // LockNowPoliciesShouldBeHonored()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 LockOnCreatePoliciesShouldBeHonored (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1333,12 +1472,15 @@ LockOnCreatePoliciesShouldBeHonored (
   UT_ASSERT_TRUE( EFI_ERROR( PolicyCheck ) );
 
   return UNIT_TEST_PASSED;
-} // LockOnCreatePoliciesShouldBeHonored()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 LockOnStatePoliciesShouldBeHonored (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1449,12 +1591,15 @@ LockOnStatePoliciesShouldBeHonored (
   UT_ASSERT_TRUE( EFI_ERROR( PolicyCheck ) );
 
   return UNIT_TEST_PASSED;
-} // LockOnStatePoliciesShouldBeHonored()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 LockOnStatePoliciesShouldApplyToNamespaces (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1553,12 +1698,15 @@ LockOnStatePoliciesShouldApplyToNamespaces (
   UT_ASSERT_TRUE( EFI_ERROR( PolicyCheck ) );
 
   return UNIT_TEST_PASSED;
-} // LockOnStatePoliciesShouldApplyToNamespaces()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 LockOnStateShouldHandleErrorsGracefully (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1650,12 +1798,15 @@ LockOnStateShouldHandleErrorsGracefully (
   UT_ASSERT_TRUE( EFI_ERROR( PolicyCheck ) );
 
   return UNIT_TEST_PASSED;
-} // LockOnStateShouldHandleErrorsGracefully()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 BestMatchPriorityShouldBeObeyed (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1785,15 +1936,18 @@ BestMatchPriorityShouldBeObeyed (
   UT_ASSERT_NOT_EFI_ERROR( PolicyCheck );
 
   return UNIT_TEST_PASSED;
-} // BestMatchPriorityShouldBeObeyed()
+}
 
 
 ///=== POLICY UTILITY SUITE ===================================================
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToLockInterface (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
@@ -1824,12 +1978,15 @@ ShouldBeAbleToLockInterface (
   UT_ASSERT_TRUE( EFI_ERROR( RegisterVariablePolicy( &TestPolicy.Header ) ) );
 
   return UNIT_TEST_PASSED;
-} // ShouldBeAbleToLockInterface()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToDisablePolicyEnforcement (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
@@ -1867,12 +2024,15 @@ ShouldBeAbleToDisablePolicyEnforcement (
   UT_ASSERT_NOT_EFI_ERROR( PolicyCheck );
 
   return UNIT_TEST_PASSED;
-} // ShouldBeAbleToDisablePolicyEnforcement()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 ShouldNotBeAbleToDisablePoliciesTwice (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   // Make sure that the policy enforcement is currently enabled.
@@ -1885,12 +2045,15 @@ ShouldNotBeAbleToDisablePoliciesTwice (
   UT_ASSERT_TRUE( EFI_ERROR( DisableVariablePolicy() ) );
 
   return UNIT_TEST_PASSED;
-} // ShouldNotBeAbleToDisablePoliciesTwice()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToAddNewPoliciesAfterDisabled (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
@@ -1919,12 +2082,15 @@ ShouldBeAbleToAddNewPoliciesAfterDisabled (
   UT_ASSERT_NOT_EFI_ERROR( PolicyCheck );
 
   return UNIT_TEST_PASSED;
-} // ShouldBeAbleToAddNewPoliciesAfterDisabled()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToLockAfterDisabled (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   // Make sure that the policy enforcement is currently enabled.
@@ -1938,12 +2104,15 @@ ShouldBeAbleToLockAfterDisabled (
   UT_ASSERT_TRUE( IsVariablePolicyInterfaceLocked() );
 
   return UNIT_TEST_PASSED;
-} // ShouldBeAbleToLockAfterDisabled()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToDumpThePolicyTable (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
@@ -2001,12 +2170,15 @@ ShouldBeAbleToDumpThePolicyTable (
   FreePool( DumpBuffer );
 
   return UNIT_TEST_PASSED;
-} // ShouldBeAbleToDumpThePolicyTable()
+}
 
+/**
+  Test Case
+*/
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToDumpThePolicyTableAfterDisabled (
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
@@ -2079,7 +2251,7 @@ ShouldBeAbleToDumpThePolicyTableAfterDisabled (
   FreePool( DumpBuffer );
 
   return UNIT_TEST_PASSED;
-} // ShouldBeAbleToDumpThePolicyTableAfterDisabled()
+}
 
 
 ///=== TEST ENGINE ================================================================================
@@ -2094,7 +2266,9 @@ ShouldBeAbleToDumpThePolicyTableAfterDisabled (
   @retval other           Some error occured when executing this entry point.
 
 **/
-int main ()
+int
+main (
+  )
 {
   EFI_STATUS                  Status;
   UNIT_TEST_FRAMEWORK_HANDLE  Framework = NULL;
@@ -2285,7 +2459,7 @@ int main ()
   Status = RunAllTestSuites( Framework );
 
 EXIT:
-  if (Framework)
+  if (Framework != NULL)
   {
     FreeUnitTestFramework( Framework );
   }

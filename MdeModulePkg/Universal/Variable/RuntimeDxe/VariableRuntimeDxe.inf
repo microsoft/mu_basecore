@@ -10,6 +10,7 @@
 #  buffer overflow or integer overflow.
 #
 # Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+# Copyright (C) Microsoft Corporation
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -71,6 +72,7 @@
   VarCheckLib
   ## MU_CHANGE - Remove VariableLockRequestToLock() in lieu of VariablePolicy.
   MuVariablePolicyHelperLib
+  MemoryTypeInfoSecVarCheckLib  # MU_CHANGE TCBZ1086 - Mitigate potential system brick due to UEFI MemoryTypeInformation var changes
 
 [Protocols]
   gEfiFirmwareVolumeBlockProtocolGuid           ## CONSUMES
