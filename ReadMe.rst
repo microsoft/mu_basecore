@@ -14,13 +14,13 @@ This repository is part of Project Mu.  Please see Project Mu for details https:
 Branch Status - release/202008
 ==============================
 
-Status:
+:Status:
   In Development
 
-Entered Development:
+:Entered Development:
   2020/09/23
 
-Anticipated Stabilization:
+:Anticipated Stabilization:
   November 2020
 
 Branch Changes - release/202008
@@ -44,7 +44,8 @@ Bug Fixes-dev
 2008_RefBoot Changes
 --------------------
 
-- Incomplete
+- Disabled ECC Check plugin until it can be modified to be non-destructive in dev environments.
+- Fix VsInstrinsics to not build on GCC.
 
 2008_CIBuild Changes
 --------------------
@@ -54,8 +55,8 @@ Bug Fixes-dev
 2008_Rebase Changes
 -------------------
 
-Starting commit: f416458a77
-Destination commit: 06dc822d04 (tag: edk2-stable202008)
+| Starting commit: f416458a77
+| Destination commit: 06dc822d04 (tag: edk2-stable202008)
 
 - SecurityPkg\Tcg\Tcg2Pei\Tcg2Pei_LOCAL_4617.c, TCG services installation may conflict with CreateTcg2PreUefiEventLogEntries().
 - MdePkg/Library/UefiDebugLibDebugPortProtocol/DebugLibConstructor.c
@@ -63,13 +64,13 @@ Destination commit: 06dc822d04 (tag: edk2-stable202008)
 
 Address in this integration:
 
-- ee5ddc97ca ("Revert "CHERRY-PICK: MdeModulePkg/SetupBrowserDxe: Fix IsZeroGuid() ASSERT."", 2020-03-23)
+* ee5ddc97ca ("Revert "CHERRY-PICK: MdeModulePkg/SetupBrowserDxe: Fix IsZeroGuid() ASSERT."", 2020-03-23)
     - Figure out why this is here and give it a better comment
-- 2a2a7b0e9d ("[TCBZ2624] TEMP Revert b34ed98. Don't require meta files for custom source types (#58)", 2020-03-26)
+* 2a2a7b0e9d ("[TCBZ2624] TEMP Revert b34ed98. Don't require meta files for custom source types (#58)", 2020-03-26)
     - Take a look at dropping this.
-- 8238a66de4 ("Update for VS2017", 2018-01-22)
+* 8238a66de4 ("Update for VS2017", 2018-01-22)
     - Might try to drop this and see if it's still a problem for VS2017, otherwise upstream.
-- 164b09676a ("REBASE: Revert "MdePkg: Added header file for Delayed Dispatch PPI"", 2020-06-17)
+* 164b09676a ("REBASE: Revert "MdePkg: Added header file for Delayed Dispatch PPI"", 2020-06-17)
     - This should go away within this integration
 
 
@@ -91,8 +92,8 @@ Please open any issues in the Project Mu GitHub tracker and read https://microso
 Copyright & License
 ===================
 
-Copyright (c) Microsoft Corporation. All rights reserved.
-SPDX-License-Identifier: BSD-2-Clause-Patent
+| Copyright (C) Microsoft Corporation
+| SPDX-License-Identifier: BSD-2-Clause-Patent
 
 Upstream License (TianoCore)
 ============================
