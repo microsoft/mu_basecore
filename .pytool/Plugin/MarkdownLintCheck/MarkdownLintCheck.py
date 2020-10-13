@@ -20,8 +20,14 @@ from edk2toolext.environment import version_aggregator
 class MarkdownLintCheck(ICiBuildPlugin):
     """
     A CiBuildPlugin that uses the markdownlint-cli node module to scan the files
-    from the package being tested for linter errors.  The plugin contains
-    the configuration file for global rules.
+    from the package being tested for linter errors.
+
+    The linter config file (.markdownlint.yaml) must be present in one of the defined
+    locations otherwise the test will be skipped.  These locations were picked to also
+    align with how editors and tools will find the config file.
+
+    1st priority location - At the package root
+    2nd Priority location - At the workspace root of the build (suggested location unless override needed)
 
     Configuration options:
     "MarkdownLintCheck": {
@@ -29,6 +35,8 @@ class MarkdownLintCheck(ICiBuildPlugin):
         "IgnoreFiles": []            # package root relative file, folder, or glob pattern to ignore
     }
     """
+
+    CONFIG_FILE_NAME = ".markdownlint.yaml"
 
     def GetTestName(self, packagename: str, environment: VarDict) -> tuple:
         """ Provide the testcase name and classname for use in reporting
@@ -107,11 +115,32 @@ class MarkdownLintCheck(ICiBuildPlugin):
         #
         path_to_check = f"{relpath}/**/*.md"
 
-        # get path to config file
-        mydir = os.path.dirname(os.path.abspath(__file__))
-        config_file_path = os.path.join(mydir, ".markdownlint.yaml")
+        # get path to config file -
+
+        # Currently there is support for two different config files
+        # If the config file is not found then the test case is skipped
+        #
+        # 1st - At the package root
+        # 2nd - At the workspace root of the build
+        config_file_path = None
+
+        # 1st check to see if the config file is at package root
+        if os.path.isfile(os.path.join(abs_pkg_path, MarkdownLintCheck.CONFIG_FILE_NAME)):
+            config_file_path = os.path.join(abs_pkg_path, MarkdownLintCheck.CONFIG_FILE_NAME)
+
+        # 2nd check to see if at workspace root
+        elif os.path.isfile(os.path.join(Edk2pathObj.WorkspacePath, MarkdownLintCheck.CONFIG_FILE_NAME)):
+            config_file_path = os.path.join(Edk2pathObj.WorkspacePath, MarkdownLintCheck.CONFIG_FILE_NAME)
+
+        # If not found - skip test
+        else:
+            tc.SetSkipped()
+            tc.LogStdError(f"{MarkdownLintCheck.CONFIG_FILE_NAME} not found.  Skipping test")
+            logging.warning(f"{MarkdownLintCheck.CONFIG_FILE_NAME} not found.  Skipping test")
+            return -1
 
 
+        # Run the linter
         results = self._check_markdown(path_to_check, config_file_path, Ignores)
         for r in results:
             tc.LogStdError(r.strip())
