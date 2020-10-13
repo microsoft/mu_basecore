@@ -180,6 +180,7 @@
         "ucrtd",
         "msvcrtd",
         "XIPFLAGS",
+        "markdownlint",
         "bootflow",
         "bootup",
         "cacheability",
@@ -290,8 +291,6 @@
         "unrecovered",
         "cmocka",
         "unenrolling",
-        "unconfigure",
-        "Loongson",
-        "LOONGARCH"
+        "unconfigure"
     ]
 }
