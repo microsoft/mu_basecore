@@ -127,6 +127,14 @@
             "Library/CmockaLib/cmocka/**",
             "Library/GoogleTestLib/googletest/**",
             "Library/SubhookLib/subhook/**"
-        ]
+        ],
+    },
+    
+    ## options defined .pytool/Plugin/MarkdownLintCheck
+    "MarkdownLintCheck": {
+        "IgnoreFiles": [ 
+            "Library/CmockaLib/cmocka",  # cmocka is submodule outside of control
+            "Library/GoogleTestLib/googletest"  # googletest is submodule outside of control
+        ] # package root relative file, folder, or glob pattern to ignore
     }
 }
