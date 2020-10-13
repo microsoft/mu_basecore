@@ -48,6 +48,10 @@ steps:
 # install spell check prereqs
 - template: spell-check-prereq-steps.yml
 
+# MU_CHANGE - Add MarkdownLint
+# install markdownlint check prereqs
+- template: markdownlint-check-prereq-steps.yml
+
 # Build repo
 # MU_CHANGE - We use CI dependencies as well as submodules.
 - task: CmdLine@1
