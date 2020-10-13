@@ -77,11 +77,11 @@ A memory region that provides higher reliability relative to other memory in the
 ***Text Added***<br>
 **EfiGcdMemoryTypeUnaccepted**<br>
 A memory region that is unaccepted. This region must be accepted before it can be converted to system memory.<br>
-***Text Added***
+***Text Added***<br>
 ...<br>
 
-####9.8.4 Resource Descriptor HOBs
-...
+#### 9.8.4 Resource Descriptor HOBs
+...<br>
 **Table 2-20: Resource Descriptor HOB to GCD Type Mapping**<br>
 | Resource Descriptor   HOB |            | GCD Map                     |          |
 |---------------------------|------------|-----------------------------|----------|
@@ -91,7 +91,7 @@ A memory region that is unaccepted. This region must be accepted before it can b
 | Memory Reserved           |            | Reserved                    |          |
 | Unaccepted Memory         |            | Unaccepted ***Text Added*** |          |
 | …                         | …          | …                           | …        |
-...
+...<br>
 
 #### 5.3 PHIT HOB
 ...<br>
