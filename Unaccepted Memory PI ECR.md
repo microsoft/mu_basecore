@@ -44,16 +44,16 @@ See the following PR for the latest version of this ECR and the corresponding UE
 #### 7.2.4 Global Coherency Domain Services
 
 **AddMemorySpace()**<br>
-...
+...<br>
 **Parameters**<br>
 
 **GcdMemoryType**<br>
 The type of memory resource being added.  Type EFI_GCD_MEMORY_TYPE is defined in “Related Definitions” below.  The only types allowed are EfiGcdMemoryTypeReserved, EfiGcdMemoryTypeSystemMemory, EfiGcdMemoryTypePersistent, EfiGcdMemoryTypeMoreReliable, EfiGcdMemoryTypeUnaccepted, and EfiGcdMemoryTypeMemoryMappedIo. ***Text Added***<br>
-...
+...<br>
 **Description**<br>
-...
+...<br>
 If GcdMemoryType is not EfiGcdMemoryTypeReserved, EfiGcdMemoryTypeSystemMemory, EfiGcdMemoryTypeMemoryMappedIo, EfiGcdMemoryPersistent, ~~or~~ EfiGcdMemoryTypeMoreReliable or EfiGcdMemoryTypeUnaccepted then EFI_INVALID_PARAMETER is returned. ***Text Added***<br>
-...
+...<br>
 **Related Definitions**<br>
 ``` c
 //*******************************************************
@@ -70,7 +70,7 @@ typedef enum {
   EfiGcdMemoryTypeMaximum
 } EFI_GCD_MEMORY_TYPE;
 ```
-...
+...<br>
 **EfiGcdMemoryTypeMoreReliable**<br>
 A memory region that provides higher reliability relative to other memory in the system. If all memory has the same reliability, then this bit is not used.<br>
 
@@ -78,7 +78,7 @@ A memory region that provides higher reliability relative to other memory in the
 **EfiGcdMemoryTypeUnaccepted**<br>
 A memory region that is unaccepted. This region must be accepted before it can be converted to system memory.<br>
 ***Text Added***
-...
+...<br>
 
 ####9.8.4 Resource Descriptor HOBs
 ...
@@ -94,7 +94,7 @@ A memory region that is unaccepted. This region must be accepted before it can b
 ...
 
 #### 5.3 PHIT HOB
-...
+...<br>
 **Related Definitions**<br>
 ``` c
 //*****************************************************
@@ -102,9 +102,9 @@ A memory region that is unaccepted. This region must be accepted before it can b
 //*****************************************************
 #define EFI_HOB_HANDOFF_TABLE_VERSION  0x000a // Text Edited
 ```
-...
+...<br>
 #### 5.5  Resource Descriptor HOB
-...
+...<br>
 
 **Related Definitions**<br>
 There can only be a single ResourceType field, characterized as follows.
