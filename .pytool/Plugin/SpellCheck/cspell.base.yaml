@@ -179,6 +179,7 @@
         "vcruntimed",
         "ucrtd",
         "msvcrtd",
-        "XIPFLAGS"
+        "XIPFLAGS",
+        "markdownlint",
     ]
 }

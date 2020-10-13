@@ -1,0 +1,9 @@
+# Ignore build directory
+/Build/
+
+# Ignore external dependencies
+*_extdep/
+
+# Ignore cloned dependencies
+/Common/MU_TIANO
+/Silicon/Arm/MU_TIANO
