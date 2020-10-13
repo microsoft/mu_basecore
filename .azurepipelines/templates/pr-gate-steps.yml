@@ -61,6 +61,10 @@ steps:
 # install spell check prereqs
 - template: spell-check-prereq-steps.yml
 
+# MU_CHANGE - Add MarkdownLint
+# install markdownlint check prereqs
+- template: markdownlint-check-prereq-steps.yml
+
 # Build repo
 - task: CmdLine@1
   displayName: Setup ${{ parameters.build_pkgs }} ${{ parameters.build_archs}}
