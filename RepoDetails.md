@@ -33,21 +33,16 @@ Please open any issues in the Project Mu GitHub tracker. [More Details](https://
 
 Please follow the general Project Mu Pull Request process.  [More Details](https://microsoft.github.io/mu/How/contributing/)
 
-* [Code Requirements](/DeveloperDocs/code_requirements)
-* [Doc Requirements](/DeveloperDocs/doc_requirements)
+* [Code Requirements](https://microsoft.github.io/mu/CodeDevelopment/requirements/)
+* [Doc Requirements](https://microsoft.github.io/mu/DeveloperDocs/requirements/)
 
 ## Builds
 
-```cmd
-pip install mu_build
-mu_build -c corebuild.mu.json
-```
-
-[More info](https://github.com/microsoft/mu_pip_build)
+For information about building just this repo locally, see [pytool instructions](/.pytool/Readme.md#running-ci-locally)
 
 ## Copyright & License
 
-Copyright (C) Microsoft Corporation
+Copyright (C) Microsoft Corporation  
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 ### Upstream License (TianoCore)
