@@ -7,9 +7,9 @@ The C compiler produces the _fltused symbol by default, this is just to satisfy 
 
 To use FltUsedLib, just include it in the INF of the module that uses floating point.
 
-```
+```inf
 [LibraryClasses]
   BaseLib
   BaseMemoryLib
-  FltUsedLib 
+  FltUsedLib
 ```

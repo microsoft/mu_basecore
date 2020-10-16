@@ -4,8 +4,6 @@ version:    1.0 RFC
 copyright:  Copyright (c) Microsoft Corporation.
 ---
 
-# UEFI Variable Policy
-
 ## Summary
 
 UEFI Variable Policy spec aims to describe the DXE protocol interface
@@ -17,14 +15,14 @@ The Variable Policy is comprised of a set of policy entries which
 describe, per UEFI variable (identified by namespace GUID and variable
 name) the following rules:
 
--   Required variable attributes
--   Prohibited variable attributes
--   Minimum variable size
--   Maximum variable size
--   Locking:
-    -   Locking "immediately"
-    -   Locking on creation
-    -   Locking based on a state of another variable
+- Required variable attributes
+- Prohibited variable attributes
+- Minimum variable size
+- Maximum variable size
+- Locking:
+  - Locking "immediately"
+  - Locking on creation
+  - Locking based on a state of another variable
 
 The spec assumes that the Variable Policy Engine runs in a trusted
 enclave, potentially off the main CPU that runs UEFI. For that reason,
@@ -34,9 +32,9 @@ enclave is proprietary.
 
 At power-on, the Variable Policy Engine is:
 
--   Enabled -- present policy entries are evaluated on variable access
+- Enabled -- present policy entries are evaluated on variable access
     calls.
--   Unlocked -- new policy entries can be registered.
+- Unlocked -- new policy entries can be registered.
 
 Policy is expected to be clear on power-on. Policy is volatile and not
 preserved across system reset.
@@ -58,7 +56,7 @@ typedef _VARIABLE_POLICY_PROTOCOL VARIABLE_POLICY_PROTOCOL;
 extern EFI_GUID gVariablePolicyProtocolGuid;
 ```
 
-```text
+```edk2_dec
 ## Include/Protocol/VariablePolicy.h
   gVariablePolicyProtocolGuid = { 0x81D1675C, 0x86F6, 0x48DF, { 0xBD, 0x95, 0x9A, 0x6E, 0x4F, 0x09, 0x25, 0xC3 } }
 ```
@@ -208,18 +206,18 @@ are self-explanatory.
 
 `LockPolicyType` can have the following values:
 
--   `VARIABLE_POLICY_TYPE_NO_LOCK` -- means that no variable locking is performed. However,
+- `VARIABLE_POLICY_TYPE_NO_LOCK` -- means that no variable locking is performed. However,
     the attribute and size constraints are still enforced. LockPolicy
     field is size 0.
--   `VARIABLE_POLICY_TYPE_LOCK_NOW` -- means that the variable starts being locked
+- `VARIABLE_POLICY_TYPE_LOCK_NOW` -- means that the variable starts being locked
     immediately after policy entry registration. If the variable doesn't
     exist at this point, being LockedNow means it cannot be created on
     this boot. LockPolicy field is size 0.
--   `VARIABLE_POLICY_TYPE_LOCK_ON_CREATE` -- means that the variable starts being locked
+- `VARIABLE_POLICY_TYPE_LOCK_ON_CREATE` -- means that the variable starts being locked
     after it is created. This allows for variable creation and
     protection after LockVariablePolicy() function has been called. The
     LockPolicy field is size 0.
--   `VARIABLE_POLICY_TYPE_LOCK_ON_VAR_STATE` -- means that the Variable Policy Engine will
+- `VARIABLE_POLICY_TYPE_LOCK_ON_VAR_STATE` -- means that the Variable Policy Engine will
     examine the state/contents of another variable to determine if the
     variable referenced in the policy entry is locked.
 
@@ -248,11 +246,11 @@ considered inactive.
 Two types of wildcards can be used in the UEFI variable name field in a
 policy entry:
 
-1.  If the Name is a zero-length array (easily checked by comparing
+1. If the Name is a zero-length array (easily checked by comparing
     fields `Size` and `OffsetToName` -- if they're the same, then the
     `Name` is zero-length), then all variables in the namespace specified
     by the provided GUID are targeted by the policy entry.
-2.  Character "#" in the `Name` corresponds to one numeric character
+2. Character "#" in the `Name` corresponds to one numeric character
     (0-9, A-F, a-f). For example, string "Boot####" in the `Name`
     field of the policy entry will make it so that the policy entry will
     target variables named "Boot0001", "Boot0002", etc.
@@ -284,7 +282,7 @@ for the protocol and its interfaces (this test lives in the Mu Plus repo in the
 
 This test:
 
-`MdeModulePkg\Library\UefiVariablePolicyLib\UefiVariablePolicyUnitTest\UefiVariablePolicyUnitTest.inf`
+`MdeModulePkg/Library/UefiVariablePolicyLib/UefiVariablePolicyUnitTest/UefiVariablePolicyUnitTest.inf`
 
 can be run as part of the Host-Based Unit Testing infrastructure provided by EDK2
 PyTools (documented elsewhere). It will test all internal guarantees and is
@@ -293,7 +291,11 @@ Variable Policy Engine.
 
 ### Shell-Based Functional Test
 
-This test -- [Variable Policy Functional Unit Test](https://github.com/microsoft/mu_plus/tree/release/202005/UefiTestingPkg/FunctionalSystemTests/VarPolicyUnitTestApp) -- can be built as a
+This test:
+
+`UefiTestingPkg/FunctionalSystemTests/VarPolicyUnitTestApp/VarPolicyUnitTestApp.inf`
+
+in [mu_plus repository](https://github.com/microsoft/mu_plus) can be built as a
 UEFI Shell application and run to validate that the Variable Policy Engine
 is correctly installed and enforcing policies on the target system.
 
