@@ -121,8 +121,8 @@
 
     ## options defined .pytool/Plugin/MarkdownLintCheck
     "MarkdownLintCheck": {
-        "IgnoreFiles": [ "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma",  # submodule outside of control
-                         "MdeModulePkg/Library/BrotliCustomDecompressLib/brotli"   # submodule outside of control
+        "IgnoreFiles": [ "Universal/RegularExpressionDxe/oniguruma",  # submodule outside of control
+                         "Library/BrotliCustomDecompressLib/brotli"   # submodule outside of control
         ]            # package root relative file, folder, or glob pattern to ignore
     }
 }

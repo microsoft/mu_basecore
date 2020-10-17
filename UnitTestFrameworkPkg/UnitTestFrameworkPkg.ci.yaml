@@ -97,7 +97,7 @@
 
     ## options defined .pytool/Plugin/MarkdownLintCheck
     "MarkdownLintCheck": {
-        "IgnoreFiles": [ "UnitTestFrameworkPkg/Library/CmockaLib/cmocka"  # cmocka is submodule outside of control
+        "IgnoreFiles": [ "Library/CmockaLib/cmocka"  # cmocka is submodule outside of control
         ]            # package root relative file, folder, or glob pattern to ignore
     }
 }
