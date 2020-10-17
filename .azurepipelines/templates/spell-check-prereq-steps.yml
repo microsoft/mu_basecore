@@ -13,7 +13,7 @@ parameters:
 steps:
 - task: NodeTool@0
   inputs:
-    versionSpec: '12.x'  # mu_change [TCBZ2618]
+    versionSpec: '14.x'  # mu_change [TCBZ2618]
     #checkLatest: false # Optional
   condition: and(gt(variables.pkg_count, 0), succeeded())
 
