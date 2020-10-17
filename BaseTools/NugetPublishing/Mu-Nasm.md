@@ -1,10 +1,10 @@
 # Mu-Nasm Notes
 
-This tool is the open source NASM assembler.  More information can be found at https://nasm.us/
+This tool is the open source NASM assembler.  More information can be found at <https://nasm.us/>
 
 ## Where
 
-Go to https://nasm.us and find the desired download.
+Go to <https://nasm.us> and find the desired download.
 
 ## What
 
@@ -15,10 +15,10 @@ nasm.exe is the assembler.
 ``` cmd
 nasm.exe -v
 ```
+
 Nuget version is AA.BB.CC
 
 * The version command generally outputs a version in AA.BB.CC format.  
-
 
 ## Process to publish new version of tool
 
@@ -30,7 +30,7 @@ Nuget version is AA.BB.CC
 6. Run the nasm.exe -v command to see the version.
 7. Open cmd prompt in the NugetPublishing dir
 8. Pack and push
+
   ```cmd
   NugetPublishing.py --Operation PackAndPush --ConfigFilePath Mu-Nasm.config.json --Version <nuget version here> --InputFolderPath <path to newly created folder here>  --ApiKey <your key here>
   ```
-

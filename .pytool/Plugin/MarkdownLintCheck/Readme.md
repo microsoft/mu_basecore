@@ -15,6 +15,22 @@ The test case in this plugin will be skipped if the requirements are not met.
 * markdownlint-cli: <https://www.npmjs.com/package/markdownlint-cli>
   * Src available:  <https://github.com/igorshubovych/markdownlint-cli>
 
+## Configuration
+
+It is desired to use standard configuration methods so that both local editors (vscode, etc)
+and the CI process leverage the same configuration.  This mostly works but for ignoring
+files there is currently a small discrepancy.  
+
+First there is/can be a `.markdownlintignore` file at root of the repository.  This
+file much like a `.gitignore` is great for broadly ignoring files with patterns.  This
+works for both editor/ci.  
+
+But for package based ignores and to keep the control of which files to ignore within the package
+there is no answer that supports both CI and editors.  Open question here
+<https://github.com/DavidAnson/vscode-markdownlint/issues/130>
+
+For the CI plugin you can use the IgnoreFiles configuration option described in the Plugin Configuration.
+
 ## Plugin Configuration
 
 The plugin has only minimal configuration options to support the UEFI codebase.
