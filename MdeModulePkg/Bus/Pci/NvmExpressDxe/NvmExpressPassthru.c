@@ -609,7 +609,15 @@ NvmExpressPassThru (
   Prp         = NULL;
   TimerEvent  = NULL;
   Status      = EFI_SUCCESS;
-  QueueSize   = MIN (NVME_ASYNC_CSQ_SIZE, Private->Cap.Mqes) + 1;
+
+  // MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
+  if (PcdGetBool (PcdSupportAlternativeQueueSize)) {
+    QueueSize = MIN (NVME_ALTERNATIVE_MAX_QUEUE_SIZE, Private->Cap.Mqes) + 1;
+  } else {
+    QueueSize = MIN (NVME_ASYNC_CSQ_SIZE, Private->Cap.Mqes) + 1;
+  }
+
+  // MU_CHANGE [END]
 
   // MS_CHANGE [BEGIN] - Add extra debugging for IOMMU error tracking.
   DEBUG_CODE (
@@ -651,6 +659,14 @@ NvmExpressPassThru (
   if (Packet->NvmeCmd->Nsid != NamespaceId) {
     return EFI_INVALID_PARAMETER;
   }
+
+  // MU_CHANGE - Support alternative hardware queue sizes in NVME driver
+  //
+  // Nvme DXE driver polls phase bit for CQe completion.
+  // Explicitly assign phase bit with the bit before completion.
+  // A flipped phase bit will be assigned by device upon CQe completes.
+  //
+  Cq->Pt = Private->Pt[QueueId];
 
   ZeroMem (Sq, sizeof (NVME_SQ));
   Sq->Opc  = (UINT8)Packet->NvmeCmd->Cdw0.Opcode;
@@ -825,15 +841,22 @@ NvmExpressPassThru (
     Sq->Payload.Raw.Cdw15 = Packet->NvmeCmd->Cdw15;
   }
 
-  //
-  // Ring the submission queue doorbell.
-  //
-  if ((Event != NULL) && (QueueId != 0)) {
-    Private->SqTdbl[QueueId].Sqt =
-      (Private->SqTdbl[QueueId].Sqt + 1) % QueueSize;
+  // MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
+  if (PcdGetBool (PcdSupportAlternativeQueueSize)) {
+    Private->SqTdbl[QueueId].Sqt = (Private->SqTdbl[QueueId].Sqt + 1) % QueueSize;
   } else {
-    Private->SqTdbl[QueueId].Sqt ^= 1;
+    //
+    // Ring the submission queue doorbell.
+    //
+    if ((Event != NULL) && (QueueId != 0)) {
+      Private->SqTdbl[QueueId].Sqt =
+        (Private->SqTdbl[QueueId].Sqt + 1) % QueueSize;
+    } else {
+      Private->SqTdbl[QueueId].Sqt ^= 1;
+    }
   }
+
+  // MU_CHANGE [END]
 
   Data   = ReadUnaligned32 ((UINT32 *)&Private->SqTdbl[QueueId]);
   Status = PciIo->Mem.Write (
@@ -969,9 +992,19 @@ NvmExpressPassThru (
     goto EXIT;
   }
 
-  if ((Private->CqHdbl[QueueId].Cqh ^= 1) == 0) {
-    Private->Pt[QueueId] ^= 1;
+  // MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
+  if (PcdGetBool (PcdSupportAlternativeQueueSize)) {
+    Private->CqHdbl[QueueId].Cqh = (Private->CqHdbl[QueueId].Cqh + 1) % QueueSize;
+    if (Private->CqHdbl[QueueId].Cqh == 0) {
+      Private->Pt[QueueId] ^= 1;
+    }
+  } else {
+    if ((Private->CqHdbl[QueueId].Cqh ^= 1) == 0) {
+      Private->Pt[QueueId] ^= 1;
+    }
   }
+
+  // MU_CHANGE [END]
 
   Data           = ReadUnaligned32 ((UINT32 *)&Private->CqHdbl[QueueId]);
   PreviousStatus = Status;
