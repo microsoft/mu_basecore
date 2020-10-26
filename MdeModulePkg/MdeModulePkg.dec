@@ -1262,6 +1262,10 @@
   # Default is 2000, it represent delay is 2 ms.
   # @Prompt Delay access XHCI register after it issues HCRST (us)
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayXhciHCReset|2000|UINT16|0x30001060
+  
+  # MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportAlternativeQueueSize|FALSE|BOOLEAN|0x40000151
+  # MU_CHANGE [END]
 
   # MU_CHANGE [BEGIN] - Support indefinite boot retries
   # # Some platforms require that all EfiLoadOptions are retried until one of the options
