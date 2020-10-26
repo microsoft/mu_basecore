@@ -655,6 +655,9 @@ ProcessAsyncTaskList (
   EFI_BLOCK_IO2_TOKEN           *Token;
   BOOLEAN                       HasNewItem;
   EFI_STATUS                    Status;
+  // MU_CHANGE - Support alternative hardware queue sizes in NVME driver
+  UINT16  QueueSize = PcdGetBool (PcdSupportAlternativeQueueSize) ?
+                      NVME_ALTERNATIVE_MAX_QUEUE_SIZE : NVME_ASYNC_CCQ_SIZE;
 
   Private    = (NVME_CONTROLLER_PRIVATE_DATA *)Context;
   QueueId    = 2;
@@ -797,7 +800,8 @@ ProcessAsyncTaskList (
     }
 
     Private->CqHdbl[QueueId].Cqh++;
-    if (Private->CqHdbl[QueueId].Cqh > MIN (NVME_ASYNC_CCQ_SIZE, Private->Cap.Mqes)) {
+    // MU_CHANGE - Support alternative hardware queue sizes in NVME driver
+    if (Private->CqHdbl[QueueId].Cqh > MIN (QueueSize, Private->Cap.Mqes)) {
       Private->CqHdbl[QueueId].Cqh = 0;
       Private->Pt[QueueId]        ^= 1;
     }
