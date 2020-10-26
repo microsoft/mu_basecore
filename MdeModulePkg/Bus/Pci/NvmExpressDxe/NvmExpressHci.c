@@ -769,7 +769,11 @@ NvmeCreateIoCompletionQueue (
     CommandPacket.QueueType      = NVME_ADMIN_QUEUE;
 
     // MU_CHANGE [BEGIN] - Use the Mqes value from the Cap register
-    if (Index == 1) {
+    // MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
+    if (PcdGetBool (PcdSupportAlternativeQueueSize)) {
+      QueueSize = MIN (NVME_ALTERNATIVE_MAX_QUEUE_SIZE, Private->Cap.Mqes);
+    } else if (Index == 1) {
+      // MU_CHANGE [END] - Support alternative hardware queue sizes in NVME driver
       QueueSize = MIN (NVME_CCQ_SIZE, Private->Cap.Mqes);
     } else {
       QueueSize = MIN (NVME_ASYNC_CCQ_SIZE, Private->Cap.Mqes);
@@ -846,7 +850,11 @@ NvmeCreateIoSubmissionQueue (
     CommandPacket.QueueType      = NVME_ADMIN_QUEUE;
 
     // MU_CHANGE [BEGIN] - Use the Mqes value from the Cap register
-    if (Index == 1) {
+    // MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
+    if (PcdGetBool (PcdSupportAlternativeQueueSize)) {
+      QueueSize = MIN (NVME_ALTERNATIVE_MAX_QUEUE_SIZE, Private->Cap.Mqes);
+    } else if (Index == 1) {
+      // MU_CHANGE [END] - Support alternative hardware queue sizes in NVME driver
       QueueSize = MIN (NVME_CSQ_SIZE, Private->Cap.Mqes);
     } else {
       QueueSize = MIN (NVME_ASYNC_CSQ_SIZE, Private->Cap.Mqes);
@@ -1036,7 +1044,7 @@ NvmeControllerInit (
   EFI_STATUS           Status;
   EFI_PCI_IO_PROTOCOL  *PciIo;
   UINT64               Supports;
-  // NVME_AQA             Aqa;
+  UINT16               VidDid[2];  // MU_CHANGE - Improve NVMe controller init robustness
   // NVME_ASQ             Asq;
   // NVME_ACQ             Acq;
   UINT8                 Sn[21];
@@ -1050,10 +1058,33 @@ NvmeControllerInit (
 
   // MU_CHANGE [END] - Allocate IO Queue Buffer
 
+  // MU_CHANGE [BEGIN] - Improve NVMe controller init robustness
+  PciIo = Private->PciIo;
+
+  //
+  // Verify the controller is still accessible
+  //
+  Status = PciIo->Pci.Read (
+                        PciIo,
+                        EfiPciIoWidthUint16,
+                        PCI_VENDOR_ID_OFFSET,
+                        ARRAY_SIZE (VidDid),
+                        VidDid
+                        );
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return EFI_DEVICE_ERROR;
+  }
+
+  if ((VidDid[0] == NVME_INVALID_VID_DID) || (VidDid[1] == NVME_INVALID_VID_DID)) {
+    return EFI_DEVICE_ERROR;
+  }
+
+  // MU_CHANGE [END] - Improve NVMe controller init robustness
+
   //
   // Enable this controller.
   //
-  PciIo  = Private->PciIo;
   Status = PciIo->Attributes (
                     PciIo,
                     EfiPciIoAttributeOperationSupported,
@@ -1092,7 +1123,16 @@ NvmeControllerInit (
   //
   // Currently the driver only supports 4k page size.
   //
-  ASSERT ((Private->Cap.Mpsmin + 12) <= EFI_PAGE_SHIFT);
+  // MU_CHANGE [BEGIN] - Improve NVMe controller init robustness
+
+  // Currently, this means Cap.Mpsmin must be zero for an EFI_PAGE_SHIFT size of 12.
+  // ASSERT ((Private->Cap.Mpsmin + 12) <= EFI_PAGE_SHIFT);
+  if ((Private->Cap.Mpsmin + 12) > EFI_PAGE_SHIFT) {
+    DEBUG ((DEBUG_ERROR, "NvmeControllerInit: Mpsmin is larger than expected (0x%02x).\n", Private->Cap.Mpsmin));
+    return EFI_DEVICE_ERROR;
+  }
+
+  // MU_CHANGE [END] - Improve NVMe controller init robustness
 
   // MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
 
@@ -1122,10 +1162,12 @@ NvmeControllerInit (
   //
   // set number of entries admin submission & completion queues.
   //
-  Aqa.Asqs  = MIN (NVME_ASQ_SIZE, Private->Cap.Mqes);
+  // MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
+  Aqa.Asqs  = PcdGetBool (PcdSupportAlternativeQueueSize) ? MIN (NVME_ALTERNATIVE_MAX_QUEUE_SIZE, Private->Cap.Mqes) : MIN (NVME_ASQ_SIZE, Private->Cap.Mqes);
   Aqa.Rsvd1 = 0;
-  Aqa.Acqs  = MIN (NVME_ACQ_SIZE, Private->Cap.Mqes);
+  Aqa.Acqs  = PcdGetBool (PcdSupportAlternativeQueueSize) ? MIN (NVME_ALTERNATIVE_MAX_QUEUE_SIZE, Private->Cap.Mqes) : MIN (NVME_ACQ_SIZE, Private->Cap.Mqes);
   Aqa.Rsvd2 = 0;
+  // MU_CHANGE [END] - Support alternative hardware queue sizes in NVME driver
 
   //
   // Set admin queue entry size to default
