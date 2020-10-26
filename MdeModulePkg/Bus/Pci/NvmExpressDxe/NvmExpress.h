@@ -84,6 +84,21 @@ extern EFI_GUID  gNVMeEnableCompleteEventGroupGuid;
 
 #define NVME_MAX_QUEUES  3                              // Number of queues supported by the driver
 
+// MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
+
+//
+// NVMe DXE to accommodate hardware which requires queue size 255.
+// Driver supports queue size up to 255 (4 page SQ buffer).
+// DXE driver creates queue size MIN(Cap.Mqes, NVME_MAX_QUEUE_SIZE) for all queues.
+// Driver allocates queue buffer to support 255 max queue size.
+// Each submission queue buffer is allocated as 64B * 256 = 4 * 4kB = 4 pages.
+// Each completion queue buffer is allocated as 16B * 256 = 4kB = 1 page.
+//
+#define NVME_ALTERNATIVE_MAX_QUEUE_SIZE               255
+#define NVME_ALTERNATIVE_TOTAL_QUEUE_BUFFER_IN_PAGES  NVME_MAX_QUEUES * 5
+
+// MU_CHANGE [END]
+
 #define NVME_CONTROLLER_ID  0
 
 //
