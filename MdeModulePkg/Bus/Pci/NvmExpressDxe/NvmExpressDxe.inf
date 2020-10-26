@@ -76,6 +76,11 @@
   gEfiDriverSupportedEfiVersionProtocolGuid   ## PRODUCES
   gEfiResetNotificationProtocolGuid           ## CONSUMES
 
+[Pcd]
+  ## MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportAlternativeQueueSize ## CONSUMES
+  ## MU_CHANGE [END]
+
 # [Event]
 # EVENT_TYPE_RELATIVE_TIMER ## SOMETIMES_CONSUMES
 #

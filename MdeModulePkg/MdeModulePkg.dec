@@ -1183,6 +1183,10 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxMemoryTypeInfoPages            |0x60000|UINT32|0x40000150
   # MU_CHANGE TCBZ1086 [END]
 
+  # MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportAlternativeQueueSize|FALSE|BOOLEAN|0x40000151
+  # MU_CHANGE [END]
+
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Dynamic type PCD can be registered callback function for Pcd setting action.
   #  PcdMaxPeiPcdCallBackNumberPerPcdEntry indicates the maximum number of callback function
