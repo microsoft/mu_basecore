@@ -954,9 +954,9 @@
   #   FALSE - Does not support process non-reset capsule image at runtime.<BR>
   # @Prompt Enable process non-reset capsule image at runtime.
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportProcessCapsuleAtRuntime|FALSE|BOOLEAN|0x00010079
-  
+
   ## MU_CHANGE
-  ## Indicates that the system should not automatically enable BME on P2P bridges until a subordinate 
+  ## Indicates that the system should not automatically enable BME on P2P bridges until a subordinate
   #  device has its Bus Master Enable bit set by a call to PciIo->SetAttributes.
   #  Note: Some UEFI drivers are not compliant and do not correctly call SetAttributes before attempting
   #  DMA operations. For these drivers, this setting will cause a functionality break.
@@ -1161,6 +1161,10 @@
   # Size in pages. Current default is roughly 1.6GB.
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxMemoryTypeInfoPages            |0x60000|UINT32|0x40000150
   # MU_CHANGE TCBZ1086 [END]
+
+  # MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportAlternativeQueueSize|FALSE|BOOLEAN|0x40000151
+  # MU_CHANGE [END]
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Dynamic type PCD can be registered callback function for Pcd setting action.
@@ -2218,7 +2222,7 @@
   ## This dynamic PCD holds the device state bitmap as described in Include/Library/DeviceStateLib.h
   # @Prompt Describes device state
   gEfiMdeModulePkgTokenSpaceGuid.PcdDeviceStateBitmask|0x00000000|UINT32|0x00030007
-  
+
 [PcdsDynamicEx]
   ## This dynamic PCD enables the default variable setting.
   #  Its value is the default store ID value. The default value is zero as Standard default.
