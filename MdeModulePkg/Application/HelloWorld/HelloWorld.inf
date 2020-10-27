@@ -36,6 +36,7 @@
 [Sources]
   HelloWorld.c
   HelloWorldStr.uni
+  HelloWorld.ver # MU_CHANGE add version information
 
 [Packages]
   MdePkg/MdePkg.dec
