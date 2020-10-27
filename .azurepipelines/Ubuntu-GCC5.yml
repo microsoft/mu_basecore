@@ -30,4 +30,8 @@ jobs:
     tool_chain_tag: 'GCC5'
     vm_image: 'ubuntu-latest'
     arch_list: "IA32,X64,ARM,AARCH64"
+    # MU_CHANGE
+    extra_steps:
+    - script: sudo apt-get install mingw-w64
+      displayName: Install Windows Resource Compiler for Linux
 
