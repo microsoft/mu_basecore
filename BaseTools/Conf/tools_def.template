@@ -2000,6 +2000,8 @@ DEFINE GCC5_LOONGARCH64_PP_FLAGS           = -mabi=lp64d -march=loongarch64 DEF(
 *_GCC48_*_ASL_FLAGS                    = DEF(IASL_FLAGS)
 *_GCC48_*_ASL_OUTFLAGS                 = DEF(IASL_OUTFLAGS)
 *_GCC48_*_DEPS_FLAGS                   = DEF(GCC_DEPS_FLAGS)
+# MU_CHANGE use windres
+*_GCC48_*_MSRC_PATH                    = x86_64-w64-mingw32-windres
 
 ##################
 # GCC48 IA32 definitions
@@ -2281,6 +2283,9 @@ RELEASE_GCC49_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x20
 *_GCC5_*_ASL_FLAGS               = DEF(IASL_FLAGS)
 *_GCC5_*_ASL_OUTFLAGS            = DEF(IASL_OUTFLAGS)
 *_GCC5_*_DEPS_FLAGS                   = DEF(GCC_DEPS_FLAGS)
+
+# MU_CHANGE use windres, this requires - sudo apt-get install mingw-w64
+*_GCC5_*_MSRC_PATH               = x86_64-w64-mingw32-windres
 
 ##################
 # GCC5 IA32 definitions

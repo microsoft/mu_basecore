@@ -12,6 +12,7 @@ parameters:
   tool_chain_tag: ''
   vm_image: ''
   arch_list: ''
+  extra_steps: []   # MU_CHANGE
 
 # Build step
 jobs:
@@ -50,6 +51,7 @@ jobs:
     vmImage: ${{ parameters.vm_image }}
 
   steps:
+  - ${{ parameters.extra_steps }}   # MU_CHANGE
   - template: pr-gate-steps.yml
     parameters:
       tool_chain_tag: ${{ parameters.tool_chain_tag }}

@@ -115,8 +115,10 @@
 # 2.00 - Add .slib and .efi support in the sources file
 # 2.01 - Add support for DEPS_FLAGS as well as
 # 2.23 - Add OemData Definitions
+# 2.24 - Add .arc and .ver file type to add .rsrc sections to EFI images.
+# 2.25 - Split OemData rule into intermediate binary and final binary rules.
 
-#!VERSION=2.23
+#!VERSION=2.25
 
 [C-Code-File]
     <InputFile>
@@ -510,12 +512,12 @@
         "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff $(GENFW_FLAGS)
 
 # MU_CHANGE BEGIN
-[C-Code-File-OemData]
+[C-Code-File-OemDataIntermediate]
     <InputFile>
         ?.oemdatac
 
     <OutputFile>
-        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i
 
     <ExtraDependency>
         $(MAKE_FILE)
@@ -524,19 +526,27 @@
         "$(CC)" /Fo$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(DEPS_FLAGS) /nologo /c /FIAutoGen.h /TC /Dmain=main $(INC) ${src}
         "$(DLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll /NODEFAULTLIB /ENTRY:main /SUBSYSTEM:CONSOLE $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
         "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
-        OemDataFormatter $(OUTPUT_DIR)(+)${s_dir}
 
     <Command.GCC>
         "$(CC)" $(DEPS_FLAGS) -c -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(CC_FLAGS) -fno-toplevel-reorder -x c $(DEPS_FLAGS) $(INC) ${src}
         "$(DLINK)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(DLINK_COMMON) -u $(IMAGE_ENTRY_POINT) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(CC_FLAGS)
         "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
-        OemDataFormatter $(OUTPUT_DIR)(+)${s_dir}
 
     <Command.CLANGPDB>
         "$(CC)" $(DEPS_FLAGS) -c -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj -O0 -fkeep-static-consts --language=c $(DEPS_FLAGS) $(INC) ${src}
         "$(DLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll /NODEFAULTLIB /ENTRY:main /SUBSYSTEM:CONSOLE $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
         "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
-        OemDataFormatter $(OUTPUT_DIR)(+)${s_dir}
+
+[OemDataIntermediate-to-OemDataBin]
+    <InputFile>
+        ?.oemdatabin.i
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME).oemdatabin
+
+    <Command>
+        OemDataFormatter $(OUTPUT_DIR)(+)${s_dir} $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME).oemdatabin
+
 # MU_CHANGE END
 
 [Masm16-Code-File]
@@ -743,3 +753,39 @@
         "$(RC)" $(RC_FLAGS) $(OUTPUT_DIR)(+)$(MODULE_NAME)hii.rc ${dst}
     <Command.XCODE, Command.CLANGGCC>
         "$(GENFW)" -o $(OUTPUT_DIR)(+)$(MODULE_NAME)hii.rc -g $(MODULE_GUID) --hiibinpackage $(HII_BINARY_PACKAGES) $(GENFW_FLAGS)
+
+# MU_CHANGE Start
+[Resource-File]
+    <InputFile>
+        *.arc
+
+    <OutputFile.MSFT, OutputFile.INTEL, OutputFile.CLANGPDB>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME)Resource.lib
+
+    <OutputFile.GCC>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME)Resource.rc
+
+    <OutputFile.XCODE, OutputFile.RVCT>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME)Resource.rc
+
+    <Command.MSFT, Command.INTEL, Command.CLANGPDB>
+        "$(RC)" /Fo${dst} ${src}
+
+    <Command.GCC>
+        "$(MSRC)" -i ${src} -o ${dst} -Jrc -v
+        # first run the resource compiler, let it know we have an RC file, and tell it know it needs to produce a PECOFF
+        #"$(MSRC)" -i ${src} -o $(OUTPUT_DIR)(+)$(MODULE_NAME)Resource.windres.o -Jrc -Ocoff -v
+        # Then we run object copy to convert the PEX64 that windres produces to the elf64 gcc expects
+        # TODO - figure out the correct output format for the current arch
+        #"$(RC)" -O elf64-x86-64 $(OUTPUT_DIR)(+)$(MODULE_NAME)Resource.windres.o ${dst}
+
+[Version-Info-File]
+    <InputFile>
+        *.ver
+
+    <OutputFile.MSFT, OutputFile.INTEL, OutputFile.GCC, OutputFile.CLANGPDB>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).arc
+
+    <Command.MSFT, Command.INTEL, Command.CLANGPDB, Command.GCC, Command.XCODE>
+        versioninfo_tool -e ${src} ${dst}
+# MU_CHANGE End
