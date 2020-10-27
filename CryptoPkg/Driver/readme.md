@@ -6,7 +6,8 @@ There are two routes: using the pre-compiled version and compiling it into your 
 
 ## Benefits
 
-But first, why would you care about this? 
+But first, why would you care about this?
+
 It has a few benefits, namely:
 
 - Smaller Binary sizes
@@ -14,7 +15,7 @@ It has a few benefits, namely:
 - Transparency on what version of crypto you're using
 - Reduced build times (if using pre-compiled version)
 
-There are different flavors of Crypto available, with different functions supported. 
+There are different flavors of Crypto available, with different functions supported.
 Don't need to use HMAC in your PEI phase?
 Select a service level or flavor that doesn't include HMAC in your platform.
 
@@ -23,45 +24,53 @@ Select a service level or flavor that doesn't include HMAC in your platform.
 Now there are a few options for you. We'll start with the pre-compiled route.
 
 ### The Pre-compiled (easy) way
-The easy way involves setting a few variables and a few includes. 
+
+The easy way involves setting a few variables and a few includes.
 The hard way is just to do it yourself.
 
 First the easy way:
 
 1. Define the service level that you want for each phase of UEFI in the defines section of your DSC.
-``` dsc 
-[Defines]
-    DEFINE PEI_CRYPTO_SERVICES = TINY_SHA
-    DEFINE DXE_CRYPTO_SERVICES = STANDARD
-    DEFINE SMM_CRYPTO_SERVICES = STANDARD
-    DEFINE PEI_CRYPTO_ARCH = IA32
-    DEFINE DXE_CRYPTO_ARCH = X64
-    DEFINE SMM_CRYPTO_ARCH = X64
-```
-The above example is for a standard intel platform, and the service levels or flavors available. 
+
+    ``` dsc
+    [Defines]
+        DEFINE PEI_CRYPTO_SERVICES = TINY_SHA
+        DEFINE DXE_CRYPTO_SERVICES = STANDARD
+        DEFINE SMM_CRYPTO_SERVICES = STANDARD
+        DEFINE PEI_CRYPTO_ARCH = IA32
+        DEFINE DXE_CRYPTO_ARCH = X64
+        DEFINE SMM_CRYPTO_ARCH = X64
+    ```
+
+    The above example is for a standard intel platform, and the service levels or flavors available.
 
 2. Add the DSC include
-``` dsc
-!include CryptoPkg/Driver/Bin/CryptoDriver.inc.dsc
-```
-This sets the definitions for BaseCryptLib as well as includes the correct flavor level of the component you wish to use.
+
+    ``` dsc
+    !include CryptoPkg/Driver/Bin/CryptoDriver.inc.dsc
+    ```
+
+    This sets the definitions for BaseCryptLib as well as includes the correct flavor level of the component you
+    wish to use.
 
 3. Add the FDF includes to your platform FDF
 
-Currently, it isn't possible in an FDF to redefine a FV section and have them be combined. 
-There are two includes: BOOTBLOCK and DXE.
-The first includes the PEI phase and is meant to be stuck in your BOOTBLOCK FV.
-The second contains the DXE and SMM modules and is meant to be stuck in your FVDXE.
-``` fdf
-[FV.FVBOOTBLOCK]
-  ...
-!include CryptoPkg/Driver/Bin/CryptoDriver.BOOTBLOCK.inc.fdf
-...
+    Currently, it isn't possible in an FDF to redefine a FV section and have them be combined.
+    There are two includes: BOOTBLOCK and DXE.
+    The first includes the PEI phase and is meant to be stuck in your BOOTBLOCK FV.
+    The second contains the DXE and SMM modules and is meant to be stuck in your FVDXE.
 
-[FV.FVDXE]
-  ...
-  !include CryptoPkg/Driver/Bin/CryptoDriver.BOOTBLOCK.inc.fdf
-```
+    ``` fdf
+    [FV.FVBOOTBLOCK]
+      ...
+    !include CryptoPkg/Driver/Bin/CryptoDriver.BOOTBLOCK.inc.fdf
+    ...
+
+    [FV.FVDXE]
+      ...
+      !include CryptoPkg/Driver/Bin/CryptoDriver.DXE.inc.fdf
+    ```
+
 ### Recommendations
 
 It is highly recommended to put this logic behind conditionals like so:
@@ -84,8 +93,10 @@ Just add a check if it's not defined in your DSC like so.
 
 ### The DIY way
 
-If you want to take advantage of the BaseCryptOnProtocol but don't want to use a pre-compiled method, you can compile it within your platform itself.
-Shown here is for an intel platform, adjust the architectures as needed. 
+If you want to take advantage of the BaseCryptOnProtocol but don't want to use a pre-compiled method, you can compile
+it within your platform itself.
+
+Shown here is for an Intel platform, adjust the architectures as needed.
 
 ``` dsc
 
@@ -128,9 +139,9 @@ Shown here is for an intel platform, adjust the architectures as needed.
 ```
 
 The PCDs are long and default to all false.
-The flavors are stored as .inc.dsc files at `CryptoPkg\Driver\Packaging`. 
-An example would be `CryptoPkg\Driver\Packaging\Crypto.pcd.TINY_SHA.inc.dsc` which is a flavor that just has Sha1, Sha256, and Sha386.
-
+The flavors are stored as .inc.dsc files at `CryptoPkg\Driver\Packaging`.
+An example would be `CryptoPkg\Driver\Packaging\Crypto.pcd.TINY_SHA.inc.dsc` which is a flavor that just has Sha1,
+Sha256, and Sha386.
 
 You'll need to include these components in your FDF as well.
 
