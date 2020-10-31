@@ -49,7 +49,8 @@ Details](https://microsoft.github.io/mu/How/contributing/)
 
 ## Builds
 
-See ReadMe in the `.pytool` folder for steps. Find a section called `## Running CI locally`
+Please follow the steps in the Project Mu docs to build for CI and local
+testing. [More Details](https://microsoft.github.io/mu/CodeDevelopment/compile/)
 
 ## Copyright & License
 
