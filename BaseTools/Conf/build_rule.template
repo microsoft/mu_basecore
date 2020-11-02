@@ -768,29 +768,16 @@
         GenFw -o $(OUTPUT_DIR)(+)$(MODULE_NAME)hii.rc -g $(MODULE_GUID) --hiibinpackage $(HII_BINARY_PACKAGES)
 
 # MU_CHANGE Start
-[Resource-File]
+[Resource-File.UEFI_HII]
     <InputFile>
         *.arc
 
-    <OutputFile.MSFT, OutputFile.INTEL, OutputFile.CLANGPDB>
-        $(OUTPUT_DIR)(+)$(MODULE_NAME)Resource.lib
-
-    <OutputFile.GCC>
-        $(OUTPUT_DIR)(+)$(MODULE_NAME)Resource.rc
-
-    <OutputFile.XCODE, OutputFile.RVCT>
-        $(OUTPUT_DIR)(+)$(MODULE_NAME)Resource.rc
-
-    <Command.MSFT, Command.INTEL, Command.CLANGPDB>
-        "$(RC)" /Fo${dst} ${src}
+    <OutputFile.MSFT, OutputFile.INTEL, OutputFile.GCC, OutputFile.CLANGPDB>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME)Resource.hpk
 
     <Command.GCC>
-        "$(MSRC)" -i ${src} -o ${dst} -Jrc -v
-        # first run the resource compiler, let it know we have an RC file, and tell it know it needs to produce a PECOFF
-        #"$(MSRC)" -i ${src} -o $(OUTPUT_DIR)(+)$(MODULE_NAME)Resource.windres.o -Jrc -Ocoff -v
-        # Then we run object copy to convert the PEX64 that windres produces to the elf64 gcc expects
-        # TODO - figure out the correct output format for the current arch
-        #"$(RC)" -O elf64-x86-64 $(OUTPUT_DIR)(+)$(MODULE_NAME)Resource.windres.o ${dst}
+        # Compile the Resource source .rc to a binary .res file format
+        "$(MSRC)" -i ${src} -o ${dst} -Jrc -Ores -v
 
 [Version-Info-File]
     <InputFile>
