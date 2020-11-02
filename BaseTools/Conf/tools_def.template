@@ -3234,17 +3234,17 @@ RELEASE_*_IA32_RUSTC_FLAGS  = --edition=2018 --target i686-unknown-uefi   -C opt
 ##################
 # CARGO definitions
 ##################
-*_*_*_CARGO_PATH            = cargo
+*_*_*_CARGO_PATH            = cargo +nightly
 NOOPT_*_X64_CARGO_FLAGS     =
-#DEBUG_*_X64_CARGO_FLAGS    = --target x86_64-unknown-uefi
-*_*_X64_CARGO_FLAGS         = --target x86_64-unknown-uefi --release
+#DEBUG_*_X64_CARGO_FLAGS    = -Z build-std=core,alloc --target x86_64-unknown-uefi
+*_*_X64_CARGO_FLAGS         = -Z build-std=core,alloc --target x86_64-unknown-uefi --release
 NOOPT_*_IA32_CARGO_FLAGS    =
-#DEBUG_*_IA32_CARGO_FLAGS   = --target i686-unknown-uefi
-*_*_IA32_CARGO_FLAGS        = --target i686-unknown-uefi   --release
+#DEBUG_*_IA32_CARGO_FLAGS   = -Z build-std=core,alloc --target x86_64-unknown-uefi
+*_*_IA32_CARGO_FLAGS        = -Z build-std=core,alloc --target x86_64-unknown-uefi --release
 
 NOOPT_*_*_CARGO_BUILDCMD     = build
-DEBUG_*_*_CARGO_BUILDCMD     = xbuild
-RELEASE_*_*_CARGO_BUILDCMD   = xbuild
+DEBUG_*_*_CARGO_BUILDCMD     = build
+RELEASE_*_*_CARGO_BUILDCMD   = build
 
 # MS_CHANGE END
 
