@@ -119,8 +119,9 @@
 # 2.23 - Add OemData Definitions
 # 2.24 - Add .arc and .ver file type to add .rsrc sections to EFI images.
 # 2.25 - PSYCHE! Rust is back!
+# 2.26 - Reinstate the Rust lib build rules.
 
-#!VERSION=2.25
+#!VERSION=2.26
 
 [C-Code-File]
     <InputFile>
@@ -284,6 +285,7 @@
 
     <Command>
         $(CARGO) $(CARGO_BUILDCMD) $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --out-dir $(OUTPUT_DIR)
+        $(MV) $(OUTPUT_DIR)(+)lib$(MODULE_NAME).a $(OUTPUT_DIR)(+)$(MODULE_NAME).lib
 
 [Toml-File.RUST_MODULE]
     <InputFile>
