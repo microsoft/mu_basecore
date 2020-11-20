@@ -51,7 +51,8 @@ class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsMan
         ''' return iterable of edk2 packages supported by this build.
         These should be edk2 workspace relative paths '''
 
-        return ("MdePkg",
+        return ("BaseTools", # MU_CHANGE
+                "MdePkg",
                 "MdeModulePkg",
                 "NetworkPkg",
                 "PcAtChipsetPkg",
@@ -182,7 +183,7 @@ class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsMan
 
     def GetDependencies(self):
         # MU_CHANGE BEGIN
-        ''' Return Git Repository Dependendencies
+        ''' Return Git Repository Dependencies
 
         Return an iterable of dictionary objects with the following fields
         {
