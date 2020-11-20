@@ -49,7 +49,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         ''' return iterable of edk2 packages supported by this build.
         These should be edk2 workspace relative paths '''
 
-        return ("CryptoPkg",
+        return ("BaseTools", # MU_CHANGE
                 "MdePkg",
                 "MdeModulePkg",
                 "NetworkPkg",
