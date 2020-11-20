@@ -36,11 +36,11 @@ typedef INTN    intptr_t;
 #define offsetof  OFFSET_OF
 #endif
 
-#ifdef MDE_CPU_IA32
+#if defined (MDE_CPU_IA32) || defined (MDE_CPU_ARM)  // MU_CHANGE
 #define SIZEOF_VOIDP  4
 #endif
 
-#ifdef MDE_CPU_X64
+#if defined (MDE_CPU_X64) || defined (MDE_CPU_AARCH64)   // MU_CHANGE
 #define SIZEOF_VOIDP  8
 #endif
 
