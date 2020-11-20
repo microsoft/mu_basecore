@@ -34,6 +34,7 @@ EFI_BOOT_SERVICES  *mDebugBS;
   @param  Context      Pointer to the notification function's context.
 
 **/
+STATIC // MU_CHANGE TCBZ3083 - changed to static to avoid conflicts
 VOID
 EFIAPI
 ExitBootServicesCallback (
