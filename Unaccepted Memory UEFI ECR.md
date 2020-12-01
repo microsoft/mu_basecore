@@ -66,14 +66,14 @@ During boot services time the processor is in the following execution mode:
 |-------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | EfiReservedMemoryType   | Not usable.                                                                                                                                                                                                                                                          |
 | ...                     | ...                                                                                                                                                                                                                                                                  |
-| EfiUnacceptedMemoryType ***Text Added*** | A memory region that represents unaccepted memory, that must be accepted by the guest before it can be used. Unless otherwise noted, all other EFI memory types are accepted. For platforms that support unaccepted memory, all unaccepted valid memory will be reported as unaccepted in the memory map. Unreported physical address ranges must be treated as not-present memory. ***Text Added*** |
+| EfiUnacceptedMemoryType ***Text Added*** | A memory region that represents unaccepted memory, that must be accepted by the boot target before it can be used. Unless otherwise noted, all other EFI memory types are accepted. For platforms that support unaccepted memory, all unaccepted valid memory will be reported as unaccepted in the memory map. Unreported physical address ranges must be treated as not-present memory. ***Text Added*** |
 
 **Table 30. Memory Type Usage after ExitBootServices()**<br>
 | Mnemonic                | Description                                                                                                                                                                                                                                                          |
 |-------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | EfiReservedMemoryType   | Not usable.                                                                                                                                                                                                                                                          |
 | ...                     | ...                                                                                                                                                                                                                                                                  |
-| EfiUnacceptedMemoryType ***Text Added*** | A memory region that represents unaccepted memory, that must be accepted by the guest before it can be used. Unless otherwise noted, all other EFI memory types are accepted. For platforms that support unaccepted memory, all unaccepted valid memory will be reported as unaccepted in the memory map. Unreported physical address ranges must be treated as not-present memory. ***Text Added*** |
+| EfiUnacceptedMemoryType ***Text Added*** | A memory region that represents unaccepted memory, that must be accepted by the boot target before it can be used. Unless otherwise noted, all other EFI memory types are accepted. For platforms that support unaccepted memory, all unaccepted valid memory will be reported as unaccepted in the memory map. Unreported physical address ranges must be treated as not-present memory. ***Text Added*** |
 <br>
 
 **EFI_BOOT_SERVICES.AllocatePages()**<br>
@@ -163,7 +163,7 @@ typedef UINT64 EFI_PHYSICAL_ADDRESS;
 ***Text Added***<br>
 **Unaccepted Memory** <br>
 
-Some Virtual Machine platforms, such as AMD SEV-SNP, introduce the concept of memory acceptance, requiring memory to be accepted before it can be used by the guest. This protects against a class of attacks by the virtual machine platform.<br>
+Some Virtual Machine platforms, such as AMD SEV-SNP, introduce the concept of memory acceptance, requiring memory to be accepted before it can be used by the boot target. This protects against a class of attacks by the virtual machine platform.<br>
 ***Text Added***
 
 ### Special Instructions:
