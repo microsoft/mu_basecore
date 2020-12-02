@@ -90,8 +90,17 @@ class OemDataFormatter:
         with open(out_file_path, 'wb') as out_bin_file:
             out_bin_file.write(self._get_signed_structure())
 
+    def remove_intermediate_files(self):
+        for binary in self._get_bins():
+            try:
+                os.remove(binary)
+            except OSError as e:
+                print(e)
+                print(f"File path could not be removed.")
+
 
 # Todo: Clean up arg parsing, documentation, logger, etc.
 if __name__ == '__main__':
     oem_data = OemDataFormatter(sys.argv[1])
     oem_data.write_data(os.path.join(sys.argv[1], 'data.oemdatabin'))
+    oem_data.remove_intermediate_files()
