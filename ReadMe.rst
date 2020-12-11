@@ -44,6 +44,11 @@ Bug Fixes-dev
 2008_RefBoot Changes
 --------------------
 
+- The PcdPropertiesTableEnable PCD has been deprecated (behavior now assumes FALSE).
+- An instance of VmgExitLib is now required for MpInitLib. If you don't have a need for SEV-ES, we
+  recommend you use the NULL implementation (UefiCpuPkg/Library/VmgExitLibNull/VmgExitLibNull.inf).
+  `Check here <https://github.com/tianocore/edk2/commit/7b7508ad784d16a5208c8d12dff43aef6df0835b>`_
+  for more info.
 - Disabled ECC Check plugin until it can be modified to be non-destructive in dev environments.
 - Fix VsInstrinsics to not build on GCC.
 
