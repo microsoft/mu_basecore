@@ -10,7 +10,6 @@
 import glob
 import io
 import os
-import sys
 import struct
 from collections import namedtuple
 
@@ -90,8 +89,31 @@ class OemDataFormatter:
         with open(out_file_path, 'wb') as out_bin_file:
             out_bin_file.write(self._get_signed_structure())
 
+    def remove_intermediate_files(self):
+        for binary in self._get_bins():
+            try:
+                os.remove(binary)
+            except OSError as e:
+                print(e)
+                print(f"File path could not be removed.")
+
 
 # Todo: Clean up arg parsing, documentation, logger, etc.
 if __name__ == '__main__':
-    oem_data = OemDataFormatter(sys.argv[1])
-    oem_data.write_data(os.path.join(sys.argv[1], 'data.oemdatabin'))
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description=(
+            'Formats intermediate OEM data files into '
+            'a single consolidated binary.'))
+    parser.add_argument(
+        'input_directory',
+        help='Directory of .oemdatabin.i files')
+    parser.add_argument(
+        'output_file_path',
+        help='Name of of the final .oemdatabin file.')
+    args = parser.parse_args()
+
+    oem_data = OemDataFormatter(args.input_directory)
+    oem_data.write_data(args.output_file_path)
+    oem_data.remove_intermediate_files()
