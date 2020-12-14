@@ -17,7 +17,7 @@ schedules:
     include:
     - dev/*
     - release/*
-  always: false         # Only build if changed
+  always: true          # Always build, even if no changes
 
 pr:
 - dev/*
