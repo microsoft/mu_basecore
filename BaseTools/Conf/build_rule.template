@@ -118,8 +118,9 @@
 # 2.22 - Remove Rust Definitions. More formal support will be added soon.
 # 2.23 - Add OemData Definitions
 # 2.24 - Add .arc and .ver file type to add .rsrc sections to EFI images.
+# 2.25 - Split OemData rule into intermediate binary and final binary rules.
 
-#!VERSION=2.24
+#!VERSION=2.25
 
 [C-Code-File]
     <InputFile>
@@ -532,12 +533,12 @@
         "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff $(GENFW_FLAGS)
 
 # MU_CHANGE BEGIN
-[C-Code-File-OemData]
+[C-Code-File-OemDataIntermediate]
     <InputFile>
         ?.oemdatac
 
     <OutputFile>
-        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i
 
     <ExtraDependency>
         $(MAKE_FILE)
@@ -546,19 +547,27 @@
         "$(CC)" /Fo$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(DEPS_FLAGS) /nologo /c /FIAutoGen.h /TC /Dmain=main $(INC) ${src}
         "$(DLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll /NODEFAULTLIB /ENTRY:main /SUBSYSTEM:CONSOLE $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
         "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
-        OemDataFormatter $(OUTPUT_DIR)(+)${s_dir}
 
     <Command.GCC>
         "$(CC)" $(DEPS_FLAGS) -c -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(CC_FLAGS) -fno-toplevel-reorder -x c $(DEPS_FLAGS) $(INC) ${src}
         "$(DLINK)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(DLINK_COMMON) -u $(IMAGE_ENTRY_POINT) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(CC_FLAGS)
         "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
-        OemDataFormatter $(OUTPUT_DIR)(+)${s_dir}
 
     <Command.CLANGPDB>
         "$(CC)" $(DEPS_FLAGS) -c -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj -O0 -fkeep-static-consts --language=c $(DEPS_FLAGS) $(INC) ${src}
         "$(DLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll /NODEFAULTLIB /ENTRY:main /SUBSYSTEM:CONSOLE $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
         "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
-        OemDataFormatter $(OUTPUT_DIR)(+)${s_dir}
+
+[OemDataIntermediate-to-OemDataBin]
+    <InputFile>
+        ?.oemdatabin.i
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME).oemdatabin
+
+    <Command>
+        OemDataFormatter $(OUTPUT_DIR)(+)${s_dir} $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME).oemdatabin
+
 # MU_CHANGE END
 
 [Masm16-Code-File]

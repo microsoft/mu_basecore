@@ -288,6 +288,10 @@ After that, the following commands will set up the build and run the host-based 
 # stuart_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=<GCC5, VS2019, etc.>
 stuart_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2019
 
+# Mu specific step to clone mu repos required for ci check
+# stuart_ci_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=<GCC5, VS2019, etc.>
+stuart_ci_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2019
+
 # Update all binary dependencies
 # stuart_update -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=<GCC5, VS2019, etc.>
 stuart_update -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2019
