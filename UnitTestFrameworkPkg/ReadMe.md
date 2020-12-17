@@ -38,7 +38,7 @@ that may be used to implement, run, and debug unit tests implemented using Googl
 is an example of the C++ TestMate JSON configuration to find unit tests and configure the environment
 for unit test execution.
 
-```
+```text
 "testMate.cpp.test.advancedExecutables": [
     {
         "pattern": "Build/**/*Test*",
@@ -1031,7 +1031,10 @@ file. This provides the default defines and library class mappings requires for 
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgHost.dsc.inc
 ```
 
- > **NOTE**: DSC files for host based unit tests must **not** include default mappings from packages such as `MdePkg/MdeLibs.dsc.inc`. This DSC files provides default defines and  library mappings for firmware builds that may not be compatible with host based unit test builds. Instead, the DSC file for host based unit tests must provide all the settings required for host based unit tests.
+ > **NOTE**: DSC files for host based unit tests must **not** include default mappings from packages such as
+ `MdePkg/MdeLibs.dsc.inc`. This DSC files provides default defines and  library mappings for firmware builds
+ that may not be compatible with host based unit test builds. Instead, the DSC file for host based unit tests
+ must provide all the settings required for host based unit tests.
 
 Lastly, in the case that the test build has specific dependent libraries associated with it,
 they should be added in the \<LibraryClasses\> sub-section for the INF file in the
@@ -1401,7 +1404,7 @@ stuart_ci_build -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2022 -t NOOPT -p Mde
 By default, the address sanitizer feature is enabled for all host based unit test builds.  It can be disabled for
 development/debug purposes by setting the DSC define `UNIT_TESTING_ADDRESS_SANITIZER_ENABLE` to `FALSE`.
 
-```
+```text
 stuart_ci_build -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2022 -t NOOPT -p MdePkg BLD_*_UNIT_TESTING_ADDRESS_SANITIZER_ENABLE=FALSE
 ```
 
@@ -1503,14 +1506,14 @@ shell or using VS Code extensions such as `C++ TestMate`, then the environment m
 
 #### Windows Environment Variable Settings
 
-```
+```text
 set GTEST_CATCH_EXCEPTIONS=0
 set ASAN_OPTIONS=detect_leaks=0
 ```
 
 #### Linux Environment Variable Settings
 
-```
+```text
 export GTEST_CATCH_EXCEPTIONS=0
 export ASAN_OPTIONS=detect_leaks=0
 ```
@@ -1713,8 +1716,8 @@ the following, please make sure they live in the correct place.
 
 Code/Test                                   | Location
 ---------                                   | --------
-Host-Based Library Implementations                 | Host-Based Implementations of common libraries (eg. MemoryAllocationLibHost) should live in the same package that declares the library interface in its .DEC file in the `*Pkg/HostLibrary` directory. Should have 'Host' in the name.
-Host-Based Mocks and Stubs  | Mock and Stub libraries should live in the `UefiTestFrameworkPkg/StubLibrary` with either 'Mock' or 'Stub' in the library name.
+Host-Based Library Implementations                 | Host-Based Implementations of common libraries (eg. MemoryAllocationLibHost) should live in the same package that declares the library interface in its .DEC file in the `*Pkg/Test/Library` directory. Should have 'Host' in the name.
+Host-Based Mocks and Stubs  | Mock and Stub libraries that require test infrastructure should live in the `UefiTestFrameworkPkg/Library` with either 'Mock' or 'Stub' in the library name.
 
 ### If still in doubt
 
