@@ -49,6 +49,7 @@ UnitTestAssertTrue (
   CHAR8  TempStr[MAX_STRING_SIZE];
 
   snprintf (TempStr, sizeof (TempStr), "UT_ASSERT_TRUE(%s:%x)", Description, Expression);
+  printf ("%s:%d %s\n", FileName, (INT32)LineNumber, TempStr);     // MU_CHANGE - Report source of ASSERTs in tests
   _assert_true (Expression, TempStr, FileName, (INT32)LineNumber);
 
   return Expression;
