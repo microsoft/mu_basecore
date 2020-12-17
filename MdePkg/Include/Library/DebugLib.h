@@ -99,32 +99,6 @@ DebugPrint (
   );
 
 /**
-MS_CHANGE_?
-// MSCHANGE Added DebugDumpMemory
-  Dumps memory formatted.
-
-  Dumps the memory as hex bytes with ASCII text to the right
-
-  @param  Address      The address of the memory to dump.
-  @param  Length       The length of the region to dump.
-  @param  Flags        PrintAddress, PrintOffset etc
-
-**/
-#define DEBUG_DM_PRINT_ADDRESS 0x001     // Print Address
-#define DEBUG_DM_PRINT_OFFSET  0x002     // Print Address as Offset
-#define DEBUG_DM_PRINT_ASCII   0x004     // Print ASCII text
-
-VOID
-EFIAPI
-DebugDumpMemory (
-  IN  UINTN         ErrorLevel,
-  IN  CONST VOID   *Address,
-  IN  UINTN         Length,
-  IN  UINT32        Flags
-  );
-
-
-/**
   Prints a debug message to the debug output device if the specified
   error level is enabled.
 
@@ -425,20 +399,6 @@ UnitTestDebugAssert (
   #define DEBUG(Expression)
 #endif
 
-// MS_CHANGE_?
-//MSCHANGE - add macro
-#if !defined(MDEPKG_NDEBUG)
-#define DEBUG_BUFFER(PrintLevel, Buffer, BufferLength, Flags)        \
-    do {                                                             \
-      if (DebugPrintLevelEnabled (PrintLevel)) {                                    \
-        DebugDumpMemory (PrintLevel, Buffer, BufferLength, Flags);  \
-      }                                                              \
-    } while (FALSE)
-#else
-#define DEBUG_BUFFER(PrintLevel, Buffer, BufferLength, Flags)
-#endif
-
-
 /**
   Macro that calls DebugAssert() if an EFI_STATUS evaluates to an error code.
 
@@ -643,4 +603,81 @@ UnitTestDebugAssert (
     BASE_CR (Record, TYPE, Field)
 #endif
 
+/**
+  Log a formatted hexdump as the debug message on the specified debug
+  error level.
+  The hexdump is split into lines of 16 dumped bytes. Each line is
+  prefixed with a caller-provided string and offset. The full hexdump
+  is bracketed, and its byte ascii char also print. If the byte value
+  is not the ascii code, it will print as '.'
+  @param[in] ErrorLevel        The error level of the debug message.
+  @param[in] Offset            Offset to be display after PrefixFormat.
+                               Offset will be increased for each print line.
+  @param[in] Data              The data to dump.
+  @param[in] DataSize          Number of bytes in Data.
+  @param[in] LinePrefixFormat  Format string describing the prefix that is
+                               printed at the beginning of each dump line,
+                               including the bracket lines.
+  @param[in] ...               Arguments for LinePrefixFormat.
+**/
+#if !defined(MDEPKG_NDEBUG)
+  #define DUMP_HEX(ErrorLevel,                                                      \
+                   Offset,                                                          \
+                   Data,                                                            \
+                   DataSize,                                                        \
+                   LinePrefixFormat,                                                \
+                   ...)                                                             \
+    do {                                                                            \
+      if (DebugPrintEnabled () && DebugPrintLevelEnabled (ErrorLevel))  {           \
+        UINT8 *_DataToDump;                                                         \
+        UINT8 _Val[50];                                                             \
+        UINT8 _Str[20];                                                             \
+        UINT8 _TempByte;                                                            \
+        UINTN _Size;                                                                \
+        UINTN _DumpHexIndex;                                                        \
+        UINTN _LocalOffset;                                                         \
+        UINTN _LocalDataSize;                                                       \
+        CONST CHAR8 *_Hex = "0123456789ABCDEF";                                     \
+        _LocalOffset = (Offset);                                                    \
+        _LocalDataSize = (DataSize);                                                \
+        _DataToDump = (UINT8 *)(Data);                                              \
+                                                                                    \
+        ASSERT (_DataToDump != NULL);                                               \
+                                                                                    \
+        while (_LocalDataSize != 0) {                                               \
+          _Size = 16;                                                               \
+          if (_Size > _LocalDataSize) {                                             \
+            _Size = _LocalDataSize;                                                 \
+          }                                                                         \
+                                                                                    \
+          for (_DumpHexIndex = 0; _DumpHexIndex < _Size; _DumpHexIndex += 1) {      \
+            _TempByte            = (UINT8) _DataToDump[_DumpHexIndex];              \
+            _Val[_DumpHexIndex * 3 + 0]  = (UINT8) _Hex[_TempByte >> 4];            \
+            _Val[_DumpHexIndex * 3 + 1]  = (UINT8) _Hex[_TempByte & 0xF];           \
+            _Val[_DumpHexIndex * 3 + 2]  =                                          \
+              (CHAR8) ((_DumpHexIndex == 7) ? '-' : ' ');                           \
+            _Str[_DumpHexIndex]          =                                          \
+              (CHAR8) ((_TempByte < ' ' || _TempByte > '~') ? '.' : _TempByte);     \
+          }                                                                         \
+                                                                                    \
+          _Val[_DumpHexIndex * 3]  = 0;                                             \
+          _Str[_DumpHexIndex]      = 0;                                             \
+                                                                                    \
+          DebugPrint(ErrorLevel, LinePrefixFormat, ##__VA_ARGS__);                  \
+          DebugPrint(ErrorLevel, "%08X: %-48a *%a*\r\n", _LocalOffset, _Val, _Str); \
+          _DataToDump = (UINT8 *)(((UINTN)_DataToDump) + _Size);                    \
+          _LocalOffset += _Size;                                                    \
+          _LocalDataSize -= _Size;                                                  \
+        }                                                                           \
+      }                                                                             \
+    } while (FALSE)
+#else
+  #define DUMP_HEX(ErrorLevel,       \
+                   Offset,           \
+                   Data,             \
+                   DataSize,         \
+                   LinePrefixFormat, \
+                   ...)
 #endif
+
+#endif  // __DEBUG_LIB_H__
