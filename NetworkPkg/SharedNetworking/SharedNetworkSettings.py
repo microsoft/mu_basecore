@@ -492,17 +492,17 @@ class SettingsManager(UpdateSettingsManager, CiSetupSettingsManager, BinaryBuild
             {
                 "Path": "Silicon/Arm/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_silicon_arm_tiano.git",
-                "Branch": "release/202002"
+                "Branch": "release/202102"
             },
             {
                 "Path": "Common/MU_TIANO",
                 "Url": "https://github.com/Microsoft/mu_tiano_plus.git",
-                "Branch": "release/202002"
+                "Branch": "release/202102"
             },
             {
                 "Path": "Common/MU_PLUS",
                 "Url": "https://github.com/Microsoft/mu_plus.git",
-                "Branch": "release/202002"
+                "Branch": "release/202102"
             }
         ]
 
