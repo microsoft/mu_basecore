@@ -47,3 +47,12 @@
       UefiSortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
       DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
   }
+
+  # MU_CHANGE - Add Test
+  MdeModulePkg/Library/VariablePolicyLib/VariablePolicyUnitTest/VariablePolicyUnitTest.inf {
+    <LibraryClasses>
+      VariablePolicyLib|MdeModulePkg/Library/VariablePolicyLib/VariablePolicyLib.inf
+
+    <PcdsFixedAtBuild>
+      gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable|TRUE
+  }
