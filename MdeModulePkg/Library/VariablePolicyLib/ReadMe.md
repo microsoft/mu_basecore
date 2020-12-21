@@ -288,10 +288,16 @@ directory).
 
 ### Host-Based Unit Test
 
-There is a test that can be run as part of the Host-Based Unit Testing
-infrastructure provided by EDK2 PyTools (documented elsewhere). It will test
-all internal guarantees and is where you will find test cases for most of the
-policy matching and security of the Variable Policy Engine.
+MU_CHANGE
+
+This test:
+
+`MdeModulePkg\Library\VariablePolicyLib\VariablePolicyUnitTest\VariablePolicyUnitTest.inf`
+
+can be run as part of the Host-Based Unit Testing infrastructure provided by EDK2
+PyTools (documented elsewhere). It will test all internal guarantees and is
+where you will find test cases for most of the policy matching and security of the
+Variable Policy Engine.
 
 ### Shell-Based Functional Test
 
