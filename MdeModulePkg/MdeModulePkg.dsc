@@ -251,6 +251,13 @@
   MdeModulePkg/Application/MemoryProfileInfo/MemoryProfileInfo.inf
   MdeModulePkg/Library/MemoryTypeInformationChangeLibNull/MemoryTypeInformationChangeLibNull.inf ## MU_CHANGE
   MdeModulePkg/Library/CapsulePersistLibNull/CapsulePersistLibNull.inf                           ## MU_CHANGE
+  MdeModulePkg/Test/ShellTest/VariablePolicyFuncTestApp/VariablePolicyFuncTestApp.inf {
+    <LibraryClasses>
+        UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLib.inf
+        UnitTestPersistenceLib|UnitTestFrameworkPkg/Library/UnitTestPersistenceLibNull/UnitTestPersistenceLibNull.inf
+        UnitTestResultReportLib|UnitTestFrameworkPkg/Library/UnitTestResultReportLib/UnitTestResultReportLibDebugLib.inf
+        UnitTestBootLib|UnitTestFrameworkPkg/Library/UnitTestBootLibNull/UnitTestBootLibNull.inf
+  }
   MdeModulePkg/Library/SecurityLockAuditDebugMessageLib/SecurityLockAuditDebugMessageLib.inf     ## MU_CHANGE
   MdeModulePkg/Library/BaseExceptionPersistenceLibNull/BaseExceptionPersistenceLibNull.inf       ## MU_CHANGE
   MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf                     ## MU_CHANGE
