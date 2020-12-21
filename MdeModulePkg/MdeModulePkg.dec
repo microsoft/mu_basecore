@@ -1275,7 +1275,8 @@
   #   TRUE - VariablePolicy can be disabled by request through the interface (until interface is locked)
   #   FALSE - VariablePolicy interface will not accept requests to disable and is ALWAYS ON
   # @Prompt Allow VariablePolicy enforcement to be disabled.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable|FALSE|BOOLEAN|0x30000020
+  ## MU_CHANGE - Allow policy to be disabled by default.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable|TRUE|BOOLEAN|0x30000020
 
   ## FFS filename to find the ACPI tables.
   # @Prompt FFS name of ACPI tables storage.
