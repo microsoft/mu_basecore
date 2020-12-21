@@ -720,10 +720,17 @@ SmmVariableHandler (
         Status = EFI_UNSUPPORTED;
         break;
       }
-      if (!mEndOfDxe) {
-        MorLockInitAtEndOfDxe ();
+      // MU_CHANGE [BEGIN] - Do not lock Policy at EndOfDxe.
+      if (!IsVariablePolicyInterfaceLocked()) {
         Status = LockVariablePolicy ();
         ASSERT_EFI_ERROR (Status);
+      }
+      // MU_CHANGE [END] - Do not lock Policy at EndOfDxe.
+      if (!mEndOfDxe) {
+        MorLockInitAtEndOfDxe ();
+        // MU_CHANGE - Do not lock Policy at EndOfDxe.
+        // Status = LockVariablePolicy ();
+        // ASSERT_EFI_ERROR (Status);
         mEndOfDxe = TRUE;
         VarCheckLibInitializeAtEndOfDxe (NULL);
         //
@@ -1023,8 +1030,9 @@ SmmEndOfDxeCallback (
 
   DEBUG ((EFI_D_INFO, "[Variable]SMM_END_OF_DXE is signaled\n"));
   MorLockInitAtEndOfDxe ();
-  Status = LockVariablePolicy ();
-  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE - Do not lock Policy at EndOfDxe.
+  // Status = LockVariablePolicy ();
+  // ASSERT_EFI_ERROR (Status);
   mEndOfDxe = TRUE;
   VarCheckLibInitializeAtEndOfDxe (NULL);
   //
