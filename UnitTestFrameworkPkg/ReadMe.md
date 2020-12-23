@@ -115,7 +115,7 @@ you should be good to go.
 
 See this example in 'SampleUnitTestUefiShell.inf'...
 
-```
+```inf
 [Packages]
   MdePkg/MdePkg.dec
 
@@ -130,7 +130,7 @@ See this example in 'SampleUnitTestUefiShell.inf'...
 Also, if you want you test to automatically be picked up by the Test Runner plugin, you will need
 to make sure that the module `BASE_NAME` contains the word `Test`...
 
-```
+```inf
 [Defines]
   BASE_NAME      = SampleUnitTestUefiShell
 ```
@@ -280,7 +280,7 @@ Beyond that, if you're writing host-based tests and want to take a dependency on
 leverage the `cmocka.h` interface and write tests with all the features of the Cmocka framework.
 
 Documentation for Cmocka can be found here:
-https://api.cmocka.org/
+<https://api.cmocka.org/>
 
 ## GoogleTest Samples
 
@@ -723,14 +723,15 @@ Non-Host-Based (PEI/DXE/SMM/UefiShell) Tests for a Functionality or Feature   | 
 
 ### Future Locations in Consideration
 
-We don't know if these types will exist or be applicable yet, but if you write a support library or module that matches the following, please make sure they live in the correct place.
+We don't know if these types will exist or be applicable yet, but if you write a support library or module that matches
+the following, please make sure they live in the correct place.
 
 Code/Test                                   | Location
 ---------                                   | --------
 Host-Based Library Implementations                 | Host-Based Implementations of common libraries (eg. MemoryAllocationLibHost) should live in the same package that declares the library interface in its .DEC file in the `*Pkg/HostLibrary` directory. Should have 'Host' in the name.
 Host-Based Mocks and Stubs  | Mock and Stub libraries should live in the `UefiTestFrameworkPkg/StubLibrary` with either 'Mock' or 'Stub' in the library name.
 
-### If still in doubt...
+### If still in doubt
 
 Hop on GitHub and ask @corthon, @mdkinney, or @spbrogan. ;)
 
