@@ -31,16 +31,16 @@
             "Universal/RegularExpressionDxe"
         ]
     },
-    ## options defined ci/Plugin/CompilerPlugin
+    ## options defined .pytool/Plugin/CompilerPlugin
     "CompilerPlugin": {
         "DscPath": "MdeModulePkg.dsc"
     },
-    ## options defined ci/Plugin/HostUnitTestCompilerPlugin
+    ## options defined .pytool/Plugin/HostUnitTestCompilerPlugin
     "HostUnitTestCompilerPlugin": {
         "DscPath": "Test/MdeModulePkgHostTest.dsc"
     },
 
-    ## options defined ci/Plugin/CharEncodingCheck
+    ## options defined .pytool/Plugin/CharEncodingCheck
     "CharEncodingCheck": {
         "IgnoreFiles": [
             "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma/test/testc.c",
@@ -48,7 +48,7 @@
         ]
     },
 
-    ## options defined ci/Plugin/DependencyCheck
+    ## options defined .pytool/Plugin/DependencyCheck
     "DependencyCheck": {
         "AcceptableDependencies": [
             "MdePkg/MdePkg.dec",
@@ -65,18 +65,18 @@
         "IgnoreInf": []
     },
 
-    ## options defined ci/Plugin/DscCompleteCheck
+    ## options defined .pytool/Plugin/DscCompleteCheck
     "DscCompleteCheck": {
         "IgnoreInf": [],
         "DscPath": "MdeModulePkg.dsc"
     },
-    ## options defined ci/Plugin/HostUnitTestDscCompleteCheck
+    ## options defined .pytool/Plugin/HostUnitTestDscCompleteCheck
     "HostUnitTestDscCompleteCheck": {
         "IgnoreInf": [""],
         "DscPath": "Test/MdeModulePkgHostTest.dsc"
     },
 
-    ## options defined ci/Plugin/GuidCheck
+    ## options defined .pytool/Plugin/GuidCheck
     "GuidCheck": {
         "IgnoreGuidName": [],
         "IgnoreGuidValue": ["00000000-0000-0000-0000-000000000000"],
@@ -88,7 +88,7 @@
         ]
     },
 
-    ## options defined ci/Plugin/LibraryClassCheck
+    ## options defined .pytool/Plugin/LibraryClassCheck
     "LibraryClassCheck": {
         "IgnoreLibraryClass": [
             "HwResetSystemLib"          # MU_CHANGE - "Virtual" LibraryClass
@@ -96,7 +96,7 @@
         "IgnoreHeaderFile": []
     },
 
-    ## options defined ci/Plugin/SpellCheck
+    ## options defined .pytool/Plugin/SpellCheck
     "SpellCheck": {
         "AuditOnly": True,           # Fails test but run in AuditOnly mode to collect log
         "IgnoreStandardPaths": [     # Standard Plugin defined paths that should be ignore
