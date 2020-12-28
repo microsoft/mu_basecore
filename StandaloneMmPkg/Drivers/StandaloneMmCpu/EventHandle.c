@@ -164,7 +164,9 @@ PiMmStandaloneArmTfCpuDriverEntry (
 
   // Free the memory allocation done earlier and reset the per-cpu context
   ASSERT (GuidedEventContext);
-  CopyMem ((VOID *)NsCommBufferAddr, (CONST VOID *) GuidedEventContext, NsCommBufferSize);
+  if (GuidedEventContext->MessageLength) {
+    CopyMem ((VOID *)NsCommBufferAddr, (CONST VOID *) GuidedEventContext, NsCommBufferSize);
+  }
 
   Status = mMmst->MmFreePool ((VOID *) GuidedEventContext);
   if (Status != EFI_SUCCESS) {
