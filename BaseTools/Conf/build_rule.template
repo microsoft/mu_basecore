@@ -117,8 +117,9 @@
 # 2.23 - Add OemData Definitions
 # 2.24 - Add .arc and .ver file type to add .rsrc sections to EFI images.
 # 2.25 - Split OemData rule into intermediate binary and final binary rules.
+# 2.26 - Rename OemData to ProductData.
 
-#!VERSION=2.25
+#!VERSION=2.26
 
 [C-Code-File]
     <InputFile>
@@ -512,12 +513,12 @@
         "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff $(GENFW_FLAGS)
 
 # MU_CHANGE BEGIN
-[C-Code-File-OemDataIntermediate]
+[C-Code-File-ProductDataIntermediate]
     <InputFile>
-        ?.oemdatac
+        ?.productdatac
 
     <OutputFile>
-        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.productdatabin.i
 
     <ExtraDependency>
         $(MAKE_FILE)
@@ -525,27 +526,27 @@
     <Command.MSFT>
         "$(CC)" /Fo$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(DEPS_FLAGS) /nologo /c /FIAutoGen.h /TC /Dmain=main $(INC) ${src}
         "$(DLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll /NODEFAULTLIB /ENTRY:main /SUBSYSTEM:CONSOLE $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
-        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
+        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.productdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
 
     <Command.GCC>
         "$(CC)" $(DEPS_FLAGS) -c -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(CC_FLAGS) -fno-toplevel-reorder -x c $(DEPS_FLAGS) $(INC) ${src}
         "$(DLINK)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(DLINK_COMMON) -u $(IMAGE_ENTRY_POINT) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj $(CC_FLAGS)
-        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
+        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.productdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
 
     <Command.CLANGPDB>
         "$(CC)" $(DEPS_FLAGS) -c -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj -O0 -fkeep-static-consts --language=c $(DEPS_FLAGS) $(INC) ${src}
         "$(DLINK)" /OUT:$(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll /NODEFAULTLIB /ENTRY:main /SUBSYSTEM:CONSOLE $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
-        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.oemdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
+        "$(GENFW)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.productdatabin.i -b $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(GENFW_FLAGS)
 
-[OemDataIntermediate-to-OemDataBin]
+[ProductDataIntermediate-to-ProductDataBin]
     <InputFile>
-        ?.oemdatabin.i
+        ?.productdatabin.i
 
     <OutputFile>
-        $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME).oemdatabin
+        $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME).productdatabin
 
     <Command>
-        OemDataFormatter $(OUTPUT_DIR)(+)${s_dir} $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME).oemdatabin
+        ProductDataFormatter $(OUTPUT_DIR)(+)${s_dir} $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME).productdatabin
 
 # MU_CHANGE END
 
