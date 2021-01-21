@@ -1,7 +1,7 @@
 # @file
 #
-# Formats a collection of intermediate OEM data binary files
-# in a given directory into a single OEM binary file
+# Formats a collection of intermediate product data binary files
+# in a given directory into a single product binary file
 #
 # Copyright (C) Microsoft Corporation. All rights reserved.
 #
@@ -14,10 +14,10 @@ import struct
 from collections import namedtuple
 
 
-class OemDataFormatter:
+class ProductDataFormatter:
     STRUCT_SIGNATURE = b"__SDSH__"
     ITEM_SIGNATURE = b"_SDDATA_"
-    OEM_ID = b"__MSFT__"
+    PRODUCT_ID = b"__MSFT__"
 
     def __init__(self, directory_path):
         if not os.path.isdir(directory_path):
@@ -27,7 +27,8 @@ class OemDataFormatter:
         self._directory_path = directory_path
 
     def _get_bins(self):
-        return glob.glob(os.path.join(self._directory_path, '*.oemdatabin.i'))
+        return glob.glob(os.path.join(
+            self._directory_path, '*.productdatabin.i'))
 
     def _get_signed_item(self, file_path):
         with open(file_path, 'rb') as bin_file:
@@ -61,13 +62,13 @@ class OemDataFormatter:
                         self._get_signed_item(b)]
 
         StructureHeader = namedtuple('StructureHeader',
-                                     'sig rev header_len oem_id desc_count')
+                                     'sig rev header_len product_id desc_count')
 
         struct_header = StructureHeader(
                         self.STRUCT_SIGNATURE,
                         1,
                         26,
-                        self.OEM_ID,
+                        self.PRODUCT_ID,
                         len(signed_items))
 
         struct_header_data = struct.pack('<8sHI8sI', *struct_header)
@@ -104,16 +105,16 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         description=(
-            'Formats intermediate OEM data files into '
+            'Formats intermediate product data files into '
             'a single consolidated binary.'))
     parser.add_argument(
         'input_directory',
-        help='Directory of .oemdatabin.i files')
+        help='Directory of .productdatabin.i files')
     parser.add_argument(
         'output_file_path',
-        help='Name of of the final .oemdatabin file.')
+        help='Name of of the final .productdatabin file.')
     args = parser.parse_args()
 
-    oem_data = OemDataFormatter(args.input_directory)
-    oem_data.write_data(args.output_file_path)
-    oem_data.remove_intermediate_files()
+    product_data = ProductDataFormatter(args.input_directory)
+    product_data.write_data(args.output_file_path)
+    product_data.remove_intermediate_files()
