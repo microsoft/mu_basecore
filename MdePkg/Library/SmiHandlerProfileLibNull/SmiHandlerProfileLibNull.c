@@ -6,7 +6,7 @@
 
 **/
 
-#include <PiSmm.h>
+#include <PiMm.h> // MU_CHANGE - TCBZ3184
 #include <Library/SmiHandlerProfileLib.h>
 
 /**
