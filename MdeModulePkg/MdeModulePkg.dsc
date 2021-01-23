@@ -358,6 +358,7 @@
   MdeModulePkg/Library/PeiDxeDebugLibReportStatusCode/PeiDxeDebugLibReportStatusCode.inf
   MdeModulePkg/Library/PeiDebugLibDebugPpi/PeiDebugLibDebugPpi.inf
   MdeModulePkg/Library/UefiBootManagerLib/UefiBootManagerLib.inf
+  MdeModulePkg/Library/BaseUefiBootManagerLibNull/BaseUefiBootManagerLibNull.inf         # MU_CHANGE
   MdeModulePkg/Library/PlatformBootManagerLibNull/PlatformBootManagerLibNull.inf
   MdeModulePkg/Library/BootLogoLib/BootLogoLib.inf
   MdeModulePkg/Library/TpmMeasurementLibNull/TpmMeasurementLibNull.inf
