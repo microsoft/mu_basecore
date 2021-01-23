@@ -1,0 +1,23 @@
+## @file
+#  A Null version of UEFI Boot manager Lib
+
+#  Copyright (C) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = UefiBootManagerLibNull
+  FILE_GUID                      = 55B8B9E4-9744-4F84-A3BC-79D581C13A14
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = UefiBootManagerLib
+
+
+[Sources]
+  BaseUefiBootManagerLibNull.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
