@@ -16,8 +16,14 @@
 # 2.00 - Initial version with changes for CI
 #      - Change RC path to use plugin
 # 2.10 - Remove WHOLEARCHIVE as this breaks the build for VS2017/VS2019
+# 2.20 - Added Rusty tools
+# 2.21 - Remove Rusty tools. More formal support will be added soon.
+# 2.30 - Add VS2022 Toolchain
+# 2.40 - Move GccLto files to a tools path to be more repository layout agnostic
+# 2.41 - Can't have comment inline as it breaks concatenation see - # MU_CHANGE - Move GccLto to tools dir for better alignment
+# 2.42 - VS2022 toolchain incorrectly defined for ASL
 #
-#!VERSION=2.10
+#!VERSION=2.42
 
 IDENTIFIER = Default TOOL_CHAIN_CONF
 
@@ -81,6 +87,12 @@ DEFINE VS2019_BIN_IA32    = DEF(VS2019_BIN)\HostDEF(VS_HOST)\x86
 DEFINE VS2019_BIN_X64     = DEF(VS2019_BIN)\HostDEF(VS_HOST)\x64
 DEFINE VS2019_BIN_ARM     = DEF(VS2019_BIN)\HostDEF(VS_HOST)\arm
 DEFINE VS2019_BIN_AARCH64 = DEF(VS2019_BIN)\HostDEF(VS_HOST)\arm64
+DEFINE VS2022_BIN         = ENV(VS2022_PREFIX)bin
+DEFINE VS2022_BIN_HOST    = DEF(VS2022_BIN)\HostDEF(VS_HOST)\DEF(VS_HOST)
+DEFINE VS2022_BIN_IA32    = DEF(VS2022_BIN)\HostDEF(VS_HOST)\x86
+DEFINE VS2022_BIN_X64     = DEF(VS2022_BIN)\HostDEF(VS_HOST)\x64
+DEFINE VS2022_BIN_ARM     = DEF(VS2022_BIN)\HostDEF(VS_HOST)\arm
+DEFINE VS2022_BIN_AARCH64 = DEF(VS2022_BIN)\HostDEF(VS_HOST)\arm64
 
 #
 # Resource compiler
@@ -245,7 +257,7 @@ DEFINE DTC_BIN                 = ENV(DTC_PREFIX)dtc
 #                        Note:
 #                             Building of XIP firmware images for ARM/ARM64 is not currently supported (only applications).
 #                             /FILEALIGN:4096 and other changes are needed for ARM firmware builds.
-#   VS2019      -win32-  Requires:
+#   VS2019      -win32,win64-  Requires:
 #                             Microsoft Visual Studio 2019 version 16.2 or later
 #                        Optional:
 #                             Required to build EBC drivers:
@@ -253,9 +265,15 @@ DEFINE DTC_BIN                 = ENV(DTC_PREFIX)dtc
 #                             Required to build platforms or ACPI tables:
 #                               Intel(r) ACPI Compiler (iasl.exe) from
 #                               https://acpica.org/downloads
-#                        Note:
-#                             Building of XIP firmware images for ARM/ARM64 is not currently supported (only applications).
-#                             /FILEALIGN:4096 and other changes are needed for ARM firmware builds.
+#   VS2022      -win32,win64-  Requires:
+#                             Microsoft Visual Studio 2022 version 17.0 or later
+#                        Optional:
+#                             Required to build EBC drivers:
+#                               Intel(r) Compiler for Efi Byte Code (Intel(r) EBC Compiler)
+#                             Required to build platforms or ACPI tables:
+#                               Intel(r) ACPI Compiler (iasl.exe) from
+#                               https://acpica.org/downloads
+#
 #   GCC48       -Linux,Windows-  Requires:
 #                             GCC 4.8 targeting x86_64-linux-gnu, aarch64-linux-gnu, or arm-linux-gnueabi
 #                        Optional:
@@ -1833,6 +1851,168 @@ NOOPT_VS2019_AARCH64_DLINK_FLAGS   = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF
 *_VS2019_EBC_VFRPP_FLAGS         = /nologo /E /TC /DVFRCOMPILE /FI$(MODULE_NAME)StrDefs.h
 *_VS2019_EBC_SLINK_FLAGS         = /lib /NOLOGO /MACHINE:EBC
 *_VS2019_EBC_DLINK_FLAGS         = "C:\Program Files (x86)\Intel\EBC\Lib\EbcLib.lib" /NOLOGO /NODEFAULTLIB /MACHINE:EBC /OPT:REF /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /MAP /ALIGN:32 /DRIVER
+####################################################################################
+#   VS2022       - Microsoft Visual Studio 2022 with Intel ASL
+#   ASL          - Intel ACPI Source Language Compiler (iasl.exe)
+####################################################################################
+#   VS2022           - Microsoft Visual Studio 2017 professional Edition with Intel ASL
+*_VS2022_*_*_FAMILY        = MSFT
+*_VS2022_*_*_DLL           = DEF(VS2022_BIN_HOST)
+
+*_VS2022_*_MAKE_PATH       = DEF(VS2022_BIN_HOST)\nmake.exe
+*_VS2022_*_MAKE_FLAG       = /nologo
+*_VS2022_*_RC_PATH         = DEF(RC_PATH)
+
+*_VS2022_*_MAKE_FLAGS      = /nologo
+*_VS2022_*_SLINK_FLAGS     = /NOLOGO /LTCG
+*_VS2022_*_APP_FLAGS       = /nologo /E /TC
+*_VS2022_*_PP_FLAGS        = /nologo /E /TC /FIAutoGen.h
+*_VS2022_*_VFRPP_FLAGS     = /nologo /E /TC /DVFRCOMPILE /FI$(MODULE_NAME)StrDefs.h
+# *_VS2022_*_DLINK2_FLAGS    = /WHOLEARCHIVE # MU_CHANGE
+*_VS2022_*_ASM16_PATH      = DEF(VS2022_BIN_IA32)\ml.exe
+*_VS2022_*_DEPS_FLAGS      = DEF(MSFT_DEPS_FLAGS)
+##################
+# ASL definitions
+##################
+*_VS2022_*_ASL_PATH        = DEF(WIN_IASL_BIN)
+*_VS2022_*_ASL_FLAGS       = DEF(DEFAULT_WIN_ASL_FLAGS)
+*_VS2022_*_ASL_OUTFLAGS    = DEF(DEFAULT_WIN_ASL_OUTFLAGS)
+*_VS2022_*_ASLCC_FLAGS     = DEF(MSFT_ASLCC_FLAGS)
+*_VS2022_*_ASLPP_FLAGS     = DEF(MSFT_ASLPP_FLAGS)
+*_VS2022_*_ASLDLINK_FLAGS  = DEF(MSFT_ASLDLINK_FLAGS)
+
+##################
+# IA32 definitions
+##################
+*_VS2022_IA32_CC_PATH      = DEF(VS2022_BIN_IA32)\cl.exe
+*_VS2022_IA32_VFRPP_PATH   = DEF(VS2022_BIN_IA32)\cl.exe
+*_VS2022_IA32_ASLCC_PATH   = DEF(VS2022_BIN_IA32)\cl.exe
+*_VS2022_IA32_ASLPP_PATH   = DEF(VS2022_BIN_IA32)\cl.exe
+*_VS2022_IA32_SLINK_PATH   = DEF(VS2022_BIN_IA32)\lib.exe
+*_VS2022_IA32_DLINK_PATH   = DEF(VS2022_BIN_IA32)\link.exe
+*_VS2022_IA32_ASLDLINK_PATH= DEF(VS2022_BIN_IA32)\link.exe
+*_VS2022_IA32_APP_PATH     = DEF(VS2022_BIN_IA32)\cl.exe
+*_VS2022_IA32_PP_PATH      = DEF(VS2022_BIN_IA32)\cl.exe
+*_VS2022_IA32_ASM_PATH     = DEF(VS2022_BIN_IA32)\ml.exe
+
+      *_VS2022_IA32_MAKE_FLAGS  = /nologo
+  DEBUG_VS2022_IA32_CC_FLAGS    = /nologo /arch:IA32 /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Z7 /Gw
+RELEASE_VS2022_IA32_CC_FLAGS    = /nologo /arch:IA32 /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw
+NOOPT_VS2022_IA32_CC_FLAGS      = /nologo /arch:IA32 /c /WX /GS- /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Z7 /Od
+
+  DEBUG_VS2022_IA32_ASM_FLAGS   = /nologo /c /WX /W3 /Cx /coff /Zd /Zi
+RELEASE_VS2022_IA32_ASM_FLAGS   = /nologo /c /WX /W3 /Cx /coff /Zd
+NOOPT_VS2022_IA32_ASM_FLAGS     = /nologo /c /WX /W3 /Cx /coff /Zd /Zi
+
+  DEBUG_VS2022_IA32_NASM_FLAGS  = -Ox -f win32 -g
+RELEASE_VS2022_IA32_NASM_FLAGS  = -Ox -f win32
+NOOPT_VS2022_IA32_NASM_FLAGS    = -O0 -f win32 -g
+
+  DEBUG_VS2022_IA32_DLINK_FLAGS = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /ALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:X86 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
+RELEASE_VS2022_IA32_DLINK_FLAGS = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4254 /OPT:REF /OPT:ICF=10 /MAP /ALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:X86 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /MERGE:.rdata=.data
+NOOPT_VS2022_IA32_DLINK_FLAGS   = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /ALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:X86 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
+
+##################
+# X64 definitions
+##################
+*_VS2022_X64_CC_PATH       = DEF(VS2022_BIN_X64)\cl.exe
+*_VS2022_X64_PP_PATH       = DEF(VS2022_BIN_X64)\cl.exe
+*_VS2022_X64_APP_PATH      = DEF(VS2022_BIN_X64)\cl.exe
+*_VS2022_X64_VFRPP_PATH    = DEF(VS2022_BIN_X64)\cl.exe
+*_VS2022_X64_ASLCC_PATH    = DEF(VS2022_BIN_X64)\cl.exe
+*_VS2022_X64_ASLPP_PATH    = DEF(VS2022_BIN_X64)\cl.exe
+*_VS2022_X64_ASM_PATH      = DEF(VS2022_BIN_X64)\ml64.exe
+*_VS2022_X64_SLINK_PATH    = DEF(VS2022_BIN_X64)\lib.exe
+*_VS2022_X64_DLINK_PATH    = DEF(VS2022_BIN_X64)\link.exe
+*_VS2022_X64_ASLDLINK_PATH = DEF(VS2022_BIN_X64)\link.exe
+
+  DEBUG_VS2022_X64_CC_FLAGS     = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2s /GL /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Z7 /Gw
+RELEASE_VS2022_X64_CC_FLAGS     = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2s /GL /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Gw
+NOOPT_VS2022_X64_CC_FLAGS       = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Z7 /Od
+
+  DEBUG_VS2022_X64_ASM_FLAGS    = /nologo /c /WX /W3 /Cx /Zd /Zi
+RELEASE_VS2022_X64_ASM_FLAGS    = /nologo /c /WX /W3 /Cx /Zd
+NOOPT_VS2022_X64_ASM_FLAGS      = /nologo /c /WX /W3 /Cx /Zd /Zi
+
+  DEBUG_VS2022_X64_NASM_FLAGS   = -Ox -f win64 -g
+RELEASE_VS2022_X64_NASM_FLAGS   = -Ox -f win64
+NOOPT_VS2022_X64_NASM_FLAGS     = -O0 -f win64 -g
+
+  DEBUG_VS2022_X64_DLINK_FLAGS  = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4281 /OPT:REF /OPT:ICF=10 /MAP /ALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /Machine:X64 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
+RELEASE_VS2022_X64_DLINK_FLAGS  = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4281 /IGNORE:4254 /OPT:REF /OPT:ICF=10 /MAP /ALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /Machine:X64 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /MERGE:.rdata=.data
+NOOPT_VS2022_X64_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4281 /OPT:REF /OPT:ICF=10 /MAP /ALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /Machine:X64 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
+
+#################
+# ARM definitions
+#################
+*_VS2022_ARM_CC_PATH              = DEF(VS2022_BIN_ARM)\cl.exe
+*_VS2022_ARM_VFRPP_PATH           = DEF(VS2022_BIN_ARM)\cl.exe
+*_VS2022_ARM_SLINK_PATH           = DEF(VS2022_BIN_ARM)\lib.exe
+*_VS2022_ARM_DLINK_PATH           = DEF(VS2022_BIN_ARM)\link.exe
+*_VS2022_ARM_APP_PATH             = DEF(VS2022_BIN_ARM)\cl.exe
+*_VS2022_ARM_PP_PATH              = DEF(VS2022_BIN_ARM)\cl.exe
+*_VS2022_ARM_ASM_PATH             = DEF(VS2022_BIN_ARM)\armasm.exe
+*_VS2022_ARM_ASLCC_PATH           = DEF(VS2022_BIN_ARM)\cl.exe
+*_VS2022_ARM_ASLPP_PATH           = DEF(VS2022_BIN_ARM)\cl.exe
+*_VS2022_ARM_ASLDLINK_PATH        = DEF(VS2022_BIN_ARM)\link.exe
+
+      *_VS2022_ARM_MAKE_FLAGS     = /nologo
+  DEBUG_VS2022_ARM_CC_FLAGS       = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Gw /Oi-
+RELEASE_VS2022_ARM_CC_FLAGS       = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw /Oi-
+NOOPT_VS2022_ARM_CC_FLAGS         = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Od /Oi-
+
+  DEBUG_VS2022_ARM_ASM_FLAGS      = /nologo /g
+RELEASE_VS2022_ARM_ASM_FLAGS      = /nologo
+NOOPT_VS2022_ARM_ASM_FLAGS        = /nologo
+
+  DEBUG_VS2022_ARM_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:ARM /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
+RELEASE_VS2022_ARM_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4254 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:ARM /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /MERGE:.rdata=.data
+NOOPT_VS2022_ARM_DLINK_FLAGS      = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:ARM /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DRIVER /DEBUG
+
+#####################
+# AARCH64 definitions
+#####################
+*_VS2022_AARCH64_CC_PATH           = DEF(VS2022_BIN_AARCH64)\cl.exe
+*_VS2022_AARCH64_VFRPP_PATH        = DEF(VS2022_BIN_AARCH64)\cl.exe
+*_VS2022_AARCH64_SLINK_PATH        = DEF(VS2022_BIN_AARCH64)\lib.exe
+*_VS2022_AARCH64_DLINK_PATH        = DEF(VS2022_BIN_AARCH64)\link.exe
+*_VS2022_AARCH64_APP_PATH          = DEF(VS2022_BIN_AARCH64)\cl.exe
+*_VS2022_AARCH64_PP_PATH           = DEF(VS2022_BIN_AARCH64)\cl.exe
+*_VS2022_AARCH64_ASM_PATH          = DEF(VS2022_BIN_AARCH64)\armasm64.exe
+*_VS2022_AARCH64_ASLCC_PATH        = DEF(VS2022_BIN_AARCH64)\cl.exe
+*_VS2022_AARCH64_ASLPP_PATH        = DEF(VS2022_BIN_AARCH64)\cl.exe
+*_VS2022_AARCH64_ASLDLINK_PATH     = DEF(VS2022_BIN_AARCH64)\link.exe
+
+      *_VS2022_AARCH64_MAKE_FLAGS  = /nologo
+  DEBUG_VS2022_AARCH64_CC_FLAGS    = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Gw /Oi-
+RELEASE_VS2022_AARCH64_CC_FLAGS    = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw /Oi-
+NOOPT_VS2022_AARCH64_CC_FLAGS      = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Od /Oi-
+
+  DEBUG_VS2022_AARCH64_ASM_FLAGS   = /nologo /g
+RELEASE_VS2022_AARCH64_ASM_FLAGS   = /nologo
+NOOPT_VS2022_AARCH64_ASM_FLAGS     = /nologo
+
+  DEBUG_VS2022_AARCH64_DLINK_FLAGS = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:ARM64 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /DRIVER /DEBUG
+RELEASE_VS2022_AARCH64_DLINK_FLAGS = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4254 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:ARM64 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /DRIVER /MERGE:.rdata=.data
+NOOPT_VS2022_AARCH64_DLINK_FLAGS   = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /MAP /SECTION:.xdata,D /SECTION:.pdata,D /MACHINE:ARM64 /LTCG /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /DRIVER /DEBUG
+
+##################
+# EBC definitions
+##################
+*_VS2022_EBC_*_FAMILY            = INTEL
+
+*_VS2022_EBC_PP_PATH             = DEF(EBC_BINx86)\iec.exe
+*_VS2022_EBC_VFRPP_PATH          = DEF(EBC_BINx86)\iec.exe
+*_VS2022_EBC_CC_PATH             = DEF(EBC_BINx86)\iec.exe
+*_VS2022_EBC_SLINK_PATH          = DEF(VS2022_BIN_IA32)\link.exe
+*_VS2022_EBC_DLINK_PATH          = DEF(VS2022_BIN_IA32)\link.exe
+
+*_VS2022_EBC_MAKE_FLAGS          = /nologo
+*_VS2022_EBC_PP_FLAGS            = /nologo /E /TC /FIAutoGen.h
+*_VS2022_EBC_CC_FLAGS            = /nologo /c /WX /W3 /FIAutoGen.h /D$(MODULE_ENTRY_POINT)=$(ARCH_ENTRY_POINT)
+*_VS2022_EBC_VFRPP_FLAGS         = /nologo /E /TC /DVFRCOMPILE /FI$(MODULE_NAME)StrDefs.h
+*_VS2022_EBC_SLINK_FLAGS         = /lib /NOLOGO /MACHINE:EBC
+*_VS2022_EBC_DLINK_FLAGS         = "C:\Program Files (x86)\Intel\EBC\Lib\EbcLib.lib" /NOLOGO /NODEFAULTLIB /MACHINE:EBC /OPT:REF /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /MAP /ALIGN:32 /DRIVER
 
 ####################################################################################
 # GCC Common
@@ -1851,6 +2031,8 @@ NOOPT_*_*_OBJCOPY_ADDDEBUGFLAG     = --add-gnu-debuglink=$(DEBUG_DIR)/$(MODULE_N
 *_*_*_DTC_PATH                     = DEF(DTC_BIN)
 
 DEFINE GCC_ALL_CC_FLAGS            = -g -Os -fshort-wchar -fno-builtin -fno-strict-aliasing -Wall -Werror -Wno-array-bounds -include AutoGen.h -fno-common
+DEFINE GCC_IA32_CC_FLAGS           = DEF(GCC_ALL_CC_FLAGS) -m32 -malign-double -freorder-blocks -freorder-blocks-and-partition -O2 -mno-stack-arg-probe
+DEFINE GCC_X64_CC_FLAGS            = DEF(GCC_ALL_CC_FLAGS) -mno-red-zone -Wno-address -mno-stack-arg-probe
 DEFINE GCC_ARM_CC_FLAGS            = DEF(GCC_ALL_CC_FLAGS) -mlittle-endian -mabi=aapcs -fno-short-enums -funsigned-char -ffunction-sections -fdata-sections -fomit-frame-pointer -Wno-address -mthumb -fno-pic -fno-pie
 DEFINE GCC_LOONGARCH64_CC_FLAGS    = DEF(GCC_ALL_CC_FLAGS) -mabi=lp64d -fno-asynchronous-unwind-tables -fno-plt -Wno-address -fno-short-enums -fsigned-char -ffunction-sections -fdata-sections
 DEFINE GCC_ARM_CC_XIPFLAGS         = -mno-unaligned-access
@@ -1972,7 +2154,6 @@ DEFINE GCC5_RISCV64_CC_FLAGS               = DEF(GCC5_RISCV_ALL_CC_FLAGS) DEF(GC
 DEFINE GCC5_RISCV64_DLINK_FLAGS            = DEF(GCC5_RISCV_ALL_DLINK_FLAGS) -Wl,-melf64lriscv,--oformat=elf64-littleriscv,--no-relax
 DEFINE GCC5_RISCV64_DLINK2_FLAGS           = DEF(GCC5_RISCV_ALL_DLINK2_FLAGS)
 DEFINE GCC5_RISCV64_ASM_FLAGS              = DEF(GCC5_RISCV_ALL_ASM_FLAGS) -march=DEF(GCC5_RISCV64_ARCH) -mcmodel=medany -mabi=lp64
-
 DEFINE GCC5_LOONGARCH64_CC_FLAGS           = DEF(GCC_LOONGARCH64_CC_FLAGS) -march=loongarch64 -mno-memcpy -Werror -Wno-maybe-uninitialized -Wno-stringop-overflow -Wno-pointer-to-int-cast -no-pie -fno-stack-protector -mno-explicit-relocs
 DEFINE GCC5_LOONGARCH64_DLINK_FLAGS        = DEF(GCC_LOONGARCH64_DLINK_FLAGS)
 DEFINE GCC5_LOONGARCH64_DLINK2_FLAGS       = DEF(GCC_DLINK2_FLAGS_COMMON) -Wl,--defsym=PECOFF_HEADER_SIZE=0x228
@@ -2072,6 +2253,7 @@ RELEASE_GCC48_X64_CC_FLAGS       = DEF(GCC48_X64_CC_FLAGS) -Wno-unused-but-set-v
 *_GCC48_ARM_ASLCC_PATH           = ENV(GCC48_ARM_PREFIX)gcc
 *_GCC48_ARM_ASLPP_PATH           = ENV(GCC48_ARM_PREFIX)gcc
 *_GCC48_ARM_RC_PATH              = ENV(GCC48_ARM_PREFIX)objcopy
+
 
 *_GCC48_ARM_ASLCC_FLAGS          = DEF(GCC48_ASLCC_FLAGS)
 *_GCC48_ARM_ASLDLINK_FLAGS       = DEF(GCC48_ARM_ASLDLINK_FLAGS)
@@ -2192,8 +2374,8 @@ RELEASE_GCC49_IA32_CC_FLAGS       = DEF(GCC49_IA32_CC_FLAGS) -Wno-unused-but-set
 *_GCC49_X64_OBJCOPY_FLAGS        =
 *_GCC49_X64_NASM_FLAGS           = -f elf64
 
-  DEBUG_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS)
-RELEASE_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Wno-unused-but-set-variable -Wno-unused-const-variable
+  DEBUG_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Os
+RELEASE_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Os -Wno-unused-but-set-variable -Wno-unused-const-variable
   NOOPT_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -O0
 
 ##################
@@ -2209,6 +2391,7 @@ RELEASE_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Wno-unused-but-set-v
 *_GCC49_ARM_ASLCC_PATH           = ENV(GCC49_ARM_PREFIX)gcc
 *_GCC49_ARM_ASLPP_PATH           = ENV(GCC49_ARM_PREFIX)gcc
 *_GCC49_ARM_RC_PATH              = ENV(GCC49_ARM_PREFIX)objcopy
+
 
 *_GCC49_ARM_ASLCC_FLAGS          = DEF(GCC49_ASLCC_FLAGS)
 *_GCC49_ARM_ASLDLINK_FLAGS       = DEF(GCC49_ARM_ASLDLINK_FLAGS)
@@ -2405,17 +2588,19 @@ RELEASE_GCC5_ARM_DLINK_FLAGS     = DEF(GCC5_ARM_DLINK_FLAGS) -flto -Os -L$(WORKS
 *_GCC5_AARCH64_DLINK2_FLAGS      = DEF(GCC5_AARCH64_DLINK2_FLAGS)
 *_GCC5_AARCH64_DTCPP_FLAGS       = DEF(GCC_DTCPP_FLAGS)
 *_GCC5_AARCH64_PLATFORM_FLAGS    =
-*_GCC5_AARCH64_PP_FLAGS          = $(PLATFORM_FLAGS) DEF(GCC_PP_FLAGS)
+*_GCC5_AARCH64_PP_FLAGS          = $(ARCHCC_FLAGS) $(PLATFORM_FLAGS) DEF(GCC_PP_FLAGS)
 *_GCC5_AARCH64_RC_FLAGS          = DEF(GCC_AARCH64_RC_FLAGS)
-*_GCC5_AARCH64_VFRPP_FLAGS       = $(PLATFORM_FLAGS) DEF(GCC_VFRPP_FLAGS)
+*_GCC5_AARCH64_VFRPP_FLAGS       = $(ARCHCC_FLAGS) $(PLATFORM_FLAGS) DEF(GCC_VFRPP_FLAGS)
 *_GCC5_AARCH64_CC_XIPFLAGS       = DEF(GCC5_AARCH64_CC_XIPFLAGS)
 
   DEBUG_GCC5_AARCH64_CC_FLAGS    = DEF(GCC5_AARCH64_CC_FLAGS) -flto -Wno-unused-but-set-variable -Wno-unused-const-variable
-  DEBUG_GCC5_AARCH64_DLINK_FLAGS = DEF(GCC5_AARCH64_DLINK_FLAGS) -flto -Os -L$(WORKSPACE)/ArmPkg/Library/GccLto -llto-aarch64 -Wl,-plugin-opt=-pass-through=-llto-aarch64 -Wno-lto-type-mismatch
+  # MU_CHANGE - Move GccLto to tools dir for better alignment
+  DEBUG_GCC5_AARCH64_DLINK_FLAGS = DEF(GCC5_AARCH64_DLINK_FLAGS) -flto -Os -L$(WORKSPACE)/BaseTools/Bin/GccLto -llto-aarch64 -Wl,-plugin-opt=-pass-through=-llto-aarch64 -Wno-lto-type-mismatch
   DEBUG_GCC5_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x20
 
 RELEASE_GCC5_AARCH64_CC_FLAGS    = DEF(GCC5_AARCH64_CC_FLAGS) -flto -Wno-unused-but-set-variable -Wno-unused-const-variable
-RELEASE_GCC5_AARCH64_DLINK_FLAGS = DEF(GCC5_AARCH64_DLINK_FLAGS) -flto -Os -L$(WORKSPACE)/ArmPkg/Library/GccLto -llto-aarch64 -Wl,-plugin-opt=-pass-through=-llto-aarch64 -Wno-lto-type-mismatch
+# MU_CHANGE - Move GccLto to tools dir for better alignment
+RELEASE_GCC5_AARCH64_DLINK_FLAGS = DEF(GCC5_AARCH64_DLINK_FLAGS) -flto -Os -L$(WORKSPACE)/BaseTools/Bin/GccLto -llto-aarch64 -Wl,-plugin-opt=-pass-through=-llto-aarch64 -Wno-lto-type-mismatch
 RELEASE_GCC5_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x20
 
   NOOPT_GCC5_AARCH64_CC_FLAGS    = DEF(GCC5_AARCH64_CC_FLAGS) -O0
@@ -2701,11 +2886,13 @@ DEFINE CLANG38_ARM_DLINK_FLAGS   = DEF(CLANG38_ARM_TARGET) DEF(GCC_ARM_DLINK_FLA
 *_CLANG38_ARM_CC_XIPFLAGS        = DEF(GCC_ARM_CC_XIPFLAGS)
 
   DEBUG_CLANG38_ARM_CC_FLAGS     = DEF(CLANG38_ARM_CC_FLAGS) $(PLATFORM_FLAGS) -flto -O1
-  DEBUG_CLANG38_ARM_DLINK_FLAGS  = DEF(CLANG38_ARM_DLINK_FLAGS) -flto -Wl,-O1 -L$(WORKSPACE)/ArmPkg/Library/GccLto -llto-arm -Wl,-plugin-opt=-pass-through=-llto-arm
+  # MU_CHANGE - Move GccLto to tools dir for better alignment
+  DEBUG_CLANG38_ARM_DLINK_FLAGS  = DEF(CLANG38_ARM_DLINK_FLAGS) -flto -Wl,-O1 -L$(WORKSPACE)/BaseTools/Bin/GccLto -llto-arm -Wl,-plugin-opt=-pass-through=-llto-arm
   NOOPT_CLANG38_ARM_CC_FLAGS     = DEF(CLANG38_ARM_CC_FLAGS) $(PLATFORM_FLAGS) -O0
   NOOPT_CLANG38_ARM_DLINK_FLAGS  = DEF(CLANG38_ARM_DLINK_FLAGS)
 RELEASE_CLANG38_ARM_CC_FLAGS     = DEF(CLANG38_ARM_CC_FLAGS) $(PLATFORM_FLAGS) -flto -O3
-RELEASE_CLANG38_ARM_DLINK_FLAGS  = DEF(CLANG38_ARM_DLINK_FLAGS) -flto -Wl,-O3 -L$(WORKSPACE)/ArmPkg/Library/GccLto -llto-arm -Wl,-plugin-opt=-pass-through=-llto-arm
+# MU_CHANGE - Move GccLto to tools dir for better alignment
+RELEASE_CLANG38_ARM_DLINK_FLAGS  = DEF(CLANG38_ARM_DLINK_FLAGS) -flto -Wl,-O3 -L$(WORKSPACE)/BaseTools/Bin/GccLto -llto-arm -Wl,-plugin-opt=-pass-through=-llto-arm
 
 ##################
 # CLANG38 AARCH64 definitions
@@ -2747,11 +2934,13 @@ DEFINE CLANG38_AARCH64_DLINK_FLAGS  = DEF(CLANG38_AARCH64_TARGET) DEF(GCC_AARCH6
 *_CLANG38_AARCH64_CC_XIPFLAGS    = DEF(GCC_AARCH64_CC_XIPFLAGS)
 
   DEBUG_CLANG38_AARCH64_CC_FLAGS    = DEF(CLANG38_AARCH64_CC_FLAGS) $(PLATFORM_FLAGS) -flto -O1
-  DEBUG_CLANG38_AARCH64_DLINK_FLAGS = DEF(CLANG38_AARCH64_DLINK_FLAGS) -flto -Wl,-O1 -L$(WORKSPACE)/ArmPkg/Library/GccLto -llto-aarch64 -Wl,-plugin-opt=-pass-through=-llto-aarch64
+  # MU_CHANGE - Move GccLto to tools dir for better alignment
+  DEBUG_CLANG38_AARCH64_DLINK_FLAGS = DEF(CLANG38_AARCH64_DLINK_FLAGS) -flto -Wl,-O1 -L$(WORKSPACE)/BaseTools/Bin/GccLto -llto-aarch64 -Wl,-plugin-opt=-pass-through=-llto-aarch64
   NOOPT_CLANG38_AARCH64_CC_FLAGS    = DEF(CLANG38_AARCH64_CC_FLAGS) $(PLATFORM_FLAGS) -O0
   NOOPT_CLANG38_AARCH64_DLINK_FLAGS = DEF(CLANG38_AARCH64_DLINK_FLAGS)
 RELEASE_CLANG38_AARCH64_CC_FLAGS    = DEF(CLANG38_AARCH64_CC_FLAGS) $(PLATFORM_FLAGS) -flto -O3
-RELEASE_CLANG38_AARCH64_DLINK_FLAGS = DEF(CLANG38_AARCH64_DLINK_FLAGS) -flto -Wl,-O3 -L$(WORKSPACE)/ArmPkg/Library/GccLto -llto-aarch64 -Wl,-plugin-opt=-pass-through=-llto-aarch64
+# MU_CHANGE - Move GccLto to tools dir for better alignment
+RELEASE_CLANG38_AARCH64_DLINK_FLAGS = DEF(CLANG38_AARCH64_DLINK_FLAGS) -flto -Wl,-O3 -L$(WORKSPACE)/BaseTools/Bin/GccLto -llto-aarch64 -Wl,-plugin-opt=-pass-through=-llto-aarch64
 
 ####################################################################################
 #
