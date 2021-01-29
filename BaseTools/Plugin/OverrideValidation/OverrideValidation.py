@@ -147,6 +147,8 @@ try:
             lineno = 0
             trackno = 0
             track_nf = []
+            track_fc = []
+            track_ag = []
 
             list_path = os.path.normpath(filepath).lower()
 
@@ -175,7 +177,8 @@ try:
                         continue
 
                     # Process the override content, 1. Bail on bad data; 2. Print on formatted data (matched or not)
-                    m_result = self.override_process_line(thebuilder, CommentLine[1], filepath, filelist, modulenode, status)
+                    tagtype = CommentLine[0].strip().lower()
+                    m_result = self.override_process_line(thebuilder, CommentLine[1], filepath, filelist, modulenode, status, tagtype)
 
                     if CommentLine[0].strip().lower() == 'override':
                         # For override tags, the hash has to match
@@ -188,15 +191,38 @@ try:
                         trackno = trackno + 1
                         if m_result == self.OverrideResult.OR_TARGET_INF_NOT_FOUND:
                             track_nf.append ((lineno, Line))
-                            logging.warn("At Line %d: %s" %(lineno, Line))
+                            logging.info("At Line %d: %s" %(lineno, Line))
+                        elif m_result == self.OverrideResult.OR_FILE_CHANGE:
+                            track_fc.append([lineno, Line, modulenode.reflist[-1].path, False])
+                            logging.info("At Line %d: %s" %(lineno, Line))
                         elif m_result != self.OverrideResult.OR_ALL_GOOD:
                             result = m_result
                             logging.error("At Line %d: %s" %(lineno, Line))
+                        else:
+                            track_ag.append(modulenode.reflist[-1].path)
 
             if trackno != 0 and len(track_nf) == trackno:
                 # All track tags in this file are not found, this will enforce a failure, if not already failed
                 if result == self.OverrideResult.OR_ALL_GOOD:
                     result = self.OverrideResult.OR_TARGET_INF_NOT_FOUND
+                for (lineno, Line) in track_nf:
+                    logging.error("Track tag failed to locate target module at Line %d: %s" %(lineno, Line))
+
+            if len(track_fc) != 0:
+                canceled_cnt = 0
+                # Some track tags failed, see if they can be canceled out by other passed track tags
+                for entry in track_fc:
+                    for all_good_line in track_ag:
+                        if entry[2] == all_good_line:
+                            canceled_cnt = canceled_cnt + 1
+                            entry[3] = True
+                            break
+                if canceled_cnt != len(track_fc) and result == self.OverrideResult.OR_ALL_GOOD:
+                    result = self.OverrideResult.OR_FILE_CHANGE
+
+                for (lineno, Line, _, canceled) in track_fc:
+                    if not canceled:
+                        logging.error("Track tag failed to match module hash at Line %d: %s" %(lineno, Line))
 
             # Revert this visitied indicator after this branch is done searching
             filelist.remove(list_path)
@@ -209,7 +235,7 @@ try:
         # filelist: the stack of files collected during a dfs for loop detection, should be absolute path and lower case all the time
         # modulenode: Module node of this "filepath" module
         # status: tuple that contains the count for succeeded modules scanned and total scanned
-        def override_process_line(self, thebuilder, overridecnt, filepath, filelist, modulenode, status):
+        def override_process_line(self, thebuilder, overridecnt, filepath, filelist, modulenode, status, tagtype):
             # Prepare the potential node and update total processed number here
             m_node = self.ModuleNode("", self.OverrideResult.OR_ALL_GOOD, 0)
             modulenode.reflist.append(m_node)
@@ -247,15 +273,15 @@ try:
                 return result
 
             if version_match[0] == 1:
-                return self.override_process_line_with_version1(thebuilder, filelist, OverrideEntry, m_node, status)
+                return self.override_process_line_with_version1(thebuilder, filelist, OverrideEntry, m_node, status, tagtype)
             elif version_match[0] == 2:
-                return self.override_process_line_with_version2(thebuilder, filelist, OverrideEntry, m_node, status)
+                return self.override_process_line_with_version2(thebuilder, filelist, OverrideEntry, m_node, status, tagtype)
             else:
                 raise ValueError(f"Handler is not provided for {version_match}")
 
         # END: override_process_line(self, thebuilder, overridecnt, filepath, filelist, modulenode, status)
 
-        def override_process_line_with_version1(self, thebuilder, filelist, OverrideEntry, m_node, status):
+        def override_process_line_with_version1(self, thebuilder, filelist, OverrideEntry, m_node, status, tagtype):
             EntryVersion = 1
             # Step 2: Process the path to overridden module
             # Normalize the path to support different slashes, then strip the initial '\\' to make sure os.path.join will work correctly
@@ -263,7 +289,7 @@ try:
             fullpath = os.path.normpath(thebuilder.mws.join(thebuilder.ws, overriddenpath))
             # Search overridden module in workspace
             if not os.path.isfile(fullpath) and not os.path.isdir(fullpath):
-                logging.warn("Inf Overridden File/Path Not Found in Workspace or Packages_Path: %s" %(overriddenpath))
+                logging.info("Inf Overridden File/Path Not Found in Workspace or Packages_Path: %s" %(overriddenpath))
                 result = self.OverrideResult.OR_TARGET_INF_NOT_FOUND
                 m_node.path = overriddenpath
                 m_node.status = result
@@ -299,7 +325,11 @@ try:
             if (result == self.OverrideResult.OR_ALL_GOOD):
                 status[0] = status[0] + 1
             else:
-                logging.error("Inf Override Hash Error: %s, expecting %s, has %s" %(self.OverrideResult.GetErrStr(result), m_node.expect_hash, m_node.entry_hash))
+                pnt_str = "Inf Override Hash Error: %s, expecting %s, has %s" %(self.OverrideResult.GetErrStr(result), m_node.expect_hash, m_node.entry_hash)
+                if tagtype == 'override':
+                    logging.error(pnt_str)
+                else:
+                    logging.info(pnt_str)
 
             # Step 7: Do depth-first-search for cascaded modules
             m_result = self.override_detect_process(thebuilder, fullpath, filelist, m_node, status)
@@ -311,11 +341,11 @@ try:
             return result
         # END: override_process_line_version1(self, thebuilder, filelist, OverrideEntry, m_node, status)
 
-        def override_process_line_with_version2(self, thebuilder, filelist, OverrideEntry, m_node, status):
+        def override_process_line_with_version2(self, thebuilder, filelist, OverrideEntry, m_node, status, tagtype):
             ''' #Version 2: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss | GIT_COMMIT '''
             GitHash = OverrideEntry[4].strip()
             del OverrideEntry[4]
-            result = self.override_process_line_with_version1(thebuilder, filelist, OverrideEntry, m_node, status)
+            result = self.override_process_line_with_version1(thebuilder, filelist, OverrideEntry, m_node, status, tagtype)
             # if we failed, do a diff of the overridden file (as long as exist) and show the output
             if result != self.OverrideResult.OR_ALL_GOOD and result != self.OverrideResult.OR_TARGET_INF_NOT_FOUND:
                 overriddenpath = os.path.normpath(OverrideEntry[1].strip()).strip('\\')
@@ -323,7 +353,11 @@ try:
                 if os.path.exists(fullpath):
                     patch = ModuleGitPatch(fullpath, GitHash)
                     # TODO: figure out how to get the log file
-                logging.error(f"Override diff since last update at commit {GitHash}")
+                pnt_str = f"Override diff since last update at commit {GitHash}"
+                if tagtype == 'override':
+                    logging.error(pnt_str)
+                else:
+                    logging.info(pnt_str)
 
             return result
         # END: override_process_line_version2(self, thebuilder, filelist, OverrideEntry, m_node, status)
