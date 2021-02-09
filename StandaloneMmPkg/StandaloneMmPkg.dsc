@@ -121,6 +121,13 @@
   StandaloneMmPkg/Library/StandaloneMmMemoryAllocationLib/StandaloneMmMemoryAllocationLib.inf
   StandaloneMmPkg/Library/VariableMmDependency/VariableMmDependency.inf
 
+  # MU_CHANGE TCBZ3205 [BEGIN]
+  #
+  # Libraries
+  #
+  StandaloneMmPkg/Library/PeiStandaloneMmHobProductionLib/PeiStandaloneMmHobProductionLib.inf
+  # MU_CHANGE TCBZ3205 [END]
+
 [Components.AARCH64, Components.ARM]
   #StandaloneMmPkg/Drivers/StandaloneMmCpu/StandaloneMmCpu.inf    # MU_CHANGE
   StandaloneMmPkg/Library/StandaloneMmPeCoffExtraActionLib/StandaloneMmPeCoffExtraActionLib.inf
