@@ -157,6 +157,13 @@
   StandaloneMmPkg/Drivers/MmCommunicationDxe/MmCommunicationDxe.inf
   StandaloneMmPkg/Library/StandaloneMmExtractGuidedSectionLib/StandaloneMmExtractGuidedSectionLib.inf
 
+  # MU_CHANGE TCBZ3205 [BEGIN]
+  #
+  # Libraries
+  #
+  StandaloneMmPkg/Library/PeiStandaloneMmHobProductionLib/PeiStandaloneMmHobProductionLib.inf
+  # MU_CHANGE TCBZ3205 [END]
+
 # MU_CHANGE [BEGIN]
   StandaloneMmPkg/Library/StandaloneMmCoreEntryPointNull/StandaloneMmCoreEntryPointNull.inf
 
