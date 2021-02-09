@@ -129,6 +129,13 @@
   StandaloneMmPkg/Library/StandaloneMmMemoryAllocationLib/StandaloneMmMemoryAllocationLib.inf
   StandaloneMmPkg/Library/VariableMmDependency/VariableMmDependency.inf
 
+  # MU_CHANGE TCBZ3205 [BEGIN]
+  #
+  # Libraries
+  #
+  StandaloneMmPkg/Library/PeiStandaloneMmHobProductionLib/PeiStandaloneMmHobProductionLib.inf
+  # MU_CHANGE TCBZ3205 [END]
+
 # MU_CHANGE [BEGIN]
   StandaloneMmPkg/Library/StandaloneMmCoreEntryPointNull/StandaloneMmCoreEntryPointNull.inf
 
