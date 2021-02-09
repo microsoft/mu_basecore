@@ -118,8 +118,18 @@
   StandaloneMmPkg/Library/StandaloneMmMemoryAllocationLib/StandaloneMmMemoryAllocationLib.inf
   StandaloneMmPkg/Library/VariableMmDependency/VariableMmDependency.inf
 
-[Components.AARCH64, Components.ARM]
-  StandaloneMmPkg/Drivers/StandaloneMmCpu/StandaloneMmCpu.inf
+  # MU_CHANGE TCBZ3205 [BEGIN]
+  #
+  # Libraries
+  #
+  StandaloneMmPkg/Library/PeiStandaloneMmHobProductionLib/PeiStandaloneMmHobProductionLib.inf
+  # MU_CHANGE TCBZ3205 [END]
+
+#MU_CHANGE - TODO: resolve ARM
+#[Components.AARCH64, Components.ARM]
+
+[Components.AARCH64]
+  StandaloneMmPkg/Drivers/StandaloneMmCpu/AArch64/StandaloneMmCpu.inf
   StandaloneMmPkg/Library/StandaloneMmPeCoffExtraActionLib/StandaloneMmPeCoffExtraActionLib.inf
 
 ###################################################################################################
