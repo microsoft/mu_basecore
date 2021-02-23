@@ -2105,8 +2105,7 @@ FileInterfaceFileWrite(
     // Ascii
     //
     AsciiBuffer = AllocateZeroPool(*BufferSize);
-    AsciiSPrint(AsciiBuffer, *BufferSize, "%S", Buffer);
-    Size = AsciiStrSize(AsciiBuffer) - 1; // (we dont need the null terminator)
+    Size = AsciiSPrint(AsciiBuffer, *BufferSize, "%S", Buffer);  // MU_CHANGE BZ3232
     Status = (((EFI_FILE_PROTOCOL_FILE*)This)->Orig->Write(((EFI_FILE_PROTOCOL_FILE*)This)->Orig, &Size, AsciiBuffer));
     FreePool(AsciiBuffer);
     return (Status);
