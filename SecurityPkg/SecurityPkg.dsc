@@ -222,6 +222,9 @@
 [Components]
   SecurityPkg/Library/DxeImageVerificationLib/DxeImageVerificationLib.inf
   SecurityPkg/Library/DxeImageAuthenticationStatusLib/DxeImageAuthenticationStatusLib.inf
+  # MU_CHANGE Starts: TCBZ 3169
+  SecurityPkg/Library/Tcg2MmDependencyLib/Tcg2MmDependencyLib.inf
+  # MU_CHANGE Ends: TCBZ 3169
 
   #
   # TPM
