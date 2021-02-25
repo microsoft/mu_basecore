@@ -172,6 +172,7 @@
   MdePkg/Library/SmmPciExpressLib/SmmPciExpressLib.inf
   MdePkg/Library/SmiHandlerProfileLibNull/SmiHandlerProfileLibNull.inf
   MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
+  MdePkg/Library/MmUnblockMemoryLib/MmUnblockMemoryLibNull.inf     # MU_CHANGE TCBZ3186
 
 
 
