@@ -56,6 +56,9 @@
   DxeServicesTableLib
   UefiDriverEntryPoint
   TpmMeasurementLib
+  # MU_CHANGE Starts: TCBZ3168
+  MmUnblockMemoryLib
+  # MU_CHANGE Ends: TCBZ3168
 
 [Protocols]
   gEfiVariableWriteArchProtocolGuid             ## PRODUCES
