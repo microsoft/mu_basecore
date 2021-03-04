@@ -87,6 +87,10 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdActiveTpmInterfaceType       ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLaml            ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLasa            ## CONSUMES
+  ## MU_CHANGE
+  # Allow a platform to drop TCG ACPI measurements until we have a chance to make them more
+  # consistent and functional.
+  gEfiSecurityPkgTokenSpaceGuid.PcdSkipTcgSmmAcpiMeasurements   ## CONSUMES
 
 [Depex]
   gEfiAcpiTableProtocolGuid AND

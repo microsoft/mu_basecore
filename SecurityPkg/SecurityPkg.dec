@@ -329,6 +329,11 @@
   #  mismatch is found between PcdTpm2HashMask and the active banks.
   gEfiSecurityPkgTokenSpaceGuid.PcdForceReallocatePcrBanks|TRUE|BOOLEAN|0x0000000A
 
+  ## MU_CHANGE
+  # Allow a platform to drop TCG ACPI measurements until we have a chance to make them more
+  # consistent and functional.
+  gEfiSecurityPkgTokenSpaceGuid.PcdSkipTcgSmmAcpiMeasurements|FALSE|BOOLEAN|0x10000001
+
 [PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## Image verification policy for OptionRom. Only following values are valid:<BR><BR>
   #  NOTE: Do NOT use 0x5 and 0x2 since it violates the UEFI specification and has been removed.<BR>
