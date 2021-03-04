@@ -656,14 +656,21 @@ PublishAcpiTable (
   // Otherwise, the PCR record would be different after TPM FW update
   // or the PCD configuration change.
   //
-  TpmMeasureAndLogData (
-    0,
-    EV_POST_CODE,
-    EV_POSTCODE_INFO_ACPI_DATA,
-    ACPI_DATA_LEN,
-    Table,
-    TableSize
-    );
+  // MU_CHANGE [BEGIN]
+  // Allow a platform to drop TCG ACPI measurements until we have a chance to make them more
+  // consistent and functional.
+  if (!FixedPcdGetBool (PcdSkipTcgSmmAcpiMeasurements)) {
+    TpmMeasureAndLogData (
+      0,
+      EV_POST_CODE,
+      EV_POSTCODE_INFO_ACPI_DATA,
+      ACPI_DATA_LEN,
+      Table,
+      TableSize
+      );
+  }
+
+  // MU_CHANGE [END]
 
   //
   // Update Table version before measuring it to PCR
@@ -766,14 +773,21 @@ PublishTpm2 (
   // Otherwise, the PCR record would be different after event log update
   // or the PCD configuration change.
   //
-  TpmMeasureAndLogData (
-    0,
-    EV_POST_CODE,
-    EV_POSTCODE_INFO_ACPI_DATA,
-    ACPI_DATA_LEN,
-    &Tpm2AcpiTemplate,
-    sizeof (EFI_TPM2_ACPI_TABLE_TEMPLATE)
-    );
+  // MU_CHANGE [BEGIN]
+  // Allow a platform to drop TCG ACPI measurements until we have a chance to make them more
+  // consistent and functional.
+  if (!FixedPcdGetBool (PcdSkipTcgSmmAcpiMeasurements)) {
+    TpmMeasureAndLogData (
+      0,
+      EV_POST_CODE,
+      EV_POSTCODE_INFO_ACPI_DATA,
+      ACPI_DATA_LEN,
+      &Tpm2AcpiTemplate,
+      sizeof (EFI_TPM2_ACPI_TABLE_TEMPLATE)
+      );
+  }
+
+  // MU_CHANGE [END]
 
   Tpm2AcpiTemplate.Header.Signature = EFI_ACPI_5_0_TRUSTED_COMPUTING_PLATFORM_2_TABLE_SIGNATURE;
   Tpm2AcpiTemplate.Header.Revision  = PcdGet8 (PcdTpm2AcpiTableRev);
