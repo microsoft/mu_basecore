@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 {
-  "scope": "cibuild",
+  "scope": "cibuild-disabled",
   "name": "EccCheck Test",
   "module": "EccCheck"
 }
