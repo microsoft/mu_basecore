@@ -350,7 +350,7 @@ OnEndOfDxe (
   VOID                                    *Context
   )
 {
-  EFI_STATUS    Status;
+  // EFI_STATUS    Status;      // MU_CHANGE - Do not lock Policy at EndOfDxe.
 
   DEBUG ((EFI_D_INFO, "[Variable]END_OF_DXE is signaled\n"));
   MorLockInitAtEndOfDxe ();
