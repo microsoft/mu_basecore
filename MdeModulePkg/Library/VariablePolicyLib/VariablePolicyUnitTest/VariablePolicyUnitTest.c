@@ -2536,3 +2536,15 @@ EXIT:
 
   return;
 }
+
+/**
+  Standard POSIX C entry point for host based unit test execution.
+**/
+int
+main (
+  int argc,
+  char *argv[]
+  )
+{
+  return UnitTestMain ();
+}
