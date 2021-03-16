@@ -2333,7 +2333,7 @@ ShouldBeAbleToDumpThePolicyTableAfterDisabled (
 /**
   Unit Test Entry Point.
   **/
-VOID
+EFI_STATUS
 EFIAPI
 UnitTestMain (
   VOID
@@ -2534,7 +2534,7 @@ EXIT:
     FreeUnitTestFramework( Framework );
   }
 
-  return;
+  return Status;
 }
 
 /**
