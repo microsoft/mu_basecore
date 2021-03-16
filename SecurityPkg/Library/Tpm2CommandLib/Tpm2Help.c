@@ -356,6 +356,66 @@ CopyDigestListToBuffer (
   return Buffer;
 }
 
+// MU_CHANGE - START - [TCBZ3267] Additional helper functions.
+/**
+  Copy a buffer into  TPML_DIGEST_VALUES structure.
+  This is the opposite to the CopyDigestListToBuffer function.
+
+  @param[in]     Buffer             Buffer to hold TPML_DIGEST_VALUES compact binary.
+  @param[in]     BufferSize         Size of Buffer.
+  @param[in,out] DigestList         TPML_DIGEST_VALUES.
+
+  @return EFI_STATUS
+  @retval EFI_SUCCESS               Buffer was succesfully copied to Digest List.
+  @retval EFI_BAD_BUFFER_SIZE       Bad buffer size passed to function.
+  @retval EFI_INVALID_PARAMETER     Invalid parameter passed to function: NULL pointer or 
+                                    BufferSize bigger than TPML_DIGEST_VALUES
+**/
+EFI_STATUS
+EFIAPI
+CopyBufferToDigestList (
+  IN     VOID                   *Buffer,
+  IN     UINT32                 BufferSize,
+  IN OUT TPML_DIGEST_VALUES     *DigestList
+  )
+{
+  EFI_STATUS Status = EFI_INVALID_PARAMETER;
+  UINTN  Index;
+  UINT16 DigestSize;
+  UINT8 *CONST pBuffer = (UINT8 *CONST)Buffer;
+
+  if( Buffer == NULL || DigestList == NULL || BufferSize > sizeof(TPML_DIGEST_VALUES)) {
+     return EFI_INVALID_PARAMETER;
+  }
+  DigestList->count = SwapBytes32( ReadUnaligned32((CONST UINT32 *)Buffer) );
+  if(DigestList->count > HASH_COUNT) {
+    return EFI_INVALID_PARAMETER;
+  }
+  Buffer = (UINT8 *)Buffer +  sizeof(UINT32);
+  for (Index = 0; Index < DigestList->count; Index++) {
+    if((UINT32)((UINT8 *)Buffer - pBuffer + sizeof(UINT16)) > BufferSize ) {
+      Status = EFI_BAD_BUFFER_SIZE;
+      break;
+    } else {
+      DigestList->digests[Index].hashAlg = SwapBytes16( ReadUnaligned16((CONST UINT16 *)Buffer) );
+    }
+    Buffer = (UINT8 *)Buffer + sizeof(UINT16);
+    DigestSize = GetHashSizeFromAlgo (DigestList->digests[Index].hashAlg);
+    if((UINT32)((UINT8 *)Buffer - pBuffer + DigestSize) > BufferSize ) {
+      Status = EFI_BAD_BUFFER_SIZE;
+      break;
+    }
+    else {
+      CopyMem (&DigestList->digests[Index].digest, Buffer, DigestSize);
+    }
+    Buffer = (UINT8 *)Buffer + DigestSize;
+    Status = EFI_SUCCESS;
+  }
+
+  return Status;
+}
+// MU_CHANGE - END - [TCBZ3267] Additional helper functions.
+
 /**
   Get TPML_DIGEST_VALUES data size.
 
@@ -381,6 +441,34 @@ GetDigestListSize (
 
   return TotalSize;
 }
+
+// MU_CHANGE - START - [TCBZ3267] Additional helper functions.
+/**
+  Get TPML_DIGEST_VALUES data size from HashAlgorithmMask
+
+  @param[in]     HashAlgorithmMask.
+
+  @return TPML_DIGEST_VALUES data size.
+**/
+UINT32
+EFIAPI
+GetDigestListSizeFromHashAlgorithmMask(
+  IN UINT32         HashAlgorithmMask
+  )
+{
+  UINTN  Index;
+  UINT32 TotalSize;
+
+  TotalSize = sizeof(UINT32);
+  for (Index = 0; Index < sizeof(mHashInfo)/sizeof(mHashInfo[0]); Index++) {
+    if (mHashInfo[Index].HashMask & HashAlgorithmMask) {
+      TotalSize += sizeof(TPMI_ALG_HASH) + mHashInfo[Index].HashSize;
+    }
+  }
+
+  return TotalSize;
+}
+// MU_CHANGE - END - [TCBZ3267] Additional helper functions.
 
 /**
   This function get digest from digest list.
