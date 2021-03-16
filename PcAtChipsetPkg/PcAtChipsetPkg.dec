@@ -161,7 +161,7 @@
 [PcdsFixedAtBuild]
   ## Defines the UART base address.
   # @Prompt UART IO Port Base Address
-  gPcAtChipsetPkgTokenSpaceGuid.PcdUartIoPortBaseAddress         |0x3F8|UINT16|0x00000021     ## MU_CHANGE
+  gPcAtChipsetPkgTokenSpaceGuid.PcdUartIoPortBaseAddress         |0x3F8|UINT16|0x00000024     ## MU_CHANGE
 
 [UserExtensions.TianoCore."ExtraFiles"]
   PcAtChipsetPkgExtra.uni
