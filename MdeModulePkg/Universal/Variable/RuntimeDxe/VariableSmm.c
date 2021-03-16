@@ -1026,7 +1026,7 @@ SmmEndOfDxeCallback (
   IN EFI_HANDLE                           Handle
   )
 {
-  EFI_STATUS    Status;
+  // EFI_STATUS    Status;      // MU_CHANGE - Do not lock Policy at EndOfDxe.
 
   DEBUG ((EFI_D_INFO, "[Variable]SMM_END_OF_DXE is signaled\n"));
   MorLockInitAtEndOfDxe ();
