@@ -1,8 +1,8 @@
 {
-  "scope": "global",
+  "scope": "global-disabled",
   "type": "nuget",
   "name": "Mu-SharedNetworking",
   "source": "https://api.nuget.org/v3/index.json",
-  "version": "2020.2.1.2-beta",
+  "version": "2021.02.1",
   "flags": []
 }
