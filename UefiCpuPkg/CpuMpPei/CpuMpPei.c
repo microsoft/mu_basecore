@@ -485,10 +485,11 @@ InitializeMpExceptionStackSwitchHandlers (
   UINT8                    *StackTop;
   UINTN                    NumberOfProcessors;
 
-  if (!PcdGetBool (PcdCpuStackGuard)) {
-    return;
-  }
-
+  // MU_CHANGE START
+  // if (!PcdGetBool (PcdCpuStackGuard)) {
+  //   return;
+  // }
+  // MU_CHANGE END
   MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
   MpInitLibWhoAmI (&Bsp);
 

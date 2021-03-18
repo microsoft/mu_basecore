@@ -86,6 +86,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DebugAgentLib.h>
 #include <Library/CpuExceptionHandlerLib.h>
 #include <Library/BaseBinSecurityLib.h>          // MS_CHANGE_?
+#include <Library/MemoryProtectionHobLib.h>      // MU_CHANGE
 
 //
 // attributes for reserved memory before it is promoted to system memory
@@ -2731,17 +2732,32 @@ RemoveImageRecord (
   IN EFI_RUNTIME_IMAGE_ENTRY  *RuntimeImage
   );
 
+// MU_CHANGE START Use Project Mu ProtectUefiImage()
+
 /**
   Protect UEFI image.
 
   @param[in]  LoadedImage              The loaded image protocol
   @param[in]  LoadedImageDevicePath    The loaded image device path protocol
 **/
-VOID
-ProtectUefiImage (
+EFI_STATUS
+ProtectUefiImageMu (
   IN EFI_LOADED_IMAGE_PROTOCOL  *LoadedImage,
   IN EFI_DEVICE_PATH_PROTOCOL   *LoadedImageDevicePath
   );
+
+/**
+  Protect UEFI image.
+
+  @param[in]  LoadedImage              The loaded image protocol
+  @param[in]  LoadedImageDevicePath    The loaded image device path protocol
+**/
+// VOID
+// ProtectUefiImage (
+//   IN EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage,
+//   IN EFI_DEVICE_PATH_PROTOCOL    *LoadedImageDevicePath
+//   );
+// MU_CHANGE END
 
 /**
   Unprotect UEFI image.
