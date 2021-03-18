@@ -71,6 +71,7 @@
   DebugAgentLib
   PeiServicesTablePointerLib
   PerformanceLib
+  MemoryProtectionLib ## MU_CHANGE
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
   ArmMmuLib

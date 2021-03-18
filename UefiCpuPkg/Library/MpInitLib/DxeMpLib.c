@@ -15,6 +15,8 @@
 
 #include <Protocol/Timer.h>
 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+
 #define  AP_CHECK_INTERVAL     (EFI_TIMER_PERIOD_MILLISECONDS (100))
 #define  AP_SAFE_STACK_SIZE    128
 
@@ -337,7 +339,7 @@ InitMpGlobalData (
     return;
   }
 
-  if (PcdGetBool (PcdCpuStackGuard)) {
+  if (PcdGetBool (PcdCpuStackGuard) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     //
     // One extra page at the bottom of the stack is needed for Guard page.
     //

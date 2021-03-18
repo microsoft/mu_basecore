@@ -9,6 +9,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "DxeIpl.h"
 #include "X64/VirtualMemory.h"
 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
 
 
 /**
@@ -92,8 +93,10 @@ HandOffToDxeCore (
     // Set NX for stack feature also require PcdDxeIplBuildPageTables be TRUE
     // for the DxeIpl and the DxeCore are both X64.
     //
-    ASSERT (PcdGetBool (PcdSetNxForStack) == FALSE);
-    ASSERT (PcdGetBool (PcdCpuStackGuard) == FALSE);
+    if (IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
+      ASSERT (PcdGetBool (PcdSetNxForStack) == FALSE);
+      ASSERT (PcdGetBool (PcdCpuStackGuard) == FALSE);
+    }
   }
 
   //

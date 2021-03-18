@@ -96,7 +96,7 @@
   CpuExceptionHandlerLib
   PcdLib
   BaseBinSecurityLib         ## MS_CHANGE_?
-
+  MemoryProtectionLib        ## MU_CHANGE
 
 [Guids]
   gEfiEventMemoryMapChangeGuid                  ## PRODUCES             ## Event

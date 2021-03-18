@@ -12,6 +12,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Library/ArmMmuLib.h>
 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+
 /**
    Transfers control to DxeCore.
 
@@ -39,7 +41,7 @@ HandOffToDxeCore (
   BaseOfStack = AllocatePages (EFI_SIZE_TO_PAGES (STACK_SIZE));
   ASSERT (BaseOfStack != NULL);
 
-  if (PcdGetBool (PcdSetNxForStack)) {
+  if (PcdGetBool (PcdSetNxForStack) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     Status = ArmSetMemoryRegionNoExec ((UINTN)BaseOfStack, STACK_SIZE);
     ASSERT_EFI_ERROR (Status);
   }

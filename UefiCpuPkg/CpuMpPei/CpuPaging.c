@@ -13,6 +13,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/CpuLib.h>
 #include <Library/BaseLib.h>
 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+
 #include "CpuMpPei.h"
 
 #define IA32_PG_P             BIT0
@@ -611,7 +613,7 @@ MemoryDiscoveredPpiNotifyCallback (
   // the task switch (for the sake of stack switch).
   //
   InitStackGuard = FALSE;
-  if (IsIa32PaeSupported () && PcdGetBool (PcdCpuStackGuard)) {
+  if (IsIa32PaeSupported () && PcdGetBool (PcdCpuStackGuard) && IsMemoryProtectionGlobalToggleEnabled()) {
     EnablePaging ();
     InitStackGuard = TRUE;
   }
