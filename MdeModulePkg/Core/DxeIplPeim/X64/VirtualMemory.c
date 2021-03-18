@@ -97,6 +97,71 @@ ClearFirst4KPage (
   return;
 }
 
+// MU_CHANGE START: Add function to check if page zero can be allocated
+
+/**
+  Returns true if page zero exists and has not been allocated.
+
+  @param HobStart                  The start of HobList passed to DxeCore.
+
+  @retval TRUE                     Page zero exists and is unallocated
+  @retval FALSE                    Page zero cannot be allocated
+
+**/
+BOOLEAN
+CanUpdatePageZero (
+  IN  VOID  *HobStart
+  )
+{
+  EFI_PEI_HOB_POINTERS  RscHob;
+  EFI_PEI_HOB_POINTERS  MemHob;
+  BOOLEAN               CanUpdate;
+
+  RscHob.Raw = HobStart;
+  MemHob.Raw = HobStart;
+  CanUpdate  = FALSE;
+
+  //
+  // Check if page 0 exists and is free
+  //
+  while ((RscHob.Raw = GetNextHob (
+                         EFI_HOB_TYPE_RESOURCE_DESCRIPTOR,
+                         RscHob.Raw
+                         )) != NULL)
+  {
+    if ((RscHob.ResourceDescriptor->ResourceType == EFI_RESOURCE_SYSTEM_MEMORY) &&
+        (RscHob.ResourceDescriptor->PhysicalStart == 0))
+    {
+      CanUpdate = TRUE;
+      //
+      // Make sure memory at 0-4095 has not been allocated.
+      //
+      while ((MemHob.Raw = GetNextHob (
+                             EFI_HOB_TYPE_MEMORY_ALLOCATION,
+                             MemHob.Raw
+                             )) != NULL)
+      {
+        if (MemHob.MemoryAllocation->AllocDescriptor.MemoryBaseAddress
+            < EFI_PAGE_SIZE)
+        {
+          CanUpdate = FALSE;
+          break;
+        }
+
+        MemHob.Raw = GET_NEXT_HOB (MemHob);
+      }
+
+      break;
+    }
+
+    RscHob.Raw = GET_NEXT_HOB (RscHob);
+  }
+
+  return CanUpdate;
+}
+
+// MU_CHANGE END
+
 /**
   Return configure status of NULL pointer detection feature.
 
@@ -109,7 +174,10 @@ IsNullDetectionEnabled (
   VOID
   )
 {
-  return ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT0) != 0);
+  // MU_CHANGE START: Null detection enablement now happens in DXE phase
+  return FALSE;
+  // return ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT0) != 0);
+  // MU_CHANGE END
 }
 
 /**
@@ -163,9 +231,12 @@ IsEnableNonExecNeeded (
   // XD flag (BIT63) in page table entry is only valid if IA32_EFER.NXE is set.
   // Features controlled by Following PCDs need this feature to be enabled.
   //
-  return (PcdGetBool (PcdSetNxForStack) ||
-          PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0 ||
-          PcdGet32 (PcdImageProtectionPolicy) != 0);
+  // MU_CHANGE START
+  // return ((PcdGetBool (PcdSetNxForStack) ||
+  //         PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0 ||
+  //         PcdGet32 (PcdImageProtectionPolicy) != 0));
+  return TRUE;
+  // MU_CHANGE END
 }
 
 /**
@@ -210,22 +281,26 @@ ToSplitPageTable (
   IN UINTN                 GhcbSize
   )
 {
-  if (IsNullDetectionEnabled () && (Address == 0)) {
+  // MU_CHANGE START Remove checks to memory protection settings
+  if (Address == 0) {
+    // IsNullDetectionEnabled () && Address == 0) {
     return TRUE;
   }
 
-  if (PcdGetBool (PcdCpuStackGuard)) {
-    if ((StackBase >= Address) && (StackBase < (Address + Size))) {
-      return TRUE;
-    }
+  // if (PcdGetBool (PcdCpuStackGuard)) {
+  if ((StackBase >= Address) && (StackBase < (Address + Size))) {
+    return TRUE;
   }
 
-  if (PcdGetBool (PcdSetNxForStack)) {
-    if ((Address < StackBase + StackSize) && ((Address + Size) > StackBase)) {
-      return TRUE;
-    }
+  // }
+
+  // if (PcdGetBool (PcdSetNxForStack)) {
+  if ((Address < StackBase + StackSize) && ((Address + Size) > StackBase)) {
+    return TRUE;
   }
 
+  // }
+  // MU_CHANGE END
   if (GhcbBase != 0) {
     if ((Address < GhcbBase + GhcbSize) && ((Address + Size) > GhcbBase)) {
       return TRUE;
@@ -401,19 +476,23 @@ Split2MPageTo4K (
     }
 
     PageTableEntry->Bits.ReadWrite = 1;
-
+    // MU_CHANGE START Always set not present and NX bits for stack
     if ((IsNullDetectionEnabled () && (PhysicalAddress4K == 0)) ||
-        (PcdGetBool (PcdCpuStackGuard) && (PhysicalAddress4K == StackBase)))
+        //     (PcdGetBool (PcdCpuStackGuard) && PhysicalAddress4K == StackBase)) {
+        (PhysicalAddress4K == StackBase))
     {
       PageTableEntry->Bits.Present = 0;
     } else {
       PageTableEntry->Bits.Present = 1;
     }
 
-    if (  PcdGetBool (PcdSetNxForStack)
-       && (PhysicalAddress4K >= StackBase)
-       && (PhysicalAddress4K < StackBase + StackSize))
+    // if (PcdGetBool (PcdSetNxForStack)
+    //     && (PhysicalAddress4K >= StackBase)
+    //     && (PhysicalAddress4K < StackBase + StackSize)) {
+    if (  (PhysicalAddress4K >= StackBase)
+       && (PhysicalAddress4K < (StackBase + StackSize)))
     {
+      // MU_CHANGE END
       //
       // Set Nx bit for stack.
       //

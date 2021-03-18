@@ -293,7 +293,12 @@ DxeMain (
   // Start the Image Services.
   //
   Status = CoreInitializeImageServices (HobStart);
-  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE START Assert Status but omit EFI_NOT_READY as it just implies gCPU is not yet installed
+  if (Status != EFI_NOT_READY) {
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // MU_CHANGE END
 
   //
   // Initialize the Global Coherency Domain Services

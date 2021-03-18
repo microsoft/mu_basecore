@@ -9,7 +9,7 @@
   2) This policy is applied only if the UEFI image meets the page alignment
      requirement.
   3) This policy is applied only if the Source UEFI image matches the
-     PcdImageProtectionPolicy definition.
+     Image Protection Policy definition. // MU_CHANGE
   4) This policy is not applied to the non-PE image region.
 
   The DxeCore calls CpuArchProtocol->SetMemoryAttributes() to protect
@@ -54,6 +54,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 #define DO_NOT_PROTECT                 0x00000000
 #define PROTECT_IF_ALIGNED_ELSE_ALLOW  0x00000001
+#define PROTECT_ELSE_RAISE_ERROR       0x00000002         // MU_CHANGE Update to use Project Mu ProtectUefiImage()
 
 #define MEMORY_TYPE_OS_RESERVED_MIN   0x80000000
 #define MEMORY_TYPE_OEM_RESERVED_MIN  0x70000000
@@ -61,7 +62,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define PREVIOUS_MEMORY_DESCRIPTOR(MemoryDescriptor, Size) \
   ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)(MemoryDescriptor) - (Size)))
 
-UINT32  mImageProtectionPolicy;
+// UINT32   mImageProtectionPolicy; // MU_CHANGE
 
 extern LIST_ENTRY  mGcdMemorySpaceMap;
 
@@ -155,11 +156,25 @@ GetProtectionPolicyFromImageType (
   IN UINT32  ImageType
   )
 {
-  if ((ImageType & mImageProtectionPolicy) == 0) {
-    return DO_NOT_PROTECT;
-  } else {
+  // MU_CHANGE START Use ImageProtectionPolicy Bitfield
+  // if ((ImageType & mImageProtectionPolicy) == 0) {
+  //   return DO_NOT_PROTECT;
+  // } else {
+  //   return PROTECT_IF_ALIGNED_ELSE_ALLOW;
+  // }
+  if (((ImageType == IMAGE_UNKNOWN) && gMPS.ImageProtectionPolicy.Fields.FromUnknown) ||
+      ((ImageType == IMAGE_FROM_FV) && gMPS.ImageProtectionPolicy.Fields.FromFv))
+  {
+    if (gMPS.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails) {
+      return PROTECT_ELSE_RAISE_ERROR;
+    }
+
     return PROTECT_IF_ALIGNED_ELSE_ALLOW;
+  } else {
+    return DO_NOT_PROTECT;
   }
+
+  // MU_CHANGE END
 }
 
 /**
@@ -385,12 +400,256 @@ FreeImageRecord (
   FreePool (ImageRecord);
 }
 
+// MU_CHANGE START Use Project Mu ProtectUefiImage()
+
+/**
+  Protect UEFI PE/COFF image.
+
+  @param[in]  LoadedImage              The loaded image protocol
+  @param[in]  LoadedImageDevicePath    The loaded image device path protocol
+
+  @retval EFI_INVALID_PARAMETER   This function was called in SMM or the image
+                                  type has an undefined protection policy
+  @retval EFI_OUT_OF_RESOURCES    Failure to Allocate()
+  @retval EFI_LOAD_ERROR          The image is unaligned or the code segment count is zero
+  @retval EFI_SUCCESS             The image was successfully protected or the protection policy
+                                  is PROTECT_IF_ALIGNED_ELSE_ALLOW
+**/
+EFI_STATUS
+ProtectUefiImageMu (
+  IN EFI_LOADED_IMAGE_PROTOCOL  *LoadedImage,
+  IN EFI_DEVICE_PATH_PROTOCOL   *LoadedImageDevicePath
+  )
+{
+  VOID                                  *ImageAddress;
+  EFI_IMAGE_DOS_HEADER                  *DosHdr;
+  UINT32                                PeCoffHeaderOffset;
+  UINT32                                SectionAlignment;
+  EFI_IMAGE_SECTION_HEADER              *Section;
+  EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION   Hdr;
+  UINT8                                 *Name;
+  UINTN                                 Index;
+  IMAGE_PROPERTIES_RECORD               *ImageRecord;
+  CHAR8                                 *PdbPointer;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *ImageRecordCodeSection;
+  BOOLEAN                               IsAligned;
+  UINT32                                ProtectionPolicy;
+  EFI_STATUS                            Status = EFI_SUCCESS;
+
+  DEBUG ((DEBUG_INFO, "%a - 0x%x\n", __FUNCTION__, LoadedImage));
+  DEBUG ((DEBUG_INFO, "  - 0x%016lx - 0x%016lx\n", (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize));
+
+  if (gCpu == NULL) {
+    return EFI_NOT_READY;
+  }
+
+  ProtectionPolicy = GetUefiImageProtectionPolicy (LoadedImage, LoadedImageDevicePath);
+  switch (ProtectionPolicy) {
+    case DO_NOT_PROTECT:
+      goto Finish;
+    case PROTECT_IF_ALIGNED_ELSE_ALLOW:
+    case PROTECT_ELSE_RAISE_ERROR:
+      break;
+    default:
+      ASSERT (FALSE);
+      Status = EFI_INVALID_PARAMETER;
+      goto Finish;
+  }
+
+  ImageRecord = AllocateZeroPool (sizeof (*ImageRecord));
+  if (ImageRecord == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Finish;
+  }
+
+  ImageRecord->Signature = IMAGE_PROPERTIES_RECORD_SIGNATURE;
+
+  //
+  // Step 1: record whole region
+  //
+  ImageRecord->ImageBase = (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase;
+  ImageRecord->ImageSize = LoadedImage->ImageSize;
+
+  ImageAddress = LoadedImage->ImageBase;
+
+  PdbPointer = PeCoffLoaderGetPdbPointer ((VOID *)(UINTN)ImageAddress);
+  if (PdbPointer != NULL) {
+    DEBUG ((DEBUG_VERBOSE, "  Image: %a\n", PdbPointer));
+  }
+
+  //
+  // Check PE/COFF image
+  //
+  DosHdr             = (EFI_IMAGE_DOS_HEADER *)(UINTN)ImageAddress;
+  PeCoffHeaderOffset = 0;
+  if (DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
+    PeCoffHeaderOffset = DosHdr->e_lfanew;
+  }
+
+  Hdr.Pe32 = (EFI_IMAGE_NT_HEADERS32 *)((UINT8 *)(UINTN)ImageAddress + PeCoffHeaderOffset);
+  if (Hdr.Pe32->Signature != EFI_IMAGE_NT_SIGNATURE) {
+    DEBUG ((DEBUG_VERBOSE, "Hdr.Pe32->Signature invalid - 0x%x\n", Hdr.Pe32->Signature));
+    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
+      Status = EFI_INVALID_PARAMETER;
+    }
+
+    // It might be image in SMM.
+    goto Finish;
+  }
+
+  //
+  // Get SectionAlignment
+  //
+  if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    SectionAlignment = Hdr.Pe32->OptionalHeader.SectionAlignment;
+  } else {
+    SectionAlignment = Hdr.Pe32Plus->OptionalHeader.SectionAlignment;
+  }
+
+  IsAligned = IsMemoryProtectionSectionAligned (SectionAlignment, LoadedImage->ImageCodeType);
+  if (!IsAligned) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a - Section Alignment(0x%x) is incorrect!\n",
+      __FUNCTION__,
+      SectionAlignment
+      ));
+    PdbPointer = PeCoffLoaderGetPdbPointer ((VOID *)(UINTN)ImageAddress);
+    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
+      Status = EFI_LOAD_ERROR;
+    }
+
+    goto Finish;
+  }
+
+  Section = (EFI_IMAGE_SECTION_HEADER *)(
+                                         (UINT8 *)(UINTN)ImageAddress +
+                                         PeCoffHeaderOffset +
+                                         sizeof (UINT32) +
+                                         sizeof (EFI_IMAGE_FILE_HEADER) +
+                                         Hdr.Pe32->FileHeader.SizeOfOptionalHeader
+                                         );
+  ImageRecord->CodeSegmentCount = 0;
+  InitializeListHead (&ImageRecord->CodeSegmentList);
+  for (Index = 0; Index < Hdr.Pe32->FileHeader.NumberOfSections; Index++) {
+    Name = Section[Index].Name;
+    DEBUG ((
+      DEBUG_VERBOSE,
+      "  Section - '%c%c%c%c%c%c%c%c'\n",
+      Name[0],
+      Name[1],
+      Name[2],
+      Name[3],
+      Name[4],
+      Name[5],
+      Name[6],
+      Name[7]
+      ));
+
+    //
+    // Instead of assuming that a PE/COFF section of type EFI_IMAGE_SCN_CNT_CODE
+    // can always be mapped read-only, classify a section as a code section only
+    // if it has the executable attribute set and the writable attribute cleared.
+    //
+    // This adheres more closely to the PE/COFF spec, and avoids issues with
+    // Linux OS loaders that may consist of a single read/write/execute section.
+    //
+    if ((Section[Index].Characteristics & (EFI_IMAGE_SCN_MEM_WRITE | EFI_IMAGE_SCN_MEM_EXECUTE)) == EFI_IMAGE_SCN_MEM_EXECUTE) {
+      DEBUG ((DEBUG_VERBOSE, "  VirtualSize          - 0x%08x\n", Section[Index].Misc.VirtualSize));
+      DEBUG ((DEBUG_VERBOSE, "  VirtualAddress       - 0x%08x\n", Section[Index].VirtualAddress));
+      DEBUG ((DEBUG_VERBOSE, "  SizeOfRawData        - 0x%08x\n", Section[Index].SizeOfRawData));
+      DEBUG ((DEBUG_VERBOSE, "  PointerToRawData     - 0x%08x\n", Section[Index].PointerToRawData));
+      DEBUG ((DEBUG_VERBOSE, "  PointerToRelocations - 0x%08x\n", Section[Index].PointerToRelocations));
+      DEBUG ((DEBUG_VERBOSE, "  PointerToLinenumbers - 0x%08x\n", Section[Index].PointerToLinenumbers));
+      DEBUG ((DEBUG_VERBOSE, "  NumberOfRelocations  - 0x%08x\n", Section[Index].NumberOfRelocations));
+      DEBUG ((DEBUG_VERBOSE, "  NumberOfLinenumbers  - 0x%08x\n", Section[Index].NumberOfLinenumbers));
+      DEBUG ((DEBUG_VERBOSE, "  Characteristics      - 0x%08x\n", Section[Index].Characteristics));
+
+      //
+      // Step 2: record code section
+      //
+      ImageRecordCodeSection = AllocatePool (sizeof (*ImageRecordCodeSection));
+      if (ImageRecordCodeSection == NULL) {
+        if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
+          Status = EFI_OUT_OF_RESOURCES;
+        }
+
+        goto Finish;
+      }
+
+      ImageRecordCodeSection->Signature = IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE;
+
+      ImageRecordCodeSection->CodeSegmentBase = (UINTN)ImageAddress + Section[Index].VirtualAddress;
+      ImageRecordCodeSection->CodeSegmentSize = ALIGN_VALUE (Section[Index].SizeOfRawData, SectionAlignment);
+
+      DEBUG ((DEBUG_VERBOSE, "ImageCode: 0x%016lx - 0x%016lx\n", ImageRecordCodeSection->CodeSegmentBase, ImageRecordCodeSection->CodeSegmentSize));
+
+      InsertTailList (&ImageRecord->CodeSegmentList, &ImageRecordCodeSection->Link);
+      ImageRecord->CodeSegmentCount++;
+    }
+  }
+
+  if (ImageRecord->CodeSegmentCount == 0) {
+    //
+    // If a UEFI executable consists of a single read+write+exec PE/COFF
+    // section, the image can still be launched but image protection
+    // cannot be applied.
+    //
+    // One example that elicits this is (some) Linux kernels (with the EFI stub
+    // of course).
+    //
+    DEBUG ((DEBUG_WARN, "%a - CodeSegmentCount is 0!\n", __FUNCTION__));
+    PdbPointer = PeCoffLoaderGetPdbPointer ((VOID *)(UINTN)ImageAddress);
+    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
+      Status = EFI_LOAD_ERROR;
+    }
+
+    goto Finish;
+  }
+
+  //
+  // Final
+  //
+  SortImageRecordCodeSection (ImageRecord);
+  //
+  // Check overlap all section in ImageBase/Size
+  //
+  if (!IsImageRecordCodeSectionValid (ImageRecord)) {
+    DEBUG ((DEBUG_ERROR, "IsImageRecordCodeSectionValid - FAIL\n"));
+    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
+      Status = EFI_LOAD_ERROR;
+    }
+
+    goto Finish;
+  }
+
+  //
+  // Round up the ImageSize, some CPU arch may return EFI_UNSUPPORTED if ImageSize is not aligned.
+  // Given that the loader always allocates full pages, we know the space after the image is not used.
+  //
+  ImageRecord->ImageSize = ALIGN_VALUE (LoadedImage->ImageSize, EFI_PAGE_SIZE);
+
+  //
+  // CPU ARCH present. Update memory attribute directly.
+  //
+  SetUefiImageProtectionAttributes (ImageRecord);
+
+  //
+  // Record the image record in the list so we can undo the protections later
+  //
+  InsertTailList (&mProtectedImageRecordList, &ImageRecord->Link);
+
+Finish:
+  return Status;
+}
+
 /**
   Protect UEFI PE/COFF image.
 
   @param[in]  LoadedImage              The loaded image protocol
   @param[in]  LoadedImageDevicePath    The loaded image device path protocol
 **/
+/*
 VOID
 ProtectUefiImage (
   IN EFI_LOADED_IMAGE_PROTOCOL  *LoadedImage,
@@ -601,6 +860,8 @@ ProtectUefiImage (
 Finish:
   return;
 }
+*/
+// MU_CHANGE END
 
 /**
   Unprotect UEFI image.
@@ -617,7 +878,10 @@ UnprotectUefiImage (
   IMAGE_PROPERTIES_RECORD  *ImageRecord;
   LIST_ENTRY               *ImageRecordLink;
 
-  if (PcdGet32 (PcdImageProtectionPolicy) != 0) {
+  // // MU_CHANGE START Update to use memory protection settings HOB
+  // if (PcdGet32(PcdImageProtectionPolicy) != 0) {
+  if (gMPS.ImageProtectionPolicy.Data) {
+    // MU_CHANGE END
     for (ImageRecordLink = mProtectedImageRecordList.ForwardLink;
          ImageRecordLink != &mProtectedImageRecordList;
          ImageRecordLink = ImageRecordLink->ForwardLink)
@@ -654,21 +918,31 @@ GetPermissionAttributeForMemoryType (
   IN EFI_MEMORY_TYPE  MemoryType
   )
 {
-  UINT64  TestBit;
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // UINT64 TestBit;
 
-  if ((UINT32)MemoryType >= MEMORY_TYPE_OS_RESERVED_MIN) {
-    TestBit = BIT63;
-  } else if ((UINT32)MemoryType >= MEMORY_TYPE_OEM_RESERVED_MIN) {
-    TestBit = BIT62;
-  } else {
-    TestBit = LShiftU64 (1, MemoryType);
-  }
+  // if ((UINT32)MemoryType >= MEMORY_TYPE_OS_RESERVED_MIN) {
+  //   TestBit = BIT63;
+  // } else if ((UINT32)MemoryType >= MEMORY_TYPE_OEM_RESERVED_MIN) {
+  //   TestBit = BIT62;
+  // } else {
+  //   TestBit = LShiftU64 (1, MemoryType);
+  // }
 
-  if ((PcdGet64 (PcdDxeNxMemoryProtectionPolicy) & TestBit) != 0) {
+  // if ((gMPS.DxeNxProtectionPolicy & TestBit) != 0) { // MU_CHANGE
+  //   return EFI_MEMORY_XP;
+  // } else {
+  //   return 0;
+  // }
+
+  if (GetMemoryTypeSettingFromBitfield (MemoryType, gMPS.DxeNxProtectionPolicy)) {
+    // MU_CHANGE
     return EFI_MEMORY_XP;
-  } else {
-    return 0;
   }
+
+  return 0;
+
+  // MU_CHANGE END
 }
 
 /**
@@ -778,7 +1052,7 @@ MergeMemoryMapForProtectionPolicy (
 
 /**
   Remove exec permissions from all regions whose type is identified by
-  PcdDxeNxMemoryProtectionPolicy.
+  the Dxe NX Protection Policy. // MU_CHANGE
 **/
 STATIC
 VOID
@@ -833,7 +1107,10 @@ InitializeDxeNxMemoryProtectionPolicy (
   ASSERT_EFI_ERROR (Status);
 
   StackBase = 0;
-  if (PcdGetBool (PcdCpuStackGuard)) {
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if (PcdGetBool (PcdCpuStackGuard)) {
+  if (gMPS.CpuStackGuard) {
+    // MU_CHANGE END
     //
     // Get the base of stack from Hob.
     //
@@ -890,16 +1167,16 @@ InitializeDxeNxMemoryProtectionPolicy (
       // Add EFI_MEMORY_RP attribute for page 0 if NULL pointer detection is
       // enabled.
       //
-      if ((MemoryMapEntry->PhysicalStart == 0) &&
-          (PcdGet8 (PcdNullPointerDetectionPropertyMask) != 0))
-      {
-        ASSERT (MemoryMapEntry->NumberOfPages > 0);
-        SetUefiImageMemoryAttributes (
-          0,
-          EFI_PAGES_TO_SIZE (1),
-          EFI_MEMORY_RP | Attributes
-          );
-      }
+      // MU_CHANGE START: We Enable NULL detection via the function EnableNullDetection
+      // if (MemoryMapEntry->PhysicalStart == 0 &&
+      //     // PcdGet8 (PcdNullPointerDetectionPropertyMask) != 0) {
+      //   ASSERT (MemoryMapEntry->NumberOfPages > 0);
+      //   SetUefiImageMemoryAttributes (
+      //     0,
+      //     EFI_PAGES_TO_SIZE (1),
+      //     EFI_MEMORY_RP | Attributes);
+      // }
+      // MU_CHANGE END
 
       //
       // Add EFI_MEMORY_RP attribute for the first page of the stack if stack
@@ -909,8 +1186,11 @@ InitializeDxeNxMemoryProtectionPolicy (
           ((StackBase >= MemoryMapEntry->PhysicalStart) &&
            (StackBase <  MemoryMapEntry->PhysicalStart +
             LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT))) &&
-          PcdGetBool (PcdCpuStackGuard))
+          // MU_CHANGE START Update to use memory protection settings HOB
+          // PcdGetBool (PcdCpuStackGuard)) {
+          gMPS.CpuStackGuard)
       {
+        // MU_CHANGE END
         SetUefiImageMemoryAttributes (
           StackBase,
           EFI_PAGES_TO_SIZE (1),
@@ -1004,7 +1284,10 @@ MemoryProtectionCpuArchProtocolNotify (
   //
   // Apply the memory protection policy on non-BScode/RTcode regions.
   //
-  if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0) {
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0) {
+  if (gMPS.DxeNxProtectionPolicy.Data) {
+    // MU_CHANGE END
     InitializeDxeNxMemoryProtectionPolicy ();
   }
 
@@ -1013,7 +1296,10 @@ MemoryProtectionCpuArchProtocolNotify (
   //
   HeapGuardCpuArchProtocolNotify ();
 
-  if (mImageProtectionPolicy == 0) {
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if (mImageProtectionPolicy == 0) {
+  if (!gMPS.ImageProtectionPolicy.Data) {
+    // MU_CHANGE END
     goto Done;
   }
 
@@ -1047,7 +1333,18 @@ MemoryProtectionCpuArchProtocolNotify (
       LoadedImageDevicePath = NULL;
     }
 
-    ProtectUefiImage (LoadedImage, LoadedImageDevicePath);
+    // MU_CHANGE START Use Project Mu ProtectUefiImage()
+    // ProtectUefiImage (LoadedImage, LoadedImageDevicePath);
+    Status = ProtectUefiImageMu (LoadedImage, LoadedImageDevicePath);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "Unable to protect Image Handle: 0x%p... Unloading Image.\n", LoadedImage->DeviceHandle));
+      Status = CoreUnloadImage (LoadedImage->DeviceHandle);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "Unable to unload Image... Status: %r.\n", Status));
+      }
+    }
+
+    // MU_CHANGE END
   }
 
   FreePool (HandleBuffer);
@@ -1076,7 +1373,10 @@ MemoryProtectionExitBootServicesCallback (
   // delay setting protections on RT code pages until after SetVirtualAddressMap().
   // OS may set protection on RT based upon EFI_MEMORY_ATTRIBUTES_TABLE later.
   //
-  if (mImageProtectionPolicy != 0) {
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if (mImageProtectionPolicy != 0) {
+  if (gMPS.ImageProtectionPolicy.Data) {
+    // MU_CHANGE END
     for (Link = gRuntime->ImageHead.ForwardLink; Link != &gRuntime->ImageHead; Link = Link->ForwardLink) {
       RuntimeImage = BASE_CR (Link, EFI_RUNTIME_IMAGE_ENTRY, Link);
       SetUefiImageMemoryAttributes ((UINT64)(UINTN)RuntimeImage->ImageBase, ALIGN_VALUE (RuntimeImage->ImageSize, EFI_PAGE_SIZE), 0);
@@ -1092,9 +1392,10 @@ MemoryProtectionExitBootServicesCallback (
   @param[in]  Event     The Event this notify function registered to.
   @param[in]  Context   Pointer to the context data registered to the Event.
 **/
+// MU_CHANGE START Update naming due to addition of ability to disable at readytoboot
 VOID
 EFIAPI
-DisableNullDetectionAtTheEndOfDxe (
+DisableNullDetection (
   EFI_EVENT  Event,
   VOID       *Context
   )
@@ -1102,7 +1403,7 @@ DisableNullDetectionAtTheEndOfDxe (
   EFI_STATUS                       Status;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  Desc;
 
-  DEBUG ((DEBUG_INFO, "DisableNullDetectionAtTheEndOfDxe(): start\r\n"));
+  DEBUG ((DEBUG_INFO, "%a - start\r\n", __FUNCTION__));
   //
   // Disable NULL pointer detection by enabling first 4K page
   //
@@ -1131,10 +1432,58 @@ DisableNullDetectionAtTheEndOfDxe (
   CoreFreePages (0, 1);
 
   CoreCloseEvent (Event);
-  DEBUG ((DEBUG_INFO, "DisableNullDetectionAtTheEndOfDxe(): end\r\n"));
+  DEBUG ((DEBUG_INFO, "%a - end\r\n", __FUNCTION__));
 
   return;
 }
+
+// MU_CHANGE END
+
+// MU_CHANGE START: Add function to enable null detection as it is now done in DXE instead of PEI
+
+/**
+  Enable NULL pointer detection by changing the attributes of page 0. The assumption is that PEI
+  has set page zero to allocated so this operation can be done safely.
+
+  @retval EFI_SUCCESS       Page zero successfully marked as read protected
+  @retval Other             Page zero could not be marked as read protected
+
+**/
+VOID
+EFIAPI
+EnableNullDetection (
+  EFI_EVENT  Event,
+  VOID       *Context
+  )
+{
+  EFI_STATUS                       Status;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  Desc;
+
+  Status = CoreGetMemorySpaceDescriptor (0, &Desc);
+
+  if (EFI_ERROR (Status)) {
+    return;
+  }
+
+  if ((Desc.Capabilities & EFI_MEMORY_RP) == 0) {
+    Status = CoreSetMemorySpaceCapabilities (
+               0,
+               EFI_PAGES_TO_SIZE (1),
+               Desc.Capabilities | EFI_MEMORY_RP
+               );
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  CoreSetMemorySpaceAttributes (
+    0,
+    EFI_PAGES_TO_SIZE (1),
+    Desc.Attributes | EFI_MEMORY_RP
+    );
+
+  return;
+}
+
+// MU_CHANGE END
 
 /**
   Initialize Memory Protection support.
@@ -1147,15 +1496,16 @@ CoreInitializeMemoryProtection (
 {
   EFI_STATUS  Status;
   EFI_EVENT   Event;
-  EFI_EVENT   EndOfDxeEvent;
+  EFI_EVENT   DisableNullDetectionEvent;
+  EFI_EVENT   EnableNullDetectionEvent; // MU_CHANGE
   VOID        *Registration;
 
-  mImageProtectionPolicy = PcdGet32 (PcdImageProtectionPolicy);
+  // mImageProtectionPolicy = gMPS.ImageProtectionPolicy; // MU_CHANGE
 
   InitializeListHead (&mProtectedImageRecordList);
 
   //
-  // Sanity check the PcdDxeNxMemoryProtectionPolicy setting:
+  // Sanity check the Image Protection Policy setting: // MU_CHANGE
   // - code regions should have no EFI_MEMORY_XP attribute
   // - EfiConventionalMemory and EfiBootServicesData should use the
   //   same attribute
@@ -1190,25 +1540,65 @@ CoreInitializeMemoryProtection (
   //
   // Register a callback to disable NULL pointer detection at EndOfDxe
   //
-  if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & (BIT0|BIT7))
-      == (BIT0|BIT7))
-  {
-    Status = CoreCreateEventEx (
+  // MU_CHANGE START Update to use memory protection settings HOB, added
+  //                 disable functionality at ReadyToBoot, create NULL
+  //                 detection enable event
+  // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & (BIT0|BIT7))
+  //      == (BIT0|BIT7)) {
+  if (gMPS.NullPointerDetectionPolicy.Fields.UefiNullDetection) {
+    // PEI phase has been updated to always set page zero as allocated
+    // so it can be safely set as RP
+    Status = CoreCreateEvent (
                EVT_NOTIFY_SIGNAL,
-               TPL_NOTIFY,
-               DisableNullDetectionAtTheEndOfDxe,
+               TPL_CALLBACK,
+               EnableNullDetection,
                NULL,
-               &gEfiEndOfDxeEventGroupGuid,
-               &EndOfDxeEvent
+               &EnableNullDetectionEvent
                );
     ASSERT_EFI_ERROR (Status);
+
+    Status = CoreRegisterProtocolNotify (
+               &gEfiCpuArchProtocolGuid,
+               EnableNullDetectionEvent,
+               &Registration
+               );
+    ASSERT_EFI_ERROR (Status);
+
+    if (!EFI_ERROR (Status)) {
+      // If both DisableEndOfDxe and DisableReadyToBoot are enabled, just
+      // create the event to disable at EndOfDxe because that event is sooner
+      if (gMPS.NullPointerDetectionPolicy.Fields.DisableEndOfDxe) {
+        Status = CoreCreateEventEx (
+                   EVT_NOTIFY_SIGNAL,
+                   TPL_NOTIFY,
+                   DisableNullDetection,
+                   NULL,
+                   &gEfiEndOfDxeEventGroupGuid,
+                   &DisableNullDetectionEvent
+                   );
+      } else if (gMPS.NullPointerDetectionPolicy.Fields.DisableReadyToBoot) {
+        Status = CoreCreateEventEx (
+                   EVT_NOTIFY_SIGNAL,
+                   TPL_NOTIFY,
+                   DisableNullDetection,
+                   NULL,
+                   &gEfiEventReadyToBootGuid,
+                   &DisableNullDetectionEvent
+                   );
+      }
+    }
+
+    ASSERT_EFI_ERROR (Status);
   }
+
+  // MU_CHANGE END
 
   //
   // MSCHANGE START
   // Install protocol for validating Heap Guard if Heap Guard is turned on
-  //
-  if (PcdGet8 (PcdHeapGuardPropertyMask)) {
+  // Update to use memory protection settings HOB
+  // if (PcdGet8(PcdHeapGuardPropertyMask)) {
+  if (gMPS.HeapGuardPolicy.Data) {
     EFI_HANDLE  HgBmHandle = NULL;
     Status = CoreInstallMultipleProtocolInterfaces (
                &HgBmHandle,
@@ -1273,7 +1663,7 @@ ApplyMemoryProtectionPolicy (
   UINT64  NewAttributes;
 
   //
-  // The policy configured in PcdDxeNxMemoryProtectionPolicy
+  // The policy configured in Dxe NX Protection Policy // MU_CHANGE
   // does not apply to allocations performed in SMM mode.
   //
   if (IsInSmm ()) {
@@ -1292,7 +1682,10 @@ ApplyMemoryProtectionPolicy (
   //
   // Check if a DXE memory protection policy has been configured
   //
-  if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) == 0) {
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) == 0) {
+  if (!gMPS.DxeNxProtectionPolicy.Data) {
+    // MU_CHANGE END
     return EFI_SUCCESS;
   }
 
