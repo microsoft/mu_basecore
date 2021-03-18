@@ -21,7 +21,7 @@ Branch Status - release/202102
   2021/03/12
 
 :Anticipated Stabilization:
-  March 2021
+  May 2021
 
 Branch Changes - release/202102
 ===============================
@@ -44,7 +44,21 @@ Bug Fixes-dev
 2102_RefBoot Changes
 --------------------
 
-- Incomplete
+- VariablePolicy has changed significantly since release/202008
+    - The previously Mu-only infrastructure has been ported upstream, and the changes made with the community
+      require attention on the platform side
+    - MdeModulePkg/Library/UefiVariablePolicyLib/UefiVariablePolicyLib.inf becomes
+      MdeModulePkg/Library/VariablePolicyLib/VariablePolicyLib.inf or MdeModulePkg/Library/VariablePolicyLib/VariablePolicyLibRuntimeDxe.inf
+      and the class changes
+    - MdeModulePkg/Library/MuVariablePolicyHelperLib/MuVariablePolicyHelperLib.inf becomes
+      MdeModulePkg/Library/VariablePolicyHelperLib/VariablePolicyHelperLib.inf and the
+      class changes
+    - MdeModulePkg/Universal/Variable/UefiVariablePolicy/Library/VarCheckPolicyLib/VarCheckPolicyLib.inf moved to
+      MdeModulePkg/Library/VarCheckPolicyLib/VarCheckPolicyLib.inf
+    - MdeModulePkg/Universal/Variable/UefiVariablePolicy/Dxe/VariablePolicyDxe.inf is no longer needed. It is
+      now built-in to Variable Services
+- An instance of MmUnblockMemoryLib must be added to support the StandaloneMm changes. If your platform does not
+  already support StandaloneMm, you should be safe to use MdePkg/Library/MmUnblockMemoryLib/MmUnblockMemoryLibNull.inf
 
 2102_CIBuild Changes
 --------------------
