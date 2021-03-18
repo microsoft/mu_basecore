@@ -54,8 +54,10 @@
   SynchronizationLib
   VmgExitLib
 
-[Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard    # CONSUMES
+# MU_CHANGE START Remove memory protection PCD references
+# [Pcd]
+#   gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard    # CONSUMES
+# MU_CHANGE END
 
 [FeaturePcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmStackGuard                    ## CONSUMES
