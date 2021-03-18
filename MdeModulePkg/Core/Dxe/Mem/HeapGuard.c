@@ -10,6 +10,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "Imem.h"
 #include "HeapGuard.h"
 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+
 //
 // Global to avoid infinite reentrance of memory allocation when updating
 // page table attributes, which may need allocate pages for new PDE/PTE.
@@ -551,7 +553,7 @@ UnsetGuardPage (
   // memory.
   //
   Attributes = 0;
-  if ((PcdGet64 (PcdDxeNxMemoryProtectionPolicy) & (1 << EfiConventionalMemory)) != 0) {
+  if (((PcdGet64 (PcdDxeNxMemoryProtectionPolicy) & (1 << EfiConventionalMemory)) != 0) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE
     Attributes |= EFI_MEMORY_XP;
   }
 
@@ -595,7 +597,7 @@ IsMemoryTypeToGuard (
     return FALSE;
   }
 
-  if ((PcdGet8 (PcdHeapGuardPropertyMask) & PageOrPool) == 0) {
+  if (((PcdGet8 (PcdHeapGuardPropertyMask) & PageOrPool) == 0) || !IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE
     return FALSE;
   }
 
@@ -670,6 +672,12 @@ IsHeapGuardEnabled (
   UINT8           GuardType
   )
 {
+  // MU_CHANGE BEGIN
+  if (!IsMemoryProtectionGlobalToggleEnabled()) {
+    return FALSE;
+  }
+  // MU_CHANGE END
+
   return IsMemoryTypeToGuard (EfiMaxMemoryType, AllocateAnyPages, GuardType);
 }
 
@@ -830,7 +838,7 @@ AdjustMemoryS (
   // indicated to put the pool near the Tail Guard, we need extra bytes to
   // make sure alignment of the returned pool address.
   //
-  if ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0) {
+  if ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0 || !IsMemoryProtectionGlobalToggleEnabled()) {  // MU_CHANGE 
     SizeRequested = ALIGN_VALUE(SizeRequested, 8);
   }
 
@@ -1014,7 +1022,8 @@ AdjustPoolHeadA (
   IN UINTN                   Size
   )
 {
-  if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
+
+  if (Memory == 0 || ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0 && IsMemoryProtectionGlobalToggleEnabled())) { // MU_CHANGE 
     //
     // Pool head is put near the head Guard
     //
@@ -1040,7 +1049,8 @@ AdjustPoolHeadF (
   IN EFI_PHYSICAL_ADDRESS    Memory
   )
 {
-  if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
+
+  if (Memory == 0 || ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0 && IsMemoryProtectionGlobalToggleEnabled())) { // MU_CHANGE 
     //
     // Pool head is put near the head Guard
     //

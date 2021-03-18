@@ -110,8 +110,9 @@
   VariablePolicyHelperLib|MdeModulePkg/Library/VariablePolicyHelperLib/VariablePolicyHelperLib.inf
   MmUnblockMemoryLib|MdePkg/Library/MmUnblockMemoryLib/MmUnblockMemoryLibNull.inf
 
-  AdvLoggerAccessLib|MdeModulePkg/Library/AdvLoggerAccessLibNull/AdvLoggerAccessLib.inf       ## MS_CHANGE
+  AdvLoggerAccessLib|MdeModulePkg/Library/AdvLoggerAccessLibNull/AdvLoggerAccessLib.inf                               ## MS_CHANGE
   MemoryTypeInfoSecVarCheckLib|MdeModulePkg/Library/MemoryTypeInfoSecVarCheckLib/MemoryTypeInfoSecVarCheckLib.inf     # MU_CHANGE TCBZ1086
+  MemoryProtectionLib|MdeModulePkg/Library/BaseMemoryProtectionLibNull/BaseMemoryProtectionLibNull.inf                ## MU_CHANGE
 
 ##MSCHANGE Begin
 [LibraryClasses.common]
@@ -248,6 +249,7 @@
   MdeModulePkg/Library/MemoryTypeInformationChangeLibNull/MemoryTypeInformationChangeLibNull.inf ## MU_CHANGE
   MdeModulePkg/Library/SecurityLockAuditDebugMessageLib/SecurityLockAuditDebugMessageLib.inf  ## MU_CHANGE
   MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf                  ## MU_CHANGE
+  MdeModulePkg/Library/BaseMemoryProtectionLibNull/BaseMemoryProtectionLibNull.inf            ## MU_CHANGE
   MdeModulePkg/Library/CapsulePersistLibNull/CapsulePersistLibNull.inf                        ## MU_CHANGE
 
   MdeModulePkg/Test/ShellTest/VariablePolicyFuncTestApp/VariablePolicyFuncTestApp.inf {

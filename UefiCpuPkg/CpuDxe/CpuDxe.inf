@@ -41,6 +41,7 @@
   MpInitLib
   TimerLib
   PeCoffGetEntryPointLib
+  MemoryProtectionLib ## MU_CHANGE
 
 [Sources]
   CpuDxe.c

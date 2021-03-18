@@ -53,6 +53,7 @@
   MemoryAllocationLib
   SynchronizationLib
   VmgExitLib
+  MemoryProtectionLib ## MU_CHANGE
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard    # CONSUMES

@@ -21,6 +21,10 @@ states or to define any of the unused bits:
 * BIT 4:  DEVICE_STATE_UNDEFINED - Set by the platform
 * BIT 5:  DEVICE_STATE_UNIT_TEST_MODE - Device has a unit test build. Some
   features are disabled to allow for unit tests in UEFI Shell
+* BIT 6: DEVICE_STATE_MEM_PROTECTIONS_OFF - Device has the universal toggle for memory
+  protections switched to off. Note that this bit is not set if no memory protections
+  are enabled on the platform via the bitmasks located in MdeModulePkg. Also not this
+  bit will not be set if MemoryProtectionLib is set to a NULL implementation.
 * BIT 24: DEVICE_STATE_PLATFORM_MODE_0
 * BIT 25: DEVICE_STATE_PLATFORM_MODE_1
 * BIT 26: DEVICE_STATE_PLATFORM_MODE_2

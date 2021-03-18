@@ -12,6 +12,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "PiSmmCpuDxeSmm.h"
 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+
 #define PAGE_TABLE_PAGES            8
 #define ACC_MAX_BIT                 BIT3
 
@@ -1102,7 +1104,7 @@ SmiPFHandler (
     // If NULL pointer was just accessed
     //
     if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0 &&
-        (PFAddress < EFI_PAGE_SIZE)) {
+        (PFAddress < EFI_PAGE_SIZE) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
       DumpCpuContext (InterruptType, SystemContext);
       DEBUG ((DEBUG_ERROR, "!!! NULL pointer access !!!\n"));
       DEBUG_CODE (
@@ -1193,7 +1195,7 @@ SetPageTableAttributes (
   //  - SMM profile feature enabled
   //
   if (!mCpuSmmRestrictedMemoryAccess ||
-      ((PcdGet8 (PcdHeapGuardPropertyMask) & (BIT3 | BIT2)) != 0) ||
+      (((PcdGet8 (PcdHeapGuardPropertyMask) & (BIT3 | BIT2)) && IsMemoryProtectionGlobalToggleEnabled()) != 0) || // MU_CHANGE 
       FeaturePcdGet (PcdCpuSmmProfileEnable)) {
     //
     // Restriction on access to non-SMRAM memory and heap guard could not be enabled at the same time.
