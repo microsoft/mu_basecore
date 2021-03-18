@@ -14,6 +14,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/BaseLib.h>
 #include <Guid/MigratedFvInfo.h>
 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+
 #include "CpuMpPei.h"
 
 #define IA32_PG_P             BIT0
@@ -617,7 +619,13 @@ MemoryDiscoveredPpiNotifyCallback (
   Hob.Raw = NULL;
   if (IsIa32PaeSupported ()) {
     Hob.Raw  = GetFirstGuidHob (&gEdkiiMigratedFvInfoGuid);
-    InitStackGuard = PcdGetBool (PcdCpuStackGuard);
+    // MU_CHANGE BEGIN
+    if(IsMemoryProtectionGlobalToggleEnabled()) {
+      InitStackGuard = PcdGetBool (PcdCpuStackGuard);
+    } else {
+      InitStackGuard = FALSE;
+    }
+    // MU_CHANGE END
   }
 
   if (InitStackGuard || Hob.Raw != NULL) {

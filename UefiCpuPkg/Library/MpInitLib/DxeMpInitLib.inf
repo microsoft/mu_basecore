@@ -52,6 +52,7 @@
   SynchronizationLib
   PcdLib
   VmgExitLib
+  MemoryProtectionLib ## MU_CHANGE
 
 [Protocols]
   gEfiTimerArchProtocolGuid                     ## SOMETIMES_CONSUMES
