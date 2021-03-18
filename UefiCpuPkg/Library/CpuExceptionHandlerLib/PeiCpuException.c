@@ -12,6 +12,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/HobLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PcdLib.h>
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
 
 CONST UINTN    mDoFarReturnFlag  = 0;
 
@@ -253,7 +254,7 @@ InitializeCpuExceptionHandlersEx (
     //
     // Initializing stack switch is only necessary for Stack Guard functionality.
     //
-    if (PcdGetBool (PcdCpuStackGuard) && InitData != NULL) {
+    if (PcdGetBool (PcdCpuStackGuard) && InitData != NULL && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
       Status = ArchSetupExceptionStack (InitData);
     }
   }

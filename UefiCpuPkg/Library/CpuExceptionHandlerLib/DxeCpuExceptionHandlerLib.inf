@@ -58,3 +58,4 @@
   MemoryAllocationLib
   DebugLib
   VmgExitLib
+  MemoryProtectionLib ## MU_CHANGE

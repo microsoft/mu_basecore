@@ -8,6 +8,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "HeapGuard.h"
 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+
 //
 // Global to avoid infinite reentrance of memory allocation when updating
 // page table attributes, which may need allocating pages for new PDE/PTE.
@@ -577,7 +579,8 @@ IsMemoryTypeToGuard (
 
   if ((PcdGet8 (PcdHeapGuardPropertyMask) & PageOrPool) == 0
       || mOnGuarding
-      || AllocateType == AllocateAddress) {
+      || AllocateType == AllocateAddress
+      || !IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     return FALSE;
   }
 
@@ -648,6 +651,12 @@ IsHeapGuardEnabled (
   VOID
   )
 {
+   // MU_CHANGE BEGIN
+  if(!IsMemoryProtectionGlobalToggleEnabled()) {
+    return FALSE;
+  }
+   // MU_CHANGE END
+
   return IsMemoryTypeToGuard (EfiMaxMemoryType, AllocateAnyPages,
                               GUARD_HEAP_TYPE_POOL|GUARD_HEAP_TYPE_PAGE);
 }
@@ -926,7 +935,8 @@ AdjustPoolHeadA (
   IN UINTN                   Size
   )
 {
-  if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
+
+  if (Memory == 0 || ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0 && IsMemoryProtectionGlobalToggleEnabled())) { // MU_CHANGE 
     //
     // Pool head is put near the head Guard
     //
@@ -952,7 +962,8 @@ AdjustPoolHeadF (
   IN EFI_PHYSICAL_ADDRESS    Memory
   )
 {
-  if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
+
+  if (Memory == 0 || ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0 && IsMemoryProtectionGlobalToggleEnabled())) { // MU_CHANGE 
     //
     // Pool head is put near the head Guard
     //

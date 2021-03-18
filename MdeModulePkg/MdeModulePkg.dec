@@ -187,6 +187,11 @@
   #
   AdvLoggerAccessLib|Include/Library/AdvLoggerAccessLib.h
 
+  # MU_CHANGE - Add MemoryProtectionLib to MdeModulePkg
+  ## @libraryclass Provides a way to toggle memory protection settings
+  #
+  MemoryProtectionLib|Include/Library/MemoryProtectionLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h

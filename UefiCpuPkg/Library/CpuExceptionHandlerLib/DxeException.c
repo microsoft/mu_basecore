@@ -12,6 +12,8 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+
 CONST UINTN    mDoFarReturnFlag  = 0;
 
 RESERVED_VECTORS_DATA       mReservedVectorsData[CPU_EXCEPTION_NUM];
@@ -256,7 +258,7 @@ InitializeCpuExceptionHandlersEx (
     //
     // Initializing stack switch is only necessary for Stack Guard functionality.
     //
-    if (PcdGetBool (PcdCpuStackGuard)) {
+    if (PcdGetBool (PcdCpuStackGuard) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
       if (InitData == NULL) {
         SetMem (mNewGdt, sizeof (mNewGdt), 0);
 
