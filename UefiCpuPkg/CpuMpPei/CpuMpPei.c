@@ -487,7 +487,7 @@ InitializeMpExceptionStackSwitchHandlers (
   UINT8                           *StackTop;
   UINTN                           NumberOfProcessors;
 
-  if (!PcdGetBool (PcdCpuStackGuard) || IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
+  if (!PcdGetBool (PcdCpuStackGuard) || !IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     return;
   }
 
