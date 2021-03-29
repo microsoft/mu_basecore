@@ -254,10 +254,14 @@ TcgMmReadyToLock (
 {
   EFI_STATUS Status;
 
+  Status = EFI_SUCCESS;  //MU_CHANGE TCBZ_3277
+
+  ASSERT (mReadyToLockHandle != NULL);
   if (mReadyToLockHandle != NULL) {
     Status = gMmst->MmiHandlerUnRegister (mReadyToLockHandle);
     mReadyToLockHandle = NULL;
   }
+
   return Status;
 }
 
