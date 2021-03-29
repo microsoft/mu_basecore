@@ -35,14 +35,25 @@ steps:
 # Seems like azure pipelines/github changed checkout process in nov 2020.
 - script: git fetch origin $(System.PullRequest.targetBranch)
   displayName: fetch target branch
+
+# MU_CHANGE [BEGIN] - Workaround an azure pipelines bug.
+# $System.PullRequest.targetBranch looks like "dev/whatever" on GitHub,
+# but looks like "refs/heads/dev/whatever" on DevOps. The DevOps version
+# can't be used for comparison for the PR Eval.
+- powershell:
+    $TargetBranch = "$(System.PullRequest.targetBranch)".replace('refs/heads/', '');
+    Write-Host "##vso[task.setvariable variable=pr_compare_branch]origin/$TargetBranch";
+  displayName: Workaround for Branch Names
   condition: eq(variables['Build.Reason'], 'PullRequest')
+# MU_CHANGE [END]
 
 # trim the package list if this is a PR
 - task: CmdLine@1
   displayName: Check if ${{ parameters.build_pkgs }} need testing
   inputs:
     filename: stuart_pr_eval
-    arguments: -c .pytool/CISettings.py -p ${{ parameters.build_pkgs }} --pr-target origin/$(System.PullRequest.targetBranch) --output-csv-format-string "##vso[task.setvariable variable=pkgs_to_build;isOutpout=true]{pkgcsv}" --output-count-format-string "##vso[task.setvariable variable=pkg_count;isOutpout=true]{pkgcount}"
+    # MU_CHANGE - Workaround an azure pipelines bug.
+    arguments: -c .pytool/CISettings.py -p ${{ parameters.build_pkgs }} --pr-target $(pr_compare_branch) --output-csv-format-string "##vso[task.setvariable variable=pkgs_to_build;isOutpout=true]{pkgcsv}" --output-count-format-string "##vso[task.setvariable variable=pkg_count;isOutpout=true]{pkgcount}"
   condition: eq(variables['Build.Reason'], 'PullRequest')
 
 # install spell check prereqs
