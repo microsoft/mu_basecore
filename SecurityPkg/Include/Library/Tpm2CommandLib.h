@@ -1124,6 +1124,30 @@ CopyDigestListToBuffer(
   IN UINT32                         HashAlgorithmMask
   );
 
+// MU_CHANGE - START - [TCBZ3267] Additional helper functions.
+/**
+  Copy a buffer into  TPML_DIGEST_VALUES structure.
+  This is the opposite to the CopyDigestListToBuffer function.
+
+  @param[in]     Buffer             Buffer to hold TPML_DIGEST_VALUES compact binary.
+  @param[in]     BufferSize         Size of Buffer.
+  @param[in,out] DigestList         TPML_DIGEST_VALUES.
+
+  @return EFI_STATUS
+  @retval EFI_SUCCESS               Buffer was succesfully copied to Digest List.
+  @retval EFI_BAD_BUFFER_SIZE       Bad buffer size passed to function.
+  @retval EFI_INVALID_PARAMETER     Invalid parameter passed to function: NULL pointer or 
+                                    BufferSize bigger than TPML_DIGEST_VALUES
+**/
+EFI_STATUS
+EFIAPI
+CopyBufferToDigestList (
+  IN     VOID                   *Buffer,
+  IN     UINT32                 BufferSize,
+  IN OUT TPML_DIGEST_VALUES     *DigestList
+  );
+// MU_CHANGE - END - [TCBZ3267] Additional helper functions.
+
 /**
   Get TPML_DIGEST_VALUES data size.
 
@@ -1136,6 +1160,21 @@ EFIAPI
 GetDigestListSize(
   IN TPML_DIGEST_VALUES             *DigestList
   );
+
+// MU_CHANGE - START - [TCBZ3267] Additional helper functions.
+/**
+  Get TPML_DIGEST_VALUES data size from HashAlgorithmMask
+
+  @param[in]     DigestList    TPML_DIGEST_VALUES data.
+
+  @return TPML_DIGEST_VALUES data size.
+**/
+UINT32
+EFIAPI
+GetDigestListSizeFromHashAlgorithmMask(
+  IN UINT32         HashAlgorithmMask
+  );
+// MU_CHANGE - END - [TCBZ3267] Additional helper functions.
 
 /**
   This function get digest from digest list.

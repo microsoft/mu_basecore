@@ -13,6 +13,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 # Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -36,6 +37,8 @@
   Tpm2Tis.c
   Tpm2Ptp.c
   Tpm2DeviceLibDTpm.c
+  Tpm2DeviceLibDTpmBase.c
+  Tpm2DeviceLibDTpm.h
 
 [Packages]
   MdePkg/MdePkg.dec

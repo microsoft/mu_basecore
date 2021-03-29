@@ -8,6 +8,8 @@
 
 #include "CpuMpPei.h"
 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+
 extern EDKII_PEI_MP_SERVICES2_PPI            mMpServices2Ppi;
 
 //
@@ -522,7 +524,7 @@ InitializeMpExceptionStackSwitchHandlers (
   UINT8                           *StackTop;
   UINTN                           NumberOfProcessors;
 
-  if (!PcdGetBool (PcdCpuStackGuard)) {
+  if (!PcdGetBool (PcdCpuStackGuard) || !IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     return;
   }
 

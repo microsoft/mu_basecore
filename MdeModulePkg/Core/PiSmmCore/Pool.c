@@ -7,6 +7,8 @@
 **/
 
 #include "PiSmmCore.h"
+ 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
 
 LIST_ENTRY  mSmmPoolLists[SmmPoolTypeMax][MAX_POOL_INDEX];
 //
@@ -371,8 +373,8 @@ SmmInternalFreePool (
 
   MemoryGuarded = IsHeapGuardEnabled () &&
                   IsMemoryGuarded ((EFI_PHYSICAL_ADDRESS)(UINTN)Buffer);
-  HasPoolTail   = !(MemoryGuarded &&
-                    ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
+  HasPoolTail   = !(MemoryGuarded && IsMemoryProtectionGlobalToggleEnabled() // MU_CHANGE 
+                    && ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
 
   FreePoolHdr = (FREE_POOL_HEADER*)((POOL_HEADER*)Buffer - 1);
   ASSERT (FreePoolHdr->Header.Signature == POOL_HEAD_SIGNATURE);

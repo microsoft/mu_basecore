@@ -31,10 +31,10 @@ jobs:
     steps:
     - checkout: self
       clean: true
-  
+
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.7.x'
+        versionSpec: '3.9.x'
         architecture: 'x64'
       displayName: Install correct Python
 
@@ -73,10 +73,10 @@ jobs:
     steps:
     - checkout: self
       clean: true
-  
+
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.7.x'
+        versionSpec: '3.9.x'
         addToPath: true
         architecture: 'x64'
       displayName: Install correct Python
@@ -121,7 +121,7 @@ jobs:
 
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.7.x'
+        versionSpec: '3.9.x'
         addToPath: true
         architecture: 'x64'
       displayName: Install correct Python

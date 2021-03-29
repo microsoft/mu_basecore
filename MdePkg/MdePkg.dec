@@ -260,6 +260,13 @@
   #
   UnitTestHostBaseLib|Test/UnitTest/Include/Library/UnitTestHostBaseLib.h
 
+  ## MU_CHANGE Starts: TCBZ 3168
+  ##  @libraryclass  This library provides an interface for drivers to request MM environment
+  #   to map/unblock a memory region for accessibility inside MM.
+  #
+  MmUnblockMemoryLib|Include/Library/MmUnblockMemoryLib.h
+  ## MU_CHANGE Ends: TCBZ 3168
+
 [LibraryClasses.IA32, LibraryClasses.X64]
   ##  @libraryclass  Abstracts both S/W SMI generation and detection.
   ##

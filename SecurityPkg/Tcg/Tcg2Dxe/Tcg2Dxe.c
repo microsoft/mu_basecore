@@ -24,6 +24,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/MpService.h>
 #include <Protocol/VariableWrite.h>
 #include <Protocol/Tcg2Protocol.h>
+#include <Protocol/MuTcg2Protocol.h> // MU_CHANGE - Add a new protocol to support Log-only events.
 #include <Protocol/TrEEProtocol.h>
 #include <Protocol/ResetNotification.h>
 
@@ -1331,6 +1332,61 @@ Tcg2HashLogExtendEvent (
   return Status;
 }
 
+// MU_CHANGE - START - Add a new protocol to support Log-only events.
+/**
+  The EFI_MU_TCG2_PROTOCOL MuLogEvent function call provides callers with
+  an interface for only logging events without hashing data nor extending anything to the TPM.
+
+  @param[in]  This               Indicates the calling context
+  @param[in]  DigestList         Pointer to a list of digest values.
+  @param[in]  EfiTcgEvent        Pointer to data buffer containing information about the event.
+
+  @retval EFI_SUCCESS            Operation completed successfully.
+  @retval EFI_DEVICE_ERROR       The command was unsuccessful.
+  @retval EFI_INVALID_PARAMETER  One or more of the parameters are incorrect.
+  @retval EFI_OUT_OF_RESOURCES   No enough memory to log the new event.
+**/
+EFI_STATUS
+EFIAPI
+Tcg2LogEvent (
+  IN MU_TCG2_PROTOCOL     *This,
+  IN TPML_DIGEST_VALUES   *DigestList,
+  IN EFI_TCG2_EVENT       *Event
+  )
+{
+  EFI_STATUS         Status;
+  TCG_PCR_EVENT_HDR  NewEventHdr;
+
+  DEBUG ((DEBUG_VERBOSE, "%a - Entry\n", __FUNCTION__));
+
+  if ((This == NULL) || (Event == NULL) || (DigestList == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (!mTcgDxeData.BsCap.TPMPresentFlag) {
+    return EFI_DEVICE_ERROR;
+  }
+
+  if (Event->Size < Event->Header.HeaderSize + sizeof(UINT32)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (Event->Header.PCRIndex > MAX_PCR_INDEX) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  NewEventHdr.PCRIndex  = Event->Header.PCRIndex;
+  NewEventHdr.EventType = Event->Header.EventType;
+  NewEventHdr.EventSize = Event->Size - sizeof(UINT32) - Event->Header.HeaderSize;
+
+  Status = TcgDxeLogHashEvent (DigestList, &NewEventHdr, Event->Event);
+
+  DEBUG ((DEBUG_VERBOSE, "%a - Exit. Status = %r\n", __FUNCTION__, Status));
+  return Status;
+}
+
+//MU_CHANGE - END - Add a new protocol to support Log-only events.
+
 /**
   This service enables the sending of commands to the TPM.
 
@@ -1491,6 +1547,13 @@ Tcg2GetResultOfSetActivePcrBanks (
     return EFI_UNSUPPORTED;
   }
 }
+
+//MU_CHANGE - START - Add a new protocol to support Log-only events.
+MU_TCG2_PROTOCOL mMuTcg2Protocol = {
+  MU_TCG2_PROTOCOL_VERSION,
+  Tcg2LogEvent
+};
+//MU_CHANGE - END - Add a new protocol to support Log-only events.
 
 EFI_TCG2_PROTOCOL mTcg2Protocol = {
     Tcg2GetCapability,
@@ -2648,6 +2711,7 @@ InstallTcg2 (
                   &Handle,
                   &gEfiTcg2ProtocolGuid,
                   &mTcg2Protocol,
+                  &gMuTcg2ProtocolExGuid, &mMuTcg2Protocol, // MU_CHANGE - Add a new protocol to support Log-only events.
                   NULL
                   );
   return Status;

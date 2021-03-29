@@ -96,6 +96,7 @@
 
 [Protocols]
   gEfiTcg2ProtocolGuid                               ## PRODUCES
+  gMuTcg2ProtocolExGuid                              ## PRODUCES # MU_CHANGE - Add a new protocol to support Log-only events.
   gEfiTcg2FinalEventsTableGuid                       ## PRODUCES
   gEfiMpServiceProtocolGuid                          ## SOMETIMES_CONSUMES
   gEfiVariableWriteArchProtocolGuid                  ## NOTIFY

@@ -36,7 +36,9 @@
             "SourceLevelDebugPkg/SourceLevelDebugPkg.dec",
             # MU_CHANGE - Only used by FmpAuthenticationLibs that perhaps should move
             #             to the FmpDevicePkg.
-            "FmpDevicePkg/FmpDevicePkg.dec"
+            "FmpDevicePkg/FmpDevicePkg.dec",
+            # MU_CHANGE - To support Standalone MM drivers in this package
+            "StandaloneMmPkg/StandaloneMmPkg.dec"
         ],
         # For host based unit tests
         "AcceptableDependencies-HOST_APPLICATION":[],

@@ -45,6 +45,7 @@
   MpInitLib
   BaseMemoryLib
   CpuLib
+  MemoryProtectionLib ## MU_CHANGE
 
 [Guids]
   gEdkiiMigratedFvInfoGuid                                             ## SOMETIMES_CONSUMES     ## HOB
