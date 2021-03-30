@@ -1,0 +1,335 @@
+# File BaseTools-Build-For-Publication.yml
+#
+# Azure Pipeline to construct the final Nuget package for a binary release
+# of BaseTools.
+#
+# Copyright (C) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+trigger: none
+pr: none
+
+parameters:
+- name: publish_nuget
+  displayName: Publish as a Nuget Package
+  type: boolean
+  default: false
+- name: version_patch
+  displayName: Patch Version (0-65535)
+  type: number
+  default: 0
+
+variables:
+- name: build_archs
+  value: 'IA32,X64,AARCH64'
+- name: build_targets
+  value: 'DEBUG,RELEASE'
+- name: tool_chain_tag
+  value: 'VS2019'
+- name: python_version
+  value: '3.9.x'
+- template: ../Version.yml
+- name: version.release_flavor      # This is the semantic version modifier (e.g. X.Y.Z-dev, "-dev" is the flavor)
+  value: ''
+- name: temp_publication_directory
+  value: 'PackageStaging'
+- name: package_artifact_name
+  value: 'NugetReleasePackage'
+- group: SecMirrorCommon
+
+name: v$(version.major).$(version.minor).${{ parameters.version_patch }}$(version.release_flavor) Build_$(Date:yyyyMMdd)$(Rev:.r)
+
+stages:
+- stage: build
+  displayName: Build
+  jobs:
+  - job: crypto_build
+    # Use Matrix to build multiple versions
+    strategy:
+      matrix:
+        TARGET_ALL:
+          Build.Flavor: 'ALL'
+        TARGET_TINY:
+          Build.Flavor: 'TINY_SHA'
+        TARGET_MINIMAL:
+          Build.Flavor: 'MINIMAL_SHA_SM3'
+        TARGET_SHA:
+          Build.Flavor: 'SMALL_SHA_RSA'
+        TARGET_STANDARD:
+          Build.Flavor: 'STANDARD'
+    displayName: Crypto Build
+    pool:
+      vmImage: windows-latest
+
+    workspace:
+      clean: all
+
+    steps:
+    - checkout: self
+      clean: true
+
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.7.x'
+        addToPath: true
+        architecture: 'x64'
+      displayName: Install correct Python
+
+    - script: pip install -r pip-requirements.txt --upgrade
+      displayName: 'Install/Upgrade pip modules'
+
+    # Set up the global git auth configuration
+    - template: templates/git-sec-auth.yml
+
+    - task: CmdLine@1
+      displayName: Setup
+      inputs:
+        filename: stuart_ci_setup
+        arguments: -c .pytool/CISettings.py -p CryptoPkg --force-git -t ${{ variables.build_targets }} -a ${{variables.build_archs }} TOOL_CHAIN_TAG=${{ variables.tool_chain_tag }}
+
+    - task: CmdLine@1
+      displayName: Setup CryptoPkg ${{ variables.build_archs }}
+      inputs:
+        filename: stuart_setup
+        arguments: -c .pytool/CISettings.py -p CryptoPkg -t ${{ variables.build_targets }} -a ${{ variables.build_archs }} TOOL_CHAIN_TAG=${{ variables.tool_chain_tag }}
+
+    - task: CmdLine@1
+      displayName: Update CryptoPkg ${{ variables.build_archs }}
+      inputs:
+        filename: stuart_update
+        arguments: -c .pytool/CISettings.py -p CryptoPkg -t ${{ variables.build_targets }} -a ${{ variables.build_archs }} TOOL_CHAIN_TAG=${{ variables.tool_chain_tag }}
+
+    - task: CmdLine@1
+      displayName: Build and Test CryptoPkg ${{ variables.build_archs }}
+      inputs:
+        filename: stuart_ci_build
+        arguments: -c .pytool/CISettings.py -p CryptoPkg -t ${{ variables.build_targets }} -a ${{ variables.build_archs }} TOOL_CHAIN_TAG=${{ variables.tool_chain_tag }} BLD_*_CRYPTO_SERVICES=$(Build.Flavor) BUILDREPORTING=TRUE BUILDREPORT_TYPES="LIBRARY DEPEX PCD BUILD_FLAGS"
+
+    - task: CopyFiles@2
+      displayName: "Copy build artifacts and logs"
+      inputs:
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+        SourceFolder: 'Build'
+        contents: |
+          **/Crypto*.efi
+          **/Crypto*.depex
+          *.txt
+        flattenFolders: false # don't flatten folders so we don't overwrite
+      condition: succeededOrFailed()
+
+    - task: CopyFiles@2
+      displayName: "Copy nuget config"
+      inputs:
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+        SourceFolder: 'CryptoPkg/Driver'
+        contents: |
+          **/*config.json
+        flattenFolders: true
+      condition: and(eq(variables['Build.Flavor'], 'ALL'), succeeded())
+
+    - task: CopyFiles@2
+      displayName: "Copy license"
+      inputs:
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+        contents: |
+          License.txt
+        flattenFolders: true
+      condition: and(eq(variables['Build.Flavor'], 'ALL'), succeeded())
+
+    - task:  PublishBuildArtifacts@1
+      continueOnError: false
+      displayName: Publish To Pipeline
+      inputs:
+        pathToPublish: '$(Build.ArtifactStagingDirectory)'
+        artifactName: $(Build.Flavor)
+      condition: succeededOrFailed()
+
+  - job: assemble_package
+    displayName: Assemble Release Package
+    dependsOn:
+    - crypto_build
+    pool:
+      vmImage: windows-latest
+
+    workspace:
+      clean: all
+
+    steps:
+    - checkout: none
+
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.7.x'
+        addToPath: true
+        architecture: 'x64'
+      displayName: Install correct Python
+
+    - task: DownloadBuildArtifacts@0
+      name: DownloadBuildArtifacts
+      displayName: Download Build Artifacts
+      inputs:
+        buildType: current
+        downloadType: specific
+        downloadPath: $(Build.StagingDirectory)/Crypto
+
+      # config lives in $(Build.StagingDirectory)/ALL/edk2-BaseCryptoDriver.config.json
+
+      # Files exists in this format
+      # {FLAVOR}
+      # -- CryptoPkg
+      # ---- {TARGET}_{TOOLCHAIN}
+      # ------ Crypto(Pei|Dxe|Smm).efi
+      # ------ {GUID}
+      # -------- DEBUG
+      # ---------- Crypto(Pei|Dxe|Smm).efi
+      # -------- OUTPUT
+      # ---------- Crypto(Pei|Dxe|Smm).efi
+      # ---------- Crypto(Pei|Dxe|Smm).depex
+      # -- UPDATE_LOG.txt
+      # -- CI_BUILDLOG.txt
+      # -- edk2-BaseCryptoDriver.config.json
+
+
+      # {FLAVOR} = ALL, TINY_SHA, ...
+      # {TARGET} = DEBUG, RELEASE
+      # {TOOLCHAIN} = VS2019, VS2017
+      # {ARCH} = IA32, X64, AARCH64
+
+
+      # We need them laid out like this
+      # {FLAVOR}
+      # -- {TARGET}
+      # ---- {ARCH}
+      # ------- Crypto(Pei|Dxe|Smm).efi
+      # ---- BuildReport.txt
+      # ---- Crypto(Pei|Dxe|Smm).depex
+      # License.txt
+      # Readme.md
+
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+            $PipelineStaging = "$(Build.StagingDirectory)\$(temp_publication_directory)";
+            $PipelineSource = "$(Build.StagingDirectory)\Crypto";
+            mkdir $PipelineStaging;
+            Function Copy-If-Not-Exists {
+                Param ($Source, $Destination);
+                If (-not (Test-Path -Path $Destination)) {
+                    New-Item -ItemType File -Path $Destination -Force;
+                    Copy-Item $Source $Destination -Force;
+                };
+            };
+            # Copy the Nuget Config File;
+            $Config_In_Path = Join-Path $PipelineSource "All" | Join-Path -ChildPath "edk2-BaseCryptoDriver.config.json";
+            $Config_Out_Path = Join-Path $PipelineStaging "NugetPackageConfig.json";
+            Copy-If-Not-Exists $Config_In_Path $Config_Out_Path;
+            # Copy the EFI  and the Depex files;
+            $dirs = Get-ChildItem $PipelineSource -directory;
+            foreach ($dir in $dirs) {
+              $Flavor = $dir.Name;
+              $CryptoPkg = Join-Path -Path $dir.PSPath -ChildPath "CryptoPkg";
+              $target_dirs = Get-ChildItem $CryptoPkg -directory;
+              foreach ($target_dir in $target_dirs) {
+                $Target = $target_dir.Name.Split("_")[0];
+                $arch_dirs = Get-ChildItem $target_dir.PSPath -directory;
+                $output_dir = Join-Path $PipelineStaging $Flavor | Join-Path -ChildPath $Target;
+                # copy all the txt files
+                $txt_files = Get-ChildItem $target_dir.PSPath -Recurse -Filter *.txt;
+                foreach ($txt_file in $txt_files) {
+                    $FileName = $txt_file.BaseName + $txt_file.Extension;
+                    $output_path = Join-Path $output_dir $txt_file.Name;
+                    Copy-If-Not-Exists $txt_file.PSPath $output_path;
+                };
+                # copy all the depex files
+                $depex_files = Get-ChildItem $target_dir.PSPath -Recurse -Filter *.depex;
+                foreach ($depex_file in $depex_files) {
+                    $FileName = $depex_file.BaseName + $depex_file.Extension;
+                    $output_path = Join-Path $output_dir $depex_file.Name;
+                    Copy-If-Not-Exists $depex_file.PSPath $output_path;
+                };
+                # foreach architecture
+                foreach ($arch_dir in $arch_dirs) {
+                    $Arch = $arch_dir.Name;
+                    $output_dir = Join-Path $PipelineStaging $Flavor | Join-Path -ChildPath $Target | Join-Path -ChildPath $Arch;
+                    $files_to_copy = Get-ChildItem $arch_dir.PSPath -Recurse -Filter *.efi
+                    foreach ($file_to_copy in $files_to_copy) {
+                        $FileName = $file_to_copy.BaseName + $file_to_copy.Extension;
+                        $output_path = Join-Path $output_dir $file_to_copy.Name;
+                        Copy-If-Not-Exists $file_to_copy.PSPath $output_path;
+                    };
+                };
+              };
+            };
+      displayName: Stage Package Files
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Binaries
+      inputs:
+        pathtoPublish: '$(Build.StagingDirectory)/$(temp_publication_directory)'
+        artifactName: '$(package_artifact_name)'
+
+
+- ${{ if eq(parameters.publish_nuget, true) }}:
+  - stage: publish
+    displayName: Publish
+    dependsOn: build
+
+    variables:
+    - name: nuget_staging_directory
+      value: $(Build.StagingDirectory)/NugetPackage
+    - name: nuget_output_log
+      value: $(Build.StagingDirectory)/NugetLog.txt
+
+    pool:
+      vmImage: windows-latest
+
+    jobs:
+    - job: DownloadAndPublish
+      displayName: Download and Publish
+
+      steps:
+      - checkout: self
+        clean: true
+
+      - task: UsePythonVersion@0
+        displayName: Use Python $(python_version)
+        inputs:
+          versionSpec: $(python_version)
+          architecture: 'x64'
+
+      - script: pip install -r pip-requirements.txt --upgrade
+        displayName: Install/Upgrade Pip Modules
+
+      - task: NuGetAuthenticate@0
+        displayName: Authenticate Local Feed
+
+      - task: DownloadBuildArtifacts@0
+        name: DownloadBuildArtifacts
+        displayName: Download Build Artifacts
+        inputs:
+          buildType: 'current'
+          downloadType: 'single'
+          artifactName: $(package_artifact_name)
+          downloadPath: '$(Build.StagingDirectory)'
+
+      - task: PowerShell@2
+        name: PackNugetPackage
+        displayName: Pack and Push Nuget Package
+        inputs:
+          targetType: 'inline'
+          script: |
+            $configFilePath = "CryptoPkg/Driver/Packaging/edk2-BaseCryptoDriver.config.json";
+            $publishVersion = "$(version.major).$(version.minor).${{ parameters.version_patch }}$(version.release_flavor)";
+            $packageDirectory = "$(Build.StagingDirectory)/$(package_artifact_name)"
+
+            Write-Host nuget-publish --Operation PackAndPush --OutputLog "$(nuget_output_log)" --ConfigFilePath "$configFilePath" --InputFolderPath "$packageDirectory" --Version "$publishVersion";
+            nuget-publish --Operation PackAndPush --OutputLog "$(nuget_output_log)" --ConfigFilePath "$configFilePath" --InputFolderPath "$packageDirectory" --Version "$publishVersion";
+
+      - task: PublishBuildArtifacts@1
+        displayName: Publish Nuget Log
+        inputs:
+          pathtoPublish: '$(nuget_output_log)'
+          artifactName: 'Nuget Log'
+        condition: SucceededOrFailed()
