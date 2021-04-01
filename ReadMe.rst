@@ -57,8 +57,17 @@ Bug Fixes-dev
       MdeModulePkg/Library/VarCheckPolicyLib/VarCheckPolicyLib.inf
     - MdeModulePkg/Universal/Variable/UefiVariablePolicy/Dxe/VariablePolicyDxe.inf is no longer needed. It is
       now built-in to Variable Services
+    - All references to gVariablePolicyProtocolGuid and VARIABLE_POLICY_PROTOCOL are now gEdkiiVariablePolicyProtocolGuid
+      and EDKII_VARIABLE_POLICY_PROTOCOL, respectively
 - An instance of MmUnblockMemoryLib must be added to support the StandaloneMm changes. If your platform does not
   already support StandaloneMm, you should be safe to use MdePkg/Library/MmUnblockMemoryLib/MmUnblockMemoryLibNull.inf
+- An instance of HttpIoLib is required if using NetworkPkg\HttpBootDxe\HttpBootDxe.inf
+    - If in doubt, NetworkPkg/Library/DxeHttpIoLib/DxeHttpIoLib.inf looks like a safe choice
+- A number of spelling fixes landed in SMBIOS. These will need to be fixed in the source
+- `PcdSet*()` functions have been deprecated in favor of their `*S()` counterparts. Will need to update and check statuses
+    - EX: `PcdSetBool()` becomes `Status = PcdSetBoolS()`
+- A number of string functions (e.g. `UnicodeStrToAsciiStrS()`) have been deprecated in favor of their secure counterparts
+    - EX: `UnicodeStrToAsciiStr()` becomes `UnicodeStrToAsciiStrS()` and an upper bound must be provided
 
 2102_CIBuild Changes
 --------------------
