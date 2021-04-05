@@ -55,7 +55,12 @@ CreateMpInfoHob (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = MpPpi->GetNumberOfProcessors (PeiServices, MpPpi, &NumOfCpus, &NumOfEnabledCpus);
+  Status = MpPpi->GetNumberOfProcessors (
+                    (CONST EFI_PEI_SERVICES **) PeiServices,
+                    MpPpi,
+                    &NumOfCpus,
+                    &NumOfEnabledCpus
+                    );
   if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,
@@ -80,7 +85,12 @@ CreateMpInfoHob (
   HobData->NumberOfEnabledProcessors = NumOfEnabledCpus;
 
   for (Index = 0; Index < NumOfCpus; Index++) {
-    Status = MpPpi->GetProcessorInfo (PeiServices, MpPpi, (UINT32) Index, &HobData->ProcessorInfoBuffer[Index]);
+    Status = MpPpi->GetProcessorInfo (
+                    (CONST EFI_PEI_SERVICES **) PeiServices,
+                    MpPpi,
+                    (UINT32) Index,
+                    &HobData->ProcessorInfoBuffer[Index]
+                    );
     ASSERT_EFI_ERROR (Status);
 
     DEBUG ((DEBUG_INFO, "[%a] Get processor information returned %r.\n", __FUNCTION__, Status));
