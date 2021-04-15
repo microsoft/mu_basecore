@@ -55,4 +55,4 @@
   gArmTokenSpaceGuid.PcdFfaEnable
 
 [BuildOptions]
-  GCC:*_*_*_CC_FLAGS = -fpie
+  GCC:*_*_AARCH64_CC_FLAGS = -fpie
