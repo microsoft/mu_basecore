@@ -68,6 +68,8 @@ Bug Fixes-dev
     - EX: `PcdSetBool()` becomes `Status = PcdSetBoolS()`
 - A number of string functions (e.g. `UnicodeStrToAsciiStrS()`) have been deprecated in favor of their secure counterparts
     - EX: `UnicodeStrToAsciiStr()` becomes `UnicodeStrToAsciiStrS()` and an upper bound must be provided
+- Functionality that was previously entirely covered by Tcg2Smm has now been split between that driver and Tcg2Acpi. you
+  may need to add the new driver as well to maintain functionality
 
 2102_CIBuild Changes
 --------------------
