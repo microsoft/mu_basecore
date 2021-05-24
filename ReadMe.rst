@@ -34,7 +34,7 @@ Breaking Changes-dev
 Main Changes-dev
 ----------------
 
-- None
+- OverrideValidation command line now defaults to v2. Future versions may deprecate v1.
 
 Bug Fixes-dev
 -------------
