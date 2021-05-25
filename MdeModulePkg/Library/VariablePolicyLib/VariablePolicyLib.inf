@@ -37,6 +37,7 @@
   MemoryAllocationLib
   SafeIntLib
   PcdLib
+  SecurityLockAuditLib    # MU_CHANGE - Make sure to report when the VariablePolicy locks.
 
 
 [Pcd]
