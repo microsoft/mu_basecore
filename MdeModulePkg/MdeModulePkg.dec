@@ -29,6 +29,13 @@
   Library/BrotliCustomDecompressLib/brotli/c/include
 
 [LibraryClasses]
+  # MU_CHANGE [BEGIN] - Isolate the VariablePolicy locking event into its own code.
+  ##  @libraryclass  A NULL library instance that can be linked against Variable Services
+  #                   to allow the platform to hook pre- and post- VariablePolicy locking.
+  #                   NOTE: Must be implemented as a DXE_DRIVER lib.
+  NULL|Include/Library/VariablePolicyLockingExLib.h
+  # MU_CHANGE [END] - Isolate the VariablePolicy locking event into its own code.
+
   ##  @libraryclass  Defines a set of methods to reset whole system.
   ResetSystemLib|Include/Library/ResetSystemLib.h
 
