@@ -502,7 +502,7 @@ def path_parse():
         help = '''Specify the absolute path to your module by passing -m Path/To/Module.inf or --modulepath Path/To/Module.inf.'''
         )
     parser.add_argument (
-        '-v', '--version', dest = 'Version', default= 1, type=int,
+        '-v', '--version', dest = 'Version', default= 2, type=int,
         help = '''This is the version of the override hash to produce (currently only 1 and 2 are valid)'''
         )
 
