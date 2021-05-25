@@ -15,6 +15,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/VariablePolicy.h>
 #include <Library/VariablePolicyLib.h>
 
+#include "VariablePolicyLockingCommon.h"        // MU_CHANGE - Isolate the VariablePolicy locking event into its own code.
+
 EFI_STATUS
 EFIAPI
 ProtocolIsVariablePolicyEnabled (
@@ -297,15 +299,8 @@ OnReadyToBoot (
   VOID       *Context
   )
 {
-  EFI_STATUS  Status;
+  // EFI_STATUS    Status;      // MU_CHANGE - Do not lock Policy at EndOfDxe.
 
-  // MU_CHANGE [BEGIN] - Do not lock Policy at EndOfDxe.
-  if (!IsVariablePolicyInterfaceLocked ()) {
-    Status = LockVariablePolicy ();
-    ASSERT_EFI_ERROR (Status);
-  }
-
-  // MU_CHANGE [END] - Do not lock Policy at EndOfDxe.
   if (!mEndOfDxe) {
     MorLockInitAtEndOfDxe ();
 
@@ -650,6 +645,8 @@ VariableServiceInitialize (
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
+  Status = InitializeVariablePolicyLocking (&mVariablePolicyProtocol);  // MU_CHANGE - Isolate the VariablePolicy locking event into its own code.
+  ASSERT_EFI_ERROR (Status);                                            // MU_CHANGE - Isolate the VariablePolicy locking event into its own code.
 
   return EFI_SUCCESS;
 }
