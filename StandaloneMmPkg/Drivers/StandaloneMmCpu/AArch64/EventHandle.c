@@ -103,10 +103,6 @@ PiMmStandaloneArmTfCpuDriverEntry (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (NsCommBufferAddr < mNsCommBuffer.PhysicalStart) {
-    return EFI_ACCESS_DENIED;
-  }
-
   if ((NsCommBufferAddr + sizeof (EFI_MM_COMMUNICATE_HEADER)) >=
       (mNsCommBuffer.PhysicalStart + mNsCommBuffer.PhysicalSize)) {
     return EFI_INVALID_PARAMETER;
