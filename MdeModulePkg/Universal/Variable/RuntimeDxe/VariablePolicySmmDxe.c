@@ -20,6 +20,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Guid/VarCheckPolicyMmi.h>
 
 #include "Variable.h"
+#include "VariablePolicyLockingCommon.h"
 
 EDKII_VARIABLE_POLICY_PROTOCOL  mVariablePolicyProtocol;
 EFI_MM_COMMUNICATION2_PROTOCOL  *mMmCommunication;
@@ -489,11 +490,13 @@ VariablePolicySmmDxeMain (
   EFI_STATUS  Status;
   BOOLEAN     ProtocolInstalled;
   BOOLEAN     VirtualAddressChangeRegistered;
+  BOOLEAN     LockingInitialized;                   // MU_CHANGE - Isolate the VariablePolicy locking event into its own code.
   EFI_EVENT   VirtualAddressChangeEvent;
 
   Status                         = EFI_SUCCESS;
   ProtocolInstalled              = FALSE;
   VirtualAddressChangeRegistered = FALSE;
+  LockingInitialized             = FALSE;           // MU_CHANGE - Isolate the VariablePolicy locking event into its own code.
 
   // Update the minimum buffer size.
   mMmCommunicationBufferSize = VAR_CHECK_POLICY_MM_COMM_BUFFER_SIZE;
@@ -539,6 +542,16 @@ VariablePolicySmmDxeMain (
   // to lock the interface, but this is integrated
   // into the existing callbacks in VaraiableSmm.c
   // and VariableDxe.c.
+  // MU_CHANGE [BEGIN] - Isolate the VariablePolicy locking event into its own code.
+  Status = InitializeVariablePolicyLocking (&mVariablePolicyProtocol);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - Failed to initialize VariablePolicy locking! %r\n", __FUNCTION__, Status));
+    goto Exit;
+  } else {
+    LockingInitialized = TRUE;
+  }
+
+  // MU_CHANGE [END]
 
   //
   // Register a VirtualAddressChange callback for the MmComm protocol and Comm buffer.
@@ -569,6 +582,13 @@ Exit:
     if (VirtualAddressChangeRegistered) {
       gBS->CloseEvent (VirtualAddressChangeEvent);
     }
+
+    // MU_CHANGE [BEGIN] - Isolate the VariablePolicy locking event into its own code.
+    if (LockingInitialized) {
+      DeinitVariablePolicyLocking ();
+    }
+
+    // MU_CHANGE [END] - Isolate the VariablePolicy locking event into its own code.
   }
 
   return Status;
