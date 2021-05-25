@@ -15,6 +15,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DebugLib.h>
 #include <Library/PcdLib.h>
 
+#include <Library/SecurityLockAuditLib.h>     // MU_CHANGE - Make sure to report when the VariablePolicy locks.
+
 #include <Protocol/VariablePolicy.h>
 #include <Library/VariablePolicyLib.h>
 
@@ -1032,6 +1034,8 @@ LockVariablePolicy (
     return EFI_WRITE_PROTECTED;
   }
 
+  // MU_CHANGE - Make sure to report when the VariablePolicy locks.
+  SECURITY_LOCK_REPORT_EVENT ("VariablePolicy Lock", SOFTWARE_LOCK);
   mInterfaceLocked = TRUE;
   return EFI_SUCCESS;
 }
