@@ -44,6 +44,8 @@
   VariableParsing.h
   Variable.h
   VariablePolicySmmDxe.c
+  VariablePolicyLockingCommon.h   # MU_CHANGE - Isolate the VariablePolicy locking event into its own code.
+  VariablePolicyLockingCommon.c   # MU_CHANGE - Isolate the VariablePolicy locking event into its own code.
 
 [Packages]
   MdePkg/MdePkg.dec
