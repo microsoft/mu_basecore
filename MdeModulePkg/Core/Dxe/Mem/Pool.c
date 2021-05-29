@@ -10,8 +10,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "Imem.h"
 #include "HeapGuard.h"
 
-#include <Library/MemoryProtectionLib.h> // MU_CHANGE
-
 STATIC EFI_LOCK mPoolMemoryLock = EFI_INITIALIZE_LOCK_VARIABLE (TPL_NOTIFY);
 
 #define POOL_FREE_SIGNATURE   SIGNATURE_32('p','f','r','0')
@@ -382,8 +380,8 @@ CoreAllocatePoolI (
   // Adjust the size by the pool header & tail overhead
   //
 
-  HasPoolTail  = !(NeedGuard && IsMemoryProtectionGlobalToggleEnabled() // MU_CHANGE 
-                   && ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
+  HasPoolTail  = !(NeedGuard &&
+                   ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
   PageAsPool = (IsHeapGuardEnabled (GUARD_HEAP_TYPE_FREED) && !mOnGuarding);
 
   //
@@ -703,8 +701,8 @@ CoreFreePoolI (
 
   IsGuarded   = IsPoolTypeToGuard (Head->Type) &&
                 IsMemoryGuarded ((EFI_PHYSICAL_ADDRESS)(UINTN)Head);
-  HasPoolTail = !(IsGuarded && IsMemoryProtectionGlobalToggleEnabled() // MU_CHANGE 
-                  && (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0);
+  HasPoolTail = !(IsGuarded &&
+                  ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
   PageAsPool = (Head->Signature == POOLPAGE_HEAD_SIGNATURE);
 
   if (HasPoolTail) {
