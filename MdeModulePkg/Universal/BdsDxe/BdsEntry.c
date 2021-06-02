@@ -15,7 +15,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "Bds.h"
 #include "Language.h"
 #include "HwErrRecSupport.h"
-#include <Library/VariablePolicyHelperLib.h>
 
 #define SET_BOOT_OPTION_SUPPORT_KEY_COUNT(a, c)  { \
       (a) = ((a) & ~EFI_BOOT_OPTION_SUPPORT_COUNT) | (((c) << LowBitSet32 (EFI_BOOT_OPTION_SUPPORT_COUNT)) & EFI_BOOT_OPTION_SUPPORT_COUNT); \
@@ -675,27 +674,27 @@ BdsEntry (
   IN EFI_BDS_ARCH_PROTOCOL  *This
   )
 {
-  EFI_BOOT_MANAGER_LOAD_OPTION    *LoadOptions;
-  UINTN                           LoadOptionCount;
-  CHAR16                          *FirmwareVendor;
-  EFI_EVENT                       HotkeyTriggered;
-  UINT64                          OsIndication;
-  UINTN                           DataSize;
-  EFI_STATUS                      Status;
-  UINT32                          BootOptionSupport;
-  UINT16                          BootTimeOut;
-  EDKII_VARIABLE_POLICY_PROTOCOL  *VariablePolicy;
-  UINTN                           Index;
-  EFI_BOOT_MANAGER_LOAD_OPTION    LoadOption;
-  UINT16                          *BootNext;
-  CHAR16                          BootNextVariableName[sizeof ("Boot####")];
-  EFI_BOOT_MANAGER_LOAD_OPTION    BootManagerMenu;
-  BOOLEAN                         BootFwUi;
-  BOOLEAN                         PlatformRecovery;
-  BOOLEAN                         BootSuccess;
-  EFI_DEVICE_PATH_PROTOCOL        *FilePath;
-  EFI_STATUS                      BootManagerMenuStatus;
-  EFI_BOOT_MANAGER_LOAD_OPTION    PlatformDefaultBootOption;
+  EFI_BOOT_MANAGER_LOAD_OPTION  *LoadOptions;
+  UINTN                         LoadOptionCount;
+  CHAR16                        *FirmwareVendor;
+  EFI_EVENT                     HotkeyTriggered;
+  UINT64                        OsIndication;
+  UINTN                         DataSize;
+  EFI_STATUS                    Status;
+  UINT32                        BootOptionSupport;
+  UINT16                        BootTimeOut;
+  EDKII_VARIABLE_LOCK_PROTOCOL  *VariableLock;
+  UINTN                         Index;
+  EFI_BOOT_MANAGER_LOAD_OPTION  LoadOption;
+  UINT16                        *BootNext;
+  CHAR16                        BootNextVariableName[sizeof ("Boot####")];
+  EFI_BOOT_MANAGER_LOAD_OPTION  BootManagerMenu;
+  BOOLEAN                       BootFwUi;
+  BOOLEAN                       PlatformRecovery;
+  BOOLEAN                       BootSuccess;
+  EFI_DEVICE_PATH_PROTOCOL      *FilePath;
+  EFI_STATUS                    BootManagerMenuStatus;
+  EFI_BOOT_MANAGER_LOAD_OPTION  PlatformDefaultBootOption;
 
   HotkeyTriggered = NULL;
   Status          = EFI_SUCCESS;
@@ -731,20 +730,11 @@ BdsEntry (
   //
   // Mark the read-only variables if the Variable Lock protocol exists
   //
-  Status = gBS->LocateProtocol (&gEdkiiVariablePolicyProtocolGuid, NULL, (VOID **)&VariablePolicy);
-  DEBUG ((DEBUG_INFO, "[BdsDxe] Locate Variable Policy protocol - %r\n", Status));
+  Status = gBS->LocateProtocol (&gEdkiiVariableLockProtocolGuid, NULL, (VOID **)&VariableLock);
+  DEBUG ((EFI_D_INFO, "[BdsDxe] Locate Variable Lock protocol - %r\n", Status));
   if (!EFI_ERROR (Status)) {
     for (Index = 0; Index < ARRAY_SIZE (mReadOnlyVariables); Index++) {
-      Status = RegisterBasicVariablePolicy (
-                 VariablePolicy,
-                 &gEfiGlobalVariableGuid,
-                 mReadOnlyVariables[Index],
-                 VARIABLE_POLICY_NO_MIN_SIZE,
-                 VARIABLE_POLICY_NO_MAX_SIZE,
-                 VARIABLE_POLICY_NO_MUST_ATTR,
-                 VARIABLE_POLICY_NO_CANT_ATTR,
-                 VARIABLE_POLICY_TYPE_LOCK_NOW
-                 );
+      Status = VariableLock->RequestToLock (VariableLock, mReadOnlyVariables[Index], &gEfiGlobalVariableGuid);
       ASSERT_EFI_ERROR (Status);
     }
   }
