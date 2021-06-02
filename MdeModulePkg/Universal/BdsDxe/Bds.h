@@ -17,6 +17,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/Bds.h>
 #include <Protocol/LoadedImage.h>
+#include <Protocol/VariableLock.h>
 #include <Protocol/DeferredImageLoad.h>
 
 #include <Library/UefiDriverEntryPoint.h>
