@@ -838,7 +838,7 @@ AdjustMemoryS (
   // indicated to put the pool near the Tail Guard, we need extra bytes to
   // make sure alignment of the returned pool address.
   //
-  if ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0 || !IsMemoryProtectionGlobalToggleEnabled()) {  // MU_CHANGE 
+  if ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0) {
     SizeRequested = ALIGN_VALUE(SizeRequested, 8);
   }
 
@@ -1023,7 +1023,7 @@ AdjustPoolHeadA (
   )
 {
 
-  if (Memory == 0 || ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0 && IsMemoryProtectionGlobalToggleEnabled())) { // MU_CHANGE 
+  if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
     //
     // Pool head is put near the head Guard
     //
@@ -1050,7 +1050,7 @@ AdjustPoolHeadF (
   )
 {
 
-  if (Memory == 0 || ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0 && IsMemoryProtectionGlobalToggleEnabled())) { // MU_CHANGE 
+  if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
     //
     // Pool head is put near the head Guard
     //

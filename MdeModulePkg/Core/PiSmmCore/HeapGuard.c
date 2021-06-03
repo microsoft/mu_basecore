@@ -936,7 +936,7 @@ AdjustPoolHeadA (
   )
 {
 
-  if (Memory == 0 || ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0 && IsMemoryProtectionGlobalToggleEnabled())) { // MU_CHANGE 
+  if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
     //
     // Pool head is put near the head Guard
     //
@@ -963,7 +963,7 @@ AdjustPoolHeadF (
   )
 {
 
-  if (Memory == 0 || ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0 && IsMemoryProtectionGlobalToggleEnabled())) { // MU_CHANGE 
+  if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
     //
     // Pool head is put near the head Guard
     //

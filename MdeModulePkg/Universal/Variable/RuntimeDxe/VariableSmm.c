@@ -720,12 +720,6 @@ SmmVariableHandler (
         Status = EFI_UNSUPPORTED;
         break;
       }
-      // MU_CHANGE [BEGIN] - Do not lock Policy at EndOfDxe.
-      if (!IsVariablePolicyInterfaceLocked()) {
-        Status = LockVariablePolicy ();
-        ASSERT_EFI_ERROR (Status);
-      }
-      // MU_CHANGE [END] - Do not lock Policy at EndOfDxe.
       if (!mEndOfDxe) {
         MorLockInitAtEndOfDxe ();
         // MU_CHANGE - Do not lock Policy at EndOfDxe.
