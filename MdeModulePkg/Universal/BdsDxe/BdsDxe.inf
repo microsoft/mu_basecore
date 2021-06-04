@@ -51,7 +51,6 @@
   DebugLib
   UefiBootManagerLib
   # MU_CHANGE - START - [TCBZ3421] Updated to follow variable policy
-  VariablePolicyLib
   VariablePolicyHelperLib
   # MU_CHANGE - END - [TCBZ3421] Updated to follow variable policy
   PlatformBootManagerLib

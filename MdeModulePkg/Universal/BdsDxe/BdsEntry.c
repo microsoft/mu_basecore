@@ -16,7 +16,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "Language.h"
 #include "HwErrRecSupport.h"
 // MU_CHANGE - START - [TCBZ3421] Updated to follow variable policy
-#include <Library/VariablePolicyLib.h>
 #include <Library/VariablePolicyHelperLib.h>
 // MU_CHANGE - END - [TCBZ3421] Updated to follow variable policy
 
@@ -751,22 +750,6 @@ BdsEntry (
                  VARIABLE_POLICY_NO_CANT_ATTR,
                  VARIABLE_POLICY_TYPE_LOCK_NOW
                  );
-      //
-      // If the error returned is EFI_ALREADY_STARTED, we need to check the
-      // current database for the variable and see whether it's locked. If it's
-      // locked, we're still fine, but also generate a DEBUG_WARN message so the
-      // duplicate lock can be removed.
-      //
-      if (Status == EFI_ALREADY_STARTED) {
-        Status = ValidateSetVariable (mReadOnlyVariables[Index], &gEfiGlobalVariableGuid, 0, 0, NULL);
-        if (Status == EFI_WRITE_PROTECTED) {
-          DEBUG ((DEBUG_WARN, "  Variable: %g %s is already locked!\n", &gEfiGlobalVariableGuid, mReadOnlyVariables[Index]));
-          Status = EFI_SUCCESS;
-        } else {
-          DEBUG ((DEBUG_ERROR, "  Variable: %g %s can not be locked!\n", &gEfiGlobalVariableGuid, mReadOnlyVariables[Index]));
-          Status = EFI_ACCESS_DENIED;
-        }
-      }
       ASSERT_EFI_ERROR (Status);
       // MU_CHANGE - END - [TCBZ3421] Updated to follow variable policy
     }
