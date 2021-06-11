@@ -18,7 +18,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "VariablePolicyLockingCommon.h"
 
 CONST VARPOL_LOCK_CALLBACK_INTERFACE  *mCallbackInterface = NULL;
-CONST EDKII_VARIABLE_POLICY_PROTOCOL  *mVariablePolicy    = NULL;
+EDKII_VARIABLE_POLICY_PROTOCOL        *mVariablePolicy    = NULL;
 EFI_EVENT                             mReadyToBootEvent;
 
 /**
@@ -109,7 +109,7 @@ RegisterVarPolLockCallbackInterface (
 
 EFI_STATUS
 InitializeVariablePolicyLocking (
-  IN CONST EDKII_VARIABLE_POLICY_PROTOCOL  *VariablePolicy
+  IN EDKII_VARIABLE_POLICY_PROTOCOL  *VariablePolicy
   )
 {
   EFI_STATUS  Status;
