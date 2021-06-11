@@ -12,7 +12,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 EFI_STATUS
 InitializeVariablePolicyLocking (
-  IN CONST EDKII_VARIABLE_POLICY_PROTOCOL   *VariablePolicy
+  IN EDKII_VARIABLE_POLICY_PROTOCOL   *VariablePolicy
   );
 
 EFI_STATUS
