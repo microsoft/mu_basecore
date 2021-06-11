@@ -113,7 +113,7 @@ class MarkdownLintCheck(ICiBuildPlugin):
         #
         # Make the path string to check
         #
-        path_to_check = f"{relpath}/**/*.md"
+        path_to_check = f'"{relpath}/**/*.md"'
 
         # get path to config file -
 
