@@ -24,7 +24,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 typedef
 EFI_STATUS
 (EFIAPI *PRE_VARPOL_LOCK) (
-  IN CONST EDKII_VARIABLE_POLICY_PROTOCOL   *VariablePolicy
+  IN EDKII_VARIABLE_POLICY_PROTOCOL   *VariablePolicy
   );
 
 /**
@@ -41,7 +41,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *POST_VARPOL_LOCK) (
-  IN CONST EDKII_VARIABLE_POLICY_PROTOCOL   *VariablePolicy
+  IN EDKII_VARIABLE_POLICY_PROTOCOL   *VariablePolicy
   );
 
 typedef struct {
