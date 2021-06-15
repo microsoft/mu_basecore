@@ -22,10 +22,14 @@ MU_CHANGE: new file
 #define DEVICE_STATE_UNIT_TEST_MODE            (1 << (5))
 #define DEVICE_STATE_MEM_PROTECTIONS_OFF       (1 << (6))
 
-#define DEVICE_STATE_PLATFORM_MODE_0           (1 << (24))
-#define DEVICE_STATE_PLATFORM_MODE_1           (1 << (25))
-#define DEVICE_STATE_PLATFORM_MODE_2           (1 << (26))
-#define DEVICE_STATE_PLATFORM_MODE_3           (1 << (27))
+#define DEVICE_STATE_PLATFORM_MODE_0           (1 << (20))
+#define DEVICE_STATE_PLATFORM_MODE_1           (1 << (21))
+#define DEVICE_STATE_PLATFORM_MODE_2           (1 << (22))
+#define DEVICE_STATE_PLATFORM_MODE_3           (1 << (23))
+#define DEVICE_STATE_PLATFORM_MODE_4           (1 << (24))
+#define DEVICE_STATE_PLATFORM_MODE_5           (1 << (25))
+#define DEVICE_STATE_PLATFORM_MODE_6           (1 << (26))
+#define DEVICE_STATE_PLATFORM_MODE_7           (1 << (27))
 
 #define DEVICE_STATE_MAX                       (1 << (31))
 
