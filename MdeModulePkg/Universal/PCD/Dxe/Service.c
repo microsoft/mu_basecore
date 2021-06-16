@@ -738,19 +738,23 @@ LocateExPcdBinary (
   VOID
   )
 {
-  EFI_STATUS  Status;
+  // MU_CHANGE begin
+  // EFI_STATUS  Status;
 
-  //
-  // Search the External Pcd database from one section of current FFS,
-  // and read it to memory
-  //
-  Status = GetSectionFromFfs (
-             EFI_SECTION_RAW,
-             0,
-             (VOID **)&mDxePcdDbBinary,
-             &mDxePcdDbSize
-             );
-  ASSERT_EFI_ERROR (Status);
+  // //
+  // // Search the External Pcd database from one section of current FFS,
+  // // and read it to memory
+  // //
+  // Status = GetSectionFromFfs (
+  //            EFI_SECTION_RAW,
+  //            0,
+  //            (VOID **)&mDxePcdDbBinary,
+  //            &mDxePcdDbSize
+  //            );
+  // ASSERT_EFI_ERROR (Status);
+  mDxePcdDbBinary = (DXE_PCD_DATABASE *)PcdDatabaseLoaderLoad (NULL);
+  ASSERT (mDxePcdDbBinary != NULL);
+  // MU_CHANGE end
 
   //
   // Check the first bytes (Header Signature Guid) and build version.
@@ -761,6 +765,8 @@ LocateExPcdBinary (
     ASSERT (FALSE);
   }
 
+  mDxePcdDbSize = mDxePcdDbBinary->LengthForAllSkus;  // MU_CHANGE
+                                                      // MU_CHANGE
   return mDxePcdDbBinary;
 }
 
