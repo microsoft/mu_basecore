@@ -389,15 +389,14 @@ LocateExPcdBinary (
   IN EFI_PEI_FILE_HANDLE  FileHandle
   )
 {
-  EFI_STATUS  Status;
-  VOID        *PcdDb;
-
-  PcdDb = NULL;
+  // MU_CHANGE begin
+  VOID  *PcdDb;
 
   ASSERT (FileHandle != NULL);
 
-  Status = PeiServicesFfsFindSectionData (EFI_SECTION_RAW, FileHandle, &PcdDb);
-  ASSERT_EFI_ERROR (Status);
+  PcdDb = (PEI_PCD_DATABASE *)PcdDatabaseLoaderLoad (FileHandle);
+  ASSERT (PcdDb != NULL);
+  // MU_CHANGE end
 
   //
   // Check the first bytes (Header Signature Guid) and build version.

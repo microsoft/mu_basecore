@@ -20,12 +20,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Guid/VariableFormat.h>
 #include <Library/DebugLib.h>
 #include <Library/PeimEntryPoint.h>
-#include <Library/BaseLib.h>
+#include <Library/BaseLib.h>                // MU_CHANGE
 #include <Library/HobLib.h>
 #include <Library/PeiServicesLib.h>
 #include <Library/PcdLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/PcdDatabaseLoaderLib.h>   // MU_CHANGE
 
 //
 // Please make sure the PCD Serivce PEIM Version is consistent with
