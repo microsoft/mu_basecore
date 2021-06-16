@@ -26,6 +26,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "DxeIpl.h"
 #include "VirtualMemory.h"
 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+
 //
 // Global variable to keep track current available memory used as page table.
 //
@@ -98,7 +100,7 @@ IsNullDetectionEnabled (
   VOID
   )
 {
-  return ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT0) != 0);
+  return ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT0) != 0 && IsMemoryProtectionGlobalToggleEnabled()); // MU_CHANGE 
 }
 
 /**
@@ -152,9 +154,9 @@ IsEnableNonExecNeeded (
   // XD flag (BIT63) in page table entry is only valid if IA32_EFER.NXE is set.
   // Features controlled by Following PCDs need this feature to be enabled.
   //
-  return (PcdGetBool (PcdSetNxForStack) ||
+  return ((PcdGetBool (PcdSetNxForStack) ||
           PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0 ||
-          PcdGet32 (PcdImageProtectionPolicy) != 0);
+          PcdGet32 (PcdImageProtectionPolicy) != 0) && IsMemoryProtectionGlobalToggleEnabled()); // MU_CHANGE 
 }
 
 /**
@@ -197,13 +199,13 @@ ToSplitPageTable (
     return TRUE;
   }
 
-  if (PcdGetBool (PcdCpuStackGuard)) {
+  if (PcdGetBool (PcdCpuStackGuard) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     if (StackBase >= Address && StackBase < (Address + Size)) {
       return TRUE;
     }
   }
 
-  if (PcdGetBool (PcdSetNxForStack)) {
+  if (PcdGetBool (PcdSetNxForStack )&& IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     if ((Address < StackBase + StackSize) && ((Address + Size) > StackBase)) {
       return TRUE;
     }
@@ -359,13 +361,13 @@ Split2MPageTo4K (
     PageTableEntry->Bits.ReadWrite = 1;
 
     if ((IsNullDetectionEnabled () && PhysicalAddress4K == 0) ||
-        (PcdGetBool (PcdCpuStackGuard) && PhysicalAddress4K == StackBase)) {
+        ((PcdGetBool (PcdCpuStackGuard) && IsMemoryProtectionGlobalToggleEnabled()) && PhysicalAddress4K == StackBase)) { // MU_CHANGE 
       PageTableEntry->Bits.Present = 0;
     } else {
       PageTableEntry->Bits.Present = 1;
     }
 
-    if (PcdGetBool (PcdSetNxForStack)
+    if ((PcdGetBool (PcdSetNxForStack) && IsMemoryProtectionGlobalToggleEnabled()) // MU_CHANGE 
         && (PhysicalAddress4K >= StackBase)
         && (PhysicalAddress4K < StackBase + StackSize)) {
       //

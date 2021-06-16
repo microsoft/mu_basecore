@@ -45,6 +45,7 @@
   MpInitLib
   BaseMemoryLib
   CpuLib
+  MemoryProtectionLib ## MU_CHANGE
 
 [Ppis]
   gEfiPeiMpServicesPpiGuid                      ## PRODUCES

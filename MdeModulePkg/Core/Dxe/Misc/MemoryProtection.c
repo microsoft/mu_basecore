@@ -41,6 +41,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/SimpleFileSystem.h>
 #include <Protocol/HeapGuardDebug.h> // MS_CHANGE
 
+#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
 
@@ -608,7 +610,7 @@ UnprotectUefiImage (
   IMAGE_PROPERTIES_RECORD    *ImageRecord;
   LIST_ENTRY                 *ImageRecordLink;
 
-  if (PcdGet32(PcdImageProtectionPolicy) != 0) {
+  if (PcdGet32(PcdImageProtectionPolicy) != 0 && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     for (ImageRecordLink = mProtectedImageRecordList.ForwardLink;
          ImageRecordLink != &mProtectedImageRecordList;
          ImageRecordLink = ImageRecordLink->ForwardLink) {
@@ -652,7 +654,7 @@ GetPermissionAttributeForMemoryType (
     TestBit = LShiftU64 (1, MemoryType);
   }
 
-  if ((PcdGet64 (PcdDxeNxMemoryProtectionPolicy) & TestBit) != 0) {
+  if (((PcdGet64 (PcdDxeNxMemoryProtectionPolicy) & TestBit) != 0) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     return EFI_MEMORY_XP;
   } else {
     return 0;
@@ -820,7 +822,7 @@ InitializeDxeNxMemoryProtectionPolicy (
   ASSERT_EFI_ERROR (Status);
 
   StackBase = 0;
-  if (PcdGetBool (PcdCpuStackGuard)) {
+  if (PcdGetBool (PcdCpuStackGuard) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     //
     // Get the base of stack from Hob.
     //
@@ -877,7 +879,7 @@ InitializeDxeNxMemoryProtectionPolicy (
       // enabled.
       //
       if (MemoryMapEntry->PhysicalStart == 0 &&
-          PcdGet8 (PcdNullPointerDetectionPropertyMask) != 0) {
+          PcdGet8 (PcdNullPointerDetectionPropertyMask) != 0 && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
 
         ASSERT (MemoryMapEntry->NumberOfPages > 0);
         SetUefiImageMemoryAttributes (
@@ -894,7 +896,7 @@ InitializeDxeNxMemoryProtectionPolicy (
           (StackBase >= MemoryMapEntry->PhysicalStart &&
            StackBase <  MemoryMapEntry->PhysicalStart +
                         LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT)) &&
-          PcdGetBool (PcdCpuStackGuard)) {
+          PcdGetBool (PcdCpuStackGuard) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
 
         SetUefiImageMemoryAttributes (
           StackBase,
@@ -981,7 +983,7 @@ MemoryProtectionCpuArchProtocolNotify (
   //
   // Apply the memory protection policy on non-BScode/RTcode regions.
   //
-  if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0) {
+  if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0 && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     InitializeDxeNxMemoryProtectionPolicy ();
   }
 
@@ -990,7 +992,7 @@ MemoryProtectionCpuArchProtocolNotify (
   //
   HeapGuardCpuArchProtocolNotify ();
 
-  if (mImageProtectionPolicy == 0) {
+  if (mImageProtectionPolicy == 0 || !IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     goto Done;
   }
 
@@ -1125,7 +1127,11 @@ CoreInitializeMemoryProtection (
   EFI_EVENT   EndOfDxeEvent;
   VOID        *Registration;
 
-  mImageProtectionPolicy = PcdGet32(PcdImageProtectionPolicy);
+  if(IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
+    mImageProtectionPolicy = PcdGet32(PcdImageProtectionPolicy);
+  } else {
+    mImageProtectionPolicy = 0;
+  }
 
   InitializeListHead (&mProtectedImageRecordList);
 
@@ -1164,7 +1170,7 @@ CoreInitializeMemoryProtection (
   // Register a callback to disable NULL pointer detection at EndOfDxe
   //
   if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & (BIT0|BIT7))
-       == (BIT0|BIT7)) {
+       == (BIT0|BIT7) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     Status = CoreCreateEventEx (
                     EVT_NOTIFY_SIGNAL,
                     TPL_NOTIFY,
@@ -1180,7 +1186,7 @@ CoreInitializeMemoryProtection (
   // MSCHANGE START
   // Install protocol for validating Heap Guard if Heap Guard is turned on
   //
-  if (PcdGet8(PcdHeapGuardPropertyMask)) {
+  if (PcdGet8(PcdHeapGuardPropertyMask) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     EFI_HANDLE HgBmHandle = NULL;
     Status = CoreInstallMultipleProtocolInterfaces (
       &HgBmHandle,
@@ -1261,7 +1267,7 @@ ApplyMemoryProtectionPolicy (
   //
   // Check if a DXE memory protection policy has been configured
   //
-  if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) == 0) {
+  if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) == 0 || !IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
     return EFI_SUCCESS;
   }
 

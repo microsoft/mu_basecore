@@ -51,6 +51,7 @@
   UefiBootServicesTableLib
   DebugAgentLib
   SynchronizationLib
+  MemoryProtectionLib ## MU_CHANGE
 
 [Protocols]
   gEfiTimerArchProtocolGuid                     ## SOMETIMES_CONSUMES

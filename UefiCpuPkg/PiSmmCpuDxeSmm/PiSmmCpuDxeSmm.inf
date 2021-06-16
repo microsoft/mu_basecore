@@ -99,6 +99,7 @@
   SmmCpuFeaturesLib
   PeCoffGetEntryPointLib
   HwResetSystemLib                         ## MS_CHANGE - Allow system to reset instead of halt in test mode.
+  MemoryProtectionLib                      ## MU_CHANGE
 
 [Protocols]
   gEfiSmmAccess2ProtocolGuid               ## CONSUMES
