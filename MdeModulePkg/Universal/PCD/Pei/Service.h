@@ -25,6 +25,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PcdLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/PcdDatabaseLoaderLib.h>   // MU_CHANGE
 
 //
 // Please make sure the PCD Serivce PEIM Version is consistent with

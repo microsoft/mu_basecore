@@ -323,6 +323,7 @@
   PcdLib
   DxeServicesLib
   VariablePolicyHelperLib
+  PcdDatabaseLoaderLib                          ## MU_CHANGE
 
 [Guids]
   gPcdDataBaseHobGuid                           ## SOMETIMES_CONSUMES  ## HOB
