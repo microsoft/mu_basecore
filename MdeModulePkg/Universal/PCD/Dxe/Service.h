@@ -28,6 +28,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
+#include <Library/PcdDatabaseLoaderLib.h>   // MU_CHANGE
 
 //
 // Please make sure the PCD Serivce DXE Version is consistent with
