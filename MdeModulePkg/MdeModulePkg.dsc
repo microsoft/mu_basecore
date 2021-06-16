@@ -144,6 +144,7 @@
   ExtractGuidedSectionLib|MdePkg/Library/PeiExtractGuidedSectionLib/PeiExtractGuidedSectionLib.inf
 ## MU_CHANGE - SmmLockBoxPeiLib only supports IA32 and X64.
   LockBoxLib|MdeModulePkg/Library/LockBoxNullLib/LockBoxNullLib.inf
+  PcdDatabaseLoaderLib|MdeModulePkg/Library/PcdDatabaseLoaderLib/Pei/PcdDatabaseLoaderLibPei.inf  # MU_CHANGE
 
 ## MU_CHANGE [BEGIN] - SmmLockBoxPeiLib only supports IA32 and X64.
 [LibraryClasses.IA32.PEIM, LibraryClasses.X64.PEIM]
@@ -162,6 +163,7 @@
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
   ExtractGuidedSectionLib|MdePkg/Library/DxeExtractGuidedSectionLib/DxeExtractGuidedSectionLib.inf
   CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibFmp/DxeCapsuleLib.inf
+  PcdDatabaseLoaderLib|MdeModulePkg/Library/PcdDatabaseLoaderLib/Dxe/PcdDatabaseLoaderLibDxe.inf  # MU_CHANGE
 
 [LibraryClasses.common.DXE_RUNTIME_DRIVER]
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
@@ -510,6 +512,8 @@
   # MU_CHANGE - Add DeviceStateLib to MdeModulePkg:
   MdeModulePkg/Library/DeviceStateLib/DeviceStateLib.inf
   MdeModulePkg/Library/BaseVariableFlashInfoLib/BaseVariableFlashInfoLib.inf
+  MdeModulePkg/Library/PcdDatabaseLoaderLib/Pei/PcdDatabaseLoaderLibPei.inf   # MU_CHANGE
+  MdeModulePkg/Library/PcdDatabaseLoaderLib/Dxe/PcdDatabaseLoaderLibDxe.inf   # MU_CHANGE
 
 # MU_CHANGE START
 !if $(TOOLCHAIN) != VS2017 and $(TOOLCHAIN) != VS2019

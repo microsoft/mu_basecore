@@ -196,6 +196,11 @@
   #
   AdvLoggerAccessLib|Include/Library/AdvLoggerAccessLib.h
 
+  # MU_CHANGE - Add PcdDatabaseLoaderLib to MdeModulePkg
+  ## @libraryclass Provides a way to present an alternate PcdDatabase
+  #
+  PcdDatabaseLoaderLib|Include/Library/PcdDatabaseLoaderLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
