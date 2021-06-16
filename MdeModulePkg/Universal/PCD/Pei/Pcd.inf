@@ -318,6 +318,7 @@
   PeimEntryPoint
   DebugLib
   MemoryAllocationLib
+  PcdDatabaseLoaderLib                          ## MU_CHANGE
 
 [Guids]
   ## PRODUCES            ## HOB
