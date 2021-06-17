@@ -134,6 +134,7 @@ InitRealNonVolatileVariableStore (
 {
   EFI_FIRMWARE_VOLUME_HEADER            *FvHeader;
   VARIABLE_STORE_HEADER                 *VariableStore;
+  VARIABLE_FLASH_INFO                   *VariableFlashInfo;  // MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
   UINT32                                VariableStoreLength;
   EFI_HOB_GUID_TYPE                     *GuidHob;
   EFI_PHYSICAL_ADDRESS                  NvStorageBase;
@@ -150,18 +151,30 @@ InitRealNonVolatileVariableStore (
 
   mVariableModuleGlobal->FvbInstance = NULL;
 
+// MU_CHANGE - START - TCBZ3479 - Add Variable Flash Information HOB
+  Status = GetVariableFlashInfo (&VariableFlashInfo);
+  if (!EFI_ERROR (Status)) {
+    NvStorageBase = VariableFlashInfo->BaseAddress;
+    Status = SafeUint64ToUint32 (VariableFlashInfo->Length, &NvStorageSize);
+    // This driver currently assumes the size will be UINT32 so only accept that for now.
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  if (EFI_ERROR (Status)) {
+    NvStorageBase = NV_STORAGE_VARIABLE_BASE;
+    NvStorageSize = PcdGet32 (PcdFlashNvStorageVariableSize);
+  }
+  ASSERT (NvStorageBase != 0);
+// MU_CHANGE - END - TCBZ3479 - Add Variable Flash Information HOB
+
   //
   // Allocate runtime memory used for a memory copy of the FLASH region.
   // Keep the memory and the FLASH in sync as updates occur.
   //
-  NvStorageSize = PcdGet32 (PcdFlashNvStorageVariableSize);
   NvStorageData = AllocateRuntimeZeroPool (NvStorageSize);
   if (NvStorageData == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-
-  NvStorageBase = NV_STORAGE_VARIABLE_BASE;
-  ASSERT (NvStorageBase != 0);
 
   //
   // Copy NV storage data to the memory buffer.
