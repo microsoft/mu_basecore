@@ -75,6 +75,7 @@
   VarCheckLib
   VariablePolicyLib
   VariablePolicyHelperLib
+  SafeIntLib                    # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
   MemoryTypeInfoSecVarCheckLib  # MU_CHANGE TCBZ1086 - Mitigate potential system brick due to UEFI MemoryTypeInformation var changes
 
 [Protocols]
@@ -117,6 +118,7 @@
   gEfiSystemNvDataFvGuid                        ## CONSUMES             ## GUID
   gEfiEndOfDxeEventGroupGuid                    ## CONSUMES             ## Event
   gEdkiiFaultTolerantWriteGuid                  ## SOMETIMES_CONSUMES   ## HOB
+  gVariableFlashInfoHobGuid                     ## CONSUMES             ## HOB # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
 
   ## SOMETIMES_CONSUMES   ## Variable:L"VarErrorFlag"
   ## SOMETIMES_PRODUCES   ## Variable:L"VarErrorFlag"
