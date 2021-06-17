@@ -420,6 +420,7 @@ FtwNotificationEvent (
   EFI_STATUS                          Status;
   EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL  *FvbProtocol;
   EFI_FAULT_TOLERANT_WRITE_PROTOCOL   *FtwProtocol;
+  VARIABLE_FLASH_INFO                 *VariableFlashInfo;         // MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
   EFI_PHYSICAL_ADDRESS                NvStorageVariableBase;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR     GcdDescriptor;
   EFI_PHYSICAL_ADDRESS                BaseAddress;
@@ -427,6 +428,7 @@ FtwNotificationEvent (
   EFI_PHYSICAL_ADDRESS                VariableStoreBase;
   UINT64                              VariableStoreLength;
   UINTN                               FtwMaxBlockSize;
+  UINT32                              NvStorageVariableSize;      // MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
 
   //
   // Ensure FTW protocol is installed.
@@ -436,13 +438,31 @@ FtwNotificationEvent (
     return;
   }
 
-  Status = FtwProtocol->GetMaxBlockSize (FtwProtocol, &FtwMaxBlockSize);
+  // MU_CHANGE - START - TCBZ3479 - Add Variable Flash Information HOB
+  Status = GetVariableFlashInfo (&VariableFlashInfo);
   if (!EFI_ERROR (Status)) {
-    ASSERT (PcdGet32 (PcdFlashNvStorageVariableSize) <= FtwMaxBlockSize);
+    NvStorageVariableBase = VariableFlashInfo->BaseAddress;
+    Status                = SafeUint64ToUint32 (VariableFlashInfo->Length, &NvStorageVariableSize);
+    // This driver currently assumes the size will be UINT32 so only accept
+    // that for now.
+    ASSERT_EFI_ERROR (Status);
   }
 
-  NvStorageVariableBase = NV_STORAGE_VARIABLE_BASE;
-  VariableStoreBase     = NvStorageVariableBase + mNvFvHeaderCache->HeaderLength;
+  if (EFI_ERROR (Status)) {
+    NvStorageVariableBase = NV_STORAGE_VARIABLE_BASE;
+    NvStorageVariableSize = PcdGet32 (PcdFlashNvStorageVariableSize);
+  }
+
+  ASSERT (NvStorageVariableBase != 0);
+
+  VariableStoreBase = NvStorageVariableBase + mNvFvHeaderCache->HeaderLength;
+
+  Status = FtwProtocol->GetMaxBlockSize (FtwProtocol, &FtwMaxBlockSize);
+  if (!EFI_ERROR (Status)) {
+    ASSERT (NvStorageVariableSize <= FtwMaxBlockSize);
+  }
+
+  // MU_CHANGE - END - TCBZ3479 - Add Variable Flash Information HOB
 
   //
   // Let NonVolatileVariableBase point to flash variable store base directly after FTW ready.

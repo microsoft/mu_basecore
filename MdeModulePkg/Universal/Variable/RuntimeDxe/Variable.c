@@ -3814,6 +3814,52 @@ GetHobVariableStore (
   return EFI_SUCCESS;
 }
 
+// MU_CHANGE - START - TCBZ3479 - Add Variable Flash Information HOB
+
+/**
+  Get the HOB that contains variable flash information.
+
+  @param[out] VariableFlashInfo   Pointer to a pointer to set to the variable flash information structure.
+
+  @retval EFI_SUCCESS             Variable flash information was found successfully.
+  @retval EFI_INVALID_PARAMETER   The VariableFlashInfo pointer given is NULL.
+  @retval EFI_NOT_FOUND           Variable flash information could not be found.
+
+**/
+EFI_STATUS
+GetVariableFlashInfo (
+  OUT VARIABLE_FLASH_INFO  **VariableFlashInfo
+  )
+{
+  EFI_HOB_GUID_TYPE  *GuidHob;
+
+  if (VariableFlashInfo == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  GuidHob = GetFirstGuidHob (&gVariableFlashInfoHobGuid);
+  if (GuidHob == NULL) {
+    return EFI_NOT_FOUND;
+  }
+
+  *VariableFlashInfo = GET_GUID_HOB_DATA (GuidHob);
+
+  //
+  // Assert if more than one variable flash information HOB is present.
+  //
+  DEBUG_CODE (
+    if ((GetNextGuidHob (&gVariableFlashInfoHobGuid, GET_NEXT_HOB (GuidHob)) != NULL)) {
+    DEBUG ((DEBUG_ERROR, "ERROR: Found two variable flash information HOBs\n"));
+    ASSERT (FALSE);
+  }
+
+    );
+
+  return EFI_SUCCESS;
+}
+
+// MU_CHANGE - END - TCBZ3479 - Add Variable Flash Information HOB
+
 /**
   Initializes variable store area for non-volatile and volatile variable.
 
