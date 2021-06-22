@@ -744,8 +744,8 @@ LocateExPcdBinary (
     ASSERT (FALSE);
   }
 
-  mDxePcdDbSize =  mDxePcdDbBinary->Length;     // MU_CHANGE
-                                                // MU_CHANGE
+  mDxePcdDbSize =  mDxePcdDbBinary->Length + mDxePcdDbBinary->UninitDataBaseSize; // MU_CHANGE
+                                                                                  // MU_CHANGE
   return mDxePcdDbBinary;
 }
 
