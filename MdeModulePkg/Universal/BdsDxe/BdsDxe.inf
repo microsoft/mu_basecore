@@ -50,9 +50,6 @@
   BaseMemoryLib
   DebugLib
   UefiBootManagerLib
-  # MU_CHANGE - START - [TCBZ3421] Updated to follow variable policy
-  VariablePolicyHelperLib
-  # MU_CHANGE - END - [TCBZ3421] Updated to follow variable policy
   PlatformBootManagerLib
   PcdLib
   PrintLib
@@ -80,10 +77,7 @@
 [Protocols]
   gEfiBdsArchProtocolGuid                       ## PRODUCES
   gEfiSimpleTextInputExProtocolGuid             ## CONSUMES
-  # MU_CHANGE - START - [TCBZ3421] Updated to follow variable policy
-  ## gEdkiiVariableLockProtocolGuid                ## SOMETIMES_CONSUMES
-  gEdkiiVariablePolicyProtocolGuid                ## SOMETIMES_CONSUMES
-  # MU_CHANGE - END - [TCBZ3421] Updated to follow variable policy
+  gEdkiiVariableLockProtocolGuid                ## SOMETIMES_CONSUMES
   gEfiDeferredImageLoadProtocolGuid             ## CONSUMES
 
 [FeaturePcd]
