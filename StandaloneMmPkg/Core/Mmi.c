@@ -204,8 +204,9 @@ MmiManage (
     default:
       //
       // Unexpected status code returned.
+      // Deliver the request to the next handler registered.
       //
-      ASSERT (FALSE);
+      DEBUG ((DEBUG_INFO, "MmiManage - Handler Returned - 0x%x\n", Status));
       break;
     }
   }

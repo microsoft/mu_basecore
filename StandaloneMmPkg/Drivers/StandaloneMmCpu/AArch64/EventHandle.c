@@ -94,8 +94,8 @@ PiMmStandaloneArmTfCpuDriverEntry (
   //
   if ((ARM_SMC_ID_MM_COMMUNICATE_AARCH64 != EventId) &&
       (ARM_SVC_ID_FFA_MSG_SEND_DIRECT_REQ_AARCH64 != EventId)) {
-    DEBUG ((DEBUG_INFO, "UnRecognized Event - 0x%x\n", EventId));
-    return EFI_INVALID_PARAMETER;
+    DEBUG ((DEBUG_INFO, "Forwarding Event to Raw SMC Handler. Event - 0x%x\n", EventId));
+    return mMmst->MmiManage(&gArmRawSmcCallGuid, NULL, &EventId, NULL);
   }
 
   // Perform parameter validation of NsCommBufferAddr
