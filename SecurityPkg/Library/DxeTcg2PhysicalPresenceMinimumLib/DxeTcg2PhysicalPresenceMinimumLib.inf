@@ -1,0 +1,54 @@
+## @file
+#  Executes TPM 2.0 requests from OS or BIOS
+#
+#  Minimized to support only required PPI operations, no prompting, always approved
+#
+# Copyright (c) 2013 - 2018, Intel Corporation.
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+#Override : 00000002 | SecurityPkg/Library/DxeTcg2PhysicalPresenceLib/DxeTcg2PhysicalPresenceLib.inf | 9c3eef8293659795d611d79e146fd734 | 2025-12-22T17-05-38 | f8c1046eabc1a8c90216f7b80326e60c419e64f2
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = DxeTcg2PhysicalPresenceLib
+  FILE_GUID                      = 7190807F-8EE7-4089-818A-01768281CAC7
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = Tcg2PhysicalPresenceLib|DXE_DRIVER DXE_RUNTIME_DRIVER UEFI_APPLICATION UEFI_DRIVER
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources]
+  DxeTcg2PhysicalPresenceMinimumLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  SecurityPkg/SecurityPkg.dec
+
+[LibraryClasses]
+  DebugLib
+  BaseMemoryLib
+  UefiRuntimeServicesTableLib
+  UefiBootServicesTableLib
+  HobLib
+  Tpm2CommandLib
+  UefiLib
+  UefiDriverEntryPoint
+
+[Protocols]
+  gEfiTcg2ProtocolGuid                 ## SOMETIMES_CONSUMES
+
+[Pcd]
+  # MU_CHANGE: does not depend on gEfiSecurityPkgTokenSpaceGuid.PcdTcg2PhysicalPresenceFlags       ## SOMETIMES_CONSUMES
+
+[Guids]
+  ## SOMETIMES_PRODUCES ## Variable:L"Tcg2PhysicalPresence"
+  ## SOMETIMES_CONSUMES ## Variable:L"Tcg2PhysicalPresence"
+  gEfiTcg2PhysicalPresenceGuid
