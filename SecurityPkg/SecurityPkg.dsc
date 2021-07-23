@@ -373,6 +373,9 @@
   SecurityPkg/Tcg/Tcg2Acpi/Tcg2Acpi.inf
   SecurityPkg/Library/SmmTcg2PhysicalPresenceLib/SmmTcg2PhysicalPresenceLib.inf
   SecurityPkg/Library/SmmTcg2PhysicalPresenceLib/StandaloneMmTcg2PhysicalPresenceLib.inf
+  SecurityPkg/Library/DxeTcg2PhysicalPresenceMinimumLib/DxeTcg2PhysicalPresenceMinimumLib.inf          # MU_CHANGE
+  SecurityPkg/Library/MmTcg2PhysicalPresenceMinimumLib/TraditionalMmTcg2PhysicalPresenceMinimumLib.inf # MU_CHANGE
+  SecurityPkg/Library/MmTcg2PhysicalPresenceMinimumLib/StandaloneMmTcg2PhysicalPresenceMinimumLib.inf  # MU_CHANGE
 
   #
   # Random Number Generator

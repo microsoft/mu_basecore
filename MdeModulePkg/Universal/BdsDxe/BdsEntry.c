@@ -15,9 +15,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "Bds.h"
 #include "Language.h"
 #include "HwErrRecSupport.h"
-// MU_CHANGE - START - [TCBZ3421] Updated to follow variable policy
-#include <Library/VariablePolicyHelperLib.h>
-// MU_CHANGE - END - [TCBZ3421] Updated to follow variable policy
 
 #define SET_BOOT_OPTION_SUPPORT_KEY_COUNT(a, c) {  \
       (a) = ((a) & ~EFI_BOOT_OPTION_SUPPORT_COUNT) | (((c) << LowBitSet32 (EFI_BOOT_OPTION_SUPPORT_COUNT)) & EFI_BOOT_OPTION_SUPPORT_COUNT); \
@@ -678,10 +675,7 @@ BdsEntry (
   EFI_STATUS                      Status;
   UINT32                          BootOptionSupport;
   UINT16                          BootTimeOut;
-  // MU_CHANGE - START - [TCBZ3421] Updated to follow variable policy
-  //EDKII_VARIABLE_LOCK_PROTOCOL    *VariableLock;
-  EDKII_VARIABLE_POLICY_PROTOCOL  *VariablePolicy;
-  // MU_CHANGE - END - [TCBZ3421] Updated to follow variable policy
+  EDKII_VARIABLE_LOCK_PROTOCOL    *VariableLock;
   UINTN                           Index;
   EFI_BOOT_MANAGER_LOAD_OPTION    LoadOption;
   UINT16                          *BootNext;
@@ -729,29 +723,12 @@ BdsEntry (
   //
   // Mark the read-only variables if the Variable Lock protocol exists
   //
-  // MU_CHANGE - START - [TCBZ3421] Updated to follow variable policy
-  //Status = gBS->LocateProtocol (&gEdkiiVariableLockProtocolGuid, NULL, (VOID **) &VariableLock);
-  //DEBUG ((EFI_D_INFO, "[BdsDxe] Locate Variable Lock protocol - %r\n", Status));
-  Status = gBS->LocateProtocol (&gEdkiiVariablePolicyProtocolGuid, NULL, (VOID**) &VariablePolicy);
-  DEBUG ((DEBUG_INFO, "[BdsDxe] Locate Variable Policy protocol - %r\n", Status));
-  // MU_CHANGE - END - [TCBZ3421] Updated to follow variable policy
+  Status = gBS->LocateProtocol (&gEdkiiVariableLockProtocolGuid, NULL, (VOID **) &VariableLock);
+  DEBUG ((EFI_D_INFO, "[BdsDxe] Locate Variable Lock protocol - %r\n", Status));
   if (!EFI_ERROR (Status)) {
     for (Index = 0; Index < ARRAY_SIZE (mReadOnlyVariables); Index++) {
-      // MU_CHANGE - START - [TCBZ3421] Updated to follow variable policy
-      //Status = VariableLock->RequestToLock (VariableLock, mReadOnlyVariables[Index], &gEfiGlobalVariableGuid);
-      //ASSERT_EFI_ERROR (Status);
-      Status = RegisterBasicVariablePolicy (
-                 VariablePolicy,
-                 &gEfiGlobalVariableGuid,
-                 mReadOnlyVariables[Index],
-                 VARIABLE_POLICY_NO_MIN_SIZE,
-                 VARIABLE_POLICY_NO_MAX_SIZE,
-                 VARIABLE_POLICY_NO_MUST_ATTR,
-                 VARIABLE_POLICY_NO_CANT_ATTR,
-                 VARIABLE_POLICY_TYPE_LOCK_NOW
-                 );
+      Status = VariableLock->RequestToLock (VariableLock, mReadOnlyVariables[Index], &gEfiGlobalVariableGuid);
       ASSERT_EFI_ERROR (Status);
-      // MU_CHANGE - END - [TCBZ3421] Updated to follow variable policy
     }
   }
 
