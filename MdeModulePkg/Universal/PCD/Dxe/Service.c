@@ -752,8 +752,8 @@ LocateExPcdBinary (
     ASSERT (FALSE);
   }
 
-  mDxePcdDbSize =  mDxePcdDbBinary->Length + mDxePcdDbBinary->LengthForAllSkus;   // MU_CHANGE
-                                                                                  // MU_CHANGE
+  mDxePcdDbSize = mDxePcdDbBinary->LengthForAllSkus;  // MU_CHANGE
+                                                      // MU_CHANGE
   return mDxePcdDbBinary;
 }
 
