@@ -741,11 +741,6 @@ SmmVariableHandler (
       AdvLoggerAccessAtRuntime ();                         // MU_CHANGE
       Status = EFI_SUCCESS;
       break;
-                                                           // MU_CHANGE
-    case SMM_VARIABLE_FUNCTION_ADDRESS_CHANGE_EVENT:       // MU_CHANGE
-      AdvLoggerAccessGoneVirtual ();                       // MU_CHANGE
-      Status = EFI_SUCCESS;                                // MU_CHANGE
-      break;                                               // MU_CHANGE
 
     case SMM_VARIABLE_FUNCTION_GET_STATISTICS:
       VariableInfo = (VARIABLE_INFO_ENTRY *) SmmVariableFunctionHeader->Data;
