@@ -77,10 +77,6 @@ typedef struct {
 // The payload for this function is SMM_VARIABLE_COMMUNICATE_GET_RUNTIME_CACHE_INFO
 //
 #define SMM_VARIABLE_FUNCTION_GET_RUNTIME_CACHE_INFO                14
-//                                                                       MU_CHANGE
-// It is a notify event, no extra payload for this function.             MU_CHANGE
-//                                                                       MU_CHANGE
-#define SMM_VARIABLE_FUNCTION_ADDRESS_CHANGE_EVENT    15            //   MU_CHANGE
 
 ///
 /// Size of SMM communicate header, without including the payload.
