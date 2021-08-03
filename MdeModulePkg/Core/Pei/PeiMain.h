@@ -334,6 +334,8 @@ struct _PEI_CORE_INSTANCE {
   HOLE_MEMORY_DATA                  HoleData[HOLE_MAX_NUMBER];
 
   DELAYED_DISPATCH_TABLE            *DelayedDispatchTable;    // MS_CHANGE
+
+  EFI_PHYSICAL_ADDRESS              PlatformBlob;             // MS_CHANGE  Used by AdvancedLogger
 };
 
 ///
