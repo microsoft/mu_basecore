@@ -353,6 +353,8 @@ struct _PEI_CORE_INSTANCE {
   // This is used for the memory bin feature, if enabled, to track bin locations.
   //
   EFI_MEMORY_TYPE_STATISTICS        *MemoryTypeStatistics;
+
+  EFI_PHYSICAL_ADDRESS              PlatformBlob;             // MU_CHANGE  Used by AdvancedLogger
 };
 
 ///
