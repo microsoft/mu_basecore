@@ -307,6 +307,8 @@ struct _PEI_CORE_INSTANCE {
   // Those Memory Range will be migrated into physical memory.
   //
   HOLE_MEMORY_DATA                  HoleData[HOLE_MAX_NUMBER];
+
+  EFI_PHYSICAL_ADDRESS              PlatformBlob;             // MU_CHANGE  Used by AdvancedLogger
 };
 
 ///
