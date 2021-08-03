@@ -335,6 +335,8 @@ struct _PEI_CORE_INSTANCE {
   // Table of delayed dispatch requests
   //
   DELAYED_DISPATCH_TABLE            *DelayedDispatchTable;
+
+  EFI_PHYSICAL_ADDRESS              PlatformBlob;             // MU_CHANGE  Used by AdvancedLogger
 };
 
 ///
