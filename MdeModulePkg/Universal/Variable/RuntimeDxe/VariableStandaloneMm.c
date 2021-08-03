@@ -85,5 +85,6 @@ VariableHaveTcgProtocols (
   VOID
   )
 {
-  return FALSE;
+  return TRUE;  // MU_CHANGE TCBZ3513 - workaround MOR bit heuristic that is incompatible with Standalone MM
 }
+
