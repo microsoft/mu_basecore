@@ -125,9 +125,9 @@ class BmpCheckPlugin(IUefiBuildPlugin):
             pp = thebuilder.pp.split(";")
             edk2 = Edk2Path(ws, pp)
 
-            ActiveDsc = edk2.GetAbsolutePathOnThisSytemFromEdk2RelativePath(
+            ActiveDsc = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
                 thebuilder.env.GetValue("ACTIVE_PLATFORM"))
-            ActiveFdf = edk2.GetAbsolutePathOnThisSytemFromEdk2RelativePath(
+            ActiveFdf = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
                 thebuilder.env.GetValue("FLASH_DEFINITION"))
 
             if ActiveFdf is None:
@@ -158,7 +158,7 @@ class BmpCheckPlugin(IUefiBuildPlugin):
                         # check if it ends with a bmp
                         if fv_file_raw_item.lower().endswith(".bmp"):
                             logging.debug(fv_file_raw_item)
-                            BmpFilePath = edk2.GetAbsolutePathOnThisSytemFromEdk2RelativePath(fv_file_raw_item)
+                            BmpFilePath = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(fv_file_raw_item)
                             logging.debug(BmpFilePath)
                             if BmpCheckPlugin.CheckBmp(BmpFilePath):  # do the check
                               self.logger.error("{} failed image check".format(fv_file_raw_item))
