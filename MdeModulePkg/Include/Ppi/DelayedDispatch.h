@@ -63,8 +63,8 @@ EFI_STATUS
   IN  EFI_DELAYED_DISPATCH_PPI      *This,
   IN  EFI_DELAYED_DISPATCH_FUNCTION  Function,
   IN  UINT64                         Context,
-  IN  EFI_GUID                      *UniqueId,
-  OUT UINT32                         Delay
+  IN  EFI_GUID                      *UniqueId   OPTIONAL,
+  IN  UINT32                         Delay
   );
 
 /**
@@ -88,7 +88,7 @@ EFI_STATUS
 
 
 ///
-/// This PPI contains a set of services to interact with the SD_MMC host controller.
+/// This PPI contains a set of services to delay dispatch of functionality.
 ///
 struct _EFI_DELAYED_DISPATCH_PPI {
   EFI_DELAYED_DISPATCH_REGISTER       Register;
