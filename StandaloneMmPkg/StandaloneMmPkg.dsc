@@ -56,6 +56,7 @@
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
   PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
   ReportStatusCodeLib|MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
+  StandaloneMmCoreEntryPoint|StandaloneMmPkg/Library/StandaloneMmCoreEntryPointNull/StandaloneMmCoreEntryPointNull.inf  # MU_CHANGE
   StandaloneMmDriverEntryPoint|MdePkg/Library/StandaloneMmDriverEntryPoint/StandaloneMmDriverEntryPoint.inf
   VariableMmDependency|StandaloneMmPkg/Library/VariableMmDependency/VariableMmDependency.inf
   HobPrintLib|MdeModulePkg/Library/HobPrintLib/HobPrintLib.inf
@@ -155,6 +156,13 @@
   StandaloneMmPkg/Library/MmPlatformHobProducerLibNull/MmPlatformHobProducerLibNull.inf
   StandaloneMmPkg/Drivers/MmCommunicationDxe/MmCommunicationDxe.inf
   StandaloneMmPkg/Library/StandaloneMmExtractGuidedSectionLib/StandaloneMmExtractGuidedSectionLib.inf
+
+# MU_CHANGE [BEGIN]
+  StandaloneMmPkg/Library/StandaloneMmCoreEntryPointNull/StandaloneMmCoreEntryPointNull.inf
+
+[Components.X64]
+  StandaloneMmPkg/Library/StandaloneMmCoreEntryPoint/StandaloneMmCoreEntryPoint.inf
+# MU_CHANGE [END]
 
 [Components.AARCH64, Components.ARM]
   StandaloneMmPkg/Library/StandaloneMmPeCoffExtraActionLib/StandaloneMmPeCoffExtraActionLib.inf
