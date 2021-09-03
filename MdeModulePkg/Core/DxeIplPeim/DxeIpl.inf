@@ -61,8 +61,10 @@
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
 
-[Packages.ARM, Packages.AARCH64]
-  ArmPkg/ArmPkg.dec
+# MU_CHANGE [BEGIN]
+# [Packages.ARM, Packages.AARCH64]
+#   ArmPkg/ArmPkg.dec
+# MU_CHANGE [END]
 
 [LibraryClasses]
   PcdLib
@@ -81,7 +83,10 @@
   PerformanceLib
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
-  ArmMmuLib
+# MU_CHANGE [BEGIN]
+  #ArmMmuLib
+  MmuLib
+# MU_CHANGE [END
 
 [Ppis]
   gEfiDxeIplPpiGuid                      ## PRODUCES
