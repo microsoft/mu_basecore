@@ -27,10 +27,13 @@
   AArch64/StandaloneMmPeCoffExtraActionLib.c
 
 [Packages]
-  ArmPkg/ArmPkg.dec
+  #ArmPkg/ArmPkg.dec  # MU_CHANGE
   MdePkg/MdePkg.dec
   StandaloneMmPkg/StandaloneMmPkg.dec
 
 [LibraryClasses]
-  StandaloneMmMmuLib
+  # MU_CHANGE [BEGIN]
+  #StandaloneMmMmuLib
+  MmuLib
+  # MU_CHANGE [END]
   PcdLib
