@@ -10,7 +10,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "DxeIpl.h"
 
-#include <Library/ArmMmuLib.h>
+// MU_CHANGE [BEGIN]
+// #include <Library/ArmMmuLib.h>
+#include <Library/MmuLib.h>
+// MU_CHANGE [END]
 
 /**
    Transfers control to DxeCore.
@@ -40,7 +43,10 @@ HandOffToDxeCore (
   ASSERT (BaseOfStack != NULL);
 
   if (PcdGetBool (PcdSetNxForStack)) {
-    Status = ArmSetMemoryRegionNoExec ((UINTN)BaseOfStack, STACK_SIZE);
+    // MU_CHANGE [BEGIN]
+    // Status = ArmSetMemoryRegionNoExec ((UINTN)BaseOfStack, STACK_SIZE);
+    Status = MmuSetAttributes ((UINTN)BaseOfStack, STACK_SIZE, EFI_MEMORY_XP);
+    // MU_CHANGE [END]
     ASSERT_EFI_ERROR (Status);
   }
 
