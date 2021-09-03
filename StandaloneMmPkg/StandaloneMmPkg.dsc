@@ -125,11 +125,8 @@
   StandaloneMmPkg/Library/PeiStandaloneMmHobProductionLib/PeiStandaloneMmHobProductionLib.inf
   # MU_CHANGE TCBZ3205 [END]
 
-#MU_CHANGE - TODO: resolve ARM
-#[Components.AARCH64, Components.ARM]
-
-[Components.AARCH64]
-  StandaloneMmPkg/Drivers/StandaloneMmCpu/AArch64/StandaloneMmCpu.inf
+[Components.AARCH64, Components.ARM]
+  #StandaloneMmPkg/Drivers/StandaloneMmCpu/StandaloneMmCpu.inf    # MU_CHANGE
   StandaloneMmPkg/Library/StandaloneMmPeCoffExtraActionLib/StandaloneMmPeCoffExtraActionLib.inf
 
 ###################################################################################################
