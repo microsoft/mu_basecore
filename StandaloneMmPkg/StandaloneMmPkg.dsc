@@ -59,6 +59,7 @@
   StandaloneMmCoreEntryPoint|StandaloneMmPkg/Library/StandaloneMmCoreEntryPoint/StandaloneMmCoreEntryPoint.inf
   StandaloneMmDriverEntryPoint|MdePkg/Library/StandaloneMmDriverEntryPoint/StandaloneMmDriverEntryPoint.inf
   VariableMmDependency|StandaloneMmPkg/Library/VariableMmDependency/VariableMmDependency.inf
+  MmuLib|MdePkg/Library/BaseMmuLibNull/BaseMmuLibNull.inf   # MU_CHANGE
 
 [LibraryClasses.AARCH64, LibraryClasses.ARM]
   # MU_CHANGE [BEGIN]: Remove ArmPkg Dependencies
