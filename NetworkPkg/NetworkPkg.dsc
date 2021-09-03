@@ -98,7 +98,7 @@
   # MU_CHANGE [END]
 !endif
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
-  ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
+  #ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf   # MU_CHANGE
 
 [PcdsFeatureFlag]
   gEfiMdePkgTokenSpaceGuid.PcdComponentName2Disable|TRUE

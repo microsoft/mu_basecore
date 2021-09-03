@@ -66,10 +66,12 @@
   StandaloneMmCoreEntryPoint|StandaloneMmPkg/Library/StandaloneMmCoreEntryPoint/StandaloneMmCoreEntryPoint.inf          # MU_CHANGE
 
 [LibraryClasses.AARCH64, LibraryClasses.ARM]
-  ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
-  StandaloneMmMmuLib|ArmPkg/Library/StandaloneMmMmuLib/ArmMmuStandaloneMmLib.inf
-  ArmSvcLib|ArmPkg/Library/ArmSvcLib/ArmSvcLib.inf
-  CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
+# MU_CHANGE [BEGIN]
+  #ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
+  #StandaloneMmMmuLib|ArmPkg/Library/StandaloneMmMmuLib/ArmMmuStandaloneMmLib.inf
+  #ArmSvcLib|ArmPkg/Library/ArmSvcLib/ArmSvcLib.inf
+  #CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
+# MU_CHANGE [END]
   PeCoffExtraActionLib|StandaloneMmPkg/Library/StandaloneMmPeCoffExtraActionLib/StandaloneMmPeCoffExtraActionLib.inf
 
 # MU_CHANGE [BEGIN]
