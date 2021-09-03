@@ -274,7 +274,6 @@
   #
   #
   RegisterFilterLib|Include/Library/RegisterFilterLib.h
-
   ##  @libraryclass  This library provides interfances to probe ConfidentialComputing guest type.
   #
   #
@@ -282,6 +281,12 @@
 
   ## @libraryclass  Provides function for SMM CPU Rendezvous Library.
   SmmCpuRendezvousLib|Include/Library/SmmCpuRendezvousLib.h
+# MU_CHANGE [BEGIN]
+  ##  @libraryclass This lib abstracts some of the MMU accesses currently hardcoded against
+  #                 an Arm lib. It's likely that this will need to be refactored at some point.
+  #
+  MmuLib|Include/Library/MmuLib.h
+# MU_CHANGE [END]
 
   ##  @libraryclass  Provides services to generate Entropy using a TRNG.
   #
@@ -315,7 +320,6 @@
 
   ##  @libraryclass  Provides services to log the SMI handler registration.
   SmiHandlerProfileLib|Include/Library/SmiHandlerProfileLib.h
-
   ##  @libraryclass  Provides function to support TDX processing.
   TdxLib|Include/Library/TdxLib.h
 
