@@ -10,7 +10,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <PiDxe.h>
 
-#include <Library/ArmMmuLib.h>
+// MU_CHANGE [BEGIN]
+// #include <Library/ArmMmuLib.h>
+#include <Library/MmuLib.h>
+// MU_CHANGE [END]
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
@@ -163,6 +166,48 @@ UpdatePeCoffPermissions (
   return RETURN_SUCCESS;
 }
 
+// MU_CHANGE [BEGIN] - Switch to the MmuLib abstraction
+STATIC
+EFI_STATUS
+ArmPeSetMemoryRegionNoExec (
+  IN  EFI_PHYSICAL_ADDRESS      BaseAddress,
+  IN  UINT64                    Length
+  )
+{
+  return MmuSetAttributes (BaseAddress, Length, EFI_MEMORY_XP);
+}
+
+STATIC
+EFI_STATUS
+ArmPeClearMemoryRegionNoExec (
+  IN  EFI_PHYSICAL_ADDRESS      BaseAddress,
+  IN  UINT64                    Length
+  )
+{
+  return MmuClearAttributes (BaseAddress, Length, EFI_MEMORY_XP);
+}
+
+STATIC
+EFI_STATUS
+ArmPeSetMemoryRegionReadOnly (
+  IN  EFI_PHYSICAL_ADDRESS      BaseAddress,
+  IN  UINT64                    Length
+  )
+{
+  return MmuSetAttributes (BaseAddress, Length, EFI_MEMORY_RO);
+}
+
+STATIC
+EFI_STATUS
+ArmPeClearMemoryRegionReadOnly (
+  IN  EFI_PHYSICAL_ADDRESS      BaseAddress,
+  IN  UINT64                    Length
+  )
+{
+  return MmuClearAttributes (BaseAddress, Length, EFI_MEMORY_RO);
+}
+// MU_CHANGE [END] - Switch to the MmuLib abstraction
+
 /**
   Performs additional actions after a PE/COFF image has been loaded and relocated.
 
@@ -180,8 +225,8 @@ PeCoffLoaderRelocateImageExtraAction (
 {
   UpdatePeCoffPermissions (
     ImageContext,
-    ArmClearMemoryRegionNoExec,
-    ArmSetMemoryRegionReadOnly
+    ArmPeClearMemoryRegionNoExec,   // MU_CHANGE
+    ArmPeSetMemoryRegionReadOnly    // MU_CHANGE
     );
 }
 
@@ -205,7 +250,7 @@ PeCoffLoaderUnloadImageExtraAction (
 {
   UpdatePeCoffPermissions (
     ImageContext,
-    ArmSetMemoryRegionNoExec,
-    ArmClearMemoryRegionReadOnly
+    ArmPeSetMemoryRegionNoExec,     // MU_CHANGE
+    ArmPeClearMemoryRegionReadOnly  // MU_CHANGE
     );
 }
