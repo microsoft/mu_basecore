@@ -21,10 +21,12 @@
 #  VALID_ARCHITECTURES           = IA32 X64 IPF EBC (EBC is for build only)
 #
 
-[Sources.AARCH64, Sources.ARM]
-  Arm/StandaloneMmCoreEntryPoint.c
-  Arm/SetPermissions.c
-  Arm/CreateHobList.c
+# MU_CHANGE [BEGIN] - Remove ARM from this lib, since it requires too much from ArmPkg.
+# [Sources.AARCH64, Sources.ARM]
+#   Arm/StandaloneMmCoreEntryPoint.c
+#   Arm/SetPermissions.c
+#   Arm/CreateHobList.c
+# MU_CHANGE [END] - Remove ARM from this lib, since it requires too much from ArmPkg.
 
 [Sources.X64]
   X64/StandaloneMmCoreEntryPoint.c
@@ -34,32 +36,31 @@
   MdeModulePkg/MdeModulePkg.dec
   StandaloneMmPkg/StandaloneMmPkg.dec
 
-[Packages.ARM, Packages.AARCH64]
-  ArmPkg/ArmPkg.dec
+# MU_CHANGE [BEGIN] - Remove ARM from this lib, since it requires too much from ArmPkg.
+# [Packages.ARM, Packages.AARCH64]
+#   ArmPkg/ArmPkg.dec
+# MU_CHANGE [END] - Remove ARM from this lib, since it requires too much from ArmPkg.
 
 [LibraryClasses]
   BaseLib
   DebugLib
 
-[LibraryClasses.ARM, LibraryClasses.AARCH64]
-  StandaloneMmMmuLib
-  ArmSvcLib
+# MU_CHANGE [BEGIN] - Remove ARM from this lib, since it requires too much from ArmPkg.
+# [LibraryClasses.ARM, LibraryClasses.AARCH64]
+#   StandaloneMmMmuLib
+#   ArmSvcLib
+# MU_CHANGE [END] - Remove ARM from this lib, since it requires too much from ArmPkg.
 
 [Guids]
   gMpInformationHobGuid
   gEfiMmPeiMmramMemoryReserveGuid
-  gEfiStandaloneMmNonSecureBufferGuid
-  gEfiArmTfCpuDriverEpDescriptorGuid
+  # gEfiStandaloneMmNonSecureBufferGuid     # MU_CHANGE
+  # gEfiArmTfCpuDriverEpDescriptorGuid      # MU_CHANGE
 
-[FeaturePcd.ARM, FeaturePcd.AARCH64]
-  gArmTokenSpaceGuid.PcdFfaEnable
-
+# MU_CHANGE [BEGIN] - Remove ARM from this lib, since it requires too much from ArmPkg.
+# [FeaturePcd.ARM, FeaturePcd.AARCH64]
+#   gArmTokenSpaceGuid.PcdFfaEnable
 #
-# This configuration fails for CLANGPDB, which does not support PIE in the GCC
-# sense. Such however is required for ARM family StandaloneMmCore
-# self-relocation, and thus the CLANGPDB toolchain is unsupported for ARM and
-# AARCH64 for this module.
-#
-[BuildOptions]
-  GCC:*_*_ARM_CC_FLAGS = -fpie
-  GCC:*_*_AARCH64_CC_FLAGS = -fpie
+# [BuildOptions]
+#   GCC:*_*_AARCH64_CC_FLAGS = -fpie
+# MU_CHANGE [END] - Remove ARM from this lib, since it requires too much from ArmPkg.
