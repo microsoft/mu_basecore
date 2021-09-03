@@ -141,7 +141,7 @@
   StandaloneMmPkg/Drivers/MmCommunicationDxe/MmCommunicationDxe.inf
 
 [Components.AARCH64, Components.ARM]
-  StandaloneMmPkg/Drivers/StandaloneMmCpu/StandaloneMmCpu.inf
+  #StandaloneMmPkg/Drivers/StandaloneMmCpu/StandaloneMmCpu.inf    # MU_CHANGE
   StandaloneMmPkg/Library/StandaloneMmPeCoffExtraActionLib/StandaloneMmPeCoffExtraActionLib.inf
 
 [Components.X64]
