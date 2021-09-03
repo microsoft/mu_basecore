@@ -148,6 +148,8 @@
   MdePkg/Library/DynamicStackCookieEntryPointLib/UefiApplicationEntryPoint.inf
   MdePkg/Library/DynamicStackCookieEntryPointLib/UefiDriverEntryPoint.inf
 
+  MdePkg/Library/BaseMmuLibNull/BaseMmuLibNull.inf      ## MU_CHANGE
+
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
   #
   # Add UEFI Target Based Unit Tests
