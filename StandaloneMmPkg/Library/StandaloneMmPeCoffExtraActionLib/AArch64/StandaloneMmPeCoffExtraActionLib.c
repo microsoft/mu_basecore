@@ -16,7 +16,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PcdLib.h>
 #include <Library/PeCoffLib.h>
 #include <Library/PeCoffExtraActionLib.h>
-#include <Library/StandaloneMmMmuLib.h>
+// MU_CHANGE [BEGIN]
+// #include <Library/StandaloneMmMmuLib.h>
+#include <Library/MmuLib.h>
+// MU_CHANGE [END]
 
 typedef RETURN_STATUS (*REGION_PERMISSION_UPDATE_FUNC) (
   IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
@@ -214,6 +217,49 @@ UpdatePeCoffPermissions (
   return RETURN_SUCCESS;
 }
 
+// MU_CHANGE [BEGIN] - Switch to the MmuLib abstraction
+STATIC
+EFI_STATUS
+ArmPeSetMemoryRegionNoExec (
+  IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN  UINT64                Length
+  )
+{
+  return MmuSetAttributes (BaseAddress, Length, EFI_MEMORY_XP);
+}
+
+STATIC
+EFI_STATUS
+ArmPeClearMemoryRegionNoExec (
+  IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN  UINT64                Length
+  )
+{
+  return MmuClearAttributes (BaseAddress, Length, EFI_MEMORY_XP);
+}
+
+STATIC
+EFI_STATUS
+ArmPeSetMemoryRegionReadOnly (
+  IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN  UINT64                Length
+  )
+{
+  return MmuSetAttributes (BaseAddress, Length, EFI_MEMORY_RO);
+}
+
+STATIC
+EFI_STATUS
+ArmPeClearMemoryRegionReadOnly (
+  IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN  UINT64                Length
+  )
+{
+  return MmuClearAttributes (BaseAddress, Length, EFI_MEMORY_RO);
+}
+
+// MU_CHANGE [END] - Switch to the MmuLib abstraction
+
 /**
   Performs additional actions after a PE/COFF image has been loaded and relocated.
 
@@ -231,8 +277,8 @@ PeCoffLoaderRelocateImageExtraAction (
 {
   UpdatePeCoffPermissions (
     ImageContext,
-    ArmClearMemoryRegionNoExec,
-    ArmSetMemoryRegionReadOnly
+    ArmPeClearMemoryRegionNoExec,   // MU_CHANGE
+    ArmPeSetMemoryRegionReadOnly    // MU_CHANGE
     );
 }
 
@@ -254,7 +300,7 @@ PeCoffLoaderUnloadImageExtraAction (
 {
   UpdatePeCoffPermissions (
     ImageContext,
-    ArmSetMemoryRegionNoExec,
-    ArmClearMemoryRegionReadOnly
+    ArmPeSetMemoryRegionNoExec,     // MU_CHANGE
+    ArmPeClearMemoryRegionReadOnly  // MU_CHANGE
     );
 }

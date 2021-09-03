@@ -87,6 +87,7 @@
   PeCoffExtraActionLib|StandaloneMmPkg/Library/StandaloneMmPeCoffExtraActionLib/StandaloneMmPeCoffExtraActionLib.inf
   # MU_CHANGE [BEGIN]: Remove ArmPkg Dependencies
   #ArmTransferListLib|ArmPkg/Library/ArmTransferListLib/ArmTransferListLib.inf
+  MmuLib|MdePkg/Library/BaseMmuLibNull/BaseMmuLibNull.inf
   # MU_CHANGE [END]: Remove ArmPkg Dependencies
 
 [LibraryClasses.common.MM_CORE_STANDALONE]
