@@ -24,7 +24,7 @@
     "DependencyCheck": {
         "AcceptableDependencies": [
             # "ArmPkg/ArmPkg.dec",              # MU_CHANGE
-            "EmbeddedPkg/EmbeddedPkg.dec",
+            #"EmbeddedPkg/EmbeddedPkg.dec",     # MU_CHANGE
             "StandaloneMmPkg/StandaloneMmPkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",
             "MdePkg/MdePkg.dec",

@@ -21,7 +21,7 @@
 
 [LibraryClasses]
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
-  SecurityLockAuditLib|MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf
+  SecurityLockAuditLib|MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf    # MU_CHANGE
 
 [Components]
   MdeModulePkg/Library/DxeResetSystemLib/UnitTest/MockUefiRuntimeServicesTableLib.inf
@@ -47,9 +47,14 @@
     <LibraryClasses>
       UefiSortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
       DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+      # MU_CHANGE
+      # The UefiBootServicesTableLib cannot be used in a generic way, but is
+      # safe for this module because it only needs the symbol defined. gBS is
+      # never actually used.
+      UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
   }
 
-  # MU_CHANGE - Add Test
+  # MU_CHANGE [BEGIN]
   MdeModulePkg/Library/VariablePolicyLib/VariablePolicyUnitTest/VariablePolicyUnitTest.inf {
     <LibraryClasses>
       VariablePolicyLib|MdeModulePkg/Library/VariablePolicyLib/VariablePolicyLib.inf
@@ -57,3 +62,5 @@
     <PcdsFixedAtBuild>
       gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable|TRUE
   }
+  # MU_CHANGE [END]
+

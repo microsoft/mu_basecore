@@ -8,7 +8,7 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 {
-  "scope": "global",
+  "scope": "global-disabled",       # Disabled until next secure release.
   "type": "nuget",
   "name": "Mu-Basetools",
   "source": "https://api.nuget.org/v3/index.json",

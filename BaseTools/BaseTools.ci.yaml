@@ -33,7 +33,8 @@
     "MarkdownLintCheck": {
         # package root relative file, folder, or glob pattern to ignore
         "IgnoreFiles": [
-            "Source/C/BrotliCompress/brotli"
+            "Source/C/BrotliCompress/brotli",
+            "BaseToolsBuild"        # MU_CHANGE - Ignore build logs.
         ]
     }
 }
