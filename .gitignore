@@ -1,8 +1,50 @@
-Build/
+/Build/
 .DS_Store
 *_extdep/
 *.pyc
 __pycache__/
 tags/
 .vscode/
-.venv/
+*.bak
+BuildConfig.conf
+/BaseTools/BaseToolsBuild/
+
+# Packages not ignored:
+# ArmPkg
+# ArmPlatformPkg
+# BaseTools
+# CryptoPkg
+# DynamicTablesPkg
+# EmbeddedPkg
+# FatPkg 
+# FmpDevicePkg
+# IntelFsp2Pkg
+# IntelFsp2WrapperPkg
+# MdeModulePkg
+# MdePkg
+# NetworkPkg
+# PcAtChipsetPkg
+# PrmPkg
+# ShellPkg
+# SecurityPkg
+# StandaloneMmPkg
+# UefiCpuPkg
+# UnitTestFrameworkPkg
+
+# Ignore unused UDK PKGs.
+/.mergify/
+/ArmVirtPkg/
+/Conf/
+/EmulatorPkg/
+/OvmfPkg/
+/RedfishPkg/
+/SignedCapsulePkg/
+/SourceLevelDebugPkg/
+/UefiPayloadPkg/
+/.contrib/
+
+# Ignore dropped EDK2 files.
+/.mailmap
+/edksetup.bat
+/edksetup.sh
+/Maintainers.txt

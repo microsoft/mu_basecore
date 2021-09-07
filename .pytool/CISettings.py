@@ -67,30 +67,21 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
 
         return ("ArmPkg",
                 "ArmPlatformPkg",
-                "ArmVirtPkg",
+                "CryptoPkg",
                 "DynamicTablesPkg",
-                "EmbeddedPkg",
-                "EmulatorPkg",
+                "FmpDevicePkg",
                 "IntelFsp2Pkg",
                 "IntelFsp2WrapperPkg",
                 "MdePkg",
                 "MdeModulePkg",
                 "NetworkPkg",
                 "PcAtChipsetPkg",
+                "PrmPkg",
                 "SecurityPkg",
                 "UefiCpuPkg",
-                "FmpDevicePkg",
                 "ShellPkg",
-                "SignedCapsulePkg",
                 "StandaloneMmPkg",
-                "FatPkg",
-                "CryptoPkg",
-                "PrmPkg",
                 "UnitTestFrameworkPkg",
-                "OvmfPkg",
-                "RedfishPkg",
-                "SourceLevelDebugPkg",
-                "UefiPayloadPkg"
                 )
 
     def GetArchitecturesSupported(self):
@@ -98,9 +89,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         return (
                 "IA32",
                 "X64",
-                "AARCH64",
-                "RISCV64",
-                "LOONGARCH64")
+                "AARCH64")
 
     def GetTargetsSupported(self):
         ''' return iterable of edk2 target tags supported by this build '''
@@ -166,6 +155,14 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
 
             self.ActualToolChainTag = shell_environment.GetBuildVars().GetValue("TOOL_CHAIN_TAG", "")
 
+            is_linux = GetHostInfo().os.upper() == "LINUX"
+            if is_linux and self.ActualToolChainTag.upper().startswith("GCC"):
+                if "AARCH64" in self.ActualArchitectures:
+                    scopes += ("gcc_aarch64_linux",)
+                if "ARM" in self.ActualArchitectures:
+                    scopes += ("gcc_arm_linux",)
+                if "RISCV64" in self.ActualArchitectures:
+                    scopes += ("gcc_riscv64_unknown",)
             try:
                 scopes += codeql_helpers.get_scopes(self.codeql)
 
@@ -197,8 +194,6 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
             "MdeModulePkg/Library/BrotliCustomDecompressLib/brotli", False))
         rs.append(RequiredSubmodule(
             "BaseTools/Source/C/BrotliCompress/brotli", False))
-        rs.append(RequiredSubmodule(
-            "RedfishPkg/Library/JsonLib/jansson", False))
         rs.append(RequiredSubmodule(
             "UnitTestFrameworkPkg/Library/SubhookLib/subhook", False))
         rs.append(RequiredSubmodule(
