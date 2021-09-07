@@ -18,6 +18,7 @@
   LIBRARY_CLASS                  = CompilerIntrinsicsLib
 
 [Sources]
+
   memcpy.c             | GCC
   memset.c             | GCC
 
@@ -27,6 +28,7 @@
   memmove_ms.c         | MSFT
 
 [Sources.ARM]
+
   Arm/ashrdi3.S        | GCC
   Arm/ashldi3.S        | GCC
   Arm/div.S            | GCC
