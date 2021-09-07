@@ -189,6 +189,7 @@
 [Components.ARM, Components.AARCH64]
   MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsicArmVirt.inf
   MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+  MdePkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf  #MU_CHANGE - Add moved module
 
 [Components.RISCV64]
   MdePkg/Library/BaseRiscVSbiLib/BaseRiscVSbiLib.inf
