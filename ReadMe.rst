@@ -57,6 +57,10 @@ Bug Fixes-dev
 | Starting commit: 6ccd4f23067d025a43541b3d78f3d2965b7eac93  (revised 202102 commit - removed all SecurityPkg changes)
 | Destination Commit from upstream edk2: 7b4a99be8a39c12d3a7fc4b8db9f0eab4ac688d5 (tag: edk2-stable202108)
 
+* Major Package change
+  - Dropped all SecurityPkg, Added CryptoPkg and ShellPkg.
+  - Goal being to make BaseCore build without any dependencies.
+
 * Need to resolve StandaloneMmPkg changes regarding Cpu driver and ARM support
 
 
