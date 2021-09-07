@@ -35,6 +35,7 @@ BuildConfig.conf
 /IntelFsp2Pkg/
 /IntelFsp2WrapperPkg/
 /OvmfPkg/
+/PrmPkg/
 /RedfishPkg/
 /SecurityPkg/
 /SignedCapsulePkg/
