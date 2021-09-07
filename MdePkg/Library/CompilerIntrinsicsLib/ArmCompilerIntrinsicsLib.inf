@@ -11,7 +11,8 @@
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = CompilerIntrinsicsLib
+  #BASE_NAME                      = CompilerIntrinsicsLib
+  BASE_NAME                      = ArmCompilerIntrinsicsLib
   FILE_GUID                      = 855274FA-3575-4C20-9709-C031DC5589FA
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
@@ -84,7 +85,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-  ArmPkg/ArmPkg.dec
+  #ArmPkg/ArmPkg.dec
 
 [BuildOptions]
   MSFT:*_*_*_CC_FLAGS = /GL-
