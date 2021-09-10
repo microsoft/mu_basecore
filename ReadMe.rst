@@ -49,7 +49,10 @@ Bug Fixes-dev
 2108_CIBuild Changes
 --------------------
 
-- Incomplete
+* N/A
+  - This was completed as part of the rebase, due to the size and scope of this integration.
+    As such, it would be best to just check the commits themselves, focusing on the 20 or so
+    before the CI tag.
 
 2108_Rebase Changes
 -------------------
