@@ -23,3 +23,6 @@
 [submodule "MdePkg/Library/MipiSysTLib/mipisyst"]
 	path = MdePkg/Library/MipiSysTLib/mipisyst
 	url = https://github.com/MIPI-Alliance/public-mipi-sys-t.git
+[submodule "SecurityPkg/DeviceSecurity/SpdmLib/libspdm"]
+	path = SecurityPkg/DeviceSecurity/SpdmLib/libspdm
+	url = https://github.com/DMTF/libspdm.git

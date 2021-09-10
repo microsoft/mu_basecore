@@ -598,32 +598,48 @@ EnableDebugRegister (
   // Read DR7 so appropriate Gn, RWn and LENn bits can be modified.
   Dr7.UintN = SystemContext.SystemContextIa32->Dr7;
 
+  // MU_CHANGE TCBZ3616 [BEGIN] - Can't go from UINTN(64) to UINT32.
+  if ((Address > MAX_UINT32) ||
+      (Type > MAX_UINT32) ||
+      (Length > MAX_UINT32))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // MU_CHANGE TCBZ3616 [END]
+
   if (Register == 0) {
-    SystemContext.SystemContextIa32->Dr0 = Address;
+    SystemContext.SystemContextIa32->Dr0 = (UINT32)Address;   // MU_CHANGE TCBZ3616
     Dr7.Bits.G0                          = 1;
-    Dr7.Bits.RW0                         = Type;
-    Dr7.Bits.LEN0                        = Length;
+    Dr7.Bits.RW0                         = (UINT32)Type;      // MU_CHANGE TCBZ3616
+    Dr7.Bits.LEN0                        = (UINT32)Length;    // MU_CHANGE TCBZ3616
   } else if (Register == 1) {
-    SystemContext.SystemContextIa32->Dr1 = Address;
+    SystemContext.SystemContextIa32->Dr1 = (UINT32)Address;   // MU_CHANGE TCBZ3616
     Dr7.Bits.G1                          = 1;
-    Dr7.Bits.RW1                         = Type;
-    Dr7.Bits.LEN1                        = Length;
+    Dr7.Bits.RW1                         = (UINT32)Type;      // MU_CHANGE TCBZ3616
+    Dr7.Bits.LEN1                        = (UINT32)Length;    // MU_CHANGE TCBZ3616
   } else if (Register == 2) {
-    SystemContext.SystemContextIa32->Dr2 = Address;
+    SystemContext.SystemContextIa32->Dr2 = (UINT32)Address;   // MU_CHANGE TCBZ3616
     Dr7.Bits.G2                          = 1;
-    Dr7.Bits.RW2                         = Type;
-    Dr7.Bits.LEN2                        = Length;
+    Dr7.Bits.RW2                         = (UINT32)Type;      // MU_CHANGE TCBZ3616
+    Dr7.Bits.LEN2                        = (UINT32)Length;    // MU_CHANGE TCBZ3616
   } else if (Register == 3) {
-    SystemContext.SystemContextIa32->Dr3 = Address;
+    SystemContext.SystemContextIa32->Dr3 = (UINT32)Address;   // MU_CHANGE TCBZ3616
     Dr7.Bits.G3                          = 1;
-    Dr7.Bits.RW3                         = Type;
-    Dr7.Bits.LEN3                        = Length;
+    Dr7.Bits.RW3                         = (UINT32)Type;      // MU_CHANGE TCBZ3616
+    Dr7.Bits.LEN3                        = (UINT32)Length;    // MU_CHANGE TCBZ3616
   } else {
     return EFI_INVALID_PARAMETER;
   }
 
   // Update Dr7 with appropriate Gn, RWn and LENn bits
-  SystemContext.SystemContextIa32->Dr7 = Dr7.UintN;
+  // MU_CHANGE TCBZ3616 [BEGIN] - Can't go from UINTN(64) to UINT32.
+  if (Dr7.UintN > MAX_UINT32) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  SystemContext.SystemContextIa32->Dr7 = (UINT32)Dr7.UintN;
+  // MU_CHANGE TCBZ3616 [END]
 
   return EFI_SUCCESS;
 }
@@ -716,7 +732,8 @@ DisableDebugRegister (
   )
 {
   IA32_DR7  Dr7;
-  UINTN     Address = 0;
+  // UINTN Address = 0;   // MU_CHANGE TCBZ3616 - Can't go from UINTN(64) to UINT32.
+  UINT32  Address = 0;    // MU_CHANGE TCBZ3616
 
   // Read DR7 register so appropriate Gn, RWn and LENn bits can be turned off.
   Dr7.UintN = SystemContext.SystemContextIa32->Dr7;
@@ -746,7 +763,13 @@ DisableDebugRegister (
   }
 
   // Update DR7 register so appropriate Gn, RWn and LENn bits can be turned off.
-  SystemContext.SystemContextIa32->Dr7 = Dr7.UintN;
+  // MU_CHANGE TCBZ3616 [BEGIN] - Can't go from UINTN(64) to UINT32.
+  if (Dr7.UintN > MAX_UINT32) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  SystemContext.SystemContextIa32->Dr7 = (UINT32)Dr7.UintN;
+  // MU_CHANGE TCBZ3616 [END]
 
   return EFI_SUCCESS;
 }

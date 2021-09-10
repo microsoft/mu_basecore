@@ -66,6 +66,11 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                 "ArmPkg",
                 "DynamicTablesPkg",
                 "ArmPlatformPkg",
+                "SecurityPkg",
+                "FmpDevicePkg",
+                "FatPkg",
+                "EmbeddedPkg",
+                "PrmPkg",
                 "IntelFsp2Pkg",
                 "IntelFsp2WrapperPkg"
                 )
