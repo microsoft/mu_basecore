@@ -111,6 +111,32 @@ extends:
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
         SelfHostAgent: true
+        Pkgs: 'EmbeddedPkg,PrmPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+      TARGET_FMP_FAT:
+        Pkgs: 'FmpDevicePkg,FatPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+      TARGET_SECURITY:
+        Pkgs: 'SecurityPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+      TARGET_OTHER_ARM:
+        Pkgs: 'EmbeddedPkg,PrmPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: true
+      TARGET_FMP_FAT_ARM:
+        Pkgs: 'FmpDevicePkg,FatPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: true
+      TARGET_SECURITY_ARM:
+        Pkgs: 'SecurityPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: true
       TARGET_INTEL_SILICON:
         Pkgs: 'IntelSiliconPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'

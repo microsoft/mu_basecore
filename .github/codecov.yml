@@ -34,3 +34,13 @@ flags:
     carryforward: true
   DynamicTablesPkg:
     carryforward: true
+  EmbeddedPkg:
+    carryforward: true
+  FatPkg:
+    carryforward: true
+  FmpDevicePkg:
+    carryforward: true
+  PrmPkg:
+    carryforward: true
+  SecurityPkg:
+    carryforward: true
