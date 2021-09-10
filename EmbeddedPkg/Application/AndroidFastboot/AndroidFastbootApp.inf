@@ -48,6 +48,8 @@
   MdeModulePkg/MdeModulePkg.dec
   EmbeddedPkg/EmbeddedPkg.dec
 
-[Packages.AARCH64]
-  ArmPkg/ArmPkg.dec
-  ArmPlatformPkg/ArmPlatformPkg.dec
+# MU_CHANGE [BEGIN]
+#[Packages.AARCH64]
+#  ArmPkg/ArmPkg.dec
+#  ArmPlatformPkg/ArmPlatformPkg.dec
+# MU_CHANGE [END]
