@@ -10,6 +10,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Uefi.h>
 
 #include <Protocol/MonotonicCounter.h>
+#include <Protocol/VariablePolicy.h>                // MU_CHANGE
+
 #include <Guid/MtcVendor.h>
 
 #include <Library/BaseLib.h>
@@ -18,9 +20,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DebugLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
+#include <Library/VariablePolicyHelperLib.h>        // MU_CHANGE
 
 //
-// The handle to install Monotonic Counter Architctural Protocol
+// The handle to install Monotonic Counter Architectural Protocol
 //
 EFI_HANDLE  mMonotonicCounterHandle = NULL;
 
@@ -186,6 +189,65 @@ EfiMtcEventHandler (
   MonotonicCounterDriverGetNextHighMonotonicCount (&HighCount);
 }
 
+//
+// MU_CHANGE begin
+//
+
+/**
+    OnVariablePolicyProtocolNotification
+
+    Sets the AdvancedLogger Locator variable policy.
+
+    @param[in]      Event   - NULL if called from Entry, Event if called from notification
+    @param[in]      Context - VariablePolicy if called from Entry, NULL if called from notification
+
+  **/
+STATIC
+VOID
+EFIAPI
+OnVariablePolicyProtocolNotification (
+  IN  EFI_EVENT  Event,
+  IN  VOID       *Context
+  )
+{
+  EDKII_VARIABLE_POLICY_PROTOCOL  *VariablePolicy = NULL;
+  EFI_STATUS                      Status;
+
+  DEBUG ((DEBUG_INFO, "%a: Setting policy for MTC variable, Context=%p\n", __FUNCTION__, Context));
+
+  if (Context != NULL) {
+    VariablePolicy = (EDKII_VARIABLE_POLICY_PROTOCOL *)Context;
+  } else {
+    Status = gBS->LocateProtocol (&gEdkiiVariablePolicyProtocolGuid, NULL, (VOID **)&VariablePolicy);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: - Locating Variable Policy failed - Code=%r\n", __FUNCTION__, Status));
+      ASSERT_EFI_ERROR (Status);
+      return;
+    }
+  }
+
+  Status = RegisterBasicVariablePolicy (
+             VariablePolicy,
+             &gMtcVendorGuid,
+             MTC_VARIABLE_NAME,
+             sizeof (UINT32),
+             sizeof (UINT32),
+             EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+             (UINT32) ~(EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE),
+             VARIABLE_POLICY_TYPE_NO_LOCK
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: - Error setting policy for MTC - Code=%r\n", __FUNCTION__, Status));
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  return;
+}
+
+//
+// MU_CHANGE end
+//
+
 /**
   Entry point of monotonic counter driver.
 
@@ -202,9 +264,12 @@ MonotonicCounterDriverInitialize (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS  Status;
-  UINT32      HighCount;
-  UINTN       BufferSize;
+  EFI_STATUS                      Status;
+  UINT32                          HighCount;
+  UINTN                           BufferSize;
+  EFI_EVENT                       Event;                   // MU_CHANGE
+  VOID                            *ProtocolRegistration;   // MU_CHANGE
+  EDKII_VARIABLE_POLICY_PROTOCOL  *VariablePolicy = NULL;  // MU_CHANGE
 
   //
   // Make sure the Monotonic Counter Architectural Protocol has not been installed in the system yet.
@@ -266,6 +331,48 @@ MonotonicCounterDriverInitialize (
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
+
+  //
+  // MU_CHANGE begin
+  //
+  // There is no dependency for VariablePolicy Protocol in case this code is used
+  // in firmware without VariablePolicy.  And, VariablePolicy may or may not be installed
+  // before this driver is run.  If the Variable Policy Protocol is not found, register for
+  // a notification that may not occur.
+
+  Status = gBS->LocateProtocol (&gEdkiiVariablePolicyProtocolGuid, NULL, (VOID **)&VariablePolicy);
+  if (EFI_ERROR (Status)) {
+    Status = gBS->CreateEvent (
+                    EVT_NOTIFY_SIGNAL,
+                    TPL_CALLBACK,
+                    OnVariablePolicyProtocolNotification,
+                    NULL,
+                    &Event
+                    );
+
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: failed to create notification callback event (%r)\n", __FUNCTION__, Status));
+      ASSERT_EFI_ERROR (Status);
+    } else {
+      Status = gBS->RegisterProtocolNotify (
+                      &gEdkiiVariablePolicyProtocolGuid,
+                      Event,
+                      &ProtocolRegistration
+                      );
+
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: failed to register for notification (%r)\n", __FUNCTION__, Status));
+        gBS->CloseEvent (Event);
+        ASSERT_EFI_ERROR (Status);
+      }
+    }
+  } else {
+    OnVariablePolicyProtocolNotification (NULL, VariablePolicy);
+  }
+
+  //
+  // MU_CHANGE end
+  //
 
   return EFI_SUCCESS;
 }
