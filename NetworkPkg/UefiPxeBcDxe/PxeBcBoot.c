@@ -1067,11 +1067,14 @@ PxeBcUninstallCallback (
 
     PxeBc->SetParameters (PxeBc, NULL, NULL, NULL, NULL, &NewMakeCallback);
 
-    gBS->UninstallProtocolInterface (
-           Private->Mode.UsingIpv6 ? Private->Ip6Nic->Controller : Private->Ip4Nic->Controller,
-           &gEfiPxeBaseCodeCallbackProtocolGuid,
-           &Private->LoadFileCallback
-           );
+    if (!Private->DEADBEEF) {
+      // MS_CHANGE
+      gBS->UninstallProtocolInterface (
+             Private->Mode.UsingIpv6 ? Private->Ip6Nic->Controller : Private->Ip4Nic->Controller,
+             &gEfiPxeBaseCodeCallbackProtocolGuid,
+             &Private->LoadFileCallback
+             );
+    }
   }
 }
 

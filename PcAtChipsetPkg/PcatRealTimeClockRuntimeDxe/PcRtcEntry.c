@@ -138,6 +138,80 @@ LibRtcVirtualNotifyEvent (
   EfiConvertPointer (0x0, (VOID **)&mRtcTargetRegister);
 }
 
+//
+// MU_CHANGE begin
+//
+
+/**
+    OnVariablePolicyProtocolNotification
+
+    Sets the AdvancedLogger Locator variable policy.
+
+    @param[in]      Event   - NULL if called from Entry, Event if called from notification
+    @param[in]      Context - VariablePolicy if called from Entry, NULL if called from notification
+
+  **/
+STATIC
+VOID
+EFIAPI
+OnVariablePolicyProtocolNotification (
+  IN  EFI_EVENT  Event,
+  IN  VOID       *Context
+  )
+{
+  EDKII_VARIABLE_POLICY_PROTOCOL  *VariablePolicy = NULL;
+  EFI_STATUS                      Status;
+
+  DEBUG ((DEBUG_INFO, "%a: Setting policy for RTC variables, Context=%p\n", __FUNCTION__, Context));
+
+  if (Context != NULL) {
+    VariablePolicy = (EDKII_VARIABLE_POLICY_PROTOCOL *)Context;
+  } else {
+    Status = gBS->LocateProtocol (&gEdkiiVariablePolicyProtocolGuid, NULL, (VOID **)&VariablePolicy);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: - Locating Variable Policy failed - Code=%r\n", __FUNCTION__, Status));
+      ASSERT_EFI_ERROR (Status);
+      return;
+    }
+  }
+
+  Status = RegisterBasicVariablePolicy (
+             VariablePolicy,
+             &gEfiCallerIdGuid,
+             L"RTCALARM",
+             sizeof (EFI_TIME),
+             sizeof (EFI_TIME),
+             EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+             (UINT32) ~(EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE),
+             VARIABLE_POLICY_TYPE_NO_LOCK
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: - Error setting policy for RTCALARM - Code=%r\n", __FUNCTION__, Status));
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  Status = RegisterBasicVariablePolicy (
+             VariablePolicy,
+             &gEfiCallerIdGuid,
+             L"RTC",
+             sizeof (UINT32),
+             sizeof (UINT32),
+             EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+             (UINT32) ~(EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE),
+             VARIABLE_POLICY_TYPE_NO_LOCK
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: - Error setting policy for RTC - Code=%r\n", __FUNCTION__, Status));
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  return;
+}
+
+//
+// MU_CHANGE end
+//
+
 /**
   The user Entry Point for PcRTC module.
 
@@ -158,8 +232,10 @@ InitializePcRtc (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS  Status;
-  EFI_EVENT   Event;
+  EFI_STATUS                      Status;
+  EFI_EVENT                       Event;
+  VOID                            *ProtocolRegistration;    // MU_CHANGE
+  EDKII_VARIABLE_POLICY_PROTOCOL  *VariablePolicy = NULL;   // MU_CHANGE
 
   EfiInitializeLock (&mModuleGlobal.RtcLock, TPL_CALLBACK);
   mModuleGlobal.CenturyRtcAddress = GetCenturyRtcAddress ();
@@ -227,6 +303,48 @@ InitializePcRtc (
                     );
     ASSERT_EFI_ERROR (Status);
   }
+
+  //
+  // MU_CHANGE begin
+  //
+  // There is no dependency for VariablePolicy Protocol in case this code is used
+  // in firmware without VariablePolicy.  And, VariablePolicy may or may not be installed
+  // before this driver is run.  If the Variable Policy Protocol is not found, register for
+  // a notification that may not occur.
+
+  Status = gBS->LocateProtocol (&gEdkiiVariablePolicyProtocolGuid, NULL, (VOID **)&VariablePolicy);
+  if (EFI_ERROR (Status)) {
+    Status = gBS->CreateEvent (
+                    EVT_NOTIFY_SIGNAL,
+                    TPL_CALLBACK,
+                    OnVariablePolicyProtocolNotification,
+                    NULL,
+                    &Event
+                    );
+
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: failed to create notification callback event (%r)\n", __FUNCTION__, Status));
+      ASSERT_EFI_ERROR (Status);
+    } else {
+      Status = gBS->RegisterProtocolNotify (
+                      &gEdkiiVariablePolicyProtocolGuid,
+                      Event,
+                      &ProtocolRegistration
+                      );
+
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: failed to register for notification (%r)\n", __FUNCTION__, Status));
+        gBS->CloseEvent (Event);
+        ASSERT_EFI_ERROR (Status);
+      }
+    }
+  } else {
+    OnVariablePolicyProtocolNotification (NULL, VariablePolicy);
+  }
+
+  //
+  // MU_CHANGE end
+  //
 
   return Status;
 }
