@@ -13,9 +13,9 @@
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = MemoryTypeInfoSecVarCheckLib
   FILE_GUID                      = C69D75E8-E39F-4F79-9D74-50B8C759D09B
-  MODULE_TYPE                    = DXE_RUNTIME_DRIVER
+  MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = MemoryTypeInfoSecVarCheckLib|DXE_RUNTIME_DRIVER DXE_SMM_DRIVER
+  LIBRARY_CLASS                  = MemoryTypeInfoSecVarCheckLib|DXE_RUNTIME_DRIVER DXE_SMM_DRIVER MM_STANDALONE
   CONSTRUCTOR                    = MemoryTypeInfoSecVarCheckLibConstructor
 
 #
