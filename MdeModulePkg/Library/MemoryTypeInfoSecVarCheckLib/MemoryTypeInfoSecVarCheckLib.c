@@ -9,6 +9,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 // MU_CHANGE TCBZ1086 [WHOLE FILE] - Mitigate potential system brick due to uefi MemoryTypeInformation var changes
 
+#include <Uefi/UefiBaseType.h>
 #include <Library/VarCheckLib.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -179,17 +180,13 @@ MemoryTypeInfoVarCheckHandler (
   Constructor function of MemoryTypeInfoSecVarCheckLib to set property and
   register SetVariable check handler for MemoryTypeInformation variable.
 
-  @param[in] ImageHandle    The firmware allocated handle for the EFI image.
-  @param[in] SystemTable    A pointer to the EFI System Table.
-
-  @retval EFI_SUCCESS       The constructor executed correctly.
+  @retval RETURN_SUCCESS       The constructor executed correctly.
 
 **/
-EFI_STATUS
+RETURN_STATUS
 EFIAPI
 MemoryTypeInfoSecVarCheckLibConstructor (
-  IN EFI_HANDLE        ImageHandle,
-  IN EFI_SYSTEM_TABLE  *SystemTable
+  VOID
   )
 {
   DEBUG ((DEBUG_INFO, "%a()\n", __FUNCTION__));
@@ -206,5 +203,5 @@ MemoryTypeInfoSecVarCheckLibConstructor (
              );
   ASSERT_EFI_ERROR (Status);
 
-  return Status;
+  return RETURN_SUCCESS;
 }
