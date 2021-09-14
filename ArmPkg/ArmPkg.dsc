@@ -171,3 +171,5 @@
   ArmPkg/Drivers/MmCommunicationDxe/MmCommunication.inf
 
   ArmPkg/Library/StandaloneMmMmuLib/ArmMmuStandaloneMmLib.inf
+  ArmPkg/Library/MmuLib/BaseMmuLib.inf    # MU_CHANGE - Add BaseMmuLib
+  ArmPkg/Drivers/StandaloneMmCpu/StandaloneMmCpu.inf # MU_CHANGE - Add StandaloneMmCpu

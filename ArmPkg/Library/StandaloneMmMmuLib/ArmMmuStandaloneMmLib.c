@@ -27,6 +27,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include <Library/PcdLib.h>
+#include <Library/ArmStandaloneMmMmuLib.h> // MU_CHANGE
 
 /**
   Utility function to determine whether ABIs in FF-A to set and get
@@ -243,6 +244,62 @@ RequestMemoryPermissionChange (
   return SendMemoryPermissionRequest (UseFfaAbis, &SvcArgs, &Ret);
 }
 
+// MU_CHANGE: Add ArmSetMemoryRegionNoAccess function
+EFI_STATUS
+ArmSetMemoryRegionNoAccess (
+  IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN  UINT64                Length
+  )
+{
+  EFI_STATUS  Status;
+  UINT32      MemoryAttributes;
+  UINT32      CodePermission;
+  BOOLEAN     UseFfaAbis;
+
+  UseFfaAbis = IsFfaMemoryAbiSupported ();
+
+  Status = GetMemoryPermissions (UseFfaAbis, BaseAddress, &MemoryAttributes);
+  if (!EFI_ERROR (Status)) {
+    CodePermission = ARM_FFA_SET_MEM_ATTR_DATA_PERM_NO_ACCESS << ARM_FFA_SET_MEM_ATTR_CODE_PERM_SHIFT;
+    return RequestMemoryPermissionChange (
+             UseFfaAbis,
+             BaseAddress,
+             Length,
+             MemoryAttributes | CodePermission
+             );
+  }
+
+  return Status;
+}
+
+// MU_CHANGE: Add ArmClearMemoryRegionNoAccess function
+EFI_STATUS
+ArmClearMemoryRegionNoAccess (
+  IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN  UINT64                Length
+  )
+{
+  EFI_STATUS  Status;
+  UINT32      MemoryAttributes;
+  UINT32      CodePermission;
+  BOOLEAN     UseFfaAbis;
+
+  UseFfaAbis = IsFfaMemoryAbiSupported ();
+
+  Status = GetMemoryPermissions (UseFfaAbis, BaseAddress, &MemoryAttributes);
+  if (!EFI_ERROR (Status)) {
+    CodePermission = ARM_FFA_SET_MEM_ATTR_DATA_PERM_NO_ACCESS << ARM_FFA_SET_MEM_ATTR_CODE_PERM_SHIFT;
+    return RequestMemoryPermissionChange (
+             UseFfaAbis,
+             BaseAddress,
+             Length,
+             MemoryAttributes & ~CodePermission
+             );
+  }
+
+  return Status;
+}
+
 EFI_STATUS
 ArmSetMemoryRegionNoExec (
   IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
@@ -457,4 +514,103 @@ ArmClearMemoryRegionReadOnly (
   } // while
 
   return Status;
+}
+
+// MU_CHANGE [BEGIN] - Nerf StandaloneMmMmuLib. It's just ArmMmuLib.
+EFI_STATUS
+EFIAPI
+ArmConfigureMmu (
+  IN  ARM_MEMORY_REGION_DESCRIPTOR  *MemoryTable,
+  OUT VOID                          **TranslationTableBase OPTIONAL,
+  OUT UINTN                         *TranslationTableSize  OPTIONAL
+  )
+{
+  DEBUG ((DEBUG_ERROR, "%a() interface not implemented!\n", __func__));
+  ASSERT (FALSE);
+  return EFI_UNSUPPORTED;
+}
+
+VOID
+EFIAPI
+ArmReplaceLiveTranslationEntry (
+  IN  UINT64   *Entry,
+  IN  UINT64   Value,
+  IN  UINT64   RegionStart,
+  IN  BOOLEAN  DisableMmu
+  )
+{
+  DEBUG ((DEBUG_ERROR, "%a() interface not implemented!\n", __func__));
+  ASSERT (FALSE);
+}
+
+EFI_STATUS
+ArmSetMemoryAttributes (
+  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN UINT64                Length,
+  IN UINT64                Attributes,
+  IN UINT64                AttributeMask  // MU_CHANGE - Added missing input variable
+  )
+{
+  // MU_CHANGE [START] - Add ArmSetMemoryAttributes functionality
+  EFI_STATUS  Status;
+  UINT64      NeededAttributes;
+
+  DEBUG ((
+    DEBUG_INFO,
+    "%a: BaseAddress == 0x%llx, Length == 0x%llx, Attributes == 0x%llx, Mask == 0x%llx\n",
+    __func__,
+    BaseAddress,
+    Length,
+    Attributes,
+    AttributeMask
+    ));
+
+  NeededAttributes = Attributes & AttributeMask;
+
+  if ((Length == 0) ||
+      ((NeededAttributes & ~(EFI_MEMORY_RO | EFI_MEMORY_RP | EFI_MEMORY_XP)) != 0))
+  {
+    Status = EFI_INVALID_PARAMETER;
+    goto Done;
+  }
+
+  if ((NeededAttributes & EFI_MEMORY_RP) != 0) {
+    Status = ArmSetMemoryRegionNoAccess (BaseAddress, Length);
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+  } else {
+    Status = ArmClearMemoryRegionNoAccess (BaseAddress, Length);
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+  }
+
+  if ((NeededAttributes & EFI_MEMORY_RO) != 0) {
+    Status = ArmSetMemoryRegionReadOnly (BaseAddress, Length);
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+  } else {
+    Status = ArmClearMemoryRegionReadOnly (BaseAddress, Length);
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+  }
+
+  if ((NeededAttributes & EFI_MEMORY_XP) != 0) {
+    Status = ArmSetMemoryRegionNoExec (BaseAddress, Length);
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+  } else {
+    Status = ArmClearMemoryRegionNoExec (BaseAddress, Length);
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+  }
+
+Done:
+  return Status;
+  // MU_CHANGE [END] - Add ArmSetMemoryAttributes functionality
 }
