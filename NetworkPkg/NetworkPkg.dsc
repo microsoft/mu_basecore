@@ -49,6 +49,7 @@
   DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
+  VariablePolicyHelperLib|MdeModulePkg/Library/VariablePolicyHelperLib/VariablePolicyHelperLib.inf  # MU_CHANGE
 
 !ifdef CONTINUOUS_INTEGRATION
   BaseCryptLib|CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
