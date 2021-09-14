@@ -35,7 +35,7 @@
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/SerialPortLib.h>
-#include <Library/StandaloneMmMmuLib.h>
+#include <Library/ArmStandaloneMmMmuLib.h> // MU_CHANGE
 #include <Library/SafeIntLib.h>
 #include <Library/PcdLib.h>
 
