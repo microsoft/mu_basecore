@@ -294,10 +294,11 @@ try:
             if result != self.OverrideResult.OR_ALL_GOOD:
                 overriddenpath = os.path.normpath(OverrideEntry[1].strip()).strip('\\')
                 fullpath = os.path.normpath(thebuilder.mws.join(thebuilder.ws, overriddenpath))
-                patch = ModuleGitPatch(fullpath, GitHash)
-                # TODO: figure out how to get the log file
+                if os.path.exists(fullpath):
+                    patch = ModuleGitPatch(fullpath, GitHash)
+                    # TODO: figure out how to get the log file
                 logging.error(f"Override diff since last update at commit {GitHash}")
-                
+
             return result
         # END: override_process_line_version2(self, thebuilder, filelist, OverrideEntry, m_node, status)
 
