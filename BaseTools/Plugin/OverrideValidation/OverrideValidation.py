@@ -305,7 +305,7 @@ try:
         # Check override record against parsed entries
         # version: Override record's version number, normally parsed from the override record line
         # hash: Override record's hash field, normally parsed from the override record line, calculated by the standalone ModuleHash tool
-        # fullpath: the absolute path to the overriden module's inf file
+        # fullpath: the absolute path to the overridden module's inf file
         def override_hash_compare(self, thebuilder, version, hash, fullpath):
             result = self.OverrideResult.OR_ALL_GOOD
             hash_val = ''
