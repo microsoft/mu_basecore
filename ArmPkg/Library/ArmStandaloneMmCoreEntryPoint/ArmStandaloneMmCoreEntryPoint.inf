@@ -41,7 +41,10 @@
 [LibraryClasses]
   BaseLib
   DebugLib
-  StandaloneMmMmuLib
+  # MU_CHANGE [BEGIN] - Nerf StandaloneMmMmuLib. It's just ArmMmuLib.
+  # StandaloneMmMmuLib
+  ArmMmuLib
+  # MU_CHANGE [END] - Nerf StandaloneMmMmuLib. It's just ArmMmuLib.
   ArmSvcLib
   ArmTransferListLib
   ArmFfaLib
