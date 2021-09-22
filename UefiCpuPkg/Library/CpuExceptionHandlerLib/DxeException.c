@@ -12,7 +12,7 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 
-#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+#include <Library/MemoryProtectionHobLib.h> // MU_CHANGE
 
 CONST UINTN    mDoFarReturnFlag  = 0;
 
@@ -258,7 +258,10 @@ InitializeCpuExceptionHandlersEx (
     //
     // Initializing stack switch is only necessary for Stack Guard functionality.
     //
-    if (PcdGetBool (PcdCpuStackGuard) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
+    // MU_CHANGE START Update to use memory protection settings HOB
+    // if (PcdGetBool (PcdCpuStackGuard)) { 
+    if (gMPS.CpuStackGuard) {
+    // MU_CHANGE END
       if (InitData == NULL) {
         SetMem (mNewGdt, sizeof (mNewGdt), 0);
 

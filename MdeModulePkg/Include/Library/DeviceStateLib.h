@@ -20,7 +20,6 @@ MU_CHANGE: new file
 #define DEVICE_STATE_SOURCE_DEBUG_ENABLED      (1 << (3))
 #define DEVICE_STATE_UNDEFINED                 (1 << (4))
 #define DEVICE_STATE_UNIT_TEST_MODE            (1 << (5))
-#define DEVICE_STATE_MEM_PROTECTIONS_OFF       (1 << (6))
 
 #define DEVICE_STATE_PLATFORM_MODE_0           (1 << (20))
 #define DEVICE_STATE_PLATFORM_MODE_1           (1 << (21))

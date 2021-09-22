@@ -10,8 +10,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "Imem.h"
 #include "HeapGuard.h"
 
-#include <Library/MemoryProtectionLib.h> // MU_CHANGE
-
 //
 // Entry for tracking the memory regions for each memory type to coalesce similar memory types
 //
@@ -185,7 +183,10 @@ CoreAddRange (
   // used for other purposes.
   //
   if (Type == EfiConventionalMemory && Start == 0 && (End >= EFI_PAGE_SIZE - 1)) {
-    if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT0) == 0 || !IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
+    // MU_CHANGE START Update to use memory protection settings HOB
+    // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT0) == 0) {
+    if (!gMPS.NullPointerDetectionPolicy.UefiNullDetection) {
+    // MU_CHANGE END
       SetMem ((VOID *)(UINTN)Start, EFI_PAGE_SIZE, 0);
     }
   }

@@ -53,7 +53,7 @@
   PcdLib
   VmgExitLib
   MicrocodeLib
-  MemoryProtectionLib ## MU_CHANGE
+  MemoryProtectionHobLib ## MU_CHANGE
 
 [Protocols]
   gEfiTimerArchProtocolGuid                     ## SOMETIMES_CONSUMES
@@ -75,5 +75,7 @@
   gUefiCpuPkgTokenSpaceGuid.PcdCpuApStatusCheckIntervalInMicroSeconds  ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdSevEsIsEnabled                          ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdSevEsWorkAreaBase                       ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                      ## CONSUMES
+  # MU_CHANGE START Remove memory protection PCD references
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                      ## CONSUMES
+  # MU_CHANGE END
   gEfiMdeModulePkgTokenSpaceGuid.PcdGhcbBase                           ## CONSUMES

@@ -11,8 +11,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "DxeIpl.h"
 #include "VirtualMemory.h"
 
-#include <Library/MemoryProtectionLib.h> // MU_CHANGE
-
 #define IDT_ENTRY_COUNT       32
 
 typedef struct _X64_IDT_TABLE {
@@ -194,27 +192,30 @@ ToBuildPageTable (
   VOID
   )
 {
-  if (!IsIa32PaeSupport ()) {
-    return FALSE;
-  }
+  // MU_CHANGE START Always build page table
+  return TRUE;
+  // if (!IsIa32PaeSupport ()) {
+  //   return FALSE;
+  // }
 
-  if (IsNullDetectionEnabled ()) {
-    return TRUE;
-  }
+  // if (IsNullDetectionEnabled ()) {
+  //   return TRUE;
+  // }
 
-  if (PcdGet8 (PcdHeapGuardPropertyMask) != 0 && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
-    return TRUE;
-  }
+  // if (PcdGet8 (PcdHeapGuardPropertyMask) != 0) {
+  //   return TRUE;
+  // }
 
-  if (PcdGetBool (PcdCpuStackGuard) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
-    return TRUE;
-  }
+  // if (PcdGetBool (PcdCpuStackGuard)) {
+  //   return TRUE;
+  // }
 
-  if (IsEnableNonExecNeeded ()) {
-    return TRUE;
-  }
+  // if (IsEnableNonExecNeeded ()) {
+  //   return TRUE;
+  // }
 
-  return FALSE;
+  // return FALSE;
+  // MU_CHANGE END
 }
 
 /**

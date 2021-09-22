@@ -55,6 +55,7 @@
 #include <Library/HobLib.h>
 #include <Library/SmmMemLib.h>
 #include <Library/BaseBinSecurityLib.h>          // MS_CHANGE_?
+#include <Library/MemoryProtectionHobLib.h>         // MU_CHANGE
 
 #include "PiSmmCorePrivateData.h"
 #include "HeapGuard.h"
