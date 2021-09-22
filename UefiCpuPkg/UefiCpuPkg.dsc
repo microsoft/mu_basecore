@@ -74,7 +74,7 @@
   MicrocodeLib|UefiCpuPkg/Library/MicrocodeLib/MicrocodeLib.inf
 
 ##MSCHANGE Begin
-  MemoryProtectionLib|MdeModulePkg/Library/BaseMemoryProtectionLibNull/BaseMemoryProtectionLibNull.inf
+  MemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/MemoryProtectionHobLibNull.inf
 
 [LibraryClasses.X64, LibraryClasses.IA32]
 !if $(TARGET) == DEBUG

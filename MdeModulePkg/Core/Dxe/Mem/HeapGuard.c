@@ -10,8 +10,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "Imem.h"
 #include "HeapGuard.h"
 
-#include <Library/MemoryProtectionLib.h> // MU_CHANGE
-
 //
 // Global to avoid infinite reentrance of memory allocation when updating
 // page table attributes, which may need allocate pages for new PDE/PTE.
@@ -553,7 +551,10 @@ UnsetGuardPage (
   // memory.
   //
   Attributes = 0;
-  if (((PcdGet64 (PcdDxeNxMemoryProtectionPolicy) & (1 << EfiConventionalMemory)) != 0) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if ((PcdGet64 (PcdDxeNxMemoryProtectionPolicy) & (1 << EfiConventionalMemory)) != 0) {
+  if (gMPS.DxeNxProtectionPolicy.EfiConventionalMemory) {
+  // MU_CHANGE END
     Attributes |= EFI_MEMORY_XP;
   }
 
@@ -572,6 +573,7 @@ UnsetGuardPage (
   mOnGuarding = FALSE;
 }
 
+// MU_CHANGE START Update to use memory protection settings HOB
 /**
   Check to see if the memory at the given address should be guarded or not.
 
@@ -590,39 +592,48 @@ IsMemoryTypeToGuard (
   IN UINT8                  PageOrPool
   )
 {
-  UINT64 TestBit;
-  UINT64 ConfigBit;
+  // UINT64 TestBit;
+  // UINT64 ConfigBit;
 
   if (AllocateType == AllocateAddress) {
     return FALSE;
   }
 
-  if (((PcdGet8 (PcdHeapGuardPropertyMask) & PageOrPool) == 0) || !IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE
-    return FALSE;
+  // if ((PcdGet8 (PcdHeapGuardPropertyMask) & PageOrPool) == 0) {
+  //   return FALSE;
+  // }
+
+  // if (PageOrPool == GUARD_HEAP_TYPE_POOL) {
+  //   ConfigBit = PcdGet64 (PcdHeapGuardPoolType);
+  // } else if (PageOrPool == GUARD_HEAP_TYPE_PAGE) {
+  //   ConfigBit = PcdGet64 (PcdHeapGuardPageType);
+  // } else {
+  //   ConfigBit = (UINT64)-1;
+  // }
+
+//   if ((UINT32)MemoryType >= MEMORY_TYPE_OS_RESERVED_MIN) {
+//     TestBit = BIT63;
+//   } else if ((UINT32) MemoryType >= MEMORY_TYPE_OEM_RESERVED_MIN) {
+//     TestBit = BIT62;
+//   } else if (MemoryType < EfiMaxMemoryType) {
+//     TestBit = LShiftU64 (1, MemoryType);
+//   } else if (MemoryType == EfiMaxMemoryType) {
+//     TestBit = (UINT64)-1;
+//   } else {
+//     TestBit = 0;
+//   }
+
+//   return ((ConfigBit & TestBit) != 0);
+
+  if (PageOrPool == GUARD_HEAP_TYPE_POOL && gMPS.HeapGuardPolicy.UefiPoolGuard) {
+    return GetMemoryTypeSettingFromBitfield (MemoryType, gMPS.HeapGuardPoolType);
+  } else if (PageOrPool == GUARD_HEAP_TYPE_PAGE && gMPS.HeapGuardPolicy.UefiPageGuard) {
+    return GetMemoryTypeSettingFromBitfield (MemoryType, gMPS.HeapGuardPageType);
   }
 
-  if (PageOrPool == GUARD_HEAP_TYPE_POOL) {
-    ConfigBit = PcdGet64 (PcdHeapGuardPoolType);
-  } else if (PageOrPool == GUARD_HEAP_TYPE_PAGE) {
-    ConfigBit = PcdGet64 (PcdHeapGuardPageType);
-  } else {
-    ConfigBit = (UINT64)-1;
-  }
-
-  if ((UINT32)MemoryType >= MEMORY_TYPE_OS_RESERVED_MIN) {
-    TestBit = BIT63;
-  } else if ((UINT32) MemoryType >= MEMORY_TYPE_OEM_RESERVED_MIN) {
-    TestBit = BIT62;
-  } else if (MemoryType < EfiMaxMemoryType) {
-    TestBit = LShiftU64 (1, MemoryType);
-  } else if (MemoryType == EfiMaxMemoryType) {
-    TestBit = (UINT64)-1;
-  } else {
-    TestBit = 0;
-  }
-
-  return ((ConfigBit & TestBit) != 0);
+  return FALSE;
 }
+// MU_CHANGE END
 
 /**
   Check to see if the pool at the given address should be guarded or not.
@@ -672,13 +683,15 @@ IsHeapGuardEnabled (
   UINT8           GuardType
   )
 {
-  // MU_CHANGE BEGIN
-  if (!IsMemoryProtectionGlobalToggleEnabled()) {
-    return FALSE;
+  // MU_CHANGE START Update to work with memory protection settings HOB
+  if ((GuardType & GUARD_HEAP_TYPE_PAGE && gMPS.HeapGuardPolicy.UefiPageGuard) ||
+      (GuardType & GUARD_HEAP_TYPE_POOL && gMPS.HeapGuardPolicy.UefiPoolGuard) ||
+      (GuardType & GUARD_HEAP_TYPE_FREED && gMPS.HeapGuardPolicy.UefiFreedMemoryGuard)) {
+    return TRUE;
   }
+  return FALSE;
+  // return IsMemoryTypeToGuard (EfiMaxMemoryType, AllocateAnyPages, GuardType);
   // MU_CHANGE END
-
-  return IsMemoryTypeToGuard (EfiMaxMemoryType, AllocateAnyPages, GuardType);
 }
 
 /**
@@ -838,7 +851,10 @@ AdjustMemoryS (
   // indicated to put the pool near the Tail Guard, we need extra bytes to
   // make sure alignment of the returned pool address.
   //
-  if ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0) {
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0) {
+  if (gMPS.HeapGuardPolicy.Direction == HEAP_GUARD_ALIGNED_TO_TAIL) {
+  // MU_CHANGE END
     SizeRequested = ALIGN_VALUE(SizeRequested, 8);
   }
 
@@ -1022,8 +1038,10 @@ AdjustPoolHeadA (
   IN UINTN                   Size
   )
 {
-
-  if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
+  if (Memory == 0 || gMPS.HeapGuardPolicy.Direction == HEAP_GUARD_ALIGNED_TO_HEAD) {
+  // MU_CHANGE END
     //
     // Pool head is put near the head Guard
     //
@@ -1049,8 +1067,10 @@ AdjustPoolHeadF (
   IN EFI_PHYSICAL_ADDRESS    Memory
   )
 {
-
-  if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
+  if (Memory == 0 || gMPS.HeapGuardPolicy.Direction == HEAP_GUARD_ALIGNED_TO_HEAD) {
+  // MU_CHANGE END
     //
     // Pool head is put near the head Guard
     //

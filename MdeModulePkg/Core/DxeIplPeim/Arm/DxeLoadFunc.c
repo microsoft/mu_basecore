@@ -12,8 +12,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Library/ArmMmuLib.h>
 
-#include <Library/MemoryProtectionLib.h> // MU_CHANGE
-
 /**
    Transfers control to DxeCore.
 
@@ -40,12 +38,12 @@ HandOffToDxeCore (
   //
   BaseOfStack = AllocatePages (EFI_SIZE_TO_PAGES (STACK_SIZE));
   ASSERT (BaseOfStack != NULL);
-
-  if (PcdGetBool (PcdSetNxForStack) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
+  // MU_CHANGE Start Always set NX for stack
+  // if (PcdGetBool (PcdSetNxForStack)) {
     Status = ArmSetMemoryRegionNoExec ((UINTN)BaseOfStack, STACK_SIZE);
     ASSERT_EFI_ERROR (Status);
-  }
-
+  // }
+  // MU_CHANGE END
   //
   // Compute the top of the stack we were allocated. Pre-allocate a UINTN
   // for safety.

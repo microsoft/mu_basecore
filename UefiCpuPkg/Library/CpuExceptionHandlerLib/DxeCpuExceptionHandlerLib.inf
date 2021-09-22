@@ -39,7 +39,9 @@
   DxeException.c
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard
+  # MU_CHANGE START Remove memory protection PCD references
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard
+  # MU_CHANGE END
   gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList
   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize
 
@@ -61,4 +63,4 @@
   MemoryAllocationLib
   DebugLib
   VmgExitLib
-  MemoryProtectionLib ## MU_CHANGE
+  MemoryProtectionHobLib ## MU_CHANGE

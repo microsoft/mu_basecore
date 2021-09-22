@@ -18,7 +18,7 @@
 
 #include <Protocol/Timer.h>
 
-#include <Library/MemoryProtectionLib.h> // MU_CHANGE
+#include <Library/MemoryProtectionHobLib.h> // MU_CHANGE
 
 #define  AP_SAFE_STACK_SIZE    128
 
@@ -450,8 +450,10 @@ InitMpGlobalData (
     //
     return;
   }
-
-  if (PcdGetBool (PcdCpuStackGuard) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if (PcdGetBool (PcdCpuStackGuard)) {
+  if (gMPS.CpuStackGuard) {
+   // MU_CHANGE END
     //
     // One extra page at the bottom of the stack is needed for Guard page.
     //

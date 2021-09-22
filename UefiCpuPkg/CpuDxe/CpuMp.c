@@ -9,8 +9,6 @@
 #include "CpuDxe.h"
 #include "CpuMp.h"
 
-#include <Library/MemoryProtectionLib.h> // MU_CHANGE
-
 EFI_HANDLE     mMpServiceHandle       = NULL;
 UINTN          mNumberOfProcessors    = 1;
 
@@ -803,7 +801,10 @@ InitializeMpExceptionHandlers (
   //
   // Setup stack switch for Stack Guard feature.
   //
-  if (PcdGetBool (PcdCpuStackGuard) && IsMemoryProtectionGlobalToggleEnabled()) { // MU_CHANGE 
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if (PcdGetBool (PcdCpuStackGuard)) {
+  if (gMPS.CpuStackGuard) {
+  // MU_CHANGE END
     InitializeMpExceptionStackSwitchHandlers ();
   }
 }

@@ -110,7 +110,11 @@
 
   AdvLoggerAccessLib|MdeModulePkg/Library/AdvLoggerAccessLibNull/AdvLoggerAccessLib.inf                               ## MS_CHANGE
   MemoryTypeInfoSecVarCheckLib|MdeModulePkg/Library/MemoryTypeInfoSecVarCheckLib/MemoryTypeInfoSecVarCheckLib.inf     # MU_CHANGE TCBZ1086
-  MemoryProtectionLib|MdeModulePkg/Library/BaseMemoryProtectionLibNull/BaseMemoryProtectionLibNull.inf                ## MU_CHANGE
+
+# MU_CHANGE START Include MemoryProtectionHobLib
+[LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.DXE_CORE, LibraryClasses.common.SMM_CORE, LibraryClasses.common.DXE_SMM_DRIVER, LibraryClasses.common.UEFI_APPLICATION]
+  MemoryProtectionHobLib|MdeModulePkg/Library/DxeSmmMemoryProtectionHobLib/DxeSmmMemoryProtectionHobLib.inf
+# MU_CHANGE END
 
 ##MSCHANGE Begin
 [LibraryClasses.common]
@@ -247,10 +251,11 @@
   MdeModulePkg/Application/DumpDynPcd/DumpDynPcd.inf
   MdeModulePkg/Application/MemoryProfileInfo/MemoryProfileInfo.inf
   MdeModulePkg/Library/MemoryTypeInformationChangeLibNull/MemoryTypeInformationChangeLibNull.inf ## MU_CHANGE
-  MdeModulePkg/Library/SecurityLockAuditDebugMessageLib/SecurityLockAuditDebugMessageLib.inf  ## MU_CHANGE
-  MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf                  ## MU_CHANGE
-  MdeModulePkg/Library/BaseMemoryProtectionLibNull/BaseMemoryProtectionLibNull.inf            ## MU_CHANGE
-  MdeModulePkg/Library/CapsulePersistLibNull/CapsulePersistLibNull.inf                        ## MU_CHANGE
+  MdeModulePkg/Library/SecurityLockAuditDebugMessageLib/SecurityLockAuditDebugMessageLib.inf     ## MU_CHANGE
+  MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf                     ## MU_CHANGE
+  MdeModulePkg/Library/MemoryProtectionHobLibNull/MemoryProtectionHobLibNull.inf                 ## MU_CHANGE
+  MdeModulePkg/Library/DxeSmmMemoryProtectionHobLib/DxeSmmMemoryProtectionHobLib.inf             ## MU_CHANGE
+  MdeModulePkg/Library/CapsulePersistLibNull/CapsulePersistLibNull.inf                           ## MU_CHANGE
 
   MdeModulePkg/Test/ShellTest/VariablePolicyFuncTestApp/VariablePolicyFuncTestApp.inf {
     <LibraryClasses>

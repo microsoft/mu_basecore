@@ -14,8 +14,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/BaseLib.h>
 #include <Guid/MigratedFvInfo.h>
 
-#include <Library/MemoryProtectionLib.h> // MU_CHANGE
-
 #include "CpuMpPei.h"
 
 #define IA32_PG_P             BIT0
@@ -585,7 +583,7 @@ SetupStackGuardPage (
 }
 
 /**
-  Enable/setup stack guard for each processor if PcdCpuStackGuard is set to TRUE.
+  Enable/setup stack guard for each processor. // MU_CHANGE
 
   Doing this in the memory-discovered callback is to make sure the Stack Guard
   feature to cover as most PEI code as possible.
@@ -619,13 +617,7 @@ MemoryDiscoveredPpiNotifyCallback (
   Hob.Raw = NULL;
   if (IsIa32PaeSupported ()) {
     Hob.Raw  = GetFirstGuidHob (&gEdkiiMigratedFvInfoGuid);
-    // MU_CHANGE BEGIN
-    if(IsMemoryProtectionGlobalToggleEnabled()) {
-      InitStackGuard = PcdGetBool (PcdCpuStackGuard);
-    } else {
-      InitStackGuard = FALSE;
-    }
-    // MU_CHANGE END
+    InitStackGuard = TRUE; //PcdGetBool (PcdCpuStackGuard); // MU_CHANGE
   }
 
   if (InitStackGuard || Hob.Raw != NULL) {
