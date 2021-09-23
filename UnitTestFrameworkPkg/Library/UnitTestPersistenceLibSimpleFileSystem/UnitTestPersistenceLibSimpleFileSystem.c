@@ -414,3 +414,66 @@ Exit:
   *SaveData = Buffer;
   return Status;
 }
+
+/**
+  Will delete the cache file associated with an internal Unit Test Framework
+
+  @param[in]  FrameworkHandle  A pointer to the framework that is being persisted.
+
+  @retval  EFI_SUCCESS  Cache file was successfully deleted
+  @retval  Others       Error attempting to delete the cache file
+
+**/
+EFI_STATUS
+EFIAPI
+DeleteUnitTestCache (
+  IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle
+  )
+{
+  EFI_DEVICE_PATH_PROTOCOL  *FileDevicePath;
+  EFI_STATUS                Status;
+  SHELL_FILE_HANDLE         FileHandle;
+
+  //
+  // Check the inputs for sanity.
+  //
+  if (FrameworkHandle == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Determine the path for the cache file.
+  // NOTE: This devpath is allocated and must be freed.
+  //
+  FileDevicePath = GetCacheFileDevicePath (FrameworkHandle);
+  if (FileDevicePath == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a failed to locate cache file device path\n", __FUNCTION__));
+    return EFI_NOT_FOUND;
+  }
+
+  //
+  // Open the file to delete
+  //
+  Status = ShellOpenFileByDevicePath (
+             &FileDevicePath,
+             &FileHandle,
+             (EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE),
+             0
+             );
+
+  if (!EFI_ERROR (Status)) {
+    //
+    // If file handle above was opened it will be closed by the delete.
+    //
+    Status = ShellDeleteFile (&FileHandle);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a failed to delete file %r\n", __FUNCTION__, Status));
+    }
+  }
+
+  if (FileDevicePath != NULL) {
+    FreePool (FileDevicePath);
+  }
+
+  return Status;
+}

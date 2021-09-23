@@ -149,6 +149,18 @@ FreeUnitTestFramework (
   IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle
   )
 {
+  EFI_STATUS Status;
+
+  //
+  // If there is a persisted context, delete it now
+  //
+  if (DoesCacheExist (FrameworkHandle)) {
+    Status = DeleteUnitTestCache (FrameworkHandle);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - Failed to delete cache file\n", __FUNCTION__));
+    }
+  }
+
   // TODO: Finish this function.
   return EFI_SUCCESS;
 }

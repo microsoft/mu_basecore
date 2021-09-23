@@ -73,4 +73,19 @@ LoadUnitTestCache (
   OUT UNIT_TEST_SAVE_HEADER       **SaveData
   );
 
+/**
+  Will delete the cache file associated with an internal Unit Test Framework
+
+  @param[in]  FrameworkHandle  A pointer to the framework that is being persisted.
+
+  @retval  EFI_SUCCESS  Cache file was successfully deleted
+  @retval  Others       Error attempting to delete the cache file
+
+**/
+EFI_STATUS
+EFIAPI
+DeleteUnitTestCache (
+  IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle
+  );
+
 #endif
