@@ -94,7 +94,7 @@
 !if $(TOOL_CHAIN_TAG) != VS2017 and $(TOOL_CHAIN_TAG) != VS2015 and $(TOOL_CHAIN_TAG) != VS2019 ## MS_CHANGE only applies to ARM compiler
   # MU_CHANGE [BEGIN]
   #NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
-  NULL|UefiCpuPkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf
+  NULL|MdePkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf
   # MU_CHANGE [END]
 !endif
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf

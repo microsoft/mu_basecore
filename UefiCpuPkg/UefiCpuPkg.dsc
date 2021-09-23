@@ -33,7 +33,7 @@
   # into all ARM and AARCH64 images.
   #
   #NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
-  NULL|UefiCpuPkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf
+  NULL|MdePkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf
 ## MU_CHANGE End
 
 [LibraryClasses]
@@ -206,11 +206,6 @@ HwResetSystemLib|MdeModulePkg/Library/BaseResetSystemLibNull/BaseResetSystemLibN
   }
   UefiCpuPkg/Universal/Acpi/S3Resume2Pei/S3Resume2Pei.inf
   UefiCpuPkg/ResetVector/Vtf0/Bin/ResetVector.inf
-
-# MU_CHANGE [BEGIN]
-[Components.ARM, Components.AARCH64]
-  UefiCpuPkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf
-# MU_CHANGE [END]
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
