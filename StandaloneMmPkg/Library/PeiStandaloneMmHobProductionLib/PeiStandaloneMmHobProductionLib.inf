@@ -29,7 +29,6 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-  UefiCpuPkg/UefiCpuPkg.dec
   StandaloneMmPkg/StandaloneMmPkg.dec
 
 [LibraryClasses]
