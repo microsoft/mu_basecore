@@ -65,10 +65,11 @@
   NetLib
 
 [Guids]
-# MU_CHANGE [BEGIN] - Shutdown SnpDxe in BeforeExitBootServices
-#  gEfiEventExitBootServicesGuid                 ## SOMETIMES_CONSUMES ## Event
+  # MU_CHANGE [BEGIN] - Shutdown SnpDxe in BeforeExitBootServices
+  #  gEfiEventExitBootServicesGuid                 ## SOMETIMES_CONSUMES ## Event
   gEfiEventBeforeExitBootServicesGuid           ## SOMETIMES_CONSUMES ## Event
-# MU_CHANGE [END]
+  gSnpNetworkInitializedEventGuid               ## SOMETIMES_PRODUCES ## MU_CHANGE - Signal
+  # MU_CHANGE [END]
 
 [Protocols]
   gEfiSimpleNetworkProtocolGuid                 ## BY_START
