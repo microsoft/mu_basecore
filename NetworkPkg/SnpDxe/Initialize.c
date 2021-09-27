@@ -191,6 +191,7 @@ SnpUndi32Initialize (
   EFI_STATUS  StnAddrStatus;
   SNP_DRIVER  *Snp;
   EFI_TPL     OldTpl;
+  EFI_STATUS  EventStatus; // MU_CHANGE
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -286,6 +287,13 @@ SnpUndi32Initialize (
 
 ON_EXIT:
   gBS->RestoreTPL (OldTpl);
+  // MU_CHANGE [BEGIN] - Signal gSnpNetworkInitializedEventGuid when Snp->Initialized() called.
+  if (!EFI_ERROR (EfiStatus)) {
+    EventStatus = EfiNamedEventSignal (&gSnpNetworkInitializedEventGuid);
+    ASSERT_EFI_ERROR (EventStatus);
+  }
+
+  // MU_CHANGE [END] - Signal gSnpNetworkInitializedEventGuid when Snp->Initialized() called.
 
   return EfiStatus;
 }
