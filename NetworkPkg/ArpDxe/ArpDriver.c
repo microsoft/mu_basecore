@@ -133,6 +133,14 @@ ArpCreateService (
     goto ERROR_EXIT;
   }
 
+  // MU_CHANGE [BEGIN] - Refetch Mode Data in the event that Mnp->Configure caused changes in SnpMode.
+  Status = ArpService->Mnp->GetModeData (ArpService->Mnp, NULL, &ArpService->SnpMode);
+  if ((Status != EFI_NOT_STARTED) && EFI_ERROR (Status)) {
+    goto ERROR_EXIT;
+  }
+
+  // MU_CHANGE [END] - Refetch Mode Data in the event that Mnp->Configure caused changes in SnpMode.
+
   //
   // Create the event used in the RxToken.
   //
