@@ -66,6 +66,7 @@
 
 [Guids]
   gEfiEventExitBootServicesGuid                 ## SOMETIMES_CONSUMES ## Event
+  gSnpNetworkInitializedEventGuid               ## SOMETIMES_PRODUCES ## MU_CHANGE - Signalled when Snp->Initialize() is executed
 
 [Protocols]
   gEfiSimpleNetworkProtocolGuid                 ## BY_START
