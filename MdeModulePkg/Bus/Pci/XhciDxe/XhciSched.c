@@ -2304,7 +2304,7 @@ XhcInitializeDeviceSlot (
     DEBUG ((EFI_D_INFO, "    Address %d assigned successfully\n", DeviceAddress));
     Xhc->UsbDevContext[SlotId].XhciDevAddr = DeviceAddress;
   } else {
-    DEBUG ((DEBUG_INFO, "    Address %d assigned unsuccessfully\n"));
+    DEBUG ((DEBUG_INFO, "    Slot %d address not assigned successfully. Status=%r\n", SlotId, Status)); //MU_CHANGE - TCBZ3662
     XhcDisableSlotCmd (Xhc, SlotId);
   }
 
