@@ -138,7 +138,7 @@ TestVerifyHmacCleanUp (
 
   HmacTestContext = Context;
   if (HmacTestContext->HmacCtx != NULL) {
-    FreePool (HmacTestContext->HmacCtx);
+    HmacSha256Free (HmacTestContext->HmacCtx);  // MU_CHANGE
   }
 }
 
