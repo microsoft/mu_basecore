@@ -113,6 +113,14 @@ BEGIN {
             $uefi_config = "UEFI-x86_64-GCC";
             $extension = "S";
             $comment_character = "#";
+        ## MU_CHANGE - START - [BUG 3654] Temporary implimentation of 32-bit native instructions until official version released
+        } elsif (uc ($arch) eq "IA32") {
+            $arch = "IA32";
+            $inf_file = "OpensslLibIa32.inf";
+            $uefi_config = "UEFI-x86";
+            $extension = "nasm";
+            $comment_character = ";";
+        ## MU_CHANGE - END - [BUG 3654]
         } else {
             die "Unsupported architecture \"" . $arch . "\"!";
         }
