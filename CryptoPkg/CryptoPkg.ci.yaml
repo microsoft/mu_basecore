@@ -9,6 +9,7 @@
     "LicenseCheck": {
         "IgnoreFiles": [
             # These directories contain auto-generated OpenSSL content
+            "Library/OpensslLib/IA32",
             "Library/OpensslLib/X64",
             "Library/OpensslLib/X64Gcc"
         ]
@@ -32,6 +33,7 @@
             # This has OpenSSL interfaces that aren't UEFI spec compliant
             "Library/Include/CrtLibSupport.h",
             # These directories contain auto-generated OpenSSL content
+            "Library/OpensslLib/IA32", ## MU_CHANGE [BUG 3654] Temporary implementation of 32-bit native instructions until official version released
             "Library/OpensslLib/X64",
             "Library/OpensslLib/X64Gcc"
         ]
@@ -62,6 +64,7 @@
         "DscPath": "CryptoPkg.dsc",
         "IgnoreInf": [
             # These are alternatives to OpensslLib.inf
+            "CryptoPkg/Library/OpensslLib/OpensslLibIa32.inf", ## MU_CHANGE [BUG 3654] Temporary implementation of 32-bit native instructions until official version released
             "CryptoPkg/Library/OpensslLib/OpensslLibX64.inf",
             "CryptoPkg/Library/OpensslLib/OpensslLibX64Gcc.inf"
         ]
@@ -77,7 +80,12 @@
     "MarkdownLintCheck": {
         "AuditOnly": False,          # If True, log all errors and then mark as skipped
         "IgnoreFiles": [
-            "Library/OpensslLib/openssl"
+            "Library/OpensslLib/openssl",
+            ## MU_CHANGE - START - Added Ignore files for openssl native instructions
+            "Library/OpensslLib/IA32",
+            "Library/OpensslLib/X64",
+            "Library/OpensslLib/X64Gcc"
+            ## MU_CHANGE - END -
         ]            # package root relative file, folder, or glob pattern to ignore
     },
 
