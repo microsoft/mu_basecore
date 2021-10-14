@@ -1386,7 +1386,7 @@
   # 1295: Deprecated declaration <entity> - give arg types
   #  550: <entity> was set but never used
   # 1293: assignment in condition
-  #  111: statement is unreachable (invariably "break;" after "return X;" in case statement)
+  #  111: statement is unreachable (invariably "break;" safter "return X;" in case statement)
   #   68: integer conversion resulted in a change of sign ("if (Status == -1)")
   #  177: <entity> was declared but never referenced
   #  223: function <entity> declared implicitly
