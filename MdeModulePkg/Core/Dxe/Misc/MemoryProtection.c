@@ -478,7 +478,9 @@ ProtectUefiImageMu (
   Hdr.Pe32 = (EFI_IMAGE_NT_HEADERS32 *)((UINT8 *) (UINTN) ImageAddress + PeCoffHeaderOffset);
   if (Hdr.Pe32->Signature != EFI_IMAGE_NT_SIGNATURE) {
     DEBUG ((DEBUG_VERBOSE, "Hdr.Pe32->Signature invalid - 0x%x\n", Hdr.Pe32->Signature));
-    Status = EFI_INVALID_PARAMETER;
+    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
+      Status = EFI_INVALID_PARAMETER;
+    }
     // It might be image in SMM.
     goto Finish;
   }
