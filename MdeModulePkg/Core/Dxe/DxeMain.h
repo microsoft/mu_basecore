@@ -2866,17 +2866,31 @@ RemoveImageRecord (
   IN EFI_RUNTIME_IMAGE_ENTRY  *RuntimeImage
   );
 
+// MU_CHANGE START Use Project Mu ProtectUefiImage()
 /**
   Protect UEFI image.
 
   @param[in]  LoadedImage              The loaded image protocol
   @param[in]  LoadedImageDevicePath    The loaded image device path protocol
 **/
-VOID
-ProtectUefiImage (
+EFI_STATUS
+ProtectUefiImageMu (
   IN EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage,
   IN EFI_DEVICE_PATH_PROTOCOL    *LoadedImageDevicePath
   );
+
+/**
+  Protect UEFI image.
+
+  @param[in]  LoadedImage              The loaded image protocol
+  @param[in]  LoadedImageDevicePath    The loaded image device path protocol
+**/
+// VOID
+// ProtectUefiImage (
+//   IN EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage,
+//   IN EFI_DEVICE_PATH_PROTOCOL    *LoadedImageDevicePath
+//   );
+// MU_CHANGE END
 
 /**
   Unprotect UEFI image.
