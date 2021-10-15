@@ -54,10 +54,20 @@ typedef struct {
   UINT8 RaiseErrorIfProtectionFails   : 1;
 } IMAGE_PROTECTION_POLICY;
 
+typedef UINT8 MEMORY_PROTECTION_SETTINGS_VERSION;
+
+#define MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION 1 // Current iteration of MEMORY_PROTECTION_SETTINGS
+
 //
 // Memory Protection Settings struct
 //
 typedef struct {
+
+  // The current version of the structure definition. This is used to ensure there isn't a definition mismatch
+  // if modules have differing iterations of this header. When creating this struct, use the
+  // MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION macro.
+  MEMORY_PROTECTION_SETTINGS_VERSION StructVersion;
+
   // Indicates if to set NX for stack.
   // This is assumed true in PEI forcing page tables to always be built. DXE will reuse the stack
   // allocated in PEI if this and/or CpuStackGuard are set to TRUE.
@@ -170,24 +180,26 @@ extern GUID gMemoryProtectionSettingsGuid;
 #define HEAP_GUARD_ALIGNED_TO_HEAD 1
 
 //
-//  A memory profile for "standard" memory protection settings.
+//  A memory profile with strict settings. This will likely add to the
+//  total boot time but will catch more configuration and memory errors.
 //
-#define MEMORY_PROTECTION_SETTINGS_STANDARD                       \
+#define MEMORY_PROTECTION_SETTINGS_DEBUG                          \
           {                                                       \
+            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,           \
             TRUE,   /* NX Bit Set for Stack */                    \
             TRUE,   /* Stack Guard On */                          \
             {                                                     \
-              .UefiNullDetection          = 1,                    \
-              .SmmNullDetection           = 1,                    \
-              .NonstopMode                = 0,                    \
-              .DisableEndOfDxe            = 0,                    \
-              .DisableReadyToBoot         = 0                     \
+              .UefiNullDetection            = 1,                  \
+              .SmmNullDetection             = 1,                  \
+              .NonstopMode                  = 0,                  \
+              .DisableEndOfDxe              = 0,                  \
+              .DisableReadyToBoot           = 0                   \
             },                                                    \
             {                                                     \
               .UefiPageGuard                = 1,                  \
               .UefiPoolGuard                = 1,                  \
-              .SmmPageGuard                 = 0,                  \
-              .SmmPoolGuard                 = 0,                  \
+              .SmmPageGuard                 = 1,                  \
+              .SmmPoolGuard                 = 1,                  \
               .UefiFreedMemoryGuard         = 0,                  \
               .NonstopMode                  = 0,                  \
               .Direction                    = 0                   \
@@ -195,7 +207,7 @@ extern GUID gMemoryProtectionSettingsGuid;
             {                                                     \
               .FromUnknown                  = 0,                  \
               .FromFv                       = 1,                  \
-              .RaiseErrorIfProtectionFails  = 0                   \
+              .RaiseErrorIfProtectionFails  = 1                   \
             },                                                    \
             {                                                     \
               .EfiReservedMemoryType        = 0,                  \
@@ -257,19 +269,110 @@ extern GUID gMemoryProtectionSettingsGuid;
           }
   
 //
-//  A memory profile for "loose" memory protection settings. Mirrors the strict
-//  profile minus page and pool guards.
+//  A memory profile recommended for SHIP_MODE. Compared to the debug
+//  settings, this removes the pool guards and doesn't unload images
+//  which fail protection.
 //
-#define MEMORY_PROTECTION_SETTINGS_LOOSE                          \
+#define MEMORY_PROTECTION_SETTINGS_SHIP_MODE                        \
+          {                                                         \
+            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,             \
+            TRUE,   /* NX Bit Set for Stack */                      \
+            TRUE,   /* Stack Guard On */                            \
+            {                                                       \
+              .UefiNullDetection            = 1,                    \
+              .SmmNullDetection             = 1,                    \
+              .NonstopMode                  = 0,                    \
+              .DisableEndOfDxe              = 0,                    \
+              .DisableReadyToBoot           = 0                     \
+            },                                                      \
+            {                                                       \
+              .UefiPageGuard                = 1,                    \
+              .UefiPoolGuard                = 0,                    \
+              .SmmPageGuard                 = 1,                    \
+              .SmmPoolGuard                 = 0,                    \
+              .UefiFreedMemoryGuard         = 0,                    \
+              .NonstopMode                  = 0,                    \
+              .Direction                    = 0                     \
+            },                                                      \
+            {                                                       \
+              .FromUnknown                  = 0,                    \
+              .FromFv                       = 1,                    \
+              .RaiseErrorIfProtectionFails  = 0                     \
+            },                                                      \
+            {                                                       \
+              .EfiReservedMemoryType        = 0,                    \
+              .EfiLoaderCode                = 0,                    \
+              .EfiLoaderData                = 0,                    \
+              .EfiBootServicesCode          = 0,                    \
+              .EfiBootServicesData          = 0,                    \
+              .EfiRuntimeServicesCode       = 0,                    \
+              .EfiRuntimeServicesData       = 0,                    \
+              .EfiConventionalMemory        = 0,                    \
+              .EfiUnusableMemory            = 0,                    \
+              .EfiACPIReclaimMemory         = 0,                    \
+              .EfiACPIMemoryNVS             = 0,                    \
+              .EfiMemoryMappedIO            = 0,                    \
+              .EfiMemoryMappedIOPortSpace   = 0,                    \
+              .EfiPalCode                   = 0,                    \
+              .EfiPersistentMemory          = 0,                    \
+              .OEMReserved                  = 0,                    \
+              .OSReserved                   = 0                     \
+            },                                                      \
+            {                                                       \
+              .EfiReservedMemoryType        = 0,                    \
+              .EfiLoaderCode                = 0,                    \
+              .EfiLoaderData                = 0,                    \
+              .EfiBootServicesCode          = 0,                    \
+              .EfiBootServicesData          = 1,                    \
+              .EfiRuntimeServicesCode       = 0,                    \
+              .EfiRuntimeServicesData       = 1,                    \
+              .EfiConventionalMemory        = 0,                    \
+              .EfiUnusableMemory            = 0,                    \
+              .EfiACPIReclaimMemory         = 0,                    \
+              .EfiACPIMemoryNVS             = 0,                    \
+              .EfiMemoryMappedIO            = 0,                    \
+              .EfiMemoryMappedIOPortSpace   = 0,                    \
+              .EfiPalCode                   = 0,                    \
+              .EfiPersistentMemory          = 0,                    \
+              .OEMReserved                  = 0,                    \
+              .OSReserved                   = 0                     \
+            },                                                      \
+            {                                                       \
+              .EfiReservedMemoryType        = 1,                    \
+              .EfiLoaderCode                = 0,                    \
+              .EfiLoaderData                = 1,                    \
+              .EfiBootServicesCode          = 0,                    \
+              .EfiBootServicesData          = 1,                    \
+              .EfiRuntimeServicesCode       = 0,                    \
+              .EfiRuntimeServicesData       = 1,                    \
+              .EfiConventionalMemory        = 1,                    \
+              .EfiUnusableMemory            = 1,                    \
+              .EfiACPIReclaimMemory         = 1,                    \
+              .EfiACPIMemoryNVS             = 1,                    \
+              .EfiMemoryMappedIO            = 1,                    \
+              .EfiMemoryMappedIOPortSpace   = 1,                    \
+              .EfiPalCode                   = 1,                    \
+              .EfiPersistentMemory          = 1,                    \
+              .OEMReserved                  = 0,                    \
+              .OSReserved                   = 0                     \
+            }                                                       \
+          }
+
+//
+//  A memory profile which mirrors MEMORY_PROTECTION_SETTINGS_SHIP_MODE
+//  but doesn't include page guards.
+//
+#define MEMORY_PROTECTION_SETTINGS_SHIP_MODE_NO_PAGE_GUARDS       \
           {                                                       \
+            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,           \
             TRUE,   /* NX Bit Set for Stack */                    \
             TRUE,   /* Stack Guard On */                          \
             {                                                     \
-              .UefiNullDetection          = 1,                    \
-              .SmmNullDetection           = 1,                    \
-              .NonstopMode                = 0,                    \
-              .DisableEndOfDxe            = 0,                    \
-              .DisableReadyToBoot         = 0                     \
+              .UefiNullDetection            = 1,                  \
+              .SmmNullDetection             = 1,                  \
+              .NonstopMode                  = 0,                  \
+              .DisableEndOfDxe              = 0,                  \
+              .DisableReadyToBoot           = 0                   \
             },                                                    \
             {                                                     \
               .UefiPageGuard                = 0,                  \
@@ -345,18 +448,19 @@ extern GUID gMemoryProtectionSettingsGuid;
           }
 
 //
-//  A memory profile which disables memory protection settings.
+//  A memory profile which disables all memory protection settings.
 //
-#define MEMORY_PROTECTION_SETTINGS_OOF                            \
+#define MEMORY_PROTECTION_SETTINGS_OFF                            \
           {                                                       \
+            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,           \
             FALSE,   /* NX Bit Set for Stack */                   \
             FALSE,   /* Stack Guard On */                         \
             {                                                     \
-              .UefiNullDetection          = 0,                    \
-              .SmmNullDetection           = 0,                    \
-              .NonstopMode                = 0,                    \
-              .DisableEndOfDxe            = 0,                    \
-              .DisableReadyToBoot         = 0                     \
+              .UefiNullDetection            = 0,                  \
+              .SmmNullDetection             = 0,                  \
+              .NonstopMode                  = 0,                  \
+              .DisableEndOfDxe              = 0,                  \
+              .DisableReadyToBoot           = 0                   \
             },                                                    \
             {                                                     \
               .UefiPageGuard                = 0,                  \
