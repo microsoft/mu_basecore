@@ -207,6 +207,16 @@ MemoryProtectionHobLibConstructor (
   // Cache the Memory Protection Settings HOB entry
   //
   if (Ptr != NULL) {
+    if (*((UINT8*) GET_GUID_HOB_DATA(Ptr)) != (UINT8) MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION) {
+      DEBUG ((
+        DEBUG_INFO,
+        "%a: - Version number of the Memory Protection Settings HOB is invalid.\n",
+        __FUNCTION__
+        ));
+      ASSERT (FALSE);
+      ZeroMem(&gMPS, sizeof(gMPS));
+      return EFI_SUCCESS;
+    }
     CopyMem (&gMPS, GET_GUID_HOB_DATA(Ptr), sizeof(MEMORY_PROTECTION_SETTINGS));
     MemoryProtectionSettingsConsistencyCheck ();
   } else {
