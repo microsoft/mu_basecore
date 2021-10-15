@@ -79,68 +79,107 @@ MemoryProtectionSettingsConsistencyCheck (
   )
 {
   if (!gMPS.SetNxForStack && gMPS.DxeNxProtectionPolicy.EfiBootServicesData) {
-    DEBUG((DEBUG_INFO, "%a: - SetNxForStack is FALSE but \
-             DxeNxProtectionPolicy.EfiBootServicesData is active. \
-             NX could still be applied to the stack.\n", __FUNCTION__));
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: - SetNxForStack is FALSE but \
+DxeNxProtectionPolicy.EfiBootServicesData is active. \
+NX could still be applied to the stack.\n",
+      __FUNCTION__
+      ));
   }
 
   if ((gMPS.HeapGuardPolicy.UefiPoolGuard || gMPS.HeapGuardPolicy.UefiPageGuard) &&
        gMPS.HeapGuardPolicy.UefiFreedMemoryGuard) {
-    DEBUG((DEBUG_INFO, "%a: - HeapGuardPolicy.UefiFreedMemoryGuard and \
-             UEFI HeapGuardPolicy.UefiPoolGuard/HeapGuardPolicy.UefiPageGuard \
-             cannot be active at the same time. Setting all three to ZERO in \
-             the memory protection settings global.\n", __FUNCTION__));
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: - HeapGuardPolicy.UefiFreedMemoryGuard and \
+UEFI HeapGuardPolicy.UefiPoolGuard/HeapGuardPolicy.UefiPageGuard \
+cannot be active at the same time. Setting all three to ZERO in \
+the memory protection settings global.\n",
+      __FUNCTION__
+      ));
       gMPS.HeapGuardPolicy.UefiPoolGuard = 0;
       gMPS.HeapGuardPolicy.UefiPageGuard = 0;
       gMPS.HeapGuardPolicy.UefiFreedMemoryGuard = 0;
   }
 
   if (!IMAGE_PROTECTION_ACTIVE && 
-        (gMPS.DxeNxProtectionPolicy.EfiLoaderData ||
+        (gMPS.DxeNxProtectionPolicy.EfiLoaderData       ||
          gMPS.DxeNxProtectionPolicy.EfiBootServicesData ||
          gMPS.DxeNxProtectionPolicy.EfiRuntimeServicesData)) {
-    DEBUG((DEBUG_INFO, "%a: - Image Protection is inactive, but one or more of \
-             DxeNxProtectionPolicy.EfiLoaderData \
-             DxeNxProtectionPolicy.EfiBootServicesData \
-             DxeNxProtectionPolicy.EfiRuntimeServicesData are active. \
-             Image data sections could still be non-executable.\n", __FUNCTION__));
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: - Image Protection is inactive, but one or more of \
+DxeNxProtectionPolicy.EfiLoaderData \
+DxeNxProtectionPolicy.EfiBootServicesData \
+DxeNxProtectionPolicy.EfiRuntimeServicesData are active. \
+Image data sections could still be non-executable.\n",
+      __FUNCTION__
+      ));
   }
 
-  if (HEAP_GUARD_POOL_PROTECTION_ACTIVE && 
+  if (HEAP_GUARD_POOL_PROTECTION_ACTIVE       && 
         (!(gMPS.HeapGuardPolicy.UefiPoolGuard ||
              gMPS.HeapGuardPolicy.SmmPoolGuard))) {
-    DEBUG((DEBUG_INFO, "%a: - Heap Guard Pool protections are active, \
-             but neither HeapGuardPolicy.UefiPoolGuard nor \
-             HeapGuardPolicy.SmmPoolGuard are active.\n", __FUNCTION__));
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: - Heap Guard Pool protections are active, \
+but neither HeapGuardPolicy.UefiPoolGuard nor \
+HeapGuardPolicy.SmmPoolGuard are active.\n",
+      __FUNCTION__
+      ));
   }
 
-  if (HEAP_GUARD_PAGE_PROTECTION_ACTIVE &&
+  if (HEAP_GUARD_PAGE_PROTECTION_ACTIVE       &&
         (!(gMPS.HeapGuardPolicy.UefiPageGuard ||
            gMPS.HeapGuardPolicy.SmmPageGuard))) {
-    DEBUG((DEBUG_INFO, "%a: - Heap Guard Page protections are active, \
-             but neither HeapGuardPolicy.UefiPageGuard nor \
-             HeapGuardPolicy.SmmPageGuard are active.\n", __FUNCTION__));
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: - Heap Guard Page protections are active, \
+but neither HeapGuardPolicy.UefiPageGuard nor \
+HeapGuardPolicy.SmmPageGuard are active.\n",
+      __FUNCTION__
+      ));
   }
 
-  if (gMPS.DxeNxProtectionPolicy.EfiLoaderCode ||
-      gMPS.DxeNxProtectionPolicy.EfiBootServicesCode ||
+  if (gMPS.DxeNxProtectionPolicy.EfiLoaderCode        ||
+      gMPS.DxeNxProtectionPolicy.EfiBootServicesCode  ||
       gMPS.DxeNxProtectionPolicy.EfiRuntimeServicesCode) {
-    DEBUG((DEBUG_INFO, "%a: - DxeNxProtectionPolicy.EfiLoaderCode, \
-             DxeNxProtectionPolicy.EfiBootServicesCode, \
-             and DxeNxProtectionPolicy.EfiRuntimeServicesCode \
-             must be set to ZERO. Setting all to ZERO \
-             in the memory protection settings global.\n", __FUNCTION__));
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: - DxeNxProtectionPolicy.EfiLoaderCode, \
+DxeNxProtectionPolicy.EfiBootServicesCode, \
+and DxeNxProtectionPolicy.EfiRuntimeServicesCode \
+must be set to ZERO. Setting all to ZERO \
+in the memory protection settings global.\n",
+      __FUNCTION__
+      ));
     gMPS.DxeNxProtectionPolicy.EfiLoaderCode = 0;
     gMPS.DxeNxProtectionPolicy.EfiBootServicesCode = 0;
     gMPS.DxeNxProtectionPolicy.EfiRuntimeServicesCode = 0;
   }
 
   if (gMPS.DxeNxProtectionPolicy.EfiBootServicesData != gMPS.DxeNxProtectionPolicy.EfiConventionalMemory) {
-    DEBUG((DEBUG_INFO, "%a: - DxeNxProtectionPolicy.EfiBootServicesData \
-             and DxeNxProtectionPolicy.EfiConventionalMemory must have the same value. \
-             Setting both to ZERO in the memory protection settings global.\n", __FUNCTION__));
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: - DxeNxProtectionPolicy.EfiBootServicesData \
+and DxeNxProtectionPolicy.EfiConventionalMemory must have the same value. \
+Setting both to ZERO in the memory protection settings global.\n",
+      __FUNCTION__
+      ));
     gMPS.DxeNxProtectionPolicy.EfiBootServicesData = 0;
     gMPS.DxeNxProtectionPolicy.EfiConventionalMemory = 0;
+  }
+
+  if (gMPS.NullPointerDetectionPolicy.UefiNullDetection   &&
+      gMPS.NullPointerDetectionPolicy.DisableReadyToBoot  &&
+      gMPS.NullPointerDetectionPolicy.DisableEndOfDxe) {
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: - NULL detection disablement at both ReadyToBoot and EndOfDxe are active. \
+NULL detection will be disabled at EndOfDxe.\n",
+      __FUNCTION__
+      ));
   }
 }
 
@@ -174,7 +213,7 @@ MemoryProtectionHobLibConstructor (
     DEBUG ((
       DEBUG_INFO,
       "MemoryProtectionHobLibDxeConstructor - Unable to fetch memory protection HOB. \
-        Zero-ing memory protection settings\n"
+Zero-ing memory protection settings\n"
       ));
     ZeroMem (&gMPS, sizeof (gMPS));
   }

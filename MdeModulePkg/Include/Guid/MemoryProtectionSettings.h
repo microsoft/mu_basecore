@@ -11,11 +11,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define __MEMORY_PROTECTION_SETTINGS_H__
 
 typedef struct {
-  UINT8   UefiNullDetection : 1;
-  UINT8   SmmNullDetection  : 1;
-  UINT8   Reserved          : 4;
-  UINT8   NonstopMode       : 1;
-  UINT8   DisableEndOfDxe   : 1;
+  UINT8   UefiNullDetection   : 1;
+  UINT8   SmmNullDetection    : 1;
+  UINT8   NonstopMode         : 1;
+  UINT8   DisableEndOfDxe     : 1;
+  UINT8   DisableReadyToBoot  : 1;
 } NULL_DETECTION_POLICY;
 
 typedef struct {
@@ -78,15 +78,15 @@ typedef struct {
   // Bitfield to control the NULL address detection in code for different phases.
   // If enabled, accessing NULL address in UEFI or SMM code can be caught by marking
   // page zero as not present.
-  //   .UefiNullDetection : Enable NULL pointer detection for UEFI.
-  //   .SmmNullDetection  : Enable NULL pointer detection for SMM.
-  //   .Reserved          : Reserved for future uses.
-  //   .NonstopMode       : Enable non-stop mode.
-  //   .DisableEndOfDxe   : Disable NULL pointer detection just after EndOfDxe.
-  //                        This is a workaround for those unsolvable NULL access issues in
-  //                        OptionROM, boot loader, etc. It can also help to avoid unnecessary
-  //                        exception caused by legacy memory (0-4095) access after EndOfDxe,
-  //                        such as Windows 7 boot on Qemu.
+  //   .UefiNullDetection   : Enable NULL pointer detection for UEFI.
+  //   .SmmNullDetection    : Enable NULL pointer detection for SMM.
+  //   .NonstopMode         : Enable non-stop mode.
+  //   .DisableEndOfDxe     : Disable NULL pointer detection just after EndOfDxe.
+  //                          This is a workaround for those unsolvable NULL access issues in
+  //                          OptionROM, boot loader, etc. It can also help to avoid unnecessary
+  //                          exception caused by legacy memory (0-4095) access after EndOfDxe,
+  //                          such as Windows 7 boot on Qemu.
+  //   .DisableReadyToBoot  : Disable NULL pointer detection just after ReadyToBoot.
   NULL_DETECTION_POLICY    NullPointerDetectionPolicy;
 
   // Bitfield to control Heap Guard behavior.
@@ -176,9 +176,9 @@ extern GUID gMemoryProtectionSettingsGuid;
             {                                                     \
               .UefiNullDetection          = 1,                    \
               .SmmNullDetection           = 1,                    \
-              .Reserved                   = 0,                    \
               .NonstopMode                = 0,                    \
-              .DisableEndOfDxe            = 0                     \
+              .DisableEndOfDxe            = 0,                    \
+              .DisableReadyToBoot         = 0                     \
             },                                                    \
             {                                                     \
               .UefiPageGuard              = 1,                    \
@@ -263,9 +263,9 @@ extern GUID gMemoryProtectionSettingsGuid;
             {                                                     \
               .UefiNullDetection          = 1,                    \
               .SmmNullDetection           = 1,                    \
-              .Reserved                   = 0,                    \
               .NonstopMode                = 0,                    \
-              .DisableEndOfDxe            = 0                     \
+              .DisableEndOfDxe            = 0,                    \
+              .DisableReadyToBoot         = 0                     \
             },                                                    \
             {                                                     \
               .UefiPageGuard              = 0,                    \
@@ -349,9 +349,9 @@ extern GUID gMemoryProtectionSettingsGuid;
             {                                                     \
               .UefiNullDetection          = 0,                    \
               .SmmNullDetection           = 0,                    \
-              .Reserved                   = 0,                    \
               .NonstopMode                = 0,                    \
-              .DisableEndOfDxe            = 0                     \
+              .DisableEndOfDxe            = 0,                    \
+              .DisableReadyToBoot         = 0                     \
             },                                                    \
             {                                                     \
               .UefiPageGuard              = 0,                    \

@@ -1097,9 +1097,10 @@ MemoryProtectionExitBootServicesCallback (
   @param[in]  Event     The Event this notify function registered to.
   @param[in]  Context   Pointer to the context data registered to the Event.
 **/
+// MU_CHANGE START Update naming due to addition of ability to disable at readytoboot
 VOID
 EFIAPI
-DisableNullDetectionAtTheEndOfDxe (
+DisableNullDetection (
   EFI_EVENT                               Event,
   VOID                                    *Context
   )
@@ -1107,7 +1108,7 @@ DisableNullDetectionAtTheEndOfDxe (
   EFI_STATUS                        Status;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR   Desc;
 
-  DEBUG ((DEBUG_INFO, "DisableNullDetectionAtTheEndOfDxe(): start\r\n"));
+  DEBUG ((DEBUG_INFO, "%a - start\r\n", __FUNCTION__));
   //
   // Disable NULL pointer detection by enabling first 4K page
   //
@@ -1136,10 +1137,11 @@ DisableNullDetectionAtTheEndOfDxe (
   CoreFreePages (0, 1);
 
   CoreCloseEvent (Event);
-  DEBUG ((DEBUG_INFO, "DisableNullDetectionAtTheEndOfDxe(): end\r\n"));
+  DEBUG ((DEBUG_INFO, "%a - end\r\n", __FUNCTION__));
 
   return;
 }
+// MU_CHANGE END
 
 /**
   Initialize Memory Protection support.
@@ -1152,7 +1154,7 @@ CoreInitializeMemoryProtection (
 {
   EFI_STATUS  Status;
   EFI_EVENT   Event;
-  EFI_EVENT   EndOfDxeEvent;
+  EFI_EVENT   DisableNullDetectionEvent;
   VOID        *Registration;
 
   // mImageProtectionPolicy = gMPS.ImageProtectionPolicy; // MU_CHANGE
@@ -1193,22 +1195,35 @@ CoreInitializeMemoryProtection (
   //
   // Register a callback to disable NULL pointer detection at EndOfDxe
   //
-  // MU_CHANGE START Update to use memory protection settings HOB
+  // MU_CHANGE START Update to use memory protection settings HOB and added
+  //                 disable functionality at ReadyToBoot
   // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & (BIT0|BIT7))
   //      == (BIT0|BIT7)) {
-  if (gMPS.NullPointerDetectionPolicy.UefiNullDetection &&
-        gMPS.NullPointerDetectionPolicy.DisableEndOfDxe) {
-  // MU_CHANGE END
-    Status = CoreCreateEventEx (
-                    EVT_NOTIFY_SIGNAL,
-                    TPL_NOTIFY,
-                    DisableNullDetectionAtTheEndOfDxe,
-                    NULL,
-                    &gEfiEndOfDxeEventGroupGuid,
-                    &EndOfDxeEvent
-                    );
+  if (gMPS.NullPointerDetectionPolicy.UefiNullDetection) {
+    // If both DisableEndOfDxe and DisableReadyToBoot are enabled, just
+    // create the event to disable at EndOfDxe because that event is sooner
+    if (gMPS.NullPointerDetectionPolicy.DisableEndOfDxe) {
+      Status = CoreCreateEventEx (
+                      EVT_NOTIFY_SIGNAL,
+                      TPL_NOTIFY,
+                      DisableNullDetection,
+                      NULL,
+                      &gEfiEndOfDxeEventGroupGuid,
+                      &DisableNullDetectionEvent
+                      );
+    } else if (gMPS.NullPointerDetectionPolicy.DisableReadyToBoot) {
+      Status = CoreCreateEventEx (
+                      EVT_NOTIFY_SIGNAL,
+                      TPL_NOTIFY,
+                      DisableNullDetection,
+                      NULL,
+                      &gEfiEventReadyToBootGuid,
+                      &DisableNullDetectionEvent
+                      );
+    }
     ASSERT_EFI_ERROR (Status);
   }
+  // MU_CHANGE END
 
   //
   // MSCHANGE START
