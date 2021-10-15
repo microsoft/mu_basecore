@@ -54,6 +54,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 #define DO_NOT_PROTECT                         0x00000000
 #define PROTECT_IF_ALIGNED_ELSE_ALLOW          0x00000001
+#define PROTECT_ELSE_RAISE_ERROR               0x00000002 // MU_CHANGE Update to use Project Mu ProtectUefiImage()
 
 #define MEMORY_TYPE_OS_RESERVED_MIN            0x80000000
 #define MEMORY_TYPE_OEM_RESERVED_MIN           0x70000000
@@ -162,6 +163,9 @@ GetProtectionPolicyFromImageType (
   // }
   if ((ImageType == IMAGE_UNKNOWN && gMPS.ImageProtectionPolicy.FromUnknown) ||
       (ImageType == IMAGE_FROM_FV && gMPS.ImageProtectionPolicy.FromFv)) {
+    if (gMPS.ImageProtectionPolicy.RaiseErrorIfProtectionFails) {
+      return PROTECT_ELSE_RAISE_ERROR;
+    }
     return PROTECT_IF_ALIGNED_ELSE_ALLOW;
   } else {
     return DO_NOT_PROTECT;
@@ -387,12 +391,246 @@ FreeImageRecord (
   FreePool (ImageRecord);
 }
 
+// MU_CHANGE START Use Project Mu ProtectUefiImage()
+/**
+  Protect UEFI PE/COFF image.
+
+  @param[in]  LoadedImage              The loaded image protocol
+  @param[in]  LoadedImageDevicePath    The loaded image device path protocol
+
+  @retval EFI_INVALID_PARAMETER   This function was called in SMM or the image
+                                  type has an undefined protection policy
+  @retval EFI_OUT_OF_RESOURCES    Failure to Allocate()
+  @retval EFI_LOAD_ERROR          The image is unaligned or the code segment count is zero
+  @retval EFI_SUCCESS             The image was successfully protected or the protection policy
+                                  is PROTECT_IF_ALIGNED_ELSE_ALLOW
+**/
+EFI_STATUS
+ProtectUefiImageMu (
+  IN EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage,
+  IN EFI_DEVICE_PATH_PROTOCOL    *LoadedImageDevicePath
+  )
+{
+  VOID                                 *ImageAddress;
+  EFI_IMAGE_DOS_HEADER                 *DosHdr;
+  UINT32                               PeCoffHeaderOffset;
+  UINT32                               SectionAlignment;
+  EFI_IMAGE_SECTION_HEADER             *Section;
+  EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION  Hdr;
+  UINT8                                *Name;
+  UINTN                                Index;
+  IMAGE_PROPERTIES_RECORD              *ImageRecord;
+  CHAR8                                *PdbPointer;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION *ImageRecordCodeSection;
+  BOOLEAN                              IsAligned;
+  UINT32                               ProtectionPolicy;
+  EFI_STATUS                           Status = EFI_SUCCESS;
+
+  DEBUG ((DEBUG_INFO, "%a - 0x%x\n", __FUNCTION__, LoadedImage));
+  DEBUG ((DEBUG_INFO, "  - 0x%016lx - 0x%016lx\n", (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize));
+
+  if (gCpu == NULL) {
+    return EFI_NOT_READY;
+  }
+
+  ProtectionPolicy = GetUefiImageProtectionPolicy (LoadedImage, LoadedImageDevicePath);
+  switch (ProtectionPolicy) {
+    case DO_NOT_PROTECT:
+      goto Finish;
+    case PROTECT_IF_ALIGNED_ELSE_ALLOW:
+    case PROTECT_ELSE_RAISE_ERROR:
+      break;
+    default:
+      ASSERT (FALSE);
+      Status = EFI_INVALID_PARAMETER;
+      goto Finish;
+  }
+
+  ImageRecord = AllocateZeroPool (sizeof(*ImageRecord));
+  if (ImageRecord == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Finish;
+  }
+  ImageRecord->Signature = IMAGE_PROPERTIES_RECORD_SIGNATURE;
+
+  //
+  // Step 1: record whole region
+  //
+  ImageRecord->ImageBase = (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase;
+  ImageRecord->ImageSize = LoadedImage->ImageSize;
+
+  ImageAddress = LoadedImage->ImageBase;
+
+  PdbPointer = PeCoffLoaderGetPdbPointer ((VOID*) (UINTN) ImageAddress);
+  if (PdbPointer != NULL) {
+    DEBUG ((DEBUG_VERBOSE, "  Image: %a\n", PdbPointer));
+  }
+
+  //
+  // Check PE/COFF image
+  //
+  DosHdr = (EFI_IMAGE_DOS_HEADER *) (UINTN) ImageAddress;
+  PeCoffHeaderOffset = 0;
+  if (DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
+    PeCoffHeaderOffset = DosHdr->e_lfanew;
+  }
+
+  Hdr.Pe32 = (EFI_IMAGE_NT_HEADERS32 *)((UINT8 *) (UINTN) ImageAddress + PeCoffHeaderOffset);
+  if (Hdr.Pe32->Signature != EFI_IMAGE_NT_SIGNATURE) {
+    DEBUG ((DEBUG_VERBOSE, "Hdr.Pe32->Signature invalid - 0x%x\n", Hdr.Pe32->Signature));
+    Status = EFI_INVALID_PARAMETER;
+    // It might be image in SMM.
+    goto Finish;
+  }
+
+  //
+  // Get SectionAlignment
+  //
+  if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    SectionAlignment  = Hdr.Pe32->OptionalHeader.SectionAlignment;
+  } else {
+    SectionAlignment  = Hdr.Pe32Plus->OptionalHeader.SectionAlignment;
+  }
+
+  IsAligned = IsMemoryProtectionSectionAligned (SectionAlignment, LoadedImage->ImageCodeType);
+  if (!IsAligned) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a - Section Alignment(0x%x) is incorrect!\n",
+      __FUNCTION__,
+      SectionAlignment
+      ));
+    PdbPointer = PeCoffLoaderGetPdbPointer ((VOID*) (UINTN) ImageAddress);
+    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
+      Status = EFI_LOAD_ERROR;
+    }
+    goto Finish;
+  }
+
+  Section = (EFI_IMAGE_SECTION_HEADER *) (
+               (UINT8 *) (UINTN) ImageAddress +
+               PeCoffHeaderOffset +
+               sizeof(UINT32) +
+               sizeof(EFI_IMAGE_FILE_HEADER) +
+               Hdr.Pe32->FileHeader.SizeOfOptionalHeader
+               );
+  ImageRecord->CodeSegmentCount = 0;
+  InitializeListHead (&ImageRecord->CodeSegmentList);
+  for (Index = 0; Index < Hdr.Pe32->FileHeader.NumberOfSections; Index++) {
+    Name = Section[Index].Name;
+    DEBUG ((
+      DEBUG_VERBOSE,
+      "  Section - '%c%c%c%c%c%c%c%c'\n",
+      Name[0],
+      Name[1],
+      Name[2],
+      Name[3],
+      Name[4],
+      Name[5],
+      Name[6],
+      Name[7]
+      ));
+
+    //
+    // Instead of assuming that a PE/COFF section of type EFI_IMAGE_SCN_CNT_CODE
+    // can always be mapped read-only, classify a section as a code section only
+    // if it has the executable attribute set and the writable attribute cleared.
+    //
+    // This adheres more closely to the PE/COFF spec, and avoids issues with
+    // Linux OS loaders that may consist of a single read/write/execute section.
+    //
+    if ((Section[Index].Characteristics & (EFI_IMAGE_SCN_MEM_WRITE | EFI_IMAGE_SCN_MEM_EXECUTE)) == EFI_IMAGE_SCN_MEM_EXECUTE) {
+      DEBUG ((DEBUG_VERBOSE, "  VirtualSize          - 0x%08x\n", Section[Index].Misc.VirtualSize));
+      DEBUG ((DEBUG_VERBOSE, "  VirtualAddress       - 0x%08x\n", Section[Index].VirtualAddress));
+      DEBUG ((DEBUG_VERBOSE, "  SizeOfRawData        - 0x%08x\n", Section[Index].SizeOfRawData));
+      DEBUG ((DEBUG_VERBOSE, "  PointerToRawData     - 0x%08x\n", Section[Index].PointerToRawData));
+      DEBUG ((DEBUG_VERBOSE, "  PointerToRelocations - 0x%08x\n", Section[Index].PointerToRelocations));
+      DEBUG ((DEBUG_VERBOSE, "  PointerToLinenumbers - 0x%08x\n", Section[Index].PointerToLinenumbers));
+      DEBUG ((DEBUG_VERBOSE, "  NumberOfRelocations  - 0x%08x\n", Section[Index].NumberOfRelocations));
+      DEBUG ((DEBUG_VERBOSE, "  NumberOfLinenumbers  - 0x%08x\n", Section[Index].NumberOfLinenumbers));
+      DEBUG ((DEBUG_VERBOSE, "  Characteristics      - 0x%08x\n", Section[Index].Characteristics));
+
+      //
+      // Step 2: record code section
+      //
+      ImageRecordCodeSection = AllocatePool (sizeof(*ImageRecordCodeSection));
+      if (ImageRecordCodeSection == NULL) {
+        if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
+          Status = EFI_OUT_OF_RESOURCES;
+        }
+        goto Finish;
+      }
+      ImageRecordCodeSection->Signature = IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE;
+
+      ImageRecordCodeSection->CodeSegmentBase = (UINTN)ImageAddress + Section[Index].VirtualAddress;
+      ImageRecordCodeSection->CodeSegmentSize = ALIGN_VALUE(Section[Index].SizeOfRawData, SectionAlignment);
+
+      DEBUG ((DEBUG_VERBOSE, "ImageCode: 0x%016lx - 0x%016lx\n", ImageRecordCodeSection->CodeSegmentBase, ImageRecordCodeSection->CodeSegmentSize));
+
+      InsertTailList (&ImageRecord->CodeSegmentList, &ImageRecordCodeSection->Link);
+      ImageRecord->CodeSegmentCount++;
+    }
+  }
+
+  if (ImageRecord->CodeSegmentCount == 0) {
+    //
+    // If a UEFI executable consists of a single read+write+exec PE/COFF
+    // section, the image can still be launched but image protection 
+    // cannot be applied.
+    //
+    // One example that elicits this is (some) Linux kernels (with the EFI stub
+    // of course).
+    //
+    DEBUG ((DEBUG_WARN, "%a - CodeSegmentCount is 0!\n", __FUNCTION__));
+    PdbPointer = PeCoffLoaderGetPdbPointer ((VOID*) (UINTN) ImageAddress);
+    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
+      Status = EFI_LOAD_ERROR;
+    }
+    goto Finish;
+  }
+
+  //
+  // Final
+  //
+  SortImageRecordCodeSection (ImageRecord);
+  //
+  // Check overlap all section in ImageBase/Size
+  //
+  if (!IsImageRecordCodeSectionValid (ImageRecord)) {
+    DEBUG ((DEBUG_ERROR, "IsImageRecordCodeSectionValid - FAIL\n"));
+    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
+      Status = EFI_LOAD_ERROR;
+    }
+    goto Finish;
+  }
+
+  //
+  // Round up the ImageSize, some CPU arch may return EFI_UNSUPPORTED if ImageSize is not aligned.
+  // Given that the loader always allocates full pages, we know the space after the image is not used.
+  //
+  ImageRecord->ImageSize = ALIGN_VALUE(LoadedImage->ImageSize, EFI_PAGE_SIZE);
+
+  //
+  // CPU ARCH present. Update memory attribute directly.
+  //
+  SetUefiImageProtectionAttributes (ImageRecord);
+
+  //
+  // Record the image record in the list so we can undo the protections later
+  //
+  InsertTailList (&mProtectedImageRecordList, &ImageRecord->Link);
+
+Finish:
+  return Status;
+}
+
 /**
   Protect UEFI PE/COFF image.
 
   @param[in]  LoadedImage              The loaded image protocol
   @param[in]  LoadedImageDevicePath    The loaded image device path protocol
 **/
+/*
 VOID
 ProtectUefiImage (
   IN EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage,
@@ -596,6 +834,8 @@ ProtectUefiImage (
 Finish:
   return ;
 }
+*/
+// MU_CHANGE END
 
 /**
   Unprotect UEFI image.
@@ -1049,8 +1289,18 @@ MemoryProtectionCpuArchProtocolNotify (
     if (EFI_ERROR(Status)) {
       LoadedImageDevicePath = NULL;
     }
+    // MU_CHANGE START Use Project Mu ProtectUefiImage()
+    // ProtectUefiImage (LoadedImage, LoadedImageDevicePath);
+    Status = ProtectUefiImageMu (LoadedImage, LoadedImageDevicePath);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "Unable to protect Image Handle: 0x%p... Unloading Image.\n", LoadedImage->DeviceHandle));
+      Status = CoreUnloadImage (LoadedImage->DeviceHandle);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "Unable to unload Image... Status: %r.\n", Status));
+      }
+    }
+    // MU_CHANGE END
 
-    ProtectUefiImage (LoadedImage, LoadedImageDevicePath);
   }
   FreePool (HandleBuffer);
 
