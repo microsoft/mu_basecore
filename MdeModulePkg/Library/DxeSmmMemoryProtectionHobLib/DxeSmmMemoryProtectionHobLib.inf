@@ -1,5 +1,5 @@
 ## @file
-# Library to support platform-specific global controls for all memory protections.
+# DXE and SMM library instance to support platform-specific global controls for all memory protections.
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -7,18 +7,20 @@
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = DxeMemoryProtectionHobLib
+  BASE_NAME                      = DxeSmmMemoryProtectionHobLib
   FILE_GUID                      = f497f7de-b9ab-4b9f-807e-89778922542d
   MODULE_TYPE                    = UEFI_DRIVER
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = MemoryProtectionHobLib|DXE_DRIVER DXE_CORE SMM_CORE DXE_SMM_DRIVER UEFI_APPLICATION
-  CONSTRUCTOR                    = MemoryProtectionHobLibConstructor
+  CONSTRUCTOR                    = DxeSmmMemoryProtectionHobLibConstructor
 
 #
 #  VALID_ARCHITECTURES           = IA32 X64 AARCH64
 #
 
 [Sources]
+  CommonMemoryProtectionHobLib.c
+  CommonMemoryProtectionHobLib.h
   DxeSmmMemoryProtectionHobLib.c
 
 [Packages]
