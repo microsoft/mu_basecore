@@ -5,8 +5,7 @@ Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#include <Base.h>
-#include <Uefi/UefiMultiPhase.h>
+#include <Uefi.h>
 #include <Library/MemoryProtectionHobLib.h>
 
 // According to the C Specification, a global variable
