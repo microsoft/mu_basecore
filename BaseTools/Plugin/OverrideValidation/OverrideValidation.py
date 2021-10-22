@@ -523,7 +523,7 @@ def path_parse():
     # Needs to strip os.sep is to take care of the root path case
     # For a folder, this will do nothing on a formatted abspath
     # For a drive root, this will rip off the os.sep
-    if not os.path.normcase(Paths.ModulePath).startswith(os.path.normcase(Paths.WorkSpace.strip(os.sep)) + os.sep):
+    if not os.path.normcase(Paths.ModulePath).startswith(os.path.normcase(Paths.WorkSpace.rstrip(os.sep)) + os.sep):
         raise RuntimeError("Module is not within specified Workspace.")
 
     return Paths
