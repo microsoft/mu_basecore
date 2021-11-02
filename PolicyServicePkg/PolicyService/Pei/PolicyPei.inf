@@ -1,0 +1,47 @@
+## @file
+#
+#  This is a driver for PEI policy service module.
+#
+#  Copyright (C) Microsoft Corporation. All rights reserved.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  BASE_NAME                      = PolicyPei
+  FILE_GUID                      = a124f01d-89f2-46c5-a4c0-da1630cec15c
+  MODULE_TYPE                    = PEIM
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = PeiPolicyEntry
+
+[Sources]
+  PolicyPei.c
+  PolicyPei.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  PolicyServicePkg/PolicyServicePkg.dec
+
+[LibraryClasses]
+  BaseMemoryLib
+  PeimEntryPoint
+  DebugLib
+  HobLib
+  PeiServicesLib
+  BaseLib
+  MemoryAllocationLib
+
+[Guids]
+  gPolicyHobGuid
+
+[Ppis]
+  gPeiPolicyPpiGuid             ## PRODUCES
+
+[FeaturePcd]
+
+[Pcd]
+
+[Depex]
+  TRUE
