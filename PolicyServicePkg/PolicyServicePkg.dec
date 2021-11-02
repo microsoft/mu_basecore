@@ -1,0 +1,30 @@
+## @file
+# This package contains the policy service and related libraries 
+# and headers.
+#
+# Copyright (C) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  DEC_SPECIFICATION           = 0x00010017
+  PACKAGE_NAME                = PolicyServicePkg
+  PACKAGE_GUID                = EE01A914-32E5-45AA-AC39-AAA4E77EE10C
+  PACKAGE_VERSION             = 0.1
+
+[Includes]
+  Include
+
+[LibraryClasses]
+
+[Guids]
+  ## GUID used for storing policy data in HOB.
+  gPolicyHobGuid = {0x455f8b79, 0x6713, 0x4119, { 0x8a, 0x9c, 0x88, 0x7d, 0x1a, 0x33, 0xe2, 0x43 } }
+
+[Ppis]
+  ## Include/Ppi/Policy.h
+  gPeiPolicyPpiGuid = { 0xa8b33630, 0xa1ae, 0x4e2d, { 0x8d, 0x0f, 0x3d, 0xf3, 0xe5, 0x87, 0x08, 0xce } }
+
+[Protocols]
+  ## Include/Protocol/Policy.h
+  gPolicyProtocolGuid = { 0xd7c9b744, 0x13a5, 0x4377, { 0x8d, 0x2a, 0x6b, 0x37, 0xad, 0x1f, 0xd8, 0x2a } }

@@ -58,6 +58,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                 "ShellPkg",
                 "StandaloneMmPkg",
                 "CryptoPkg",
+                "PolicyServicePkg",
                 "UnitTestFrameworkPkg"
                 )
 
