@@ -1,0 +1,64 @@
+## @file
+# CI configuration for PolicServicePkg
+#
+# Copyright (c) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+{
+    "LicenseCheck": {
+        "IgnoreFiles": []
+    },
+    "EccCheck": {
+        ## Exception sample looks like below:
+        ## "ExceptionList": [
+        ##     "<ErrorID>", "<KeyWord>"
+        ## ]
+        "ExceptionList": [
+        ],
+        ## Both file path and directory path are accepted.
+        "IgnoreFiles": [
+        ]
+    },
+    "CompilerPlugin": {
+        "DscPath": "PolicyServicePkg.dsc"
+    },
+    "CharEncodingCheck": {
+        "IgnoreFiles": []
+    },
+    "DependencyCheck": {
+        "AcceptableDependencies": [
+            "MdePkg/MdePkg.dec",
+            "MdeModulePkg/MdeModulePkg.dec",
+            "PolicyServicePkg/PolicyServicePkg.dec",
+        ],
+        # For host based unit tests
+        "AcceptableDependencies-HOST_APPLICATION":[],
+        # For UEFI shell based apps
+        "AcceptableDependencies-UEFI_APPLICATION":[],
+        "IgnoreInf": []
+    },
+    "DscCompleteCheck": {
+        "DscPath": "PolicyServicePkg.dsc",
+        "IgnoreInf": []
+    },
+    "GuidCheck": {
+        "IgnoreGuidName": [],
+        "IgnoreGuidValue": [],
+        "IgnoreFoldersAndFiles": [],
+        "IgnoreDuplicates": []
+    },
+    "LibraryClassCheck": {
+        "IgnoreHeaderFile": []
+    },
+    "SpellCheck": {
+        "AuditOnly": False,
+        "ExtendWords": [],           # words to extend to the dictionary for this package
+        "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
+        "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)
+    },
+    "MarkdownLintCheck": {
+        "IgnoreFiles": [
+        ]            # package root relative file, folder, or glob pattern to ignore
+    }
+}

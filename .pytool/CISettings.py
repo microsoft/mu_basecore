@@ -58,6 +58,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                 "UefiCpuPkg",
                 "StandaloneMmPkg",
                 "CryptoPkg", # MU_CHANGE
+                "PolicyServicePkg",
                 "UnitTestFrameworkPkg"
                 )
 
