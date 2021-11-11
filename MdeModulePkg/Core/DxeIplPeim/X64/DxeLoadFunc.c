@@ -35,14 +35,28 @@ HandOffToDxeCore (
   EFI_PEI_VECTOR_HANDOFF_INFO_PPI *VectorHandoffInfoPpi;
   VOID                            *GhcbBase;
   UINTN                           GhcbSize;
+  // MU_CHANGE START: Page zero will be set to allocated if possible
+  //                  and only be cleared if null detection is enabled.
+  //                  Null detection will now be enabled in DXE phase.
+  BOOLEAN                         CanUpdate;
+
+  CanUpdate = CanUpdatePageZero (HobList.Raw);
+  ASSERT (CanUpdate == TRUE);
 
   //
   // Clear page 0 and mark it as allocated if NULL pointer detection is enabled.
   //
-  if (IsNullDetectionEnabled ()) {
-    ClearFirst4KPage (HobList.Raw);
+  // if (IsNullDetectionEnabled ()) {
+  //   ClearFirst4KPage (HobList.Raw);
+  //   BuildMemoryAllocationHob (0, EFI_PAGES_TO_SIZE (1), EfiBootServicesData);
+  // }
+  if (CanUpdate) {
+    DEBUG ((DEBUG_INFO, "Clearing first 4K-page!\r\n"));
+    SetMem (NULL, EFI_PAGE_SIZE, 0);
     BuildMemoryAllocationHob (0, EFI_PAGES_TO_SIZE (1), EfiBootServicesData);
   }
+  // MU_CHANGE END
+
 
   //
   // Get Vector Hand-off Info PPI and build Guided HOB

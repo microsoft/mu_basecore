@@ -1395,6 +1395,42 @@ DisableNullDetection (
 }
 // MU_CHANGE END
 
+// MU_CHANGE START: Add function to enable null detection as it is now done in DXE instead of PEI
+/**
+  Enable NULL pointer detection by changing the attributes of page 0. The assumption is that PEI
+  has set page zero to allocated so this operation can be done safely.
+
+  @retval EFI_SUCCESS       Page zero successfully marked as read protected
+  @retval Other             Page zero could not be marked as read protected
+
+**/
+EFI_STATUS
+EFIAPI
+EnableNullDetection (
+  VOID
+  )
+{
+  EFI_STATUS                        Status;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR   Desc;
+
+  Status = CoreGetMemorySpaceDescriptor (0, &Desc);
+  
+  if (EFI_ERROR(Status)) {
+    return Status;
+  }
+
+  if ((Desc.Capabilities & EFI_MEMORY_RP) == 0) {
+    Status = CoreSetMemorySpaceCapabilities (
+              0,
+              EFI_PAGE_SIZE,
+              Desc.Capabilities | EFI_MEMORY_RP
+              );
+  }
+
+  return Status;
+}
+// MU_CHANGE END
+
 /**
   Initialize Memory Protection support.
 **/
@@ -1452,26 +1488,33 @@ CoreInitializeMemoryProtection (
   // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & (BIT0|BIT7))
   //      == (BIT0|BIT7)) {
   if (gMPS.NullPointerDetectionPolicy.UefiNullDetection) {
-    // If both DisableEndOfDxe and DisableReadyToBoot are enabled, just
-    // create the event to disable at EndOfDxe because that event is sooner
-    if (gMPS.NullPointerDetectionPolicy.DisableEndOfDxe) {
-      Status = CoreCreateEventEx (
-                      EVT_NOTIFY_SIGNAL,
-                      TPL_NOTIFY,
-                      DisableNullDetection,
-                      NULL,
-                      &gEfiEndOfDxeEventGroupGuid,
-                      &DisableNullDetectionEvent
-                      );
-    } else if (gMPS.NullPointerDetectionPolicy.DisableReadyToBoot) {
-      Status = CoreCreateEventEx (
-                      EVT_NOTIFY_SIGNAL,
-                      TPL_NOTIFY,
-                      DisableNullDetection,
-                      NULL,
-                      &gEfiEventReadyToBootGuid,
-                      &DisableNullDetectionEvent
-                      );
+
+    // PEI phase has been updated to always set page zero as allocated
+    // so it can be safely set as not present here
+    Status = EnableNullDetection ();
+
+    if (!EFI_ERROR (Status)) {
+      // If both DisableEndOfDxe and DisableReadyToBoot are enabled, just
+      // create the event to disable at EndOfDxe because that event is sooner
+      if (gMPS.NullPointerDetectionPolicy.DisableEndOfDxe) {
+        Status = CoreCreateEventEx (
+                        EVT_NOTIFY_SIGNAL,
+                        TPL_NOTIFY,
+                        DisableNullDetection,
+                        NULL,
+                        &gEfiEndOfDxeEventGroupGuid,
+                        &DisableNullDetectionEvent
+                        );
+      } else if (gMPS.NullPointerDetectionPolicy.DisableReadyToBoot) {
+        Status = CoreCreateEventEx (
+                        EVT_NOTIFY_SIGNAL,
+                        TPL_NOTIFY,
+                        DisableNullDetection,
+                        NULL,
+                        &gEfiEventReadyToBootGuid,
+                        &DisableNullDetectionEvent
+                        );
+      }
     }
     ASSERT_EFI_ERROR (Status);
   }
