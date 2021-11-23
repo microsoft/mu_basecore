@@ -518,7 +518,7 @@ TerminalConInTimerHandler (
   EFI_STATUS              Status;
   TERMINAL_DEV            *TerminalDevice;
   UINT32                  Control;
-  UINT8                   Input;
+  UINT8                   Input[RAW_FIFO_MAX_NUMBER];
   EFI_SERIAL_IO_MODE      *Mode;
   EFI_SERIAL_IO_PROTOCOL  *SerialIo;
   UINTN                   SerialInTimeOut;
@@ -573,23 +573,27 @@ TerminalConInTimerHandler (
     // Fetch all the keys in the serial buffer,
     // and insert the byte stream into RawFIFO.
     //
-    while (!IsRawFiFoFull (TerminalDevice)) {
-      Status = GetOneKeyFromSerial (TerminalDevice->SerialIo, &Input);
-
-      if (EFI_ERROR (Status)) {
-        if (Status == EFI_DEVICE_ERROR) {
-          REPORT_STATUS_CODE_WITH_DEVICE_PATH (
-            EFI_ERROR_CODE | EFI_ERROR_MINOR,
-            (EFI_PERIPHERAL_REMOTE_CONSOLE | EFI_P_EC_INPUT_ERROR),
-            TerminalDevice->DevicePath
-            );
-        }
-
-        break;
+    // MU_CHANGE Starts: Keep getting all available serial keys until we exhaust the FIFO.
+    UINTN  Size = RAW_FIFO_MAX_NUMBER;
+    Status = GetOneKeyFromSerial (TerminalDevice->SerialIo, Input, &Size);
+    if (EFI_ERROR (Status)) {
+      if (Status == EFI_DEVICE_ERROR) {
+        REPORT_STATUS_CODE_WITH_DEVICE_PATH (
+          EFI_ERROR_CODE | EFI_ERROR_MINOR,
+          (EFI_PERIPHERAL_REMOTE_CONSOLE | EFI_P_EC_INPUT_ERROR),
+          TerminalDevice->DevicePath
+          );
       }
 
-      RawFiFoInsertOneKey (TerminalDevice, Input);
+      return;
     }
+
+    UINTN  i = 0;
+    while (i < Size && !IsRawFiFoFull (TerminalDevice)) {
+      RawFiFoInsertOneKey (TerminalDevice, Input[i++]);
+    }
+
+    // MU_CHANGE Ends
   }
 
   //
@@ -668,25 +672,26 @@ KeyNotifyProcessHandler (
 EFI_STATUS
 GetOneKeyFromSerial (
   EFI_SERIAL_IO_PROTOCOL  *SerialIo,
-  UINT8                   *Output
+  UINT8                   *Output,
+  // MU_CHANGE Starts: Extending the FIFO buffer size beyond UINT8 width.
+  UINTN                   *Size
   )
 {
   EFI_STATUS  Status;
-  UINTN       Size;
 
-  Size    = 1;
   *Output = 0;
 
   //
   // Read one key from serial I/O device.
   //
-  Status = SerialIo->Read (SerialIo, &Size, Output);
+  Status = SerialIo->Read (SerialIo, Size, Output);
+
+  if (Status == EFI_TIMEOUT) {
+    return EFI_SUCCESS;
+  }
 
   if (EFI_ERROR (Status)) {
-    if (Status == EFI_TIMEOUT) {
-      return EFI_NOT_READY;
-    }
-
+    // MU_CHANGE Ends.
     return EFI_DEVICE_ERROR;
   }
 
@@ -714,7 +719,7 @@ RawFiFoInsertOneKey (
   UINT8         Input
   )
 {
-  UINT8  Tail;
+  UINT16  Tail; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   Tail = TerminalDevice->RawFiFo->Tail;
 
@@ -727,7 +732,7 @@ RawFiFoInsertOneKey (
 
   TerminalDevice->RawFiFo->Data[Tail] = Input;
 
-  TerminalDevice->RawFiFo->Tail = (UINT8)((Tail + 1) % (RAW_FIFO_MAX_NUMBER + 1));
+  TerminalDevice->RawFiFo->Tail = (UINT16)((Tail + 1) % (RAW_FIFO_MAX_NUMBER + 1)); // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   return TRUE;
 }
@@ -748,7 +753,7 @@ RawFiFoRemoveOneKey (
   UINT8         *Output
   )
 {
-  UINT8  Head;
+  UINT16  Head; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   Head = TerminalDevice->RawFiFo->Head;
 
@@ -763,7 +768,7 @@ RawFiFoRemoveOneKey (
   *Output                             = TerminalDevice->RawFiFo->Data[Head];
   TerminalDevice->RawFiFo->Data[Head] = 0;
 
-  TerminalDevice->RawFiFo->Head = (UINT8)((Head + 1) % (RAW_FIFO_MAX_NUMBER + 1));
+  TerminalDevice->RawFiFo->Head = (UINT16)((Head + 1) % (RAW_FIFO_MAX_NUMBER + 1)); // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   return TRUE;
 }
@@ -803,8 +808,8 @@ IsRawFiFoFull (
   TERMINAL_DEV  *TerminalDevice
   )
 {
-  UINT8  Tail;
-  UINT8  Head;
+  UINT16  Tail; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
+  UINT16  Head; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   Tail = TerminalDevice->RawFiFo->Tail;
   Head = TerminalDevice->RawFiFo->Head;
@@ -833,7 +838,7 @@ EfiKeyFiFoForNotifyInsertOneKey (
   EFI_INPUT_KEY  *Input
   )
 {
-  UINT8  Tail;
+  UINT16  Tail; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   Tail = EfiKeyFiFo->Tail;
 
@@ -846,7 +851,7 @@ EfiKeyFiFoForNotifyInsertOneKey (
 
   CopyMem (&EfiKeyFiFo->Data[Tail], Input, sizeof (EFI_INPUT_KEY));
 
-  EfiKeyFiFo->Tail = (UINT8)((Tail + 1) % (FIFO_MAX_NUMBER + 1));
+  EfiKeyFiFo->Tail = (UINT16)((Tail + 1) % (FIFO_MAX_NUMBER + 1));  // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   return TRUE;
 }
@@ -867,7 +872,7 @@ EfiKeyFiFoForNotifyRemoveOneKey (
   EFI_INPUT_KEY  *Output
   )
 {
-  UINT8  Head;
+  UINT16  Head; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   Head = EfiKeyFiFo->Head;
   ASSERT (Head < FIFO_MAX_NUMBER + 1);
@@ -884,7 +889,7 @@ EfiKeyFiFoForNotifyRemoveOneKey (
   CopyMem (Output, &EfiKeyFiFo->Data[Head], sizeof (EFI_INPUT_KEY));
   ZeroMem (&EfiKeyFiFo->Data[Head], sizeof (EFI_INPUT_KEY));
 
-  EfiKeyFiFo->Head = (UINT8)((Head + 1) % (FIFO_MAX_NUMBER + 1));
+  EfiKeyFiFo->Head = (UINT16)((Head + 1) % (FIFO_MAX_NUMBER + 1));  // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   return TRUE;
 }
@@ -924,8 +929,8 @@ IsEfiKeyFiFoForNotifyFull (
   EFI_KEY_FIFO  *EfiKeyFiFo
   )
 {
-  UINT8  Tail;
-  UINT8  Head;
+  UINT16  Tail; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
+  UINT16  Head; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   Tail = EfiKeyFiFo->Tail;
   Head = EfiKeyFiFo->Head;
@@ -954,7 +959,7 @@ EfiKeyFiFoInsertOneKey (
   EFI_INPUT_KEY  *Key
   )
 {
-  UINT8                          Tail;
+  UINT16                         Tail;  // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
   LIST_ENTRY                     *Link;
   LIST_ENTRY                     *NotifyList;
   TERMINAL_CONSOLE_IN_EX_NOTIFY  *CurrentNotify;
@@ -998,7 +1003,7 @@ EfiKeyFiFoInsertOneKey (
 
   CopyMem (&TerminalDevice->EfiKeyFiFo->Data[Tail], Key, sizeof (EFI_INPUT_KEY));
 
-  TerminalDevice->EfiKeyFiFo->Tail = (UINT8)((Tail + 1) % (FIFO_MAX_NUMBER + 1));
+  TerminalDevice->EfiKeyFiFo->Tail = (UINT16)((Tail + 1) % (FIFO_MAX_NUMBER + 1));  // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   return TRUE;
 }
@@ -1019,7 +1024,7 @@ EfiKeyFiFoRemoveOneKey (
   EFI_INPUT_KEY  *Output
   )
 {
-  UINT8  Head;
+  UINT16  Head; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   Head = TerminalDevice->EfiKeyFiFo->Head;
   ASSERT (Head < FIFO_MAX_NUMBER + 1);
@@ -1036,7 +1041,7 @@ EfiKeyFiFoRemoveOneKey (
   CopyMem (Output, &TerminalDevice->EfiKeyFiFo->Data[Head], sizeof (EFI_INPUT_KEY));
   ZeroMem (&TerminalDevice->EfiKeyFiFo->Data[Head], sizeof (EFI_INPUT_KEY));
 
-  TerminalDevice->EfiKeyFiFo->Head = (UINT8)((Head + 1) % (FIFO_MAX_NUMBER + 1));
+  TerminalDevice->EfiKeyFiFo->Head = (UINT16)((Head + 1) % (FIFO_MAX_NUMBER + 1));  // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   return TRUE;
 }
@@ -1076,8 +1081,8 @@ IsEfiKeyFiFoFull (
   TERMINAL_DEV  *TerminalDevice
   )
 {
-  UINT8  Tail;
-  UINT8  Head;
+  UINT16  Tail; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
+  UINT16  Head; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   Tail = TerminalDevice->EfiKeyFiFo->Tail;
   Head = TerminalDevice->EfiKeyFiFo->Head;
@@ -1106,7 +1111,7 @@ UnicodeFiFoInsertOneKey (
   UINT16        Input
   )
 {
-  UINT8  Tail;
+  UINT16  Tail; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   Tail = TerminalDevice->UnicodeFiFo->Tail;
   ASSERT (Tail < FIFO_MAX_NUMBER + 1);
@@ -1120,7 +1125,7 @@ UnicodeFiFoInsertOneKey (
 
   TerminalDevice->UnicodeFiFo->Data[Tail] = Input;
 
-  TerminalDevice->UnicodeFiFo->Tail = (UINT8)((Tail + 1) % (FIFO_MAX_NUMBER + 1));
+  TerminalDevice->UnicodeFiFo->Tail = (UINT16)((Tail + 1) % (FIFO_MAX_NUMBER + 1)); // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   return TRUE;
 }
@@ -1140,7 +1145,7 @@ UnicodeFiFoRemoveOneKey (
   UINT16        *Output
   )
 {
-  UINT8  Head;
+  UINT16  Head; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   Head = TerminalDevice->UnicodeFiFo->Head;
   ASSERT (Head < FIFO_MAX_NUMBER + 1);
@@ -1148,7 +1153,7 @@ UnicodeFiFoRemoveOneKey (
   *Output                                 = TerminalDevice->UnicodeFiFo->Data[Head];
   TerminalDevice->UnicodeFiFo->Data[Head] = 0;
 
-  TerminalDevice->UnicodeFiFo->Head = (UINT8)((Head + 1) % (FIFO_MAX_NUMBER + 1));
+  TerminalDevice->UnicodeFiFo->Head = (UINT16)((Head + 1) % (FIFO_MAX_NUMBER + 1)); // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 }
 
 /**
@@ -1186,8 +1191,8 @@ IsUnicodeFiFoFull (
   TERMINAL_DEV  *TerminalDevice
   )
 {
-  UINT8  Tail;
-  UINT8  Head;
+  UINT16  Tail; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
+  UINT16  Head; // MU_CHANGE: Extending the FIFO buffer size beyond UINT8 width.
 
   Tail = TerminalDevice->UnicodeFiFo->Tail;
   Head = TerminalDevice->UnicodeFiFo->Head;
