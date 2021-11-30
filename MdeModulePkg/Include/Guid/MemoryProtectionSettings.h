@@ -10,53 +10,65 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #ifndef __MEMORY_PROTECTION_SETTINGS_H__
 #define __MEMORY_PROTECTION_SETTINGS_H__
 
-typedef struct {
-  UINT8   UefiNullDetection   : 1;
-  UINT8   SmmNullDetection    : 1;
-  UINT8   NonstopMode         : 1;
-  UINT8   DisableEndOfDxe     : 1;
-  UINT8   DisableReadyToBoot  : 1;
+typedef union {
+  UINT8   Data;
+  struct {
+    UINT8   UefiNullDetection   : 1;
+    UINT8   SmmNullDetection    : 1;
+    UINT8   NonstopMode         : 1;
+    UINT8   DisableEndOfDxe     : 1;
+    UINT8   DisableReadyToBoot  : 1;
+  } Fields;
 } NULL_DETECTION_POLICY;
 
-typedef struct {
-  UINT8 UefiPageGuard         : 1;
-  UINT8 UefiPoolGuard         : 1;
-  UINT8 SmmPageGuard          : 1;
-  UINT8 SmmPoolGuard          : 1;
-  UINT8 UefiFreedMemoryGuard  : 1;
-  UINT8 NonstopMode           : 1;
-  UINT8 Direction             : 1;
+typedef union {
+  UINT8   Data;
+  struct {
+    UINT8 UefiPageGuard         : 1;
+    UINT8 UefiPoolGuard         : 1;
+    UINT8 SmmPageGuard          : 1;
+    UINT8 SmmPoolGuard          : 1;
+    UINT8 UefiFreedMemoryGuard  : 1;
+    UINT8 NonstopMode           : 1;
+    UINT8 Direction             : 1;
+  } Fields;
 } HEAP_GUARD_POLICY;
 
-typedef struct {
-  UINT8 EfiReservedMemoryType      : 1;
-  UINT8 EfiLoaderCode              : 1;
-  UINT8 EfiLoaderData              : 1;
-  UINT8 EfiBootServicesCode        : 1;
-  UINT8 EfiBootServicesData        : 1;
-  UINT8 EfiRuntimeServicesCode     : 1;
-  UINT8 EfiRuntimeServicesData     : 1;
-  UINT8 EfiConventionalMemory      : 1;
-  UINT8 EfiUnusableMemory          : 1;
-  UINT8 EfiACPIReclaimMemory       : 1;
-  UINT8 EfiACPIMemoryNVS           : 1;
-  UINT8 EfiMemoryMappedIO          : 1;
-  UINT8 EfiMemoryMappedIOPortSpace : 1;
-  UINT8 EfiPalCode                 : 1;
-  UINT8 EfiPersistentMemory        : 1;
-  UINT8 OEMReserved                : 1;
-  UINT8 OSReserved                 : 1;
+typedef union {
+  UINT32  Data;
+  struct {
+    UINT8 EfiReservedMemoryType      : 1;
+    UINT8 EfiLoaderCode              : 1;
+    UINT8 EfiLoaderData              : 1;
+    UINT8 EfiBootServicesCode        : 1;
+    UINT8 EfiBootServicesData        : 1;
+    UINT8 EfiRuntimeServicesCode     : 1;
+    UINT8 EfiRuntimeServicesData     : 1;
+    UINT8 EfiConventionalMemory      : 1;
+    UINT8 EfiUnusableMemory          : 1;
+    UINT8 EfiACPIReclaimMemory       : 1;
+    UINT8 EfiACPIMemoryNVS           : 1;
+    UINT8 EfiMemoryMappedIO          : 1;
+    UINT8 EfiMemoryMappedIOPortSpace : 1;
+    UINT8 EfiPalCode                 : 1;
+    UINT8 EfiPersistentMemory        : 1;
+    UINT8 OEMReserved                : 1;
+    UINT8 OSReserved                 : 1;
+  } Fields;
 } HEAP_GUARD_MEMORY_TYPES;
 
-typedef struct {
-  UINT8 FromUnknown                   : 1;
-  UINT8 FromFv                        : 1;
-  UINT8 RaiseErrorIfProtectionFails   : 1;
+typedef union {
+  UINT8 Data;
+  struct {
+    UINT8 FromUnknown                   : 1;
+    UINT8 FromFv                        : 1;
+    UINT8 RaiseErrorIfProtectionFails   : 1;
+  } Fields;
 } IMAGE_PROTECTION_POLICY;
 
 typedef UINT8 MEMORY_PROTECTION_SETTINGS_VERSION;
 
-#define MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION 1 // Current iteration of MEMORY_PROTECTION_SETTINGS
+#define MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION 2 // Current iteration of MEMORY_PROTECTION_SETTINGS
 
 //
 // Memory Protection Settings struct
@@ -67,17 +79,6 @@ typedef struct {
   // if modules have differing iterations of this header. When creating this struct, use the
   // MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION macro.
   MEMORY_PROTECTION_SETTINGS_VERSION StructVersion;
-
-  // Indicates if to set NX for stack.
-  // This is assumed true in PEI forcing page tables to always be built. DXE will reuse the stack
-  // allocated in PEI if this and/or CpuStackGuard are set to TRUE.
-  //
-  //  TRUE  - Set NX for stack.
-  //  FALSE - Do nothing for stack.
-  //
-  // Note: If this value is set to FALSE, NX could be still applied to stack due to 
-  //  DxeNxProtectionPolicy.EfiBootServicesData.
-  BOOLEAN  SetNxForStack;
 
   // Indicates if UEFI Stack Guard will be enabled.
   //
@@ -173,99 +174,98 @@ typedef struct {
 
 extern GUID gMemoryProtectionSettingsGuid;
 
-// HeapGuardPolicy.Direction value indicating tail alignment
+// HeapGuardPolicy.Fields.Direction value indicating tail alignment
 #define HEAP_GUARD_ALIGNED_TO_TAIL 0
 
-// HeapGuardPolicy.Direction value indicating head alignment
+// HeapGuardPolicy.Fields.Direction value indicating head alignment
 #define HEAP_GUARD_ALIGNED_TO_HEAD 1
 
 //
 //  A memory profile with strict settings. This will likely add to the
 //  total boot time but will catch more configuration and memory errors.
 //
-#define MEMORY_PROTECTION_SETTINGS_DEBUG                          \
-          {                                                       \
-            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,           \
-            TRUE,   /* NX Bit Set for Stack */                    \
-            TRUE,   /* Stack Guard On */                          \
-            {                                                     \
-              .UefiNullDetection            = 1,                  \
-              .SmmNullDetection             = 1,                  \
-              .NonstopMode                  = 0,                  \
-              .DisableEndOfDxe              = 0,                  \
-              .DisableReadyToBoot           = 0                   \
-            },                                                    \
-            {                                                     \
-              .UefiPageGuard                = 1,                  \
-              .UefiPoolGuard                = 1,                  \
-              .SmmPageGuard                 = 1,                  \
-              .SmmPoolGuard                 = 1,                  \
-              .UefiFreedMemoryGuard         = 0,                  \
-              .NonstopMode                  = 0,                  \
-              .Direction                    = 0                   \
-            },                                                    \
-            {                                                     \
-              .FromUnknown                  = 0,                  \
-              .FromFv                       = 1,                  \
-              .RaiseErrorIfProtectionFails  = 1                   \
-            },                                                    \
-            {                                                     \
-              .EfiReservedMemoryType        = 0,                  \
-              .EfiLoaderCode                = 0,                  \
-              .EfiLoaderData                = 0,                  \
-              .EfiBootServicesCode          = 0,                  \
-              .EfiBootServicesData          = 1,                  \
-              .EfiRuntimeServicesCode       = 0,                  \
-              .EfiRuntimeServicesData       = 1,                  \
-              .EfiConventionalMemory        = 0,                  \
-              .EfiUnusableMemory            = 0,                  \
-              .EfiACPIReclaimMemory         = 0,                  \
-              .EfiACPIMemoryNVS             = 0,                  \
-              .EfiMemoryMappedIO            = 0,                  \
-              .EfiMemoryMappedIOPortSpace   = 0,                  \
-              .EfiPalCode                   = 0,                  \
-              .EfiPersistentMemory          = 0,                  \
-              .OEMReserved                  = 0,                  \
-              .OSReserved                   = 0                   \
-            },                                                    \
-            {                                                     \
-              .EfiReservedMemoryType        = 0,                  \
-              .EfiLoaderCode                = 0,                  \
-              .EfiLoaderData                = 0,                  \
-              .EfiBootServicesCode          = 0,                  \
-              .EfiBootServicesData          = 1,                  \
-              .EfiRuntimeServicesCode       = 0,                  \
-              .EfiRuntimeServicesData       = 1,                  \
-              .EfiConventionalMemory        = 0,                  \
-              .EfiUnusableMemory            = 0,                  \
-              .EfiACPIReclaimMemory         = 0,                  \
-              .EfiACPIMemoryNVS             = 0,                  \
-              .EfiMemoryMappedIO            = 0,                  \
-              .EfiMemoryMappedIOPortSpace   = 0,                  \
-              .EfiPalCode                   = 0,                  \
-              .EfiPersistentMemory          = 0,                  \
-              .OEMReserved                  = 0,                  \
-              .OSReserved                   = 0                   \
-            },                                                    \
-            {                                                     \
-              .EfiReservedMemoryType        = 1,                  \
-              .EfiLoaderCode                = 0,                  \
-              .EfiLoaderData                = 1,                  \
-              .EfiBootServicesCode          = 0,                  \
-              .EfiBootServicesData          = 1,                  \
-              .EfiRuntimeServicesCode       = 0,                  \
-              .EfiRuntimeServicesData       = 1,                  \
-              .EfiConventionalMemory        = 1,                  \
-              .EfiUnusableMemory            = 1,                  \
-              .EfiACPIReclaimMemory         = 1,                  \
-              .EfiACPIMemoryNVS             = 1,                  \
-              .EfiMemoryMappedIO            = 1,                  \
-              .EfiMemoryMappedIOPortSpace   = 1,                  \
-              .EfiPalCode                   = 1,                  \
-              .EfiPersistentMemory          = 1,                  \
-              .OEMReserved                  = 0,                  \
-              .OSReserved                   = 0                   \
-            }                                                     \
+#define MEMORY_PROTECTION_SETTINGS_DEBUG                        \
+          {                                                     \
+            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,         \
+            TRUE,   /* Stack Guard On */                        \
+            {                                                   \
+              .Fields.UefiNullDetection            = 1,         \
+              .Fields.SmmNullDetection             = 1,         \
+              .Fields.NonstopMode                  = 0,         \
+              .Fields.DisableEndOfDxe              = 0,         \
+              .Fields.DisableReadyToBoot           = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.UefiPageGuard                = 1,         \
+              .Fields.UefiPoolGuard                = 1,         \
+              .Fields.SmmPageGuard                 = 1,         \
+              .Fields.SmmPoolGuard                 = 1,         \
+              .Fields.UefiFreedMemoryGuard         = 0,         \
+              .Fields.NonstopMode                  = 0,         \
+              .Fields.Direction                    = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.FromUnknown                  = 0,         \
+              .Fields.FromFv                       = 1,         \
+              .Fields.RaiseErrorIfProtectionFails  = 1          \
+            },                                                  \
+            {                                                   \
+              .Fields.EfiReservedMemoryType        = 0,         \
+              .Fields.EfiLoaderCode                = 0,         \
+              .Fields.EfiLoaderData                = 0,         \
+              .Fields.EfiBootServicesCode          = 0,         \
+              .Fields.EfiBootServicesData          = 1,         \
+              .Fields.EfiRuntimeServicesCode       = 0,         \
+              .Fields.EfiRuntimeServicesData       = 1,         \
+              .Fields.EfiConventionalMemory        = 0,         \
+              .Fields.EfiUnusableMemory            = 0,         \
+              .Fields.EfiACPIReclaimMemory         = 0,         \
+              .Fields.EfiACPIMemoryNVS             = 0,         \
+              .Fields.EfiMemoryMappedIO            = 0,         \
+              .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
+              .Fields.EfiPalCode                   = 0,         \
+              .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.OEMReserved                  = 0,         \
+              .Fields.OSReserved                   = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.EfiReservedMemoryType        = 0,         \
+              .Fields.EfiLoaderCode                = 0,         \
+              .Fields.EfiLoaderData                = 0,         \
+              .Fields.EfiBootServicesCode          = 0,         \
+              .Fields.EfiBootServicesData          = 1,         \
+              .Fields.EfiRuntimeServicesCode       = 0,         \
+              .Fields.EfiRuntimeServicesData       = 1,         \
+              .Fields.EfiConventionalMemory        = 0,         \
+              .Fields.EfiUnusableMemory            = 0,         \
+              .Fields.EfiACPIReclaimMemory         = 0,         \
+              .Fields.EfiACPIMemoryNVS             = 0,         \
+              .Fields.EfiMemoryMappedIO            = 0,         \
+              .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
+              .Fields.EfiPalCode                   = 0,         \
+              .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.OEMReserved                  = 0,         \
+              .Fields.OSReserved                   = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.EfiReservedMemoryType        = 1,         \
+              .Fields.EfiLoaderCode                = 0,         \
+              .Fields.EfiLoaderData                = 1,         \
+              .Fields.EfiBootServicesCode          = 0,         \
+              .Fields.EfiBootServicesData          = 1,         \
+              .Fields.EfiRuntimeServicesCode       = 0,         \
+              .Fields.EfiRuntimeServicesData       = 1,         \
+              .Fields.EfiConventionalMemory        = 1,         \
+              .Fields.EfiUnusableMemory            = 1,         \
+              .Fields.EfiACPIReclaimMemory         = 1,         \
+              .Fields.EfiACPIMemoryNVS             = 1,         \
+              .Fields.EfiMemoryMappedIO            = 1,         \
+              .Fields.EfiMemoryMappedIOPortSpace   = 1,         \
+              .Fields.EfiPalCode                   = 1,         \
+              .Fields.EfiPersistentMemory          = 1,         \
+              .Fields.OEMReserved                  = 0,         \
+              .Fields.OSReserved                   = 0          \
+            }                                                   \
           }
   
 //
@@ -273,266 +273,263 @@ extern GUID gMemoryProtectionSettingsGuid;
 //  settings, this removes the pool guards and doesn't unload images
 //  which fail protection.
 //
-#define MEMORY_PROTECTION_SETTINGS_SHIP_MODE                        \
-          {                                                         \
-            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,             \
-            TRUE,   /* NX Bit Set for Stack */                      \
-            TRUE,   /* Stack Guard On */                            \
-            {                                                       \
-              .UefiNullDetection            = 1,                    \
-              .SmmNullDetection             = 1,                    \
-              .NonstopMode                  = 0,                    \
-              .DisableEndOfDxe              = 0,                    \
-              .DisableReadyToBoot           = 0                     \
-            },                                                      \
-            {                                                       \
-              .UefiPageGuard                = 1,                    \
-              .UefiPoolGuard                = 0,                    \
-              .SmmPageGuard                 = 1,                    \
-              .SmmPoolGuard                 = 0,                    \
-              .UefiFreedMemoryGuard         = 0,                    \
-              .NonstopMode                  = 0,                    \
-              .Direction                    = 0                     \
-            },                                                      \
-            {                                                       \
-              .FromUnknown                  = 0,                    \
-              .FromFv                       = 1,                    \
-              .RaiseErrorIfProtectionFails  = 0                     \
-            },                                                      \
-            {                                                       \
-              .EfiReservedMemoryType        = 0,                    \
-              .EfiLoaderCode                = 0,                    \
-              .EfiLoaderData                = 0,                    \
-              .EfiBootServicesCode          = 0,                    \
-              .EfiBootServicesData          = 0,                    \
-              .EfiRuntimeServicesCode       = 0,                    \
-              .EfiRuntimeServicesData       = 0,                    \
-              .EfiConventionalMemory        = 0,                    \
-              .EfiUnusableMemory            = 0,                    \
-              .EfiACPIReclaimMemory         = 0,                    \
-              .EfiACPIMemoryNVS             = 0,                    \
-              .EfiMemoryMappedIO            = 0,                    \
-              .EfiMemoryMappedIOPortSpace   = 0,                    \
-              .EfiPalCode                   = 0,                    \
-              .EfiPersistentMemory          = 0,                    \
-              .OEMReserved                  = 0,                    \
-              .OSReserved                   = 0                     \
-            },                                                      \
-            {                                                       \
-              .EfiReservedMemoryType        = 0,                    \
-              .EfiLoaderCode                = 0,                    \
-              .EfiLoaderData                = 0,                    \
-              .EfiBootServicesCode          = 0,                    \
-              .EfiBootServicesData          = 1,                    \
-              .EfiRuntimeServicesCode       = 0,                    \
-              .EfiRuntimeServicesData       = 1,                    \
-              .EfiConventionalMemory        = 0,                    \
-              .EfiUnusableMemory            = 0,                    \
-              .EfiACPIReclaimMemory         = 0,                    \
-              .EfiACPIMemoryNVS             = 0,                    \
-              .EfiMemoryMappedIO            = 0,                    \
-              .EfiMemoryMappedIOPortSpace   = 0,                    \
-              .EfiPalCode                   = 0,                    \
-              .EfiPersistentMemory          = 0,                    \
-              .OEMReserved                  = 0,                    \
-              .OSReserved                   = 0                     \
-            },                                                      \
-            {                                                       \
-              .EfiReservedMemoryType        = 1,                    \
-              .EfiLoaderCode                = 0,                    \
-              .EfiLoaderData                = 1,                    \
-              .EfiBootServicesCode          = 0,                    \
-              .EfiBootServicesData          = 1,                    \
-              .EfiRuntimeServicesCode       = 0,                    \
-              .EfiRuntimeServicesData       = 1,                    \
-              .EfiConventionalMemory        = 1,                    \
-              .EfiUnusableMemory            = 1,                    \
-              .EfiACPIReclaimMemory         = 1,                    \
-              .EfiACPIMemoryNVS             = 1,                    \
-              .EfiMemoryMappedIO            = 1,                    \
-              .EfiMemoryMappedIOPortSpace   = 1,                    \
-              .EfiPalCode                   = 1,                    \
-              .EfiPersistentMemory          = 1,                    \
-              .OEMReserved                  = 0,                    \
-              .OSReserved                   = 0                     \
-            }                                                       \
+#define MEMORY_PROTECTION_SETTINGS_SHIP_MODE                    \
+          {                                                     \
+            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,         \
+            TRUE,   /* Stack Guard On */                        \
+            {                                                   \
+              .Fields.UefiNullDetection            = 1,         \
+              .Fields.SmmNullDetection             = 1,         \
+              .Fields.NonstopMode                  = 0,         \
+              .Fields.DisableEndOfDxe              = 0,         \
+              .Fields.DisableReadyToBoot           = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.UefiPageGuard                = 1,         \
+              .Fields.UefiPoolGuard                = 0,         \
+              .Fields.SmmPageGuard                 = 1,         \
+              .Fields.SmmPoolGuard                 = 0,         \
+              .Fields.UefiFreedMemoryGuard         = 0,         \
+              .Fields.NonstopMode                  = 0,         \
+              .Fields.Direction                    = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.FromUnknown                  = 0,         \
+              .Fields.FromFv                       = 1,         \
+              .Fields.RaiseErrorIfProtectionFails  = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.EfiReservedMemoryType        = 0,         \
+              .Fields.EfiLoaderCode                = 0,         \
+              .Fields.EfiLoaderData                = 0,         \
+              .Fields.EfiBootServicesCode          = 0,         \
+              .Fields.EfiBootServicesData          = 0,         \
+              .Fields.EfiRuntimeServicesCode       = 0,         \
+              .Fields.EfiRuntimeServicesData       = 0,         \
+              .Fields.EfiConventionalMemory        = 0,         \
+              .Fields.EfiUnusableMemory            = 0,         \
+              .Fields.EfiACPIReclaimMemory         = 0,         \
+              .Fields.EfiACPIMemoryNVS             = 0,         \
+              .Fields.EfiMemoryMappedIO            = 0,         \
+              .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
+              .Fields.EfiPalCode                   = 0,         \
+              .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.OEMReserved                  = 0,         \
+              .Fields.OSReserved                   = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.EfiReservedMemoryType        = 0,         \
+              .Fields.EfiLoaderCode                = 0,         \
+              .Fields.EfiLoaderData                = 0,         \
+              .Fields.EfiBootServicesCode          = 0,         \
+              .Fields.EfiBootServicesData          = 1,         \
+              .Fields.EfiRuntimeServicesCode       = 0,         \
+              .Fields.EfiRuntimeServicesData       = 1,         \
+              .Fields.EfiConventionalMemory        = 0,         \
+              .Fields.EfiUnusableMemory            = 0,         \
+              .Fields.EfiACPIReclaimMemory         = 0,         \
+              .Fields.EfiACPIMemoryNVS             = 0,         \
+              .Fields.EfiMemoryMappedIO            = 0,         \
+              .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
+              .Fields.EfiPalCode                   = 0,         \
+              .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.OEMReserved                  = 0,         \
+              .Fields.OSReserved                   = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.EfiReservedMemoryType        = 1,         \
+              .Fields.EfiLoaderCode                = 0,         \
+              .Fields.EfiLoaderData                = 1,         \
+              .Fields.EfiBootServicesCode          = 0,         \
+              .Fields.EfiBootServicesData          = 1,         \
+              .Fields.EfiRuntimeServicesCode       = 0,         \
+              .Fields.EfiRuntimeServicesData       = 1,         \
+              .Fields.EfiConventionalMemory        = 1,         \
+              .Fields.EfiUnusableMemory            = 1,         \
+              .Fields.EfiACPIReclaimMemory         = 1,         \
+              .Fields.EfiACPIMemoryNVS             = 1,         \
+              .Fields.EfiMemoryMappedIO            = 1,         \
+              .Fields.EfiMemoryMappedIOPortSpace   = 1,         \
+              .Fields.EfiPalCode                   = 1,         \
+              .Fields.EfiPersistentMemory          = 1,         \
+              .Fields.OEMReserved                  = 0,         \
+              .Fields.OSReserved                   = 0          \
+            }                                                   \
           }
 
 //
 //  A memory profile which mirrors MEMORY_PROTECTION_SETTINGS_SHIP_MODE
 //  but doesn't include page guards.
 //
-#define MEMORY_PROTECTION_SETTINGS_SHIP_MODE_NO_PAGE_GUARDS       \
-          {                                                       \
-            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,           \
-            TRUE,   /* NX Bit Set for Stack */                    \
-            TRUE,   /* Stack Guard On */                          \
-            {                                                     \
-              .UefiNullDetection            = 1,                  \
-              .SmmNullDetection             = 1,                  \
-              .NonstopMode                  = 0,                  \
-              .DisableEndOfDxe              = 0,                  \
-              .DisableReadyToBoot           = 0                   \
-            },                                                    \
-            {                                                     \
-              .UefiPageGuard                = 0,                  \
-              .UefiPoolGuard                = 0,                  \
-              .SmmPageGuard                 = 0,                  \
-              .SmmPoolGuard                 = 0,                  \
-              .UefiFreedMemoryGuard         = 0,                  \
-              .NonstopMode                  = 0,                  \
-              .Direction                    = 0                   \
-            },                                                    \
-            {                                                     \
-              .FromUnknown                  = 0,                  \
-              .FromFv                       = 1,                  \
-              .RaiseErrorIfProtectionFails  = 0                   \
-            },                                                    \
-            {                                                     \
-              .EfiReservedMemoryType        = 0,                  \
-              .EfiLoaderCode                = 0,                  \
-              .EfiLoaderData                = 0,                  \
-              .EfiBootServicesCode          = 0,                  \
-              .EfiBootServicesData          = 0,                  \
-              .EfiRuntimeServicesCode       = 0,                  \
-              .EfiRuntimeServicesData       = 0,                  \
-              .EfiConventionalMemory        = 0,                  \
-              .EfiUnusableMemory            = 0,                  \
-              .EfiACPIReclaimMemory         = 0,                  \
-              .EfiACPIMemoryNVS             = 0,                  \
-              .EfiMemoryMappedIO            = 0,                  \
-              .EfiMemoryMappedIOPortSpace   = 0,                  \
-              .EfiPalCode                   = 0,                  \
-              .EfiPersistentMemory          = 0,                  \
-              .OEMReserved                  = 0,                  \
-              .OSReserved                   = 0                   \
-            },                                                    \
-            {                                                     \
-              .EfiReservedMemoryType        = 0,                  \
-              .EfiLoaderCode                = 0,                  \
-              .EfiLoaderData                = 0,                  \
-              .EfiBootServicesCode          = 0,                  \
-              .EfiBootServicesData          = 0,                  \
-              .EfiRuntimeServicesCode       = 0,                  \
-              .EfiRuntimeServicesData       = 0,                  \
-              .EfiConventionalMemory        = 0,                  \
-              .EfiUnusableMemory            = 0,                  \
-              .EfiACPIReclaimMemory         = 0,                  \
-              .EfiACPIMemoryNVS             = 0,                  \
-              .EfiMemoryMappedIO            = 0,                  \
-              .EfiMemoryMappedIOPortSpace   = 0,                  \
-              .EfiPalCode                   = 0,                  \
-              .EfiPersistentMemory          = 0,                  \
-              .OEMReserved                  = 0,                  \
-              .OSReserved                   = 0                   \
-            },                                                    \
-            {                                                     \
-              .EfiReservedMemoryType        = 1,                  \
-              .EfiLoaderCode                = 0,                  \
-              .EfiLoaderData                = 1,                  \
-              .EfiBootServicesCode          = 0,                  \
-              .EfiBootServicesData          = 1,                  \
-              .EfiRuntimeServicesCode       = 0,                  \
-              .EfiRuntimeServicesData       = 1,                  \
-              .EfiConventionalMemory        = 1,                  \
-              .EfiUnusableMemory            = 1,                  \
-              .EfiACPIReclaimMemory         = 1,                  \
-              .EfiACPIMemoryNVS             = 1,                  \
-              .EfiMemoryMappedIO            = 1,                  \
-              .EfiMemoryMappedIOPortSpace   = 1,                  \
-              .EfiPalCode                   = 1,                  \
-              .EfiPersistentMemory          = 1,                  \
-              .OEMReserved                  = 0,                  \
-              .OSReserved                   = 0                   \
-            }                                                     \
+#define MEMORY_PROTECTION_SETTINGS_SHIP_MODE_NO_PAGE_GUARDS     \
+          {                                                     \
+            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,         \
+            TRUE,   /* Stack Guard On */                        \
+            {                                                   \
+              .Fields.UefiNullDetection            = 1,         \
+              .Fields.SmmNullDetection             = 1,         \
+              .Fields.NonstopMode                  = 0,         \
+              .Fields.DisableEndOfDxe              = 0,         \
+              .Fields.DisableReadyToBoot           = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.UefiPageGuard                = 0,         \
+              .Fields.UefiPoolGuard                = 0,         \
+              .Fields.SmmPageGuard                 = 0,         \
+              .Fields.SmmPoolGuard                 = 0,         \
+              .Fields.UefiFreedMemoryGuard         = 0,         \
+              .Fields.NonstopMode                  = 0,         \
+              .Fields.Direction                    = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.FromUnknown                  = 0,         \
+              .Fields.FromFv                       = 1,         \
+              .Fields.RaiseErrorIfProtectionFails  = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.EfiReservedMemoryType        = 0,         \
+              .Fields.EfiLoaderCode                = 0,         \
+              .Fields.EfiLoaderData                = 0,         \
+              .Fields.EfiBootServicesCode          = 0,         \
+              .Fields.EfiBootServicesData          = 0,         \
+              .Fields.EfiRuntimeServicesCode       = 0,         \
+              .Fields.EfiRuntimeServicesData       = 0,         \
+              .Fields.EfiConventionalMemory        = 0,         \
+              .Fields.EfiUnusableMemory            = 0,         \
+              .Fields.EfiACPIReclaimMemory         = 0,         \
+              .Fields.EfiACPIMemoryNVS             = 0,         \
+              .Fields.EfiMemoryMappedIO            = 0,         \
+              .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
+              .Fields.EfiPalCode                   = 0,         \
+              .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.OEMReserved                  = 0,         \
+              .Fields.OSReserved                   = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.EfiReservedMemoryType        = 0,         \
+              .Fields.EfiLoaderCode                = 0,         \
+              .Fields.EfiLoaderData                = 0,         \
+              .Fields.EfiBootServicesCode          = 0,         \
+              .Fields.EfiBootServicesData          = 0,         \
+              .Fields.EfiRuntimeServicesCode       = 0,         \
+              .Fields.EfiRuntimeServicesData       = 0,         \
+              .Fields.EfiConventionalMemory        = 0,         \
+              .Fields.EfiUnusableMemory            = 0,         \
+              .Fields.EfiACPIReclaimMemory         = 0,         \
+              .Fields.EfiACPIMemoryNVS             = 0,         \
+              .Fields.EfiMemoryMappedIO            = 0,         \
+              .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
+              .Fields.EfiPalCode                   = 0,         \
+              .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.OEMReserved                  = 0,         \
+              .Fields.OSReserved                   = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.EfiReservedMemoryType        = 1,         \
+              .Fields.EfiLoaderCode                = 0,         \
+              .Fields.EfiLoaderData                = 1,         \
+              .Fields.EfiBootServicesCode          = 0,         \
+              .Fields.EfiBootServicesData          = 1,         \
+              .Fields.EfiRuntimeServicesCode       = 0,         \
+              .Fields.EfiRuntimeServicesData       = 1,         \
+              .Fields.EfiConventionalMemory        = 1,         \
+              .Fields.EfiUnusableMemory            = 1,         \
+              .Fields.EfiACPIReclaimMemory         = 1,         \
+              .Fields.EfiACPIMemoryNVS             = 1,         \
+              .Fields.EfiMemoryMappedIO            = 1,         \
+              .Fields.EfiMemoryMappedIOPortSpace   = 1,         \
+              .Fields.EfiPalCode                   = 1,         \
+              .Fields.EfiPersistentMemory          = 1,         \
+              .Fields.OEMReserved                  = 0,         \
+              .Fields.OSReserved                   = 0          \
+            }                                                   \
           }
 
 //
 //  A memory profile which disables all memory protection settings.
 //
-#define MEMORY_PROTECTION_SETTINGS_OFF                            \
-          {                                                       \
-            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,           \
-            FALSE,   /* NX Bit Set for Stack */                   \
-            FALSE,   /* Stack Guard On */                         \
-            {                                                     \
-              .UefiNullDetection            = 0,                  \
-              .SmmNullDetection             = 0,                  \
-              .NonstopMode                  = 0,                  \
-              .DisableEndOfDxe              = 0,                  \
-              .DisableReadyToBoot           = 0                   \
-            },                                                    \
-            {                                                     \
-              .UefiPageGuard                = 0,                  \
-              .UefiPoolGuard                = 0,                  \
-              .SmmPageGuard                 = 0,                  \
-              .SmmPoolGuard                 = 0,                  \
-              .UefiFreedMemoryGuard         = 0,                  \
-              .NonstopMode                  = 0,                  \
-              .Direction                    = 0                   \
-            },                                                    \
-            {                                                     \
-              .FromUnknown                  = 0,                  \
-              .FromFv                       = 0,                  \
-              .RaiseErrorIfProtectionFails  = 0                   \
-            },                                                    \
-            {                                                     \
-              .EfiReservedMemoryType        = 0,                  \
-              .EfiLoaderCode                = 0,                  \
-              .EfiLoaderData                = 0,                  \
-              .EfiBootServicesCode          = 0,                  \
-              .EfiBootServicesData          = 0,                  \
-              .EfiRuntimeServicesCode       = 0,                  \
-              .EfiRuntimeServicesData       = 0,                  \
-              .EfiConventionalMemory        = 0,                  \
-              .EfiUnusableMemory            = 0,                  \
-              .EfiACPIReclaimMemory         = 0,                  \
-              .EfiACPIMemoryNVS             = 0,                  \
-              .EfiMemoryMappedIO            = 0,                  \
-              .EfiMemoryMappedIOPortSpace   = 0,                  \
-              .EfiPalCode                   = 0,                  \
-              .EfiPersistentMemory          = 0,                  \
-              .OEMReserved                  = 0,                  \
-              .OSReserved                   = 0                   \
-            },                                                    \
-            {                                                     \
-              .EfiReservedMemoryType        = 0,                  \
-              .EfiLoaderCode                = 0,                  \
-              .EfiLoaderData                = 0,                  \
-              .EfiBootServicesCode          = 0,                  \
-              .EfiBootServicesData          = 0,                  \
-              .EfiRuntimeServicesCode       = 0,                  \
-              .EfiRuntimeServicesData       = 0,                  \
-              .EfiConventionalMemory        = 0,                  \
-              .EfiUnusableMemory            = 0,                  \
-              .EfiACPIReclaimMemory         = 0,                  \
-              .EfiACPIMemoryNVS             = 0,                  \
-              .EfiMemoryMappedIO            = 0,                  \
-              .EfiMemoryMappedIOPortSpace   = 0,                  \
-              .EfiPalCode                   = 0,                  \
-              .EfiPersistentMemory          = 0,                  \
-              .OEMReserved                  = 0,                  \
-              .OSReserved                   = 0                   \
-            },                                                    \
-            {                                                     \
-              .EfiReservedMemoryType        = 0,                  \
-              .EfiLoaderCode                = 0,                  \
-              .EfiLoaderData                = 0,                  \
-              .EfiBootServicesCode          = 0,                  \
-              .EfiBootServicesData          = 0,                  \
-              .EfiRuntimeServicesCode       = 0,                  \
-              .EfiRuntimeServicesData       = 0,                  \
-              .EfiConventionalMemory        = 0,                  \
-              .EfiUnusableMemory            = 0,                  \
-              .EfiACPIReclaimMemory         = 0,                  \
-              .EfiACPIMemoryNVS             = 0,                  \
-              .EfiMemoryMappedIO            = 0,                  \
-              .EfiMemoryMappedIOPortSpace   = 0,                  \
-              .EfiPalCode                   = 0,                  \
-              .EfiPersistentMemory          = 0,                  \
-              .OEMReserved                  = 0,                  \
-              .OSReserved                   = 0                   \
-            }                                                     \
+#define MEMORY_PROTECTION_SETTINGS_OFF                          \
+          {                                                     \
+            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,         \
+            FALSE,   /* Stack Guard On */                       \
+            {                                                   \
+              .Fields.UefiNullDetection            = 0,         \
+              .Fields.SmmNullDetection             = 0,         \
+              .Fields.NonstopMode                  = 0,         \
+              .Fields.DisableEndOfDxe              = 0,         \
+              .Fields.DisableReadyToBoot           = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.UefiPageGuard                = 0,         \
+              .Fields.UefiPoolGuard                = 0,         \
+              .Fields.SmmPageGuard                 = 0,         \
+              .Fields.SmmPoolGuard                 = 0,         \
+              .Fields.UefiFreedMemoryGuard         = 0,         \
+              .Fields.NonstopMode                  = 0,         \
+              .Fields.Direction                    = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.FromUnknown                  = 0,         \
+              .Fields.FromFv                       = 0,         \
+              .Fields.RaiseErrorIfProtectionFails  = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.EfiReservedMemoryType        = 0,         \
+              .Fields.EfiLoaderCode                = 0,         \
+              .Fields.EfiLoaderData                = 0,         \
+              .Fields.EfiBootServicesCode          = 0,         \
+              .Fields.EfiBootServicesData          = 0,         \
+              .Fields.EfiRuntimeServicesCode       = 0,         \
+              .Fields.EfiRuntimeServicesData       = 0,         \
+              .Fields.EfiConventionalMemory        = 0,         \
+              .Fields.EfiUnusableMemory            = 0,         \
+              .Fields.EfiACPIReclaimMemory         = 0,         \
+              .Fields.EfiACPIMemoryNVS             = 0,         \
+              .Fields.EfiMemoryMappedIO            = 0,         \
+              .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
+              .Fields.EfiPalCode                   = 0,         \
+              .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.OEMReserved                  = 0,         \
+              .Fields.OSReserved                   = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.EfiReservedMemoryType        = 0,         \
+              .Fields.EfiLoaderCode                = 0,         \
+              .Fields.EfiLoaderData                = 0,         \
+              .Fields.EfiBootServicesCode          = 0,         \
+              .Fields.EfiBootServicesData          = 0,         \
+              .Fields.EfiRuntimeServicesCode       = 0,         \
+              .Fields.EfiRuntimeServicesData       = 0,         \
+              .Fields.EfiConventionalMemory        = 0,         \
+              .Fields.EfiUnusableMemory            = 0,         \
+              .Fields.EfiACPIReclaimMemory         = 0,         \
+              .Fields.EfiACPIMemoryNVS             = 0,         \
+              .Fields.EfiMemoryMappedIO            = 0,         \
+              .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
+              .Fields.EfiPalCode                   = 0,         \
+              .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.OEMReserved                  = 0,         \
+              .Fields.OSReserved                   = 0          \
+            },                                                  \
+            {                                                   \
+              .Fields.EfiReservedMemoryType        = 0,         \
+              .Fields.EfiLoaderCode                = 0,         \
+              .Fields.EfiLoaderData                = 0,         \
+              .Fields.EfiBootServicesCode          = 0,         \
+              .Fields.EfiBootServicesData          = 0,         \
+              .Fields.EfiRuntimeServicesCode       = 0,         \
+              .Fields.EfiRuntimeServicesData       = 0,         \
+              .Fields.EfiConventionalMemory        = 0,         \
+              .Fields.EfiUnusableMemory            = 0,         \
+              .Fields.EfiACPIReclaimMemory         = 0,         \
+              .Fields.EfiACPIMemoryNVS             = 0,         \
+              .Fields.EfiMemoryMappedIO            = 0,         \
+              .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
+              .Fields.EfiPalCode                   = 0,         \
+              .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.OEMReserved                  = 0,         \
+              .Fields.OSReserved                   = 0          \
+            }                                                   \
           }
 
 #endif

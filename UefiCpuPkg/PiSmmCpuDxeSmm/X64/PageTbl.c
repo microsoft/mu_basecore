@@ -1106,7 +1106,7 @@ SmiPFHandler (
     // MU_CHANGE START Update to use memory protection settings HOB
     // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0 &&
     //     (PFAddress < EFI_PAGE_SIZE)) {
-    if (gMPS.NullPointerDetectionPolicy.SmmNullDetection &&
+    if (gMPS.NullPointerDetectionPolicy.Fields.SmmNullDetection &&
         (PFAddress < EFI_PAGE_SIZE)) {
     // MU_CHANGE END
       DumpCpuContext (InterruptType, SystemContext);
@@ -1201,14 +1201,14 @@ SetPageTableAttributes (
   if (!mCpuSmmRestrictedMemoryAccess ||
       // MU_CHANGE START Update to use memory protection settings HOB
       // ((PcdGet8 (PcdHeapGuardPropertyMask) & (BIT3 | BIT2)) != 0) ||
-      (gMPS.HeapGuardPolicy.SmmPageGuard || gMPS.HeapGuardPolicy.SmmPoolGuard) ||
+      (gMPS.HeapGuardPolicy.Fields.SmmPageGuard || gMPS.HeapGuardPolicy.Fields.SmmPoolGuard) ||
       // MU_CHANGE
       FeaturePcdGet (PcdCpuSmmProfileEnable)) {
     //
     // Restriction on access to non-SMRAM memory and heap guard could not be enabled at the same time.
     //
     ASSERT (!(mCpuSmmRestrictedMemoryAccess &&
-              (gMPS.HeapGuardPolicy.SmmPageGuard || gMPS.HeapGuardPolicy.SmmPoolGuard))); // MU_CHANGE
+              (gMPS.HeapGuardPolicy.Fields.SmmPageGuard || gMPS.HeapGuardPolicy.Fields.SmmPoolGuard))); // MU_CHANGE
 
     //
     // Restriction on access to non-SMRAM memory and SMM profile could not be enabled at the same time.

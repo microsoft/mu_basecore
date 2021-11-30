@@ -60,16 +60,16 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define MSR_DS_AREA                  0x600
 
 // MU_CHANGE START Update to use gMPS
-#define HEAP_GUARD_NONSTOP_MODE (gMPS.HeapGuardPolicy.NonstopMode && \
-                                  (gMPS.HeapGuardPolicy.SmmPoolGuard || \
-                                    gMPS.HeapGuardPolicy.SmmPageGuard))
+#define HEAP_GUARD_NONSTOP_MODE (gMPS.HeapGuardPolicy.Fields.NonstopMode && \
+                                  (gMPS.HeapGuardPolicy.Fields.SmmPoolGuard || \
+                                    gMPS.HeapGuardPolicy.Fields.SmmPageGuard))
 /*
 #define HEAP_GUARD_NONSTOP_MODE      \
         ((PcdGet8 (PcdHeapGuardPropertyMask) & (BIT6|BIT3|BIT2)) > BIT6)
 */
 
-#define NULL_DETECTION_NONSTOP_MODE (gMPS.NullPointerDetectionPolicy.NonstopMode && \
-                                      gMPS.NullPointerDetectionPolicy.SmmNullDetection)
+#define NULL_DETECTION_NONSTOP_MODE (gMPS.NullPointerDetectionPolicy.Fields.NonstopMode && \
+                                      gMPS.NullPointerDetectionPolicy.Fields.SmmNullDetection)
 /*
 #define NULL_DETECTION_NONSTOP_MODE  \
         ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & (BIT6|BIT1)) > BIT6)

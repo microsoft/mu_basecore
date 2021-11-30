@@ -553,7 +553,7 @@ UnsetGuardPage (
   Attributes = 0;
   // MU_CHANGE START Update to use memory protection settings HOB
   // if ((PcdGet64 (PcdDxeNxMemoryProtectionPolicy) & (1 << EfiConventionalMemory)) != 0) {
-  if (gMPS.DxeNxProtectionPolicy.EfiConventionalMemory) {
+  if (gMPS.DxeNxProtectionPolicy.Fields.EfiConventionalMemory) {
   // MU_CHANGE END
     Attributes |= EFI_MEMORY_XP;
   }
@@ -625,9 +625,9 @@ IsMemoryTypeToGuard (
 
 //   return ((ConfigBit & TestBit) != 0);
 
-  if (PageOrPool == GUARD_HEAP_TYPE_POOL && gMPS.HeapGuardPolicy.UefiPoolGuard) {
+  if (PageOrPool == GUARD_HEAP_TYPE_POOL && gMPS.HeapGuardPolicy.Fields.UefiPoolGuard) {
     return GetMemoryTypeSettingFromBitfield (MemoryType, gMPS.HeapGuardPoolType);
-  } else if (PageOrPool == GUARD_HEAP_TYPE_PAGE && gMPS.HeapGuardPolicy.UefiPageGuard) {
+  } else if (PageOrPool == GUARD_HEAP_TYPE_PAGE && gMPS.HeapGuardPolicy.Fields.UefiPageGuard) {
     return GetMemoryTypeSettingFromBitfield (MemoryType, gMPS.HeapGuardPageType);
   }
 
@@ -684,9 +684,9 @@ IsHeapGuardEnabled (
   )
 {
   // MU_CHANGE START Update to work with memory protection settings HOB
-  if ((GuardType & GUARD_HEAP_TYPE_PAGE && gMPS.HeapGuardPolicy.UefiPageGuard) ||
-      (GuardType & GUARD_HEAP_TYPE_POOL && gMPS.HeapGuardPolicy.UefiPoolGuard) ||
-      (GuardType & GUARD_HEAP_TYPE_FREED && gMPS.HeapGuardPolicy.UefiFreedMemoryGuard)) {
+  if ((GuardType & GUARD_HEAP_TYPE_PAGE && gMPS.HeapGuardPolicy.Fields.UefiPageGuard) ||
+      (GuardType & GUARD_HEAP_TYPE_POOL && gMPS.HeapGuardPolicy.Fields.UefiPoolGuard) ||
+      (GuardType & GUARD_HEAP_TYPE_FREED && gMPS.HeapGuardPolicy.Fields.UefiFreedMemoryGuard)) {
     return TRUE;
   }
   return FALSE;
@@ -853,7 +853,7 @@ AdjustMemoryS (
   //
   // MU_CHANGE START Update to use memory protection settings HOB
   // if ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0) {
-  if (gMPS.HeapGuardPolicy.Direction == HEAP_GUARD_ALIGNED_TO_TAIL) {
+  if (gMPS.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_TAIL) {
   // MU_CHANGE END
     SizeRequested = ALIGN_VALUE(SizeRequested, 8);
   }
@@ -1040,7 +1040,7 @@ AdjustPoolHeadA (
 {
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
-  if (Memory == 0 || gMPS.HeapGuardPolicy.Direction == HEAP_GUARD_ALIGNED_TO_HEAD) {
+  if (Memory == 0 || gMPS.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_HEAD) {
   // MU_CHANGE END
     //
     // Pool head is put near the head Guard
@@ -1069,7 +1069,7 @@ AdjustPoolHeadF (
 {
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
-  if (Memory == 0 || gMPS.HeapGuardPolicy.Direction == HEAP_GUARD_ALIGNED_TO_HEAD) {
+  if (Memory == 0 || gMPS.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_HEAD) {
   // MU_CHANGE END
     //
     // Pool head is put near the head Guard

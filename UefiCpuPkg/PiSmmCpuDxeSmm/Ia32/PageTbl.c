@@ -196,7 +196,7 @@ SmiPFHandler (
     // MU_CHANGE START Update to use memory protection settings HOB
     // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0 &&
     //   (PFAddress < EFI_PAGE_SIZE)) {
-    if (gMPS.NullPointerDetectionPolicy.SmmNullDetection &&
+    if (gMPS.NullPointerDetectionPolicy.Fields.SmmNullDetection &&
         (PFAddress < EFI_PAGE_SIZE)) {
     // // MU_CHANGE END
       DumpCpuContext (InterruptType, SystemContext);
@@ -265,7 +265,7 @@ SetPageTableAttributes (
   //
   // MU_CHANGE START Update to use memory protection settings HOB
   // if ((PcdGet8 (PcdHeapGuardPropertyMask) & (BIT3 | BIT2)) != 0) {
-  if (gMPS.HeapGuardPolicy.SmmPageGuard || gMPS.HeapGuardPolicy.SmmPoolGuard) {
+  if (gMPS.HeapGuardPolicy.Fields.SmmPageGuard || gMPS.HeapGuardPolicy.Fields.SmmPoolGuard) {
   // MU_CHANGE END
     DEBUG ((DEBUG_INFO, "Don't mark page table to read-only as heap guard is enabled\n"));
     return ;
