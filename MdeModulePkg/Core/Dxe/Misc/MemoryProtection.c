@@ -161,9 +161,9 @@ GetProtectionPolicyFromImageType (
   // } else {
   //   return PROTECT_IF_ALIGNED_ELSE_ALLOW;
   // }
-  if ((ImageType == IMAGE_UNKNOWN && gMPS.ImageProtectionPolicy.FromUnknown) ||
-      (ImageType == IMAGE_FROM_FV && gMPS.ImageProtectionPolicy.FromFv)) {
-    if (gMPS.ImageProtectionPolicy.RaiseErrorIfProtectionFails) {
+  if ((ImageType == IMAGE_UNKNOWN && gMPS.ImageProtectionPolicy.Fields.FromUnknown) ||
+      (ImageType == IMAGE_FROM_FV && gMPS.ImageProtectionPolicy.Fields.FromFv)) {
+    if (gMPS.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails) {
       return PROTECT_ELSE_RAISE_ERROR;
     }
     return PROTECT_IF_ALIGNED_ELSE_ALLOW;
@@ -855,7 +855,7 @@ UnprotectUefiImage (
   LIST_ENTRY                 *ImageRecordLink;
   // // MU_CHANGE START Update to use memory protection settings HOB
   // if (PcdGet32(PcdImageProtectionPolicy) != 0) {
-  if (IMAGE_PROTECTION_ACTIVE) {
+  if (gMPS.ImageProtectionPolicy.Data) {
   // MU_CHANGE END
     for (ImageRecordLink = mProtectedImageRecordList.ForwardLink;
          ImageRecordLink != &mProtectedImageRecordList;
@@ -1245,7 +1245,7 @@ MemoryProtectionCpuArchProtocolNotify (
   //
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0) {
-  if (NX_PROTECTION_ACTIVE) {
+  if (gMPS.DxeNxProtectionPolicy.Data) {
   // MU_CHANGE END
     InitializeDxeNxMemoryProtectionPolicy ();
   }
@@ -1257,7 +1257,7 @@ MemoryProtectionCpuArchProtocolNotify (
 
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (mImageProtectionPolicy == 0) { 
-  if (!IMAGE_PROTECTION_ACTIVE) {
+  if (!gMPS.ImageProtectionPolicy.Data) {
   // MU_CHANGE END
     goto Done;
   }
@@ -1331,7 +1331,7 @@ MemoryProtectionExitBootServicesCallback (
   //
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (mImageProtectionPolicy != 0) {
-  if (IMAGE_PROTECTION_ACTIVE) {
+  if (gMPS.ImageProtectionPolicy.Data) {
   // MU_CHANGE END
     for (Link = gRuntime->ImageHead.ForwardLink; Link != &gRuntime->ImageHead; Link = Link->ForwardLink) {
       RuntimeImage = BASE_CR (Link, EFI_RUNTIME_IMAGE_ENTRY, Link);
@@ -1496,7 +1496,7 @@ CoreInitializeMemoryProtection (
   //                 detection enable event
   // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & (BIT0|BIT7))
   //      == (BIT0|BIT7)) {
-  if (gMPS.NullPointerDetectionPolicy.UefiNullDetection) {
+  if (gMPS.NullPointerDetectionPolicy.Fields.UefiNullDetection) {
 
     // PEI phase has been updated to always set page zero as allocated
     // so it can be safely set as RP
@@ -1519,7 +1519,7 @@ CoreInitializeMemoryProtection (
     if (!EFI_ERROR (Status)) {
       // If both DisableEndOfDxe and DisableReadyToBoot are enabled, just
       // create the event to disable at EndOfDxe because that event is sooner
-      if (gMPS.NullPointerDetectionPolicy.DisableEndOfDxe) {
+      if (gMPS.NullPointerDetectionPolicy.Fields.DisableEndOfDxe) {
         Status = CoreCreateEventEx (
                         EVT_NOTIFY_SIGNAL,
                         TPL_NOTIFY,
@@ -1528,7 +1528,7 @@ CoreInitializeMemoryProtection (
                         &gEfiEndOfDxeEventGroupGuid,
                         &DisableNullDetectionEvent
                         );
-      } else if (gMPS.NullPointerDetectionPolicy.DisableReadyToBoot) {
+      } else if (gMPS.NullPointerDetectionPolicy.Fields.DisableReadyToBoot) {
         Status = CoreCreateEventEx (
                         EVT_NOTIFY_SIGNAL,
                         TPL_NOTIFY,
@@ -1548,7 +1548,7 @@ CoreInitializeMemoryProtection (
   // Install protocol for validating Heap Guard if Heap Guard is turned on
   // Update to use memory protection settings HOB
   // if (PcdGet8(PcdHeapGuardPropertyMask)) {
-  if (HEAP_GUARD_ACTIVE) {
+  if (gMPS.HeapGuardPolicy.Data) {
     EFI_HANDLE HgBmHandle = NULL;
     Status = CoreInstallMultipleProtocolInterfaces (
       &HgBmHandle,
@@ -1631,7 +1631,7 @@ ApplyMemoryProtectionPolicy (
   //
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) == 0) {
-  if (!NX_PROTECTION_ACTIVE) {
+  if (!gMPS.DxeNxProtectionPolicy.Data) {
   // MU_CHANGE END
     return EFI_SUCCESS;
   }

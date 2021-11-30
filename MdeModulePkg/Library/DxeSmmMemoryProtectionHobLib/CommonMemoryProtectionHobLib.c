@@ -34,35 +34,35 @@ GetMemoryTypeSettingFromBitfield (
 {
   switch (MemoryType) {
     case EfiReservedMemoryType:
-      return HeapGuardMemoryType.EfiReservedMemoryType;
+      return HeapGuardMemoryType.Fields.EfiReservedMemoryType;
     case EfiLoaderCode:
-      return HeapGuardMemoryType.EfiLoaderCode;
+      return HeapGuardMemoryType.Fields.EfiLoaderCode;
     case EfiLoaderData:
-      return HeapGuardMemoryType.EfiLoaderData;
+      return HeapGuardMemoryType.Fields.EfiLoaderData;
     case EfiBootServicesCode:
-      return HeapGuardMemoryType.EfiBootServicesCode;
+      return HeapGuardMemoryType.Fields.EfiBootServicesCode;
     case EfiBootServicesData:
-      return HeapGuardMemoryType.EfiBootServicesData;
+      return HeapGuardMemoryType.Fields.EfiBootServicesData;
     case EfiRuntimeServicesCode:
-      return HeapGuardMemoryType.EfiRuntimeServicesCode;
+      return HeapGuardMemoryType.Fields.EfiRuntimeServicesCode;
     case EfiRuntimeServicesData:
-      return HeapGuardMemoryType.EfiRuntimeServicesData;
+      return HeapGuardMemoryType.Fields.EfiRuntimeServicesData;
     case EfiConventionalMemory:
-      return HeapGuardMemoryType.EfiConventionalMemory;
+      return HeapGuardMemoryType.Fields.EfiConventionalMemory;
     case EfiUnusableMemory:
-      return HeapGuardMemoryType.EfiUnusableMemory;
+      return HeapGuardMemoryType.Fields.EfiUnusableMemory;
     case EfiACPIReclaimMemory:
-      return HeapGuardMemoryType.EfiACPIReclaimMemory;
+      return HeapGuardMemoryType.Fields.EfiACPIReclaimMemory;
     case EfiACPIMemoryNVS:
-      return HeapGuardMemoryType.EfiACPIMemoryNVS;
+      return HeapGuardMemoryType.Fields.EfiACPIMemoryNVS;
     case EfiMemoryMappedIO:
-      return HeapGuardMemoryType.EfiMemoryMappedIO;
+      return HeapGuardMemoryType.Fields.EfiMemoryMappedIO;
     case EfiMemoryMappedIOPortSpace:
-      return HeapGuardMemoryType.EfiMemoryMappedIOPortSpace;
+      return HeapGuardMemoryType.Fields.EfiMemoryMappedIOPortSpace;
     case EfiPalCode:
-      return HeapGuardMemoryType.EfiPalCode;
+      return HeapGuardMemoryType.Fields.EfiPalCode;
     case EfiPersistentMemory:
-      return HeapGuardMemoryType.EfiPersistentMemory;
+      return HeapGuardMemoryType.Fields.EfiPersistentMemory;
     default:
       return FALSE;
   }
@@ -78,18 +78,8 @@ MemoryProtectionSettingsConsistencyCheck (
     VOID
   )
 {
-  if (!gMPS.SetNxForStack && gMPS.DxeNxProtectionPolicy.EfiBootServicesData) {
-    DEBUG ((
-      DEBUG_WARN,
-      "%a: - SetNxForStack is FALSE but \
-DxeNxProtectionPolicy.EfiBootServicesData is active. \
-NX could still be applied to the stack.\n",
-      __FUNCTION__
-      ));
-  }
-
-  if ((gMPS.HeapGuardPolicy.UefiPoolGuard || gMPS.HeapGuardPolicy.UefiPageGuard) &&
-       gMPS.HeapGuardPolicy.UefiFreedMemoryGuard) {
+  if ((gMPS.HeapGuardPolicy.Fields.UefiPoolGuard || gMPS.HeapGuardPolicy.Fields.UefiPageGuard) &&
+       gMPS.HeapGuardPolicy.Fields.UefiFreedMemoryGuard) {
     DEBUG ((
       DEBUG_WARN,
       "%a: - HeapGuardPolicy.UefiFreedMemoryGuard and \
@@ -98,15 +88,15 @@ cannot be active at the same time. Setting all three to ZERO in \
 the memory protection settings global.\n",
       __FUNCTION__
       ));
-      gMPS.HeapGuardPolicy.UefiPoolGuard = 0;
-      gMPS.HeapGuardPolicy.UefiPageGuard = 0;
-      gMPS.HeapGuardPolicy.UefiFreedMemoryGuard = 0;
+      gMPS.HeapGuardPolicy.Fields.UefiPoolGuard = 0;
+      gMPS.HeapGuardPolicy.Fields.UefiPageGuard = 0;
+      gMPS.HeapGuardPolicy.Fields.UefiFreedMemoryGuard = 0;
   }
 
-  if (!IMAGE_PROTECTION_ACTIVE && 
-        (gMPS.DxeNxProtectionPolicy.EfiLoaderData       ||
-         gMPS.DxeNxProtectionPolicy.EfiBootServicesData ||
-         gMPS.DxeNxProtectionPolicy.EfiRuntimeServicesData)) {
+  if (!gMPS.ImageProtectionPolicy.Data && 
+        (gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderData       ||
+         gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesData ||
+         gMPS.DxeNxProtectionPolicy.Fields.EfiRuntimeServicesData)) {
     DEBUG ((
       DEBUG_WARN,
       "%a: - Image Protection is inactive, but one or more of \
@@ -118,9 +108,9 @@ Image data sections could still be non-executable.\n",
       ));
   }
 
-  if (HEAP_GUARD_POOL_PROTECTION_ACTIVE       && 
-        (!(gMPS.HeapGuardPolicy.UefiPoolGuard ||
-             gMPS.HeapGuardPolicy.SmmPoolGuard))) {
+  if (gMPS.HeapGuardPoolType.Data && 
+        (!(gMPS.HeapGuardPolicy.Fields.UefiPoolGuard ||
+             gMPS.HeapGuardPolicy.Fields.SmmPoolGuard))) {
     DEBUG ((
       DEBUG_WARN,
       "%a: - Heap Guard Pool protections are active, \
@@ -130,9 +120,9 @@ HeapGuardPolicy.SmmPoolGuard are active.\n",
       ));
   }
 
-  if (HEAP_GUARD_PAGE_PROTECTION_ACTIVE       &&
-        (!(gMPS.HeapGuardPolicy.UefiPageGuard ||
-           gMPS.HeapGuardPolicy.SmmPageGuard))) {
+  if (gMPS.HeapGuardPageType.Data &&
+        (!(gMPS.HeapGuardPolicy.Fields.UefiPageGuard ||
+           gMPS.HeapGuardPolicy.Fields.SmmPageGuard))) {
     DEBUG ((
       DEBUG_WARN,
       "%a: - Heap Guard Page protections are active, \
@@ -142,9 +132,9 @@ HeapGuardPolicy.SmmPageGuard are active.\n",
       ));
   }
 
-  if (gMPS.DxeNxProtectionPolicy.EfiLoaderCode        ||
-      gMPS.DxeNxProtectionPolicy.EfiBootServicesCode  ||
-      gMPS.DxeNxProtectionPolicy.EfiRuntimeServicesCode) {
+  if (gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderCode        ||
+      gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesCode  ||
+      gMPS.DxeNxProtectionPolicy.Fields.EfiRuntimeServicesCode) {
     DEBUG ((
       DEBUG_WARN,
       "%a: - DxeNxProtectionPolicy.EfiLoaderCode, \
@@ -154,12 +144,12 @@ must be set to ZERO. Setting all to ZERO \
 in the memory protection settings global.\n",
       __FUNCTION__
       ));
-    gMPS.DxeNxProtectionPolicy.EfiLoaderCode = 0;
-    gMPS.DxeNxProtectionPolicy.EfiBootServicesCode = 0;
-    gMPS.DxeNxProtectionPolicy.EfiRuntimeServicesCode = 0;
+    gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderCode = 0;
+    gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesCode = 0;
+    gMPS.DxeNxProtectionPolicy.Fields.EfiRuntimeServicesCode = 0;
   }
 
-  if (gMPS.DxeNxProtectionPolicy.EfiBootServicesData != gMPS.DxeNxProtectionPolicy.EfiConventionalMemory) {
+  if (gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesData != gMPS.DxeNxProtectionPolicy.Fields.EfiConventionalMemory) {
     DEBUG ((
       DEBUG_WARN,
       "%a: - DxeNxProtectionPolicy.EfiBootServicesData \
@@ -167,13 +157,13 @@ and DxeNxProtectionPolicy.EfiConventionalMemory must have the same value. \
 Setting both to ZERO in the memory protection settings global.\n",
       __FUNCTION__
       ));
-    gMPS.DxeNxProtectionPolicy.EfiBootServicesData = 0;
-    gMPS.DxeNxProtectionPolicy.EfiConventionalMemory = 0;
+    gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesData = 0;
+    gMPS.DxeNxProtectionPolicy.Fields.EfiConventionalMemory = 0;
   }
 
-  if (gMPS.NullPointerDetectionPolicy.UefiNullDetection   &&
-      gMPS.NullPointerDetectionPolicy.DisableReadyToBoot  &&
-      gMPS.NullPointerDetectionPolicy.DisableEndOfDxe) {
+  if (gMPS.NullPointerDetectionPolicy.Fields.UefiNullDetection   &&
+      gMPS.NullPointerDetectionPolicy.Fields.DisableReadyToBoot  &&
+      gMPS.NullPointerDetectionPolicy.Fields.DisableEndOfDxe) {
     DEBUG ((
       DEBUG_WARN,
       "%a: - NULL detection disablement at both ReadyToBoot and EndOfDxe are active. \
