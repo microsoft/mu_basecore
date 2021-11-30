@@ -1,8 +1,8 @@
 # Memory Protections
 
-The Memory Protection bitwise PCDs add safety functionality such as page and pool guards, stack guard and 
+The Memory Protection Settings add safety functionality such as page and pool guards, stack guard and 
 null pointer detection. The target audience for this doc has intermediate knowledge of systems programming and working 
-with EDK II. 
+with EDK II.
 
 ## Useful Terms and Concepts (Linked in Text if Used)
 
@@ -56,8 +56,8 @@ Memory to Physical Memory. The addresses stored in the TLB are dictated by some 
 amount of memory accesses for which the address translation is outside the TLB. 
 
 ### Non-Stop Mode
-In the case of Non-Stop mode being enabled for either [PcdHeapGuardPropertyMask](#PcdHeapGuardPropertyMask) or 
-[PcdNullPointerDetectionPropertyMask](#PcdNullPointerDetectionPropertyMask), two exception handlers are registered. 
+In the case of Non-Stop mode being enabled for either [HeapGuardPolicy](#HeapGuardPolicy) or 
+[NullPointerDetectionPolicy](#NullPointerDetectionPolicy), two exception handlers are registered. 
 The first handler runs whenever the heap guard or null pointer page absences trigger a 
 [#PF](#Page-Fault-Exception-(AKA-#PF)). If Non-Stop mode is enabled for this type of 
 [#PF](#Page-Fault-Exception-(AKA-#PF)), the absent page(s) are temporarily set to be present and a 
@@ -67,43 +67,45 @@ The debug handler sets the page to be present and clears the [TLB](#Translation-
 remove the current translation for the page which caused the [#PF](#Page-Fault-Exception-(AKA-#PF)). Once these 
 two handlers have run, code execution continues.
 
-## PcdNullPointerDetectionPropertyMask
+## NullPointerDetectionPolicy
 
 ### Summary
-Pages are allocated in 4Kb chunks. This PCD marks the first 4Kb page to be not present to
+Pages are allocated in 4KB chunks. This policy marks the first 4KB page to be not present to
 detect NULL pointer references in both/either UEFI and SMM.
 
 ### Implementation Details
 
-If BIT0 is set, the present bit for the NULL page is cleared for UEFI address space in
-https://github.com/tianocore/edk2/tree/master/MdeModulePkg/Core/DxeIplPeim (A PEIM module which is the last
-executed in PEI phase and loads DXE Core from the Firmware Volume). Therefore, any NULL accesses prior to this 
-point will not cause a [#PF](#Page-Fault-Exception-(AKA-#PF)).
+In PEI phase, Project Mu will set page zero (on x64, what a NULL pointer translates to) to be allocated in the
+resource descriptor HOB but will not alter the present bit. DXE phase uses the memory descriptor HOB to create the
+memory map, so we are safe to set page zero as read protected in DXE phase. Because page zero is not read protected
+prior to DXE phase, any NULL accesses prior to this point will not cause a [#PF](#Page-Fault-Exception-(AKA-#PF)).
 
-If BIT1 is set, the present bit for the NULL page is cleared for SMM address space in 
-https://github.com/tianocore/edk2/tree/master/UefiCpuPkg/PiSmmCpuDxeSmm (THE SMM initialization driver).
+If SmmNullDetection is set, the present bit for the NULL page is cleared for SMM address space in 
+https://github.com/tianocore/edk2/tree/master/UefiCpuPkg/PiSmmCpuDxeSmm (The SMM initialization driver).
 
-If Bit 7 is set, the present bits for the NULL page in UEFI and SMM will be set once execution reaches 
-[EndOfDxe](#EndOfDxe). This is a workaround in order to skip unfixable NULL pointer access issues detected in 
-legacy [Option ROM](#Option-ROM) or [boot loaders](#boot-loader).
+If DisableEndOfDxe or DisableReadyToBoot set, NULL pointer detection will be disabled for UEFI
+once execution reaches the relevant phase. If both are enabled, NULL pointer
+detection will be disabled at the earliest
+event (EndOfDxe). This is a workaround in order to skip unfixable NULL pointer access issues
+detected in legacy [Option ROM](#Option-ROM) or [boot loaders](#boot-loader).
 
 ### Overhead
 **O(1)** time and space overhead because there is a constant number of NULL pages.
 
-**Available Bits:**
+**Available Settings:**
+  
+- UefiNullDetection  - Enable NULL pointer detection for UEFI
+- SmmNullDetection   - Enable NULL pointer detection for SMM
+- NonstopMode        - Enable [Non-Stop Mode](#Non-Stop-Mode)
+- DisableEndOfDxe    - Disable NULL pointer detection just after [EndOfDxe](#EndOfDxe)
+- DisableReadyToBoot - Disable NULL pointer detection just after ReadyToBoot
 
-- BIT0  - Enable NULL pointer detection for UEFI
-- BIT1  - Enable NULL pointer detection for SMM
-- BIT6  - Enable [Non-Stop Mode](#Non-Stop-Mode)
-- BIT7  - Disable NULL pointer detection just after [EndOfDxe](#EndOfDxe)
-
-## PcdImageProtectionPolicy
+## ImageProtectionPolicy
 
 ### Summary
 
-If a bit is set, the image will be protected by DxeCore if it is page-aligned.
-The code section becomes read-only, and the data section becomes non-executable. If a bit (BIT1 and/or BIT2) 
-is clear, nothing will be done to image code/data sections.
+Enabled an image to be protected by DxeCore if it is page-aligned.
+The code section becomes read-only, and the data section becomes non-executable.
 
 ### Implementation Details in UEFI
 
@@ -156,7 +158,7 @@ is invoked to unprotect the runtime image to accomodate virtual address mapping.
 
 ### Implementation Details in SMM
 In UEFI/PI firmware, the SMM image is a normal PE/COFF image loaded by the SmmCore. However, image protection in 
-SMM is completely separate from this PCD and is controlled by the static variable 
+SMM is completely separate from this policy and is controlled by the static variable 
 [mMemoryProtectionAttribute](https://github.com/tianocore/edk2/blob/master/MdeModulePkg/Core/PiSmmCore/MemoryAttributesTable.c)
 . To change image protection in SMM, change that variable.
 
@@ -165,22 +167,24 @@ SMM is completely separate from this PCD and is controlled by the static variabl
 space overhead will be 6K\*n and thus O(n) time to populate the headers. Of course, in most cases the number of 
 images is fairly low, and so enabling this feature is relatively inexpensive.
 
-**Available Bits:**
+**Available Settings:**
+  
+- FromUnknown                 - Protect images from unknown devices
+- FromFv                      - Protect images from firmware volume
+- RaiseErrorIfProtectionFails - If set, images which fail to be protected will be unloaded. This excludes
+failure because CPU Arch Protocol has not yet been installed
 
-- BIT0 - Images from Unknown devices
-- BIT1 - Images from firmware volumes
+## DxeNxMemoryProtectionPolicy
 
-## PcdDxeNxMemoryProtectionPolicy
-
-Sets DXE memory protection policy. If a bit is set, memory regions of the associated type
-will be mapped non-executable. **Note** that a portion of memory will only be marked as
+Every active memory type will be mapped as non-executable.
+**Note** that a portion of memory will only be marked as
 non-executable once gEfiCpuArchProtocolGuid has been published. **Also note** that in order
 to enable Data Execution Protection, the operating system needs to set the 
 [IA32_EFER.NXE](#Non-eXecute/eXecute-Disable-Bit-(NX/DX)) bit in the IA32_EFER [MSR](#-Model-specific-Register-(MSR)), 
 and then set the [XD](#Non-eXecute/eXecute-Disable-Bit-(NX/DX)) bit in the CPU [PAE](#Physical/Page-Address-Extension) 
 page table. **Finally**, [NX](#Non-eXecute/eXecute-Disable-Bit-(NX/DX)) settings cannot be applied while in SMM.
 
-This PCD is consumed by DXE Core through 
+This policy is consumed by DXE Core through 
 [ApplyMemoryProtectionPolicy()](https://github.com/tianocore/edk2/blob/master/MdeModulePkg/Core/Dxe/Misc/MemoryProtection.c) 
 which sets the NX attribute for allocated memory using the CPU_ARCH protocol (hence why gEfiCpuArchProtocolGuid 
 must be published for this to work). Once gEfiCpuArchProtocolGuid is published, 
@@ -196,29 +200,9 @@ protection policy will become one entry.
 inconsequential because every memory region must be checked if at least one bit is set. There is no extra space 
 complexity due to using the already present [NX](#Non-eXecute/eXecute-Disable-Bit-(NX/DX)) bit.
 
-**Available Bits:**
+## HeapGuardPageType
 
-- BIT0  - EfiReservedMemoryType
-- BIT1  - EfiLoaderCode
-- BIT2  - EfiLoaderData
-- BIT3  - EfiBootServicesCode
-- BIT4  - EfiBootServicesData
-- BIT5  - EfiRuntimeServicesCode
-- BIT6  - EfiRuntimeServicesData
-- BIT7  - EfiConventionalMemory
-- BIT8  - EfiUnusableMemory
-- BIT9  - EfiACPIReclaimMemory  
-- BIT10 - EfiACPIMemoryNVS  
-- BIT11 - EfiMemoryMappedIO
-- BIT12 - EfiMemoryMappedIOPortSpace
-- BIT13 - EfiPalCode
-- BIT14 - EfiPersistentMemory
-- BIT15 - OEM Reserved
-- BIT16 - OS Reserved
-
-## PcdHeapGuardPageType
-
-This PCD implements guard pages on the specified regions to detect heap overflow. If a bit
+This policy implements guard pages on the specified memory types to detect heap overflow. If a bit
 is set, a guard page will be added before and after the
 corresponding type of page allocated if there's enough free pages for all of them. On the 
 implementation side, the tail and guard pages are simply set to NOT PRESENT so any attempt 
@@ -251,93 +235,54 @@ Pages can be freed partially while maintaining guard structure as shown in the f
 **O(n)** time where n is the number of page allocations/frees. Because there are 2 extra pages allocated for 
 every call to AllocatePages(), **O(n)** space is also required.
 
-**Available Bits:**
+## HeapGuardPoolType
 
-- BIT0  - EfiReservedMemoryType
-- BIT1  - EfiLoaderCode
-- BIT2  - EfiLoaderData
-- BIT3  - EfiBootServicesCode
-- BIT4  - EfiBootServicesData
-- BIT5  - EfiRuntimeServicesCode
-- BIT6  - EfiRuntimeServicesData
-- BIT7  - EfiConventionalMemory
-- BIT8  - EfiUnusableMemory
-- BIT9  - EfiACPIReclaimMemory
-- BIT10 - EfiACPIMemoryNVS
-- BIT11 - EfiMemoryMappedIO
-- BIT12 - EfiMemoryMappedIOPortSpace
-- BIT13 - EfiPalCode
-- BIT14 - EfiPersistentMemory
-- BIT15 - OEM Reserved
-- BIT16 - OS Reserved
-
-## PcdHeapGuardPoolType
-
-This is essentially the same as PcdHeapGuardPageType. If a bit is set, a head guard page and 
+This is essentially the same as HeapGuardPageType. For each active memory type, a head guard page and 
 a tail guard page will be added just before and after the portion of memory which the 
 allocated pool occupies. For brevity, I will not trace the calls here as well, but it's essentially the same as 
-above with the word "Pool" instead of "Page". The only added complexity comes when the allocated pool is not a 
-multiple of the size of a page. In this case, the pool must align with either the head or tail guard page. This 
-behavior is defined by BIT7 in [PcdHeapGuardPropertyMask](#PcdHeapGuardPropertyMask) - look there for additional 
-details.
+above. The only added complexity comes when the allocated pool is not a 
+multiple of the size of a page. In this case, the pool must align with either the head or tail guard page, meaning
+either overflow or underflow can be caught but not both. The alignment is set in
+[HeapGuardPolicy](#HeapGuardPolicy) - look there for additional details.
 
 ### Overhead
-Same as above: **O(n)** time and space for same reasons as [PcdHeapGuardPageType](#PcdHeapGuardPageType). **Note** 
+Same as above: **O(n)** time and space for same reasons as [HeapGuardPageType](#HeapGuardPageType). **Note** 
 that this functionality requires creating guard pages, meaning that for n allocations, 4k \* (n + 1) (assuming 
 each of the n pools is adjacent to another pool) additional space is required.
 
-**Available Bits:**
+## HeapGuardPolicy
 
-- BIT0  - EfiReservedMemoryType
-- BIT1  - EfiLoaderCode
-- BIT2  - EfiLoaderData
-- BIT3  - EfiBootServicesCode
-- BIT4  - EfiBootServicesData
-- BIT5  - EfiRuntimeServicesCode
-- BIT6  - EfiRuntimeServicesData
-- BIT7  - EfiConventionalMemory
-- BIT8  - EfiUnusableMemory
-- BIT9  - EfiACPIReclaimMemory
-- BIT10 - EfiACPIMemoryNVS
-- BIT11 - EfiMemoryMappedIO
-- BIT12 - EfiMemoryMappedIOPortSpace
-- BIT13 - EfiPalCode
-- BIT14 - EfiPersistentMemory
-- BIT15 - OEM Reserved
-- BIT16 - OS Reserved
+While the above two policies ([HeapGuardPoolType](#HeapGuardPoolType) and 
+[HeapGuardPageType](#HeapGuardPageType)) act as a 
+switch for each protectable type of memory, this policy is an enable/disable switch for those 
+two policies (ex. if , UEFI page guards are inactive regardless of the bitmask for 
+[HeapGuardPageType](#HeapGuardPageType)).
 
-## PcdHeapGuardPropertyMask
-
-While the above two Pcd Masks ([PcdHeapGuardPoolType](#PcdHeapGuardPoolType) and 
-[PcdHeapGuardPageType](#PcdHeapGuardPageType)) act as a 
-switch for each protectable type of memory, this PCD is an enable/disable switch for those 
-two PCDs (ex. if BIT0 == 0, UEFI page guards are inactive regardless of the bitmask for 
-[PcdHeapGuardPageType](#PcdHeapGuardPageType)).
-
-The only aspect of this PCD which should be elaborated upon is BIT7. BIT7 dictates whether an allocated pool 
+The only aspect of this policy which should be elaborated upon is BIT7. BIT7 dictates whether an allocated pool 
 which does not fit perfectly into a multiple of pages is aligned to the head or tail guard. The following Figure 
 shows examples of the two.
 
 ![Heap Guard Pool Alignment Image](alignment_mu.PNG)
 
-**Available Bits:**
+**Available Settings:**
 
-- BIT0 - Enable UEFI page guard
-- BIT1 - Enable UEFI pool guard
-- BIT2 - Enable SMM page guard
-- BIT3 - Enable SMM pool guard
-- BIT6 - Enable [Non-Stop Mode](#Non-Stop-Mode)
-- BIT7 - Specifies the direction of Guard Page for Pool Guard. If 0, the returned
+- UefiPageGuard - Enable UEFI page guard
+- UefiPoolGuard - Enable UEFI pool guard
+- SmmPageGuard - Enable SMM page guard
+- SmmPoolGuard - Enable SMM pool guard
+- UefiFreedMemoryGuard - Enable Use-After-Free memory detection
+- NonstopMode - Enable [Non-Stop Mode](#Non-Stop-Mode)
+- Direction - Specifies the direction of Guard Page for Pool Guard. If 0, the returned
 pool is near the tail guard page. If 1, the returned pool is near the head guard page. The
 default value for this is 0
 
 ### Overhead
-Overhead is same as [PcdHeapGuardPoolType](#PcdHeapGuardPoolType) and 
-[PcdHeapGuardPageType](#PcdHeapGuardPageType) if any of BIT0 - BIT3 are enabled.
+Overhead is same as [HeapGuardPoolType](#HeapGuardPoolType) and 
+[HeapGuardPageType](#HeapGuardPageType) for each page/pool guard enabled.
 
-## PcdCpuStackGuard and PcdCpuSmmStackGuard
+## CpuStackGuard
 
-PcdCpuStackGuard indicates if UEFI Stack Guard will be enabled and an equivalent SMM 
+CpuStackGuard indicates if UEFI Stack Guard will be enabled and an equivalent SMM 
 stack guard feature is contained in 
 [PiSmmCpuDxeSmm](https://github.com/tianocore/edk2/tree/master/UefiCpuPkg/PiSmmCpuDxeSmm). 
 
@@ -346,18 +291,19 @@ The stack guards add two additional pages to the bottom of the stack(s). The fir
 which is set to not present. However, a complexity arises when a page fault occurs due to the guard page being 
 accessed. In this case, the current stack address is invalid and so it is not possible to push the error code and 
 architecture status onto the current stack. For this reason, there is a special "Exception Stack" (described as a 
-"Known Good Stack" in the actual codebase) which is the second page placed at the bottom of the stack. This page is 
+"Known Good Stack" in the codebase) which is the second page placed at the bottom of the stack. This page is 
 reserved for use by the exception handler and ensures that a valid stack is always present when an exception occurs 
 for error reporting.
 
 **Note** that the UEFI
 stack protection starts in DxeIpl, because the region is fixed, and requires 
 [PcdDxeIplBuildPageTables](https://github.com/tianocore/edk2/blob/master/MdeModulePkg/MdeModulePkg.dec) to be 
-TRUE. If the PcdCpuStackGuard is TRUE, the DxeIpl clears the PRESENT bit in the page table for the guard page of 
-the Boot Strap Processor stack. The guard page of the Application Processor stack is initialized in CpuDxe driver 
-by using the DXE service 
+TRUE. In Project Mu, we have hard-coded CpuStackGuard to be TRUE in PEI phase, so we always set up a switch
+stack, clear the PRESENT bit in the page table for the guard page of 
+the Boot Strap Processor stack, and build the page tables. However, the stack switch handlers will still only be
+installed in DXE phase if CpuStackGuard is TRUE.
+The guard page of the Application Processor stack is initialized in CpuDxe driver by using the DXE service 
 [CpuSetMemoryAttributes()](https://github.com/tianocore/edk2/blob/master/UefiCpuPkg/CpuDxe/CpuDxe.c). 
-[PcdCpuSmmStackGuard](https://github.com/tianocore/edk2/blob/master/UefiCpuPkg/UefiCpuPkg.dec).
 
 ### Overhead
 **O(1)** time and space.
@@ -366,13 +312,45 @@ by using the DXE service
 
 - If TRUE, UEFI Stack Guard will be enabled.
 
-## PcdSetNxForStack
+## How to Set the Memory Protection Policy
 
-This TRUE/FALSE PCD indicates if the stack will have [NX](#Non-eXecute/eXecute-Disable-Bit-(NX/DX)) protection.
+In a platform DSC file, add:
 
-### Overhead
-**O(1)** time and space.
+```C
+[LibraryClasses.Common.DXE_DRIVER, LibraryClasses.Common.DXE_CORE, LibraryClasses.Common.SMM_CORE, LibraryClasses.Common.DXE_SMM_DRIVER, LibraryClasses.Common.UEFI_APPLICATION]
+  MemoryProtectionHobLib|MdeModulePkg/Library/DxeSmmMemoryProtectionHobLib/DxeSmmMemoryProtectionHobLib.inf 
+```
 
-**Setting:**
+Create the HOB entry in any PEI module by adding the include:
 
-- If TRUE, Stack will have [NX](#Non-eXecute/eXecute-Disable-Bit-(NX/DX)) bit set.
+```C
+#include <Guid/MemoryProtectionSettings.h>
+```
+
+and somewhere within the code doing something like:
+
+```C
+  MEMORY_PROTECTION_SETTINGS              Settings;
+  
+  Settings = (MEMORY_PROTECTION_SETTINGS) MEMORY_PROTECTION_SETTINGS_DEBUG;
+  
+  BuildGuidDataHob (
+    &gMemoryProtectionSettingsGuid,
+    &Settings,
+    sizeof(Settings)
+    );
+```
+
+This will also require you to add gMemoryProtectionSettingsGuid under the Guids section in the relevant INF.
+
+If you want to deviate from one of the settings profile definitions in MemoryProtectionSettings.h, it is recommended
+that you start with the one which most closely aligns with your desired settings and update from there.
+For example, if you wanted the settings in MEMORY_PROTECTION_SETTINGS_DEBUG minus pool guards,
+you would add the lines:
+
+```C
+Settings.HeapGuardPolicy.Fields.UefiPoolGuard = 0;
+Settings.HeapGuardPolicy.Fields.SmmPoolGuard = 0;
+```
+
+before building the HOB.
