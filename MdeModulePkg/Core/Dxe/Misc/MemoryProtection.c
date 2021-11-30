@@ -1135,17 +1135,16 @@ InitializeDxeNxMemoryProtectionPolicy (
       // Add EFI_MEMORY_RP attribute for page 0 if NULL pointer detection is
       // enabled.
       //
-      // MU_CHANGE START Update to use memory protection settings HOB
-      if (MemoryMapEntry->PhysicalStart == 0 &&
-          // PcdGet8 (PcdNullPointerDetectionPropertyMask) != 0) { 
-          gMPS.NullPointerDetectionPolicy.UefiNullDetection) {
+      // MU_CHANGE START: We Enable NULL detection via the function EnableNullDetection
+      // if (MemoryMapEntry->PhysicalStart == 0 &&
+      //     // PcdGet8 (PcdNullPointerDetectionPropertyMask) != 0) {
+      //   ASSERT (MemoryMapEntry->NumberOfPages > 0);
+      //   SetUefiImageMemoryAttributes (
+      //     0,
+      //     EFI_PAGES_TO_SIZE (1),
+      //     EFI_MEMORY_RP | Attributes);
+      // }
       // MU_CHANGE END
-        ASSERT (MemoryMapEntry->NumberOfPages > 0);
-        SetUefiImageMemoryAttributes (
-          0,
-          EFI_PAGES_TO_SIZE (1),
-          EFI_MEMORY_RP | Attributes);
-      }
 
       //
       // Add EFI_MEMORY_RP attribute for the first page of the stack if stack
@@ -1404,30 +1403,38 @@ DisableNullDetection (
   @retval Other             Page zero could not be marked as read protected
 
 **/
-EFI_STATUS
+VOID
 EFIAPI
 EnableNullDetection (
-  VOID
+  EFI_EVENT                               Event,
+  VOID                                    *Context
   )
 {
   EFI_STATUS                        Status;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR   Desc;
 
   Status = CoreGetMemorySpaceDescriptor (0, &Desc);
-  
+
   if (EFI_ERROR(Status)) {
-    return Status;
+    return;
   }
 
   if ((Desc.Capabilities & EFI_MEMORY_RP) == 0) {
     Status = CoreSetMemorySpaceCapabilities (
               0,
-              EFI_PAGE_SIZE,
+              EFI_PAGES_TO_SIZE (1),
               Desc.Capabilities | EFI_MEMORY_RP
               );
+    ASSERT_EFI_ERROR (Status);
   }
 
-  return Status;
+  CoreSetMemorySpaceAttributes (
+    0,
+    EFI_PAGES_TO_SIZE (1),
+    Desc.Attributes | EFI_MEMORY_RP
+    );
+
+  return;
 }
 // MU_CHANGE END
 
@@ -1443,6 +1450,7 @@ CoreInitializeMemoryProtection (
   EFI_STATUS  Status;
   EFI_EVENT   Event;
   EFI_EVENT   DisableNullDetectionEvent;
+  EFI_EVENT   EnableNullDetectionEvent; // MU_CHANGE
   VOID        *Registration;
 
   // mImageProtectionPolicy = gMPS.ImageProtectionPolicy; // MU_CHANGE
@@ -1483,15 +1491,30 @@ CoreInitializeMemoryProtection (
   //
   // Register a callback to disable NULL pointer detection at EndOfDxe
   //
-  // MU_CHANGE START Update to use memory protection settings HOB and added
-  //                 disable functionality at ReadyToBoot
+  // MU_CHANGE START Update to use memory protection settings HOB, added
+  //                 disable functionality at ReadyToBoot, create NULL
+  //                 detection enable event
   // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & (BIT0|BIT7))
   //      == (BIT0|BIT7)) {
   if (gMPS.NullPointerDetectionPolicy.UefiNullDetection) {
 
     // PEI phase has been updated to always set page zero as allocated
-    // so it can be safely set as not present here
-    Status = EnableNullDetection ();
+    // so it can be safely set as RP
+    Status = CoreCreateEvent (
+               EVT_NOTIFY_SIGNAL,
+               TPL_CALLBACK,
+               EnableNullDetection,
+               NULL,
+               &EnableNullDetectionEvent
+               );
+    ASSERT_EFI_ERROR(Status);
+
+    Status = CoreRegisterProtocolNotify (
+               &gEfiCpuArchProtocolGuid,
+               EnableNullDetectionEvent,
+               &Registration
+               );
+    ASSERT_EFI_ERROR(Status);
 
     if (!EFI_ERROR (Status)) {
       // If both DisableEndOfDxe and DisableReadyToBoot are enabled, just
