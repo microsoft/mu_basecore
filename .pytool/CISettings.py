@@ -59,6 +59,7 @@ class Settings(CiSetupSettingsManager, CiBuildSettingsManager, UpdateSettingsMan
                 "SecurityPkg",
                 "UefiCpuPkg",
                 "StandaloneMmPkg",
+                "PolicyServicePkg",
                 "UnitTestFrameworkPkg"
                 )
 
