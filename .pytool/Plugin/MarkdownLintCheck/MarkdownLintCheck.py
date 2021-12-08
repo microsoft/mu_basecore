@@ -144,6 +144,7 @@ class MarkdownLintCheck(ICiBuildPlugin):
         results = self._check_markdown(path_to_check, config_file_path, Ignores)
         for r in results:
             tc.LogStdError(r.strip())
+            logging.error(r.strip())
 
         # add result to test case
         overall_status = len(results)
