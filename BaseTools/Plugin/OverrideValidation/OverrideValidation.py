@@ -28,6 +28,7 @@ try:
     from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
     from edk2toollib.utility_functions import RunCmd
     from edk2toollib.uefi.edk2.parsers.dsc_parser import *
+    from edk2toollib.uefi.edk2.path_utilities import Edk2Path
 
     #Tuple for (version, entrycount)
     FORMAT_VERSION_1 = (1, 4)   #Version 1: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss
@@ -57,9 +58,9 @@ try:
                 elif (errcode == cls.OR_INVALID_FORMAT):
                     str = 'INVALID_FORMAT'
                 elif (errcode == cls.OR_DSC_INF_NOT_FOUND):
-                    str = 'FILE_NOT_FOUND'
+                    str = 'DSC_FILE_NOT_FOUND'
                 elif (errcode == cls.OR_TARGET_INF_NOT_FOUND):
-                    str = 'FILE_NOT_FOUND'
+                    str = 'INF_FILE_NOT_FOUND'
                 else:
                     str = 'UNKNOWN'
                 return str
@@ -104,6 +105,10 @@ try:
             result = self.OverrideResult.OR_ALL_GOOD
             InfFileList = self.get_dsc_inf_list(thebuilder)
 
+            ws = thebuilder.ws
+            pp = thebuilder.pp.split(";")
+            self.PathTool = Edk2Path(ws, pp)
+
             if (InfFileList == []):
                 return result
 
@@ -124,7 +129,7 @@ try:
                 if m_result != self.OverrideResult.OR_ALL_GOOD:
                     if m_result != self.OverrideResult.OR_DSC_INF_NOT_FOUND:
                         result = m_result
-                    logging.error("Override processing error %s in file %s." % (self.OverrideResult.GetErrStr(m_result), file))
+                    logging.error("Override processing error %s in file %s" % (self.OverrideResult.GetErrStr(m_result), file))
 
             self.override_log_print(thebuilder, modulelist, status)
 
@@ -140,6 +145,8 @@ try:
             # Find the specific line of Override flag
             result = self.OverrideResult.OR_ALL_GOOD
             lineno = 0
+            trackno = 0
+            track_nf = []
 
             list_path = os.path.normpath(filepath).lower()
 
@@ -162,15 +169,34 @@ try:
                         continue
 
                     CommentLine = Line.strip('#').split(':')
-                    if (len(CommentLine) != 2) or (CommentLine[0].strip().lower() != 'override'):
+                    if (len(CommentLine) != 2) or\
+                       ((CommentLine[0].strip().lower() != 'override') and\
+                        (CommentLine[0].strip().lower() != 'track')):
                         continue
 
                     # Process the override content, 1. Bail on bad data; 2. Print on formatted data (matched or not)
                     m_result = self.override_process_line(thebuilder, CommentLine[1], filepath, filelist, modulenode, status)
 
-                    if m_result != self.OverrideResult.OR_ALL_GOOD:
-                        result = m_result
-                        logging.error("At Line %d: %s" %(lineno, Line))
+                    if CommentLine[0].strip().lower() == 'override':
+                        # For override tags, the hash has to match
+                        if m_result != self.OverrideResult.OR_ALL_GOOD:
+                            result = m_result
+                            logging.error("At Line %d: %s" %(lineno, Line))
+
+                    elif CommentLine[0].strip().lower() == 'track':
+                        # For track tags, ignore the tags of which inf modules are not found
+                        trackno = trackno + 1
+                        if m_result == self.OverrideResult.OR_TARGET_INF_NOT_FOUND:
+                            track_nf.append ((lineno, Line))
+                            logging.warn("At Line %d: %s" %(lineno, Line))
+                        elif m_result != self.OverrideResult.OR_ALL_GOOD:
+                            result = m_result
+                            logging.error("At Line %d: %s" %(lineno, Line))
+
+            if trackno != 0 and len(track_nf) == trackno:
+                # All track tags in this file are not found, this will enforce a failure, if not already failed
+                if result == self.OverrideResult.OR_ALL_GOOD:
+                    result = self.OverrideResult.OR_TARGET_INF_NOT_FOUND
 
             # Revert this visitied indicator after this branch is done searching
             filelist.remove(list_path)
@@ -237,7 +263,7 @@ try:
             fullpath = os.path.normpath(thebuilder.mws.join(thebuilder.ws, overriddenpath))
             # Search overridden module in workspace
             if not os.path.isfile(fullpath):
-                logging.error("Inf Overridden File Not Found in Workspace or Packages_Path: %s" %(overriddenpath))
+                logging.warn("Inf Overridden File Not Found in Workspace or Packages_Path: %s" %(overriddenpath))
                 result = self.OverrideResult.OR_TARGET_INF_NOT_FOUND
                 m_node.path = overriddenpath
                 m_node.status = result
@@ -262,7 +288,7 @@ try:
 
             # Step 6: House keeping
             # Process the path to workspace/package path based add it to the parent node
-            overridden_rel_path = thebuilder.mws.relpath(fullpath, thebuilder.ws).replace('\\', '/')
+            overridden_rel_path = self.PathTool.GetEdk2RelativePathFromAbsolutePath(fullpath)
             date_delta = datetime.utcnow() - EntryTimestamp
 
             m_node.entry_hash = EntryHash
@@ -290,8 +316,8 @@ try:
             GitHash = OverrideEntry[4].strip()
             del OverrideEntry[4]
             result = self.override_process_line_with_version1(thebuilder, filelist, OverrideEntry, m_node, status)
-            # if we failed, do a diff of the overridden file and show the output
-            if result != self.OverrideResult.OR_ALL_GOOD:
+            # if we failed, do a diff of the overridden file (as long as exist) and show the output
+            if result != self.OverrideResult.OR_ALL_GOOD and result != self.OverrideResult.OR_TARGET_INF_NOT_FOUND:
                 overriddenpath = os.path.normpath(OverrideEntry[1].strip()).strip('\\')
                 fullpath = os.path.normpath(thebuilder.mws.join(thebuilder.ws, overriddenpath))
                 if os.path.exists(fullpath):
@@ -506,6 +532,12 @@ def path_parse():
         '-v', '--version', dest = 'Version', default= 2, type=int,
         help = '''This is the version of the override hash to produce (currently only 1 and 2 are valid)'''
         )
+    parser.add_argument (
+        '--track', action="store_true", dest = 'Track', default= False,
+        help = '''Indicate whether to create a track tag or override tag. Track tags will be treated as ignorable if the
+        overridden modules are not found. However, for each module that contains track tags, at least one tracked modules
+        has to be found, otherwise build will fail. By default, all tags will be generated as override tags.'''
+        )
 
     Paths = parser.parse_args()
     # pre-process the parsed paths to abspath
@@ -555,9 +587,9 @@ if __name__ == '__main__':
 
     if VERSION_INDEX == 0:
         print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-        print('#Override : %08d | %s | %s | %s' % (FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S")))
+        print('#%s : %08d | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S")))
 
     elif VERSION_INDEX == 1:
         git_hash = ModuleGitHash(Paths.ModulePath)
         print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-        print('#Override : %08d | %s | %s | %s | %s' % (FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
+        print('#%s : %08d | %s | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
