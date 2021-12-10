@@ -262,8 +262,8 @@ try:
             overriddenpath = os.path.normpath(OverrideEntry[1].strip()).strip('\\')
             fullpath = os.path.normpath(thebuilder.mws.join(thebuilder.ws, overriddenpath))
             # Search overridden module in workspace
-            if not os.path.isfile(fullpath):
-                logging.warn("Inf Overridden File Not Found in Workspace or Packages_Path: %s" %(overriddenpath))
+            if not os.path.isfile(fullpath) and not os.path.isdir(fullpath):
+                logging.warn("Inf Overridden File/Path Not Found in Workspace or Packages_Path: %s" %(overriddenpath))
                 result = self.OverrideResult.OR_TARGET_INF_NOT_FOUND
                 m_node.path = overriddenpath
                 m_node.status = result
@@ -454,13 +454,20 @@ def ModuleHashCal(path):
 
     sourcefileList = []
     binaryfileList = []
-    sourcefileList.append(path)
     hash_obj = hashlib.md5()
 
     # Find the specific line of Sources section
     folderpath = os.path.dirname(path)
 
-    if path.lower().endswith(".inf"):
+    if os.path.isdir(path):
+      # Collect all files in this folder to the list
+      for subdir, _, files in os.walk(path):
+          for file in files:
+              sourcefileList.append(os.path.join(subdir, file))
+    else:
+        sourcefileList.append(path)
+
+    if path.lower().endswith(".inf") and os.path.isfile(path):
 
         # Use InfParser to parse sources section
         ip = InfParser()
@@ -524,9 +531,14 @@ def path_parse():
         '-w', '--workspace', dest = 'WorkSpace', required = True, type=str,
         help = '''Specify the absolute path to your workspace by passing -w WORKSPACE or --workspace WORKSPACE.'''
         )
-    parser.add_argument (
-        '-m', '--modulepath', dest = 'ModulePath', required = True, type=str,
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument (
+        '-m', '--modulepath', dest = 'ModulePath', type=str,
         help = '''Specify the absolute path to your module by passing -m Path/To/Module.inf or --modulepath Path/To/Module.inf.'''
+        )
+    group.add_argument (
+        '-t', '--targetpath', dest = 'TargetPath', type=str,
+        help = '''Specify the absolute path to your target module/file/folder by passing t Path/To/Target or --targetpath Path/To/Target.'''
         )
     parser.add_argument (
         '-v', '--version', dest = 'Version', default= 2, type=int,
@@ -542,7 +554,13 @@ def path_parse():
     Paths = parser.parse_args()
     # pre-process the parsed paths to abspath
     Paths.WorkSpace = os.path.abspath(Paths.WorkSpace)
-    Paths.ModulePath = os.path.abspath(Paths.ModulePath)
+    if Paths.TargetPath is not None:
+        Paths.TargetPath = os.path.abspath(Paths.TargetPath)
+
+    if Paths.ModulePath is not None:
+        Paths.TargetPath = os.path.abspath(Paths.ModulePath)
+        if not os.path.isfile(Paths.TargetPath):
+            raise RuntimeError("Module path is invalid.")
 
 
     if Paths.Version < 1 or Paths.Version > len(FORMAT_VERSIONS):
@@ -550,12 +568,12 @@ def path_parse():
 
     if not os.path.isdir(Paths.WorkSpace):
         raise RuntimeError("Workspace path is invalid.")
-    if not os.path.isfile(Paths.ModulePath):
+    if not os.path.isfile(Paths.TargetPath) and not os.path.isdir(Paths.TargetPath):
         raise RuntimeError("Module path is invalid.")
     # Needs to strip os.sep is to take care of the root path case
     # For a folder, this will do nothing on a formatted abspath
     # For a drive root, this will rip off the os.sep
-    if not os.path.normcase(Paths.ModulePath).startswith(os.path.normcase(Paths.WorkSpace.rstrip(os.sep)) + os.sep):
+    if not os.path.normcase(Paths.TargetPath).startswith(os.path.normcase(Paths.WorkSpace.rstrip(os.sep)) + os.sep):
         raise RuntimeError("Module is not within specified Workspace.")
 
     return Paths
@@ -577,11 +595,11 @@ if __name__ == '__main__':
     pathtool = Edk2Path(Paths.WorkSpace, dummy_list)
 
     # Use absolute module path to find package path
-    pkg_path = pathtool.GetContainingPackage(Paths.ModulePath)
-    rel_path = Paths.ModulePath[Paths.ModulePath.find(pkg_path):]
+    pkg_path = pathtool.GetContainingPackage(Paths.TargetPath)
+    rel_path = Paths.TargetPath[Paths.TargetPath.find(pkg_path):]
 
     rel_path = rel_path.replace('\\', '/')
-    mod_hash = ModuleHashCal(Paths.ModulePath)
+    mod_hash = ModuleHashCal(Paths.TargetPath)
 
     VERSION_INDEX = Paths.Version - 1
 
@@ -590,6 +608,6 @@ if __name__ == '__main__':
         print('#%s : %08d | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S")))
 
     elif VERSION_INDEX == 1:
-        git_hash = ModuleGitHash(Paths.ModulePath)
+        git_hash = ModuleGitHash(Paths.TargetPath)
         print("Copy and paste the following line(s) to your overrider inf file(s):\n")
         print('#%s : %08d | %s | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
