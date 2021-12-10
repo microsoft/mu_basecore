@@ -79,6 +79,18 @@ Track record to be included in tracking module's inf:
 #Track : 00000002 | MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | 5bca19892b2e9f4c00a74041fa6b1eab | 2021-12-07T04-25-21 | 5c76ea08864294e11f8d7d1ac2ccf76c72673c8f
 ```
 
+Command to generate an override record for a target file or directory:
+
+``` cmd
+OverrideValidation.py -w C:\Repo -t C:\Repo\MU_BASECORE\MdeModulePkg\Library\BaseSerialPortLib16550
+```
+
+Override record to be included in overriding module's inf:
+
+``` cmd
+#Override : 00000002 | MdeModulePkg/Library/BaseSerialPortLib16550 | 140759cf30a73b02f48cc1f226b015d8 | 2021-12-07T05-30-10 | fa99a33fdb7e8bf6063513fddb807105ec2fad81
+```
+
 Override log generated during pre-build process:
 
 ``` cmd
@@ -101,6 +113,7 @@ ORIGINALS:
   | Current State: 62929532257365b261080b7e7b1c4e7a | Last Fingerprint: dc9f5e3af1efbac6cf5485b672291903
   + MdePkg/Library/BaseMemoryLibOptDxe/BaseMemoryLibOptDxe.inf | SUCCESS | 0 days
   + MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | SUCCESS | 2 days
+  + MdeModulePkg/Library/BaseSerialPortLib16550 | SUCCESS | 7 days
 
 ```
 
