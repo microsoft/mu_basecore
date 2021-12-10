@@ -106,7 +106,7 @@ try:
             InfFileList = self.get_dsc_inf_list(thebuilder)
 
             ws = thebuilder.ws
-            pp = thebuilder.pp.split(";")
+            pp = thebuilder.pp.split(os.pathsep)
             self.PathTool = Edk2Path(ws, pp)
 
             if (InfFileList == []):
