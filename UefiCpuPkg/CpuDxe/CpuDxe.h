@@ -307,6 +307,7 @@ PageFaultExceptionHandler (
 
 extern BOOLEAN mIsAllocatingPageTable;
 extern UINTN   mNumberOfProcessors;
+extern EFI_HANDLE mCpuHandle;
 
 #endif
 

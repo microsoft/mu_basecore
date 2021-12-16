@@ -96,6 +96,8 @@ EFI_SMM_BASE2_PROTOCOL            *mSmmBase2 = NULL;
 UINTN                     *mPFEntryCount;
 UINT64                    *(*mLastPFEntryPointer)[MAX_PF_ENTRY_COUNT];
 
+UINT64 mAddressEncMask;
+
 /**
  Check if current execution environment is in SMM mode or not, via
  EFI_SMM_BASE2_PROTOCOL.
@@ -1380,3 +1382,261 @@ InitializePageTableLib (
   return ;
 }
 
+
+/**
+  This function set given attributes of the memory region specified by
+  BaseAddress and Length.
+  The valid Attributes is EFI_MEMORY_RP, EFI_MEMORY_XP, and EFI_MEMORY_RO.
+  @param  This              The EDKII_SMM_MEMORY_ATTRIBUTE_PROTOCOL instance.
+  @param  BaseAddress       The physical address that is the start address of
+                            a memory region.
+  @param  Length            The size in bytes of the memory region.
+  @param  Attributes        The bit mask of attributes to set for the memory
+                            region.
+  @retval EFI_SUCCESS           The attributes were set for the memory region.
+  @retval EFI_INVALID_PARAMETER Length is zero.
+                                Attributes specified an illegal combination of
+                                attributes that cannot be set together.
+  @retval EFI_UNSUPPORTED       The processor does not support one or more
+                                bytes of the memory resource range specified
+                                by BaseAddress and Length.
+                                The bit mask of attributes is not supported for
+                                the memory resource range specified by
+                                BaseAddress and Length.
+**/
+EFI_STATUS
+EFIAPI
+EfiSetMemoryAttributes (
+  IN  EFI_MEMORY_ATTRIBUTE_PROTOCOL       *This,
+  IN  EFI_PHYSICAL_ADDRESS                BaseAddress,
+  IN  UINT64                              Length,
+  IN  UINT64                              Attributes
+  )
+{
+  RETURN_STATUS  Status;
+  BOOLEAN        IsModified;
+  BOOLEAN        IsSplitted;
+
+  if ((Attributes & ~EFI_MEMORY_ACCESS_MASK) != 0) {
+    DEBUG ((DEBUG_ERROR, "Attributes(0x%lx) invalid\n", Attributes));
+    return EFI_INVALID_PARAMETER;
+  }
+  if (Attributes == 0) {
+    DEBUG ((DEBUG_ERROR, "Attributes is 0\n"));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DEBUG((DEBUG_INFO, "EfiSetMemoryAttributes: 0x%lx - 0x%lx (0x%lx)\n", BaseAddress, Length, Attributes));
+  Status = ConvertMemoryPageAttributes (NULL, BaseAddress, Length, Attributes, PageActionSet, NULL, &IsSplitted, &IsModified);
+  if (!EFI_ERROR (Status)) {
+    if (IsModified) {
+      //
+      // Flush TLB as last step.
+      //
+      // Note: Since APs will always init CR3 register in HLT loop mode or do
+      // TLB flush in MWAIT loop mode, there's no need to flush TLB for them
+      // here.
+      //
+      CpuFlushTlb ();
+    }
+  }
+
+  return Status;
+}
+
+/**
+  This function clears given attributes of the memory region specified by
+  BaseAddress and Length.
+  The valid Attributes is EFI_MEMORY_RP, EFI_MEMORY_XP, and EFI_MEMORY_RO.
+  @param  This              The EDKII_SMM_MEMORY_ATTRIBUTE_PROTOCOL instance.
+  @param  BaseAddress       The physical address that is the start address of
+                            a memory region.
+  @param  Length            The size in bytes of the memory region.
+  @param  Attributes        The bit mask of attributes to clear for the memory
+                            region.
+  @retval EFI_SUCCESS           The attributes were cleared for the memory region.
+  @retval EFI_INVALID_PARAMETER Length is zero.
+                                Attributes specified an illegal combination of
+                                attributes that cannot be cleared together.
+  @retval EFI_UNSUPPORTED       The processor does not support one or more
+                                bytes of the memory resource range specified
+                                by BaseAddress and Length.
+                                The bit mask of attributes is not supported for
+                                the memory resource range specified by
+                                BaseAddress and Length.
+**/
+EFI_STATUS
+EFIAPI
+EfiClearMemoryAttributes (
+  IN  EFI_MEMORY_ATTRIBUTE_PROTOCOL       *This,
+  IN  EFI_PHYSICAL_ADDRESS                BaseAddress,
+  IN  UINT64                              Length,
+  IN  UINT64                              Attributes
+  )
+{
+
+  RETURN_STATUS  Status;
+  BOOLEAN        IsModified;
+  BOOLEAN        IsSplitted;
+
+  if ((Attributes & ~EFI_MEMORY_ACCESS_MASK) != 0) {
+    DEBUG ((DEBUG_ERROR, "Attributes(0x%lx) invalid\n", Attributes));
+    return EFI_INVALID_PARAMETER;
+  }
+  if (Attributes == 0) {
+    DEBUG ((DEBUG_ERROR, "Attributes is 0\n"));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DEBUG((DEBUG_INFO, "EfiClearMemoryAttributes: 0x%lx - 0x%lx (0x%lx)\n", BaseAddress, Length, Attributes));
+  Status = ConvertMemoryPageAttributes (NULL, BaseAddress, Length, Attributes, PageActionClear, NULL, &IsSplitted, &IsModified);
+  if (!EFI_ERROR (Status)) {
+    if (IsModified) {
+      //
+      // Flush TLB as last step.
+      //
+      // Note: Since APs will always init CR3 register in HLT loop mode or do
+      // TLB flush in MWAIT loop mode, there's no need to flush TLB for them
+      // here.
+      //
+      CpuFlushTlb ();
+    }
+  }
+
+  return Status;
+}
+
+/**
+  This function retrieves the attributes of the memory region specified by
+  BaseAddress and Length. If different attributes are got from different part
+  of the memory region, EFI_NO_MAPPING will be returned.
+  @param  This              The EDKII_SMM_MEMORY_ATTRIBUTE_PROTOCOL instance.
+  @param  BaseAddress       The physical address that is the start address of
+                            a memory region.
+  @param  Length            The size in bytes of the memory region.
+  @param  Attributes        Pointer to attributes returned.
+  @retval EFI_SUCCESS           The attributes got for the memory region.
+  @retval EFI_INVALID_PARAMETER Length is zero.
+                                Attributes is NULL.
+  @retval EFI_NO_MAPPING        Attributes are not consistent cross the memory
+                                region.
+  @retval EFI_UNSUPPORTED       The processor does not support one or more
+                                bytes of the memory resource range specified
+                                by BaseAddress and Length.
+**/
+EFI_STATUS
+EFIAPI
+EfiGetMemoryAttributes (
+  IN  EFI_MEMORY_ATTRIBUTE_PROTOCOL       *This,
+  IN  EFI_PHYSICAL_ADDRESS                BaseAddress,
+  IN  UINT64                              Length,
+  OUT UINT64                              *Attributes
+  )
+{
+  PAGE_TABLE_LIB_PAGING_CONTEXT  CurrentPagingContext;
+  EFI_PHYSICAL_ADDRESS  Address;
+  UINT64                *PageEntry;
+  UINT64                MemAttr;
+  PAGE_ATTRIBUTE        PageAttr;
+  INT64                 Size;
+  UINT64                AddressEncMask;
+
+  if ((BaseAddress & (SIZE_4KB - 1)) != 0) {
+    DEBUG ((DEBUG_ERROR, "BaseAddress(0x%lx) is not aligned!\n", BaseAddress));
+    return EFI_UNSUPPORTED;
+  }
+
+  if ((Length & (SIZE_4KB - 1)) != 0) {
+    DEBUG ((DEBUG_ERROR, "Length(0x%lx) is not aligned!\n", Length));
+    return EFI_UNSUPPORTED;
+  }
+
+  if (Length == 0) {
+    DEBUG ((DEBUG_ERROR, "Length is 0!\n"));
+    return RETURN_INVALID_PARAMETER;
+  }
+
+  if (Attributes == NULL) {
+    DEBUG ((DEBUG_ERROR, "Attributes is NULL\n"));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Size    = (INT64)Length;
+  MemAttr = (UINT64)-1;
+
+  // Make sure AddressEncMask is contained to smallest supported address field.
+  //
+  AddressEncMask = PcdGet64 (PcdPteMemoryEncryptionAddressOrMask) & PAGING_1G_ADDRESS_MASK_64;
+
+  GetCurrentPagingContext (&CurrentPagingContext);
+
+  do {
+    PageEntry = GetPageTableEntry (&CurrentPagingContext, BaseAddress, &PageAttr);
+    if ((PageEntry == NULL) || (PageAttr == PageNone)) {
+      return EFI_UNSUPPORTED;
+    }
+
+    //
+    // If the memory range is cross page table boundary, make sure they
+    // share the same attribute. Return EFI_NO_MAPPING if not.
+    //
+    *Attributes = GetAttributesFromPageEntry (PageEntry);
+    if ((MemAttr != (UINT64)-1) && (*Attributes != MemAttr)) {
+      return EFI_NO_MAPPING;
+    }
+
+    switch (PageAttr) {
+      case Page4K:
+        Address      = *PageEntry & ~mAddressEncMask & PAGING_4K_ADDRESS_MASK_64;
+        Size        -= (SIZE_4KB - (BaseAddress - Address));
+        BaseAddress += (SIZE_4KB - (BaseAddress - Address));
+        break;
+
+      case Page2M:
+        Address      = *PageEntry & ~mAddressEncMask & PAGING_2M_ADDRESS_MASK_64;
+        Size        -= SIZE_2MB - (BaseAddress - Address);
+        BaseAddress += SIZE_2MB - (BaseAddress - Address);
+        break;
+
+      case Page1G:
+        Address      = *PageEntry & ~mAddressEncMask & PAGING_1G_ADDRESS_MASK_64;
+        Size        -= SIZE_1GB - (BaseAddress - Address);
+        BaseAddress += SIZE_1GB - (BaseAddress - Address);
+        break;
+
+      default:
+        return EFI_UNSUPPORTED;
+    }
+
+    MemAttr = *Attributes;
+  } while (Size > 0);
+
+  DEBUG ((DEBUG_INFO, "Attributes is 0x%lx\n", *Attributes));
+
+  return EFI_SUCCESS;
+}
+
+EFI_MEMORY_ATTRIBUTE_PROTOCOL mMemoryAttributeProtocol = {
+  EfiGetMemoryAttributes,
+  EfiSetMemoryAttributes,
+  EfiClearMemoryAttributes,
+};
+
+/**
+  Install Memory Attribute Protocol.
+**/
+VOID
+InstallEfiMemoryAttributeProtocol (
+  VOID
+  )
+{
+  EFI_STATUS               Status;
+
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &mCpuHandle,
+                  &gEfiMemoryAttributeProtocolGuid,
+                  &mMemoryAttributeProtocol,
+                  NULL
+                  );
+  ASSERT_EFI_ERROR (Status);
+}
