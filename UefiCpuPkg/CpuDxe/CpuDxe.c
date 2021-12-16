@@ -1256,5 +1256,7 @@ InitializeCpu (
 
   InitializeMpSupport ();
 
+  InstallEfiMemoryAttributeProtocol (); // TCBZ3519 MU_CHANGE
+
   return Status;
 }
