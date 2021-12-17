@@ -132,19 +132,27 @@ HeapGuardPolicy.SmmPageGuard are active.\n",
       ));
   }
 
-  if (gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderCode        ||
-      gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesCode  ||
+  // if (gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderCode        ||
+     if (gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesCode  ||
       gMPS.DxeNxProtectionPolicy.Fields.EfiRuntimeServicesCode) {
-    DEBUG ((
+//     DEBUG ((
+//       DEBUG_WARN,
+//       "%a: - DxeNxProtectionPolicy.EfiLoaderCode, \
+// DxeNxProtectionPolicy.EfiBootServicesCode, \
+// and DxeNxProtectionPolicy.EfiRuntimeServicesCode \
+// must be set to ZERO. Setting all to ZERO \
+// in the memory protection settings global.\n",
+//       __FUNCTION__
+//       ));
+        DEBUG ((
       DEBUG_WARN,
-      "%a: - DxeNxProtectionPolicy.EfiLoaderCode, \
-DxeNxProtectionPolicy.EfiBootServicesCode, \
+      "%a: - DxeNxProtectionPolicy.EfiBootServicesCode, \
 and DxeNxProtectionPolicy.EfiRuntimeServicesCode \
 must be set to ZERO. Setting all to ZERO \
 in the memory protection settings global.\n",
       __FUNCTION__
       ));
-    gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderCode = 0;
+    // gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderCode = 0;
     gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesCode = 0;
     gMPS.DxeNxProtectionPolicy.Fields.EfiRuntimeServicesCode = 0;
   }

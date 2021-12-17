@@ -1462,10 +1462,10 @@ CoreInitializeMemoryProtection (
   // - code regions should have no EFI_MEMORY_XP attribute
   // - EfiConventionalMemory and EfiBootServicesData should use the
   //   same attribute
-  //
+  // //
   ASSERT ((GetPermissionAttributeForMemoryType (EfiBootServicesCode) & EFI_MEMORY_XP) == 0);
   ASSERT ((GetPermissionAttributeForMemoryType (EfiRuntimeServicesCode) & EFI_MEMORY_XP) == 0);
-  ASSERT ((GetPermissionAttributeForMemoryType (EfiLoaderCode) & EFI_MEMORY_XP) == 0);
+  // ASSERT ((GetPermissionAttributeForMemoryType (EfiLoaderCode) & EFI_MEMORY_XP) == 0);
   ASSERT (GetPermissionAttributeForMemoryType (EfiBootServicesData) ==
           GetPermissionAttributeForMemoryType (EfiConventionalMemory));
 
@@ -1667,14 +1667,17 @@ ApplyMemoryProtectionPolicy (
 
   if (OldType != EfiMaxMemoryType) {
     OldAttributes = GetPermissionAttributeForMemoryType (OldType);
-    if (OldAttributes == NewAttributes) {
-      // policy is the same between OldType and NewType
-      return EFI_SUCCESS;
-    }
+    // MU_CHANGE START: TODO: There is a potential bug where attributes are not properly set
+    //                  for all pages during a call to AllocatePages(). This may be due to a bug somewhere
+    //                  during the free page process.
+    // if (OldAttributes == NewAttributes) {
+    //   // policy is the same between OldType and NewType
+    //   return EFI_SUCCESS;
+    // }
+    // MU_CHANGE END
   } else if (NewAttributes == 0) {
     // newly added region of a type that does not require protection
     return EFI_SUCCESS;
   }
-
   return gCpu->SetMemoryAttributes (gCpu, Memory, Length, NewAttributes);
 }

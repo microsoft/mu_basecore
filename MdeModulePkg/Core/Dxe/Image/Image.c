@@ -8,11 +8,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "DxeMain.h"
 #include "Image.h"
+#include <Protocol/MemoryAttribute.h>
 
 //
 // Module Globals
 //
 LOADED_IMAGE_PRIVATE_DATA  *mCurrentImage = NULL;
+EFI_MEMORY_ATTRIBUTE_PROTOCOL *mMemoryAttribute = NULL; // MU_CHANGE
 
 typedef struct {
   LIST_ENTRY                            Link;
@@ -577,6 +579,7 @@ CoreLoadPeImage (
   BOOLEAN                   DstBufAlocated;
   UINTN                     Size;
   UINT64*                   SecurityCookieAddress;   // MS_CHANGE_? - TODO
+  UINT64                         Attributes;          // MU_CHANGE
 
   ZeroMem (&Image->ImageContext, sizeof (Image->ImageContext));
 
@@ -690,6 +693,35 @@ CoreLoadPeImage (
     if (EFI_ERROR (Status)) {
       return Status;
     }
+    // MU_CHANGE START
+    if (mMemoryAttribute == NULL) {
+      gBS->LocateProtocol (
+             &gEfiMemoryAttributeProtocolGuid,
+             NULL,
+             (VOID **) &mMemoryAttribute
+             );
+    }
+
+    if (mMemoryAttribute != NULL) {
+      Status = mMemoryAttribute->GetMemoryAttributes (
+                                   mMemoryAttribute,
+                                   Image->ImageContext.ImageAddress,
+                                   EFI_PAGES_TO_SIZE (Image->NumberOfPages),
+                                   &Attributes
+                                   );
+      ASSERT_EFI_ERROR (Status);
+
+      Attributes |= EFI_MEMORY_XP;
+
+      Status = mMemoryAttribute->SetMemoryAttributes (
+                                   mMemoryAttribute,
+                                   Image->ImageContext.ImageAddress,
+                                   EFI_PAGES_TO_SIZE (Image->NumberOfPages),
+                                   Attributes
+                                   );
+      ASSERT_EFI_ERROR (Status);
+    }
+    // MU_CHANGE END
     DstBufAlocated = TRUE;
   } else {
     //
@@ -753,7 +785,20 @@ CoreLoadPeImage (
   if (EFI_ERROR (Status)) {
     goto Done;
   }
+  // MU_CHANGE START
+  if (mMemoryAttribute != NULL) {
 
+    Attributes |= EFI_MEMORY_RO;
+
+    Status = mMemoryAttribute->SetMemoryAttributes (
+                                 mMemoryAttribute,
+                                 Image->ImageContext.ImageAddress,
+                                 EFI_PAGES_TO_SIZE (Image->NumberOfPages),
+                                 Attributes
+                                 );
+    ASSERT_EFI_ERROR (Status);
+  }
+  // MU_CHANGE END
   //
   // Flush the Instruction Cache
   //
