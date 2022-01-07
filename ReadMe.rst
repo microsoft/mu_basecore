@@ -11,19 +11,19 @@ Ubuntu_GCC5_                  |UbuntuCiBuild|   |UbuntuCiTest|  |UbuntuCiCoverag
 
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
 
-Branch Status - release/202108
+Branch Status - release/202202
 ==============================
 
 :Status:
   In Development
 
 :Entered Development:
-  2021/09/08
+  2022/03/03
 
 :Anticipated Stabilization:
-  March 2022
+  Mar 2022
 
-Branch Changes - release/202108
+Branch Changes - release/202202
 ===============================
 
 Breaking Changes-dev
@@ -41,24 +41,23 @@ Bug Fixes-dev
 
 - None
 
-2108_RefBoot Changes
+2202_RefBoot Changes
 --------------------
 
 - Incomplete
 
-2108_CIBuild Changes
+2202_CIBuild Changes
 --------------------
 
 - Incomplete
 
-2108_Rebase Changes
+2202_Rebase Changes
 -------------------
 
-| Starting commit: 6ccd4f23067d025a43541b3d78f3d2965b7eac93  (revised 202102 commit - removed all SecurityPkg changes)
-| Destination Commit from upstream edk2: 7b4a99be8a39c12d3a7fc4b8db9f0eab4ac688d5 (tag: edk2-stable202108)
+| Starting commit: 4516829f8d ("Merged PR 4899: Mitigate track tag print levels", 2022-03-01)
+| Destination Commit from upstream edk2: b24306f15d ("NetworkPkg: Fix incorrect unicode string of the AKM/Cipher Suite", 2022-01-26)
 
-* Need to resolve StandaloneMmPkg changes regarding Cpu driver and ARM support
-
+- Incomplete
 
 Code of Conduct
 ===============
@@ -142,14 +141,14 @@ POSSIBILITY OF SUCH DAMAGE.
 
 .. CoreCI
 
-.. _Windows_VS2019: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=39&&branchName=release%2F202108
-.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202108
+.. _Windows_VS2019: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=39&&branchName=release%2F202202
+.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202202
 .. |WindowsCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/39.svg
 .. |WindowsCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
 
-.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=40&branchName=release%2F202108
-.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20Ubuntu%20GCC5?branchName=release%2F202108
+.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=40&branchName=release%2F202202
+.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20Ubuntu%20GCC5?branchName=release%2F202202
 .. |UbuntuCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/40.svg
 .. |UbuntuCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
 
-.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202108
+.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202202
