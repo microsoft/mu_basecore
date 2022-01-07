@@ -21,10 +21,15 @@ Branch Status - release/202108
   2021/09/08
 
 :Anticipated Stabilization:
-  March 2022
+  Jan 2022
 
 Branch Changes - release/202108
 ===============================
+
+
+Updated on 1/7/2022 to sync with additional changes from release/202102 @ commit e23d4ec50adf39e119480d3a56405d3ad025b41b
+Additionally commits were cherry-picked from mu_tiano_plus release/202102 due to repo package restructuring.  In sync
+up to 46bfc9cff4a6960a2d021de92d875ed67915e081
 
 Breaking Changes-dev
 --------------------
