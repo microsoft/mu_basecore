@@ -75,6 +75,7 @@
   SecureBootVariableProvisionLib|SecurityPkg/Library/SecureBootVariableProvisionLib/SecureBootVariableProvisionLib.inf
   TdxLib|MdePkg/Library/TdxLib/TdxLib.inf
   VariablePolicyHelperLib|MdeModulePkg/Library/VariablePolicyHelperLib/VariablePolicyHelperLib.inf
+  Hash2CryptoLib|SecurityPkg/Library/BaseHash2CryptoLibNull/BaseHash2CryptoLibNull.inf   ## MU_CHANGE
 
   SpdmSecurityLib|SecurityPkg/DeviceSecurity/SpdmSecurityLib/SpdmSecurityLib.inf
   SpdmDeviceSecretLib|SecurityPkg/DeviceSecurity/SpdmLib/SpdmDeviceSecretLibNull.inf
@@ -248,6 +249,10 @@
   SecurityPkg/Library/TcgPpVendorLibNull/TcgPpVendorLibNull.inf
   SecurityPkg/Library/TcgEventLogRecordLib/TcgEventLogRecordLib.inf
 
+# MU_CHANGE [BEGIN]
+  SecurityPkg/Library/BaseHash2CryptoLibNull/BaseHash2CryptoLibNull.inf
+  SecurityPkg/Library/DxeHash2CryptoLib/DxeHash2CryptoLib.inf
+# MU_CHANGE [END]
 [Components.IA32, Components.X64, Components.AARCH64]
   SecurityPkg/Library/AuthVariableLib/AuthVariableLib.inf
   SecurityPkg/Library/SecureBootVariableLib/SecureBootVariableLib.inf
