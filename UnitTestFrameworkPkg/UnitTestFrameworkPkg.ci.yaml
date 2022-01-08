@@ -87,6 +87,7 @@
             "pytools",
             "NOFAILURE",
             "DHAVE", # build flag for cmocka in the INF
+            "cmockery",
             "corthon",      # Contact GitHub account in Readme
             "mdkinney",     # Contact GitHub account in Readme
             "spbrogan"      # Contact GitHub account in Readme
