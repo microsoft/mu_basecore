@@ -1,27 +1,16 @@
 /** @file
-  This is definition for service binding for Hash driver.
+  Definitions internal to this library instance.
 
-Copyright (c) 2015 - 2016, Intel Corporation. All rights reserved.<BR>
-SPDX-License-Identifier: BSD-2-Clause-Patent
+  Copyright (c) 2015 - 2016, Intel Corporation. All rights reserved.<BR>
+  Copyright (C) Microsoft Corporation. All rights reserved.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef _HASH2_DRIVER_H_
-#define _HASH2_DRIVER_H_
+// MU_CHANGE - NEW FILE
 
-#include <Uefi.h>
-
-#include <Protocol/ServiceBinding.h>
-#include <Protocol/Hash2.h>
-
-#include <Library/BaseLib.h>
-#include <Library/BaseMemoryLib.h>
-#include <Library/DebugLib.h>
-#include <Library/MemoryAllocationLib.h>
-#include <Library/UefiBootServicesTableLib.h>
-#include <Library/UefiRuntimeServicesTableLib.h>
-#include <Library/DevicePathLib.h>
-#include <Library/UefiLib.h>
+#ifndef _DXE_HASH2_CRYPTO_LIB_H_
+#define _DXE_HASH2_CRYPTO_LIB_H_
 
 #define HASH2_SERVICE_DATA_SIGNATURE  SIGNATURE_32 ('H', 'S', '2', 'S')
 

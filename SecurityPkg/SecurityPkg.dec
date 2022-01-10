@@ -99,6 +99,11 @@
   TcgEventLogRecordLib|Include/Library/TcgEventLogRecordLib.h
 
 ## MU_CHANGE BEGIN
+  ##  @libraryclass  This library provides an implementation of the UEFI
+  #   Hash 2 Service Binding protocol and Hash 2 protocol.
+  #
+  Hash2CryptoLib|Include/Library/Hash2CryptoLib.h
+
   ##  @libraryclass  This library can be used to publish TPM EventLog entries
   ##  for measurements that may have been made prior to driver initialization
   #
@@ -217,7 +222,7 @@
   ## GUID used to enforce loading order between Tcg2Acpi and Tcg2Smm
   gTcg2MmSwSmiRegisteredGuid         = { 0x9d4548b9, 0xa48d, 0x4db4, { 0x9a, 0x68, 0x32, 0xc5, 0x13, 0x9e, 0x20, 0x18 } }
 
-  
+
 [Protocols]
   ## MU_CHANGE - START - Add a new protocol to support Log-only events.
   # Include/Protocol/MuTcg2Protocol.h
@@ -363,7 +368,7 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmPhysicalPresence|TRUE|BOOLEAN|0x00010001
 
   ## MS_CHANGE - Support mode where Ready To Boot Strings/Events are not measured into
-  ## PCR 4.  
+  ## PCR 4.
   # TRUE - The Platform will measure
   # FALSE -The Platform will not measure those events
   gEfiSecurityPkgTokenSpaceGuid.TcgMeasureBootStringsInPcr4|TRUE|BOOLEAN|0x0000000B

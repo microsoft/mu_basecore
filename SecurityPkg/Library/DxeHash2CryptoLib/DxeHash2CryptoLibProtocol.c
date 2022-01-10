@@ -1,22 +1,26 @@
 /** @file
-  This module implements Hash2 Protocol.
+  Hash 2 protocol instance implementation.
 
-(C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
-Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
-SPDX-License-Identifier: BSD-2-Clause-Patent
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation. All rights reserved.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
+// MU_CHANGE - NEW FILE
+
 #include <Uefi.h>
 #include <Protocol/Hash2.h>
+#include <Protocol/ServiceBinding.h>
+#include <Library/BaseCryptLib.h>
 #include <Library/BaseLib.h>
-#include <Library/UefiBootServicesTableLib.h>
-#include <Library/MemoryAllocationLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
-#include <Library/BaseCryptLib.h>
+#include <Library/MemoryAllocationLib.h>
+#include <Library/UefiBootServicesTableLib.h>
 
-#include "Driver.h"
+#include "DxeHash2CryptoLib.h"
 
 /**
   Retrieves the size, in bytes, of the context buffer required for hash operations.
