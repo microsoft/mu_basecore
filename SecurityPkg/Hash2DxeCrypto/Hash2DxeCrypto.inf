@@ -1,10 +1,9 @@
 ## @file
-#  Produces the UEFI HASH2 protocol
-#
-#  This module will use EDKII crypto library to HASH2 protocol.
+#  This module produces the Hash 2 Service Binding protocol and Hash 2 protocol.
 #
 #  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
 #  Copyright (c) 2015 - 2020, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) Microsoft Corporation. All rights reserved.<BR>
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -25,32 +24,40 @@
 #
 
 [Sources.common]
-  Hash2DxeCrypto.c
-  Driver.h
-  Driver.c
+  Hash2CryptoDxe.c
+  # Driver.h    # MU_CHANGE
+  # Driver.c    # MU_CHANGE
 
 [Packages]
   MdePkg/MdePkg.dec
-  CryptoPkg/CryptoPkg.dec
+  # CryptoPkg/CryptoPkg.dec   # MU_CHANGE
+  SecurityPkg/SecurityPkg.dec
 
 [LibraryClasses]
-  UefiBootServicesTableLib
-  BaseLib
-  BaseMemoryLib
-  BaseCryptLib
-  MemoryAllocationLib
+  # MU_CHANGE - BEGIN
+  # UefiBootServicesTableLib
+  # BaseLib
+  # BaseMemoryLib
+  # BaseCryptLib
+  # MemoryAllocationLib
+  # MU_CHANGE - END
+  Hash2CryptoLib
   UefiDriverEntryPoint
-  DebugLib
-  UefiLib
+  # MU_CHANGE - BEGIN
+  # DebugLib
+  # UefiLib
+  # MU_CHANGE - END
 
-[Guids]
-  gEfiHashAlgorithmSha256Guid           ## CONSUMES               ## GUID
-  gEfiHashAlgorithmSha384Guid           ## CONSUMES               ## GUID
-  gEfiHashAlgorithmSha512Guid           ## CONSUMES               ## GUID
+# MU_CHANGE - BEGIN
+# [Guids]
+#   gEfiHashAlgorithmSha256Guid           ## CONSUMES               ## GUID
+#   gEfiHashAlgorithmSha384Guid           ## CONSUMES               ## GUID
+#   gEfiHashAlgorithmSha512Guid           ## CONSUMES               ## GUID
 
-[Protocols]
-  gEfiHash2ProtocolGuid                 ## PRODUCES
-  gEfiHash2ServiceBindingProtocolGuid   ## PRODUCES
+# [Protocols]
+#   gEfiHash2ProtocolGuid                 ## PRODUCES
+#   gEfiHash2ServiceBindingProtocolGuid   ## PRODUCES
+# MU_CHANGE - END
 
 [UserExtensions.TianoCore."ExtraFiles"]
   Hash2DxeCryptoExtra.uni
