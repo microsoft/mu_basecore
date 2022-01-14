@@ -39,6 +39,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/SimpleFileSystem.h>
 #include <Protocol/HeapGuardDebug.h> // MS_CHANGE
+#include <Protocol/MemoryAttribute.h> // MU_CHANGE
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
@@ -67,6 +68,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 extern LIST_ENTRY         mGcdMemorySpaceMap;
 
 extern BOOLEAN            mSetNxOnCodeTypes; // MU_CHANGE
+EFI_MEMORY_ATTRIBUTE_PROTOCOL *mMemoryAttribute = NULL; // MU_CHANGE
+
 
 STATIC LIST_ENTRY         mProtectedImageRecordList;
 //MS_CHANGE - START
@@ -1583,6 +1586,65 @@ IsInSmm (
 }
 
 /**
+  Sets the attributes of a loaded image to be read-only.
+
+  @param  Image                   Pointer to the loaded image private data
+
+  @return EFI_SUCCESS             Read-only set on loaded Image
+  @return EFI_INVALID_PARAMETER   Image or Image->ImageContext.ImageAddress was NULL
+  @return other                   Return value of mMemoryAttribute->GetMemoryAttributes(),
+                                  mMemoryAttribute->SetMemoryAttributes, or
+                                  gBS->LocateProtocol()
+
+**/
+EFI_STATUS
+SetImageToReadOnly (
+  IN LOADED_IMAGE_PRIVATE_DATA   *Image
+  )
+{
+  EFI_STATUS Status;
+  UINT64     Attributes;
+
+  DEBUG((DEBUG_INFO, "%a - Enter...\n", __FUNCTION__));
+
+  if (Image == NULL || (VOID *) Image->ImageContext.ImageAddress == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (mMemoryAttribute == NULL) {
+    Status = gBS->LocateProtocol (
+                    &gEfiMemoryAttributeProtocolGuid,
+                    NULL,
+                    (VOID **) &mMemoryAttribute
+                    );
+  }
+
+  if (mMemoryAttribute != NULL) {
+
+    Status = mMemoryAttribute->GetMemoryAttributes (
+                                mMemoryAttribute,
+                                Image->ImageContext.ImageAddress,
+                                EFI_PAGES_TO_SIZE (Image->NumberOfPages),
+                                &Attributes
+                                );
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    Attributes |= EFI_MEMORY_RO;
+
+    return mMemoryAttribute->SetMemoryAttributes (
+                                 mMemoryAttribute,
+                                 Image->ImageContext.ImageAddress,
+                                 EFI_PAGES_TO_SIZE (Image->NumberOfPages),
+                                 Attributes
+                                 );
+  }
+
+  return Status;
+}
+
+/**
   Manage memory permission attributes on a memory range, according to the
   configured DXE memory protection policy.
 
@@ -1665,7 +1727,8 @@ ApplyMemoryProtectionPolicy (
   // - the policy is different between the old and the new type, or
   // - this is a newly added region (OldType == EfiMaxMemoryType)
   //
-  // MU_CHANGE START Handle code allocations according to NX DLL flag
+  // MU_CHANGE START Handle code allocations according to NX DLL flag. If the flag is set, the image
+  // should update the attributes of code type allocates when it's ready to execute them.
   if (NewType == EfiLoaderCode || NewType == EfiBootServicesCode || NewType == EfiRuntimeServicesCode) {
     if (mSetNxOnCodeTypes) {
       NewAttributes = EFI_MEMORY_XP;

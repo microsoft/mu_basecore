@@ -8,13 +8,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "DxeMain.h"
 #include "Image.h"
-#include <Protocol/MemoryAttribute.h> // MU_CHANGE
 
 //
 // Module Globals
 //
 LOADED_IMAGE_PRIVATE_DATA  *mCurrentImage = NULL;
-EFI_MEMORY_ATTRIBUTE_PROTOCOL *mMemoryAttribute = NULL; // MU_CHANGE
 BOOLEAN mSetNxOnCodeTypes = TRUE; // MU_CHANGE
 
 typedef struct {
@@ -564,6 +562,10 @@ CoreIsImageTypeSupported (
                                   relocate the PE/COFF file
   @retval EFI_INVALID_PARAMETER   Invalid parameter
   @retval EFI_BUFFER_TOO_SMALL    Buffer for image is too small
+  // MU_CHANGE START
+  @retval EFI_LOAD_ERROR          NXCOMPAT flag not set on image and it is 
+                                  of subsystem type EFI_APPLICATION
+  // MU_CHANGE END
 
 **/
 EFI_STATUS
@@ -580,7 +582,6 @@ CoreLoadPeImage (
   BOOLEAN                   DstBufAlocated;
   UINTN                     Size;
   UINT64*                   SecurityCookieAddress;   // MS_CHANGE_? - TODO
-  UINT64                    Attributes;              // MU_CHANGE
 
   ZeroMem (&Image->ImageContext, sizeof (Image->ImageContext));
 
@@ -629,11 +630,15 @@ CoreLoadPeImage (
   }
 
   // MU_CHANGE START
+  // If the image doesn't have the NXCOMPAT flag and is an EFI_APPLICATION subsystem, it could be a boot
+  // loader or 3rd party binary which isn't NX aware. Because of this, we need to ensure future allocations
+  // of code memory types aren't set to NX in case this image does its own allocations.
+  // Or, if our memory protection policy specifies that we shouldn't allow such images, return a failure.
   if (!(Image->ImageContext.SupportsNx) && Image->ImageContext.ImageCodeMemoryType == EfiLoaderCode) {
     if (!gMPS.ImageProtectionPolicy.Fields.AllowImagesWithoutNxFlag) {
-      return EFI_INVALID_PARAMETER;
+      return EFI_LOAD_ERROR;
     }
-    DEBUG((DEBUG_INFO, "%a:%d - Setting Nx on Code types to FALSE\n", __FUNCTION__, __LINE__));
+    DEBUG((DEBUG_INFO, "%a - Setting Nx on Code types to FALSE\n", __FUNCTION__));
     mSetNxOnCodeTypes = FALSE;
   }
   // MU_CHANGE END
@@ -767,34 +772,8 @@ CoreLoadPeImage (
     goto Done;
   }
   // MU_CHANGE START
-  if (mMemoryAttribute == NULL) {
-    gBS->LocateProtocol (
-            &gEfiMemoryAttributeProtocolGuid,
-            NULL,
-            (VOID **) &mMemoryAttribute
-            );
-  }
-
-  if (mMemoryAttribute != NULL) {
-
-    Status = mMemoryAttribute->GetMemoryAttributes (
-                                mMemoryAttribute,
-                                Image->ImageContext.ImageAddress,
-                                EFI_PAGES_TO_SIZE (Image->NumberOfPages),
-                                &Attributes
-                                );
-    ASSERT_EFI_ERROR (Status);
-
-    Attributes |= EFI_MEMORY_RO;
-
-    Status = mMemoryAttribute->SetMemoryAttributes (
-                                 mMemoryAttribute,
-                                 Image->ImageContext.ImageAddress,
-                                 EFI_PAGES_TO_SIZE (Image->NumberOfPages),
-                                 Attributes
-                                 );
-    ASSERT_EFI_ERROR (Status);
-  }
+  // Now that relocations are done, set the image to read-only
+  Status = SetImageToReadOnly (Image);
   // MU_CHANGE END
   //
   // Flush the Instruction Cache

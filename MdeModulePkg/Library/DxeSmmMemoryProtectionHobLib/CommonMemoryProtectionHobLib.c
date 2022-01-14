@@ -144,14 +144,6 @@ must be set to ZERO. Setting all to ZERO \
 in the memory protection settings global.\n",
       __FUNCTION__
       ));
-        DEBUG ((
-      DEBUG_WARN,
-      "%a: - DxeNxProtectionPolicy.EfiBootServicesCode, \
-and DxeNxProtectionPolicy.EfiRuntimeServicesCode \
-must be set to ZERO. Setting all to ZERO \
-in the memory protection settings global.\n",
-      __FUNCTION__
-      ));
     gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderCode = 0;
     gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesCode = 0;
     gMPS.DxeNxProtectionPolicy.Fields.EfiRuntimeServicesCode = 0;
