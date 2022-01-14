@@ -8,7 +8,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "DxeMain.h"
 #include "Image.h"
-#include <Protocol/MemoryAttribute.h>
+#include <Protocol/MemoryAttribute.h> // MU_CHANGE
 
 //
 // Module Globals
@@ -627,6 +627,7 @@ CoreLoadPeImage (
     Image->ImageContext.ImageError = IMAGE_ERROR_INVALID_SUBSYSTEM;
     return EFI_UNSUPPORTED;
   }
+
   // MU_CHANGE START
   if (!(Image->ImageContext.SupportsNx) && Image->ImageContext.ImageCodeMemoryType == EfiLoaderCode) {
     if (!gMPS.ImageProtectionPolicy.Fields.AllowImagesWithoutNxFlag) {
@@ -702,7 +703,6 @@ CoreLoadPeImage (
     if (EFI_ERROR (Status)) {
       return Status;
     }
-
     DstBufAlocated = TRUE;
   } else {
     //

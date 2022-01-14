@@ -133,7 +133,7 @@ HeapGuardPolicy.SmmPageGuard are active.\n",
   }
 
   if (gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderCode        ||
-     if (gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesCode  ||
+      gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesCode  ||
       gMPS.DxeNxProtectionPolicy.Fields.EfiRuntimeServicesCode) {
     DEBUG ((
       DEBUG_WARN,

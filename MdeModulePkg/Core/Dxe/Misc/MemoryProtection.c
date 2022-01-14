@@ -1665,6 +1665,7 @@ ApplyMemoryProtectionPolicy (
   // - the policy is different between the old and the new type, or
   // - this is a newly added region (OldType == EfiMaxMemoryType)
   //
+  // MU_CHANGE START Handle code allocations according to NX DLL flag
   if (NewType == EfiLoaderCode || NewType == EfiBootServicesCode || NewType == EfiRuntimeServicesCode) {
     if (mSetNxOnCodeTypes) {
       NewAttributes = EFI_MEMORY_XP;
@@ -1674,6 +1675,7 @@ ApplyMemoryProtectionPolicy (
   } else {
     NewAttributes = GetPermissionAttributeForMemoryType (NewType);
   }
+  // MU_CHANGE END
 
   if (OldType != EfiMaxMemoryType) {
     OldAttributes = GetPermissionAttributeForMemoryType (OldType);
