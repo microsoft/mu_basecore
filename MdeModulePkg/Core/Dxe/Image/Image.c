@@ -580,7 +580,7 @@ CoreLoadPeImage (
   BOOLEAN                   DstBufAlocated;
   UINTN                     Size;
   UINT64*                   SecurityCookieAddress;   // MS_CHANGE_? - TODO
-  UINT64                         Attributes;          // MU_CHANGE
+  UINT64                    Attributes;              // MU_CHANGE
 
   ZeroMem (&Image->ImageContext, sizeof (Image->ImageContext));
 

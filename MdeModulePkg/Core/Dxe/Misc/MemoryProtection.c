@@ -1691,5 +1691,6 @@ ApplyMemoryProtectionPolicy (
     // newly added region of a type that does not require protection
     return EFI_SUCCESS;
   }
+
   return gCpu->SetMemoryAttributes (gCpu, Memory, Length, NewAttributes);
 }
