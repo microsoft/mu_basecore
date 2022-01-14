@@ -563,7 +563,7 @@ CoreIsImageTypeSupported (
   @retval EFI_INVALID_PARAMETER   Invalid parameter
   @retval EFI_BUFFER_TOO_SMALL    Buffer for image is too small
   // MU_CHANGE START
-  @retval EFI_LOAD_ERROR          NXCOMPAT flag not set on image and it is 
+  @retval EFI_SECURITY_VIOLATION  NXCOMPAT flag not set on image and it is 
                                   of subsystem type EFI_APPLICATION
   // MU_CHANGE END
 
@@ -636,7 +636,7 @@ CoreLoadPeImage (
   // Or, if our memory protection policy specifies that we shouldn't allow such images, return a failure.
   if (!(Image->ImageContext.SupportsNx) && Image->ImageContext.ImageCodeMemoryType == EfiLoaderCode) {
     if (!gMPS.ImageProtectionPolicy.Fields.AllowImagesWithoutNxFlag) {
-      return EFI_LOAD_ERROR;
+      return EFI_SECURITY_VIOLATION;
     }
     DEBUG((DEBUG_INFO, "%a - Setting Nx on Code types to FALSE\n", __FUNCTION__));
     mSetNxOnCodeTypes = FALSE;
