@@ -15,6 +15,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 LOADED_IMAGE_PRIVATE_DATA  *mCurrentImage = NULL;
 EFI_MEMORY_ATTRIBUTE_PROTOCOL *mMemoryAttribute = NULL; // MU_CHANGE
+BOOLEAN mSetNxOnCodeTypes = TRUE; // MU_CHANGE
 
 typedef struct {
   LIST_ENTRY                            Link;
@@ -626,7 +627,15 @@ CoreLoadPeImage (
     Image->ImageContext.ImageError = IMAGE_ERROR_INVALID_SUBSYSTEM;
     return EFI_UNSUPPORTED;
   }
-
+  // MU_CHANGE START
+  if (!(Image->ImageContext.SupportsNx) && Image->ImageContext.ImageCodeMemoryType == EfiLoaderCode) {
+    if (!gMPS.ImageProtectionPolicy.Fields.AllowImagesWithoutNxFlag) {
+      return EFI_INVALID_PARAMETER;
+    }
+    DEBUG((DEBUG_INFO, "%a:%d - Setting Nx on Code types to FALSE\n", __FUNCTION__, __LINE__));
+    mSetNxOnCodeTypes = FALSE;
+  }
+  // MU_CHANGE END
   //
   // Allocate memory of the correct memory type aligned on the required image boundary
   //
@@ -693,35 +702,7 @@ CoreLoadPeImage (
     if (EFI_ERROR (Status)) {
       return Status;
     }
-    // MU_CHANGE START
-    if (mMemoryAttribute == NULL) {
-      gBS->LocateProtocol (
-             &gEfiMemoryAttributeProtocolGuid,
-             NULL,
-             (VOID **) &mMemoryAttribute
-             );
-    }
 
-    if (mMemoryAttribute != NULL) {
-      Status = mMemoryAttribute->GetMemoryAttributes (
-                                   mMemoryAttribute,
-                                   Image->ImageContext.ImageAddress,
-                                   EFI_PAGES_TO_SIZE (Image->NumberOfPages),
-                                   &Attributes
-                                   );
-      ASSERT_EFI_ERROR (Status);
-
-      Attributes |= EFI_MEMORY_XP;
-
-      Status = mMemoryAttribute->SetMemoryAttributes (
-                                   mMemoryAttribute,
-                                   Image->ImageContext.ImageAddress,
-                                   EFI_PAGES_TO_SIZE (Image->NumberOfPages),
-                                   Attributes
-                                   );
-      ASSERT_EFI_ERROR (Status);
-    }
-    // MU_CHANGE END
     DstBufAlocated = TRUE;
   } else {
     //
@@ -786,7 +767,23 @@ CoreLoadPeImage (
     goto Done;
   }
   // MU_CHANGE START
+  if (mMemoryAttribute == NULL) {
+    gBS->LocateProtocol (
+            &gEfiMemoryAttributeProtocolGuid,
+            NULL,
+            (VOID **) &mMemoryAttribute
+            );
+  }
+
   if (mMemoryAttribute != NULL) {
+
+    Status = mMemoryAttribute->GetMemoryAttributes (
+                                mMemoryAttribute,
+                                Image->ImageContext.ImageAddress,
+                                EFI_PAGES_TO_SIZE (Image->NumberOfPages),
+                                &Attributes
+                                );
+    ASSERT_EFI_ERROR (Status);
 
     Attributes |= EFI_MEMORY_RO;
 

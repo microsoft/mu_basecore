@@ -63,6 +63,7 @@ typedef union {
     UINT8 FromUnknown                   : 1;
     UINT8 FromFv                        : 1;
     UINT8 RaiseErrorIfProtectionFails   : 1;
+    UINT8 AllowImagesWithoutNxFlag      : 1;
   } Fields;
 } IMAGE_PROTECTION_POLICY;
 
@@ -131,6 +132,8 @@ typedef struct {
   //  .FromFv                       - Image from firmware volume.
   //  .RaiseErrorIfProtectionFails  - ProtectUefiImageMu() will return an error if protection
   //                                  fails.
+  //  .AllowImagesWithoutNxFlag     - If true, images which don't utilize the NX PE flag can still
+  //                                  be loaded
   //
   // Note: If a bit is cleared, the data section could be still non-executable if
   // DxeNxProtectionPolicy is enabled for EfiLoaderData, EfiBootServicesData
@@ -207,7 +210,8 @@ extern GUID gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.FromUnknown                  = 0,         \
               .Fields.FromFv                       = 1,         \
-              .Fields.RaiseErrorIfProtectionFails  = 1          \
+              .Fields.RaiseErrorIfProtectionFails  = 1,         \
+              .Fields.AllowImagesWithoutNxFlag     = 1          \
             },                                                  \
             {                                                   \
               .Fields.EfiReservedMemoryType        = 0,         \
@@ -296,7 +300,8 @@ extern GUID gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.FromUnknown                  = 0,         \
               .Fields.FromFv                       = 1,         \
-              .Fields.RaiseErrorIfProtectionFails  = 0          \
+              .Fields.RaiseErrorIfProtectionFails  = 0,         \
+              .Fields.AllowImagesWithoutNxFlag     = 1          \
             },                                                  \
             {                                                   \
               .Fields.EfiReservedMemoryType        = 0,         \
@@ -384,7 +389,8 @@ extern GUID gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.FromUnknown                  = 0,         \
               .Fields.FromFv                       = 1,         \
-              .Fields.RaiseErrorIfProtectionFails  = 0          \
+              .Fields.RaiseErrorIfProtectionFails  = 0,         \
+              .Fields.AllowImagesWithoutNxFlag     = 1          \
             },                                                  \
             {                                                   \
               .Fields.EfiReservedMemoryType        = 0,         \
@@ -471,7 +477,8 @@ extern GUID gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.FromUnknown                  = 0,         \
               .Fields.FromFv                       = 0,         \
-              .Fields.RaiseErrorIfProtectionFails  = 0          \
+              .Fields.RaiseErrorIfProtectionFails  = 0,         \
+              .Fields.AllowImagesWithoutNxFlag     = 1          \
             },                                                  \
             {                                                   \
               .Fields.EfiReservedMemoryType        = 0,         \

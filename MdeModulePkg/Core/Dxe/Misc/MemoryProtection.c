@@ -66,6 +66,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 extern LIST_ENTRY         mGcdMemorySpaceMap;
 
+extern BOOLEAN            mSetNxOnCodeTypes; // MU_CHANGE
+
 STATIC LIST_ENTRY         mProtectedImageRecordList;
 //MS_CHANGE - START
 STATIC HEAP_GUARD_DEBUG_PROTOCOL mHeapGuardDebug = {
@@ -1465,7 +1467,7 @@ CoreInitializeMemoryProtection (
   //
   ASSERT ((GetPermissionAttributeForMemoryType (EfiBootServicesCode) & EFI_MEMORY_XP) == 0);
   ASSERT ((GetPermissionAttributeForMemoryType (EfiRuntimeServicesCode) & EFI_MEMORY_XP) == 0);
-  // ASSERT ((GetPermissionAttributeForMemoryType (EfiLoaderCode) & EFI_MEMORY_XP) == 0);
+  ASSERT ((GetPermissionAttributeForMemoryType (EfiLoaderCode) & EFI_MEMORY_XP) == 0);
   ASSERT (GetPermissionAttributeForMemoryType (EfiBootServicesData) ==
           GetPermissionAttributeForMemoryType (EfiConventionalMemory));
 
@@ -1663,7 +1665,15 @@ ApplyMemoryProtectionPolicy (
   // - the policy is different between the old and the new type, or
   // - this is a newly added region (OldType == EfiMaxMemoryType)
   //
-  NewAttributes = GetPermissionAttributeForMemoryType (NewType);
+  if (NewType == EfiLoaderCode || NewType == EfiBootServicesCode || NewType == EfiRuntimeServicesCode) {
+    if (mSetNxOnCodeTypes) {
+      NewAttributes = EFI_MEMORY_XP;
+    } else {
+      NewAttributes = 0;
+    }
+  } else {
+    NewAttributes = GetPermissionAttributeForMemoryType (NewType);
+  }
 
   if (OldType != EfiMaxMemoryType) {
     OldAttributes = GetPermissionAttributeForMemoryType (OldType);

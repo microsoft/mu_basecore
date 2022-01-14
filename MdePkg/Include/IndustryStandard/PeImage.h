@@ -106,6 +106,11 @@ typedef struct {
 #define EFI_IMAGE_FILE_DLL                  BIT13    ///< 0x2000  File is a DLL.
 #define EFI_IMAGE_FILE_BYTES_REVERSED_HI    BIT15    ///< 0x8000  Bytes of machine word are reversed.
 
+//
+// DLL Characteristics
+//
+#define IMAGE_DLLCHARACTERISTICS_NX_COMPAT  BIT8     ///< 0x0100 Image is NX compatible
+
 ///
 /// Header Data Directories.
 ///

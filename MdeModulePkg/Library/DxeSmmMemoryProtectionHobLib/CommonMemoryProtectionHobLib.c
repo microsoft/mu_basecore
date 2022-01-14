@@ -132,18 +132,18 @@ HeapGuardPolicy.SmmPageGuard are active.\n",
       ));
   }
 
-  // if (gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderCode        ||
+  if (gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderCode        ||
      if (gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesCode  ||
       gMPS.DxeNxProtectionPolicy.Fields.EfiRuntimeServicesCode) {
-//     DEBUG ((
-//       DEBUG_WARN,
-//       "%a: - DxeNxProtectionPolicy.EfiLoaderCode, \
-// DxeNxProtectionPolicy.EfiBootServicesCode, \
-// and DxeNxProtectionPolicy.EfiRuntimeServicesCode \
-// must be set to ZERO. Setting all to ZERO \
-// in the memory protection settings global.\n",
-//       __FUNCTION__
-//       ));
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: - DxeNxProtectionPolicy.EfiLoaderCode, \
+DxeNxProtectionPolicy.EfiBootServicesCode, \
+and DxeNxProtectionPolicy.EfiRuntimeServicesCode \
+must be set to ZERO. Setting all to ZERO \
+in the memory protection settings global.\n",
+      __FUNCTION__
+      ));
         DEBUG ((
       DEBUG_WARN,
       "%a: - DxeNxProtectionPolicy.EfiBootServicesCode, \
