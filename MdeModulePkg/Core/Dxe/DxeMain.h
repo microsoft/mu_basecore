@@ -2907,6 +2907,23 @@ EFI_STATUS
 SetImageToReadOnly (
   IN LOADED_IMAGE_PRIVATE_DATA   *Image
   );
+
+/**
+  Sets the attributes of a loaded image to be read-only.
+
+  @param  Image                   Pointer to the loaded image private data
+
+  @return EFI_SUCCESS             Read-only and NX attributes unset on image
+  @return EFI_INVALID_PARAMETER   Image or Image->ImageContext.ImageAddress was NULL
+  @return other                   Return value of mMemoryAttribute->GetMemoryAttributes(),
+                                  mMemoryAttribute->SetMemoryAttributes, or
+                                  gBS->LocateProtocol()
+
+**/
+EFI_STATUS
+UnsetReadOnlyAndNxOnImage (
+  IN EFI_LOADED_IMAGE_PROTOCOL   *Image
+  );
 // MU_CHANGE END
 
 /**
