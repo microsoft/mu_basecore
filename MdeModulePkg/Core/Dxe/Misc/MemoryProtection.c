@@ -619,7 +619,7 @@ ProtectUefiImageMu (
 
 Finish:
   if (EFI_ERROR (Status)) {
-    UnsetReadOnlyAndNxOnImage (LoadedImage);
+    ClearReadOnlyAndNxFromImage (LoadedImage);
     if (ProtectionPolicy != PROTECT_ELSE_RAISE_ERROR) {
       Status = EFI_SUCCESS;
     }
@@ -1641,19 +1641,18 @@ SetImageToReadOnly (
 }
 
 /**
-  Sets the attributes of a loaded image to be read-only.
+  Clears the read-only and no-execute attributes of a loaded image.
 
-  @param  Image                   Pointer to the loaded image private data
+  @param  Image                   Pointer to the loaded image private protocol
 
   @return EFI_SUCCESS             Read-only and NX attributes unset on image
-  @return EFI_INVALID_PARAMETER   Image or Image->ImageContext.ImageAddress was NULL
-  @return other                   Return value of mMemoryAttribute->GetMemoryAttributes(),
-                                  mMemoryAttribute->SetMemoryAttributes, or
-                                  gBS->LocateProtocol()
+  @return EFI_INVALID_PARAMETER   Image or Image->ImageBase was NULL
+  @return other                   Return value of mMemoryAttribute->ClearMemoryAttributes()
+                                  or gBS->LocateProtocol()
 
 **/
 EFI_STATUS
-UnsetReadOnlyAndNxOnImage (
+ClearReadOnlyAndNxFromImage (
   IN EFI_LOADED_IMAGE_PROTOCOL   *Image
   )
 {
