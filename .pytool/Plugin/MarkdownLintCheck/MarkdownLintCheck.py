@@ -66,6 +66,9 @@ class MarkdownLintCheck(ICiBuildPlugin):
 
     def RunBuildPlugin(self, packagename, Edk2pathObj, pkgconfig, environment, PLM, PLMHelper, tc, output_stream=None):
         Errors = []
+        audit_only = True
+        if "AuditOnly" in pkgconfig and not pkgconfig["AuditOnly"]:
+            audit_only = False
 
         abs_pkg_path = Edk2pathObj.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
             packagename)
@@ -144,12 +147,13 @@ class MarkdownLintCheck(ICiBuildPlugin):
         results = self._check_markdown(path_to_check, config_file_path, Ignores)
         for r in results:
             tc.LogStdError(r.strip())
-            logging.error(r.strip())
+            if not audit_only:
+                logging.error(r.strip())
 
         # add result to test case
         overall_status = len(results)
         if overall_status != 0:
-            if "AuditOnly" in pkgconfig and pkgconfig["AuditOnly"]:
+            if audit_only:
                 # set as skipped if AuditOnly
                 tc.SetSkipped()
                 return -1
