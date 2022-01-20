@@ -31,6 +31,17 @@ variables from the build environment:
     firmware version, if not provided, 'None' will be used for the corresponding
     field
 
+This tool provides two types of validation, determined by the type of **tags** included in the overriding module:
+
+- **Override**: Override validation, as indicated by override tags, intends to enforce the validity of a linkage. Thus if
+the target that is overridden is either not found or has an change since the last linkage update, the build will break.
+- **Track**: Track validation, indicated by track tags from tracking modules, intends to soft-tracking certain module updates
+across upstream changes. This validation will ignore this tag if the corresponding target is not found. However, if the
+target is found, the linkage has to match the current status of target, otherwise build will break.
+
+  *Note*: If one module contains one or more track tags, at least one tracked target needs to be found, otherwise build
+  will break.
+
 ### Command Line Tool
 
 When used as a command line tool, this tool takes the absolute path of workspace
@@ -56,6 +67,30 @@ Override record to be included in overriding module's inf:
 #Override : 00000001 | MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | cc255d9de141fccbdfca9ad02e0daa47 | 2018-05-09T17-54-17
 ```
 
+Command to generate a track record:
+
+``` cmd
+OverrideValidation.py --track -w C:\Repo -m C:\Repo\SM_UDK\MdePkg\Library\BaseMemoryLib\BaseMemoryLib.inf
+```
+
+Track record to be included in tracking module's inf:
+
+``` cmd
+#Track : 00000002 | MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | 5bca19892b2e9f4c00a74041fa6b1eab | 2021-12-07T04-25-21 | 5c76ea08864294e11f8d7d1ac2ccf76c72673c8f
+```
+
+Command to generate an override record for a target file or directory:
+
+``` cmd
+OverrideValidation.py -w C:\Repo -t C:\Repo\MU_BASECORE\MdeModulePkg\Library\BaseSerialPortLib16550
+```
+
+Override record to be included in overriding module's inf:
+
+``` cmd
+#Override : 00000002 | MdeModulePkg/Library/BaseSerialPortLib16550 | 140759cf30a73b02f48cc1f226b015d8 | 2021-12-07T05-30-10 | fa99a33fdb7e8bf6063513fddb807105ec2fad81
+```
+
 Override log generated during pre-build process:
 
 ``` cmd
@@ -78,6 +113,7 @@ ORIGINALS:
   | Current State: 62929532257365b261080b7e7b1c4e7a | Last Fingerprint: dc9f5e3af1efbac6cf5485b672291903
   + MdePkg/Library/BaseMemoryLibOptDxe/BaseMemoryLibOptDxe.inf | SUCCESS | 0 days
   + MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | SUCCESS | 2 days
+  + MdeModulePkg/Library/BaseSerialPortLib16550 | SUCCESS | 7 days
 
 ```
 
