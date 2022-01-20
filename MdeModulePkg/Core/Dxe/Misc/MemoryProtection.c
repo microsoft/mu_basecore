@@ -483,9 +483,7 @@ ProtectUefiImageMu (
   Hdr.Pe32 = (EFI_IMAGE_NT_HEADERS32 *)((UINT8 *) (UINTN) ImageAddress + PeCoffHeaderOffset);
   if (Hdr.Pe32->Signature != EFI_IMAGE_NT_SIGNATURE) {
     DEBUG ((DEBUG_VERBOSE, "Hdr.Pe32->Signature invalid - 0x%x\n", Hdr.Pe32->Signature));
-    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
-      Status = EFI_INVALID_PARAMETER;
-    }
+    Status = EFI_INVALID_PARAMETER;
     // It might be image in SMM.
     goto Finish;
   }
@@ -508,9 +506,7 @@ ProtectUefiImageMu (
       SectionAlignment
       ));
     PdbPointer = PeCoffLoaderGetPdbPointer ((VOID*) (UINTN) ImageAddress);
-    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
-      Status = EFI_LOAD_ERROR;
-    }
+    Status = EFI_LOAD_ERROR;
     goto Finish;
   }
 
@@ -562,9 +558,7 @@ ProtectUefiImageMu (
       //
       ImageRecordCodeSection = AllocatePool (sizeof(*ImageRecordCodeSection));
       if (ImageRecordCodeSection == NULL) {
-        if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
-          Status = EFI_OUT_OF_RESOURCES;
-        }
+        Status = EFI_OUT_OF_RESOURCES;
         goto Finish;
       }
       ImageRecordCodeSection->Signature = IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE;
@@ -590,9 +584,7 @@ ProtectUefiImageMu (
     //
     DEBUG ((DEBUG_WARN, "%a - CodeSegmentCount is 0!\n", __FUNCTION__));
     PdbPointer = PeCoffLoaderGetPdbPointer ((VOID*) (UINTN) ImageAddress);
-    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
-      Status = EFI_LOAD_ERROR;
-    }
+    Status = EFI_LOAD_ERROR;
     goto Finish;
   }
 
@@ -605,9 +597,7 @@ ProtectUefiImageMu (
   //
   if (!IsImageRecordCodeSectionValid (ImageRecord)) {
     DEBUG ((DEBUG_ERROR, "IsImageRecordCodeSectionValid - FAIL\n"));
-    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
-      Status = EFI_LOAD_ERROR;
-    }
+    Status = EFI_LOAD_ERROR;
     goto Finish;
   }
 
@@ -628,6 +618,12 @@ ProtectUefiImageMu (
   InsertTailList (&mProtectedImageRecordList, &ImageRecord->Link);
 
 Finish:
+  if (EFI_ERROR (Status)) {
+    ClearReadOnlyAndNxFromImage (LoadedImage);
+    if (ProtectionPolicy != PROTECT_ELSE_RAISE_ERROR) {
+      Status = EFI_SUCCESS;
+    }
+  }
   return Status;
 }
 
@@ -1584,7 +1580,7 @@ IsInSmm (
   }
   return InSmm;
 }
-
+// MU_CHANGE START
 /**
   Sets the attributes of a loaded image to be read-only.
 
@@ -1624,7 +1620,7 @@ SetImageToReadOnly (
     Status = mMemoryAttribute->GetMemoryAttributes (
                                 mMemoryAttribute,
                                 Image->ImageContext.ImageAddress,
-                                EFI_PAGES_TO_SIZE (Image->NumberOfPages),
+                                ALIGN_VALUE (Image->ImageContext.ImageSize, EFI_PAGE_SIZE),
                                 &Attributes
                                 );
     if (EFI_ERROR (Status)) {
@@ -1636,7 +1632,7 @@ SetImageToReadOnly (
     return mMemoryAttribute->SetMemoryAttributes (
                                  mMemoryAttribute,
                                  Image->ImageContext.ImageAddress,
-                                 EFI_PAGES_TO_SIZE (Image->NumberOfPages),
+                                 ALIGN_VALUE (Image->ImageContext.ImageSize, EFI_PAGE_SIZE),
                                  Attributes
                                  );
   }
@@ -1644,6 +1640,54 @@ SetImageToReadOnly (
   return Status;
 }
 
+/**
+  Clears the read-only and no-execute attributes of a loaded image.
+
+  @param  Image                   Pointer to the loaded image private protocol
+
+  @return EFI_SUCCESS             Read-only and NX attributes unset on image
+  @return EFI_INVALID_PARAMETER   Image or Image->ImageBase was NULL
+  @return other                   Return value of mMemoryAttribute->ClearMemoryAttributes()
+                                  or gBS->LocateProtocol()
+
+**/
+EFI_STATUS
+ClearReadOnlyAndNxFromImage (
+  IN EFI_LOADED_IMAGE_PROTOCOL   *Image
+  )
+{
+  EFI_STATUS Status;
+  UINT64     Attributes;
+
+  DEBUG((DEBUG_INFO, "%a - Enter...\n", __FUNCTION__));
+
+  if (Image == NULL || (VOID *) Image->ImageBase == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (mMemoryAttribute == NULL) {
+    Status = gBS->LocateProtocol (
+                    &gEfiMemoryAttributeProtocolGuid,
+                    NULL,
+                    (VOID **) &mMemoryAttribute
+                    );
+  }
+
+  if (mMemoryAttribute != NULL) {
+
+    Attributes = (EFI_MEMORY_RO | EFI_MEMORY_XP);
+
+    return mMemoryAttribute->ClearMemoryAttributes (
+                                 mMemoryAttribute,
+                                 (EFI_PHYSICAL_ADDRESS) Image->ImageBase,
+                                 ALIGN_VALUE (Image->ImageSize, EFI_PAGE_SIZE),
+                                 Attributes
+                                 );
+  }
+
+  return Status;
+}
+// MU_CHANGE END
 /**
   Manage memory permission attributes on a memory range, according to the
   configured DXE memory protection policy.

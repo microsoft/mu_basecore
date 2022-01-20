@@ -2907,6 +2907,22 @@ EFI_STATUS
 SetImageToReadOnly (
   IN LOADED_IMAGE_PRIVATE_DATA   *Image
   );
+
+/**
+  Clears the read-only and no-execute attributes of a loaded image.
+
+  @param  Image                   Pointer to the loaded image private protocol
+
+  @return EFI_SUCCESS             Read-only and NX attributes unset on image
+  @return EFI_INVALID_PARAMETER   Image or Image->ImageBase was NULL
+  @return other                   Return value of mMemoryAttribute->ClearMemoryAttributes()
+                                  or gBS->LocateProtocol()
+
+**/
+EFI_STATUS
+ClearReadOnlyAndNxFromImage (
+  IN EFI_LOADED_IMAGE_PROTOCOL   *Image
+  );
 // MU_CHANGE END
 
 /**
