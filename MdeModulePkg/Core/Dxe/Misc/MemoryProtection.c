@@ -468,7 +468,7 @@ ProtectUefiImageMu (
 
   PdbPointer = PeCoffLoaderGetPdbPointer ((VOID*) (UINTN) ImageAddress);
   if (PdbPointer != NULL) {
-    DEBUG ((DEBUG_VERBOSE, "  Image: %a\n", PdbPointer));
+    DEBUG ((DEBUG_INFO, "  Image: %a\n", PdbPointer));
   }
 
   //
@@ -1714,7 +1714,7 @@ ApplyMemoryProtectionPolicy (
   IN  UINT64                Length
   )
 {
-  UINT64  OldAttributes;
+  // UINT64  OldAttributes;
   UINT64  NewAttributes;
 
   //
@@ -1784,20 +1784,20 @@ ApplyMemoryProtectionPolicy (
   }
   // MU_CHANGE END
 
-  if (OldType != EfiMaxMemoryType) {
-    OldAttributes = GetPermissionAttributeForMemoryType (OldType);
-    // MU_CHANGE START: TODO: There is a potential bug where attributes are not properly set
-    //                  for all pages during a call to AllocatePages(). This may be due to a bug somewhere
-    //                  during the free page process.
-    // if (OldAttributes == NewAttributes) {
-    //   // policy is the same between OldType and NewType
-    //   return EFI_SUCCESS;
-    // }
-    // MU_CHANGE END
-  } else if (NewAttributes == 0) {
-    // newly added region of a type that does not require protection
-    return EFI_SUCCESS;
-  }
+  // MU_CHANGE START: TODO: There is a potential bug where attributes are not properly set
+  //                  for all pages during a call to AllocatePages(). This may be due to a bug somewhere
+  //                  during the free page process.
+  // if (OldType != EfiMaxMemoryType) {
+  //   OldAttributes = GetPermissionAttributeForMemoryType (OldType);
+  //   if (OldAttributes == NewAttributes) {
+  //     // policy is the same between OldType and NewType
+  //     return EFI_SUCCESS;
+  //   }
+  // } else if (NewAttributes == 0) {
+  //   // newly added region of a type that does not require protection
+  //   return EFI_SUCCESS;
+  // }
+  // MU_CHANGE END
 
   return gCpu->SetMemoryAttributes (gCpu, Memory, Length, NewAttributes);
 }
