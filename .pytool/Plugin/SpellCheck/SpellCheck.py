@@ -72,6 +72,9 @@ class SpellCheck(ICiBuildPlugin):
 
     def RunBuildPlugin(self, packagename, Edk2pathObj, pkgconfig, environment, PLM, PLMHelper, tc, output_stream=None):
         Errors = []
+        audit_only = False
+        if "AuditOnly" in pkgconfig and pkgconfig["AuditOnly"]:
+            audit_only = True
 
         abs_pkg_path = Edk2pathObj.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
             packagename)
@@ -178,7 +181,8 @@ class SpellCheck(ICiBuildPlugin):
             # real error
             EasyFix.append(word.strip().strip("()"))
             Errors.append(r)
-
+            if not audit_only:
+                logging.error(r)
         # Log all errors tc StdError
         for l in Errors:
             tc.LogStdError(l.strip())
@@ -197,7 +201,7 @@ class SpellCheck(ICiBuildPlugin):
         # add result to test case
         overall_status = len(Errors)
         if overall_status != 0:
-            if "AuditOnly" in pkgconfig and pkgconfig["AuditOnly"]:
+            if audit_only:
                 # set as skipped if AuditOnly
                 tc.SetSkipped()
                 return -1
