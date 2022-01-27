@@ -15,13 +15,13 @@ Branch Status - release/202102
 ==============================
 
 :Status:
-  In Development
+  Stabilized
 
 :Entered Development:
   2021/03/12
 
 :Anticipated Stabilization:
-  May 2021
+  Jan 2022
 
 Branch Changes - release/202102
 ===============================

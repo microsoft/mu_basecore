@@ -1,12 +1,29 @@
 /** @file
-  This is service binding for Hash driver.
+  Installs an instance of the Hash 2 Service Binding protocol.
 
-Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
-SPDX-License-Identifier: BSD-2-Clause-Patent
+  Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation. All rights reserved.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#include "Driver.h"
+// MU_CHANGE - NEW FILE
+
+#include <PiDxe.h>
+#include <Protocol/Hash2.h>
+#include <Protocol/ServiceBinding.h>
+
+#include <Library/BaseLib.h>
+#include <Library/BaseMemoryLib.h>
+#include <Library/DebugLib.h>
+#include <Library/Hash2CryptoLib.h>
+#include <Library/MemoryAllocationLib.h>
+#include <Library/UefiBootServicesTableLib.h>
+#include <Library/UefiRuntimeServicesTableLib.h>
+#include <Library/DevicePathLib.h>
+#include <Library/UefiLib.h>
+
+#include "DxeHash2CryptoLib.h"
 
 EFI_SERVICE_BINDING_PROTOCOL    mHash2ServiceBindingProtocol = {
   Hash2ServiceBindingCreateChild,
@@ -188,20 +205,19 @@ Hash2ServiceBindingDestroyChild (
 }
 
 /**
-  The entry point for Hash driver which installs the service binding protocol.
+  Installs an instance of the Hash 2 Service Binding protocol.
 
-  @param[in]  ImageHandle  The image handle of the driver.
-  @param[in]  SystemTable  The system table.
-
-  @retval EFI_SUCCESS      The service binding protocols is successfully installed.
-  @retval Others           Other errors as indicated.
+  @retval EFI_SUCCESS           The Hash 2 Service Binding protocol was installed successfully.
+  @retval EFI_UNSUPPORTED       The given implementation does not support installing the Hash 2
+                                Service Binding protocol.
+  @retval EFI_OUT_OF_RESOURCES  Insufficient resources to allocate memory to install the protocol.
+  @retval Others                An error occurred installing the Hash 2 Service Binding protocol.
 
 **/
 EFI_STATUS
 EFIAPI
-Hash2DriverEntryPoint (
-  IN EFI_HANDLE          ImageHandle,
-  IN EFI_SYSTEM_TABLE    *SystemTable
+InstallHash2ServiceBindingProtocol (
+  VOID
   )
 {
   EFI_STATUS         Status;

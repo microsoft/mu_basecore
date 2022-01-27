@@ -1,0 +1,53 @@
+## @file
+#  Produces the Hash 2 Service Binding and Hash 2 Protocols.
+#
+#  This library is intended to be linked against a module that includes the BaseCryptLib
+#  hashing functionality to reduce overall firmware size.
+#
+#  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+#  Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) Microsoft Corporation. All rights reserved.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+# MU_CHANGE - NEW FILE
+
+[Defines]
+  INF_VERSION         = 0x00010005
+  BASE_NAME           = DxeHash2CryptoLib
+  FILE_GUID           = BC19C101-5D53-4FD4-93E6-B9237C76F3A5
+  MODULE_TYPE         = DXE_DRIVER
+  VERSION_STRING      = 1.0
+  LIBRARY_CLASS       = Hash2CryptoLib
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources]
+  DxeHash2CryptoLibProtocol.c
+  DxeHash2CryptoLibServiceBindingProtocol.c
+  DxeHash2CryptoLib.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  CryptoPkg/CryptoPkg.dec
+  SecurityPkg/SecurityPkg.dec
+
+[LibraryClasses]
+  BaseCryptLib
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  UefiBootServicesTableLib
+
+[Protocols]
+  gEfiHash2ProtocolGuid                 ## PRODUCES
+  gEfiHash2ServiceBindingProtocolGuid   ## PRODUCES
+
+[Guids]
+  gEfiHashAlgorithmSha256Guid           ## CONSUMES     ## GUID
+  gEfiHashAlgorithmSha384Guid           ## CONSUMES     ## GUID
+  gEfiHashAlgorithmSha512Guid           ## CONSUMES     ## GUID
