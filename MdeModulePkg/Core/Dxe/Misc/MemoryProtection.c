@@ -468,7 +468,7 @@ ProtectUefiImageMu (
 
   PdbPointer = PeCoffLoaderGetPdbPointer ((VOID*) (UINTN) ImageAddress);
   if (PdbPointer != NULL) {
-    DEBUG ((DEBUG_VERBOSE, "  Image: %a\n", PdbPointer));
+    DEBUG ((DEBUG_INFO, "  Image: %a\n", PdbPointer));
   }
 
   //
@@ -1689,6 +1689,54 @@ ClearReadOnlyAndNxFromImage (
 }
 // MU_CHANGE END
 /**
+  Clears the read-only and no-execute attributes of a loaded image.
+
+  @param  Image                   Pointer to the loaded image private protocol
+
+  @return EFI_SUCCESS             Read-only and NX attributes unset on image
+  @return EFI_INVALID_PARAMETER   Image or Image->ImageBase was NULL
+  @return other                   Return value of mMemoryAttribute->ClearMemoryAttributes()
+                                  or gBS->LocateProtocol()
+
+**/
+EFI_STATUS
+ClearReadOnlyAndNxFromImage (
+  IN EFI_LOADED_IMAGE_PROTOCOL   *Image
+  )
+{
+  EFI_STATUS Status;
+  UINT64     Attributes;
+
+  DEBUG((DEBUG_INFO, "%a - Enter...\n", __FUNCTION__));
+
+  if (Image == NULL || (VOID *) Image->ImageBase == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (mMemoryAttribute == NULL) {
+    Status = gBS->LocateProtocol (
+                    &gEfiMemoryAttributeProtocolGuid,
+                    NULL,
+                    (VOID **) &mMemoryAttribute
+                    );
+  }
+
+  if (mMemoryAttribute != NULL) {
+
+    Attributes = (EFI_MEMORY_RO | EFI_MEMORY_XP);
+
+    return mMemoryAttribute->ClearMemoryAttributes (
+                                 mMemoryAttribute,
+                                 (EFI_PHYSICAL_ADDRESS) Image->ImageBase,
+                                 ALIGN_VALUE (Image->ImageSize, EFI_PAGE_SIZE),
+                                 Attributes
+                                 );
+  }
+
+  return Status;
+}
+// MU_CHANGE END
+/**
   Manage memory permission attributes on a memory range, according to the
   configured DXE memory protection policy.
 
@@ -1714,7 +1762,7 @@ ApplyMemoryProtectionPolicy (
   IN  UINT64                Length
   )
 {
-  UINT64  OldAttributes;
+  // UINT64  OldAttributes;
   UINT64  NewAttributes;
 
   //
@@ -1784,20 +1832,20 @@ ApplyMemoryProtectionPolicy (
   }
   // MU_CHANGE END
 
-  if (OldType != EfiMaxMemoryType) {
-    OldAttributes = GetPermissionAttributeForMemoryType (OldType);
-    // MU_CHANGE START: TODO: There is a potential bug where attributes are not properly set
-    //                  for all pages during a call to AllocatePages(). This may be due to a bug somewhere
-    //                  during the free page process.
-    // if (OldAttributes == NewAttributes) {
-    //   // policy is the same between OldType and NewType
-    //   return EFI_SUCCESS;
-    // }
-    // MU_CHANGE END
-  } else if (NewAttributes == 0) {
-    // newly added region of a type that does not require protection
-    return EFI_SUCCESS;
-  }
+  // MU_CHANGE START: TODO: There is a potential bug where attributes are not properly set
+  //                  for all pages during a call to AllocatePages(). This may be due to a bug somewhere
+  //                  during the free page process.
+  // if (OldType != EfiMaxMemoryType) {
+  //   OldAttributes = GetPermissionAttributeForMemoryType (OldType);
+  //   if (OldAttributes == NewAttributes) {
+  //     // policy is the same between OldType and NewType
+  //     return EFI_SUCCESS;
+  //   }
+  // } else if (NewAttributes == 0) {
+  //   // newly added region of a type that does not require protection
+  //   return EFI_SUCCESS;
+  // }
+  // MU_CHANGE END
 
   return gCpu->SetMemoryAttributes (gCpu, Memory, Length, NewAttributes);
 }
