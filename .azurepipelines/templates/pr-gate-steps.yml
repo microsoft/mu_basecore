@@ -84,9 +84,9 @@ steps:
 # build basetools
 #   do this after setup and update so that code base dependencies
 #   are all resolved.
-# - template: basetools-build-steps.yml
-#   parameters:
-#     tool_chain_tag: ${{ parameters.tool_chain_tag }}
+- template: basetools-build-steps.yml
+  parameters:
+    tool_chain_tag: ${{ parameters.tool_chain_tag }}
 # MU_CHANGE [END]
 
 - task: CmdLine@1
