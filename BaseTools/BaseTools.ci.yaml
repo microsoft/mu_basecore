@@ -36,5 +36,12 @@
             "Source/C/BrotliCompress/brotli",
             "BaseToolsBuild"        # MU_CHANGE - Ignore build logs.
         ]
+    },
+
+    # MU_CHANGE [BEGIN]
+    ## options defined .pytool/Plugin/UncrustifyCheck
+    "UncrustifyCheck": {
+        "AuditOnly": True,
     }
+    # MU_CHANGE [END]
 }
