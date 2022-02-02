@@ -1518,11 +1518,11 @@ int *max_k;
 				if ( k==CLL_k )
 				{
 #ifdef NOT_USED
-***					int save_LL_k = LL_k;
-***					int save_CLL_k = CLL_k;
-***					/* Get new LL_k from interactive feature if enabled */
-***					if ( AImode )
-***						AmbiguityDialog(j, jtype, alt1, alt2, &CLL_k, &LL_k);
+///	MU_CHANGE		int save_LL_k = LL_k;
+///	MU_CHANGE		int save_CLL_k = CLL_k;
+///	MU_CHANGE		/* Get new LL_k from interactive feature if enabled */
+///	MU_CHANGE		if ( AImode )
+///	MU_CHANGE			AmbiguityDialog(j, jtype, alt1, alt2, &CLL_k, &LL_k);
 #endif
 					*max_k = CLL_k;
                     save_maintainBackTrace=MR_MaintainBackTrace;
