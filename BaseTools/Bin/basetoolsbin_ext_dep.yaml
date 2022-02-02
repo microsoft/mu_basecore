@@ -8,11 +8,11 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 {
-  "scope": "global-disable",
+  "scope": "global",
   "type": "nuget",
   "name": "Mu-Basetools",
   "source": "https://api.nuget.org/v3/index.json",
-  "version": "0.0.0",
+  "version": "2021.11.1",
   "flags": ["set_shell_var", "set_path", "host_specific"],
   "var_name": "EDK_TOOLS_BIN"
 }
