@@ -54,7 +54,9 @@ Bug Fixes-dev
 2111_CIBuild Changes
 --------------------
 
-  - Incomplete
+- Small tweaks to get Uncrustify passing
+  - Expect all fingerprints for OverrideValidator to fail, likely false positive
+- Disabled VersionInfo until the server-side issue can be root-caused
 
 2111_Rebase Changes
 -------------------
