@@ -27,6 +27,10 @@ extern EFI_GUID gVariableFlashInfoHobGuid;
 typedef struct {
   EFI_PHYSICAL_ADDRESS        BaseAddress;
   UINT64                      Length;
+  EFI_PHYSICAL_ADDRESS        FtwSpareBaseAddress;
+  UINT64                      FtwSpareLength;
+  EFI_PHYSICAL_ADDRESS        FtwWorkingBaseAddress;
+  UINT64                      FtwWorkingLength;
 } VARIABLE_FLASH_INFO;
 
 #pragma pack (pop)

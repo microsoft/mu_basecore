@@ -52,6 +52,8 @@
   ReportStatusCodeLib
   SmmMemLib
   BaseLib
+  HobLib                # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
+  SafeIntLib            # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
 
 [Guids]
   #
@@ -60,6 +62,7 @@
   ## CONSUMES           ## GUID
   ## PRODUCES           ## GUID
   gEdkiiWorkingBlockSignatureGuid
+  gVariableFlashInfoHobGuid       ## CONSUMES   ## HOB # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
 
 [Protocols]
   gEfiSmmSwapAddressRangeProtocolGuid | gEfiMdeModulePkgTokenSpaceGuid.PcdFullFtwServiceEnable  ## SOMETIMES_CONSUMES
@@ -75,12 +78,12 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdFullFtwServiceEnable    ## CONSUMES
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingBase    ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingBase64  ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize    ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase      ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase64    ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareSize      ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingBase    ## SOMETIMES_CONSUMES # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingBase64  ## SOMETIMES_CONSUMES # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize    ## SOMETIMES_CONSUMES # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase      ## SOMETIMES_CONSUMES # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase64    ## SOMETIMES_CONSUMES # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareSize      ## SOMETIMES_CONSUMES # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
 
 #
 # gBS->CalculateCrc32() is consumed in EntryPoint.
