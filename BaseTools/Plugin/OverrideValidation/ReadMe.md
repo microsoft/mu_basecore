@@ -35,9 +35,10 @@ This tool provides two types of validation, determined by the type of **tags** i
 
 - **Override**: Override validation, as indicated by override tags, intends to enforce the validity of a linkage. Thus if
 the target that is overridden is either not found or has an change since the last linkage update, the build will break.
-- **Track**: Track validation, indicated by track tags from tracking modules, intends to soft-tracking certain module updates
-across upstream changes. This validation will ignore this tag if the corresponding target is not found. However, if the
-target is found, the linkage has to match the current status of target, otherwise build will break.
+- **Track**: Track validation, indicated by track tags from tracking modules, intends to soft-track updates of certain
+module with various flavors across upstream changes. This validation will ignore this tag if the corresponding target
+is not found. If a single target is found in multiple track tags, there must be one and only one linkage that matches
+the current status of target, otherwise build will break.
 
   *Note*: If one module contains one or more track tags, at least one tracked target needs to be found, otherwise build
   will break.
@@ -77,6 +78,16 @@ Track record to be included in tracking module's inf:
 
 ``` cmd
 #Track : 00000002 | MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | 5bca19892b2e9f4c00a74041fa6b1eab | 2021-12-07T04-25-21 | 5c76ea08864294e11f8d7d1ac2ccf76c72673c8f
+```
+
+Track records to be included in tracking multiple flavors of the same module's inf (you should do not need this in a
+perfect world):
+
+``` cmd
+# Production build
+#Track : 00000002 | MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | 5bca19892b2e9f4c00a74041fa6b1eab | 2021-12-07T04-25-21 | 5c76ea08864294e11f8d7d1ac2ccf76c72673c8f
+# Debug build
+#Track : 00000002 | MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | dbfc0ece0cb8fa499ac2141c80107926 | 2022-02-09T00-31-30 | fd114d321703a32c4684d8411ba0fe7dd7012c14
 ```
 
 Command to generate an override record for a target file or directory:
