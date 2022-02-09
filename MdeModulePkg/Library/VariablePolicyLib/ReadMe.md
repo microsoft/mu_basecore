@@ -83,7 +83,7 @@ more than once, it will return `EFI_ALREADY_STARTED`. Note, this process
 is irreversible until the next system reset -- there is no
 "EnablePolicy" protocol function.
 
-_IMPORTANT NOTE:_ It is strongly recommended that VariablePolicy *NEVER*
+_IMPORTANT NOTE:_ It is strongly recommended that VariablePolicy _NEVER_
 be disabled in "normal, production boot conditions". It is expected to always
 be enforced. The most likely reasons to disable are for Manufacturing and
 Refurbishing scenarios. If in doubt, leave the `gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable`
@@ -325,8 +325,8 @@ the variable, appropriate GUID listed as the namespace, and 1 as
 value. Entry into the trusted UEFI menu app doesn't signal
 ReadyToBoot, but booting to any device does, and the setup variables
 are write-protected. The "ReadyToBoot" variable would need to be
-locked-on-create. *(THIS IS ESSENTIALLY LOCK ON EVENT, BUT SINCE THE
-POLICY ENGINE IS NOT IN THE UEFI ENVIRONMENT VARIABLES ARE USED)*
+locked-on-create. _(THIS IS ESSENTIALLY LOCK ON EVENT, BUT SINCE THE
+POLICY ENGINE IS NOT IN THE UEFI ENVIRONMENT VARIABLES ARE USED)_
 
 For example, "AllowPXEBoot" variable locked by "ReadyToBoot" variable.
 
