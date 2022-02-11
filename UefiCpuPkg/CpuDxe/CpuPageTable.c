@@ -1417,16 +1417,18 @@ EfiSetMemoryAttributes (
   BOOLEAN        IsModified;
   BOOLEAN        IsSplitted;
 
-  if ((Attributes & ~EFI_MEMORY_ACCESS_MASK) != 0) {
-    DEBUG ((DEBUG_ERROR, "Attributes(0x%lx) invalid\n", Attributes));
-    return EFI_INVALID_PARAMETER;
-  }
+  DEBUG((DEBUG_INFO, "%a: 0x%lx - 0x%lx (0x%lx)\n", __FUNCTION__, BaseAddress, Length, Attributes));
+
   if (Attributes == 0) {
-    DEBUG ((DEBUG_ERROR, "Attributes is 0\n"));
+    DEBUG ((DEBUG_ERROR, "%a: Error - Attributes == 0\n", __FUNCTION__));
     return EFI_INVALID_PARAMETER;
   }
 
-  DEBUG((DEBUG_INFO, "EfiSetMemoryAttributes: 0x%lx - 0x%lx (0x%lx)\n", BaseAddress, Length, Attributes));
+  if ((Attributes & ~EFI_MEMORY_ACCESS_MASK) != 0) {
+    DEBUG ((DEBUG_ERROR, "%a: Error - Attributes(0x%lx) invalid\n", __FUNCTION__, Attributes));
+    return EFI_INVALID_PARAMETER;
+  }
+
   Status = ConvertMemoryPageAttributes (NULL, BaseAddress, Length, Attributes, PageActionSet, NULL, &IsSplitted, &IsModified);
   if (!EFI_ERROR (Status)) {
     if (IsModified) {
@@ -1440,7 +1442,10 @@ EfiSetMemoryAttributes (
       CpuFlushTlb ();
     }
   }
-
+  else
+  {
+    DEBUG((DEBUG_ERROR, "%a: Failed in ConvertMemoryPageAttributes (%r)\n", __FUNCTION__, Status));
+  }
   return Status;
 }
 
@@ -1479,16 +1484,18 @@ EfiClearMemoryAttributes (
   BOOLEAN        IsModified;
   BOOLEAN        IsSplitted;
 
-  if ((Attributes & ~EFI_MEMORY_ACCESS_MASK) != 0) {
-    DEBUG ((DEBUG_ERROR, "Attributes(0x%lx) invalid\n", Attributes));
-    return EFI_INVALID_PARAMETER;
-  }
+  DEBUG((DEBUG_INFO, "%a: 0x%lx - 0x%lx (0x%lx)\n", __FUNCTION__, BaseAddress, Length, Attributes));
+
   if (Attributes == 0) {
-    DEBUG ((DEBUG_ERROR, "Attributes is 0\n"));
+    DEBUG ((DEBUG_ERROR, "%a: Error - Attributes == 0\n", __FUNCTION__));
     return EFI_INVALID_PARAMETER;
   }
 
-  DEBUG((DEBUG_INFO, "EfiClearMemoryAttributes: 0x%lx - 0x%lx (0x%lx)\n", BaseAddress, Length, Attributes));
+  if ((Attributes & ~EFI_MEMORY_ACCESS_MASK) != 0) {
+    DEBUG ((DEBUG_ERROR, "%a: Error - Attributes(0x%lx) invalid\n", __FUNCTION__, Attributes));
+    return EFI_INVALID_PARAMETER;
+  }
+
   Status = ConvertMemoryPageAttributes (NULL, BaseAddress, Length, Attributes, PageActionClear, NULL, &IsSplitted, &IsModified);
   if (!EFI_ERROR (Status)) {
     if (IsModified) {
@@ -1501,6 +1508,10 @@ EfiClearMemoryAttributes (
       //
       CpuFlushTlb ();
     }
+  }
+  else
+  {
+    DEBUG((DEBUG_ERROR, "%a: Failed in ConvertMemoryPageAttributes (%r)\n", __FUNCTION__, Status));
   }
 
   return Status;
@@ -1540,6 +1551,8 @@ EfiGetMemoryAttributes (
   PAGE_ATTRIBUTE        PageAttr;
   INT64                 Size;
   UINT64                AddressEncMask;
+
+  DEBUG((DEBUG_INFO, "%a: 0x%lx - 0x%lx\n", __FUNCTION__, BaseAddress, Length));
 
   if ((BaseAddress & (SIZE_4KB - 1)) != 0) {
     DEBUG ((DEBUG_ERROR, "BaseAddress(0x%lx) is not aligned!\n", BaseAddress));
@@ -1611,7 +1624,7 @@ EfiGetMemoryAttributes (
     MemAttr = *Attributes;
   } while (Size > 0);
 
-  DEBUG ((DEBUG_INFO, "Attributes is 0x%lx\n", *Attributes));
+  DEBUG ((DEBUG_INFO, "%a: Attributes is 0x%lx\n", __FUNCTION__, *Attributes));
 
   return EFI_SUCCESS;
 }
