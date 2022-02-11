@@ -576,7 +576,7 @@ ProtectUefiImageMu (
   if (ImageRecord->CodeSegmentCount == 0) {
     //
     // If a UEFI executable consists of a single read+write+exec PE/COFF
-    // section, the image can still be launched but image protection 
+    // section, the image can still be launched but image protection
     // cannot be applied.
     //
     // One example that elicits this is (some) Linux kernels (with the EFI stub
@@ -907,12 +907,12 @@ GetPermissionAttributeForMemoryType (
   // } else {
   //   return 0;
   // }
-  
+
   if (GetMemoryTypeSettingFromBitfield (MemoryType, gMPS.DxeNxProtectionPolicy)) { // MU_CHANGE
     return EFI_MEMORY_XP;
   }
   return 0;
-  
+
   // MU_CHANGE END
 }
 
@@ -1156,7 +1156,7 @@ InitializeDxeNxMemoryProtectionPolicy (
            StackBase <  MemoryMapEntry->PhysicalStart +
                         LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT)) &&
           // MU_CHANGE START Update to use memory protection settings HOB
-          // PcdGetBool (PcdCpuStackGuard)) { 
+          // PcdGetBool (PcdCpuStackGuard)) {
           gMPS.CpuStackGuard) {
           // MU_CHANGE END
         SetUefiImageMemoryAttributes (
@@ -1257,7 +1257,7 @@ MemoryProtectionCpuArchProtocolNotify (
   HeapGuardCpuArchProtocolNotify ();
 
   // MU_CHANGE START Update to use memory protection settings HOB
-  // if (mImageProtectionPolicy == 0) { 
+  // if (mImageProtectionPolicy == 0) {
   if (!gMPS.ImageProtectionPolicy.Data) {
   // MU_CHANGE END
     goto Done;
@@ -1688,54 +1688,7 @@ ClearReadOnlyAndNxFromImage (
   return Status;
 }
 // MU_CHANGE END
-/**
-  Clears the read-only and no-execute attributes of a loaded image.
 
-  @param  Image                   Pointer to the loaded image private protocol
-
-  @return EFI_SUCCESS             Read-only and NX attributes unset on image
-  @return EFI_INVALID_PARAMETER   Image or Image->ImageBase was NULL
-  @return other                   Return value of mMemoryAttribute->ClearMemoryAttributes()
-                                  or gBS->LocateProtocol()
-
-**/
-EFI_STATUS
-ClearReadOnlyAndNxFromImage (
-  IN EFI_LOADED_IMAGE_PROTOCOL   *Image
-  )
-{
-  EFI_STATUS Status;
-  UINT64     Attributes;
-
-  DEBUG((DEBUG_INFO, "%a - Enter...\n", __FUNCTION__));
-
-  if (Image == NULL || (VOID *) Image->ImageBase == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  if (mMemoryAttribute == NULL) {
-    Status = gBS->LocateProtocol (
-                    &gEfiMemoryAttributeProtocolGuid,
-                    NULL,
-                    (VOID **) &mMemoryAttribute
-                    );
-  }
-
-  if (mMemoryAttribute != NULL) {
-
-    Attributes = (EFI_MEMORY_RO | EFI_MEMORY_XP);
-
-    return mMemoryAttribute->ClearMemoryAttributes (
-                                 mMemoryAttribute,
-                                 (EFI_PHYSICAL_ADDRESS) Image->ImageBase,
-                                 ALIGN_VALUE (Image->ImageSize, EFI_PAGE_SIZE),
-                                 Attributes
-                                 );
-  }
-
-  return Status;
-}
-// MU_CHANGE END
 /**
   Manage memory permission attributes on a memory range, according to the
   configured DXE memory protection policy.
