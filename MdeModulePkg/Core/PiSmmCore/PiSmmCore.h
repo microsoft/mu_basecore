@@ -217,6 +217,7 @@ typedef struct {
 // SMM Core Global Variables
 //
 extern SMM_CORE_PRIVATE_DATA  *gSmmCorePrivate;
+extern SMM_CORE_PRIVATE_DATA  *gSmmCoreMailbox; // MU_CHANGE: Decouple Core private and IPL mailbox
 extern EFI_SMM_SYSTEM_TABLE2  gSmmCoreSmst;
 extern LIST_ENTRY             gHandleList;
 extern EFI_PHYSICAL_ADDRESS   gLoadModuleAtFixAddressSmramBase;
