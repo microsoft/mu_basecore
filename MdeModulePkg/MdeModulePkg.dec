@@ -1703,6 +1703,12 @@
   #   [7:0]   - Blue
   # @Prompt Describes background color of progress bar.
   gEfiMdeModulePkgTokenSpaceGuid.PcdProgressBarBackgroundColor|0x00808080|UINT32|0x0000010B
+
+  ## Determine whether a port will be force-reset during USB enumeration.
+  #  Force resetting a USB port during enumeration can be useful to recover
+  #  inactive devices.
+  # @Prompt Force reset USB ports during enumeration.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdUsbForceResetPort|FALSE|BOOLEAN|0x0000010C
   ## MU_CHANGE [END]
 
 [PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
