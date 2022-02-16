@@ -946,7 +946,9 @@ SmmDispatcher (
       //
       // Cache state of SmmEntryPointRegistered before calling entry point
       //
-      PreviousSmmEntryPointRegistered = gSmmCorePrivate->SmmEntryPointRegistered;
+      // MU_CHANGE: Decouple Core private and IPL mailbox
+      // PreviousSmmEntryPointRegistered = gSmmCorePrivate->SmmEntryPointRegistered;
+      PreviousSmmEntryPointRegistered = gSmmCoreMailbox->SmmEntryPointRegistered;
 
       //
       // For each SMM driver, pass NULL as ImageHandle
@@ -999,7 +1001,9 @@ SmmDispatcher (
         sizeof (DriverEntry->ImageHandle)
         );
 
-      if (!PreviousSmmEntryPointRegistered && gSmmCorePrivate->SmmEntryPointRegistered) {
+      // MU_CHANGE: Decouple Core private and IPL mailbox
+      // if (!PreviousSmmEntryPointRegistered && gSmmCorePrivate->SmmEntryPointRegistered) {
+      if (!PreviousSmmEntryPointRegistered && gSmmCoreMailbox->SmmEntryPointRegistered) {
         //
         // Return immediately if the SMM Entry Point was registered by the SMM
         // Driver that was just dispatched.  The SMM IPL will reinvoke the SMM
