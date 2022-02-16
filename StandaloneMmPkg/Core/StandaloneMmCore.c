@@ -23,6 +23,8 @@ EFI_HANDLE  mMmCpuHandle = NULL;
 // Physical pointer to private structure shared between MM IPL and the MM Core
 //
 MM_CORE_PRIVATE_DATA  *gMmCorePrivate;
+// MU_CHANGE: Decouple Core private and IPL mailbox
+MM_CORE_PRIVATE_DATA  *gMmCoreMailbox = NULL;
 
 //
 // MM Core global variable for MM System Table.  Only accessed as a physical structure in MMRAM.
@@ -355,6 +357,13 @@ MmEntryPoint (
   //
   // TBD: Mark the InMm flag as TRUE
   //
+  // MU_CHANGE Starts: Decouple Core private and IPL mailbox
+  if (gMmCoreMailbox != NULL) {
+    gMmCoreMailbox->InMm = TRUE;
+    CopyMem (gMmCorePrivate, gMmCoreMailbox, sizeof (MM_CORE_PRIVATE_DATA));
+  }
+
+  // MU_CHANGE Ends
   gMmCorePrivate->InMm = TRUE;
 
   //
@@ -403,6 +412,13 @@ MmEntryPoint (
   // Clear the InMm flag as we are going to leave MM
   //
   gMmCorePrivate->InMm = FALSE;
+  // MU_CHANGE Starts: Decouple Core private and IPL mailbox
+  if (gMmCoreMailbox != NULL) {
+    CopyMem (gMmCoreMailbox, gMmCorePrivate, sizeof (MM_CORE_PRIVATE_DATA));
+    gMmCoreMailbox->InMm = FALSE;
+  }
+
+  // MU_CHANGE Ends
 
   DEBUG ((DEBUG_INFO, "MmEntryPoint Done\n"));
 }
@@ -559,8 +575,15 @@ StandaloneMmMain (
       MmramRangeCount * sizeof (EFI_MMRAM_DESCRIPTOR)
       );
   } else {
-    DataInHob       = GET_GUID_HOB_DATA (GuidHob);
-    gMmCorePrivate  = (MM_CORE_PRIVATE_DATA *)(UINTN)DataInHob->Address;
+    DataInHob = GET_GUID_HOB_DATA (GuidHob);
+    // MU_CHANGE Starts: Decouple Core private and IPL mailbox
+    // gMmCorePrivate  = (MM_CORE_PRIVATE_DATA *)(UINTN)DataInHob->Address;
+    gMmCoreMailbox = (MM_CORE_PRIVATE_DATA *)(UINTN)DataInHob->Address;
+    gMmCorePrivate = (MM_CORE_PRIVATE_DATA *)AllocateRuntimePages (EFI_SIZE_TO_PAGES (sizeof (MM_CORE_PRIVATE_DATA)));
+    ASSERT (gMmCorePrivate != NULL);
+    SetMem ((VOID *)(UINTN)gMmCorePrivate, sizeof (MM_CORE_PRIVATE_DATA), 0);
+    CopyMem (gMmCorePrivate, gMmCoreMailbox, sizeof (MM_CORE_PRIVATE_DATA));
+    // MU_CHANGE Ends
     MmramRanges     = (EFI_MMRAM_DESCRIPTOR *)(UINTN)gMmCorePrivate->MmramRanges;
     MmramRangeCount = (UINTN)gMmCorePrivate->MmramRangeCount;
   }
@@ -653,6 +676,13 @@ StandaloneMmMain (
                );
     DEBUG ((DEBUG_INFO, "MmiHandlerRegister - GUID %g - Status %d\n", mMmCoreMmiHandlers[Index].HandlerType, Status));
   }
+
+  // MU_CHANGE Starts: Decouple Core private and IPL mailbox
+  if (gMmCoreMailbox != NULL) {
+    CopyMem (gMmCoreMailbox, gMmCorePrivate, sizeof (MM_CORE_PRIVATE_DATA));
+  }
+
+  // MU_CHANGE Ends
 
   DEBUG ((DEBUG_INFO, "MmMain Done!\n"));
 
