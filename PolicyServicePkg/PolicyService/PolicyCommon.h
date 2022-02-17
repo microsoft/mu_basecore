@@ -6,6 +6,9 @@
 
 **/
 
+#ifndef _POLICY_COMMON_H_
+#define _POLICY_COMMON_H_
+
 typedef struct _POLICY_HOB_HEADER {
   EFI_GUID    PolicyGuid;
   UINT64      Attributes;
@@ -16,3 +19,5 @@ typedef struct _POLICY_HOB_HEADER {
 } POLICY_HOB_HEADER;
 
 #define GET_HOB_POLICY_DATA(_hob_header)  ((VOID *)(((UINT8*)_hob_header) + sizeof(POLICY_HOB_HEADER)))
+
+#endif
