@@ -985,8 +985,7 @@ UsbEnumeratePort (
     // Now, new device connected, enumerate and configure the device
     //
     DEBUG (( EFI_D_INFO, "UsbEnumeratePort: new device connected at port %d\n", Port));
-    if (USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_RESET) &&
-       (PcdGetBool(PcdUsbForceResetPort) == FALSE)) {     // MU_CHANGE
+    if (USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_RESET)) {
       Status = UsbEnumerateNewDev (HubIf, Port, FALSE);
     } else {
       Status = UsbEnumerateNewDev (HubIf, Port, TRUE);

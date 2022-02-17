@@ -43,7 +43,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-  MdeModulePkg/MdeModulePkg.dec ## MU_CHANGE
+
 
 [LibraryClasses]
   MemoryAllocationLib
@@ -54,7 +54,6 @@
   BaseMemoryLib
   DebugLib
   ReportStatusCodeLib
-  PcdLib  ## MU_CHANGE
 
 
 [Protocols]
@@ -64,9 +63,6 @@
   gEfiDevicePathProtocolGuid
   gEfiUsb2HcProtocolGuid                        ## TO_START
   gEfiUsbHcProtocolGuid                         ## TO_START
-
-[Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdUsbForceResetPort   ## CONSUMES ## MU_CHANGE
 
 # [Event]
 #
