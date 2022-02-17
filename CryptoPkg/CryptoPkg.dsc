@@ -202,8 +202,11 @@
 
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/PeiCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/DxeCryptLib.inf
-  # MU_CHANGE START The prebuilt versions of CryptoDriver
-  #!include CryptoPkg/Driver/Bin/CryptoPkg.ci.inc.dsc
+  # MU_CHANGE [BEGIN] The prebuilt versions of CryptoDriver
+!if $(CRYPTO_BINARY_EXTDEP_PATH) != FALSE
+  !include CryptoPkg/Driver/Bin/CryptoPkg.ci.inc.dsc
+!endif
+  # MU_CHANGE [END] The prebuilt versions of CryptoDriver
 
 # MU_CHANGE START
 [Components.X64, Components.IA32]
