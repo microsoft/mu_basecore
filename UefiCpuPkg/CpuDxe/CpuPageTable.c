@@ -98,6 +98,21 @@ UINT64                    *(*mLastPFEntryPointer)[MAX_PF_ENTRY_COUNT];
 
 UINT64 mAddressEncMask;
 
+// BEEBE TODO
+typedef struct {
+  UINT64                *RunUpL2Page;
+  UINT64                *RunUpL3Page;
+  UINT64                *RunUpL4Page;
+  UINT64                *RunUpL5Page;
+} RUN_UP_ATTRIBUTES_PAGES;
+
+RUN_UP_ATTRIBUTES_PAGES RunUpPages = {NULL, NULL, NULL, NULL};
+
+# define CLEAR_RUN_UP_PAGES RunUpPages.RunUpL2Page = NULL; \
+                            RunUpPages.RunUpL3Page = NULL; \
+                            RunUpPages.RunUpL4Page = NULL; \
+                            RunUpPages.RunUpL5Page = NULL;
+
 /**
  Check if current execution environment is in SMM mode or not, via
  EFI_SMM_BASE2_PROTOCOL.
@@ -298,6 +313,8 @@ GetPageTableEntry (
   Index2 = ((UINTN)Address >> 21) & PAGING_PAE_INDEX_MASK;
   Index1 = ((UINTN)Address >> 12) & PAGING_PAE_INDEX_MASK;
 
+  CLEAR_RUN_UP_PAGES // BEEBE CHANGE
+
   // Make sure AddressEncMask is contained to smallest supported address field.
   //
   AddressEncMask = PcdGet64 (PcdPteMemoryEncryptionAddressOrMask) & PAGING_1G_ADDRESS_MASK_64;
@@ -309,22 +326,24 @@ GetPageTableEntry (
         *PageAttribute = PageNone;
         return NULL;
       }
-
+      RunUpPages.RunUpL5Page = &L5PageTable[Index5]; // BEEBE CHANGE
       L4PageTable = (UINT64 *)(UINTN)(L5PageTable[Index5] & ~AddressEncMask & PAGING_4K_ADDRESS_MASK_64);
     } else {
       L4PageTable = (UINT64 *)(UINTN)PagingContext->ContextData.X64.PageTableBase;
     }
     if (L4PageTable[Index4] == 0) {
+      CLEAR_RUN_UP_PAGES // BEEBE CHANGE
       *PageAttribute = PageNone;
       return NULL;
     }
-
+    RunUpPages.RunUpL4Page = &L4PageTable[Index4]; // BEEBE CHANGE
     L3PageTable = (UINT64 *)(UINTN)(L4PageTable[Index4] & ~AddressEncMask & PAGING_4K_ADDRESS_MASK_64);
   } else {
     ASSERT((PagingContext->ContextData.Ia32.Attributes & PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PAE) != 0);
     L3PageTable = (UINT64 *)(UINTN)PagingContext->ContextData.Ia32.PageTableBase;
   }
   if (L3PageTable[Index3] == 0) {
+    CLEAR_RUN_UP_PAGES // BEEBE CHANGE
     *PageAttribute = PageNone;
     return NULL;
   }
@@ -332,10 +351,13 @@ GetPageTableEntry (
     // 1G
     *PageAttribute = Page1G;
     return &L3PageTable[Index3];
+  } else {
+    RunUpPages.RunUpL3Page = &L3PageTable[Index3]; // BEEBE CHANGE
   }
 
   L2PageTable = (UINT64 *)(UINTN)(L3PageTable[Index3] & ~AddressEncMask & PAGING_4K_ADDRESS_MASK_64);
   if (L2PageTable[Index2] == 0) {
+    CLEAR_RUN_UP_PAGES // BEEBE CHANGE
     *PageAttribute = PageNone;
     return NULL;
   }
@@ -343,11 +365,14 @@ GetPageTableEntry (
     // 2M
     *PageAttribute = Page2M;
     return &L2PageTable[Index2];
+  } else {
+    RunUpPages.RunUpL2Page = &L2PageTable[Index2]; // BEEBE CHANGE
   }
 
   // 4k
   L1PageTable = (UINT64 *)(UINTN)(L2PageTable[Index2] & ~AddressEncMask & PAGING_4K_ADDRESS_MASK_64);
   if ((L1PageTable[Index1] == 0) && (Address != 0)) {
+    CLEAR_RUN_UP_PAGES // BEEBE CHANGE
     *PageAttribute = PageNone;
     return NULL;
   }
@@ -381,6 +406,42 @@ GetAttributesFromPageEntry (
   return Attributes;
 }
 
+/*
+  BEEBE TODO
+*/
+EFI_STATUS
+RunUpAttribute (
+  IN UINT64 Attribute
+  )
+{
+  EFI_STATUS Status = EFI_INVALID_PARAMETER;
+
+  // For now, let's only run up the RW attribute
+  if (Attribute != IA32_PG_RW) {
+    return Status;
+  }
+
+  if (RunUpPages.RunUpL5Page != NULL) {
+    *(RunUpPages.RunUpL5Page) |= IA32_PG_RW;
+    Status = EFI_SUCCESS;
+  }
+  if (RunUpPages.RunUpL4Page != NULL) {
+    *(RunUpPages.RunUpL4Page) |= IA32_PG_RW;
+    Status = EFI_SUCCESS;
+  }
+  if (RunUpPages.RunUpL3Page != NULL) {
+    *(RunUpPages.RunUpL3Page) |= IA32_PG_RW;
+    Status = EFI_SUCCESS;
+  }
+  if (RunUpPages.RunUpL2Page != NULL) {
+    *(RunUpPages.RunUpL2Page) |= IA32_PG_RW;
+    Status = EFI_SUCCESS;
+  }
+
+  CLEAR_RUN_UP_PAGES
+  return Status;
+}
+
 /**
   Modify memory attributes of page entry.
 
@@ -402,6 +463,7 @@ ConvertPageEntryAttribute (
   UINT64  CurrentPageEntry;
   UINT64  NewPageEntry;
   UINT32  *PageAttributes;
+  BOOLEAN RanUpAttributes = FALSE; // BEEBE CHANGE
 
   CurrentPageEntry = *PageEntry;
   NewPageEntry = CurrentPageEntry;
@@ -433,12 +495,18 @@ ConvertPageEntryAttribute (
       break;
     case PageActionClear:
       NewPageEntry |= IA32_PG_RW;
+      if (!EFI_ERROR (RunUpAttribute (IA32_PG_RW))) {
+        RanUpAttributes = TRUE;
+      }
       break;
     }
   } else {
     switch (PageAction) {
     case PageActionAssign:
       NewPageEntry |= IA32_PG_RW;
+      if (!EFI_ERROR (RunUpAttribute (IA32_PG_RW))) {
+        RanUpAttributes = TRUE;
+      }
       break;
     case PageActionSet:
     case PageActionClear:
@@ -471,7 +539,7 @@ ConvertPageEntryAttribute (
     }
   }
   *PageEntry = NewPageEntry;
-  if (CurrentPageEntry != NewPageEntry) {
+  if (CurrentPageEntry != NewPageEntry || RanUpAttributes) {
     *IsModified = TRUE;
     DEBUG ((DEBUG_VERBOSE, "ConvertPageEntryAttribute 0x%lx", CurrentPageEntry));
     DEBUG ((DEBUG_VERBOSE, "->0x%lx\n", NewPageEntry));
