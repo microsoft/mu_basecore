@@ -24,7 +24,7 @@
   SKUID_IDENTIFIER               = DEFAULT
 
 # MU_CHANGE
-!include CryptoPkg/Driver/Packaging/Crypto.inc.dsc
+!include CryptoPkg/Driver/Bin/Crypto.inc.dsc
 
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgTarget.dsc.inc
 
