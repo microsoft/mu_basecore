@@ -592,6 +592,25 @@ SmmLibInternalReadyToLockNotify (
 }
 
 /**
+  This function should be used for MMI handlers to check if the communicate buffer is valid.
+
+  @param Buffer  The buffer start address to be checked.
+  @param Length  The buffer length to be checked.
+
+  @retval TRUE  This communicate buffer is valid per processor architecture.
+  @retval FALSE This communicate buffer is not valid per processor architecture.
+**/
+BOOLEAN
+EFIAPI
+SmmCommBufferValid (
+  IN EFI_PHYSICAL_ADDRESS  Buffer,
+  IN UINT64                Length
+  )
+{
+  return SmmIsBufferOutsideSmmValid (Buffer, Length);
+}
+
+/**
   The constructor function initializes the Smm Mem library
 
   @param  ImageHandle   The firmware allocated handle for the EFI image.
