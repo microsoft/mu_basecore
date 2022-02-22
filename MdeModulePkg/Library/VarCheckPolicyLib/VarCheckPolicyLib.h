@@ -26,8 +26,8 @@ VarCheckPolicyLibCommonConstructor (
 /**
   This function is wrapper function to validate the buffer.
 
-  @param Buffer  The buffer start address to be checked.
-  @param Length  The buffer length to be checked.
+  @param[in] Buffer  The buffer start address to be checked.
+  @param[in] Length  The buffer length to be checked.
 
   @retval TRUE  This buffer is valid per processor architecture and not overlap with SMRAM/MMRAM.
   @retval FALSE This buffer is not valid per processor architecture or overlap with SMRAM/MMRAM.
@@ -35,6 +35,22 @@ VarCheckPolicyLibCommonConstructor (
 BOOLEAN
 EFIAPI
 VarCheckPolicyIsBufferOutsideValid (
+  IN EFI_PHYSICAL_ADDRESS  Buffer,
+  IN UINT64                Length
+  );
+
+/**
+  This function is wrapper function to validate the communicate buffer.
+
+  @param[in] Buffer  The buffer start address to be checked.
+  @param[in] Length  The buffer length to be checked.
+
+  @retval TRUE  This buffer is valid per processor architecture and not overlap with SMRAM.
+  @retval FALSE This buffer is not valid per processor architecture or overlap with SMRAM.
+**/
+BOOLEAN
+EFIAPI
+VarCheckPolicyIsCommBufferValid (
   IN EFI_PHYSICAL_ADDRESS  Buffer,
   IN UINT64                Length
   );
