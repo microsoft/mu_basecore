@@ -996,7 +996,8 @@ UsbEnumeratePort (
     //
     DEBUG ((DEBUG_INFO, "UsbEnumeratePort: new device connected at port %d\n", Port));
     if (USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_RESET) &&
-        (Status != EFI_DEVICE_ERROR)) {   // MU_CHANGE
+        (Status != EFI_DEVICE_ERROR))     // MU_CHANGE
+    {
       Status = UsbEnumerateNewDev (HubIf, Port, FALSE);
     } else {
       Status = UsbEnumerateNewDev (HubIf, Port, TRUE);

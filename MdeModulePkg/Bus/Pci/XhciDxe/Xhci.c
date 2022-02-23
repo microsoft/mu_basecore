@@ -458,7 +458,7 @@ XhcGetRootHubPortStatus (
   // For those devices behind hub, we get its attach/detach event by hooking Get_Port_Status request at control transfer for those hub.
   //
   ParentRouteChart.Dword = 0;
-  Status = XhcPollPortStatusChange (Xhc, ParentRouteChart, PortNumber, PortStatus);  // MU_CHANGE
+  Status                 = XhcPollPortStatusChange (Xhc, ParentRouteChart, PortNumber, PortStatus); // MU_CHANGE
 
 ON_EXIT:
   gBS->RestoreTPL (OldTpl);
