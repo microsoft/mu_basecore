@@ -98,30 +98,43 @@ UINT64                    *(*mLastPFEntryPointer)[MAX_PF_ENTRY_COUNT];
 
 UINT64 mAddressEncMask;
 
-// BEEBE TODO
+// MU_CHANGE START
 /*
 SUMMARY OF CHANGES:
-When fetching a page with GetPageTableEntry(), each page level is captured in the RUN_UP_ATTRIBUTES_PAGES struct as
+When fetching a page with GetPageTableEntry(), each page level is captured in the PATH_TO_FETCHED_PAGE struct as
 we go down to the lowest level page. Later, when we are actually setting the page attributes
 via ConvertPageEntryAttribute(), if the RW flag is being SET, we walk back through each level of the paging
 structure and set the RW flag. We need to do this because RW
 is determined via a logical AND of the RW attribute of every page level leading to the desired range. A new
 BOOLEAN was added to ConvertPageEntryAttribute() which we set to TRUE if we've updated higher-level pages
-stored in the RUN_UP_ATTRIBUTES_PAGES struct to ensure the caller of the function flushes the TLB.
+stored in the PATH_TO_FETCHED_PAGE struct to ensure the caller of the function flushes the TLB.
+
+We DO NOT alter the attributes of higher level pages if we are removing the RW flag for obvious reasons.
 */
+
+#define NUMBER_OF_SUPPORTED_PAGE_LEVELS 5
+
 typedef struct {
+  UINT64                *L1Page;
   UINT64                *L2Page;
   UINT64                *L3Page;
   UINT64                *L4Page;
   UINT64                *L5Page;
-} RUN_UP_ATTRIBUTES_PAGES;
+} PATH_TO_FETCHED_PAGE;
 
-RUN_UP_ATTRIBUTES_PAGES RunUpPages = {NULL, NULL, NULL, NULL};
+typedef union {
+  PATH_TO_FETCHED_PAGE Fields;
+  UINT64 *Data[NUMBER_OF_SUPPORTED_PAGE_LEVELS];
+} PATH_TO_FETCHED_PAGE_UNION;
 
-# define CLEAR_RUN_UP_PAGES RunUpPages.L2Page = NULL; \
-                            RunUpPages.L3Page = NULL; \
-                            RunUpPages.L4Page = NULL; \
-                            RunUpPages.L5Page = NULL;
+PATH_TO_FETCHED_PAGE_UNION FixupPages = { .Fields.L1Page = NULL, .Fields.L2Page = NULL, .Fields.L3Page = NULL, .Fields.L4Page = NULL, .Fields.L5Page = NULL };
+
+#define CLEAR_FIXUP_PAGES   FixupPages.Fields.L1Page = NULL; \
+                            FixupPages.Fields.L2Page = NULL; \
+                            FixupPages.Fields.L3Page = NULL; \
+                            FixupPages.Fields.L4Page = NULL; \
+                            FixupPages.Fields.L5Page = NULL
+// MU_CHANGE END
 
 /**
  Check if current execution environment is in SMM mode or not, via
@@ -323,7 +336,7 @@ GetPageTableEntry (
   Index2 = ((UINTN)Address >> 21) & PAGING_PAE_INDEX_MASK;
   Index1 = ((UINTN)Address >> 12) & PAGING_PAE_INDEX_MASK;
 
-  CLEAR_RUN_UP_PAGES // BEEBE CHANGE
+  CLEAR_FIXUP_PAGES; // MU_CHANGE: Fixup page attributes when setting RW
 
   // Make sure AddressEncMask is contained to smallest supported address field.
   //
@@ -336,57 +349,56 @@ GetPageTableEntry (
         *PageAttribute = PageNone;
         return NULL;
       }
-      RunUpPages.L5Page = &L5PageTable[Index5]; // BEEBE CHANGE
+      FixupPages.Fields.L5Page = &L5PageTable[Index5]; // MU_CHANGE: Fixup page attributes when setting RW
       L4PageTable = (UINT64 *)(UINTN)(L5PageTable[Index5] & ~AddressEncMask & PAGING_4K_ADDRESS_MASK_64);
     } else {
       L4PageTable = (UINT64 *)(UINTN)PagingContext->ContextData.X64.PageTableBase;
     }
     if (L4PageTable[Index4] == 0) {
-      CLEAR_RUN_UP_PAGES // BEEBE CHANGE
+      CLEAR_FIXUP_PAGES; // MU_CHANGE: Fixup page attributes when setting RW
       *PageAttribute = PageNone;
       return NULL;
     }
-    RunUpPages.L4Page = &L4PageTable[Index4]; // BEEBE CHANGE
+    FixupPages.Fields.L4Page = &L4PageTable[Index4]; // MU_CHANGE: Fixup page attributes when setting RW
     L3PageTable = (UINT64 *)(UINTN)(L4PageTable[Index4] & ~AddressEncMask & PAGING_4K_ADDRESS_MASK_64);
   } else {
     ASSERT((PagingContext->ContextData.Ia32.Attributes & PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PAE) != 0);
     L3PageTable = (UINT64 *)(UINTN)PagingContext->ContextData.Ia32.PageTableBase;
   }
   if (L3PageTable[Index3] == 0) {
-    CLEAR_RUN_UP_PAGES // BEEBE CHANGE
+    CLEAR_FIXUP_PAGES; // MU_CHANGE: Fixup page attributes when setting RW
     *PageAttribute = PageNone;
     return NULL;
   }
   if ((L3PageTable[Index3] & IA32_PG_PS) != 0) {
     // 1G
     *PageAttribute = Page1G;
+    FixupPages.Fields.L3Page = &L3PageTable[Index3]; // MU_CHANGE: Fixup page attributes when setting RW
     return &L3PageTable[Index3];
-  } else {
-    RunUpPages.L3Page = &L3PageTable[Index3]; // BEEBE CHANGE
   }
 
   L2PageTable = (UINT64 *)(UINTN)(L3PageTable[Index3] & ~AddressEncMask & PAGING_4K_ADDRESS_MASK_64);
   if (L2PageTable[Index2] == 0) {
-    CLEAR_RUN_UP_PAGES // BEEBE CHANGE
+    CLEAR_FIXUP_PAGES; // MU_CHANGE: Fixup page attributes when setting RW
     *PageAttribute = PageNone;
     return NULL;
   }
   if ((L2PageTable[Index2] & IA32_PG_PS) != 0) {
     // 2M
     *PageAttribute = Page2M;
+    FixupPages.Fields.L2Page = &L2PageTable[Index2]; // MU_CHANGE: Fixup page attributes when setting RW
     return &L2PageTable[Index2];
-  } else {
-    RunUpPages.L2Page = &L2PageTable[Index2]; // BEEBE CHANGE
   }
 
   // 4k
   L1PageTable = (UINT64 *)(UINTN)(L2PageTable[Index2] & ~AddressEncMask & PAGING_4K_ADDRESS_MASK_64);
   if ((L1PageTable[Index1] == 0) && (Address != 0)) {
-    CLEAR_RUN_UP_PAGES // BEEBE CHANGE
+    CLEAR_FIXUP_PAGES; // MU_CHANGE: Fixup page attributes when setting RW
     *PageAttribute = PageNone;
     return NULL;
   }
   *PageAttribute = Page4K;
+  FixupPages.Fields.L1Page = &L1PageTable[Index1]; // MU_CHANGE: Fixup page attributes when setting RW
   return &L1PageTable[Index1];
 }
 
@@ -416,39 +428,60 @@ GetAttributesFromPageEntry (
   return Attributes;
 }
 
-/*
-  BEEBE TODO
-*/
+/**
+  Update every level of the page table leading to the page being updated
+
+  @param[in]  Attribute        The attribute being updated
+  @param[in]  PageEntry        The page entry.
+  @param[out] DidUpdatePages   TRUE if any of the page table entries in the
+                               FixupPages union were updated
+
+  @return EFI_SUCCESS             Input was valid and process completed
+  @return EFI_INVALID_PARAMETER   Lowest level page in the struct did not match the page passed in
+                                  or the attribute being set was invalid
+**/
 EFI_STATUS
-RunUpAttribute (
-  IN UINT64 Attribute
+FixupAttributes (
+  IN  UINT64  Attribute,
+  IN  UINT64  *PageEntry,
+  OUT BOOLEAN *DidUpdatePages
   )
 {
   EFI_STATUS Status = EFI_INVALID_PARAMETER;
+  UINT8 Index1;
+  UINT8 Index2;
 
-  // For now, let's only run up the RW attribute
+  // For now, let's only run up the RW attribute.
   if (Attribute != IA32_PG_RW) {
     return Status;
   }
 
-  if (RunUpPages.L5Page != NULL) {
-    *(RunUpPages.L5Page) |= IA32_PG_RW;
-    Status = EFI_SUCCESS;
-  }
-  if (RunUpPages.L4Page != NULL) {
-    *(RunUpPages.L4Page) |= IA32_PG_RW;
-    Status = EFI_SUCCESS;
-  }
-  if (RunUpPages.L3Page != NULL) {
-    *(RunUpPages.L3Page) |= IA32_PG_RW;
-    Status = EFI_SUCCESS;
-  }
-  if (RunUpPages.L2Page != NULL) {
-    *(RunUpPages.L2Page) |= IA32_PG_RW;
-    Status = EFI_SUCCESS;
+  // If the lowest level page pointer in the structure is not the same
+  // as the pointer passed in or the structure is empty, return.
+  for (Index1 = 0; Index1 < NUMBER_OF_SUPPORTED_PAGE_LEVELS; Index1++) {
+    if (FixupPages.Data[Index1] != NULL) {
+      if (FixupPages.Data[Index1] == PageEntry) {
+        break;
+      } else {
+        return Status;
+      };
+    }
   }
 
-  CLEAR_RUN_UP_PAGES
+  if (Index1 == NUMBER_OF_SUPPORTED_PAGE_LEVELS) {
+    return Status;
+  }
+
+  Status = EFI_SUCCESS;
+  // Update pages as needed. Set DidUpdatePages to TRUE if a page is updated.
+  for (Index2 = NUMBER_OF_SUPPORTED_PAGE_LEVELS; Index2 > 0; --Index2) {
+    if (FixupPages.Data[Index2] != NULL && (*(FixupPages.Data[Index2]) & Attribute) != 0 && Index2 > Index1) {
+      *(FixupPages.Data[Index2]) |= Attribute;
+      *DidUpdatePages = TRUE;
+    }
+  }
+
+  CLEAR_FIXUP_PAGES;
   return Status;
 }
 
@@ -473,7 +506,7 @@ ConvertPageEntryAttribute (
   UINT64  CurrentPageEntry;
   UINT64  NewPageEntry;
   UINT32  *PageAttributes;
-  BOOLEAN RanUpAttributes = FALSE; // BEEBE CHANGE
+  BOOLEAN DidFixupAttributes = FALSE; // MU_CHANGE: Fixup page attributes when setting RW
 
   CurrentPageEntry = *PageEntry;
   NewPageEntry = CurrentPageEntry;
@@ -505,18 +538,14 @@ ConvertPageEntryAttribute (
       break;
     case PageActionClear:
       NewPageEntry |= IA32_PG_RW;
-      if (!EFI_ERROR (RunUpAttribute (IA32_PG_RW))) { // BEEBE CHANGE
-        RanUpAttributes = TRUE;
-      }
+      FixupAttributes (IA32_PG_RW, PageEntry, &DidFixupAttributes); // MU_CHANGE: Fixup page attributes when setting RW
       break;
     }
   } else {
     switch (PageAction) {
     case PageActionAssign:
       NewPageEntry |= IA32_PG_RW;
-      if (!EFI_ERROR (RunUpAttribute (IA32_PG_RW))) { // BEEBE CHANGE
-        RanUpAttributes = TRUE;
-      }
+      FixupAttributes (IA32_PG_RW, PageEntry, &DidFixupAttributes); // MU_CHANGE: Fixup page attributes when setting RW
       break;
     case PageActionSet:
     case PageActionClear:
@@ -549,7 +578,7 @@ ConvertPageEntryAttribute (
     }
   }
   *PageEntry = NewPageEntry;
-  if (CurrentPageEntry != NewPageEntry || RanUpAttributes) {
+  if (CurrentPageEntry != NewPageEntry || DidFixupAttributes) {
     *IsModified = TRUE;
     DEBUG ((DEBUG_VERBOSE, "ConvertPageEntryAttribute 0x%lx", CurrentPageEntry));
     DEBUG ((DEBUG_VERBOSE, "->0x%lx\n", NewPageEntry));
