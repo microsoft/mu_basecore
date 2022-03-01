@@ -908,12 +908,17 @@ UsbEnumeratePort (
   Child  = NULL;
   HubApi = HubIf->HubApi;
 
+  // MU_CHANGE: Zero out PortState in case GetPortStatus does not set it and we
+  //            continue on the EFI_DEVICE_ERROR path
+  PortState.PortStatus       = 0;
+  PortState.PortChangeStatus = 0;
+
   //
   // Host learns of the new device by polling the hub for port changes.
   //
   Status = HubApi->GetPortStatus (HubIf, Port, &PortState);
 
-  // MU_CHANGE - try a port reset if get port status returns device error
+  // MU_CHANGE - try a port reset if GetPortStatus returns device error
   if (EFI_ERROR (Status) && (Status != EFI_DEVICE_ERROR)) {
     DEBUG ((DEBUG_ERROR, "UsbEnumeratePort: failed to get state of port %d\n", Port));
     return Status;
