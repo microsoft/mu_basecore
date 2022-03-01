@@ -309,6 +309,7 @@ GetPageTableEntry (
         *PageAttribute = PageNone;
         return NULL;
       }
+
       L4PageTable = (UINT64 *)(UINTN)(L5PageTable[Index5] & ~AddressEncMask & PAGING_4K_ADDRESS_MASK_64);
     } else {
       L4PageTable = (UINT64 *)(UINTN)PagingContext->ContextData.X64.PageTableBase;
