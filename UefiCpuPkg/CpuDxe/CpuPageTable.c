@@ -474,8 +474,8 @@ FixupAttributes (
 
   Status = EFI_SUCCESS;
   // Update pages as needed. Set DidUpdatePages to TRUE if a page is updated.
-  for (Index2 = NUMBER_OF_SUPPORTED_PAGE_LEVELS; Index2 > 0; --Index2) {
-    if (FixupPages.Data[Index2] != NULL && (*(FixupPages.Data[Index2]) & Attribute) != 0 && Index2 > Index1) {
+  for (Index2 = NUMBER_OF_SUPPORTED_PAGE_LEVELS; Index2 > 0 && Index2 > Index1; --Index2) {
+    if (FixupPages.Data[Index2] != NULL && (*(FixupPages.Data[Index2]) & Attribute) != 0) {
       *(FixupPages.Data[Index2]) |= Attribute;
       *DidUpdatePages = TRUE;
     }
