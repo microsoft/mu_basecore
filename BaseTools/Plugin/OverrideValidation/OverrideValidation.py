@@ -191,10 +191,10 @@ try:
                         trackno = trackno + 1
                         if m_result == self.OverrideResult.OR_TARGET_INF_NOT_FOUND:
                             track_nf.append ((lineno, Line))
-                            logging.warn("At Line %d: %s" %(lineno, Line))
+                            logging.info("At Line %d: %s" %(lineno, Line))
                         elif m_result == self.OverrideResult.OR_FILE_CHANGE:
-                            track_fc.append(modulenode.reflist[-1].path)
-                            logging.warn("At Line %d: %s" %(lineno, Line))
+                            track_fc.append([lineno, Line, modulenode.reflist[-1].path, False])
+                            logging.info("At Line %d: %s" %(lineno, Line))
                         elif m_result != self.OverrideResult.OR_ALL_GOOD:
                             result = m_result
                             logging.error("At Line %d: %s" %(lineno, Line))
@@ -206,15 +206,24 @@ try:
                 if result == self.OverrideResult.OR_ALL_GOOD:
                     result = self.OverrideResult.OR_TARGET_INF_NOT_FOUND
 
+                for (lineno, Line) in track_nf:
+                    logging.error("Track tag failed to locate target module at Line %d: %s" %(lineno, Line))
+
             if len(track_fc) != 0:
                 canceled_cnt = 0
                 # Some track tags failed, see if they can be canceled out by other passed track tags
-                for changed_line in track_fc:
+                for entry in track_fc:
                     for all_good_line in track_ag:
-                        if changed_line == all_good_line:
+                        if entry[2] == all_good_line:
                             canceled_cnt = canceled_cnt + 1
+                            entry[3] = True
+                            break
                 if canceled_cnt != len(track_fc) and result == self.OverrideResult.OR_ALL_GOOD:
                     result = self.OverrideResult.OR_FILE_CHANGE
+
+                for (lineno, Line, _, canceled) in track_fc:
+                    if not canceled:
+                        logging.error("Track tag failed to match module hash at Line %d: %s" %(lineno, Line))
 
             # Revert this visitied indicator after this branch is done searching
             filelist.remove(list_path)
@@ -281,7 +290,7 @@ try:
             fullpath = os.path.normpath(thebuilder.mws.join(thebuilder.ws, overriddenpath))
             # Search overridden module in workspace
             if not os.path.isfile(fullpath) and not os.path.isdir(fullpath):
-                logging.warn("Inf Overridden File/Path Not Found in Workspace or Packages_Path: %s" %(overriddenpath))
+                logging.info("Inf Overridden File/Path Not Found in Workspace or Packages_Path: %s" %(overriddenpath))
                 result = self.OverrideResult.OR_TARGET_INF_NOT_FOUND
                 m_node.path = overriddenpath
                 m_node.status = result
@@ -321,7 +330,7 @@ try:
                 if tagtype == 'override':
                     logging.error(pnt_str)
                 else:
-                    logging.warn(pnt_str)
+                    logging.info(pnt_str)
 
             # Step 7: Do depth-first-search for cascaded modules
             m_result = self.override_detect_process(thebuilder, fullpath, filelist, m_node, status)
@@ -348,7 +357,7 @@ try:
                 if tagtype == 'override':
                     logging.error(pnt_str)
                 else:
-                    logging.warn(pnt_str)
+                    logging.info(pnt_str)
 
             return result
         # END: override_process_line_version2(self, thebuilder, filelist, OverrideEntry, m_node, status)
