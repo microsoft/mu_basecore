@@ -38,6 +38,16 @@
 #define IA32_PG_NX      BIT63
 
 #define PAGE_ATTRIBUTE_BITS  (IA32_PG_D | IA32_PG_A | IA32_PG_U | IA32_PG_RW | IA32_PG_P)
+// TCBZ3869 MU_CHANGE START
+// A memory range can be submitted for attribute changes which is large enough to
+// not require a page split during the attribute update. If an attribute update removed, say,
+// the RW attribute on a range large enough to not require a page split for a specific page
+// and then a subsequent update readded the RW attribute for a subsection of the larger page which
+// had its RW attribute removed, the subsection would correctly have the RW attribute added but the parent
+// page would still have the RW attribute removed which will cause an access violation. To fix this,
+// we OR the below attributes to the larger page after doing a split to fix the case described.
+#define PAGE_ATTRIBUTE_BITS_POST_SPLIT  (IA32_PG_RW | IA32_PG_P)
+// TCBZ3869 MU_CHANGE END
 //
 // Bits 1, 2, 5, 6 are reserved in the IA32 PAE PDPTE
 // X64 PAE PDPTE does not have such restriction
@@ -580,7 +590,7 @@ SplitPage (
         NewPageEntry[Index] = (BaseAddress + SIZE_4KB * Index) | AddressEncMask | ((*PageEntry) & PAGE_PROGATE_BITS);
       }
 
-      (*PageEntry) = (UINT64)(UINTN)NewPageEntry | AddressEncMask | ((*PageEntry) & PAGE_ATTRIBUTE_BITS);
+      (*PageEntry) = (UINT64)(UINTN)NewPageEntry | AddressEncMask | PAGE_ATTRIBUTE_BITS_POST_SPLIT; // TCBZ3869 MU_CHANGE
       return RETURN_SUCCESS;
     } else {
       return RETURN_UNSUPPORTED;
@@ -603,7 +613,7 @@ SplitPage (
         NewPageEntry[Index] = (BaseAddress + SIZE_2MB * Index) | AddressEncMask | IA32_PG_PS | ((*PageEntry) & PAGE_PROGATE_BITS);
       }
 
-      (*PageEntry) = (UINT64)(UINTN)NewPageEntry | AddressEncMask | ((*PageEntry) & PAGE_ATTRIBUTE_BITS);
+      (*PageEntry) = (UINT64)(UINTN)NewPageEntry | AddressEncMask | PAGE_ATTRIBUTE_BITS_POST_SPLIT; // TCBZ3869 MU_CHANGE
       return RETURN_SUCCESS;
     } else {
       return RETURN_UNSUPPORTED;
