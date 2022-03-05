@@ -310,7 +310,7 @@ def read_header_file(options, path):
             all_functions.append(cur_function)
             cur_function = crypto_function()
         elif mode == modes.PARAMS:  # if we're looking for parameters
-            cur_function.params.append("  "+line)
+            cur_function.params.append(line)
         elif mode == modes.RETURN_TYPE:  # if we're looking for the return type
             if not cur_function.set_return_type_if_valid(sline):
                 if options.verbose:
@@ -420,9 +420,11 @@ def get_crypto_c(options, functions):
     # generate the function bodies
     if not options.eno:
         for valid_type, funcs in sorted_functions:
-            lines.append("//=============================================================================")
+            lines.append("// =============================================================================")
             lines.append(f"//     {valid_type} functions")
-            lines.append("//=============================================================================")
+            lines.append("// =============================================================================")
+            if len(funcs) > 0:
+                lines.append("")
             for func in funcs:
                 lines.extend(func.comment)
                 lines.append(f"// See {func.source}:{func.line_no}")
@@ -434,9 +436,10 @@ def get_crypto_c(options, functions):
                 lines.append("{")
                 params = func.get_params_tuple()
                 if len(params) > 0 and params[-1] == "...":
-                    lines.append("  VA_LIST Args;")
-                    lines.append("  BOOLEAN Result;")
-                    lines.append(f"  VA_START (Args,{params[0]});")
+                    lines.append("  VA_LIST  Args;")
+                    lines.append("  BOOLEAN  Result;")
+                    lines.append("")
+                    lines.append(f"  VA_START (Args, {params[0]});")
                     lines.append(f"  Result = CryptoService{func.name} {func.get_params_formatted()};")
                     lines.append("  VA_END (Args);")
                     lines.append("  return Result;")
@@ -447,19 +450,19 @@ def get_crypto_c(options, functions):
                 lines.append("}")
 
     # Generate the struct
-    lines.append("\nconst EDKII_CRYPTO_PROTOCOL mEdkiiCrypto = {")
+    lines.append("const EDKII_CRYPTO_PROTOCOL  mEdkiiCrypto = {")
     lines.append("  /// Version")
     lines.append("  CryptoServiceGetCryptoVersion,")
     for valid_type, funcs in sorted_functions:
         lines.append(f"  // {valid_type} functions")
         for func in funcs:
             if options.eno:
-                lines.append(f"#if _PCD_VALUE_PcdCryptoService{func.name}")
+                lines.append(f" #if _PCD_VALUE_PcdCryptoService{func.name}")
             lines.append(f"  {func.name},")
             if options.eno:
-                lines.append("#else")
+                lines.append(" #else")
                 lines.append("  NULL,")
-                lines.append("#endif")
+                lines.append(" #endif")
     lines.append("};")
 
     generate_file_replacement(lines, "Crypto.template.c", "temp_Crypto.c", options)
@@ -473,9 +476,11 @@ def get_crypto_lib_c(options, functions):
     sorted_functions = sort_functions(functions)
     # generate the function bodies
     for valid_type, funcs in sorted_functions:
-        lines.append("//=============================================================================")
+        lines.append("// =============================================================================")
         lines.append(f"//     {valid_type} functions")
-        lines.append("//=============================================================================")
+        lines.append("// =============================================================================")
+        if len(funcs) > 0:
+            lines.append("")
         for func in funcs:
             # add a macro that will turn this off if it's not enabled by PCD
             if options.ctc:
@@ -491,9 +496,10 @@ def get_crypto_lib_c(options, functions):
             params = func.get_params_tuple()
             # we need to do something special for variable args
             if len(params) > 0 and params[-1] == "...":
-                lines.append("  VA_LIST Args;")
-                lines.append("  BOOLEAN Result;")
-                lines.append(f"  VA_START (Args,{params[0]});")
+                lines.append("  VA_LIST  Args;")
+                lines.append("  BOOLEAN  Result;")
+                lines.append("")
+                lines.append(f"  VA_START (Args, {params[0]});")
                 lines.append(f"  Result = {func.name}V {func.get_params_formatted()};")
                 lines.append("  VA_END (Args);")
                 lines.append("  return Result;")
@@ -502,6 +508,7 @@ def get_crypto_lib_c(options, functions):
             else:
                 lines.append(f"  CALL_CRYPTO_SERVICE ({func.name}, {func.get_params_formatted()}, {func.get_default_value()});")
             lines.append("}")
+            lines.append("")
             # if we're doing compile time checking, have an else statement
             if options.ctc:
                 lines.append("#else")
@@ -521,31 +528,34 @@ def get_crypto_h(options, functions):
 
     # Generate the function prototypes
     for valid_type, funcs in sorted_functions:
-        lines.append("//=============================================================================")
+        lines.append("// =============================================================================")
         lines.append(f"//     {valid_type} functions")
-        lines.append("//=============================================================================")
+        lines.append("// =============================================================================")
+        if len(funcs) > 0:
+            lines.append("")
         for func in funcs:
             lines.extend(func.comment)
             lines.append(f"// FROM {func.source}:{func.line_no}")
             lines.append("typedef")
             lines.append(func.return_type)
-            lines.append(f"(EFIAPI *{func.get_protocoled_name()}) (")
+            lines.append(f"(EFIAPI *{func.get_protocoled_name()})(")
             lines.extend(func.params if len(func.params) > 0 else ["  VOID", ])
-            lines.append("  );\n")
+            lines.append("  );")
+            lines.append("")
 
     # generate the protocol struct
-    lines.append("\n")
     lines.append("///\n/// EDK II Crypto Protocol\n///")
     lines.append("struct _EDKII_CRYPTO_PROTOCOL {")
-    lines.append(" // VERSION")
-    lines.append("  EDKII_CRYPTO_GET_VERSION                          GetVersion;")
+    lines.append("  // VERSION")
+    lines.append("  EDKII_CRYPTO_GET_VERSION                           GetVersion;")
     # generate the struct memebers
     for valid_type, funcs in sorted_functions:
         lines.append(f"  // {valid_type}")
         for func in funcs:
-            member_name = func.get_protocoled_name().ljust(49)  # make sure they're all the same size
+            member_name = func.get_protocoled_name().ljust(50)  # make sure they're all the same size
             lines.append(f"  {member_name} {func.name};")
     lines.append("};")
+    lines.append("")
 
     generate_file_replacement(lines, "Crypto.template.h", "temp_Crypto.h", options)
 
