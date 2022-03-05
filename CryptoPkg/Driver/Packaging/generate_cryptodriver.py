@@ -206,7 +206,7 @@ def read_header_file(options, path):
         def valid_types(cls):
             ''' the valid types that the function can be '''
             return ["HMACSHA256", "PKCS", "DH", "RANDOM", "RSA", "SHA1",
-                    "SHA256", "SHA384", "SHA512", "X509", "TDES", "AES", "ARC4", "SM3", "HKDF", "TLS", "TLSSET", "TLSGET"]
+                    "SHA256", "SHA384", "SHA512", "PARALLELHASH256", "X509", "TDES", "AES", "ARC4", "SM3", "HKDF", "TLS", "TLSSET", "TLSGET"]
 
         def get_escaped_name(self):
             ''' 
