@@ -21,7 +21,7 @@ Branch Status - release/202202
   2022/03/03
 
 :Anticipated Stabilization:
-  Mar 2022
+  May 2022
 
 Branch Changes - release/202202
 ===============================
@@ -57,7 +57,7 @@ Bug Fixes-dev
 | Starting commit: 4516829f8d ("Merged PR 4899: Mitigate track tag print levels", 2022-03-01)
 | Destination Commit from upstream edk2: b24306f15d ("NetworkPkg: Fix incorrect unicode string of the AKM/Cipher Suite", 2022-01-26)
 
-- Incomplete
+- PCD gUefiCpuPkgTokenSpaceGuid.PcdGhcbHypervisorFeatures added. Confirm settings for virtualized platforms.
 
 Code of Conduct
 ===============
