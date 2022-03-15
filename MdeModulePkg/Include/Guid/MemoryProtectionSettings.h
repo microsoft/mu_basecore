@@ -63,12 +63,13 @@ typedef union {
     UINT8    FromUnknown                 : 1;
     UINT8    FromFv                      : 1;
     UINT8    RaiseErrorIfProtectionFails : 1;
+    UINT8    BlockImagesWithoutNxFlag    : 1;
   } Fields;
 } IMAGE_PROTECTION_POLICY;
 
 typedef UINT8 MEMORY_PROTECTION_SETTINGS_VERSION;
 
-#define MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  2// Current iteration of MEMORY_PROTECTION_SETTINGS
+#define MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  3// Current iteration of MEMORY_PROTECTION_SETTINGS
 
 //
 // Memory Protection Settings struct
@@ -121,19 +122,20 @@ typedef struct {
   //                           1 - The returned pool is near the head guard page.
   HEAP_GUARD_POLICY    HeapGuardPolicy;
 
-  // Set image protection policy. The policy is bitwise.
+  // Set image protection policy.
   //
-  // If a bit is set, the image will be protected by DxeCore if it is aligned.
-  // The code section becomes read-only, and the data section becomes non-executable.
-  // If a bit is clear, nothing will be done to image code/data sections.
-  //  .FromUnknown                  - Image from unknown device.
-  //  .FromFv                       - Image from firmware volume.
-  //  .RaiseErrorIfProtectionFails  - ProtectUefiImageMu() will return an error if protection
-  //                                  fails.
+  //  .FromUnknown                  - If set, images from unknown devices will be protected by DxeCore
+  //                                  if it is aligned.The code section becomes read-only, and the data
+  //                                  section becomes non-executable.
+  //  .FromFv                       - If set, images from firmware volumes will be protected by DxeCore
+  //                                  if it is aligned.The code section becomes read-only, and the data
+  //                                  section becomes non-executable.
+  //  .RaiseErrorIfProtectionFails  - If set, ProtectUefiImageMu() will return an error if protection fails.
+  //  .BlockImagesWithoutNxFlag     - If set, images which don't utilize the NX_COMPAT PE flag will not be loaded.
   //
-  // Note: If a bit is cleared, the data section could be still non-executable if
+  // Note: If a bit is cleared, an image data section could be still non-executable if
   // DxeNxProtectionPolicy is enabled for EfiLoaderData, EfiBootServicesData
-  // and/or EfiRuntimeServicesData.
+  // or EfiRuntimeServicesData.
   IMAGE_PROTECTION_POLICY    ImageProtectionPolicy;
 
   // Indicates which type allocation need guard page.
@@ -206,7 +208,8 @@ extern GUID  gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.FromUnknown                  = 0,         \
               .Fields.FromFv                       = 1,         \
-              .Fields.RaiseErrorIfProtectionFails  = 1          \
+              .Fields.RaiseErrorIfProtectionFails  = 1,         \
+              .Fields.BlockImagesWithoutNxFlag     = 1          \
             },                                                  \
             {                                                   \
               .Fields.EfiReservedMemoryType        = 0,         \
@@ -295,7 +298,8 @@ extern GUID  gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.FromUnknown                  = 0,         \
               .Fields.FromFv                       = 1,         \
-              .Fields.RaiseErrorIfProtectionFails  = 0          \
+              .Fields.RaiseErrorIfProtectionFails  = 0,         \
+              .Fields.BlockImagesWithoutNxFlag     = 0          \
             },                                                  \
             {                                                   \
               .Fields.EfiReservedMemoryType        = 0,         \
@@ -383,7 +387,8 @@ extern GUID  gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.FromUnknown                  = 0,         \
               .Fields.FromFv                       = 1,         \
-              .Fields.RaiseErrorIfProtectionFails  = 0          \
+              .Fields.RaiseErrorIfProtectionFails  = 0,         \
+              .Fields.BlockImagesWithoutNxFlag     = 0          \
             },                                                  \
             {                                                   \
               .Fields.EfiReservedMemoryType        = 0,         \
@@ -470,7 +475,8 @@ extern GUID  gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.FromUnknown                  = 0,         \
               .Fields.FromFv                       = 0,         \
-              .Fields.RaiseErrorIfProtectionFails  = 0          \
+              .Fields.RaiseErrorIfProtectionFails  = 0,         \
+              .Fields.BlockImagesWithoutNxFlag     = 0          \
             },                                                  \
             {                                                   \
               .Fields.EfiReservedMemoryType        = 0,         \
