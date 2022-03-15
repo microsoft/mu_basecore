@@ -632,6 +632,8 @@ PeCoffLoaderGetImageInfo (
   //
   ImageContext->ImageError = IMAGE_ERROR_SUCCESS;
 
+  ImageContext->SupportsNx = TRUE; // MU_CHANGE
+
   Hdr.Union = &HdrData;
   Status    = PeCoffLoaderGetPeHeader (ImageContext, Hdr);
   if (RETURN_ERROR (Status)) {
@@ -698,12 +700,24 @@ PeCoffLoaderGetImageInfo (
       //
       NumberOfRvaAndSizes = Hdr.Pe32->OptionalHeader.NumberOfRvaAndSizes;
       DebugDirectoryEntry = (EFI_IMAGE_DATA_DIRECTORY *)&(Hdr.Pe32->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
+      // MU_CHANGE START
+      if (!(Hdr.Pe32->OptionalHeader.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_NX_COMPAT)) {
+        ImageContext->SupportsNx = FALSE;
+      }
+
+      // MU_CHANGE END
     } else {
       //
       // Use PE32+ offset
       //
       NumberOfRvaAndSizes = Hdr.Pe32Plus->OptionalHeader.NumberOfRvaAndSizes;
       DebugDirectoryEntry = (EFI_IMAGE_DATA_DIRECTORY *)&(Hdr.Pe32Plus->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
+      // MU_CHANGE START
+      if (!(Hdr.Pe32Plus->OptionalHeader.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_NX_COMPAT)) {
+        ImageContext->SupportsNx = FALSE;
+      }
+
+      // MU_CHANGE END
     }
 
     if (NumberOfRvaAndSizes > EFI_IMAGE_DIRECTORY_ENTRY_DEBUG) {

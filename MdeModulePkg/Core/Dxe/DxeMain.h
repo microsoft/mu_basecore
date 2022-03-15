@@ -2732,7 +2732,7 @@ RemoveImageRecord (
   IN EFI_RUNTIME_IMAGE_ENTRY  *RuntimeImage
   );
 
-// MU_CHANGE START Use Project Mu ProtectUefiImage()
+// MU_CHANGE START Use Project Mu ProtectUefiImage() and add function for setting images to read-only
 
 /**
   Protect UEFI image.
@@ -2757,6 +2757,42 @@ ProtectUefiImageMu (
 //   IN EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage,
 //   IN EFI_DEVICE_PATH_PROTOCOL    *LoadedImageDevicePath
 //   );
+
+/**
+  Sets the attributes of a loaded image to be read-only.
+
+  @param  Image                   Pointer to the loaded image private data
+
+  @return EFI_SUCCESS             Read-only set on loaded Image
+  @return EFI_INVALID_PARAMETER   Image or Image->ImageContext.ImageAddress was NULL
+  @return EFI_NOT_READY           gCpu is not available yet
+  @return other                   Return value of mMemoryAttribute->GetMemoryAttributes(),
+                                  mMemoryAttribute->SetMemoryAttributes, or
+                                  gBS->LocateProtocol()
+
+**/
+EFI_STATUS
+SetImageToReadOnly (
+  IN LOADED_IMAGE_PRIVATE_DATA  *Image
+  );
+
+/**
+  Clears the read-only and no-execute attributes of a loaded image.
+
+  @param  Image                   Pointer to the loaded image private protocol
+
+  @return EFI_SUCCESS             Read-only and NX attributes unset on image
+  @return EFI_INVALID_PARAMETER   Image or Image->ImageBase was NULL
+  @return EFI_NOT_READY           gCpu is not available yet
+  @return other                   Return value of mMemoryAttribute->ClearMemoryAttributes()
+                                  or gBS->LocateProtocol()
+
+**/
+EFI_STATUS
+ClearReadOnlyAndNxFromImage (
+  IN EFI_LOADED_IMAGE_PROTOCOL  *Image
+  );
+
 // MU_CHANGE END
 
 /**
