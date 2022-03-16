@@ -1,9 +1,9 @@
 {
-    "scope": "global-disabled",
+    "scope": "global",
     "type": "nuget",
     "name": "edk2-basecrypto-driver-bin",
     "source": "https://pkgs.dev.azure.com/projectmu/mu/_packaging/Mu-Public/nuget/v3/index.json",
-    "version": "0.0.0",
+    "version": "2022.02.2",
     "flags": ["set_build_var"],
-    "var_name": "BLD_*_CRYPTO_BINARY_EXTDEP_PATH"
+    "var_name": "CRYPTO_BINARY_EXTDEP_PATH"
   }
