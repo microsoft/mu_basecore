@@ -104,6 +104,19 @@ plugin execution.
 By default, files in paths matched in a .gitignore file or a recognized git submodule are excluded. If this option
 is `True`, the plugin will not attempt to recognize these files and exclude them.
 
+### `UNCRUSTIFY_IN_PLACE=TRUE`
+
+MU_CHANGE - Feature added.
+
+Mu adds support for passing this parameter on the command line when running `stuart_ci_build`. If passed, it will
+cause any changes to be made in-place to the files in the workspace, enabling the caller to easily format any failing
+code before submitting a PR.
+
+While this can also be set as an environment variable, it is recommended to only use it
+as a CLI paramter.
+
+_NOTE:_ This is _not_ an option in the config `yaml`. It is an option passed directly into the tool.
+
 ## High-Level Plugin Operation
 
 This plugin generates two main sets of temporary files:
