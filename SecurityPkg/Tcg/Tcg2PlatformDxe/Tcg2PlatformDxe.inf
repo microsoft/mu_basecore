@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
-###
+##
 
 [Defines]
   INF_VERSION                    = 0x00010017
@@ -25,19 +25,23 @@
   UefiBootServicesTableLib
   UefiDriverEntryPoint
   DebugLib
+  HobLib # MU_CHANGE - refactor Tcg2PlatformDxe to lock TPM at EndOfDxe or ReadyToBoot depending on boot mode.
   UefiLib
   TpmPlatformHierarchyLib
 
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+
   SecurityPkg/SecurityPkg.dec
 
 [Sources]
   Tcg2PlatformDxe.c
 
-[Protocols]
-  gEfiDxeSmmReadyToLockProtocolGuid             ## SOMETIMES_CONSUMES ## NOTIFY
+# MU_CHANGE - START refactor Tcg2PlatformDxe to lock TPM at EndOfDxe or ReadyToBoot depending on boot mode.
+[Guids]
+  gEfiEndOfDxeEventGroupGuid             ## SOMETIMES_CONSUMES ## NOTIFY
+# MU_CHANGE - END refactor Tcg2PlatformDxe to lock TPM at EndOfDxe or ReadyToBoot depending on boot mode.
 
 [Depex]
   gEfiTcg2ProtocolGuid
