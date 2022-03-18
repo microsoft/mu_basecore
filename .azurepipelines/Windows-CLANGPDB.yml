@@ -1,0 +1,35 @@
+## @file
+# Azure Pipeline build file for a build using Windows and clangpdb
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+# MU_CHANGE BEGIN
+trigger:
+- dev/*
+- release/*
+
+schedules:
+- cron: "0 8 * * 0,3"   # Sun/Wed at 1AM Pacific
+  displayName: Sun/Wed Build
+  branches:
+    include:
+    - dev/*
+    - release/*
+  always: true          # Always build, even if no changes
+
+pr:
+- dev/*
+- release/*
+# MU_CHANGE END
+
+jobs:
+- template: templates/pr-gate-build-job-clang.yml
+  parameters:
+    tool_chain_tag: 'CLANGPDB'
+    vm_image: 'windows-latest'
+    arch_list: "IA32,X64"
+    extra_steps:
+        - powershell: choco install llvm
+          displayName: Install LLVM and CLANG # friendly name displayed in the UI
+          condition: and(gt(variables.pkg_count, 0), succeeded())
