@@ -13,6 +13,7 @@ parameters:
   build_targets: ''
   build_archs: ''
   has_ci_dependencies: false    # MU_CHANGE - Enable toggle for stuart_ci_build
+  extra_steps: []               # MU_CHANGE - needed for clang
 
 steps:
 - checkout: self
@@ -65,6 +66,13 @@ steps:
 # MU_CHANGE - Add MarkdownLint
 # install markdownlint check prereqs
 - template: markdownlint-check-prereq-steps.yml
+
+
+# MU_CHANGE - [start] need support for extra steps for clang
+# Extra steps if needed
+- ${{ parameters.extra_steps }}
+# MU_CHANGE [end]
+
 
 # Build repo
 # MU_CHANGE - We use CI dependencies as well as submodules.
