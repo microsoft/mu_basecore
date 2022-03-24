@@ -210,6 +210,7 @@
   X86RdRand.c
   X86PatchInstruction.c
   X86SpeculationBarrier.c
+  CpuBreakAssert.nasm
   IntelTdxNull.c
 
 [Sources.X64]
@@ -223,9 +224,9 @@
   X64/DisableCache.nasm
   X64/WriteTr.nasm
   X64/Lfence.nasm
+  CpuBreakAssert.nasm
 
   X64/CpuBreakpoint.c | MSFT
-  X64/CpuBreakAssert.c | MSFT ## MS_CHANGE
   X64/WriteMsr64.c | MSFT
   X64/ReadMsr64.c | MSFT
   X64/CpuPause.nasm| MSFT
@@ -343,6 +344,7 @@
   Arm/InternalSwitchStack.c
   Arm/Unaligned.c
   Math64.c                   | MSFT
+
 
   Arm/SwitchStack.asm        | MSFT
   Arm/SetJumpLongJump.asm    | MSFT
