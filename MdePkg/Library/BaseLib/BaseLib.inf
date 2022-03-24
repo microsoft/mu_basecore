@@ -211,6 +211,7 @@
   X86RdRand.c
   X86PatchInstruction.c
   X86SpeculationBarrier.c
+  CpuBreakAssert.nasm ## MU_CHANGE
   IntelTdxNull.c
 
 [Sources.X64]
@@ -224,9 +225,9 @@
   X64/DisableCache.nasm
   X64/WriteTr.nasm
   X64/Lfence.nasm
+  CpuBreakAssert.nasm ## MU_CHANGE
 
   X64/CpuBreakpoint.c | MSFT
-  X64/CpuBreakAssert.c | MSFT ## MU_CHANGE
   X64/WriteMsr64.c | MSFT
   X64/ReadMsr64.c | MSFT
   X64/CpuPause.nasm| MSFT
