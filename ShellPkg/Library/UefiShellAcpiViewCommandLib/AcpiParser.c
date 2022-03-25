@@ -16,16 +16,14 @@ STATIC UINT32  gIndent;
 STATIC UINT32  mTableErrorCount;
 STATIC UINT32  mTableWarningCount;
 
-// STATIC ACPI_DESCRIPTION_HEADER_INFO AcpiHdrInfo; // MS_CHANGE removed unused variable. PR 1967110
-
+STATIC ACPI_DESCRIPTION_HEADER_INFO AcpiHdrInfo;
 /**
   An ACPI_PARSER array describing the ACPI header.
 **/
-/* MS_CHANGE we turn this off as it is no longer used. Merged PR 1967110
 STATIC CONST ACPI_PARSER AcpiHeaderParser[] = {
   PARSE_ACPI_HEADER (&AcpiHdrInfo)
 };
-*/
+
 
 /**
   This function resets the ACPI table error counter to Zero.
@@ -705,18 +703,14 @@ DumpAcpiHeader (
   IN UINT8  *Ptr
   )
 {
-  // MS_CHANGE [BEGIN] - This code currently breaks CoreBuild, and we don't use it anyway.
-  //                      Bugs filed.
-  // return ParseAcpi (
-  //          TRUE,
-  //          0,
-  //          "ACPI Table Header",
-  //          Ptr,
-  //          ACPI_DESCRIPTION_HEADER_LENGTH,
-  //          PARSER_PARAMS (AcpiHeaderParser)
-  //          );
-  return 0;
-  // MS_CHANGE [END]
+  return ParseAcpi (
+           TRUE,
+           0,
+           "ACPI Table Header",
+           Ptr,
+           sizeof (EFI_ACPI_DESCRIPTION_HEADER),
+           PARSER_PARAMS (AcpiHeaderParser)
+           );
 }
 
 /**
@@ -741,24 +735,20 @@ ParseAcpiHeader (
   OUT CONST UINT8   **Revision
   )
 {
-  // MS_CHANGE [BEGIN] - This code currently breaks CoreBuild, and we don't use it anyway.
-  //                      Bugs filed.
-  // UINT32                        BytesParsed;
+  UINT32  BytesParsed;
 
-  // BytesParsed = ParseAcpi (
-  //                 FALSE,
-  //                 0,
-  //                 NULL,
-  //                 Ptr,
-  //                 ACPI_DESCRIPTION_HEADER_LENGTH,
-  //                 PARSER_PARAMS (AcpiHeaderParser)
-  //                 );
+  BytesParsed = ParseAcpi (
+                  FALSE,
+                  0,
+                  NULL,
+                  Ptr,
+                  sizeof (EFI_ACPI_DESCRIPTION_HEADER),
+                  PARSER_PARAMS (AcpiHeaderParser)
+                  );
 
-  // *Signature = AcpiHdrInfo.Signature;
-  // *Length = AcpiHdrInfo.Length;
-  // *Revision = AcpiHdrInfo.Revision;
+  *Signature = AcpiHdrInfo.Signature;
+  *Length    = AcpiHdrInfo.Length;
+  *Revision  = AcpiHdrInfo.Revision;
 
-  // return BytesParsed;
-  return 0;
-  // MS_CHANGE [END]
+  return BytesParsed;
 }
