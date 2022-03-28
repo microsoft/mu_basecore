@@ -55,18 +55,6 @@ A memory cache which is part of the CPUs [MMU](#Memory-Management-Unit-(MMU)) an
 Memory to Physical Memory. The addresses stored in the TLB are dictated by some algorithm intended to decrease 
 amount of memory accesses for which the address translation is outside the TLB. 
 
-### Non-Stop Mode
-In the case of Non-Stop mode being enabled for either [HeapGuardPolicy](#HeapGuardPolicy) or 
-[NullPointerDetectionPolicy](#NullPointerDetectionPolicy), two exception handlers are registered. 
-The first handler runs whenever the heap guard or null pointer page absences trigger a 
-[#PF](#Page-Fault-Exception-(AKA-#PF)). If Non-Stop mode is enabled for this type of 
-[#PF](#Page-Fault-Exception-(AKA-#PF)), the absent page(s) are temporarily set to be present and a 
-[Cpu Context Dump](#Cpu-Context-Dump) is run after which the second exception handler registered 
-(the debug handler) is run. 
-The debug handler sets the page to be present and clears the [TLB](#Translation-Lookaside-Buffer-(AKA-TLB)) to 
-remove the current translation for the page which caused the [#PF](#Page-Fault-Exception-(AKA-#PF)). Once these 
-two handlers have run, code execution continues.
-
 ## NullPointerDetectionPolicy
 
 ### Summary
@@ -96,7 +84,6 @@ detected in legacy [Option ROM](#Option-ROM) or [boot loaders](#boot-loader).
   
 - UefiNullDetection  - Enable NULL pointer detection for UEFI
 - SmmNullDetection   - Enable NULL pointer detection for SMM
-- NonstopMode        - Enable [Non-Stop Mode](#Non-Stop-Mode)
 - DisableEndOfDxe    - Disable NULL pointer detection just after [EndOfDxe](#EndOfDxe)
 - DisableReadyToBoot - Disable NULL pointer detection just after ReadyToBoot
 
@@ -271,7 +258,6 @@ shows examples of the two.
 - SmmPageGuard - Enable SMM page guard
 - SmmPoolGuard - Enable SMM pool guard
 - UefiFreedMemoryGuard - Enable Use-After-Free memory detection
-- NonstopMode - Enable [Non-Stop Mode](#Non-Stop-Mode)
 - Direction - Specifies the direction of Guard Page for Pool Guard. If 0, the returned
 pool is near the tail guard page. If 1, the returned pool is near the head guard page. The
 default value for this is 0

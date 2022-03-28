@@ -15,7 +15,6 @@ typedef union {
   struct {
     UINT8    UefiNullDetection  : 1;
     UINT8    SmmNullDetection   : 1;
-    UINT8    NonstopMode        : 1;
     UINT8    DisableEndOfDxe    : 1;
     UINT8    DisableReadyToBoot : 1;
   } Fields;
@@ -29,7 +28,6 @@ typedef union {
     UINT8    SmmPageGuard         : 1;
     UINT8    SmmPoolGuard         : 1;
     UINT8    UefiFreedMemoryGuard : 1;
-    UINT8    NonstopMode          : 1;
     UINT8    Direction            : 1;
   } Fields;
 } HEAP_GUARD_POLICY;
@@ -92,7 +90,6 @@ typedef struct {
   // page zero as not present.
   //   .UefiNullDetection   : Enable NULL pointer detection for UEFI.
   //   .SmmNullDetection    : Enable NULL pointer detection for SMM.
-  //   .NonstopMode         : Enable non-stop mode.
   //   .DisableEndOfDxe     : Disable NULL pointer detection just after EndOfDxe.
   //                          This is a workaround for those unsolvable NULL access issues in
   //                          OptionROM, boot loader, etc. It can also help to avoid unnecessary
@@ -116,7 +113,6 @@ typedef struct {
   //  .SmmPageGuard          : Enable SMM page guard.
   //  .SmmPoolGuard          : Enable SMM pool guard.
   //  .UefiFreedMemoryGuard  : Enable UEFI freed-memory guard (Use-After-Free memory detection).
-  //  .NonstopMode           : Enable non-stop mode.
   //  .Direction             : The direction of Guard Page for Pool Guard.
   //                           0 - The returned pool is near the tail guard page.
   //                           1 - The returned pool is near the head guard page.
@@ -192,7 +188,6 @@ extern GUID  gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.UefiNullDetection            = 1,         \
               .Fields.SmmNullDetection             = 1,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.DisableEndOfDxe              = 0,         \
               .Fields.DisableReadyToBoot           = 0          \
             },                                                  \
@@ -202,7 +197,6 @@ extern GUID  gMemoryProtectionSettingsGuid;
               .Fields.SmmPageGuard                 = 1,         \
               .Fields.SmmPoolGuard                 = 1,         \
               .Fields.UefiFreedMemoryGuard         = 0,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
@@ -282,7 +276,6 @@ extern GUID  gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.UefiNullDetection            = 1,         \
               .Fields.SmmNullDetection             = 1,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.DisableEndOfDxe              = 0,         \
               .Fields.DisableReadyToBoot           = 0          \
             },                                                  \
@@ -292,7 +285,6 @@ extern GUID  gMemoryProtectionSettingsGuid;
               .Fields.SmmPageGuard                 = 1,         \
               .Fields.SmmPoolGuard                 = 0,         \
               .Fields.UefiFreedMemoryGuard         = 0,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
@@ -371,7 +363,6 @@ extern GUID  gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.UefiNullDetection            = 1,         \
               .Fields.SmmNullDetection             = 1,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.DisableEndOfDxe              = 0,         \
               .Fields.DisableReadyToBoot           = 0          \
             },                                                  \
@@ -381,7 +372,6 @@ extern GUID  gMemoryProtectionSettingsGuid;
               .Fields.SmmPageGuard                 = 0,         \
               .Fields.SmmPoolGuard                 = 0,         \
               .Fields.UefiFreedMemoryGuard         = 0,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
@@ -459,7 +449,6 @@ extern GUID  gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.UefiNullDetection            = 0,         \
               .Fields.SmmNullDetection             = 0,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.DisableEndOfDxe              = 0,         \
               .Fields.DisableReadyToBoot           = 0          \
             },                                                  \
@@ -469,7 +458,6 @@ extern GUID  gMemoryProtectionSettingsGuid;
               .Fields.SmmPageGuard                 = 0,         \
               .Fields.SmmPoolGuard                 = 0,         \
               .Fields.UefiFreedMemoryGuard         = 0,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
