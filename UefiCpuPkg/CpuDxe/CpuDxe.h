@@ -40,18 +40,14 @@
 #include <Guid/IdleLoopEvent.h>
 #include <Guid/VectorHandoffTable.h>
 
-// MU_CHANGE START Update to use gMPS
-#define HEAP_GUARD_NONSTOP_MODE  (gMPS.HeapGuardPolicy.Fields.NonstopMode &&\
-                                  (gMPS.HeapGuardPolicy.Fields.UefiPoolGuard || \
-                                    gMPS.HeapGuardPolicy.Fields.UefiPageGuard || \
-                                    gMPS.HeapGuardPolicy.Fields.UefiFreedMemoryGuard))
+// MU_CHANGE START Remove Nonstop Mode
+#define HEAP_GUARD_NONSTOP_MODE  FALSE
 
 /*
 #define HEAP_GUARD_NONSTOP_MODE       \
         ((PcdGet8 (PcdHeapGuardPropertyMask) & (BIT6|BIT4|BIT1|BIT0)) > BIT6)
 */
-#define NULL_DETECTION_NONSTOP_MODE  (gMPS.NullPointerDetectionPolicy.Fields.NonstopMode &&\
-                                      gMPS.NullPointerDetectionPolicy.Fields.UefiNullDetection)
+#define NULL_DETECTION_NONSTOP_MODE  FALSE
 
 /*
 #define NULL_DETECTION_NONSTOP_MODE   \
