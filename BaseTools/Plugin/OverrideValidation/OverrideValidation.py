@@ -581,8 +581,8 @@ def path_parse():
         help = '''Specify the absolute path to an inf with existing overrides to regen by passing r Path/To/Target or --regenpath Path/To/Target.'''
         )
     parser.add_argument (
-        '-p', '--prefixes', dest = 'RegenPrefix', nargs="*", default=None,
-        help = '''Specify prefixes for path resolution when using --regenpath. ignored otherwise. Workspace is always included.'''
+        '-p', '--packagepath', dest = 'RegenPackagePath', nargs="*", default=[],
+        help = '''Specify the packages path to be used to resolve relative paths when using --regenpath. ignored otherwise. Workspace is always included.'''
         )
     parser.add_argument (
         '-v', '--version', dest = 'Version', default= 2, type=int,
@@ -631,17 +631,6 @@ def path_parse():
 
     return Paths
 
-# resolve relative paths to absolute path over the given list of prefixes.
-# prefixes: a list of path prefixes to check. if more than one prefix matches, those closer to the front of the list are preferred
-# relpath: a relative path to resolve against the prefixes.
-def resolvePath(prefixes, relpath):
-    for prefix in prefixes:
-        for (dirpath, _, _) in os.walk(prefix):
-            prospect = os.path.join(dirpath, relpath)
-            if (os.path.isfile (prospect)):
-                return os.path.abspath(prospect)
-    return None
-
 ################################################
 # This plugin python file is also
 # a command line tool
@@ -655,16 +644,9 @@ if __name__ == '__main__':
     # Parse required paths passed from cmd line arguments
     Paths = path_parse()
 
-    dummy_list = []
-    pathtool = Edk2Path(Paths.WorkSpace, dummy_list)
-
     # check if we are asked to update an .inf file "in-place"
     if (Paths.RegenPath is not None):
-        if (Paths.RegenPrefix is not None):
-            path_prefixes = Paths.RegenPrefix
-        else:
-            path_prefixes = []
-        path_prefixes.append (Paths.WorkSpace)
+        pathtool = Edk2Path(Paths.WorkSpace, Paths.RegenPackagePath)
 
         v1_regex = re.compile(r"#(Override|Track) : (.*?) \| (.*?) \| (.*?) \| (.*?)")
         v2_regex = re.compile(r"#(Override|Track) : (.*?) \| (.*?) \| (.*?) \| (.*?) \| (.*?)")
@@ -679,25 +661,31 @@ if __name__ == '__main__':
 
             if match is not None:
                 rel_path = match.group(3)
-                abs_path = resolvePath(path_prefixes, rel_path)
+                abs_path = pathtool.GetAbsolutePathOnThisSystemFromEdk2RelativePath(rel_path)
+                if abs_path is not None:
+                    mod_hash = ModuleHashCal(abs_path)
+                    # only update the line if the hash has changed - this ensures the timestamp tracks actual changes rather than last time it was run.
+                    if (mod_hash != match.group(4)):
+                        VERSION_INDEX = Paths.Version - 1
 
-                mod_hash = ModuleHashCal(abs_path)
-                # only update the line if the hash has changed - this ensures the timestamp tracks actual changes rather than last time it was run.
-                if (mod_hash != match.group(4)):
-                    VERSION_INDEX = Paths.Version - 1
+                        if VERSION_INDEX == 0:
+                            line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"))
+                        elif VERSION_INDEX == 1:
+                            git_hash = ModuleGitHash(abs_path)
+                            line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash)
+                        print("Updating:\n" + line)
+                else:
+                    print(f"Warning: Could not resolve relative path {rel_path}. Override line not updated.\n")
 
-                    if VERSION_INDEX == 0:
-                        line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"))
-                    elif VERSION_INDEX == 1:
-                        git_hash = ModuleGitHash(abs_path)
-                        line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash)
-                    print("Updating:\n" + line)
             RegenInfOutData += line
 
         with open (Paths.RegenPath, "w") as fd:
             fd.write(RegenInfOutData)
 
     else:
+        dummy_list = []
+        pathtool = Edk2Path(Paths.WorkSpace, dummy_list)
+
         # Generate and print the override for pasting into the file.
         # Use absolute module path to find package path
         pkg_path = pathtool.GetContainingPackage(Paths.TargetPath)
