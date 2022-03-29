@@ -12,7 +12,10 @@
     },
     ## options defined .pytool/Plugin/LicenseCheck
     "LicenseCheck": {
-        "IgnoreFiles": []
+        "IgnoreFiles": [
+            "Universal/Variable/RuntimeDxe/RuntimeDxeUnitTest/BlackBoxTest",    # MU_CHANGE
+            "Universal/Variable/RuntimeDxe/RuntimeDxeUnitTest/SctInclude",      # MU_CHANGE
+        ]
     },
     "EccCheck": {
         ## Exception sample looks like below:
@@ -28,7 +31,9 @@
         "IgnoreFiles": [
             "Library/LzmaCustomDecompressLib",
             "Library/BrotliCustomDecompressLib",
-            "Universal/RegularExpressionDxe"
+            "Universal/RegularExpressionDxe",
+            "Universal/Variable/RuntimeDxe/RuntimeDxeUnitTest/BlackBoxTest",    # MU_CHANGE
+            "Universal/Variable/RuntimeDxe/RuntimeDxeUnitTest/SctInclude",      # MU_CHANGE
         ]
     },
     ## options defined .pytool/Plugin/CompilerPlugin
