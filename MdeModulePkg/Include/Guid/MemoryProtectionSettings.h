@@ -58,8 +58,8 @@ typedef union {
 typedef union {
   UINT8    Data;
   struct {
-    UINT8    FromUnknown                 : 1;
-    UINT8    FromFv                      : 1;
+    UINT8    ProtectImageFromUnknown     : 1;
+    UINT8    ProtectImageFromFv          : 1;
     UINT8    RaiseErrorIfProtectionFails : 1;
     UINT8    BlockImagesWithoutNxFlag    : 1;
   } Fields;
@@ -120,14 +120,14 @@ typedef struct {
 
   // Set image protection policy.
   //
-  //  .FromUnknown                  - If set, images from unknown devices will be protected by DxeCore
-  //                                  if it is aligned.The code section becomes read-only, and the data
+  //  .ProtectImageFromUnknown      : If set, images from unknown devices will be protected by DxeCore
+  //                                  if they are aligned. The code section becomes read-only, and the data
   //                                  section becomes non-executable.
-  //  .FromFv                       - If set, images from firmware volumes will be protected by DxeCore
-  //                                  if it is aligned.The code section becomes read-only, and the data
+  //  .ProtectImageFromFv           : If set, images from firmware volumes will be protected by DxeCore
+  //                                  if they are aligned. The code section becomes read-only, and the data
   //                                  section becomes non-executable.
-  //  .RaiseErrorIfProtectionFails  - If set, ProtectUefiImageMu() will return an error if protection fails.
-  //  .BlockImagesWithoutNxFlag     - If set, images which don't utilize the NX_COMPAT PE flag will not be loaded.
+  //  .RaiseErrorIfProtectionFails  : If set, ProtectUefiImageMu() will return an error if protection fails.
+  //  .BlockImagesWithoutNxFlag     : If set, images which don't utilize the NX_COMPAT PE flag will not be loaded.
   //
   // Note: If a bit is cleared, an image data section could be still non-executable if
   // DxeNxProtectionPolicy is enabled for EfiLoaderData, EfiBootServicesData
@@ -200,8 +200,8 @@ extern GUID  gMemoryProtectionSettingsGuid;
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
-              .Fields.FromUnknown                  = 0,         \
-              .Fields.FromFv                       = 1,         \
+              .Fields.ProtectImageFromUnknown      = 0,         \
+              .Fields.ProtectImageFromFv           = 1,         \
               .Fields.RaiseErrorIfProtectionFails  = 1,         \
               .Fields.BlockImagesWithoutNxFlag     = 1          \
             },                                                  \
@@ -288,8 +288,8 @@ extern GUID  gMemoryProtectionSettingsGuid;
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
-              .Fields.FromUnknown                  = 0,         \
-              .Fields.FromFv                       = 1,         \
+              .Fields.ProtectImageFromUnknown      = 0,         \
+              .Fields.ProtectImageFromFv           = 1,         \
               .Fields.RaiseErrorIfProtectionFails  = 0,         \
               .Fields.BlockImagesWithoutNxFlag     = 0          \
             },                                                  \
@@ -375,8 +375,8 @@ extern GUID  gMemoryProtectionSettingsGuid;
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
-              .Fields.FromUnknown                  = 0,         \
-              .Fields.FromFv                       = 1,         \
+              .Fields.ProtectImageFromUnknown      = 0,         \
+              .Fields.ProtectImageFromFv           = 1,         \
               .Fields.RaiseErrorIfProtectionFails  = 0,         \
               .Fields.BlockImagesWithoutNxFlag     = 0          \
             },                                                  \
@@ -461,8 +461,8 @@ extern GUID  gMemoryProtectionSettingsGuid;
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
-              .Fields.FromUnknown                  = 0,         \
-              .Fields.FromFv                       = 0,         \
+              .Fields.ProtectImageFromUnknown      = 0,         \
+              .Fields.ProtectImageFromFv           = 0,         \
               .Fields.RaiseErrorIfProtectionFails  = 0,         \
               .Fields.BlockImagesWithoutNxFlag     = 0          \
             },                                                  \

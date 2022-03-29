@@ -166,8 +166,8 @@ GetProtectionPolicyFromImageType (
   // } else {
   //   return PROTECT_IF_ALIGNED_ELSE_ALLOW;
   // }
-  if (((ImageType == IMAGE_UNKNOWN) && gMPS.ImageProtectionPolicy.Fields.FromUnknown) ||
-      ((ImageType == IMAGE_FROM_FV) && gMPS.ImageProtectionPolicy.Fields.FromFv))
+  if (((ImageType == IMAGE_UNKNOWN) && gMPS.ImageProtectionPolicy.Fields.ProtectImageFromUnknown) ||
+      ((ImageType == IMAGE_FROM_FV) && gMPS.ImageProtectionPolicy.Fields.ProtectImageFromFv))
   {
     if (gMPS.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails) {
       return PROTECT_ELSE_RAISE_ERROR;
