@@ -38,7 +38,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/SimpleFileSystem.h>
-#include <Protocol/HeapGuardDebug.h> // MS_CHANGE
+#include <Protocol/HeapGuardDebug.h>  // MU_CHANGE
+#include <Protocol/MemoryAttribute.h> // MU_CHANGE
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
@@ -65,6 +66,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // UINT32   mImageProtectionPolicy; // MU_CHANGE
 
 extern LIST_ENTRY  mGcdMemorySpaceMap;
+
+extern BOOLEAN                 mSetNxOnCodeTypeMemoryAllocations; // MU_CHANGE
+EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttribute = NULL;          // MU_CHANGE
 
 STATIC LIST_ENTRY  mProtectedImageRecordList;
 // MS_CHANGE - START
@@ -162,8 +166,8 @@ GetProtectionPolicyFromImageType (
   // } else {
   //   return PROTECT_IF_ALIGNED_ELSE_ALLOW;
   // }
-  if (((ImageType == IMAGE_UNKNOWN) && gMPS.ImageProtectionPolicy.Fields.FromUnknown) ||
-      ((ImageType == IMAGE_FROM_FV) && gMPS.ImageProtectionPolicy.Fields.FromFv))
+  if (((ImageType == IMAGE_UNKNOWN) && gMPS.ImageProtectionPolicy.Fields.ProtectImageFromUnknown) ||
+      ((ImageType == IMAGE_FROM_FV) && gMPS.ImageProtectionPolicy.Fields.ProtectImageFromFv))
   {
     if (gMPS.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails) {
       return PROTECT_ELSE_RAISE_ERROR;
@@ -411,6 +415,8 @@ FreeImageRecord (
   @retval EFI_INVALID_PARAMETER   This function was called in SMM or the image
                                   type has an undefined protection policy
   @retval EFI_OUT_OF_RESOURCES    Failure to Allocate()
+  @retval EFI_UNSUPPORTED         Image type will not be protected in accordance with memory
+                                  protection policy settings
   @retval EFI_LOAD_ERROR          The image is unaligned or the code segment count is zero
   @retval EFI_SUCCESS             The image was successfully protected or the protection policy
                                   is PROTECT_IF_ALIGNED_ELSE_ALLOW
@@ -446,6 +452,7 @@ ProtectUefiImageMu (
   ProtectionPolicy = GetUefiImageProtectionPolicy (LoadedImage, LoadedImageDevicePath);
   switch (ProtectionPolicy) {
     case DO_NOT_PROTECT:
+      Status = EFI_UNSUPPORTED;
       goto Finish;
     case PROTECT_IF_ALIGNED_ELSE_ALLOW:
     case PROTECT_ELSE_RAISE_ERROR:
@@ -474,7 +481,7 @@ ProtectUefiImageMu (
 
   PdbPointer = PeCoffLoaderGetPdbPointer ((VOID *)(UINTN)ImageAddress);
   if (PdbPointer != NULL) {
-    DEBUG ((DEBUG_VERBOSE, "  Image: %a\n", PdbPointer));
+    DEBUG ((DEBUG_INFO, "  Image: %a\n", PdbPointer));
   }
 
   //
@@ -489,10 +496,7 @@ ProtectUefiImageMu (
   Hdr.Pe32 = (EFI_IMAGE_NT_HEADERS32 *)((UINT8 *)(UINTN)ImageAddress + PeCoffHeaderOffset);
   if (Hdr.Pe32->Signature != EFI_IMAGE_NT_SIGNATURE) {
     DEBUG ((DEBUG_VERBOSE, "Hdr.Pe32->Signature invalid - 0x%x\n", Hdr.Pe32->Signature));
-    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
-      Status = EFI_INVALID_PARAMETER;
-    }
-
+    Status = EFI_INVALID_PARAMETER;
     // It might be image in SMM.
     goto Finish;
   }
@@ -515,10 +519,7 @@ ProtectUefiImageMu (
       SectionAlignment
       ));
     PdbPointer = PeCoffLoaderGetPdbPointer ((VOID *)(UINTN)ImageAddress);
-    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
-      Status = EFI_LOAD_ERROR;
-    }
-
+    Status     = EFI_LOAD_ERROR;
     goto Finish;
   }
 
@@ -570,10 +571,7 @@ ProtectUefiImageMu (
       //
       ImageRecordCodeSection = AllocatePool (sizeof (*ImageRecordCodeSection));
       if (ImageRecordCodeSection == NULL) {
-        if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
-          Status = EFI_OUT_OF_RESOURCES;
-        }
-
+        Status = EFI_OUT_OF_RESOURCES;
         goto Finish;
       }
 
@@ -600,10 +598,7 @@ ProtectUefiImageMu (
     //
     DEBUG ((DEBUG_WARN, "%a - CodeSegmentCount is 0!\n", __FUNCTION__));
     PdbPointer = PeCoffLoaderGetPdbPointer ((VOID *)(UINTN)ImageAddress);
-    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
-      Status = EFI_LOAD_ERROR;
-    }
-
+    Status     = EFI_LOAD_ERROR;
     goto Finish;
   }
 
@@ -616,10 +611,7 @@ ProtectUefiImageMu (
   //
   if (!IsImageRecordCodeSectionValid (ImageRecord)) {
     DEBUG ((DEBUG_ERROR, "IsImageRecordCodeSectionValid - FAIL\n"));
-    if (ProtectionPolicy == PROTECT_ELSE_RAISE_ERROR) {
-      Status = EFI_LOAD_ERROR;
-    }
-
+    Status = EFI_LOAD_ERROR;
     goto Finish;
   }
 
@@ -640,6 +632,13 @@ ProtectUefiImageMu (
   InsertTailList (&mProtectedImageRecordList, &ImageRecord->Link);
 
 Finish:
+  if (EFI_ERROR (Status)) {
+    ClearReadOnlyAndNxFromImage (LoadedImage);
+    if (ProtectionPolicy != PROTECT_ELSE_RAISE_ERROR) {
+      Status = EFI_SUCCESS;
+    }
+  }
+
   return Status;
 }
 
@@ -1633,6 +1632,89 @@ IsInSmm (
   return InSmm;
 }
 
+// MU_CHANGE START
+
+/**
+  Sets the attributes of a loaded image to be read-only.
+
+  @param  Image                   Pointer to the loaded image private data
+
+  @return EFI_SUCCESS             Read-only set on loaded Image
+  @return EFI_INVALID_PARAMETER   Image or Image->ImageContext.ImageAddress was NULL
+  @return EFI_NOT_READY           gCpu is not available yet
+  @return other                   Return value of mMemoryAttribute->GetMemoryAttributes(),
+                                  mMemoryAttribute->SetMemoryAttributes, or
+                                  gBS->LocateProtocol()
+
+**/
+EFI_STATUS
+SetImageToReadOnly (
+  IN LOADED_IMAGE_PRIVATE_DATA  *Image
+  )
+{
+  DEBUG ((DEBUG_INFO, "%a - Enter...\n", __FUNCTION__));
+
+  if ((Image == NULL) || ((VOID *)((UINTN)Image->ImageContext.ImageAddress) == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // If the CPU arch protocol is not installed yet, we cannot manage memory
+  // permission attributes.
+  //
+  if (gCpu == NULL) {
+    return EFI_NOT_READY;
+  }
+
+  return gCpu->SetMemoryAttributes (gCpu, (EFI_PHYSICAL_ADDRESS)((UINTN)Image->ImageContext.ImageAddress), ALIGN_VALUE (Image->ImageContext.ImageSize, EFI_PAGE_SIZE), (EFI_MEMORY_RO | EFI_MEMORY_XP));
+}
+
+/**
+  Clears the read-only and no-execute attributes of a loaded image.
+
+  @param  Image                   Pointer to the loaded image private protocol
+
+  @return EFI_SUCCESS             Read-only and NX attributes unset on image
+  @return EFI_INVALID_PARAMETER   Image or Image->ImageBase was NULL
+  @return EFI_NOT_READY           gCpu is not available yet
+  @return other                   Return value of mMemoryAttribute->ClearMemoryAttributes()
+                                  or gBS->LocateProtocol()
+
+**/
+EFI_STATUS
+ClearReadOnlyAndNxFromImage (
+  IN EFI_LOADED_IMAGE_PROTOCOL  *Image
+  )
+{
+  UINT64                           Attributes = 0;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  Desc;
+  EFI_STATUS                       Status;
+
+  DEBUG ((DEBUG_INFO, "%a - Enter...\n", __FUNCTION__));
+
+  if ((Image == NULL) || ((VOID *)Image->ImageBase == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // If the CPU arch protocol is not installed yet, we cannot manage memory
+  // permission attributes.
+  //
+  if (gCpu == NULL) {
+    return EFI_NOT_READY;
+  }
+
+  Status = CoreGetMemorySpaceDescriptor ((EFI_PHYSICAL_ADDRESS)((UINTN)Image->ImageBase), &Desc);
+
+  if (!EFI_ERROR (Status)) {
+    Attributes = ((EFI_MEMORY_ACCESS_MASK)&Desc.Attributes) & ~(EFI_MEMORY_RO | EFI_MEMORY_XP);
+  }
+
+  return gCpu->SetMemoryAttributes (gCpu, (EFI_PHYSICAL_ADDRESS)((UINTN)Image->ImageBase), ALIGN_VALUE (Image->ImageSize, EFI_PAGE_SIZE), Attributes);
+}
+
+// MU_CHANGE END
+
 /**
   Manage memory permission attributes on a memory range, according to the
   configured DXE memory protection policy.
@@ -1659,7 +1741,7 @@ ApplyMemoryProtectionPolicy (
   IN  UINT64                Length
   )
 {
-  UINT64  OldAttributes;
+  // UINT64  OldAttributes;
   UINT64  NewAttributes;
 
   //
@@ -1716,18 +1798,34 @@ ApplyMemoryProtectionPolicy (
   // - the policy is different between the old and the new type, or
   // - this is a newly added region (OldType == EfiMaxMemoryType)
   //
-  NewAttributes = GetPermissionAttributeForMemoryType (NewType);
-
-  if (OldType != EfiMaxMemoryType) {
-    OldAttributes = GetPermissionAttributeForMemoryType (OldType);
-    if (OldAttributes == NewAttributes) {
-      // policy is the same between OldType and NewType
-      return EFI_SUCCESS;
+  // MU_CHANGE START Handle code allocations according to NX DLL flag. If the flag is set, the image
+  // should update the attributes of code type allocates when it's ready to execute them.
+  if ((NewType == EfiLoaderCode) || (NewType == EfiBootServicesCode) || (NewType == EfiRuntimeServicesCode)) {
+    if (mSetNxOnCodeTypeMemoryAllocations) {
+      NewAttributes = EFI_MEMORY_XP;
+    } else {
+      NewAttributes = 0;
     }
-  } else if (NewAttributes == 0) {
-    // newly added region of a type that does not require protection
-    return EFI_SUCCESS;
+  } else {
+    NewAttributes = GetPermissionAttributeForMemoryType (NewType);
   }
+
+  // MU_CHANGE END
+
+  // MU_CHANGE START: TODO: There is a potential bug where attributes are not properly set
+  //                  for all pages during a call to AllocatePages(). This may be due to a bug somewhere
+  //                  during the free page process.
+  // if (OldType != EfiMaxMemoryType) {
+  //   OldAttributes = GetPermissionAttributeForMemoryType (OldType);
+  //   if (OldAttributes == NewAttributes) {
+  //     // policy is the same between OldType and NewType
+  //     return EFI_SUCCESS;
+  //   }
+  // } else if (NewAttributes == 0) {
+  //   // newly added region of a type that does not require protection
+  //   return EFI_SUCCESS;
+  // }
+  // MU_CHANGE END
 
   return gCpu->SetMemoryAttributes (gCpu, Memory, Length, NewAttributes);
 }

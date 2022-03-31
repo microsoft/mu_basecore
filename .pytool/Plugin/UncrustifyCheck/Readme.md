@@ -42,7 +42,7 @@ The plugin can be configured with a few optional configuration options.
       "AuditOnly": False,           # Don't fail the build if there are errors.  Just log them.
       "ConfigFilePath": "",         # Custom path to an Uncrustify config file.
       "IgnoreStandardPaths": [],    # Standard Plugin defined paths that should be ignored.
-      "OutputFileDiffs": False,     # Output chunks of formatting diffs in the test case log.
+      "OutputFileDiffs": True,      # Output chunks of formatting diffs in the test case log.
                                     # This can significantly slow down the plugin on very large packages.
       "SkipGitExclusions": False    # Don't exclude git ignored files and files in git submodules.
   }
@@ -82,7 +82,7 @@ to be ignored.
 
 ### `OutputFileDiffs`
 
-`Boolean` - Default is `False`.
+`Boolean` - Default is `True`.
 
 If `True`, output diffs of formatting changes into the test case log. This is helpful to exactly understand what changes
 need to be made to the source code in order to fix a coding standard compliance issue.
@@ -96,6 +96,19 @@ plugin execution.
 
 By default, files in paths matched in a .gitignore file or a recognized git submodule are excluded. If this option
 is `True`, the plugin will not attempt to recognize these files and exclude them.
+
+### `UNCRUSTIFY_IN_PLACE=TRUE`
+
+MU_CHANGE - Feature added.
+
+Mu adds support for passing this parameter on the command line when running `stuart_ci_build`. If passed, it will
+cause any changes to be made in-place to the files in the workspace, enabling the caller to easily format any failing
+code before submitting a PR.
+
+While this can also be set as an environment variable, it is recommended to only use it
+as a CLI paramter.
+
+_NOTE:_ This is _not_ an option in the config `yaml`. It is an option passed directly into the tool.
 
 ## High-Level Plugin Operation
 

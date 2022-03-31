@@ -94,20 +94,17 @@ the memory protection settings global.\n",
     gMPS.HeapGuardPolicy.Fields.UefiFreedMemoryGuard = 0;
   }
 
-  if (!gMPS.ImageProtectionPolicy.Data &&
-      (gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderData       ||
-       gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesData ||
-       gMPS.DxeNxProtectionPolicy.Fields.EfiRuntimeServicesData))
+  if (!(gMPS.ImageProtectionPolicy.Fields.ProtectImageFromFv || gMPS.ImageProtectionPolicy.Fields.ProtectImageFromUnknown) &&
+      gMPS.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails)
   {
     DEBUG ((
       DEBUG_WARN,
-      "%a: - Image Protection is inactive, but one or more of \
-DxeNxProtectionPolicy.EfiLoaderData \
-DxeNxProtectionPolicy.EfiBootServicesData \
-DxeNxProtectionPolicy.EfiRuntimeServicesData are active. \
-Image data sections could still be non-executable.\n",
+      "%a: - ImageProtectionPolicy.ProtectImageFromFv or ImageProtectionPolicy.ProtectImageFromUnknown are \
+inactive but RaiseErrorIfProtectionFails is active. RaiseErrorIfProtectionFails would have \
+no effect - toggling off.\n",
       __FUNCTION__
       ));
+    gMPS.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails = 0;
   }
 
   if (gMPS.HeapGuardPoolType.Data &&

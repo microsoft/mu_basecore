@@ -13,6 +13,6 @@ parameters:
 
 steps:
 
-- script: npm install -g markdownlint-cli@0.31.0
+- script: npm install -g markdownlint-cli@0.31.1
   displayName: "Install markdown linter"
   condition: and(gt(variables.pkg_count, 0), succeeded())

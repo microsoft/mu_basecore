@@ -909,6 +909,7 @@ RefreshGcdMemoryAttributes (
   }
 
   if (IsPagingAndPageAddressExtensionsEnabled ()) {
+    DEBUG ((DEBUG_INFO, "Syncing GCD...\n")); // MU_CHANGE
     RefreshGcdMemoryAttributesFromPaging ();
   }
 
@@ -1255,6 +1256,8 @@ InitializeCpu (
   ASSERT_EFI_ERROR (Status);
 
   InitializeMpSupport ();
+
+  InstallEfiMemoryAttributeProtocol (); // TCBZ3519 MU_CHANGE
 
   return Status;
 }

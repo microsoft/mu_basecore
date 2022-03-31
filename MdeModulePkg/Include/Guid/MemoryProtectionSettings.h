@@ -15,7 +15,6 @@ typedef union {
   struct {
     UINT8    UefiNullDetection  : 1;
     UINT8    SmmNullDetection   : 1;
-    UINT8    NonstopMode        : 1;
     UINT8    DisableEndOfDxe    : 1;
     UINT8    DisableReadyToBoot : 1;
   } Fields;
@@ -29,7 +28,6 @@ typedef union {
     UINT8    SmmPageGuard         : 1;
     UINT8    SmmPoolGuard         : 1;
     UINT8    UefiFreedMemoryGuard : 1;
-    UINT8    NonstopMode          : 1;
     UINT8    Direction            : 1;
   } Fields;
 } HEAP_GUARD_POLICY;
@@ -60,15 +58,16 @@ typedef union {
 typedef union {
   UINT8    Data;
   struct {
-    UINT8    FromUnknown                 : 1;
-    UINT8    FromFv                      : 1;
+    UINT8    ProtectImageFromUnknown     : 1;
+    UINT8    ProtectImageFromFv          : 1;
     UINT8    RaiseErrorIfProtectionFails : 1;
+    UINT8    BlockImagesWithoutNxFlag    : 1;
   } Fields;
 } IMAGE_PROTECTION_POLICY;
 
 typedef UINT8 MEMORY_PROTECTION_SETTINGS_VERSION;
 
-#define MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  2// Current iteration of MEMORY_PROTECTION_SETTINGS
+#define MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  3// Current iteration of MEMORY_PROTECTION_SETTINGS
 
 //
 // Memory Protection Settings struct
@@ -91,7 +90,6 @@ typedef struct {
   // page zero as not present.
   //   .UefiNullDetection   : Enable NULL pointer detection for UEFI.
   //   .SmmNullDetection    : Enable NULL pointer detection for SMM.
-  //   .NonstopMode         : Enable non-stop mode.
   //   .DisableEndOfDxe     : Disable NULL pointer detection just after EndOfDxe.
   //                          This is a workaround for those unsolvable NULL access issues in
   //                          OptionROM, boot loader, etc. It can also help to avoid unnecessary
@@ -115,25 +113,25 @@ typedef struct {
   //  .SmmPageGuard          : Enable SMM page guard.
   //  .SmmPoolGuard          : Enable SMM pool guard.
   //  .UefiFreedMemoryGuard  : Enable UEFI freed-memory guard (Use-After-Free memory detection).
-  //  .NonstopMode           : Enable non-stop mode.
   //  .Direction             : The direction of Guard Page for Pool Guard.
   //                           0 - The returned pool is near the tail guard page.
   //                           1 - The returned pool is near the head guard page.
   HEAP_GUARD_POLICY    HeapGuardPolicy;
 
-  // Set image protection policy. The policy is bitwise.
+  // Set image protection policy.
   //
-  // If a bit is set, the image will be protected by DxeCore if it is aligned.
-  // The code section becomes read-only, and the data section becomes non-executable.
-  // If a bit is clear, nothing will be done to image code/data sections.
-  //  .FromUnknown                  - Image from unknown device.
-  //  .FromFv                       - Image from firmware volume.
-  //  .RaiseErrorIfProtectionFails  - ProtectUefiImageMu() will return an error if protection
-  //                                  fails.
+  //  .ProtectImageFromUnknown      : If set, images from unknown devices will be protected by DxeCore
+  //                                  if they are aligned. The code section becomes read-only, and the data
+  //                                  section becomes non-executable.
+  //  .ProtectImageFromFv           : If set, images from firmware volumes will be protected by DxeCore
+  //                                  if they are aligned. The code section becomes read-only, and the data
+  //                                  section becomes non-executable.
+  //  .RaiseErrorIfProtectionFails  : If set, ProtectUefiImageMu() will return an error if protection fails.
+  //  .BlockImagesWithoutNxFlag     : If set, images which don't utilize the NX_COMPAT PE flag will not be loaded.
   //
-  // Note: If a bit is cleared, the data section could be still non-executable if
+  // Note: If a bit is cleared, an image data section could be still non-executable if
   // DxeNxProtectionPolicy is enabled for EfiLoaderData, EfiBootServicesData
-  // and/or EfiRuntimeServicesData.
+  // or EfiRuntimeServicesData.
   IMAGE_PROTECTION_POLICY    ImageProtectionPolicy;
 
   // Indicates which type allocation need guard page.
@@ -190,7 +188,6 @@ extern GUID  gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.UefiNullDetection            = 1,         \
               .Fields.SmmNullDetection             = 1,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.DisableEndOfDxe              = 0,         \
               .Fields.DisableReadyToBoot           = 0          \
             },                                                  \
@@ -200,13 +197,13 @@ extern GUID  gMemoryProtectionSettingsGuid;
               .Fields.SmmPageGuard                 = 1,         \
               .Fields.SmmPoolGuard                 = 1,         \
               .Fields.UefiFreedMemoryGuard         = 0,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
-              .Fields.FromUnknown                  = 0,         \
-              .Fields.FromFv                       = 1,         \
-              .Fields.RaiseErrorIfProtectionFails  = 1          \
+              .Fields.ProtectImageFromUnknown      = 0,         \
+              .Fields.ProtectImageFromFv           = 1,         \
+              .Fields.RaiseErrorIfProtectionFails  = 1,         \
+              .Fields.BlockImagesWithoutNxFlag     = 1          \
             },                                                  \
             {                                                   \
               .Fields.EfiReservedMemoryType        = 0,         \
@@ -279,7 +276,6 @@ extern GUID  gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.UefiNullDetection            = 1,         \
               .Fields.SmmNullDetection             = 1,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.DisableEndOfDxe              = 0,         \
               .Fields.DisableReadyToBoot           = 0          \
             },                                                  \
@@ -289,13 +285,13 @@ extern GUID  gMemoryProtectionSettingsGuid;
               .Fields.SmmPageGuard                 = 1,         \
               .Fields.SmmPoolGuard                 = 0,         \
               .Fields.UefiFreedMemoryGuard         = 0,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
-              .Fields.FromUnknown                  = 0,         \
-              .Fields.FromFv                       = 1,         \
-              .Fields.RaiseErrorIfProtectionFails  = 0          \
+              .Fields.ProtectImageFromUnknown      = 0,         \
+              .Fields.ProtectImageFromFv           = 1,         \
+              .Fields.RaiseErrorIfProtectionFails  = 0,         \
+              .Fields.BlockImagesWithoutNxFlag     = 0          \
             },                                                  \
             {                                                   \
               .Fields.EfiReservedMemoryType        = 0,         \
@@ -367,7 +363,6 @@ extern GUID  gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.UefiNullDetection            = 1,         \
               .Fields.SmmNullDetection             = 1,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.DisableEndOfDxe              = 0,         \
               .Fields.DisableReadyToBoot           = 0          \
             },                                                  \
@@ -377,13 +372,13 @@ extern GUID  gMemoryProtectionSettingsGuid;
               .Fields.SmmPageGuard                 = 0,         \
               .Fields.SmmPoolGuard                 = 0,         \
               .Fields.UefiFreedMemoryGuard         = 0,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
-              .Fields.FromUnknown                  = 0,         \
-              .Fields.FromFv                       = 1,         \
-              .Fields.RaiseErrorIfProtectionFails  = 0          \
+              .Fields.ProtectImageFromUnknown      = 0,         \
+              .Fields.ProtectImageFromFv           = 1,         \
+              .Fields.RaiseErrorIfProtectionFails  = 0,         \
+              .Fields.BlockImagesWithoutNxFlag     = 0          \
             },                                                  \
             {                                                   \
               .Fields.EfiReservedMemoryType        = 0,         \
@@ -454,7 +449,6 @@ extern GUID  gMemoryProtectionSettingsGuid;
             {                                                   \
               .Fields.UefiNullDetection            = 0,         \
               .Fields.SmmNullDetection             = 0,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.DisableEndOfDxe              = 0,         \
               .Fields.DisableReadyToBoot           = 0          \
             },                                                  \
@@ -464,13 +458,13 @@ extern GUID  gMemoryProtectionSettingsGuid;
               .Fields.SmmPageGuard                 = 0,         \
               .Fields.SmmPoolGuard                 = 0,         \
               .Fields.UefiFreedMemoryGuard         = 0,         \
-              .Fields.NonstopMode                  = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
-              .Fields.FromUnknown                  = 0,         \
-              .Fields.FromFv                       = 0,         \
-              .Fields.RaiseErrorIfProtectionFails  = 0          \
+              .Fields.ProtectImageFromUnknown      = 0,         \
+              .Fields.ProtectImageFromFv           = 0,         \
+              .Fields.RaiseErrorIfProtectionFails  = 0,         \
+              .Fields.BlockImagesWithoutNxFlag     = 0          \
             },                                                  \
             {                                                   \
               .Fields.EfiReservedMemoryType        = 0,         \

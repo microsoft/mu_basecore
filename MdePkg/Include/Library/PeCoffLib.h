@@ -181,6 +181,13 @@ typedef struct {
   /// Initialization Core Interface Specification.
   ///
   BOOLEAN                     IsTeImage;
+  // MU_CHANGE START
+  ///
+  /// Set by PeCoffLoaderGetImageInfo() to TRUE if the image has the IMAGE_DLLCHARACTERISTICS_NX_COMPAT
+  /// flag set.
+  ///
+  BOOLEAN                     SupportsNx;
+  // MU_CHANGE END
   ///
   /// Set by PeCoffLoaderLoadImage() to the HII resource offset
   /// if the image contains a custom PE/COFF resource with the type 'HII'.

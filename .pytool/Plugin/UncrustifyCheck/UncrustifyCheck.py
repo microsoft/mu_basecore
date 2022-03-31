@@ -151,6 +151,7 @@ class UncrustifyCheck(ICiBuildPlugin):
         """
         try:
             # Initialize plugin and check pre-requisites.
+            self._env = environment_config  # MU_CHANGE - Add "UNCRUSTIFY_IN_PLACE" option.
             self._initialize_environment_info(
                 package_rel_path, edk2_path, package_config, tc)
             self._initialize_configuration()
@@ -267,10 +268,20 @@ class UncrustifyCheck(ICiBuildPlugin):
         """
         Executes Uncrustify with the initialized configuration.
         """
+        # MU_CHANGE [BEGIN] - Add "UNCRUSTIFY_IN_PLACE" option.
         output = StringIO()
+        params = ['-c', self._app_config_file]
+        params += ['-F', self._app_input_file_path]
+        params += ['--if-changed']
+        if self._env.GetValue("UNCRUSTIFY_IN_PLACE", "FALSE") == "TRUE":
+            params += ['--replace', '--no-backup']
+        else:
+            params += ['--suffix', UncrustifyCheck.FORMATTED_FILE_EXTENSION]
         self._app_exit_code = RunCmd(
             self._app_path,
-            f"-c {self._app_config_file} -F {self._app_input_file_path} --if-changed --suffix {UncrustifyCheck.FORMATTED_FILE_EXTENSION}", outstream=output)
+            " ".join(params),
+            outstream=output)
+        # MU_CHANGE [END] - Add "UNCRUSTIFY_IN_PLACE" option.
         self._app_output = output.getvalue().strip().splitlines()
 
     def _get_git_ignored_paths(self) -> List[str]:
@@ -501,13 +512,13 @@ class UncrustifyCheck(ICiBuildPlugin):
         Initializes options that influence test case output.
         """
         self._audit_only_mode = False
-        self._output_file_diffs = False
+        self._output_file_diffs = True
 
         if "AuditOnly" in self._package_config and self._package_config["AuditOnly"]:
             self._audit_only_mode = True
 
-        if "OutputFileDiffs" in self._package_config and self._package_config["OutputFileDiffs"]:
-            self._output_file_diffs = True
+        if "OutputFileDiffs" in self._package_config and not self._package_config["OutputFileDiffs"]:
+            self._output_file_diffs = False
 
     def _log_uncrustify_app_info(self) -> None:
         """

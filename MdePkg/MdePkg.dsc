@@ -149,6 +149,8 @@
 
 [Components.IA32, Components.X64, Components.AARCH64]
   MdePkg/Library/BaseRngLib/BaseRngLib.inf
+  #  TCBZ3519 MU_CHANGE: UEFI shell test for MemoryAttributeProtocol
+  MdePkg/Test/ShellTest/MemoryAttributeProtocolFuncTestApp/MemoryAttributeProtocolFuncTestApp.inf
 
 [Components.IA32, Components.X64]
   MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
@@ -187,9 +189,8 @@
 
 
 # MS_CHANGE Begin
-!if $(TOOLCHAIN) == VS2017 or $(TOOLCHAIN) == VS2019
+!if $(TOOLCHAIN) == VS2017 or $(TOOLCHAIN) == VS2019 or $(TOOLCHAIN) == VS2022
 [Components.IA32]
-  # For VS2017 support link the VsIntrinsicLib into all 32 bit modules
   MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf
 !endif
 # MS_CHANGE End

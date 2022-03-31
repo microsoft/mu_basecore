@@ -151,7 +151,6 @@
   Ia32/CpuIdEx.c | MSFT
   Ia32/CpuId.c | MSFT
   Ia32/CpuBreakpoint.c | MSFT
-  Ia32/CpuBreakAssert.c | MSFT ## MU_CHANGE
   Ia32/ARShiftU64.c | MSFT
   Ia32/EnableCache.c | MSFT
   Ia32/DisableCache.c | MSFT
@@ -211,6 +210,7 @@
   X86RdRand.c
   X86PatchInstruction.c
   X86SpeculationBarrier.c
+  CpuBreakAssert.nasm
 
 [Sources.X64]
   X64/Thunk16.nasm
@@ -223,9 +223,9 @@
   X64/DisableCache.nasm
   X64/WriteTr.nasm
   X64/Lfence.nasm
+  CpuBreakAssert.nasm
 
   X64/CpuBreakpoint.c | MSFT
-  X64/CpuBreakAssert.c | MSFT ## MS_CHANGE
   X64/WriteMsr64.c | MSFT
   X64/ReadMsr64.c | MSFT
   X64/CpuPause.nasm| MSFT
@@ -327,6 +327,7 @@
   X64/XSetBv.nasm
   X64/VmgExit.nasm
   ChkStkGcc.c  | GCC
+
 
 [Sources.EBC]
   Ebc/CpuBreakpoint.c

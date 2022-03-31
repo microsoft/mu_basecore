@@ -64,6 +64,7 @@
 [Protocols]
   gEfiCpuArchProtocolGuid                       ## PRODUCES
   gEfiMpServiceProtocolGuid                     ## PRODUCES
+  gEfiMemoryAttributeProtocolGuid               ## TCBZ3519 MU_CHANGE PRODUCES
   gEfiSmmBase2ProtocolGuid                      ## SOMETIMES_CONSUMES
 
 [Guids]
