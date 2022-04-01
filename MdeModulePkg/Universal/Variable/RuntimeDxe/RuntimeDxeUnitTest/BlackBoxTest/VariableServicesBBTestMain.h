@@ -5,12 +5,12 @@
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at 
+  which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
- 
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
- 
+
 **/
 /*++
 
@@ -28,19 +28,19 @@ Abstract:
 //
 // Includes
 //
-#include <SctShim.h>
-#include "Guid.h"
+  #include <SctShim.h>
+  #include "Guid.h"
 
 //
 // Definitions
 //
 
-#define VARIABLE_SERVICES_BB_TEST_REVISION    0x00010000
+#define VARIABLE_SERVICES_BB_TEST_REVISION  0x00010000
 
 #define VARIABLE_SERVICES_BB_TEST_GUID        \
   { 0xD6844631, 0x0A1E, 0x42d1, {0xA5, 0x94, 0x60, 0x35, 0x48, 0x47, 0xB6, 0x76 }}
 
-#define MAX_BUFFER_SIZE                       256
+#define MAX_BUFFER_SIZE  256
 
 #define TEST_VENDOR1_GUID                         \
   { 0xF6FAB04F, 0xACAF, 0x4af3, { 0xB9, 0xFA, 0xDC, 0xF9, 0x7F, 0xB4, 0x42, 0x6F } }
@@ -69,7 +69,7 @@ Abstract:
 //
 // For QueryVariableInfo
 //
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 #define QUERY_VAR_CASE6_GUID1                         \
   { 0x5d1f058c, 0x08ae, 0x4f71, {0x9e, 0x81, 0xa6, 0x78, 0x30, 0x33, 0xa5, 0xed }}
 
@@ -85,24 +85,23 @@ Abstract:
 #define QUERYVAR_GUID2 \
   { 0xcc648ba7, 0x1be7, 0x4262, {0xa8, 0xcb, 0x47, 0x08, 0x51, 0x6d, 0x86, 0xe8 }}
 
-#if ((ALIGNMENT == 0) || (ALIGNMENT == 1))
-#define GET_PAD_SIZE(a) (0)
-#else
-#define GET_PAD_SIZE(a) (((~a) + 1) & (ALIGNMENT - 1))
-#endif
+    #if ((ALIGNMENT == 0) || (ALIGNMENT == 1))
+#define GET_PAD_SIZE(a)  (0)
+    #else
+#define GET_PAD_SIZE(a)  (((~a) + 1) & (ALIGNMENT - 1))
+    #endif
 
-#define MAX_DATA_SIZE 20
-#endif
+#define MAX_DATA_SIZE  20
+  #endif
 
-
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
 #define HARDWARE_ERROR_RECORD_FUNC_TEST_GUID \
   { 0xefaba332, 0x13e8, 0x4730, {0x97, 0xcb, 0x48, 0xce, 0x9f, 0x8, 0x26, 0xc5 }}
 
 #define HARDWARE_ERROR_RECORD_CONF_TEST_GUID \
   { 0xcf94f695, 0x7917, 0x4f78, {0xa0, 0xa8, 0xf0, 0xb5, 0x9, 0x9, 0x92, 0x97 }}
 
-#define EFI_VARIABLE_HARDWARE_ERROR_RECORD 0x00000008
+#define EFI_VARIABLE_HARDWARE_ERROR_RECORD  0x00000008
 
 #define EFI_HARDWARE_ERROR_VARIABLE \
   { 0x414E6BDD, 0xE47B, 0x47cc, {0xB2, 0x44, 0xBB, 0x61, 0x02, 0x0C, 0xF5, 0x16 }}
@@ -115,25 +114,25 @@ Abstract:
 #define EFI_AUTHVARIABLE_DER_CONF_TEST_GUID \
   { 0x28155531, 0x80c5, 0x4ad0, {0x84, 0x71, 0xa5, 0xe2, 0xae, 0xcf, 0x23, 0x6c }}
 
-#endif
+  #endif
 
 //
-// The Variable Name of Hardware Error Record Variables 
+// The Variable Name of Hardware Error Record Variables
 // defined in the UEFI Spec is HwErrRec####. For example,
 // HwErrRec0001, HwErrRec0002, HwErrRecF31A, etc.
 // The prefix length is 8, index length is 4.
 // Consider the tail of string, the name length is 13.
 //
-#define HW_ERR_REC_VARIABLE_NAME_LEN           13
-#define HW_ERR_REC_VARIABLE_NAME_PREFIX_LEN    8
-#define HW_ERR_REC_VARIABLE_NAME_INDEX_LEN     4
+#define HW_ERR_REC_VARIABLE_NAME_LEN         13
+#define HW_ERR_REC_VARIABLE_NAME_PREFIX_LEN  8
+#define HW_ERR_REC_VARIABLE_NAME_INDEX_LEN   4
 
 //
 // Global Variables
 //
 
-extern EFI_GUID gTestVendor1Guid;
-extern EFI_GUID gTestVendor2Guid;
+extern EFI_GUID  gTestVendor1Guid;
+extern EFI_GUID  gTestVendor2Guid;
 
 //
 // Prototypes
@@ -144,10 +143,10 @@ extern EFI_GUID gTestVendor2Guid;
 //
 EFI_STATUS
 GetVariableConfTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
 //
@@ -155,10 +154,10 @@ GetVariableConfTest (
 //
 EFI_STATUS
 GetNextVariableNameConfTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
 //
@@ -166,51 +165,51 @@ GetNextVariableNameConfTest (
 //
 EFI_STATUS
 SetVariableConfTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 //
 // TDS 3.4
 //
 EFI_STATUS
 QueryVariableInfoConfTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
 EFI_STATUS
 AuthVariableDERConfTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
 EFI_STATUS
 AuthVariableDERFuncTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
-#endif
+  #endif
 
 //
 // TDS 4.1
 //
 EFI_STATUS
 GetVariableFuncTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
 //
@@ -218,10 +217,10 @@ GetVariableFuncTest (
 //
 EFI_STATUS
 GetNextVariableNameFuncTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
 //
@@ -229,51 +228,51 @@ GetNextVariableNameFuncTest (
 //
 EFI_STATUS
 SetVariableFuncTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  #if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 //
 // TDS 4.4
 //
 EFI_STATUS
 QueryVariableInfoFuncTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
 EFI_STATUS
 HardwareErrorRecordFuncTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
-  
+
 EFI_STATUS
 HardwareErrorRecordConfTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
-  
-#endif
+
+  #endif
 
 //
 // TDS 5.1
 //
 EFI_STATUS
 MultipleStressTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
 //
@@ -281,10 +280,10 @@ MultipleStressTest (
 //
 EFI_STATUS
 OverflowStressTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
 //
@@ -297,13 +296,14 @@ GetTestSupportLibrary (
   OUT EFI_TEST_RECOVERY_LIBRARY_PROTOCOL  **RecoveryLib,
   OUT EFI_TEST_LOGGING_LIBRARY_PROTOCOL   **LoggingLib
   );
+
 #endif
 
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
 EFI_STATUS
 Myitox (
-  IN UINTN        Num,
-  OUT CHAR16      *StringNum
+  IN UINTN    Num,
+  OUT CHAR16  *StringNum
   );
 
 #endif

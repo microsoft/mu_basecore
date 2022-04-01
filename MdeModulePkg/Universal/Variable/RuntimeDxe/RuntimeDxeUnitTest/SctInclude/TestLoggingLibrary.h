@@ -5,12 +5,12 @@
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at 
+  which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
- 
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
- 
+
 **/
 /*++
 
@@ -38,7 +38,7 @@ Abstract:
 #define EFI_TEST_LOGGING_LIBRARY_GUID       \
   { 0x1ab99b08, 0x58c6, 0x40dd, {0x86, 0xd8, 0xe8, 0xff, 0x2f, 0xa8, 0x4e, 0x4d }}
 
-#define EFI_TEST_LOGGING_LIBRARY_REVISION   0x00010000
+#define EFI_TEST_LOGGING_LIBRARY_REVISION  0x00010000
 
 //
 // Forward reference for pure ANSI compatibility
@@ -51,11 +51,12 @@ typedef struct _EFI_TEST_LOGGING_LIBRARY_PROTOCOL EFI_TEST_LOGGING_LIBRARY_PROTO
 //
 typedef
 EFI_STATUS
-(EFIAPI *EFI_TLL_LINE) (
+(EFIAPI *EFI_TLL_LINE)(
   IN  EFI_TEST_LOGGING_LIBRARY_PROTOCOL           *This,
   IN  EFI_VERBOSE_LEVEL                           VerboseLevel,
   IN  UINT32                                      Length
   )
+
 /*++
 
 Routine Description:
@@ -85,12 +86,13 @@ Returns:
 //
 typedef
 EFI_STATUS
-(EFIAPI *EFI_TLL_ENTER_FUNCTION) (
+(EFIAPI *EFI_TLL_ENTER_FUNCTION)(
   IN  EFI_TEST_LOGGING_LIBRARY_PROTOCOL           *This,
   IN  CHAR16                                      *FunctionName,
   IN  CHAR16                                      *Format,
   ...
   )
+
 /*++
 
 Routine Description:
@@ -118,12 +120,13 @@ Returns:
 //
 typedef
 EFI_STATUS
-(EFIAPI *EFI_TLL_EXIT_FUNCTION) (
+(EFIAPI *EFI_TLL_EXIT_FUNCTION)(
   IN  EFI_TEST_LOGGING_LIBRARY_PROTOCOL           *This,
   IN  CHAR16                                      *FunctionName,
   IN  CHAR16                                      *Format,
   ...
   )
+
 /*++
 
 Routine Description:
@@ -151,12 +154,13 @@ Returns:
 //
 typedef
 EFI_STATUS
-(EFIAPI *EFI_TLL_DUMP_MASK) (
+(EFIAPI *EFI_TLL_DUMP_MASK)(
   IN  EFI_TEST_LOGGING_LIBRARY_PROTOCOL           *This,
   IN  EFI_VERBOSE_LEVEL                           VerboseLevel,
   IN  UINT32                                      BitMask,
   IN  UINT32                                      Length
   )
+
 /*++
 
 Routine Description:
@@ -192,13 +196,14 @@ Returns:
 //
 typedef
 EFI_STATUS
-(EFIAPI *EFI_TLL_DUMP_BUF) (
+(EFIAPI *EFI_TLL_DUMP_BUF)(
   IN  EFI_TEST_LOGGING_LIBRARY_PROTOCOL           *This,
   IN  EFI_VERBOSE_LEVEL                           VerboseLevel,
   IN  CHAR16                                      *Buffer,
   IN  UINT32                                      Length,
   IN  UINT32                                      Flags
   )
+
 /*++
 
 Routine Description:
@@ -233,20 +238,20 @@ Returns:
 //
 
 struct _EFI_TEST_LOGGING_LIBRARY_PROTOCOL {
-  UINT64                                LibraryRevision;
-  CHAR16                                *Name;
-  CHAR16                                *Description;
-  EFI_TLL_LINE                          Line;
-  EFI_TLL_ENTER_FUNCTION                EnterFunction;
-  EFI_TLL_EXIT_FUNCTION                 ExitFunction;
-  EFI_TLL_DUMP_MASK                     DumpMask;
-  EFI_TLL_DUMP_BUF                      DumpBuf;
+  UINT64                    LibraryRevision;
+  CHAR16                    *Name;
+  CHAR16                    *Description;
+  EFI_TLL_LINE              Line;
+  EFI_TLL_ENTER_FUNCTION    EnterFunction;
+  EFI_TLL_EXIT_FUNCTION     ExitFunction;
+  EFI_TLL_DUMP_MASK         DumpMask;
+  EFI_TLL_DUMP_BUF          DumpBuf;
 };
 
 //
 // Global ID for EFI Test Logging Library Protocol
 //
 
-extern EFI_GUID gEfiTestLoggingLibraryGuid;
+extern EFI_GUID  gEfiTestLoggingLibraryGuid;
 
 #endif
