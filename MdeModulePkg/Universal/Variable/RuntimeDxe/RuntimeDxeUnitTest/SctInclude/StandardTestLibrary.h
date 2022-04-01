@@ -5,12 +5,12 @@
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at 
+  which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
- 
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
- 
+
 **/
 /*++
 
@@ -55,19 +55,19 @@ typedef struct _EFI_STANDARD_TEST_LIBRARY_PROTOCOL EFI_STANDARD_TEST_LIBRARY_PRO
 //
 typedef UINT32 EFI_TEST_LEVEL;
 
-#define EFI_TEST_LEVEL_MINIMAL          0x01
-#define EFI_TEST_LEVEL_DEFAULT          0x02
-#define EFI_TEST_LEVEL_EXHAUSTIVE       0x04
+#define EFI_TEST_LEVEL_MINIMAL     0x01
+#define EFI_TEST_LEVEL_DEFAULT     0x02
+#define EFI_TEST_LEVEL_EXHAUSTIVE  0x04
 
 //
 // EFI Test Case Attribute
 //
 typedef UINT32 EFI_TEST_ATTRIBUTE;
 
-#define EFI_TEST_CASE_AUTO              0x00
-#define EFI_TEST_CASE_MANUAL            0x01
-#define EFI_TEST_CASE_DESTRUCTIVE       0x02
-#define EFI_TEST_CASE_RESET_REQUIRED    0x04
+#define EFI_TEST_CASE_AUTO            0x00
+#define EFI_TEST_CASE_MANUAL          0x01
+#define EFI_TEST_CASE_DESTRUCTIVE     0x02
+#define EFI_TEST_CASE_RESET_REQUIRED  0x04
 
 //
 // EFI Test Assertion Types
@@ -94,7 +94,7 @@ typedef enum {
 //
 typedef
 EFI_STATUS
-(EFIAPI *EFI_RECORD_ASSERTION) (
+(EFIAPI *EFI_RECORD_ASSERTION)(
   IN  EFI_STANDARD_TEST_LIBRARY_PROTOCOL          *This,
   IN  EFI_TEST_ASSERTION                          Type,
   IN  EFI_GUID                                    EventId,
@@ -102,6 +102,7 @@ EFI_STATUS
   IN  CHAR16                                      *Detail,
   ...
   )
+
 /*++
 
 Routine Description:
@@ -132,12 +133,13 @@ Returns:
 //
 typedef
 EFI_STATUS
-(EFIAPI *EFI_RECORD_MESSAGE) (
+(EFIAPI *EFI_RECORD_MESSAGE)(
   IN  EFI_STANDARD_TEST_LIBRARY_PROTOCOL          *This,
   IN  EFI_VERBOSE_LEVEL                           VerboseLevel,
   IN  CHAR16                                      *Message,
   ...
   )
+
 /*++
 
 Routine Description:
@@ -168,11 +170,12 @@ Returns:
 //
 typedef
 EFI_STATUS
-(EFIAPI *EFI_GET_RESULT_COUNT) (
+(EFIAPI *EFI_GET_RESULT_COUNT)(
   IN  EFI_STANDARD_TEST_LIBRARY_PROTOCOL          *This,
   IN  EFI_TEST_ASSERTION                          Type,
   OUT UINT32                                      *Count
   )
+
 /*++
 
 Routine Description:
@@ -199,19 +202,19 @@ Returns:
 //
 
 struct _EFI_STANDARD_TEST_LIBRARY_PROTOCOL {
-  UINT64                                LibraryRevision;
-  CHAR16                                *Name;
-  CHAR16                                *Description;
-  EFI_RECORD_ASSERTION                  RecordAssertion;
-  EFI_RECORD_MESSAGE                    RecordMessage;
-  EFI_GET_RESULT_COUNT                  GetResultCount;
+  UINT64                  LibraryRevision;
+  CHAR16                  *Name;
+  CHAR16                  *Description;
+  EFI_RECORD_ASSERTION    RecordAssertion;
+  EFI_RECORD_MESSAGE      RecordMessage;
+  EFI_GET_RESULT_COUNT    GetResultCount;
 };
 
 //
 // Global ID for EFI Standard Test Library Protocol
 //
 
-extern EFI_GUID gEfiStandardTestLibraryGuid;
+extern EFI_GUID  gEfiStandardTestLibraryGuid;
 
 //
 // Global ID for some standard services
@@ -230,9 +233,9 @@ extern EFI_GUID gEfiStandardTestLibraryGuid;
 #define EFI_RUNTIME_SERVICES_CLIENT_GUID  \
   { 0xAFF115FB, 0x387B, 0x4c18, {0x8C, 0x41, 0x6A, 0xFC, 0x7F, 0x03, 0xBB, 0x90 }}
 
-extern EFI_GUID gEfiNullGuid;
-extern EFI_GUID gEfiGenericCategoryGuid;
-extern EFI_GUID gEfiBootServicesCategoryGuid;
-extern EFI_GUID gEfiRuntimeServicesCategoryGuid;
+extern EFI_GUID  gEfiNullGuid;
+extern EFI_GUID  gEfiGenericCategoryGuid;
+extern EFI_GUID  gEfiBootServicesCategoryGuid;
+extern EFI_GUID  gEfiRuntimeServicesCategoryGuid;
 
 #endif
