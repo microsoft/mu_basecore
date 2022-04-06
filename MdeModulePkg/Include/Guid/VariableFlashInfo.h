@@ -94,13 +94,13 @@ typedef struct {
   ///
   /// Base address of the FTW working block range in the flash device.
   ///
-  /// Note that if FtwWorkingLength is larger than on block size, this value should be block size aligned.
+  /// Note that if FtwWorkingLength is larger than one block size, this value should be block size aligned.
   ///
   EFI_PHYSICAL_ADDRESS    FtwWorkingBaseAddress;
   ///
   /// Size of the FTW working block range in the flash device.
   ///
-  /// Note that if the value is less than on block size, the range should not span blocks.
+  /// Note that if the value is less than one block size, the range should not span blocks.
   /// Note that if the value is larger than one block size, this value should be block size aligned.
   ///
   UINT64                  FtwWorkingLength;
