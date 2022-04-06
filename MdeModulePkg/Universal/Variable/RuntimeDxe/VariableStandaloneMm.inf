@@ -74,10 +74,11 @@
   HobLib
   MemoryAllocationLib
   MmServicesTableLib
-  SafeIntLib                                   # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
+  SafeIntLib
   StandaloneMmDriverEntryPoint
   SynchronizationLib
   VarCheckLib
+  VariableFlashInfoLib
   VariablePolicyLib
   VariablePolicyHelperLib
   MemoryTypeInfoSecVarCheckLib                 # MU_CHANGE TCBZ1086 - Mitigate potential system brick due to UEFI MemoryTypeInformation var changes
@@ -117,7 +118,6 @@
 
   gEfiSystemNvDataFvGuid                        ## CONSUMES             ## GUID
   gEdkiiFaultTolerantWriteGuid                  ## SOMETIMES_CONSUMES   ## HOB
-  gVariableFlashInfoHobGuid                     ## CONSUMES             ## HOB  # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
 
   ## SOMETIMES_CONSUMES   ## Variable:L"VarErrorFlag"
   ## SOMETIMES_PRODUCES   ## Variable:L"VarErrorFlag"
@@ -126,9 +126,6 @@
   gAdvLoggerAccessGuid                                               ## CONSUMES   MU_CHANGE
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase       ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase64     ## SOMETIMES_CONSUMES # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableSize       ## SOMETIMES_CONSUMES # MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize                  ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxAuthVariableSize              ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVolatileVariableSize          ## CONSUMES

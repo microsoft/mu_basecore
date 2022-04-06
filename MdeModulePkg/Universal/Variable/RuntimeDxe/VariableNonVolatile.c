@@ -137,12 +137,12 @@ InitRealNonVolatileVariableStore (
 {
   EFI_FIRMWARE_VOLUME_HEADER            *FvHeader;
   VARIABLE_STORE_HEADER                 *VariableStore;
-  VARIABLE_FLASH_INFO                   *VariableFlashInfo;  // MU_CHANGE TCBZ3479 - Add Variable Flash Information HOB
   UINT32                                VariableStoreLength;
   EFI_HOB_GUID_TYPE                     *GuidHob;
   EFI_PHYSICAL_ADDRESS                  NvStorageBase;
   UINT8                                 *NvStorageData;
   UINT32                                NvStorageSize;
+  UINT64                                NvStorageSize64;
   FAULT_TOLERANT_WRITE_LAST_WRITE_DATA  *FtwLastWriteData;
   UINT32                                BackUpOffset;
   UINT32                                BackUpSize;
@@ -154,22 +154,14 @@ InitRealNonVolatileVariableStore (
 
   mVariableModuleGlobal->FvbInstance = NULL;
 
-  // MU_CHANGE - START - TCBZ3479 - Add Variable Flash Information HOB
-  Status = GetVariableFlashInfo (&VariableFlashInfo);
-  if (!EFI_ERROR (Status)) {
-    NvStorageBase = VariableFlashInfo->BaseAddress;
-    Status        = SafeUint64ToUint32 (VariableFlashInfo->Length, &NvStorageSize);
-    // This driver currently assumes the size will be UINT32 so only accept that for now.
-    ASSERT_EFI_ERROR (Status);
-  }
+  Status = GetVariableFlashNvStorageInfo (&NvStorageBase, &NvStorageSize64);
+  ASSERT_EFI_ERROR (Status);
 
-  if (EFI_ERROR (Status)) {
-    NvStorageBase = NV_STORAGE_VARIABLE_BASE;
-    NvStorageSize = PcdGet32 (PcdFlashNvStorageVariableSize);
-  }
+  Status = SafeUint64ToUint32 (NvStorageSize64, &NvStorageSize);
+  // This driver currently assumes the size will be UINT32 so assert the value is safe for now.
+  ASSERT_EFI_ERROR (Status);
 
   ASSERT (NvStorageBase != 0);
-  // MU_CHANGE - END - TCBZ3479 - Add Variable Flash Information HOB
 
   //
   // Allocate runtime memory used for a memory copy of the FLASH region.
