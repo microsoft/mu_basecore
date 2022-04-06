@@ -972,52 +972,6 @@ GetPreviousRecordOfWrites (
   return EFI_SUCCESS;
 }
 
-// MU_CHANGE - START - TCBZ3479 - Add Variable Flash Information HOB
-
-/**
-  Get the HOB that contains variable flash information.
-
-  @param[out] VariableFlashInfo   Pointer to a pointer to set to the variable flash information structure.
-
-  @retval EFI_SUCCESS             Variable flash information was found successfully.
-  @retval EFI_INVALID_PARAMETER   The VariableFlashInfo pointer given is NULL.
-  @retval EFI_NOT_FOUND           Variable flash information could not be found.
-
-**/
-EFI_STATUS
-GetVariableFlashInfo (
-  OUT VARIABLE_FLASH_INFO  **VariableFlashInfo
-  )
-{
-  EFI_HOB_GUID_TYPE  *GuidHob;
-
-  if (VariableFlashInfo == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  GuidHob = GetFirstGuidHob (&gVariableFlashInfoHobGuid);
-  if (GuidHob == NULL) {
-    return EFI_NOT_FOUND;
-  }
-
-  *VariableFlashInfo = GET_GUID_HOB_DATA (GuidHob);
-
-  //
-  // Assert if more than one variable flash information HOB is present.
-  //
-  DEBUG_CODE (
-    if ((GetNextGuidHob (&gVariableFlashInfoHobGuid, GET_NEXT_HOB (GuidHob)) != NULL)) {
-    DEBUG ((DEBUG_ERROR, "ERROR: Found two variable flash information HOBs\n"));
-    ASSERT (FALSE);
-  }
-
-    );
-
-  return EFI_SUCCESS;
-}
-
-// MU_CHANGE - END - TCBZ3479 - Add Variable Flash Information HOB
-
 /**
   Allocate private data for FTW driver and initialize it.
 
@@ -1033,28 +987,20 @@ InitFtwDevice (
   OUT EFI_FTW_DEVICE  **FtwData
   )
 {
-  // MU_CHANGE - START - TCBZ3479 - Add Variable Flash Information HOB
-  EFI_STATUS           Status;
-  EFI_STATUS           VariableFlashInfoStatus;
-  UINTN                FtwWorkingSize;
-  VARIABLE_FLASH_INFO  *VariableFlashInfo;
-  // MU_CHANGE - END - TCBZ3479 - Add Variable Flash Information HOB
-  EFI_FTW_DEVICE  *FtwDevice;
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  WorkSpaceAddress;
+  UINT64                Size;
+  UINTN                 FtwWorkingSize;
+  EFI_FTW_DEVICE        *FtwDevice;
 
-  // MU_CHANGE - START - TCBZ3479 - Add Variable Flash Information HOB
-  FtwWorkingSize          = 0;
-  VariableFlashInfoStatus = GetVariableFlashInfo (&VariableFlashInfo);
-  if (!EFI_ERROR (VariableFlashInfoStatus)) {
-    Status = SafeUint64ToUintn (VariableFlashInfo->FtwWorkingLength, &FtwWorkingSize);
-    if (EFI_ERROR (Status)) {
-      ASSERT_EFI_ERROR (Status);
-      FtwWorkingSize = 0;
-    }
-  }
+  FtwWorkingSize = 0;
 
-  if (FtwWorkingSize == 0) {
-    FtwWorkingSize = (UINTN)PcdGet32 (PcdFlashNvStorageFtwWorkingSize);
-  }
+  Status = GetVariableFlashFtwWorkingInfo (&WorkSpaceAddress, &Size);
+  ASSERT_EFI_ERROR (Status);
+
+  Status = SafeUint64ToUintn (Size, &FtwWorkingSize);
+  // This driver currently assumes the size will be UINTN so assert the value is safe for now.
+  ASSERT_EFI_ERROR (Status);
 
   //
   // Allocate private data of this driver,
@@ -1065,40 +1011,15 @@ InitFtwDevice (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  FtwDevice->WorkSpaceLength = FtwWorkingSize;
+  FtwDevice->WorkSpaceAddress = WorkSpaceAddress;
+  FtwDevice->WorkSpaceLength  = FtwWorkingSize;
 
-  if (!EFI_ERROR (VariableFlashInfoStatus)) {
-    // This driver currently assumes the size will be UINT32 so only accept
-    // that for now.
-    Status = SafeUint64ToUintn (VariableFlashInfo->FtwSpareLength, &FtwDevice->SpareAreaLength);
-    if (EFI_ERROR (Status)) {
-      ASSERT_EFI_ERROR (Status);
-      FtwDevice->SpareAreaLength = 0;
-    }
+  Status = GetVariableFlashFtwSpareInfo (&FtwDevice->SpareAreaAddress, &Size);
+  ASSERT_EFI_ERROR (Status);
 
-    FtwDevice->SpareAreaAddress = VariableFlashInfo->FtwSpareBaseAddress;
-    FtwDevice->WorkSpaceAddress = VariableFlashInfo->FtwWorkingBaseAddress;
-  }
-
-  if (FtwDevice->SpareAreaLength == 0) {
-    FtwDevice->SpareAreaLength = (UINTN)PcdGet32 (PcdFlashNvStorageFtwSpareSize);
-  }
-
-  if (FtwDevice->SpareAreaAddress == 0) {
-    FtwDevice->SpareAreaAddress = (EFI_PHYSICAL_ADDRESS)PcdGet64 (PcdFlashNvStorageFtwSpareBase64);
-    if (FtwDevice->SpareAreaAddress == 0) {
-      FtwDevice->SpareAreaAddress = (EFI_PHYSICAL_ADDRESS)PcdGet32 (PcdFlashNvStorageFtwSpareBase);
-    }
-  }
-
-  if (FtwDevice->WorkSpaceAddress == 0) {
-    FtwDevice->WorkSpaceAddress = (EFI_PHYSICAL_ADDRESS)PcdGet64 (PcdFlashNvStorageFtwWorkingBase64);
-    if (FtwDevice->WorkSpaceAddress == 0) {
-      FtwDevice->WorkSpaceAddress = (EFI_PHYSICAL_ADDRESS)PcdGet32 (PcdFlashNvStorageFtwWorkingBase);
-    }
-  }
-
-  // MU_CHANGE - END - TCBZ3479 - Add Variable Flash Information HOB
+  Status = SafeUint64ToUintn (Size, &FtwDevice->SpareAreaLength);
+  // This driver currently assumes the size will be UINTN so assert the value is safe for now.
+  ASSERT_EFI_ERROR (Status);
 
   //
   // Initialize other parameters, and set WorkSpace as FTW_ERASED_BYTE.
@@ -1367,7 +1288,7 @@ InitFtwProtocol (
   FtwDevice->FtwLastWriteHeader = NULL;
   FtwDevice->FtwLastWriteRecord = NULL;
 
-  InitializeLocalWorkSpaceHeader (FtwDevice->WorkSpaceLength);  // MU_CHANGE - TCBZ3479 - Add Variable Flash Information HOB
+  InitializeLocalWorkSpaceHeader (FtwDevice->WorkSpaceLength);
 
   //
   // Refresh the working space data from working block

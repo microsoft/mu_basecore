@@ -11,13 +11,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Guid/SystemNvDataGuid.h>
 #include <Guid/FaultTolerantWrite.h>
-#include <Guid/VariableFlashInfo.h>   // MU_CHANGE - TCBZ3479 - Add Variable Flash Information HOB
 #include <Library/PeiServicesLib.h>
 #include <Library/PcdLib.h>
 #include <Library/DebugLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/HobLib.h>
-#include <Library/SafeIntLib.h>       // MU_CHANGE - TCBZ3479 - Add Variable Flash Information HOB
+#include <Library/SafeIntLib.h>
+#include <Library/VariableFlashInfoLib.h>
 
 EFI_PEI_PPI_DESCRIPTOR  mPpiListVariable = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
@@ -188,52 +188,6 @@ IsValidWorkSpace (
   return TRUE;
 }
 
-// MU_CHANGE - START - TCBZ3479 - Add Variable Flash Information HOB
-
-/**
-  Get the HOB that contains variable flash information.
-
-  @param[out] VariableFlashInfo   Pointer to a pointer to set to the variable flash information structure.
-
-  @retval EFI_SUCCESS             Variable flash information was found successfully.
-  @retval EFI_INVALID_PARAMETER   The VariableFlashInfo pointer given is NULL.
-  @retval EFI_NOT_FOUND           Variable flash information could not be found.
-
-**/
-EFI_STATUS
-GetVariableFlashInfo (
-  OUT VARIABLE_FLASH_INFO  **VariableFlashInfo
-  )
-{
-  EFI_HOB_GUID_TYPE  *GuidHob;
-
-  if (VariableFlashInfo == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  GuidHob = GetFirstGuidHob (&gVariableFlashInfoHobGuid);
-  if (GuidHob == NULL) {
-    return EFI_NOT_FOUND;
-  }
-
-  *VariableFlashInfo = GET_GUID_HOB_DATA (GuidHob);
-
-  //
-  // Assert if more than one variable flash information HOB is present.
-  //
-  DEBUG_CODE (
-    if ((GetNextGuidHob (&gVariableFlashInfoHobGuid, GET_NEXT_HOB (GuidHob)) != NULL)) {
-    DEBUG ((DEBUG_ERROR, "ERROR: Found two variable flash information HOBs\n"));
-    ASSERT (FALSE);
-  }
-
-    );
-
-  return EFI_SUCCESS;
-}
-
-// MU_CHANGE - END - TCBZ3479 - Add Variable Flash Information HOB
-
 /**
   Main entry for Fault Tolerant Write PEIM.
 
@@ -255,67 +209,36 @@ PeimFaultTolerantWriteInitialize (
   EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER  *FtwWorkingBlockHeader;
   EFI_FAULT_TOLERANT_WRITE_HEADER          *FtwLastWriteHeader;
   EFI_FAULT_TOLERANT_WRITE_RECORD          *FtwLastWriteRecord;
-  VARIABLE_FLASH_INFO                      *VariableFlashInfo;      // MU_CHANGE - TCBZ3479 - Add Variable Flash Information HOB
   EFI_PHYSICAL_ADDRESS                     WorkSpaceAddress;
   UINTN                                    WorkSpaceLength;
   EFI_PHYSICAL_ADDRESS                     SpareAreaAddress;
   UINTN                                    SpareAreaLength;
   EFI_PHYSICAL_ADDRESS                     WorkSpaceInSpareArea;
+  UINT64                                   Size;
   FAULT_TOLERANT_WRITE_LAST_WRITE_DATA     FtwLastWrite;
 
   FtwWorkingBlockHeader = NULL;
   FtwLastWriteHeader    = NULL;
   FtwLastWriteRecord    = NULL;
 
-  // MU_CHANGE - START - TCBZ3479 - Add Variable Flash Information HOB
   SpareAreaAddress = 0;
   SpareAreaLength  = 0;
   WorkSpaceAddress = 0;
   WorkSpaceLength  = 0;
 
-  Status = GetVariableFlashInfo (&VariableFlashInfo);
-  if (!EFI_ERROR (Status)) {
-    // This driver currently assumes the size will be UINT32 so only accept
-    // that for now.
-    Status = SafeUint64ToUintn (VariableFlashInfo->FtwSpareLength, &SpareAreaLength);
-    if (EFI_ERROR (Status)) {
-      ASSERT_EFI_ERROR (Status);
-      SpareAreaLength = 0;
-    }
+  Status = GetVariableFlashFtwWorkingInfo (&WorkSpaceAddress, &Size);
+  ASSERT_EFI_ERROR (Status);
 
-    Status = SafeUint64ToUintn (VariableFlashInfo->FtwWorkingLength, &WorkSpaceLength);
-    if (EFI_ERROR (Status)) {
-      ASSERT_EFI_ERROR (Status);
-      WorkSpaceLength = 0;
-    }
+  Status = SafeUint64ToUintn (Size, &WorkSpaceLength);
+  // This driver currently assumes the size will be UINTN so assert the value is safe for now.
+  ASSERT_EFI_ERROR (Status);
 
-    SpareAreaAddress = VariableFlashInfo->FtwSpareBaseAddress;
-    WorkSpaceAddress = VariableFlashInfo->FtwWorkingBaseAddress;
-  }
+  Status = GetVariableFlashFtwSpareInfo (&SpareAreaAddress, &Size);
+  ASSERT_EFI_ERROR (Status);
 
-  if (SpareAreaLength == 0) {
-    SpareAreaLength = (UINTN)PcdGet32 (PcdFlashNvStorageFtwSpareSize);
-  }
-
-  if (WorkSpaceLength == 0) {
-    WorkSpaceLength = (UINTN)PcdGet32 (PcdFlashNvStorageFtwWorkingSize);
-  }
-
-  if (SpareAreaAddress == 0) {
-    SpareAreaAddress = (EFI_PHYSICAL_ADDRESS)PcdGet64 (PcdFlashNvStorageFtwSpareBase64);
-    if (SpareAreaAddress == 0) {
-      SpareAreaAddress = (EFI_PHYSICAL_ADDRESS)PcdGet32 (PcdFlashNvStorageFtwSpareBase);
-    }
-  }
-
-  if (WorkSpaceAddress == 0) {
-    WorkSpaceAddress = (EFI_PHYSICAL_ADDRESS)PcdGet64 (PcdFlashNvStorageFtwWorkingBase64);
-    if (WorkSpaceAddress == 0) {
-      WorkSpaceAddress = (EFI_PHYSICAL_ADDRESS)PcdGet32 (PcdFlashNvStorageFtwWorkingBase);
-    }
-  }
-
-  // MU_CHANGE - END - TCBZ3479 - Add Variable Flash Information HOB
+  Status = SafeUint64ToUintn (Size, &SpareAreaLength);
+  // This driver currently assumes the size will be UINTN so assert the value is safe for now.
+  ASSERT_EFI_ERROR (Status);
 
   //
   // The address of FTW working base and spare base must not be 0.

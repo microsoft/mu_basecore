@@ -11,8 +11,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER  mWorkingBlockHeader = { ZERO_GUID, 0, 0, 0, 0, { 0, 0, 0 }, 0 };
 
-// MU_CHANGE - START - TCBZ3479 - Add Variable Flash Information HOB
-
 /**
   Initialize a local work space header.
 
@@ -26,7 +24,6 @@ VOID
 InitializeLocalWorkSpaceHeader (
   IN  UINTN  WorkSpaceLength
   )
-// MU_CHANGE - END - TCBZ3479 - Add Variable Flash Information HOB
 {
   //
   // Check signature with gEdkiiWorkingBlockSignatureGuid.
@@ -52,9 +49,7 @@ InitializeLocalWorkSpaceHeader (
     &gEdkiiWorkingBlockSignatureGuid,
     sizeof (EFI_GUID)
     );
-  // MU_CHANGE - START - TCBZ3479 - Add Variable Flash Information HOB
   mWorkingBlockHeader.WriteQueueSize = WorkSpaceLength - sizeof (EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER);
-  // MU_CHANGE - END - TCBZ3479 - Add Variable Flash Information HOB
 
   //
   // Crc is calculated with all the fields except Crc and STATE, so leave them as FTW_ERASED_BYTE.
