@@ -1255,6 +1255,8 @@ InitializeCpu (
                   );
   ASSERT_EFI_ERROR (Status);
 
+  InstallEfiMemoryAttributeProtocol (); // TCBZ3519 MU_CHANGE
+
   //
   // Refresh GCD memory space map according to MTRR value.
   //
@@ -1279,8 +1281,6 @@ InitializeCpu (
   ASSERT_EFI_ERROR (Status);
 
   InitializeMpSupport ();
-
-  InstallEfiMemoryAttributeProtocol (); // TCBZ3519 MU_CHANGE
 
   return Status;
 }

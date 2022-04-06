@@ -20,6 +20,11 @@
 
 #include <Library/MemoryProtectionHobLib.h> // MU_CHANGE
 
+// MU_CHANGE START: Update to enable removal of NX attribute from buffer
+#include <Uefi.h>
+#include <Protocol/MemoryAttribute.h>
+// MU_CHANGE END
+
 #define  AP_SAFE_STACK_SIZE  128
 
 CPU_MP_DATA       *mCpuMpData                  = NULL;
@@ -35,6 +40,60 @@ volatile UINT32   mNumberToFinish = 0;
 // Begin wakeup buffer allocation below 0x88000
 //
 STATIC EFI_PHYSICAL_ADDRESS  mSevEsDxeWakeupBuffer = 0x88000;
+// MU_CHANGE START: Update to enable removal of NX attribute from buffer
+
+/**
+  Remove NX attribute from Buffer
+
+  @param[in]  Buffer      Buffer whose attributes will be altered
+  @param[in]  Size        Size of the buffer
+
+  @retval EFI_SUCCESS             NX attribute removed
+  @retval EFI_INVALID_PARAMETER   Buffer is not page-aligned or Buffer is 0 or Size of buffer
+                                  is not page-aligned
+  @retval Other                   Return value of LocateProtocol or ClearMemoryAttributes
+**/
+EFI_STATUS
+BufferRemoveNoExecute (
+  IN EFI_PHYSICAL_ADDRESS  Buffer,
+  IN UINTN                 Size
+  )
+{
+  EFI_STATUS                     Status;
+  EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttribute;
+
+  if ((Buffer == 0) || (Buffer % EFI_PAGE_SIZE != 0) || (Size % EFI_PAGE_SIZE != 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = gBS->LocateProtocol (
+                  &gEfiMemoryAttributeProtocolGuid,
+                  NULL,
+                  (VOID **)&MemoryAttribute
+                  );
+
+  if EFI_ERROR (Status) {
+    DEBUG ((DEBUG_INFO, "%a - Unable to locate Memory Attribute Protocol\n", __FUNCTION__));
+    ASSERT_EFI_ERROR (Status);
+    return Status;
+  }
+
+  Status = MemoryAttribute->ClearMemoryAttributes (
+                              MemoryAttribute,
+                              Buffer,
+                              Size,
+                              EFI_MEMORY_XP
+                              );
+
+  if EFI_ERROR (Status) {
+    DEBUG ((DEBUG_INFO, "%a - Unable to clear NX attribute from buffer\n", __FUNCTION__));
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  return Status;
+}
+
+// MU_CHANGE END
 
 /**
   Enable Debug Agent to support source debugging on AP function.
@@ -178,9 +237,14 @@ AllocateCodeBuffer (
                         EFI_SIZE_TO_PAGES (BufferSize),
                         &StartAddress
                         );
-  if (EFI_ERROR (Status)) {
+  // MU_CHANGE START: NX is applied to the allocated buffer - call function to remove that attribute
+  if (EFI_ERROR (Status) ||
+      EFI_ERROR (BufferRemoveNoExecute (StartAddress, EFI_PAGES_TO_SIZE (EFI_SIZE_TO_PAGES (BufferSize)))))
+  {
     StartAddress = 0;
   }
+
+  // MU_CHANGE END
 
   return (UINTN)StartAddress;
 }
