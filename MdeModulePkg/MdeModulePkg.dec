@@ -165,6 +165,10 @@
   #
   VariablePolicyHelperLib|Include/Library/VariablePolicyHelperLib.h
 
+  ##  @libraryclass  Provides services to access UEFI variable flash information.
+  #
+  VariableFlashInfoLib|Include/Library/VariableFlashInfoLib.h
+
   ## MS_CHANGE
   ##  @libraryclass  Provides a way for logging security locks
   #
