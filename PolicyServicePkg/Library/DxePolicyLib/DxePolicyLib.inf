@@ -1,0 +1,36 @@
+## @file
+#  DXE instance of verified policy library.
+#
+#  Copyright (c) Microsoft Corporation.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 1.26
+  BASE_NAME                      = DxePolicyLib
+  MODULE_UNI_FILE                = DxePolicyLib.uni
+  FILE_GUID                      = 66BE3195-F6D0-49D5-9C47-D3D7A6F7CC26
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = PolicyLib | DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION
+
+[Sources]
+  ../PolicyLibCommon.c
+  ../PolicyLibCommon.h
+  DxePolicy.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  PolicyServicePkg/PolicyServicePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UefiBootServicesTableLib
+
+[Protocols]
+  gPolicyProtocolGuid                 ## CONSUMES
+
+[Pcd]
