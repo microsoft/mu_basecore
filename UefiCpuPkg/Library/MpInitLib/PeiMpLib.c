@@ -398,6 +398,29 @@ CheckAndUpdateApsStatus (
   VOID
   )
 {
+  // MU_CHANGE - Add basic support for non-blocking AP dispatch in PEI.
+  UINTN        ProcessorNumber;
+  EFI_STATUS   Status;
+  CPU_MP_DATA  *CpuMpData;
+
+  CpuMpData = GetCpuMpData ();
+
+  //
+  // check whether pending StartupThisAPs() callings exist.
+  //
+  for (ProcessorNumber = 0; ProcessorNumber < CpuMpData->CpuCount; ProcessorNumber++) {
+    if (CpuMpData->CpuData[ProcessorNumber].WaitEvent == NULL) {
+      continue;
+    }
+
+    Status = CheckThisAP (ProcessorNumber);
+
+    if (Status != EFI_NOT_READY) {
+      CpuMpData->CpuData[ProcessorNumber].WaitEvent = NULL;
+    }
+  }
+
+  // MU_CHANGE - End Add basic support for non-blocking AP dispatch in PEI.
 }
 
 /**
@@ -658,14 +681,16 @@ MpInitLibStartupThisAP (
   OUT BOOLEAN           *Finished               OPTIONAL
   )
 {
-  if (WaitEvent != NULL) {
-    return EFI_UNSUPPORTED;
-  }
+  // MU_CHANGE - Add basic support for non-blocking AP dispatch in PEI.
+  // if (WaitEvent != NULL) {
+  //  return EFI_UNSUPPORTED;
+  // }
+  // MU_CHANGE - End Add basic support for non-blocking AP dispatch in PEI.
 
   return StartupThisAPWorker (
            Procedure,
            ProcessorNumber,
-           NULL,
+           WaitEvent, // MU_CHANGE - Add basic support for non-blocking AP dispatch in PEI.
            TimeoutInMicroseconds,
            ProcedureArgument,
            Finished
