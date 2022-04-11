@@ -32,7 +32,7 @@
 typedef
 EFI_STATUS
 (EFIAPI *POLICY_SET_POLICY)(
-  IN EFI_GUID *PolicyGuid,
+  IN CONST EFI_GUID *PolicyGuid,
   IN UINT64 Attributes,
   IN VOID *Policy,
   IN UINT16 PolicySize
@@ -54,7 +54,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *POLICY_GET_POLICY)(
-  IN EFI_GUID *PolicyGuid,
+  IN CONST EFI_GUID *PolicyGuid,
   OUT UINT64 *Attributes OPTIONAL,
   OUT VOID *Policy,
   IN OUT UINT16 *PolicySize
@@ -72,7 +72,7 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *POLICY_REMOVE_POLICY)(
-  IN EFI_GUID *PolicyGuid
+  IN CONST EFI_GUID *PolicyGuid
   );
 
 typedef struct _POLICY_INTERFACE {
