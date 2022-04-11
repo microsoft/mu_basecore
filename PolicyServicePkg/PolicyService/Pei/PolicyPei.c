@@ -32,7 +32,7 @@ STATIC EFI_PEI_PPI_DESCRIPTOR  PolicyPpiList = {
 EFI_STATUS
 EFIAPI
 PeiInstallPolicyIndicatorPpi (
-  IN EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid
   )
 {
   EFI_STATUS              Status;
@@ -77,7 +77,7 @@ PeiInstallPolicyIndicatorPpi (
 EFI_STATUS
 EFIAPI
 PeiGetPolicyHob (
-  IN EFI_GUID            *PolicyGuid,
+  IN CONST EFI_GUID      *PolicyGuid,
   OUT POLICY_HOB_HEADER  **PolicyHob
   )
 {
@@ -111,7 +111,7 @@ PeiGetPolicyHob (
 BOOLEAN
 EFIAPI
 PeiCheckPolicyExists (
-  IN EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid
   )
 
 {
@@ -174,10 +174,10 @@ PeiCreatePolicyHob (
 EFI_STATUS
 EFIAPI
 PeiGetPolicy (
-  IN EFI_GUID    *PolicyGuid,
-  OUT UINT64     *Attributes OPTIONAL,
-  OUT VOID       *Policy,
-  IN OUT UINT16  *PolicySize
+  IN CONST EFI_GUID  *PolicyGuid,
+  OUT UINT64         *Attributes OPTIONAL,
+  OUT VOID           *Policy,
+  IN OUT UINT16      *PolicySize
   )
 {
   POLICY_HOB_HEADER  *PolicyHob;
@@ -226,10 +226,10 @@ PeiGetPolicy (
 EFI_STATUS
 EFIAPI
 PeiSetPolicy (
-  IN EFI_GUID  *PolicyGuid,
-  IN UINT64    Attributes,
-  IN VOID      *Policy,
-  IN UINT16    PolicySize
+  IN CONST EFI_GUID  *PolicyGuid,
+  IN UINT64          Attributes,
+  IN VOID            *Policy,
+  IN UINT16          PolicySize
   )
 
 {
@@ -296,7 +296,7 @@ PeiSetPolicy (
 EFI_STATUS
 EFIAPI
 PeiRemovePolicy (
-  IN EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid
   )
 {
   EFI_STATUS         Status;

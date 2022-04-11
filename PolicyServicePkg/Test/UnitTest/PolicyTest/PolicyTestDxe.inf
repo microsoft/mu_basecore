@@ -1,0 +1,42 @@
+## @file
+#
+#  This is a sample DXE driver for using the policy service.
+#
+#  Copyright (C) Microsoft Corporation. All rights reserved.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  BASE_NAME                      = PolicyTestDxe
+  FILE_GUID                      = F00D0B09-7D28-4DBF-B79B-998C61FCACD9
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = DxeEntryPoint
+
+[Sources]
+  PolicyTestDxe.c
+  PolicyServiceTestCommon.c
+  PolicyLibTestCommon.c
+  PolicyTest.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  PolicyServicePkg/PolicyServicePkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  BaseLib
+  UefiRuntimeServicesTableLib
+  DebugLib
+  UnitTestLib
+  PrintLib
+  PolicyLib
+
+[Protocols]
+  gPolicyProtocolGuid                 ## CONSUMES
+
+[Depex]
+  gPolicyProtocolGuid
