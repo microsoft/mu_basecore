@@ -240,6 +240,53 @@ PeiStartupThisAP (
   IN  VOID                     *ProcedureArgument      OPTIONAL
   );
 
+// MU_CHANGE - Add basic support for non-blocking AP dispatch in PEI.
+
+/**
+  This service lets the caller get one enabled AP to execute a caller-provided
+  function. This service may only be called from the BSP.
+
+  This function is used to dispatch one enabled AP to the function specified by
+  Procedure passing in the argument specified by ProcedureArgument.
+  The execution is in non-blocking mode. The BSP continues executing immediately
+  after starting the AP.
+
+  Caller is responsible for ensuring that the scheduled AP task is complete (via
+  caller-specific logic) before dispatching further tasks on the AP using this
+  or other routines in the API.
+
+
+  @param[in] PeiServices          An indirect pointer to the PEI Services Table
+                                  published by the PEI Foundation.
+  @param[in] This                 A pointer to the EFI_PEI_MP_SERVICES_PPI instance.
+  @param[in] Procedure            A pointer to the function to be run on enabled APs of
+                                  the system.
+  @param[in] ProcessorNumber      The handle number of the AP. The range is from 0 to the
+                                  total number of logical processors minus 1. The total
+                                  number of logical processors can be retrieved by
+                                  EFI_PEI_MP_SERVICES_PPI.GetNumberOfProcessors().
+  @param[in] ProcedureArgument    The parameter passed into Procedure for all APs.
+
+  @retval EFI_SUCCESS             Indicates that the procedure was successfully
+                                  started on the AP
+  @retval EFI_DEVICE_ERROR        The calling processor is an AP.
+  @retval EFI_NOT_FOUND           The processor with the handle specified by
+                                  ProcessorNumber does not exist.
+  @retval EFI_INVALID_PARAMETER   ProcessorNumber specifies the BSP or disabled AP.
+  @retval EFI_INVALID_PARAMETER   Procedure is NULL.
+**/
+EFI_STATUS
+EFIAPI
+PeiStartupThisAPNonBlocking (
+  IN  CONST EFI_PEI_SERVICES   **PeiServices,
+  IN  EFI_PEI_MP_SERVICES_PPI  *This,
+  IN  EFI_AP_PROCEDURE         Procedure,
+  IN  UINTN                    ProcessorNumber,
+  IN  VOID                     *ProcedureArgument      OPTIONAL
+  );
+
+// MU_CHANGE - End Add basic support for non-blocking AP dispatch in PEI.
+
 /**
   This service switches the requested AP to be the BSP from that point onward.
   This service changes the BSP for all purposes.   This call can only be performed
