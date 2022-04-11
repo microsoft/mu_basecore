@@ -37,10 +37,10 @@
 EFI_STATUS
 EFIAPI
 PeiSetPolicy (
-  IN EFI_GUID  *PolicyGuid,
-  IN UINT64    Attributes,
-  IN VOID      *Policy,
-  IN UINT16    PolicySize
+  IN CONST EFI_GUID  *PolicyGuid,
+  IN UINT64          Attributes,
+  IN VOID            *Policy,
+  IN UINT16          PolicySize
   );
 
 /**
@@ -59,10 +59,10 @@ PeiSetPolicy (
 EFI_STATUS
 EFIAPI
 PeiGetPolicy (
-  IN EFI_GUID    *PolicyGuid,
-  OUT UINT64     *Attributes OPTIONAL,
-  OUT VOID       *Policy,
-  IN OUT UINT16  *PolicySize
+  IN CONST EFI_GUID  *PolicyGuid,
+  OUT UINT64         *Attributes OPTIONAL,
+  OUT VOID           *Policy,
+  IN OUT UINT16      *PolicySize
   );
 
 /**
@@ -77,7 +77,7 @@ PeiGetPolicy (
 EFI_STATUS
 EFIAPI
 PeiRemovePolicy (
-  IN EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid
   );
 
 #endif

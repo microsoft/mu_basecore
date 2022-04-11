@@ -30,13 +30,13 @@ POLICY_PROTOCOL  mPolicyProtocol = {
 EFI_STATUS
 EFIAPI
 DxeInstallPolicyIndicatorProtocol (
-  IN EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid
   )
 {
   EFI_STATUS  Status;
   VOID        *Interface;
 
-  Status = gBS->LocateProtocol (PolicyGuid, NULL, &Interface);
+  Status = gBS->LocateProtocol ((EFI_GUID *)PolicyGuid, NULL, &Interface);
   if (EFI_ERROR (Status)) {
     Status = gBS->InstallMultipleProtocolInterfaces (
                     &mImageHandle,
@@ -47,7 +47,7 @@ DxeInstallPolicyIndicatorProtocol (
   } else {
     Status = gBS->ReinstallProtocolInterface (
                     mImageHandle,
-                    PolicyGuid,
+                    (EFI_GUID *)PolicyGuid,
                     NULL,
                     NULL
                     );
@@ -73,8 +73,8 @@ DxeInstallPolicyIndicatorProtocol (
 EFI_STATUS
 EFIAPI
 DxeGetPolicyEntry (
-  IN EFI_GUID       *PolicyGuid,
-  OUT POLICY_ENTRY  **PolicyEntry
+  IN CONST EFI_GUID  *PolicyGuid,
+  OUT POLICY_ENTRY   **PolicyEntry
   )
 {
   LIST_ENTRY    *Link;
@@ -103,7 +103,7 @@ DxeGetPolicyEntry (
 BOOLEAN
 EFIAPI
 DxeCheckPolicyExists (
-  IN EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid
   )
 {
   POLICY_ENTRY  *Entry;
@@ -127,10 +127,10 @@ DxeCheckPolicyExists (
 EFI_STATUS
 EFIAPI
 DxeGetPolicy (
-  IN EFI_GUID    *PolicyGuid,
-  OUT UINT64     *Attributes OPTIONAL,
-  OUT VOID       *Policy,
-  IN OUT UINT16  *PolicySize
+  IN CONST EFI_GUID  *PolicyGuid,
+  OUT UINT64         *Attributes OPTIONAL,
+  OUT VOID           *Policy,
+  IN OUT UINT16      *PolicySize
   )
 {
   EFI_STATUS    Status;
@@ -246,7 +246,7 @@ IngestPoliciesFromHob (
 EFI_STATUS
 EFIAPI
 DxeRemovePolicy (
-  IN EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid
   )
 {
   EFI_STATUS    Status;
@@ -288,10 +288,10 @@ DxeRemovePolicy (
 EFI_STATUS
 EFIAPI
 DxeSetPolicy (
-  IN EFI_GUID  *PolicyGuid,
-  IN UINT64    Attributes,
-  IN VOID      *Policy,
-  IN UINT16    PolicySize
+  IN CONST EFI_GUID  *PolicyGuid,
+  IN UINT64          Attributes,
+  IN VOID            *Policy,
+  IN UINT16          PolicySize
   )
 {
   EFI_STATUS    Status;
@@ -388,13 +388,13 @@ DxePolicyEntry (
   EFI_STATUS  Status;
 
   // Process the HOBs to consume any existing policies.
-  Status = IngestPoliciesFromHob ();
+  mImageHandle = ImageHandle;
+  Status       = IngestPoliciesFromHob ();
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: Failed to ingest HOB policies. (%r)\n", __FUNCTION__, Status));
     return Status;
   }
 
-  mImageHandle = ImageHandle;
   return gBS->InstallMultipleProtocolInterfaces (
                 &ImageHandle,
                 &gPolicyProtocolGuid,
