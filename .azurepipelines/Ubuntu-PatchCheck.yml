@@ -29,7 +29,7 @@ steps:
 
 - task: UsePythonVersion@0
   inputs:
-    versionSpec: '3.9.x'  # MU_CHANGE
+    versionSpec: '3.8.x'  # MU_CHANGE
     architecture: 'x64'
 
 - script: |
