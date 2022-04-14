@@ -22,8 +22,9 @@ Abstract:
 
 --*/
 
-#include "SctLib.h"
 #include "VariableServicesBBTestMain.h"
+
+#include <Guid/GlobalVariable.h>
 
 //
 // Prototypes (external)
@@ -145,11 +146,11 @@ QueryVariableInfoFuncTestSub1 (
 
 #endif
 
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
-EFI_GUID gGlobalVariableGuid = EFI_GLOBAL_VARIABLE;
+// #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+// EFI_GUID gGlobalVariableGuid = EFI_GLOBAL_VARIABLE;
 
-EFI_GUID gHwErrRecGuid = EFI_HARDWARE_ERROR_VARIABLE;
-#endif
+// EFI_GUID gHwErrRecGuid = EFI_HARDWARE_ERROR_VARIABLE;
+// #endif
 //
 // Functions
 //
@@ -276,8 +277,8 @@ SetVariableFuncTest (
   EFI_STANDARD_TEST_LIBRARY_PROTOCOL  *StandardLib;
   EFI_TEST_RECOVERY_LIBRARY_PROTOCOL  *RecoveryLib;
   EFI_TEST_LOGGING_LIBRARY_PROTOCOL   *LoggingLib;
-  UINTN                               RecoveryDataSize;
-  UINT8                               *RecoveryData;
+  // UINTN                               RecoveryDataSize;
+  // UINT8                               *RecoveryData;
 
   //
   // Get test support library interfaces
@@ -297,34 +298,34 @@ SetVariableFuncTest (
   //
   // Allocate memory for recovery data
   //
-  Status = gtBS->AllocatePool (
-                   EfiLoaderData,
-                   1024,
-                   (VOID **)&RecoveryData
-                   );
-  if (EFI_ERROR(Status)) {
-    return Status;
-  }
+  // Status = gtBS->AllocatePool (
+  //                  EfiLoaderData,
+  //                  1024,
+  //                  (VOID **)&RecoveryData
+  //                  );
+  // if (EFI_ERROR(Status)) {
+  //   return Status;
+  // }
 
   //
   // Read reset record
   //
-  RecoveryDataSize = 1024;
-  Status = RecoveryLib->ReadResetRecord (
-                          RecoveryLib,
-                          &RecoveryDataSize,
-                          RecoveryData
-                          );
-  if (!EFI_ERROR(Status) && (RecoveryDataSize > 0)) {
-    switch (RecoveryData[0]) {
-    case 6:
-      goto step6;
-    case 7:
-      goto step7;
-    default:
-      goto step8;
-    }
-  }
+  // RecoveryDataSize = 1024;
+  // Status = RecoveryLib->ReadResetRecord (
+  //                         RecoveryLib,
+  //                         &RecoveryDataSize,
+  //                         RecoveryData
+  //                         );
+  // if (!EFI_ERROR(Status) && (RecoveryDataSize > 0)) {
+  //   switch (RecoveryData[0]) {
+  //   case 6:
+  //     goto step6;
+  //   case 7:
+  //     goto step7;
+  //   default:
+  //     goto step8;
+  //   }
+  // }
 
   //
   // SetVariable when the variable does not exist
@@ -354,20 +355,20 @@ SetVariableFuncTest (
   //
   // Non-volatile variable exists after system reset
   //
-step6:
-  Status = SetVariableFuncTestSub6 (RT, StandardLib, RecoveryLib, LoggingLib);
+  // step6:
+  //   Status = SetVariableFuncTestSub6 (RT, StandardLib, RecoveryLib, LoggingLib);
 
   //
   // Volatile variable does not exist after system reset
   //
-step7:
-  Status = SetVariableFuncTestSub7 (RT, StandardLib, RecoveryLib, LoggingLib);
+  // step7:
+  //   Status = SetVariableFuncTestSub7 (RT, StandardLib, RecoveryLib, LoggingLib);
 
   //
   // Free resources
   //
-step8:
-  gtBS->FreePool (RecoveryData);
+  // step8:
+  //   gtBS->FreePool (RecoveryData);
 
   //
   // Done
@@ -2124,8 +2125,8 @@ SetVariableFuncTestSub6 (
   UINT8                 Data[MAX_BUFFER_SIZE];
   CHAR16                *VariableName;
   UINT32                Attributes;
-  UINTN                 RecoveryDataSize;
-  UINT8                 *RecoveryData;
+  // UINTN                 RecoveryDataSize;
+  // UINT8                 *RecoveryData;
   EFI_TPL               OldTpl;
   EFI_TPL               TplArray[] = {TPL_APPLICATION, TPL_CALLBACK};
   UINT32                AttributesArray[] = {
@@ -2147,42 +2148,42 @@ SetVariableFuncTestSub6 (
   //
   // Allocate memory for recovery data
   //
-  Status = gtBS->AllocatePool (
-                   EfiLoaderData,
-                   1024,
-                   (VOID **)&RecoveryData
-                   );
-  if (EFI_ERROR(Status)) {
-    if (LoggingLib != NULL) {
-      LoggingLib->ExitFunction (
-                    LoggingLib,
-                    L"SetVariableFuncTestSub6",
-                    L"TDS 4.3.2.6 - Cannot allocate memory for recovery data"
-                    );
-    }
+  // Status = gtBS->AllocatePool (
+  //                  EfiLoaderData,
+  //                  1024,
+  //                  (VOID **)&RecoveryData
+  //                  );
+  // if (EFI_ERROR(Status)) {
+  //   if (LoggingLib != NULL) {
+  //     LoggingLib->ExitFunction (
+  //                   LoggingLib,
+  //                   L"SetVariableFuncTestSub6",
+  //                   L"TDS 4.3.2.6 - Cannot allocate memory for recovery data"
+  //                   );
+  //   }
 
-    return Status;
-  }
+  //   return Status;
+  // }
 
   //
   // Read reset record
   //
-  RecoveryDataSize = 1024;
-  Status = RecoveryLib->ReadResetRecord (
-                          RecoveryLib,
-                          &RecoveryDataSize,
-                          RecoveryData
-                          );
-  if (!EFI_ERROR(Status) && (RecoveryDataSize > 1)) {
-    if (RecoveryData[0] == 6) {
-      switch (RecoveryData[1]) {
-      case 2:
-        goto step2;
-      default:
-        goto step3;
-      }
-    }
-  }
+  // RecoveryDataSize = 1024;
+  // Status = RecoveryLib->ReadResetRecord (
+  //                         RecoveryLib,
+  //                         &RecoveryDataSize,
+  //                         RecoveryData
+  //                         );
+  // if (!EFI_ERROR(Status) && (RecoveryDataSize > 1)) {
+  //   if (RecoveryData[0] == 6) {
+  //     switch (RecoveryData[1]) {
+  //     case 2:
+  //       goto step2;
+  //     default:
+  //       goto step3;
+  //     }
+  //   }
+  // }
 
   //
   // for each TPL less than or equal to TPL_CALLBACK do
@@ -2234,23 +2235,23 @@ SetVariableFuncTestSub6 (
   //
   // Write reset record
   //
-  RecoveryData[0] = 6;
-  RecoveryData[1] = 2;
-  RecoveryLib->WriteResetRecord (RecoveryLib, 2, RecoveryData);
+  // RecoveryData[0] = 6;
+  // RecoveryData[1] = 2;
+  // RecoveryLib->WriteResetRecord (RecoveryLib, 2, RecoveryData);
 
   //
   // Print out some information to avoid the user thought it is an error
   //
-  SctPrint (L"System will cold reset after 1 second...");
-  gtBS->Stall (1000000);
+  // SctPrint (L"System will cold reset after 1 second...");
+  // gtBS->Stall (1000000);
 
-  gtRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
+  // gtRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
 
   //
   // After system reset
   //
-step2:
-  RecoveryLib->WriteResetRecord (RecoveryLib, 0, NULL);
+  // step2:
+  //   RecoveryLib->WriteResetRecord (RecoveryLib, 0, NULL);
 
   //
   // for each TPL less than or equal to TPL_CALLBACK do
@@ -2336,8 +2337,8 @@ step2:
   //
   // Free resources
   //
-step3:
-  gtBS->FreePool (RecoveryData);
+  // step3:
+  //   gtBS->FreePool (RecoveryData);
 
   //
   // Trace ...
@@ -2385,8 +2386,8 @@ SetVariableFuncTestSub7 (
   UINT8                 Data[MAX_BUFFER_SIZE];
   CHAR16                *VariableName;
   UINT32                Attributes;
-  UINTN                 RecoveryDataSize;
-  UINT8                 *RecoveryData;
+  // UINTN                 RecoveryDataSize;
+  // UINT8                 *RecoveryData;
   EFI_TPL               OldTpl;
   EFI_TPL               TplArray[] = {TPL_APPLICATION, TPL_CALLBACK};
   UINT32                AttributesArray[] = {
@@ -2408,42 +2409,42 @@ SetVariableFuncTestSub7 (
   //
   // Allocate memory for recovery data
   //
-  Status = gtBS->AllocatePool (
-                   EfiLoaderData,
-                   1024,
-                   (VOID **)&RecoveryData
-                   );
-  if (EFI_ERROR(Status)) {
-    if (LoggingLib != NULL) {
-      LoggingLib->ExitFunction (
-                    LoggingLib,
-                    L"SetVariableFuncTestSub7",
-                    L"TDS 4.3.2.7 - Cannot allocate memory for recovery data"
-                    );
-    }
+  // Status = gtBS->AllocatePool (
+  //                  EfiLoaderData,
+  //                  1024,
+  //                  (VOID **)&RecoveryData
+  //                  );
+  // if (EFI_ERROR(Status)) {
+  //   if (LoggingLib != NULL) {
+  //     LoggingLib->ExitFunction (
+  //                   LoggingLib,
+  //                   L"SetVariableFuncTestSub7",
+  //                   L"TDS 4.3.2.7 - Cannot allocate memory for recovery data"
+  //                   );
+  //   }
 
-    return Status;
-  }
+  //   return Status;
+  // }
 
   //
   // Read reset record
   //
-  RecoveryDataSize = 1024;
-  Status = RecoveryLib->ReadResetRecord (
-                          RecoveryLib,
-                          &RecoveryDataSize,
-                          RecoveryData
-                          );
-  if (!EFI_ERROR(Status) && (RecoveryDataSize > 1)) {
-    if (RecoveryData[0] == 7) {
-      switch (RecoveryData[1]) {
-      case 2:
-        goto step2;
-      default:
-        goto step3;
-      }
-    }
-  }
+  // RecoveryDataSize = 1024;
+  // Status = RecoveryLib->ReadResetRecord (
+  //                         RecoveryLib,
+  //                         &RecoveryDataSize,
+  //                         RecoveryData
+  //                         );
+  // if (!EFI_ERROR(Status) && (RecoveryDataSize > 1)) {
+  //   if (RecoveryData[0] == 7) {
+  //     switch (RecoveryData[1]) {
+  //     case 2:
+  //       goto step2;
+  //     default:
+  //       goto step3;
+  //     }
+  //   }
+  // }
 
   //
   // for each TPL less than or equal to TPL_CALLBACK do
@@ -2495,22 +2496,22 @@ SetVariableFuncTestSub7 (
   //
   // Write reset record
   //
-  RecoveryData[0] = 7;
-  RecoveryData[1] = 2;
-  RecoveryLib->WriteResetRecord (RecoveryLib, 2, RecoveryData);
+  // RecoveryData[0] = 7;
+  // RecoveryData[1] = 2;
+  // RecoveryLib->WriteResetRecord (RecoveryLib, 2, RecoveryData);
 
   //
   // Print out some information to avoid the user thought it is an error
   //
-  SctPrint (L"System will cold reset after 1 second...");
-  gtBS->Stall (1000000);
+  // SctPrint (L"System will cold reset after 1 second...");
+  // gtBS->Stall (1000000);
 
-  gtRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
+  // gtRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
 
   //
   // After system reset
   //
-step2:
+  // step2:
   //
   // for each TPL less than or equal to TPL_CALLBACK do
   //
@@ -2564,8 +2565,8 @@ step2:
   //
   // Free resources
   //
-step3:
-  gtBS->FreePool (RecoveryData);
+  // step3:
+  //   gtBS->FreePool (RecoveryData);
 
   //
   // Trace ...
@@ -2635,14 +2636,14 @@ QueryVariableInfoFuncTest (
     return Status;
   }
 
-  if (FALSE == CheckBBTestCanRunAndRecordAssertion(
-                  StandardLib, 
-                  L"RT.QueryVariableInfo_Func - QueryVariableInfo_Func it's not Supported in EFI",
-                  __FILE__,
-                  (UINTN)__LINE__
-                  )) {
-    return EFI_SUCCESS;
-  }
+  // if (FALSE == CheckBBTestCanRunAndRecordAssertion(
+  //                 StandardLib, 
+  //                 L"RT.QueryVariableInfo_Func - QueryVariableInfo_Func it's not Supported in EFI",
+  //                 __FILE__,
+  //                 (UINTN)__LINE__
+  //                 )) {
+  //   return EFI_SUCCESS;
+  // }
 
   RT = (EFI_RUNTIME_SERVICES *)ClientInterface;
 
@@ -2664,7 +2665,7 @@ QueryVariableInfoFuncTestSub1 (
   )
 {
   EFI_STATUS            QueryVarStatus[3];
-  EFI_STATUS            SetVarStatus;
+  // EFI_STATUS          SetVarStatus;
   UINT32                ValidAttributes[] = {
                           EFI_VARIABLE_NON_VOLATILE|EFI_VARIABLE_BOOTSERVICE_ACCESS,
                           EFI_VARIABLE_BOOTSERVICE_ACCESS|EFI_VARIABLE_RUNTIME_ACCESS,
@@ -2712,13 +2713,13 @@ QueryVariableInfoFuncTestSub1 (
         DataBuf[DataIndex] = (UINT8)(DataIndex + 1);
     }
 
-    SetVarStatus = RT->SetVariable (
-                         L"TestVariable",           // VariableName
-                         &TestVendorGuid,           // VendorGuid
-                         ValidAttributes[Index],    // Attributes
-                         MAX_DATA_SIZE,             // DataSize
-                         DataBuf                    // Data
-                         );
+    RT->SetVariable (
+          L"TestVariable",           // VariableName
+          &TestVendorGuid,           // VendorGuid
+          ValidAttributes[Index],    // Attributes
+          MAX_DATA_SIZE,             // DataSize
+          DataBuf                    // Data
+          );
 
     //
     // QueryVariableInfo 2
@@ -2733,13 +2734,13 @@ QueryVariableInfoFuncTestSub1 (
     //
     // Call SetVariable service to delete the variable inserted just now
     //
-    SetVarStatus = RT->SetVariable (
-                         L"TestVariable",             // VariableName
-                         &TestVendorGuid,            // VendorGuid
-                         ValidAttributes[Index],
-                         0,                           // DataSize
-                         DataBuf               // Data
-                         );
+    RT->SetVariable (
+          L"TestVariable",            // VariableName
+          &TestVendorGuid,            // VendorGuid
+          ValidAttributes[Index],
+          0,                    // DataSize
+          DataBuf               // Data
+          );
 
     //
     // QueryVariableInfo 3
@@ -2842,8 +2843,8 @@ HardwareErrorRecordFuncTest (
   EFI_TEST_RECOVERY_LIBRARY_PROTOCOL  *RecoveryLib;
   EFI_TEST_LOGGING_LIBRARY_PROTOCOL   *LoggingLib;
   
-  UINTN                 RecoveryDataSize;
-  UINT8                 *RecoveryData;
+  // UINTN                 RecoveryDataSize;
+  // UINT8                 *RecoveryData;
   
   CHAR16                *HwErrRecName = L"HwErrRecSupport";
   UINT16                HwErrRecSupportVariable;
@@ -2897,15 +2898,15 @@ HardwareErrorRecordFuncTest (
   //
   // Allocate memory for recovery data
   //
-  RecoveryDataSize = 1024;
-  Status = gtBS->AllocatePool (
-                   EfiLoaderData,
-                   RecoveryDataSize,
-                   (VOID **)&RecoveryData
-                   );
-  if ( EFI_ERROR(Status) ) {
-    return Status;
-  }
+  // RecoveryDataSize = 1024;
+  // Status = gtBS->AllocatePool (
+  //                  EfiLoaderData,
+  //                  RecoveryDataSize,
+  //                  (VOID **)&RecoveryData
+  //                  );
+  // if ( EFI_ERROR(Status) ) {
+  //   return Status;
+  // }
 
   //
   // Try to read reset record from the RecoveryData,
@@ -2914,19 +2915,19 @@ HardwareErrorRecordFuncTest (
   // it means useful data has been saved before the reset
   // and the date should be retrived goto particular process
   //
-  Status = RecoveryLib->ReadResetRecord (
-                          RecoveryLib,
-                          &RecoveryDataSize,
-                          RecoveryData
-                          );
-  if ( !EFI_ERROR(Status) && (RecoveryDataSize > 0) ) {
-    switch (RecoveryData[0]) {
-    case 2:
-      goto step2;
-    default:
-      goto step3;
-    }
-  }
+  // Status = RecoveryLib->ReadResetRecord (
+  //                         RecoveryLib,
+  //                         &RecoveryDataSize,
+  //                         RecoveryData
+  //                         );
+  // if ( !EFI_ERROR(Status) && (RecoveryDataSize > 0) ) {
+  //   switch (RecoveryData[0]) {
+  //   case 2:
+  //     goto step2;
+  //   default:
+  //     goto step3;
+  //   }
+  // }
   
   //
   // Check if the platform implements support for Hardware Error Record Persistence
@@ -2951,7 +2952,7 @@ HardwareErrorRecordFuncTest (
 
   
   if ( EFI_SUCCESS != Status || !HwErrRecSupportVariable ) {
-    gtBS->FreePool (RecoveryData);
+    // gtBS->FreePool (RecoveryData);
     return Status;
   }
   
@@ -2974,7 +2975,7 @@ HardwareErrorRecordFuncTest (
                          );
   
   if ( Status != EFI_SUCCESS || RemainingVariableStorageSize <= 0 ) {
-    gtBS->FreePool (RecoveryData);
+    // gtBS->FreePool (RecoveryData);
     return Status;
   }
   
@@ -3033,7 +3034,7 @@ HardwareErrorRecordFuncTest (
                         HwErrRecVariable
                         );
   if ( EFI_ERROR(Status) ) {
-    gtBS->FreePool (RecoveryData);
+    // gtBS->FreePool (RecoveryData);
     return Status;
   }
   
@@ -3041,26 +3042,26 @@ HardwareErrorRecordFuncTest (
   // Before the reset, test writes magic num 2 in RecoveryData[0]
   // and writes the useful data - HwErrRecVariableName - to RecoveryData[2]
   //
-  RecoveryData[0] = 2;
-  SctStrnCpy ( (CHAR16*)(&RecoveryData[2]), HwErrRecVariableName, HW_ERR_REC_VARIABLE_NAME_LEN - 1 );
-  RecoveryLib->WriteResetRecord( RecoveryLib, HW_ERR_REC_VARIABLE_NAME_LEN * sizeof(CHAR16) + 2, RecoveryData );
+  // RecoveryData[0] = 2;
+  // SctStrnCpy ( (CHAR16*)(&RecoveryData[2]), HwErrRecVariableName, HW_ERR_REC_VARIABLE_NAME_LEN - 1 );
+  // RecoveryLib->WriteResetRecord( RecoveryLib, HW_ERR_REC_VARIABLE_NAME_LEN * sizeof(CHAR16) + 2, RecoveryData );
   
   //
   // Prompt the user about the cold reset and reset the system
   //
-  SctPrint (L"\r\nSystem will cold reset after 1 second...");
-  gtBS->Stall (1000000);
+  // SctPrint (L"\r\nSystem will cold reset after 1 second...");
+  // gtBS->Stall (1000000);
 
-  gtRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
+  // gtRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
   
   //
   // The particular process after the reset
   // retrive the useful data - HwErrRecVariableName - from RecoveryData[2]
   //
-step2:
+  // step2:
   DataSize = 255;
-  HwErrRecVariableName[HW_ERR_REC_VARIABLE_NAME_LEN - 1] = L'\0';
-  SctStrnCpy ( HwErrRecVariableName, (CHAR16*)(RecoveryData+2), HW_ERR_REC_VARIABLE_NAME_LEN - 1 );
+  // HwErrRecVariableName[HW_ERR_REC_VARIABLE_NAME_LEN - 1] = L'\0';
+  // SctStrnCpy ( HwErrRecVariableName, (CHAR16*)(RecoveryData+2), HW_ERR_REC_VARIABLE_NAME_LEN - 1 );
   Status = RT->GetVariable (
                         HwErrRecVariableName,
                         &gHwErrRecGuid,
@@ -3069,7 +3070,7 @@ step2:
                         HwErrRecGetVariable
                         );
   if ( EFI_ERROR(Status) ) {
-    gtBS->FreePool (RecoveryData);
+    // gtBS->FreePool (RecoveryData);
     return Status;
   }
   
@@ -3106,8 +3107,8 @@ step2:
   //
   // Free resources
   //
-step3:
-  gtBS->FreePool (RecoveryData);
+  // step3:
+  //   gtBS->FreePool (RecoveryData);
 
   if (LoggingLib != NULL) {
     LoggingLib->ExitFunction (

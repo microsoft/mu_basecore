@@ -22,7 +22,6 @@ Abstract:
 
 --*/
 
-#include "SctLib.h"
 #include "VariableServicesBBTestMain.h"
 
 #define MULTIPLE_TEST_TIMES         50
@@ -166,8 +165,8 @@ OverflowStressTest (
   EFI_STANDARD_TEST_LIBRARY_PROTOCOL  *StandardLib;
   EFI_TEST_RECOVERY_LIBRARY_PROTOCOL  *RecoveryLib;
   EFI_TEST_LOGGING_LIBRARY_PROTOCOL   *LoggingLib;
-  UINTN                               RecoveryDataSize;
-  UINT8                               *RecoveryData;
+  // UINTN                               RecoveryDataSize;
+  // UINT8                               *RecoveryData;
 
   //
   // Get test support library interfaces
@@ -187,45 +186,45 @@ OverflowStressTest (
   //
   // Allocate memory for recovery data
   //
-  Status = gtBS->AllocatePool (
-                   EfiLoaderData,
-                   1024,
-                   (VOID **)&RecoveryData
-                   );
-  if (EFI_ERROR(Status)) {
-    return Status;
-  }
+  // Status = gtBS->AllocatePool (
+  //                  EfiLoaderData,
+  //                  1024,
+  //                  (VOID **)&RecoveryData
+  //                  );
+  // if (EFI_ERROR(Status)) {
+  //   return Status;
+  // }
 
   //
   // Read reset record
   //
-  RecoveryDataSize = 1024;
-  Status = RecoveryLib->ReadResetRecord (
-                          RecoveryLib,
-                          &RecoveryDataSize,
-                          RecoveryData
-                          );
-  if (!EFI_ERROR(Status) && (RecoveryDataSize > 0)) {
-    switch (RecoveryData[0]) {
-    case 2:
-      goto step2;
-    default:
-      goto step3;
-    }
-  }
+  // RecoveryDataSize = 1024;
+  // Status = RecoveryLib->ReadResetRecord (
+  //                         RecoveryLib,
+  //                         &RecoveryDataSize,
+  //                         RecoveryData
+  //                         );
+  // if (!EFI_ERROR(Status) && (RecoveryDataSize > 0)) {
+  //   switch (RecoveryData[0]) {
+  //   case 2:
+  //     goto step2;
+  //   default:
+  //     goto step3;
+  //   }
+  // }
 
   //
   // Reclaim test with system reset
   //
-step2:
+  // step2:
   Status = OverflowStressTestSub1 (RT, StandardLib, RecoveryLib, LoggingLib);
 
 
   //
   // Free resources
   //
-step3:
-  gtBS->FreePool (RecoveryData);
+  // step3:
+  //   gtBS->FreePool (RecoveryData);
 
   //
   // Done
@@ -671,8 +670,8 @@ OverflowStressTestSub1 (
   CHAR16                *VariableName;
   UINTN                 DataIndex;
   UINT8                 Data[MAX_BUFFER_SIZE];
-  UINTN                 RecoveryDataSize;
-  UINT8                 *RecoveryData;
+  // UINTN                 RecoveryDataSize;
+  // UINT8                 *RecoveryData;
 
   //
   // Trace ...
@@ -688,40 +687,40 @@ OverflowStressTestSub1 (
   //
   // Allocate memory for recovery data
   //
-  Status = gtBS->AllocatePool (
-                   EfiLoaderData,
-                   1024,
-                   (VOID **)&RecoveryData
-                   );
-  if (EFI_ERROR(Status)) {
-    if (LoggingLib != NULL) {
-      LoggingLib->ExitFunction (
-                    LoggingLib,
-                    L"OverflowStressTestSub2",
-                    L"TDS 5.2.2.2 - Cannot allocate memory for recovery data\n"
-                    );
-    }
+  // Status = gtBS->AllocatePool (
+  //                  EfiLoaderData,
+  //                  1024,
+  //                  (VOID **)&RecoveryData
+  //                  );
+  // if (EFI_ERROR(Status)) {
+  //   if (LoggingLib != NULL) {
+  //     LoggingLib->ExitFunction (
+  //                   LoggingLib,
+  //                   L"OverflowStressTestSub2",
+  //                   L"TDS 5.2.2.2 - Cannot allocate memory for recovery data\n"
+  //                   );
+  //   }
 
-    return Status;
-  }
+  //   return Status;
+  // }
 
   //
   // Read reset record
   //
-  RecoveryDataSize = 1024;
-  Status = RecoveryLib->ReadResetRecord (
-                          RecoveryLib,
-                          &RecoveryDataSize,
-                          RecoveryData
-                          );
-  if (!EFI_ERROR(Status) && (RecoveryDataSize > 1)) {
-    switch (RecoveryData[1]) {
-    case 2:
-      goto step2;
-    default:
-      goto step3;
-    }
-  }
+  // RecoveryDataSize = 1024;
+  // Status = RecoveryLib->ReadResetRecord (
+  //                         RecoveryLib,
+  //                         &RecoveryDataSize,
+  //                         RecoveryData
+  //                         );
+  // if (!EFI_ERROR(Status) && (RecoveryDataSize > 1)) {
+  //   switch (RecoveryData[1]) {
+  //   case 2:
+  //     goto step2;
+  //   default:
+  //     goto step3;
+  //   }
+  // }
 
   //
   // Insert variables until no enough storage
@@ -754,23 +753,23 @@ OverflowStressTestSub1 (
   //
   // Write reset record
   //
-  RecoveryData[0] = 2;
-  RecoveryData[1] = 2;
-  RecoveryLib->WriteResetRecord (RecoveryLib, 2, RecoveryData);
+  // RecoveryData[0] = 2;
+  // RecoveryData[1] = 2;
+  // RecoveryLib->WriteResetRecord (RecoveryLib, 2, RecoveryData);
 
   //
   // Print out some information to avoid the user thought it is an error
   //
-  SctPrint (L"System will cold reset after 1 second...");
-  gtBS->Stall (1000000);
+  // SctPrint (L"System will cold reset after 1 second...");
+  // gtBS->Stall (1000000);
 
-  gtRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
+  // gtRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
 
   //
   // After system reset
   //
-step2:
-  RecoveryLib->WriteResetRecord (RecoveryLib, 0, NULL);
+  // step2:
+  //   RecoveryLib->WriteResetRecord (RecoveryLib, 0, NULL);
 
   //
   // Delete variables until all added have been deleted
@@ -813,8 +812,8 @@ step2:
   //
   // Free resources
   //
-step3:
-  gtBS->FreePool (RecoveryData);
+  // step3:
+  //   gtBS->FreePool (RecoveryData);
 
   if (LoggingLib != NULL) {
     LoggingLib->ExitFunction (

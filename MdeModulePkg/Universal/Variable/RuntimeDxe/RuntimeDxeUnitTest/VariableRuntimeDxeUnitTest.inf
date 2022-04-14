@@ -23,10 +23,20 @@
 
 [Sources]
   # Test Harness
+  SctShim.c
+  SctShim.h
   TestData.c
   VariableRuntimeDxeUnitTest.c
   VariableRuntimeDxeUnitTest.h
   VariableTestDataHelpers.c
+  BlackBoxTest/Guid.c
+  BlackBoxTest/Guid.h
+  BlackBoxTest/VariableServicesBBTestConformance.c
+  BlackBoxTest/VariableServicesBBTestFunction.c
+  BlackBoxTest/VariableServicesBBTestMain.h
+  BlackBoxTest/VariableServicesBBTestStress.c
+  SctInclude/StandardTestLibrary.h
+  SctInclude/TestLoggingLibrary.h
 
   # Files Under Test
   ../Measurement.c
@@ -68,6 +78,7 @@
   VariablePolicyLib
   VariablePolicyHelperLib
   VariableFlashInfoLib
+  PrintLib
 
 
 [Protocols]
@@ -76,6 +87,7 @@
 
 [Guids]
   gVariableFlashInfoHobGuid
+  gEfiHardwareErrorVariableGuid
 
   ## SOMETIMES_CONSUMES   ## GUID # Signature of Variable store header
   ## SOMETIMES_PRODUCES   ## GUID # Signature of Variable store header
