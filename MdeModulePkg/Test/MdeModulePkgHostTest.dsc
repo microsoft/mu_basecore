@@ -67,6 +67,8 @@
     <PcdsFixedAtBuild>
       gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable|TRUE
       gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable|TRUE
+      # SCT tests are noisy, so disable VERBOSE.
+      gUnitTestFrameworkPkgTokenSpaceGuid.PcdUnitTestLogLevel|0x00000007
   }
   # MU_CHANGE [END] - Add a host-based unit test for common variable services code.
 
