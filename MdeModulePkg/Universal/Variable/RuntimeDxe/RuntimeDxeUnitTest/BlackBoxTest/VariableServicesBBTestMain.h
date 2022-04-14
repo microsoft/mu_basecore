@@ -28,12 +28,8 @@ Abstract:
 //
 // Includes
 //
-#include "Efi.h"
+#include <SctShim.h>
 #include "Guid.h"
-#include <Library/EfiTestLib.h>
-
-#include EFI_TEST_PROTOCOL_DEFINITION(TestRecoveryLibrary)
-#include EFI_TEST_PROTOCOL_DEFINITION(TestLoggingLibrary)
 
 //
 // Definitions
@@ -110,9 +106,6 @@ Abstract:
 
 #define EFI_HARDWARE_ERROR_VARIABLE \
   { 0x414E6BDD, 0xE47B, 0x47cc, {0xB2, 0x44, 0xBB, 0x61, 0x02, 0x0C, 0xF5, 0x16 }}
-
-#define EFI_GLOBAL_VARIABLE \
-  { 0x8BE4DF61, 0x93CA, 0x11d2, {0xAA, 0x0D, 0x00, 0xE0, 0x98, 0x03, 0x2B, 0x8C }}
 
 // {9338D0EC-807B-4750-986A-8F2A91BB3616}
 #define EFI_AUTHVARIABLE_DER_FUNC_TEST_GUID \

@@ -24,7 +24,7 @@ Abstract:
 
 --*/
 
-#include "Efi.h"
+#include <Uefi.h>
 #include "Guid.h"
 
 
