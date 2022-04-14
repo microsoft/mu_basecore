@@ -22,7 +22,6 @@ Abstract:
 
 --*/
 
-#include "SctLib.h"
 #include "VariableServicesBBTestMain.h"
 
 
@@ -3014,14 +3013,14 @@ QueryVariableInfoConfTest (
     return Status;
   }
 
-  if (FALSE == CheckBBTestCanRunAndRecordAssertion(
-                  StandardLib, 
-                  L"RT.QueryVariableInfo_Conf - QueryVariableInfo_Conf it's not Supported in EFI",
-                  __FILE__,
-                  (UINTN)__LINE__
-                  )) {
-    return EFI_SUCCESS;
-  }
+  // if (FALSE == CheckBBTestCanRunAndRecordAssertion(
+  //                 StandardLib, 
+  //                 L"RT.QueryVariableInfo_Conf - QueryVariableInfo_Conf it's not Supported in EFI",
+  //                 __FILE__,
+  //                 (UINTN)__LINE__
+  //                 )) {
+  //   return EFI_SUCCESS;
+  // }
 
   RT = (EFI_RUNTIME_SERVICES *)ClientInterface;
 #if 0
