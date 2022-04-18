@@ -2,11 +2,20 @@
   Pei Core Main Entry Point
 
 Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "PeiMain.h"
+
+// MU_CHANGE [BEGIN]
+// MU_CHANGE - Include these in order to build the performance HOB here instead of
+//            FirmwarePerformancePei. Necessary because Firmware firmwarePerformancePei
+//            is loaded postmem when CAR is gone.
+#include <Ppi/SecPerformance.h>
+#include <Guid/FirmwarePerformance.h>
+// MU_CHANGE [END]
 
 EFI_PEI_PPI_DESCRIPTOR  mMemoryDiscoveredPpi = {
   (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
@@ -178,6 +187,12 @@ PeiCore (
   EFI_HOB_HANDOFF_INFO_TABLE      *HandoffInformationTable;
   EFI_PEI_TEMPORARY_RAM_DONE_PPI  *TemporaryRamDonePpi;
   UINTN                           Index;
+  // MU_CHANGE [BEGIN]
+  // MU_CHANGE - Build the performance HOB here instead of FirmwarePerformancePei.
+  FIRMWARE_SEC_PERFORMANCE  Performance;
+  PEI_SEC_PERFORMANCE_PPI   *SecPerf;
+
+  // MU_CHANGE [END]
 
   //
   // Retrieve context passed into PEI Core
@@ -437,6 +452,30 @@ PeiCore (
     if (PpiList != NULL) {
       ProcessPpiListFromSec ((CONST EFI_PEI_SERVICES **)&PrivateData.Ps, PpiList);
     }
+
+    // MU_CHANGE [BEGIN]
+    //
+    // MU_CHANGE: Build Hob for SEC performance data.
+    //
+    Status = PeiServicesLocatePpi (
+               &gPeiSecPerformancePpiGuid,
+               0,
+               NULL,
+               (VOID **)&SecPerf
+               );
+    if (!EFI_ERROR (Status)) {
+      Status = SecPerf->GetPerformance ((CONST EFI_PEI_SERVICES **)&PrivateData.Ps, SecPerf, &Performance);
+      if (!EFI_ERROR (Status)) {
+        BuildGuidDataHob (
+          &gEfiFirmwarePerformanceGuid,
+          &Performance,
+          sizeof (FIRMWARE_SEC_PERFORMANCE)
+          );
+        DEBUG ((DEBUG_ERROR, "SEC Performance Hob ResetEnd = %ld\n", Performance.ResetEnd));
+      }
+    }
+
+    // MU_CHANGE [END]
   } else {
     if (PcdGetBool (PcdMigrateTemporaryRamFirmwareVolumes)) {
       //

@@ -6,6 +6,7 @@
   and install FPDT to ACPI table.
 
   Copyright (c) 2011 - 2021, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -686,7 +687,7 @@ FirmwarePerformanceDxeEntryPoint (
   //
   Status = gBS->CreateEventEx (
                   EVT_NOTIFY_SIGNAL,
-                  TPL_NOTIFY,
+                  TPL_CALLBACK,             // MU_CHANGE - Change to TPL_CALLBACK from TPL_NOTIFY
                   FpdtEndOfDxeEventNotify,
                   NULL,
                   &gEfiEndOfDxeEventGroupGuid,
