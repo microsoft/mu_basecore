@@ -2,7 +2,7 @@
   SMM IPL that produces SMM related runtime protocols and load the SMM Core into SMRAM
 
   Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
-  Copyright (c) Microsoft Corporation.<BR>
+  Copyright (c) Microsoft Corporation<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -1142,7 +1142,14 @@ ExecuteSmmCoreFromSmram (
   //
   // Print debug message showing SMM Core load address.
   //
-  DEBUG ((DEBUG_INFO, "SMM IPL loading SMM Core at SMRAM address %p\n", (VOID *)(UINTN)ImageContext.ImageAddress));
+  // MU_CHANGE [BEGIN]
+  if (DebugCodeEnabled ()) {
+    DEBUG ((DEBUG_INFO, "SMM IPL loading SMM Core at SMRAM address %p\n", (VOID *)(UINTN)ImageContext.ImageAddress));
+  } else {
+    DEBUG ((DEBUG_ERROR, "SMM IPL loading SMM Core (PiSmmCore.efi)\n"));
+  }
+
+  // MU_CHANGE [END]
 
   //
   // Load the image to our new buffer

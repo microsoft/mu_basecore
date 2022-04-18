@@ -12,6 +12,7 @@
 
 Copyright (c) 2006 - 2023, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
+Copyright (c) Microsoft Corporation<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -1519,7 +1520,7 @@ DxeCorePerformanceLibConstructor (
   //
   Status = gBS->CreateEventEx (
                   EVT_NOTIFY_SIGNAL,
-                  TPL_NOTIFY,
+                  TPL_CALLBACK, // MU_CHANGE - Change to TPL_CALLBACK from TPL_NOTIFY
                   ReportFpdtRecordBuffer,
                   NULL,
                   &gEfiEndOfDxeEventGroupGuid,
