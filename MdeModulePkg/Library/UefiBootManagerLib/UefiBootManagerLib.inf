@@ -72,6 +72,7 @@
   ## SOMETIMES_CONSUMES ## Variable:L"MemoryTypeInformation."
   ## SOMETIMES_PRODUCES ## Variable:L"MemoryTypeInformation."
   gEfiMemoryTypeInformationGuid
+  gEfiMemoryTypeMinimumAllocationGuid ## SOMETIMES_CONSUMES ## HOB
 
   ## SOMETIMES_PRODUCES ## Variable:L"BootCurrent" (The boot option of current boot)
   ## SOMETIMES_CONSUMES ## Variable:L"BootXX" (Boot option variable)
