@@ -22,6 +22,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 extern EFI_GUID  gEfiMemoryTypeInformationGuid;
 
+#define EFI_MEMORY_TYPE_MINIMUM_ALLOCATION_GUID \
+  { 0xE4FFE60B, 0x2499, 0x4848, { 0x88, 0x9A, 0xF4, 0x24, 0xC1, 0xC9, 0xC3, 0x47 }}
+
+extern EFI_GUID  gEfiMemoryTypeMinimumAllocationGuid;
+
 typedef struct {
   UINT32    Type;           ///< EFI memory type defined in UEFI specification.
   UINT32    NumberOfPages;  ///< The pages of this type memory.
