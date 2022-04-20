@@ -19,6 +19,11 @@
 
 extern GUID  gParallelLzmaCustomDecompressGuid;
 
+#define PARALLEL_LZMA_CUSTOM_DECOMPRESS_HOB_GUID \
+  { 0x21650a93, 0xed65, 0x4240, { 0x84, 0x37, 0x55, 0xba, 0xe2, 0x62, 0x98, 0x5b } }
+
+extern GUID  gParallelLzmaCustomDecompressHobGuid;
+
 typedef struct {
   VOID     *SourceBuffer;
   VOID     *DecompressedBuffer;
