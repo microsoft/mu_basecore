@@ -1,0 +1,40 @@
+## @file
+#  ParallelLzmaCustomDecompressLib produces the Parallel LZMA custom decompression algorithm.
+#
+# This relies on the standard LzmaCustomDecompress lib to do the work and expects to be
+# linked against it with a NULL| library instance.
+#
+##
+
+[Defines]
+  INF_VERSION                    = 1.27
+  BASE_NAME                      = ParallelLzmaDecompressLib
+  FILE_GUID                      = 16979EFB-EC84-4390-BC4E-923B69B02CDA
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = NULL
+  CONSTRUCTOR                    = ParallelLzmaDecompressLibConstructor
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 AARCH64 ARM
+#
+
+[Sources]
+  ParallelLzmaDecompress.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[Guids]
+  gParallelLzmaCustomDecompressGuid     ## PRODUCES # specifies LZMA custom decompress algorithm.
+  gParallelLzmaCustomDecompressHobGuid  ## CONSUMES
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  ExtractGuidedSectionLib
+  HobLib

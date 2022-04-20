@@ -271,6 +271,7 @@
   MdeModulePkg/Library/DxeSmmMemoryProtectionHobLib/DxeSmmMemoryProtectionHobLib.inf             ## MU_CHANGE
   MdeModulePkg/Library/DxeSmmMemoryProtectionHobLib/StandaloneMmMemoryProtectionHobLib.inf       ## MU_CHANGE
   MdeModulePkg/Library/CapsulePersistLibNull/CapsulePersistLibNull.inf                           ## MU_CHANGE
+  MdeModulePkg/Library/ParallelLzmaCustomDecompressLib/ParallelLzmaCustomDecompressLib.inf       ## MU_CHANGE
 
   MdeModulePkg/Test/ShellTest/VariablePolicyFuncTestApp/VariablePolicyFuncTestApp.inf {
     <LibraryClasses>
