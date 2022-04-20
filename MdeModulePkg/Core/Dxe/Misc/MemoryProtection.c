@@ -633,7 +633,10 @@ ProtectUefiImageMu (
 
 Finish:
   if (EFI_ERROR (Status)) {
-    ClearReadOnlyAndNxFromImage (LoadedImage);
+    if (gMPS.ImageProtectionPolicy.Data) {
+      ClearReadOnlyAndNxFromImage (LoadedImage);
+    }
+
     if (ProtectionPolicy != PROTECT_ELSE_RAISE_ERROR) {
       Status = EFI_SUCCESS;
     }
@@ -1642,9 +1645,7 @@ IsInSmm (
   @return EFI_SUCCESS             Read-only set on loaded Image
   @return EFI_INVALID_PARAMETER   Image or Image->ImageContext.ImageAddress was NULL
   @return EFI_NOT_READY           gCpu is not available yet
-  @return other                   Return value of mMemoryAttribute->GetMemoryAttributes(),
-                                  mMemoryAttribute->SetMemoryAttributes, or
-                                  gBS->LocateProtocol()
+  @return other                   Return value of SetMemoryAttributes()
 
 **/
 EFI_STATUS
@@ -1660,13 +1661,18 @@ SetImageToReadOnly (
 
   //
   // If the CPU arch protocol is not installed yet, we cannot manage memory
-  // permission attributes.
+  // attributes.
   //
   if (gCpu == NULL) {
     return EFI_NOT_READY;
   }
 
-  return gCpu->SetMemoryAttributes (gCpu, (EFI_PHYSICAL_ADDRESS)((UINTN)Image->ImageContext.ImageAddress), ALIGN_VALUE (Image->ImageContext.ImageSize, EFI_PAGE_SIZE), (EFI_MEMORY_RO | EFI_MEMORY_XP));
+  return gCpu->SetMemoryAttributes (
+                 gCpu,
+                 (EFI_PHYSICAL_ADDRESS)((UINTN)Image->ImageContext.ImageAddress),
+                 ALIGN_VALUE (Image->ImageContext.ImageSize, EFI_PAGE_SIZE),
+                 (EFI_MEMORY_RO | EFI_MEMORY_XP)
+                 );
 }
 
 /**
@@ -1675,10 +1681,11 @@ SetImageToReadOnly (
   @param  Image                   Pointer to the loaded image private protocol
 
   @return EFI_SUCCESS             Read-only and NX attributes unset on image
-  @return EFI_INVALID_PARAMETER   Image or Image->ImageBase was NULL
+  @return EFI_INVALID_PARAMETER   Image or Image->ImageBase was NULL, or could not
+                                  fetch the memory descriptor
   @return EFI_NOT_READY           gCpu is not available yet
-  @return other                   Return value of mMemoryAttribute->ClearMemoryAttributes()
-                                  or gBS->LocateProtocol()
+  @return other                   Return value of CoreGetMemorySpaceDescriptor() or
+                                  SetMemoryAttributes()
 
 **/
 EFI_STATUS
@@ -1686,7 +1693,6 @@ ClearReadOnlyAndNxFromImage (
   IN EFI_LOADED_IMAGE_PROTOCOL  *Image
   )
 {
-  UINT64                           Attributes = 0;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  Desc;
   EFI_STATUS                       Status;
 
@@ -1698,19 +1704,27 @@ ClearReadOnlyAndNxFromImage (
 
   //
   // If the CPU arch protocol is not installed yet, we cannot manage memory
-  // permission attributes.
+  // attributes.
   //
   if (gCpu == NULL) {
     return EFI_NOT_READY;
   }
 
-  Status = CoreGetMemorySpaceDescriptor ((EFI_PHYSICAL_ADDRESS)((UINTN)Image->ImageBase), &Desc);
+  Status = CoreGetMemorySpaceDescriptor (
+             (EFI_PHYSICAL_ADDRESS)((UINTN)Image->ImageBase),
+             &Desc
+             );
 
   if (!EFI_ERROR (Status)) {
-    Attributes = ((EFI_MEMORY_ACCESS_MASK)&Desc.Attributes) & ~(EFI_MEMORY_RO | EFI_MEMORY_XP);
+    return gCpu->SetMemoryAttributes (
+                   gCpu,
+                   (EFI_PHYSICAL_ADDRESS)((UINTN)Image->ImageBase),
+                   ALIGN_VALUE (Image->ImageSize, EFI_PAGE_SIZE),
+                   Desc.Attributes & ~(EFI_MEMORY_RO | EFI_MEMORY_XP)
+                   );
   }
 
-  return gCpu->SetMemoryAttributes (gCpu, (EFI_PHYSICAL_ADDRESS)((UINTN)Image->ImageBase), ALIGN_VALUE (Image->ImageSize, EFI_PAGE_SIZE), Attributes);
+  return Status;
 }
 
 // MU_CHANGE END

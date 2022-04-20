@@ -63,10 +63,10 @@ typedef struct _POLICY_ENTRY {
 EFI_STATUS
 EFIAPI
 DxeSetPolicy (
-  IN EFI_GUID  *PolicyGuid,
-  IN UINT64    Attributes,
-  IN VOID      *Policy,
-  IN UINT16    PolicySize
+  IN CONST EFI_GUID  *PolicyGuid,
+  IN UINT64          Attributes,
+  IN VOID            *Policy,
+  IN UINT16          PolicySize
   );
 
 /**
@@ -85,10 +85,10 @@ DxeSetPolicy (
 EFI_STATUS
 EFIAPI
 DxeGetPolicy (
-  IN EFI_GUID    *PolicyGuid,
-  OUT UINT64     *Attributes OPTIONAL,
-  OUT VOID       *Policy,
-  IN OUT UINT16  *PolicySize
+  IN CONST EFI_GUID  *PolicyGuid,
+  OUT UINT64         *Attributes OPTIONAL,
+  OUT VOID           *Policy,
+  IN OUT UINT16      *PolicySize
   );
 
 /**
@@ -103,7 +103,7 @@ DxeGetPolicy (
 EFI_STATUS
 EFIAPI
 DxeRemovePolicy (
-  IN EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid
   );
 
 #endif

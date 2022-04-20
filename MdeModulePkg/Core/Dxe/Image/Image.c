@@ -802,7 +802,10 @@ CoreLoadPeImage (
 
   // MU_CHANGE START
   // Now that relocations are done, set the image to read-only
-  SetImageToReadOnly (Image);
+  if (gMPS.ImageProtectionPolicy.Data) {
+    SetImageToReadOnly (Image);
+  }
+
   // MU_CHANGE END
   //
   // Flush the Instruction Cache
