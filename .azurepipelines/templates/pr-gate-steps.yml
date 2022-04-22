@@ -14,6 +14,7 @@ parameters:
   build_archs: ''
   has_ci_dependencies: false    # MU_CHANGE - Enable toggle for stuart_ci_build
   extra_steps: []               # MU_CHANGE - needed for clang
+  build_args: '' # MU_CHANGE - add build arguments to support code coverage
 
 steps:
 - checkout: self
@@ -109,7 +110,8 @@ steps:
   displayName: Build and Test ${{ parameters.build_pkgs }} ${{ parameters.build_archs}}
   inputs:
     filename: stuart_ci_build
-    arguments: -c .pytool/CISettings.py -p $(pkgs_to_build) -t ${{ parameters.build_targets}} -a ${{ parameters.build_archs}} TOOL_CHAIN_TAG=${{ parameters.tool_chain_tag}}
+    # MU_CHANGE - Add build arguments parameter
+    arguments: -c .pytool/CISettings.py -p $(pkgs_to_build) -t ${{ parameters.build_targets}} -a ${{ parameters.build_archs}} TOOL_CHAIN_TAG=${{ parameters.tool_chain_tag}} ${{ parameters.build_args}}
   condition: and(gt(variables.pkg_count, 0), succeeded())
 
 # Publish Test Results to Azure Pipelines/TFS
@@ -160,6 +162,8 @@ steps:
       TestSuites.xml
       **/BUILD_TOOLS_REPORT.html
       **/OVERRIDELOG.TXT
+      coverage.xml
+      coverage.html
     flattenFolders: true
   condition: succeededOrFailed()
 
@@ -171,3 +175,11 @@ steps:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)'
     artifactName: 'Build Logs $(System.JobName)'
   condition: succeededOrFailed()
+
+# MU_CHANGE - Publish the LCOV coverage files.
+- task: PublishCodeCoverageResults@1
+  condition: and(succeededOrFailed(), and(gt(variables.pkg_count, 0), contains('${{ parameters.build_args }}', 'CODE_COVERAGE=TRUE')))
+  inputs:
+    codeCoverageTool: 'Cobertura'
+    summaryFileLocation: 'Build/coverage.xml'
+    pathToSources: '$(Build.SourcesDirectory)'
