@@ -193,6 +193,9 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         if os.path.isfile(f"{workspace}/Build/coverage.xml"):
             os.remove(f"{workspace}/Build/coverage.xml")
         ret = RunCmd("lcov_cobertura",f"{workspace}/Build/all-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {workspace}/Build/coverage.xml")
+        if ret != 0:
+            logging.error("UnitTest Coverage: Failed generate all coverage XML.")
+            return 1
 
         return 0
 
@@ -209,7 +212,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         # Generate coverage file
         coverageFile = ""
         for testFile in testList:
-            ret = RunCmd("OpenCppCoverage", f"--source {workspace} --export_type binary:{testFile}.cov -- {testFile}")
+            ret = RunCmd("OpenCppCoverage", f"--source {workspace} --export_type binary:{testFile}.cov -- {testFile}", workingdir=f"{workspace}Build/")
             if ret != 0:
                 logging.error("UnitTest Coverage: Failed to collect coverage data.")
                 return 1
