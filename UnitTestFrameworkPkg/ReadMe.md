@@ -403,6 +403,27 @@ CMOCKA_XML_FILE=<absolute or relative path to output file>
 
 This mode is used by the test running plugin to aggregate the results for CI test status reporting in the web view.
 
+### Code Coverage
+
+Host based Unit Tests will automatically include GCC build flags to enable coverage data.
+This is primarily leveraged for pipeline builds, but this can be leveraged locally using the
+lcov linux tool, and parsed using the lcov_cobertura python tool. pycobertura is used to
+covert this coverage data to a human readable HTML file. These tools must be installed
+to parse code coverage.
+
+```bash
+sudo apt-get install -y lcov
+pip install lcov_cobertura
+pip install pycobertura
+```
+
+During CI builds, use the  ```CODE_COVERAGE=TRUE``` flag to generate the code coverage XML files,
+and additionally use the ```CC_HTML=TRUE``` flag to generate the HTML file. This will be generated
+in Build/coverage.html.
+
+There is currently no official guidance or support for code coverage when compiling
+in Visual Studio at this time.
+
 ### Important Note
 
 This works on both Windows and Linux, but is currently limited to x64 architectures. Working on getting others, but we
