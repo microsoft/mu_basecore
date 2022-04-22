@@ -16,6 +16,7 @@ from datetime import datetime
 import subprocess
 import argparse
 import hashlib
+import re
 from io import StringIO
 
 #
@@ -58,7 +59,7 @@ try:
                 elif (errcode == cls.OR_INVALID_FORMAT):
                     str = 'INVALID_FORMAT'
                 elif (errcode == cls.OR_DSC_INF_NOT_FOUND):
-                    str = 'DSC_FILE_NOT_FOUND'
+                    str = 'FILE_NOT_FOUND'
                 elif (errcode == cls.OR_TARGET_INF_NOT_FOUND):
                     str = 'INF_FILE_NOT_FOUND'
                 else:
@@ -129,7 +130,7 @@ try:
                 if m_result != self.OverrideResult.OR_ALL_GOOD:
                     if m_result != self.OverrideResult.OR_DSC_INF_NOT_FOUND:
                         result = m_result
-                    logging.error("Override processing error %s in file %s" % (self.OverrideResult.GetErrStr(m_result), file))
+                    logging.error("Override processing error %s in file/dir %s" % (self.OverrideResult.GetErrStr(m_result), file))
 
             self.override_log_print(thebuilder, modulelist, status)
 
@@ -153,6 +154,10 @@ try:
             list_path = os.path.normpath(filepath).lower()
 
             if (list_path in filelist):
+                return result
+
+            # This processing step is only for files. If the filepath is a directory (meaning the directory is hashed), skip this step
+            if os.path.isdir(filepath):
                 return result
 
             # Check for file existence, fail otherwise.
@@ -574,6 +579,14 @@ def path_parse():
         '-t', '--targetpath', dest = 'TargetPath', type=str,
         help = '''Specify the absolute path to your target module/file/folder by passing t Path/To/Target or --targetpath Path/To/Target.'''
         )
+    group.add_argument (
+        '-r', '--regenpath', dest = 'RegenPath', type=str,
+        help = '''Specify the absolute path to an inf with existing overrides to regen by passing r Path/To/Target or --regenpath Path/To/Target.'''
+        )
+    parser.add_argument (
+        '-p', '--packagepath', dest = 'RegenPackagePath', nargs="*", default=[],
+        help = '''Specify the packages path to be used to resolve relative paths when using --regenpath. ignored otherwise. Workspace is always included.'''
+        )
     parser.add_argument (
         '-v', '--version', dest = 'Version', default= 2, type=int,
         help = '''This is the version of the override hash to produce (currently only 1 and 2 are valid)'''
@@ -596,19 +609,28 @@ def path_parse():
         if not os.path.isfile(Paths.TargetPath):
             raise RuntimeError("Module path is invalid.")
 
-
     if Paths.Version < 1 or Paths.Version > len(FORMAT_VERSIONS):
         raise RuntimeError("Version is invalid")
 
     if not os.path.isdir(Paths.WorkSpace):
         raise RuntimeError("Workspace path is invalid.")
-    if not os.path.isfile(Paths.TargetPath) and not os.path.isdir(Paths.TargetPath):
-        raise RuntimeError("Module path is invalid.")
-    # Needs to strip os.sep is to take care of the root path case
-    # For a folder, this will do nothing on a formatted abspath
-    # For a drive root, this will rip off the os.sep
-    if not os.path.normcase(Paths.TargetPath).startswith(os.path.normcase(Paths.WorkSpace.rstrip(os.sep)) + os.sep):
-        raise RuntimeError("Module is not within specified Workspace.")
+    if Paths.TargetPath is not None:
+        if not os.path.isfile(Paths.TargetPath) and not os.path.isdir(Paths.TargetPath):
+            raise RuntimeError("Module path is invalid.")
+        # Needs to strip os.sep is to take care of the root path case
+        # For a folder, this will do nothing on a formatted abspath
+        # For a drive root, this will rip off the os.sep
+        if not os.path.normcase(Paths.TargetPath).startswith(os.path.normcase(Paths.WorkSpace.rstrip(os.sep)) + os.sep):
+            raise RuntimeError("Module is not within specified Workspace.")
+
+    if Paths.RegenPath is not None:
+        if not os.path.isfile(Paths.RegenPath):
+            raise RuntimeError("Regen path is invalid.")
+        # Needs to strip os.sep is to take care of the root path case
+        # For a folder, this will do nothing on a formatted abspath
+        # For a drive root, this will rip off the os.sep
+        if not os.path.normcase(Paths.RegenPath).startswith(os.path.normcase(Paths.WorkSpace.rstrip(os.sep)) + os.sep):
+            raise RuntimeError("Module is not within specified Workspace.")
 
     return Paths
 
@@ -625,23 +647,63 @@ if __name__ == '__main__':
     # Parse required paths passed from cmd line arguments
     Paths = path_parse()
 
-    dummy_list = []
-    pathtool = Edk2Path(Paths.WorkSpace, dummy_list)
+    # check if we are asked to update an .inf file "in-place"
+    if (Paths.RegenPath is not None):
+        pathtool = Edk2Path(Paths.WorkSpace, Paths.RegenPackagePath)
 
-    # Use absolute module path to find package path
-    pkg_path = pathtool.GetContainingPackage(Paths.TargetPath)
-    rel_path = Paths.TargetPath[Paths.TargetPath.find(pkg_path):]
+        v1_regex = re.compile(r"#(Override|Track) : (.*?) \| (.*?) \| (.*?) \| (.*?)")
+        v2_regex = re.compile(r"#(Override|Track) : (.*?) \| (.*?) \| (.*?) \| (.*?) \| (.*?)")
+        with open (Paths.RegenPath) as fd:
+            RegenInfData = fd.read()
 
-    rel_path = rel_path.replace('\\', '/')
-    mod_hash = ModuleHashCal(Paths.TargetPath)
+        RegenInfOutData = ""
+        for line in RegenInfData.splitlines (True):
+            match = v1_regex.match(line)
+            if match is None:
+                match = v2_regex.match(line)
 
-    VERSION_INDEX = Paths.Version - 1
+            if match is not None:
+                rel_path = match.group(3)
+                abs_path = pathtool.GetAbsolutePathOnThisSystemFromEdk2RelativePath(rel_path)
+                if abs_path is not None:
+                    mod_hash = ModuleHashCal(abs_path)
+                    # only update the line if the hash has changed - this ensures the timestamp tracks actual changes rather than last time it was run.
+                    if (mod_hash != match.group(4)):
+                        VERSION_INDEX = Paths.Version - 1
 
-    if VERSION_INDEX == 0:
-        print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-        print('#%s : %08d | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S")))
+                        if VERSION_INDEX == 0:
+                            line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"))
+                        elif VERSION_INDEX == 1:
+                            git_hash = ModuleGitHash(abs_path)
+                            line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash)
+                        print("Updating:\n" + line)
+                else:
+                    print(f"Warning: Could not resolve relative path {rel_path}. Override line not updated.\n")
 
-    elif VERSION_INDEX == 1:
-        git_hash = ModuleGitHash(Paths.TargetPath)
-        print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-        print('#%s : %08d | %s | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
+            RegenInfOutData += line
+
+        with open (Paths.RegenPath, "w") as fd:
+            fd.write(RegenInfOutData)
+
+    else:
+        dummy_list = []
+        pathtool = Edk2Path(Paths.WorkSpace, dummy_list)
+
+        # Generate and print the override for pasting into the file.
+        # Use absolute module path to find package path
+        pkg_path = pathtool.GetContainingPackage(Paths.TargetPath)
+        rel_path = Paths.TargetPath[Paths.TargetPath.find(pkg_path):]
+
+        rel_path = rel_path.replace('\\', '/')
+        mod_hash = ModuleHashCal(Paths.TargetPath)
+
+        VERSION_INDEX = Paths.Version - 1
+
+        if VERSION_INDEX == 0:
+            print("Copy and paste the following line(s) to your overrider inf file(s):\n")
+            print('#%s : %08d | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S")))
+
+        elif VERSION_INDEX == 1:
+            git_hash = ModuleGitHash(Paths.TargetPath)
+            print("Copy and paste the following line(s) to your overrider inf file(s):\n")
+            print('#%s : %08d | %s | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
