@@ -7,7 +7,6 @@ the UEFI shell environment and host-based environments. It allows for unit test 
 on the tests and leave error logging, result formatting, context persistence, and test running to the framework.
 The unit test framework works well for low level unit tests as well as system level tests and
 fits easily in automation frameworks.
-
 ### Framework
 
 The first unit test framework is called **Framework** and is implemented as a set of EDK II libraries.
@@ -281,7 +280,6 @@ leverage the `cmocka.h` interface and write tests with all the features of the C
 
 Documentation for Cmocka can be found here:
 <https://api.cmocka.org/>
-
 ## GoogleTest Samples
 
 There is a sample unit test provided as both an example of how to write a unit test and leverage
