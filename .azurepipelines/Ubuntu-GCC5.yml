@@ -30,8 +30,10 @@ jobs:
     tool_chain_tag: 'GCC5'
     vm_image: 'ubuntu-latest'
     arch_list: "IA32,X64,ARM,AARCH64"
+    build_args: "CODE_COVERAGE=TRUE CC_HTML=TRUE" # MU_CHANGE
     # MU_CHANGE
     extra_steps:
-    - script: sudo apt-get install mingw-w64
-      displayName: Install Windows Resource Compiler for Linux
-
+    - script: |
+              sudo apt-get install -y mingw-w64 lcov
+              pip install lcov_cobertura pycobertura
+      displayName: Install Windows Resource Compiler for Linux & Code Coverage Tools
