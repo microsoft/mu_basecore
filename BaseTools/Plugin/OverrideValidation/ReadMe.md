@@ -128,6 +128,27 @@ ORIGINALS:
 
 ```
 
+Command to regenerate the override records in a given .inf file:
+
+``` cmd
+OverrideValidation.py -w c:\src -r c:\src\FooPkg\OverridingModule.inf
+```
+
+an example of the diff produced when using -r:
+
+``` diff
+diff --git a/FooPkg/OverridingModule.inf b/FooPkg/OverridingModule.inf
+index 2d4ca47299..90da207a39 100644
+--- a/FooPkg/OverridingModule.inf
++++ b/FooPkg/OverridingModule.inf
+@@ -8,7 +8,7 @@
+ #
+ #
+-#Override : 00000002 | BarPkg/OverridenModule.inf | 4f7eed98e3c084eecdff5fa2e1e57db1 | 2021-11-23T21-41-21 | 44b40c0358489da6c444e7cfb2be26e56b7c16a1
++#Override : 00000002 | BarPkg/OverridenModule.inf | 143b08782a2abc620d1eb57461c6e290 | 2022-03-10T23-09-45 | 6f8c53a3fcd79b202c708e7aa58256cafbf24bc4
+ #
+```
+
 ## Versions
 
 There are two versions of the override format.
@@ -151,5 +172,5 @@ overridden file (the INF or DSC) and the overriding file.
 
 ## Copyright & License
 
-Copyright (c) Microsoft Corporation. All rights reserved.  
+Copyright (c) Microsoft Corporation. All rights reserved.
 SPDX-License-Identifier: BSD-2-Clause-Patent
