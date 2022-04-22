@@ -112,4 +112,51 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                                             "  %s - %s" % (case.attrib['name'], result.text))
                                         failure_count += 1
 
+            if thebuilder.env.GetValue("CODE_COVERAGE") == "TRUE":
+                if thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "GCC5":
+                    self.gen_code_coverage(thebuilder)
+                else:
+                    logging.info("Skipping code coverage. Only supported on GCC.")
+
         return failure_count
+
+    def gen_code_coverage(self, thebuilder):
+        logging.info("Generating UnitTest code coverage")
+
+        # Generate base code coverage for all source files
+        ret = RunCmd("lcov", "--no-external --capture --initial --directory ./ --output-file Build/cov-base.info --rc lcov_branch_coverage=1")
+        if(ret != 0):
+            logging.error("UnitTest Coverage: Failed to build initial coverage data.")
+            return
+
+        # Coverage data for tested files only
+        ret = RunCmd("lcov", "--capture --directory Build/ --output-file Build/coverage-test.info --rc lcov_branch_coverage=1")
+        if(ret != 0):
+            logging.error("UnitTest Coverage: Failed to build coverage data for tested files.")
+            return
+
+        # Aggregate all coverage data
+        ret = RunCmd("lcov", "--add-tracefile Build/cov-base.info --add-tracefile Build/coverage-test.info --output-file Build/total-coverage.info --rc lcov_branch_coverage=1")
+        if(ret != 0):
+            logging.error("UnitTest Coverage: Failed to aggregate coverage data.")
+            return
+
+        # Generate coverage XML
+        ret = RunCmd("lcov_cobertura","Build/total-coverage.info -o Build/compare.xml")
+        if(ret != 0):
+            logging.error("UnitTest Coverage: Failed to generate coverage XML.")
+            return
+
+        # Filter out auto-generated and test code
+        ret = RunCmd("lcov_cobertura","Build/total-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o Build/coverage.xml")
+        if(ret != 0):
+            logging.error("UnitTest Coverage: Failed generate filtered coverage XML.")
+            return
+
+        # Generate and HTML file if requested.
+        if thebuilder.env.GetValue("CC_HTML") == "TRUE":
+            ret = RunCmd("pycobertura", "show --format html --output Build/coverage.html Build/coverage.xml --source .")
+            if(ret != 0):
+                logging.error("UnitTest Coverage: Failed to generate HTML.")
+
+        return
