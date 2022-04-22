@@ -129,10 +129,13 @@ ORIGINALS:
 ```
 
 Command to regenerate the override records in a given .inf file:
+
 ``` cmd
 OverrideValidation.py -w c:\src -r c:\src\FooPkg\OverridingModule.inf
 ```
+
 an example of the diff produced when using -r:
+
 ``` diff
 diff --git a/FooPkg/OverridingModule.inf b/FooPkg/OverridingModule.inf
 index 2d4ca47299..90da207a39 100644
