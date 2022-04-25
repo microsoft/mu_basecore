@@ -533,17 +533,20 @@ TestVerifyPkcs7SignVerify (
   BOOLEAN  Status;
   UINT8    *P7SignedData;
   UINTN    P7SignedDataSize;
-  UINT8    *SignCert;
+
+  // UINT8    *SignCert;  // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
 
   P7SignedData = NULL;
-  SignCert     = NULL;
+  // SignCert     = NULL; // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
 
+  // MU_CHANGE [TCBZ3925] [BEGIN] - Pkcs7Sign is broken
   //
   // Construct Signer Certificate from RAW data.
   //
-  Status = X509ConstructCertificate (TestCert, sizeof (TestCert), (UINT8 **)&SignCert);
-  UT_ASSERT_TRUE (Status);
-  UT_ASSERT_NOT_NULL (SignCert);
+  // Status = X509ConstructCertificate (TestCert, sizeof (TestCert), (UINT8 **)&SignCert);
+  // UT_ASSERT_TRUE (Status);
+  // UT_ASSERT_NOT_NULL (SignCert);
+  // MU_CHANGE [TCBZ3925] [END] - Pkcs7Sign is broken
 
   //
   // Create PKCS#7 signedData on Payload.
@@ -555,7 +558,8 @@ TestVerifyPkcs7SignVerify (
              (CONST UINT8 *)PemPass,
              (UINT8 *)Payload,
              AsciiStrLen (Payload),
-             SignCert,
+             TestCert,            // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             sizeof (TestCert),   // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
              NULL,
              &P7SignedData,
              &P7SignedDataSize
@@ -577,9 +581,11 @@ TestVerifyPkcs7SignVerify (
     FreePool (P7SignedData);
   }
 
-  if (SignCert != NULL) {
-    X509Free (SignCert);
-  }
+  // MU_CHANGE [TCBZ3925] [BEGIN] - Pkcs7Sign is broken
+  // if (SignCert != NULL) {
+  //   X509Free (SignCert);
+  // }
+  // MU_CHANGE [TCBZ3925] [END] - Pkcs7Sign is broken
 
   return UNIT_TEST_PASSED;
 }
