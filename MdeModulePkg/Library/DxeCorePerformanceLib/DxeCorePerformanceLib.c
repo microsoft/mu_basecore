@@ -1511,7 +1511,7 @@ DxeCorePerformanceLibConstructor (
   //
   Status = gBS->CreateEventEx (
                   EVT_NOTIFY_SIGNAL,
-                  TPL_NOTIFY,
+                  TPL_CALLBACK, // MU_CHANGE - Change to TPL_CALLBACK from TPL_NOTIFY
                   ReportFpdtRecordBuffer,
                   NULL,
                   &gEfiEndOfDxeEventGroupGuid,
