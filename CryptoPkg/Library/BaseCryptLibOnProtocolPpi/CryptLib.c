@@ -3298,13 +3298,16 @@ Pkcs7Sign (
   IN   CONST UINT8  *KeyPassword,
   IN   UINT8        *InData,
   IN   UINTN        InDataSize,
-  IN   UINT8        *SignCert,
+  IN   CONST UINT8  *SignCert,
+  // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+  IN   UINTN        SignCertSize,
+  // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
   IN   UINT8        *OtherCerts      OPTIONAL,
   OUT  UINT8        **SignedData,
   OUT  UINTN        *SignedDataSize
   )
 {
-  CALL_CRYPTO_SERVICE (Pkcs7Sign, (PrivateKey, PrivateKeySize, KeyPassword, InData, InDataSize, SignCert, OtherCerts, SignedData, SignedDataSize), FALSE);
+  CALL_CRYPTO_SERVICE (Pkcs7Sign, (PrivateKey, PrivateKeySize, KeyPassword, InData, InDataSize, SignCert, SignCertSize, OtherCerts, SignedData, SignedDataSize), FALSE);
 }
 
 /**
