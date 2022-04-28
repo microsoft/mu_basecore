@@ -30,6 +30,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "VariableParsing.h"
 #include "VariableRuntimeCache.h"
 
+#include <Library/VariablePolicyLib.h>  // MU_CHANGE - Enable simple delete when VarPol is disabled
+
 VARIABLE_MODULE_GLOBAL  *mVariableModuleGlobal;
 
 ///
@@ -104,6 +106,22 @@ AUTH_VAR_LIB_CONTEXT_IN  mAuthContextIn = {
 };
 
 AUTH_VAR_LIB_CONTEXT_OUT  mAuthContextOut;
+
+// MU_CHANGE [BEGIN] - Enable simple delete when VarPol is disabled
+CONST EFI_VARIABLE_AUTHENTICATION_2  mTimeBasedDeletePayload = {
+  // The end of time.
+  { 0xFFFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00000000, 0x0000, 0x00, 0x00 },
+  {
+    {
+      OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData),
+      0x0200,
+      WIN_CERT_TYPE_EFI_GUID,
+    },
+    EFI_CERT_TYPE_PKCS7_GUID,
+    { 0 }
+  }
+};
+// MU_CHANGE [END] - Enable simple delete when VarPol is disabled
 
 /**
 
@@ -2796,6 +2814,21 @@ VariableServiceSetVariable (
       return EFI_INVALID_PARAMETER;
     }
   }
+
+  // MU_CHANGE [BEGIN] - Enable simple delete when VarPol is disabled
+  //
+  // If this is a delete operation on a EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS variable
+  // and VariablePolicy is disabled, allow deletion without complete payload.
+  //
+  if ((Attributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) == EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) {
+    if ((Data == NULL) && (DataSize == 0) && !IsVariablePolicyEnabled ()) {
+      // NOTE: Data really should be CONST. Don't know why it isn't.
+      Data     = (VOID *)&mTimeBasedDeletePayload;
+      DataSize = OFFSET_OF (EFI_VARIABLE_AUTHENTICATION_2, AuthInfo) + OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData);
+    }
+  }
+
+  // MU_CHANGE [END] - Enable simple delete when VarPol is disabled
 
   //
   // EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS and EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS attribute
