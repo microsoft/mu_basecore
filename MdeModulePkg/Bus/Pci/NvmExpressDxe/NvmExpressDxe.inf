@@ -40,6 +40,7 @@
   NvmExpressHci.c
   NvmExpressHci.h
   NvmExpressPassthru.c
+  NvmExpressMediaSanitize.c
 
 ## MSChange [BEGIN]
 [Guids]
@@ -75,6 +76,7 @@
   gEfiStorageSecurityCommandProtocolGuid      ## BY_START
   gEfiDriverSupportedEfiVersionProtocolGuid   ## PRODUCES
   gEfiResetNotificationProtocolGuid           ## CONSUMES
+  gEfiMediaSanitizeProtocolGuid               ## CONSUMES
 
 [Pcd]
   ## MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver

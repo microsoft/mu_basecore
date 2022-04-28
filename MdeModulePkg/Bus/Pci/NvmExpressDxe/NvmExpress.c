@@ -167,6 +167,15 @@ EnumerateNvmeDevNamespace (
     InitializeListHead (&Device->AsyncQueue);
 
     //
+    // Create Media Sanitize Protocol instance
+    //
+    Device->MediaSanitize.Revision       = EFI_MEDIA_SANITIZE_PROTOCOL_REVISION;
+    Device->MediaSanitize.Media          = &Device->Media;
+    Device->MediaSanitize.SanitizeAction = 0;
+    Device->MediaSanitize.MediaClear     = NvmExpressMediaClear;
+    Device->MediaSanitize.MediaPurge     = NvmExpressMediaPurge;
+
+    //
     // Create StorageSecurityProtocol Instance
     //
     Device->StorageSecurity.ReceiveData = NvmeStorageSecurityReceiveData;
