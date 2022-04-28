@@ -663,6 +663,9 @@ typedef struct {
   UINT32    Pi    : 3;        /* Protection Information */
   UINT32    Pil   : 1;        /* Protection Information Location */
   UINT32    Ses   : 3;        /* Secure Erase Settings */
+  #define SES_NO_SECURE_ERASE  0x0
+  #define SES_USER_DATA_ERASE  0x1
+  #define SES_CRYPTO_ERASE     0x2
   UINT32    Rsvd1 : 20;
 } NVME_ADMIN_FORMAT_NVM;
 
@@ -698,6 +701,29 @@ typedef struct {
   UINT32    Tl;               /* Transfer Length */
 } NVME_ADMIN_SECURITY_SEND;
 
+//
+// NvmExpress Admin Sanitize Command
+//
+typedef struct {
+  //
+  // CDW 10
+  //
+  UINT32    Sanac : 3;        /* Sanitize Action */
+  #define SANITIZE_ACTION_EXIT_FAILURE_MODE  0x1
+  #define SANITIZE_ACTION_BLOCK_ERASE        0x2
+  #define SANITIZE_ACTION_OVERWRITE          0x3
+  #define SANITIZE_ACTION_CRYPTO_ERASE       0x4
+  UINT32    Ause  : 1;        /* Allow Unrestricted Sanitize Exit */
+  UINT32    Owpas : 4;        /* Overwrite Pass Count */
+  UINT32    Oipbp : 1;        /* Overwrite Invert Pattern Between Passes */
+  UINT32    Ndas  : 1;        /* No-Deallocate After Sanitize */
+  UINT32    Rsvd1 : 22;
+  //
+  // CDW 11
+  //
+  UINT32    Ovrpat;           /* Overwrite Pattern */
+} NVME_ADMIN_SANITIZE;
+
 typedef union {
   NVME_ADMIN_IDENTIFY                   Identify;
   NVME_ADMIN_CRIOCQ                     CrIoCq;
@@ -713,6 +739,7 @@ typedef union {
   NVME_ADMIN_FORMAT_NVM                 FormatNvm;
   NVME_ADMIN_SECURITY_RECEIVE           SecurityReceive;
   NVME_ADMIN_SECURITY_SEND              SecuritySend;
+  NVME_ADMIN_SANITIZE                   Sanitize;
 } NVME_ADMIN_CMD;
 
 typedef struct {
@@ -815,6 +842,7 @@ typedef struct {
 #define NVME_ADMIN_FORMAT_NVM_CMD           0x80
 #define NVME_ADMIN_SECURITY_SEND_CMD        0x81
 #define NVME_ADMIN_SECURITY_RECEIVE_CMD     0x82
+#define NVME_ADMIN_SANITIZE_CMD             0x84
 
 #define NVME_IO_FLUSH_OPC  0
 #define NVME_IO_WRITE_OPC  1
@@ -837,7 +865,8 @@ typedef enum {
   NamespaceAttachmentOpcode     = NVME_ADMIN_NAMESACE_ATTACHMENT_CMD,
   FormatNvmOpcode               = NVME_ADMIN_FORMAT_NVM_CMD,
   SecuritySendOpcode            = NVME_ADMIN_SECURITY_SEND_CMD,
-  SecurityReceiveOpcode         = NVME_ADMIN_SECURITY_RECEIVE_CMD
+  SecurityReceiveOpcode         = NVME_ADMIN_SECURITY_RECEIVE_CMD,
+  SanitizeOpcode                = NVME_ADMIN_SANITIZE_CMD
 } NVME_ADMIN_COMMAND_OPCODE;
 
 //
