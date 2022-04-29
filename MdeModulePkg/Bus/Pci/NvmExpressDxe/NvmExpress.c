@@ -171,7 +171,7 @@ EnumerateNvmeDevNamespace (
     //
     Device->MediaSanitize.Revision       = EFI_MEDIA_SANITIZE_PROTOCOL_REVISION;
     Device->MediaSanitize.Media          = &Device->Media;
-    Device->MediaSanitize.SanitizeAction = 0;
+    //Device->MediaSanitize.SanitizeAction = PURGE_ACTION_NO_ACTION;
     Device->MediaSanitize.MediaClear     = NvmExpressMediaClear;
     Device->MediaSanitize.MediaPurge     = NvmExpressMediaPurge;
 

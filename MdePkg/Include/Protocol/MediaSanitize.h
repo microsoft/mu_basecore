@@ -22,6 +22,27 @@ typedef struct _EFI_MEDIA_SANITIZE_PROTOCOL EFI_MEDIA_SANITIZE_PROTOCOL;
 #define EFI_MEDIA_SANITIZE_PROTOCOL_REVISION  0x00010000
 
 ///
+/// Sanitize actions for purge operation.
+///
+/// NO_ACTION:
+/// OVERWRITE:
+/// BLOCK_ERASE:
+/// CRYPTO_ERASE:
+/// RESET_REQUIRED:
+/// NO_DEALLOCATE:
+/// INVERT_OW_PATTERN:
+/// ALLOW_UNRESTRICTED_SANITIZE_EXIT:
+///
+#define PURGE_ACTION_NO_ACTION                        0x00000000
+#define PURGE_ACTION_OVERWRITE                        0x00000001
+#define PURGE_ACTION_BLOCK_ERASE                      0x00000002
+#define PURGE_ACTION_CRYPTO_ERASE                     0x00000004
+#define PURGE_ACTION_RESET_REQUIRED                   0x00000008
+#define PURGE_ACTION_NO_DEALLOCATE                    0x00000010
+#define PURGE_ACTION_INVERT_OW_PATTERN                0x00000020
+#define PURGE_ACTION_ALLOW_UNRESTRICTED_SANITIZE_EXIT 0x00000040
+
+///
 /// EFI_MEDIA_SANITIZE_TOKEN
 ///
 typedef struct {
@@ -37,17 +58,6 @@ typedef struct {
   EFI_STATUS    TransactionStatus;
 } EFI_MEDIA_SANITIZE_TOKEN;
 
-///
-/// EFI_MEDIA_SANITIZE_ACTION
-///
-typedef enum {
-  EfiBlockSanitizeNoAction      = 0x00000001,
-  EfiBlockSanitizeOverwrite     = 0x00000002,
-  EfiBlockSanitizeBlockErase    = 0x00000004,
-  EfiBlockSanitizeCryptoErase   = 0x00000008,
-  EfiBlockSanitizeResetRequired = 0x00000010,
-  EfiBlockSanitizeNoDeallocate  = 0x00000020
-} EFI_BLOCK_SANITIZE_ACTION;
 
 /**
   Clear Media utilizes transport native WRITE commands to write a fixed pattern
@@ -136,7 +146,9 @@ struct _EFI_MEDIA_SANITIZE_PROTOCOL {
   /// Sanitize action shall be specific to the sanitize operation, such as
   /// deallocate after sanitize, number of passes, reset required, etc.
   ///
-  EFI_BLOCK_SANITIZE_ACTION    SanitizeAction;
+  //UINT32                       SanitizeAction;
+  // TBD: Look into Sanitize Capabilites on this block/media for purge action
+  // Get rid of Sanitize Action as a param
 
   EFI_BLOCK_MEDIA_CLEAR        MediaClear;
   EFI_BLOCK_MEDIA_PURGE        MediaPurge;

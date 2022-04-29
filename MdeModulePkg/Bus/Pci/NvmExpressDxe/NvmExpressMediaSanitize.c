@@ -442,17 +442,17 @@ NvmExpressMediaPurge (
     return EFI_MEDIA_CHANGED;
   }
 
-  if (PurgeAction & EfiBlockSanitizeOverwrite) {
+  if (PurgeAction & PURGE_ACTION_OVERWRITE) {
     SanitizeAction = SANITIZE_ACTION_OVERWRITE;
-  } else if (PurgeAction & EfiBlockSanitizeBlockErase) {
+  } else if (PurgeAction & PURGE_ACTION_BLOCK_ERASE) {
     SanitizeAction = SANITIZE_ACTION_BLOCK_ERASE;
-  } else if (PurgeAction & EfiBlockSanitizeCryptoErase) {
+  } else if (PurgeAction & PURGE_ACTION_CRYPTO_ERASE) {
     SanitizeAction = SANITIZE_ACTION_CRYPTO_ERASE;
   } else {
-    SanitizeAction = 0;
+    SanitizeAction = SANITIZE_ACTION_NO_ACTION;
   }
 
-  NoDeallocate = PurgeAction & EfiBlockSanitizeNoDeallocate;
+  NoDeallocate = (PurgeAction & PURGE_ACTION_NO_DEALLOCATE) ? 1 : 0;
 
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 
