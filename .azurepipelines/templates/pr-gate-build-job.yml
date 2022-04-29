@@ -34,7 +34,7 @@ jobs:
         Build.Targets: 'RELEASE,NO-TARGET'
       TARGET_NETWORK:
         Build.Pkgs: 'NetworkPkg'
-        Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOOPT'
+        Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
       TARGET_OTHER:
         Build.Pkgs: 'PcAtChipsetPkg,ShellPkg,StandaloneMmPkg,BaseTools' # MU_CHANGE add BaseTools
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
