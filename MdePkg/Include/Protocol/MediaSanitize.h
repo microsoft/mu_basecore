@@ -1,11 +1,8 @@
 /** @file
   This file defines the EFI Media Sanitize Protocol.
 
-  Copyright (c) 2016, Intel Corporation. All rights reserved.
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
-
-  @par Revision Reference:
-  This Protocol is introduced in UEFI Specification x.x
 
 **/
 
@@ -24,40 +21,17 @@ typedef struct _EFI_MEDIA_SANITIZE_PROTOCOL EFI_MEDIA_SANITIZE_PROTOCOL;
 ///
 /// Sanitize actions for purge operation.
 ///
-/// NO_ACTION:
-/// OVERWRITE:
-/// BLOCK_ERASE:
-/// CRYPTO_ERASE:
-/// RESET_REQUIRED:
-/// NO_DEALLOCATE:
-/// INVERT_OW_PATTERN:
-/// ALLOW_UNRESTRICTED_SANITIZE_EXIT:
+/// NOTE: First four actions (no action, overwrite, block erase, crypto erase) cannot
+/// be overlapped. All other fields may be overlapped as they apply. 
 ///
-#define PURGE_ACTION_NO_ACTION                        0x00000000
-#define PURGE_ACTION_OVERWRITE                        0x00000001
-#define PURGE_ACTION_BLOCK_ERASE                      0x00000002
-#define PURGE_ACTION_CRYPTO_ERASE                     0x00000004
-#define PURGE_ACTION_RESET_REQUIRED                   0x00000008
-#define PURGE_ACTION_NO_DEALLOCATE                    0x00000010
-#define PURGE_ACTION_INVERT_OW_PATTERN                0x00000020
-#define PURGE_ACTION_ALLOW_UNRESTRICTED_SANITIZE_EXIT 0x00000040
-
-///
-/// EFI_MEDIA_SANITIZE_TOKEN
-///
-typedef struct {
-  //
-  // If Event is NULL, then blocking I/O is performed. If Event is not NULL and
-  // non-blocking I/O is supported, then non-blocking I/O is performed, and
-  // Event will be signaled when the erase request is completed.
-  //
-  EFI_EVENT     Event;
-  //
-  // Defines whether the signaled event encountered an error.
-  //
-  EFI_STATUS    TransactionStatus;
-} EFI_MEDIA_SANITIZE_TOKEN;
-
+#define PURGE_ACTION_NO_ACTION                        0x00000000 // No purge action requested
+#define PURGE_ACTION_OVERWRITE                        0x00000001 // Overwrite with 32-bit pattern
+#define PURGE_ACTION_BLOCK_ERASE                      0x00000002 // Erase Blocks with indeterminate pattern
+#define PURGE_ACTION_CRYPTO_ERASE                     0x00000004 // Delete encryption keys only
+#define PURGE_ACTION_RESET_REQUIRED                   0x00000008 // Reset required after purge
+#define PURGE_ACTION_NO_DEALLOCATE                    0x00000010 // Do no deallocate (trim) flash medai after sanitize
+#define PURGE_ACTION_INVERT_OW_PATTERN                0x00000020 // Invert overwrite pattern between passes
+#define PURGE_ACTION_ALLOW_UNRESTRICTED_SANITIZE_EXIT 0x00000040 // Allow exit without restrictions
 
 /**
   Clear Media utilizes transport native WRITE commands to write a fixed pattern

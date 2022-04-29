@@ -5,7 +5,7 @@
 #  NVM Express specification.
 #
 #  Copyright (c) 2013 - 2019, Intel Corporation. All rights reserved.<BR>
-#
+#  Copyright (c) Microsoft Corporation.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -75,8 +75,8 @@
   gEfiDiskInfoProtocolGuid                    ## BY_START
   gEfiStorageSecurityCommandProtocolGuid      ## BY_START
   gEfiDriverSupportedEfiVersionProtocolGuid   ## PRODUCES
+  gEfiMediaSanitizeProtocolGuid               ## PRODUCES
   gEfiResetNotificationProtocolGuid           ## CONSUMES
-  gEfiMediaSanitizeProtocolGuid               ## CONSUMES
 
 [Pcd]
   ## MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver

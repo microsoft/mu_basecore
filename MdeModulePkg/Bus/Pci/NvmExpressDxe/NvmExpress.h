@@ -2,8 +2,9 @@
   NvmExpressDxe driver is used to manage non-volatile memory subsystem which follows
   NVM Express specification.
 
-  (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
-  Copyright (c) 2013 - 2019, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2016 Hewlett Packard Enterprise Development LP
+  Copyright (c) 2013 - 2019, Intel Corporation. All rights reserved.
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/

@@ -1,8 +1,8 @@
 /** @file
   Header file for EFI_MEDIA_SANITIZE_PROTOCOL interface.
 
-Copyright (c) 2013 - 2016, Intel Corporation. All rights reserved.<BR>
-SPDX-License-Identifier: BSD-2-Clause-Patent
+  Copyright (c) Microsoft Corporation.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -33,16 +33,14 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
                                - 011b to 111b: Reserved
   @param[in] Flbas           Current LBA Format size Index (bits 3:0) in NamespaceData
 
-  @retval EFI_SUCCESS           The data was written correctly to the device.
-  @retval EFI_WRITE_PROTECTED   The device can not be written to.
-  @retval EFI_DEVICE_ERROR      The device reported an error while performing the write.
+  @retval EFI_SUCCESS           The device formatted correctly.
+  @retval EFI_WRITE_PROTECTED   The device can not be formatted due to write protection.
+  @retval EFI_DEVICE_ERROR      The device reported an error while performing the format.
   @retval EFI_NO_MEDIA          There is no media in the device.
   @retval EFI_MEDIA_CHNAGED     The MediaId does not matched the current device.
-  @retval EFI_BAD_BUFFER_SIZE   The Buffer was not a multiple of the block size of the device.
-  @retval EFI_INVALID_PARAMETER The write request contains LBAs that are not valid,
-                                or the buffer is not on proper alignment.
+  @retval EFI_INVALID_PARAMETER The format request contains parameters that are not valid.
 
- **/
+**/
 EFI_STATUS
 NvmExpressFormatNvm (
   IN EFI_BLOCK_IO_PROTOCOL  *This,
@@ -69,16 +67,14 @@ NvmExpressFormatNvm (
   @param[in] NoDeallocAfterSani  No deallocate after sanitize option
   @param[in] OverwritePatter     Pattern to overwrite old user data
 
-  @retval EFI_SUCCESS           The data was written correctly to the device.
-  @retval EFI_WRITE_PROTECTED   The device can not be written to.
-  @retval EFI_DEVICE_ERROR      The device reported an error while performing the write.
+  @retval EFI_SUCCESS           The media was sanitized successfully on the device.
+  @retval EFI_WRITE_PROTECTED   The device can not be sanitized due to write protection.
+  @retval EFI_DEVICE_ERROR      The device reported an error while performing the sanitize.
   @retval EFI_NO_MEDIA          There is no media in the device.
-  @retval EFI_MEDIA_CHNAGED     The MediaId does not matched the current device.
-  @retval EFI_BAD_BUFFER_SIZE   The Buffer was not a multiple of the block size of the device.
-  @retval EFI_INVALID_PARAMETER The write request contains LBAs that are not valid,
-                                or the buffer is not on proper alignment.
+  @retval EFI_MEDIA_CHNAGED     The MediaId does not match the current device.
+  @retval EFI_INVALID_PARAMETER The sanitize request contains parameters that are not valid.
 
- **/
+**/
 EFI_STATUS
 NvmExpressSanitize (
   IN EFI_BLOCK_IO_PROTOCOL  *This,
@@ -138,14 +134,12 @@ NvmExpressMediaClear (
   @param  PurgeAction      The purage action (overwrite, crypto erase, block erase).
   @param  OverwritePattern 32-bit pattern to overwrite on media (for overwrite).
 
-  @retval EFI_SUCCESS           The data was written correctly to the device.
-  @retval EFI_WRITE_PROTECTED   The device can not be written to.
-  @retval EFI_DEVICE_ERROR      The device reported an error while performing the write.
+  @retval EFI_SUCCESS           The media was purged successfully on the device.
+  @retval EFI_WRITE_PROTECTED   The device can not be purged due to write protection.
+  @retval EFI_DEVICE_ERROR      The device reported an error while performing the purge.
   @retval EFI_NO_MEDIA          There is no media in the device.
-  @retval EFI_MEDIA_CHNAGED     The MediaId does not matched the current device.
-  @retval EFI_BAD_BUFFER_SIZE   The Buffer was not a multiple of the block size of the device.
-  @retval EFI_INVALID_PARAMETER The write request contains LBAs that are not valid,
-                                or the buffer is not on proper alignment.
+  @retval EFI_MEDIA_CHNAGED     The MediaId does not match the current device.
+  @retval EFI_INVALID_PARAMETER The purge request contains parameters that are not valid.
 
 **/
 EFI_STATUS
