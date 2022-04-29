@@ -709,6 +709,7 @@ typedef struct {
   // CDW 10
   //
   UINT32    Sanac : 3;        /* Sanitize Action */
+  #define SANITIZE_ACTION_NO_ACTION          0x0
   #define SANITIZE_ACTION_EXIT_FAILURE_MODE  0x1
   #define SANITIZE_ACTION_BLOCK_ERASE        0x2
   #define SANITIZE_ACTION_OVERWRITE          0x3

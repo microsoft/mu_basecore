@@ -93,6 +93,7 @@ extern EFI_GUID  gNVMeEnableCompleteEventGroupGuid;
 
 //
 // NVMe Completion Queue Entry Bits, Fields, Masks
+//
 #define NVME_CQE_STATUS_FIELD_MASK                       0xFFFF0000
 #define NVME_CQE_STATUS_FIELD_OFFSET                     16
 #define NVME_CQE_STATUS_FIELD_SCT_MASK                   0x0E00
