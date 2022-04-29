@@ -8,8 +8,8 @@
 
   Implementation based off NVMe spec revision 1.4c.
 
-  Copyright (c) 2022, Microsoft Corporation.
-  All rights reserved.
+  Copyright (c) Microsoft Corporation.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -26,7 +26,7 @@
   in the Identify Controller data structure).
 
   After the Format NVM command successfully completes, the controller shall not return any user
-  data that was previously contained in an affectednamespace.
+  data that was previously contained in an affected namespace.
 
   @param[in] This            Indicates a pointer to the calling context (Block IO Protocol)
   @param[in] NamespaceId     The NVM Express namespace ID  for which a device path node is to be
@@ -39,8 +39,12 @@
                                - 011b to 111b: Reserved
   @param[in] Flbas           Current LBA Format size Index (bits 3:0) in NamespaceData
 
-  @retval    EFI_SUCCESS     All the namespaces in the device are successfully enumerated.
-  @return    Others          Some error occurs when enumerating the namespaces.
+  @retval EFI_SUCCESS           The device formatted correctly.
+  @retval EFI_WRITE_PROTECTED   The device can not be formatted due to write protection.
+  @retval EFI_DEVICE_ERROR      The device reported an error while performing the format.
+  @retval EFI_NO_MEDIA          There is no media in the device.
+  @retval EFI_MEDIA_CHNAGED     The MediaId does not matched the current device.
+  @retval EFI_INVALID_PARAMETER The format request contains parameters that are not valid.
 
  **/
 EFI_STATUS
@@ -74,7 +78,7 @@ NvmExpressFormatNvm (
   Command.Nsid                 = NamespaceId;
 
   DEBUG ((
-    DEBUG_ERROR,
+    DEBUG_VERBOSE,
     "NvmExpressFormatNvm: NSID = 0x%x, SES = 0x%x, FLBAS = 0x%x\n",
     NamespaceId,
     Ses,
@@ -180,8 +184,12 @@ NvmExpressFormatNvm (
   @param[in] NoDeallocAfterSani  No deallocate after sanitize option
   @param[in] OverwritePatter     Pattern to overwrite old user data
 
-  @retval EFI_SUCCESS            All the namespaces in the device are successfully enumerated.
-  @return Others                 Some error occurs when enumerating the namespaces.
+  @retval EFI_SUCCESS           The media was sanitized successfully on the device.
+  @retval EFI_WRITE_PROTECTED   The device can not be sanitized due to write protection.
+  @retval EFI_DEVICE_ERROR      The device reported an error while performing the sanitize.
+  @retval EFI_NO_MEDIA          There is no media in the device.
+  @retval EFI_MEDIA_CHNAGED     The MediaId does not match the current device.
+  @retval EFI_INVALID_PARAMETER The sanitize request contains parameters that are not valid.
 
  **/
 EFI_STATUS
@@ -215,7 +223,7 @@ NvmExpressSanitize (
   Command.Nsid                 = NamespaceId;
 
   DEBUG ((
-    DEBUG_ERROR,
+    DEBUG_VERBOSE,
     "NvmExpressSanitize NSID = 0x%x, SANACT = 0x%x, NDAS = 0x%x\n",
     NamespaceId,
     SanitizeAction,
@@ -296,12 +304,12 @@ NvmExpressSanitize (
   Clear Media utilizes transport native WRITE commands to write a fixed pattern
   of non-sensitive data to the media.
 
+  NOTE: The caller shall send buffer of one sector/LBA size with overwrite data.
+  NOTE: This operation is a blocking call.
+
   Functions are defined to erase and purge data at a block level from mass
   storage devices as well as to manage such devices in the EFI boot services
   environment.
-
-  NOTE: The caller shall send buffer of one sector/LBA size with overwrite data.
-  NOTE: This operation is a blocking call.
 
   @param  This             Indicates a pointer to the calling context.
   @param  MediaId          The media ID that the write request is for.
@@ -400,14 +408,12 @@ NvmExpressMediaClear (
   @param  PurgeAction      The purage action (overwrite, crypto erase, block erase).
   @param  OverwritePattern 32-bit pattern to overwrite on media (for overwrite).
 
-  @retval EFI_SUCCESS           The data was written correctly to the device.
-  @retval EFI_WRITE_PROTECTED   The device can not be written to.
-  @retval EFI_DEVICE_ERROR      The device reported an error while performing the write.
+  @retval EFI_SUCCESS           The media was purged successfully on the device.
+  @retval EFI_WRITE_PROTECTED   The device can not be purged due to write protection.
+  @retval EFI_DEVICE_ERROR      The device reported an error while performing the purge.
   @retval EFI_NO_MEDIA          There is no media in the device.
-  @retval EFI_MEDIA_CHNAGED     The MediaId does not matched the current device.
-  @retval EFI_BAD_BUFFER_SIZE   The Buffer was not a multiple of the block size of the device.
-  @retval EFI_INVALID_PARAMETER The write request contains LBAs that are not valid,
-                                or the buffer is not on proper alignment.
+  @retval EFI_MEDIA_CHNAGED     The MediaId does not match the current device.
+  @retval EFI_INVALID_PARAMETER The purge request contains parameters that are not valid.
 
 **/
 EFI_STATUS
@@ -442,6 +448,11 @@ NvmExpressMediaPurge (
     return EFI_MEDIA_CHANGED;
   }
 
+  //
+  // Purge action will directly map to sanitize action. If no valid purge
+  // action is selected, then default to no action and let the NVMe SSD handle
+  // the no-op sanitize action (as there may be other contingencies).
+  //
   if (PurgeAction & PURGE_ACTION_OVERWRITE) {
     SanitizeAction = SANITIZE_ACTION_OVERWRITE;
   } else if (PurgeAction & PURGE_ACTION_BLOCK_ERASE) {
