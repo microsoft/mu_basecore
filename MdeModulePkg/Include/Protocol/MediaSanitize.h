@@ -22,16 +22,16 @@ typedef struct _EFI_MEDIA_SANITIZE_PROTOCOL EFI_MEDIA_SANITIZE_PROTOCOL;
 /// Sanitize actions for purge operation.
 ///
 /// NOTE: First four actions (no action, overwrite, block erase, crypto erase) cannot
-/// be overlapped. All other fields may be overlapped as they apply. 
+/// be overlapped. All other fields may be overlapped as they apply.
 ///
-#define PURGE_ACTION_NO_ACTION                        0x00000000 // No purge action requested
-#define PURGE_ACTION_OVERWRITE                        0x00000001 // Overwrite with 32-bit pattern
-#define PURGE_ACTION_BLOCK_ERASE                      0x00000002 // Erase Blocks with indeterminate pattern
-#define PURGE_ACTION_CRYPTO_ERASE                     0x00000004 // Delete encryption keys only
-#define PURGE_ACTION_RESET_REQUIRED                   0x00000008 // Reset required after purge
-#define PURGE_ACTION_NO_DEALLOCATE                    0x00000010 // Do no deallocate (trim) flash medai after sanitize
-#define PURGE_ACTION_INVERT_OW_PATTERN                0x00000020 // Invert overwrite pattern between passes
-#define PURGE_ACTION_ALLOW_UNRESTRICTED_SANITIZE_EXIT 0x00000040 // Allow exit without restrictions
+#define PURGE_ACTION_NO_ACTION                         0x00000000 // No purge action requested
+#define PURGE_ACTION_OVERWRITE                         0x00000001 // Overwrite with 32-bit pattern
+#define PURGE_ACTION_BLOCK_ERASE                       0x00000002 // Erase Blocks with indeterminate pattern
+#define PURGE_ACTION_CRYPTO_ERASE                      0x00000004 // Delete encryption keys only
+#define PURGE_ACTION_RESET_REQUIRED                    0x00000008 // Reset required after purge
+#define PURGE_ACTION_NO_DEALLOCATE                     0x00000010 // Do no deallocate (trim) flash medai after sanitize
+#define PURGE_ACTION_INVERT_OW_PATTERN                 0x00000020 // Invert overwrite pattern between passes
+#define PURGE_ACTION_ALLOW_UNRESTRICTED_SANITIZE_EXIT  0x00000040 // Allow exit without restrictions
 
 /**
   Clear Media utilizes transport native WRITE commands to write a fixed pattern
@@ -108,24 +108,24 @@ struct _EFI_MEDIA_SANITIZE_PROTOCOL {
   /// revisions must be backwards compatible. If a future version is not
   /// backwards compatible, it is not the same GUID.
   ///
-  UINT64                       Revision;
+  UINT64                Revision;
 
   ///
   /// A pointer to the EFI_BLOCK_IO_MEDIA data for this device.
   /// Type EFI_BLOCK_IO_MEDIA is defined in BlockIo.h.
   ///
-  EFI_BLOCK_IO_MEDIA           *Media;
+  EFI_BLOCK_IO_MEDIA    *Media;
 
   ///
   /// Sanitize action shall be specific to the sanitize operation, such as
   /// deallocate after sanitize, number of passes, reset required, etc.
   ///
-  //UINT32                       SanitizeAction;
+  // UINT32                       SanitizeAction;
   // TBD: Look into Sanitize Capabilites on this block/media for purge action
   // Get rid of Sanitize Action as a param
 
-  EFI_BLOCK_MEDIA_CLEAR        MediaClear;
-  EFI_BLOCK_MEDIA_PURGE        MediaPurge;
+  EFI_BLOCK_MEDIA_CLEAR    MediaClear;
+  EFI_BLOCK_MEDIA_PURGE    MediaPurge;
 };
 
 extern EFI_GUID  gEfiMediaSanitizeProtocolGuid;

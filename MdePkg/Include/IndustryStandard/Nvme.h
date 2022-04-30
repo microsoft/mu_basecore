@@ -26,10 +26,13 @@
 #define NVME_INTMC_OFFSET   0x0010        // Interrupt Mask Clear
 #define NVME_CC_OFFSET      0x0014        // Controller Configuration
 #define NVME_CSTS_OFFSET    0x001c        // Controller Status
-#define NVME_NSSR_OFFSET    0x0020        // NVM Subsystem Reset
+#define NVME_NSSR_OFFSET    0x0020        // NVM Subsystem Reset (Optional)
 #define NVME_AQA_OFFSET     0x0024        // Admin Queue Attributes
 #define NVME_ASQ_OFFSET     0x0028        // Admin Submission Queue Base Address
 #define NVME_ACQ_OFFSET     0x0030        // Admin Completion Queue Base Address
+#define NVME_CMBLOC_OFFSET  0x0038        // Control Memory Buffer Location (Optional)
+#define NVME_CMBSZ_OFFSET   0x003C        // Control Memory Buffer Size (Optional)
+
 #define NVME_BPINFO_OFFSET  0x0040        // Boot Partition Information
 #define NVME_BPRSEL_OFFSET  0x0044        // Boot Partition Read Select
 #define NVME_BPMBL_OFFSET   0x0048        // Boot Partition Memory Buffer Location
