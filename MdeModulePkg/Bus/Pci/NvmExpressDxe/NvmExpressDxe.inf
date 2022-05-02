@@ -75,7 +75,7 @@
   gEfiDiskInfoProtocolGuid                    ## BY_START
   gEfiStorageSecurityCommandProtocolGuid      ## BY_START
   gEfiDriverSupportedEfiVersionProtocolGuid   ## PRODUCES
-  gEfiMediaSanitizeProtocolGuid               ## PRODUCES
+  gMediaSanitizeProtocolGuid                  ## PRODUCES
   gEfiResetNotificationProtocolGuid           ## CONSUMES
 
 [Pcd]

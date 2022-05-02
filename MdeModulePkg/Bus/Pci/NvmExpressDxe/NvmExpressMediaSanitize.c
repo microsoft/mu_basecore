@@ -328,10 +328,10 @@ NvmExpressSanitize (
 EFI_STATUS
 EFIAPI
 NvmExpressMediaClear (
-  IN EFI_MEDIA_SANITIZE_PROTOCOL  *This,
-  IN UINT32                       MediaId,
-  IN UINT32                       PassCount,
-  IN VOID                         *SectorOwBuffer
+  IN MEDIA_SANITIZE_PROTOCOL  *This,
+  IN UINT32                   MediaId,
+  IN UINT32                   PassCount,
+  IN VOID                     *SectorOwBuffer
   )
 {
   NVME_DEVICE_PRIVATE_DATA  *Device;
@@ -419,14 +419,15 @@ NvmExpressMediaClear (
 EFI_STATUS
 EFIAPI
 NvmExpressMediaPurge (
-  IN EFI_MEDIA_SANITIZE_PROTOCOL  *This,
-  IN UINT32                       MediaId,
-  IN UINT32                       PurgeAction,
-  IN UINT32                       OverwritePattern
+  IN MEDIA_SANITIZE_PROTOCOL  *This,
+  IN UINT32                   MediaId,
+  IN UINT32                   PurgeAction,
+  IN UINT32                   OverwritePattern
   )
 {
   NVME_DEVICE_PRIVATE_DATA  *Device;
   EFI_BLOCK_IO_MEDIA        *Media;
+  NVME_SANICAP              SaniCap;
   UINT32                    SanitizeAction;
   UINT32                    NoDeallocate;
   UINT32                    NamespaceId;
@@ -443,6 +444,7 @@ NvmExpressMediaPurge (
   Device      = NVME_DEVICE_PRIVATE_DATA_FROM_MEDIA_SANITIZE (This);
   NamespaceId = Device->NamespaceId;
   Media       = &Device->Media;
+  SaniCap     = Device->Controller->ControllerData->Sanicap;
 
   if ((MediaId != Media->MediaId) || (!Media->MediaPresent)) {
     return EFI_MEDIA_CHANGED;
@@ -453,17 +455,19 @@ NvmExpressMediaPurge (
   // action is selected, then default to no action and let the NVMe SSD handle
   // the no-op sanitize action (as there may be other contingencies).
   //
-  if (PurgeAction & PURGE_ACTION_OVERWRITE) {
+  if ((PurgeAction & PURGE_ACTION_OVERWRITE) && (SaniCap.Ows)) {
     SanitizeAction = SANITIZE_ACTION_OVERWRITE;
-  } else if (PurgeAction & PURGE_ACTION_BLOCK_ERASE) {
+  } else if ((PurgeAction & PURGE_ACTION_BLOCK_ERASE) && (SaniCap.Bes)) {
     SanitizeAction = SANITIZE_ACTION_BLOCK_ERASE;
-  } else if (PurgeAction & PURGE_ACTION_CRYPTO_ERASE) {
+  } else if ((PurgeAction & PURGE_ACTION_CRYPTO_ERASE) && (SaniCap.Ces)) {
     SanitizeAction = SANITIZE_ACTION_CRYPTO_ERASE;
   } else {
     SanitizeAction = SANITIZE_ACTION_NO_ACTION;
   }
 
-  NoDeallocate = (PurgeAction & PURGE_ACTION_NO_DEALLOCATE) ? 1 : 0;
+  if (PurgeAction & PURGE_ACTION_NO_DEALLOCATE) {
+    NoDeallocate = NVME_NO_DEALLOCATE_AFTER_SANITZE;
+  }
 
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 

@@ -170,12 +170,11 @@ EnumerateNvmeDevNamespace (
     //
     // Create Media Sanitize Protocol instance
     //
-    Device->MediaSanitize.Revision   = EFI_MEDIA_SANITIZE_PROTOCOL_REVISION;
+    Device->MediaSanitize.Revision   = MEDIA_SANITIZE_PROTOCOL_REVISION;
     Device->MediaSanitize.Media      = &Device->Media;
     Device->MediaSanitize.MediaClear = NvmExpressMediaClear;
     Device->MediaSanitize.MediaPurge = NvmExpressMediaPurge;
-
-    // TBD: Get sanitize capabilities
+    CopyMem (&(Device->MediaSanitize.SanitizeCapabilities), &(Device->Controller->ControllerData->Sanicap), sizeof (NVME_SANICAP));
 
     //
     // Create StorageSecurityProtocol Instance
