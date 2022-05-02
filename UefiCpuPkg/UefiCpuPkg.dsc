@@ -79,7 +79,8 @@
   CpuPageTableLib|UefiCpuPkg/Library/CpuPageTableLib/CpuPageTableLib.inf
 
 ##MSCHANGE Begin
-  MemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/MemoryProtectionHobLibNull.inf
+  DxeMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/DxeMemoryProtectionHobLibNull.inf
+  SmmStandaloneMmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/SmmStandaloneMmMemoryProtectionHobLibNull.inf
 
 [LibraryClasses.X64, LibraryClasses.IA32]
 !if $(TARGET) == DEBUG

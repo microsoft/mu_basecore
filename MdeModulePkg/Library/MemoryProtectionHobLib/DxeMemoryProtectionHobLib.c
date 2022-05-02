@@ -1,5 +1,5 @@
 /**@file
-Library fills out gMPS global
+Library fills out gDxeMps global
 
 Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -9,27 +9,27 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Pi/PiMultiPhase.h>
 #include <Uefi/UefiMultiPhase.h>
 
-#include <Library/MemoryProtectionHobLib.h>
+#include <Library/DxeMemoryProtectionHobLib.h>
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
 #include <Library/BaseMemoryLib.h>
 
-MEMORY_PROTECTION_SETTINGS  gMPS;
+DXE_MEMORY_PROTECTION_SETTINGS  gDxeMps;
 
 /**
-  Gets the input EFI_MEMORY_TYPE from the input HEAP_GUARD_MEMORY_TYPES bitfield
+  Gets the input EFI_MEMORY_TYPE from the input DXE_HEAP_GUARD_MEMORY_TYPES bitfield
 
   @param[in]  MemoryType            Memory type to check.
-  @param[in]  HeapGuardMemoryType   HEAP_GUARD_MEMORY_TYPES bitfield
+  @param[in]  HeapGuardMemoryType   DXE_HEAP_GUARD_MEMORY_TYPES bitfield
 
-  @return TRUE  The given EFI_MEMORY_TYPE is TRUE in the given HEAP_GUARD_MEMORY_TYPES
-  @return FALSE The given EFI_MEMORY_TYPE is FALSE in the given HEAP_GUARD_MEMORY_TYPES
+  @return TRUE  The given EFI_MEMORY_TYPE is TRUE in the given DXE_HEAP_GUARD_MEMORY_TYPES
+  @return FALSE The given EFI_MEMORY_TYPE is FALSE in the given DXE_HEAP_GUARD_MEMORY_TYPES
 **/
 BOOLEAN
 EFIAPI
-GetMemoryTypeSettingFromBitfield (
-  IN EFI_MEMORY_TYPE          MemoryType,
-  IN HEAP_GUARD_MEMORY_TYPES  HeapGuardMemoryType
+GetDxeMemoryTypeSettingFromBitfield (
+  IN EFI_MEMORY_TYPE              MemoryType,
+  IN DXE_HEAP_GUARD_MEMORY_TYPES  HeapGuardMemoryType
   )
 {
   switch (MemoryType) {
@@ -74,12 +74,12 @@ GetMemoryTypeSettingFromBitfield (
   protections to create consistency, never turn others on.
 **/
 VOID
-MemoryProtectionSettingsConsistencyCheck (
+DxeMemoryProtectionSettingsConsistencyCheck (
   VOID
   )
 {
-  if ((gMPS.HeapGuardPolicy.Fields.UefiPoolGuard || gMPS.HeapGuardPolicy.Fields.UefiPageGuard) &&
-      gMPS.HeapGuardPolicy.Fields.UefiFreedMemoryGuard)
+  if ((gDxeMps.HeapGuardPolicy.Fields.UefiPoolGuard || gDxeMps.HeapGuardPolicy.Fields.UefiPageGuard) &&
+      gDxeMps.HeapGuardPolicy.Fields.UefiFreedMemoryGuard)
   {
     DEBUG ((
       DEBUG_WARN,
@@ -89,30 +89,29 @@ cannot be active at the same time. Setting all three to ZERO in \
 the memory protection settings global.\n",
       __FUNCTION__
       ));
-    gMPS.HeapGuardPolicy.Fields.UefiPoolGuard        = 0;
-    gMPS.HeapGuardPolicy.Fields.UefiPageGuard        = 0;
-    gMPS.HeapGuardPolicy.Fields.UefiFreedMemoryGuard = 0;
+    gDxeMps.HeapGuardPolicy.Fields.UefiPoolGuard        = 0;
+    gDxeMps.HeapGuardPolicy.Fields.UefiPageGuard        = 0;
+    gDxeMps.HeapGuardPolicy.Fields.UefiFreedMemoryGuard = 0;
   }
 
-  if (!gMPS.ImageProtectionPolicy.Data &&
-      (gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderData       ||
-       gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesData ||
-       gMPS.DxeNxProtectionPolicy.Fields.EfiRuntimeServicesData))
+  if (!gDxeMps.ImageProtectionPolicy.Data &&
+      (gDxeMps.NxProtectionPolicy.Fields.EfiLoaderData       ||
+       gDxeMps.NxProtectionPolicy.Fields.EfiBootServicesData ||
+       gDxeMps.NxProtectionPolicy.Fields.EfiRuntimeServicesData))
   {
     DEBUG ((
       DEBUG_WARN,
       "%a: - Image Protection is inactive, but one or more of \
-DxeNxProtectionPolicy.EfiLoaderData \
-DxeNxProtectionPolicy.EfiBootServicesData \
-DxeNxProtectionPolicy.EfiRuntimeServicesData are active. \
+NxProtectionPolicy.EfiLoaderData \
+NxProtectionPolicy.EfiBootServicesData \
+NxProtectionPolicy.EfiRuntimeServicesData are active. \
 Image data sections could still be non-executable.\n",
       __FUNCTION__
       ));
   }
 
-  if (gMPS.HeapGuardPoolType.Data &&
-      (!(gMPS.HeapGuardPolicy.Fields.UefiPoolGuard ||
-         gMPS.HeapGuardPolicy.Fields.SmmPoolGuard)))
+  if (gDxeMps.HeapGuardPoolType.Data &&
+      (!(gDxeMps.HeapGuardPolicy.Fields.UefiPoolGuard)))
   {
     DEBUG ((
       DEBUG_WARN,
@@ -123,9 +122,8 @@ HeapGuardPolicy.SmmPoolGuard are active.\n",
       ));
   }
 
-  if (gMPS.HeapGuardPageType.Data &&
-      (!(gMPS.HeapGuardPolicy.Fields.UefiPageGuard ||
-         gMPS.HeapGuardPolicy.Fields.SmmPageGuard)))
+  if (gDxeMps.HeapGuardPageType.Data &&
+      (!(gDxeMps.HeapGuardPolicy.Fields.UefiPageGuard)))
   {
     DEBUG ((
       DEBUG_WARN,
@@ -136,39 +134,39 @@ HeapGuardPolicy.SmmPageGuard are active.\n",
       ));
   }
 
-  if (gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderCode        ||
-      gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesCode  ||
-      gMPS.DxeNxProtectionPolicy.Fields.EfiRuntimeServicesCode)
+  if (gDxeMps.NxProtectionPolicy.Fields.EfiLoaderCode        ||
+      gDxeMps.NxProtectionPolicy.Fields.EfiBootServicesCode  ||
+      gDxeMps.NxProtectionPolicy.Fields.EfiRuntimeServicesCode)
   {
     DEBUG ((
       DEBUG_WARN,
-      "%a: - DxeNxProtectionPolicy.EfiLoaderCode, \
-DxeNxProtectionPolicy.EfiBootServicesCode, \
-and DxeNxProtectionPolicy.EfiRuntimeServicesCode \
+      "%a: - NxProtectionPolicy.EfiLoaderCode, \
+NxProtectionPolicy.EfiBootServicesCode, \
+and NxProtectionPolicy.EfiRuntimeServicesCode \
 must be set to ZERO. Setting all to ZERO \
 in the memory protection settings global.\n",
       __FUNCTION__
       ));
-    gMPS.DxeNxProtectionPolicy.Fields.EfiLoaderCode          = 0;
-    gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesCode    = 0;
-    gMPS.DxeNxProtectionPolicy.Fields.EfiRuntimeServicesCode = 0;
+    gDxeMps.NxProtectionPolicy.Fields.EfiLoaderCode          = 0;
+    gDxeMps.NxProtectionPolicy.Fields.EfiBootServicesCode    = 0;
+    gDxeMps.NxProtectionPolicy.Fields.EfiRuntimeServicesCode = 0;
   }
 
-  if (gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesData != gMPS.DxeNxProtectionPolicy.Fields.EfiConventionalMemory) {
+  if (gDxeMps.NxProtectionPolicy.Fields.EfiBootServicesData != gDxeMps.NxProtectionPolicy.Fields.EfiConventionalMemory) {
     DEBUG ((
       DEBUG_WARN,
-      "%a: - DxeNxProtectionPolicy.EfiBootServicesData \
-and DxeNxProtectionPolicy.EfiConventionalMemory must have the same value. \
+      "%a: - NxProtectionPolicy.EfiBootServicesData \
+and NxProtectionPolicy.EfiConventionalMemory must have the same value. \
 Setting both to ZERO in the memory protection settings global.\n",
       __FUNCTION__
       ));
-    gMPS.DxeNxProtectionPolicy.Fields.EfiBootServicesData   = 0;
-    gMPS.DxeNxProtectionPolicy.Fields.EfiConventionalMemory = 0;
+    gDxeMps.NxProtectionPolicy.Fields.EfiBootServicesData   = 0;
+    gDxeMps.NxProtectionPolicy.Fields.EfiConventionalMemory = 0;
   }
 
-  if (gMPS.NullPointerDetectionPolicy.Fields.UefiNullDetection   &&
-      gMPS.NullPointerDetectionPolicy.Fields.DisableReadyToBoot  &&
-      gMPS.NullPointerDetectionPolicy.Fields.DisableEndOfDxe)
+  if (gDxeMps.NullPointerDetectionPolicy.Fields.UefiNullDetection   &&
+      gDxeMps.NullPointerDetectionPolicy.Fields.DisableReadyToBoot  &&
+      gDxeMps.NullPointerDetectionPolicy.Fields.DisableEndOfDxe)
   {
     DEBUG ((
       DEBUG_WARN,
@@ -180,45 +178,59 @@ NULL detection will be disabled at EndOfDxe.\n",
 }
 
 /**
-  Populates gMPS global with the data present in the HOB. If the HOB entry does not exist,
+  Populates gDxeMps global with the data present in the HOB. If the HOB entry does not exist,
   this constructor will zero the memory protection settings.
 
   @retval EFI_SUCCESS   The constructor always returns EFI_SUCCESS.
 **/
 EFI_STATUS
 EFIAPI
-CommonMemoryProtectionHobLibConstructor (
-  VOID
+DxeMemoryProtectionHobLibConstructor (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
   VOID  *Ptr;
 
-  Ptr = GetFirstGuidHob (&gMemoryProtectionSettingsGuid);
+  Ptr = GetFirstGuidHob (&gDxeMemoryProtectionSettingsGuid);
 
   //
   // Cache the Memory Protection Settings HOB entry
   //
   if (Ptr != NULL) {
-    if (*((UINT8 *)GET_GUID_HOB_DATA (Ptr)) != (UINT8)MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION) {
+    if (*((UINT8 *)GET_GUID_HOB_DATA (Ptr)) != (UINT8)DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION) {
       DEBUG ((
         DEBUG_INFO,
         "%a: - Version number of the Memory Protection Settings HOB is invalid.\n",
         __FUNCTION__
         ));
       ASSERT (FALSE);
-      ZeroMem (&gMPS, sizeof (gMPS));
+      ZeroMem (&gDxeMps, sizeof (gDxeMps));
       return EFI_SUCCESS;
     }
 
-    CopyMem (&gMPS, GET_GUID_HOB_DATA (Ptr), sizeof (MEMORY_PROTECTION_SETTINGS));
-    MemoryProtectionSettingsConsistencyCheck ();
+    CopyMem (&gDxeMps, GET_GUID_HOB_DATA (Ptr), sizeof (DXE_MEMORY_PROTECTION_SETTINGS));
+    DxeMemoryProtectionSettingsConsistencyCheck ();
   } else {
     DEBUG ((
       DEBUG_INFO,
-      "MemoryProtectionHobLibDxeConstructor - Unable to fetch memory protection HOB. \
+      "DxeMemoryProtectionHobLibConstructor - Unable to fetch memory protection HOB. \
 Zero-ing memory protection settings\n"
       ));
-    ZeroMem (&gMPS, sizeof (gMPS));
+    ZeroMem (&gDxeMps, sizeof (gDxeMps));
+  }
+
+  if (!(gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv || gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromUnknown) &&
+      gDxeMps.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails)
+  {
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: - ImageProtectionPolicy.ProtectImageFromFv or ImageProtectionPolicy.ProtectImageFromUnknown are \
+inactive but RaiseErrorIfProtectionFails is active. RaiseErrorIfProtectionFails would have \
+no effect - toggling off.\n",
+      __FUNCTION__
+      ));
+    gDxeMps.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails = 0;
   }
 
   return EFI_SUCCESS;

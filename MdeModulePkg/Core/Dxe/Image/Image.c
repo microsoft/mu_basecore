@@ -657,7 +657,7 @@ CoreLoadPeImage (
   // of code memory types aren't set to NX in case this image does its own allocations.
   // Or, if our memory protection policy specifies that we shouldn't allow such images, return a failure.
   if (!(Image->ImageContext.SupportsNx) && (Image->ImageContext.ImageCodeMemoryType == EfiLoaderCode)) {
-    if (gMPS.ImageProtectionPolicy.Fields.BlockImagesWithoutNxFlag) {
+    if (gDxeMps.ImageProtectionPolicy.Fields.BlockImagesWithoutNxFlag) {
       return EFI_SECURITY_VIOLATION;
     }
 
@@ -802,7 +802,10 @@ CoreLoadPeImage (
 
   // MU_CHANGE START
   // Now that relocations are done, set the image to read-only
-  SetImageToReadOnly (Image);
+  if (gDxeMps.ImageProtectionPolicy.Data) {
+    SetImageToReadOnly (Image);
+  }
+
   // MU_CHANGE END
   //
   // Flush the Instruction Cache

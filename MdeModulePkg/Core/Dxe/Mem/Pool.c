@@ -386,7 +386,7 @@ CoreAllocatePoolI (
   // MU_CHANGE START Update to use memory protection settings HOB
   HasPoolTail = !(NeedGuard &&
                   //  ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
-                  gMPS.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_TAIL);
+                  gDxeMps.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_TAIL);
   // MU_CHANGE END
   PageAsPool = (IsHeapGuardEnabled (GUARD_HEAP_TYPE_FREED) && !mOnGuarding);
 
@@ -721,7 +721,7 @@ CoreFreePoolI (
   // MU_CHANGE START Update to use memory protection settings HOB
   HasPoolTail = !(IsGuarded &&
                   // ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
-                  gMPS.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_TAIL);
+                  gDxeMps.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_TAIL);
   // MU_CHANGE END
   PageAsPool = (Head->Signature == POOLPAGE_HEAD_SIGNATURE);
 

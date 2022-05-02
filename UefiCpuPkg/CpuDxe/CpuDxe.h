@@ -35,7 +35,7 @@
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/MpInitLib.h>
 #include <Library/TimerLib.h>
-#include <Library/MemoryProtectionHobLib.h> // MU_CHANGE
+#include <Library/DxeMemoryProtectionHobLib.h> // MU_CHANGE
 
 #include <Guid/IdleLoopEvent.h>
 #include <Guid/VectorHandoffTable.h>

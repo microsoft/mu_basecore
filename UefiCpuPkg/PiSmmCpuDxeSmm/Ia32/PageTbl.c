@@ -10,7 +10,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "PiSmmCpuDxeSmm.h"
 
-#include <Library/MemoryProtectionHobLib.h> // MU_CHANGE
+#include <Library/SmmStandaloneMmMemoryProtectionHobLib.h> // MU_CHANGE
 
 /**
   Disable CET.
@@ -182,7 +182,7 @@ SmiPFHandler (
     // MU_CHANGE START Update to use memory protection settings HOB
     // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0 &&
     //   (PFAddress < EFI_PAGE_SIZE)) {
-    if (gMPS.NullPointerDetectionPolicy.Fields.SmmNullDetection &&
+    if (gSmmMps.NullPointerDetectionPolicy &&
         (PFAddress < EFI_PAGE_SIZE))
     {
       // // MU_CHANGE END
@@ -252,7 +252,7 @@ SetPageTableAttributes (
   //
   // MU_CHANGE START Update to use memory protection settings HOB
   // if ((PcdGet8 (PcdHeapGuardPropertyMask) & (BIT3 | BIT2)) != 0) {
-  if (gMPS.HeapGuardPolicy.Fields.SmmPageGuard || gMPS.HeapGuardPolicy.Fields.SmmPoolGuard) {
+  if (gSmmMps.HeapGuardPolicy.Fields.SmmPageGuard || gSmmMps.HeapGuardPolicy.Fields.SmmPoolGuard) {
     // MU_CHANGE END
     DEBUG ((DEBUG_INFO, "Don't mark page table to read-only as heap guard is enabled\n"));
     return;

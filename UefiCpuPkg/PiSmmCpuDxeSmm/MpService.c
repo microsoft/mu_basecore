@@ -10,7 +10,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "PiSmmCpuDxeSmm.h"
 
-#include <Library/MemoryProtectionHobLib.h> // MU_CHANGE
+#include <Library/SmmStandaloneMmMemoryProtectionHobLib.h> // MU_CHANGE
 
 //
 // Slots for all MTRR( FIXED MTRR + VARIABLE MTRR + MTRR_LIB_IA32_MTRR_DEF_TYPE)
@@ -1011,7 +1011,7 @@ Gen4GPageTable (
 
   // MU_CHANGE START Update to use memory protection settings HOB
   // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0) {
-  if (gMPS.NullPointerDetectionPolicy.Fields.SmmNullDetection) {
+  if (gSmmMps.NullPointerDetectionPolicy) {
     // MU_CHANGE END
     Pte = (UINT64 *)(UINTN)(Pdpte[0] & ~mAddressEncMask & ~(EFI_PAGE_SIZE - 1));
     if ((Pte[0] & IA32_PG_PS) == 0) {

@@ -11,7 +11,8 @@
 #include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
-#include <Library/MemoryProtectionHobLib.h> // MU_CHANGE
+
+#include <Library/DxeMemoryProtectionHobLib.h> // MU_CHANGE
 
 CONST UINTN  mDoFarReturnFlag = 0;
 
@@ -66,13 +67,11 @@ InitializeCpuExceptionHandlers (
   IN EFI_VECTOR_HANDOFF_INFO  *VectorInfo OPTIONAL
   )
 {
-
   InitializeSpinLock (&mExceptionHandlerData.DisplayMessageSpinLock);
   return InitializeCpuExceptionHandlersWorker (VectorInfo, &mExceptionHandlerData);
 }
 
 /**
-
   Registers a function to be called from the processor interrupt handler.
 
   This function registers and enables the handler specified by InterruptHandler for a processor
@@ -170,7 +169,6 @@ InitializeSeparateExceptionStacks (
     if (BufferSize == NULL) {
       return EFI_INVALID_PARAMETER;
     }
-
 
     //
     // Total needed size includes stack size, new GDT table size, TSS size.
