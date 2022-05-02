@@ -117,11 +117,12 @@
   MmuLib|MdePkg/Library/BaseMmuLibNull/BaseMmuLibNull.inf       ## MU_CHANGE
 
 # MU_CHANGE START Include MemoryProtectionHobLib
-[LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.DXE_CORE, LibraryClasses.common.SMM_CORE, LibraryClasses.common.DXE_SMM_DRIVER, LibraryClasses.common.UEFI_APPLICATION]
-  MemoryProtectionHobLib|MdeModulePkg/Library/DxeSmmMemoryProtectionHobLib/DxeSmmMemoryProtectionHobLib.inf
+[LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.DXE_CORE, LibraryClasses.common.UEFI_APPLICATION]
+  DxeMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLib/DxeMemoryProtectionHobLib.inf
 
-[LibraryClasses.common.MM_CORE_STANDALONE, LibraryClasses.common.MM_STANDALONE]
-  MemoryProtectionHobLib|MdeModulePkg/Library/DxeSmmMemoryProtectionHobLib/StandaloneMmMemoryProtectionHobLib.inf
+[LibraryClasses.common.SMM_CORE, LibraryClasses.common.DXE_SMM_DRIVER, LibraryClasses.common.MM_CORE_STANDALONE, LibraryClasses.common.MM_STANDALONE]
+  SmmStandaloneMmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLib/SmmStandaloneMmMemoryProtectionHobLib.inf
+
 # MU_CHANGE END
 
 ##MSCHANGE Begin
@@ -266,9 +267,10 @@
   MdeModulePkg/Library/MemoryTypeInformationChangeLibNull/MemoryTypeInformationChangeLibNull.inf ## MU_CHANGE
   MdeModulePkg/Library/SecurityLockAuditDebugMessageLib/SecurityLockAuditDebugMessageLib.inf     ## MU_CHANGE
   MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf                     ## MU_CHANGE
-  MdeModulePkg/Library/MemoryProtectionHobLibNull/MemoryProtectionHobLibNull.inf                 ## MU_CHANGE
-  MdeModulePkg/Library/DxeSmmMemoryProtectionHobLib/DxeSmmMemoryProtectionHobLib.inf             ## MU_CHANGE
-  MdeModulePkg/Library/DxeSmmMemoryProtectionHobLib/StandaloneMmMemoryProtectionHobLib.inf       ## MU_CHANGE
+  MdeModulePkg/Library/MemoryProtectionHobLibNull/DxeMemoryProtectionHobLibNull.inf              ## MU_CHANGE
+  MdeModulePkg/Library/MemoryProtectionHobLib/DxeMemoryProtectionHobLib.inf                      ## MU_CHANGE
+  MdeModulePkg/Library/MemoryProtectionHobLib/SmmStandaloneMmMemoryProtectionHobLib.inf          ## MU_CHANGE
+  MdeModulePkg/Library/MemoryProtectionHobLibNull/SmmStandaloneMmMemoryProtectionHobLibNull.inf  ## MU_CHANGE
   MdeModulePkg/Library/CapsulePersistLibNull/CapsulePersistLibNull.inf                           ## MU_CHANGE
   MdeModulePkg/Library/ParallelLzmaCustomDecompressLib/ParallelLzmaCustomDecompressLib.inf       ## MU_CHANGE
 

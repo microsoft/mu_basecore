@@ -56,7 +56,7 @@
   PcdLib
   VmgExitLib
   MicrocodeLib
-  MemoryProtectionHobLib ## MU_CHANGE
+  DxeMemoryProtectionHobLib ## MU_CHANGE
 
 [Protocols]
   gEfiTimerArchProtocolGuid                     ## SOMETIMES_CONSUMES

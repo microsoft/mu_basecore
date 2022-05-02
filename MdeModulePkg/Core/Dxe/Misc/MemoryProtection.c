@@ -166,10 +166,10 @@ GetProtectionPolicyFromImageType (
   // } else {
   //   return PROTECT_IF_ALIGNED_ELSE_ALLOW;
   // }
-  if (((ImageType == IMAGE_UNKNOWN) && gMPS.ImageProtectionPolicy.Fields.ProtectImageFromUnknown) ||
-      ((ImageType == IMAGE_FROM_FV) && gMPS.ImageProtectionPolicy.Fields.ProtectImageFromFv))
+  if (((ImageType == IMAGE_UNKNOWN) && gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromUnknown) ||
+      ((ImageType == IMAGE_FROM_FV) && gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv))
   {
-    if (gMPS.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails) {
+    if (gDxeMps.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails) {
       return PROTECT_ELSE_RAISE_ERROR;
     }
 
@@ -633,7 +633,7 @@ ProtectUefiImageMu (
 
 Finish:
   if (EFI_ERROR (Status)) {
-    if (gMPS.ImageProtectionPolicy.Data) {
+    if (gDxeMps.ImageProtectionPolicy.Data) {
       ClearReadOnlyAndNxFromImage (LoadedImage);
     }
 
@@ -882,7 +882,7 @@ UnprotectUefiImage (
 
   // // MU_CHANGE START Update to use memory protection settings HOB
   // if (PcdGet32(PcdImageProtectionPolicy) != 0) {
-  if (gMPS.ImageProtectionPolicy.Data) {
+  if (gDxeMps.ImageProtectionPolicy.Data) {
     // MU_CHANGE END
     for (ImageRecordLink = mProtectedImageRecordList.ForwardLink;
          ImageRecordLink != &mProtectedImageRecordList;
@@ -931,13 +931,13 @@ GetPermissionAttributeForMemoryType (
   //   TestBit = LShiftU64 (1, MemoryType);
   // }
 
-  // if ((gMPS.DxeNxProtectionPolicy & TestBit) != 0) { // MU_CHANGE
+  // if ((gDxeMps.NxProtectionPolicy & TestBit) != 0) { // MU_CHANGE
   //   return EFI_MEMORY_XP;
   // } else {
   //   return 0;
   // }
 
-  if (GetMemoryTypeSettingFromBitfield (MemoryType, gMPS.DxeNxProtectionPolicy)) {
+  if (GetDxeMemoryTypeSettingFromBitfield (MemoryType, gDxeMps.NxProtectionPolicy)) {
     // MU_CHANGE
     return EFI_MEMORY_XP;
   }
@@ -1111,7 +1111,7 @@ InitializeDxeNxMemoryProtectionPolicy (
   StackBase = 0;
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (PcdGetBool (PcdCpuStackGuard)) {
-  if (gMPS.CpuStackGuard) {
+  if (gDxeMps.CpuStackGuard) {
     // MU_CHANGE END
     //
     // Get the base of stack from Hob.
@@ -1190,7 +1190,7 @@ InitializeDxeNxMemoryProtectionPolicy (
             LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT))) &&
           // MU_CHANGE START Update to use memory protection settings HOB
           // PcdGetBool (PcdCpuStackGuard)) {
-          gMPS.CpuStackGuard)
+          gDxeMps.CpuStackGuard)
       {
         // MU_CHANGE END
         SetUefiImageMemoryAttributes (
@@ -1288,7 +1288,7 @@ MemoryProtectionCpuArchProtocolNotify (
   //
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0) {
-  if (gMPS.DxeNxProtectionPolicy.Data) {
+  if (gDxeMps.NxProtectionPolicy.Data) {
     // MU_CHANGE END
     InitializeDxeNxMemoryProtectionPolicy ();
   }
@@ -1300,7 +1300,7 @@ MemoryProtectionCpuArchProtocolNotify (
 
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (mImageProtectionPolicy == 0) {
-  if (!gMPS.ImageProtectionPolicy.Data) {
+  if (!gDxeMps.ImageProtectionPolicy.Data) {
     // MU_CHANGE END
     goto Done;
   }
@@ -1377,7 +1377,7 @@ MemoryProtectionExitBootServicesCallback (
   //
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (mImageProtectionPolicy != 0) {
-  if (gMPS.ImageProtectionPolicy.Data) {
+  if (gDxeMps.ImageProtectionPolicy.Data) {
     // MU_CHANGE END
     for (Link = gRuntime->ImageHead.ForwardLink; Link != &gRuntime->ImageHead; Link = Link->ForwardLink) {
       RuntimeImage = BASE_CR (Link, EFI_RUNTIME_IMAGE_ENTRY, Link);
@@ -1502,7 +1502,7 @@ CoreInitializeMemoryProtection (
   EFI_EVENT   EnableNullDetectionEvent; // MU_CHANGE
   VOID        *Registration;
 
-  // mImageProtectionPolicy = gMPS.ImageProtectionPolicy; // MU_CHANGE
+  // mImageProtectionPolicy = gDxeMps.ImageProtectionPolicy; // MU_CHANGE
 
   InitializeListHead (&mProtectedImageRecordList);
 
@@ -1547,7 +1547,7 @@ CoreInitializeMemoryProtection (
   //                 detection enable event
   // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & (BIT0|BIT7))
   //      == (BIT0|BIT7)) {
-  if (gMPS.NullPointerDetectionPolicy.Fields.UefiNullDetection) {
+  if (gDxeMps.NullPointerDetectionPolicy.Fields.UefiNullDetection) {
     // PEI phase has been updated to always set page zero as allocated
     // so it can be safely set as RP
     Status = CoreCreateEvent (
@@ -1569,7 +1569,7 @@ CoreInitializeMemoryProtection (
     if (!EFI_ERROR (Status)) {
       // If both DisableEndOfDxe and DisableReadyToBoot are enabled, just
       // create the event to disable at EndOfDxe because that event is sooner
-      if (gMPS.NullPointerDetectionPolicy.Fields.DisableEndOfDxe) {
+      if (gDxeMps.NullPointerDetectionPolicy.Fields.DisableEndOfDxe) {
         Status = CoreCreateEventEx (
                    EVT_NOTIFY_SIGNAL,
                    TPL_NOTIFY,
@@ -1578,7 +1578,7 @@ CoreInitializeMemoryProtection (
                    &gEfiEndOfDxeEventGroupGuid,
                    &DisableNullDetectionEvent
                    );
-      } else if (gMPS.NullPointerDetectionPolicy.Fields.DisableReadyToBoot) {
+      } else if (gDxeMps.NullPointerDetectionPolicy.Fields.DisableReadyToBoot) {
         Status = CoreCreateEventEx (
                    EVT_NOTIFY_SIGNAL,
                    TPL_NOTIFY,
@@ -1600,7 +1600,7 @@ CoreInitializeMemoryProtection (
   // Install protocol for validating Heap Guard if Heap Guard is turned on
   // Update to use memory protection settings HOB
   // if (PcdGet8(PcdHeapGuardPropertyMask)) {
-  if (gMPS.HeapGuardPolicy.Data) {
+  if (gDxeMps.HeapGuardPolicy.Data) {
     EFI_HANDLE  HgBmHandle = NULL;
     Status = CoreInstallMultipleProtocolInterfaces (
                &HgBmHandle,
@@ -1780,7 +1780,7 @@ ApplyMemoryProtectionPolicy (
   //
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) == 0) {
-  if (!gMPS.DxeNxProtectionPolicy.Data) {
+  if (!gDxeMps.NxProtectionPolicy.Data) {
     // MU_CHANGE END
     return EFI_SUCCESS;
   }

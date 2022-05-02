@@ -12,7 +12,7 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 
-#include <Library/MemoryProtectionHobLib.h> // MU_CHANGE
+#include <Library/DxeMemoryProtectionHobLib.h> // MU_CHANGE
 
 CONST UINTN  mDoFarReturnFlag = 0;
 
@@ -261,7 +261,7 @@ InitializeCpuExceptionHandlersEx (
     //
     // MU_CHANGE START Update to use memory protection settings HOB
     // if (PcdGetBool (PcdCpuStackGuard)) {
-    if (gMPS.CpuStackGuard) {
+    if (gDxeMps.CpuStackGuard) {
       // MU_CHANGE END
       if (InitData == NULL) {
         SetMem (mNewGdt, sizeof (mNewGdt), 0);

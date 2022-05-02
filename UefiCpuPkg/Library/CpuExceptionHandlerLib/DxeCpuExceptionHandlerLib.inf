@@ -63,4 +63,4 @@
   MemoryAllocationLib
   DebugLib
   VmgExitLib
-  MemoryProtectionHobLib ## MU_CHANGE
+  DxeMemoryProtectionHobLib ## MU_CHANGE
