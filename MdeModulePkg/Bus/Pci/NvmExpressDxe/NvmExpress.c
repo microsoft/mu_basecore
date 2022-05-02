@@ -174,7 +174,17 @@ EnumerateNvmeDevNamespace (
     Device->MediaSanitize.Media      = &Device->Media;
     Device->MediaSanitize.MediaClear = NvmExpressMediaClear;
     Device->MediaSanitize.MediaPurge = NvmExpressMediaPurge;
-    CopyMem (&(Device->MediaSanitize.SanitizeCapabilities), &(Device->Controller->ControllerData->Sanicap), sizeof (NVME_SANICAP));
+
+    ASSERT (
+      sizeof (Device->MediaSanitize.SanitizeCapabilities) ==
+      sizeof (Device->Controller->ControllerData->Sanicap)
+      );
+
+    CopyMem (
+      &(Device->MediaSanitize.SanitizeCapabilities),
+      &(Device->Controller->ControllerData->Sanicap),
+      sizeof (Device->MediaSanitize.SanitizeCapabilities)
+      );
 
     //
     // Create StorageSecurityProtocol Instance
