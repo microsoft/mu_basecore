@@ -7,30 +7,27 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef __MEMORY_PROTECTION_SETTINGS_H__
-#define __MEMORY_PROTECTION_SETTINGS_H__
+#ifndef __DXE_MEMORY_PROTECTION_SETTINGS_H__
+#define __DXE_MEMORY_PROTECTION_SETTINGS_H__
 
 typedef union {
   UINT8    Data;
   struct {
     UINT8    UefiNullDetection  : 1;
-    UINT8    SmmNullDetection   : 1;
     UINT8    DisableEndOfDxe    : 1;
     UINT8    DisableReadyToBoot : 1;
   } Fields;
-} NULL_DETECTION_POLICY;
+} DXE_NULL_DETECTION_POLICY;
 
 typedef union {
   UINT8    Data;
   struct {
     UINT8    UefiPageGuard        : 1;
     UINT8    UefiPoolGuard        : 1;
-    UINT8    SmmPageGuard         : 1;
-    UINT8    SmmPoolGuard         : 1;
     UINT8    UefiFreedMemoryGuard : 1;
     UINT8    Direction            : 1;
   } Fields;
-} HEAP_GUARD_POLICY;
+} DXE_HEAP_GUARD_POLICY;
 
 typedef union {
   UINT32    Data;
@@ -53,7 +50,7 @@ typedef union {
     UINT8    OEMReserved                : 1;
     UINT8    OSReserved                 : 1;
   } Fields;
-} HEAP_GUARD_MEMORY_TYPES;
+} DXE_HEAP_GUARD_MEMORY_TYPES;
 
 typedef union {
   UINT8    Data;
@@ -63,11 +60,11 @@ typedef union {
     UINT8    RaiseErrorIfProtectionFails : 1;
     UINT8    BlockImagesWithoutNxFlag    : 1;
   } Fields;
-} IMAGE_PROTECTION_POLICY;
+} DXE_IMAGE_PROTECTION_POLICY;
 
-typedef UINT8 MEMORY_PROTECTION_SETTINGS_VERSION;
+typedef UINT8 DXE_MEMORY_PROTECTION_SETTINGS_VERSION;
 
-#define MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  3// Current iteration of MEMORY_PROTECTION_SETTINGS
+#define DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  1 // Current iteration of DXE_MEMORY_PROTECTION_SETTINGS
 
 //
 // Memory Protection Settings struct
@@ -75,28 +72,27 @@ typedef UINT8 MEMORY_PROTECTION_SETTINGS_VERSION;
 typedef struct {
   // The current version of the structure definition. This is used to ensure there isn't a definition mismatch
   // if modules have differing iterations of this header. When creating this struct, use the
-  // MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION macro.
-  MEMORY_PROTECTION_SETTINGS_VERSION    StructVersion;
+  // DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION macro.
+  DXE_MEMORY_PROTECTION_SETTINGS_VERSION    StructVersion;
 
   // Indicates if UEFI Stack Guard will be enabled.
   //
   // If enabled, stack overflow in UEFI can be caught.
   //  TRUE  - UEFI Stack Guard will be enabled.
   //  FALSE - UEFI Stack Guard will be disabled.
-  BOOLEAN                               CpuStackGuard;
+  BOOLEAN                                   CpuStackGuard;
 
   // Bitfield to control the NULL address detection in code for different phases.
   // If enabled, accessing NULL address in UEFI or SMM code can be caught by marking
-  // page zero as not present.
+  // the NULL page as not present.
   //   .UefiNullDetection   : Enable NULL pointer detection for UEFI.
-  //   .SmmNullDetection    : Enable NULL pointer detection for SMM.
   //   .DisableEndOfDxe     : Disable NULL pointer detection just after EndOfDxe.
   //                          This is a workaround for those unsolvable NULL access issues in
   //                          OptionROM, boot loader, etc. It can also help to avoid unnecessary
   //                          exception caused by legacy memory (0-4095) access after EndOfDxe,
   //                          such as Windows 7 boot on Qemu.
   //   .DisableReadyToBoot  : Disable NULL pointer detection just after ReadyToBoot.
-  NULL_DETECTION_POLICY    NullPointerDetectionPolicy;
+  DXE_NULL_DETECTION_POLICY    NullPointerDetectionPolicy;
 
   // Bitfield to control Heap Guard behavior.
   //
@@ -110,13 +106,11 @@ typedef struct {
   //
   //  .UefiPageGuard         : Enable UEFI page guard.
   //  .UefiPoolGuard         : Enable UEFI pool guard.
-  //  .SmmPageGuard          : Enable SMM page guard.
-  //  .SmmPoolGuard          : Enable SMM pool guard.
   //  .UefiFreedMemoryGuard  : Enable UEFI freed-memory guard (Use-After-Free memory detection).
   //  .Direction             : The direction of Guard Page for Pool Guard.
   //                           0 - The returned pool is near the tail guard page.
   //                           1 - The returned pool is near the head guard page.
-  HEAP_GUARD_POLICY    HeapGuardPolicy;
+  DXE_HEAP_GUARD_POLICY    HeapGuardPolicy;
 
   // Set image protection policy.
   //
@@ -126,13 +120,13 @@ typedef struct {
   //  .ProtectImageFromFv           : If set, images from firmware volumes will be protected by DxeCore
   //                                  if they are aligned. The code section becomes read-only, and the data
   //                                  section becomes non-executable.
-  //  .RaiseErrorIfProtectionFails  : If set, ProtectUefiImageMu() will return an error if protection fails.
-  //  .BlockImagesWithoutNxFlag     : If set, images which don't utilize the NX_COMPAT PE flag will not be loaded.
+  //  .RaiseErrorIfProtectionFails  : If set, the image protection logic will return an error if protection fails.
+  //  .BlockImagesWithoutNxFlag     : If set, images of subsystem type EFI_APPLICATION
+  //                                  which don't utilize the /NXCOMPAT DLL flag will not be loaded.
   //
   // Note: If a bit is cleared, an image data section could be still non-executable if
-  // DxeNxProtectionPolicy is enabled for EfiLoaderData, EfiBootServicesData
-  // or EfiRuntimeServicesData.
-  IMAGE_PROTECTION_POLICY    ImageProtectionPolicy;
+  // NxProtectionPolicy is enabled for EfiLoaderData, EfiBootServicesData or EfiRuntimeServicesData.
+  DXE_IMAGE_PROTECTION_POLICY    ImageProtectionPolicy;
 
   // Indicates which type allocation need guard page.
   //
@@ -142,7 +136,7 @@ typedef struct {
   // type related to cleared bits keeps the same as ususal.
   //
   // This bitfield is only valid if UefiPoolGuard and/or SmmPoolGuard are set in HeapGuardPolicy.
-  HEAP_GUARD_MEMORY_TYPES    HeapGuardPoolType;
+  DXE_HEAP_GUARD_MEMORY_TYPES    HeapGuardPoolType;
 
   // Indicates which type allocation need guard page.
   //
@@ -151,8 +145,8 @@ typedef struct {
   // free pages for all of them. The page allocation for the type related to
   // cleared bits keeps the same as ususal.
   //
-  // This bitfield is only valid if UefiPageGuard and/or SmmPageGuard are set in HeapGuardPolicy.
-  HEAP_GUARD_MEMORY_TYPES    HeapGuardPageType;
+  // This bitfield is only valid if UefiPageGuard is set in HeapGuardPolicy.
+  DXE_HEAP_GUARD_MEMORY_TYPES    HeapGuardPageType;
 
   // DXE no execute memory protection policy.
   //
@@ -161,15 +155,15 @@ typedef struct {
   //
   //  NOTE: - User must NOT set NX protection for EfiLoaderCode / EfiBootServicesCode / EfiRuntimeServicesCode.
   //        - User MUST set the same NX protection for EfiBootServicesData and EfiConventionalMemory.
-  HEAP_GUARD_MEMORY_TYPES    DxeNxProtectionPolicy;
-} MEMORY_PROTECTION_SETTINGS;
+  DXE_HEAP_GUARD_MEMORY_TYPES    NxProtectionPolicy;
+} DXE_MEMORY_PROTECTION_SETTINGS;
 
-#define HOB_MEMORY_PROTECTION_SETTINGS_GUID \
+#define HOB_DXE_MEMORY_PROTECTION_SETTINGS_GUID \
   { \
     { 0x9ABFD639, 0xD1D0, 0x4EFF, { 0xBD, 0xB6, 0x7E, 0xC4, 0x19, 0x0D, 0x17, 0xD5 } } \
   }
 
-extern GUID  gMemoryProtectionSettingsGuid;
+extern GUID  gDxeMemoryProtectionSettingsGuid;
 
 // HeapGuardPolicy.Fields.Direction value indicating tail alignment
 #define HEAP_GUARD_ALIGNED_TO_TAIL  0
@@ -181,21 +175,18 @@ extern GUID  gMemoryProtectionSettingsGuid;
 //  A memory profile with strict settings. This will likely add to the
 //  total boot time but will catch more configuration and memory errors.
 //
-#define MEMORY_PROTECTION_SETTINGS_DEBUG                        \
+#define DXE_MEMORY_PROTECTION_SETTINGS_DEBUG                        \
           {                                                     \
-            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,         \
+            DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,         \
             TRUE,   /* Stack Guard On */                        \
             {                                                   \
               .Fields.UefiNullDetection            = 1,         \
-              .Fields.SmmNullDetection             = 1,         \
               .Fields.DisableEndOfDxe              = 0,         \
               .Fields.DisableReadyToBoot           = 0          \
             },                                                  \
             {                                                   \
               .Fields.UefiPageGuard                = 1,         \
               .Fields.UefiPoolGuard                = 1,         \
-              .Fields.SmmPageGuard                 = 1,         \
-              .Fields.SmmPoolGuard                 = 1,         \
               .Fields.UefiFreedMemoryGuard         = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \
@@ -269,21 +260,18 @@ extern GUID  gMemoryProtectionSettingsGuid;
 //  settings, this removes the pool guards and doesn't unload images
 //  which fail protection.
 //
-#define MEMORY_PROTECTION_SETTINGS_SHIP_MODE                    \
+#define DXE_MEMORY_PROTECTION_SETTINGS_SHIP_MODE                \
           {                                                     \
-            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,         \
+            DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,     \
             TRUE,   /* Stack Guard On */                        \
             {                                                   \
               .Fields.UefiNullDetection            = 1,         \
-              .Fields.SmmNullDetection             = 1,         \
               .Fields.DisableEndOfDxe              = 0,         \
               .Fields.DisableReadyToBoot           = 0          \
             },                                                  \
             {                                                   \
               .Fields.UefiPageGuard                = 1,         \
               .Fields.UefiPoolGuard                = 0,         \
-              .Fields.SmmPageGuard                 = 1,         \
-              .Fields.SmmPoolGuard                 = 0,         \
               .Fields.UefiFreedMemoryGuard         = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \
@@ -353,24 +341,21 @@ extern GUID  gMemoryProtectionSettingsGuid;
           }
 
 //
-//  A memory profile which mirrors MEMORY_PROTECTION_SETTINGS_SHIP_MODE
+//  A memory profile which mirrors DXE_MEMORY_PROTECTION_SETTINGS_SHIP_MODE
 //  but doesn't include page guards.
 //
-#define MEMORY_PROTECTION_SETTINGS_SHIP_MODE_NO_PAGE_GUARDS     \
+#define DXE_MEMORY_PROTECTION_SETTINGS_SHIP_MODE_NO_PAGE_GUARDS \
           {                                                     \
-            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,         \
+            DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,     \
             TRUE,   /* Stack Guard On */                        \
             {                                                   \
               .Fields.UefiNullDetection            = 1,         \
-              .Fields.SmmNullDetection             = 1,         \
               .Fields.DisableEndOfDxe              = 0,         \
               .Fields.DisableReadyToBoot           = 0          \
             },                                                  \
             {                                                   \
               .Fields.UefiPageGuard                = 0,         \
               .Fields.UefiPoolGuard                = 0,         \
-              .Fields.SmmPageGuard                 = 0,         \
-              .Fields.SmmPoolGuard                 = 0,         \
               .Fields.UefiFreedMemoryGuard         = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \
@@ -442,21 +427,18 @@ extern GUID  gMemoryProtectionSettingsGuid;
 //
 //  A memory profile which disables all memory protection settings.
 //
-#define MEMORY_PROTECTION_SETTINGS_OFF                          \
+#define DXE_MEMORY_PROTECTION_SETTINGS_OFF                      \
           {                                                     \
-            MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,         \
+            DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,     \
             FALSE,   /* Stack Guard On */                       \
             {                                                   \
               .Fields.UefiNullDetection            = 0,         \
-              .Fields.SmmNullDetection             = 0,         \
               .Fields.DisableEndOfDxe              = 0,         \
               .Fields.DisableReadyToBoot           = 0          \
             },                                                  \
             {                                                   \
               .Fields.UefiPageGuard                = 0,         \
               .Fields.UefiPoolGuard                = 0,         \
-              .Fields.SmmPageGuard                 = 0,         \
-              .Fields.SmmPoolGuard                 = 0,         \
               .Fields.UefiFreedMemoryGuard         = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \

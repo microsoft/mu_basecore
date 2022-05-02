@@ -18,7 +18,7 @@
 
 #include <Protocol/Timer.h>
 
-#include <Library/MemoryProtectionHobLib.h> // MU_CHANGE
+#include <Library/DxeMemoryProtectionHobLib.h> // MU_CHANGE
 
 // MU_CHANGE START: Update to enable removal of NX attribute from buffer
 #include <Uefi.h>
@@ -549,7 +549,7 @@ InitMpGlobalData (
 
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (PcdGetBool (PcdCpuStackGuard)) {
-  if (gMPS.CpuStackGuard) {
+  if (gDxeMps.CpuStackGuard) {
     // MU_CHANGE END
     //
     // One extra page at the bottom of the stack is needed for Guard page.

@@ -196,10 +196,15 @@
   #
   AdvLoggerAccessLib|Include/Library/AdvLoggerAccessLib.h
 
-  # MU_CHANGE - Add MemoryProtectionHobLib to MdeModulePkg
-  ## @libraryclass Provides a way to toggle memory protection settings
+  # MU_CHANGE - Add DxeMemoryProtectionHobLib to MdeModulePkg
+  ## @libraryclass Provides a way to toggle DXE memory protection settings
   #
-  MemoryProtectionHobLib|Include/Library/MemoryProtectionHobLib.h
+  DxeMemoryProtectionHobLib|Include/Library/DxeMemoryProtectionHobLib.h
+
+  # MU_CHANGE - Add SmmStandaloneMmMemoryProtectionHobLib to MdeModulePkg
+  ## @libraryclass Provides a way to toggle SMM memory protection settings
+  #
+  SmmStandaloneMmMemoryProtectionHobLib|Include/Library/SmmStandaloneMmMemoryProtectionHobLib.h
 
   # MU_CHANGE - Add PcdDatabaseLoaderLib to MdeModulePkg
   ## @libraryclass Provides a way to present an alternate PcdDatabase
@@ -470,10 +475,15 @@
   #
   gAdvLoggerAccessGuid = { 0xa021bf2b, 0x34ed, 0x4a98, {0x85, 0x9c, 0x42, 0x0e, 0xf9, 0x4f, 0x3e, 0x94 }}
 
-  ## Memory Protection Settings Guid. Used to create and fetch the memory protection settings HOB entry.
+  ## DXE Memory Protection Settings Guid. Used to create and fetch the DXE memory protection settings HOB entry.
   #
-  # Include/Guid/MemoryProtectionSettings.h
-  gMemoryProtectionSettingsGuid = { 0x9ABFD639, 0xD1D0, 0x4EFF, { 0xBD, 0xB6, 0x7E, 0xC4, 0x19, 0x0D, 0x17, 0xD5 }}
+  # Include/Guid/DxeMemoryProtectionSettings
+  gDxeMemoryProtectionSettingsGuid = { 0x9ABFD639, 0xD1D0, 0x4EFF, { 0xBD, 0xB6, 0x7E, 0xC4, 0x19, 0x0D, 0x17, 0xD5 }}
+
+  ## SMM Memory Protection Settings Guid. Used to create and fetch the SMM memory protection settings HOB entry.
+  #
+  # Include/Guid/SmmMemoryProtectionSettings
+  gSmmMemoryProtectionSettingsGuid = { 0x0CF445DD, 0xA67C, 0x4F8C, { 0x81, 0x9B, 0xB7, 0xB6, 0x86, 0xED, 0x7C, 0x75 }}
 
 ## MSCHANGE END
 

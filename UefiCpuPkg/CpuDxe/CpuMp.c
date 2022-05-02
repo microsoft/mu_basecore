@@ -806,7 +806,7 @@ InitializeMpExceptionHandlers (
   //
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (PcdGetBool (PcdCpuStackGuard)) {
-  if (gMPS.CpuStackGuard) {
+  if (gDxeMps.CpuStackGuard) {
     // MU_CHANGE END
     InitializeMpExceptionStackSwitchHandlers ();
   }

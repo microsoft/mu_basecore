@@ -260,7 +260,7 @@ SmmInternalAllocatePool (
   HasPoolTail = !(NeedGuard &&
                   // MU_CHANGE START Update to use memory protection settings HOB
                   // ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
-                  gMPS.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_TAIL);
+                  gSmmMps.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_TAIL);
   // MU_CHANGE END
 
   //
@@ -405,7 +405,7 @@ SmmInternalFreePool (
   HasPoolTail = !(MemoryGuarded &&
                   // MU_CHANGE START Update to use memory protection settings HOB
                   // ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
-                  gMPS.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_TAIL);
+                  gSmmMps.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_TAIL);
   // MU_CHANGE END
   // MU_CHANGE Ends: TCBZ3488
 
