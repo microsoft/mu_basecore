@@ -1,13 +1,15 @@
 /** @file
-  Header file for EFI_MEDIA_SANITIZE_PROTOCOL interface.
+  Header file for MEDIA_SANITIZE_PROTOCOL interface.
 
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef _EFI_NVME_MEDIA_SANITIZE_H_
-#define _EFI_NVME_MEDIA_SANITIZE_H_
+#ifndef _NVME_MEDIA_SANITIZE_H_
+#define _NVME_MEDIA_SANITIZE_H_
+
+#define NVME_NO_DEALLOCATE_AFTER_SANITZE  0x1
 
 /**
   Send NVM Express FormatNVM Admin Command
@@ -112,10 +114,10 @@ NvmExpressSanitize (
 EFI_STATUS
 EFIAPI
 NvmExpressMediaClear (
-  IN EFI_MEDIA_SANITIZE_PROTOCOL  *This,
-  IN UINT32                       MediaId,
-  IN UINT32                       PassCount,
-  IN VOID                         *SectorOwBuffer
+  IN MEDIA_SANITIZE_PROTOCOL  *This,
+  IN UINT32                   MediaId,
+  IN UINT32                   PassCount,
+  IN VOID                     *SectorOwBuffer
   );
 
 /**
@@ -145,10 +147,10 @@ NvmExpressMediaClear (
 EFI_STATUS
 EFIAPI
 NvmExpressMediaPurge (
-  IN EFI_MEDIA_SANITIZE_PROTOCOL  *This,
-  IN UINT32                       MediaId,
-  IN UINT32                       PurgeAction,
-  IN UINT32                       OverwritePattern
+  IN MEDIA_SANITIZE_PROTOCOL  *This,
+  IN UINT32                   MediaId,
+  IN UINT32                   PurgeAction,
+  IN UINT32                   OverwritePattern
   );
 
 #endif

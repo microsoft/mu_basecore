@@ -250,7 +250,8 @@ struct _NVME_DEVICE_PRIVATE_DATA {
   EFI_BLOCK_IO2_PROTOCOL                   BlockIo2;
   EFI_DISK_INFO_PROTOCOL                   DiskInfo;
   EFI_STORAGE_SECURITY_COMMAND_PROTOCOL    StorageSecurity;
-  EFI_MEDIA_SANITIZE_PROTOCOL              MediaSanitize;
+
+  MEDIA_SANITIZE_PROTOCOL                  MediaSanitize;
 
   LIST_ENTRY                               AsyncQueue;
 

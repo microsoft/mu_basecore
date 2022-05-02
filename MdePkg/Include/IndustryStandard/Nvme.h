@@ -357,6 +357,15 @@ typedef struct {
   UINT8     Rsvd7[16];      /* Reserved as of Nvm Express 1.1 Spec */
 } NVME_PSDESCRIPTOR;
 
+typedef struct {
+  UINT32    Ces     : 1;    /* Crypto Erase Supported */
+  UINT32    Bes     : 1;    /* Block Erase Supported */
+  UINT32    Ows     : 1;    /* Overwrite Supported */
+  UINT32    Rsvd1   : 26;   /* Reserved as of NVM Express 1.4c Spec */
+  UINT32    Ndi     : 1;    /* No-Deallocate Inhibited */
+  UINT32    Nodmmas : 2;    /* No-Deallocate Modifies Media After Sanitize */
+} NVME_SANICAP;
+
 //
 //  Identify Controller Data
 //
@@ -374,8 +383,21 @@ typedef struct {
   UINT8                Ieee_oui[3]; /* Organization Unique Identifier */
   UINT8                Cmic;        /* Multi-interface Capabilities */
   UINT8                Mdts;        /* Maximum Data Transfer Size */
-  UINT8                Cntlid[2];   /* Controller ID */
-  UINT8                Rsvd1[176];  /* Reserved as of Nvm Express 1.1 Spec */
+  UINT16               Cntlid;      /* Controller ID */
+  UINT32               Ver;         /* Version */
+  UINT32               Rtd3r;       /* RTD3 Resume Latency */
+  UINT32               Rtd3e;       /* RTD3 Entry Latency */
+  UINT32               Oaes;        /* Optional Async Events Supported */
+  UINT32               Ctratt;      /* Controller Attributes */
+  UINT16               Rrls;        /* Read Recovery Levels Supported */
+  UINT8                Rsvd1[9];    /* Reserved as of NVM Express 1.4c Spec */
+  UINT8                Cntrltype;   /* Controller Type */
+  UINT8                Fguid[16];   /* FRU Globally Unique Identifier */
+  UINT16               Crdt1;       /* Command Retry Delay Time 1 */
+  UINT16               Crdt2;       /* Command Retry Delay Time 2 */
+  UINT16               Crdt3;       /* Command Retry Delay Time 3 */
+  UINT8                Rsvd2[106];  /* Reserved as of NVM Express 1.4c Spec */
+  UINT8                Rsvd3[16];   /* Reserved for NVMe MI Spec */
   //
   // Admin Command Set Attributes
   //
@@ -406,30 +428,49 @@ typedef struct {
   UINT16               Edstt;       /* Extended Device Self-test Time */
   UINT8                Dsto;        /* Device Self-test Options  */
   UINT8                Fwug;        /* Firmware Update Granularity */
-  UINT8                Rsvd2[192];  /* Reserved as of Nvm Express 1.4 Spec */
+  UINT16               Kas;         /* Keep Alive Support */
+  UINT16               Hctma;       /* Host Controlled Thermal Management Attributes */
+  UINT16               Mntmt;       /* Minimum Thermal Management Temperature */
+  UINT16               Mxtmt;       /* Maximum Thermal Management Temperature */
+
+  //
+  // Sanitize Capabilities
+  //
+  NVME_SANICAP         Sanicap;
+
+  UINT32               Hmminds;     /* Host Memory Buffer Minimum Descriptor Entry Size */
+  UINT16               Hmmaxd;      /* Host Memory Maximum Descriptors Entries */
+  UINT16               Nsetidmax;   /* NVM Set Identifier Maximum */
+  UINT16               Endgidmax;   /* Endurance Group Identifier Maximum */
+  UINT8                Anatt;       /* ANA Transition Time */
+  UINT8                Anacap;      /* Asymmetric Namespace Access Capabilities */
+  UINT32               Anagrpmax;   /* ANA Group Identifier Maximum */
+  UINT32               Nanagrpid;   /* Number of ANA Group Identifiers */
+  UINT32               Pels;        /* Persistent Event Log Size */
+  UINT8                Rsvd4[156];  /* Reserved as of NVM Express 1.4c Spec */
   //
   // NVM Command Set Attributes
   //
-  UINT8                Sqes;       /* Submission Queue Entry Size */
-  UINT8                Cqes;       /* Completion Queue Entry Size */
-  UINT16               Rsvd3;      /* Reserved as of Nvm Express 1.1 Spec */
-  UINT32               Nn;         /* Number of Namespaces */
-  UINT16               Oncs;       /* Optional NVM Command Support */
-  UINT16               Fuses;      /* Fused Operation Support */
-  UINT8                Fna;        /* Format NVM Attributes */
-  UINT8                Vwc;        /* Volatile Write Cache */
-  UINT16               Awun;       /* Atomic Write Unit Normal */
-  UINT16               Awupf;      /* Atomic Write Unit Power Fail */
-  UINT8                Nvscc;      /* NVM Vendor Specific Command Configuration */
-  UINT8                Rsvd4;      /* Reserved as of Nvm Express 1.1 Spec */
-  UINT16               Acwu;       /* Atomic Compare & Write Unit */
-  UINT16               Rsvd5;      /* Reserved as of Nvm Express 1.1 Spec */
-  UINT32               Sgls;       /* SGL Support  */
-  UINT8                Rsvd6[164]; /* Reserved as of Nvm Express 1.1 Spec */
-  //
-  // I/O Command set Attributes
-  //
-  UINT8                Rsvd7[1344]; /* Reserved as of Nvm Express 1.1 Spec */
+  UINT8                Sqes;        /* Submission Queue Entry Size */
+  UINT8                Cqes;        /* Completion Queue Entry Size */
+  UINT16               Maxcmd;      /* Maximum Outstanding Commands */
+  UINT32               Nn;          /* Number of Namespaces */
+  UINT16               Oncs;        /* Optional NVM Command Support */
+  UINT16               Fuses;       /* Fused Operation Support */
+  UINT8                Fna;         /* Format NVM Attributes */
+  UINT8                Vwc;         /* Volatile Write Cache */
+  UINT16               Awun;        /* Atomic Write Unit Normal */
+  UINT16               Awupf;       /* Atomic Write Unit Power Fail */
+  UINT8                Nvscc;       /* NVM Vendor Specific Command Configuration */
+  UINT8                Nwpc;        /* Namespace Write Protection Capabilities */
+  UINT16               Acwu;        /* Atomic Compare & Write Unit */
+  UINT16               Rsvd5;       /* Reserved as of NVM Express 1.4c Spec */
+  UINT32               Sgls;        /* SGL Support */
+  UINT32               Mnan;        /* Maximum Number of Allowed Namespace */
+  UINT8                Rsvd6[224];  /* Reserved as of NVM Express 1.4c Spec */
+  UINT8                Subnqn[256]; /* NVM Subsystem NVMe Qualified Name */
+  UINT8                Rsvd7[768];  /* Reserved as of NVM Express 1.4c Spec */
+  UINT8                Rsvd8[256];  /* Reserved for NVMe over Fabrics Spec */
   //
   // Power State Descriptors
   //
