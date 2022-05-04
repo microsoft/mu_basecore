@@ -306,6 +306,7 @@ NvmExpressSanitize (
 
   NOTE: The caller shall send buffer of one sector/LBA size with overwrite data.
   NOTE: This operation is a blocking call.
+  NOTE: This function must be called from TPL aaplication or callback.
 
   Functions are defined to erase and purge data at a block level from mass
   storage devices as well as to manage such devices in the EFI boot services
@@ -338,7 +339,6 @@ NvmExpressMediaClear (
   EFI_BLOCK_IO_MEDIA        *Media;
   EFI_LBA                   SectorOffset;
   UINT32                    TotalPassCount;
-  EFI_TPL                   OldTpl;
   EFI_STATUS                Status;
 
   //
@@ -365,8 +365,6 @@ NvmExpressMediaClear (
     return EFI_INVALID_PARAMETER;
   }
 
-  OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
-
   //
   // Per NIST 800-88r1, one or more pass of writes may be alteratively used.
   //
@@ -387,8 +385,6 @@ NvmExpressMediaClear (
     SectorOffset = 0;
   }
 
-  gBS->RestoreTPL (OldTpl);
-
   return Status;
 }
 
@@ -402,6 +398,7 @@ NvmExpressMediaClear (
   data on the media infeasible for a given level of effort.
 
   NOTE: This operation is a blocking call.
+  NOTE: This function must be called from TPL aaplication or callback.
 
   @param  This             Indicates a pointer to the calling context.
   @param  MediaId          The media ID that the write request is for.
@@ -431,7 +428,6 @@ NvmExpressMediaPurge (
   UINT32                    SanitizeAction;
   UINT32                    NoDeallocate;
   UINT32                    NamespaceId;
-  EFI_TPL                   OldTpl;
   EFI_STATUS                Status;
 
   //
@@ -469,8 +465,6 @@ NvmExpressMediaPurge (
     NoDeallocate = NVME_NO_DEALLOCATE_AFTER_SANITZE;
   }
 
-  OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
-
   //
   // Call NVM Express Admin command Sanitize (blocking call).
   //
@@ -481,8 +475,6 @@ NvmExpressMediaPurge (
              NoDeallocate,
              OverwritePattern
              );
-
-  gBS->RestoreTPL (OldTpl);
 
   return Status;
 }

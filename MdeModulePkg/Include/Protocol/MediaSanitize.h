@@ -38,6 +38,8 @@ typedef struct _MEDIA_SANITIZE_PROTOCOL MEDIA_SANITIZE_PROTOCOL;
   of non-sensitive data. The size of the overwrite buffer shall be equal to the
   one sector/LBA (in bytes).
 
+  NOTE: This function must be called from TPL aaplication or callback.
+
   @param[in]       This           Indicates a pointer to the calling context.
   @param[in]       MediaId        The media ID that the clear request is for.
   @param[in]       PassCount      Number of passes to write over the media.
@@ -60,15 +62,17 @@ typedef
 EFI_STATUS
 (EFIAPI *BLOCK_MEDIA_CLEAR)(
   IN     MEDIA_SANITIZE_PROTOCOL   *This,
-  IN     UINT32                        MediaId,
-  IN     UINT32                        PassCount,
-  IN     VOID                          *SectorOwBuffer
+  IN     UINT32                    MediaId,
+  IN     UINT32                    PassCount,
+  IN     VOID                      *SectorOwBuffer
   );
 
 /**
   Purge Media utilizes native Sanitize operations. Transport specific
   overwrite, block erase, or crypto erase functions shall be invoked based
   on transport.
+
+  NOTE: This function must be called from TPL aaplication or callback.
 
   @param[in] This             Indicates a pointer to the calling context.
   @param[in] MediaId          The media ID that the clear request is for.
@@ -92,9 +96,9 @@ typedef
 EFI_STATUS
 (EFIAPI *BLOCK_MEDIA_PURGE)(
   IN     MEDIA_SANITIZE_PROTOCOL   *This,
-  IN     UINT32                        MediaId,
-  IN     UINT32                        PurgeAction,
-  IN     UINT32                        OverwritePattern
+  IN     UINT32                    MediaId,
+  IN     UINT32                    PurgeAction,
+  IN     UINT32                    OverwritePattern
   );
 
 ///
