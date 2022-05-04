@@ -92,6 +92,7 @@ NvmExpressSanitize (
 
   NOTE: The caller shall send buffer of one sector/LBA size with overwrite data.
   NOTE: This operation is a blocking call.
+  NOTE: This function must be called from TPL aaplication or callback.
 
   Functions are defined to erase and purge data at a block level from mass
   storage devices as well as to manage such devices in the EFI boot services
@@ -130,6 +131,7 @@ NvmExpressMediaClear (
   data on the media infeasible for a given level of effort.
 
   NOTE: This operation is a blocking call.
+  NOTE: This function must be called from TPL aaplication or callback.
 
   @param  This             Indicates a pointer to the calling context.
   @param  MediaId          The media ID that the write request is for.
