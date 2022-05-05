@@ -1,0 +1,25 @@
+## @file
+# A minimal implementation of RngLib that supports host based testing
+# with a simple LFSR:
+# https://en.wikipedia.org/wiki/Linear-feedback_shift_register
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+
+[Defines]
+  INF_VERSION         = 0x00010017
+  BASE_NAME           = RngLibHostTestLfsr
+  FILE_GUID           = E96C1E06-1052-4967-9FF2-F3E07EE02D8B
+  VERSION_STRING      = 1.0
+  MODULE_TYPE         = HOST_APPLICATION
+  LIBRARY_CLASS       = RngLib|HOST_APPLICATION
+
+
+[Sources]
+  RngLibHostTestLfsr.c
+
+
+[Packages]
+  MdePkg/MdePkg.dec
