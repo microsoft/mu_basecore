@@ -29,6 +29,9 @@
   MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibHost.inf
   MdePkg/Test/UnitTest/Library/BaseLib/BaseLibUnitTestsHost.inf
   MdePkg/Test/GoogleTest/Library/BaseSafeIntLib/GoogleTestBaseSafeIntLib.inf
+  # MU_CHANGE [BEGIN]
+  MdePkg/Test/Library/MockUefiRuntimeServicesTableLib/MockUefiRuntimeServicesTableLib.inf
+  # MU_CHANGE [END]
 
   #
   # Build HOST_APPLICATION Libraries
