@@ -38,6 +38,7 @@
   MdePkg/Test/GoogleTest/Library/BaseLib/GoogleTestBaseLib.inf
   # MU_CHANGE [BEGIN]
   MdePkg/Test/Library/SynchronizationLibHostUnitTest/SynchronizationLibHostUnitTest.inf
+  MdePkg/Test/Library/RngLibHostTestLfsr/RngLibHostTestLfsr.inf
   # MU_CHANGE [END]
 
   #
