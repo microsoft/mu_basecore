@@ -1,0 +1,31 @@
+## @file VarCheckPolicyLib.inf
+# This is an instance of a VarCheck lib that leverages the business logic behind
+# the VariablePolicy code to make its decisions.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = VarCheckPolicyLibVariableDxe
+  FILE_GUID                      = C17DF9DB-A744-4011-A796-4EDA2ED97C2F
+  MODULE_TYPE                    = DXE_RUNTIME_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = NULL|DXE_RUNTIME_DRIVER
+  CONSTRUCTOR                    = VarCheckPolicyLibConstructor
+
+
+[Sources]
+  VarCheckPolicyLibVariableDxe.c
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+
+[LibraryClasses]
+  DebugLib
+  VarCheckLib
+  VariablePolicyLib
