@@ -393,6 +393,7 @@
   MdeModulePkg/Library/AuthVariableLibNull/AuthVariableLibNull.inf
   MdeModulePkg/Library/VariablePolicyLib/VariablePolicyLib.inf
   MdeModulePkg/Library/VariablePolicyLib/VariablePolicyLibRuntimeDxe.inf
+  MdeModulePkg/Library/VarCheckPolicyLib/VarCheckPolicyLibVariableDxe.inf     # MU_CHANGE
   MdeModulePkg/Library/VarCheckPolicyLib/VarCheckPolicyLib.inf
   MdeModulePkg/Library/VarCheckPolicyLib/VarCheckPolicyLibStandaloneMm.inf
   MdeModulePkg/Library/VarCheckLib/VarCheckLib.inf
