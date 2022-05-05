@@ -32,6 +32,7 @@
   MdePkg/Test/GoogleTest/Library/BaseSafeIntLib/GoogleTestBaseSafeIntLib.inf
   MdePkg/Test/UnitTest/Library/DevicePathLib/TestDevicePathLibHost.inf
   # MU_CHANGE [BEGIN]
+  MdePkg/Test/Library/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf
   MdePkg/Test/Library/MockUefiRuntimeServicesTableLib/MockUefiRuntimeServicesTableLib.inf
   MdePkg/Test/Library/StubHobLib/StubHobLib.inf
   MdePkg/Test/Library/StubUefiLib/StubUefiLib.inf
