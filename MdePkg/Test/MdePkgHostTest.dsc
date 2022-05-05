@@ -35,6 +35,7 @@
   MdePkg/Test/Library/RngLibHostTestLfsr/RngLibHostTestLfsr.inf
   MdePkg/Test/Library/StubHobLib/StubHobLib.inf
   MdePkg/Test/Library/StubUefiLib/StubUefiLib.inf
+  MdePkg/Test/Library/SynchronizationLibHostUnitTest/SynchronizationLibHostUnitTest.inf
   # MU_CHANGE [END]
 
   #
