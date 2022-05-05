@@ -33,6 +33,7 @@
   MdePkg/Test/UnitTest/Library/DevicePathLib/TestDevicePathLibHost.inf
   # MU_CHANGE [BEGIN]
   MdePkg/Test/Library/MockUefiRuntimeServicesTableLib/MockUefiRuntimeServicesTableLib.inf
+  MdePkg/Test/Library/StubHobLib/StubHobLib.inf
   MdePkg/Test/Library/StubUefiLib/StubUefiLib.inf
   # MU_CHANGE [END]
 
