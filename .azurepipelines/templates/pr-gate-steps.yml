@@ -14,7 +14,8 @@ parameters:
   build_archs: ''
   has_ci_dependencies: false    # MU_CHANGE - Enable toggle for stuart_ci_build
   extra_steps: []               # MU_CHANGE - needed for clang
-  build_args: '' # MU_CHANGE - add build arguments to support code coverage
+  build_args: ''                # MU_CHANGE - add build arguments
+  override_python: true         # MU_CHANGE - Add support for using inbox python
 
 steps:
 - checkout: self
@@ -25,6 +26,7 @@ steps:
   inputs:
     versionSpec: '3.8.x'
     architecture: 'x64'
+  condition: eq('${{ parameters.override_python }}', 'true') # MU_CHANGE
 
 - script: pip install -r pip-requirements.txt --upgrade
   displayName: 'Install/Upgrade pip modules'
@@ -96,7 +98,8 @@ steps:
   displayName: Update ${{ parameters.build_pkgs }} ${{ parameters.build_archs}}
   inputs:
     filename: stuart_update
-    arguments: -c .pytool/CISettings.py -p $(pkgs_to_build) -t ${{ parameters.build_targets}} -a ${{ parameters.build_archs}} TOOL_CHAIN_TAG=${{ parameters.tool_chain_tag}}
+    # MU_CHANGE - Add build arguments parameter
+    arguments: -c .pytool/CISettings.py -p $(pkgs_to_build) -t ${{ parameters.build_targets}} -a ${{ parameters.build_archs}} TOOL_CHAIN_TAG=${{ parameters.tool_chain_tag}}  ${{ parameters.build_args}}
   condition: and(gt(variables.pkg_count, 0), succeeded())
 
 # MU_CHANGE [BEGIN] - We use binary BaseTools

@@ -153,12 +153,15 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                 logging.warning("Falling back to using in-tree BaseTools")
 
             if is_linux and self.ActualToolChainTag.upper().startswith("GCC"):
-                if "AARCH64" in self.ActualArchitectures:
-                    scopes += ("gcc_aarch64_linux",)
-                if "ARM" in self.ActualArchitectures:
-                    scopes += ("gcc_arm_linux",)
-                if "RISCV64" in self.ActualArchitectures:
-                    scopes += ("gcc_riscv64_unknown",)
+                # MU_CHANGE[BEGIN] - Allow opting out of downloading compilers.
+                if shell_environment.GetBuildVars().GetValue("USE_LOCAL_GCC", "") != "TRUE":
+                    if "AARCH64" in self.ActualArchitectures:
+                        scopes += ("gcc_aarch64_linux",)
+                    if "ARM" in self.ActualArchitectures:
+                        scopes += ("gcc_arm_linux",)
+                    if "RISCV64" in self.ActualArchitectures:
+                        scopes += ("gcc_riscv64_unknown",)
+                # MU_CHANGE[END]
             self.ActualScopes = scopes
         return self.ActualScopes
 
