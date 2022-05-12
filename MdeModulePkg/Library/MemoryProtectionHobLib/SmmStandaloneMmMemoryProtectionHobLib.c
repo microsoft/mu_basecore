@@ -104,18 +104,14 @@ HeapGuardPolicy.SmmPageGuard are active.\n",
 }
 
 /**
-  Abstraction layer for library constructor of DXE and SMM instances.
-
-  @param  ImageHandle   The firmware allocated handle for the EFI image.
-  @param  SystemTable   A pointer to the EFI System Table.
+  Abstraction layer for library constructor of Standalone MM and SMM instances.
 
   @retval EFI_SUCCESS   The constructor always returns EFI_SUCCESS.
 **/
 EFI_STATUS
 EFIAPI
-SmmStandaloneMmMemoryProtectionHobLibConstructor (
-  IN EFI_HANDLE        ImageHandle,
-  IN EFI_SYSTEM_TABLE  *SystemTable
+MmMemoryProtectionHobLibConstructorCommon (
+  VOID
   )
 {
   VOID  *Ptr;
