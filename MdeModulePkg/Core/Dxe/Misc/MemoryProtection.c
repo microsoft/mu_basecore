@@ -1815,7 +1815,14 @@ ApplyMemoryProtectionPolicy (
   // MU_CHANGE START Handle code allocations according to NX DLL flag. If the flag is set, the image
   // should update the attributes of code type allocates when it's ready to execute them.
   if ((NewType == EfiLoaderCode) || (NewType == EfiBootServicesCode) || (NewType == EfiRuntimeServicesCode)) {
-    if (mSetNxOnCodeTypeMemoryAllocations) {
+    //
+    // mSetNxOnCodeTypeMemoryAllocations will be set to FALSE if an image of subsystem type EFI_APPLICATION
+    // is loaded without the NX_COMPAT flag. InstallMemoryAttributeProtocol is dictated by the memory protection
+    // policy. Even if all images are NX compatable, the memory attribute protocol is considered necessary
+    // for updating the memory attributes after allocation. Because of this, we don't want to apply NX
+    // to code type memory unless the protocol will be available to remove NX prior to execution.
+    //
+    if (mSetNxOnCodeTypeMemoryAllocations && gDxeMps.ImageProtectionPolicy.Fields.InstallMemoryAttributeProtocol) {
       NewAttributes = EFI_MEMORY_XP;
     } else {
       NewAttributes = 0;

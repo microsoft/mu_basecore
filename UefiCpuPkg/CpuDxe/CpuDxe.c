@@ -1255,7 +1255,12 @@ InitializeCpu (
                   );
   ASSERT_EFI_ERROR (Status);
 
-  InstallEfiMemoryAttributeProtocol (); // TCBZ3519 MU_CHANGE
+  // TCBZ3519 MU_CHANGE START
+  if (gDxeMps.ImageProtectionPolicy.Fields.InstallMemoryAttributeProtocol) {
+    InstallEfiMemoryAttributeProtocol ();
+  }
+
+  // MU_CHANGE END
 
   //
   // Refresh GCD memory space map according to MTRR value.
