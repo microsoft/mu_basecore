@@ -16,6 +16,13 @@
 
 [Sources]
   MemoryAttributeProtocolFuncTestApp.c
+  MemoryAttributeProtocolFuncTestApp.h
+
+[Sources.X64]
+  X64/PageSplitTest.c
+
+[Sources.IA32, Sources.AARCH64]
+  PageSplitTest.c
 
 [Packages]
   MdePkg/MdePkg.dec
