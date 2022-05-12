@@ -478,3 +478,109 @@ NvmExpressMediaPurge (
 
   return Status;
 }
+
+/**
+  Format Media utilizes native format operations to modify sector/LBA size.
+  Secure erase actions are used to define how latent user data is erased.
+
+  NOTE: This function must be called from TPL aaplication or callback.
+
+  @param[in] This              Indicates a pointer to the calling context.
+  @param[in] MediaId           The media ID that the clear request is for.
+  @param[in] LbaSize           Size of LBA (in terms of power of two: 2^n).
+  @param[in] SecureEraseAction Secure erase action, if any, to apply to format.
+                                 - 000b: No secure erase operation requested
+                                 - 001b: User Data Erase
+                                 - 010b: Cryptographic Erase
+                                 - 011b to 111b: Reserved
+
+  @retval EFI_SUCCESS             The media format request comopleted successfully on the device.
+  @retval EFI_WRITE_PROTECTED     The device can't be formatted due to write protection.
+  @retval EFI_DEVICE_ERROR        The device reported an error while attempting to perform the format operation.
+  @retval EFI_INVALID_PARAMETER   The format request contains parameters that are not valid.
+  @retval EFI_NO_MEDIA            There is no media in the device.
+  @retval EFI_MEDIA_CHANGED       The MediaId is not for the current media.
+
+ **/
+EFI_STATUS
+EFIAPI
+NvmExpressMediaFormat (
+  IN MEDIA_SANITIZE_PROTOCOL  *This,
+  IN UINT32                   MediaId,
+  IN UINT32                   LbaSize,
+  IN UINT32                   SecureEraseAction
+  )
+{
+  NVME_DEVICE_PRIVATE_DATA  *Device;
+  EFI_BLOCK_IO_MEDIA        *Media;
+  UINT32                    NamespaceId;
+  UINT32                    SecureEraseSettings;
+  UINT32                    FlbaIndex;
+  BOOLEAN                   LbaSizeIsSupported;
+  EFI_STATUS                Status;
+
+  //
+  // Check parameters.
+  //
+  if (This == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Device              = NVME_DEVICE_PRIVATE_DATA_FROM_MEDIA_SANITIZE (This);
+  NamespaceId         = Device->NamespaceId;
+  Media               = &Device->Media;
+  SecureEraseSettings = FORMAT_SES_NO_SECURE_ERASE_REQUESTED;
+  FlbaIndex           = 0;
+
+  if ((MediaId != Media->MediaId) || (!Media->MediaPresent)) {
+    return EFI_MEDIA_CHANGED;
+  }
+
+  //
+  // Convert secure erase action to NVMe secure erase setting
+  //
+  switch (SecureEraseAction) {
+    case FORMAT_SES_USER_DATA_ERASE:
+      SecureEraseSettings = SES_USER_DATA_ERASE;
+      break;
+    case FORMAT_SES_CRYPTOGRAPHIC_ERASE:
+      SecureEraseSettings = SES_CRYPTO_ERASE;
+      break;
+    case FORMAT_SES_NO_SECURE_ERASE_REQUESTED:
+    default:
+      //
+      // Cannot perform an equivalent FormatNVM action/operation
+      //
+      SecureEraseSettings = SES_NO_SECURE_ERASE;
+      break;
+  }
+
+  //
+  // The requested LBA size must be supported by the NVMe SSD as defined in Identify
+  // Namespace structure.
+  //
+  // Current supported LBA format sizes is in Identify Namespace LBA Format Table,
+  // indexed by FLBAS (bits 3:0). Loop through all supported LBADF sizes and check
+  // to see if requested LBA size is supported. If yes, send FormatNVM command.
+  //
+  LbaSizeIsSupported = FALSE;
+  for (FlbaIndex = 0; FlbaIndex < Device->NamespaceData.Nlbaf; FlbaIndex++) {
+    if (Device->NamespaceData.LbaFormat[FlbaIndex].Lbads == LbaSize) {
+      LbaSizeIsSupported = TRUE;
+      break;
+    }
+  }
+
+  if (LbaSizeIsSupported) {
+    Status = NvmExpressFormatNvm (
+               &Device->BlockIo,
+               NamespaceId,
+               SecureEraseSettings,
+               FlbaIndex
+               );
+  } else {
+    Status = EFI_INVALID_PARAMETER;
+  }
+
+  return Status;
+}
