@@ -155,4 +155,36 @@ NvmExpressMediaPurge (
   IN UINT32                   OverwritePattern
   );
 
+/**
+  Format Media utilizes native format operations to modify sector/LBA size.
+  Secure erase actions are used to define how latent user data is erased.
+
+  NOTE: This function must be called from TPL aaplication or callback.
+
+  @param[in] This              Indicates a pointer to the calling context.
+  @param[in] MediaId           The media ID that the clear request is for.
+  @param[in] LbaSize           Size of LBA (in terms of power of two: 2^n).
+  @param[in] SecureEraseAction Secure erase action, if any, to apply to format.
+                                 - 000b: No secure erase operation requested
+                                 - 001b: User Data Erase
+                                 - 010b: Cryptographic Erase
+                                 - 011b to 111b: Reserved
+
+  @retval EFI_SUCCESS             The media format request comopleted successfully on the device.
+  @retval EFI_WRITE_PROTECTED     The device can't be formatted due to write protection.
+  @retval EFI_DEVICE_ERROR        The device reported an error while attempting to perform the format operation.
+  @retval EFI_INVALID_PARAMETER   The format request contains parameters that are not valid.
+  @retval EFI_NO_MEDIA            There is no media in the device.
+  @retval EFI_MEDIA_CHANGED       The MediaId is not for the current media.
+
+ **/
+EFI_STATUS
+EFIAPI
+NvmExpressMediaFormat (
+  IN MEDIA_SANITIZE_PROTOCOL  *This,
+  IN UINT32                   MediaId,
+  IN UINT32                   LbaSize,
+  IN UINT32                   SecureEraseAction
+  );
+
 #endif

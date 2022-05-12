@@ -33,6 +33,13 @@ typedef struct _MEDIA_SANITIZE_PROTOCOL MEDIA_SANITIZE_PROTOCOL;
 #define PURGE_ACTION_INVERT_OW_PATTERN                 0x00000020 // Invert overwrite pattern between passes
 #define PURGE_ACTION_ALLOW_UNRESTRICTED_SANITIZE_EXIT  0x00000040 // Allow exit without restrictions
 
+///
+/// Secure erase action for media format operation
+///
+#define FORMAT_SES_NO_SECURE_ERASE_REQUESTED  0x0 // No secure erase operation requested
+#define FORMAT_SES_USER_DATA_ERASE            0x1 // User Data Erase
+#define FORMAT_SES_CRYPTOGRAPHIC_ERASE        0x2 // Cryptographic Erase
+
 /**
   Clear Media utilizes transport native WRITE commands to write a fixed pattern
   of non-sensitive data. The size of the overwrite buffer shall be equal to the
@@ -45,13 +52,12 @@ typedef struct _MEDIA_SANITIZE_PROTOCOL MEDIA_SANITIZE_PROTOCOL;
   @param[in]       PassCount      Number of passes to write over the media.
   @param[in]       SectorOwBuffer Pointer to overwrite pattern buffer.
 
-  @retval EFI_SUCCESS             The sanitize request was queued if Event is
-                                  not NULL. The data was erased correctly to the
-                                  device if the Event is NULL.to the device.
-  @retval EFI_WRITE_PROTECTED     The device can't be sanitized due to write
+  @retval EFI_SUCCESS             The media clear request completed successfully
+                                  on the device.
+  @retval EFI_WRITE_PROTECTED     The device can't be cleared due to write
                                   protection.
   @retval EFI_DEVICE_ERROR        The device reported an error while attempting
-                                  to perform the sanitize operation.
+                                  to perform the clear operation.
   @retval EFI_INVALID_PARAMETER   The clear request contains parameters that
                                   are not valid.
   @retval EFI_NO_MEDIA            There is no media in the device.
@@ -76,17 +82,16 @@ EFI_STATUS
 
   @param[in] This             Indicates a pointer to the calling context.
   @param[in] MediaId          The media ID that the clear request is for.
-  @param[in] PurgeAction      Sanitize action: overwrite, crypto or block erase.
+  @param[in] PurgeAction      Purge action: overwrite, crypto or block erase.
   @param[in] OverwritePattern 32-bit pattern to overwrite on media.
 
-  @retval EFI_SUCCESS             The sanitize request was queued if Event is
-                                  not NULL. The data was erased correctly to the
-                                  device if the Event is NULL.to the device.
-  @retval EFI_WRITE_PROTECTED     The device can't be sanitized due to write
+  @retval EFI_SUCCESS             The media purge request completed successfully
+                                  on the device.
+  @retval EFI_WRITE_PROTECTED     The device can't be purged due to write
                                   protection.
   @retval EFI_DEVICE_ERROR        The device reported an error while attempting
-                                  to perform the sanitize operation.
-  @retval EFI_INVALID_PARAMETER   The clear request contains parameters that
+                                  to perform the purge operation.
+  @retval EFI_INVALID_PARAMETER   The purge request contains parameters that
                                   are not valid.
   @retval EFI_NO_MEDIA            There is no media in the device.
   @retval EFI_MEDIA_CHANGED       The MediaId is not for the current media.
@@ -99,6 +104,38 @@ EFI_STATUS
   IN     UINT32                    MediaId,
   IN     UINT32                    PurgeAction,
   IN     UINT32                    OverwritePattern
+  );
+
+/**
+  Format Media utilizes native format operations to modify sector/LBA size.
+  Secure erase actions are used to define how latent user data is erased.
+
+  NOTE: This function must be called from TPL aaplication or callback.
+
+  @param[in] This              Indicates a pointer to the calling context.
+  @param[in] MediaId           The media ID that the clear request is for.
+  @param[in] LbaSize           Size of LBA (in terms of power of two: 2^n).
+  @param[in] SecureEraseAction Secure erase action, if any, to apply to format.
+
+  @retval EFI_SUCCESS             The media format request comopleted
+                                  successfully on the device.
+  @retval EFI_WRITE_PROTECTED     The device can't be formatted due to write
+                                  protection.
+  @retval EFI_DEVICE_ERROR        The device reported an error while attempting
+                                  to perform the format operation.
+  @retval EFI_INVALID_PARAMETER   The format request contains parameters that
+                                  are not valid.
+  @retval EFI_NO_MEDIA            There is no media in the device.
+  @retval EFI_MEDIA_CHANGED       The MediaId is not for the current media.
+
+ **/
+typedef
+EFI_STATUS
+(EFIAPI *BLOCK_MEDIA_FORMAT)(
+  IN     MEDIA_SANITIZE_PROTOCOL  *This,
+  IN     UINT32                   MediaId,
+  IN     UINT32                   LbaSize,
+  IN     UINT32                   SecureEraseAction
   );
 
 ///
@@ -128,6 +165,7 @@ struct _MEDIA_SANITIZE_PROTOCOL {
 
   BLOCK_MEDIA_CLEAR     MediaClear;
   BLOCK_MEDIA_PURGE     MediaPurge;
+  BLOCK_MEDIA_FORMAT    MediaFormat;
 };
 
 extern EFI_GUID  gMediaSanitizeProtocolGuid;

@@ -170,10 +170,11 @@ EnumerateNvmeDevNamespace (
     //
     // Create Media Sanitize Protocol instance
     //
-    Device->MediaSanitize.Revision   = MEDIA_SANITIZE_PROTOCOL_REVISION;
-    Device->MediaSanitize.Media      = &Device->Media;
-    Device->MediaSanitize.MediaClear = NvmExpressMediaClear;
-    Device->MediaSanitize.MediaPurge = NvmExpressMediaPurge;
+    Device->MediaSanitize.Revision    = MEDIA_SANITIZE_PROTOCOL_REVISION;
+    Device->MediaSanitize.Media       = &Device->Media;
+    Device->MediaSanitize.MediaClear  = NvmExpressMediaClear;
+    Device->MediaSanitize.MediaPurge  = NvmExpressMediaPurge;
+    Device->MediaSanitize.MediaFormat = NvmExpressMediaFormat;
 
     ASSERT (
       sizeof (Device->MediaSanitize.SanitizeCapabilities) ==
