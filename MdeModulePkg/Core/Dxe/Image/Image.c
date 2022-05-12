@@ -661,6 +661,17 @@ CoreLoadPeImage (
       return EFI_SECURITY_VIOLATION;
     }
 
+    if (mSetNxOnCodeTypeMemoryAllocations) {
+      DEBUG ((DEBUG_INFO, "%a - Setting Nx on Code types to FALSE\n", __FUNCTION__));
+      mSetNxOnCodeTypeMemoryAllocations = FALSE;
+    }
+  }
+
+  // InstallMemoryAttributeProtocol is dictated by the memory protection
+  // policy. Even if all images are NX compatable, the memory attribute protocol is considered necessary
+  // for updating the memory attributes after allocation. Because of this, we don't want to apply NX
+  // to code type memory unless the protocol will be available to remove NX prior to execution.
+  if ((!gDxeMps.ImageProtectionPolicy.Fields.InstallMemoryAttributeProtocol) && mSetNxOnCodeTypeMemoryAllocations) {
     DEBUG ((DEBUG_INFO, "%a - Setting Nx on Code types to FALSE\n", __FUNCTION__));
     mSetNxOnCodeTypeMemoryAllocations = FALSE;
   }
