@@ -250,7 +250,12 @@ SetUefiImageMemoryAttributes (
   DEBUG ((DEBUG_INFO, "SetUefiImageMemoryAttributes - 0x%016lx - 0x%016lx (0x%016lx)\n", BaseAddress, Length, FinalAttributes));
 
   ASSERT (gCpu != NULL);
-  gCpu->SetMemoryAttributes (gCpu, BaseAddress, Length, FinalAttributes);
+  // MU_CHANGE START: Don't dereference if gCpu is NULL
+  if (gCpu != NULL) {
+    gCpu->SetMemoryAttributes (gCpu, BaseAddress, Length, FinalAttributes);
+  }
+
+  // MU_CHANGE END
 }
 
 /**
@@ -1727,6 +1732,46 @@ ClearReadOnlyAndNxFromImage (
   return Status;
 }
 
+/**
+  Clears the attributes from a memory range.
+
+  @param  BaseAddress            The base address of the pages which need their attributes cleared
+  @param  Length                 Length in bytes
+
+  @retval EFI_SUCCESS            Attributes updated if necessary
+  @retval EFI_INVALID_PARAMETER  BaseAddress is NULL or Length is zero
+  @retval Other                  Return value of CoreGetMemorySpaceDescriptor()
+
+**/
+EFI_STATUS
+ClearAttributesFromMemoryRange (
+  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN UINTN                 Length
+  )
+{
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  Desc;
+  EFI_STATUS                       Status;
+
+  if (((VOID *)((UINTN)BaseAddress) == NULL) || (Length == 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = CoreGetMemorySpaceDescriptor (
+             BaseAddress,
+             &Desc
+             );
+
+  if ((!EFI_ERROR (Status)) && ((Desc.Attributes & EFI_MEMORY_ACCESS_MASK) != 0)) {
+    SetUefiImageMemoryAttributes (
+      BaseAddress,
+      Length,
+      0
+      );
+  }
+
+  return Status;
+}
+
 // MU_CHANGE END
 
 /**
@@ -1815,7 +1860,14 @@ ApplyMemoryProtectionPolicy (
   // MU_CHANGE START Handle code allocations according to NX DLL flag. If the flag is set, the image
   // should update the attributes of code type allocates when it's ready to execute them.
   if ((NewType == EfiLoaderCode) || (NewType == EfiBootServicesCode) || (NewType == EfiRuntimeServicesCode)) {
-    if (mSetNxOnCodeTypeMemoryAllocations) {
+    //
+    // mSetNxOnCodeTypeMemoryAllocations will be set to FALSE if an image of subsystem type EFI_APPLICATION
+    // is loaded without the NX_COMPAT flag. InstallMemoryAttributeProtocol is dictated by the memory protection
+    // policy. Even if all images are NX compatable, the memory attribute protocol is considered necessary
+    // for updating the memory attributes after allocation. Because of this, we don't want to apply NX
+    // to code type memory unless the protocol will be available to remove NX prior to execution.
+    //
+    if (mSetNxOnCodeTypeMemoryAllocations && gDxeMps.ImageProtectionPolicy.Fields.InstallMemoryAttributeProtocol) {
       NewAttributes = EFI_MEMORY_XP;
     } else {
       NewAttributes = 0;

@@ -175,6 +175,18 @@ NULL detection will be disabled at EndOfDxe.\n",
       __FUNCTION__
       ));
   }
+
+  if (!(gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv || gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromUnknown) &&
+      gDxeMps.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails)
+  {
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: - ProtectImageFromFv and/or ProtectImageFromUnknown are \
+inactive but RaiseErrorIfProtectionFails is active. RaiseErrorIfProtectionFails would have no effect\n",
+      __FUNCTION__
+      ));
+    gDxeMps.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails = 0;
+  }
 }
 
 /**
@@ -218,19 +230,6 @@ DxeMemoryProtectionHobLibConstructor (
 Zero-ing memory protection settings\n"
       ));
     ZeroMem (&gDxeMps, sizeof (gDxeMps));
-  }
-
-  if (!(gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv || gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromUnknown) &&
-      gDxeMps.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails)
-  {
-    DEBUG ((
-      DEBUG_WARN,
-      "%a: - ImageProtectionPolicy.ProtectImageFromFv or ImageProtectionPolicy.ProtectImageFromUnknown are \
-inactive but RaiseErrorIfProtectionFails is active. RaiseErrorIfProtectionFails would have \
-no effect - toggling off.\n",
-      __FUNCTION__
-      ));
-    gDxeMps.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails = 0;
   }
 
   return EFI_SUCCESS;
