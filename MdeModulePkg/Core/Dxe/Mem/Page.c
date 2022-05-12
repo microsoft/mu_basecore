@@ -1539,6 +1539,15 @@ CoreInternalFreePages (
   //
   CoreAcquireMemoryLock ();
 
+  // MU_CHANGE Start: Unprotect page(s) before free
+  Status = ClearAttributesFromMemoryRange (Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_WARN, "%a - Unable to clear attributes from memory at base: 0x%llx\n", __FUNCTION__, Memory));
+  }
+
+  // MU_CHANGE End
+
   //
   // Find the entry that the covers the range
   //
