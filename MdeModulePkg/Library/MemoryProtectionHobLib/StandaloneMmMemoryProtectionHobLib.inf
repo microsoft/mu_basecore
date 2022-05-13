@@ -12,7 +12,7 @@
   MODULE_TYPE                    = MM_CORE_STANDALONE
   PI_SPECIFICATION_VERSION       = 0x00010032
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = SmmStandaloneMmMemoryProtectionHobLib|MM_CORE_STANDALONE MM_STANDALONE
+  LIBRARY_CLASS                  = MmMemoryProtectionHobLib|MM_CORE_STANDALONE MM_STANDALONE
   CONSTRUCTOR                    = StandaloneMmMemoryProtectionHobLibConstructor
 
 #
@@ -20,7 +20,7 @@
 #
 
 [Sources]
-  SmmStandaloneMmMemoryProtectionHobLib.c
+  MmCommonMemoryProtectionHobLib.c
   StandaloneMmMemoryProtectionHobLib.c
 
 [Packages]
@@ -33,4 +33,4 @@
   BaseMemoryLib
 
 [Guids]
-  gSmmMemoryProtectionSettingsGuid
+  gMmMemoryProtectionSettingsGuid

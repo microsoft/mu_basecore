@@ -117,7 +117,7 @@ Image data sections could still be non-executable.\n",
       DEBUG_WARN,
       "%a: - Heap Guard Pool protections are active, \
 but neither HeapGuardPolicy.UefiPoolGuard nor \
-HeapGuardPolicy.SmmPoolGuard are active.\n",
+HeapGuardPolicy.MmPoolGuard are active.\n",
       __FUNCTION__
       ));
   }
@@ -129,7 +129,7 @@ HeapGuardPolicy.SmmPoolGuard are active.\n",
       DEBUG_WARN,
       "%a: - Heap Guard Page protections are active, \
 but neither HeapGuardPolicy.UefiPageGuard nor \
-HeapGuardPolicy.SmmPageGuard are active.\n",
+HeapGuardPolicy.MmPageGuard are active.\n",
       __FUNCTION__
       ));
   }

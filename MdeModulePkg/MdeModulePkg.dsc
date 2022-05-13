@@ -121,10 +121,10 @@
   DxeMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLib/DxeMemoryProtectionHobLib.inf
 
 [LibraryClasses.common.SMM_CORE, LibraryClasses.common.DXE_SMM_DRIVER]
-  SmmStandaloneMmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLib/SmmMemoryProtectionHobLib.inf
+  MmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLib/SmmMemoryProtectionHobLib.inf
 
 [LibraryClasses.common.MM_CORE_STANDALONE, LibraryClasses.common.MM_STANDALONE]
-  SmmStandaloneMmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLib/StandaloneMmMemoryProtectionHobLib.inf
+  MmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLib/StandaloneMmMemoryProtectionHobLib.inf
 
 # MU_CHANGE END
 
@@ -274,7 +274,7 @@
   MdeModulePkg/Library/MemoryProtectionHobLib/DxeMemoryProtectionHobLib.inf                      ## MU_CHANGE
   MdeModulePkg/Library/MemoryProtectionHobLib/SmmMemoryProtectionHobLib.inf                      ## MU_CHANGE
   MdeModulePkg/Library/MemoryProtectionHobLib/StandaloneMmMemoryProtectionHobLib.inf             ## MU_CHANGE
-  MdeModulePkg/Library/MemoryProtectionHobLibNull/SmmStandaloneMmMemoryProtectionHobLibNull.inf  ## MU_CHANGE
+  MdeModulePkg/Library/MemoryProtectionHobLibNull/MmMemoryProtectionHobLibNull.inf               ## MU_CHANGE
   MdeModulePkg/Library/CapsulePersistLibNull/CapsulePersistLibNull.inf                           ## MU_CHANGE
   MdeModulePkg/Library/ParallelLzmaCustomDecompressLib/ParallelLzmaCustomDecompressLib.inf       ## MU_CHANGE
 

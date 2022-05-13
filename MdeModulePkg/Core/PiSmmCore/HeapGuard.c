@@ -8,7 +8,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "HeapGuard.h"
 
-#include <Library/SmmStandaloneMmMemoryProtectionHobLib.h> // MU_CHANGE
+#include <Library/MmMemoryProtectionHobLib.h> // MU_CHANGE
 
 //
 // Global to avoid infinite reentrance of memory allocation when updating
@@ -584,7 +584,7 @@ IsMemoryTypeToGuard (
   //   UINT64 TestBit;
   //   UINT64 ConfigBit;
 
-  //   if ((gSmmMps.HeapGuardPropertyMask & PageOrPool) == 0
+  //   if ((gMmMps.HeapGuardPropertyMask & PageOrPool) == 0
   //       || mOnGuarding
   //       || AllocateType == AllocateAddress) {
   //     return FALSE;
@@ -612,12 +612,12 @@ IsMemoryTypeToGuard (
   //   }
 
   //   return ((ConfigBit & TestBit) != 0);
-  if (PageOrPool & GUARD_HEAP_TYPE_POOL && gSmmMps.HeapGuardPolicy.Fields.SmmPoolGuard) {
-    return GetSmmMemoryTypeSettingFromBitfield (MemoryType, gSmmMps.HeapGuardPoolType);
+  if (PageOrPool & GUARD_HEAP_TYPE_POOL && gMmMps.HeapGuardPolicy.Fields.MmPoolGuard) {
+    return GetMmMemoryTypeSettingFromBitfield (MemoryType, gMmMps.HeapGuardPoolType);
   }
 
-  if (PageOrPool & GUARD_HEAP_TYPE_PAGE && gSmmMps.HeapGuardPolicy.Fields.SmmPageGuard) {
-    return GetSmmMemoryTypeSettingFromBitfield (MemoryType, gSmmMps.HeapGuardPageType);
+  if (PageOrPool & GUARD_HEAP_TYPE_PAGE && gMmMps.HeapGuardPolicy.Fields.MmPageGuard) {
+    return GetMmMemoryTypeSettingFromBitfield (MemoryType, gMmMps.HeapGuardPageType);
   }
 
   return FALSE;
@@ -675,7 +675,7 @@ IsHeapGuardEnabled (
   )
 {
   // MU_CHANGE START Update to work with memory protection settings HOB
-  return gSmmMps.HeapGuardPolicy.Fields.SmmPageGuard || gSmmMps.HeapGuardPolicy.Fields.SmmPoolGuard;
+  return gMmMps.HeapGuardPolicy.Fields.MmPageGuard || gMmMps.HeapGuardPolicy.Fields.MmPoolGuard;
   // return IsMemoryTypeToGuard (EfiMaxMemoryType, AllocateAnyPages,
   //                             GUARD_HEAP_TYPE_POOL|GUARD_HEAP_TYPE_PAGE);
   // MU_CHANGE END
@@ -954,7 +954,7 @@ AdjustPoolHeadA (
 {
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
-  if ((Memory == 0) || (gSmmMps.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_HEAD)) {
+  if ((Memory == 0) || (gMmMps.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_HEAD)) {
     // MU_CHANGE END
     //
     // Pool head is put near the head Guard
@@ -983,7 +983,7 @@ AdjustPoolHeadF (
 {
   // MU_CHANGE START Update to use memory protection settings HOB
   // if (Memory == 0 || (PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) != 0) {
-  if ((Memory == 0) || (gSmmMps.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_HEAD)) {
+  if ((Memory == 0) || (gMmMps.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_HEAD)) {
     // MU_CHANGE END
     //
     // Pool head is put near the head Guard
