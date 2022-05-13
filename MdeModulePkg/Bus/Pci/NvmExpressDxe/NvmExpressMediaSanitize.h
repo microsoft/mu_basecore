@@ -33,7 +33,8 @@
                                - 001b: User Data Erase
                                - 010b: Cryptographic Erase
                                - 011b to 111b: Reserved
-  @param[in] Flbas           Current LBA Format size Index (bits 3:0) in NamespaceData
+  @param[in] Flbas           New LBA size (in terms of LBA Format size Index (bits 3:0) in NamespaceData).
+                             If this param is 0 (NULL), then use existing LBA size.
 
   @retval EFI_SUCCESS           The device formatted correctly.
   @retval EFI_WRITE_PROTECTED   The device can not be formatted due to write protection.
