@@ -12,7 +12,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "PiSmmCpuDxeSmm.h"
 
-#include <Library/SmmStandaloneMmMemoryProtectionHobLib.h> // MU_CHANGE
+#include <Library/MmMemoryProtectionHobLib.h> // MU_CHANGE
 
 #define PAGE_TABLE_PAGES  8
 #define ACC_MAX_BIT       BIT3
@@ -1127,7 +1127,7 @@ SmiPFHandler (
     // MU_CHANGE START Update to use memory protection settings HOB
     // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0 &&
     //     (PFAddress < EFI_PAGE_SIZE)) {
-    if (gSmmMps.NullPointerDetectionPolicy &&
+    if (gMmMps.NullPointerDetectionPolicy &&
         (PFAddress < EFI_PAGE_SIZE))
     {
       // MU_CHANGE END
@@ -1223,7 +1223,7 @@ SetPageTableAttributes (
   if (!mCpuSmmRestrictedMemoryAccess ||
       // MU_CHANGE START Update to use memory protection settings HOB
       // ((PcdGet8 (PcdHeapGuardPropertyMask) & (BIT3 | BIT2)) != 0) ||
-      (gSmmMps.HeapGuardPolicy.Fields.SmmPageGuard || gSmmMps.HeapGuardPolicy.Fields.SmmPoolGuard) ||
+      (gMmMps.HeapGuardPolicy.Fields.MmPageGuard || gMmMps.HeapGuardPolicy.Fields.MmPoolGuard) ||
       // MU_CHANGE
       FeaturePcdGet (PcdCpuSmmProfileEnable))
   {
@@ -1232,7 +1232,7 @@ SetPageTableAttributes (
     //
     ASSERT (
       !(mCpuSmmRestrictedMemoryAccess &&
-        (gSmmMps.HeapGuardPolicy.Fields.SmmPageGuard || gSmmMps.HeapGuardPolicy.Fields.SmmPoolGuard))
+        (gMmMps.HeapGuardPolicy.Fields.MmPageGuard || gMmMps.HeapGuardPolicy.Fields.MmPoolGuard))
       );                                                                                                // MU_CHANGE
 
     //

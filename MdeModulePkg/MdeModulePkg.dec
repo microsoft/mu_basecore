@@ -200,10 +200,10 @@
   #
   DxeMemoryProtectionHobLib|Include/Library/DxeMemoryProtectionHobLib.h
 
-  # MU_CHANGE - Add SmmStandaloneMmMemoryProtectionHobLib to MdeModulePkg
+  # MU_CHANGE - Add MmMemoryProtectionHobLib to MdeModulePkg
   ## @libraryclass Provides a way to toggle SMM memory protection settings
   #
-  SmmStandaloneMmMemoryProtectionHobLib|Include/Library/SmmStandaloneMmMemoryProtectionHobLib.h
+  MmMemoryProtectionHobLib|Include/Library/MmMemoryProtectionHobLib.h
 
   # MU_CHANGE - Add PcdDatabaseLoaderLib to MdeModulePkg
   ## @libraryclass Provides a way to present an alternate PcdDatabase
@@ -480,8 +480,8 @@
 
   ## SMM Memory Protection Settings Guid. Used to create and fetch the SMM memory protection settings HOB entry.
   #
-  # Include/Guid/SmmMemoryProtectionSettings
-  gSmmMemoryProtectionSettingsGuid = { 0x0CF445DD, 0xA67C, 0x4F8C, { 0x81, 0x9B, 0xB7, 0xB6, 0x86, 0xED, 0x7C, 0x75 }}
+  # Include/Guid/MmMemoryProtectionSettings
+  gMmMemoryProtectionSettingsGuid = { 0x0CF445DD, 0xA67C, 0x4F8C, { 0x81, 0x9B, 0xB7, 0xB6, 0x86, 0xED, 0x7C, 0x75 }}
 
 ## MSCHANGE END
 

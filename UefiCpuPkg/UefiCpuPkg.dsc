@@ -80,7 +80,7 @@
 
 ##MSCHANGE Begin
   DxeMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/DxeMemoryProtectionHobLibNull.inf
-  SmmStandaloneMmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/SmmStandaloneMmMemoryProtectionHobLibNull.inf
+  MmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/MmMemoryProtectionHobLibNull.inf
 
 [LibraryClasses.X64, LibraryClasses.IA32]
 !if $(TARGET) == DEBUG
