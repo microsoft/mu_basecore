@@ -238,8 +238,9 @@ GetModeTransitionBuffer (
                         &StartAddress
                         );
   // MU_CHANGE START: NX is applied to the allocated buffer - call function to remove that attribute
-  if (EFI_ERROR (Status) ||
-      EFI_ERROR (BufferRemoveNoExecute (StartAddress, EFI_PAGES_TO_SIZE (EFI_SIZE_TO_PAGES (BufferSize)))))
+  if (gDxeMps.ImageProtectionPolicy.Fields.InstallMemoryAttributeProtocol &&
+      (EFI_ERROR (Status) ||
+       EFI_ERROR (BufferRemoveNoExecute (StartAddress, EFI_PAGES_TO_SIZE (EFI_SIZE_TO_PAGES (BufferSize))))))
   {
     StartAddress = 0;
   }
