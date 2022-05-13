@@ -37,7 +37,8 @@
                                - 001b: User Data Erase
                                - 010b: Cryptographic Erase
                                - 011b to 111b: Reserved
-  @param[in] Flbas           Current LBA Format size Index (bits 3:0) in NamespaceData
+  @param[in] Flbas           New LBA size (in terms of LBA Format size Index (bits 3:0) in NamespaceData).
+                             If this param is 0 (NULL), then use existing LBA size.
 
   @retval EFI_SUCCESS           The device formatted correctly.
   @retval EFI_WRITE_PROTECTED   The device can not be formatted due to write protection.
@@ -95,7 +96,7 @@ NvmExpressFormatNvm (
   // Current supported LBA format size in Identify Namespace LBA Format Table, indexed by
   // FLBAS (bits 3:0).
   //
-  LbaFormat           = (!LbaFormat ? Device->NamespaceData.Flbas : Flbas);
+  LbaFormat           = (!Flbas ? Device->NamespaceData.Flbas : Flbas);
   FormatNvmCdw10.Lbaf = LbaFormat & NVME_LBA_FORMATNVM_LBAF_MASK;
   CopyMem (&CommandPacket.NvmeCmd->Cdw10, &FormatNvmCdw10, sizeof (NVME_ADMIN_FORMAT_NVM));
 
@@ -291,7 +292,7 @@ NvmExpressSanitize (
                    This,
                    NVME_ALL_NAMESPACES,
                    FnvmSes,
-                   Device->NamespaceData.Flbas
+                   0 // Pass in NULL so existing LBA size is used in Format NVM
                    );
       }
     }
