@@ -2793,6 +2793,23 @@ ClearReadOnlyAndNxFromImage (
   IN EFI_LOADED_IMAGE_PROTOCOL  *Image
   );
 
+/**
+  Clears the attributes from a memory range.
+
+  @param  BaseAddress            The base address of the pages which need their attributes cleared
+  @param  Length                 Length in bytes
+
+  @retval EFI_SUCCESS            Attributes updated if necessary
+  @retval EFI_INVALID_PARAMETER  BaseAddress is NULL or Length is zero
+  @retval Other                  Return value of CoreGetMemorySpaceDescriptor()
+
+**/
+EFI_STATUS
+ClearAttributesFromMemoryRange (
+  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN UINTN                 Length
+  );
+
 // MU_CHANGE END
 
 /**
