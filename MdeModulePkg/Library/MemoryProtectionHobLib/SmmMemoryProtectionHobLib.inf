@@ -11,7 +11,7 @@
   FILE_GUID                      = dc9666f4-917f-400d-8026-2b3beeeff195
   MODULE_TYPE                    = DXE_SMM_DRIVER
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = SmmStandaloneMmMemoryProtectionHobLib|SMM_CORE DXE_SMM_DRIVER
+  LIBRARY_CLASS                  = MmMemoryProtectionHobLib|SMM_CORE DXE_SMM_DRIVER
   CONSTRUCTOR                    = SmmMemoryProtectionHobLibConstructor
 
 #
@@ -19,7 +19,7 @@
 #
 
 [Sources]
-  SmmStandaloneMmMemoryProtectionHobLib.c
+  MmCommonMemoryProtectionHobLib.c
   SmmMemoryProtectionHobLib.c
 
 [Packages]
@@ -32,4 +32,4 @@
   BaseMemoryLib
 
 [Guids]
-  gSmmMemoryProtectionSettingsGuid
+  gMmMemoryProtectionSettingsGuid

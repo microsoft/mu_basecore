@@ -28,6 +28,14 @@
   #
   MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibHost.inf
   MdePkg/Test/UnitTest/Library/BaseLib/BaseLibUnitTestsHost.inf
+  # MU_CHANGE [BEGIN]
+  MdePkg/Test/Library/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf
+  MdePkg/Test/Library/MockUefiRuntimeServicesTableLib/MockUefiRuntimeServicesTableLib.inf
+  MdePkg/Test/Library/RngLibHostTestLfsr/RngLibHostTestLfsr.inf
+  MdePkg/Test/Library/StubHobLib/StubHobLib.inf
+  MdePkg/Test/Library/StubUefiLib/StubUefiLib.inf
+  MdePkg/Test/Library/SynchronizationLibHostUnitTest/SynchronizationLibHostUnitTest.inf
+  # MU_CHANGE [END]
 
   #
   # Build HOST_APPLICATION Libraries

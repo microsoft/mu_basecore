@@ -1,5 +1,5 @@
 /**@file
-Library fills out gSmmMps global
+Library fills out gMmMps global
 
 Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -9,27 +9,27 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Pi/PiMultiPhase.h>
 #include <Uefi/UefiMultiPhase.h>
 
-#include <Library/SmmStandaloneMmMemoryProtectionHobLib.h>
+#include <Library/MmMemoryProtectionHobLib.h>
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
 #include <Library/BaseMemoryLib.h>
 
-SMM_MEMORY_PROTECTION_SETTINGS  gSmmMps;
+MM_MEMORY_PROTECTION_SETTINGS  gMmMps;
 
 /**
-  Gets the input EFI_MEMORY_TYPE from the input SMM_HEAP_GUARD_MEMORY_TYPES bitfield
+  Gets the input EFI_MEMORY_TYPE from the input MM_HEAP_GUARD_MEMORY_TYPES bitfield
 
   @param[in]  MemoryType            Memory type to check.
-  @param[in]  HeapGuardMemoryType   SMM_HEAP_GUARD_MEMORY_TYPES bitfield
+  @param[in]  HeapGuardMemoryType   MM_HEAP_GUARD_MEMORY_TYPES bitfield
 
-  @return TRUE  The given EFI_MEMORY_TYPE is TRUE in the given SMM_HEAP_GUARD_MEMORY_TYPES
-  @return FALSE The given EFI_MEMORY_TYPE is FALSE in the given SMM_HEAP_GUARD_MEMORY_TYPES
+  @return TRUE  The given EFI_MEMORY_TYPE is TRUE in the given MM_HEAP_GUARD_MEMORY_TYPES
+  @return FALSE The given EFI_MEMORY_TYPE is FALSE in the given MM_HEAP_GUARD_MEMORY_TYPES
 **/
 BOOLEAN
 EFIAPI
-GetSmmMemoryTypeSettingFromBitfield (
-  IN EFI_MEMORY_TYPE              MemoryType,
-  IN SMM_HEAP_GUARD_MEMORY_TYPES  HeapGuardMemoryType
+GetMmMemoryTypeSettingFromBitfield (
+  IN EFI_MEMORY_TYPE             MemoryType,
+  IN MM_HEAP_GUARD_MEMORY_TYPES  HeapGuardMemoryType
   )
 {
   switch (MemoryType) {
@@ -74,30 +74,30 @@ GetSmmMemoryTypeSettingFromBitfield (
   protections to create consistency, never turn others on.
 **/
 VOID
-SmmMemoryProtectionSettingsConsistencyCheck (
+MmMemoryProtectionSettingsConsistencyCheck (
   VOID
   )
 {
-  if (gSmmMps.HeapGuardPoolType.Data &&
-      (!(gSmmMps.HeapGuardPolicy.Fields.SmmPoolGuard)))
+  if (gMmMps.HeapGuardPoolType.Data &&
+      (!(gMmMps.HeapGuardPolicy.Fields.MmPoolGuard)))
   {
     DEBUG ((
       DEBUG_WARN,
       "%a: - Heap Guard Pool protections are active, \
 but neither HeapGuardPolicy.UefiPoolGuard nor \
-HeapGuardPolicy.SmmPoolGuard are active.\n",
+HeapGuardPolicy.MmPoolGuard are active.\n",
       __FUNCTION__
       ));
   }
 
-  if (gSmmMps.HeapGuardPageType.Data &&
-      (!(gSmmMps.HeapGuardPolicy.Fields.SmmPageGuard)))
+  if (gMmMps.HeapGuardPageType.Data &&
+      (!(gMmMps.HeapGuardPolicy.Fields.MmPageGuard)))
   {
     DEBUG ((
       DEBUG_WARN,
       "%a: - Heap Guard Page protections are active, \
 but neither HeapGuardPolicy.UefiPageGuard nor \
-HeapGuardPolicy.SmmPageGuard are active.\n",
+HeapGuardPolicy.MmPageGuard are active.\n",
       __FUNCTION__
       ));
   }
@@ -116,32 +116,32 @@ MmMemoryProtectionHobLibConstructorCommon (
 {
   VOID  *Ptr;
 
-  Ptr = GetFirstGuidHob (&gSmmMemoryProtectionSettingsGuid);
+  Ptr = GetFirstGuidHob (&gMmMemoryProtectionSettingsGuid);
 
   //
   // Cache the Memory Protection Settings HOB entry
   //
   if (Ptr != NULL) {
-    if (*((UINT8 *)GET_GUID_HOB_DATA (Ptr)) != (UINT8)SMM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION) {
+    if (*((UINT8 *)GET_GUID_HOB_DATA (Ptr)) != (UINT8)MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION) {
       DEBUG ((
         DEBUG_INFO,
         "%a: - Version number of the Memory Protection Settings HOB is invalid.\n",
         __FUNCTION__
         ));
       ASSERT (FALSE);
-      ZeroMem (&gSmmMps, sizeof (gSmmMps));
+      ZeroMem (&gMmMps, sizeof (gMmMps));
       return EFI_SUCCESS;
     }
 
-    CopyMem (&gSmmMps, GET_GUID_HOB_DATA (Ptr), sizeof (SMM_MEMORY_PROTECTION_SETTINGS));
-    SmmMemoryProtectionSettingsConsistencyCheck ();
+    CopyMem (&gMmMps, GET_GUID_HOB_DATA (Ptr), sizeof (MM_MEMORY_PROTECTION_SETTINGS));
+    MmMemoryProtectionSettingsConsistencyCheck ();
   } else {
     DEBUG ((
       DEBUG_INFO,
-      "SmmStandaloneMmMemoryProtectionHobLibConstructor - Unable to fetch memory protection HOB. \
-Zero-ing SMM memory protection settings\n"
+      "MmMemoryProtectionHobLibConstructor - Unable to fetch memory protection HOB. \
+Zero-ing MM memory protection settings\n"
       ));
-    ZeroMem (&gSmmMps, sizeof (gSmmMps));
+    ZeroMem (&gMmMps, sizeof (gMmMps));
   }
 
   return EFI_SUCCESS;

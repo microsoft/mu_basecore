@@ -7,17 +7,17 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef __SMM_MEMORY_PROTECTION_SETTINGS_H__
-#define __SMM_MEMORY_PROTECTION_SETTINGS_H__
+#ifndef __MM_MEMORY_PROTECTION_SETTINGS_H__
+#define __MM_MEMORY_PROTECTION_SETTINGS_H__
 
 typedef union {
   UINT8    Data;
   struct {
-    UINT8    SmmPageGuard : 1;
-    UINT8    SmmPoolGuard : 1;
-    UINT8    Direction    : 1;
+    UINT8    MmPageGuard : 1;
+    UINT8    MmPoolGuard : 1;
+    UINT8    Direction   : 1;
   } Fields;
-} SMM_HEAP_GUARD_POLICY;
+} MM_HEAP_GUARD_POLICY;
 
 typedef union {
   UINT32    Data;
@@ -40,11 +40,11 @@ typedef union {
     UINT8    OEMReserved                : 1;
     UINT8    OSReserved                 : 1;
   } Fields;
-} SMM_HEAP_GUARD_MEMORY_TYPES;
+} MM_HEAP_GUARD_MEMORY_TYPES;
 
-typedef UINT8 SMM_MEMORY_PROTECTION_SETTINGS_VERSION;
+typedef UINT8 MM_MEMORY_PROTECTION_SETTINGS_VERSION;
 
-#define SMM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  1 // Current iteration of SMM_MEMORY_PROTECTION_SETTINGS
+#define MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  1 // Current iteration of MM_MEMORY_PROTECTION_SETTINGS
 
 //
 // Memory Protection Settings struct
@@ -52,12 +52,12 @@ typedef UINT8 SMM_MEMORY_PROTECTION_SETTINGS_VERSION;
 typedef struct {
   // The current version of the structure definition. This is used to ensure there isn't a definition mismatch
   // if modules have differing iterations of this header. When creating this struct, use the
-  // SMM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION macro.
-  SMM_MEMORY_PROTECTION_SETTINGS_VERSION    StructVersion;
+  // MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION macro.
+  MM_MEMORY_PROTECTION_SETTINGS_VERSION    StructVersion;
 
   // If enabled, accessing NULL address in UEFI or SMM code can be caught by marking
   // the NULL page as not present.
-  BOOLEAN                                   NullPointerDetectionPolicy;
+  BOOLEAN                                  NullPointerDetectionPolicy;
 
   // Bitfield to control Heap Guard behavior.
   //
@@ -67,12 +67,12 @@ typedef struct {
   //     setting which cannot guarantee that the returned pool is exactly
   //     adjacent to head guard page or tail guard page.
   //
-  //  .SmmPageGuard          : Enable SMM page guard.
-  //  .SmmPoolGuard          : Enable SMM pool guard.
+  //  .MmPageGuard          : Enable SMM page guard.
+  //  .MmPoolGuard          : Enable SMM pool guard.
   //  .Direction             : The direction of Guard Page for Pool Guard.
   //                           0 - The returned pool is near the tail guard page.
   //                           1 - The returned pool is near the head guard page.
-  SMM_HEAP_GUARD_POLICY    HeapGuardPolicy;
+  MM_HEAP_GUARD_POLICY    HeapGuardPolicy;
 
   // Indicates which type allocation need guard page.
   //
@@ -81,8 +81,8 @@ typedef struct {
   // if there's enough free memory for all of them. The pool allocation for the
   // type related to cleared bits keeps the same as ususal.
   //
-  // This bitfield is only valid if UefiPoolGuard and/or SmmPoolGuard are set in HeapGuardPolicy.
-  SMM_HEAP_GUARD_MEMORY_TYPES    HeapGuardPoolType;
+  // This bitfield is only valid if UefiPoolGuard and/or MmPoolGuard are set in HeapGuardPolicy.
+  MM_HEAP_GUARD_MEMORY_TYPES    HeapGuardPoolType;
 
   // Indicates which type allocation need guard page.
   //
@@ -91,16 +91,16 @@ typedef struct {
   // free pages for all of them. The page allocation for the type related to
   // cleared bits keeps the same as ususal.
   //
-  // This bitfield is only valid if SmmPageGuard is set in HeapGuardPolicy.
-  SMM_HEAP_GUARD_MEMORY_TYPES    HeapGuardPageType;
-} SMM_MEMORY_PROTECTION_SETTINGS;
+  // This bitfield is only valid if MmPageGuard is set in HeapGuardPolicy.
+  MM_HEAP_GUARD_MEMORY_TYPES    HeapGuardPageType;
+} MM_MEMORY_PROTECTION_SETTINGS;
 
-#define HOB_SMM_MEMORY_PROTECTION_SETTINGS_GUID \
+#define HOB_MM_MEMORY_PROTECTION_SETTINGS_GUID \
   { \
     { 0x0CF445DD, 0xA67C, 0x4F8C, { 0x81, 0x9B, 0xB7, 0xB6, 0x86, 0xED, 0x7C, 0x75 } } \
   }
 
-extern GUID  gSmmMemoryProtectionSettingsGuid;
+extern GUID  gMmMemoryProtectionSettingsGuid;
 
 // HeapGuardPolicy.Fields.Direction value indicating tail alignment
 #define HEAP_GUARD_ALIGNED_TO_TAIL  0
@@ -112,13 +112,13 @@ extern GUID  gSmmMemoryProtectionSettingsGuid;
 //  An SMM memory profile with strict settings. This will likely add to the
 //  total boot time but will catch more configuration and memory errors.
 //
-#define SMM_MEMORY_PROTECTION_SETTINGS_DEBUG                    \
+#define MM_MEMORY_PROTECTION_SETTINGS_DEBUG                     \
           {                                                     \
-            SMM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,     \
+            MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,      \
             TRUE,                                               \
             {                                                   \
-              .Fields.SmmPageGuard                 = 1,         \
-              .Fields.SmmPoolGuard                 = 1,         \
+              .Fields.MmPageGuard                  = 1,         \
+              .Fields.MmPoolGuard                  = 1,         \
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \
@@ -164,13 +164,13 @@ extern GUID  gSmmMemoryProtectionSettingsGuid;
 //
 //  An SMM memory profile with all settings off.
 //
-#define SMM_MEMORY_PROTECTION_SETTINGS_OFF                      \
+#define MM_MEMORY_PROTECTION_SETTINGS_OFF                       \
           {                                                     \
-            SMM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,     \
+            MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,      \
             FALSE,                                              \
             {                                                   \
-              .Fields.SmmPageGuard                 = 0,         \
-              .Fields.SmmPoolGuard                 = 0,         \
+              .Fields.MmPageGuard                  = 0,         \
+              .Fields.MmPoolGuard                  = 0,         \
               .Fields.Direction                    = 0          \
             },                                                  \
             {                                                   \

@@ -61,7 +61,7 @@
   HobLib
   SmmMemLib
   BaseBinSecurityLib  ## MS_CHANGE_?
-  SmmStandaloneMmMemoryProtectionHobLib ## MU_CHANGE
+  MmMemoryProtectionHobLib ## MU_CHANGE
 
 [Protocols]
   gEfiDxeSmmReadyToLockProtocolGuid             ## UNDEFINED # SmiHandlerRegister
