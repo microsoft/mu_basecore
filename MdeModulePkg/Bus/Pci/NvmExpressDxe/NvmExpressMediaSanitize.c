@@ -237,7 +237,7 @@ NvmExpressSanitize (
   CopyMem (&CommandPacket.NvmeCmd->Cdw10, &SanitizeCdw10Cdw11, sizeof (NVME_ADMIN_SANITIZE));
 
   //
-  // Send Format NVM command via passthru and wait for completion
+  // Send Sanitize command via passthru and wait for completion
   //
   Status = Device->Controller->Passthru.PassThru (
                                           &(Device->Controller->Passthru),
