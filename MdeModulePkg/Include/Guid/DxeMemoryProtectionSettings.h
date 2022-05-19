@@ -138,7 +138,7 @@ typedef struct {
   // if there's enough free memory for all of them. The pool allocation for the
   // type related to cleared bits keeps the same as ususal.
   //
-  // This bitfield is only valid if UefiPoolGuard and/or SmmPoolGuard are set in HeapGuardPolicy.
+  // This bitfield is only valid if UefiPoolGuard and/or MmPoolGuard are set in HeapGuardPolicy.
   DXE_HEAP_GUARD_MEMORY_TYPES    HeapGuardPoolType;
 
   // Indicates which type allocation need guard page.

@@ -1,5 +1,5 @@
 /**@file
-Library fills out gSmmMps global
+Library fills out gMmMps global
 
 Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
