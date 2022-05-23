@@ -78,14 +78,6 @@ NvmExpressFormatNvm (
   Command.Cdw0.Opcode          = NVME_ADMIN_FORMAT_NVM_CMD;
   Command.Nsid                 = NamespaceId;
 
-  DEBUG ((
-    DEBUG_VERBOSE,
-    "NvmExpressFormatNvm: NSID = 0x%x, SES = 0x%x, FLBAS = 0x%x\n",
-    NamespaceId,
-    Ses,
-    Flbas
-    ));
-
   //
   // SES (Secure Erase Settings)
   //
@@ -142,6 +134,8 @@ NvmExpressFormatNvm (
       if (NewNamespaceData == NULL) {
         Status = EFI_OUT_OF_RESOURCES;
       } else {
+        DEBUG ((DEBUG_VERBOSE, "NvmExpressFormatNvm: Format NVM SUCCEEDED; updating namesapce data\n"));
+
         Status = NvmeIdentifyNamespace (
                    Device->Controller,
                    NamespaceId,
@@ -223,21 +217,13 @@ NvmExpressSanitize (
   Command.Cdw0.Opcode          = NVME_ADMIN_SANITIZE_CMD;
   Command.Nsid                 = NamespaceId;
 
-  DEBUG ((
-    DEBUG_VERBOSE,
-    "NvmExpressSanitize NSID = 0x%x, SANACT = 0x%x, NDAS = 0x%x\n",
-    NamespaceId,
-    SanitizeAction,
-    NoDeallocAfterSanitize
-    ));
-
   SanitizeCdw10Cdw11.Ndas   = NoDeallocAfterSanitize;
   SanitizeCdw10Cdw11.Sanac  = SanitizeAction;
   SanitizeCdw10Cdw11.Ovrpat = OverwritePattern;
   CopyMem (&CommandPacket.NvmeCmd->Cdw10, &SanitizeCdw10Cdw11, sizeof (NVME_ADMIN_SANITIZE));
 
   //
-  // Send Sanitize command via passthru and wait for completion
+  // Send Format NVM command via passthru and wait for completion
   //
   Status = Device->Controller->Passthru.PassThru (
                                           &(Device->Controller->Passthru),
@@ -438,10 +424,11 @@ NvmExpressMediaPurge (
     return EFI_INVALID_PARAMETER;
   }
 
-  Device      = NVME_DEVICE_PRIVATE_DATA_FROM_MEDIA_SANITIZE (This);
-  NamespaceId = Device->NamespaceId;
-  Media       = &Device->Media;
-  SaniCap     = Device->Controller->ControllerData->Sanicap;
+  Device       = NVME_DEVICE_PRIVATE_DATA_FROM_MEDIA_SANITIZE (This);
+  NamespaceId  = Device->NamespaceId;
+  Media        = &Device->Media;
+  SaniCap      = Device->Controller->ControllerData->Sanicap;
+  NoDeallocate = 0;
 
   if ((MediaId != Media->MediaId) || (!Media->MediaPresent)) {
     return EFI_MEDIA_CHANGED;
