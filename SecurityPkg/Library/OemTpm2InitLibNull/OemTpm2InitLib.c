@@ -51,7 +51,7 @@ OemTpm2InitPeiPreStartup (
 
   IMPLEMENTATION: Read the TPM Enablement NV Index from the TPM itself.
     - If enabled, allow init to continue.
-    - If read fails because NV Index missing or uninitialzed:
+    - If read fails because NV Index missing or uninitialized:
       - If missing, create and initialize.
       - If uninitialized, set to default value (TPM ON)
     - If disabled, discontinue TPM init.
@@ -128,7 +128,7 @@ OemTpm2InitDxeEntryPreRegistration (
   NOTE: If this function returns an EFI_ERROR, TPM initialization WILL NOT continue.
         Make sure this is something you actually want to do.
 
-  @param[in]  BootAttemptCount  Number of ReadyToBoot events that have occured.
+  @param[in]  BootAttemptCount  Number of ReadyToBoot events that have occurred.
                                 0 indicates that this is the first ReadyToBoot event and
                                 is where most of any custom initialization should occur.
 
