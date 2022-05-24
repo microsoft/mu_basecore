@@ -262,8 +262,8 @@ EndofPeiSignalNotifyCallBack (
     CopyMem (&MeasuredHobData->MeasuredFvBuf[mMeasuredBaseFvIndex], mMeasuredChildFvInfo, sizeof (EFI_PLATFORM_FIRMWARE_BLOB) * (mMeasuredChildFvIndex));
   }
 
-  // MU_CHANGE - START
-  // Create a guid hob to save all excluded FVs for DXE - mschange start
+  //
+  // Create a guid hob to save all excluded FVs for DXE - MU_CHANGE - START
   //
 
   //

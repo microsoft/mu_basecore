@@ -247,7 +247,7 @@ MmcIoBlocks (
   UINTN                  Cmd;
   MMC_HOST_INSTANCE      *MmcHostInstance;
   EFI_MMC_HOST_PROTOCOL  *MmcHost;
-  UINTN                  BytesRemainingToBeTransfered;
+  UINTN                  BytesRemainingToBeTransferred;
   UINTN                  BlockCount;
   UINTN                  ConsumeSize;
   UINT32                 MaxBlock;
@@ -301,10 +301,10 @@ MmcIoBlocks (
   }
 
   // Max block number in single cmd is 65535 blocks.
-  MaxBlock                     = 0xFFFF;
-  RemainingBlock               = BlockCount;
-  BytesRemainingToBeTransfered = BufferSize;
-  while (BytesRemainingToBeTransfered > 0) {
+  MaxBlock                      = 0xFFFF;
+  RemainingBlock                = BlockCount;
+  BytesRemainingToBeTransferred = BufferSize;
+  while (BytesRemainingToBeTransferred > 0) {
     if (RemainingBlock <= MaxBlock) {
       BlockCount = RemainingBlock;
     } else {
@@ -349,8 +349,8 @@ MmcIoBlocks (
     }
 
     ConsumeSize = BlockCount * This->Media->BlockSize;
-    if (BytesRemainingToBeTransfered < ConsumeSize) {
-      ConsumeSize = BytesRemainingToBeTransfered;
+    if (BytesRemainingToBeTransferred < ConsumeSize) {
+      ConsumeSize = BytesRemainingToBeTransferred;
     }
 
     Status = MmcTransferBlock (This, Cmd, Transfer, MediaId, Lba, ConsumeSize, Buffer);
@@ -358,9 +358,9 @@ MmcIoBlocks (
       DEBUG ((DEBUG_ERROR, "%a(): Failed to transfer block and Status:%r\n", __func__, Status));
     }
 
-    RemainingBlock               -= BlockCount;
-    BytesRemainingToBeTransfered -= ConsumeSize;
-    if (BytesRemainingToBeTransfered > 0) {
+    RemainingBlock                -= BlockCount;
+    BytesRemainingToBeTransferred -= ConsumeSize;
+    if (BytesRemainingToBeTransferred > 0) {
       Lba   += BlockCount;
       Buffer = (UINT8 *)Buffer + ConsumeSize;
     }

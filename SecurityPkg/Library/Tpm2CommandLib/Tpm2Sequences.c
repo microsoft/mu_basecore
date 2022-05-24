@@ -156,7 +156,7 @@ Tpm2HashSequenceStart (
   }
 
   //
-  // Unmarshal the response
+  // Un-marshal the response
   //
 
   // sequenceHandle
@@ -253,7 +253,7 @@ Tpm2SequenceUpdate (
   }
 
   //
-  // Unmarshal the response
+  // Un-marshal the response
   //
 
   // None
@@ -362,7 +362,7 @@ Tpm2EventSequenceComplete (
   }
 
   //
-  // Unmarshal the response
+  // Un-marshal the response
   //
 
   BufferPtr = (UINT8 *)&Res.Results;
@@ -489,7 +489,7 @@ Tpm2SequenceComplete (
   }
 
   //
-  // Unmarshal the response
+  // Un-marshal the response
   //
 
   BufferPtr = (UINT8 *)&Res.Digest;
