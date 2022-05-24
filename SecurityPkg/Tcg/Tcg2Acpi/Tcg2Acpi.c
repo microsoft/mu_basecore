@@ -197,7 +197,7 @@ ExchangeCommonBuffer (
   // Step 1: Grab the common buffer header
   Status = EfiGetSystemConfigurationTable (&gEdkiiPiSmmCommunicationRegionTableGuid, (VOID **)&PiSmmCommunicationRegionTable);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - Failed to locate SMM communciation common buffer - %r!\n", __func__, Status));
+    DEBUG ((DEBUG_ERROR, "%a - Failed to locate SMM communication common buffer - %r!\n", __func__, Status));
     return Status;
   }
 
@@ -320,11 +320,11 @@ UpdatePossibleResource (
   UINT8   *DataPtr;
   UINT8   *DataEndPtr;
   UINT32  NewPkgLength;
-  UINT32  OrignalPkgLength;
+  UINT32  OriginalPkgLength;
 
-  NewPkgLength     = 0;
-  OrignalPkgLength = 0;
-  DataEndPtr       = NULL;
+  NewPkgLength      = 0;
+  OriginalPkgLength = 0;
+  DataEndPtr        = NULL;
 
   //
   // Follow ACPI spec
@@ -375,8 +375,8 @@ UpdatePossibleResource (
       DataPtr += TPM_PRS_RES_NAME_SIZE + 1;
 
       if ((*DataPtr & (BIT7|BIT6)) == 0) {
-        OrignalPkgLength = (UINT32)*DataPtr;
-        DataEndPtr       = DataPtr + OrignalPkgLength;
+        OriginalPkgLength = (UINT32)*DataPtr;
+        DataEndPtr        = DataPtr + OriginalPkgLength;
 
         //
         // Jump over PkgLength = PkgLeadByte only
@@ -409,7 +409,7 @@ UpdatePossibleResource (
         break;
       }
 
-      if (NewPkgLength > OrignalPkgLength) {
+      if (NewPkgLength > OriginalPkgLength) {
         ASSERT (FALSE);
         return EFI_INVALID_PARAMETER;
       }
@@ -438,8 +438,8 @@ UpdatePossibleResource (
   // 2. Use TPM_PRS_RESL with PkgLength > 63 to hold longer input interrupt number buffer for patching
   //
   if (NewPkgLength > 63) {
-    NewPkgLength     = 0;
-    OrignalPkgLength = 0;
+    NewPkgLength      = 0;
+    OriginalPkgLength = 0;
     for (DataPtr  = (UINT8 *)(Table + 1);
          DataPtr < (UINT8 *)((UINT8 *)Table + Table->Length - (TPM_PRS_RES_NAME_SIZE + TPM_POS_RES_TEMPLATE_MIN_SIZE));
          DataPtr += 1)
@@ -451,8 +451,8 @@ UpdatePossibleResource (
         DataPtr += TPM_PRS_RES_NAME_SIZE + 1;
 
         if ((*DataPtr & (BIT7|BIT6)) != 0) {
-          OrignalPkgLength = (UINT32)(*(DataPtr + 1) << 4) + (*DataPtr & 0x0F);
-          DataEndPtr       = DataPtr + OrignalPkgLength;
+          OriginalPkgLength = (UINT32)(*(DataPtr + 1) << 4) + (*DataPtr & 0x0F);
+          DataEndPtr        = DataPtr + OriginalPkgLength;
           //
           // Jump over PkgLength = PkgLeadByte + ByteData length
           //
@@ -481,7 +481,7 @@ UpdatePossibleResource (
         //
         NewPkgLength += 19 + IrqBuffserSize;
 
-        if (NewPkgLength > OrignalPkgLength) {
+        if (NewPkgLength > OriginalPkgLength) {
           ASSERT (FALSE);
           return EFI_INVALID_PARAMETER;
         }

@@ -93,7 +93,7 @@ OemTpm2InitDxeEntryPreRegistration (
   NOTE: If this function returns an EFI_ERROR, TPM initialization WILL NOT continue.
         Make sure this is something you actually want to do.
 
-  @param[in]  BootAttemptCount  Number of ReadyToBoot events that have occured.
+  @param[in]  BootAttemptCount  Number of ReadyToBoot events that have occurred.
                                 0 indicates that this is the first ReadyToBoot event and
                                 is where most of any custom initialization should occur.
 
