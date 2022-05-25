@@ -21,6 +21,7 @@
 [Sources]
   MediaSanitizeUnitTest.c
   ../NvmExpressMediaSanitize.c
+  ../NvmExpressMediaSanitize.h
 
 [Packages]
   MdePkg/MdePkg.dec

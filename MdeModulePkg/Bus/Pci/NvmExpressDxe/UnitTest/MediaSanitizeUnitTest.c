@@ -15,15 +15,14 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
-#include <Uefi/UefiBaseType.h>
 #include <Library/UefiBootManagerLib.h>
 #include <Protocol/NvmExpressPassthru.h>
+#include <Protocol/MediaSanitize.h>
 
 #include "../NvmExpress.h"
 #include "../NvmExpressBlockIo.h"
 #include "../NvmExpressMediaSanitize.h"
 #include "../NvmExpressHci.h"
-#include "../../../Include/Protocol/MediaSanitize.h"
 
 EFI_STATUS
 EFIAPI
@@ -37,20 +36,14 @@ NvmeDeviceUnitTestPassthru (
   //
   // Parse command packet for unit testing
   //
-  // NVME_DEVICE_PRIVATE_DATA                  *Device;
   EFI_NVM_EXPRESS_COMMAND     *Command;
   EFI_NVM_EXPRESS_COMPLETION  *Completion;
   NVME_CQ                     *Cqe;
   NVME_ADMIN_FORMAT_NVM       FormatNvmCdw10;
   NVME_ADMIN_SANITIZE         SanitizeCdw1011;
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: Enter\n"));
-
-  UT_ASSERT_NOT_NULL (This);
-  UT_ASSERT_NOT_NULL (Packet);
-
-  // Device = NVME_DEVICE_PRIVATE_DATA_FROM_BLOCK_IO (This);
-  // UT_ASSERT_NOT_NULL(Device);
+  ASSERT (This);
+  ASSERT (Packet);
 
   Command    = Packet->NvmeCmd;
   Completion = Packet->NvmeCompletion;
@@ -59,12 +52,9 @@ NvmeDeviceUnitTestPassthru (
   ZeroMem (&FormatNvmCdw10, sizeof (NVME_ADMIN_FORMAT_NVM));
   ZeroMem (&SanitizeCdw1011, sizeof (NVME_ADMIN_SANITIZE));
 
-  UT_ASSERT_NOT_NULL (Command);
-  UT_ASSERT_NOT_NULL (Completion);
-
   switch (Command->Cdw0.Opcode) {
     case NVME_ADMIN_FORMAT_NVM_CMD:
-      DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: Opcode = NVME_ADMIN_FORMAT_NVM_CMD\n"));
+      DEBUG ((DEBUG_VERBOSE, "[          ] %a: Opcode = NVME_ADMIN_FORMAT_NVM_CMD\n", __FUNCTION__));
 
       CopyMem (&FormatNvmCdw10, &Command->Cdw10, sizeof (NVME_ADMIN_FORMAT_NVM));
 
@@ -72,8 +62,6 @@ NvmeDeviceUnitTestPassthru (
       // FormatNVM Check 1: Validate SES parameter
       //
       if (FormatNvmCdw10.Ses > 0x2) {
-        // DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: SES (0x%x) Out of Range!!!\n", FormatNvmCdw10.Ses));
-
         Cqe->Sct = NVME_CQE_SCT_GENERIC_CMD_STATUS;
         Cqe->Sc  = NVME_CQE_SC_INVALID_FIELD_IN_CMD;
 
@@ -84,8 +72,6 @@ NvmeDeviceUnitTestPassthru (
       // FormatNVM Check 2: Validate LbaIndex parameter
       //
       if (FormatNvmCdw10.Lbaf > 0x1) {
-        // DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: Lbaf (0x%x) Out of Range!!!\n", FormatNvmCdw10.Lbaf));
-
         Cqe->Sct = NVME_CQE_SCT_GENERIC_CMD_STATUS;
         Cqe->Sc  = NVME_CQE_SC_INVALID_FIELD_IN_CMD;
 
@@ -94,7 +80,7 @@ NvmeDeviceUnitTestPassthru (
 
       break;
     case NVME_ADMIN_SANITIZE_CMD:
-      DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: Opcode = NVME_ADMIN_SANITIZE_CMD\n"));
+      DEBUG ((DEBUG_VERBOSE, "[          ] %a: Opcode = NVME_ADMIN_SANITIZE_CMD\n", __FUNCTION__));
 
       CopyMem (&SanitizeCdw1011, &Command->Cdw10, sizeof (NVME_ADMIN_SANITIZE));
 
@@ -102,8 +88,6 @@ NvmeDeviceUnitTestPassthru (
       // Sanitize Check 1: Validate Sanitize Action parameter
       //
       if (SanitizeCdw1011.Sanac > 0x4) {
-        // DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: Sanac (0x%x) Out of Range!!!\n", SanitizeCdw1011.Sanac));
-
         Cqe->Sct = NVME_CQE_SCT_GENERIC_CMD_STATUS;
         Cqe->Sc  = NVME_CQE_SC_INVALID_FIELD_IN_CMD;
 
@@ -116,8 +100,6 @@ NvmeDeviceUnitTestPassthru (
       if (((SanitizeCdw1011.Sanac == SANITIZE_ACTION_OVERWRITE) && (SanitizeCdw1011.Ovrpat != 0xDEADBEEF)) ||
           ((SanitizeCdw1011.Sanac != SANITIZE_ACTION_OVERWRITE) && (SanitizeCdw1011.Ovrpat != 0)))
       {
-        // DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: Overwrite Action has NO PATTERN (0x%x)!!!\n", SanitizeCdw1011.Ovrpat));
-
         Cqe->Sct = NVME_CQE_SCT_GENERIC_CMD_STATUS;
         Cqe->Sc  = NVME_CQE_SC_INVALID_FIELD_IN_CMD;
 
@@ -126,18 +108,13 @@ NvmeDeviceUnitTestPassthru (
 
       break;
     default:
-      DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: Invalid Opcode = 0x%x!!!\n", Command->Cdw0.Opcode));
+      DEBUG ((DEBUG_VERBOSE, "[          ] %a: Invalid Opcode = 0x%x!!!\n", __FUNCTION__, Command->Cdw0.Opcode));
       break;
   }
-
-  // DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: Passed!!!\n"));
 
   //
   // Populate CQE (completion queue entry based on opcode and parameters
   //
-  // TBD
-
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: Exit\n"));
 
   return EFI_SUCCESS;
 }
@@ -152,8 +129,6 @@ NvmeIdentifyNamespace (
   EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET  CommandPacket;
   EFI_NVM_EXPRESS_COMMAND                   Command;
   EFI_NVM_EXPRESS_COMPLETION                Completion;
-
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeIdentifyNamespace: Enter\n"));
 
   ZeroMem (&CommandPacket, sizeof (EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET));
   ZeroMem (&Command, sizeof (EFI_NVM_EXPRESS_COMMAND));
@@ -174,16 +149,6 @@ NvmeIdentifyNamespace (
   CommandPacket.NvmeCmd->Cdw10 = 0;
   CommandPacket.NvmeCmd->Flags = CDW10_VALID;
 
-  //  Status = Private->Passthru.PassThru (
-  //                               &Private->Passthru,
-  //                               NamespaceId,
-  //                               &CommandPacket,
-  //                               NULL
-  //                               );
-
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeIdentifyNamespace: Exit\n"));
-
-  //  return Status;
   return EFI_SUCCESS;
 }
 
@@ -195,14 +160,10 @@ NvmeUnitTestRead (
   IN     UINTN                     Blocks
   )
 {
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeRead: Enter\n"));
-
   UT_ASSERT_NOT_NULL (Device);
   Buffer = NULL;
   Lba    = 0;
   Blocks = 0;
-
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeRead: Exit\n"));
 
   return EFI_SUCCESS;
 }
@@ -215,14 +176,10 @@ NvmeUnitTestWrite (
   IN UINTN                     Blocks
   )
 {
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeWrite: Enter\n"));
-
   UT_ASSERT_NOT_NULL (Device);
   Buffer = NULL;
   Lba    = 0;
   Blocks = 0;
-
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeWrite: Exit\n"));
 
   return EFI_SUCCESS;
 }
@@ -243,10 +200,6 @@ NvmeBlockIoReadBlocks (
   UINTN                     BlockSize;
   UINTN                     NumberOfBlocks;
   UINTN                     IoAlign;
-
-  //  EFI_TPL                   OldTpl;
-
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeBlockIoReadBlocks: Enter\n"));
 
   //
   // Check parameters.
@@ -287,9 +240,6 @@ NvmeBlockIoReadBlocks (
   Device = NVME_DEVICE_PRIVATE_DATA_FROM_BLOCK_IO (This);
   Status = NvmeUnitTestRead (Device, Buffer, Lba, NumberOfBlocks);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeBlockIoReadBlocks: Exit\n"));
-
-  // return EFI_SUCCESS;
   return Status;
 }
 
@@ -309,10 +259,6 @@ NvmeBlockIoWriteBlocks (
   UINTN                     BlockSize;
   UINTN                     NumberOfBlocks;
   UINTN                     IoAlign;
-
-  //  EFI_TPL                   OldTpl;
-
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeBlockIoWriteBlocks: Enter\n"));
 
   //
   // Check parameters.
@@ -353,9 +299,6 @@ NvmeBlockIoWriteBlocks (
   Device = NVME_DEVICE_PRIVATE_DATA_FROM_BLOCK_IO (This);
   Status = NvmeUnitTestWrite (Device, Buffer, Lba, NumberOfBlocks);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeBlockIoWriteBlocks: Exit\n"));
-
-  // return EFI_SUCCESS;
   return Status;
 }
 
@@ -376,10 +319,6 @@ NvmeBlockIoReadBlocksEx (
   UINTN                     NumberOfBlocks;
   UINTN                     IoAlign;
   EFI_STATUS                Status;
-
-  // EFI_TPL                   OldTpl;
-
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeBlockIoReadBlocksEx: Enter\n"));
 
   //
   // Check parameters.
@@ -415,8 +354,6 @@ NvmeBlockIoReadBlocksEx (
 
   Device = NVME_DEVICE_PRIVATE_DATA_FROM_BLOCK_IO2 (This);
   Status = NvmeUnitTestRead (Device, Buffer, Lba, NumberOfBlocks);
-
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeBlockIoReadBlocksEx: Exit\n"));
 
   return Status;
 }
@@ -439,8 +376,6 @@ NvmeBlockIoWriteBlocksEx (
   UINTN                     IoAlign;
   EFI_STATUS                Status;
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeBlockIoWriteBlocksEx: Enter\n"));
-
   //
   // Check parameters.
   //
@@ -476,9 +411,6 @@ NvmeBlockIoWriteBlocksEx (
   Device = NVME_DEVICE_PRIVATE_DATA_FROM_BLOCK_IO2 (This);
   Status = NvmeUnitTestWrite (Device, Buffer, Lba, NumberOfBlocks);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeBlockIoWriteBlocksEx: Exit\n"));
-
-  // return EFI_SUCCESS;
   return Status;
 }
 
@@ -488,8 +420,6 @@ NvmeDestroyDeviceInstance (
   NVME_DEVICE_PRIVATE_DATA  **ppDevice
   )
 {
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDestroyDeviceInstance: Enter\n"));
-
   //
   // Free in following order to to avoid dangling pointers:
   //
@@ -506,8 +436,6 @@ NvmeDestroyDeviceInstance (
   FreePool ((*ppDevice));
   *ppDevice = NULL;
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDestroyDeviceInstance: Exit\n"));
-
   return UNIT_TEST_PASSED;
 }
 
@@ -521,23 +449,9 @@ NvmeCreateDeviceInstance (
   NVME_CONTROLLER_PRIVATE_DATA  *Private;
   NVME_DEVICE_PRIVATE_DATA      *Device;
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeCreateDeviceInstance: Enter\n"));
-
   Private = AllocateZeroPool (sizeof (NVME_CONTROLLER_PRIVATE_DATA));
 
-  Private->Signature = NVME_CONTROLLER_PRIVATE_DATA_SIGNATURE;
-  // Private->Passthru.Mode             = &Private->PassThruMode;
-  // Private->Passthru.PassThru         = NvmExpressPassThru;
-  // Private->Passthru.GetNextNamespace = NvmExpressGetNextNamespace;
-  // Private->Passthru.BuildDevicePath  = NvmExpressBuildDevicePath;
-  // Private->Passthru.GetNamespace     = NvmExpressGetNamespace;
-
-  // CopyMem (
-  //  &Private->PassThruMode,
-  //  &gEfiNvmExpressPassThruMode,
-  //  sizeof (EFI_NVM_EXPRESS_PASS_THRU_MODE)
-  //  );
-
+  Private->Signature     = NVME_CONTROLLER_PRIVATE_DATA_SIGNATURE;
   Private->Cid[0]        = 0;
   Private->Cid[1]        = 0;
   Private->Cid[2]        = 0;
@@ -554,19 +468,16 @@ NvmeCreateDeviceInstance (
 
   Private->ControllerData = (NVME_ADMIN_CONTROLLER_DATA *)AllocateZeroPool (sizeof (NVME_ADMIN_CONTROLLER_DATA));
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeCreateDeviceInstance: Allocated and Initialized NVME_CONTROLLER_PRIVATE_DATA\n"));
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeCreateDeviceInstance: Allocated and Initialized NVME_ADMIN_CONTROLLER_DATA\n"));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Allocated and Initialized NVME_CONTROLLER_PRIVATE_DATA\n", __FUNCTION__));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Allocated and Initialized NVME_ADMIN_CONTROLLER_DATA\n", __FUNCTION__));
 
   Private->ControllerData->Nn          = 1; // One namespace
   Private->ControllerData->Sanicap.Bes = 1; // Block Erase Supported
   Private->ControllerData->Sanicap.Ces = 1; // Crypto Erase Supported
   Private->ControllerData->Sanicap.Ows = 1; // Overwrite Supported
 
-  // CopyMem (Sn, Private->ControllerData->Sn, sizeof (Private->ControllerData->Sn));
-  // CopyMem (Mn, Private->ControllerData->Mn, sizeof (Private->ControllerData->Mn));
-
   NamespaceData = AllocateZeroPool (sizeof (NVME_ADMIN_NAMESPACE_DATA));
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeCreateDeviceInstance: Allocated and Initialized NVME_ADMIN_NAMESPACE_DATA\n"));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Allocated and Initialized NVME_ADMIN_NAMESPACE_DATA\n", __FUNCTION__));
 
   Device = (NVME_DEVICE_PRIVATE_DATA *)(AllocateZeroPool (sizeof (NVME_DEVICE_PRIVATE_DATA)));
 
@@ -588,11 +499,7 @@ NvmeCreateDeviceInstance (
   Device->Media.LogicalPartition = FALSE;
   Device->Media.ReadOnly         = FALSE;
   Device->Media.WriteCaching     = FALSE;
-  // Device->Media.IoAlign          = Private->PassThruMode.IoAlign;
-
-  // Lbads                   = NamespaceData->LbaFormat[LbaFmtIdx].Lbads;
-  // Device->Media.BlockSize = (UINT32)1 << Lbads;
-  Device->Media.BlockSize = (UINT32)(1 << 9); // 512 byte sector size
+  Device->Media.BlockSize        = (UINT32)(1 << 9); // 512 byte sector size
 
   Device->Media.LastBlock                     = 0x4000; // NamespaceData=>Nsze
   Device->Media.LogicalBlocksPerPhysicalBlock = 1;
@@ -619,22 +526,10 @@ NvmeCreateDeviceInstance (
   Device->Controller->Passthru.GetNamespace     = NULL;
   Device->Controller->Passthru.GetNextNamespace = NULL;
 
-  // ASSERT (
-  //  sizeof (Device->MediaSanitize.SanitizeCapabilities) ==
-  //  sizeof (Device->Controller->ControllerData->Sanicap)
-  //  );
-
-  // CopyMem (
-  //  &(Device->MediaSanitize.SanitizeCapabilities),
-  //  &(Device->Controller->ControllerData->Sanicap),
-  //  sizeof (Device->MediaSanitize.SanitizeCapabilities)
-  //  );
-
   CopyMem (&Device->NamespaceData, NamespaceData, sizeof (NVME_ADMIN_NAMESPACE_DATA));
   *ppDevice = Device;
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeCreateDeviceInstance: Allocated and Initialized NVME_DEVICE_PRIVATE_DATA\n"));
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeCreateDeviceInstance: Exit\n"));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Allocated and Initialized NVME_DEVICE_PRIVATE_DATA\n", __FUNCTION__));
 
   return UNIT_TEST_PASSED;
 }
@@ -651,14 +546,12 @@ MediaSanitizePurgeUnitTest (
   NVME_DEVICE_PRIVATE_DATA  *NvmeDevice    = NULL;
   EFI_STATUS                Status         = EFI_SUCCESS;
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] MediaSanitizePurgeUnitTest: Starting Unit Test\n"));
-
   UnitTestStatus = NvmeCreateDeviceInstance (&NvmeDevice);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] MediaSanitizePurgeUnitTest: Create Device Instance Status = 0x%x\n", UnitTestStatus));
-  DEBUG ((DEBUG_VERBOSE, "[          ] MediaSanitizePurgeUnitTest: Device = 0x%x\n", NvmeDevice));
-  DEBUG ((DEBUG_VERBOSE, "[          ] MediaSanitizePurgeUnitTest: Device->BlockIo = 0x%x\n", NvmeDevice->BlockIo));
-  DEBUG ((DEBUG_VERBOSE, "[          ] MediaSanitizePurgeUnitTest: Device->Signature = 0x%x\n", NvmeDevice->Signature));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Create Device Instance Status = 0x%x\n", __FUNCTION__, UnitTestStatus));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device = 0x%x\n", __FUNCTION__, NvmeDevice));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device->BlockIo = 0x%x\n", __FUNCTION__, NvmeDevice->BlockIo));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device->Signature = 0x%x\n", __FUNCTION__, NvmeDevice->Signature));
 
   //
   // Case 1: Block Erase
@@ -666,16 +559,6 @@ MediaSanitizePurgeUnitTest (
   PurgeAction      = SANITIZE_ACTION_BLOCK_ERASE;
   OverwritePattern = 0;
 
-  // EFI_STATUS
-  // EFIAPI
-  // NvmExpressMediaPurge (
-  //  IN MEDIA_SANITIZE_PROTOCOL  *This,
-  //  IN UINT32                   MediaId,
-  //  IN UINT32                   PurgeAction,
-  //  IN UINT32                   OverwritePattern
-  //  );
-
- #if 1
   Status = NvmExpressMediaPurge (
              &NvmeDevice->MediaSanitize,
              NvmeDevice->Media.MediaId,
@@ -684,81 +567,8 @@ MediaSanitizePurgeUnitTest (
              );
 
   UT_ASSERT_NOT_EFI_ERROR (Status);
- #endif
-
- #if 0
-  //
-  // Case 2: Crypto Erase
-  //
-  SanitizeAction            = SANITIZE_ACTION_CRYPTO_ERASE;
-  NoDeallocateAfterSanitize = 0;
-  OverwritePattern          = 0;
-
-  Status = NvmExpressSanitize (
-             &NvmeDevice->BlockIo,
-             NamespaceId,
-             SanitizeAction,
-             NoDeallocateAfterSanitize,
-             OverwritePattern
-             );
-
-  UT_ASSERT_NOT_EFI_ERROR (Status);
-
-  //
-  // Case 3: Overwrite
-  //
-  SanitizeAction            = SANITIZE_ACTION_OVERWRITE;
-  NoDeallocateAfterSanitize = 0;
-  OverwritePattern          = 0xDEADBEEF;
-
-  Status = NvmExpressSanitize (
-             &NvmeDevice->BlockIo,
-             NamespaceId,
-             SanitizeAction,
-             NoDeallocateAfterSanitize,
-             OverwritePattern
-             );
-
-  UT_ASSERT_NOT_EFI_ERROR (Status);
-
-  //
-  // Case 4: Block Erase (invalid overwrite pattern)
-  //
-  SanitizeAction            = SANITIZE_ACTION_BLOCK_ERASE;
-  NoDeallocateAfterSanitize = 0;
-  OverwritePattern          = 0xDEADBEEF;
-
-  Status = NvmExpressSanitize (
-             &NvmeDevice->BlockIo,
-             NamespaceId,
-             SanitizeAction,
-             NoDeallocateAfterSanitize,
-             OverwritePattern
-             );
-
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
-
-  //
-  // Case 5: Overwrite (invalid overwrite pattern)
-  //
-  SanitizeAction            = SANITIZE_ACTION_OVERWRITE;
-  NoDeallocateAfterSanitize = 0;
-  OverwritePattern          = 0;
-
-  Status = NvmExpressSanitize (
-             &NvmeDevice->BlockIo,
-             NamespaceId,
-             SanitizeAction,
-             NoDeallocateAfterSanitize,
-             OverwritePattern
-             );
-
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
- #endif
 
   UnitTestStatus = NvmeDestroyDeviceInstance (&NvmeDevice);
-
-  DEBUG ((DEBUG_VERBOSE, "[          ] MediaSanitizePurgeUnitTest: Passed!!!!\n"));
 
   return UNIT_TEST_PASSED;
 }
@@ -777,19 +587,16 @@ NvmeSanitizeUnitTest (
   NVME_DEVICE_PRIVATE_DATA  *NvmeDevice    = NULL;
   EFI_STATUS                Status         = EFI_SUCCESS;
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeSanitizenitTest: Starting Unit Test\n"));
-
   SanitizeAction            = SANITIZE_ACTION_BLOCK_ERASE;
   NoDeallocateAfterSanitize = 0;
   OverwritePattern          = 0;
-  // OverwritePattern          = 0xDEADBEEF;
 
   UnitTestStatus = NvmeCreateDeviceInstance (&NvmeDevice);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeSanitizeUnitTest: Create Device Instance Status = 0x%x\n", UnitTestStatus));
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeSanitizeUnitTest: Device = 0x%x\n", NvmeDevice));
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeSanitizeUnitTest: Device->BlockIo = 0x%x\n", NvmeDevice->BlockIo));
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeSanitizeUnitTest: Device->Signature = 0x%x\n", NvmeDevice->Signature));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Create Device Instance Status = 0x%x\n", __FUNCTION__, UnitTestStatus));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device = 0x%x\n", __FUNCTION__, NvmeDevice));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device->BlockIo = 0x%x\n", __FUNCTION__, NvmeDevice->BlockIo));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device->Signature = 0x%x\n", __FUNCTION__, NvmeDevice->Signature));
 
   //
   // Case 1: Block Erase
@@ -878,7 +685,7 @@ NvmeSanitizeUnitTest (
 
   UnitTestStatus = NvmeDestroyDeviceInstance (&NvmeDevice);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeSanitizeUnitTest: Passed!!!!\n"));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Passed!!!!\n", __FUNCTION__));
 
   return UNIT_TEST_PASSED;
 }
@@ -896,14 +703,12 @@ NvmeFormatNvmUnitTest (
   UINT32                    Flbas;
   NVME_DEVICE_PRIVATE_DATA  *NvmeDevice = NULL;
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeFormatNvmUnitTest: Starting Unit Test\n"));
-
   UnitTestStatus = NvmeCreateDeviceInstance (&NvmeDevice);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeFormatNvmUnitTest: Create Device Instance Status = 0x%x\n", UnitTestStatus));
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeFormatNvmUnitTest: Device = 0x%x\n", NvmeDevice));
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeFormatNvmUnitTest: Device->BlockIo = 0x%x\n", NvmeDevice->BlockIo));
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeFormatNvmUnitTest: Device->Signature = 0x%x\n", NvmeDevice->Signature));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Create Device Instance Status = 0x%x\n", __FUNCTION__, UnitTestStatus));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device = 0x%x\n", __FUNCTION__, NvmeDevice));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device->BlockIo = 0x%x\n", __FUNCTION__, NvmeDevice->BlockIo));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device->Signature = 0x%x\n", __FUNCTION__, NvmeDevice->Signature));
 
   //
   // Case 1: User Data Erase (Flbas = 0)
@@ -963,7 +768,7 @@ NvmeFormatNvmUnitTest (
 
   UnitTestStatus = NvmeDestroyDeviceInstance (&NvmeDevice);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] NvmeFormatNvmUnitTest: Passed!!!!\n"));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Passed!!!!\n", __FUNCTION__));
 
   return UNIT_TEST_PASSED;
 }
@@ -985,7 +790,7 @@ UnitTestBaseline (
   UT_ASSERT_EQUAL (C, 2);
   UT_ASSERT_NOT_EQUAL (0, 1);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] UnitTestBaseline: Passed!!!!\n"));
+  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Passed!!!!\n", __FUNCTION__));
 
   return UNIT_TEST_PASSED;
 }
@@ -1155,32 +960,6 @@ MediaSanitizeUnitTestEntry (
     NULL,                                // (Optional) UNIT_TEST_CLEANUP()
     NULL                                 // (Optional) UNIT_TEST_CONTEXT
     );
-
-  //
-  // Add test case for Media Clear
-  //
-  // AddTestCase (
-  //  NvmeSanitizeTestSuite,         // Test Suite Handle
-  //  "Baseline Sanitize Unit Test", // Test Description
-  //  "Sanitize",                    // Test Class
-  //  NvmeUnitTestBaseline,          // UNIT_TEST_FUNCTION()
-  //  NULL,                          // (Optional) UNIT_TEST_PREREQUISITE()
-  //  NULL,                          // (Optional) UNIT_TEST_CLEANUP()
-  //  NULL                           // (Optional) UNIT_TEST_CONTEXT
-  //  );
-
-  //
-  // Add test case for Media Format
-  //
-  // AddTestCase (
-  //  NvmeSanitizeTestSuite,         // Test Suite Handle
-  //  "Baseline Sanitize Unit Test", // Test Description
-  //  "Sanitize",                    // Test Class
-  //  NvmeUnitTestBaseline,          // UNIT_TEST_FUNCTION()
-  //  NULL,                          // (Optional) UNIT_TEST_PREREQUISITE()
-  //  NULL,                          // (Optional) UNIT_TEST_CLEANUP()
-  //  NULL                           // (Optional) UNIT_TEST_CONTEXT
-  //  );
 
   //
   // Execute the tests.

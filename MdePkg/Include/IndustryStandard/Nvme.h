@@ -708,11 +708,12 @@ typedef struct {
   UINT32    Pi    : 3;        /* Protection Information */
   UINT32    Pil   : 1;        /* Protection Information Location */
   UINT32    Ses   : 3;        /* Secure Erase Settings */
-  #define SES_NO_SECURE_ERASE  0x0
-  #define SES_USER_DATA_ERASE  0x1
-  #define SES_CRYPTO_ERASE     0x2
   UINT32    Rsvd1 : 20;
 } NVME_ADMIN_FORMAT_NVM;
+
+#define SES_NO_SECURE_ERASE  0x0
+#define SES_USER_DATA_ERASE  0x1
+#define SES_CRYPTO_ERASE     0x2
 
 //
 // NvmExpress Admin Security Receive Command
@@ -754,11 +755,6 @@ typedef struct {
   // CDW 10
   //
   UINT32    Sanac : 3;        /* Sanitize Action */
-  #define SANITIZE_ACTION_NO_ACTION          0x0
-  #define SANITIZE_ACTION_EXIT_FAILURE_MODE  0x1
-  #define SANITIZE_ACTION_BLOCK_ERASE        0x2
-  #define SANITIZE_ACTION_OVERWRITE          0x3
-  #define SANITIZE_ACTION_CRYPTO_ERASE       0x4
   UINT32    Ause  : 1;        /* Allow Unrestricted Sanitize Exit */
   UINT32    Owpas : 4;        /* Overwrite Pass Count */
   UINT32    Oipbp : 1;        /* Overwrite Invert Pattern Between Passes */
@@ -769,6 +765,12 @@ typedef struct {
   //
   UINT32    Ovrpat;           /* Overwrite Pattern */
 } NVME_ADMIN_SANITIZE;
+
+#define SANITIZE_ACTION_NO_ACTION          0x0
+#define SANITIZE_ACTION_EXIT_FAILURE_MODE  0x1
+#define SANITIZE_ACTION_BLOCK_ERASE        0x2
+#define SANITIZE_ACTION_OVERWRITE          0x3
+#define SANITIZE_ACTION_CRYPTO_ERASE       0x4
 
 typedef union {
   NVME_ADMIN_IDENTIFY                   Identify;

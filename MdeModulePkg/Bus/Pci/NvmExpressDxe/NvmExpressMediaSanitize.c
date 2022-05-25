@@ -79,9 +79,9 @@ NvmExpressFormatNvm (
   ZeroMem (&FormatNvmCdw10, sizeof (NVME_ADMIN_FORMAT_NVM));
 
   NewNamespaceData = NULL;
-  Lbads            = 0;;
-  NewFlbas         = 0;;
-  LbaFmtIdx        = 0;;
+  Lbads            = 0;
+  NewFlbas         = 0;
+  LbaFmtIdx        = 0;
   StatusField      = 0;
   Sct              = 0;
   Sc               = 0;
@@ -140,7 +140,7 @@ NvmExpressFormatNvm (
       if (NewNamespaceData == NULL) {
         Status = EFI_OUT_OF_RESOURCES;
       } else {
-        DEBUG ((DEBUG_VERBOSE, "NvmExpressFormatNvm: Format NVM SUCCEEDED; updating namesapce data\n"));
+        DEBUG ((DEBUG_VERBOSE, "%a: Format NVM SUCCEEDED; updating namesapce data\n", __FUNCTION__));
 
         Status = NvmeIdentifyNamespace (
                    Device->Controller,
@@ -208,6 +208,10 @@ NvmExpressSanitize (
   EFI_NVM_EXPRESS_COMPLETION                Completion;
   NVME_ADMIN_SANITIZE                       SanitizeCdw10Cdw11;
   EFI_STATUS                                Status;
+  UINT16                                    StatusField;
+  UINT16                                    Sct;
+  UINT16                                    Sc;
+  UINT32                                    FnvmSes;
 
   Device = NVME_DEVICE_PRIVATE_DATA_FROM_BLOCK_IO (This);
 
@@ -215,6 +219,11 @@ NvmExpressSanitize (
   ZeroMem (&Command, sizeof (EFI_NVM_EXPRESS_COMMAND));
   ZeroMem (&Completion, sizeof (EFI_NVM_EXPRESS_COMPLETION));
   ZeroMem (&SanitizeCdw10Cdw11, sizeof (NVME_ADMIN_SANITIZE));
+
+  StatusField = 0;
+  Sct         = 0;
+  Sc          = 0;
+  FnvmSes     = 0;
 
   CommandPacket.NvmeCmd        = &Command;
   CommandPacket.NvmeCompletion = &Completion;
@@ -239,10 +248,6 @@ NvmExpressSanitize (
                                           );
 
   if (EFI_ERROR (Status)) {
-    UINT16  StatusField = 0;
-    UINT16  Sct         = 0;
-    UINT16  Sc          = 0;
-
     StatusField = (UINT16)((CommandPacket.NvmeCompletion->DW3 & NVME_CQE_STATUS_FIELD_MASK) >>
                            NVME_CQE_STATUS_FIELD_OFFSET);
 
@@ -260,8 +265,6 @@ NvmExpressSanitize (
     if ((Sct == NVME_CQE_SCT_GENERIC_CMD_STATUS) &&
         (Sc == NVME_CQE_SC_INVALID_CMD_OPCODE))
     {
-      UINT32  FnvmSes = 0;
-
       switch (SanitizeCdw10Cdw11.Sanac) {
         case SANITIZE_ACTION_BLOCK_ERASE:
           FnvmSes = SES_USER_DATA_ERASE; // User Data Erase (LBAs indeterminate after)
@@ -299,7 +302,7 @@ NvmExpressSanitize (
 
   NOTE: The caller shall send buffer of one sector/LBA size with overwrite data.
   NOTE: This operation is a blocking call.
-  NOTE: This function must be called from TPL aaplication or callback.
+  NOTE: This function must be called from TPL_APPLICATION or TPL_CALLBACK.
 
   Functions are defined to erase and purge data at a block level from mass
   storage devices as well as to manage such devices in the EFI boot services
@@ -391,7 +394,7 @@ NvmExpressMediaClear (
   data on the media infeasible for a given level of effort.
 
   NOTE: This operation is a blocking call.
-  NOTE: This function must be called from TPL aaplication or callback.
+  NOTE: This function must be called from TPL_APPLICATION or TPL_CALLBACK.
 
   @param[in] This             Indicates a pointer to the calling context.
   @param[in] MediaId          The media ID that the write request is for.
@@ -477,7 +480,7 @@ NvmExpressMediaPurge (
   Format Media utilizes native format operations to modify sector/LBA size.
   Secure erase actions are used to define how latent user data is erased.
 
-  NOTE: This function must be called from TPL aaplication or callback.
+  NOTE: This function must be called from TPL_APPLICATION or TPL_CALLBACK.
 
   @param[in] This              Indicates a pointer to the calling context.
   @param[in] MediaId           The media ID that the clear request is for.
