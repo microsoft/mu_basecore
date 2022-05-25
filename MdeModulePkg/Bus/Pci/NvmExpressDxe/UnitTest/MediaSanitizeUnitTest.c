@@ -17,12 +17,12 @@
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/UefiBootManagerLib.h>
 #include <Protocol/NvmExpressPassthru.h>
-#include <Protocol/MediaSanitize.h>
 
 #include "../NvmExpress.h"
 #include "../NvmExpressBlockIo.h"
 #include "../NvmExpressMediaSanitize.h"
 #include "../NvmExpressHci.h"
+#include "../../../../Include/Protocol/MediaSanitize.h"
 
 EFI_STATUS
 EFIAPI
