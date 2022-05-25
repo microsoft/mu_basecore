@@ -1465,6 +1465,11 @@ InitializePageTableLib (
                                 The bit mask of attributes is not supported for
                                 the memory resource range specified by
                                 BaseAddress and Length.
+  @retval EFI_OUT_OF_RESOURCES  Requested attributes cannot be applied due to lack of
+                                system resources.
+  @retval EFI_ACCESS_DENIED         Attributes for the requested memory region are
+                                controlled by system firmware and cannot be updated
+                                via the protocol.
 **/
 EFI_STATUS
 EFIAPI
@@ -1535,6 +1540,11 @@ EfiSetMemoryAttributes (
                                 The bit mask of attributes is not supported for
                                 the memory resource range specified by
                                 BaseAddress and Length.
+  @retval EFI_OUT_OF_RESOURCES  Requested attributes cannot be applied due to lack of
+                                system resources.
+  @retval EFI_ACCESS_DENIED     Attributes for the requested memory region are
+                                controlled by system firmware and cannot be updated
+                                via the protocol.
 **/
 EFI_STATUS
 EFIAPI
