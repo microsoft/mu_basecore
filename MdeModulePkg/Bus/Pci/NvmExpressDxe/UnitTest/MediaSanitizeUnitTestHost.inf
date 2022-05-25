@@ -1,5 +1,5 @@
 ## @file
-# Unit tests of the DxeResetSystemLib instance of the ResetSystemLib class
+# Unit tests for MEDIA_SANITIZE_PROTOCOL and mapping to NVM Express native commands (Sanitize and FormatNVM) 
 #
 # Copyright (C) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -21,10 +21,6 @@
 [Sources]
   MediaSanitizeUnitTest.c
   ../NvmExpressMediaSanitize.c
-# ../NvmExpressPassthru.c
-# ../NvmExpressBlockIo.c
-# ../NvmExpressHci.c
-# ../NvmExpress.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -37,5 +33,4 @@
   DebugLib
   UnitTestLib
   PrintLib
-# UefiRuntimeServicesTableLib
   MemoryAllocationLib

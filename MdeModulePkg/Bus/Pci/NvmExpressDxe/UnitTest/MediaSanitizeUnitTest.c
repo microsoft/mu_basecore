@@ -25,8 +25,6 @@
 #include "../NvmExpressHci.h"
 #include "../../../Include/Protocol/MediaSanitize.h"
 
-// #pragma warning ( disable : 4100 )
-
 EFI_STATUS
 EFIAPI
 NvmeDeviceUnitTestPassthru (
@@ -42,8 +40,9 @@ NvmeDeviceUnitTestPassthru (
   // NVME_DEVICE_PRIVATE_DATA                  *Device;
   EFI_NVM_EXPRESS_COMMAND     *Command;
   EFI_NVM_EXPRESS_COMPLETION  *Completion;
-  EFI_STATUS                  Status;
   NVME_CQ                     *Cqe;
+  NVME_ADMIN_FORMAT_NVM       FormatNvmCdw10;
+  NVME_ADMIN_SANITIZE         SanitizeCdw1011;
 
   DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: Enter\n"));
 
@@ -55,16 +54,16 @@ NvmeDeviceUnitTestPassthru (
 
   Command    = Packet->NvmeCmd;
   Completion = Packet->NvmeCompletion;
-  Status     = EFI_SUCCESS;
   Cqe        = (NVME_CQ *)Completion;
+
+  ZeroMem (&FormatNvmCdw10, sizeof (NVME_ADMIN_FORMAT_NVM));
+  ZeroMem (&SanitizeCdw1011, sizeof (NVME_ADMIN_SANITIZE));
 
   UT_ASSERT_NOT_NULL (Command);
   UT_ASSERT_NOT_NULL (Completion);
 
   switch (Command->Cdw0.Opcode) {
     case NVME_ADMIN_FORMAT_NVM_CMD:
-      NVME_ADMIN_FORMAT_NVM  FormatNvmCdw10;
-
       DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: Opcode = NVME_ADMIN_FORMAT_NVM_CMD\n"));
 
       CopyMem (&FormatNvmCdw10, &Command->Cdw10, sizeof (NVME_ADMIN_FORMAT_NVM));
@@ -95,8 +94,6 @@ NvmeDeviceUnitTestPassthru (
 
       break;
     case NVME_ADMIN_SANITIZE_CMD:
-      NVME_ADMIN_SANITIZE  SanitizeCdw1011;
-
       DEBUG ((DEBUG_VERBOSE, "[          ] NvmeDeviceUnitTestPassthru: Opcode = NVME_ADMIN_SANITIZE_CMD\n"));
 
       CopyMem (&SanitizeCdw1011, &Command->Cdw10, sizeof (NVME_ADMIN_SANITIZE));

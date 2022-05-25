@@ -61,8 +61,15 @@ NvmExpressFormatNvm (
   EFI_NVM_EXPRESS_COMMAND                   Command;
   EFI_NVM_EXPRESS_COMPLETION                Completion;
   NVME_ADMIN_FORMAT_NVM                     FormatNvmCdw10;
-  UINT32                                    LbaFormat = 0;
+  NVME_ADMIN_NAMESPACE_DATA                 *NewNamespaceData;
+  UINT32                                    Lbads;
+  UINT32                                    NewFlbas;
+  UINT32                                    LbaFmtIdx;
   EFI_STATUS                                Status    = EFI_NOT_STARTED;
+  UINT32                                    LbaFormat = 0;
+  UINT16                                    StatusField;
+  UINT16                                    Sct;
+  UINT16                                    Sc;
 
   Device = NVME_DEVICE_PRIVATE_DATA_FROM_BLOCK_IO (This);
 
@@ -70,6 +77,14 @@ NvmExpressFormatNvm (
   ZeroMem (&Command, sizeof (EFI_NVM_EXPRESS_COMMAND));
   ZeroMem (&Completion, sizeof (EFI_NVM_EXPRESS_COMPLETION));
   ZeroMem (&FormatNvmCdw10, sizeof (NVME_ADMIN_FORMAT_NVM));
+
+  NewNamespaceData = NULL;
+  Lbads            = 0;;
+  NewFlbas         = 0;;
+  LbaFmtIdx        = 0;;
+  StatusField      = 0;
+  Sct              = 0;
+  Sc               = 0;
 
   CommandPacket.NvmeCmd        = &Command;
   CommandPacket.NvmeCompletion = &Completion;
@@ -106,10 +121,6 @@ NvmExpressFormatNvm (
                                           );
 
   if (EFI_ERROR (Status)) {
-    UINT16  StatusField = 0;
-    UINT16  Sct         = 0;
-    UINT16  Sc          = 0;
-
     StatusField = (UINT16)((CommandPacket.NvmeCompletion->DW3 & NVME_CQE_STATUS_FIELD_MASK) >>
                            NVME_CQE_STATUS_FIELD_OFFSET);
 
@@ -125,11 +136,6 @@ NvmExpressFormatNvm (
     // cached copies of fields related to block size.
     //
     if (Flbas) {
-      NVME_ADMIN_NAMESPACE_DATA  *NewNamespaceData;
-      UINT32                     Lbads;
-      UINT32                     NewFlbas;
-      UINT32                     LbaFmtIdx;
-
       NewNamespaceData = AllocateZeroPool (sizeof (NVME_ADMIN_NAMESPACE_DATA));
       if (NewNamespaceData == NULL) {
         Status = EFI_OUT_OF_RESOURCES;
@@ -171,13 +177,13 @@ NvmExpressFormatNvm (
   All sanitize operations are processed in the background (i.e., completion of the Sanitize
   command does not indicate completion of the sanitize operation).
 
-  @param[in] This                Indicates a pointer to the calling context (Block IO Protocol)
-  @param[in] NamespaceId         The NVM Express namespace ID  for which a device path node is to be
-                                 allocated and built. Caller must set the NamespaceId to zero if the
-                                 device path node will contain a valid UUID.
-  @param[in] SanitizeAction      Sanitize action
-  @param[in] NoDeallocAfterSani  No deallocate after sanitize option
-  @param[in] OverwritePatter     Pattern to overwrite old user data
+  @param[in] This                   Indicates a pointer to the calling context (Block IO Protocol)
+  @param[in] NamespaceId            The NVM Express namespace ID  for which a device path node is to be
+                                    allocated and built. Caller must set the NamespaceId to zero if the
+                                    device path node will contain a valid UUID.
+  @param[in] SanitizeAction         Sanitize action
+  @param[in] NoDeallocAfterSanitize No deallocate after sanitize option
+  @param[in] OverwritePattern       Pattern to overwrite old user data
 
   @retval EFI_SUCCESS           The media was sanitized successfully on the device.
   @retval EFI_WRITE_PROTECTED   The device can not be sanitized due to write protection.
@@ -299,10 +305,10 @@ NvmExpressSanitize (
   storage devices as well as to manage such devices in the EFI boot services
   environment.
 
-  @param  This             Indicates a pointer to the calling context.
-  @param  MediaId          The media ID that the write request is for.
-  @param  PassCount        The number of passes to write over media.
-  @param  SectorOwBuffer   A pointer to the overwrite buffer.
+  @param[in] This           Indicates a pointer to the calling context.
+  @param[in] MediaId        The media ID that the write request is for.
+  @param[in] PassCount      The number of passes to write over media.
+  @param[in] SectorOwBuffer A pointer to the overwrite buffer.
 
   @retval EFI_SUCCESS           The data was written correctly to the device.
   @retval EFI_WRITE_PROTECTED   The device can not be written to.
@@ -387,10 +393,10 @@ NvmExpressMediaClear (
   NOTE: This operation is a blocking call.
   NOTE: This function must be called from TPL aaplication or callback.
 
-  @param  This             Indicates a pointer to the calling context.
-  @param  MediaId          The media ID that the write request is for.
-  @param  PurgeAction      The purage action (overwrite, crypto erase, block erase).
-  @param  OverwritePattern 32-bit pattern to overwrite on media (for overwrite).
+  @param[in] This             Indicates a pointer to the calling context.
+  @param[in] MediaId          The media ID that the write request is for.
+  @param[in] PurgeAction      The purage action (overwrite, crypto erase, block erase).
+  @param[in] OverwritePattern 32-bit pattern to overwrite on media (for overwrite).
 
   @retval EFI_SUCCESS           The media was purged successfully on the device.
   @retval EFI_WRITE_PROTECTED   The device can not be purged due to write protection.

@@ -41,6 +41,7 @@
   NvmExpressHci.h
   NvmExpressPassthru.c
   NvmExpressMediaSanitize.c
+  NvmExpressMediaSanitize.h
 
 ## MSChange [BEGIN]
 [Guids]

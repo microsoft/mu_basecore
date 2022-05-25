@@ -62,13 +62,13 @@ NvmExpressFormatNvm (
   All sanitize operations are processed in the background (i.e., completion of the Sanitize
   command does not indicate completion of the sanitize operation).
 
-  @param[in] This                Indicates a pointer to the calling context (Block IO Protocol)
-  @param[in] NamespaceId         The NVM Express namespace ID  for which a device path node is to be
-                                 allocated and built. Caller must set the NamespaceId to zero if the
-                                 device path node will contain a valid UUID.
-  @param[in] SanitizeAction      Sanitize action
-  @param[in] NoDeallocAfterSani  No deallocate after sanitize option
-  @param[in] OverwritePatter     Pattern to overwrite old user data
+  @param[in] This                   Indicates a pointer to the calling context (Block IO Protocol)
+  @param[in] NamespaceId            The NVM Express namespace ID  for which a device path node is to be
+                                    allocated and built. Caller must set the NamespaceId to zero if the
+                                    device path node will contain a valid UUID.
+  @param[in] SanitizeAction         Sanitize action
+  @param[in] NoDeallocAfterSanitize No deallocate after sanitize option
+  @param[in] OverwritePattern       Pattern to overwrite old user data
 
   @retval EFI_SUCCESS           The media was sanitized successfully on the device.
   @retval EFI_WRITE_PROTECTED   The device can not be sanitized due to write protection.
@@ -93,16 +93,16 @@ NvmExpressSanitize (
 
   NOTE: The caller shall send buffer of one sector/LBA size with overwrite data.
   NOTE: This operation is a blocking call.
-  NOTE: This function must be called from TPL aaplication or callback.
+  NOTE: This function must be called from TPL_APPLICATION or TPL_CALLBACK.
 
   Functions are defined to erase and purge data at a block level from mass
   storage devices as well as to manage such devices in the EFI boot services
   environment.
 
-  @param  This             Indicates a pointer to the calling context.
-  @param  MediaId          The media ID that the write request is for.
-  @param  PassCount        The number of passes to write over media.
-  @param  SectorOwBuffer   A pointer to the overwrite buffer.
+  @param[in] This           Indicates a pointer to the calling context.
+  @param[in] MediaId        The media ID that the write request is for.
+  @param[in] PassCount      The number of passes to write over media.
+  @param[in] SectorOwBuffer A pointer to the overwrite buffer.
 
   @retval EFI_SUCCESS           The data was written correctly to the device.
   @retval EFI_WRITE_PROTECTED   The device can not be written to.
@@ -132,12 +132,12 @@ NvmExpressMediaClear (
   data on the media infeasible for a given level of effort.
 
   NOTE: This operation is a blocking call.
-  NOTE: This function must be called from TPL aaplication or callback.
+  NOTE: This function must be called from TPL_APPLICATION or TPL_CALLBACK.
 
-  @param  This             Indicates a pointer to the calling context.
-  @param  MediaId          The media ID that the write request is for.
-  @param  PurgeAction      The purage action (overwrite, crypto erase, block erase).
-  @param  OverwritePattern 32-bit pattern to overwrite on media (for overwrite).
+  @param[in] This             Indicates a pointer to the calling context.
+  @param[in] MediaId          The media ID that the write request is for.
+  @param[in] PurgeAction      The purage action (overwrite, crypto erase, block erase).
+  @param[in] OverwritePattern 32-bit pattern to overwrite on media (for overwrite).
 
   @retval EFI_SUCCESS           The media was purged successfully on the device.
   @retval EFI_WRITE_PROTECTED   The device can not be purged due to write protection.
@@ -160,7 +160,7 @@ NvmExpressMediaPurge (
   Format Media utilizes native format operations to modify sector/LBA size.
   Secure erase actions are used to define how latent user data is erased.
 
-  NOTE: This function must be called from TPL aaplication or callback.
+  NOTE: This function must be called from TPL_APPLICATION or TPL_CALLBACK.
 
   @param[in] This              Indicates a pointer to the calling context.
   @param[in] MediaId           The media ID that the clear request is for.
@@ -171,7 +171,7 @@ NvmExpressMediaPurge (
                                  - 010b: Cryptographic Erase
                                  - 011b to 111b: Reserved
 
-  @retval EFI_SUCCESS             The media format request comopleted successfully on the device.
+  @retval EFI_SUCCESS             The media format request completed successfully on the device.
   @retval EFI_WRITE_PROTECTED     The device can't be formatted due to write protection.
   @retval EFI_DEVICE_ERROR        The device reported an error while attempting to perform the format operation.
   @retval EFI_INVALID_PARAMETER   The format request contains parameters that are not valid.
