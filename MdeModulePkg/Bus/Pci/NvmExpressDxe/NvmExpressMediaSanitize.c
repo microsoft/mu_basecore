@@ -126,9 +126,6 @@ NvmExpressFormatNvm (
 
     Sc  = (StatusField & NVME_CQE_STATUS_FIELD_SC_MASK) >> NVME_CQE_STATUS_FIELD_SC_OFFSET;
     Sct = (StatusField & NVME_CQE_STATUS_FIELD_SCT_MASK) >> NVME_CQE_STATUS_FIELD_SCT_OFFSET;
-
-    DEBUG ((DEBUG_ERROR, "ERROR %a - %r\n", __FUNCTION__, Status));
-    DEBUG ((DEBUG_ERROR, "SCT = 0x%x, SC = 0x%x\n", Sct, Sc));
   } else {
     //
     // Update Block IO and Media Protocols only if Flbas parameter was not NULL.
@@ -140,8 +137,6 @@ NvmExpressFormatNvm (
       if (NewNamespaceData == NULL) {
         Status = EFI_OUT_OF_RESOURCES;
       } else {
-        DEBUG ((DEBUG_VERBOSE, "%a: Format NVM SUCCEEDED; updating namesapce data\n", __FUNCTION__));
-
         Status = NvmeIdentifyNamespace (
                    Device->Controller,
                    NamespaceId,
@@ -254,14 +249,12 @@ NvmExpressSanitize (
     Sc  = (StatusField & NVME_CQE_STATUS_FIELD_SC_MASK) >> NVME_CQE_STATUS_FIELD_SC_OFFSET;
     Sct = (StatusField & NVME_CQE_STATUS_FIELD_SCT_MASK) >> NVME_CQE_STATUS_FIELD_SCT_OFFSET;
 
-    DEBUG ((DEBUG_ERROR, "ERROR %a - %r\n", __FUNCTION__, Status));
-    DEBUG ((DEBUG_ERROR, "SCT = 0x%x, SC = 0x%x\n", Sct, Sc));
-
     //
     // Check for an error status code of "Invalid Command Opcode" in case
     // the NVM Express controller does not support Sanitize. If the NVM
     // Exress Controller does not support Sanitize, then send a Format NVM
     // admin command instead to perform the Purge operation.
+    //
     if ((Sct == NVME_CQE_SCT_GENERIC_CMD_STATUS) &&
         (Sc == NVME_CQE_SC_INVALID_CMD_OPCODE))
     {

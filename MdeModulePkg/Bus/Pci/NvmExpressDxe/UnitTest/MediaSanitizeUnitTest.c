@@ -5,24 +5,20 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
-
 #include <Uefi.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
-#include <Library/UefiLib.h>
 #include <Library/DebugLib.h>
 #include <Library/UnitTestLib.h>
-#include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
-#include <Library/UefiRuntimeServicesTableLib.h>
-#include <Library/UefiBootManagerLib.h>
+#include <Protocol/BlockIo.h>
 #include <Protocol/NvmExpressPassthru.h>
+#include <Protocol/MediaSanitize.h>
 
 #include "../NvmExpress.h"
 #include "../NvmExpressBlockIo.h"
 #include "../NvmExpressMediaSanitize.h"
 #include "../NvmExpressHci.h"
-#include "../../../../Include/Protocol/MediaSanitize.h"
 
 EFI_STATUS
 EFIAPI
@@ -54,7 +50,7 @@ NvmeDeviceUnitTestPassthru (
 
   switch (Command->Cdw0.Opcode) {
     case NVME_ADMIN_FORMAT_NVM_CMD:
-      DEBUG ((DEBUG_VERBOSE, "[          ] %a: Opcode = NVME_ADMIN_FORMAT_NVM_CMD\n", __FUNCTION__));
+      UT_LOG_VERBOSE ("%a: Opcode = NVME_ADMIN_FORMAT_NVM_CMD\n", __FUNCTION__);
 
       CopyMem (&FormatNvmCdw10, &Command->Cdw10, sizeof (NVME_ADMIN_FORMAT_NVM));
 
@@ -80,7 +76,7 @@ NvmeDeviceUnitTestPassthru (
 
       break;
     case NVME_ADMIN_SANITIZE_CMD:
-      DEBUG ((DEBUG_VERBOSE, "[          ] %a: Opcode = NVME_ADMIN_SANITIZE_CMD\n", __FUNCTION__));
+      UT_LOG_VERBOSE ("%a: Opcode = NVME_ADMIN_SANITIZE_CMD\n", __FUNCTION__);
 
       CopyMem (&SanitizeCdw1011, &Command->Cdw10, sizeof (NVME_ADMIN_SANITIZE));
 
@@ -108,7 +104,7 @@ NvmeDeviceUnitTestPassthru (
 
       break;
     default:
-      DEBUG ((DEBUG_VERBOSE, "[          ] %a: Invalid Opcode = 0x%x!!!\n", __FUNCTION__, Command->Cdw0.Opcode));
+      UT_LOG_VERBOSE ("%a: Invalid Opcode = 0x%x!!!\n", __FUNCTION__, Command->Cdw0.Opcode);
       break;
   }
 
@@ -468,8 +464,8 @@ NvmeCreateDeviceInstance (
 
   Private->ControllerData = (NVME_ADMIN_CONTROLLER_DATA *)AllocateZeroPool (sizeof (NVME_ADMIN_CONTROLLER_DATA));
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Allocated and Initialized NVME_CONTROLLER_PRIVATE_DATA\n", __FUNCTION__));
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Allocated and Initialized NVME_ADMIN_CONTROLLER_DATA\n", __FUNCTION__));
+  UT_LOG_VERBOSE ("%a: Allocated and Initialized NVME_CONTROLLER_PRIVATE_DATA\n", __FUNCTION__);
+  UT_LOG_VERBOSE ("%a: Allocated and Initialized NVME_ADMIN_CONTROLLER_DATA\n", __FUNCTION__);
 
   Private->ControllerData->Nn          = 1; // One namespace
   Private->ControllerData->Sanicap.Bes = 1; // Block Erase Supported
@@ -477,7 +473,7 @@ NvmeCreateDeviceInstance (
   Private->ControllerData->Sanicap.Ows = 1; // Overwrite Supported
 
   NamespaceData = AllocateZeroPool (sizeof (NVME_ADMIN_NAMESPACE_DATA));
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Allocated and Initialized NVME_ADMIN_NAMESPACE_DATA\n", __FUNCTION__));
+  UT_LOG_VERBOSE ("%a: Allocated and Initialized NVME_ADMIN_NAMESPACE_DATA\n", __FUNCTION__);
 
   Device = (NVME_DEVICE_PRIVATE_DATA *)(AllocateZeroPool (sizeof (NVME_DEVICE_PRIVATE_DATA)));
 
@@ -529,7 +525,7 @@ NvmeCreateDeviceInstance (
   CopyMem (&Device->NamespaceData, NamespaceData, sizeof (NVME_ADMIN_NAMESPACE_DATA));
   *ppDevice = Device;
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Allocated and Initialized NVME_DEVICE_PRIVATE_DATA\n", __FUNCTION__));
+  UT_LOG_VERBOSE ("%a: Allocated and Initialized NVME_DEVICE_PRIVATE_DATA\n", __FUNCTION__);
 
   return UNIT_TEST_PASSED;
 }
@@ -548,10 +544,13 @@ MediaSanitizePurgeUnitTest (
 
   UnitTestStatus = NvmeCreateDeviceInstance (&NvmeDevice);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Create Device Instance Status = 0x%x\n", __FUNCTION__, UnitTestStatus));
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device = 0x%x\n", __FUNCTION__, NvmeDevice));
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device->BlockIo = 0x%x\n", __FUNCTION__, NvmeDevice->BlockIo));
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device->Signature = 0x%x\n", __FUNCTION__, NvmeDevice->Signature));
+  UT_ASSERT_STATUS_EQUAL (UnitTestStatus, UNIT_TEST_PASSED);
+  UT_ASSERT_NOT_NULL (NvmeDevice);
+
+  UT_LOG_VERBOSE ("%a: Create Device Instance Status = 0x%x\n", __FUNCTION__, UnitTestStatus);
+  UT_LOG_VERBOSE ("%a: Device = 0x%x\n", __FUNCTION__, NvmeDevice);
+  UT_LOG_VERBOSE ("%a: Device->BlockIo = 0x%x\n", __FUNCTION__, NvmeDevice->BlockIo);
+  UT_LOG_VERBOSE ("%a: Device->Signature = 0x%x\n", __FUNCTION__, NvmeDevice->Signature);
 
   //
   // Case 1: Block Erase
@@ -593,10 +592,13 @@ NvmeSanitizeUnitTest (
 
   UnitTestStatus = NvmeCreateDeviceInstance (&NvmeDevice);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Create Device Instance Status = 0x%x\n", __FUNCTION__, UnitTestStatus));
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device = 0x%x\n", __FUNCTION__, NvmeDevice));
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device->BlockIo = 0x%x\n", __FUNCTION__, NvmeDevice->BlockIo));
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device->Signature = 0x%x\n", __FUNCTION__, NvmeDevice->Signature));
+  UT_ASSERT_STATUS_EQUAL (UnitTestStatus, UNIT_TEST_PASSED);
+  UT_ASSERT_NOT_NULL (NvmeDevice);
+
+  UT_LOG_VERBOSE ("%a: Create Device Instance Status = 0x%x\n", __FUNCTION__, UnitTestStatus);
+  UT_LOG_VERBOSE ("%a: Device = 0x%x\n", __FUNCTION__, NvmeDevice);
+  UT_LOG_VERBOSE ("%a: Device->BlockIo = 0x%x\n", __FUNCTION__, NvmeDevice->BlockIo);
+  UT_LOG_VERBOSE ("%a: Device->Signature = 0x%x\n", __FUNCTION__, NvmeDevice->Signature);
 
   //
   // Case 1: Block Erase
@@ -685,8 +687,6 @@ NvmeSanitizeUnitTest (
 
   UnitTestStatus = NvmeDestroyDeviceInstance (&NvmeDevice);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Passed!!!!\n", __FUNCTION__));
-
   return UNIT_TEST_PASSED;
 }
 
@@ -696,19 +696,22 @@ NvmeFormatNvmUnitTest (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  EFI_STATUS                Status;
-  UNIT_TEST_STATUS          UnitTestStatus;
   UINT32                    NamespaceId = 0;
   UINT32                    Ses;
   UINT32                    Flbas;
-  NVME_DEVICE_PRIVATE_DATA  *NvmeDevice = NULL;
+  NVME_DEVICE_PRIVATE_DATA  *NvmeDevice    = NULL;
+  UNIT_TEST_STATUS          UnitTestStatus = UNIT_TEST_PASSED;
+  EFI_STATUS                Status         = EFI_SUCCESS;
 
   UnitTestStatus = NvmeCreateDeviceInstance (&NvmeDevice);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Create Device Instance Status = 0x%x\n", __FUNCTION__, UnitTestStatus));
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device = 0x%x\n", __FUNCTION__, NvmeDevice));
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device->BlockIo = 0x%x\n", __FUNCTION__, NvmeDevice->BlockIo));
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Device->Signature = 0x%x\n", __FUNCTION__, NvmeDevice->Signature));
+  UT_ASSERT_STATUS_EQUAL (UnitTestStatus, UNIT_TEST_PASSED);
+  UT_ASSERT_NOT_NULL (NvmeDevice);
+
+  UT_LOG_VERBOSE ("%a: Create Device Instance Status = 0x%x\n", __FUNCTION__, UnitTestStatus);
+  UT_LOG_VERBOSE ("%a: Device = 0x%x\n", __FUNCTION__, NvmeDevice);
+  UT_LOG_VERBOSE ("%a: Device->BlockIo = 0x%x\n", __FUNCTION__, NvmeDevice->BlockIo);
+  UT_LOG_VERBOSE ("%a: Device->Signature = 0x%x\n", __FUNCTION__, NvmeDevice->Signature);
 
   //
   // Case 1: User Data Erase (Flbas = 0)
@@ -768,8 +771,6 @@ NvmeFormatNvmUnitTest (
 
   UnitTestStatus = NvmeDestroyDeviceInstance (&NvmeDevice);
 
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Passed!!!!\n", __FUNCTION__));
-
   return UNIT_TEST_PASSED;
 }
 
@@ -789,8 +790,6 @@ UnitTestBaseline (
 
   UT_ASSERT_EQUAL (C, 2);
   UT_ASSERT_NOT_EQUAL (0, 1);
-
-  DEBUG ((DEBUG_VERBOSE, "[          ] %a: Passed!!!!\n", __FUNCTION__));
 
   return UNIT_TEST_PASSED;
 }
@@ -842,7 +841,7 @@ MediaSanitizeUnitTestEntry (
              );
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Failed in CreateUnitTestSuite for NvmeFormatNvmTestSuite\n"));
+    DEBUG ((DEBUG_ERROR, "Failed in CreateUnitTestSuite for NvmeFormatNvmTestSuite. Status = %r\n", Status));
     Status = EFI_OUT_OF_RESOURCES;
     goto EXIT;
   }
@@ -886,7 +885,7 @@ MediaSanitizeUnitTestEntry (
              );
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Failed in CreateUnitTestSuite for NvmeSanitizTestSuite\n"));
+    DEBUG ((DEBUG_ERROR, "Failed in CreateUnitTestSuite for NvmeSanitizTestSuite. Status = %r\n", Status));
     Status = EFI_OUT_OF_RESOURCES;
     goto EXIT;
   }
@@ -930,7 +929,7 @@ MediaSanitizeUnitTestEntry (
              );
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Failed in CreateUnitTestSuite for MediaSanitizeProtocolTestSuite\n"));
+    DEBUG ((DEBUG_ERROR, "Failed in CreateUnitTestSuite for MediaSanitizeProtocolTestSuite. Status = %r\n", Status));
     Status = EFI_OUT_OF_RESOURCES;
     goto EXIT;
   }
