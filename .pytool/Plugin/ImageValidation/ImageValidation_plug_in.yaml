@@ -1,0 +1,11 @@
+## @file
+# Performs PE/COFF Image Validation Post Build
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+{
+    "scope": "global",
+    "name": "PECOFF Image Validation Plugin",
+    "module": "ImageValidation"
+}
