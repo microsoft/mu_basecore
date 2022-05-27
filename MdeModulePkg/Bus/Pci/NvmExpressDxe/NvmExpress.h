@@ -2,8 +2,9 @@
   NvmExpressDxe driver is used to manage non-volatile memory subsystem which follows
   NVM Express specification.
 
-  (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
-  Copyright (c) 2013 - 2019, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2016 Hewlett Packard Enterprise Development LP
+  Copyright (c) 2013 - 2019, Intel Corporation. All rights reserved.
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -29,6 +30,7 @@
 #include <Protocol/DriverSupportedEfiVersion.h>
 #include <Protocol/StorageSecurityCommand.h>
 #include <Protocol/ResetNotification.h>
+#include <Protocol/MediaSanitize.h>
 
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -51,6 +53,7 @@ typedef struct _NVME_DEVICE_PRIVATE_DATA      NVME_DEVICE_PRIVATE_DATA;
 #include "NvmExpressBlockIo.h"
 #include "NvmExpressDiskInfo.h"
 #include "NvmExpressHci.h"
+#include "NvmExpressMediaSanitize.h"
 
 extern EFI_DRIVER_BINDING_PROTOCOL                gNvmExpressDriverBinding;
 extern EFI_COMPONENT_NAME_PROTOCOL                gNvmExpressComponentName;
@@ -83,6 +86,30 @@ extern EFI_GUID  gNVMeEnableCompleteEventGroupGuid;
 #define NVME_ASYNC_CCQ_SIZE  255
 
 #define NVME_MAX_QUEUES  3                              // Number of queues supported by the driver
+
+//
+// FormatNVM Admin Command LBA Format (LBAF) Mask
+//
+#define NVME_LBA_FORMATNVM_LBAF_MASK  0xF
+
+//
+// NVMe Completion Queue Entry Bits, Fields, Masks
+//
+#define NVME_CQE_STATUS_FIELD_MASK                       0xFFFF0000
+#define NVME_CQE_STATUS_FIELD_OFFSET                     16
+#define NVME_CQE_STATUS_FIELD_SCT_MASK                   0x0E00
+#define NVME_CQE_STATUS_FIELD_SCT_OFFSET                 0x9
+#define NVME_CQE_STATUS_FIELD_SC_MASK                    0x1FE
+#define NVME_CQE_STATUS_FIELD_SC_OFFSET                  0x01
+#define NVME_CQE_SCT_GENERIC_CMD_STATUS                  0x0
+#define NVME_CQE_SCT_CMD_SPECIFIC_STATUS                 0x1
+#define NVME_CQE_SCT_MEDIA_DATA_INTEGRITY_ERRORS_STATUS  0x2
+#define NVME_CQE_SCT_PATH_RELATED_STATUS                 0x3
+#define NVME_CQE_SC_SUCCESSFUL_COMPLETION                0x00
+#define NVME_CQE_SC_INVALID_CMD_OPCODE                   0x01
+#define NVME_CQE_SC_INVALID_FIELD_IN_CMD                 0x02
+
+#define NVME_ALL_NAMESPACES  0xFFFFFFFF
 
 // MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
 
@@ -224,6 +251,8 @@ struct _NVME_DEVICE_PRIVATE_DATA {
   EFI_DISK_INFO_PROTOCOL                   DiskInfo;
   EFI_STORAGE_SECURITY_COMMAND_PROTOCOL    StorageSecurity;
 
+  MEDIA_SANITIZE_PROTOCOL                  MediaSanitize;
+
   LIST_ENTRY                               AsyncQueue;
 
   EFI_LBA                                  NumBlocks;
@@ -263,6 +292,13 @@ struct _NVME_DEVICE_PRIVATE_DATA {
       NVME_DEVICE_PRIVATE_DATA,                          \
       StorageSecurity,                                   \
       NVME_DEVICE_PRIVATE_DATA_SIGNATURE                 \
+      )
+
+#define NVME_DEVICE_PRIVATE_DATA_FROM_MEDIA_SANITIZE(a) \
+  CR (a,                                                \
+      NVME_DEVICE_PRIVATE_DATA,                         \
+      MediaSanitize,                                    \
+      NVME_DEVICE_PRIVATE_DATA_SIGNATURE                \
       )
 
 //
