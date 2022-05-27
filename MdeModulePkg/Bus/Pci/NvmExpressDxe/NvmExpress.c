@@ -2,7 +2,8 @@
   NvmExpressDxe driver is used to manage non-volatile memory subsystem which follows
   NVM Express specification.
 
-  Copyright (c) 2013 - 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2013 - 2017, Intel Corporation. All rights reserved.
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -180,6 +181,26 @@ EnumerateNvmeDevNamespace (
     Device->BlockIo2.WriteBlocksEx = NvmeBlockIoWriteBlocksEx;
     Device->BlockIo2.FlushBlocksEx = NvmeBlockIoFlushBlocksEx;
     InitializeListHead (&Device->AsyncQueue);
+
+    //
+    // Create Media Sanitize Protocol instance
+    //
+    Device->MediaSanitize.Revision    = MEDIA_SANITIZE_PROTOCOL_REVISION;
+    Device->MediaSanitize.Media       = &Device->Media;
+    Device->MediaSanitize.MediaClear  = NvmExpressMediaClear;
+    Device->MediaSanitize.MediaPurge  = NvmExpressMediaPurge;
+    Device->MediaSanitize.MediaFormat = NvmExpressMediaFormat;
+
+    ASSERT (
+      sizeof (Device->MediaSanitize.SanitizeCapabilities) ==
+      sizeof (Device->Controller->ControllerData->Sanicap)
+      );
+
+    CopyMem (
+      &(Device->MediaSanitize.SanitizeCapabilities),
+      &(Device->Controller->ControllerData->Sanicap),
+      sizeof (Device->MediaSanitize.SanitizeCapabilities)
+      );
 
     //
     // Create StorageSecurityProtocol Instance
