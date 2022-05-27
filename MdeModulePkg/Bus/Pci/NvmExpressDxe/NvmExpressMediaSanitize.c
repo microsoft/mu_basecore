@@ -126,6 +126,8 @@ NvmExpressFormatNvm (
 
     Sc  = (StatusField & NVME_CQE_STATUS_FIELD_SC_MASK) >> NVME_CQE_STATUS_FIELD_SC_OFFSET;
     Sct = (StatusField & NVME_CQE_STATUS_FIELD_SCT_MASK) >> NVME_CQE_STATUS_FIELD_SCT_OFFSET;
+
+    DEBUG ((DEBUG_ERROR, "%a: NVMe FormatNVM admin command failed SCT = 0x%x, SC = 0x%x\n", __FUNCTION__, Sct, Sc));
   } else {
     //
     // Update Block IO and Media Protocols only if Flbas parameter was not NULL.
@@ -248,6 +250,8 @@ NvmExpressSanitize (
 
     Sc  = (StatusField & NVME_CQE_STATUS_FIELD_SC_MASK) >> NVME_CQE_STATUS_FIELD_SC_OFFSET;
     Sct = (StatusField & NVME_CQE_STATUS_FIELD_SCT_MASK) >> NVME_CQE_STATUS_FIELD_SCT_OFFSET;
+
+    DEBUG ((DEBUG_ERROR, "%a: NVMe Sanitize admin command failed SCT = 0x%x, SC = 0x%x\n", __FUNCTION__, Sct, Sc));
 
     //
     // Check for an error status code of "Invalid Command Opcode" in case
