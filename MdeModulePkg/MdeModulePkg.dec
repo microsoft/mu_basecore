@@ -659,6 +659,10 @@
   # Include/Guid/MemoryProtectionSpecialRegionProtocol.h
   gMemoryProtectionSpecialRegionProtocolGuid = { 0x47BF7F78, 0x0B53, 0x487B, {0xA2, 0xFE, 0x42, 0xE7, 0x09, 0x87, 0x54, 0x5C } }
 
+  ## This protocol defines the Media Clear and Sanitize operations defined by NIST
+  # Include/Protocol/MediaSanitize.h
+  gMediaSanitizeProtocolGuid = { 0x0d799a99, 0x25af, 0x429e, {0x92, 0x72, 0xd0, 0xb2, 0x7d, 0x6d, 0x5f, 0x14 } }
+
   ## This protocol defines the generic memory test interfaces in Dxe phase.
   # Include/Protocol/GenericMemoryTest.h
   gEfiGenericMemTestProtocolGuid = { 0x309DE7F1, 0x7F5E, 0x4ACE, { 0xB4, 0x9C, 0x53, 0x1B, 0xE5, 0xAA, 0x95, 0xEF }}
