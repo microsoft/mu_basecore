@@ -31,5 +31,5 @@ jobs:
     vm_image: 'ubuntu-latest'
     arch_list: "IA32,X64,ARM,AARCH64"
     build_args: "CODE_COVERAGE=TRUE USE_LOCAL_GCC=TRUE" # MU_CHANGE
-    container: 'docker.io/cfernald/mu_ubuntu_ci:latest' # MU_CHANGE
+    container: 'ghcr.io/tianocore/containers/fedora-36-build:abe8988' # MU_CHANGE
     override_python: false # MU_CHANGE
