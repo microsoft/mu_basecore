@@ -79,7 +79,7 @@
 ##MSCHANGE Begin
   DxeMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/DxeMemoryProtectionHobLibNull.inf
   MmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/MmMemoryProtectionHobLibNull.inf
-
+  DeviceStateLib|MdeModulePkg/Library/DeviceStateLib/DeviceStateLib.inf
 [LibraryClasses.X64, LibraryClasses.IA32]
 !if $(TARGET) == DEBUG
 !if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019

@@ -10,6 +10,8 @@
 #include "CpuMp.h"
 #include "CpuPageTable.h"
 
+#include <Library/DeviceStateLib.h> // MU_CHANGE
+
 //
 // Global Variables
 //
@@ -1263,6 +1265,13 @@ InitializeCpu (
   ASSERT_EFI_ERROR (Status);
 
   InitializeMpSupport ();
+
+  // MU_CHANGE START
+  if ((GetDeviceState () & DEVICE_STATE_UNIT_TEST_MODE) != 0) {
+    InstallMemoryProtectionNonstopModeProtocol ();
+  }
+
+  // MU_CHANGE END
 
   return Status;
 }
