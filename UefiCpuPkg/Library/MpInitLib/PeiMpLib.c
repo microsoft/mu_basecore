@@ -381,11 +381,18 @@ CheckAndUpdateApsStatus (
       continue;
     }
 
-    Status = CheckThisAP (ProcessorNumber);
+    //
+    // Block until all CPUs are ready. This ensures that we don't attempt to dispatch
+    // tasks on CPUs that are executing a non-blocking task. NOTE: this implies
+    // that only one non-blocking AP dispatch may be outstanding at a time.
+    //
+    do {
+      Status = CheckThisAP (ProcessorNumber);
 
-    if (Status != EFI_NOT_READY) {
-      CpuMpData->CpuData[ProcessorNumber].WaitEvent = NULL;
-    }
+      if (Status != EFI_NOT_READY) {
+        CpuMpData->CpuData[ProcessorNumber].WaitEvent = NULL;
+      }
+    } while (Status == EFI_NOT_READY);
   }
 
   // MU_CHANGE - End Add basic support for non-blocking AP dispatch in PEI.
