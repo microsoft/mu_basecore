@@ -290,10 +290,14 @@ PeiStartupThisAP (
   The execution is in non-blocking mode. The BSP continues executing immediately
   after starting the AP.
 
-  Caller is responsible for ensuring that the scheduled AP task is complete (via
-  caller-specific logic) before dispatching further tasks on the AP using this
-  or other routines in the API.
+  If an attempt is made to dispatch a blocking or non-blcoking task on the AP
+  while it is running a non-blocking task, that dispatch will block until the
+  AP completes the current task.
 
+  No timeout is specified - failure of the AP to complete the task is fatal. If
+  the AP crashes or fails to return from Procedure, then the next attempt to
+  dispatch blocking or non-blocking tasks on the AP will hang waiting on the AP.
+  No attempt is made to reset or recover the AP in this state.
 
   @param[in] PeiServices          An indirect pointer to the PEI Services Table
                                   published by the PEI Foundation.
