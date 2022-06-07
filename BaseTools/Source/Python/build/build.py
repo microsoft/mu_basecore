@@ -279,18 +279,18 @@ def LaunchCommand(Command, WorkingDir,ModuleAuto = None):
         f.close()
 
         EdkLogger.info("Built with Respfile ... %s", WorkingDir)
-        
+
         for i in range(0, len(RespContent), 2):
             cmd = RespContent[i]
             cmd = cmd[cmd.find("OUTPUT")+7 : cmd.find("_resp.txt")]
             flags = RespContent[i+1]
             EdkLogger.info("  \"%s_FLAGS\" : %s" % (cmd.upper(), flags))
 
-        if Proc.returncode != 0:
-            Command = " ".join(Command)
-            EdkLogger.error("build", COMMAND_FAILURE, ExtraData="%s [%s]" % (Command, WorkingDir)) 
+    if Proc.returncode != 0:
+        Command = " ".join(Command)
+        EdkLogger.error("build", COMMAND_FAILURE, ExtraData="%s [%s]" % (Command, WorkingDir))
     # MU_CHANGE end
-    
+
     if ModuleAuto:
         iau = IncludesAutoGen(WorkingDir,ModuleAuto)
         if ModuleAuto.ToolChainFamily == TAB_COMPILER_MSFT:
