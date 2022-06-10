@@ -277,6 +277,11 @@ VcDebugRegs:
     push    rax
 
 DrFinish:
+;; Clear the CR0.TS bit prior to FX instructions
+    mov rdi, cr0
+    btr edi, 3
+    mov cr0, rdi
+
 ;; FX_SAVE_STATE_X64 FxSaveState;
     sub rsp, 512
     mov rdi, rsp
