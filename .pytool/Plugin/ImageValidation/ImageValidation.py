@@ -44,6 +44,7 @@ class ImageValidation(IUefiBuildPlugin):
 
         # Load Configuration Data
         config_path = thebuilder.env.GetValue("PE_VALIDATION_PATH", None)
+        tool_chain_tag = thebuilder.env.GetValue("TOOL_CHAIN_TAG")
         if config_path is None:
             logging.info(
                 "PE_VALIDATION_PATH not set, PE Image Validation Skipped")
@@ -68,7 +69,7 @@ class ImageValidation(IUefiBuildPlugin):
         dsc_parser = DscParser()
 
         ws = thebuilder.ws
-        pp = thebuilder.pp.split(";")
+        pp = thebuilder.pp.split(os.pathsep)
         edk2 = Edk2Path(ws, pp)
 
         ActiveDsc = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
@@ -118,25 +119,39 @@ class ImageValidation(IUefiBuildPlugin):
         for arch in thebuilder.env.GetValue("TARGET_ARCH").split():
             efi_path_list = self._walk_directory_for_extension(
                 ['.efi'], f'{thebuilder.env.GetValue("BUILD_OUTPUT_BASE")}/{arch}')
+            
             for efi_path in efi_path_list:
-                if efi_path.__contains__("OUTPUT"):
-                    profile = self._get_profile_from_makefile(
-                        f'{Path(efi_path).parent.parent}/Makefile')
-                else:
-                    profile = "DEFAULT"
                 if os.path.basename(efi_path) in self.ignore_list:
                     continue
-                # Building DEBUG and efi is in debug folder
-                if efi_path.__contains__("DEBUG_") and efi_path.count("DEBUG") > 1:
-                    continue
-                # Not Building DEBUG, but efi is in debug folder
-                if not efi_path.__contains__("DEBUG_") and efi_path.count("DEBUG") > 0:
-                    continue
-                logging.info(
-                    f'Performing Image Verification ... {os.path.basename(efi_path)}')
-                if self._validate_image(efi_path, profile) == Result.FAIL:
-                    result = Result.FAIL
-                count += 1
+                
+                # Perform Image Verification on any output efi's
+                # Grab profile from makefile
+                if efi_path.__contains__("OUTPUT"):
+                    try:
+                        if tool_chain_tag.__contains__("VS"):
+                            profile = self._get_profile_from_makefile(
+                                f'{Path(efi_path).parent.parent}/Makefile')
+                    
+                        elif tool_chain_tag.__contains__("GCC"):
+                            profile = self._get_profile_from_makefile(
+                                f'{Path(efi_path).parent.parent}/GNUmakefile')
+                        
+                        elif tool_chain_tag.__contains__("CLANG"):
+                            profile = self._get_profile_from_makefile(
+                                f'{Path(efi_path).parent.parent}/GNUmakefile')
+                        else:
+                            logging.warn("Unexpected TOOL_CHAIN_TAG... Cannot parse makefile. Using DEFAULT profile.")
+                            profile = "DEFAULT"
+                    except:
+                        logging.warn(f'Failed to parse makefile at [{Path(efi_path).parent.parent}/GNUmakefile]')
+                        logging.warn(f'Using DEFAULT profile')
+                        profile = "DEFAULT"
+
+                    logging.info(
+                        f'Performing Image Verification ... {os.path.basename(efi_path)}')
+                    if self._validate_image(efi_path, profile) == Result.FAIL:
+                        result = Result.FAIL
+                    count += 1                
         # End Built Time Compiled Image Verification
 
         endtime = datetime.now()
@@ -255,7 +270,6 @@ class ImageValidation(IUefiBuildPlugin):
                                     ignoreIt = True
                                     break
                         if not ignoreIt:
-                            logging.debug(os.path.join(Root, File))
                             returnlist.append(os.path.join(Root, File))
 
         return returnlist
