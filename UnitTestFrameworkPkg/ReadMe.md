@@ -2,11 +2,66 @@
 
 ## About
 
-This package adds a unit test framework capable of building tests for multiple contexts including
+This package provides unit test frameworks capable of building tests for multiple contexts including
 the UEFI shell environment and host-based environments. It allows for unit test development to focus
-on the tests and leave error logging, result formatting, context persistance, and test running to the framework.
+on the tests and leave error logging, result formatting, context persistence, and test running to the framework.
 The unit test framework works well for low level unit tests as well as system level tests and
 fits easily in automation frameworks.
+
+### Framework
+
+The first unit test framework is called **Framework** and is implemented as a set of EDK II libraries.
+The Framework supports both host-based unit tests and target-based unit tests that share the same
+source style, macros, and APIs. In some scenarios, the same unit test case sources can be built
+for both host-based unit test execution and target-based unit test execution. Host-based unit tests
+that require mocked interfaces can use the mocking infrastructure provided by
+[cmocka](https://api.cmocka.org/) that is included in the UnitTestFrameworkPkg as a submodule.
+
+### GoogleTest
+
+The second unit test framework supported by the UnitTestFrameworkPkg is
+[GoogleTest](http://google.github.io/googletest/) that can be used to implement host-based unit tests.
+Use of GoogleTest for target-based unit tests of EDK II components is not supported. If a
+host-based unit test requires mocked interfaces, then the Framework with cmocka support should be
+used instead. Enabling support for mocked interfaces with GoogleTest is being actively investigated.
+[GoogleTest on GitHub](https://github.com/google/googletest) is included in the UnitTestFrameworkPkg
+as a submodule.
+
+GoogleTest requires less overhead to register test suites and test cases compared to the Framework.
+There are also a number of tools that layer on top of GoogleTest that improve developer productivity.
+One example is the VS Code extension
+[C++ TestMate](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
+that may be used to implement, run, and debug unit tests implemented using GoogleTest.
+
+If a component can be tested with host-based unit tests without support for mocked interfaces,
+then GoogleTest is recommended. The MdePkg contains a port of the BaseSafeIntLib unit tests in
+the GoogleTest style so the differences between GoogleTest and Framework unit tests can be reviewed.
+The paths to the BaseSafeIntLib unit tests are:
+
+* MdePkg\Test\UnitTest\Library\BaseSafeIntLib
+* MdePkg\Test\GoogleTest\Library\BaseSafeIntLib
+
+## Framework and GoogleTest Feature Comparison
+
+| Feature                     | Framework | GoogleTest |
+|:----------------------------|:---------:|:----------:|
+| Host Based Unit Tests       |    YES    |    YES     |
+| Target Based Unit Tests     |    YES    |     NO     |
+| Unit Test Source Language   |     C     |    C++     |
+| Register Test Suite         |    YES    |    Auto    |
+| Register Test Case          |    YES    |    Auto    |
+| Death/Expected Assert Tests |    YES    |    YES     |
+| Setup/Teardown Hooks        |    YES    |    YES     |
+| Value-Parameterized Tests   |    NO     |    YES     |
+| Typed Tests                 |    NO     |    YES     |
+| Type-Parameterized Tests    |    NO     |    YES     |
+| Timeout Support             |    NO     |    YES     |
+| Mocking Support             |   Cmocka  |     NO     |
+| JUNIT XML Reports           |    YES    |    YES     |
+| Execute subset of tests     |    NO     |    YES     |
+| VS Code Extensions          |    NO     |    YES     |
+
+## Framework Libraries
 
 ### UnitTestLib
 
@@ -31,10 +86,10 @@ in supporting a system reboot in the middle of a test run.
 
 Library provides function to run at the end of a framework test run and handles formatting the report.
 This is a common customization point and allows the unit test framework to fit its output reports into
-other test infrastructure. In this package a simple library instances has been supplied to output test
+other test infrastructure. In this package simple library instances have been supplied to output test
 results to the console as plain text.
 
-## Samples
+## Framework Samples
 
 There is a sample unit test provided as both an example of how to write a unit test and leverage
 many of the features of the framework. This sample can be found in the `Test/UnitTest/Sample/SampleUnitTest`
@@ -43,7 +98,7 @@ directory.
 The sample is provided in PEI, SMM, DXE, and UEFI App flavors. It also has a flavor for the HOST_APPLICATION
 build type, which can be run on a host system without needing a target.
 
-## Usage
+## Framework Usage
 
 This section is built a lot like a "Getting Started". We'll go through some of the components that are needed
 when constructing a unit test and some of the decisions that are made by the test writer. We'll also describe
@@ -51,7 +106,7 @@ how to check for expected conditions in test cases and a bit of the logging char
 
 Most of these examples will refer to the SampleUnitTestUefiShell app found in this package.
 
-### Requirements - INF
+### Framework Requirements - INF
 
 In our INF file, we'll need to bring in the `UnitTestLib` library. Conveniently, the interface
 header for the `UnitTestLib` is located in `MdePkg`, so you shouldn't need to depend on any other
@@ -80,7 +135,7 @@ to make sure that the module `BASE_NAME` contains the word `Test`...
   BASE_NAME      = SampleUnitTestUefiShell
 ```
 
-### Requirements - Code
+### Framework Requirements - Code
 
 Not to state the obvious, but let's make sure we have the following include before getting too far along...
 
@@ -90,9 +145,9 @@ Not to state the obvious, but let's make sure we have the following include befo
 
 Now that we've got that squared away, let's look at our 'Main()'' routine (or DriverEntryPoint() or whatever).
 
-### Configuring the Framework
+### Framework Configuration
 
-Everything in the UnitTestPkg framework is built around an object called -- conveniently -- the Framework.
+Everything in the UnitTestFrameworkPkg framework is built around an object called -- conveniently -- the Framework.
 This Framework object will contain all the information about our test, the test suites and test cases associated
 with it, the current location within the test pass, and any results that have been recorded so far.
 
@@ -102,7 +157,7 @@ The long name and version strings are just for user presentation and relatively 
 will be used to name any cache files and/or test results, so should be a name that makes sense in that context.
 These strings are copied internally to the Framework, so using stack-allocated or literal strings is fine.
 
-In the 'SampleUnitTestUefiShell' app, the module name is used as the short name, so the init looks like this.
+In the 'SampleUnitTestUefiShell' app, the module name is used as the short name, so the initialization looks like this.
 
 ```c
 DEBUG(( DEBUG_INFO, "%a v%a\n", UNIT_TEST_APP_NAME, UNIT_TEST_APP_VERSION ));
@@ -144,11 +199,11 @@ will be used when adding test cases.
 Great! Now we've finished some of the cruft, red tape, and busy work. We're ready to add some tests. Adding a test
 to a test suite is accomplished with the -- you guessed it -- `AddTestCase` function. It takes in the suite handle;
 a `CHAR8` string for the description and class name; a function pointer for the test case itself; additional, optional
-function pointers for prerequisite check and cleanup routines; and and optional pointer to a context structure.
+function pointers for prerequisite check and cleanup routines; and an optional pointer to a context structure.
 
 Okay, that's a lot. Let's take it one piece at a time. The description and class name strings are very similar in
 usage to the suite title and package name strings in the test suites. The former is for user presentation and the
-latter is for xUnit parsing. The test case function pointer is what is actually executed as the "test" and the
+latter is for xUnit parsing. The test case function pointer is what is executed as the "test" and the
 prototype should be `UNIT_TEST_FUNCTION`. The last three parameters require a little bit more explaining.
 
 The prerequisite check function has a prototype of `UNIT_TEST_PREREQUISITE` and -- if provided -- will be called
@@ -180,7 +235,7 @@ Once all the suites and cases are added, it's time to run the Framework.
 Status = RunAllTestSuites( Framework );
 ```
 
-### A Simple Test Case
+### Framework - A Simple Test Case
 
 We'll take a look at the below test case from 'SampleUnitTestApp'...
 
@@ -217,9 +272,9 @@ _Note_ that this early return can have implications for memory leakage.
 
 At the end, if all test criteria pass, you should return `UNIT_TEST_PASSED`.
 
-### More Complex Cases
+### Framework - More Complex Cases
 
-To write more advanced tests, first take a look at all the Assertion and Logging macros provided in the framework.
+To write more advanced tests, first look at all the Assertion and Logging macros provided in the framework.
 
 Beyond that, if you're writing host-based tests and want to take a dependency on the UnitTestFrameworkPkg, you can
 leverage the `cmocka.h` interface and write tests with all the features of the Cmocka framework.
@@ -362,11 +417,11 @@ stuart_ci_build -c .pytool/CISettings.py TOOL_CHAIN_TAG=VS2017 -p MdePkg -t NOOP
 
 ### Hooking BaseLib
 
-Most unit test mocking can be performed by the functions provided in the UnitTestFramework libraries, but since
+Most unit test mocking can be performed by the functions provided in the UnitTestFrameworkPkg libraries, but since
 BaseLib is consumed by the Framework itself, it requires different techniques to substitute parts of the
 functionality.
 
-To solve some of this, the UnitTestFramework consumes a special implementation of BaseLib for host-based tests.
+To solve some of this, the UnitTestFrameworkPkg consumes a special implementation of BaseLib for host-based tests.
 This implementation contains a [hook table](https://github.com/tianocore/edk2/blob/e188ecc8b4aed8fdd26b731d43883861f5e5e7b4/MdePkg/Test/UnitTest/Include/Library/UnitTestHostBaseLib.h#L507)
 that can be used to substitute test functionality for any of the BaseLib functions. By default, this implementation
 will use the underlying BaseLib implementation, so the unit test writer only has to supply minimal code to test a
@@ -374,7 +429,7 @@ particular case.
 
 ### Debugging the Framework Itself
 
-While most of the tests that are produced by the UnitTestFramework are easy to step through in a debugger, the Framework
+While most of the tests that are produced by the UnitTestFrameworkPkg are easy to step through in a debugger, the Framework
 itself consumes code (mostly Cmocka) that sets its own build flags. These flags cause parts of the Framework to not
 export symbols and captures exceptions, and as such are harder to debug. We have provided a Stuart parameter to force
 symbolic debugging to be enabled.
@@ -388,15 +443,17 @@ stuart_ci_build -c .pytool/CISettings.py TOOL_CHAIN_TAG=VS2019 -p MdePkg -t NOOP
 ## Building and Running Host-Based Tests
 
 The EDK2 CI infrastructure provides a convenient way to run all host-based tests -- in the the entire tree or just
-selected packages -- and aggregate all the the reports, including highlighting any failures. This functionality is
-provided through the Stuart build system (published by EDK2-PyTools) and the `NOOPT` build target.
+selected packages -- and aggregate all the reports, including highlighting any failures. This functionality is
+provided through the Stuart build system (published by EDK2-PyTools) and the `NOOPT` build target. The sections that
+follow use Framework examples. Unit tests based on GoogleTest are built and run the same way. The text output and
+JUNIT XML output format have small differences.
 
 ### Building Locally
 
 First, to make sure you're working with the latest PyTools, run the following command:
 
 ```bash
-# Would recommend to run this in a Python venv, but that's out of scope for this doc.
+# Would recommend running this in a Python venv, but that's out of scope for this doc.
 python -m pip install --upgrade -r ./pip-requirements.txt
 ```
 
@@ -484,7 +541,7 @@ RUNNING TEST SUITE: Int Safe Conversions Test Suite
 ```
 
 You can also, if you are so inclined, read the output from the exact instance of the test that was run during
-`stuart_ci_build`. The ouput file can be found on a path that looks like:
+`stuart_ci_build`. The output file can be found on a path that looks like:
 
 `Build/<Package>/HostTest/<Arch>/<TestName>.<TestSuiteName>.<Arch>.result.xml`
 
@@ -512,8 +569,9 @@ c:\_uefi\MdePkg\Test\UnitTest\Library\BaseSafeIntLib\TestBaseSafeIntLib.c:35: er
 
 ### XML Reporting Mode
 
-Since these applications are built using the CMocka framework, they can also use the following env variables to output
-in a structured XML rather than text:
+Unit test applications using Framework are built using Cmocka that requires the
+following environment variables to be set to generate structured XML output
+rather than text:
 
 ```inf
 CMOCKA_MESSAGE_OUTPUT=xml
@@ -552,10 +610,10 @@ in Visual Studio at this time.
 
 ### Important Note
 
-This works on both Windows and Linux, but is currently limited to x64 architectures. Working on getting others, but we
+This works on both Windows and Linux but is currently limited to x64 architectures. Working on getting others, but we
 also welcome contributions.
 
-## Known Limitations
+## Framework Known Limitations
 
 ### PEI, DXE, SMM
 
@@ -569,7 +627,7 @@ PEI, DXE, and SMM is forthcoming, but should be considered beta/staging for now.
 The host-based test framework is powered internally by the Cmocka framework. As such, it has abilities
 that the target-based tests don't (yet). It would be awesome if this meant that it was a super set of
 the target-based tests, and it worked just like the target-based tests but with more features. Unfortunately,
-this is not the case. While care has been taken to keep them as close a possible, there are a few known
+this is not the case. While care has been taken to keep them as close as possible, there are a few known
 inconsistencies that we're still ironing out. For example, the logging messages in the target-based tests
 are cached internally and associated with the running test case. They can be saved later as part of the
 reporting lib. This isn't currently possible with host-based. Only the assertion failures are logged.
@@ -592,6 +650,9 @@ Non-Host-Based (PEI/DXE/SMM/UefiShell) Tests for a Functionality or Feature   | 
   ComponentY/
     ComponentY.inf
     ComponentY.c
+    GoogleTest/
+      ComponentYHostGoogleTest.inf    # Host-Based Test for Driver Module
+      ComponentYGoogleTest.cpp
     UnitTest/
       ComponentYUnitTestHost.inf      # Host-Based Test for Driver Module
       ComponentYUnitTest.c
@@ -606,11 +667,23 @@ Non-Host-Based (PEI/DXE/SMM/UefiShell) Tests for a Functionality or Feature   | 
     SpecificLibDxe/
       SpecificLibDxe.c
       SpecificLibDxe.inf
+      GoogleTest/                    # Host-Based Test for Specific Library Implementation
+        SpecificLibDxeHostGoogleTest.cpp
+        SpecificLibDxeHostGoogleTest.inf
       UnitTest/                      # Host-Based Test for Specific Library Implementation
         SpecificLibDxeUnitTest.c
         SpecificLibDxeUnitTestHost.inf
   Test/
     <Package>HostTest.dsc             # Host-Based Test Apps
+    GoogleTest/
+      InterfaceX
+        InterfaceXHostGoogleTest.inf  # Host-Based App (should be in Test/<Package>HostTest.dsc)
+        InterfaceXUnitTest.cpp        # Test Logic
+
+      GeneralPurposeLib/              # Host-Based Test for any implementation of GeneralPurposeLib
+        GeneralPurposeLibTest.cpp
+        GeneralPurposeLibHostUnitTest.inf
+
     UnitTest/
       InterfaceX
         InterfaceXUnitTestHost.inf    # Host-Based App (should be in Test/<Package>HostTest.dsc)
