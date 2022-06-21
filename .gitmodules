@@ -14,3 +14,6 @@
 	path = BaseTools/Source/C/BrotliCompress/brotli
 	url = https://github.com/google/brotli
 	ignore = untracked
+[submodule "UnitTestFrameworkPkg/Library/GoogleTestLib/googletest"]
+	path = UnitTestFrameworkPkg/Library/GoogleTestLib/googletest
+	url = https://github.com/google/googletest.git
