@@ -62,6 +62,61 @@ The paths to the BaseSafeIntLib unit tests are:
 
 ## Framework Libraries
 
+### Framework
+
+The first unit test framework is called **Framework** and is implemented as a set of EDK II libraries.
+The Framework supports both host-based unit tests and target-based unit tests that share the same
+source style, macros, and APIs. In some scenarios, the same unit test case sources can be built
+for both host-based unit test execution and target-based unit test execution. Host-based unit tests
+that require mocked interfaces can use the mocking infrastructure provided by
+[cmocka](https://api.cmocka.org/) that is included in the UnitTestFrameworkPkg as a submodule.
+
+### GoogleTest
+
+The second unit test framework supported by the UnitTestFrameworkPkg is
+[GoogleTest](http://google.github.io/googletest/) that can be used to implement host-based unit tests.
+Use of GoogleTest for target-based unit tests of EDK II components is not supported. If a
+host-based unit test requires mocked interfaces, then the Framework with cmocka support should be
+used instead. Enabling support for mocked interfaces with GoogleTest is being actively investigated.
+[GoogleTest on GitHub](https://github.com/google/googletest) is included in the UnitTestFrameworkPkg
+as a submodule.
+
+GoogleTest requires less overhead to register test suites and test cases compared to the Framework.
+There are also a number of tools that layer on top of GoogleTest that improve developer productivity.
+One example is the VS Code extension
+[C++ TestMate](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
+that may be used to implement, run, and debug unit tests implemented using GoogleTest.
+
+If a component can be tested with host-based unit tests without support for mocked interfaces,
+then GoogleTest is recommended. The MdePkg contains a port of the BaseSafeIntLib unit tests in
+the GoogleTest style so the differences between GoogleTest and Framework unit tests can be reviewed.
+The paths to the BaseSafeIntLib unit tests are:
+
+* MdePkg\Test\UnitTest\Library\BaseSafeIntLib
+* MdePkg\Test\GoogleTest\Library\BaseSafeIntLib
+
+## Framework and GoogleTest Feature Comparison
+
+| Feature                     | Framework | GoogleTest |
+|:----------------------------|:---------:|:----------:|
+| Host Based Unit Tests       |    YES    |    YES     |
+| Target Based Unit Tests     |    YES    |     NO     |
+| Unit Test Source Language   |     C     |    C++     |
+| Register Test Suite         |    YES    |    Auto    |
+| Register Test Case          |    YES    |    Auto    |
+| Death/Expected Assert Tests |    YES    |    YES     |
+| Setup/Teardown Hooks        |    YES    |    YES     |
+| Value-Parameterized Tests   |    NO     |    YES     |
+| Typed Tests                 |    NO     |    YES     |
+| Type-Parameterized Tests    |    NO     |    YES     |
+| Timeout Support             |    NO     |    YES     |
+| Mocking Support             |   Cmocka  |     NO     |
+| JUNIT XML Reports           |    YES    |    YES     |
+| Execute subset of tests     |    NO     |    YES     |
+| VS Code Extensions          |    NO     |    YES     |
+
+## Framework Libraries
+
 ### UnitTestLib
 
 The main "framework" library. The core of the framework is the Framework object, which can have any number
@@ -280,6 +335,125 @@ leverage the `cmocka.h` interface and write tests with all the features of the C
 
 Documentation for Cmocka can be found here:
 <https://api.cmocka.org/>
+## GoogleTest Samples
+
+There is a sample unit test provided as both an example of how to write a unit test and leverage
+many of the GoogleTest features. This sample can be found in the `Test/GoogleTest/Sample/SampleGoogleTest`
+directory.
+
+The sample is provided for the HOST_APPLICATION build type, which can be run on a host system without
+needing a target.
+
+## GoogleTest Usage
+
+This section is built a lot like a "Getting Started". We'll go through some of the components that are needed
+when constructing a unit test and some of the decisions that are made by the test writer. We'll also describe
+how to check for expected conditions in test cases and a bit of the logging characteristics.
+
+Most of these examples will refer to the SampleGoogleTestHost app found in this package.
+
+### GoogleTest Requirements - INF
+
+In our INF file, we'll need to bring in the `GoogleTest` library. Conveniently, the interface
+header for the `GoogleTest` is in `UnitTestFrameworkPkg`, so you shouldn't need to depend on any other
+packages. As long as your DSC file knows where to find the lib implementation that you want to use,
+you should be good to go.
+
+See this example in 'SampleGoogleTestHost.inf'...
+
+```
+[Packages]
+  MdePkg/MdePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  GoogleTestLib
+  BaseLib
+  DebugLib
+```
+
+Also, if you want you test to automatically be picked up by the Test Runner plugin, you will need
+to make sure that the module `BASE_NAME` contains the word `Test`...
+
+```
+[Defines]
+  BASE_NAME      = SampleGoogleTestHost
+```
+
+### GoogleTest Requirements - Code
+
+Not to state the obvious, but let's make sure we have the following include before getting too far along...
+
+```
+#include <gtest/gtest.h>
+extern "C" {
+  #include <Uefi.h>
+  #include <Library/BaseLib.h>
+  #include <Library/DebugLib.h>
+}
+```
+
+GoogleTest applications are implemented in C++. The first include brings in the
+GoogleTest definitions. Other EDK II related include files must be wrapped in
+`extern "C" {}` because they are C include files. Link failures will occur if
+this is not done.
+
+Now that we've got that squared away, let's look at our 'Main()'' routine (or DriverEntryPoint() or whatever).
+
+### GoogleTest Configuration
+
+Unlike the Framework, GoogleTest does not require test suites or test cases to
+be registered. Instead, the test cases declare the test suite name and test
+case name as part of their implementation. The only requirement for GoogleTest
+is to have a `main()` function that initialize the GoogleTest infrastructure and
+call the service `RUN_ALL_TESTS()` to run all the unit tests.
+
+```c
+int main(int argc, char* argv[]) {
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
+```
+
+### GoogleTest - A Simple Test Case
+
+We'll look at the below test case from 'SampleGoogleTestHost'...
+
+```c
+TEST(SimpleMathTests, OnePlusOneShouldEqualTwo) {
+  UINTN  A;
+  UINTN  B;
+  UINTN  C;
+
+  A = 1;
+  B = 1;
+  C = A + B;
+
+  ASSERT_EQ (C, 2);
+}
+```
+
+This uses the simplest form of a GoogleTest unit test using `TEST()` that
+declares the test suite name and the unit test name within that test suite.
+The unit test performs actions and typically makes calls to the code under test
+and contains test assertions to verify that the code under test behaves as
+expected for the given inputs.
+
+In this test case, the `ASSERT_EQ` assertion is being used to establish that the business logic has functioned
+correctly. There are several assertion macros, and you are encouraged to use one that matches as closely to your
+intended test criterium as possible, because the logging is specific to the macro and more specific macros have more
+detailed logs. When in doubt, there are always `ASSERT_TRUE` and `ASSERT_FALSE`. Assertion macros that fail their
+test criterium will immediately return from the test case with a failed status and log an error string.
+_Note_ that this early return can have implications for memory leakage.
+
+There is no return status from a GooglTest unit test. If no assertions are
+triggered then the unit test has a passing status.
+
+### GoogleTest - More Complex Cases
+
+To write more advanced tests, take a look at the
+[GoogleTest User's Guide](http://google.github.io/googletest/).
+
 ## GoogleTest Samples
 
 There is a sample unit test provided as both an example of how to write a unit test and leverage
