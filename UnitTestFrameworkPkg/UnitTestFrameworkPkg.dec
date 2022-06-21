@@ -24,6 +24,8 @@
   # MU_CHANGE - With great power comes great responsibility.
   # Some Mu test collateral expects access to the framework internals.
   PrivateInclude
+  Library/GoogleTestLib/googletest/googletest/include
+  Library/GoogleTestLib/googletest/googlemock/include
 
 [Includes.Common.Private]
   #PrivateInclude   # MU_CHANGE - See above.
@@ -50,6 +52,10 @@
   ## @libraryclass Provides boot-option routines useful in shell-based tests.
   #
   UnitTestBootLib|PrivateInclude/Library/UnitTestBootLib.h
+
+  ## @libraryclass GoogleTest infrastructure
+  #
+  GoogleTestLib|Include/Library/GoogleTestLib.h
 
 [Guids]
   gUnitTestFrameworkPkgTokenSpaceGuid = { 0x833d3aba, 0x39b4, 0x43a2, { 0xb9, 0x30, 0x7a, 0x34, 0x53, 0x39, 0x31, 0xb3 } }
