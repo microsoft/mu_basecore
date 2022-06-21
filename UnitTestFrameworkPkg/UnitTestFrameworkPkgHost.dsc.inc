@@ -32,6 +32,7 @@
 !endif
   GCC:*_GCC5_*_CC_FLAGS = --coverage
   GCC:*_GCC5_*_DLINK_FLAGS = --coverage
+
 [BuildOptions.common.EDKII.HOST_APPLICATION]
   #
   # MSFT
