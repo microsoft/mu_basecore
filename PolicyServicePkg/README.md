@@ -170,3 +170,101 @@ and freed when removed or expanded.
 Like the PEIM, the DXE driver will install/reinstall a NULL protocol with the
 given policies GUID when it is created or updated to allow for notification and
 dispatch on the policy availability.
+
+## YAML Based Policy Definition
+
+This section provides an overview of YAML based policy definition and how platform can
+integrate them.
+
+### YAML Definition for Policy Structures
+
+When used, the YAML based policy definition is treated as the ground truth of policy structure
+and default data. The YAML parser is largely inheritted from [Intel's slim bootloader](https://github.com/slimbootloader/slimbootloader).
+Thus, the YAML syntax follows the specification defined in [slim bootloader](https://slimbootloader.github.io/specs/config.html#configuration-description-yaml-explained)
+as well.
+
+Such YAML definition will be used to generate header files and the field accessors for platform consumption.
+
+### MU Added Rules
+
+In addition to aforementioned YAML specification from slim bootloader, a few extra rules was added to the existing
+specification to facilitate the adaptation of policy specific usage. These rules will be enforced by a Pre-Build
+plugin, more details in its [implementation section](#Pre-Build-Plugin).
+
+1. Each policy definition group must include a `POLICY_HEADER_TMPL` section, as provided in this template [here](CommonPolicy/Template_PolicyHeader.yaml).
+This section should include a 64-bit signature, an expected major version, an maximally expected minor version and
+a size of such structure. This data will mainly be used as metadata instead of policy data. Platforms could `!include`
+the provided template for easier inclusion.
+
+1. For each non-header fields defined in the YAML policy file, developers could optionally add a `minver` field, which
+denotes at which minor version this field is added. If not added, this field will be treated as 0 for default value.
+
+1. Under the same major value, all new minor fields should only be appended after the fields with lower minor version
+values, otherwise the build will break.
+
+1. This YAML definition is not created to support UI configuration features, thus no UI related configuration fields
+will be recognized in the context of policy YAML definition.
+
+### Field Accessors
+
+For each fields defined in YAML structures, 4 accessor functions will be created. These functions will cover the
+functionality of setting this field to target value or default value, get current or default value from policy handle.
+
+All autogen functions will be created under the naming scheme of `SET_POLICY_STRUCTURE_NAME_Field_Name`,
+`SET_POLICY_STRUCTURE_NAME_Field_Name_default`, `GET_POLICY_STRUCTURE_NAME_Field_Name` and
+`GET_POLICY_STRUCTURE_NAME_Field_Name_default`.
+
+The internal implementation of these functions are dependent on `PolicyLib`, specifically the verified policy related
+functionalities.
+
+In order to simplify the usage of policy initialization, a function of `SET_POLICY_STRUCTURE_NAME_default` is created.
+This function could be invoked for a platform to initialize the newly created policy handle.
+
+### Pre-Build Plugin
+
+A pre-build plugin is created to enforce rules indicated in the previous [section](#Field-Accessors).
+
+This plugin requires 3 build environment variable to execute properly:
+
+- `BUILD_OUTPUT_BASE`: This is used to create a temporary folder to contain intermediate files
+- `UPDATE_SETTINGS`: Setting this to `false` to disable this plugin
+- `POLICY_REPORT_FOLDER`: This optional variable can be used to indicate where the plugin should output the report.
+- `POLICY_IGNORE_PATHS`: This optional variable can be used by platform to specify which directories or files the autogen
+should ignore. Each entry should be relative UEFI path separated by colons (';').
+If not supplied this report will be save to the same folder of `ACTIVE_PLATFORM`.
+
+A policy report is the collateral output after codebase analyzing:
+
+- During pre-build, this plugin will search through all the included package paths
+for files ending with `_policy_def.yaml` or `_policy_def.yml`. Each policy component
+should have its own `*_policy_def.yaml` file. i.e. `USB_policy_def.yaml` for USB
+policies and `PCI_policy_def.yaml` for PCI policies.
+
+- For each discovered policy definition, the plugin will compute a hash value of
+each defined minor version with the structure and its content. This value will
+be compared to the value from previously output report, if this report does not
+exist, the plugin will create one.
+
+- If the any of the rules does not meet, or any field change is detected, the build
+will halt and notify the developers to fix the unexpected and update the report file.
+
+- The plugin will also generate the header file from this YAML definition automatically,
+which includes the header structure and its accessors.
+
+### Platform Integration
+
+For a platform to integrate the changes, the following needs to be satisfied:
+
+#### Silicon Packages
+
+- Define and create component policy defintions in YAML.
+
+- Use autogen accessors and `PolicyLib` to consume policy values.
+
+#### Platform Packages
+
+- Use autogen accessors and `PolicyLib` to publish and/or override policy values.
+
+- Include `POLICY_REPORT.xml` for version tracking purpose.
+
+- Add `PolicyLib` instances to platform descriptor file.
