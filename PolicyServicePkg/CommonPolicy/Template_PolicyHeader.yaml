@@ -1,0 +1,27 @@
+## @file
+#
+#  Slim Bootloader CFGDATA Default File.
+#
+#  Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+# Template section for common policy header, template name has to end with `_TMPL`
+# Policy structure metadata, will be used for policy headers and genereating unique macro definitions
+POLICY_HEADER_TMPL: >
+    # Unique identifier for this polisy structure. Duplicate category in an active platform will cause build break
+    - category       : $(1)
+    # Signature field for verfied policy header
+    - signature      :
+        - length       : 0x08
+        - value        : $(2)
+    # Major version field for verfied policy header
+    - majver         :
+        - length       : 0x02
+        - value        : $(3)
+    # Minor version field for verfied policy header is automatically populated with the highest minor version from fields
+    # Size field for verfied policy header, should be what your 
+    - size           :
+        - length       : 0x04
+        - value        : $(4)

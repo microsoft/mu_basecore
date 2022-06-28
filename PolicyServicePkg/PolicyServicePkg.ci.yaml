@@ -53,12 +53,19 @@
     },
     "SpellCheck": {
         "AuditOnly": False,
-        "ExtendWords": [],           # words to extend to the dictionary for this package
+        "ExtendWords": [
+            "PDATA"
+        ],           # words to extend to the dictionary for this package
         "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
         "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)
     },
     "MarkdownLintCheck": {
         "IgnoreFiles": [
         ]            # package root relative file, folder, or glob pattern to ignore
+    },
+    "UncrustifyCheck": {
+        "IgnoreFiles": [
+            "Samples/PolicyDefinitions/PolicyDataStructGFX.h"
+        ]    # Standard Plugin defined paths that should be ignored.
     }
 }
