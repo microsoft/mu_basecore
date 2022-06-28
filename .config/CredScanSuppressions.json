@@ -1,14 +1,21 @@
 {
+    "tool": "Credential Scanner",
     "suppressions": [
         {
-            "file": "BaseTools/Source/Python/Pkcs7Sign/TestCert.pem",
-            "file": "BaseTools/Source/Python/Pkcs7Sign/TestRoot.pem",
-            "file": "BaseTools/Source/Python/Rsa2048Sha256Sign/TestSigningPrivateKey.pem",
-            "_justification": "Test case test certificates."
+            "file": "\\BaseTools\\Source\\Python\\Pkcs7Sign\\TestCert.pem",
+            "_justification": "Test case test certificate."
         },
         {
-            "file": "MdePkg/Include/IndustryStandard/Http11.h",
-            "_justification": "Example comment about usage."
+            "file": "\\BaseTools\\Source\\Python\\Pkcs7Sign\\TestRoot.pem",
+            "_justification": "Test case test certificate."
+        },
+        {
+            "file": "\\BaseTools\\Source\\Python\\Rsa2048Sha256Sign\\TestSigningPrivateKey.pem",
+            "_justification": "Test case test certificate."
+        },
+        {
+            "file": "\\MdePkg\\Include\\IndustryStandard\\Http11.h",
+            "_justification": "Industry standard header."
         }
     ]
 }
