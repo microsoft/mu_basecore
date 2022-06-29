@@ -86,7 +86,6 @@
   # MU_CHANGE END
   gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList              ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize                    ## CONSUMES
-  gEfiMdePkgTokenSpaceGuid.PcdSupportNonstopMode                        ## MU_CHANGE: CONSUMES
 
 [Depex]
   TRUE

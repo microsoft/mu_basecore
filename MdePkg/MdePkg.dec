@@ -2230,11 +2230,6 @@
   # @Prompt Speculation Barrier Type.
   gEfiMdePkgTokenSpaceGuid.PcdSpeculationBarrierType|0x01|UINT8|0x30001018
 
-  # MU_CHANGE START
-  # TRUE if platform supports nonstop mode on page fault
-  gEfiMdePkgTokenSpaceGuid.PcdSupportNonstopMode|FALSE|BOOLEAN|0x4000001D
-  # MU_CHANGE END
-
 [PcdsFixedAtBuild,PcdsPatchableInModule]
   ## Indicates the maximum length of unicode string used in the following
   #  BaseLib functions: StrLen(), StrSize(), StrCmp(), StrnCmp(), StrCpy(), StrnCpy()<BR><BR>
