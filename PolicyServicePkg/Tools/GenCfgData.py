@@ -1673,7 +1673,7 @@ class CGenCfgData:
         # Step 3: Template verified policy header
         for struct in struct_list:
             if struct["name"] == "PolicyHeader":
-                lines.append ('CONST VERIFIED_POLICY_HEADER POLICY_%s_DESC = {\n' % (category))
+                lines.append ('STATIC CONST VERIFIED_POLICY_HEADER POLICY_%s_DESC = {\n' % (category))
                 lines.append ('  .Signature     = %s,\n' % ('PDATA_%s_SIGNATURE' % (category)))
                 lines.append ('  .MajorVersion  = %s,\n' % ('PDATA_%s_MAJOR_VER' % (category)))
                 lines.append ('  .MinorVersion  = %s,\n' % ('PDATA_%s_MINOR_VER' % (category)))
@@ -1712,6 +1712,7 @@ class CGenCfgData:
                 }
             }
             '''
+            lines.append("inline\n"                                    )
             lines.append("STATIC\n"                                    )
             lines.append("VOID\n"                                      )
             lines.append("EFIAPI\n"                                    )
@@ -1991,6 +1992,7 @@ class CGenCfgData:
               ReportVerifiedPolicyAccess (_handle, Guid, offset, size, FALSE);
             }
             '''
+            final_acs_list.append("inline"                                    )
             final_acs_list.append("STATIC"                                    )
             final_acs_list.append("VOID"                                      )
             final_acs_list.append("EFIAPI"                                    )
@@ -2016,6 +2018,7 @@ class CGenCfgData:
               ReportVerifiedPolicyAccess (_handle, Guid, offset, size, FALSE);
             }
             '''
+            final_acs_list.append("inline"                                    )
             final_acs_list.append("STATIC"                                    )
             final_acs_list.append("VOID"                                      )
             final_acs_list.append("EFIAPI"                                    )
@@ -2046,6 +2049,7 @@ class CGenCfgData:
               return Temp;
             }
             '''
+            final_acs_list.append("inline"                                    )
             final_acs_list.append("STATIC"                                    )
             final_acs_list.append("%s"                                        % type)
             final_acs_list.append("EFIAPI"                                    )
@@ -2076,6 +2080,7 @@ class CGenCfgData:
               return 0x%x;
             }
             '''
+            final_acs_list.append("inline"                                    )
             final_acs_list.append("STATIC"                                    )
             final_acs_list.append("%s"                                        % type)
             final_acs_list.append("EFIAPI"                                    )

@@ -38,7 +38,7 @@ typedef struct {
 
 } GFX_POLICY_DATA;
 
-CONST VERIFIED_POLICY_HEADER POLICY_GFX_DESC = {
+STATIC CONST VERIFIED_POLICY_HEADER POLICY_GFX_DESC = {
   .Signature     = PDATA_GFX_SIGNATURE,
   .MajorVersion  = PDATA_GFX_MAJOR_VER,
   .MinorVersion  = PDATA_GFX_MINOR_VER,
@@ -46,6 +46,7 @@ CONST VERIFIED_POLICY_HEADER POLICY_GFX_DESC = {
 };
 
 /* Get accessors for MIN_VER 0 */
+inline
 STATIC
 UINT16
 EFIAPI
@@ -64,6 +65,7 @@ GET_GFX_POLICY_DATA_Power_State_Port_0 (
 }
 
 
+inline
 STATIC
 UINT16
 EFIAPI
@@ -75,6 +77,7 @@ GET_GFX_POLICY_DATA_Power_State_Port_0_default (
   return 0x1;
 }
 
+inline
 STATIC
 UINT16
 EFIAPI
@@ -93,6 +96,7 @@ GET_GFX_POLICY_DATA_Power_State_Port_1 (
 }
 
 
+inline
 STATIC
 UINT16
 EFIAPI
@@ -106,6 +110,7 @@ GET_GFX_POLICY_DATA_Power_State_Port_1_default (
 
 
 /* Set accessors for MIN_VER 0 */
+inline
 STATIC
 VOID
 EFIAPI
@@ -119,6 +124,7 @@ SET_GFX_POLICY_DATA_Power_State_Port_0 (
 }
 
 
+inline
 STATIC
 VOID
 EFIAPI
@@ -130,6 +136,7 @@ SET_GFX_POLICY_DATA_Power_State_Port_0_default (
   ReportVerifiedPolicyAccess (_handle, Guid, 0x2, 0x20, TRUE);
 }
 
+inline
 STATIC
 VOID
 EFIAPI
@@ -143,6 +150,7 @@ SET_GFX_POLICY_DATA_Power_State_Port_1 (
 }
 
 
+inline
 STATIC
 VOID
 EFIAPI
@@ -156,6 +164,7 @@ SET_GFX_POLICY_DATA_Power_State_Port_1_default (
 
 
 /* Get accessors for MIN_VER 1 */
+inline
 STATIC
 UINT16
 EFIAPI
@@ -174,6 +183,7 @@ GET_GFX_POLICY_DATA_Skip_Check_0 (
 }
 
 
+inline
 STATIC
 UINT16
 EFIAPI
@@ -185,6 +195,7 @@ GET_GFX_POLICY_DATA_Skip_Check_0_default (
   return 0x0;
 }
 
+inline
 STATIC
 UINT16
 EFIAPI
@@ -203,6 +214,7 @@ GET_GFX_POLICY_DATA_Skip_Check_1 (
 }
 
 
+inline
 STATIC
 UINT16
 EFIAPI
@@ -216,6 +228,7 @@ GET_GFX_POLICY_DATA_Skip_Check_1_default (
 
 
 /* Set accessors for MIN_VER 1 */
+inline
 STATIC
 VOID
 EFIAPI
@@ -229,6 +242,7 @@ SET_GFX_POLICY_DATA_Skip_Check_0 (
 }
 
 
+inline
 STATIC
 VOID
 EFIAPI
@@ -240,6 +254,7 @@ SET_GFX_POLICY_DATA_Skip_Check_0_default (
   ReportVerifiedPolicyAccess (_handle, Guid, 0x2, 0x24, TRUE);
 }
 
+inline
 STATIC
 VOID
 EFIAPI
@@ -253,6 +268,7 @@ SET_GFX_POLICY_DATA_Skip_Check_1 (
 }
 
 
+inline
 STATIC
 VOID
 EFIAPI
@@ -266,6 +282,7 @@ SET_GFX_POLICY_DATA_Skip_Check_1_default (
 
 
 /* Set accessors for all fields of this structure */
+inline
 STATIC
 VOID
 EFIAPI

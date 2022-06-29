@@ -91,7 +91,7 @@ class UpdatePolicyHdr(IUefiBuildPlugin):
         yaml_list = []
         exception_list = []
         ws = thebuilder.ws
-        pp = thebuilder.pp.split(";")
+        pp = thebuilder.pp.split(os.pathsep)
         edk2 = Edk2Path(ws, pp)
 
         # Form the exception list of formatted absolute paths. And always ignore our own samples.
@@ -140,7 +140,7 @@ class UpdatePolicyHdr(IUefiBuildPlugin):
 
         for setting in yaml_list:
 
-            if not os.path.normcase(setting).startswith(os.path.normcase(report_dir.strip(os.sep)) + os.sep):
+            if not os.path.normcase(setting).startswith(os.path.normcase(report_dir.rstrip(os.sep)) + os.sep):
                 continue
 
             logging.info ("Processing settings from %s" % setting)
