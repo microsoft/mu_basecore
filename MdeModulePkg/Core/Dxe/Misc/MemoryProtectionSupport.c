@@ -368,7 +368,7 @@ CreateImagePropertiesRecord (
   UINT32                                SectionAlignment;
   UINT32                                PeCoffHeaderOffset;
 
-  DEBUG ((DEBUG_INFO, "%a - Enter...\n", __FUNCTION__, __LINE__));
+  DEBUG ((DEBUG_INFO, "%a - Enter...\n", __FUNCTION__));
 
   if ((ImageRecord == NULL) || (ImageBase == NULL)) {
     return EFI_OUT_OF_RESOURCES;
