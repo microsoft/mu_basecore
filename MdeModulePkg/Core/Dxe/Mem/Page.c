@@ -9,6 +9,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "DxeMain.h"
 #include "Imem.h"
 #include "HeapGuard.h"
+#include "MemoryProtectionSupport.h" // MU_CHANGE
 
 //
 // Entry for tracking the memory regions for each memory type to coalesce similar memory types
@@ -1526,7 +1527,7 @@ CoreInternalFreePages (
   CoreAcquireMemoryLock ();
 
   // MU_CHANGE Start: Unprotect page(s) before free
-  Status = ClearAttributesFromMemoryRange (Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
+  Status = ClearAccessAttributesFromMemoryRange (Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_WARN, "%a - Unable to clear attributes from memory at base: 0x%llx\n", __FUNCTION__, Memory));
