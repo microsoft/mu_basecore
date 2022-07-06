@@ -1256,9 +1256,7 @@ InitializeCpu (
   ASSERT_EFI_ERROR (Status);
 
   // TCBZ3519 MU_CHANGE START
-  if (gDxeMps.ImageProtectionPolicy.Fields.InstallMemoryAttributeProtocol) {
-    InstallEfiMemoryAttributeProtocol ();
-  }
+  InstallEfiMemoryAttributeProtocol ();
 
   // MU_CHANGE END
 

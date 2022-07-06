@@ -2732,85 +2732,17 @@ RemoveImageRecord (
   IN EFI_RUNTIME_IMAGE_ENTRY  *RuntimeImage
   );
 
-// MU_CHANGE START Use Project Mu ProtectUefiImage() and add function for setting images to read-only
-
 /**
   Protect UEFI image.
 
   @param[in]  LoadedImage              The loaded image protocol
   @param[in]  LoadedImageDevicePath    The loaded image device path protocol
 **/
-EFI_STATUS
-ProtectUefiImageMu (
+VOID
+ProtectUefiImage (
   IN EFI_LOADED_IMAGE_PROTOCOL  *LoadedImage,
   IN EFI_DEVICE_PATH_PROTOCOL   *LoadedImageDevicePath
   );
-
-/**
-  Protect UEFI image.
-
-  @param[in]  LoadedImage              The loaded image protocol
-  @param[in]  LoadedImageDevicePath    The loaded image device path protocol
-**/
-// VOID
-// ProtectUefiImage (
-//   IN EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage,
-//   IN EFI_DEVICE_PATH_PROTOCOL    *LoadedImageDevicePath
-//   );
-
-/**
-  Sets the attributes of a loaded image to be read-only.
-
-  @param  Image                   Pointer to the loaded image private data
-
-  @return EFI_SUCCESS             Read-only set on loaded Image
-  @return EFI_INVALID_PARAMETER   Image or Image->ImageContext.ImageAddress was NULL
-  @return EFI_NOT_READY           gCpu is not available yet
-  @return other                   Return value of mMemoryAttribute->GetMemoryAttributes(),
-                                  mMemoryAttribute->SetMemoryAttributes, or
-                                  gBS->LocateProtocol()
-
-**/
-EFI_STATUS
-SetImageToReadOnly (
-  IN LOADED_IMAGE_PRIVATE_DATA  *Image
-  );
-
-/**
-  Clears the read-only and no-execute attributes of a loaded image.
-
-  @param  Image                   Pointer to the loaded image private protocol
-
-  @return EFI_SUCCESS             Read-only and NX attributes unset on image
-  @return EFI_INVALID_PARAMETER   Image or Image->ImageBase was NULL
-  @return EFI_NOT_READY           gCpu is not available yet
-  @return other                   Return value of mMemoryAttribute->ClearMemoryAttributes()
-                                  or gBS->LocateProtocol()
-
-**/
-EFI_STATUS
-ClearReadOnlyAndNxFromImage (
-  IN EFI_LOADED_IMAGE_PROTOCOL  *Image
-  );
-
-/**
-  Clears the attributes from a memory range.
-
-  @param  BaseAddress            The base address of the pages which need their attributes cleared
-  @param  Length                 Length in bytes
-
-  @retval EFI_SUCCESS            Attributes updated if necessary
-  @retval EFI_INVALID_PARAMETER  BaseAddress is NULL or Length is zero
-  @retval Other                  Return value of CoreGetMemorySpaceDescriptor()
-
-**/
-EFI_STATUS
-ClearAttributesFromMemoryRange (
-  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN UINTN                 Length
-  );
-
-// MU_CHANGE END
 
 /**
   Unprotect UEFI image.
