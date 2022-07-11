@@ -81,9 +81,15 @@ VarCheckPolicyLibMmiHandler (
   VAR_CHECK_POLICY_COMM_IS_ENABLED_PARAMS  *IsEnabledParams;
   VAR_CHECK_POLICY_COMM_DUMP_PARAMS        *DumpParamsIn;
   VAR_CHECK_POLICY_COMM_DUMP_PARAMS        *DumpParamsOut;
+  VAR_CHECK_POLICY_COMM_GET_INFO_PARAMS    *GetInfoParamsInternal;
+  VAR_CHECK_POLICY_COMM_GET_INFO_PARAMS    *GetInfoParamsExternal;
+  CHAR16                                   *InternalCopyOfOutputVariableName;
+  CHAR16                                   *ExternalCopyOfOutputVariableName;
   UINT8                                    *DumpInputBuffer;
   UINT8                                    *DumpOutputBuffer;
+  UINTN                                    AllowedOutputVariableNameSize;
   UINTN                                    DumpTotalPages;
+  UINTN                                    LocalSize;
   VARIABLE_POLICY_ENTRY                    *PolicyEntry;
   UINTN                                    ExpectedSize;
   UINT32                                   TempSize;
@@ -294,6 +300,120 @@ VarCheckPolicyLibMmiHandler (
 
     case VAR_CHECK_POLICY_COMMAND_LOCK:
       PolicyCommHeader->Result = LockVariablePolicy ();
+      break;
+
+    case VAR_CHECK_POLICY_COMMAND_GET_INFO:
+    case VAR_CHECK_POLICY_COMMAND_GET_LOCK_VAR_STATE_INFO:
+      ExpectedSize += VAR_CHECK_POLICY_COMM_GET_INFO_PARAMS_END + VAR_CHECK_POLICY_MM_GET_INFO_BUFFER_SIZE;
+
+      if (InternalCommBufferSize < ExpectedSize) {
+        PolicyCommHeader->Result = EFI_INVALID_PARAMETER;
+        break;
+      }
+
+      GetInfoParamsInternal = (VAR_CHECK_POLICY_COMM_GET_INFO_PARAMS *)(InternalPolicyCommHeader + 1);
+      GetInfoParamsExternal = (VAR_CHECK_POLICY_COMM_GET_INFO_PARAMS *)(PolicyCommHeader + 1);
+
+      SubCommandStatus =  SafeUintnSub (
+                            VAR_CHECK_POLICY_MM_GET_INFO_BUFFER_SIZE,
+                            GetInfoParamsInternal->InputVariableNameSize,
+                            &AllowedOutputVariableNameSize
+                            );
+      if (EFI_ERROR (SubCommandStatus)) {
+        PolicyCommHeader->Result = EFI_INVALID_PARAMETER;
+        break;
+      }
+
+      if (GetInfoParamsInternal->OutputVariableNameSize > 0) {
+        SubCommandStatus =  SafeUintnAdd (
+                              ((UINTN)GetInfoParamsInternal + VAR_CHECK_POLICY_COMM_GET_INFO_PARAMS_END),
+                              (UINTN)GetInfoParamsInternal->InputVariableNameSize,
+                              (UINTN *)&InternalCopyOfOutputVariableName
+                              );
+        if (EFI_ERROR (SubCommandStatus)) {
+          PolicyCommHeader->Result = EFI_INVALID_PARAMETER;
+          break;
+        }
+      } else {
+        InternalCopyOfOutputVariableName = NULL;
+      }
+
+      ZeroMem (&GetInfoParamsInternal->OutputPolicyEntry, sizeof (GetInfoParamsInternal->OutputPolicyEntry));
+      ZeroMem (&GetInfoParamsExternal->OutputPolicyEntry, sizeof (GetInfoParamsExternal->OutputPolicyEntry));
+
+      LocalSize = (UINTN)GetInfoParamsInternal->OutputVariableNameSize;
+
+      if (InternalPolicyCommHeader->Command == VAR_CHECK_POLICY_COMMAND_GET_INFO) {
+        SubCommandStatus =  GetVariablePolicyInfo (
+                              GetInfoParamsInternal->InputVariableName,
+                              &GetInfoParamsInternal->InputVendorGuid,
+                              &LocalSize,
+                              &GetInfoParamsInternal->OutputPolicyEntry.VariablePolicy,
+                              InternalCopyOfOutputVariableName
+                              );
+      } else if (InternalPolicyCommHeader->Command == VAR_CHECK_POLICY_COMMAND_GET_LOCK_VAR_STATE_INFO) {
+        SubCommandStatus =  GetLockOnVariableStateVariablePolicyInfo (
+                              GetInfoParamsInternal->InputVariableName,
+                              &GetInfoParamsInternal->InputVendorGuid,
+                              &LocalSize,
+                              &GetInfoParamsInternal->OutputPolicyEntry.LockOnVarStatePolicy,
+                              InternalCopyOfOutputVariableName
+                              );
+      } else {
+        PolicyCommHeader->Result = EFI_INVALID_PARAMETER;
+        break;
+      }
+
+      if (EFI_ERROR (SubCommandStatus) && (SubCommandStatus != EFI_BUFFER_TOO_SMALL)) {
+        PolicyCommHeader->Result = SubCommandStatus;
+        break;
+      }
+
+      if (EFI_ERROR (SafeUintnToUint32 (LocalSize, &GetInfoParamsInternal->OutputVariableNameSize))) {
+        PolicyCommHeader->Result = EFI_BAD_BUFFER_SIZE;
+        break;
+      }
+
+      ASSERT (sizeof (GetInfoParamsInternal->OutputPolicyEntry) == sizeof (GetInfoParamsExternal->OutputPolicyEntry));
+      CopyMem (
+        &GetInfoParamsExternal->OutputPolicyEntry,
+        &GetInfoParamsInternal->OutputPolicyEntry,
+        sizeof (GetInfoParamsExternal->OutputPolicyEntry)
+        );
+
+      GetInfoParamsExternal->OutputVariableNameSize = GetInfoParamsInternal->OutputVariableNameSize;
+      if (SubCommandStatus == EFI_BUFFER_TOO_SMALL) {
+        PolicyCommHeader->Result = EFI_BUFFER_TOO_SMALL;
+        break;
+      }
+
+      SubCommandStatus =  SafeUintnAdd (
+                            ((UINTN)GetInfoParamsExternal + VAR_CHECK_POLICY_COMM_GET_INFO_PARAMS_END),
+                            (UINTN)GetInfoParamsInternal->InputVariableNameSize,
+                            (UINTN *)&ExternalCopyOfOutputVariableName
+                            );
+      if (EFI_ERROR (SubCommandStatus)) {
+        PolicyCommHeader->Result = EFI_BAD_BUFFER_SIZE;
+        break;
+      }
+
+      if (GetInfoParamsInternal->OutputVariableNameSize > 0) {
+        SubCommandStatus =  StrnCpyS (
+                              ExternalCopyOfOutputVariableName,
+                              AllowedOutputVariableNameSize,
+                              InternalCopyOfOutputVariableName,
+                              (UINTN)GetInfoParamsInternal->OutputVariableNameSize
+                              );
+        ASSERT_EFI_ERROR (SubCommandStatus);
+      } else {
+        // The comm buffer should always have the space for the variable policy output
+        // variable name. Fill it with NULL chars if a variable name is not present so
+        // it has a consistent value in the case of variable name absence.
+        SetMem (ExternalCopyOfOutputVariableName, AllowedOutputVariableNameSize, CHAR_NULL);
+      }
+
+      PolicyCommHeader->Result = SubCommandStatus;
+
       break;
 
     default:
