@@ -1072,9 +1072,16 @@ ProtectUefiImageMu (
 Finish:
   if (EFI_ERROR (Status)) {
     // If we failed to protect the image for reasons other than CPU Arch not being ready,
-    // clear the access attributes from the memory
+    // clear the access attributes from the memory and free the image record.
     if (Status != EFI_NOT_READY) {
-      ClearAccessAttributesFromMemoryRange (ImageRecord->ImageBase, (UINTN)ImageRecord->ImageSize);
+      ClearAccessAttributesFromMemoryRange (
+        (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase,
+        ALIGN_VALUE ((UINTN)LoadedImage->ImageSize, EFI_PAGE_SIZE)
+        );
+
+      if (ImageRecord != NULL) {
+        FreeImageRecord (ImageRecord);
+      }
     }
 
     // If the status is EFI_NOT_READY, the CPU Arch has not been installed. We assume
@@ -1366,7 +1373,7 @@ ClearAccessAttributesFromMemoryRange (
              &Desc
              );
 
-  if ((!EFI_ERROR (Status)) && ((Desc.Attributes & EFI_MEMORY_ACCESS_MASK) != 0)) {
+  if (!EFI_ERROR (Status)) {
     SetUefiImageMemoryAttributes (
       BaseAddress,
       Length,
