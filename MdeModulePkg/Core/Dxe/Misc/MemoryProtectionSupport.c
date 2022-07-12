@@ -334,7 +334,8 @@ SortImageRecord (
   @param[in]  ImageBase               Base of PE image
   @param[in]  ImageSize               Size of PE image
   @param[in]  MemoryType              EFI memory type
-  @param[out] ImageRecord             Populated image properties record
+  @param[in,out] ImageRecord          IN:  an allocated pool of length sizeof(IMAGE_PROPERTIES_RECORD)
+                                      OUT: a populated image properties record
 
   @retval     EFI_INVALID_PARAMETER   This function was called in SMM or the image
                                       type has an undefined protection policy
@@ -373,7 +374,9 @@ CreateImagePropertiesRecord (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  ImageRecord->Signature = IMAGE_PROPERTIES_RECORD_SIGNATURE;
+  ImageRecord->Signature        = IMAGE_PROPERTIES_RECORD_SIGNATURE;
+  ImageRecord->CodeSegmentCount = 0;
+  InitializeListHead (&ImageRecord->CodeSegmentList);
 
   //
   // Step 1: record whole region
@@ -431,8 +434,6 @@ CreateImagePropertiesRecord (
                                          sizeof (EFI_IMAGE_FILE_HEADER) +
                                          Hdr.Pe32->FileHeader.SizeOfOptionalHeader
                                          );
-  ImageRecord->CodeSegmentCount = 0;
-  InitializeListHead (&ImageRecord->CodeSegmentList);
   for (Index = 0; Index < Hdr.Pe32->FileHeader.NumberOfSections; Index++) {
     Name = Section[Index].Name;
     DEBUG ((
@@ -1072,9 +1073,16 @@ ProtectUefiImageMu (
 Finish:
   if (EFI_ERROR (Status)) {
     // If we failed to protect the image for reasons other than CPU Arch not being ready,
-    // clear the access attributes from the memory
+    // clear the access attributes from the memory and free the image record.
     if (Status != EFI_NOT_READY) {
-      ClearAccessAttributesFromMemoryRange (ImageRecord->ImageBase, (UINTN)ImageRecord->ImageSize);
+      ClearAccessAttributesFromMemoryRange (
+        (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase,
+        ALIGN_VALUE ((UINTN)LoadedImage->ImageSize, EFI_PAGE_SIZE)
+        );
+
+      if (ImageRecord != NULL) {
+        FreeImageRecord (ImageRecord);
+      }
     }
 
     // If the status is EFI_NOT_READY, the CPU Arch has not been installed. We assume
@@ -1339,12 +1347,13 @@ Done:
 /**
   Clears the attributes from a memory range.
 
-  @param[in]  BaseAddress            The base address of the pages which need their attributes cleared
-  @param[in]  Length                 Length in bytes
+  @param  BaseAddress            The base address of the pages which need their attributes cleared
+  @param  Length                 Length in bytes
 
-  @retval     EFI_SUCCESS            Attributes updated if necessary
-  @retval     EFI_INVALID_PARAMETER  BaseAddress is NULL or Length is zero
-  @retval     Other                  Return value of CoreGetMemorySpaceDescriptor()
+  @retval EFI_SUCCESS            Attributes updated if necessary
+  @retval EFI_INVALID_PARAMETER  BaseAddress is NULL or Length is zero
+  @retval EFI_NOT_READY          Cpu Arch is not installed yet
+  @retval Other                  Return value of CoreGetMemorySpaceDescriptor()
 
 **/
 EFI_STATUS
@@ -1357,6 +1366,10 @@ ClearAccessAttributesFromMemoryRange (
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  Desc;
   EFI_STATUS                       Status;
 
+  if (gCpu == NULL) {
+    return EFI_NOT_READY;
+  }
+
   if (((VOID *)((UINTN)BaseAddress) == NULL) || (Length == 0)) {
     return EFI_INVALID_PARAMETER;
   }
@@ -1366,7 +1379,7 @@ ClearAccessAttributesFromMemoryRange (
              &Desc
              );
 
-  if ((!EFI_ERROR (Status)) && ((Desc.Attributes & EFI_MEMORY_ACCESS_MASK) != 0)) {
+  if (!EFI_ERROR (Status)) {
     SetUefiImageMemoryAttributes (
       BaseAddress,
       Length,
