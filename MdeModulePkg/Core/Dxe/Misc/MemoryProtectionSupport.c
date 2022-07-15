@@ -334,7 +334,8 @@ SortImageRecord (
   @param[in]  ImageBase               Base of PE image
   @param[in]  ImageSize               Size of PE image
   @param[in]  MemoryType              EFI memory type
-  @param[out] ImageRecord             Populated image properties record
+  @param[in,out] ImageRecord          IN:  an allocated pool of length sizeof(IMAGE_PROPERTIES_RECORD)
+                                      OUT: a populated image properties record
 
   @retval     EFI_INVALID_PARAMETER   This function was called in SMM or the image
                                       type has an undefined protection policy
@@ -373,7 +374,9 @@ CreateImagePropertiesRecord (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  ImageRecord->Signature = IMAGE_PROPERTIES_RECORD_SIGNATURE;
+  ImageRecord->Signature        = IMAGE_PROPERTIES_RECORD_SIGNATURE;
+  ImageRecord->CodeSegmentCount = 0;
+  InitializeListHead (&ImageRecord->CodeSegmentList);
 
   //
   // Step 1: record whole region
@@ -431,8 +434,6 @@ CreateImagePropertiesRecord (
                                          sizeof (EFI_IMAGE_FILE_HEADER) +
                                          Hdr.Pe32->FileHeader.SizeOfOptionalHeader
                                          );
-  ImageRecord->CodeSegmentCount = 0;
-  InitializeListHead (&ImageRecord->CodeSegmentList);
   for (Index = 0; Index < Hdr.Pe32->FileHeader.NumberOfSections; Index++) {
     Name = Section[Index].Name;
     DEBUG ((
