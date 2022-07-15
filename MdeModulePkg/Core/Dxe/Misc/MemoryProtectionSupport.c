@@ -1346,12 +1346,13 @@ Done:
 /**
   Clears the attributes from a memory range.
 
-  @param[in]  BaseAddress            The base address of the pages which need their attributes cleared
-  @param[in]  Length                 Length in bytes
+  @param  BaseAddress            The base address of the pages which need their attributes cleared
+  @param  Length                 Length in bytes
 
-  @retval     EFI_SUCCESS            Attributes updated if necessary
-  @retval     EFI_INVALID_PARAMETER  BaseAddress is NULL or Length is zero
-  @retval     Other                  Return value of CoreGetMemorySpaceDescriptor()
+  @retval EFI_SUCCESS            Attributes updated if necessary
+  @retval EFI_INVALID_PARAMETER  BaseAddress is NULL or Length is zero
+  @retval EFI_NOT_READY          Cpu Arch is not installed yet
+  @retval Other                  Return value of CoreGetMemorySpaceDescriptor()
 
 **/
 EFI_STATUS
@@ -1363,6 +1364,10 @@ ClearAccessAttributesFromMemoryRange (
 {
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  Desc;
   EFI_STATUS                       Status;
+
+  if (gCpu == NULL) {
+    return EFI_NOT_READY;
+  }
 
   if (((VOID *)((UINTN)BaseAddress) == NULL) || (Length == 0)) {
     return EFI_INVALID_PARAMETER;

@@ -1529,7 +1529,7 @@ CoreInternalFreePages (
   // MU_CHANGE Start: Unprotect page(s) before free
   Status = ClearAccessAttributesFromMemoryRange (Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
 
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (Status) && (Status != EFI_NOT_READY)) {
     DEBUG ((DEBUG_WARN, "%a - Unable to clear attributes from memory at base: 0x%llx\n", __FUNCTION__, Memory));
   }
 

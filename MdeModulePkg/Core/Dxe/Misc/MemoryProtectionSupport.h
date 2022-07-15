@@ -39,6 +39,7 @@ typedef struct {
 
   @retval EFI_SUCCESS            Attributes updated if necessary
   @retval EFI_INVALID_PARAMETER  BaseAddress is NULL or Length is zero
+  @retval EFI_NOT_READY          Cpu Arch is not installed yet
   @retval Other                  Return value of CoreGetMemorySpaceDescriptor()
 
 **/
