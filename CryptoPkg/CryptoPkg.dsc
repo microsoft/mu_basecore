@@ -185,7 +185,7 @@
 ###################################################################################################
 [Components]
   CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
-  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf
+  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/BaseCryptLibUnitTestApp.inf
   CryptoPkg/Library/HmacSha1Lib/HmacSha1Lib.inf
   CryptoPkg/Library/HmacSha1Lib/HmacSha1LibNull.inf
 !if $(CRYPTO_SERVICES) == PACKAGE
@@ -235,7 +235,7 @@
 
 ## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
 [Components.IA32, Components.X64, Components.AARCH64]
-  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf {  ## Add unit-test application for the crypto tests.
+  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/BaseCryptLibUnitTestApp.inf {  ## Add unit-test application for the crypto tests.
     ## MU_CHANGE [START] add library classes to allow crypto tests to run in uefi shell correctly
     <LibraryClasses>
       DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf # MU_CHANGE add debug lib
