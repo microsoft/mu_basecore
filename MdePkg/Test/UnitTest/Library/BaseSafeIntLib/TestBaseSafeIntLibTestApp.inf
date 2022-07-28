@@ -8,7 +8,7 @@
 
 [Defines]
   INF_VERSION     = 0x00010005
-  BASE_NAME       = TestBaseSafeIntLibUefiShell
+  BASE_NAME       = TestBaseSafeIntLibTestApp
   MODULE_UNI_FILE = TestBaseSafeIntLib.uni
   FILE_GUID       = 1F91B73E-5B6A-4317-80E8-E7C36A3C7AF4
   MODULE_TYPE     = UEFI_APPLICATION
