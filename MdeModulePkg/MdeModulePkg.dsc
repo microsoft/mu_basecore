@@ -566,7 +566,7 @@
 
 [Components.IA32, Components.X64]
   MdeModulePkg/Universal/DebugSupportDxe/DebugSupportDxe.inf
-  MdeModulePkg/Application/SmiHandlerProfileInfo/SmiHandlerProfileInfo.inf
+  MdeModulePkg/Application/SmiHandlerProfileInfo/SmiHandlerProfileAuditTestApp.inf
   MdeModulePkg/Core/PiSmmCore/PiSmmIpl.inf
   MdeModulePkg/Core/PiSmmCore/PiSmmCore.inf
   MdeModulePkg/Universal/Variable/RuntimeDxe/VariableSmm.inf {

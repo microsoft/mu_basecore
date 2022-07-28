@@ -154,7 +154,7 @@
   #
   # Add UEFI Target Based Unit Tests
   #
-  MdePkg/Test/UnitTest/Library/BaseLib/BaseLibUnitTestsUefi.inf
+  MdePkg/Test/UnitTest/Library/BaseLib/BaseLibUnitTestApp.inf
 
   #
   # Build PEIM, DXE_DRIVER, SMM_DRIVER, UEFI Shell components that test SafeIntLib
@@ -162,7 +162,7 @@
   MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibPei.inf
   MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibDxe.inf
   MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibSmm.inf
-  MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibUefiShell.inf
+  MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibTestApp.inf
 
 [Components.IA32, Components.X64, Components.AARCH64]
   MdePkg/Library/BaseRngLib/BaseRngLib.inf
