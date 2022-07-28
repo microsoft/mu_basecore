@@ -7,7 +7,7 @@
 
 [Defines]
   INF_VERSION                    = 0x00010006
-  BASE_NAME                      = BaseLibUnitTestsUefi
+  BASE_NAME                      = BaseLibUnitTestApp
   FILE_GUID                      = df5a6fed-8786-4a9d-9d02-eab39497b4a1
   MODULE_TYPE                    = UEFI_APPLICATION
   VERSION_STRING                 = 1.0
