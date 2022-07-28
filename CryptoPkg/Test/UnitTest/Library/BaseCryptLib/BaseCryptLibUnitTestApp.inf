@@ -7,7 +7,7 @@
 
 [Defines]
   INF_VERSION    = 0x00010006
-  BASE_NAME      = BaseCryptLibUnitTestShell
+  BASE_NAME      = BaseCryptLibUnitTestApp
   FILE_GUID      = ed54ee8c-ef7a-41f2-83d5-0e0d4cd88c21
   MODULE_TYPE    = UEFI_APPLICATION
   VERSION_STRING = 1.0

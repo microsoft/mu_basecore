@@ -84,6 +84,7 @@
 # MU_CHANGE [END]
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
+
   #ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf ## MU_CHANGE
   #
   # It is not possible to prevent the ARM compiler for generic intrinsic functions.
@@ -118,6 +119,7 @@
 
 [LibraryClasses.IA32.PEIM, LibraryClasses.X64.PEIM]
   PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLibIdt/PeiServicesTablePointerLibIdt.inf
+
 
 [LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_APPLICATION] # MU_CHANGE add UEFI Application for UEFI TEsts
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
@@ -331,7 +333,7 @@
 
 ## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
 [Components.IA32, Components.X64, Components.AARCH64]
-  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf {  ## Add unit-test application for the crypto tests.
+  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/BaseCryptLibUnitTestApp.inf {  ## Add unit-test application for the crypto tests.
     ## MU_CHANGE [START] add library classes to allow crypto tests to run in uefi shell correctly
     <LibraryClasses>
       DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf # MU_CHANGE add debug lib
@@ -357,3 +359,8 @@
   INTEL:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
   GCC:*_*_*_CC_FLAGS = -D ENABLE_MD5_DEPRECATED_INTERFACES
 !endif
+#MU_CHANGE START
+[BuildOptions.common.EDKII.DXE_RUNTIME_DRIVER, BuildOptions.common.EDKII.DXE_SMM_DRIVER, BuildOptions.common.EDKII.SMM_CORE, BuildOptions.common.EDKII.DXE_DRIVER]
+  MSFT:*_*_IA32_DLINK_FLAGS = /ALIGN:4096 # enable 4k alignment for MAT and other protections.
+  MSFT:*_*_X64_DLINK_FLAGS = /ALIGN:4096 # enable 4k alignment for MAT and other protections.
+#MU_CHANGE END
