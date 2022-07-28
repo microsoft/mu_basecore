@@ -188,7 +188,7 @@
 ###################################################################################################
 [Components]
   CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
-  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf
+  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/BaseCryptLibUnitTestApp.inf
   CryptoPkg/Library/HmacSha1Lib/HmacSha1Lib.inf
   CryptoPkg/Library/HmacSha1Lib/HmacSha1LibNull.inf
 !if $(CRYPTO_SERVICES) == PACKAGE
@@ -235,29 +235,10 @@
     <Defines>
       FILE_GUID = $(SMM_CRYPTO_DRIVER_FILE_GUID)# MU_CHANGE updated File GUID
   }
-## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
-[Components.IA32, Components.X64, Components.AARCH64]
-  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf {  ## Add unit-test application for the crypto tests.
-    ## MU_CHANGE [START] add library classes to allow crypto tests to run in uefi shell correctly
-    <LibraryClasses>
-      DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf # MU_CHANGE add debug lib
-      DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf # MU_CHANGE add debug lib
-      UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
-      OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
-      IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
-      ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
-      MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
-      BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
-    <PcdsFixedAtBuild>
-      gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
-    ## MU_CHANGE [END]
-  }
-  ## MU_CHANGE [END]
-## MU_CHANGE [END]
 
 ## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
 [Components.IA32, Components.X64, Components.AARCH64]
-  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf {  ## Add unit-test application for the crypto tests.
+  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/BaseCryptLibUnitTestApp.inf {  ## Add unit-test application for the crypto tests.
     ## MU_CHANGE [START] add library classes to allow crypto tests to run in uefi shell correctly
     <LibraryClasses>
       DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf # MU_CHANGE add debug lib
