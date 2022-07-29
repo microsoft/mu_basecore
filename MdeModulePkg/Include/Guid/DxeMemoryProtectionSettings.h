@@ -153,8 +153,7 @@ typedef struct {
   // If a bit is set, memory regions of the associated type will be mapped
   // non-executable. If a bit is cleared, nothing will be done to associated type of memory.
   //
-  //  NOTE: - User must NOT set NX protection for EfiLoaderCode / EfiBootServicesCode / EfiRuntimeServicesCode.
-  //        - User MUST set the same NX protection for EfiBootServicesData and EfiConventionalMemory.
+  //  NOTE: - User MUST set the same NX protection for EfiBootServicesData and EfiConventionalMemory.
   DXE_HEAP_GUARD_MEMORY_TYPES    NxProtectionPolicy;
 } DXE_MEMORY_PROTECTION_SETTINGS;
 
@@ -242,7 +241,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiBootServicesData             = 1,      \
               .Fields.EfiRuntimeServicesCode          = 1,      \
               .Fields.EfiRuntimeServicesData          = 1,      \
-              .Fields.EfiConventionalMemory           = 0,      \
+              .Fields.EfiConventionalMemory           = 1,      \
               .Fields.EfiUnusableMemory               = 1,      \
               .Fields.EfiACPIReclaimMemory            = 1,      \
               .Fields.EfiACPIMemoryNVS                = 1,      \

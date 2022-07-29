@@ -1259,16 +1259,21 @@ EnableNullDetection (
                EFI_PAGES_TO_SIZE (1),
                Desc.Capabilities | EFI_MEMORY_RP
                );
-    ASSERT_EFI_ERROR (Status);
+    if (EFI_ERROR (Status)) {
+      ASSERT_EFI_ERROR (Status);
+      goto Done;
+    }
   }
 
-  CoreSetMemorySpaceAttributes (
-    0,
-    EFI_PAGES_TO_SIZE (1),
-    Desc.Attributes | EFI_MEMORY_RP
-    );
+  Status = CoreSetMemorySpaceAttributes (
+             0,
+             EFI_PAGES_TO_SIZE (1),
+             Desc.Attributes | EFI_MEMORY_RP
+             );
+  ASSERT_EFI_ERROR (Status);
 
-  return;
+Done:
+  CoreCloseEvent (Event);
 }
 
 // MU_CHANGE END
@@ -1310,8 +1315,8 @@ CoreInitializeMemoryProtection (
 
   Status = CoreCreateEvent (
              EVT_NOTIFY_SIGNAL,
-             TPL_CALLBACK,
              // MU_CHANGE START: Use Project Mu Arch Protocol Notify
+             TPL_CALLBACK - 1,
              //  MemoryProtectionCpuArchProtocolNotify,
              MemoryProtectionCpuArchProtocolNotifyMu,
              // MU_CHANGE END
@@ -1343,7 +1348,7 @@ CoreInitializeMemoryProtection (
     // so it can be safely set as RP
     Status = CoreCreateEvent (
                EVT_NOTIFY_SIGNAL,
-               TPL_CALLBACK,
+               TPL_CALLBACK - 1,
                EnableNullDetection,
                NULL,
                &EnableNullDetectionEvent
