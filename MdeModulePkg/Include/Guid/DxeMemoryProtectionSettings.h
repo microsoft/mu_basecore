@@ -242,7 +242,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiBootServicesData             = 1,      \
               .Fields.EfiRuntimeServicesCode          = 1,      \
               .Fields.EfiRuntimeServicesData          = 1,      \
-              .Fields.EfiConventionalMemory           = 0,      \
+              .Fields.EfiConventionalMemory           = 1,      \
               .Fields.EfiUnusableMemory               = 1,      \
               .Fields.EfiACPIReclaimMemory            = 1,      \
               .Fields.EfiACPIMemoryNVS                = 1,      \
