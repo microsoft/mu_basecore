@@ -575,8 +575,8 @@ class UncrustifyCheck(ICiBuildPlugin):
         self._formatted_file_error_count = len(formatted_files)
 
         if self._formatted_file_error_count > 0:
-            logging.warning('Uncrustify found {0} files with formatting errors'.format(self._formatted_file_error_count))
-            self._tc.LogStdError("Uncrustify found {0} files with formatting errors:\n".format(self._formatted_file_error_count))
+            logging.warning(f'Uncrustify found {self._formatted_file_error_count} files with formatting errors')
+            self._tc.LogStdError(f"Uncrustify found {self._formatted_file_error_count} files with formatting errors:\n")
             logging.critical(
                 "Visit the following instructions to learn "
                 "how to find the detailed formatting errors in Azure "
@@ -590,9 +590,8 @@ class UncrustifyCheck(ICiBuildPlugin):
         for formatted_file in formatted_files:
             pre_formatted_file = formatted_file[:-len(UncrustifyCheck.FORMATTED_FILE_EXTENSION)]
 
-            msg = f"Formatting errors in {os.path.relpath(pre_formatted_file, self._abs_package_path)}"
-            self._tc.LogStdError(msg + '\n')
-            logging.info(msg)
+            self._tc.LogStdError(f"Formatting errors in {os.path.relpath(pre_formatted_file, self._abs_package_path)}\n")
+            logging.info(f"Formatting errors in {os.path.relpath(pre_formatted_file, self._abs_package_path)}")
 
             if (self._output_file_diffs or
                     self._file_template_contents is not None or

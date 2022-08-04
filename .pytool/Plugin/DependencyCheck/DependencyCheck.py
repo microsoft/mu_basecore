@@ -108,9 +108,8 @@ class DependencyCheck(ICiBuildPlugin):
                     if mod_specific_key in pkgconfig and p in pkgconfig[mod_specific_key]:
                         continue
 
-                    msg = "Dependency Check: {0} depends on pkg {1} but pkg is not listed in AcceptableDependencies".format(file, p)
-                    logging.error(msg)
-                    tc.LogStdError(msg)
+                    logging.error(f"Dependency Check: {file} depends on pkg {p} but pkg is not listed in AcceptableDependencies")
+                    tc.LogStdError(f"Dependency Check: {file} depends on pkg {p} but pkg is not listed in AcceptableDependencies")
                     overall_status += 1
 
         # If XML object exists, add results
