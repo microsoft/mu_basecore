@@ -385,7 +385,7 @@ class UncrustifyCheck(ICiBuildPlugin):
                 file_template_path = pathlib.Path(os.path.join(self._plugin_path, file_template_name))
                 self._file_template_contents = file_template_path.read_text()
         except KeyError:
-            logging.info("A file header template is not specified in the config file.")
+            logging.warn("A file header template is not specified in the config file.")
         except FileNotFoundError:
             logging.warn("The specified file header template file was not found.")
         try:
@@ -397,7 +397,7 @@ class UncrustifyCheck(ICiBuildPlugin):
                 func_template_path = pathlib.Path(os.path.join(self._plugin_path, func_template_name))
                 self._func_template_contents = func_template_path.read_text()
         except KeyError:
-            logging.info("A function header template is not specified in the config file.")
+            logging.warn("A function header template is not specified in the config file.")
         except FileNotFoundError:
             logging.warn("The specified function header template file was not found.")
 
@@ -577,7 +577,7 @@ class UncrustifyCheck(ICiBuildPlugin):
         if self._formatted_file_error_count > 0:
             logging.warning('Uncrustify found {0} files with formatting errors'.format(self._formatted_file_error_count))
             self._tc.LogStdError("Uncrustify found {0} files with formatting errors:\n".format(self._formatted_file_error_count))
-            logging.info(
+            logging.critical(
                 "Visit the following instructions to learn "
                 "how to find the detailed formatting errors in Azure "
                 "DevOps CI: "
