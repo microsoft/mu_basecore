@@ -50,7 +50,7 @@ AddDeviceState (
   DevState |= AdditionalState;
   Status    = PcdSet32S (PcdDeviceStateBitmask, DevState);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Error setting device state\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a - Error setting device state - %r\n", __FUNCTION__, Status));
     return RETURN_DEVICE_ERROR;
   }
 
