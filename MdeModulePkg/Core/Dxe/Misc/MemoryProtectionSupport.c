@@ -603,6 +603,24 @@ SplitMemoryDescriptor (
     ImageRecord = NewImageRecord;
 
     //
+    // Update PhysicalStart to exclude the portion before the image buffer
+    //
+    if (TempRecord.PhysicalStart < ImageRecord->ImageBase) {
+      NewRecord->Type          = TempRecord.Type;
+      NewRecord->PhysicalStart = TempRecord.PhysicalStart;
+      NewRecord->VirtualStart  = 0;
+      NewRecord->NumberOfPages = EfiSizeToPages (ImageRecord->ImageBase - TempRecord.PhysicalStart);
+      NewRecord->Attribute     = TempRecord.Attribute;
+      TotalNewRecordCount++;
+
+      PhysicalStart            = ImageRecord->ImageBase;
+      TempRecord.PhysicalStart = PhysicalStart;
+      TempRecord.NumberOfPages = EfiSizeToPages (PhysicalEnd - PhysicalStart);
+
+      NewRecord = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)NewRecord + DescriptorSize);
+    }
+
+    //
     // Set new record
     //
     NewRecordCount       = SetNewRecord (ImageRecord, NewRecord, &TempRecord, DescriptorSize);
