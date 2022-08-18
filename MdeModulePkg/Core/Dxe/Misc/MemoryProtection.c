@@ -1310,8 +1310,8 @@ CoreInitializeMemoryProtection (
 
   Status = CoreCreateEvent (
              EVT_NOTIFY_SIGNAL,
-             TPL_CALLBACK,
              // MU_CHANGE START: Use Project Mu Arch Protocol Notify
+             TPL_CALLBACK - 1,
              //  MemoryProtectionCpuArchProtocolNotify,
              MemoryProtectionCpuArchProtocolNotifyMu,
              // MU_CHANGE END
