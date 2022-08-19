@@ -571,30 +571,16 @@ SplitMemoryDescriptor (
     NewImageRecord = GetImageRecordContainedByBuffer (PhysicalStart, PhysicalEnd - PhysicalStart);
     if (NewImageRecord == NULL) {
       //
-      // No more image covered by this range, stop
+      // No more images cover this range, check if we've reached the end of the old descriptor. If not,
+      // add the remaining range to the new descriptor list.
       //
-      if ((PhysicalEnd > PhysicalStart) && (ImageRecord != NULL)) {
-        //
-        // If this is still address in this record, need record.
-        //
-        NewRecord = PREVIOUS_MEMORY_DESCRIPTOR (NewRecord, DescriptorSize);
-        if (IsDataType (NewRecord->Type)) {
-          //
-          // Last record is DATA, just merge it.
-          //
-          NewRecord->NumberOfPages = EfiSizeToPages (PhysicalEnd - NewRecord->PhysicalStart);
-        } else {
-          //
-          // Last record is CODE, create a new DATA entry.
-          //
-          NewRecord                = NEXT_MEMORY_DESCRIPTOR (NewRecord, DescriptorSize);
-          NewRecord->Type          = TempRecord.Type;
-          NewRecord->PhysicalStart = TempRecord.PhysicalStart;
-          NewRecord->VirtualStart  = 0;
-          NewRecord->NumberOfPages = TempRecord.NumberOfPages;
-          NewRecord->Attribute     = TempRecord.Attribute | EFI_MEMORY_XP;
-          TotalNewRecordCount++;
-        }
+      if (PhysicalEnd > PhysicalStart) {
+        NewRecord->Type          = TempRecord.Type;
+        NewRecord->PhysicalStart = PhysicalStart;
+        NewRecord->VirtualStart  = 0;
+        NewRecord->NumberOfPages = EfiSizeToPages (PhysicalEnd - PhysicalStart);
+        NewRecord->Attribute     = TempRecord.Attribute;
+        TotalNewRecordCount++;
       }
 
       break;
