@@ -1328,11 +1328,7 @@ MemoryProtectionCpuArchProtocolNotifyMu (
   IN VOID       *Context
   )
 {
-  EFI_STATUS             Status;
-  EFI_CPU_ARCH_PROTOCOL  *CpuArchProtocol;
-
-  Status = CoreLocateProtocol (&gEfiCpuArchProtocolGuid, NULL, (VOID **)&CpuArchProtocol);
-  if (EFI_ERROR (Status)) {
+  if (gCpu == NULL) {
     goto Done;
   }
 
