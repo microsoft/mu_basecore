@@ -130,7 +130,7 @@ InitializeCpuInterruptHandlers (
   // ExternalInterruptHandler = AllocateZeroPool (sizeof (EFI_CPU_INTERRUPT_HANDLER) * CPU_INTERRUPT_NUM);
   gBS->AllocatePages (
          AllocateAnyPages,
-         EfiBootServicesCode,
+         EfiBootServicesData,
          EFI_SIZE_TO_PAGES (sizeof (EFI_CPU_INTERRUPT_HANDLER) * CPU_INTERRUPT_NUM),
          (EFI_PHYSICAL_ADDRESS *)(UINTN)&ExternalInterruptHandler
          );
@@ -160,7 +160,7 @@ InitializeCpuInterruptHandlers (
   ASSERT (IdtTable != NULL);
   ZeroMem (IdtTable, (sizeof (IA32_IDT_GATE_DESCRIPTOR) * CPU_INTERRUPT_NUM) + sizeof (UINT32));
   // We must offset the IDT pointer due to the below MU_CHANGE:
-  // https://dev.azure.com/windowspartners/MSCoreUEFI/_git/mu_basecore/commit/51cac4080627afa4907af64fbcc69eb9aac4ed08
+  // https://github.com/microsoft/mu_basecore/commit/51cac4080627afa4907af64fbcc69eb9aac4ed08
   IdtTable = (IA32_IDT_GATE_DESCRIPTOR *)((UINT8 *)IdtTable + sizeof (UINT32));
   // MU_CHANGE END
   CopyMem (IdtTable, (VOID *)IdtDescriptor.Base, sizeof (IA32_IDT_GATE_DESCRIPTOR) * IdtEntryCount);
@@ -178,7 +178,7 @@ InitializeCpuInterruptHandlers (
                   EfiBootServicesCode,
                   EFI_SIZE_TO_PAGES (TemplateMap.ExceptionStubHeaderSize * CPU_INTERRUPT_NUM),
                   (EFI_PHYSICAL_ADDRESS *)(UINTN)&InterruptEntryCode
-                  );                                                                                                                                                 // mu_change
+                  );
   // MU_CHANGE END
   ASSERT (!EFI_ERROR (Status) && InterruptEntryCode != NULL);
 
