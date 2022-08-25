@@ -375,6 +375,7 @@ StartTerminalStateMachine (
   )
 {
   EFI_STATUS  Status;
+  UINT64      TimerInterval;  // MU_CHANGE: Override the timer interval if the PCD is set
 
   Status = gBS->CreateEvent (
                   EVT_TIMER | EVT_NOTIFY_SIGNAL,
@@ -385,10 +386,21 @@ StartTerminalStateMachine (
                   );
   ASSERT_EFI_ERROR (Status);
 
+  // MU_CHANGE Starts: Override the timer interval if the PCD is set
+  if (PcdGet32 (PcdTerminalKeyboardTimerInterval) != 0) {
+    TimerInterval = PcdGet32 (PcdTerminalKeyboardTimerInterval);
+  } else if (TerminalDevice->SerialInTimeOut == 0) {
+    TimerInterval = KEYBOARD_TIMER_INTERVAL;
+  } else {
+    // We should check back when filled in half of the FIFO, the number is the unit of 100ns.
+    TimerInterval = TerminalDevice->SerialInTimeOut * FIFO_MAX_NUMBER / 2 * 10;
+  }
+
+  // MU_CHANGE Ends
   Status = gBS->SetTimer (
                   TerminalDevice->TimerEvent,
                   TimerPeriodic,
-                  KEYBOARD_TIMER_INTERVAL
+                  TimerInterval // MU_CHANGE
                   );
   ASSERT_EFI_ERROR (Status);
 
