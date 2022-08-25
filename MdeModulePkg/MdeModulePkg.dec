@@ -2314,6 +2314,11 @@
   # @Prompt The shared bit mask when Intel Tdx is enabled.
   gEfiMdeModulePkgTokenSpaceGuid.PcdTdxSharedBitMask|0x0|UINT64|0x10000025
 
+  ## MU_CHANGE - Configuring timer interval in terminal DXE driver
+  ## This PCD determines the timer interval to be set when using serial console.
+  # @Prompt Sets the serial console timer interval, in the unit of 100ns.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdTerminalKeyboardTimerInterval|0x00000000|UINT32|0x00030025
+
 [PcdsPatchableInModule]
   ## Specify memory size with page number for PEI code when
   #  Loading Module at Fixed Address feature is enabled.
