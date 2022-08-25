@@ -2368,6 +2368,11 @@
   ## The value of rate limiter event for timeout check. Default value is 100(unit 1ms).
   # @Prompt The value is use for Usb Network rate limiting supported.
   gEfiMdeModulePkgTokenSpaceGuid.PcdUsbNetworkRateLimitingFactor|100|UINT32|0x10000028
+  
+  ## MU_CHANGE - Configuring timer interval in terminal DXE driver
+  ## This PCD determines the timer interval to be set when using serial console.
+  # @Prompt Sets the serial console timer interval, in the unit of 100ns.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdTerminalKeyboardTimerInterval|0x00000000|UINT32|0x00030025
 
 [PcdsPatchableInModule]
   ## Specify memory size with page number for PEI code when
