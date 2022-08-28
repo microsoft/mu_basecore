@@ -59,7 +59,7 @@ try:
                 elif (errcode == cls.OR_INVALID_FORMAT):
                     str = 'INVALID_FORMAT'
                 elif (errcode == cls.OR_DSC_INF_NOT_FOUND):
-                    str = 'DSC_FILE_NOT_FOUND'
+                    str = 'FILE_NOT_FOUND'
                 elif (errcode == cls.OR_TARGET_INF_NOT_FOUND):
                     str = 'INF_FILE_NOT_FOUND'
                 else:
@@ -130,7 +130,7 @@ try:
                 if m_result != self.OverrideResult.OR_ALL_GOOD:
                     if m_result != self.OverrideResult.OR_DSC_INF_NOT_FOUND:
                         result = m_result
-                    logging.error("Override processing error %s in file %s" % (self.OverrideResult.GetErrStr(m_result), file))
+                    logging.error("Override processing error %s in file/dir %s" % (self.OverrideResult.GetErrStr(m_result), file))
 
             self.override_log_print(thebuilder, modulelist, status)
 
@@ -154,6 +154,10 @@ try:
             list_path = os.path.normpath(filepath).lower()
 
             if (list_path in filelist):
+                return result
+
+            # This processing step is only for files. If the filepath is a directory (meaning the directory is hashed), skip this step
+            if os.path.isdir(filepath):
                 return result
 
             # Check for file existence, fail otherwise.

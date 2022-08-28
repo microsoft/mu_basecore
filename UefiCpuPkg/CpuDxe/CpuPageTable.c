@@ -1766,19 +1766,21 @@ ClearPageFault (
       if (((OldAttributes & EFI_MEMORY_RP) != 0) || ((OldAttributes & EFI_MEMORY_XP) != 0)) {
         NewAttributes  = OldAttributes;
         NewAttributes &= ~(EFI_MEMORY_RP | EFI_MEMORY_XP);
-        Status         = AssignMemoryPageAttributes (
-                           &PagingContext,
-                           PFAddress,
-                           EFI_PAGE_SIZE,
-                           NewAttributes,
-                           NULL
-                           );
+        DEBUG ((DEBUG_INFO, "%a - Clearing page fault at address: 0x%x\n", __FUNCTION__, PFAddress));
+        Status = AssignMemoryPageAttributes (
+                   &PagingContext,
+                   PFAddress,
+                   EFI_PAGE_SIZE,
+                   NewAttributes,
+                   NULL
+                   );
         if (!EFI_ERROR (Status)) {
-          DEBUG ((DEBUG_INFO, "%a:%d - PFAddress: 0x%x\n", __FUNCTION__, __LINE__, PFAddress));
           if (mPFCount < ARRAY_SIZE (mPageFaultAddresses)) {
             mPageFaultAttributes[mPFCount]  = OldAttributes;
             mPageFaultAddresses[mPFCount++] = PFAddress;
           }
+        } else {
+          DEBUG ((DEBUG_INFO, "%a - Failed to clear page fault at address: 0x%x\n", __FUNCTION__, PFAddress));
         }
       }
     }
@@ -1818,6 +1820,7 @@ ResetPageAttributes (
 
     if (PageEntry != NULL) {
       Attributes = mPageFaultAttributes[mPFCount];
+      DEBUG ((DEBUG_INFO, "%a - Restoring page attributes at address: 0x%x\n", __FUNCTION__, PFAddress));
       if (EFI_ERROR (
             AssignMemoryPageAttributes (
               &PagingContext,
@@ -1828,7 +1831,7 @@ ResetPageAttributes (
               )
             ))
       {
-        DEBUG ((DEBUG_ERROR, "%a:%d - Unable to set memory attributes at address: 0x%x\n", __FUNCTION__, __LINE__, PFAddress));
+        DEBUG ((DEBUG_ERROR, "%a - Unable to set memory attributes at address: 0x%x\n", __FUNCTION__, PFAddress));
         Status = EFI_DEVICE_ERROR;
       }
 

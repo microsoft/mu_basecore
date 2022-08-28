@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 import os
+import logging
 from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
 import edk2toollib.windows.locate_tools as locate_tools
 from edk2toolext.environment import shell_environment
@@ -21,9 +22,11 @@ class WinRcPath(IUefiBuildPlugin):
         #get the locate tools module
         path = locate_tools.FindToolInWinSdk("rc.exe")
         if path is None:
-            thebuilder.logging.warning("Failed to find rc.exe")
+            logging.critical("Failed to find rc.exe")
+            return 1
         else:
             p = os.path.abspath(os.path.dirname(path))
             shell_environment.GetEnvironment().set_shell_var("WINSDK_PATH_FOR_RC_EXE", p)
             version_aggregator.GetVersionAggregator().ReportVersion("WINSDK_PATH_FOR_RC_EXE", p, version_aggregator.VersionTypes.INFO)
+            return 0
         return 0

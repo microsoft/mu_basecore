@@ -134,24 +134,6 @@ HeapGuardPolicy.MmPageGuard are active.\n",
       ));
   }
 
-  if (gDxeMps.NxProtectionPolicy.Fields.EfiLoaderCode        ||
-      gDxeMps.NxProtectionPolicy.Fields.EfiBootServicesCode  ||
-      gDxeMps.NxProtectionPolicy.Fields.EfiRuntimeServicesCode)
-  {
-    DEBUG ((
-      DEBUG_WARN,
-      "%a: - NxProtectionPolicy.EfiLoaderCode, \
-NxProtectionPolicy.EfiBootServicesCode, \
-and NxProtectionPolicy.EfiRuntimeServicesCode \
-must be set to ZERO. Setting all to ZERO \
-in the memory protection settings global.\n",
-      __FUNCTION__
-      ));
-    gDxeMps.NxProtectionPolicy.Fields.EfiLoaderCode          = 0;
-    gDxeMps.NxProtectionPolicy.Fields.EfiBootServicesCode    = 0;
-    gDxeMps.NxProtectionPolicy.Fields.EfiRuntimeServicesCode = 0;
-  }
-
   if (gDxeMps.NxProtectionPolicy.Fields.EfiBootServicesData != gDxeMps.NxProtectionPolicy.Fields.EfiConventionalMemory) {
     DEBUG ((
       DEBUG_WARN,

@@ -8,12 +8,12 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "DxeMain.h"
 #include "Image.h"
+#include "MemoryProtectionSupport.h" // MU_CHANGE
 
 //
 // Module Globals
 //
-LOADED_IMAGE_PRIVATE_DATA  *mCurrentImage                    = NULL;
-BOOLEAN                    mSetNxOnCodeTypeMemoryAllocations = TRUE; // MU_CHANGE
+LOADED_IMAGE_PRIVATE_DATA  *mCurrentImage = NULL;
 
 typedef struct {
   LIST_ENTRY                              Link;
@@ -656,24 +656,11 @@ CoreLoadPeImage (
   // loader or 3rd party binary which isn't NX aware. Because of this, we need to ensure future allocations
   // of code memory types aren't set to NX in case this image does its own allocations.
   // Or, if our memory protection policy specifies that we shouldn't allow such images, return a failure.
-  if (!(Image->ImageContext.SupportsNx) && (Image->ImageContext.ImageCodeMemoryType == EfiLoaderCode)) {
+  if (!(Image->ImageContext.SupportsNx) && (Image->ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION)) {
+    TurnOffNxCompatibility ();
     if (gDxeMps.ImageProtectionPolicy.Fields.BlockImagesWithoutNxFlag) {
       return EFI_SECURITY_VIOLATION;
     }
-
-    if (mSetNxOnCodeTypeMemoryAllocations) {
-      DEBUG ((DEBUG_INFO, "%a - Setting Nx on Code types to FALSE\n", __FUNCTION__));
-      mSetNxOnCodeTypeMemoryAllocations = FALSE;
-    }
-  }
-
-  // InstallMemoryAttributeProtocol is dictated by the memory protection
-  // policy. Even if all images are NX compatable, the memory attribute protocol is considered necessary
-  // for updating the memory attributes after allocation. Because of this, we don't want to apply NX
-  // to code type memory unless the protocol will be available to remove NX prior to execution.
-  if ((!gDxeMps.ImageProtectionPolicy.Fields.InstallMemoryAttributeProtocol) && mSetNxOnCodeTypeMemoryAllocations) {
-    DEBUG ((DEBUG_INFO, "%a - Setting Nx on Code types to FALSE\n", __FUNCTION__));
-    mSetNxOnCodeTypeMemoryAllocations = FALSE;
   }
 
   // MU_CHANGE END
@@ -811,13 +798,6 @@ CoreLoadPeImage (
     goto Done;
   }
 
-  // MU_CHANGE START
-  // Now that relocations are done, set the image to read-only
-  if (gDxeMps.ImageProtectionPolicy.Data) {
-    SetImageToReadOnly (Image);
-  }
-
-  // MU_CHANGE END
   //
   // Flush the Instruction Cache
   //
@@ -1029,7 +1009,10 @@ CoreUnloadAndCloseImage (
     UnregisterMemoryProfileImage (Image);
   }
 
-  UnprotectUefiImage (&Image->Info, Image->LoadedImageDevicePath);
+  // MU_CHANGE START: Use Project Mu UnprotectUefiImage
+  // UnprotectUefiImage (&Image->Info, Image->LoadedImageDevicePath);
+  UnprotectUefiImageMu (&Image->Info, Image->LoadedImageDevicePath);
+  // MU_CHANGE END
 
   if (Image->PeCoffEmu != NULL) {
     //
