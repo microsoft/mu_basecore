@@ -214,6 +214,7 @@
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
   DebugLib|MdePkg/Library/UefiDebugLibStdErr/UefiDebugLibStdErr.inf
   FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
+  ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
 
 [LibraryClasses.common.MM_STANDALONE]
   HobLib|MdeModulePkg/Library/BaseHobLibNull/BaseHobLibNull.inf
@@ -618,9 +619,17 @@
   MdeModulePkg/Library/TraceHubDebugSysTLib/BaseTraceHubDebugSysTLib.inf
   MdeModulePkg/Library/TraceHubDebugSysTLib/PeiTraceHubDebugSysTLib.inf
   MdeModulePkg/Library/TraceHubDebugSysTLib/DxeSmmTraceHubDebugSysTLib.inf
+  MdeModulePkg/Application/MpServicesTest/MpServicesTest.inf
 
 [Components.X64]
   MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf
+
+[Components.AARCH64]
+  MdeModulePkg/Application/MpServicesTest/MpServicesTest.inf {
+    <LibraryClasses>
+      CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
+      ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
+  }
 
 [BuildOptions]
 
