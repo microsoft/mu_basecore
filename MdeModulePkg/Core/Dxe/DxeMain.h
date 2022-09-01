@@ -14,6 +14,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/LoadedImage.h>
 #include <Protocol/GuidedSectionExtraction.h>
+#include <Protocol/InternalEventServices.h> // MU_CHANGE: Support all TPLs
 #include <Protocol/DevicePath.h>
 #include <Protocol/Runtime.h>
 #include <Protocol/LoadFile.h>
@@ -1581,11 +1582,46 @@ CoreWaitForEvent (
 // MU_CHANGE begin
 
 /**
+  Stops execution until an event is signaled.
+
+  @param  NumberOfEvents[in]     The number of events in the UserEvents array
+  @param  UserEvents[in]         An array of EFI_EVENT
+  @param  UserIndex[out]         Pointer to the index of the event which
+                                 satisfied the wait condition
+
+  @retval EFI_SUCCESS            The event indicated by Index was signaled.
+  @retval EFI_INVALID_PARAMETER  The event indicated by Index has a notification
+                                 function or Event was not a valid type
+
+**/
+EFI_STATUS
+EFIAPI
+CoreWaitForEventInternal (
+  IN UINTN      NumberOfEvents,
+  IN EFI_EVENT  *UserEvents,
+  OUT UINTN     *UserIndex
+  );
+
+/**
   Initialize the memory protection special region reporting.
 **/
 VOID
 EFIAPI
 CoreInitializeMemoryProtectionSpecialRegions (
+  VOID
+  );
+
+/**
+  Installs the internal version of Event Services that does not require
+  TPL_APPLICATION to execute.
+
+  @retval EFI_SUCCESS           Driver initialized successfully
+  @retval EFI_OUT_OF_RESOURCES  Could not allocate needed resources
+
+**/
+EFI_STATUS
+EFIAPI
+InternalEventServicesInit (
   VOID
   );
 

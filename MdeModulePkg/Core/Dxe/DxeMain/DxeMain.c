@@ -554,6 +554,17 @@ DxeMain (
   Status = InitializeSectionExtraction (gDxeCoreImageHandle, gDxeCoreST);
   ASSERT_EFI_ERROR (Status);
 
+  // MU_CHANGE [BEGIN] - Support all TPLs
+  //
+  // Produce Internal Event Services
+  //
+  if (FeaturePcdGet (PcdInternalEventServicesEnabled)) {
+    Status = InternalEventServicesInit ();
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // MU_CHANGE [END] - Support all TPLs
+
   //
   // Initialize the DXE Dispatcher
   //
