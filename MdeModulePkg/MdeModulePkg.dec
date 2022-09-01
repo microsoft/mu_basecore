@@ -649,6 +649,10 @@
   # Include/Protocol/MediaSanitize.h
   gMediaSanitizeProtocolGuid = { 0x0d799a99, 0x25af, 0x429e, {0x92, 0x72, 0xd0, 0xb2, 0x7d, 0x6d, 0x5f, 0x14 } }
 
+  # MU_CHANGE
+  # This protocol provides access to Internal Event services that do not need TPL_APPLICATION
+  gInternalEventServicesProtocolGuid = {0x7ecd162a, 0xc664, 0x11ec, { 0x9d, 0x64, 0x02, 0x42, 0xac, 0x12, 0x00, 0x02 } }
+  
   ## This protocol defines the generic memory test interfaces in Dxe phase.
   # Include/Protocol/GenericMemoryTest.h
   gEfiGenericMemTestProtocolGuid = { 0x309DE7F1, 0x7F5E, 0x4ACE, { 0xB4, 0x9C, 0x53, 0x1B, 0xE5, 0xAA, 0x95, 0xEF }}
@@ -1057,6 +1061,14 @@
   #   FALSE - DMA Access can happen before IOMMU protocol install.<BR>
   # @Prompt Enable DMA before IOMMU protocol.
   gEfiMdeModulePkgTokenSpaceGuid.PcdRequireIommu|TRUE|BOOLEAN|0x30001057
+
+  ## MU_CHANGE
+  ## Indicates if the InternalEventServices protocol is published to gBS. This protocol provides access to the
+  #  internal event functions that do not require TPL_APPLICATION.
+  #    TRUE  - Publish the InternalEventServices protocol
+  #    FALSE - Do not publish the InternalEventServices protocol
+  # @Prompt Install Internal Event Services Protocol
+  gEfiMdeModulePkgTokenSpaceGuid.PcdInternalEventServicesEnabled|FALSE|BOOLEAN|0x30003003
 
 [PcdsFeatureFlag.IA32, PcdsFeatureFlag.ARM, PcdsFeatureFlag.AARCH64]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|FALSE|BOOLEAN|0x0001003a

@@ -541,6 +541,17 @@ DxeMain (
   Status = InitializeSectionExtraction (gDxeCoreImageHandle, gDxeCoreST);
   ASSERT_EFI_ERROR (Status);
 
+  // MU_CHANGE begin
+  //
+  // Produce Internal Event Services
+  //
+  if (FeaturePcdGet (PcdInternalEventServicesEnabled)) {
+    Status = InternalEventServicesInit ();
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // MU_CHANGE end
+
   //
   // Initialize the DXE Dispatcher
   //
