@@ -1535,11 +1535,6 @@ CoreInternalFreePages (
   UINTN       Alignment;
   BOOLEAN     IsGuarded;
 
-  //
-  // Free the range
-  //
-  CoreAcquireMemoryLock ();
-
   // MU_CHANGE Start: Unprotect page(s) before free
   Status = ClearAccessAttributesFromMemoryRange (Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
 
@@ -1548,6 +1543,11 @@ CoreInternalFreePages (
   }
 
   // MU_CHANGE End
+
+  //
+  // Free the range
+  //
+  CoreAcquireMemoryLock ();
 
   //
   // Find the entry that the covers the range
