@@ -1042,6 +1042,15 @@ PeiGetVariable (
     return EFI_NOT_FOUND;
   }
 
+  // MU_CHANGE
+  DEBUG ((DEBUG_VARIABLE, "Enter: FunctionName(%a) VariableName(%s) VendorGuid(%g) &Attributes(0x%p) DataSize(0x%Lx) &Data(%p) \n",
+    __FUNCTION__,
+    VariableName,
+    VariableGuid,
+    Attributes,
+    (UINT64)*DataSize,
+    Data));
+
   VariableHeader = NULL;
 
   //
@@ -1074,6 +1083,13 @@ PeiGetVariable (
   }
 
   *DataSize = VarDataSize;
+
+  // MU_CHANGE
+  DEBUG ((DEBUG_VARIABLE, "Exit: FunctionName(%a) VariableName(%s) VendorGuid(%g) Attributes(0x%x)\n",
+    __FUNCTION__,
+    VariableName,
+    VariableGuid,
+    (Attributes != NULL) ? *Attributes : 0));
 
   return Status;
 }

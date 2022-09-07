@@ -2570,7 +2570,16 @@ VariableServiceGetVariable (
     return EFI_NOT_FOUND;
   }
 
-  AcquireLockOnlyAtBootTime (&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
+  // MU_CHANGE
+  DEBUG ((DEBUG_VARIABLE, "Enter: FunctionName(%a) VariableName(%s) VendorGuid(%g) &Attributes(0x%p) DataSize(0x%Lx) &Data(%p) \n",
+    __FUNCTION__,
+    VariableName,
+    VendorGuid,
+    Attributes,
+    (UINT64)*DataSize,
+    Data));
+
+  AcquireLockOnlyAtBootTime(&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
 
   Status = FindVariable (VariableName, VendorGuid, &Variable, &mVariableModuleGlobal->VariableGlobal, FALSE);
   if (EFI_ERROR (Status) || (Variable.CurrPtr == NULL)) {
@@ -2610,6 +2619,14 @@ Done:
   }
 
   ReleaseLockOnlyAtBootTime (&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
+
+  // MU_CHANGE
+  DEBUG ((DEBUG_VARIABLE, "Exit: FunctionName(%a) VariableName(%s) VendorGuid(%g) Attributes(0x%x)\n",
+    __FUNCTION__,
+    VariableName,
+    VendorGuid,
+    (Attributes != NULL) ? *Attributes : 0));
+
   return Status;
 }
 
@@ -2769,6 +2786,15 @@ VariableServiceSetVariable (
   if ((DataSize != 0) && (Data == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
+
+  // MU_CHANGE
+  DEBUG((DEBUG_VARIABLE, "Enter: FunctionName(%a) VariableName(%s) VendorGuid(%g) Attributes(0x%x) DataSize(0x%Lx) *Data(%p) \n",
+    __FUNCTION__,
+    VariableName,
+    VendorGuid,
+    Attributes,
+    (UINT64)DataSize,
+    Data));
 
   //
   // Check for reserverd bit in variable attribute.
