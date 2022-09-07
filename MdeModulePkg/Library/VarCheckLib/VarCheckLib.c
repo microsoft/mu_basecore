@@ -509,6 +509,8 @@ VarCheckLibVariablePropertySet (
 
   Status = EFI_SUCCESS;
 
+  DEBUG (( DEBUG_VARIABLE, "FunctionName(%a) VariableName(%s) VendorGuid(%g)\n", __FUNCTION__, Name, Guid ));
+
   //
   // Get the pointer of property data for set.
   //
