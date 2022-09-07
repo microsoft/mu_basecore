@@ -667,7 +667,7 @@ GetMaximumRecordSplit (
     }
 
     PhysicalStart     = ImageRecord->ImageBase + ImageRecord->ImageSize;
-    SplitRecordCount += (2 * ImageRecord->CodeSegmentCount + 1);
+    SplitRecordCount += (2 * ImageRecord->CodeSegmentCount + 3);
   } while ((ImageRecord != NULL) && (PhysicalStart < PhysicalEnd));
 
   if (SplitRecordCount != 0) {
@@ -895,7 +895,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
     return EFI_INVALID_PARAMETER;
   }
 
-  AdditionalRecordCount = (2 * mImagePropertiesPrivate.CodeSegmentCountMax + 1) * mImagePropertiesPrivate.ImageRecordCount;
+  AdditionalRecordCount = (2 * mImagePropertiesPrivate.CodeSegmentCountMax + 3) * mImagePropertiesPrivate.ImageRecordCount;
 
   OldMemoryMapSize = *MemoryMapSize;
   Status           = CoreGetMemoryMap (MemoryMapSize, MemoryMap, MapKey, DescriptorSize, DescriptorVersion);
