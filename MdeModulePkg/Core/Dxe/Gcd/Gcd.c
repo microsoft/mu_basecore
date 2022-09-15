@@ -157,7 +157,10 @@ CoreDumpGcdMemorySpaceMap (
 
   // MU_CHANGE
   Status = CoreGetMemorySpaceMap (&NumberOfDescriptors, &MemorySpaceMap);
-  ASSERT (Status == EFI_SUCCESS && MemorySpaceMap != NULL);
+  if (!((Status == EFI_SUCCESS) && (MemorySpaceMap != NULL))) {
+    ASSERT ((Status == EFI_SUCCESS) && (MemorySpaceMap != NULL));
+    return;
+  }
 
   if (InitialMap) {
     DEBUG ((DEBUG_GCD, "GCD:Initial GCD Memory Space Map\n"));
@@ -203,7 +206,10 @@ CoreDumpGcdIoSpaceMap (
   UINTN                        Index;
 
   Status = CoreGetIoSpaceMap (&NumberOfDescriptors, &IoSpaceMap);
-  ASSERT (Status == EFI_SUCCESS && IoSpaceMap != NULL);
+  if (!((Status == EFI_SUCCESS) && (IoSpaceMap != NULL))) {
+    ASSERT ((Status == EFI_SUCCESS) && (IoSpaceMap != NULL));
+    return;
+  }
 
   if (InitialMap) {
     DEBUG ((DEBUG_GCD, "GCD:Initial GCD I/O Space Map\n"));
@@ -765,13 +771,12 @@ CoreConvertSpace (
   // Search for the list of descriptors that cover the range BaseAddress to BaseAddress+Length
   //
   Status = CoreSearchGcdMapEntry (BaseAddress, Length, &StartLink, &EndLink, Map);
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (Status) || ((StartLink == NULL) || (EndLink == NULL))) {
     Status = EFI_UNSUPPORTED;
 
+    ASSERT ((StartLink != NULL) && (EndLink != NULL));
     goto Done;
   }
-
-  ASSERT (StartLink != NULL && EndLink != NULL);
 
   //
   // Verify that the list of descriptors are unallocated non-existent memory.
@@ -884,12 +889,12 @@ CoreConvertSpace (
   // Allocate work space to perform this operation
   //
   Status = CoreAllocateGcdMapEntry (&TopEntry, &BottomEntry);
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (Status) || ((TopEntry == NULL) || (BottomEntry == NULL))) {
     Status = EFI_OUT_OF_RESOURCES;
+
+    ASSERT ((TopEntry != NULL) && (BottomEntry != NULL));
     goto Done;
   }
-
-  ASSERT (TopEntry != NULL && BottomEntry != NULL);
 
   //
   // Initialize CpuArchAttributes to suppress incorrect compiler/analyzer warnings.
@@ -1182,12 +1187,12 @@ CoreAllocateSpace (
     // Search for the list of descriptors that cover the range BaseAddress to BaseAddress+Length
     //
     Status = CoreSearchGcdMapEntry (*BaseAddress, Length, &StartLink, &EndLink, Map);
-    if (EFI_ERROR (Status)) {
+    if (EFI_ERROR (Status) || ((StartLink == NULL) || (EndLink == NULL))) {
       Status = EFI_NOT_FOUND;
+
+      ASSERT ((StartLink != NULL) && (EndLink != NULL));
       goto Done;
     }
-
-    ASSERT (StartLink != NULL && EndLink != NULL);
 
     //
     // Verify that the list of descriptors are unallocated memory matching GcdMemoryType.
@@ -1275,12 +1280,12 @@ CoreAllocateSpace (
       // Search for the list of descriptors that cover the range BaseAddress to BaseAddress+Length
       //
       Status = CoreSearchGcdMapEntry (*BaseAddress, Length, &StartLink, &EndLink, Map);
-      if (EFI_ERROR (Status)) {
+      if (EFI_ERROR (Status) || ((StartLink == NULL) || (EndLink == NULL))) {
         Status = EFI_NOT_FOUND;
+
+        ASSERT ((StartLink != NULL) && (EndLink != NULL));
         goto Done;
       }
-
-      ASSERT (StartLink != NULL && EndLink != NULL);
 
       Link = StartLink;
       //
@@ -1315,12 +1320,12 @@ CoreAllocateSpace (
   // Allocate work space to perform this operation
   //
   Status = CoreAllocateGcdMapEntry (&TopEntry, &BottomEntry);
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (Status) || ((TopEntry == NULL) || (BottomEntry == NULL))) {
     Status = EFI_OUT_OF_RESOURCES;
+
+    ASSERT ((TopEntry != NULL) && (BottomEntry != NULL));
     goto Done;
   }
-
-  ASSERT (TopEntry != NULL && BottomEntry != NULL);
 
   //
   // Convert/Insert the list of descriptors from StartLink to EndLink
@@ -1628,10 +1633,10 @@ CoreGetMemorySpaceDescriptor (
   // Search for the list of descriptors that contain BaseAddress
   //
   Status = CoreSearchGcdMapEntry (BaseAddress, 1, &StartLink, &EndLink, &mGcdMemorySpaceMap);
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (Status) || ((StartLink == NULL) || (EndLink == NULL))) {
+    ASSERT ((StartLink != NULL) && (EndLink != NULL));
     Status = EFI_NOT_FOUND;
   } else {
-    ASSERT (StartLink != NULL && EndLink != NULL);
     //
     // Copy the contents of the found descriptor into Descriptor
     //
@@ -2013,10 +2018,10 @@ CoreGetIoSpaceDescriptor (
   // Search for the list of descriptors that contain BaseAddress
   //
   Status = CoreSearchGcdMapEntry (BaseAddress, 1, &StartLink, &EndLink, &mGcdIoSpaceMap);
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (Status) || ((StartLink == NULL) || (EndLink == NULL))) {
+    ASSERT ((StartLink != NULL) && (EndLink != NULL));
     Status = EFI_NOT_FOUND;
   } else {
-    ASSERT (StartLink != NULL && EndLink != NULL);
     //
     // Copy the contents of the found descriptor into Descriptor
     //
@@ -2540,7 +2545,11 @@ CoreInitializeGcdServices (
   // Get the number of address lines in the I/O and Memory space for the CPU
   //
   CpuHob = GetFirstHob (EFI_HOB_TYPE_CPU);
-  ASSERT (CpuHob != NULL);
+  if (CpuHob == NULL) {
+    ASSERT (CpuHob != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
   SizeOfMemorySpace = CpuHob->SizeOfMemorySpace;
   SizeOfIoSpace     = CpuHob->SizeOfIoSpace;
 
@@ -2548,7 +2557,10 @@ CoreInitializeGcdServices (
   // Initialize the GCD Memory Space Map
   //
   Entry = AllocateCopyPool (sizeof (EFI_GCD_MAP_ENTRY), &mGcdMemorySpaceMapEntryTemplate);
-  ASSERT (Entry != NULL);
+  if (Entry == NULL) {
+    ASSERT (Entry != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
 
   Entry->EndAddress = LShiftU64 (1, SizeOfMemorySpace) - 1;
 
@@ -2560,7 +2572,10 @@ CoreInitializeGcdServices (
   // Initialize the GCD I/O Space Map
   //
   Entry = AllocateCopyPool (sizeof (EFI_GCD_MAP_ENTRY), &mGcdIoSpaceMapEntryTemplate);
-  ASSERT (Entry != NULL);
+  if (Entry == NULL) {
+    ASSERT (Entry != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
 
   Entry->EndAddress = LShiftU64 (1, SizeOfIoSpace) - 1;
 
@@ -2780,7 +2795,10 @@ CoreInitializeGcdServices (
                  (UINTN)PhitHob->EfiFreeMemoryBottom - (UINTN)(*HobStart),
                  *HobStart
                  );
-  ASSERT (NewHobList != NULL);
+  if (NewHobList == NULL) {
+    ASSERT (NewHobList != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
 
   *HobStart = NewHobList;
   gHobList  = NewHobList;

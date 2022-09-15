@@ -34,6 +34,7 @@
 #include <Library/HobLib.h>
 #include <Library/PcdLib.h>
 #include <Library/MicrocodeLib.h>
+#include <Library/SafeIntLib.h>
 #include <ConfidentialComputingGuestAttr.h>
 
 #include <Register/Amd/Fam17Msr.h>

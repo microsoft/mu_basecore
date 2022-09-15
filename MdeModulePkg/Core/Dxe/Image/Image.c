@@ -1310,6 +1310,11 @@ CoreLoadImageCommon (
         // LoadFile () may cause the device path of the Handle be updated.
         //
         OriginalFilePath = AppendDevicePath (DevicePathFromHandle (DeviceHandle), Node);
+        if (OriginalFilePath == NULL) {
+          Image  = NULL;
+          Status = EFI_OUT_OF_RESOURCES;
+          goto Done;
+        }
       }
     }
   }

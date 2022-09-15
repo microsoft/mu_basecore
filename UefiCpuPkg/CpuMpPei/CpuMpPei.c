@@ -507,7 +507,6 @@ InitializeExceptionStackSwitchHandlers (
 
   MpInitLibWhoAmI (&Index);
   SwitchStackData = (EXCEPTION_STACK_SWITCH_CONTEXT *)Buffer;
-
   //
   // This function may be called twice for each Cpu. Only run InitializeSeparateExceptionStacks
   // if this is the first call or the first call failed because of size too small.

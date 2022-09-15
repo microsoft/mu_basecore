@@ -343,12 +343,17 @@ CoreFreeMemoryMapStack (
     //
     Entry = AllocateMemoryMapEntry ();
 
-    ASSERT (Entry);
-
     //
     // Update to proper entry
     //
     mMapDepth -= 1;
+
+    // If entry allocation failed once, it is unlikely to succeed moving forward
+    // However, we can try since we're in the middle of moving list nodes
+    if (Entry == NULL) {
+      ASSERT (Entry != NULL);
+      continue;
+    }
 
     if (mMapStack[mMapDepth].Link.ForwardLink != NULL) {
       //
@@ -394,6 +399,7 @@ PromoteMemoryResource (
 {
   LIST_ENTRY                       *Link;
   EFI_GCD_MAP_ENTRY                *Entry;
+  EFI_STATUS                       Status;
   BOOLEAN                          Promoted;
   EFI_PHYSICAL_ADDRESS             StartAddress;
   EFI_PHYSICAL_ADDRESS             EndAddress;
@@ -453,14 +459,16 @@ PromoteMemoryResource (
     //
     Promoted = PromoteGuardedFreePages (&StartAddress, &EndAddress);
     if (Promoted) {
-      CoreGetMemorySpaceDescriptor (StartAddress, &Descriptor);
-      CoreAddRange (
-        EfiConventionalMemory,
-        StartAddress,
-        EndAddress,
-        Descriptor.Capabilities & ~(EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED |
-                                    EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
-        );
+      Status = CoreGetMemorySpaceDescriptor (StartAddress, &Descriptor);
+      if (Status == EFI_SUCCESS) {
+        CoreAddRange (
+          EfiConventionalMemory,
+          StartAddress,
+          EndAddress,
+          Descriptor.Capabilities & ~(EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED |
+                                      EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
+          );
+      }
     }
   }
 
