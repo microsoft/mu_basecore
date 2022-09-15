@@ -366,7 +366,9 @@ InternalGetLockBoxQueue (
 /**
   This function find LockBox by GUID.
 
-  @param Guid The guid to indentify the LockBox
+  NULL will be returned by this function if the lock box queue is not found.
+
+  @param Guid The guid to identify the LockBox
 
   @return LockBoxData
 **/
@@ -380,7 +382,11 @@ InternalFindLockBoxByGuid (
   LIST_ENTRY         *LockBoxQueue;
 
   LockBoxQueue = InternalGetLockBoxQueue ();
-  ASSERT (LockBoxQueue != NULL);
+
+  if (LockBoxQueue == NULL) {
+    ASSERT (LockBoxQueue != NULL);
+    return NULL;
+  }
 
   for (Link = LockBoxQueue->ForwardLink;
        Link != LockBoxQueue;

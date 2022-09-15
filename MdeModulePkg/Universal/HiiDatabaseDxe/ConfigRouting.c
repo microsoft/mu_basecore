@@ -625,6 +625,7 @@ CompareBlockElementDefault (
   UINTN       TotalSize;
   BOOLEAN     FoundOffset;
 
+  Status       = EFI_SUCCESS;
   AppendString = NULL;
   TempBuffer   = NULL;
   //
@@ -632,12 +633,19 @@ CompareBlockElementDefault (
   //
   AltConfigHdrPtr = StrStr (DefaultAltCfgResp, AltConfigHdr);
   ASSERT (AltConfigHdrPtr != NULL);
+  if (AltConfigHdrPtr == NULL) {
+    goto Exit;
+  }
+
   BlockPtr = StrStr (AltConfigHdrPtr, L"&OFFSET=");
   //
   // Make StringPtr point to the AltConfigHdr in ConfigAltResp.
   //
   StringPtr = StrStr (*ConfigAltResp, AltConfigHdr);
-  ASSERT (StringPtr != NULL);
+  if (StringPtr == NULL) {
+    ASSERT (StringPtr != NULL);
+    goto Exit;
+  }
 
   while (BlockPtr != NULL) {
     //
@@ -771,6 +779,7 @@ CompareNameElementDefault (
   UINTN       AppendSize;
   UINTN       TotalSize;
 
+  Status        = EFI_SUCCESS;
   AppendString  = NULL;
   NvConfigExist = NULL;
   //
@@ -778,14 +787,28 @@ CompareNameElementDefault (
   //
   NvConfigPtr = StrStr (DefaultAltCfgResp, AltConfigHdr);
   ASSERT (NvConfigPtr != NULL);
+  if (NvConfigPtr == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
+
   NvConfigPtr = StrStr (NvConfigPtr + StrLen (AltConfigHdr), L"&");
   //
   // Make StringPtr point to the first <NvConfig> with AltConfigHdr in ConfigAltResp.
   //
   StringPtr = StrStr (*ConfigAltResp, AltConfigHdr);
   ASSERT (StringPtr != NULL);
+  if (StringPtr == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
+
   StringPtr = StrStr (StringPtr + StrLen (AltConfigHdr), L"&");
   ASSERT (StringPtr != NULL);
+  if (StringPtr == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
 
   while (NvConfigPtr != NULL) {
     //
@@ -794,7 +817,11 @@ CompareNameElementDefault (
     //
     NvConfigStart    = NvConfigPtr;
     NvConfigValuePtr = StrStr (NvConfigPtr + 1, L"=");
-    ASSERT (NvConfigValuePtr != NULL);
+    if (NvConfigValuePtr == NULL) {
+      ASSERT (NvConfigValuePtr != NULL);
+      goto Exit;
+    }
+
     TempChar          = *NvConfigValuePtr;
     *NvConfigValuePtr = L'\0';
     //
@@ -924,6 +951,11 @@ CompareAndMergeDefaultString (
   //
   AltConfigHdrPtr = StrStr (DefaultAltCfgResp, AltConfigHdr);
   ASSERT (AltConfigHdrPtr != NULL);
+  if (AltConfigHdrPtr == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
+
   AltConfigHdrPtrNext = StrStr (AltConfigHdrPtr + 1, L"&GUID");
   if (AltConfigHdrPtrNext != NULL) {
     TempChar             = *AltConfigHdrPtrNext;
@@ -935,6 +967,11 @@ CompareAndMergeDefaultString (
   //
   StringPtr = StrStr (*AltCfgResp, AltConfigHdr);
   ASSERT (StringPtr != NULL);
+  if (StringPtr == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
+
   StringPtrNext = StrStr (StringPtr + 1, L"&GUID");
   if (StringPtrNext != NULL) {
     TempCharA      = *StringPtrNext;
@@ -1802,9 +1839,10 @@ GetElementsFromRequest (
 
   TmpRequest = StrStr (ConfigRequest, L"PATH=");
   ASSERT (TmpRequest != NULL);
-
-  if ((StrStr (TmpRequest, L"&OFFSET=") != NULL) || (StrStr (TmpRequest, L"&") != NULL)) {
-    return TRUE;
+  if (TmpRequest != NULL) {
+    if ((StrStr (TmpRequest, L"&OFFSET=") != NULL) || (StrStr (TmpRequest, L"&") != NULL)) {
+      return TRUE;
+    }
   }
 
   return FALSE;
@@ -3365,7 +3403,7 @@ GetBlockElement (
   while ((Link != &RequestBlockArray->Entry) && (Link->ForwardLink != &RequestBlockArray->Entry)) {
     BlockData     = BASE_CR (Link, IFR_BLOCK_DATA, Entry);
     NextBlockData = BASE_CR (Link->ForwardLink, IFR_BLOCK_DATA, Entry);
-    if ((NextBlockData->Offset >= BlockData->Offset) && (NextBlockData->Offset <= (BlockData->Offset + BlockData->Width))) {
+    if ((NextBlockData->Offset >= BlockData->Offset) || (NextBlockData->Offset <= (BlockData->Offset + BlockData->Width))) {
       if ((NextBlockData->Offset + NextBlockData->Width) > (BlockData->Offset + BlockData->Width)) {
         BlockData->Width = (UINT16)(NextBlockData->Offset + NextBlockData->Width - BlockData->Offset);
       }
@@ -5069,8 +5107,13 @@ HiiConfigRoutingExtractConfig (
           // Merge the AltCfgResp in AccessResultsBackup to AccessResults
           //
           if ((AccessResultsBackup != NULL) && (StrStr (AccessResultsBackup, L"&ALTCFG=") != NULL)) {
-            ConigStringSize        = StrSize (AccessResults);
-            ConfigStringPtr        = StrStr (AccessResultsBackup, L"&GUID=");
+            ConigStringSize = StrSize (AccessResults);
+            ConfigStringPtr = StrStr (AccessResultsBackup, L"&GUID=");
+            if (ConfigStringPtr == NULL) {
+              Status = EFI_NOT_FOUND;
+              goto Done;
+            }
+
             ConigStringSizeNewsize = StrSize (ConfigStringPtr) + ConigStringSize + sizeof (CHAR16);
             AccessResults          = (EFI_STRING)ReallocatePool (
                                                    ConigStringSize,

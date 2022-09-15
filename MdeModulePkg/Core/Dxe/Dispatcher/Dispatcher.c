@@ -1052,13 +1052,15 @@ CoreProcessFvImageFile (
       //
       if (gSecurity != NULL) {
         FvFileDevicePath = CoreFvToDevicePath (Fv, FvHandle, FileName);
-        Status           = gSecurity->FileAuthenticationState (
-                                        gSecurity,
-                                        AuthenticationStatus,
-                                        FvFileDevicePath
-                                        );
         if (FvFileDevicePath != NULL) {
+          Status = gSecurity->FileAuthenticationState (
+                                gSecurity,
+                                AuthenticationStatus,
+                                FvFileDevicePath
+                                );
           FreePool (FvFileDevicePath);
+        } else {
+          Status = EFI_OUT_OF_RESOURCES;
         }
 
         if (Status != EFI_SUCCESS) {
