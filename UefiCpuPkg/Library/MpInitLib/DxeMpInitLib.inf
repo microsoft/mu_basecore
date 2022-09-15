@@ -56,6 +56,7 @@
   DebugAgentLib
   SynchronizationLib
   PcdLib
+  SafeIntLib
   CcExitLib
   MicrocodeLib
   DxeMemoryProtectionHobLib ## MU_CHANGE

@@ -708,6 +708,7 @@ InitializeMpExceptionStackSwitchHandlers (
       ASSERT (SwitchStackData[Index].Status == EFI_SUCCESS);
     }
   }
+
   FreePool (SwitchStackData);
 }
 
@@ -759,25 +760,28 @@ InitializeMpSupport (
   Status = MpInitLibInitialize ();
   ASSERT_EFI_ERROR (Status);
 
-  MpInitLibGetNumberOfProcessors (&NumberOfProcessors, &NumberOfEnabledProcessors);
-  mNumberOfProcessors = NumberOfProcessors;
-  DEBUG ((DEBUG_INFO, "Detect CPU count: %d\n", mNumberOfProcessors));
-
-  //
-  // Initialize special exception handlers for each logic processor.
-  //
-  InitializeMpExceptionHandlers ();
-
-  //
-  // Update CPU healthy information from Guided HOB
-  //
-  CollectBistDataFromHob ();
-
-  Status = gBS->InstallMultipleProtocolInterfaces (
-                  &mMpServiceHandle,
-                  &gEfiMpServiceProtocolGuid,
-                  &mMpServicesTemplate,
-                  NULL
-                  );
+  Status = MpInitLibGetNumberOfProcessors (&NumberOfProcessors, &NumberOfEnabledProcessors);
   ASSERT_EFI_ERROR (Status);
+  if (!EFI_ERROR (Status)) {
+    mNumberOfProcessors = NumberOfProcessors;
+    DEBUG ((DEBUG_INFO, "Detect CPU count: %d\n", mNumberOfProcessors));
+
+    //
+    // Initialize special exception handlers for each logic processor.
+    //
+    InitializeMpExceptionHandlers ();
+
+    //
+    // Update CPU healthy information from Guided HOB
+    //
+    CollectBistDataFromHob ();
+
+    Status = gBS->InstallMultipleProtocolInterfaces (
+                    &mMpServiceHandle,
+                    &gEfiMpServiceProtocolGuid,
+                    &mMpServicesTemplate,
+                    NULL
+                    );
+    ASSERT_EFI_ERROR (Status);
+  }
 }

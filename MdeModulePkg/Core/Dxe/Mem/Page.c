@@ -343,12 +343,17 @@ CoreFreeMemoryMapStack (
     //
     Entry = AllocateMemoryMapEntry ();
 
-    ASSERT (Entry);
-
     //
     // Update to proper entry
     //
     mMapDepth -= 1;
+
+    // If entry allocation failed once, it is unlikely to succeed moving forward
+    // However, we can try since we're in the middle of moving list nodes
+    if (Entry == NULL) {
+      ASSERT (Entry != NULL);
+      continue;
+    }
 
     if (mMapStack[mMapDepth].Link.ForwardLink != NULL) {
       //

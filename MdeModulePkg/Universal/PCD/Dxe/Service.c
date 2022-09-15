@@ -563,9 +563,10 @@ DxeRegisterCallBackWorker (
 
   FnTableEntry = AllocatePool (sizeof (CALLBACK_FN_ENTRY));
   ASSERT (FnTableEntry != NULL);
-
-  FnTableEntry->CallbackFn = CallBackFunction;
-  InsertTailList (ListHead, &FnTableEntry->Node);
+  if (FnTableEntry != NULL) {
+    FnTableEntry->CallbackFn = CallBackFunction;
+    InsertTailList (ListHead, &FnTableEntry->Node);
+  }
 
   return EFI_SUCCESS;
 }
@@ -986,20 +987,20 @@ GetHiiVariable (
   //
   if (Status == EFI_BUFFER_TOO_SMALL) {
     Buffer = (UINT8 *)AllocatePool (Size);
-
     ASSERT (Buffer != NULL);
+    if (Buffer != NULL) {
+      Status = gRT->GetVariable (
+                      VariableName,
+                      VariableGuid,
+                      NULL,
+                      &Size,
+                      Buffer
+                      );
 
-    Status = gRT->GetVariable (
-                    VariableName,
-                    VariableGuid,
-                    NULL,
-                    &Size,
-                    Buffer
-                    );
-
-    ASSERT (Status == EFI_SUCCESS);
-    *VariableData = Buffer;
-    *VariableSize = Size;
+      ASSERT (Status == EFI_SUCCESS);
+      *VariableData = Buffer;
+      *VariableSize = Size;
+    }
   } else {
     //
     // Use Default Data only when variable is not found.
@@ -1494,32 +1495,34 @@ SetHiiVariable (
 
     Buffer = AllocatePool (SetSize);
     ASSERT (Buffer != NULL);
+    if (Buffer != NULL) {
+      Status = gRT->GetVariable (
+                      VariableName,
+                      VariableGuid,
+                      &Attribute,
+                      &Size,
+                      Buffer
+                      );
 
-    Status = gRT->GetVariable (
-                    VariableName,
-                    VariableGuid,
-                    &Attribute,
-                    &Size,
-                    Buffer
-                    );
+      ASSERT_EFI_ERROR (Status);
 
-    ASSERT_EFI_ERROR (Status);
+      CopyMem ((UINT8 *)Buffer + Offset, Data, DataSize);
 
-    CopyMem ((UINT8 *)Buffer + Offset, Data, DataSize);
+      if (SetAttributes == 0) {
+        SetAttributes = Attribute;
+      }
 
-    if (SetAttributes == 0) {
-      SetAttributes = Attribute;
+      Status = gRT->SetVariable (
+                      VariableName,
+                      VariableGuid,
+                      SetAttributes,
+                      SetSize,
+                      Buffer
+                      );
+
+      FreePool (Buffer);
     }
 
-    Status = gRT->SetVariable (
-                    VariableName,
-                    VariableGuid,
-                    SetAttributes,
-                    SetSize,
-                    Buffer
-                    );
-
-    FreePool (Buffer);
     return Status;
   } else if (Status == EFI_NOT_FOUND) {
     //

@@ -381,6 +381,10 @@ DumpResourceMap (
       }
 
       ChildResources = AllocatePool (sizeof (PCI_RESOURCE_NODE *) * ChildResourceCount);
+      if (ChildResources == NULL) {
+        return;
+      }
+
       ASSERT (ChildResources != NULL);
       ChildResourceCount = 0;
       for (Index = 0; Index < ResourceCount; Index++) {
@@ -545,6 +549,9 @@ PciHostBridgeResourceAllocator (
                    PciBarTypeIo16,
                    PciResUsageTypical
                    );
+      if (IoBridge == NULL) {
+        return EFI_OUT_OF_RESOURCES;
+      }
 
       Mem32Bridge = CreateResourceNode (
                       RootBridgeDev,
@@ -554,6 +561,10 @@ PciHostBridgeResourceAllocator (
                       PciBarTypeMem32,
                       PciResUsageTypical
                       );
+      if (Mem32Bridge == NULL) {
+        FreePool (IoBridge);
+        return EFI_OUT_OF_RESOURCES;
+      }
 
       PMem32Bridge = CreateResourceNode (
                        RootBridgeDev,
@@ -563,6 +574,11 @@ PciHostBridgeResourceAllocator (
                        PciBarTypePMem32,
                        PciResUsageTypical
                        );
+      if (PMem32Bridge == NULL) {
+        FreePool (IoBridge);
+        FreePool (Mem32Bridge);
+        return EFI_OUT_OF_RESOURCES;
+      }
 
       Mem64Bridge = CreateResourceNode (
                       RootBridgeDev,
@@ -572,6 +588,12 @@ PciHostBridgeResourceAllocator (
                       PciBarTypeMem64,
                       PciResUsageTypical
                       );
+      if (Mem64Bridge == NULL) {
+        FreePool (IoBridge);
+        FreePool (Mem32Bridge);
+        FreePool (PMem32Bridge);
+        return EFI_OUT_OF_RESOURCES;
+      }
 
       PMem64Bridge = CreateResourceNode (
                        RootBridgeDev,
@@ -581,6 +603,13 @@ PciHostBridgeResourceAllocator (
                        PciBarTypePMem64,
                        PciResUsageTypical
                        );
+      if (PMem64Bridge == NULL) {
+        FreePool (IoBridge);
+        FreePool (Mem32Bridge);
+        FreePool (PMem32Bridge);
+        FreePool (Mem64Bridge);
+        return EFI_OUT_OF_RESOURCES;
+      }
 
       //
       // Get the max ROM size that the root bridge can process
@@ -1100,7 +1129,7 @@ PciScanBus (
   EFI_HPC_STATE                      State;
   UINT64                             PciAddress;
   EFI_HPC_PADDING_ATTRIBUTES         Attributes;
-  VOID                               *DescriptorsBuffer = NULL; // MS_CHANGE
+  VOID                               *DescriptorsBuffer = NULL;   // MS_CHANGE
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR  *Descriptors;
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR  *NextDescriptors;
   UINT16                             BusRange;
@@ -1266,7 +1295,7 @@ PciScanBus (
                 return Status;
               }
 
-              Descriptors     = (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)DescriptorsBuffer; // MS_CHANGE
+              Descriptors     = (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)DescriptorsBuffer;   // MS_CHANGE
               BusRange        = 0;
               NextDescriptors = Descriptors;
               Status          = PciGetBusRange (

@@ -1576,6 +1576,10 @@ PeCoffLoaderLoadImage (
       return RETURN_LOAD_ERROR;
     }
 
+    if ((Base == NULL) || (End == NULL)) {
+      DEBUG ((DEBUG_WARN | DEBUG_LOAD, "%a PeCoffLoaderImageAddress resolved NULL for Base (0x%p) or End (0x%p)\n", __FUNCTION__, Base, End));
+    }
+
     if (Section->SizeOfRawData > 0) {
       Status = ImageContext->ImageRead (
                                ImageContext->Handle,

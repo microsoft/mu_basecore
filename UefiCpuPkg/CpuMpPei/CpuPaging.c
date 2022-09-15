@@ -482,53 +482,50 @@ SetupStackGuardPage (
 
   Status = MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
   ASSERT_EFI_ERROR (Status);
+  if (!EFI_ERROR (Status)) {
+    MpInitLibWhoAmI (&Bsp);
+    for (Index = 0; Index < NumberOfProcessors; ++Index) {
+      StackBase = 0;
 
-  if (EFI_ERROR (Status)) {
-    NumberOfProcessors = 1;
-  }
+      if (Index == Bsp) {
+        Hob.Raw = GetHobList ();
+        while ((Hob.Raw = GetNextHob (EFI_HOB_TYPE_MEMORY_ALLOCATION, Hob.Raw)) != NULL) {
+          if (CompareGuid (
+                &gEfiHobMemoryAllocStackGuid,
+                &(Hob.MemoryAllocationStack->AllocDescriptor.Name)
+                ))
+          {
+            StackBase = Hob.MemoryAllocationStack->AllocDescriptor.MemoryBaseAddress;
+            break;
+          }
 
-  MpInitLibWhoAmI (&Bsp);
-  for (Index = 0; Index < NumberOfProcessors; ++Index) {
-    StackBase = 0;
-
-    if (Index == Bsp) {
-      Hob.Raw = GetHobList ();
-      while ((Hob.Raw = GetNextHob (EFI_HOB_TYPE_MEMORY_ALLOCATION, Hob.Raw)) != NULL) {
-        if (CompareGuid (
-              &gEfiHobMemoryAllocStackGuid,
-              &(Hob.MemoryAllocationStack->AllocDescriptor.Name)
-              ))
-        {
-          StackBase = Hob.MemoryAllocationStack->AllocDescriptor.MemoryBaseAddress;
-          break;
+          Hob.Raw = GET_NEXT_HOB (Hob);
         }
-
-        Hob.Raw = GET_NEXT_HOB (Hob);
+      } else {
+        //
+        // Ask AP to return is stack base address.
+        //
+        MpInitLibStartupThisAP (GetStackBase, Index, NULL, 0, (VOID *)&StackBase, NULL);
       }
-    } else {
+
+      ASSERT (StackBase != 0);
       //
-      // Ask AP to return is stack base address.
+      // Set Guard page at stack base address.
       //
-      MpInitLibStartupThisAP (GetStackBase, Index, NULL, 0, (VOID *)&StackBase, NULL);
+      ConvertMemoryPageAttributes (StackBase, EFI_PAGE_SIZE, 0);
+      DEBUG ((
+        DEBUG_INFO,
+        "Stack Guard set at %lx [cpu%lu]!\n",
+        (UINT64)StackBase,
+        (UINT64)Index
+        ));
     }
 
-    ASSERT (StackBase != 0);
     //
-    // Set Guard page at stack base address.
+    // Publish the changes of page table.
     //
-    ConvertMemoryPageAttributes (StackBase, EFI_PAGE_SIZE, 0);
-    DEBUG ((
-      DEBUG_INFO,
-      "Stack Guard set at %lx [cpu%lu]!\n",
-      (UINT64)StackBase,
-      (UINT64)Index
-      ));
+    CpuFlushTlb ();
   }
-
-  //
-  // Publish the changes of page table.
-  //
-  CpuFlushTlb ();
 }
 
 /**
