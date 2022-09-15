@@ -396,16 +396,22 @@ LocateExPcdBinary (
 
   PcdDb = (PEI_PCD_DATABASE *)PcdDatabaseLoaderLoad (FileHandle);
   ASSERT (PcdDb != NULL);
-  // MU_CHANGE end
+  if (PcdDb != NULL) {
+    // MU_CHANGE end
 
-  //
-  // Check the first bytes (Header Signature Guid) and build version.
-  //
-  if (!CompareGuid (PcdDb, &gPcdDataBaseSignatureGuid) ||
-      (((PEI_PCD_DATABASE *)PcdDb)->BuildVersion != PCD_SERVICE_PEIM_VERSION))
-  {
-    ASSERT (FALSE);
+    //
+    // Check the first bytes (Header Signature Guid) and build version.
+    //
+    if (!CompareGuid (PcdDb, &gPcdDataBaseSignatureGuid) ||
+        (((PEI_PCD_DATABASE *)PcdDb)->BuildVersion != PCD_SERVICE_PEIM_VERSION))
+    {
+      ASSERT (FALSE);
+    }
+
+    // MU_CHANGE begin
   }
+
+  // MU_CHANGE end
 
   return PcdDb;
 }

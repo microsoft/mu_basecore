@@ -365,7 +365,7 @@ BmGetUsbDescription (
 
   @param Handle                Controller handle.
 
-  @return  The description string.
+  @return  The description string or NULL if the string could not be created.
 **/
 CHAR16 *
 BmGetNetworkDescription (
@@ -497,7 +497,11 @@ BmGetNetworkDescription (
   //
   DescriptionSize = sizeof (L"HTTPv6 (MAC:112233445566 VLAN65535)");
   Description     = AllocatePool (DescriptionSize);
-  ASSERT (Description != NULL);
+  if (Description == NULL) {
+    ASSERT (Description != NULL);
+    return NULL;
+  }
+
   UnicodeSPrint (
     Description,
     DescriptionSize,
@@ -790,7 +794,7 @@ BM_GET_BOOT_DESCRIPTION  mBmBootDescriptionHandlers[] = {
 
   @param Handle                Controller handle.
 
-  @return  The description string.
+  @return  The description string or NULL if the string could not be created.
 **/
 CHAR16 *
 BmGetBootDescription (
@@ -816,7 +820,11 @@ BmGetBootDescription (
       // ONLY for core provided boot description handler.
       //
       Temp = AllocatePool (StrSize (DefaultDescription) + sizeof (mBmUefiPrefix));
-      ASSERT (Temp != NULL);
+      if (Temp == NULL) {
+        ASSERT (Temp != NULL);
+        return NULL;
+      }
+
       StrCpyS (Temp, (StrSize (DefaultDescription) + sizeof (mBmUefiPrefix)) / sizeof (CHAR16), mBmUefiPrefix);
       StrCatS (Temp, (StrSize (DefaultDescription) + sizeof (mBmUefiPrefix)) / sizeof (CHAR16), DefaultDescription);
       FreePool (DefaultDescription);

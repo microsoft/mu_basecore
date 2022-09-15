@@ -675,29 +675,13 @@ FindQuestionDefaultSetting (
     NvStoreBuffer   = (VARIABLE_STORE_HEADER *)((UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize);
     VariableStorage = AllocatePool (NvStoreBuffer->Size);
     ASSERT (VariableStorage != NULL);
-    CopyMem (VariableStorage, NvStoreBuffer, NvStoreBuffer->Size);
+    if (VariableStorage != NULL) {
+      CopyMem (VariableStorage, NvStoreBuffer, NvStoreBuffer->Size);
 
-    //
-    // Find the matched SkuId and DefaultId in the first section
-    //
-    IsFound     = FALSE;
-    DefaultInfo = &(DataHeader->DefaultInfo[0]);
-    BufferEnd   = (UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize;
-    while ((UINT8 *)DefaultInfo < BufferEnd) {
-      if ((DefaultInfo->DefaultId == DefaultId) && (DefaultInfo->SkuId == gSkuId)) {
-        IsFound = TRUE;
-        break;
-      }
-
-      DefaultInfo++;
-    }
-
-    //
-    // Find the matched SkuId and DefaultId in the remaining section
-    //
-    Index      = sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER) + ((DataHeader->DataSize + 7) & (~7));
-    DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + Index);
-    while (!IsFound && Index < gNvDefaultStoreSize && DataHeader->DataSize != 0xFFFF) {
+      //
+      // Find the matched SkuId and DefaultId in the first section
+      //
+      IsFound     = FALSE;
       DefaultInfo = &(DataHeader->DefaultInfo[0]);
       BufferEnd   = (UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize;
       while ((UINT8 *)DefaultInfo < BufferEnd) {
@@ -709,81 +693,99 @@ FindQuestionDefaultSetting (
         DefaultInfo++;
       }
 
-      if (IsFound) {
-        DeltaData = (PCD_DATA_DELTA *)BufferEnd;
-        BufferEnd = (UINT8 *)DataHeader + DataHeader->DataSize;
-        while ((UINT8 *)DeltaData < BufferEnd) {
-          *((UINT8 *)VariableStorage + DeltaData->Offset) = (UINT8)DeltaData->Value;
-          DeltaData++;
+      //
+      // Find the matched SkuId and DefaultId in the remaining section
+      //
+      Index      = sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER) + ((DataHeader->DataSize + 7) & (~7));
+      DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + Index);
+      while (!IsFound && Index < gNvDefaultStoreSize && DataHeader->DataSize != 0xFFFF) {
+        DefaultInfo = &(DataHeader->DefaultInfo[0]);
+        BufferEnd   = (UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize;
+        while ((UINT8 *)DefaultInfo < BufferEnd) {
+          if ((DefaultInfo->DefaultId == DefaultId) && (DefaultInfo->SkuId == gSkuId)) {
+            IsFound = TRUE;
+            break;
+          }
+
+          DefaultInfo++;
         }
 
-        break;
+        if (IsFound) {
+          DeltaData = (PCD_DATA_DELTA *)BufferEnd;
+          BufferEnd = (UINT8 *)DataHeader + DataHeader->DataSize;
+          while ((UINT8 *)DeltaData < BufferEnd) {
+            *((UINT8 *)VariableStorage + DeltaData->Offset) = (UINT8)DeltaData->Value;
+            DeltaData++;
+          }
+
+          break;
+        }
+
+        Index      = (Index + DataHeader->DataSize + 7) & (~7);
+        DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + Index);
       }
 
-      Index      = (Index + DataHeader->DataSize + 7) & (~7);
-      DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + Index);
+      //
+      // Cache the found result in VarStorageList
+      //
+      if (!IsFound) {
+        FreePool (VariableStorage);
+        VariableStorage = NULL;
+      }
+
+      Entry = AllocatePool (sizeof (VARSTORAGE_DEFAULT_DATA));
+      if (Entry != NULL) {
+        Entry->DefaultId       = DefaultId;
+        Entry->VariableStorage = VariableStorage;
+        InsertTailList (&gVarStorageList, &Entry->Entry);
+      } else if (VariableStorage != NULL) {
+        FreePool (VariableStorage);
+        VariableStorage = NULL;
+      }
     }
 
     //
-    // Cache the found result in VarStorageList
+    // The matched variable storage is not found.
     //
-    if (!IsFound) {
-      FreePool (VariableStorage);
-      VariableStorage = NULL;
+    if (VariableStorage == NULL) {
+      return EFI_NOT_FOUND;
     }
 
-    Entry = AllocatePool (sizeof (VARSTORAGE_DEFAULT_DATA));
-    if (Entry != NULL) {
-      Entry->DefaultId       = DefaultId;
-      Entry->VariableStorage = VariableStorage;
-      InsertTailList (&gVarStorageList, &Entry->Entry);
-    } else if (VariableStorage != NULL) {
-      FreePool (VariableStorage);
-      VariableStorage = NULL;
+    //
+    // Find the question default value from the variable storage
+    //
+    VariableHeader = FindVariableData (VariableStorage, &EfiVarStore->Guid, EfiVarStore->Attributes, (CHAR16 *)EfiVarStore->Name);
+    if (VariableHeader == NULL) {
+      return EFI_NOT_FOUND;
     }
-  }
 
-  //
-  // The matched variable storage is not found.
-  //
-  if (VariableStorage == NULL) {
-    return EFI_NOT_FOUND;
-  }
-
-  //
-  // Find the question default value from the variable storage
-  //
-  VariableHeader = FindVariableData (VariableStorage, &EfiVarStore->Guid, EfiVarStore->Attributes, (CHAR16 *)EfiVarStore->Name);
-  if (VariableHeader == NULL) {
-    return EFI_NOT_FOUND;
-  }
-
-  StartBit   = 0;
-  EndBit     = 0;
-  ByteOffset = IfrQuestionHdr->VarStoreInfo.VarOffset;
-  if (BitFieldQuestion) {
-    BitOffset  = IfrQuestionHdr->VarStoreInfo.VarOffset;
-    ByteOffset = BitOffset / 8;
-    BitWidth   = Width;
-    StartBit   = BitOffset % 8;
-    EndBit     = StartBit + BitWidth - 1;
-    Width      = EndBit / 8 + 1;
-  }
-
-  if (VariableHeader->DataSize < ByteOffset + Width) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  //
-  // Copy the question value
-  //
-  if (ValueBuffer != NULL) {
+    StartBit   = 0;
+    EndBit     = 0;
+    ByteOffset = IfrQuestionHdr->VarStoreInfo.VarOffset;
     if (BitFieldQuestion) {
-      CopyMem (&BufferValue, (UINT8 *)VariableHeader + sizeof (VARIABLE_HEADER) + VariableHeader->NameSize + ByteOffset, Width);
-      BitFieldVal = BitFieldRead32 (BufferValue, StartBit, EndBit);
-      CopyMem (ValueBuffer, &BitFieldVal, Width);
-    } else {
-      CopyMem (ValueBuffer, (UINT8 *)VariableHeader + sizeof (VARIABLE_HEADER) + VariableHeader->NameSize + IfrQuestionHdr->VarStoreInfo.VarOffset, Width);
+      BitOffset  = IfrQuestionHdr->VarStoreInfo.VarOffset;
+      ByteOffset = BitOffset / 8;
+      BitWidth   = Width;
+      StartBit   = BitOffset % 8;
+      EndBit     = StartBit + BitWidth - 1;
+      Width      = EndBit / 8 + 1;
+    }
+
+    if (VariableHeader->DataSize < ByteOffset + Width) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    //
+    // Copy the question value
+    //
+    if (ValueBuffer != NULL) {
+      if (BitFieldQuestion) {
+        CopyMem (&BufferValue, (UINT8 *)VariableHeader + sizeof (VARIABLE_HEADER) + VariableHeader->NameSize + ByteOffset, Width);
+        BitFieldVal = BitFieldRead32 (BufferValue, StartBit, EndBit);
+        CopyMem (ValueBuffer, &BitFieldVal, Width);
+      } else {
+        CopyMem (ValueBuffer, (UINT8 *)VariableHeader + sizeof (VARIABLE_HEADER) + VariableHeader->NameSize + IfrQuestionHdr->VarStoreInfo.VarOffset, Width);
+      }
     }
   }
 

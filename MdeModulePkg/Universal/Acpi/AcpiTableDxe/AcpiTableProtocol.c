@@ -530,6 +530,9 @@ AddTableToList (
   //
   CurrentTableList = AllocatePool (sizeof (EFI_ACPI_TABLE_LIST));
   ASSERT (CurrentTableList);
+  if (CurrentTableList == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
 
   //
   // Determine table type and size

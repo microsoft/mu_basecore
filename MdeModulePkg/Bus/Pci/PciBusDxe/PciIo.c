@@ -1466,7 +1466,9 @@ SupportPaletteSnoopAttributes (
   // Check if they are on the same bus
   //
   if (Temp->Parent == PciIoDevice->Parent) {
-    PCI_READ_COMMAND_REGISTER (Temp, &VGACommand);
+    if (EFI_ERROR (PCI_READ_COMMAND_REGISTER (Temp, &VGACommand))) {
+      return EFI_UNSUPPORTED;
+    }
 
     //
     // If they are on the same bus, either one can

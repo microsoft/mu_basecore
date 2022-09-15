@@ -448,13 +448,15 @@ GetResourceFromDevice (
                  (PciDev->PciBar)[Index].BarType,
                  PciResUsageTypical
                  );
+        if (Node != NULL) {
+          InsertResourceNode (
+            Mem32Node,
+            Node
+            );
 
-        InsertResourceNode (
-          Mem32Node,
-          Node
-          );
+          ResourceRequested = TRUE;
+        }
 
-        ResourceRequested = TRUE;
         break;
 
       case PciBarTypeMem64:
@@ -467,13 +469,15 @@ GetResourceFromDevice (
                  PciBarTypeMem64,
                  PciResUsageTypical
                  );
+        if (Node != NULL) {
+          InsertResourceNode (
+            Mem64Node,
+            Node
+            );
 
-        InsertResourceNode (
-          Mem64Node,
-          Node
-          );
+          ResourceRequested = TRUE;
+        }
 
-        ResourceRequested = TRUE;
         break;
 
       case PciBarTypePMem64:
@@ -486,13 +490,15 @@ GetResourceFromDevice (
                  PciBarTypePMem64,
                  PciResUsageTypical
                  );
+        if (Node != NULL) {
+          InsertResourceNode (
+            PMem64Node,
+            Node
+            );
 
-        InsertResourceNode (
-          PMem64Node,
-          Node
-          );
+          ResourceRequested = TRUE;
+        }
 
-        ResourceRequested = TRUE;
         break;
 
       case PciBarTypePMem32:
@@ -505,12 +511,14 @@ GetResourceFromDevice (
                  PciBarTypePMem32,
                  PciResUsageTypical
                  );
+        if (Node != NULL) {
+          InsertResourceNode (
+            PMem32Node,
+            Node
+            );
+          ResourceRequested = TRUE;
+        }
 
-        InsertResourceNode (
-          PMem32Node,
-          Node
-          );
-        ResourceRequested = TRUE;
         break;
 
       case PciBarTypeIo16:
@@ -524,12 +532,14 @@ GetResourceFromDevice (
                  PciBarTypeIo16,
                  PciResUsageTypical
                  );
+        if (Node != NULL) {
+          InsertResourceNode (
+            IoNode,
+            Node
+            );
+          ResourceRequested = TRUE;
+        }
 
-        InsertResourceNode (
-          IoNode,
-          Node
-          );
-        ResourceRequested = TRUE;
         break;
 
       case PciBarTypeUnknown:
@@ -555,11 +565,12 @@ GetResourceFromDevice (
                  PciBarTypeMem32,
                  PciResUsageTypical
                  );
-
-        InsertResourceNode (
-          Mem32Node,
-          Node
-          );
+        if (Node != NULL) {
+          InsertResourceNode (
+            Mem32Node,
+            Node
+            );
+        }
 
         break;
 
@@ -573,11 +584,12 @@ GetResourceFromDevice (
                  PciBarTypeMem64,
                  PciResUsageTypical
                  );
-
-        InsertResourceNode (
-          Mem64Node,
-          Node
-          );
+        if (Node != NULL) {
+          InsertResourceNode (
+            Mem64Node,
+            Node
+            );
+        }
 
         break;
 
@@ -591,11 +603,12 @@ GetResourceFromDevice (
                  PciBarTypePMem64,
                  PciResUsageTypical
                  );
-
-        InsertResourceNode (
-          PMem64Node,
-          Node
-          );
+        if (Node != NULL) {
+          InsertResourceNode (
+            PMem64Node,
+            Node
+            );
+        }
 
         break;
 
@@ -609,11 +622,13 @@ GetResourceFromDevice (
                  PciBarTypePMem32,
                  PciResUsageTypical
                  );
+        if (Node != NULL) {
+          InsertResourceNode (
+            PMem32Node,
+            Node
+            );
+        }
 
-        InsertResourceNode (
-          PMem32Node,
-          Node
-          );
         break;
 
       case PciBarTypeIo16:

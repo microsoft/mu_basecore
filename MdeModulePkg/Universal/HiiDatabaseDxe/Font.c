@@ -1787,11 +1787,14 @@ HiiStringToImage (
       Background  = ((EFI_FONT_DISPLAY_INFO *)StringInfo)->BackgroundColor;
     } else if (Status == EFI_SUCCESS) {
       FontInfo = &StringInfoOut->FontInfo;
-      IsFontInfoExisted (Private, FontInfo, NULL, NULL, &GlobalFont);
-      Height     = GlobalFont->FontPackage->Height;
-      BaseLine   = GlobalFont->FontPackage->BaseLine;
-      Foreground = StringInfoOut->ForegroundColor;
-      Background = StringInfoOut->BackgroundColor;
+      if (TRUE == IsFontInfoExisted (Private, FontInfo, NULL, NULL, &GlobalFont)) {
+        Height     = GlobalFont->FontPackage->Height;
+        BaseLine   = GlobalFont->FontPackage->BaseLine;
+        Foreground = StringInfoOut->ForegroundColor;
+        Background = StringInfoOut->BackgroundColor;
+      } else {
+        goto Exit;
+      }
     } else {
       goto Exit;
     }
@@ -2127,12 +2130,15 @@ HiiStringToImage (
         // MS_CHANGE_185410
         UINT32  Bkgnd = Background.Blue | Background.Green << 8 | Background.Red << 16;
         BltBuffer = AllocatePool (RowInfo[RowIndex].LineWidth * RowInfo[RowIndex].LineHeight * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
-        SetMem32 (BltBuffer, RowInfo[RowIndex].LineWidth * RowInfo[RowIndex].LineHeight * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), Bkgnd);
-        // END
         if (BltBuffer == NULL) {
           Status = EFI_OUT_OF_RESOURCES;
           goto Exit;
         }
+
+        // Fill in the current background
+        // MS_CHANGE_185410
+        SetMem32 (BltBuffer, RowInfo[RowIndex].LineWidth * RowInfo[RowIndex].LineHeight * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), Bkgnd);
+        // END
 
         //
         // Initialize the background color.

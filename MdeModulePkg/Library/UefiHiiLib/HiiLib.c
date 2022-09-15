@@ -51,10 +51,11 @@ GLOBAL_REMOVE_IF_UNREFERENCED CONST EFI_HII_PACKAGE_HEADER  mEndOfPakageList = {
   If HiiHandle could not be found in the HII database, then ASSERT.
   If Guid is NULL, then ASSERT.
 
-  @param  Handle              Hii handle
-  @param  Guid                Package list GUID
+  @param  Handle                Hii handle
+  @param  Guid                  Package list GUID
 
-  @retval EFI_SUCCESS         Successfully extract GUID from Hii database.
+  @retval EFI_SUCCESS           Successfully extract GUID from Hii database.
+  @retval EFI_OUT_OF_RESOURCES  Insufficient memory resources to perform a necessary memory allocation.
 
 **/
 EFI_STATUS
@@ -68,8 +69,11 @@ InternalHiiExtractGuidFromHiiHandle (
   UINTN                        BufferSize;
   EFI_HII_PACKAGE_LIST_HEADER  *HiiPackageList;
 
-  ASSERT (Guid != NULL);
-  ASSERT (Handle != NULL);
+  if ((Handle == NULL) || (Guid == NULL)) {
+    ASSERT (Guid != NULL);
+    ASSERT (Handle != NULL);
+    return EFI_INVALID_PARAMETER;
+  }
 
   //
   // Get HII PackageList
@@ -82,7 +86,10 @@ InternalHiiExtractGuidFromHiiHandle (
 
   if (Status == EFI_BUFFER_TOO_SMALL) {
     HiiPackageList = AllocatePool (BufferSize);
-    ASSERT (HiiPackageList != NULL);
+    if (HiiPackageList == NULL) {
+      ASSERT (HiiPackageList != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
 
     Status = gHiiDatabase->ExportPackageLists (gHiiDatabase, Handle, &BufferSize, HiiPackageList);
   }
@@ -1952,10 +1959,14 @@ GetBlockDataInfo (
     goto Done;
   }
 
-  InitializeListHead (&BlockArray->Entry);
-
   StringPtr = StrStr (ConfigElement, L"&OFFSET=");
-  ASSERT (StringPtr != NULL);
+  if (StringPtr == NULL) {
+    ASSERT (StringPtr != NULL);
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Done;
+  }
+
+  InitializeListHead (&BlockArray->Entry);
 
   //
   // Parse each <RequestElement> if exists
@@ -2120,7 +2131,7 @@ GetBlockDataInfo (
   while ((Link != &BlockArray->Entry) && (Link->ForwardLink != &BlockArray->Entry)) {
     BlockData    = BASE_CR (Link, IFR_BLOCK_DATA, Entry);
     NewBlockData = BASE_CR (Link->ForwardLink, IFR_BLOCK_DATA, Entry);
-    if ((NewBlockData->Offset >= BlockData->Offset) && (NewBlockData->Offset <= (BlockData->Offset + BlockData->Width))) {
+    if ((NewBlockData->Offset >= BlockData->Offset) && ((UINTN)NewBlockData->Offset <= (UINTN)(BlockData->Offset + BlockData->Width))) {
       if ((NewBlockData->Offset + NewBlockData->Width) > (BlockData->Offset + BlockData->Width)) {
         BlockData->Width = (UINT16)(NewBlockData->Offset + NewBlockData->Width - BlockData->Offset);
       }
@@ -2210,7 +2221,10 @@ InternalHiiValidateCurrentSetting (
     // Skip header part.
     //
     StringPtr = StrStr (ConfigResp, L"PATH=");
-    ASSERT (StringPtr != NULL);
+    if (StringPtr == NULL) {
+      ASSERT (StringPtr != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
 
     if (StrStr (StringPtr, L"&") != NULL) {
       NameValueType = TRUE;
@@ -2273,7 +2287,10 @@ GetElementsFromRequest (
   EFI_STRING  TmpRequest;
 
   TmpRequest = StrStr (ConfigRequest, L"PATH=");
-  ASSERT (TmpRequest != NULL);
+  if (TmpRequest == NULL) {
+    ASSERT (TmpRequest != NULL);
+    return FALSE;
+  }
 
   if ((StrStr (TmpRequest, L"&OFFSET=") != NULL) || (StrStr (TmpRequest, L"&") != NULL)) {
     return TRUE;

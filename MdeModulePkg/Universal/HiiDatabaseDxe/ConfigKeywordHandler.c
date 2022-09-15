@@ -2106,36 +2106,39 @@ ExtractConfigRequest (
 
       Storage = FindStorageFromVarId (FormPackage, Header->VarStoreId);
       ASSERT (Storage != NULL);
+      if (Storage != NULL) {
+        if (((EFI_IFR_OP_HEADER *)Storage)->OpCode == EFI_IFR_VARSTORE_NAME_VALUE_OP) {
+          Name = GetNameFromId (DatabaseRecord, Header->VarStoreInfo.VarName);
+        } else {
+          Offset = Header->VarStoreInfo.VarOffset;
+          Width  = GetWidth (OpCode);
+        }
 
-      if (((EFI_IFR_OP_HEADER *)Storage)->OpCode == EFI_IFR_VARSTORE_NAME_VALUE_OP) {
-        Name = GetNameFromId (DatabaseRecord, Header->VarStoreInfo.VarName);
-      } else {
-        Offset = Header->VarStoreInfo.VarOffset;
-        Width  = GetWidth (OpCode);
-      }
+        RequestElement = ConstructRequestElement (Name, Offset, Width);
+        ConfigHdr      = ConstructConfigHdr (Storage, DatabaseRecord->DriverHandle);
+        ASSERT (ConfigHdr != NULL);
+        if (ConfigHdr != NULL) {
+          MaxLen         = StrLen (ConfigHdr) + 1 + StrLen (RequestElement) + 1;
+          *ConfigRequest = AllocatePool (MaxLen * sizeof (CHAR16));
+          if (*ConfigRequest == NULL) {
+            FreePool (ConfigHdr);
+            FreePool (RequestElement);
+            return EFI_OUT_OF_RESOURCES;
+          }
 
-      RequestElement = ConstructRequestElement (Name, Offset, Width);
-      ConfigHdr      = ConstructConfigHdr (Storage, DatabaseRecord->DriverHandle);
-      ASSERT (ConfigHdr != NULL);
+          StringPtr = *ConfigRequest;
 
-      MaxLen         = StrLen (ConfigHdr) + 1 + StrLen (RequestElement) + 1;
-      *ConfigRequest = AllocatePool (MaxLen * sizeof (CHAR16));
-      if (*ConfigRequest == NULL) {
-        FreePool (ConfigHdr);
+          StrCpyS (StringPtr, MaxLen, ConfigHdr);
+
+          StrCatS (StringPtr, MaxLen, L"&");
+
+          StrCatS (StringPtr, MaxLen, RequestElement);
+
+          FreePool (ConfigHdr);
+        }
+
         FreePool (RequestElement);
-        return EFI_OUT_OF_RESOURCES;
       }
-
-      StringPtr = *ConfigRequest;
-
-      StrCpyS (StringPtr, MaxLen, ConfigHdr);
-
-      StrCatS (StringPtr, MaxLen, L"&");
-
-      StrCatS (StringPtr, MaxLen, RequestElement);
-
-      FreePool (ConfigHdr);
-      FreePool (RequestElement);
 
       return EFI_SUCCESS;
     }
@@ -2211,45 +2214,48 @@ ExtractConfigResp (
 
       Storage = FindStorageFromVarId (FormPackage, Header->VarStoreId);
       ASSERT (Storage != NULL);
+      if (Storage != NULL) {
+        if (((EFI_IFR_OP_HEADER *)Storage)->OpCode == EFI_IFR_VARSTORE_NAME_VALUE_OP) {
+          Name = GetNameFromId (DatabaseRecord, Header->VarStoreInfo.VarName);
+        } else {
+          Offset = Header->VarStoreInfo.VarOffset;
+          Width  = GetWidth (OpCode);
+        }
 
-      if (((EFI_IFR_OP_HEADER *)Storage)->OpCode == EFI_IFR_VARSTORE_NAME_VALUE_OP) {
-        Name = GetNameFromId (DatabaseRecord, Header->VarStoreInfo.VarName);
-      } else {
-        Offset = Header->VarStoreInfo.VarOffset;
-        Width  = GetWidth (OpCode);
-      }
+        RequestElement = ConstructRequestElement (Name, Offset, Width);
 
-      RequestElement = ConstructRequestElement (Name, Offset, Width);
+        ConfigHdr = ConstructConfigHdr (Storage, DatabaseRecord->DriverHandle);
+        ASSERT (ConfigHdr != NULL);
+        if (ConfigHdr != NULL) {
+          MaxLen      = StrLen (ConfigHdr) + 1 + StrLen (RequestElement) + 1 + StrLen (L"VALUE=") + StrLen (ValueElement) + 1;
+          *ConfigResp = AllocatePool (MaxLen * sizeof (CHAR16));
+          if (*ConfigResp == NULL) {
+            FreePool (ConfigHdr);
+            FreePool (RequestElement);
+            return EFI_OUT_OF_RESOURCES;
+          }
 
-      ConfigHdr = ConstructConfigHdr (Storage, DatabaseRecord->DriverHandle);
-      ASSERT (ConfigHdr != NULL);
+          StringPtr = *ConfigResp;
 
-      MaxLen      = StrLen (ConfigHdr) + 1 + StrLen (RequestElement) + 1 + StrLen (L"VALUE=") + StrLen (ValueElement) + 1;
-      *ConfigResp = AllocatePool (MaxLen * sizeof (CHAR16));
-      if (*ConfigResp == NULL) {
-        FreePool (ConfigHdr);
+          StrCpyS (StringPtr, MaxLen, ConfigHdr);
+
+          StrCatS (StringPtr, MaxLen, L"&");
+
+          StrCatS (StringPtr, MaxLen, RequestElement);
+
+          StrCatS (StringPtr, MaxLen, L"&");
+
+          StrCatS (StringPtr, MaxLen, L"VALUE=");
+
+          StrCatS (StringPtr, MaxLen, ValueElement);
+
+          FreePool (ConfigHdr);
+        }
+
         FreePool (RequestElement);
-        return EFI_OUT_OF_RESOURCES;
+
+        return EFI_SUCCESS;
       }
-
-      StringPtr = *ConfigResp;
-
-      StrCpyS (StringPtr, MaxLen, ConfigHdr);
-
-      StrCatS (StringPtr, MaxLen, L"&");
-
-      StrCatS (StringPtr, MaxLen, RequestElement);
-
-      StrCatS (StringPtr, MaxLen, L"&");
-
-      StrCatS (StringPtr, MaxLen, L"VALUE=");
-
-      StrCatS (StringPtr, MaxLen, ValueElement);
-
-      FreePool (ConfigHdr);
-      FreePool (RequestElement);
-
-      return EFI_SUCCESS;
     }
   }
 
@@ -2298,21 +2304,23 @@ ExtractValueFromDriver (
   //
   StringPtr = StrStr (Result, L"&VALUE=");
   ASSERT (StringPtr != NULL);
-  StringEnd = StrStr (StringPtr + 1, L"&");
-  if (StringEnd != NULL) {
-    *StringEnd = L'\0';
-  }
+  if (StringPtr != NULL) {
+    StringEnd = StrStr (StringPtr + 1, L"&");
+    if (StringEnd != NULL) {
+      *StringEnd = L'\0';
+    }
 
-  *ValueElement = AllocateCopyPool (StrSize (StringPtr), StringPtr);
-  if (*ValueElement == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
+    *ValueElement = AllocateCopyPool (StrSize (StringPtr), StringPtr);
+    if (*ValueElement == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
 
-  if (StringEnd != NULL) {
-    *StringEnd = L'&';
-  }
+    if (StringEnd != NULL) {
+      *StringEnd = L'&';
+    }
 
-  FreePool (Result);
+    FreePool (Result);
+  }
 
   return EFI_SUCCESS;
 }

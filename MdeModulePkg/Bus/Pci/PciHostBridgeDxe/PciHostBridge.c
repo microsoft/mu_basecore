@@ -668,12 +668,11 @@ ResourceConflict (
                 sizeof (EFI_ACPI_END_TAG_DESCRIPTOR)
                 );
   ASSERT (Resources != NULL);
+  if (Resources == NULL) {
+    return;
+  }
 
-  for (Link = GetFirstNode (&HostBridge->RootBridges), Descriptor = Resources
-       ; !IsNull (&HostBridge->RootBridges, Link)
-       ; Link = GetNextNode (&HostBridge->RootBridges, Link)
-       )
-  {
+  for (Link = GetFirstNode (&HostBridge->RootBridges), Descriptor = Resources; !IsNull (&HostBridge->RootBridges, Link); Link = GetNextNode (&HostBridge->RootBridges, Link)) {
     RootBridge = ROOT_BRIDGE_FROM_LINK (Link);
     for (Index = TypeIo; Index < TypeMax; Index++) {
       ResAllocNode = &RootBridge->ResAllocNode[Index];
