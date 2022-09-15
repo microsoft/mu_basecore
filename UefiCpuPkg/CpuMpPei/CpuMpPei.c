@@ -524,56 +524,59 @@ InitializeMpExceptionStackSwitchHandlers (
   EXCEPTION_STACK_SWITCH_CONTEXT  SwitchStackData;
   UINTN                           BufferSize;
   UINTN                           NumberOfProcessors;
+  EFI_STATUS                      Status;
 
   // MU_CHANGE START
   // if (!PcdGetBool (PcdCpuStackGuard)) {
-  //  return;
+  //   return;
   // }
   // MU_CHANGE END
-
   SwitchStackData.BufferSize = &BufferSize;
-  MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
-  MpInitLibWhoAmI (&Bsp);
+  Status                     = MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
+  ASSERT_EFI_ERROR (Status);
+  if (!EFI_ERROR (Status)) {
+    MpInitLibWhoAmI (&Bsp);
 
-  for (Index = 0; Index < NumberOfProcessors; ++Index) {
-    SwitchStackData.Buffer = NULL;
-    BufferSize             = 0;
+    for (Index = 0; Index < NumberOfProcessors; ++Index) {
+      SwitchStackData.Buffer = NULL;
+      BufferSize             = 0;
 
-    if (Index == Bsp) {
-      InitializeExceptionStackSwitchHandlers (&SwitchStackData);
-    } else {
-      //
-      // AP might need different buffer size from BSP.
-      //
-      MpInitLibStartupThisAP (InitializeExceptionStackSwitchHandlers, Index, NULL, 0, (VOID *)&SwitchStackData, NULL);
-    }
+      if (Index == Bsp) {
+        InitializeExceptionStackSwitchHandlers (&SwitchStackData);
+      } else {
+        //
+        // AP might need different buffer size from BSP.
+        //
+        MpInitLibStartupThisAP (InitializeExceptionStackSwitchHandlers, Index, NULL, 0, (VOID *)&SwitchStackData, NULL);
+      }
 
-    if (BufferSize == 0) {
-      continue;
-    }
+      if (BufferSize == 0) {
+        continue;
+      }
 
-    SwitchStackData.Buffer = AllocatePages (EFI_SIZE_TO_PAGES (BufferSize));
-    ASSERT (SwitchStackData.Buffer != NULL);
-    ZeroMem (SwitchStackData.Buffer, EFI_PAGES_TO_SIZE (EFI_SIZE_TO_PAGES (BufferSize)));
-    DEBUG ((
-      DEBUG_INFO,
-      "Buffer[cpu%lu] for InitializeExceptionStackSwitchHandlers: 0x%lX with size 0x%x\n",
-      (UINT64)(UINTN)Index,
-      (UINT64)(UINTN)SwitchStackData.Buffer,
-      (UINT32)BufferSize
-      ));
+      SwitchStackData.Buffer = AllocatePages (EFI_SIZE_TO_PAGES (BufferSize));
+      ASSERT (SwitchStackData.Buffer != NULL);
+      ZeroMem (SwitchStackData.Buffer, EFI_PAGES_TO_SIZE (EFI_SIZE_TO_PAGES (BufferSize)));
+      DEBUG ((
+        DEBUG_INFO,
+        "Buffer[cpu%lu] for InitializeExceptionStackSwitchHandlers: 0x%lX with size 0x%x\n",
+        (UINT64)(UINTN)Index,
+        (UINT64)(UINTN)SwitchStackData.Buffer,
+        (UINT32)BufferSize
+        ));
 
-    if (Index == Bsp) {
-      InitializeExceptionStackSwitchHandlers (&SwitchStackData);
-    } else {
-      MpInitLibStartupThisAP (
-        InitializeExceptionStackSwitchHandlers,
-        Index,
-        NULL,
-        0,
-        (VOID *)&SwitchStackData,
-        NULL
-        );
+      if (Index == Bsp) {
+        InitializeExceptionStackSwitchHandlers (&SwitchStackData);
+      } else {
+        MpInitLibStartupThisAP (
+          InitializeExceptionStackSwitchHandlers,
+          Index,
+          NULL,
+          0,
+          (VOID *)&SwitchStackData,
+          NULL
+          );
+      }
     }
   }
 }

@@ -1814,6 +1814,10 @@ MpInitLibInitialize (
   BufferSize += (sizeof (CPU_AP_DATA) + sizeof (CPU_INFO_IN_HOB))* MaxLogicalProcessorNumber;
   MpBuffer    = AllocatePages (EFI_SIZE_TO_PAGES (BufferSize));
   ASSERT (MpBuffer != NULL);
+  if (MpBuffer == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
   ZeroMem (MpBuffer, BufferSize);
   Buffer = (UINTN)MpBuffer;
 

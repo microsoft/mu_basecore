@@ -508,7 +508,11 @@ XhcInitSched (
   Entries = (Xhc->MaxSlotsEn + 1) * sizeof (UINT64);
   Dcbaa   = UsbHcAllocateMem (Xhc->MemPool, Entries);
   ASSERT (Dcbaa != NULL);
-  ZeroMem (Dcbaa, Entries);
+  if (Dcbaa != NULL) {
+    ZeroMem (Dcbaa, Entries);
+  } else {
+    return;
+  }
 
   //
   // A Scratchpad Buffer is a PAGESIZE block of system memory located on a PAGESIZE boundary.
@@ -798,6 +802,10 @@ CreateEventRing (
   Buf  = UsbHcAllocateMem (Xhc->MemPool, Size);
   ASSERT (Buf != NULL);
   ASSERT (((UINTN)Buf & 0x3F) == 0);
+  if (Buf == NULL) {
+    return;
+  }
+
   ZeroMem (Buf, Size);
 
   EventRing->EventRingSeg0    = Buf;
@@ -817,6 +825,10 @@ CreateEventRing (
   Buf  = UsbHcAllocateMem (Xhc->MemPool, Size);
   ASSERT (Buf != NULL);
   ASSERT (((UINTN)Buf & 0x3F) == 0);
+  if (Buf == NULL) {
+    return;
+  }
+
   ZeroMem (Buf, Size);
 
   ERSTBase              = (EVENT_RING_SEG_TABLE_ENTRY *)Buf;
@@ -895,6 +907,10 @@ CreateTransferRing (
   Buf = UsbHcAllocateMem (Xhc->MemPool, sizeof (TRB_TEMPLATE) * TrbNum);
   ASSERT (Buf != NULL);
   ASSERT (((UINTN)Buf & 0x3F) == 0);
+  if (Buf == NULL) {
+    return;
+  }
+
   ZeroMem (Buf, sizeof (TRB_TEMPLATE) * TrbNum);
 
   TransferRing->RingSeg0    = Buf;
@@ -2190,6 +2206,10 @@ XhcInitializeDeviceSlot (
   InputContext = UsbHcAllocateMem (Xhc->MemPool, sizeof (INPUT_CONTEXT));
   ASSERT (InputContext != NULL);
   ASSERT (((UINTN)InputContext & 0x3F) == 0);
+  if (InputContext == NULL) {
+    return RETURN_OUT_OF_RESOURCES;
+  }
+
   ZeroMem (InputContext, sizeof (INPUT_CONTEXT));
 
   Xhc->UsbDevContext[SlotId].InputContext = (VOID *)InputContext;
@@ -2292,6 +2312,10 @@ XhcInitializeDeviceSlot (
   OutputContext = UsbHcAllocateMem (Xhc->MemPool, sizeof (DEVICE_CONTEXT));
   ASSERT (OutputContext != NULL);
   ASSERT (((UINTN)OutputContext & 0x3F) == 0);
+  if (OutputContext == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
   ZeroMem (OutputContext, sizeof (DEVICE_CONTEXT));
 
   Xhc->UsbDevContext[SlotId].OutputContext = OutputContext;
@@ -2406,6 +2430,10 @@ XhcInitializeDeviceSlot64 (
   InputContext = UsbHcAllocateMem (Xhc->MemPool, sizeof (INPUT_CONTEXT_64));
   ASSERT (InputContext != NULL);
   ASSERT (((UINTN)InputContext & 0x3F) == 0);
+  if (InputContext == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
   ZeroMem (InputContext, sizeof (INPUT_CONTEXT_64));
 
   Xhc->UsbDevContext[SlotId].InputContext = (VOID *)InputContext;
@@ -2508,6 +2536,10 @@ XhcInitializeDeviceSlot64 (
   OutputContext = UsbHcAllocateMem (Xhc->MemPool, sizeof (DEVICE_CONTEXT_64));
   ASSERT (OutputContext != NULL);
   ASSERT (((UINTN)OutputContext & 0x3F) == 0);
+  if (OutputContext == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
   ZeroMem (OutputContext, sizeof (DEVICE_CONTEXT_64));
 
   Xhc->UsbDevContext[SlotId].OutputContext = OutputContext;
