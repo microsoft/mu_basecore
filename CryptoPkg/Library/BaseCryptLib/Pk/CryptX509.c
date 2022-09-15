@@ -448,6 +448,17 @@ InternalX509GetNIDName (
   }
 
   EntryData = X509_NAME_ENTRY_get_data (Entry);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (EntryData == NULL) {
+    //
+    // Fail to retrieve name entry data
+    //
+    *CommonNameSize = 0;
+    ReturnStatus    = RETURN_NOT_FOUND;
+    goto _Exit;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Length = ASN1_STRING_to_UTF8 (&UTF8Name, EntryData);
   if (Length < 0) {
@@ -808,6 +819,10 @@ X509GetTBSCert (
   UINT32       ObjClass;
   UINTN        Length;
   UINTN        Inf;
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+  Asn1Tag = (UINT32)V_ASN1_UNDEF;
+  // MU_CHANGE [END] - CodeQL change
 
   //
   // Check input parameters.
@@ -1900,9 +1915,16 @@ Asn1GetTag (
   //
   PtrOld = *Ptr;
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  // ASN1_get_object ((CONST UINT8 **)Ptr, &ObjLength, &ObjTag, &ObjCls, (INT32)(End - (*Ptr)));
   Inf = ASN1_get_object ((CONST UINT8 **)Ptr, &ObjLength, &ObjTag, &ObjCls, (INT32)(End - (*Ptr)));
-  if (((Inf & 0x80) == 0x00) &&
-      (ObjTag == (INT32)(Tag & CRYPTO_ASN1_TAG_VALUE_MASK)) &&
+  if (Inf & 0x80) {
+    return FALSE;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
+  if ((ObjTag == (INT32)(Tag & CRYPTO_ASN1_TAG_VALUE_MASK)) &&
       (ObjCls == (INT32)(Tag & CRYPTO_ASN1_TAG_CLASS_MASK)))
   {
     *Length = (UINTN)ObjLength;
