@@ -29,6 +29,25 @@ from typing import Dict, Iterable, List, Optional, Tuple
 PROGRAM_NAME = "Debug Macro Checker"
 
 
+def log_old_python_version_warning():
+    """Warn users on old Python versions for future usage of 3.10 features."""
+
+    # Help move the world toward being more ideal...
+    if sys.version_info.major < 3 or \
+       (sys.version_info.major == 3 and sys.version_info.minor < 10):
+        from datetime import date
+        import platform
+
+        py_3_10_release_date = date(2021, 10, 4)
+        days_since_release = (date.today() - py_3_10_release_date).days
+
+        logging.warning(f"You are using Python {platform.python_version()}."
+                        f" Python 3.10 has been available for "
+                        f"{days_since_release} days.\nUpgrade so Python "
+                        f"scripts can use 3.10 language features!\n\n"
+                        f"https://www.python.org/downloads/\n")
+
+
 class GitHelpers:
     """
     Collection of Git helpers.
@@ -757,41 +776,47 @@ def _module_invocation_check_macros_in_directory_wrapper() -> int:
         file_logger_handler = logging.FileHandler(filename=args.log_file,
                                                   mode='w', encoding='utf-8')
 
-        match args.verbose_log_file:
-            case 0:
-                file_logger_handler.setLevel(logging.INFO)
-                file_logger_formatter = logging.Formatter(
-                    '%(levelname)-8s %(message)s')
-            case 1:
-                file_logger_handler.setLevel(logging.DEBUG)
-                file_logger_formatter = logging.Formatter(
-                    '%(levelname)-8s %(message)s')
-            case 2:
-                file_logger_handler.setLevel(logging.DEBUG)
-                file_logger_formatter = logging.Formatter(
-                    '[%(filename)s - %(funcName)20s() ] %(levelname)-8s '
-                    '%(message)s')
-            case 3:
-                file_logger_handler.setLevel(logging.DEBUG)
-                file_logger_formatter = logging.Formatter(
-                    '[%(filename)s:%(lineno)s - %(funcName)20s() ] '
-                    '%(levelname)-8s %(message)s')
-            case 4:
-                file_logger_handler.setLevel(logging.DEBUG)
-                file_logger_formatter = logging.Formatter(
-                    '%(asctime)s [%(filename)s:%(lineno)s - %(funcName)20s() ]'
-                    ' %(levelname)-8s %(message)s')
-            case _:
-                file_logger_handler.setLevel(logging.DEBUG)
-                file_logger_formatter = logging.Formatter(
-                    '%(asctime)s [%(filename)s:%(lineno)s - %(funcName)20s() ]'
-                    ' %(levelname)-8s %(message)s')
+        # In an ideal world, everyone would update to the latest Python
+        # minor version (3.10) after a few weeks/months. Since that's not the
+        # case, resist from using structural pattern matching in Python 3.10.
+        # https://peps.python.org/pep-0636/
+
+        if args.verbose_log_file == 0:
+            file_logger_handler.setLevel(logging.INFO)
+            file_logger_formatter = logging.Formatter(
+                '%(levelname)-8s %(message)s')
+        elif args.verbose_log_file == 1:
+            file_logger_handler.setLevel(logging.DEBUG)
+            file_logger_formatter = logging.Formatter(
+                '%(levelname)-8s %(message)s')
+        elif args.verbose_log_file == 2:
+            file_logger_handler.setLevel(logging.DEBUG)
+            file_logger_formatter = logging.Formatter(
+                '[%(filename)s - %(funcName)20s() ] %(levelname)-8s '
+                '%(message)s')
+        elif args.verbose_log_file == 3:
+            file_logger_handler.setLevel(logging.DEBUG)
+            file_logger_formatter = logging.Formatter(
+                '[%(filename)s:%(lineno)s - %(funcName)20s() ] '
+                '%(levelname)-8s %(message)s')
+        elif args.verbose_log_file == 4:
+            file_logger_handler.setLevel(logging.DEBUG)
+            file_logger_formatter = logging.Formatter(
+                '%(asctime)s [%(filename)s:%(lineno)s - %(funcName)20s() ]'
+                ' %(levelname)-8s %(message)s')
+        else:
+            file_logger_handler.setLevel(logging.DEBUG)
+            file_logger_formatter = logging.Formatter(
+                '%(asctime)s [%(filename)s:%(lineno)s - %(funcName)20s() ]'
+                ' %(levelname)-8s %(message)s')
 
         file_logger_handler.addFilter(ProgressFilter())
         file_logger_handler.setFormatter(file_logger_formatter)
         root_logger.addHandler(file_logger_handler)
 
     logging.info(PROGRAM_NAME + "\n")
+
+    log_old_python_version_warning()
 
     substitution_data = {}
     if args.substitution_file:
@@ -853,3 +878,5 @@ if __name__ == '__main__':
         # 102 signals a file not found error.
         logging.critical(f"Input file {e.args[0]} does not exist.")
         sys.exit(102)
+else:
+    log_old_python_version_warning()
