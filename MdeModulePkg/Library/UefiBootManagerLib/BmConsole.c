@@ -193,7 +193,9 @@ EfiBootManagerGetGopDevicePath (
             //
             TempDevicePath = GopPool;
             GopPool        = AppendDevicePathInstance (GopPool, DevicePath);
-            gBS->FreePool (TempDevicePath);
+            if (TempDevicePath != NULL) {
+              gBS->FreePool (TempDevicePath);
+            }
           }
         }
 
@@ -205,8 +207,14 @@ EfiBootManagerGetGopDevicePath (
           TempDevicePath   = GopPool;
           ReturnDevicePath = EfiBootManagerGetGopDevicePath (OpenInfoBuffer[Index].ControllerHandle);
           GopPool          = AppendDevicePathInstance (GopPool, ReturnDevicePath);
-          gBS->FreePool (ReturnDevicePath);
-          gBS->FreePool (TempDevicePath);
+
+          if (ReturnDevicePath != NULL) {
+            gBS->FreePool (ReturnDevicePath);
+          }
+
+          if (TempDevicePath != NULL) {
+            gBS->FreePool (TempDevicePath);
+          }
         }
       }
     }

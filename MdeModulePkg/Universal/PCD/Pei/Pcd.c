@@ -164,35 +164,19 @@ PcdSetNvStoreDefaultIdCallBack (
 
   if (PeiPcdGetSizeEx (&gEfiMdeModulePkgTokenSpaceGuid, PcdToken (PcdNvStoreDefaultValueBuffer)) > sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER)) {
     DataBuffer = (UINT8 *)PeiPcdGetPtrEx (&gEfiMdeModulePkgTokenSpaceGuid, PcdToken (PcdNvStoreDefaultValueBuffer));
-    FullSize   = ((PCD_NV_STORE_DEFAULT_BUFFER_HEADER *)DataBuffer)->Length;
-    DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER));
-    //
-    // The first section data includes NV storage default setting.
-    //
-    NvStoreBuffer   = (VARIABLE_STORE_HEADER *)((UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize);
-    VarStoreHobData = (UINT8 *)BuildGuidHob (&NvStoreBuffer->Signature, NvStoreBuffer->Size);
-    ASSERT (VarStoreHobData != NULL);
-    CopyMem (VarStoreHobData, NvStoreBuffer, NvStoreBuffer->Size);
-    //
-    // Find the matched SkuId and DefaultId in the first section
-    //
-    DefaultInfo = &(DataHeader->DefaultInfo[0]);
-    BufferEnd   = (UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize;
-    while ((UINT8 *)DefaultInfo < BufferEnd) {
-      if ((DefaultInfo->DefaultId == DefaultId) && (DefaultInfo->SkuId == SkuId)) {
-        IsFound = TRUE;
-        break;
-      }
-
-      DefaultInfo++;
-    }
-
-    //
-    // Find the matched SkuId and DefaultId in the remaining section
-    //
-    Index      = sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER) + ((DataHeader->DataSize + 7) & (~7));
-    DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + Index);
-    while (!IsFound && Index < FullSize && DataHeader->DataSize != 0xFFFFFFFF) {
+    if (DataBuffer != NULL) {
+      FullSize   = ((PCD_NV_STORE_DEFAULT_BUFFER_HEADER *)DataBuffer)->Length;
+      DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER));
+      //
+      // The first section data includes NV storage default setting.
+      //
+      NvStoreBuffer   = (VARIABLE_STORE_HEADER *)((UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize);
+      VarStoreHobData = (UINT8 *)BuildGuidHob (&NvStoreBuffer->Signature, NvStoreBuffer->Size);
+      ASSERT (VarStoreHobData != NULL);
+      CopyMem (VarStoreHobData, NvStoreBuffer, NvStoreBuffer->Size);
+      //
+      // Find the matched SkuId and DefaultId in the first section
+      //
       DefaultInfo = &(DataHeader->DefaultInfo[0]);
       BufferEnd   = (UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize;
       while ((UINT8 *)DefaultInfo < BufferEnd) {
@@ -204,19 +188,37 @@ PcdSetNvStoreDefaultIdCallBack (
         DefaultInfo++;
       }
 
-      if (IsFound) {
-        DeltaData = (PCD_DATA_DELTA *)BufferEnd;
-        BufferEnd = (UINT8 *)DataHeader + DataHeader->DataSize;
-        while ((UINT8 *)DeltaData < BufferEnd) {
-          *(VarStoreHobData + DeltaData->Offset) = (UINT8)DeltaData->Value;
-          DeltaData++;
+      //
+      // Find the matched SkuId and DefaultId in the remaining section
+      //
+      Index      = sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER) + ((DataHeader->DataSize + 7) & (~7));
+      DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + Index);
+      while (!IsFound && Index < FullSize && DataHeader->DataSize != 0xFFFFFFFF) {
+        DefaultInfo = &(DataHeader->DefaultInfo[0]);
+        BufferEnd   = (UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize;
+        while ((UINT8 *)DefaultInfo < BufferEnd) {
+          if ((DefaultInfo->DefaultId == DefaultId) && (DefaultInfo->SkuId == SkuId)) {
+            IsFound = TRUE;
+            break;
+          }
+
+          DefaultInfo++;
         }
 
-        break;
-      }
+        if (IsFound) {
+          DeltaData = (PCD_DATA_DELTA *)BufferEnd;
+          BufferEnd = (UINT8 *)DataHeader + DataHeader->DataSize;
+          while ((UINT8 *)DeltaData < BufferEnd) {
+            *(VarStoreHobData + DeltaData->Offset) = (UINT8)DeltaData->Value;
+            DeltaData++;
+          }
 
-      Index      = (Index + DataHeader->DataSize + 7) & (~7);
-      DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + Index);
+          break;
+        }
+
+        Index      = (Index + DataHeader->DataSize + 7) & (~7);
+        DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + Index);
+      }
     }
   }
 
@@ -311,9 +313,11 @@ EndOfPeiSignalPpiNotifyCallback (
   //
   PcdDb = (PEI_PCD_DATABASE *)PcdDatabaseLoaderLoad (FileHandle);     // MU_CHANGE
   ASSERT (PcdDb != NULL);                                             // MU_CHANGE
-  Length   = PeiPcdDb->LengthForAllSkus;
-  Database = BuildGuidHob (&gPcdDataBaseHobGuid, Length);
-  CopyMem (Database, PcdDb, Length);
+  if (PcdDb != NULL) {
+    Length   = PeiPcdDb->LengthForAllSkus;
+    Database = BuildGuidHob (&gPcdDataBaseHobGuid, Length);
+    CopyMem (Database, PcdDb, Length);
+  }
 
   return EFI_SUCCESS;
 }

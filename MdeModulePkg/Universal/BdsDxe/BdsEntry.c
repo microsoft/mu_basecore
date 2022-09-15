@@ -892,8 +892,10 @@ BdsEntry (
   // Execute Driver Options
   //
   LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionTypeDriver);
-  ProcessLoadOptions (LoadOptions, LoadOptionCount);
-  EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
+  if ((LoadOptionCount != 0) && (LoadOptions != NULL)) {
+    ProcessLoadOptions (LoadOptions, LoadOptionCount);
+    EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
+  }
 
   //
   // Connect consoles
@@ -964,15 +966,17 @@ BdsEntry (
       mBdsLoadOptionName[LoadOptionType]
       ));
     LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionType);
-    for (Index = 0; Index < LoadOptionCount; Index++) {
-      DEBUG ((
-        DEBUG_INFO,
-        "    %s%04x: %s \t\t 0x%04x\n",
-        mBdsLoadOptionName[LoadOptionType],
-        LoadOptions[Index].OptionNumber,
-        LoadOptions[Index].Description,
-        LoadOptions[Index].Attributes
-        ));
+    if ((LoadOptionCount != 0) && (LoadOptions != NULL)) {
+      for (Index = 0; Index < LoadOptionCount; Index++) {
+        DEBUG ((
+          DEBUG_INFO,
+          "    %s%04x: %s \t\t 0x%04x\n",
+          mBdsLoadOptionName[LoadOptionType],
+          LoadOptions[Index].OptionNumber,
+          LoadOptions[Index].Description,
+          LoadOptions[Index].Attributes
+          ));
+      }
     }
 
     EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
@@ -1028,8 +1032,10 @@ BdsEntry (
     // Execute SysPrep####
     //
     LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionTypeSysPrep);
-    ProcessLoadOptions (LoadOptions, LoadOptionCount);
-    EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
+    if ((LoadOptionCount != 0) && (LoadOptions != NULL)) {
+      ProcessLoadOptions (LoadOptions, LoadOptionCount);
+      EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
+    }
 
     //
     // Execute Key####
@@ -1089,8 +1095,10 @@ BdsEntry (
       // Retry to boot if any of the boot succeeds
       //
       LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionTypeBoot);
-      BootSuccess = BootBootOptions (LoadOptions, LoadOptionCount, (BootManagerMenuStatus != EFI_NOT_FOUND) ? &BootManagerMenu : NULL);
-      EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
+      if ((LoadOptionCount != 0) && (LoadOptions != NULL)) {
+        BootSuccess = BootBootOptions (LoadOptions, LoadOptionCount, (BootManagerMenuStatus != EFI_NOT_FOUND) ? &BootManagerMenu : NULL);
+        EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
+      }
     } while (BootSuccess);
   }
 
@@ -1101,16 +1109,18 @@ BdsEntry (
   if (!BootSuccess) {
     if (PcdGetBool (PcdPlatformRecoverySupport)) {
       LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionTypePlatformRecovery);
-      ProcessLoadOptions (LoadOptions, LoadOptionCount);
-      EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
-      //    } else {
-      //
-      // MU_CHANGE TCBZ2523 - Bds should NEVER boot anything the platform has not specified.
-      //
-      //      //
-      //      // When platform recovery is not enabled, still boot to platform default file path.
-      //      //
-      //      EfiBootManagerProcessLoadOption (&PlatformDefaultBootOption);
+      if ((LoadOptionCount != 0) && (LoadOptions != NULL)) {
+        ProcessLoadOptions (LoadOptions, LoadOptionCount);
+        EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
+        //    } else {
+        //
+        // MU_CHANGE TCBZ2523 - Bds should NEVER boot anything the platform has not specified.
+        //
+        //      //
+        //      // When platform recovery is not enabled, still boot to platform default file path.
+        //      //
+        //      EfiBootManagerProcessLoadOption (&PlatformDefaultBootOption);
+      }
     }
   }
 
