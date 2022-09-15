@@ -573,7 +573,14 @@ TestVerifyX509 (
   Status      = X509GetIssuerName (mTestCert, sizeof (mTestCert), NULL, &SubjectSize);
   UT_ASSERT_TRUE (!Status);
   Subject = AllocatePool (SubjectSize);
-  Status  = X509GetIssuerName (mTestCert, sizeof (mTestCert), Subject, &SubjectSize);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Subject == NULL) {
+    ASSERT (Subject != NULL);
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+  Status = X509GetIssuerName (mTestCert, sizeof (mTestCert), Subject, &SubjectSize);
   UT_ASSERT_TRUE (Status);
   FreePool (Subject);
 
