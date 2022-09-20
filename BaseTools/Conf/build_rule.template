@@ -260,6 +260,43 @@
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
         "$(NASM)" -I${s_path}(+) $(NASM_INC) $(NASM_FLAGS) -o $dst ${d_path}(+)${s_base}.iii
 
+# MU_CHANGE [BEGIN] - Add Rust build support
+
+[Rust-To-Lib-File]
+    <InputFile>
+        ?.rs
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.lib
+
+    <Command>
+        $(RUSTC) $(RUSTC_FLAGS) ${src} --emit link=${dst}
+
+[Toml-File]
+    <InputFile>
+        ?.toml
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
+
+    <Command>
+        $(CARGO) build $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
+        $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.a $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME)rust.lib
+
+[Toml-File.RUST_MODULE]
+    <InputFile>
+        ?.toml
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+
+    <Command>
+        $(CARGO) build $(CARGO_FLAGS) --manifest-path ${src} --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
+        $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+        $(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
+
+# MU_CHANGE [END] - Add Rust build support
+
 [Device-Tree-Source-File]
     <InputFile>
         ?.dts

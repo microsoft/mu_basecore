@@ -22,6 +22,9 @@ from .MetaFileParser import *
 from Workspace.DecBuildData import DecBuildData
 from Workspace.DscBuildData import DscBuildData
 from Workspace.InfBuildData import InfBuildData
+# MU_CHANGE [BEGIN]: Add Rust build support
+from Workspace.TomlBuildData import TomlBuildData
+# MU_CHANGE [END]: Add Rust build support
 
 ## Database
 #
@@ -45,6 +48,9 @@ class WorkspaceDatabase(object):
             ".inf"  : MODEL_FILE_INF,
             ".dec"  : MODEL_FILE_DEC,
             ".dsc"  : MODEL_FILE_DSC,
+            # MU_CHANGE [BEGIN]: Add Rust build support
+            ".toml" : MODEL_FILE_TOML,
+            # MU_CHANGE [END]: Add Rust build support
         }
 
         # file parser
@@ -52,6 +58,9 @@ class WorkspaceDatabase(object):
             MODEL_FILE_INF  :   InfParser,
             MODEL_FILE_DEC  :   DecParser,
             MODEL_FILE_DSC  :   DscParser,
+            # MU_CHANGE [BEGIN]: Add Rust build support
+            MODEL_FILE_TOML :   TomlParser,
+            # MU_CHANGE [END]: Add Rust build support
         }
 
         # convert to xxxBuildData object
@@ -59,6 +68,9 @@ class WorkspaceDatabase(object):
             MODEL_FILE_INF  :   InfBuildData,
             MODEL_FILE_DEC  :   DecBuildData,
             MODEL_FILE_DSC  :   DscBuildData,
+            # MU_CHANGE [BEGIN]: Add Rust build support
+            MODEL_FILE_TOML :   TomlBuildData,
+            # MU_CHANGE [END]: Add Rust build support
         }
 
         _CACHE_ = {}    # (FilePath, Arch)  : <object>
