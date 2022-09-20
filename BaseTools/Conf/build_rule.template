@@ -281,7 +281,7 @@
         $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
 
     <Command>
-        $(CARGO) build $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
+        $(CARGO) build $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
         $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.a $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME)rust.lib
 
 [Toml-File.RUST_MODULE]
@@ -292,7 +292,7 @@
         $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
 
     <Command>
-        $(CARGO) build $(CARGO_FLAGS) --manifest-path ${src} --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
+        $(CARGO) build $(CARGO_FLAGS) --manifest-path ${src} -Z unstable-options --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
         $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
         $(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
 
