@@ -280,8 +280,8 @@
         $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
 
     <Command>
-        $(CARGO) build $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
-        $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.a $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME)rust.lib
+        $(CARGO) $(CARGOMAKE_BUILD) $(MODULE_NAME)
+        $(CP) $(CARGO_BINDIR)(+)*.a $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
 
 [Toml-File.RUST_MODULE]
     <InputFile>
@@ -291,9 +291,12 @@
         $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
 
     <Command>
-        $(CARGO) build $(CARGO_FLAGS) --manifest-path ${src} --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
-        $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
-        $(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
+        # Temporary_Rust_Todo - Remove .efi files to better support Rust incremental build for now.
+        $(RM) $(OUTPUT_DIR)(+)*.efi
+        $(CARGO) $(CARGOMAKE_BUILD) $(MODULE_NAME)
+        $(CP) $(CARGO_BINDIR)(+)$(MODULE_NAME).map $(OUTPUT_DIR)(+)$(MODULE_NAME).map
+        $(CP) $(CARGO_BINDIR)(+)$(MODULE_NAME).efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+        $(CP) $(CARGO_BINDIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
 
 # MU_CHANGE [END] - Add Rust build support
 
@@ -341,7 +344,7 @@
     <Command.GCC>
         $(RM) ${dst}
         "$(SLINK)" cr ${dst} $(SLINK_FLAGS) @$(OBJECT_FILES_LIST)
-    
+
     <Command.XCODE>
         "$(SLINK)" $(SLINK_FLAGS) ${dst} -filelist $(OBJECT_FILES_LIST)
 
