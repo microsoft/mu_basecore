@@ -31,6 +31,7 @@ from collections import OrderedDict, defaultdict
 
 from AutoGen.PlatformAutoGen import PlatformAutoGen
 from AutoGen.ModuleAutoGen import ModuleAutoGen
+from AutoGen.RustModuleAutoGen import RustModuleAutoGen
 from AutoGen.WorkspaceAutoGen import WorkspaceAutoGen
 from AutoGen.AutoGenWorker import AutoGenWorkerInProcess,AutoGenManager,\
     LogAgent
@@ -63,6 +64,7 @@ from GenFds.FdfParser import FdfParser
 from AutoGen.IncludesAutoGen import IncludesAutoGen
 from GenFds.GenFds import resetFdsGlobalVariable
 from AutoGen.AutoGen import CalculatePriorityValue
+from Common.Misc import UpdateTomlFileMTime
 
 ## standard targets of build command
 gSupportedTarget = ['all', 'genc', 'genmake', 'modules', 'libraries', 'fds', 'clean', 'cleanall', 'cleanlib', 'run']
@@ -389,6 +391,26 @@ class ModuleMakeUnit(BuildUnit):
         if Target in [None, "", "all"]:
             self.Target = "tbuild"
 
+## The smallest module unit that can be built by cargo build command in multi-thread build mode
+#
+# This class is for rust module build by cargo build system. The "Obj" parameter
+# must provide __str__(), __eq__() and __hash__() methods. Otherwise there could
+# be make units missing build.
+#
+# Currently the "Obj" should be only RustModuleAutoGen object.
+#
+class RustModuleBuildUnit(BuildUnit):
+    ## The constructor
+    #
+    #   @param  self        The object pointer
+    #   @param  Obj         The RustModuleAutoGen object the build is working on
+    #   @param  Target      The build target name, one of gSupportedTarget
+    #
+    def __init__(self, Obj, BuildCommand,Target):
+        Dependency = []
+        BuildUnit.__init__(self, Obj, BuildCommand, Target, Dependency, Obj.MakeFileDir)
+        self.Target = None
+
 ## The smallest platform unit that can be built by nmake/make command in multi-thread build mode
 #
 # This class is for platform build by nmake/make build system. The "Obj" parameter
@@ -682,7 +704,10 @@ class BuildTask:
     #
     def Start(self):
         EdkLogger.quiet("Building ... %s" % repr(self.BuildItem))
-        Command = self.BuildItem.BuildCommand + [self.BuildItem.Target]
+        if self.BuildItem.Target is None:
+            Command = self.BuildItem.BuildCommand
+        else:
+            Command = self.BuildItem.BuildCommand + [self.BuildItem.Target]
         self.BuildTread = Thread(target=self._CommandThread, args=(Command, self.BuildItem.WorkingDir))
         self.BuildTread.name = "build thread"
         self.BuildTread.daemon = False
@@ -2309,8 +2334,37 @@ class Build():
                     EdkLogger.quiet("[cache Summary]: PreMakecache miss num: %s " % len(self.PreMakeCacheMiss))
                     EdkLogger.quiet("[cache Summary]: Makecache miss num: %s " % len(self.MakeCacheMiss))
 
+                # if .tmol releated rust src changed, update .toml file's modified time
+                UpdateTomlFileMTime(os.path.join(Wa.BuildDir, 'RustFileWatch.lst'))
+
                 for Arch in Wa.ArchList:
                     MakeStart = time.time()
+
+                    for RustModulePath in Wa.Platform.RustModules:
+                        rma = RustModuleAutoGen(Wa, RustModulePath, BuildTarget, ToolChain, Arch, DataPipe=Pa.DataPipe)
+                        BuildCommand = "%s %s %s --manifest-path %s -Z unstable-options --out-dir %s --target-dir %s" % (
+                            Wa.ToolDefinition['CARGO']["PATH"],
+                            Wa.ToolDefinition['CARGOBUILD']["NAME"],
+                            Wa.ToolDefinition['CARGO']['FLAGS'],
+                            rma.MetaFile.Path,
+                            rma.OutputDir,
+                            rma.BuildDir
+                        )
+                        bu = RustModuleBuildUnit(rma, BuildCommand, None)
+                        Bt = BuildTask.New(bu)
+                        if BuildTask.HasError():
+                            ExitFlag.set()
+                            BuildTask.WaitForComplete()
+                            EdkLogger.error("build", BUILD_ERROR, "Failed to build module",
+                                            ExtraData=GlobalData.gBuildingModule)
+                        if not BuildTask.IsOnGoing():
+                            BuildTask.StartScheduler(self.ThreadNumber, ExitFlag)
+
+                    # Wait for rust build complete
+                    ExitFlag.set()
+                    BuildTask.WaitForComplete()
+                    ExitFlag.clear()
+
                     for Ma in set(self.BuildModules):
                         # Generate build task for the module
                         if not Ma.IsBinaryModule:
