@@ -2457,6 +2457,30 @@ RELEASE_XCODE5_X64_CC_FLAGS   = -target x86_64-pc-win32-macho -c    -Os       -W
 # NASMB uses NASM produce a .bin from a .nasmb NASM source file
 *_*_*_NASMB_FLAGS              = -f bin
 
+# MU_CHANGE [BEGIN] - Add Rust build support
+
+##################
+# RUSTC definitions
+##################
+*_*_*_RUSTC_PATH            = rustc
+DEBUG_*_X64_RUSTC_FLAGS     = --edition=2018 --target x86_64-unknown-uefi -C debuginfo=2 --crate-type staticlib
+RELEASE_*_X64_RUSTC_FLAGS   = --edition=2018 --target x86_64-unknown-uefi -C debuginfo=3 --crate-type staticlib
+DEBUG_*_IA32_RUSTC_FLAGS    = --edition=2018 --target i686-unknown-uefi -C debuginfo=2 --crate-type staticlib
+RELEASE_*_IA32_RUSTC_FLAGS  = --edition=2018 --target i686-unknown-uefi -C debuginfo=2 --crate-type staticlib
+
+##################
+# CARGO definitions
+##################
+*_*_*_CARGO_PATH            = cargo
+DEBUG_*_X64_CARGO_FLAGS     = --target x86_64-unknown-uefi
+RELEASE_*_X64_CARGO_FLAGS   = --target x86_64-unknown-uefi --release
+DEBUG_*_IA32_CARGO_FLAGS    = --target i686-unknown-uefi
+RELEASE_*_IA32_CARGO_FLAGS  = --target i686-unknown-uefi   --release
+
+*_*_*_CARGOBUILD_NAME	= build
+
+# MU_CHANGE [END] - Add Rust build support
+
 #################
 # Build rule order
 #################
