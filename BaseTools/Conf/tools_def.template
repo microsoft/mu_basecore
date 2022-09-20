@@ -2462,22 +2462,39 @@ RELEASE_XCODE5_X64_CC_FLAGS   = -target x86_64-pc-win32-macho -c    -Os       -W
 ##################
 # RUSTC definitions
 ##################
+*_*_X64_TARGET_TRIPLE = x86_64-unknown-uefi
+*_*_IA32_TARGET_TRIPLE = i686-unknown-uefi
+
 *_*_*_RUSTC_PATH            = rustc
-DEBUG_*_X64_RUSTC_FLAGS     = --edition=2018 --target x86_64-unknown-uefi -C debuginfo=2 --crate-type staticlib
-RELEASE_*_X64_RUSTC_FLAGS   = --edition=2018 --target x86_64-unknown-uefi -C debuginfo=3 --crate-type staticlib
-DEBUG_*_IA32_RUSTC_FLAGS    = --edition=2018 --target i686-unknown-uefi -C debuginfo=2 --crate-type staticlib
-RELEASE_*_IA32_RUSTC_FLAGS  = --edition=2018 --target i686-unknown-uefi -C debuginfo=2 --crate-type staticlib
+DEBUG_*_X64_RUSTC_FLAGS     = --edition=2018 --target $(TARGET_TRIPLE) -C debuginfo=2 --crate-type staticlib
+RELEASE_*_X64_RUSTC_FLAGS   = --edition=2018 --target $(TARGET_TRIPLE) -C debuginfo=3 --crate-type staticlib
+DEBUG_*_IA32_RUSTC_FLAGS    = --edition=2018 --target $(TARGET_TRIPLE) -C debuginfo=2 --crate-type staticlib
+RELEASE_*_IA32_RUSTC_FLAGS  = --edition=2018 --target $(TARGET_TRIPLE) -C debuginfo=2 --crate-type staticlib
+
+##########################
+# CARGO MAKE definitions #
+##########################
+*_VS2019_*_CARGOMAKE_RUSTFLAGS  = "-C link-arg=/MAP:$(CARGO_BINDIR)\$(MODULE_NAME).map"
+*_VS2022_*_CARGOMAKE_RUSTFLAGS  = "-C link-arg=/MAP:$(CARGO_BINDIR)\$(MODULE_NAME).map"
+*_GCC5_*_CARGOMAKE_RUSTFLAGS  = "-C link-arg=/MAP:$(CARGO_BINDIR)/$(MODULE_NAME).map"
+
+DEBUG_*_*_CARGOMAKE_BUILD    = make --cwd ENV(WORKSPACE) -p development -e TARGET_TRIPLE=$(TARGET_TRIPLE) -e RUSTFLAGS=$(CARGOMAKE_RUSTFLAGS) build
+RELEASE_*_*_CARGOMAKE_BUILD  = make --cwd ENV(WORKSPACE) -p release -e TARGET_TRIPLE=$(TARGET_TRIPLE) -e RUSTFLAGS=$(CARGOMAKE_RUSTFLAGS) build
 
 ##################
 # CARGO definitions
 ##################
-*_*_*_CARGO_PATH            = cargo
-DEBUG_*_X64_CARGO_FLAGS     = --target x86_64-unknown-uefi
-RELEASE_*_X64_CARGO_FLAGS   = --target x86_64-unknown-uefi --release
-DEBUG_*_IA32_CARGO_FLAGS    = --target i686-unknown-uefi
-RELEASE_*_IA32_CARGO_FLAGS  = --target i686-unknown-uefi   --release
+# The path to where cargo generated binaries are placed (.efi, .a, .d,)
+DEBUG_VS2019_*_CARGO_BINDIR  = ENV(WORKSPACE)\target\$(TARGET_TRIPLE)\debug
+RELEASE_VS2019_*_CARGO_BINDIR  = ENV(WORKSPACE)\target\$(TARGET_TRIPLE)\release
 
-*_*_*_CARGOBUILD_NAME	= build
+DEBUG_VS2022_*_CARGO_BINDIR  = ENV(WORKSPACE)\target\$(TARGET_TRIPLE)\debug
+RELEASE_VS2022_*_CARGO_BINDIR  = ENV(WORKSPACE)\target\$(TARGET_TRIPLE)\release
+
+DEBUG_GCC5_*_CARGO_BINDIR    = ENV(WORKSPACE)/target/$(TARGET_TRIPLE)/debug
+RELEASE_GCC5_*_CARGO_BINDIR    = ENV(WORKSPACE)/target/$(TARGET_TRIPLE)/release
+
+*_*_*_CARGO_PATH         = cargo
 
 # MU_CHANGE [END] - Add Rust build support
 
