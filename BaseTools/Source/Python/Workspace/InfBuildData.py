@@ -293,6 +293,11 @@ class InfBuildData(ModuleBuildClassObject):
         elif 'UEFI_HII_RESOURCE_SECTION' in self._Defs \
            and self._Defs['UEFI_HII_RESOURCE_SECTION'] == 'TRUE':
             self._BuildType = 'UEFI_HII'
+        # MU_CHANGE [BEGIN]: Add Rust build support
+        elif self._RawData._Defines.get("RUST_MODULE", None) \
+                and self._RawData._Defines.get("LIBRARY_CLASS", None) is None:
+            self._BuildType = 'RUST_MODULE'
+        # MU_CHANGE [END]: Add Rust build support
         else:
             self._BuildType = self._ModuleType.upper()
 
