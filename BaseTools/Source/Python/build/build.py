@@ -15,7 +15,6 @@
 #
 from __future__ import print_function
 from __future__ import absolute_import
-import os.path as path
 import sys
 import os
 import re
@@ -31,13 +30,14 @@ from subprocess import Popen,PIPE, STDOUT
 from collections import OrderedDict, defaultdict
 import json
 import secrets
+import pathlib
 
 from AutoGen.PlatformAutoGen import PlatformAutoGen
 from AutoGen.ModuleAutoGen import ModuleAutoGen
+from AutoGen.RustModuleAutoGen import RustModuleAutoGen
 from AutoGen.WorkspaceAutoGen import WorkspaceAutoGen
 from AutoGen.AutoGenWorker import AutoGenWorkerInProcess,AutoGenManager,\
     LogAgent
-from AutoGen import GenMake
 from Common import Misc as Utils
 
 from Common.TargetTxtClassObject import TargetTxtDict
@@ -64,7 +64,6 @@ from AutoGen.ModuleAutoGenHelper import WorkSpaceInfo, PlatformInfo
 from GenFds.FdfParser import FdfParser
 from AutoGen.IncludesAutoGen import IncludesAutoGen
 from GenFds.GenFds import resetFdsGlobalVariable
-from AutoGen.AutoGen import CalculatePriorityValue
 
 ## standard targets of build command
 gSupportedTarget = ['all', 'genc', 'genmake', 'modules', 'libraries', 'fds', 'clean', 'cleanall', 'cleanlib', 'run']
@@ -389,6 +388,26 @@ class ModuleMakeUnit(BuildUnit):
         if Target in [None, "", "all"]:
             self.Target = "tbuild"
 
+## The smallest module unit that can be built by cargo build command in multi-thread build mode
+#
+# This class is for rust module build by cargo build system. The "Obj" parameter
+# must provide __str__(), __eq__() and __hash__() methods. Otherwise there could
+# be make units missing build.
+#
+# Currently the "Obj" should be only RustModuleAutoGen object.
+#
+class RustModuleBuildUnit(BuildUnit):
+    ## The constructor
+    #
+    #   @param  self        The object pointer
+    #   @param  Obj         The RustModuleAutoGen object the build is working on
+    #   @param  Target      The build target name, one of gSupportedTarget
+    #
+    def __init__(self, Obj, BuildCommand,Target):
+        Dependency = []
+        BuildUnit.__init__(self, Obj, BuildCommand, Target, Dependency, Obj.MakeFileDir)
+        self.Target = None
+		
 ## The class representing the task of a module build or platform build
 #
 # This class manages the build tasks in multi-thread build mode. Its jobs include
@@ -2280,8 +2299,42 @@ class Build():
                     EdkLogger.quiet("[cache Summary]: PreMakecache miss num: %s " % len(self.PreMakeCacheMiss))
                     EdkLogger.quiet("[cache Summary]: Makecache miss num: %s " % len(self.MakeCacheMiss))
 
+                # Touch all toml files (to update the last modified time) so
+                # that make will actually see that a source file is newer than
+                # the .efi file and copy it to the expected directory(s).
+                for m in self.AllModules:
+                    for src in m.SourceFileList:
+                        if ".toml" in src.Path.lower():
+                            pathlib.Path(src.Path).touch(exist_ok=True)
+
                 for Arch in Wa.ArchList:
                     MakeStart = time.time()
+
+                    for RustModulePath in Wa.Platform.RustModules:
+                        rma = RustModuleAutoGen(Wa, RustModulePath, BuildTarget, ToolChain, Arch, DataPipe=Pa.DataPipe)
+                        BuildCommand = "%s %s %s --manifest-path %s -Z unstable-options --out-dir %s --target-dir %s" % (
+                            Wa.ToolDefinition['CARGO']["PATH"],
+                            Wa.ToolDefinition['CARGOBUILD']["NAME"],
+                            Wa.ToolDefinition['CARGO']['FLAGS'],
+                            rma.MetaFile.Path,
+                            rma.OutputDir,
+                            rma.BuildDir
+                        )
+                        bu = RustModuleBuildUnit(rma, BuildCommand, None)
+                        Bt = BuildTask.New(bu)
+                        if BuildTask.HasError():
+                            ExitFlag.set()
+                            BuildTask.WaitForComplete()
+                            EdkLogger.error("build", BUILD_ERROR, "Failed to build module",
+                                            ExtraData=GlobalData.gBuildingModule)
+                        if not BuildTask.IsOnGoing():
+                            BuildTask.StartScheduler(self.ThreadNumber, ExitFlag)
+
+                    # Wait for rust build complete
+                    ExitFlag.set()
+                    BuildTask.WaitForComplete()
+                    ExitFlag.clear()
+
                     for Ma in set(self.BuildModules):
                         # Generate build task for the module
                         if not Ma.IsBinaryModule:
@@ -2618,7 +2671,7 @@ def Main():
 
     EdkLogger.quiet("Build environment: %s" % platform.platform())
     BuildStartTime = GetBuildEpoch()
-    EdkLogger.quiet(time.strftime("Build start time: %H:%M:%S, %b.%d %Y\n", time.localtime(BuildStartTime)));
+    EdkLogger.quiet(time.strftime("Build start time: %H:%M:%S, %b.%d %Y\n", time.localtime(BuildStartTime)))
     ReturnCode = 0
     MyBuild = None
     BuildError = True
