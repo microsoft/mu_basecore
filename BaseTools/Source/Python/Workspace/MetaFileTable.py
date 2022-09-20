@@ -15,7 +15,7 @@ import Common.EdkLogger as EdkLogger
 from Common.BuildToolError import FORMAT_INVALID
 
 from CommonDataClass.DataClass import MODEL_FILE_DSC, MODEL_FILE_DEC, MODEL_FILE_INF, \
-                                      MODEL_FILE_OTHERS
+                                      MODEL_FILE_OTHERS, MODEL_FILE_TOML
 from Common.DataType import *
 
 class MetaFileTable():
@@ -393,6 +393,7 @@ class MetaFileStorage(object):
         MODEL_FILE_INF      :   ModuleTable,
         MODEL_FILE_DEC      :   PackageTable,
         MODEL_FILE_DSC      :   PlatformTable,
+        MODEL_FILE_TOML     :   ModuleTable,
         MODEL_FILE_OTHERS   :   MetaFileTable,
     }
 
@@ -400,6 +401,7 @@ class MetaFileStorage(object):
         ".inf"  : MODEL_FILE_INF,
         ".dec"  : MODEL_FILE_DEC,
         ".dsc"  : MODEL_FILE_DSC,
+        ".toml" : MODEL_FILE_TOML,
     }
     _ObjectCache = {}
     ## Constructor
