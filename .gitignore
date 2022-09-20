@@ -5,6 +5,7 @@
 __pycache__/
 tags/
 .vscode/
+target/
 *.bak
 BuildConfig.conf
 /BaseTools/BaseToolsBuild/
