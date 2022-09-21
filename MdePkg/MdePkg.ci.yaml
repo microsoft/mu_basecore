@@ -199,5 +199,11 @@
             "Library/BaseFdtLib/string.h",
             "mipi_syst.h"
         ]
+    },
+
+    ## options defined .pytool/Plugin/MarkdownLintCheck
+    "MarkdownLintCheck": {
+        "IgnoreFiles": [ "Library/MipiSysTLib/mipisyst"  # submodule outside of control
+        ]            # package root relative file, folder, or glob pattern to ignore
     }
 }
