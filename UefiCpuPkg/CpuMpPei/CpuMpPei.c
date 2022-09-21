@@ -525,9 +525,11 @@ InitializeMpExceptionStackSwitchHandlers (
   UINTN                           BufferSize;
   UINTN                           NumberOfProcessors;
 
-  if (!PcdGetBool (PcdCpuStackGuard)) {
-    return;
-  }
+  // MU_CHANGE START
+  // if (!PcdGetBool (PcdCpuStackGuard)) {
+  //  return;
+  // }
+  // MU_CHANGE END
 
   SwitchStackData.BufferSize = &BufferSize;
   MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
@@ -573,7 +575,6 @@ InitializeMpExceptionStackSwitchHandlers (
         NULL
         );
     }
-
   }
 }
 

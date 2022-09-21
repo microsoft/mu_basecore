@@ -260,10 +260,12 @@ DxeMain (
   //
   // Setup Stack Guard
   //
-  if (PcdGetBool (PcdCpuStackGuard)) {
-    Status = InitializeSeparateExceptionStacks (NULL, NULL);
-    ASSERT_EFI_ERROR (Status);
-  }
+  // MU_CHANGE START
+  // if (PcdGetBool (PcdCpuStackGuard)) {
+  //  Status = InitializeSeparateExceptionStacks (NULL, NULL);
+  //  ASSERT_EFI_ERROR (Status);
+  // }
+  // MU_CHANGE END
 
   //
   // Initialize Debug Agent to support source level debug in DXE phase
