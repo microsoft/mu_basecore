@@ -49,7 +49,9 @@ Bug Fixes-dev
 2208_CIBuild Changes
 --------------------
 
-- Incomplete
+- Rebuild all crypto drivers through the script to work with upstream changes we took in.
+- Removed memory protection changes that rely on PCDs we don't use in project MU (No impact on actual memory protections)
+- Removed stale macro definitions that have been overwritten upstream.
 
 2208_Rebase Changes
 -------------------
