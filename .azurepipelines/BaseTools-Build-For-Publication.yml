@@ -62,6 +62,7 @@ jobs:
     - publish: $(linux_build_output_path)
       artifact: $(linux_artifact_name)
       displayName: Publish To Pipeline
+      condition: SucceededOrFailed()
 
   - job: windows_build
     displayName: Windows Build
@@ -99,12 +100,13 @@ jobs:
 
     - template: templates/basetools-build-steps.yml
       parameters:
-        tool_chain_tag: 'VS2019'
+        tool_chain_tag: 'VS2022'
         extra_parameters: '--skip_path_env'
 
     - publish: $(windows_build_output_path)
       artifact: $(windows_artifact_name)
       displayName: Publish To Pipeline
+      condition: SucceededOrFailed()
 
   - job: assemble_package
     displayName: Assemble Release Package

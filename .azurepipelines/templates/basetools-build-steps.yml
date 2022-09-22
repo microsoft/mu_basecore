@@ -26,7 +26,7 @@ steps:
     filename: python
     # MU_CHANGE
     arguments: BaseTools/Edk2ToolsBuild.py -t ${{ parameters.tool_chain_tag }} ${{ parameters.extra_parameters }}
-  condition: and(gt(variables.pkg_count, 0), succeeded())
+  condition: and(gt(variables.pkg_count, 0), Succeeded())
 
 - task: CopyFiles@2
   displayName: "Copy base tools build log"
@@ -36,4 +36,13 @@ steps:
     contents: |
       BASETOOLS_BUILD*.*
     flattenFolders: true
-  condition: and(gt(variables.pkg_count, 0), succeededOrFailed())
+  condition: and(gt(variables.pkg_count, 0), SucceededOrFailed())
+
+# Publish build artifacts
+- task: PublishBuildArtifacts@1
+  continueOnError: true
+  displayName: "Publish build logs"
+  inputs:
+    pathtoPublish: "$(Build.ArtifactStagingDirectory)"
+    artifactName: ${{ parameters.tool_chain_tag }}
+  condition: SucceededOrFailed()
