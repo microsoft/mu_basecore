@@ -2680,8 +2680,10 @@ EfiBootManagerGetBootManagerMenu (
   UINTN                         Index;
 
   BootOptions = EfiBootManagerGetLoadOptions (&BootOptionCount, LoadOptionTypeBoot);
-  if (BootOptions == NULL) {
-    return EFI_NOT_FOUND;
+  if ((BootOptions == NULL) || (BootOptionCount == 0)) {
+    BootOptionCount = 0;
+    Index           = 0;
+    goto Register;
   }
 
   for (Index = 0; Index < BootOptionCount; Index++) {
@@ -2706,6 +2708,7 @@ EfiBootManagerGetBootManagerMenu (
   //
   // Automatically create the Boot#### for Boot Manager Menu when not found.
   //
+Register:
   if (Index == BootOptionCount) {
     return BmRegisterBootManagerMenu (BootOption);
   } else {
