@@ -1452,6 +1452,11 @@ def CreateLibraryDestructorCode(Info, AutoGenC, AutoGenH):
 def CreateModuleEntryPointCode(Info, AutoGenC, AutoGenH):
     if Info.IsLibrary or Info.ModuleType in [SUP_MODULE_USER_DEFINED, SUP_MODULE_HOST_APPLICATION, SUP_MODULE_SEC]:
         return
+
+    # Temporary_Rust_Todo - For now, return on DXE_CORE
+    if Info.ModuleType in [SUP_MODULE_DXE_CORE]:
+        return
+
     #
     # Module Entry Points
     #
