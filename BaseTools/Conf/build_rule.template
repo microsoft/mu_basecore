@@ -292,6 +292,8 @@
         $(CARGO) build $(CARGO_FLAGS) --manifest-path ${src} -Z unstable-options --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
         $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
         $(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
+        # Temporary_Rust_Todo - Create fake map file to prevent build error. Revisit and generate actual map file.
+        $(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(OUTPUT_DIR)(+)$(MODULE_NAME).map
 
 [Device-Tree-Source-File]
     <InputFile>
