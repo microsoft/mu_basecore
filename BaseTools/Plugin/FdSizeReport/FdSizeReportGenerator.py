@@ -56,8 +56,14 @@ try:
             FdfF = thebuilder.mws.join(thebuilder.ws, thebuilder.env.GetValue("FLASH_DEFINITION"))
             #3 - Get the product name
             Product = thebuilder.env.GetValue("PRODUCT_NAME")
+            if Product is None:
+                logging.debug("Environment variable PRODUCT_NAME is not set")
+                Product = "not set"
             #4 - Get the Fw version
             FwVersion = thebuilder.env.GetBuildValue("BUILDID_STRING")
+            if FwVersion is None:
+                logging.debug("Environment variable BUILDID_STRING is not set")
+                FwVersion = "not set"
             #5 - Get the build Report file
             BuildReportF = thebuilder.env.GetValue("BUILDREPORT_FILE")
 
