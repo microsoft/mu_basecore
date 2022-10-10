@@ -1527,6 +1527,56 @@ UnicodeStrToAsciiStrS (
   );
 
 /**
+  Convert a Null-terminated Unicode string to a Null-terminated
+  ASCII string and allows for replacement of character instead of Asserting.
+
+  This function is similar to AsciiStrCpyS.
+
+  This function converts the content of the Unicode string Source
+  to the ASCII string Destination by copying the lower 8 bits of
+  each Unicode character. The function terminates the ASCII string
+  Destination by appending a Null-terminator character at the end.
+
+  The caller is responsible to make sure Destination points to a buffer with size
+  equal or greater than ((StrLen (Source) + 1) * sizeof (CHAR8)) in bytes.
+
+  If any Unicode characters in Source the resultant string will replace that character
+  with user given character.
+
+  If Source is not aligned on a 16-bit boundary, then return RETURN_ACCESS_DENIED.
+
+  If an error is returned, then the Destination is unmodified.
+
+  @param  Source            The pointer to a Null-terminated Unicode string.
+  @param  Destination       The pointer to a Null-terminated ASCII string.
+  @param  DestMax           The maximum number of Destination Ascii
+                            char, including terminating null char.
+  @param  ReplacementChar   The char to replace the upper 8 bits with
+
+  @retval RETURN_SUCCESS           String is converted.
+  @retval RETURN_BUFFER_TOO_SMALL  If DestMax is NOT greater than StrLen(Source).
+  @retval RETURN_INVALID_PARAMETER If Destination is NULL.
+                                   If Source is NULL.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                    and DestMax is greater than
+                                    PcdMaximumAsciiStringLength.
+                                   If PcdMaximumUnicodeStringLength is not zero,
+                                    and DestMax is greater than
+                                    PcdMaximumUnicodeStringLength.
+                                   If DestMax is 0.
+  @retval RETURN_ACCESS_DENIED     If Source and Destination overlap.
+
+**/
+RETURN_STATUS
+EFIAPI
+ReplaceUnicodeStrToAsciiStrS (
+  IN      CONST CHAR16  *Source,
+  OUT     CHAR8         *Destination,
+  IN      UINTN         DestMax,
+  IN      CONST CHAR8   ReplacementChar
+);
+
+/**
   Convert not more than Length successive characters from a Null-terminated
   Unicode string to a Null-terminated Ascii string. If no null char is copied
   from Source, then Destination[Length] is always set to null.

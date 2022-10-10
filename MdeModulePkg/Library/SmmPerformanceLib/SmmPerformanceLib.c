@@ -20,6 +20,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/BaseMemoryLib.h>
 
 //
+// Data for FPDT performance records.
+//
+#define STRING_SIZE  (FPDT_STRING_EVENT_RECORD_NAME_LENGTH * sizeof (CHAR8))
+
+//
 // The cached SMM Performance Protocol and SMM PerformanceEx Protocol interface.
 EDKII_PERFORMANCE_MEASUREMENT_PROTOCOL  *mPerformanceMeasurement = NULL;
 BOOLEAN                                 mPerformanceMeasurementEnabled;
@@ -389,6 +394,52 @@ PerformanceMeasurementEnabled (
   )
 {
   return mPerformanceMeasurementEnabled;
+}
+
+/**
+  Create performance record with event description and a timestamp.
+
+  @param CallerIdentifier  - Image handle or pointer to caller ID GUID
+  @param Guid              - Pointer to a GUID
+  @param String            - Pointer to a unicode string describing the measurement
+  @param Address           - Pointer to a location in memory relevant to the measurement
+  @param Identifier        - Performance identifier describing the type of measurement
+
+  @retval RETURN_SUCCESS           - Successfully created performance record
+  @retval RETURN_OUT_OF_RESOURCES  - Ran out of space to store the records
+  @retval RETURN_INVALID_PARAMETER - Invalid parameter passed to function - NULL
+                                     pointer or invalid PerfId
+
+**/
+RETURN_STATUS
+EFIAPI
+LogPerformanceMeasurementUnicode (
+  IN CONST VOID    *CallerIdentifier,
+  IN CONST VOID    *Guid     OPTIONAL,
+  IN CONST CHAR16  *String   OPTIONAL,
+  IN UINT64        Address  OPTIONAL,
+  IN UINT32        Identifier
+  )
+{
+  CHAR8       AsciiString[STRING_SIZE];
+  EFI_STATUS  Status = UnicodeStrToAsciiStrS (String, AsciiString, STRING_SIZE);
+
+  if (Status != RETURN_SUCCESS) {
+    return Status;
+  }
+
+  Status = GetPerformanceMeasurementProtocol ();
+  if (EFI_ERROR (Status)) {
+    return RETURN_OUT_OF_RESOURCES;
+  }
+
+  if (mPerformanceMeasurement != NULL) {
+    Status = mPerformanceMeasurement->CreatePerformanceMeasurement (CallerIdentifier, Guid, AsciiString, 0, Address, Identifier, PerfEntry);
+  } else {
+    ASSERT (FALSE);
+  }
+
+  return (RETURN_STATUS)Status;
 }
 
 /**

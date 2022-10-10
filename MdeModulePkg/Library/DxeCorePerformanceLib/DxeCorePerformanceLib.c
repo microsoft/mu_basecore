@@ -1010,7 +1010,7 @@ InsertFpdtRecord (
       }
     } else if (PerfId == 0) {
       //
-      // Get ProgressID form the String Token.
+      // Get ProgressID from the String Token.
       //
       Status = GetFpdtRecordId (Attribute, CallerIdentifier, String, &ProgressId);
       if (EFI_ERROR (Status)) {
@@ -1213,6 +1213,28 @@ InsertFpdtRecord (
       }
 
       break;
+
+    // MU_CHANGE
+    case PERF_VARIABLE_START_ID:
+    case PERF_VARIABLE_END_ID:
+      if ((String != NULL) && (AsciiStrLen (String) != 0)) {
+        StringPtr = String;
+      } else {
+        StringPtr = "unknown name";
+      }
+
+      if (!PcdGetBool (PcdEdkiiFpdtStringRecordEnableOnly)) {
+        FpdtRecordPtr.GuidQwordStringEvent->Header.Type     = FPDT_GUID_QWORD_STRING_EVENT_TYPE;
+        FpdtRecordPtr.GuidQwordStringEvent->Header.Length   = sizeof (FPDT_GUID_QWORD_STRING_EVENT_RECORD);
+        FpdtRecordPtr.GuidQwordStringEvent->Header.Revision = FPDT_RECORD_REVISION_1;
+        FpdtRecordPtr.GuidQwordStringEvent->ProgressID      = PerfId;
+        FpdtRecordPtr.GuidQwordStringEvent->Timestamp       = TimeStamp;
+        FpdtRecordPtr.GuidQwordStringEvent->Qword           = Address;
+        CopyMem (&FpdtRecordPtr.GuidQwordStringEvent->Guid, Guid, sizeof (EFI_GUID));
+        CopyStringIntoPerfRecordAndUpdateLength (FpdtRecordPtr.GuidQwordStringEvent->String, StringPtr, &FpdtRecordPtr.GuidQwordStringEvent->Header.Length);
+      }
+
+    break;
 
     default:
       if (Attribute != PerfEntry) {
@@ -1954,4 +1976,39 @@ LogPerformanceMeasurementEnabled (
   }
 
   return FALSE;
+}
+
+/**
+  Create performance record with event description and a timestamp.
+
+  @param CallerIdentifier  - Image handle or pointer to caller ID GUID
+  @param Guid              - Pointer to a GUID
+  @param String            - Pointer to a unicode string describing the measurement
+  @param Address           - Pointer to a location in memory relevant to the measurement
+  @param Identifier        - Performance identifier describing the type of measurement
+
+  @retval RETURN_SUCCESS           - Successfully created performance record
+  @retval RETURN_OUT_OF_RESOURCES  - Ran out of space to store the records
+  @retval RETURN_INVALID_PARAMETER - Invalid parameter passed to function - NULL
+                                     pointer or invalid PerfId
+
+**/
+RETURN_STATUS
+EFIAPI
+LogPerformanceMeasurementUnicode (
+  IN CONST VOID   *CallerIdentifier,
+  IN CONST VOID   *Guid     OPTIONAL,
+  IN CONST CHAR16 *String   OPTIONAL,
+  IN UINT64       Address  OPTIONAL,
+  IN UINT32       Identifier
+  )
+{
+  CHAR8 AsciiString[STRING_SIZE];
+  EFI_STATUS Status = ReplaceUnicodeStrToAsciiStrS(String, AsciiString, STRING_SIZE, '?');
+
+  if (Status != RETURN_SUCCESS) {
+    return Status;
+  }
+  
+  return (RETURN_STATUS)CreatePerformanceMeasurement (CallerIdentifier, Guid, (const CHAR8*)AsciiString, 0, Address, Identifier, PerfEntry);
 }

@@ -30,6 +30,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "VariableParsing.h"
 #include "VariableRuntimeCache.h"
 
+#include <Library/PerformanceLib.h> // MU_CHANGE
 #include <Library/VariablePolicyLib.h>  // MU_CHANGE - Enable simple delete when VarPol is disabled
 
 VARIABLE_MODULE_GLOBAL  *mVariableModuleGlobal;
@@ -2571,13 +2572,17 @@ VariableServiceGetVariable (
   }
 
   // MU_CHANGE
-  DEBUG ((DEBUG_VARIABLE, "Enter: FunctionName(%a) VariableName(%s) VendorGuid(%g) &Attributes(0x%p) DataSize(0x%Lx) &Data(%p) \n",
+  DEBUG ((DEBUG_VARIABLE, "Enter: FunctionName(%a) FunctionPointer(%p) VariableName(%s) VendorGuid(%g) &Attributes(0x%p) DataSize(0x%Lx) &Data(%p)\n",
     __FUNCTION__,
+    VariableServiceGetVariable,
     VariableName,
     VendorGuid,
     Attributes,
     (UINT64)*DataSize,
     Data));
+
+  // MU_CHANGE
+  PERF_VARIABLE_BEGIN(VendorGuid, VariableName, VariableServiceGetVariable);
 
   AcquireLockOnlyAtBootTime(&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
 
@@ -2621,11 +2626,15 @@ Done:
   ReleaseLockOnlyAtBootTime (&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
 
   // MU_CHANGE
-  DEBUG ((DEBUG_VARIABLE, "Exit: FunctionName(%a) VariableName(%s) VendorGuid(%g) Attributes(0x%x)\n",
+  PERF_VARIABLE_END(VendorGuid, VariableName, VariableServiceGetVariable);
+
+  // MU_CHANGE
+  DEBUG ((DEBUG_VARIABLE, "Exit: FunctionName(%a) VariableName(%s) VendorGuid(%g) Attributes(0x%x) Status(0x%x)\n",
     __FUNCTION__,
     VariableName,
     VendorGuid,
-    (Attributes != NULL) ? *Attributes : 0));
+    (Attributes != NULL) ? *Attributes : 0,
+    Status));
 
   return Status;
 }
@@ -2788,13 +2797,17 @@ VariableServiceSetVariable (
   }
 
   // MU_CHANGE
-  DEBUG((DEBUG_VARIABLE, "Enter: FunctionName(%a) VariableName(%s) VendorGuid(%g) Attributes(0x%x) DataSize(0x%Lx) *Data(%p) \n",
+  DEBUG((DEBUG_VARIABLE, "Enter: FunctionName(%a) FunctionPointer(%p) VariableName(%s) VendorGuid(%g) Attributes(0x%x) DataSize(0x%Lx) *Data(%p) \n",
     __FUNCTION__,
+    VariableServiceSetVariable,
     VariableName,
     VendorGuid,
     Attributes,
     (UINT64)DataSize,
     Data));
+
+  // MU_CHANGE
+  PERF_VARIABLE_BEGIN(VendorGuid, VariableName, VariableServiceSetVariable);
 
   //
   // Check for reserverd bit in variable attribute.
@@ -2803,7 +2816,9 @@ VariableServiceSetVariable (
   // So leave EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS attribute check to AuthVariableLib
   //
   if ((Attributes & (~(EFI_VARIABLE_ATTRIBUTES_MASK | EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS))) != 0) {
-    return EFI_INVALID_PARAMETER;
+    // MU_CHANGE
+    Status = EFI_INVALID_PARAMETER;
+    goto EXIT;
   }
 
   //
@@ -2814,28 +2829,38 @@ VariableServiceSetVariable (
     // Make sure if runtime bit is set, boot service bit is set also.
     //
     if ((Attributes & EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS) != 0) {
-      return EFI_UNSUPPORTED;
+      // MU_CHANGE
+      Status = EFI_UNSUPPORTED;
+      goto EXIT;
     } else {
-      return EFI_INVALID_PARAMETER;
+      // MU_CHANGE
+      Status = EFI_INVALID_PARAMETER;
+      goto EXIT;
     }
   } else if ((Attributes & EFI_VARIABLE_ATTRIBUTES_MASK) == EFI_VARIABLE_NON_VOLATILE) {
     //
     // Only EFI_VARIABLE_NON_VOLATILE attribute is invalid
     //
-    return EFI_INVALID_PARAMETER;
+    // MU_CHANGE
+    Status = EFI_INVALID_PARAMETER;
+    goto EXIT;
   } else if ((Attributes & VARIABLE_ATTRIBUTE_AT_AW) != 0) {
     if (!mVariableModuleGlobal->VariableGlobal.AuthSupport) {
       //
       // Not support authenticated variable write.
       //
-      return EFI_INVALID_PARAMETER;
+      // MU_CHANGE
+      Status = EFI_INVALID_PARAMETER;
+      goto EXIT;
     }
   } else if ((Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) != 0) {
     if (PcdGet32 (PcdHwErrStorageSize) == 0) {
       //
       // Not support harware error record variable variable.
       //
-      return EFI_INVALID_PARAMETER;
+      // MU_CHANGE
+      Status = EFI_INVALID_PARAMETER;
+      goto EXIT;
     }
   }
 
@@ -2861,7 +2886,9 @@ VariableServiceSetVariable (
   if (  ((Attributes & EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS) == EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS)
      && ((Attributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) == EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS))
   {
-    return EFI_UNSUPPORTED;
+    // MU_CHANGE
+    Status = EFI_UNSUPPORTED;
+    goto EXIT;
   }
 
   if ((Attributes & EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS) == EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS) {
@@ -2870,7 +2897,9 @@ VariableServiceSetVariable (
     //  Maybe it's the delete operation of common authenticated variable at user physical presence.
     //
     if (DataSize != AUTHINFO_SIZE) {
-      return EFI_UNSUPPORTED;
+      // MU_CHANGE
+      Status = EFI_UNSUPPORTED;
+      goto EXIT;
     }
 
     PayloadSize = DataSize - AUTHINFO_SIZE;
@@ -2882,7 +2911,9 @@ VariableServiceSetVariable (
         (((EFI_VARIABLE_AUTHENTICATION_2 *)Data)->AuthInfo.Hdr.dwLength > DataSize - (OFFSET_OF (EFI_VARIABLE_AUTHENTICATION_2, AuthInfo))) ||
         (((EFI_VARIABLE_AUTHENTICATION_2 *)Data)->AuthInfo.Hdr.dwLength < OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData)))
     {
-      return EFI_SECURITY_VIOLATION;
+      // MU_CHANGE
+      Status = EFI_SECURITY_VIOLATION;
+      goto EXIT;
     }
 
     //
@@ -2900,7 +2931,9 @@ VariableServiceSetVariable (
     //
     // Prevent whole variable size overflow
     //
-    return EFI_INVALID_PARAMETER;
+    // MU_CHANGE
+    Status = EFI_INVALID_PARAMETER;
+    goto EXIT;
   }
 
   //
@@ -2912,7 +2945,9 @@ VariableServiceSetVariable (
     if (StrSize (VariableName) + PayloadSize >
         PcdGet32 (PcdMaxHardwareErrorVariableSize) - GetVariableHeaderSize (AuthFormat))
     {
-      return EFI_INVALID_PARAMETER;
+      // MU_CHANGE
+      Status = EFI_INVALID_PARAMETER;
+      goto EXIT;
     }
   } else {
     //
@@ -2940,7 +2975,10 @@ VariableServiceSetVariable (
           mVariableModuleGlobal->MaxAuthVariableSize,
           GetVariableHeaderSize (AuthFormat)
           ));
-        return EFI_INVALID_PARAMETER;
+        
+        // MU_CHANGE
+        Status = EFI_INVALID_PARAMETER;
+        goto EXIT;
       }
     } else if ((Attributes & EFI_VARIABLE_NON_VOLATILE) != 0) {
       if (StrSize (VariableName) + PayloadSize >
@@ -2962,7 +3000,10 @@ VariableServiceSetVariable (
           mVariableModuleGlobal->MaxVariableSize,
           GetVariableHeaderSize (AuthFormat)
           ));
-        return EFI_INVALID_PARAMETER;
+        
+        // MU_CHANGE
+        Status = EFI_INVALID_PARAMETER;
+        goto EXIT;
       }
     } else {
       if (StrSize (VariableName) + PayloadSize >
@@ -2984,7 +3025,10 @@ VariableServiceSetVariable (
           mVariableModuleGlobal->MaxVolatileVariableSize,
           GetVariableHeaderSize (AuthFormat)
           ));
-        return EFI_INVALID_PARAMETER;
+        
+        // MU_CHANGE
+        Status = EFI_INVALID_PARAMETER;
+        goto EXIT;
       }
     }
   }
@@ -2998,16 +3042,20 @@ VariableServiceSetVariable (
     // EFI_ALREADY_STARTED means the SetVariable() action is handled inside of SetVariableCheckHandlerMor().
     // Variable driver can just return SUCCESS.
     //
-    return EFI_SUCCESS;
+    // MU_CHANGE
+    Status = EFI_SUCCESS;
+    goto EXIT;
   }
 
   if (EFI_ERROR (Status)) {
-    return Status;
+    // MU_CHANGE
+    goto EXIT;
   }
 
   Status = VarCheckLibSetVariableCheck (VariableName, VendorGuid, Attributes, PayloadSize, (VOID *)((UINTN)Data + DataSize - PayloadSize), mRequestSource);
   if (EFI_ERROR (Status)) {
-    return Status;
+    // MU_CHANGE
+    goto EXIT;
   }
 
   AcquireLockOnlyAtBootTime (&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
@@ -3035,7 +3083,8 @@ VariableServiceSetVariable (
   if (!EFI_ERROR (Status)) {
     if (((Variable.CurrPtr->Attributes & EFI_VARIABLE_RUNTIME_ACCESS) == 0) && AtRuntime ()) {
       Status = EFI_WRITE_PROTECTED;
-      goto Done;
+      // MU_CHANGE
+      goto CLEANUP;
     }
 
     if ((Attributes != 0) && ((Attributes & (~EFI_VARIABLE_APPEND_WRITE)) != Variable.CurrPtr->Attributes)) {
@@ -3047,7 +3096,8 @@ VariableServiceSetVariable (
       //
       Status = EFI_INVALID_PARAMETER;
       DEBUG ((DEBUG_INFO, "[Variable]: Rewritten a preexisting variable(0x%08x) with different attributes(0x%08x) - %g:%s\n", Variable.CurrPtr->Attributes, Attributes, VendorGuid, VariableName));
-      goto Done;
+      // MU_CHANGE
+      goto CLEANUP;
     }
   }
 
@@ -3060,7 +3110,8 @@ VariableServiceSetVariable (
       //
       // The auto update operation failed, directly return to avoid inconsistency between PlatformLang and Lang.
       //
-      goto Done;
+      // MU_CHANGE
+      goto CLEANUP;
     }
   }
 
@@ -3070,7 +3121,8 @@ VariableServiceSetVariable (
     Status = UpdateVariable (VariableName, VendorGuid, Data, DataSize, Attributes, 0, 0, &Variable, NULL);
   }
 
-Done:
+// MU_CHANGE
+CLEANUP:
   InterlockedDecrement (&mVariableModuleGlobal->VariableGlobal.ReentrantState);
   ReleaseLockOnlyAtBootTime (&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
 
@@ -3082,6 +3134,12 @@ Done:
         );
     }
   }
+
+// MU_CHANGE
+EXIT:
+
+  // MU_CHANGE
+  PERF_VARIABLE_END(VendorGuid, VariableName, VariableServiceSetVariable);
 
   return Status;
 }

@@ -63,6 +63,7 @@
   SafeIntLib
   PcdLib
   MmUnblockMemoryLib
+  PerformanceLib  # MU_CHANGE
 
 [Protocols]
   gEfiVariableWriteArchProtocolGuid             ## PRODUCES

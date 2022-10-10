@@ -40,7 +40,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define PERF_INMODULE_END_ID       0x41
 #define PERF_CROSSMODULE_START_ID  0x50
 #define PERF_CROSSMODULE_END_ID    0x51
-
+// MU_CHANGE
+#define PERF_VARIABLE_START_ID     0x60
+#define PERF_VARIABLE_END_ID       0x61
 //
 // Declare bits for PcdPerformanceLibraryPropertyMask and
 // also used as the Type parameter of LogPerformanceMeasurementEnabled().
@@ -345,6 +347,31 @@ LogPerformanceMeasurement (
   IN CONST VOID   *Guid     OPTIONAL,
   IN CONST CHAR8  *String   OPTIONAL,
   IN UINT64       Address   OPTIONAL,
+  IN UINT32       Identifier
+  );
+
+  /**
+  Create performance record with event description and a timestamp.
+
+  @param CallerIdentifier  - Image handle or pointer to caller ID GUID
+  @param Guid              - Pointer to a GUID
+  @param String            - Pointer to a unicode string describing the measurement
+  @param Address           - Pointer to a location in memory relevant to the measurement
+  @param Identifier        - Performance identifier describing the type of measurement
+
+  @retval RETURN_SUCCESS           - Successfully created performance record
+  @retval RETURN_OUT_OF_RESOURCES  - Ran out of space to store the records
+  @retval RETURN_INVALID_PARAMETER - Invalid parameter passed to function - NULL
+                                     pointer or invalid PerfId
+
+**/
+RETURN_STATUS
+EFIAPI
+LogPerformanceMeasurementUnicode (
+  IN CONST VOID   *CallerIdentifier,
+  IN CONST VOID   *Guid     OPTIONAL,
+  IN CONST CHAR16 *String   OPTIONAL,
+  IN UINT64       Address  OPTIONAL,
   IN UINT32       Identifier
   );
 
@@ -760,5 +787,37 @@ LogPerformanceMeasurement (
   PERF_CODE_BEGIN ();          \
   Expression                   \
   PERF_CODE_END ()
+
+// MU_CHANGE
+/**
+  Begin Macro to measure the performance of a Variable Access.
+
+  If the PERFORMANCE_LIBRARY_PROPERTY_MEASUREMENT_ENABLED bit of PcdPerformanceLibraryPropertyMask is set,
+  and the BIT6 (disable PERF_GENERAL_TYPE) of PcdPerformanceLibraryPropertyMask is not set.
+  then LogPerformanceMeasurement() is called.
+
+**/
+#define PERF_VARIABLE_BEGIN(Guid, Variable, Function)                                                                    \
+  do {                                                                                                                   \
+      if (PerformanceMeasurementEnabled ()) {                                                                            \
+        LogPerformanceMeasurementUnicode (&gEfiCallerIdGuid, Guid, Variable, (UINT64)Function, PERF_VARIABLE_START_ID);  \
+      }                                                                                                                  \
+  } while (FALSE)
+
+// MU_CHANGE
+/**
+  End Macro to measure the performance of a Variable Access.
+
+  If the PERFORMANCE_LIBRARY_PROPERTY_MEASUREMENT_ENABLED bit of PcdPerformanceLibraryPropertyMask is set,
+  and the BIT6 (disable PERF_GENERAL_TYPE) of PcdPerformanceLibraryPropertyMask is not set.
+  then LogPerformanceMeasurement() is called.
+
+**/
+#define PERF_VARIABLE_END(Guid, Variable, Function)                                                                  \
+  do {                                                                                                               \
+    if (PerformanceMeasurementEnabled ()) {                                                                          \
+      LogPerformanceMeasurementUnicode (&gEfiCallerIdGuid, Guid, Variable, (UINT64)Function, PERF_VARIABLE_END_ID);  \
+    }                                                                                                                \
+  } while (FALSE)
 
 #endif

@@ -2691,6 +2691,119 @@ UnicodeStrToAsciiStrS (
 }
 
 /**
+  Convert a Null-terminated Unicode string to a Null-terminated
+  ASCII string and allows for replacement of character instead of Asserting.
+
+  This function is similar to AsciiStrCpyS.
+
+  This function converts the content of the Unicode string Source
+  to the ASCII string Destination by copying the lower 8 bits of
+  each Unicode character. The function terminates the ASCII string
+  Destination by appending a Null-terminator character at the end.
+
+  The caller is responsible to make sure Destination points to a buffer with size
+  equal or greater than ((StrLen (Source) + 1) * sizeof (CHAR8)) in bytes.
+
+  If any Unicode characters in Source the resultant string will replace that character
+  with user given character.
+
+  If Source is not aligned on a 16-bit boundary, then assert() 
+
+  If an error is returned, then the Destination is unmodified.
+
+  @param  Source            The pointer to a Null-terminated Unicode string.
+  @param  Destination       The pointer to a Null-terminated ASCII string.
+  @param  DestMax           The maximum number of Destination Ascii
+                            char, including terminating null char.
+  @param  ReplacementChar   The char to replace the upper 8 bits with
+
+  @retval RETURN_SUCCESS           String is converted.
+  @retval RETURN_BUFFER_TOO_SMALL  If DestMax is NOT greater than StrLen(Source).
+  @retval RETURN_INVALID_PARAMETER If Destination is NULL.
+                                   If Source is NULL.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                    and DestMax is greater than
+                                    PcdMaximumAsciiStringLength.
+                                   If PcdMaximumUnicodeStringLength is not zero,
+                                    and DestMax is greater than
+                                    PcdMaximumUnicodeStringLength. 
+                                   If DestMax is 0.
+  @retval RETURN_ACCESS_DENIED     If Source and Destination overlap.
+
+**/
+RETURN_STATUS
+EFIAPI
+ ReplaceUnicodeStrToAsciiStrS (
+  IN      CONST CHAR16  *Source,
+  OUT     CHAR8         *Destination,
+  IN      UINTN         DestMax,
+  IN      CONST CHAR8   ReplacementChar
+  )
+{
+  UINTN  SourceLen;
+
+  ASSERT (((UINTN)Source & BIT0) == 0);
+
+  //
+  // 1. Neither Destination nor Source shall be a null pointer.
+  //
+  SAFE_STRING_CONSTRAINT_CHECK ((Destination != NULL), RETURN_INVALID_PARAMETER);
+  SAFE_STRING_CONSTRAINT_CHECK ((Source != NULL), RETURN_INVALID_PARAMETER);
+
+  //
+  // 2. DestMax shall not be greater than ASCII_RSIZE_MAX or RSIZE_MAX.
+  //
+  if (ASCII_RSIZE_MAX != 0) {
+    SAFE_STRING_CONSTRAINT_CHECK ((DestMax <= ASCII_RSIZE_MAX), RETURN_INVALID_PARAMETER);
+  }
+
+  if (RSIZE_MAX != 0) {
+    SAFE_STRING_CONSTRAINT_CHECK ((DestMax <= RSIZE_MAX), RETURN_INVALID_PARAMETER);
+  }
+
+  //
+  // 3. DestMax shall not equal zero.
+  //
+  SAFE_STRING_CONSTRAINT_CHECK ((DestMax != 0), RETURN_INVALID_PARAMETER);
+
+  //
+  // 4. DestMax shall be greater than StrnLenS (Source, DestMax).
+  //
+  SourceLen = StrnLenS (Source, DestMax);
+  SAFE_STRING_CONSTRAINT_CHECK ((DestMax > SourceLen), RETURN_BUFFER_TOO_SMALL);
+
+  //
+  // 5. Copying shall not take place between objects that overlap.
+  //
+  SAFE_STRING_CONSTRAINT_CHECK (!InternalSafeStringIsOverlap (Destination, DestMax, (VOID *)Source, (SourceLen + 1) * sizeof (CHAR16)), RETURN_ACCESS_DENIED);
+
+  //
+  // convert string
+  //
+  while (*Source != '\0') {
+    //
+    // If any Unicode characters in Source contain
+    // non-zero value in the upper 8 bits, then replace.
+    //
+
+    // if two bytes are greater than 256
+    if (*Source > 0x100) {
+      *(Destination) = ReplacementChar;
+    } else {
+      // chops off the upper 8 bits
+      *(Destination) = (CHAR8)*Source;
+    }
+
+    *(Destination++);
+    *(Source++);
+  }
+
+  *Destination = '\0';
+
+  return RETURN_SUCCESS;
+}
+
+/**
   Convert not more than Length successive characters from a Null-terminated
   Unicode string to a Null-terminated Ascii string. If no null char is copied
   from Source, then Destination[Length] is always set to null.
