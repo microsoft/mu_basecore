@@ -64,6 +64,7 @@
   PcdLib
   MmUnblockMemoryLib
   DeviceStateLib # MU_CHANGE - Check device state before locking variable policy
+  PerformanceLib  # MU_CHANGE - Measure performance of variable services
 
 [Protocols]
   gEfiVariableWriteArchProtocolGuid             ## PRODUCES

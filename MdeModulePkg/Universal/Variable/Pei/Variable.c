@@ -9,6 +9,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "Variable.h"
+#include <Library/PerformanceLib.h> // MU_CHANGE
 
 //
 // Module globals
@@ -1043,13 +1044,17 @@ PeiGetVariable (
   }
 
   // MU_CHANGE
-  DEBUG ((DEBUG_VARIABLE, "Enter: FunctionName(%a) VariableName(%s) VendorGuid(%g) &Attributes(0x%p) DataSize(0x%Lx) &Data(%p) \n",
+  DEBUG ((DEBUG_VARIABLE, "Enter: FunctionName(%a) FunctionPointer(%p) VariableName(%s) VendorGuid(%g) &Attributes(0x%p) DataSize(0x%Lx) &Data(%p) \n",
     __FUNCTION__,
+    PeiGetVariable,
     VariableName,
     VariableGuid,
     Attributes,
     (UINT64)*DataSize,
     Data));
+
+  // MU_CHANGE
+  PERF_VARIABLE_BEGIN(VariableGuid, VariableName, PeiGetVariable);
 
   VariableHeader = NULL;
 
@@ -1058,7 +1063,9 @@ PeiGetVariable (
   //
   Status = FindVariable (VariableName, VariableGuid, &Variable, &StoreInfo);
   if (EFI_ERROR (Status)) {
-    return Status;
+    // MU_CHANGE
+    // return Status from Find Variable
+    goto EXIT;
   }
 
   GetVariableHeader (&StoreInfo, Variable.CurrPtr, &VariableHeader);
@@ -1069,7 +1076,9 @@ PeiGetVariable (
   VarDataSize = DataSizeOfVariable (VariableHeader, StoreInfo.AuthFlag);
   if (*DataSize >= VarDataSize) {
     if (Data == NULL) {
-      return EFI_INVALID_PARAMETER;
+      // MU_CHANGE
+      Status = EFI_INVALID_PARAMETER;
+      goto EXIT;
     }
 
     GetVariableNameOrData (&StoreInfo, GetVariableDataPtr (Variable.CurrPtr, VariableHeader, StoreInfo.AuthFlag), VarDataSize, Data);
@@ -1084,12 +1093,19 @@ PeiGetVariable (
 
   *DataSize = VarDataSize;
 
+// MU_CHANGE
+EXIT:
+
   // MU_CHANGE
-  DEBUG ((DEBUG_VARIABLE, "Exit: FunctionName(%a) VariableName(%s) VendorGuid(%g) Attributes(0x%x)\n",
+  PERF_VARIABLE_END(VariableName, VariableName, PeiGetVariable);
+
+  // MU_CHANGE
+  DEBUG ((DEBUG_VARIABLE, "Exit: FunctionName(%a) VariableName(%s) VendorGuid(%g) Attributes(0x%x) Status(0x%x)\n",
     __FUNCTION__,
     VariableName,
     VariableGuid,
-    (Attributes != NULL) ? *Attributes : 0));
+    (Attributes != NULL) ? *Attributes : 0,
+    Status));
 
   return Status;
 }
