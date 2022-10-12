@@ -42,16 +42,6 @@ SwapImageRecordCodeSection (
   );
 
 /**
-  Sort code section in image record, based upon CodeSegmentBase from low to high.
-
-  @param  ImageRecord    image record to be sorted
-**/
-VOID
-SortImageRecordCodeSection (
-  IN IMAGE_PROPERTIES_RECORD  *ImageRecord
-  );
-
-/**
   Check if code section in image record is valid.
 
   @param  ImageRecord    image record to be checked
@@ -240,6 +230,126 @@ SetUefiImageMemoryAttributes (
 
 extern LIST_ENTRY  mGcdMemorySpaceMap;
 
+// ---------------------------------------
+//     LINKED LIST SUPPORT FUNCTIONS
+// ---------------------------------------
+
+/**
+  Inserts the input ImageRecordToInsertLink into ImageRecordList based on the IMAGE_PROPERTIES_RECORD.ImageBase field
+
+  @param[in] ImageRecordList           Pointer to the head of the IMAGE_PROPERTIES_RECORD list
+  @param[in] ImageRecordToInsertLink   Pointer to the list entry of the IMAGE_PROPERTIES_RECORD to insert
+
+  @retval EFI_SUCCESS             IMAGE_PROPERTIES_RECORD inserted into the list
+  @retval EFI_INVALID_PARAMETER   ImageRecordList or ImageRecordToInsertLink were NULL
+**/
+STATIC
+EFI_STATUS
+OrderedInsertImageRecordListEntry (
+  IN LIST_ENTRY  *ImageRecordList,
+  IN LIST_ENTRY  *ImageRecordToInsertLink
+  )
+{
+  IMAGE_PROPERTIES_RECORD  *CurrentImageRecord;
+  IMAGE_PROPERTIES_RECORD  *ImageRecordToInsert;
+  LIST_ENTRY               *ImageRecordLink;
+  LIST_ENTRY               *ImageRecordEndLink;
+  EFI_PHYSICAL_ADDRESS     ImageRecordToInsertBase;
+
+  if ((ImageRecordList == NULL) || (ImageRecordToInsertLink == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ImageRecordToInsert = CR (
+                          ImageRecordToInsertLink,
+                          IMAGE_PROPERTIES_RECORD,
+                          Link,
+                          IMAGE_PROPERTIES_RECORD_SIGNATURE
+                          );
+  ImageRecordToInsertBase = ImageRecordToInsert->ImageBase;
+
+  ImageRecordLink    = ImageRecordList->ForwardLink;
+  ImageRecordEndLink = ImageRecordList;
+  while (ImageRecordLink != ImageRecordEndLink) {
+    CurrentImageRecord = CR (
+                           ImageRecordLink,
+                           IMAGE_PROPERTIES_RECORD,
+                           Link,
+                           IMAGE_PROPERTIES_RECORD_SIGNATURE
+                           );
+    if (ImageRecordToInsertBase < CurrentImageRecord->ImageBase) {
+      break;
+    }
+
+    ImageRecordLink = ImageRecordLink->ForwardLink;
+  }
+
+  ImageRecordToInsertLink->BackLink              = ImageRecordLink->BackLink;
+  ImageRecordToInsertLink->ForwardLink           = ImageRecordLink;
+  ImageRecordToInsertLink->BackLink->ForwardLink = ImageRecordToInsertLink;
+  ImageRecordToInsertLink->ForwardLink->BackLink = ImageRecordToInsertLink;
+  return EFI_SUCCESS;
+}
+
+/**
+  Inserts the input CodeSectionToInsertLink into CodeSectionList based on the
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION.CodeSegmentBase field
+
+  @param[in] CodeSectionList           Pointer to the head of the IMAGE_PROPERTIES_RECORD_CODE_SECTION list
+  @param[in] CodeSectionToInsertLink   Pointer to the list entry of the IMAGE_PROPERTIES_RECORD_CODE_SECTION to insert
+
+  @retval EFI_SUCCESS             IMAGE_PROPERTIES_RECORD_CODE_SECTION inserted into the list
+  @retval EFI_INVALID_PARAMETER   CodeSectionList or CodeSectionToInsertLink were NULL
+**/
+STATIC
+EFI_STATUS
+OrderedInsertCodeSectionListEntry (
+  IN LIST_ENTRY  *CodeSectionList,
+  IN LIST_ENTRY  *CodeSectionToInsertLink
+  )
+{
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CurrentCodeSection;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSectionToInsert;
+  LIST_ENTRY                            *CodeSectionLink;
+  LIST_ENTRY                            *CodeSectionEndLink;
+  EFI_PHYSICAL_ADDRESS                  CodeSectionToInsertBase;
+
+  if ((CodeSectionList == NULL) || (CodeSectionToInsertLink == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  CodeSectionToInsert = CR (
+                          CodeSectionToInsertLink,
+                          IMAGE_PROPERTIES_RECORD_CODE_SECTION,
+                          Link,
+                          IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+                          );
+
+  CodeSectionToInsertBase = CodeSectionToInsert->CodeSegmentBase;
+
+  CodeSectionLink    = CodeSectionList->ForwardLink;
+  CodeSectionEndLink = CodeSectionList;
+  while (CodeSectionLink != CodeSectionEndLink) {
+    CurrentCodeSection = CR (
+                           CodeSectionLink,
+                           IMAGE_PROPERTIES_RECORD_CODE_SECTION,
+                           Link,
+                           IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+                           );
+    if (CodeSectionToInsertBase < CurrentCodeSection->CodeSegmentBase) {
+      break;
+    }
+
+    CodeSectionLink = CodeSectionLink->ForwardLink;
+  }
+
+  CodeSectionToInsertLink->BackLink              = CodeSectionLink->BackLink;
+  CodeSectionToInsertLink->ForwardLink           = CodeSectionLink;
+  CodeSectionToInsertLink->BackLink->ForwardLink = CodeSectionToInsertLink;
+  CodeSectionToInsertLink->ForwardLink->BackLink = CodeSectionToInsertLink;
+  return EFI_SUCCESS;
+}
+
 /**
   Find the first image record contained by the memory range Buffer -> Buffer + Length
 
@@ -280,53 +390,6 @@ GetImageRecordContainedByBuffer (
   }
 
   return NULL;
-}
-
-/**
-  Sort image record based upon the ImageBase from low to high via bubble sort.
-
-  @param[in, out] ImageRecordList   A list of IMAGE_PROPERTIES_RECORD entries to be sorted by
-                                    base address.
-**/
-STATIC
-VOID
-SortImageRecordList (
-  IN OUT LIST_ENTRY  *ImageRecordList
-  )
-{
-  IMAGE_PROPERTIES_RECORD  *ImageRecord;
-  IMAGE_PROPERTIES_RECORD  *NextImageRecord;
-  LIST_ENTRY               *ImageRecordLink;
-  LIST_ENTRY               *NextImageRecordLink;
-  LIST_ENTRY               *ImageRecordEndLink;
-
-  ImageRecordLink     = ImageRecordList->ForwardLink;
-  NextImageRecordLink = ImageRecordLink->ForwardLink;
-  ImageRecordEndLink  = ImageRecordList;
-  while (ImageRecordLink != ImageRecordEndLink) {
-    ImageRecord = CR (
-                    ImageRecordLink,
-                    IMAGE_PROPERTIES_RECORD,
-                    Link,
-                    IMAGE_PROPERTIES_RECORD_SIGNATURE
-                    );
-    while (NextImageRecordLink != ImageRecordEndLink) {
-      NextImageRecord = CR (
-                          NextImageRecordLink,
-                          IMAGE_PROPERTIES_RECORD,
-                          Link,
-                          IMAGE_PROPERTIES_RECORD_SIGNATURE
-                          );
-      if (ImageRecord->ImageBase > NextImageRecord->ImageBase) {
-        SwapImageRecord (ImageRecord, NextImageRecord);
-      }
-
-      NextImageRecordLink = NextImageRecordLink->ForwardLink;
-    }
-
-    ImageRecordLink     = ImageRecordLink->ForwardLink;
-    NextImageRecordLink = ImageRecordLink->ForwardLink;
-  }
 }
 
 /**
@@ -482,7 +545,7 @@ CreateImagePropertiesRecord (
       ImageRecordCodeSection->CodeSegmentBase = (UINTN)ImageAddress + Section[Index].VirtualAddress;
       ImageRecordCodeSection->CodeSegmentSize = EfiPagesToSize (EfiSizeToPages (Section[Index].SizeOfRawData));
 
-      InsertTailList (&ImageRecord->CodeSegmentList, &ImageRecordCodeSection->Link);
+      OrderedInsertCodeSectionListEntry (&ImageRecord->CodeSegmentList, &ImageRecordCodeSection->Link);
       ImageRecord->CodeSegmentCount++;
     }
   }
@@ -500,10 +563,6 @@ CreateImagePropertiesRecord (
     return EFI_LOAD_ERROR;
   }
 
-  //
-  // Final
-  //
-  SortImageRecordCodeSection (ImageRecord);
   //
   // Check overlap all section in ImageBase/Size
   //
@@ -1073,7 +1132,7 @@ ProtectUefiImageMu (
     }
 
     // Record the image record in the list so we can undo the protections later
-    InsertTailList (&mImagePropertiesPrivate.ImageRecordList, &ImageRecord->Link);
+    Status = OrderedInsertImageRecordListEntry (&mImagePropertiesPrivate.ImageRecordList, &ImageRecord->Link);
     mImagePropertiesPrivate.ImageRecordCount++;
 
     // When breaking up the memory map to include image code/data ranges, we need
@@ -1081,10 +1140,6 @@ ProtectUefiImageMu (
     if (mImagePropertiesPrivate.CodeSegmentCountMax < ImageRecord->CodeSegmentCount) {
       mImagePropertiesPrivate.CodeSegmentCountMax = ImageRecord->CodeSegmentCount;
     }
-
-    // We must keep the image records sorted because GetImageRecordContainedByBuffer()
-    // always returns the first image record contained by buffer
-    SortImageRecordList (&mImagePropertiesPrivate.ImageRecordList);
   }
 
 Finish:
