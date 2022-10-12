@@ -14,7 +14,8 @@ IMAGE_PROPERTIES_PRIVATE_DATA  mImagePropertiesPrivate = {
   INITIALIZE_LIST_HEAD_VARIABLE (mImagePropertiesPrivate.ImageRecordList)
 };
 
-BOOLEAN  mIsSystemNxCompatible = TRUE;
+BOOLEAN                        mIsSystemNxCompatible    = TRUE;
+EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
 
 /**
   Swap two image records.
@@ -1354,6 +1355,37 @@ MemoryProtectionCpuArchProtocolNotifyMu (
   HeapGuardCpuArchProtocolNotify ();
 
 Done:
+  CoreCloseEvent (Event);
+}
+
+/**
+  A notification for the Memory Attribute Protocol.
+
+  @param[in]  Event                 Event whose notification function is being invoked.
+  @param[in]  Context               Pointer to the notification function's context,
+                                    which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+MemoryAttributeProtocolNotify (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&MemoryAttributeProtocol);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_INFO,
+      "%a - Unable to locate the memory attribute protocol! Status = %r\n",
+      __FUNCTION__,
+      Status
+      ));
+  }
+
   CoreCloseEvent (Event);
 }
 
