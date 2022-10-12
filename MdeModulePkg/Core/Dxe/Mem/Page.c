@@ -1544,10 +1544,18 @@ CoreInternalFreePages (
   BOOLEAN     IsGuarded;
 
   // MU_CHANGE Start: Unprotect page(s) before free
-  Status = ClearAccessAttributesFromMemoryRange (Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
+  UINT64  Attributes;
 
-  if (EFI_ERROR (Status) && (Status != EFI_NOT_READY)) {
-    DEBUG ((DEBUG_WARN, "%a - Unable to clear attributes from memory at base: 0x%llx\n", __FUNCTION__, Memory));
+  if (MemoryAttributeProtocol != NULL) {
+    Status = MemoryAttributeProtocol->GetMemoryAttributes (MemoryAttributeProtocol, Memory, EFI_PAGES_TO_SIZE (NumberOfPages), &Attributes);
+
+    if ((Attributes & EFI_MEMORY_RO) || (Attributes & EFI_MEMORY_RP) || (Status == EFI_NO_MAPPING)) {
+      Status = ClearAccessAttributesFromMemoryRange (Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
+
+      if (EFI_ERROR (Status) && (Status != EFI_NOT_READY)) {
+        DEBUG ((DEBUG_WARN, "%a - Unable to clear attributes from memory at base: 0x%llx\n", __FUNCTION__, Memory));
+      }
+    }
   }
 
   // MU_CHANGE End

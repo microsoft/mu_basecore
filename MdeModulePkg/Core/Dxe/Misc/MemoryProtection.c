@@ -1290,7 +1290,8 @@ CoreInitializeMemoryProtection (
   EFI_STATUS  Status;
   EFI_EVENT   Event;
   EFI_EVENT   DisableNullDetectionEvent;
-  EFI_EVENT   EnableNullDetectionEvent; // MU_CHANGE
+  EFI_EVENT   EnableNullDetectionEvent;     // MU_CHANGE
+  EFI_EVENT   MemoryAttributeProtocolEvent; // MU_CHANGE
   VOID        *Registration;
 
   // mImageProtectionPolicy = gDxeMps.ImageProtectionPolicy; // MU_CHANGE
@@ -1335,6 +1336,26 @@ CoreInitializeMemoryProtection (
              );
   ASSERT_EFI_ERROR (Status);
 
+  // MU_CHANGE START: Register an event to populate the memory attribute protocol
+  Status = CoreCreateEvent (
+             EVT_NOTIFY_SIGNAL,
+             TPL_CALLBACK,
+             MemoryAttributeProtocolNotify,
+             NULL,
+             &MemoryAttributeProtocolEvent
+             );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Register for protocol notification
+  //
+  Status = CoreRegisterProtocolNotify (
+             &gEfiMemoryAttributeProtocolGuid,
+             MemoryAttributeProtocolEvent,
+             &Registration
+             );
+  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE END
   //
   // Register a callback to disable NULL pointer detection at EndOfDxe
   //
