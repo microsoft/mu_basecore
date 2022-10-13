@@ -8,7 +8,7 @@ Copyright (c) Microsoft Corporation.
 **/
 
 #include <PiPei.h>
-#include <Library/VmgExitLib.h>
+#include <Library/CcExitLib.h>
 #include "CpuExceptionCommon.h"
 #include <Library/ExceptionPersistenceLib.h>
 #include <Library/ResetSystemLib.h>
@@ -40,7 +40,7 @@ CommonExceptionHandler (
     //   On other       - ExceptionType contains (possibly new) exception
     //                    value
     //
-    Status = VmgExitHandleVc (&ExceptionType, SystemContext);
+    Status = CcExitHandleVc (&ExceptionType, SystemContext);
     if (!EFI_ERROR (Status)) {
       return;
     }
@@ -213,13 +213,7 @@ RegisterCpuInterruptHandler (
   This could be done by calling InitializeCpuExceptionHandlers() directly
   in this method besides the extra works.
 
-  InitData is optional and its use and content are processor arch dependent.
-  The typical usage of it is to convey resources which have to be reserved
-  elsewhere and are necessary for the extra initializations of exception.
-
   @param[in]  VectorInfo    Pointer to reserved vector list.
-  @param[in]  InitData      Pointer to data optional for extra initializations
-                            of exception.
 
   @retval EFI_SUCCESS             The exceptions have been successfully
                                   initialized.
@@ -230,9 +224,34 @@ RegisterCpuInterruptHandler (
 EFI_STATUS
 EFIAPI
 InitializeCpuExceptionHandlersEx (
-  IN EFI_VECTOR_HANDOFF_INFO  *VectorInfo OPTIONAL,
-  IN CPU_EXCEPTION_INIT_DATA  *InitData OPTIONAL
+  IN EFI_VECTOR_HANDOFF_INFO  *VectorInfo OPTIONAL
   )
 {
   return InitializeCpuExceptionHandlers (VectorInfo);
+}
+
+/**
+  Setup separate stacks for certain exception handlers.
+
+  If the input Buffer and BufferSize are both NULL, use global variable if possible.
+
+  @param[in]       Buffer        Point to buffer used to separate exception stack.
+  @param[in, out]  BufferSize    On input, it indicates the byte size of Buffer.
+                                 If the size is not enough, the return status will
+                                 be EFI_BUFFER_TOO_SMALL, and output BufferSize
+                                 will be the size it needs.
+
+  @retval EFI_SUCCESS             The stacks are assigned successfully.
+  @retval EFI_UNSUPPORTED         This function is not supported.
+  @retval EFI_BUFFER_TOO_SMALL    This BufferSize is too small.
+
+**/
+EFI_STATUS
+EFIAPI
+InitializeSeparateExceptionStacks (
+  IN     VOID   *Buffer,
+  IN OUT UINTN  *BufferSize
+  )
+{
+  return EFI_UNSUPPORTED;
 }

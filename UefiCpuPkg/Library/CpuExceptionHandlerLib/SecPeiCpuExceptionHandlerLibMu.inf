@@ -49,9 +49,13 @@
   PrintLib
   LocalApicLib
   PeCoffGetEntryPointLib
-  VmgExitLib
+  CcExitLib
   ResetSystemLib
   ExceptionPersistenceLib
+
+[Pcd]
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize
 
 [FeaturePcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmStackGuard                    ## CONSUMES
