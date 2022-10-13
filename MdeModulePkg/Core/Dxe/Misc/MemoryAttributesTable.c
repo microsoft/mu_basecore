@@ -464,9 +464,12 @@ MergeMemoryMap (
     NextMemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, DescriptorSize);
 
     do {
-      if ((UINTN)NextMemoryMapEntry < (UINTN)MemoryMapEnd) { // MU_CHANGE
+      // MU_CHANGE START Fix overflow in the MergeGuardPages call.
+      if ((UINTN)NextMemoryMapEntry < (UINTN)MemoryMapEnd) {
         MergeGuardPages (NewMemoryMapEntry, NextMemoryMapEntry->PhysicalStart);
-      } // MU_CHANGE
+      }
+
+      // MU_CHANGE END
 
       MemoryBlockLength = (UINT64)(EfiPagesToSize (NewMemoryMapEntry->NumberOfPages));
       if (((UINTN)NextMemoryMapEntry < (UINTN)MemoryMapEnd) &&
