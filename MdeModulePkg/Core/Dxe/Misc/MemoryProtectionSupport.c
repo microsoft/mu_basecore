@@ -17,6 +17,12 @@ IMAGE_PROPERTIES_PRIVATE_DATA  mImagePropertiesPrivate = {
 BOOLEAN                        mIsSystemNxCompatible    = TRUE;
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
 
+#define POPULATE_IMAGE_RANGE_DESCRIPTOR(descriptor, type, base, length) \
+          ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Signature = IMAGE_RANGE_DESCRIPTOR_SIGNATURE; \
+          ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Type = type; \
+          ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Base = base; \
+          ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Length = length
+
 /**
   Swap two image records.
 
@@ -513,6 +519,128 @@ GetImageRecordContainedByBuffer (
   }
 
   return NULL;
+}
+
+/**
+ Generate a list of IMAGE_RANGE_DESCRIPTOR structs which describe all data and code regions of loaded images.
+
+ @param[in]  ImageList  Pointer to NULL IMAGE_RANGE_DESCRIPTOR* which will be updated to the head of the allocated
+                        IMAGE_RANGE_DESCRIPTOR list
+
+ @retval  EFI_SUCCESS             *ImageList points to the head of the IMAGE_RANGE_DESCRIPTOR list
+ @retval  EFI_INVALID_PARAMETER   ImageList is NULL or *ImageList is not NULL
+ @retval  EFI_OUT_OF_RESOURCES    Allocation of memory failed
+**/
+EFI_STATUS
+EFIAPI
+GetProtectedImageList (
+  IN IMAGE_RANGE_DESCRIPTOR  **ImageList
+  )
+{
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *ImageRecordCodeSection;
+  LIST_ENTRY                            *ImageRecordCodeSectionLink;
+  LIST_ENTRY                            *ImageRecordCodeSectionEndLink;
+  LIST_ENTRY                            *ImageRecordCodeSectionList;
+  IMAGE_PROPERTIES_RECORD               *ImageRecord;
+  LIST_ENTRY                            *ImageRecordLink;
+  UINT64                                PhysicalStart, PhysicalEnd;
+  IMAGE_RANGE_DESCRIPTOR                *CurrentImageRangeDescriptor;
+
+  if ((ImageList == NULL) || (*ImageList != NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *ImageList = AllocateZeroPool (sizeof (IMAGE_RANGE_DESCRIPTOR));
+
+  if (*ImageList == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  InitializeListHead (&(*ImageList)->Link);
+
+  // Walk through each image
+  for (ImageRecordLink = mImagePropertiesPrivate.ImageRecordList.ForwardLink;
+       ImageRecordLink != &mImagePropertiesPrivate.ImageRecordList;
+       ImageRecordLink = ImageRecordLink->ForwardLink)
+  {
+    ImageRecord = CR (
+                    ImageRecordLink,
+                    IMAGE_PROPERTIES_RECORD,
+                    Link,
+                    IMAGE_PROPERTIES_RECORD_SIGNATURE
+                    );
+    PhysicalStart = ImageRecord->ImageBase;
+    PhysicalEnd   = ImageRecord->ImageBase + ImageRecord->ImageSize;
+
+    ImageRecordCodeSectionList = &ImageRecord->CodeSegmentList;
+
+    ImageRecordCodeSectionLink    = ImageRecordCodeSectionList->ForwardLink;
+    ImageRecordCodeSectionEndLink = ImageRecordCodeSectionList;
+    while (ImageRecordCodeSectionLink != ImageRecordCodeSectionEndLink) {
+      ImageRecordCodeSection = CR (
+                                 ImageRecordCodeSectionLink,
+                                 IMAGE_PROPERTIES_RECORD_CODE_SECTION,
+                                 Link,
+                                 IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+                                 );
+      ImageRecordCodeSectionLink = ImageRecordCodeSectionLink->ForwardLink;
+
+      // Mark the data region
+      if (PhysicalStart < ImageRecordCodeSection->CodeSegmentBase) {
+        CurrentImageRangeDescriptor = AllocatePool (sizeof (IMAGE_RANGE_DESCRIPTOR));
+        if (CurrentImageRangeDescriptor == NULL) {
+          goto OutOfResourcesCleanup;
+        }
+
+        POPULATE_IMAGE_RANGE_DESCRIPTOR (CurrentImageRangeDescriptor, Data, PhysicalStart, ImageRecordCodeSection->CodeSegmentBase - PhysicalStart);
+        PhysicalStart = ImageRecordCodeSection->CodeSegmentBase;
+        InsertTailList (&(*ImageList)->Link, &CurrentImageRangeDescriptor->Link);
+      }
+
+      // Mark the code region
+      CurrentImageRangeDescriptor = AllocatePool (sizeof (IMAGE_RANGE_DESCRIPTOR));
+      if (CurrentImageRangeDescriptor == NULL) {
+        goto OutOfResourcesCleanup;
+      }
+
+      POPULATE_IMAGE_RANGE_DESCRIPTOR (CurrentImageRangeDescriptor, Code, PhysicalStart, ImageRecordCodeSection->CodeSegmentSize);
+      PhysicalStart = ImageRecordCodeSection->CodeSegmentBase + ImageRecordCodeSection->CodeSegmentSize;
+      InsertTailList (&(*ImageList)->Link, &CurrentImageRangeDescriptor->Link);
+    }
+
+    // Mark the last data region
+    if (PhysicalStart < PhysicalEnd) {
+      CurrentImageRangeDescriptor = AllocatePool (sizeof (IMAGE_RANGE_DESCRIPTOR));
+      if (CurrentImageRangeDescriptor == NULL) {
+        goto OutOfResourcesCleanup;
+      }
+
+      POPULATE_IMAGE_RANGE_DESCRIPTOR (CurrentImageRangeDescriptor, Data, PhysicalStart, PhysicalEnd - PhysicalStart);
+      PhysicalStart = PhysicalEnd;
+      InsertTailList (&(*ImageList)->Link, &CurrentImageRangeDescriptor->Link);
+    }
+  }
+
+  return EFI_SUCCESS;
+
+OutOfResourcesCleanup:
+  ImageRecordLink = &(*ImageList)->Link;
+
+  while (!IsListEmpty (ImageRecordLink)) {
+    CurrentImageRangeDescriptor = CR (
+                                    ImageRecordLink->ForwardLink,
+                                    IMAGE_RANGE_DESCRIPTOR,
+                                    Link,
+                                    IMAGE_RANGE_DESCRIPTOR_SIGNATURE
+                                    );
+
+    RemoveEntryList (&CurrentImageRangeDescriptor->Link);
+    FreePool (CurrentImageRangeDescriptor);
+  }
+
+  FreePool (*ImageList);
+
+  return EFI_OUT_OF_RESOURCES;
 }
 
 /**

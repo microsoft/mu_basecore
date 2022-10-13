@@ -11,6 +11,7 @@
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
+#include <Protocol/MemoryProtectionDebug.h>
 
 #define DO_NOT_PROTECT                 0x00000000
 #define PROTECT_IF_ALIGNED_ELSE_ALLOW  0x00000001
@@ -139,6 +140,22 @@ BOOLEAN
 EFIAPI
 IsSystemNxCompatible (
   VOID
+  );
+
+/**
+ Generate a list of IMAGE_RANGE_DESCRIPTOR structs which describe all data and code regions of loaded images
+
+ @param[in]  ImageList  Pointer to NULL IMAGE_RANGE_DESCRIPTOR* which will be updated to the head of the allocated
+                        IMAGE_RANGE_DESCRIPTOR list
+
+ @retval  EFI_SUCCESS             *ImageList points to the head of the IMAGE_RANGE_DESCRIPTOR list
+ @retval  EFI_INVALID_PARAMETER   ImageList is NULL or *ImageList is not NULL
+ @retval  EFI_OUT_OF_RESOURCES    Allocation of memory failed
+**/
+EFI_STATUS
+EFIAPI
+GetProtectedImageList (
+  IN IMAGE_RANGE_DESCRIPTOR  **ImageList
   );
 
 #endif
