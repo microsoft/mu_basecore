@@ -231,6 +231,125 @@ SetUefiImageMemoryAttributes (
 extern LIST_ENTRY  mGcdMemorySpaceMap;
 
 // ---------------------------------------
+//       USEFUL DEBUG FUNCTIONS
+// ---------------------------------------
+
+/**
+  Debug dumps the input list of IMAGE_PROPERTIES_RECORD_CODE_SECTION structs
+
+  @param[in] ImageRecordCodeSectionList Head of the IMAGE_PROPERTIES_RECORD_CODE_SECTION list
+**/
+STATIC
+VOID
+DumpCodeSectionList (
+  IN CONST LIST_ENTRY  *ImageRecordCodeSectionList
+  )
+{
+  LIST_ENTRY                            *CodeSectionLink;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CurrentImageRecord;
+
+  if (ImageRecordCodeSectionList == NULL) {
+    return;
+  }
+
+  CodeSectionLink = ImageRecordCodeSectionList->ForwardLink;
+
+  while (CodeSectionLink != ImageRecordCodeSectionList) {
+    CurrentImageRecord = CR (
+                           CodeSectionLink,
+                           IMAGE_PROPERTIES_RECORD_CODE_SECTION,
+                           Link,
+                           IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+                           );
+
+    DEBUG ((
+      DEBUG_INFO,
+      "\tCode Section Memory Range 0x%llx - 0x%llx\n",
+      CurrentImageRecord->CodeSegmentBase,
+      CurrentImageRecord->CodeSegmentBase + CurrentImageRecord->CodeSegmentSize
+      ));
+
+    CodeSectionLink = CodeSectionLink->ForwardLink;
+  }
+}
+
+/**
+  Debug dumps the input list of IMAGE_PROPERTIES_RECORD structs
+
+  @param[in] ImageRecordList Head of the IMAGE_PROPERTIES_RECORD list
+**/
+STATIC
+VOID
+DumpImageRecords (
+  IN CONST LIST_ENTRY  *ImageRecordList
+  )
+{
+  LIST_ENTRY               *ImageRecordLink;
+  IMAGE_PROPERTIES_RECORD  *CurrentImageRecord;
+
+  if (ImageRecordList == NULL) {
+    return;
+  }
+
+  ImageRecordLink = ImageRecordList->ForwardLink;
+
+  while (ImageRecordLink != ImageRecordList) {
+    CurrentImageRecord = CR (
+                           ImageRecordLink,
+                           IMAGE_PROPERTIES_RECORD,
+                           Link,
+                           IMAGE_PROPERTIES_RECORD_SIGNATURE
+                           );
+
+    DEBUG ((
+      DEBUG_INFO,
+      "Image Record Memory Range 0x%llx - 0x%llx\n",
+      CurrentImageRecord->ImageBase,
+      CurrentImageRecord->ImageBase + CurrentImageRecord->ImageSize
+      ));
+    DumpCodeSectionList (&CurrentImageRecord->CodeSegmentList);
+    ImageRecordLink = ImageRecordLink->ForwardLink;
+  }
+}
+
+/**
+  Debug dumps the memory map.
+
+  @param[in]  MemoryMapSize     A pointer to the size, in bytes, of the MemoryMap buffer
+  @param[in]  MemoryMap         A pointer to the buffer containing the memory map
+  @param[in]  DescriptorSize    Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
+**/
+STATIC
+VOID
+DumpMemoryMap (
+  IN CONST UINTN             *MemoryMapSize,
+  IN  EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST UINTN             *DescriptorSize
+  )
+{
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapEnd;
+
+  if ((MemoryMapSize == NULL) || (MemoryMap == NULL) || (DescriptorSize == NULL)) {
+    return;
+  }
+
+  MemoryMapEntry = MemoryMap;
+  MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+  while (MemoryMapEntry < MemoryMapEnd) {
+    DEBUG ((
+      DEBUG_INFO,
+      "Memory Range: 0x%llx - 0x%llx. Type:%d, Attributes: 0x%llx\n",
+      MemoryMapEntry->PhysicalStart,
+      MemoryMapEntry->PhysicalStart + EfiPagesToSize (MemoryMapEntry->NumberOfPages),
+      MemoryMapEntry->Type,
+      MemoryMapEntry->Attribute
+      ));
+    MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+  }
+}
+
+// ---------------------------------------
 //     LINKED LIST SUPPORT FUNCTIONS
 // ---------------------------------------
 
@@ -349,6 +468,10 @@ OrderedInsertCodeSectionListEntry (
   CodeSectionToInsertLink->ForwardLink->BackLink = CodeSectionToInsertLink;
   return EFI_SUCCESS;
 }
+
+// ---------------------------------------
+//              CORE LOGIC
+// ---------------------------------------
 
 /**
   Find the first image record contained by the memory range Buffer -> Buffer + Length
@@ -970,10 +1093,21 @@ GetMemoryMapWithPopulatedAccessAttributes (
       // Filter each map entry to only contain access attributes
       FilterMemoryMapAttributes (MemoryMapSize, MemoryMap, *DescriptorSize);
 
+      DEBUG_CODE (
+        DEBUG ((DEBUG_INFO, "---Currently protected images---\n"));
+        DumpImageRecords (&mImagePropertiesPrivate.ImageRecordList);
+        );
+
       // Split PE code/data if firmware volume image protection is active
       if (gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv) {
         SeparateImagesInMemoryMap (MemoryMapSize, MemoryMap, *DescriptorSize, &mImagePropertiesPrivate.ImageRecordList, AdditionalRecordCount);
       }
+
+      DEBUG_CODE (
+        DEBUG ((DEBUG_INFO, "---Memory Map With Separated Image Descriptors---\n"));
+        DumpMemoryMap (MemoryMapSize, MemoryMap, DescriptorSize);
+        DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
+        );
 
       // Set attributes if NX protection is active
       if (gDxeMps.NxProtectionPolicy.Data) {
