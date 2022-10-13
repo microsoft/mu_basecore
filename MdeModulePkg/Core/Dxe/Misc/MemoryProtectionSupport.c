@@ -475,6 +475,107 @@ OrderedInsertCodeSectionListEntry (
   return EFI_SUCCESS;
 }
 
+/**
+  Merges every IMAGE_PROPERTIES_RECORD entry within ArrayOfListEntriesToBeMerged into ImagePropertiesRecordList
+
+  @param[in] ImagePropertiesRecordList        Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
+                                              into which the input ArrayOfListEntriesToBeMerged will be merged
+  @param[in] ArrayOfListEntriesToBeMerged     Pointer to an array of LIST_ENTRY* which will be merged
+                                              into the input ImagePropertiesRecordList
+  @param[in] ListToBeMergedCount              Number of LIST_ENTRY* which will be merged
+                                              into the input ImagePropertiesRecordList
+
+  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into ImagePropertiesRecordList
+  @retval EFI_INVALID_PARAMETER               ImagePropertiesRecordList was NULL        OR
+                                              ArrayOfListEntriesToBeMerged was NULL     OR
+                                              ArrayOfListEntriesToBeMerged[n] was NULL  OR
+                                              ListToBeMergedCount was zero
+**/
+STATIC
+EFI_STATUS
+OrderedInsertImagePropertiesRecordArray (
+  IN  LIST_ENTRY  *ImagePropertiesRecordList,
+  IN  LIST_ENTRY  **ArrayOfListEntriesToBeMerged,
+  IN  UINTN       ListToBeMergedCount
+  )
+{
+  INTN  ListToBeMergedIndex = ListToBeMergedCount - 1;
+
+  if ((ImagePropertiesRecordList == NULL) || (ArrayOfListEntriesToBeMerged == NULL) || (ListToBeMergedCount == 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // The input array should be sorted, so going backwards is the fastest method
+  for ( ; ListToBeMergedIndex >= 0; --ListToBeMergedIndex) {
+    if (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex] == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    RemoveEntryList (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
+    OrderedInsertImageRecordListEntry (ImagePropertiesRecordList, ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Merges every LIST_ENTRY within ArrayOfListEntriesToBeMerged into ImagePropertiesRecordList
+
+  @param[in]  ListToMergeInto                 Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
+                                              into which the input ListToBeMerged will be merged
+  @param[in]  ListToBeMerged                  Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
+                                              which will be merged into ListToMergeInto
+  @param[in]  ListToBeMergedCount             Number of IMAGE_PROPERTIES_RECORD entries in ListToBeMerged
+  @param[out] ArrayOfListEntriesToBeMerged    Pointer to an allocated array of LIST_ENTRY* which were merged
+                                              into the input ListToMergeInto. This array should be size
+                                              ListToBeMergedCount * sizeof(LIST_ENTRY*)
+
+  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into
+                                              ImagePropertiesRecordList
+  @retval EFI_OUT_OF_RESOURCES                Failed to allocate memory
+  @retval EFI_INVALID_PARAMETER               ListToMergeInto was NULL                  OR
+                                              ListToBeMerged was NULL                   OR
+                                              ArrayOfListEntriesToBeMerged was NULL     OR
+                                              ListToBeMergedCount was zero
+  @retval other                               Return value of OrderedInsertImageRecordListEntry()
+**/
+EFI_STATUS
+MergeImagePropertiesRecordLists (
+  IN  LIST_ENTRY  *ListToMergeInto,
+  IN  LIST_ENTRY  *ListToBeMerged,
+  IN  UINTN       ListToBeMergedCount,
+  OUT LIST_ENTRY  **ArrayOfMergedElements
+  )
+{
+  UINTN       Index = 0;
+  EFI_STATUS  Status;
+
+  if ((ListToMergeInto == NULL) || (ListToBeMerged == NULL) ||
+      (ArrayOfMergedElements == NULL) || (ListToBeMergedCount == 0))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // Insert each entry in the list to be merged into the
+  while (!IsListEmpty (ListToBeMerged) && Index < ListToBeMergedCount) {
+    ArrayOfMergedElements[Index] = ListToBeMerged->ForwardLink;
+    RemoveEntryList (ArrayOfMergedElements[Index]);
+    Status = OrderedInsertImageRecordListEntry (ListToMergeInto, ArrayOfMergedElements[Index++]);
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+  }
+
+  // If we did not merge all elements of the list, unmerge them and free the input array
+  if (!IsListEmpty (ListToBeMerged)) {
+    OrderedInsertImagePropertiesRecordArray (ListToBeMerged, ArrayOfMergedElements, Index - 1);
+    FreePool (*ArrayOfMergedElements);
+    return Status;
+  }
+
+  return EFI_SUCCESS;
+}
+
 // ---------------------------------------
 //              CORE LOGIC
 // ---------------------------------------
