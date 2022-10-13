@@ -131,7 +131,7 @@
   gEfiCapsuleArchProtocolGuid
   gEfiWatchdogTimerArchProtocolGuid
   gEfiCpu2ProtocolGuid
-  gHeapGuardDebugProtocolGuid
+  gMemoryProtectionDebugProtocolGuid
   gEfiMemoryAttributeProtocolGuid
   gInternalEventServicesProtocolGuid
 

@@ -38,8 +38,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/SimpleFileSystem.h>
-#include <Protocol/HeapGuardDebug.h>  // MU_CHANGE
-#include <Protocol/MemoryAttribute.h> // MU_CHANGE
+#include <Protocol/MemoryProtectionDebug.h> // MU_CHANGE
+#include <Protocol/MemoryAttribute.h>       // MU_CHANGE
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
@@ -73,9 +73,10 @@ EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttribute = NULL;          // MU_CHANGE
 
 STATIC LIST_ENTRY  mProtectedImageRecordList;
 // MS_CHANGE - START
-STATIC HEAP_GUARD_DEBUG_PROTOCOL  mHeapGuardDebug =
+STATIC MEMORY_PROTECTION_DEBUG_PROTOCOL  mMemoryProtectionDebug =
 {
-  IsGuardPage
+  IsGuardPage,
+  GetProtectedImageList
 };
 // MS_CHANGE - END
 
@@ -1417,15 +1418,18 @@ CoreInitializeMemoryProtection (
   // Install protocol for validating Heap Guard if Heap Guard is turned on
   // Update to use memory protection settings HOB
   // if (PcdGet8(PcdHeapGuardPropertyMask)) {
-  if (gDxeMps.HeapGuardPolicy.Data) {
+  if (gDxeMps.HeapGuardPolicy.Data ||
+      gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv ||
+      gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromUnknown)
+  {
     EFI_HANDLE  HgBmHandle = NULL;
     Status = CoreInstallMultipleProtocolInterfaces (
                &HgBmHandle,
-               &gHeapGuardDebugProtocolGuid,
-               &mHeapGuardDebug,
+               &gMemoryProtectionDebugProtocolGuid,
+               &mMemoryProtectionDebug,
                NULL
                );
-    DEBUG ((DEBUG_INFO, "Installed gHeapGuardDebugProtocolGuid - %r\n", Status));
+    DEBUG ((DEBUG_INFO, "Installed gMemoryProtectionDebugProtocolGuid - %r\n", Status));
   }
 
   // MSCHANGE END
