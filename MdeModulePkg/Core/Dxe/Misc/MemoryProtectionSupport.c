@@ -14,6 +14,12 @@ IMAGE_PROPERTIES_PRIVATE_DATA  mImagePropertiesPrivate = {
   INITIALIZE_LIST_HEAD_VARIABLE (mImagePropertiesPrivate.ImageRecordList)
 };
 
+NONPROTECTED_IMAGES_PRIVATE_DATA  mNonProtectedImageRangesPrivate = {
+  NONPROTECTED_IMAGE_PRIVATE_DATA_SIGNATURE,
+  0,
+  INITIALIZE_LIST_HEAD_VARIABLE (mNonProtectedImageRangesPrivate.NonProtectedImageList)
+};
+
 BOOLEAN                        mIsSystemNxCompatible    = TRUE;
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
 
@@ -745,6 +751,54 @@ OutOfResourcesCleanup:
 }
 
 /**
+  Create an image properties record and insert it into the nonprotected image list
+
+  @param[in]  ImageBase               Base of PE image
+  @param[in]  ImageSize               Size of PE image
+
+  @retval     EFI_INVALID_PARAMETER   ImageSize was zero
+  @retval     EFI_OUT_OF_RESOURCES    Failure to Allocate()
+  @retval     EFI_SUCCESS             The image properties record was successfully created and inserted
+                                      into the nonprotected image list
+**/
+STATIC
+EFI_STATUS
+CreateNonProtectedImagePropertiesRecord (
+  IN    EFI_PHYSICAL_ADDRESS  ImageBase,
+  IN    UINT64                ImageSize
+  )
+{
+  EFI_STATUS               Status       = EFI_SUCCESS;
+  IMAGE_PROPERTIES_RECORD  *ImageRecord = NULL;
+
+  if (ImageSize == 0) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ImageRecord = AllocateZeroPool (sizeof (*ImageRecord));
+
+  if (ImageRecord == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  ImageRecord->Signature        = IMAGE_PROPERTIES_RECORD_SIGNATURE;
+  ImageRecord->ImageBase        = ImageBase;
+  ImageRecord->ImageSize        = ImageSize;
+  ImageRecord->CodeSegmentCount = 0;
+  InitializeListHead (&ImageRecord->CodeSegmentList);
+
+  Status = OrderedInsertImageRecordListEntry (&mNonProtectedImageRangesPrivate.NonProtectedImageList, &ImageRecord->Link);
+
+  if (EFI_ERROR (Status)) {
+    FreeImageRecord (ImageRecord);
+  } else {
+    mNonProtectedImageRangesPrivate.NonProtectedImageCount++;
+  }
+
+  return Status;
+}
+
+/**
   Creates and image properties record from a loaded PE image
 
   @param[in]  ImageBase               Base of PE image
@@ -1459,74 +1513,68 @@ ProtectUefiImageMu (
   ProtectionPolicy = GetUefiImageProtectionPolicy (LoadedImage, LoadedImageDevicePath);
   switch (ProtectionPolicy) {
     case DO_NOT_PROTECT:
-      Status = EFI_UNSUPPORTED;
-      goto Finish;
+      ClearAccessAttributesFromMemoryRange (
+        (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase,
+        ALIGN_VALUE ((UINTN)LoadedImage->ImageSize, EFI_PAGE_SIZE)
+        );
+      CreateNonProtectedImagePropertiesRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize);
+      return EFI_SUCCESS;
     case PROTECT_IF_ALIGNED_ELSE_ALLOW:
     case PROTECT_ELSE_RAISE_ERROR:
       break;
     default:
       ASSERT (FALSE);
-      Status = EFI_INVALID_PARAMETER;
-      goto Finish;
+      return EFI_INVALID_PARAMETER;
   }
 
   ImageRecord = AllocateZeroPool (sizeof (*ImageRecord));
 
   if (ImageRecord == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
-    goto Finish;
-  }
-
-  // If a record was already created for the memory attributes table, copy it
-  Status = CopyExistingPropertiesRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize, ImageRecord);
-
-  if (EFI_ERROR (Status)) {
-    // Create a new image properties record
-    Status = CreateImagePropertiesRecord (LoadedImage->ImageBase, LoadedImage->ImageSize, LoadedImage->ImageCodeType, ImageRecord);
   }
 
   if (!EFI_ERROR (Status)) {
-    if (gCpu != NULL) {
-      SetUefiImageProtectionAttributes (ImageRecord);
-    } else {
-      // If gCpu is not ready, still put this record into the image record
-      // list so it can be protected in MemoryProtectionCpuArchProtocolNotifyMu()
-      Status = EFI_NOT_READY;
+    // If a record was already created for the memory attributes table, copy it
+    Status = CopyExistingPropertiesRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize, ImageRecord);
+
+    if (EFI_ERROR (Status)) {
+      // Create a new image properties record
+      Status = CreateImagePropertiesRecord (LoadedImage->ImageBase, LoadedImage->ImageSize, LoadedImage->ImageCodeType, ImageRecord);
     }
 
-    // Record the image record in the list so we can undo the protections later
-    Status = OrderedInsertImageRecordListEntry (&mImagePropertiesPrivate.ImageRecordList, &ImageRecord->Link);
-    mImagePropertiesPrivate.ImageRecordCount++;
+    if (!EFI_ERROR (Status)) {
+      // Record the image record in the list so we can undo the protections later
+      Status = OrderedInsertImageRecordListEntry (&mImagePropertiesPrivate.ImageRecordList, &ImageRecord->Link);
+      ASSERT_EFI_ERROR (Status);
 
-    // When breaking up the memory map to include image code/data ranges, we need
-    // to know the maximum number of code segments a single image will have
-    if (mImagePropertiesPrivate.CodeSegmentCountMax < ImageRecord->CodeSegmentCount) {
-      mImagePropertiesPrivate.CodeSegmentCountMax = ImageRecord->CodeSegmentCount;
+      mImagePropertiesPrivate.ImageRecordCount++;
+
+      // When breaking up the memory map to include image code/data ranges, we need
+      // to know the maximum number of code segments a single image will have
+      if (mImagePropertiesPrivate.CodeSegmentCountMax < ImageRecord->CodeSegmentCount) {
+        mImagePropertiesPrivate.CodeSegmentCountMax = ImageRecord->CodeSegmentCount;
+      }
+
+      // if gCpu is NULL, this image will be protected when CPU Arch is installed
+      if (gCpu != NULL) {
+        SetUefiImageProtectionAttributes (ImageRecord);
+      }
+
+      return EFI_SUCCESS;
     }
   }
 
-Finish:
-  if (EFI_ERROR (Status)) {
-    // If we failed to protect the image for reasons other than CPU Arch not being ready,
-    // clear the access attributes from the memory and free the image record.
-    if (Status != EFI_NOT_READY) {
-      ClearAccessAttributesFromMemoryRange (
-        (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase,
-        ALIGN_VALUE ((UINTN)LoadedImage->ImageSize, EFI_PAGE_SIZE)
-        );
+  if (ImageRecord != NULL) {
+    FreePool (ImageRecord);
+  }
 
-      if (ImageRecord != NULL) {
-        FreeImageRecord (ImageRecord);
-      }
-    }
-
-    // If the status is EFI_NOT_READY, the CPU Arch has not been installed. We assume
-    // CPU Arch will be installed later in boot, so don't return an error in that case
-    // or in the case that the protection policy indicates we shouldn't return an error
-    // if protection fails.
-    if ((ProtectionPolicy != PROTECT_ELSE_RAISE_ERROR) || (Status == EFI_NOT_READY)) {
-      Status = EFI_SUCCESS;
-    }
+  if ((ProtectionPolicy == PROTECT_IF_ALIGNED_ELSE_ALLOW)) {
+    ClearAccessAttributesFromMemoryRange (
+      (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase,
+      ALIGN_VALUE ((UINTN)LoadedImage->ImageSize, EFI_PAGE_SIZE)
+      );
+    CreateNonProtectedImagePropertiesRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize);
+    Status = EFI_SUCCESS;
   }
 
   return Status;
@@ -1547,33 +1595,54 @@ UnprotectUefiImageMu (
   IMAGE_PROPERTIES_RECORD  *ImageRecord;
   LIST_ENTRY               *ImageRecordLink;
 
-  if (gDxeMps.ImageProtectionPolicy.Data) {
-    for (ImageRecordLink = mImagePropertiesPrivate.ImageRecordList.ForwardLink;
-         ImageRecordLink != &mImagePropertiesPrivate.ImageRecordList;
-         ImageRecordLink = ImageRecordLink->ForwardLink)
-    {
-      ImageRecord = CR (
-                      ImageRecordLink,
-                      IMAGE_PROPERTIES_RECORD,
-                      Link,
-                      IMAGE_PROPERTIES_RECORD_SIGNATURE
-                      );
+  for (ImageRecordLink = mImagePropertiesPrivate.ImageRecordList.ForwardLink;
+       ImageRecordLink != &mImagePropertiesPrivate.ImageRecordList;
+       ImageRecordLink = ImageRecordLink->ForwardLink)
+  {
+    ImageRecord = CR (
+                    ImageRecordLink,
+                    IMAGE_PROPERTIES_RECORD,
+                    Link,
+                    IMAGE_PROPERTIES_RECORD_SIGNATURE
+                    );
 
-      if (ImageRecord->ImageBase == (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase) {
-        if (gCpu != NULL) {
-          SetUefiImageMemoryAttributes (
-            ImageRecord->ImageBase,
-            ImageRecord->ImageSize,
-            0
-            );
-        }
-
-        // FreeImageRecord() will remove the record from the global list
-        FreeImageRecord (ImageRecord);
-        return;
-      }
+    if (ImageRecord->ImageBase == (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase) {
+      mImagePropertiesPrivate.ImageRecordCount--;
+      goto Free;
     }
   }
+
+  for (ImageRecordLink = mNonProtectedImageRangesPrivate.NonProtectedImageList.ForwardLink;
+       ImageRecordLink != &mNonProtectedImageRangesPrivate.NonProtectedImageList;
+       ImageRecordLink = ImageRecordLink->ForwardLink)
+  {
+    ImageRecord = CR (
+                    ImageRecordLink,
+                    IMAGE_PROPERTIES_RECORD,
+                    Link,
+                    IMAGE_PROPERTIES_RECORD_SIGNATURE
+                    );
+
+    if (ImageRecord->ImageBase == (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase) {
+      mNonProtectedImageRangesPrivate.NonProtectedImageCount--;
+      goto Free;
+    }
+  }
+
+  return;
+
+Free:
+  if (gCpu != NULL) {
+    SetUefiImageMemoryAttributes (
+      ImageRecord->ImageBase,
+      ImageRecord->ImageSize,
+      0
+      );
+  }
+
+  // FreeImageRecord() will remove the record from the global list
+  FreeImageRecord (ImageRecord);
+  return;
 }
 
 /**
