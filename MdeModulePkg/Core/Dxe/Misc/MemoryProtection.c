@@ -76,7 +76,7 @@ STATIC LIST_ENTRY  mProtectedImageRecordList;
 STATIC MEMORY_PROTECTION_DEBUG_PROTOCOL  mMemoryProtectionDebug =
 {
   IsGuardPage,
-  GetProtectedImageList
+  GetImageList
 };
 // MS_CHANGE - END
 
