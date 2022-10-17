@@ -23,6 +23,9 @@ NONPROTECTED_IMAGES_PRIVATE_DATA  mNonProtectedImageRangesPrivate = {
 BOOLEAN                        mIsSystemNxCompatible    = TRUE;
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
 
+#define IS_BITMAP_INDEX_SET(Bitmap, Index)  ((((UINT8*)Bitmap)[Index / 8] & (1 << (Index % 8))) != 0 ? TRUE : FALSE)
+#define SET_BITMAP_INDEX(Bitmap, Index)     (((UINT8*)Bitmap)[Index / 8] |= (1 << (Index % 8)))
+
 #define POPULATE_IMAGE_RANGE_DESCRIPTOR(descriptor, type, base, length) \
           ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Signature = IMAGE_RANGE_DESCRIPTOR_SIGNATURE; \
           ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Type = type; \
@@ -359,6 +362,29 @@ DumpMemoryMap (
       ));
     MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
   }
+}
+
+/**
+  Debug dumps the input bitmap
+
+  @param[in] Bitmap Pointer to the start of the bitmap
+  @param[in] Count  Number of bitmap entries
+**/
+STATIC
+VOID
+DumpBitmap (
+  IN CONST UINT8  *Bitmap,
+  IN UINTN        Count
+  )
+{
+  UINTN  Index = 0;
+
+  DEBUG ((DEBUG_INFO, "Bitmap: "));
+  for ( ; Index < Count; Index++) {
+    DEBUG ((DEBUG_INFO, "%d", IS_BITMAP_INDEX_SET (Bitmap, Index) ? 1 : 0));
+  }
+
+  DEBUG ((DEBUG_INFO, "\n"));
 }
 
 // ---------------------------------------
@@ -1286,41 +1312,44 @@ FilterMemoryMapAttributes (
 }
 
 /**
-  Sets NX attribute on memory map based on NxProtectionPolicy
+  Access attributes in the memory map based on the memory protection policy and
+  mark visited regions in the bitmap.
 
-  @param[in, out] MemoryMapSize       A pointer to the size, in bytes, of the
-                                      MemoryMap buffer. On input, this is the size of
-                                      old MemoryMap before split. The actual buffer
-                                      size of MemoryMap is MemoryMapSize +
-                                      (AdditionalRecordCount * DescriptorSize) calculated
-                                      below. On output, it is the size of new MemoryMap
-                                      after split.
-  @param[in, out] MemoryMap           A pointer to the buffer in which firmware places
-                                      the current memory map.
-  @param[in]      DescriptorSize      Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+  @param[in]        MemoryMapSize       A pointer to the size, in bytes, of the
+                                        MemoryMap buffer.
+  @param[in, out]   MemoryMap           A pointer to the current memory map.
+  @param[in]        DescriptorSize      Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+  @param[in]        Bitmap              Pointer to the beginning of the bitmap to be updated
 **/
 STATIC
 VOID
-SetAccessAttributesInMemoryMap (
-  IN OUT UINTN                  *MemoryMapSize,
-  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN UINTN                      DescriptorSize
+SyncBitmapAndSetAccessAttributesInMemoryMap (
+  IN CONST UINTN             *MemoryMapSize,
+  IN  EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST UINTN             *DescriptorSize,
+  IN CONST UINT8             *Bitmap
   )
 {
   EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
   EFI_MEMORY_DESCRIPTOR  *MemoryMapEnd;
+  UINTN                  Index = 0;
 
   MemoryMapEntry = MemoryMap;
   MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
 
   while (MemoryMapEntry < MemoryMapEnd) {
-    if ((MemoryMapEntry->Attribute == 0) &&
-        (!IsCodeType (MemoryMapEntry->Type)))
-    {
+    // If attributes are nonzero, set the corresponding bit in the bitmap
+    if (MemoryMapEntry->Attribute != 0) {
+      SET_BITMAP_INDEX (Bitmap, Index);
+
+      // Skip code regions
+    } else if (!IsCodeType (MemoryMapEntry->Type)) {
       MemoryMapEntry->Attribute = GetPermissionAttributeForMemoryType (MemoryMapEntry->Type);
+      SET_BITMAP_INDEX (Bitmap, Index);
     }
 
-    MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, DescriptorSize);
+    Index++;
+    MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
   }
 }
 
@@ -1368,7 +1397,8 @@ GetMemoryMapWithPopulatedAccessAttributes (
 {
   EFI_STATUS  Status;
   UINTN       OldMemoryMapSize;
-  UINTN       AdditionalRecordCount;
+  UINTN       AdditionalRecordCount, NumberOfDescriptors, NumberOfBitmapEntries;
+  UINT8       *Bitmap = NULL;
 
   if (MemoryMapSize == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -1405,10 +1435,23 @@ GetMemoryMapWithPopulatedAccessAttributes (
         DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
         );
 
-      // Set attributes if NX protection is active
-      if (gDxeMps.NxProtectionPolicy.Data) {
-        SetAccessAttributesInMemoryMap (MemoryMapSize, MemoryMap, *DescriptorSize);
+      NumberOfDescriptors   = *MemoryMapSize / *DescriptorSize;
+      NumberOfBitmapEntries = (NumberOfDescriptors % 8) == 0 ? NumberOfDescriptors : (((NumberOfDescriptors / 8) * 8) + 8);
+
+      Bitmap = AllocateZeroPool (NumberOfBitmapEntries / 8);
+
+      // Set the extra bits
+      if ((NumberOfDescriptors % 8) != 0) {
+        Bitmap[NumberOfDescriptors / 8] |= ~((1 << (NumberOfDescriptors % 8)) - 1);
       }
+
+      SyncBitmapAndSetAccessAttributesInMemoryMap (MemoryMapSize, MemoryMap, DescriptorSize, Bitmap);
+
+      DEBUG_CODE (
+        DEBUG ((DEBUG_INFO, "---Final Bitmap---\n"));
+        DumpBitmap (Bitmap, NumberOfBitmapEntries);
+        DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
+        );
 
       // Merge contiguous entries with the type and attributes
       MergeMemoryMap (MemoryMap, MemoryMapSize, *DescriptorSize);
