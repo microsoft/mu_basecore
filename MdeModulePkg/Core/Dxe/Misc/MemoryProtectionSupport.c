@@ -629,10 +629,13 @@ GetImageRecordContainedByBuffer (
 }
 
 /**
- Generate a list of IMAGE_RANGE_DESCRIPTOR structs which describe all data and code regions of loaded images.
+ Generate a list of IMAGE_RANGE_DESCRIPTOR structs which describe the data/code regions of protected images or
+ the memory ranges of nonprotected images.
 
- @param[in]  ImageList  Pointer to NULL IMAGE_RANGE_DESCRIPTOR* which will be updated to the head of the allocated
-                        IMAGE_RANGE_DESCRIPTOR list
+ @param[in]  ImageList                  Pointer to NULL IMAGE_RANGE_DESCRIPTOR* which will be updated to the head of the allocated
+                                        IMAGE_RANGE_DESCRIPTOR list
+ @param[in]  ProtectedOrNonProtected    Enum describing if the returned list will describe the protected or
+                                        nonprotected loaded images
 
  @retval  EFI_SUCCESS             *ImageList points to the head of the IMAGE_RANGE_DESCRIPTOR list
  @retval  EFI_INVALID_PARAMETER   ImageList is NULL or *ImageList is not NULL
@@ -640,8 +643,9 @@ GetImageRecordContainedByBuffer (
 **/
 EFI_STATUS
 EFIAPI
-GetProtectedImageList (
-  IN IMAGE_RANGE_DESCRIPTOR  **ImageList
+GetImageList (
+  IN IMAGE_RANGE_DESCRIPTOR         **ImageList,
+  IN IMAGE_RANGE_PROTECTION_STATUS  ProtectedOrNonProtected
   )
 {
   IMAGE_PROPERTIES_RECORD_CODE_SECTION  *ImageRecordCodeSection;
@@ -650,10 +654,19 @@ GetProtectedImageList (
   LIST_ENTRY                            *ImageRecordCodeSectionList;
   IMAGE_PROPERTIES_RECORD               *ImageRecord;
   LIST_ENTRY                            *ImageRecordLink;
+  LIST_ENTRY                            ImageListHead;
   UINT64                                PhysicalStart, PhysicalEnd;
   IMAGE_RANGE_DESCRIPTOR                *CurrentImageRangeDescriptor;
 
   if ((ImageList == NULL) || (*ImageList != NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (ProtectedOrNonProtected == Protected) {
+    ImageListHead = mImagePropertiesPrivate.ImageRecordList;
+  } else if (ProtectedOrNonProtected == NonProtected) {
+    ImageListHead = mNonProtectedImageRangesPrivate.NonProtectedImageList;
+  } else {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -666,8 +679,8 @@ GetProtectedImageList (
   InitializeListHead (&(*ImageList)->Link);
 
   // Walk through each image
-  for (ImageRecordLink = mImagePropertiesPrivate.ImageRecordList.ForwardLink;
-       ImageRecordLink != &mImagePropertiesPrivate.ImageRecordList;
+  for (ImageRecordLink = ImageListHead.ForwardLink;
+       ImageRecordLink != &ImageListHead;
        ImageRecordLink = ImageRecordLink->ForwardLink)
   {
     ImageRecord = CR (
@@ -715,7 +728,7 @@ GetProtectedImageList (
       InsertTailList (&(*ImageList)->Link, &CurrentImageRangeDescriptor->Link);
     }
 
-    // Mark the last data region
+    // Mark the remainder of the image as a data section
     if (PhysicalStart < PhysicalEnd) {
       CurrentImageRangeDescriptor = AllocatePool (sizeof (IMAGE_RANGE_DESCRIPTOR));
       if (CurrentImageRangeDescriptor == NULL) {

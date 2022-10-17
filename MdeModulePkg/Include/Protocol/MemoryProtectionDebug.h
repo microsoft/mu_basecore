@@ -26,6 +26,11 @@ typedef enum _IMAGE_RANGE_TYPE {
   Data
 } IMAGE_RANGE_TYPE;
 
+typedef enum _IMAGE_RANGE_PROTECTION_STATUS {
+  Protected,
+  NonProtected
+} IMAGE_RANGE_PROTECTION_STATUS;
+
 typedef struct _IMAGE_RANGE_DESCRIPTOR {
   UINT32                  Signature;
   LIST_ENTRY              Link;
@@ -42,13 +47,14 @@ BOOLEAN
 
 typedef
 EFI_STATUS
-(EFIAPI *GET_PROTECTED_IMAGE_LIST)(
-  IMAGE_RANGE_DESCRIPTOR **ImageList
+(EFIAPI *GET_IMAGE_LIST)(
+  IMAGE_RANGE_DESCRIPTOR          **ImageList,
+  IMAGE_RANGE_PROTECTION_STATUS   ProtectedOrNonProtected
   );
 
 typedef struct _MEMORY_PROTECTION_DEBUG_PROTOCOL {
-  IS_GUARD_PAGE               IsGuardPage;
-  GET_PROTECTED_IMAGE_LIST    GetProtectedImageList;
+  IS_GUARD_PAGE     IsGuardPage;
+  GET_IMAGE_LIST    GetImageList;
 } MEMORY_PROTECTION_DEBUG_PROTOCOL;
 
 extern EFI_GUID  gMemoryProtectionDebugProtocolGuid;
