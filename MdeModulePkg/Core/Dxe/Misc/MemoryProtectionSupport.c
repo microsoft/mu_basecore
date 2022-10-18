@@ -14,7 +14,23 @@ IMAGE_PROPERTIES_PRIVATE_DATA  mImagePropertiesPrivate = {
   INITIALIZE_LIST_HEAD_VARIABLE (mImagePropertiesPrivate.ImageRecordList)
 };
 
-BOOLEAN  mIsSystemNxCompatible = TRUE;
+NONPROTECTED_IMAGES_PRIVATE_DATA  mNonProtectedImageRangesPrivate = {
+  NONPROTECTED_IMAGE_PRIVATE_DATA_SIGNATURE,
+  0,
+  INITIALIZE_LIST_HEAD_VARIABLE (mNonProtectedImageRangesPrivate.NonProtectedImageList)
+};
+
+BOOLEAN                        mIsSystemNxCompatible    = TRUE;
+EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
+
+#define IS_BITMAP_INDEX_SET(Bitmap, Index)  ((((UINT8*)Bitmap)[Index / 8] & (1 << (Index % 8))) != 0 ? TRUE : FALSE)
+#define SET_BITMAP_INDEX(Bitmap, Index)     (((UINT8*)Bitmap)[Index / 8] |= (1 << (Index % 8)))
+
+#define POPULATE_IMAGE_RANGE_DESCRIPTOR(descriptor, type, base, length) \
+          ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Signature = IMAGE_RANGE_DESCRIPTOR_SIGNATURE; \
+          ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Type = type; \
+          ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Base = base; \
+          ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Length = length
 
 /**
   Swap two image records.
@@ -38,16 +54,6 @@ VOID
 SwapImageRecordCodeSection (
   IN IMAGE_PROPERTIES_RECORD_CODE_SECTION  *FirstImageRecordCodeSection,
   IN IMAGE_PROPERTIES_RECORD_CODE_SECTION  *SecondImageRecordCodeSection
-  );
-
-/**
-  Sort code section in image record, based upon CodeSegmentBase from low to high.
-
-  @param  ImageRecord    image record to be sorted
-**/
-VOID
-SortImageRecordCodeSection (
-  IN IMAGE_PROPERTIES_RECORD  *ImageRecord
   );
 
 /**
@@ -239,6 +245,373 @@ SetUefiImageMemoryAttributes (
 
 extern LIST_ENTRY  mGcdMemorySpaceMap;
 
+// ---------------------------------------
+//       USEFUL DEBUG FUNCTIONS
+// ---------------------------------------
+
+/**
+  Debug dumps the input list of IMAGE_PROPERTIES_RECORD_CODE_SECTION structs
+
+  @param[in] ImageRecordCodeSectionList Head of the IMAGE_PROPERTIES_RECORD_CODE_SECTION list
+**/
+STATIC
+VOID
+DumpCodeSectionList (
+  IN CONST LIST_ENTRY  *ImageRecordCodeSectionList
+  )
+{
+  LIST_ENTRY                            *CodeSectionLink;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CurrentImageRecord;
+
+  if (ImageRecordCodeSectionList == NULL) {
+    return;
+  }
+
+  CodeSectionLink = ImageRecordCodeSectionList->ForwardLink;
+
+  while (CodeSectionLink != ImageRecordCodeSectionList) {
+    CurrentImageRecord = CR (
+                           CodeSectionLink,
+                           IMAGE_PROPERTIES_RECORD_CODE_SECTION,
+                           Link,
+                           IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+                           );
+
+    DEBUG ((
+      DEBUG_INFO,
+      "\tCode Section Memory Range 0x%llx - 0x%llx\n",
+      CurrentImageRecord->CodeSegmentBase,
+      CurrentImageRecord->CodeSegmentBase + CurrentImageRecord->CodeSegmentSize
+      ));
+
+    CodeSectionLink = CodeSectionLink->ForwardLink;
+  }
+}
+
+/**
+  Debug dumps the input list of IMAGE_PROPERTIES_RECORD structs
+
+  @param[in] ImageRecordList Head of the IMAGE_PROPERTIES_RECORD list
+**/
+STATIC
+VOID
+DumpImageRecords (
+  IN CONST LIST_ENTRY  *ImageRecordList
+  )
+{
+  LIST_ENTRY               *ImageRecordLink;
+  IMAGE_PROPERTIES_RECORD  *CurrentImageRecord;
+
+  if (ImageRecordList == NULL) {
+    return;
+  }
+
+  ImageRecordLink = ImageRecordList->ForwardLink;
+
+  while (ImageRecordLink != ImageRecordList) {
+    CurrentImageRecord = CR (
+                           ImageRecordLink,
+                           IMAGE_PROPERTIES_RECORD,
+                           Link,
+                           IMAGE_PROPERTIES_RECORD_SIGNATURE
+                           );
+
+    DEBUG ((
+      DEBUG_INFO,
+      "Image Record Memory Range 0x%llx - 0x%llx\n",
+      CurrentImageRecord->ImageBase,
+      CurrentImageRecord->ImageBase + CurrentImageRecord->ImageSize
+      ));
+    DumpCodeSectionList (&CurrentImageRecord->CodeSegmentList);
+    ImageRecordLink = ImageRecordLink->ForwardLink;
+  }
+}
+
+/**
+  Debug dumps the memory map.
+
+  @param[in]  MemoryMapSize     A pointer to the size, in bytes, of the MemoryMap buffer
+  @param[in]  MemoryMap         A pointer to the buffer containing the memory map
+  @param[in]  DescriptorSize    Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
+**/
+STATIC
+VOID
+DumpMemoryMap (
+  IN CONST UINTN             *MemoryMapSize,
+  IN  EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST UINTN             *DescriptorSize
+  )
+{
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapEnd;
+
+  if ((MemoryMapSize == NULL) || (MemoryMap == NULL) || (DescriptorSize == NULL)) {
+    return;
+  }
+
+  MemoryMapEntry = MemoryMap;
+  MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+  while (MemoryMapEntry < MemoryMapEnd) {
+    DEBUG ((
+      DEBUG_INFO,
+      "Memory Range: 0x%llx - 0x%llx. Type:%d, Attributes: 0x%llx\n",
+      MemoryMapEntry->PhysicalStart,
+      MemoryMapEntry->PhysicalStart + EfiPagesToSize (MemoryMapEntry->NumberOfPages),
+      MemoryMapEntry->Type,
+      MemoryMapEntry->Attribute
+      ));
+    MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+  }
+}
+
+/**
+  Debug dumps the input bitmap
+
+  @param[in] Bitmap Pointer to the start of the bitmap
+  @param[in] Count  Number of bitmap entries
+**/
+STATIC
+VOID
+DumpBitmap (
+  IN CONST UINT8  *Bitmap,
+  IN UINTN        Count
+  )
+{
+  UINTN  Index = 0;
+
+  DEBUG ((DEBUG_INFO, "Bitmap: "));
+  for ( ; Index < Count; Index++) {
+    DEBUG ((DEBUG_INFO, "%d", IS_BITMAP_INDEX_SET (Bitmap, Index) ? 1 : 0));
+  }
+
+  DEBUG ((DEBUG_INFO, "\n"));
+}
+
+// ---------------------------------------
+//     LINKED LIST SUPPORT FUNCTIONS
+// ---------------------------------------
+
+/**
+  Inserts the input ImageRecordToInsertLink into ImageRecordList based on the IMAGE_PROPERTIES_RECORD.ImageBase field
+
+  @param[in] ImageRecordList           Pointer to the head of the IMAGE_PROPERTIES_RECORD list
+  @param[in] ImageRecordToInsertLink   Pointer to the list entry of the IMAGE_PROPERTIES_RECORD to insert
+
+  @retval EFI_SUCCESS             IMAGE_PROPERTIES_RECORD inserted into the list
+  @retval EFI_INVALID_PARAMETER   ImageRecordList or ImageRecordToInsertLink were NULL
+**/
+STATIC
+EFI_STATUS
+OrderedInsertImageRecordListEntry (
+  IN LIST_ENTRY  *ImageRecordList,
+  IN LIST_ENTRY  *ImageRecordToInsertLink
+  )
+{
+  IMAGE_PROPERTIES_RECORD  *CurrentImageRecord;
+  IMAGE_PROPERTIES_RECORD  *ImageRecordToInsert;
+  LIST_ENTRY               *ImageRecordLink;
+  LIST_ENTRY               *ImageRecordEndLink;
+  EFI_PHYSICAL_ADDRESS     ImageRecordToInsertBase;
+
+  if ((ImageRecordList == NULL) || (ImageRecordToInsertLink == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ImageRecordToInsert = CR (
+                          ImageRecordToInsertLink,
+                          IMAGE_PROPERTIES_RECORD,
+                          Link,
+                          IMAGE_PROPERTIES_RECORD_SIGNATURE
+                          );
+  ImageRecordToInsertBase = ImageRecordToInsert->ImageBase;
+
+  ImageRecordLink    = ImageRecordList->ForwardLink;
+  ImageRecordEndLink = ImageRecordList;
+  while (ImageRecordLink != ImageRecordEndLink) {
+    CurrentImageRecord = CR (
+                           ImageRecordLink,
+                           IMAGE_PROPERTIES_RECORD,
+                           Link,
+                           IMAGE_PROPERTIES_RECORD_SIGNATURE
+                           );
+    if (ImageRecordToInsertBase < CurrentImageRecord->ImageBase) {
+      break;
+    }
+
+    ImageRecordLink = ImageRecordLink->ForwardLink;
+  }
+
+  ImageRecordToInsertLink->BackLink              = ImageRecordLink->BackLink;
+  ImageRecordToInsertLink->ForwardLink           = ImageRecordLink;
+  ImageRecordToInsertLink->BackLink->ForwardLink = ImageRecordToInsertLink;
+  ImageRecordToInsertLink->ForwardLink->BackLink = ImageRecordToInsertLink;
+  return EFI_SUCCESS;
+}
+
+/**
+  Inserts the input CodeSectionToInsertLink into CodeSectionList based on the
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION.CodeSegmentBase field
+
+  @param[in] CodeSectionList           Pointer to the head of the IMAGE_PROPERTIES_RECORD_CODE_SECTION list
+  @param[in] CodeSectionToInsertLink   Pointer to the list entry of the IMAGE_PROPERTIES_RECORD_CODE_SECTION to insert
+
+  @retval EFI_SUCCESS             IMAGE_PROPERTIES_RECORD_CODE_SECTION inserted into the list
+  @retval EFI_INVALID_PARAMETER   CodeSectionList or CodeSectionToInsertLink were NULL
+**/
+STATIC
+EFI_STATUS
+OrderedInsertCodeSectionListEntry (
+  IN LIST_ENTRY  *CodeSectionList,
+  IN LIST_ENTRY  *CodeSectionToInsertLink
+  )
+{
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CurrentCodeSection;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSectionToInsert;
+  LIST_ENTRY                            *CodeSectionLink;
+  LIST_ENTRY                            *CodeSectionEndLink;
+  EFI_PHYSICAL_ADDRESS                  CodeSectionToInsertBase;
+
+  if ((CodeSectionList == NULL) || (CodeSectionToInsertLink == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  CodeSectionToInsert = CR (
+                          CodeSectionToInsertLink,
+                          IMAGE_PROPERTIES_RECORD_CODE_SECTION,
+                          Link,
+                          IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+                          );
+
+  CodeSectionToInsertBase = CodeSectionToInsert->CodeSegmentBase;
+
+  CodeSectionLink    = CodeSectionList->ForwardLink;
+  CodeSectionEndLink = CodeSectionList;
+  while (CodeSectionLink != CodeSectionEndLink) {
+    CurrentCodeSection = CR (
+                           CodeSectionLink,
+                           IMAGE_PROPERTIES_RECORD_CODE_SECTION,
+                           Link,
+                           IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+                           );
+    if (CodeSectionToInsertBase < CurrentCodeSection->CodeSegmentBase) {
+      break;
+    }
+
+    CodeSectionLink = CodeSectionLink->ForwardLink;
+  }
+
+  CodeSectionToInsertLink->BackLink              = CodeSectionLink->BackLink;
+  CodeSectionToInsertLink->ForwardLink           = CodeSectionLink;
+  CodeSectionToInsertLink->BackLink->ForwardLink = CodeSectionToInsertLink;
+  CodeSectionToInsertLink->ForwardLink->BackLink = CodeSectionToInsertLink;
+  return EFI_SUCCESS;
+}
+
+/**
+  Merges every IMAGE_PROPERTIES_RECORD entry within ArrayOfListEntriesToBeMerged into ImagePropertiesRecordList
+
+  @param[in] ImagePropertiesRecordList        Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
+                                              into which the input ArrayOfListEntriesToBeMerged will be merged
+  @param[in] ArrayOfListEntriesToBeMerged     Pointer to an array of LIST_ENTRY* which will be merged
+                                              into the input ImagePropertiesRecordList
+  @param[in] ListToBeMergedCount              Number of LIST_ENTRY* which will be merged
+                                              into the input ImagePropertiesRecordList
+
+  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into ImagePropertiesRecordList
+  @retval EFI_INVALID_PARAMETER               ImagePropertiesRecordList was NULL        OR
+                                              ArrayOfListEntriesToBeMerged was NULL     OR
+                                              ArrayOfListEntriesToBeMerged[n] was NULL  OR
+                                              ListToBeMergedCount was zero
+**/
+STATIC
+EFI_STATUS
+OrderedInsertImagePropertiesRecordArray (
+  IN  LIST_ENTRY  *ImagePropertiesRecordList,
+  IN  LIST_ENTRY  **ArrayOfListEntriesToBeMerged,
+  IN  UINTN       ListToBeMergedCount
+  )
+{
+  INTN  ListToBeMergedIndex = ListToBeMergedCount - 1;
+
+  if ((ImagePropertiesRecordList == NULL) || (ArrayOfListEntriesToBeMerged == NULL) || (ListToBeMergedCount == 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // The input array should be sorted, so going backwards is the fastest method
+  for ( ; ListToBeMergedIndex >= 0; --ListToBeMergedIndex) {
+    if (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex] == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    RemoveEntryList (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
+    OrderedInsertImageRecordListEntry (ImagePropertiesRecordList, ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Merges every LIST_ENTRY within ArrayOfListEntriesToBeMerged into ImagePropertiesRecordList
+
+  @param[in]  ListToMergeInto                 Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
+                                              into which the input ListToBeMerged will be merged
+  @param[in]  ListToBeMerged                  Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
+                                              which will be merged into ListToMergeInto
+  @param[in]  ListToBeMergedCount             Number of IMAGE_PROPERTIES_RECORD entries in ListToBeMerged
+  @param[out] ArrayOfListEntriesToBeMerged    Pointer to an allocated array of LIST_ENTRY* which were merged
+                                              into the input ListToMergeInto. This array should be size
+                                              ListToBeMergedCount * sizeof(LIST_ENTRY*)
+
+  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into
+                                              ImagePropertiesRecordList
+  @retval EFI_OUT_OF_RESOURCES                Failed to allocate memory
+  @retval EFI_INVALID_PARAMETER               ListToMergeInto was NULL                  OR
+                                              ListToBeMerged was NULL                   OR
+                                              ArrayOfListEntriesToBeMerged was NULL     OR
+                                              ListToBeMergedCount was zero
+  @retval other                               Return value of OrderedInsertImageRecordListEntry()
+**/
+EFI_STATUS
+MergeImagePropertiesRecordLists (
+  IN  LIST_ENTRY  *ListToMergeInto,
+  IN  LIST_ENTRY  *ListToBeMerged,
+  IN  UINTN       ListToBeMergedCount,
+  OUT LIST_ENTRY  **ArrayOfMergedElements
+  )
+{
+  UINTN       Index = 0;
+  EFI_STATUS  Status;
+
+  if ((ListToMergeInto == NULL) || (ListToBeMerged == NULL) ||
+      (ArrayOfMergedElements == NULL) || (ListToBeMergedCount == 0))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // Insert each entry in the list to be merged into the
+  while (!IsListEmpty (ListToBeMerged) && Index < ListToBeMergedCount) {
+    ArrayOfMergedElements[Index] = ListToBeMerged->ForwardLink;
+    RemoveEntryList (ArrayOfMergedElements[Index]);
+    Status = OrderedInsertImageRecordListEntry (ListToMergeInto, ArrayOfMergedElements[Index++]);
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+  }
+
+  // If we did not merge all elements of the list, unmerge them and free the input array
+  if (!IsListEmpty (ListToBeMerged)) {
+    OrderedInsertImagePropertiesRecordArray (ListToBeMerged, ArrayOfMergedElements, Index - 1);
+    FreePool (*ArrayOfMergedElements);
+    return Status;
+  }
+
+  return EFI_SUCCESS;
+}
+
+// ---------------------------------------
+//              CORE LOGIC
+// ---------------------------------------
+
 /**
   Find the first image record contained by the memory range Buffer -> Buffer + Length
 
@@ -282,50 +655,186 @@ GetImageRecordContainedByBuffer (
 }
 
 /**
-  Sort image record based upon the ImageBase from low to high via bubble sort.
+ Generate a list of IMAGE_RANGE_DESCRIPTOR structs which describe the data/code regions of protected images or
+ the memory ranges of nonprotected images.
 
-  @param[in, out] ImageRecordList   A list of IMAGE_PROPERTIES_RECORD entries to be sorted by
-                                    base address.
+ @param[in]  ImageList                  Pointer to NULL IMAGE_RANGE_DESCRIPTOR* which will be updated to the head of the allocated
+                                        IMAGE_RANGE_DESCRIPTOR list
+ @param[in]  ProtectedOrNonProtected    Enum describing if the returned list will describe the protected or
+                                        nonprotected loaded images
+
+ @retval  EFI_SUCCESS             *ImageList points to the head of the IMAGE_RANGE_DESCRIPTOR list
+ @retval  EFI_INVALID_PARAMETER   ImageList is NULL or *ImageList is not NULL
+ @retval  EFI_OUT_OF_RESOURCES    Allocation of memory failed
 **/
-STATIC
-VOID
-SortImageRecordList (
-  IN OUT LIST_ENTRY  *ImageRecordList
+EFI_STATUS
+EFIAPI
+GetImageList (
+  IN IMAGE_RANGE_DESCRIPTOR         **ImageList,
+  IN IMAGE_RANGE_PROTECTION_STATUS  ProtectedOrNonProtected
   )
 {
-  IMAGE_PROPERTIES_RECORD  *ImageRecord;
-  IMAGE_PROPERTIES_RECORD  *NextImageRecord;
-  LIST_ENTRY               *ImageRecordLink;
-  LIST_ENTRY               *NextImageRecordLink;
-  LIST_ENTRY               *ImageRecordEndLink;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *ImageRecordCodeSection;
+  LIST_ENTRY                            *ImageRecordCodeSectionLink;
+  LIST_ENTRY                            *ImageRecordCodeSectionEndLink;
+  LIST_ENTRY                            *ImageRecordCodeSectionList;
+  IMAGE_PROPERTIES_RECORD               *ImageRecord;
+  LIST_ENTRY                            *ImageRecordLink;
+  LIST_ENTRY                            ImageListHead;
+  UINT64                                PhysicalStart, PhysicalEnd;
+  IMAGE_RANGE_DESCRIPTOR                *CurrentImageRangeDescriptor;
 
-  ImageRecordLink     = ImageRecordList->ForwardLink;
-  NextImageRecordLink = ImageRecordLink->ForwardLink;
-  ImageRecordEndLink  = ImageRecordList;
-  while (ImageRecordLink != ImageRecordEndLink) {
+  if ((ImageList == NULL) || (*ImageList != NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (ProtectedOrNonProtected == Protected) {
+    ImageListHead = mImagePropertiesPrivate.ImageRecordList;
+  } else if (ProtectedOrNonProtected == NonProtected) {
+    ImageListHead = mNonProtectedImageRangesPrivate.NonProtectedImageList;
+  } else {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *ImageList = AllocateZeroPool (sizeof (IMAGE_RANGE_DESCRIPTOR));
+
+  if (*ImageList == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  InitializeListHead (&(*ImageList)->Link);
+
+  // Walk through each image
+  for (ImageRecordLink = ImageListHead.ForwardLink;
+       ImageRecordLink != &ImageListHead;
+       ImageRecordLink = ImageRecordLink->ForwardLink)
+  {
     ImageRecord = CR (
                     ImageRecordLink,
                     IMAGE_PROPERTIES_RECORD,
                     Link,
                     IMAGE_PROPERTIES_RECORD_SIGNATURE
                     );
-    while (NextImageRecordLink != ImageRecordEndLink) {
-      NextImageRecord = CR (
-                          NextImageRecordLink,
-                          IMAGE_PROPERTIES_RECORD,
-                          Link,
-                          IMAGE_PROPERTIES_RECORD_SIGNATURE
-                          );
-      if (ImageRecord->ImageBase > NextImageRecord->ImageBase) {
-        SwapImageRecord (ImageRecord, NextImageRecord);
+    PhysicalStart = ImageRecord->ImageBase;
+    PhysicalEnd   = ImageRecord->ImageBase + ImageRecord->ImageSize;
+
+    ImageRecordCodeSectionList = &ImageRecord->CodeSegmentList;
+
+    ImageRecordCodeSectionLink    = ImageRecordCodeSectionList->ForwardLink;
+    ImageRecordCodeSectionEndLink = ImageRecordCodeSectionList;
+    while (ImageRecordCodeSectionLink != ImageRecordCodeSectionEndLink) {
+      ImageRecordCodeSection = CR (
+                                 ImageRecordCodeSectionLink,
+                                 IMAGE_PROPERTIES_RECORD_CODE_SECTION,
+                                 Link,
+                                 IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+                                 );
+      ImageRecordCodeSectionLink = ImageRecordCodeSectionLink->ForwardLink;
+
+      // Mark the data region
+      if (PhysicalStart < ImageRecordCodeSection->CodeSegmentBase) {
+        CurrentImageRangeDescriptor = AllocatePool (sizeof (IMAGE_RANGE_DESCRIPTOR));
+        if (CurrentImageRangeDescriptor == NULL) {
+          goto OutOfResourcesCleanup;
+        }
+
+        POPULATE_IMAGE_RANGE_DESCRIPTOR (CurrentImageRangeDescriptor, Data, PhysicalStart, ImageRecordCodeSection->CodeSegmentBase - PhysicalStart);
+        PhysicalStart = ImageRecordCodeSection->CodeSegmentBase;
+        InsertTailList (&(*ImageList)->Link, &CurrentImageRangeDescriptor->Link);
       }
 
-      NextImageRecordLink = NextImageRecordLink->ForwardLink;
+      // Mark the code region
+      CurrentImageRangeDescriptor = AllocatePool (sizeof (IMAGE_RANGE_DESCRIPTOR));
+      if (CurrentImageRangeDescriptor == NULL) {
+        goto OutOfResourcesCleanup;
+      }
+
+      POPULATE_IMAGE_RANGE_DESCRIPTOR (CurrentImageRangeDescriptor, Code, PhysicalStart, ImageRecordCodeSection->CodeSegmentSize);
+      PhysicalStart = ImageRecordCodeSection->CodeSegmentBase + ImageRecordCodeSection->CodeSegmentSize;
+      InsertTailList (&(*ImageList)->Link, &CurrentImageRangeDescriptor->Link);
     }
 
-    ImageRecordLink     = ImageRecordLink->ForwardLink;
-    NextImageRecordLink = ImageRecordLink->ForwardLink;
+    // Mark the remainder of the image as a data section
+    if (PhysicalStart < PhysicalEnd) {
+      CurrentImageRangeDescriptor = AllocatePool (sizeof (IMAGE_RANGE_DESCRIPTOR));
+      if (CurrentImageRangeDescriptor == NULL) {
+        goto OutOfResourcesCleanup;
+      }
+
+      POPULATE_IMAGE_RANGE_DESCRIPTOR (CurrentImageRangeDescriptor, Data, PhysicalStart, PhysicalEnd - PhysicalStart);
+      PhysicalStart = PhysicalEnd;
+      InsertTailList (&(*ImageList)->Link, &CurrentImageRangeDescriptor->Link);
+    }
   }
+
+  return EFI_SUCCESS;
+
+OutOfResourcesCleanup:
+  ImageRecordLink = &(*ImageList)->Link;
+
+  while (!IsListEmpty (ImageRecordLink)) {
+    CurrentImageRangeDescriptor = CR (
+                                    ImageRecordLink->ForwardLink,
+                                    IMAGE_RANGE_DESCRIPTOR,
+                                    Link,
+                                    IMAGE_RANGE_DESCRIPTOR_SIGNATURE
+                                    );
+
+    RemoveEntryList (&CurrentImageRangeDescriptor->Link);
+    FreePool (CurrentImageRangeDescriptor);
+  }
+
+  FreePool (*ImageList);
+
+  return EFI_OUT_OF_RESOURCES;
+}
+
+/**
+  Create an image properties record and insert it into the nonprotected image list
+
+  @param[in]  ImageBase               Base of PE image
+  @param[in]  ImageSize               Size of PE image
+
+  @retval     EFI_INVALID_PARAMETER   ImageSize was zero
+  @retval     EFI_OUT_OF_RESOURCES    Failure to Allocate()
+  @retval     EFI_SUCCESS             The image properties record was successfully created and inserted
+                                      into the nonprotected image list
+**/
+STATIC
+EFI_STATUS
+CreateNonProtectedImagePropertiesRecord (
+  IN    EFI_PHYSICAL_ADDRESS  ImageBase,
+  IN    UINT64                ImageSize
+  )
+{
+  EFI_STATUS               Status       = EFI_SUCCESS;
+  IMAGE_PROPERTIES_RECORD  *ImageRecord = NULL;
+
+  if (ImageSize == 0) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ImageRecord = AllocateZeroPool (sizeof (*ImageRecord));
+
+  if (ImageRecord == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  ImageRecord->Signature        = IMAGE_PROPERTIES_RECORD_SIGNATURE;
+  ImageRecord->ImageBase        = ImageBase;
+  ImageRecord->ImageSize        = ImageSize;
+  ImageRecord->CodeSegmentCount = 0;
+  InitializeListHead (&ImageRecord->CodeSegmentList);
+
+  Status = OrderedInsertImageRecordListEntry (&mNonProtectedImageRangesPrivate.NonProtectedImageList, &ImageRecord->Link);
+
+  if (EFI_ERROR (Status)) {
+    FreeImageRecord (ImageRecord);
+  } else {
+    mNonProtectedImageRangesPrivate.NonProtectedImageCount++;
+  }
+
+  return Status;
 }
 
 /**
@@ -481,7 +990,7 @@ CreateImagePropertiesRecord (
       ImageRecordCodeSection->CodeSegmentBase = (UINTN)ImageAddress + Section[Index].VirtualAddress;
       ImageRecordCodeSection->CodeSegmentSize = EfiPagesToSize (EfiSizeToPages (Section[Index].SizeOfRawData));
 
-      InsertTailList (&ImageRecord->CodeSegmentList, &ImageRecordCodeSection->Link);
+      OrderedInsertCodeSectionListEntry (&ImageRecord->CodeSegmentList, &ImageRecordCodeSection->Link);
       ImageRecord->CodeSegmentCount++;
     }
   }
@@ -499,10 +1008,6 @@ CreateImagePropertiesRecord (
     return EFI_LOAD_ERROR;
   }
 
-  //
-  // Final
-  //
-  SortImageRecordCodeSection (ImageRecord);
   //
   // Check overlap all section in ImageBase/Size
   //
@@ -807,41 +1312,44 @@ FilterMemoryMapAttributes (
 }
 
 /**
-  Sets NX attribute on memory map based on NxProtectionPolicy
+  Access attributes in the memory map based on the memory protection policy and
+  mark visited regions in the bitmap.
 
-  @param[in, out] MemoryMapSize       A pointer to the size, in bytes, of the
-                                      MemoryMap buffer. On input, this is the size of
-                                      old MemoryMap before split. The actual buffer
-                                      size of MemoryMap is MemoryMapSize +
-                                      (AdditionalRecordCount * DescriptorSize) calculated
-                                      below. On output, it is the size of new MemoryMap
-                                      after split.
-  @param[in, out] MemoryMap           A pointer to the buffer in which firmware places
-                                      the current memory map.
-  @param[in]      DescriptorSize      Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+  @param[in]        MemoryMapSize       A pointer to the size, in bytes, of the
+                                        MemoryMap buffer.
+  @param[in, out]   MemoryMap           A pointer to the current memory map.
+  @param[in]        DescriptorSize      Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+  @param[in]        Bitmap              Pointer to the beginning of the bitmap to be updated
 **/
 STATIC
 VOID
-SetAccessAttributesInMemoryMap (
-  IN OUT UINTN                  *MemoryMapSize,
-  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN UINTN                      DescriptorSize
+SyncBitmapAndSetAccessAttributesInMemoryMap (
+  IN CONST UINTN             *MemoryMapSize,
+  IN  EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST UINTN             *DescriptorSize,
+  IN CONST UINT8             *Bitmap
   )
 {
   EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
   EFI_MEMORY_DESCRIPTOR  *MemoryMapEnd;
+  UINTN                  Index = 0;
 
   MemoryMapEntry = MemoryMap;
   MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
 
   while (MemoryMapEntry < MemoryMapEnd) {
-    if ((MemoryMapEntry->Attribute == 0) &&
-        (!IsCodeType (MemoryMapEntry->Type)))
-    {
+    // If attributes are nonzero, set the corresponding bit in the bitmap
+    if (MemoryMapEntry->Attribute != 0) {
+      SET_BITMAP_INDEX (Bitmap, Index);
+
+      // Skip code regions
+    } else if (!IsCodeType (MemoryMapEntry->Type)) {
       MemoryMapEntry->Attribute = GetPermissionAttributeForMemoryType (MemoryMapEntry->Type);
+      SET_BITMAP_INDEX (Bitmap, Index);
     }
 
-    MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, DescriptorSize);
+    Index++;
+    MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
   }
 }
 
@@ -889,7 +1397,8 @@ GetMemoryMapWithPopulatedAccessAttributes (
 {
   EFI_STATUS  Status;
   UINTN       OldMemoryMapSize;
-  UINTN       AdditionalRecordCount;
+  UINTN       AdditionalRecordCount, NumberOfDescriptors, NumberOfBitmapEntries;
+  UINT8       *Bitmap = NULL;
 
   if (MemoryMapSize == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -910,15 +1419,39 @@ GetMemoryMapWithPopulatedAccessAttributes (
       // Filter each map entry to only contain access attributes
       FilterMemoryMapAttributes (MemoryMapSize, MemoryMap, *DescriptorSize);
 
+      DEBUG_CODE (
+        DEBUG ((DEBUG_INFO, "---Currently protected images---\n"));
+        DumpImageRecords (&mImagePropertiesPrivate.ImageRecordList);
+        );
+
       // Split PE code/data if firmware volume image protection is active
       if (gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv) {
         SeparateImagesInMemoryMap (MemoryMapSize, MemoryMap, *DescriptorSize, &mImagePropertiesPrivate.ImageRecordList, AdditionalRecordCount);
       }
 
-      // Set attributes if NX protection is active
-      if (gDxeMps.NxProtectionPolicy.Data) {
-        SetAccessAttributesInMemoryMap (MemoryMapSize, MemoryMap, *DescriptorSize);
+      DEBUG_CODE (
+        DEBUG ((DEBUG_INFO, "---Memory Map With Separated Image Descriptors---\n"));
+        DumpMemoryMap (MemoryMapSize, MemoryMap, DescriptorSize);
+        DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
+        );
+
+      NumberOfDescriptors   = *MemoryMapSize / *DescriptorSize;
+      NumberOfBitmapEntries = (NumberOfDescriptors % 8) == 0 ? NumberOfDescriptors : (((NumberOfDescriptors / 8) * 8) + 8);
+
+      Bitmap = AllocateZeroPool (NumberOfBitmapEntries / 8);
+
+      // Set the extra bits
+      if ((NumberOfDescriptors % 8) != 0) {
+        Bitmap[NumberOfDescriptors / 8] |= ~((1 << (NumberOfDescriptors % 8)) - 1);
       }
+
+      SyncBitmapAndSetAccessAttributesInMemoryMap (MemoryMapSize, MemoryMap, DescriptorSize, Bitmap);
+
+      DEBUG_CODE (
+        DEBUG ((DEBUG_INFO, "---Final Bitmap---\n"));
+        DumpBitmap (Bitmap, NumberOfBitmapEntries);
+        DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
+        );
 
       // Merge contiguous entries with the type and attributes
       MergeMemoryMap (MemoryMap, MemoryMapSize, *DescriptorSize);
@@ -1036,78 +1569,68 @@ ProtectUefiImageMu (
   ProtectionPolicy = GetUefiImageProtectionPolicy (LoadedImage, LoadedImageDevicePath);
   switch (ProtectionPolicy) {
     case DO_NOT_PROTECT:
-      Status = EFI_UNSUPPORTED;
-      goto Finish;
+      ClearAccessAttributesFromMemoryRange (
+        (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase,
+        ALIGN_VALUE ((UINTN)LoadedImage->ImageSize, EFI_PAGE_SIZE)
+        );
+      CreateNonProtectedImagePropertiesRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize);
+      return EFI_SUCCESS;
     case PROTECT_IF_ALIGNED_ELSE_ALLOW:
     case PROTECT_ELSE_RAISE_ERROR:
       break;
     default:
       ASSERT (FALSE);
-      Status = EFI_INVALID_PARAMETER;
-      goto Finish;
+      return EFI_INVALID_PARAMETER;
   }
 
   ImageRecord = AllocateZeroPool (sizeof (*ImageRecord));
 
   if (ImageRecord == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
-    goto Finish;
-  }
-
-  // If a record was already created for the memory attributes table, copy it
-  Status = CopyExistingPropertiesRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize, ImageRecord);
-
-  if (EFI_ERROR (Status)) {
-    // Create a new image properties record
-    Status = CreateImagePropertiesRecord (LoadedImage->ImageBase, LoadedImage->ImageSize, LoadedImage->ImageCodeType, ImageRecord);
   }
 
   if (!EFI_ERROR (Status)) {
-    if (gCpu != NULL) {
-      SetUefiImageProtectionAttributes (ImageRecord);
-    } else {
-      // If gCpu is not ready, still put this record into the image record
-      // list so it can be protected in MemoryProtectionCpuArchProtocolNotifyMu()
-      Status = EFI_NOT_READY;
+    // If a record was already created for the memory attributes table, copy it
+    Status = CopyExistingPropertiesRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize, ImageRecord);
+
+    if (EFI_ERROR (Status)) {
+      // Create a new image properties record
+      Status = CreateImagePropertiesRecord (LoadedImage->ImageBase, LoadedImage->ImageSize, LoadedImage->ImageCodeType, ImageRecord);
     }
 
-    // Record the image record in the list so we can undo the protections later
-    InsertTailList (&mImagePropertiesPrivate.ImageRecordList, &ImageRecord->Link);
-    mImagePropertiesPrivate.ImageRecordCount++;
+    if (!EFI_ERROR (Status)) {
+      // Record the image record in the list so we can undo the protections later
+      Status = OrderedInsertImageRecordListEntry (&mImagePropertiesPrivate.ImageRecordList, &ImageRecord->Link);
+      ASSERT_EFI_ERROR (Status);
 
-    // When breaking up the memory map to include image code/data ranges, we need
-    // to know the maximum number of code segments a single image will have
-    if (mImagePropertiesPrivate.CodeSegmentCountMax < ImageRecord->CodeSegmentCount) {
-      mImagePropertiesPrivate.CodeSegmentCountMax = ImageRecord->CodeSegmentCount;
+      mImagePropertiesPrivate.ImageRecordCount++;
+
+      // When breaking up the memory map to include image code/data ranges, we need
+      // to know the maximum number of code segments a single image will have
+      if (mImagePropertiesPrivate.CodeSegmentCountMax < ImageRecord->CodeSegmentCount) {
+        mImagePropertiesPrivate.CodeSegmentCountMax = ImageRecord->CodeSegmentCount;
+      }
+
+      // if gCpu is NULL, this image will be protected when CPU Arch is installed
+      if (gCpu != NULL) {
+        SetUefiImageProtectionAttributes (ImageRecord);
+      }
+
+      return EFI_SUCCESS;
     }
-
-    // We must keep the image records sorted because GetImageRecordContainedByBuffer()
-    // always returns the first image record contained by buffer
-    SortImageRecordList (&mImagePropertiesPrivate.ImageRecordList);
   }
 
-Finish:
-  if (EFI_ERROR (Status)) {
-    // If we failed to protect the image for reasons other than CPU Arch not being ready,
-    // clear the access attributes from the memory and free the image record.
-    if (Status != EFI_NOT_READY) {
-      ClearAccessAttributesFromMemoryRange (
-        (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase,
-        ALIGN_VALUE ((UINTN)LoadedImage->ImageSize, EFI_PAGE_SIZE)
-        );
+  if (ImageRecord != NULL) {
+    FreePool (ImageRecord);
+  }
 
-      if (ImageRecord != NULL) {
-        FreeImageRecord (ImageRecord);
-      }
-    }
-
-    // If the status is EFI_NOT_READY, the CPU Arch has not been installed. We assume
-    // CPU Arch will be installed later in boot, so don't return an error in that case
-    // or in the case that the protection policy indicates we shouldn't return an error
-    // if protection fails.
-    if ((ProtectionPolicy != PROTECT_ELSE_RAISE_ERROR) || (Status == EFI_NOT_READY)) {
-      Status = EFI_SUCCESS;
-    }
+  if ((ProtectionPolicy == PROTECT_IF_ALIGNED_ELSE_ALLOW)) {
+    ClearAccessAttributesFromMemoryRange (
+      (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase,
+      ALIGN_VALUE ((UINTN)LoadedImage->ImageSize, EFI_PAGE_SIZE)
+      );
+    CreateNonProtectedImagePropertiesRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize);
+    Status = EFI_SUCCESS;
   }
 
   return Status;
@@ -1128,33 +1651,54 @@ UnprotectUefiImageMu (
   IMAGE_PROPERTIES_RECORD  *ImageRecord;
   LIST_ENTRY               *ImageRecordLink;
 
-  if (gDxeMps.ImageProtectionPolicy.Data) {
-    for (ImageRecordLink = mImagePropertiesPrivate.ImageRecordList.ForwardLink;
-         ImageRecordLink != &mImagePropertiesPrivate.ImageRecordList;
-         ImageRecordLink = ImageRecordLink->ForwardLink)
-    {
-      ImageRecord = CR (
-                      ImageRecordLink,
-                      IMAGE_PROPERTIES_RECORD,
-                      Link,
-                      IMAGE_PROPERTIES_RECORD_SIGNATURE
-                      );
+  for (ImageRecordLink = mImagePropertiesPrivate.ImageRecordList.ForwardLink;
+       ImageRecordLink != &mImagePropertiesPrivate.ImageRecordList;
+       ImageRecordLink = ImageRecordLink->ForwardLink)
+  {
+    ImageRecord = CR (
+                    ImageRecordLink,
+                    IMAGE_PROPERTIES_RECORD,
+                    Link,
+                    IMAGE_PROPERTIES_RECORD_SIGNATURE
+                    );
 
-      if (ImageRecord->ImageBase == (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase) {
-        if (gCpu != NULL) {
-          SetUefiImageMemoryAttributes (
-            ImageRecord->ImageBase,
-            ImageRecord->ImageSize,
-            0
-            );
-        }
-
-        // FreeImageRecord() will remove the record from the global list
-        FreeImageRecord (ImageRecord);
-        return;
-      }
+    if (ImageRecord->ImageBase == (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase) {
+      mImagePropertiesPrivate.ImageRecordCount--;
+      goto Free;
     }
   }
+
+  for (ImageRecordLink = mNonProtectedImageRangesPrivate.NonProtectedImageList.ForwardLink;
+       ImageRecordLink != &mNonProtectedImageRangesPrivate.NonProtectedImageList;
+       ImageRecordLink = ImageRecordLink->ForwardLink)
+  {
+    ImageRecord = CR (
+                    ImageRecordLink,
+                    IMAGE_PROPERTIES_RECORD,
+                    Link,
+                    IMAGE_PROPERTIES_RECORD_SIGNATURE
+                    );
+
+    if (ImageRecord->ImageBase == (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase) {
+      mNonProtectedImageRangesPrivate.NonProtectedImageCount--;
+      goto Free;
+    }
+  }
+
+  return;
+
+Free:
+  if (gCpu != NULL) {
+    SetUefiImageMemoryAttributes (
+      ImageRecord->ImageBase,
+      ImageRecord->ImageSize,
+      0
+      );
+  }
+
+  // FreeImageRecord() will remove the record from the global list
+  FreeImageRecord (ImageRecord);
+  return;
 }
 
 /**
@@ -1354,6 +1898,37 @@ MemoryProtectionCpuArchProtocolNotifyMu (
   HeapGuardCpuArchProtocolNotify ();
 
 Done:
+  CoreCloseEvent (Event);
+}
+
+/**
+  A notification for the Memory Attribute Protocol.
+
+  @param[in]  Event                 Event whose notification function is being invoked.
+  @param[in]  Context               Pointer to the notification function's context,
+                                    which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+MemoryAttributeProtocolNotify (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&MemoryAttributeProtocol);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_INFO,
+      "%a - Unable to locate the memory attribute protocol! Status = %r\n",
+      __FUNCTION__,
+      Status
+      ));
+  }
+
   CoreCloseEvent (Event);
 }
 

@@ -631,8 +631,8 @@
 
   # MSCHANGE
   # This protocol provides debug access to Heap Guard memory protections
-  # Include/Protocol/HeapGuardDebug.h
-  gHeapGuardDebugProtocolGuid = { 0xe8150630, 0x6366, 0x4294, { 0xa3, 0x47, 0x89, 0x2c, 0x3a, 0x7d, 0xe4, 0xaf } }
+  # Include/Protocol/MemoryProtectionDebug.h
+  gMemoryProtectionDebugProtocolGuid = { 0xe8150630, 0x6366, 0x4294, { 0xa3, 0x47, 0x89, 0x2c, 0x3a, 0x7d, 0xe4, 0xaf } }
 
   ## This protocol defines the Media Clear and Sanitize operations defined by NIST
   # Include/Protocol/MediaSanitize.h

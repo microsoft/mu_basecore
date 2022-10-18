@@ -38,8 +38,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/SimpleFileSystem.h>
-#include <Protocol/HeapGuardDebug.h>  // MU_CHANGE
-#include <Protocol/MemoryAttribute.h> // MU_CHANGE
+#include <Protocol/MemoryProtectionDebug.h> // MU_CHANGE
+#include <Protocol/MemoryAttribute.h>       // MU_CHANGE
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
@@ -73,9 +73,10 @@ EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttribute = NULL;          // MU_CHANGE
 
 STATIC LIST_ENTRY  mProtectedImageRecordList;
 // MS_CHANGE - START
-STATIC HEAP_GUARD_DEBUG_PROTOCOL  mHeapGuardDebug =
+STATIC MEMORY_PROTECTION_DEBUG_PROTOCOL  mMemoryProtectionDebug =
 {
-  IsGuardPage
+  IsGuardPage,
+  GetImageList
 };
 // MS_CHANGE - END
 
@@ -1290,7 +1291,8 @@ CoreInitializeMemoryProtection (
   EFI_STATUS  Status;
   EFI_EVENT   Event;
   EFI_EVENT   DisableNullDetectionEvent;
-  EFI_EVENT   EnableNullDetectionEvent; // MU_CHANGE
+  EFI_EVENT   EnableNullDetectionEvent;     // MU_CHANGE
+  EFI_EVENT   MemoryAttributeProtocolEvent; // MU_CHANGE
   VOID        *Registration;
 
   // mImageProtectionPolicy = gDxeMps.ImageProtectionPolicy; // MU_CHANGE
@@ -1335,6 +1337,26 @@ CoreInitializeMemoryProtection (
              );
   ASSERT_EFI_ERROR (Status);
 
+  // MU_CHANGE START: Register an event to populate the memory attribute protocol
+  Status = CoreCreateEvent (
+             EVT_NOTIFY_SIGNAL,
+             TPL_CALLBACK,
+             MemoryAttributeProtocolNotify,
+             NULL,
+             &MemoryAttributeProtocolEvent
+             );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Register for protocol notification
+  //
+  Status = CoreRegisterProtocolNotify (
+             &gEfiMemoryAttributeProtocolGuid,
+             MemoryAttributeProtocolEvent,
+             &Registration
+             );
+  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE END
   //
   // Register a callback to disable NULL pointer detection at EndOfDxe
   //
@@ -1396,15 +1418,18 @@ CoreInitializeMemoryProtection (
   // Install protocol for validating Heap Guard if Heap Guard is turned on
   // Update to use memory protection settings HOB
   // if (PcdGet8(PcdHeapGuardPropertyMask)) {
-  if (gDxeMps.HeapGuardPolicy.Data) {
+  if (gDxeMps.HeapGuardPolicy.Data ||
+      gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv ||
+      gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromUnknown)
+  {
     EFI_HANDLE  HgBmHandle = NULL;
     Status = CoreInstallMultipleProtocolInterfaces (
                &HgBmHandle,
-               &gHeapGuardDebugProtocolGuid,
-               &mHeapGuardDebug,
+               &gMemoryProtectionDebugProtocolGuid,
+               &mMemoryProtectionDebug,
                NULL
                );
-    DEBUG ((DEBUG_INFO, "Installed gHeapGuardDebugProtocolGuid - %r\n", Status));
+    DEBUG ((DEBUG_INFO, "Installed gMemoryProtectionDebugProtocolGuid - %r\n", Status));
   }
 
   // MSCHANGE END
