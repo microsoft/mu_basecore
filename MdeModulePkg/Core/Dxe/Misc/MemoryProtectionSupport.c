@@ -680,7 +680,7 @@ GetImageList (
   LIST_ENTRY                            *ImageRecordCodeSectionList;
   IMAGE_PROPERTIES_RECORD               *ImageRecord;
   LIST_ENTRY                            *ImageRecordLink;
-  LIST_ENTRY                            ImageListHead;
+  LIST_ENTRY                            *ImageListHead;
   UINT64                                PhysicalStart, PhysicalEnd;
   IMAGE_RANGE_DESCRIPTOR                *CurrentImageRangeDescriptor;
 
@@ -689,9 +689,9 @@ GetImageList (
   }
 
   if (ProtectedOrNonProtected == Protected) {
-    ImageListHead = mImagePropertiesPrivate.ImageRecordList;
+    ImageListHead = &mImagePropertiesPrivate.ImageRecordList;
   } else if (ProtectedOrNonProtected == NonProtected) {
-    ImageListHead = mNonProtectedImageRangesPrivate.NonProtectedImageList;
+    ImageListHead = &mNonProtectedImageRangesPrivate.NonProtectedImageList;
   } else {
     return EFI_INVALID_PARAMETER;
   }
@@ -705,8 +705,8 @@ GetImageList (
   InitializeListHead (&(*ImageList)->Link);
 
   // Walk through each image
-  for (ImageRecordLink = ImageListHead.ForwardLink;
-       ImageRecordLink != &ImageListHead;
+  for (ImageRecordLink = ImageListHead->ForwardLink;
+       ImageRecordLink != ImageListHead;
        ImageRecordLink = ImageRecordLink->ForwardLink)
   {
     ImageRecord = CR (
