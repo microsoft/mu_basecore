@@ -1668,109 +1668,155 @@ SyncBitmapAndSetAccessAttributesInMemoryMap (
 }
 
 /**
-  This function for GetMemoryMap() with properties table capability.
+  Create a memory map which describes all of memory. The returned memory map will have access
+  attributes (EFI_MEMORY_XP, EFI_MEMORY_RP, EFI_MEMORY_RO) consistent with
+  the memory protection policy and can be used to secure system memory.
 
-  It calls original GetMemoryMap() to get the original memory map information. Then
-  plus the additional memory map entries for PE Code/Data seperation.
+  @param[out]     MemoryMapSize           A pointer to the size, in bytes, of the
+                                          MemoryMap buffer
+  @param[out]     MemoryMap               A pointer to the buffer containing the memory map
+                                          with EFI access attributes which should be applied
+  @param[out]     DescriptorSize          A pointer to the size, in bytes, of an individual
+                                          EFI_MEMORY_DESCRIPTOR
 
-  @param[in, out] MemoryMapSize           A pointer to the size, in bytes, of the
-                                          MemoryMap buffer. On input, this is the size of
-                                          the buffer allocated by the caller.  On output,
-                                          it is the size of the buffer returned by the
-                                          firmware  if the buffer was large enough, or the
-                                          size of the buffer needed  to contain the map if
-                                          the buffer was too small.
-  @param[in, out] MemoryMap               A pointer to the buffer in which firmware places
-                                          the current memory map.
-  @param[out]     MapKey                  A pointer to the location in which firmware
-                                          returns the key for the current memory map.
-  @param[out]     DescriptorSize          A pointer to the location in which firmware
-                                          returns the size, in bytes, of an individual
-                                          EFI_MEMORY_DESCRIPTOR.
-  @param[out]     DescriptorVersion       A pointer to the location in which firmware
-                                          returns the version number associated with the
-                                          EFI_MEMORY_DESCRIPTOR.
-
-  @retval         EFI_SUCCESS             The memory map was returned in the MemoryMap
-                                          buffer.
-  @retval         EFI_BUFFER_TOO_SMALL    The MemoryMap buffer was too small. The current
-                                          buffer size needed to hold the memory map is
-                                          returned in MemoryMapSize.
-  @retval         EFI_INVALID_PARAMETER  One of the parameters has an invalid value.
-
+  @retval         EFI_SUCCESS             The memory map was returned in the MemoryMap buffer
+  @retval         EFI_INVALID_PARAMETER   One of the input parameters has an invalid value
+  @retval         EFI_OUT_OF_RESOURCES    Failed to allocate memory
 **/
 EFI_STATUS
 EFIAPI
 GetMemoryMapWithPopulatedAccessAttributes (
-  IN OUT UINTN                  *MemoryMapSize,
-  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  OUT UINTN                     *MapKey,
-  OUT UINTN                     *DescriptorSize,
-  OUT UINT32                    *DescriptorVersion
+  OUT UINTN                  *MemoryMapSize,
+  OUT EFI_MEMORY_DESCRIPTOR  **MemoryMap,
+  OUT UINTN                  *DescriptorSize
   )
 {
-  EFI_STATUS  Status;
-  UINTN       OldMemoryMapSize;
-  UINTN       AdditionalRecordCount, NumberOfDescriptors, NumberOfBitmapEntries;
-  UINT8       *Bitmap = NULL;
+  EFI_STATUS             Status;
+  UINTN                  AdditionalRecordCount, NumberOfDescriptors, NumberOfBitmapEntries;
+  UINT8                  *Bitmap = NULL;
+  UINTN                  MapKey;
+  UINT32                 DescriptorVersion;
+  EFI_MEMORY_DESCRIPTOR  *ExpandedMemoryMap;
+  UINTN                  ExpandedMemoryMapSize;
 
-  if (MemoryMapSize == NULL) {
+  if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
+      (*MemoryMap != NULL) || (DescriptorSize == NULL))
+  {
     return EFI_INVALID_PARAMETER;
   }
 
-  AdditionalRecordCount = (2 * mImagePropertiesPrivate.CodeSegmentCountMax + 3) * mImagePropertiesPrivate.ImageRecordCount;
+  *MemoryMapSize = 0;
 
-  OldMemoryMapSize = *MemoryMapSize;
-  Status           = CoreGetMemoryMap (MemoryMapSize, MemoryMap, MapKey, DescriptorSize, DescriptorVersion);
-  if (Status == EFI_BUFFER_TOO_SMALL) {
-    *MemoryMapSize = *MemoryMapSize + (*DescriptorSize) * AdditionalRecordCount;
-  } else if (Status == EFI_SUCCESS) {
-    ASSERT (MemoryMap != NULL);
-    if (OldMemoryMapSize - *MemoryMapSize < (*DescriptorSize) * AdditionalRecordCount) {
-      *MemoryMapSize = *MemoryMapSize + (*DescriptorSize) * AdditionalRecordCount;
-      Status         = EFI_BUFFER_TOO_SMALL;
-    } else {
-      // Filter each map entry to only contain access attributes
-      FilterMemoryMapAttributes (MemoryMapSize, MemoryMap, *DescriptorSize);
+  Status = CoreGetMemoryMap (
+             MemoryMapSize,
+             *MemoryMap,
+             &MapKey,
+             DescriptorSize,
+             &DescriptorVersion
+             );
 
-      DEBUG_CODE (
-        DEBUG ((DEBUG_INFO, "---Currently protected images---\n"));
-        DumpImageRecords (&mImagePropertiesPrivate.ImageRecordList);
-        );
+  ASSERT (Status == EFI_BUFFER_TOO_SMALL);
 
-      // Split PE code/data if firmware volume image protection is active
-      if (gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv) {
-        SeparateImagesInMemoryMap (MemoryMapSize, MemoryMap, *DescriptorSize, &mImagePropertiesPrivate.ImageRecordList, AdditionalRecordCount);
-      }
-
-      DEBUG_CODE (
-        DEBUG ((DEBUG_INFO, "---Memory Map With Separated Image Descriptors---\n"));
-        DumpMemoryMap (MemoryMapSize, MemoryMap, DescriptorSize);
-        DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
-        );
-
-      NumberOfDescriptors   = *MemoryMapSize / *DescriptorSize;
-      NumberOfBitmapEntries = (NumberOfDescriptors % 8) == 0 ? NumberOfDescriptors : (((NumberOfDescriptors / 8) * 8) + 8);
-
-      Bitmap = AllocateZeroPool (NumberOfBitmapEntries / 8);
-
-      // Set the extra bits
-      if ((NumberOfDescriptors % 8) != 0) {
-        Bitmap[NumberOfDescriptors / 8] |= ~((1 << (NumberOfDescriptors % 8)) - 1);
-      }
-
-      SyncBitmapAndSetAccessAttributesInMemoryMap (MemoryMapSize, MemoryMap, DescriptorSize, Bitmap);
-
-      DEBUG_CODE (
-        DEBUG ((DEBUG_INFO, "---Final Bitmap---\n"));
-        DumpBitmap (Bitmap, NumberOfBitmapEntries);
-        DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
-        );
-
-      // Merge contiguous entries with the type and attributes
-      MergeMemoryMap (MemoryMap, MemoryMapSize, *DescriptorSize);
+  do {
+    *MemoryMap = (EFI_MEMORY_DESCRIPTOR *)AllocatePool (*MemoryMapSize);
+    if (*MemoryMap == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      break;
     }
+
+    Status = CoreGetMemoryMap (
+               MemoryMapSize,
+               *MemoryMap,
+               &MapKey,
+               DescriptorSize,
+               &DescriptorVersion
+               );
+    if (EFI_ERROR (Status)) {
+      FreePool (*MemoryMap);
+    }
+  } while (Status == EFI_BUFFER_TOO_SMALL);
+
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return Status;
   }
+
+  // Filter each map entry to only contain access attributes
+  FilterMemoryMapAttributes (MemoryMapSize, *MemoryMap, *DescriptorSize);
+
+  // |         |      |      |      |      |      |         |
+  // | 4K PAGE | DATA | CODE | DATA | CODE | DATA | 4K PAGE |
+  // |         |      |      |      |      |      |         |
+  // Assume the above memory region is currently one memory map descriptor. This image layout example contains
+  // two code sections oriented in a way that maximizes the number of descriptors which would be required
+  // to describe each section. We can see that there are two code sections (let's say CodeSegmentMax == 2),
+  // three data sections, and two memory regions flanking the image. Using the first part of the below formula,
+  // the number of required descriptors to describe this layout will be 2 * 2 + 3 == 7 which matches the above example.
+  // To ensure we have enough space for every descriptor of the broken up memory map, we assume that every
+  // image will have the maximum number of code sections oriented in a way which maximizes the number of
+  // data sections with unrelated memory regions flanking each image within a single descriptor.
+
+  // |         |       |         |
+  // | 4K PAGE | IMAGE | 4K PAGE |
+  // |         |       |         |
+  // Assume the above memory region is currently one memory map descriptor. This layout describes a nonprotected
+  // image (so we don't split it by code/data sections) with flanking unrelated memory regions. In this case, the
+  // number of descriptors required to describe this region will be 3. To ensure we have enough descriptors to
+  // describe every nonprotected image, we must have 3 * <number of nonprotected images> additional descriptors.
+  AdditionalRecordCount = ((2 * mImagePropertiesPrivate.CodeSegmentCountMax + 3) * mImagePropertiesPrivate.ImageRecordCount) +
+                          (mNonProtectedImageRangesPrivate.NonProtectedImageCount * 3);
+
+  ExpandedMemoryMapSize = (*MemoryMapSize * 2) + ((*DescriptorSize) * AdditionalRecordCount);
+  ExpandedMemoryMap     = AllocatePool (ExpandedMemoryMapSize);
+
+  if (ExpandedMemoryMap == NULL) {
+    FreePool (*MemoryMap);
+    *MemoryMapSize  = 0;
+    *DescriptorSize = 0;
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  CopyMem (ExpandedMemoryMap, *MemoryMap, *MemoryMapSize);
+  FreePool (*MemoryMap);
+
+  *MemoryMap = ExpandedMemoryMap;
+
+  DEBUG_CODE (
+    DEBUG ((DEBUG_INFO, "---Currently protected images---\n"));
+    DumpImageRecords (&mImagePropertiesPrivate.ImageRecordList);
+    );
+
+  // Split PE code/data if firmware volume image protection is active
+  if (gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv) {
+    SeparateImagesInMemoryMap (MemoryMapSize, *MemoryMap, *DescriptorSize, &mImagePropertiesPrivate.ImageRecordList, AdditionalRecordCount);
+  }
+
+  DEBUG_CODE (
+    DEBUG ((DEBUG_INFO, "---Memory Map With Separated Image Descriptors---\n"));
+    DumpMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize);
+    DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
+    );
+
+  NumberOfDescriptors   = *MemoryMapSize / *DescriptorSize;
+  NumberOfBitmapEntries = (NumberOfDescriptors % 8) == 0 ? NumberOfDescriptors : (((NumberOfDescriptors / 8) * 8) + 8);
+
+  Bitmap = AllocateZeroPool (NumberOfBitmapEntries / 8);
+
+  // Set the extra bits
+  if ((NumberOfDescriptors % 8) != 0) {
+    Bitmap[NumberOfDescriptors / 8] |= ~((1 << (NumberOfDescriptors % 8)) - 1);
+  }
+
+  SyncBitmapAndSetAccessAttributesInMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
+
+  DEBUG_CODE (
+    DEBUG ((DEBUG_INFO, "---Final Bitmap---\n"));
+    DumpBitmap (Bitmap, NumberOfBitmapEntries);
+    DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
+    );
+
+  // Merge contiguous entries with the type and attributes
+  MergeMemoryMap (*MemoryMap, MemoryMapSize, *DescriptorSize);
 
   return Status;
 }
@@ -2027,9 +2073,7 @@ InitializePageAttributesForMemoryProtectionPolicy (
   )
 {
   UINTN                      MemoryMapSize;
-  UINTN                      MapKey;
   UINTN                      DescriptorSize;
-  UINT32                     DescriptorVersion;
   EFI_MEMORY_DESCRIPTOR      *MemoryMap;
   EFI_MEMORY_DESCRIPTOR      *MemoryMapEntry;
   EFI_MEMORY_DESCRIPTOR      *MemoryMapEnd;
@@ -2047,26 +2091,9 @@ InitializePageAttributesForMemoryProtectionPolicy (
 
   Status = GetMemoryMapWithPopulatedAccessAttributes (
              &MemoryMapSize,
-             MemoryMap,
-             &MapKey,
-             &DescriptorSize,
-             &DescriptorVersion
+             &MemoryMap,
+             &DescriptorSize
              );
-  ASSERT (Status == EFI_BUFFER_TOO_SMALL);
-  do {
-    MemoryMap = (EFI_MEMORY_DESCRIPTOR *)AllocatePool (MemoryMapSize);
-    ASSERT (MemoryMap != NULL);
-    Status = GetMemoryMapWithPopulatedAccessAttributes (
-               &MemoryMapSize,
-               MemoryMap,
-               &MapKey,
-               &DescriptorSize,
-               &DescriptorVersion
-               );
-    if (EFI_ERROR (Status)) {
-      FreePool (MemoryMap);
-    }
-  } while (Status == EFI_BUFFER_TOO_SMALL);
 
   ASSERT_EFI_ERROR (Status);
 
@@ -2097,6 +2124,10 @@ InitializePageAttributesForMemoryProtectionPolicy (
 
     // Ensure the base of stack can be found from Hob when stack guard is enabled.
     ASSERT (StackBase != 0);
+  }
+
+  if (EFI_ERROR (Status)) {
+    return;
   }
 
   DEBUG ((
