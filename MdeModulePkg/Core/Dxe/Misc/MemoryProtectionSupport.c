@@ -26,11 +26,21 @@ EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
 #define IS_BITMAP_INDEX_SET(Bitmap, Index)  ((((UINT8*)Bitmap)[Index / 8] & (1 << (Index % 8))) != 0 ? TRUE : FALSE)
 #define SET_BITMAP_INDEX(Bitmap, Index)     (((UINT8*)Bitmap)[Index / 8] |= (1 << (Index % 8)))
 
+#define NEXT_MEMORY_SPACE_DESCRIPTOR(MemoryDescriptor, Size) \
+  ((EFI_GCD_MEMORY_SPACE_DESCRIPTOR *)((UINT8 *)(MemoryDescriptor) + (Size)))
+
 #define POPULATE_IMAGE_RANGE_DESCRIPTOR(descriptor, type, base, length) \
           ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Signature = IMAGE_RANGE_DESCRIPTOR_SIGNATURE; \
           ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Type = type; \
           ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Base = base; \
           ((IMAGE_RANGE_DESCRIPTOR*) descriptor)->Length = length
+
+#define POPULATE_MEMORY_DESCRIPTOR_ENTRY(Entry, Start, Pages, EfiType)                  \
+  ((EFI_MEMORY_DESCRIPTOR*)Entry)->PhysicalStart  = (EFI_PHYSICAL_ADDRESS)Start;        \
+  ((EFI_MEMORY_DESCRIPTOR*)Entry)->NumberOfPages  = (UINT64)Pages;                      \
+  ((EFI_MEMORY_DESCRIPTOR*)Entry)->Attribute      = 0;                                  \
+  ((EFI_MEMORY_DESCRIPTOR*)Entry)->Type           = (EFI_MEMORY_TYPE)EfiType;           \
+  ((EFI_MEMORY_DESCRIPTOR*)Entry)->VirtualStart   = 0
 
 /**
   Swap two image records.
@@ -604,6 +614,310 @@ MergeImagePropertiesRecordLists (
     FreePool (*ArrayOfMergedElements);
     return Status;
   }
+
+  return EFI_SUCCESS;
+}
+
+// ---------------------------------------
+//        GCD MEMORY MAP FUNCTIONS
+// ---------------------------------------
+
+/**
+  Sort the GCD memory map entries from low to high.
+
+  @param[in, out]   MemoryMap       A pointer to the buffer containing the current memory map
+  @param[in]        MemoryMapSize   Size, in bytes, of the MemoryMap buffer
+  @param[in]        DescriptorSize  Size, in bytes, of an individual EFI_GCD_MEMORY_SPACE_DESCRIPTOR
+**/
+STATIC
+VOID
+SortMemorySpaceMap (
+  IN OUT EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemoryMap,
+  IN CONST UINTN                          *MemoryMapSize,
+  IN CONST UINTN                          *DescriptorSize
+  )
+{
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemoryMapEntry;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *NextMemoryMapEntry;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemoryMapEnd;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  TempMemoryMap;
+
+  if ((MemoryMap == NULL) || (MemoryMapSize == NULL) || (DescriptorSize == NULL)) {
+    return;
+  }
+
+  MemoryMapEntry     = MemoryMap;
+  NextMemoryMapEntry = NEXT_MEMORY_SPACE_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+  MemoryMapEnd       = (EFI_GCD_MEMORY_SPACE_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+  while (MemoryMapEntry < MemoryMapEnd) {
+    while (NextMemoryMapEntry < MemoryMapEnd) {
+      if (MemoryMapEntry->BaseAddress > NextMemoryMapEntry->BaseAddress) {
+        CopyMem (&TempMemoryMap, MemoryMapEntry, *DescriptorSize);
+        CopyMem (MemoryMapEntry, NextMemoryMapEntry, *DescriptorSize);
+        CopyMem (NextMemoryMapEntry, &TempMemoryMap, *DescriptorSize);
+      }
+
+      NextMemoryMapEntry = NEXT_MEMORY_SPACE_DESCRIPTOR (NextMemoryMapEntry, *DescriptorSize);
+    }
+
+    MemoryMapEntry     = NEXT_MEMORY_SPACE_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+    NextMemoryMapEntry = NEXT_MEMORY_SPACE_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+  }
+
+  return;
+}
+
+/**
+  Convert a GCD memory type to an EFI memory type
+
+  @param[in]  GcdType   The GCD memory type to convert
+
+  @retval               The converted EFI memory type
+**/
+STATIC
+EFI_MEMORY_TYPE
+GcdTypeToEfiType (
+  IN EFI_GCD_MEMORY_TYPE  *GcdType
+  )
+{
+  if (GcdType == NULL) {
+    return EfiConventionalMemory;
+  }
+
+  switch (*GcdType) {
+    case EfiGcdMemoryTypeMemoryMappedIo:
+      return EfiMemoryMappedIO;
+    case EfiGcdMemoryTypePersistentMemory:
+      return EfiPersistentMemory;
+    case EfiGcdMemoryTypeReserved:
+      return EfiReservedMemoryType;
+    default:
+      return EfiConventionalMemory;
+  }
+}
+
+/**
+  Find GCD memory type for the input region. If one GCD type does not cover the entire region, return the remaining
+  region which are covered by one or more subsequent GCD descriptors.
+
+  @param[in]  MemorySpaceMap        A SORTED array of GCD memory descrptors
+  @param[in]  NumberOfDescriptors   The number of descriptors in the GCD descriptor array
+  @param[in]  PhysicalStart         Page-aligned starting address to check against GCD descriptors
+  @param[in]  Length                Length of the region being checked
+  @param[out] Type                  The GCD memory type which applies to
+                                    PhyscialStart + NumberOfPages - <remaining uncovered pages>
+
+  @retval Remaining region length not covered by the found GCD Memory region
+**/
+STATIC
+UINT64
+GetOverlappingMemorySpaceRegion (
+  IN EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemorySpaceMap,
+  IN CONST UINTN                      *NumberOfDescriptors,
+  IN CONST EFI_PHYSICAL_ADDRESS       *PhysicalStart,
+  IN CONST UINT64                     *Length,
+  OUT EFI_GCD_MEMORY_TYPE             *Type
+  )
+{
+  UINTN                 Index;
+  EFI_PHYSICAL_ADDRESS  AlignedPhysicalStart, AlignedLength, PhysicalEnd, MapEntryStart, MapEntryEnd;
+
+  if ((MemorySpaceMap == NULL) || (Type == NULL) ||
+      (Length == NULL) || (NumberOfDescriptors == NULL) ||
+      (PhysicalStart == NULL))
+  {
+    return 0;
+  }
+
+  // Ensure the PhysicalStart is page aligned
+  ASSERT ((*PhysicalStart & EFI_PAGE_MASK) == 0);
+  ASSERT ((*Length & EFI_PAGE_MASK) == 0);
+  AlignedPhysicalStart = ALIGN_VALUE (*PhysicalStart, EFI_PAGE_SIZE);
+  AlignedLength        = ALIGN_VALUE (*Length, EFI_PAGE_SIZE);
+  PhysicalEnd          = AlignedPhysicalStart + AlignedLength;
+
+  // Go through each memory space map entry
+  for (Index = 0; Index < *NumberOfDescriptors; Index++) {
+    MapEntryStart = MemorySpaceMap[Index].BaseAddress;
+    MapEntryEnd   = MemorySpaceMap[Index].BaseAddress + MemorySpaceMap[Index].Length;
+
+    MapEntryStart = ALIGN_VALUE (MapEntryStart, EFI_PAGE_SIZE);
+    MapEntryEnd   = ALIGN_VALUE (MapEntryEnd, EFI_PAGE_SIZE);
+
+    // Check if the memory map entry contains the physical start
+    if ((MapEntryStart <= AlignedPhysicalStart) && (MapEntryEnd > AlignedPhysicalStart)) {
+      *Type = MemorySpaceMap[Index].GcdMemoryType;
+      // Check if the memory map entry contains the entire physical region
+      if (MapEntryEnd >= PhysicalEnd) {
+        return 0;
+      } else {
+        // Return remaining region
+        return PhysicalEnd - MapEntryEnd;
+      }
+    }
+  }
+
+  *Type = EfiGcdMemoryTypeNonExistent;
+  return 0;
+}
+
+/**
+  Updates the memory map to contain contiguous entries from StartOfAddressSpace to
+  max(EndOfAddressSpace, address + length of the final memory map entry)
+
+  @param[in, out] MemoryMapSize         Size, in bytes, of MemoryMap
+  @param[in, out] MemoryMap             IN:  Pointer to the EFI memory map which will have all gaps filled. The
+                                             original buffer will be freed and updated to a newly allocated buffer
+                                        OUT: A sorted memory map describing the entire memory region
+  @param[in]      DescriptorSize        Size, in bytes, of each descriptor region in the array
+  @param[in]      StartOfAddressSpace   Starting address from which there should be contiguous entries
+  @param[in]      EndOfAddressSpace     Ending address at which the memory map should at least reach
+
+  @retval EFI_SUCCESS                   Successfully filled in the memory map
+  @retval EFI_OUT_OF_RECOURCES          Failed to allocate pools
+  @retval EFI_INVALID_PARAMETER         MemoryMap == NULL, *MemoryMap == NULL, *MemoryMapSize == 0, or
+                                        DescriptorSize == 0
+**/
+EFI_STATUS
+FillInMemoryMap (
+  IN OUT    UINTN                            *MemoryMapSize,
+  IN OUT    EFI_MEMORY_DESCRIPTOR            **MemoryMap,
+  IN CONST  UINTN                            *DescriptorSize,
+  IN CONST  UINTN                            *MemorySpaceMapDescriptorCount,
+  IN        EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemorySpaceMap,
+  IN CONST  UINTN                            *MemorySpaceMapDescriptorSize
+  )
+{
+  EFI_MEMORY_DESCRIPTOR  *OldMemoryMapCurrent, *OldMemoryMapEnd, *NewMemoryMapStart, *NewMemoryMapCurrent;
+  EFI_PHYSICAL_ADDRESS   LastEntryEnd, NextEntryStart, StartOfAddressSpace, EndOfAddressSpace;
+  EFI_GCD_MEMORY_TYPE    GcdType = 0;
+  UINT64                 RemainingLength, OverlapLength;
+
+  if ((MemoryMap == NULL) || (*MemoryMap == NULL) ||
+      (MemoryMapSize == NULL) || (*MemoryMapSize == 0) ||
+      (*DescriptorSize == 0) || (MemorySpaceMap == NULL) ||
+      (MemorySpaceMapDescriptorSize == NULL) || (MemorySpaceMapDescriptorCount == NULL))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  SortMemoryMap (*MemoryMap, *MemoryMapSize, *DescriptorSize);
+  SortMemorySpaceMap (MemorySpaceMap, MemorySpaceMapDescriptorCount, MemorySpaceMapDescriptorSize);
+
+  StartOfAddressSpace = MemorySpaceMap[0].BaseAddress;
+  EndOfAddressSpace   = MemorySpaceMap[*MemorySpaceMapDescriptorCount - 1].BaseAddress +
+                        MemorySpaceMap[*MemorySpaceMapDescriptorCount - 1].Length;
+
+  NewMemoryMapStart = NULL;
+
+  // Double the size of the memory map for the worst case of every entry being non-contiguous
+  NewMemoryMapStart = AllocatePool ((*MemoryMapSize * 2) + (*DescriptorSize * 2));
+
+  if (NewMemoryMapStart == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  NewMemoryMapCurrent = NewMemoryMapStart;
+  OldMemoryMapCurrent = *MemoryMap;
+  OldMemoryMapEnd     = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)*MemoryMap + *MemoryMapSize);
+
+  // Check if we need to insert a new entry at the start of the memory map
+  if (OldMemoryMapCurrent->PhysicalStart > StartOfAddressSpace) {
+    do {
+      OverlapLength   = OldMemoryMapCurrent->PhysicalStart - StartOfAddressSpace;
+      RemainingLength = GetOverlappingMemorySpaceRegion (
+                          MemorySpaceMap,
+                          MemorySpaceMapDescriptorCount,
+                          &StartOfAddressSpace,
+                          &OverlapLength,
+                          &GcdType
+                          );
+
+      POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+        NewMemoryMapCurrent,
+        StartOfAddressSpace,
+        EfiSizeToPages (OldMemoryMapCurrent->PhysicalStart - StartOfAddressSpace - RemainingLength),
+        GcdTypeToEfiType (&GcdType)
+        );
+
+      NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
+      StartOfAddressSpace = OldMemoryMapCurrent->PhysicalStart - RemainingLength;
+    } while (RemainingLength > 0);
+  }
+
+  while (OldMemoryMapCurrent < OldMemoryMapEnd) {
+    CopyMem (NewMemoryMapCurrent, OldMemoryMapCurrent, *DescriptorSize);
+    if (NEXT_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize) < OldMemoryMapEnd) {
+      LastEntryEnd   = NewMemoryMapCurrent->PhysicalStart + EfiPagesToSize (NewMemoryMapCurrent->NumberOfPages);
+      NextEntryStart = NEXT_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize)->PhysicalStart;
+      // Check for a gap in the memory map
+      if (NextEntryStart > LastEntryEnd) {
+        // Fill in missing region based on the GCD Memory Map
+        do {
+          NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
+          OverlapLength       = NextEntryStart - LastEntryEnd;
+          RemainingLength     = GetOverlappingMemorySpaceRegion (
+                                  MemorySpaceMap,
+                                  MemorySpaceMapDescriptorCount,
+                                  &LastEntryEnd,
+                                  &OverlapLength,
+                                  &GcdType
+                                  );
+
+          POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+            NewMemoryMapCurrent,
+            LastEntryEnd,
+            EfiSizeToPages (NextEntryStart - LastEntryEnd - RemainingLength),
+            GcdTypeToEfiType (&GcdType)
+            );
+          LastEntryEnd = NextEntryStart - RemainingLength;
+        } while (RemainingLength > 0);
+      }
+    }
+
+    NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
+    OldMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize);
+  }
+
+  LastEntryEnd = PREVIOUS_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize)->PhysicalStart +
+                 EfiPagesToSize (PREVIOUS_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize)->NumberOfPages);
+
+  // Check if we need to insert a new entry at the end of the memory map
+  if (EndOfAddressSpace > LastEntryEnd) {
+    do {
+      OverlapLength   = EndOfAddressSpace - LastEntryEnd;
+      RemainingLength = GetOverlappingMemorySpaceRegion (
+                          MemorySpaceMap,
+                          MemorySpaceMapDescriptorCount,
+                          &LastEntryEnd,
+                          &OverlapLength,
+                          &GcdType
+                          );
+
+      POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+        NewMemoryMapCurrent,
+        LastEntryEnd,
+        EfiSizeToPages (EndOfAddressSpace - LastEntryEnd - RemainingLength),
+        GcdTypeToEfiType (&GcdType)
+        );
+      NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
+      LastEntryEnd        = EndOfAddressSpace - RemainingLength;
+    } while (RemainingLength > 0);
+  }
+
+  // Re-use this stack variable as an intermediate to ensure we can allocate a buffer before updating the old memory map
+  OldMemoryMapCurrent = AllocateCopyPool ((UINTN)((UINT8 *)NewMemoryMapCurrent - (UINT8 *)NewMemoryMapStart), NewMemoryMapStart);
+
+  if (OldMemoryMapCurrent == NULL ) {
+    FreePool (NewMemoryMapStart);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  FreePool (*MemoryMap);
+  *MemoryMap = OldMemoryMapCurrent;
+
+  *MemoryMapSize = (UINTN)((UINT8 *)NewMemoryMapCurrent - (UINT8 *)NewMemoryMapStart);
+  FreePool (NewMemoryMapStart);
 
   return EFI_SUCCESS;
 }
