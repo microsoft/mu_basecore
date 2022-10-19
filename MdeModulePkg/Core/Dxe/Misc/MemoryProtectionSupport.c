@@ -1668,6 +1668,80 @@ SyncBitmapAndSetAccessAttributesInMemoryMap (
 }
 
 /**
+Removes the access attributes from memory map descriptors which match the elements in the
+  input IMAGE_PROPERTIES_RECORD list.
+
+  @param[in]      MemoryMapSize           A pointer to the size, in bytes, of the
+                                          MemoryMap buffer
+  @param[in, out] MemoryMap               A pointer to the buffer containing the memory map. This
+                                          memory map must be sorted.
+  @param[in]      DescriptorSize          Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
+  @param[in]      NonProtectedImageList   List of IMAGE_PROPERTIES_RECORD entries. This list
+                                          must be sorted.
+
+  @retval   EFI_SUCCESS                   The bitmap was updated
+  @retval   EFI_INVALID_PARAMETER         MemoryMapSize was NULL, DescriptorSize was NULL,
+                                          Bitmap was NULL, or MemoryMap was NULL
+  @retval   EFI_NOT_FOUND                 No memory map entry matched an image properties record described
+                                          in the input IMAGE_PROPERTIES_RECORD list
+**/
+STATIC
+EFI_STATUS
+RemoveAttributesOfNonProtectedImageRanges (
+  IN CONST UINTN            *MemoryMapSize,
+  IN EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST UINTN            *DescriptorSize,
+  IN LIST_ENTRY             *NonProtectedImageList
+  )
+{
+  LIST_ENTRY               *NonProtectedImageRecordLink = NULL;
+  IMAGE_PROPERTIES_RECORD  *NonProtectedImageRecord     = NULL;
+  EFI_MEMORY_DESCRIPTOR    *MemoryMapEntry              = NULL;
+  EFI_MEMORY_DESCRIPTOR    *MemoryMapEnd                = NULL;
+
+  if ((MemoryMapSize == 0) || (MemoryMap == NULL) ||
+      (NonProtectedImageList == NULL) || (DescriptorSize == NULL))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  NonProtectedImageRecordLink = NonProtectedImageList->ForwardLink;
+  MemoryMapEntry              = MemoryMap;
+  MemoryMapEnd                = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+
+  while (NonProtectedImageRecordLink != NonProtectedImageList) {
+    if (MemoryMapEntry >= MemoryMapEnd) {
+      break;
+    }
+
+    NonProtectedImageRecord = CR (
+                                NonProtectedImageRecordLink,
+                                IMAGE_PROPERTIES_RECORD,
+                                Link,
+                                IMAGE_PROPERTIES_RECORD_SIGNATURE
+                                );
+
+    while (MemoryMapEntry < MemoryMapEnd) {
+      if ((NonProtectedImageRecord->ImageBase == MemoryMapEntry->PhysicalStart) &&
+          (NonProtectedImageRecord->ImageSize == EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages)))
+      {
+        MemoryMapEntry->Attribute   = 0;
+        NonProtectedImageRecordLink = NonProtectedImageRecordLink->ForwardLink;
+        break;
+      }
+
+      MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+    }
+  }
+
+  if (NonProtectedImageRecordLink != NonProtectedImageList) {
+    return EFI_NOT_FOUND;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
   Create a memory map which describes all of memory. The returned memory map will have access
   attributes (EFI_MEMORY_XP, EFI_MEMORY_RP, EFI_MEMORY_RO) consistent with
   the memory protection policy and can be used to secure system memory.
@@ -1698,6 +1772,8 @@ GetMemoryMapWithPopulatedAccessAttributes (
   UINT32                 DescriptorVersion;
   EFI_MEMORY_DESCRIPTOR  *ExpandedMemoryMap;
   UINTN                  ExpandedMemoryMapSize;
+  LIST_ENTRY             *MergedImageList           = NULL;
+  LIST_ENTRY             **ArrayOfListEntryPointers = NULL;
 
   if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
       (*MemoryMap != NULL) || (DescriptorSize == NULL))
@@ -1786,9 +1862,53 @@ GetMemoryMapWithPopulatedAccessAttributes (
     DumpImageRecords (&mImagePropertiesPrivate.ImageRecordList);
     );
 
+  // Set MergedImageList to the list of IMAGE_PROPERTIES_RECORD entries which will
+  // be used to breakup the memory map
+  if (mImagePropertiesPrivate.ImageRecordCount == 0) {
+    MergedImageList = &mNonProtectedImageRangesPrivate.NonProtectedImageList;
+  } else if (mNonProtectedImageRangesPrivate.NonProtectedImageCount == 0) {
+    MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
+  } else {
+    MergedImageList          = &mImagePropertiesPrivate.ImageRecordList;
+    ArrayOfListEntryPointers = AllocateZeroPool (mNonProtectedImageRangesPrivate.NonProtectedImageCount * sizeof (LIST_ENTRY *));
+
+    if (ArrayOfListEntryPointers == NULL) {
+      FreePool (*MemoryMap);
+      *MemoryMapSize  = 0;
+      *DescriptorSize = 0;
+      return Status;
+    }
+
+    Status = MergeImagePropertiesRecordLists (
+               MergedImageList,
+               &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+               mNonProtectedImageRangesPrivate.NonProtectedImageCount,
+               ArrayOfListEntryPointers
+               );
+
+    ASSERT_EFI_ERROR (Status);
+  }
+
   // Split PE code/data if firmware volume image protection is active
-  if (gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv) {
-    SeparateImagesInMemoryMap (MemoryMapSize, *MemoryMap, *DescriptorSize, &mImagePropertiesPrivate.ImageRecordList, AdditionalRecordCount);
+  SeparateImagesInMemoryMap (MemoryMapSize, *MemoryMap, *DescriptorSize, MergedImageList, AdditionalRecordCount);
+
+  if (ArrayOfListEntryPointers != NULL) {
+    Status = OrderedInsertImagePropertiesRecordArray (
+               &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+               ArrayOfListEntryPointers,
+               mNonProtectedImageRangesPrivate.NonProtectedImageCount
+               );
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  if (mNonProtectedImageRangesPrivate.NonProtectedImageCount > 0) {
+    Status = RemoveAttributesOfNonProtectedImageRanges (
+               MemoryMapSize,
+               *MemoryMap,
+               DescriptorSize,
+               &mNonProtectedImageRangesPrivate.NonProtectedImageList
+               );
+    ASSERT_EFI_ERROR (Status);
   }
 
   DEBUG_CODE (
