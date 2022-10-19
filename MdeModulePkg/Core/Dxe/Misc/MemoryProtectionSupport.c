@@ -1957,7 +1957,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
   // Set the bits in the bitmap to mark that the corresponding memory descriptor
   // has been set based on the memory protection policy
   SyncBitmap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
-  
+
   DEBUG_CODE (
     DEBUG ((DEBUG_INFO, "---Memory Map With Separated Image Descriptors---\n"));
     DumpMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize);
