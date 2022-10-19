@@ -1958,9 +1958,6 @@ GetMemoryMapWithPopulatedAccessAttributes (
   // has been set based on the memory protection policy
   SyncBitmap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
   
-  DEBUG((DEBUG_INFO, "%a:%d - bitmap after sync\n", __FUNCTION__, __LINE__));
-  DumpBitmap (Bitmap, NumberOfBitmapEntries);
-
   DEBUG_CODE (
     DEBUG ((DEBUG_INFO, "---Memory Map With Separated Image Descriptors---\n"));
     DumpMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize);
