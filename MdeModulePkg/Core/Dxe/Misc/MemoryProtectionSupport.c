@@ -1890,7 +1890,6 @@ GetMemoryMapWithPopulatedAccessAttributes (
     ASSERT_EFI_ERROR (Status);
   }
 
-  // Split PE code/data if firmware volume image protection is active
   SeparateImagesInMemoryMap (MemoryMapSize, *MemoryMap, *DescriptorSize, MergedImageList, AdditionalRecordCount);
 
   if (ArrayOfListEntryPointers != NULL) {
