@@ -1627,18 +1627,17 @@ FilterMemoryMapAttributes (
 }
 
 /**
-  Access attributes in the memory map based on the memory protection policy and
-  mark visited regions in the bitmap.
+  Set every bit in the bitmap which corrosponds to a memory map descriptor with nonzero attributes.
 
   @param[in]        MemoryMapSize       A pointer to the size, in bytes, of the
                                         MemoryMap buffer.
-  @param[in, out]   MemoryMap           A pointer to the current memory map.
+  @param[in]        MemoryMap           A pointer to the current memory map.
   @param[in]        DescriptorSize      Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
   @param[in]        Bitmap              Pointer to the beginning of the bitmap to be updated
 **/
 STATIC
 VOID
-SyncBitmapAndSetAccessAttributesInMemoryMap (
+SyncBitmap (
   IN CONST UINTN             *MemoryMapSize,
   IN  EFI_MEMORY_DESCRIPTOR  *MemoryMap,
   IN CONST UINTN             *DescriptorSize,
@@ -1656,9 +1655,43 @@ SyncBitmapAndSetAccessAttributesInMemoryMap (
     // If attributes are nonzero, set the corresponding bit in the bitmap
     if (MemoryMapEntry->Attribute != 0) {
       SET_BITMAP_INDEX (Bitmap, Index);
+    }
 
-      // Skip code regions
-    } else if (!IsCodeType (MemoryMapEntry->Type)) {
+    Index++;
+    MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+  }
+}
+
+/**
+  Set access attributes in the memory map based on the memory protection policy and
+  mark visited regions in the bitmap.
+
+  @param[in]        MemoryMapSize       A pointer to the size, in bytes, of the
+                                        MemoryMap buffer.
+  @param[in, out]   MemoryMap           A pointer to the current memory map.
+  @param[in]        DescriptorSize      Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+  @param[in]        Bitmap              Pointer to the beginning of the bitmap to be updated
+**/
+STATIC
+VOID
+SetAccessAttributesInMemoryMap (
+  IN CONST UINTN             *MemoryMapSize,
+  IN  EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST UINTN             *DescriptorSize,
+  IN CONST UINT8             *Bitmap
+  )
+{
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapEnd;
+  UINTN                  Index = 0;
+
+  MemoryMapEntry = MemoryMap;
+  MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+
+  while (MemoryMapEntry < MemoryMapEnd) {
+    if (!IS_BITMAP_INDEX_SET (Bitmap, Index) &&
+        !IsCodeType (MemoryMapEntry->Type))
+    {
       MemoryMapEntry->Attribute = GetPermissionAttributeForMemoryType (MemoryMapEntry->Type);
       SET_BITMAP_INDEX (Bitmap, Index);
     }
@@ -1689,10 +1722,10 @@ Removes the access attributes from memory map descriptors which match the elemen
 STATIC
 EFI_STATUS
 RemoveAttributesOfNonProtectedImageRanges (
-  IN CONST UINTN            *MemoryMapSize,
-  IN EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN CONST UINTN            *DescriptorSize,
-  IN LIST_ENTRY             *NonProtectedImageList
+  IN CONST UINTN                *MemoryMapSize,
+  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST UINTN                *DescriptorSize,
+  IN LIST_ENTRY                 *NonProtectedImageList
   )
 {
   LIST_ENTRY               *NonProtectedImageRecordLink = NULL;
@@ -1877,7 +1910,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
       FreePool (*MemoryMap);
       *MemoryMapSize  = 0;
       *DescriptorSize = 0;
-      return Status;
+      return EFI_OUT_OF_RESOURCES;
     }
 
     Status = MergeImagePropertiesRecordLists (
@@ -1892,6 +1925,24 @@ GetMemoryMapWithPopulatedAccessAttributes (
 
   SeparateImagesInMemoryMap (MemoryMapSize, *MemoryMap, *DescriptorSize, MergedImageList, AdditionalRecordCount);
 
+  NumberOfDescriptors   = *MemoryMapSize / *DescriptorSize;
+  NumberOfBitmapEntries = (NumberOfDescriptors % 8) == 0 ? NumberOfDescriptors : (((NumberOfDescriptors / 8) * 8) + 8);
+
+  Bitmap = AllocateZeroPool (NumberOfBitmapEntries / 8);
+
+  if (Bitmap == NULL) {
+    FreePool (*MemoryMap);
+    *MemoryMapSize  = 0;
+    *DescriptorSize = 0;
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // Set the extra bits
+  if ((NumberOfDescriptors % 8) != 0) {
+    Bitmap[NumberOfDescriptors / 8] |= ~((1 << (NumberOfDescriptors % 8)) - 1);
+  }
+
+  // Restore the nonprotected image list
   if (ArrayOfListEntryPointers != NULL) {
     Status = OrderedInsertImagePropertiesRecordArray (
                &mNonProtectedImageRangesPrivate.NonProtectedImageList,
@@ -1901,6 +1952,22 @@ GetMemoryMapWithPopulatedAccessAttributes (
     ASSERT_EFI_ERROR (Status);
   }
 
+  // All image regions will now have nonzero attributes
+  //
+  // Set the bits in the bitmap to mark that the corresponding memory descriptor
+  // has been set based on the memory protection policy
+  SyncBitmap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
+  
+  DEBUG((DEBUG_INFO, "%a:%d - bitmap after sync\n", __FUNCTION__, __LINE__));
+  DumpBitmap (Bitmap, NumberOfBitmapEntries);
+
+  DEBUG_CODE (
+    DEBUG ((DEBUG_INFO, "---Memory Map With Separated Image Descriptors---\n"));
+    DumpMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize);
+    DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
+    );
+
+  // Remove the access attributes from descriptors which correspond with nonprotected images
   if (mNonProtectedImageRangesPrivate.NonProtectedImageCount > 0) {
     Status = RemoveAttributesOfNonProtectedImageRanges (
                MemoryMapSize,
@@ -1911,23 +1978,9 @@ GetMemoryMapWithPopulatedAccessAttributes (
     ASSERT_EFI_ERROR (Status);
   }
 
-  DEBUG_CODE (
-    DEBUG ((DEBUG_INFO, "---Memory Map With Separated Image Descriptors---\n"));
-    DumpMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize);
-    DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
-    );
-
-  NumberOfDescriptors   = *MemoryMapSize / *DescriptorSize;
-  NumberOfBitmapEntries = (NumberOfDescriptors % 8) == 0 ? NumberOfDescriptors : (((NumberOfDescriptors / 8) * 8) + 8);
-
-  Bitmap = AllocateZeroPool (NumberOfBitmapEntries / 8);
-
-  // Set the extra bits
-  if ((NumberOfDescriptors % 8) != 0) {
-    Bitmap[NumberOfDescriptors / 8] |= ~((1 << (NumberOfDescriptors % 8)) - 1);
-  }
-
-  SyncBitmapAndSetAccessAttributesInMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
+  // Set the access attributes of descriptor ranges which have not been checked
+  // against our memory protection policy
+  SetAccessAttributesInMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
 
   DEBUG_CODE (
     DEBUG ((DEBUG_INFO, "---Final Bitmap---\n"));
