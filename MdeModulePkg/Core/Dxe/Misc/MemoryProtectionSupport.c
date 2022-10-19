@@ -581,6 +581,7 @@ OrderedInsertImagePropertiesRecordArray (
                                               ListToBeMergedCount was zero
   @retval other                               Return value of OrderedInsertImageRecordListEntry()
 **/
+STATIC
 EFI_STATUS
 MergeImagePropertiesRecordLists (
   IN  LIST_ENTRY  *ListToMergeInto,
