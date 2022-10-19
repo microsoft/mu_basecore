@@ -278,8 +278,8 @@
         $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
 
     <Command>
-        $(CARGO) build $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --target-dir $(CARGO_OUTPUT_DIR) --timings=html
-        $(CP) $(OUTPUT_DIR)(+)x86_64-unknown-uefi(+)$(TARGET)(+)*.a $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME)rust.lib
+        $(CARGO) rustc $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --target-dir $(CARGO_OUTPUT_DIR) --timings=html
+        $(CP) $(CARGO_BINDIR)(+)*.a $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
 
 [Toml-File.RUST_MODULE]
     <InputFile>
@@ -291,8 +291,8 @@
     <Command>
         # Temporary_Rust_Todo - Remove .efi files to better support Rust incremental build for now.
         $(RM) $(OUTPUT_DIR)(+)*.efi
-        $(CARGO) build $(CARGO_FLAGS) --manifest-path ${src} -Z unstable-options --target-dir $(CARGO_OUTPUT_DIR) --timings=html
-        $(CP) $(OUTPUT_DIR)(+)x86_64-unknown-uefi(+)$(TARGET)(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+        $(CARGO) rustc $(CARGO_FLAGS) --bins --manifest-path ${src} -Z unstable-options --target-dir $(CARGO_OUTPUT_DIR) --timings=html -- -C link-arg=/MAP:$(OUTPUT_DIR)(+)$(MODULE_NAME).map
+        $(CP) $(CARGO_BINDIR)(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
         $(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
 
 [Device-Tree-Source-File]
