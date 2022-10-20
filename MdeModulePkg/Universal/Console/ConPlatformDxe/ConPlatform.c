@@ -1171,42 +1171,41 @@ ConPlatformUpdateDeviceVariable (
   // it is the caller's responsibility to free the memory before return.
   //
   VariableDevicePath = ConPlatformGetVariable (VariableName);
-  if (VariableDevicePath != NULL) {
-    if (Operation != Delete) {
-      //
-      // Match specified DevicePath in Console Variable.
-      //
-      Status = ConPlatformMatchDevicePaths (
-                 VariableDevicePath,
-                 DevicePath,
-                 NULL,
-                 FALSE
-                 );
+  // At this point, VariableDevicePath may be null.  This is expected.
+  if (Operation != Delete) {
+    //
+    // Match specified DevicePath in Console Variable.
+    //
+    Status = ConPlatformMatchDevicePaths (
+               VariableDevicePath,
+               DevicePath,
+               NULL,
+               FALSE
+               );
 
-      if ((Operation == Check) || (!EFI_ERROR (Status))) {
-        //
-        // Branch here includes 2 cases:
-        // 1. Operation is CHECK, simply return Status.
-        // 2. Operation is APPEND, and device path already exists in variable, also return.
-        //
-        if (VariableDevicePath != NULL) {
-          FreePool (VariableDevicePath);
-        }
-
-        return Status;
+    if ((Operation == Check) || (!EFI_ERROR (Status))) {
+      //
+      // Branch here includes 2 cases:
+      // 1. Operation is CHECK, simply return Status.
+      // 2. Operation is APPEND, and device path already exists in variable, also return.
+      //
+      if (VariableDevicePath != NULL) {
+        FreePool (VariableDevicePath);
       }
 
-      //
-      // We reach here to append a device path that does not exist in variable.
-      //
-      Status                = EFI_SUCCESS;
-      NewVariableDevicePath = AppendDevicePathInstance (
-                                VariableDevicePath,
-                                DevicePath
-                                );
-      if (NewVariableDevicePath == NULL) {
-        Status = EFI_OUT_OF_RESOURCES;
-      }
+      return Status;
+    }
+
+    //
+    // We reach here to append a device path that does not exist in variable.
+    //
+    Status                = EFI_SUCCESS;
+    NewVariableDevicePath = AppendDevicePathInstance (
+                              VariableDevicePath,
+                              DevicePath
+                              );
+    if (NewVariableDevicePath == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
     }
   } else {
     //
