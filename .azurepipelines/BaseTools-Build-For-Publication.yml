@@ -1,11 +1,19 @@
-# File BaseTools-Build-For-Publication.yml
-#
+## @file
 # Azure Pipeline to construct the final Nuget package for a binary release
 # of BaseTools.
 #
 # Copyright (C) Microsoft Corporation
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
+
+resources:
+  repositories:
+    - repository: mu_devops
+      type: github
+      endpoint: microsoft
+      name: microsoft/mu_devops
+      ref: main
+
 name: BaseTools_Bin_$(release_version)_$(Rev:r)
 
 variables:
@@ -54,10 +62,10 @@ jobs:
         filename: stuart_update
         arguments: -c .pytool/CISettings.py
 
-    - template: templates/basetools-build-steps.yml
+    - template: Steps/BuildBaseTools.yml@mu_devops
       parameters:
-        tool_chain_tag: 'GCC5'
         extra_parameters: '--skip_path_env'
+        tool_chain_tag: 'GCC5'
 
     - publish: $(linux_build_output_path)
       artifact: $(linux_artifact_name)
@@ -98,10 +106,10 @@ jobs:
         filename: stuart_update
         arguments: -c .pytool/CISettings.py
 
-    - template: templates/basetools-build-steps.yml
+    - template: Steps/BuildBaseTools.yml@mu_devops
       parameters:
-        tool_chain_tag: 'VS2022'
         extra_parameters: '--skip_path_env'
+        tool_chain_tag: 'VS2022'
 
     - publish: $(windows_build_output_path)
       artifact: $(windows_artifact_name)
@@ -129,13 +137,13 @@ jobs:
         architecture: 'x64'
       displayName: Install correct Python
 
-    - template: templates/github-file-fetch.yml
+    - template: Steps/FetchGitHubFile.yml@mu_devops
       parameters:
+        dest_file_path: $(Build.StagingDirectory)/pip-requirements.txt
+        display_name: Fetch Pip Requirements
         github_repo: microsoft/mu_basecore
         source_branch: $(Build.SourceBranch)
         source_file_path: pip-requirements.txt
-        dest_file_path: $(Build.StagingDirectory)/pip-requirements.txt
-        display_name: Fetch Pip Requirements
 
     - script: pip install -r $(Build.StagingDirectory)/pip-requirements.txt --upgrade
       displayName: 'Install/Upgrade Pip Modules'
@@ -143,7 +151,7 @@ jobs:
     - download: current
       displayName: Grab Artifacts from Builds
 
-    - template: templates/github-file-fetch.yml
+    - template: Steps/FetchGitHubFile.yml@mu_devops
       parameters:
         github_repo: microsoft/mu_basecore
         source_branch: $(Build.SourceBranch)
