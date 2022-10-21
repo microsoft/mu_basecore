@@ -2262,14 +2262,6 @@ GetMemoryMapWithPopulatedAccessAttributes (
     AdditionalRecordCount
     );
 
-  SeparateImagesInMemoryMap (
-    MemoryMapSize,
-    *MemoryMap,
-    *DescriptorSize,
-    MergedImageList,
-    AdditionalRecordCount
-    );
-
   NumberOfDescriptors   = *MemoryMapSize / *DescriptorSize;
   NumberOfBitmapEntries = (NumberOfDescriptors % 8) == 0 ? NumberOfDescriptors : (((NumberOfDescriptors / 8) * 8) + 8);
 
