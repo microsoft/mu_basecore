@@ -1,4 +1,4 @@
-/** @file -- MemoryProtectionSpecialRegion.h
+/** @file -- MemoryProtectionSpecialRegionProtocol.h
 
   The memory protection special region protocol enables fetching all special regions
   and adding new ones.
@@ -7,10 +7,10 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef __MEMORY_PROTECTION_SPECIAL_REGION_PROTOCOL_H__
-#define __MEMORY_PROTECTION_SPECIAL_REGION_PROTOCOL_H__
+#ifndef MEMORY_PROTECTION_SPECIAL_REGION_PROTOCOL_H__
+#define MEMORY_PROTECTION_SPECIAL_REGION_PROTOCOL_H__
 
-#include <Guid/MemoryProtectionSpecialRegion.h>
+#include <Guid/MemoryProtectionSpecialRegionGuid.h>
 
 #define MEMORY_PROTECTION_SPECIAL_REGION_PROTOCOL_GUID \
 { \

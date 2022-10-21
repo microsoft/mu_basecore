@@ -493,7 +493,7 @@
 
   # MU_CHANGE
   # This GUID is used to report regions of memory in PEI which should have specific paging attributes via the HOB
-  # Include/Guid/MemoryProtectionSpecialRegion.h
+  # Include/Guid/MemoryProtectionSpecialRegionGuid.h
   gMemoryProtectionSpecialRegionHobGuid = { 0xBFCC1325, 0x3BFE, 0x469A, { 0x9A, 0xAC, 0x0C, 0x99, 0x0E, 0x4E, 0xC9, 0xF1 } }
 
 ## MSCHANGE END
@@ -641,7 +641,7 @@
 
   # MU_CHANGE
   # This protocol is used to get and add special memory protection regions
-  # Include/Guid/MemoryProtectionSpecialRegion.h
+  # Include/Guid/MemoryProtectionSpecialRegionProtocol.h
   gMemoryProtectionSpecialRegionProtocolGuid = { 0x47BF7F78, 0x0B53, 0x487B, {0xA2, 0xFE, 0x42, 0xE7, 0x09, 0x87, 0x54, 0x5C } }
 
   ## This protocol defines the Media Clear and Sanitize operations defined by NIST

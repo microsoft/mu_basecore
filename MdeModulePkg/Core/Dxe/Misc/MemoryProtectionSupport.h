@@ -12,7 +12,7 @@
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
 #include <Protocol/MemoryProtectionDebug.h>
-#include <Protocol/MemoryProtectionSpecialRegion.h>
+#include <Protocol/MemoryProtectionSpecialRegionProtocol.h>
 
 #define DO_NOT_PROTECT                 0x00000000
 #define PROTECT_IF_ALIGNED_ELSE_ALLOW  0x00000001

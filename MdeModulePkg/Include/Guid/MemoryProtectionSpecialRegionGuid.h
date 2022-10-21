@@ -1,4 +1,4 @@
-/** @file -- MemoryProtectionSpecialRegion.h
+/** @file -- MemoryProtectionSpecialRegionGuid.h
 
   The required struct definition and GUID for reporting special memory protection
   regions via the HOB.
@@ -7,8 +7,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef __MEMORY_PROTECTION_SPECIAL_REGION_GUID_H__
-#define __MEMORY_PROTECTION_SPECIAL_REGION_GUID_H__
+#ifndef MEMORY_PROTECTION_SPECIAL_REGION_GUID_H__
+#define MEMORY_PROTECTION_SPECIAL_REGION_GUID_H__
 
 #define MEMORY_PROTECTION_SPECIAL_REGION_GUID \
 { \
@@ -17,7 +17,7 @@
 
 typedef struct _MEMORY_PROTECTION_SPECIAL_REGION {
   EFI_PHYSICAL_ADDRESS    Start;
-  EFI_PHYSICAL_ADDRESS    Length;
+  UINT64                  Length;
   UINT64                  EfiAttributes;
 } MEMORY_PROTECTION_SPECIAL_REGION;
 

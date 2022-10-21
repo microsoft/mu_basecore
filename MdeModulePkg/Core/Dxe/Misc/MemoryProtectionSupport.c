@@ -354,6 +354,11 @@ CollectSpecialRegionHobs (
     NewSpecialRegion = AllocateCopyPool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY), HobSpecialRegion);
 
     if (NewSpecialRegion == NULL) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a - Failed to allocate a special region list entry!\n",
+        __FUNCTION__
+        ));
       return EFI_OUT_OF_RESOURCES;
     }
 
@@ -372,7 +377,7 @@ CollectSpecialRegionHobs (
 
 /**
   Create a sorted array of MEMORY_PROTECTION_SPECIAL_REGION structs describing
-  all memory protection special regions.
+  all memory protection special regions. This memory should be freed by the caller.
 
   @param[out] SpecialRegions  Pointer to unallocated MEMORY_PROTECTION_SPECIAL_REGION array
   @param[out] Count           Number of MEMORY_PROTECTION_SPECIAL_REGION structs in the
@@ -456,7 +461,7 @@ EFI_STATUS
 EFIAPI
 AddSpecialRegion (
   IN EFI_PHYSICAL_ADDRESS  Start,
-  IN EFI_PHYSICAL_ADDRESS  Length,
+  IN UINT64                Length,
   IN UINT64                Attributes
   )
 {
