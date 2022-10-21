@@ -1,5 +1,5 @@
 ## @file
-# Azure Pipeline build file for a build using Windows and CLANGPDB.
+# Azure Pipeline build file for a build using Windows and the latest Visual Studio toolchain supported.
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -15,16 +15,11 @@ resources:
 
 variables:
 - group: architectures-x86-64
-- group: tool-chain-clangpdb
-- group: tool-chain-clangpdb-ubuntu-vm-image
+- group: tool-chain-windows-visual-studio-latest
 
 jobs:
-- template: templates/matrix-build-job-clang.yml
+- template: templates/matrix-build-job.yml
   parameters:
     arch_list: $(arch_list)
-    extra_install_step:
-      - powershell: choco install llvm
-        displayName: Install LLVM and CLANG
-        condition: and(gt(variables.pkg_count, 0), succeeded())
     tool_chain_tag: $(tool_chain_tag)
     vm_image: $(vm_image)
