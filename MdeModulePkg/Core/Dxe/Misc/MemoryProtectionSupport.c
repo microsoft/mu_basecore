@@ -718,6 +718,8 @@ DumpMemoryProtectionSpecialRegions (
       ));
   }
 
+  FreePool (SpecialRegions);
+
   return;
 }
 
