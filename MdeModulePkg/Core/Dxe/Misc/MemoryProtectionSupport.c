@@ -347,16 +347,9 @@ CollectSpecialRegionHobs (
   MEMORY_PROTECTION_SPECIAL_REGION             *HobSpecialRegion = NULL;
   MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *NewSpecialRegion = NULL;
 
-  DEBUG ((
-    DEBUG_INFO,
-    "%a - Enter...\n",
-    __FUNCTION__
-    ));
-
   GuidHob = GetFirstGuidHob (&gMemoryProtectionSpecialRegionHobGuid);
 
   while (GuidHob != NULL) {
-    DEBUG ((DEBUG_INFO, "%a - 1\n", __FUNCTION__));
     HobSpecialRegion = (MEMORY_PROTECTION_SPECIAL_REGION *)GET_GUID_HOB_DATA (GuidHob);
     NewSpecialRegion = AllocateCopyPool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY), HobSpecialRegion);
 
@@ -364,8 +357,10 @@ CollectSpecialRegionHobs (
       return EFI_OUT_OF_RESOURCES;
     }
 
-    CopyMem (&NewSpecialRegion->SpecialRegion, HobSpecialRegion, sizeof (MEMORY_PROTECTION_SPECIAL_REGION));
-    NewSpecialRegion->Signature = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
+    NewSpecialRegion->SpecialRegion.Start         = ALIGN_ADDRESS (HobSpecialRegion->Start);
+    NewSpecialRegion->SpecialRegion.Length        = ALIGN_VALUE (HobSpecialRegion->Length, EFI_PAGE_SIZE);
+    NewSpecialRegion->SpecialRegion.EfiAttributes = HobSpecialRegion->EfiAttributes & EFI_MEMORY_ACCESS_MASK;
+    NewSpecialRegion->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
     InsertHeadList (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &NewSpecialRegion->Link);
     mSpecialMemoryRegionsPrivate.Count++;
 
@@ -399,7 +394,7 @@ GetSpecialRegions (
   LIST_ENTRY                                   *SpecialRegionEntryLink;
   UINTN                                        Index = 0;
 
-  if ((SpecialRegions == NULL) || (*SpecialRegions != NULL)) {
+  if ((SpecialRegions == NULL) || (*SpecialRegions != NULL) || (Count == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -464,8 +459,6 @@ AddSpecialRegion (
   )
 {
   MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry = NULL;
-  EFI_PHYSICAL_ADDRESS                         AlignedStart        = 0;
-  EFI_PHYSICAL_ADDRESS                         AlignedLength       = 0;
 
   if (Length == 0) {
     return EFI_INVALID_PARAMETER;
@@ -475,9 +468,6 @@ AddSpecialRegion (
     return EFI_UNSUPPORTED;
   }
 
-  AlignedStart  = ALIGN_ADDRESS (Start);
-  AlignedLength = ALIGN_VALUE (Length, EFI_PAGE_SIZE);
-
   SpecialRegionEntry = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY));
 
   if (SpecialRegionEntry == NULL) {
@@ -485,9 +475,9 @@ AddSpecialRegion (
   }
 
   SpecialRegionEntry->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
-  SpecialRegionEntry->SpecialRegion.Start         = AlignedStart;
-  SpecialRegionEntry->SpecialRegion.Length        = AlignedLength;
-  SpecialRegionEntry->SpecialRegion.EfiAttributes = Attributes;
+  SpecialRegionEntry->SpecialRegion.Start         = ALIGN_ADDRESS (Start);
+  SpecialRegionEntry->SpecialRegion.Length        = ALIGN_VALUE (Length, EFI_PAGE_SIZE);
+  SpecialRegionEntry->SpecialRegion.EfiAttributes = Attributes & EFI_MEMORY_ACCESS_MASK;
   InsertTailList (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &SpecialRegionEntry->Link);
   mSpecialMemoryRegionsPrivate.Count++;
 
