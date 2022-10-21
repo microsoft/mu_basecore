@@ -437,17 +437,19 @@ GetSpecialRegions (
 
 /**
   Add the input MEMORY_PROTECTION_SPECIAL_REGION to the internal list of memory protection special regions
-  which will have the specified attributes applied when memory protections are initialized.
+  which will have the specified attributes applied when memory protections are initialized or, if memory
+  protection initialization has already occurred, will be used by test drivers to ensure the
+  region has the specified attributes.
 
   @param[in]  Start               Start of region which will be added to the special memory regions.
                                   NOTE: This address will be page-aligned
   @param[in]  Length              Length of the region which will be added to the special memory regions
                                   NOTE: This value will be page-aligned
   @param[in]  Attributes          Attributes to apply to the region during memory protection initialization
+                                  and which should be active if the region was reported after initialization.
 
   @retval   EFI_SUCCESS           SpecialRegion was successfully added
   @retval   EFI_INVALID_PARAMTER  Length is zero
-  @retval   EFI_UNSUPPORTED       Memory protection has already been initialized
   @retval   EFI_OUT_OF_RESOURCES  Failed to allocate memory
 **/
 EFI_STATUS
@@ -462,10 +464,6 @@ AddSpecialRegion (
 
   if (Length == 0) {
     return EFI_INVALID_PARAMETER;
-  }
-
-  if (gCpu != NULL) {
-    return EFI_UNSUPPORTED;
   }
 
   SpecialRegionEntry = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY));
