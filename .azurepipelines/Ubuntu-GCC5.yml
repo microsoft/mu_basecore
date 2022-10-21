@@ -18,7 +18,7 @@ variables:
 - group: tool-chain-ubuntu-gcc
 
 jobs:
-- template: templates/matrix-build-job.yml
+- template: Matrix-Build-Job.yml
   parameters:
     arch_list: $(arch_list)
     extra_build_args: CODE_COVERAGE=TRUE CC_HTML=TRUE

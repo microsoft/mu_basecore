@@ -19,7 +19,7 @@ variables:
 - group: tool-chain-clangpdb-ubuntu-vm-image
 
 jobs:
-- template: templates/matrix-build-job-clang.yml
+- template: Matrix-Build-Job-Clang.yml
   parameters:
     arch_list: $(arch_list)
     extra_install_step:

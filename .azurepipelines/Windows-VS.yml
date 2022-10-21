@@ -18,7 +18,7 @@ variables:
 - group: tool-chain-windows-visual-studio-latest
 
 jobs:
-- template: templates/matrix-build-job.yml
+- template: Matrix-Build-Job.yml
   parameters:
     arch_list: $(arch_list)
     tool_chain_tag: $(tool_chain_tag)
