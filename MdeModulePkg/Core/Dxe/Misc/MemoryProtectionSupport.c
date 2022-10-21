@@ -1595,23 +1595,17 @@ SeparateImagesInMemoryMap (
 /**
   Applies EFI_MEMORY_ACCESS_MASK to each memory map entry
 
-  @param[in, out] MemoryMapSize     A pointer to the size, in bytes, of the
-                                    MemoryMap buffer. On input, this is the size of
-                                    old MemoryMap before split. The actual buffer
-                                    size of MemoryMap is MemoryMapSize +
-                                    (AdditionalRecordCount * DescriptorSize) calculated
-                                    below. On output, it is the size of new MemoryMap
-                                    after split.
-  @param[in, out] MemoryMap         A pointer to the buffer in which firmware places
-                                    the current memory map.
-  @param[in]      DescriptorSize    Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+  @param[in]      MemoryMapSize     A pointer to the size, in bytes, of the
+                                    MemoryMap buffer
+  @param[in, out] MemoryMap         A pointer to the buffer containing the memory map
+  @param[in]      DescriptorSize    Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
 **/
 STATIC
 VOID
 FilterMemoryMapAttributes (
-  IN OUT UINTN                  *MemoryMapSize,
+  IN CONST UINTN                *MemoryMapSize,
   IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN UINTN                      DescriptorSize
+  IN CONST UINTN                *DescriptorSize
   )
 {
   EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
@@ -1622,7 +1616,7 @@ FilterMemoryMapAttributes (
 
   while (MemoryMapEntry < MemoryMapEnd) {
     MemoryMapEntry->Attribute &= EFI_MEMORY_ACCESS_MASK;
-    MemoryMapEntry             = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, DescriptorSize);
+    MemoryMapEntry             = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
   }
 }
 
@@ -1870,7 +1864,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
   }
 
   // Filter each map entry to only contain access attributes
-  FilterMemoryMapAttributes (MemoryMapSize, *MemoryMap, *DescriptorSize);
+  FilterMemoryMapAttributes (MemoryMapSize, *MemoryMap, DescriptorSize);
 
   // |         |      |      |      |      |      |         |
   // | 4K PAGE | DATA | CODE | DATA | CODE | DATA | 4K PAGE |
