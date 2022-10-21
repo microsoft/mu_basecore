@@ -12,13 +12,15 @@
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
 #include <Protocol/MemoryProtectionDebug.h>
+#include <Protocol/MemoryProtectionSpecialRegionProtocol.h>
 
 #define DO_NOT_PROTECT                 0x00000000
 #define PROTECT_IF_ALIGNED_ELSE_ALLOW  0x00000001
 #define PROTECT_ELSE_RAISE_ERROR       0x00000002
 
-#define IMAGE_PROPERTIES_PRIVATE_DATA_SIGNATURE    SIGNATURE_32 ('I','P','P','D')
-#define NONPROTECTED_IMAGE_PRIVATE_DATA_SIGNATURE  SIGNATURE_32 ('N','I','P','D')
+#define IMAGE_PROPERTIES_PRIVATE_DATA_SIGNATURE                SIGNATURE_32 ('I','P','P','D')
+#define NONPROTECTED_IMAGE_PRIVATE_DATA_SIGNATURE              SIGNATURE_32 ('N','I','P','D')
+#define MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE  SIGNATURE_32 ('M','P','S','R')
 
 typedef struct {
   UINT32        Signature;
@@ -38,6 +40,17 @@ typedef struct {
   UINTN         CodeSegmentCountMax;
   LIST_ENTRY    ImageRecordList;
 } IMAGE_PROPERTIES_PRIVATE_DATA;
+
+typedef struct {
+  UINT32                              Signature;
+  MEMORY_PROTECTION_SPECIAL_REGION    SpecialRegion;
+  LIST_ENTRY                          Link;
+} MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY;
+
+typedef struct {
+  UINTN         Count;
+  LIST_ENTRY    SpecialRegionList;
+} MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD;
 
 /**
   Clears the attributes from a memory range.

@@ -20,6 +20,11 @@ NONPROTECTED_IMAGES_PRIVATE_DATA  mNonProtectedImageRangesPrivate = {
   INITIALIZE_LIST_HEAD_VARIABLE (mNonProtectedImageRangesPrivate.NonProtectedImageList)
 };
 
+MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD  mSpecialMemoryRegionsPrivate = {
+  0,
+  INITIALIZE_LIST_HEAD_VARIABLE (mSpecialMemoryRegionsPrivate.SpecialRegionList)
+};
+
 BOOLEAN                        mIsSystemNxCompatible    = TRUE;
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
 
@@ -41,6 +46,8 @@ EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
   ((EFI_MEMORY_DESCRIPTOR*)Entry)->Attribute      = 0;                                  \
   ((EFI_MEMORY_DESCRIPTOR*)Entry)->Type           = (EFI_MEMORY_TYPE)EfiType;           \
   ((EFI_MEMORY_DESCRIPTOR*)Entry)->VirtualStart   = 0
+
+#define ALIGN_ADDRESS(Address)  ((Address / EFI_PAGE_SIZE) * EFI_PAGE_SIZE)
 
 /**
   Swap two image records.
@@ -256,6 +263,282 @@ SetUefiImageMemoryAttributes (
 extern LIST_ENTRY  mGcdMemorySpaceMap;
 
 // ---------------------------------------
+//         SPECIAL REGION LOGIC
+// ---------------------------------------
+
+/**
+  Sorts the MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY list by Start
+
+  @param[in] SpecialRegionList Head of the list to be sorted
+**/
+STATIC
+VOID
+SortMemoryProtectionSpecialRegionList (
+  IN LIST_ENTRY  *SpecialRegionList
+  )
+{
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *NextSpecialRegionEntry;
+  MEMORY_PROTECTION_SPECIAL_REGION             TempSpecialRegion;
+  LIST_ENTRY                                   *SpecialRegionEntryLink;
+  LIST_ENTRY                                   *NextSpecialRegionEntryLink;
+  LIST_ENTRY                                   *SpecialRegionEndLink;
+
+  if (SpecialRegionList == NULL) {
+    return;
+  }
+
+  SpecialRegionEntryLink     = SpecialRegionList->ForwardLink;
+  NextSpecialRegionEntryLink = SpecialRegionEntryLink->ForwardLink;
+  SpecialRegionEndLink       = SpecialRegionList;
+
+  while (SpecialRegionEntryLink != SpecialRegionEndLink) {
+    SpecialRegionEntry = CR (
+                           SpecialRegionEntryLink,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                           Link,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                           );
+    while (NextSpecialRegionEntryLink != SpecialRegionEndLink) {
+      NextSpecialRegionEntry = CR (
+                                 NextSpecialRegionEntryLink,
+                                 MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                                 Link,
+                                 MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                                 );
+      if (SpecialRegionEntry->SpecialRegion.Start > NextSpecialRegionEntry->SpecialRegion.Start) {
+        // Temp = Current
+        TempSpecialRegion.Start         = SpecialRegionEntry->SpecialRegion.Start;
+        TempSpecialRegion.Length        = SpecialRegionEntry->SpecialRegion.Length;
+        TempSpecialRegion.EfiAttributes = SpecialRegionEntry->SpecialRegion.EfiAttributes;
+
+        // Current = Next
+        SpecialRegionEntry->SpecialRegion.Start         = NextSpecialRegionEntry->SpecialRegion.Start;
+        SpecialRegionEntry->SpecialRegion.Length        = NextSpecialRegionEntry->SpecialRegion.Length;
+        SpecialRegionEntry->SpecialRegion.EfiAttributes = NextSpecialRegionEntry->SpecialRegion.EfiAttributes;
+
+        // Next = Temp
+        NextSpecialRegionEntry->SpecialRegion.Start         = TempSpecialRegion.Start;
+        NextSpecialRegionEntry->SpecialRegion.Length        = TempSpecialRegion.Length;
+        NextSpecialRegionEntry->SpecialRegion.EfiAttributes = TempSpecialRegion.EfiAttributes;
+      }
+
+      NextSpecialRegionEntryLink = NextSpecialRegionEntryLink->ForwardLink;
+    }
+
+    SpecialRegionEntryLink     = SpecialRegionEntryLink->ForwardLink;
+    NextSpecialRegionEntryLink = SpecialRegionEntryLink->ForwardLink;
+  }
+}
+
+/**
+  Copy the HOB MEMORY_PROTECTION_SPECIAL_REGION entries into a local list
+
+  @retval EFI_SUCCESS           HOB Entries successfully copied
+  @retval EFI_OUT_OF_RESOURCES  Failed to allocate
+**/
+STATIC
+EFI_STATUS
+CollectSpecialRegionHobs (
+  VOID
+  )
+{
+  EFI_HOB_GUID_TYPE                            *GuidHob          = NULL;
+  MEMORY_PROTECTION_SPECIAL_REGION             *HobSpecialRegion = NULL;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *NewSpecialRegion = NULL;
+
+  GuidHob = GetFirstGuidHob (&gMemoryProtectionSpecialRegionHobGuid);
+
+  while (GuidHob != NULL) {
+    HobSpecialRegion = (MEMORY_PROTECTION_SPECIAL_REGION *)GET_GUID_HOB_DATA (GuidHob);
+    NewSpecialRegion = AllocateCopyPool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY), HobSpecialRegion);
+
+    if (NewSpecialRegion == NULL) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a - Failed to allocate a special region list entry!\n",
+        __FUNCTION__
+        ));
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    NewSpecialRegion->SpecialRegion.Start         = ALIGN_ADDRESS (HobSpecialRegion->Start);
+    NewSpecialRegion->SpecialRegion.Length        = ALIGN_VALUE (HobSpecialRegion->Length, EFI_PAGE_SIZE);
+    NewSpecialRegion->SpecialRegion.EfiAttributes = HobSpecialRegion->EfiAttributes & EFI_MEMORY_ACCESS_MASK;
+    NewSpecialRegion->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
+    InsertHeadList (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &NewSpecialRegion->Link);
+    mSpecialMemoryRegionsPrivate.Count++;
+
+    GuidHob = GetNextGuidHob (&gMemoryProtectionSpecialRegionHobGuid, GET_NEXT_HOB (GuidHob));
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Create a sorted array of MEMORY_PROTECTION_SPECIAL_REGION structs describing
+  all memory protection special regions. This memory should be freed by the caller but
+  will not be allocated if there are no special regions.
+
+  @param[out] SpecialRegions  Pointer to unallocated MEMORY_PROTECTION_SPECIAL_REGION array
+  @param[out] Count           Number of MEMORY_PROTECTION_SPECIAL_REGION structs in the
+                              allocated array
+
+  @retval EFI_SUCCESS           Array successfuly created
+  @retval EFI_INVALID_PARAMTER  SpecialRegions is NULL or *SpecialRegions is not NULL
+  @retval EFI_OUT_OF_RESOURCES  Failed to allocate memory
+
+**/
+EFI_STATUS
+EFIAPI
+GetSpecialRegions (
+  OUT MEMORY_PROTECTION_SPECIAL_REGION  **SpecialRegions,
+  OUT UINTN                             *Count
+  )
+{
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry;
+  LIST_ENTRY                                   *SpecialRegionEntryLink;
+  UINTN                                        Index = 0;
+
+  if ((SpecialRegions == NULL) || (*SpecialRegions != NULL) || (Count == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (mSpecialMemoryRegionsPrivate.Count == 0) {
+    *Count = 0;
+    return EFI_SUCCESS;
+  }
+
+  SortMemoryProtectionSpecialRegionList (&mSpecialMemoryRegionsPrivate.SpecialRegionList);
+
+  *SpecialRegions = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION) * mSpecialMemoryRegionsPrivate.Count);
+
+  if (*SpecialRegions == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  for (SpecialRegionEntryLink = mSpecialMemoryRegionsPrivate.SpecialRegionList.ForwardLink;
+       SpecialRegionEntryLink != &mSpecialMemoryRegionsPrivate.SpecialRegionList;
+       SpecialRegionEntryLink = SpecialRegionEntryLink->ForwardLink)
+  {
+    SpecialRegionEntry = CR (
+                           SpecialRegionEntryLink,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                           Link,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                           );
+
+    CopyMem (
+      &((*SpecialRegions)[Index++]),
+      &SpecialRegionEntry->SpecialRegion,
+      sizeof (MEMORY_PROTECTION_SPECIAL_REGION)
+      );
+  }
+
+  // Fix the private count if it has gotten out of sync somehow
+  if (mSpecialMemoryRegionsPrivate.Count != Index) {
+    mSpecialMemoryRegionsPrivate.Count = Index;
+  }
+
+  *Count = mSpecialMemoryRegionsPrivate.Count;
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Add the input MEMORY_PROTECTION_SPECIAL_REGION to the internal list of memory protection special regions
+  which will have the specified attributes applied when memory protections are initialized or, if memory
+  protection initialization has already occurred, will be used by test drivers to ensure the
+  region has the specified attributes.
+
+  @param[in]  Start               Start of region which will be added to the special memory regions.
+                                  NOTE: This address will be page-aligned
+  @param[in]  Length              Length of the region which will be added to the special memory regions
+                                  NOTE: This value will be page-aligned
+  @param[in]  Attributes          Attributes to apply to the region during memory protection initialization
+                                  and which should be active if the region was reported after initialization.
+
+  @retval   EFI_SUCCESS           SpecialRegion was successfully added
+  @retval   EFI_INVALID_PARAMTER  Length is zero
+  @retval   EFI_OUT_OF_RESOURCES  Failed to allocate memory
+**/
+EFI_STATUS
+EFIAPI
+AddSpecialRegion (
+  IN EFI_PHYSICAL_ADDRESS  Start,
+  IN UINT64                Length,
+  IN UINT64                Attributes
+  )
+{
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry = NULL;
+
+  if (Length == 0) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  SpecialRegionEntry = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY));
+
+  if (SpecialRegionEntry == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  SpecialRegionEntry->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
+  SpecialRegionEntry->SpecialRegion.Start         = ALIGN_ADDRESS (Start);
+  SpecialRegionEntry->SpecialRegion.Length        = ALIGN_VALUE (Length, EFI_PAGE_SIZE);
+  SpecialRegionEntry->SpecialRegion.EfiAttributes = Attributes & EFI_MEMORY_ACCESS_MASK;
+  InsertTailList (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &SpecialRegionEntry->Link);
+  mSpecialMemoryRegionsPrivate.Count++;
+
+  return EFI_SUCCESS;
+}
+
+STATIC MEMORY_PROTECTION_SPECIAL_REGION_PROTOCOL  mMemoryProtectionSpecialRegion =
+{
+  GetSpecialRegions,
+  AddSpecialRegion
+};
+
+/**
+  Initialize the memory protection special region reporting.
+**/
+VOID
+EFIAPI
+CoreInitializeMemoryProtectionSpecialRegions (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+  EFI_HANDLE  HandleNull = NULL;
+
+  Status = CollectSpecialRegionHobs ();
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a - Failed to collect the memory protection special region HOB entries!\n",
+      __FUNCTION__
+      ));
+  }
+
+  Status = CoreInstallMultipleProtocolInterfaces (
+             &HandleNull,
+             &gMemoryProtectionSpecialRegionProtocolGuid,
+             &mMemoryProtectionSpecialRegion,
+             NULL
+             );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a - Failed to install the memory protection special region protocol!\n",
+      __FUNCTION__
+      ));
+  }
+
+  return;
+}
+
+// ---------------------------------------
 //       USEFUL DEBUG FUNCTIONS
 // ---------------------------------------
 
@@ -395,6 +678,44 @@ DumpBitmap (
   }
 
   DEBUG ((DEBUG_INFO, "\n"));
+}
+
+/**
+  Debug dumps the input bitmap
+
+  @param[in] Bitmap Pointer to the start of the bitmap
+  @param[in] Count  Number of bitmap entries
+**/
+STATIC
+VOID
+DumpMemoryProtectionSpecialRegions (
+  VOID
+  )
+{
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry;
+  LIST_ENTRY                                   *SpecialRegionEntryLink;
+
+  for (SpecialRegionEntryLink = mSpecialMemoryRegionsPrivate.SpecialRegionList.ForwardLink;
+       SpecialRegionEntryLink != &mSpecialMemoryRegionsPrivate.SpecialRegionList;
+       SpecialRegionEntryLink = SpecialRegionEntryLink->ForwardLink)
+  {
+    SpecialRegionEntry = CR (
+                           SpecialRegionEntryLink,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                           Link,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                           );
+
+    DEBUG ((
+      DEBUG_INFO,
+      "Memory Protection Special Region: 0x%llx - 0x%llx. Attributes: 0x%llx\n",
+      SpecialRegionEntry->SpecialRegion.Start,
+      SpecialRegionEntry->SpecialRegion.Start + SpecialRegionEntry->SpecialRegion.Length,
+      SpecialRegionEntry->SpecialRegion.EfiAttributes
+      ));
+  }
+
+  return;
 }
 
 // ---------------------------------------
@@ -1905,6 +2226,10 @@ GetMemoryMapWithPopulatedAccessAttributes (
     DumpImageRecords (&mImagePropertiesPrivate.ImageRecordList);
     );
 
+  DEBUG_CODE (
+    DumpMemoryProtectionSpecialRegions ();
+    );
+
   // Set MergedImageList to the list of IMAGE_PROPERTIES_RECORD entries which will
   // be used to breakup the memory map
   if (mImagePropertiesPrivate.ImageRecordCount == 0) {
@@ -1928,6 +2253,14 @@ GetMemoryMapWithPopulatedAccessAttributes (
 
     ASSERT_EFI_ERROR (Status);
   }
+
+  SeparateImagesInMemoryMap (
+    MemoryMapSize,
+    *MemoryMap,
+    *DescriptorSize,
+    &mImagePropertiesPrivate.ImageRecordList,
+    AdditionalRecordCount
+    );
 
   SeparateImagesInMemoryMap (
     MemoryMapSize,
