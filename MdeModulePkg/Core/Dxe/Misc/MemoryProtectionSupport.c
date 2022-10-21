@@ -1629,19 +1629,18 @@ FilterMemoryMapAttributes (
 /**
   Set every bit in the bitmap which corrosponds to a memory map descriptor with nonzero attributes.
 
-  @param[in]        MemoryMapSize       A pointer to the size, in bytes, of the
-                                        MemoryMap buffer.
-  @param[in]        MemoryMap           A pointer to the current memory map.
-  @param[in]        DescriptorSize      Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
-  @param[in]        Bitmap              Pointer to the beginning of the bitmap to be updated
+  @param[in]        MemoryMapSize       A pointer to the size, in bytes, of the MemoryMap buffer
+  @param[in]        MemoryMap           A pointer to the current memory map
+  @param[in]        DescriptorSize      Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
+  @param[out]       Bitmap              Pointer to the beginning of the bitmap to be updated
 **/
 STATIC
 VOID
 SyncBitmap (
-  IN CONST UINTN             *MemoryMapSize,
-  IN  EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN CONST UINTN             *DescriptorSize,
-  IN CONST UINT8             *Bitmap
+  IN  CONST   UINTN                  *MemoryMapSize,
+  IN          EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN  CONST   UINTN                  *DescriptorSize,
+  OUT CONST   UINT8                  *Bitmap
   )
 {
   EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
@@ -1666,19 +1665,18 @@ SyncBitmap (
   Set access attributes in the memory map based on the memory protection policy and
   mark visited regions in the bitmap.
 
-  @param[in]        MemoryMapSize       A pointer to the size, in bytes, of the
-                                        MemoryMap buffer.
-  @param[in, out]   MemoryMap           A pointer to the current memory map.
-  @param[in]        DescriptorSize      Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
-  @param[in]        Bitmap              Pointer to the beginning of the bitmap to be updated
+  @param[in]        MemoryMapSize       A pointer to the size, in bytes, of the MemoryMap buffer
+  @param[in, out]   MemoryMap           A pointer to the current memory map
+  @param[in]        DescriptorSize      Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
+  @param[in, out]   Bitmap              Pointer to the beginning of the bitmap to be updated
 **/
 STATIC
 VOID
 SetAccessAttributesInMemoryMap (
-  IN CONST UINTN                *MemoryMapSize,
-  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN CONST UINTN                *DescriptorSize,
-  IN CONST UINT8                *Bitmap
+  IN CONST  UINTN                  *MemoryMapSize,
+  IN OUT    EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST  UINTN                  *DescriptorSize,
+  IN OUT    UINT8                  *Bitmap
   )
 {
   EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
@@ -1708,12 +1706,11 @@ SetAccessAttributesInMemoryMap (
 }
 
 /**
-Removes the access attributes from memory map descriptors which match the elements in the
+  Removes the access attributes from memory map descriptors which match the elements in the
   input IMAGE_PROPERTIES_RECORD list.
 
-  @param[in]      MemoryMapSize           A pointer to the size, in bytes, of the
-                                          MemoryMap buffer
-  @param[in, out] MemoryMap               A pointer to the buffer containing the memory map. This
+  @param[in]      MemoryMapSize           A pointer to the size, in bytes, of the MemoryMap buffer
+  @param[out]     MemoryMap               A pointer to the buffer containing the memory map. This
                                           memory map must be sorted.
   @param[in]      DescriptorSize          Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
   @param[in]      NonProtectedImageList   List of IMAGE_PROPERTIES_RECORD entries. This list
@@ -1728,10 +1725,10 @@ Removes the access attributes from memory map descriptors which match the elemen
 STATIC
 EFI_STATUS
 RemoveAttributesOfNonProtectedImageRanges (
-  IN CONST UINTN                *MemoryMapSize,
-  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN CONST UINTN                *DescriptorSize,
-  IN LIST_ENTRY                 *NonProtectedImageList
+  IN CONST  UINTN                  *MemoryMapSize,
+  OUT       EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST  UINTN                  *DescriptorSize,
+  IN        LIST_ENTRY             *NonProtectedImageList
   )
 {
   LIST_ENTRY               *NonProtectedImageRecordLink = NULL;
