@@ -8,8 +8,7 @@
 # MU_CHANGE BEGIN
 trigger:
 - dev/*
-- release/202208
-- release/202202
+- release/*
 
 schedules:
 - cron: "30 9 * * 0,3"  # Sun/Wed at 2:30AM Pacific
@@ -17,14 +16,12 @@ schedules:
   branches:
     include:
     - dev/*
-    - release/202208
-    - release/202202
+    - release/*
   always: true          # Always build, even if no changes
 
 pr:
 - dev/*
-- release/202208
-- release/202202
+- release/*
 # MU_CHANGE END
 
 jobs:
