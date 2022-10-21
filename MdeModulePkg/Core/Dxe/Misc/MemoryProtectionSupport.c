@@ -284,6 +284,10 @@ SortMemoryProtectionSpecialRegionList (
   LIST_ENTRY                                   *NextSpecialRegionEntryLink;
   LIST_ENTRY                                   *SpecialRegionEndLink;
 
+  if (SpecialRegionList == NULL) {
+    return;
+  }
+
   SpecialRegionEntryLink     = SpecialRegionList->ForwardLink;
   NextSpecialRegionEntryLink = SpecialRegionEntryLink->ForwardLink;
   SpecialRegionEndLink       = SpecialRegionList;
@@ -349,7 +353,7 @@ CollectSpecialRegionHobs (
     __FUNCTION__
     ));
 
-  GuidHob = GetFirstGuidHob (&gMemoryProtectionSpecialRegion);
+  GuidHob = GetFirstGuidHob (&gMemoryProtectionSpecialRegionHobGuid);
 
   while (GuidHob != NULL) {
     DEBUG ((DEBUG_INFO, "%a - 1\n", __FUNCTION__));
@@ -365,7 +369,7 @@ CollectSpecialRegionHobs (
     InsertHeadList (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &NewSpecialRegion->Link);
     mSpecialMemoryRegionsPrivate.Count++;
 
-    GuidHob = GetNextGuidHob (&gMemoryProtectionSpecialRegion, GET_NEXT_HOB (GuidHob));
+    GuidHob = GetNextGuidHob (&gMemoryProtectionSpecialRegionHobGuid, GET_NEXT_HOB (GuidHob));
   }
 
   return EFI_SUCCESS;
