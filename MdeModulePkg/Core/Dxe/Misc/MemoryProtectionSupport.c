@@ -434,7 +434,7 @@ GetSpecialRegions (
       sizeof (MEMORY_PROTECTION_SPECIAL_REGION)
       );
   }
-  
+
   // Fix the private count if it has gotten out of sync somehow
   if (mSpecialMemoryRegionsPrivate.Count != Index) {
     mSpecialMemoryRegionsPrivate.Count = Index;
