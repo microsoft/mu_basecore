@@ -489,6 +489,11 @@
   # Include/Guid/MmMemoryProtectionSettings
   gMmMemoryProtectionSettingsGuid = { 0x0CF445DD, 0xA67C, 0x4F8C, { 0x81, 0x9B, 0xB7, 0xB6, 0x86, 0xED, 0x7C, 0x75 }}
 
+  # MU_CHANGE
+  # This GUID is used to report regions of memory in PEI which should have specific paging attributes via the HOB
+  # Include/Guid/MemoryProtectionSpecialRegionGuid.h
+  gMemoryProtectionSpecialRegionHobGuid = { 0xBFCC1325, 0x3BFE, 0x469A, { 0x9A, 0xAC, 0x0C, 0x99, 0x0E, 0x4E, 0xC9, 0xF1 } }
+
 ## MSCHANGE END
 
 
@@ -634,6 +639,11 @@
   # This protocol provides debug access to Heap Guard memory protections
   # Include/Protocol/MemoryProtectionDebug.h
   gMemoryProtectionDebugProtocolGuid = { 0xe8150630, 0x6366, 0x4294, { 0xa3, 0x47, 0x89, 0x2c, 0x3a, 0x7d, 0xe4, 0xaf } }
+
+  # MU_CHANGE
+  # This protocol is used to get and add special memory protection regions
+  # Include/Guid/MemoryProtectionSpecialRegionProtocol.h
+  gMemoryProtectionSpecialRegionProtocolGuid = { 0x47BF7F78, 0x0B53, 0x487B, {0xA2, 0xFE, 0x42, 0xE7, 0x09, 0x87, 0x54, 0x5C } }
 
   ## This protocol defines the Media Clear and Sanitize operations defined by NIST
   # Include/Protocol/MediaSanitize.h
