@@ -2258,7 +2258,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
     MemoryMapSize,
     *MemoryMap,
     *DescriptorSize,
-    &mImagePropertiesPrivate.ImageRecordList,
+    MergedImageList,
     AdditionalRecordCount
     );
 
