@@ -692,33 +692,28 @@ DumpMemoryProtectionSpecialRegions (
   VOID
   )
 {
-  MEMORY_PROTECTION_SPECIAL_REGION  *SpecialRegions = NULL;
-  UINTN                             Count           = 0;
-  UINTN                             Index           = 0;
-  EFI_STATUS                        Status;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry;
+  LIST_ENTRY                                   *SpecialRegionEntryLink;
 
-  Status = GetSpecialRegions (&SpecialRegions, &Count);
+  for (SpecialRegionEntryLink = mSpecialMemoryRegionsPrivate.SpecialRegionList.ForwardLink;
+       SpecialRegionEntryLink != &mSpecialMemoryRegionsPrivate.SpecialRegionList;
+       SpecialRegionEntryLink = SpecialRegionEntryLink->ForwardLink)
+  {
+    SpecialRegionEntry = CR (
+                           SpecialRegionEntryLink,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                           Link,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                           );
 
-  if (EFI_ERROR (Status)) {
-    DEBUG ((
-      DEBUG_WARN,
-      "Failed to fetch the memory protection special regions! Status: %r\n",
-      Status
-      ));
-    return;
-  }
-
-  for ( ; Index < Count; Index++) {
     DEBUG ((
       DEBUG_INFO,
       "Memory Protection Special Region: 0x%llx - 0x%llx. Attributes: 0x%llx\n",
-      SpecialRegions[Index].Start,
-      SpecialRegions[Index].Start + SpecialRegions[Index].Length,
-      SpecialRegions[Index].EfiAttributes
+      SpecialRegionEntry->SpecialRegion.Start,
+      SpecialRegionEntry->SpecialRegion.Start + SpecialRegionEntry->SpecialRegion.Length,
+      SpecialRegionEntry->SpecialRegion.EfiAttributes
       ));
   }
-
-  FreePool (SpecialRegions);
 
   return;
 }
