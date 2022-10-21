@@ -302,6 +302,11 @@ DxeMain (
 
   // MU_CHANGE END
 
+  // MU_CHANGE START: Add initialization of the memory protection special region protocol to support
+  //                  applying specific settings to memory regions during protection initialization
+  CoreInitializeMemoryProtectionSpecialRegions ();
+  // MU_CHANGE END
+
   //
   // Initialize the Global Coherency Domain Services
   //
