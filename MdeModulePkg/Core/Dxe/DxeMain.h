@@ -1615,6 +1615,15 @@ CoreWaitForEventInternal (
   OUT UINTN     *UserIndex
   );
 
+/**
+  Initialize the memory protection special region reporting.
+**/
+VOID
+EFIAPI
+CoreInitializeMemoryProtectionSpecialRegions (
+  VOID
+  );
+
 // MU_CHANGE end
 
 /**
