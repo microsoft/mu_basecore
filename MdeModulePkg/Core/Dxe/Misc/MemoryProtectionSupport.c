@@ -1675,15 +1675,21 @@ SyncBitmap (
 STATIC
 VOID
 SetAccessAttributesInMemoryMap (
-  IN CONST UINTN             *MemoryMapSize,
-  IN  EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN CONST UINTN             *DescriptorSize,
-  IN CONST UINT8             *Bitmap
+  IN CONST UINTN                *MemoryMapSize,
+  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST UINTN                *DescriptorSize,
+  IN CONST UINT8                *Bitmap
   )
 {
   EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
   EFI_MEMORY_DESCRIPTOR  *MemoryMapEnd;
   UINTN                  Index = 0;
+
+  if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
+      (DescriptorSize == NULL) || (Bitmap == NULL))
+  {
+    return;
+  }
 
   MemoryMapEntry = MemoryMap;
   MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
@@ -1830,8 +1836,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
   do {
     *MemoryMap = (EFI_MEMORY_DESCRIPTOR *)AllocatePool (*MemoryMapSize);
     if (*MemoryMap == NULL) {
-      Status = EFI_OUT_OF_RESOURCES;
-      break;
+      goto OutOfResourcesCleanup;
     }
 
     Status = CoreGetMemoryMap (
@@ -1880,10 +1885,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
   ExpandedMemoryMap     = AllocatePool (ExpandedMemoryMapSize);
 
   if (ExpandedMemoryMap == NULL) {
-    FreePool (*MemoryMap);
-    *MemoryMapSize  = 0;
-    *DescriptorSize = 0;
-    return EFI_OUT_OF_RESOURCES;
+    goto OutOfResourcesCleanup;
   }
 
   CopyMem (ExpandedMemoryMap, *MemoryMap, *MemoryMapSize);
@@ -1907,10 +1909,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
     ArrayOfListEntryPointers = AllocateZeroPool (mNonProtectedImageRangesPrivate.NonProtectedImageCount * sizeof (LIST_ENTRY *));
 
     if (ArrayOfListEntryPointers == NULL) {
-      FreePool (*MemoryMap);
-      *MemoryMapSize  = 0;
-      *DescriptorSize = 0;
-      return EFI_OUT_OF_RESOURCES;
+      goto OutOfResourcesCleanup;
     }
 
     Status = MergeImagePropertiesRecordLists (
@@ -1923,7 +1922,13 @@ GetMemoryMapWithPopulatedAccessAttributes (
     ASSERT_EFI_ERROR (Status);
   }
 
-  SeparateImagesInMemoryMap (MemoryMapSize, *MemoryMap, *DescriptorSize, MergedImageList, AdditionalRecordCount);
+  SeparateImagesInMemoryMap (
+    MemoryMapSize,
+    *MemoryMap,
+    *DescriptorSize,
+    MergedImageList,
+    AdditionalRecordCount
+    );
 
   NumberOfDescriptors   = *MemoryMapSize / *DescriptorSize;
   NumberOfBitmapEntries = (NumberOfDescriptors % 8) == 0 ? NumberOfDescriptors : (((NumberOfDescriptors / 8) * 8) + 8);
@@ -1931,10 +1936,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
   Bitmap = AllocateZeroPool (NumberOfBitmapEntries / 8);
 
   if (Bitmap == NULL) {
-    FreePool (*MemoryMap);
-    *MemoryMapSize  = 0;
-    *DescriptorSize = 0;
-    return EFI_OUT_OF_RESOURCES;
+    goto OutOfResourcesCleanup;
   }
 
   // Set the extra bits
@@ -1950,6 +1952,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
                mNonProtectedImageRangesPrivate.NonProtectedImageCount
                );
     ASSERT_EFI_ERROR (Status);
+    FreePool (ArrayOfListEntryPointers);
   }
 
   // All image regions will now have nonzero attributes
@@ -1989,6 +1992,26 @@ GetMemoryMapWithPopulatedAccessAttributes (
   MergeMemoryMap (*MemoryMap, MemoryMapSize, *DescriptorSize);
 
   return Status;
+
+OutOfResourcesCleanup:
+  if (*MemoryMap != NULL) {
+    FreePool (*MemoryMap);
+  }
+
+  if (ArrayOfListEntryPointers != NULL) {
+    Status = OrderedInsertImagePropertiesRecordArray (
+               &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+               ArrayOfListEntryPointers,
+               mNonProtectedImageRangesPrivate.NonProtectedImageCount
+               );
+    ASSERT_EFI_ERROR (Status);
+    FreePool (ArrayOfListEntryPointers);
+  }
+
+  *MemoryMapSize  = 0;
+  *DescriptorSize = 0;
+
+  return EFI_OUT_OF_RESOURCES;
 }
 
 /**
