@@ -134,6 +134,7 @@
   gMemoryProtectionDebugProtocolGuid
   gEfiMemoryAttributeProtocolGuid
   gInternalEventServicesProtocolGuid
+  gMemoryProtectionSpecialRegionProtocolGuid
 
 [Ppis]
   gEfiVectorHandoffInfoPpiGuid
@@ -174,6 +175,7 @@
   gEfiHobMemoryAllocStackGuid
   gMuEventPreExitBootServicesGuid
   gDxeMemoryProtectionSettingsGuid
+  gMemoryProtectionSpecialRegionHobGuid
 
 [BuildOptions.Common]
   MSFT:*_*_*_CC_FLAGS = -I$(WORKSPACE)/MdeModulePkg/Core/Dxe
