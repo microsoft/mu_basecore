@@ -28,8 +28,8 @@ typedef
 EFI_STATUS
 (EFIAPI *ADD_SPECIAL_REGION)(
   EFI_PHYSICAL_ADDRESS  Start,
-  EFI_PHYSICAL_ADDRESS  Length,
-  UINTN                 Attributes
+  UINT64                Length,
+  UINT64                Attributes
   );
 
 typedef struct _MEMORY_PROTECTION_SPECIAL_REGION_PROTOCOL {
