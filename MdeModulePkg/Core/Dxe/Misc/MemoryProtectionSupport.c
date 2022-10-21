@@ -377,7 +377,8 @@ CollectSpecialRegionHobs (
 
 /**
   Create a sorted array of MEMORY_PROTECTION_SPECIAL_REGION structs describing
-  all memory protection special regions. This memory should be freed by the caller.
+  all memory protection special regions. This memory should be freed by the caller but
+  will not be allocated if there are no special regions.
 
   @param[out] SpecialRegions  Pointer to unallocated MEMORY_PROTECTION_SPECIAL_REGION array
   @param[out] Count           Number of MEMORY_PROTECTION_SPECIAL_REGION structs in the
@@ -404,6 +405,7 @@ GetSpecialRegions (
   }
 
   if (mSpecialMemoryRegionsPrivate.Count == 0) {
+    *Count = 0;
     return EFI_SUCCESS;
   }
 
@@ -414,8 +416,6 @@ GetSpecialRegions (
   if (*SpecialRegions == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-
-  *Count = mSpecialMemoryRegionsPrivate.Count;
 
   for (SpecialRegionEntryLink = mSpecialMemoryRegionsPrivate.SpecialRegionList.ForwardLink;
        SpecialRegionEntryLink != &mSpecialMemoryRegionsPrivate.SpecialRegionList;
@@ -434,8 +434,13 @@ GetSpecialRegions (
       sizeof (MEMORY_PROTECTION_SPECIAL_REGION)
       );
   }
+  
+  // Fix the private count if it has gotten out of sync somehow
+  if (mSpecialMemoryRegionsPrivate.Count != Index) {
+    mSpecialMemoryRegionsPrivate.Count = Index;
+  }
 
-  *Count = (Index == mSpecialMemoryRegionsPrivate.Count) ? mSpecialMemoryRegionsPrivate.Count : Index;
+  *Count = mSpecialMemoryRegionsPrivate.Count;
 
   return EFI_SUCCESS;
 }
