@@ -1931,6 +1931,7 @@ SeparateImagesInMemoryMap (
 
   @retval         EFI_SUCCESS                     Memory map has been split
   @retval         EFI_NOT_FOUND                   Unable to find a special region
+  @retval         EFI_INVALID_PARAMETER           An input was NULL
 **/
 STATIC
 EFI_STATUS
@@ -1946,6 +1947,13 @@ SeparateSpecialRegionsInMemoryMap (
   LIST_ENTRY                                   *SpecialRegionEntryLink;
   MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry;
   UINTN                                        SpecialRegionStart, SpecialRegionEnd, MapEntryStart, MapEntryEnd;
+
+  if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
+      (DescriptorSize == NULL) || (BufferSize == NULL) ||
+      (SpecialRegionList == NULL))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
 
   MemoryMapEntry = MemoryMap;
   MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
