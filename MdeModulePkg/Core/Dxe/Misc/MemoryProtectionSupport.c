@@ -1968,15 +1968,15 @@ SeparateSpecialRegionsInMemoryMap (
                            MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
                            );
 
-    SpecialRegionStart = SpecialRegionEntry->SpecialRegion.Start;
-    SpecialRegionEnd   = SpecialRegionEntry->SpecialRegion.Start + SpecialRegionEntry->SpecialRegion.Length;
+    SpecialRegionStart = (UINTN)SpecialRegionEntry->SpecialRegion.Start;
+    SpecialRegionEnd   = (UINTN)SpecialRegionEntry->SpecialRegion.Start + (UINTN)SpecialRegionEntry->SpecialRegion.Length;
 
     while ((MemoryMapEntry < MemoryMapEnd) &&
            (SpecialRegionStart < SpecialRegionEnd) &&
            (((UINTN)MapEntryInsert + *DescriptorSize) > *BufferSize))
     {
-      MapEntryStart = MemoryMapEntry->PhysicalStart;
-      MapEntryEnd   = MemoryMapEntry->PhysicalStart + EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages);
+      MapEntryStart = (UINTN)MemoryMapEntry->PhysicalStart;
+      MapEntryEnd   = (UINTN)MemoryMapEntry->PhysicalStart + (UINTN)EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages);
       if ((MapEntryStart <= SpecialRegionStart) && (MapEntryEnd >= SpecialRegionStart)) {
         // Check if some portion of the map entry isn't covered by the special region
         if (MapEntryStart != SpecialRegionStart) {
@@ -2047,7 +2047,7 @@ SeparateSpecialRegionsInMemoryMap (
   }
 
   // if we've created new records, sort the map
-  if (MapEntryInsert > MapEntryEnd) {
+  if ((UINTN)MapEntryInsert > (UINTN)MapEntryEnd) {
     // Sort from low to high
     SortMemoryMap (
       MemoryMap,
@@ -2240,12 +2240,12 @@ RemoveAttributesOfNonProtectedImageRanges (
                                 IMAGE_PROPERTIES_RECORD_SIGNATURE
                                 );
 
-    NonProtectedStart = NonProtectedImageRecord->ImageBase;
-    NonProtectedEnd   = NonProtectedImageRecord->ImageBase + NonProtectedImageRecord->ImageSize;
+    NonProtectedStart = (UINTN)NonProtectedImageRecord->ImageBase;
+    NonProtectedEnd   = (UINTN)NonProtectedImageRecord->ImageBase + (UINTN)NonProtectedImageRecord->ImageSize;
 
     while ((MemoryMapEntry < MemoryMapEnd) && (NonProtectedStart < NonProtectedEnd)) {
-      MapEntryStart = MemoryMapEntry->PhysicalStart;
-      MapEntryEnd   = MemoryMapEntry->PhysicalStart +  EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages);
+      MapEntryStart = (UINTN)MemoryMapEntry->PhysicalStart;
+      MapEntryEnd   = (UINTN)MemoryMapEntry->PhysicalStart +  (UINTN)EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages);
 
       if ((NonProtectedStart == MapEntryStart)) {
         if (MemoryMapEntry->VirtualStart != SPECIAL_REGION_PATTERN) {
