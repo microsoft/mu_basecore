@@ -49,6 +49,8 @@ EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
 
 #define ALIGN_ADDRESS(Address)  ((Address / EFI_PAGE_SIZE) * EFI_PAGE_SIZE)
 
+#define SPECIAL_REGION_PATTERN  7732426 // 7-(S) 7-(P) 3-(E) 2-(C) 4-(I) 2-(A) 6-(L)
+
 /**
   Swap two image records.
 
@@ -1914,6 +1916,145 @@ SeparateImagesInMemoryMap (
 }
 
 /**
+  Split memory map descriptors based on the input special region list. After the function, one or more memory map
+  descriptors will divide evenly into every special region so attributes can be targetted at those regions. Every
+  descriptor covered by a special region will have its virtual address set to SPECIAL_REGION_PATTERN.
+
+  @param[in, out] MemoryMapSize                   IN:   The size, in bytes, of the old memory map before the split
+                                                  OUT:  The size, in bytes, of the used descriptors of the split
+                                                        memory map
+  @param[in, out] MemoryMap                       IN:   A pointer to the buffer containing a sorted memory map
+                                                  OUT:  A pointer to the updated memory map
+  @param[in]      DescriptorSize                  The size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
+  @param[in]      ExpandedMemMapSize              The size, in bytes, of the full memory map buffer
+  @param[in]      SpecialRegionList               List of special regions to separate
+
+  @retval         EFI_SUCCESS                     Memory map has been split
+  @retval         EFI_NOT_FOUND                   Unable to find a special region
+**/
+STATIC
+EFI_STATUS
+SeparateSpecialRegionsInMemoryMap (
+  IN OUT      UINTN                  *MemoryMapSize,
+  IN OUT      EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST    UINTN                  *DescriptorSize,
+  IN CONST    UINTN                  *BufferSize,
+  IN CONST    LIST_ENTRY             *SpecialRegionList
+  )
+{
+  EFI_MEMORY_DESCRIPTOR                        *MemoryMapEntry, *MemoryMapEnd, *MapEntryInsert;
+  LIST_ENTRY                                   *SpecialRegionEntryLink;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry;
+  UINTN                                        SpecialRegionStart, SpecialRegionEnd, MapEntryStart, MapEntryEnd;
+
+  MemoryMapEntry = MemoryMap;
+  MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+  MapEntryInsert = MemoryMapEnd;
+
+  SpecialRegionEntryLink = SpecialRegionList->ForwardLink;
+  while (SpecialRegionEntryLink != SpecialRegionList) {
+    SpecialRegionEntry = CR (
+                           SpecialRegionEntryLink,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                           Link,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                           );
+
+    SpecialRegionStart = SpecialRegionEntry->SpecialRegion.Start;
+    SpecialRegionEnd   = SpecialRegionEntry->SpecialRegion.Start + SpecialRegionEntry->SpecialRegion.Length;
+
+    while ((MemoryMapEntry < MemoryMapEnd) &&
+           (SpecialRegionStart < SpecialRegionEnd) &&
+           (((UINTN)MapEntryInsert + *DescriptorSize) > *BufferSize))
+    {
+      MapEntryStart = MemoryMapEntry->PhysicalStart;
+      MapEntryEnd   = MemoryMapEntry->PhysicalStart + EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages);
+      if ((MapEntryStart <= SpecialRegionStart) && (MapEntryEnd >= SpecialRegionStart)) {
+        // Check if some portion of the map entry isn't covered by the special region
+        if (MapEntryStart != SpecialRegionStart) {
+          // Populate a new descriptor for the region before the special region
+          POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+            MapEntryInsert,
+            MapEntryStart,
+            EFI_SIZE_TO_PAGES (SpecialRegionStart - MapEntryStart),
+            MemoryMapEntry->Type
+            );
+          MapEntryInsert->Attribute = MemoryMapEntry->Attribute;
+
+          // Update this descriptor to start at the special region start
+          MemoryMapEntry->NumberOfPages -= MapEntryInsert->NumberOfPages; // BEEBE TODO: Underflow cases?
+          MemoryMapEntry->PhysicalStart  = SpecialRegionStart;
+          MapEntryStart                  = SpecialRegionStart;
+
+          // Get the next blank map entry
+          MapEntryInsert = NEXT_MEMORY_DESCRIPTOR (MapEntryInsert, *DescriptorSize);
+        }
+
+        // If the special region ends after this region, get the next entry
+        if (SpecialRegionEnd > MapEntryEnd) {
+          SpecialRegionStart           = MapEntryEnd;
+          MemoryMapEntry->Attribute    = SpecialRegionEntry->SpecialRegion.EfiAttributes;
+          MemoryMapEntry->VirtualStart = SPECIAL_REGION_PATTERN;
+
+          // Continue to the next memory map descriptor
+          MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+          continue;
+        }
+
+        // If the special region ends before the end of this descriptor region, insert a new record at the end
+        // of the memory map for the remaining region
+        if (SpecialRegionEnd < MapEntryEnd) {
+          // Populate a new descriptor for the region after the special region
+          POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+            MapEntryInsert,
+            SpecialRegionEnd,
+            EFI_SIZE_TO_PAGES (MapEntryEnd - SpecialRegionEnd),
+            MemoryMapEntry->Type
+            );
+          MapEntryInsert->Attribute = MemoryMapEntry->Attribute;
+
+          // Trim the current memory map entry
+          MemoryMapEntry->NumberOfPages -= MapEntryInsert->NumberOfPages;
+          MapEntryEnd                    = SpecialRegionEnd;
+
+          // Get the next blank map entry
+          MapEntryInsert = NEXT_MEMORY_DESCRIPTOR (MapEntryInsert, *DescriptorSize);
+        }
+
+        // This entry is now covered entirely by the special region - update the attributes and mark this
+        // entry as a special region
+        MemoryMapEntry->Attribute    = SpecialRegionEntry->SpecialRegion.EfiAttributes;
+        MemoryMapEntry->VirtualStart = SPECIAL_REGION_PATTERN;
+        SpecialRegionStart           = MapEntryEnd;
+      }
+
+      MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+    }
+
+    if (SpecialRegionStart > SpecialRegionEnd) {
+      return EFI_NOT_FOUND;
+    }
+
+    SpecialRegionEntryLink = SpecialRegionEntryLink->ForwardLink;
+  }
+
+  // if we've created new records, sort the map
+  if (MapEntryInsert > MapEntryEnd) {
+    // Sort from low to high
+    SortMemoryMap (
+      MemoryMap,
+      (UINTN)MapEntryInsert - (UINTN)MemoryMap,
+      *DescriptorSize
+      );
+
+    // Update the memory map size to be the new number of records
+    *MemoryMapSize = (UINTN)MapEntryInsert - (UINTN)MemoryMap;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
   Applies EFI_MEMORY_ACCESS_MASK to each memory map entry
 
   @param[in]      MemoryMapSize     A pointer to the size, in bytes, of the
@@ -1975,8 +2116,9 @@ SyncBitmap (
   MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
 
   while (MemoryMapEntry < MemoryMapEnd) {
-    // If attributes are nonzero, set the corresponding bit in the bitmap
-    if (MemoryMapEntry->Attribute != 0) {
+    // If attributes are nonzero or the virtual address (always zero during boot services according to UEFI Spec 2.9)
+    // is set to the pattern indicating it is a special memory region, set the corresponding bit in the bitmap
+    if ((MemoryMapEntry->Attribute != 0) || (MemoryMapEntry->VirtualStart == SPECIAL_REGION_PATTERN)) {
       SET_BITMAP_INDEX (Bitmap, Index);
     }
 
@@ -2063,9 +2205,10 @@ RemoveAttributesOfNonProtectedImageRanges (
   )
 {
   LIST_ENTRY               *NonProtectedImageRecordLink = NULL;
-  IMAGE_PROPERTIES_RECORD  *NonProtectedImageRecord     = NULL;
-  EFI_MEMORY_DESCRIPTOR    *MemoryMapEntry              = NULL;
-  EFI_MEMORY_DESCRIPTOR    *MemoryMapEnd                = NULL;
+  IMAGE_PROPERTIES_RECORD  *NonProtectedImageRecord = NULL;
+  EFI_MEMORY_DESCRIPTOR    *MemoryMapEntry = NULL;
+  EFI_MEMORY_DESCRIPTOR    *MemoryMapEnd = NULL;
+  UINTN                    NonProtectedStart, NonProtectedEnd, MapEntryStart, MapEntryEnd;
 
   if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
       (NonProtectedImageList == NULL) || (DescriptorSize == NULL))
@@ -2089,17 +2232,27 @@ RemoveAttributesOfNonProtectedImageRanges (
                                 IMAGE_PROPERTIES_RECORD_SIGNATURE
                                 );
 
-    while (MemoryMapEntry < MemoryMapEnd) {
-      if ((NonProtectedImageRecord->ImageBase == MemoryMapEntry->PhysicalStart) &&
-          (NonProtectedImageRecord->ImageSize == EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages)))
-      {
-        MemoryMapEntry->Attribute   = 0;
-        NonProtectedImageRecordLink = NonProtectedImageRecordLink->ForwardLink;
-        break;
+    NonProtectedStart = NonProtectedImageRecord->ImageBase;
+    NonProtectedEnd   = NonProtectedImageRecord->ImageBase + NonProtectedImageRecord->ImageSize;
+
+    while ((MemoryMapEntry < MemoryMapEnd) && (NonProtectedStart < NonProtectedEnd)) {
+      MapEntryStart = MemoryMapEntry->PhysicalStart;
+      MapEntryEnd   = MemoryMapEntry->PhysicalStart +  EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages);
+
+      if ((NonProtectedStart == MapEntryStart)) {
+        if (MemoryMapEntry->VirtualStart != SPECIAL_REGION_PATTERN) {
+          MemoryMapEntry->Attribute = 0;
+        } else {
+          MemoryMapEntry->VirtualStart = 0;
+        }
+
+        NonProtectedStart = MapEntryEnd;
       }
 
       MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
     }
+
+    NonProtectedImageRecordLink = NonProtectedImageRecordLink->ForwardLink;
   }
 
   if (NonProtectedImageRecordLink != NonProtectedImageList) {
