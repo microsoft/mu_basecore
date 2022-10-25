@@ -188,7 +188,7 @@ InitializeCpuInterruptHandlers (
   // MU_CHANGE: Ensure this region has read-only applied during memory protection initialization
   if (SpecialRegionProtocol != NULL) {
     Status = SpecialRegionProtocol->AddSpecialRegion (
-                                      (EFI_PHYSICAL_ADDRESS)InterruptEntryCode,
+                                      (EFI_PHYSICAL_ADDRESS)(UINTN)InterruptEntryCode,
                                       ALIGN_VALUE (TemplateMap.ExceptionStubHeaderSize * CPU_INTERRUPT_NUM, EFI_PAGE_SIZE),
                                       EFI_MEMORY_RO
                                       );
