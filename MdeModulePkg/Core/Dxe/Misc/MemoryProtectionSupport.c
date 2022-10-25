@@ -2186,6 +2186,60 @@ SetAccessAttributesInMemoryMap (
 }
 
 /**
+  Merge continous memory map entries with the same attributes.
+
+  @param  MemoryMap              A pointer to the memory map
+  @param  MemoryMapSize          A pointer to the size, in bytes, of the
+                                 MemoryMap buffer. On input, this is the size of the current
+                                 memory map.  On output, it is the size of new memory map after merge.
+  @param  DescriptorSize         Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+**/
+STATIC
+VOID
+MergeMemoryMapByAttribute (
+  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN OUT UINTN                  *MemoryMapSize,
+  IN CONST UINTN                *DescriptorSize
+  )
+{
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapEnd;
+  UINT64                 MemoryBlockLength;
+  EFI_MEMORY_DESCRIPTOR  *NewMemoryMapEntry;
+  EFI_MEMORY_DESCRIPTOR  *NextMemoryMapEntry;
+
+  MemoryMapEntry    = MemoryMap;
+  NewMemoryMapEntry = MemoryMap;
+  MemoryMapEnd      = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+  while ((UINTN)MemoryMapEntry < (UINTN)MemoryMapEnd) {
+    CopyMem (NewMemoryMapEntry, MemoryMapEntry, sizeof (EFI_MEMORY_DESCRIPTOR));
+    NextMemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+
+    do {
+      MemoryBlockLength = (UINT64)(EfiPagesToSize (NewMemoryMapEntry->NumberOfPages));
+      if (((UINTN)NextMemoryMapEntry < (UINTN)MemoryMapEnd) &&
+          (NewMemoryMapEntry->Attribute == NextMemoryMapEntry->Attribute) &&
+          ((NewMemoryMapEntry->PhysicalStart + MemoryBlockLength) == NextMemoryMapEntry->PhysicalStart))
+      {
+        NewMemoryMapEntry->NumberOfPages += NextMemoryMapEntry->NumberOfPages;
+        NextMemoryMapEntry                = NEXT_MEMORY_DESCRIPTOR (NextMemoryMapEntry, *DescriptorSize);
+        continue;
+      } else {
+        MemoryMapEntry = PREVIOUS_MEMORY_DESCRIPTOR (NextMemoryMapEntry, *DescriptorSize);
+        break;
+      }
+    } while (TRUE);
+
+    MemoryMapEntry    = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+    NewMemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapEntry, *DescriptorSize);
+  }
+
+  *MemoryMapSize = (UINTN)NewMemoryMapEntry - (UINTN)MemoryMap;
+
+  return;
+}
+
+/**
   Removes the access attributes from memory map descriptors which match the elements in the
   input IMAGE_PROPERTIES_RECORD list.
 
@@ -2481,9 +2535,6 @@ GetMemoryMapWithPopulatedAccessAttributes (
     DumpBitmap (Bitmap, NumberOfBitmapEntries);
     DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
     );
-
-  // Merge contiguous entries with the type and attributes
-  MergeMemoryMap (*MemoryMap, MemoryMapSize, *DescriptorSize);
 
   return Status;
 
@@ -2783,6 +2834,12 @@ InitializePageAttributesForMemoryProtectionPolicy (
              );
 
   ASSERT_EFI_ERROR (Status);
+
+  if (MemoryMap != NULL) {
+    // Merge contiguous entries with the same attributes to reduce the number
+    // of calls to SetUefiImageMemoryAttributes()
+    MergeMemoryMapByAttribute (MemoryMap, &MemoryMapSize, &DescriptorSize);
+  }
 
   StackBase = 0;
   if (gDxeMps.CpuStackGuard) {
