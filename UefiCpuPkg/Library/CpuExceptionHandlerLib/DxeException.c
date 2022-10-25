@@ -183,8 +183,8 @@ InitializeCpuInterruptHandlers (
                   );
   ASSERT (!EFI_ERROR (Status) && InterruptEntryCode != NULL);
 
-  ASSERT_EFI_ERROR (gBS->LocateProtocol (&gMemoryProtectionSpecialRegionProtocolGuid, NULL, (VOID **)&SpecialRegionProtocol));
-
+  Status = gBS->LocateProtocol (&gMemoryProtectionSpecialRegionProtocolGuid, NULL, (VOID **)&SpecialRegionProtocol);
+  ASSERT_EFI_ERROR (Status);
   // MU_CHANGE: Ensure this region has read-only applied during memory protection initialization
   if (SpecialRegionProtocol != NULL) {
     Status = SpecialRegionProtocol->AddSpecialRegion (
