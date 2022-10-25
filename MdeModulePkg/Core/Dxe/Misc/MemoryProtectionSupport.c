@@ -2186,7 +2186,7 @@ SetAccessAttributesInMemoryMap (
 }
 
 /**
-  Merge continous memory map entries with the same attributes.
+  Merge contiguous memory map entries with the same attributes.
 
   @param  MemoryMap              A pointer to the memory map
   @param  MemoryMapSize          A pointer to the size, in bytes, of the
@@ -2207,6 +2207,10 @@ MergeMemoryMapByAttribute (
   UINT64                 MemoryBlockLength;
   EFI_MEMORY_DESCRIPTOR  *NewMemoryMapEntry;
   EFI_MEMORY_DESCRIPTOR  *NextMemoryMapEntry;
+
+  if ((MemoryMap == NULL) || (MemoryMapSize == NULL) || (DescriptorSize == NULL)) {
+    return;
+  }
 
   MemoryMapEntry    = MemoryMap;
   NewMemoryMapEntry = MemoryMap;
