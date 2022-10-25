@@ -62,6 +62,7 @@
   PeiCoreEntryPoint
   DebugLib
   MemoryAllocationLib
+  MemoryBucketLib                # MU_CHANGE - added runtime memory buckets in pei
   CacheMaintenanceLib
   PeCoffLib
   PeiServicesTablePointerLib

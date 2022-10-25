@@ -43,7 +43,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <IndustryStandard/PeImage.h>
 #include <Library/PeiServicesTablePointerLib.h>
 #include <Library/MemoryAllocationLib.h>
-#include <Library/TimerLib.h>       // MS_CHANGE
+#include <Library/MemoryBucketLib.h>
+#include <Library/TimerLib.h>       // MU_CHANGE
 #include <Guid/FirmwareFileSystem2.h>
 #include <Guid/FirmwareFileSystem3.h>
 #include <Guid/AprioriFileName.h>
