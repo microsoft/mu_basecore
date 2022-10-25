@@ -12,7 +12,8 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 
-#include <Library/DxeMemoryProtectionHobLib.h> // MU_CHANGE
+#include <Library/DxeMemoryProtectionHobLib.h>              // MU_CHANGE
+#include <Protocol/MemoryProtectionSpecialRegionProtocol.h> // MU_CHANGE
 
 CONST UINTN  mDoFarReturnFlag = 0;
 
@@ -92,16 +93,17 @@ InitializeCpuInterruptHandlers (
   IN EFI_VECTOR_HANDOFF_INFO  *VectorInfo OPTIONAL
   )
 {
-  EFI_STATUS                      Status;
-  IA32_IDT_GATE_DESCRIPTOR        *IdtTable;
-  IA32_DESCRIPTOR                 IdtDescriptor;
-  UINTN                           IdtEntryCount;
-  EXCEPTION_HANDLER_TEMPLATE_MAP  TemplateMap;
-  UINTN                           Index;
-  UINTN                           InterruptEntry;
-  UINT8                           *InterruptEntryCode;
-  RESERVED_VECTORS_DATA           *ReservedVectors;
-  EFI_CPU_INTERRUPT_HANDLER       *ExternalInterruptHandler;
+  EFI_STATUS                                 Status;
+  IA32_IDT_GATE_DESCRIPTOR                   *IdtTable;
+  IA32_DESCRIPTOR                            IdtDescriptor;
+  UINTN                                      IdtEntryCount;
+  EXCEPTION_HANDLER_TEMPLATE_MAP             TemplateMap;
+  UINTN                                      Index;
+  UINTN                                      InterruptEntry;
+  UINT8                                      *InterruptEntryCode;
+  RESERVED_VECTORS_DATA                      *ReservedVectors;
+  EFI_CPU_INTERRUPT_HANDLER                  *ExternalInterruptHandler;
+  MEMORY_PROTECTION_SPECIAL_REGION_PROTOCOL  *SpecialRegionProtocol = NULL;
 
   // MU_CHANGE START: Update ReservedVectors allocation to be page instead of pool
   // Status = gBS->AllocatePool (
@@ -179,8 +181,22 @@ InitializeCpuInterruptHandlers (
                   EFI_SIZE_TO_PAGES (TemplateMap.ExceptionStubHeaderSize * CPU_INTERRUPT_NUM),
                   (EFI_PHYSICAL_ADDRESS *)(UINTN)&InterruptEntryCode
                   );
-  // MU_CHANGE END
   ASSERT (!EFI_ERROR (Status) && InterruptEntryCode != NULL);
+
+  Status = gBS->LocateProtocol (&gMemoryProtectionSpecialRegionProtocolGuid, NULL, (VOID **)&SpecialRegionProtocol);
+  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE: Ensure this region has read-only applied during memory protection initialization
+  if (SpecialRegionProtocol != NULL) {
+    Status = SpecialRegionProtocol->AddSpecialRegion (
+                                      (EFI_PHYSICAL_ADDRESS)(UINTN)InterruptEntryCode,
+                                      ALIGN_VALUE (TemplateMap.ExceptionStubHeaderSize * CPU_INTERRUPT_NUM, EFI_PAGE_SIZE),
+                                      EFI_MEMORY_RO
+                                      );
+
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // MU_CHANGE END
 
   InterruptEntry = (UINTN)InterruptEntryCode;
   for (Index = 0; Index < CPU_INTERRUPT_NUM; Index++) {
