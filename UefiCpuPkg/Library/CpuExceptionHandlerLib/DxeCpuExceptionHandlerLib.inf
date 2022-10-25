@@ -64,3 +64,10 @@
   DebugLib
   VmgExitLib
   DxeMemoryProtectionHobLib ## MU_CHANGE
+
+## MU_CHANGE START: Add protocol used for declaring regions of memory
+##                  which should have specific attributes applied during
+##                  memory protection initialization.
+[Protocols]
+  gMemoryProtectionSpecialRegionProtocolGuid
+# MU_CHANGE END
