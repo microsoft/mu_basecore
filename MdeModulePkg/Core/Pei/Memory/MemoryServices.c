@@ -611,6 +611,11 @@ PeiAllocatePages (
     return EFI_INVALID_PARAMETER;
   }
 
+  // Allocate memory in memory buckets
+  if (IsRuntimeType (MemoryType)) {
+    return PeiAllocateRuntimePages (MemoryType, Pages, Memory);
+  }
+
   Granularity = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
 
   PrivateData = PEI_CORE_INSTANCE_FROM_PS_THIS (PeiServices);
@@ -648,6 +653,12 @@ PeiAllocatePages (
   } else {
     FreeMemoryTop    = &(Hob.HandoffInformationTable->EfiFreeMemoryTop);
     FreeMemoryBottom = &(Hob.HandoffInformationTable->EfiFreeMemoryBottom);
+  }
+
+  // Check to make sure we aren't allocating memory in runtime buckets
+  SyncMemoryBuckets ();
+  if (CheckIfInRuntimeBoundary (*FreeMemoryTop)) {
+    *FreeMemoryTop = GetEndOfBucketsAddress ();
   }
 
   //

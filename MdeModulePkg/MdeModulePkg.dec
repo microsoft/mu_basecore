@@ -216,6 +216,16 @@
   #
   ExceptionPersistenceLib|Include/Library/ExceptionPersistenceLib.h
 
+  # MU_CHANGE - Add MemoryBucketLib to MdeModulePkg
+  ## @libraryclass Provides a way for Runtime memory buckets to be created during Pei
+  #
+  MemoryBucketLib|Include/Library/MemoryBucketLib.h
+
+  # MU_CHANGE - Add MemoryBucketHelperLib to MdeModulePkg
+  ## @libraryclass Keeps track of Runtime memory buckets during Pei
+  #
+  MemoryBucketHelperLib|Include/Library/MemoryBucketHelperLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
@@ -539,6 +549,11 @@
 
   ## GUID used for Boot Discovery Policy FormSet guid and related variables.
   gBootDiscoveryPolicyMgrFormsetGuid = { 0x5b6f7107, 0xbb3c, 0x4660, { 0x92, 0xcd, 0x54, 0x26, 0x90, 0x28, 0x0b, 0xbd } }
+
+  ## PEI memory buckets Guid.  Used to create and fetch the PEI memory buckets.
+  #
+  # Include/Guid/MemoryBucketInformation.h
+  gMemoryBucketInformationGuid = { 0x36138737, 0xb6db, 0x4ed6, { 0x9b, 0x4b, 0xf9, 0x61, 0x28, 0xe7, 0x19, 0x3c }}
 
 [Ppis]
   ## Include/Ppi/AtaController.h

@@ -116,6 +116,8 @@
   ExceptionPersistenceLib|MdeModulePkg/Library/BaseExceptionPersistenceLibNull/BaseExceptionPersistenceLibNull.inf # MU_CHANGE
 
   MmuLib|MdePkg/Library/BaseMmuLibNull/BaseMmuLibNull.inf       ## MU_CHANGE
+  MemoryBucketHelperLib|MdeModulePkg/Library/MemoryBucketHelperLib/MemoryBucketHelperLib.inf  ## MU_CHANGE
+  MemoryBucketLib|MdeModulePkg/Library/MemoryBucketLib/MemoryBucketLib.inf                    ## MU_CHANGE
 
 # MU_CHANGE START Include MemoryProtectionHobLib
 [LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.DXE_CORE, LibraryClasses.common.UEFI_APPLICATION]
@@ -528,6 +530,9 @@
   MdeModulePkg/Library/BaseVariableFlashInfoLib/BaseVariableFlashInfoLib.inf
   MdeModulePkg/Library/PcdDatabaseLoaderLib/Pei/PcdDatabaseLoaderLibPei.inf   # MU_CHANGE
   MdeModulePkg/Library/PcdDatabaseLoaderLib/Dxe/PcdDatabaseLoaderLibDxe.inf   # MU_CHANGE
+
+  MdeModulePkg/Library/MemoryBucketHelperLib/MemoryBucketHelperLib.inf  ## MU_CHANGE
+  MdeModulePkg/Library/MemoryBucketLib/MemoryBucketLib.inf              ## MU_CHANGE
 
 # MU_CHANGE START
 !if $(TOOLCHAIN) != VS2017 and $(TOOLCHAIN) != VS2019
