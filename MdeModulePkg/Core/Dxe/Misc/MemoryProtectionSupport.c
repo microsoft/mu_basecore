@@ -1917,7 +1917,7 @@ SeparateImagesInMemoryMap (
 
 /**
   Split memory map descriptors based on the input special region list. After the function, one or more memory map
-  descriptors will divide evenly into every special region so attributes can be targetted at those regions. Every
+  descriptors will divide evenly into every special region so attributes can be targeted at those regions. Every
   descriptor covered by a special region will have its virtual address set to SPECIAL_REGION_PATTERN.
 
   @param[in, out] MemoryMapSize                   IN:   The size, in bytes, of the old memory map before the split
@@ -1926,14 +1926,13 @@ SeparateImagesInMemoryMap (
   @param[in, out] MemoryMap                       IN:   A pointer to the buffer containing a sorted memory map
                                                   OUT:  A pointer to the updated memory map
   @param[in]      DescriptorSize                  The size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
-  @param[in]      ExpandedMemMapSize              The size, in bytes, of the full memory map buffer
+  @param[in]      BufferSize                      The size, in bytes, of the full memory map buffer
   @param[in]      SpecialRegionList               List of special regions to separate
 
   @retval         EFI_SUCCESS                     Memory map has been split
   @retval         EFI_NOT_FOUND                   Unable to find a special region
   @retval         EFI_INVALID_PARAMETER           An input was NULL
 **/
-STATIC
 EFI_STATUS
 SeparateSpecialRegionsInMemoryMap (
   IN OUT      UINTN                  *MemoryMapSize,
@@ -1990,7 +1989,7 @@ SeparateSpecialRegionsInMemoryMap (
           MapEntryInsert->Attribute = MemoryMapEntry->Attribute;
 
           // Update this descriptor to start at the special region start
-          MemoryMapEntry->NumberOfPages -= MapEntryInsert->NumberOfPages; // BEEBE TODO: Underflow cases?
+          MemoryMapEntry->NumberOfPages -= MapEntryInsert->NumberOfPages;
           MemoryMapEntry->PhysicalStart  = SpecialRegionStart;
           MapEntryStart                  = SpecialRegionStart;
 
