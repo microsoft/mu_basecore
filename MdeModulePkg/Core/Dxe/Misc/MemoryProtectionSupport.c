@@ -2046,7 +2046,7 @@ SeparateSpecialRegionsInMemoryMap (
   }
 
   // if we've created new records, sort the map
-  if ((UINTN)MapEntryInsert > (UINTN)MapEntryEnd) {
+  if ((UINTN)MapEntryInsert > (UINTN)MemoryMapEnd) {
     // Sort from low to high
     SortMemoryMap (
       MemoryMap,
