@@ -591,14 +591,7 @@ CollectSpecialRegionHobs (
     NewSpecialRegion->SpecialRegion.Length        = ALIGN_VALUE (HobSpecialRegion->Length, EFI_PAGE_SIZE);
     NewSpecialRegion->SpecialRegion.EfiAttributes = HobSpecialRegion->EfiAttributes & EFI_MEMORY_ACCESS_MASK;
     NewSpecialRegion->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
-
-    OrderedInsertUint64Comparison (
-      &mSpecialMemoryRegionsPrivate.SpecialRegionList,
-      &NewSpecialRegion->Link,
-      OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, SpecialRegion) + OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION, Start) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
-      OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Signature) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
-      MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
-      );
+    InsertHeadList (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &NewSpecialRegion->Link);
     mSpecialMemoryRegionsPrivate.Count++;
 
     GuidHob = GetNextGuidHob (&gMemoryProtectionSpecialRegionHobGuid, GET_NEXT_HOB (GuidHob));
@@ -718,13 +711,7 @@ AddSpecialRegion (
   SpecialRegionEntry->SpecialRegion.Start         = ALIGN_ADDRESS (Start);
   SpecialRegionEntry->SpecialRegion.Length        = ALIGN_VALUE (Length, EFI_PAGE_SIZE);
   SpecialRegionEntry->SpecialRegion.EfiAttributes = Attributes & EFI_MEMORY_ACCESS_MASK;
-  OrderedInsertUint64Comparison (
-    &mSpecialMemoryRegionsPrivate.SpecialRegionList,
-    &SpecialRegionEntry->Link,
-    OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, SpecialRegion) + OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION, Start) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
-    OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Signature) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
-    MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
-    );
+  InsertTailList (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &SpecialRegionEntry->Link);
   mSpecialMemoryRegionsPrivate.Count++;
 
   return EFI_SUCCESS;
