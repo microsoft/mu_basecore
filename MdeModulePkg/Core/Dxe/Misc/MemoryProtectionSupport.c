@@ -2165,7 +2165,7 @@ SeparateSpecialRegionsInMemoryMap (
   IN OUT      EFI_MEMORY_DESCRIPTOR  *MemoryMap,
   IN CONST    UINTN                  *DescriptorSize,
   IN CONST    UINTN                  *BufferSize,
-  IN          LIST_ENTRY             *SpecialRegionList
+  IN CONST    LIST_ENTRY             *SpecialRegionList
   )
 {
   EFI_MEMORY_DESCRIPTOR                        *MemoryMapEntry, *MemoryMapEnd, *MapEntryInsert;
