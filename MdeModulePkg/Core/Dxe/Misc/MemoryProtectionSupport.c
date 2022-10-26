@@ -491,69 +491,285 @@ MergeListsUint64Comparison (
 // ---------------------------------------
 
 /**
-  Sorts the MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY list by Start
+  Inserts the input SpecialRegionToInsertLink into SpecialRegionList based on the
+  SpecialRegionToInsert.SpecialRegion.Start field.
 
-  @param[in] SpecialRegionList Head of the list to be sorted
+  @param[in] SpecialRegionList           Pointer to the head of the MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY list
+  @param[in] SpecialRegionToInsertLink   Pointer to the list entry of the MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY to insert
+
+  @retval EFI_SUCCESS                    MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY inserted into the list
+  @retval EFI_INVALID_PARAMETER          CodeSectionList or CodeSectionToInsertLink were NULL
 **/
 STATIC
-VOID
-SortMemoryProtectionSpecialRegionList (
-  IN LIST_ENTRY  *SpecialRegionList
+EFI_STATUS
+OrderedInsertSpecialRegionListEntry (
+  IN LIST_ENTRY  *SpecialRegionList,
+  IN LIST_ENTRY  *SpecialRegionToInsertLink
   )
 {
-  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry;
-  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *NextSpecialRegionEntry;
-  MEMORY_PROTECTION_SPECIAL_REGION             TempSpecialRegion;
-  LIST_ENTRY                                   *SpecialRegionEntryLink;
-  LIST_ENTRY                                   *NextSpecialRegionEntryLink;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *CurrentSpecialRegion;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionToInsert;
+  LIST_ENTRY                                   *SpecialRegionLink;
   LIST_ENTRY                                   *SpecialRegionEndLink;
+  EFI_PHYSICAL_ADDRESS                         SpecialRegionToInsertBase;
 
-  if (SpecialRegionList == NULL) {
-    return;
+  if ((SpecialRegionList == NULL) || (SpecialRegionToInsertLink == NULL)) {
+    return EFI_INVALID_PARAMETER;
   }
 
-  SpecialRegionEntryLink     = SpecialRegionList->ForwardLink;
-  NextSpecialRegionEntryLink = SpecialRegionEntryLink->ForwardLink;
-  SpecialRegionEndLink       = SpecialRegionList;
+  SpecialRegionToInsert = CR (
+                            SpecialRegionToInsertLink,
+                            MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                            Link,
+                            MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                            );
 
-  while (SpecialRegionEntryLink != SpecialRegionEndLink) {
-    SpecialRegionEntry = CR (
-                           SpecialRegionEntryLink,
-                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
-                           Link,
-                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
-                           );
-    while (NextSpecialRegionEntryLink != SpecialRegionEndLink) {
-      NextSpecialRegionEntry = CR (
-                                 NextSpecialRegionEntryLink,
-                                 MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
-                                 Link,
-                                 MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
-                                 );
-      if (SpecialRegionEntry->SpecialRegion.Start > NextSpecialRegionEntry->SpecialRegion.Start) {
-        // Temp = Current
-        TempSpecialRegion.Start         = SpecialRegionEntry->SpecialRegion.Start;
-        TempSpecialRegion.Length        = SpecialRegionEntry->SpecialRegion.Length;
-        TempSpecialRegion.EfiAttributes = SpecialRegionEntry->SpecialRegion.EfiAttributes;
+  SpecialRegionToInsertBase = SpecialRegionToInsert->SpecialRegion.Start;
 
-        // Current = Next
-        SpecialRegionEntry->SpecialRegion.Start         = NextSpecialRegionEntry->SpecialRegion.Start;
-        SpecialRegionEntry->SpecialRegion.Length        = NextSpecialRegionEntry->SpecialRegion.Length;
-        SpecialRegionEntry->SpecialRegion.EfiAttributes = NextSpecialRegionEntry->SpecialRegion.EfiAttributes;
-
-        // Next = Temp
-        NextSpecialRegionEntry->SpecialRegion.Start         = TempSpecialRegion.Start;
-        NextSpecialRegionEntry->SpecialRegion.Length        = TempSpecialRegion.Length;
-        NextSpecialRegionEntry->SpecialRegion.EfiAttributes = TempSpecialRegion.EfiAttributes;
-      }
-
-      NextSpecialRegionEntryLink = NextSpecialRegionEntryLink->ForwardLink;
+  SpecialRegionLink    = SpecialRegionList->ForwardLink;
+  SpecialRegionEndLink = SpecialRegionList;
+  while (SpecialRegionLink != SpecialRegionEndLink) {
+    CurrentSpecialRegion = CR (
+                             SpecialRegionLink,
+                             MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                             Link,
+                             MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                             );
+    if (SpecialRegionToInsertBase < CurrentSpecialRegion->SpecialRegion.Start) {
+      break;
     }
 
-    SpecialRegionEntryLink     = SpecialRegionEntryLink->ForwardLink;
-    NextSpecialRegionEntryLink = SpecialRegionEntryLink->ForwardLink;
+    SpecialRegionLink = SpecialRegionLink->ForwardLink;
   }
+
+  SpecialRegionToInsertLink->BackLink              = SpecialRegionLink->BackLink;
+  SpecialRegionToInsertLink->ForwardLink           = SpecialRegionLink;
+  SpecialRegionToInsertLink->BackLink->ForwardLink = SpecialRegionToInsertLink;
+  SpecialRegionToInsertLink->ForwardLink->BackLink = SpecialRegionToInsertLink;
+  return EFI_SUCCESS;
 }
+
+/**
+  Inserts the input ImageRecordToInsertLink into ImageRecordList based on the IMAGE_PROPERTIES_RECORD.ImageBase field
+
+  @param[in] ImageRecordList           Pointer to the head of the IMAGE_PROPERTIES_RECORD list
+  @param[in] ImageRecordToInsertLink   Pointer to the list entry of the IMAGE_PROPERTIES_RECORD to insert
+
+  @retval EFI_SUCCESS                  IMAGE_PROPERTIES_RECORD inserted into the list
+  @retval EFI_INVALID_PARAMETER        ImageRecordList or ImageRecordToInsertLink were NULL
+**/
+STATIC
+EFI_STATUS
+OrderedInsertImageRecordListEntry (
+  IN LIST_ENTRY  *ImageRecordList,
+  IN LIST_ENTRY  *ImageRecordToInsertLink
+  )
+{
+  IMAGE_PROPERTIES_RECORD  *CurrentImageRecord;
+  IMAGE_PROPERTIES_RECORD  *ImageRecordToInsert;
+  LIST_ENTRY               *ImageRecordLink;
+  LIST_ENTRY               *ImageRecordEndLink;
+  EFI_PHYSICAL_ADDRESS     ImageRecordToInsertBase;
+
+  if ((ImageRecordList == NULL) || (ImageRecordToInsertLink == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ImageRecordToInsert = CR (
+                          ImageRecordToInsertLink,
+                          IMAGE_PROPERTIES_RECORD,
+                          Link,
+                          IMAGE_PROPERTIES_RECORD_SIGNATURE
+                          );
+  ImageRecordToInsertBase = ImageRecordToInsert->ImageBase;
+
+  ImageRecordLink    = ImageRecordList->ForwardLink;
+  ImageRecordEndLink = ImageRecordList;
+  while (ImageRecordLink != ImageRecordEndLink) {
+    CurrentImageRecord = CR (
+                           ImageRecordLink,
+                           IMAGE_PROPERTIES_RECORD,
+                           Link,
+                           IMAGE_PROPERTIES_RECORD_SIGNATURE
+                           );
+    if (ImageRecordToInsertBase < CurrentImageRecord->ImageBase) {
+      break;
+    }
+
+    ImageRecordLink = ImageRecordLink->ForwardLink;
+  }
+
+  ImageRecordToInsertLink->BackLink              = ImageRecordLink->BackLink;
+  ImageRecordToInsertLink->ForwardLink           = ImageRecordLink;
+  ImageRecordToInsertLink->BackLink->ForwardLink = ImageRecordToInsertLink;
+  ImageRecordToInsertLink->ForwardLink->BackLink = ImageRecordToInsertLink;
+  return EFI_SUCCESS;
+}
+
+/**
+  Inserts the input CodeSectionToInsertLink into CodeSectionList based on the
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION.CodeSegmentBase field
+
+  @param[in] CodeSectionList           Pointer to the head of the IMAGE_PROPERTIES_RECORD_CODE_SECTION list
+  @param[in] CodeSectionToInsertLink   Pointer to the list entry of the IMAGE_PROPERTIES_RECORD_CODE_SECTION to insert
+
+  @retval EFI_SUCCESS             IMAGE_PROPERTIES_RECORD_CODE_SECTION inserted into the list
+  @retval EFI_INVALID_PARAMETER   CodeSectionList or CodeSectionToInsertLink were NULL
+**/
+STATIC
+EFI_STATUS
+OrderedInsertCodeSectionListEntry (
+  IN LIST_ENTRY  *CodeSectionList,
+  IN LIST_ENTRY  *CodeSectionToInsertLink
+  )
+{
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CurrentCodeSection;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSectionToInsert;
+  LIST_ENTRY                            *CodeSectionLink;
+  LIST_ENTRY                            *CodeSectionEndLink;
+  EFI_PHYSICAL_ADDRESS                  CodeSectionToInsertBase;
+
+  if ((CodeSectionList == NULL) || (CodeSectionToInsertLink == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  CodeSectionToInsert = CR (
+                          CodeSectionToInsertLink,
+                          IMAGE_PROPERTIES_RECORD_CODE_SECTION,
+                          Link,
+                          IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+                          );
+
+  CodeSectionToInsertBase = CodeSectionToInsert->CodeSegmentBase;
+
+  CodeSectionLink    = CodeSectionList->ForwardLink;
+  CodeSectionEndLink = CodeSectionList;
+  while (CodeSectionLink != CodeSectionEndLink) {
+    CurrentCodeSection = CR (
+                           CodeSectionLink,
+                           IMAGE_PROPERTIES_RECORD_CODE_SECTION,
+                           Link,
+                           IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+                           );
+    if (CodeSectionToInsertBase < CurrentCodeSection->CodeSegmentBase) {
+      break;
+    }
+
+    CodeSectionLink = CodeSectionLink->ForwardLink;
+  }
+
+  CodeSectionToInsertLink->BackLink              = CodeSectionLink->BackLink;
+  CodeSectionToInsertLink->ForwardLink           = CodeSectionLink;
+  CodeSectionToInsertLink->BackLink->ForwardLink = CodeSectionToInsertLink;
+  CodeSectionToInsertLink->ForwardLink->BackLink = CodeSectionToInsertLink;
+  return EFI_SUCCESS;
+}
+
+/**
+  Merges every IMAGE_PROPERTIES_RECORD entry within ArrayOfListEntriesToBeMerged into ImagePropertiesRecordList
+
+  @param[in] ImagePropertiesRecordList        Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
+                                              into which the input ArrayOfListEntriesToBeMerged will be merged
+  @param[in] ArrayOfListEntriesToBeMerged     Pointer to an array of LIST_ENTRY* which will be merged
+                                              into the input ImagePropertiesRecordList
+  @param[in] ListToBeMergedCount              Number of LIST_ENTRY* which will be merged
+                                              into the input ImagePropertiesRecordList
+
+  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into ImagePropertiesRecordList
+  @retval EFI_INVALID_PARAMETER               ImagePropertiesRecordList was NULL        OR
+                                              ArrayOfListEntriesToBeMerged was NULL     OR
+                                              ArrayOfListEntriesToBeMerged[n] was NULL  OR
+                                              ListToBeMergedCount was zero
+**/
+STATIC
+EFI_STATUS
+OrderedInsertImagePropertiesRecordArray (
+  IN  LIST_ENTRY  *ImagePropertiesRecordList,
+  IN  LIST_ENTRY  **ArrayOfListEntriesToBeMerged,
+  IN  UINTN       ListToBeMergedCount
+  )
+{
+  INTN  ListToBeMergedIndex = ListToBeMergedCount - 1;
+
+  if ((ImagePropertiesRecordList == NULL) || (ArrayOfListEntriesToBeMerged == NULL) || (ListToBeMergedCount == 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // The input array should be sorted, so going backwards is the fastest method
+  for ( ; ListToBeMergedIndex >= 0; --ListToBeMergedIndex) {
+    if (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex] == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    RemoveEntryList (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
+    OrderedInsertImageRecordListEntry (ImagePropertiesRecordList, ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Merges every LIST_ENTRY within ArrayOfListEntriesToBeMerged into ImagePropertiesRecordList
+
+  @param[in]  ListToMergeInto                 Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
+                                              into which the input ListToBeMerged will be merged
+  @param[in]  ListToBeMerged                  Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
+                                              which will be merged into ListToMergeInto
+  @param[in]  ListToBeMergedCount             Number of IMAGE_PROPERTIES_RECORD entries in ListToBeMerged
+  @param[out] ArrayOfListEntriesToBeMerged    Pointer to an allocated array of LIST_ENTRY* which were merged
+                                              into the input ListToMergeInto. This array should be size
+                                              ListToBeMergedCount * sizeof(LIST_ENTRY*)
+
+  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into
+                                              ImagePropertiesRecordList
+  @retval EFI_OUT_OF_RESOURCES                Failed to allocate memory
+  @retval EFI_INVALID_PARAMETER               ListToMergeInto was NULL                  OR
+                                              ListToBeMerged was NULL                   OR
+                                              ArrayOfListEntriesToBeMerged was NULL     OR
+                                              ListToBeMergedCount was zero
+  @retval other                               Return value of OrderedInsertImageRecordListEntry()
+**/
+STATIC
+EFI_STATUS
+MergeImagePropertiesRecordLists (
+  IN  LIST_ENTRY  *ListToMergeInto,
+  IN  LIST_ENTRY  *ListToBeMerged,
+  IN  UINTN       ListToBeMergedCount,
+  OUT LIST_ENTRY  **ArrayOfMergedElements
+  )
+{
+  UINTN       Index = 0;
+  EFI_STATUS  Status;
+
+  if ((ListToMergeInto == NULL) || (ListToBeMerged == NULL) ||
+      (ArrayOfMergedElements == NULL) || (ListToBeMergedCount == 0))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // Insert each entry in the list to be merged into the
+  while (!IsListEmpty (ListToBeMerged) && Index < ListToBeMergedCount) {
+    ArrayOfMergedElements[Index] = ListToBeMerged->ForwardLink;
+    RemoveEntryList (ArrayOfMergedElements[Index]);
+    Status = OrderedInsertImageRecordListEntry (ListToMergeInto, ArrayOfMergedElements[Index++]);
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+  }
+
+  // If we did not merge all elements of the list, unmerge them and free the input array
+  if (!IsListEmpty (ListToBeMerged)) {
+    OrderedInsertImagePropertiesRecordArray (ListToBeMerged, ArrayOfMergedElements, Index - 1);
+    FreePool (*ArrayOfMergedElements);
+    return Status;
+  }
+
+  return EFI_SUCCESS;
+}
+
+// ---------------------------------------
+//         SPECIAL REGION LOGIC
+// ---------------------------------------
 
 /**
   Copy the HOB MEMORY_PROTECTION_SPECIAL_REGION entries into a local list
@@ -590,7 +806,7 @@ CollectSpecialRegionHobs (
     NewSpecialRegion->SpecialRegion.Length        = ALIGN_VALUE (HobSpecialRegion->Length, EFI_PAGE_SIZE);
     NewSpecialRegion->SpecialRegion.EfiAttributes = HobSpecialRegion->EfiAttributes & EFI_MEMORY_ACCESS_MASK;
     NewSpecialRegion->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
-    InsertHeadList (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &NewSpecialRegion->Link);
+    OrderedInsertSpecialRegionListEntry (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &NewSpecialRegion->Link);
     mSpecialMemoryRegionsPrivate.Count++;
 
     GuidHob = GetNextGuidHob (&gMemoryProtectionSpecialRegionHobGuid, GET_NEXT_HOB (GuidHob));
@@ -632,8 +848,6 @@ GetSpecialRegions (
     *Count = 0;
     return EFI_SUCCESS;
   }
-
-  SortMemoryProtectionSpecialRegionList (&mSpecialMemoryRegionsPrivate.SpecialRegionList);
 
   *SpecialRegions = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION) * mSpecialMemoryRegionsPrivate.Count);
 
@@ -710,7 +924,7 @@ AddSpecialRegion (
   SpecialRegionEntry->SpecialRegion.Start         = ALIGN_ADDRESS (Start);
   SpecialRegionEntry->SpecialRegion.Length        = ALIGN_VALUE (Length, EFI_PAGE_SIZE);
   SpecialRegionEntry->SpecialRegion.EfiAttributes = Attributes & EFI_MEMORY_ACCESS_MASK;
-  InsertTailList (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &SpecialRegionEntry->Link);
+  OrderedInsertSpecialRegionListEntry (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &SpecialRegionEntry->Link);
   mSpecialMemoryRegionsPrivate.Count++;
 
   return EFI_SUCCESS;
@@ -1965,8 +2179,6 @@ SeparateSpecialRegionsInMemoryMap (
   {
     return EFI_INVALID_PARAMETER;
   }
-
-  SortMemoryProtectionSpecialRegionList (SpecialRegionList);
 
   MemoryMapEntry = MemoryMap;
   MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
