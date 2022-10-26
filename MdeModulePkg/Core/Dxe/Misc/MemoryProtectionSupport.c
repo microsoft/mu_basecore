@@ -265,6 +265,229 @@ SetUefiImageMemoryAttributes (
 extern LIST_ENTRY  mGcdMemorySpaceMap;
 
 // ---------------------------------------
+//     LINKED LIST SUPPORT FUNCTIONS
+// ---------------------------------------
+
+/**
+  Inserts the input EntryToInsert into List by comparing UINT64 values at LIST_ENTRY + ComparisonOffset. If the input
+  Signature is non-zero, a signature check based on each LIST_ENTRY + SignatureOffset will be performed.
+
+  @param[in] List                       Pointer to the head of the list into which EntryToInsert will be inserted
+  @param[in] EntryToInsert              Pointer to the list entry to insert into List
+  @param[in] ComparisonOffset           Offset of the field to compare each list entry against relative to the
+                                        list entry pointer
+  @param[in] ComparisonOffset           Offset of the signature to compare each list entry against relative to the
+                                        list entry pointer
+  @param[in] Signature                  Signature to compare for each list entry. If this is zero, no signature check
+                                        will be performed
+
+  @retval EFI_SUCCESS                   EntryToInsert was inserted into List
+  @retval EFI_INVALID_PARAMETER         ImageRecordList or ImageRecordToInsertLink were NULL, or a signature
+                                        check failed
+**/
+STATIC
+EFI_STATUS
+OrderedInsertUint64Comparison (
+  IN LIST_ENTRY  *List,
+  IN LIST_ENTRY  *EntryToInsert,
+  IN INT64       ComparisonOffset,
+  IN INT64       SignatureOffset OPTIONAL,
+  IN UINT32      Signature OPTIONAL
+  )
+{
+  LIST_ENTRY  *ListLink;
+  LIST_ENTRY  *ListEndLink;
+  UINT64      EntryToInsertVal;
+  UINT64      ListEntryVal;
+
+  if ((List == NULL) || (EntryToInsert == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if ((Signature != 0) && (*((UINT32 *)((UINT8 *)EntryToInsert + SignatureOffset)) != Signature)) {
+    ASSERT (*((UINT32 *)((UINT8 *)EntryToInsert + SignatureOffset)) == Signature);
+    return EFI_INVALID_PARAMETER;
+  }
+
+  EntryToInsertVal = *((UINT64 *)((UINT8 *)EntryToInsert + ComparisonOffset));
+
+  ListLink    = List->ForwardLink;
+  ListEndLink = List;
+  while (ListLink != ListEndLink) {
+    if ((Signature != 0) && (*((UINT32 *)((UINT8 *)ListLink + SignatureOffset)) != Signature)) {
+      ASSERT (*((UINT32 *)((UINT8 *)ListLink + SignatureOffset)) == Signature);
+      return EFI_INVALID_PARAMETER;
+    }
+
+    ListEntryVal = *((UINT64 *)((UINT8 *)ListLink + ComparisonOffset));
+
+    if (EntryToInsertVal < ListEntryVal) {
+      break;
+    }
+
+    ListLink = ListLink->ForwardLink;
+  }
+
+  EntryToInsert->BackLink              = ListLink->BackLink;
+  EntryToInsert->ForwardLink           = ListLink;
+  EntryToInsert->BackLink->ForwardLink = EntryToInsert;
+  EntryToInsert->ForwardLink->BackLink = EntryToInsert;
+  return EFI_SUCCESS;
+}
+
+/**
+  Merges every LIST_ENTRY within ArrayOfListEntriesToBeMerged into List
+
+  @param[in] List                             Pointer to the head of the list into which each element
+                                              of ArrayOfListEntriesToBeMerged will be inserted
+  @param[in] ArrayOfListEntriesToBeMerged     Pointer to an array of LIST_ENTRY* which will be merged
+                                              into the input List
+  @param[in] ListToBeMergedCount              Number of LIST_ENTRY* which will be merged
+                                              into the input List
+  @param[in] ComparisonOffset                 Offset of the field to compare each list entry against relative to the
+                                              list entry pointer
+  @param[in] ComparisonOffset                 Offset of the signature to compare each list entry against relative to the
+                                              list entry pointer
+  @param[in] Signature                        Signature to compare for each list entry. If this is zero,
+                                              no signature check will be performed
+
+  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into List
+  @retval EFI_INVALID_PARAMETER               List was NULL                             OR
+                                              ArrayOfListEntriesToBeMerged was NULL     OR
+                                              ArrayOfListEntriesToBeMerged[n] was NULL  OR
+                                              ListToBeMergedCount was zero
+  @retval Other                               Return value of OrderedInsertUint64Comparison()
+**/
+STATIC
+EFI_STATUS
+OrderedInsertArrayUint64Comparison (
+  IN  LIST_ENTRY  *List,
+  IN  LIST_ENTRY  **ArrayOfListEntriesToBeMerged,
+  IN  UINTN       ListToBeMergedCount,
+  IN  INT64       ComparisonOffset,
+  IN  INT64       SignatureOffset OPTIONAL,
+  IN  UINT32      Signature OPTIONAL
+  )
+{
+  INTN        ListToBeMergedIndex = ListToBeMergedCount - 1;
+  EFI_STATUS  Status              = EFI_SUCCESS;
+
+  if ((List == NULL) || (ArrayOfListEntriesToBeMerged == NULL) || (ListToBeMergedCount == 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // If the input array is sorted, going backwards is the fastest method
+  for ( ; ListToBeMergedIndex >= 0; --ListToBeMergedIndex) {
+    if (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex] == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    RemoveEntryList (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
+    Status = OrderedInsertUint64Comparison (
+               List,
+               ArrayOfListEntriesToBeMerged[ListToBeMergedIndex],
+               ComparisonOffset,
+               SignatureOffset,
+               Signature
+               );
+
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+  }
+
+  return Status;
+}
+
+/**
+  Merges every LIST_ENTRY within ListToBeMerged into ListToMergeInto
+
+  @param[in]  ListToMergeInto                 Pointer to the head of a list into which the input
+                                              ListToBeMerged will be merged
+  @param[in]  ListToBeMerged                  Pointer to the head of a list which will be merged
+                                              into ListToMergeInto
+  @param[in]  ListToBeMergedCount             Number of LIST_ENTRY* in ListToBeMerged
+  @param[out] ArrayOfMergedElements           Pointer to an unallocated array of LIST_ENTRY*. The array will be
+                                              allocated if the function returns success and contain every
+                                              LIST_ENTRY* merged into ListToMergeInto
+  @param[in] ComparisonOffset                 Offset of the field to compare each list entry against relative to the
+                                              list entry pointer
+  @param[in] ComparisonOffset                 Offset of the signature to compare each list entry against relative to the
+                                              list entry pointer
+  @param[in] Signature                        Signature to compare for each list entry. If this is zero,
+                                              no signature check will be performed
+
+  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into
+                                              ImagePropertiesRecordList
+  @retval EFI_OUT_OF_RESOURCES                Failed to allocate memory
+  @retval EFI_INVALID_PARAMETER               ListToMergeInto was NULL                    OR
+                                              ListToBeMerged was NULL                     OR
+                                              ArrayOfListEntriesToBeMerged was NULL       OR
+                                              *ArrayOfListEntriesToBeMerged was not NULL  OR
+                                              ListToBeMergedCount was NULL
+  @retval other                               Return value of OrderedInsertUint64Comparison()
+**/
+STATIC
+EFI_STATUS
+MergeListsUint64Comparison (
+  IN  LIST_ENTRY   *ListToMergeInto,
+  IN  LIST_ENTRY   *ListToBeMerged,
+  IN  CONST UINTN  *ListToBeMergedCount,
+  OUT LIST_ENTRY   ***ArrayOfMergedElements,
+  IN  INT64        ComparisonOffset,
+  IN  INT64        SignatureOffset OPTIONAL,
+  IN  UINT32       Signature OPTIONAL
+  )
+{
+  UINTN       Index  = 0;
+  EFI_STATUS  Status = EFI_SUCCESS;
+
+  if ((ListToMergeInto == NULL) || (ListToBeMerged == NULL) ||
+      (ArrayOfMergedElements == NULL) || (*ArrayOfMergedElements != NULL) ||
+      (ListToBeMergedCount == NULL))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *ArrayOfMergedElements = AllocateZeroPool (sizeof (LIST_ENTRY *) * *ListToBeMergedCount);
+
+  if (*ArrayOfMergedElements == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // Insert each entry in the list to be merged into the
+  while (!IsListEmpty (ListToBeMerged) && Index < *ListToBeMergedCount) {
+    (*ArrayOfMergedElements)[Index] = ListToBeMerged->ForwardLink;
+    RemoveEntryList ((*ArrayOfMergedElements)[Index]);
+    Status = OrderedInsertUint64Comparison (
+               ListToMergeInto,
+               (*ArrayOfMergedElements)[Index++],
+               ComparisonOffset,
+               SignatureOffset,
+               Signature
+               );
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+  }
+
+  // If we did not merge all elements of the list, unmerge them and free the input array
+  if (!IsListEmpty (ListToBeMerged)) {
+    OrderedInsertArrayUint64Comparison (
+      ListToBeMerged,
+      *ArrayOfMergedElements,
+      Index - 1,
+      ComparisonOffset,
+      SignatureOffset,
+      Signature
+      );
+    FreePool (*ArrayOfMergedElements);
+  }
+
+  return Status;
+}
+
+// ---------------------------------------
 //         SPECIAL REGION LOGIC
 // ---------------------------------------
 
@@ -731,229 +954,6 @@ DumpMemoryProtectionSpecialRegions (
   }
 
   return;
-}
-
-// ---------------------------------------
-//     LINKED LIST SUPPORT FUNCTIONS
-// ---------------------------------------
-
-/**
-  Inserts the input EntryToInsert into List by comparing UINT64 values at LIST_ENTRY + ComparisonOffset. If the input
-  Signature is non-zero, a signature check based on each LIST_ENTRY + SignatureOffset will be performed.
-
-  @param[in] List                       Pointer to the head of the list into which EntryToInsert will be inserted
-  @param[in] EntryToInsert              Pointer to the list entry to insert into List
-  @param[in] ComparisonOffset           Offset of the field to compare each list entry against relative to the
-                                        list entry pointer
-  @param[in] ComparisonOffset           Offset of the signature to compare each list entry against relative to the
-                                        list entry pointer
-  @param[in] Signature                  Signature to compare for each list entry. If this is zero, no signature check
-                                        will be performed
-
-  @retval EFI_SUCCESS                   EntryToInsert was inserted into List
-  @retval EFI_INVALID_PARAMETER         ImageRecordList or ImageRecordToInsertLink were NULL, or a signature
-                                        check failed
-**/
-STATIC
-EFI_STATUS
-OrderedInsertUint64Comparison (
-  IN LIST_ENTRY  *List,
-  IN LIST_ENTRY  *EntryToInsert,
-  IN INT64       ComparisonOffset,
-  IN INT64       SignatureOffset OPTIONAL,
-  IN UINT32      Signature OPTIONAL
-  )
-{
-  LIST_ENTRY  *ListLink;
-  LIST_ENTRY  *ListEndLink;
-  UINT64      EntryToInsertVal;
-  UINT64      ListEntryVal;
-
-  if ((List == NULL) || (EntryToInsert == NULL)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  if ((Signature != 0) && (*((UINT32 *)((UINT8 *)EntryToInsert + SignatureOffset)) != Signature)) {
-    ASSERT (*((UINT32 *)((UINT8 *)EntryToInsert + SignatureOffset)) == Signature);
-    return EFI_INVALID_PARAMETER;
-  }
-
-  EntryToInsertVal = *((UINT64 *)((UINT8 *)EntryToInsert + ComparisonOffset));
-
-  ListLink    = List->ForwardLink;
-  ListEndLink = List;
-  while (ListLink != ListEndLink) {
-    if ((Signature != 0) && (*((UINT32 *)((UINT8 *)ListLink + SignatureOffset)) != Signature)) {
-      ASSERT (*((UINT32 *)((UINT8 *)ListLink + SignatureOffset)) == Signature);
-      return EFI_INVALID_PARAMETER;
-    }
-
-    ListEntryVal = *((UINT64 *)((UINT8 *)ListLink + ComparisonOffset));
-
-    if (EntryToInsertVal < ListEntryVal) {
-      break;
-    }
-
-    ListLink = ListLink->ForwardLink;
-  }
-
-  EntryToInsert->BackLink              = ListLink->BackLink;
-  EntryToInsert->ForwardLink           = ListLink;
-  EntryToInsert->BackLink->ForwardLink = EntryToInsert;
-  EntryToInsert->ForwardLink->BackLink = EntryToInsert;
-  return EFI_SUCCESS;
-}
-
-/**
-  Merges every LIST_ENTRY within ArrayOfListEntriesToBeMerged into List
-
-  @param[in] List                             Pointer to the head of the list into which each element
-                                              of ArrayOfListEntriesToBeMerged will be inserted
-  @param[in] ArrayOfListEntriesToBeMerged     Pointer to an array of LIST_ENTRY* which will be merged
-                                              into the input List
-  @param[in] ListToBeMergedCount              Number of LIST_ENTRY* which will be merged
-                                              into the input List
-  @param[in] ComparisonOffset                 Offset of the field to compare each list entry against relative to the
-                                              list entry pointer
-  @param[in] ComparisonOffset                 Offset of the signature to compare each list entry against relative to the
-                                              list entry pointer
-  @param[in] Signature                        Signature to compare for each list entry. If this is zero,
-                                              no signature check will be performed
-
-  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into List
-  @retval EFI_INVALID_PARAMETER               List was NULL                             OR
-                                              ArrayOfListEntriesToBeMerged was NULL     OR
-                                              ArrayOfListEntriesToBeMerged[n] was NULL  OR
-                                              ListToBeMergedCount was zero
-  @retval Other                               Return value of OrderedInsertUint64Comparison()
-**/
-STATIC
-EFI_STATUS
-OrderedInsertArrayUint64Comparison (
-  IN  LIST_ENTRY  *List,
-  IN  LIST_ENTRY  **ArrayOfListEntriesToBeMerged,
-  IN  UINTN       ListToBeMergedCount,
-  IN  INT64       ComparisonOffset,
-  IN  INT64       SignatureOffset OPTIONAL,
-  IN  UINT32      Signature OPTIONAL
-  )
-{
-  INTN        ListToBeMergedIndex = ListToBeMergedCount - 1;
-  EFI_STATUS  Status              = EFI_SUCCESS;
-
-  if ((List == NULL) || (ArrayOfListEntriesToBeMerged == NULL) || (ListToBeMergedCount == 0)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  // If the input array is sorted, going backwards is the fastest method
-  for ( ; ListToBeMergedIndex >= 0; --ListToBeMergedIndex) {
-    if (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex] == NULL) {
-      return EFI_INVALID_PARAMETER;
-    }
-
-    RemoveEntryList (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
-    Status = OrderedInsertUint64Comparison (
-               List,
-               ArrayOfListEntriesToBeMerged[ListToBeMergedIndex],
-               ComparisonOffset,
-               SignatureOffset,
-               Signature
-               );
-
-    if (EFI_ERROR (Status)) {
-      break;
-    }
-  }
-
-  return Status;
-}
-
-/**
-  Merges every LIST_ENTRY within ListToBeMerged into ListToMergeInto
-
-  @param[in]  ListToMergeInto                 Pointer to the head of a list into which the input
-                                              ListToBeMerged will be merged
-  @param[in]  ListToBeMerged                  Pointer to the head of a list which will be merged
-                                              into ListToMergeInto
-  @param[in]  ListToBeMergedCount             Number of LIST_ENTRY* in ListToBeMerged
-  @param[out] ArrayOfMergedElements           Pointer to an unallocated array of LIST_ENTRY*. The array will be
-                                              allocated if the function returns success and contain every
-                                              LIST_ENTRY* merged into ListToMergeInto
-  @param[in] ComparisonOffset                 Offset of the field to compare each list entry against relative to the
-                                              list entry pointer
-  @param[in] ComparisonOffset                 Offset of the signature to compare each list entry against relative to the
-                                              list entry pointer
-  @param[in] Signature                        Signature to compare for each list entry. If this is zero,
-                                              no signature check will be performed
-
-  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into
-                                              ImagePropertiesRecordList
-  @retval EFI_OUT_OF_RESOURCES                Failed to allocate memory
-  @retval EFI_INVALID_PARAMETER               ListToMergeInto was NULL                    OR
-                                              ListToBeMerged was NULL                     OR
-                                              ArrayOfListEntriesToBeMerged was NULL       OR
-                                              *ArrayOfListEntriesToBeMerged was not NULL  OR
-                                              ListToBeMergedCount was NULL
-  @retval other                               Return value of OrderedInsertUint64Comparison()
-**/
-STATIC
-EFI_STATUS
-MergeListsUint64Comparison (
-  IN  LIST_ENTRY   *ListToMergeInto,
-  IN  LIST_ENTRY   *ListToBeMerged,
-  IN  CONST UINTN  *ListToBeMergedCount,
-  OUT LIST_ENTRY   ***ArrayOfMergedElements,
-  IN  INT64        ComparisonOffset,
-  IN  INT64        SignatureOffset OPTIONAL,
-  IN  UINT32       Signature OPTIONAL
-  )
-{
-  UINTN       Index  = 0;
-  EFI_STATUS  Status = EFI_SUCCESS;
-
-  if ((ListToMergeInto == NULL) || (ListToBeMerged == NULL) ||
-      (ArrayOfMergedElements == NULL) || (*ArrayOfMergedElements != NULL) ||
-      (ListToBeMergedCount == NULL))
-  {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  *ArrayOfMergedElements = AllocateZeroPool (sizeof (LIST_ENTRY *) * *ListToBeMergedCount);
-
-  if (*ArrayOfMergedElements == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // Insert each entry in the list to be merged into the
-  while (!IsListEmpty (ListToBeMerged) && Index < *ListToBeMergedCount) {
-    (*ArrayOfMergedElements)[Index] = ListToBeMerged->ForwardLink;
-    RemoveEntryList ((*ArrayOfMergedElements)[Index]);
-    Status = OrderedInsertUint64Comparison (
-               ListToMergeInto,
-               (*ArrayOfMergedElements)[Index++],
-               ComparisonOffset,
-               SignatureOffset,
-               Signature
-               );
-    if (EFI_ERROR (Status)) {
-      break;
-    }
-  }
-
-  // If we did not merge all elements of the list, unmerge them and free the input array
-  if (!IsListEmpty (ListToBeMerged)) {
-    OrderedInsertArrayUint64Comparison (
-      ListToBeMerged,
-      *ArrayOfMergedElements,
-      Index - 1,
-      ComparisonOffset,
-      SignatureOffset,
-      Signature
-      );
-    FreePool (*ArrayOfMergedElements);
-  }
-
-  return Status;
 }
 
 // ---------------------------------------
