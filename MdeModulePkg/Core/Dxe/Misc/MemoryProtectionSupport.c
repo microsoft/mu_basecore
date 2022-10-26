@@ -1939,7 +1939,7 @@ SeparateImagesInMemoryMap (
                                                   OUT:  A pointer to the updated memory map
   @param[in]      DescriptorSize                  The size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
   @param[in]      BufferSize                      The size, in bytes, of the full memory map buffer
-  @param[in]      SpecialRegionList               List of special regions to separate
+  @param[in]      SpecialRegionList               List of special regions to separate. This list will be sorted.
 
   @retval         EFI_SUCCESS                     Memory map has been split
   @retval         EFI_NOT_FOUND                   Unable to find a special region
@@ -1951,7 +1951,7 @@ SeparateSpecialRegionsInMemoryMap (
   IN OUT      EFI_MEMORY_DESCRIPTOR  *MemoryMap,
   IN CONST    UINTN                  *DescriptorSize,
   IN CONST    UINTN                  *BufferSize,
-  IN CONST    LIST_ENTRY             *SpecialRegionList
+  IN          LIST_ENTRY             *SpecialRegionList
   )
 {
   EFI_MEMORY_DESCRIPTOR                        *MemoryMapEntry, *MemoryMapEnd, *MapEntryInsert;
@@ -1965,6 +1965,8 @@ SeparateSpecialRegionsInMemoryMap (
   {
     return EFI_INVALID_PARAMETER;
   }
+
+  SortMemoryProtectionSpecialRegionList (SpecialRegionList);
 
   MemoryMapEntry = MemoryMap;
   MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
@@ -1984,14 +1986,15 @@ SeparateSpecialRegionsInMemoryMap (
 
     while ((MemoryMapEntry < MemoryMapEnd) &&
            (SpecialRegionStart < SpecialRegionEnd) &&
-           (((UINTN)MapEntryInsert + *DescriptorSize) > *BufferSize))
+           (((UINTN)MapEntryInsert + *DescriptorSize) < ((UINTN)MemoryMap + *BufferSize)))
     {
       MapEntryStart = (UINTN)MemoryMapEntry->PhysicalStart;
       MapEntryEnd   = (UINTN)MemoryMapEntry->PhysicalStart + (UINTN)EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages);
       if ((MapEntryStart <= SpecialRegionStart) && (MapEntryEnd >= SpecialRegionStart)) {
         // Check if some portion of the map entry isn't covered by the special region
         if (MapEntryStart != SpecialRegionStart) {
-          // Populate a new descriptor for the region before the special region
+          // Populate a new descriptor for the region before the special region. This entry can go to the end
+          // of the memory map because the special region list is sorted
           POPULATE_MEMORY_DESCRIPTOR_ENTRY (
             MapEntryInsert,
             MapEntryStart,
@@ -2023,30 +2026,38 @@ SeparateSpecialRegionsInMemoryMap (
         // If the special region ends before the end of this descriptor region, insert a new record at the end
         // of the memory map for the remaining region
         if (SpecialRegionEnd < MapEntryEnd) {
-          // Populate a new descriptor for the region after the special region
+          // SpecialRegionStart is now guaranteed to be equal to MapEntryStart. Populate a new descriptor
+          // for the region covered by the special region. This entry needs to go to
+          // the end of the memory map in case a subsequent special region will cover some portion
+          // of the remaining map entry region
           POPULATE_MEMORY_DESCRIPTOR_ENTRY (
             MapEntryInsert,
-            SpecialRegionEnd,
-            EFI_SIZE_TO_PAGES (MapEntryEnd - SpecialRegionEnd),
+            SpecialRegionStart,
+            EFI_SIZE_TO_PAGES (SpecialRegionEnd - SpecialRegionStart),
             MemoryMapEntry->Type
             );
-          MapEntryInsert->Attribute = MemoryMapEntry->Attribute;
+          MapEntryInsert->Attribute = SpecialRegionEntry->SpecialRegion.EfiAttributes;
 
           // Trim the current memory map entry
           MemoryMapEntry->NumberOfPages -= MapEntryInsert->NumberOfPages;
-          MapEntryEnd                    = SpecialRegionEnd;
+          MemoryMapEntry->PhysicalStart  = SpecialRegionEnd;
 
           // Get the next blank map entry
           MapEntryInsert = NEXT_MEMORY_DESCRIPTOR (MapEntryInsert, *DescriptorSize);
+
+          // Break the loop to get the next special region which will need to be checked against the remainder
+          // of this map entry
+          break;
         }
 
-        // This entry is now covered entirely by the special region - update the attributes and mark this
+        // This entry is covered entirely by the special region. Update the attributes and mark this
         // entry as a special region
         MemoryMapEntry->Attribute    = SpecialRegionEntry->SpecialRegion.EfiAttributes;
         MemoryMapEntry->VirtualStart = SPECIAL_REGION_PATTERN;
         SpecialRegionStart           = MapEntryEnd;
       }
 
+      // If we've fallen through to this point, we need to get the next memory map entry
       MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
     }
 
