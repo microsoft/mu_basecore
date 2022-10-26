@@ -276,7 +276,7 @@ extern LIST_ENTRY  mGcdMemorySpaceMap;
   @param[in] EntryToInsert              Pointer to the list entry to insert into List
   @param[in] ComparisonOffset           Offset of the field to compare each list entry against relative to the
                                         list entry pointer
-  @param[in] ComparisonOffset           Offset of the signature to compare each list entry against relative to the
+  @param[in] SignatureOffset            Offset of the signature to compare each list entry against relative to the
                                         list entry pointer
   @param[in] Signature                  Signature to compare for each list entry. If this is zero, no signature check
                                         will be performed
@@ -346,7 +346,7 @@ OrderedInsertUint64Comparison (
                                               into the input List
   @param[in] ComparisonOffset                 Offset of the field to compare each list entry against relative to the
                                               list entry pointer
-  @param[in] ComparisonOffset                 Offset of the signature to compare each list entry against relative to the
+  @param[in] SignatureOffset                  Offset of the signature to compare each list entry against relative to the
                                               list entry pointer
   @param[in] Signature                        Signature to compare for each list entry. If this is zero,
                                               no signature check will be performed
@@ -412,7 +412,7 @@ OrderedInsertArrayUint64Comparison (
                                               LIST_ENTRY* merged into ListToMergeInto
   @param[in] ComparisonOffset                 Offset of the field to compare each list entry against relative to the
                                               list entry pointer
-  @param[in] ComparisonOffset                 Offset of the signature to compare each list entry against relative to the
+  @param[in] SignatureOffset                  Offset of the signature to compare each list entry against relative to the
                                               list entry pointer
   @param[in] Signature                        Signature to compare for each list entry. If this is zero,
                                               no signature check will be performed
