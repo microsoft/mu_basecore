@@ -265,6 +265,228 @@ SetUefiImageMemoryAttributes (
 extern LIST_ENTRY  mGcdMemorySpaceMap;
 
 // ---------------------------------------
+//     LINKED LIST SUPPORT FUNCTIONS
+// ---------------------------------------
+
+/**
+  Inserts the input EntryToInsert into List by comparing UINT64 values at LIST_ENTRY + ComparisonOffset. If the input
+  Signature is non-zero, a signature check based on each LIST_ENTRY + SignatureOffset will be performed.
+
+  @param[in] List                       Pointer to the head of the list into which EntryToInsert will be inserted
+  @param[in] EntryToInsert              Pointer to the list entry to insert into List
+  @param[in] ComparisonOffset           Offset of the field to compare each list entry against relative to the
+                                        list entry pointer
+  @param[in] SignatureOffset            Offset of the signature to compare each list entry against relative to the
+                                        list entry pointer
+  @param[in] Signature                  Signature to compare for each list entry. If this is zero, no signature check
+                                        will be performed
+
+  @retval EFI_SUCCESS                   EntryToInsert was inserted into List
+  @retval EFI_INVALID_PARAMETER         List or EntryToInsert were NULL, or a signature check failed
+**/
+STATIC
+EFI_STATUS
+OrderedInsertUint64Comparison (
+  IN LIST_ENTRY  *List,
+  IN LIST_ENTRY  *EntryToInsert,
+  IN INT64       ComparisonOffset,
+  IN INT64       SignatureOffset OPTIONAL,
+  IN UINT32      Signature OPTIONAL
+  )
+{
+  LIST_ENTRY  *ListLink;
+  LIST_ENTRY  *ListEndLink;
+  UINT64      EntryToInsertVal;
+  UINT64      ListEntryVal;
+
+  if ((List == NULL) || (EntryToInsert == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if ((Signature != 0) && (*((UINT32 *)((UINT8 *)EntryToInsert + SignatureOffset)) != Signature)) {
+    ASSERT (*((UINT32 *)((UINT8 *)EntryToInsert + SignatureOffset)) == Signature);
+    return EFI_INVALID_PARAMETER;
+  }
+
+  EntryToInsertVal = *((UINT64 *)((UINT8 *)EntryToInsert + ComparisonOffset));
+
+  ListLink    = List->ForwardLink;
+  ListEndLink = List;
+  while (ListLink != ListEndLink) {
+    if ((Signature != 0) && (*((UINT32 *)((UINT8 *)ListLink + SignatureOffset)) != Signature)) {
+      ASSERT (*((UINT32 *)((UINT8 *)ListLink + SignatureOffset)) == Signature);
+      return EFI_INVALID_PARAMETER;
+    }
+
+    ListEntryVal = *((UINT64 *)((UINT8 *)ListLink + ComparisonOffset));
+
+    if (EntryToInsertVal < ListEntryVal) {
+      break;
+    }
+
+    ListLink = ListLink->ForwardLink;
+  }
+
+  EntryToInsert->BackLink              = ListLink->BackLink;
+  EntryToInsert->ForwardLink           = ListLink;
+  EntryToInsert->BackLink->ForwardLink = EntryToInsert;
+  EntryToInsert->ForwardLink->BackLink = EntryToInsert;
+  return EFI_SUCCESS;
+}
+
+/**
+  Merges every LIST_ENTRY within ArrayOfListEntriesToBeMerged into List
+
+  @param[in] List                             Pointer to the head of the list into which each element
+                                              of ArrayOfListEntriesToBeMerged will be inserted
+  @param[in] ArrayOfListEntriesToBeMerged     Pointer to an array of LIST_ENTRY* which will be merged
+                                              into the input List
+  @param[in] ListToBeMergedCount              Number of LIST_ENTRY* which will be merged
+                                              into the input List
+  @param[in] ComparisonOffset                 Offset of the field to compare each list entry against relative to the
+                                              list entry pointer
+  @param[in] SignatureOffset                  Offset of the signature to compare each list entry against relative to the
+                                              list entry pointer
+  @param[in] Signature                        Signature to compare for each list entry. If this is zero,
+                                              no signature check will be performed
+
+  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into List
+  @retval EFI_INVALID_PARAMETER               List was NULL                             OR
+                                              ArrayOfListEntriesToBeMerged was NULL     OR
+                                              ArrayOfListEntriesToBeMerged[n] was NULL  OR
+                                              ListToBeMergedCount was zero
+  @retval Other                               Return value of OrderedInsertUint64Comparison()
+**/
+STATIC
+EFI_STATUS
+OrderedInsertArrayUint64Comparison (
+  IN  LIST_ENTRY  *List,
+  IN  LIST_ENTRY  **ArrayOfListEntriesToBeMerged,
+  IN  UINTN       ListToBeMergedCount,
+  IN  INT64       ComparisonOffset,
+  IN  INT64       SignatureOffset OPTIONAL,
+  IN  UINT32      Signature OPTIONAL
+  )
+{
+  INTN        ListToBeMergedIndex = ListToBeMergedCount - 1;
+  EFI_STATUS  Status              = EFI_SUCCESS;
+
+  if ((List == NULL) || (ArrayOfListEntriesToBeMerged == NULL) || (ListToBeMergedCount == 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // If the input array is sorted, going backwards is the fastest method
+  for ( ; ListToBeMergedIndex >= 0; --ListToBeMergedIndex) {
+    if (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex] == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    RemoveEntryList (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
+    Status = OrderedInsertUint64Comparison (
+               List,
+               ArrayOfListEntriesToBeMerged[ListToBeMergedIndex],
+               ComparisonOffset,
+               SignatureOffset,
+               Signature
+               );
+
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+  }
+
+  return Status;
+}
+
+/**
+  Merges every LIST_ENTRY within ListToBeMerged into ListToMergeInto
+
+  @param[in]  ListToMergeInto                 Pointer to the head of a list into which the input
+                                              ListToBeMerged will be merged
+  @param[in]  ListToBeMerged                  Pointer to the head of a list which will be merged
+                                              into ListToMergeInto
+  @param[in]  ListToBeMergedCount             Number of LIST_ENTRY* in ListToBeMerged
+  @param[out] ArrayOfMergedElements           Pointer to an unallocated array of LIST_ENTRY*. The array will be
+                                              allocated if the function returns success and contain every
+                                              LIST_ENTRY* merged into ListToMergeInto
+  @param[in] ComparisonOffset                 Offset of the field to compare each list entry against relative to the
+                                              list entry pointer
+  @param[in] SignatureOffset                  Offset of the signature to compare each list entry against relative to the
+                                              list entry pointer
+  @param[in] Signature                        Signature to compare for each list entry. If this is zero,
+                                              no signature check will be performed
+
+  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into
+                                              ImagePropertiesRecordList
+  @retval EFI_OUT_OF_RESOURCES                Failed to allocate memory
+  @retval EFI_INVALID_PARAMETER               ListToMergeInto was NULL                    OR
+                                              ListToBeMerged was NULL                     OR
+                                              ArrayOfListEntriesToBeMerged was NULL       OR
+                                              *ArrayOfListEntriesToBeMerged was not NULL  OR
+                                              ListToBeMergedCount was NULL
+  @retval other                               Return value of OrderedInsertUint64Comparison()
+**/
+STATIC
+EFI_STATUS
+MergeListsUint64Comparison (
+  IN  LIST_ENTRY   *ListToMergeInto,
+  IN  LIST_ENTRY   *ListToBeMerged,
+  IN  CONST UINTN  *ListToBeMergedCount,
+  OUT LIST_ENTRY   ***ArrayOfMergedElements,
+  IN  INT64        ComparisonOffset,
+  IN  INT64        SignatureOffset OPTIONAL,
+  IN  UINT32       Signature OPTIONAL
+  )
+{
+  UINTN       Index  = 0;
+  EFI_STATUS  Status = EFI_SUCCESS;
+
+  if ((ListToMergeInto == NULL) || (ListToBeMerged == NULL) ||
+      (ArrayOfMergedElements == NULL) || (*ArrayOfMergedElements != NULL) ||
+      (ListToBeMergedCount == NULL))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *ArrayOfMergedElements = AllocateZeroPool (sizeof (LIST_ENTRY *) * *ListToBeMergedCount);
+
+  if (*ArrayOfMergedElements == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // Insert each entry in the list to be merged into the
+  while (!IsListEmpty (ListToBeMerged) && Index < *ListToBeMergedCount) {
+    (*ArrayOfMergedElements)[Index] = ListToBeMerged->ForwardLink;
+    RemoveEntryList ((*ArrayOfMergedElements)[Index]);
+    Status = OrderedInsertUint64Comparison (
+               ListToMergeInto,
+               (*ArrayOfMergedElements)[Index++],
+               ComparisonOffset,
+               SignatureOffset,
+               Signature
+               );
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+  }
+
+  // If we did not merge all elements of the list, unmerge them and free the input array
+  if (!IsListEmpty (ListToBeMerged)) {
+    OrderedInsertArrayUint64Comparison (
+      ListToBeMerged,
+      *ArrayOfMergedElements,
+      Index - 1,
+      ComparisonOffset,
+      SignatureOffset,
+      Signature
+      );
+    FreePool (*ArrayOfMergedElements);
+  }
+
+  return Status;
+}
+
+// ---------------------------------------
 //         SPECIAL REGION LOGIC
 // ---------------------------------------
 
@@ -718,228 +940,6 @@ DumpMemoryProtectionSpecialRegions (
   }
 
   return;
-}
-
-// ---------------------------------------
-//     LINKED LIST SUPPORT FUNCTIONS
-// ---------------------------------------
-
-/**
-  Inserts the input ImageRecordToInsertLink into ImageRecordList based on the IMAGE_PROPERTIES_RECORD.ImageBase field
-
-  @param[in] ImageRecordList           Pointer to the head of the IMAGE_PROPERTIES_RECORD list
-  @param[in] ImageRecordToInsertLink   Pointer to the list entry of the IMAGE_PROPERTIES_RECORD to insert
-
-  @retval EFI_SUCCESS             IMAGE_PROPERTIES_RECORD inserted into the list
-  @retval EFI_INVALID_PARAMETER   ImageRecordList or ImageRecordToInsertLink were NULL
-**/
-STATIC
-EFI_STATUS
-OrderedInsertImageRecordListEntry (
-  IN LIST_ENTRY  *ImageRecordList,
-  IN LIST_ENTRY  *ImageRecordToInsertLink
-  )
-{
-  IMAGE_PROPERTIES_RECORD  *CurrentImageRecord;
-  IMAGE_PROPERTIES_RECORD  *ImageRecordToInsert;
-  LIST_ENTRY               *ImageRecordLink;
-  LIST_ENTRY               *ImageRecordEndLink;
-  EFI_PHYSICAL_ADDRESS     ImageRecordToInsertBase;
-
-  if ((ImageRecordList == NULL) || (ImageRecordToInsertLink == NULL)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  ImageRecordToInsert = CR (
-                          ImageRecordToInsertLink,
-                          IMAGE_PROPERTIES_RECORD,
-                          Link,
-                          IMAGE_PROPERTIES_RECORD_SIGNATURE
-                          );
-  ImageRecordToInsertBase = ImageRecordToInsert->ImageBase;
-
-  ImageRecordLink    = ImageRecordList->ForwardLink;
-  ImageRecordEndLink = ImageRecordList;
-  while (ImageRecordLink != ImageRecordEndLink) {
-    CurrentImageRecord = CR (
-                           ImageRecordLink,
-                           IMAGE_PROPERTIES_RECORD,
-                           Link,
-                           IMAGE_PROPERTIES_RECORD_SIGNATURE
-                           );
-    if (ImageRecordToInsertBase < CurrentImageRecord->ImageBase) {
-      break;
-    }
-
-    ImageRecordLink = ImageRecordLink->ForwardLink;
-  }
-
-  ImageRecordToInsertLink->BackLink              = ImageRecordLink->BackLink;
-  ImageRecordToInsertLink->ForwardLink           = ImageRecordLink;
-  ImageRecordToInsertLink->BackLink->ForwardLink = ImageRecordToInsertLink;
-  ImageRecordToInsertLink->ForwardLink->BackLink = ImageRecordToInsertLink;
-  return EFI_SUCCESS;
-}
-
-/**
-  Inserts the input CodeSectionToInsertLink into CodeSectionList based on the
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION.CodeSegmentBase field
-
-  @param[in] CodeSectionList           Pointer to the head of the IMAGE_PROPERTIES_RECORD_CODE_SECTION list
-  @param[in] CodeSectionToInsertLink   Pointer to the list entry of the IMAGE_PROPERTIES_RECORD_CODE_SECTION to insert
-
-  @retval EFI_SUCCESS             IMAGE_PROPERTIES_RECORD_CODE_SECTION inserted into the list
-  @retval EFI_INVALID_PARAMETER   CodeSectionList or CodeSectionToInsertLink were NULL
-**/
-STATIC
-EFI_STATUS
-OrderedInsertCodeSectionListEntry (
-  IN LIST_ENTRY  *CodeSectionList,
-  IN LIST_ENTRY  *CodeSectionToInsertLink
-  )
-{
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CurrentCodeSection;
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSectionToInsert;
-  LIST_ENTRY                            *CodeSectionLink;
-  LIST_ENTRY                            *CodeSectionEndLink;
-  EFI_PHYSICAL_ADDRESS                  CodeSectionToInsertBase;
-
-  if ((CodeSectionList == NULL) || (CodeSectionToInsertLink == NULL)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  CodeSectionToInsert = CR (
-                          CodeSectionToInsertLink,
-                          IMAGE_PROPERTIES_RECORD_CODE_SECTION,
-                          Link,
-                          IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
-                          );
-
-  CodeSectionToInsertBase = CodeSectionToInsert->CodeSegmentBase;
-
-  CodeSectionLink    = CodeSectionList->ForwardLink;
-  CodeSectionEndLink = CodeSectionList;
-  while (CodeSectionLink != CodeSectionEndLink) {
-    CurrentCodeSection = CR (
-                           CodeSectionLink,
-                           IMAGE_PROPERTIES_RECORD_CODE_SECTION,
-                           Link,
-                           IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
-                           );
-    if (CodeSectionToInsertBase < CurrentCodeSection->CodeSegmentBase) {
-      break;
-    }
-
-    CodeSectionLink = CodeSectionLink->ForwardLink;
-  }
-
-  CodeSectionToInsertLink->BackLink              = CodeSectionLink->BackLink;
-  CodeSectionToInsertLink->ForwardLink           = CodeSectionLink;
-  CodeSectionToInsertLink->BackLink->ForwardLink = CodeSectionToInsertLink;
-  CodeSectionToInsertLink->ForwardLink->BackLink = CodeSectionToInsertLink;
-  return EFI_SUCCESS;
-}
-
-/**
-  Merges every IMAGE_PROPERTIES_RECORD entry within ArrayOfListEntriesToBeMerged into ImagePropertiesRecordList
-
-  @param[in] ImagePropertiesRecordList        Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
-                                              into which the input ArrayOfListEntriesToBeMerged will be merged
-  @param[in] ArrayOfListEntriesToBeMerged     Pointer to an array of LIST_ENTRY* which will be merged
-                                              into the input ImagePropertiesRecordList
-  @param[in] ListToBeMergedCount              Number of LIST_ENTRY* which will be merged
-                                              into the input ImagePropertiesRecordList
-
-  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into ImagePropertiesRecordList
-  @retval EFI_INVALID_PARAMETER               ImagePropertiesRecordList was NULL        OR
-                                              ArrayOfListEntriesToBeMerged was NULL     OR
-                                              ArrayOfListEntriesToBeMerged[n] was NULL  OR
-                                              ListToBeMergedCount was zero
-**/
-STATIC
-EFI_STATUS
-OrderedInsertImagePropertiesRecordArray (
-  IN  LIST_ENTRY  *ImagePropertiesRecordList,
-  IN  LIST_ENTRY  **ArrayOfListEntriesToBeMerged,
-  IN  UINTN       ListToBeMergedCount
-  )
-{
-  INTN  ListToBeMergedIndex = ListToBeMergedCount - 1;
-
-  if ((ImagePropertiesRecordList == NULL) || (ArrayOfListEntriesToBeMerged == NULL) || (ListToBeMergedCount == 0)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  // The input array should be sorted, so going backwards is the fastest method
-  for ( ; ListToBeMergedIndex >= 0; --ListToBeMergedIndex) {
-    if (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex] == NULL) {
-      return EFI_INVALID_PARAMETER;
-    }
-
-    RemoveEntryList (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
-    OrderedInsertImageRecordListEntry (ImagePropertiesRecordList, ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
-  }
-
-  return EFI_SUCCESS;
-}
-
-/**
-  Merges every LIST_ENTRY within ArrayOfListEntriesToBeMerged into ImagePropertiesRecordList
-
-  @param[in]  ListToMergeInto                 Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
-                                              into which the input ListToBeMerged will be merged
-  @param[in]  ListToBeMerged                  Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
-                                              which will be merged into ListToMergeInto
-  @param[in]  ListToBeMergedCount             Number of IMAGE_PROPERTIES_RECORD entries in ListToBeMerged
-  @param[out] ArrayOfListEntriesToBeMerged    Pointer to an allocated array of LIST_ENTRY* which were merged
-                                              into the input ListToMergeInto. This array should be size
-                                              ListToBeMergedCount * sizeof(LIST_ENTRY*)
-
-  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into
-                                              ImagePropertiesRecordList
-  @retval EFI_OUT_OF_RESOURCES                Failed to allocate memory
-  @retval EFI_INVALID_PARAMETER               ListToMergeInto was NULL                  OR
-                                              ListToBeMerged was NULL                   OR
-                                              ArrayOfListEntriesToBeMerged was NULL     OR
-                                              ListToBeMergedCount was zero
-  @retval other                               Return value of OrderedInsertImageRecordListEntry()
-**/
-STATIC
-EFI_STATUS
-MergeImagePropertiesRecordLists (
-  IN  LIST_ENTRY  *ListToMergeInto,
-  IN  LIST_ENTRY  *ListToBeMerged,
-  IN  UINTN       ListToBeMergedCount,
-  OUT LIST_ENTRY  **ArrayOfMergedElements
-  )
-{
-  UINTN       Index = 0;
-  EFI_STATUS  Status;
-
-  if ((ListToMergeInto == NULL) || (ListToBeMerged == NULL) ||
-      (ArrayOfMergedElements == NULL) || (ListToBeMergedCount == 0))
-  {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  // Insert each entry in the list to be merged into the
-  while (!IsListEmpty (ListToBeMerged) && Index < ListToBeMergedCount) {
-    ArrayOfMergedElements[Index] = ListToBeMerged->ForwardLink;
-    RemoveEntryList (ArrayOfMergedElements[Index]);
-    Status = OrderedInsertImageRecordListEntry (ListToMergeInto, ArrayOfMergedElements[Index++]);
-    if (EFI_ERROR (Status)) {
-      break;
-    }
-  }
-
-  // If we did not merge all elements of the list, unmerge them and free the input array
-  if (!IsListEmpty (ListToBeMerged)) {
-    OrderedInsertImagePropertiesRecordArray (ListToBeMerged, ArrayOfMergedElements, Index - 1);
-    FreePool (*ArrayOfMergedElements);
-    return Status;
-  }
-
-  return EFI_SUCCESS;
 }
 
 // ---------------------------------------
@@ -1464,7 +1464,13 @@ CreateNonProtectedImagePropertiesRecord (
   ImageRecord->CodeSegmentCount = 0;
   InitializeListHead (&ImageRecord->CodeSegmentList);
 
-  Status = OrderedInsertImageRecordListEntry (&mNonProtectedImageRangesPrivate.NonProtectedImageList, &ImageRecord->Link);
+  Status = OrderedInsertUint64Comparison (
+             &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+             &ImageRecord->Link,
+             OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+             OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+             IMAGE_PROPERTIES_RECORD_SIGNATURE
+             );
 
   if (EFI_ERROR (Status)) {
     FreeImageRecord (ImageRecord);
@@ -1628,7 +1634,13 @@ CreateImagePropertiesRecord (
       ImageRecordCodeSection->CodeSegmentBase = (UINTN)ImageAddress + Section[Index].VirtualAddress;
       ImageRecordCodeSection->CodeSegmentSize = EfiPagesToSize (EfiSizeToPages (Section[Index].SizeOfRawData));
 
-      OrderedInsertCodeSectionListEntry (&ImageRecord->CodeSegmentList, &ImageRecordCodeSection->Link);
+      OrderedInsertUint64Comparison (
+        &ImageRecord->CodeSegmentList,
+        &ImageRecordCodeSection->Link,
+        OFFSET_OF (IMAGE_PROPERTIES_RECORD_CODE_SECTION, CodeSegmentBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD_CODE_SECTION, Link),
+        OFFSET_OF (IMAGE_PROPERTIES_RECORD_CODE_SECTION, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD_CODE_SECTION, Link),
+        IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+        );
       ImageRecord->CodeSegmentCount++;
     }
   }
@@ -2455,21 +2467,21 @@ GetMemoryMapWithPopulatedAccessAttributes (
   } else if (mNonProtectedImageRangesPrivate.NonProtectedImageCount == 0) {
     MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
   } else {
-    MergedImageList          = &mImagePropertiesPrivate.ImageRecordList;
-    ArrayOfListEntryPointers = AllocateZeroPool (mNonProtectedImageRangesPrivate.NonProtectedImageCount * sizeof (LIST_ENTRY *));
-
-    if (ArrayOfListEntryPointers == NULL) {
-      goto OutOfResourcesCleanup;
-    }
-
-    Status = MergeImagePropertiesRecordLists (
-               MergedImageList,
-               &mNonProtectedImageRangesPrivate.NonProtectedImageList,
-               mNonProtectedImageRangesPrivate.NonProtectedImageCount,
-               ArrayOfListEntryPointers
-               );
+    MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
+    Status          = MergeListsUint64Comparison (
+                        MergedImageList,
+                        &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+                        &mNonProtectedImageRangesPrivate.NonProtectedImageCount,
+                        &ArrayOfListEntryPointers,
+                        OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                        OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                        IMAGE_PROPERTIES_RECORD_SIGNATURE
+                        );
 
     ASSERT_EFI_ERROR (Status);
+    if (Status == EFI_OUT_OF_RESOURCES) {
+      goto OutOfResourcesCleanup;
+    }
   }
 
   SeparateImagesInMemoryMap (
@@ -2496,10 +2508,13 @@ GetMemoryMapWithPopulatedAccessAttributes (
 
   // Restore the nonprotected image list
   if (ArrayOfListEntryPointers != NULL) {
-    Status = OrderedInsertImagePropertiesRecordArray (
+    Status = OrderedInsertArrayUint64Comparison (
                &mNonProtectedImageRangesPrivate.NonProtectedImageList,
                ArrayOfListEntryPointers,
-               mNonProtectedImageRangesPrivate.NonProtectedImageCount
+               mNonProtectedImageRangesPrivate.NonProtectedImageCount,
+               OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+               OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+               IMAGE_PROPERTIES_RECORD_SIGNATURE
                );
     ASSERT_EFI_ERROR (Status);
     FreePool (ArrayOfListEntryPointers);
@@ -2548,10 +2563,13 @@ OutOfResourcesCleanup:
   }
 
   if (ArrayOfListEntryPointers != NULL) {
-    Status = OrderedInsertImagePropertiesRecordArray (
+    Status = OrderedInsertArrayUint64Comparison (
                &mNonProtectedImageRangesPrivate.NonProtectedImageList,
                ArrayOfListEntryPointers,
-               mNonProtectedImageRangesPrivate.NonProtectedImageCount
+               mNonProtectedImageRangesPrivate.NonProtectedImageCount,
+               OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+               OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+               IMAGE_PROPERTIES_RECORD_SIGNATURE
                );
     ASSERT_EFI_ERROR (Status);
     FreePool (ArrayOfListEntryPointers);
@@ -2702,7 +2720,13 @@ ProtectUefiImageMu (
 
     if (!EFI_ERROR (Status)) {
       // Record the image record in the list so we can undo the protections later
-      Status = OrderedInsertImageRecordListEntry (&mImagePropertiesPrivate.ImageRecordList, &ImageRecord->Link);
+      Status = OrderedInsertUint64Comparison (
+                 &mImagePropertiesPrivate.ImageRecordList,
+                 &ImageRecord->Link,
+                 OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                 OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                 IMAGE_PROPERTIES_RECORD_SIGNATURE
+                 );
       ASSERT_EFI_ERROR (Status);
 
       mImagePropertiesPrivate.ImageRecordCount++;
