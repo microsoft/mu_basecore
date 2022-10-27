@@ -1485,8 +1485,6 @@ ApplyMemoryProtectionPolicy (
   UINT64  OldAttributes;
   UINT64  NewAttributes;
 
-  EFI_STATUS  Status; // MU_CHANGE
-
   //
   // The policy configured in Dxe NX Protection Policy // MU_CHANGE
   // does not apply to allocations performed in SMM mode.
@@ -1561,14 +1559,9 @@ ApplyMemoryProtectionPolicy (
   // attributes from the page table to see if they are consistent. If they are not consistent,
   // GetMemoryAttributes() will return an error.
   if (MemoryAttributeProtocol != NULL) {
-    Status = MemoryAttributeProtocol->GetMemoryAttributes (
-                                        MemoryAttributeProtocol,
-                                        Memory,
-                                        Length,
-                                        &OldAttributes
-                                        );
-
-    if (!EFI_ERROR (Status) && (OldAttributes == NewAttributes)) {
+    if (!EFI_ERROR (MemoryAttributeProtocol->GetMemoryAttributes (MemoryAttributeProtocol, Memory, Length, &OldAttributes)) &&
+        (OldAttributes == NewAttributes))
+    {
       return EFI_SUCCESS;
     }
   }
