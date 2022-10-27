@@ -633,7 +633,7 @@ AddSpecialRegion (
   IN UINT64                Attributes
   )
 {
-  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY *SpecialRegionEntry = NULL;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry = NULL;
 
   if (Length == 0) {
     return EFI_INVALID_PARAMETER;
