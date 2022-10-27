@@ -282,8 +282,7 @@ extern LIST_ENTRY  mGcdMemorySpaceMap;
                                         will be performed
 
   @retval EFI_SUCCESS                   EntryToInsert was inserted into List
-  @retval EFI_INVALID_PARAMETER         ImageRecordList or ImageRecordToInsertLink were NULL, or a signature
-                                        check failed
+  @retval EFI_INVALID_PARAMETER         List or EntryToInsert were NULL, or a signature check failed
 **/
 STATIC
 EFI_STATUS
