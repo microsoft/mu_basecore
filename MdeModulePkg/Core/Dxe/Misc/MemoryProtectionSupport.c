@@ -27,6 +27,7 @@ MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD  mSpecialMemoryRegionsPrivate
 
 BOOLEAN                        mIsSystemNxCompatible    = TRUE;
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
+BOOLEAN                        TestBool                 = TRUE;
 
 #define IS_BITMAP_INDEX_SET(Bitmap, Index)  ((((UINT8*)Bitmap)[Index / 8] & (1 << (Index % 8))) != 0 ? TRUE : FALSE)
 #define SET_BITMAP_INDEX(Bitmap, Index)     (((UINT8*)Bitmap)[Index / 8] |= (1 << (Index % 8)))
@@ -525,7 +526,13 @@ CollectSpecialRegionHobs (
     NewSpecialRegion->SpecialRegion.Length        = ALIGN_VALUE (HobSpecialRegion->Length, EFI_PAGE_SIZE);
     NewSpecialRegion->SpecialRegion.EfiAttributes = HobSpecialRegion->EfiAttributes & EFI_MEMORY_ACCESS_MASK;
     NewSpecialRegion->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
-    OrderedInsertSpecialRegionListEntry (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &NewSpecialRegion->Link);
+    OrderedInsertUint64Comparison (
+      &mSpecialMemoryRegionsPrivate.SpecialRegionList,
+      &NewSpecialRegion->Link,
+      OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, SpecialRegion) + OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION, Start) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+      OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Signature) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+      MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+      );
     mSpecialMemoryRegionsPrivate.Count++;
 
     GuidHob = GetNextGuidHob (&gMemoryProtectionSpecialRegionHobGuid, GET_NEXT_HOB (GuidHob));
@@ -627,7 +634,7 @@ AddSpecialRegion (
   IN UINT64                Attributes
   )
 {
-  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry = NULL;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry;
 
   if (Length == 0) {
     return EFI_INVALID_PARAMETER;
@@ -643,7 +650,13 @@ AddSpecialRegion (
   SpecialRegionEntry->SpecialRegion.Start         = ALIGN_ADDRESS (Start);
   SpecialRegionEntry->SpecialRegion.Length        = ALIGN_VALUE (Length, EFI_PAGE_SIZE);
   SpecialRegionEntry->SpecialRegion.EfiAttributes = Attributes & EFI_MEMORY_ACCESS_MASK;
-  OrderedInsertSpecialRegionListEntry (&mSpecialMemoryRegionsPrivate.SpecialRegionList, &SpecialRegionEntry->Link);
+  OrderedInsertUint64Comparison (
+    &mSpecialMemoryRegionsPrivate.SpecialRegionList,
+    &SpecialRegionEntry->Link,
+    OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, SpecialRegion) + OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION, Start) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+    OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Signature) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+    MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+    );
   mSpecialMemoryRegionsPrivate.Count++;
 
   return EFI_SUCCESS;
@@ -1872,7 +1885,7 @@ SeparateImagesInMemoryMap (
                                                   OUT:  A pointer to the updated memory map
   @param[in]      DescriptorSize                  The size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
   @param[in]      BufferSize                      The size, in bytes, of the full memory map buffer
-  @param[in]      SpecialRegionList               List of special regions to separate. This list will be sorted.
+  @param[in]      SpecialRegionList               List of special regions to separate. This list should be sorted.
 
   @retval         EFI_SUCCESS                     Memory map has been split
   @retval         EFI_NOT_FOUND                   Unable to find a special region
@@ -2650,6 +2663,13 @@ ProtectUefiImageMu (
   if (ImageRecord == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
   }
+
+  if (TestBool) {
+    Status           = EFI_INVALID_PARAMETER;
+    ProtectionPolicy = PROTECT_IF_ALIGNED_ELSE_ALLOW;
+  }
+
+  TestBool = !TestBool;
 
   if (!EFI_ERROR (Status)) {
     // If a record was already created for the memory attributes table, copy it
