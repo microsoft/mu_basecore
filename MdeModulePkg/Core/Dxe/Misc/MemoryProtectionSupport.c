@@ -27,7 +27,6 @@ MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD  mSpecialMemoryRegionsPrivate
 
 BOOLEAN                        mIsSystemNxCompatible    = TRUE;
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
-BOOLEAN                        TestBool                 = TRUE;
 
 #define IS_BITMAP_INDEX_SET(Bitmap, Index)  ((((UINT8*)Bitmap)[Index / 8] & (1 << (Index % 8))) != 0 ? TRUE : FALSE)
 #define SET_BITMAP_INDEX(Bitmap, Index)     (((UINT8*)Bitmap)[Index / 8] |= (1 << (Index % 8)))
@@ -634,7 +633,7 @@ AddSpecialRegion (
   IN UINT64                Attributes
   )
 {
-  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY *SpecialRegionEntry = NULL;
 
   if (Length == 0) {
     return EFI_INVALID_PARAMETER;
@@ -2663,13 +2662,6 @@ ProtectUefiImageMu (
   if (ImageRecord == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
   }
-
-  if (TestBool) {
-    Status           = EFI_INVALID_PARAMETER;
-    ProtectionPolicy = PROTECT_IF_ALIGNED_ELSE_ALLOW;
-  }
-
-  TestBool = !TestBool;
 
   if (!EFI_ERROR (Status)) {
     // If a record was already created for the memory attributes table, copy it
