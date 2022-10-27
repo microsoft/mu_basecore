@@ -1564,7 +1564,7 @@ ApplyMemoryProtectionPolicy (
     Status = MemoryAttributeProtocol->GetMemoryAttributes (
                                         MemoryAttributeProtocol,
                                         Memory,
-                                        EFI_SIZE_TO_PAGES (Length),
+                                        Length,
                                         &OldAttributes
                                         );
 
