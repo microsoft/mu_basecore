@@ -1482,7 +1482,7 @@ ApplyMemoryProtectionPolicy (
   IN  UINT64                Length
   )
 {
-  // UINT64  OldAttributes;
+  UINT64  OldAttributes;
   UINT64  NewAttributes;
 
   //
@@ -1541,7 +1541,7 @@ ApplyMemoryProtectionPolicy (
   //
   NewAttributes = GetPermissionAttributeForMemoryType (NewType);
 
-  // MU_CHANGE START: TODO: There is a potential bug where attributes are not properly set
+  // MU_CHANGE START: There is a potential bug where attributes are not properly set
   //                  for all pages during a call to AllocatePages(). This may be due to a bug somewhere
   //                  during the free page process.
   // if (OldType != EfiMaxMemoryType) {
@@ -1554,6 +1554,18 @@ ApplyMemoryProtectionPolicy (
   //   // newly added region of a type that does not require protection
   //   return EFI_SUCCESS;
   // }
+
+  // To catch the edge case where the attributes are not consistent across the range, get the
+  // attributes from the page table to see if they are consistent. If they are not consistent,
+  // GetMemoryAttributes() will return an error.
+  if (MemoryAttributeProtocol != NULL) {
+    if (!EFI_ERROR (MemoryAttributeProtocol->GetMemoryAttributes (MemoryAttributeProtocol, Memory, Length, &OldAttributes)) &&
+        (OldAttributes == NewAttributes))
+    {
+      return EFI_SUCCESS;
+    }
+  }
+
   // MU_CHANGE END
 
   return gCpu->SetMemoryAttributes (gCpu, Memory, Length, NewAttributes);
