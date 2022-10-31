@@ -2592,10 +2592,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
              &MemorySpaceMapDescriptorSize
              );
 
-  if (EFI_ERROR (Status)) {
-    ASSERT_EFI_ERROR (Status);
-    goto Cleanup;
-  }
+  ASSERT_EFI_ERROR (Status);
 
   // |         |      |      |      |      |      |         |
   // | 4K PAGE | DATA | CODE | DATA | CODE | DATA | 4K PAGE |
@@ -2721,11 +2718,8 @@ GetMemoryMapWithPopulatedAccessAttributes (
                OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
                IMAGE_PROPERTIES_RECORD_SIGNATURE
                );
-    if (EFI_ERROR (Status)) {
-      ASSERT_EFI_ERROR (Status);
-      goto Cleanup;
-    }
 
+    ASSERT_EFI_ERROR (Status);
     FreePool (ArrayOfListEntryPointers);
   }
 
@@ -2735,10 +2729,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
   // Set the bits in the bitmap to mark that the corresponding memory descriptor
   // has been set based on the memory protection policy and special regions
   Status = SyncBitmap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
-  if (EFI_ERROR (Status)) {
-    ASSERT_EFI_ERROR (Status);
-    goto Cleanup;
-  }
+  ASSERT_EFI_ERROR (Status);
 
   // Remove the access attributes from descriptors which correspond to nonprotected images
   if (mNonProtectedImageRangesPrivate.NonProtectedImageCount > 0) {
@@ -2757,10 +2748,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
   // Set the access attributes of descriptor ranges which have not been checked
   // against our memory protection policy
   Status = SetAccessAttributesInMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
-  if (EFI_ERROR (Status)) {
-    ASSERT_EFI_ERROR (Status);
-    goto Cleanup;
-  }
+  ASSERT_EFI_ERROR (Status);
 
   DEBUG_CODE (
     DEBUG ((DEBUG_INFO, "---Final Bitmap---\n"));
