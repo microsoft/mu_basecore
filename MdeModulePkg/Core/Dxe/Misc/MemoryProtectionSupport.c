@@ -517,7 +517,7 @@ MergeOverlappingSpecialRegions (
   IN LIST_ENTRY  *SpecialRegionList
   )
 {
-  LIST_ENTRY                                   *BackLink, *ForwardLink;
+  LIST_ENTRY                                   *BackLink, *ForwardLink, *TempLink;
   MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *BackEntry, *ForwardEntry, *NewEntry;
   EFI_PHYSICAL_ADDRESS                         BackStart, BackEnd, ForwardStart, ForwardEnd;
 
@@ -555,8 +555,9 @@ MergeOverlappingSpecialRegions (
         // If the attributes are the same between both entries, just expand BackEntry and delete ForwardEntry
         if (BackEntry->SpecialRegion.EfiAttributes == ForwardEntry->SpecialRegion.EfiAttributes) {
           BackEntry->SpecialRegion.Length = ForwardEnd - BackStart;
+          TempLink                        = ForwardLink;
           ForwardLink                     = ForwardLink->ForwardLink;
-          RemoveEntryList (ForwardLink);
+          RemoveEntryList (TempLink);
           FreePool (ForwardEntry);
           continue;
         }
