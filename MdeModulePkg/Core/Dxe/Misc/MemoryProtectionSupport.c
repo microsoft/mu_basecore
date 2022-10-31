@@ -609,7 +609,7 @@ MergeOverlappingSpecialRegions (
 }
 
 /**
-  Check if the input SpecialRegion conflicts with any special regions in the input SpecialRegionList. SpecialRegion
+  Check if the input SpecialRegion conflicts with any special regions in the input SpecialRegionList. The SpecialRegion
   conflicts if the interval overlaps with another interval in SpecialRegionList AND the attributes of
   SpecialRegion are not a subset of the attributes of the region with which it overlaps.
 
