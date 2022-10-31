@@ -2518,7 +2518,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
   EFI_STATUS  Status;
   UINTN       AdditionalRecordCount, NumMemMapDesc, NumBitmapEntries, \
               NumMemSpaceMapDesc, MemSpaceMapDescSize, MapKey, \
-              ExpandedMemMapSize, MemSpaceMapSize;
+              ExpandedMemMapSize, MemSpaceMapSize, BitmapIndex;
   UINT32                           DescVersion;
   UINT8                            *Bitmap                    = NULL;
   EFI_MEMORY_DESCRIPTOR            *ExpandedMemMap            = NULL;
@@ -2653,14 +2653,6 @@ GetMemoryMapWithPopulatedAccessAttributes (
   // If both protected and non-protected images are loaded, merge the two lists
   else {
     MergedImageList          = &mImagePropertiesPrivate.ImageRecordList;
-    ArrayOfListEntryPointers = AllocateZeroPool (mNonProtectedImageRangesPrivate.NonProtectedImageCount * sizeof (LIST_ENTRY *));
-
-    if (ArrayOfListEntryPointers == NULL) {
-      Status = EFI_OUT_OF_RESOURCES;
-      ASSERT_EFI_ERROR (Status);
-      goto Cleanup;
-    }
-
     Status = MergeListsUint64Comparison (
                MergedImageList,
                &mNonProtectedImageRangesPrivate.NonProtectedImageList,
@@ -2774,6 +2766,11 @@ GetMemoryMapWithPopulatedAccessAttributes (
     DEBUG ((DEBUG_INFO, "---Final Bitmap---\n"));
     DumpBitmap (Bitmap, NumBitmapEntries);
     );
+
+  // ASSERT if a bit in the bitmap is not set
+  for (BitmapIndex = 0; BitmapIndex < NumBitmapEntries; BitmapIndex++) {
+    ASSERT (IS_BITMAP_INDEX_SET (Bitmap, BitmapIndex));
+  }
 
   DEBUG_CODE (
     DEBUG ((DEBUG_INFO, "---Memory Map with Populated Access Attributes---\n"));
@@ -3182,9 +3179,7 @@ MemoryProtectionCpuArchProtocolNotifyMu (
     goto Done;
   }
 
-  if (gDxeMps.NxProtectionPolicy.Data || gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv) {
-    InitializePageAttributesForMemoryProtectionPolicy ();
-  }
+  InitializePageAttributesForMemoryProtectionPolicy ();
 
   //
   // Call notify function meant for Heap Guard.
