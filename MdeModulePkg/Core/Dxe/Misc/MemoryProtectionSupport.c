@@ -60,7 +60,7 @@ EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
 #define CHECK_SUBSUMPTION(AStart, AEnd, BStart, BEnd) \
   ((AStart < BStart) && (AEnd > BEnd))
 
-// TRUE if A is a subset of B
+// TRUE if A is a bitwise subset of B
 #define CHECK_SUBSET(A, B)  ((A | B) == B)
 
 /**
@@ -555,8 +555,10 @@ MergeOverlappingSpecialRegions (
         // If the attributes are the same between both entries, just expand BackEntry and delete ForwardEntry
         if (BackEntry->SpecialRegion.EfiAttributes == ForwardEntry->SpecialRegion.EfiAttributes) {
           BackEntry->SpecialRegion.Length = ForwardEnd - BackStart;
+          ForwardLink                     = ForwardLink->ForwardLink;
           RemoveEntryList (ForwardLink);
           FreePool (ForwardEntry);
+          continue;
         }
         // If BackEntry subsumes ForwardEntry, we need to create a new list entry to split BackEntry
         else if (CHECK_SUBSUMPTION (BackStart, BackEnd, ForwardStart, ForwardEnd)) {
@@ -689,33 +691,31 @@ CollectSpecialRegionHobs (
         HobSpecialRegion->Start + HobSpecialRegion->Length
         ));
       ASSERT (FALSE);
-      GuidHob = GetNextGuidHob (&gMemoryProtectionSpecialRegionHobGuid, GET_NEXT_HOB (GuidHob));
-      continue;
+    } else {
+      NewSpecialRegion = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY));
+
+      if (NewSpecialRegion == NULL) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "%a - Failed to allocate a special region list entry!\n",
+          __FUNCTION__
+          ));
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      NewSpecialRegion->SpecialRegion.Start         = ALIGN_ADDRESS (HobSpecialRegion->Start);
+      NewSpecialRegion->SpecialRegion.Length        = ALIGN_VALUE (HobSpecialRegion->Length, EFI_PAGE_SIZE);
+      NewSpecialRegion->SpecialRegion.EfiAttributes = HobSpecialRegion->EfiAttributes & EFI_MEMORY_ACCESS_MASK;
+      NewSpecialRegion->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
+      OrderedInsertUint64Comparison (
+        &mSpecialMemoryRegionsPrivate.SpecialRegionList,
+        &NewSpecialRegion->Link,
+        OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, SpecialRegion) + OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION, Start) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+        OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Signature) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+        MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+        );
+      mSpecialMemoryRegionsPrivate.Count++;
     }
-
-    NewSpecialRegion = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY));
-
-    if (NewSpecialRegion == NULL) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%a - Failed to allocate a special region list entry!\n",
-        __FUNCTION__
-        ));
-      return EFI_OUT_OF_RESOURCES;
-    }
-
-    NewSpecialRegion->SpecialRegion.Start         = ALIGN_ADDRESS (HobSpecialRegion->Start);
-    NewSpecialRegion->SpecialRegion.Length        = ALIGN_VALUE (HobSpecialRegion->Length, EFI_PAGE_SIZE);
-    NewSpecialRegion->SpecialRegion.EfiAttributes = HobSpecialRegion->EfiAttributes & EFI_MEMORY_ACCESS_MASK;
-    NewSpecialRegion->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
-    OrderedInsertUint64Comparison (
-      &mSpecialMemoryRegionsPrivate.SpecialRegionList,
-      &NewSpecialRegion->Link,
-      OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, SpecialRegion) + OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION, Start) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
-      OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Signature) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
-      MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
-      );
-    mSpecialMemoryRegionsPrivate.Count++;
 
     GuidHob = GetNextGuidHob (&gMemoryProtectionSpecialRegionHobGuid, GET_NEXT_HOB (GuidHob));
   }
