@@ -2521,10 +2521,10 @@ GetMemoryMapWithPopulatedAccessAttributes (
               ExpandedMemoryMapSize, MemorySpaceMapSize, BitmapIndex;
   UINT32                           DescriptorVersion;
   UINT8                            *Bitmap                    = NULL;
-  EFI_MEMORY_DESCRIPTOR            *ExpandedMemMap            = NULL;
+  EFI_MEMORY_DESCRIPTOR            *ExpandedMemoryMap         = NULL;
   LIST_ENTRY                       *MergedImageList           = NULL;
   LIST_ENTRY                       **ArrayOfListEntryPointers = NULL;
-  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemSpaceMap               = NULL;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemorySpaceMap            = NULL;
 
   if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
       (*MemoryMap != NULL) || (DescriptorSize == NULL))
@@ -2572,7 +2572,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
   // Filter each map entry to only contain access attributes
   FilterMemoryMapAttributes (MemoryMapSize, *MemoryMap, DescriptorSize);
 
-  Status = CoreGetMemorySpaceMap (&NumMemorySpaceMapDescriptors, &MemSpaceMap);
+  Status = CoreGetMemorySpaceMap (&NumMemorySpaceMapDescriptors, &MemorySpaceMap);
 
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
@@ -2588,7 +2588,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
              MemoryMap,
              DescriptorSize,
              &NumMemorySpaceMapDescriptors,
-             MemSpaceMap,
+             MemorySpaceMap,
              &MemorySpaceMapDescriptorSize
              );
 
@@ -2620,18 +2620,18 @@ GetMemoryMapWithPopulatedAccessAttributes (
                           (mNonProtectedImageRangesPrivate.NonProtectedImageCount * 3);
 
   ExpandedMemoryMapSize = (*MemoryMapSize * 2) + ((*DescriptorSize) * AdditionalRecordCount);
-  ExpandedMemMap        = AllocatePool (ExpandedMemoryMapSize);
+  ExpandedMemoryMap     = AllocatePool (ExpandedMemoryMapSize);
 
-  if (ExpandedMemMap == NULL) {
+  if (ExpandedMemoryMap == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
     ASSERT_EFI_ERROR (Status);
     goto Cleanup;
   }
 
-  CopyMem (ExpandedMemMap, *MemoryMap, *MemoryMapSize);
+  CopyMem (ExpandedMemoryMap, *MemoryMap, *MemoryMapSize);
   FreePool (*MemoryMap);
 
-  *MemoryMap = ExpandedMemMap;
+  *MemoryMap = ExpandedMemoryMap;
 
   DEBUG_CODE (
     DEBUG ((DEBUG_INFO, "---Currently Protected Images---\n"));
