@@ -672,14 +672,14 @@ CollectSpecialRegionHobs (
   VOID
   )
 {
-  EFI_HOB_GUID_TYPE                            *GuidHob                  = NULL;
-  MEMORY_PROTECTION_SPECIAL_REGION             *HobSpecialRegion         = NULL;
-  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *NewSpecialRegion         = NULL;
+  EFI_HOB_GUID_TYPE                            *GuidHob          = NULL;
+  MEMORY_PROTECTION_SPECIAL_REGION             *HobSpecialRegion = NULL;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *NewSpecialRegion = NULL;
 
   GuidHob = GetFirstGuidHob (&gMemoryProtectionSpecialRegionHobGuid);
 
   while (GuidHob != NULL) {
-    HobSpecialRegion         = (MEMORY_PROTECTION_SPECIAL_REGION *)GET_GUID_HOB_DATA (GuidHob);
+    HobSpecialRegion = (MEMORY_PROTECTION_SPECIAL_REGION *)GET_GUID_HOB_DATA (GuidHob);
     if (DoesSpecialRegionConflict (HobSpecialRegion, &mSpecialMemoryRegionsPrivate.SpecialRegionList)) {
       DEBUG ((
         DEBUG_ERROR,
