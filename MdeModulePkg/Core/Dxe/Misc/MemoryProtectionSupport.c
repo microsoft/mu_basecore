@@ -2516,10 +2516,10 @@ GetMemoryMapWithPopulatedAccessAttributes (
   )
 {
   EFI_STATUS  Status;
-  UINTN       AdditionalRecordCount, NumMemMapDesc, NumBitmapEntries, \
-              NumMemSpaceMapDesc, MemSpaceMapDescSize, MapKey, \
-              ExpandedMemMapSize, MemSpaceMapSize, BitmapIndex;
-  UINT32                           DescVersion;
+  UINTN       AdditionalRecordCount, NumMemoryMapDescriptors, NumBitmapEntries, \
+              NumMemorySpaceMapDescriptors, MemorySpaceMapDescriptorSize, MapKey, \
+              ExpandedMemoryMapSize, MemorySpaceMapSize, BitmapIndex;
+  UINT32                           DescriptorVersion;
   UINT8                            *Bitmap                    = NULL;
   EFI_MEMORY_DESCRIPTOR            *ExpandedMemMap            = NULL;
   LIST_ENTRY                       *MergedImageList           = NULL;
@@ -2539,7 +2539,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
              *MemoryMap,
              &MapKey,
              DescriptorSize,
-             &DescVersion
+             &DescriptorVersion
              );
 
   ASSERT (Status == EFI_BUFFER_TOO_SMALL);
@@ -2557,7 +2557,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
                *MemoryMap,
                &MapKey,
                DescriptorSize,
-               &DescVersion
+               &DescriptorVersion
                );
     if (EFI_ERROR (Status)) {
       FreePool (*MemoryMap);
@@ -2572,24 +2572,24 @@ GetMemoryMapWithPopulatedAccessAttributes (
   // Filter each map entry to only contain access attributes
   FilterMemoryMapAttributes (MemoryMapSize, *MemoryMap, DescriptorSize);
 
-  Status = CoreGetMemorySpaceMap (&NumMemSpaceMapDesc, &MemSpaceMap);
+  Status = CoreGetMemorySpaceMap (&NumMemorySpaceMapDescriptors, &MemSpaceMap);
 
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
     goto Cleanup;
   }
 
-  MemSpaceMapDescSize = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR);
-  MemSpaceMapSize     = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR) * NumMemSpaceMapDesc;
+  MemorySpaceMapDescriptorSize = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR);
+  MemorySpaceMapSize           = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR) * NumMemorySpaceMapDescriptors;
 
   // Fill in the memory map with regions described in the GCD memory map but not the EFI memory map
   Status = FillInMemoryMap (
              MemoryMapSize,
              MemoryMap,
              DescriptorSize,
-             &NumMemSpaceMapDesc,
+             &NumMemorySpaceMapDescriptors,
              MemSpaceMap,
-             &MemSpaceMapDescSize
+             &MemorySpaceMapDescriptorSize
              );
 
   if (EFI_ERROR (Status)) {
@@ -2619,8 +2619,8 @@ GetMemoryMapWithPopulatedAccessAttributes (
   AdditionalRecordCount = ((2 * mImagePropertiesPrivate.CodeSegmentCountMax + 3) * mImagePropertiesPrivate.ImageRecordCount) +
                           (mNonProtectedImageRangesPrivate.NonProtectedImageCount * 3);
 
-  ExpandedMemMapSize = (*MemoryMapSize * 2) + ((*DescriptorSize) * AdditionalRecordCount);
-  ExpandedMemMap     = AllocatePool (ExpandedMemMapSize);
+  ExpandedMemoryMapSize = (*MemoryMapSize * 2) + ((*DescriptorSize) * AdditionalRecordCount);
+  ExpandedMemMap        = AllocatePool (ExpandedMemoryMapSize);
 
   if (ExpandedMemMap == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
@@ -2685,7 +2685,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
                MemoryMapSize,
                *MemoryMap,
                DescriptorSize,
-               &ExpandedMemMapSize,
+               &ExpandedMemoryMapSize,
                &mSpecialMemoryRegionsPrivate.SpecialRegionList
                );
     if (EFI_ERROR (Status)) {
@@ -2695,9 +2695,9 @@ GetMemoryMapWithPopulatedAccessAttributes (
   }
 
   // Create a bitmap to track which descriptors have been updated with the correct attributes
-  NumMemMapDesc    = *MemoryMapSize / *DescriptorSize;
-  NumBitmapEntries = (NumMemMapDesc % 8) == 0 ? NumMemMapDesc : (((NumMemMapDesc / 8) * 8) + 8);
-  Bitmap           = AllocateZeroPool (NumBitmapEntries / 8);
+  NumMemoryMapDescriptors = *MemoryMapSize / *DescriptorSize;
+  NumBitmapEntries        = (NumMemoryMapDescriptors % 8) == 0 ? NumMemoryMapDescriptors : (((NumMemoryMapDescriptors / 8) * 8) + 8);
+  Bitmap                  = AllocateZeroPool (NumBitmapEntries / 8);
 
   if (Bitmap == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
@@ -2706,8 +2706,8 @@ GetMemoryMapWithPopulatedAccessAttributes (
   }
 
   // Set the extra bits
-  if ((NumMemMapDesc % 8) != 0) {
-    Bitmap[NumMemMapDesc / 8] |= ~((1 << (NumMemMapDesc % 8)) - 1);
+  if ((NumMemoryMapDescriptors % 8) != 0) {
+    Bitmap[NumMemoryMapDescriptors / 8] |= ~((1 << (NumMemoryMapDescriptors % 8)) - 1);
   }
 
   // Restore the nonprotected image list if it was merged with the protected
