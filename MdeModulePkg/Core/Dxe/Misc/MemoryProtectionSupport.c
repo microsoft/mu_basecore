@@ -51,6 +51,18 @@ EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
 
 #define SPECIAL_REGION_PATTERN  7732426 // 7-(S) 7-(P) 3-(E) 2-(C) 4-(I) 2-(A) 6-(L)
 
+// TRUE if A and B have overlapping intervals
+#define CHECK_OVERLAP(AStart, AEnd, BStart, BEnd) \
+  ((AStart <= BStart && AEnd > BStart) || \
+  (BStart <= AStart && BEnd > AStart))
+
+// TRUE if A interval subsumes B interval
+#define CHECK_SUBSUMPTION(AStart, AEnd, BStart, BEnd) \
+  ((AStart < BStart) && (AEnd > BEnd))
+
+// TRUE if A is a bitwise subset of B
+#define CHECK_SUBSET(A, B)  ((A | B) == B)
+
 /**
   Swap two image records.
 
@@ -491,6 +503,165 @@ MergeListsUint64Comparison (
 // ---------------------------------------
 
 /**
+  Walk through the input special region list to combine overlapping intervals.
+
+  @param[in]  SpecialRegionList      Pointer to the head of the list
+
+  @retval     EFI_INVALID_PARAMTER  SpecialRegionList was NULL
+  @retval     EFI_OUT_OF_RESOURCES  Failed to allocate memory
+  @retval     EFI_SUCCESS           Input special region list was merged
+**/
+STATIC
+EFI_STATUS
+MergeOverlappingSpecialRegions (
+  IN LIST_ENTRY  *SpecialRegionList
+  )
+{
+  LIST_ENTRY                                   *BackLink, *ForwardLink;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *BackEntry, *ForwardEntry, *NewEntry;
+  EFI_PHYSICAL_ADDRESS                         BackStart, BackEnd, ForwardStart, ForwardEnd;
+
+  if (SpecialRegionList == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  BackLink = SpecialRegionList->ForwardLink;
+
+  while (BackLink != SpecialRegionList) {
+    BackEntry = CR (
+                  BackLink,
+                  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                  Link,
+                  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                  );
+
+    BackStart = BackEntry->SpecialRegion.Start;
+    BackEnd   = BackEntry->SpecialRegion.Start + BackEntry->SpecialRegion.Length;
+
+    ForwardLink = BackLink->ForwardLink;
+    while (ForwardLink != SpecialRegionList) {
+      ForwardEntry = CR (
+                       ForwardLink,
+                       MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                       Link,
+                       MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                       );
+
+      ForwardStart = ForwardEntry->SpecialRegion.Start;
+      ForwardEnd   = ForwardEntry->SpecialRegion.Start + ForwardEntry->SpecialRegion.Length;
+
+      // If BackEntry and ForwardEntry overlap
+      if (CHECK_OVERLAP (BackStart, BackEnd, ForwardStart, ForwardEnd)) {
+        // If the attributes are the same between both entries, just expand BackEntry and delete ForwardEntry
+        if (BackEntry->SpecialRegion.EfiAttributes == ForwardEntry->SpecialRegion.EfiAttributes) {
+          BackEntry->SpecialRegion.Length = ForwardEnd - BackStart;
+          ForwardLink                     = ForwardLink->BackLink;
+          RemoveEntryList (ForwardLink->ForwardLink);
+          FreePool (ForwardEntry);
+        }
+        // If BackEntry subsumes ForwardEntry, we need to create a new list entry to split BackEntry
+        else if (CHECK_SUBSUMPTION (BackStart, BackEnd, ForwardStart, ForwardEnd)) {
+          NewEntry = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY));
+
+          if (NewEntry == NULL) {
+            return EFI_OUT_OF_RESOURCES;
+          }
+
+          BackEntry->SpecialRegion.Length = ForwardStart - BackStart;
+          InitializeListHead (&NewEntry->Link);
+          NewEntry->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
+          NewEntry->SpecialRegion.EfiAttributes = BackEntry->SpecialRegion.EfiAttributes;
+          NewEntry->SpecialRegion.Start         = ForwardEnd;
+          NewEntry->SpecialRegion.Length        = BackEnd - ForwardEnd;
+          OrderedInsertUint64Comparison (
+            SpecialRegionList,
+            &NewEntry->Link,
+            OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, SpecialRegion) + OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION, Start) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+            OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Signature) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+            MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+            );
+
+          ForwardLink = &NewEntry->Link;
+          break;
+        }
+        // If BackEntry does not subsume FrontEntry, we can trim each entry
+        //
+        // If ForwardEntry has more strict attributes, trim BackEntry
+        else if (CHECK_SUBSET (BackEntry->SpecialRegion.EfiAttributes, ForwardEntry->SpecialRegion.EfiAttributes)) {
+          BackEntry->SpecialRegion.Length = ForwardStart - BackStart;
+        }
+        // If BackEntry has more strict attributes, trim ForwardEntry
+        else {
+          ForwardEntry->SpecialRegion.Start = BackEnd;
+        }
+      } else {
+        // No overlap
+        break;
+      }
+
+      ForwardLink = ForwardLink->ForwardLink;
+    }
+
+    BackLink    = ForwardLink;
+    ForwardLink = BackLink->ForwardLink;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Check if the input SpecialRegion conflicts with any special regions in the input SpecialRegionList. The SpecialRegion
+  conflicts if the interval overlaps with another interval in SpecialRegionList AND the attributes of
+  SpecialRegion are not a subset of the attributes of the region with which it overlaps.
+
+  @param[in]  SpecialRegion       The special region to check against all special regions in SpecialRegionList
+  @param[in]  SpecialRegionList   The list of special regions to check against the input SpecialRegion
+
+  @retval     TRUE                SpecialRegion conflicts with a special region in SpecialRegionList
+  @retval     FALSE               SpecialRegion does not conflict with a special region in SpecialRegionList
+**/
+STATIC
+BOOLEAN
+DoesSpecialRegionConflict (
+  IN MEMORY_PROTECTION_SPECIAL_REGION  *SpecialRegion,
+  IN LIST_ENTRY                        *SpecialRegionList
+  )
+{
+  LIST_ENTRY                                   *SpecialRegionListLink;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionListEntry;
+  BOOLEAN                                      OverlapCheck, SubsetCheck;
+  EFI_PHYSICAL_ADDRESS                         InputStart, InputEnd, ListEntryStart, ListEntryEnd;
+
+  InputStart = SpecialRegion->Start;
+  InputEnd   = SpecialRegion->Start + SpecialRegion->Length;
+
+  SpecialRegionListLink = SpecialRegionList->ForwardLink;
+
+  while (SpecialRegionListLink != SpecialRegionList) {
+    SpecialRegionListEntry = CR (
+                               SpecialRegionListLink,
+                               MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                               Link,
+                               MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                               );
+
+    ListEntryStart = SpecialRegionListEntry->SpecialRegion.Start;
+    ListEntryEnd   = SpecialRegionListEntry->SpecialRegion.Start + SpecialRegionListEntry->SpecialRegion.Length;
+
+    OverlapCheck = CHECK_OVERLAP (InputStart, InputEnd, ListEntryStart, ListEntryEnd);
+    SubsetCheck  = CHECK_SUBSET (SpecialRegion->EfiAttributes, SpecialRegionListEntry->SpecialRegion.EfiAttributes);
+
+    if (OverlapCheck && !SubsetCheck) {
+      return TRUE;
+    }
+
+    SpecialRegionListLink = SpecialRegionListLink->ForwardLink;
+  }
+
+  return FALSE;
+}
+
+/**
   Copy the HOB MEMORY_PROTECTION_SPECIAL_REGION entries into a local list
 
   @retval EFI_SUCCESS           HOB Entries successfully copied
@@ -510,32 +681,45 @@ CollectSpecialRegionHobs (
 
   while (GuidHob != NULL) {
     HobSpecialRegion = (MEMORY_PROTECTION_SPECIAL_REGION *)GET_GUID_HOB_DATA (GuidHob);
-    NewSpecialRegion = AllocateCopyPool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY), HobSpecialRegion);
-
-    if (NewSpecialRegion == NULL) {
+    if (DoesSpecialRegionConflict (HobSpecialRegion, &mSpecialMemoryRegionsPrivate.SpecialRegionList)) {
       DEBUG ((
         DEBUG_ERROR,
-        "%a - Failed to allocate a special region list entry!\n",
-        __FUNCTION__
+        "%a - Special region 0x%llx - 0x%llx conflicts with another special region!\n",
+        __FUNCTION__,
+        HobSpecialRegion->Start,
+        HobSpecialRegion->Start + HobSpecialRegion->Length
         ));
-      return EFI_OUT_OF_RESOURCES;
-    }
+      ASSERT (FALSE);
+    } else {
+      NewSpecialRegion = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY));
 
-    NewSpecialRegion->SpecialRegion.Start         = ALIGN_ADDRESS (HobSpecialRegion->Start);
-    NewSpecialRegion->SpecialRegion.Length        = ALIGN_VALUE (HobSpecialRegion->Length, EFI_PAGE_SIZE);
-    NewSpecialRegion->SpecialRegion.EfiAttributes = HobSpecialRegion->EfiAttributes & EFI_MEMORY_ACCESS_MASK;
-    NewSpecialRegion->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
-    OrderedInsertUint64Comparison (
-      &mSpecialMemoryRegionsPrivate.SpecialRegionList,
-      &NewSpecialRegion->Link,
-      OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, SpecialRegion) + OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION, Start) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
-      OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Signature) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
-      MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
-      );
-    mSpecialMemoryRegionsPrivate.Count++;
+      if (NewSpecialRegion == NULL) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "%a - Failed to allocate a special region list entry!\n",
+          __FUNCTION__
+          ));
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      NewSpecialRegion->SpecialRegion.Start         = ALIGN_ADDRESS (HobSpecialRegion->Start);
+      NewSpecialRegion->SpecialRegion.Length        = ALIGN_VALUE (HobSpecialRegion->Length, EFI_PAGE_SIZE);
+      NewSpecialRegion->SpecialRegion.EfiAttributes = HobSpecialRegion->EfiAttributes & EFI_MEMORY_ACCESS_MASK;
+      NewSpecialRegion->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
+      OrderedInsertUint64Comparison (
+        &mSpecialMemoryRegionsPrivate.SpecialRegionList,
+        &NewSpecialRegion->Link,
+        OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, SpecialRegion) + OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION, Start) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+        OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Signature) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+        MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+        );
+      mSpecialMemoryRegionsPrivate.Count++;
+    }
 
     GuidHob = GetNextGuidHob (&gMemoryProtectionSpecialRegionHobGuid, GET_NEXT_HOB (GuidHob));
   }
+
+  MergeOverlappingSpecialRegions (&mSpecialMemoryRegionsPrivate.SpecialRegionList);
 
   return EFI_SUCCESS;
 }
@@ -622,7 +806,8 @@ GetSpecialRegions (
                                   and which should be active if the region was reported after initialization.
 
   @retval   EFI_SUCCESS           SpecialRegion was successfully added
-  @retval   EFI_INVALID_PARAMTER  Length is zero
+  @retval   EFI_INVALID_PARAMTER  Length is zero or the input region overlaps with an
+                                  existing special region
   @retval   EFI_OUT_OF_RESOURCES  Failed to allocate memory
 **/
 EFI_STATUS
@@ -649,6 +834,20 @@ AddSpecialRegion (
   SpecialRegionEntry->SpecialRegion.Start         = ALIGN_ADDRESS (Start);
   SpecialRegionEntry->SpecialRegion.Length        = ALIGN_VALUE (Length, EFI_PAGE_SIZE);
   SpecialRegionEntry->SpecialRegion.EfiAttributes = Attributes & EFI_MEMORY_ACCESS_MASK;
+
+  if (DoesSpecialRegionConflict (&SpecialRegionEntry->SpecialRegion, &mSpecialMemoryRegionsPrivate.SpecialRegionList)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a - Special region 0x%llx - 0x%llx conflicts with an existing special region!\n",
+      __FUNCTION__,
+      SpecialRegionEntry->SpecialRegion.Start,
+      SpecialRegionEntry->SpecialRegion.Start + SpecialRegionEntry->SpecialRegion.Length
+      ));
+    ASSERT (FALSE);
+    FreePool (SpecialRegionEntry);
+    return EFI_INVALID_PARAMETER;
+  }
+
   OrderedInsertUint64Comparison (
     &mSpecialMemoryRegionsPrivate.SpecialRegionList,
     &SpecialRegionEntry->Link,
@@ -657,6 +856,7 @@ AddSpecialRegion (
     MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
     );
   mSpecialMemoryRegionsPrivate.Count++;
+  MergeOverlappingSpecialRegions (&mSpecialMemoryRegionsPrivate.SpecialRegionList);
 
   return EFI_SUCCESS;
 }
