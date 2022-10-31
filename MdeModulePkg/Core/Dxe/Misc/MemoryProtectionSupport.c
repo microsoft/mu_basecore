@@ -2652,16 +2652,16 @@ GetMemoryMapWithPopulatedAccessAttributes (
   }
   // If both protected and non-protected images are loaded, merge the two lists
   else {
-    MergedImageList          = &mImagePropertiesPrivate.ImageRecordList;
-    Status = MergeListsUint64Comparison (
-               MergedImageList,
-               &mNonProtectedImageRangesPrivate.NonProtectedImageList,
-               &mNonProtectedImageRangesPrivate.NonProtectedImageCount,
-               &ArrayOfListEntryPointers,
-               OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
-               OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
-               IMAGE_PROPERTIES_RECORD_SIGNATURE
-               );
+    MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
+    Status          = MergeListsUint64Comparison (
+                        MergedImageList,
+                        &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+                        &mNonProtectedImageRangesPrivate.NonProtectedImageCount,
+                        &ArrayOfListEntryPointers,
+                        OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                        OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                        IMAGE_PROPERTIES_RECORD_SIGNATURE
+                        );
 
     if (EFI_ERROR (Status)) {
       ASSERT_EFI_ERROR (Status);
