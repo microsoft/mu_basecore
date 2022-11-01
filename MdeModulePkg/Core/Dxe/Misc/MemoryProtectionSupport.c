@@ -2518,7 +2518,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
   EFI_STATUS  Status;
   UINTN       AdditionalRecordCount, NumMemoryMapDescriptors, NumBitmapEntries, \
               NumMemorySpaceMapDescriptors, MemorySpaceMapDescriptorSize, MapKey, \
-              ExpandedMemoryMapSize, MemorySpaceMapSize, BitmapIndex;
+              ExpandedMemoryMapSize, BitmapIndex;
   UINT32                           DescriptorVersion;
   UINT8                            *Bitmap                    = NULL;
   EFI_MEMORY_DESCRIPTOR            *ExpandedMemoryMap         = NULL;
@@ -2580,7 +2580,6 @@ GetMemoryMapWithPopulatedAccessAttributes (
   }
 
   MemorySpaceMapDescriptorSize = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR);
-  MemorySpaceMapSize           = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR) * NumMemorySpaceMapDescriptors;
 
   // Fill in the memory map with regions described in the GCD memory map but not the EFI memory map
   Status = FillInMemoryMap (
