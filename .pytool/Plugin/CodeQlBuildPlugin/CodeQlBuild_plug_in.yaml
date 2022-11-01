@@ -1,0 +1,12 @@
+## @file
+# Build plugin used to include CodeQL results with build results.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+{
+  "scope": "codeql",
+  "name": "CodeQL Build Plugin",
+  "module": "CodeQlBuildPlugin"
+}
