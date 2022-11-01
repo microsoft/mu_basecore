@@ -1,0 +1,24 @@
+## @file codeqlcli_linux_ext_dep.yaml
+#
+# Downloads the Linux CodeQL Command-Line Interface (CLI) application.
+#
+# This download only supports Linux. In an environment where a platform might build in different operating
+# systems, it is recommended to set the scope for the appropriate CodeQL external dependency based on the
+# host operating system being used.
+#
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+{
+  "scope": "codeql-linux-ext-dep",
+  "type": "web",
+  "name": "codeql_linux_cli",
+  "source": "https://github.com/github/codeql-cli-binaries/releases/download/v2.11.2/codeql-linux64.zip",
+  "version": "2.11.2",
+  "sha256": "a9b735d7ef9cc4a8cdf3a67b7018fe741078605cec273e1514a497353e31d2b8",
+  "compression_type": "zip",
+  "internal_path": "/codeql/",
+  "flags": ["set_shell_var", ],
+  "var_name": "STUART_CODEQL_PATH"
+}
