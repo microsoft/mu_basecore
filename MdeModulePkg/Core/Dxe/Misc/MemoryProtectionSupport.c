@@ -2505,7 +2505,7 @@ RemoveAttributesOfNonProtectedImageRanges (
 
   @retval         EFI_SUCCESS             The memory map was returned in the MemoryMap buffer
   @retval         EFI_OUT_OF_RESOURCES    Failed to allocate memory
-  @retval         Other                   One of the supportion functions failed
+  @retval         Other                   One of the supporting functions failed
 **/
 EFI_STATUS
 EFIAPI
@@ -2573,25 +2573,23 @@ GetMemoryMapWithPopulatedAccessAttributes (
   FilterMemoryMapAttributes (MemoryMapSize, *MemoryMap, DescriptorSize);
 
   Status = CoreGetMemorySpaceMap (&NumMemorySpaceMapDescriptors, &MemorySpaceMap);
-
-  if (EFI_ERROR (Status)) {
-    ASSERT_EFI_ERROR (Status);
-    goto Cleanup;
-  }
-
-  MemorySpaceMapDescriptorSize = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR);
-
-  // Fill in the memory map with regions described in the GCD memory map but not the EFI memory map
-  Status = FillInMemoryMap (
-             MemoryMapSize,
-             MemoryMap,
-             DescriptorSize,
-             &NumMemorySpaceMapDescriptors,
-             MemorySpaceMap,
-             &MemorySpaceMapDescriptorSize
-             );
-
   ASSERT_EFI_ERROR (Status);
+
+  if (MemorySpaceMap != NULL) {
+    MemorySpaceMapDescriptorSize = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR);
+
+    // Fill in the memory map with regions described in the GCD memory map but not the EFI memory map
+    Status = FillInMemoryMap (
+               MemoryMapSize,
+               MemoryMap,
+               DescriptorSize,
+               &NumMemorySpaceMapDescriptors,
+               MemorySpaceMap,
+               &MemorySpaceMapDescriptorSize
+               );
+
+    ASSERT_EFI_ERROR (Status);
+  }
 
   // |         |      |      |      |      |      |         |
   // | 4K PAGE | DATA | CODE | DATA | CODE | DATA | 4K PAGE |
