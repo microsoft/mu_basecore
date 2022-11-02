@@ -96,7 +96,7 @@ class GuidCheck(ICiBuildPlugin):
             # Loop thru and remove any errors where all files are infs as it is ok if
             # they have the same inf base name.
             for e in errors[:]:
-                if len( [en for en in e.entries if not en.absfilepath.lower().endswith(".inf")]) == 0:
+                if len([en for en in e.entries if not en.absfilepath.lower().endswith(".inf")]) == 0:
                     errors.remove(e)
 
         return errors
@@ -116,7 +116,7 @@ class GuidCheck(ICiBuildPlugin):
     def RunBuildPlugin(self, packagename, Edk2pathObj, pkgconfig, environment, PLM, PLMHelper, tc, output_stream=None):
         Errors = []
 
-        abs_pkg_path = Edk2pathObj.GetAbsolutePathOnThisSystemFromEdk2RelativePath( # MU_CHANGE
+        abs_pkg_path = Edk2pathObj.GetAbsolutePathOnThisSystemFromEdk2RelativePath(  # MU_CHANGE
             packagename)
 
         if abs_pkg_path is None:
@@ -141,7 +141,7 @@ class GuidCheck(ICiBuildPlugin):
                     for b in gs[:]:
                         if b.guid == a.upper():
                             gs.remove(b)
-                except:
+                except Exception:
                     tc.LogStdError("GuidCheck.IgnoreGuid -> {0} not found.  Invalid ignore guid".format(a.upper()))
                     logging.info("GuidCheck.IgnoreGuid -> {0} not found.  Invalid ignore guid".format(a.upper()))
 
@@ -162,9 +162,9 @@ class GuidCheck(ICiBuildPlugin):
                             elif(len(entry) == 2 and b.guid.upper() == entry[1].upper()):
                                 gs.remove(b)
                             else:
-                                c.LogStdError("GuidCheck.IgnoreGuidName -> {0} incomplete match.  Invalid ignore guid".format(a))
+                                tc.LogStdError("GuidCheck.IgnoreGuidName -> {0} incomplete match.  Invalid ignore guid".format(a))
 
-                except:
+                except Exception:
                     tc.LogStdError("GuidCheck.IgnoreGuidName -> {0} not found.  Invalid ignore name".format(a))
                     logging.info("GuidCheck.IgnoreGuidName -> {0} not found.  Invalid ignore name".format(a))
 
@@ -183,25 +183,23 @@ class GuidCheck(ICiBuildPlugin):
                 for b in Errors[:]:
                     if b.type != "guid":
                         continue
-                    ## Make a list of the names that are not in the names list.  If there
-                    ## are any in the list then this error should not be ignored.
+                    # Make a list of the names that are not in the names list.  If there
+                    # are any in the list then this error should not be ignored.
                     t = [x for x in b.entries if x.name not in names]
                     if(len(t) == len(b.entries)):
-                        ## did not apply to any entry
+                        # did not apply to any entry
                         continue
                     elif(len(t) == 0):
-                        ## full match - ignore duplicate
+                        # full match - ignore duplicate
                         tc.LogStdOut("GuidCheck.IgnoreDuplicates -> {0}".format(a))
                         Errors.remove(b)
                     elif(len(t) < len(b.entries)):
-                        ## partial match
+                        # partial match
                         tc.LogStdOut("GuidCheck.IgnoreDuplicates -> {0} incomplete match".format(a))
                         logging.info("GuidCheck.IgnoreDuplicates -> {0} incomplete match".format(a))
                     else:
                         tc.LogStdOut("GuidCheck.IgnoreDuplicates -> {0} unknown error.".format(a))
                         logging.info("GuidCheck.IgnoreDuplicates -> {0} unknown error".format(a))
-
-
 
         # Find conflicting Guid Names
         Errors.extend(self._FindConflictingGuidNames(gs))

@@ -657,10 +657,11 @@ CoreLoadPeImage (
   // of code memory types aren't set to NX in case this image does its own allocations.
   // Or, if our memory protection policy specifies that we shouldn't allow such images, return a failure.
   if (!(Image->ImageContext.SupportsNx) && (Image->ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION)) {
-    TurnOffNxCompatibility ();
     if (gDxeMps.ImageProtectionPolicy.Fields.BlockImagesWithoutNxFlag) {
       return EFI_SECURITY_VIOLATION;
     }
+
+    TurnOffNxCompatibility ();
   }
 
   // MU_CHANGE END
