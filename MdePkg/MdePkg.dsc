@@ -179,7 +179,7 @@
   MdePkg/Library/SmmMemLib/SmmMemLib.inf
   MdePkg/Library/SmmIoLib/SmmIoLib.inf
   ##MSCHANGE Begin
-!if $(TOOLCHAIN) == VS2017 or $(TOOLCHAIN) == VS2019
+!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022
   MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
   MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
 !endif
