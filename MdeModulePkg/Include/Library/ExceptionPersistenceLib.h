@@ -12,6 +12,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 typedef enum {
   ExceptionPersistNone,
   ExceptionPersistPageFault,
+  ExceptionPersistI2C,
   ExceptionPersistOther,
   ExceptionPersistMax
 } EXCEPTION_TYPE;
