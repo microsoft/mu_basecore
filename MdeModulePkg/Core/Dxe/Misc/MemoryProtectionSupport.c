@@ -2337,9 +2337,7 @@ SetAccessAttributesInMemoryMap (
   MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
 
   while (MemoryMapEntry < MemoryMapEnd) {
-    if (!IS_BITMAP_INDEX_SET (Bitmap, Index) &&
-        !IsCodeType (MemoryMapEntry->Type))
-    {
+    if (!IS_BITMAP_INDEX_SET (Bitmap, Index)) {
       MemoryMapEntry->Attribute = GetPermissionAttributeForMemoryType (MemoryMapEntry->Type);
       SET_BITMAP_INDEX (Bitmap, Index);
     }
@@ -2506,8 +2504,8 @@ RemoveAttributesOfNonProtectedImageRanges (
                                           EFI_MEMORY_DESCRIPTOR
 
   @retval         EFI_SUCCESS             The memory map was returned in the MemoryMap buffer
-  @retval         EFI_INVALID_PARAMETER   One of the input parameters has an invalid value
   @retval         EFI_OUT_OF_RESOURCES    Failed to allocate memory
+  @retval         Other                   One of the supporting functions failed
 **/
 EFI_STATUS
 EFIAPI
@@ -2517,15 +2515,16 @@ GetMemoryMapWithPopulatedAccessAttributes (
   OUT UINTN                  *DescriptorSize
   )
 {
-  EFI_STATUS             Status;
-  UINTN                  AdditionalRecordCount, NumberOfDescriptors, NumberOfBitmapEntries;
-  UINT8                  *Bitmap = NULL;
-  UINTN                  MapKey;
-  UINT32                 DescriptorVersion;
-  EFI_MEMORY_DESCRIPTOR  *ExpandedMemoryMap;
-  UINTN                  ExpandedMemoryMapSize;
-  LIST_ENTRY             *MergedImageList           = NULL;
-  LIST_ENTRY             **ArrayOfListEntryPointers = NULL;
+  EFI_STATUS  Status;
+  UINTN       AdditionalRecordCount, NumMemoryMapDescriptors, NumBitmapEntries, \
+              NumMemorySpaceMapDescriptors, MemorySpaceMapDescriptorSize, MapKey, \
+              ExpandedMemoryMapSize, BitmapIndex;
+  UINT32                           DescriptorVersion;
+  UINT8                            *Bitmap                    = NULL;
+  EFI_MEMORY_DESCRIPTOR            *ExpandedMemoryMap         = NULL;
+  LIST_ENTRY                       *MergedImageList           = NULL;
+  LIST_ENTRY                       **ArrayOfListEntryPointers = NULL;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemorySpaceMap            = NULL;
 
   if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
       (*MemoryMap != NULL) || (DescriptorSize == NULL))
@@ -2548,7 +2547,9 @@ GetMemoryMapWithPopulatedAccessAttributes (
   do {
     *MemoryMap = (EFI_MEMORY_DESCRIPTOR *)AllocatePool (*MemoryMapSize);
     if (*MemoryMap == NULL) {
-      goto OutOfResourcesCleanup;
+      Status = EFI_OUT_OF_RESOURCES;
+      ASSERT_EFI_ERROR (Status);
+      goto Cleanup;
     }
 
     Status = CoreGetMemoryMap (
@@ -2565,11 +2566,30 @@ GetMemoryMapWithPopulatedAccessAttributes (
 
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
-    return Status;
+    goto Cleanup;
   }
 
   // Filter each map entry to only contain access attributes
   FilterMemoryMapAttributes (MemoryMapSize, *MemoryMap, DescriptorSize);
+
+  Status = CoreGetMemorySpaceMap (&NumMemorySpaceMapDescriptors, &MemorySpaceMap);
+  ASSERT_EFI_ERROR (Status);
+
+  if (MemorySpaceMap != NULL) {
+    MemorySpaceMapDescriptorSize = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR);
+
+    // Fill in the memory map with regions described in the GCD memory map but not the EFI memory map
+    Status = FillInMemoryMap (
+               MemoryMapSize,
+               MemoryMap,
+               DescriptorSize,
+               &NumMemorySpaceMapDescriptors,
+               MemorySpaceMap,
+               &MemorySpaceMapDescriptorSize
+               );
+
+    ASSERT_EFI_ERROR (Status);
+  }
 
   // |         |      |      |      |      |      |         |
   // | 4K PAGE | DATA | CODE | DATA | CODE | DATA | 4K PAGE |
@@ -2597,7 +2617,9 @@ GetMemoryMapWithPopulatedAccessAttributes (
   ExpandedMemoryMap     = AllocatePool (ExpandedMemoryMapSize);
 
   if (ExpandedMemoryMap == NULL) {
-    goto OutOfResourcesCleanup;
+    Status = EFI_OUT_OF_RESOURCES;
+    ASSERT_EFI_ERROR (Status);
+    goto Cleanup;
   }
 
   CopyMem (ExpandedMemoryMap, *MemoryMap, *MemoryMapSize);
@@ -2606,11 +2628,12 @@ GetMemoryMapWithPopulatedAccessAttributes (
   *MemoryMap = ExpandedMemoryMap;
 
   DEBUG_CODE (
-    DEBUG ((DEBUG_INFO, "---Currently protected images---\n"));
+    DEBUG ((DEBUG_INFO, "---Currently Protected Images---\n"));
     DumpImageRecords (&mImagePropertiesPrivate.ImageRecordList);
     );
 
   DEBUG_CODE (
+    DEBUG ((DEBUG_INFO, "---Memory Protection Special Regions---\n"));
     DumpMemoryProtectionSpecialRegions ();
     );
 
@@ -2620,7 +2643,9 @@ GetMemoryMapWithPopulatedAccessAttributes (
     MergedImageList = &mNonProtectedImageRangesPrivate.NonProtectedImageList;
   } else if (mNonProtectedImageRangesPrivate.NonProtectedImageCount == 0) {
     MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
-  } else {
+  }
+  // If both protected and non-protected images are loaded, merge the two lists
+  else {
     MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
     Status          = MergeListsUint64Comparison (
                         MergedImageList,
@@ -2632,12 +2657,14 @@ GetMemoryMapWithPopulatedAccessAttributes (
                         IMAGE_PROPERTIES_RECORD_SIGNATURE
                         );
 
-    ASSERT_EFI_ERROR (Status);
-    if (Status == EFI_OUT_OF_RESOURCES) {
-      goto OutOfResourcesCleanup;
+    if (EFI_ERROR (Status)) {
+      ASSERT_EFI_ERROR (Status);
+      goto Cleanup;
     }
   }
 
+  // Break up the memory map so every image range divides evenly into some number of
+  // EFI memory descriptors
   SeparateImagesInMemoryMap (
     MemoryMapSize,
     *MemoryMap,
@@ -2646,21 +2673,39 @@ GetMemoryMapWithPopulatedAccessAttributes (
     AdditionalRecordCount
     );
 
-  NumberOfDescriptors   = *MemoryMapSize / *DescriptorSize;
-  NumberOfBitmapEntries = (NumberOfDescriptors % 8) == 0 ? NumberOfDescriptors : (((NumberOfDescriptors / 8) * 8) + 8);
+  // Update the separated memory map based on the special regions (if any)
+  if (mSpecialMemoryRegionsPrivate.Count > 0) {
+    Status = SeparateSpecialRegionsInMemoryMap (
+               MemoryMapSize,
+               *MemoryMap,
+               DescriptorSize,
+               &ExpandedMemoryMapSize,
+               &mSpecialMemoryRegionsPrivate.SpecialRegionList
+               );
+    if (EFI_ERROR (Status)) {
+      ASSERT_EFI_ERROR (Status);
+      goto Cleanup;
+    }
+  }
 
-  Bitmap = AllocateZeroPool (NumberOfBitmapEntries / 8);
+  // Create a bitmap to track which descriptors have been updated with the correct attributes
+  NumMemoryMapDescriptors = *MemoryMapSize / *DescriptorSize;
+  NumBitmapEntries        = (NumMemoryMapDescriptors % 8) == 0 ? NumMemoryMapDescriptors : (((NumMemoryMapDescriptors / 8) * 8) + 8);
+  Bitmap                  = AllocateZeroPool (NumBitmapEntries / 8);
 
   if (Bitmap == NULL) {
-    goto OutOfResourcesCleanup;
+    Status = EFI_OUT_OF_RESOURCES;
+    ASSERT_EFI_ERROR (Status);
+    goto Cleanup;
   }
 
   // Set the extra bits
-  if ((NumberOfDescriptors % 8) != 0) {
-    Bitmap[NumberOfDescriptors / 8] |= ~((1 << (NumberOfDescriptors % 8)) - 1);
+  if ((NumMemoryMapDescriptors % 8) != 0) {
+    Bitmap[NumMemoryMapDescriptors / 8] |= ~((1 << (NumMemoryMapDescriptors % 8)) - 1);
   }
 
-  // Restore the nonprotected image list
+  // Restore the nonprotected image list if it was merged with the protected
+  // image list
   if (ArrayOfListEntryPointers != NULL) {
     Status = OrderedInsertArrayUint64Comparison (
                &mNonProtectedImageRangesPrivate.NonProtectedImageList,
@@ -2670,24 +2715,20 @@ GetMemoryMapWithPopulatedAccessAttributes (
                OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
                IMAGE_PROPERTIES_RECORD_SIGNATURE
                );
+
     ASSERT_EFI_ERROR (Status);
     FreePool (ArrayOfListEntryPointers);
   }
 
-  // All image regions will now have nonzero attributes
+  // All image regions will now have nonzero attributes and special regions will have their
+  // virtual address set to SPECIAL_REGION_PATTERN
   //
   // Set the bits in the bitmap to mark that the corresponding memory descriptor
-  // has been set based on the memory protection policy
+  // has been set based on the memory protection policy and special regions
   Status = SyncBitmap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
   ASSERT_EFI_ERROR (Status);
 
-  DEBUG_CODE (
-    DEBUG ((DEBUG_INFO, "---Memory Map With Separated Image Descriptors---\n"));
-    DumpMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize);
-    DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
-    );
-
-  // Remove the access attributes from descriptors which correspond with nonprotected images
+  // Remove the access attributes from descriptors which correspond to nonprotected images
   if (mNonProtectedImageRangesPrivate.NonProtectedImageCount > 0) {
     Status = RemoveAttributesOfNonProtectedImageRanges (
                MemoryMapSize,
@@ -2695,7 +2736,10 @@ GetMemoryMapWithPopulatedAccessAttributes (
                DescriptorSize,
                &mNonProtectedImageRangesPrivate.NonProtectedImageList
                );
-    ASSERT_EFI_ERROR (Status);
+    if (EFI_ERROR (Status)) {
+      ASSERT_EFI_ERROR (Status);
+      goto Cleanup;
+    }
   }
 
   // Set the access attributes of descriptor ranges which have not been checked
@@ -2705,13 +2749,23 @@ GetMemoryMapWithPopulatedAccessAttributes (
 
   DEBUG_CODE (
     DEBUG ((DEBUG_INFO, "---Final Bitmap---\n"));
-    DumpBitmap (Bitmap, NumberOfBitmapEntries);
+    DumpBitmap (Bitmap, NumBitmapEntries);
+    );
+
+  // ASSERT if a bit in the bitmap is not set
+  for (BitmapIndex = 0; BitmapIndex < NumBitmapEntries; BitmapIndex++) {
+    ASSERT (IS_BITMAP_INDEX_SET (Bitmap, BitmapIndex));
+  }
+
+  DEBUG_CODE (
+    DEBUG ((DEBUG_INFO, "---Memory Map with Populated Access Attributes---\n"));
+    DumpMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize);
     DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
     );
 
   return Status;
 
-OutOfResourcesCleanup:
+Cleanup:
   if (*MemoryMap != NULL) {
     FreePool (*MemoryMap);
   }
@@ -2732,7 +2786,7 @@ OutOfResourcesCleanup:
   *MemoryMapSize  = 0;
   *DescriptorSize = 0;
 
-  return EFI_OUT_OF_RESOURCES;
+  return Status;
 }
 
 /**
@@ -2998,9 +3052,6 @@ InitializePageAttributesForMemoryProtectionPolicy (
   EFI_MEMORY_DESCRIPTOR      *MemoryMapEntry;
   EFI_MEMORY_DESCRIPTOR      *MemoryMapEnd;
   EFI_STATUS                 Status;
-  UINT64                     Attributes;
-  LIST_ENTRY                 *Link;
-  EFI_GCD_MAP_ENTRY          *Entry;
   EFI_PEI_HOB_POINTERS       Hob;
   EFI_HOB_MEMORY_ALLOCATION  *MemoryHob;
   EFI_PHYSICAL_ADDRESS       StackBase;
@@ -3092,52 +3143,6 @@ InitializePageAttributesForMemoryProtectionPolicy (
   }
 
   FreePool (MemoryMap);
-
-  // Apply the policy for RAM regions that we know are present and
-  // accessible, but have not been added to the UEFI memory map (yet).
-  if (GetDxeMemoryTypeSettingFromBitfield (EfiConventionalMemory, gDxeMps.NxProtectionPolicy)) {
-    DEBUG ((
-      DEBUG_INFO,
-      "%a: applying strict permissions to inactive memory regions\n",
-      __FUNCTION__
-      ));
-
-    CoreAcquireGcdMemoryLock ();
-
-    Link = mGcdMemorySpaceMap.ForwardLink;
-    while (Link != &mGcdMemorySpaceMap) {
-      Entry = CR (Link, EFI_GCD_MAP_ENTRY, Link, EFI_GCD_MAP_SIGNATURE);
-
-      if ((Entry->GcdMemoryType == EfiGcdMemoryTypeReserved) &&
-          (Entry->EndAddress < MAX_ADDRESS) &&
-          ((Entry->Capabilities & (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED)) ==
-           (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED)))
-      {
-        Attributes = (GetDxeMemoryTypeSettingFromBitfield (EfiConventionalMemory, gDxeMps.NxProtectionPolicy) ? EFI_MEMORY_XP : 0) |
-                     (Entry->Attributes & EFI_CACHE_ATTRIBUTE_MASK);
-
-        DEBUG ((
-          DEBUG_INFO,
-          "Untested GCD memory space region: - 0x%016lx - 0x%016lx (0x%016lx)\n",
-          Entry->BaseAddress,
-          Entry->EndAddress - Entry->BaseAddress + 1,
-          Attributes
-          ));
-
-        ASSERT (gCpu != NULL);
-        gCpu->SetMemoryAttributes (
-                gCpu,
-                Entry->BaseAddress,
-                Entry->EndAddress - Entry->BaseAddress + 1,
-                Attributes
-                );
-      }
-
-      Link = Link->ForwardLink;
-    }
-
-    CoreReleaseGcdMemoryLock ();
-  }
 }
 
 /**
@@ -3159,9 +3164,7 @@ MemoryProtectionCpuArchProtocolNotifyMu (
     goto Done;
   }
 
-  if (gDxeMps.NxProtectionPolicy.Data || gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv) {
-    InitializePageAttributesForMemoryProtectionPolicy ();
-  }
+  InitializePageAttributesForMemoryProtectionPolicy ();
 
   //
   // Call notify function meant for Heap Guard.
