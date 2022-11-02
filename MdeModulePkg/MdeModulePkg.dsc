@@ -132,7 +132,7 @@
 ##MSCHANGE Begin
 [LibraryClasses.common]
   BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
-!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019
+!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022
 !if $(TARGET) == DEBUG
 [LibraryClasses.X64, LibraryClasses.IA32]
   #if debug is enabled provide StackCookie support lib so that we can link to /GS exports on MSVC
