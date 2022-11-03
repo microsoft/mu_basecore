@@ -17,7 +17,7 @@ __security_check_cookie PROC PUBLIC
     ret
 
 __security_check_cookie_Failure:
-    int     2ch
+    int     40h
     ret
 __security_check_cookie ENDP
 
