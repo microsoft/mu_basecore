@@ -158,7 +158,8 @@ typedef struct {
 
   // Indicates if stack cookie protection will be enabled
   //
-  // A stack cookie check failure will trigger a 2C interrupt. If this boolean is set to FALSE,
+  // A stack cookie check failure will trigger an interrupt. If this boolean is set to FALSE,
+
   // the interrupt should be ignored.
   BOOLEAN StackCookies;
 } DXE_MEMORY_PROTECTION_SETTINGS;
