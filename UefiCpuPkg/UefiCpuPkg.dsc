@@ -85,7 +85,7 @@
   DeviceStateLib|MdeModulePkg/Library/DeviceStateLib/DeviceStateLib.inf
 [LibraryClasses.X64, LibraryClasses.IA32]
 !if $(TARGET) == DEBUG
-!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019
+!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022
   #if debug is enabled provide StackCookie support lib so that we can link to /GS exports
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
   NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
