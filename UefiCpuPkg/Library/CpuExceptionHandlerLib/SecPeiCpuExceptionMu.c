@@ -236,3 +236,29 @@ InitializeCpuExceptionHandlersEx (
 {
   return InitializeCpuExceptionHandlers (VectorInfo);
 }
+
+/**
+  Setup separate stacks for certain exception handlers.
+
+  If the input Buffer and BufferSize are both NULL, use global variable if possible.
+
+  @param[in]       Buffer        Point to buffer used to separate exception stack.
+  @param[in, out]  BufferSize    On input, it indicates the byte size of Buffer.
+                                 If the size is not enough, the return status will
+                                 be EFI_BUFFER_TOO_SMALL, and output BufferSize
+                                 will be the size it needs.
+
+  @retval EFI_SUCCESS             The stacks are assigned successfully.
+  @retval EFI_UNSUPPORTED         This function is not supported.
+  @retval EFI_BUFFER_TOO_SMALL    This BufferSize is too small.
+
+**/
+EFI_STATUS
+EFIAPI
+InitializeSeparateExceptionStacks (
+  IN     VOID   *Buffer,
+  IN OUT UINTN  *BufferSize
+  )
+{
+  return EFI_UNSUPPORTED;
+}

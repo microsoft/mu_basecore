@@ -68,7 +68,7 @@
 
 ##MSCHANGE Begin
 !if $(TARGET) == DEBUG
-!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019
+!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022
 [LibraryClasses.X64]
   #if debug is enabled provide StackCookie support lib so that we can link to /GS exports
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
