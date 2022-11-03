@@ -64,7 +64,7 @@ typedef union {
 
 typedef UINT8 DXE_MEMORY_PROTECTION_SETTINGS_VERSION;
 
-#define DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  3 // Current iteration of DXE_MEMORY_PROTECTION_SETTINGS
+#define DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  4 // Current iteration of DXE_MEMORY_PROTECTION_SETTINGS
 
 //
 // Memory Protection Settings struct
@@ -155,6 +155,13 @@ typedef struct {
   //
   //  NOTE: - User MUST set the same NX protection for EfiBootServicesData and EfiConventionalMemory.
   DXE_HEAP_GUARD_MEMORY_TYPES    NxProtectionPolicy;
+
+  // Indicates if stack cookie protection will be enabled
+  //
+  // A stack cookie check failure will trigger an interrupt. If this boolean is set to FALSE,
+
+  // the interrupt should be ignored.
+  BOOLEAN                        StackCookies;
 } DXE_MEMORY_PROTECTION_SETTINGS;
 
 #define HOB_DXE_MEMORY_PROTECTION_SETTINGS_GUID \
@@ -251,7 +258,8 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiPersistentMemory             = 0,      \
               .Fields.OEMReserved                     = 1,      \
               .Fields.OSReserved                      = 1       \
-            }                                                   \
+            },                                                  \
+            TRUE                                                \
           }
 
 //
@@ -336,7 +344,8 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiPersistentMemory             = 1,      \
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
-            }                                                   \
+            },                                                  \
+            TRUE                                                \
           }
 
 //
@@ -420,7 +429,8 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiPersistentMemory             = 1,      \
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
-            }                                                   \
+            },                                                  \
+            TRUE                                                \
           }
 
 //
@@ -503,7 +513,8 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiPersistentMemory             = 0,      \
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
-            }                                                   \
+            },                                                  \
+            FALSE                                               \
           }
 
 #endif
