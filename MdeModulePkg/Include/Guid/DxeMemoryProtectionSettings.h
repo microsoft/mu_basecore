@@ -161,7 +161,7 @@ typedef struct {
   // A stack cookie check failure will trigger an interrupt. If this boolean is set to FALSE,
 
   // the interrupt should be ignored.
-  BOOLEAN StackCookies;
+  BOOLEAN                        StackCookies;
 } DXE_MEMORY_PROTECTION_SETTINGS;
 
 #define HOB_DXE_MEMORY_PROTECTION_SETTINGS_GUID \
