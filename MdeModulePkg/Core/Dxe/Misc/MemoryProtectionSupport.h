@@ -11,12 +11,22 @@
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
+#include <Protocol/MemoryProtectionDebug.h>
+#include <Protocol/MemoryProtectionSpecialRegionProtocol.h>
 
 #define DO_NOT_PROTECT                 0x00000000
 #define PROTECT_IF_ALIGNED_ELSE_ALLOW  0x00000001
 #define PROTECT_ELSE_RAISE_ERROR       0x00000002
 
-#define IMAGE_PROPERTIES_PRIVATE_DATA_SIGNATURE  SIGNATURE_32 ('I','P','P','D')
+#define IMAGE_PROPERTIES_PRIVATE_DATA_SIGNATURE                SIGNATURE_32 ('I','P','P','D')
+#define NONPROTECTED_IMAGE_PRIVATE_DATA_SIGNATURE              SIGNATURE_32 ('N','I','P','D')
+#define MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE  SIGNATURE_32 ('M','P','S','R')
+
+typedef struct {
+  UINT32        Signature;
+  UINTN         NonProtectedImageCount;
+  LIST_ENTRY    NonProtectedImageList;
+} NONPROTECTED_IMAGES_PRIVATE_DATA;
 
 #define PREVIOUS_MEMORY_DESCRIPTOR(MemoryDescriptor, Size) \
   ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)(MemoryDescriptor) - (Size)))
@@ -30,6 +40,17 @@ typedef struct {
   UINTN         CodeSegmentCountMax;
   LIST_ENTRY    ImageRecordList;
 } IMAGE_PROPERTIES_PRIVATE_DATA;
+
+typedef struct {
+  UINT32                              Signature;
+  MEMORY_PROTECTION_SPECIAL_REGION    SpecialRegion;
+  LIST_ENTRY                          Link;
+} MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY;
+
+typedef struct {
+  UINTN         Count;
+  LIST_ENTRY    SpecialRegionList;
+} MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD;
 
 /**
   Clears the attributes from a memory range.
@@ -108,6 +129,21 @@ MemoryProtectionCpuArchProtocolNotifyMu (
   );
 
 /**
+  A notification for the Memory Attribute Protocol.
+
+  @param[in]  Event                 Event whose notification function is being invoked.
+  @param[in]  Context               Pointer to the notification function's context,
+                                    which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+MemoryAttributeProtocolNotify (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  );
+
+/**
   Sets the NX compatibility global to FALSE so future checks to
   IsSystemNxCompatible() will return FALSE.
 **/
@@ -124,6 +160,26 @@ BOOLEAN
 EFIAPI
 IsSystemNxCompatible (
   VOID
+  );
+
+/**
+ Generate a list of IMAGE_RANGE_DESCRIPTOR structs which describe the data/code regions of protected images or
+ the memory ranges of nonprotected images.
+
+ @param[in]  ImageList                  Pointer to NULL IMAGE_RANGE_DESCRIPTOR* which will be updated to the head of the allocated
+                                        IMAGE_RANGE_DESCRIPTOR list
+ @param[in]  ProtectedOrNonProtected    Enum describing if the returned list will describe the protected or
+                                        nonprotected loaded images
+
+ @retval  EFI_SUCCESS             *ImageList points to the head of the IMAGE_RANGE_DESCRIPTOR list
+ @retval  EFI_INVALID_PARAMETER   ImageList is NULL or *ImageList is not NULL
+ @retval  EFI_OUT_OF_RESOURCES    Allocation of memory failed
+**/
+EFI_STATUS
+EFIAPI
+GetImageList (
+  IN IMAGE_RANGE_DESCRIPTOR         **ImageList,
+  IN IMAGE_RANGE_PROTECTION_STATUS  ProtectedOrNonProtected
   );
 
 #endif
