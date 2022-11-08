@@ -460,7 +460,7 @@ MergeMemoryMap (
   NewMemoryMapEntry = MemoryMap;
   MemoryMapEnd      = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
   while ((UINTN)MemoryMapEntry < (UINTN)MemoryMapEnd) {
-    CopyMem (NewMemoryMapEntry, MemoryMapEntry, sizeof (EFI_MEMORY_DESCRIPTOR));
+    CopyMem (NewMemoryMapEntry, MemoryMapEntry, DescriptorSize); // MU_CHANGE Use size parameter for consistency.
     NextMemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, DescriptorSize);
 
     do {
