@@ -551,10 +551,13 @@ InitializePciHostBridge (
         Status = gDS->SetMemorySpaceAttributes (
                         HostAddress,
                         MemApertures[MemApertureIndex]->Limit - MemApertures[MemApertureIndex]->Base + 1,
-                        EFI_MEMORY_UC
+                        // MU_CHANGE START: MMIO ranges should be non-executable
+                        // EFI_MEMORY_UC
+                        EFI_MEMORY_XP | EFI_MEMORY_UC
+                        // MU_CHANGE END
                         );
         if (EFI_ERROR (Status)) {
-          DEBUG ((DEBUG_WARN, "PciHostBridge driver failed to set EFI_MEMORY_UC to MMIO aperture - %r.\n", Status));
+          DEBUG ((DEBUG_WARN, "PciHostBridge driver failed to set EFI_MEMORY_XP and EFI_MEMORY_UC to MMIO aperture - %r.\n", Status));
         }
 
         if (ResourceAssigned) {
