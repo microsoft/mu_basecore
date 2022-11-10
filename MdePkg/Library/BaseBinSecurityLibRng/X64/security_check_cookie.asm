@@ -17,7 +17,7 @@ __security_check_cookie PROC PUBLIC
     ret
 
 __security_check_cookie_Failure:
-    int     40h
+    int     FixedPcdGet8 (PcdStackCookieExceptionVector)
     ret
 __security_check_cookie ENDP
 
