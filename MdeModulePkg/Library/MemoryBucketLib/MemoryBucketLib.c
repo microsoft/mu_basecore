@@ -85,38 +85,34 @@ InternalBuildRuntimeMemoryAllocationHob (
 **/
 VOID
 InternalBuildRuntimeMemoryAllocationInfoHob (
-    VOID
-)
+  VOID
+  )
 {
-    PEI_MEMORY_BUCKET_INFORMATION RuntimeBucketHob;
+  PEI_MEMORY_BUCKET_INFORMATION  RuntimeBucketHob;
 
-    RuntimeBucketHob = GetRuntimeBucketHob ();
-    BuildGuidDataHob (
-        &gMemoryBucketInformationGuid,
-        &RuntimeBucketHob,
-        (sizeof(PEI_MEMORY_BUCKET_INFORMATION))
+  RuntimeBucketHob = GetRuntimeBucketHob ();
+  BuildGuidDataHob (
+    &gMemoryBucketInformationGuid,
+    &RuntimeBucketHob,
+    (sizeof (PEI_MEMORY_BUCKET_INFORMATION))
     );
 }
 
 /**
-  The purpose of the service is to publish an interface that allows
-  PEIMs to allocate memory ranges that are managed by the PEI Foundation.
+  This function allocates pages in the PEI memory bucket regions.
+  When this is called for the first time the memory bucket ranges are initialized.
 
-  Prior to InstallPeiMemory() being called, PEI will allocate pages from the heap.
-  After InstallPeiMemory() is called, PEI will allocate pages within the region
-  of memory provided by InstallPeiMemory() service in a best-effort fashion.
-  Location-specific allocations are not managed by the PEI foundation code.
+  If this is called prior to InstallPeiMemory() the memory bucket ranges will be
+  on the heap.  If this is called after InstallPeiMemory() the memory bucket
+  ranges will be in the region provided by InstallPeiMemory().
 
-  @param  MemoryType       The type of memory to allocate. Either EfiRuntimeServicesCode or EffiRuntimeServicesData
+  @param  MemoryType       The type of memory to allocate.
   @param  Pages            The number of contiguous 4 KB pages to allocate.
   @param  Memory           Pointer to a physical address. On output, the address is set to the base
                            of the page range that was allocated.
 
   @retval EFI_SUCCESS           The memory range was successfully allocated.
   @retval EFI_OUT_OF_RESOURCES  The pages could not be allocated.
-  @retval EFI_INVALID_PARAMETER Type is not equal to EfiLoaderCode, EfiLoaderData, EfiRuntimeServicesCode,
-                                EfiRuntimeServicesData, EfiBootServicesCode, EfiBootServicesData,
-                                EfiACPIReclaimMemory, EfiReservedMemoryType, or EfiACPIMemoryNVS.
 
 **/
 EFI_STATUS
@@ -127,7 +123,7 @@ PeiAllocateRuntimePages (
   OUT      EFI_PHYSICAL_ADDRESS  *Memory
   )
 {
-  //EFI_STATUS              Status;
+  // EFI_STATUS              Status;
   CONST EFI_PEI_SERVICES         **PeiServices;
   PEI_CORE_INSTANCE              *PrivateData;
   EFI_PEI_HOB_POINTERS           Hob;
@@ -162,23 +158,19 @@ PeiAllocateRuntimePages (
 
   // Check to see if Runtime memory has been initialized yet.
   if (IsRuntimeMemoryInitialized ()) {
-    FreeMemoryTop = GetCurrentBucketTop (MemoryType);
+    FreeMemoryTop    = GetCurrentBucketTop (MemoryType);
     FreeMemoryBottom = GetCurrentBucketEnd (MemoryType);
   } else if (!PrivateData->PeiMemoryInstalled && PrivateData->SwitchStackSignal) {
     //
     // When PeiInstallMemory is called but temporary memory has *not* been moved to permanent memory,
     // the AllocatePage will depend on the field of PEI_CORE_INSTANCE structure.
     //
-    InitializeMemoryBuckets ((EFI_PHYSICAL_ADDRESS) (PrivateData->FreePhysicalMemoryTop));
-    //FreeMemoryTop       = &(PrivateData->FreePhysicalMemoryTop);
-    //FreeMemoryBottom = &(PrivateData->PhysicalMemoryBegin);
-    FreeMemoryTop = GetCurrentBucketTop (MemoryType);
+    InitializeMemoryBuckets ((EFI_PHYSICAL_ADDRESS)(PrivateData->FreePhysicalMemoryTop));
+    FreeMemoryTop    = GetCurrentBucketTop (MemoryType);
     FreeMemoryBottom = GetCurrentBucketEnd (MemoryType);
   } else {
-    InitializeMemoryBuckets ((EFI_PHYSICAL_ADDRESS) (Hob.HandoffInformationTable->EfiFreeMemoryTop));
-    // FreeMemoryTop    = &(Hob.HandoffInformationTable->EfiFreeMemoryTop);
-    //FreeMemoryBottom = &(Hob.HandoffInformationTable->EfiFreeMemoryBottom);
-    FreeMemoryTop = GetCurrentBucketTop (MemoryType);
+    InitializeMemoryBuckets ((EFI_PHYSICAL_ADDRESS)(Hob.HandoffInformationTable->EfiFreeMemoryTop));
+    FreeMemoryTop    = GetCurrentBucketTop (MemoryType);
     FreeMemoryBottom = GetCurrentBucketEnd (MemoryType);
   }
 
@@ -217,10 +209,10 @@ PeiAllocateRuntimePages (
     //
     // Try to find free memory by searching memory allocation HOBs.
     //
-    //Status = FindFreeMemoryFromMemoryAllocationHob (MemoryType, Pages, Granularity, Memory);
-    //if (!EFI_ERROR (Status)) {
-      //return Status;
-    //}
+    // Status = FindFreeMemoryFromMemoryAllocationHob (MemoryType, Pages, Granularity, Memory);
+    // if (!EFI_ERROR (Status)) {
+    // return Status;
+    // }
 
     DEBUG ((DEBUG_ERROR, "AllocateRuntimePages failed: No 0x%lx Pages is available.\n", (UINT64)Pages));
     DEBUG ((DEBUG_ERROR, "There is only left 0x%lx pages memory resource to be allocated.\n", (UINT64)RemainingPages));
@@ -251,50 +243,85 @@ PeiAllocateRuntimePages (
     if (MemBucketHob == NULL) {
       InternalBuildRuntimeMemoryAllocationInfoHob ();
     } else {
-        RuntimeBucketHob = GetRuntimeBucketHob ();
-        CopyMem (
-          GET_GUID_HOB_DATA (MemBucketHob),
-          &RuntimeBucketHob,
-          (sizeof (PEI_MEMORY_BUCKET_INFORMATION)));
+      RuntimeBucketHob = GetRuntimeBucketHob ();
+      CopyMem (
+        GET_GUID_HOB_DATA (MemBucketHob),
+        &RuntimeBucketHob,
+        (sizeof (PEI_MEMORY_BUCKET_INFORMATION))
+        );
     }
+
     InitializeRuntimeMemoryBuckets ();
 
     return EFI_SUCCESS;
   }
 }
 
+/**
+  Function to check if MemoryType is one of the types included in the PEI
+  memory bucket structure.
+
+  @param[in] MemoryType         The memory type we are checking.
+
+  @retval    TRUE               The memory type is in the PEI memory bucket
+                                structure.
+  @retval    FALSE              The memory type is not in the PEI memory
+                                bucket structure.
+
+**/
 BOOLEAN
 EFIAPI
 IsRuntimeType (
-  IN       EFI_MEMORY_TYPE       MemoryType
+  IN       EFI_MEMORY_TYPE  MemoryType
   )
 {
   return IsRuntimeTypeInternal (MemoryType);
 }
 
+/**
+  Function that makes pulls the memory bucket hob information locally
+  if necessary.  This is so it can be more easily referenced.
+
+**/
 VOID
 EFIAPI
 SyncMemoryBuckets (
   VOID
   )
 {
-  EFI_HOB_GUID_TYPE     *MemBucketHob;
+  EFI_HOB_GUID_TYPE  *MemBucketHob;
 
   MemBucketHob = GetFirstGuidHob (&gMemoryBucketInformationGuid);
-  if (!IsRuntimeMemoryInitialized () && MemBucketHob != NULL) {
+  if (!IsRuntimeMemoryInitialized () && (MemBucketHob != NULL)) {
     SetMemoryBucketsFromHob (GET_GUID_HOB_DATA (MemBucketHob));
   }
 }
 
+/**
+  Function to check if a memory region is within the memory bucket structure.
+
+  @param[in] Start              The start of the memory region we are checking
+
+  @retval    TRUE               The region is in the memory bucket structure.
+  @retval    FALSE              The region is not in the memory bucket structure.
+
+**/
 BOOLEAN
 EFIAPI
 CheckIfInRuntimeBoundary (
-  EFI_PHYSICAL_ADDRESS Start
+  EFI_PHYSICAL_ADDRESS  Start
   )
 {
   return CheckIfInRuntimeBoundaryInternal (Start);
 }
 
+/**
+  Function that returns the address associated with the end of the
+  memory bucket structure.
+
+  @retval    The memory address below the memory bucket structure.
+
+**/
 EFI_PHYSICAL_ADDRESS
 EFIAPI
 GetEndOfBucketsAddress (
