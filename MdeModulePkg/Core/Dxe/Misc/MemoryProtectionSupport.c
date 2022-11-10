@@ -20,6 +20,11 @@ NONPROTECTED_IMAGES_PRIVATE_DATA  mNonProtectedImageRangesPrivate = {
   INITIALIZE_LIST_HEAD_VARIABLE (mNonProtectedImageRangesPrivate.NonProtectedImageList)
 };
 
+MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD  mSpecialMemoryRegionsPrivate = {
+  0,
+  INITIALIZE_LIST_HEAD_VARIABLE (mSpecialMemoryRegionsPrivate.SpecialRegionList)
+};
+
 BOOLEAN                        mIsSystemNxCompatible    = TRUE;
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
 
@@ -41,6 +46,22 @@ EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
   ((EFI_MEMORY_DESCRIPTOR*)Entry)->Attribute      = 0;                                  \
   ((EFI_MEMORY_DESCRIPTOR*)Entry)->Type           = (EFI_MEMORY_TYPE)EfiType;           \
   ((EFI_MEMORY_DESCRIPTOR*)Entry)->VirtualStart   = 0
+
+#define ALIGN_ADDRESS(Address)  ((Address / EFI_PAGE_SIZE) * EFI_PAGE_SIZE)
+
+#define SPECIAL_REGION_PATTERN  7732426 // 7-(S) 7-(P) 3-(E) 2-(C) 4-(I) 2-(A) 6-(L)
+
+// TRUE if A and B have overlapping intervals
+#define CHECK_OVERLAP(AStart, AEnd, BStart, BEnd) \
+  ((AStart <= BStart && AEnd > BStart) || \
+  (BStart <= AStart && BEnd > AStart))
+
+// TRUE if A interval subsumes B interval
+#define CHECK_SUBSUMPTION(AStart, AEnd, BStart, BEnd) \
+  ((AStart < BStart) && (AEnd > BEnd))
+
+// TRUE if A is a bitwise subset of B
+#define CHECK_SUBSET(A, B)  ((A | B) == B)
 
 /**
   Swap two image records.
@@ -256,6 +277,637 @@ SetUefiImageMemoryAttributes (
 extern LIST_ENTRY  mGcdMemorySpaceMap;
 
 // ---------------------------------------
+//     LINKED LIST SUPPORT FUNCTIONS
+// ---------------------------------------
+
+/**
+  Inserts the input EntryToInsert into List by comparing UINT64 values at LIST_ENTRY + ComparisonOffset. If the input
+  Signature is non-zero, a signature check based on each LIST_ENTRY + SignatureOffset will be performed.
+
+  @param[in] List                       Pointer to the head of the list into which EntryToInsert will be inserted
+  @param[in] EntryToInsert              Pointer to the list entry to insert into List
+  @param[in] ComparisonOffset           Offset of the field to compare each list entry against relative to the
+                                        list entry pointer
+  @param[in] SignatureOffset            Offset of the signature to compare each list entry against relative to the
+                                        list entry pointer
+  @param[in] Signature                  Signature to compare for each list entry. If this is zero, no signature check
+                                        will be performed
+
+  @retval EFI_SUCCESS                   EntryToInsert was inserted into List
+  @retval EFI_INVALID_PARAMETER         List or EntryToInsert were NULL, or a signature check failed
+**/
+STATIC
+EFI_STATUS
+OrderedInsertUint64Comparison (
+  IN LIST_ENTRY  *List,
+  IN LIST_ENTRY  *EntryToInsert,
+  IN INT64       ComparisonOffset,
+  IN INT64       SignatureOffset OPTIONAL,
+  IN UINT32      Signature OPTIONAL
+  )
+{
+  LIST_ENTRY  *ListLink;
+  LIST_ENTRY  *ListEndLink;
+  UINT64      EntryToInsertVal;
+  UINT64      ListEntryVal;
+
+  if ((List == NULL) || (EntryToInsert == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if ((Signature != 0) && (*((UINT32 *)((UINT8 *)EntryToInsert + SignatureOffset)) != Signature)) {
+    ASSERT (*((UINT32 *)((UINT8 *)EntryToInsert + SignatureOffset)) == Signature);
+    return EFI_INVALID_PARAMETER;
+  }
+
+  EntryToInsertVal = *((UINT64 *)((UINT8 *)EntryToInsert + ComparisonOffset));
+
+  ListLink    = List->ForwardLink;
+  ListEndLink = List;
+  while (ListLink != ListEndLink) {
+    if ((Signature != 0) && (*((UINT32 *)((UINT8 *)ListLink + SignatureOffset)) != Signature)) {
+      ASSERT (*((UINT32 *)((UINT8 *)ListLink + SignatureOffset)) == Signature);
+      return EFI_INVALID_PARAMETER;
+    }
+
+    ListEntryVal = *((UINT64 *)((UINT8 *)ListLink + ComparisonOffset));
+
+    if (EntryToInsertVal < ListEntryVal) {
+      break;
+    }
+
+    ListLink = ListLink->ForwardLink;
+  }
+
+  EntryToInsert->BackLink              = ListLink->BackLink;
+  EntryToInsert->ForwardLink           = ListLink;
+  EntryToInsert->BackLink->ForwardLink = EntryToInsert;
+  EntryToInsert->ForwardLink->BackLink = EntryToInsert;
+  return EFI_SUCCESS;
+}
+
+/**
+  Merges every LIST_ENTRY within ArrayOfListEntriesToBeMerged into List
+
+  @param[in] List                             Pointer to the head of the list into which each element
+                                              of ArrayOfListEntriesToBeMerged will be inserted
+  @param[in] ArrayOfListEntriesToBeMerged     Pointer to an array of LIST_ENTRY* which will be merged
+                                              into the input List
+  @param[in] ListToBeMergedCount              Number of LIST_ENTRY* which will be merged
+                                              into the input List
+  @param[in] ComparisonOffset                 Offset of the field to compare each list entry against relative to the
+                                              list entry pointer
+  @param[in] SignatureOffset                  Offset of the signature to compare each list entry against relative to the
+                                              list entry pointer
+  @param[in] Signature                        Signature to compare for each list entry. If this is zero,
+                                              no signature check will be performed
+
+  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into List
+  @retval EFI_INVALID_PARAMETER               List was NULL                             OR
+                                              ArrayOfListEntriesToBeMerged was NULL     OR
+                                              ArrayOfListEntriesToBeMerged[n] was NULL  OR
+                                              ListToBeMergedCount was zero
+  @retval Other                               Return value of OrderedInsertUint64Comparison()
+**/
+STATIC
+EFI_STATUS
+OrderedInsertArrayUint64Comparison (
+  IN  LIST_ENTRY  *List,
+  IN  LIST_ENTRY  **ArrayOfListEntriesToBeMerged,
+  IN  UINTN       ListToBeMergedCount,
+  IN  INT64       ComparisonOffset,
+  IN  INT64       SignatureOffset OPTIONAL,
+  IN  UINT32      Signature OPTIONAL
+  )
+{
+  INTN        ListToBeMergedIndex = ListToBeMergedCount - 1;
+  EFI_STATUS  Status              = EFI_SUCCESS;
+
+  if ((List == NULL) || (ArrayOfListEntriesToBeMerged == NULL) || (ListToBeMergedCount == 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // If the input array is sorted, going backwards is the fastest method
+  for ( ; ListToBeMergedIndex >= 0; --ListToBeMergedIndex) {
+    if (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex] == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    RemoveEntryList (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
+    Status = OrderedInsertUint64Comparison (
+               List,
+               ArrayOfListEntriesToBeMerged[ListToBeMergedIndex],
+               ComparisonOffset,
+               SignatureOffset,
+               Signature
+               );
+
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+  }
+
+  return Status;
+}
+
+/**
+  Merges every LIST_ENTRY within ListToBeMerged into ListToMergeInto
+
+  @param[in]  ListToMergeInto                 Pointer to the head of a list into which the input
+                                              ListToBeMerged will be merged
+  @param[in]  ListToBeMerged                  Pointer to the head of a list which will be merged
+                                              into ListToMergeInto
+  @param[in]  ListToBeMergedCount             Number of LIST_ENTRY* in ListToBeMerged
+  @param[out] ArrayOfMergedElements           Pointer to an unallocated array of LIST_ENTRY*. The array will be
+                                              allocated if the function returns success and contain every
+                                              LIST_ENTRY* merged into ListToMergeInto
+  @param[in] ComparisonOffset                 Offset of the field to compare each list entry against relative to the
+                                              list entry pointer
+  @param[in] SignatureOffset                  Offset of the signature to compare each list entry against relative to the
+                                              list entry pointer
+  @param[in] Signature                        Signature to compare for each list entry. If this is zero,
+                                              no signature check will be performed
+
+  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into
+                                              ImagePropertiesRecordList
+  @retval EFI_OUT_OF_RESOURCES                Failed to allocate memory
+  @retval EFI_INVALID_PARAMETER               ListToMergeInto was NULL                    OR
+                                              ListToBeMerged was NULL                     OR
+                                              ArrayOfListEntriesToBeMerged was NULL       OR
+                                              *ArrayOfListEntriesToBeMerged was not NULL  OR
+                                              ListToBeMergedCount was NULL
+  @retval other                               Return value of OrderedInsertUint64Comparison()
+**/
+STATIC
+EFI_STATUS
+MergeListsUint64Comparison (
+  IN  LIST_ENTRY   *ListToMergeInto,
+  IN  LIST_ENTRY   *ListToBeMerged,
+  IN  CONST UINTN  *ListToBeMergedCount,
+  OUT LIST_ENTRY   ***ArrayOfMergedElements,
+  IN  INT64        ComparisonOffset,
+  IN  INT64        SignatureOffset OPTIONAL,
+  IN  UINT32       Signature OPTIONAL
+  )
+{
+  UINTN       Index  = 0;
+  EFI_STATUS  Status = EFI_SUCCESS;
+
+  if ((ListToMergeInto == NULL) || (ListToBeMerged == NULL) ||
+      (ArrayOfMergedElements == NULL) || (*ArrayOfMergedElements != NULL) ||
+      (ListToBeMergedCount == NULL))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *ArrayOfMergedElements = AllocateZeroPool (sizeof (LIST_ENTRY *) * *ListToBeMergedCount);
+
+  if (*ArrayOfMergedElements == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // Insert each entry in the list to be merged into the
+  while (!IsListEmpty (ListToBeMerged) && Index < *ListToBeMergedCount) {
+    (*ArrayOfMergedElements)[Index] = ListToBeMerged->ForwardLink;
+    RemoveEntryList ((*ArrayOfMergedElements)[Index]);
+    Status = OrderedInsertUint64Comparison (
+               ListToMergeInto,
+               (*ArrayOfMergedElements)[Index++],
+               ComparisonOffset,
+               SignatureOffset,
+               Signature
+               );
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+  }
+
+  // If we did not merge all elements of the list, unmerge them and free the input array
+  if (!IsListEmpty (ListToBeMerged)) {
+    OrderedInsertArrayUint64Comparison (
+      ListToBeMerged,
+      *ArrayOfMergedElements,
+      Index - 1,
+      ComparisonOffset,
+      SignatureOffset,
+      Signature
+      );
+    FreePool (*ArrayOfMergedElements);
+  }
+
+  return Status;
+}
+
+// ---------------------------------------
+//         SPECIAL REGION LOGIC
+// ---------------------------------------
+
+/**
+  Walk through the input special region list to combine overlapping intervals.
+
+  @param[in]  SpecialRegionList      Pointer to the head of the list
+
+  @retval     EFI_INVALID_PARAMTER  SpecialRegionList was NULL
+  @retval     EFI_OUT_OF_RESOURCES  Failed to allocate memory
+  @retval     EFI_SUCCESS           Input special region list was merged
+**/
+STATIC
+EFI_STATUS
+MergeOverlappingSpecialRegions (
+  IN LIST_ENTRY  *SpecialRegionList
+  )
+{
+  LIST_ENTRY                                   *BackLink, *ForwardLink;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *BackEntry, *ForwardEntry, *NewEntry;
+  EFI_PHYSICAL_ADDRESS                         BackStart, BackEnd, ForwardStart, ForwardEnd;
+
+  if (SpecialRegionList == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  BackLink = SpecialRegionList->ForwardLink;
+
+  while (BackLink != SpecialRegionList) {
+    BackEntry = CR (
+                  BackLink,
+                  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                  Link,
+                  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                  );
+
+    BackStart = BackEntry->SpecialRegion.Start;
+    BackEnd   = BackEntry->SpecialRegion.Start + BackEntry->SpecialRegion.Length;
+
+    ForwardLink = BackLink->ForwardLink;
+    while (ForwardLink != SpecialRegionList) {
+      ForwardEntry = CR (
+                       ForwardLink,
+                       MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                       Link,
+                       MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                       );
+
+      ForwardStart = ForwardEntry->SpecialRegion.Start;
+      ForwardEnd   = ForwardEntry->SpecialRegion.Start + ForwardEntry->SpecialRegion.Length;
+
+      // If BackEntry and ForwardEntry overlap
+      if (CHECK_OVERLAP (BackStart, BackEnd, ForwardStart, ForwardEnd)) {
+        // If the attributes are the same between both entries, just expand BackEntry and delete ForwardEntry
+        if (BackEntry->SpecialRegion.EfiAttributes == ForwardEntry->SpecialRegion.EfiAttributes) {
+          BackEntry->SpecialRegion.Length = ForwardEnd - BackStart;
+          ForwardLink                     = ForwardLink->BackLink;
+          RemoveEntryList (ForwardLink->ForwardLink);
+          FreePool (ForwardEntry);
+        }
+        // If BackEntry subsumes ForwardEntry, we need to create a new list entry to split BackEntry
+        else if (CHECK_SUBSUMPTION (BackStart, BackEnd, ForwardStart, ForwardEnd)) {
+          NewEntry = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY));
+
+          if (NewEntry == NULL) {
+            return EFI_OUT_OF_RESOURCES;
+          }
+
+          BackEntry->SpecialRegion.Length = ForwardStart - BackStart;
+          InitializeListHead (&NewEntry->Link);
+          NewEntry->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
+          NewEntry->SpecialRegion.EfiAttributes = BackEntry->SpecialRegion.EfiAttributes;
+          NewEntry->SpecialRegion.Start         = ForwardEnd;
+          NewEntry->SpecialRegion.Length        = BackEnd - ForwardEnd;
+          OrderedInsertUint64Comparison (
+            SpecialRegionList,
+            &NewEntry->Link,
+            OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, SpecialRegion) + OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION, Start) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+            OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Signature) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+            MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+            );
+
+          ForwardLink = &NewEntry->Link;
+          break;
+        }
+        // If BackEntry does not subsume FrontEntry, we can trim each entry
+        //
+        // If ForwardEntry has more strict attributes, trim BackEntry
+        else if (CHECK_SUBSET (BackEntry->SpecialRegion.EfiAttributes, ForwardEntry->SpecialRegion.EfiAttributes)) {
+          BackEntry->SpecialRegion.Length = ForwardStart - BackStart;
+        }
+        // If BackEntry has more strict attributes, trim ForwardEntry
+        else {
+          ForwardEntry->SpecialRegion.Start = BackEnd;
+        }
+      } else {
+        // No overlap
+        break;
+      }
+
+      ForwardLink = ForwardLink->ForwardLink;
+    }
+
+    BackLink    = ForwardLink;
+    ForwardLink = BackLink->ForwardLink;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Check if the input SpecialRegion conflicts with any special regions in the input SpecialRegionList. The SpecialRegion
+  conflicts if the interval overlaps with another interval in SpecialRegionList AND the attributes of
+  SpecialRegion are not a subset of the attributes of the region with which it overlaps.
+
+  @param[in]  SpecialRegion       The special region to check against all special regions in SpecialRegionList
+  @param[in]  SpecialRegionList   The list of special regions to check against the input SpecialRegion
+
+  @retval     TRUE                SpecialRegion conflicts with a special region in SpecialRegionList
+  @retval     FALSE               SpecialRegion does not conflict with a special region in SpecialRegionList
+**/
+STATIC
+BOOLEAN
+DoesSpecialRegionConflict (
+  IN MEMORY_PROTECTION_SPECIAL_REGION  *SpecialRegion,
+  IN LIST_ENTRY                        *SpecialRegionList
+  )
+{
+  LIST_ENTRY                                   *SpecialRegionListLink;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionListEntry;
+  BOOLEAN                                      OverlapCheck, SubsetCheck;
+  EFI_PHYSICAL_ADDRESS                         InputStart, InputEnd, ListEntryStart, ListEntryEnd;
+
+  InputStart = SpecialRegion->Start;
+  InputEnd   = SpecialRegion->Start + SpecialRegion->Length;
+
+  SpecialRegionListLink = SpecialRegionList->ForwardLink;
+
+  while (SpecialRegionListLink != SpecialRegionList) {
+    SpecialRegionListEntry = CR (
+                               SpecialRegionListLink,
+                               MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                               Link,
+                               MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                               );
+
+    ListEntryStart = SpecialRegionListEntry->SpecialRegion.Start;
+    ListEntryEnd   = SpecialRegionListEntry->SpecialRegion.Start + SpecialRegionListEntry->SpecialRegion.Length;
+
+    OverlapCheck = CHECK_OVERLAP (InputStart, InputEnd, ListEntryStart, ListEntryEnd);
+    SubsetCheck  = CHECK_SUBSET (SpecialRegion->EfiAttributes, SpecialRegionListEntry->SpecialRegion.EfiAttributes);
+
+    if (OverlapCheck && !SubsetCheck) {
+      return TRUE;
+    }
+
+    SpecialRegionListLink = SpecialRegionListLink->ForwardLink;
+  }
+
+  return FALSE;
+}
+
+/**
+  Copy the HOB MEMORY_PROTECTION_SPECIAL_REGION entries into a local list
+
+  @retval EFI_SUCCESS           HOB Entries successfully copied
+  @retval EFI_OUT_OF_RESOURCES  Failed to allocate
+**/
+STATIC
+EFI_STATUS
+CollectSpecialRegionHobs (
+  VOID
+  )
+{
+  EFI_HOB_GUID_TYPE                            *GuidHob          = NULL;
+  MEMORY_PROTECTION_SPECIAL_REGION             *HobSpecialRegion = NULL;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *NewSpecialRegion = NULL;
+
+  GuidHob = GetFirstGuidHob (&gMemoryProtectionSpecialRegionHobGuid);
+
+  while (GuidHob != NULL) {
+    HobSpecialRegion = (MEMORY_PROTECTION_SPECIAL_REGION *)GET_GUID_HOB_DATA (GuidHob);
+    if (DoesSpecialRegionConflict (HobSpecialRegion, &mSpecialMemoryRegionsPrivate.SpecialRegionList)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a - Special region 0x%llx - 0x%llx conflicts with another special region!\n",
+        __FUNCTION__,
+        HobSpecialRegion->Start,
+        HobSpecialRegion->Start + HobSpecialRegion->Length
+        ));
+      ASSERT (FALSE);
+    } else {
+      NewSpecialRegion = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY));
+
+      if (NewSpecialRegion == NULL) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "%a - Failed to allocate a special region list entry!\n",
+          __FUNCTION__
+          ));
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      NewSpecialRegion->SpecialRegion.Start         = ALIGN_ADDRESS (HobSpecialRegion->Start);
+      NewSpecialRegion->SpecialRegion.Length        = ALIGN_VALUE (HobSpecialRegion->Length, EFI_PAGE_SIZE);
+      NewSpecialRegion->SpecialRegion.EfiAttributes = HobSpecialRegion->EfiAttributes & EFI_MEMORY_ACCESS_MASK;
+      NewSpecialRegion->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
+      OrderedInsertUint64Comparison (
+        &mSpecialMemoryRegionsPrivate.SpecialRegionList,
+        &NewSpecialRegion->Link,
+        OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, SpecialRegion) + OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION, Start) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+        OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Signature) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+        MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+        );
+      mSpecialMemoryRegionsPrivate.Count++;
+    }
+
+    GuidHob = GetNextGuidHob (&gMemoryProtectionSpecialRegionHobGuid, GET_NEXT_HOB (GuidHob));
+  }
+
+  MergeOverlappingSpecialRegions (&mSpecialMemoryRegionsPrivate.SpecialRegionList);
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Create a sorted array of MEMORY_PROTECTION_SPECIAL_REGION structs describing
+  all memory protection special regions. This memory should be freed by the caller but
+  will not be allocated if there are no special regions.
+
+  @param[out] SpecialRegions  Pointer to unallocated MEMORY_PROTECTION_SPECIAL_REGION array
+  @param[out] Count           Number of MEMORY_PROTECTION_SPECIAL_REGION structs in the
+                              allocated array
+
+  @retval EFI_SUCCESS           Array successfuly created
+  @retval EFI_INVALID_PARAMTER  SpecialRegions is NULL or *SpecialRegions is not NULL
+  @retval EFI_OUT_OF_RESOURCES  Failed to allocate memory
+
+**/
+EFI_STATUS
+EFIAPI
+GetSpecialRegions (
+  OUT MEMORY_PROTECTION_SPECIAL_REGION  **SpecialRegions,
+  OUT UINTN                             *Count
+  )
+{
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry;
+  LIST_ENTRY                                   *SpecialRegionEntryLink;
+  UINTN                                        Index = 0;
+
+  if ((SpecialRegions == NULL) || (*SpecialRegions != NULL) || (Count == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (mSpecialMemoryRegionsPrivate.Count == 0) {
+    *Count = 0;
+    return EFI_SUCCESS;
+  }
+
+  *SpecialRegions = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION) * mSpecialMemoryRegionsPrivate.Count);
+
+  if (*SpecialRegions == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  for (SpecialRegionEntryLink = mSpecialMemoryRegionsPrivate.SpecialRegionList.ForwardLink;
+       SpecialRegionEntryLink != &mSpecialMemoryRegionsPrivate.SpecialRegionList;
+       SpecialRegionEntryLink = SpecialRegionEntryLink->ForwardLink)
+  {
+    SpecialRegionEntry = CR (
+                           SpecialRegionEntryLink,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                           Link,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                           );
+
+    CopyMem (
+      &((*SpecialRegions)[Index++]),
+      &SpecialRegionEntry->SpecialRegion,
+      sizeof (MEMORY_PROTECTION_SPECIAL_REGION)
+      );
+  }
+
+  // Fix the private count if it has gotten out of sync somehow
+  if (mSpecialMemoryRegionsPrivate.Count != Index) {
+    mSpecialMemoryRegionsPrivate.Count = Index;
+  }
+
+  *Count = mSpecialMemoryRegionsPrivate.Count;
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Add the input MEMORY_PROTECTION_SPECIAL_REGION to the internal list of memory protection special regions
+  which will have the specified attributes applied when memory protections are initialized or, if memory
+  protection initialization has already occurred, will be used by test drivers to ensure the
+  region has the specified attributes.
+
+  @param[in]  Start               Start of region which will be added to the special memory regions.
+                                  NOTE: This address will be page-aligned
+  @param[in]  Length              Length of the region which will be added to the special memory regions
+                                  NOTE: This value will be page-aligned
+  @param[in]  Attributes          Attributes to apply to the region during memory protection initialization
+                                  and which should be active if the region was reported after initialization.
+
+  @retval   EFI_SUCCESS           SpecialRegion was successfully added
+  @retval   EFI_INVALID_PARAMTER  Length is zero or the input region overlaps with an
+                                  existing special region
+  @retval   EFI_OUT_OF_RESOURCES  Failed to allocate memory
+**/
+EFI_STATUS
+EFIAPI
+AddSpecialRegion (
+  IN EFI_PHYSICAL_ADDRESS  Start,
+  IN UINT64                Length,
+  IN UINT64                Attributes
+  )
+{
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry = NULL;
+
+  if (Length == 0) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  SpecialRegionEntry = AllocatePool (sizeof (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY));
+
+  if (SpecialRegionEntry == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  SpecialRegionEntry->Signature                   = MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE;
+  SpecialRegionEntry->SpecialRegion.Start         = ALIGN_ADDRESS (Start);
+  SpecialRegionEntry->SpecialRegion.Length        = ALIGN_VALUE (Length, EFI_PAGE_SIZE);
+  SpecialRegionEntry->SpecialRegion.EfiAttributes = Attributes & EFI_MEMORY_ACCESS_MASK;
+
+  if (DoesSpecialRegionConflict (&SpecialRegionEntry->SpecialRegion, &mSpecialMemoryRegionsPrivate.SpecialRegionList)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a - Special region 0x%llx - 0x%llx conflicts with an existing special region!\n",
+      __FUNCTION__,
+      SpecialRegionEntry->SpecialRegion.Start,
+      SpecialRegionEntry->SpecialRegion.Start + SpecialRegionEntry->SpecialRegion.Length
+      ));
+    ASSERT (FALSE);
+    FreePool (SpecialRegionEntry);
+    return EFI_INVALID_PARAMETER;
+  }
+
+  OrderedInsertUint64Comparison (
+    &mSpecialMemoryRegionsPrivate.SpecialRegionList,
+    &SpecialRegionEntry->Link,
+    OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, SpecialRegion) + OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION, Start) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+    OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Signature) - OFFSET_OF (MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY, Link),
+    MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+    );
+  mSpecialMemoryRegionsPrivate.Count++;
+  MergeOverlappingSpecialRegions (&mSpecialMemoryRegionsPrivate.SpecialRegionList);
+
+  return EFI_SUCCESS;
+}
+
+STATIC MEMORY_PROTECTION_SPECIAL_REGION_PROTOCOL  mMemoryProtectionSpecialRegion =
+{
+  GetSpecialRegions,
+  AddSpecialRegion
+};
+
+/**
+  Initialize the memory protection special region reporting.
+**/
+VOID
+EFIAPI
+CoreInitializeMemoryProtectionSpecialRegions (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+  EFI_HANDLE  HandleNull = NULL;
+
+  Status = CollectSpecialRegionHobs ();
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a - Failed to collect the memory protection special region HOB entries!\n",
+      __FUNCTION__
+      ));
+  }
+
+  Status = CoreInstallMultipleProtocolInterfaces (
+             &HandleNull,
+             &gMemoryProtectionSpecialRegionProtocolGuid,
+             &mMemoryProtectionSpecialRegion,
+             NULL
+             );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a - Failed to install the memory protection special region protocol!\n",
+      __FUNCTION__
+      ));
+  }
+
+  return;
+}
+
+// ---------------------------------------
 //       USEFUL DEBUG FUNCTIONS
 // ---------------------------------------
 
@@ -397,225 +1049,42 @@ DumpBitmap (
   DEBUG ((DEBUG_INFO, "\n"));
 }
 
-// ---------------------------------------
-//     LINKED LIST SUPPORT FUNCTIONS
-// ---------------------------------------
-
 /**
-  Inserts the input ImageRecordToInsertLink into ImageRecordList based on the IMAGE_PROPERTIES_RECORD.ImageBase field
+  Debug dumps the input bitmap
 
-  @param[in] ImageRecordList           Pointer to the head of the IMAGE_PROPERTIES_RECORD list
-  @param[in] ImageRecordToInsertLink   Pointer to the list entry of the IMAGE_PROPERTIES_RECORD to insert
-
-  @retval EFI_SUCCESS             IMAGE_PROPERTIES_RECORD inserted into the list
-  @retval EFI_INVALID_PARAMETER   ImageRecordList or ImageRecordToInsertLink were NULL
+  @param[in] Bitmap Pointer to the start of the bitmap
+  @param[in] Count  Number of bitmap entries
 **/
 STATIC
-EFI_STATUS
-OrderedInsertImageRecordListEntry (
-  IN LIST_ENTRY  *ImageRecordList,
-  IN LIST_ENTRY  *ImageRecordToInsertLink
+VOID
+DumpMemoryProtectionSpecialRegions (
+  VOID
   )
 {
-  IMAGE_PROPERTIES_RECORD  *CurrentImageRecord;
-  IMAGE_PROPERTIES_RECORD  *ImageRecordToInsert;
-  LIST_ENTRY               *ImageRecordLink;
-  LIST_ENTRY               *ImageRecordEndLink;
-  EFI_PHYSICAL_ADDRESS     ImageRecordToInsertBase;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry;
+  LIST_ENTRY                                   *SpecialRegionEntryLink;
 
-  if ((ImageRecordList == NULL) || (ImageRecordToInsertLink == NULL)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  ImageRecordToInsert = CR (
-                          ImageRecordToInsertLink,
-                          IMAGE_PROPERTIES_RECORD,
-                          Link,
-                          IMAGE_PROPERTIES_RECORD_SIGNATURE
-                          );
-  ImageRecordToInsertBase = ImageRecordToInsert->ImageBase;
-
-  ImageRecordLink    = ImageRecordList->ForwardLink;
-  ImageRecordEndLink = ImageRecordList;
-  while (ImageRecordLink != ImageRecordEndLink) {
-    CurrentImageRecord = CR (
-                           ImageRecordLink,
-                           IMAGE_PROPERTIES_RECORD,
-                           Link,
-                           IMAGE_PROPERTIES_RECORD_SIGNATURE
-                           );
-    if (ImageRecordToInsertBase < CurrentImageRecord->ImageBase) {
-      break;
-    }
-
-    ImageRecordLink = ImageRecordLink->ForwardLink;
-  }
-
-  ImageRecordToInsertLink->BackLink              = ImageRecordLink->BackLink;
-  ImageRecordToInsertLink->ForwardLink           = ImageRecordLink;
-  ImageRecordToInsertLink->BackLink->ForwardLink = ImageRecordToInsertLink;
-  ImageRecordToInsertLink->ForwardLink->BackLink = ImageRecordToInsertLink;
-  return EFI_SUCCESS;
-}
-
-/**
-  Inserts the input CodeSectionToInsertLink into CodeSectionList based on the
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION.CodeSegmentBase field
-
-  @param[in] CodeSectionList           Pointer to the head of the IMAGE_PROPERTIES_RECORD_CODE_SECTION list
-  @param[in] CodeSectionToInsertLink   Pointer to the list entry of the IMAGE_PROPERTIES_RECORD_CODE_SECTION to insert
-
-  @retval EFI_SUCCESS             IMAGE_PROPERTIES_RECORD_CODE_SECTION inserted into the list
-  @retval EFI_INVALID_PARAMETER   CodeSectionList or CodeSectionToInsertLink were NULL
-**/
-STATIC
-EFI_STATUS
-OrderedInsertCodeSectionListEntry (
-  IN LIST_ENTRY  *CodeSectionList,
-  IN LIST_ENTRY  *CodeSectionToInsertLink
-  )
-{
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CurrentCodeSection;
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSectionToInsert;
-  LIST_ENTRY                            *CodeSectionLink;
-  LIST_ENTRY                            *CodeSectionEndLink;
-  EFI_PHYSICAL_ADDRESS                  CodeSectionToInsertBase;
-
-  if ((CodeSectionList == NULL) || (CodeSectionToInsertLink == NULL)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  CodeSectionToInsert = CR (
-                          CodeSectionToInsertLink,
-                          IMAGE_PROPERTIES_RECORD_CODE_SECTION,
-                          Link,
-                          IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
-                          );
-
-  CodeSectionToInsertBase = CodeSectionToInsert->CodeSegmentBase;
-
-  CodeSectionLink    = CodeSectionList->ForwardLink;
-  CodeSectionEndLink = CodeSectionList;
-  while (CodeSectionLink != CodeSectionEndLink) {
-    CurrentCodeSection = CR (
-                           CodeSectionLink,
-                           IMAGE_PROPERTIES_RECORD_CODE_SECTION,
-                           Link,
-                           IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
-                           );
-    if (CodeSectionToInsertBase < CurrentCodeSection->CodeSegmentBase) {
-      break;
-    }
-
-    CodeSectionLink = CodeSectionLink->ForwardLink;
-  }
-
-  CodeSectionToInsertLink->BackLink              = CodeSectionLink->BackLink;
-  CodeSectionToInsertLink->ForwardLink           = CodeSectionLink;
-  CodeSectionToInsertLink->BackLink->ForwardLink = CodeSectionToInsertLink;
-  CodeSectionToInsertLink->ForwardLink->BackLink = CodeSectionToInsertLink;
-  return EFI_SUCCESS;
-}
-
-/**
-  Merges every IMAGE_PROPERTIES_RECORD entry within ArrayOfListEntriesToBeMerged into ImagePropertiesRecordList
-
-  @param[in] ImagePropertiesRecordList        Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
-                                              into which the input ArrayOfListEntriesToBeMerged will be merged
-  @param[in] ArrayOfListEntriesToBeMerged     Pointer to an array of LIST_ENTRY* which will be merged
-                                              into the input ImagePropertiesRecordList
-  @param[in] ListToBeMergedCount              Number of LIST_ENTRY* which will be merged
-                                              into the input ImagePropertiesRecordList
-
-  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into ImagePropertiesRecordList
-  @retval EFI_INVALID_PARAMETER               ImagePropertiesRecordList was NULL        OR
-                                              ArrayOfListEntriesToBeMerged was NULL     OR
-                                              ArrayOfListEntriesToBeMerged[n] was NULL  OR
-                                              ListToBeMergedCount was zero
-**/
-STATIC
-EFI_STATUS
-OrderedInsertImagePropertiesRecordArray (
-  IN  LIST_ENTRY  *ImagePropertiesRecordList,
-  IN  LIST_ENTRY  **ArrayOfListEntriesToBeMerged,
-  IN  UINTN       ListToBeMergedCount
-  )
-{
-  INTN  ListToBeMergedIndex = ListToBeMergedCount - 1;
-
-  if ((ImagePropertiesRecordList == NULL) || (ArrayOfListEntriesToBeMerged == NULL) || (ListToBeMergedCount == 0)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  // The input array should be sorted, so going backwards is the fastest method
-  for ( ; ListToBeMergedIndex >= 0; --ListToBeMergedIndex) {
-    if (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex] == NULL) {
-      return EFI_INVALID_PARAMETER;
-    }
-
-    RemoveEntryList (ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
-    OrderedInsertImageRecordListEntry (ImagePropertiesRecordList, ArrayOfListEntriesToBeMerged[ListToBeMergedIndex]);
-  }
-
-  return EFI_SUCCESS;
-}
-
-/**
-  Merges every LIST_ENTRY within ArrayOfListEntriesToBeMerged into ImagePropertiesRecordList
-
-  @param[in]  ListToMergeInto                 Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
-                                              into which the input ListToBeMerged will be merged
-  @param[in]  ListToBeMerged                  Pointer to the head of a list of IMAGE_PROPERTIES_RECORD entries
-                                              which will be merged into ListToMergeInto
-  @param[in]  ListToBeMergedCount             Number of IMAGE_PROPERTIES_RECORD entries in ListToBeMerged
-  @param[out] ArrayOfListEntriesToBeMerged    Pointer to an allocated array of LIST_ENTRY* which were merged
-                                              into the input ListToMergeInto. This array should be size
-                                              ListToBeMergedCount * sizeof(LIST_ENTRY*)
-
-  @retval EFI_SUCCESS                         ArrayOfListEntriesToBeMerged was successfully merged into
-                                              ImagePropertiesRecordList
-  @retval EFI_OUT_OF_RESOURCES                Failed to allocate memory
-  @retval EFI_INVALID_PARAMETER               ListToMergeInto was NULL                  OR
-                                              ListToBeMerged was NULL                   OR
-                                              ArrayOfListEntriesToBeMerged was NULL     OR
-                                              ListToBeMergedCount was zero
-  @retval other                               Return value of OrderedInsertImageRecordListEntry()
-**/
-EFI_STATUS
-MergeImagePropertiesRecordLists (
-  IN  LIST_ENTRY  *ListToMergeInto,
-  IN  LIST_ENTRY  *ListToBeMerged,
-  IN  UINTN       ListToBeMergedCount,
-  OUT LIST_ENTRY  **ArrayOfMergedElements
-  )
-{
-  UINTN       Index = 0;
-  EFI_STATUS  Status;
-
-  if ((ListToMergeInto == NULL) || (ListToBeMerged == NULL) ||
-      (ArrayOfMergedElements == NULL) || (ListToBeMergedCount == 0))
+  for (SpecialRegionEntryLink = mSpecialMemoryRegionsPrivate.SpecialRegionList.ForwardLink;
+       SpecialRegionEntryLink != &mSpecialMemoryRegionsPrivate.SpecialRegionList;
+       SpecialRegionEntryLink = SpecialRegionEntryLink->ForwardLink)
   {
-    return EFI_INVALID_PARAMETER;
+    SpecialRegionEntry = CR (
+                           SpecialRegionEntryLink,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                           Link,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                           );
+
+    DEBUG ((
+      DEBUG_INFO,
+      "Memory Protection Special Region: 0x%llx - 0x%llx. Attributes: 0x%llx\n",
+      SpecialRegionEntry->SpecialRegion.Start,
+      SpecialRegionEntry->SpecialRegion.Start + SpecialRegionEntry->SpecialRegion.Length,
+      SpecialRegionEntry->SpecialRegion.EfiAttributes
+      ));
   }
 
-  // Insert each entry in the list to be merged into the
-  while (!IsListEmpty (ListToBeMerged) && Index < ListToBeMergedCount) {
-    ArrayOfMergedElements[Index] = ListToBeMerged->ForwardLink;
-    RemoveEntryList (ArrayOfMergedElements[Index]);
-    Status = OrderedInsertImageRecordListEntry (ListToMergeInto, ArrayOfMergedElements[Index++]);
-    if (EFI_ERROR (Status)) {
-      break;
-    }
-  }
-
-  // If we did not merge all elements of the list, unmerge them and free the input array
-  if (!IsListEmpty (ListToBeMerged)) {
-    OrderedInsertImagePropertiesRecordArray (ListToBeMerged, ArrayOfMergedElements, Index - 1);
-    FreePool (*ArrayOfMergedElements);
-    return Status;
-  }
-
-  return EFI_SUCCESS;
+  return;
 }
 
 // ---------------------------------------
@@ -1140,7 +1609,13 @@ CreateNonProtectedImagePropertiesRecord (
   ImageRecord->CodeSegmentCount = 0;
   InitializeListHead (&ImageRecord->CodeSegmentList);
 
-  Status = OrderedInsertImageRecordListEntry (&mNonProtectedImageRangesPrivate.NonProtectedImageList, &ImageRecord->Link);
+  Status = OrderedInsertUint64Comparison (
+             &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+             &ImageRecord->Link,
+             OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+             OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+             IMAGE_PROPERTIES_RECORD_SIGNATURE
+             );
 
   if (EFI_ERROR (Status)) {
     FreeImageRecord (ImageRecord);
@@ -1304,7 +1779,13 @@ CreateImagePropertiesRecord (
       ImageRecordCodeSection->CodeSegmentBase = (UINTN)ImageAddress + Section[Index].VirtualAddress;
       ImageRecordCodeSection->CodeSegmentSize = EfiPagesToSize (EfiSizeToPages (Section[Index].SizeOfRawData));
 
-      OrderedInsertCodeSectionListEntry (&ImageRecord->CodeSegmentList, &ImageRecordCodeSection->Link);
+      OrderedInsertUint64Comparison (
+        &ImageRecord->CodeSegmentList,
+        &ImageRecordCodeSection->Link,
+        OFFSET_OF (IMAGE_PROPERTIES_RECORD_CODE_SECTION, CodeSegmentBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD_CODE_SECTION, Link),
+        OFFSET_OF (IMAGE_PROPERTIES_RECORD_CODE_SECTION, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD_CODE_SECTION, Link),
+        IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+        );
       ImageRecord->CodeSegmentCount++;
     }
   }
@@ -1592,6 +2073,161 @@ SeparateImagesInMemoryMap (
 }
 
 /**
+  Split memory map descriptors based on the input special region list. After the function, one or more memory map
+  descriptors will divide evenly into every special region so attributes can be targeted at those regions. Every
+  descriptor covered by a special region will have its virtual address set to SPECIAL_REGION_PATTERN.
+
+  @param[in, out] MemoryMapSize                   IN:   The size, in bytes, of the old memory map before the split
+                                                  OUT:  The size, in bytes, of the used descriptors of the split
+                                                        memory map
+  @param[in, out] MemoryMap                       IN:   A pointer to the buffer containing a sorted memory map
+                                                  OUT:  A pointer to the updated memory map
+  @param[in]      DescriptorSize                  The size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
+  @param[in]      BufferSize                      The size, in bytes, of the full memory map buffer
+  @param[in]      SpecialRegionList               List of special regions to separate. This list should be sorted.
+
+  @retval         EFI_SUCCESS                     Memory map has been split
+  @retval         EFI_NOT_FOUND                   Unable to find a special region
+  @retval         EFI_INVALID_PARAMETER           An input was NULL
+**/
+EFI_STATUS
+SeparateSpecialRegionsInMemoryMap (
+  IN OUT      UINTN                  *MemoryMapSize,
+  IN OUT      EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST    UINTN                  *DescriptorSize,
+  IN CONST    UINTN                  *BufferSize,
+  IN CONST    LIST_ENTRY             *SpecialRegionList
+  )
+{
+  EFI_MEMORY_DESCRIPTOR                        *MemoryMapEntry, *MemoryMapEnd, *MapEntryInsert;
+  LIST_ENTRY                                   *SpecialRegionEntryLink;
+  MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY  *SpecialRegionEntry;
+  UINTN                                        SpecialRegionStart, SpecialRegionEnd, MapEntryStart, MapEntryEnd;
+
+  if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
+      (DescriptorSize == NULL) || (BufferSize == NULL) ||
+      (SpecialRegionList == NULL))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  MemoryMapEntry = MemoryMap;
+  MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+  MapEntryInsert = MemoryMapEnd;
+
+  SpecialRegionEntryLink = SpecialRegionList->ForwardLink;
+  while (SpecialRegionEntryLink != SpecialRegionList) {
+    SpecialRegionEntry = CR (
+                           SpecialRegionEntryLink,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY,
+                           Link,
+                           MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE
+                           );
+
+    SpecialRegionStart = (UINTN)SpecialRegionEntry->SpecialRegion.Start;
+    SpecialRegionEnd   = (UINTN)SpecialRegionEntry->SpecialRegion.Start + (UINTN)SpecialRegionEntry->SpecialRegion.Length;
+
+    while ((MemoryMapEntry < MemoryMapEnd) &&
+           (SpecialRegionStart < SpecialRegionEnd) &&
+           (((UINTN)MapEntryInsert + *DescriptorSize) < ((UINTN)MemoryMap + *BufferSize)))
+    {
+      MapEntryStart = (UINTN)MemoryMapEntry->PhysicalStart;
+      MapEntryEnd   = (UINTN)MemoryMapEntry->PhysicalStart + (UINTN)EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages);
+      if ((MapEntryStart <= SpecialRegionStart) && (MapEntryEnd > SpecialRegionStart)) {
+        // Check if some portion of the map entry isn't covered by the special region
+        if (MapEntryStart != SpecialRegionStart) {
+          // Populate a new descriptor for the region before the special region. This entry can go to the end
+          // of the memory map because the special region list is sorted
+          POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+            MapEntryInsert,
+            MapEntryStart,
+            EFI_SIZE_TO_PAGES (SpecialRegionStart - MapEntryStart),
+            MemoryMapEntry->Type
+            );
+          MapEntryInsert->Attribute = MemoryMapEntry->Attribute;
+
+          // Update this descriptor to start at the special region start
+          MemoryMapEntry->NumberOfPages -= MapEntryInsert->NumberOfPages;
+          MemoryMapEntry->PhysicalStart  = SpecialRegionStart;
+          MapEntryStart                  = SpecialRegionStart;
+
+          // Get the next blank map entry
+          MapEntryInsert = NEXT_MEMORY_DESCRIPTOR (MapEntryInsert, *DescriptorSize);
+        }
+
+        // If the special region ends after this region, get the next entry
+        if (SpecialRegionEnd > MapEntryEnd) {
+          SpecialRegionStart           = MapEntryEnd;
+          MemoryMapEntry->Attribute    = SpecialRegionEntry->SpecialRegion.EfiAttributes;
+          MemoryMapEntry->VirtualStart = SPECIAL_REGION_PATTERN;
+
+          // Continue to the next memory map descriptor
+          MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+          continue;
+        }
+
+        // If the special region ends before the end of this descriptor region, insert a new record at the end
+        // of the memory map for the remaining region
+        if (SpecialRegionEnd < MapEntryEnd) {
+          // SpecialRegionStart is now guaranteed to be equal to MapEntryStart. Populate a new descriptor
+          // for the region covered by the special region. This entry needs to go to
+          // the end of the memory map in case a subsequent special region will cover some portion
+          // of the remaining map entry region
+          POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+            MapEntryInsert,
+            SpecialRegionStart,
+            EFI_SIZE_TO_PAGES (SpecialRegionEnd - SpecialRegionStart),
+            MemoryMapEntry->Type
+            );
+          MapEntryInsert->Attribute = SpecialRegionEntry->SpecialRegion.EfiAttributes;
+
+          // Trim the current memory map entry
+          MemoryMapEntry->NumberOfPages -= MapEntryInsert->NumberOfPages;
+          MemoryMapEntry->PhysicalStart  = SpecialRegionEnd;
+
+          // Get the next blank map entry
+          MapEntryInsert = NEXT_MEMORY_DESCRIPTOR (MapEntryInsert, *DescriptorSize);
+
+          // Break the loop to get the next special region which will need to be checked against the remainder
+          // of this map entry
+          break;
+        }
+
+        // This entry is covered entirely by the special region. Update the attributes and mark this
+        // entry as a special region
+        MemoryMapEntry->Attribute    = SpecialRegionEntry->SpecialRegion.EfiAttributes;
+        MemoryMapEntry->VirtualStart = SPECIAL_REGION_PATTERN;
+        SpecialRegionStart           = MapEntryEnd;
+      }
+
+      // If we've fallen through to this point, we need to get the next memory map entry
+      MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+    }
+
+    if (SpecialRegionStart > SpecialRegionEnd) {
+      return EFI_NOT_FOUND;
+    }
+
+    SpecialRegionEntryLink = SpecialRegionEntryLink->ForwardLink;
+  }
+
+  // if we've created new records, sort the map
+  if ((UINTN)MapEntryInsert > (UINTN)MemoryMapEnd) {
+    // Sort from low to high
+    SortMemoryMap (
+      MemoryMap,
+      (UINTN)MapEntryInsert - (UINTN)MemoryMap,
+      *DescriptorSize
+      );
+
+    // Update the memory map size to be the new number of records
+    *MemoryMapSize = (UINTN)MapEntryInsert - (UINTN)MemoryMap;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
   Applies EFI_MEMORY_ACCESS_MASK to each memory map entry
 
   @param[in]      MemoryMapSize     A pointer to the size, in bytes, of the
@@ -1620,38 +2256,88 @@ FilterMemoryMapAttributes (
 }
 
 /**
-  Access attributes in the memory map based on the memory protection policy and
-  mark visited regions in the bitmap.
+  Set every bit in the bitmap which corresponds to a memory map descriptor with nonzero attributes.
 
-  @param[in]        MemoryMapSize       A pointer to the size, in bytes, of the
-                                        MemoryMap buffer.
-  @param[in, out]   MemoryMap           A pointer to the current memory map.
-  @param[in]        DescriptorSize      Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
-  @param[in]        Bitmap              Pointer to the beginning of the bitmap to be updated
+  @param[in]        MemoryMapSize           A pointer to the size, in bytes, of the MemoryMap buffer
+  @param[in]        MemoryMap               A pointer to the current memory map
+  @param[in]        DescriptorSize          Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
+  @param[out]       Bitmap                  Pointer to the beginning of the bitmap to be updated
+
+  @retval           EFI_SUCCESS             Bitmap was updated
+  @retval           EFI_INVALID_PARAMETER   An input was NULL
 **/
 STATIC
-VOID
-SyncBitmapAndSetAccessAttributesInMemoryMap (
-  IN CONST UINTN             *MemoryMapSize,
-  IN  EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN CONST UINTN             *DescriptorSize,
-  IN CONST UINT8             *Bitmap
+EFI_STATUS
+SyncBitmap (
+  IN  CONST   UINTN                  *MemoryMapSize,
+  IN          EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN  CONST   UINTN                  *DescriptorSize,
+  OUT CONST   UINT8                  *Bitmap
   )
 {
   EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
   EFI_MEMORY_DESCRIPTOR  *MemoryMapEnd;
   UINTN                  Index = 0;
 
+  if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
+      (DescriptorSize == NULL) || (Bitmap == NULL))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
   MemoryMapEntry = MemoryMap;
   MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
 
   while (MemoryMapEntry < MemoryMapEnd) {
-    // If attributes are nonzero, set the corresponding bit in the bitmap
-    if (MemoryMapEntry->Attribute != 0) {
+    // If attributes are nonzero or the virtual address (always zero during boot services according to UEFI Spec 2.9)
+    // is set to the pattern indicating it is a special memory region, set the corresponding bit in the bitmap
+    if ((MemoryMapEntry->Attribute != 0) || (MemoryMapEntry->VirtualStart == SPECIAL_REGION_PATTERN)) {
       SET_BITMAP_INDEX (Bitmap, Index);
+    }
 
-      // Skip code regions
-    } else if (!IsCodeType (MemoryMapEntry->Type)) {
+    Index++;
+    MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Set access attributes in the memory map based on the memory protection policy and
+  mark visited regions in the bitmap.
+
+  @param[in]        MemoryMapSize           A pointer to the size, in bytes, of the MemoryMap buffer
+  @param[in, out]   MemoryMap               A pointer to the current memory map
+  @param[in]        DescriptorSize          Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
+  @param[in, out]   Bitmap                  Pointer to the beginning of the bitmap to be updated
+
+  @retval           EFI_SUCCESS             Access attributes and bitmap updated
+  @retval           EFI_INVALID_PARAMETER   An input was NULL
+**/
+STATIC
+EFI_STATUS
+SetAccessAttributesInMemoryMap (
+  IN CONST  UINTN                  *MemoryMapSize,
+  IN OUT    EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST  UINTN                  *DescriptorSize,
+  IN OUT    UINT8                  *Bitmap
+  )
+{
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapEnd;
+  UINTN                  Index = 0;
+
+  if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
+      (DescriptorSize == NULL) || (Bitmap == NULL))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  MemoryMapEntry = MemoryMap;
+  MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+
+  while (MemoryMapEntry < MemoryMapEnd) {
+    if (!IS_BITMAP_INDEX_SET (Bitmap, Index)) {
       MemoryMapEntry->Attribute = GetPermissionAttributeForMemoryType (MemoryMapEntry->Type);
       SET_BITMAP_INDEX (Bitmap, Index);
     }
@@ -1659,6 +2345,150 @@ SyncBitmapAndSetAccessAttributesInMemoryMap (
     Index++;
     MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
   }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Merge contiguous memory map entries with the same attributes.
+
+  @param  MemoryMap              A pointer to the memory map
+  @param  MemoryMapSize          A pointer to the size, in bytes, of the
+                                 MemoryMap buffer. On input, this is the size of the current
+                                 memory map.  On output, it is the size of new memory map after merge.
+  @param  DescriptorSize         Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+**/
+STATIC
+VOID
+MergeMemoryMapByAttribute (
+  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN OUT UINTN                  *MemoryMapSize,
+  IN CONST UINTN                *DescriptorSize
+  )
+{
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapEntry;
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapEnd;
+  UINT64                 MemoryBlockLength;
+  EFI_MEMORY_DESCRIPTOR  *NewMemoryMapEntry;
+  EFI_MEMORY_DESCRIPTOR  *NextMemoryMapEntry;
+
+  if ((MemoryMap == NULL) || (MemoryMapSize == NULL) || (DescriptorSize == NULL)) {
+    return;
+  }
+
+  MemoryMapEntry    = MemoryMap;
+  NewMemoryMapEntry = MemoryMap;
+  MemoryMapEnd      = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+  while ((UINTN)MemoryMapEntry < (UINTN)MemoryMapEnd) {
+    CopyMem (NewMemoryMapEntry, MemoryMapEntry, sizeof (EFI_MEMORY_DESCRIPTOR));
+    NextMemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+
+    do {
+      MemoryBlockLength = (UINT64)(EfiPagesToSize (NewMemoryMapEntry->NumberOfPages));
+      if (((UINTN)NextMemoryMapEntry < (UINTN)MemoryMapEnd) &&
+          (NewMemoryMapEntry->Attribute == NextMemoryMapEntry->Attribute) &&
+          ((NewMemoryMapEntry->PhysicalStart + MemoryBlockLength) == NextMemoryMapEntry->PhysicalStart))
+      {
+        NewMemoryMapEntry->NumberOfPages += NextMemoryMapEntry->NumberOfPages;
+        NextMemoryMapEntry                = NEXT_MEMORY_DESCRIPTOR (NextMemoryMapEntry, *DescriptorSize);
+        continue;
+      } else {
+        MemoryMapEntry = PREVIOUS_MEMORY_DESCRIPTOR (NextMemoryMapEntry, *DescriptorSize);
+        break;
+      }
+    } while (TRUE);
+
+    MemoryMapEntry    = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+    NewMemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapEntry, *DescriptorSize);
+  }
+
+  *MemoryMapSize = (UINTN)NewMemoryMapEntry - (UINTN)MemoryMap;
+
+  return;
+}
+
+/**
+  Removes the access attributes from memory map descriptors which match the elements in the
+  input IMAGE_PROPERTIES_RECORD list.
+
+  @param[in]      MemoryMapSize           A pointer to the size, in bytes, of the MemoryMap buffer
+  @param[out]     MemoryMap               A pointer to the buffer containing the memory map. This
+                                          memory map must be sorted.
+  @param[in]      DescriptorSize          Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR
+  @param[in]      NonProtectedImageList   List of IMAGE_PROPERTIES_RECORD entries. This list
+                                          must be sorted.
+
+  @retval   EFI_SUCCESS                   The bitmap was updated
+  @retval   EFI_INVALID_PARAMETER         MemoryMapSize was NULL, DescriptorSize was NULL,
+                                          Bitmap was NULL, or MemoryMap was NULL
+  @retval   EFI_NOT_FOUND                 No memory map entry matched an image properties record described
+                                          in the input IMAGE_PROPERTIES_RECORD list
+**/
+STATIC
+EFI_STATUS
+RemoveAttributesOfNonProtectedImageRanges (
+  IN CONST  UINTN                  *MemoryMapSize,
+  OUT       EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  IN CONST  UINTN                  *DescriptorSize,
+  IN        LIST_ENTRY             *NonProtectedImageList
+  )
+{
+  LIST_ENTRY               *NonProtectedImageRecordLink = NULL;
+  IMAGE_PROPERTIES_RECORD  *NonProtectedImageRecord = NULL;
+  EFI_MEMORY_DESCRIPTOR    *MemoryMapEntry = NULL;
+  EFI_MEMORY_DESCRIPTOR    *MemoryMapEnd = NULL;
+  UINTN                    NonProtectedStart, NonProtectedEnd, MapEntryStart, MapEntryEnd;
+
+  if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
+      (NonProtectedImageList == NULL) || (DescriptorSize == NULL))
+  {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  NonProtectedImageRecordLink = NonProtectedImageList->ForwardLink;
+  MemoryMapEntry              = MemoryMap;
+  MemoryMapEnd                = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+
+  while (NonProtectedImageRecordLink != NonProtectedImageList) {
+    if (MemoryMapEntry >= MemoryMapEnd) {
+      break;
+    }
+
+    NonProtectedImageRecord = CR (
+                                NonProtectedImageRecordLink,
+                                IMAGE_PROPERTIES_RECORD,
+                                Link,
+                                IMAGE_PROPERTIES_RECORD_SIGNATURE
+                                );
+
+    NonProtectedStart = (UINTN)NonProtectedImageRecord->ImageBase;
+    NonProtectedEnd   = (UINTN)NonProtectedImageRecord->ImageBase + (UINTN)NonProtectedImageRecord->ImageSize;
+
+    while ((MemoryMapEntry < MemoryMapEnd) && (NonProtectedStart < NonProtectedEnd)) {
+      MapEntryStart = (UINTN)MemoryMapEntry->PhysicalStart;
+      MapEntryEnd   = (UINTN)MemoryMapEntry->PhysicalStart +  (UINTN)EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages);
+
+      if ((NonProtectedStart == MapEntryStart)) {
+        if (MemoryMapEntry->VirtualStart != SPECIAL_REGION_PATTERN) {
+          MemoryMapEntry->Attribute = 0;
+        } else {
+          MemoryMapEntry->VirtualStart = 0;
+        }
+
+        NonProtectedStart = MapEntryEnd;
+      }
+
+      MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
+    }
+
+    NonProtectedImageRecordLink = NonProtectedImageRecordLink->ForwardLink;
+  }
+
+  if (NonProtectedImageRecordLink != NonProtectedImageList) {
+    return EFI_NOT_FOUND;
+  }
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -1674,8 +2504,8 @@ SyncBitmapAndSetAccessAttributesInMemoryMap (
                                           EFI_MEMORY_DESCRIPTOR
 
   @retval         EFI_SUCCESS             The memory map was returned in the MemoryMap buffer
-  @retval         EFI_INVALID_PARAMETER   One of the input parameters has an invalid value
   @retval         EFI_OUT_OF_RESOURCES    Failed to allocate memory
+  @retval         Other                   One of the supporting functions failed
 **/
 EFI_STATUS
 EFIAPI
@@ -1685,13 +2515,16 @@ GetMemoryMapWithPopulatedAccessAttributes (
   OUT UINTN                  *DescriptorSize
   )
 {
-  EFI_STATUS             Status;
-  UINTN                  AdditionalRecordCount, NumberOfDescriptors, NumberOfBitmapEntries;
-  UINT8                  *Bitmap = NULL;
-  UINTN                  MapKey;
-  UINT32                 DescriptorVersion;
-  EFI_MEMORY_DESCRIPTOR  *ExpandedMemoryMap;
-  UINTN                  ExpandedMemoryMapSize;
+  EFI_STATUS  Status;
+  UINTN       AdditionalRecordCount, NumMemoryMapDescriptors, NumBitmapEntries, \
+              NumMemorySpaceMapDescriptors, MemorySpaceMapDescriptorSize, MapKey, \
+              ExpandedMemoryMapSize, BitmapIndex;
+  UINT32                           DescriptorVersion;
+  UINT8                            *Bitmap                    = NULL;
+  EFI_MEMORY_DESCRIPTOR            *ExpandedMemoryMap         = NULL;
+  LIST_ENTRY                       *MergedImageList           = NULL;
+  LIST_ENTRY                       **ArrayOfListEntryPointers = NULL;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemorySpaceMap            = NULL;
 
   if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
       (*MemoryMap != NULL) || (DescriptorSize == NULL))
@@ -1715,7 +2548,8 @@ GetMemoryMapWithPopulatedAccessAttributes (
     *MemoryMap = (EFI_MEMORY_DESCRIPTOR *)AllocatePool (*MemoryMapSize);
     if (*MemoryMap == NULL) {
       Status = EFI_OUT_OF_RESOURCES;
-      break;
+      ASSERT_EFI_ERROR (Status);
+      goto Cleanup;
     }
 
     Status = CoreGetMemoryMap (
@@ -1732,11 +2566,30 @@ GetMemoryMapWithPopulatedAccessAttributes (
 
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
-    return Status;
+    goto Cleanup;
   }
 
   // Filter each map entry to only contain access attributes
   FilterMemoryMapAttributes (MemoryMapSize, *MemoryMap, DescriptorSize);
+
+  Status = CoreGetMemorySpaceMap (&NumMemorySpaceMapDescriptors, &MemorySpaceMap);
+  ASSERT_EFI_ERROR (Status);
+
+  if (MemorySpaceMap != NULL) {
+    MemorySpaceMapDescriptorSize = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR);
+
+    // Fill in the memory map with regions described in the GCD memory map but not the EFI memory map
+    Status = FillInMemoryMap (
+               MemoryMapSize,
+               MemoryMap,
+               DescriptorSize,
+               &NumMemorySpaceMapDescriptors,
+               MemorySpaceMap,
+               &MemorySpaceMapDescriptorSize
+               );
+
+    ASSERT_EFI_ERROR (Status);
+  }
 
   // |         |      |      |      |      |      |         |
   // | 4K PAGE | DATA | CODE | DATA | CODE | DATA | 4K PAGE |
@@ -1764,10 +2617,9 @@ GetMemoryMapWithPopulatedAccessAttributes (
   ExpandedMemoryMap     = AllocatePool (ExpandedMemoryMapSize);
 
   if (ExpandedMemoryMap == NULL) {
-    FreePool (*MemoryMap);
-    *MemoryMapSize  = 0;
-    *DescriptorSize = 0;
-    return EFI_OUT_OF_RESOURCES;
+    Status = EFI_OUT_OF_RESOURCES;
+    ASSERT_EFI_ERROR (Status);
+    goto Cleanup;
   }
 
   CopyMem (ExpandedMemoryMap, *MemoryMap, *MemoryMapSize);
@@ -1776,41 +2628,163 @@ GetMemoryMapWithPopulatedAccessAttributes (
   *MemoryMap = ExpandedMemoryMap;
 
   DEBUG_CODE (
-    DEBUG ((DEBUG_INFO, "---Currently protected images---\n"));
+    DEBUG ((DEBUG_INFO, "---Currently Protected Images---\n"));
     DumpImageRecords (&mImagePropertiesPrivate.ImageRecordList);
     );
 
-  // Split PE code/data if firmware volume image protection is active
-  if (gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv) {
-    SeparateImagesInMemoryMap (MemoryMapSize, *MemoryMap, *DescriptorSize, &mImagePropertiesPrivate.ImageRecordList, AdditionalRecordCount);
+  DEBUG_CODE (
+    DEBUG ((DEBUG_INFO, "---Memory Protection Special Regions---\n"));
+    DumpMemoryProtectionSpecialRegions ();
+    );
+
+  // Set MergedImageList to the list of IMAGE_PROPERTIES_RECORD entries which will
+  // be used to breakup the memory map
+  if (mImagePropertiesPrivate.ImageRecordCount == 0) {
+    MergedImageList = &mNonProtectedImageRangesPrivate.NonProtectedImageList;
+  } else if (mNonProtectedImageRangesPrivate.NonProtectedImageCount == 0) {
+    MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
+  }
+  // If both protected and non-protected images are loaded, merge the two lists
+  else {
+    MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
+    Status          = MergeListsUint64Comparison (
+                        MergedImageList,
+                        &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+                        &mNonProtectedImageRangesPrivate.NonProtectedImageCount,
+                        &ArrayOfListEntryPointers,
+                        OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                        OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                        IMAGE_PROPERTIES_RECORD_SIGNATURE
+                        );
+
+    if (EFI_ERROR (Status)) {
+      ASSERT_EFI_ERROR (Status);
+      goto Cleanup;
+    }
+  }
+
+  // Break up the memory map so every image range divides evenly into some number of
+  // EFI memory descriptors
+  SeparateImagesInMemoryMap (
+    MemoryMapSize,
+    *MemoryMap,
+    *DescriptorSize,
+    MergedImageList,
+    AdditionalRecordCount
+    );
+
+  // Update the separated memory map based on the special regions (if any)
+  if (mSpecialMemoryRegionsPrivate.Count > 0) {
+    Status = SeparateSpecialRegionsInMemoryMap (
+               MemoryMapSize,
+               *MemoryMap,
+               DescriptorSize,
+               &ExpandedMemoryMapSize,
+               &mSpecialMemoryRegionsPrivate.SpecialRegionList
+               );
+    if (EFI_ERROR (Status)) {
+      ASSERT_EFI_ERROR (Status);
+      goto Cleanup;
+    }
+  }
+
+  // Create a bitmap to track which descriptors have been updated with the correct attributes
+  NumMemoryMapDescriptors = *MemoryMapSize / *DescriptorSize;
+  NumBitmapEntries        = (NumMemoryMapDescriptors % 8) == 0 ? NumMemoryMapDescriptors : (((NumMemoryMapDescriptors / 8) * 8) + 8);
+  Bitmap                  = AllocateZeroPool (NumBitmapEntries / 8);
+
+  if (Bitmap == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    ASSERT_EFI_ERROR (Status);
+    goto Cleanup;
+  }
+
+  // Set the extra bits
+  if ((NumMemoryMapDescriptors % 8) != 0) {
+    Bitmap[NumMemoryMapDescriptors / 8] |= ~((1 << (NumMemoryMapDescriptors % 8)) - 1);
+  }
+
+  // Restore the nonprotected image list if it was merged with the protected
+  // image list
+  if (ArrayOfListEntryPointers != NULL) {
+    Status = OrderedInsertArrayUint64Comparison (
+               &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+               ArrayOfListEntryPointers,
+               mNonProtectedImageRangesPrivate.NonProtectedImageCount,
+               OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+               OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+               IMAGE_PROPERTIES_RECORD_SIGNATURE
+               );
+
+    ASSERT_EFI_ERROR (Status);
+    FreePool (ArrayOfListEntryPointers);
+  }
+
+  // All image regions will now have nonzero attributes and special regions will have their
+  // virtual address set to SPECIAL_REGION_PATTERN
+  //
+  // Set the bits in the bitmap to mark that the corresponding memory descriptor
+  // has been set based on the memory protection policy and special regions
+  Status = SyncBitmap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
+  ASSERT_EFI_ERROR (Status);
+
+  // Remove the access attributes from descriptors which correspond to nonprotected images
+  if (mNonProtectedImageRangesPrivate.NonProtectedImageCount > 0) {
+    Status = RemoveAttributesOfNonProtectedImageRanges (
+               MemoryMapSize,
+               *MemoryMap,
+               DescriptorSize,
+               &mNonProtectedImageRangesPrivate.NonProtectedImageList
+               );
+    if (EFI_ERROR (Status)) {
+      ASSERT_EFI_ERROR (Status);
+      goto Cleanup;
+    }
+  }
+
+  // Set the access attributes of descriptor ranges which have not been checked
+  // against our memory protection policy
+  Status = SetAccessAttributesInMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
+  ASSERT_EFI_ERROR (Status);
+
+  DEBUG_CODE (
+    DEBUG ((DEBUG_INFO, "---Final Bitmap---\n"));
+    DumpBitmap (Bitmap, NumBitmapEntries);
+    );
+
+  // ASSERT if a bit in the bitmap is not set
+  for (BitmapIndex = 0; BitmapIndex < NumBitmapEntries; BitmapIndex++) {
+    ASSERT (IS_BITMAP_INDEX_SET (Bitmap, BitmapIndex));
   }
 
   DEBUG_CODE (
-    DEBUG ((DEBUG_INFO, "---Memory Map With Separated Image Descriptors---\n"));
+    DEBUG ((DEBUG_INFO, "---Memory Map with Populated Access Attributes---\n"));
     DumpMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize);
     DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
     );
 
-  NumberOfDescriptors   = *MemoryMapSize / *DescriptorSize;
-  NumberOfBitmapEntries = (NumberOfDescriptors % 8) == 0 ? NumberOfDescriptors : (((NumberOfDescriptors / 8) * 8) + 8);
+  return Status;
 
-  Bitmap = AllocateZeroPool (NumberOfBitmapEntries / 8);
-
-  // Set the extra bits
-  if ((NumberOfDescriptors % 8) != 0) {
-    Bitmap[NumberOfDescriptors / 8] |= ~((1 << (NumberOfDescriptors % 8)) - 1);
+Cleanup:
+  if (*MemoryMap != NULL) {
+    FreePool (*MemoryMap);
   }
 
-  SyncBitmapAndSetAccessAttributesInMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
+  if (ArrayOfListEntryPointers != NULL) {
+    Status = OrderedInsertArrayUint64Comparison (
+               &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+               ArrayOfListEntryPointers,
+               mNonProtectedImageRangesPrivate.NonProtectedImageCount,
+               OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+               OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+               IMAGE_PROPERTIES_RECORD_SIGNATURE
+               );
+    ASSERT_EFI_ERROR (Status);
+    FreePool (ArrayOfListEntryPointers);
+  }
 
-  DEBUG_CODE (
-    DEBUG ((DEBUG_INFO, "---Final Bitmap---\n"));
-    DumpBitmap (Bitmap, NumberOfBitmapEntries);
-    DEBUG ((DEBUG_INFO, "---------------------------------------\n"));
-    );
-
-  // Merge contiguous entries with the type and attributes
-  MergeMemoryMap (*MemoryMap, MemoryMapSize, *DescriptorSize);
+  *MemoryMapSize  = 0;
+  *DescriptorSize = 0;
 
   return Status;
 }
@@ -1954,7 +2928,13 @@ ProtectUefiImageMu (
 
     if (!EFI_ERROR (Status)) {
       // Record the image record in the list so we can undo the protections later
-      Status = OrderedInsertImageRecordListEntry (&mImagePropertiesPrivate.ImageRecordList, &ImageRecord->Link);
+      Status = OrderedInsertUint64Comparison (
+                 &mImagePropertiesPrivate.ImageRecordList,
+                 &ImageRecord->Link,
+                 OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                 OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                 IMAGE_PROPERTIES_RECORD_SIGNATURE
+                 );
       ASSERT_EFI_ERROR (Status);
 
       mImagePropertiesPrivate.ImageRecordCount++;
@@ -2072,9 +3052,6 @@ InitializePageAttributesForMemoryProtectionPolicy (
   EFI_MEMORY_DESCRIPTOR      *MemoryMapEntry;
   EFI_MEMORY_DESCRIPTOR      *MemoryMapEnd;
   EFI_STATUS                 Status;
-  UINT64                     Attributes;
-  LIST_ENTRY                 *Link;
-  EFI_GCD_MAP_ENTRY          *Entry;
   EFI_PEI_HOB_POINTERS       Hob;
   EFI_HOB_MEMORY_ALLOCATION  *MemoryHob;
   EFI_PHYSICAL_ADDRESS       StackBase;
@@ -2090,6 +3067,12 @@ InitializePageAttributesForMemoryProtectionPolicy (
              );
 
   ASSERT_EFI_ERROR (Status);
+
+  if (MemoryMap != NULL) {
+    // Merge contiguous entries with the same attributes to reduce the number
+    // of calls to SetUefiImageMemoryAttributes()
+    MergeMemoryMapByAttribute (MemoryMap, &MemoryMapSize, &DescriptorSize);
+  }
 
   StackBase = 0;
   if (gDxeMps.CpuStackGuard) {
@@ -2160,52 +3143,6 @@ InitializePageAttributesForMemoryProtectionPolicy (
   }
 
   FreePool (MemoryMap);
-
-  // Apply the policy for RAM regions that we know are present and
-  // accessible, but have not been added to the UEFI memory map (yet).
-  if (GetDxeMemoryTypeSettingFromBitfield (EfiConventionalMemory, gDxeMps.NxProtectionPolicy)) {
-    DEBUG ((
-      DEBUG_INFO,
-      "%a: applying strict permissions to inactive memory regions\n",
-      __FUNCTION__
-      ));
-
-    CoreAcquireGcdMemoryLock ();
-
-    Link = mGcdMemorySpaceMap.ForwardLink;
-    while (Link != &mGcdMemorySpaceMap) {
-      Entry = CR (Link, EFI_GCD_MAP_ENTRY, Link, EFI_GCD_MAP_SIGNATURE);
-
-      if ((Entry->GcdMemoryType == EfiGcdMemoryTypeReserved) &&
-          (Entry->EndAddress < MAX_ADDRESS) &&
-          ((Entry->Capabilities & (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED)) ==
-           (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED)))
-      {
-        Attributes = (GetDxeMemoryTypeSettingFromBitfield (EfiConventionalMemory, gDxeMps.NxProtectionPolicy) ? EFI_MEMORY_XP : 0) |
-                     (Entry->Attributes & EFI_CACHE_ATTRIBUTE_MASK);
-
-        DEBUG ((
-          DEBUG_INFO,
-          "Untested GCD memory space region: - 0x%016lx - 0x%016lx (0x%016lx)\n",
-          Entry->BaseAddress,
-          Entry->EndAddress - Entry->BaseAddress + 1,
-          Attributes
-          ));
-
-        ASSERT (gCpu != NULL);
-        gCpu->SetMemoryAttributes (
-                gCpu,
-                Entry->BaseAddress,
-                Entry->EndAddress - Entry->BaseAddress + 1,
-                Attributes
-                );
-      }
-
-      Link = Link->ForwardLink;
-    }
-
-    CoreReleaseGcdMemoryLock ();
-  }
 }
 
 /**
@@ -2227,9 +3164,7 @@ MemoryProtectionCpuArchProtocolNotifyMu (
     goto Done;
   }
 
-  if (gDxeMps.NxProtectionPolicy.Data || gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv) {
-    InitializePageAttributesForMemoryProtectionPolicy ();
-  }
+  InitializePageAttributesForMemoryProtectionPolicy ();
 
   //
   // Call notify function meant for Heap Guard.
