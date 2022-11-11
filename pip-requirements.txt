@@ -12,8 +12,8 @@
 # https://www.python.org/dev/peps/pep-0440/#version-specifiers
 ##
 
-edk2-pytool-library~=0.11.6 # MU_CHANGE
-edk2-pytool-extensions~=0.17.2 # MU_CHANGE
-edk2-basetools==0.1.13 # MU_CHANGE - update to 0.1.6 or later
+edk2-pytool-library~=0.12.1
+edk2-pytool-extensions~=0.20.0
+edk2-basetools==0.1.13
 antlr4-python3-runtime==4.7.1
 regex
