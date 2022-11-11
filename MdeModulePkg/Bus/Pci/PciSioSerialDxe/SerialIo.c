@@ -631,6 +631,13 @@ SerialReset (
                    (UINT8)This->Mode->DataBits,
                    (EFI_STOP_BITS_TYPE)This->Mode->StopBits
                    );
+  //
+  // Terminal Reset is complete, enable modem to receive data
+  //
+  Mcr.Data = READ_MCR (SerialDevice);
+  Mcr.Bits.DtrC = 1;
+  Mcr.Bits.Rts = 1;
+  WRITE_MCR (SerialDevice, Mcr.Data);
 
   if (EFI_ERROR (Status)) {
     gBS->RestoreTPL (Tpl);
