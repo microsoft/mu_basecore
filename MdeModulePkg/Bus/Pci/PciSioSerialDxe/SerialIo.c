@@ -634,9 +634,9 @@ SerialReset (
   //
   // Terminal Reset is complete, enable modem to receive data
   //
-  Mcr.Data = READ_MCR (SerialDevice);
+  Mcr.Data      = READ_MCR (SerialDevice);
   Mcr.Bits.DtrC = 1;
-  Mcr.Bits.Rts = 1;
+  Mcr.Bits.Rts  = 1;
   WRITE_MCR (SerialDevice, Mcr.Data);
 
   if (EFI_ERROR (Status)) {
