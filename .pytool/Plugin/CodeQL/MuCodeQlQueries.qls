@@ -1,0 +1,53 @@
+---
+- description: Project Mu UEFI (C++) queries
+
+- queries: '.'
+  from: codeql/cpp-queries
+
+# "Core" Queries
+- include:
+    id: cpp/badoverflowguard
+- include:
+    id: cpp/comparison-with-wider-type
+- include:
+    id: cpp/conditionallyuninitializedvariable
+- include:
+    id: cpp/likely-bugs/memory-management/v2/conditionally-uninitialized-variable
+- include:
+    id: cpp/paddingbyteinformationdisclosure
+- include:
+    id: cpp/pointer-overflow-check
+- include:
+    id: cpp/redundant-null-check-param
+- include:
+    id: cpp/unguardednullreturndereference
+- include:
+    id: cpp/uselesstest
+
+# Additional Fundamental Queries Not Originally Run
+- include:
+    id: cpp/infinite-loop-with-unsatisfiable-exit-condition
+- include:
+    id: cpp/infiniteloop
+- include:
+    id: cpp/overflow-buffer
+- include:
+    id: cpp/sizeof/const-int-argument
+- include:
+    id: cpp/sizeof/sizeof-or-operation-as-argument
+
+- include:
+    tags:
+      - "security"
+      - "correctness"
+    severity: "error"
+
+# Specifically hide the results of these.
+- exclude:
+    id: cpp/use-of-goto
+- exclude:
+    id: cpp/weak-crypto/banned-hash-algorithms
+- exclude:
+    id: cpp/weak-crypto/openssl/banned-hash-algorithms
+- exclude:
+    id: cpp/weak-crypto/capi/banned-modes
