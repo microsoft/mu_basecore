@@ -631,6 +631,7 @@ SerialReset (
                    (UINT8)This->Mode->DataBits,
                    (EFI_STOP_BITS_TYPE)This->Mode->StopBits
                    );
+
   // MU_CHANGE [BEGIN]
   //
   // Terminal Reset is complete, enable modem to receive data
