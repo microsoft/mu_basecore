@@ -18,13 +18,6 @@ updates:
     commit-message:
       prefix: "pip"
 
-  - package-ecosystem: "gitsubmodule"
-    directory: "/"
-    schedule:
-      interval: "daily"
-    commit-message:
-      prefix: "submodule"
-
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
