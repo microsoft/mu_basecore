@@ -37,6 +37,9 @@ EFI_PHYSICAL_ADDRESS  CurrentBucketTops[4] = {
   MAX_ALLOC_ADDRESS  // EfiACPIMemoryNVS
 };
 
+// Total number of memory buckets
+UINTN  NumberOfBuckets = 4;
+
 // Information storage for Hob
 PEI_MEMORY_BUCKET_INFORMATION  RuntimeBucketHob;
 

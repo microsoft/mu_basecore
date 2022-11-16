@@ -15,7 +15,7 @@ extern EFI_GUID  gMemoryBucketInformationGuid;
 
 extern EFI_GUID  gEfiMemoryTypeStatisticsGuid;
 
-UINTN  NumberOfBuckets = 4;
+extern UINTN  NumberOfBuckets;
 
 typedef struct {
   EFI_PHYSICAL_ADDRESS    BaseAddress;
