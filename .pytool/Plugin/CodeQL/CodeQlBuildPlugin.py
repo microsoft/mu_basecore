@@ -17,7 +17,7 @@ from edk2toolext.environment.plugintypes.uefi_build_plugin import \
     IUefiBuildPlugin
 from edk2toolext.environment.uefi_build import UefiBuilder
 from edk2toollib.uefi.edk2.path_utilities import Edk2Path
-from edk2toollib.utility_functions import GetHostInfo
+from edk2toollib.utility_functions import GetHostInfo, RemoveTree
 
 
 class CodeQlBuildPlugin(IUefiBuildPlugin):
@@ -44,6 +44,8 @@ class CodeQlBuildPlugin(IUefiBuildPlugin):
                                                 "ACTIVE_PLATFORM")))
         self.target = builder.env.GetValue("TARGET")
 
+        self.build_output_dir = builder.env.GetValue("BUILD_OUTPUT_BASE")
+
         self.codeql_db_path = codeql_plugin.get_codeql_db_path(
                                 builder.ws, self.package, self.target)
 
@@ -58,7 +60,24 @@ class CodeQlBuildPlugin(IUefiBuildPlugin):
             return -1
 
         # CodeQL can only generate a database on clean build
-        builder.CleanTree()
+        #
+        # Note: builder.CleanTree() cannot be used here as some platforms
+        #       have build steps that run before this plugin that store
+        #       files in the build output directory.
+        #
+        #       CodeQL does not care about with those files or many others such
+        #       as the FV directory, build logs, etc. so instead focus on
+        #       removing only the directories with compilation/linker output
+        #       for the architectures being built (that need clean runs for
+        #       CodeQL to work).
+        targets = self.builder.env.GetValue("TARGET_ARCH").split(" ")
+        for target in targets:
+            directory_to_delete = Path(self.build_output_dir, target)
+
+            if directory_to_delete.is_dir():
+                logging.debug(f"Removing {str(directory_to_delete)} to have a "
+                              f"clean build for CodeQL.")
+                RemoveTree(str(directory_to_delete))
 
         # A build is required to generate a database
         builder.SkipBuild = False
@@ -72,8 +91,7 @@ class CodeQlBuildPlugin(IUefiBuildPlugin):
         # future, this code is going to use the workaround to place the
         # command in an executable file that is instead passed to CodeQL.
         self.codeql_cmd_path = Path(builder.mws.join(
-                                    builder.ws, builder.env.GetValue(
-                                        "BUILD_OUTPUT_BASE"),
+                                    builder.ws, self.build_output_dir,
                                     "codeql_build_command"))
 
         build_params = self._get_build_params()
