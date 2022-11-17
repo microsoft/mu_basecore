@@ -32,4 +32,7 @@
   DebugLib
   BaseLib
   RngLib
+  PcdLib
 
+[FixedPcd]
+  gEfiMdePkgTokenSpaceGuid.PcdStackCookieExceptionVector
