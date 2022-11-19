@@ -147,7 +147,7 @@ BmFindBootOptionInVariable (
   if (OptionNumber == LoadOptionNumberUnassigned) {
     BootOptions = EfiBootManagerGetLoadOptions (&BootOptionCount, LoadOptionTypeBoot);
 
-    if (BootOptions == NULL) {
+    if ((BootOptions == NULL) && (BootOptionCount > 0)) {
       ASSERT (BootOptions != NULL);
       return LoadOptionNumberUnassigned;
     }
