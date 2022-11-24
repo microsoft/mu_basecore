@@ -431,7 +431,6 @@ DhcpCleanLease (
   IN DHCP_SERVICE  *DhcpSb
   )
 {
-
   DEBUG ((DEBUG_NET, "%a: Setting state to Init.\n", __FUNCTION__));
 
   DhcpSb->DhcpState  = Dhcp4Init;
@@ -576,8 +575,6 @@ DhcpEndSession (
   IN EFI_STATUS    Status
   )
 {
-
-
   if (DHCP_CONNECTED (DhcpSb->DhcpState)) {
     DEBUG ((DEBUG_NET, "%a: AddressLost.\n", __FUNCTION__));
     DhcpCallUser (DhcpSb, Dhcp4AddressLost, NULL, NULL);
@@ -884,7 +881,7 @@ DhcpHandleReboot (
     DhcpSb->ClientAddr = 0;
     DEBUG ((DEBUG_NET, "%a: NAK received, going to Init\n", __FUNCTION__));
 
-    DhcpSb->DhcpState  = Dhcp4Init;
+    DhcpSb->DhcpState = Dhcp4Init;
 
     Status = DhcpInitRequest (DhcpSb);
     goto ON_EXIT;
