@@ -45,10 +45,10 @@ BasicCreatePolicyTest (
   SetMem (&SetPolicy[0], sizeof (SetPolicy), 0xCD);
   ZeroMem (&GetPolicy[0], sizeof (GetPolicy));
 
-  Status = mPolicyInterface->GetPolicy (&PolicyGuid, NULL, &GetPolicy[0], &PolicySize);
+  Status = mPolicyInterface->GetPolicy (&PolicyGuid, NULL, NULL, &GetPolicy[0], &PolicySize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
 
-  Status = mPolicyInterface->SetPolicy (&PolicyGuid, 0, &SetPolicy[0], sizeof (SetPolicy));
+  Status = mPolicyInterface->SetPolicy (&PolicyGuid, NULL, 0, &SetPolicy[0], sizeof (SetPolicy));
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
   //
@@ -57,7 +57,7 @@ BasicCreatePolicyTest (
 
   PolicySize = 0;
 
-  Status = mPolicyInterface->GetPolicy (&PolicyGuid, NULL, &GetPolicy[0], &PolicySize);
+  Status = mPolicyInterface->GetPolicy (&PolicyGuid, NULL, NULL, &GetPolicy[0], &PolicySize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_BUFFER_TOO_SMALL);
   UT_ASSERT_EQUAL (PolicySize, sizeof (SetPolicy));
 
@@ -65,7 +65,7 @@ BasicCreatePolicyTest (
   // Check the policy comes back correctly.
   //
 
-  Status = mPolicyInterface->GetPolicy (&PolicyGuid, NULL, &GetPolicy[0], &PolicySize);
+  Status = mPolicyInterface->GetPolicy (&PolicyGuid, NULL, NULL, &GetPolicy[0], &PolicySize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
   UT_ASSERT_EQUAL (PolicySize, sizeof (SetPolicy));
   UT_ASSERT_MEM_EQUAL (&GetPolicy[0], &SetPolicy[0], PolicySize);
@@ -74,10 +74,10 @@ BasicCreatePolicyTest (
   // Check the policy can be removed.
   //
 
-  Status = mPolicyInterface->RemovePolicy (&PolicyGuid);
+  Status = mPolicyInterface->RemovePolicy (&PolicyGuid, NULL);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
-  Status = mPolicyInterface->GetPolicy (&PolicyGuid, NULL, &GetPolicy[0], &PolicySize);
+  Status = mPolicyInterface->GetPolicy (&PolicyGuid, NULL, NULL, &GetPolicy[0], &PolicySize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
 
   return UNIT_TEST_PASSED;
@@ -111,7 +111,7 @@ DuplicatePolicyTest (
   ZeroMem (&GetPolicy[0], sizeof (GetPolicy));
   ZeroMem (&SetPolicy[0], sizeof (SetPolicy));
 
-  Status = mPolicyInterface->SetPolicy (&PolicyGuid, 0, &SetPolicy[0], sizeof (SetPolicy));
+  Status = mPolicyInterface->SetPolicy (&PolicyGuid, NULL, 0, &SetPolicy[0], sizeof (SetPolicy));
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
   //
@@ -119,11 +119,11 @@ DuplicatePolicyTest (
   //
 
   SetMem (&SetPolicy[0], sizeof (SetPolicy), 0xCD);
-  Status = mPolicyInterface->SetPolicy (&PolicyGuid, POLICY_ATTRIBUTE_FINALIZED, &SetPolicy[0], sizeof (SetPolicy));
+  Status = mPolicyInterface->SetPolicy (&PolicyGuid, NULL, POLICY_ATTRIBUTE_FINALIZED, &SetPolicy[0], sizeof (SetPolicy));
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
   PolicySize = sizeof (SetPolicy);
-  Status     = mPolicyInterface->GetPolicy (&PolicyGuid, &Attributes, &GetPolicy[0], &PolicySize);
+  Status     = mPolicyInterface->GetPolicy (&PolicyGuid, NULL, &Attributes, &GetPolicy[0], &PolicySize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
   UT_ASSERT_EQUAL (PolicySize, sizeof (SetPolicy));
   UT_ASSERT_EQUAL (Attributes, POLICY_ATTRIBUTE_FINALIZED);
@@ -134,10 +134,10 @@ DuplicatePolicyTest (
   //
 
   SetMem (&SetPolicy[0], sizeof (SetPolicy), 0xCD);
-  Status = mPolicyInterface->SetPolicy (&PolicyGuid, POLICY_ATTRIBUTE_FINALIZED, &SetPolicy[0], sizeof (SetPolicy));
+  Status = mPolicyInterface->SetPolicy (&PolicyGuid, NULL, POLICY_ATTRIBUTE_FINALIZED, &SetPolicy[0], sizeof (SetPolicy));
   UT_ASSERT_STATUS_EQUAL (Status, EFI_ACCESS_DENIED);
 
-  Status = mPolicyInterface->RemovePolicy (&PolicyGuid);
+  Status = mPolicyInterface->RemovePolicy (&PolicyGuid, NULL);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
   return UNIT_TEST_PASSED;
@@ -194,10 +194,10 @@ MultiplePolicyTest (
     Policies[PolicyIndex] = PolicyIndex;
     PolicySize            = 0;
 
-    Status = mPolicyInterface->GetPolicy (&PolicyGuids[PolicyIndex], NULL, &GetPolicy, &PolicySize);
+    Status = mPolicyInterface->GetPolicy (&PolicyGuids[PolicyIndex], NULL, NULL, &GetPolicy, &PolicySize);
     UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
 
-    Status = mPolicyInterface->SetPolicy (&PolicyGuids[PolicyIndex], 0, &Policies[PolicyIndex], sizeof (Policies[0]));
+    Status = mPolicyInterface->SetPolicy (&PolicyGuids[PolicyIndex], NULL, 0, &Policies[PolicyIndex], sizeof (Policies[0]));
     UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
   }
 
@@ -208,7 +208,7 @@ MultiplePolicyTest (
   for (PolicyIndex = 0; PolicyIndex < 10; PolicyIndex++) {
     PolicySize = sizeof (Policies[0]);
 
-    Status = mPolicyInterface->GetPolicy (&PolicyGuids[PolicyIndex], NULL, &GetPolicy, &PolicySize);
+    Status = mPolicyInterface->GetPolicy (&PolicyGuids[PolicyIndex], NULL, NULL, &GetPolicy, &PolicySize);
     UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
     UT_ASSERT_EQUAL (PolicySize, sizeof (Policies[0]));
     UT_ASSERT_EQUAL (GetPolicy, Policies[PolicyIndex]);
@@ -221,7 +221,7 @@ MultiplePolicyTest (
   for (PolicyIndex = 0; PolicyIndex < 10; PolicyIndex++) {
     PolicySize = sizeof (Policies[0]);
 
-    Status = mPolicyInterface->RemovePolicy (&PolicyGuids[PolicyIndex]);
+    Status = mPolicyInterface->RemovePolicy (&PolicyGuids[PolicyIndex], NULL);
     UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
   }
 

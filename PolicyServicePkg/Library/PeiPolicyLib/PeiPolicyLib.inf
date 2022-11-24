@@ -17,7 +17,7 @@
   LIBRARY_CLASS                  = PolicyLib|PEIM PEI_CORE SEC
 
 [Sources]
-  ../PolicyLibCommon.c
+  ../VerifiedPolicy.c
   ../PolicyLibCommon.h
   PeiPolicy.c
 

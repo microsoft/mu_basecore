@@ -17,7 +17,7 @@
   LIBRARY_CLASS                  = PolicyLib | DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION
 
 [Sources]
-  ../PolicyLibCommon.c
+  ../VerifiedPolicy.c
   ../PolicyLibCommon.h
   DxePolicy.c
 

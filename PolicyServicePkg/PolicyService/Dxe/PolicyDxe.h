@@ -26,6 +26,7 @@ typedef struct _POLICY_ENTRY {
   UINT32        Signature;
   LIST_ENTRY    Link;
   EFI_GUID      PolicyGuid;
+  CHAR16        *Name;
   UINT64        Attributes;
   BOOLEAN       FromHob;
   VOID          *Policy;
@@ -51,6 +52,7 @@ typedef struct _POLICY_ENTRY {
   callbacks.
 
   @param[in]  PolicyGuid          The uniquely identifying GUID for the policy.
+  @param[in]  Name                The optional uniquely identifying string for the policy.
   @param[in]  Attributes          Attributes of the policy to be set.
   @param[in]  Policy              The policy data buffer. This buffer will be
                                   copied into the data store.
@@ -64,6 +66,7 @@ EFI_STATUS
 EFIAPI
 DxeSetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL,
   IN UINT64          Attributes,
   IN VOID            *Policy,
   IN UINT16          PolicySize
@@ -73,6 +76,7 @@ DxeSetPolicy (
   Retrieves the policy descriptor, buffer, and size for a given policy GUID.
 
   @param[in]      PolicyGuid        The GUID of the policy being retrieved.
+  @param[in]      Name              The optional uniquely identifying string for the policy.
   @param[out]     Attributes        The attributes of the stored policy.
   @param[out]     Policy            The buffer where the policy data is copied.
   @param[in,out]  PolicySize        The size of the stored policy data buffer.
@@ -86,6 +90,7 @@ EFI_STATUS
 EFIAPI
 DxeGetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL,
   OUT UINT64         *Attributes OPTIONAL,
   OUT VOID           *Policy,
   IN OUT UINT16      *PolicySize
@@ -96,6 +101,8 @@ DxeGetPolicy (
   and freed if possible.
 
   @param[in]  PolicyGuid        The GUID of the policy being retrieved.
+  @param[in]  Name              The name of the specific policy, NULL if no name
+                                used
 
   @retval   EFI_SUCCESS         The policy was removed.
   @retval   EFI_NOT_FOUND       The policy does not exist.
@@ -103,7 +110,8 @@ DxeGetPolicy (
 EFI_STATUS
 EFIAPI
 DxeRemovePolicy (
-  IN CONST EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL
   );
 
 #endif

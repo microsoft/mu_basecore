@@ -19,7 +19,8 @@
   Creates or updates a policy in the policy store. Will notify any applicable
   callbacks.
 
-  @param[in]  PolicyGuid          The uniquely identifying GUID for the policy.
+  @param[in]  PolicyGuid          The uniquely identifying GUID for the policy group.
+  @param[in]  Name                The optional uniquely identifying string for the policy.
   @param[in]  Attributes          Attributes of the policy to be set.
   @param[in]  Policy              The policy data buffer. This buffer will be
                                   copied into the data store.
@@ -33,6 +34,7 @@ typedef
 EFI_STATUS
 (EFIAPI *POLICY_SET_POLICY)(
   IN CONST EFI_GUID *PolicyGuid,
+  IN CONST CHAR16 *Name OPTIONAL,
   IN UINT64 Attributes,
   IN VOID *Policy,
   IN UINT16 PolicySize
@@ -41,7 +43,8 @@ EFI_STATUS
 /**
   Retrieves the policy descriptor, buffer, and size for a given policy GUID.
 
-  @param[in]      PolicyGuid        The GUID of the policy being retrieved.
+  @param[in]      PolicyGuid        The GUID of the policy group being retrieved.
+  @param[in]      Name              The optional uniquely identifying string for the policy.
   @param[out]     Attributes        The attributes of the stored policy.
   @param[out]     Policy            The buffer where the policy data is copied.
   @param[in,out]  PolicySize        The size of the stored policy data buffer.
@@ -55,6 +58,7 @@ typedef
 EFI_STATUS
 (EFIAPI *POLICY_GET_POLICY)(
   IN CONST EFI_GUID *PolicyGuid,
+  IN CONST CHAR16 *Name OPTIONAL,
   OUT UINT64 *Attributes OPTIONAL,
   OUT VOID *Policy,
   IN OUT UINT16 *PolicySize
@@ -64,7 +68,9 @@ EFI_STATUS
   Removes a policy from the policy store. The policy will be removed from the store
   and freed if possible.
 
-  @param[in]  PolicyGuid        The GUID of the policy being retrieved.
+  @param[in]  PolicyGuid        The GUID of the policy group being retrieved.
+  @param[in]  Name              The name of the specific policy, NULL if no name
+                                used
 
   @retval   EFI_SUCCESS         The policy was removed.
   @retval   EFI_NOT_FOUND       The policy does not exist.
@@ -72,7 +78,8 @@ EFI_STATUS
 typedef
 EFI_STATUS
 (EFIAPI *POLICY_REMOVE_POLICY)(
-  IN CONST EFI_GUID *PolicyGuid
+  IN CONST EFI_GUID *PolicyGuid,
+  IN CONST CHAR16 *Name OPTIONAL
   );
 
 typedef struct _POLICY_INTERFACE {

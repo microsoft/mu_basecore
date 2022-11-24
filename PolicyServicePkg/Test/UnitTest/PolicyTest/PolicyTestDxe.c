@@ -57,12 +57,12 @@ IngestedPolicyTest (
   // Ensure the policy can be retrieved.
   //
 
-  Status = mPolicyProtocol->GetPolicy (&PolicyGuid, &Attributes, &GetPolicy[0], &PolicySize);
+  Status = mPolicyProtocol->GetPolicy (&PolicyGuid, NULL, &Attributes, &GetPolicy[0], &PolicySize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_BUFFER_TOO_SMALL);
   UT_ASSERT_EQUAL (PolicySize, PEI_TO_DXE_POLICY_SIZE);
   UT_ASSERT_EQUAL ((Attributes & POLICY_ATTRIBUTE_FINALIZED), 0);
 
-  Status = mPolicyProtocol->GetPolicy (&PolicyGuid, &Attributes, &GetPolicy[0], &PolicySize);
+  Status = mPolicyProtocol->GetPolicy (&PolicyGuid, NULL, &Attributes, &GetPolicy[0], &PolicySize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
   UT_ASSERT_EQUAL (PolicySize, PEI_TO_DXE_POLICY_SIZE);
   UT_ASSERT_EQUAL ((Attributes & POLICY_ATTRIBUTE_FINALIZED), 0);
@@ -74,10 +74,10 @@ IngestedPolicyTest (
 
   Policy[0] = 0xAF;
   Policy[5] = 0xFA;
-  Status    = mPolicyProtocol->SetPolicy (&PolicyGuid, POLICY_ATTRIBUTE_FINALIZED, &Policy[0], PEI_TO_DXE_POLICY_SIZE);
+  Status    = mPolicyProtocol->SetPolicy (&PolicyGuid, NULL, POLICY_ATTRIBUTE_FINALIZED, &Policy[0], PEI_TO_DXE_POLICY_SIZE);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
-  Status = mPolicyProtocol->GetPolicy (&PolicyGuid, &Attributes, &GetPolicy[0], &PolicySize);
+  Status = mPolicyProtocol->GetPolicy (&PolicyGuid, NULL, &Attributes, &GetPolicy[0], &PolicySize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
   UT_ASSERT_EQUAL (PolicySize, PEI_TO_DXE_POLICY_SIZE);
   UT_ASSERT_EQUAL ((Attributes & POLICY_ATTRIBUTE_FINALIZED), POLICY_ATTRIBUTE_FINALIZED);
@@ -87,10 +87,10 @@ IngestedPolicyTest (
   // The policy should also be removeable without any trace of the previous values.
   //
 
-  Status = mPolicyProtocol->RemovePolicy (&PolicyGuid);
+  Status = mPolicyProtocol->RemovePolicy (&PolicyGuid, NULL);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
-  Status = mPolicyProtocol->GetPolicy (&PolicyGuid, NULL, &GetPolicy[0], &PolicySize);
+  Status = mPolicyProtocol->GetPolicy (&PolicyGuid, NULL, NULL, &GetPolicy[0], &PolicySize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
 
   //
@@ -99,12 +99,12 @@ IngestedPolicyTest (
 
   PolicySize = 0;
 
-  Status = mPolicyProtocol->GetPolicy (&PolicyFinalGuid, &Attributes, &GetPolicy[0], &PolicySize);
+  Status = mPolicyProtocol->GetPolicy (&PolicyFinalGuid, NULL, &Attributes, &GetPolicy[0], &PolicySize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_BUFFER_TOO_SMALL);
   UT_ASSERT_EQUAL (PolicySize, PEI_TO_DXE_POLICY_SIZE);
   UT_ASSERT_EQUAL ((Attributes & POLICY_ATTRIBUTE_FINALIZED), POLICY_ATTRIBUTE_FINALIZED);
 
-  Status = mPolicyProtocol->GetPolicy (&PolicyFinalGuid, &Attributes, &GetPolicy[0], &PolicySize);
+  Status = mPolicyProtocol->GetPolicy (&PolicyFinalGuid, NULL, &Attributes, &GetPolicy[0], &PolicySize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
   UT_ASSERT_EQUAL (PolicySize, PEI_TO_DXE_POLICY_SIZE);
   UT_ASSERT_EQUAL ((Attributes & POLICY_ATTRIBUTE_FINALIZED), POLICY_ATTRIBUTE_FINALIZED);
@@ -116,17 +116,17 @@ IngestedPolicyTest (
 
   PolicyFinal[0] = 0xAB;
   PolicyFinal[5] = 0xBA;
-  Status         = mPolicyProtocol->SetPolicy (&PolicyFinalGuid, 0, &PolicyFinal[0], PEI_TO_DXE_POLICY_SIZE);
+  Status         = mPolicyProtocol->SetPolicy (&PolicyFinalGuid, NULL, 0, &PolicyFinal[0], PEI_TO_DXE_POLICY_SIZE);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_ACCESS_DENIED);
 
   //
   // Remove the policy.
   //
 
-  Status = mPolicyProtocol->RemovePolicy (&PolicyFinalGuid);
+  Status = mPolicyProtocol->RemovePolicy (&PolicyFinalGuid, NULL);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
-  Status = mPolicyProtocol->GetPolicy (&PolicyFinalGuid, NULL, &GetPolicy[0], &PolicySize);
+  Status = mPolicyProtocol->GetPolicy (&PolicyFinalGuid, NULL, NULL, &GetPolicy[0], &PolicySize);
   UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
 
   return UNIT_TEST_PASSED;

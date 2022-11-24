@@ -17,7 +17,9 @@
 
 [Sources]
   PolicyPei.c
+  ../PolicyCommon.c
   PolicyPei.h
+  ../PolicyCommon.h
 
 [Packages]
   MdePkg/MdePkg.dec

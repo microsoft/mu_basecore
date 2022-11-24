@@ -46,10 +46,10 @@ PeiPersistenceTest (
   UINT8           PolicyFinal[PEI_TO_DXE_POLICY_SIZE] = PEI_TO_DXE_POLICY_FINALIZED;
   EFI_STATUS      Status;
 
-  Status = mPolicyPpi->SetPolicy (&PolicyGuid, 0, &Policy[0], sizeof (Policy));
+  Status = mPolicyPpi->SetPolicy (&PolicyGuid, NULL, 0, &Policy[0], sizeof (Policy));
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
-  Status = mPolicyPpi->SetPolicy (&PolicyFinalGuid, POLICY_ATTRIBUTE_FINALIZED, &PolicyFinal[0], sizeof (PolicyFinal));
+  Status = mPolicyPpi->SetPolicy (&PolicyFinalGuid, NULL, POLICY_ATTRIBUTE_FINALIZED, &PolicyFinal[0], sizeof (PolicyFinal));
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
   return UNIT_TEST_PASSED;

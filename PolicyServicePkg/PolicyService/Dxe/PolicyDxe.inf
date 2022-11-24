@@ -17,7 +17,9 @@
 
 [Sources]
   PolicyDxe.c
+  ../PolicyCommon.c
   PolicyDxe.h
+  ../PolicyCommon.h
 
 [Packages]
   MdePkg/MdePkg.dec

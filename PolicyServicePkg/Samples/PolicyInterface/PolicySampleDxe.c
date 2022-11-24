@@ -51,14 +51,14 @@ DxeSampleGetPeiPolicy (
 
   // First check the size. This would usually be done for policies of a dynamic
   // or changing size. Attributes may be retrieved at this time if desired.
-  Status = mPolicyProtocol->GetPolicy (PolicyGuid, NULL, NULL, &PolicySize);
+  Status = mPolicyProtocol->GetPolicy (PolicyGuid, NULL, NULL, NULL, &PolicySize);
   if ((Status != EFI_BUFFER_TOO_SMALL) || (PolicySize != sizeof (Policy))) {
     ASSERT (FALSE);
     return EFI_PROTOCOL_ERROR;
   }
 
   // Retrieve the actual policy.
-  Status = mPolicyProtocol->GetPolicy (PolicyGuid, &Attributes, &Policy, &PolicySize);
+  Status = mPolicyProtocol->GetPolicy (PolicyGuid, NULL, &Attributes, &Policy, &PolicySize);
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
     return Status;

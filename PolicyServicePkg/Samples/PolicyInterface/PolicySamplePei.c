@@ -55,7 +55,7 @@ PeiSampleSetGetRemovePolicy (
   PolicySize = sizeof (ResultPolicy);
 
   // Since the policy does not yet exist, it should fail.
-  Status = mPolicyPpi->GetPolicy (PolicyGuid, &Attributes, &ResultPolicy, &PolicySize);
+  Status = mPolicyPpi->GetPolicy (PolicyGuid, NULL, &Attributes, &ResultPolicy, &PolicySize);
   if (Status != EFI_NOT_FOUND) {
     DEBUG ((DEBUG_ERROR, "%a: Unexpected return code: %r\n", __FUNCTION__, Status));
     ASSERT (FALSE);
@@ -63,7 +63,7 @@ PeiSampleSetGetRemovePolicy (
   }
 
   // Creating the policy for the first time.
-  Status = mPolicyPpi->SetPolicy (PolicyGuid, 0, &Policy, sizeof (Policy));
+  Status = mPolicyPpi->SetPolicy (PolicyGuid, NULL, 0, &Policy, sizeof (Policy));
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
     return Status;
@@ -71,21 +71,21 @@ PeiSampleSetGetRemovePolicy (
 
   // After this the policy should be retrievable. This will be stored in the
   // provided buffer.
-  Status = mPolicyPpi->GetPolicy (PolicyGuid, &Attributes, &ResultPolicy, &PolicySize);
+  Status = mPolicyPpi->GetPolicy (PolicyGuid, NULL, &Attributes, &ResultPolicy, &PolicySize);
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
     return Status;
   }
 
   // The policy can now be removed.
-  Status = mPolicyPpi->RemovePolicy (PolicyGuid);
+  Status = mPolicyPpi->RemovePolicy (PolicyGuid, NULL);
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
     return Status;
   }
 
   // Trying to get the policy now should fail.
-  Status = mPolicyPpi->GetPolicy (PolicyGuid, &Attributes, &ResultPolicy, &PolicySize);
+  Status = mPolicyPpi->GetPolicy (PolicyGuid, NULL, &Attributes, &ResultPolicy, &PolicySize);
   if (Status != EFI_NOT_FOUND) {
     DEBUG ((DEBUG_ERROR, "%a: Unexpected return code: %r\n", __FUNCTION__, Status));
     ASSERT (FALSE);
@@ -117,7 +117,7 @@ PeiSampleCreatePolicy (
   Policy.Value     = SAMPLE_POLICY_VALUE;
 
   // Creating the policy for the first time.
-  Status = mPolicyPpi->SetPolicy (PolicyGuid, 0, &Policy, sizeof (Policy));
+  Status = mPolicyPpi->SetPolicy (PolicyGuid, NULL, 0, &Policy, sizeof (Policy));
   ASSERT_EFI_ERROR (Status);
   return Status;
 }

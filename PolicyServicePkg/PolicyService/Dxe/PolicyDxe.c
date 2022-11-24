@@ -61,6 +61,7 @@ DxeInstallPolicyIndicatorProtocol (
   Assumes the caller is already in CS.
 
   @param[in]      PolicyGuid        The GUID of the policy being retrieved.
+  @param[in]      Name              The optional uniquely identifying string for the policy.
   @param[out]     PolicyDescriptor  Descriptor for the stored policy.
   @param[out]     Policy            The buffer where the policy data is copied.
   @param[in,out]  PolicySize        The size of the stored policy data buffer.
@@ -74,6 +75,7 @@ EFI_STATUS
 EFIAPI
 DxeGetPolicyEntry (
   IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL,
   OUT POLICY_ENTRY   **PolicyEntry
   )
 {
@@ -82,7 +84,9 @@ DxeGetPolicyEntry (
 
   BASE_LIST_FOR_EACH (Link, &mPolicyListHead) {
     CheckEntry = POLICY_ENTRY_FROM_LINK (Link);
-    if (CompareGuid (PolicyGuid, &CheckEntry->PolicyGuid)) {
+    if (CompareGuid (PolicyGuid, &CheckEntry->PolicyGuid) &&
+        PolicyCompareNames (Name, CheckEntry->Name))
+    {
       *PolicyEntry = CheckEntry;
       return EFI_SUCCESS;
     }
@@ -96,6 +100,7 @@ DxeGetPolicyEntry (
   is already in CS.
 
   @param[in]  PolicyGuid      The policy GUID to match.
+  @param[in]  Name            The optional uniquely identifying string for the policy.
 
   @retval   TRUE              The policy exists in the store.
   @retval   FALSE             The policy does not exists in the store.
@@ -103,18 +108,20 @@ DxeGetPolicyEntry (
 BOOLEAN
 EFIAPI
 DxeCheckPolicyExists (
-  IN CONST EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL
   )
 {
   POLICY_ENTRY  *Entry;
 
-  return !EFI_ERROR (DxeGetPolicyEntry (PolicyGuid, &Entry));
+  return !EFI_ERROR (DxeGetPolicyEntry (PolicyGuid, Name, &Entry));
 }
 
 /**
   Retrieves the policy descriptor, buffer, and size for a given policy GUID.
 
   @param[in]      PolicyGuid        The GUID of the policy being retrieved.
+  @param[in]      Name              The optional uniquely identifying string for the policy.
   @param[out]     Attributes        The attributes of the stored policy.
   @param[out]     Policy            The buffer where the policy data is copied.
   @param[in,out]  PolicySize        The size of the stored policy data buffer.
@@ -128,6 +135,7 @@ EFI_STATUS
 EFIAPI
 DxeGetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL,
   OUT UINT64         *Attributes OPTIONAL,
   OUT VOID           *Policy,
   IN OUT UINT16      *PolicySize
@@ -144,7 +152,7 @@ DxeGetPolicy (
   }
 
   EfiAcquireLock (&mPolicyListLock);
-  Status = DxeGetPolicyEntry (PolicyGuid, &Entry);
+  Status = DxeGetPolicyEntry (PolicyGuid, Name, &Entry);
   if (EFI_ERROR (Status)) {
     goto Exit;
   }
@@ -201,7 +209,7 @@ IngestPoliciesFromHob (
       continue;
     }
 
-    ASSERT (!DxeCheckPolicyExists (&PolicyHob->PolicyGuid));
+    ASSERT (!DxeCheckPolicyExists (&PolicyHob->PolicyGuid, NULL));
 
     PolicyEntry = AllocatePool (sizeof (POLICY_ENTRY));
     if (PolicyEntry == NULL) {
@@ -239,6 +247,7 @@ IngestPoliciesFromHob (
   and freed if possible.
 
   @param[in]  PolicyGuid        The GUID of the policy being retrieved.
+  @param[in]  Name              The optional uniquely identifying string for the policy.
 
   @retval   EFI_SUCCESS         The policy was removed.
   @retval   EFI_NOT_FOUND       The policy does not exist.
@@ -246,7 +255,8 @@ IngestPoliciesFromHob (
 EFI_STATUS
 EFIAPI
 DxeRemovePolicy (
-  IN CONST EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL
   )
 {
   EFI_STATUS    Status;
@@ -257,7 +267,7 @@ DxeRemovePolicy (
   }
 
   EfiAcquireLock (&mPolicyListLock);
-  Status = DxeGetPolicyEntry (PolicyGuid, &Entry);
+  Status = DxeGetPolicyEntry (PolicyGuid, Name, &Entry);
   if (!EFI_ERROR (Status)) {
     RemoveEntryList (&Entry->Link);
     if (!Entry->FromHob) {
@@ -276,6 +286,7 @@ DxeRemovePolicy (
   callbacks.
 
   @param[in]  PolicyGuid          The uniquely identifying GUID for the policy.
+  @param[in]  Name                The optional uniquely identifying string for the policy.
   @param[in]  Attributes          Attributes of the policy to be set.
   @param[in]  Policy              The policy data buffer. This buffer will be
                                   copied into the data store.
@@ -289,6 +300,7 @@ EFI_STATUS
 EFIAPI
 DxeSetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL,
   IN UINT64          Attributes,
   IN VOID            *Policy,
   IN UINT16          PolicySize
@@ -297,13 +309,15 @@ DxeSetPolicy (
   EFI_STATUS    Status;
   POLICY_ENTRY  *Entry;
   VOID          *AllocatedPolicy;
+  UINT16        *NameBuffer;
+  UINTN         NameSize;
 
   if ((PolicyGuid == NULL) || (Policy == NULL) || (PolicySize == 0)) {
     return EFI_INVALID_PARAMETER;
   }
 
   EfiAcquireLock (&mPolicyListLock);
-  Status = DxeGetPolicyEntry (PolicyGuid, &Entry);
+  Status = DxeGetPolicyEntry (PolicyGuid, Name, &Entry);
   if (!EFI_ERROR (Status)) {
     if (Entry->Attributes & POLICY_ATTRIBUTE_FINALIZED) {
       Status = EFI_ACCESS_DENIED;
@@ -340,6 +354,19 @@ DxeSetPolicy (
       goto Exit;
     }
 
+    if (Name != NULL) {
+      NameSize   = (StrLen (Name) + 1) * sizeof (CHAR16);
+      NameBuffer = AllocatePool (NameSize);
+      if (NameBuffer == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Exit;
+      }
+
+      CopyMem (NameBuffer, Name, NameSize);
+    } else {
+      NameBuffer = NULL;
+    }
+
     AllocatedPolicy = AllocatePool (PolicySize);
     if (AllocatedPolicy == NULL) {
       Status = EFI_OUT_OF_RESOURCES;
@@ -349,6 +376,7 @@ DxeSetPolicy (
     ZeroMem (Entry, sizeof (POLICY_ENTRY));
     Entry->Signature      = POLICY_ENTRY_SIGNATURE;
     Entry->PolicyGuid     = *PolicyGuid;
+    Entry->Name           = NameBuffer;
     Entry->Attributes     = Attributes;
     Entry->Policy         = AllocatedPolicy;
     Entry->PolicySize     = PolicySize;

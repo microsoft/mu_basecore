@@ -25,6 +25,7 @@
   callbacks.
 
   @param[in]  PolicyGuid          The uniquely identifying GUID for the policy.
+  @param[in]  Name                The optional uniquely identifying string for the policy.
   @param[in]  Attributes          Attributes of the policy to be set.
   @param[in]  Policy              The policy data buffer. This buffer will be
                                   copied into the data store.
@@ -38,6 +39,7 @@ EFI_STATUS
 EFIAPI
 PeiSetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL,
   IN UINT64          Attributes,
   IN VOID            *Policy,
   IN UINT16          PolicySize
@@ -47,6 +49,7 @@ PeiSetPolicy (
   Retrieves the policy descriptor, buffer, and size for a given policy GUID.
 
   @param[in]      PolicyGuid        The GUID of the policy being retrieved.
+  @param[in]      Name              The optional uniquely identifying string for the policy.
   @param[out]     Attributes        The attributes of the stored policy.
   @param[out]     Policy            The buffer where the policy data is copied.
   @param[in,out]  PolicySize        The size of the stored policy data buffer.
@@ -60,6 +63,7 @@ EFI_STATUS
 EFIAPI
 PeiGetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL,
   OUT UINT64         *Attributes OPTIONAL,
   OUT VOID           *Policy,
   IN OUT UINT16      *PolicySize
@@ -69,7 +73,9 @@ PeiGetPolicy (
   Removes a policy from the policy store. The policy will be removed from the store
   and freed if possible.
 
-  @param[in]  PolicyGuid        The GUID of the policy being retrieved.
+  @param[in]  PolicyGuid        The GUID of the policy group being retrieved.
+  @param[in]  Name              The name of the specific policy, NULL if no name
+                                used
 
   @retval   EFI_SUCCESS         The policy was removed.
   @retval   EFI_NOT_FOUND       The policy does not exist.
@@ -77,7 +83,8 @@ PeiGetPolicy (
 EFI_STATUS
 EFIAPI
 PeiRemovePolicy (
-  IN CONST EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL
   );
 
 #endif

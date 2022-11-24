@@ -22,7 +22,7 @@ STATIC EFI_PEI_PPI_DESCRIPTOR  PolicyPpiList = {
 };
 
 /**
-  Creates and emptry PPI for a given GUID to notify or dispatch consumers of
+  Creates and empty PPI for a given GUID to notify or dispatch consumers of
   this policy GUID. If the PPI already exists it will be reinstalled.
 
   @param[in]  PolicyGuid        The policy GUID used for the PPI.
@@ -69,6 +69,7 @@ PeiInstallPolicyIndicatorPpi (
   Retrieves the hob for a given policy GUID.
 
   @param[in]  PolicyGuid      The policy GUID to match.
+  @param[in]  PolicyName      The policy string to match.
   @param[out] PolicyHob       Pointer to the policy hob header found.
 
   @retval   EFI_SUCCESS       The policy entry was found.
@@ -78,20 +79,31 @@ EFI_STATUS
 EFIAPI
 PeiGetPolicyHob (
   IN CONST EFI_GUID      *PolicyGuid,
+  IN CONST CHAR16        *PolicyName,
   OUT POLICY_HOB_HEADER  **PolicyHob
   )
 {
   EFI_HOB_GUID_TYPE  *GuidHob;
   POLICY_HOB_HEADER  *CheckHob;
+  CHAR16             *CheckName;
 
   GuidHob = GetFirstGuidHob (&gPolicyHobGuid);
   while (GuidHob != NULL) {
-    CheckHob = (POLICY_HOB_HEADER *)GET_GUID_HOB_DATA (GuidHob);
+    CheckHob  = (POLICY_HOB_HEADER *)GET_GUID_HOB_DATA (GuidHob);
+    CheckName = GET_HOB_POLICY_NAME (CheckHob);
     if (!CheckHob->Removed &&
-        CompareGuid (PolicyGuid, &CheckHob->PolicyGuid))
+        CompareGuid (PolicyGuid, &CheckHob->PolicyGuid) &&
+        PolicyCompareNames (PolicyName, CheckName))
     {
-      *PolicyHob = CheckHob;
-      return EFI_SUCCESS;
+      //
+      // Compare the strings if present.
+      //
+      if ((CheckHob->NameSize == 0) ||
+          (StrnCmp ((CHAR16 *)(CheckHob + 1), PolicyName, CheckHob->NameSize) == 0))
+      {
+        *PolicyHob = CheckHob;
+        return EFI_SUCCESS;
+      }
     }
 
     GuidHob = GetNextGuidHob (&gPolicyHobGuid, GET_NEXT_HOB (GuidHob));
@@ -104,6 +116,7 @@ PeiGetPolicyHob (
   Checks if a given policy exists in the policy store.
 
   @param[in]  PolicyGuid      The policy GUID to match.
+  @param[in]  NameSize        The size in bytes of the name string.
 
   @retval   TRUE              The policy exists in the store.
   @retval   FALSE             The policy does not exists in the store.
@@ -111,19 +124,21 @@ PeiGetPolicyHob (
 BOOLEAN
 EFIAPI
 PeiCheckPolicyExists (
-  IN CONST EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL
   )
 
 {
   POLICY_HOB_HEADER  *PolicyHob;
 
-  return !EFI_ERROR (PeiGetPolicyHob (PolicyGuid, &PolicyHob));
+  return !EFI_ERROR (PeiGetPolicyHob (PolicyGuid, NULL, &PolicyHob));
 }
 
 /**
   Allocates a policy HOB and initialized its header structure.
 
   @param[in]  PolicyGuid      The policy GUID the HOB is created for.
+  @param[in]  NameSize        The size in bytes of the name string.
   @param[out] HobHeader       The pointer to the created HOBs header structure.
 
   @retval     EFI_SUCCESS           The policy HOB was successfully allocated.
@@ -134,13 +149,14 @@ EFI_STATUS
 EFIAPI
 PeiCreatePolicyHob (
   IN UINT16              PolicySize,
+  IN UINT16              NameSize,
   OUT POLICY_HOB_HEADER  **HobHeader
   )
 {
   POLICY_HOB_HEADER  *HobPolicy;
   UINT32             HobLength;
 
-  HobLength = sizeof (POLICY_HOB_HEADER) + PolicySize;
+  HobLength = sizeof (POLICY_HOB_HEADER) + PolicySize + NameSize;
   if (HobLength > MAX_UINT16) {
     DEBUG ((DEBUG_ERROR, "%a: Policy provided exceeds maximum HOB size! Required size: %lu\n", __FUNCTION__, HobLength));
     return EFI_BAD_BUFFER_SIZE;
@@ -162,6 +178,7 @@ PeiCreatePolicyHob (
   Retrieves the policy descriptor, buffer, and size for a given policy GUID.
 
   @param[in]      PolicyGuid        The GUID of the policy being retrieved.
+  @param[in]      Name              The optional uniquely identifying string for the policy.
   @param[out]     Attributes        The attributes of the stored policy.
   @param[out]     Policy            The buffer where the policy data is copied.
   @param[in,out]  PolicySize        The size of the stored policy data buffer.
@@ -175,6 +192,7 @@ EFI_STATUS
 EFIAPI
 PeiGetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL,
   OUT UINT64         *Attributes OPTIONAL,
   OUT VOID           *Policy,
   IN OUT UINT16      *PolicySize
@@ -190,7 +208,7 @@ PeiGetPolicy (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = PeiGetPolicyHob (PolicyGuid, &PolicyHob);
+  Status = PeiGetPolicyHob (PolicyGuid, Name, &PolicyHob);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -214,6 +232,7 @@ PeiGetPolicy (
   callbacks.
 
   @param[in]  PolicyGuid          The uniquely identifying GUID for the policy.
+  @param[in]  Name                The optional uniquely identifying string for the policy.
   @param[in]  Attributes          Attributes of the policy to be set.
   @param[in]  Policy              The policy data buffer. This buffer will be
                                   copied into the data store.
@@ -227,6 +246,7 @@ EFI_STATUS
 EFIAPI
 PeiSetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL,
   IN UINT64          Attributes,
   IN VOID            *Policy,
   IN UINT16          PolicySize
@@ -235,12 +255,13 @@ PeiSetPolicy (
 {
   EFI_STATUS         Status;
   POLICY_HOB_HEADER  *PolicyHob;
+  UINT16             NameSize;
 
   if ((PolicyGuid == NULL) || (Policy == NULL) || (PolicySize == 0)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = PeiGetPolicyHob (PolicyGuid, &PolicyHob);
+  Status = PeiGetPolicyHob (PolicyGuid, Name, &PolicyHob);
   if (!EFI_ERROR (Status)) {
     if (PolicyHob->Attributes & POLICY_ATTRIBUTE_FINALIZED) {
       return EFI_ACCESS_DENIED;
@@ -264,7 +285,13 @@ PeiSetPolicy (
     PolicyHob->Removed = 1;
   }
 
-  Status = PeiCreatePolicyHob (PolicySize, &PolicyHob);
+  if (Name != NULL) {
+    NameSize = (UINT16)((StrLen (Name) + 1) * sizeof (CHAR16));
+  } else {
+    NameSize = 0;
+  }
+
+  Status = PeiCreatePolicyHob (PolicySize, NameSize, &PolicyHob);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: Failed to create policy HOB. (%r)\n", __FUNCTION__, Status));
     return Status;
@@ -273,6 +300,11 @@ PeiSetPolicy (
   PolicyHob->PolicyGuid = *PolicyGuid;
   PolicyHob->PolicySize = PolicySize;
   PolicyHob->Attributes = Attributes;
+  PolicyHob->NameSize   = NameSize;
+  if (NameSize != 0) {
+    CopyMem (GET_HOB_POLICY_NAME (PolicyHob), Name, NameSize);
+  }
+
   CopyMem (GET_HOB_POLICY_DATA (PolicyHob), Policy, PolicySize);
 
   Status = PeiInstallPolicyIndicatorPpi (PolicyGuid);
@@ -288,7 +320,9 @@ PeiSetPolicy (
   Removes a policy from the policy store. The policy will be removed from the store
   and freed if possible.
 
-  @param[in]  PolicyGuid        The GUID of the policy being retrieved.
+  @param[in]  PolicyGuid        The GUID of the policy group being retrieved.
+  @param[in]  Name              The name of the specific policy, NULL if no name
+                                used
 
   @retval   EFI_SUCCESS         The policy was removed.
   @retval   EFI_NOT_FOUND       The policy does not exist.
@@ -296,7 +330,8 @@ PeiSetPolicy (
 EFI_STATUS
 EFIAPI
 PeiRemovePolicy (
-  IN CONST EFI_GUID  *PolicyGuid
+  IN CONST EFI_GUID  *PolicyGuid,
+  IN CONST CHAR16    *Name OPTIONAL
   )
 {
   EFI_STATUS         Status;
@@ -306,7 +341,7 @@ PeiRemovePolicy (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = PeiGetPolicyHob (PolicyGuid, &PolicyHob);
+  Status = PeiGetPolicyHob (PolicyGuid, Name, &PolicyHob);
   if (!EFI_ERROR (Status)) {
     PolicyHob->Removed = 1;
   }
