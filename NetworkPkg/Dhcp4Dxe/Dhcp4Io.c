@@ -900,7 +900,7 @@ DhcpHandleReboot (
 
   Status = DhcpCallUser (DhcpSb, Dhcp4RcvdAck, Packet, NULL);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_NET, "%a: Error from CallUser.\n", __FUNCTION__));
+    DEBUG ((DEBUG_NET, "%a: Error from CallUser - %r.\n", __FUNCTION__, Status));
     goto ON_EXIT;
   }
 
