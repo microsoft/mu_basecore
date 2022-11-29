@@ -1421,7 +1421,7 @@ DhcpRetransmit (
 
   ASSERT (DhcpSb->LastPacket != NULL);
 
-  DEBUG ((DEBUG_NET, "%a:\n", __FUNCTION__));
+  DEBUG ((DEBUG_NET, "%a: Entry...\n", __FUNCTION__));
 
   //
   // For REQUEST message in Dhcp4Requesting state, do not change the secs fields.
