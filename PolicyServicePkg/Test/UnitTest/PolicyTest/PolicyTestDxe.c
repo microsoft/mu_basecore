@@ -41,57 +41,71 @@ IngestedPolicyTest (
   )
 
 {
-  CONST EFI_GUID  PolicyGuid                          = PEI_TO_DXE_TEST_GUID;
-  CONST EFI_GUID  PolicyFinalGuid                     = PEI_TO_DXE_TEST_GUID_FINALIZED;
-  UINT8           Policy[PEI_TO_DXE_POLICY_SIZE]      = PEI_TO_DXE_POLICY;
+  CONST EFI_GUID  PolicyFinalGuid = PEI_TO_DXE_TEST_GUID_FINALIZED;
+  CONST EFI_GUID  *PolicyGuid;
+  CONST CHAR16    *PolicyName;
+  UINT8           *PolicyData;
   UINT8           PolicyFinal[PEI_TO_DXE_POLICY_SIZE] = PEI_TO_DXE_POLICY_FINALIZED;
   UINT8           GetPolicy[PEI_TO_DXE_POLICY_SIZE];
   EFI_STATUS      Status;
   UINT16          PolicySize;
   UINT64          Attributes;
+  UINT32          Index;
 
   ZeroMem (&GetPolicy[0], PEI_TO_DXE_POLICY_SIZE);
-  PolicySize = 0;
 
   //
-  // Ensure the policy can be retrieved.
+  // Check the policy for each of the globally defined policies.
   //
 
-  Status = mPolicyProtocol->GetPolicy (&PolicyGuid, NULL, &Attributes, &GetPolicy[0], &PolicySize);
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_BUFFER_TOO_SMALL);
-  UT_ASSERT_EQUAL (PolicySize, PEI_TO_DXE_POLICY_SIZE);
-  UT_ASSERT_EQUAL ((Attributes & POLICY_ATTRIBUTE_FINALIZED), 0);
+  for (Index = 0; Index < PEI_TO_DXE_POLICY_COUNT; Index++) {
+    PolicyGuid = &gPeiToDxePolicyGuids[Index];
+    PolicyName = gPeiToDxePolicyNames[Index];
+    PolicyData = &gPeiToDxePolicyData[Index][0];
 
-  Status = mPolicyProtocol->GetPolicy (&PolicyGuid, NULL, &Attributes, &GetPolicy[0], &PolicySize);
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
-  UT_ASSERT_EQUAL (PolicySize, PEI_TO_DXE_POLICY_SIZE);
-  UT_ASSERT_EQUAL ((Attributes & POLICY_ATTRIBUTE_FINALIZED), 0);
-  UT_ASSERT_MEM_EQUAL (&GetPolicy[0], &Policy[0], PolicySize);
+    ZeroMem (&GetPolicy[0], PEI_TO_DXE_POLICY_SIZE);
+    PolicySize = 0;
 
-  //
-  // The policy should be updatable without problem.
-  //
+    //
+    // Ensure the policy can be retrieved.
+    //
 
-  Policy[0] = 0xAF;
-  Policy[5] = 0xFA;
-  Status    = mPolicyProtocol->SetPolicy (&PolicyGuid, NULL, POLICY_ATTRIBUTE_FINALIZED, &Policy[0], PEI_TO_DXE_POLICY_SIZE);
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+    Status = mPolicyProtocol->GetPolicy (PolicyGuid, PolicyName, &Attributes, &GetPolicy[0], &PolicySize);
+    UT_ASSERT_STATUS_EQUAL (Status, EFI_BUFFER_TOO_SMALL);
+    UT_ASSERT_EQUAL (PolicySize, PEI_TO_DXE_POLICY_SIZE);
+    UT_ASSERT_EQUAL ((Attributes & POLICY_ATTRIBUTE_FINALIZED), 0);
 
-  Status = mPolicyProtocol->GetPolicy (&PolicyGuid, NULL, &Attributes, &GetPolicy[0], &PolicySize);
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
-  UT_ASSERT_EQUAL (PolicySize, PEI_TO_DXE_POLICY_SIZE);
-  UT_ASSERT_EQUAL ((Attributes & POLICY_ATTRIBUTE_FINALIZED), POLICY_ATTRIBUTE_FINALIZED);
-  UT_ASSERT_MEM_EQUAL (&GetPolicy[0], &Policy[0], PolicySize);
+    Status = mPolicyProtocol->GetPolicy (PolicyGuid, PolicyName, &Attributes, &GetPolicy[0], &PolicySize);
+    UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+    UT_ASSERT_EQUAL (PolicySize, PEI_TO_DXE_POLICY_SIZE);
+    UT_ASSERT_EQUAL ((Attributes & POLICY_ATTRIBUTE_FINALIZED), 0);
+    UT_ASSERT_MEM_EQUAL (&GetPolicy[0], &PolicyData[0], PolicySize);
 
-  //
-  // The policy should also be removeable without any trace of the previous values.
-  //
+    //
+    // The policy should be updatable without problem.
+    //
 
-  Status = mPolicyProtocol->RemovePolicy (&PolicyGuid, NULL);
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+    PolicyData[0] = 0xAF;
+    PolicyData[5] = 0xFA;
+    Status        = mPolicyProtocol->SetPolicy (PolicyGuid, PolicyName, POLICY_ATTRIBUTE_FINALIZED, &PolicyData[0], PEI_TO_DXE_POLICY_SIZE);
+    UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
-  Status = mPolicyProtocol->GetPolicy (&PolicyGuid, NULL, NULL, &GetPolicy[0], &PolicySize);
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
+    Status = mPolicyProtocol->GetPolicy (PolicyGuid, PolicyName, &Attributes, &GetPolicy[0], &PolicySize);
+    UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+    UT_ASSERT_EQUAL (PolicySize, PEI_TO_DXE_POLICY_SIZE);
+    UT_ASSERT_EQUAL ((Attributes & POLICY_ATTRIBUTE_FINALIZED), POLICY_ATTRIBUTE_FINALIZED);
+    UT_ASSERT_MEM_EQUAL (&GetPolicy[0], &PolicyData[0], PolicySize);
+
+    //
+    // The policy should also be removeable without any trace of the previous values.
+    //
+
+    Status = mPolicyProtocol->RemovePolicy (PolicyGuid, PolicyName);
+    UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+
+    Status = mPolicyProtocol->GetPolicy (PolicyGuid, PolicyName, NULL, &GetPolicy[0], &PolicySize);
+    UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
+  }
 
   //
   // Check the finalized policy also exists.

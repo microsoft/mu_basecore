@@ -18,6 +18,39 @@
 
 #include "PolicyTest.h"
 
+//
+// Globals for passing policies between DXE and PEI
+//
+
+CONST EFI_GUID  gPeiToDxePolicyGuids[PEI_TO_DXE_POLICY_COUNT] = {
+  { 0x3b2fd885, 0x1ec8, 0x4eef, { 0xb2, 0xd1, 0x74, 0xaa, 0x8a, 0x19, 0x9e, 0x46 }
+  },
+  { 0xb4f9eda1, 0x2f64, 0x41bd, { 0x9e, 0x9e, 0x47, 0x96, 0xf8, 0xe1, 0x48, 0x74 }
+  },
+  { 0xa38ff7aa, 0x7187, 0x44d3, { 0x9e, 0x4f, 0xba, 0x39, 0x44, 0xd1, 0xc6, 0x85 }
+  },
+  { 0xa38ff7aa, 0x7187, 0x44d3, { 0x9e, 0x4f, 0xba, 0x39, 0x44, 0xd1, 0xc6, 0x85 }
+  },
+  { 0xa38ff7aa, 0x7187, 0x44d3, { 0x9e, 0x4f, 0xba, 0x39, 0x44, 0xd1, 0xc6, 0x85 }
+  }
+};
+
+CONST CHAR16  *gPeiToDxePolicyNames[PEI_TO_DXE_POLICY_COUNT] = {
+  NULL,
+  L"TESTNAME",
+  NULL,
+  L"NAME1",
+  L"NAME2"
+};
+
+UINT8  gPeiToDxePolicyData[PEI_TO_DXE_POLICY_COUNT][PEI_TO_DXE_POLICY_SIZE] = {
+  { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09 },
+  { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19 },
+  { 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29 },
+  { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39 },
+  { 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49 }
+};
+
 /**
   Tests the basic lifecycle of a policy.
 
@@ -249,8 +282,8 @@ PolicyServiceCommonCreateTests (
   Status = CreateUnitTestSuite (
              &ServiceCommonTests,
              Framework,
-             "Common Policy Service Tests",
-             "Policy.Service.Common",
+             "Common Policy Service Tests ",
+             "Policy.Service.Common ",
              NULL,
              NULL
              );
@@ -259,9 +292,9 @@ PolicyServiceCommonCreateTests (
     return Status;
   }
 
-  AddTestCase (ServiceCommonTests, "Test basic policy creation", "BasicCreatePolicyTest", BasicCreatePolicyTest, NULL, NULL, NULL);
-  AddTestCase (ServiceCommonTests, "Test duplicate/override policy", "DuplicatePolicyTest", DuplicatePolicyTest, NULL, NULL, NULL);
-  AddTestCase (ServiceCommonTests, "Multiple policy test", "MultiplePolicyTest", MultiplePolicyTest, NULL, NULL, NULL);
+  AddTestCase (ServiceCommonTests, "Test basic policy creation ", "BasicCreatePolicyTest ", BasicCreatePolicyTest, NULL, NULL, NULL);
+  AddTestCase (ServiceCommonTests, "Test duplicate/override policy ", "DuplicatePolicyTest ", DuplicatePolicyTest, NULL, NULL, NULL);
+  AddTestCase (ServiceCommonTests, "Multiple policy test ", "MultiplePolicyTest ", MultiplePolicyTest, NULL, NULL, NULL);
 
   return EFI_SUCCESS;
 }

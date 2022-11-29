@@ -40,14 +40,30 @@ PeiPersistenceTest (
   )
 
 {
-  CONST EFI_GUID  PolicyGuid                          = PEI_TO_DXE_TEST_GUID;
   CONST EFI_GUID  PolicyFinalGuid                     = PEI_TO_DXE_TEST_GUID_FINALIZED;
-  UINT8           Policy[PEI_TO_DXE_POLICY_SIZE]      = PEI_TO_DXE_POLICY;
   UINT8           PolicyFinal[PEI_TO_DXE_POLICY_SIZE] = PEI_TO_DXE_POLICY_FINALIZED;
   EFI_STATUS      Status;
+  UINT32          Index;
 
-  Status = mPolicyPpi->SetPolicy (&PolicyGuid, NULL, 0, &Policy[0], sizeof (Policy));
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+  //
+  // Set each of the policies in the global.
+  //
+
+  for (Index = 0; Index < PEI_TO_DXE_POLICY_COUNT; Index++) {
+    Status = mPolicyPpi->SetPolicy (
+                           &gPeiToDxePolicyGuids[Index],
+                           gPeiToDxePolicyNames[Index],
+                           0,
+                           &gPeiToDxePolicyData[Index][0],
+                           PEI_TO_DXE_POLICY_SIZE
+                           );
+
+    UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+  }
+
+  //
+  // Explicitly set the finalized policy.
+  //
 
   Status = mPolicyPpi->SetPolicy (&PolicyFinalGuid, NULL, POLICY_ATTRIBUTE_FINALIZED, &PolicyFinal[0], sizeof (PolicyFinal));
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);

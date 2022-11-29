@@ -192,6 +192,9 @@ IngestPoliciesFromHob (
   POLICY_ENTRY       *PolicyEntry;
   UINT32             PolicyCount;
   EFI_STATUS         Status;
+  CHAR16             *Name;
+  VOID               *NameBuffer;
+  UINTN              NameSize;
 
   PolicyCount = 0;
   Status      = EFI_SUCCESS;
@@ -209,12 +212,26 @@ IngestPoliciesFromHob (
       continue;
     }
 
-    ASSERT (!DxeCheckPolicyExists (&PolicyHob->PolicyGuid, NULL));
+    ASSERT (!DxeCheckPolicyExists (&PolicyHob->PolicyGuid, GET_HOB_POLICY_NAME (PolicyHob)));
 
     PolicyEntry = AllocatePool (sizeof (POLICY_ENTRY));
     if (PolicyEntry == NULL) {
       Status = EFI_OUT_OF_RESOURCES;
       break;
+    }
+
+    Name = GET_HOB_POLICY_NAME (PolicyHob);
+    if (Name != NULL) {
+      NameSize   = (StrLen (Name) + 1) * sizeof (CHAR16);
+      NameBuffer = AllocatePool (NameSize);
+      if (NameBuffer == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        break;
+      }
+
+      CopyMem (NameBuffer, Name, NameSize);
+    } else {
+      NameBuffer = NULL;
     }
 
     ZeroMem (PolicyEntry, sizeof (POLICY_ENTRY));
@@ -224,6 +241,7 @@ IngestPoliciesFromHob (
     PolicyEntry->Attributes     = PolicyHob->Attributes;
     PolicyEntry->Policy         = GET_HOB_POLICY_DATA (PolicyHob);
     PolicyEntry->PolicySize     = PolicyHob->PolicySize;
+    PolicyEntry->Name           = NameBuffer;
     PolicyEntry->AllocationSize = 0;
     InsertTailList (&mPolicyListHead, &PolicyEntry->Link);
     PolicyCount++;

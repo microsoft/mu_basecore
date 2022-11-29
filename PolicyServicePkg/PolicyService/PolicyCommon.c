@@ -26,11 +26,15 @@ PolicyCompareNames (
   CONST CHAR16  *Name2 OPTIONAL
   )
 {
+  BOOLEAN  Result;
+
   if ((Name1 == NULL) && (Name2 == NULL)) {
-    return TRUE;
-  } else if ((Name1 == NULL) || (Name1 == NULL)) {
-    return FALSE;
+    Result = TRUE;
+  } else if ((Name1 == NULL) || (Name2 == NULL)) {
+    Result = FALSE;
   } else {
-    return (StrCmp (Name1, Name2) == 0);
+    Result = (StrCmp (Name1, Name2) == 0);
   }
+
+  return Result;
 }
