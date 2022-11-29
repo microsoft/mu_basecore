@@ -788,13 +788,13 @@ EfiDhcp4Start (
   DhcpSb = Instance->Service;
 
   if (DhcpSb->DhcpState == Dhcp4Stopped) {
-    DEBUG ((DEBUG_NET, "%a: failed, in stopped state.\n", __FUNCTION__));
+    DEBUG ((DEBUG_NET | DEBUG_ERROR, "%a: failed, in stopped state.\n", __FUNCTION__));
     Status = EFI_NOT_STARTED;
     goto ON_ERROR;
   }
 
   if ((DhcpSb->DhcpState != Dhcp4Init) && (DhcpSb->DhcpState != Dhcp4InitReboot)) {
-    DEBUG ((DEBUG_NET, "%a: failed, !Init and !InitReboot state.\n", __FUNCTION__));
+    DEBUG ((DEBUG_NET | DEBUG_ERROR, "%a: failed, !Init and !InitReboot state.\n", __FUNCTION__));
     Status = EFI_ALREADY_STARTED;
     goto ON_ERROR;
   }
