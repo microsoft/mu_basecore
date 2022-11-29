@@ -917,7 +917,7 @@ DhcpHandleReboot (
   DhcpSb->Selected = Packet;
   Status           = DhcpLeaseAcquired (DhcpSb);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_NET, "%a: Error from LeaseAcquired.\n", __FUNCTION__));
+    DEBUG ((DEBUG_NET, "%a: Error from LeaseAcquired - %r.\n", __FUNCTION__, Status));
     return Status;
   }
 
