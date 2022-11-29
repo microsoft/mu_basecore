@@ -39,7 +39,7 @@ DhcpInitRequest (
     Status = DhcpSendMessage (DhcpSb, NULL, NULL, DHCP_MSG_DISCOVER, NULL);
 
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_NET, "%a: SendError, new state is Dhcp4Init. Code=%r\n", __FUNCTION__, Status));
+      DEBUG ((DEBUG_NET | DEBUG_ERROR, "%a: SendError, new state is Dhcp4Init. Code=%r\n", __FUNCTION__, Status));
       DhcpSb->DhcpState = Dhcp4Init;
       return Status;
     }
@@ -48,7 +48,7 @@ DhcpInitRequest (
     Status = DhcpSendMessage (DhcpSb, NULL, NULL, DHCP_MSG_REQUEST, NULL);
 
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_NET, "%a: SendError, new state is Dhcp4InitReboot. Code-%r\n", __FUNCTION__, Status));
+      DEBUG ((DEBUG_NET | DEBUG_ERROR, "%a: SendError, new state is Dhcp4InitReboot. Code-%r\n", __FUNCTION__, Status));
       DhcpSb->DhcpState = Dhcp4InitReboot;
       return Status;
     }
