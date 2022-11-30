@@ -611,10 +611,12 @@ PeiAllocatePages (
     return EFI_INVALID_PARAMETER;
   }
 
+  // MU_CHANGE START
   // Allocate memory in memory buckets
   if (IsRuntimeType (MemoryType)) {
     return PeiAllocateRuntimePages (MemoryType, Pages, Memory);
   }
+  // MU_CHANGE END
 
   Granularity = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
 
@@ -655,11 +657,13 @@ PeiAllocatePages (
     FreeMemoryBottom = &(Hob.HandoffInformationTable->EfiFreeMemoryBottom);
   }
 
+  // MU_CHANGE START
   // Check to make sure we aren't allocating memory in runtime buckets
   SyncMemoryBuckets ();
   if (CheckIfInRuntimeBoundary (*FreeMemoryTop)) {
     *FreeMemoryTop = GetEndOfBucketsAddress ();
   }
+  // MU_CHANGE END
 
   //
   // Check to see if on correct boundary for the memory type.
