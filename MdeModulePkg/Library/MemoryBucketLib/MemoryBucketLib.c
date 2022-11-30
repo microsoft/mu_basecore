@@ -1,5 +1,5 @@
 /**@file
-Library the defines Runtime memory buckets for use during PEI
+Library that defines runtime memory buckets for use during PEI.
 
 Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent

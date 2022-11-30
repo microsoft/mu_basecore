@@ -26,7 +26,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 VOID
 EFIAPI
 InitializeMemoryBuckets (
-  EFI_PHYSICAL_ADDRESS  StartingAddress
+  IN EFI_PHYSICAL_ADDRESS  StartingAddress
   );
 
 /**
@@ -40,7 +40,7 @@ InitializeMemoryBuckets (
 UINTN
 EFIAPI
 MemoryTypeToIndex (
-  EFI_MEMORY_TYPE  MemoryType
+  IN EFI_MEMORY_TYPE  MemoryType
   );
 
 /**
@@ -53,8 +53,8 @@ MemoryTypeToIndex (
 VOID
 EFIAPI
 UpdateCurrentBucketTop (
-  EFI_PHYSICAL_ADDRESS  NewTop,
-  EFI_MEMORY_TYPE       MemoryType
+  IN EFI_PHYSICAL_ADDRESS  NewTop,
+  IN EFI_MEMORY_TYPE       MemoryType
   );
 
 /**
@@ -69,7 +69,7 @@ UpdateCurrentBucketTop (
 EFI_PHYSICAL_ADDRESS
 EFIAPI
 GetCurrentBucketTop (
-  EFI_MEMORY_TYPE  MemoryType
+  IN EFI_MEMORY_TYPE  MemoryType
   );
 
 /**
@@ -84,7 +84,7 @@ GetCurrentBucketTop (
 EFI_PHYSICAL_ADDRESS
 EFIAPI
 GetCurrentBucketEnd (
-  EFI_MEMORY_TYPE  MemoryType
+  IN EFI_MEMORY_TYPE  MemoryType
   );
 
 /**
@@ -97,8 +97,8 @@ GetCurrentBucketEnd (
 VOID
 EFIAPI
 UpdateRuntimeMemoryStats (
-  UINTN            Pages,
-  EFI_MEMORY_TYPE  MemoryType
+  IN UINTN            Pages,
+  IN EFI_MEMORY_TYPE  MemoryType
   );
 
 VOID
@@ -118,7 +118,7 @@ MemoryBucketLibInitialize (
 BOOLEAN
 EFIAPI
 CheckIfInRuntimeBoundaryInternal (
-  EFI_PHYSICAL_ADDRESS  Start
+  IN EFI_PHYSICAL_ADDRESS  Start
   );
 
 /**
@@ -167,7 +167,7 @@ GetBucketLength (
 BOOLEAN
 EFIAPI
 IsRuntimeTypeInternal (
-  IN       EFI_MEMORY_TYPE  MemoryType
+  IN EFI_MEMORY_TYPE  MemoryType
   );
 
 /**
@@ -192,7 +192,7 @@ GetRuntimeBucketHob (
 VOID
 EFIAPI
 SetMemoryBucketsFromHob (
-  VOID  *MemoryBuckets
+  IN VOID  *MemoryBuckets
   );
 
 #endif

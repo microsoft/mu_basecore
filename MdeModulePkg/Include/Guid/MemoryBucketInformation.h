@@ -1,5 +1,5 @@
 /** @file
-Guid for Pei storing and retreiving the PEI memory buckets.
+Guid for Pei storing and retrieving the PEI memory buckets.
 **/
 
 #ifndef _MEMORY_BUCKET_INFORMATION_H_
@@ -10,10 +10,10 @@ Guid for Pei storing and retreiving the PEI memory buckets.
 
 extern EFI_GUID  gMemoryBucketInformationGuid;
 
-#define EFI_MEMORY_TYPE_STATISTICS_GUID \
+#define MEMORY_TYPE_STATISTICS_GUID \
   { 0x6146C0D6, 0x8E30, 0x4DC2, { 0xA9, 0xCB, 0x5D, 0x85, 0x10, 0xC4, 0x8B, 0x39 }}
 
-extern EFI_GUID  gEfiMemoryTypeStatisticsGuid;
+extern EFI_GUID  gMemoryTypeStatisticsGuid;
 
 extern UINTN  NumberOfBuckets;
 
@@ -22,7 +22,7 @@ typedef struct {
   EFI_PHYSICAL_ADDRESS    MaximumAddress;
   UINT64                  CurrentNumberOfPages;
   UINT64                  NumberOfPages;
-  UINTN                   InformationIndex;
+  UINT32                  InformationIndex;
   BOOLEAN                 Special;
   BOOLEAN                 Runtime;
 } EFI_MEMORY_TYPE_STATISTICS;

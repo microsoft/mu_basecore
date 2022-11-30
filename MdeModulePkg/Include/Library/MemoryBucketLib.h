@@ -111,7 +111,7 @@ SyncMemoryBuckets (
 BOOLEAN
 EFIAPI
 CheckIfInRuntimeBoundary (
-  EFI_PHYSICAL_ADDRESS  Start
+  IN EFI_PHYSICAL_ADDRESS  Start
   );
 
 /**
