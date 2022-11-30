@@ -25,11 +25,16 @@
   #PrivateInclude   # MU_CHANGE - See above.
   Library/CmockaLib/cmocka/include/cmockery
 
-[LibraryClasses.Common.Private]
+[LibraryClasses]
   ## @libraryclass Allows save and restore unit test internal state
   #
-  UnitTestPersistenceLib|PrivateInclude/Library/UnitTestPersistenceLib.h
+  UnitTestPersistenceLib|Include/Library/UnitTestPersistenceLib.h
 
+  ## @libraryclass GoogleTest infrastructure
+  #
+  GoogleTestLib|Include/Library/GoogleTestLib.h
+
+[LibraryClasses.Common.Private]
   ## @libraryclass Provides a unit test result report
   #
   UnitTestResultReportLib|PrivateInclude/Library/UnitTestResultReportLib.h
