@@ -616,6 +616,7 @@ PeiAllocatePages (
   if (IsRuntimeType (MemoryType)) {
     return PeiAllocateRuntimePages (MemoryType, Pages, Memory);
   }
+
   // MU_CHANGE END
 
   Granularity = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
@@ -663,6 +664,7 @@ PeiAllocatePages (
   if (CheckIfInRuntimeBoundary (*FreeMemoryTop)) {
     *FreeMemoryTop = GetEndOfBucketsAddress ();
   }
+
   // MU_CHANGE END
 
   //
