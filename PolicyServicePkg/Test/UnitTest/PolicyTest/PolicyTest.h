@@ -8,7 +8,7 @@
 
 extern POLICY_INTERFACE  *mPolicyInterface;
 
-#define PEI_TO_DXE_POLICY_COUNT  (5)
+#define PEI_TO_DXE_POLICY_COUNT  (6)
 #define PEI_TO_DXE_POLICY_SIZE   (10)
 
 //

@@ -27,6 +27,8 @@ CONST EFI_GUID  gPeiToDxePolicyGuids[PEI_TO_DXE_POLICY_COUNT] = {
   },
   { 0xb4f9eda1, 0x2f64, 0x41bd, { 0x9e, 0x9e, 0x47, 0x96, 0xf8, 0xe1, 0x48, 0x74 }
   },
+  { 0xf0ebd82a, 0x3d96, 0x4f7d, { 0x89, 0x83, 0x01, 0xff, 0x9d, 0x61, 0xf8, 0x90 }
+  },
   { 0xa38ff7aa, 0x7187, 0x44d3, { 0x9e, 0x4f, 0xba, 0x39, 0x44, 0xd1, 0xc6, 0x85 }
   },
   { 0xa38ff7aa, 0x7187, 0x44d3, { 0x9e, 0x4f, 0xba, 0x39, 0x44, 0xd1, 0xc6, 0x85 }
@@ -38,6 +40,7 @@ CONST EFI_GUID  gPeiToDxePolicyGuids[PEI_TO_DXE_POLICY_COUNT] = {
 CONST CHAR16  *gPeiToDxePolicyNames[PEI_TO_DXE_POLICY_COUNT] = {
   NULL,
   L"TESTNAME",
+  L"TESTNAME",
   NULL,
   L"NAME1",
   L"NAME2"
@@ -48,7 +51,8 @@ UINT8  gPeiToDxePolicyData[PEI_TO_DXE_POLICY_COUNT][PEI_TO_DXE_POLICY_SIZE] = {
   { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19 },
   { 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29 },
   { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39 },
-  { 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49 }
+  { 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49 },
+  { 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59 }
 };
 
 /**
@@ -209,14 +213,27 @@ MultiplePolicyTest (
     },
     { 0x0b3cfd24, 0xcfe3, 0x4614, { 0x81, 0x78, 0xc1, 0x4a, 0x12, 0xe2, 0x15, 0x5e }
     },
-    { 0xc6c8edfe, 0x7867, 0x4aac, { 0xa8, 0x02, 0xda, 0xde, 0xe3, 0x98, 0x1e, 0x50 }
+    { 0xa7f9df09, 0x5502, 0x45cb, { 0x93, 0x77, 0xd4, 0x80, 0x09, 0x30, 0xed, 0xe8 }
     },
     { 0xa7f9df09, 0x5502, 0x45cb, { 0x93, 0x77, 0xd4, 0x80, 0x09, 0x30, 0xed, 0xe8 }
     },
-    { 0x1daddb05, 0xd36f, 0x4e6c, { 0x8b, 0x6b, 0x64, 0x7b, 0xb9, 0x2b, 0x29, 0x65 }
+    { 0x46433b36, 0x871a, 0x4755, { 0x96, 0x36, 0xce, 0x9f, 0x3a, 0x44, 0x67, 0x51 }
     },
     { 0x46433b36, 0x871a, 0x4755, { 0x96, 0x36, 0xce, 0x9f, 0x3a, 0x44, 0x67, 0x51 }
     }
+  };
+
+  CONST CHAR16  *PolicyNames[10] = {
+    NULL,
+    L"TEST1",
+    L"TEST1",
+    L"TEST2",
+    NULL,
+    NULL,
+    L"TEST3",
+    NULL,
+    NULL,
+    L"TEST4"
   };
 
   //
@@ -227,10 +244,10 @@ MultiplePolicyTest (
     Policies[PolicyIndex] = PolicyIndex;
     PolicySize            = 0;
 
-    Status = mPolicyInterface->GetPolicy (&PolicyGuids[PolicyIndex], NULL, NULL, &GetPolicy, &PolicySize);
+    Status = mPolicyInterface->GetPolicy (&PolicyGuids[PolicyIndex], PolicyNames[PolicyIndex], NULL, &GetPolicy, &PolicySize);
     UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
 
-    Status = mPolicyInterface->SetPolicy (&PolicyGuids[PolicyIndex], NULL, 0, &Policies[PolicyIndex], sizeof (Policies[0]));
+    Status = mPolicyInterface->SetPolicy (&PolicyGuids[PolicyIndex], PolicyNames[PolicyIndex], 0, &Policies[PolicyIndex], sizeof (Policies[0]));
     UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
   }
 
@@ -241,7 +258,7 @@ MultiplePolicyTest (
   for (PolicyIndex = 0; PolicyIndex < 10; PolicyIndex++) {
     PolicySize = sizeof (Policies[0]);
 
-    Status = mPolicyInterface->GetPolicy (&PolicyGuids[PolicyIndex], NULL, NULL, &GetPolicy, &PolicySize);
+    Status = mPolicyInterface->GetPolicy (&PolicyGuids[PolicyIndex], PolicyNames[PolicyIndex], NULL, &GetPolicy, &PolicySize);
     UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
     UT_ASSERT_EQUAL (PolicySize, sizeof (Policies[0]));
     UT_ASSERT_EQUAL (GetPolicy, Policies[PolicyIndex]);
@@ -254,7 +271,7 @@ MultiplePolicyTest (
   for (PolicyIndex = 0; PolicyIndex < 10; PolicyIndex++) {
     PolicySize = sizeof (Policies[0]);
 
-    Status = mPolicyInterface->RemovePolicy (&PolicyGuids[PolicyIndex], NULL);
+    Status = mPolicyInterface->RemovePolicy (&PolicyGuids[PolicyIndex], PolicyNames[PolicyIndex]);
     UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
   }
 
