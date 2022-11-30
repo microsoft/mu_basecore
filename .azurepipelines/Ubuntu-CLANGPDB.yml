@@ -1,6 +1,15 @@
 ## @file
 # Azure Pipeline build file for a build using Ubuntu and CLANGPDB.
 #
+# IMPORTANT: This file requires the local repo to contain a .azurepipelines/Matrix-Build-Job-Clang.yml file that
+#            performs the actual build steps for the configurations and packages supported by the repo.
+#
+# NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
+#       instead of the file in this repo.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
+#
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
@@ -11,12 +20,12 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: main
+      ref: refs/tags/v2.4.0
 
 variables:
 - group: architectures-x86-64
 - group: tool-chain-clangpdb
-- group: tool-chain-clangpdb-windows-vm-image
+- group: tool-chain-clangpdb-ubuntu-vm-image
 
 jobs:
 - template: Matrix-Build-Job-Clang.yml
