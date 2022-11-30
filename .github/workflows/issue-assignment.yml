@@ -1,4 +1,4 @@
-# Project Mu GitHub Issue Configuration File
+# This workflow provides actions that should be applied when an issue is assigned.
 #
 # NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
 #       instead of the file in this repo.
@@ -10,7 +10,12 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
-contact_links:
-  - name: 📃 Project Mu Documentation
-    url: https://microsoft.github.io/mu/
-    about: Goals, principles, repo layout, build instructions, and more.
+name: React to Issue Assignment
+
+on:
+  issues:
+    types: assigned
+
+jobs:
+  apply:
+    uses: microsoft/mu_devops/.github/workflows/IssueAssignment.yml@v7.0.1

@@ -1,0 +1,119 @@
+## @file
+# Azure Pipeline build file for a build using mu_devops.
+#
+# NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
+#       instead of the file in this repo.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+resources:
+  repositories:
+    - repository: mu_devops
+      type: github
+      endpoint: microsoft
+      name: microsoft/mu_devops
+      ref: refs/tags/v7.0.1
+
+parameters:
+- name: do_ci_build
+  displayName: Perform Stuart CI Build
+  type: boolean
+  default: true
+- name: do_ci_setup
+  displayName: Perform Stuart CI Setup
+  type: boolean
+  default: true
+- name: do_non_ci_build
+  displayName: Perform non-CI Stuart Build
+  type: boolean
+  default: false
+- name: do_non_ci_setup
+  displayName: Perform non-CI Stuart Setup
+  type: boolean
+  default: false
+- name: do_pr_eval
+  displayName: Perform Stuart PR Evaluation
+  type: boolean
+  default: true
+- name: container_build
+  displayName: Flag for whether this repo should do stuart_setup
+  type: boolean
+  default: false
+- name: os_type
+  displayName: OS type on the self-hosted agent pools
+  type: string
+  values:
+  - Windows_NT
+  - Linux
+  default: Windows_NT
+- name: build_matrix
+  displayName: Build matrix for this repository
+  type: object
+- name: pool_name
+  displayName: Variable name that hosts pool name to be used for self-hosted agents
+  type: string
+  default: pool_name
+- name: extra_install_step
+  displayName: Extra Install Steps
+  type: stepList
+  default:
+    - script: echo No extra steps provided
+- name: extra_jobs
+  displayName: Extra Jobs to be run after build
+  type: jobList
+  default: []
+- name: rust_build
+  displayName: Whether Rust code is being built
+  type: boolean
+  default: false
+- name: extra_cargo_steps
+  displayName: Extra Steps to Run Before Standard Cargo Steps
+  type: stepList
+  default:
+    - script: echo No extra cargo steps provided
+
+jobs:
+- template: Jobs/PrGate.yml@mu_devops
+  parameters:
+    linux_container_image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:1082f35
+    ${{ if eq(parameters.rust_build, true) }}:
+      linux_container_options: --security-opt seccomp=unconfined
+    do_ci_build: ${{ parameters.do_ci_build }}
+    do_ci_setup: ${{ parameters.do_ci_setup }}
+    do_pr_eval: ${{ parameters.do_pr_eval }}
+    do_non_ci_setup: ${{ parameters.do_non_ci_setup }}
+    do_non_ci_build: ${{ parameters.do_non_ci_build }}
+    build_matrix: ${{ parameters.build_matrix }}
+    os_type: ${{ parameters.os_type }}
+    pool_name: ${{ parameters.pool_name }}
+    extra_install_step: ${{ parameters.extra_install_step }}
+    tool_chain_tag: $(tool_chain_tag)
+    vm_image: $(vm_image)
+    container_build: ${{ parameters.container_build }}
+    rust_build: ${{ parameters.rust_build }}
+
+- ${{ if eq(parameters.rust_build, true) }}:
+  - job: CargoCmds
+    displayName: Workspace Cargo Commands
+
+    container:
+
+      image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:1082f35
+      options: --user root --name mu_devops_build_container --security-opt seccomp=unconfined
+
+    steps:
+    - checkout: self
+      fetchDepth: 1
+      clean: true
+    - ${{ parameters.extra_cargo_steps }}
+    - template: Steps/RustCargoSteps.yml@mu_devops
+      parameters:
+        container_build: true
+
+- ${{ parameters.extra_jobs }}
+

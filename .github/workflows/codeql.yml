@@ -48,7 +48,7 @@ jobs:
     - name: Install Python
       uses: actions/setup-python@v4
       with:
-        python-version: '>=3.11'
+        python-version: '3.12'
 
     - name: Generate Package Matrix
       id: generate_matrix
@@ -89,12 +89,11 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
 
     - name: Install Python
       uses: actions/setup-python@v4
       with:
-        python-version: '>=3.11'
+        python-version: '3.12'
         cache: 'pip'
         cache-dependency-path: 'pip-requirements.txt'
 
@@ -341,6 +340,29 @@ jobs:
       env:
         STUART_CODEQL_PATH: ${{ steps.cache_key_gen.outputs.codeql_cli_ext_dep_dir }}
       run: stuart_ci_build -c .pytool/CISettings.py -t DEBUG -p ${{ matrix.package }} -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }} --codeql
+
+    - name: Build Cleanup
+      id: build_cleanup
+      shell: python
+      run: |
+        import os
+        import shutil
+        from pathlib import Path
+
+        dirs_to_delete = ['ia32', 'x64', 'arm', 'aarch64']
+
+        def delete_dirs(path: Path):
+            if path.exists() and path.is_dir():
+                if path.name.lower() in dirs_to_delete:
+                    print(f'Removed {str(path)}')
+                    shutil.rmtree(path)
+                    return
+
+                for child_dir in path.iterdir():
+                    delete_dirs(child_dir)
+
+        build_path = Path(os.environ['GITHUB_WORKSPACE'], 'Build')
+        delete_dirs(build_path)
 
     - name: Upload Build Logs As An Artifact
       uses: actions/upload-artifact@v3
