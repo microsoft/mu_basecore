@@ -17,6 +17,7 @@
 variables:
 - group: architectures-arm-64-x86-64
 - group: tool-chain-ubuntu-gcc
+- group: coverage
 
 extends:
   template: MuDevOpsWrapper.yml

@@ -1,4 +1,5 @@
-# Project Mu GitHub Issue Configuration File
+# This workflow assists with initial triage of new issues by applying
+# labels based on data provided in the issue.
 #
 # NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
 #       instead of the file in this repo.
@@ -10,7 +11,12 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
-contact_links:
-  - name: 📃 Project Mu Documentation
-    url: https://microsoft.github.io/mu/
-    about: Goals, principles, repo layout, build instructions, and more.
+name: Initial Triage for New Issue
+
+on:
+  issues:
+    types: [ opened ]
+
+jobs:
+  triage:
+    uses: microsoft/mu_devops/.github/workflows/IssueTriager.yml@v9.0.1

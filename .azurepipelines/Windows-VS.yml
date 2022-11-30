@@ -17,6 +17,7 @@
 variables:
 - group: architectures-x86-64
 - group: tool-chain-windows-visual-studio-latest
+- group: coverage
 
 extends:
   template: MuDevOpsWrapper.yml

@@ -87,6 +87,7 @@ class HostUnitTestCompilerPlugin(ICiBuildPlugin):
     def RunBuildPlugin(self, packagename, Edk2pathObj, pkgconfig, environment, PLM, PLMHelper, tc, output_stream=None):
         self._env = environment
         environment.SetValue("CI_BUILD_TYPE", "host_unit_test", "Set in HostUnitTestCompilerPlugin")
+        environment.SetValue("CI_PACKAGE_NAME", packagename, "Set in HostUnitTestCompilerPlugin")
 
         # Parse the config for required DscPath element
         if "DscPath" not in pkgconfig:

@@ -1,9 +1,7 @@
 # rustfmt (and cargo fmt) will automatically pick up this config when run in the workspace.
 
-# This file in Mu Basecore is expected to define the values used across all Project Mu repos for consistency.
-
-# Note that some items are included here set to their default values. This is to explicitly specify settings for
-# more common options.
+# Note that some items are included here set to their default values. This is to explicitly
+# reveal settings for more common options.
 
 # Keep these options sorted in ascending order to ease lookup with rustfmt documentation.
 
