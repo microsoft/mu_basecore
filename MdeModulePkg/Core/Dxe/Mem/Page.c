@@ -10,6 +10,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "Imem.h"
 #include "HeapGuard.h"
 #include "MemoryProtectionSupport.h" // MU_CHANGE
+#include <Library/MemoryBinOverrideLib.h> // MU_CHANGE
 
 //
 // Entry for tracking the memory regions for each memory type to coalesce similar memory types
@@ -567,6 +568,7 @@ CoreAddMemoryDescriptor (
   EFI_STATUS            Status;
   UINTN                 Index;
   UINTN                 FreeIndex;
+  EFI_ALLOCATE_TYPE     AllocationType; // MU_CHANGE
 
   if ((Start & EFI_PAGE_MASK) != 0) {
     return;
@@ -616,16 +618,29 @@ CoreAddMemoryDescriptor (
     }
 
     if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
+      // MU_CHANGE START Allow overriding of bin locations.
+      AllocationType = AllocateAnyPages;
+      CheckMemoryBinOverride (
+        Type,
+        &mMemoryTypeStatistics[Type].BaseAddress,
+        &gMemoryTypeInformation[Index].NumberOfPages,
+        &AllocationType
+        );
+      // MU_CHANGE END
+
       //
       // Allocate pages for the current memory type from the top of available memory
       //
+
       Status = CoreAllocatePages (
-                 AllocateAnyPages,
+                 AllocationType, // MU_CHANGE
                  Type,
                  gMemoryTypeInformation[Index].NumberOfPages,
                  &mMemoryTypeStatistics[Type].BaseAddress
                  );
       if (EFI_ERROR (Status)) {
+        mMemoryTypeStatistics[Type].BaseAddress = 0; // MU_CHANGE
+
         //
         // If an error occurs allocating the pages for the current memory type, then
         // free all the pages allocates for the previous memory types and return.  This
@@ -692,6 +707,15 @@ CoreAddMemoryDescriptor (
       mMemoryTypeStatistics[Type].NumberOfPages   = gMemoryTypeInformation[Index].NumberOfPages;
       gMemoryTypeInformation[Index].NumberOfPages = 0;
     }
+
+    // MU_CHANGE START
+    ReportMemoryBinLocation (
+      Type,
+      mMemoryTypeStatistics[Type].BaseAddress,
+      mMemoryTypeStatistics[Type].NumberOfPages
+      );
+
+    // MU_CHANGE END
   }
 
   //
