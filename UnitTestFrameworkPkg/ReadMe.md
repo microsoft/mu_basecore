@@ -1493,47 +1493,61 @@ This mode is used by the test running plugin to aggregate the results for CI tes
 
 ### Code Coverage
 
-Host based Unit Tests will automatically enable coverage data.
+Code coverage can be enabled for Host based Unit Tests with `CODE_COVERAGE=TRUE`, which generates a cobertura report
+per package tested, and combined cobertura report for all packages tested. The per-package cobertura report will be
+present at `Build/<Pkg>/HostTest/<Target_Toolchain>/<Pkg>_coverage.xml`. The overall cobertura report will be present
+at `Build/coverage.xml`
+
+Code coverage generation has two config knobs:
+
+1. `CC_FULL`: If set to `TRUE`, will generate zero'd out coverage data for untested source files in the package.
+2. `CC_FLATTEN`: If Set to `TRUE`, will group all source files together, rather than by INF.
+
+**TIP: `CC_FLATTEN=TRUE/FALSE` will produce different coverage percentage results as `TRUE` de-duplicates source files
+that are consumed by multiple INFs.
 
 For Windows, this is primarily leveraged for pipeline builds, but this can be leveraged locally using the
 OpenCppCoverage windows tool to parse coverage data to cobertura xml format.
 
+#### Prerequisites
+
+In addition to required prerequisites to build and test, there are additional requirements for calculating code
+coverage files as noted below.
+
 * Windows Prerequisite
 
-  ```text
-  Download and install https://github.com/OpenCppCoverage/OpenCppCoverage/releases
-  python -m pip install --upgrade -r ./pip-requirements.txt
-  stuart_ci_build -c .pytool/CISettings.py  -t NOOPT TOOL_CHAIN_TAG=VS2019 -p MdeModulePkg
-  Open Build/coverage.xml
-  ```
-
-  * How to see code coverage data on IDE Visual Studio
-
-    ```text
-    Open Visual Studio VS2019 or above version
-    Click "Tools" -> "OpenCppCoverage Settings"
-    Fill your execute file into "Program to run:"
-    Click "Tools" -> "Run OpenCppCoverage"
-    ```
-
-For Linux, this is primarily leveraged for pipeline builds, but this can be leveraged locally using the
-lcov linux tool, and parsed using the lcov_cobertura python tool to parse it to cobertura xml format.
+  1. OpenCppCoverage: Download and install <https://github.com/OpenCppCoverage/OpenCppCoverage/releases>
 
 * Linux Prerequisite
 
-  ```bash
-  sudo apt-get install -y lcov
-  python -m pip install --upgrade -r ./pip-requirements.txt
-  stuart_ci_build -c .pytool/CISettings.py  -t NOOPT TOOL_CHAIN_TAG=GCC5 -p MdeModulePkg
-  Open Build/coverage.xml
-  ```
+  1. lcov: sudo apt-get install -y lcov
 
-  * How to see code coverage data on IDE Visual Studio Code
+#### Examples
 
-    ```bash
-    Download plugin "Coverage Gutters"
-    Press Hot Key "Ctrl + Shift + P" and click option "Coverage Gutters: Display Coverage"
-    ```
+```bash
+stuart_ci_build -c .pytool/CISettings.py -t NOOPT TOOL_CHAIN_TAG=VS2019 -p MdeModulePkg CODE_COVERAGE=TRUE
+stuart_ci_build -c .pytool/CISettings.py -t NOOPT TOOL_CHAIN_TAG=VS2019 CODE_COVERAGE=TRUE CC_FLATTEN=TRUE CC_FULL=FALSE
+```
+
+How to see code coverage data on IDE Visual Studio
+
+```text
+Open Visual Studio VS2019 or above version
+Click "Tools" -> "OpenCppCoverage Settings"
+Fill your execute file into "Program to run:"
+Click "Tools" -> "Run OpenCppCoverage"
+```
+
+#### Additional Tools
+
+There are a plethora of open source tools for generating reports from a Cobertura file, which is why it was selected as
+the output file format. Tools such as pycobertura (`pip install pycobertura`) and [reportgenerator](https://www.nuget.org/packages/dotnet-reportgenerator-globaltool)
+can be utilized to generate different report types, such as local html reports. VSCode Extensions such as [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters)
+can highlight coverage results directly in the file, and cloud tools such as [CodeCov](https://about.codecov.io/) can
+consume cobertura files to provide PR checks and general code coverage statistics for the repository.
+
+*** REMINDER: During CI builds, use the ``CODE_COVERAGE=TRUE` flag to generate the code coverage XML files,
+and additionally use the `CC_FLATTEN=TRUE` or `CC_FULL=TRUE` flags to customize coverage results.
 
 ### Important Note
 

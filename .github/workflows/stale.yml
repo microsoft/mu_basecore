@@ -1,6 +1,12 @@
 # This workflow warns and then closes issues and PRs that have had no activity for a specified amount of time.
 #
-# Copyright (c) Microsoft Corporation. All rights reserved.
+# NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
+#       instead of the file in this repo.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
+#
+# Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 # You can adjust the behavior by modifying this file.
@@ -18,4 +24,4 @@ on:
 
 jobs:
   check:
-    uses: microsoft/mu_devops/.github/workflows/Stale.yml@main
+    uses: microsoft/mu_devops/.github/workflows/Stale.yml@v9.0.1
