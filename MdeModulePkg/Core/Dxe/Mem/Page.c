@@ -688,7 +688,7 @@ CoreAddMemoryDescriptor (
   for (Type = (EFI_MEMORY_TYPE)0; Type < EfiMaxMemoryType; Type++) {
     for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
       if (Type == (EFI_MEMORY_TYPE)gMemoryTypeInformation[Index].Type) {
-        mMemoryTypeStatistics[Type].InformationIndex = Index;
+        mMemoryTypeStatistics[Type].InformationIndex = (UINT32)Index;
       }
     }
 
