@@ -100,6 +100,10 @@ PrintProcessorInformation (
   UINTN                      NumCpu;
   UINTN                      NumEnabledCpu;
 
+  // MU_CHANGE: Initialize local variables in case there is error in the function call.
+  NumCpu        = 0;
+  NumEnabledCpu = 0;
+
   Status = Mp->GetNumberOfProcessors (Mp, &NumCpu, &NumEnabledCpu);
   if (EFI_ERROR (Status)) {
     Print (L"GetNumberOfProcessors failed: %r\n", Status);
@@ -201,7 +205,9 @@ AllocateApFuncBufferAllAPs (
   IN UINTN                     NumCpus
   )
 {
-  INT32  Index;
+  // MU_CHANGE: Conformed to use UINTN and an extra index to clean up during failure
+  UINTN  Index;
+  UINTN  FailureIndex;
 
   ApArg->Mp = Mp;
 
@@ -215,8 +221,9 @@ AllocateApFuncBufferAllAPs (
     ApArg->Buffer[Index] = AllocateZeroPool (APFUNC_BUFFER_LEN);
     if (ApArg->Buffer[Index] == NULL) {
       Print (L"Failed to allocate buffer for AP message\n");
-      for (--Index; Index >= 0; Index++) {
-        FreePool (ApArg->Buffer[Index]);
+      // MU_CHANGE: Uses an extra index to clean up during failure
+      for (FailureIndex = 0; FailureIndex < Index; FailureIndex++) {
+        FreePool (ApArg->Buffer[FailureIndex]);
       }
 
       FreePool (ApArg->Buffer);
@@ -270,11 +277,6 @@ StartupThisAP (
 {
   EFI_STATUS  Status;
   APFUNC_ARG  ApArg;
-
-  Status = AllocateApFuncBufferSingleAP (&ApArg, Mp, ProcessorIndex);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
 
   Status = AllocateApFuncBufferSingleAP (&ApArg, Mp, ProcessorIndex);
   if (EFI_ERROR (Status)) {
@@ -378,8 +380,8 @@ STATIC
 EFI_STATUS
 EnableAP (
   IN EFI_MP_SERVICES_PROTOCOL  *Mp,
-  UINTN                        ProcessorIndex,
-  BOOLEAN                      ProcessorHealthy
+  IN UINTN                     ProcessorIndex,
+  IN BOOLEAN                   ProcessorHealthy
   )
 {
   EFI_STATUS  Status;
@@ -417,8 +419,8 @@ STATIC
 EFI_STATUS
 DisableAP (
   IN EFI_MP_SERVICES_PROTOCOL  *Mp,
-  UINTN                        ProcessorIndex,
-  BOOLEAN                      ProcessorHealthy
+  IN UINTN                     ProcessorIndex,
+  IN BOOLEAN                   ProcessorHealthy
   )
 {
   EFI_STATUS  Status;
