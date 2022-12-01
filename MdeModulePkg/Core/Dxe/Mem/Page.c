@@ -9,7 +9,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "DxeMain.h"
 #include "Imem.h"
 #include "HeapGuard.h"
-#include "MemoryProtectionSupport.h" // MU_CHANGE
+#include "MemoryProtectionSupport.h"      // MU_CHANGE
 #include <Library/MemoryBinOverrideLib.h> // MU_CHANGE
 
 //
