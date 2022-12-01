@@ -100,6 +100,7 @@
   OrderedCollectionLib
   DxeMemoryProtectionHobLib ## MU_CHANGE
   SafeIntLib                ## MU_CHANGE
+  MemoryBinOverrideLib      ## MU_CHANGE
 
 [Guids]
   gEfiEventMemoryMapChangeGuid                  ## PRODUCES             ## Event
