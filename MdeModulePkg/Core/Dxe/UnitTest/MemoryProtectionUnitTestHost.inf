@@ -98,6 +98,7 @@
   PcdLib
   BaseBinSecurityLib
   DxeMemoryProtectionHobLib
+  MemoryBinOverrideLib
 
 [Protocols]
   gEfiDecompressProtocolGuid
@@ -176,6 +177,7 @@
   gMuEventPreExitBootServicesGuid
   gDxeMemoryProtectionSettingsGuid
   gMemoryProtectionSpecialRegionHobGuid
+  gEfiEventBeforeExitBootServicesGuid
 
 [BuildOptions.Common]
   MSFT:*_*_*_CC_FLAGS = -I$(WORKSPACE)/MdeModulePkg/Core/Dxe
