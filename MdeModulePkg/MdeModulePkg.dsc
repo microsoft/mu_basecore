@@ -130,6 +130,9 @@
   LockBoxLib|MdeModulePkg/Library/SmmLockBoxLib/SmmLockBoxPeiLib.inf
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibBase.inf
 
+[LibraryClasses.AARCH64.PEIM]
+  DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibBase.inf
+
 [LibraryClasses.common.DXE_CORE]
   HobLib|MdePkg/Library/DxeCoreHobLib/DxeCoreHobLib.inf
   MemoryAllocationLib|MdeModulePkg/Library/DxeCoreMemoryAllocationLib/DxeCoreMemoryAllocationLib.inf
@@ -556,6 +559,14 @@
 
 [Components.X64]
   MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf
+
+[Components.AARCH64]
+  MdeModulePkg/Application/MpServicesTest/MpServicesTest.inf {
+    <LibraryClasses>
+      # MU_CHANGE: Remove below ArmPkg instance for pipeline builds
+      # CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
+      ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
+  }
 
 [BuildOptions]
 
