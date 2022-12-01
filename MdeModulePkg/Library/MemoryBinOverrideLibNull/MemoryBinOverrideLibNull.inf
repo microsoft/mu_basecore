@@ -28,5 +28,4 @@
   MdeModulePkg/MdeModulePkg.dec
 
 [LibraryClasses]
-  DebugLib
   BaseLib

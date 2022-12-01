@@ -8,7 +8,6 @@
 
 #include <Uefi.h>
 #include <Library/BaseLib.h>
-#include <Library/DebugLib.h>
 #include <Library/MemoryBinOverrideLib.h>
 
 /**
@@ -42,7 +41,7 @@ ReportMemoryBinLocation (
 **/
 VOID
 EFIAPI
-CheckMemoryBinOverride (
+GetMemoryBinOverride (
   IN EFI_MEMORY_TYPE        Type,
   OUT EFI_PHYSICAL_ADDRESS  *BaseAddress,
   OUT UINT32                *NumberOfPages,

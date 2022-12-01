@@ -620,7 +620,7 @@ CoreAddMemoryDescriptor (
     if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
       // MU_CHANGE START Allow overriding of bin locations.
       AllocationType = AllocateAnyPages;
-      CheckMemoryBinOverride (
+      GetMemoryBinOverride (
         Type,
         &mMemoryTypeStatistics[Type].BaseAddress,
         &gMemoryTypeInformation[Index].NumberOfPages,

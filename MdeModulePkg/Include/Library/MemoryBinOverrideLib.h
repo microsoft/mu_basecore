@@ -38,11 +38,11 @@ ReportMemoryBinLocation (
 **/
 VOID
 EFIAPI
-CheckMemoryBinOverride (
-  IN EFI_MEMORY_TYPE         Type,
-  OUT EFI_PHYSICAL_ADDRESS   *BaseAddress,
-  OUT OUT UINT32             *NumberOfPages,
-  OUT OUT EFI_ALLOCATE_TYPE  *AllocationType
+GetMemoryBinOverride (
+  IN EFI_MEMORY_TYPE        Type,
+  OUT EFI_PHYSICAL_ADDRESS  *BaseAddress,
+  OUT UINT32                *NumberOfPages,
+  OUT EFI_ALLOCATE_TYPE     *AllocationType
   );
 
 #endif
