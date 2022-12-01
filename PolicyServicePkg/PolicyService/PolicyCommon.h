@@ -19,13 +19,13 @@ typedef struct _POLICY_HOB_HEADER {
   UINT16      Removed  : 1;
   UINT16      Reserved : 15;
   UINT16      NameSize;
-  // CHAR16 Name[NameSize]
+  CHAR16      Name[]; // Should remain as last element.
 } POLICY_HOB_HEADER;
 
 #pragma pack()
 
 #define GET_HOB_POLICY_NAME(_hob_header)  \
-  (_hob_header->NameSize == 0 ? NULL : (CHAR16 *)(((UINT8*)_hob_header) + sizeof(POLICY_HOB_HEADER)))
+  (_hob_header->NameSize == 0 ? NULL : &_hob_header->Name[0])
 
 #define GET_HOB_POLICY_DATA(_hob_header)  \
   ((VOID *)(((UINT8*)_hob_header) + sizeof(POLICY_HOB_HEADER) + _hob_header->NameSize))

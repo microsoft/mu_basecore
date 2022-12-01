@@ -292,6 +292,10 @@ DxeRemovePolicy (
       FreePool (Entry->Policy);
     }
 
+    if (Entry->Name != NULL) {
+      FreePool (Entry->Name);
+    }
+
     FreePool (Entry);
   }
 
