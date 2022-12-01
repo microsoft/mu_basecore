@@ -88,7 +88,8 @@ UnicodeStringToInteger (
       return (EFI_DEVICE_ERROR);
     }
 
-    Result = MultU64x32 (Result, 10) + (*String - L'0');
+    // MU_CHANGE: Fixing interger type mismatch
+    Result = (UINTN)(MultU64x32 (Result, 10) + (*String - L'0'));
     String++;
   }
 
@@ -142,7 +143,7 @@ ParseArguments (
   )
 {
   EFI_STATUS    Status;
-  INT32         ArgIndex;
+  UINTN         ArgIndex; // MU_CHANGE: Fixing interger signed/unsigned mismatch against Argc
   CONST CHAR16  *Argument;
   BOOLEAN       NeedsValue;
   UINTN         *Value;
