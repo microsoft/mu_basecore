@@ -88,6 +88,8 @@ DhcpCallUser (
     *NewPacket = NULL;
   }
 
+  DEBUG ((DEBUG_NET, "%a: Calling user code with DhcpState=%d.\n", __FUNCTION__, Event));
+
   //
   // If user doesn't provide the call back function, return the value
   // that directs the client to continue the normal process.
@@ -104,8 +106,6 @@ DhcpCallUser (
 
     return EFI_SUCCESS;
   }
-
-  DEBUG ((DEBUG_NET, "%a: Calling user code with DhcpState=%d.\n", __FUNCTION__, DhcpSb->DhcpState));
 
   Status = Config->Dhcp4Callback (
                      &DhcpSb->ActiveChild->Dhcp4Protocol,
