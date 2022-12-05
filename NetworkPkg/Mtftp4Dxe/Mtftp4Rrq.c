@@ -1,4 +1,4 @@
-/** @file
+F/** @file
   Routines to process Rrq (download).
 
 (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
@@ -48,6 +48,8 @@ Mtftp4RrqStart (
   )
 {
   EFI_STATUS  Status;
+
+  DEBUG ((DEBUG_NET, "%a: Entry\n", __FUNCTION__));
 
   //
   // The valid block number range are [1, 0xffff]. For example:
@@ -273,6 +275,7 @@ Mtftp4RrqHandleData (
   Status = Mtftp4RrqSaveBlock (Instance, Packet, Len);
 
   if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_NET, "%a: Error = %r\n", __FUNCTION__, Status));
     return Status;
   }
 
@@ -429,6 +432,7 @@ Mtftp4RrqConfigMcastPort (
   Status = McastIo->Protocol.Udp4->Configure (McastIo->Protocol.Udp4, &UdpConfig);
 
   if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_NET, "%a: Error = %r\n", __FUNCTION__, Status));
     return Status;
   }
 
@@ -448,6 +452,7 @@ Mtftp4RrqConfigMcastPort (
                                        );
 
     if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_NET, "%a: Error2 = %r\n", __FUNCTION__, Status));
       McastIo->Protocol.Udp4->Configure (McastIo->Protocol.Udp4, NULL);
       return Status;
     }
@@ -527,6 +532,8 @@ Mtftp4RrqHandleOack (
         );
     }
 
+    DEBUG ((DEBUG_NET, "%a: TFTP ERROR(%d) = %r\n", __FUNCTION__, __LINE__, Status));
+
     return EFI_TFTP_ERROR;
   }
 
@@ -545,6 +552,8 @@ Mtftp4RrqHandleOack (
           EFI_MTFTP4_ERRORCODE_ILLEGAL_OPERATION,
           (UINT8 *)"Illegal multicast setting"
           );
+
+        DEBUG ((DEBUG_NET, "%a: TFTP ERROR(%d) = %r\n", __FUNCTION__, __LINE__, Status));
 
         return EFI_TFTP_ERROR;
       }
@@ -591,6 +600,8 @@ Mtftp4RrqHandleOack (
           EFI_MTFTP4_ERRORCODE_ACCESS_VIOLATION,
           (UINT8 *)"Failed to create socket to receive multicast packet"
           );
+
+        DEBUG ((DEBUG_NET, "%a: TFTP ERROR(%d) = %r\n", __FUNCTION__, __LINE__, Status));
 
         return Status;
       }
@@ -669,6 +680,7 @@ Mtftp4RrqInput (
 
   if (EFI_ERROR (IoStatus)) {
     Status = IoStatus;
+    DEBUG ((DEBUG_NET, "%a: TFTP ERROR(%d) = %r\n", __FUNCTION__, __LINE__, Status));
     goto ON_EXIT;
   }
 
@@ -744,6 +756,8 @@ Mtftp4RrqInput (
           );
       }
 
+      DEBUG ((DEBUG_NET, "%a: TFTP ERROR(%d) = %r\n", __FUNCTION__, __LINE__, Status));
+
       Status = EFI_ABORTED;
       goto ON_EXIT;
     }
@@ -797,6 +811,8 @@ ON_EXIT:
       Status = UdpIoRecvDatagram (Instance->UnicastPort, Mtftp4RrqInput, Instance, 0);
     }
   }
+
+  DEBUG ((DEBUG_NET, "%a: Completed=%d. Code=%r\n", __FUNCTION__, Completed, Status));
 
   if (EFI_ERROR (Status) || Completed) {
     Mtftp4CleanOperation (Instance, Status);
