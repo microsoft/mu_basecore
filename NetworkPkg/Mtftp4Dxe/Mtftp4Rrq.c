@@ -1,4 +1,4 @@
-F/** @file
+/** @file
   Routines to process Rrq (download).
 
 (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
