@@ -98,6 +98,7 @@
   PcdLib
   BaseBinSecurityLib         ## MS_CHANGE_?
   DxeMemoryProtectionHobLib        ## MU_CHANGE
+  MemoryBinOverrideLib      ## MU_CHANGE
 
 [Guids]
   gEfiEventMemoryMapChangeGuid                  ## PRODUCES             ## Event
