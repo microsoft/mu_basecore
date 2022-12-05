@@ -1301,15 +1301,16 @@ FillInMemoryMap (
                           &OverlapLength,
                           &GcdType
                           );
+      if (GcdType != EfiGcdMemoryTypeNonExistent) {
+        POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+          NewMemoryMapCurrent,
+          StartOfAddressSpace,
+          EfiSizeToPages (OldMemoryMapCurrent->PhysicalStart - StartOfAddressSpace - RemainingLength),
+          GcdTypeToEfiType (&GcdType)
+          );
+        NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
+      }
 
-      POPULATE_MEMORY_DESCRIPTOR_ENTRY (
-        NewMemoryMapCurrent,
-        StartOfAddressSpace,
-        EfiSizeToPages (OldMemoryMapCurrent->PhysicalStart - StartOfAddressSpace - RemainingLength),
-        GcdTypeToEfiType (&GcdType)
-        );
-
-      NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
       StartOfAddressSpace = OldMemoryMapCurrent->PhysicalStart - RemainingLength;
     } while (RemainingLength > 0);
   }
@@ -1323,22 +1324,24 @@ FillInMemoryMap (
       if (NextEntryStart > LastEntryEnd) {
         // Fill in missing region based on the GCD Memory Map
         do {
-          NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
-          OverlapLength       = NextEntryStart - LastEntryEnd;
-          RemainingLength     = GetOverlappingMemorySpaceRegion (
-                                  MemorySpaceMap,
-                                  MemorySpaceMapDescriptorCount,
-                                  &LastEntryEnd,
-                                  &OverlapLength,
-                                  &GcdType
-                                  );
+          OverlapLength   = NextEntryStart - LastEntryEnd;
+          RemainingLength = GetOverlappingMemorySpaceRegion (
+                              MemorySpaceMap,
+                              MemorySpaceMapDescriptorCount,
+                              &LastEntryEnd,
+                              &OverlapLength,
+                              &GcdType
+                              );
+          if (GcdType != EfiGcdMemoryTypeNonExistent) {
+            NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
+            POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+              NewMemoryMapCurrent,
+              LastEntryEnd,
+              EfiSizeToPages (NextEntryStart - LastEntryEnd - RemainingLength),
+              GcdTypeToEfiType (&GcdType)
+              );
+          }
 
-          POPULATE_MEMORY_DESCRIPTOR_ENTRY (
-            NewMemoryMapCurrent,
-            LastEntryEnd,
-            EfiSizeToPages (NextEntryStart - LastEntryEnd - RemainingLength),
-            GcdTypeToEfiType (&GcdType)
-            );
           LastEntryEnd = NextEntryStart - RemainingLength;
         } while (RemainingLength > 0);
       }
@@ -1362,15 +1365,17 @@ FillInMemoryMap (
                           &OverlapLength,
                           &GcdType
                           );
+      if (GcdType != EfiGcdMemoryTypeNonExistent) {
+        POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+          NewMemoryMapCurrent,
+          LastEntryEnd,
+          EfiSizeToPages (EndOfAddressSpace - LastEntryEnd - RemainingLength),
+          GcdTypeToEfiType (&GcdType)
+          );
+        NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
+      }
 
-      POPULATE_MEMORY_DESCRIPTOR_ENTRY (
-        NewMemoryMapCurrent,
-        LastEntryEnd,
-        EfiSizeToPages (EndOfAddressSpace - LastEntryEnd - RemainingLength),
-        GcdTypeToEfiType (&GcdType)
-        );
-      NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
-      LastEntryEnd        = EndOfAddressSpace - RemainingLength;
+      LastEntryEnd = EndOfAddressSpace - RemainingLength;
     } while (RemainingLength > 0);
   }
 
