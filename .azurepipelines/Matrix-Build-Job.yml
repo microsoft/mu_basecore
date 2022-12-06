@@ -29,6 +29,10 @@ parameters:
   displayName: Virtual Machine Image (e.g. windows-latest)
   type: string
   default: 'windows-latest'
+- name: container_image
+  displayName: Container Image
+  type: string
+  default: ''
 
 jobs:
 
@@ -65,10 +69,16 @@ jobs:
   workspace:
     clean: all
 
+  ${{ if ne(parameters.container_image, '') }}:
+    container: ${{ parameters.container_image }}
+
   pool:
     vmImage: ${{ parameters.vm_image }}
 
   steps:
+  - ${{ if and(ne(parameters.container_image, ''), not(contains(parameters.vm_image, 'windows'))) }}:
+    - script: echo "##vso[task.prependpath]/home/vsts_azpcontainer/.local/bin"
+      displayName: Add User Local Bin to Path
   - template: Steps/PrGate.yml@mu_devops
     parameters:
       build_archs: ${{ parameters.arch_list }}
@@ -82,3 +92,4 @@ jobs:
       extra_build_args: ${{ parameters.extra_build_args }}
       extra_install_step: ${{ parameters.extra_install_step }}
       tool_chain_tag: ${{ parameters.tool_chain_tag }}
+      install_tools: ${{ eq(parameters.container_image, '') }}
