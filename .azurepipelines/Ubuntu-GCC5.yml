@@ -20,7 +20,7 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: main
+      ref: refs/tags/v1.1.1
 
 variables:
 - group: architectures-arm-64-x86-64
