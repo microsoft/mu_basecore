@@ -20,12 +20,12 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: refs/tags/v1.1.1
+      ref: refs/tags/v1.3.0
 
 variables:
 - group: architectures-x86-64
 - group: tool-chain-clangpdb
-- group: tool-chain-clangpdb-windows-vm-image
+- group: tool-chain-clangpdb-ubuntu-vm-image
 
 jobs:
 - template: Matrix-Build-Job-Clang.yml
