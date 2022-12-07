@@ -225,7 +225,7 @@
   gEfiCryptoPkgTokenSpaceGuid.PcdHashApiLibPolicy|0x00000002|UINT32|0x00000001
   ## Enable/Disable the ECC feature in openssl library. The default is disabled.
   #  If ECC feature is disabled, all related source files will not be compiled.
-  gEfiCryptoPkgTokenSpaceGuid.PcdOpensslEcEnabled|FALSE|BOOLEAN|0x0000007a
+  gEfiCryptoPkgTokenSpaceGuid.PcdOpensslEcEnabled|TRUE|BOOLEAN|0x0000007a
 
 [UserExtensions.TianoCore."ExtraFiles"]
   CryptoPkgExtra.uni
