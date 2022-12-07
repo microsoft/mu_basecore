@@ -629,6 +629,9 @@ def get_crypto_dsc(options, functions):
         for function in functions:
             if function.name in indiv and function.name not in exclude:
                 flavor_lines.append(f"  {function.get_pcd_name().ljust(70)}| TRUE")
+        # Added as we'll want PcdOpensslEcEnabled to always be TRUE
+        flavor_lines.append("# Enable use of EC")
+        flavor_lines.append("  gEfiCryptoPkgTokenSpaceGuid.PcdOpensslEcEnabled                       | TRUE")
 
         flavor_file = f"Crypto.pcd.{flavor}.inc.dsc"
         generate_file_replacement(flavor_lines, None, flavor_file, options, "#")
