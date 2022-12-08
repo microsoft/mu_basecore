@@ -1219,6 +1219,7 @@ PxeBcLoadBootFile (
   // Begin to download the bootfile if everything is ready.
   //
   AsciiPrint ("\n Downloading NBP file...\n");
+  DEBUG ((DEBUG_NET, "%a:  Downloading NBP file...\n", __FUNCTION__));
   if (PxeBcMode->UsingIpv6) {
     Status = PxeBcReadBootFileList (
                Private,
@@ -1243,6 +1244,8 @@ PxeBcLoadBootFile (
 ON_EXIT:
   *BufferSize = (UINTN)CurrentSize;
   PxeBcUninstallCallback (Private, NewMakeCallback);
+
+  DEBUG ((DEBUG_NET, "%a:  Complete, code = %r\n", __FUNCTION__, Status));
 
   if (Status == EFI_SUCCESS) {
     AsciiPrint ("\n  NBP file downloaded successfully.\n");
