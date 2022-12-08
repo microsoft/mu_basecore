@@ -788,11 +788,13 @@ EfiDhcp4Start (
   DhcpSb = Instance->Service;
 
   if (DhcpSb->DhcpState == Dhcp4Stopped) {
+    DEBUG ((DEBUG_NET | DEBUG_ERROR, "%a: failed, in stopped state.\n", __FUNCTION__));
     Status = EFI_NOT_STARTED;
     goto ON_ERROR;
   }
 
   if ((DhcpSb->DhcpState != Dhcp4Init) && (DhcpSb->DhcpState != Dhcp4InitReboot)) {
+    DEBUG ((DEBUG_NET | DEBUG_ERROR, "%a: failed, !Init and !InitReboot state.\n", __FUNCTION__));
     Status = EFI_ALREADY_STARTED;
     goto ON_ERROR;
   }
@@ -903,11 +905,13 @@ EfiDhcp4RenewRebind (
   DhcpSb = Instance->Service;
 
   if (DhcpSb->DhcpState == Dhcp4Stopped) {
+    DEBUG ((DEBUG_NET, "%a: failed, Dhcp4Stopped.\n", __FUNCTION__));
     Status = EFI_NOT_STARTED;
     goto ON_EXIT;
   }
 
   if (DhcpSb->DhcpState != Dhcp4Bound) {
+    DEBUG ((DEBUG_NET, "%a: failed, !Dhcp4Bound.\n", __FUNCTION__));
     Status = EFI_ACCESS_DENIED;
     goto ON_EXIT;
   }
@@ -1016,6 +1020,7 @@ EfiDhcp4Release (
   DhcpSb = Instance->Service;
 
   if ((DhcpSb->DhcpState != Dhcp4InitReboot) && (DhcpSb->DhcpState != Dhcp4Bound)) {
+    DEBUG ((DEBUG_NET, "%a: failed, !InitReboot and !Bound.\n", __FUNCTION__));
     Status = EFI_ACCESS_DENIED;
     goto ON_EXIT;
   }
@@ -1084,6 +1089,8 @@ EfiDhcp4Stop (
   DhcpSb = Instance->Service;
 
   DhcpCleanLease (DhcpSb);
+
+  DEBUG ((DEBUG_NET, "%a: new state is Dhcp4Stopped.\n", __FUNCTION__));
 
   DhcpSb->DhcpState    = Dhcp4Stopped;
   DhcpSb->ServiceState = DHCP_UNCONFIGED;
