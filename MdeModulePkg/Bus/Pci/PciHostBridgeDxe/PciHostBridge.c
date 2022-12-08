@@ -545,7 +545,10 @@ InitializePciHostBridge (
         Status = AddMemoryMappedIoSpace (
                    HostAddress,
                    MemApertures[MemApertureIndex]->Limit - MemApertures[MemApertureIndex]->Base + 1,
-                   EFI_MEMORY_UC
+                   // MU_CHANGE START: MMIO ranges should be non-executable
+                   // EFI_MEMORY_UC
+                   EFI_MEMORY_XP | EFI_MEMORY_UC
+                   // MU_CHANGE END
                    );
         ASSERT_EFI_ERROR (Status);
         Status = gDS->SetMemorySpaceAttributes (
