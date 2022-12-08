@@ -2385,6 +2385,8 @@ EfiPxeLoadFile (
   EFI_STATUS                  Status;
   EFI_STATUS                  MediaStatus;
 
+  DEBUG ((DEBUG_NET, "%a: Entry\n", __func__)); // MU_CHANGE
+
   if ((This == NULL) || (BufferSize == NULL) || (FilePath == NULL) || !IsDevicePathEnd (FilePath)) {
     return EFI_INVALID_PARAMETER;
   }
@@ -2393,6 +2395,7 @@ EfiPxeLoadFile (
   // Only support BootPolicy
   //
   if (!BootPolicy) {
+    DEBUG ((DEBUG_NET, "%a: !BootPolicy\n", __func__)); // MU_CHANGE
     return EFI_UNSUPPORTED;
   }
 
@@ -2408,6 +2411,7 @@ EfiPxeLoadFile (
   MediaStatus = EFI_SUCCESS;
   NetLibDetectMediaWaitTimeout (Private->Controller, PXEBC_CHECK_MEDIA_WAITING_TIME, &MediaStatus);
   if (MediaStatus != EFI_SUCCESS) {
+    DEBUG ((DEBUG_NET, "%a: No Media\n", __func__)); // MU_CHANGE
     return EFI_NO_MEDIA;
   }
 
@@ -2458,6 +2462,8 @@ EfiPxeLoadFile (
       Private->Dhcp4->Configure (Private->Dhcp4, NULL);
     }
   }
+
+  DEBUG ((DEBUG_NET, "%a: Completed, Code = %r\n", __func__, Status)); // MU_CHANGE
 
   return Status;
 }
