@@ -492,6 +492,8 @@ Mtftp4Start (
   //
   Token->Status = EFI_NOT_READY;
 
+  DEBUG ((DEBUG_NET, "%a: Starting request, type=%d\n", __FUNCTION__, (UINT32)Operation));
+
   //
   // Build and send an initial requests
   //
@@ -637,6 +639,8 @@ EfiMtftp4Configure (
     return EFI_INVALID_PARAMETER;
   }
 
+  DEBUG ((DEBUG_NET, "%a: Entry\n", __FUNCTION__));
+
   Instance = MTFTP4_PROTOCOL_FROM_THIS (This);
 
   if (ConfigData == NULL) {
@@ -692,6 +696,8 @@ EfiMtftp4Configure (
 
     gBS->RestoreTPL (OldTpl);
   }
+
+  DEBUG ((DEBUG_NET, "%a: Exit Success\n", __FUNCTION__));
 
   return EFI_SUCCESS;
 }
@@ -794,6 +800,8 @@ EfiMtftp4ReadFile (
   IN EFI_MTFTP4_TOKEN     *Token
   )
 {
+  DEBUG ((DEBUG_NET, "%a: Entry\n", __FUNCTION__));
+
   return Mtftp4Start (This, Token, EFI_MTFTP4_OPCODE_RRQ);
 }
 
@@ -854,6 +862,8 @@ EfiMtftp4WriteFile (
   IN EFI_MTFTP4_TOKEN     *Token
   )
 {
+  DEBUG ((DEBUG_NET, "%a: Entry\n", __FUNCTION__));
+
   return Mtftp4Start (This, Token, EFI_MTFTP4_OPCODE_WRQ);
 }
 
@@ -923,6 +933,8 @@ EfiMtftp4ReadDirectory (
   IN EFI_MTFTP4_TOKEN     *Token
   )
 {
+  DEBUG ((DEBUG_NET, "%a: Entry\n", __FUNCTION__));
+
   return Mtftp4Start (This, Token, EFI_MTFTP4_OPCODE_DIR);
 }
 
