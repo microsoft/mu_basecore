@@ -105,7 +105,8 @@ class CodeQlAnalyzePlugin(IUefiBuildPlugin):
         # by setting the value in the STUART_CODEQL_QUERY_SPECIFIERS
         # environment variable.
         if not query_specifiers:
-            builder.env.GetValue("STUART_CODEQL_QUERY_SPECIFIERS")
+            query_specifiers = builder.env.GetValue(
+                                "STUART_CODEQL_QUERY_SPECIFIERS")
 
         # Use this plugins query set file as the default fallback if it is
         # not overridden. It is possible the file is not present if modified
