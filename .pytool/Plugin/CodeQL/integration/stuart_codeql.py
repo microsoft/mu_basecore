@@ -1,4 +1,4 @@
-# @file codeql_stuart_integration.py
+# @file stuart_codeql.py
 #
 # Exports functions commonly needed for Stuart-based platforms to easily
 # enable CodeQL in their platform build.
