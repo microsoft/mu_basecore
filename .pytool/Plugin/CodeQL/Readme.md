@@ -1,9 +1,20 @@
 # CodeQL Plugin
 
-The set of CodeQL plugins provided include two main plugins:
+The set of CodeQL plugins provided include two main plugins that seamlessly integrate into a Stuart build environment:
 
 1. `CodeQlBuildPlugin` - Used to produce a CodeQL database from a build.
 2. `CodeQlAnalyzePlugin` - Used to analyze a CodeQL database.
+
+While CodeQL can be run in a CI environment with other approaches. This plugin offers the following advantages:
+
+1. Provides exactly the same results locally as on a CI server.
+2. Integrates very well into VS Code.
+3. Very simple to use - just use normal Stuart update and build commands.
+4. Very simple to understand - minimally wraps the official CodeQL CLI.
+5. Very simple to integrate - works like any other Stuart build plugin.
+   - Integration is usually just a few lines of code.
+6. Portable - not tied to Azure DevOps specific, GitHub specific, or other host infrastructure.
+7. Versioned - the query and filters are versioned in source control so easy to find and track.
 
 ❗ It is very important to read the Integration Instructions in this file and determine how to best integrate the
 CodeQL plugin into your environment.
