@@ -11,6 +11,7 @@ import logging
 import os
 import yaml
 
+from analyze import analyze_filter
 from common import codeql_plugin
 
 from edk2toolext import edk2_logging
@@ -80,6 +81,7 @@ class CodeQlAnalyzePlugin(IUefiBuildPlugin):
         query_specifiers = None
         package_config_file = Path(os.path.join(
                                 self.package_path, self.package + ".ci.yaml"))
+        plugin_data = None
         if package_config_file.is_file():
             with open(package_config_file, 'r') as cf:
                 package_config_file_data = yaml.safe_load(cf)
@@ -138,6 +140,58 @@ class CodeQlAnalyzePlugin(IUefiBuildPlugin):
             logging.critical(f"The sarif file {self.codeql_sarif_path} was "
                              f"not created. Analysis cannot continue.")
             return -1
+
+        filter_pattern_data = []
+        global_filter_file_value = builder.env.GetValue(
+                                    "STUART_CODEQL_FILTER_FILES")
+        if global_filter_file_value:
+            global_filter_files = global_filter_file_value.strip().split(',')
+            global_filter_files = [Path(f) for f in global_filter_files]
+
+            for global_filter_file in global_filter_files:
+                if global_filter_file.is_file():
+                    with open(global_filter_file, 'r') as ff:
+                        global_filter_file_data = yaml.safe_load(ff)
+                        if "Filters" in global_filter_file_data:
+                            current_pattern_data = \
+                                global_filter_file_data["Filters"]
+                            if type(current_pattern_data) is not list:
+                                logging.critical(
+                                    f"CodeQL pattern data must be a list of "
+                                    f"strings. Data in "
+                                    f"{str(global_filter_file.resolve())} is "
+                                    f"invalid. CodeQL analysis is incomplete.")
+                                return -1
+                            filter_pattern_data += current_pattern_data
+                        else:
+                            logging.critical(
+                                f"CodeQL global filter file "
+                                f"{str(global_filter_file.resolve())} is  "
+                                f"malformed. Missing Filters section. CodeQL "
+                                f"analysis is incomplete.")
+                            return -1
+                else:
+                    logging.critical(
+                        f"CodeQL global filter file "
+                        f"{str(global_filter_file.resolve())} was not found. "
+                        f"CodeQL analysis is incomplete.")
+                    return -1
+
+        if plugin_data and "Filters" in plugin_data:
+            if type(plugin_data["Filters"]) is not list:
+                logging.critical(
+                    "CodeQL pattern data must be a list of strings. "
+                    "CodeQL analysis is incomplete.")
+                return -1
+            filter_pattern_data.extend(plugin_data["Filters"])
+
+        if filter_pattern_data:
+            logging.info("Applying CodeQL SARIF result filters.")
+            analyze_filter.filter_sarif(
+                self.codeql_sarif_path,
+                self.codeql_sarif_path,
+                filter_pattern_data,
+                split_lines=False)
 
         with open(self.codeql_sarif_path, 'r') as sf:
             sarif_file_data = json.load(sf)
