@@ -165,9 +165,9 @@
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmFeatureControlMsrLock|TRUE|BOOLEAN|0x3213210B
 
   ## MS_CHANGE
-  ## If TRUE, Install the protocol to communicate to the Smm Exception 
-  # handler so automated testing can be performed. 
-  # 
+  ## If TRUE, Install the protocol to communicate to the Smm Exception
+  # handler so automated testing can be performed.
+  #
   gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionTestModeSupport|FALSE|BOOLEAN|0x00000021
 
 [PcdsFixedAtBuild]
@@ -195,7 +195,7 @@
   gUefiCpuPkgTokenSpaceGuid.PcdSevEsWorkAreaSize|0x0|UINT32|0x30002006
 
   ## MS_CHANGE
-  ## If TRUE, the default Cpu Exception Handler in SMM will reboot 
+  ## If TRUE, the default Cpu Exception Handler in SMM will reboot
   # This handler state can be changed by using the Exception Test Protocol
   gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionRebootInsteadOfHaltDefault|TRUE|BOOLEAN|0x00000020
 
@@ -337,6 +337,13 @@
   #   FALSE - Current boot is not a power-on reset.<BR>
   # @Prompt Current boot is a power-on reset.
   gUefiCpuPkgTokenSpaceGuid.PcdIsPowerOnReset|FALSE|BOOLEAN|0x0000001B
+
+  # MU_CHANGE START Add PCD to make wakeup buffer reserved
+  ## Specifies that the wake-up buffer for AP startup should be permanently
+  #  allocated as reserved.
+  # @Prompt Allocates CPU wake-up buffer as reserved.
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuApWakeupBufferReserved|FALSE|BOOLEAN|0x0000001F
+  # MU_CHANGE END
 
 [PcdsFixedAtBuild.X64, PcdsPatchableInModule.X64, PcdsDynamic.X64, PcdsDynamicEx.X64]
   ## Indicate access to non-SMRAM memory is restricted to reserved, runtime and ACPI NVS type after SmmReadyToLock.
