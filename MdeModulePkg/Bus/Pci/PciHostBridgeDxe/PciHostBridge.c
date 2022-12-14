@@ -557,6 +557,7 @@ InitializePciHostBridge (
         if (gDxeMps.NxProtectionPolicy.Fields.EfiMemoryMappedIO != 0) {
           Attributes |= EFI_MEMORY_XP;
         }
+
         Status = gDS->SetMemorySpaceAttributes (
                         HostAddress,
                         MemApertures[MemApertureIndex]->Limit - MemApertures[MemApertureIndex]->Base + 1,
