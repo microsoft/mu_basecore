@@ -1279,8 +1279,8 @@ FillInMemoryMap (
 
   NewMemoryMapStart = NULL;
 
-  // Double the size of the memory map for the worst case of every entry being non-contiguous
-  NewMemoryMapStart = AllocatePool ((*MemoryMapSize * 2) + (*DescriptorSize * 2));
+  // Quadruple the size of the input memory map to accomodate extra entries
+  NewMemoryMapStart = AllocatePool ((*MemoryMapSize * 4) + *DescriptorSize);
 
   if (NewMemoryMapStart == NULL) {
     return EFI_OUT_OF_RESOURCES;
