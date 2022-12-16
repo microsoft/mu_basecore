@@ -1280,7 +1280,7 @@ FillInMemoryMap (
   NewMemoryMapStart = NULL;
 
   // Quadruple the size of the input memory map to accomodate extra entries
-  NewMemoryMapStart = AllocatePool ((*MemoryMapSize * 4) + *DescriptorSize);
+  NewMemoryMapStart = AllocatePool (*MemoryMapSize * 4);
 
   if (NewMemoryMapStart == NULL) {
     return EFI_OUT_OF_RESOURCES;
