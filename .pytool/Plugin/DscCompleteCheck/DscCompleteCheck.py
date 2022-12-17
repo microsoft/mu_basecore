@@ -96,19 +96,9 @@ class DscCompleteCheck(ICiBuildPlugin):
         dp.SetInputVars(environment.GetAllBuildKeyValues())
         dp.ParseFile(wsr_dsc_path)
 
-        def module_in_dsc(inf: str) -> bool:
-            for module_type in (dp.ThreeMods, dp.SixMods, dp.OtherMods):
-                for module in module_type:
-                    if Path(module).is_absolute():
-                        module = Edk2pathObj.GetEdk2RelativePathFromAbsolutePath(module)
-                    if inf in module:
-                        return True
-            return False
-
         # Check if INF in component section
         for INF in INFFiles:
-            if not module_in_dsc(INF):
-
+            if not DscCompleteCheck._module_in_dsc(INF, dp, Edk2pathObj):
                 infp = InfParser().SetBaseAbsPath(Edk2pathObj.WorkspacePath)
                 infp.SetPackagePaths(Edk2pathObj.PackagePathList)
                 infp.ParseFile(INF)
@@ -138,3 +128,23 @@ class DscCompleteCheck(ICiBuildPlugin):
         else:
             tc.SetSuccess()
         return overall_status
+
+    @staticmethod
+    def _module_in_dsc(inf: str, dsc: DscParser, Edk2pathObj) -> bool:
+        """Checks if the given module (inf) is in the given dsc.
+
+        Args:
+            inf (str): The inf file to check for
+            dsc (DscParser): The parsed dsc file.
+            Edk2pathObj (Edk2Path): The path object capturing the workspace and package paths.
+
+        Returns:
+            bool: if the module is in the dsc.
+        """
+        for module_type in (dsc.ThreeMods, dsc.SixMods, dsc.OtherMods):
+            for module in module_type:
+                if Path(module).is_absolute():
+                    module = Edk2pathObj.GetEdk2RelativePathFromAbsolutePath(module)
+                if inf in module:
+                    return True
+        return False
