@@ -10,6 +10,7 @@ from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
 from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
 from edk2toolext.environment.var_dict import VarDict
 from pathlib import Path
+from edk2toollib.uefi.edk2.path_utilities import Edk2Path
 
 
 class DscCompleteCheck(ICiBuildPlugin):
