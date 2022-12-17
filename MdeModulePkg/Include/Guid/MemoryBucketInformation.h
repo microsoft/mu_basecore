@@ -1,5 +1,11 @@
 /** @file
-Guid for Pei storing and retrieving the PEI memory buckets.
+
+Guids for Pei storing and retrieving the PEI memory buckets
+as well as storing bucket information in DXE.
+
+Copyright (C) Microsoft Corporation. All rights reserved.
+SPDX-License-Identifier: BSD-2-Clause-Patent
+
 **/
 
 #ifndef _MEMORY_BUCKET_INFORMATION_H_

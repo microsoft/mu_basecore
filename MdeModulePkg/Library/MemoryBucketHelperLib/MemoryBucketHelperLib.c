@@ -9,10 +9,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <PiPei.h>
 
-#include <Uefi.h>
 #include <Library/DebugLib.h>
 #include <Library/MemoryBucketHelperLib.h>
 #include <Library/BaseMemoryLib.h>
+#include <Library/Hoblib.h>
 
 // Memory types being kept in buckets in PEI.  Currently only runtime types.
 EFI_MEMORY_TYPE  MemoryTypes[4] = {
@@ -50,8 +50,26 @@ UINT32  RuntimeMemLength = 50;
 BOOLEAN  RuntimeMemInitialized = FALSE;
 
 /**
+  TODO
+**/
+VOID
+EFIAPI
+InitializeMemoryBucketSizes (
+  VOID
+  )
+{
+  RuntimeMemoryStats[0].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeCode);
+  RuntimeMemoryStats[1].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeData);
+  RuntimeMemoryStats[2].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiReclaimMemory);
+  RuntimeMemoryStats[3].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiMemoryNvs);
+}
+
+/**
   This function initialized the PEI memory buckets.  This should be called
   when the first memory type being tracked in these buckets is allocated.
+
+  NOTE: The memory buckets can be created in Pre-mem PEI if runtime pages are
+  allocated in pre-mem PEI.
 
   @param[in] StartingAddress   The starting address of the memory buckets.
                                All of them are contiguous.
@@ -65,9 +83,12 @@ InitializeMemoryBuckets (
   UINTN   Index;
   UINT32  AddressAdjustment;
 
+  InitializeMemoryBucketSizes ();
+
   for (Index = 0; Index < NumberOfBuckets; Index++) {
     // Initialize memory locations for buckets
-    AddressAdjustment                     = EFI_PAGE_SIZE * RuntimeMemLength * (UINT32)Index;
+    AddressAdjustment = EFI_PAGE_SIZE *
+                        ((UINT32)RuntimeMemoryStats[Index].NumberOfPages * (UINT32)Index);
     RuntimeMemoryStats[Index].BaseAddress = StartingAddress - AddressAdjustment;
     CurrentBucketTops[Index]              = StartingAddress - AddressAdjustment;
 
@@ -159,17 +180,17 @@ GetCurrentBucketTop (
 }
 
 /**
-  This function gets the address of the end of the bucket specified by
+  This function gets the address of the bottom of the bucket specified by
   MemoryType.
 
   @param[in] MemoryType   The type of memory we are interested in.
 
-  @retval    Returns an address that points to the end of memory in a
+  @retval    Returns an address that points to the bottom of memory in a
              memory bucket that is specified by MemoryType
 **/
 EFI_PHYSICAL_ADDRESS
 EFIAPI
-GetCurrentBucketEnd (
+GetCurrentBucketBottom (
   EFI_MEMORY_TYPE  MemoryType
   )
 {
@@ -178,8 +199,24 @@ GetCurrentBucketEnd (
 
   Index = MemoryTypeToIndex (MemoryType);
 
-  ReturnValue = (EFI_PHYSICAL_ADDRESS)(RuntimeMemoryStats[Index].BaseAddress) - (EFI_PAGE_SIZE * RuntimeMemLength);
+  ReturnValue = (EFI_PHYSICAL_ADDRESS)(RuntimeMemoryStats[Index].BaseAddress) - (EFI_PAGE_SIZE * RuntimeMemoryStats[Index].NumberOfPages);
   return ReturnValue;
+}
+
+/**
+  Function that returns the address associated with the end of the
+  memory bucket structure.
+
+  @retval    The memory address below the memory bucket structure.
+
+**/
+EFI_PHYSICAL_ADDRESS
+EFIAPI
+GetEndOfBucketsAddress (
+  VOID
+  )
+{
+  return GetCurrentBucketBottom (EfiACPIMemoryNVS);
 }
 
 /**
@@ -200,14 +237,13 @@ UpdateRuntimeMemoryStats (
 
   Index = MemoryTypeToIndex (MemoryType);
 
-  if (RuntimeMemoryStats[Index].NumberOfPages + (UINT64)Pages > RuntimeMemLength) {
+  if (RuntimeMemoryStats[Index].CurrentNumberOfPages + (UINT64)Pages > RuntimeMemoryStats[Index].NumberOfPages) {
     DEBUG ((DEBUG_ERROR, "We have overflowed while allocating PEI pages of index: %d!\n", Index));
     ASSERT (FALSE);
     return;
   }
 
-  RuntimeMemoryStats[Index].NumberOfPages        = (UINT64)RuntimeMemoryStats[Index].NumberOfPages + (UINT64)Pages;
-  RuntimeMemoryStats[Index].CurrentNumberOfPages = RuntimeMemoryStats[Index].NumberOfPages;
+  RuntimeMemoryStats[Index].CurrentNumberOfPages = (UINT64)RuntimeMemoryStats[Index].NumberOfPages + (UINT64)Pages;
 
   RuntimeBucketHob.RuntimeBuckets[Index]     = RuntimeMemoryStats[Index];
   RuntimeBucketHob.CurrentTopInBucket[Index] = CurrentBucketTops[Index];
@@ -224,7 +260,7 @@ UpdateRuntimeMemoryStats (
 **/
 BOOLEAN
 EFIAPI
-CheckIfInRuntimeBoundaryInternal (
+CheckIfInRuntimeBoundary (
   EFI_PHYSICAL_ADDRESS  Start
   )
 {
@@ -292,7 +328,7 @@ GetBucketLength (
 **/
 BOOLEAN
 EFIAPI
-IsRuntimeTypeInternal (
+IsRuntimeType (
   IN       EFI_MEMORY_TYPE  MemoryType
   )
 {
@@ -305,6 +341,69 @@ IsRuntimeTypeInternal (
   }
 
   return FALSE;
+}
+
+/**
+  Function to build a HOB for the memory allocation. It will search and reuse
+  the unused(freed) memory allocation HOB, or build memory allocation HOB
+  normally if no unused(freed) memory allocation HOB found.
+
+  @param[in] BaseAddress        The 64 bit physical address of the memory.
+  @param[in] Length             The length of the memory allocation in bytes.
+
+**/
+/*VOID
+BuildRuntimeMemoryAllocationInfoHob (
+  VOID
+  )
+{
+  PEI_MEMORY_BUCKET_INFORMATION  RuntimeBucketHob;
+
+  RuntimeBucketHob = GetRuntimeBucketHob ();
+  BuildGuidDataHob (
+    &gMemoryBucketInformationGuid,
+    &RuntimeBucketHob,
+    (sizeof (PEI_MEMORY_BUCKET_INFORMATION))
+    );
+}*/
+
+/**
+  Internal function to build a HOB for the memory allocation.
+  It will search and reuse the unused(freed) memory allocation HOB,
+  or build memory allocation HOB normally if no unused(freed) memory allocation HOB found.
+  @param[in] BaseAddress        The 64 bit physical address of the memory.
+  @param[in] Length             The length of the memory allocation in bytes.
+**/
+VOID
+InternalBuildRuntimeMemoryAllocationInfoHob (
+  VOID
+  )
+{
+  BuildGuidDataHob (
+    &gMemoryBucketInformationGuid,
+    &RuntimeBucketHob,
+    (sizeof (PEI_MEMORY_BUCKET_INFORMATION))
+    );
+}
+
+
+/**
+  Function that makes pulls the memory bucket hob information locally
+  if necessary.  This is so it can be more easily referenced.
+
+**/
+VOID
+EFIAPI
+SyncMemoryBuckets (
+  VOID
+  )
+{
+  EFI_HOB_GUID_TYPE  *MemBucketHob;
+
+  MemBucketHob = GetFirstGuidHob (&gMemoryBucketInformationGuid);
+  if (!IsRuntimeMemoryInitialized () && (MemBucketHob != NULL)) {
+    SetMemoryBucketsFromHob (GET_GUID_HOB_DATA (MemBucketHob));
+  }
 }
 
 /**

@@ -589,14 +589,16 @@ PeiAllocatePages (
   OUT      EFI_PHYSICAL_ADDRESS  *Memory
   )
 {
-  EFI_STATUS            Status;
-  PEI_CORE_INSTANCE     *PrivateData;
-  EFI_PEI_HOB_POINTERS  Hob;
-  EFI_PHYSICAL_ADDRESS  *FreeMemoryTop;
-  EFI_PHYSICAL_ADDRESS  *FreeMemoryBottom;
-  UINTN                 RemainingPages;
-  UINTN                 Granularity;
-  UINTN                 Padding;
+  EFI_STATUS                     Status;
+  PEI_CORE_INSTANCE              *PrivateData;
+  EFI_PEI_HOB_POINTERS           Hob;
+  EFI_PHYSICAL_ADDRESS           *FreeMemoryTop;
+  EFI_PHYSICAL_ADDRESS           *FreeMemoryBottom;
+  UINTN                          RemainingPages;
+  UINTN                          Granularity;
+  UINTN                          Padding;
+  EFI_HOB_GUID_TYPE              *MemBucketHob;
+  PEI_MEMORY_BUCKET_INFORMATION  RuntimeBucketHob;
 
   if ((MemoryType != EfiLoaderCode) &&
       (MemoryType != EfiLoaderData) &&
@@ -610,14 +612,6 @@ PeiAllocatePages (
   {
     return EFI_INVALID_PARAMETER;
   }
-
-  // MU_CHANGE START
-  // Allocate memory in memory buckets
-  if (IsRuntimeType (MemoryType)) {
-    return PeiAllocateRuntimePages (MemoryType, Pages, Memory);
-  }
-
-  // MU_CHANGE END
 
   Granularity = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
 
@@ -659,12 +653,25 @@ PeiAllocatePages (
   }
 
   // MU_CHANGE START
-  // Check to make sure we aren't allocating memory in runtime buckets
+  MemBucketHob = GetFirstGuidHob (&gMemoryBucketInformationGuid);
   SyncMemoryBuckets ();
+
+  // Check if we're using the memory buckets
+  if (IsRuntimeType (MemoryType)) {
+    if (IsRuntimeMemoryInitialized ()) {
+      *FreeMemoryTop    = GetCurrentBucketTop (MemoryType);
+      *FreeMemoryBottom = GetCurrentBucketBottom (MemoryType);
+    } else {
+      InitializeMemoryBuckets (*FreeMemoryTop);
+      *FreeMemoryTop    = GetCurrentBucketTop (MemoryType);
+      *FreeMemoryBottom = GetCurrentBucketBottom (MemoryType);
+    }
+  }
+
+  // Check to make sure we aren't allocating memory in runtime buckets
   if (CheckIfInRuntimeBoundary (*FreeMemoryTop)) {
     *FreeMemoryTop = GetEndOfBucketsAddress ();
   }
-
   // MU_CHANGE END
 
   //
@@ -720,6 +727,7 @@ PeiAllocatePages (
     // Update the value for the caller
     //
     *Memory = *(FreeMemoryTop);
+    UpdateCurrentBucketTop (*FreeMemoryTop, MemoryType);
 
     //
     // Create a memory allocation HOB.
@@ -729,6 +737,23 @@ PeiAllocatePages (
       Pages * EFI_PAGE_SIZE,
       MemoryType
       );
+
+    // MU_CHANGE START
+    UpdateRuntimeMemoryStats (Pages, MemoryType);
+
+    if (MemBucketHob == NULL) {
+      InternalBuildRuntimeMemoryAllocationInfoHob ();
+    } else {
+      RuntimeBucketHob = GetRuntimeBucketHob ();
+      CopyMem (
+        GET_GUID_HOB_DATA (MemBucketHob),
+        &RuntimeBucketHob,
+        (sizeof (PEI_MEMORY_BUCKET_INFORMATION))
+        );
+    }
+
+    InitializeRuntimeMemoryBuckets ();
+    // MU_CHANGE END
 
     return EFI_SUCCESS;
   }

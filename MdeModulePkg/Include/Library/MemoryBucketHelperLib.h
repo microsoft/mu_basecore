@@ -58,7 +58,7 @@ UpdateCurrentBucketTop (
   );
 
 /**
-  This function gets the address of the startfree memory in the bucket
+  This function gets the address of the start free memory in the bucket
   specified by MemoryType.
 
   @param[in] MemoryType   The type of memory we are interested in.
@@ -73,18 +73,31 @@ GetCurrentBucketTop (
   );
 
 /**
-  This function gets the address of the end of the bucket specified by
+  This function gets the address of the bottom of the bucket specified by
   MemoryType.
 
   @param[in] MemoryType   The type of memory we are interested in.
 
-  @retval    Returns an address that points to the end of memory in a
+  @retval    Returns an address that points to the bottom of memory in a
              memory bucket that is specified by MemoryType
 **/
 EFI_PHYSICAL_ADDRESS
 EFIAPI
-GetCurrentBucketEnd (
+GetCurrentBucketBottom (
   IN EFI_MEMORY_TYPE  MemoryType
+  );
+
+/**
+  Function that returns the address associated with the end of the
+  memory bucket structure.
+
+  @retval    The memory address below the memory bucket structure.
+
+**/
+EFI_PHYSICAL_ADDRESS
+EFIAPI
+GetEndOfBucketsAddress (
+  VOID
   );
 
 /**
@@ -101,11 +114,6 @@ UpdateRuntimeMemoryStats (
   IN EFI_MEMORY_TYPE  MemoryType
   );
 
-VOID
-MemoryBucketLibInitialize (
-  VOID
-  );
-
 /**
   This function checks to see if there is an attempt to allocate memory in the runtime
   memory buckets that we have defined.
@@ -117,7 +125,7 @@ MemoryBucketLibInitialize (
 **/
 BOOLEAN
 EFIAPI
-CheckIfInRuntimeBoundaryInternal (
+CheckIfInRuntimeBoundary (
   IN EFI_PHYSICAL_ADDRESS  Start
   );
 
@@ -166,8 +174,45 @@ GetBucketLength (
 **/
 BOOLEAN
 EFIAPI
-IsRuntimeTypeInternal (
+IsRuntimeType (
   IN EFI_MEMORY_TYPE  MemoryType
+  );
+
+/**
+  Function to build a HOB for the memory allocation. It will search and reuse
+  the unused(freed) memory allocation HOB, or build memory allocation HOB
+  normally if no unused(freed) memory allocation HOB found.
+
+  @param[in] BaseAddress        The 64 bit physical address of the memory.
+  @param[in] Length             The length of the memory allocation in bytes.
+
+**/
+VOID
+BuildRuntimeMemoryAllocationInfoHob (
+  VOID
+  );
+
+/**
+  Internal function to build a HOB for the memory allocation.
+  It will search and reuse the unused(freed) memory allocation HOB,
+  or build memory allocation HOB normally if no unused(freed) memory allocation HOB found.
+  @param[in] BaseAddress        The 64 bit physical address of the memory.
+  @param[in] Length             The length of the memory allocation in bytes.
+**/
+VOID
+InternalBuildRuntimeMemoryAllocationInfoHob (
+  VOID
+  );
+
+/**
+  Function that makes pulls the memory bucket hob information locally
+  if necessary.  This is so it can be more easily referenced.
+
+**/
+VOID
+EFIAPI
+SyncMemoryBuckets (
+  VOID
   );
 
 /**

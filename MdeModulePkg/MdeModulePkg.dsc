@@ -261,6 +261,11 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxSizeNonPopulateCapsule|0x0
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxSizePopulateCapsule|0x0
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxPeiPerformanceLogEntries|28
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketRuntimeCode|0x30
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketRuntimeData|0x0
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketAcpiReclaimMemory|0x0
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketAcpiMemoryNvs|0x0
+  
 
 [PcdsDynamicExDefault]
   gEfiMdeModulePkgTokenSpaceGuid.PcdRecoveryFileName|L"FVMAIN.FV"

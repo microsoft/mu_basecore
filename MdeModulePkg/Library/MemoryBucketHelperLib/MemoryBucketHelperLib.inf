@@ -27,4 +27,10 @@
 [LibraryClasses]
   BaseMemoryLib
   MemoryAllocationLib
+
+[FixedPcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketRuntimeCode
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketRuntimeData
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketAcpiReclaimMemory
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketAcpiMemoryNvs
   
