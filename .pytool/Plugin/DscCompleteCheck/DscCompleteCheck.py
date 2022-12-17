@@ -130,7 +130,8 @@ class DscCompleteCheck(ICiBuildPlugin):
         return overall_status
 
     @staticmethod
-    def _module_in_dsc(inf: str, dsc: DscParser, Edk2pathObj) -> bool:
+    def _module_in_dsc(inf: str, dsc: DscParser, Edk2pathObj: Edk2Path) -> bool:
+
         """Checks if the given module (inf) is in the given dsc.
 
         Args:
