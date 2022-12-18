@@ -1,0 +1,58 @@
+## @file
+#  CPU Exception Handler library instance for SEC/PEI modules.
+#
+#  Copyright (c) 2012 - 2018, Intel Corporation. All rights reserved.
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = SecPeiCpuExceptionHandlerLib
+  MODULE_UNI_FILE                = SecPeiCpuExceptionHandlerLib.uni
+  FILE_GUID                      = D719EBB9-20EC-42E2-9B66-8FF06E809EAB
+  MODULE_TYPE                    = PEIM
+  VERSION_STRING                 = 1.1
+  LIBRARY_CLASS                  = CpuExceptionHandlerLib|SEC PEI_CORE PEIM
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources.Ia32]
+  Ia32/ExceptionHandlerAsm.nasm
+  Ia32/ExceptionTssEntryAsm.nasm
+  Ia32/ArchExceptionHandler.c
+  Ia32/ArchInterruptDefs.h
+
+[Sources.X64]
+  X64/ExceptionHandlerAsm.nasm
+  X64/ArchExceptionHandler.c
+  X64/ArchInterruptDefs.h
+
+[Sources.common]
+  CpuExceptionCommon.h
+  CpuExceptionCommon.c
+  SecPeiCpuExceptionMu.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  UefiCpuPkg/UefiCpuPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  SerialPortLib
+  PrintLib
+  LocalApicLib
+  PeCoffGetEntryPointLib
+  VmgExitLib
+  ResetSystemLib
+  ExceptionPersistenceLib
+
+[FeaturePcd]
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmStackGuard                    ## CONSUMES
+

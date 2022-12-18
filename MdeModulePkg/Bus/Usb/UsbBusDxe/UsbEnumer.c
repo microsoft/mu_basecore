@@ -955,7 +955,7 @@ UsbEnumeratePort (
       //   which probably is caused by short circuit. It has to wait system hardware
       //   to perform recovery.
       //
-      DEBUG ((DEBUG_ERROR, "UsbEnumeratePort: Critical Over Current\n", Port));
+      DEBUG ((DEBUG_ERROR, "UsbEnumeratePort: Critical Over Current (port %d)\n", Port));
       return EFI_DEVICE_ERROR;
     }
 
@@ -965,7 +965,7 @@ UsbEnumeratePort (
     //   over current. As a result, all ports are nearly power-off, so
     //   it's necessary to detach and enumerate all ports again.
     //
-    DEBUG ((DEBUG_ERROR, "UsbEnumeratePort: 2.0 device Recovery Over Current\n", Port));
+    DEBUG ((DEBUG_ERROR, "UsbEnumeratePort: 2.0 device Recovery Over Current (port %d)\n", Port));
   }
 
   if (USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_ENABLE)) {
@@ -975,7 +975,7 @@ UsbEnumeratePort (
     //   on 2.0 roothub does. When over-current has influence on 1.1 device, the port
     //   would be disabled, so it's also necessary to detach and enumerate again.
     //
-    DEBUG ((DEBUG_ERROR, "UsbEnumeratePort: 1.1 device Recovery Over Current\n", Port));
+    DEBUG ((DEBUG_ERROR, "UsbEnumeratePort: 1.1 device Recovery Over Current (port %d)\n", Port));
   }
 
   if (USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_CONNECTION)) {
@@ -983,7 +983,7 @@ UsbEnumeratePort (
     // Case4:
     //   Device connected or disconnected normally.
     //
-    DEBUG ((DEBUG_INFO, "UsbEnumeratePort: Device Connect/Disconnect Normally\n", Port));
+    DEBUG ((DEBUG_INFO, "UsbEnumeratePort: Device Connect/Disconnect Normally (port %d)\n", Port));
   }
 
   //

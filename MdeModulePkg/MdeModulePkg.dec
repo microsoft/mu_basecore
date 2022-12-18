@@ -211,6 +211,12 @@
   #
   PcdDatabaseLoaderLib|Include/Library/PcdDatabaseLoaderLib.h
 
+  # MU_CHANGE - Add ExceptionPersistenceLib to MdeModulePkg
+  ## @libraryclass Provides a way to turn off exceptions if an exception related to memory
+  ##               protection is tripped
+  #
+  ExceptionPersistenceLib|Include/Library/ExceptionPersistenceLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
@@ -485,6 +491,11 @@
   # Include/Guid/MmMemoryProtectionSettings
   gMmMemoryProtectionSettingsGuid = { 0x0CF445DD, 0xA67C, 0x4F8C, { 0x81, 0x9B, 0xB7, 0xB6, 0x86, 0xED, 0x7C, 0x75 }}
 
+  # MU_CHANGE
+  # This GUID is used to report regions of memory in PEI which should have specific paging attributes via the HOB
+  # Include/Guid/MemoryProtectionSpecialRegionGuid.h
+  gMemoryProtectionSpecialRegionHobGuid = { 0xBFCC1325, 0x3BFE, 0x469A, { 0x9A, 0xAC, 0x0C, 0x99, 0x0E, 0x4E, 0xC9, 0xF1 } }
+
 ## MSCHANGE END
 
 
@@ -625,13 +636,22 @@
 
   # MSCHANGE
   # This protocol provides debug access to Heap Guard memory protections
-  # Include/Protocol/HeapGuardDebug.h
-  gHeapGuardDebugProtocolGuid = { 0xe8150630, 0x6366, 0x4294, { 0xa3, 0x47, 0x89, 0x2c, 0x3a, 0x7d, 0xe4, 0xaf } }
+  # Include/Protocol/MemoryProtectionDebug.h
+  gMemoryProtectionDebugProtocolGuid = { 0xe8150630, 0x6366, 0x4294, { 0xa3, 0x47, 0x89, 0x2c, 0x3a, 0x7d, 0xe4, 0xaf } }
+
+  # MU_CHANGE
+  # This protocol is used to get and add special memory protection regions
+  # Include/Guid/MemoryProtectionSpecialRegionProtocol.h
+  gMemoryProtectionSpecialRegionProtocolGuid = { 0x47BF7F78, 0x0B53, 0x487B, {0xA2, 0xFE, 0x42, 0xE7, 0x09, 0x87, 0x54, 0x5C } }
 
   ## This protocol defines the Media Clear and Sanitize operations defined by NIST
   # Include/Protocol/MediaSanitize.h
   gMediaSanitizeProtocolGuid = { 0x0d799a99, 0x25af, 0x429e, {0x92, 0x72, 0xd0, 0xb2, 0x7d, 0x6d, 0x5f, 0x14 } }
 
+  # MU_CHANGE
+  # This protocol provides access to Internal Event services that do not need TPL_APPLICATION
+  gInternalEventServicesProtocolGuid = {0x7ecd162a, 0xc664, 0x11ec, { 0x9d, 0x64, 0x02, 0x42, 0xac, 0x12, 0x00, 0x02 } }
+  
   ## This protocol defines the generic memory test interfaces in Dxe phase.
   # Include/Protocol/GenericMemoryTest.h
   gEfiGenericMemTestProtocolGuid = { 0x309DE7F1, 0x7F5E, 0x4ACE, { 0xB4, 0x9C, 0x53, 0x1B, 0xE5, 0xAA, 0x95, 0xEF }}
@@ -1040,6 +1060,14 @@
   #   FALSE - DMA Access can happen before IOMMU protocol install.<BR>
   # @Prompt Enable DMA before IOMMU protocol.
   gEfiMdeModulePkgTokenSpaceGuid.PcdRequireIommu|TRUE|BOOLEAN|0x30001057
+
+  ## MU_CHANGE
+  ## Indicates if the InternalEventServices protocol is published to gBS. This protocol provides access to the
+  #  internal event functions that do not require TPL_APPLICATION.
+  #    TRUE  - Publish the InternalEventServices protocol
+  #    FALSE - Do not publish the InternalEventServices protocol
+  # @Prompt Install Internal Event Services Protocol
+  gEfiMdeModulePkgTokenSpaceGuid.PcdInternalEventServicesEnabled|FALSE|BOOLEAN|0x30003003
 
 [PcdsFeatureFlag.IA32, PcdsFeatureFlag.ARM, PcdsFeatureFlag.AARCH64]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|FALSE|BOOLEAN|0x0001003a

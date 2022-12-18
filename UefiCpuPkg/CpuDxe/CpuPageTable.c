@@ -1636,7 +1636,10 @@ EfiGetMemoryAttributes (
   INT64                          Size;
   UINT64                         AddressEncMask;
 
-  DEBUG ((DEBUG_INFO, "%a: 0x%lx - 0x%lx\n", __FUNCTION__, BaseAddress, Length));
+  // MU_CHANGE START: Change debug verbosity
+  // DEBUG ((DEBUG_INFO, "%a: 0x%lx - 0x%lx\n", __FUNCTION__, BaseAddress, Length));
+  DEBUG ((DEBUG_VERBOSE, "%a: 0x%lx - 0x%lx\n", __FUNCTION__, BaseAddress, Length));
+  // MU_CHANGE END
 
   if ((BaseAddress & (EFI_PAGE_SIZE - 1)) != 0) {
     DEBUG ((DEBUG_ERROR, "BaseAddress(0x%lx) is not aligned!\n", BaseAddress));
@@ -1708,7 +1711,10 @@ EfiGetMemoryAttributes (
     MemAttr = *Attributes;
   } while (Size > 0);
 
-  DEBUG ((DEBUG_INFO, "%a: Attributes is 0x%lx\n", __FUNCTION__, *Attributes));
+  // MU_CHANGE START: Change debug verbosity
+  // DEBUG ((DEBUG_INFO, "%a: Attributes is 0x%lx\n", __FUNCTION__, *Attributes));
+  DEBUG ((DEBUG_VERBOSE, "%a: Attributes is 0x%lx\n", __FUNCTION__, *Attributes));
+  // MU_CHANG END
 
   return EFI_SUCCESS;
 }

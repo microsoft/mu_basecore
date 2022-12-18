@@ -650,6 +650,34 @@ CoreWaitForEvent (
   OUT UINTN     *UserIndex
   )
 {
+  if (gEfiCurrentTpl != TPL_APPLICATION) {
+    return EFI_UNSUPPORTED;
+  }
+
+  return CoreWaitForEventInternal (NumberOfEvents, UserEvents, UserIndex); // MS_CHANGE
+}
+
+/**
+  Stops execution until an event is signaled.
+
+  @param  NumberOfEvents         The number of events in the UserEvents array
+  @param  UserEvents             An array of EFI_EVENT
+  @param  UserIndex              Pointer to the index of the event which
+                                 satisfied the wait condition
+
+  @retval EFI_SUCCESS            The event indicated by Index was signaled.
+  @retval EFI_INVALID_PARAMETER  The event indicated by Index has a notification
+                                 function or Event was not a valid type
+
+**/
+EFI_STATUS
+EFIAPI
+CoreWaitForEventInternal (
+  IN UINTN      NumberOfEvents,
+  IN EFI_EVENT  *UserEvents,
+  OUT UINTN     *UserIndex
+  )
+{
   EFI_STATUS  Status;
   UINTN       Index;
 
@@ -704,6 +732,44 @@ CoreWaitForEvent (
     // MS_CHANGE
   }
 }
+
+// MU_CHANGE begin
+//
+// Provides access to the event.c internal event functions that do not require TPL_APPLICATION
+// The event.c core event functions are provided via gBS and require TPL_APPLICATION however
+// the internal functions can optionally be produced via the Feature PCD PcdInternalEventServicesEnabled
+//
+INTERNAL_EVENT_SERVICES_PROTOCOL  mInternalEventServicesProtocol = {
+  CoreWaitForEventInternal
+};
+EFI_HANDLE                        mInternalEventServicesProtocolHandle = NULL;
+
+/**
+  Installs the internal version of Event Services that does not require
+  TPL_APPLICATION to execute.
+
+  @param  ImageHandle   A handle for the image that is initializing this protocol
+  @param  SystemTable   A pointer to the EFI system table
+
+  @retval EFI_SUCCESS           Driver initialized successfully
+  @retval EFI_OUT_OF_RESOURCES  Could not allocate needed resources
+
+**/
+EFI_STATUS
+EFIAPI
+InternalEventServicesInit (
+  VOID
+  )
+{
+  return CoreInstallProtocolInterface (
+           &mInternalEventServicesProtocolHandle,
+           &gInternalEventServicesProtocolGuid,
+           EFI_NATIVE_INTERFACE,
+           &mInternalEventServicesProtocol
+           );
+}
+
+// MU_CHANGE end
 
 /**
   Closes an event and frees the event structure.

@@ -128,6 +128,7 @@
   gEfiHobMemoryAllocStackGuid                   ## SOMETIMES_CONSUMES   ## SystemTable
   gMuEventPreExitBootServicesGuid               ## PRODUCES             ## Event    // MU_CHANGE
   gDxeMemoryProtectionSettingsGuid              ## CONSUMES             ## HOB      // MU_CHANGE
+  gMemoryProtectionSpecialRegionHobGuid         ## CONSUMES             ## HOB      // MU_CHANGE
 
 [Ppis]
   gEfiVectorHandoffInfoPpiGuid                  ## UNDEFINED # HOB
@@ -159,6 +160,7 @@
   gEfiHiiPackageListProtocolGuid                ## SOMETIMES_PRODUCES
   gEfiSmmBase2ProtocolGuid                      ## SOMETIMES_CONSUMES
   gEdkiiPeCoffImageEmulatorProtocolGuid         ## SOMETIMES_CONSUMES
+  gInternalEventServicesProtocolGuid            ## CONSUMES            ## MU_CHANGE
 
   # Arch Protocols
   gEfiBdsArchProtocolGuid                       ## CONSUMES
@@ -176,8 +178,9 @@
   gEfiCapsuleArchProtocolGuid                   ## CONSUMES
   gEfiWatchdogTimerArchProtocolGuid             ## CONSUMES
   gEfiCpu2ProtocolGuid                          ## SOMETIMES_CONSUMES        ## MS_CHANGE
-  gHeapGuardDebugProtocolGuid                   ## SOMETIMES_PRODUCES        ## MS_CHANGE
+  gMemoryProtectionDebugProtocolGuid            ## SOMETIMES_PRODUCES        ## MS_CHANGE
   gEfiMemoryAttributeProtocolGuid               ## CONSUMES                  ## MS_CHANGE
+  gMemoryProtectionSpecialRegionProtocolGuid    ## PRODUCES                  ## MU_CHANGE
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdLoadFixAddressBootTimeCodePageNumber    ## SOMETIMES_CONSUMES
@@ -197,6 +200,9 @@
   # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                           ## CONSUMES
   # MU_CHANGE END
   gEfiMdeModulePkgTokenSpaceGuid.PcdFwVolDxeMaxEncapsulationDepth           ## CONSUMES
+
+[FeaturePcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdInternalEventServicesEnabled ## CONSUMES ## MU_CHANGE
 
 # [Hob]
 # RESOURCE_DESCRIPTOR   ## CONSUMES

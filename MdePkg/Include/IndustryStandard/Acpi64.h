@@ -2,7 +2,7 @@
   ACPI 6.4 definitions from the ACPI Specification Revision 6.4 Jan, 2021.
 
   Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-  Copyright (c) 2019 - 2021, ARM Ltd. All rights reserved.<BR>
+  Copyright (c) 2019 - 2022, ARM Ltd. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -3128,6 +3128,11 @@ typedef struct {
 /// "XENV" Xen Project Table
 ///
 #define EFI_ACPI_6_4_XEN_PROJECT_TABLE_SIGNATURE  SIGNATURE_32('X', 'E', 'N', 'V')
+
+///
+/// "MPAM" Memory System Resource Partitioning and Monitoring Table
+///
+#define EFI_ACPI_6_4_MEMORY_SYSTEM_RESOURCE_PARTITIONING_AND_MONITORING_TABLE_SIGNATURE  SIGNATURE_32('M', 'P', 'A', 'M')
 
 #pragma pack()
 

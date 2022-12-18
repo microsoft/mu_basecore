@@ -83,9 +83,8 @@ MmMemoryProtectionSettingsConsistencyCheck (
   {
     DEBUG ((
       DEBUG_WARN,
-      "%a: - Heap Guard Pool protections are active, \
-but neither HeapGuardPolicy.UefiPoolGuard nor \
-HeapGuardPolicy.MmPoolGuard are active.\n",
+      "%a: - Bits set in gMmMps.HeapGuardPoolType, but gMmMps.HeapGuardPolicy.Fields.MmPoolGuard is inactive. "
+      "No pool guards will be set.\n",
       __FUNCTION__
       ));
   }
@@ -95,9 +94,8 @@ HeapGuardPolicy.MmPoolGuard are active.\n",
   {
     DEBUG ((
       DEBUG_WARN,
-      "%a: - Heap Guard Page protections are active, \
-but neither HeapGuardPolicy.UefiPageGuard nor \
-HeapGuardPolicy.MmPageGuard are active.\n",
+      "%a: - Bits are set in gMmMps.HeapGuardPageType, but gMmMps.HeapGuardPolicy.Fields.MmPageGuard is inactive. "
+      "No page guards will be set.\n",
       __FUNCTION__
       ));
   }

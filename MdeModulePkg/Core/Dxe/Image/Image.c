@@ -657,10 +657,11 @@ CoreLoadPeImage (
   // of code memory types aren't set to NX in case this image does its own allocations.
   // Or, if our memory protection policy specifies that we shouldn't allow such images, return a failure.
   if (!(Image->ImageContext.SupportsNx) && (Image->ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION)) {
-    TurnOffNxCompatibility ();
     if (gDxeMps.ImageProtectionPolicy.Fields.BlockImagesWithoutNxFlag) {
       return EFI_SECURITY_VIOLATION;
     }
+
+    TurnOffNxCompatibility ();
   }
 
   // MU_CHANGE END
@@ -1309,6 +1310,11 @@ CoreLoadImageCommon (
         // LoadFile () may cause the device path of the Handle be updated.
         //
         OriginalFilePath = AppendDevicePath (DevicePathFromHandle (DeviceHandle), Node);
+        if (OriginalFilePath == NULL) {
+          Image  = NULL;
+          Status = EFI_OUT_OF_RESOURCES;
+          goto Done;
+        }
       }
     }
   }
@@ -1791,7 +1797,7 @@ CoreStartImage (
   if ((Image->ExitDataSize != 0) || (Image->ExitData != NULL)) {
     DEBUG ((DEBUG_LOAD, "StartImage: ExitDataSize %d, ExitData %p", (UINT32)Image->ExitDataSize, Image->ExitData));
     if (Image->ExitData != NULL) {
-      DEBUG ((DEBUG_LOAD, " (%hs)", Image->ExitData));
+      DEBUG ((DEBUG_LOAD, " (%s)", Image->ExitData));
     }
 
     DEBUG ((DEBUG_LOAD, "\n"));

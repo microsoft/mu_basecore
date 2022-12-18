@@ -340,12 +340,17 @@ CoreFreeMemoryMapStack (
     //
     Entry = AllocateMemoryMapEntry ();
 
-    ASSERT (Entry);
-
     //
     // Update to proper entry
     //
     mMapDepth -= 1;
+
+    // If entry allocation failed once, it is unlikely to succeed moving forward
+    // However, we can try since we're in the middle of moving list nodes
+    if (Entry == NULL) {
+      ASSERT (Entry != NULL);
+      continue;
+    }
 
     if (mMapStack[mMapDepth].Link.ForwardLink != NULL) {
       //
@@ -391,6 +396,7 @@ PromoteMemoryResource (
 {
   LIST_ENTRY                       *Link;
   EFI_GCD_MAP_ENTRY                *Entry;
+  EFI_STATUS                       Status;
   BOOLEAN                          Promoted;
   EFI_PHYSICAL_ADDRESS             StartAddress;
   EFI_PHYSICAL_ADDRESS             EndAddress;
@@ -450,14 +456,16 @@ PromoteMemoryResource (
     //
     Promoted = PromoteGuardedFreePages (&StartAddress, &EndAddress);
     if (Promoted) {
-      CoreGetMemorySpaceDescriptor (StartAddress, &Descriptor);
-      CoreAddRange (
-        EfiConventionalMemory,
-        StartAddress,
-        EndAddress,
-        Descriptor.Capabilities & ~(EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED |
-                                    EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
-        );
+      Status = CoreGetMemorySpaceDescriptor (StartAddress, &Descriptor);
+      if (Status == EFI_SUCCESS) {
+        CoreAddRange (
+          EfiConventionalMemory,
+          StartAddress,
+          EndAddress,
+          Descriptor.Capabilities & ~(EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED |
+                                      EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
+          );
+      }
     }
   }
 
@@ -1521,19 +1529,27 @@ CoreInternalFreePages (
   UINTN       Alignment;
   BOOLEAN     IsGuarded;
 
+  // MU_CHANGE Start: Unprotect page(s) before free
+  UINT64  Attributes;
+
+  if (MemoryAttributeProtocol != NULL) {
+    Status = MemoryAttributeProtocol->GetMemoryAttributes (MemoryAttributeProtocol, Memory, EFI_PAGES_TO_SIZE (NumberOfPages), &Attributes);
+
+    if ((Attributes & EFI_MEMORY_RO) || (Attributes & EFI_MEMORY_RP) || (Status == EFI_NO_MAPPING)) {
+      Status = ClearAccessAttributesFromMemoryRange (Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
+
+      if (EFI_ERROR (Status) && (Status != EFI_NOT_READY)) {
+        DEBUG ((DEBUG_WARN, "%a - Unable to clear attributes from memory at base: 0x%llx\n", __FUNCTION__, Memory));
+      }
+    }
+  }
+
+  // MU_CHANGE End
+
   //
   // Free the range
   //
   CoreAcquireMemoryLock ();
-
-  // MU_CHANGE Start: Unprotect page(s) before free
-  Status = ClearAccessAttributesFromMemoryRange (Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
-
-  if (EFI_ERROR (Status) && (Status != EFI_NOT_READY)) {
-    DEBUG ((DEBUG_WARN, "%a - Unable to clear attributes from memory at base: 0x%llx\n", __FUNCTION__, Memory));
-  }
-
-  // MU_CHANGE End
 
   //
   // Find the entry that the covers the range

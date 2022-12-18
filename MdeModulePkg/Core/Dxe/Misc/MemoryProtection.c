@@ -38,8 +38,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/SimpleFileSystem.h>
-#include <Protocol/HeapGuardDebug.h>  // MU_CHANGE
-#include <Protocol/MemoryAttribute.h> // MU_CHANGE
+#include <Protocol/MemoryProtectionDebug.h> // MU_CHANGE
+#include <Protocol/MemoryAttribute.h>       // MU_CHANGE
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
@@ -73,9 +73,10 @@ EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttribute = NULL;          // MU_CHANGE
 
 STATIC LIST_ENTRY  mProtectedImageRecordList;
 // MS_CHANGE - START
-STATIC HEAP_GUARD_DEBUG_PROTOCOL  mHeapGuardDebug =
+STATIC MEMORY_PROTECTION_DEBUG_PROTOCOL  mMemoryProtectionDebug =
 {
-  IsGuardPage
+  IsGuardPage,
+  GetImageList
 };
 // MS_CHANGE - END
 
@@ -1259,16 +1260,21 @@ EnableNullDetection (
                EFI_PAGES_TO_SIZE (1),
                Desc.Capabilities | EFI_MEMORY_RP
                );
-    ASSERT_EFI_ERROR (Status);
+    if (EFI_ERROR (Status)) {
+      ASSERT_EFI_ERROR (Status);
+      goto Done;
+    }
   }
 
-  CoreSetMemorySpaceAttributes (
-    0,
-    EFI_PAGES_TO_SIZE (1),
-    Desc.Attributes | EFI_MEMORY_RP
-    );
+  Status = CoreSetMemorySpaceAttributes (
+             0,
+             EFI_PAGES_TO_SIZE (1),
+             Desc.Attributes | EFI_MEMORY_RP
+             );
+  ASSERT_EFI_ERROR (Status);
 
-  return;
+Done:
+  CoreCloseEvent (Event);
 }
 
 // MU_CHANGE END
@@ -1285,7 +1291,8 @@ CoreInitializeMemoryProtection (
   EFI_STATUS  Status;
   EFI_EVENT   Event;
   EFI_EVENT   DisableNullDetectionEvent;
-  EFI_EVENT   EnableNullDetectionEvent; // MU_CHANGE
+  EFI_EVENT   EnableNullDetectionEvent;     // MU_CHANGE
+  EFI_EVENT   MemoryAttributeProtocolEvent; // MU_CHANGE
   VOID        *Registration;
 
   // mImageProtectionPolicy = gDxeMps.ImageProtectionPolicy; // MU_CHANGE
@@ -1330,6 +1337,26 @@ CoreInitializeMemoryProtection (
              );
   ASSERT_EFI_ERROR (Status);
 
+  // MU_CHANGE START: Register an event to populate the memory attribute protocol
+  Status = CoreCreateEvent (
+             EVT_NOTIFY_SIGNAL,
+             TPL_CALLBACK,
+             MemoryAttributeProtocolNotify,
+             NULL,
+             &MemoryAttributeProtocolEvent
+             );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Register for protocol notification
+  //
+  Status = CoreRegisterProtocolNotify (
+             &gEfiMemoryAttributeProtocolGuid,
+             MemoryAttributeProtocolEvent,
+             &Registration
+             );
+  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE END
   //
   // Register a callback to disable NULL pointer detection at EndOfDxe
   //
@@ -1343,7 +1370,7 @@ CoreInitializeMemoryProtection (
     // so it can be safely set as RP
     Status = CoreCreateEvent (
                EVT_NOTIFY_SIGNAL,
-               TPL_CALLBACK,
+               TPL_CALLBACK - 1,
                EnableNullDetection,
                NULL,
                &EnableNullDetectionEvent
@@ -1391,15 +1418,18 @@ CoreInitializeMemoryProtection (
   // Install protocol for validating Heap Guard if Heap Guard is turned on
   // Update to use memory protection settings HOB
   // if (PcdGet8(PcdHeapGuardPropertyMask)) {
-  if (gDxeMps.HeapGuardPolicy.Data) {
+  if (gDxeMps.HeapGuardPolicy.Data ||
+      gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv ||
+      gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromUnknown)
+  {
     EFI_HANDLE  HgBmHandle = NULL;
     Status = CoreInstallMultipleProtocolInterfaces (
                &HgBmHandle,
-               &gHeapGuardDebugProtocolGuid,
-               &mHeapGuardDebug,
+               &gMemoryProtectionDebugProtocolGuid,
+               &mMemoryProtectionDebug,
                NULL
                );
-    DEBUG ((DEBUG_INFO, "Installed gHeapGuardDebugProtocolGuid - %r\n", Status));
+    DEBUG ((DEBUG_INFO, "Installed gMemoryProtectionDebugProtocolGuid - %r\n", Status));
   }
 
   // MSCHANGE END
@@ -1452,7 +1482,7 @@ ApplyMemoryProtectionPolicy (
   IN  UINT64                Length
   )
 {
-  // UINT64  OldAttributes;
+  UINT64  OldAttributes;
   UINT64  NewAttributes;
 
   //
@@ -1511,7 +1541,7 @@ ApplyMemoryProtectionPolicy (
   //
   NewAttributes = GetPermissionAttributeForMemoryType (NewType);
 
-  // MU_CHANGE START: TODO: There is a potential bug where attributes are not properly set
+  // MU_CHANGE START: There is a potential bug where attributes are not properly set
   //                  for all pages during a call to AllocatePages(). This may be due to a bug somewhere
   //                  during the free page process.
   // if (OldType != EfiMaxMemoryType) {
@@ -1524,6 +1554,18 @@ ApplyMemoryProtectionPolicy (
   //   // newly added region of a type that does not require protection
   //   return EFI_SUCCESS;
   // }
+
+  // To catch the edge case where the attributes are not consistent across the range, get the
+  // attributes from the page table to see if they are consistent. If they are not consistent,
+  // GetMemoryAttributes() will return an error.
+  if (MemoryAttributeProtocol != NULL) {
+    if (!EFI_ERROR (MemoryAttributeProtocol->GetMemoryAttributes (MemoryAttributeProtocol, Memory, Length, &OldAttributes)) &&
+        (OldAttributes == NewAttributes))
+    {
+      return EFI_SUCCESS;
+    }
+  }
+
   // MU_CHANGE END
 
   return gCpu->SetMemoryAttributes (gCpu, Memory, Length, NewAttributes);

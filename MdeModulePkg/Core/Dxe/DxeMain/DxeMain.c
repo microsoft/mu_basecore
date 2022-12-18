@@ -292,6 +292,11 @@ DxeMain (
 
   // MU_CHANGE END
 
+  // MU_CHANGE START: Add initialization of the memory protection special region protocol to support
+  //                  applying specific settings to memory regions during protection initialization
+  CoreInitializeMemoryProtectionSpecialRegions ();
+  // MU_CHANGE END
+
   //
   // Initialize the Global Coherency Domain Services
   //
@@ -517,6 +522,17 @@ DxeMain (
   //
   Status = InitializeSectionExtraction (gDxeCoreImageHandle, gDxeCoreST);
   ASSERT_EFI_ERROR (Status);
+
+  // MU_CHANGE begin
+  //
+  // Produce Internal Event Services
+  //
+  if (FeaturePcdGet (PcdInternalEventServicesEnabled)) {
+    Status = InternalEventServicesInit ();
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // MU_CHANGE end
 
   //
   // Initialize the DXE Dispatcher

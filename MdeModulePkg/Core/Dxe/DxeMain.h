@@ -14,6 +14,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/LoadedImage.h>
 #include <Protocol/GuidedSectionExtraction.h>
+#include <Protocol/InternalEventServices.h>
 #include <Protocol/DevicePath.h>
 #include <Protocol/Runtime.h>
 #include <Protocol/LoadFile.h>
@@ -36,7 +37,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/Security2.h>
 #include <Protocol/Reset.h>
 #include <Protocol/Cpu.h>
-#include <Protocol/Cpu2.h>           // MS_CHANGE
+#include <Protocol/Cpu2.h>            // MS_CHANGE
+#include <Protocol/MemoryAttribute.h> // MU_CHANGE
 #include <Protocol/Metronome.h>
 #include <Protocol/FirmwareVolumeBlock.h>
 #include <Protocol/Capsule.h>
@@ -273,6 +275,7 @@ extern EFI_SECURITY_ARCH_PROTOCOL        *gSecurity;
 extern EFI_SECURITY2_ARCH_PROTOCOL       *gSecurity2;
 extern EFI_BDS_ARCH_PROTOCOL             *gBds;
 extern EFI_SMM_BASE2_PROTOCOL            *gSmmBase2;
+extern EFI_MEMORY_ATTRIBUTE_PROTOCOL     *MemoryAttributeProtocol;      // MU_CHANGE
 
 extern volatile EFI_TPL  gEfiCurrentTpl;                                // MS_CHANGE
 
@@ -1587,6 +1590,57 @@ CoreWaitForEvent (
   IN UINTN      NumberOfEvents,
   IN EFI_EVENT  *UserEvents,
   OUT UINTN     *UserIndex
+  );
+
+// MU_CHANGE begin
+
+/**
+  Stops execution until an event is signaled.
+
+  @param  NumberOfEvents         The number of events in the UserEvents array
+  @param  UserEvents             An array of EFI_EVENT
+  @param  UserIndex              Pointer to the index of the event which
+                                 satisfied the wait condition
+
+  @retval EFI_SUCCESS            The event indicated by Index was signaled.
+  @retval EFI_INVALID_PARAMETER  The event indicated by Index has a notification
+                                 function or Event was not a valid type
+
+**/
+EFI_STATUS
+EFIAPI
+CoreWaitForEventInternal (
+  IN UINTN      NumberOfEvents,
+  IN EFI_EVENT  *UserEvents,
+  OUT UINTN     *UserIndex
+  );
+
+/**
+  Initialize the memory protection special region reporting.
+**/
+VOID
+EFIAPI
+CoreInitializeMemoryProtectionSpecialRegions (
+  VOID
+  );
+
+// MU_CHANGE end
+
+/**
+  Installs the internal version of Event Services that does not require
+  TPL_APPLICATION to execute.
+
+  @param  ImageHandle   A handle for the image that is initializing this protocol
+  @param  SystemTable   A pointer to the EFI system table
+
+  @retval EFI_SUCCESS           Driver initialized successfully
+  @retval EFI_OUT_OF_RESOURCES  Could not allocate needed resources
+
+**/
+EFI_STATUS
+EFIAPI
+InternalEventServicesInit (
+  VOID
   );
 
 /**
