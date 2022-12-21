@@ -2304,12 +2304,20 @@ BmEnumerateBootOptions (
       }
 
       Description = BmGetBootDescription (Handles[Index]);
+      if (Description == NULL) {
+        continue;
+      }
+
       BootOptions = ReallocatePool (
                       sizeof (EFI_BOOT_MANAGER_LOAD_OPTION) * (*BootOptionCount),
                       sizeof (EFI_BOOT_MANAGER_LOAD_OPTION) * (*BootOptionCount + 1),
                       BootOptions
                       );
-      ASSERT (BootOptions != NULL);
+      if (BootOptions == NULL) {
+        ASSERT (BootOptions != NULL);
+        FreePool (Description);
+        continue;
+      }
 
       Status = EfiBootManagerInitializeLoadOption (
                  &BootOptions[(*BootOptionCount)++],
@@ -2355,12 +2363,20 @@ BmEnumerateBootOptions (
     }
 
     Description = BmGetBootDescription (Handles[Index]);
+    if (Description == NULL) {
+      continue;
+    }
+
     BootOptions = ReallocatePool (
                     sizeof (EFI_BOOT_MANAGER_LOAD_OPTION) * (*BootOptionCount),
                     sizeof (EFI_BOOT_MANAGER_LOAD_OPTION) * (*BootOptionCount + 1),
                     BootOptions
                     );
-    ASSERT (BootOptions != NULL);
+    if (BootOptions == NULL) {
+      ASSERT (BootOptions != NULL);
+      FreePool (Description);
+      continue;
+    }
 
     Status = EfiBootManagerInitializeLoadOption (
                &BootOptions[(*BootOptionCount)++],
@@ -2399,12 +2415,20 @@ BmEnumerateBootOptions (
     }
 
     Description = BmGetBootDescription (Handles[Index]);
+    if (Description == NULL) {
+      continue;
+    }
+
     BootOptions = ReallocatePool (
                     sizeof (EFI_BOOT_MANAGER_LOAD_OPTION) * (*BootOptionCount),
                     sizeof (EFI_BOOT_MANAGER_LOAD_OPTION) * (*BootOptionCount + 1),
                     BootOptions
                     );
-    ASSERT (BootOptions != NULL);
+    if (BootOptions == NULL) {
+      ASSERT (BootOptions != NULL);
+      FreePool (Description);
+      continue;
+    }
 
     Status = EfiBootManagerInitializeLoadOption (
                &BootOptions[(*BootOptionCount)++],

@@ -2566,7 +2566,7 @@ ScsiDiskInquiryDevice (
         //
         // Locate the code for the Block Limits VPD page
         //
-        for (Index = 0; Index < PageLength; Index++) {
+        for (Index = 0; (UINTN)Index < PageLength; Index++) {
           //
           // Sanity check
           //
