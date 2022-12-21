@@ -1859,7 +1859,7 @@ PciProgramResizableBar (
                                     );
   ASSERT_EFI_ERROR (Status);
 
-  for (Index = 0; Index < ResizableBarNumber; Index++) {
+  for (Index = 0; (UINTN)Index < ResizableBarNumber; Index++) {
     //
     // When the bit of Capabilities Set, indicates that the Function supports
     // operating with the BAR sized to (2^Bit) MB.

@@ -295,7 +295,7 @@ GetWakeupBuffer (
           WakeupBufferEnd = BASE_1MB;
         }
 
-        while (WakeupBufferEnd > WakeupBufferSize) {
+        while (WakeupBufferEnd > (UINT64)WakeupBufferSize) {
           //
           // Wakeup buffer should be aligned on 4KB
           //
