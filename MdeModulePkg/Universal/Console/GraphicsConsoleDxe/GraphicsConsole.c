@@ -463,7 +463,7 @@ GraphicsConsoleControllerDriverStart (
       //
       MaxMode = Private->GraphicsOutput->Mode->MaxMode;
 
-      for (ModeIndex = 0; ModeIndex < MaxMode; ModeIndex++) {
+      for (ModeIndex = 0; (UINTN)ModeIndex < MaxMode; ModeIndex++) {
         Status = Private->GraphicsOutput->QueryMode (
                                             Private->GraphicsOutput,
                                             ModeIndex,

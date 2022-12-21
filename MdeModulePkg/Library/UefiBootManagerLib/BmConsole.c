@@ -484,17 +484,19 @@ EfiBootManagerUpdateConsoleVariable (
     }
   }
 
-  //
-  // Finally, Update the variable of the default console by NewDevicePath
-  //
-  Status = gRT->SetVariable (
-                  mConVarName[ConsoleType],
-                  &gEfiGlobalVariableGuid,
-                  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS
-                  | ((ConsoleType < ConInDev) ? EFI_VARIABLE_NON_VOLATILE : 0),
-                  GetDevicePathSize (NewDevicePath),
-                  NewDevicePath
-                  );
+  if (NewDevicePath != NULL) {
+    //
+    // Finally, Update the variable of the default console by NewDevicePath
+    //
+    Status = gRT->SetVariable (
+                    mConVarName[ConsoleType],
+                    &gEfiGlobalVariableGuid,
+                    EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS
+                    | ((ConsoleType < ConInDev) ? EFI_VARIABLE_NON_VOLATILE : 0),
+                    GetDevicePathSize (NewDevicePath),
+                    NewDevicePath
+                    );
+  }
 
   if (VarConsole == NewDevicePath) {
     if (VarConsole != NULL) {
