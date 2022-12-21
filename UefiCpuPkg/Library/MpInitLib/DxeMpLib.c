@@ -25,6 +25,18 @@
 #include <Protocol/MemoryAttribute.h>
 // MU_CHANGE END
 
+// MU_CHANGE: Add protocol for reporting multi-processor debug info
+#include <Protocol/CpuMpDebug.h>
+CPU_MP_DEBUG_PROTOCOL  mCpuMpDebugProtocol = {
+  CPU_MP_DEBUG_SIGNATURE,
+  0,
+  0,
+  0,
+  INITIALIZE_LIST_HEAD_VARIABLE (mCpuMpDebugProtocol.Link)
+};
+
+// MU_CHANGE END
+
 #define  AP_SAFE_STACK_SIZE  128
 
 CPU_MP_DATA       *mCpuMpData                  = NULL;
@@ -155,6 +167,63 @@ BufferRemoveNoExecute (
   }
 
   return Status;
+}
+
+// MU_CHANGE END
+
+// MU_CHANGE START: Install protocol for reporting multi-processor debug info
+
+/**
+  Add CPU_MP_DEBUG_PROTOCOL entry to the global list
+
+  @param[in]  StackBuffer      Start of AP stack buffer
+  @param[in]  StackSize        Size of the stack
+  @param[in]  CpuNumber        AP CPU number
+**/
+STATIC
+VOID
+AppendCpuMpDebugProtocolEntry (
+  UINTN  StackBuffer,
+  UINTN  StackSize,
+  UINTN  CpuNumber
+  )
+{
+  CPU_MP_DEBUG_PROTOCOL  *Entry;
+
+  Entry = AllocatePool (sizeof (CPU_MP_DEBUG_PROTOCOL));
+  if (Entry == NULL) {
+    DEBUG ((DEBUG_INFO, "%a - Failed to allocate memory!\n", __FUNCTION__));
+    return;
+  }
+
+  Entry->Signature     = CPU_MP_DEBUG_SIGNATURE;
+  Entry->ApStackBuffer = StackBuffer;
+  Entry->ApStackSize   = StackSize;
+  Entry->CpuNumber     = CpuNumber;
+  InsertTailList (&mCpuMpDebugProtocol.Link, &Entry->Link);
+}
+
+// MU_CHANGE START: Install protocol for reporting multi-processor debug info
+
+/**
+  Install the CPU MP debug protocol
+**/
+STATIC
+VOID
+InstallCpuMpDebugProtocol (
+  VOID
+  )
+{
+  EFI_HANDLE  MpDebugHandle = NULL;
+  EFI_STATUS  Status;
+
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &MpDebugHandle,
+                  &gCpuMpDebugProtocolGuid,
+                  &mCpuMpDebugProtocol,
+                  NULL
+                  );
+  DEBUG ((DEBUG_INFO, "Installed gCpuMpDebugProtocolGuid - Status: %r\n", Status));
 }
 
 // MU_CHANGE END
@@ -675,7 +744,7 @@ InitMpGlobalData (
                       MemDesc.Attributes | EFI_MEMORY_RP
                       );
       ASSERT_EFI_ERROR (Status);
-
+      AppendCpuMpDebugProtocolEntry (StackBase, CpuMpData->CpuApStackSize, Index); // MU_CHANGE
       DEBUG ((
         DEBUG_INFO,
         "Stack Guard set at %lx [cpu%lu]!\n",
@@ -683,6 +752,8 @@ InitMpGlobalData (
         (UINT64)Index
         ));
     }
+
+    InstallCpuMpDebugProtocol (); // MU_CHANGE
   }
 
   //
