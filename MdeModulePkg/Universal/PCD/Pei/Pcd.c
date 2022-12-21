@@ -574,7 +574,7 @@ PeiPcdSetSku (
   }
 
   SkuIdTable = (SKU_ID *)((UINT8 *)PeiPcdDb + PeiPcdDb->SkuIdTableOffset);
-  for (Index = 0; Index < SkuIdTable[0]; Index++) {
+  for (Index = 0; (UINT64)Index < SkuIdTable[0]; Index++) {
     if (SkuId == SkuIdTable[Index + 1]) {
       DEBUG ((DEBUG_INFO, "PcdPei - SkuId is found in SkuId table.\n"));
       break;
