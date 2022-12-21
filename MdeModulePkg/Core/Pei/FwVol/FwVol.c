@@ -338,7 +338,7 @@ FindFileEx (
   FileOffset = (UINT32)((UINT8 *)FfsFileHeader - (UINT8 *)FwVolHeader);
   ASSERT (FileOffset <= 0xFFFFFFFF);
 
-  while (FileOffset < (FvLength - sizeof (EFI_FFS_FILE_HEADER))) {
+  while ((UINTN)FileOffset < (UINTN)(FvLength - sizeof (EFI_FFS_FILE_HEADER))) {
     //
     // Get FileState which is the highest bit of the State
     //

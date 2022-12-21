@@ -3807,18 +3807,31 @@ UefiDevicePathLibConvertTextToDevicePath (
   }
 
   DevicePath = (EFI_DEVICE_PATH_PROTOCOL *)AllocatePool (END_DEVICE_PATH_LENGTH);
-  ASSERT (DevicePath != NULL);
+  if (DevicePath == NULL) {
+    ASSERT (DevicePath != NULL);
+    return NULL;
+  }
+
   SetDevicePathEndNode (DevicePath);
 
   DevicePathStr = UefiDevicePathLibStrDuplicate (TextDevicePath);
+  if (DevicePathStr == NULL) {
+    return NULL;
+  }
 
   Str = DevicePathStr;
   while ((DeviceNodeStr = GetNextDeviceNodeStr (&Str, &IsInstanceEnd)) != NULL) {
     DeviceNode = UefiDevicePathLibConvertTextToDeviceNode (DeviceNodeStr);
 
     NewDevicePath = AppendDevicePathNode (DevicePath, DeviceNode);
-    FreePool (DevicePath);
-    FreePool (DeviceNode);
+    if (DevicePath != NULL) {
+      FreePool (DevicePath);
+    }
+
+    if (DeviceNode != NULL) {
+      FreePool (DeviceNode);
+    }
+
     DevicePath = NewDevicePath;
 
     if (IsInstanceEnd) {
@@ -3828,8 +3841,14 @@ UefiDevicePathLibConvertTextToDevicePath (
       DeviceNode->SubType = END_INSTANCE_DEVICE_PATH_SUBTYPE;
 
       NewDevicePath = AppendDevicePathNode (DevicePath, DeviceNode);
-      FreePool (DevicePath);
-      FreePool (DeviceNode);
+      if (DevicePath != NULL) {
+        FreePool (DevicePath);
+      }
+
+      if (DeviceNode != NULL) {
+        FreePool (DeviceNode);
+      }
+
       DevicePath = NewDevicePath;
     }
   }

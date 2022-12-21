@@ -102,7 +102,7 @@ PeCoffLoaderGetPeHeader (
   UINTN                     Size;
   UINTN                     ReadSize;
   UINT32                    SectionHeaderOffset;
-  UINT32                    Index;
+  UINTN                     Index;
   UINT32                    HeaderWithoutDataDir;
   CHAR8                     BufferData;
   UINTN                     NumberOfSections;
