@@ -755,6 +755,23 @@ InitMpGlobalData (
 
     InstallCpuMpDebugProtocol (); // MU_CHANGE
   }
+  // MU_CHANGE START: Add the Debug Protocol in the case that CpuStackGuard is not active
+  else {
+    CpuInfoInHob = (CPU_INFO_IN_HOB *)(UINTN)CpuMpData->CpuInfoInHob;
+    for (Index = 0; Index < CpuMpData->CpuCount; ++Index) {
+      if ((CpuInfoInHob != NULL) && (CpuInfoInHob[Index].ApTopOfStack != 0)) {
+        StackBase = (UINTN)CpuInfoInHob[Index].ApTopOfStack - CpuMpData->CpuApStackSize;
+      } else {
+        StackBase = CpuMpData->Buffer + Index * CpuMpData->CpuApStackSize;
+      }
+
+      AppendCpuMpDebugProtocolEntry (StackBase, CpuMpData->CpuApStackSize, Index);
+    }
+
+    InstallCpuMpDebugProtocol ();
+  }
+
+  // MU_CHANGE END
 
   //
   // Avoid APs access invalid buffer data which allocated by BootServices,
