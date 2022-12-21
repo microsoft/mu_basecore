@@ -23,6 +23,7 @@
   PrivateInclude
   Library/GoogleTestLib/googletest/googletest/include
   Library/GoogleTestLib/googletest/googlemock/include
+  Library/SubhookLib/subhook
 
 [Includes.Common.Private]
   #PrivateInclude   # MU_CHANGE - See above.
@@ -39,7 +40,6 @@
   #
   GoogleTestLib|Include/Library/GoogleTestLib.h
   SubhookLib|Include/Library/SubhookLib.h
-  FunctionMockLib|Include/Library/FunctionMockLib.h
 
 [LibraryClasses.Common.Private]
   ## @libraryclass Provides a unit test result report
