@@ -16,33 +16,32 @@
 # https://github.com/redhat-plumbers-in-action/advanced-issue-labeler
 
 policy:
-  - template: [bug_report.yml, documentation_request.yml, feature_request.yml]
-    section:
+  - section:
 
-      # Issue Template - Urgency Dropdown
-      - id: ['urgency']
-        block-list: []
-        label:
-          - name: 'urgency:low'
-            keys: ['Low']
-          - name: 'urgency:medium'
-            keys: ['Medium']
-          - name: 'urgency:high'
-            keys: ['High']
+    # Issue Template - Urgency Dropdown
+    - id: ['urgency']
+      block-list: []
+      label:
+        - name: 'urgency:low'
+          keys: ['Low']
+        - name: 'urgency:medium'
+          keys: ['Medium']
+        - name: 'urgency:high'
+          keys: ['High']
 
-      # Issue Template - Fix Owner Dropdown
-      - id: ['fix_owner', 'request_owner']
-        block-list: []
-        label:
-          - name: 'state:needs-owner'
-            keys: [
-              'Someone else needs to fix it',
-              'Someone else needs to make the change',
-              'Someone else needs to implement the feature'
-              ]
-          - name: 'state:needs-triage'
-            keys: [
-              'Someone else needs to fix it',
-              'Someone else needs to make the change',
-              'Someone else needs to implement the feature'
-              ]
+    # Issue Template - Fix Owner Dropdown
+    - id: ['fix_owner', 'request_owner']
+      block-list: []
+      label:
+        - name: 'state:needs-owner'
+          keys: [
+            'Someone else needs to fix it',
+            'Someone else needs to make the change',
+            'Someone else needs to implement the feature'
+            ]
+        - name: 'state:needs-triage'
+          keys: [
+            'Someone else needs to fix it',
+            'Someone else needs to make the change',
+            'Someone else needs to implement the feature'
+            ]
