@@ -217,14 +217,9 @@
   ExceptionPersistenceLib|Include/Library/ExceptionPersistenceLib.h
 
   # MU_CHANGE - Add MemoryBucketLib to MdeModulePkg
-  ## @libraryclass Provides a way for Runtime memory buckets to be created during Pei
-  #
-  MemoryBucketLib|Include/Library/MemoryBucketLib.h
-
-  # MU_CHANGE - Add MemoryBucketHelperLib to MdeModulePkg
   ## @libraryclass Keeps track of Runtime memory buckets during Pei
   #
-  MemoryBucketHelperLib|Include/Library/MemoryBucketHelperLib.h
+  MemoryBucketLib|Include/Library/MemoryBucketLib.h
 
 [Guids]
   ## MdeModule package token space guid

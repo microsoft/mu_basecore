@@ -36,6 +36,7 @@ typedef struct {
 typedef struct {
   EFI_MEMORY_TYPE_STATISTICS    RuntimeBuckets[4];
   EFI_PHYSICAL_ADDRESS          CurrentTopInBucket[4];
+  BOOLEAN                       MemoryBucketsDisabled;
 } PEI_MEMORY_BUCKET_INFORMATION;
 
 #endif

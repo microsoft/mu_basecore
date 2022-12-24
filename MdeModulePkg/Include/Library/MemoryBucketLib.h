@@ -9,8 +9,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef __MEMORY_BUCKET_HELPER_LIB_H__
-#define __MEMORY_BUCKET_HELPER_LIB_H__
+#ifndef __MEMORY_BUCKET_LIB_H__
+#define __MEMORY_BUCKET_LIB_H__
 
 #include <Uefi.h>
 #include <Base.h>
@@ -151,17 +151,6 @@ IsRuntimeMemoryInitialized (
   );
 
 /**
-  This function returns the standard length of a PEI memory bucket.
-
-  @retval   Returns the length of a PEI memory bucket.
-**/
-UINTN
-EFIAPI
-GetBucketLength (
-  VOID
-  );
-
-/**
   This function checks if the memory type we are allocating is being kept
   track of within the PEI memory bucket structure.
 
@@ -179,13 +168,12 @@ IsRuntimeType (
   );
 
 /**
-  Function to build a HOB for the memory allocation. It will search and reuse
-  the unused(freed) memory allocation HOB, or build memory allocation HOB
-  normally if no unused(freed) memory allocation HOB found.
+  Internal function to build a HOB for the memory allocation.
+  It will search and reuse the unused(freed) memory allocation HOB,
+  or build memory allocation HOB normally if no unused(freed) memory allocation HOB found.
 
   @param[in] BaseAddress        The 64 bit physical address of the memory.
   @param[in] Length             The length of the memory allocation in bytes.
-
 **/
 VOID
 BuildRuntimeMemoryAllocationInfoHob (
@@ -193,26 +181,16 @@ BuildRuntimeMemoryAllocationInfoHob (
   );
 
 /**
-  Internal function to build a HOB for the memory allocation.
-  It will search and reuse the unused(freed) memory allocation HOB,
-  or build memory allocation HOB normally if no unused(freed) memory allocation HOB found.
-  @param[in] BaseAddress        The 64 bit physical address of the memory.
-  @param[in] Length             The length of the memory allocation in bytes.
-**/
-VOID
-InternalBuildRuntimeMemoryAllocationInfoHob (
-  VOID
-  );
-
-/**
   Function that makes pulls the memory bucket hob information locally
   if necessary.  This is so it can be more easily referenced.
 
+  @param[in] MemBucketHob   A passed in hob that's associated with the
+                            PEI_MEMORY_BUCKET_INFORMATION GUID.
 **/
 VOID
 EFIAPI
 SyncMemoryBuckets (
-  VOID
+  IN VOID  *MemBucketHob
   );
 
 /**

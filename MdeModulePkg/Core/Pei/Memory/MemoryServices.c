@@ -654,7 +654,7 @@ PeiAllocatePages (
 
   // MU_CHANGE START
   MemBucketHob = GetFirstGuidHob (&gMemoryBucketInformationGuid);
-  SyncMemoryBuckets ();
+  SyncMemoryBuckets (MemBucketHob);
 
   // Check if we're using the memory buckets
   if (IsRuntimeType (MemoryType)) {
@@ -663,15 +663,17 @@ PeiAllocatePages (
       *FreeMemoryBottom = GetCurrentBucketBottom (MemoryType);
     } else {
       InitializeMemoryBuckets (*FreeMemoryTop);
-      *FreeMemoryTop    = GetCurrentBucketTop (MemoryType);
-      *FreeMemoryBottom = GetCurrentBucketBottom (MemoryType);
+      if (IsRuntimeType (MemoryType)) {
+        *FreeMemoryTop    = GetCurrentBucketTop (MemoryType);
+        *FreeMemoryBottom = GetCurrentBucketBottom (MemoryType);
+      }
     }
-  }
 
-  // Check to make sure we aren't allocating memory in runtime buckets
-  if (CheckIfInRuntimeBoundary (*FreeMemoryTop)) {
+    // Check to make sure we aren't allocating memory in runtime buckets
+  } else if (CheckIfInRuntimeBoundary (*FreeMemoryTop)) {
     *FreeMemoryTop = GetEndOfBucketsAddress ();
   }
+
   // MU_CHANGE END
 
   //
@@ -727,7 +729,6 @@ PeiAllocatePages (
     // Update the value for the caller
     //
     *Memory = *(FreeMemoryTop);
-    UpdateCurrentBucketTop (*FreeMemoryTop, MemoryType);
 
     //
     // Create a memory allocation HOB.
@@ -738,21 +739,26 @@ PeiAllocatePages (
       MemoryType
       );
 
-    // MU_CHANGE START
-    UpdateRuntimeMemoryStats (Pages, MemoryType);
+    // MU_CHANGE START - Save memory allocations for the PEI memory buckets
+    if (IsRuntimeType (MemoryType)) {
+      UpdateCurrentBucketTop (*FreeMemoryTop, MemoryType);
 
-    if (MemBucketHob == NULL) {
-      InternalBuildRuntimeMemoryAllocationInfoHob ();
-    } else {
-      RuntimeBucketHob = GetRuntimeBucketHob ();
-      CopyMem (
-        GET_GUID_HOB_DATA (MemBucketHob),
-        &RuntimeBucketHob,
-        (sizeof (PEI_MEMORY_BUCKET_INFORMATION))
-        );
+      UpdateRuntimeMemoryStats (Pages, MemoryType);
+
+      if (MemBucketHob == NULL) {
+        BuildRuntimeMemoryAllocationInfoHob ();
+      } else {
+        RuntimeBucketHob = GetRuntimeBucketHob ();
+        CopyMem (
+          GET_GUID_HOB_DATA (MemBucketHob),
+          &RuntimeBucketHob,
+          (sizeof (PEI_MEMORY_BUCKET_INFORMATION))
+          );
+      }
+
+      InitializeRuntimeMemoryBuckets ();
     }
 
-    InitializeRuntimeMemoryBuckets ();
     // MU_CHANGE END
 
     return EFI_SUCCESS;

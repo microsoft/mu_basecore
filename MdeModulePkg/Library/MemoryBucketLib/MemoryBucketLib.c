@@ -10,7 +10,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <PiPei.h>
 
 #include <Library/DebugLib.h>
-#include <Library/MemoryBucketHelperLib.h>
+#include <Library/MemoryBucketLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/Hoblib.h>
 
@@ -43,8 +43,8 @@ UINTN  NumberOfBuckets = 4;
 // Information storage for Hob
 PEI_MEMORY_BUCKET_INFORMATION  RuntimeBucketHob;
 
-// Number of pages that can fit into each memory bucket.
-UINT32  RuntimeMemLength = 50;
+// TRUE if PEI memory buckets are disabled
+BOOLEAN  MemoryBucketsDisabled = FALSE;
 
 // TRUE if we have initialized the runtime memory buckets.
 BOOLEAN  RuntimeMemInitialized = FALSE;
@@ -62,6 +62,12 @@ InitializeMemoryBucketSizes (
   RuntimeMemoryStats[1].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeData);
   RuntimeMemoryStats[2].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiReclaimMemory);
   RuntimeMemoryStats[3].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiMemoryNvs);
+
+  // Disable memory buckets if the PCDs are unaltered.
+  if ((RuntimeMemoryStats[0].NumberOfPages + RuntimeMemoryStats[1].NumberOfPages +
+    RuntimeMemoryStats[2].NumberOfPages + RuntimeMemoryStats[3].NumberOfPages) == 0) {
+    MemoryBucketsDisabled = TRUE;
+  }
 }
 
 /**
@@ -81,21 +87,28 @@ InitializeMemoryBuckets (
   )
 {
   UINTN   Index;
+  UINTN   AdjustedIndex;
   UINT32  AddressAdjustment;
 
   InitializeMemoryBucketSizes ();
+  AdjustedIndex = 0;
 
   for (Index = 0; Index < NumberOfBuckets; Index++) {
     // Initialize memory locations for buckets
     AddressAdjustment = EFI_PAGE_SIZE *
-                        ((UINT32)RuntimeMemoryStats[Index].NumberOfPages * (UINT32)Index);
+                        ((UINT32)RuntimeMemoryStats[Index].NumberOfPages * (UINT32)AdjustedIndex);
     RuntimeMemoryStats[Index].BaseAddress = StartingAddress - AddressAdjustment;
     CurrentBucketTops[Index]              = StartingAddress - AddressAdjustment;
 
     // Initialize Hob to be able to reference it later
     RuntimeBucketHob.RuntimeBuckets[Index]     = RuntimeMemoryStats[Index];
     RuntimeBucketHob.CurrentTopInBucket[Index] = CurrentBucketTops[Index];
+    if (RuntimeMemoryStats[Index].NumberOfPages != 0) {
+      AdjustedIndex += 1;
+    }
   }
+
+  RuntimeBucketHob.MemoryBucketsDisabled = MemoryBucketsDisabled;
 }
 
 /**
@@ -216,7 +229,16 @@ GetEndOfBucketsAddress (
   VOID
   )
 {
-  return GetCurrentBucketBottom (EfiACPIMemoryNVS);
+  UINTN Index;
+
+  for (Index = NumberOfBuckets-1; Index >= 0; Index--) {
+    if (RuntimeMemoryStats[Index].NumberOfPages > 0) {
+      return GetCurrentBucketBottom (MemoryTypes[Index]);
+    }
+  }
+  
+  DEBUG ((DEBUG_ERROR, "We should not be calling GetEndOfBucketsAddress if we have Pei memory buckets disabled!\n"));
+  return 0;
 }
 
 /**
@@ -243,7 +265,7 @@ UpdateRuntimeMemoryStats (
     return;
   }
 
-  RuntimeMemoryStats[Index].CurrentNumberOfPages = (UINT64)RuntimeMemoryStats[Index].NumberOfPages + (UINT64)Pages;
+  RuntimeMemoryStats[Index].CurrentNumberOfPages = (UINT64)RuntimeMemoryStats[Index].CurrentNumberOfPages + (UINT64)Pages;
 
   RuntimeBucketHob.RuntimeBuckets[Index]     = RuntimeMemoryStats[Index];
   RuntimeBucketHob.CurrentTopInBucket[Index] = CurrentBucketTops[Index];
@@ -264,8 +286,13 @@ CheckIfInRuntimeBoundary (
   EFI_PHYSICAL_ADDRESS  Start
   )
 {
+  // There is no boundary if the buckets are disabled
+  if (MemoryBucketsDisabled) {
+    return FALSE;
+  }
+
   if (RuntimeMemInitialized &&
-      ((Start >= (RuntimeMemoryStats[0].BaseAddress - (NumberOfBuckets * EFI_PAGE_SIZE * RuntimeMemLength))) &&
+      ((Start >= GetEndOfBucketsAddress ()) &&
        (Start <= RuntimeMemoryStats[0].BaseAddress)))
   {
     return TRUE;
@@ -302,20 +329,6 @@ IsRuntimeMemoryInitialized (
 }
 
 /**
-  This function returns the standard length of a PEI memory bucket.
-
-  @retval   Returns the length of a PEI memory bucket.
-**/
-UINTN
-EFIAPI
-GetBucketLength (
-  VOID
-  )
-{
-  return RuntimeMemLength;
-}
-
-/**
   This function checks if the memory type we are allocating is being kept
   track of within the PEI memory bucket structure.
 
@@ -334,6 +347,11 @@ IsRuntimeType (
 {
   UINTN  Index;
 
+  // If Runtime Buckets are disabled then deny memory bucket operations.
+  if (MemoryBucketsDisabled) {
+    return FALSE;
+  }
+
   for (Index = 0; Index < NumberOfBuckets; Index++) {
     if (MemoryType == MemoryTypes[Index]) {
       return TRUE;
@@ -344,30 +362,6 @@ IsRuntimeType (
 }
 
 /**
-  Function to build a HOB for the memory allocation. It will search and reuse
-  the unused(freed) memory allocation HOB, or build memory allocation HOB
-  normally if no unused(freed) memory allocation HOB found.
-
-  @param[in] BaseAddress        The 64 bit physical address of the memory.
-  @param[in] Length             The length of the memory allocation in bytes.
-
-**/
-/*VOID
-BuildRuntimeMemoryAllocationInfoHob (
-  VOID
-  )
-{
-  PEI_MEMORY_BUCKET_INFORMATION  RuntimeBucketHob;
-
-  RuntimeBucketHob = GetRuntimeBucketHob ();
-  BuildGuidDataHob (
-    &gMemoryBucketInformationGuid,
-    &RuntimeBucketHob,
-    (sizeof (PEI_MEMORY_BUCKET_INFORMATION))
-    );
-}*/
-
-/**
   Internal function to build a HOB for the memory allocation.
   It will search and reuse the unused(freed) memory allocation HOB,
   or build memory allocation HOB normally if no unused(freed) memory allocation HOB found.
@@ -375,7 +369,7 @@ BuildRuntimeMemoryAllocationInfoHob (
   @param[in] Length             The length of the memory allocation in bytes.
 **/
 VOID
-InternalBuildRuntimeMemoryAllocationInfoHob (
+BuildRuntimeMemoryAllocationInfoHob (
   VOID
   )
 {
@@ -391,16 +385,15 @@ InternalBuildRuntimeMemoryAllocationInfoHob (
   Function that makes pulls the memory bucket hob information locally
   if necessary.  This is so it can be more easily referenced.
 
+  @param[in] MemBucketHob   A passed in hob that's associated with the
+                            PEI_MEMORY_BUCKET_INFORMATION GUID.
 **/
 VOID
 EFIAPI
 SyncMemoryBuckets (
-  VOID
+  IN VOID *MemBucketHob
   )
 {
-  EFI_HOB_GUID_TYPE  *MemBucketHob;
-
-  MemBucketHob = GetFirstGuidHob (&gMemoryBucketInformationGuid);
   if (!IsRuntimeMemoryInitialized () && (MemBucketHob != NULL)) {
     SetMemoryBucketsFromHob (GET_GUID_HOB_DATA (MemBucketHob));
   }
@@ -447,6 +440,7 @@ SetMemoryBucketsFromHob (
     RuntimeMemoryStats[Index] = TempStats->RuntimeBuckets[Index];
     CurrentBucketTops[Index]  = TempStats->CurrentTopInBucket[Index];
   }
+  MemoryBucketsDisabled = TempStats->MemoryBucketsDisabled;
 
   RuntimeMemInitialized = TRUE;
 }
