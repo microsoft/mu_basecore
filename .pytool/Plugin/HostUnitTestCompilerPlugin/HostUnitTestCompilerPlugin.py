@@ -137,10 +137,11 @@ class HostUnitTestCompilerPlugin(ICiBuildPlugin):
                 return -1
 
         uefiBuilder = UefiBuilder()
+        
         # do all the steps
         # WorkSpace, PackagesPath, PInHelper, PInManager
         # Skip post build plugins and run only host-based-tests manually
-        sys.argv.append("--SkipPostBuild")
+        uefiBuilder.SkipPostBuild = True
         ret = uefiBuilder.Go(Edk2pathObj.WorkspacePath, os.pathsep.join(Edk2pathObj.PackagePathList), PLMHelper, PLM)
         if ret != 0:  # failure:
             tc.SetFailed("Compile failed for {0}".format(packagename), "Compile_FAILED")
