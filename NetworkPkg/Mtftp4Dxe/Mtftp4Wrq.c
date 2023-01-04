@@ -465,6 +465,8 @@ ON_EXIT:
     Status = UdpIoRecvDatagram (Instance->UnicastPort, Mtftp4WrqInput, Instance, 0);
   }
 
+  DEBUG ((DEBUG_NET, "%a: Completed=%d. Code=%r\n", __FUNCTION__, Completed, Status));
+
   //
   // Status may have been updated by UdpIoRecvDatagram
   //
@@ -495,6 +497,8 @@ Mtftp4WrqStart (
 {
   EFI_STATUS  Status;
 
+  DEBUG ((DEBUG_NET, "%a: Entry\n", __FUNCTION__));
+
   //
   // The valid block number range are [0, 0xffff]. For example:
   // the client sends an WRQ request to the server, the server
@@ -504,12 +508,14 @@ Mtftp4WrqStart (
   Status = Mtftp4InitBlockRange (&Instance->Blocks, 0, 0xffff);
 
   if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_NET, "%a: TFTP ERROR(%d) = %r\n", __FUNCTION__, __LINE__, Status));
     return Status;
   }
 
   Status = Mtftp4SendRequest (Instance);
 
   if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_NET, "%a: TFTP ERROR(%d) = %r\n", __FUNCTION__, __LINE__, Status));
     return Status;
   }
 

@@ -216,6 +216,11 @@
   #
   ExceptionPersistenceLib|Include/Library/ExceptionPersistenceLib.h
 
+  # MU_CHANGE - Add MemoryBinOverrideLib to MdeModulePkg
+  ## @libraryclass Provides a way to override memory bin locations and sizes
+  #                dynamically.
+  #
+  MemoryBinOverrideLib|Include/Library/MemoryBinOverrideLib.h
   # MU_CHANGE - Add MemoryBucketLib to MdeModulePkg
   ## @libraryclass Keeps track of Runtime memory buckets during Pei
   #
@@ -544,7 +549,6 @@
 
   ## GUID used for Boot Discovery Policy FormSet guid and related variables.
   gBootDiscoveryPolicyMgrFormsetGuid = { 0x5b6f7107, 0xbb3c, 0x4660, { 0x92, 0xcd, 0x54, 0x26, 0x90, 0x28, 0x0b, 0xbd } }
-
   ## MU_CHANGE
   ## PEI memory buckets Guid.  Used to create and fetch the PEI memory buckets.
   #

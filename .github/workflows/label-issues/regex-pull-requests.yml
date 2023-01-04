@@ -1,0 +1,30 @@
+# Specifies labels to apply to pull requests in Project Mu repositories based on regular expressions.
+#
+# NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
+#       instead of the file in this repo.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+# For more information, see:
+# https://github.com/github/issue-labeler
+
+# Maintenance: Keep labels organized in ascending alphabetical order - easier to scan, identify duplicates, etc.
+
+impact:breaking-change:
+  - '\s*-\s*\[\s*[x|X]\s*\] Breaking change\?'
+
+impact:non-functional:
+  - '\s*-\s*\[\s*(?![x|X])\s*\] Impacts functionality\?'
+
+impact:security:
+  - '\s*-\s*\[\s*[x|X]\s*\] Impacts security\?'
+
+impact:testing:
+  - '\s*-\s*\[\s*[x|X]\s*\] Includes tests\?'
+
+type:documentation:
+  - '\s*-\s*\[\s*[x|X]\s*\] Includes documentation\?'

@@ -39,6 +39,7 @@ DhcpInitRequest (
     Status = DhcpSendMessage (DhcpSb, NULL, NULL, DHCP_MSG_DISCOVER, NULL);
 
     if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_NET | DEBUG_ERROR, "%a: SendError, new state is Dhcp4Init. Code=%r\n", __FUNCTION__, Status));
       DhcpSb->DhcpState = Dhcp4Init;
       return Status;
     }
@@ -47,6 +48,7 @@ DhcpInitRequest (
     Status = DhcpSendMessage (DhcpSb, NULL, NULL, DHCP_MSG_REQUEST, NULL);
 
     if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_NET | DEBUG_ERROR, "%a: SendError, new state is Dhcp4InitReboot. Code-%r\n", __FUNCTION__, Status));
       DhcpSb->DhcpState = Dhcp4InitReboot;
       return Status;
     }
@@ -85,6 +87,8 @@ DhcpCallUser (
   if (NewPacket != NULL) {
     *NewPacket = NULL;
   }
+
+  DEBUG ((DEBUG_NET, "%a: Calling user code with DhcpState=%d.\n", __FUNCTION__, Event));
 
   //
   // If user doesn't provide the call back function, return the value
@@ -183,6 +187,8 @@ DhcpSetState (
   )
 {
   EFI_STATUS  Status;
+
+  DEBUG ((DEBUG_NET, "%a: Setting state to %d, CallUser=%d.\n", __FUNCTION__, State, CallUser));
 
   if (CallUser) {
     Status = EFI_SUCCESS;
@@ -425,6 +431,8 @@ DhcpCleanLease (
   IN DHCP_SERVICE  *DhcpSb
   )
 {
+  DEBUG ((DEBUG_NET, "%a: Setting state to Init.\n", __FUNCTION__));
+
   DhcpSb->DhcpState  = Dhcp4Init;
   DhcpSb->Xid        = DhcpSb->Xid + 1;
   DhcpSb->ClientAddr = 0;
@@ -568,8 +576,10 @@ DhcpEndSession (
   )
 {
   if (DHCP_CONNECTED (DhcpSb->DhcpState)) {
+    DEBUG ((DEBUG_NET, "%a: AddressLost.\n", __FUNCTION__));
     DhcpCallUser (DhcpSb, Dhcp4AddressLost, NULL, NULL);
   } else {
+    DEBUG ((DEBUG_NET, "%a: Fail.\n", __FUNCTION__));
     DhcpCallUser (DhcpSb, Dhcp4Fail, NULL, NULL);
   }
 
@@ -869,22 +879,28 @@ DhcpHandleReboot (
     DhcpCallUser (DhcpSb, Dhcp4RcvdNak, Packet, NULL);
 
     DhcpSb->ClientAddr = 0;
-    DhcpSb->DhcpState  = Dhcp4Init;
+    DEBUG ((DEBUG_NET, "%a: NAK received, going to Init\n", __FUNCTION__));
+
+    DhcpSb->DhcpState = Dhcp4Init;
 
     Status = DhcpInitRequest (DhcpSb);
     goto ON_EXIT;
   }
 
+  DEBUG ((DEBUG_NET, "%a: ACK Received.\n", __FUNCTION__));
+
   //
   // Check whether the ACK matches the selected offer
   //
   if (EFI_NTOHL (Head->YourAddr) != DhcpSb->ClientAddr) {
+    DEBUG ((DEBUG_NET, "%a: ACK didn't match offer.\n", __FUNCTION__));
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
 
   Status = DhcpCallUser (DhcpSb, Dhcp4RcvdAck, Packet, NULL);
   if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_NET, "%a: Error from CallUser - %r.\n", __FUNCTION__, Status));
     goto ON_EXIT;
   }
 
@@ -893,6 +909,7 @@ DhcpHandleReboot (
   //
   DhcpSb->Para = AllocateCopyPool (sizeof (DHCP_PARAMETER), Para);
   if (DhcpSb->Para == NULL) {
+    DEBUG ((DEBUG_NET, "%a: Out of resources.\n", __FUNCTION__));
     Status = EFI_OUT_OF_RESOURCES;
     goto ON_EXIT;
   }
@@ -900,11 +917,13 @@ DhcpHandleReboot (
   DhcpSb->Selected = Packet;
   Status           = DhcpLeaseAcquired (DhcpSb);
   if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_NET, "%a: Error from LeaseAcquired - %r.\n", __FUNCTION__, Status));
     return Status;
   }
 
   DhcpSb->IoStatus = EFI_SUCCESS;
   DhcpNotifyUser (DhcpSb, DHCP_NOTIFY_COMPLETION);
+  DEBUG ((DEBUG_NET, "%a: DHCP Complete.\n", __FUNCTION__));
   return EFI_SUCCESS;
 
 ON_EXIT:
@@ -954,6 +973,7 @@ DhcpInput (
   ASSERT (UdpPacket != NULL);
 
   if (DhcpSb->DhcpState == Dhcp4Stopped) {
+    DEBUG ((DEBUG_NET, "%a: Restarting due to state == Stopped.\n", __FUNCTION__));
     goto RESTART;
   }
 
@@ -961,6 +981,7 @@ DhcpInput (
   // Validate the packet received
   //
   if (UdpPacket->TotalSize < sizeof (EFI_DHCP4_HEADER)) {
+    DEBUG ((DEBUG_NET, "%a: Restarting due to invalid header size.\n", __FUNCTION__));
     goto RESTART;
   }
 
@@ -971,6 +992,7 @@ DhcpInput (
   Packet = (EFI_DHCP4_PACKET *)AllocatePool (Len);
 
   if (Packet == NULL) {
+    DEBUG ((DEBUG_NET, "%a: Restarting due to out of resources.\n", __FUNCTION__));
     goto RESTART;
   }
 
@@ -979,6 +1001,7 @@ DhcpInput (
   Packet->Length = NetbufCopy (UdpPacket, 0, UdpPacket->TotalSize, (UINT8 *)Head);
 
   if (Packet->Length != UdpPacket->TotalSize) {
+    DEBUG ((DEBUG_NET, "%a: Restarting due to incorrect packet length.\n", __FUNCTION__));
     goto RESTART;
   }
 
@@ -989,6 +1012,7 @@ DhcpInput (
       (NTOHL (Head->Xid) != DhcpSb->Xid) ||
       (CompareMem (DhcpSb->ClientAddressSendOut, Head->ClientHwAddr, Head->HwAddrLen) != 0))
   {
+    DEBUG ((DEBUG_NET, "%a: Restarting due to not our answer.\n", __FUNCTION__));
     goto RESTART;
   }
 
@@ -1000,6 +1024,7 @@ DhcpInput (
       (Packet->Dhcp4.Magik == DHCP_OPTION_MAGIC) &&
       EFI_ERROR (DhcpValidateOptions (Packet, &Para)))
   {
+    DEBUG ((DEBUG_NET, "%a: Restarting due to bad options.\n", __FUNCTION__));
     goto RESTART;
   }
 
@@ -1017,10 +1042,12 @@ DhcpInput (
   switch (DhcpSb->DhcpState) {
     case Dhcp4Selecting:
       Status = DhcpHandleSelect (DhcpSb, Packet, Para);
+      DEBUG ((DEBUG_NET, "%a: Selecting - code=%r.\n", __FUNCTION__, Status));
       break;
 
     case Dhcp4Requesting:
       Status = DhcpHandleRequest (DhcpSb, Packet, Para);
+      DEBUG ((DEBUG_NET, "%a: Requesting - code=%r.\n", __FUNCTION__, Status));
       break;
 
     case Dhcp4InitReboot:
@@ -1029,6 +1056,7 @@ DhcpInput (
       //
       // Ignore the packet in INITREBOOT, INIT and BOUND states
       //
+      DEBUG ((DEBUG_NET, "%a: Ignoring Init, InitReboot, Bound.\n", __FUNCTION__));
       FreePool (Packet);
       Status = EFI_SUCCESS;
       break;
@@ -1036,10 +1064,12 @@ DhcpInput (
     case Dhcp4Renewing:
     case Dhcp4Rebinding:
       Status = DhcpHandleRenewRebind (DhcpSb, Packet, Para);
+      DEBUG ((DEBUG_NET, "%a: Renew/Rebinding - code=%r.\n", __FUNCTION__, Status));
       break;
 
     case Dhcp4Rebooting:
       Status = DhcpHandleReboot (DhcpSb, Packet, Para);
+      DEBUG ((DEBUG_NET, "%a: Rebooting - code=%r.\n", __FUNCTION__, Status));
       break;
   }
 
@@ -1391,6 +1421,8 @@ DhcpRetransmit (
 
   ASSERT (DhcpSb->LastPacket != NULL);
 
+  DEBUG ((DEBUG_NET, "%a: Entry...\n", __FUNCTION__));
+
   //
   // For REQUEST message in Dhcp4Requesting state, do not change the secs fields.
   //
@@ -1523,6 +1555,7 @@ DhcpOnTimerTick (
         }
 
         DhcpSb->IoStatus = EFI_TIMEOUT;
+        DEBUG ((DEBUG_NET, "%a: Timeout\n", __FUNCTION__));
         DhcpNotifyUser (DhcpSb, DHCP_NOTIFY_RENEWREBIND);
       }
     } else {
@@ -1607,6 +1640,7 @@ ON_EXIT:
     Instance = NET_LIST_USER_STRUCT (Entry, DHCP_PROTOCOL, Link);
     Instance->Timeout--;
     if ((Instance->Timeout == 0) && (Instance->Token != NULL)) {
+      DEBUG ((DEBUG_NET, "%a: Calling PxeDhcpDone\n", __FUNCTION__));
       PxeDhcpDone (Instance);
     }
   }
@@ -1614,6 +1648,8 @@ ON_EXIT:
   return;
 
 END_SESSION:
+  DEBUG ((DEBUG_NET, "%a: Ending session with timeout\n", __FUNCTION__));
+
   DhcpEndSession (DhcpSb, EFI_TIMEOUT);
 
   return;
