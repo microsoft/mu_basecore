@@ -291,8 +291,12 @@ GetWakeupBuffer (
   EFI_PHYSICAL_ADDRESS  StartAddress;
   EFI_MEMORY_TYPE       MemoryType;
 
-  if (ConfidentialComputingGuestHas (CCAttrAmdSevEs) &&
-      !ConfidentialComputingGuestHas (CCAttrAmdSevSnp))
+  // MU_CHANGE START Add PCD to make wakeup buffer reserved
+  if (PcdGetBool (PcdCpuApWakeupBufferReserved)) {
+    MemoryType = EfiReservedMemoryType;
+    // MU_CHANGE END
+  } else if (ConfidentialComputingGuestHas (CCAttrAmdSevEs) &&
+             !ConfidentialComputingGuestHas (CCAttrAmdSevSnp))
   {
     //
     // An SEV-ES-only guest requires the memory to be reserved. SEV-SNP, which
