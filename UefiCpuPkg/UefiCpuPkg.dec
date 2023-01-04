@@ -340,7 +340,7 @@
 
   # MU_CHANGE START Add PCD to make wakeup buffer reserved
   ## Specifies that the wake-up buffer for AP startup should be permanently
-  #  allocated as reserved.
+  # allocated as reserved.
   # @Prompt Allocates CPU wake-up buffer as reserved.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuApWakeupBufferReserved|FALSE|BOOLEAN|0x0000001F
   # MU_CHANGE END
