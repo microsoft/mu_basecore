@@ -65,7 +65,8 @@ InitializeMemoryBucketSizes (
 
   // Disable memory buckets if the PCDs are unaltered.
   if ((RuntimeMemoryStats[0].NumberOfPages + RuntimeMemoryStats[1].NumberOfPages +
-    RuntimeMemoryStats[2].NumberOfPages + RuntimeMemoryStats[3].NumberOfPages) == 0) {
+       RuntimeMemoryStats[2].NumberOfPages + RuntimeMemoryStats[3].NumberOfPages) == 0)
+  {
     MemoryBucketsDisabled = TRUE;
   }
 }
@@ -229,14 +230,14 @@ GetEndOfBucketsAddress (
   VOID
   )
 {
-  UINTN Index;
+  UINTN  Index;
 
   for (Index = NumberOfBuckets-1; Index >= 0; Index--) {
     if (RuntimeMemoryStats[Index].NumberOfPages > 0) {
       return GetCurrentBucketBottom (MemoryTypes[Index]);
     }
   }
-  
+
   DEBUG ((DEBUG_ERROR, "We should not be calling GetEndOfBucketsAddress if we have Pei memory buckets disabled!\n"));
   return 0;
 }
@@ -380,7 +381,6 @@ BuildRuntimeMemoryAllocationInfoHob (
     );
 }
 
-
 /**
   Function that makes pulls the memory bucket hob information locally
   if necessary.  This is so it can be more easily referenced.
@@ -391,7 +391,7 @@ BuildRuntimeMemoryAllocationInfoHob (
 VOID
 EFIAPI
 SyncMemoryBuckets (
-  IN VOID *MemBucketHob
+  IN VOID  *MemBucketHob
   )
 {
   if (!IsRuntimeMemoryInitialized () && (MemBucketHob != NULL)) {
@@ -440,6 +440,7 @@ SetMemoryBucketsFromHob (
     RuntimeMemoryStats[Index] = TempStats->RuntimeBuckets[Index];
     CurrentBucketTops[Index]  = TempStats->CurrentTopInBucket[Index];
   }
+
   MemoryBucketsDisabled = TempStats->MemoryBucketsDisabled;
 
   RuntimeMemInitialized = TRUE;
