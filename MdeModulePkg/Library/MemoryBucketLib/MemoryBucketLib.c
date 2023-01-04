@@ -12,7 +12,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DebugLib.h>
 #include <Library/MemoryBucketLib.h>
 #include <Library/BaseMemoryLib.h>
-#include <Library/Hoblib.h>
+#include <Library/HobLib.h>
 
 // Memory types being kept in buckets in PEI.  Currently only runtime types.
 EFI_MEMORY_TYPE  MemoryTypes[4] = {
