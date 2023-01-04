@@ -20,7 +20,10 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: main
+      ref: refs/tags/v1.3.0
+  containers:
+    - container: linux-gcc
+      image: ghcr.io/tianocore/containers/fedora-35-build:2113a0e
 
 variables:
 - group: architectures-arm-64-x86-64
@@ -33,8 +36,9 @@ jobs:
     extra_build_args: CODE_COVERAGE=TRUE CC_HTML=TRUE
     extra_install_step:
     - script: |
-              sudo apt-get install -y mingw-w64 lcov
+              sudo microdnf install --assumeyes mingw64-gcc lcov
               pip install lcov_cobertura pycobertura
       displayName: Install Windows Resource Compiler for Linux & Code Coverage Tools
     tool_chain_tag: $(tool_chain_tag)
     vm_image: $(vm_image)
+    container_image: linux-gcc
