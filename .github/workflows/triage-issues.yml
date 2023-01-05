@@ -18,5 +18,5 @@ on:
     types: [ opened ]
 
 jobs:
-  sync:
-    uses: microsoft/mu_devops/.github/workflows/IssueTriager.yml@v1.3.0
+  triage:
+    uses: microsoft/mu_devops/.github/workflows/IssueTriager.yml@v1.4.0
