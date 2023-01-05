@@ -405,11 +405,12 @@ before building the HOB.
 ## **Memory Protection Special Regions**
 
 Memory protection is not activated until the CPU Architecture Protocol has been installed because the
-protocol facilitates access to the attribute set functions in CpuDxe. Many allocations and image loads
-will have occurred by the time the protocol is published so careful accounting is required to ensure
-appropriate attributes are applied. An event notification triggered on the CPU Architecture Protocol
-installation will combine the GCD and EFI memory maps to create a full map of memory. Because image memory
-is allocated for the entire image and not each section (code and data), the images are separated within
+protocol facilitates access to the attribute manipulation functions in CpuDxe which update the translation/page tables.
+Many allocations and image loads will have occurred by the time the protocol is published so careful accounting
+is required to ensure appropriate attributes are applied. An event notification triggered on the CPU Architecture
+Protocol installation will combine the GCD and EFI memory maps to create a full map of memory for use internally
+by the memory protection initialization logic. Because image memory is allocated for the entire image and not each
+section (code and data), the images are separated within
 the combined map so NX can be applied to data regions and RO can be applied to code regions. After breaking
 up the map so each DXE image section has its own descriptor, every non-image descriptor will have its attributes
 set based on its EFI memory type. There are cases where the platform will want to attributes applied to
