@@ -413,8 +413,9 @@ by the memory protection initialization logic. Because image memory is allocated
 section (code and data), the images are separated within
 the combined map so NX can be applied to data regions and RO can be applied to code regions. After breaking
 up the map so each DXE image section has its own descriptor, every non-image descriptor will have its attributes
-set based on its EFI memory type. There are cases where the platform will want to attributes applied to
+set based on its EFI memory type. There are cases where the platform will want to apply attributes to
 a region of memory which is different than what would be applied based on its EFI memory type. In this case,
+
 platforms can utilize the Memory Protection Special Region interface to specify regions which should have specific
 attributes applied during memory protection initialization.
 
