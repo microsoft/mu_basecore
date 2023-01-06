@@ -419,7 +419,7 @@ a region of memory which is different than what would be applied based on its EF
 platforms can utilize the Memory Protection Special Region interface to specify regions which should have specific
 attributes applied during memory protection initialization.
 
-### In PEI:
+### Example Declaration of Special Region in PEI:
 
 ```C
 #include <Guid/MemoryProtectionSpecialRegionGuid.h>
@@ -438,7 +438,7 @@ BuildGuidDataHob (
 ```
 
 
-### In DXE:
+### Example Declaration of Special Region in DXE:
 
 ```C
 #include <Protocol/MemoryProtectionSpecialRegionProtocol.h>
