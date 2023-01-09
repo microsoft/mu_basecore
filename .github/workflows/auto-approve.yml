@@ -1,4 +1,4 @@
-# This workflow automatically merges pull requests under certain conditions.
+# This workflow automatically approves pull requests under certain conditions.
 #
 # NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
 #       instead of the file in this repo.
@@ -13,18 +13,17 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
-name: Auto Merge Pull Request
+name: Auto Approve Pull Request
 
 on:
   pull_request_target:
     types:
       - opened
       - reopened
-      - synchronize
 
 jobs:
-  merge_check:
+  approval_check:
     if: |
       github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'uefibot'
-    uses: microsoft/mu_devops/.github/workflows/AutoMerger.yml@v1.4.2
+    uses: microsoft/mu_devops/.github/workflows/AutoApprover.yml@v1.4.2
     secrets: inherit
