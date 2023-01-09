@@ -10,6 +10,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "PciHostBridge.h"
 #include "PciRootBridge.h"
 #include "PciHostResource.h"
+#include <Library/DxeMemoryProtectionHobLib.h>
 
 EFI_CPU_IO2_PROTOCOL  *mCpuIo;
 
@@ -450,6 +451,7 @@ InitializePciHostBridge (
   BOOLEAN                   ResourceAssigned;
   LIST_ENTRY                *Link;
   UINT64                    HostAddress;
+  UINT64                    Attributes = EFI_MEMORY_UC; // MU_CHANGE
 
   RootBridges = PciHostBridgeGetRootBridges (&RootBridgeCount);
   if ((RootBridges == NULL) || (RootBridgeCount == 0)) {
@@ -534,6 +536,11 @@ InitializePciHostBridge (
 
     for (MemApertureIndex = 0; MemApertureIndex < ARRAY_SIZE (MemApertures); MemApertureIndex++) {
       if (MemApertures[MemApertureIndex]->Base <= MemApertures[MemApertureIndex]->Limit) {
+        // MU_CHANGE START: Set MMIO ranges to be non-executable if protection policy dictates
+        if (gDxeMps.NxProtectionPolicy.Fields.EfiMemoryMappedIO != 0) {
+          Attributes |= EFI_MEMORY_XP;
+        }
+
         //
         // Base and Limit in PCI_ROOT_BRIDGE_APERTURE are device address.
         // For GCD resource manipulation, we need to use host address.
@@ -545,20 +552,18 @@ InitializePciHostBridge (
         Status = AddMemoryMappedIoSpace (
                    HostAddress,
                    MemApertures[MemApertureIndex]->Limit - MemApertures[MemApertureIndex]->Base + 1,
-                   // MU_CHANGE START: MMIO ranges should be non-executable
                    // EFI_MEMORY_UC
-                   EFI_MEMORY_XP | EFI_MEMORY_UC
-                   // MU_CHANGE END
+                   Attributes
                    );
         ASSERT_EFI_ERROR (Status);
+
         Status = gDS->SetMemorySpaceAttributes (
                         HostAddress,
                         MemApertures[MemApertureIndex]->Limit - MemApertures[MemApertureIndex]->Base + 1,
-                        // MU_CHANGE START: MMIO ranges should be non-executable
                         // EFI_MEMORY_UC
-                        EFI_MEMORY_XP | EFI_MEMORY_UC
-                        // MU_CHANGE END
+                        Attributes
                         );
+        // MU_CHANGE END
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "PciHostBridge driver failed to set EFI_MEMORY_XP and EFI_MEMORY_UC to MMIO aperture - %r.\n", Status));
         }
