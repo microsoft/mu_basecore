@@ -91,6 +91,10 @@
   ## Include/Protocol/SmmExceptionTestProtocol.h
   gSmmExceptionTestProtocolGuid   = { 0xb76383a1, 0x0e70, 0x4a3f, { 0x86, 0xb4, 0xc6, 0x13, 0x4c, 0x8e, 0x57, 0x23 }}
 
+  # MU_CHANGE - Add protocol for reporting multi-processor debug info
+  #
+  ## Include/Protocol/CpuMpDebug.h
+  gCpuMpDebugProtocolGuid = { 0xce05eb65, 0x9416, 0x4197, {0x98, 0x4b, 0xa2, 0x8b, 0x62, 0x9c, 0x64, 0x4d }}
 
 #
 # [Error.gUefiCpuPkgTokenSpaceGuid]
