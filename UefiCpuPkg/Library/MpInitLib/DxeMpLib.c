@@ -32,6 +32,7 @@ CPU_MP_DEBUG_PROTOCOL  mCpuMpDebugProtocol = {
   0,
   0,
   0,
+  FALSE,
   INITIALIZE_LIST_HEAD_VARIABLE (mCpuMpDebugProtocol.Link)
 };
 
@@ -179,20 +180,22 @@ BufferRemoveNoExecute (
   @param[in]  StackBuffer      Start of AP stack buffer
   @param[in]  StackSize        Size of the stack
   @param[in]  CpuNumber        AP CPU number
+  @param[in]  IsSwitchStack    If the input buffer is the CPU switch stack
 **/
-STATIC
 VOID
+EFIAPI
 AppendCpuMpDebugProtocolEntry (
-  UINTN  StackBuffer,
-  UINTN  StackSize,
-  UINTN  CpuNumber
+  UINTN    StackBuffer,
+  UINTN    StackSize,
+  UINTN    CpuNumber,
+  BOOLEAN  IsSwitchStack
   )
 {
   CPU_MP_DEBUG_PROTOCOL  *Entry;
 
   Entry = AllocatePool (sizeof (CPU_MP_DEBUG_PROTOCOL));
   if (Entry == NULL) {
-    DEBUG ((DEBUG_INFO, "%a - Failed to allocate memory!\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a - Failed to allocate memory!\n", __FUNCTION__));
     return;
   }
 
@@ -200,6 +203,7 @@ AppendCpuMpDebugProtocolEntry (
   Entry->ApStackBuffer = StackBuffer;
   Entry->ApStackSize   = StackSize;
   Entry->CpuNumber     = CpuNumber;
+  Entry->IsSwitchStack = IsSwitchStack;
   InsertTailList (&mCpuMpDebugProtocol.Link, &Entry->Link);
 }
 
@@ -744,7 +748,7 @@ InitMpGlobalData (
                       MemDesc.Attributes | EFI_MEMORY_RP
                       );
       ASSERT_EFI_ERROR (Status);
-      AppendCpuMpDebugProtocolEntry (StackBase, CpuMpData->CpuApStackSize, Index); // MU_CHANGE
+      AppendCpuMpDebugProtocolEntry (StackBase, CpuMpData->CpuApStackSize, Index, FALSE); // MU_CHANGE
       DEBUG ((
         DEBUG_INFO,
         "Stack Guard set at %lx [cpu%lu]!\n",
@@ -765,7 +769,7 @@ InitMpGlobalData (
         StackBase = CpuMpData->Buffer + Index * CpuMpData->CpuApStackSize;
       }
 
-      AppendCpuMpDebugProtocolEntry (StackBase, CpuMpData->CpuApStackSize, Index);
+      AppendCpuMpDebugProtocolEntry (StackBase, CpuMpData->CpuApStackSize, Index, FALSE);
     }
 
     InstallCpuMpDebugProtocol ();

@@ -62,7 +62,7 @@
 [Protocols]
   gEfiTimerArchProtocolGuid                     ## SOMETIMES_CONSUMES
   gEfiMemoryAttributeProtocolGuid               ## CONSUMES ## MU_CHANGE
-  gCpuMpDebugProtocolGuid                       ## CONSUMES ## MU_CHANGE
+  gCpuMpDebugProtocolGuid                       ## PRODUCES ## MU_CHANGE
 
 [Guids]
   gEfiEventExitBootServicesGuid                 ## CONSUMES  ## Event

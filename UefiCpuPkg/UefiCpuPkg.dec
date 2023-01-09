@@ -93,7 +93,7 @@
 
   # MU_CHANGE - Add protocol for reporting multi-processor debug info
   #
-  ## Include/Protocol/MpDebug.h
+  ## Include/Protocol/CpuMpDebug.h
   gCpuMpDebugProtocolGuid = { 0xce05eb65, 0x9416, 0x4197, {0x98, 0x4b, 0xa2, 0x8b, 0x62, 0x9c, 0x64, 0x4d }}
 
 #

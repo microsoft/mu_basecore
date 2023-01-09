@@ -22,6 +22,7 @@ typedef struct _CPU_MP_DEBUG_PROTOCOL {
   UINTN         ApStackBuffer;
   UINTN         ApStackSize;
   UINTN         CpuNumber;
+  BOOLEAN       IsSwitchStack;
   LIST_ENTRY    Link;
 } CPU_MP_DEBUG_PROTOCOL;
 
