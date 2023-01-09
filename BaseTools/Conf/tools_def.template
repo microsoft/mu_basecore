@@ -3488,9 +3488,15 @@ RELEASE_*_*_CARGOMAKE_BUILD  = make --cwd ENV(WORKSPACE) -p release -e TARGET_TR
 # CARGO definitions
 ##################
 # The path to where cargo generated binaries are placed (.efi, .a, .d,)
-*_VS2019_*_CARGO_BINDIR  = ENV(WORKSPACE)\target\$(TARGET_TRIPLE)\$(TARGET)
-*_VS2022_*_CARGO_BINDIR  = ENV(WORKSPACE)\target\$(TARGET_TRIPLE)\$(TARGET)
-*_GCC5_*_CARGO_BINDIR    = ENV(WORKSPACE)/target/$(TARGET_TRIPLE)/$(TARGET)
+DEBUG_VS2019_*_CARGO_BINDIR  = ENV(WORKSPACE)\target\$(TARGET_TRIPLE)\debug
+RELEASE_VS2019_*_CARGO_BINDIR  = ENV(WORKSPACE)\target\$(TARGET_TRIPLE)\release
+
+DEBUG_VS2022_*_CARGO_BINDIR  = ENV(WORKSPACE)\target\$(TARGET_TRIPLE)\debug
+RELEASE_VS2022_*_CARGO_BINDIR  = ENV(WORKSPACE)\target\$(TARGET_TRIPLE)\release
+
+DEBUG_GCC5_*_CARGO_BINDIR    = ENV(WORKSPACE)/target/$(TARGET_TRIPLE)/debug
+RELEASE_GCC5_*_CARGO_BINDIR    = ENV(WORKSPACE)/target/$(TARGET_TRIPLE)/release
+
 *_*_*_CARGO_PATH         = cargo
 
 #################
