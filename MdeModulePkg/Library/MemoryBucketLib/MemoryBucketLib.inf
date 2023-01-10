@@ -1,5 +1,5 @@
 ## @file
-# Library the defines Runtime memory buckets for use during PEI
+# Library the creates and manages Runtime memory buckets for use during PEI
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -9,9 +9,9 @@
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = MemoryBucketLib
   FILE_GUID                      = 916b6cbe-52f3-439b-8f4c-b97453e36cc7
-  MODULE_TYPE                    = PEIM
+  MODULE_TYPE                    = PEI_CORE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = MemoryBucketLib|DXE_CORE DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SMM_DRIVER SMM_CORE PEIM SEC PEI_CORE UEFI_APPLICATION UEFI_DRIVER
+  LIBRARY_CLASS                  = MemoryBucketLib
 
 #
 #  VALID_ARCHITECTURES           = IA32 X64 AARCH64

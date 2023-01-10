@@ -15,18 +15,37 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Uefi.h>
 #include <Base.h>
 #include <Guid/MemoryBucketInformation.h>
+#include <Guid/MemoryTypeStatistics.h>
 
 /**
   This function initialized the PEI memory buckets.  This should be called
   when the first memory type being tracked in these buckets is allocated.
 
+      +-----------------------------+  <-- Top of free memory
+      |  Memory Bucket Allocation 1 |
+      +-----------------------------+  <-- Top of free memory + 1st non-zero memory bucket pcd
+      |  Memory Bucket Allocation 2 |
+      +-----------------------------+  <-- Top of free memory + 1st and 2nd non-zero memory bucket pcds
+      |  Memory Bucket Allocation 3 |
+      +-----------------------------+  <-- Top of free memory + 1st, 2nd, 3rd non-zero memory bucket pcds
+      |   . . . . . . . . . . . .   |
+      +-----------------------------+  <-- Top of free memory + 1-n non-zero memory bucket pcds
+      |         FREE MEMORY         |      For PEI allocations all new non bucket free memory starts here.
+      +-----------------------------+
+
+  NOTE: The memory buckets can be created in Pre-mem PEI if runtime pages are
+  allocated in pre-mem PEI.
+
   @param[in] StartingAddress   The starting address of the memory buckets.
                                All of them are contiguous.
+  @param[in] UsingPreMem       TRUE if we're allocating memory buckets in
+                               PEI pre mem.
 **/
 VOID
 EFIAPI
 InitializeMemoryBuckets (
-  IN EFI_PHYSICAL_ADDRESS  StartingAddress
+  EFI_PHYSICAL_ADDRESS  StartingAddress,
+  BOOLEAN               UsingPreMem
   );
 
 /**
@@ -96,7 +115,7 @@ GetCurrentBucketBottom (
 **/
 EFI_PHYSICAL_ADDRESS
 EFIAPI
-GetEndOfBucketsAddress (
+GetBottomOfBucketsAddress (
   VOID
   );
 
@@ -165,6 +184,18 @@ BOOLEAN
 EFIAPI
 IsRuntimeType (
   IN EFI_MEMORY_TYPE  MemoryType
+  );
+
+/**
+  Function that checks if PEI memory buckets are enabled.
+
+  @retval    TRUE         PEI memory buckets are enabled
+  @retval    FALSE        PEI memory buckets are disabled
+**/
+BOOLEAN
+EFIAPI
+AreMemoryBucketsEnabled (
+  VOID
   );
 
 /**

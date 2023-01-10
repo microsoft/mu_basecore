@@ -15,7 +15,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/HobLib.h>
 
 // Memory types being kept in buckets in PEI.  Currently only runtime types.
-EFI_MEMORY_TYPE  MemoryTypes[4] = {
+EFI_MEMORY_TYPE  mMemoryTypes[PEI_BUCKETS] = {
   EfiRuntimeServicesCode,
   EfiRuntimeServicesData,
   EfiACPIReclaimMemory,
@@ -23,34 +23,36 @@ EFI_MEMORY_TYPE  MemoryTypes[4] = {
 };
 
 // PEI memory bucket statistics.  Can be extended if necessary
-EFI_MEMORY_TYPE_STATISTICS  RuntimeMemoryStats[4] = {
+EFI_MEMORY_TYPE_STATISTICS  mRuntimeMemoryStats[PEI_BUCKETS] = {
   { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiRuntimeServicesCode, TRUE, TRUE  },   // EfiRuntimeServicesCode
   { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiRuntimeServicesData, TRUE, TRUE  },   // EfiRuntimeServicesData
   { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiACPIReclaimMemory,   TRUE, FALSE },   // EfiACPIReclaimMemory
   { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiACPIMemoryNVS,       TRUE, FALSE }    // EfiACPIMemoryNVS
 };
 
-EFI_PHYSICAL_ADDRESS  CurrentBucketTops[4] = {
+EFI_PHYSICAL_ADDRESS  mCurrentBucketTops[PEI_BUCKETS] = {
   MAX_ALLOC_ADDRESS, // EfiRuntimeServicesCode
   MAX_ALLOC_ADDRESS, // EfiRuntimeServicesData
   MAX_ALLOC_ADDRESS, // EfiACPIReclaimMemory
   MAX_ALLOC_ADDRESS  // EfiACPIMemoryNVS
 };
 
-// Total number of memory buckets
-UINTN  NumberOfBuckets = 4;
-
 // Information storage for Hob
-PEI_MEMORY_BUCKET_INFORMATION  RuntimeBucketHob;
+PEI_MEMORY_BUCKET_INFORMATION  mRuntimeBucketHob;
+
+// TRUE if the memory buckets are currently allocated in temp memory.
+BOOLEAN  mPreMemPeiAllocation = FALSE;
 
 // TRUE if PEI memory buckets are disabled
-BOOLEAN  MemoryBucketsDisabled = FALSE;
+BOOLEAN  mMemoryBucketsDisabled = FALSE;
 
 // TRUE if we have initialized the runtime memory buckets.
-BOOLEAN  RuntimeMemInitialized = FALSE;
+BOOLEAN  mRuntimeMemInitialized = FALSE;
 
 /**
-  TODO
+  This function figures out the size of the memory buckets based on the PEI
+  memory bucket PCDs.  If the PCDs are not set by the platform then the memory
+  buckets are disabled.
 **/
 VOID
 EFIAPI
@@ -58,16 +60,22 @@ InitializeMemoryBucketSizes (
   VOID
   )
 {
-  RuntimeMemoryStats[0].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeCode);
-  RuntimeMemoryStats[1].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeData);
-  RuntimeMemoryStats[2].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiReclaimMemory);
-  RuntimeMemoryStats[3].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiMemoryNvs);
+  UINT64  TotalBucketPages;
+
+  TotalBucketPages = 0;
+
+  mRuntimeMemoryStats[0].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeCode);
+  TotalBucketPages                    += mRuntimeMemoryStats[0].NumberOfPages;
+  mRuntimeMemoryStats[1].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeData);
+  TotalBucketPages                    += mRuntimeMemoryStats[1].NumberOfPages;
+  mRuntimeMemoryStats[2].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiReclaimMemory);
+  TotalBucketPages                    += mRuntimeMemoryStats[2].NumberOfPages;
+  mRuntimeMemoryStats[3].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiMemoryNvs);
+  TotalBucketPages                    += mRuntimeMemoryStats[3].NumberOfPages;
 
   // Disable memory buckets if the PCDs are unaltered.
-  if ((RuntimeMemoryStats[0].NumberOfPages + RuntimeMemoryStats[1].NumberOfPages +
-       RuntimeMemoryStats[2].NumberOfPages + RuntimeMemoryStats[3].NumberOfPages) == 0)
-  {
-    MemoryBucketsDisabled = TRUE;
+  if (TotalBucketPages == 0) {
+    mMemoryBucketsDisabled = TRUE;
   }
 }
 
@@ -75,16 +83,31 @@ InitializeMemoryBucketSizes (
   This function initialized the PEI memory buckets.  This should be called
   when the first memory type being tracked in these buckets is allocated.
 
+      +-----------------------------+  <-- Top of free memory
+      |  Memory Bucket Allocation 1 |
+      +-----------------------------+  <-- Top of free memory + 1st non-zero memory bucket pcd
+      |  Memory Bucket Allocation 2 |
+      +-----------------------------+  <-- Top of free memory + 1st and 2nd non-zero memory bucket pcds
+      |  Memory Bucket Allocation 3 |
+      +-----------------------------+  <-- Top of free memory + 1st, 2nd, 3rd non-zero memory bucket pcds
+      |   . . . . . . . . . . . .   |
+      +-----------------------------+  <-- Top of free memory + 1-n non-zero memory bucket pcds
+      |         FREE MEMORY         |      For PEI allocations all new non bucket free memory starts here.
+      +-----------------------------+
+
   NOTE: The memory buckets can be created in Pre-mem PEI if runtime pages are
   allocated in pre-mem PEI.
 
   @param[in] StartingAddress   The starting address of the memory buckets.
                                All of them are contiguous.
+  @param[in] UsingPreMem       TRUE if we're allocating memory buckets in
+                               PEI pre mem.
 **/
 VOID
 EFIAPI
 InitializeMemoryBuckets (
-  EFI_PHYSICAL_ADDRESS  StartingAddress
+  EFI_PHYSICAL_ADDRESS  StartingAddress,
+  BOOLEAN               UsingPreMem
   )
 {
   UINTN   Index;
@@ -92,24 +115,57 @@ InitializeMemoryBuckets (
   UINT32  AddressAdjustment;
 
   InitializeMemoryBucketSizes ();
-  AdjustedIndex = 0;
+  AdjustedIndex        = 0;
+  mPreMemPeiAllocation = UsingPreMem;
 
-  for (Index = 0; Index < NumberOfBuckets; Index++) {
+  for (Index = 0; Index < PEI_BUCKETS; Index++) {
     // Initialize memory locations for buckets
     AddressAdjustment = EFI_PAGE_SIZE *
-                        ((UINT32)RuntimeMemoryStats[Index].NumberOfPages * (UINT32)AdjustedIndex);
-    RuntimeMemoryStats[Index].BaseAddress = StartingAddress - AddressAdjustment;
-    CurrentBucketTops[Index]              = StartingAddress - AddressAdjustment;
+                        ((UINT32)mRuntimeMemoryStats[Index].NumberOfPages * (UINT32)AdjustedIndex);
+    mRuntimeMemoryStats[Index].BaseAddress = StartingAddress - AddressAdjustment;
+    mCurrentBucketTops[Index]              = StartingAddress - AddressAdjustment;
 
     // Initialize Hob to be able to reference it later
-    RuntimeBucketHob.RuntimeBuckets[Index]     = RuntimeMemoryStats[Index];
-    RuntimeBucketHob.CurrentTopInBucket[Index] = CurrentBucketTops[Index];
-    if (RuntimeMemoryStats[Index].NumberOfPages != 0) {
+    mRuntimeBucketHob.RuntimeBuckets[Index]     = mRuntimeMemoryStats[Index];
+    mRuntimeBucketHob.CurrentTopInBucket[Index] = mCurrentBucketTops[Index];
+    if (mRuntimeMemoryStats[Index].NumberOfPages != 0) {
       AdjustedIndex += 1;
     }
   }
 
-  RuntimeBucketHob.MemoryBucketsDisabled = MemoryBucketsDisabled;
+  mRuntimeBucketHob.MemoryBucketsDisabled = mMemoryBucketsDisabled;
+  mRuntimeBucketHob.PreMemAllocation      = mPreMemPeiAllocation;
+}
+
+/**
+  This function updates the base memory addresses of each bucket if they
+  were initially created in pre-mem PEI to their new post-mem locations.
+
+  @param[in] OldMemoryTop   The top of memory for pre-mem PEI
+  @param[in] NewMemoryTop   The top of memory for post-mem PEI
+**/
+VOID
+EFIAPI
+MigrateMemoryBuckets (
+  EFI_PHYSICAL_ADDRESS  OldMemoryTop,
+  EFI_PHYSICAL_ADDRESS  NewMemoryTop
+  )
+{
+  UINTN   Index;
+  UINT64  Offset;
+
+  if (!mPreMemPeiAllocation) {
+    return;
+  }
+
+  for (Index = 0; Index < PEI_BUCKETS; Index++) {
+    if (mRuntimeMemoryStats[Index].NumberOfPages != 0) {
+      Offset                                 = OldMemoryTop - mRuntimeMemoryStats[Index].BaseAddress;
+      mRuntimeMemoryStats[Index].BaseAddress = NewMemoryTop - Offset;
+    }
+  }
+
+  mPreMemPeiAllocation = FALSE;
 }
 
 /**
@@ -142,7 +198,7 @@ MemoryTypeToIndex (
       Index = 3;
       break;
     default:
-      DEBUG ((DEBUG_ERROR, "We got an incorrect MemoryType\n"));
+      DEBUG ((DEBUG_ERROR, "[%a] - We got an incorrect MemoryType\n", __FUNCTION__));
       ASSERT (FALSE);
       Index = 4;
   }
@@ -168,7 +224,7 @@ UpdateCurrentBucketTop (
 
   Index = MemoryTypeToIndex (MemoryType);
 
-  CurrentBucketTops[Index] = NewTop;
+  mCurrentBucketTops[Index] = NewTop;
 }
 
 /**
@@ -190,7 +246,7 @@ GetCurrentBucketTop (
 
   Index = MemoryTypeToIndex (MemoryType);
 
-  return CurrentBucketTops[Index];
+  return mCurrentBucketTops[Index];
 }
 
 /**
@@ -213,7 +269,7 @@ GetCurrentBucketBottom (
 
   Index = MemoryTypeToIndex (MemoryType);
 
-  ReturnValue = (EFI_PHYSICAL_ADDRESS)(RuntimeMemoryStats[Index].BaseAddress) - (EFI_PAGE_SIZE * RuntimeMemoryStats[Index].NumberOfPages);
+  ReturnValue = (EFI_PHYSICAL_ADDRESS)(mRuntimeMemoryStats[Index].BaseAddress) - (EFI_PAGE_SIZE * mRuntimeMemoryStats[Index].NumberOfPages);
   return ReturnValue;
 }
 
@@ -226,19 +282,19 @@ GetCurrentBucketBottom (
 **/
 EFI_PHYSICAL_ADDRESS
 EFIAPI
-GetEndOfBucketsAddress (
+GetBottomOfBucketsAddress (
   VOID
   )
 {
   UINTN  Index;
 
-  for (Index = NumberOfBuckets-1; Index >= 0; Index--) {
-    if (RuntimeMemoryStats[Index].NumberOfPages > 0) {
-      return GetCurrentBucketBottom (MemoryTypes[Index]);
+  for (Index = PEI_BUCKETS-1; Index >= 0; Index--) {
+    if (mRuntimeMemoryStats[Index].NumberOfPages > 0) {
+      return GetCurrentBucketBottom (mMemoryTypes[Index]);
     }
   }
 
-  DEBUG ((DEBUG_ERROR, "We should not be calling GetEndOfBucketsAddress if we have Pei memory buckets disabled!\n"));
+  DEBUG ((DEBUG_ERROR, "[%a] - We should not get here.\n", __FUNCTION__));
   return 0;
 }
 
@@ -260,21 +316,21 @@ UpdateRuntimeMemoryStats (
 
   Index = MemoryTypeToIndex (MemoryType);
 
-  if (RuntimeMemoryStats[Index].CurrentNumberOfPages + (UINT64)Pages > RuntimeMemoryStats[Index].NumberOfPages) {
+  if (mRuntimeMemoryStats[Index].CurrentNumberOfPages + (UINT64)Pages > mRuntimeMemoryStats[Index].NumberOfPages) {
     DEBUG ((DEBUG_ERROR, "We have overflowed while allocating PEI pages of index: %d!\n", Index));
     ASSERT (FALSE);
     return;
   }
 
-  RuntimeMemoryStats[Index].CurrentNumberOfPages = (UINT64)RuntimeMemoryStats[Index].CurrentNumberOfPages + (UINT64)Pages;
+  mRuntimeMemoryStats[Index].CurrentNumberOfPages = (UINT64)mRuntimeMemoryStats[Index].CurrentNumberOfPages + (UINT64)Pages;
 
-  RuntimeBucketHob.RuntimeBuckets[Index]     = RuntimeMemoryStats[Index];
-  RuntimeBucketHob.CurrentTopInBucket[Index] = CurrentBucketTops[Index];
+  mRuntimeBucketHob.RuntimeBuckets[Index]     = mRuntimeMemoryStats[Index];
+  mRuntimeBucketHob.CurrentTopInBucket[Index] = mCurrentBucketTops[Index];
 }
 
 /**
-  This function checks to see if there is an attempt to allocate memory in the runtime
-  memory buckets that we have defined.
+  This function checks to see if the given address lies within the currently defined
+  runtime memory bucket range.
 
   @param[in] Start   The start of the address we are trying to allocate memory in.
 
@@ -288,13 +344,13 @@ CheckIfInRuntimeBoundary (
   )
 {
   // There is no boundary if the buckets are disabled
-  if (MemoryBucketsDisabled) {
+  if (mMemoryBucketsDisabled) {
     return FALSE;
   }
 
-  if (RuntimeMemInitialized &&
-      ((Start >= GetEndOfBucketsAddress ()) &&
-       (Start <= RuntimeMemoryStats[0].BaseAddress)))
+  if (mRuntimeMemInitialized &&
+      ((Start >= GetBottomOfBucketsAddress ()) &&
+       (Start <= mRuntimeMemoryStats[0].BaseAddress)))
   {
     return TRUE;
   }
@@ -303,7 +359,7 @@ CheckIfInRuntimeBoundary (
 }
 
 /**
-  Sets the RuntimeMemInitialized variable to TRUE
+  Sets the mRuntimeMemInitialized variable to TRUE.
 **/
 VOID
 EFIAPI
@@ -311,7 +367,7 @@ InitializeRuntimeMemoryBuckets (
   VOID
   )
 {
-  RuntimeMemInitialized = TRUE;
+  mRuntimeMemInitialized = TRUE;
 }
 
 /**
@@ -326,7 +382,7 @@ IsRuntimeMemoryInitialized (
   VOID
   )
 {
-  return RuntimeMemInitialized;
+  return mRuntimeMemInitialized;
 }
 
 /**
@@ -349,17 +405,36 @@ IsRuntimeType (
   UINTN  Index;
 
   // If Runtime Buckets are disabled then deny memory bucket operations.
-  if (MemoryBucketsDisabled) {
+  if (mMemoryBucketsDisabled) {
     return FALSE;
   }
 
-  for (Index = 0; Index < NumberOfBuckets; Index++) {
-    if (MemoryType == MemoryTypes[Index]) {
+  for (Index = 0; Index < PEI_BUCKETS; Index++) {
+    if (MemoryType == mMemoryTypes[Index]) {
       return TRUE;
     }
   }
 
   return FALSE;
+}
+
+/**
+  Function that checks if PEI memory buckets are enabled.
+
+  @retval    TRUE         PEI memory buckets are enabled
+  @retval    FALSE        PEI memory buckets are disabled
+**/
+BOOLEAN
+EFIAPI
+AreMemoryBucketsEnabled (
+  VOID
+  )
+{
+  if (mMemoryBucketsDisabled) {
+    return FALSE;
+  }
+
+  return TRUE;
 }
 
 /**
@@ -376,7 +451,7 @@ BuildRuntimeMemoryAllocationInfoHob (
 {
   BuildGuidDataHob (
     &gMemoryBucketInformationGuid,
-    &RuntimeBucketHob,
+    &mRuntimeBucketHob,
     (sizeof (PEI_MEMORY_BUCKET_INFORMATION))
     );
 }
@@ -410,7 +485,7 @@ GetRuntimeBucketHob (
   VOID
   )
 {
-  return RuntimeBucketHob;
+  return mRuntimeBucketHob;
 }
 
 /**
@@ -436,12 +511,13 @@ SetMemoryBucketsFromHob (
   }
 
   TempStats = (PEI_MEMORY_BUCKET_INFORMATION *)MemoryBuckets;
-  for (Index = 0; Index < NumberOfBuckets; Index++) {
-    RuntimeMemoryStats[Index] = TempStats->RuntimeBuckets[Index];
-    CurrentBucketTops[Index]  = TempStats->CurrentTopInBucket[Index];
+  for (Index = 0; Index < PEI_BUCKETS; Index++) {
+    mRuntimeMemoryStats[Index] = TempStats->RuntimeBuckets[Index];
+    mCurrentBucketTops[Index]  = TempStats->CurrentTopInBucket[Index];
   }
 
-  MemoryBucketsDisabled = TempStats->MemoryBucketsDisabled;
+  mMemoryBucketsDisabled = TempStats->MemoryBucketsDisabled;
+  mPreMemPeiAllocation   = TempStats->PreMemAllocation;
 
-  RuntimeMemInitialized = TRUE;
+  mRuntimeMemInitialized = TRUE;
 }

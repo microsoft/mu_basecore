@@ -11,6 +11,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #ifndef _MEMORY_BUCKET_INFORMATION_H_
 #define _MEMORY_BUCKET_INFORMATION_H_
 
+#include <Guid/MemoryTypeStatistics.h>
+
 #define MEMORY_BUCKET_INFORMATION_GUID \
 { 0x36138737, 0xb6db, 0x4ed6, { 0x9b, 0x4b, 0xf9, 0x61, 0x28, 0xe7, 0x19, 0x3c } }
 
@@ -21,22 +23,13 @@ extern EFI_GUID  gMemoryBucketInformationGuid;
 
 extern EFI_GUID  gMemoryTypeStatisticsGuid;
 
-extern UINTN  NumberOfBuckets;
+#define PEI_BUCKETS  4
 
 typedef struct {
-  EFI_PHYSICAL_ADDRESS    BaseAddress;
-  EFI_PHYSICAL_ADDRESS    MaximumAddress;
-  UINT64                  CurrentNumberOfPages;
-  UINT64                  NumberOfPages;
-  UINT32                  InformationIndex;
-  BOOLEAN                 Special;
-  BOOLEAN                 Runtime;
-} EFI_MEMORY_TYPE_STATISTICS;
-
-typedef struct {
-  EFI_MEMORY_TYPE_STATISTICS    RuntimeBuckets[4];
-  EFI_PHYSICAL_ADDRESS          CurrentTopInBucket[4];
+  EFI_MEMORY_TYPE_STATISTICS    RuntimeBuckets[PEI_BUCKETS];
+  EFI_PHYSICAL_ADDRESS          CurrentTopInBucket[PEI_BUCKETS];
   BOOLEAN                       MemoryBucketsDisabled;
+  BOOLEAN                       PreMemAllocation;
 } PEI_MEMORY_BUCKET_INFORMATION;
 
 #endif
