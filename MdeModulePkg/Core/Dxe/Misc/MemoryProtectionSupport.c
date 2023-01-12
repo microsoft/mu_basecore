@@ -1232,7 +1232,9 @@ GetOverlappingMemorySpaceRegion (
 
 /**
   Updates the memory map to contain contiguous entries from StartOfAddressSpace to
-  max(EndOfAddressSpace, address + length of the final memory map entry)
+  max(EndOfAddressSpace, address + length of the final memory map entry). Gaps in the
+  input EFI memory map which correlate with the non-existent GCD type will not be added
+  to the map.
 
   @param[in, out] MemoryMapSize         Size, in bytes, of MemoryMap
   @param[in, out] MemoryMap             IN:  Pointer to the EFI memory map which will have all gaps filled. The
@@ -1261,6 +1263,7 @@ FillInMemoryMap (
   EFI_PHYSICAL_ADDRESS   LastEntryEnd, NextEntryStart, StartOfAddressSpace, EndOfAddressSpace;
   EFI_GCD_MEMORY_TYPE    GcdType = 0;
   UINT64                 RemainingLength, OverlapLength;
+  UINTN                  NewMemoryMapSize, AdditionalEntriesCount, LoopIteration;
 
   if ((MemoryMap == NULL) || (*MemoryMap == NULL) ||
       (MemoryMapSize == NULL) || (*MemoryMapSize == 0) ||
@@ -1277,116 +1280,136 @@ FillInMemoryMap (
   EndOfAddressSpace   = MemorySpaceMap[*MemorySpaceMapDescriptorCount - 1].BaseAddress +
                         MemorySpaceMap[*MemorySpaceMapDescriptorCount - 1].Length;
 
-  NewMemoryMapStart = NULL;
+  AdditionalEntriesCount = 0;
+  NewMemoryMapSize       = 0;
+  NewMemoryMapStart      = NULL;
+  for (LoopIteration = 0; LoopIteration < 2; LoopIteration++) {
+    if (LoopIteration == 1) {
+      NewMemoryMapSize = *MemoryMapSize + (AdditionalEntriesCount * *DescriptorSize);
+      // Allocate a buffer for the new memory map
+      NewMemoryMapStart = AllocatePool (NewMemoryMapSize);
 
-  // Double the size of the memory map for the worst case of every entry being non-contiguous
-  NewMemoryMapStart = AllocatePool ((*MemoryMapSize * 2) + (*DescriptorSize * 2));
-
-  if (NewMemoryMapStart == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  NewMemoryMapCurrent = NewMemoryMapStart;
-  OldMemoryMapCurrent = *MemoryMap;
-  OldMemoryMapEnd     = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)*MemoryMap + *MemoryMapSize);
-
-  // Check if we need to insert a new entry at the start of the memory map
-  if (OldMemoryMapCurrent->PhysicalStart > StartOfAddressSpace) {
-    do {
-      OverlapLength   = OldMemoryMapCurrent->PhysicalStart - StartOfAddressSpace;
-      RemainingLength = GetOverlappingMemorySpaceRegion (
-                          MemorySpaceMap,
-                          MemorySpaceMapDescriptorCount,
-                          &StartOfAddressSpace,
-                          &OverlapLength,
-                          &GcdType
-                          );
-
-      POPULATE_MEMORY_DESCRIPTOR_ENTRY (
-        NewMemoryMapCurrent,
-        StartOfAddressSpace,
-        EfiSizeToPages (OldMemoryMapCurrent->PhysicalStart - StartOfAddressSpace - RemainingLength),
-        GcdTypeToEfiType (&GcdType)
-        );
-
-      NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
-      StartOfAddressSpace = OldMemoryMapCurrent->PhysicalStart - RemainingLength;
-    } while (RemainingLength > 0);
-  }
-
-  while (OldMemoryMapCurrent < OldMemoryMapEnd) {
-    CopyMem (NewMemoryMapCurrent, OldMemoryMapCurrent, *DescriptorSize);
-    if (NEXT_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize) < OldMemoryMapEnd) {
-      LastEntryEnd   = NewMemoryMapCurrent->PhysicalStart + EfiPagesToSize (NewMemoryMapCurrent->NumberOfPages);
-      NextEntryStart = NEXT_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize)->PhysicalStart;
-      // Check for a gap in the memory map
-      if (NextEntryStart > LastEntryEnd) {
-        // Fill in missing region based on the GCD Memory Map
-        do {
-          NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
-          OverlapLength       = NextEntryStart - LastEntryEnd;
-          RemainingLength     = GetOverlappingMemorySpaceRegion (
-                                  MemorySpaceMap,
-                                  MemorySpaceMapDescriptorCount,
-                                  &LastEntryEnd,
-                                  &OverlapLength,
-                                  &GcdType
-                                  );
-
-          POPULATE_MEMORY_DESCRIPTOR_ENTRY (
-            NewMemoryMapCurrent,
-            LastEntryEnd,
-            EfiSizeToPages (NextEntryStart - LastEntryEnd - RemainingLength),
-            GcdTypeToEfiType (&GcdType)
-            );
-          LastEntryEnd = NextEntryStart - RemainingLength;
-        } while (RemainingLength > 0);
+      if (NewMemoryMapStart == NULL) {
+        return EFI_OUT_OF_RESOURCES;
       }
     }
 
-    NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
-    OldMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize);
-  }
+    NewMemoryMapCurrent = NewMemoryMapStart;
+    OldMemoryMapCurrent = *MemoryMap;
+    OldMemoryMapEnd     = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)*MemoryMap + *MemoryMapSize);
 
-  LastEntryEnd = PREVIOUS_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize)->PhysicalStart +
-                 EfiPagesToSize (PREVIOUS_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize)->NumberOfPages);
+    // Check if we need to insert a new entry at the start of the memory map
+    if (OldMemoryMapCurrent->PhysicalStart > StartOfAddressSpace) {
+      do {
+        OverlapLength   = OldMemoryMapCurrent->PhysicalStart - StartOfAddressSpace;
+        RemainingLength = GetOverlappingMemorySpaceRegion (
+                            MemorySpaceMap,
+                            MemorySpaceMapDescriptorCount,
+                            &StartOfAddressSpace,
+                            &OverlapLength,
+                            &GcdType
+                            );
+        if ((GcdType != EfiGcdMemoryTypeNonExistent)) {
+          if ((LoopIteration == 1)) {
+            POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+              NewMemoryMapCurrent,
+              StartOfAddressSpace,
+              EfiSizeToPages (OldMemoryMapCurrent->PhysicalStart - StartOfAddressSpace - RemainingLength),
+              GcdTypeToEfiType (&GcdType)
+              );
 
-  // Check if we need to insert a new entry at the end of the memory map
-  if (EndOfAddressSpace > LastEntryEnd) {
-    do {
-      OverlapLength   = EndOfAddressSpace - LastEntryEnd;
-      RemainingLength = GetOverlappingMemorySpaceRegion (
-                          MemorySpaceMap,
-                          MemorySpaceMapDescriptorCount,
-                          &LastEntryEnd,
-                          &OverlapLength,
-                          &GcdType
-                          );
+            NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
+          } else {
+            AdditionalEntriesCount++;
+          }
+        }
 
-      POPULATE_MEMORY_DESCRIPTOR_ENTRY (
-        NewMemoryMapCurrent,
-        LastEntryEnd,
-        EfiSizeToPages (EndOfAddressSpace - LastEntryEnd - RemainingLength),
-        GcdTypeToEfiType (&GcdType)
-        );
-      NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
-      LastEntryEnd        = EndOfAddressSpace - RemainingLength;
-    } while (RemainingLength > 0);
-  }
+        StartOfAddressSpace = OldMemoryMapCurrent->PhysicalStart - RemainingLength;
+      } while (RemainingLength > 0);
+    }
 
-  // Re-use this stack variable as an intermediate to ensure we can allocate a buffer before updating the old memory map
-  OldMemoryMapCurrent = AllocateCopyPool ((UINTN)((UINT8 *)NewMemoryMapCurrent - (UINT8 *)NewMemoryMapStart), NewMemoryMapStart);
+    while (OldMemoryMapCurrent < OldMemoryMapEnd) {
+      if (LoopIteration == 1) {
+        CopyMem (NewMemoryMapCurrent, OldMemoryMapCurrent, *DescriptorSize);
+      }
 
-  if (OldMemoryMapCurrent == NULL ) {
-    FreePool (NewMemoryMapStart);
-    return EFI_OUT_OF_RESOURCES;
+      if (NEXT_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize) < OldMemoryMapEnd) {
+        LastEntryEnd   = OldMemoryMapCurrent->PhysicalStart + EfiPagesToSize (OldMemoryMapCurrent->NumberOfPages);
+        NextEntryStart = NEXT_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize)->PhysicalStart;
+        // Check for a gap in the memory map
+        if (NextEntryStart > LastEntryEnd) {
+          // Fill in missing region based on the GCD Memory Map
+          do {
+            OverlapLength   = NextEntryStart - LastEntryEnd;
+            RemainingLength = GetOverlappingMemorySpaceRegion (
+                                MemorySpaceMap,
+                                MemorySpaceMapDescriptorCount,
+                                &LastEntryEnd,
+                                &OverlapLength,
+                                &GcdType
+                                );
+            if ((GcdType != EfiGcdMemoryTypeNonExistent)) {
+              if ((LoopIteration == 1)) {
+                NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
+                POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+                  NewMemoryMapCurrent,
+                  LastEntryEnd,
+                  EfiSizeToPages (NextEntryStart - LastEntryEnd - RemainingLength),
+                  GcdTypeToEfiType (&GcdType)
+                  );
+              } else {
+                AdditionalEntriesCount++;
+              }
+            }
+
+            LastEntryEnd = NextEntryStart - RemainingLength;
+          } while (RemainingLength > 0);
+        }
+      }
+
+      if (LoopIteration == 1) {
+        NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
+      }
+
+      OldMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize);
+    }
+
+    LastEntryEnd = PREVIOUS_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize)->PhysicalStart +
+                   EfiPagesToSize (PREVIOUS_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize)->NumberOfPages);
+
+    // Check if we need to insert a new entry at the end of the memory map
+    if (EndOfAddressSpace > LastEntryEnd) {
+      do {
+        OverlapLength   = EndOfAddressSpace - LastEntryEnd;
+        RemainingLength = GetOverlappingMemorySpaceRegion (
+                            MemorySpaceMap,
+                            MemorySpaceMapDescriptorCount,
+                            &LastEntryEnd,
+                            &OverlapLength,
+                            &GcdType
+                            );
+        if ((GcdType != EfiGcdMemoryTypeNonExistent)) {
+          if ((LoopIteration == 1)) {
+            POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+              NewMemoryMapCurrent,
+              LastEntryEnd,
+              EfiSizeToPages (EndOfAddressSpace - LastEntryEnd - RemainingLength),
+              GcdTypeToEfiType (&GcdType)
+              );
+            NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
+          } else {
+            AdditionalEntriesCount++;
+          }
+        }
+
+        LastEntryEnd = EndOfAddressSpace - RemainingLength;
+      } while (RemainingLength > 0);
+    }
   }
 
   FreePool (*MemoryMap);
-  *MemoryMap = OldMemoryMapCurrent;
-
-  *MemoryMapSize = (UINTN)((UINT8 *)NewMemoryMapCurrent - (UINT8 *)NewMemoryMapStart);
-  FreePool (NewMemoryMapStart);
+  *MemoryMap     = NewMemoryMapStart;
+  *MemoryMapSize = NewMemoryMapSize;
 
   return EFI_SUCCESS;
 }
