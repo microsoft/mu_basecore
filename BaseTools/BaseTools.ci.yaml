@@ -42,6 +42,9 @@
     ## options defined .pytool/Plugin/UncrustifyCheck
     "UncrustifyCheck": {
         "AuditOnly": True,
+    },
+    "LineEndingCheck": {
+        "IgnoreFiles": ['*.*']
     }
     # MU_CHANGE [END]
 }
