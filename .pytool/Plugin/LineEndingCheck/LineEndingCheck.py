@@ -32,6 +32,17 @@ LINE_ENDINGS = [
 
 ALLOWED_LINE_ENDING = b'\r\n'
 
+#
+# Based on a solution for binary file detection presented in
+# https://stackoverflow.com/a/7392391.
+#
+_TEXT_CHARS = bytearray(
+    {7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7f})
+
+
+def _is_binary_string(_bytes: bytes) -> bool:
+    return bool(_bytes.translate(None, _TEXT_CHARS))
+
 
 class LineEndingCheckBadLineEnding(Exception):
     pass
@@ -125,6 +136,8 @@ class LineEndingCheck(ICiBuildPlugin):
           -1 : Skipped due to a missing pre-requisite
         """
 
+        ws_path = edk2_path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
+                        '.')
         abs_pkg_path = \
             edk2_path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
                         package_rel_path)
@@ -134,7 +147,7 @@ class LineEndingCheck(ICiBuildPlugin):
             tc.LogStdError(f"Package folder not found {abs_pkg_path}")
             return 0
 
-        all_files = [n for n in glob.glob(os.path.join(abs_pkg_path, '*.*'),
+        all_files = [n for n in glob.glob(os.path.join(abs_pkg_path, '**/*.*'),
                      recursive=True)]
 
         ignored_files = list(filter(
@@ -151,7 +164,13 @@ class LineEndingCheck(ICiBuildPlugin):
         line_ending_count = dict.fromkeys(LINE_ENDINGS, 0)
 
         for file in all_files:
+            if os.path.isdir(file):
+                continue
             with open(file, 'rb') as fb:
+                if not fb.readable() or _is_binary_string(fb.read(1024)):
+                    continue
+                fb.seek(0)
+
                 for lineno, line in enumerate(fb):
                     try:
                         for e in LINE_ENDINGS:
@@ -159,17 +178,18 @@ class LineEndingCheck(ICiBuildPlugin):
                                 line_ending_count[e] += 1
 
                                 if e is not ALLOWED_LINE_ENDING:
-                                    file_name = Path(file).name
+                                    file_path = Path(file).relative_to(
+                                                    ws_path).as_posix()
                                     file_count += 1
 
                                     tc.LogStdError(
                                         f"Line ending on Line {lineno} in "
-                                        f"{file_name} is not allowed.\nLine "
+                                        f"{file_path} is not allowed.\nLine "
                                         f"ending is {e} and should be "
                                         f"{ALLOWED_LINE_ENDING}.")
                                     logging.error(
                                         f"Line ending on Line {lineno} in "
-                                        f"{file_name} is not allowed.\nLine "
+                                        f"{file_path} is not allowed.\nLine "
                                         f"ending is {e} and should be "
                                         f"{ALLOWED_LINE_ENDING}.")
                                     raise LineEndingCheckBadLineEnding
