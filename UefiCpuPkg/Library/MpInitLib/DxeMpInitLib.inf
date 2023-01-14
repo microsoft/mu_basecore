@@ -62,6 +62,7 @@
 [Protocols]
   gEfiTimerArchProtocolGuid                     ## SOMETIMES_CONSUMES
   gEfiMemoryAttributeProtocolGuid               ## CONSUMES ## MU_CHANGE
+  gCpuMpDebugProtocolGuid                       ## PRODUCES ## MU_CHANGE
 
 [Guids]
   gEfiEventExitBootServicesGuid                 ## CONSUMES  ## Event
@@ -80,6 +81,7 @@
   gUefiCpuPkgTokenSpaceGuid.PcdCpuApStatusCheckIntervalInMicroSeconds  ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdGhcbHypervisorFeatures                  ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdSevEsWorkAreaBase                       ## SOMETIMES_CONSUMES
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuApWakeupBufferReserved               ## CONSUMES MU_CHANGE
   # MU_CHANGE START Remove memory protection PCD references
   # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                      ## CONSUMES
   # MU_CHANGE END

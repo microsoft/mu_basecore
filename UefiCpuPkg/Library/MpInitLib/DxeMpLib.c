@@ -25,6 +25,19 @@
 #include <Protocol/MemoryAttribute.h>
 // MU_CHANGE END
 
+// MU_CHANGE: Add protocol for reporting multi-processor debug info
+#include <Protocol/CpuMpDebug.h>
+CPU_MP_DEBUG_PROTOCOL  mCpuMpDebugProtocol = {
+  CPU_MP_DEBUG_SIGNATURE,
+  0,
+  0,
+  0,
+  FALSE,
+  INITIALIZE_LIST_HEAD_VARIABLE (mCpuMpDebugProtocol.Link)
+};
+
+// MU_CHANGE END
+
 #define  AP_SAFE_STACK_SIZE  128
 
 CPU_MP_DATA       *mCpuMpData                  = NULL;
@@ -159,6 +172,66 @@ BufferRemoveNoExecute (
 
 // MU_CHANGE END
 
+// MU_CHANGE START: Install protocol for reporting multi-processor debug info
+
+/**
+  Add CPU_MP_DEBUG_PROTOCOL entry to the global list
+
+  @param[in]  StackBuffer      Start of AP stack buffer
+  @param[in]  StackSize        Size of the stack
+  @param[in]  CpuNumber        AP CPU number
+  @param[in]  IsSwitchStack    If the input buffer is the CPU switch stack
+**/
+VOID
+EFIAPI
+AppendCpuMpDebugProtocolEntry (
+  UINTN    StackBuffer,
+  UINTN    StackSize,
+  UINTN    CpuNumber,
+  BOOLEAN  IsSwitchStack
+  )
+{
+  CPU_MP_DEBUG_PROTOCOL  *Entry;
+
+  Entry = AllocatePool (sizeof (CPU_MP_DEBUG_PROTOCOL));
+  if (Entry == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a - Failed to allocate memory!\n", __FUNCTION__));
+    return;
+  }
+
+  Entry->Signature     = CPU_MP_DEBUG_SIGNATURE;
+  Entry->ApStackBuffer = StackBuffer;
+  Entry->ApStackSize   = StackSize;
+  Entry->CpuNumber     = CpuNumber;
+  Entry->IsSwitchStack = IsSwitchStack;
+  InsertTailList (&mCpuMpDebugProtocol.Link, &Entry->Link);
+}
+
+// MU_CHANGE START: Install protocol for reporting multi-processor debug info
+
+/**
+  Install the CPU MP debug protocol
+**/
+STATIC
+VOID
+InstallCpuMpDebugProtocol (
+  VOID
+  )
+{
+  EFI_HANDLE  MpDebugHandle = NULL;
+  EFI_STATUS  Status;
+
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &MpDebugHandle,
+                  &gCpuMpDebugProtocolGuid,
+                  &mCpuMpDebugProtocol,
+                  NULL
+                  );
+  DEBUG ((DEBUG_INFO, "Installed gCpuMpDebugProtocolGuid - Status: %r\n", Status));
+}
+
+// MU_CHANGE END
+
 /**
   Enable Debug Agent to support source debugging on AP function.
 
@@ -218,8 +291,12 @@ GetWakeupBuffer (
   EFI_PHYSICAL_ADDRESS  StartAddress;
   EFI_MEMORY_TYPE       MemoryType;
 
-  if (ConfidentialComputingGuestHas (CCAttrAmdSevEs) &&
-      !ConfidentialComputingGuestHas (CCAttrAmdSevSnp))
+  // MU_CHANGE START Add PCD to make wakeup buffer reserved
+  if (PcdGetBool (PcdCpuApWakeupBufferReserved)) {
+    MemoryType = EfiReservedMemoryType;
+    // MU_CHANGE END
+  } else if (ConfidentialComputingGuestHas (CCAttrAmdSevEs) &&
+             !ConfidentialComputingGuestHas (CCAttrAmdSevSnp))
   {
     //
     // An SEV-ES-only guest requires the memory to be reserved. SEV-SNP, which
@@ -675,7 +752,7 @@ InitMpGlobalData (
                       MemDesc.Attributes | EFI_MEMORY_RP
                       );
       ASSERT_EFI_ERROR (Status);
-
+      AppendCpuMpDebugProtocolEntry (StackBase, CpuMpData->CpuApStackSize, Index, FALSE); // MU_CHANGE
       DEBUG ((
         DEBUG_INFO,
         "Stack Guard set at %lx [cpu%lu]!\n",
@@ -683,7 +760,26 @@ InitMpGlobalData (
         (UINT64)Index
         ));
     }
+
+    InstallCpuMpDebugProtocol (); // MU_CHANGE
   }
+  // MU_CHANGE START: Add the Debug Protocol in the case that CpuStackGuard is not active
+  else {
+    CpuInfoInHob = (CPU_INFO_IN_HOB *)(UINTN)CpuMpData->CpuInfoInHob;
+    for (Index = 0; Index < CpuMpData->CpuCount; ++Index) {
+      if ((CpuInfoInHob != NULL) && (CpuInfoInHob[Index].ApTopOfStack != 0)) {
+        StackBase = (UINTN)CpuInfoInHob[Index].ApTopOfStack - CpuMpData->CpuApStackSize;
+      } else {
+        StackBase = CpuMpData->Buffer + Index * CpuMpData->CpuApStackSize;
+      }
+
+      AppendCpuMpDebugProtocolEntry (StackBase, CpuMpData->CpuApStackSize, Index, FALSE);
+    }
+
+    InstallCpuMpDebugProtocol ();
+  }
+
+  // MU_CHANGE END
 
   //
   // Avoid APs access invalid buffer data which allocated by BootServices,

@@ -7,8 +7,10 @@
 ##
 
 import glob
+from io import StringIO
 import logging
 import os
+import shutil
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
 
@@ -20,6 +22,7 @@ from edk2toolext.environment.var_dict import VarDict
 from edk2toollib.gitignore_parser import parse_gitignore_lines
 from edk2toollib.log.junit_report_format import JunitReportTestCase
 from edk2toollib.uefi.edk2.path_utilities import Edk2Path
+from edk2toollib.utility_functions import RunCmd
 
 PLUGIN_NAME = "LineEndingCheck"
 
@@ -32,10 +35,23 @@ LINE_ENDINGS = [
 
 ALLOWED_LINE_ENDING = b'\r\n'
 
+#
+# Based on a solution for binary file detection presented in
+# https://stackoverflow.com/a/7392391.
+#
+_TEXT_CHARS = bytearray(
+    {7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7f})
+
+
+def _is_binary_string(_bytes: bytes) -> bool:
+    return bool(_bytes.translate(None, _TEXT_CHARS))
+
 
 class LineEndingCheckBadLineEnding(Exception):
     pass
 
+class LineEndingCheckGitIgnoreFileException(Exception):
+    pass
 
 class LineEndingCheck(ICiBuildPlugin):
     """
@@ -67,6 +83,94 @@ class LineEndingCheck(ICiBuildPlugin):
         """
         return ("Check line endings in " + packagename, packagename +
                 "." + PLUGIN_NAME)
+
+    # Note: This function currently accesses git via the git command to prevent
+    #       introducing a new Python git module dependency in mu_basecore
+    #       on gitpython.
+    #
+    #       After gitpython is adopted by edk2-pytool-extensions, this
+    #       implementation can be updated to use the gitpython interface.
+    def _get_git_ignored_paths(self) -> List[Path]:
+        """"
+        Gets paths ignored by git.
+
+        Returns:
+            List[str]: A list of file absolute path strings to all files
+            ignored in this git repository.
+
+            If git is not found, an empty list will be returned.
+        """
+        if not shutil.which("git"):
+            logging.warn(
+                "Git is not found on this system. Git submodule paths will "
+                "not be considered.")
+            return []
+
+        outstream_buffer = StringIO()
+        exit_code = RunCmd("git", "ls-files --other",
+                           workingdir=self._abs_workspace_path,
+                           outstream=outstream_buffer,
+                           logging_level=logging.NOTSET)
+        if (exit_code != 0):
+            raise LineEndingCheckGitIgnoreFileException(
+                f"An error occurred reading git ignore settings. This will "
+                f"prevent LineEndingCheck from running against the expected "
+                f"set of files.")
+
+        # Note: This will potentially be a large list, but at least sorted
+        rel_paths = outstream_buffer.getvalue().strip().splitlines()
+        abs_paths = []
+        for path in rel_paths:
+            abs_paths.append(Path(
+                os.path.normpath(os.path.join(self._abs_workspace_path, path))))
+        return abs_paths
+
+    # Note: This function currently accesses git via the git command to prevent
+    #       introducing a new Python git module dependency in mu_basecore
+    #       on gitpython.
+    #
+    #       After gitpython is adopted by edk2-pytool-extensions, this
+    #       implementation can be updated to use the gitpython interface.
+    def _get_git_submodule_paths(self) -> List[Path]:
+        """
+        Gets submodule paths recognized by git.
+
+        Returns:
+            List[str]: A list of directory absolute path strings to the root
+            of each submodule in the workspace repository.
+
+            If git is not found, an empty list will be returned.
+        """
+        if not shutil.which("git"):
+            logging.warn(
+                "Git is not found on this system. Git submodule paths will "
+                "not be considered.")
+            return []
+
+        if os.path.isfile(os.path.join(self._abs_workspace_path, ".gitmodules")):
+            logging.info(
+                ".gitmodules file found. Excluding submodules in "
+                "LineEndingCheck.")
+
+            outstream_buffer = StringIO()
+            exit_code = RunCmd("git",
+                            "config --file .gitmodules --get-regexp path",
+                            workingdir=self._abs_workspace_path,
+                            outstream=outstream_buffer,
+                            logging_level=logging.NOTSET)
+            if (exit_code != 0):
+                raise LineEndingCheckGitIgnoreFileException(
+                    f".gitmodule file detected but an error occurred reading "
+                    f"the file. Cannot proceed with unknown submodule paths.")
+
+            submodule_paths = []
+            for line in outstream_buffer.getvalue().strip().splitlines():
+                submodule_paths.append(Path(
+                    os.path.normpath(os.path.join(self._abs_workspace_path, line.split()[1]))))
+
+            return submodule_paths
+        else:
+            return []
 
     def _get_files_ignored_in_config(self,
                                      pkg_config: Dict[str, List[str]],
@@ -125,33 +229,63 @@ class LineEndingCheck(ICiBuildPlugin):
           -1 : Skipped due to a missing pre-requisite
         """
 
-        abs_pkg_path = \
+        self._abs_workspace_path = \
+            edk2_path.GetAbsolutePathOnThisSystemFromEdk2RelativePath('.')
+        self._abs_pkg_path = \
             edk2_path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
                         package_rel_path)
 
-        if abs_pkg_path is None:
+        if self._abs_pkg_path is None:
             tc.SetSkipped()
-            tc.LogStdError(f"Package folder not found {abs_pkg_path}")
+            tc.LogStdError(f"Package folder not found {self._abs_pkg_path}")
             return 0
 
-        all_files = [n for n in glob.glob(os.path.join(abs_pkg_path, '*.*'),
-                     recursive=True)]
-
+        all_files = [Path(n) for n in glob.glob(
+                        os.path.join(self._abs_pkg_path, '**/*.*'),
+                        recursive=True)]
         ignored_files = list(filter(
                             self._get_files_ignored_in_config(
-                                package_config, abs_pkg_path), all_files))
+                                package_config, self._abs_pkg_path), all_files))
+        ignored_files = [Path(f) for f in ignored_files]
 
-        for file in ignored_files:
-            if file in all_files:
-                logging.info(f"  File ignored in plugin config file: "
-                             f"{Path(file).name}")
-                all_files.remove(file)
+        all_files = list(set(all_files) - set(ignored_files))
+        if not all_files:
+            tc.SetSuccess()
+            return 0
+
+        all_files_before_git_removal = set(all_files)
+        git_ignored_paths = set(self._get_git_ignored_paths() + self._get_git_submodule_paths())
+        all_files = list(all_files_before_git_removal - git_ignored_paths)
+        git_ignored_paths = git_ignored_paths - (all_files_before_git_removal - set(all_files))
+        if not all_files:
+            tc.SetSuccess()
+            return 0
+
+        git_ignored_paths = {p for p in git_ignored_paths if p.is_dir()}
+
+        ignored_files = []
+        for file in all_files:
+            for ignored_path in git_ignored_paths:
+                if Path(file).is_relative_to(ignored_path):
+                    ignored_files.append(file)
+                    break
+
+        all_files = list(set(all_files) - set(ignored_files))
+        if not all_files:
+            tc.SetSuccess()
+            return 0
 
         file_count = 0
         line_ending_count = dict.fromkeys(LINE_ENDINGS, 0)
 
         for file in all_files:
-            with open(file, 'rb') as fb:
+            if file.is_dir():
+                continue
+            with open(file.resolve(), 'rb') as fb:
+                if not fb.readable() or _is_binary_string(fb.read(1024)):
+                    continue
+                fb.seek(0)
+
                 for lineno, line in enumerate(fb):
                     try:
                         for e in LINE_ENDINGS:
@@ -159,17 +293,18 @@ class LineEndingCheck(ICiBuildPlugin):
                                 line_ending_count[e] += 1
 
                                 if e is not ALLOWED_LINE_ENDING:
-                                    file_name = Path(file).name
+                                    file_path = file.relative_to(
+                                        Path(self._abs_workspace_path)).as_posix()
                                     file_count += 1
 
                                     tc.LogStdError(
                                         f"Line ending on Line {lineno} in "
-                                        f"{file_name} is not allowed.\nLine "
+                                        f"{file_path} is not allowed.\nLine "
                                         f"ending is {e} and should be "
                                         f"{ALLOWED_LINE_ENDING}.")
                                     logging.error(
                                         f"Line ending on Line {lineno} in "
-                                        f"{file_name} is not allowed.\nLine "
+                                        f"{file_path} is not allowed.\nLine "
                                         f"ending is {e} and should be "
                                         f"{ALLOWED_LINE_ENDING}.")
                                     raise LineEndingCheckBadLineEnding

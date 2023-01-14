@@ -1,9 +1,20 @@
 # CodeQL Plugin
 
-The set of CodeQL plugins provided include two main plugins:
+The set of CodeQL plugins provided include two main plugins that seamlessly integrate into a Stuart build environment:
 
 1. `CodeQlBuildPlugin` - Used to produce a CodeQL database from a build.
 2. `CodeQlAnalyzePlugin` - Used to analyze a CodeQL database.
+
+While CodeQL can be run in a CI environment with other approaches. This plugin offers the following advantages:
+
+1. Provides exactly the same results locally as on a CI server.
+2. Integrates very well into VS Code.
+3. Very simple to use - just use normal Stuart update and build commands.
+4. Very simple to understand - minimally wraps the official CodeQL CLI.
+5. Very simple to integrate - works like any other Stuart build plugin.
+   - Integration is usually just a few lines of code.
+6. Portable - not tied to Azure DevOps specific, GitHub specific, or other host infrastructure.
+7. Versioned - the query and filters are versioned in source control so easy to find and track.
 
 ❗ It is very important to read the Integration Instructions in this file and determine how to best integrate the
 CodeQL plugin into your environment.
@@ -21,17 +32,19 @@ such users is [Local Development Tips](#local-development-tips).
 1. [Database and Analysis Result Locations](#database-and-analysis-result-locations)
 2. [Global Configuration](#global-configuration)
 3. [Package-Specific Configuration](#package-specific-configuration)
-4. [Integration Instructions](#integration-instructions)
+4. [Filter Patterns](#filter-patterns)
+5. [Integration Instructions](#integration-instructions)
    - [Integration Step 1 - Choose Scopes](#integration-step-1---choose-scopes)
+     - [Scopes Available](#scopes-available)
    - [Integration Step 2 - Choose CodeQL Queries](#integration-step-2---choose-codeql-queries)
    - [Integration Step 3 - Determine Global Configuration Values](#integration-step-3---determine-global-configuration-values)
    - [Integration Step 4 - Determine Package-Specific Configuration Values](#integration-step-4---determine-package-specific-configuration-values)
    - [Integration Step 5 - Testing](#integration-step-5---testing)
-     - [Scopes Available](#scopes-available)
-5. [High-Level Operation](#high-level-operation)
+   - [Integration Step 6 - Define Inclusion and Exclusion Filter Patterns](#integration-step-6---define-inclusion-and-exclusion-filter-patterns)
+6. [High-Level Operation](#high-level-operation)
    - [CodeQlBuildPlugin](#codeqlbuildplugin)
    - [CodeQlAnalyzePlugin](#codeqlanalyzeplugin)
-6. [Local Development Tips](#local-development-tips)
+7. [Local Development Tips](#local-development-tips)
 
 ## Database and Analysis Result Locations
 
@@ -74,6 +87,26 @@ built by the script.
 - `STUART_CODEQL_PATH` - The path to the CodeQL CLI application to use.
 - `STUART_CODEQL_QUERY_SPECIFIERS` - The CodeQL CLI query specifiers to use. See [Running codeql database analyze](https://codeql.github.com/docs/codeql-cli/analyzing-databases-with-the-codeql-cli/#running-codeql-database-analyze)
   for possible options.
+- `STUART_CODEQL_FILTER_FILES` - The path to "filter" files that contains filter patterns as described in
+  [Filter Patterns](#filter-patterns).
+  - More than one file may be specified by separating each absolute file path with a comma.
+    - This might be useful to reference a global filter file from an upstream repo and also include a global filter
+      file for the local repo.
+    - Filters are concatenated in the order of files in the variable. Patterns in later files can override patterns
+      in earlier files.
+  - The file only needs to contain a list of filter pattern strings under a `"Filters"` key. For example:
+
+    ```yaml
+      {
+        "Filters": [
+          "<pattern-line-1>",
+          "<pattern-line-2>"
+        ]
+      }
+      ...
+    ```
+
+    Comments are allowed in the filter files and begin with `#` (like a normal YAML file).
 
 ## Package-Specific Configuration
 
@@ -87,8 +120,57 @@ the package.
   "CodeQlAnalyze": {
       "AuditOnly": False,         # Don't fail the build if there are errors. Just log them.
       "QuerySpecifiers": ""       # Query specifiers to pass to CodeQL CLI.
+      "Filters": ""               # Inclusion/exclusion filters
   }
 ```
+
+> _NOTE:_ If a global filter set is provided via `STUART_CODEQL_FILTER_FILES` and a package has a package-specific
+> list, then the package-specific filter list (in a package CI YAML file) is appended onto the global filter list and
+> may be used to override settings in the global list.
+
+The format used to specify items in `"Filters"` is specified in [Filter Patterns](#filter-patterns).
+
+## Filter Patterns
+
+As you inspect results, you may want to include or exclude certain sets of results. For example, exclude some files by
+file path entirely or adjust the CodeQL rule applied to a certain file. This plugin reuses logic from a popular
+GitHub Action called [`filter-sarif`](https://github.com/advanced-security/filter-sarif) to allow filtering as part of
+the plugin analysis process.
+
+If any results are excluded using filters, the results are removed from the SARIF file. This allows the exclude results
+seen locally to exactly match the results on the CI server.
+
+Read the ["Patterns"](https://github.com/advanced-security/filter-sarif#patterns) section there for more details. The
+patterns section is also copied below with some updates to make the information more relevant for an edk2 codebase
+for convenience.
+
+Each pattern line is of the form:
+
+```plaintext
+[+/-]<file pattern>[:<rule pattern>]
+```
+
+For example:
+
+```yaml
+-**/*Test*.c:**             # exclusion pattern: remove all alerts from all test files
+-**/*Test*.c                # ditto, short form of the line above
++**/*.c:cpp/infiniteloop    # inclusion pattern: This line has precedence over the first two
+                            # and thus "allow lists" alerts of type "cpp/infiniteloop"
+**/*.c:cpp/infiniteloop     # ditto, the "+" in inclusion patterns is optional
+**                          # allow all alerts in all files (reverses all previous lines)
+```
+
+- The path separator character in patterns is always `/`, independent of the platform the code is running on and
+  independent of the paths in the SARIF file.
+- `*` matches any character, except a path separator
+- `**` matches any character and is only allowed between path separators, e.g. `/**/file.txt`, `**/file.txt` or `**`.
+  NOT allowed: `**.txt`, `/etc**`
+- The rule pattern is optional. If omitted, it will apply to alerts of all types.
+- Subsequent lines override earlier ones. By default all alerts are included.
+- If you need to use the literals `+`, `-`, `\` or `:` in your pattern, you can escape them with `\`, e.g.
+  `\-this/is/an/inclusion/file/pattern\:with-a-semicolon:and/a/rule/pattern/with/a/\\/backslash`. For `+` and `-`, this
+  is only necessary if they appear at the beginning of the pattern line.
 
 ## Integration Instructions
 
@@ -204,6 +286,11 @@ package's CI YAML file.
 ### Integration Step 5 - Testing
 
 Verify a `stuart_update` and `stuart_build` (or `stuart_ci_build`) command work.
+
+### Integration Step 6 - Define Inclusion and Exclusion Filter Patterns
+
+After reviewing the test results from Step 5, determine if you need to apply any filters as described in
+[Filter Patterns](#filter-patterns).
 
 ## High-Level Operation
 

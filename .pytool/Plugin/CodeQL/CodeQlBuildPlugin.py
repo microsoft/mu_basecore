@@ -17,7 +17,7 @@ from edk2toolext.environment.plugintypes.uefi_build_plugin import \
     IUefiBuildPlugin
 from edk2toolext.environment.uefi_build import UefiBuilder
 from edk2toollib.uefi.edk2.path_utilities import Edk2Path
-from edk2toollib.utility_functions import GetHostInfo
+from edk2toollib.utility_functions import GetHostInfo, RemoveTree
 
 
 class CodeQlBuildPlugin(IUefiBuildPlugin):
@@ -34,81 +34,97 @@ class CodeQlBuildPlugin(IUefiBuildPlugin):
             occurred during plugin execution.
         """
 
-        pp = builder.pp.split(os.pathsep)
-        edk2_path = Edk2Path(builder.ws, pp)
+        if not builder.SkipBuild:
+            pp = builder.pp.split(os.pathsep)
+            edk2_path = Edk2Path(builder.ws, pp)
 
-        self.builder = builder
-        self.package = edk2_path.GetContainingPackage(
-                            builder.mws.join(builder.ws,
-                                             builder.env.GetValue(
-                                                "ACTIVE_PLATFORM")))
-        self.target = builder.env.GetValue("TARGET")
+            self.builder = builder
+            self.package = edk2_path.GetContainingPackage(
+                                builder.mws.join(builder.ws,
+                                                builder.env.GetValue(
+                                                    "ACTIVE_PLATFORM")))
+            self.target = builder.env.GetValue("TARGET")
 
-        self.codeql_db_path = codeql_plugin.get_codeql_db_path(
-                                builder.ws, self.package, self.target)
+            self.build_output_dir = builder.env.GetValue("BUILD_OUTPUT_BASE")
 
-        edk2_logging.log_progress(f"{self.package} will be built for CodeQL")
-        edk2_logging.log_progress(f"  CodeQL database will be written to "
-                                  f"{self.codeql_db_path}")
+            self.codeql_db_path = codeql_plugin.get_codeql_db_path(
+                                    builder.ws, self.package, self.target)
 
-        self.codeql_path = codeql_plugin.get_codeql_cli_path()
-        if not self.codeql_path:
-            logging.critical("CodeQL build enabled but CodeQL CLI application "
-                             "not found.")
-            return -1
+            edk2_logging.log_progress(f"{self.package} will be built for CodeQL")
+            edk2_logging.log_progress(f"  CodeQL database will be written to "
+                                    f"{self.codeql_db_path}")
 
-        # CodeQL can only generate a database on clean build
-        builder.CleanTree()
+            self.codeql_path = codeql_plugin.get_codeql_cli_path()
+            if not self.codeql_path:
+                logging.critical("CodeQL build enabled but CodeQL CLI application "
+                                "not found.")
+                return -1
 
-        # A build is required to generate a database
-        builder.SkipBuild = False
+            # CodeQL can only generate a database on clean build
+            #
+            # Note: builder.CleanTree() cannot be used here as some platforms
+            #       have build steps that run before this plugin that store
+            #       files in the build output directory.
+            #
+            #       CodeQL does not care about with those files or many others such
+            #       as the FV directory, build logs, etc. so instead focus on
+            #       removing only the directories with compilation/linker output
+            #       for the architectures being built (that need clean runs for
+            #       CodeQL to work).
+            targets = self.builder.env.GetValue("TARGET_ARCH").split(" ")
+            for target in targets:
+                directory_to_delete = Path(self.build_output_dir, target)
 
-        # CodeQL CLI does not handle spaces passed in CLI commands well
-        # (perhaps at all) as discussed here:
-        #   1. https://github.com/github/codeql-cli-binaries/issues/73
-        #   2. https://github.com/github/codeql/issues/4910
-        #
-        # Since it's unclear how quotes are handled and may change in the
-        # future, this code is going to use the workaround to place the
-        # command in an executable file that is instead passed to CodeQL.
-        self.codeql_cmd_path = Path(builder.mws.join(
-                                    builder.ws, builder.env.GetValue(
-                                        "BUILD_OUTPUT_BASE"),
-                                    "codeql_build_command"))
+                if directory_to_delete.is_dir():
+                    logging.debug(f"Removing {str(directory_to_delete)} to have a "
+                                f"clean build for CodeQL.")
+                    RemoveTree(str(directory_to_delete))
 
-        build_params = self._get_build_params()
+            # CodeQL CLI does not handle spaces passed in CLI commands well
+            # (perhaps at all) as discussed here:
+            #   1. https://github.com/github/codeql-cli-binaries/issues/73
+            #   2. https://github.com/github/codeql/issues/4910
+            #
+            # Since it's unclear how quotes are handled and may change in the
+            # future, this code is going to use the workaround to place the
+            # command in an executable file that is instead passed to CodeQL.
+            self.codeql_cmd_path = Path(builder.mws.join(
+                                        builder.ws, self.build_output_dir,
+                                        "codeql_build_command"))
 
-        codeql_build_cmd = ""
-        if GetHostInfo().os == "Windows":
-            self.codeql_cmd_path = self.codeql_cmd_path.parent / (
-                self.codeql_cmd_path.name + '.bat')
-        elif GetHostInfo().os == "Linux":
-            self.codeql_cmd_path.suffix = self.codeql_cmd_path.parent / (
-                self.codeql_cmd_path.name + '.sh')
-            codeql_build_cmd += f"#!/bin/bash{os.linesep * 2}"
-        codeql_build_cmd += "build " + build_params
+            build_params = self._get_build_params()
 
-        self.codeql_cmd_path.parent.mkdir(exist_ok=True, parents=True)
-        self.codeql_cmd_path.write_text(encoding='utf8', data=codeql_build_cmd)
+            codeql_build_cmd = ""
+            if GetHostInfo().os == "Windows":
+                self.codeql_cmd_path = self.codeql_cmd_path.parent / (
+                    self.codeql_cmd_path.name + '.bat')
+            elif GetHostInfo().os == "Linux":
+                self.codeql_cmd_path.suffix = self.codeql_cmd_path.parent / (
+                    self.codeql_cmd_path.name + '.sh')
+                codeql_build_cmd += f"#!/bin/bash{os.linesep * 2}"
+            codeql_build_cmd += "build " + build_params
 
-        if GetHostInfo().os == "Linux":
-            os.chmod(self.codeql_cmd_path,
-                     os.stat(self.codeql_cmd_path).st_mode | stat.S_IEXEC)
+            self.codeql_cmd_path.parent.mkdir(exist_ok=True, parents=True)
+            self.codeql_cmd_path.write_text(encoding='utf8', data=codeql_build_cmd)
 
-        codeql_params = (f'database create {self.codeql_db_path} '
-                         f'--language=cpp '
-                         f'--source-root={builder.ws} '
-                         f'--command={self.codeql_cmd_path}')
+            if GetHostInfo().os == "Linux":
+                os.chmod(self.codeql_cmd_path,
+                        os.stat(self.codeql_cmd_path).st_mode | stat.S_IEXEC)
 
-        # Set environment variables so the CodeQL build command is picked up
-        # as the active build command.
-        #
-        # Note: Requires recent changes in edk2-pytool-extensions (0.20.0)
-        #       to support reading these variables.
-        builder.env.SetValue(
-            "EDK_BUILD_CMD", self.codeql_path, "Set in CodeQL Build Plugin")
-        builder.env.SetValue(
-            "EDK_BUILD_PARAMS", codeql_params, "Set in CodeQL Build Plugin")
+            codeql_params = (f'database create {self.codeql_db_path} '
+                            f'--language=cpp '
+                            f'--source-root={builder.ws} '
+                            f'--command={self.codeql_cmd_path}')
+
+            # Set environment variables so the CodeQL build command is picked up
+            # as the active build command.
+            #
+            # Note: Requires recent changes in edk2-pytool-extensions (0.20.0)
+            #       to support reading these variables.
+            builder.env.SetValue(
+                "EDK_BUILD_CMD", self.codeql_path, "Set in CodeQL Build Plugin")
+            builder.env.SetValue(
+                "EDK_BUILD_PARAMS", codeql_params, "Set in CodeQL Build Plugin")
 
         return 0
 
