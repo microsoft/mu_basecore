@@ -22,6 +22,13 @@ EFI_MEMORY_TYPE  mMemoryTypes[PEI_BUCKETS] = {
   EfiACPIMemoryNVS
 };
 
+enum {
+  RuntimeCode,
+  RuntimeData,
+  ACPIReclaimMemory,
+  ACPIMemoryNVS
+};
+
 // PEI memory bucket statistics.  Can be extended if necessary
 EFI_MEMORY_TYPE_STATISTICS  mRuntimeMemoryStats[PEI_BUCKETS] = {
   { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiRuntimeServicesCode, TRUE, TRUE  },   // EfiRuntimeServicesCode
@@ -64,14 +71,14 @@ InitializeMemoryBucketSizes (
 
   TotalBucketPages = 0;
 
-  mRuntimeMemoryStats[0].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeCode);
-  TotalBucketPages                    += mRuntimeMemoryStats[0].NumberOfPages;
-  mRuntimeMemoryStats[1].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeData);
-  TotalBucketPages                    += mRuntimeMemoryStats[1].NumberOfPages;
-  mRuntimeMemoryStats[2].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiReclaimMemory);
-  TotalBucketPages                    += mRuntimeMemoryStats[2].NumberOfPages;
-  mRuntimeMemoryStats[3].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiMemoryNvs);
-  TotalBucketPages                    += mRuntimeMemoryStats[3].NumberOfPages;
+  mRuntimeMemoryStats[RuntimeCode].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeCode);
+  TotalBucketPages                    += mRuntimeMemoryStats[RuntimeCode].NumberOfPages;
+  mRuntimeMemoryStats[RuntimeData].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeData);
+  TotalBucketPages                    += mRuntimeMemoryStats[RuntimeData].NumberOfPages;
+  mRuntimeMemoryStats[ACPIReclaimMemory].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiReclaimMemory);
+  TotalBucketPages                    += mRuntimeMemoryStats[ACPIReclaimMemory].NumberOfPages;
+  mRuntimeMemoryStats[ACPIMemoryNVS].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiMemoryNvs);
+  TotalBucketPages                    += mRuntimeMemoryStats[ACPIMemoryNVS].NumberOfPages;
 
   // Disable memory buckets if the PCDs are unaltered.
   if (TotalBucketPages == 0) {
@@ -186,16 +193,16 @@ MemoryTypeToIndex (
 
   switch (MemoryType) {
     case EfiRuntimeServicesCode:
-      Index = 0;
+      Index = RuntimeCode;
       break;
     case EfiRuntimeServicesData:
-      Index = 1;
+      Index = RuntimeData;
       break;
     case EfiACPIReclaimMemory:
-      Index = 2;
+      Index = ACPIReclaimMemory;
       break;
     case EfiACPIMemoryNVS:
-      Index = 3;
+      Index = ACPIMemoryNVS;
       break;
     default:
       DEBUG ((DEBUG_ERROR, "[%a] - We got an incorrect MemoryType\n", __FUNCTION__));
@@ -350,7 +357,7 @@ CheckIfInRuntimeBoundary (
 
   if (mRuntimeMemInitialized &&
       ((Start >= GetBottomOfBucketsAddress ()) &&
-       (Start <= mRuntimeMemoryStats[0].BaseAddress)))
+       (Start <= mRuntimeMemoryStats[RuntimeCode].BaseAddress)))
   {
     return TRUE;
   }
