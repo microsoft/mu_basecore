@@ -1768,7 +1768,7 @@ CoreStartImage (
   // Image has completed.  Verify the tpl is the same
   //
   ASSERT (Image->Tpl == gEfiCurrentTpl);
-  CoreRestoreTpl (Image->Tpl);
+  // CoreRestoreTpl (Image->Tpl); //MU_CHANGE - remove unecessary TPL restore.
 
   CoreFreePool (Image->JumpBuffer);
 
