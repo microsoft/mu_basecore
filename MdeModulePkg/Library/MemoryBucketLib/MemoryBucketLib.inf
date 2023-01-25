@@ -1,5 +1,5 @@
 ## @file
-# Library the creates and manages Runtime memory buckets for use during PEI
+# Library that creates and manages Runtime memory buckets for use during PEI
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -36,4 +36,3 @@
 
 [Depex]
   gEfiPeiMemoryDiscoveredPpiGuid
-  

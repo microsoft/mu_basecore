@@ -475,7 +475,7 @@
 
   ## Include/Guid/EndofS3Resume.h
   gEdkiiEndOfS3ResumeGuid = { 0x96f5296d, 0x05f7, 0x4f3c, {0x84, 0x67, 0xe4, 0x56, 0x89, 0x0e, 0x0c, 0xb5 } }
-  
+
 ## MSCHANGE BEGIN
   #
   # Guids for NVMe Timeout Events
@@ -667,7 +667,7 @@
   # MU_CHANGE
   # This protocol provides access to Internal Event services that do not need TPL_APPLICATION
   gInternalEventServicesProtocolGuid = {0x7ecd162a, 0xc664, 0x11ec, { 0x9d, 0x64, 0x02, 0x42, 0xac, 0x12, 0x00, 0x02 } }
-  
+
   ## This protocol defines the generic memory test interfaces in Dxe phase.
   # Include/Protocol/GenericMemoryTest.h
   gEfiGenericMemTestProtocolGuid = { 0x309DE7F1, 0x7F5E, 0x4ACE, { 0xB4, 0x9C, 0x53, 0x1B, 0xE5, 0xAA, 0x95, 0xEF }}
@@ -2397,7 +2397,7 @@
   ## This dynamic PCD holds the device state bitmap as described in Include/Library/DeviceStateLib.h
   # @Prompt Describes device state
   gEfiMdeModulePkgTokenSpaceGuid.PcdDeviceStateBitmask|0x00000000|UINT32|0x00030009
-  
+
 [PcdsDynamicEx]
   ## This dynamic PCD enables the default variable setting.
   #  Its value is the default store ID value. The default value is zero as Standard default.

@@ -1,7 +1,7 @@
 /**@file
 Library for defining PEI memory buckets. This keeps track of the
 different buckets and the data for the associated HOB.
-For internal use only.
+This library should not be called by anything outside of the PEI CORE.
 
 Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -439,7 +439,7 @@ SyncMemoryBuckets (
   )
 {
   if (!IsRuntimeMemoryInitialized () && (MemBucketHob != NULL)) {
-    SetMemoryBucketsFromHob (GET_GUID_HOB_DATA (MemBucketHob));
+    SetMemoryBucketsFromHob ((PEI_MEMORY_BUCKET_INFORMATION *)GET_GUID_HOB_DATA (MemBucketHob));
   }
 }
 
@@ -468,24 +468,22 @@ GetRuntimeBucketHob (
 VOID
 EFIAPI
 SetMemoryBucketsFromHob (
-  VOID  *MemoryBuckets
+  PEI_MEMORY_BUCKET_INFORMATION  *MemoryBuckets
   )
 {
-  PEI_MEMORY_BUCKET_INFORMATION  *TempStats;
-  UINTN                          Index;
+  UINTN  Index;
 
   if (MemoryBuckets == NULL) {
     DEBUG ((DEBUG_ERROR, "NO PEI RUNTIME MEMORY BUCKETS YET\n"));
+    ASSERT (MemoryBuckets == NULL);
     return;
   }
 
-  TempStats = (PEI_MEMORY_BUCKET_INFORMATION *)MemoryBuckets;
   for (Index = 0; Index < PEI_BUCKETS; Index++) {
-    mRuntimeMemoryStats[Index] = TempStats->RuntimeBuckets[Index];
-    mCurrentBucketTops[Index]  = TempStats->CurrentTopInBucket[Index];
+    mRuntimeMemoryStats[Index] = MemoryBuckets->RuntimeBuckets[Index];
+    mCurrentBucketTops[Index]  = MemoryBuckets->CurrentTopInBucket[Index];
   }
 
-  mMemoryBucketsDisabled = TempStats->MemoryBucketsDisabled;
-
+  mMemoryBucketsDisabled = MemoryBuckets->MemoryBucketsDisabled;
   mRuntimeMemInitialized = TRUE;
 }
