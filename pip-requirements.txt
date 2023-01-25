@@ -13,7 +13,7 @@
 ##
 
 edk2-pytool-library~=0.12.1 # MU_CHANGE
-edk2-pytool-extensions~=0.21.0 # MU_CHANGE
+edk2-pytool-extensions~=0.21.1 # MU_CHANGE
 edk2-basetools==0.1.24
 antlr4-python3-runtime==4.11.1
 regex
