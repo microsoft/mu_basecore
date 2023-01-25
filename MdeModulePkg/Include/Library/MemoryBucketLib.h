@@ -243,7 +243,7 @@ GetRuntimeBucketHob (
 VOID
 EFIAPI
 SetMemoryBucketsFromHob (
-  IN VOID  *MemoryBuckets
+  IN PEI_MEMORY_BUCKET_INFORMATION  *MemoryBuckets
   );
 
 #endif
