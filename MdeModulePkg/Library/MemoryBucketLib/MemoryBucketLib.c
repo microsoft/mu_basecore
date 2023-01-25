@@ -22,6 +22,7 @@ EFI_MEMORY_TYPE  mMemoryTypes[PEI_BUCKETS] = {
   EfiACPIMemoryNVS
 };
 
+// Enum for different bucket types to make code easier to understand
 enum {
   RuntimeCode,
   RuntimeData,
@@ -47,9 +48,6 @@ EFI_PHYSICAL_ADDRESS  mCurrentBucketTops[PEI_BUCKETS] = {
 // Information storage for Hob
 PEI_MEMORY_BUCKET_INFORMATION  mRuntimeBucketHob;
 
-// TRUE if the memory buckets are currently allocated in temp memory.
-BOOLEAN  mPreMemPeiAllocation = FALSE;
-
 // TRUE if PEI memory buckets are disabled
 BOOLEAN  mMemoryBucketsDisabled = FALSE;
 
@@ -71,14 +69,14 @@ InitializeMemoryBucketSizes (
 
   TotalBucketPages = 0;
 
-  mRuntimeMemoryStats[RuntimeCode].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeCode);
-  TotalBucketPages                    += mRuntimeMemoryStats[RuntimeCode].NumberOfPages;
-  mRuntimeMemoryStats[RuntimeData].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeData);
-  TotalBucketPages                    += mRuntimeMemoryStats[RuntimeData].NumberOfPages;
+  mRuntimeMemoryStats[RuntimeCode].NumberOfPages       = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeCode);
+  TotalBucketPages                                    += mRuntimeMemoryStats[RuntimeCode].NumberOfPages;
+  mRuntimeMemoryStats[RuntimeData].NumberOfPages       = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeData);
+  TotalBucketPages                                    += mRuntimeMemoryStats[RuntimeData].NumberOfPages;
   mRuntimeMemoryStats[ACPIReclaimMemory].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiReclaimMemory);
-  TotalBucketPages                    += mRuntimeMemoryStats[ACPIReclaimMemory].NumberOfPages;
-  mRuntimeMemoryStats[ACPIMemoryNVS].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiMemoryNvs);
-  TotalBucketPages                    += mRuntimeMemoryStats[ACPIMemoryNVS].NumberOfPages;
+  TotalBucketPages                                    += mRuntimeMemoryStats[ACPIReclaimMemory].NumberOfPages;
+  mRuntimeMemoryStats[ACPIMemoryNVS].NumberOfPages     = FixedPcdGet8 (PcdPeiMemoryBucketAcpiMemoryNvs);
+  TotalBucketPages                                    += mRuntimeMemoryStats[ACPIMemoryNVS].NumberOfPages;
 
   // Disable memory buckets if the PCDs are unaltered.
   if (TotalBucketPages == 0) {
@@ -107,14 +105,11 @@ InitializeMemoryBucketSizes (
 
   @param[in] StartingAddress   The starting address of the memory buckets.
                                All of them are contiguous.
-  @param[in] UsingPreMem       TRUE if we're allocating memory buckets in
-                               PEI pre mem.
 **/
 VOID
 EFIAPI
 InitializeMemoryBuckets (
-  EFI_PHYSICAL_ADDRESS  StartingAddress,
-  BOOLEAN               UsingPreMem
+  EFI_PHYSICAL_ADDRESS  StartingAddress
   )
 {
   UINTN   Index;
@@ -122,8 +117,7 @@ InitializeMemoryBuckets (
   UINT32  AddressAdjustment;
 
   InitializeMemoryBucketSizes ();
-  AdjustedIndex        = 0;
-  mPreMemPeiAllocation = UsingPreMem;
+  AdjustedIndex = 0;
 
   for (Index = 0; Index < PEI_BUCKETS; Index++) {
     // Initialize memory locations for buckets
@@ -141,38 +135,6 @@ InitializeMemoryBuckets (
   }
 
   mRuntimeBucketHob.MemoryBucketsDisabled = mMemoryBucketsDisabled;
-  mRuntimeBucketHob.PreMemAllocation      = mPreMemPeiAllocation;
-}
-
-/**
-  This function updates the base memory addresses of each bucket if they
-  were initially created in pre-mem PEI to their new post-mem locations.
-
-  @param[in] OldMemoryTop   The top of memory for pre-mem PEI
-  @param[in] NewMemoryTop   The top of memory for post-mem PEI
-**/
-VOID
-EFIAPI
-MigrateMemoryBuckets (
-  EFI_PHYSICAL_ADDRESS  OldMemoryTop,
-  EFI_PHYSICAL_ADDRESS  NewMemoryTop
-  )
-{
-  UINTN   Index;
-  UINT64  Offset;
-
-  if (!mPreMemPeiAllocation) {
-    return;
-  }
-
-  for (Index = 0; Index < PEI_BUCKETS; Index++) {
-    if (mRuntimeMemoryStats[Index].NumberOfPages != 0) {
-      Offset                                 = OldMemoryTop - mRuntimeMemoryStats[Index].BaseAddress;
-      mRuntimeMemoryStats[Index].BaseAddress = NewMemoryTop - Offset;
-    }
-  }
-
-  mPreMemPeiAllocation = FALSE;
 }
 
 /**
@@ -524,7 +486,6 @@ SetMemoryBucketsFromHob (
   }
 
   mMemoryBucketsDisabled = TempStats->MemoryBucketsDisabled;
-  mPreMemPeiAllocation   = TempStats->PreMemAllocation;
 
   mRuntimeMemInitialized = TRUE;
 }

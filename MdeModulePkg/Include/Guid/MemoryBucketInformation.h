@@ -29,7 +29,6 @@ typedef struct {
   EFI_MEMORY_TYPE_STATISTICS    RuntimeBuckets[PEI_BUCKETS];
   EFI_PHYSICAL_ADDRESS          CurrentTopInBucket[PEI_BUCKETS];
   BOOLEAN                       MemoryBucketsDisabled;
-  BOOLEAN                       PreMemAllocation;
 } PEI_MEMORY_BUCKET_INFORMATION;
 
 #endif

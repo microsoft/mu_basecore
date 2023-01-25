@@ -599,7 +599,6 @@ PeiAllocatePages (
   UINTN                          Padding;
   EFI_HOB_GUID_TYPE              *MemBucketHob;
   PEI_MEMORY_BUCKET_INFORMATION  RuntimeBucketHob;
-  BOOLEAN                        PreMemoryAllocation;
 
   if ((MemoryType != EfiLoaderCode) &&
       (MemoryType != EfiLoaderData) &&
@@ -614,8 +613,7 @@ PeiAllocatePages (
     return EFI_INVALID_PARAMETER;
   }
 
-  Granularity         = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
-  PreMemoryAllocation = FALSE;
+  Granularity = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
 
   PrivateData = PEI_CORE_INSTANCE_FROM_PS_THIS (PeiServices);
   Hob.Raw     = PrivateData->HobList.Raw;
@@ -647,9 +645,8 @@ PeiAllocatePages (
     // When PeiInstallMemory is called but temporary memory has *not* been moved to permanent memory,
     // the AllocatePage will depend on the field of PEI_CORE_INSTANCE structure.
     //
-    FreeMemoryTop       = &(PrivateData->FreePhysicalMemoryTop);
-    FreeMemoryBottom    = &(PrivateData->PhysicalMemoryBegin);
-    PreMemoryAllocation = TRUE;
+    FreeMemoryTop    = &(PrivateData->FreePhysicalMemoryTop);
+    FreeMemoryBottom = &(PrivateData->PhysicalMemoryBegin);
   } else {
     FreeMemoryTop    = &(Hob.HandoffInformationTable->EfiFreeMemoryTop);
     FreeMemoryBottom = &(Hob.HandoffInformationTable->EfiFreeMemoryBottom);
@@ -662,7 +659,7 @@ PeiAllocatePages (
   // Check if we're using the memory buckets
   if (IsRuntimeType (MemoryType)) {
     if (!IsRuntimeMemoryInitialized ()) {
-      InitializeMemoryBuckets (*FreeMemoryTop, PreMemoryAllocation);
+      InitializeMemoryBuckets (*FreeMemoryTop);
     }
 
     if (AreMemoryBucketsEnabled ()) {

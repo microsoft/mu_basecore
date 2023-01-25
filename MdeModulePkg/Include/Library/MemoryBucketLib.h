@@ -38,14 +38,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @param[in] StartingAddress   The starting address of the memory buckets.
                                All of them are contiguous.
-  @param[in] UsingPreMem       TRUE if we're allocating memory buckets in
-                               PEI pre mem.
 **/
 VOID
 EFIAPI
 InitializeMemoryBuckets (
-  EFI_PHYSICAL_ADDRESS  StartingAddress,
-  BOOLEAN               UsingPreMem
+  EFI_PHYSICAL_ADDRESS  StartingAddress
   );
 
 /**

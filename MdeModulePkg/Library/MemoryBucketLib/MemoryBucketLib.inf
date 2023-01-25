@@ -33,4 +33,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketRuntimeData
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketAcpiReclaimMemory
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketAcpiMemoryNvs
+
+[Depex]
+  gEfiPeiMemoryDiscoveredPpiGuid
   
