@@ -592,10 +592,12 @@ DeletePlatformKey (
 {
   EFI_STATUS  Status;
 
-  Status = SetSecureBootMode (CUSTOM_SECURE_BOOT_MODE);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
+  // MU_CHANGE [BEGIN] - Remove the indicator of custom secure boot mode variable
+  // Status = SetSecureBootMode (CUSTOM_SECURE_BOOT_MODE);
+  // if (EFI_ERROR (Status)) {
+  //   return Status;
+  // }
+  // MU_CHANGE [END]
 
   Status = DeleteVariable (
              EFI_PLATFORM_KEY_NAME,

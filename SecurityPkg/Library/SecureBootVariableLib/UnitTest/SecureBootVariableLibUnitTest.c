@@ -835,15 +835,18 @@ DeletePKShouldDelete (
   UINT8       Dummy       = 3;
   UINT8       *Payload    = NULL;
   UINTN       PayloadSize = 0;
-  UINT8       BootMode    = CUSTOM_SECURE_BOOT_MODE;
 
-  expect_memory (MockSetVariable, VariableName, EFI_CUSTOM_MODE_NAME, sizeof (EFI_CUSTOM_MODE_NAME));
-  expect_value (MockSetVariable, VendorGuid, &gEfiCustomModeEnableGuid);
-  expect_value (MockSetVariable, Attributes, EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS);
-  expect_value (MockSetVariable, DataSize, sizeof (BootMode));
-  expect_memory (MockSetVariable, Data, &BootMode, sizeof (BootMode));
+  // MU_CHANGE [BEGIN] - Remove the indicator of custom secure boot mode variable
+  // UINT8       BootMode    = CUSTOM_SECURE_BOOT_MODE;
 
-  will_return (MockSetVariable, EFI_SUCCESS);
+  // expect_memory (MockSetVariable, VariableName, EFI_CUSTOM_MODE_NAME, sizeof (EFI_CUSTOM_MODE_NAME));
+  // expect_value (MockSetVariable, VendorGuid, &gEfiCustomModeEnableGuid);
+  // expect_value (MockSetVariable, Attributes, EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS);
+  // expect_value (MockSetVariable, DataSize, sizeof (BootMode));
+  // expect_memory (MockSetVariable, Data, &BootMode, sizeof (BootMode));
+
+  // will_return (MockSetVariable, EFI_SUCCESS);
+  // MU_CHANGE [END]
 
   expect_memory (MockGetVariable, VariableName, EFI_PLATFORM_KEY_NAME, sizeof (EFI_PLATFORM_KEY_NAME));
   expect_value (MockGetVariable, VendorGuid, &gEfiGlobalVariableGuid);
@@ -903,7 +906,8 @@ DeleteSecureBootVariablesShouldDelete (
   UINT8       Dummy       = 3;
   UINT8       *Payload    = NULL;
   UINTN       PayloadSize = 0;
-  UINT8       BootMode    = CUSTOM_SECURE_BOOT_MODE;
+
+  // UINT8       BootMode    = CUSTOM_SECURE_BOOT_MODE; // MU_CHANGE
 
   Status = CreateTimeBasedPayload (&PayloadSize, &Payload, &mMaxTimestamp);
   UT_ASSERT_NOT_EFI_ERROR (Status);
@@ -911,13 +915,15 @@ DeleteSecureBootVariablesShouldDelete (
 
   will_return (DisablePKProtection, EFI_SUCCESS);
 
-  expect_memory (MockSetVariable, VariableName, EFI_CUSTOM_MODE_NAME, sizeof (EFI_CUSTOM_MODE_NAME));
-  expect_value (MockSetVariable, VendorGuid, &gEfiCustomModeEnableGuid);
-  expect_value (MockSetVariable, Attributes, EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS);
-  expect_value (MockSetVariable, DataSize, sizeof (BootMode));
-  expect_memory (MockSetVariable, Data, &BootMode, sizeof (BootMode));
+  // MU_CHANGE [BEGIN] - Remove the indicator of custom secure boot mode variable
+  // expect_memory (MockSetVariable, VariableName, EFI_CUSTOM_MODE_NAME, sizeof (EFI_CUSTOM_MODE_NAME));
+  // expect_value (MockSetVariable, VendorGuid, &gEfiCustomModeEnableGuid);
+  // expect_value (MockSetVariable, Attributes, EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS);
+  // expect_value (MockSetVariable, DataSize, sizeof (BootMode));
+  // expect_memory (MockSetVariable, Data, &BootMode, sizeof (BootMode));
 
-  will_return (MockSetVariable, EFI_SUCCESS);
+  // will_return (MockSetVariable, EFI_SUCCESS);
+  // MU_CHANGE [END]
 
   expect_memory (MockGetVariable, VariableName, EFI_PLATFORM_KEY_NAME, sizeof (EFI_PLATFORM_KEY_NAME));
   expect_value (MockGetVariable, VendorGuid, &gEfiGlobalVariableGuid);
@@ -1093,17 +1099,20 @@ DeleteSecureBootVariablesShouldProceedWithNotFound (
   )
 {
   EFI_STATUS  Status;
-  UINT8       BootMode = CUSTOM_SECURE_BOOT_MODE;
+
+  // UINT8       BootMode = CUSTOM_SECURE_BOOT_MODE;  // MU_CHANGE
 
   will_return (DisablePKProtection, EFI_SUCCESS);
 
-  expect_memory (MockSetVariable, VariableName, EFI_CUSTOM_MODE_NAME, sizeof (EFI_CUSTOM_MODE_NAME));
-  expect_value (MockSetVariable, VendorGuid, &gEfiCustomModeEnableGuid);
-  expect_value (MockSetVariable, Attributes, EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS);
-  expect_value (MockSetVariable, DataSize, sizeof (BootMode));
-  expect_memory (MockSetVariable, Data, &BootMode, sizeof (BootMode));
+  // MU_CHANGE [BEGIN] - Remove the indicator of custom secure boot mode variable
+  // expect_memory (MockSetVariable, VariableName, EFI_CUSTOM_MODE_NAME, sizeof (EFI_CUSTOM_MODE_NAME));
+  // expect_value (MockSetVariable, VendorGuid, &gEfiCustomModeEnableGuid);
+  // expect_value (MockSetVariable, Attributes, EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS);
+  // expect_value (MockSetVariable, DataSize, sizeof (BootMode));
+  // expect_memory (MockSetVariable, Data, &BootMode, sizeof (BootMode));
 
-  will_return (MockSetVariable, EFI_SUCCESS);
+  // will_return (MockSetVariable, EFI_SUCCESS);
+  // MU_CHANGE [END]
 
   expect_memory (MockGetVariable, VariableName, EFI_PLATFORM_KEY_NAME, sizeof (EFI_PLATFORM_KEY_NAME));
   expect_value (MockGetVariable, VendorGuid, &gEfiGlobalVariableGuid);
