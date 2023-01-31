@@ -339,12 +339,17 @@ class WindowsVsToolChain(IUefiBuildPlugin):
         
         if(path is None):
             # Not specified...find latest
-            (rc, path) = FindWithVsWhere(vs_version=vs_version)
-            if rc == 0 and path is not None and os.path.exists(path):
+            try:
+                path = FindWithVsWhere(vs_version=vs_version)
+            except (EnvironmentError, ValueError, RuntimeError) as e:
+                self.Logger.error(str(e))
+                return None
+
+            if path is not None and os.path.exists(path):
                 self.Logger.debug("Found VS instance for %s", vs_version)
             else:
                 self.Logger.error(
-                    "Failed to find VS instance with VsWhere (%d)" % rc)
+                    f"VsWhere successfully executed, but could not find VS instance for {vs_version}.")
         return path
 
     def _get_vc_version(self, path, varname):
