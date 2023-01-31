@@ -29,17 +29,20 @@ Branch Changes - release/202208
 Breaking Changes-dev
 --------------------
 
-- None
+- Removed RCVT support
 
 Main Changes-dev
 ----------------
 
-- None
+- Updated Openssl crypto
+- Allow Dxe to use untested memory
+- Added cryptography for SEC phase
+- Cleaned up and reworked exception stack code
 
 Bug Fixes-dev
 -------------
 
-- None
+- Various minor bugs involving type casting were fixed
 
 2208_RefBoot Changes
 --------------------

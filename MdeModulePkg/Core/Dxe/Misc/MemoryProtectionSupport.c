@@ -1276,14 +1276,14 @@ FillInMemoryMap (
   SortMemoryMap (*MemoryMap, *MemoryMapSize, *DescriptorSize);
   SortMemorySpaceMap (MemorySpaceMap, MemorySpaceMapDescriptorCount, MemorySpaceMapDescriptorSize);
 
-  StartOfAddressSpace = MemorySpaceMap[0].BaseAddress;
-  EndOfAddressSpace   = MemorySpaceMap[*MemorySpaceMapDescriptorCount - 1].BaseAddress +
-                        MemorySpaceMap[*MemorySpaceMapDescriptorCount - 1].Length;
-
   AdditionalEntriesCount = 0;
   NewMemoryMapSize       = 0;
   NewMemoryMapStart      = NULL;
   for (LoopIteration = 0; LoopIteration < 2; LoopIteration++) {
+    StartOfAddressSpace = MemorySpaceMap[0].BaseAddress;
+    EndOfAddressSpace   = MemorySpaceMap[*MemorySpaceMapDescriptorCount - 1].BaseAddress +
+                          MemorySpaceMap[*MemorySpaceMapDescriptorCount - 1].Length;
+
     if (LoopIteration == 1) {
       NewMemoryMapSize = *MemoryMapSize + (AdditionalEntriesCount * *DescriptorSize);
       // Allocate a buffer for the new memory map
