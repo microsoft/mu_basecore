@@ -39,6 +39,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/SimpleFileSystem.h>
+#include <Protocol/MemoryProtectionDebug.h> // MU_CHANGE
 #include <Protocol/MemoryAttribute.h>       // MU_CHANGE
 
 #include "DxeMain.h"
@@ -77,6 +78,14 @@ extern LIST_ENTRY  mGcdMemorySpaceMap;
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttribute = NULL;          // MU_CHANGE
 
 // STATIC LIST_ENTRY  mProtectedImageRecordList; MU_CHANGE
+
+// MU_CHANGE - START
+STATIC MEMORY_PROTECTION_DEBUG_PROTOCOL  mMemoryProtectionDebug =
+{
+  IsGuardPage,
+  GetImageList
+};
+// MU_CHANGE - END
 
 /**
   Get the image type.
@@ -1334,11 +1343,11 @@ CoreInitializeMemoryProtection (
     EFI_HANDLE  HgBmHandle = NULL;
     Status = CoreInstallMultipleProtocolInterfaces (
                &HgBmHandle,
-               &gHeapGuardDebugProtocolGuid,
-               &mHeapGuardDebug,
+               &gMemoryProtectionDebugProtocolGuid,
+               &mMemoryProtectionDebug,
                NULL
                );
-    DEBUG ((DEBUG_INFO, "Installed gHeapGuardDebugProtocolGuid - %r\n", Status));
+    DEBUG ((DEBUG_INFO, "Installed gMemoryProtectionDebugProtocolGuid - %r\n", Status));
   }
 
   // MSCHANGE END
