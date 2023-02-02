@@ -164,6 +164,8 @@
 
 [Components.IA32, Components.X64, Components.AARCH64]
   MdePkg/Library/BaseRngLib/BaseRngLib.inf
+  #  TCBZ3519 MU_CHANGE: UEFI shell test for MemoryAttributeProtocol
+  MdePkg/Test/ShellTest/MemoryAttributeProtocolFuncTestApp/MemoryAttributeProtocolFuncTestApp.inf
 
 [Components.IA32, Components.X64]
   MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
