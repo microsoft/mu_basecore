@@ -36,6 +36,8 @@
   Misc/InstallConfigurationTable.c
   Misc/MemoryAttributesTable.c
   Misc/MemoryProtection.c
+  Misc/MemoryProtectionSupport.c # MU_CHANGE
+  Misc/MemoryProtectionSupport.h # MU_CHANGE
   Library/Library.c
   Hand/DriverSupport.c
   Hand/Notify.c

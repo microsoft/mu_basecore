@@ -42,6 +42,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
+#include "MemoryProtectionSupport.h"
 
 //
 // Image type definitions
@@ -52,8 +53,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 // Protection policy bit definition
 //
-#define DO_NOT_PROTECT                 0x00000000
-#define PROTECT_IF_ALIGNED_ELSE_ALLOW  0x00000001
+// MU_CHANGE START: Moved to MemoryProtectionSupport.h
+// #define DO_NOT_PROTECT                 0x00000000
+// #define PROTECT_IF_ALIGNED_ELSE_ALLOW  0x00000001
+// MU_CHANG END
 
 #define MEMORY_TYPE_OS_RESERVED_MIN   0x80000000
 #define MEMORY_TYPE_OEM_RESERVED_MIN  0x70000000
@@ -61,7 +64,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define PREVIOUS_MEMORY_DESCRIPTOR(MemoryDescriptor, Size) \
   ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)(MemoryDescriptor) - (Size)))
 
-UINT32  mImageProtectionPolicy;
+// UINT32   mImageProtectionPolicy; // MU_CHANGE
 
 extern LIST_ENTRY  mGcdMemorySpaceMap;
 
@@ -683,7 +686,7 @@ UnprotectUefiImage (
 
   @param MemoryType       Memory type.
 **/
-STATIC
+// STATIC // MU_CHANGE
 UINT64
 GetPermissionAttributeForMemoryType (
   IN EFI_MEMORY_TYPE  MemoryType
@@ -722,7 +725,7 @@ GetPermissionAttributeForMemoryType (
   @param  MemoryMapSize          Size, in bytes, of the MemoryMap buffer.
   @param  DescriptorSize         Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
 **/
-STATIC
+// STATIC // MU_CHANGE
 VOID
 SortMemoryMap (
   IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
@@ -765,7 +768,7 @@ SortMemoryMap (
                                           it is the size of new memory map after merge.
   @param[in]       DescriptorSize         Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
 **/
-STATIC
+// STATIC // MU_CHANGE
 VOID
 MergeMemoryMapForProtectionPolicy (
   IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
@@ -1274,7 +1277,7 @@ CoreInitializeMemoryProtection (
   EFI_EVENT   EnableNullDetectionEvent;     // MU_CHANGE
   VOID        *Registration;
 
-  mImageProtectionPolicy = PcdGet32 (PcdImageProtectionPolicy);
+  // mImageProtectionPolicy = gDxeMps.ImageProtectionPolicy; // MU_CHANGE
 
   InitializeListHead (&mProtectedImageRecordList);
 
@@ -1284,9 +1287,11 @@ CoreInitializeMemoryProtection (
   // - EfiConventionalMemory and EfiBootServicesData should use the
   //   same attribute
   //
-  ASSERT ((GetPermissionAttributeForMemoryType (EfiBootServicesCode) & EFI_MEMORY_XP) == 0);
-  ASSERT ((GetPermissionAttributeForMemoryType (EfiRuntimeServicesCode) & EFI_MEMORY_XP) == 0);
-  ASSERT ((GetPermissionAttributeForMemoryType (EfiLoaderCode) & EFI_MEMORY_XP) == 0);
+  // MU_CHANGE START: We allow code types to have NX
+  // ASSERT ((GetPermissionAttributeForMemoryType (EfiBootServicesCode) & EFI_MEMORY_XP) == 0);
+  // ASSERT ((GetPermissionAttributeForMemoryType (EfiRuntimeServicesCode) & EFI_MEMORY_XP) == 0);
+  // ASSERT ((GetPermissionAttributeForMemoryType (EfiLoaderCode) & EFI_MEMORY_XP) == 0);
+  // MU_CHANGE END
   ASSERT (
     GetPermissionAttributeForMemoryType (EfiBootServicesData) ==
     GetPermissionAttributeForMemoryType (EfiConventionalMemory)
@@ -1294,8 +1299,11 @@ CoreInitializeMemoryProtection (
 
   Status = CoreCreateEvent (
              EVT_NOTIFY_SIGNAL,
-             TPL_CALLBACK,
-             MemoryProtectionCpuArchProtocolNotify,
+             // MU_CHANGE START: Use Project Mu Arch Protocol Notify
+             TPL_CALLBACK - 1,
+             //  MemoryProtectionCpuArchProtocolNotify,
+             MemoryProtectionCpuArchProtocolNotifyMu,
+             // MU_CHANGE END
              NULL,
              &Event
              );
