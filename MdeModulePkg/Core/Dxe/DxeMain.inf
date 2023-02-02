@@ -128,6 +128,7 @@
   gEfiEndOfDxeEventGroupGuid                    ## SOMETIMES_CONSUMES   ## Event
   gEfiHobMemoryAllocStackGuid                   ## SOMETIMES_CONSUMES   ## SystemTable
   gDxeMemoryProtectionSettingsGuid              ## CONSUMES             ## HOB      // MU_CHANGE
+  gMemoryProtectionSpecialRegionHobGuid         ## CONSUMES             ## HOB      // MU_CHANGE
 
 [Ppis]
   gEfiVectorHandoffInfoPpiGuid                  ## UNDEFINED # HOB
@@ -176,6 +177,7 @@
   gEfiCapsuleArchProtocolGuid                   ## CONSUMES
   gEfiWatchdogTimerArchProtocolGuid             ## CONSUMES
   gEfiCpu2ProtocolGuid                          ## SOMETIMES_CONSUMES        ## MU_CHANGE
+  gMemoryProtectionSpecialRegionProtocolGuid    ## PRODUCES                  ## MU_CHANGE
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdLoadFixAddressBootTimeCodePageNumber    ## SOMETIMES_CONSUMES
