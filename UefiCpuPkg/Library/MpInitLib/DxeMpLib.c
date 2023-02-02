@@ -18,6 +18,7 @@
 
 #include <Protocol/Timer.h>
 
+#include <Library/DxeMemoryProtectionHobLib.h> // MU_CHANGE
 #define  AP_SAFE_STACK_SIZE  128
 
 CPU_MP_DATA             *mCpuMpData                  = NULL;
@@ -497,7 +498,10 @@ InitMpGlobalData (
     return;
   }
 
-  if (PcdGetBool (PcdCpuStackGuard)) {
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if (PcdGetBool (PcdCpuStackGuard)) {
+  if (gDxeMps.CpuStackGuard) {
+    // MU_CHANGE END
     //
     // One extra page at the bottom of the stack is needed for Guard page.
     //

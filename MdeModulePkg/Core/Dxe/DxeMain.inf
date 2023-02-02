@@ -95,7 +95,7 @@
   CpuExceptionHandlerLib
   PcdLib
   BaseBinSecurityLib         ## MS_CHANGE_?
-
+  DxeMemoryProtectionHobLib        ## MU_CHANGE
 
 [Guids]
   gEfiEventMemoryMapChangeGuid                  ## PRODUCES             ## Event
@@ -126,6 +126,7 @@
   gEfiEndOfDxeEventGroupGuid                    ## SOMETIMES_CONSUMES   ## Event
   gEfiHobMemoryAllocStackGuid                   ## SOMETIMES_CONSUMES   ## SystemTable
   gMuEventPreExitBootServicesGuid               ## PRODUCES             ## Event    // MU_CHANGE
+  gDxeMemoryProtectionSettingsGuid              ## CONSUMES             ## HOB      // MU_CHANGE
 
 [Ppis]
   gEfiVectorHandoffInfoPpiGuid                  ## UNDEFINED # HOB
@@ -184,13 +185,15 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfileMemoryType                 ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfilePropertyMask               ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfileDriverPath                 ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdImageProtectionPolicy                   ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy             ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask        ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPageType                       ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPoolType                       ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask                   ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                           ## CONSUMES
+  # MU_CHANGE START Remove memory protection PCD references
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdImageProtectionPolicy                   ## CONSUMES
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy             ## CONSUMES
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask        ## CONSUMES
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPageType                       ## CONSUMES
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPoolType                       ## CONSUMES
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask                   ## CONSUMES
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                           ## CONSUMES
+  # MU_CHANGE END
   gEfiMdeModulePkgTokenSpaceGuid.PcdFwVolDxeMaxEncapsulationDepth           ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdImageLargeAddressLoad                   ## CONSUMES
 

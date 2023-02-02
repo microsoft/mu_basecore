@@ -469,9 +469,11 @@ InitializeMpExceptionStackSwitchHandlers (
   EFI_STATUS                      Status;
   UINT8                           *Buffer;
 
-  if (!PcdGetBool (PcdCpuStackGuard)) {
-    return;
-  }
+  // MU_CHANGE START
+  // if (!PcdGetBool (PcdCpuStackGuard)) {
+  //  return;
+  // }
+  // MU_CHANGE END
 
   Status = MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
   ASSERT_EFI_ERROR (Status);

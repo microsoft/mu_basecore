@@ -38,15 +38,15 @@ HandOffToDxeCore (
   //
   BaseOfStack = AllocatePages (EFI_SIZE_TO_PAGES (STACK_SIZE));
   ASSERT (BaseOfStack != NULL);
-
-  if (PcdGetBool (PcdSetNxForStack)) {
+  // MU_CHANGE Start Always set NX for stack
+  // if (PcdGetBool (PcdSetNxForStack)) {
     Status = PeiServicesLocatePpi (
                &gEdkiiMemoryAttributePpiGuid,
                0,
                NULL,
                (VOID **)&MemoryPpi
                );
-    ASSERT_EFI_ERROR (Status);
+  ASSERT_EFI_ERROR (Status);
 
     Status = MemoryPpi->SetPermissions (
                           MemoryPpi,
@@ -56,8 +56,8 @@ HandOffToDxeCore (
                           EFI_MEMORY_XP
                           );
     ASSERT_EFI_ERROR (Status);
-  }
-
+  // }
+  // MU_CHANGE END
   //
   // Compute the top of the stack we were allocated. Pre-allocate a UINTN
   // for safety.
