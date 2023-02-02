@@ -19,8 +19,10 @@
 #define PROTECT_IF_ALIGNED_ELSE_ALLOW  0x00000001
 #define PROTECT_ELSE_RAISE_ERROR       0x00000002
 
-#define IMAGE_PROPERTIES_PRIVATE_DATA_SIGNATURE    SIGNATURE_32 ('I','P','P','D')
-#define NONPROTECTED_IMAGE_PRIVATE_DATA_SIGNATURE  SIGNATURE_32 ('N','I','P','D')
+#define IMAGE_PROPERTIES_PRIVATE_DATA_SIGNATURE                SIGNATURE_32 ('I','P','P','D')
+#define NONPROTECTED_IMAGE_PRIVATE_DATA_SIGNATURE              SIGNATURE_32 ('N','I','P','D')
+#define MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE  SIGNATURE_32 ('M','P','S','R')
+
 typedef struct {
   UINT32        Signature;
   UINTN         NonProtectedImageCount;
@@ -54,12 +56,37 @@ typedef struct {
 
 #define ALIGN_ADDRESS(Address)  ((Address / EFI_PAGE_SIZE) * EFI_PAGE_SIZE)
 
+#define SPECIAL_REGION_PATTERN  7732426 // 7-(S) 7-(P) 3-(E) 2-(C) 4-(I) 2-(A) 6-(L)
+
+// TRUE if A and B have overlapping intervals
+#define CHECK_OVERLAP(AStart, AEnd, BStart, BEnd) \
+  ((AStart <= BStart && AEnd > BStart) || \
+  (BStart <= AStart && BEnd > AStart))
+
+// TRUE if A interval subsumes B interval
+#define CHECK_SUBSUMPTION(AStart, AEnd, BStart, BEnd) \
+  ((AStart < BStart) && (AEnd > BEnd))
+
+// TRUE if A is a bitwise subset of B
+#define CHECK_SUBSET(A, B)  ((A | B) == B)
+
 typedef struct {
   UINT32        Signature;
   UINTN         ImageRecordCount;
   UINTN         CodeSegmentCountMax;
   LIST_ENTRY    ImageRecordList;
 } IMAGE_PROPERTIES_PRIVATE_DATA;
+
+typedef struct {
+  UINT32                              Signature;
+  MEMORY_PROTECTION_SPECIAL_REGION    SpecialRegion;
+  LIST_ENTRY                          Link;
+} MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY;
+
+typedef struct {
+  UINTN         Count;
+  LIST_ENTRY    SpecialRegionList;
+} MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD;
 
 /**
   Clears the attributes from a memory range.

@@ -299,6 +299,11 @@ DxeMain (
     ASSERT_EFI_ERROR (Status);
   }
 
+  // MU_CHANGE START: Add initialization of the memory protection special region protocol to support
+  //                  applying specific settings to memory regions during protection initialization
+  CoreInitializeMemoryProtectionSpecialRegions ();
+  // MU_CHANGE END
+
   //
   // Initialize the Global Coherency Domain Services
   //
