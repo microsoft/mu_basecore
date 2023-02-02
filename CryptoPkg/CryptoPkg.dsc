@@ -69,11 +69,12 @@
 [LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_APPLICATION]
   RngLib|MdePkg/Library/DxeRngLib/DxeRngLib.inf
 
-!if $(TOOLCHAIN) == VS2017 or $(TOOLCHAIN) == VS2019 or $(TOOLCHAIN) == VS2022 ## MU_CHANGE
+!if $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022 ## MU_CHANGE
 [LibraryClasses.IA32]
   NULL|MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf
   ReportStatusCodeLib|MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
-[LibraryClasses.X64, LibraryClasses.IA32]
+[LibraryClasses.X64]
+  # Provide StackCookie support lib so that we can link to /GS exports for VS builds
   NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
   BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
 [LibraryClasses.X64.DXE_CORE, LibraryClasses.X64.UEFI_DRIVER, LibraryClasses.X64.DXE_DRIVER, LibraryClasses.X64.UEFI_APPLICATION]
