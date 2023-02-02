@@ -20,6 +20,8 @@
 
 #define IMAGE_PROPERTIES_PRIVATE_DATA_SIGNATURE                SIGNATURE_32 ('I','P','P','D')
 #define NONPROTECTED_IMAGE_PRIVATE_DATA_SIGNATURE              SIGNATURE_32 ('N','I','P','D')
+#define MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY_SIGNATURE  SIGNATURE_32 ('M','P','S','R')
+
 typedef struct {
   UINT32        Signature;
   UINTN         NonProtectedImageCount;
@@ -38,6 +40,17 @@ typedef struct {
   UINTN         CodeSegmentCountMax;
   LIST_ENTRY    ImageRecordList;
 } IMAGE_PROPERTIES_PRIVATE_DATA;
+
+typedef struct {
+  UINT32                              Signature;
+  MEMORY_PROTECTION_SPECIAL_REGION    SpecialRegion;
+  LIST_ENTRY                          Link;
+} MEMORY_PROTECTION_SPECIAL_REGION_LIST_ENTRY;
+
+typedef struct {
+  UINTN         Count;
+  LIST_ENTRY    SpecialRegionList;
+} MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD;
 
 /**
   Clears the attributes from a memory range.
