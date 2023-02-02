@@ -708,11 +708,16 @@ GetPermissionAttributeForMemoryType (
   // } else {
   //   return 0;
   // }
-  if (GetDxeMemoryTypeSettingFromBitfield (MemoryType, gDxeMps.NxProtectionPolicy)) {
+
+  // Handle code allocations according to the NX_COMPAT DLL flag. If the flag is
+  // set, the image should update the attributes of code type allocates when it's ready to execute them.
+  if (IsCodeType (MemoryType) && !IsSystemNxCompatible ()) {
+    return 0;
+  } else if (GetDxeMemoryTypeSettingFromBitfield (MemoryType, gDxeMps.NxProtectionPolicy)) {
     return EFI_MEMORY_XP;
   }
 
-    return 0;
+  return 0;
 
   // MU_CHANGE END
 }
