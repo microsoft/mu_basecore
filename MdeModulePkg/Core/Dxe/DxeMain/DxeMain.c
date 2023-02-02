@@ -244,6 +244,7 @@ DxeMain (
   EFI_VECTOR_HANDOFF_INFO       *VectorInfoList;
   EFI_VECTOR_HANDOFF_INFO       *VectorInfo;
   VOID                          *EntryPoint;
+  EFI_HOB_GUID_TYPE             *GuidHob2; // MU_CHANGE
 
   //
   // Setup the default exception handlers
@@ -260,10 +261,19 @@ DxeMain (
   //
   // Setup Stack Guard
   //
-  if (PcdGetBool (PcdCpuStackGuard)) {
+  // MU_CHANGE START: Check Memory Protection HOB
+  // if (PcdGetBool (PcdCpuStackGuard)) {
+  GuidHob2 = GetFirstGuidHob (&gDxeMemoryProtectionSettingsGuid);
+  if ((GuidHob2 != NULL) &&
+      (((DXE_MEMORY_PROTECTION_SETTINGS *)GET_GUID_HOB_DATA (GuidHob2))->StructVersion == (UINT8)DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION) &&
+      ((DXE_MEMORY_PROTECTION_SETTINGS *)GET_GUID_HOB_DATA (GuidHob2))->CpuStackGuard)
+  {
     Status = InitializeSeparateExceptionStacks (NULL, NULL);
     ASSERT_EFI_ERROR (Status);
   }
+
+  // }
+  // MU_CHANGE END
 
   //
   // Initialize Debug Agent to support source level debug in DXE phase
@@ -293,8 +303,12 @@ DxeMain (
   // Start the Image Services.
   //
   Status = CoreInitializeImageServices (HobStart);
-  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE START Assert Status but omit EFI_NOT_READY as it just implies gCPU is not yet installed
+  if (Status != EFI_NOT_READY) {
+    ASSERT_EFI_ERROR (Status);
+  }
 
+  // MU_CHANGE END
   //
   // Initialize the Global Coherency Domain Services
   //

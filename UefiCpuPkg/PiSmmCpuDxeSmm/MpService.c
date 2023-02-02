@@ -10,6 +10,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "PiSmmCpuDxeSmm.h"
 
+#include <Library/MmMemoryProtectionHobLib.h> // MU_CHANGE
+
 //
 // Slots for all MTRR( FIXED MTRR + VARIABLE MTRR + MTRR_LIB_IA32_MTRR_DEF_TYPE)
 //
@@ -1015,6 +1017,9 @@ APHandler (
 }
 
 /**
+  // MU_CHANGE START Update to use memory protection settings HOB
+  if (gMmMps.NullPointerDetectionPolicy) {
+    // MU_CHANGE END
   Checks whether the input token is the current used token.
 
   @param[in]  Token      This parameter describes the token that was passed into DispatchProcedure or
