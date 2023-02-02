@@ -26,6 +26,8 @@ MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD  mSpecialMemoryRegionsPrivate
 };
 
 BOOLEAN                        mIsSystemNxCompatible    = TRUE;
+EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
+
 #define IS_BITMAP_INDEX_SET(Bitmap, Index)  ((((UINT8*)Bitmap)[Index / 8] & (1 << (Index % 8))) != 0 ? TRUE : FALSE)
 #define SET_BITMAP_INDEX(Bitmap, Index)     (((UINT8*)Bitmap)[Index / 8] |= (1 << (Index % 8)))
 
@@ -3058,6 +3060,37 @@ MemoryProtectionCpuArchProtocolNotifyMu (
   HeapGuardCpuArchProtocolNotify ();
 
 Done:
+  CoreCloseEvent (Event);
+}
+
+/**
+  A notification for the Memory Attribute Protocol.
+
+  @param[in]  Event                 Event whose notification function is being invoked.
+  @param[in]  Context               Pointer to the notification function's context,
+                                    which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+MemoryAttributeProtocolNotify (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&MemoryAttributeProtocol);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_INFO,
+      "%a - Unable to locate the memory attribute protocol! Status = %r\n",
+      __FUNCTION__,
+      Status
+      ));
+  }
+
   CoreCloseEvent (Event);
 }
 
