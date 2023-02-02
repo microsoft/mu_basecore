@@ -129,6 +129,21 @@ MemoryProtectionCpuArchProtocolNotifyMu (
   );
 
 /**
+  A notification for the Memory Attribute Protocol.
+
+  @param[in]  Event                 Event whose notification function is being invoked.
+  @param[in]  Context               Pointer to the notification function's context,
+                                    which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+MemoryAttributeProtocolNotify (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  );
+
+/**
   Sets the NX compatibility global to FALSE so future checks to
   IsSystemNxCompatible() will return FALSE.
 **/

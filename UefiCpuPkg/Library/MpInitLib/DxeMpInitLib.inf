@@ -65,6 +65,7 @@
 
 [Protocols]
   gEfiTimerArchProtocolGuid                     ## SOMETIMES_CONSUMES
+  gEfiMemoryAttributeProtocolGuid               ## CONSUMES ## MU_CHANGE
 
 [Guids]
   gEfiEventExitBootServicesGuid                 ## CONSUMES  ## Event
