@@ -48,13 +48,11 @@
   VariablePolicyHelperLib|MdeModulePkg/Library/VariablePolicyHelperLib/VariablePolicyHelperLib.inf    # MU_CHANGE
 
 ## MS_CHANGE Begin
-[LibraryClasses.X64, LibraryClasses.IA32]
-!if $(TARGET) == DEBUG
-!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019
-  #if debug is enabled provide StackCookie support lib so that we can link to /GS exports
+[LibraryClasses.X64]
+!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022
+  # Provide StackCookie support lib so that we can link to /GS exports for VS builds
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
   NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
-!endif
 !endif
 ## MS_CHANGE End
 

@@ -33,6 +33,16 @@
 
 [LibraryClasses]
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
+  # MU_CHANGE START
+  BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
+!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022
+[LibraryClasses.X64]
+  # Provide StackCookie support lib so that we can link to /GS exports for VS builds
+  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
+  BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+  NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
+!endif
+# MU_CHANGE END
 
 [Components]
   MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
@@ -177,7 +187,7 @@
   MdePkg/Library/SmmMemLib/SmmMemLib.inf
   MdePkg/Library/SmmIoLib/SmmIoLib.inf
   ##MSCHANGE Begin
-!if $(TOOLCHAIN) == VS2017 or $(TOOLCHAIN) == VS2019
+!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022
   MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
   MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
 !endif
