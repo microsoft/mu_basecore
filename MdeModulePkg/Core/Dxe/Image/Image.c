@@ -8,6 +8,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "DxeMain.h"
 #include "Image.h"
+#include "MemoryProtectionSupport.h" // MU_CHANGE
 
 //
 // Module Globals
@@ -580,6 +581,10 @@ CoreIsImageTypeSupported (
                                   relocate the PE/COFF file
   @retval EFI_INVALID_PARAMETER   Invalid parameter
   @retval EFI_BUFFER_TOO_SMALL    Buffer for image is too small
+  // MU_CHANGE START
+  @retval EFI_SECURITY_VIOLATION  NXCOMPAT flag not set on image and it is
+                                  of subsystem type EFI_APPLICATION
+  // MU_CHANGE END
 
 **/
 EFI_STATUS
@@ -646,6 +651,20 @@ CoreLoadPeImage (
       return EFI_UNSUPPORTED;
   }
 
+  // MU_CHANGE START
+  // If the image doesn't have the NXCOMPAT flag and is an EFI_APPLICATION subsystem, it could be a boot
+  // loader or 3rd party binary which isn't NX aware. Because of this, we need to ensure future allocations
+  // of code memory types aren't set to NX in case this image does its own allocations.
+  // Or, if our memory protection policy specifies that we shouldn't allow such images, return a failure.
+  if (!(Image->ImageContext.SupportsNx) && (Image->ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION)) {
+    if (gDxeMps.ImageProtectionPolicy.Fields.BlockImagesWithoutNxFlag) {
+      return EFI_SECURITY_VIOLATION;
+    }
+
+    TurnOffNxCompatibility ();
+  }
+
+  // MU_CHANGE END
   //
   // Allocate memory of the correct memory type aligned on the required image boundary
   //
