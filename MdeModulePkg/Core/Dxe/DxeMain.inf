@@ -179,6 +179,7 @@
   gEfiCapsuleArchProtocolGuid                   ## CONSUMES
   gEfiWatchdogTimerArchProtocolGuid             ## CONSUMES
   gEfiCpu2ProtocolGuid                          ## SOMETIMES_CONSUMES        ## MU_CHANGE
+  gMemoryProtectionDebugProtocolGuid            ## SOMETIMES_PRODUCES        ## MU_CHANGE
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdLoadFixAddressBootTimeCodePageNumber    ## SOMETIMES_CONSUMES
