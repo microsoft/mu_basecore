@@ -469,9 +469,11 @@ InitializeMpExceptionStackSwitchHandlers (
   EFI_STATUS                      Status;
   UINT8                           *Buffer;
 
-  if (!PcdGetBool (PcdCpuStackGuard)) {
-    return;
-  }
+  // MU_CHANGE START
+  // if (!PcdGetBool (PcdCpuStackGuard)) {
+  //  return;
+  // }
+  // MU_CHANGE END
 
   MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
   SwitchStackData = AllocatePages (EFI_SIZE_TO_PAGES (NumberOfProcessors * sizeof (EXCEPTION_STACK_SWITCH_CONTEXT)));
