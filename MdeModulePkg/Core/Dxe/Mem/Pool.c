@@ -383,9 +383,11 @@ CoreAllocatePoolI (
   //
   // Adjust the size by the pool header & tail overhead
   //
-
+  // MU_CHANGE START Update to use memory protection settings HOB
   HasPoolTail = !(NeedGuard &&
-                  ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
+                  //  ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
+                  gDxeMps.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_TAIL);
+  // MU_CHANGE END
   PageAsPool = (IsHeapGuardEnabled (GUARD_HEAP_TYPE_FREED) && !mOnGuarding);
 
   //
@@ -716,8 +718,11 @@ CoreFreePoolI (
 
   IsGuarded = IsPoolTypeToGuard (Head->Type) &&
               IsMemoryGuarded ((EFI_PHYSICAL_ADDRESS)(UINTN)Head);
+  // MU_CHANGE START Update to use memory protection settings HOB
   HasPoolTail = !(IsGuarded &&
-                  ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
+                  // ((PcdGet8 (PcdHeapGuardPropertyMask) & BIT7) == 0));
+                  gDxeMps.HeapGuardPolicy.Fields.Direction == HEAP_GUARD_ALIGNED_TO_TAIL);
+  // MU_CHANGE END
   PageAsPool = (Head->Signature == POOLPAGE_HEAD_SIGNATURE);
 
   if (HasPoolTail) {

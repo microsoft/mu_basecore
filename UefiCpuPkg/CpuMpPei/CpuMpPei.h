@@ -425,7 +425,7 @@ InitializeCpuMpWorker (
   );
 
 /**
-  Enable/setup stack guard for each processor if PcdCpuStackGuard is set to TRUE.
+  Enable/setup stack guard for each processor. // MU_CHANGE
 
   Doing this in the memory-discovered callback is to make sure the Stack Guard
   feature to cover as most PEI code as possible.

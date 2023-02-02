@@ -86,6 +86,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DebugAgentLib.h>
 #include <Library/CpuExceptionHandlerLib.h>
 #include <Library/BaseBinSecurityLib.h>          // MS_CHANGE_?
+#include <Library/DxeMemoryProtectionHobLib.h>   // MU_CHANGE
 
 //
 // attributes for reserved memory before it is promoted to system memory
