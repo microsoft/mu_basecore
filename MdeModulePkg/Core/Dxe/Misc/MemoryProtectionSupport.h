@@ -162,4 +162,24 @@ IsSystemNxCompatible (
   VOID
   );
 
+/**
+ Generate a list of IMAGE_RANGE_DESCRIPTOR structs which describe the data/code regions of protected images or
+ the memory ranges of nonprotected images.
+
+ @param[in]  ImageList                  Pointer to NULL IMAGE_RANGE_DESCRIPTOR* which will be updated to the head of the allocated
+                                        IMAGE_RANGE_DESCRIPTOR list
+ @param[in]  ProtectedOrNonProtected    Enum describing if the returned list will describe the protected or
+                                        nonprotected loaded images
+
+ @retval  EFI_SUCCESS             *ImageList points to the head of the IMAGE_RANGE_DESCRIPTOR list
+ @retval  EFI_INVALID_PARAMETER   ImageList is NULL or *ImageList is not NULL
+ @retval  EFI_OUT_OF_RESOURCES    Allocation of memory failed
+**/
+EFI_STATUS
+EFIAPI
+GetImageList (
+  IN IMAGE_RANGE_DESCRIPTOR         **ImageList,
+  IN IMAGE_RANGE_PROTECTION_STATUS  ProtectedOrNonProtected
+  );
+
 #endif

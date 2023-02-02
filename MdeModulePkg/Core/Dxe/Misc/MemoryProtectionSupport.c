@@ -1461,6 +1461,141 @@ GetImageRecordContainedByBuffer (
 }
 
 /**
+ Generate a list of IMAGE_RANGE_DESCRIPTOR structs which describe the data/code regions of protected images or
+ the memory ranges of nonprotected images.
+
+ @param[in]  ImageList                  Pointer to NULL IMAGE_RANGE_DESCRIPTOR* which will be updated to the head of the allocated
+                                        IMAGE_RANGE_DESCRIPTOR list
+ @param[in]  ProtectedOrNonProtected    Enum describing if the returned list will describe the protected or
+                                        nonprotected loaded images
+
+ @retval  EFI_SUCCESS             *ImageList points to the head of the IMAGE_RANGE_DESCRIPTOR list
+ @retval  EFI_INVALID_PARAMETER   ImageList is NULL or *ImageList is not NULL
+ @retval  EFI_OUT_OF_RESOURCES    Allocation of memory failed
+**/
+EFI_STATUS
+EFIAPI
+GetImageList (
+  IN IMAGE_RANGE_DESCRIPTOR         **ImageList,
+  IN IMAGE_RANGE_PROTECTION_STATUS  ProtectedOrNonProtected
+  )
+{
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *ImageRecordCodeSection;
+  LIST_ENTRY                            *ImageRecordCodeSectionLink;
+  LIST_ENTRY                            *ImageRecordCodeSectionEndLink;
+  LIST_ENTRY                            *ImageRecordCodeSectionList;
+  IMAGE_PROPERTIES_RECORD               *ImageRecord;
+  LIST_ENTRY                            *ImageRecordLink;
+  LIST_ENTRY                            *ImageListHead;
+  UINT64                                PhysicalStart, PhysicalEnd;
+  IMAGE_RANGE_DESCRIPTOR                *CurrentImageRangeDescriptor;
+
+  if ((ImageList == NULL) || (*ImageList != NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (ProtectedOrNonProtected == Protected) {
+    ImageListHead = &mImagePropertiesPrivate.ImageRecordList;
+  } else if (ProtectedOrNonProtected == NonProtected) {
+    ImageListHead = &mNonProtectedImageRangesPrivate.NonProtectedImageList;
+  } else {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *ImageList = AllocateZeroPool (sizeof (IMAGE_RANGE_DESCRIPTOR));
+
+  if (*ImageList == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  InitializeListHead (&(*ImageList)->Link);
+
+  // Walk through each image
+  for (ImageRecordLink = ImageListHead->ForwardLink;
+       ImageRecordLink != ImageListHead;
+       ImageRecordLink = ImageRecordLink->ForwardLink)
+  {
+    ImageRecord = CR (
+                    ImageRecordLink,
+                    IMAGE_PROPERTIES_RECORD,
+                    Link,
+                    IMAGE_PROPERTIES_RECORD_SIGNATURE
+                    );
+    PhysicalStart = ImageRecord->ImageBase;
+    PhysicalEnd   = ImageRecord->ImageBase + ImageRecord->ImageSize;
+
+    ImageRecordCodeSectionList = &ImageRecord->CodeSegmentList;
+
+    ImageRecordCodeSectionLink    = ImageRecordCodeSectionList->ForwardLink;
+    ImageRecordCodeSectionEndLink = ImageRecordCodeSectionList;
+    while (ImageRecordCodeSectionLink != ImageRecordCodeSectionEndLink) {
+      ImageRecordCodeSection = CR (
+                                 ImageRecordCodeSectionLink,
+                                 IMAGE_PROPERTIES_RECORD_CODE_SECTION,
+                                 Link,
+                                 IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
+                                 );
+      ImageRecordCodeSectionLink = ImageRecordCodeSectionLink->ForwardLink;
+
+      // Mark the data region
+      if (PhysicalStart < ImageRecordCodeSection->CodeSegmentBase) {
+        CurrentImageRangeDescriptor = AllocatePool (sizeof (IMAGE_RANGE_DESCRIPTOR));
+        if (CurrentImageRangeDescriptor == NULL) {
+          goto OutOfResourcesCleanup;
+        }
+
+        POPULATE_IMAGE_RANGE_DESCRIPTOR (CurrentImageRangeDescriptor, Data, PhysicalStart, ImageRecordCodeSection->CodeSegmentBase - PhysicalStart);
+        PhysicalStart = ImageRecordCodeSection->CodeSegmentBase;
+        InsertTailList (&(*ImageList)->Link, &CurrentImageRangeDescriptor->Link);
+      }
+
+      // Mark the code region
+      CurrentImageRangeDescriptor = AllocatePool (sizeof (IMAGE_RANGE_DESCRIPTOR));
+      if (CurrentImageRangeDescriptor == NULL) {
+        goto OutOfResourcesCleanup;
+      }
+
+      POPULATE_IMAGE_RANGE_DESCRIPTOR (CurrentImageRangeDescriptor, Code, PhysicalStart, ImageRecordCodeSection->CodeSegmentSize);
+      PhysicalStart = ImageRecordCodeSection->CodeSegmentBase + ImageRecordCodeSection->CodeSegmentSize;
+      InsertTailList (&(*ImageList)->Link, &CurrentImageRangeDescriptor->Link);
+    }
+
+    // Mark the remainder of the image as a data section
+    if (PhysicalStart < PhysicalEnd) {
+      CurrentImageRangeDescriptor = AllocatePool (sizeof (IMAGE_RANGE_DESCRIPTOR));
+      if (CurrentImageRangeDescriptor == NULL) {
+        goto OutOfResourcesCleanup;
+      }
+
+      POPULATE_IMAGE_RANGE_DESCRIPTOR (CurrentImageRangeDescriptor, Data, PhysicalStart, PhysicalEnd - PhysicalStart);
+      PhysicalStart = PhysicalEnd;
+      InsertTailList (&(*ImageList)->Link, &CurrentImageRangeDescriptor->Link);
+    }
+  }
+
+  return EFI_SUCCESS;
+
+OutOfResourcesCleanup:
+  ImageRecordLink = &(*ImageList)->Link;
+
+  while (!IsListEmpty (ImageRecordLink)) {
+    CurrentImageRangeDescriptor = CR (
+                                    ImageRecordLink->ForwardLink,
+                                    IMAGE_RANGE_DESCRIPTOR,
+                                    Link,
+                                    IMAGE_RANGE_DESCRIPTOR_SIGNATURE
+                                    );
+
+    RemoveEntryList (&CurrentImageRangeDescriptor->Link);
+    FreePool (CurrentImageRangeDescriptor);
+  }
+
+  FreePool (*ImageList);
+
+  return EFI_OUT_OF_RESOURCES;
+}
+
+/**
   Create an image properties record and insert it into the nonprotected image list
 
   @param[in]  ImageBase               Base of PE image
