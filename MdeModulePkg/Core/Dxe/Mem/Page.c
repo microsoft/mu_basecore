@@ -10,6 +10,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "Imem.h"
 #include "HeapGuard.h"
 #include <Pi/PrePiDxeCis.h>
+#include "MemoryProtectionSupport.h" // MU_CHANGE
 
 //
 // Entry for tracking the memory regions for each memory type to coalesce similar memory types
@@ -1102,7 +1103,7 @@ CoreFindFreePagesI (
       DescEnd = MaxAddress;
     }
 
-    DescEnd = ((DescEnd + 1) & (~((UINT64)Alignment - 1))) - 1;
+    DescEnd = ((DescEnd + 1) & (~(Alignment - 1))) - 1;
 
     // Skip if DescEnd is less than DescStart after alignment clipping
     if (DescEnd < DescStart) {
@@ -1537,6 +1538,22 @@ CoreInternalFreePages (
   MEMORY_MAP  *Entry;
   UINTN       Alignment;
   BOOLEAN     IsGuarded;
+  // MU_CHANGE Start: Unprotect page(s) before free if the memory will be cleared on free
+  UINT64  Attributes;
+
+  if (DebugClearMemoryEnabled () && (MemoryAttributeProtocol != NULL)) {
+    Status = MemoryAttributeProtocol->GetMemoryAttributes (MemoryAttributeProtocol, Memory, EFI_PAGES_TO_SIZE (NumberOfPages), &Attributes);
+
+    if ((Attributes & EFI_MEMORY_RO) || (Attributes & EFI_MEMORY_RP) || (Status == EFI_NO_MAPPING)) {
+      Status = ClearAccessAttributesFromMemoryRange (Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
+
+      if (EFI_ERROR (Status) && (Status != EFI_NOT_READY)) {
+        DEBUG ((DEBUG_WARN, "%a - Unable to clear attributes from memory at base: 0x%llx\n", __FUNCTION__, Memory));
+      }
+    }
+  }
+
+  // MU_CHANGE End
 
   //
   // Free the range
@@ -1961,7 +1978,6 @@ CoreGetMemoryMap (
       MemoryMap->Attribute     = MergeGcdMapEntry.Attributes | EFI_MEMORY_NV |
                                  (MergeGcdMapEntry.Capabilities & (EFI_CACHE_ATTRIBUTE_MASK | EFI_MEMORY_ATTRIBUTE_MASK));
       MemoryMap->Type = EfiPersistentMemory;
-
       //
       // Check to see if the new Memory Map Descriptor can be merged with an
       // existing descriptor if they are adjacent and have the same attributes
