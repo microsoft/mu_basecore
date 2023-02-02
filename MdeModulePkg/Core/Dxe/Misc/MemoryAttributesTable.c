@@ -343,7 +343,7 @@ CoreInitializeMemoryAttributesTable (
   @return  The number of bytes associated with the number of EFI_PAGEs specified
            by Pages.
 **/
-STATIC
+// STATIC MU_CHANGE
 UINT64
 EfiPagesToSize (
   IN UINT64  Pages
@@ -363,7 +363,7 @@ EfiPagesToSize (
            by Size.
 
 **/
-STATIC
+// STATIC MU_CHANGE
 UINT64
 EfiSizeToPages (
   IN UINT64  Size
@@ -593,7 +593,7 @@ GetImageRecordByAddress (
   @param  OldRecord              A pointer to one old memory map entry.
   @param  DescriptorSize         Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
 **/
-STATIC
+// STATIC // MU_CHANGE
 UINTN
 SetNewRecord (
   IN IMAGE_PROPERTIES_RECORD    *ImageRecord,
@@ -1072,7 +1072,7 @@ SetMemoryAttributesTableSectionAlignment (
   @param  FirstImageRecordCodeSection    first code section in image record
   @param  SecondImageRecordCodeSection   second code section in image record
 **/
-STATIC
+// STATIC MU_CHANGE
 VOID
 SwapImageRecordCodeSection (
   IN IMAGE_PROPERTIES_RECORD_CODE_SECTION  *FirstImageRecordCodeSection,
@@ -1207,7 +1207,7 @@ IsImageRecordCodeSectionValid (
   @param  FirstImageRecord   first image record.
   @param  SecondImageRecord  second image record.
 **/
-STATIC
+// STATIC MU_CHANGE
 VOID
 SwapImageRecord (
   IN IMAGE_PROPERTIES_RECORD  *FirstImageRecord,
@@ -1470,7 +1470,7 @@ Finish:
 
   @return image record
 **/
-STATIC
+// STATIC MU_CHANGE
 IMAGE_PROPERTIES_RECORD *
 FindImageRecord (
   IN EFI_PHYSICAL_ADDRESS  ImageBase,
