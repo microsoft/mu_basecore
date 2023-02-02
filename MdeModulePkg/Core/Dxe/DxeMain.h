@@ -1591,6 +1591,19 @@ CoreWaitForEvent (
   OUT UINTN     *UserIndex
   );
 
+// MU_CHANGE begin
+
+/**
+  Initialize the memory protection special region reporting.
+**/
+VOID
+EFIAPI
+CoreInitializeMemoryProtectionSpecialRegions (
+  VOID
+  );
+
+// MU_CHANGE end
+
 /**
   Closes an event and frees the event structure.
 
