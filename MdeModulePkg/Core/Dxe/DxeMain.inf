@@ -178,6 +178,7 @@
   gEfiCapsuleArchProtocolGuid                   ## CONSUMES
   gEfiWatchdogTimerArchProtocolGuid             ## CONSUMES
   gEfiCpu2ProtocolGuid                          ## SOMETIMES_CONSUMES        ## MS_CHANGE
+  gMemoryProtectionDebugProtocolGuid            ## SOMETIMES_PRODUCES        ## MS_CHANGE
   gEfiMemoryAttributeProtocolGuid               ## CONSUMES                  ## MS_CHANGE
   gMemoryProtectionSpecialRegionProtocolGuid    ## PRODUCES                  ## MU_CHANGE
 
