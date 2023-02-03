@@ -1973,7 +1973,7 @@ MpInitLibInitialize (
     ApResetVectorSizeAbove1Mb
     );
   DEBUG ((DEBUG_INFO, "AP Vector: non-16-bit = %p/%x\n", CpuMpData->WakeupBufferHigh, ApResetVectorSizeAbove1Mb));
-
+  BufferRemoveNoExecuteSetReadOnly (CpuMpData->WakeupBufferHigh, ALIGN_VALUE (ApResetVectorSizeAbove1Mb, EFI_PAGE_SIZE));
   //
   // Enable the local APIC for Virtual Wire Mode.
   //
