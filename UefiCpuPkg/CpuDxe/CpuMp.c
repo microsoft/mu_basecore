@@ -671,7 +671,7 @@ InitializeMpExceptionStackSwitchHandlers (
       (UINT64)(UINTN)SwitchStackData.Buffer,
       (UINT32)BufferSize
       ));
-
+    AppendCpuMpDebugProtocolEntry ((UINTN)SwitchStackData.Buffer, BufferSize, Index, TRUE); // MU_CHANGE
     if (Index == Bsp) {
       InitializeExceptionStackSwitchHandlers (&SwitchStackData);
     } else {
