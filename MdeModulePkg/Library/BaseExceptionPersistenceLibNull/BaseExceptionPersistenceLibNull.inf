@@ -1,0 +1,26 @@
+## @file BaseExceptionPersistenceLibNull.inf
+#
+# NULL implementation of ExceptionPersistenceLib
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = BaseExceptionPersistenceLibNull
+  FILE_GUID                      = adefa38d-ea8c-4418-beb5-ff9e13ea2260
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = ExceptionPersistenceLib
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources]
+  BaseExceptionPersistenceLibNull.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
