@@ -1,0 +1,13 @@
+## @file
+# CodeQL Result Filters for Packages in Mu Basecore
+#
+# Note: Packages that use Mu Basecore can reuse this file to quickly pick up the
+#       same filters applied to results in the Mu Basecore repo.
+#
+# Copyright (c) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+{
+  "Filters": []
+}
