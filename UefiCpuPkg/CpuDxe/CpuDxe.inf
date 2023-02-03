@@ -42,6 +42,7 @@
   TimerLib
   PeCoffGetEntryPointLib
   DxeMemoryProtectionHobLib ## MU_CHANGE
+  DeviceStateLib            ## MU_CHANGE
 
 [Sources]
   CpuDxe.c
@@ -66,6 +67,7 @@
   gEfiMpServiceProtocolGuid                     ## PRODUCES
   gEfiMemoryAttributeProtocolGuid               ## TCBZ3519 MU_CHANGE PRODUCES
   gEfiSmmBase2ProtocolGuid                      ## SOMETIMES_CONSUMES
+  gMemoryProtectionNonstopModeProtocolGuid      ## MU_CHANGE: PRODUCES
 
 [Guids]
   gIdleLoopEventGuid                            ## CONSUMES           ## Event

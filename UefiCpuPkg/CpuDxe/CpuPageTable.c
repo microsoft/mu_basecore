@@ -98,6 +98,12 @@ EFI_SMM_BASE2_PROTOCOL         *mSmmBase2 = NULL;
 UINTN  *mPFEntryCount;
 UINT64                    *(*mLastPFEntryPointer)[MAX_PF_ENTRY_COUNT];
 
+// MU_CHANGE START
+UINTN   mPFCount = 0;
+UINT64  mPageFaultAddresses[MAX_PF_ENTRY_COUNT];
+UINT64  mPageFaultAttributes[MAX_PF_ENTRY_COUNT];
+// MU_CHANGE END
+
 /**
  Check if current execution environment is in SMM mode or not, via
  EFI_SMM_BASE2_PROTOCOL.
@@ -1714,6 +1720,134 @@ EFI_MEMORY_ATTRIBUTE_PROTOCOL  mMemoryAttributeProtocol = {
   EfiClearMemoryAttributes,
 };
 
+// MU_CHANGE START
+
+/**
+  Marks the faulting pages as present, R/W, and executable so execution can resume.
+
+  @param[in] ExceptionType  Exception type.
+  @param[in] SystemContext  Pointer to EFI_SYSTEM_CONTEXT.
+
+  @retval EFI_SUCCESS              Page attributes were cleared.
+  @retval RETURN_ACCESS_DENIED     The attributes for the page could not be modified.
+  @retval RETURN_OUT_OF_RESOURCES  There are not enough system resources to modify the attributes of
+                                   the memory resource range.
+**/
+EFI_STATUS
+EFIAPI
+ClearPageFault (
+  IN EFI_EXCEPTION_TYPE  ExceptionType,
+  IN EFI_SYSTEM_CONTEXT  SystemContext
+  )
+{
+  EFI_STATUS                     Status;
+  UINT64                         PFAddress;
+  PAGE_TABLE_LIB_PAGING_CONTEXT  PagingContext;
+  PAGE_ATTRIBUTE                 PageAttribute;
+  UINT64                         OldAttributes;
+  UINT64                         NewAttributes;
+  UINT64                         *PageEntry;
+  UINTN                          CpuIndex;
+  UINTN                          PageNumber;
+
+  PFAddress = AsmReadCr2 () & ~EFI_PAGE_MASK;
+  MpInitLibWhoAmI (&CpuIndex);
+  GetCurrentPagingContext (&PagingContext);
+  //
+  // Memory operation cross page boundary, like "rep mov" instruction, will
+  // cause infinite loop. We have to make sure that current page and the page
+  // followed are both in PRESENT state.
+  //
+  PageNumber = 2;
+  while (PageNumber > 0) {
+    PageEntry = GetPageTableEntry (&PagingContext, PFAddress, &PageAttribute);
+    ASSERT (PageEntry != NULL);
+    if (PageEntry != NULL) {
+      OldAttributes = GetAttributesFromPageEntry (PageEntry);
+      if (((OldAttributes & EFI_MEMORY_RP) != 0) || ((OldAttributes & EFI_MEMORY_XP) != 0)) {
+        NewAttributes  = OldAttributes;
+        NewAttributes &= ~(EFI_MEMORY_RP | EFI_MEMORY_XP);
+        DEBUG ((DEBUG_INFO, "%a - Clearing page fault at address: 0x%x\n", __FUNCTION__, PFAddress));
+        Status = AssignMemoryPageAttributes (
+                   &PagingContext,
+                   PFAddress,
+                   EFI_PAGE_SIZE,
+                   NewAttributes,
+                   NULL
+                   );
+        if (!EFI_ERROR (Status)) {
+          if (mPFCount < ARRAY_SIZE (mPageFaultAddresses)) {
+            mPageFaultAttributes[mPFCount]  = OldAttributes;
+            mPageFaultAddresses[mPFCount++] = PFAddress;
+          }
+        } else {
+          DEBUG ((DEBUG_INFO, "%a - Failed to clear page fault at address: 0x%x\n", __FUNCTION__, PFAddress));
+        }
+      }
+    }
+
+    PFAddress += EFI_PAGE_SIZE;
+    --PageNumber;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Restores the page table attributes of a page whose attributes were cleared via a call to
+  CLEAR_PAGE_FAULT.
+
+  @retval EFI_SUCCESS              Page attributes were restored.
+  @retval EFI_DEVICE_ERROR         The attributes could not be modified for one or more of the pages being restored.
+**/
+EFI_STATUS
+EFIAPI
+ResetPageAttributes (
+  VOID
+  )
+{
+  EFI_STATUS                     Status = EFI_SUCCESS;
+  UINT64                         PFAddress;
+  PAGE_TABLE_LIB_PAGING_CONTEXT  PagingContext;
+  PAGE_ATTRIBUTE                 PageAttribute;
+  UINT64                         Attributes;
+  UINT64                         *PageEntry;
+
+  while (mPFCount > 0) {
+    PFAddress = mPageFaultAddresses[--mPFCount];
+    GetCurrentPagingContext (&PagingContext);
+
+    PageEntry = GetPageTableEntry (&PagingContext, PFAddress, &PageAttribute);
+
+    if (PageEntry != NULL) {
+      Attributes = mPageFaultAttributes[mPFCount];
+      DEBUG ((DEBUG_INFO, "%a - Restoring page attributes at address: 0x%x\n", __FUNCTION__, PFAddress));
+      if (EFI_ERROR (
+            AssignMemoryPageAttributes (
+              &PagingContext,
+              PFAddress,
+              EFI_PAGE_SIZE,
+              Attributes,
+              NULL
+              )
+            ))
+      {
+        DEBUG ((DEBUG_ERROR, "%a - Unable to set memory attributes at address: 0x%x\n", __FUNCTION__, PFAddress));
+        Status = EFI_DEVICE_ERROR;
+      }
+
+      mPageFaultAddresses[mPFCount] = 0;
+    }
+  }
+
+  return Status;
+}
+
+MEMORY_PROTECTION_NONSTOP_MODE_PROTOCOL  mMemoryNonstopModeProtocol = {
+  ClearPageFault,
+  ResetPageAttributes
+};
+
 /**
   Install Memory Attribute Protocol.
 **/
@@ -1734,3 +1868,26 @@ InstallEfiMemoryAttributeProtocol (
 }
 
 // TCBZ3519 MU_CHANGE END
+
+// MU_CHANGE START
+
+/**
+  Install Memory Protection Nonstop Protocol.
+**/
+VOID
+InstallMemoryProtectionNonstopModeProtocol (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &mCpuHandle,
+                  &gMemoryProtectionNonstopModeProtocolGuid,
+                  &mMemoryNonstopModeProtocol,
+                  NULL
+                  );
+  ASSERT_EFI_ERROR (Status);
+}
+
+// MU_CHANGE END

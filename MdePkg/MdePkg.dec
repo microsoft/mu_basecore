@@ -1991,6 +1991,11 @@
 #   0x80000002 | Reserved bits must be set to zero.
 #   0x80000003 | Incorrect progress code provided.
 #
+  # MU_CHANGE START
+  ## Include/Protocol/MemoryProtectionNonstopMode.h
+  # 896306BA-1722-414D-93CF-14244F5E315D
+  gMemoryProtectionNonstopModeProtocolGuid = {0x896306BA, 0x1722, 0x414D, {0x93, 0xCF, 0x14, 0x24, 0x4F, 0x5E, 0x31, 0x5D }}
+  # MU_CHANGE END
 
 [PcdsFeatureFlag]
   ## Indicates if the component name protocol will be installed.<BR><BR>
