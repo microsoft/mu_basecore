@@ -36,6 +36,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/Security2.h>
 #include <Protocol/Reset.h>
 #include <Protocol/Cpu.h>
+#include <Protocol/Cpu2.h>            // MS_CHANGE
 #include <Protocol/MemoryAttribute.h> // MU_CHANGE
 #include <Protocol/Metronome.h>
 #include <Protocol/FirmwareVolumeBlock.h>
