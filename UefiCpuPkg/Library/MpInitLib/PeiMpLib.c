@@ -795,3 +795,27 @@ PlatformShadowMicrocode (
 
   return EFI_SUCCESS;
 }
+
+// MU_CHANGE START: Support for protocol for reporting multi-processor debug info
+
+/**
+  Add CPU_MP_DEBUG_PROTOCOL entry to the global list
+
+  @param[in]  StackBuffer      Start of AP stack buffer
+  @param[in]  StackSize        Size of the stack
+  @param[in]  CpuNumber        AP CPU number
+  @param[in]  IsSwitchStack    If the input buffer is the CPU switch stack
+**/
+VOID
+EFIAPI
+AppendCpuMpDebugProtocolEntry (
+  UINTN    StackBuffer,
+  UINTN    StackSize,
+  UINTN    CpuNumber,
+  BOOLEAN  IsSwitchStack
+  )
+{
+  return;
+}
+
+// MU_CHANGE END
