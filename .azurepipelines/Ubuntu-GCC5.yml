@@ -36,7 +36,7 @@ jobs:
     extra_build_args: CODE_COVERAGE=TRUE CC_HTML=TRUE
     extra_install_step:
     - script: |
-              sudo microdnf install --assumeyes mingw64-gcc lcov
+              sudo dnf install --assumeyes mingw64-gcc lcov
               pip install lcov_cobertura pycobertura
       displayName: Install Windows Resource Compiler for Linux & Code Coverage Tools
     tool_chain_tag: $(tool_chain_tag)
