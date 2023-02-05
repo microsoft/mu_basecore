@@ -43,11 +43,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <IndustryStandard/PeImage.h>
 #include <Library/PeiServicesTablePointerLib.h>
 #include <Library/MemoryAllocationLib.h>
-#include <Library/TimerLib.h>       // MS_CHANGE
+#include <Library/TimerLib.h>          // MS_CHANGE
 #include <Guid/FirmwareFileSystem2.h>
 #include <Guid/FirmwareFileSystem3.h>
 #include <Guid/AprioriFileName.h>
 #include <Guid/MigratedFvInfo.h>
+#include <Guid/MemoryTypeStatistics.h>  // MU_CHANGE - Save memory allocations for the PEI memory buckets
+#include <Guid/MemoryTypeInformation.h> // MU_CHANGE - Save memory allocations for the PEI memory buckets
 
 ///
 /// It is an FFS type extension used for PeiFindFileEx. It indicates current
@@ -176,6 +178,17 @@ typedef struct {
   UINTN                   Offset;
   BOOLEAN                 OffsetPositive;
 } HOLE_MEMORY_DATA;
+
+// MU_CHANGE [BEGIN] - Save memory allocations for the PEI memory buckets
+#pragma pack (push, 1)
+typedef struct {
+  EFI_MEMORY_TYPE_STATISTICS    RuntimeBuckets[EfiMaxMemoryType + 1];
+  EFI_PHYSICAL_ADDRESS          CurrentTopInBucket[EfiMaxMemoryType + 1];
+  BOOLEAN                       MemoryBucketsDisabled;
+  BOOLEAN                       RuntimeMemInitialized;
+} PEI_MEMORY_BUCKET_INFORMATION;
+#pragma pack (pop)
+// MU_CHANGE [END] - Save memory allocations for the PEI memory buckets
 
 ///
 /// Forward declaration for PEI_CORE_INSTANCE
@@ -336,6 +349,11 @@ struct _PEI_CORE_INSTANCE {
   DELAYED_DISPATCH_TABLE            *DelayedDispatchTable;    // MS_CHANGE
 
   EFI_PHYSICAL_ADDRESS              PlatformBlob;             // MS_CHANGE  Used by AdvancedLogger
+
+  // MU_CHANGE [BEGIN] - Save memory allocations for the PEI memory buckets
+  // Memory Bucket Variables
+  PEI_MEMORY_BUCKET_INFORMATION     PeiMemoryBuckets;
+  // MU_CHANGE [END] - Save memory allocations for the PEI memory buckets
 };
 
 ///

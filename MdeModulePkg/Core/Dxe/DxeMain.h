@@ -49,6 +49,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/SmmBase2.h>
 #include <Protocol/PeCoffImageEmulator.h>
 #include <Guid/MemoryTypeInformation.h>
+#include <Guid/MemoryTypeStatistics.h>  // MU_CHANGE - Save memory allocations for the PEI memory buckets
 #include <Guid/FirmwareFileSystem2.h>
 #include <Guid/FirmwareFileSystem3.h>
 #include <Guid/HobList.h>
@@ -292,6 +293,20 @@ extern BOOLEAN                                     gLoadFixedAddressCodeMemoryRe
 //
 // Service Initialization Functions
 //
+
+// MU_CHANGE [BEGIN] - Save memory allocations for the PEI memory buckets
+
+/**
+  Called to initialize memory statistics information used during
+  page allocation.
+
+**/
+VOID
+CoreInitializeMemoryStatistics (
+  VOID
+  );
+
+// MU_CHANGE [END] - Save memory allocations for the PEI memory buckets
 
 /**
   Called to initialize the pool.

@@ -13,19 +13,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/MemoryBinOverrideLib.h> // MU_CHANGE
 
 //
-// Entry for tracking the memory regions for each memory type to coalesce similar memory types
-//
-typedef struct {
-  EFI_PHYSICAL_ADDRESS    BaseAddress;
-  EFI_PHYSICAL_ADDRESS    MaximumAddress;
-  UINT64                  CurrentNumberOfPages;
-  UINT64                  NumberOfPages;
-  UINTN                   InformationIndex;
-  BOOLEAN                 Special;
-  BOOLEAN                 Runtime;
-} EFI_MEMORY_TYPE_STATISTICS;
-
-//
 // MemoryMap - The current memory map
 //
 UINTN  mMemoryMapKey = 0;
@@ -66,6 +53,16 @@ EFI_MEMORY_TYPE_STATISTICS  mMemoryTypeStatistics[EfiMaxMemoryType + 1] = {
   { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE }   // EfiMaxMemoryType
 };
 
+// MU_CHANGE [BEGIN] - Save memory allocations for the PEI memory buckets
+// Todo: Pull this in from a common definition
+EFI_MEMORY_TYPE  mMemoryTypes[] = {
+  EfiRuntimeServicesCode,
+  EfiRuntimeServicesData,
+  EfiACPIReclaimMemory,
+  EfiACPIMemoryNVS
+};
+// MU_CHANGE [END] - Save memory allocations for the PEI memory buckets
+
 EFI_PHYSICAL_ADDRESS  mDefaultMaximumAddress = MAX_ALLOC_ADDRESS;
 EFI_PHYSICAL_ADDRESS  mDefaultBaseAddress    = MAX_ALLOC_ADDRESS;
 
@@ -93,6 +90,34 @@ EFI_MEMORY_TYPE_INFORMATION  gMemoryTypeInformation[EfiMaxMemoryType + 1] = {
 //  address assigned by DXE core.
 //
 GLOBAL_REMOVE_IF_UNREFERENCED   BOOLEAN  gLoadFixedAddressCodeMemoryReady = FALSE;
+
+// MU_CHANGE [BEGIN] - Save memory allocations for the PEI memory buckets
+
+/**
+  Called to initialize memory statistics information used during
+  page allocation.
+
+**/
+VOID
+CoreInitializeMemoryStatistics (
+  VOID
+  )
+{
+  UINTN                       Index;
+  EFI_HOB_GUID_TYPE           *GuidHob;
+  EFI_MEMORY_TYPE_STATISTICS  *TempStat;
+
+  // Get MemoryBucketHob data to populate the Memory Statistics table
+  GuidHob = GetFirstGuidHob (&gMemoryTypeStatisticsGuid);
+  if (GuidHob != NULL) {
+    TempStat = (EFI_MEMORY_TYPE_STATISTICS *)GET_GUID_HOB_DATA (GuidHob);
+    for (Index = 0; Index < ARRAY_SIZE (mMemoryTypes); Index++) {
+      mMemoryTypeStatistics[mMemoryTypes[Index]] = TempStat[mMemoryTypes[Index]];
+    }
+  }
+}
+
+// MU_CHANGE [END] - Save memory allocations for the PEI memory buckets
 
 /**
   Enter critical section by gaining lock on gMemoryLock.
@@ -631,42 +656,46 @@ CoreAddMemoryDescriptor (
       //
       // Allocate pages for the current memory type from the top of available memory
       //
+      // MU_CHANGE [BEGIN] - Save memory allocations for the PEI memory buckets
+      if (mMemoryTypeStatistics[Type].BaseAddress == 0) {
+        Status = CoreAllocatePages (
+                   AllocationType, // MU_CHANGE
+                   Type,
+                   gMemoryTypeInformation[Index].NumberOfPages,
+                   &mMemoryTypeStatistics[Type].BaseAddress
+                   );
+        if (EFI_ERROR (Status)) {
+          mMemoryTypeStatistics[Type].BaseAddress = 0; // MU_CHANGE
 
-      Status = CoreAllocatePages (
-                 AllocationType, // MU_CHANGE
-                 Type,
-                 gMemoryTypeInformation[Index].NumberOfPages,
-                 &mMemoryTypeStatistics[Type].BaseAddress
-                 );
-      if (EFI_ERROR (Status)) {
-        mMemoryTypeStatistics[Type].BaseAddress = 0; // MU_CHANGE
+          //
+          // If an error occurs allocating the pages for the current memory type, then
+          // free all the pages allocates for the previous memory types and return.  This
+          // operation with be retied when/if more memory is added to the system
+          //
+          for (FreeIndex = 0; FreeIndex < Index; FreeIndex++) {
+            //
+            // Make sure the memory type in the gMemoryTypeInformation[] array is valid
+            //
+            Type = (EFI_MEMORY_TYPE)(gMemoryTypeInformation[FreeIndex].Type);
+            if ((UINT32)Type > EfiMaxMemoryType) {
+              continue;
+            }
 
-        //
-        // If an error occurs allocating the pages for the current memory type, then
-        // free all the pages allocates for the previous memory types and return.  This
-        // operation with be retied when/if more memory is added to the system
-        //
-        for (FreeIndex = 0; FreeIndex < Index; FreeIndex++) {
-          //
-          // Make sure the memory type in the gMemoryTypeInformation[] array is valid
-          //
-          Type = (EFI_MEMORY_TYPE)(gMemoryTypeInformation[FreeIndex].Type);
-          if ((UINT32)Type > EfiMaxMemoryType) {
-            continue;
+            if (gMemoryTypeInformation[FreeIndex].NumberOfPages != 0) {
+              CoreFreePages (
+                mMemoryTypeStatistics[Type].BaseAddress,
+                gMemoryTypeInformation[FreeIndex].NumberOfPages
+                );
+              mMemoryTypeStatistics[Type].BaseAddress    = 0;
+              mMemoryTypeStatistics[Type].MaximumAddress = MAX_ALLOC_ADDRESS;
+            }
           }
 
-          if (gMemoryTypeInformation[FreeIndex].NumberOfPages != 0) {
-            CoreFreePages (
-              mMemoryTypeStatistics[Type].BaseAddress,
-              gMemoryTypeInformation[FreeIndex].NumberOfPages
-              );
-            mMemoryTypeStatistics[Type].BaseAddress    = 0;
-            mMemoryTypeStatistics[Type].MaximumAddress = MAX_ALLOC_ADDRESS;
-          }
+          return;
         }
-
-        return;
       }
+
+      // MU_CHANGE [END] - Save memory allocations for the PEI memory buckets
 
       //
       // Compute the address at the top of the current statistics
@@ -725,7 +754,7 @@ CoreAddMemoryDescriptor (
   for (Type = (EFI_MEMORY_TYPE)0; Type < EfiMaxMemoryType; Type++) {
     for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
       if (Type == (EFI_MEMORY_TYPE)gMemoryTypeInformation[Index].Type) {
-        mMemoryTypeStatistics[Type].InformationIndex = Index;
+        mMemoryTypeStatistics[Type].InformationIndex = (UINT32)Index; // MU_CHANGE - Save memory allocations for the PEI memory buckets
       }
     }
 

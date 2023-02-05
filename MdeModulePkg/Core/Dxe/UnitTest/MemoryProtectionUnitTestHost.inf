@@ -177,6 +177,7 @@
   gMuEventPreExitBootServicesGuid
   gDxeMemoryProtectionSettingsGuid
   gMemoryProtectionSpecialRegionHobGuid
+  gMemoryTypeStatisticsGuid
 
 [BuildOptions.Common]
   MSFT:*_*_*_CC_FLAGS = -I$(WORKSPACE)/MdeModulePkg/Core/Dxe

@@ -7,6 +7,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "PeiMain.h"
+#include "MemoryBuckets.h"  // MU_CHANGE - Save memory allocations for the PEI memory buckets
 
 /**
 
@@ -27,7 +28,9 @@ InitializeMemoryServices (
   IN PEI_CORE_INSTANCE           *OldCoreData
   )
 {
-  PrivateData->SwitchStackSignal = FALSE;
+  PrivateData->SwitchStackSignal                      = FALSE;
+  PrivateData->PeiMemoryBuckets.MemoryBucketsDisabled = TRUE;   // MU_CHANGE - Save memory allocations for the PEI memory buckets
+  PrivateData->PeiMemoryBuckets.RuntimeMemInitialized = FALSE;  // MU_CHANGE - Save memory allocations for the PEI memory buckets
 
   //
   // First entering PeiCore, following code will initialized some field
@@ -594,9 +597,12 @@ PeiAllocatePages (
   EFI_PEI_HOB_POINTERS  Hob;
   EFI_PHYSICAL_ADDRESS  *FreeMemoryTop;
   EFI_PHYSICAL_ADDRESS  *FreeMemoryBottom;
+  UINTN                 TotalBucketPages;            // MU_CHANGE - Save memory allocations for the PEI memory buckets
   UINTN                 RemainingPages;
   UINTN                 Granularity;
   UINTN                 Padding;
+
+  TotalBucketPages = 0; // MU_CHANGE - Save memory allocations for the PEI memory buckets
 
   if ((MemoryType != EfiLoaderCode) &&
       (MemoryType != EfiLoaderData) &&
@@ -650,6 +656,22 @@ PeiAllocatePages (
     FreeMemoryBottom = &(Hob.HandoffInformationTable->EfiFreeMemoryBottom);
   }
 
+  // MU_CHANGE [BEGIN] - Save memory allocations for the PEI memory buckets
+  // If the allocation is for a runtime type, redirect it to a pre-assigned memory range
+  if (IsRuntimeType (PrivateData, MemoryType)) {
+    if (!IsRuntimeMemoryInitialized (PrivateData)) {
+      TotalBucketPages = InitializeMemoryBuckets (PrivateData, *FreeMemoryTop, (UINTN)(*FreeMemoryTop - *FreeMemoryBottom));
+      *FreeMemoryTop  -= (TotalBucketPages * EFI_PAGE_SIZE);
+    }
+
+    if (AreMemoryBucketsEnabled (PrivateData)) {
+      FreeMemoryTop    = GetCurrentBucketTop (PrivateData, MemoryType);
+      FreeMemoryBottom = GetCurrentBucketBottom (PrivateData, MemoryType);
+    }
+  }
+
+  // MU_CHANGE [END] - Save memory allocations for the PEI memory buckets
+
   //
   // Check to see if on correct boundary for the memory type.
   // If not aligned, make the allocation aligned.
@@ -690,8 +712,6 @@ PeiAllocatePages (
       return Status;
     }
 
-    DEBUG ((DEBUG_ERROR, "AllocatePages failed: No 0x%lx Pages is available.\n", (UINT64)Pages));
-    DEBUG ((DEBUG_ERROR, "There is only left 0x%lx pages memory resource to be allocated.\n", (UINT64)RemainingPages));
     return EFI_OUT_OF_RESOURCES;
   } else {
     //
@@ -712,9 +732,16 @@ PeiAllocatePages (
       Pages * EFI_PAGE_SIZE,
       MemoryType
       );
-
-    return EFI_SUCCESS;
   }
+
+  // MU_CHANGE [BEGIN] - Save memory allocations for the PEI memory buckets
+  if (IsRuntimeType (PrivateData, MemoryType) && AreMemoryBucketsEnabled (PrivateData)) {
+    UpdateCurrentBucketTop (PrivateData, *FreeMemoryTop, MemoryType);
+    UpdateRuntimeMemoryStats (PrivateData, Pages, MemoryType);
+  }
+
+  return EFI_SUCCESS;
+  // MU_CHANGE [END] - Save memory allocations for the PEI memory buckets
 }
 
 /**

@@ -2263,6 +2263,14 @@ CoreInitializeMemoryServices (
   Hob.Raw = *HobStart;
   ASSERT (GET_HOB_TYPE (Hob) == EFI_HOB_TYPE_HANDOFF);
 
+  // MU_CHANGE [BEGIN] - Save memory allocations for the PEI memory buckets
+  //
+  // Initialize memory statistics information that may be used
+  // for runtime memory bin allocation.
+  //
+  CoreInitializeMemoryStatistics ();
+  // MU_CHANGE [END] - Save memory allocations for the PEI memory buckets
+
   //
   // Initialize the spin locks and maps in the memory services.
   // Also fill in the memory services into the EFI Boot Services Table
@@ -2309,6 +2317,8 @@ CoreInitializeMemoryServices (
   //
   // Include the total memory bin size needed to make sure memory bin could be allocated successfully.
   //
+  // // MU_CHANGE - Save memory allocations for the PEI memory buckets
+  // Todo: Need to adjust the bin allocation to account for pre-allocated bins if provided
   MinimalMemorySizeNeeded = MINIMUM_INITIAL_MEMORY_SIZE + CalculateTotalMemoryBinSizeNeeded ();
 
   //

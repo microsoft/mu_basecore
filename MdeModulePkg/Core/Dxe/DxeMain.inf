@@ -116,6 +116,7 @@
   ## PRODUCES               ## SystemTable
   ## SOMETIMES_CONSUMES     ## HOB
   gEfiMemoryTypeInformationGuid
+  gMemoryTypeStatisticsGuid                     ## CONSUMES # MU_CHANGE - Save memory allocations for the PEI memory buckets
   gEfiEventDxeDispatchGuid                      ## PRODUCES             ## Event
   gLoadFixedAddressConfigurationTableGuid       ## SOMETIMES_PRODUCES   ## SystemTable
   ## PRODUCES   ## Event
