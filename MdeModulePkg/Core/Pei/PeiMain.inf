@@ -35,6 +35,8 @@
   Ppi/Ppi.c
   PeiMain/PeiMain.c
   Memory/MemoryServices.c
+  Memory/MemoryBuckets.c   # MU_CHANGE - Added for PEI memory buckets
+  Memory/MemoryBuckets.h   # MU_CHANGE - Added for PEI memory buckets
   Image/Image.c
   Hob/Hob.c
   FwVol/FwVol.c
@@ -121,6 +123,12 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxDelayUs               ## CONSUMES  // MS_CHANGE
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchCompletionTimeoutUs      ## CONSUMES  // MS_CHANGE
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxEntries               ## CONSUMES  // MS_CHANGE
+
+[FixedPcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketRuntimeCode              ## CONSUMES  // MU_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketRuntimeData              ## CONSUMES  // MU_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketAcpiReclaimMemory        ## CONSUMES  // MU_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketAcpiMemoryNvs            ## CONSUMES  // MU_CHANGE
 
 # [BootMode]
 # S3_RESUME             ## SOMETIMES_CONSUMES

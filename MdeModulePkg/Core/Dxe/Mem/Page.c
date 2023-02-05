@@ -13,19 +13,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/MemoryBinOverrideLib.h> // MU_CHANGE
 
 //
-// Entry for tracking the memory regions for each memory type to coalesce similar memory types
-//
-typedef struct {
-  EFI_PHYSICAL_ADDRESS    BaseAddress;
-  EFI_PHYSICAL_ADDRESS    MaximumAddress;
-  UINT64                  CurrentNumberOfPages;
-  UINT64                  NumberOfPages;
-  UINTN                   InformationIndex;
-  BOOLEAN                 Special;
-  BOOLEAN                 Runtime;
-} EFI_MEMORY_TYPE_STATISTICS;
-
-//
 // MemoryMap - The current memory map
 //
 UINTN  mMemoryMapKey = 0;
@@ -725,7 +712,7 @@ CoreAddMemoryDescriptor (
   for (Type = (EFI_MEMORY_TYPE)0; Type < EfiMaxMemoryType; Type++) {
     for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
       if (Type == (EFI_MEMORY_TYPE)gMemoryTypeInformation[Index].Type) {
-        mMemoryTypeStatistics[Type].InformationIndex = Index;
+        mMemoryTypeStatistics[Type].InformationIndex = (UINT32)Index;
       }
     }
 

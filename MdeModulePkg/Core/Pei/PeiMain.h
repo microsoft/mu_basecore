@@ -43,11 +43,12 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <IndustryStandard/PeImage.h>
 #include <Library/PeiServicesTablePointerLib.h>
 #include <Library/MemoryAllocationLib.h>
-#include <Library/TimerLib.h>       // MS_CHANGE
+#include <Library/TimerLib.h>          // MS_CHANGE
 #include <Guid/FirmwareFileSystem2.h>
 #include <Guid/FirmwareFileSystem3.h>
 #include <Guid/AprioriFileName.h>
 #include <Guid/MigratedFvInfo.h>
+#include <Guid/MemoryTypeStatistics.h>
 
 ///
 /// It is an FFS type extension used for PeiFindFileEx. It indicates current
@@ -176,6 +177,14 @@ typedef struct {
   UINTN                   Offset;
   BOOLEAN                 OffsetPositive;
 } HOLE_MEMORY_DATA;
+
+#define PEI_BUCKETS  4
+typedef struct {
+  EFI_MEMORY_TYPE_STATISTICS    RuntimeBuckets[PEI_BUCKETS];
+  EFI_PHYSICAL_ADDRESS          CurrentTopInBucket[PEI_BUCKETS];
+  BOOLEAN                       MemoryBucketsDisabled;
+  BOOLEAN                       RuntimeMemInitialized;
+} PEI_MEMORY_BUCKET_INFORMATION;
 
 ///
 /// Forward declaration for PEI_CORE_INSTANCE
@@ -336,6 +345,9 @@ struct _PEI_CORE_INSTANCE {
   DELAYED_DISPATCH_TABLE            *DelayedDispatchTable;    // MS_CHANGE
 
   EFI_PHYSICAL_ADDRESS              PlatformBlob;             // MS_CHANGE  Used by AdvancedLogger
+
+  // Memory Bucket Variables
+  PEI_MEMORY_BUCKET_INFORMATION     PeiMemoryBuckets;
 };
 
 ///

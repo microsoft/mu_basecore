@@ -7,6 +7,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "PeiMain.h"
+#include "MemoryBuckets.h"
 
 /**
 
@@ -28,6 +29,7 @@ InitializeMemoryServices (
   )
 {
   PrivateData->SwitchStackSignal = FALSE;
+  PrivateData->PeiMemoryBuckets.RuntimeMemInitialized = FALSE; // MU_CHANGE
 
   //
   // First entering PeiCore, following code will initialized some field
@@ -589,14 +591,14 @@ PeiAllocatePages (
   OUT      EFI_PHYSICAL_ADDRESS  *Memory
   )
 {
-  EFI_STATUS            Status;
-  PEI_CORE_INSTANCE     *PrivateData;
-  EFI_PEI_HOB_POINTERS  Hob;
-  EFI_PHYSICAL_ADDRESS  *FreeMemoryTop;
-  EFI_PHYSICAL_ADDRESS  *FreeMemoryBottom;
-  UINTN                 RemainingPages;
-  UINTN                 Granularity;
-  UINTN                 Padding;
+  EFI_STATUS                     Status;
+  PEI_CORE_INSTANCE              *PrivateData;
+  EFI_PEI_HOB_POINTERS           Hob;
+  EFI_PHYSICAL_ADDRESS           *FreeMemoryTop;
+  EFI_PHYSICAL_ADDRESS           *FreeMemoryBottom;
+  UINTN                          RemainingPages;
+  UINTN                          Granularity;
+  UINTN                          Padding;
 
   if ((MemoryType != EfiLoaderCode) &&
       (MemoryType != EfiLoaderData) &&
@@ -649,6 +651,26 @@ PeiAllocatePages (
     FreeMemoryTop    = &(Hob.HandoffInformationTable->EfiFreeMemoryTop);
     FreeMemoryBottom = &(Hob.HandoffInformationTable->EfiFreeMemoryBottom);
   }
+
+  // MU_CHANGE START
+
+  // Check if we're using the memory buckets
+  if (IsRuntimeType (PrivateData, MemoryType)) {
+    if (!IsRuntimeMemoryInitialized (PrivateData)) {
+      InitializeMemoryBuckets (PrivateData, *FreeMemoryTop);
+    }
+
+    if (AreMemoryBucketsEnabled (PrivateData)) {
+      *FreeMemoryTop    = GetCurrentBucketTop (PrivateData, MemoryType);
+      *FreeMemoryBottom = GetCurrentBucketBottom (PrivateData, MemoryType);
+    }
+
+    // Check to make sure we aren't allocating memory in runtime buckets
+  } else if (CheckIfInRuntimeBoundary (PrivateData, *FreeMemoryTop)) {
+    *FreeMemoryTop = GetBottomOfBucketsAddress (PrivateData);
+  }
+
+  // MU_CHANGE END
 
   //
   // Check to see if on correct boundary for the memory type.
@@ -712,6 +734,17 @@ PeiAllocatePages (
       Pages * EFI_PAGE_SIZE,
       MemoryType
       );
+
+    // MU_CHANGE START - Save memory allocations for the PEI memory buckets
+    if (IsRuntimeType (PrivateData, MemoryType)) {
+      UpdateCurrentBucketTop (PrivateData, *FreeMemoryTop, MemoryType);
+
+      UpdateRuntimeMemoryStats (PrivateData, Pages, MemoryType);
+
+      InitializeRuntimeMemoryBuckets (PrivateData);
+    }
+
+    // MU_CHANGE END
 
     return EFI_SUCCESS;
   }

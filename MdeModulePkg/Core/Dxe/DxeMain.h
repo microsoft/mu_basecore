@@ -49,6 +49,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/SmmBase2.h>
 #include <Protocol/PeCoffImageEmulator.h>
 #include <Guid/MemoryTypeInformation.h>
+#include <Guid/MemoryTypeStatistics.h>  // MU_CHANGE
 #include <Guid/FirmwareFileSystem2.h>
 #include <Guid/FirmwareFileSystem3.h>
 #include <Guid/HobList.h>

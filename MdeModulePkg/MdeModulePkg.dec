@@ -1272,6 +1272,13 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportAlternativeQueueSize|FALSE|BOOLEAN|0x40000151
   # MU_CHANGE [END]
 
+  # MU_CHANGE [BEGIN] - Add PCDs for PEI memory buckets
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketRuntimeCode|0x0|UINT8|0x40000152
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketRuntimeData|0x0|UINT8|0x40000153
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketAcpiReclaimMemory|0x0|UINT8|0x40000154
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBucketAcpiMemoryNvs|0x0|UINT8|0x40000155
+  # MU_CHANGE [END]
+
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Dynamic type PCD can be registered callback function for Pcd setting action.
   #  PcdMaxPeiPcdCallBackNumberPerPcdEntry indicates the maximum number of callback function
