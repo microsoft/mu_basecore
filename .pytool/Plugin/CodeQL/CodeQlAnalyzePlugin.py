@@ -177,13 +177,13 @@ class CodeQlAnalyzePlugin(IUefiBuildPlugin):
                         f"CodeQL analysis is incomplete.")
                     return -1
 
-        if plugin_data and "Patterns" in plugin_data:
-            if type(plugin_data["Patterns"]) is not list:
+        if plugin_data and "Filters" in plugin_data:
+            if type(plugin_data["Filters"]) is not list:
                 logging.critical(
                     "CodeQL pattern data must be a list of strings. "
                     "CodeQL analysis is incomplete.")
                 return -1
-            filter_pattern_data.extend(plugin_data["Patterns"])
+            filter_pattern_data.extend(plugin_data["Filters"])
 
         if filter_pattern_data:
             logging.info("Applying CodeQL SARIF result filters.")
