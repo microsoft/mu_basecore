@@ -68,6 +68,7 @@ jobs:
   steps:
   - template: Steps/PrGate.yml@mu_devops
     parameters:
+      artifacts_identifier: '$(Build.Pkgs) $(Build.Targets)'
       build_archs: ${{ parameters.arch_list }}
       build_pkgs: $(Build.Pkgs)
       build_targets: $(Build.Targets)
