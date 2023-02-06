@@ -227,6 +227,125 @@ leverage the `cmocka.h` interface and write tests with all the features of the C
 Documentation for Cmocka can be found here:
 <https://api.cmocka.org/>
 
+## GoogleTest Samples
+
+There is a sample unit test provided as both an example of how to write a unit test and leverage
+many of the GoogleTest features. This sample can be found in the `Test/GoogleTest/Sample/SampleGoogleTest`
+directory.
+
+The sample is provided for the HOST_APPLICATION build type, which can be run on a host system without
+needing a target.
+
+## GoogleTest Usage
+
+This section is built a lot like a "Getting Started". We'll go through some of the components that are needed
+when constructing a unit test and some of the decisions that are made by the test writer. We'll also describe
+how to check for expected conditions in test cases and a bit of the logging characteristics.
+
+Most of these examples will refer to the SampleGoogleTestHost app found in this package.
+
+### GoogleTest Requirements - INF
+
+In our INF file, we'll need to bring in the `GoogleTest` library. Conveniently, the interface
+header for the `GoogleTest` is in `UnitTestFrameworkPkg`, so you shouldn't need to depend on any other
+packages. As long as your DSC file knows where to find the lib implementation that you want to use,
+you should be good to go.
+
+See this example in 'SampleGoogleTestHost.inf'...
+
+```inf
+[Packages]
+  MdePkg/MdePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  GoogleTestLib
+  BaseLib
+  DebugLib
+```
+
+Also, if you want you test to automatically be picked up by the Test Runner plugin, you will need
+to make sure that the module `BASE_NAME` contains the word `Test`...
+
+```inf
+[Defines]
+  BASE_NAME      = SampleGoogleTestHost
+```
+
+### GoogleTest Requirements - Code
+
+Not to state the obvious, but let's make sure we have the following include before getting too far along...
+
+```c
+#include <gtest/gtest.h>
+extern "C" {
+  #include <Uefi.h>
+  #include <Library/BaseLib.h>
+  #include <Library/DebugLib.h>
+}
+```
+
+GoogleTest applications are implemented in C++. The first include brings in the
+GoogleTest definitions. Other EDK II related include files must be wrapped in
+`extern "C" {}` because they are C include files. Link failures will occur if
+this is not done.
+
+Now that we've got that squared away, let's look at our 'Main()'' routine (or DriverEntryPoint() or whatever).
+
+### GoogleTest Configuration
+
+Unlike the Framework, GoogleTest does not require test suites or test cases to
+be registered. Instead, the test cases declare the test suite name and test
+case name as part of their implementation. The only requirement for GoogleTest
+is to have a `main()` function that initialize the GoogleTest infrastructure and
+call the service `RUN_ALL_TESTS()` to run all the unit tests.
+
+```c
+int main(int argc, char* argv[]) {
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
+```
+
+### GoogleTest - A Simple Test Case
+
+We'll look at the below test case from 'SampleGoogleTestHost'...
+
+```c
+TEST(SimpleMathTests, OnePlusOneShouldEqualTwo) {
+  UINTN  A;
+  UINTN  B;
+  UINTN  C;
+
+  A = 1;
+  B = 1;
+  C = A + B;
+
+  ASSERT_EQ (C, 2);
+}
+```
+
+This uses the simplest form of a GoogleTest unit test using `TEST()` that
+declares the test suite name and the unit test name within that test suite.
+The unit test performs actions and typically makes calls to the code under test
+and contains test assertions to verify that the code under test behaves as
+expected for the given inputs.
+
+In this test case, the `ASSERT_EQ` assertion is being used to establish that the business logic has functioned
+correctly. There are several assertion macros, and you are encouraged to use one that matches as closely to your
+intended test criterium as possible, because the logging is specific to the macro and more specific macros have more
+detailed logs. When in doubt, there are always `ASSERT_TRUE` and `ASSERT_FALSE`. Assertion macros that fail their
+test criterium will immediately return from the test case with a failed status and log an error string.
+_Note_ that this early return can have implications for memory leakage.
+
+There is no return status from a GooglTest unit test. If no assertions are
+triggered then the unit test has a passing status.
+
+### GoogleTest - More Complex Cases
+
+To write more advanced tests, take a look at the
+[GoogleTest User's Guide](http://google.github.io/googletest/).
+
 ## Development
 
 ### Iterating on a Single Test
@@ -396,9 +515,16 @@ c:\_uefi\MdePkg\Test\UnitTest\Library\BaseSafeIntLib\TestBaseSafeIntLib.c:35: er
 Since these applications are built using the CMocka framework, they can also use the following env variables to output
 in a structured XML rather than text:
 
-```text
+```inf
 CMOCKA_MESSAGE_OUTPUT=xml
 CMOCKA_XML_FILE=<absolute or relative path to output file>
+```
+
+Unit test applications using GoogleTest require the following environment
+variable to be set to generate structured XML output rather than text:
+
+```inf
+GTEST_OUTPUT=xml:<absolute or relative path to output file>
 ```
 
 This mode is used by the test running plugin to aggregate the results for CI test status reporting in the web view.
