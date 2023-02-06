@@ -1397,7 +1397,7 @@ you should be good to go.
 
 See this example in 'SampleGoogleTestHost.inf'...
 
-```
+```inf
 [Packages]
   MdePkg/MdePkg.dec
   UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
@@ -1411,7 +1411,7 @@ See this example in 'SampleGoogleTestHost.inf'...
 Also, if you want you test to automatically be picked up by the Test Runner plugin, you will need
 to make sure that the module `BASE_NAME` contains the word `Test`...
 
-```
+```inf
 [Defines]
   BASE_NAME      = SampleGoogleTestHost
 ```
@@ -1420,7 +1420,7 @@ to make sure that the module `BASE_NAME` contains the word `Test`...
 
 Not to state the obvious, but let's make sure we have the following include before getting too far along...
 
-```
+```c
 #include <gtest/gtest.h>
 extern "C" {
   #include <Uefi.h>
@@ -1662,7 +1662,7 @@ Unit test applications using Framework are built using Cmocka that requires the
 following environment variables to be set to generate structured XML output
 rather than text:
 
-```
+```inf
 CMOCKA_MESSAGE_OUTPUT=xml
 CMOCKA_XML_FILE=<absolute or relative path to output file>
 ```
@@ -1670,7 +1670,7 @@ CMOCKA_XML_FILE=<absolute or relative path to output file>
 Unit test applications using GoogleTest require the following environment
 variable to be set to generate structured XML output rather than text:
 
-```
+```inf
 GTEST_OUTPUT=xml:<absolute or relative path to output file>
 ```
 
