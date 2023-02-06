@@ -639,7 +639,9 @@ typedef __builtin_va_list VA_LIST;
 // VA macros for Visual Studio
 // This comes from the VS header:
 //   Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\<version>\include\vadefs.h
-#elif defined (_MSC_VER)
+// Do not use when building host-based unit tests as these definitions conflict with those
+// used in original header file.
+#elif defined (_MSC_VER) && !defined (HOST_UNIT_TEST_BUILD)
 
 //
 // Microsoft compilers
