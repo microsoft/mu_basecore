@@ -16,15 +16,10 @@ from edk2toolext.invocables.edk2_pr_eval import PrEvalSettingsManager
 from edk2toollib.utility_functions import GetHostInfo
 from pathlib import Path
 
-
 try:
-    # Temporarily needed until edk2 can update to the latest edk2-pytools
-    # that has the CodeQL helpers.
-    #
-    # May not be present until submodules are populated.
-    #
-    root = Path(__file__).parent.parent.resolve()
-    sys.path.append(str(root/'BaseTools'/'Plugin'/'CodeQL'/'integration'))
+    # May not be present until submodules are populated
+    root = Path(__file__).parent.resolve()
+    sys.path.append(str(root/'Plugin'/'CodeQL'/'integration'))
     import stuart_codeql as codeql_helpers
 except ImportError:
     pass
@@ -184,6 +179,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                     scopes += ("gcc_arm_linux",)
                 if "RISCV64" in self.ActualArchitectures:
                     scopes += ("gcc_riscv64_unknown",)
+
             try:
                 scopes += codeql_helpers.get_scopes(self.codeql)
 
@@ -196,6 +192,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                 pass
 
             self.ActualScopes = scopes
+
         return self.ActualScopes
 
     def GetRequiredSubmodules(self):
