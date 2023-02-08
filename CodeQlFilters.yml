@@ -9,5 +9,13 @@
 ##
 
 {
-  "Filters": []
+  "Filters": [
+    "-MdeModulePkg/Universal/Disk/UdfDxe/FileName.c:cpp/uselesstest",
+    "-MdeModulePkg/Universal/EbcDxe/EbcDebugger/EdbSupportString.c:cpp/uselesstest",
+    "-MdeModulePkg/Universal/Disk/UdfDxe/FileSystemOperations.c:cpp/uselesstest",
+    "-MdeModulePkg/Core/Pei/Ppi/Ppi.c:cpp/overflow-buffer",
+    "-ShellPkg/Application/Shell/ShellManParser.c:cpp/redundant-null-check-param",
+    "-ShellPkg/Library/UefiShellAcpiViewCommandLib/Parsers/Aest/AestParser.c:cpp/overflow-buffer",
+    "-ShellPkg/Library/UefiShellAcpiViewCommandLib/Parsers/Iort/IortParser.c:cpp/overflow-buffer"
+  ]
 }
