@@ -21,8 +21,9 @@
 # 2.40 - Move GccLto files to a tools path to be more repository layout agnostic
 # 2.41 - Can't have comment inline as it breaks concatenation see - # MU_CHANGE - Move GccLto to tools dir for better alignment
 # 2.42 - VS2022 toolchain incorrectly defined for ASL
+# 2.43 - Enable stack cookies to VS2019 and VS20222 X64 builds via /GS flag
 #
-#!VERSION=2.42
+#!VERSION=2.43
 
 IDENTIFIER = Default TOOL_CHAIN_CONF
 
@@ -1500,9 +1501,9 @@ NOOPT_VS2015x86_IA32_DLINK_FLAGS   = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF
 *_VS2015x86_X64_DLINK_PATH    = DEF(VS2015x86_BINX64)\link.exe
 *_VS2015x86_X64_ASLDLINK_PATH = DEF(VS2015x86_BINX64)\link.exe
 
-  DEBUG_VS2015x86_X64_CC_FLAGS     = /nologo /c /WX /GS /W4 /Gs32768 /D UNICODE /O1b2s /GL /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Z7 /Gw
-RELEASE_VS2015x86_X64_CC_FLAGS     = /nologo /c /WX /GS /W4 /Gs32768 /D UNICODE /O1b2s /GL /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Gw
-NOOPT_VS2015x86_X64_CC_FLAGS       = /nologo /c /WX /GS /W4 /Gs32768 /D UNICODE /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Z7 /Od
+  DEBUG_VS2015x86_X64_CC_FLAGS     = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2s /GL /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Z7 /Gw
+RELEASE_VS2015x86_X64_CC_FLAGS     = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2s /GL /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Gw
+NOOPT_VS2015x86_X64_CC_FLAGS       = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Z7 /Od
 
   DEBUG_VS2015x86_X64_ASM_FLAGS    = /nologo /c /WX /W3 /Cx /Zd /Zi
 RELEASE_VS2015x86_X64_ASM_FLAGS    = /nologo /c /WX /W3 /Cx /Zd
@@ -1608,9 +1609,9 @@ NOOPT_VS2017_IA32_DLINK_FLAGS   = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /O
 *_VS2017_X64_DLINK_PATH    = DEF(VS2017_BIN_X64)\link.exe
 *_VS2017_X64_ASLDLINK_PATH = DEF(VS2017_BIN_X64)\link.exe
 
-  DEBUG_VS2017_X64_CC_FLAGS     = /nologo /c /WX /GS /W4 /Gs32768 /D UNICODE /O1b2s /GL /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Z7 /Gw
-RELEASE_VS2017_X64_CC_FLAGS     = /nologo /c /WX /GS /W4 /Gs32768 /D UNICODE /O1b2s /GL /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Gw
-NOOPT_VS2017_X64_CC_FLAGS       = /nologo /c /WX /GS /W4 /Gs32768 /D UNICODE /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Z7 /Od
+  DEBUG_VS2017_X64_CC_FLAGS     = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2s /GL /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Z7 /Gw
+RELEASE_VS2017_X64_CC_FLAGS     = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2s /GL /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Gw
+NOOPT_VS2017_X64_CC_FLAGS       = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /Gy /FIAutoGen.h /EHs-c- /GR- /GF /Z7 /Od
 
   DEBUG_VS2017_X64_ASM_FLAGS    = /nologo /c /WX /W3 /Cx /Zd /Zi
 RELEASE_VS2017_X64_ASM_FLAGS    = /nologo /c /WX /W3 /Cx /Zd
