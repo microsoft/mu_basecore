@@ -1422,6 +1422,10 @@ PlatOverMngrCallback (
     }
   } else if (Action == EFI_BROWSER_ACTION_CHANGED) {
     if ((KeyValue >= KEY_VALUE_DRIVER_OFFSET) && (KeyValue < KEY_VALUE_DRIVER_OFFSET + mDriverImageHandleCount)) {
+      if (Value == NULL) {
+        return EFI_INVALID_PARAMETER;
+      }
+
       mDriSelection[KeyValue - KEY_VALUE_DRIVER_OFFSET] = Value->b;
     } else {
       switch (KeyValue) {
