@@ -824,7 +824,7 @@ IScsiCreateAttempts (
   UINT8                        Index;
   EFI_STATUS                   Status;
 
-  for (Index = 1; Index <= AttemptNum; Index++) {
+  for (Index = 1; (UINTN)Index <= AttemptNum; Index++) {
     //
     // Get the initialized attempt order. This is used to essure creating attempts by order.
     //
