@@ -69,7 +69,7 @@
 [LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_APPLICATION]
   RngLib|MdePkg/Library/DxeRngLib/DxeRngLib.inf
 
-!if $(TOOL_CHAIN_TAG) == VS2017 or $(TOOL_CHAIN_TAG) == VS2015 or $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022 ## MU_CHANGE
+!if $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022 ## MU_CHANGE
 [LibraryClasses.IA32]
   NULL|MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf
   ReportStatusCodeLib|MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
