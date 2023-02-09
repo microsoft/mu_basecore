@@ -174,6 +174,7 @@
       gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
   }
   ShellPkg/DynamicCommand/DpDynamicCommand/DpApp.inf
+  ShellPkg/DynamicCommand/VariablePolicyDynamicCommand/VariablePolicyDynamicCommand.inf # MU_CHANGE - Add varpolicy command
   ShellPkg/Application/AcpiViewApp/AcpiViewApp.inf
 
 [BuildOptions]

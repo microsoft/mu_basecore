@@ -692,7 +692,13 @@ if __name__ == '__main__':
         # Generate and print the override for pasting into the file.
         # Use absolute module path to find package path
         pkg_path = pathtool.GetContainingPackage(Paths.TargetPath)
-        rel_path = Paths.TargetPath[Paths.TargetPath.find(pkg_path):]
+        if pkg_path is not None:
+            rel_path = Paths.TargetPath[Paths.TargetPath.find(pkg_path):]
+        else:
+            rel_path = pathtool.GetEdk2RelativePathFromAbsolutePath(Paths.TargetPath)
+            if not rel_path:
+                print(f"{Paths.TargetPath} is invalid for this workspace.")
+                sys.exit(1)
 
         rel_path = rel_path.replace('\\', '/')
         mod_hash = ModuleHashCal(Paths.TargetPath)
