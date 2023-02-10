@@ -187,9 +187,9 @@ Such YAML definition will be used to generate header files and the field accesso
 
 ### MU Added Rules
 
-In addition to aforementioned YAML specification from slim bootloader, a few extra rules was added to the existing
+In addition to aforementioned YAML specification from slim bootloader, a few extra rules were added to the existing
 specification to facilitate the adaptation of policy specific usage. These rules will be enforced by a Pre-Build
-plugin, more details in its [implementation section](#Pre-Build-Plugin).
+plugin, more details in its [implementation section](#pre-build-plugin).
 
 1. Each policy definition group must include a `POLICY_HEADER_TMPL` section, as provided in this template [here](CommonPolicy/Template_PolicyHeader.yaml).
 This section should include a 64-bit signature, an expected major version, an maximally expected minor version and
@@ -222,7 +222,7 @@ This function could be invoked for a platform to initialize the newly created po
 
 ### Pre-Build Plugin
 
-A pre-build plugin is created to enforce rules indicated in the previous [section](#Field-Accessors).
+A pre-build plugin is created to enforce rules indicated in the previous [section](#field-accessors).
 
 This plugin requires 3 build environment variable to execute properly:
 

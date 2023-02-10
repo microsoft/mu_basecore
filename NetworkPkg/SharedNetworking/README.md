@@ -1,7 +1,6 @@
 # SharedNetworking
 
-Similar to SharedCrypto
-(<https://github.com/microsoft/mu_plus/tree/release/201911/SharedCryptoPkg>),
+Similar to the [SharedCrypto implementation](CryptoPkg/),
 SharedNetworking is a collection of pre-built network binaries you can include
 in your platform or other EDK2 project.
 

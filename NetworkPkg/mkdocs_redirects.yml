@@ -1,0 +1,4 @@
+plugins:
+    - redirects:
+        redirect_maps:
+            'dyn/mu_basecore/NetworkPkg/SharedNetworking/CryptoPkg.md': '{current_branch}/CryptoPkg/Driver/readme.md'
