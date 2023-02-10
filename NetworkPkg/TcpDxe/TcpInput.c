@@ -1604,7 +1604,8 @@ TcpIcmpInput (
                     &IcmpErrNotify
                     );
 
-  if (IcmpErrNotify) {
+  if (EFI_ERROR (IcmpErrStatus) && IcmpErrNotify) {
+    // MU_CHANGE - CodeQL change
     SOCK_ERROR (Tcb->Sk, IcmpErrStatus);
   }
 

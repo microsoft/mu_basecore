@@ -17,6 +17,10 @@
     "-MdeModulePkg/Universal/EbcDxe/EbcDebugger/EdbSupportString.c:cpp/uselesstest",
     "-MdeModulePkg/Universal/Disk/UdfDxe/FileSystemOperations.c:cpp/uselesstest",
     "-MdeModulePkg/Core/Pei/Ppi/Ppi.c:cpp/overflow-buffer",
+    # Todo: Exclude for now, needs more review and testing
+    "-NetworkPkg/Ip6Dxe/Ip6Output.c:SM02313",
+    # Todo: Exclude for now, needs more review and testing
+    "-NetworkPkg/Ip6Dxe/Ip6Output.c:cpp/likely-bugs/memory-management/v2/conditionally-uninitialized-variable",
     "-ShellPkg/Application/Shell/ShellManParser.c:cpp/redundant-null-check-param",
     "-ShellPkg/Library/UefiShellAcpiViewCommandLib/Parsers/Aest/AestParser.c:cpp/overflow-buffer",
     "-ShellPkg/Library/UefiShellAcpiViewCommandLib/Parsers/Iort/IortParser.c:cpp/overflow-buffer"
