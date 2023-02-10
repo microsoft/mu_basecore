@@ -53,6 +53,25 @@ EFI_MEMORY_TYPE_STATISTICS  mMemoryTypeStatistics[EfiMaxMemoryType + 1] = {
   { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE }   // EfiMaxMemoryType
 };
 
+UINT64 mPeiAllocations[EfiMaxMemoryType + 1] = {
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+};
+
 EFI_PHYSICAL_ADDRESS  mDefaultMaximumAddress = MAX_ALLOC_ADDRESS;
 EFI_PHYSICAL_ADDRESS  mDefaultBaseAddress    = MAX_ALLOC_ADDRESS;
 
@@ -556,6 +575,8 @@ CoreAddMemoryDescriptor (
   UINTN                 Index;
   UINTN                 FreeIndex;
   EFI_ALLOCATE_TYPE     AllocationType; // MU_CHANGE
+  EFI_HOB_GUID_TYPE  *GuidHob;
+  EFI_MEMORY_TYPE_STATISTICS  *TempStat;
 
   if ((Start & EFI_PAGE_MASK) != 0) {
     return;
@@ -592,6 +613,22 @@ CoreAddMemoryDescriptor (
     return;
   }
 
+  // Get MemoryBucketHob data to populate the Memory Statistics table
+  GuidHob = GetFirstGuidHob (&gMemoryTypeStatisticsGuid);
+  if (GuidHob != NULL) {
+    TempStat = (EFI_MEMORY_TYPE_STATISTICS *) GET_GUID_HOB_DATA (GuidHob);
+    mMemoryTypeStatistics[EfiRuntimeServicesCode] = TempStat[EfiRuntimeServicesCode];
+    mMemoryTypeStatistics[EfiRuntimeServicesData] = TempStat[EfiRuntimeServicesData];
+    mMemoryTypeStatistics[EfiACPIReclaimMemory] = TempStat[EfiACPIReclaimMemory];
+    mMemoryTypeStatistics[EfiACPIMemoryNVS] = TempStat[EfiACPIMemoryNVS];
+    mMemoryTypeStatistics[EfiACPIReclaimMemory].Runtime = FALSE;
+    mMemoryTypeStatistics[EfiACPIMemoryNVS].Runtime = FALSE;
+    mPeiAllocations[EfiRuntimeServicesCode] = TempStat[EfiRuntimeServicesCode].CurrentNumberOfPages;
+    mPeiAllocations[EfiRuntimeServicesData] = TempStat[EfiRuntimeServicesData].CurrentNumberOfPages;
+    mPeiAllocations[EfiACPIReclaimMemory] = TempStat[EfiACPIReclaimMemory].CurrentNumberOfPages;
+    mPeiAllocations[EfiACPIMemoryNVS] = TempStat[EfiACPIMemoryNVS].CurrentNumberOfPages;
+  }
+
   //
   // Loop through each memory type in the order specified by the gMemoryTypeInformation[] array
   //
@@ -604,7 +641,7 @@ CoreAddMemoryDescriptor (
       continue;
     }
 
-    if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
+    if (gMemoryTypeInformation[Index].NumberOfPages != 0 && (Type != EfiRuntimeServicesCode || Type != EfiRuntimeServicesData || Type != EfiACPIReclaimMemory || Type != EfiACPIMemoryNVS)) {
       // MU_CHANGE START Allow overriding of bin locations.
       AllocationType = AllocateAnyPages;
       GetMemoryBinOverride (
@@ -686,13 +723,24 @@ CoreAddMemoryDescriptor (
       continue;
     }
 
-    if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
-      CoreFreePages (
-        mMemoryTypeStatistics[Type].BaseAddress,
-        gMemoryTypeInformation[Index].NumberOfPages
-        );
-      mMemoryTypeStatistics[Type].NumberOfPages   = gMemoryTypeInformation[Index].NumberOfPages;
-      gMemoryTypeInformation[Index].NumberOfPages = 0;
+    if (Type != EfiRuntimeServicesCode || Type != EfiRuntimeServicesData || Type != EfiACPIReclaimMemory || Type != EfiACPIMemoryNVS) {
+      if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
+        CoreFreePages (
+          mMemoryTypeStatistics[Type].BaseAddress,
+          gMemoryTypeInformation[Index].NumberOfPages
+          );
+        mMemoryTypeStatistics[Type].NumberOfPages   = gMemoryTypeInformation[Index].NumberOfPages;
+        gMemoryTypeInformation[Index].NumberOfPages = 0;
+      }
+    } else {
+      if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
+        CoreFreePages (
+          mMemoryTypeStatistics[Type].BaseAddress - (UINT64) (EFI_PAGE_SIZE * mMemoryTypeStatistics[Type].CurrentNumberOfPages),
+          gMemoryTypeInformation[Index].NumberOfPages - (UINTN) mMemoryTypeStatistics[Type].CurrentNumberOfPages
+          );
+        mMemoryTypeStatistics[Type].NumberOfPages   = gMemoryTypeInformation[Index].NumberOfPages;
+        gMemoryTypeInformation[Index].NumberOfPages = 0;
+      }
     }
 
     // MU_CHANGE START
@@ -1198,13 +1246,19 @@ FindFreePages (
   )
 {
   UINT64  Start;
+  EFI_PHYSICAL_ADDRESS  AdjustedMax;
+
+  AdjustedMax = mMemoryTypeStatistics[NewType].MaximumAddress;
+  if (NewType == EfiRuntimeServicesCode || NewType == EfiRuntimeServicesData || NewType == EfiACPIReclaimMemory || NewType == EfiACPIMemoryNVS) {
+    AdjustedMax -= mPeiAllocations[NewType];
+  }
 
   //
   // Attempt to find free pages in the preferred bin based on the requested memory type
   //
-  if (((UINT32)NewType < EfiMaxMemoryType) && (MaxAddress >= mMemoryTypeStatistics[NewType].MaximumAddress)) {
+  if (((UINT32)NewType < EfiMaxMemoryType) && (MaxAddress >= AdjustedMax)) {
     Start = CoreFindFreePagesI (
-              mMemoryTypeStatistics[NewType].MaximumAddress,
+              AdjustedMax,
               mMemoryTypeStatistics[NewType].BaseAddress,
               NoPages,
               NewType,
@@ -1219,7 +1273,7 @@ FindFreePages (
   //
   // Attempt to find free pages in the default allocation bin
   //
-  if (MaxAddress >= mDefaultMaximumAddress) {
+  if (MaxAddress >= mDefaultMaximumAddress && (NewType != EfiRuntimeServicesCode && NewType != EfiRuntimeServicesData && NewType != EfiACPIReclaimMemory && NewType != EfiACPIMemoryNVS)) {
     Start = CoreFindFreePagesI (
               mDefaultMaximumAddress,
               0,

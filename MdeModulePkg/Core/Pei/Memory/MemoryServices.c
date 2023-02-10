@@ -29,7 +29,7 @@ InitializeMemoryServices (
   )
 {
   PrivateData->SwitchStackSignal = FALSE;
-  PrivateData->PeiMemoryBuckets.RuntimeMemInitialized = FALSE; // MU_CHANGE
+  //PrivateData->PeiMemoryBuckets.RuntimeMemInitialized = FALSE; // MU_CHANGE
 
   //
   // First entering PeiCore, following code will initialized some field

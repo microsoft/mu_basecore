@@ -116,6 +116,7 @@
   ## PRODUCES               ## SystemTable
   ## SOMETIMES_CONSUMES     ## HOB
   gEfiMemoryTypeInformationGuid
+  gMemoryTypeStatisticsGuid
   gEfiEventDxeDispatchGuid                      ## PRODUCES             ## Event
   gLoadFixedAddressConfigurationTableGuid       ## SOMETIMES_PRODUCES   ## SystemTable
   ## PRODUCES   ## Event

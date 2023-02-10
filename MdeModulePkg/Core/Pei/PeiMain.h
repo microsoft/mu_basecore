@@ -48,7 +48,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Guid/FirmwareFileSystem3.h>
 #include <Guid/AprioriFileName.h>
 #include <Guid/MigratedFvInfo.h>
-#include <Guid/MemoryTypeStatistics.h>
+#include <Guid/MemoryTypeStatistics.h> // MU_CHANGE
+#include <Guid/MemoryTypeInformation.h> // MU_CHANGE
 
 ///
 /// It is an FFS type extension used for PeiFindFileEx. It indicates current
@@ -180,8 +181,8 @@ typedef struct {
 
 #define PEI_BUCKETS  4
 typedef struct {
-  EFI_MEMORY_TYPE_STATISTICS    RuntimeBuckets[PEI_BUCKETS];
-  EFI_PHYSICAL_ADDRESS          CurrentTopInBucket[PEI_BUCKETS];
+  EFI_MEMORY_TYPE_STATISTICS    RuntimeBuckets[EfiMaxMemoryType + 1];
+  EFI_PHYSICAL_ADDRESS          CurrentTopInBucket[EfiMaxMemoryType + 1];
   BOOLEAN                       MemoryBucketsDisabled;
   BOOLEAN                       RuntimeMemInitialized;
 } PEI_MEMORY_BUCKET_INFORMATION;

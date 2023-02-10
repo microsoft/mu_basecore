@@ -7,7 +7,7 @@ Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#include <PeiMain.h>
+#include "PeiMain.h"
 #include "MemoryBuckets.h"
 
 // Memory types being kept in buckets in PEI.  Currently only runtime types.
@@ -19,12 +19,12 @@ EFI_MEMORY_TYPE  mMemoryTypes[PEI_BUCKETS] = {
 };
 
 // Enum for different bucket types to make code easier to understand
-enum {
+/*enum {
   RuntimeCode,
   RuntimeData,
   ACPIReclaimMemory,
   ACPIMemoryNVS
-};
+};*/
 
 /**
   This function figures out the size of the memory buckets based on the PEI
@@ -40,22 +40,66 @@ InitializeMemoryBucketSizes (
   )
 {
   UINT64  TotalBucketPages;
+  UINTN  DataSize;
+  EFI_HOB_GUID_TYPE  *GuidHob;
+  EFI_MEMORY_TYPE_INFORMATION  *MemInfo;
 
   TotalBucketPages = 0;
-  PrivateData->PeiMemoryBuckets.RuntimeBuckets[RuntimeCode].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeCode);
-  TotalBucketPages                                    += PrivateData->PeiMemoryBuckets.RuntimeBuckets[RuntimeCode].NumberOfPages;
-  PrivateData->PeiMemoryBuckets.RuntimeBuckets[RuntimeData].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketRuntimeData);
-  TotalBucketPages                                    += PrivateData->PeiMemoryBuckets.RuntimeBuckets[RuntimeData].NumberOfPages;
-  PrivateData->PeiMemoryBuckets.RuntimeBuckets[ACPIReclaimMemory].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiReclaimMemory);
-  TotalBucketPages                                    += PrivateData->PeiMemoryBuckets.RuntimeBuckets[ACPIReclaimMemory].NumberOfPages;
-  PrivateData->PeiMemoryBuckets.RuntimeBuckets[ACPIMemoryNVS].NumberOfPages = FixedPcdGet8 (PcdPeiMemoryBucketAcpiMemoryNvs);
-  TotalBucketPages                                    += PrivateData->PeiMemoryBuckets.RuntimeBuckets[ACPIMemoryNVS].NumberOfPages;
+  GuidHob = GetFirstGuidHob (&gEfiMemoryTypeInformationGuid);
+  if (GuidHob != NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - The Memory Type Information exists!.\n", __FUNCTION__));
+    MemInfo = GET_GUID_HOB_DATA (GuidHob);
+    DataSize                 = GET_GUID_HOB_DATA_SIZE (GuidHob);
+    PrivateData->PeiMemoryBuckets.RuntimeBuckets[EfiRuntimeServicesCode].NumberOfPages = GetBucketSizeFromMemoryInfoHob (PrivateData, DataSize, MemInfo, EfiRuntimeServicesCode);
+    TotalBucketPages += PrivateData->PeiMemoryBuckets.RuntimeBuckets[EfiRuntimeServicesCode].NumberOfPages;
+    PrivateData->PeiMemoryBuckets.RuntimeBuckets[EfiRuntimeServicesData].NumberOfPages = GetBucketSizeFromMemoryInfoHob (PrivateData, DataSize, MemInfo, EfiRuntimeServicesData);
+    TotalBucketPages += PrivateData->PeiMemoryBuckets.RuntimeBuckets[EfiRuntimeServicesData].NumberOfPages;
+    PrivateData->PeiMemoryBuckets.RuntimeBuckets[EfiACPIReclaimMemory].NumberOfPages = GetBucketSizeFromMemoryInfoHob (PrivateData, DataSize, MemInfo, EfiACPIReclaimMemory);
+    TotalBucketPages += PrivateData->PeiMemoryBuckets.RuntimeBuckets[EfiACPIReclaimMemory].NumberOfPages;
+    PrivateData->PeiMemoryBuckets.RuntimeBuckets[EfiACPIMemoryNVS].NumberOfPages = GetBucketSizeFromMemoryInfoHob (PrivateData, DataSize, MemInfo, EfiACPIMemoryNVS);
+    TotalBucketPages += PrivateData->PeiMemoryBuckets.RuntimeBuckets[EfiACPIMemoryNVS].NumberOfPages;
+  } else {
+    DEBUG ((DEBUG_ERROR, "[%a] - The Memory Type Information doesn't exist!.\n", __FUNCTION__));
+  }
 
   PrivateData->PeiMemoryBuckets.MemoryBucketsDisabled = FALSE;
   // Disable memory buckets if the PCDs are unaltered.
   if (TotalBucketPages == 0) {
     PrivateData->PeiMemoryBuckets.MemoryBucketsDisabled = TRUE;
   }
+}
+
+/**
+  This function gets the number of pages associated with the memory type
+  that is saved within the MEMORY_TYPE_INFORMATION Hob.
+
+  @param[in] PrivateData   Pointer to PeiCore's private data structure.
+  @param[in] DataSize      The size of the data in the MEMORY_TYPE_INFORMATION
+                           hob.
+  @param[in] MemInfo       Pointer the the MEMORY_TYPE_INFORMATION object
+                           with the relevant memory bucket sizes.
+  @param[in] MemoryType    The type of memory we are interested in.
+
+  @retval    Returns the number of pages to use for the bucket in the memory
+             memory type inputted.
+**/
+UINT32
+EFIAPI
+GetBucketSizeFromMemoryInfoHob (
+  IN PEI_CORE_INSTANCE     *PrivateData,
+  IN UINTN                  DataSize,
+  IN EFI_MEMORY_TYPE_INFORMATION *MemInfo,
+  IN EFI_MEMORY_TYPE       MemoryType
+  )
+{
+  UINTN Index;
+  for (Index = 0; Index < DataSize / sizeof (EFI_MEMORY_TYPE_INFORMATION); Index++) {
+    if (MemInfo[Index].Type == (UINT32)MemoryType) {
+      return MemInfo[Index].NumberOfPages;
+    }
+  }
+  DEBUG ((DEBUG_ERROR, "[%a] - The memory time wasn't found in the MEMORY_TYPE_INFORMATION hob!.\n", __FUNCTION__));
+  return 0;
 }
 
 /**
@@ -89,11 +133,11 @@ InitializeMemoryBuckets (
   )
 {
   UINTN   Index;
-  UINT32  AddressAdjustment;
+  UINT64  AddressAdjustment;
 
   AddressAdjustment = 0;
 
-  for (Index = 0; Index < PEI_BUCKETS; Index++) {
+  for (Index = 0; Index < EfiMaxMemoryType+1; Index++) {
     PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].BaseAddress = 0;
     PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].MaximumAddress = MAX_ALLOC_ADDRESS;
     PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].CurrentNumberOfPages = 0;
@@ -101,19 +145,17 @@ InitializeMemoryBuckets (
     PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].InformationIndex = mMemoryTypes[Index];
     PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].Special = TRUE;
     PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].Runtime = TRUE;
+    PrivateData->PeiMemoryBuckets.CurrentTopInBucket[Index] = MAX_ALLOC_ADDRESS;
   }
 
   InitializeMemoryBucketSizes (PrivateData);
 
-  for (Index = 0; Index < PEI_BUCKETS; Index++) {
+  for (Index = PEI_BUCKETS; Index > 0; Index--) {
     // Initialize memory locations for buckets
-    PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].BaseAddress = StartingAddress - AddressAdjustment;
-    PrivateData->PeiMemoryBuckets.CurrentTopInBucket[Index]          = StartingAddress - AddressAdjustment;
-
-    if (PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].NumberOfPages != 0) {
-      AddressAdjustment += EFI_PAGE_SIZE *
-                        ((UINT32)PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].NumberOfPages);
-    }
+    PrivateData->PeiMemoryBuckets.RuntimeBuckets[mMemoryTypes[Index-1]].MaximumAddress = StartingAddress - AddressAdjustment;
+    AddressAdjustment += PrivateData->PeiMemoryBuckets.RuntimeBuckets[mMemoryTypes[Index-1]].NumberOfPages * EFI_PAGE_SIZE;
+    PrivateData->PeiMemoryBuckets.RuntimeBuckets[mMemoryTypes[Index-1]].BaseAddress = StartingAddress - AddressAdjustment;
+    PrivateData->PeiMemoryBuckets.CurrentTopInBucket[mMemoryTypes[Index-1]]          = StartingAddress - AddressAdjustment;
   }
 }
 
@@ -125,7 +167,7 @@ InitializeMemoryBuckets (
 
   @retval    The index associated with the memory type.
 **/
-UINTN
+/*UINTN
 EFIAPI
 MemoryTypeToIndex (
   IN EFI_MEMORY_TYPE  MemoryType
@@ -153,7 +195,7 @@ MemoryTypeToIndex (
   }
 
   return Index;
-}
+}*/
 
 /**
   This function updates the pointer that keeps track of the start of unused
@@ -171,11 +213,7 @@ UpdateCurrentBucketTop (
   IN EFI_MEMORY_TYPE       MemoryType
   )
 {
-  UINTN  Index;
-
-  Index = MemoryTypeToIndex (MemoryType);
-
-  PrivateData->PeiMemoryBuckets.CurrentTopInBucket[Index] = NewTop;
+  PrivateData->PeiMemoryBuckets.CurrentTopInBucket[MemoryType] = NewTop;
 }
 
 /**
@@ -195,11 +233,11 @@ GetCurrentBucketTop (
   IN EFI_MEMORY_TYPE  MemoryType
   )
 {
-  UINTN  Index;
+  UINT64 PageAdjustment;
 
-  Index = MemoryTypeToIndex (MemoryType);
-
-  return PrivateData->PeiMemoryBuckets.CurrentTopInBucket[Index];
+  PageAdjustment = (PrivateData->PeiMemoryBuckets.RuntimeBuckets[MemoryType].NumberOfPages
+                   - PrivateData->PeiMemoryBuckets.RuntimeBuckets[MemoryType].CurrentNumberOfPages) * EFI_PAGE_SIZE;
+  return PrivateData->PeiMemoryBuckets.RuntimeBuckets[MemoryType].BaseAddress + PageAdjustment;
 }
 
 /**
@@ -219,14 +257,7 @@ GetCurrentBucketBottom (
   IN EFI_MEMORY_TYPE  MemoryType
   )
 {
-  EFI_PHYSICAL_ADDRESS  ReturnValue;
-  UINTN                 Index;
-
-  Index = MemoryTypeToIndex (MemoryType);
-
-  ReturnValue = (EFI_PHYSICAL_ADDRESS)(PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].BaseAddress) -
-                                        (EFI_PAGE_SIZE * PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].NumberOfPages);
-  return ReturnValue;
+  return PrivateData->PeiMemoryBuckets.RuntimeBuckets[MemoryType].BaseAddress;
 }
 
 /**
@@ -246,8 +277,8 @@ GetBottomOfBucketsAddress (
 {
   UINTN  Index;
 
-  for (Index = PEI_BUCKETS-1; Index >= 0; Index--) {
-    if (PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].NumberOfPages > 0) {
+  for (Index = 0; Index < PEI_BUCKETS; Index++) {
+    if (PrivateData->PeiMemoryBuckets.RuntimeBuckets[mMemoryTypes[Index]].NumberOfPages > 0) {
       return GetCurrentBucketBottom (PrivateData, mMemoryTypes[Index]);
     }
   }
@@ -272,18 +303,15 @@ UpdateRuntimeMemoryStats (
   IN EFI_MEMORY_TYPE  MemoryType
   )
 {
-  UINTN  Index;
-
-  Index = MemoryTypeToIndex (MemoryType);
-
-  if (PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].CurrentNumberOfPages + (UINT64)Pages
-      > PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].NumberOfPages) {
-    DEBUG ((DEBUG_ERROR, "We have overflowed while allocating PEI pages of index: %d!\n", Index));
+  if (PrivateData->PeiMemoryBuckets.RuntimeBuckets[MemoryType].CurrentNumberOfPages + (UINT64)Pages
+      > PrivateData->PeiMemoryBuckets.RuntimeBuckets[MemoryType].NumberOfPages) {
+    DEBUG ((DEBUG_ERROR, "We have overflowed while allocating PEI pages of index: %d!\n", MemoryType));
     ASSERT (FALSE);
     return;
   }
 
-  PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].CurrentNumberOfPages = (UINT64)PrivateData->PeiMemoryBuckets.RuntimeBuckets[Index].CurrentNumberOfPages + (UINT64)Pages;
+  PrivateData->PeiMemoryBuckets.RuntimeBuckets[MemoryType].CurrentNumberOfPages = (UINT64)PrivateData->PeiMemoryBuckets.RuntimeBuckets[MemoryType].CurrentNumberOfPages + (UINT64)Pages;
+  UpdateMemoryBucketHob (PrivateData);
 }
 
 /**
@@ -308,9 +336,15 @@ CheckIfInRuntimeBoundary (
     return FALSE;
   }
 
+  /*if (PrivateData->PeiMemoryBuckets.RuntimeMemInitialized &&
+      ((Start >= GetBottomOfBucketsAddress (PrivateData)) &&
+       (Start <= PrivateData->PeiMemoryBuckets.RuntimeBuckets[EfiRuntimeServicesCode].BaseAddress)))
+  {
+    return TRUE;
+  }*/
   if (PrivateData->PeiMemoryBuckets.RuntimeMemInitialized &&
       ((Start >= GetBottomOfBucketsAddress (PrivateData)) &&
-       (Start <= PrivateData->PeiMemoryBuckets.RuntimeBuckets[RuntimeCode].BaseAddress)))
+       (Start <= GetCurrentBucketTop (PrivateData, EfiACPIMemoryNVS))))
   {
     return TRUE;
   }
@@ -403,4 +437,34 @@ AreMemoryBucketsEnabled (
   }
 
   return TRUE;
+}
+
+/**
+  Function that builds and updates the memory bucket hob that will be
+  consumed in DXE.
+
+  @param[in] PrivateData   Pointer to PeiCore's private data structure.
+**/
+VOID
+EFIAPI
+UpdateMemoryBucketHob (
+  IN PEI_CORE_INSTANCE     *PrivateData
+  )
+{
+  EFI_HOB_GUID_TYPE  *GuidHob;
+
+  GuidHob = GetFirstGuidHob (&gMemoryTypeStatisticsGuid);
+  if (GuidHob != NULL) {
+        CopyMem (
+          GET_GUID_HOB_DATA (GuidHob),
+          PrivateData->PeiMemoryBuckets.RuntimeBuckets,
+          (sizeof (PrivateData->PeiMemoryBuckets.RuntimeBuckets))
+          );
+  } else {
+    BuildGuidDataHob (
+          &gMemoryTypeStatisticsGuid,
+          PrivateData->PeiMemoryBuckets.RuntimeBuckets,
+          sizeof (PrivateData->PeiMemoryBuckets.RuntimeBuckets)
+          );
+  }
 }

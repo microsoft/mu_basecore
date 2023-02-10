@@ -14,6 +14,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <PeiMain.h>
 #include <Guid/MemoryTypeStatistics.h>
+#include <Guid/MemoryTypeInformation.h>
 
 /**
   This function figures out the size of the memory buckets based on the PEI
@@ -26,6 +27,29 @@ VOID
 EFIAPI
 InitializeMemoryBucketSizes (
   IN PEI_CORE_INSTANCE     *PrivateData
+  );
+
+/**
+  This function gets the number of pages associated with the memory type
+  that is saved within the MEMORY_TYPE_INFORMATION Hob.
+
+  @param[in] PrivateData   Pointer to PeiCore's private data structure.
+  @param[in] DataSize      The size of the data in the MEMORY_TYPE_INFORMATION
+                           hob.
+  @param[in] MemInfo       Pointer the the MEMORY_TYPE_INFORMATION object
+                           with the relevant memory bucket sizes.
+  @param[in] MemoryType    The type of memory we are interested in.
+
+  @retval    Returns the number of pages to use for the bucket in the memory
+             memory type inputted.
+**/
+UINT32
+EFIAPI
+GetBucketSizeFromMemoryInfoHob (
+  IN PEI_CORE_INSTANCE     *PrivateData,
+  IN UINTN                  DataSize,
+  IN EFI_MEMORY_TYPE_INFORMATION *MemInfo,
+  IN EFI_MEMORY_TYPE       MemoryType
   );
 
 /**
@@ -89,7 +113,7 @@ UpdateCurrentBucketTop (
   );
 
 /**
-  This function gets the address of the startfree memory in the bucket
+  This function gets the address of the start free memory in the bucket
   specified by MemoryType.
 
   @param[in] PrivateData   Pointer to PeiCore's private data structure.
@@ -225,6 +249,18 @@ IsRuntimeType (
 BOOLEAN
 EFIAPI
 AreMemoryBucketsEnabled (
+  IN PEI_CORE_INSTANCE     *PrivateData
+  );
+
+/**
+  Function that builds and updates the memory bucket hob that will be
+  consumed in DXE.
+
+  @param[in] PrivateData   Pointer to PeiCore's private data structure.
+**/
+VOID
+EFIAPI
+UpdateMemoryBucketHob (
   IN PEI_CORE_INSTANCE     *PrivateData
   );
 
