@@ -1,4 +1,4 @@
-## @file
+﻿## @file
 # TCBZ3519
 # Uefi Shell based Application that unit tests the Memory Attribute Protocol.
 #
@@ -21,18 +21,27 @@
 [Sources.X64]
   X64/PageSplitTest.c
 
-[Sources.IA32, Sources.AARCH64]
+[Sources.IA32, Sources.ARM]
   PageSplitTest.c
+
+[Sources.AARCH64]
+  AARCH64/PageSplitTest.c
 
 [Packages]
   MdePkg/MdePkg.dec
   UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[Packages.AARCH64]
+  ArmPkg/ArmPkg.dec
 
 [LibraryClasses]
   UefiApplicationEntryPoint
   UnitTestLib
   UefiBootServicesTableLib
   DebugLib
+  
+[LibraryClasses.AARCH64]
+  ArmLib
 
 [Guids]
 
