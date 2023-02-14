@@ -306,7 +306,13 @@ TcpTransmitSegment (
                        NET_BUF_HEAD
                        );
 
-  ASSERT (Head != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Head == NULL) {
+    ASSERT (Head != NULL);
+    return -1;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Nbuf->Tcp = Head;
 
@@ -608,6 +614,10 @@ TcpGetSegment (
     Nbuf = TcpGetSegmentSndQue (Tcb, Seq, Len);
   } else {
     Nbuf = TcpGetSegmentSock (Tcb, Seq, Len);
+  }
+
+  if (Nbuf == NULL) {
+    return NULL;
   }
 
   if (TcpVerifySegment (Nbuf) == 0) {
@@ -1124,7 +1134,14 @@ TcpSendReset (
                         NET_BUF_TAIL
                         );
 
-  ASSERT (Nhead != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Nhead == NULL) {
+    ASSERT (Nhead != NULL);
+    NetbufFree (Nbuf);
+    return -1;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Nbuf->Tcp   = Nhead;
   Nhead->Flag = TCP_FLG_RST;

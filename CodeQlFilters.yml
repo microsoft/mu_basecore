@@ -13,6 +13,8 @@
     "-MdePkg/Library/UefiDevicePathLib/DevicePathFromText.c:SM02311",
     "-MdePkg/Library/UefiDevicePathLib/DevicePathUtilities.c:SM02311",
     "-MdePkg/Library/UefiDevicePathLibDevicePathProtocol/UefiDevicePathLib.c:SM02311",
+    "-MdeModulePkg/Library/UefiBootManagerLib/BmConsole.c:SM02311",
+    "-MdeModulePkg/Library/UefiBootManagerLib/BmMisc.c:SM02311",
     "-MdeModulePkg/Universal/Disk/UdfDxe/FileName.c:cpp/uselesstest",
     "-MdeModulePkg/Universal/EbcDxe/EbcDebugger/EdbSupportString.c:cpp/uselesstest",
     "-MdeModulePkg/Universal/Disk/UdfDxe/FileSystemOperations.c:cpp/uselesstest",

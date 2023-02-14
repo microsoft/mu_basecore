@@ -2221,7 +2221,13 @@ IScsiGetConfigData (
     //
 
     NicInfo = IScsiGetNicInfoByIndex (mPrivate->CurrentNic);
-    ASSERT (NicInfo != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (NicInfo == NULL) {
+      ASSERT (NicInfo != NULL);
+      break;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     IScsiMacAddrToStr (&NicInfo->PermanentAddress, NicInfo->HwAddressSize, NicInfo->VlanId, MacString);
     UnicodeSPrint (
       mPrivate->PortString,
