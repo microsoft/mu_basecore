@@ -194,6 +194,28 @@ CoreConvertPages (
   );
 
 /**
+  Internal function.  Gets the relevant memory from the PEI bucket list if applicable
+
+  @param  Start                  The first address of the range Must be page
+                                 aligned
+  @param  NumberOfPages          The number of pages to convert
+  @param  NewType                The new type for the memory range
+
+  @retval EFI_INVALID_PARAMETER  Invalid parameter
+  @retval EFI_NOT_FOUND          Could not find a descriptor cover the specified
+                                 range  or convertion not allowed.
+  @retval EFI_SUCCESS            Successfully converts the memory range to the
+                                 specified type.
+
+**/
+EFI_STATUS
+CoreGetPages (
+  IN UINT64           Start,
+  IN UINT64           NumberOfPages,
+  IN EFI_MEMORY_TYPE  NewType
+  );
+
+/**
   Allocate or free guarded memory.
 
   @param[in]  Start           Start address of memory to allocate or free.
@@ -204,6 +226,22 @@ CoreConvertPages (
 **/
 EFI_STATUS
 CoreConvertPagesWithGuard (
+  IN UINT64           Start,
+  IN UINTN            NumberOfPages,
+  IN EFI_MEMORY_TYPE  NewType
+  );
+
+  /**
+  Allocate or free guarded memory.
+
+  @param[in]  Start           Start address of memory to allocate or free.
+  @param[in]  NumberOfPages   Memory size in pages.
+  @param[in]  NewType         Memory type to convert to.
+
+  @return VOID.
+**/
+EFI_STATUS
+CoreGetPagesWithGuard (
   IN UINT64           Start,
   IN UINTN            NumberOfPages,
   IN EFI_MEMORY_TYPE  NewType

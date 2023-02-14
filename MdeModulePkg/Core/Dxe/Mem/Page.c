@@ -641,7 +641,7 @@ CoreAddMemoryDescriptor (
       continue;
     }
 
-    if (gMemoryTypeInformation[Index].NumberOfPages != 0 && (Type != EfiRuntimeServicesCode || Type != EfiRuntimeServicesData || Type != EfiACPIReclaimMemory || Type != EfiACPIMemoryNVS)) {
+    if (gMemoryTypeInformation[Index].NumberOfPages != 0 && (Type != EfiRuntimeServicesCode && Type != EfiRuntimeServicesData && Type != EfiACPIReclaimMemory && Type != EfiACPIMemoryNVS)) {
       // MU_CHANGE START Allow overriding of bin locations.
       AllocationType = AllocateAnyPages;
       GetMemoryBinOverride (
@@ -1050,6 +1050,39 @@ CoreConvertPages (
   )
 {
   return CoreConvertPagesEx (Start, NumberOfPages, TRUE, NewType, FALSE, 0);
+}
+
+/**
+  Internal function.  Gets the relevant memory from the PEI bucket list if applicable
+
+  @param  Start                  The first address of the range Must be page
+                                 aligned
+  @param  NumberOfPages          The number of pages to convert
+  @param  NewType                The new type for the memory range
+
+  @retval EFI_INVALID_PARAMETER  Invalid parameter
+  @retval EFI_NOT_FOUND          Could not find a descriptor cover the specified
+                                 range  or convertion not allowed.
+  @retval EFI_SUCCESS            Successfully converts the memory range to the
+                                 specified type.
+
+**/
+EFI_STATUS
+CoreGetPages (
+  IN UINT64           Start,
+  IN UINT64           NumberOfPages,
+  IN EFI_MEMORY_TYPE  NewType
+  )
+{
+  if ((UINT32)NewType < EfiMaxMemoryType) {
+    if ((Start >= mMemoryTypeStatistics[NewType].BaseAddress) && (Start <= mMemoryTypeStatistics[NewType].MaximumAddress - mPeiAllocations[NewType])
+         && (NumberOfPages + mMemoryTypeStatistics[NewType].CurrentNumberOfPages <= mMemoryTypeStatistics[NewType].NumberOfPages)) {
+      mMemoryTypeStatistics[NewType].CurrentNumberOfPages += NumberOfPages;
+    }
+    return EFI_SUCCESS;
+  }
+  DEBUG ((DEBUG_ERROR, "The memory bucket for type %x if full!\n", NewType));
+  return EFI_OUT_OF_RESOURCES;
 }
 
 /**
@@ -1489,11 +1522,31 @@ CoreInternalAllocatePages (
   //
   // Convert pages from FreeMemory to the requested type
   //
-  if (NeedGuard) {
-    Status = CoreConvertPagesWithGuard (Start, NumberOfPages, MemoryType);
+  // MU_CHANGE START
+  // Get the relevant pages from the memory types allocated in PEI.
+  // No conversion necessary
+  if (MemoryType == EfiRuntimeServicesCode || MemoryType == EfiRuntimeServicesData || MemoryType == EfiACPIReclaimMemory || MemoryType == EfiACPIMemoryNVS) {
+    if (NeedGuard) {
+      Status = CoreGetPagesWithGuard (Start, NumberOfPages, MemoryType);
+    } else {
+      Status = CoreGetPages (Start, NumberOfPages, MemoryType);
+    }
+    // We need to convert memory not in the memory bucket
+    if (EFI_ERROR (Status)) {
+      if (NeedGuard) {
+        Status = CoreConvertPagesWithGuard (Start, NumberOfPages, MemoryType);
+      } else {
+        Status = CoreConvertPages (Start, NumberOfPages, MemoryType);
+      }
+    }
   } else {
-    Status = CoreConvertPages (Start, NumberOfPages, MemoryType);
+    if (NeedGuard) {
+      Status = CoreConvertPagesWithGuard (Start, NumberOfPages, MemoryType);
+    } else {
+      Status = CoreConvertPages (Start, NumberOfPages, MemoryType);
+    }
   }
+  // MU_CHANGE END
 
   if (EFI_ERROR (Status)) {
     //
@@ -1561,7 +1614,7 @@ CoreAllocatePages (
                 Memory,
                 NeedGuard
                 );
-  if (!EFI_ERROR (Status)) {
+  if (!EFI_ERROR (Status) && (Type != EfiRuntimeServicesCode && Type == EfiRuntimeServicesData && Type != EfiACPIReclaimMemory && Type != EfiACPIMemoryNVS)) {
     CoreUpdateProfile (
       (EFI_PHYSICAL_ADDRESS)(UINTN)RETURN_ADDRESS (0),
       MemoryProfileActionAllocatePages,

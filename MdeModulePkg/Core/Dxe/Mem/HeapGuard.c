@@ -1135,6 +1135,48 @@ CoreConvertPagesWithGuard (
 }
 
 /**
+  Allocate or free guarded memory.
+
+  @param[in]  Start           Start address of memory to allocate or free.
+  @param[in]  NumberOfPages   Memory size in pages.
+  @param[in]  NewType         Memory type to convert to.
+
+  @return VOID.
+**/
+EFI_STATUS
+CoreGetPagesWithGuard (
+  IN UINT64           Start,
+  IN UINTN            NumberOfPages,
+  IN EFI_MEMORY_TYPE  NewType
+  )
+{
+  UINT64  OldStart;
+  UINTN   OldPages;
+
+  if (NewType == EfiConventionalMemory) {
+    OldStart = Start;
+    OldPages = NumberOfPages;
+
+    AdjustMemoryF (&Start, &NumberOfPages);
+    //
+    // It's safe to unset Guard page inside memory lock because there should
+    // be no memory allocation occurred in updating memory page attribute at
+    // this point. And unsetting Guard page before free will prevent Guard
+    // page just freed back to pool from being allocated right away before
+    // marking it usable (from non-present to present).
+    //
+    UnsetGuardForMemory (OldStart, OldPages);
+    if (NumberOfPages == 0) {
+      return EFI_SUCCESS;
+    }
+  } else {
+    AdjustMemoryA (&Start, &NumberOfPages);
+  }
+
+  return CoreGetPages (Start, NumberOfPages, NewType);
+}
+
+/**
   Set all Guard pages which cannot be set before CPU Arch Protocol installed.
 **/
 VOID
