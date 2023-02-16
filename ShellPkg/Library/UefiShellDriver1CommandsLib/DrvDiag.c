@@ -199,17 +199,24 @@ DoDiagnostics (
                               );
               if (!EFI_ERROR (Status) && (DriverDiagnostics2 != NULL)) {
                 Language = GetBestLanguageForDriver (DriverDiagnostics2->SupportedLanguages, Lang, FALSE);
-                Found    = TRUE;
-                Status   = DriverDiagnostics2->RunDiagnostics (
-                                                 DriverDiagnostics2,
-                                                 ControllerHandleList[ControllerHandleListLoop],
-                                                 ChildHandleList == NULL ? NULL : ChildHandleList[ChildHandleListLoop],
-                                                 (EFI_DRIVER_DIAGNOSTIC_TYPE)Mode,
-                                                 Language,
-                                                 &ErrorType,
-                                                 &OutBufferSize,
-                                                 &OutBuffer
-                                                 );
+                // MU_CHANGE [START] - CodeQL change
+                if (Language == NULL) {
+                  Language = AllocateCopyPool (StrSize (L"en-US"), L"en-US");
+                }
+
+                // MU_CHANGE [END] - CodeQL change
+
+                Found  = TRUE;
+                Status = DriverDiagnostics2->RunDiagnostics (
+                                               DriverDiagnostics2,
+                                               ControllerHandleList[ControllerHandleListLoop],
+                                               ChildHandleList == NULL ? NULL : ChildHandleList[ChildHandleListLoop],
+                                               (EFI_DRIVER_DIAGNOSTIC_TYPE)Mode,
+                                               Language,
+                                               &ErrorType,
+                                               &OutBufferSize,
+                                               &OutBuffer
+                                               );
                 FreePool (Language);
               }
             }
@@ -225,16 +232,23 @@ DoDiagnostics (
                               );
               if (!EFI_ERROR (Status)) {
                 Language = GetBestLanguageForDriver (DriverDiagnostics->SupportedLanguages, Lang, FALSE);
-                Status   = DriverDiagnostics->RunDiagnostics (
-                                                DriverDiagnostics,
-                                                ControllerHandleList[ControllerHandleListLoop],
-                                                ChildHandleList == NULL ? NULL : ChildHandleList[ChildHandleListLoop],
-                                                (EFI_DRIVER_DIAGNOSTIC_TYPE)Mode,
-                                                Language,
-                                                &ErrorType,
-                                                &OutBufferSize,
-                                                &OutBuffer
-                                                );
+                // MU_CHANGE [START] - CodeQL change
+                if (Language == NULL) {
+                  Language = AllocateCopyPool (StrSize (L"en-US"), L"en-US");
+                }
+
+                // MU_CHANGE [END] - CodeQL change
+
+                Status = DriverDiagnostics->RunDiagnostics (
+                                              DriverDiagnostics,
+                                              ControllerHandleList[ControllerHandleListLoop],
+                                              ChildHandleList == NULL ? NULL : ChildHandleList[ChildHandleListLoop],
+                                              (EFI_DRIVER_DIAGNOSTIC_TYPE)Mode,
+                                              Language,
+                                              &ErrorType,
+                                              &OutBufferSize,
+                                              &OutBuffer
+                                              );
                 FreePool (Language);
               }
             }
@@ -357,8 +371,10 @@ ShellCommandRunDrvDiag (
   EFI_HANDLE          Handle1;
   EFI_HANDLE          Handle2;
   EFI_HANDLE          Handle3;
-  UINT64              Intermediate;
+  // MU_CHANGE [START] - CodeQL change
+  UINT64  Intermediate = 0;
 
+  // MU_CHANGE [END] - CodeQL change
   ShellStatus = SHELL_SUCCESS;
   Mode        = TestModeMax;
   Language    = NULL;

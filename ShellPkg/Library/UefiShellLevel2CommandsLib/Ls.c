@@ -42,7 +42,12 @@ PrintSfoVolumeInfoTableEntry (
 
   if (Node->Handle == NULL) {
     DirectoryName = GetFullyQualifiedPath (((EFI_SHELL_FILE_INFO *)GetFirstNode (&TheList->Link))->FullName);
+    // MU_CHANGE [START] - CodeQL change
+    if (DirectoryName == NULL) {
+      return (EFI_OUT_OF_RESOURCES);
+    }
 
+    // MU_CHANGE [END] - CodeQL change
     //
     // We need to open something up to get system information
     //
@@ -616,7 +621,13 @@ PrintLsOutput (
     }
 
     CorrectedPath = StrnCatGrow (&CorrectedPath, &LongestPath, L"*", 0);
-    Status        = ShellOpenFileMetaArg ((CHAR16 *)CorrectedPath, EFI_FILE_MODE_READ, &ListHead);
+    // MU_CHANGE [START] - CodeQL change
+    if (CorrectedPath == NULL) {
+      return SHELL_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+    Status = ShellOpenFileMetaArg ((CHAR16 *)CorrectedPath, EFI_FILE_MODE_READ, &ListHead);
 
     if (!EFI_ERROR (Status)) {
       for ( Node = (EFI_SHELL_FILE_INFO *)GetFirstNode (&ListHead->Link)

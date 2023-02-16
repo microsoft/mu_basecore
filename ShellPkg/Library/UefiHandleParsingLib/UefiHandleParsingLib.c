@@ -299,6 +299,12 @@ LoadedImageProtocolDumpInformation (
 
     SHELL_FREE_NON_NULL (Temp);
     SHELL_FREE_NON_NULL (FileName);
+    // MU_CHANGE [START] - CodeQL change
+    if (RetVal == NULL) {
+      return NULL;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
   }
 
   Temp = HiiGetString (mHandleParsingHiiHandle, STRING_TOKEN (STR_LI_DUMP_MAIN), NULL);
@@ -409,6 +415,12 @@ GraphicsOutputProtocolDumpInformation (
              );
 
   SHELL_FREE_NON_NULL (Temp);
+  // MU_CHANGE [START] - CodeQL change
+  if (RetVal == NULL) {
+    goto EXIT;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Temp = HiiGetString (mHandleParsingHiiHandle, STRING_TOKEN (STR_GOP_RES_LIST_MAIN), NULL);
   if (Temp == NULL) {
@@ -509,7 +521,12 @@ EdidDiscoveredProtocolDumpInformation (
 
   RetVal = CatSPrint (NULL, Temp, EdidDiscovered->SizeOfEdid);
   SHELL_FREE_NON_NULL (Temp);
+  // MU_CHANGE [START] - CodeQL change
+  if (RetVal == NULL) {
+    return NULL;
+  }
 
+  // MU_CHANGE [END] - CodeQL change
   if (EdidDiscovered->SizeOfEdid != 0) {
     Temp = HiiGetString (mHandleParsingHiiHandle, STRING_TOKEN (STR_EDID_DISCOVERED_DATA), NULL);
     if (Temp == NULL) {
@@ -575,6 +592,12 @@ EdidActiveProtocolDumpInformation (
 
   RetVal = CatSPrint (NULL, Temp, EdidActive->SizeOfEdid);
   SHELL_FREE_NON_NULL (Temp);
+  // MU_CHANGE [START] - CodeQL change
+  if (RetVal == NULL) {
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   if (EdidActive->SizeOfEdid != 0) {
     Temp = HiiGetString (mHandleParsingHiiHandle, STRING_TOKEN (STR_EDID_ACTIVE_DATA), NULL);
@@ -1056,6 +1079,12 @@ BusSpecificDriverOverrideProtocolDumpInformation (
                        ConvertHandleToHandleIndex (ImageHandle),
                        ConvertDevicePathToText (LoadedImage->FilePath, TRUE, TRUE)
                        );
+        // MU_CHANGE [START] - CodeQL change
+        if (TempRetVal == NULL) {
+          break;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         StrnCatGrow (&RetVal, &Size, TempRetVal, 0);
         SHELL_FREE_NON_NULL (TempRetVal);
       }
@@ -1287,6 +1316,13 @@ PciIoProtocolDumpInformation (
              Pci.Hdr.ClassCode[1],
              Pci.Hdr.ClassCode[2]
              );
+  // MU_CHANGE [START] - CodeQL change
+  if (RetVal == NULL) {
+    FreePool (GetString);
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   for (Index = 0; Index < sizeof (Pci); Index++) {
     if ((Index % 0x10) == 0) {
       TempRetVal = CatSPrint (RetVal, L"\r\n       %02x", *((UINT8 *)(&Pci) + Index));
@@ -1435,6 +1471,12 @@ AdapterInformationDumpInformation (
     }
 
     RetVal = CatSPrint (NULL, TempStr);
+    // MU_CHANGE [START] - CodeQL change
+    if (RetVal == NULL) {
+      goto ERROR_EXIT;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     SHELL_FREE_NON_NULL (TempStr);
 
     for (GuidIndex = 0; GuidIndex < InfoTypesBufferCount; GuidIndex++) {
@@ -1726,6 +1768,12 @@ FirmwareManagementDumpInformation (
     }
 
     RetVal = CatSPrint (NULL, TempStr, ImageInfoSize);
+    // MU_CHANGE [START] - CodeQL change
+    if (RetVal == NULL) {
+      goto ERROR_EXIT;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     SHELL_FREE_NON_NULL (TempStr);
 
     //
@@ -1823,37 +1871,67 @@ FirmwareManagementDumpInformation (
       } else {
         AttributeSettingStr = CatSPrint (NULL, L"(");
 
+        // MU_CHANGE [START] - CodeQL change
+        if (AttributeSettingStr == NULL) {
+          goto ERROR_EXIT;
+        }
+
         if ((AttributeSetting & IMAGE_ATTRIBUTE_IMAGE_UPDATABLE) != 0x0) {
           TempRetVal = CatSPrint (AttributeSettingStr, L" IMAGE_ATTRIBUTE_IMAGE_UPDATABLE");
+          if (TempRetVal == NULL) {
+            goto ERROR_EXIT;
+          }
+
           SHELL_FREE_NON_NULL (AttributeSettingStr);
           AttributeSettingStr = TempRetVal;
         }
 
         if ((AttributeSetting & IMAGE_ATTRIBUTE_RESET_REQUIRED) != 0x0) {
           TempRetVal = CatSPrint (AttributeSettingStr, L" IMAGE_ATTRIBUTE_RESET_REQUIRED");
+          if (TempRetVal == NULL) {
+            goto ERROR_EXIT;
+          }
+
           SHELL_FREE_NON_NULL (AttributeSettingStr);
           AttributeSettingStr = TempRetVal;
         }
 
         if ((AttributeSetting & IMAGE_ATTRIBUTE_AUTHENTICATION_REQUIRED) != 0x0) {
           TempRetVal = CatSPrint (AttributeSettingStr, L" IMAGE_ATTRIBUTE_AUTHENTICATION_REQUIRED");
+          if (TempRetVal == NULL) {
+            goto ERROR_EXIT;
+          }
+
           SHELL_FREE_NON_NULL (AttributeSettingStr);
           AttributeSettingStr = TempRetVal;
         }
 
         if ((AttributeSetting & IMAGE_ATTRIBUTE_IN_USE) != 0x0) {
           TempRetVal = CatSPrint (AttributeSettingStr, L" IMAGE_ATTRIBUTE_IN_USE");
+          if (TempRetVal == NULL) {
+            goto ERROR_EXIT;
+          }
+
           SHELL_FREE_NON_NULL (AttributeSettingStr);
           AttributeSettingStr = TempRetVal;
         }
 
         if ((AttributeSetting & IMAGE_ATTRIBUTE_UEFI_IMAGE) != 0x0) {
           TempRetVal = CatSPrint (AttributeSettingStr, L" IMAGE_ATTRIBUTE_UEFI_IMAGE");
+          if (TempRetVal == NULL) {
+            goto ERROR_EXIT;
+          }
+
           SHELL_FREE_NON_NULL (AttributeSettingStr);
           AttributeSettingStr = TempRetVal;
         }
 
         TempRetVal = CatSPrint (AttributeSettingStr, L" )");
+        if (TempRetVal == NULL) {
+          goto ERROR_EXIT;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         SHELL_FREE_NON_NULL (AttributeSettingStr);
         AttributeSettingStr = TempRetVal;
       }
@@ -2848,7 +2926,13 @@ GetStringNameFromHandle (
                   );
   if (!EFI_ERROR (Status)) {
     BestLang = GetBestLanguageForDriver (CompNameStruct->SupportedLanguages, Language, FALSE);
-    Status   = CompNameStruct->GetDriverName (CompNameStruct, BestLang, &RetVal);
+    // MU_CHANGE [START] - CodeQL change
+    if (BestLang == NULL) {
+      return (NULL);
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+    Status = CompNameStruct->GetDriverName (CompNameStruct, BestLang, &RetVal);
     if (BestLang != NULL) {
       FreePool (BestLang);
       BestLang = NULL;
@@ -2869,7 +2953,13 @@ GetStringNameFromHandle (
                   );
   if (!EFI_ERROR (Status)) {
     BestLang = GetBestLanguageForDriver (CompNameStruct->SupportedLanguages, Language, FALSE);
-    Status   = CompNameStruct->GetDriverName (CompNameStruct, BestLang, &RetVal);
+    // MU_CHANGE [START] - CodeQL change
+    if (BestLang == NULL) {
+      return (NULL);
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+    Status = CompNameStruct->GetDriverName (CompNameStruct, BestLang, &RetVal);
     if (BestLang != NULL) {
       FreePool (BestLang);
     }

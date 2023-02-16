@@ -62,7 +62,13 @@ ShellCommandRunSetSize (
       NewSize     = 0;
     } else {
       Temp1 = ShellCommandLineGetRawValue (Package, 1);
-      if (!ShellIsHexOrDecimalNumber (Temp1, FALSE, FALSE)) {
+      // MU_CHANGE [START] - CodeQL change
+      if (Temp1 == NULL) {
+        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_FEW), gShellDebug1HiiHandle, L"setsize");
+        ShellStatus = SHELL_INVALID_PARAMETER;
+        NewSize     = 0;
+      } else if (!ShellIsHexOrDecimalNumber (Temp1, FALSE, FALSE)) {
+        // MU_CHANGE [END] - CodeQL change
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_SIZE_NOT_SPEC), gShellDebug1HiiHandle, L"setsize");
         ShellStatus = SHELL_INVALID_PARAMETER;
         NewSize     = 0;
