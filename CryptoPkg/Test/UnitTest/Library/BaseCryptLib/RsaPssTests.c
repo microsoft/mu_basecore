@@ -163,8 +163,8 @@ TestVerifyRsaPssSignVerify (
     UT_LOG_ERROR ("Failed to allocate memory for Signature");
     return UNIT_TEST_ERROR_TEST_FAILED;
   }
-  
-  Status    = RsaPssSign (mRsa, PssMessage, sizeof (PssMessage), SHA256_DIGEST_SIZE, SHA256_DIGEST_SIZE, Signature, &SigSize);
+
+  Status = RsaPssSign (mRsa, PssMessage, sizeof (PssMessage), SHA256_DIGEST_SIZE, SHA256_DIGEST_SIZE, Signature, &SigSize);
   UT_ASSERT_TRUE (Status);
 
   //
