@@ -1537,11 +1537,8 @@ PeCoffLoaderLoadImage (
       return RETURN_LOAD_ERROR;
     }
 
-    if ((Base == NULL) || (End == NULL)) {
-      DEBUG ((DEBUG_WARN | DEBUG_LOAD, "%a PeCoffLoaderImageAddress resolved NULL for Base (0x%p) or End (0x%p)\n", __FUNCTION__, Base, End));
-    }
-
-    if (Section->SizeOfRawData > 0) {
+    // MU_CHANGE - CodeQL change
+    if ((Section->SizeOfRawData > 0) && (Base != NULL)) {
       Status = ImageContext->ImageRead (
                                ImageContext->Handle,
                                Section->PointerToRawData - TeStrippedOffset,
@@ -1557,8 +1554,8 @@ PeCoffLoaderLoadImage (
     //
     // If raw size is less then virtual size, zero fill the remaining
     //
-
-    if (Size < Section->Misc.VirtualSize) {
+    // MU_CHANGE - CodeQL change - Assume Base is non-NULL if Size is non-zero
+    if ((Size < Section->Misc.VirtualSize) && (Base != NULL)) {
       ZeroMem (Base + Size, Section->Misc.VirtualSize - Size);
     }
 
