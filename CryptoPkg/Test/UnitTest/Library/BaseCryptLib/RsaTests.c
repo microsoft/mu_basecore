@@ -129,11 +129,11 @@ TestVerifyRsaSetGetKeyComponents (
 
   KeyBuffer = AllocatePool (KeySize);
   if (KeyBuffer == NULL) {
-    UT_LOG_ERROR("Failed to allocate memory for KeyBuffer");
+    UT_LOG_ERROR ("Failed to allocate memory for KeyBuffer");
     return UNIT_TEST_ERROR_TEST_FAILED;
   }
 
-  Status    = RsaGetKey (mRsa, RsaKeyN, KeyBuffer, &KeySize);
+  Status = RsaGetKey (mRsa, RsaKeyN, KeyBuffer, &KeySize);
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_EQUAL (KeySize, sizeof (RsaN));
 
@@ -154,11 +154,11 @@ TestVerifyRsaSetGetKeyComponents (
 
   KeyBuffer = AllocatePool (KeySize);
   if (KeyBuffer == NULL) {
-    UT_LOG_ERROR("Failed to allocate memory for KeyBuffer");
+    UT_LOG_ERROR ("Failed to allocate memory for KeyBuffer");
     return UNIT_TEST_ERROR_TEST_FAILED;
   }
-  
-  Status    = RsaGetKey (mRsa, RsaKeyE, KeyBuffer, &KeySize);
+
+  Status = RsaGetKey (mRsa, RsaKeyE, KeyBuffer, &KeySize);
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_EQUAL (KeySize, sizeof (RsaE));
 

@@ -42,15 +42,15 @@ TestVerifyPkcs5Pbkdf2 (
   // Verify PKCS#5 PBKDF2 Key Derivation Function
   //
   Status = Pkcs5HashPassword (
-             PassLen,
-             Password,
-             SaltLen,
-             (CONST UINT8 *)Salt,
-             Count,
-             SHA1_DIGEST_SIZE,
-             KeyLen,
-             OutKey
-             );
+                              PassLen,
+                              Password,
+                              SaltLen,
+                              (CONST UINT8 *)Salt,
+                              Count,
+                              SHA1_DIGEST_SIZE,
+                              KeyLen,
+                              OutKey
+                              );
   UT_ASSERT_TRUE (Status);
 
   //
