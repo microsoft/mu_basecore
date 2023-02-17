@@ -128,6 +128,11 @@ TestVerifyRsaSetGetKeyComponents (
   UT_ASSERT_EQUAL (KeySize, sizeof (RsaN));
 
   KeyBuffer = AllocatePool (KeySize);
+  if (KeyBuffer == NULL) {
+    UT_LOG_ERROR("Failed to allocate memory for KeyBuffer");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
   Status    = RsaGetKey (mRsa, RsaKeyN, KeyBuffer, &KeySize);
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_EQUAL (KeySize, sizeof (RsaN));
@@ -148,6 +153,11 @@ TestVerifyRsaSetGetKeyComponents (
   UT_ASSERT_EQUAL (KeySize, sizeof (RsaE));
 
   KeyBuffer = AllocatePool (KeySize);
+  if (KeyBuffer == NULL) {
+    UT_LOG_ERROR("Failed to allocate memory for KeyBuffer");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+  
   Status    = RsaGetKey (mRsa, RsaKeyE, KeyBuffer, &KeySize);
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_EQUAL (KeySize, sizeof (RsaE));
@@ -204,7 +214,12 @@ TestVerifyRsaGenerateKeyComponents (
 
   KeySize   = RSA_MODULUS_LENGTH / 8;
   KeyBuffer = AllocatePool (KeySize);
-  Status    = RsaGetKey (mRsa, RsaKeyE, KeyBuffer, &KeySize);
+  if (KeyBuffer == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for KeyBuffer");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = RsaGetKey (mRsa, RsaKeyE, KeyBuffer, &KeySize);
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_EQUAL (KeySize, 3);
   UT_ASSERT_MEM_EQUAL (KeyBuffer, DefaultPublicKey, 3);
@@ -283,7 +298,12 @@ TestVerifyRsaPkcs1SignVerify (
   UT_ASSERT_NOT_EQUAL (SigSize, 0);
 
   Signature = AllocatePool (SigSize);
-  Status    = RsaPkcs1Sign (mRsa, HashValue, HashSize, Signature, &SigSize);
+  if (Signature == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for Signature");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = RsaPkcs1Sign (mRsa, HashValue, HashSize, Signature, &SigSize);
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_EQUAL (SigSize, sizeof (RsaPkcs1Signature));
 

@@ -246,18 +246,21 @@ TestVerifyRsaCertPkcs1SignVerify (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  BOOLEAN        Status;
-  VOID           *RsaPrivKey;
-  VOID           *RsaPubKey;
-  UINT8          *Signature;
-  UINTN          SigSize;
-  UINT8          *Subject;
-  UINTN          SubjectSize;
-  RETURN_STATUS  ReturnStatus;
-  CHAR8          CommonName[64];
-  UINTN          CommonNameSize;
-  CHAR8          OrgName[64];
-  UINTN          OrgNameSize;
+  BOOLEAN           Status;
+  VOID              *RsaPrivKey;
+  VOID              *RsaPubKey;
+  UINT8             *Signature;
+  UINTN             SigSize;
+  UINT8             *Subject;
+  UINTN             SubjectSize;
+  RETURN_STATUS     ReturnStatus;
+  CHAR8             CommonName[64];
+  UINTN             CommonNameSize;
+  CHAR8             OrgName[64];
+  UINTN             OrgNameSize;
+  UNIT_TEST_STATUS  TestStatus;
+
+  TestStatus = UNIT_TEST_ERROR_TEST_FAILED;
 
   //
   // Retrieve RSA private key from encrypted PEM data.
@@ -281,7 +284,12 @@ TestVerifyRsaCertPkcs1SignVerify (
   UT_ASSERT_NOT_EQUAL (SigSize, 0);
 
   Signature = AllocatePool (SigSize);
-  Status    = RsaPkcs1Sign (RsaPrivKey, MsgHash, SHA1_DIGEST_SIZE, Signature, &SigSize);
+  if (Signature == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for Signature.\n");
+    goto Exit;
+  }
+
+  Status = RsaPkcs1Sign (RsaPrivKey, MsgHash, SHA1_DIGEST_SIZE, Signature, &SigSize);
   UT_ASSERT_TRUE (Status);
 
   //
@@ -296,7 +304,12 @@ TestVerifyRsaCertPkcs1SignVerify (
   SubjectSize = 0;
   Status      = X509GetSubjectName (TestCert, sizeof (TestCert), NULL, &SubjectSize);
   Subject     = (UINT8 *)AllocatePool (SubjectSize);
-  Status      = X509GetSubjectName (TestCert, sizeof (TestCert), Subject, &SubjectSize);
+  if (Subject == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for Subject.\n");
+    goto Exit;
+  }
+
+  Status = X509GetSubjectName (TestCert, sizeof (TestCert), Subject, &SubjectSize);
   UT_ASSERT_TRUE (Status);
 
   //
@@ -324,15 +337,28 @@ TestVerifyRsaCertPkcs1SignVerify (
   Status = X509VerifyCert (TestCert, sizeof (TestCert), TestCACert, sizeof (TestCACert));
   UT_ASSERT_TRUE (Status);
 
+  TestStatus = UNIT_TEST_PASSED;
+Exit:
   //
   // Release Resources.
   //
-  RsaFree (RsaPubKey);
-  RsaFree (RsaPrivKey);
-  FreePool (Signature);
-  FreePool (Subject);
+  if (RsaPrivKey != NULL) {
+    RsaFree (RsaPrivKey);
+  }
 
-  return UNIT_TEST_PASSED;
+  if (RsaPubKey != NULL) {
+    RsaFree (RsaPubKey);
+  }
+
+  if (Signature != NULL) {
+    FreePool (Signature);
+  }
+
+  if (Subject != NULL) {
+    FreePool (Subject);
+  }
+
+  return TestStatus;
 }
 
 UNIT_TEST_STATUS
@@ -364,28 +390,28 @@ TestVerifyPkcs7SignVerify (
   // Note: Caller should release P7SignedData manually.
   //
   Status = Pkcs7Sign (
-             TestKeyPem,
-             sizeof (TestKeyPem),
-             (CONST UINT8 *)PemPass,
-             (UINT8 *)Payload,
-             AsciiStrLen (Payload),
-             TestCert,            // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
-             sizeof (TestCert),   // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
-             NULL,
-             &P7SignedData,
-             &P7SignedDataSize
-             );
+                      TestKeyPem,
+                      sizeof (TestKeyPem),
+                      (CONST UINT8 *)PemPass,
+                      (UINT8 *)Payload,
+                      AsciiStrLen (Payload),
+                      TestCert,          // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+                      sizeof (TestCert), // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+                      NULL,
+                      &P7SignedData,
+                      &P7SignedDataSize
+                      );
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_NOT_EQUAL (P7SignedDataSize, 0);
 
   Status = Pkcs7Verify (
-             P7SignedData,
-             P7SignedDataSize,
-             TestCACert,
-             sizeof (TestCACert),
-             (UINT8 *)Payload,
-             AsciiStrLen (Payload)
-             );
+                        P7SignedData,
+                        P7SignedDataSize,
+                        TestCACert,
+                        sizeof (TestCACert),
+                        (UINT8 *)Payload,
+                        AsciiStrLen (Payload)
+                        );
   UT_ASSERT_TRUE (Status);
 
   if (P7SignedData != NULL) {
