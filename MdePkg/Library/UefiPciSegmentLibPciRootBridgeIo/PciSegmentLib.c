@@ -185,7 +185,7 @@ DxePciSegmentLibPciRootBridgeIoReadWorker (
 
   PciRootBridgeIo = PciSegmentLibSearchForRootBridge (Address);
   // MU_CHANGE [BEGIN] - CodeQL change
-  if (PciRootBridgeIo != NULL) {
+  if (PciRootBridgeIo == NULL) {
     ASSERT (PciRootBridgeIo != NULL);
     return 0;
   }
@@ -230,7 +230,7 @@ DxePciSegmentLibPciRootBridgeIoWriteWorker (
 
   PciRootBridgeIo = PciSegmentLibSearchForRootBridge (Address);
   // MU_CHANGE [BEGIN] - CodeQL change
-  if (PciRootBridgeIo != NULL) {
+  if (PciRootBridgeIo == NULL) {
     ASSERT (PciRootBridgeIo != NULL);
     return 0;
   }
