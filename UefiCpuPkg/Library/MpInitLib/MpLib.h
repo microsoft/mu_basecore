@@ -938,6 +938,6 @@ BufferRemoveNoExecuteSetReadOnly (
   IN EFI_PHYSICAL_ADDRESS  Buffer,
   IN UINTN                 Size
   );
-  
+
 // MU_CHANGE END
 #endif
