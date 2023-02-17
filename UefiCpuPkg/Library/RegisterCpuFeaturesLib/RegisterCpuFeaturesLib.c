@@ -966,6 +966,8 @@ RegisterCpuFeature (
   Return ACPI_CPU_DATA data.
 
   @return  Pointer to ACPI_CPU_DATA data.
+           NULL if the ACPI CPU data structure cannot be allocated.   // MU_CHANGE - CodeQL change
+
 **/
 ACPI_CPU_DATA *
 GetAcpiCpuData (
@@ -984,7 +986,13 @@ GetAcpiCpuData (
   AcpiCpuData = (ACPI_CPU_DATA *)(UINTN)PcdGet64 (PcdCpuS3DataAddress);
   if (AcpiCpuData == NULL) {
     AcpiCpuData = AllocatePages (EFI_SIZE_TO_PAGES (sizeof (ACPI_CPU_DATA)));
-    ASSERT (AcpiCpuData != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (AcpiCpuData == NULL) {
+      ASSERT (AcpiCpuData != NULL);
+      return NULL;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     ZeroMem (AcpiCpuData, sizeof (ACPI_CPU_DATA));
 
     //
@@ -1006,7 +1014,15 @@ GetAcpiCpuData (
     NumberOfCpus  = AcpiCpuData->NumberOfCpus;
     TableSize     = 2 * NumberOfCpus * sizeof (CPU_REGISTER_TABLE);
     RegisterTable = AllocatePages (EFI_SIZE_TO_PAGES (TableSize));
-    ASSERT (RegisterTable != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (RegisterTable == NULL) {
+      // Leave the AcpiCpuData data buffer allocated since it was assigned to a dynamic PCD
+      // which could have invoked PCD set callbacks that may have cached the buffer.
+      ASSERT (RegisterTable != NULL);
+      return NULL;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     for (Index = 0; Index < NumberOfCpus; Index++) {
       Status = GetProcessorInformation (Index, &ProcessorInfoBuffer);
@@ -1111,7 +1127,14 @@ CpuRegisterTableWriteWorker (
   CpuFeaturesData = GetCpuFeaturesData ();
   if (CpuFeaturesData->RegisterTable == NULL) {
     AcpiCpuData = GetAcpiCpuData ();
-    ASSERT ((AcpiCpuData != NULL) && (AcpiCpuData->CpuFeatureInitData.RegisterTable != 0));
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (AcpiCpuData == NULL) {
+      ASSERT (AcpiCpuData != NULL);
+      return;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+    ASSERT (AcpiCpuData->CpuFeatureInitData.RegisterTable != 0);
     CpuFeaturesData->RegisterTable       = (CPU_REGISTER_TABLE *)(UINTN)AcpiCpuData->CpuFeatureInitData.RegisterTable;
     CpuFeaturesData->PreSmmRegisterTable = (CPU_REGISTER_TABLE *)(UINTN)AcpiCpuData->CpuFeatureInitData.PreSmmInitRegisterTable;
   }

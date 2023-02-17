@@ -174,7 +174,8 @@ McaInitialize (
     }
 
     if (PcdGetBool (PcdIsPowerOnReset)) {
-      for (BankIndex = 0; BankIndex < (UINTN)McgCap.Bits.Count; BankIndex++) {
+      for (BankIndex = 0; BankIndex < (UINT32)McgCap.Bits.Count; BankIndex++) {
+        // MU_CHANGE - CodeQL change
         CPU_REGISTER_TABLE_WRITE64 (
           ProcessorNumber,
           Msr,

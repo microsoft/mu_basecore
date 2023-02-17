@@ -827,7 +827,13 @@ GetSmiCommandPort (
   Fadt = (EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE *)EfiLocateFirstAcpiTable (
                                                         EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE
                                                         );
-  ASSERT (Fadt != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Fadt == NULL) {
+    ASSERT (Fadt != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   mSmiCommandPort = Fadt->SmiCmd;
   DEBUG ((DEBUG_INFO, "mSmiCommandPort = %x\n", mSmiCommandPort));
