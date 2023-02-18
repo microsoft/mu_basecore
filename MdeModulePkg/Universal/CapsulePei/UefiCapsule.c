@@ -1277,7 +1277,7 @@ CreateState (
   UINTN                          Size;
   EFI_PHYSICAL_ADDRESS           NewBuffer;
   UINTN                          CapsuleNumber;
-  UINT32                         Index;
+  UINT64                         Index; // MU_CHANGE - Comparison size mismatch
   EFI_PHYSICAL_ADDRESS           BaseAddress;
   UINT64                         Length;
 

@@ -182,7 +182,7 @@ BrGetDecodedSizeOfBuf (
   )
 {
   UINT64  DecodedSize;
-  INTN    Index;
+  UINT8   Index; // MU_CHANGE - comparison size mismatch
 
   /* Parse header */
   DecodedSize = 0;

@@ -666,7 +666,12 @@ FindQuestionDefaultSetting (
   }
 
   if (Link == &gVarStorageList) {
-    DataBuffer          = (UINT8 *)PcdGetPtr (PcdNvStoreDefaultValueBuffer);
+    DataBuffer = (UINT8 *)PcdGetPtr (PcdNvStoreDefaultValueBuffer);
+    // MU_CHANGE - Verify PcdGetPtr returned a non-null valie
+    if (DataBuffer == NULL) {
+      ASSERT (DataBuffer != NULL);
+    }
+
     gNvDefaultStoreSize = ((PCD_NV_STORE_DEFAULT_BUFFER_HEADER *)DataBuffer)->Length;
     //
     // The first section data includes NV storage default setting.

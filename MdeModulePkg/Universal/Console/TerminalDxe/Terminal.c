@@ -1281,19 +1281,22 @@ TerminalRemoveConsoleDevVariable (
   FreePool (OriginalVariable);
 
   if (FoundOne) {
-    VariableSize = GetDevicePathSize (NewVariable);
+    // MU_CHANGE - Verify NewVariable is valid before attempting to use
+    if (NewVariable != NULL) {
+      VariableSize = GetDevicePathSize (NewVariable);
 
-    Status = gRT->SetVariable (
-                    VariableName,
-                    &gEfiGlobalVariableGuid,
-                    EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-                    VariableSize,
-                    NewVariable
-                    );
-    //
-    // Shrinking variable with existing variable driver implementation shouldn't fail.
-    //
-    ASSERT_EFI_ERROR (Status);
+      Status = gRT->SetVariable (
+                      VariableName,
+                      &gEfiGlobalVariableGuid,
+                      EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                      VariableSize,
+                      NewVariable
+                      );
+      //
+      // Shrinking variable with existing variable driver implementation shouldn't fail.
+      //
+      ASSERT_EFI_ERROR (Status);
+    }
   }
 
   if (NewVariable != NULL) {

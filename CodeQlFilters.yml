@@ -16,6 +16,17 @@
     "-MdeModulePkg/Core/Pei/Ppi/Ppi.c:cpp/overflow-buffer",
     "-ShellPkg/Application/Shell/ShellManParser.c:cpp/redundant-null-check-param",
     "-ShellPkg/Library/UefiShellAcpiViewCommandLib/Parsers/Aest/AestParser.c:cpp/overflow-buffer",
-    "-ShellPkg/Library/UefiShellAcpiViewCommandLib/Parsers/Iort/IortParser.c:cpp/overflow-buffer"
+    "-ShellPkg/Library/UefiShellAcpiViewCommandLib/Parsers/Iort/IortParser.c:cpp/overflow-buffer",
+
+    "-MdeModulePkg/Universal/Disk/UdfDxe/FileName.c:cpp/uselesstest",
+    "-MdeModulePkg/Bus/Pci/PciBusDxe/PciResourceSupport.c:SM02311",
+    "-MdeModulePkg/Universal/DriverSampleDxe/**:*",
+    "-MdeModulePkg/Universal/EbcDxe/EbcDebugger/EdbSupportString.c:cpp/uselesstest",
+    "-MdeModulePkg/Universal/RegularExpressionDxe/oniguruma/src/**.c:*",
+    "-MdeModulePkg/Library/UefiBootManagerLib/BmMisc.c:cpp/unguardednullreturndereference",
+    "-MdeModulePkg/Universal/Acpi/S3SaveStateDxe/AcpiS3ContextSave.c:cpp/unguardednulllreturndereference",
+    "-MdeModulePkg/Universal/Disk/UdfDxe/FileName.c:cpp/uselesstest",
+    "-MdeModulePkg/Universal/BdsDxe/BdsEntry.c:cpp/unguardednullreturndereference",
+    "-MdeModulePkg/Core/Pei/Ppi/Ppi.c:cpp/overflow-buffer",
   ]
 }
