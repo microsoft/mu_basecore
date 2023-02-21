@@ -1485,15 +1485,20 @@ TlsCloseSession (
   }
 
   PacketOut = NetbufAlloc ((UINT32)BufferOutSize);
+  // MU_CHANGE [BEGIN] - CodeQL change
   if (PacketOut == NULL) {
     FreePool (BufferOut);
     return EFI_OUT_OF_RESOURCES;
   }
 
+  // MU_CHANGE [END] - CodeQL change
+
   DataOut = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
   if (DataOut == NULL) {
     FreePool (BufferOut);
+    // MU_CHANGE [BEGIN] - CodeQL change
     NetbufFree (PacketOut);
+    // MU_CHANGE [END] - CodeQL change
     return EFI_OUT_OF_RESOURCES;
   }
 
