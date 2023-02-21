@@ -170,6 +170,7 @@ RamDiskPublishNfit (
     // MU_CHANGE - Verify MemoryMap allocation succeeded
     if (MemoryMap == NULL) {
       ASSERT (MemoryMap != NULL);
+      return EFI_OUT_OF_RESOURCES;
     }
 
     Status = gBS->GetMemoryMap (

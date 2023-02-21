@@ -165,9 +165,11 @@ CoreFreeMemoryMapStack (
     // Deque an memory map entry from mFreeMemoryMapEntryList
     //
     Entry = AllocateMemoryMapEntry ();
-    // MU_CHANGE - Verify that Entry is non-null
+    // MU_CHANGE - Verify that Entry is non-null, otherise exit
     if (Entry == NULL) {
       ASSERT (Entry);
+      mFreeMapStack -= 1;
+      return;
     }
 
     //

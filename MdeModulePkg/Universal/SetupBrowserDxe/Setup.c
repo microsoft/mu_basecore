@@ -358,24 +358,26 @@ LoadAllHiiFormset (
       //
       LocalFormSet = AllocateZeroPool (sizeof (FORM_BROWSER_FORMSET));
       ASSERT (LocalFormSet != NULL);
-      mSystemLevelFormSet = LocalFormSet;
+      if (LocalFormSet != NULL ) {
+        mSystemLevelFormSet = LocalFormSet;
 
-      ZeroMem (&ZeroGuid, sizeof (ZeroGuid));
-      Status = InitializeFormSet (HiiHandles[Index], &ZeroGuid, LocalFormSet);
-      if (EFI_ERROR (Status) || IsListEmpty (&LocalFormSet->FormListHead)) {
-        DestroyFormSet (LocalFormSet);
-        continue;
-      }
+        ZeroMem (&ZeroGuid, sizeof (ZeroGuid));
+        Status = InitializeFormSet (HiiHandles[Index], &ZeroGuid, LocalFormSet);
+        if (EFI_ERROR (Status) || IsListEmpty (&LocalFormSet->FormListHead)) {
+          DestroyFormSet (LocalFormSet);
+          continue;
+        }
 
-      InitializeCurrentSetting (LocalFormSet);
+        InitializeCurrentSetting (LocalFormSet);
 
-      //
-      // Initilize Questions' Value
-      //
-      Status = LoadFormSetConfig (NULL, LocalFormSet);
-      if (EFI_ERROR (Status)) {
-        DestroyFormSet (LocalFormSet);
-        continue;
+        //
+        // Initilize Questions' Value
+        //
+        Status = LoadFormSetConfig (NULL, LocalFormSet);
+        if (EFI_ERROR (Status)) {
+          DestroyFormSet (LocalFormSet);
+          continue;
+        }
       }
     }
 
@@ -3133,7 +3135,9 @@ GetSyncRestoreConfigRequest (
     SyncSize           = StrSize (ConfigRequest) - RestoreEleSize + sizeof (CHAR16);
     *SyncConfigRequest = AllocateZeroPool (SyncSize);
     ASSERT (*SyncConfigRequest != NULL);
-    StrnCpyS (*SyncConfigRequest, SyncSize / sizeof (CHAR16), ConfigRequest, SyncSize / sizeof (CHAR16) - 1);
+    if (*SyncConfigRequest != NULL) {
+      StrnCpyS (*SyncConfigRequest, SyncSize / sizeof (CHAR16), ConfigRequest, SyncSize / sizeof (CHAR16) - 1);
+    }
   }
 
   //
@@ -4714,7 +4718,7 @@ ExtractAltCfgForForm (
                                   &Storage->Guid,
                                   Storage->Name,
                                   NULL,
-                                  &DefaultId,   // it can be NULL to get the current setting.
+                                  &DefaultId,  // it can be NULL to get the current setting.
                                   &ConfigResp
                                   );
     FreePool (Result);
@@ -4821,7 +4825,7 @@ ExtractAltCfgForFormSet (
                                   &Storage->Guid,
                                   Storage->Name,
                                   NULL,
-                                  &DefaultId,   // it can be NULL to get the current setting.
+                                  &DefaultId,  // it can be NULL to get the current setting.
                                   &ConfigResp
                                   );
 

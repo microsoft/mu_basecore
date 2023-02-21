@@ -592,8 +592,10 @@ UpdateBootManager (
           HelpString = AllocateZeroPool (TempSize + StrSize (L"Device Path : "));
           MaxLen     = (TempSize + StrSize (L"Device Path : "))/sizeof (CHAR16);
           ASSERT (HelpString != NULL);
-          StrCatS (HelpString, MaxLen, L"Device Path : ");
-          StrCatS (HelpString, MaxLen, TempStr);
+          if (HelpString != NULL) {
+            StrCatS (HelpString, MaxLen, L"Device Path : ");
+            StrCatS (HelpString, MaxLen, TempStr);
+          }
         }
 
         HelpToken = HiiSetString (HiiHandle, 0, HelpString, NULL);

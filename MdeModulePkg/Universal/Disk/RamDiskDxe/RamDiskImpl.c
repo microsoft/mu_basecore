@@ -474,7 +474,7 @@ UpdateMainForm (
   StartOpCodeHandle = HiiAllocateOpCodeHandle ();
   ASSERT (StartOpCodeHandle != NULL);
   // MU_CHANGE - Verify that StartOpCode and EndOpCode are valid before using
-  if (StartOpCodeHandle == NULL) {
+  if (StartOpCodeHandle != NULL) {
     EndOpCodeHandle = HiiAllocateOpCodeHandle ();
     ASSERT (EndOpCodeHandle != NULL);
 
