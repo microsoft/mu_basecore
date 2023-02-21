@@ -67,6 +67,7 @@ PciDevicePresent (
     if ((Pci->Hdr).VendorId == 0x0001) {
       DEBUG ((DEBUG_WARN, "CRS response detected.  Devices that return a CRS response during enumeration are currently ignored\n"));
     }
+
     // MU_CHANGE End
 
     //
