@@ -674,7 +674,7 @@ VlanConfigMain (
     }
 
     // MU_CHANGE [END] - CodeQL change
-    DisplayVlan (NULL);
+    AddVlan ((CHAR16 *)Str);
 
     goto Exit;
   }
