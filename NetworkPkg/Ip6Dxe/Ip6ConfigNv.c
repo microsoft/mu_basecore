@@ -1407,6 +1407,13 @@ Ip6FormExtractConfig (
                          mIp6ConfigStorageName,
                          Private->ChildHandle
                          );
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (ConfigRequestHdr == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Exit;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     Size          = (StrLen (ConfigRequestHdr) + 32 + 1) * sizeof (CHAR16);
     ConfigRequest = AllocateZeroPool (Size);
     ASSERT (ConfigRequest != NULL);
