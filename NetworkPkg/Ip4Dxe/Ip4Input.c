@@ -862,7 +862,13 @@ Ip4AccpetFrame (
   }
 
   Head = (IP4_HEAD *)NetbufGetByte (Packet, 0, NULL);
-  ASSERT (Head != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Head == NULL) {
+    ASSERT (Head != NULL);
+    goto RESTART;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   OptionLen = (Head->HeadLen << 2) - IP4_MIN_HEADLEN;
   if (OptionLen > 0) {
     Option = (UINT8 *)(Head + 1);
@@ -916,7 +922,13 @@ Ip4AccpetFrame (
     }
 
     Head = (IP4_HEAD *)NetbufGetByte (Packet, 0, NULL);
-    ASSERT (Head != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Head == NULL) {
+      ASSERT (Head != NULL);
+      goto RESTART;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     Status = Ip4PreProcessPacket (
                IpSb,
                &Packet,

@@ -654,18 +654,40 @@ VlanConfigMain (
 
   if (ShellCommandLineGetFlag (List, L"-l")) {
     Str = ShellCommandLineGetValue (List, L"-l");
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Str == NULL) {
+      ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_VCONFIG_NO_IF), mHiiHandle);
+      goto Exit;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     DisplayVlan ((CHAR16 *)Str);
     goto Exit;
   }
 
   if (ShellCommandLineGetFlag (List, L"-a")) {
     Str = ShellCommandLineGetValue (List, L"-a");
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Str == NULL) {
+      ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_VCONFIG_NO_IF), mHiiHandle);
+      goto Exit;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     AddVlan ((CHAR16 *)Str);
+
     goto Exit;
   }
 
   if (ShellCommandLineGetFlag (List, L"-d")) {
     Str = ShellCommandLineGetValue (List, L"-d");
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Str == NULL) {
+      ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_VCONFIG_NO_IF), mHiiHandle);
+      goto Exit;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     DeleteVlan ((CHAR16 *)Str);
     goto Exit;
   }
