@@ -1108,10 +1108,23 @@ AllocateTokenBuffer (
   // Separate the Spin_lock and Proc_token because the alignment requires by Spin_Lock.
   //
   SpinLockBuffer = AllocatePool (SpinLockSize * TokenCountPerChunk);
-  ASSERT (SpinLockBuffer != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (SpinLockBuffer == NULL) {
+    ASSERT (SpinLockBuffer != NULL);
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   ProcTokens = AllocatePool (sizeof (PROCEDURE_TOKEN) * TokenCountPerChunk);
-  ASSERT (ProcTokens != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (ProcTokens == NULL) {
+    ASSERT (ProcTokens != NULL);
+    FreePool (SpinLockBuffer);
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   for (Index = 0; Index < TokenCountPerChunk; Index++) {
     SpinLock = (SPIN_LOCK *)(SpinLockBuffer + SpinLockSize * Index);

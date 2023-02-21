@@ -560,7 +560,13 @@ LibFileInfo (
                     );
   if (Status == EFI_BUFFER_TOO_SMALL) {
     Buffer = AllocatePool (BufferSize);
-    ASSERT (Buffer != NULL);
+    // MU_CHANGE START
+    if (Buffer == NULL) {
+      ASSERT (Buffer != NULL);
+      return NULL;
+    }
+
+    // MU_CHANGE END
   }
 
   Status = FHand->GetInfo (
@@ -1075,7 +1081,14 @@ LibCreateNewFile (
   NewHandle    = NULL;
   FullFileName = NULL;
 
-  LibGetFileHandleFromDevicePath (gFileExplorerPrivate.RetDevicePath, &FileHandle, &ParentName, &DeviceHandle);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  Status = LibGetFileHandleFromDevicePath (gFileExplorerPrivate.RetDevicePath, &FileHandle, &ParentName, &DeviceHandle);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   FullFileName = LibAppendFileName (ParentName, FileName);
   if (FullFileName == NULL) {
     return EFI_OUT_OF_RESOURCES;

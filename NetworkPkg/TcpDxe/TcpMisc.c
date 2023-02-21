@@ -685,7 +685,13 @@ TcpFormatNetbuf (
 
   Seg  = TCPSEG_NETBUF (Nbuf);
   Head = (TCP_HEAD *)NetbufGetByte (Nbuf, 0, NULL);
-  ASSERT (Head != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Head == NULL) {
+    ASSERT (Head != NULL);
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Nbuf->Tcp = Head;
 
@@ -930,7 +936,14 @@ TcpResetConnection (
                         NET_BUF_TAIL
                         );
 
-  ASSERT (Nhead != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Nhead == NULL) {
+    ASSERT (Nhead != NULL);
+    NetbufFree (Nbuf);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Nbuf->Tcp = Nhead;
 
