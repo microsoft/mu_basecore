@@ -57,13 +57,18 @@ PciDevicePresent (
                                   1,
                                   Pci
                                   );
+
   // MU_CHANGE Begin
   // The host bridge may be programmed to accept CRS.  If the PCI device is slow, and CRS is enabled,
   // the VendorId may read as 0x0001 when not ready. This value is assigned to the PCI-SIG for this,
   // and other purposes.  Skip the device, as all the other data read will be invalid.
   //
   if (!EFI_ERROR (Status) && ((Pci->Hdr).VendorId != 0xffff) && ((Pci->Hdr).VendorId != 0x0001)) {
+    if ((Pci->Hdr).VendorId == 0x0001) {
+      DEBUG ((DEBUG_WARN, "CRS response detected.  Devices that return a CRS response during enumeration are currently ignored\n"));
+    }
     // MU_CHANGE End
+
     //
     // Read the entire config header for the device
     //
