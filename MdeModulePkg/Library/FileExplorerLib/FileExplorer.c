@@ -566,6 +566,7 @@ LibFileInfo (
       ASSERT (Buffer != NULL);
       return NULL;
     }
+
     // MU_CHANGE END
   }
 
@@ -1085,7 +1086,6 @@ LibCreateNewFile (
   if (EFI_ERROR (Status)) {
     return EFI_NOT_FOUND;
   }
-
 
   // MU_CHANGE [BEGIN] - CodeQL change
   Status = LibGetFileHandleFromDevicePath (gFileExplorerPrivate.RetDevicePath, &FileHandle, &ParentName, &DeviceHandle);
