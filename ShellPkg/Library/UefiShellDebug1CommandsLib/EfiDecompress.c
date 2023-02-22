@@ -85,10 +85,18 @@ ShellCommandRunEfiDecompress (
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
       TempParam = ShellCommandLineGetRawValue (Package, 1);
-      ASSERT (TempParam != NULL);
+      // MU_CHANGE [START] - CodeQL change
+      if (TempParam == NULL) {
+        ASSERT (TempParam != NULL);
+        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"efidecompress");
+        ShellStatus = SHELL_INVALID_PARAMETER;
+        return (ShellStatus);
+      }
+
       InFileName  = ShellFindFilePath (TempParam);
       OutFileName = ShellCommandLineGetRawValue (Package, 2);
-      if (InFileName == NULL) {
+      if ((InFileName == NULL) || (OutFileName == NULL)) {
+        // MU_CHANGE [END] - CodeQL change
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_FILE_FIND_FAIL), gShellDebug1HiiHandle, L"efidecompress", TempParam);
         ShellStatus = SHELL_NOT_FOUND;
       } else {
@@ -112,6 +120,15 @@ ShellCommandRunEfiDecompress (
 
         if (ShellStatus == SHELL_SUCCESS) {
           Status = FileHandleGetSize (InFileHandle, &Temp64Bit);
+          // MU_CHANGE [START] - CodeQL change
+          if (EFI_ERROR (Status)) {
+            ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_FILE_OPEN_FAIL), gShellDebug1HiiHandle, L"efidecompress", ShellCommandLineGetRawValue (Package, 1));
+            ShellStatus = SHELL_NOT_FOUND;
+          }
+        }
+
+        if (ShellStatus == SHELL_SUCCESS) {
+          // MU_CHANGE [END] - CodeQL change
           ASSERT (Temp64Bit <= (UINT32)(-1));
           InSize = (UINTN)Temp64Bit;
           ASSERT_EFI_ERROR (Status);

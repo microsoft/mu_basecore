@@ -285,7 +285,13 @@ GetVariableDataFromParameter (
 
   for (Index = 2; Index < ShellCommandLineGetCount (Package); Index++) {
     TempData = ShellCommandLineGetRawValue (Package, Index);
-    ASSERT (TempData != NULL);
+    // MU_CHANGE [START] - CodeQL change
+    if (TempData == NULL) {
+      ASSERT (TempData != NULL);
+      return EFI_INVALID_PARAMETER;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     if (TempData[0] != L'=') {
       ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"setvar", TempData);
@@ -401,11 +407,24 @@ ShellCommandRunSetVar (
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
       VariableName = ShellCommandLineGetRawValue (Package, 1);
+      // MU_CHANGE [START] - CodeQL change
+      if (VariableName == NULL) {
+        return SHELL_INVALID_PARAMETER;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       if (!ShellCommandLineGetFlag (Package, L"-guid")) {
         CopyGuid (&Guid, &gEfiGlobalVariableGuid);
       } else {
         StringGuid = ShellCommandLineGetValue (Package, L"-guid");
-        RStatus    = StrToGuid (StringGuid, &Guid);
+        // MU_CHANGE [START] - CodeQL change
+        if (StringGuid != NULL) {
+          RStatus = StrToGuid (StringGuid, &Guid);
+        } else {
+          return SHELL_INVALID_PARAMETER;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         if (RETURN_ERROR (RStatus) || (StringGuid[GUID_STRING_LENGTH] != L'\0')) {
           ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"setvar", StringGuid);
           ShellStatus = SHELL_INVALID_PARAMETER;
