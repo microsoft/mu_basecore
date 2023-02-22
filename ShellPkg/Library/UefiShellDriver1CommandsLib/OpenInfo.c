@@ -199,13 +199,25 @@ ShellCommandRunOpenInfo (
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
       Param1 = ShellCommandLineGetRawValue (Package, 1);
-      Status = ShellConvertStringToUint64 (Param1, &Intermediate, TRUE, FALSE);
+      // MU_CHANGE [START] - CodeQL change
+      if (Param1 != NULL) {
+        Status = ShellConvertStringToUint64 (Param1, &Intermediate, TRUE, FALSE);
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       if (EFI_ERROR (Status) || (Param1 == NULL) || (ConvertHandleIndexToHandle ((UINTN)Intermediate) == NULL)) {
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, L"openinfo", Param1);
         ShellStatus = SHELL_INVALID_PARAMETER;
       } else {
         TheHandle = ConvertHandleIndexToHandle ((UINTN)Intermediate);
-        ASSERT (TheHandle != NULL);
+        // MU_CHANGE [START] - CodeQL change
+        if (TheHandle == NULL) {
+          ASSERT (TheHandle != NULL);
+          ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, L"openinfo", Param1);
+          return SHELL_INVALID_PARAMETER;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_OPENINFO_HEADER_LINE), gShellDriver1HiiHandle, (UINTN)Intermediate, TheHandle);
 
         Status = TraverseHandleDatabase (TheHandle);

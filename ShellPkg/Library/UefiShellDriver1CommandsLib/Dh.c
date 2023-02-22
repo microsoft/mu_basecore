@@ -218,7 +218,13 @@ GetDriverName (
     return (EFI_NOT_FOUND);
   }
 
-  Lang   = GetBestLanguageForDriver (CompName2->SupportedLanguages, Language, FALSE);
+  Lang = GetBestLanguageForDriver (CompName2->SupportedLanguages, Language, FALSE);
+  // MU_CHANGE [START] - CodeQL change
+  if (Lang == NULL) {
+    return (EFI_NOT_FOUND);
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   Status = CompName2->GetDriverName (CompName2, Lang, &NameToReturn);
   FreePool (Lang);
 

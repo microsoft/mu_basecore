@@ -1459,29 +1459,36 @@ ShellCommandCreateInitialMappingsAndPaths (
     //
     PerformQuickSort (DevicePathList, Count, sizeof (EFI_DEVICE_PATH_PROTOCOL *), DevicePathCompare);
 
-    if (!EFI_ERROR (ShellCommandConsistMappingInitialize (&ConsistMappingTable))) {
-      //
-      // Assign new Mappings to all...
-      //
-      for (Count = 0; HandleList[Count] != NULL; Count++) {
-        //
-        // Get default name first
-        //
-        NewDefaultName = ShellCommandCreateNewMappingName (MappingTypeFileSystem);
-        ASSERT (NewDefaultName != NULL);
-        Status = ShellCommandAddMapItemAndUpdatePath (NewDefaultName, DevicePathList[Count], 0, TRUE);
-        ASSERT_EFI_ERROR (Status);
-        FreePool (NewDefaultName);
+    Status = ShellCommandConsistMappingInitialize (&ConsistMappingTable);
+    // MU_CHANGE [START] - CodeQL change
+    if (EFI_ERROR (Status)) {
+      SHELL_FREE_NON_NULL (HandleList);
+      SHELL_FREE_NON_NULL (DevicePathList);
+      return Status;
+    }
 
-        //
-        // Now do consistent name
-        //
-        NewConsistName = ShellCommandConsistMappingGenMappingName (DevicePathList[Count], ConsistMappingTable);
-        if (NewConsistName != NULL) {
-          Status = ShellCommandAddMapItemAndUpdatePath (NewConsistName, DevicePathList[Count], 0, FALSE);
-          ASSERT_EFI_ERROR (Status);
-          FreePool (NewConsistName);
-        }
+    // MU_CHANGE [END] - CodeQL change
+    //
+    // Assign new Mappings to all...
+    //
+    for (Count = 0; HandleList[Count] != NULL; Count++) {
+      //
+      // Get default name first
+      //
+      NewDefaultName = ShellCommandCreateNewMappingName (MappingTypeFileSystem);
+      ASSERT (NewDefaultName != NULL);
+      Status = ShellCommandAddMapItemAndUpdatePath (NewDefaultName, DevicePathList[Count], 0, TRUE);
+      ASSERT_EFI_ERROR (Status);
+      FreePool (NewDefaultName);
+
+      //
+      // Now do consistent name
+      //
+      NewConsistName = ShellCommandConsistMappingGenMappingName (DevicePathList[Count], ConsistMappingTable);
+      if (NewConsistName != NULL) {
+        Status = ShellCommandAddMapItemAndUpdatePath (NewConsistName, DevicePathList[Count], 0, FALSE);
+        ASSERT_EFI_ERROR (Status);
+        FreePool (NewConsistName);
       }
     }
 
@@ -1629,9 +1636,14 @@ ShellCommandUpdateMapping (
     // Sort all DevicePaths
     //
     PerformQuickSort (DevicePathList, Count, sizeof (EFI_DEVICE_PATH_PROTOCOL *), DevicePathCompare);
-
+    // MU_CHANGE [START] - CodeQL change
     Status = ShellCommandConsistMappingInitialize (&ConsistMappingTable);
 
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     //
     // Assign new Mappings to remainders
     //

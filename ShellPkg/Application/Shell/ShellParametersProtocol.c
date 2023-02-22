@@ -1307,6 +1307,12 @@ UpdateStdInStdOutStdErr (
             TempHandle = CreateFileInterfaceFile (TempHandle, FALSE);
           }
 
+          // MU_CHANGE [START] - CodeQL change
+          if (TempHandle == NULL) {
+            return EFI_OUT_OF_RESOURCES;
+          }
+
+          // MU_CHANGE [END] - CodeQL change
           ShellParameters->StdIn = TempHandle;
           gST->ConIn             = CreateSimpleTextInOnFile (TempHandle, &gST->ConsoleInHandle);
         }

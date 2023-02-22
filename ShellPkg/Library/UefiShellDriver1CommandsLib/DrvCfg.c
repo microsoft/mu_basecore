@@ -661,7 +661,14 @@ PreHiiDrvCfg (
     // keep consistent with the above clause
     //
     DriverImageHandleBuffer = AllocatePool (sizeof (EFI_HANDLE));
-    ASSERT (DriverImageHandleBuffer);
+    // MU_CHANGE [START] - CodeQL change
+    if (DriverImageHandleBuffer == NULL) {
+      ASSERT (DriverImageHandleBuffer);
+      ShellStatus = SHELL_OUT_OF_RESOURCES;
+      goto Done;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     DriverImageHandleBuffer[0] = DriverImageHandle;
   }
 
@@ -1287,6 +1294,14 @@ ShellCommandRunDrvCfg (
       FileName = NULL;
     }
 
+    // MU_CHANGE [START] - CodeQL change
+    if (FileName == NULL) {
+      ASSERT (FileName != NULL);
+      ShellStatus = SHELL_INVALID_PARAMETER;
+      goto Done;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     if (InFromFile && EFI_ERROR (ShellFileExists (FileName))) {
       ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_FIND_FAIL), gShellDriver1HiiHandle, L"drvcfg", FileName);
       ShellStatus = SHELL_INVALID_PARAMETER;
