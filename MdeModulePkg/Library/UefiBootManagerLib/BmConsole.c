@@ -429,7 +429,7 @@ EfiBootManagerUpdateConsoleVariable (
   IN  EFI_DEVICE_PATH_PROTOCOL  *ExclusiveDevicePath
   )
 {
-  EFI_STATUS                Status;
+  EFI_STATUS                Status = EFI_SUCCESS;    // MU_CHANGE
   EFI_DEVICE_PATH_PROTOCOL  *VarConsole;
   EFI_DEVICE_PATH_PROTOCOL  *NewDevicePath;
   EFI_DEVICE_PATH_PROTOCOL  *TempNewDevicePath;
