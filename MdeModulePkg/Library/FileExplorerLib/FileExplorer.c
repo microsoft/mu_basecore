@@ -560,6 +560,7 @@ LibFileInfo (
                     );
   if (Status == EFI_BUFFER_TOO_SMALL) {
     Buffer = AllocatePool (BufferSize);
+
     // MU_CHANGE START
     if (Buffer == NULL) {
       ASSERT (Buffer != NULL);
@@ -1080,6 +1081,11 @@ LibCreateNewFile (
 
   NewHandle    = NULL;
   FullFileName = NULL;
+  // MU_CHANGE - Check return status of LibGetFileHandleFromDevicePath
+  Status = LibGetFileHandleFromDevicePath (gFileExplorerPrivate.RetDevicePath, &FileHandle, &ParentName, &DeviceHandle);
+  if (EFI_ERROR (Status)) {
+    return EFI_NOT_FOUND;
+  }
 
   // MU_CHANGE [BEGIN] - CodeQL change
   Status = LibGetFileHandleFromDevicePath (gFileExplorerPrivate.RetDevicePath, &FileHandle, &ParentName, &DeviceHandle);
