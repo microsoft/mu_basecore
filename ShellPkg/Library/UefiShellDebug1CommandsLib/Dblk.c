@@ -184,7 +184,9 @@ ShellCommandRunDblk (
         //
         // do the work if we have a valid block identifier
         //
+        // MU_CHANGE [START] - CodeQL change
         if ((BlockName == NULL) || (gEfiShellProtocol->GetDevicePathFromMap (BlockName) == NULL)) {
+          // MU_CHANGE [END] - CodeQL change
           ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"dblk", BlockName);
           ShellStatus = SHELL_INVALID_PARAMETER;
         } else {

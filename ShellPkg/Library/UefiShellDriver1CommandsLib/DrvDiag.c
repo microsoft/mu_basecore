@@ -201,7 +201,7 @@ DoDiagnostics (
                 Language = GetBestLanguageForDriver (DriverDiagnostics2->SupportedLanguages, Lang, FALSE);
                 // MU_CHANGE [START] - CodeQL change
                 if (Language == NULL) {
-                  Language = AllocateCopyPool (StrSize (L"en-US"), L"en-US");
+                  return EFI_NOT_FOUND;
                 }
 
                 // MU_CHANGE [END] - CodeQL change
@@ -234,7 +234,7 @@ DoDiagnostics (
                 Language = GetBestLanguageForDriver (DriverDiagnostics->SupportedLanguages, Lang, FALSE);
                 // MU_CHANGE [START] - CodeQL change
                 if (Language == NULL) {
-                  Language = AllocateCopyPool (StrSize (L"en-US"), L"en-US");
+                  return EFI_NOT_FOUND;
                 }
 
                 // MU_CHANGE [END] - CodeQL change
