@@ -35,7 +35,13 @@ ShellCommandRunShift (
   }
 
   CurrentScriptFile = ShellCommandGetCurrentScriptFile ();
-  ASSERT (CurrentScriptFile != NULL);
+  // MU_CHANGE [START] - CodeQL change
+  if (CurrentScriptFile == NULL) {
+    ASSERT (CurrentScriptFile != NULL);
+    return (SHELL_UNSUPPORTED);
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   if (CurrentScriptFile->Argc < 2) {
     ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_FEW), gShellLevel1HiiHandle, L"shift");

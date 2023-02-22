@@ -100,15 +100,17 @@ ShellCommandRunDblk (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS                Status;
-  LIST_ENTRY                *Package;
-  CHAR16                    *ProblemParam;
-  SHELL_STATUS              ShellStatus;
-  CONST CHAR16              *BlockName;
-  CONST CHAR16              *LbaString;
-  CONST CHAR16              *BlockCountString;
-  UINT64                    Lba;
-  UINT64                    BlockCount;
+  EFI_STATUS    Status;
+  LIST_ENTRY    *Package;
+  CHAR16        *ProblemParam;
+  SHELL_STATUS  ShellStatus;
+  CONST CHAR16  *BlockName;
+  CONST CHAR16  *LbaString;
+  CONST CHAR16  *BlockCountString;
+  // MU_CHANGE [START] - CodeQL change
+  UINT64  Lba        = 0;
+  UINT64  BlockCount = 0;
+  // MU_CHANGE [END] - CodeQL change
   EFI_DEVICE_PATH_PROTOCOL  *DevPath;
 
   ShellStatus = SHELL_SUCCESS;
@@ -186,7 +188,9 @@ ShellCommandRunDblk (
         //
         // do the work if we have a valid block identifier
         //
-        if (gEfiShellProtocol->GetDevicePathFromMap (BlockName) == NULL) {
+        // MU_CHANGE [START] - CodeQL change
+        if ((BlockName == NULL) || (gEfiShellProtocol->GetDevicePathFromMap (BlockName) == NULL)) {
+          // MU_CHANGE [END] - CodeQL change
           ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"dblk", BlockName);
           ShellStatus = SHELL_INVALID_PARAMETER;
         } else {
