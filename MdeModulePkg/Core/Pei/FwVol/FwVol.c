@@ -792,7 +792,7 @@ ProcessSection (
 {
   EFI_STATUS                             Status;
   UINT32                                 SectionLength;
-  UINT32                                 ParsedLength;
+  UINTN                                  ParsedLength; // MU_CHANGE - Comparison size mismatch
   EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI  *GuidSectionPpi;
   EFI_PEI_DECOMPRESS_PPI                 *DecompressPpi;
   VOID                                   *PpiOutput;
