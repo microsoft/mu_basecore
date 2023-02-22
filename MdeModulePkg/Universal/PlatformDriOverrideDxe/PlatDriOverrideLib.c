@@ -360,9 +360,13 @@ UpdateFvFileDevicePath (
     // Build the shell device path
     //
     NewDevicePath = DevicePathFromHandle (FoundFvHandle);
-    EfiInitializeFwVolDevicepathNode (&FvFileNode, FileGuid);
-    NewDevicePath = AppendDevicePathNode (NewDevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&FvFileNode);
-    *DevicePath   = NewDevicePath;
+    // MU_CHANGE - Verify valid pointer returned before accessing
+    if (NewDevicePath != NULL) {
+      EfiInitializeFwVolDevicepathNode (&FvFileNode, FileGuid);
+      NewDevicePath = AppendDevicePathNode (NewDevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&FvFileNode);
+      *DevicePath   = NewDevicePath;
+    }
+
     return EFI_SUCCESS;
   }
 
