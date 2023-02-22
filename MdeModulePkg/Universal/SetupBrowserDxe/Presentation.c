@@ -410,7 +410,10 @@ InitializeDisplayStatement (
   if (Statement->ParentStatement != NULL) {
     ParentStatement = GetDisplayStatement (Statement->ParentStatement->OpCode);
     ASSERT (ParentStatement != NULL);
-    InsertTailList (&ParentStatement->NestStatementList, &DisplayStatement->DisplayLink);
+    // MU_CHANGE - Verify valid before pointer dereference
+    if (ParentStatement != NULL) {
+      InsertTailList (&ParentStatement->NestStatementList, &DisplayStatement->DisplayLink);
+    }
   } else {
     InsertTailList (&gDisplayFormData.StatementListHead, &DisplayStatement->DisplayLink);
   }
@@ -1099,7 +1102,10 @@ GetFormsetGuidFromHiiHandle (
     HiiPackageList = AllocatePool (BufferSize);
     ASSERT (HiiPackageList != NULL);
 
-    Status = mHiiDatabase->ExportPackageLists (mHiiDatabase, HiiHandle, &BufferSize, HiiPackageList);
+    // MU_CHANGE - Verify HiiPackageList is valid before dereference
+    if (HiiPackageList != NULL) {
+      Status = mHiiDatabase->ExportPackageLists (mHiiDatabase, HiiHandle, &BufferSize, HiiPackageList);
+    }
   }
 
   if (EFI_ERROR (Status) || (HiiPackageList == NULL)) {
@@ -1255,21 +1261,24 @@ FormSetGuidToHiiHandle (
   HiiHandles = HiiGetHiiHandles (NULL);
   ASSERT (HiiHandles != NULL);
 
-  //
-  // Search for formset of each class type
-  //
-  for (Index = 0; HiiHandles[Index] != NULL; Index++) {
-    if (GetFormsetGuidFromHiiHandle (HiiHandles[Index], ComparingGuid)) {
-      HiiHandle = HiiHandles[Index];
-      break;
+  // MU_CHANGE - Verify HiiHandle before accessing
+  if (HiiHandles != NULL) {
+    //
+    // Search for formset of each class type
+    //
+    for (Index = 0; HiiHandles[Index] != NULL; Index++) {
+      if (GetFormsetGuidFromHiiHandle (HiiHandles[Index], ComparingGuid)) {
+        HiiHandle = HiiHandles[Index];
+        break;
+      }
+
+      if (HiiHandle != NULL) {
+        break;
+      }
     }
 
-    if (HiiHandle != NULL) {
-      break;
-    }
+    FreePool (HiiHandles);
   }
-
-  FreePool (HiiHandles);
 
   return HiiHandle;
 }
@@ -1584,19 +1593,22 @@ ProcessUserInput (
     Statement = GetBrowserStatement (UserInput->SelectedStatement);
     ASSERT (Statement != NULL);
 
-    //
-    // This question is the current user select one,record it and later
-    // show it as the highlight question.
-    //
-    gCurrentSelection->CurrentMenu->QuestionId = Statement->QuestionId;
-    //
-    // For statement like text, actio, it not has question id.
-    // So use FakeQuestionId to save the question.
-    //
-    if (gCurrentSelection->CurrentMenu->QuestionId == 0) {
-      mCurFakeQestId = Statement->FakeQuestionId;
-    } else {
-      mCurFakeQestId = 0;
+    // MU_CHANGE - Verify Statement valid before accessing
+    if (Statement != NULL) {
+      //
+      // This question is the current user select one,record it and later
+      // show it as the highlight question.
+      //
+      gCurrentSelection->CurrentMenu->QuestionId = Statement->QuestionId;
+      //
+      // For statement like text, actio, it not has question id.
+      // So use FakeQuestionId to save the question.
+      //
+      if (gCurrentSelection->CurrentMenu->QuestionId == 0) {
+        mCurFakeQestId = Statement->FakeQuestionId;
+      } else {
+        mCurFakeQestId = 0;
+      }
     }
   }
 
@@ -2085,15 +2097,18 @@ ProcessCallBackFunction (
         NewString = GetToken (Statement->HiiValue.Value.string, FormSet->HiiHandle);
         ASSERT (NewString != NULL);
 
-        ASSERT (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth);
-        if (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth) {
-          ZeroMem (Statement->BufferValue, Statement->StorageWidth);
-          CopyMem (Statement->BufferValue, NewString, StrSize (NewString));
-        } else {
-          CopyMem (Statement->BufferValue, NewString, Statement->StorageWidth);
-        }
+        // MU_CHANGE - Verify NewString is valid before accessing
+        if (NewString != NULL) {
+          ASSERT (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth);
+          if (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth) {
+            ZeroMem (Statement->BufferValue, Statement->StorageWidth);
+            CopyMem (Statement->BufferValue, NewString, StrSize (NewString));
+          } else {
+            CopyMem (Statement->BufferValue, NewString, Statement->StorageWidth);
+          }
 
-        FreePool (NewString);
+          FreePool (NewString);
+        }
       }
 
       //
@@ -2339,15 +2354,18 @@ ProcessRetrieveForQuestion (
     NewString = GetToken (Statement->HiiValue.Value.string, FormSet->HiiHandle);
     ASSERT (NewString != NULL);
 
-    ASSERT (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth);
-    if (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth) {
-      ZeroMem (Statement->BufferValue, Statement->StorageWidth);
-      CopyMem (Statement->BufferValue, NewString, StrSize (NewString));
-    } else {
-      CopyMem (Statement->BufferValue, NewString, Statement->StorageWidth);
-    }
+    // MU_CHANGE - Verify NewString is valid before accessing
+    if (NewString != NULL) {
+      ASSERT (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth);
+      if (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth) {
+        ZeroMem (Statement->BufferValue, Statement->StorageWidth);
+        CopyMem (Statement->BufferValue, NewString, StrSize (NewString));
+      } else {
+        CopyMem (Statement->BufferValue, NewString, Statement->StorageWidth);
+      }
 
-    FreePool (NewString);
+      FreePool (NewString);
+    }
   }
 
   return Status;

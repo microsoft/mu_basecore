@@ -1702,7 +1702,7 @@ PeiDispatcher (
 {
   EFI_STATUS              Status;
   UINT32                  Index1;
-  UINT32                  Index2;
+  UINTN                   Index2; // MU_CHANGE - Comparison Size Mismatch
   CONST EFI_PEI_SERVICES  **PeiServices;
   EFI_PEI_FILE_HANDLE     PeimFileHandle;
   UINTN                   FvCount;
