@@ -47,7 +47,13 @@ InitSmmS3Cr3 (
   // Fill Page-Table-Level4 (PML4) entry
   //
   PTEntry = (UINT64 *)AllocatePageTableMemory (1);
-  ASSERT (PTEntry != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (PTEntry == NULL) {
+    ASSERT (PTEntry != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   *PTEntry = Pages | mAddressEncMask | PAGE_ATTRIBUTE_BITS;
   ZeroMem (PTEntry + 1, EFI_PAGE_SIZE - sizeof (*PTEntry));
 

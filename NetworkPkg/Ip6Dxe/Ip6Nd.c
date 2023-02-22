@@ -1157,7 +1157,14 @@ Ip6SendRouterSolicit (
   //
 
   IcmpHead = (IP6_ICMP_INFORMATION_HEAD *)NetbufAllocSpace (Packet, sizeof (IP6_ICMP_INFORMATION_HEAD), FALSE);
-  ASSERT (IcmpHead != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (IcmpHead == NULL) {
+    ASSERT (IcmpHead != NULL);
+    NetbufFree (Packet);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   ZeroMem (IcmpHead, sizeof (IP6_ICMP_INFORMATION_HEAD));
   IcmpHead->Head.Type = ICMP_V6_ROUTER_SOLICIT;
   IcmpHead->Head.Code = 0;
@@ -1169,7 +1176,14 @@ Ip6SendRouterSolicit (
                                                  sizeof (IP6_ETHER_ADDR_OPTION),
                                                  FALSE
                                                  );
-    ASSERT (LinkLayerOption != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (LinkLayerOption == NULL) {
+      ASSERT (LinkLayerOption != NULL);
+      NetbufFree (Packet);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     LinkLayerOption->Type   = Ip6OptionEtherSource;
     LinkLayerOption->Length = (UINT8)sizeof (IP6_ETHER_ADDR_OPTION);
     CopyMem (LinkLayerOption->EtherAddr, SourceLinkAddress, 6);
@@ -1263,7 +1277,14 @@ Ip6SendNeighborAdvertise (
   //
 
   IcmpHead = (IP6_ICMP_INFORMATION_HEAD *)NetbufAllocSpace (Packet, sizeof (IP6_ICMP_INFORMATION_HEAD), FALSE);
-  ASSERT (IcmpHead != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (IcmpHead == NULL) {
+    ASSERT (IcmpHead != NULL);
+    NetbufFree (Packet);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   ZeroMem (IcmpHead, sizeof (IP6_ICMP_INFORMATION_HEAD));
   IcmpHead->Head.Type = ICMP_V6_NEIGHBOR_ADVERTISE;
   IcmpHead->Head.Code = 0;
@@ -1281,7 +1302,14 @@ Ip6SendNeighborAdvertise (
   }
 
   Target = (EFI_IPv6_ADDRESS *)NetbufAllocSpace (Packet, sizeof (EFI_IPv6_ADDRESS), FALSE);
-  ASSERT (Target != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Target == NULL) {
+    ASSERT (Target != NULL);
+    NetbufFree (Packet);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   IP6_COPY_ADDRESS (Target, TargetIp6Address);
 
   LinkLayerOption = (IP6_ETHER_ADDR_OPTION *)NetbufAllocSpace (
@@ -1289,7 +1317,14 @@ Ip6SendNeighborAdvertise (
                                                sizeof (IP6_ETHER_ADDR_OPTION),
                                                FALSE
                                                );
-  ASSERT (LinkLayerOption != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (LinkLayerOption == NULL) {
+    ASSERT (LinkLayerOption != NULL);
+    NetbufFree (Packet);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   LinkLayerOption->Type   = Ip6OptionEtherTarget;
   LinkLayerOption->Length = 1;
   CopyMem (LinkLayerOption->EtherAddr, TargetLinkAddress, 6);
@@ -1397,7 +1432,14 @@ Ip6SendNeighborSolicit (
   // Fill in the ICMP header, Target address, and Source link-layer address.
   //
   IcmpHead = (IP6_ICMP_INFORMATION_HEAD *)NetbufAllocSpace (Packet, sizeof (IP6_ICMP_INFORMATION_HEAD), FALSE);
-  ASSERT (IcmpHead != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (IcmpHead == NULL) {
+    ASSERT (IcmpHead != NULL);
+    NetbufFree (Packet);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   ZeroMem (IcmpHead, sizeof (IP6_ICMP_INFORMATION_HEAD));
   IcmpHead->Head.Type = ICMP_V6_NEIGHBOR_SOLICIT;
   IcmpHead->Head.Code = 0;
@@ -1416,7 +1458,14 @@ Ip6SendNeighborSolicit (
                                                  sizeof (IP6_ETHER_ADDR_OPTION),
                                                  FALSE
                                                  );
-    ASSERT (LinkLayerOption != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (LinkLayerOption == NULL) {
+      ASSERT (LinkLayerOption != NULL);
+      NetbufFree (Packet);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     LinkLayerOption->Type   = Ip6OptionEtherSource;
     LinkLayerOption->Length = 1;
     CopyMem (LinkLayerOption->EtherAddr, SourceLinkAddress, 6);

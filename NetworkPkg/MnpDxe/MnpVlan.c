@@ -131,7 +131,13 @@ MnpRemoveVlanTag (
   // Get the packet buffer.
   //
   Packet = NetbufGetByte (Nbuf, 0, NULL);
-  ASSERT (Packet != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Packet == NULL) {
+    ASSERT (Packet != NULL);
+    return FALSE;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   //
   // Check whether this is VLAN tagged frame by Ether Type
