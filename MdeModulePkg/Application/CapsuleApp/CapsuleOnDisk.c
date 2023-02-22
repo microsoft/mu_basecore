@@ -518,7 +518,12 @@ GetUpdateFileSystem (
     // If map is assigned, try to get ESP from mapped Fs.
     //
     DevicePath = DuplicateDevicePath (MappedDevicePath);
-    Status     = GetEfiSysPartitionFromDevPath (DevicePath, &FullPath, Fs);
+    // MU_CHANGE - Check DuplicateDevicePath returned a Non-Null device path
+    if (DevicePath == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    Status = GetEfiSysPartitionFromDevPath (DevicePath, &FullPath, Fs);
     if (EFI_ERROR (Status)) {
       Print (L"Error: Cannot get EFI system partition from '%s' - %r\n", Map, Status);
       return EFI_NOT_FOUND;

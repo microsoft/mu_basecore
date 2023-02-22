@@ -1828,11 +1828,14 @@ ResourcePaddingForCardBusBridge (
            PciBarTypeMem32,
            PciResUsagePadding
            );
-
-  InsertResourceNode (
-    Mem32Node,
-    Node
-    );
+  // MU_CHANGE - Handle CreateResourceNode returning a NULL
+  ASSERT (Node != NULL);
+  if (Node != NULL) {
+    InsertResourceNode (
+      Mem32Node,
+      Node
+      );
+  }
 
   //
   // Memory Base/Limit Register 1
@@ -1847,10 +1850,14 @@ ResourcePaddingForCardBusBridge (
            PciResUsagePadding
            );
 
-  InsertResourceNode (
-    PMem32Node,
-    Node
-    );
+  // MU_CHANGE - Handle CreateResourceNode returning a NULL
+  ASSERT (Node != NULL);
+  if (Node != NULL) {
+    InsertResourceNode (
+      PMem32Node,
+      Node
+      );
+  }
 
   //
   // Io Base/Limit
@@ -1865,10 +1872,14 @@ ResourcePaddingForCardBusBridge (
            PciResUsagePadding
            );
 
-  InsertResourceNode (
-    IoNode,
-    Node
-    );
+  // MU_CHANGE - Handle CreateResourceNode returning a NULL
+  ASSERT (Node != NULL);
+  if (Node != NULL) {
+    InsertResourceNode (
+      IoNode,
+      Node
+      );
+  }
 
   //
   // Io Base/Limit
@@ -1883,10 +1894,14 @@ ResourcePaddingForCardBusBridge (
            PciResUsagePadding
            );
 
-  InsertResourceNode (
-    IoNode,
-    Node
-    );
+  // MU_CHANGE - Handle CreateResourceNode returning a NULL
+  ASSERT (Node != NULL);
+  if (Node != NULL) {
+    InsertResourceNode (
+      IoNode,
+      Node
+      );
+  }
 }
 
 /**
@@ -2157,10 +2172,14 @@ ApplyResourcePadding (
                  PciBarTypeIo16,
                  PciResUsagePadding
                  );
-        InsertResourceNode (
-          IoNode,
-          Node
-          );
+
+        // MU_CHANGE - Handle CreateResourceNode returning a NULL
+        if (Node != NULL) {
+          InsertResourceNode (
+            IoNode,
+            Node
+            );
+        }
       }
 
       Ptr++;
@@ -2182,10 +2201,13 @@ ApplyResourcePadding (
                      PciBarTypePMem32,
                      PciResUsagePadding
                      );
-            InsertResourceNode (
-              PMem32Node,
-              Node
-              );
+            // MU_CHANGE - Handle CreateResourceNode returning a NULL
+            if (Node != NULL) {
+              InsertResourceNode (
+                PMem32Node,
+                Node
+                );
+            }
           }
 
           Ptr++;
@@ -2205,10 +2227,13 @@ ApplyResourcePadding (
                      PciBarTypeMem32,
                      PciResUsagePadding
                      );
-            InsertResourceNode (
-              Mem32Node,
-              Node
-              );
+            // MU_CHANGE - Handle CreateResourceNode returning a NULL
+            if (Node != NULL) {
+              InsertResourceNode (
+                Mem32Node,
+                Node
+                );
+            }
           }
 
           Ptr++;
@@ -2230,10 +2255,13 @@ ApplyResourcePadding (
                      PciBarTypePMem64,
                      PciResUsagePadding
                      );
-            InsertResourceNode (
-              PMem64Node,
-              Node
-              );
+            // MU_CHANGE - Handle CreateResourceNode returning a NULL
+            if (Node != NULL) {
+              InsertResourceNode (
+                PMem64Node,
+                Node
+                );
+            }
           }
 
           Ptr++;
@@ -2253,10 +2281,13 @@ ApplyResourcePadding (
                      PciBarTypeMem64,
                      PciResUsagePadding
                      );
-            InsertResourceNode (
-              Mem64Node,
-              Node
-              );
+            // MU_CHANGE - Handle CreateResourceNode returning a NULL
+            if (Node != NULL) {
+              InsertResourceNode (
+                Mem64Node,
+                Node
+                );
+            }
           }
 
           Ptr++;
