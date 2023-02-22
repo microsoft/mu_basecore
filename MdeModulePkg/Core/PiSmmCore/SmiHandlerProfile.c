@@ -341,7 +341,10 @@ GetSmmLoadedImage (
 
     if (RealImageBase != 0) {
       PdbString = PeCoffLoaderGetPdbPointer ((VOID *)(UINTN)RealImageBase);
-      DEBUG ((DEBUG_INFO, "       pdb - %a\n", PdbString));
+      // MU_CHANGE - Ensure PdbString is not NULL before dereference
+      if (PdbString != NULL) {
+        DEBUG ((DEBUG_INFO, "       pdb - %a\n", PdbString));
+      }
     } else {
       PdbString = NULL;
     }

@@ -206,9 +206,9 @@ EfiBootManagerGetGopDevicePath (
           DEBUG ((DEBUG_INFO, "[Bds] Looking for GOP child deeper ... \n"));
           TempDevicePath   = GopPool;
           ReturnDevicePath = EfiBootManagerGetGopDevicePath (OpenInfoBuffer[Index].ControllerHandle);
-          GopPool          = AppendDevicePathInstance (GopPool, ReturnDevicePath);
-
+          // MU_CHANGE verify ReturnDevicePath is valid before Appending
           if (ReturnDevicePath != NULL) {
+            GopPool = AppendDevicePathInstance (GopPool, ReturnDevicePath);
             gBS->FreePool (ReturnDevicePath);
           }
 
@@ -472,12 +472,16 @@ EfiBootManagerUpdateConsoleVariable (
       // Check if there is part of CustomizedConDevicePath in NewDevicePath, delete it.
       //
       NewDevicePath = BmDelPartMatchInstance (NewDevicePath, CustomizedConDevicePath);
-      //
-      // In the first check, the default console variable will be _ModuleEntryPoint,
-      // just append current customized device path
-      //
-      TempNewDevicePath = NewDevicePath;
-      NewDevicePath     = AppendDevicePathInstance (NewDevicePath, CustomizedConDevicePath);
+      // MU_CHANGE - Verify NewDevicePath is valid before using it
+      if (NewDevicePath != NULL) {
+        //
+        // In the first check, the default console variable will be _ModuleEntryPoint,
+        // just append current customized device path
+        //
+        TempNewDevicePath = NewDevicePath;
+      }
+
+      NewDevicePath = AppendDevicePathInstance (NewDevicePath, CustomizedConDevicePath);
       if (TempNewDevicePath != NULL) {
         FreePool (TempNewDevicePath);
       }
