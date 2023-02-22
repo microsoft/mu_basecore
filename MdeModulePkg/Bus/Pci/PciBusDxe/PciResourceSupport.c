@@ -1829,6 +1829,7 @@ ResourcePaddingForCardBusBridge (
            PciResUsagePadding
            );
   // MU_CHANGE - Handle CreateResourceNode returning a NULL
+  ASSERT (Node != NULL);
   if (Node != NULL) {
     InsertResourceNode (
       Mem32Node,
@@ -1850,6 +1851,7 @@ ResourcePaddingForCardBusBridge (
            );
 
   // MU_CHANGE - Handle CreateResourceNode returning a NULL
+  ASSERT (Node != NULL);
   if (Node != NULL) {
     InsertResourceNode (
       PMem32Node,
@@ -1871,6 +1873,7 @@ ResourcePaddingForCardBusBridge (
            );
 
   // MU_CHANGE - Handle CreateResourceNode returning a NULL
+  ASSERT (Node != NULL);
   if (Node != NULL) {
     InsertResourceNode (
       IoNode,
@@ -1892,6 +1895,7 @@ ResourcePaddingForCardBusBridge (
            );
 
   // MU_CHANGE - Handle CreateResourceNode returning a NULL
+  ASSERT (Node != NULL);
   if (Node != NULL) {
     InsertResourceNode (
       IoNode,
