@@ -430,7 +430,6 @@ EfiShellGetFilePathFromDevicePath (
         if ((DevicePathType (&FilePath->Header) != MEDIA_DEVICE_PATH) ||
             (DevicePathSubType (&FilePath->Header) != MEDIA_FILEPATH_DP))
         {
-          FreePool (PathForReturn);
           return NULL;
         }
 
@@ -441,7 +440,12 @@ EfiShellGetFilePathFromDevicePath (
 
         AlignedNode = AllocateCopyPool (DevicePathNodeLength (FilePath), FilePath);
         if (AlignedNode == NULL) {
-          FreePool (PathForReturn);
+          // MU_CHANGE [START] - CodeQL change
+          if (PathForReturn != NULL) {
+            FreePool (PathForReturn);
+          }
+
+          // MU_CHANGE [END] - CodeQL change
           return NULL;
         }
 
@@ -713,7 +717,13 @@ EfiShellGetDeviceName (
         continue;
       }
 
-      Lang   = GetBestLanguageForDriver (CompName2->SupportedLanguages, Language, FALSE);
+      Lang = GetBestLanguageForDriver (CompName2->SupportedLanguages, Language, FALSE);
+      // MU_CHANGE [START] - CodeQL change
+      if (Lang == NULL) {
+        continue;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       Status = CompName2->GetControllerName (CompName2, DeviceHandle, NULL, Lang, &DeviceNameToReturn);
       FreePool (Lang);
       Lang = NULL;
@@ -730,7 +740,13 @@ EfiShellGetDeviceName (
     // Now check the parent controller using this as the child.
     //
     if (DeviceNameToReturn == NULL) {
-      PARSE_HANDLE_DATABASE_PARENTS (DeviceHandle, &ParentControllerCount, &ParentControllerBuffer);
+      // MU_CHANGE [START] - CodeQL change
+      Status = PARSE_HANDLE_DATABASE_PARENTS (DeviceHandle, &ParentControllerCount, &ParentControllerBuffer);
+      if (EFI_ERROR (Status)) {
+        ParentControllerCount = 0;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       for (LoopVar = 0; LoopVar < ParentControllerCount; LoopVar++) {
         PARSE_HANDLE_DATABASE_UEFI_DRIVERS (ParentControllerBuffer[LoopVar], &ParentDriverCount, &ParentDriverBuffer);
         for (HandleCount = 0; HandleCount < ParentDriverCount; HandleCount++) {
@@ -760,7 +776,13 @@ EfiShellGetDeviceName (
             continue;
           }
 
-          Lang   = GetBestLanguageForDriver (CompName2->SupportedLanguages, Language, FALSE);
+          Lang = GetBestLanguageForDriver (CompName2->SupportedLanguages, Language, FALSE);
+          // MU_CHANGE [START] - CodeQL change
+          if (Lang == NULL) {
+            continue;
+          }
+
+          // MU_CHANGE [END] - CodeQL change
           Status = CompName2->GetControllerName (CompName2, ParentControllerBuffer[LoopVar], DeviceHandle, Lang, &DeviceNameToReturn);
           FreePool (Lang);
           Lang = NULL;
@@ -1800,8 +1822,10 @@ EfiShellExecute (
   OUT EFI_STATUS  *StatusCode OPTIONAL
   )
 {
-  EFI_STATUS                Status;
-  CHAR16                    *Temp;
+  EFI_STATUS  Status;
+  // MU_CHANGE [START] - CodeQL change
+  CHAR16  *Temp = NULL;
+  // MU_CHANGE [END] - CodeQL change
   EFI_DEVICE_PATH_PROTOCOL  *DevPath;
   UINTN                     Size;
 
@@ -1811,14 +1835,31 @@ EfiShellExecute (
 
   if (NestingEnabled ()) {
     DevPath = AppendDevicePath (ShellInfoObject.ImageDevPath, ShellInfoObject.FileDevPath);
+    // MU_CHANGE [START] - CodeQL change
+    if (DevPath == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
 
     DEBUG_CODE_BEGIN ();
     Temp = ConvertDevicePathToText (ShellInfoObject.FileDevPath, TRUE, TRUE);
-    FreePool (Temp);
+    if (Temp != NULL) {
+      FreePool (Temp);
+    }
+
     Temp = ConvertDevicePathToText (ShellInfoObject.ImageDevPath, TRUE, TRUE);
-    FreePool (Temp);
-    Temp = ConvertDevicePathToText (DevPath, TRUE, TRUE);
-    FreePool (Temp);
+    if (Temp != NULL) {
+      FreePool (Temp);
+    }
+
+    if (DevPath != NULL) {
+      Temp = ConvertDevicePathToText (DevPath, TRUE, TRUE);
+    }
+
+    if (Temp != NULL) {
+      FreePool (Temp);
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     DEBUG_CODE_END ();
 
     Temp = NULL;
@@ -2381,11 +2422,13 @@ ShellSearchHandle (
   CHAR16               *CurrentFilePattern;
   EFI_SHELL_FILE_INFO  *ShellInfo;
   EFI_SHELL_FILE_INFO  *ShellInfoNode;
-  EFI_SHELL_FILE_INFO  *NewShellNode;
-  EFI_FILE_INFO        *FileInfo;
-  BOOLEAN              Directory;
-  CHAR16               *NewFullName;
-  UINTN                Size;
+  // MU_CHANGE [START] - CodeQL change
+  EFI_SHELL_FILE_INFO  *NewShellNode = NULL;
+  EFI_FILE_INFO        *FileInfo     = NULL;
+  // MU_CHANGE [END] - CodeQL change
+  BOOLEAN  Directory;
+  CHAR16   *NewFullName;
+  UINTN    Size;
 
   if (  (FilePattern      == NULL)
      || (UnicodeCollation == NULL)
@@ -2426,14 +2469,19 @@ ShellSearchHandle (
       //
       // We want the root node.  create the node.
       //
-      FileInfo     = FileHandleGetInfo (FileHandle);
-      NewShellNode = CreateAndPopulateShellFileInfo (
-                       MapName,
-                       EFI_SUCCESS,
-                       L"\\",
-                       FileHandle,
-                       FileInfo
-                       );
+      FileInfo = FileHandleGetInfo (FileHandle);
+      // MU_CHANGE [START] - CodeQL change
+      if (FileInfo != NULL) {
+        NewShellNode = CreateAndPopulateShellFileInfo (
+                         MapName,
+                         EFI_SUCCESS,
+                         L"\\",
+                         FileHandle,
+                         FileInfo
+                         );
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       SHELL_FREE_NON_NULL (FileInfo);
     } else {
       //
@@ -2623,7 +2671,12 @@ EfiShellFindFiles (
   }
 
   PatternCopy = PathCleanUpDirectories (PatternCopy);
+  // MU_CHANGE [START] - CodeQL change
+  if (PatternCopy == NULL) {
+    return (EFI_OUT_OF_RESOURCES);
+  }
 
+  // MU_CHANGE [END] - CodeQL change
   Count = StrStr (PatternCopy, L":") - PatternCopy + 1;
   ASSERT (Count <= StrLen (PatternCopy));
 
@@ -2707,6 +2760,12 @@ EfiShellOpenFileList (
   //
   if (StrStr (Path, L":") == NULL) {
     CurDir = EfiShellGetCurDir (NULL);
+    // MU_CHANGE [START] - CodeQL change
+    if (CurDir == NULL) {
+      return EFI_NOT_FOUND;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     ASSERT ((Path2 == NULL && Path2Size == 0) || (Path2 != NULL));
     StrnCatGrow (&Path2, &Path2Size, CurDir, 0);
     StrnCatGrow (&Path2, &Path2Size, L"\\", 0);
@@ -3114,8 +3173,13 @@ EfiShellSetCurDir (
   }
 
   DirectoryName = StrnCatGrow (&DirectoryName, NULL, Dir, 0);
-  ASSERT (DirectoryName != NULL);
+  // MU_CHANGE [START] - CodeQL change
+  if (DirectoryName == NULL) {
+    ASSERT (DirectoryName != NULL);
+    return (EFI_OUT_OF_RESOURCES);
+  }
 
+  // MU_CHANGE [END] - CodeQL change
   PathCleanUpDirectories (DirectoryName);
 
   if (FileSystem == NULL) {

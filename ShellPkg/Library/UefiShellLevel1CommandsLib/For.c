@@ -334,7 +334,13 @@ ShellCommandRunFor (
   }
 
   CurrentScriptFile = ShellCommandGetCurrentScriptFile ();
-  ASSERT (CurrentScriptFile != NULL);
+  // MU_CHANGE [START] - CodeQL change
+  if (CurrentScriptFile == NULL) {
+    ASSERT (CurrentScriptFile != NULL);
+    return (SHELL_DEVICE_ERROR);
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   if ((CurrentScriptFile->CurrentCommand != NULL) && (CurrentScriptFile->CurrentCommand->Data == NULL)) {
     FirstPass = TRUE;
