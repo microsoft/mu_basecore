@@ -410,13 +410,13 @@ TestVerifyPkcs7SignVerify (
   UT_ASSERT_NOT_EQUAL (P7SignedDataSize, 0);
 
   Status = Pkcs7Verify (
-              P7SignedData,
-              P7SignedDataSize,
-              TestCACert,
-              sizeof (TestCACert),
-              (UINT8 *)Payload,
-              AsciiStrLen (Payload)
-              );
+             P7SignedData,
+             P7SignedDataSize,
+             TestCACert,
+             sizeof (TestCACert),
+             (UINT8 *)Payload,
+             AsciiStrLen (Payload)
+             );
   UT_ASSERT_TRUE (Status);
 
   if (P7SignedData != NULL) {
