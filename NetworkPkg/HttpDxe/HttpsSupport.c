@@ -376,7 +376,7 @@ TlsConfigCertificate (
   EFI_STATUS          Status;
   UINT8               *CACert;
   UINTN               CACertSize;
-  UINT32              Index;
+  UINTN               Index;          // MU_CHANGE - CodeQL change
   EFI_SIGNATURE_LIST  *CertList;
   EFI_SIGNATURE_DATA  *Cert;
   UINTN               CertArraySizeInBytes;
@@ -1224,13 +1224,21 @@ TlsConnectSession (
   //
   // Transmit ClientHello
   //
+  // MU_CHANGE [BEGIN] - CodeQL change
   PacketOut = NetbufAlloc ((UINT32)BufferOutSize);
-  DataOut   = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
-  if (DataOut == NULL) {
+  if (PacketOut == NULL) {
     FreePool (BufferOut);
     return EFI_OUT_OF_RESOURCES;
   }
 
+  DataOut = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
+  if (DataOut == NULL) {
+    FreePool (BufferOut);
+    NetbufFree (PacketOut);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   CopyMem (DataOut, BufferOut, BufferOutSize);
   Status = TlsCommonTransmit (HttpInstance, PacketOut);
 
@@ -1310,13 +1318,22 @@ TlsConnectSession (
       //
       // Transmit the response packet.
       //
+      // MU_CHANGE [BEGIN] - CodeQL change
       PacketOut = NetbufAlloc ((UINT32)BufferOutSize);
-      DataOut   = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
-      if (DataOut == NULL) {
+      if (PacketOut == NULL) {
         FreePool (BufferOut);
         return EFI_OUT_OF_RESOURCES;
       }
 
+      DataOut = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
+      if (DataOut == NULL) {
+        FreePool (BufferOut);
+        NetbufFree (PacketOut);
+
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       CopyMem (DataOut, BufferOut, BufferOutSize);
 
       Status = TlsCommonTransmit (HttpInstance, PacketOut);
@@ -1468,9 +1485,20 @@ TlsCloseSession (
   }
 
   PacketOut = NetbufAlloc ((UINT32)BufferOutSize);
-  DataOut   = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (PacketOut == NULL) {
+    FreePool (BufferOut);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
+  DataOut = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
   if (DataOut == NULL) {
     FreePool (BufferOut);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    NetbufFree (PacketOut);
+    // MU_CHANGE [END] - CodeQL change
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -1754,14 +1782,22 @@ HttpsReceive (
           return Status;
         }
 
+        // MU_CHANGE [BEGIN] - CodeQL change
         if (BufferOutSize != 0) {
           PacketOut = NetbufAlloc ((UINT32)BufferOutSize);
-          DataOut   = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
-          if (DataOut == NULL) {
+          if (PacketOut == NULL) {
             FreePool (BufferOut);
             return EFI_OUT_OF_RESOURCES;
           }
 
+          DataOut = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
+          if (DataOut == NULL) {
+            FreePool (BufferOut);
+            NetbufFree (PacketOut);
+            return EFI_OUT_OF_RESOURCES;
+          }
+
+          // MU_CHANGE [END] - CodeQL change
           CopyMem (DataOut, BufferOut, BufferOutSize);
 
           Status = TlsCommonTransmit (HttpInstance, PacketOut);
@@ -1846,14 +1882,22 @@ HttpsReceive (
       return Status;
     }
 
+    // MU_CHANGE [BEGIN] - CodeQL change
     if (BufferOutSize != 0) {
       PacketOut = NetbufAlloc ((UINT32)BufferOutSize);
-      DataOut   = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
-      if (DataOut == NULL) {
+      if (PacketOut == NULL) {
         FreePool (BufferOut);
         return EFI_OUT_OF_RESOURCES;
       }
 
+      DataOut = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
+      if (DataOut == NULL) {
+        FreePool (BufferOut);
+        NetbufFree (PacketOut);
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       CopyMem (DataOut, BufferOut, BufferOutSize);
 
       Status = TlsCommonTransmit (HttpInstance, PacketOut);

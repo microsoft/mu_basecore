@@ -193,7 +193,14 @@ Ip6SendMldReport (
   // Fill in MLD message - Report
   //
   MldHead = (IP6_MLD_HEAD *)NetbufAllocSpace (Packet, sizeof (IP6_MLD_HEAD), FALSE);
-  ASSERT (MldHead != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (MldHead == NULL) {
+    ASSERT (MldHead != NULL);
+    NetbufFree (Packet);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   ZeroMem (MldHead, sizeof (IP6_MLD_HEAD));
   MldHead->Head.Type = ICMP_V6_LISTENER_REPORT;
   MldHead->Head.Code = 0;
@@ -297,7 +304,14 @@ Ip6SendMldDone (
   // Fill in MLD message - Done
   //
   MldHead = (IP6_MLD_HEAD *)NetbufAllocSpace (Packet, sizeof (IP6_MLD_HEAD), FALSE);
-  ASSERT (MldHead != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (MldHead == NULL) {
+    ASSERT (MldHead != NULL);
+    NetbufFree (Packet);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   ZeroMem (MldHead, sizeof (IP6_MLD_HEAD));
   MldHead->Head.Type = ICMP_V6_LISTENER_DONE;
   MldHead->Head.Code = 0;

@@ -540,7 +540,13 @@ HttpIoSendChunkedTransfer (
         //
         // Override content-length to Transfer-Encoding.
         //
-        ContentLengthHeader             = HttpFindHeader (RequestMessage->HeaderCount, NewHeaders, HTTP_HEADER_CONTENT_LENGTH);
+        ContentLengthHeader = HttpFindHeader (RequestMessage->HeaderCount, NewHeaders, HTTP_HEADER_CONTENT_LENGTH);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (ContentLengthHeader == NULL) {
+          return EFI_INVALID_PARAMETER;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         ContentLengthHeader->FieldName  = NULL;
         ContentLengthHeader->FieldValue = NULL;
       } else {

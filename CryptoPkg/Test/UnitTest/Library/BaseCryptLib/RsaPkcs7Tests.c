@@ -260,6 +260,11 @@ TestVerifyRsaCertPkcs1SignVerify (
   UINTN             OrgNameSize;
   UNIT_TEST_STATUS  TestStatus;
 
+  RsaPrivKey = NULL;
+  RsaPubKey  = NULL;
+  Signature  = NULL;
+  Subject    = NULL;
+
   TestStatus = UNIT_TEST_ERROR_TEST_FAILED;
 
   //
@@ -342,20 +347,20 @@ Exit:
   //
   // Release Resources.
   //
-  if (RsaPrivKey != NULL) {
-    RsaFree (RsaPrivKey);
-  }
-
-  if (RsaPubKey != NULL) {
-    RsaFree (RsaPubKey);
+  if (Subject != NULL) {
+    FreePool (Subject);
   }
 
   if (Signature != NULL) {
     FreePool (Signature);
   }
 
-  if (Subject != NULL) {
-    FreePool (Subject);
+  if (RsaPubKey != NULL) {
+    RsaFree (RsaPubKey);
+  }
+
+  if (RsaPrivKey != NULL) {
+    RsaFree (RsaPrivKey);
   }
 
   return TestStatus;
@@ -390,17 +395,17 @@ TestVerifyPkcs7SignVerify (
   // Note: Caller should release P7SignedData manually.
   //
   Status = Pkcs7Sign (
-                      TestKeyPem,
-                      sizeof (TestKeyPem),
-                      (CONST UINT8 *)PemPass,
-                      (UINT8 *)Payload,
-                      AsciiStrLen (Payload),
-                      TestCert,          // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
-                      sizeof (TestCert), // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
-                      NULL,
-                      &P7SignedData,
-                      &P7SignedDataSize
-                      );
+             TestKeyPem,
+             sizeof (TestKeyPem),
+             (CONST UINT8 *)PemPass,
+             (UINT8 *)Payload,
+             AsciiStrLen (Payload),
+             TestCert,                   // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             sizeof (TestCert),          // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             NULL,
+             &P7SignedData,
+             &P7SignedDataSize
+             );
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_NOT_EQUAL (P7SignedDataSize, 0);
 

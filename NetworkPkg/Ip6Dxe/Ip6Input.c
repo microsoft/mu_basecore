@@ -331,7 +331,13 @@ Ip6Reassemble (
     // Revert IP head to network order.
     //
     DupHead = NetbufGetByte (Duplicate, 0, NULL);
-    ASSERT (DupHead != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (DupHead == NULL) {
+      ASSERT (DupHead != NULL);
+      goto Error;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     Duplicate->Ip.Ip6 = Ip6NtohHead ((EFI_IP6_HEADER *)DupHead);
     Assemble->Packet  = Duplicate;
 
@@ -399,7 +405,14 @@ Ip6Reassemble (
     // the Fragment Header is excluded.
     //
     TmpPacket = NetbufGetFragment (Fragment, 0, This->HeadLen, 0);
-    ASSERT (TmpPacket != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (TmpPacket == NULL) {
+      ASSERT (TmpPacket != NULL);
+      Ip6FreeAssembleEntry (Assemble);
+      goto Error;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     NET_LIST_FOR_EACH (Cur, ListHead) {
       //
