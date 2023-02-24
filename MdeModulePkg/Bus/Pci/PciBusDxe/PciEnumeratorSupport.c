@@ -63,21 +63,23 @@ PciDevicePresent (
   // the VendorId may read as 0x0001 when not ready. This value is assigned to the PCI-SIG for this,
   // and other purposes.  Skip the device, as all the other data read will be invalid.
   //
-  if (!EFI_ERROR (Status) && ((Pci->Hdr).VendorId != 0xffff) && ((Pci->Hdr).VendorId != 0x0001)) {
-    //
-    // Read the entire config header for the device
-    //
-    Status = PciRootBridgeIo->Pci.Read (
-                                    PciRootBridgeIo,
-                                    EfiPciWidthUint32,
-                                    Address,
-                                    sizeof (PCI_TYPE00) / sizeof (UINT32),
-                                    Pci
-                                    );
+  if (!EFI_ERROR (Status)) {
+    if (((Pci->Hdr).VendorId != 0xffff) && ((Pci->Hdr).VendorId != 0x0001)) {
+      //
+      // Read the entire config header for the device
+      //
+      Status = PciRootBridgeIo->Pci.Read (
+                                      PciRootBridgeIo,
+                                      EfiPciWidthUint32,
+                                      Address,
+                                      sizeof (PCI_TYPE00) / sizeof (UINT32),
+                                      Pci
+                                      );
 
-    return EFI_SUCCESS;
-  } else if ((Pci->Hdr).VendorId == 0x0001) {
-    DEBUG ((DEBUG_WARN, "CRS response detected.  Devices that return a CRS response during enumeration are currently ignored\n"));
+      return EFI_SUCCESS;
+    } else if ((Pci->Hdr).VendorId == 0x0001) {
+      DEBUG ((DEBUG_WARN, "CRS response detected.  Devices that return a CRS response during enumeration are currently ignored\n"));
+    }
   }
 
   // MU_CHANGE End
