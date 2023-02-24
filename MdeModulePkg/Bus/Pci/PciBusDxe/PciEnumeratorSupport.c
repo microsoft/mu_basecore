@@ -64,12 +64,6 @@ PciDevicePresent (
   // and other purposes.  Skip the device, as all the other data read will be invalid.
   //
   if (!EFI_ERROR (Status) && ((Pci->Hdr).VendorId != 0xffff) && ((Pci->Hdr).VendorId != 0x0001)) {
-    if ((Pci->Hdr).VendorId == 0x0001) {
-      DEBUG ((DEBUG_WARN, "CRS response detected.  Devices that return a CRS response during enumeration are currently ignored\n"));
-    }
-
-    // MU_CHANGE End
-
     //
     // Read the entire config header for the device
     //
@@ -82,7 +76,11 @@ PciDevicePresent (
                                     );
 
     return EFI_SUCCESS;
+  } else if ((Pci->Hdr).VendorId == 0x0001) {
+    DEBUG ((DEBUG_WARN, "CRS response detected.  Devices that return a CRS response during enumeration are currently ignored\n"));
   }
+
+  // MU_CHANGE End
 
   return EFI_NOT_FOUND;
 }
