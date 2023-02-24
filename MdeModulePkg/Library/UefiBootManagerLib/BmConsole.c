@@ -446,6 +446,9 @@ EfiBootManagerUpdateConsoleVariable (
     return EFI_UNSUPPORTED;
   }
 
+  // MU_CHANGE - Initialize variable that might not be updated due to error checking
+  TempNewDevicePath = NULL;
+
   //
   // Delete the ExclusiveDevicePath from current default console
   //
