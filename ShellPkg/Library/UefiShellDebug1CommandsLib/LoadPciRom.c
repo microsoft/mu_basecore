@@ -333,7 +333,13 @@ LoadEfiDriversFromRomImage (
           //
           UnicodeSPrint (RomFileName, sizeof (RomFileName), L"%s[%d]", FileName, ImageIndex);
           FilePath = FileDevicePath (NULL, RomFileName);
+          // MU_CHANGE [START] - CodeQL change
+          if (FilePath == NULL) {
+            ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_LOADPCIROM_LOAD_FAIL), gShellDebug1HiiHandle, L"loadpcirom", FileName, ImageIndex);
+            return EFI_OUT_OF_RESOURCES;
+          }
 
+          // MU_CHANGE [END] - CodeQL change
           Status = gBS->LoadImage (
                           TRUE,
                           gImageHandle,

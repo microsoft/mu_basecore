@@ -101,8 +101,16 @@ ShellCommandRunEdit (
         //
         if (ShellCommandLineGetCount (Package) == 2) {
           TempParam = ShellCommandLineGetRawValue (Package, 1);
-          ASSERT (TempParam != NULL);
-          FileBufferSetFileName (TempParam);
+          // MU_CHANGE [START] - CodeQL change
+          if (TempParam == NULL) {
+            ASSERT (TempParam != NULL);
+            ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellDebug1HiiHandle, L"edit");
+            ShellStatus = SHELL_INVALID_PARAMETER;
+          } else {
+            FileBufferSetFileName (TempParam);
+          }
+
+          // MU_CHANGE [END] - CodeQL change
           //          if (EFI_ERROR(ShellFileExists(MainEditor.FileBuffer->FileName))) {
           //            Status = ShellOpenFileByName(MainEditor.FileBuffer->FileName, &TempHandle, EFI_FILE_MODE_CREATE|EFI_FILE_MODE_READ|EFI_FILE_MODE_WRITE, 0);
           //            if (!EFI_ERROR(Status)) {
