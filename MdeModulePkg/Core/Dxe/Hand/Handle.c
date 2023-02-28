@@ -988,6 +988,8 @@ CoreOpenProtocol (
     return EFI_INVALID_PARAMETER;
   }
 
+  // MU_CHANGE - Handle code path that does not initialize Prot
+  Prot = NULL;
   //
   // Lock the protocol database
   //

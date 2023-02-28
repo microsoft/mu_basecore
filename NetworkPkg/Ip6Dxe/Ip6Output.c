@@ -609,7 +609,13 @@ Ip6Output (
       }
 
       IcmpHead = (IP6_ICMP_HEAD *)NetbufGetByte (Packet, 0, NULL);
-      ASSERT (IcmpHead != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (IcmpHead == NULL) {
+        ASSERT (IcmpHead != NULL);
+        return EFI_INVALID_PARAMETER;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       if (IcmpHead->Checksum == 0) {
         Checksum = &IcmpHead->Checksum;
       }
@@ -843,7 +849,14 @@ Ip6Output (
       // be fragmented below.
       //
       TmpPacket = NetbufGetFragment (Packet, 0, Packet->TotalSize, FragmentHdrsLen);
-      ASSERT (TmpPacket != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (TmpPacket == NULL) {
+        ASSERT (TmpPacket != NULL);
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Error;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
 
       //
       // Allocate the space to contain the fragmentable hdrs and copy the data.

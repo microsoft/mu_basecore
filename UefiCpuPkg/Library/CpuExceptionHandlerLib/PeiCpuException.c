@@ -71,7 +71,13 @@ SetExceptionHandlerData (
   IdtTable = (IA32_IDT_GATE_DESCRIPTOR *)IdtDescriptor.Base;
 
   Exception0StubHeader = AllocatePool (sizeof (*Exception0StubHeader));
-  ASSERT (Exception0StubHeader != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Exception0StubHeader == NULL) {
+    ASSERT (Exception0StubHeader != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   CopyMem (
     Exception0StubHeader->ExceptionStubHeader,
     (VOID *)ArchGetIdtHandler (&IdtTable[0]),
@@ -129,10 +135,23 @@ InitializeCpuExceptionHandlers (
   RESERVED_VECTORS_DATA   *ReservedVectors;
 
   ReservedVectors = AllocatePool (sizeof (RESERVED_VECTORS_DATA) * CPU_EXCEPTION_NUM);
-  ASSERT (ReservedVectors != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (ReservedVectors == NULL) {
+    ASSERT (ReservedVectors != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   ExceptionHandlerData = AllocatePool (sizeof (EXCEPTION_HANDLER_DATA));
-  ASSERT (ExceptionHandlerData != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (ExceptionHandlerData == NULL) {
+    ASSERT (ExceptionHandlerData != NULL);
+    FreePool (ReservedVectors);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   ExceptionHandlerData->IdtEntryCount            = CPU_EXCEPTION_NUM;
   ExceptionHandlerData->ReservedVectors          = ReservedVectors;
   ExceptionHandlerData->ExternalInterruptHandler = NULL;

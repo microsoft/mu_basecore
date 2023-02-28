@@ -541,6 +541,10 @@ AmlFindPath (
   RootNameSeg[0]  = AML_ROOT_CHAR;
   RootNameSeg[1]  = 0;
   AmlRootNodeList = AmlCreateNode (RootNameSeg, NULL, AmlHandle->AmlByteEncoding);
+  // MU_CHANGE - Verify AmlCreateNode returns a valid value, or bail out
+  if (AmlRootNodeList == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
 
   Status = AmlConstructNodeList (
              AmlHandle,

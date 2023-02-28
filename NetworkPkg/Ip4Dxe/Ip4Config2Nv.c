@@ -919,8 +919,15 @@ Ip4FormExtractConfig (
       // followed by "&OFFSET=0&WIDTH=WWWWWWWWWWWWWWWW" followed by a Null-terminator
       //
       ConfigRequestHdr = HiiConstructConfigHdr (&gIp4Config2NvDataGuid, mIp4Config2StorageName, Private->ChildHandle);
-      Size             = (StrLen (ConfigRequestHdr) + 32 + 1) * sizeof (CHAR16);
-      ConfigRequest    = AllocateZeroPool (Size);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (ConfigRequestHdr == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Failure;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
+      Size          = (StrLen (ConfigRequestHdr) + 32 + 1) * sizeof (CHAR16);
+      ConfigRequest = AllocateZeroPool (Size);
       if (ConfigRequest == NULL) {
         Status = EFI_OUT_OF_RESOURCES;
         goto Failure;

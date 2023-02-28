@@ -89,7 +89,7 @@ class CompilerPlugin(ICiBuildPlugin):
             # Skip if there is no intersection between SUPPORTED_ARCHITECTURES and TARGET_ARCHITECTURES
             if len(set(SUPPORTED_ARCHITECTURES) & set(TARGET_ARCHITECTURES)) == 0:
                 tc.SetSkipped()
-                tc.LogStdError("No supported architecutres to build")
+                tc.LogStdError("No supported architectures to build")
                 return -1
 
         uefiBuilder = UefiBuilder()

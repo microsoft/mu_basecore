@@ -837,7 +837,13 @@ FvIsBeingProcessed (
   DEBUG ((DEBUG_INFO, "FvIsBeingProcessed - 0x%08x\n", FwVolHeader));
 
   KnownFwVol = AllocatePool (sizeof (KNOWN_FWVOL));
-  ASSERT (KnownFwVol != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (KnownFwVol == NULL) {
+    ASSERT (KnownFwVol != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   KnownFwVol->Signature   = KNOWN_FWVOL_SIGNATURE;
   KnownFwVol->FwVolHeader = FwVolHeader;
