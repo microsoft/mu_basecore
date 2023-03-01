@@ -32,7 +32,9 @@ InternalMemSetMem16 (
   )
 {
   for ( ; Length != 0; Length--) {
-    ((UINT16 *)Buffer)[Length - 1] = Value;
+    // MU_CHANGE use a pointer to volatile data to prevent Visual Studio 17.5 (VS2022)
+    // from replacing the assignment with a `memset()` intrinsic
+    ((volatile UINT16 *)Buffer)[Length - 1] = Value;
   }
 
   return Buffer;
@@ -57,7 +59,9 @@ InternalMemSetMem32 (
   )
 {
   for ( ; Length != 0; Length--) {
-    ((UINT32 *)Buffer)[Length - 1] = Value;
+    // MU_CHANGE use a pointer to volatile data to prevent Visual Studio 17.5 (VS2022)
+    // from replacing the assignment with a `memset()` intrinsic
+    ((volatile UINT32 *)Buffer)[Length - 1] = Value;
   }
 
   return Buffer;
@@ -82,7 +86,9 @@ InternalMemSetMem64 (
   )
 {
   for ( ; Length != 0; Length--) {
-    ((UINT64 *)Buffer)[Length - 1] = Value;
+    // MU_CHANGE use a pointer to volatile data to prevent Visual Studio 17.5 (VS2022)
+    // from replacing the assignment with a `memset()` intrinsic
+    ((volatile UINT64 *)Buffer)[Length - 1] = Value;
   }
 
   return Buffer;
