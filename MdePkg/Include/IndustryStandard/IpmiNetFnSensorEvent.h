@@ -51,10 +51,10 @@ typedef union {
   struct _SENSOR_BITS {
     UINT8    LowerNonCriticalThreshold    : 1;
     UINT8    LowerCriticalThreshold       : 1;
-    UINT8    LowerNonRecoverablethreshold : 1;
+    UINT8    LowerNonRecoverableThreshold : 1;
     UINT8    UpperNonCriticalThreshold    : 1;
     UINT8    UpperCriticalThreshold       : 1;
-    UINT8    UpperNonRecoverablethreshold : 1;
+    UINT8    UpperNonRecoverableThreshold : 1;
     UINT8    Reserved                     : 2;
   } Bits;
   UINT8    Uint8;
@@ -65,10 +65,10 @@ typedef struct _IPMI_SENSOR_SET_SENSOR_THRESHOLD_REQUEST_DATA {
   SENSOR_BITS    SetBitEnable;
   UINT8          LowerNonCriticalThreshold;
   UINT8          LowerCriticalThreshold;
-  UINT8          LowerNonRecoverablethreshold;
+  UINT8          LowerNonRecoverableThreshold;
   UINT8          UpperNonCriticalThreshold;
   UINT8          UpperCriticalThreshold;
-  UINT8          UpperNonRecoverablethreshold;
+  UINT8          UpperNonRecoverableThreshold;
 } IPMI_SENSOR_SET_SENSOR_THRESHOLD_REQUEST_DATA;
 
 //
@@ -81,10 +81,10 @@ typedef struct _IPMI_SENSOR_GET_SENSOR_THRESHOLD_RESPONSE_DATA {
   SENSOR_BITS    GetBitEnable;
   UINT8          LowerNonCriticalThreshold;
   UINT8          LowerCriticalThreshold;
-  UINT8          LowerNonRecoverablethreshold;
+  UINT8          LowerNonRecoverableThreshold;
   UINT8          UpperNonCriticalThreshold;
   UINT8          UpperCriticalThreshold;
-  UINT8          UpperNonRecoverablethreshold;
+  UINT8          UpperNonRecoverableThreshold;
 } IPMI_SENSOR_GET_SENSOR_THRESHOLD_RESPONSE_DATA;
 
 #pragma pack()
