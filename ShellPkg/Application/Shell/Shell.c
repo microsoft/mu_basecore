@@ -1262,12 +1262,12 @@ LocateStartupScript (
     // MU_CHANGE START: Ensure FileDevicePath is a FILEPATH_DEVICE_PATH prior to accessing PathName
     if ((FileDevicePath->Type == MEDIA_VENDOR_DP) && (FileDevicePath->SubType == MEDIA_FILEPATH_DP)) {
       StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, ((FILEPATH_DEVICE_PATH *)FileDevicePath)->PathName, 0);
+      PathRemoveLastItem (StartupScriptPath);
     } else {
       StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, L"\\", 0);
     }
 
     // MU_CHANGE END
-    PathRemoveLastItem (StartupScriptPath);
     StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, mStartupScript, 0);
   }
 
