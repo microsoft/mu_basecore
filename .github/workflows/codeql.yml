@@ -96,6 +96,12 @@ jobs:
       with:
         python-version: '>=3.11'
 
+    - name: Use Git Long Paths on Windows
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        git config --system core.longpaths true
+
     - name: Install/Upgrade pip Modules
       run: pip install -r pip-requirements.txt --upgrade
 

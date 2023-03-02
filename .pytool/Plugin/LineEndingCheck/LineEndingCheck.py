@@ -23,6 +23,8 @@ from edk2toollib.gitignore_parser import parse_gitignore_lines
 from edk2toollib.log.junit_report_format import JunitReportTestCase
 from edk2toollib.uefi.edk2.path_utilities import Edk2Path
 from edk2toollib.utility_functions import RunCmd
+from git import Repo
+
 
 PLUGIN_NAME = "LineEndingCheck"
 
@@ -83,6 +85,24 @@ class LineEndingCheck(ICiBuildPlugin):
         """
         return ("Check line endings in " + packagename, packagename +
                 "." + PLUGIN_NAME)
+
+    # Note: This function access git via the command line
+    #
+    #   function to check and warn if git config reports that 
+    #   autocrlf is configured to TRUE
+    def _check_autocrlf(self):
+        r = Repo(".")
+        try:
+            result = r.config_reader().get_value("core", "autocrlf")
+            if result:
+                logging.warning(f"git config core.autocrlf is set to {result} "
+                                f"recommended setting is false "
+                                f"git config --global core.autocrlf false")
+        except:
+            logging.warning(f"git config core.autocrlf is not set "
+                            f"recommended setting is false "
+                            f"git config --global core.autocrlf false")
+        return
 
     # Note: This function currently accesses git via the git command to prevent
     #       introducing a new Python git module dependency in mu_basecore
@@ -228,7 +248,7 @@ class LineEndingCheck(ICiBuildPlugin):
           0  : Ran successfully
           -1 : Skipped due to a missing pre-requisite
         """
-
+        self._check_autocrlf()
         self._abs_workspace_path = \
             edk2_path.GetAbsolutePathOnThisSystemFromEdk2RelativePath('.')
         self._abs_pkg_path = \
