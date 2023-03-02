@@ -700,6 +700,7 @@ Ip6SendFrame (
   // MU_CHANGE [BEGIN] - CodeQL change
   if (NeighborCache == NULL) {
     ASSERT (NeighborCache != NULL);
+    Status = EFI_NOT_FOUND;
     goto Error;
   }
 

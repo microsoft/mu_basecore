@@ -670,9 +670,9 @@ ProcessStorage (
       if (*ResultsDataSize >= BufferSize) {
         StrCpyS (*ResultsData, *ResultsDataSize / sizeof (CHAR16), StrPtr);
       }
-    }
 
-    *ResultsDataSize = BufferSize;
+      *ResultsDataSize = BufferSize;
+    }
     FreePool (ConfigResp);
   } else {
     //
@@ -3167,7 +3167,7 @@ ConfirmSaveFail (
 {
   CHAR16  *FormTitle;
   CHAR16  *StringBuffer;
-  UINT32  RetVal;
+  UINT32  RetVal = BROWSER_ACTION_UNREGISTER;
 
   FormTitle = GetToken (TitleId, HiiHandle);
   // MU_CHANGE - Verify FormTitle is valid before using
@@ -3211,7 +3211,7 @@ ConfirmNoSubmitFail (
 {
   CHAR16  *FormTitle;
   CHAR16  *StringBuffer;
-  UINT32  RetVal;
+  UINT32  RetVal = BROWSER_ACTION_UNREGISTER;
 
   FormTitle = GetToken (TitleId, HiiHandle);
   // MU_CHANGE - Verify FormTitle is valid before using
