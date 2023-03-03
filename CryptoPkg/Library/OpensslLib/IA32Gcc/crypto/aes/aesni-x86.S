@@ -1,7 +1,7 @@
 # WARNING: do not edit!
 # Generated from openssl/crypto/aes/asm/aesni-x86.pl
 #
-# Copyright 2009-2020 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2009-2022 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the OpenSSL license (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -1953,7 +1953,7 @@ aesni_ocb_encrypt:
         movdqu  %xmm6,-32(%edi,%esi,1)
         movdqu  %xmm7,-16(%edi,%esi,1)
         cmpl    %eax,%esi
-        jb      .L077grandloop
+        jbe     .L077grandloop
 .L076short:
         addl    $96,%eax
         subl    %esi,%eax
@@ -2348,7 +2348,7 @@ aesni_ocb_decrypt:
         pxor    %xmm7,%xmm1
         movdqu  %xmm7,-16(%edi,%esi,1)
         cmpl    %eax,%esi
-        jb      .L087grandloop
+        jbe     .L087grandloop
 .L086short:
         addl    $96,%eax
         subl    %esi,%eax

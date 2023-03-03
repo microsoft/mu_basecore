@@ -1,7 +1,7 @@
 ; WARNING: do not edit!
 ; Generated from openssl/crypto/aes/asm/aesni-x86.pl
 ;
-; Copyright 2009-2020 The OpenSSL Project Authors. All Rights Reserved.
+; Copyright 2009-2022 The OpenSSL Project Authors. All Rights Reserved.
 ;
 ; Licensed under the OpenSSL license (the "License").  You may not use
 ; this file except in compliance with the License.  You can obtain a copy
@@ -1928,7 +1928,7 @@ db      102,15,56,220,249
         movdqu  [esi*1+edi-32],xmm6
         movdqu  [esi*1+edi-16],xmm7
         cmp     esi,eax
-        jb      NEAR L$077grandloop
+        jbe     NEAR L$077grandloop
 L$076short:
         add     eax,96
         sub     eax,esi
@@ -2321,7 +2321,7 @@ db      102,15,56,222,249
         pxor    xmm1,xmm7
         movdqu  [esi*1+edi-16],xmm7
         cmp     esi,eax
-        jb      NEAR L$087grandloop
+        jbe     NEAR L$087grandloop
 L$086short:
         add     eax,96
         sub     eax,esi
