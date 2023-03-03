@@ -1260,7 +1260,7 @@ LocateStartupScript (
 
     InternalEfiShellSetEnv (L"homefilesystem", StartupScriptPath, TRUE);
     // MU_CHANGE START: Ensure FileDevicePath is a FILEPATH_DEVICE_PATH prior to accessing PathName
-    if ((FileDevicePath->Type == MEDIA_VENDOR_DP) && (FileDevicePath->SubType == MEDIA_FILEPATH_DP)) {
+    if ((FileDevicePath->Type == MEDIA_DEVICE_PATH) && (FileDevicePath->SubType == MEDIA_FILEPATH_DP)) {
       StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, ((FILEPATH_DEVICE_PATH *)FileDevicePath)->PathName, 0);
       PathRemoveLastItem (StartupScriptPath);
     } else {
