@@ -670,9 +670,10 @@ ProcessStorage (
       if (*ResultsDataSize >= BufferSize) {
         StrCpyS (*ResultsData, *ResultsDataSize / sizeof (CHAR16), StrPtr);
       }
+
+      *ResultsDataSize = BufferSize;
     }
 
-    *ResultsDataSize = BufferSize;
     FreePool (ConfigResp);
   } else {
     //
@@ -3169,6 +3170,8 @@ ConfirmSaveFail (
   CHAR16  *StringBuffer;
   UINT32  RetVal;
 
+  RetVal = BROWSER_ACTION_UNREGISTER;    // MU_CHANGE - Initialize variable that might not be updated due to error checking
+
   FormTitle = GetToken (TitleId, HiiHandle);
   // MU_CHANGE - Verify FormTitle is valid before using
   if (FormTitle != NULL) {
@@ -3212,6 +3215,8 @@ ConfirmNoSubmitFail (
   CHAR16  *FormTitle;
   CHAR16  *StringBuffer;
   UINT32  RetVal;
+
+  RetVal = BROWSER_ACTION_UNREGISTER;    // MU_CHANGE - Initialize variable that might not be updated due to error checking
 
   FormTitle = GetToken (TitleId, HiiHandle);
   // MU_CHANGE - Verify FormTitle is valid before using
