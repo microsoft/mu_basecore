@@ -673,6 +673,7 @@ ProcessStorage (
 
       *ResultsDataSize = BufferSize;
     }
+
     FreePool (ConfigResp);
   } else {
     //
@@ -3167,7 +3168,9 @@ ConfirmSaveFail (
 {
   CHAR16  *FormTitle;
   CHAR16  *StringBuffer;
-  UINT32  RetVal = BROWSER_ACTION_UNREGISTER; // MU_CHANGE - Initialize variable that might not be updated due to error checking
+  UINT32  RetVal;
+
+  RetVal = BROWSER_ACTION_UNREGISTER;    // MU_CHANGE - Initialize variable that might not be updated due to error checking
 
   FormTitle = GetToken (TitleId, HiiHandle);
   // MU_CHANGE - Verify FormTitle is valid before using
@@ -3211,7 +3214,9 @@ ConfirmNoSubmitFail (
 {
   CHAR16  *FormTitle;
   CHAR16  *StringBuffer;
-  UINT32  RetVal = BROWSER_ACTION_UNREGISTER; // MU_CHANGE - Initialize variable that might not be updated due to error checking
+  UINT32  RetVal;
+
+  RetVal = BROWSER_ACTION_UNREGISTER;    // MU_CHANGE - Initialize variable that might not be updated due to error checking
 
   FormTitle = GetToken (TitleId, HiiHandle);
   // MU_CHANGE - Verify FormTitle is valid before using
