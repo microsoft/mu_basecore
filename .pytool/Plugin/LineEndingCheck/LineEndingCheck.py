@@ -98,7 +98,7 @@ class LineEndingCheck(ICiBuildPlugin):
                 logging.warning(f"git config core.autocrlf is set to {result} "
                                 f"recommended setting is false "
                                 f"git config --global core.autocrlf false")
-        except:
+        except Exception:
             logging.warning(f"git config core.autocrlf is not set "
                             f"recommended setting is false "
                             f"git config --global core.autocrlf false")
