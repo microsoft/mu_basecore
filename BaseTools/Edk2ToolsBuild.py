@@ -16,6 +16,7 @@ from edk2toolext import edk2_logging
 from edk2toolext.environment import self_describing_environment
 from edk2toolext.base_abstract_invocable import BaseAbstractInvocable
 from edk2toollib.utility_functions import RunCmd
+from edk2toollib.utility_functions import GetHostInfo
 from edk2toollib.windows.locate_tools import QueryVcVariables
 
 
@@ -115,6 +116,15 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         shell_env.set_shell_var("PYTHON_COMMAND", pc)
 
         if self.tool_chain_tag.lower().startswith("vs"):
+            HostInfo = GetHostInfo()
+            if HostInfo.arch == "x86":
+                VcHostArch = "x86"
+                ToolHostArch = "IA32"
+            elif HostInfo.arch == "ARM":
+                VcHostArch = "x86_arm"
+                ToolHostArch = "ARM"
+            else:
+                raise NotImplementedError()
 
             # # Update environment with required VC vars.
             interesting_keys = ["ExtensionSdkDir", "INCLUDE", "LIB"]
@@ -123,13 +133,15 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             interesting_keys.extend(
                 ["WindowsSdkDir", "WindowsSdkVerBinPath", "WindowsSDKVersion", "VCToolsInstallDir"])
             vc_vars = QueryVcVariables(
-                interesting_keys, 'x86', vs_version=self.tool_chain_tag.lower())
+                interesting_keys, VcHostArch, vs_version=self.tool_chain_tag.lower())
             for key in vc_vars.keys():
                 logging.debug(f"Var - {key} = {vc_vars[key]}")
                 if key.lower() == 'path':
                     shell_env.insert_path(vc_vars[key])
                 else:
                     shell_env.set_shell_var(key, vc_vars[key])
+
+            shell_env.set_shell_var('HOST_ARCH', ToolHostArch)
 
             self.OutputDir = os.path.join(
                 shell_env.get_shell_var("EDK_TOOLS_PATH"), "Bin", "Win32")
