@@ -666,7 +666,7 @@ typedef struct {
   UINT32  FunctionStartAddress;
   UINT32  FunctionEndAddress;
   UINT32  UnwindInfoAddress;
-} RUNTIME_FUNCTION;
+} PD_RUNTIME_FUNCTION;
 
 typedef struct {
   UINT8  Version:3;
