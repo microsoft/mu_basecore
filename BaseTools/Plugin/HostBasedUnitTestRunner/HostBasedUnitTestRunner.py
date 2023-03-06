@@ -128,11 +128,12 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
     def gen_code_coverage_gcc(self, thebuilder):
         logging.info("Generating UnitTest code coverage")
 
+        coverageOutputBase = thebuilder.env.GetValue("COVERAGE_BUILD_DIR")
         buildOutputBase = thebuilder.env.GetValue("BUILD_OUTPUT_BASE")
         workspace = thebuilder.env.GetValue("WORKSPACE")
 
         # Generate base code coverage for all source files
-        ret = RunCmd("lcov", f"--no-external --capture --initial --directory {buildOutputBase} --output-file {buildOutputBase}/cov-base.info --rc lcov_branch_coverage=1")
+        ret = RunCmd("lcov", f"--capture --initial --directory {coverageOutputBase} --output-file {buildOutputBase}/cov-base.info --rc lcov_branch_coverage=1")
         if ret != 0:
             logging.error("UnitTest Coverage: Failed to build initial coverage data.")
             return 1
@@ -149,16 +150,10 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
             logging.error("UnitTest Coverage: Failed to aggregate coverage data.")
             return 1
 
-        # Generate coverage XML
-        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info -o {buildOutputBase}/compare.xml")
-        if ret != 0:
-            logging.error("UnitTest Coverage: Failed to generate coverage XML.")
-            return 1
-
         # Filter out auto-generated and test code
-        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {buildOutputBase}/coverage.xml")
+        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info -o {buildOutputBase}/coverage.xml")
         if ret != 0:
-            logging.error("UnitTest Coverage: Failed generate filtered coverage XML.")
+            logging.error("UnitTest Coverage: Failed generate coverage XML.")
             return 1
 
         # Generate all coverage file
@@ -175,7 +170,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         # Generate and XML file if requested.for all package
         if os.path.isfile(f"{workspace}/Build/coverage.xml"):
             os.remove(f"{workspace}/Build/coverage.xml")
-        ret = RunCmd("lcov_cobertura",f"{workspace}/Build/all-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {workspace}/Build/coverage.xml")
+        ret = RunCmd("lcov_cobertura",f"{workspace}/Build/all-coverage.info -o {workspace}/Build/coverage.xml")
 
         return 0
 
