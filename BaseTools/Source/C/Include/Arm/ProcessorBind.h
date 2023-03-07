@@ -62,6 +62,7 @@
     //
     // use Microsoft* C compiler dependent integer width types
     //
+    #include <stdint.h>
     typedef unsigned __int64    UINT64;
     typedef __int64             INT64;
     typedef unsigned __int32    UINT32;
@@ -90,8 +91,6 @@
     typedef signed char         INT8;
 
   #endif
-
-  #define UINT8_MAX 0xff
 
 #else
   //
