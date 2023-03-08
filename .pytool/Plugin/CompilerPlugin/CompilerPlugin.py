@@ -12,7 +12,7 @@ from edk2toolext.environment.plugintypes.ci_build_plugin import ICiBuildPlugin
 from edk2toolext.environment.uefi_build import UefiBuilder
 from edk2toolext import edk2_logging
 from edk2toolext.environment.var_dict import VarDict
-
+from edk2toollib.utility_functions import GetHostInfo # MU_CHANGE
 
 class CompilerPlugin(ICiBuildPlugin):
     """
@@ -54,6 +54,23 @@ class CompilerPlugin(ICiBuildPlugin):
     #   - output_stream the StringIO output stream from this plugin via logging
     def RunBuildPlugin(self, packagename, Edk2pathObj, pkgconfig, environment, PLM, PLMHelper, tc, output_stream=None):
         self._env = environment
+
+        # MU_CHANGE START: Optimize to only build NOOPT when useful
+        target_arch = environment.GetValue("TARGET_ARCH")
+        if environment.GetValue("TARGET") == "NOOPT":
+            if environment.GetValue("CODE_COVERAGE") != "TRUE":
+                print("LEEDLE 1")
+                tc.SetSkipped()
+                tc.LogStdError("Skipping NOOPT since code coverage is not enabled.")
+                return -1
+
+            if (target_arch == "ARM" or target_arch == "AARCH64") != (GetHostInfo().arch == "ARM"):
+                print("LEEDLE 2")
+                tc.SetSkipped()
+                tc.LogStdError("Skipping NOOPT since code coverage is not enabled.")
+                return -1
+
+        # MU_CHANGE END
 
         # Parse the config for required DscPath element
         if "DscPath" not in pkgconfig:
