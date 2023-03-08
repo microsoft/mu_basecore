@@ -153,7 +153,8 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         # Filter out auto-generated and test code
         ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info -o {buildOutputBase}/coverage.xml")
         if ret != 0:
-            logging.error("UnitTest Coverage: Failed generate coverage XML.")
+            logging.error("UnitTest Coverage: Failed to generate coverage XML.")
+
             return 1
 
         # Generate all coverage file
