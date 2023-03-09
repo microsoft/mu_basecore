@@ -132,6 +132,10 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         buildOutputBase = thebuilder.env.GetValue("BUILD_OUTPUT_BASE")
         workspace = thebuilder.env.GetValue("WORKSPACE")
 
+        if coverageOutputBase is None:
+            logging.warning("Coverage build directory not specified! Coverage will only include unit test compiled code.")
+            coverageOutputBase = buildOutputBase
+
         # Generate base code coverage for all source files
         ret = RunCmd("lcov", f"--capture --initial --directory {coverageOutputBase} --output-file {buildOutputBase}/cov-base.info --rc lcov_branch_coverage=1")
         if ret != 0:
