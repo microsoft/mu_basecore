@@ -32,3 +32,8 @@ jobs:
     arch_list: $(arch_list)
     tool_chain_tag: $(tool_chain_tag)
     vm_image: $(vm_image)
+    extra_install_step:
+    - powershell: |
+                  choco install opencppcoverage
+                  Write-Host "##vso[task.prependpath]C:\Program Files\OpenCppCoverage"
+      displayName: Install Windows Resource Compiler for Linux & Code Coverage Tools
