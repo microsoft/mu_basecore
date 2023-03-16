@@ -1821,23 +1821,35 @@ ParseOpCodes (
       case EFI_IFR_SUBTITLE_OP:
         CurrentStatement = CreateStatement (OpCodeData, FormSet, CurrentForm);
         ASSERT (CurrentStatement != NULL);
+        // MU_CHANGE - Verify valid before pointer dereference
+        if (CurrentStatement != NULL) {
+          CurrentStatement->Flags          = ((EFI_IFR_SUBTITLE *)OpCodeData)->Flags;
+          CurrentStatement->FakeQuestionId = mUsedQuestionId++;
+        }
 
-        CurrentStatement->Flags          = ((EFI_IFR_SUBTITLE *)OpCodeData)->Flags;
-        CurrentStatement->FakeQuestionId = mUsedQuestionId++;
         break;
 
       case EFI_IFR_TEXT_OP:
         CurrentStatement = CreateStatement (OpCodeData, FormSet, CurrentForm);
         ASSERT (CurrentStatement != NULL);
-        CurrentStatement->FakeQuestionId = mUsedQuestionId++;
-        CopyMem (&CurrentStatement->TextTwo, &((EFI_IFR_TEXT *)OpCodeData)->TextTwo, sizeof (EFI_STRING_ID));
+        // MU_CHANGE - Verify valid before pointer dereference
+        if (CurrentStatement != NULL) {
+          CurrentStatement->FakeQuestionId = mUsedQuestionId++;
+          CopyMem (&CurrentStatement->TextTwo, &((EFI_IFR_TEXT *)OpCodeData)->TextTwo, sizeof (EFI_STRING_ID));
+        }
+
         break;
 
       case EFI_IFR_RESET_BUTTON_OP:
         CurrentStatement = CreateStatement (OpCodeData, FormSet, CurrentForm);
         ASSERT (CurrentStatement != NULL);
-        CurrentStatement->FakeQuestionId = mUsedQuestionId++;
-        CopyMem (&CurrentStatement->DefaultId, &((EFI_IFR_RESET_BUTTON *)OpCodeData)->DefaultId, sizeof (EFI_DEFAULT_ID));
+
+        // MU_CHANGE - Verify valid before pointer dereference
+        if (CurrentStatement != NULL) {
+          CurrentStatement->FakeQuestionId = mUsedQuestionId++;
+          CopyMem (&CurrentStatement->DefaultId, &((EFI_IFR_RESET_BUTTON *)OpCodeData)->DefaultId, sizeof (EFI_DEFAULT_ID));
+        }
+
         break;
 
       //
@@ -1846,15 +1858,19 @@ ParseOpCodes (
       case EFI_IFR_ACTION_OP:
         CurrentStatement = CreateQuestion (OpCodeData, FormSet, CurrentForm);
         ASSERT (CurrentStatement != NULL);
-        CurrentStatement->HiiValue.Type = EFI_IFR_TYPE_ACTION;
 
-        if (OpCodeLength == sizeof (EFI_IFR_ACTION_1)) {
-          //
-          // No QuestionConfig present, so no configuration string will be processed
-          //
-          CurrentStatement->QuestionConfig = 0;
-        } else {
-          CopyMem (&CurrentStatement->QuestionConfig, &((EFI_IFR_ACTION *)OpCodeData)->QuestionConfig, sizeof (EFI_STRING_ID));
+        // MU_CHANGE - Verify valid before pointer dereference
+        if (CurrentStatement != NULL) {
+          CurrentStatement->HiiValue.Type = EFI_IFR_TYPE_ACTION;
+
+          if (OpCodeLength == sizeof (EFI_IFR_ACTION_1)) {
+            //
+            // No QuestionConfig present, so no configuration string will be processed
+            //
+            CurrentStatement->QuestionConfig = 0;
+          } else {
+            CopyMem (&CurrentStatement->QuestionConfig, &((EFI_IFR_ACTION *)OpCodeData)->QuestionConfig, sizeof (EFI_STRING_ID));
+          }
         }
 
         break;
@@ -1862,26 +1878,31 @@ ParseOpCodes (
       case EFI_IFR_REF_OP:
         CurrentStatement = CreateQuestion (OpCodeData, FormSet, CurrentForm);
         ASSERT (CurrentStatement != NULL);
-        Value       = &CurrentStatement->HiiValue;
-        Value->Type = EFI_IFR_TYPE_REF;
-        if (OpCodeLength >= sizeof (EFI_IFR_REF)) {
-          CopyMem (&Value->Value.ref.FormId, &((EFI_IFR_REF *)OpCodeData)->FormId, sizeof (EFI_FORM_ID));
 
-          if (OpCodeLength >= sizeof (EFI_IFR_REF2)) {
-            CopyMem (&Value->Value.ref.QuestionId, &((EFI_IFR_REF2 *)OpCodeData)->QuestionId, sizeof (EFI_QUESTION_ID));
+        // MU_CHANGE - Verify valid before pointer dereference
+        if (CurrentStatement != NULL) {
+          Value       = &CurrentStatement->HiiValue;
+          Value->Type = EFI_IFR_TYPE_REF;
+          if (OpCodeLength >= sizeof (EFI_IFR_REF)) {
+            CopyMem (&Value->Value.ref.FormId, &((EFI_IFR_REF *)OpCodeData)->FormId, sizeof (EFI_FORM_ID));
 
-            if (OpCodeLength >= sizeof (EFI_IFR_REF3)) {
-              CopyMem (&Value->Value.ref.FormSetGuid, &((EFI_IFR_REF3 *)OpCodeData)->FormSetId, sizeof (EFI_GUID));
+            if (OpCodeLength >= sizeof (EFI_IFR_REF2)) {
+              CopyMem (&Value->Value.ref.QuestionId, &((EFI_IFR_REF2 *)OpCodeData)->QuestionId, sizeof (EFI_QUESTION_ID));
 
-              if (OpCodeLength >= sizeof (EFI_IFR_REF4)) {
-                CopyMem (&Value->Value.ref.DevicePath, &((EFI_IFR_REF4 *)OpCodeData)->DevicePath, sizeof (EFI_STRING_ID));
+              if (OpCodeLength >= sizeof (EFI_IFR_REF3)) {
+                CopyMem (&Value->Value.ref.FormSetGuid, &((EFI_IFR_REF3 *)OpCodeData)->FormSetId, sizeof (EFI_GUID));
+
+                if (OpCodeLength >= sizeof (EFI_IFR_REF4)) {
+                  CopyMem (&Value->Value.ref.DevicePath, &((EFI_IFR_REF4 *)OpCodeData)->DevicePath, sizeof (EFI_STRING_ID));
+                }
               }
             }
           }
+
+          CurrentStatement->StorageWidth = (UINT16)sizeof (EFI_HII_REF);
+          InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
         }
 
-        CurrentStatement->StorageWidth = (UINT16)sizeof (EFI_HII_REF);
-        InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
         break;
 
       case EFI_IFR_ONE_OF_OP:
@@ -1889,102 +1910,105 @@ ParseOpCodes (
         CurrentStatement = CreateQuestion (OpCodeData, FormSet, CurrentForm);
         ASSERT (CurrentStatement != NULL);
 
-        CurrentStatement->Flags = ((EFI_IFR_ONE_OF *)OpCodeData)->Flags;
-        Value                   = &CurrentStatement->HiiValue;
+        // MU_CHANGE - Verify valid before pointer dereference
+        if (CurrentStatement != NULL) {
+          CurrentStatement->Flags = ((EFI_IFR_ONE_OF *)OpCodeData)->Flags;
+          Value                   = &CurrentStatement->HiiValue;
 
-        if (QuestionReferBitField) {
-          //
-          // Get the bit var store info (bit/byte offset, bit/byte offset)
-          //
-          CurrentStatement->QuestionReferToBitField = TRUE;
-          CurrentStatement->BitStorageWidth         = CurrentStatement->Flags & EDKII_IFR_NUMERIC_SIZE_BIT;
-          CurrentStatement->BitVarOffset            = CurrentStatement->VarStoreInfo.VarOffset;
-          CurrentStatement->VarStoreInfo.VarOffset  = CurrentStatement->BitVarOffset / 8;
-          TotalBits                                 = CurrentStatement->BitVarOffset % 8 + CurrentStatement->BitStorageWidth;
-          CurrentStatement->StorageWidth            = (TotalBits % 8 == 0 ? TotalBits / 8 : TotalBits / 8 + 1);
+          if (QuestionReferBitField) {
+            //
+            // Get the bit var store info (bit/byte offset, bit/byte offset)
+            //
+            CurrentStatement->QuestionReferToBitField = TRUE;
+            CurrentStatement->BitStorageWidth         = CurrentStatement->Flags & EDKII_IFR_NUMERIC_SIZE_BIT;
+            CurrentStatement->BitVarOffset            = CurrentStatement->VarStoreInfo.VarOffset;
+            CurrentStatement->VarStoreInfo.VarOffset  = CurrentStatement->BitVarOffset / 8;
+            TotalBits                                 = CurrentStatement->BitVarOffset % 8 + CurrentStatement->BitStorageWidth;
+            CurrentStatement->StorageWidth            = (TotalBits % 8 == 0 ? TotalBits / 8 : TotalBits / 8 + 1);
 
-          //
-          // Get the Minimum/Maximum/Step value(Note: bit field type has been stored as UINT32 type)
-          //
-          CurrentStatement->Minimum = ((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.MinValue;
-          CurrentStatement->Maximum = ((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.MaxValue;
-          CurrentStatement->Step    = ((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.Step;
+            //
+            // Get the Minimum/Maximum/Step value(Note: bit field type has been stored as UINT32 type)
+            //
+            CurrentStatement->Minimum = ((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.MinValue;
+            CurrentStatement->Maximum = ((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.MaxValue;
+            CurrentStatement->Step    = ((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.Step;
 
-          //
-          // Update the Flag and type of Minimum/Maximum/Step according to the actual width of bit field,
-          // in order to make Browser handle these question with bit varstore correctly.
-          //
-          ((EFI_IFR_NUMERIC *)OpCodeData)->Flags  &=  EDKII_IFR_DISPLAY_BIT;
-          ((EFI_IFR_NUMERIC *)OpCodeData)->Flags >>= 2;
-          switch (CurrentStatement->StorageWidth) {
-            case 1:
-              ((EFI_IFR_NUMERIC *)OpCodeData)->Flags           |= EFI_IFR_TYPE_NUM_SIZE_8;
-              ((EFI_IFR_NUMERIC *)OpCodeData)->data.u8.MinValue = (UINT8)CurrentStatement->Minimum;
-              ((EFI_IFR_NUMERIC *)OpCodeData)->data.u8.MaxValue = (UINT8)CurrentStatement->Maximum;
-              ((EFI_IFR_NUMERIC *)OpCodeData)->data.u8.Step     = (UINT8)CurrentStatement->Step;
-              Value->Type                                       = EFI_IFR_TYPE_NUM_SIZE_8;
-              break;
-            case 2:
-              ((EFI_IFR_NUMERIC *)OpCodeData)->Flags            |= EFI_IFR_TYPE_NUM_SIZE_16;
-              ((EFI_IFR_NUMERIC *)OpCodeData)->data.u16.MinValue = (UINT16)CurrentStatement->Minimum;
-              ((EFI_IFR_NUMERIC *)OpCodeData)->data.u16.MaxValue = (UINT16)CurrentStatement->Maximum;
-              ((EFI_IFR_NUMERIC *)OpCodeData)->data.u16.Step     = (UINT16)CurrentStatement->Step;
-              Value->Type                                        = EFI_IFR_TYPE_NUM_SIZE_16;
-              break;
-            case 3:
-            case 4:
-              ((EFI_IFR_NUMERIC *)OpCodeData)->Flags            |= EFI_IFR_TYPE_NUM_SIZE_32;
-              ((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.MinValue = (UINT32)CurrentStatement->Minimum;
-              ((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.MaxValue = (UINT32)CurrentStatement->Maximum;
-              ((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.Step     = (UINT32)CurrentStatement->Step;
-              Value->Type                                        = EFI_IFR_TYPE_NUM_SIZE_32;
-              break;
-            default:
-              break;
+            //
+            // Update the Flag and type of Minimum/Maximum/Step according to the actual width of bit field,
+            // in order to make Browser handle these question with bit varstore correctly.
+            //
+            ((EFI_IFR_NUMERIC *)OpCodeData)->Flags  &=  EDKII_IFR_DISPLAY_BIT;
+            ((EFI_IFR_NUMERIC *)OpCodeData)->Flags >>= 2;
+            switch (CurrentStatement->StorageWidth) {
+              case 1:
+                ((EFI_IFR_NUMERIC *)OpCodeData)->Flags           |= EFI_IFR_TYPE_NUM_SIZE_8;
+                ((EFI_IFR_NUMERIC *)OpCodeData)->data.u8.MinValue = (UINT8)CurrentStatement->Minimum;
+                ((EFI_IFR_NUMERIC *)OpCodeData)->data.u8.MaxValue = (UINT8)CurrentStatement->Maximum;
+                ((EFI_IFR_NUMERIC *)OpCodeData)->data.u8.Step     = (UINT8)CurrentStatement->Step;
+                Value->Type                                       = EFI_IFR_TYPE_NUM_SIZE_8;
+                break;
+              case 2:
+                ((EFI_IFR_NUMERIC *)OpCodeData)->Flags            |= EFI_IFR_TYPE_NUM_SIZE_16;
+                ((EFI_IFR_NUMERIC *)OpCodeData)->data.u16.MinValue = (UINT16)CurrentStatement->Minimum;
+                ((EFI_IFR_NUMERIC *)OpCodeData)->data.u16.MaxValue = (UINT16)CurrentStatement->Maximum;
+                ((EFI_IFR_NUMERIC *)OpCodeData)->data.u16.Step     = (UINT16)CurrentStatement->Step;
+                Value->Type                                        = EFI_IFR_TYPE_NUM_SIZE_16;
+                break;
+              case 3:
+              case 4:
+                ((EFI_IFR_NUMERIC *)OpCodeData)->Flags            |= EFI_IFR_TYPE_NUM_SIZE_32;
+                ((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.MinValue = (UINT32)CurrentStatement->Minimum;
+                ((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.MaxValue = (UINT32)CurrentStatement->Maximum;
+                ((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.Step     = (UINT32)CurrentStatement->Step;
+                Value->Type                                        = EFI_IFR_TYPE_NUM_SIZE_32;
+                break;
+              default:
+                break;
+            }
+          } else {
+            switch (CurrentStatement->Flags & EFI_IFR_NUMERIC_SIZE) {
+              case EFI_IFR_NUMERIC_SIZE_1:
+                CurrentStatement->Minimum      = ((EFI_IFR_NUMERIC *)OpCodeData)->data.u8.MinValue;
+                CurrentStatement->Maximum      = ((EFI_IFR_NUMERIC *)OpCodeData)->data.u8.MaxValue;
+                CurrentStatement->Step         = ((EFI_IFR_NUMERIC *)OpCodeData)->data.u8.Step;
+                CurrentStatement->StorageWidth = (UINT16)sizeof (UINT8);
+                Value->Type                    = EFI_IFR_TYPE_NUM_SIZE_8;
+                break;
+
+              case EFI_IFR_NUMERIC_SIZE_2:
+                CopyMem (&CurrentStatement->Minimum, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u16.MinValue, sizeof (UINT16));
+                CopyMem (&CurrentStatement->Maximum, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u16.MaxValue, sizeof (UINT16));
+                CopyMem (&CurrentStatement->Step, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u16.Step, sizeof (UINT16));
+                CurrentStatement->StorageWidth = (UINT16)sizeof (UINT16);
+                Value->Type                    = EFI_IFR_TYPE_NUM_SIZE_16;
+                break;
+
+              case EFI_IFR_NUMERIC_SIZE_4:
+                CopyMem (&CurrentStatement->Minimum, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.MinValue, sizeof (UINT32));
+                CopyMem (&CurrentStatement->Maximum, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.MaxValue, sizeof (UINT32));
+                CopyMem (&CurrentStatement->Step, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.Step, sizeof (UINT32));
+                CurrentStatement->StorageWidth = (UINT16)sizeof (UINT32);
+                Value->Type                    = EFI_IFR_TYPE_NUM_SIZE_32;
+                break;
+
+              case EFI_IFR_NUMERIC_SIZE_8:
+                CopyMem (&CurrentStatement->Minimum, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u64.MinValue, sizeof (UINT64));
+                CopyMem (&CurrentStatement->Maximum, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u64.MaxValue, sizeof (UINT64));
+                CopyMem (&CurrentStatement->Step, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u64.Step, sizeof (UINT64));
+                CurrentStatement->StorageWidth = (UINT16)sizeof (UINT64);
+                Value->Type                    = EFI_IFR_TYPE_NUM_SIZE_64;
+                break;
+
+              default:
+                break;
+            }
           }
-        } else {
-          switch (CurrentStatement->Flags & EFI_IFR_NUMERIC_SIZE) {
-            case EFI_IFR_NUMERIC_SIZE_1:
-              CurrentStatement->Minimum      = ((EFI_IFR_NUMERIC *)OpCodeData)->data.u8.MinValue;
-              CurrentStatement->Maximum      = ((EFI_IFR_NUMERIC *)OpCodeData)->data.u8.MaxValue;
-              CurrentStatement->Step         = ((EFI_IFR_NUMERIC *)OpCodeData)->data.u8.Step;
-              CurrentStatement->StorageWidth = (UINT16)sizeof (UINT8);
-              Value->Type                    = EFI_IFR_TYPE_NUM_SIZE_8;
-              break;
 
-            case EFI_IFR_NUMERIC_SIZE_2:
-              CopyMem (&CurrentStatement->Minimum, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u16.MinValue, sizeof (UINT16));
-              CopyMem (&CurrentStatement->Maximum, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u16.MaxValue, sizeof (UINT16));
-              CopyMem (&CurrentStatement->Step, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u16.Step, sizeof (UINT16));
-              CurrentStatement->StorageWidth = (UINT16)sizeof (UINT16);
-              Value->Type                    = EFI_IFR_TYPE_NUM_SIZE_16;
-              break;
+          InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
 
-            case EFI_IFR_NUMERIC_SIZE_4:
-              CopyMem (&CurrentStatement->Minimum, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.MinValue, sizeof (UINT32));
-              CopyMem (&CurrentStatement->Maximum, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.MaxValue, sizeof (UINT32));
-              CopyMem (&CurrentStatement->Step, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u32.Step, sizeof (UINT32));
-              CurrentStatement->StorageWidth = (UINT16)sizeof (UINT32);
-              Value->Type                    = EFI_IFR_TYPE_NUM_SIZE_32;
-              break;
-
-            case EFI_IFR_NUMERIC_SIZE_8:
-              CopyMem (&CurrentStatement->Minimum, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u64.MinValue, sizeof (UINT64));
-              CopyMem (&CurrentStatement->Maximum, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u64.MaxValue, sizeof (UINT64));
-              CopyMem (&CurrentStatement->Step, &((EFI_IFR_NUMERIC *)OpCodeData)->data.u64.Step, sizeof (UINT64));
-              CurrentStatement->StorageWidth = (UINT16)sizeof (UINT64);
-              Value->Type                    = EFI_IFR_TYPE_NUM_SIZE_64;
-              break;
-
-            default:
-              break;
+          if ((Operand == EFI_IFR_ONE_OF_OP) && (Scope != 0)) {
+            SuppressForOption = TRUE;
           }
-        }
-
-        InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
-
-        if ((Operand == EFI_IFR_ONE_OF_OP) && (Scope != 0)) {
-          SuppressForOption = TRUE;
         }
 
         break;
@@ -1993,14 +2017,17 @@ ParseOpCodes (
         CurrentStatement = CreateQuestion (OpCodeData, FormSet, CurrentForm);
         ASSERT (CurrentStatement != NULL);
 
-        CurrentStatement->Flags         = ((EFI_IFR_ORDERED_LIST *)OpCodeData)->Flags;
-        CurrentStatement->MaxContainers = ((EFI_IFR_ORDERED_LIST *)OpCodeData)->MaxContainers;
+        // MU_CHANGE - Verify valid before pointer dereference
+        if (CurrentStatement != NULL) {
+          CurrentStatement->Flags         = ((EFI_IFR_ORDERED_LIST *)OpCodeData)->Flags;
+          CurrentStatement->MaxContainers = ((EFI_IFR_ORDERED_LIST *)OpCodeData)->MaxContainers;
 
-        CurrentStatement->HiiValue.Type = EFI_IFR_TYPE_BUFFER;
-        CurrentStatement->BufferValue   = NULL;
+          CurrentStatement->HiiValue.Type = EFI_IFR_TYPE_BUFFER;
+          CurrentStatement->BufferValue   = NULL;
 
-        if (Scope != 0) {
-          SuppressForOption = TRUE;
+          if (Scope != 0) {
+            SuppressForOption = TRUE;
+          }
         }
 
         break;
@@ -2009,82 +2036,98 @@ ParseOpCodes (
         CurrentStatement = CreateQuestion (OpCodeData, FormSet, CurrentForm);
         ASSERT (CurrentStatement != NULL);
 
-        CurrentStatement->Flags         = ((EFI_IFR_CHECKBOX *)OpCodeData)->Flags;
-        CurrentStatement->StorageWidth  = (UINT16)sizeof (BOOLEAN);
-        CurrentStatement->HiiValue.Type = EFI_IFR_TYPE_BOOLEAN;
+        // MU_CHANGE - Verify valid before pointer dereference
+        if (CurrentStatement != NULL) {
+          CurrentStatement->Flags         = ((EFI_IFR_CHECKBOX *)OpCodeData)->Flags;
+          CurrentStatement->StorageWidth  = (UINT16)sizeof (BOOLEAN);
+          CurrentStatement->HiiValue.Type = EFI_IFR_TYPE_BOOLEAN;
 
-        if (QuestionReferBitField) {
-          //
-          // Get the bit var store info (bit/byte offset, bit/byte offset)
-          //
-          CurrentStatement->QuestionReferToBitField = TRUE;
-          CurrentStatement->BitStorageWidth         = 1;
-          CurrentStatement->BitVarOffset            = CurrentStatement->VarStoreInfo.VarOffset;
-          CurrentStatement->VarStoreInfo.VarOffset  = CurrentStatement->BitVarOffset / 8;
-          TotalBits                                 = CurrentStatement->BitVarOffset % 8 + CurrentStatement->BitStorageWidth;
-          CurrentStatement->StorageWidth            = (TotalBits % 8 == 0 ? TotalBits / 8 : TotalBits / 8 + 1);
+          if (QuestionReferBitField) {
+            //
+            // Get the bit var store info (bit/byte offset, bit/byte offset)
+            //
+            CurrentStatement->QuestionReferToBitField = TRUE;
+            CurrentStatement->BitStorageWidth         = 1;
+            CurrentStatement->BitVarOffset            = CurrentStatement->VarStoreInfo.VarOffset;
+            CurrentStatement->VarStoreInfo.VarOffset  = CurrentStatement->BitVarOffset / 8;
+            TotalBits                                 = CurrentStatement->BitVarOffset % 8 + CurrentStatement->BitStorageWidth;
+            CurrentStatement->StorageWidth            = (TotalBits % 8 == 0 ? TotalBits / 8 : TotalBits / 8 + 1);
+          }
+
+          InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
         }
-
-        InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
 
         break;
 
       case EFI_IFR_STRING_OP:
         CurrentStatement = CreateQuestion (OpCodeData, FormSet, CurrentForm);
         ASSERT (CurrentStatement != NULL);
-        //
-        // MinSize is the minimum number of characters that can be accepted for this opcode,
-        // MaxSize is the maximum number of characters that can be accepted for this opcode.
-        // The characters are stored as Unicode, so the storage width should multiply 2.
-        //
-        CurrentStatement->Minimum      = ((EFI_IFR_STRING *)OpCodeData)->MinSize;
-        CurrentStatement->Maximum      = ((EFI_IFR_STRING *)OpCodeData)->MaxSize;
-        CurrentStatement->StorageWidth = (UINT16)((UINTN)CurrentStatement->Maximum * sizeof (CHAR16));
-        CurrentStatement->Flags        = ((EFI_IFR_STRING *)OpCodeData)->Flags;
 
-        CurrentStatement->HiiValue.Type         = EFI_IFR_TYPE_STRING;
-        CurrentStatement->BufferValue           = AllocateZeroPool (CurrentStatement->StorageWidth + sizeof (CHAR16));
-        CurrentStatement->HiiValue.Value.string = NewString ((CHAR16 *)CurrentStatement->BufferValue, FormSet->HiiHandle);
+        // MU_CHANGE - Verify valid before pointer dereference
+        if (CurrentStatement != NULL) {
+          //
+          // MinSize is the minimum number of characters that can be accepted for this opcode,
+          // MaxSize is the maximum number of characters that can be accepted for this opcode.
+          // The characters are stored as Unicode, so the storage width should multiply 2.
+          //
+          CurrentStatement->Minimum      = ((EFI_IFR_STRING *)OpCodeData)->MinSize;
+          CurrentStatement->Maximum      = ((EFI_IFR_STRING *)OpCodeData)->MaxSize;
+          CurrentStatement->StorageWidth = (UINT16)((UINTN)CurrentStatement->Maximum * sizeof (CHAR16));
+          CurrentStatement->Flags        = ((EFI_IFR_STRING *)OpCodeData)->Flags;
 
-        InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
+          CurrentStatement->HiiValue.Type         = EFI_IFR_TYPE_STRING;
+          CurrentStatement->BufferValue           = AllocateZeroPool (CurrentStatement->StorageWidth + sizeof (CHAR16));
+          CurrentStatement->HiiValue.Value.string = NewString ((CHAR16 *)CurrentStatement->BufferValue, FormSet->HiiHandle);
+
+          InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
+        }
+
         break;
 
       case EFI_IFR_PASSWORD_OP:
         CurrentStatement = CreateQuestion (OpCodeData, FormSet, CurrentForm);
         ASSERT (CurrentStatement != NULL);
-        //
-        // MinSize is the minimum number of characters that can be accepted for this opcode,
-        // MaxSize is the maximum number of characters that can be accepted for this opcode.
-        // The characters are stored as Unicode, so the storage width should multiply 2.
-        //
-        CopyMem (&CurrentStatement->Minimum, &((EFI_IFR_PASSWORD *)OpCodeData)->MinSize, sizeof (UINT16));
-        CopyMem (&CurrentStatement->Maximum, &((EFI_IFR_PASSWORD *)OpCodeData)->MaxSize, sizeof (UINT16));
-        CurrentStatement->StorageWidth = (UINT16)((UINTN)CurrentStatement->Maximum * sizeof (CHAR16));
 
-        CurrentStatement->HiiValue.Type         = EFI_IFR_TYPE_STRING;
-        CurrentStatement->BufferValue           = AllocateZeroPool ((CurrentStatement->StorageWidth + sizeof (CHAR16)));
-        CurrentStatement->HiiValue.Value.string = NewString ((CHAR16 *)CurrentStatement->BufferValue, FormSet->HiiHandle);
+        // MU_CHANGE - Verify valid before pointer dereference
+        if (CurrentStatement != NULL) {
+          //
+          // MinSize is the minimum number of characters that can be accepted for this opcode,
+          // MaxSize is the maximum number of characters that can be accepted for this opcode.
+          // The characters are stored as Unicode, so the storage width should multiply 2.
+          //
+          CopyMem (&CurrentStatement->Minimum, &((EFI_IFR_PASSWORD *)OpCodeData)->MinSize, sizeof (UINT16));
+          CopyMem (&CurrentStatement->Maximum, &((EFI_IFR_PASSWORD *)OpCodeData)->MaxSize, sizeof (UINT16));
+          CurrentStatement->StorageWidth = (UINT16)((UINTN)CurrentStatement->Maximum * sizeof (CHAR16));
 
-        InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
+          CurrentStatement->HiiValue.Type         = EFI_IFR_TYPE_STRING;
+          CurrentStatement->BufferValue           = AllocateZeroPool ((CurrentStatement->StorageWidth + sizeof (CHAR16)));
+          CurrentStatement->HiiValue.Value.string = NewString ((CHAR16 *)CurrentStatement->BufferValue, FormSet->HiiHandle);
+
+          InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
+        }
+
         break;
 
       case EFI_IFR_DATE_OP:
         CurrentStatement = CreateQuestion (OpCodeData, FormSet, CurrentForm);
         ASSERT (CurrentStatement != NULL);
 
-        CurrentStatement->Flags         = ((EFI_IFR_DATE *)OpCodeData)->Flags;
-        CurrentStatement->HiiValue.Type = EFI_IFR_TYPE_DATE;
+        // MU_CHANGE - Verify valid before pointer dereference
+        if (CurrentStatement != NULL) {
+          CurrentStatement->Flags         = ((EFI_IFR_DATE *)OpCodeData)->Flags;
+          CurrentStatement->HiiValue.Type = EFI_IFR_TYPE_DATE;
 
-        if ((CurrentStatement->Flags & EFI_QF_DATE_STORAGE) == QF_DATE_STORAGE_NORMAL) {
-          CurrentStatement->StorageWidth = (UINT16)sizeof (EFI_HII_DATE);
+          if ((CurrentStatement->Flags & EFI_QF_DATE_STORAGE) == QF_DATE_STORAGE_NORMAL) {
+            CurrentStatement->StorageWidth = (UINT16)sizeof (EFI_HII_DATE);
 
-          InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
-        } else {
-          //
-          // Don't assign storage for RTC type of date/time
-          //
-          CurrentStatement->Storage      = NULL;
-          CurrentStatement->StorageWidth = 0;
+            InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
+          } else {
+            //
+            // Don't assign storage for RTC type of date/time
+            //
+            CurrentStatement->Storage      = NULL;
+            CurrentStatement->StorageWidth = 0;
+          }
         }
 
         break;
@@ -2093,19 +2136,22 @@ ParseOpCodes (
         CurrentStatement = CreateQuestion (OpCodeData, FormSet, CurrentForm);
         ASSERT (CurrentStatement != NULL);
 
-        CurrentStatement->Flags         = ((EFI_IFR_TIME *)OpCodeData)->Flags;
-        CurrentStatement->HiiValue.Type = EFI_IFR_TYPE_TIME;
+        // MU_CHANGE - Verify valid before pointer dereference
+        if (CurrentStatement != NULL) {
+          CurrentStatement->Flags         = ((EFI_IFR_TIME *)OpCodeData)->Flags;
+          CurrentStatement->HiiValue.Type = EFI_IFR_TYPE_TIME;
 
-        if ((CurrentStatement->Flags & QF_TIME_STORAGE) == QF_TIME_STORAGE_NORMAL) {
-          CurrentStatement->StorageWidth = (UINT16)sizeof (EFI_HII_TIME);
+          if ((CurrentStatement->Flags & QF_TIME_STORAGE) == QF_TIME_STORAGE_NORMAL) {
+            CurrentStatement->StorageWidth = (UINT16)sizeof (EFI_HII_TIME);
 
-          InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
-        } else {
-          //
-          // Don't assign storage for RTC type of date/time
-          //
-          CurrentStatement->Storage      = NULL;
-          CurrentStatement->StorageWidth = 0;
+            InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
+          } else {
+            //
+            // Don't assign storage for RTC type of date/time
+            //
+            CurrentStatement->Storage      = NULL;
+            CurrentStatement->StorageWidth = 0;
+          }
         }
 
         break;

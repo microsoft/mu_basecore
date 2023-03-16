@@ -191,6 +191,11 @@ UiSupportLibCallbackHandler (
 
   if (Action == EFI_BROWSER_ACTION_RETRIEVE) {
     if (QuestionId == FRONT_PAGE_KEY_LANGUAGE) {
+      if (Value == NULL) {
+        *Status = EFI_INVALID_PARAMETER;
+        return FALSE;
+      }
+
       Value->u8 = gCurrentLanguageIndex;
       *Status   = EFI_SUCCESS;
     } else {

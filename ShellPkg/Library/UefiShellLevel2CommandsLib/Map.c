@@ -82,7 +82,13 @@ SearchList (
        )
   {
     TempList = StrnCatGrow (&TempList, NULL, ListWalker, 0);
-    ASSERT (TempList != NULL);
+    // MU_CHANGE [START] - CodeQL change
+    if (TempList == NULL) {
+      ASSERT (TempList != NULL);
+      return (FALSE);
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     TempSpot = StrStr (TempList, Target);
     if (TempSpot != NULL) {
       *TempSpot = CHAR_NULL;

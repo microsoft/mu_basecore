@@ -988,6 +988,8 @@ CoreOpenProtocol (
     return EFI_INVALID_PARAMETER;
   }
 
+  // MU_CHANGE - Handle code path that does not initialize Prot
+  Prot = NULL;
   //
   // Lock the protocol database
   //
@@ -1166,16 +1168,7 @@ Done:
     // Keep Interface unmodified in case of any Error
     // except EFI_ALREADY_STARTED and EFI_UNSUPPORTED.
     //
-    if (!EFI_ERROR (Status) || (Status == EFI_ALREADY_STARTED)) {
-      //
-      // According to above logic, if 'Prot' is NULL, then the 'Status' must be
-      // EFI_UNSUPPORTED. Here the 'Status' is not EFI_UNSUPPORTED, so 'Prot'
-      // must be not NULL.
-      //
-      // The ASSERT here is for addressing a false positive NULL pointer
-      // dereference issue raised from static analysis.
-      //
-      ASSERT (Prot != NULL);
+    if ((!EFI_ERROR (Status) || (Status == EFI_ALREADY_STARTED)) && (Prot != NULL)) {
       //
       // EFI_ALREADY_STARTED is not an error for bus driver.
       // Return the corresponding protocol interface.

@@ -1142,7 +1142,7 @@ DeleteScriptFileStruct (
   IN SCRIPT_FILE  *Script
   )
 {
-  UINT8  LoopVar;
+  UINTN  LoopVar;
 
   if (Script == NULL) {
     return;
@@ -1458,7 +1458,15 @@ ShellCommandCreateInitialMappingsAndPaths (
     //
     PerformQuickSort (DevicePathList, Count, sizeof (EFI_DEVICE_PATH_PROTOCOL *), DevicePathCompare);
 
-    ShellCommandConsistMappingInitialize (&ConsistMappingTable);
+    Status = ShellCommandConsistMappingInitialize (&ConsistMappingTable);
+    // MU_CHANGE [START] - CodeQL change
+    if (EFI_ERROR (Status)) {
+      SHELL_FREE_NON_NULL (HandleList);
+      SHELL_FREE_NON_NULL (DevicePathList);
+      return Status;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     //
     // Assign new Mappings to all...
     //
@@ -1625,9 +1633,14 @@ ShellCommandUpdateMapping (
     // Sort all DevicePaths
     //
     PerformQuickSort (DevicePathList, Count, sizeof (EFI_DEVICE_PATH_PROTOCOL *), DevicePathCompare);
+    // MU_CHANGE [START] - CodeQL change
+    Status = ShellCommandConsistMappingInitialize (&ConsistMappingTable);
 
-    ShellCommandConsistMappingInitialize (&ConsistMappingTable);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
 
+    // MU_CHANGE [END] - CodeQL change
     //
     // Assign new Mappings to remainders
     //

@@ -1193,8 +1193,10 @@ IfConfig6SetInterfaceInfo (
   EFI_EVENT       MappedEvt;
   BOOLEAN         IsAddressOk;
 
-  UINTN                          DataSize;
-  UINT32                         Index;
+  UINTN  DataSize;
+  // MU_CHANGE [START] - CodeQL change
+  UINTN  Index;
+  // MU_CHANGE [END] - CodeQL change
   UINT32                         Index2;
   BOOLEAN                        IsAddressSet;
   EFI_IP6_CONFIG_INTERFACE_INFO  *IfInfo;

@@ -1350,6 +1350,12 @@ IfrCatenate (
     MaxLen    = (StrSize (String[1]) + Size) / sizeof (CHAR16);
     StringPtr = AllocatePool (MaxLen * sizeof (CHAR16));
     ASSERT (StringPtr != NULL);
+
+    // MU_CHANGE - Verify allocation or bail out
+    if (StringPtr == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
     StrCpyS (StringPtr, MaxLen, String[1]);
     StrCatS (StringPtr, MaxLen, String[0]);
 
@@ -1830,6 +1836,10 @@ IfrMid (
   } else {
     BufferLen = GetLengthForValue (&Value[2]);
     Buffer    = GetBufferForValue (&Value[2]);
+    // MU_CHANGE - Verify valid pointer or bail out
+    if (Buffer == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
 
     Result->Type = EFI_IFR_TYPE_BUFFER;
     if ((Length == 0) || (Base >= BufferLen)) {
@@ -2257,6 +2267,10 @@ CompareHiiValue (
     Buf1Len = GetLengthForValue (Value1);
     Buf2    = GetBufferForValue (Value2);
     Buf2Len = GetLengthForValue (Value2);
+    // MU_CHANGE - Verify valid pointers or bail out
+    if ((Buf1 == NULL) || (Buf2 == NULL)) {
+      return EFI_INVALID_PARAMETER;
+    }
 
     Len     = Buf1Len > Buf2Len ? Buf2Len : Buf1Len;
     *Result = CompareMem (Buf1, Buf2, Len);
@@ -2544,7 +2558,7 @@ EvaluateExpression (
   EXPRESSION_OPCODE         *OpCode;
   FORM_BROWSER_STATEMENT    *Question;
   FORM_BROWSER_STATEMENT    *Question2;
-  UINT16                    Index;
+  UINTN                     Index;
   EFI_HII_VALUE             Data1;
   EFI_HII_VALUE             Data2;
   EFI_HII_VALUE             Data3;
@@ -2649,7 +2663,7 @@ EvaluateExpression (
         }
 
         Value->Value.b = FALSE;
-        for (Index = 0; Index < OpCode->ListLength; Index++) {
+        for (Index = 0; Index < (UINTN)OpCode->ListLength; Index++) {
           if (Question->HiiValue.Value.u16 == OpCode->ValueList[Index]) {
             Value->Value.b = TRUE;
             break;
@@ -3012,8 +3026,8 @@ EvaluateExpression (
           //
           Value->Value.string = NewString (gEmptyString, FormSet->HiiHandle);
         } else {
-          Index               = (UINT16)Value->Value.u64;
-          Value->Value.string = Index;
+          Index               = (UINTN)Value->Value.u64;
+          Value->Value.string = (UINT16)Index;
           FreePool (StrPtr);
         }
 

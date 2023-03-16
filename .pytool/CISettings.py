@@ -188,6 +188,11 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                         "STUART_CODEQL_AUDIT_ONLY",
                         "TRUE",
                         "Set in CISettings.py")
+                    shell_environment.GetBuildVars().SetValue(
+                        "STUART_CODEQL_FILTER_FILES",
+                        os.path.join(self.GetWorkspaceRoot(),
+                                     "CodeQlFilters.yml"),
+                        "Set in CISettings.py")
             except NameError:
                 pass
 

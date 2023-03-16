@@ -113,9 +113,23 @@ VlanExtractConfig (
     // followed by "&OFFSET=0&WIDTH=WWWWWWWWWWWWWWWW" followed by a Null-terminator
     //
     ConfigRequestHdr = HiiConstructConfigHdr (&gVlanConfigFormSetGuid, mVlanStorageName, PrivateData->DriverHandle);
-    Size             = (StrLen (ConfigRequestHdr) + 32 + 1) * sizeof (CHAR16);
-    ConfigRequest    = AllocateZeroPool (Size);
-    ASSERT (ConfigRequest != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (ConfigRequestHdr == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+    Size          = (StrLen (ConfigRequestHdr) + 32 + 1) * sizeof (CHAR16);
+    ConfigRequest = AllocateZeroPool (Size);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (ConfigRequest == NULL) {
+      ASSERT (ConfigRequest != NULL);
+      FreePool (ConfigRequestHdr);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+
     AllocatedRequest = TRUE;
     UnicodeSPrint (ConfigRequest, Size, L"%s&OFFSET=0&WIDTH=%016LX", ConfigRequestHdr, (UINT64)BufferSize);
     FreePool (ConfigRequestHdr);
@@ -374,11 +388,19 @@ VlanUpdateForm (
   // Init OpCode Handle
   //
   StartOpCodeHandle = HiiAllocateOpCodeHandle ();
-  ASSERT (StartOpCodeHandle != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (StartOpCodeHandle == NULL) {
+    ASSERT (StartOpCodeHandle != NULL);
+    return;
+  }
 
   EndOpCodeHandle = HiiAllocateOpCodeHandle ();
-  ASSERT (EndOpCodeHandle != NULL);
+  if (EndOpCodeHandle == NULL) {
+    ASSERT (EndOpCodeHandle != NULL);
+    return;
+  }
 
+  // MU_CHANGE [END] - CodeQL change
   //
   // Create Hii Extend Label OpCode as the start opcode
   //
@@ -431,7 +453,13 @@ VlanUpdateForm (
     *String = 0;
 
     StringId = HiiSetString (PrivateData->HiiHandle, 0, VlanStr, NULL);
-    ASSERT (StringId != 0);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (StringId == 0) {
+      ASSERT (StringId != 0);
+      continue;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     HiiCreateCheckBoxOpCode (
       StartOpCodeHandle,

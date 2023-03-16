@@ -1259,9 +1259,15 @@ LocateStartupScript (
     }
 
     InternalEfiShellSetEnv (L"homefilesystem", StartupScriptPath, TRUE);
+    // MU_CHANGE START: Ensure FileDevicePath is a FILEPATH_DEVICE_PATH prior to accessing PathName
+    if ((FileDevicePath->Type == MEDIA_DEVICE_PATH) && (FileDevicePath->SubType == MEDIA_FILEPATH_DP)) {
+      StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, ((FILEPATH_DEVICE_PATH *)FileDevicePath)->PathName, 0);
+      PathRemoveLastItem (StartupScriptPath);
+    } else {
+      StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, L"\\", 0);
+    }
 
-    StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, ((FILEPATH_DEVICE_PATH *)FileDevicePath)->PathName, 0);
-    PathRemoveLastItem (StartupScriptPath);
+    // MU_CHANGE END
     StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, mStartupScript, 0);
   }
 
@@ -1324,7 +1330,9 @@ DoStartupScript (
     }
 
     Status = RunShellCommand (FileStringPath, &CalleeStatus);
-    if (ShellInfoObject.ShellInitSettings.BitUnion.Bits.Exit == TRUE) {
+    // MU_CHANGE [START] - CodeQL change
+    if ((!EFI_ERROR (Status)) && (ShellInfoObject.ShellInitSettings.BitUnion.Bits.Exit == TRUE)) {
+      // MU_CHANGE [END] - CodeQL change
       ShellCommandRegisterExit (gEfiShellProtocol->BatchIsActive (), (UINT64)CalleeStatus);
     }
 
@@ -2607,11 +2615,19 @@ RunCommandOrFile (
         CommandWithPath = ShellFindFilePathEx (FirstParameter, mExecutableExtensions);
       }
 
-      //
-      // This should be impossible now.
-      //
-      ASSERT (CommandWithPath != NULL);
+      // MU_CHANGE [START] - CodeQL change
+      if (CommandWithPath == NULL) {
+        //
+        // This should be impossible now.
+        //
+        ASSERT (CommandWithPath != NULL);
+        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_SHELL_NOT_FOUND), ShellInfoObject.HiiHandle, FirstParameter);
+        SetLastError (SHELL_NOT_FOUND);
+        SHELL_FREE_NON_NULL (CommandWithPath);
+        return EFI_NOT_FOUND;
+      }
 
+      // MU_CHANGE [END] - CodeQL change
       //
       // Make sure that path is not just a directory (or not found)
       //
@@ -3328,8 +3344,11 @@ FindFirstCharacter (
   IN CONST CHAR16  EscapeCharacter
   )
 {
-  UINT32  WalkChar;
-  UINT32  WalkStr;
+  // MU_CHANGE [START] - CodeQL change
+  UINTN  WalkChar;
+  UINTN  WalkStr;
+
+  // MU_CHANGE [END] - CodeQL change
 
   for (WalkStr = 0; WalkStr < StrLen (String); WalkStr++) {
     if (String[WalkStr] == EscapeCharacter) {

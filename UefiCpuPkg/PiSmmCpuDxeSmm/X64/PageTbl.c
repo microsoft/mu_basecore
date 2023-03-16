@@ -271,7 +271,13 @@ SetStaticPageTable (
       PageMapLevel4Entry = (UINT64 *)((*PageMapLevel5Entry) & ~mAddressEncMask & gPhyMask);
       if (PageMapLevel4Entry == NULL) {
         PageMapLevel4Entry = AllocatePageTableMemory (1);
-        ASSERT (PageMapLevel4Entry != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (PageMapLevel4Entry == NULL) {
+          ASSERT (PageMapLevel4Entry != NULL);
+          continue;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         ZeroMem (PageMapLevel4Entry, EFI_PAGES_TO_SIZE (1));
 
         *PageMapLevel5Entry = (UINT64)(UINTN)PageMapLevel4Entry | mAddressEncMask | PAGE_ATTRIBUTE_BITS;
@@ -285,7 +291,13 @@ SetStaticPageTable (
       PageDirectoryPointerEntry = (UINT64 *)((*PageMapLevel4Entry) & ~mAddressEncMask & gPhyMask);
       if (PageDirectoryPointerEntry == NULL) {
         PageDirectoryPointerEntry = AllocatePageTableMemory (1);
-        ASSERT (PageDirectoryPointerEntry != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (PageDirectoryPointerEntry == NULL) {
+          ASSERT (PageDirectoryPointerEntry != NULL);
+          continue;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         ZeroMem (PageDirectoryPointerEntry, EFI_PAGES_TO_SIZE (1));
 
         *PageMapLevel4Entry = (UINT64)(UINTN)PageDirectoryPointerEntry | mAddressEncMask | PAGE_ATTRIBUTE_BITS;
@@ -323,7 +335,13 @@ SetStaticPageTable (
           PageDirectoryEntry = (UINT64 *)((*PageDirectoryPointerEntry) & ~mAddressEncMask & gPhyMask);
           if (PageDirectoryEntry == NULL) {
             PageDirectoryEntry = AllocatePageTableMemory (1);
-            ASSERT (PageDirectoryEntry != NULL);
+            // MU_CHANGE [BEGIN] - CodeQL change
+            if (PageDirectoryEntry == NULL) {
+              ASSERT (PageDirectoryEntry != NULL);
+              continue;
+            }
+
+            // MU_CHANGE [END] - CodeQL change
             ZeroMem (PageDirectoryEntry, EFI_PAGES_TO_SIZE (1));
 
             //
@@ -348,6 +366,7 @@ SetStaticPageTable (
   Create PageTable for SMM use.
 
   @return The address of PML4 (to set CR3).
+          Zero if any error occurs.           // MU_CHANGE - CodeQL change
 
 **/
 UINT32
@@ -364,6 +383,9 @@ SmmInitPageTable (
   EFI_STATUS                Status;
   UINT64                    *Pml4Entry;
   UINT64                    *Pml5Entry;
+
+  Pml4Entry = NULL; // MU_CHANGE - CodeQL change
+  Pml5Entry = NULL; // MU_CHANGE - CodeQL change
 
   //
   // Initialize spin lock
@@ -396,7 +418,13 @@ SmmInitPageTable (
   // Fill Page-Table-Level4 (PML4) entry
   //
   Pml4Entry = (UINT64 *)AllocatePageTableMemory (1);
-  ASSERT (Pml4Entry != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Pml4Entry == NULL) {
+    ASSERT (Pml4Entry != NULL);
+    return 0;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   *Pml4Entry = Pages | mAddressEncMask | PAGE_ATTRIBUTE_BITS;
   ZeroMem (Pml4Entry + 1, EFI_PAGE_SIZE - sizeof (*Pml4Entry));
 
@@ -411,7 +439,14 @@ SmmInitPageTable (
     // Fill PML5 entry
     //
     Pml5Entry = (UINT64 *)AllocatePageTableMemory (1);
-    ASSERT (Pml5Entry != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Pml5Entry == NULL) {
+      ASSERT (Pml5Entry != NULL);
+      FreePages (Pml4Entry, 1);
+      return 0;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     *Pml5Entry = (UINTN)Pml4Entry | mAddressEncMask | PAGE_ATTRIBUTE_BITS;
     ZeroMem (Pml5Entry + 1, EFI_PAGE_SIZE - sizeof (*Pml5Entry));
     //
@@ -432,7 +467,18 @@ SmmInitPageTable (
     // Add pages to page pool
     //
     FreePage = (LIST_ENTRY *)AllocatePageTableMemory (PAGE_TABLE_PAGES);
-    ASSERT (FreePage != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (FreePage == NULL) {
+      FreePages (Pml4Entry, 1);
+      if (Pml5Entry != NULL) {
+        FreePages (Pml5Entry, 1);
+      }
+
+      ASSERT (FreePage != NULL);
+      return 0;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     for (Index = 0; Index < PAGE_TABLE_PAGES; Index++) {
       InsertTailList (&mPagePool, FreePage);
       FreePage += EFI_PAGE_SIZE / sizeof (*FreePage);

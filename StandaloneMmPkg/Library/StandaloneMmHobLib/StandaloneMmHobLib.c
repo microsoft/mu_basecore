@@ -318,6 +318,13 @@ BuildModuleHob (
     );
 
   Hob = CreateHob (EFI_HOB_TYPE_MEMORY_ALLOCATION, sizeof (EFI_HOB_MEMORY_ALLOCATION_MODULE));
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Hob == NULL) {
+    ASSERT (Hob != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   CopyGuid (&(Hob->MemoryAllocationHeader.Name), &gEfiHobMemoryAllocModuleGuid);
   Hob->MemoryAllocationHeader.MemoryBaseAddress = MemoryAllocationModule;
@@ -357,7 +364,13 @@ BuildResourceDescriptorHob (
   EFI_HOB_RESOURCE_DESCRIPTOR  *Hob;
 
   Hob = CreateHob (EFI_HOB_TYPE_RESOURCE_DESCRIPTOR, sizeof (EFI_HOB_RESOURCE_DESCRIPTOR));
-  ASSERT (Hob != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Hob == NULL) {
+    ASSERT (Hob != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Hob->ResourceType      = ResourceType;
   Hob->ResourceAttribute = ResourceAttribute;
@@ -396,6 +409,14 @@ BuildGuidHob (
   ASSERT (DataLength <= (0xffff - sizeof (EFI_HOB_GUID_TYPE)));
 
   Hob = CreateHob (EFI_HOB_TYPE_GUID_EXTENSION, (UINT16)(sizeof (EFI_HOB_GUID_TYPE) + DataLength));
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Hob == NULL) {
+    ASSERT (Hob != NULL);
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   CopyGuid (&Hob->Name, Guid);
   return Hob + 1;
 }
@@ -431,6 +452,13 @@ BuildGuidDataHob (
   ASSERT (Data != NULL || DataLength == 0);
 
   HobData = BuildGuidHob (Guid, DataLength);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (HobData == NULL) {
+    ASSERT (HobData != NULL);
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   return CopyMem (HobData, Data, DataLength);
 }
@@ -455,6 +483,13 @@ BuildFvHob (
   EFI_HOB_FIRMWARE_VOLUME  *Hob;
 
   Hob = CreateHob (EFI_HOB_TYPE_FV, sizeof (EFI_HOB_FIRMWARE_VOLUME));
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Hob == NULL) {
+    ASSERT (Hob != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Hob->BaseAddress = BaseAddress;
   Hob->Length      = Length;
@@ -484,6 +519,13 @@ BuildFv2Hob (
   EFI_HOB_FIRMWARE_VOLUME2  *Hob;
 
   Hob = CreateHob (EFI_HOB_TYPE_FV2, sizeof (EFI_HOB_FIRMWARE_VOLUME2));
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Hob == NULL) {
+    ASSERT (Hob != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Hob->BaseAddress = BaseAddress;
   Hob->Length      = Length;
@@ -511,6 +553,13 @@ BuildCpuHob (
   EFI_HOB_CPU  *Hob;
 
   Hob = CreateHob (EFI_HOB_TYPE_CPU, sizeof (EFI_HOB_CPU));
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Hob == NULL) {
+    ASSERT (Hob != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Hob->SizeOfMemorySpace = SizeOfMemorySpace;
   Hob->SizeOfIoSpace     = SizeOfIoSpace;
@@ -548,6 +597,13 @@ BuildMemoryAllocationHob (
     );
 
   Hob = CreateHob (EFI_HOB_TYPE_MEMORY_ALLOCATION, sizeof (EFI_HOB_MEMORY_ALLOCATION));
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Hob == NULL) {
+    ASSERT (Hob != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   ZeroMem (&(Hob->AllocDescriptor.Name), sizeof (EFI_GUID));
   Hob->AllocDescriptor.MemoryBaseAddress = BaseAddress;

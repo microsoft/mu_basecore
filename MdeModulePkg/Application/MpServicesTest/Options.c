@@ -158,6 +158,8 @@ ParseArguments (
     PrintUsage ();
   }
 
+  // MU_CHANGE - init Value to NULL due to code path that would leave it uninitialized
+  Value = NULL;
   ZeroMem (Options, sizeof (MP_SERVICES_TEST_OPTIONS));
 
   for (ArgIndex = 1; ArgIndex < Argc; ArgIndex++) {

@@ -32,7 +32,7 @@ AmlConstructNodeList (
   @param[in]    Parent               AML parent node list.
   @param[in]    AmlByteEncoding      AML Byte Encoding.
 
-  @return       AML Node.
+  @return       AML Node or NULL if insufficient resources to allocate a buffer
 **/
 EFI_AML_NODE_LIST *
 AmlCreateNode (
@@ -44,7 +44,10 @@ AmlCreateNode (
   EFI_AML_NODE_LIST  *AmlNodeList;
 
   AmlNodeList = AllocatePool (sizeof (*AmlNodeList));
-  ASSERT (AmlNodeList != NULL);
+  if (AmlNodeList == NULL) {
+    ASSERT (AmlNodeList != NULL);
+    return NULL;
+  }
 
   AmlNodeList->Signature = EFI_AML_NODE_LIST_SIGNATURE;
   CopyMem (AmlNodeList->Name, NameSeg, AML_NAME_SEG_SIZE);
@@ -538,6 +541,10 @@ AmlFindPath (
   RootNameSeg[0]  = AML_ROOT_CHAR;
   RootNameSeg[1]  = 0;
   AmlRootNodeList = AmlCreateNode (RootNameSeg, NULL, AmlHandle->AmlByteEncoding);
+  // MU_CHANGE - Verify AmlCreateNode returns a valid value, or bail out
+  if (AmlRootNodeList == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
 
   Status = AmlConstructNodeList (
              AmlHandle,

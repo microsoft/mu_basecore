@@ -752,6 +752,12 @@ HttpUrlGetPort (
   }
 
   Status =  AsciiStrDecimalToUintnS (Url + Parser->FieldData[HTTP_URI_FIELD_PORT].Offset, (CHAR8 **)NULL, &Data);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (EFI_ERROR (Status)) {
+    goto ON_EXIT;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   if (Data > HTTP_URI_PORT_MAX_NUM) {
     Status = EFI_INVALID_PARAMETER;
