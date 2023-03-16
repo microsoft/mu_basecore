@@ -127,7 +127,6 @@ GetCacheFileName (
   //
   // Let's produce our final path string, shall we?
   //
-  // StrnCpyS (CacheFilePath, CacheFilePathLength, AppPath, DirectorySlashOffset + 1);  // Copy the path for the parent directory.
   StrCatS (CacheFilePath, CacheFilePathLength, TestName);                            // Copy the base name for the test cache.
   StrCatS (CacheFilePath, CacheFilePathLength, CACHE_FILE_SUFFIX);                   // Copy the file suffix.
   DEBUG ((DEBUG_ERROR, "%a HEre %s\n", __FUNCTION__, CacheFilePath));
