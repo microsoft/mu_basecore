@@ -132,11 +132,6 @@ GetCacheFileName (
   StrCatS (CacheFilePath, CacheFilePathLength, CACHE_FILE_SUFFIX);                   // Copy the file suffix.
   DEBUG ((DEBUG_ERROR, "%a HEre %s\n", __FUNCTION__, CacheFilePath));
 
-  //
-  // Finally, try to create the device path for the thing thing.
-  //
-  CacheFileDevicePath = FileDevicePath (LoadedImage->DeviceHandle, CacheFilePath);
-
 Exit:
   //
   // Free allocated buffers.
