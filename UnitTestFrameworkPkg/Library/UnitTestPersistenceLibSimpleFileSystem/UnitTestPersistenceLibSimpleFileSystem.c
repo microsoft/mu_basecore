@@ -31,7 +31,8 @@
 STATIC
 EFI_DEVICE_PATH_PROTOCOL *
 GetCacheFileDevicePath (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle
+  IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle,
+  OUT CHAR16 **CachFilePath
   )
 {
   EFI_STATUS                 Status;
@@ -129,9 +130,10 @@ GetCacheFileDevicePath (
   //
   // Let's produce our final path string, shall we?
   //
-  StrnCpyS (CacheFilePath, CacheFilePathLength, AppPath, DirectorySlashOffset + 1);  // Copy the path for the parent directory.
+  // StrnCpyS (CacheFilePath, CacheFilePathLength, AppPath, DirectorySlashOffset + 1);  // Copy the path for the parent directory.
   StrCatS (CacheFilePath, CacheFilePathLength, TestName);                            // Copy the base name for the test cache.
   StrCatS (CacheFilePath, CacheFilePathLength, CACHE_FILE_SUFFIX);                   // Copy the file suffix.
+  DEBUG ((DEBUG_ERROR, "%a HEre %s\n", __FUNCTION__, CacheFilePath));
 
   //
   // Finally, try to create the device path for the thing thing.
@@ -146,9 +148,10 @@ Exit:
     FreePool (AppPath);
   }
 
-  if (CacheFilePath != NULL) {
-    FreePool (CacheFilePath);
-  }
+  // if (CacheFilePath != NULL) {
+  //   FreePool (CacheFilePath);
+  // }
+  *CachFilePath = CacheFilePath;
 
   if (TestName != NULL) {
     FreePool (TestName);
@@ -176,18 +179,19 @@ DoesCacheExist (
   EFI_DEVICE_PATH_PROTOCOL  *FileDevicePath;
   EFI_STATUS                Status;
   SHELL_FILE_HANDLE         FileHandle;
+  CHAR16                    *FileName;
 
   //
   // NOTE: This devpath is allocated and must be freed.
   //
-  FileDevicePath = GetCacheFileDevicePath (FrameworkHandle);
+  FileDevicePath = GetCacheFileDevicePath (FrameworkHandle, &FileName);
 
   //
   // Check to see whether the file exists.  If the file can be opened for
   // reading, it exists.  Otherwise, probably not.
   //
-  Status = ShellOpenFileByDevicePath (
-             &FileDevicePath,
+  Status = ShellOpenFileByName (
+             FileName,
              &FileHandle,
              EFI_FILE_MODE_READ,
              0
@@ -229,6 +233,7 @@ SaveUnitTestCache (
   EFI_STATUS                Status;
   SHELL_FILE_HANDLE         FileHandle;
   UINTN                     WriteCount;
+  CHAR16                    *FileName;
 
   //
   // Check the inputs for sanity.
@@ -241,13 +246,13 @@ SaveUnitTestCache (
   // Determine the path for the cache file.
   // NOTE: This devpath is allocated and must be freed.
   //
-  FileDevicePath = GetCacheFileDevicePath (FrameworkHandle);
+  FileDevicePath = GetCacheFileDevicePath (FrameworkHandle, &FileName);
 
   //
   // First lets open the file if it exists so we can delete it...This is the work around for truncation
   //
-  Status = ShellOpenFileByDevicePath (
-             &FileDevicePath,
+  Status = ShellOpenFileByName (
+             FileName,
              &FileHandle,
              (EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE),
              0
@@ -266,8 +271,8 @@ SaveUnitTestCache (
   //
   // Now that we know the path to the file... let's open it for writing.
   //
-  Status = ShellOpenFileByDevicePath (
-             &FileDevicePath,
+  Status = ShellOpenFileByName (
+             FileName,
              &FileHandle,
              (EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE),
              0
@@ -335,6 +340,7 @@ LoadUnitTestCache (
   UINT64                    LargeFileSize;
   UINTN                     FileSize;
   UNIT_TEST_SAVE_HEADER     *Buffer;
+  CHAR16                    *FileName;
 
   IsFileOpened = FALSE;
   Buffer       = NULL;
@@ -350,13 +356,13 @@ LoadUnitTestCache (
   // Determine the path for the cache file.
   // NOTE: This devpath is allocated and must be freed.
   //
-  FileDevicePath = GetCacheFileDevicePath (FrameworkHandle);
+  FileDevicePath = GetCacheFileDevicePath (FrameworkHandle, &FileName);
 
   //
   // Now that we know the path to the file... let's open it for writing.
   //
-  Status = ShellOpenFileByDevicePath (
-             &FileDevicePath,
+  Status = ShellOpenFileByName (
+             FileName,
              &FileHandle,
              EFI_FILE_MODE_READ,
              0
