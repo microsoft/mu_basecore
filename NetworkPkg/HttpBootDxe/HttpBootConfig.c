@@ -634,16 +634,21 @@ HttpBootConfigFormInit (
                       STRING_TOKEN (STR_HTTP_BOOT_CONFIG_FORM_HELP),
                       NULL
                       );
-    UnicodeSPrint (MenuString, 128, L"%s (MAC:%s)", OldMenuString, MacString);
-    HiiSetString (
-      CallbackInfo->RegisteredHandle,
-      STRING_TOKEN (STR_HTTP_BOOT_CONFIG_FORM_HELP),
-      MenuString,
-      NULL
-      );
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (OldMenuString != NULL) {
+      UnicodeSPrint (MenuString, 128, L"%s (MAC:%s)", OldMenuString, MacString);
+      HiiSetString (
+        CallbackInfo->RegisteredHandle,
+        STRING_TOKEN (STR_HTTP_BOOT_CONFIG_FORM_HELP),
+        MenuString,
+        NULL
+        );
 
+      FreePool (OldMenuString);
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     FreePool (MacString);
-    FreePool (OldMenuString);
 
     CallbackInfo->Initialized = TRUE;
     return EFI_SUCCESS;
