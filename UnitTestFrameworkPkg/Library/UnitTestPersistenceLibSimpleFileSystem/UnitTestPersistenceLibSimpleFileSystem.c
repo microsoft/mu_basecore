@@ -43,10 +43,10 @@ GetCacheFileName (
   UINTN                      DirectorySlashOffset;
   UINTN                      CacheFilePathLength;
 
-  Framework           = (UNIT_TEST_FRAMEWORK *)FrameworkHandle;
-  AppPath             = NULL;
-  CacheFilePath       = NULL;
-  TestName            = NULL;
+  Framework     = (UNIT_TEST_FRAMEWORK *)FrameworkHandle;
+  AppPath       = NULL;
+  CacheFilePath = NULL;
+  TestName      = NULL;
 
   //
   // First, we need to get some information from the loaded image.
@@ -162,9 +162,9 @@ DoesCacheExist (
   IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle
   )
 {
-  CHAR16                    *FileName;
-  EFI_STATUS                Status;
-  SHELL_FILE_HANDLE         FileHandle;
+  CHAR16             *FileName;
+  EFI_STATUS         Status;
+  SHELL_FILE_HANDLE  FileHandle;
 
   //
   // NOTE: This devpath is allocated and must be freed.
@@ -214,10 +214,10 @@ SaveUnitTestCache (
   IN UNIT_TEST_SAVE_HEADER       *SaveData
   )
 {
-  CHAR16                    *FileName;
-  EFI_STATUS                Status;
-  SHELL_FILE_HANDLE         FileHandle;
-  UINTN                     WriteCount;
+  CHAR16             *FileName;
+  EFI_STATUS         Status;
+  SHELL_FILE_HANDLE  FileHandle;
+  UINTN              WriteCount;
 
   //
   // Check the inputs for sanity.
@@ -317,13 +317,13 @@ LoadUnitTestCache (
   OUT UNIT_TEST_SAVE_HEADER       **SaveData
   )
 {
-  EFI_STATUS                Status;
-  CHAR16                    *FileName;
-  SHELL_FILE_HANDLE         FileHandle;
-  BOOLEAN                   IsFileOpened;
-  UINT64                    LargeFileSize;
-  UINTN                     FileSize;
-  UNIT_TEST_SAVE_HEADER     *Buffer;
+  EFI_STATUS             Status;
+  CHAR16                 *FileName;
+  SHELL_FILE_HANDLE      FileHandle;
+  BOOLEAN                IsFileOpened;
+  UINT64                 LargeFileSize;
+  UINTN                  FileSize;
+  UNIT_TEST_SAVE_HEADER  *Buffer;
 
   IsFileOpened = FALSE;
   Buffer       = NULL;
