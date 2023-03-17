@@ -87,11 +87,14 @@ GetCacheFileName (
   //     if (PathRemoveLastItem (FileNameCopy)) {
   //
   if (mCachePath == NULL) {
-    AppPath = ConvertDevicePathToText (LoadedImage->FilePath, TRUE, TRUE); // NOTE: This must be freed.
+  	AppPath              = ConvertDevicePathToText (LoadedImage->FilePath, TRUE, TRUE); // NOTE: This must be freed.
+  	// MU_CHANGE [BEGIN] - CodeQL change
     if (AppPath == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a - Failed to convert device path to text.\n", __FUNCTION__));
       goto Exit;
     }
 
+  	// MU_CHANGE [END] - CodeQL change
     DirectorySlashOffset = StrLen (AppPath);
     //
     // Make sure we didn't get any weird data.
