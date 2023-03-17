@@ -15,7 +15,6 @@
     "-MdeModulePkg/Core/Pei/Ppi/Ppi.c:cpp/overflow-buffer",
     "-MdeModulePkg/Library/UefiBootManagerLib/BmConsole.c:SM02311",
     "-MdeModulePkg/Library/UefiBootManagerLib/BmMisc.c:SM02311",
-    "-MdeModulePkg/Library/UefiBootManagerLib/BmMisc.c:SM02311",
     "-MdeModulePkg/Universal/Acpi/S3SaveStateDxe/AcpiS3ContextSave.c:SM02311",
     "-MdeModulePkg/Universal/BdsDxe/BdsEntry.c:SM02311",
     "-MdeModulePkg/Universal/Disk/UdfDxe/FileName.c:cpp/uselesstest",
@@ -26,6 +25,7 @@
     "-MdeModulePkg/Universal/EbcDxe/EbcDebugger/EdbSupportString.c:cpp/uselesstest",
     "-MdeModulePkg/Universal/EbcDxe/EbcDebugger/EdbSupportString.c:cpp/uselesstest",
     "-MdeModulePkg/Universal/RegularExpressionDxe/oniguruma/src/**/*.c:*",
+    "-MdeModulePkg/Universal/Console/ConPlatformDxe/ConPlatform.c:SM02311",
     "-MdePkg/Library/UefiDevicePathLib/DevicePathFromText.c:SM02311",
     "-MdePkg/Library/UefiDevicePathLib/DevicePathUtilities.c:SM02311",
     "-MdePkg/Library/UefiDevicePathLibDevicePathProtocol/UefiDevicePathLib.c:SM02311",
@@ -39,5 +39,10 @@
     "-ShellPkg/Library/UefiShellDebug1CommandsLib/DmpStore.c:SM02311",
     "-ShellPkg/Library/UefiShellLevel2CommandsLib/Map.c:SM02311",
     "-ShellPkg/Library/UefiShellLevel3CommandsLib/Alias.c:SM02311",
+    "-CryptoPkg/Library/BaseCryptLib/Pk/CryptRsaBasic.c:SM02311",
+    "-CryptoPkg/Library/BaseCryptLib/Pk/CryptDh.c:SM02311",
+    "-CryptoPkg/Library/BaseCryptLib/**/*.c:SM02690",
+    "-CryptoPkg/Library/BaseCryptLib/SysCall/TimerWrapper.c:SM02320",
+    "-CryptoPkg/Library/OpensslLib/**/*.c:*",
   ]
 }
