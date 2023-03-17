@@ -23,7 +23,7 @@ resources:
       ref: refs/tags/v2.2.0
   containers:
     - container: linux-gcc
-      image: ghcr.io/tianocore/containers/fedora-35-build:5b8a008
+      image: ghcr.io/tianocore/containers/fedora-37-build:14d2aba
 
 variables:
 - group: architectures-arm-64-x86-64
