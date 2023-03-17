@@ -88,12 +88,19 @@ HandleVol (
 
   if (Status == EFI_BUFFER_TOO_SMALL) {
     SysInfo = AllocateZeroPool (SysInfoSize);
-    Status  = EfiFpHandle->GetInfo (
-                             EfiFpHandle,
-                             &gEfiFileSystemInfoGuid,
-                             &SysInfoSize,
-                             SysInfo
-                             );
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (SysInfo == NULL) {
+      ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellLevel2HiiHandle, L"vol");
+      return SHELL_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+    Status = EfiFpHandle->GetInfo (
+                            EfiFpHandle,
+                            &gEfiFileSystemInfoGuid,
+                            &SysInfoSize,
+                            SysInfo
+                            );
   }
 
   ASSERT (SysInfo != NULL);
@@ -155,12 +162,19 @@ HandleVol (
 
   if (Status == EFI_BUFFER_TOO_SMALL) {
     SysInfo = AllocateZeroPool (SysInfoSize);
-    Status  = EfiFpHandle->GetInfo (
-                             EfiFpHandle,
-                             &gEfiFileSystemInfoGuid,
-                             &SysInfoSize,
-                             SysInfo
-                             );
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (SysInfo == NULL) {
+      ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellLevel2HiiHandle, L"vol");
+      return SHELL_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+    Status = EfiFpHandle->GetInfo (
+                            EfiFpHandle,
+                            &gEfiFileSystemInfoGuid,
+                            &SysInfoSize,
+                            SysInfo
+                            );
   }
 
   gEfiShellProtocol->CloseFile (ShellFileHandle);

@@ -2906,6 +2906,12 @@ EfiShellGetEnvEx (
         // Allocate the space and recall the get function
         //
         Buffer = AllocateZeroPool (Size);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (Buffer == NULL) {
+          return NULL;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         Status = SHELL_GET_ENVIRONMENT_VARIABLE_AND_ATTRIBUTES (Name, Attributes, &Size, Buffer);
       }
 
@@ -3556,6 +3562,13 @@ EfiShellGetAlias (
     Status  = gRT->GetVariable (AliasLower, &gShellAliasGuid, &Attribs, &RetSize, RetVal);
     if (Status == EFI_BUFFER_TOO_SMALL) {
       RetVal = AllocateZeroPool (RetSize);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (RetVal == NULL) {
+        FreePool (AliasLower);
+        return NULL;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       Status = gRT->GetVariable (AliasLower, &gShellAliasGuid, &Attribs, &RetSize, RetVal);
     }
 
