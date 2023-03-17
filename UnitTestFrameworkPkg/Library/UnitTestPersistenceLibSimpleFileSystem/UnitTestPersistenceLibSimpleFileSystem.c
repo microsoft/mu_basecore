@@ -20,6 +20,7 @@
 #define CACHE_FILE_SUFFIX  L"_Cache.dat"
 
 // MU_CHANGE Starts: Repurposed this function to return file name and path instead of device path
+
 /**
   Generate the file name and path to the cache file.
 
@@ -32,7 +33,7 @@
 STATIC
 CHAR16 *
 GetCacheFileName (
-// MU_CHANGE Ends
+  // MU_CHANGE Ends
   IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle
   )
 {
@@ -152,6 +153,7 @@ Exit:
   if (CacheFileDevicePath != NULL) {
     FreePool (CacheFileDevicePath);
   }
+
   // MU_CHANGE Ends
 
   if (TestName != NULL) {
