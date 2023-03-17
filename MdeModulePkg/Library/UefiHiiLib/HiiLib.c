@@ -8,6 +8,8 @@
 
 #include "InternalHiiLib.h"
 
+#include <Library/SafeIntLib.h>
+
 #define GUID_CONFIG_STRING_TYPE  0x00
 #define NAME_CONFIG_STRING_TYPE  0x01
 #define PATH_CONFIG_STRING_TYPE  0x02
@@ -1366,8 +1368,13 @@ ValidateQuestionFromVfr (
 
             if (NameValueType) {
               QuestionName = HiiGetString (HiiHandle, IfrOneOf->Question.VarStoreInfo.VarName, NULL);
-              ASSERT (QuestionName != NULL);
+              // MU_CHANGE [BEGIN] - CodeQL change
+              if (QuestionName == NULL) {
+                ASSERT (QuestionName != NULL);
+                return EFI_INVALID_PARAMETER;
+              }
 
+              // MU_CHANGE [END] - CodeQL change
               if (StrStr (RequestElement, QuestionName) == NULL) {
                 //
                 // This question is not in the current configuration string. Skip it.
@@ -1462,7 +1469,13 @@ ValidateQuestionFromVfr (
 
             if (NameValueType) {
               QuestionName = HiiGetString (HiiHandle, IfrNumeric->Question.VarStoreInfo.VarName, NULL);
-              ASSERT (QuestionName != NULL);
+              // MU_CHANGE [BEGIN] - CodeQL change
+              if (QuestionName == NULL) {
+                ASSERT (QuestionName != NULL);
+                return EFI_INVALID_PARAMETER;
+              }
+
+              // MU_CHANGE [END] - CodeQL change
 
               if (StrStr (RequestElement, QuestionName) == NULL) {
                 //
@@ -1654,7 +1667,13 @@ ValidateQuestionFromVfr (
 
             if (NameValueType) {
               QuestionName = HiiGetString (HiiHandle, IfrCheckBox->Question.VarStoreInfo.VarName, NULL);
-              ASSERT (QuestionName != NULL);
+              // MU_CHANGE [BEGIN] - CodeQL change
+              if (QuestionName == NULL) {
+                ASSERT (QuestionName != NULL);
+                return EFI_INVALID_PARAMETER;
+              }
+
+              // MU_CHANGE [END] - CodeQL change
 
               if (StrStr (RequestElement, QuestionName) == NULL) {
                 //
@@ -1756,7 +1775,13 @@ ValidateQuestionFromVfr (
             Width = (UINT16)(IfrString->MaxSize * sizeof (UINT16));
             if (NameValueType) {
               QuestionName = HiiGetString (HiiHandle, IfrString->Question.VarStoreInfo.VarName, NULL);
-              ASSERT (QuestionName != NULL);
+              // MU_CHANGE [BEGIN] - CodeQL change
+              if (QuestionName == NULL) {
+                ASSERT (QuestionName != NULL);
+                return EFI_INVALID_PARAMETER;
+              }
+
+              // MU_CHANGE [END] - CodeQL change
 
               StringPtr = StrStr (RequestElement, QuestionName);
               if (StringPtr == NULL) {
@@ -1935,6 +1960,8 @@ GetBlockDataInfo (
   EFI_STATUS      Status;
   IFR_BLOCK_DATA  *BlockArray;
   UINT8           *DataBuffer;
+
+  UINT16  Sum1, Sum2, Sum3; // MU_CHANGE - CodeQL change
 
   //
   // Initialize the local variables.
@@ -2131,11 +2158,22 @@ GetBlockDataInfo (
   while ((Link != &BlockArray->Entry) && (Link->ForwardLink != &BlockArray->Entry)) {
     BlockData    = BASE_CR (Link, IFR_BLOCK_DATA, Entry);
     NewBlockData = BASE_CR (Link->ForwardLink, IFR_BLOCK_DATA, Entry);
-    if ((NewBlockData->Offset >= BlockData->Offset) && ((UINTN)NewBlockData->Offset <= (UINTN)(BlockData->Offset + BlockData->Width))) {
-      if ((NewBlockData->Offset + NewBlockData->Width) > (BlockData->Offset + BlockData->Width)) {
-        BlockData->Width = (UINT16)(NewBlockData->Offset + NewBlockData->Width - BlockData->Offset);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if ((SafeUint16Add (BlockData->Offset, BlockData->Width, &Sum1) != EFI_SUCCESS) ||
+        (SafeUint16Add (NewBlockData->Offset, NewBlockData->Width, &Sum2) != EFI_SUCCESS) ||
+        (SafeUint16Sub (NewBlockData->Offset, BlockData->Offset, &Sum3) != EFI_SUCCESS))
+    {
+      continue;
+    }
+
+    if ((NewBlockData->Offset >= BlockData->Offset) && (NewBlockData->Offset <= Sum1)) {
+      if (Sum2 > Sum1) {
+        if (SafeUint16Sub ((UINT16)Sum2, BlockData->Offset, &BlockData->Width) != EFI_SUCCESS) {
+          continue;
+        }
       }
 
+      // MU_CHANGE [END] - CodeQL change
       RemoveEntryList (Link->ForwardLink);
       FreePool (NewBlockData);
       continue;
@@ -2913,6 +2951,13 @@ HiiGetBrowserData (
   Size       = (StrLen (mConfigHdrTemplate) + 1) * sizeof (CHAR16);
   Size       = Size + (StrLen (ResultsData) + 1) * sizeof (CHAR16);
   ConfigResp = AllocateZeroPool (Size);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (ConfigResp == NULL) {
+    FreePool (ResultsData);
+    return FALSE;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   UnicodeSPrint (ConfigResp, Size, L"%s&%s", mConfigHdrTemplate, ResultsData);
 
   //
@@ -2993,6 +3038,12 @@ HiiSetBrowserData (
     //
     Size          = (StrLen (mConfigHdrTemplate) + 32 + 1) * sizeof (CHAR16);
     ConfigRequest = AllocateZeroPool (Size);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (ConfigRequest == NULL) {
+      return FALSE;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     UnicodeSPrint (ConfigRequest, Size, L"%s&OFFSET=0&WIDTH=%016LX", mConfigHdrTemplate, (UINT64)BufferSize);
   } else {
     //
@@ -3002,6 +3053,12 @@ HiiSetBrowserData (
     Size          = StrLen (mConfigHdrTemplate) * sizeof (CHAR16);
     Size          = Size + (StrLen (RequestElement) + 1) * sizeof (CHAR16);
     ConfigRequest = AllocateZeroPool (Size);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (ConfigRequest == NULL) {
+      return FALSE;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     UnicodeSPrint (ConfigRequest, Size, L"%s%s", mConfigHdrTemplate, RequestElement);
   }
 

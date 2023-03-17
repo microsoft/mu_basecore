@@ -180,14 +180,32 @@ CreateQuestion (
         // Insert to Name/Value varstore list
         //
         NameValueNode = AllocateZeroPool (sizeof (NAME_VALUE_NODE));
-        ASSERT (NameValueNode != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (NameValueNode == NULL) {
+          ASSERT (NameValueNode != NULL);
+          return NULL;
+        }
+
         NameValueNode->Signature = NAME_VALUE_NODE_SIGNATURE;
         NameValueNode->Name      = AllocateCopyPool (StrSize (Statement->VariableName), Statement->VariableName);
-        ASSERT (NameValueNode->Name != NULL);
+        if (NameValueNode->Name == NULL) {
+          ASSERT (NameValueNode->Name != NULL);
+          return NULL;
+        }
+
         NameValueNode->Value = AllocateZeroPool (0x10);
-        ASSERT (NameValueNode->Value != NULL);
+        if (NameValueNode->Value == NULL) {
+          ASSERT (NameValueNode->Value != NULL);
+          return NULL;
+        }
+
         NameValueNode->EditValue = AllocateZeroPool (0x10);
-        ASSERT (NameValueNode->EditValue != NULL);
+        if (NameValueNode->EditValue == NULL) {
+          ASSERT (NameValueNode->EditValue != NULL);
+          return NULL;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
 
         InsertTailList (&Statement->Storage->NameValueListHead, &NameValueNode->Link);
       }
@@ -215,7 +233,13 @@ CreateExpression (
   FORM_EXPRESSION  *Expression;
 
   Expression = AllocateZeroPool (sizeof (FORM_EXPRESSION));
-  ASSERT (Expression != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Expression == NULL) {
+    ASSERT (Expression != NULL);
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   Expression->Signature = FORM_EXPRESSION_SIGNATURE;
   InitializeListHead (&Expression->OpCodeListHead);
   Expression->OpCode = (EFI_IFR_OP_HEADER *)OpCode;
@@ -416,21 +440,39 @@ CreateStorage (
     ASSERT (StorageName != NULL);
 
     UnicodeString = AllocateZeroPool (AsciiStrSize (StorageName) * 2);
-    ASSERT (UnicodeString != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (UnicodeString == NULL) {
+      ASSERT (UnicodeString != NULL);
+      return NULL;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     for (Index = 0; StorageName[Index] != 0; Index++) {
       UnicodeString[Index] = (CHAR16)StorageName[Index];
     }
   }
 
   Storage = AllocateZeroPool (sizeof (FORMSET_STORAGE));
-  ASSERT (Storage != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Storage == NULL) {
+    ASSERT (Storage != NULL);
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   Storage->Signature = FORMSET_STORAGE_SIGNATURE;
   InsertTailList (&FormSet->StorageListHead, &Storage->Link);
 
   BrowserStorage = FindStorageInList (StorageType, StorageGuid, UnicodeString, FormSet->HiiHandle);
   if (BrowserStorage == NULL) {
     BrowserStorage = AllocateZeroPool (sizeof (BROWSER_STORAGE));
-    ASSERT (BrowserStorage != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (BrowserStorage == NULL) {
+      ASSERT (BrowserStorage != NULL);
+      return NULL;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     BrowserStorage->Signature = BROWSER_STORAGE_SIGNATURE;
     InsertTailList (&gBrowserStorageList, &BrowserStorage->Link);
@@ -663,7 +705,13 @@ InitializeRequestElement (
 
   if (!Find) {
     ConfigInfo = AllocateZeroPool (sizeof (FORM_BROWSER_CONFIG_REQUEST));
-    ASSERT (ConfigInfo != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (ConfigInfo == NULL) {
+      ASSERT (ConfigInfo != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     ConfigInfo->Signature     = FORM_BROWSER_CONFIG_REQUEST_SIGNATURE;
     ConfigInfo->ConfigRequest = AllocateCopyPool (StrSize (FormsetStorage->ConfigHdr), FormsetStorage->ConfigHdr);
     ASSERT (ConfigInfo->ConfigRequest != NULL);
@@ -1551,6 +1599,12 @@ ParseOpCodes (
       //
       if ((CurrentExpression == NULL) && (MapScopeDepth > 0)) {
         CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentExpression == NULL) {
+          ASSERT (CurrentExpression != NULL);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
         ASSERT (MapExpressionList != NULL);
         InsertTailList (MapExpressionList, &CurrentExpression->Link);
         if (Scope == 0) {
@@ -1558,7 +1612,7 @@ ParseOpCodes (
         }
       }
 
-      ASSERT (CurrentExpression != NULL);
+      // MU_CHANGE [END] - CodeQL change
       InsertTailList (&CurrentExpression->OpCodeListHead, &ExpressionOpCode->Link);
       if (Operand == EFI_IFR_MAP_OP) {
         //
@@ -1636,7 +1690,13 @@ ParseOpCodes (
         // Create a new Form for this FormSet
         //
         CurrentForm = AllocateZeroPool (sizeof (FORM_BROWSER_FORM));
-        ASSERT (CurrentForm != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentForm == NULL) {
+          ASSERT (CurrentForm != NULL);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CurrentForm->Signature = FORM_BROWSER_FORM_SIGNATURE;
         InitializeListHead (&CurrentForm->ExpressionListHead);
         InitializeListHead (&CurrentForm->StatementListHead);
@@ -1655,7 +1715,13 @@ ParseOpCodes (
           CurrentForm->SuppressExpression = (FORM_EXPRESSION_LIST *)AllocatePool (
                                                                       (UINTN)(sizeof (FORM_EXPRESSION_LIST) + ((ConditionalExprCount -1) * sizeof (FORM_EXPRESSION *)))
                                                                       );
-          ASSERT (CurrentForm->SuppressExpression != NULL);
+          // MU_CHANGE [BEGIN] - CodeQL change
+          if (CurrentForm->SuppressExpression == NULL) {
+            ASSERT (CurrentForm->SuppressExpression != NULL);
+            return EFI_OUT_OF_RESOURCES;
+          }
+
+          // MU_CHANGE [END] - CodeQL change
           CurrentForm->SuppressExpression->Count     = (UINTN)ConditionalExprCount;
           CurrentForm->SuppressExpression->Signature = FORM_EXPRESSION_LIST_SIGNATURE;
           CopyMem (CurrentForm->SuppressExpression->Expression, GetConditionalExpressionList (ExpressForm), (UINTN)(sizeof (FORM_EXPRESSION *) * ConditionalExprCount));
@@ -1679,7 +1745,13 @@ ParseOpCodes (
         // Create a new Form for this FormSet
         //
         CurrentForm = AllocateZeroPool (sizeof (FORM_BROWSER_FORM));
-        ASSERT (CurrentForm != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentForm == NULL) {
+          ASSERT (CurrentForm != NULL);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CurrentForm->Signature = FORM_BROWSER_FORM_SIGNATURE;
         InitializeListHead (&CurrentForm->ExpressionListHead);
         InitializeListHead (&CurrentForm->StatementListHead);
@@ -1725,7 +1797,13 @@ ParseOpCodes (
           CurrentForm->SuppressExpression = (FORM_EXPRESSION_LIST *)AllocatePool (
                                                                       (UINTN)(sizeof (FORM_EXPRESSION_LIST) + ((ConditionalExprCount -1) * sizeof (FORM_EXPRESSION *)))
                                                                       );
-          ASSERT (CurrentForm->SuppressExpression != NULL);
+          // MU_CHANGE [BEGIN] - CodeQL change
+          if (CurrentForm->SuppressExpression == NULL) {
+            ASSERT (CurrentForm->SuppressExpression != NULL);
+            return EFI_OUT_OF_RESOURCES;
+          }
+
+          // MU_CHANGE [END] - CodeQL change
           CurrentForm->SuppressExpression->Count     = (UINTN)ConditionalExprCount;
           CurrentForm->SuppressExpression->Signature = FORM_EXPRESSION_LIST_SIGNATURE;
           CopyMem (CurrentForm->SuppressExpression->Expression, GetConditionalExpressionList (ExpressForm), (UINTN)(sizeof (FORM_EXPRESSION *) * ConditionalExprCount));
@@ -1752,6 +1830,12 @@ ParseOpCodes (
         // Create a buffer Storage for this FormSet
         //
         Storage = CreateStorage (FormSet, EFI_HII_VARSTORE_BUFFER, OpCodeData);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (Storage == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CopyMem (&Storage->VarStoreId, &((EFI_IFR_VARSTORE *)OpCodeData)->VarStoreId, sizeof (EFI_VARSTORE_ID));
         break;
 
@@ -1760,6 +1844,12 @@ ParseOpCodes (
         // Create a name/value Storage for this FormSet
         //
         Storage = CreateStorage (FormSet, EFI_HII_VARSTORE_NAME_VALUE, OpCodeData);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (Storage == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CopyMem (&Storage->VarStoreId, &((EFI_IFR_VARSTORE_NAME_VALUE *)OpCodeData)->VarStoreId, sizeof (EFI_VARSTORE_ID));
         break;
 
@@ -1779,6 +1869,12 @@ ParseOpCodes (
           Storage = CreateStorage (FormSet, EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER, OpCodeData);
         }
 
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (Storage == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CopyMem (&Storage->VarStoreId, &((EFI_IFR_VARSTORE_EFI *)OpCodeData)->VarStoreId, sizeof (EFI_VARSTORE_ID));
         break;
 
@@ -1788,7 +1884,13 @@ ParseOpCodes (
       case EFI_IFR_DEFAULTSTORE_OP:
         HaveInserted = FALSE;
         DefaultStore = AllocateZeroPool (sizeof (FORMSET_DEFAULTSTORE));
-        ASSERT (DefaultStore != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (DefaultStore == NULL) {
+          ASSERT (DefaultStore != NULL);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         DefaultStore->Signature = FORMSET_DEFAULTSTORE_SIGNATURE;
 
         CopyMem (&DefaultStore->DefaultId, &((EFI_IFR_DEFAULTSTORE *)OpCodeData)->DefaultId, sizeof (UINT16));
@@ -2166,7 +2268,13 @@ ParseOpCodes (
         // A Question may have more than one Default value which have different default types.
         //
         CurrentDefault = AllocateZeroPool (sizeof (QUESTION_DEFAULT));
-        ASSERT (CurrentDefault != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentDefault == NULL) {
+          ASSERT (CurrentDefault != NULL);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CurrentDefault->Signature = QUESTION_DEFAULT_SIGNATURE;
 
         CurrentDefault->Value.Type = ((EFI_IFR_DEFAULT *)OpCodeData)->Type;
@@ -2201,7 +2309,13 @@ ParseOpCodes (
           // It's keep the default value for ordered list opcode.
           //
           CurrentDefault = AllocateZeroPool (sizeof (QUESTION_DEFAULT));
-          ASSERT (CurrentDefault != NULL);
+          // MU_CHANGE [BEGIN] - CodeQL change
+          if (CurrentDefault == NULL) {
+            ASSERT (CurrentDefault != NULL);
+            return EFI_OUT_OF_RESOURCES;
+          }
+
+          // MU_CHANGE [END] - CodeQL change
           CurrentDefault->Signature = QUESTION_DEFAULT_SIGNATURE;
 
           CurrentDefault->Value.Type = EFI_IFR_TYPE_BUFFER;
@@ -2227,7 +2341,13 @@ ParseOpCodes (
         // It create a selection for use in current Question.
         //
         CurrentOption = AllocateZeroPool (sizeof (QUESTION_OPTION));
-        ASSERT (CurrentOption != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentOption == NULL) {
+          ASSERT (CurrentOption != NULL);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CurrentOption->Signature = QUESTION_OPTION_SIGNATURE;
         CurrentOption->OpCode    = (EFI_IFR_ONE_OF_OPTION *)OpCodeData;
 
@@ -2306,6 +2426,12 @@ ParseOpCodes (
         // Create an Expression node
         //
         CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentExpression == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CopyMem (&CurrentExpression->Error, &((EFI_IFR_INCONSISTENT_IF *)OpCodeData)->Error, sizeof (EFI_STRING_ID));
 
         if (Operand == EFI_IFR_NO_SUBMIT_IF_OP) {
@@ -2331,6 +2457,12 @@ ParseOpCodes (
         // Create an Expression node
         //
         CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentExpression == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CopyMem (&CurrentExpression->Error, &((EFI_IFR_WARNING_IF *)OpCodeData)->Warning, sizeof (EFI_STRING_ID));
         CurrentExpression->TimeOut = ((EFI_IFR_WARNING_IF *)OpCodeData)->TimeOut;
         CurrentExpression->Type    = EFI_HII_EXPRESSION_WARNING_IF;
@@ -2350,7 +2482,13 @@ ParseOpCodes (
         //
         // Question and Option will appear in scope of this OpCode
         //
-        CurrentExpression       = CreateExpression (CurrentForm, OpCodeData);
+        CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentExpression == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CurrentExpression->Type = EFI_HII_EXPRESSION_SUPPRESS_IF;
 
         if (CurrentForm == NULL) {
@@ -2381,7 +2519,13 @@ ParseOpCodes (
         //
         // Questions will appear in scope of this OpCode
         //
-        CurrentExpression       = CreateExpression (CurrentForm, OpCodeData);
+        CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentExpression == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CurrentExpression->Type = EFI_HII_EXPRESSION_GRAY_OUT_IF;
         InsertTailList (&CurrentForm->ExpressionListHead, &CurrentExpression->Link);
         PushConditionalExpression (CurrentExpression, ExpressStatement);
@@ -2402,7 +2546,13 @@ ParseOpCodes (
         // evaluated at initialization and it will not be queued
         //
         CurrentExpression = AllocateZeroPool (sizeof (FORM_EXPRESSION));
-        ASSERT (CurrentExpression != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentExpression == NULL) {
+          ASSERT (CurrentExpression != NULL);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CurrentExpression->Signature = FORM_EXPRESSION_SIGNATURE;
         CurrentExpression->Type      = EFI_HII_EXPRESSION_DISABLE_IF;
         InitializeListHead (&CurrentExpression->OpCodeListHead);
@@ -2431,7 +2581,13 @@ ParseOpCodes (
       // Expression
       //
       case EFI_IFR_VALUE_OP:
-        CurrentExpression       = CreateExpression (CurrentForm, OpCodeData);
+        CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentExpression == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CurrentExpression->Type = EFI_HII_EXPRESSION_VALUE;
         InsertTailList (&CurrentForm->ExpressionListHead, &CurrentExpression->Link);
 
@@ -2464,7 +2620,13 @@ ParseOpCodes (
         break;
 
       case EFI_IFR_RULE_OP:
-        CurrentExpression       = CreateExpression (CurrentForm, OpCodeData);
+        CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentExpression == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CurrentExpression->Type = EFI_HII_EXPRESSION_RULE;
 
         CurrentExpression->RuleId = ((EFI_IFR_RULE *)OpCodeData)->RuleId;
@@ -2481,7 +2643,13 @@ ParseOpCodes (
         break;
 
       case EFI_IFR_READ_OP:
-        CurrentExpression       = CreateExpression (CurrentForm, OpCodeData);
+        CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentExpression == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CurrentExpression->Type = EFI_HII_EXPRESSION_READ;
         InsertTailList (&CurrentForm->ExpressionListHead, &CurrentExpression->Link);
 
@@ -2504,7 +2672,13 @@ ParseOpCodes (
         break;
 
       case EFI_IFR_WRITE_OP:
-        CurrentExpression       = CreateExpression (CurrentForm, OpCodeData);
+        CurrentExpression = CreateExpression (CurrentForm, OpCodeData);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (CurrentExpression == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         CurrentExpression->Type = EFI_HII_EXPRESSION_WRITE;
         InsertTailList (&CurrentForm->ExpressionListHead, &CurrentExpression->Link);
 
