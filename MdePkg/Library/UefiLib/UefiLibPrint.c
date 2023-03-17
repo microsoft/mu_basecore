@@ -425,7 +425,13 @@ InternalPrintGraphic (
   }
 
   Blt = (EFI_IMAGE_OUTPUT *)AllocateZeroPool (sizeof (EFI_IMAGE_OUTPUT));
-  ASSERT (Blt != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Blt == NULL) {
+    ASSERT (Blt != NULL);
+    return 0;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Blt->Width  = (UINT16)(HorizontalResolution);
   Blt->Height = (UINT16)(VerticalResolution);
