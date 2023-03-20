@@ -30,8 +30,11 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         # MU_CHANGE
         ParserObj.add_argument("-s", "--skip_path_env", dest="skip_env", default=False, action='store_true',
                                help="Skip the creation of the path_env descriptor file")
+        ParserObj.add_argument("-a", "--target_arch", dest="arch", default='IA32', choices=['IA32', 'ARM'],
+                               help="Specify the architecture of the built base tools")
         args = ParserObj.parse_args()
         self.tool_chain_tag = args.tct
+        self.target_arch = args.arch
         # MU_CHANGE
         self.skip_path_env = args.skip_env
 
@@ -116,13 +119,10 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         shell_env.set_shell_var("PYTHON_COMMAND", pc)
 
         if self.tool_chain_tag.lower().startswith("vs"):
-            HostInfo = GetHostInfo()
-            if HostInfo.arch == "x86":
-                VcHostArch = "x86"
-                ToolHostArch = "IA32"
-            elif HostInfo.arch == "ARM":
-                VcHostArch = "x86_arm"
-                ToolHostArch = "ARM"
+            if self.target_arch == "IA32":
+                VcToolChainArch = "x86"
+            elif self.target_arch == "ARM":
+                VcToolChainArch = "x86_arm"
             else:
                 raise NotImplementedError()
 
@@ -133,7 +133,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             interesting_keys.extend(
                 ["WindowsSdkDir", "WindowsSdkVerBinPath", "WindowsSDKVersion", "VCToolsInstallDir"])
             vc_vars = QueryVcVariables(
-                interesting_keys, VcHostArch, vs_version=self.tool_chain_tag.lower())
+                interesting_keys, VcToolChainArch, vs_version=self.tool_chain_tag.lower())
             for key in vc_vars.keys():
                 logging.debug(f"Var - {key} = {vc_vars[key]}")
                 if key.lower() == 'path':
@@ -141,7 +141,10 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
                 else:
                     shell_env.set_shell_var(key, vc_vars[key])
 
-            shell_env.set_shell_var('HOST_ARCH', ToolHostArch)
+            # MU_CHANGE: Specify target architecture
+            # Note: This HOST_ARCH is in respect to the BUILT base tools, not the host arch where
+            # this script is BUILDING the base tools.
+            shell_env.set_shell_var('HOST_ARCH', self.target_arch)
 
             self.OutputDir = os.path.join(
                 shell_env.get_shell_var("EDK_TOOLS_PATH"), "Bin", "Win32")
