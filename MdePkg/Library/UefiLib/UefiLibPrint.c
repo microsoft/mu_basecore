@@ -428,7 +428,7 @@ InternalPrintGraphic (
   // MU_CHANGE [BEGIN] - CodeQL change
   if (Blt == NULL) {
     ASSERT (Blt != NULL);
-    return 0;
+    goto Error;
   }
 
   // MU_CHANGE [END] - CodeQL change
