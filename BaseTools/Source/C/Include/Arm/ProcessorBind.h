@@ -22,6 +22,7 @@
 #pragma pack()
 #endif
 
+// MU_CHANGE Starts: Fixing basic ARM definitions in Windows 
 #if _MSC_EXTENSIONS
 
 //
@@ -110,6 +111,7 @@
   typedef uint16_t  CHAR16;
 
 #endif
+// MU_CHANGE Ends
 
 ///
 /// Unsigned value of native width.  (4 bytes on supported 32-bit processor instructions,
