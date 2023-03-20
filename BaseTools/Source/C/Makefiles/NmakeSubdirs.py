@@ -132,7 +132,7 @@ class ThreadControl(object):
                 break
 
         self.runningLock.acquire(True)
-        self.running.remove(threading.current_thread())
+        self.running.remove(threading.currentThread())
         self.runningLock.release()
 
 def Run():

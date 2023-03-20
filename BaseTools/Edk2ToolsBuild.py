@@ -134,7 +134,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             interesting_keys.extend(
                 ["WindowsSdkDir", "WindowsSdkVerBinPath", "WindowsSDKVersion", "VCToolsInstallDir"])
             vc_vars = QueryVcVariables(
-                interesting_keys, VcToolChainArch, vs_version=self.tool_chain_tag.lower())
+                interesting_keys, VcToolChainArch, vs_version=self.tool_chain_tag.lower()) # MU_CHANGE
             for key in vc_vars.keys():
                 logging.debug(f"Var - {key} = {vc_vars[key]}")
                 if key.lower() == 'path':
