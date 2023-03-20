@@ -1359,7 +1359,7 @@ Ip4Config2FormInit (
                       NULL
                       );
     // MU_CHANGE [BEGIN] - CodeQL change
-    if (OldMenuString != NULL && MacString != NULL) {
+    if (OldMenuString != NULL) {
       UnicodeSPrint (MenuString, 128, L"%s (MAC:%s)", OldMenuString, MacString);
       HiiSetString (
         CallbackInfo->RegisteredHandle,
@@ -1377,8 +1377,9 @@ Ip4Config2FormInit (
         );
 
       FreePool (OldMenuString);
-      FreePool (MacString);
     }
+
+    FreePool (MacString);
 
     // MU_CHANGE [END] - CodeQL change
 

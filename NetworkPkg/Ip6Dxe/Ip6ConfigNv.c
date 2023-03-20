@@ -2009,9 +2009,9 @@ Ip6ConfigFormInit (
                       NULL
                       )
     ;
-    if ((OldMenuString != NULL) && (MacString != NULL)) {
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (OldMenuString != NULL) {
       UnicodeSPrint (MenuString, 128, L"%s (MAC:%s)", OldMenuString, MacString);
-      // MU_CHANGE [BEGIN] - CodeQL change
       HiiSetString (
         CallbackInfo->RegisteredHandle,
         STRING_TOKEN (STR_IP6_CONFIG_FORM_HELP),
@@ -2027,8 +2027,9 @@ Ip6ConfigFormInit (
         );
 
       FreePool (OldMenuString);
-      FreePool (MacString);
     }
+
+    FreePool (MacString);
 
     // MU_CHANGE [END] - CodeQL change
 
