@@ -516,7 +516,7 @@ NvmExpressPassThru (
   EFI_STATUS                     PreviousStatus;
   EFI_PCI_IO_PROTOCOL            *PciIo;
   NVME_SQ                        *Sq;
-  NVME_CQ                        *Cq;
+  volatile NVME_CQ               *Cq;      // MU_CHANGE: Add volatile so that timer loop below is getting updated CQ
   UINT16                         QueueId;
   UINT16                         QueueSize;
   UINT32                         Bytes;

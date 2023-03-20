@@ -344,7 +344,7 @@ NvmePassThruExecute (
 {
   EFI_STATUS             Status;
   NVME_SQ                *Sq;
-  NVME_CQ                *Cq;
+  volatile NVME_CQ       *Cq;      // MU_CHANGE: Add volatile so that timer loop below is getting updated CQ
   UINT8                  QueueId;
   UINTN                  SqSize;
   UINTN                  CqSize;
