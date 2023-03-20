@@ -379,6 +379,7 @@ ShellCommandRunDrivers (
         ShellCommandLineFreeVarList (Package);
         return (SHELL_OUT_OF_RESOURCES);
       }
+
       // MU_CHANGE [END] - CodeQL change
 
       HandleList = GetHandleListByProtocol (&gEfiDriverBindingProtocolGuid);

@@ -409,7 +409,6 @@ ShellCommandRunSetVar (
       VariableName = ShellCommandLineGetRawValue (Package, 1);
       // MU_CHANGE [START] - CodeQL change
       if (VariableName == NULL) {
-        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"setvar", StringGuid);
         return SHELL_INVALID_PARAMETER;
       }
 
