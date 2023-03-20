@@ -16,6 +16,7 @@ from edk2toolext import edk2_logging
 from edk2toolext.environment import self_describing_environment
 from edk2toolext.base_abstract_invocable import BaseAbstractInvocable
 from edk2toollib.utility_functions import RunCmd
+from edk2toollib.utility_functions import GetHostInfo # MU_CHANGE: Need to check if this is cross compilation
 from edk2toollib.windows.locate_tools import QueryVcVariables
 
 
@@ -121,8 +122,10 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             # MU_CHANGE: Specify target architecture
             if self.target_arch == "IA32":
                 VcToolChainArch = "x86"
+                TargetInfoArch = "x86"
             elif self.target_arch == "ARM":
                 VcToolChainArch = "x86_arm"
+                TargetInfoArch = "ARM"
             else:
                 raise NotImplementedError()
             # MU_CHANGE
@@ -151,7 +154,13 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
                 shell_env.get_shell_var("EDK_TOOLS_PATH"), "Bin", "Win32")
 
             # compiled tools need to be added to path because antlr is referenced
-            shell_env.insert_path(self.OutputDir)
+            HostInfo = GetHostInfo()
+            if TargetInfoArch == HostInfo.arch:
+                # not cross compiling
+                shell_env.insert_path(self.OutputDir)
+            else:
+                # cross compiling
+                shell_env.insert_path(shell_env.get_shell_var("EDK_TOOLS_BIN"))
 
             # Actually build the tools.
             ret = RunCmd('nmake.exe', None,
