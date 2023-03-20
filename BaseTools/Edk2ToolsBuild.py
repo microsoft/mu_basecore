@@ -16,7 +16,6 @@ from edk2toolext import edk2_logging
 from edk2toolext.environment import self_describing_environment
 from edk2toolext.base_abstract_invocable import BaseAbstractInvocable
 from edk2toollib.utility_functions import RunCmd
-from edk2toollib.utility_functions import GetHostInfo
 from edk2toollib.windows.locate_tools import QueryVcVariables
 
 
@@ -119,12 +118,14 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         shell_env.set_shell_var("PYTHON_COMMAND", pc)
 
         if self.tool_chain_tag.lower().startswith("vs"):
+            # MU_CHANGE: Specify target architecture
             if self.target_arch == "IA32":
                 VcToolChainArch = "x86"
             elif self.target_arch == "ARM":
                 VcToolChainArch = "x86_arm"
             else:
                 raise NotImplementedError()
+            # MU_CHANGE
 
             # # Update environment with required VC vars.
             interesting_keys = ["ExtensionSdkDir", "INCLUDE", "LIB"]
@@ -152,7 +153,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             # compiled tools need to be added to path because antlr is referenced
             shell_env.insert_path(self.OutputDir)
 
-            # First clean the slate.
+            # MU_CHANGE: First clean the slate.
             ret = RunCmd('nmake.exe', 'cleanall',
                          workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
             if ret != 0:
