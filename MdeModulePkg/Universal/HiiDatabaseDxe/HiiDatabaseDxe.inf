@@ -55,6 +55,7 @@
   UefiRuntimeServicesTableLib
   PrintLib
   PerformanceLib # MU_CHANGE
+  SafeIntLib # MU_CHANGE
 
 [Protocols]
   gEfiDevicePathProtocolGuid                                            ## SOMETIMES_CONSUMES

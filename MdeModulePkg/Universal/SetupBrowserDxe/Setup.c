@@ -306,7 +306,13 @@ UiCopyMenuList (
     Link     = GetNextNode (CurrentMenuListHead, Link);
 
     NewMenuEntry = AllocateZeroPool (sizeof (FORM_ENTRY_INFO));
-    ASSERT (NewMenuEntry != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (NewMenuEntry == NULL) {
+      ASSERT (NewMenuEntry != NULL);
+      return;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     NewMenuEntry->Signature = FORM_ENTRY_INFO_SIGNATURE;
     NewMenuEntry->HiiHandle = MenuList->HiiHandle;
     CopyMem (&NewMenuEntry->FormSetGuid, &MenuList->FormSetGuid, sizeof (EFI_GUID));
@@ -414,7 +420,13 @@ PopupErrorMessage (
 
   if (OpCode != NULL) {
     Statement = AllocateZeroPool (sizeof (FORM_DISPLAY_ENGINE_STATEMENT));
-    ASSERT (Statement != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Statement == NULL) {
+      ASSERT (Statement != NULL);
+      return BROWSER_ACTION_NONE;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     Statement->OpCode                     = OpCode;
     gDisplayFormData.HighLightedStatement = Statement;
   }
@@ -509,8 +521,14 @@ SendForm (
 
   for (Index = 0; Index < HandleCount; Index++) {
     Selection = AllocateZeroPool (sizeof (UI_MENU_SELECTION));
-    ASSERT (Selection != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Selection == NULL) {
+      ASSERT (Selection != NULL);
+      Status = EFI_OUT_OF_RESOURCES;
+      break;
+    }
 
+    // MU_CHANGE [END] - CodeQL change
     Selection->Handle = Handles[Index];
     if (FormSetGuid != NULL) {
       CopyMem (&Selection->FormSetGuid, FormSetGuid, sizeof (EFI_GUID));
@@ -521,8 +539,14 @@ SendForm (
 
     do {
       FormSet = AllocateZeroPool (sizeof (FORM_BROWSER_FORMSET));
-      ASSERT (FormSet != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (FormSet == NULL) {
+        ASSERT (FormSet != NULL);
+        Status = EFI_OUT_OF_RESOURCES;
+        break;
+      }
 
+      // MU_CHANGE [END] - CodeQL change
       //
       // Validate the HiiHandle
       // if validate failed, find the first validate parent HiiHandle.
@@ -685,8 +709,13 @@ ProcessStorage (
     BufferSize = (TmpSize + StrLen (BrowserStorage->ConfigHdr) + 2) * sizeof (CHAR16);
     MaxLen     = BufferSize / sizeof (CHAR16);
     ConfigResp = AllocateZeroPool (BufferSize);
-    ASSERT (ConfigResp != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (ConfigResp == NULL) {
+      ASSERT (ConfigResp != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
 
+    // MU_CHANGE [END] - CodeQL change
     StrCpyS (ConfigResp, MaxLen, BrowserStorage->ConfigHdr);
     StrCatS (ConfigResp, MaxLen, L"&");
     StrCatS (ConfigResp, MaxLen, *ResultsData);
@@ -1096,8 +1125,13 @@ NewStringCat (
 
   MaxLen    = (StrSize (*Dest) + StrSize (Src) - 1) / sizeof (CHAR16);
   NewString = AllocateZeroPool (MaxLen * sizeof (CHAR16));
-  ASSERT (NewString != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (NewString == NULL) {
+    ASSERT (NewString != NULL);
+    return;
+  }
 
+  // MU_CHANGE [END] - CodeQL change
   StrCpyS (NewString, MaxLen, *Dest);
   StrCatS (NewString, MaxLen, Src);
 
@@ -1831,7 +1865,13 @@ GetQuestionValue (
     // Allocate buffer include '\0'
     MaxLen        = Length + 1;
     ConfigRequest = AllocateZeroPool (MaxLen * sizeof (CHAR16));
-    ASSERT (ConfigRequest != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (ConfigRequest == NULL) {
+      ASSERT (ConfigRequest != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     StrCpyS (ConfigRequest, MaxLen, FormsetStorage->ConfigHdr);
     if (IsBufferStorage) {
@@ -2097,7 +2137,13 @@ SetQuestionValue (
         Value     = NULL;
         BufferLen = ((StrLen ((CHAR16 *)Src) * 4) + 1) * sizeof (CHAR16);
         Value     = AllocateZeroPool (BufferLen);
-        ASSERT (Value != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (Value == NULL) {
+          ASSERT (Value != NULL);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         //
         // Convert Unicode String to Config String, e.g. "ABCD" => "0041004200430044"
         //
@@ -2116,7 +2162,13 @@ SetQuestionValue (
       } else {
         BufferLen = StorageWidth * 2 + 1;
         Value     = AllocateZeroPool (BufferLen * sizeof (CHAR16));
-        ASSERT (Value != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (Value == NULL) {
+          ASSERT (Value != NULL);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         //
         // Convert Buffer to Hex String
         //
@@ -2161,7 +2213,13 @@ SetQuestionValue (
     ASSERT (FormsetStorage != NULL);
     MaxLen     = StrLen (FormsetStorage->ConfigHdr) + Length + 1;
     ConfigResp = AllocateZeroPool (MaxLen * sizeof (CHAR16));
-    ASSERT (ConfigResp != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (ConfigResp == NULL) {
+      ASSERT (ConfigResp != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     StrCpyS (ConfigResp, MaxLen, FormsetStorage->ConfigHdr);
     if (IsBufferStorage) {
@@ -2919,7 +2977,13 @@ FindQuestionFromProgress (
       // For Name/Value type, Skip the ConfigHdr part.
       //
       EndStr = StrStr (Progress, L"PATH=");
-      ASSERT (EndStr != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (EndStr == NULL) {
+        ASSERT (EndStr != NULL);
+        return FALSE;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       while (*EndStr != '&') {
         EndStr++;
       }
@@ -2930,7 +2994,13 @@ FindQuestionFromProgress (
       // For Buffer type, Skip the ConfigHdr part.
       //
       EndStr = StrStr (Progress, L"&OFFSET=");
-      ASSERT (EndStr != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (EndStr == NULL) {
+        ASSERT (EndStr != NULL);
+        return FALSE;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       *EndStr = '\0';
     }
 
@@ -5337,7 +5407,13 @@ RemoveConfigRequest (
   //
   if (Storage->BrowserStorage->Type == EFI_HII_VARSTORE_NAME_VALUE) {
     RequestElement = StrStr (ConfigRequest, L"PATH");
-    ASSERT (RequestElement != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (RequestElement == NULL) {
+      ASSERT (RequestElement != NULL);
+      return;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     RequestElement = StrStr (RequestElement, SearchKey);
   } else {
     RequestElement = StrStr (ConfigRequest, SearchKey);
@@ -5545,7 +5621,13 @@ ConfigRequestAdjust (
   //
   if (Storage->Type == EFI_HII_VARSTORE_NAME_VALUE) {
     RequestElement = StrStr (ConfigRequest, L"PATH");
-    ASSERT (RequestElement != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (RequestElement == NULL) {
+      ASSERT (RequestElement != NULL);
+      return FALSE;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     RequestElement = StrStr (RequestElement, SearchKey);
   } else {
     RequestElement = StrStr (ConfigRequest, SearchKey);
@@ -5567,22 +5649,29 @@ ConfigRequestAdjust (
         ASSERT (NextRequestElement != NULL);
       }
 
-      //
-      // Replace "&" with '\0'.
-      //
-      *NextRequestElement = L'\0';
+      // MU_CHANGE [START] - CodeQL change
+      if (NextRequestElement != NULL) {
+        //
+        // Replace "&" with '\0'.
+        //
+        *NextRequestElement = L'\0';
+      }
+
+      // MU_CHANGE [END] - CodeQL change
     } else {
       if (RespString && (Storage->Type == EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER)) {
         NextElementBakup   = NextRequestElement;
         NextRequestElement = StrStr (RequestElement, ValueKey);
         ASSERT (NextRequestElement != NULL);
-        // MU_CHANGE - Verify NextRequestElement is valid before terminating
+        // MU_CHANGE [START] - CodeQL change
         if (NextRequestElement != NULL) {
           //
           // Replace "&" with '\0'.
           //
           *NextRequestElement = L'\0';
         }
+
+        // MU_CHANGE [END] - CodeQL change
       }
     }
 
@@ -5677,7 +5766,13 @@ LoadStorage (
     //
     StrLen        = StrSize (Storage->ConfigHdr) + 20 * sizeof (CHAR16);
     ConfigRequest = AllocateZeroPool (StrLen);
-    ASSERT (ConfigRequest != NULL);
+    // MU_CHANGE [START] - CodeQL change
+    if (ConfigRequest == NULL) {
+      ASSERT (ConfigRequest != NULL);
+      return;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     UnicodeSPrint (
       ConfigRequest,
       StrLen,
@@ -6538,7 +6633,13 @@ RegisterHotKey (
   // Create new Key, and add it into List.
   //
   HotKey = AllocateZeroPool (sizeof (BROWSER_HOT_KEY));
-  ASSERT (HotKey != NULL);
+  // MU_CHANGE [START] - CodeQL change
+  if (HotKey == NULL) {
+    ASSERT (HotKey != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   HotKey->Signature = BROWSER_HOT_KEY_SIGNATURE;
   HotKey->KeyData   = AllocateCopyPool (sizeof (EFI_INPUT_KEY), KeyData);
   InsertTailList (&gBrowserHotKeyList, &HotKey->Link);
