@@ -880,7 +880,13 @@ InitializeDxeNxMemoryProtectionPolicy (
   ASSERT (Status == EFI_BUFFER_TOO_SMALL);
   do {
     MemoryMap = (EFI_MEMORY_DESCRIPTOR *)AllocatePool (MemoryMapSize);
-    ASSERT (MemoryMap != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (MemoryMap == NULL) {
+      ASSERT (MemoryMap != NULL);
+      return;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     Status = gBS->GetMemoryMap (
                     &MemoryMapSize,
                     MemoryMap,

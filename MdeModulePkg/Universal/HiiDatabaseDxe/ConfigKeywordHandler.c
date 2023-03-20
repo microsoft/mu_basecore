@@ -1757,7 +1757,13 @@ ConstructConfigHdr (
   if (AsciiName != NULL) {
     NameSize = AsciiStrSize (AsciiName);
     Name     = AllocateZeroPool (NameSize * sizeof (CHAR16));
-    ASSERT (Name != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Name == NULL) {
+      ASSERT (Name != NULL);
+      return NULL;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     AsciiStrToUnicodeStrS (AsciiName, Name, NameSize);
   } else {
     Name = NULL;
@@ -1917,7 +1923,13 @@ ConstructRequestElement (
   // Allocate buffer for the entire <ConfigRequest>
   //
   StringPtr = AllocateZeroPool (Length * sizeof (CHAR16));
-  ASSERT (StringPtr != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (StringPtr == NULL) {
+    ASSERT (StringPtr != NULL);
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   if (Name != NULL) {
     //
@@ -1975,6 +1987,12 @@ GetNameFromId (
 
   GetEfiGlobalVariable2 (L"PlatformLang", (VOID **)&PlatformLanguage, NULL);
   SupportedLanguages = GetSupportedLanguages (DatabaseRecord->Handle);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (SupportedLanguages == NULL) {
+    goto Done;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   //
   // Get the best matching language from SupportedLanguages
@@ -2115,8 +2133,20 @@ ExtractConfigRequest (
         }
 
         RequestElement = ConstructRequestElement (Name, Offset, Width);
-        ConfigHdr      = ConstructConfigHdr (Storage, DatabaseRecord->DriverHandle);
-        ASSERT (ConfigHdr != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (RequestElement == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        ConfigHdr = ConstructConfigHdr (Storage, DatabaseRecord->DriverHandle);
+
+        if (ConfigHdr == NULL) {
+          ASSERT (ConfigHdr != NULL);
+          FreePool (RequestElement);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         if (ConfigHdr != NULL) {
           MaxLen         = StrLen (ConfigHdr) + 1 + StrLen (RequestElement) + 1;
           *ConfigRequest = AllocatePool (MaxLen * sizeof (CHAR16));
@@ -2223,6 +2253,12 @@ ExtractConfigResp (
         }
 
         RequestElement = ConstructRequestElement (Name, Offset, Width);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (RequestElement == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
 
         ConfigHdr = ConstructConfigHdr (Storage, DatabaseRecord->DriverHandle);
         ASSERT (ConfigHdr != NULL);

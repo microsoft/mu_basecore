@@ -111,6 +111,12 @@ AmlFindNodeInThis (
   // Create new node with NULL buffer - it means namespace not be returned.
   //
   AmlNodeList = AmlCreateNode (NameSeg, AmlParentNodeList, NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (AmlNodeList == NULL) {
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   InsertTailList (&AmlParentNodeList->Children, &AmlNodeList->Link);
 
   return AmlNodeList;

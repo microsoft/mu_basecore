@@ -130,7 +130,12 @@ BmDisplayMessages (
                      DriverHealthInfo->ControllerHandle,
                      DriverHealthInfo->ChildHandle
                      );
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (ControllerName == NULL) {
+    return;
+  }
 
+  // MU_CHANGE [END] - CodeQL change
   DEBUG ((DEBUG_INFO, "Controller: %s\n", ControllerName));
   Print (L"Controller: %s\n", ControllerName);
   for (Index = 0; DriverHealthInfo->MessageList[Index].HiiHandle != NULL; Index++) {
