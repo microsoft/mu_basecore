@@ -1245,7 +1245,13 @@ GetDistinctTokenSpace (
   BOOLEAN   Match;
 
   DistinctTokenSpace = AllocateZeroPool (*ExMapTableSize * sizeof (EFI_GUID *));
-  ASSERT (DistinctTokenSpace != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (DistinctTokenSpace == NULL) {
+    ASSERT (DistinctTokenSpace != NULL);
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   TsIdx                     = 0;
   OldGuidIndex              = ExMapTable[0].ExGuidIndex;
@@ -1329,6 +1335,14 @@ DxePcdGetNextTokenSpace (
                                  (DYNAMICEX_MAPPING *)((UINT8 *)mPcdDatabase.PeiDb + mPcdDatabase.PeiDb->ExMapTableOffset),
                                  (EFI_GUID *)((UINT8 *)mPcdDatabase.PeiDb + mPcdDatabase.PeiDb->GuidTableOffset)
                                  );
+
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (PeiTokenSpaceTable == NULL) {
+        return EFI_NOT_FOUND;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
+
       CopyMem (TmpTokenSpaceBuffer, PeiTokenSpaceTable, sizeof (EFI_GUID *) * PeiTokenSpaceTableSize);
       TmpTokenSpaceBufferCount = PeiTokenSpaceTableSize;
       FreePool (PeiTokenSpaceTable);
@@ -1341,6 +1355,12 @@ DxePcdGetNextTokenSpace (
                                  (DYNAMICEX_MAPPING *)((UINT8 *)mPcdDatabase.DxeDb + mPcdDatabase.DxeDb->ExMapTableOffset),
                                  (EFI_GUID *)((UINT8 *)mPcdDatabase.DxeDb + mPcdDatabase.DxeDb->GuidTableOffset)
                                  );
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (DxeTokenSpaceTable == NULL) {
+        return EFI_NOT_FOUND;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
 
       //
       // Make sure EFI_GUID in DxeTokenSpaceTable does not exist in PeiTokenSpaceTable

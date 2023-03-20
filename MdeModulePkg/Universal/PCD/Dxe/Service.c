@@ -170,7 +170,13 @@ GetPcdName (
     //
     NameSize = AsciiStrSize (TokenSpaceName) + AsciiStrSize (PcdName);
     Name     = AllocateZeroPool (NameSize);
-    ASSERT (Name != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Name == NULL) {
+      ASSERT (Name != NULL);
+      return NULL;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     //
     // Catenate TokenSpaceCName and PcdCName with a '.' to form the full PCD name.
     //
@@ -1534,7 +1540,13 @@ SetHiiVariable (
     //
     GetVariableSizeAndDataFromHiiPcd (VariableGuid, VariableName, &Size, NULL);
     Buffer = AllocateZeroPool (Size);
-    ASSERT (Buffer != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Buffer == NULL) {
+      ASSERT (Buffer != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     GetVariableSizeAndDataFromHiiPcd (VariableGuid, VariableName, &Size, Buffer);
 
     //

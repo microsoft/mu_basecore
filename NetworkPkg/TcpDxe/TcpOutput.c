@@ -566,8 +566,14 @@ TcpGetSegmentSock (
     // copy data to the segment.
     //
     Data = NetbufAllocSpace (Nbuf, Len, NET_BUF_TAIL);
-    ASSERT (Data != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Data == NULL) {
+      ASSERT (Data != NULL);
+      NetbufFree (Nbuf);
+      return NULL;
+    }
 
+    // MU_CHANGE [END] - CodeQL change
     DataGet = SockGetDataToSend (Tcb->Sk, 0, Len, Data);
   }
 
