@@ -930,6 +930,12 @@ FileHandleReturnLine (
   Status = FileHandleReadLine (Handle, RetVal, &Size, FALSE, Ascii);
   if (Status == EFI_BUFFER_TOO_SMALL) {
     RetVal = AllocateZeroPool (Size);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (RetVal == NULL) {
+      return NULL;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     Status = FileHandleReadLine (Handle, RetVal, &Size, FALSE, Ascii);
   }
 
