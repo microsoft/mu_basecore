@@ -477,7 +477,13 @@ CreatePopUp (
   // Allocate a buffer for a single line of the popup with borders and a Null-terminator
   //
   Line = AllocateZeroPool ((MaxLength + 3) * sizeof (CHAR16));
-  ASSERT (Line != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Line == NULL) {
+    ASSERT (Line != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   //
   // Draw top of popup box
@@ -513,7 +519,13 @@ CreatePopUp (
       //
       UefiLibGetStringWidth (String, TRUE, MaxLength, &Length);
       TmpString = AllocateZeroPool ((Length + 1) * sizeof (CHAR16));
-      ASSERT (TmpString != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (TmpString == NULL) {
+        ASSERT (TmpString != NULL);
+        break;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       StrnCpyS (TmpString, Length + 1, String, Length - 3);
       StrCatS (TmpString, Length + 1, L"...");
 
