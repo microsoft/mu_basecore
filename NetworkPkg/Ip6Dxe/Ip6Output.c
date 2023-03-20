@@ -294,6 +294,10 @@ Ip6SelectInterface (
   IP6_INTERFACE     *IpIf;
   BOOLEAN           Exist;
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  IpIf = NULL;
+  // MU_CHANGE [END] - CodeQL change
+
   NET_CHECK_SIGNATURE (IpSb, IP6_SERVICE_SIGNATURE);
   ASSERT (Destination != NULL && Source != NULL);
 
