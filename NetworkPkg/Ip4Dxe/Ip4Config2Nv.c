@@ -1358,24 +1358,30 @@ Ip4Config2FormInit (
                       STRING_TOKEN (STR_IP4_CONFIG2_FORM_HELP),
                       NULL
                       );
-    UnicodeSPrint (MenuString, 128, L"%s (MAC:%s)", OldMenuString, MacString);
-    HiiSetString (
-      CallbackInfo->RegisteredHandle,
-      STRING_TOKEN (STR_IP4_CONFIG2_FORM_HELP),
-      MenuString,
-      NULL
-      );
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (OldMenuString != NULL) {
+      UnicodeSPrint (MenuString, 128, L"%s (MAC:%s)", OldMenuString, MacString);
+      HiiSetString (
+        CallbackInfo->RegisteredHandle,
+        STRING_TOKEN (STR_IP4_CONFIG2_FORM_HELP),
+        MenuString,
+        NULL
+        );
 
-    UnicodeSPrint (PortString, 128, L"MAC:%s", MacString);
-    HiiSetString (
-      CallbackInfo->RegisteredHandle,
-      STRING_TOKEN (STR_IP4_DEVICE_FORM_HELP),
-      PortString,
-      NULL
-      );
+      UnicodeSPrint (PortString, 128, L"MAC:%s", MacString);
+      HiiSetString (
+        CallbackInfo->RegisteredHandle,
+        STRING_TOKEN (STR_IP4_DEVICE_FORM_HELP),
+        PortString,
+        NULL
+        );
+
+      FreePool (OldMenuString);
+    }
 
     FreePool (MacString);
-    FreePool (OldMenuString);
+
+    // MU_CHANGE [END] - CodeQL change
 
     return EFI_SUCCESS;
   }
