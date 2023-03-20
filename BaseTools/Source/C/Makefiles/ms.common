@@ -13,7 +13,6 @@
 !ERROR "BASE_TOOLS_PATH is not set! Please run build_tools.bat at first!"
 !ENDIF
 
-# MU_CHANGE: Only override HOST_ARCH when it is not specified
 !IFNDEF HOST_ARCH
 HOST_ARCH = IA32
 !ENDIF
