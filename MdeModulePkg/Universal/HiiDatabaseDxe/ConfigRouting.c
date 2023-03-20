@@ -3308,7 +3308,7 @@ GetBlockElement (
   IFR_BLOCK_DATA  *NextBlockData;
   UINTN           Length;
 
-  UINT16  Sum1, Sum2, Sum3; // MU_CHANGE - CodeQL change
+  UINT16  Sum1, Sum2; // MU_CHANGE - CodeQL change
 
   TmpBuffer = NULL;
 
@@ -3432,26 +3432,24 @@ GetBlockElement (
     BlockData     = BASE_CR (Link, IFR_BLOCK_DATA, Entry);
     NextBlockData = BASE_CR (Link->ForwardLink, IFR_BLOCK_DATA, Entry);
 
-    // MU_CHANGE [BEGIN] - Use SafeIntLib functions
-    if ((EFI_ERROR (SafeUint16Add (BlockData->Offset, BlockData->Width, &Sum1))) ||
-        (EFI_ERROR (SafeUint16Add (NextBlockData->Offset, NextBlockData->Width, &Sum2))) ||
-        (EFI_ERROR (SafeUint16Sub (NextBlockData->Offset, BlockData->Offset, &Sum3))))
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if ((!EFI_ERROR (SafeUint16Add (BlockData->Offset, BlockData->Width, &Sum1))) &&
+        (!EFI_ERROR (SafeUint16Add (NextBlockData->Offset, NextBlockData->Width, &Sum2))) &&
+        (NextBlockData->Offset >= BlockData->Offset) &&
+        (NextBlockData->Offset <= Sum1) &&
+        (Sum2 > Sum1))
     {
-      continue;
-    }
-
-    if ((NextBlockData->Offset >= BlockData->Offset) || (NextBlockData->Offset <= Sum1)) {
-      if (Sum2 > Sum1) {
-        if (EFI_ERROR (SafeUint16Sub ((UINT16)Sum2, BlockData->Offset, &BlockData->Width))) {
-          continue;
-        }
+      Sum1 = BlockData->Width;
+      if (!EFI_ERROR (SafeUint16Sub ((UINT16)Sum2, BlockData->Offset, &BlockData->Width))) {
+        RemoveEntryList (Link->ForwardLink);
+        FreePool (NextBlockData);
+        continue;
+      } else {
+        BlockData->Width = Sum1;
       }
-
-      // MU_CHANGE [END] - Use SafeIntLib functions
-      RemoveEntryList (Link->ForwardLink);
-      FreePool (NextBlockData);
-      continue;
     }
+
+    // MU_CHANGE [END] - CodeQL change
 
     Link = Link->ForwardLink;
   }

@@ -1961,7 +1961,7 @@ GetBlockDataInfo (
   IFR_BLOCK_DATA  *BlockArray;
   UINT8           *DataBuffer;
 
-  UINT16  Sum1, Sum2, Sum3; // MU_CHANGE - CodeQL change
+  UINT16  Sum1, Sum2; // MU_CHANGE - CodeQL change
 
   //
   // Initialize the local variables.
@@ -2159,29 +2159,25 @@ GetBlockDataInfo (
     BlockData    = BASE_CR (Link, IFR_BLOCK_DATA, Entry);
     NewBlockData = BASE_CR (Link->ForwardLink, IFR_BLOCK_DATA, Entry);
     // MU_CHANGE [BEGIN] - CodeQL change
-    if ((SafeUint16Add (BlockData->Offset, BlockData->Width, &Sum1) != EFI_SUCCESS) ||
-        (SafeUint16Add (NewBlockData->Offset, NewBlockData->Width, &Sum2) != EFI_SUCCESS) ||
-        (SafeUint16Sub (NewBlockData->Offset, BlockData->Offset, &Sum3) != EFI_SUCCESS))
+    if ((!EFI_ERROR (SafeUint16Add (BlockData->Offset, BlockData->Width, &Sum1))) &&
+        (!EFI_ERROR (SafeUint16Add (NewBlockData->Offset, NewBlockData->Width, &Sum2))) &&
+        (NewBlockData->Offset >= BlockData->Offset) &&
+        (NewBlockData->Offset <= Sum1))
     {
-      continue;
-    }
-
-    if ((NewBlockData->Offset >= BlockData->Offset) && (NewBlockData->Offset <= Sum1)) {
-      if (Sum2 > Sum1) {
-        if (SafeUint16Sub ((UINT16)Sum2, BlockData->Offset, &BlockData->Width) != EFI_SUCCESS) {
-          continue;
-        }
+      Sum1 = BlockData->Width;
+      if (!EFI_ERROR (SafeUint16Sub (Sum2, BlockData->Offset, &BlockData->Width))) {
+        RemoveEntryList (Link->ForwardLink);
+        FreePool (NewBlockData);
+        continue;
+      } else {
+        BlockData->Width = Sum1;
       }
-
-      // MU_CHANGE [END] - CodeQL change
-      RemoveEntryList (Link->ForwardLink);
-      FreePool (NewBlockData);
-      continue;
     }
 
     Link = Link->ForwardLink;
   }
 
+  // MU_CHANGE [END] - CodeQL change
   *VarBuffer         = DataBuffer;
   *CurrentBlockArray = BlockArray;
   return EFI_SUCCESS;

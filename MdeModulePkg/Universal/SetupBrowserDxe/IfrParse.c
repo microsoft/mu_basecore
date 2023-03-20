@@ -190,19 +190,19 @@ CreateQuestion (
         NameValueNode->Name      = AllocateCopyPool (StrSize (Statement->VariableName), Statement->VariableName);
         if (NameValueNode->Name == NULL) {
           ASSERT (NameValueNode->Name != NULL);
-          return NULL;
+          goto ErrorExit;
         }
 
         NameValueNode->Value = AllocateZeroPool (0x10);
         if (NameValueNode->Value == NULL) {
           ASSERT (NameValueNode->Value != NULL);
-          return NULL;
+          goto ErrorExit;
         }
 
         NameValueNode->EditValue = AllocateZeroPool (0x10);
         if (NameValueNode->EditValue == NULL) {
           ASSERT (NameValueNode->EditValue != NULL);
-          return NULL;
+          goto ErrorExit;
         }
 
         // MU_CHANGE [END] - CodeQL change
@@ -213,6 +213,28 @@ CreateQuestion (
   }
 
   return Statement;
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+ErrorExit:
+  if (NameValueNode != NULL) {
+    if (NameValueNode->Name != NULL) {
+      FreePool (NameValueNode->Name);
+    }
+
+    if (NameValueNode->Value != NULL) {
+      FreePool (NameValueNode->Value);
+    }
+
+    if (NameValueNode->EditValue != NULL) {
+      FreePool (NameValueNode->EditValue);
+    }
+
+    FreePool (NameValueNode);
+  }
+
+  return NULL;
+
+  // MU_CHANGE [END] - CodeQL change
 }
 
 /**
@@ -456,7 +478,7 @@ CreateStorage (
   // MU_CHANGE [BEGIN] - CodeQL change
   if (Storage == NULL) {
     ASSERT (Storage != NULL);
-    return NULL;
+    goto ErrorExit;
   }
 
   // MU_CHANGE [END] - CodeQL change
@@ -469,7 +491,7 @@ CreateStorage (
     // MU_CHANGE [BEGIN] - CodeQL change
     if (BrowserStorage == NULL) {
       ASSERT (BrowserStorage != NULL);
-      return NULL;
+      goto ErrorExit;
     }
 
     // MU_CHANGE [END] - CodeQL change
@@ -491,9 +513,37 @@ CreateStorage (
   Storage->BrowserStorage = BrowserStorage;
   InitializeConfigHdr (FormSet, Storage);
   Storage->ConfigRequest = AllocateCopyPool (StrSize (Storage->ConfigHdr), Storage->ConfigHdr);
-  Storage->SpareStrLen   = 0;
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Storage->ConfigRequest == NULL) {
+    ASSERT (Storage->ConfigRequest != NULL);
+    goto ErrorExit;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+  Storage->SpareStrLen = 0;
 
   return Storage;
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+ErrorExit:
+  if (UnicodeString != NULL) {
+    FreePool (UnicodeString);
+  }
+
+  if (BrowserStorage != NULL) {
+    FreePool (BrowserStorage);
+  }
+
+  if (Storage->ConfigRequest != NULL) {
+    FreePool (Storage->ConfigRequest);
+  }
+
+  if (Storage != NULL) {
+    FreePool (Storage);
+  }
+
+  return NULL;
+  // MU_CHANGE [END] - CodeQL change
 }
 
 /**
@@ -1718,6 +1768,7 @@ ParseOpCodes (
           // MU_CHANGE [BEGIN] - CodeQL change
           if (CurrentForm->SuppressExpression == NULL) {
             ASSERT (CurrentForm->SuppressExpression != NULL);
+            FreePool (CurrentForm);
             return EFI_OUT_OF_RESOURCES;
           }
 
@@ -1800,6 +1851,7 @@ ParseOpCodes (
           // MU_CHANGE [BEGIN] - CodeQL change
           if (CurrentForm->SuppressExpression == NULL) {
             ASSERT (CurrentForm->SuppressExpression != NULL);
+            FreePool (CurrentForm);
             return EFI_OUT_OF_RESOURCES;
           }
 
@@ -2282,7 +2334,14 @@ ParseOpCodes (
         if (CurrentDefault->Value.Type == EFI_IFR_TYPE_BUFFER) {
           CurrentDefault->Value.BufferLen = (UINT16)(OpCodeLength - OFFSET_OF (EFI_IFR_DEFAULT, Value));
           CurrentDefault->Value.Buffer    = AllocateCopyPool (CurrentDefault->Value.BufferLen, &((EFI_IFR_DEFAULT *)OpCodeData)->Value);
-          ASSERT (CurrentDefault->Value.Buffer != NULL);
+          // MU_CHANGE [BEGIN] - CodeQL change
+          if (CurrentDefault->Value.Buffer == NULL) {
+            ASSERT (CurrentDefault->Value.Buffer != NULL);
+            FreePool (CurrentDefault);
+            return EFI_OUT_OF_RESOURCES;
+          }
+
+          // MU_CHANGE [END] - CodeQL change
         } else {
           CopyMem (&CurrentDefault->Value.Value, &((EFI_IFR_DEFAULT *)OpCodeData)->Value, OpCodeLength - OFFSET_OF (EFI_IFR_DEFAULT, Value));
           ExtendValueToU64 (&CurrentDefault->Value);
@@ -2327,7 +2386,14 @@ ParseOpCodes (
 
           CurrentDefault->Value.BufferLen = (UINT16)(OpCodeLength - OFFSET_OF (EFI_IFR_ONE_OF_OPTION, Value));
           CurrentDefault->Value.Buffer    = AllocateCopyPool (CurrentDefault->Value.BufferLen, &((EFI_IFR_ONE_OF_OPTION *)OpCodeData)->Value);
-          ASSERT (CurrentDefault->Value.Buffer != NULL);
+          // MU_CHANGE [BEGIN] - CodeQL change
+          if (CurrentDefault->Value.Buffer == NULL) {
+            ASSERT (CurrentDefault->Value.Buffer != NULL);
+            FreePool (CurrentDefault);
+            return EFI_OUT_OF_RESOURCES;
+          }
+
+          // MU_CHANGE [END] - CodeQL change
 
           //
           // Insert to Default Value list of current Question
@@ -2344,6 +2410,12 @@ ParseOpCodes (
         // MU_CHANGE [BEGIN] - CodeQL change
         if (CurrentOption == NULL) {
           ASSERT (CurrentOption != NULL);
+          if (CurrentDefault != NULL) {
+            FreePool (CurrentDefault->Value.Buffer);
+            RemoveEntryList (&CurrentDefault->Link);
+            FreePool (CurrentDefault);
+          }
+
           return EFI_OUT_OF_RESOURCES;
         }
 
@@ -2365,7 +2437,20 @@ ParseOpCodes (
           CurrentOption->SuppressExpression = (FORM_EXPRESSION_LIST *)AllocatePool (
                                                                         (UINTN)(sizeof (FORM_EXPRESSION_LIST) + ((ConditionalExprCount -1) * sizeof (FORM_EXPRESSION *)))
                                                                         );
-          ASSERT (CurrentOption->SuppressExpression != NULL);
+          // MU_CHANGE [BEGIN] - CodeQL change
+          if (CurrentOption->SuppressExpression == NULL) {
+            ASSERT (CurrentOption->SuppressExpression != NULL);
+            FreePool (CurrentOption);
+            if (CurrentDefault != NULL) {
+              FreePool (CurrentDefault->Value.Buffer);
+              RemoveEntryList (&CurrentDefault->Link);
+              FreePool (CurrentDefault);
+            }
+
+            return EFI_OUT_OF_RESOURCES;
+          }
+
+          // MU_CHANGE [END] - CodeQL change
           CurrentOption->SuppressExpression->Count     = (UINTN)ConditionalExprCount;
           CurrentOption->SuppressExpression->Signature = FORM_EXPRESSION_LIST_SIGNATURE;
           CopyMem (CurrentOption->SuppressExpression->Expression, GetConditionalExpressionList (ExpressOption), (UINTN)(sizeof (FORM_EXPRESSION *) * ConditionalExprCount));

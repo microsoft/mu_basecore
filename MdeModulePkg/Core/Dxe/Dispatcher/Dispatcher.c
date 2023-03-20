@@ -858,6 +858,7 @@ CoreFvToDevicePath (
   @retval EFI_ALREADY_STARTED   The driver has already been started. Only one
                                 DriverName may be active in the system at any one
                                 time.
+  @retval EFI_OUT_OF_RESOURCES  If memory could not be allocated for the DriverEntry. // MU_CHANGE - CodeQL change
 
 **/
 EFI_STATUS

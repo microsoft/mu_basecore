@@ -164,7 +164,7 @@ USBMouseAbsolutePointerDriverBindingStart (
   if (UsbMouseAbsolutePointerDevice == NULL) {
     ASSERT (UsbMouseAbsolutePointerDevice != NULL);
     Status = EFI_OUT_OF_RESOURCES;
-    goto ErrorExit1;
+    goto ErrorExit;
   }
 
   // MU_CHANGE [END] - CodeQL change
