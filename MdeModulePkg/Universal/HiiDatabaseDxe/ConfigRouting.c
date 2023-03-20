@@ -3431,7 +3431,6 @@ GetBlockElement (
   while ((Link != &RequestBlockArray->Entry) && (Link->ForwardLink != &RequestBlockArray->Entry)) {
     BlockData     = BASE_CR (Link, IFR_BLOCK_DATA, Entry);
     NextBlockData = BASE_CR (Link->ForwardLink, IFR_BLOCK_DATA, Entry);
-
     // MU_CHANGE [BEGIN] - CodeQL change
     if ((!EFI_ERROR (SafeUint16Add (BlockData->Offset, BlockData->Width, &Sum1))) &&
         (!EFI_ERROR (SafeUint16Add (NextBlockData->Offset, NextBlockData->Width, &Sum2))) &&
@@ -3440,7 +3439,7 @@ GetBlockElement (
         (Sum2 > Sum1))
     {
       Sum1 = BlockData->Width;
-      if (!EFI_ERROR (SafeUint16Sub ((UINT16)Sum2, BlockData->Offset, &BlockData->Width))) {
+      if (!EFI_ERROR (SafeUint16Sub (Sum2, BlockData->Offset, &BlockData->Width))) {
         RemoveEntryList (Link->ForwardLink);
         FreePool (NextBlockData);
         continue;

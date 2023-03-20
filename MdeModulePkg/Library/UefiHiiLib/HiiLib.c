@@ -2162,7 +2162,8 @@ GetBlockDataInfo (
     if ((!EFI_ERROR (SafeUint16Add (BlockData->Offset, BlockData->Width, &Sum1))) &&
         (!EFI_ERROR (SafeUint16Add (NewBlockData->Offset, NewBlockData->Width, &Sum2))) &&
         (NewBlockData->Offset >= BlockData->Offset) &&
-        (NewBlockData->Offset <= Sum1))
+        (NewBlockData->Offset <= Sum1) &&
+        (Sum2 > Sum1))
     {
       Sum1 = BlockData->Width;
       if (!EFI_ERROR (SafeUint16Sub (Sum2, BlockData->Offset, &BlockData->Width))) {
