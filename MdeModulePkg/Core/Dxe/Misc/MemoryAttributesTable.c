@@ -148,7 +148,13 @@ InstallMemoryAttributesTable (
 
   do {
     MemoryMap = AllocatePool (MemoryMapSize);
-    ASSERT (MemoryMap != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (MemoryMap == NULL) {
+      ASSERT (MemoryMap != NULL);
+      return;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     Status = CoreGetMemoryMapWithSeparatedImageSection (
                &MemoryMapSize,
@@ -179,7 +185,14 @@ InstallMemoryAttributesTable (
   // Allocate MemoryAttributesTable
   //
   MemoryAttributesTable = AllocatePool (sizeof (EFI_MEMORY_ATTRIBUTES_TABLE) + DescriptorSize * RuntimeEntryCount);
-  ASSERT (MemoryAttributesTable != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (MemoryAttributesTable == NULL) {
+    ASSERT (MemoryAttributesTable != NULL);
+    FreePool (MemoryMapStart);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   MemoryAttributesTable->Version         = EFI_MEMORY_ATTRIBUTES_TABLE_VERSION;
   MemoryAttributesTable->NumberOfEntries = RuntimeEntryCount;
   MemoryAttributesTable->DescriptorSize  = (UINT32)DescriptorSize;

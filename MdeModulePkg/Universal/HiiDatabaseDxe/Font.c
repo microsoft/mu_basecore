@@ -1739,11 +1739,28 @@ HiiStringToImage (
 
   StrLength = StrLen (String);
   GlyphBuf  = (UINT8 **)AllocateZeroPool (StrLength * sizeof (UINT8 *));
-  ASSERT (GlyphBuf != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (GlyphBuf == NULL) {
+    ASSERT (GlyphBuf != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
   Cell = (EFI_HII_GLYPH_INFO *)AllocateZeroPool (StrLength * sizeof (EFI_HII_GLYPH_INFO));
-  ASSERT (Cell != NULL);
+  if (Cell == NULL) {
+    ASSERT (Cell != NULL);
+    FreePool (GlyphBuf);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
   Attributes = (UINT8 *)AllocateZeroPool (StrLength * sizeof (UINT8));
-  ASSERT (Attributes != NULL);
+  if (Attributes == NULL) {
+    ASSERT (Attributes != NULL);
+    FreePool (GlyphBuf);
+    FreePool (Cell);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   FontInfo      = NULL;
   RowInfo       = NULL;

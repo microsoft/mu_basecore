@@ -286,7 +286,13 @@ InitializeGraphicsConsoleTextMode (
   // Reserve 2 modes for 80x25, 80x50 of graphics console.
   //
   NewModeBuffer = AllocateZeroPool (sizeof (GRAPHICS_CONSOLE_MODE_DATA) * (Count + 2));
-  ASSERT (NewModeBuffer != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (NewModeBuffer == NULL) {
+    ASSERT (NewModeBuffer != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   //
   // Mode 0 and mode 1 is for 80x25, 80x50 according to UEFI spec.
@@ -2097,7 +2103,13 @@ RegisterFontPackage (
 
   PackageLength = sizeof (EFI_HII_SIMPLE_FONT_PACKAGE_HDR) + mNarrowFontSize + 4;
   Package       = AllocateZeroPool (PackageLength);
-  ASSERT (Package != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Package == NULL) {
+    ASSERT (Package != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   WriteUnaligned32 ((UINT32 *)Package, PackageLength);
   SimplifiedFont                       = (EFI_HII_SIMPLE_FONT_PACKAGE_HDR *)(Package + 4);
