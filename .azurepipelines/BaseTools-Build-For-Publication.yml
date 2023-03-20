@@ -72,7 +72,7 @@ jobs:
       displayName: Publish To Pipeline
       condition: SucceededOrFailed()
 
-  - job: windows_build-x86
+  - job: windows_build_x86
     displayName: Windows Build x86
     pool:
       vmImage: windows-latest
@@ -116,7 +116,7 @@ jobs:
       displayName: Publish To Pipeline
       condition: SucceededOrFailed()
 
-  - job: windows_build-ARM
+  - job: windows_build_ARM
     displayName: Windows Build ARM
     pool:
       vmImage: windows-latest
