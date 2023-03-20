@@ -806,7 +806,7 @@ X509GetTBSCert (
   UINTN        Length;
 
   // MU_CHANGE [BEGIN] - CodeQL change
-  Asn1Tag = V_ASN1_UNDEF;
+  Asn1Tag = (UINT32)V_ASN1_UNDEF;
   // MU_CHANGE [END] - CodeQL change
 
   //
