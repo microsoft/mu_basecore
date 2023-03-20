@@ -535,6 +535,12 @@ HttpIoSendChunkedTransfer (
       }
 
       NewHeaders = AllocateZeroPool ((RequestMessage->HeaderCount + AddNewHeader) * sizeof (EFI_HTTP_HEADER));
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (NewHeaders == NULL) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       CopyMem ((VOID *)NewHeaders, (VOID *)RequestMessage->Headers, RequestMessage->HeaderCount * sizeof (EFI_HTTP_HEADER));
       if (AddNewHeader == 0) {
         //

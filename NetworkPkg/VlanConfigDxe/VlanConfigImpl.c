@@ -258,7 +258,13 @@ VlanCallback (
   // Get Browser data
   //
   Configuration = AllocateZeroPool (sizeof (VLAN_CONFIGURATION));
-  ASSERT (Configuration != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Configuration == NULL) {
+    ASSERT (Configuration != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   HiiGetBrowserData (&gVlanConfigFormSetGuid, mVlanStorageName, sizeof (VLAN_CONFIGURATION), (UINT8 *)Configuration);
 
   VlanConfig = PrivateData->VlanConfig;

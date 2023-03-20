@@ -1,0 +1,297 @@
+# This workflow runs CodeQL against the repository.
+#
+# Results are uploaded to GitHub Code Scanning.
+#
+# Note: Important: This file currently only works with "CI" builds. "Platform" builds can
+#                   be supported without much effort but that will be done in the future.
+#
+# Note: This workflow only supports Windows as CodeQL CLI has confirmed issues running
+#       against edk2-style codebases on Linux (only tested on Ubuntu). Therefore, this
+#       workflow is written only for Windows but could easily be adapted to run on Linux
+#       in the future if needed (e.g. swap out "windows" with agent OS var value, etc.)
+#
+# NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
+#       instead of the file in this repo.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+
+name: "CodeQL"
+
+on:
+  push:
+    branches:
+      - main
+      - release/*
+  pull_request_target:
+    branches:
+      - main
+      - release/*
+    paths-ignore:
+      - '!**.c'
+      - '!**.h'
+
+jobs:
+  gather_packages:
+    name: Gather Repo Packages
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.generate_matrix.outputs.packages }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '>=3.11'
+
+    - name: Generate Package Matrix
+      id: generate_matrix
+      shell: python
+      run: |
+        import os
+        import json
+
+        packages = [d for d in os.listdir() if d.strip().lower().endswith('pkg')]
+
+        # Ensure the package can actually be built
+        for package in packages:
+            if not any(file.endswith('.dsc') for file in os.listdir(package)):
+                packages.remove(package)
+
+        packages.sort()
+
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            print(f'packages={json.dumps(packages)}', file=fh)
+
+  analyze:
+    name: Analyze
+    runs-on: windows-2022
+    needs:
+      - gather_packages
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJson(needs.gather_packages.outputs.packages) }}
+        include:
+          - archs: IA32,X64
+          - tool_chain_tag: VS2022
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '>=3.11'
+
+    - name: Use Git Long Paths on Windows
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        git config --system core.longpaths true
+
+    - name: Install/Upgrade pip Modules
+      run: pip install -r pip-requirements.txt --upgrade
+
+    - name: Determine CI Settings File Supported Operations
+      id: get_ci_file_operations
+      shell: python
+      run: |
+        import importlib
+        import os
+        import sys
+        from pathlib import Path
+        from edk2toolext.invocables.edk2_ci_setup import CiSetupSettingsManager
+        from edk2toolext.invocables.edk2_setup import SetupSettingsManager
+
+        # Find the CI Settings file (usually in .pytool/CISettings.py)
+        ci_settings_file = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('.pytool/CISettings.py'))
+
+        # Note: At this point, submodules have not been pulled, only one CI Settings file should exist
+        if len(ci_settings_file) != 1 or not ci_settings_file[0].is_file():
+            print("::error title=Workspace Error!::Failed to find CI Settings file!")
+            sys.exit(1)
+
+        ci_settings_file = ci_settings_file[0]
+
+        # Try Finding the Settings class in the file
+        module_name = 'ci_settings'
+
+        spec = importlib.util.spec_from_file_location(module_name, ci_settings_file)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        try:
+            settings = getattr(module, 'Settings')
+        except AttributeError:
+            print("::error title=Workspace Error!::Failed to find Settings class in CI Settings file!")
+            sys.exit(1)
+
+        # Determine Which Operations Are Supported by the Settings Class
+        ci_setup_supported = issubclass(settings, CiSetupSettingsManager)
+        setup_supported = issubclass(settings, SetupSettingsManager)
+
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            print(f'ci_setup_supported={str(ci_setup_supported).lower()}', file=fh)
+            print(f'setup_supported={str(setup_supported).lower()}', file=fh)
+
+    - name: Setup
+      if: steps.get_ci_file_operations.outputs.setup_supported == 'true'
+      run: stuart_setup -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }}
+
+    - name: CI Setup
+      if: steps.get_ci_file_operations.outputs.ci_setup_supported == 'true'
+      run: stuart_ci_setup -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }}
+
+    - name: Update
+      run: stuart_update -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }}
+
+    - name: Find CodeQL Plugin Directory
+      id: find_dir
+      shell: python
+      run: |
+        import os
+        import sys
+        from pathlib import Path
+
+        # Find the plugin directory that contains the CodeQL plugin
+        plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('.pytool/Plugin/CodeQL'))
+
+        # This should only be found once
+        if len(plugin_dir) == 1:
+            plugin_dir = str(plugin_dir[0])
+
+            with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+                print(f'codeql_plugin_dir={plugin_dir}', file=fh)
+        else:
+            print("::error title=Workspace Error!::Failed to find Mu Basecore plugin directory!")
+            sys.exit(1)
+
+    - name: Get CodeQL CLI Cache Data
+      id: cache_key_gen
+      env:
+        CODEQL_PLUGIN_DIR: ${{ steps.find_dir.outputs.codeql_plugin_dir }}
+      shell: python
+      run: |
+        import os
+        import yaml
+
+        codeql_cli_ext_dep_name = 'codeqlcli_windows_ext_dep'
+        codeql_plugin_file = os.path.join(os.environ['CODEQL_PLUGIN_DIR'], codeql_cli_ext_dep_name + '.yaml')
+
+        with open (codeql_plugin_file) as pf:
+            codeql_cli_ext_dep = yaml.safe_load(pf)
+
+            cache_key_name = codeql_cli_ext_dep['name']
+            cache_key_version = codeql_cli_ext_dep['version']
+            cache_key = f'{cache_key_name}-{cache_key_version}'
+
+            codeql_plugin_cli_ext_dep_dir = os.path.join(os.environ['CODEQL_PLUGIN_DIR'], codeql_cli_ext_dep['name'].strip() + '_extdep')
+
+            with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+                print(f'codeql_cli_cache_key={cache_key}', file=fh)
+                print(f'codeql_cli_ext_dep_dir={codeql_plugin_cli_ext_dep_dir}', file=fh)
+
+    - name: Attempt to Load CodeQL CLI From Cache
+      id: codeqlcli_cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.cache_key_gen.outputs.codeql_cli_ext_dep_dir }}
+        key: ${{ steps.cache_key_gen.outputs.codeql_cli_cache_key }}
+
+    - name: Download CodeQL CLI
+      if: steps.codeqlcli_cache.outputs.cache-hit != 'true'
+      run: stuart_update -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }} --codeql
+
+    - name: Remove CI Plugins Irrelevant to CodeQL
+      shell: python
+      env:
+        CODEQL_PLUGIN_DIR: ${{ steps.find_dir.outputs.codeql_plugin_dir }}
+      run: |
+        import os
+        import shutil
+        from pathlib import Path
+
+        # Only these two plugins are needed for CodeQL
+        plugins_to_keep = ['CodeQL', 'CompilerPlugin']
+
+        plugin_dir = Path(os.environ['CODEQL_PLUGIN_DIR']).parent.absolute()
+        if plugin_dir.is_dir():
+            for dir in plugin_dir.iterdir():
+                if str(dir.stem) not in plugins_to_keep:
+                    shutil.rmtree(str(dir.absolute()), ignore_errors=True)
+
+    - name: CI Build
+      env:
+        STUART_CODEQL_PATH: ${{ steps.cache_key_gen.outputs.codeql_cli_ext_dep_dir }}
+      run: stuart_ci_build -c .pytool/CISettings.py -t DEBUG -p ${{ matrix.package }} -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }} --codeql
+
+    - name: Prepare Env Data for CodeQL Upload
+      id: env_data
+      env:
+        PACKAGE_NAME: ${{ matrix.package }}
+      shell: python
+      run: |
+        import os
+
+        package = os.environ['PACKAGE_NAME'].strip().lower()
+        directory_name = 'codeql-analysis-' + package + '-debug'
+        file_name = 'codeql-db-' + package + '-debug-0.sarif'
+        sarif_path = os.path.join('Build', directory_name, file_name)
+
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            print(f'sarif_file_path={sarif_path}', file=fh)
+
+    - name: Upload Setup and Update Logs As An Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.package }}-Setup-Update-Logs
+        path: |
+          **/OVERRIDELOG.TXT
+          CISETUP.txt
+          SETUPLOG.txt
+          UPDATE_LOG.txt
+        retention-days: 3
+        if-no-files-found: ignore
+
+    - name: Upload Build Log As An Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.package }}-Build-Logs
+        path: |
+          **/BUILD_REPORT.TXT
+          BUILDLOG_*.md
+          BUILDLOG_*.txt
+          CI_*.md
+          CI_*.txt
+        retention-days: 7
+        if-no-files-found: ignore
+
+    - name: Upload CodeQL Results (SARIF) As An Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.package }}-CodeQL-SARIF
+        path: ${{ steps.env_data.outputs.sarif_file_path }}
+        retention-days: 14
+        if-no-files-found: warn
+
+    - name: Upload CodeQL Results (SARIF) To GitHub Code Scanning
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        # Path to SARIF file relative to the root of the repository.
+        sarif_file: ${{ steps.env_data.outputs.sarif_file_path }}
+        # Optional category for the results. Used to differentiate multiple results for one commit.
+        # Each package is a separate category.
+        category: ${{ matrix.package }}
