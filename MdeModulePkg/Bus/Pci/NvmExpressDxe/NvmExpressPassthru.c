@@ -940,7 +940,7 @@ NvmExpressPassThru (
       // Dump every completion entry status for debugging.
       //
       DEBUG_CODE_BEGIN ();
-      NvmeDumpStatus ((NVME_CQ)Cq);
+      NvmeDumpStatus (Cq);
       DEBUG_CODE_END ();
     }
 
