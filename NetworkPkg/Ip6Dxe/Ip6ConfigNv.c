@@ -1413,10 +1413,16 @@ Ip6FormExtractConfig (
       goto Exit;
     }
 
-    // MU_CHANGE [END] - CodeQL change
     Size          = (StrLen (ConfigRequestHdr) + 32 + 1) * sizeof (CHAR16);
     ConfigRequest = AllocateZeroPool (Size);
-    ASSERT (ConfigRequest != NULL);
+
+    if (ConfigRequest == NULL) {
+      ASSERT (ConfigRequest != NULL);
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Exit;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     AllocatedRequest = TRUE;
     UnicodeSPrint (
       ConfigRequest,
@@ -2003,23 +2009,29 @@ Ip6ConfigFormInit (
                       NULL
                       )
     ;
-    UnicodeSPrint (MenuString, 128, L"%s (MAC:%s)", OldMenuString, MacString);
-    HiiSetString (
-      CallbackInfo->RegisteredHandle,
-      STRING_TOKEN (STR_IP6_CONFIG_FORM_HELP),
-      MenuString,
-      NULL
-      );
-    UnicodeSPrint (PortString, 128, L"MAC:%s", MacString);
-    HiiSetString (
-      CallbackInfo->RegisteredHandle,
-      STRING_TOKEN (STR_IP6_DEVICE_FORM_HELP),
-      PortString,
-      NULL
-      );
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (OldMenuString != NULL) {
+      UnicodeSPrint (MenuString, 128, L"%s (MAC:%s)", OldMenuString, MacString);
+      HiiSetString (
+        CallbackInfo->RegisteredHandle,
+        STRING_TOKEN (STR_IP6_CONFIG_FORM_HELP),
+        MenuString,
+        NULL
+        );
+      UnicodeSPrint (PortString, 128, L"MAC:%s", MacString);
+      HiiSetString (
+        CallbackInfo->RegisteredHandle,
+        STRING_TOKEN (STR_IP6_DEVICE_FORM_HELP),
+        PortString,
+        NULL
+        );
+
+      FreePool (OldMenuString);
+    }
 
     FreePool (MacString);
-    FreePool (OldMenuString);
+
+    // MU_CHANGE [END] - CodeQL change
 
     InitializeListHead (&Instance->Ip6NvData.ManualAddress);
     InitializeListHead (&Instance->Ip6NvData.GatewayAddress);
