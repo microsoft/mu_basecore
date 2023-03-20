@@ -204,7 +204,7 @@ GetBootOptionCrc (
     Buffer = AllocateZeroPool (BufferSize);
     // MU_CHANGE [BEGIN] - CodeQL change
     if (Buffer == NULL) {
-      return (EFI_OUT_OF_RESOURCES);
+      return EFI_OUT_OF_RESOURCES;
     }
 
     // MU_CHANGE [END] - CodeQL change
