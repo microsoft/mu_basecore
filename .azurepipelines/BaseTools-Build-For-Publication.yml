@@ -72,8 +72,8 @@ jobs:
       displayName: Publish To Pipeline
       condition: SucceededOrFailed()
 
-  - job: windows_build
-    displayName: Windows Build
+  - job: windows_build-x86
+    displayName: Windows Build x86
     pool:
       vmImage: windows-latest
 
@@ -112,7 +112,51 @@ jobs:
         tool_chain_tag: 'VS2022'
 
     - publish: $(windows_build_output_path)
-      artifact: $(windows_artifact_name)
+      artifact: $(windows_artifact_name)_x86
+      displayName: Publish To Pipeline
+      condition: SucceededOrFailed()
+
+  - job: windows_build-ARM
+    displayName: Windows Build ARM
+    pool:
+      vmImage: windows-latest
+
+    workspace:
+      clean: all
+
+    steps:
+    - checkout: self
+      clean: true
+
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python_version)
+        addToPath: true
+        architecture: 'x64'
+      displayName: Install correct Python
+
+    - script: pip install -r pip-requirements.txt --upgrade
+      displayName: 'Install/Upgrade pip modules'
+
+    - task: CmdLine@1
+      displayName: Fetch Submodules
+      inputs:
+        filename: stuart_setup
+        arguments: -c .pytool/CISettings.py
+
+    - task: CmdLine@1
+      displayName: Update Environment
+      inputs:
+        filename: stuart_update
+        arguments: -c .pytool/CISettings.py
+
+    - template: Steps/BuildBaseTools.yml@mu_devops
+      parameters:
+        extra_parameters: '--skip_path_env -a ARM'
+        tool_chain_tag: 'VS2022'
+
+    - publish: $(windows_build_output_path)
+      artifact: $(windows_artifact_name)_ARM
       displayName: Publish To Pipeline
       condition: SucceededOrFailed()
 
@@ -162,7 +206,8 @@ jobs:
     - powershell:
         mkdir $(Build.StagingDirectory)/$(temp_publication_directory);
         mv $(Pipeline.Workspace)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
-        mv $(Pipeline.Workspace)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
+        mv $(Pipeline.Workspace)/$(windows_artifact_name)_x86 $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
+        mv $(Pipeline.Workspace)/$(windows_artifact_name)_ARM $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-ARM;
       displayName: Stage Package Files
 
     - powershell:
