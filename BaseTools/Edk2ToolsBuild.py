@@ -153,12 +153,6 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             # compiled tools need to be added to path because antlr is referenced
             shell_env.insert_path(self.OutputDir)
 
-            # MU_CHANGE: First clean the slate.
-            ret = RunCmd('nmake.exe', 'cleanall',
-                         workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
-            if ret != 0:
-                raise Exception("Failed to clean all.")
-
             # Actually build the tools.
             ret = RunCmd('nmake.exe', None,
                          workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
