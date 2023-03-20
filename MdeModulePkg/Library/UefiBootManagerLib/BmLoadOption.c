@@ -47,7 +47,13 @@ BmForEachVariable (
 
   NameSize = sizeof (CHAR16);
   Name     = AllocateZeroPool (NameSize);
-  ASSERT (Name != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Name == NULL) {
+    ASSERT (Name != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   while (TRUE) {
     NewNameSize = NameSize;
     Status      = gRT->GetNextVariableName (&NewNameSize, Name, &Guid);

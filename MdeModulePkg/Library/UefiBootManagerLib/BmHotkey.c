@@ -689,7 +689,19 @@ BmProcessKeyOption (
 
   for (Index = 0; Index < KeyShiftStateCount; Index++) {
     Hotkey = AllocateZeroPool (sizeof (BM_HOTKEY));
-    ASSERT (Hotkey != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Hotkey == NULL) {
+      ASSERT (Hotkey != NULL);
+      if (Handles != NULL) {
+        FreePool (Handles);
+      }
+
+      EfiReleaseLock (&mBmHotkeyLock);
+
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     Hotkey->Signature  = BM_HOTKEY_SIGNATURE;
     Hotkey->BootOption = KeyOption->BootOption;
