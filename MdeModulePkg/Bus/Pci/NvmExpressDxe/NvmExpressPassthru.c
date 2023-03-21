@@ -18,7 +18,7 @@
 **/
 VOID
 NvmeDumpStatus (
-  IN volatile NVME_CQ  *Cq     // MU_CHANGE: Add volatile keyword to NVME_CQ
+  IN NVME_CQ  *Cq
   )
 {
   DEBUG ((DEBUG_VERBOSE, "Dump NVMe Completion Entry Status from [0x%x]:\n", Cq));
@@ -940,7 +940,7 @@ NvmExpressPassThru (
       // Dump every completion entry status for debugging.
       //
       DEBUG_CODE_BEGIN ();
-      NvmeDumpStatus (Cq);
+      NvmeDumpStatus ((NVME_CQ *)Cq); // MU_CHANGE: Add volatile keyword to NVME_CQ
       DEBUG_CODE_END ();
     }
 
