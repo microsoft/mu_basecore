@@ -115,7 +115,7 @@ NvmeCreatePrpList (
 **/
 EFI_STATUS
 NvmeCheckCqStatus (
-  IN NVME_CQ  *Cq
+  IN volatile NVME_CQ  *Cq  // MU_CHANGE: Add volatile to CQ
   )
 {
   if ((Cq->Sct == 0x0) && (Cq->Sc == 0x0)) {
@@ -617,7 +617,7 @@ NvmePassThruExecute (
   //
   // Copy the Respose Queue entry for this command to the callers response buffer
   //
-  CopyMem (Packet->NvmeCompletion, Cq, sizeof (EFI_NVM_EXPRESS_COMPLETION));
+  CopyMem (Packet->NvmeCompletion, (NVME_CQ *)Cq, sizeof (EFI_NVM_EXPRESS_COMPLETION)); // MU_CHANGE: Add volatile keyword
 
   //
   // Check the NVMe cmd execution result
