@@ -626,7 +626,13 @@ CreateGuidedExtractionRpnEvent (
   // Allocate new event structure and context
   //
   Context = AllocatePool (sizeof (RPN_EVENT_CONTEXT));
-  ASSERT (Context != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Context == NULL) {
+    ASSERT (Context != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Context->ChildNode    = ChildNode;
   Context->ParentStream = ParentStream;

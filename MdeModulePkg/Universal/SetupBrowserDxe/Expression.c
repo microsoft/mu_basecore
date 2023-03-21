@@ -1176,7 +1176,13 @@ IfrToString (
       }
 
       TmpBuf = AllocateZeroPool (SrcLen + 3);
-      ASSERT (TmpBuf != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (TmpBuf == NULL) {
+        ASSERT (TmpBuf != NULL);
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       if (Format == EFI_IFR_STRING_ASCII) {
         CopyMem (TmpBuf, SrcBuf, SrcLen);
         PrintFormat = L"%a";
@@ -2472,7 +2478,14 @@ GetQuestionValueFromForm (
   // Get the formset data include this question.
   //
   FormSet = AllocateZeroPool (sizeof (FORM_BROWSER_FORMSET));
-  ASSERT (FormSet != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (FormSet == NULL) {
+    ASSERT (FormSet != NULL);
+    GetTheVal = FALSE;
+    goto Done;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   Status = InitializeFormSet (HiiHandle, FormSetGuid, FormSet);
   if (EFI_ERROR (Status)) {
     GetTheVal = FALSE;
@@ -3183,7 +3196,14 @@ EvaluateExpression (
             case EFI_HII_VARSTORE_NAME_VALUE:
               if (OpCode->ValueType != EFI_IFR_TYPE_STRING) {
                 NameValue = AllocateZeroPool ((OpCode->ValueWidth * 2 + 1) * sizeof (CHAR16));
-                ASSERT (NameValue != NULL);
+                // MU_CHANGE [BEGIN] - CodeQL change
+                if (NameValue == NULL) {
+                  ASSERT (NameValue != NULL);
+                  Status = EFI_OUT_OF_RESOURCES;
+                  goto Done;
+                }
+
+                // MU_CHANGE [END] - CodeQL change
                 //
                 // Convert Buffer to Hex String
                 //
