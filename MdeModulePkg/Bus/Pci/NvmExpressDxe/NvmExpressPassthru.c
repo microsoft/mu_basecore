@@ -515,8 +515,8 @@ NvmExpressPassThru (
   EFI_STATUS                     Status;
   EFI_STATUS                     PreviousStatus;
   EFI_PCI_IO_PROTOCOL            *PciIo;
-  NVME_SQ                        *Sq;
-  NVME_CQ                        *Cq;
+  volatile NVME_SQ               *Sq;      // MU_CHANGE: Add volatile to ensure HW access
+  volatile NVME_CQ               *Cq;      // MU_CHANGE: Add volatile so that timer loop below is getting updated CQ
   UINT16                         QueueId;
   UINT16                         QueueSize;
   UINT32                         Bytes;
@@ -668,7 +668,7 @@ NvmExpressPassThru (
   //
   Cq->Pt = Private->Pt[QueueId];
 
-  ZeroMem (Sq, sizeof (NVME_SQ));
+  ZeroMem ((VOID *)Sq, sizeof (NVME_SQ)); // MU_CHANGE: Add volatile keyword to ensure HW access
   Sq->Opc  = (UINT8)Packet->NvmeCmd->Cdw0.Opcode;
   Sq->Fuse = (UINT8)Packet->NvmeCmd->Cdw0.FusedOperation;
   Sq->Cid  = Private->Cid[QueueId]++;
@@ -940,14 +940,14 @@ NvmExpressPassThru (
       // Dump every completion entry status for debugging.
       //
       DEBUG_CODE_BEGIN ();
-      NvmeDumpStatus (Cq);
+      NvmeDumpStatus ((NVME_CQ *)Cq); // MU_CHANGE: Add volatile keyword to NVME_CQ
       DEBUG_CODE_END ();
     }
 
     //
     // Copy the Respose Queue entry for this command to the callers response buffer
     //
-    CopyMem (Packet->NvmeCompletion, Cq, sizeof (EFI_NVM_EXPRESS_COMPLETION));
+    CopyMem (Packet->NvmeCompletion, (VOID *)Cq, sizeof (EFI_NVM_EXPRESS_COMPLETION));  // MU_CHANGE: Add volatile keyword to NVME_CQ
   } else {
     // MS_CHANGE BEGIN UEFI_890
     ReportStatusCode ((EFI_ERROR_MAJOR | EFI_ERROR_CODE), (EFI_IO_BUS_SCSI | EFI_IOB_EC_INTERFACE_ERROR));
