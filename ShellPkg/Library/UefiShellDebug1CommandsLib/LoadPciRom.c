@@ -302,6 +302,13 @@ LoadEfiDriversFromRomImage (
                                       );
             if (!EFI_ERROR (Status)) {
               DecompressedImageBuffer = AllocateZeroPool (DestinationSize);
+              // MU_CHANGE [BEGIN] - CodeQL change
+              if (DecompressedImageBuffer == NULL) {
+                ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellDebug1HiiHandle, L"loadpcirom");
+                return EFI_OUT_OF_RESOURCES;
+              }
+
+              // MU_CHANGE [END] - CodeQL change
               if (ImageBuffer != NULL) {
                 Scratch = AllocateZeroPool (ScratchSize);
                 if (Scratch != NULL) {

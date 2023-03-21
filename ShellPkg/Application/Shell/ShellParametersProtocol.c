@@ -354,7 +354,13 @@ CreatePopulateInstallShellParametersProtocol (
   Status = SHELL_GET_ENVIRONMENT_VARIABLE (L"ShellOpt", &Size, FullCommandLine);
   if (Status == EFI_BUFFER_TOO_SMALL) {
     FullCommandLine = AllocateZeroPool (Size + LoadedImage->LoadOptionsSize);
-    Status          = SHELL_GET_ENVIRONMENT_VARIABLE (L"ShellOpt", &Size, FullCommandLine);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (FullCommandLine == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+    Status = SHELL_GET_ENVIRONMENT_VARIABLE (L"ShellOpt", &Size, FullCommandLine);
   }
 
   if (Status == EFI_NOT_FOUND) {

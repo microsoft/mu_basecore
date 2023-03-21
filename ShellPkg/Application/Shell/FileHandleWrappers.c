@@ -2144,8 +2144,14 @@ FileInterfaceFileWrite (
     // Ascii
     //
     AsciiBuffer = AllocateZeroPool (*BufferSize);
-    Size        = AsciiSPrint (AsciiBuffer, *BufferSize, "%S", Buffer); // MU_CHANGE BZ3232
-    Status      = (((EFI_FILE_PROTOCOL_FILE *)This)->Orig->Write (((EFI_FILE_PROTOCOL_FILE *)This)->Orig, &Size, AsciiBuffer));
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (AsciiBuffer == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+    Size   = AsciiSPrint (AsciiBuffer, *BufferSize, "%S", Buffer);      // MU_CHANGE BZ3232
+    Status = (((EFI_FILE_PROTOCOL_FILE *)This)->Orig->Write (((EFI_FILE_PROTOCOL_FILE *)This)->Orig, &Size, AsciiBuffer));
     FreePool (AsciiBuffer);
     return (Status);
   }
