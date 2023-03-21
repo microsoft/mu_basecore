@@ -204,12 +204,19 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                         HostType = "x86"
                     elif HostInfo.bit == "64":
                         HostType = "x64"
+                # MU_CHANGE: Support Windows-ARM
+                elif HostInfo.arch == "ARM":
+                    if HostInfo.bit == "32":
+                        HostType = "arm"
+                    elif HostInfo.bit == "64":
+                        HostType = "arm64"
+                # MU_CHANGE
                 else:
                     raise NotImplementedError()
 
             # VS2022_HOST options are not exactly the same as QueryVcVariables. This translates.
             VC_HOST_ARCH_TRANSLATOR = {
-                "x86": "x86", "x64": "AMD64", "arm": "not supported", "arm64": "not supported"}
+                "x86": "x86", "x64": "AMD64", "arm": "x86_arm", "arm64": "amd64_arm64"} # MU_CHANGE: Support Windows-ARM
 
             # check to see if full path already configured
             if shell_environment.GetEnvironment().get_shell_var("VS2022_PREFIX") is not None:
