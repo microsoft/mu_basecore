@@ -4,7 +4,10 @@
 # Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
+# MU_CHANGE: Only override HOST_ARCH when it is not specified
+!IFNDEF HOST_ARCH
 HOST_ARCH = IA32
+!ENDIF
 
 !INCLUDE Makefiles\ms.common
 
