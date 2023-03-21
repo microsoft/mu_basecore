@@ -835,6 +835,35 @@ CreateResourceMap (
                        PciResUsageTypical
                        );
 
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if ((IoBridge == NULL) || (Mem32Bridge == NULL) || (PMem32Bridge == NULL) ||
+          (Mem64Bridge == NULL) || (PMem64Bridge == NULL))
+      {
+        if (IoBridge != NULL) {
+          FreePool (IoBridge);
+        }
+
+        if (Mem32Bridge != NULL) {
+          FreePool (Mem32Bridge);
+        }
+
+        if (PMem32Bridge != NULL) {
+          FreePool (PMem32Bridge);
+        }
+
+        if (Mem64Bridge != NULL) {
+          FreePool (Mem64Bridge);
+        }
+
+        if (PMem64Bridge != NULL) {
+          FreePool (PMem64Bridge);
+        }
+
+        return;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
+
       //
       // Recursively create resource map on this bridge
       //

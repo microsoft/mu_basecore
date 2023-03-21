@@ -7,6 +7,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "HiiDatabase.h"
+#include <Library/SafeIntLib.h>
 extern HII_DATABASE_PRIVATE_DATA  mPrivate;
 
 /**
@@ -248,8 +249,13 @@ GenerateSubStr (
   //
   Length = StrLen (String) + BufferLen * 2 + 1 + 1;
   Str    = AllocateZeroPool (Length * sizeof (CHAR16));
-  ASSERT (Str != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Str == NULL) {
+    ASSERT (Str != NULL);
+    return;
+  }
 
+  // MU_CHANGE [END] - CodeQL change
   StrCpyS (Str, Length, String);
 
   StringHeader = Str + StrLen (String);
@@ -691,6 +697,13 @@ CompareBlockElementDefault (
       //
       if (AppendString == NULL) {
         AppendString = (EFI_STRING)AllocateZeroPool (AppendSize + sizeof (CHAR16));
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (AppendString == NULL) {
+          Status = EFI_OUT_OF_RESOURCES;
+          goto Exit;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         StrnCatS (AppendString, AppendSize / sizeof (CHAR16) + 1, BlockPtrStart, AppendSize / sizeof (CHAR16));
       } else {
         TotalSize    = StrSize (AppendString) + AppendSize + sizeof (CHAR16);
@@ -846,6 +859,13 @@ CompareNameElementDefault (
       //
       if (AppendString == NULL) {
         AppendString = (EFI_STRING)AllocateZeroPool (AppendSize + sizeof (CHAR16));
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (AppendString == NULL) {
+          Status = EFI_OUT_OF_RESOURCES;
+          goto Exit;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
         StrnCatS (AppendString, AppendSize / sizeof (CHAR16) + 1, NvConfigStart, AppendSize / sizeof (CHAR16));
       } else {
         TotalSize    = StrSize (AppendString) + AppendSize + sizeof (CHAR16);
@@ -1261,7 +1281,13 @@ InsertDefaultValue (
   // Insert new default value data in tail.
   //
   DefaultValueArray = AllocateZeroPool (sizeof (IFR_DEFAULT_DATA));
-  ASSERT (DefaultValueArray != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (DefaultValueArray == NULL) {
+    ASSERT (DefaultValueArray != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   CopyMem (DefaultValueArray, DefaultValueData, sizeof (IFR_DEFAULT_DATA));
   InsertTailList (Link, &DefaultValueArray->Entry);
 }
@@ -3282,6 +3308,8 @@ GetBlockElement (
   IFR_BLOCK_DATA  *NextBlockData;
   UINTN           Length;
 
+  UINT16  Sum1, Sum2; // MU_CHANGE - CodeQL change
+
   TmpBuffer = NULL;
 
   //
@@ -3403,15 +3431,24 @@ GetBlockElement (
   while ((Link != &RequestBlockArray->Entry) && (Link->ForwardLink != &RequestBlockArray->Entry)) {
     BlockData     = BASE_CR (Link, IFR_BLOCK_DATA, Entry);
     NextBlockData = BASE_CR (Link->ForwardLink, IFR_BLOCK_DATA, Entry);
-    if ((NextBlockData->Offset >= BlockData->Offset) || (NextBlockData->Offset <= (BlockData->Offset + BlockData->Width))) {
-      if ((NextBlockData->Offset + NextBlockData->Width) > (BlockData->Offset + BlockData->Width)) {
-        BlockData->Width = (UINT16)(NextBlockData->Offset + NextBlockData->Width - BlockData->Offset);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if ((!EFI_ERROR (SafeUint16Add (BlockData->Offset, BlockData->Width, &Sum1))) &&
+        (!EFI_ERROR (SafeUint16Add (NextBlockData->Offset, NextBlockData->Width, &Sum2))) &&
+        (NextBlockData->Offset >= BlockData->Offset) &&
+        (NextBlockData->Offset <= Sum1) &&
+        (Sum2 > Sum1))
+    {
+      Sum1 = BlockData->Width;
+      if (!EFI_ERROR (SafeUint16Sub (Sum2, BlockData->Offset, &BlockData->Width))) {
+        RemoveEntryList (Link->ForwardLink);
+        FreePool (NextBlockData);
+        continue;
+      } else {
+        BlockData->Width = Sum1;
       }
-
-      RemoveEntryList (Link->ForwardLink);
-      FreePool (NextBlockData);
-      continue;
     }
+
+    // MU_CHANGE [END] - CodeQL change
 
     Link = Link->ForwardLink;
   }
@@ -3941,6 +3978,8 @@ UpdateBlockDataArray (
   IFR_BLOCK_DATA  *BlockData;
   IFR_BLOCK_DATA  *NextBlockData;
 
+  UINT16  Sum1, Sum2; // MU_CHANGE - CodeQL change
+
   //
   // 1. Update default value in BitVar block data.
   // Sine some block datas are used as BitVarStore, then the default value recored in the block
@@ -3962,9 +4001,18 @@ UpdateBlockDataArray (
 
     for (TempLink = Link->ForwardLink; TempLink != BlockLink; TempLink = TempLink->ForwardLink) {
       NextBlockData = BASE_CR (TempLink, IFR_BLOCK_DATA, Entry);
-      if (!NextBlockData->IsBitVar || (NextBlockData->Offset >= BlockData->Offset + BlockData->Width) || (BlockData->Offset >= NextBlockData->Offset + NextBlockData->Width)) {
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (EFI_ERROR (SafeUint16Add (BlockData->Offset, BlockData->Width, &Sum1)) ||
+          EFI_ERROR (SafeUint16Add (NextBlockData->Offset, NextBlockData->Width, &Sum2)))
+      {
         continue;
       }
+
+      if (!NextBlockData->IsBitVar || (NextBlockData->Offset >= Sum1) || (BlockData->Offset >= Sum2)) {
+        continue;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
 
       //
       // Find two blocks are used as bit VarStore and have overlap region, so need to merge default value of these two blocks.
@@ -4563,7 +4611,14 @@ GetConfigRespFromEfiVarStore (
   }
 
   VarStore = AllocateZeroPool (BufferSize);
-  ASSERT (VarStore != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (VarStore == NULL) {
+    ASSERT (VarStore != NULL);
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Done;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   Status = gRT->GetVariable (VarStoreName, &EfiVarStoreInfo->Guid, NULL, &BufferSize, VarStore);
   if (EFI_ERROR (Status)) {
     goto Done;
@@ -4642,7 +4697,14 @@ RouteConfigRespForEfiVarStore (
 
   BlockSize = BufferSize;
   VarStore  = AllocateZeroPool (BufferSize);
-  ASSERT (VarStore != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (VarStore == NULL) {
+    ASSERT (VarStore != NULL);
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Done;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   Status = gRT->GetVariable (VarStoreName, &EfiVarStoreInfo->Guid, NULL, &BufferSize, VarStore);
   if (EFI_ERROR (Status)) {
     goto Done;

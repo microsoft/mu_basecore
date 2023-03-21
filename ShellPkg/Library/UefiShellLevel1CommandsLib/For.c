@@ -693,6 +693,12 @@ ShellCommandRunFor (
       }
 
       TempString = AllocateZeroPool (50*sizeof (CHAR16));
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (TempString == NULL) {
+        return (SHELL_OUT_OF_RESOURCES);
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       UnicodeSPrint (TempString, 50*sizeof (CHAR16), L"%d", Info->Current);
       InternalUpdateAliasOnList (Info->ReplacementName, TempString, &CurrentScriptFile->SubstList);
       FreePool (TempString);
