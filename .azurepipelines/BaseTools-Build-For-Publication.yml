@@ -175,7 +175,7 @@ jobs:
 
     - powershell:
         mkdir $(Build.StagingDirectory)/PackageOutput;
-        nuget-publish --Operation Pack --OutputLog $(Build.StagingDirectory)/NugetPackagingLog.txt --ConfigFilePath $(Build.StagingDirectory)/NugetPackageConfig.json --InputFolderPath $(Build.StagingDirectory)/$(temp_publication_directory) --Version $(release_version) --OutputFolderPath $(Build.StagingDirectory)/PackageOutput;
+        nuget-publish --Operation Pack --OutputLog $(Build.StagingDirectory)/NugetPackagingLog.txt --ConfigFilePath $(Build.StagingDirectory)/NugetPackageConfig.json --InputFolderPath $(Build.StagingDirectory)/$(temp_publication_directory) --Version $(release_version) --CustomLicensePath $(Build.SourcesDirectory)/License.txt --OutputFolderPath $(Build.StagingDirectory)/PackageOutput;
         Get-Content $(Build.StagingDirectory)/NugetPackagingLog.txt;
       displayName: Nuget Packaging
 
