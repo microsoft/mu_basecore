@@ -515,7 +515,7 @@ NvmExpressPassThru (
   EFI_STATUS                     Status;
   EFI_STATUS                     PreviousStatus;
   EFI_PCI_IO_PROTOCOL            *PciIo;
-  NVME_SQ                        *Sq;
+  volatile NVME_SQ               *Sq;      // MU_CHANGE: Add volatile to ensure HW access
   volatile NVME_CQ               *Cq;
   UINT16                         QueueId;
   UINT16                         QueueSize;
@@ -668,7 +668,7 @@ NvmExpressPassThru (
   //
   Cq->Pt = Private->Pt[QueueId];
 
-  ZeroMem (Sq, sizeof (NVME_SQ));
+  ZeroMem ((VOID *)Sq, sizeof (NVME_SQ)); // MU_CHANGE: Add volatile keyword to ensure HW access
   Sq->Opc  = (UINT8)Packet->NvmeCmd->Cdw0.Opcode;
   Sq->Fuse = (UINT8)Packet->NvmeCmd->Cdw0.FusedOperation;
   Sq->Cid  = Private->Cid[QueueId]++;

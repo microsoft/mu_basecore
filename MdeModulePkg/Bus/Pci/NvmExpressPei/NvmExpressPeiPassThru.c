@@ -343,7 +343,7 @@ NvmePassThruExecute (
   )
 {
   EFI_STATUS             Status;
-  NVME_SQ                *Sq;
+  volatile NVME_SQ       *Sq;      // MU_CHANGE: Add volatile keyword to ensure HW access
   volatile NVME_CQ       *Cq;
   UINT8                  QueueId;
   UINTN                  SqSize;
@@ -414,7 +414,7 @@ NvmePassThruExecute (
     return EFI_INVALID_PARAMETER;
   }
 
-  ZeroMem (Sq, sizeof (NVME_SQ));
+  ZeroMem ((VOID *)Sq, sizeof (NVME_SQ));  // MU_CHANGE: Add volatile keyword to ensure HW access
   Sq->Opc  = (UINT8)Packet->NvmeCmd->Cdw0.Opcode;
   Sq->Fuse = (UINT8)Packet->NvmeCmd->Cdw0.FusedOperation;
   Sq->Cid  = Private->Cid[QueueId]++;
