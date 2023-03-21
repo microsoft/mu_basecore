@@ -16,6 +16,7 @@ from edk2toolext import edk2_logging
 from edk2toolext.environment import self_describing_environment
 from edk2toolext.base_abstract_invocable import BaseAbstractInvocable
 from edk2toollib.utility_functions import RunCmd
+from edk2toollib.utility_functions import GetHostInfo # MU_CHANGE: Need to check if this is cross compilation
 from edk2toollib.windows.locate_tools import QueryVcVariables
 
 
@@ -29,8 +30,11 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         # MU_CHANGE
         ParserObj.add_argument("-s", "--skip_path_env", dest="skip_env", default=False, action='store_true',
                                help="Skip the creation of the path_env descriptor file")
+        ParserObj.add_argument("-a", "--target_arch", dest="arch", default='IA32', choices=['IA32', 'ARM'],
+                               help="Specify the architecture of the built base tools")
         args = ParserObj.parse_args()
         self.tool_chain_tag = args.tct
+        self.target_arch = args.arch
         # MU_CHANGE
         self.skip_path_env = args.skip_env
 
@@ -115,6 +119,16 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         shell_env.set_shell_var("PYTHON_COMMAND", pc)
 
         if self.tool_chain_tag.lower().startswith("vs"):
+            # MU_CHANGE: Specify target architecture
+            if self.target_arch == "IA32":
+                VcToolChainArch = "x86"
+                TargetInfoArch = "x86"
+            elif self.target_arch == "ARM":
+                VcToolChainArch = "x86_arm"
+                TargetInfoArch = "ARM"
+            else:
+                raise NotImplementedError()
+            # MU_CHANGE
 
             # # Update environment with required VC vars.
             interesting_keys = ["ExtensionSdkDir", "INCLUDE", "LIB"]
@@ -123,7 +137,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             interesting_keys.extend(
                 ["WindowsSdkDir", "WindowsSdkVerBinPath", "WindowsSDKVersion", "VCToolsInstallDir"])
             vc_vars = QueryVcVariables(
-                interesting_keys, 'x86', vs_version=self.tool_chain_tag.lower())
+                interesting_keys, VcToolChainArch, vs_version=self.tool_chain_tag.lower()) # MU_CHANGE
             for key in vc_vars.keys():
                 logging.debug(f"Var - {key} = {vc_vars[key]}")
                 if key.lower() == 'path':
@@ -131,11 +145,23 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
                 else:
                     shell_env.set_shell_var(key, vc_vars[key])
 
+            # MU_CHANGE: Specify target architecture
+            # Note: This HOST_ARCH is in respect to the BUILT base tools, not the host arch where
+            # this script is BUILDING the base tools.
+            shell_env.set_shell_var('HOST_ARCH', self.target_arch)
+
             self.OutputDir = os.path.join(
                 shell_env.get_shell_var("EDK_TOOLS_PATH"), "Bin", "Win32")
 
             # compiled tools need to be added to path because antlr is referenced
-            shell_env.insert_path(self.OutputDir)
+            # MU_CHANGE: Added logic to support cross compilation scenarios
+            HostInfo = GetHostInfo()
+            if TargetInfoArch == HostInfo.arch:
+                # not cross compiling
+                shell_env.insert_path(self.OutputDir)
+            else:
+                # cross compiling
+                shell_env.insert_path(shell_env.get_shell_var("EDK_TOOLS_BIN"))
 
             # Actually build the tools.
             output_stream = edk2_logging.create_output_stream()
