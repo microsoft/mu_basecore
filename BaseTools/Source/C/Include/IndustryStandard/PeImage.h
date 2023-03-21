@@ -666,7 +666,7 @@ typedef struct {
   UINT32  FunctionStartAddress;
   UINT32  FunctionEndAddress;
   UINT32  UnwindInfoAddress;
-} PD_RUNTIME_FUNCTION; // MU_CHANGE: Resolve definition conflict for ARM
+} PD_RUNTIME_FUNCTION; // MU_CHANGE: Resolve definition conflict in winnt.h for ARM target.
 
 typedef struct {
   UINT8  Version:3;
