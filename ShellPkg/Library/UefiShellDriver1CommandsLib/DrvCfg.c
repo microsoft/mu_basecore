@@ -236,7 +236,22 @@ ConfigToFile (
   Status = HiiDatabase->ExportPackageLists (HiiDatabase, HiiHandle, &MainBufferSize, MainBuffer);
   if (Status == EFI_BUFFER_TOO_SMALL) {
     MainBuffer = AllocateZeroPool (MainBufferSize);
-    Status     = HiiDatabase->ExportPackageLists (HiiDatabase, HiiHandle, &MainBufferSize, MainBuffer);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (MainBuffer == NULL) {
+      ShellPrintHiiEx (
+        -1,
+        -1,
+        NULL,
+        STRING_TOKEN (STR_GEN_OUT_MEM),
+        gShellDriver1HiiHandle,
+        L"drvcfg"
+        );
+      ShellCloseFile (&FileHandle);
+      return (SHELL_OUT_OF_RESOURCES);
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+    Status = HiiDatabase->ExportPackageLists (HiiDatabase, HiiHandle, &MainBufferSize, MainBuffer);
   }
 
   Status = ShellWriteFile (FileHandle, &MainBufferSize, MainBuffer);
@@ -355,6 +370,21 @@ ConfigFromFile (
   }
 
   MainBuffer = AllocateZeroPool ((UINTN)MainBufferSize);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (MainBuffer == NULL) {
+    ShellPrintHiiEx (
+      -1,
+      -1,
+      NULL,
+      STRING_TOKEN (STR_GEN_OUT_MEM),
+      gShellDriver1HiiHandle,
+      L"drvcfg"
+      );
+    ShellCloseFile (&FileHandle);
+    return (SHELL_OUT_OF_RESOURCES);
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   if (EFI_ERROR (Status)) {
     ShellPrintHiiEx (
       -1,
@@ -1271,6 +1301,13 @@ ShellCommandRunDrvCfg (
     Lang = ShellCommandLineGetValue (Package, L"-l");
     if (Lang != NULL) {
       Language = AllocateZeroPool (StrSize (Lang));
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (Language == NULL) {
+        ShellStatus = SHELL_OUT_OF_RESOURCES;
+        goto Done;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       AsciiSPrint (Language, StrSize (Lang), "%S", Lang);
     } else if (ShellCommandLineGetFlag (Package, L"-l")) {
       ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_NO_VALUE), gShellDriver1HiiHandle, L"drvcfg", L"-l");

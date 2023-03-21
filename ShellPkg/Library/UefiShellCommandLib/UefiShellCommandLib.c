@@ -1263,6 +1263,12 @@ ShellCommandCreateNewMappingName (
   String = NULL;
 
   String = AllocateZeroPool (PcdGet8 (PcdShellMapNameLength) * sizeof (String[0]));
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (String == NULL) {
+    return (NULL);
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   UnicodeSPrint (
     String,
     PcdGet8 (PcdShellMapNameLength) * sizeof (String[0]),
@@ -1475,7 +1481,14 @@ ShellCommandCreateInitialMappingsAndPaths (
       // Get default name first
       //
       NewDefaultName = ShellCommandCreateNewMappingName (MappingTypeFileSystem);
-      ASSERT (NewDefaultName != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (NewDefaultName == NULL) {
+        ASSERT (NewDefaultName != NULL);
+        Status = EFI_OUT_OF_RESOURCES;
+        break;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       Status = ShellCommandAddMapItemAndUpdatePath (NewDefaultName, DevicePathList[Count], 0, TRUE);
       ASSERT_EFI_ERROR (Status);
       FreePool (NewDefaultName);
@@ -1565,7 +1578,15 @@ ShellCommandCreateInitialMappingsAndPaths (
       // Get default name first
       //
       NewDefaultName = ShellCommandCreateNewMappingName (MappingTypeBlockIo);
-      ASSERT (NewDefaultName != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (NewDefaultName == NULL) {
+        ASSERT (NewDefaultName != NULL);
+        SHELL_FREE_NON_NULL (HandleList);
+        SHELL_FREE_NON_NULL (DevicePathList);
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       Status = ShellCommandAddMapItemAndUpdatePath (NewDefaultName, DevicePathList[Count], 0, FALSE);
       ASSERT_EFI_ERROR (Status);
       FreePool (NewDefaultName);
