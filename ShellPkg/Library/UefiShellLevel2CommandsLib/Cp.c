@@ -203,12 +203,19 @@ CopySingleFile (
 
     if (Status == EFI_BUFFER_TOO_SMALL) {
       DestVolumeInfo = AllocateZeroPool (DestVolumeInfoSize);
-      Status         = DestVolumeFP->GetInfo (
-                                       DestVolumeFP,
-                                       &gEfiFileSystemInfoGuid,
-                                       &DestVolumeInfoSize,
-                                       DestVolumeInfo
-                                       );
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (DestVolumeInfo == NULL) {
+        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellLevel2HiiHandle, L"cp");
+        return (SHELL_OUT_OF_RESOURCES);
+      }
+
+      // MU_CHANGE [END] - CodeQL change
+      Status = DestVolumeFP->GetInfo (
+                               DestVolumeFP,
+                               &gEfiFileSystemInfoGuid,
+                               &DestVolumeInfoSize,
+                               DestVolumeInfo
+                               );
     }
 
     //

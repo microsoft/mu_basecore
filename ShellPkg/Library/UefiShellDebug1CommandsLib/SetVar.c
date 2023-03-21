@@ -421,6 +421,7 @@ ShellCommandRunSetVar (
         if (StringGuid != NULL) {
           RStatus = StrToGuid (StringGuid, &Guid);
         } else {
+          ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"setvar", StringGuid);
           return SHELL_INVALID_PARAMETER;
         }
 
@@ -438,6 +439,13 @@ ShellCommandRunSetVar (
         Status = gRT->GetVariable ((CHAR16 *)VariableName, &Guid, &Attributes, &Size, Buffer);
         if (Status == EFI_BUFFER_TOO_SMALL) {
           Buffer = AllocateZeroPool (Size);
+          // MU_CHANGE [START] - CodeQL change
+          if (Buffer == NULL) {
+            ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellDebug1HiiHandle, L"setvar");
+            return SHELL_OUT_OF_RESOURCES;
+          }
+
+          // MU_CHANGE [END] - CodeQL change
           Status = gRT->GetVariable ((CHAR16 *)VariableName, &Guid, &Attributes, &Size, Buffer);
         }
 
@@ -459,6 +467,13 @@ ShellCommandRunSetVar (
         Status = gRT->GetVariable ((CHAR16 *)VariableName, &Guid, &Attributes, &Size, Buffer);
         if (Status == EFI_BUFFER_TOO_SMALL) {
           Buffer = AllocateZeroPool (Size);
+          // MU_CHANGE [START] - CodeQL change
+          if (Buffer == NULL) {
+            ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellDebug1HiiHandle, L"setvar");
+            return SHELL_OUT_OF_RESOURCES;
+          }
+
+          // MU_CHANGE [END] - CodeQL change
           Status = gRT->GetVariable ((CHAR16 *)VariableName, &Guid, &Attributes, &Size, Buffer);
         }
 
