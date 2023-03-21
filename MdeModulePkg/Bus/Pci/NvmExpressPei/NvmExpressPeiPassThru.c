@@ -617,7 +617,7 @@ NvmePassThruExecute (
   //
   // Copy the Respose Queue entry for this command to the callers response buffer
   //
-  CopyMem (Packet->NvmeCompletion, (NVME_CQ *)Cq, sizeof (EFI_NVM_EXPRESS_COMPLETION)); // MU_CHANGE: Add volatile keyword
+  CopyMem (Packet->NvmeCompletion, (VOID *)Cq, sizeof (EFI_NVM_EXPRESS_COMPLETION)); // MU_CHANGE: Add volatile keyword
 
   //
   // Check the NVMe cmd execution result
