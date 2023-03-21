@@ -75,12 +75,18 @@ PrintSfoVolumeInfoTableEntry (
 
     if (Status == EFI_BUFFER_TOO_SMALL) {
       SysInfo = AllocateZeroPool (SysInfoSize);
-      Status  = EfiFpHandle->GetInfo (
-                               EfiFpHandle,
-                               &gEfiFileSystemInfoGuid,
-                               &SysInfoSize,
-                               SysInfo
-                               );
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (SysInfo == NULL) {
+        return (EFI_OUT_OF_RESOURCES);
+      }
+
+      // MU_CHANGE [END] - CodeQL change
+      Status = EfiFpHandle->GetInfo (
+                              EfiFpHandle,
+                              &gEfiFileSystemInfoGuid,
+                              &SysInfoSize,
+                              SysInfo
+                              );
     }
 
     ASSERT_EFI_ERROR (Status);
@@ -102,12 +108,18 @@ PrintSfoVolumeInfoTableEntry (
 
     if (Status == EFI_BUFFER_TOO_SMALL) {
       SysInfo = AllocateZeroPool (SysInfoSize);
-      Status  = EfiFpHandle->GetInfo (
-                               EfiFpHandle,
-                               &gEfiFileSystemInfoGuid,
-                               &SysInfoSize,
-                               SysInfo
-                               );
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (SysInfo == NULL) {
+        return (EFI_OUT_OF_RESOURCES);
+      }
+
+      // MU_CHANGE [END] - CodeQL change
+      Status = EfiFpHandle->GetInfo (
+                              EfiFpHandle,
+                              &gEfiFileSystemInfoGuid,
+                              &SysInfoSize,
+                              SysInfo
+                              );
     }
 
     ASSERT_EFI_ERROR (Status);

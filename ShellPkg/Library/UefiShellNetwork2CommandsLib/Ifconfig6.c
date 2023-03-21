@@ -468,7 +468,13 @@ IfConfig6ParseManualAddressList (
   }
 
   AddrBuf = AllocateZeroPool (AddrCnt * sizeof (EFI_IP6_CONFIG_MANUAL_ADDRESS));
-  ASSERT (AddrBuf != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (AddrBuf == NULL) {
+    ASSERT (AddrBuf != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   AddrCnt = 0;
   VarArg  = *Arg;
@@ -569,7 +575,13 @@ IfConfig6ParseGwDnsAddressList (
   }
 
   AddrBuf = AllocateZeroPool (AddrCnt * sizeof (EFI_IPv6_ADDRESS));
-  ASSERT (AddrBuf != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (AddrBuf == NULL) {
+    ASSERT (AddrBuf != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   AddrCnt = 0;
   VarArg  = *Arg;

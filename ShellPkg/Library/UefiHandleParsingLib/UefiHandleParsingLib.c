@@ -315,25 +315,28 @@ LoadedImageProtocolDumpInformation (
   PdbFileName = PeCoffLoaderGetPdbPointer (LoadedImage->ImageBase);
   DataType    = ConvertMemoryType (LoadedImage->ImageDataType);
   CodeType    = ConvertMemoryType (LoadedImage->ImageCodeType);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if ((PdbFileName != NULL) && (DataType != NULL) && (CodeType != NULL) && (FilePath != NULL)) {
+    RetVal = CatSPrint (
+               RetVal,
+               Temp,
+               LoadedImage->Revision,
+               LoadedImage->ParentHandle,
+               LoadedImage->SystemTable,
+               LoadedImage->DeviceHandle,
+               FilePath,
+               PdbFileName,
+               LoadedImage->LoadOptionsSize,
+               LoadedImage->LoadOptions,
+               LoadedImage->ImageBase,
+               LoadedImage->ImageSize,
+               CodeType,
+               DataType,
+               LoadedImage->Unload
+               );
+  }
 
-  RetVal = CatSPrint (
-             RetVal,
-             Temp,
-             LoadedImage->Revision,
-             LoadedImage->ParentHandle,
-             LoadedImage->SystemTable,
-             LoadedImage->DeviceHandle,
-             FilePath,
-             PdbFileName,
-             LoadedImage->LoadOptionsSize,
-             LoadedImage->LoadOptions,
-             LoadedImage->ImageBase,
-             LoadedImage->ImageSize,
-             CodeType,
-             DataType,
-             LoadedImage->Unload
-             );
-
+  // MU_CHANGE [END] - CodeQL change
   SHELL_FREE_NON_NULL (Temp);
   SHELL_FREE_NON_NULL (FilePath);
   SHELL_FREE_NON_NULL (CodeType);
@@ -395,7 +398,13 @@ GraphicsOutputProtocolDumpInformation (
   }
 
   Fmt = ConvertPixelFormat (GraphicsOutput->Mode->Info->PixelFormat);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Fmt == NULL) {
+    SHELL_FREE_NON_NULL (Temp);
+    return NULL;
+  }
 
+  // MU_CHANGE [END] - CodeQL change
   RetVal = CatSPrint (
              NULL,
              Temp,
@@ -813,7 +822,12 @@ TxtOutProtocolDumpInformation (
 
   Size   = (Dev->Mode->MaxMode + 1) * 80;
   RetVal = AllocateZeroPool (Size);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (RetVal == NULL) {
+    return NULL;
+  }
 
+  // MU_CHANGE END] - CodeQL change
   Temp = HiiGetString (mHandleParsingHiiHandle, STRING_TOKEN (STR_TXT_OUT_DUMP_HEADER), NULL);
   if (Temp != NULL) {
     UnicodeSPrint (RetVal, Size, Temp, Dev, Dev->Mode->Attribute);
@@ -824,6 +838,13 @@ TxtOutProtocolDumpInformation (
   // Dump TextOut Info
   //
   Temp = HiiGetString (mHandleParsingHiiHandle, STRING_TOKEN (STR_TXT_OUT_DUMP_LINE), NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Temp == NULL) {
+    FreePool (RetVal);
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   for (Index = 0; Index < Dev->Mode->MaxMode; Index++) {
     Status  = Dev->QueryMode (Dev, Index, &Col, &Row);
     NewSize = Size - StrSize (RetVal);

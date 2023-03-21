@@ -202,6 +202,12 @@ GetBootOptionCrc (
                   );
   if (Status == EFI_BUFFER_TOO_SMALL) {
     Buffer = AllocateZeroPool (BufferSize);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Buffer == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     Status = gRT->GetVariable (
                     VariableName,
                     (EFI_GUID *)&gEfiGlobalVariableGuid,
@@ -1388,6 +1394,14 @@ BcfgDisplayDump (
                     );
     if (Status == EFI_BUFFER_TOO_SMALL) {
       Buffer = AllocateZeroPool (BufferSize);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (Buffer == NULL) {
+        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_NO_MEM), gShellBcfgHiiHandle, L"bcfg");
+        ++Errors;
+        goto Cleanup;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       Status = gRT->GetVariable (
                       VariableName,
                       (EFI_GUID *)&gEfiGlobalVariableGuid,
