@@ -575,6 +575,13 @@ UefiMain (
 
     Size       = 100;
     TempString = AllocateZeroPool (Size);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (TempString == NULL) {
+      ASSERT (TempString != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     UnicodeSPrint (TempString, Size, L"%d", PcdGet8 (PcdShellSupportLevel));
     Status = InternalEfiShellSetEnv (L"uefishellsupport", TempString, TRUE);

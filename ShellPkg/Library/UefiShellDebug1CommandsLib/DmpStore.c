@@ -448,7 +448,13 @@ CascadeProcessVariables (
     StrnCatGrow (&FoundVarName, &NameSize, PrevName, 0);
   } else {
     FoundVarName = AllocateZeroPool (sizeof (CHAR16));
-    NameSize     = sizeof (CHAR16);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (FoundVarName == NULL) {
+      return (SHELL_OUT_OF_RESOURCES);
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+    NameSize = sizeof (CHAR16);
   }
 
   Status = gRT->GetNextVariableName (&NameSize, FoundVarName, &FoundVarGuid);
@@ -817,6 +823,12 @@ ShellCommandRunDmpStore (
       // Get the Name of the variable to find
       //
       Name = ShellCommandLineGetRawValue (Package, 1);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (Name == NULL) {
+        return (SHELL_INVALID_PARAMETER);
+      }
+
+      // MU_CHANGE [END] - CodeQL change
 
       if (ShellStatus == SHELL_SUCCESS) {
         if (ShellCommandLineGetFlag (Package, L"-s")) {
