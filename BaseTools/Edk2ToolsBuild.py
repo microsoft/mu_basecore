@@ -154,6 +154,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
                 shell_env.get_shell_var("EDK_TOOLS_PATH"), "Bin", "Win32")
 
             # compiled tools need to be added to path because antlr is referenced
+            # MU_CHANGE: Added logic to support cross compilation scenarios
             HostInfo = GetHostInfo()
             if TargetInfoArch == HostInfo.arch:
                 # not cross compiling
