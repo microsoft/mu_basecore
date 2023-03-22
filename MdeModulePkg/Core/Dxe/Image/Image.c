@@ -160,9 +160,14 @@ PeCoffEmuProtocolNotify (
       continue;
     }
 
+    // MU_CHANGE [BEGIN] - CodeQL change
     Entry = AllocateZeroPool (sizeof (*Entry));
-    ASSERT (Entry != NULL);
+    if (Entry == NULL) {
+      ASSERT (Entry != NULL);
+      break;
+    }
 
+    // MU_CHANGE [END] - CodeQL change
     Entry->Emulator    = Emulator;
     Entry->MachineType = Entry->Emulator->MachineType;
 

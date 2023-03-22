@@ -252,7 +252,13 @@ CreateRefreshEventForStatement (
   ASSERT_EFI_ERROR (Status);
 
   EventNode = AllocateZeroPool (sizeof (FORM_BROWSER_REFRESH_EVENT_NODE));
-  ASSERT (EventNode != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (EventNode == NULL) {
+    ASSERT (EventNode != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   EventNode->RefreshEvent = RefreshEvent;
   InsertTailList (&mRefreshEventList, &EventNode->Link);
 }
@@ -286,7 +292,13 @@ CreateRefreshEventForForm (
   ASSERT_EFI_ERROR (Status);
 
   EventNode = AllocateZeroPool (sizeof (FORM_BROWSER_REFRESH_EVENT_NODE));
-  ASSERT (EventNode != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (EventNode == NULL) {
+    ASSERT (EventNode != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   EventNode->RefreshEvent = RefreshEvent;
   InsertTailList (&mRefreshEventList, &EventNode->Link);
 }
@@ -337,7 +349,13 @@ InitializeDisplayStatement (
     }
 
     DisplayOption = AllocateZeroPool (sizeof (DISPLAY_QUESTION_OPTION));
-    ASSERT (DisplayOption != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (DisplayOption == NULL) {
+      ASSERT (DisplayOption != NULL);
+      continue;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     DisplayOption->ImageId      = Option->ImageId;
     DisplayOption->Signature    = DISPLAY_QUESTION_OPTION_SIGNATURE;
@@ -558,7 +576,13 @@ AddStatementToDisplayForm (
     Link      = GetNextNode (&gCurrentSelection->FormSet->StatementListOSF, Link);
 
     DisplayStatement = AllocateZeroPool (sizeof (FORM_DISPLAY_ENGINE_STATEMENT));
-    ASSERT (DisplayStatement != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (DisplayStatement == NULL) {
+      ASSERT (DisplayStatement != NULL);
+      return;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     DisplayStatement->Signature = FORM_DISPLAY_ENGINE_STATEMENT_SIGNATURE;
     DisplayStatement->Version   = FORM_DISPLAY_ENGINE_STATEMENT_VERSION_1;
     DisplayStatement->OpCode    = Statement->OpCode;
@@ -573,7 +597,13 @@ AddStatementToDisplayForm (
   // treat formset as statement outside the form,get its opcode.
   //
   DisplayStatement = AllocateZeroPool (sizeof (FORM_DISPLAY_ENGINE_STATEMENT));
-  ASSERT (DisplayStatement != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (DisplayStatement == NULL) {
+    ASSERT (DisplayStatement != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   DisplayStatement->Signature = FORM_DISPLAY_ENGINE_STATEMENT_SIGNATURE;
   DisplayStatement->Version   = FORM_DISPLAY_ENGINE_STATEMENT_VERSION_1;
@@ -608,7 +638,13 @@ AddStatementToDisplayForm (
     }
 
     DisplayStatement = AllocateZeroPool (sizeof (FORM_DISPLAY_ENGINE_STATEMENT));
-    ASSERT (DisplayStatement != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (DisplayStatement == NULL) {
+      ASSERT (DisplayStatement != NULL);
+      continue;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     //
     // Initialize this statement and add it to the display form.
@@ -644,7 +680,13 @@ AddStatementToDisplayForm (
     ASSERT_EFI_ERROR (Status);
 
     EventNode = AllocateZeroPool (sizeof (FORM_BROWSER_REFRESH_EVENT_NODE));
-    ASSERT (EventNode != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (EventNode == NULL) {
+      ASSERT (EventNode != NULL);
+      return;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     EventNode->RefreshEvent = RefreshIntervalEvent;
     InsertTailList (&mRefreshEventList, &EventNode->Link);
   }
@@ -1727,7 +1769,13 @@ DisplayForm (
                     gCurrentSelection->FormId,
                     gCurrentSelection->QuestionId
                     );
-    ASSERT (CurrentMenu != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (CurrentMenu == NULL) {
+      ASSERT (CurrentMenu != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
   }
 
   //
