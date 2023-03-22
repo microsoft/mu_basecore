@@ -10,11 +10,11 @@
 
 {
   "Filters": [
-    "-CryptoPkg/Library/OpensslLib/**/*.c:*",
     "-CryptoPkg/Library/BaseCryptLib/**/*.c:SM02690",
     "-CryptoPkg/Library/BaseCryptLib/Pk/CryptDh.c:SM02311",
     "-CryptoPkg/Library/BaseCryptLib/Pk/CryptRsaBasic.c:SM02311",
     "-CryptoPkg/Library/BaseCryptLib/SysCall/TimerWrapper.c:SM02320",
+    "-CryptoPkg/Library/OpensslLib/**/*.c:*",
     "-MdeModulePkg/Bus/Pci/PciBusDxe/PciResourceSupport.c:SM02311",
     "-MdeModulePkg/Core/Pei/Ppi/Ppi.c:cpp/overflow-buffer",
     "-MdeModulePkg/Library/UefiBootManagerLib/BmConsole.c:SM02311",
