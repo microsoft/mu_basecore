@@ -22,39 +22,96 @@
 #pragma pack()
 #endif
 
+// MU_CHANGE Starts: Fixing basic ARM definitions in Windows 
 #if _MSC_EXTENSIONS
+
+//
+// Disable warning that make it impossible to compile at /W4
+// This only works for Microsoft* tools
+//
+
+//
+// Disabling bitfield type checking warnings.
+//
+#pragma warning ( disable : 4214 )
+
+//
+// Disabling the unreferenced formal parameter warnings.
+//
+#pragma warning ( disable : 4100 )
+
+//
+// Disable slightly different base types warning as CHAR8 * can not be set
+// to a constant string.
+//
+#pragma warning ( disable : 4057 )
+
+//
+// ASSERT(FALSE) or while (TRUE) are legal constructs so suppress this warning
+//
+#pragma warning ( disable : 4127 )
+
+
+#endif
+
+#if !defined(__GNUC__) && (__STDC_VERSION__ < 199901L)
   //
-  // use Microsoft* C compiler dependent integer width types
+  // No ANSI C 2000 stdint.h integer width declarations, so define equivalents
   //
-  typedef unsigned __int64    UINT64;
-  typedef __int64             INT64;
-  typedef unsigned __int32    UINT32;
-  typedef __int32             INT32;
-  typedef unsigned short      UINT16;
-  typedef unsigned short      CHAR16;
-  typedef short               INT16;
-  typedef unsigned char       BOOLEAN;
-  typedef unsigned char       UINT8;
-  typedef char                CHAR8;
-  typedef signed char         INT8;
+
+  #if _MSC_EXTENSIONS
+    //
+    // use Microsoft* C compiler dependent integer width types
+    //
+    #include <stdint.h>
+    typedef unsigned __int64    UINT64;
+    typedef __int64             INT64;
+    typedef unsigned __int32    UINT32;
+    typedef __int32             INT32;
+    typedef unsigned short      UINT16;
+    typedef unsigned short      CHAR16;
+    typedef short               INT16;
+    typedef unsigned char       BOOLEAN;
+    typedef unsigned char       UINT8;
+    typedef char                CHAR8;
+    typedef signed char         INT8;
+  #else
+    //
+    // Assume standard ARM alignment.
+    //
+    typedef unsigned long long  UINT64;
+    typedef long long           INT64;
+    typedef unsigned int        UINT32;
+    typedef int                 INT32;
+    typedef unsigned short      UINT16;
+    typedef unsigned short      CHAR16;
+    typedef short               INT16;
+    typedef unsigned char       BOOLEAN;
+    typedef unsigned char       UINT8;
+    typedef char                CHAR8;
+    typedef signed char         INT8;
+
+  #endif
+
 #else
   //
-  // Assume standard ARM alignment.
+  // Use ANSI C 2000 stdint.h integer width declarations
   //
-  typedef unsigned long long  UINT64;
-  typedef long long           INT64;
-  typedef unsigned int        UINT32;
-  typedef int                 INT32;
-  typedef unsigned short      UINT16;
-  typedef unsigned short      CHAR16;
-  typedef short               INT16;
-  typedef unsigned char       BOOLEAN;
-  typedef unsigned char       UINT8;
-  typedef char                CHAR8;
-  typedef signed char         INT8;
+  #include "stdint.h"
+  typedef uint8_t   BOOLEAN;
+  typedef int8_t    INT8;
+  typedef uint8_t   UINT8;
+  typedef int16_t   INT16;
+  typedef uint16_t  UINT16;
+  typedef int32_t   INT32;
+  typedef uint32_t  UINT32;
+  typedef int64_t   INT64;
+  typedef uint64_t  UINT64;
+  typedef char      CHAR8;
+  typedef uint16_t  CHAR16;
 
-  #define UINT8_MAX 0xff
 #endif
+// MU_CHANGE Ends
 
 ///
 /// Unsigned value of native width.  (4 bytes on supported 32-bit processor instructions,

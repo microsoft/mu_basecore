@@ -270,6 +270,12 @@ CheckTSTInfo (
   //
   Imprint  = TstInfo->MessageImprint;
   HashAlgo = X509_ALGOR_dup (Imprint->HashAlgorithm);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if ((HashAlgo == NULL) || (HashAlgo->algorithm == NULL)) {
+    goto _Exit;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   Md = EVP_get_digestbyobj (HashAlgo->algorithm);
   if (Md == NULL) {

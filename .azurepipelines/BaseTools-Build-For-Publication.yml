@@ -32,7 +32,7 @@ jobs:
   - job: linux_build
     displayName: Linux Build
     pool:
-      vmImage: ubuntu-latest
+      vmImage: ubuntu-20.04
 
     workspace:
       clean: all
@@ -73,7 +73,14 @@ jobs:
       condition: SucceededOrFailed()
 
   - job: windows_build
-    displayName: Windows Build
+    # Use matrix to speed up the build process
+    strategy:
+      matrix:
+        TARGET_x86:
+          Build.Targets: 'IA32'
+        TARGET_ARM:
+          Build.Targets: 'ARM'
+
     pool:
       vmImage: windows-latest
 
@@ -108,11 +115,11 @@ jobs:
 
     - template: Steps/BuildBaseTools.yml@mu_devops
       parameters:
-        extra_parameters: '--skip_path_env'
+        extra_parameters: '--skip_path_env -a $(Build.Targets)'
         tool_chain_tag: 'VS2022'
 
     - publish: $(windows_build_output_path)
-      artifact: $(windows_artifact_name)
+      artifact: $(windows_artifact_name)_$(Build.Targets)
       displayName: Publish To Pipeline
       condition: SucceededOrFailed()
 
@@ -159,15 +166,24 @@ jobs:
         dest_file_path: $(Build.StagingDirectory)/NugetPackageConfig.json
         display_name: Fetch Nuget Publishing Config
 
+    - template: Steps/FetchGitHubFile.yml@mu_devops
+      parameters:
+        github_repo: microsoft/mu_basecore
+        source_branch: $(Build.SourceBranch)
+        source_file_path: License.txt
+        dest_file_path: $(Build.StagingDirectory)/License.txt
+        display_name: Fetch BASECORE License
+
     - powershell:
         mkdir $(Build.StagingDirectory)/$(temp_publication_directory);
         mv $(Pipeline.Workspace)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
-        mv $(Pipeline.Workspace)/$(windows_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
+        mv $(Pipeline.Workspace)/$(windows_artifact_name)_IA32 $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
+        mv $(Pipeline.Workspace)/$(windows_artifact_name)_ARM $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-ARM;
       displayName: Stage Package Files
 
     - powershell:
         mkdir $(Build.StagingDirectory)/PackageOutput;
-        nuget-publish --Operation Pack --OutputLog $(Build.StagingDirectory)/NugetPackagingLog.txt --ConfigFilePath $(Build.StagingDirectory)/NugetPackageConfig.json --InputFolderPath $(Build.StagingDirectory)/$(temp_publication_directory) --Version $(release_version) --OutputFolderPath $(Build.StagingDirectory)/PackageOutput;
+        nuget-publish --Operation Pack --OutputLog $(Build.StagingDirectory)/NugetPackagingLog.txt --ConfigFilePath $(Build.StagingDirectory)/NugetPackageConfig.json --InputFolderPath $(Build.StagingDirectory)/$(temp_publication_directory) --Version $(release_version) --CustomLicensePath $(Build.StagingDirectory)/License.txt --OutputFolderPath $(Build.StagingDirectory)/PackageOutput;
         Get-Content $(Build.StagingDirectory)/NugetPackagingLog.txt;
       displayName: Nuget Packaging
 
