@@ -117,6 +117,7 @@
       CpuExceptionHandlerLib|MdeModulePkg/Library/CpuExceptionHandlerLibNull/CpuExceptionHandlerLibNull.inf
       BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
       UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
+      MemoryBinOverrideLib|MdeModulePkg/Library/MemoryBinOverrideLibNull/MemoryBinOverrideLibNull.inf  # MU_CHANGE
 
     <PcdsFixedAtBuild>
       gEfiMdeModulePkgTokenSpaceGuid.PcdLoadModuleAtFixAddressEnable|0
@@ -124,3 +125,9 @@
       gEfiMdeModulePkgTokenSpaceGuid.PcdLoadFixAddressBootTimeCodePageNumber|0
   }
   # MU_CHANGE [END]
+
+  MdeModulePkg/Library/UefiSortLib/GoogleTest/UefiSortLibGoogleTest.inf {
+    <LibraryClasses>
+      UefiSortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+      DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+  }
