@@ -28,6 +28,7 @@
   #PrivateInclude   # MU_CHANGE - See above.
   Library/CmockaLib/cmocka/include/cmockery
   Library/GoogleTestLib/googletest/googletest
+  Library/GoogleTestLib/googletest/googlemock
 
 [LibraryClasses]
   ## @libraryclass Allows save and restore unit test internal state
@@ -37,6 +38,8 @@
   ## @libraryclass GoogleTest infrastructure
   #
   GoogleTestLib|Include/Library/GoogleTestLib.h
+  SubhookLib|Include/Library/SubhookLib.h
+  FunctionMockLib|Include/Library/FunctionMockLib.h
 
 [LibraryClasses.Common.Private]
   ## @libraryclass Provides a unit test result report
