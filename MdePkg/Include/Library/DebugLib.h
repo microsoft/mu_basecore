@@ -51,6 +51,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define DEBUG_CACHE     0x00200000  // Memory range cachability changes
 #define DEBUG_VERBOSE   0x00400000  // Detailed debug messages that may
                                     // significantly impact boot performance
+#define DEBUG_MM_SUPV   0x00800000  // MU_CHANGE: This is separately defined to allow repetetive
+                                    // supervisor debugging prints to be enabled individually.
 #define DEBUG_ERROR  0x80000000     // Error
 
 //
