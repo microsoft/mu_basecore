@@ -9,5 +9,8 @@
 #include <Uefi.h>
 
 extern EFI_BOOT_SERVICES  MockBoot;
+extern EFI_SYSTEM_TABLE   MockSys;
+
 
 EFI_BOOT_SERVICES  *gBS = &MockBoot;
+EFI_SYSTEM_TABLE   *gST = &MockSys;
