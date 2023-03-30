@@ -193,6 +193,9 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         if os.path.isfile(f"{workspace}/Build/coverage.xml"):
             os.remove(f"{workspace}/Build/coverage.xml")
         ret = RunCmd("lcov_cobertura",f"{workspace}/Build/all-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {workspace}/Build/coverage.xml")
+        if ret != 0:
+            logging.error("UnitTest Coverage: Failed generate all coverage XML.")
+            return 1
 
         return 0
 
