@@ -9,7 +9,7 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = MockPeiServicesLib
-  FILE_GUID                      = AD05B2EC-9B7C-433E-9AB0-E1CA9E0FDCED
+  FILE_GUID                      = CCAC9908-7D28-43FF-80DE-1C52308A9353
   MODULE_TYPE                    = HOST_APPLICATION
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = PeiServicesLib
@@ -29,3 +29,4 @@
 [LibraryClasses]
   BaseLib
   UnitTestLib
+  

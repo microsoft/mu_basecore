@@ -1,15 +1,15 @@
 ## @file
 #  Mocked library instance for ResetSystem library class
 #
-#  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
-#  SPDX-License-Identifier: BSD-2-Clause-Patent
+# Copyright (C) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = MockBaseResetSystemLibNull
-  FILE_GUID                      = FCDB0F20-B02A-4C5E-892A-7BF098B04CD9
+  FILE_GUID                      = A4A9C177-75C7-40F6-8F88-0786C57A66A6
   MODULE_TYPE                    = HOST_APPLICATION
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = ResetSystemLib
@@ -30,3 +30,4 @@
 [LibraryClasses]
   DebugLib
   UnitTestLib
+  

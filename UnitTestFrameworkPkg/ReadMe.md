@@ -709,7 +709,8 @@ the following, please make sure they live in the correct place.
 Code/Test                                   | Location
 ---------                                   | --------
 Host-Based Library Implementations                 | Host-Based Implementations of common libraries (eg. MemoryAllocationLibHost) should live in the same package that declares the library interface in its .DEC file in the `*Pkg/Test/Library` directory. Should have 'Host' in the name.
-Host-Based Mocks and Stubs  | Mock and Stub libraries should live in the `*Pkg/Test/Library` with either 'Mock' or 'Stub' in the library name.
+Host-Based Mocks and Stubs  | Mock and Stub libraries should live in the `*Pkg/Test/Library` directory with either 'Mock' or 'Stub' in the library name.
+Unit test infrastructure | Unit test infrastructure and libraries should likve in the 1UefiTestFrameworkPkg/Library` directory
 
 ### If still in doubt
 

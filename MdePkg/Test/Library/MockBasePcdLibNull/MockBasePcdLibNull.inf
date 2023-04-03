@@ -9,7 +9,7 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = MockBasePcdLibNull
-  FILE_GUID                      = ADA323D2-2C77-462D-A51D-79F456DF011D
+  FILE_GUID                      = F6DE8976-07E6-49E4-9B0B-4F95F17CEB99
   MODULE_TYPE                    = HOST_APPLICATION
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = PcdLib
@@ -30,3 +30,4 @@
 [LibraryClasses]
   DebugLib
   UnitTestLib
+  

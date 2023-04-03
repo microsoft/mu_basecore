@@ -9,7 +9,7 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = MockResetUtilityLib
-  FILE_GUID                      = E9F746A2-AFF1-400F-BADE-0599151BE394
+  FILE_GUID                      = 179DF840-2465-4DE9-AA39-1BE25A75714B
   MODULE_TYPE                    = HOST_APPLICATION
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = ResetUtilityLib
