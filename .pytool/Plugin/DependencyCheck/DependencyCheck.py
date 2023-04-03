@@ -8,7 +8,6 @@ import logging
 import os
 from edk2toolext.environment.plugintypes.ci_build_plugin import ICiBuildPlugin
 from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
-from edk2toollib.uefi.edk2.path_utilities import Edk2Path
 from edk2toolext.environment.var_dict import VarDict
 
 
