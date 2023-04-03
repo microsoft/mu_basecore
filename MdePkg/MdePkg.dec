@@ -23,6 +23,7 @@
 
 [Includes]
   Include
+  Test/Include
   Test/UnitTest/Include
 
 [Includes.IA32]
