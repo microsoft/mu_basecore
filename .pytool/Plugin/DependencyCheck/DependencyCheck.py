@@ -93,7 +93,8 @@ class DependencyCheck(ICiBuildPlugin):
         # For each INF file
         for file in INFFiles:
             logging.debug("Parsing " + file)
-            ip = InfParser().SetEdk2Path(Edk2pathObj).ParseFile(file)
+            ip = InfParser().SetEdk2Path(Edk2pathObj)
+            ip.ParseFile(file)
 
             if("MODULE_TYPE" not in ip.Dict):
                 tc.LogStdOut("Ignoring INF. Missing key for MODULE_TYPE {0}".format(file))
