@@ -8,7 +8,7 @@
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = MockResetSystemLib
+  BASE_NAME                      = MockBaseResetSystemLibNull
   FILE_GUID                      = FCDB0F20-B02A-4C5E-892A-7BF098B04CD9
   MODULE_TYPE                    = HOST_APPLICATION
   VERSION_STRING                 = 1.0
@@ -21,7 +21,7 @@
 #
 
 [Sources]
-  MockResetSystemLib.c
+  MockBaseResetSystemLibNull.c
 
 [Packages]
   MdePkg/MdePkg.dec
