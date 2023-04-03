@@ -20,7 +20,7 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: refs/tags/v2.2.0
+      ref: refs/tags/v2.3.0
 
 variables:
 - group: architectures-x86-64
@@ -30,5 +30,6 @@ jobs:
 - template: Matrix-Build-Job.yml
   parameters:
     arch_list: $(arch_list)
+    extra_build_args: CODE_COVERAGE=TRUE
     tool_chain_tag: $(tool_chain_tag)
     vm_image: $(vm_image)

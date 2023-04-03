@@ -20,10 +20,10 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: refs/tags/v2.2.0
+      ref: refs/tags/v2.3.0
   containers:
     - container: linux-gcc
-      image: ghcr.io/tianocore/containers/fedora-37-build:14d2aba
+      image: ghcr.io/tianocore/containers/fedora-37-build:f1c7a20
 
 variables:
 - group: architectures-arm-64-x86-64
@@ -33,12 +33,11 @@ jobs:
 - template: Matrix-Build-Job.yml
   parameters:
     arch_list: $(arch_list)
-    extra_build_args: CODE_COVERAGE=TRUE CC_HTML=TRUE
+    extra_build_args: CODE_COVERAGE=TRUE
     extra_install_step:
     - script: |
-              sudo dnf install --assumeyes mingw64-gcc lcov
-              pip install lcov_cobertura pycobertura
-      displayName: Install Windows Resource Compiler for Linux & Code Coverage Tools
+              sudo dnf install --assumeyes mingw64-gcc
+      displayName: Install Windows Resource Compiler for Linux
     tool_chain_tag: $(tool_chain_tag)
     vm_image: $(vm_image)
     container_image: linux-gcc

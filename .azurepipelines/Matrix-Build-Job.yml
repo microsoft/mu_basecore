@@ -91,3 +91,14 @@ jobs:
       extra_install_step: ${{ parameters.extra_install_step }}
       tool_chain_tag: ${{ parameters.tool_chain_tag }}
       install_tools: ${{ eq(parameters.container_image, '') }}
+
+- job: PublishCoverage
+  dependsOn: Build
+  workspace:
+    clean: all
+
+  pool:
+    vmImage: 'windows-latest'
+
+  steps:
+    - template: Steps/PublishCodeCoverage.yml@mu_devops

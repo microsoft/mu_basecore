@@ -12,7 +12,7 @@
   "type": "nuget",
   "name": "Mu-Basetools",
   "source": "https://pkgs.dev.azure.com/projectmu/mu/_packaging/Basetools-Binary/nuget/v3/index.json",
-  "version": "2022.08.2",
+  "version": "2022.08.3",
   "flags": ["set_shell_var", "set_path", "host_specific"],
   "var_name": "EDK_TOOLS_BIN"
 }
