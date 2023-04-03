@@ -8,6 +8,7 @@ import logging
 import os
 from edk2toolext.environment.plugintypes.ci_build_plugin import ICiBuildPlugin
 from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
+from edk2toollib.uefi.edk2.path_utilities import Edk2Path
 from edk2toolext.environment.var_dict import VarDict
 
 
@@ -92,9 +93,8 @@ class DependencyCheck(ICiBuildPlugin):
 
         # For each INF file
         for file in INFFiles:
-            ip = InfParser()
             logging.debug("Parsing " + file)
-            ip.SetBaseAbsPath(Edk2pathObj.WorkspacePath).SetPackagePaths(Edk2pathObj.PackagePathList).ParseFile(file)
+            ip = InfParser().SetEdk2Path(Edk2pathObj).ParseFile(file)
 
             if("MODULE_TYPE" not in ip.Dict):
                 tc.LogStdOut("Ignoring INF. Missing key for MODULE_TYPE {0}".format(file))
