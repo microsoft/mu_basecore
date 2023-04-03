@@ -92,8 +92,8 @@ class DependencyCheck(ICiBuildPlugin):
 
         # For each INF file
         for file in INFFiles:
-            logging.debug("Parsing " + file)
             ip = InfParser().SetEdk2Path(Edk2pathObj)
+            logging.debug("Parsing " + file)
             ip.ParseFile(file)
 
             if("MODULE_TYPE" not in ip.Dict):
