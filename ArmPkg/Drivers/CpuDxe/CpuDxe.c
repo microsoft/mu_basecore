@@ -12,6 +12,7 @@
 #include <Guid/IdleLoopEvent.h>
 
 #include <Library/MemoryAllocationLib.h>
+#include <Library/DxeMemoryProtectionHobLib.h> // MU_CHANGE
 
 BOOLEAN  mIsFlushingGCD;
 
@@ -312,7 +313,10 @@ RemapUnusedMemoryNx (
   EFI_STATUS             Status;
 
   TestBit = LShiftU64 (1, EfiBootServicesData);
-  if ((PcdGet64 (PcdDxeNxMemoryProtectionPolicy) & TestBit) == 0) {
+  // MU_CHANGE START: Use memory protection HOB instead of PCD
+  // if ((PcdGet64 (PcdDxeNxMemoryProtectionPolicy) & TestBit) == 0) {
+  if (gDxeMps.NxProtectionPolicy.Fields.EfiConventionalMemory == 0) {
+    // MU_CHANGE END
     return;
   }
 
