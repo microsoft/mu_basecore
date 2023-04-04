@@ -49,6 +49,7 @@
   PeCoffGetEntryPointLib
   UefiDriverEntryPoint
   UefiLib
+  DxeMemoryProtectionHobLib # MU_CHANGE
 
 [Protocols]
   gEfiCpuArchProtocolGuid
@@ -62,7 +63,7 @@
   gEfiVectorHandoffTableGuid
 
 [Pcd.common]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy # MU_CHANGE
 
 [FeaturePcd.common]
   gArmTokenSpaceGuid.PcdRemapUnusedMemoryNx
