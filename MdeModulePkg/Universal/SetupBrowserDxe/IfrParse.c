@@ -438,8 +438,9 @@ CreateStorage (
   EFI_GUID         *StorageGuid;
   CHAR8            *StorageName;
 
-  UnicodeString = NULL;
-  StorageName   = NULL;
+  UnicodeString  = NULL;
+  StorageName    = NULL;
+  BrowserStorage = NULL; // MU_CHANGE - Initialize variable that might not be updated due to error checking
   switch (StorageType) {
     case EFI_HII_VARSTORE_BUFFER:
       StorageGuid = (EFI_GUID *)(CHAR8 *)&((EFI_IFR_VARSTORE *)OpCodeData)->Guid;
