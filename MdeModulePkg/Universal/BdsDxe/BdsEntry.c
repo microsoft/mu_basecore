@@ -417,16 +417,31 @@ BootBootOptions (
 
     PlatformBootManagerProcessBootCompletion (&BootOptions[Index]);        // MSCHANGE 00076 - record boot status
 
-    //
-    // If the boot via Boot#### returns with a status of EFI_SUCCESS, platform firmware
-    // supports boot manager menu, and if firmware is configured to boot in an
-    // interactive mode, the boot manager will stop processing the BootOrder variable and
-    // present a boot manager menu to the user.
-    //
-    if ((BootManagerMenu != NULL) && (BootOptions[Index].Status == EFI_SUCCESS)) {
-      EfiBootManagerBoot (BootManagerMenu);
-      break;
+    // MU_CHANGE [BEGIN] - Support infinite boot retries
+    if (!PcdGetBool (PcdSupportInfiniteBootRetries)) {
+      // MU_CHANGE [END] - Support infinite boot retries
+
+      //
+      // If the boot via Boot#### returns with a status of EFI_SUCCESS, platform firmware
+      // supports boot manager menu, and if firmware is configured to boot in an
+      // interactive mode, the boot manager will stop processing the BootOrder variable and
+      // present a boot manager menu to the user.
+      //
+      if ((BootManagerMenu != NULL) && (BootOptions[Index].Status == EFI_SUCCESS)) {
+        EfiBootManagerBoot (BootManagerMenu);
+        break;
+      }
+
+      // MU_CHANGE [BEGIN]- Support infinite boot retries
     }
+
+    if (PcdGetBool (PcdSupportInfiniteBootRetries)) {
+      if (Index == (BootOptionCount -1)) {
+        Index = 0;
+      }
+    }
+
+    // MU_CHANGE [END]- Support infinite boot retries
   }
 
   return (BOOLEAN)(Index < BootOptionCount);
