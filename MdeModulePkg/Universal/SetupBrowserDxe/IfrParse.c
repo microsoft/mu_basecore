@@ -539,6 +539,7 @@ ErrorExit:
     if (Storage->ConfigRequest != NULL) {
       FreePool (Storage->ConfigRequest);
     }
+
     FreePool (Storage);
   }
 
