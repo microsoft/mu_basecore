@@ -535,11 +535,10 @@ ErrorExit:
     FreePool (BrowserStorage);
   }
 
-  if (Storage->ConfigRequest != NULL) {
-    FreePool (Storage->ConfigRequest);
-  }
-
   if (Storage != NULL) {
+    if (Storage->ConfigRequest != NULL) {
+      FreePool (Storage->ConfigRequest);
+    }
     FreePool (Storage);
   }
 
