@@ -60,11 +60,11 @@ jobs:
       displayName: Update Environment
       inputs:
         filename: stuart_update
-        arguments: -c .pytool/CISettings.py
+        arguments: -c .pytool/CISettings.py TOOL_CHAIN_TAG=GCC5 -a targetarch
 
     - template: Steps/BuildBaseTools.yml@mu_devops
       parameters:
-        extra_parameters: '--skip_path_env'
+        extra_parameters: '--skip_path_env -a targetarch'
         tool_chain_tag: 'GCC5'
 
     - publish: $(linux_build_output_path)

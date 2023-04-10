@@ -13,7 +13,7 @@ import logging
 import argparse
 import multiprocessing
 from edk2toolext import edk2_logging
-from edk2toolext.environment import self_describing_environment
+from edk2toolext.environment import self_describing_environment, shell_environment
 from edk2toolext.base_abstract_invocable import BaseAbstractInvocable
 from edk2toollib.utility_functions import RunCmd
 from edk2toollib.utility_functions import GetHostInfo # MU_CHANGE: Need to check if this is cross compilation
@@ -30,7 +30,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         # MU_CHANGE
         ParserObj.add_argument("-s", "--skip_path_env", dest="skip_env", default=False, action='store_true',
                                help="Skip the creation of the path_env descriptor file")
-        ParserObj.add_argument("-a", "--target_arch", dest="arch", default='IA32', choices=['IA32', 'ARM'],
+        ParserObj.add_argument("-a", "--target_arch", dest="arch", default=None, choices=[None, 'IA32', 'X64', 'ARM', 'AARCH64'],
                                help="Specify the architecture of the built base tools")
         args = ParserObj.parse_args()
         self.tool_chain_tag = args.tct
@@ -47,8 +47,13 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
     def GetActiveScopes(self):
         ''' return tuple containing scopes that should be active for this process '''
 
-        # for now don't use scopes
-        return ('global',)
+        scopes = ('global',)
+        if GetHostInfo().os == "Linux" and self.tool_chain_tag.lower().startswith("gcc"):
+            if "AARCH64" in self.target_arch:
+                scopes += ("gcc_aarch64_linux",)
+            if "ARM" in self.target_arch:
+                scopes += ("gcc_arm_linux",)
+        return scopes
 
     def GetLoggingLevel(self, loggerType):
         ''' Get the logging level for a given type (return Logging.Level)
@@ -120,6 +125,10 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
 
         if self.tool_chain_tag.lower().startswith("vs"):
             # MU_CHANGE: Specify target architecture
+            if self.target_arch is not None:
+                # Put a default as IA32
+                self.target_arch = "IA32"
+
             if self.target_arch == "IA32":
                 VcToolChainArch = "x86"
                 TargetInfoArch = "x86"
@@ -175,6 +184,22 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             return ret
 
         elif self.tool_chain_tag.lower().startswith("gcc"):
+            # MU_CHANGE: Specify target architecture
+            # Note: This HOST_ARCH is in respect to the BUILT base tools, not the host arch where
+            # this script is BUILDING the base tools.
+            if self.target_arch is not None:
+                shell_env.set_shell_var('HOST_ARCH', self.target_arch)
+
+                # now check for install dir.  If set then set the Prefix
+                install_path = shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_INSTALL")
+
+                # make GCC5_AARCH64_PREFIX to align with tools_def.txt
+                prefix = os.path.join(install_path, "bin", "aarch64-none-linux-gnu-")
+                shell_environment.GetEnvironment().set_shell_var("GCC5_AARCH64_PREFIX", prefix)
+
+                # Otherwise, the built binary arch will be consistent with the host system
+
+            ret = RunCmd("make", "clean", workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
             cpu_count = self.GetCpuThreads()
             ret = RunCmd("make", f"-C .  -j {cpu_count}", workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
             if ret != 0:
