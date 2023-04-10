@@ -91,17 +91,14 @@ class DscCompleteCheck(ICiBuildPlugin):
                         "DscCompleteCheck.IgnoreInf -> {0} not found in filesystem.  Invalid ignore file".format(a))
 
         # DSC Parser
-        dp = DscParser()
-        dp.SetBaseAbsPath(Edk2pathObj.WorkspacePath)
-        dp.SetPackagePaths(Edk2pathObj.PackagePathList)
+        dp = DscParser().SetEdk2Path(Edk2pathObj)
         dp.SetInputVars(environment.GetAllBuildKeyValues())
         dp.ParseFile(wsr_dsc_path)
 
         # Check if INF in component section
         for INF in INFFiles:
             if not DscCompleteCheck._module_in_dsc(INF, dp, Edk2pathObj):
-                infp = InfParser().SetBaseAbsPath(Edk2pathObj.WorkspacePath)
-                infp.SetPackagePaths(Edk2pathObj.PackagePathList)
+                infp = InfParser().SetEdk2Path(Edk2pathObj)
                 infp.ParseFile(INF)
                 if("MODULE_TYPE" not in infp.Dict):
                     tc.LogStdOut(
