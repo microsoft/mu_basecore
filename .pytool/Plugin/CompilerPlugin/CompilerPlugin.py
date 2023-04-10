@@ -74,9 +74,7 @@ class CompilerPlugin(ICiBuildPlugin):
         self._env.SetValue("ACTIVE_PLATFORM", AP_Path, "Set in Compiler Plugin")
 
         # Parse DSC to check for SUPPORTED_ARCHITECTURES
-        dp = DscParser()
-        dp.SetBaseAbsPath(Edk2pathObj.WorkspacePath)
-        dp.SetPackagePaths(Edk2pathObj.PackagePathList)
+        dp = DscParser().SetEdk2Path(Edk2pathObj)
         # MU_CHANGE [BEGIN] - Enable CompilerPlugin to pass through BuildVars
         build_target = self._env.GetValue("TARGET")
         dp.SetInputVars(self._env.GetAllBuildKeyValues(build_target))

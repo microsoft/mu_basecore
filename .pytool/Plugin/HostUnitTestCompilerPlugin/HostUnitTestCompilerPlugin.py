@@ -122,9 +122,7 @@ class HostUnitTestCompilerPlugin(ICiBuildPlugin):
                 raise RuntimeError("Can't Change TARGET_ARCH as required")
 
         # Parse DSC to check for SUPPORTED_ARCHITECTURES
-        dp = DscParser()
-        dp.SetBaseAbsPath(Edk2pathObj.WorkspacePath)
-        dp.SetPackagePaths(Edk2pathObj.PackagePathList)
+        dp = DscParser().SetEdk2Path(Edk2pathObj)
         dp.ParseFile(AP_Path)
         if "SUPPORTED_ARCHITECTURES" in dp.LocalVars:
             SUPPORTED_ARCHITECTURES = dp.LocalVars["SUPPORTED_ARCHITECTURES"].split('|')

@@ -82,10 +82,10 @@ class ImageValidation(IUefiBuildPlugin):
             return 0
 
         # parse the DSC and the FDF
-        dsc_parser.SetBaseAbsPath(ws).SetPackagePaths(pp)
+        dsc_parser.SetEdk2Path(edk2)
         dsc_parser.SetInputVars(thebuilder.env.GetAllBuildKeyValues()).ParseFile(
             ActiveDsc)  # parse the DSC for build vars
-        fdf_parser.SetBaseAbsPath(ws).SetPackagePaths(pp)
+        fdf_parser.SetEdk2Path(edk2)
         fdf_parser.SetInputVars(dsc_parser.LocalVars).ParseFile(
             ActiveFdf)  # give FDF parser the vars from DSC
 
