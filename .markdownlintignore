@@ -3,3 +3,4 @@
 
 # Ignore external dependencies
 *_extdep/
+UnitTestFrameworkPkg/Library/SubhookLib/

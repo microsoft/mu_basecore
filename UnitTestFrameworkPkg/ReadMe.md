@@ -205,7 +205,7 @@ section so that the unit tests will be built.
 
 See this example in `UnitTestFrameworkPkg.dsc`...
 
-```
+```inf
 [Components]
   UnitTestFrameworkPkg/Test/UnitTest/Sample/SampleUnitTest/SampleUnitTestUefiShell.inf
 ```
@@ -214,7 +214,7 @@ Also, based on the type of tests that are being created, the associated DSC incl
 UnitTestFrameworkPkg for Host or Target based tests should also be included at the top of the DSC
 file.
 
-```
+```inf
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgTarget.dsc.inc
 ```
 
@@ -224,7 +224,7 @@ they should be added in the \<LibraryClasses\> sub-section for the INF file in t
 
 See this example in `SecurityPkgHostTest.dsc`...
 
-```
+```inf
 [Components]
   SecurityPkg/Library/SecureBootVariableLib/UnitTest/SecureBootVariableLibUnitTest.inf {
     <LibraryClasses>
@@ -1683,16 +1683,18 @@ Host based Unit Tests will automatically enable coverage data.
 For Windows, this is primarily leveraged for pipeline builds, but this can be leveraged locally using the
 OpenCppCoverage windows tool to parse coverage data to cobertura xml format.
 
-- Windows Prerequisite
-  ```bash
+* Windows Prerequisite
+
+  ```text
   Download and install https://github.com/OpenCppCoverage/OpenCppCoverage/releases
   python -m pip install --upgrade -r ./pip-requirements.txt
   stuart_ci_build -c .pytool/CISettings.py  -t NOOPT TOOL_CHAIN_TAG=VS2019 -p MdeModulePkg
   Open Build/coverage.xml
   ```
 
-  - How to see code coverage data on IDE Visual Studio
-    ```
+  * How to see code coverage data on IDE Visual Studio
+
+    ```text
     Open Visual Studio VS2019 or above version
     Click "Tools" -> "OpenCppCoverage Settings"
     Fill your execute file into "Program to run:"
