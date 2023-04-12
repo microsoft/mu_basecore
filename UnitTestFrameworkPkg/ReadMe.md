@@ -135,6 +135,43 @@ to make sure that the module `BASE_NAME` contains the word `Test`...
   BASE_NAME      = SampleUnitTestUefiShell
 ```
 
+### Framework Requirements - DSC
+
+In our DSC file, we'll need to bring in the INF file that was just created into the `[Components]`
+section so that the unit tests will be built.
+
+See this example in `UnitTestFrameworkPkg.dsc`...
+
+```inf
+[Components]
+  UnitTestFrameworkPkg/Test/UnitTest/Sample/SampleUnitTest/SampleUnitTestUefiShell.inf
+```
+
+Also, based on the type of tests that are being created, the associated DSC include file from the
+UnitTestFrameworkPkg for Host or Target based tests should also be included at the top of the DSC
+file.
+
+```inf
+!include UnitTestFrameworkPkg/UnitTestFrameworkPkgTarget.dsc.inc
+```
+
+Lastly, in the case that the test build has specific dependent libraries associated with it,
+they should be added in the \<LibraryClasses\> sub-section for the INF file in the
+`[Components]` section of the DSC file.
+
+See this example in `SecurityPkgHostTest.dsc`...
+
+```inf
+[Components]
+  SecurityPkg/Library/SecureBootVariableLib/UnitTest/SecureBootVariableLibUnitTest.inf {
+    <LibraryClasses>
+      SecureBootVariableLib|SecurityPkg/Library/SecureBootVariableLib/SecureBootVariableLib.inf
+      UefiRuntimeServicesTableLib|SecurityPkg/Library/SecureBootVariableLib/UnitTest/MockUefiRuntimeServicesTableLib.inf
+      PlatformPKProtectionLib|SecurityPkg/Library/SecureBootVariableLib/UnitTest/MockPlatformPKProtectionLib.inf
+      UefiLib|SecurityPkg/Library/SecureBootVariableLib/UnitTest/MockUefiLib.inf
+  }
+```
+
 ### Framework Requirements - Code
 
 Not to state the obvious, but let's make sure we have the following include before getting too far along...
@@ -279,8 +316,7 @@ To write more advanced tests, first look at all the Assertion and Logging macros
 Beyond that, if you're writing host-based tests and want to take a dependency on the UnitTestFrameworkPkg, you can
 leverage the `cmocka.h` interface and write tests with all the features of the Cmocka framework.
 
-Documentation for Cmocka can be found here:
-<https://api.cmocka.org/>
+Documentation for Cmocka can be found [here](https://api.cmocka.org/).
 
 ## GoogleTest Samples
 
@@ -589,11 +625,33 @@ This mode is used by the test running plugin to aggregate the results for CI tes
 
 ### Code Coverage
 
-Host based Unit Tests will automatically include GCC build flags to enable coverage data.
-This is primarily leveraged for pipeline builds, but this can be leveraged locally using the
-lcov linux tool, and parsed using the lcov_cobertura python tool. pycobertura is used to
-covert this coverage data to a human readable HTML file. These tools must be installed
-to parse code coverage.
+Host based Unit Tests will automatically enable coverage data.
+
+For Windows, this is primarily leverage for pipeline builds, but this can be leveraged locally using the
+OpenCppCoverage windows tool to parse coverage data to cobertura xml format.
+
+* Windows Prerequisite
+
+  ```text
+  Download and install https://github.com/OpenCppCoverage/OpenCppCoverage/releases
+  python -m pip install --upgrade -r ./pip-requirements.txt
+  stuart_ci_build -c .pytool/CISettings.py  -t NOOPT TOOL_CHAIN_TAG=VS2019 -p MdeModulePkg
+  Open Build/coverage.xml
+  ```
+
+  * How to see code coverage data on IDE Visual Studio
+
+    ```text
+    Open Visual Studio VS2019 or above version
+    Click "Tools" -> "OpenCppCoverage Settings"
+    Fill your execute file into "Program to run:"
+    Click "Tools" -> "Run OpenCppCoverage"
+    ```
+
+For Linux, this is primarily leveraged for pipeline builds, but this can be leveraged locally using the
+lcov linux tool, and parsed using the lcov_cobertura python tool to parse it to cobertura xml format. pycobertura
+is used to covert this coverage data to a human readable HTML file. These tools must be installed to parse code
+coverage.
 
 ```bash
 sudo apt-get install -y lcov
