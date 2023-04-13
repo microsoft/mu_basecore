@@ -11,6 +11,8 @@ import os
 import logging
 from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
 from edk2toolext.environment import shell_environment
+from edk2toollib.utility_functions import GetHostInfo
+from edk2toollib.utility_functions import RunCmd
 
 
 class LinuxGcc5ToolChain(IUefiBuildPlugin):
@@ -69,22 +71,29 @@ class LinuxGcc5ToolChain(IUefiBuildPlugin):
 
     def _check_aarch64(self):
         # check to see if full path already configured
-        if shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_PREFIX") is not None:
-            self.Logger.info("GCC5_AARCH64_PREFIX is already set.")
+        HostInfo = GetHostInfo()
+        if HostInfo.arch == "x86":
+            if shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_PREFIX") is not None:
+                self.Logger.info("GCC5_AARCH64_PREFIX is already set.")
+
+            else:
+                # now check for install dir.  If set then set the Prefix
+                install_path = shell_environment.GetEnvironment(
+                ).get_shell_var("GCC5_AARCH64_INSTALL")
+                if install_path is None:
+                    return 0
+
+                # make GCC5_AARCH64_PREFIX to align with tools_def.txt
+                prefix = os.path.join(install_path, "bin", "aarch64-none-linux-gnu-")
+                shell_environment.GetEnvironment().set_shell_var("GCC5_AARCH64_PREFIX", prefix)
 
         else:
-            # now check for install dir.  If set then set the Prefix
-            install_path = shell_environment.GetEnvironment(
-            ).get_shell_var("GCC5_AARCH64_INSTALL")
-            if install_path is None:
-                return 0
+            shell_environment.GetEnvironment().set_shell_var("GCC5_AARCH64_PREFIX", "")
 
-            # make GCC5_AARCH64_PREFIX to align with tools_def.txt
-            prefix = os.path.join(install_path, "bin", "aarch64-none-linux-gnu-")
-            shell_environment.GetEnvironment().set_shell_var("GCC5_AARCH64_PREFIX", prefix)
-
-        # now confirm it exists
-        if not os.path.exists(shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_PREFIX") + "gcc"):
+        # now confirm it exists by checking its version
+        cmd = shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_PREFIX") + "gcc"
+        ret = RunCmd(cmd, "-v")
+        if ret != 0:
             self.Logger.error(
                 "Path for GCC5_AARCH64_PREFIX toolchain is invalid")
             return -2
