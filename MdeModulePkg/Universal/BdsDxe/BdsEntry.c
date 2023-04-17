@@ -418,6 +418,9 @@ BootBootOptions (
     PlatformBootManagerProcessBootCompletion (&BootOptions[Index]);        // MSCHANGE 00076 - record boot status
 
     // MU_CHANGE [BEGIN] - Support infinite boot retries
+    //  Changes for PcdSupportInfiniteBootRetries are meant to minimize upkeep in mu repos.
+    //   If/when upstreaming this change, refactoring calling loop in BdsEntry() would be
+    //   better location.
     if (!PcdGetBool (PcdSupportInfiniteBootRetries)) {
       // MU_CHANGE [END] - Support infinite boot retries
 
@@ -433,10 +436,14 @@ BootBootOptions (
       }
 
       // MU_CHANGE [BEGIN]- Support infinite boot retries
+      //  Changes for PcdSupportInfiniteBootRetries are meant to minimize upkeep in mu repos.
+      //   If/when upstreaming this change, refactoring calling loop in BdsEntry() would be
+      //   better location.
     }
 
     if (PcdGetBool (PcdSupportInfiniteBootRetries)) {
       if (Index == (BootOptionCount - 1)) {
+        // Resetting index back to -1 so loop increment will result in Index 0 for next iteration
         Index = (UINTN)-1;
       }
     }
