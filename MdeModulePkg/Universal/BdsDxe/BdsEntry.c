@@ -436,8 +436,8 @@ BootBootOptions (
     }
 
     if (PcdGetBool (PcdSupportInfiniteBootRetries)) {
-      if (Index == (BootOptionCount -1)) {
-        Index = 0;
+      if (Index == (BootOptionCount - 1)) {
+        Index = (UINTN)-1;
       }
     }
 
