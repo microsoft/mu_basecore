@@ -1276,6 +1276,15 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportAlternativeQueueSize|FALSE|BOOLEAN|0x40000151
   # MU_CHANGE [END]
 
+  # MU_CHANGE [BEGIN] - Support indefinite boot retries
+  # # Some platforms require that all EfiLoadOptions are retried until one of the options 
+  # # succeeds. When True, this Pcd will force Bds to retry all the valid EfiLoadOptions 
+  # # indefinitely until one of the options succeeds. 
+  # #   TRUE  - Efi boot options will be retried indefinitely.
+  # #   FALSE - Efi boot options will not be retried.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportInfiniteBootRetries|FALSE|BOOLEAN|0x40000152
+  # MU_CHANGE [END]
+
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Dynamic type PCD can be registered callback function for Pcd setting action.
   #  PcdMaxPeiPcdCallBackNumberPerPcdEntry indicates the maximum number of callback function
