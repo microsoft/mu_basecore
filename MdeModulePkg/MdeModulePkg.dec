@@ -1185,6 +1185,15 @@
   # @Prompt Delay access XHCI register after it issues HCRST (us)
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayXhciHCReset|2000|UINT16|0x30001060
 
+  # MU_CHANGE [BEGIN] - Support indefinite boot retries
+  # # Some platforms require that all EfiLoadOptions are retried until one of the options 
+  # # succeeds. When True, this Pcd will force Bds to retry all the valid EfiLoadOptions 
+  # # indefinitely until one of the options succeeds. 
+  # #   TRUE  - Efi boot options will be retried indefinitely.
+  # #   FALSE - Efi boot options will not be retried.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportInfiniteBootRetries|FALSE|BOOLEAN|0x40000152
+  # MU_CHANGE [END]
+
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Dynamic type PCD can be registered callback function for Pcd setting action.
   #  PcdMaxPeiPcdCallBackNumberPerPcdEntry indicates the maximum number of callback function
