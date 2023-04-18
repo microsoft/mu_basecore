@@ -12,6 +12,7 @@ import sys
 import logging
 import argparse
 import multiprocessing
+import shutil
 from edk2toolext import edk2_logging
 from edk2toolext.environment import self_describing_environment, shell_environment
 from edk2toolext.base_abstract_invocable import BaseAbstractInvocable
@@ -49,6 +50,8 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
 
         scopes = ('global',)
         if GetHostInfo().os == "Linux" and self.tool_chain_tag.lower().startswith("gcc"):
+            if self.target_arch is None:
+                return scopes
             if "AARCH64" in self.target_arch:
                 scopes += ("gcc_aarch64_linux",)
             if "ARM" in self.target_arch:
@@ -187,19 +190,77 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             # MU_CHANGE: Specify target architecture
             # Note: This HOST_ARCH is in respect to the BUILT base tools, not the host arch where
             # this script is BUILDING the base tools.
+            prefix = None
+            TargetInfoArch = None
             if self.target_arch is not None:
                 shell_env.set_shell_var('HOST_ARCH', self.target_arch)
 
-                # now check for install dir.  If set then set the Prefix
-                install_path = shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_INSTALL")
+                if "AARCH64" in self.target_arch:
+                    # now check for install dir.  If set then set the Prefix
+                    install_path = shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_INSTALL")
 
-                # make GCC5_AARCH64_PREFIX to align with tools_def.txt
-                prefix = os.path.join(install_path, "bin", "aarch64-none-linux-gnu-")
-                shell_environment.GetEnvironment().set_shell_var("GCC5_AARCH64_PREFIX", prefix)
+                    # make GCC5_AARCH64_PREFIX to align with tools_def.txt
+                    prefix = os.path.join(install_path, "bin", "aarch64-none-linux-gnu-")
+                    shell_environment.GetEnvironment().set_shell_var("GCC5_AARCH64_PREFIX", prefix)
+                    TargetInfoArch = "ARM"
 
-                # Otherwise, the built binary arch will be consistent with the host system
+                elif "ARM" in self.target_arch:
+                    # now check for install dir.  If set then set the Prefix
+                    install_path = shell_environment.GetEnvironment().get_shell_var("GCC5_ARM_INSTALL")
+
+                    # make GCC5_ARM_PREFIX to align with tools_def.txt
+                    prefix = os.path.join(install_path, "bin", "arm-none-linux-gnueabihf-")
+                    shell_environment.GetEnvironment().set_shell_var("GCC5_ARM_PREFIX", prefix)
+                    TargetInfoArch = "ARM"
+
+                else:
+                    TargetInfoArch = "x86"
+
+            # Otherwise, the built binary arch will be consistent with the host system
+
+            # Added logic to support cross compilation scenarios
+            HostInfo = GetHostInfo()
+            if TargetInfoArch != HostInfo.arch:
+                # this is defaulting to the version that comes with Ubuntu 20.04
+                ver = shell_environment.GetBuildVars().GetValue("LIBUUID_VERSION", "2.34")
+                work_dir = os.path.join(shell_env.get_shell_var("EDK_TOOLS_PATH"), self.GetLoggingFolderRelativeToRoot())
+                pack_name = f"util-linux-{ver}"
+                unzip_dir = os.path.join(work_dir, pack_name)
+
+                if os.path.isfile(os.path.join(work_dir, f"{pack_name}.tar.gz")):
+                    os.remove(os.path.join(work_dir, f"{pack_name}.tar.gz"))
+                if os.path.isdir(unzip_dir):
+                    shutil.rmtree(unzip_dir)
+
+                # cross compiling, need to rebuild libuuid for the target
+                ret = RunCmd("wget", f"https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v{ver}/{pack_name}.tar.gz", workingdir=work_dir)
+                if ret != 0:
+                    raise Exception(f"Failed to download libuuid version {ver} - {ret}")
+
+                ret = RunCmd("tar", f"xvzf {pack_name}.tar.gz", workingdir=work_dir)
+                if ret != 0:
+                    raise Exception(f"Failed to untar the downloaded file {ret}")
+
+                # configure the source to use the cross compiler
+                pack_name = f"util-linux-{ver}"
+                if "AARCH64" in self.target_arch:
+                    ret = RunCmd("sh", f"./configure --host=aarch64-linux  -disable-all-programs --enable-libuuid CC={prefix}gcc", workingdir=unzip_dir)
+                elif "ARM" in self.target_arch:
+                    ret = RunCmd("sh", f"./configure --host=arm-linux  -disable-all-programs --enable-libuuid CC={prefix}gcc", workingdir=unzip_dir)
+                if ret != 0:
+                    raise Exception(f"Failed to configure the util-linux to build with our gcc {ret}")
+
+                ret = RunCmd("make", "", workingdir=unzip_dir)
+                if ret != 0:
+                    raise Exception(f"Failed to build the libuuid with our gcc {ret}")
+
+                shell_environment.GetEnvironment().set_shell_var("CROSS_LIB_UUID", unzip_dir)
+                shell_environment.GetEnvironment().set_shell_var("CROSS_LIB_UUID_INC", os.path.join(unzip_dir, "libuuid", "src"))
 
             ret = RunCmd("make", "clean", workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
+            if ret != 0:
+                raise Exception("Failed to build.")
+
             cpu_count = self.GetCpuThreads()
             ret = RunCmd("make", f"-C .  -j {cpu_count}", workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
             if ret != 0:

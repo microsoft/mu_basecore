@@ -18,6 +18,11 @@ ifeq ($(CYGWIN), CYGWIN)
 endif
 
 ifeq ($(LINUX), Linux)
+ifndef CROSS_LIB_UUID
   LIBS += -luuid
+else
+  LIBS += -L$(CROSS_LIB_UUID)
+  BUILD_CFLAGS += -D__CROSS_LIB_UUID__ -I $(CROSS_LIB_UUID_INC)
+endif
 endif
 
