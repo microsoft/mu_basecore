@@ -391,7 +391,7 @@ BootBootOptions (
   // Attempt boot each boot option
   //
   // MU_CHANGE [BEGINS]- Support infinite boot retries
-  for (Index = 0;; Index++) {
+  for (Index = 0; ; Index++) {
     if (Index == BootOptionCount) {
       if (PcdGetBool (PcdSupportInfiniteBootRetries)) {
         Index = 0;
@@ -399,6 +399,7 @@ BootBootOptions (
         break;
       }
     }
+
     // MU_CHANGE [ENDS]- Support infinite boot retries
 
     //
