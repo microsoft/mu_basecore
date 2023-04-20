@@ -549,6 +549,7 @@ ManFileFindTitleSection (
                                 returned help text.
   @retval EFI_INVALID_PARAMETER HelpText is NULL.
   @retval EFI_INVALID_PARAMETER ManFileName is invalid.
+  @retval EFI_INVALID_PARAMETER Command is invalid. // MU_CHANGE: CodeQL change
   @retval EFI_NOT_FOUND         There is no help text available for Command.
 **/
 EFI_STATUS
@@ -633,13 +634,19 @@ ProcessManFile (
       FileDevPath = FileDevicePath (NULL, TempString);
       // MU_CHANGE [START] - CodeQL change
       if (FileDevPath == NULL) {
-        Status = EFI_INVALID_PARAMETER;
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Done;
+      }
+
+      DevPath = AppendDevicePath (ShellInfoObject.ImageDevPath, FileDevPath);
+
+      if (DevPath == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
         goto Done;
       }
 
       // MU_CHANGE [END] - CodeQL change
-      DevPath = AppendDevicePath (ShellInfoObject.ImageDevPath, FileDevPath);
-      Status  = InternalOpenFileDevicePath (DevPath, &FileHandle, EFI_FILE_MODE_READ, 0);
+      Status = InternalOpenFileDevicePath (DevPath, &FileHandle, EFI_FILE_MODE_READ, 0);
       SHELL_FREE_NON_NULL (FileDevPath);
       SHELL_FREE_NON_NULL (DevPath);
     }
