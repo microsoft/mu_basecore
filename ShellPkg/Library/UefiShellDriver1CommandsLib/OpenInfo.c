@@ -25,6 +25,7 @@ STATIC CONST CHAR16  StringUnknown[]   = L"Unknown  ";
 
   @retval EFI_SUCCESS           The operation was successful.
   @retval EFI_INVALID_PARAMETER TheHandle was NULL.
+  @retval EFI_OUT_OF_RESOURCES  A memory allocation failed. // MU_CHANGE: CodeQL change
 **/
 EFI_STATUS
 TraverseHandleDatabase (
@@ -102,7 +103,14 @@ TraverseHandleDatabase (
               break;
           }
 
-          HandleIndex     = ConvertHandleToHandleIndex (OpenInfo[OpenInfoIndex].AgentHandle);
+          HandleIndex = ConvertHandleToHandleIndex (OpenInfo[OpenInfoIndex].AgentHandle);
+          // MU_CHANGE [BEGIN] - CodeQL change
+          if (HandleIndex == 0) {
+            FreePool (OpenInfo);
+            FreePool (ProtocolGuidArray);
+            return EFI_OUT_OF_RESOURCES;
+          }
+
           Name            = GetStringNameFromHandle (OpenInfo[OpenInfoIndex].AgentHandle, NULL);
           ControllerIndex = ConvertHandleToHandleIndex (OpenInfo[OpenInfoIndex].ControllerHandle);
           if (ControllerIndex != 0) {
@@ -118,7 +126,7 @@ TraverseHandleDatabase (
               OpenTypeString,
               Name
               );
-          } else {
+          } else if (Name != NULL) {
             ShellPrintHiiEx (
               -1,
               -1,
@@ -133,6 +141,7 @@ TraverseHandleDatabase (
           }
         }
 
+        // MU_CHANGE [END] - CodeQL change
         FreePool (OpenInfo);
       }
     }
