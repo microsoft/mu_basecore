@@ -396,7 +396,6 @@ BootBootOptions (
       if (PcdGetBool (PcdSupportInfiniteBootRetries)) {
         // Resetting index back to -1 so loop increment will result in Index 0 for next iteration
         Index = 0;
-        DEBUG ((DEBUG_ERROR, "%a HEre: Wrap around!!! %d\n", __FUNCTION__, __LINE__));
       } else {
         break;
       }
