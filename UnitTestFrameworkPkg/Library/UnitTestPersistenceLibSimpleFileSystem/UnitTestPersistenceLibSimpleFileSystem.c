@@ -197,7 +197,7 @@ DoesCacheExist (
   IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle
   )
 {
-  CHAR16             *FileName;
+  CHAR16             *FileName = NULL; // MU_CHANGE: Use file name and path instead of device path
   EFI_STATUS         Status;
   SHELL_FILE_HANDLE  FileHandle;
 
@@ -363,7 +363,7 @@ LoadUnitTestCache (
   )
 {
   EFI_STATUS         Status;
-  CHAR16             *FileName;
+  CHAR16                 *FileName; // MU_CHANGE: Use file name and path instead of device path
   SHELL_FILE_HANDLE  FileHandle;
   BOOLEAN            IsFileOpened;
   UINT64             LargeFileSize;
