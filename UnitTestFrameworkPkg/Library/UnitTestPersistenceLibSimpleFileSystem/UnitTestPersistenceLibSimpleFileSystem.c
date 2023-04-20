@@ -161,6 +161,7 @@ Exit:
   if (CacheFileDevicePath != NULL) {
     FreePool (CacheFileDevicePath);
   }
+
   // MU_CHANGE Ends
 
   if (TestName != NULL) {
@@ -187,7 +188,7 @@ DoesCacheExist (
   IN UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle
   )
 {
-  CHAR16             *FileName; // MU_CHANGE: Use file name and path instead of device path
+  CHAR16             *FileName = NULL; // MU_CHANGE: Use file name and path instead of device path
   EFI_STATUS         Status;
   SHELL_FILE_HANDLE  FileHandle;
 
@@ -196,7 +197,13 @@ DoesCacheExist (
   //
   // MU_CHANGE: Use file name and path instead of device path
   FileName = GetCacheFileName (FrameworkHandle);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (FileName == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a - Failed to get cache file name.\n", __FUNCTION__));
+    return FALSE;
+  }
 
+  // MU_CHANGE [END] - CodeQL change
   //
   // Check to see whether the file exists.  If the file can be opened for
   // reading, it exists.  Otherwise, probably not.
@@ -353,13 +360,13 @@ LoadUnitTestCache (
   OUT UINTN                       *SaveStateSize
   )
 {
-  EFI_STATUS             Status;
-  CHAR16                 *FileName; // MU_CHANGE: Use file name and path instead of device path
-  SHELL_FILE_HANDLE      FileHandle;
-  BOOLEAN                IsFileOpened;
-  UINT64                 LargeFileSize;
-  UINTN                  FileSize;
-  VOID                    *Buffer;
+  EFI_STATUS         Status;
+  CHAR16             *FileName;     // MU_CHANGE: Use file name and path instead of device path
+  SHELL_FILE_HANDLE  FileHandle;
+  BOOLEAN            IsFileOpened;
+  UINT64             LargeFileSize;
+  UINTN              FileSize;
+  VOID               *Buffer;
 
   IsFileOpened = FALSE;
   Buffer       = NULL;

@@ -418,6 +418,12 @@ CoreAllocatePoolI (
     NoPages  = EFI_SIZE_TO_PAGES (Size) + EFI_SIZE_TO_PAGES (Granularity) - 1;
     NoPages &= ~(UINTN)(EFI_SIZE_TO_PAGES (Granularity) - 1);
     Head     = CoreAllocatePoolPagesI (PoolType, NoPages, Granularity, NeedGuard);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Head == NULL) {
+      return NULL;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     if (NeedGuard) {
       Head = AdjustPoolHeadA ((EFI_PHYSICAL_ADDRESS)(UINTN)Head, NoPages, Size);
     }
