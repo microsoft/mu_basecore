@@ -394,7 +394,6 @@ BootBootOptions (
   for (Index = 0;; Index++) {
     if (Index == BootOptionCount) {
       if (PcdGetBool (PcdSupportInfiniteBootRetries)) {
-        // Resetting index back to -1 so loop increment will result in Index 0 for next iteration
         Index = 0;
       } else {
         break;
