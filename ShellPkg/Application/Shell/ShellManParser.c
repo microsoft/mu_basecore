@@ -641,7 +641,7 @@ ProcessManFile (
       DevPath = AppendDevicePath (ShellInfoObject.ImageDevPath, FileDevPath);
 
       if (DevPath == NULL) {
-        Status = EFI_INVALID_PARAMETER;
+        Status = EFI_OUT_OF_RESOURCES;
         goto Done;
       }
 
