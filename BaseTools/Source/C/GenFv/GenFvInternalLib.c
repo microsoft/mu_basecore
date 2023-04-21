@@ -16,11 +16,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #if defined(__FreeBSD__)
 #include <uuid.h>
 #elif defined(__GNUC__)
+// MU_CHANGE STARTs: Support cross compiling
 #if !defined(__CROSS_LIB_UUID__)
 #include <uuid/uuid.h>
 #else
 #include <uuid.h>
 #endif
+// MU_CHANGE ENDs
 #endif
 #ifdef __GNUC__
 #include <sys/stat.h>
