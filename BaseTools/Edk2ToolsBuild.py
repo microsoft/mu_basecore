@@ -32,7 +32,8 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         ParserObj.add_argument("-s", "--skip_path_env", dest="skip_env", default=False, action='store_true',
                                help="Skip the creation of the path_env descriptor file")
         ParserObj.add_argument("-a", "--target_arch", dest="arch", default=None, choices=[None, 'IA32', 'X64', 'ARM', 'AARCH64'],
-                               help="Specify the architecture of the built base tools")
+                               help="Specify the architecture of the built base tools. Not specifying this will fall back to the default "
+                               "behavior, for Windows builds, IA32 target will be built, for Linux builds, target arch will be the same as host arch.")
         args = ParserObj.parse_args()
         self.tool_chain_tag = args.tct
         self.target_arch = args.arch
@@ -128,7 +129,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
 
         if self.tool_chain_tag.lower().startswith("vs"):
             # MU_CHANGE: Specify target architecture
-            if self.target_arch is not None:
+            if self.target_arch is None:
                 # Put a default as IA32
                 self.target_arch = "IA32"
 
