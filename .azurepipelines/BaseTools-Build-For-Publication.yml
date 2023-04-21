@@ -185,7 +185,7 @@ jobs:
     - powershell:
         mkdir $(Build.StagingDirectory)/$(temp_publication_directory);
         mv $(Pipeline.Workspace)/$(linux_artifact_name)_X64 $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
-        mv $(Pipeline.Workspace)/$(linux_artifact_name)_AARCH64 $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
+        mv $(Pipeline.Workspace)/$(linux_artifact_name)_AARCH64 $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-ARM-64;
         mv $(Pipeline.Workspace)/$(windows_artifact_name)_IA32 $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
         mv $(Pipeline.Workspace)/$(windows_artifact_name)_ARM $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-ARM;
       displayName: Stage Package Files
