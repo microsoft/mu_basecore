@@ -125,3 +125,12 @@
       gEfiMdeModulePkgTokenSpaceGuid.PcdLoadFixAddressBootTimeCodePageNumber|0
   }
   # MU_CHANGE [END]
+
+  MdeModulePkg/Library/UefiSortLib/GoogleTest/UefiSortLibGoogleTest.inf {
+    <LibraryClasses>
+      UefiSortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+      DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+      # MU_CHANGE [BEGIN]: Temporarily fixing a regression due to recent change in UnitTestFrameworkPkgHost.dsc.inc
+      UefiBootServicesTableLib|UnitTestFrameworkPkg/Library/UnitTestUefiBootServicesTableLib/UnitTestUefiBootServicesTableLib.inf
+      # MU_CHANGE [END]: Temporarily fixing a regression due to recent change in UnitTestFrameworkPkgHost.dsc.inc
+  }

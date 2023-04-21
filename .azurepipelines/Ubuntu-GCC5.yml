@@ -38,6 +38,6 @@ jobs:
     - script: |
               sudo dnf install --assumeyes mingw64-gcc
       displayName: Install Windows Resource Compiler for Linux
-    tool_chain_tag: $(tool_chain_tag)
+    tool_chain_tag: 'GCC5'
     vm_image: $(vm_image)
     container_image: linux-gcc

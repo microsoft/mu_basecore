@@ -15,9 +15,14 @@
   CacheMaintenanceLib|MdePkg/Library/BaseCacheMaintenanceLibNull/BaseCacheMaintenanceLibNull.inf
   CmockaLib|UnitTestFrameworkPkg/Library/CmockaLib/CmockaLib.inf
   GoogleTestLib|UnitTestFrameworkPkg/Library/GoogleTestLib/GoogleTestLib.inf
+  SubhookLib|UnitTestFrameworkPkg/Library/SubhookLib/SubhookLib.inf
+  FunctionMockLib|UnitTestFrameworkPkg/Library/FunctionMockLib/FunctionMockLib.inf
   UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLibCmocka.inf
   DebugLib|UnitTestFrameworkPkg/Library/Posix/DebugLibPosix/DebugLibPosix.inf
   MemoryAllocationLib|UnitTestFrameworkPkg/Library/Posix/MemoryAllocationLibPosix/MemoryAllocationLibPosix.inf
+  # MU_CHANGE [BEGIN] - Disable UefiBootServicesTableLib until all unit tests converge to this common instance
+  # UefiBootServicesTableLib|UnitTestFrameworkPkg/Library/UnitTestUefiBootServicesTableLib/UnitTestUefiBootServicesTableLib.inf
+  # MU_CHANGE [BEGIN] - Disable UefiBootServicesTableLib until all unit tests converge to this common instance
 
 [BuildOptions]
 # MU_CHANGE [BEGIN] - Add build flag to detect when building host-based unit tests

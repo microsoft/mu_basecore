@@ -1442,6 +1442,14 @@ BcfgDisplayDump (
     if (LoadOption->FilePathListLength != 0) {
       FilePathList  = (UINT8 *)Description + DescriptionSize;
       DevPathString = ConvertDevicePathToText (FilePathList, TRUE, FALSE);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (DevPathString == NULL) {
+        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_NO_MEM), gShellBcfgHiiHandle, L"bcfg");
+        ++Errors;
+        goto Cleanup;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
     }
 
     OptionalDataOffset = sizeof *LoadOption + DescriptionSize +

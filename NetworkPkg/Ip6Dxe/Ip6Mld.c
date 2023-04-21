@@ -181,7 +181,14 @@ Ip6SendMldReport (
   // Fill a IPv6 Router Alert option in a Hop-by-Hop Options Header
   //
   Options = NetbufAllocSpace (Packet, (UINT32)OptionLen, FALSE);
-  ASSERT (Options != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Options == NULL) {
+    ASSERT (Options != NULL);
+    NetbufFree (Packet);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   Status = Ip6FillHopByHop (Options, &OptionLen, IP6_ICMP);
   if (EFI_ERROR (Status)) {
     NetbufFree (Packet);

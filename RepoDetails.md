@@ -1,9 +1,9 @@
 # Project Mu Basecore Repository
 
-??? info "Git Details"  
-    Repository Url: {{mu_basecore.url}}  
-    Branch:         {{mu_basecore.branch}}  
-    Commit:         [{{mu_basecore.commit}}]({{mu_basecore.commitlink}})  
+??? info "Git Details"
+    Repository Url: {{mu_basecore.url}}
+    Branch:         {{mu_basecore.branch}}
+    Commit:         [{{mu_basecore.commit}}]({{mu_basecore.commitlink}})
     Commit Date:    {{mu_basecore.date}}
 
 This repository is considered foundational and fundamental to Project Mu. The
@@ -24,7 +24,7 @@ more of the following
 ## More Info
 
 Please see the Project Mu docs (<https://github.com/Microsoft/mu>) for more
-information.  
+information.
 
 This project has adopted the [Microsoft Open Source Code of
 Conduct](https://opensource.microsoft.com/codeofconduct/).
@@ -33,6 +33,38 @@ For more information see the [Code of Conduct
 FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact
 [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional
 questions or comments.
+
+## Releases
+
+It is recommended to consume binaries built from the code in this repo (outside of development purposes) through a
+versioned release.
+
+Releases are tagged in the repository and are visible in the [Releases](https://github.com/microsoft/mu_basecore/releases)
+page. Each release contains release notes describing the changes since the last release with important changes such as
+breaking changes highlighted.
+
+A semantic versioning process (version is `<major.minor.patch>`) is followed with the following rules:
+
+- Major Version
+
+  - A major version change indicates a breaking change. This means that the release is not backward
+    compatible with the previous release. This is typically a change to the API or ABI of a component.
+
+  - The major version in Mu Basecore is broken down into the following components:
+    - `<Mu Release Version><Major Version>`
+      - `Mu Release Version` is 6 digits and corresponds to the edk2 stable tag the Mu release branch is based on.
+      - `Major Version` is 4 digits and tracks the monotonically incrementing major version within the branch.
+      - For example, `2022080001` would be the first major version value in the `release/202208` branch.
+
+- Minor Version
+
+  - A minor version change indicates a new feature or enhancement. This means that the release is backward
+    compatible with the previous release but includes new functionality or a major rework of existing functionality.
+
+- Patch Version
+
+  - A patch version change indicates a bug fix or any other change. This means that the release is backward compatible
+    with the previous release and contains no new functionality.
 
 ## Issues
 
@@ -54,7 +86,7 @@ testing. [More Details](https://microsoft.github.io/mu/CodeDevelopment/compile/)
 
 ## Copyright & License
 
-Copyright (C) Microsoft Corporation  
+Copyright (C) Microsoft Corporation
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 ### Upstream License (TianoCore)
