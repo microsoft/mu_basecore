@@ -48,11 +48,13 @@ BUILD_AS ?= $(CLANG_BIN)clang
 BUILD_AR ?= $(CLANG_BIN)llvm-ar
 BUILD_LD ?= $(CLANG_BIN)llvm-ld
 else
+# MU_CHANGE STARTs: Support GCC prefix
 BUILD_CC ?= $(GCC_PREFIX)gcc
 BUILD_CXX ?= $(GCC_PREFIX)g++
 BUILD_AS ?= $(GCC_PREFIX)gcc
 BUILD_AR ?= $(GCC_PREFIX)ar
 BUILD_LD ?= $(GCC_PREFIX)ld
+# MU_CHANGE ENDs
 endif
 LINKER ?= $(BUILD_CC)
 ifeq ($(HOST_ARCH), IA32)
