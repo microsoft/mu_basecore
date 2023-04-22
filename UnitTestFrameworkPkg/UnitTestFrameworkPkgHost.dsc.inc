@@ -20,9 +20,7 @@
   UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLibCmocka.inf
   DebugLib|UnitTestFrameworkPkg/Library/Posix/DebugLibPosix/DebugLibPosix.inf
   MemoryAllocationLib|UnitTestFrameworkPkg/Library/Posix/MemoryAllocationLibPosix/MemoryAllocationLibPosix.inf
-  # MU_CHANGE [BEGIN] - Disable UefiBootServicesTableLib until all unit tests converge to this common instance
-  # UefiBootServicesTableLib|UnitTestFrameworkPkg/Library/UnitTestUefiBootServicesTableLib/UnitTestUefiBootServicesTableLib.inf
-  # MU_CHANGE [BEGIN] - Disable UefiBootServicesTableLib until all unit tests converge to this common instance
+  UefiBootServicesTableLib|UnitTestFrameworkPkg/Library/UnitTestUefiBootServicesTableLib/UnitTestUefiBootServicesTableLib.inf
 
 [BuildOptions]
 # MU_CHANGE [BEGIN] - Add build flag to detect when building host-based unit tests
