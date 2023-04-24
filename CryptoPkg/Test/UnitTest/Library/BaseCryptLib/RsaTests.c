@@ -122,6 +122,7 @@ TestVerifyRsaSetGetKeyComponents (
   if (!PcdGetBool (PcdCryptoServiceRsaSetKey) || !PcdGetBool (PcdCryptoServiceRsaGetKey)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
+
   Status = RsaSetKey (mRsa, RsaKeyN, RsaN, sizeof (RsaN));
   UT_ASSERT_TRUE (Status);
 

@@ -162,10 +162,11 @@ TestVerifyHash (
 
   HashTestContext = Context;
 
-  if ((HashTestContext->DigestSize == SHA1_DIGEST_SIZE && !PcdGetBool (PcdCryptoServiceSha1Init)) ||
-      (HashTestContext->DigestSize == SHA256_DIGEST_SIZE && !PcdGetBool (PcdCryptoServiceSha256Init)) ||
-      (HashTestContext->DigestSize == SHA384_DIGEST_SIZE && !PcdGetBool (PcdCryptoServiceSha384Init)) ||
-      (HashTestContext->DigestSize == SHA512_DIGEST_SIZE && !PcdGetBool (PcdCryptoServiceSha512Init))) {
+  if (((HashTestContext->DigestSize == SHA1_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha1Init)) ||
+      ((HashTestContext->DigestSize == SHA256_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha256Init)) ||
+      ((HashTestContext->DigestSize == SHA384_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha384Init)) ||
+      ((HashTestContext->DigestSize == SHA512_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha512Init)))
+  {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
 
@@ -200,10 +201,11 @@ TestVerifyHashAll (
 
   HashTestContext = Context;
 
-  if ((HashTestContext->DigestSize == SHA1_DIGEST_SIZE && !PcdGetBool (PcdCryptoServiceSha1HashAll)) ||
-      (HashTestContext->DigestSize == SHA256_DIGEST_SIZE && !PcdGetBool (PcdCryptoServiceSha256HashAll)) ||
-      (HashTestContext->DigestSize == SHA384_DIGEST_SIZE && !PcdGetBool (PcdCryptoServiceSha384HashAll)) ||
-      (HashTestContext->DigestSize == SHA512_DIGEST_SIZE && !PcdGetBool (PcdCryptoServiceSha512HashAll))) {
+  if (((HashTestContext->DigestSize == SHA1_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha1HashAll)) ||
+      ((HashTestContext->DigestSize == SHA256_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha256HashAll)) ||
+      ((HashTestContext->DigestSize == SHA384_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha384HashAll)) ||
+      ((HashTestContext->DigestSize == SHA512_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha512HashAll)))
+  {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
 
@@ -224,12 +226,12 @@ TEST_DESC  mHashTest[] = {
   // -----Description----------------Class---------------------Function---------------Pre------------------Post------------Context
   //
  #ifdef ENABLE_MD5_DEPRECATED_INTERFACES
-  { "TestVerifyMd5()",    "CryptoPkg.BaseCryptLib.Hash", TestVerifyHash, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mMd5TestCtx    },
+  { "TestVerifyMd5()",    "CryptoPkg.BaseCryptLib.Hash",    TestVerifyHash,    TestVerifyHashPreReq, TestVerifyHashCleanUp, &mMd5TestCtx    },
  #endif
-  { "TestVerifySha1()",   "CryptoPkg.BaseCryptLib.Hash", TestVerifyHash, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha1TestCtx   },
-  { "TestVerifySha256()", "CryptoPkg.BaseCryptLib.Hash", TestVerifyHash, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha256TestCtx },
-  { "TestVerifySha384()", "CryptoPkg.BaseCryptLib.Hash", TestVerifyHash, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha384TestCtx },
-  { "TestVerifySha512()", "CryptoPkg.BaseCryptLib.Hash", TestVerifyHash, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha512TestCtx },
+  { "TestVerifySha1()",   "CryptoPkg.BaseCryptLib.Hash",    TestVerifyHash,    TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha1TestCtx   },
+  { "TestVerifySha256()", "CryptoPkg.BaseCryptLib.Hash",    TestVerifyHash,    TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha256TestCtx },
+  { "TestVerifySha384()", "CryptoPkg.BaseCryptLib.Hash",    TestVerifyHash,    TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha384TestCtx },
+  { "TestVerifySha512()", "CryptoPkg.BaseCryptLib.Hash",    TestVerifyHash,    TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha512TestCtx },
   { "TestVerifySha1()",   "CryptoPkg.BaseCryptLib.HashAll", TestVerifyHashAll, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha1TestCtx   },
   { "TestVerifySha256()", "CryptoPkg.BaseCryptLib.HashAll", TestVerifyHashAll, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha256TestCtx },
   { "TestVerifySha384()", "CryptoPkg.BaseCryptLib.HashAll", TestVerifyHashAll, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha384TestCtx },
