@@ -11,6 +11,10 @@ Ubuntu_GCC5_                  |UbuntuCiBuild|   |UbuntuCiTest|  |UbuntuCiCoverag
 
 This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
 
+For more details about the repository, refer to `RepoDetails.md`_.
+
+.. _`RepoDetails.md`: https://github.com/microsoft/mu_basecore/blob/HEAD/RepoDetails.md
+
 Branch Status - release/202208
 ==============================
 

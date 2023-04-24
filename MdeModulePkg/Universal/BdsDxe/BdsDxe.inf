@@ -97,6 +97,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdTestKeyUsed                       ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleOnDiskSupport              ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPlatformRecoverySupport           ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportInfiniteBootRetries	      ## CONSUMES // MU_CHANGE
 
 [Depex]
   TRUE
