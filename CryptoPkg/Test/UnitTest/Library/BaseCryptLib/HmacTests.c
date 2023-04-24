@@ -118,6 +118,10 @@ TestVerifyHmacPreReq (
 {
   HMAC_TEST_CONTEXT  *HmacTestContext;
 
+  if (!PcdGetBool (PcdCryptoServiceHmacSha256New)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   HmacTestContext          = Context;
   HmacTestContext->HmacCtx = HmacTestContext->HmacNew ();
   if (HmacTestContext->HmacCtx == NULL) {
@@ -150,6 +154,11 @@ TestVerifyHmac (
   UINT8              Digest[MAX_DIGEST_SIZE];
   BOOLEAN            Status;
   HMAC_TEST_CONTEXT  *HmacTestContext;
+
+  if (!PcdGetBool (PcdCryptoServiceHmacSha256SetKey) || !PcdGetBool (PcdCryptoServiceHmacSha256Update)
+      || !PcdGetBool (PcdCryptoServiceHmacSha256Final)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
 
   HmacTestContext = Context;
 

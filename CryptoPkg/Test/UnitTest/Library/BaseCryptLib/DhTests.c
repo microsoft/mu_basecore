@@ -17,6 +17,10 @@ TestVerifyDhPreReq (
   UNIT_TEST_CONTEXT  Context
   )
 {
+  if (!PcdGetBool (PcdCryptoServiceDhNew)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   mDh1 = DhNew ();
   if (mDh1 == NULL) {
     return UNIT_TEST_ERROR_TEST_FAILED;
@@ -63,6 +67,11 @@ TestVerifyDhGenerateKey (
   UINT8    Key2[64];
   UINTN    Key2Length;
   BOOLEAN  Status;
+
+  if (!PcdGetBool (PcdCryptoServiceDhSetParameter) || !PcdGetBool (PcdCryptoServiceDhGenerateParameter)
+      || !PcdGetBool (PcdCryptoServiceDhGenerateKey) || !PcdGetBool (PcdCryptoServiceDhComputeKey)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
 
   //
   // Initialize Key Length
