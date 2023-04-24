@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
+import glob
 import logging
 import os
 import stat
@@ -99,7 +100,7 @@ class CodeQlBuildPlugin(IUefiBuildPlugin):
                 self.codeql_cmd_path = self.codeql_cmd_path.parent / (
                     self.codeql_cmd_path.name + '.bat')
             elif GetHostInfo().os == "Linux":
-                self.codeql_cmd_path.suffix = self.codeql_cmd_path.parent / (
+                self.codeql_cmd_path = self.codeql_cmd_path.parent / (
                     self.codeql_cmd_path.name + '.sh')
                 codeql_build_cmd += f"#!/bin/bash{os.linesep * 2}"
             codeql_build_cmd += "build " + build_params
@@ -110,6 +111,9 @@ class CodeQlBuildPlugin(IUefiBuildPlugin):
             if GetHostInfo().os == "Linux":
                 os.chmod(self.codeql_cmd_path,
                         os.stat(self.codeql_cmd_path).st_mode | stat.S_IEXEC)
+                for f in glob.glob(os.path.join(
+                    os.path.dirname(self.codeql_path), '**/*'), recursive=True):
+                        os.chmod(f, os.stat(f).st_mode | stat.S_IEXEC)
 
             codeql_params = (f'database create {self.codeql_db_path} '
                             f'--language=cpp '

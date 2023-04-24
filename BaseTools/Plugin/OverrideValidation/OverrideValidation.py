@@ -458,7 +458,7 @@ try:
             logging.debug("Parse Active Platform DSC file")
             input_vars = thebuilder.env.GetAllBuildKeyValues()
             input_vars["TARGET"] = thebuilder.env.GetValue("TARGET")
-            dscp = DscParser().SetBaseAbsPath(thebuilder.ws).SetPackagePaths(thebuilder.pp.split(os.pathsep)).SetInputVars(input_vars)
+            dscp = DscParser().SetEdk2Path(Edk2Path(thebuilder.ws, thebuilder.pp.split(os.pathsep))).SetInputVars(input_vars)
             plat_dsc = thebuilder.env.GetValue("ACTIVE_PLATFORM")
             if (plat_dsc is None):
                 return InfFileList

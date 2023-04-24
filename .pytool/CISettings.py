@@ -217,6 +217,8 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
             "MdeModulePkg/Library/BrotliCustomDecompressLib/brotli", False))
         rs.append(RequiredSubmodule(
             "BaseTools/Source/C/BrotliCompress/brotli", False))
+        rs.append(RequiredSubmodule(
+            "UnitTestFrameworkPkg/Library/SubhookLib/subhook", False))
         return rs
 
     def GetName(self):
