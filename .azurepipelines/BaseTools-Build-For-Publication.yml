@@ -30,6 +30,14 @@ variables:
 
 jobs:
   - job: linux_build
+    # Use matrix to speed up the build process
+    strategy:
+      matrix:
+        TARGET_x64:
+          Build.Targets: 'X64'
+        TARGET_AArch64:
+          Build.Targets: 'AARCH64'
+
     displayName: Linux Build
     pool:
       vmImage: ubuntu-20.04
@@ -60,15 +68,15 @@ jobs:
       displayName: Update Environment
       inputs:
         filename: stuart_update
-        arguments: -c .pytool/CISettings.py
+        arguments: -c .pytool/CISettings.py TOOL_CHAIN_TAG=GCC5 -a $(Build.Targets)
 
     - template: Steps/BuildBaseTools.yml@mu_devops
       parameters:
-        extra_parameters: '--skip_path_env'
+        extra_parameters: '--skip_path_env -a $(Build.Targets)'
         tool_chain_tag: 'GCC5'
 
     - publish: $(linux_build_output_path)
-      artifact: $(linux_artifact_name)
+      artifact: $(linux_artifact_name)_$(Build.Targets)
       displayName: Publish To Pipeline
       condition: SucceededOrFailed()
 
@@ -176,7 +184,8 @@ jobs:
 
     - powershell:
         mkdir $(Build.StagingDirectory)/$(temp_publication_directory);
-        mv $(Pipeline.Workspace)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
+        mv $(Pipeline.Workspace)/$(linux_artifact_name)_X64 $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
+        mv $(Pipeline.Workspace)/$(linux_artifact_name)_AARCH64 $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-ARM-64;
         mv $(Pipeline.Workspace)/$(windows_artifact_name)_IA32 $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
         mv $(Pipeline.Workspace)/$(windows_artifact_name)_ARM $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-ARM;
       displayName: Stage Package Files
