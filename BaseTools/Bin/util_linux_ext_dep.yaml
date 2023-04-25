@@ -1,0 +1,24 @@
+## @file
+# Download util-linux source code from Linux Kernel release site
+# Set shell variable CROSS_LIB_UUID to this folder
+#
+# This is only downloaded when a build activates scope cross_lib_uuid for cross
+# compilation process.
+#
+# Current version is using the version that comes with Ubuntu 20.04
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+{
+  "scope": "cross_lib_uuid",
+  "type": "web",
+  "name": "util-linux",
+  "source": "https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.gz",
+  "version": "2.34",
+  "compression_type": "tar",
+  "sha256": "b62c92e5e1629642113cd41cec1ee86d1ee7e36b8ffe8ec3ac89c11797e9ac25",
+  "internal_path": "/gcc-riscv-9.2.0-2020.04-x86_64_riscv64-unknown-gnu",
+  "flags": ["set_shell_var", ],
+  "var_name": "CROSS_LIB_UUID"
+}
