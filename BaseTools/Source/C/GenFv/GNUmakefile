@@ -14,6 +14,17 @@ include $(MAKEROOT)/Makefiles/app.makefile
 
 LIBS = -lCommon
 ifeq ($(CYGWIN), CYGWIN)
-  LIBS += -L/lib/e2fsprogs
+  LIBS += -L/lib/e2fsprogs -luuid
+endif
+
+ifeq ($(LINUX), Linux)
+# MU_CHANGE STARTs: Support cross compiling
+ifndef CROSS_LIB_UUID
+  LIBS += -luuid
+else
+  LIBS += -L$(CROSS_LIB_UUID)
+  BUILD_CFLAGS += -D__CROSS_LIB_UUID__ -I $(CROSS_LIB_UUID_INC)
+endif
+# MU_CHANGE ENDs
 endif
 
