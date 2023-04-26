@@ -390,7 +390,18 @@ BootBootOptions (
   //
   // Attempt boot each boot option
   //
-  for (Index = 0; Index < BootOptionCount; Index++) {
+  // MU_CHANGE [BEGINS]- Support infinite boot retries
+  for (Index = 0; ; Index++) {
+    if (Index == BootOptionCount) {
+      if (PcdGetBool (PcdSupportInfiniteBootRetries)) {
+        Index = 0;
+      } else {
+        break;
+      }
+    }
+
+    // MU_CHANGE [ENDS]- Support infinite boot retries
+
     //
     // According to EFI Specification, if a load option is not marked
     // as LOAD_OPTION_ACTIVE, the boot manager will not automatically
@@ -439,13 +450,6 @@ BootBootOptions (
       //  Changes for PcdSupportInfiniteBootRetries are meant to minimize upkeep in mu repos.
       //   If/when upstreaming this change, refactoring calling loop in BdsEntry() would be
       //   better location.
-    }
-
-    if (PcdGetBool (PcdSupportInfiniteBootRetries)) {
-      if (Index == (BootOptionCount - 1)) {
-        // Resetting index back to -1 so loop increment will result in Index 0 for next iteration
-        Index = (UINTN)-1;
-      }
     }
 
     // MU_CHANGE [END]- Support infinite boot retries
