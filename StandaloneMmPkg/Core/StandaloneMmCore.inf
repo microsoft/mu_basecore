@@ -85,5 +85,5 @@
 [BuildOptions]
   GCC:*_*_ARM_CC_FLAGS = -fpie
   GCC:*_*_ARM_DLINK_FLAGS = -Wl,-z,text,-Bsymbolic,-pie
-  GCC:*_*_AARCH64_CC_FLAGS = -fpie -fpic
+  GCC:*_*_AARCH64_CC_FLAGS = -fpie
   GCC:*_*_AARCH64_DLINK_FLAGS = -Wl,-z,text,-Bsymbolic,-pie
