@@ -1554,7 +1554,13 @@ Ip6ProcessNeighborSolicit (
     OptionLen = (UINT16)(Head->PayloadLength - IP6_ND_LENGTH);
     if (OptionLen != 0) {
       Option = NetbufGetByte (Packet, IP6_ND_LENGTH, NULL);
-      ASSERT (Option != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (Option == NULL) {
+        ASSERT (Option != NULL);
+        goto Exit;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
 
       //
       // All included options should have a length that is greater than zero.
@@ -2043,8 +2049,13 @@ Ip6ProcessRouterAdvertise (
   OptionLen = (UINT16)(Head->PayloadLength - IP6_RA_LENGTH);
   if (OptionLen != 0) {
     Option = NetbufGetByte (Packet, IP6_RA_LENGTH, NULL);
-    ASSERT (Option != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Option == NULL) {
+      ASSERT (Option != NULL);
+      goto Exit;
+    }
 
+    // MU_CHANGE [END] - CodeQL change
     if (!Ip6IsNDOptionValid (Option, OptionLen)) {
       goto Exit;
     }

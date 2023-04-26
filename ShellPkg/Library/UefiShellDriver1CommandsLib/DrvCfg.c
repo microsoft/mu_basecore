@@ -473,6 +473,20 @@ ConfigFromFile (
             // print out an error.
             //
             TempDevPathString = ConvertDevicePathToText ((EFI_DEVICE_PATH_PROTOCOL *)(((CHAR8 *)PackageHeader) + sizeof (EFI_HII_PACKAGE_HEADER)), TRUE, TRUE);
+            // MU_CHANGE [BEGIN] - CodeQL change
+            if (TempDevPathString == NULL) {
+              ShellPrintHiiEx (
+                -1,
+                -1,
+                NULL,
+                STRING_TOKEN (STR_GEN_OUT_MEM),
+                gShellDriver1HiiHandle,
+                L"drvcfg"
+                );
+              return (SHELL_OUT_OF_RESOURCES);
+            }
+
+            // MU_CHANGE [END] - CodeQL change
             ShellPrintHiiEx (
               -1,
               -1,

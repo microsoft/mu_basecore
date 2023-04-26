@@ -1314,24 +1314,25 @@ Ip6InstanceFrameAcceptable (
   // Check whether the protocol is acceptable.
   //
   ExtHdrs = NetbufGetByte (Packet, 0, NULL);
-
-  if (!Ip6IsExtsValid (
-         IpInstance->Service,
-         Packet,
-         &Head->NextHeader,
-         ExtHdrs,
-         (UINT32)Head->PayloadLength,
-         TRUE,
-         NULL,
-         &Proto,
-         NULL,
-         NULL,
-         NULL
-         ))
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if ((ExtHdrs == NULL) || !Ip6IsExtsValid (
+                              IpInstance->Service,
+                              Packet,
+                              &Head->NextHeader,
+                              ExtHdrs,
+                              (UINT32)Head->PayloadLength,
+                              TRUE,
+                              NULL,
+                              &Proto,
+                              NULL,
+                              NULL,
+                              NULL
+                              ))
   {
     return FALSE;
   }
 
+  // MU_CHANGE [END] - CodeQL change
   //
   // The upper layer driver may want to receive the ICMPv6 error packet
   // invoked by its packet, like UDP.
@@ -1349,23 +1350,25 @@ Ip6InstanceFrameAcceptable (
       //
       ErrMsgPayloadLen = NTOHS (Icmp.IpHead.PayloadLength);
       ErrMsgPayload    = NetbufGetByte (Packet, sizeof (Icmp), NULL);
-
-      if (!Ip6IsExtsValid (
-             NULL,
-             NULL,
-             &Icmp.IpHead.NextHeader,
-             ErrMsgPayload,
-             ErrMsgPayloadLen,
-             TRUE,
-             NULL,
-             &Proto,
-             NULL,
-             NULL,
-             NULL
-             ))
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if ((ErrMsgPayload == NULL) || !Ip6IsExtsValid (
+                                        NULL,
+                                        NULL,
+                                        &Icmp.IpHead.NextHeader,
+                                        ErrMsgPayload,
+                                        ErrMsgPayloadLen,
+                                        TRUE,
+                                        NULL,
+                                        &Proto,
+                                        NULL,
+                                        NULL,
+                                        NULL
+                                        ))
       {
         return FALSE;
       }
+
+      // MU_CHANGE [END] - CodeQL change
     }
   }
 

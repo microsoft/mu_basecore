@@ -12,8 +12,9 @@ import sys
 import logging
 import argparse
 import multiprocessing
+import shutil
 from edk2toolext import edk2_logging
-from edk2toolext.environment import self_describing_environment
+from edk2toolext.environment import self_describing_environment, shell_environment
 from edk2toolext.base_abstract_invocable import BaseAbstractInvocable
 from edk2toollib.utility_functions import RunCmd
 from edk2toollib.utility_functions import GetHostInfo # MU_CHANGE: Need to check if this is cross compilation
@@ -30,8 +31,9 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         # MU_CHANGE
         ParserObj.add_argument("-s", "--skip_path_env", dest="skip_env", default=False, action='store_true',
                                help="Skip the creation of the path_env descriptor file")
-        ParserObj.add_argument("-a", "--target_arch", dest="arch", default='IA32', choices=['IA32', 'ARM'],
-                               help="Specify the architecture of the built base tools")
+        ParserObj.add_argument("-a", "--target_arch", dest="arch", default=None, choices=[None, 'IA32', 'X64', 'ARM', 'AARCH64'],
+                               help="Specify the architecture of the built base tools. Not specifying this will fall back to the default "
+                               "behavior, for Windows builds, IA32 target will be built, for Linux builds, target arch will be the same as host arch.")
         args = ParserObj.parse_args()
         self.tool_chain_tag = args.tct
         self.target_arch = args.arch
@@ -47,8 +49,17 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
     def GetActiveScopes(self):
         ''' return tuple containing scopes that should be active for this process '''
 
-        # for now don't use scopes
-        return ('global',)
+        # MU_CHANGE STARTs: Adding scope for cross compilers when building for ARM/AARCH64
+        scopes = ('global',)
+        if GetHostInfo().os == "Linux" and self.tool_chain_tag.lower().startswith("gcc"):
+            if self.target_arch is None:
+                return scopes
+            if "AARCH64" in self.target_arch:
+                scopes += ("gcc_aarch64_linux",)
+            if "ARM" in self.target_arch:
+                scopes += ("gcc_arm_linux",)
+        return scopes
+        # MU_CHANGE ENDs
 
     def GetLoggingLevel(self, loggerType):
         ''' Get the logging level for a given type (return Logging.Level)
@@ -120,12 +131,26 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
 
         if self.tool_chain_tag.lower().startswith("vs"):
             # MU_CHANGE: Specify target architecture
+            if self.target_arch is None:
+                # Put a default as IA32
+                self.target_arch = "IA32"
+
             if self.target_arch == "IA32":
                 VcToolChainArch = "x86"
                 TargetInfoArch = "x86"
+                OutputDir = "Win32"
             elif self.target_arch == "ARM":
                 VcToolChainArch = "x86_arm"
                 TargetInfoArch = "ARM"
+                OutputDir = "Win32"
+            elif self.target_arch == "X64":
+                VcToolChainArch = "amd64"
+                TargetInfoArch = "x86"
+                OutputDir = "Win64"
+            elif self.target_arch == "AARCH64":
+                VcToolChainArch = "amd64_arm64"
+                TargetInfoArch = "ARM"
+                OutputDir = "Win64"
             else:
                 raise NotImplementedError()
             # MU_CHANGE
@@ -151,7 +176,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             shell_env.set_shell_var('HOST_ARCH', self.target_arch)
 
             self.OutputDir = os.path.join(
-                shell_env.get_shell_var("EDK_TOOLS_PATH"), "Bin", "Win32")
+                shell_env.get_shell_var("EDK_TOOLS_PATH"), "Bin", OutputDir)
 
             # compiled tools need to be added to path because antlr is referenced
             # MU_CHANGE: Added logic to support cross compilation scenarios
@@ -175,6 +200,81 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             return ret
 
         elif self.tool_chain_tag.lower().startswith("gcc"):
+            # MU_CHANGE STARTs: Specify target architecture
+            # Note: This HOST_ARCH is in respect to the BUILT base tools, not the host arch where
+            # this script is BUILDING the base tools.
+            prefix = None
+            TargetInfoArch = None
+            if self.target_arch is not None:
+                shell_env.set_shell_var('HOST_ARCH', self.target_arch)
+
+                if "AARCH64" in self.target_arch:
+                    # now check for install dir.  If set then set the Prefix
+                    install_path = shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_INSTALL")
+
+                    # make GCC5_AARCH64_PREFIX to align with tools_def.txt
+                    prefix = os.path.join(install_path, "bin", "aarch64-none-linux-gnu-")
+                    shell_environment.GetEnvironment().set_shell_var("GCC_PREFIX", prefix)
+                    TargetInfoArch = "ARM"
+
+                elif "ARM" in self.target_arch:
+                    # now check for install dir.  If set then set the Prefix
+                    install_path = shell_environment.GetEnvironment().get_shell_var("GCC5_ARM_INSTALL")
+
+                    # make GCC5_ARM_PREFIX to align with tools_def.txt
+                    prefix = os.path.join(install_path, "bin", "arm-none-linux-gnueabihf-")
+                    shell_environment.GetEnvironment().set_shell_var("GCC_PREFIX", prefix)
+                    TargetInfoArch = "ARM"
+
+                else:
+                    TargetInfoArch = "x86"
+
+            # Otherwise, the built binary arch will be consistent with the host system
+
+            # Added logic to support cross compilation scenarios
+            HostInfo = GetHostInfo()
+            if TargetInfoArch != HostInfo.arch:
+                # this is defaulting to the version that comes with Ubuntu 20.04
+                ver = shell_environment.GetBuildVars().GetValue("LIBUUID_VERSION", "2.34")
+                work_dir = os.path.join(shell_env.get_shell_var("EDK_TOOLS_PATH"), self.GetLoggingFolderRelativeToRoot())
+                pack_name = f"util-linux-{ver}"
+                unzip_dir = os.path.join(work_dir, pack_name)
+
+                if os.path.isfile(os.path.join(work_dir, f"{pack_name}.tar.gz")):
+                    os.remove(os.path.join(work_dir, f"{pack_name}.tar.gz"))
+                if os.path.isdir(unzip_dir):
+                    shutil.rmtree(unzip_dir)
+
+                # cross compiling, need to rebuild libuuid for the target
+                ret = RunCmd("wget", f"https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v{ver}/{pack_name}.tar.gz", workingdir=work_dir)
+                if ret != 0:
+                    raise Exception(f"Failed to download libuuid version {ver} - {ret}")
+
+                ret = RunCmd("tar", f"xvzf {pack_name}.tar.gz", workingdir=work_dir)
+                if ret != 0:
+                    raise Exception(f"Failed to untar the downloaded file {ret}")
+
+                # configure the source to use the cross compiler
+                pack_name = f"util-linux-{ver}"
+                if "AARCH64" in self.target_arch:
+                    ret = RunCmd("sh", f"./configure --host=aarch64-linux  -disable-all-programs --enable-libuuid CC={prefix}gcc", workingdir=unzip_dir)
+                elif "ARM" in self.target_arch:
+                    ret = RunCmd("sh", f"./configure --host=arm-linux  -disable-all-programs --enable-libuuid CC={prefix}gcc", workingdir=unzip_dir)
+                if ret != 0:
+                    raise Exception(f"Failed to configure the util-linux to build with our gcc {ret}")
+
+                ret = RunCmd("make", "", workingdir=unzip_dir)
+                if ret != 0:
+                    raise Exception(f"Failed to build the libuuid with our gcc {ret}")
+
+                shell_environment.GetEnvironment().set_shell_var("CROSS_LIB_UUID", unzip_dir)
+                shell_environment.GetEnvironment().set_shell_var("CROSS_LIB_UUID_INC", os.path.join(unzip_dir, "libuuid", "src"))
+
+            ret = RunCmd("make", "clean", workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
+            if ret != 0:
+                raise Exception("Failed to build.")
+            # MU_CHANGE ENDs
+
             cpu_count = self.GetCpuThreads()
             ret = RunCmd("make", f"-C .  -j {cpu_count}", workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
             if ret != 0:
