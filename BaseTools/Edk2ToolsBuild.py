@@ -138,9 +138,19 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             if self.target_arch == "IA32":
                 VcToolChainArch = "x86"
                 TargetInfoArch = "x86"
+                OutputDir = "Win32"
             elif self.target_arch == "ARM":
                 VcToolChainArch = "x86_arm"
                 TargetInfoArch = "ARM"
+                OutputDir = "Win32"
+            elif self.target_arch == "X64":
+                VcToolChainArch = "amd64"
+                TargetInfoArch = "x86"
+                OutputDir = "Win64"
+            elif self.target_arch == "AARCH64":
+                VcToolChainArch = "amd64_arm64"
+                TargetInfoArch = "ARM"
+                OutputDir = "Win64"
             else:
                 raise NotImplementedError()
             # MU_CHANGE
@@ -166,7 +176,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             shell_env.set_shell_var('HOST_ARCH', self.target_arch)
 
             self.OutputDir = os.path.join(
-                shell_env.get_shell_var("EDK_TOOLS_PATH"), "Bin", "Win32")
+                shell_env.get_shell_var("EDK_TOOLS_PATH"), "Bin", OutputDir)
 
             # compiled tools need to be added to path because antlr is referenced
             # MU_CHANGE: Added logic to support cross compilation scenarios
