@@ -1181,7 +1181,7 @@ NonCoherentPciIoAllocateBuffer (
   Status = gDS->SetMemorySpaceAttributes (
                   (EFI_PHYSICAL_ADDRESS)(UINTN)AllocAddress,
                   EFI_PAGES_TO_SIZE (Pages),
-                  MemType
+                  MemType | EFI_MEMORY_XP // MU_CHANGE: Alloc MMIO memory XP by default
                   );
   if (EFI_ERROR (Status)) {
     goto RemoveList;
