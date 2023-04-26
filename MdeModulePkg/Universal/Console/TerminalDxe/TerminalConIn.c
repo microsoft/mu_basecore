@@ -78,9 +78,6 @@ TerminalConInReset (
     );
 
   Status = TerminalDevice->SerialIo->Reset (TerminalDevice->SerialIo);
-  // MU_CHANGE [BEGIN] - Ensure serial device is ready to receive data
-  Status = TerminalDevice->SerialIo->SetControl (TerminalDevice->SerialIo, EFI_SERIAL_DATA_TERMINAL_READY|EFI_SERIAL_REQUEST_TO_SEND);
-  // MU_CHANGE [END]
 
   //
   // Make all the internal buffer empty for keys
@@ -97,6 +94,14 @@ TerminalConInReset (
       TerminalDevice->DevicePath
       );
   }
+
+  // MU_CHANGE [BEGIN] - Ensure serial device is ready to receive data
+  // by setting data terminal ready and request to send
+  if (!EFI_ERROR (Status)) {
+    Status = TerminalDevice->SerialIo->SetControl (TerminalDevice->SerialIo, EFI_SERIAL_DATA_TERMINAL_READY|EFI_SERIAL_REQUEST_TO_SEND);
+  }
+
+  // MU_CHANGE [END]
 
   return Status;
 }
