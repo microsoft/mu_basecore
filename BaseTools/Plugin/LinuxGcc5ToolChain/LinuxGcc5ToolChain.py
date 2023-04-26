@@ -11,8 +11,6 @@ import os
 import logging
 from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
 from edk2toolext.environment import shell_environment
-from edk2toollib.utility_functions import GetHostInfo
-from edk2toollib.utility_functions import RunCmd
 
 
 class LinuxGcc5ToolChain(IUefiBuildPlugin):
@@ -45,12 +43,6 @@ class LinuxGcc5ToolChain(IUefiBuildPlugin):
                 self.Logger.critical("Failed in check riscv64")
                 return ret
 
-            # Check x86 compiler
-            ret = self._check_x86()
-            if ret != 0:
-                self.Logger.critical("Failed in check x86")
-                return ret
-
         return 0
 
     def _check_arm(self):
@@ -77,32 +69,22 @@ class LinuxGcc5ToolChain(IUefiBuildPlugin):
 
     def _check_aarch64(self):
         # check to see if full path already configured
-        HostInfo = GetHostInfo()
-        if HostInfo.arch == "x86":
-            if shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_PREFIX") is not None:
-                self.Logger.info("GCC5_AARCH64_PREFIX is already set.")
-
-            else:
-                # now check for install dir.  If set then set the Prefix
-                install_path = shell_environment.GetEnvironment(
-                ).get_shell_var("GCC5_AARCH64_INSTALL")
-                if install_path is None:
-                    return 0
-
-                # make GCC5_AARCH64_PREFIX to align with tools_def.txt
-                prefix = os.path.join(install_path, "bin", "aarch64-none-linux-gnu-")
-                shell_environment.GetEnvironment().set_shell_var("GCC5_AARCH64_PREFIX", prefix)
-
-        elif HostInfo.arch == "ARM":
-            shell_environment.GetEnvironment().set_shell_var("GCC5_AARCH64_PREFIX", "")
+        if shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_PREFIX") is not None:
+            self.Logger.info("GCC5_AARCH64_PREFIX is already set.")
 
         else:
-            raise NotImplementedError(f"Building AARCH64 target on host architecture {HostInfo.arch} is not supported yet!")
+            # now check for install dir.  If set then set the Prefix
+            install_path = shell_environment.GetEnvironment(
+            ).get_shell_var("GCC5_AARCH64_INSTALL")
+            if install_path is None:
+                return 0
 
-        # now confirm it exists by checking its version
-        cmd = shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_PREFIX") + "gcc"
-        ret = RunCmd(cmd, "-v")
-        if ret != 0:
+            # make GCC5_AARCH64_PREFIX to align with tools_def.txt
+            prefix = os.path.join(install_path, "bin", "aarch64-none-linux-gnu-")
+            shell_environment.GetEnvironment().set_shell_var("GCC5_AARCH64_PREFIX", prefix)
+
+        # now confirm it exists
+        if not os.path.exists(shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_PREFIX") + "gcc"):
             self.Logger.error(
                 "Path for GCC5_AARCH64_PREFIX toolchain is invalid")
             return -2
@@ -137,65 +119,5 @@ class LinuxGcc5ToolChain(IUefiBuildPlugin):
 
         prefix = os.path.join(install_path, "lib")
         shell_environment.GetEnvironment().set_shell_var("LD_LIBRARY_PATH", prefix)
-
-        return 0
-
-    def _check_x86(self):
-        # check to see if full path already configured
-        HostInfo = GetHostInfo()
-        if HostInfo.arch == "x86":
-            # Stick to the old way of using GCC5_BIN
-            prefix = shell_environment.GetEnvironment().get_shell_var("GCC5_BIN")
-            if prefix is None:
-                prefix = ''
-
-            # check to see if full path already configured
-            if shell_environment.GetEnvironment().get_shell_var("GCC5_IA32_PREFIX") is not None:
-                self.Logger.info("GCC5_IA32_PREFIX is already set.")
-
-            else:
-                # make GCC5_IA32_PREFIX to align with tools_def.txt
-                shell_environment.GetEnvironment().set_shell_var("GCC5_IA32_PREFIX", prefix)
-
-            # check to see if full path already configured
-            if shell_environment.GetEnvironment().get_shell_var("GCC5_X64_PREFIX") is not None:
-                self.Logger.info("GCC5_X64_PREFIX is already set.")
-
-            else:
-                # make GCC5_X64_PREFIX to align with tools_def.txt
-                shell_environment.GetEnvironment().set_shell_var("GCC5_X64_PREFIX", prefix)
-
-        elif HostInfo.arch == 'ARM':
-            # TODO: This is not ideal, need to carry a binary?
-            prefix = "x86_64-linux-gnu-"
-
-            # check to see if full path already configured
-            if shell_environment.GetEnvironment().get_shell_var("GCC5_IA32_PREFIX") is not None:
-                self.Logger.info("GCC5_IA32_PREFIX is already set.")
-
-            else:
-                # make GCC5_IA32_PREFIX to align with tools_def.txt
-                shell_environment.GetEnvironment().set_shell_var("GCC5_IA32_PREFIX", prefix)
-            
-            check = shell_environment.GetEnvironment().get_shell_var("GCC5_IA32_PREFIX")
-
-            # check to see if full path already configured
-            if shell_environment.GetEnvironment().get_shell_var("GCC5_X64_PREFIX") is not None:
-                self.Logger.info("GCC5_X64_PREFIX is already set.")
-
-            else:
-                # make GCC5_X64_PREFIX to align with tools_def.txt
-                shell_environment.GetEnvironment().set_shell_var("GCC5_X64_PREFIX", prefix)
-
-        else:
-            raise NotImplementedError(f"Building x86 target on host architecture {HostInfo.arch} is not supported yet!")
-
-        # now confirm it exists by checking its version
-        cmd = shell_environment.GetEnvironment().get_shell_var("GCC5_X64_PREFIX") + "gcc"
-        ret = RunCmd(cmd, "-v")
-        if ret != 0:
-            self.Logger.error(
-                "Path for GCC5_X64_PREFIX toolchain is invalid")
-            return -2
 
         return 0
