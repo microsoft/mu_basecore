@@ -267,11 +267,18 @@ SetUefiImageMemoryAttributes (
   ASSERT_EFI_ERROR (Status);
 
   FinalAttributes = (Descriptor.Attributes & EFI_CACHE_ATTRIBUTE_MASK) | (Attributes & EFI_MEMORY_ATTRIBUTE_MASK);
-
-  DEBUG ((DEBUG_INFO, "SetUefiImageMemoryAttributes - 0x%016lx - 0x%016lx (0x%016lx)\n", BaseAddress, Length, FinalAttributes));
+  // MU_CHANGE START: Update verbosity to reduce excessive debug output
+  // DEBUG ((DEBUG_INFO, "SetUefiImageMemoryAttributes - 0x%016lx - 0x%016lx (0x%016lx)\n", BaseAddress, Length, FinalAttributes));
+  DEBUG ((DEBUG_VERBOSE, "SetUefiImageMemoryAttributes - 0x%016lx - 0x%016lx (0x%016lx)\n", BaseAddress, Length, FinalAttributes));
+  // MU_CHANGE END
 
   ASSERT (gCpu != NULL);
-  gCpu->SetMemoryAttributes (gCpu, BaseAddress, Length, FinalAttributes);
+  // MU_CHANGE START: Don't dereference if gCpu is NULL
+  if (gCpu != NULL) {
+    gCpu->SetMemoryAttributes (gCpu, BaseAddress, Length, FinalAttributes);
+  }
+
+  // MU_CHANGE END
 }
 
 /**
