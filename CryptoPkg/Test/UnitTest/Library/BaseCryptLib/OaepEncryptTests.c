@@ -166,6 +166,10 @@ TestVerifyOaepEncrypt (
   UINT8    *OutBuffer2;
   UINTN    OutBuffer2Size;
 
+  if (!PcdGetBool (PcdCryptoServicePkcs1v2Encrypt)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   // Create a file and add content '123' in it
   File[0] = '1';
   File[1] = '2';

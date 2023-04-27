@@ -162,6 +162,14 @@ TestVerifyHash (
 
   HashTestContext = Context;
 
+  if (((HashTestContext->DigestSize == SHA1_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha1Init)) ||
+      ((HashTestContext->DigestSize == SHA256_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha256Init)) ||
+      ((HashTestContext->DigestSize == SHA384_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha384Init)) ||
+      ((HashTestContext->DigestSize == SHA512_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha512Init)))
+  {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   DataSize = AsciiStrLen (HashData);
 
   ZeroMem (Digest, MAX_DIGEST_SIZE);
@@ -177,7 +185,34 @@ TestVerifyHash (
 
   UT_ASSERT_MEM_EQUAL (Digest, HashTestContext->Digest, HashTestContext->DigestSize);
 
+  return UNIT_TEST_PASSED;
+}
+
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyHashAll (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  UINTN              DataSize;
+  UINT8              Digest[MAX_DIGEST_SIZE];
+  BOOLEAN            Status;
+  HASH_TEST_CONTEXT  *HashTestContext;
+
+  HashTestContext = Context;
+
+  if (((HashTestContext->DigestSize == SHA1_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha1HashAll)) ||
+      ((HashTestContext->DigestSize == SHA256_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha256HashAll)) ||
+      ((HashTestContext->DigestSize == SHA384_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha384HashAll)) ||
+      ((HashTestContext->DigestSize == SHA512_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha512HashAll)))
+  {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
+  DataSize = AsciiStrLen (HashData);
+
   ZeroMem (Digest, MAX_DIGEST_SIZE);
+
   Status = HashTestContext->HashAll (HashData, DataSize, Digest);
   UT_ASSERT_TRUE (Status);
 
@@ -191,12 +226,16 @@ TEST_DESC  mHashTest[] = {
   // -----Description----------------Class---------------------Function---------------Pre------------------Post------------Context
   //
  #ifdef ENABLE_MD5_DEPRECATED_INTERFACES
-  { "TestVerifyMd5()",    "CryptoPkg.BaseCryptLib.Hash", TestVerifyHash, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mMd5TestCtx    },
+  { "TestVerifyMd5()",    "CryptoPkg.BaseCryptLib.Hash",    TestVerifyHash,    TestVerifyHashPreReq, TestVerifyHashCleanUp, &mMd5TestCtx    },
  #endif
-  { "TestVerifySha1()",   "CryptoPkg.BaseCryptLib.Hash", TestVerifyHash, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha1TestCtx   },
-  { "TestVerifySha256()", "CryptoPkg.BaseCryptLib.Hash", TestVerifyHash, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha256TestCtx },
-  { "TestVerifySha384()", "CryptoPkg.BaseCryptLib.Hash", TestVerifyHash, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha384TestCtx },
-  { "TestVerifySha512()", "CryptoPkg.BaseCryptLib.Hash", TestVerifyHash, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha512TestCtx },
+  { "TestVerifySha1()",   "CryptoPkg.BaseCryptLib.Hash",    TestVerifyHash,    TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha1TestCtx   },
+  { "TestVerifySha256()", "CryptoPkg.BaseCryptLib.Hash",    TestVerifyHash,    TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha256TestCtx },
+  { "TestVerifySha384()", "CryptoPkg.BaseCryptLib.Hash",    TestVerifyHash,    TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha384TestCtx },
+  { "TestVerifySha512()", "CryptoPkg.BaseCryptLib.Hash",    TestVerifyHash,    TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha512TestCtx },
+  { "TestVerifySha1()",   "CryptoPkg.BaseCryptLib.HashAll", TestVerifyHashAll, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha1TestCtx   },
+  { "TestVerifySha256()", "CryptoPkg.BaseCryptLib.HashAll", TestVerifyHashAll, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha256TestCtx },
+  { "TestVerifySha384()", "CryptoPkg.BaseCryptLib.HashAll", TestVerifyHashAll, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha384TestCtx },
+  { "TestVerifySha512()", "CryptoPkg.BaseCryptLib.HashAll", TestVerifyHashAll, TestVerifyHashPreReq, TestVerifyHashCleanUp, &mSha512TestCtx },
 };
 
 UINTN  mHashTestNum = ARRAY_SIZE (mHashTest);
