@@ -929,6 +929,7 @@ RefreshGcdMemoryAttributes (
   }
 
   if (IsPagingAndPageAddressExtensionsEnabled ()) {
+    DEBUG ((DEBUG_INFO, "Syncing GCD...\n")); // MU_CHANGE
     RefreshGcdMemoryAttributesFromPaging ();
   }
 
