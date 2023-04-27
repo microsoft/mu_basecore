@@ -346,6 +346,7 @@
       BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
     <PcdsFixedAtBuild>
       gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
+      !include CryptoPkg/Test/Crypto.pcd.ALL.inc.dsc
     ## MU_CHANGE [END]
   }
   ## MU_CHANGE [END]

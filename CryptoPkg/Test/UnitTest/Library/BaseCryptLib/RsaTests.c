@@ -119,6 +119,10 @@ TestVerifyRsaSetGetKeyComponents (
   //
   // Set/Get RSA Key N
   //
+  if (!PcdGetBool (PcdCryptoServiceRsaSetKey) || !PcdGetBool (PcdCryptoServiceRsaGetKey)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   Status = RsaSetKey (mRsa, RsaKeyN, RsaN, sizeof (RsaN));
   UT_ASSERT_TRUE (Status);
 
@@ -208,6 +212,10 @@ TestVerifyRsaGenerateKeyComponents (
   UINT8    TestPublicExponent2[] = { 0x01, 0x01 };
   UINT8    TestPublicExponent3[] = { 0x01, 0x00, 0x01 };
 
+  if (!PcdGetBool (PcdCryptoServiceRsaGenerateKey)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   //
   // Generate RSA Key Components
   //
@@ -279,6 +287,10 @@ TestVerifyRsaPkcs1SignVerify (
   UINT8    *Signature;
   UINTN    SigSize;
   BOOLEAN  Status;
+
+  if (!PcdGetBool (PcdCryptoServiceRsaPkcs1Sign)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
 
   //
   // SHA-1 Digest Message for PKCS#1 Signature
