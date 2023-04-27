@@ -5,7 +5,7 @@ Project Mu Basecore Repository
 ============================= ================= =============== ===================
  Host Type & Toolchain        Build Status      Test Status     Code Coverage
 ============================= ================= =============== ===================
-Windows_VS2019_               |WindowsCiBuild|  |WindowsCiTest| |WindowsCiCoverage|
+Windows_VS2022_               |WindowsCiBuild|  |WindowsCiTest| |WindowsCiCoverage|
 Ubuntu_GCC5_                  |UbuntuCiBuild|   |UbuntuCiTest|  |UbuntuCiCoverage|
 ============================= ================= =============== ===================
 
@@ -15,59 +15,51 @@ For more details about the repository, refer to `RepoDetails.md`_.
 
 .. _`RepoDetails.md`: https://github.com/microsoft/mu_basecore/blob/HEAD/RepoDetails.md
 
-Branch Status - release/202208
+Branch Status - release/202302
 ==============================
 
 :Status:
   In Development
 
 :Entered Development:
-  2022/09/13
+  2023/04/27
 
 :Anticipated Stabilization:
-  Nov 2022
+  Aug 2023
 
-Branch Changes - release/202208
+Branch Changes - release/202302
 ===============================
 
 Breaking Changes-dev
 --------------------
 
-- Removed RCVT support
+- Incomplete
 
 Main Changes-dev
 ----------------
 
-- Updated Openssl crypto
-- Allow Dxe to use untested memory
-- Added cryptography for SEC phase
-- Cleaned up and reworked exception stack code
+- Incomplete
 
 Bug Fixes-dev
 -------------
 
-- Various minor bugs involving type casting were fixed
+- Incomplete
 
-2208_RefBoot Changes
+2302_RefBoot Changes
 --------------------
 
 - Incomplete
 
-2208_CIBuild Changes
+2302_CIBuild Changes
 --------------------
 
-- Rebuild all crypto drivers through the script to work with upstream changes we took in.
-- Removed memory protection changes that rely on PCDs we don't use in project MU (No impact on actual memory protections)
-- Removed stale macro definitions that have been overwritten upstream.
+- Incomplete
 
-2208_Rebase Changes
+2302_Rebase Changes
 -------------------
 
-| Starting commit: 10dd0bf271 ("Update pip-requirements.txt", 2022-09-10)
-| Destination Commit from upstream edk2: ba0e0e4c6a ("BaseTools: Fix DevicePath GNUmakefile for macOS", 2022-08-27)
-
--  DxeException.c -> Changes from upstream removed Pageguards.  Need to adjust code to address this.
-  (Same with PeiCpuException.c and PeiCpuExceptionHandler.inf)
+| Starting commit: 082b06d160 ("Edk2ToolsBuild.py: set arch to host arch if not specified on linux", 2023-04-27)
+| Destination Commit from upstream edk2: f80f052277 ("OvmfPkg/RiscVVirt: Add Stack HOB", 2023-03-01)
 
 Code of Conduct
 ===============
@@ -152,14 +144,14 @@ POSSIBILITY OF SUCH DAMAGE.
 
 .. CoreCI
 
-.. _Windows_VS2019: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=39&&branchName=release%2F202208
-.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202208
+.. _Windows_VS2019: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=39&&branchName=release%2F202302
+.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202302
 .. |WindowsCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/39.svg
 .. |WindowsCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
 
-.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=40&branchName=release%2F202208
-.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20Ubuntu%20GCC5?branchName=release%2F202208
+.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=40&branchName=release%2F202302
+.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20Ubuntu%20GCC5?branchName=release%2F202302
 .. |UbuntuCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/40.svg
 .. |UbuntuCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
 
-.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202208
+.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202302
