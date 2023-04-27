@@ -208,6 +208,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             # MU_CHANGE STARTs: Specify target architecture
             # Note: This HOST_ARCH is in respect to the BUILT base tools, not the host arch where
             # this script is BUILDING the base tools.
+            HostInfo = GetHostInfo()
             prefix = None
             TargetInfoArch = None
             if self.target_arch is not None:
@@ -233,11 +234,12 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
 
                 else:
                     TargetInfoArch = "x86"
-
+            else:
+                self.target_arch = HostInfo.arch
+                TargetInfoArch = HostInfo.arch
             # Otherwise, the built binary arch will be consistent with the host system
 
             # Added logic to support cross compilation scenarios
-            HostInfo = GetHostInfo()
             if TargetInfoArch != HostInfo.arch:
                 # this is defaulting to the version that comes with Ubuntu 20.04
                 ver = shell_environment.GetBuildVars().GetValue("LIBUUID_VERSION", "2.34")
