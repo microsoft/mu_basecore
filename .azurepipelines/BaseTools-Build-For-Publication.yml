@@ -19,7 +19,7 @@ name: BaseTools_Bin_$(release_version)_$(Rev:r)
 variables:
   linux_build_output_path: '$(Build.Repository.LocalPath)/BaseTools/Source/C/bin'
   linux_artifact_name: 'LinuxOutput'
-  windows_build_output_path: '$(Build.Repository.LocalPath)\BaseTools\Bin\Win32'
+  windows_build_output_path: '$(Build.Repository.LocalPath)\BaseTools\Bin'
   windows_artifact_name: 'WindowsOutput'
   temp_publication_directory: 'PackageStaging'
   package_artifact_name: 'NugetReleasePackage'
@@ -30,6 +30,14 @@ variables:
 
 jobs:
   - job: linux_build
+    # Use matrix to speed up the build process
+    strategy:
+      matrix:
+        TARGET_x64:
+          Build.Targets: 'X64'
+        TARGET_AArch64:
+          Build.Targets: 'AARCH64'
+
     displayName: Linux Build
     pool:
       vmImage: ubuntu-20.04
@@ -60,15 +68,15 @@ jobs:
       displayName: Update Environment
       inputs:
         filename: stuart_update
-        arguments: -c .pytool/CISettings.py
+        arguments: -c .pytool/CISettings.py TOOL_CHAIN_TAG=GCC5 -a $(Build.Targets)
 
     - template: Steps/BuildBaseTools.yml@mu_devops
       parameters:
-        extra_parameters: '--skip_path_env'
+        extra_parameters: '--skip_path_env -a $(Build.Targets)'
         tool_chain_tag: 'GCC5'
 
     - publish: $(linux_build_output_path)
-      artifact: $(linux_artifact_name)
+      artifact: $(linux_artifact_name)_$(Build.Targets)
       displayName: Publish To Pipeline
       condition: SucceededOrFailed()
 
@@ -78,8 +86,13 @@ jobs:
       matrix:
         TARGET_x86:
           Build.Targets: 'IA32'
+          Build.TargetFolder: 'Win32'
         TARGET_ARM:
           Build.Targets: 'ARM'
+          Build.TargetFolder: 'Win32'
+        TARGET_AArch64:
+          Build.Targets: 'AARCH64'
+          Build.TargetFolder: 'Win64'
 
     pool:
       vmImage: windows-latest
@@ -118,7 +131,7 @@ jobs:
         extra_parameters: '--skip_path_env -a $(Build.Targets)'
         tool_chain_tag: 'VS2022'
 
-    - publish: $(windows_build_output_path)
+    - publish: '$(windows_build_output_path)\$(Build.TargetFolder)'
       artifact: $(windows_artifact_name)_$(Build.Targets)
       displayName: Publish To Pipeline
       condition: SucceededOrFailed()
@@ -176,9 +189,11 @@ jobs:
 
     - powershell:
         mkdir $(Build.StagingDirectory)/$(temp_publication_directory);
-        mv $(Pipeline.Workspace)/$(linux_artifact_name) $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
+        mv $(Pipeline.Workspace)/$(linux_artifact_name)_X64 $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
+        mv $(Pipeline.Workspace)/$(linux_artifact_name)_AARCH64 $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-ARM-64;
         mv $(Pipeline.Workspace)/$(windows_artifact_name)_IA32 $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
         mv $(Pipeline.Workspace)/$(windows_artifact_name)_ARM $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-ARM;
+        mv $(Pipeline.Workspace)/$(windows_artifact_name)_AARCH64 $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-ARM-64;
       displayName: Stage Package Files
 
     - powershell:
