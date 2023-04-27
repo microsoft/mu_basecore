@@ -823,10 +823,10 @@ ShellCommandRunDmpStore (
       // Get the Name of the variable to find
       //
       Name = ShellCommandLineGetRawValue (Package, 1);
-      // MU_CHANGE [BEGIN] - CodeQL change
-      if (Name == NULL) {
-        return (SHELL_INVALID_PARAMETER);
-      }
+      // // MU_CHANGE [BEGIN] - CodeQL change
+      // if (Name == NULL) {
+      //   return (SHELL_INVALID_PARAMETER);
+      // }
 
       // MU_CHANGE [END] - CodeQL change
 
