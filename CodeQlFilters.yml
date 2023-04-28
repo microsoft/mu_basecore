@@ -43,5 +43,6 @@
     "-ShellPkg/Library/UefiShellDebug1CommandsLib/DmpStore.c:SM02311",
     "-ShellPkg/Library/UefiShellLevel2CommandsLib/Map.c:SM02311",
     "-ShellPkg/Library/UefiShellLevel3CommandsLib/Alias.c:SM02311",
+    "-ShellPkg/Library/UefiShellDebug1CommandsLib/DmpStore.c:SM02311",
   ]
 }
