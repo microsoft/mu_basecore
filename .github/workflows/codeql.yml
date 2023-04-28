@@ -153,12 +153,42 @@ jobs:
       if: steps.get_ci_file_operations.outputs.setup_supported == 'true'
       run: stuart_setup -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }}
 
+    - name: Upload Setup Log As An Artifact
+      uses: actions/upload-artifact@v3
+      if: (success() || failure()) && steps.get_ci_file_operations.outputs.setup_supported == 'true'
+      with:
+        name: ${{ matrix.package }}-Logs
+        path: |
+          **/SETUPLOG.txt
+          retention-days: 7
+        if-no-files-found: ignore
+
     - name: CI Setup
       if: steps.get_ci_file_operations.outputs.ci_setup_supported == 'true'
       run: stuart_ci_setup -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }}
 
+    - name: Upload CI Setup Log As An Artifact
+      uses: actions/upload-artifact@v3
+      if: (success() || failure()) && steps.get_ci_file_operations.outputs.ci_setup_supported == 'true'
+      with:
+        name: ${{ matrix.package }}-Logs
+        path: |
+          **/CISETUP.txt
+          retention-days: 7
+        if-no-files-found: ignore
+
     - name: Update
       run: stuart_update -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }}
+
+    - name: Upload Update Log As An Artifact
+      uses: actions/upload-artifact@v3
+      if: success() || failure()
+      with:
+        name: ${{ matrix.package }}-Logs
+        path: |
+          **/UPDATE_LOG.txt
+        retention-days: 7
+        if-no-files-found: ignore
 
     - name: Find CodeQL Plugin Directory
       id: find_dir
@@ -240,6 +270,21 @@ jobs:
         STUART_CODEQL_PATH: ${{ steps.cache_key_gen.outputs.codeql_cli_ext_dep_dir }}
       run: stuart_ci_build -c .pytool/CISettings.py -t DEBUG -p ${{ matrix.package }} -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }} --codeql
 
+    - name: Upload Build Logs As An Artifact
+      uses: actions/upload-artifact@v3
+      if: success() || failure()
+      with:
+        name: ${{ matrix.package }}-Logs
+        path: |
+          **/BUILD_REPORT.TXT
+          **/OVERRIDELOG.TXT
+          **/BUILDLOG_*.md
+          **/BUILDLOG_*.txt
+          **/CI_*.md
+          **/CI_*.txt
+        retention-days: 7
+        if-no-files-found: ignore
+
     - name: Prepare Env Data for CodeQL Upload
       id: env_data
       env:
@@ -255,31 +300,6 @@ jobs:
 
         with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
             print(f'sarif_file_path={sarif_path}', file=fh)
-
-    - name: Upload Setup and Update Logs As An Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ matrix.package }}-Setup-Update-Logs
-        path: |
-          **/OVERRIDELOG.TXT
-          CISETUP.txt
-          SETUPLOG.txt
-          UPDATE_LOG.txt
-        retention-days: 3
-        if-no-files-found: ignore
-
-    - name: Upload Build Log As An Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ matrix.package }}-Build-Logs
-        path: |
-          **/BUILD_REPORT.TXT
-          BUILDLOG_*.md
-          BUILDLOG_*.txt
-          CI_*.md
-          CI_*.txt
-        retention-days: 7
-        if-no-files-found: ignore
 
     - name: Upload CodeQL Results (SARIF) As An Artifact
       uses: actions/upload-artifact@v3

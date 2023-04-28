@@ -20,7 +20,7 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: refs/tags/v2.4.0
+      ref: refs/tags/v2.5.1
   containers:
     - container: linux-gcc
       image: ghcr.io/tianocore/containers/fedora-37-build:3b3eb8f
