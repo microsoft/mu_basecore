@@ -737,7 +737,7 @@ SmmLoadImage (
   Status = PeCoffLoaderGetSecurityCookieAddress (&ImageContext, &SecurityCookieAddress);
   if (!EFI_ERROR (Status)) {
     InitializeSecurityCookieAddress (SecurityCookieAddress);
-    DEBUG ((DEBUG_INFO | DEBUG_LOAD, "SMM SecurityCookie set to %lld\n", (*SecurityCookieAddress)));
+    DEBUG ((DEBUG_VERBOSE | DEBUG_LOAD, "SMM SecurityCookie set to %lld\n", (*SecurityCookieAddress)));
   }
 
   // END
