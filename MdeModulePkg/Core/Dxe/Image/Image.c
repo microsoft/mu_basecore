@@ -927,7 +927,7 @@ CoreLoadPeImage (
   Status = PeCoffLoaderGetSecurityCookieAddress (&Image->ImageContext, &SecurityCookieAddress);
   if (!EFI_ERROR (Status)) {
     InitializeSecurityCookieAddress (SecurityCookieAddress);
-    DEBUG ((DEBUG_INFO | DEBUG_LOAD, "SecurityCookie set to %lld\n", (*SecurityCookieAddress)));
+    DEBUG ((DEBUG_VERBOSE | DEBUG_LOAD, "SecurityCookie set to %lld\n", (*SecurityCookieAddress)));
   }
 
   // END
