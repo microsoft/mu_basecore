@@ -2430,15 +2430,15 @@ RELEASE_GCC49_ARM_CC_FLAGS       = DEF(GCC49_ARM_CC_FLAGS) -Wno-unused-but-set-v
 
   DEBUG_GCC49_AARCH64_CC_FLAGS     = DEF(GCC49_AARCH64_CC_FLAGS) -O0
   DEBUG_GCC49_AARCH64_DLINK_FLAGS  = DEF(GCC49_AARCH64_DLINK_FLAGS)
-  DEBUG_GCC49_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x20
+  DEBUG_GCC49_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x1000
 
 RELEASE_GCC49_AARCH64_CC_FLAGS     = DEF(GCC49_AARCH64_CC_FLAGS) -Wno-unused-but-set-variable -Wno-unused-const-variable
 RELEASE_GCC49_AARCH64_DLINK_FLAGS  = DEF(GCC49_AARCH64_DLINK_FLAGS)
-RELEASE_GCC49_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x20
+RELEASE_GCC49_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x1000
 
   NOOPT_GCC49_AARCH64_CC_FLAGS     = DEF(GCC49_AARCH64_CC_FLAGS) -O0
   NOOPT_GCC49_AARCH64_DLINK_FLAGS  = DEF(GCC49_AARCH64_DLINK_FLAGS) -O0
-  NOOPT_GCC49_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x20 -O0
+  NOOPT_GCC49_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x1000 -O0
 
 ####################################################################################
 #
@@ -2593,16 +2593,16 @@ RELEASE_GCC5_ARM_DLINK_FLAGS     = DEF(GCC5_ARM_DLINK_FLAGS) -flto -Os -L$(WORKS
   DEBUG_GCC5_AARCH64_CC_FLAGS    = DEF(GCC5_AARCH64_CC_FLAGS) -flto -Wno-unused-but-set-variable -Wno-unused-const-variable
   # MU_CHANGE - Move GccLto to tools dir for better alignment
   DEBUG_GCC5_AARCH64_DLINK_FLAGS = DEF(GCC5_AARCH64_DLINK_FLAGS) -flto -Os -L$(WORKSPACE)/BaseTools/Bin/GccLto -llto-aarch64 -Wl,-plugin-opt=-pass-through=-llto-aarch64 -Wno-lto-type-mismatch
-  DEBUG_GCC5_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x20
+  DEBUG_GCC5_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x1000
 
 RELEASE_GCC5_AARCH64_CC_FLAGS    = DEF(GCC5_AARCH64_CC_FLAGS) -flto -Wno-unused-but-set-variable -Wno-unused-const-variable
 # MU_CHANGE - Move GccLto to tools dir for better alignment
 RELEASE_GCC5_AARCH64_DLINK_FLAGS = DEF(GCC5_AARCH64_DLINK_FLAGS) -flto -Os -L$(WORKSPACE)/BaseTools/Bin/GccLto -llto-aarch64 -Wl,-plugin-opt=-pass-through=-llto-aarch64 -Wno-lto-type-mismatch
-RELEASE_GCC5_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x20
+RELEASE_GCC5_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x1000
 
   NOOPT_GCC5_AARCH64_CC_FLAGS    = DEF(GCC5_AARCH64_CC_FLAGS) -O0
   NOOPT_GCC5_AARCH64_DLINK_FLAGS = DEF(GCC5_AARCH64_DLINK_FLAGS) -O0
-  NOOPT_GCC5_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x20 -O0
+  NOOPT_GCC5_AARCH64_DLINK_XIPFLAGS = -z common-page-size=0x1000 -O0
 
 ####################################################################################
 #
