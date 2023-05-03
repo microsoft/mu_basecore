@@ -9,15 +9,17 @@
 
 [Defines]
   INF_VERSION                    = 0x00010017
-  BASE_NAME                      = PolicyDxe
-  FILE_GUID                      = fa1bb8af-71f0-4e2e-ba78-0fb10f8367dd
-  MODULE_TYPE                    = DXE_DRIVER
+  PI_SPECIFICATION_VERSION       = 0x00010032
+  BASE_NAME                      = PolicyMm
+  FILE_GUID                      = 9FF65AAD-5982-4609-9702-05EFD584148C
+  MODULE_TYPE                    = MM_STANDALONE
   VERSION_STRING                 = 1.0
-  ENTRY_POINT                    = DxePolicyEntry
+  ENTRY_POINT                    = PolicyStandaloneEntry
 
 [Sources]
-  PolicyDxe.c
-  PolicyDxe.h
+  PolicyMm.c
+  PolicyCommon.c
+  PolicyCommon.h
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -26,12 +28,11 @@
 
 [LibraryClasses]
   BaseLib
-  UefiDriverEntryPoint
   DebugLib
   HobLib
-  UefiRuntimeServicesTableLib
+  StandaloneMmDriverEntryPoint
+  MmServicesTableLib
   MemoryAllocationLib
-  UefiLib
 
 [Pcd]
 
@@ -39,8 +40,7 @@
   gPolicyHobGuid
 
 [Protocols]
-  gPolicyProtocolGuid                 ## PRODUCES
+  gMmPolicyProtocolGuid               ## PRODUCES
 
 [Depex]
   TRUE
-

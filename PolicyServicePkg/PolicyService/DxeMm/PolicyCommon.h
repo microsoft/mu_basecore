@@ -1,26 +1,23 @@
 /** @file
-  Prototypes and type definitions for the DXE Policy service
-  module.
+  Common prototypes and type definitions for the DXE/MM Policy service
+  modules.
 
   Copyright (c) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef _POLICY_DXE_H_
-#define _POLICY_DXE_H_
+#ifndef _POLICY_COMMON_H_
+#define _POLICY_COMMON_H_
 
 #include <Uefi.h>
-#include <Library/UefiLib.h>
 #include <Library/MemoryAllocationLib.h>
-#include <Library/UefiBootServicesTableLib.h>
 #include <Library/HobLib.h>
 #include <Library/DebugLib.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 
-#include <Protocol/Policy.h>
-#include "../PolicyCommon.h"
+#include "../PolicyHob.h"
 
 typedef struct _POLICY_ENTRY {
   UINT32        Signature;
@@ -36,7 +33,7 @@ typedef struct _POLICY_ENTRY {
 #define POLICY_ENTRY_SIGNATURE  SIGNATURE_32('p', 'o', 'l', 'c')
 #define POLICY_ENTRY_FROM_LINK(a)  CR (a, POLICY_ENTRY, Link, POLICY_ENTRY_SIGNATURE)
 
-#define INITIAL_DXE_POLICY_NOTIFY_LIST_SIZE  (32)
+// #define INITIAL_DXE_POLICY_NOTIFY_LIST_SIZE  (32) // TODO REMOVE?
 
 //
 // Macros for managing the critical section.
@@ -62,7 +59,7 @@ typedef struct _POLICY_ENTRY {
 **/
 EFI_STATUS
 EFIAPI
-DxeSetPolicy (
+SetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
   IN UINT64          Attributes,
   IN VOID            *Policy,
@@ -84,7 +81,7 @@ DxeSetPolicy (
 **/
 EFI_STATUS
 EFIAPI
-DxeGetPolicy (
+GetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
   OUT UINT64         *Attributes OPTIONAL,
   OUT VOID           *Policy,
@@ -102,8 +99,54 @@ DxeGetPolicy (
 **/
 EFI_STATUS
 EFIAPI
-DxeRemovePolicy (
+RemovePolicy (
   IN CONST EFI_GUID  *PolicyGuid
+  );
+
+/**
+  Acquires the environment specific lock for the policy list.
+
+**/
+VOID
+EFIAPI
+PolicyLockAcquire (
+  VOID
+  );
+
+/**
+  Release the environment specific lock for the policy list.
+
+**/
+VOID
+EFIAPI
+PolicyLockRelease (
+  VOID
+  );
+
+/**
+  Creates and empty protocol for a given GUID to notify or dispatch consumers of
+  this policy GUID. If the protocol already exists it will be reinstalled.
+
+  @param[in]  PolicyGuid        The policy GUID used for the protocol.
+
+  @retval     EFI_SUCCESS       The protocol was installed or reinstalled.
+**/
+EFI_STATUS
+EFIAPI
+InstallPolicyIndicatorProtocol (
+  IN CONST EFI_GUID  *PolicyGuid
+  );
+
+/**
+  Parses the HOB list to find active policies to add to the policy store.
+
+  @retval   EFI_SUCCESS           Policies added to the policy store.
+  @retval   EFI_OUT_OF_RESOURCES  Failed to allocate memory for policy.
+**/
+EFI_STATUS
+EFIAPI
+IngestPoliciesFromHob (
+  VOID
   );
 
 #endif

@@ -68,7 +68,7 @@
   PolicyLib|PolicyServicePkg/Library/DxePolicyLib/DxePolicyLib.inf
 
 [Components]
-  PolicyServicePkg/PolicyService/Dxe/PolicyDxe.inf
+  PolicyServicePkg/PolicyService/DxeMm/PolicyDxe.inf
   PolicyServicePkg/PolicyService/Pei/PolicyPei.inf
   PolicyServicePkg/Library/DxePolicyLib/DxePolicyLib.inf
   PolicyServicePkg/Library/PeiPolicyLib/PeiPolicyLib.inf
