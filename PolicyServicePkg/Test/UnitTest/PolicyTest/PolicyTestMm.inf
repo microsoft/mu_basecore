@@ -1,0 +1,43 @@
+## @file
+#
+#  This is a sample MM driver for using the policy service.
+#
+#  Copyright (C) Microsoft Corporation. All rights reserved.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  PI_SPECIFICATION_VERSION       = 0x00010032
+  BASE_NAME                      = PolicyTestMm
+  FILE_GUID                      = E190B7DB-1FCD-4B23-8310-5BF9622614EB
+  MODULE_TYPE                    = MM_STANDALONE
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = MmEntryPoint
+
+[Sources]
+  PolicyTestMm.c
+  PolicyServiceTestCommon.c
+  PolicyLibTestCommon.c
+  PolicyTest.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  PolicyServicePkg/PolicyServicePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  StandaloneMmDriverEntryPoint
+  MmServicesTableLib
+  UnitTestLib
+  PrintLib
+  PolicyLib
+
+[Protocols]
+  gMmPolicyProtocolGuid                 ## CONSUMES
+
+[Depex]
+  gMmPolicyProtocolGuid
