@@ -1,0 +1,36 @@
+## @file
+#  DXE instance of verified policy library.
+#
+#  Copyright (c) Microsoft Corporation.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 1.26
+  PI_SPECIFICATION_VERSION       = 0x00010032
+  BASE_NAME                      = MmPolicyLib
+  FILE_GUID                      = C2A9C781-8D58-46DA-BC39-5385AB8D5C8A
+  MODULE_TYPE                    = MM_STANDALONE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = PolicyLib | MM_CORE_STANDALONE MM_STANDALONE
+
+[Sources]
+  ../PolicyLibCommon.c
+  ../PolicyLibCommon.h
+  MmPolicy.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  PolicyServicePkg/PolicyServicePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  MmServicesTableLib
+
+[Protocols]
+  gMmPolicyProtocolGuid                 ## CONSUMES
+
+[Pcd]
