@@ -67,14 +67,25 @@
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
   PolicyLib|PolicyServicePkg/Library/DxePolicyLib/DxePolicyLib.inf
 
+[LibraryClasses.common.MM_STANDALONE]
+  MemoryAllocationLib|StandaloneMmPkg/Library/StandaloneMmMemoryAllocationLib/StandaloneMmMemoryAllocationLib.inf
+  StandaloneMmDriverEntryPoint|MdePkg/Library/StandaloneMmDriverEntryPoint/StandaloneMmDriverEntryPoint.inf
+  HobLib|StandaloneMmPkg/Library/StandaloneMmHobLib/StandaloneMmHobLib.inf
+  MmServicesTableLib|MdePkg/Library/StandaloneMmServicesTableLib/StandaloneMmServicesTableLib.inf
+  StandaloneMmDriverEntryPoint|MdePkg/Library/StandaloneMmDriverEntryPoint/StandaloneMmDriverEntryPoint.inf
+  PolicyLib|PolicyServicePkg/Library/MmPolicyLib/MmPolicyLib.inf
+
 [Components]
   PolicyServicePkg/PolicyService/DxeMm/PolicyDxe.inf
+  PolicyServicePkg/PolicyService/DxeMm/PolicyMm.inf
   PolicyServicePkg/PolicyService/Pei/PolicyPei.inf
   PolicyServicePkg/Library/DxePolicyLib/DxePolicyLib.inf
   PolicyServicePkg/Library/PeiPolicyLib/PeiPolicyLib.inf
+  PolicyServicePkg/Library/MmPolicyLib/MmPolicyLib.inf
 
   # Sample and test modules.
   PolicyServicePkg/Samples/PolicyInterface/PolicySampleDxe.inf
   PolicyServicePkg/Samples/PolicyInterface/PolicySamplePei.inf
   PolicyServicePkg/Test/UnitTest/PolicyTest/PolicyTestDxe.inf
   PolicyServicePkg/Test/UnitTest/PolicyTest/PolicyTestPei.inf
+  PolicyServicePkg/Test/UnitTest/PolicyTest/PolicyTestMm.inf
