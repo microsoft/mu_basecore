@@ -102,6 +102,9 @@ class MarkdownLintCheck(ICiBuildPlugin):
         # Get relative path for the root of package to use with ignore and path parameters
         relpath = os.path.relpath(abs_pkg_path)
 
+        # Newer versions of markdownlint don't understand backslashes
+        relpath = relpath.replace(os.path.sep, '/')
+
         #
         # check for any package specific ignore patterns defined by package config
         #
