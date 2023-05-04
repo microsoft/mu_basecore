@@ -33,11 +33,10 @@
   StandaloneMmDriverEntryPoint
   MmServicesTableLib
   UnitTestLib
-  PrintLib
   PolicyLib
 
 [Protocols]
   gMmPolicyProtocolGuid                 ## CONSUMES
 
 [Depex]
-  gMmPolicyProtocolGuid
+  TRUE

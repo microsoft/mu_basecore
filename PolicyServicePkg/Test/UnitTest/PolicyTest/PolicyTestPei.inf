@@ -38,4 +38,4 @@
   gPeiPolicyPpiGuid                 ## CONSUMES
 
 [Depex]
-  gPeiPolicyPpiGuid
+  gPeiPolicyPpiGuid AND gEfiPeiMemoryDiscoveredPpiGuid

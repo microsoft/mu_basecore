@@ -104,15 +104,7 @@ PolicyStandaloneEntry (
 {
   EFI_STATUS  Status;
 
-  // while (dbgloop) {
-  // }
-  // UINT8  Test;
-  // DEBUG ((DEBUG_INFO, "TEST: Image handle = 0x%llx\n", ImageHandle));
-  // Test = *((UINT8 *)ImageHandle);
-  // DEBUG ((DEBUG_INFO, "TEST: Byte read = 0x%x\n", Test));
-
   // Process the HOBs to consume any existing policies.
-  // mImageHandle = ImageHandle;
   Status = IngestPoliciesFromHob ();
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: Failed to ingest HOB policies. (%r)\n", __FUNCTION__, Status));
