@@ -174,7 +174,7 @@ dispatch on the policy availability.
 ### Standalone MM
 
 Like the DXE phase, the MM policy service will ingest any policies from the HOB
-list for architectures. The MM policy service is implemented identitically to the
+list for architectures. The MM policy service is implemented identically to the
 DXE phase module with the exception of using the MM specific protocols.
 
 Policies are not shared with the standalone MM module after initialization. Any
