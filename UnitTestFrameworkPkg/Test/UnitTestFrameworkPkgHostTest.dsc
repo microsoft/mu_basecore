@@ -27,6 +27,7 @@
   #
   UnitTestFrameworkPkg/Test/UnitTest/Sample/SampleUnitTest/SampleUnitTestHost.inf
   UnitTestFrameworkPkg/Test/GoogleTest/Sample/SampleGoogleTest/SampleGoogleTestHost.inf
+  UnitTestFrameworkPkg/Library/GoogleTestBadExamples/Googletest/GoogleTestBadExamplesUT.inf
 
   #
   # Build HOST_APPLICATION Libraries

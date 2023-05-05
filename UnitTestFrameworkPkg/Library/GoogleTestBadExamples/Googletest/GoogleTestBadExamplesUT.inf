@@ -1,0 +1,32 @@
+## @file
+# Host OS based Application that Unit Tests GoogleTestBadExamplesSrc
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION     = 0x00010005
+  BASE_NAME       = GoogleTestBadExamplesUT
+  FILE_GUID       = 445944BA-983D-4F0B-95E6-5AC5D521B66D
+  MODULE_TYPE     = HOST_APPLICATION
+  VERSION_STRING  = 1.0
+
+[Sources]
+  GoogleTestBadExamplesUT.cpp
+  ../GoogleTestBadExamplesSrc.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  PolicyServicePkg/PolicyServicePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[Protocols]
+  gPolicyProtocolGuid
+
+[Guids]
+  gZeroGuid
+
+[LibraryClasses]
+  GoogleTestLib
