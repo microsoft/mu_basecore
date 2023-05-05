@@ -1,5 +1,5 @@
 /** @file
-  Implementation of the Verified Policy library for DXE.
+  Implementation of the Verified Policy library for MM.
 
   Copyright (c) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent

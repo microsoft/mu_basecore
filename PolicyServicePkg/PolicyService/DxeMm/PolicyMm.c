@@ -84,10 +84,8 @@ InstallPolicyIndicatorProtocol (
   return Status;
 }
 
-volatile BOOLEAN  dbgloop = TRUE;
-
 /**
-  Entry to MsWheaReportStandaloneMm, register RSC handler and callback functions
+  Entry to the Standalone MM policy service module.
 
   @param[in] ImageHandle                The image handle.
   @param[in] SystemTable                The system table.

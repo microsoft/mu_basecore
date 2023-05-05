@@ -1,5 +1,5 @@
 /** @file
-  Implements sample policy for DXE environment.
+  Implements sample policy for MM environment.
 
   Copyright (c) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -27,7 +27,7 @@ MM_POLICY_PROTOCOL  *mPolicyProtocol;
 POLICY_INTERFACE    *mPolicyInterface;
 
 /**
-  Test DXE specific scenarios.
+  Test MM specific scenarios.
 
   @param[in]  Context                     Unused.
 
@@ -49,6 +49,11 @@ IngestedPolicyTest (
   EFI_STATUS      Status;
   UINT16          PolicySize;
   UINT64          Attributes;
+
+  //
+  // Note: While this code runs in MM it re-uses the policies intended for DXE
+  // for simplicity since they will be available in both cases.
+  //
 
   ZeroMem (&GetPolicy[0], PEI_TO_DXE_POLICY_SIZE);
   PolicySize = 0;

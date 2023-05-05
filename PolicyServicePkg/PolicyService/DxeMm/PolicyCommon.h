@@ -33,8 +33,6 @@ typedef struct _POLICY_ENTRY {
 #define POLICY_ENTRY_SIGNATURE  SIGNATURE_32('p', 'o', 'l', 'c')
 #define POLICY_ENTRY_FROM_LINK(a)  CR (a, POLICY_ENTRY, Link, POLICY_ENTRY_SIGNATURE)
 
-// #define INITIAL_DXE_POLICY_NOTIFY_LIST_SIZE  (32) // TODO REMOVE?
-
 //
 // Macros for managing the critical section.
 //

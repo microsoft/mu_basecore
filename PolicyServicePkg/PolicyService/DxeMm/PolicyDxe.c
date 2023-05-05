@@ -48,7 +48,7 @@ PolicyLockRelease (
 }
 
 /**
-  Creates and empty protocol for a given GUID to notify or dispatch consumers of
+  Creates an empty protocol for a given GUID to notify or dispatch consumers of
   this policy GUID. If the protocol already exists it will be reinstalled.
 
   @param[in]  PolicyGuid        The policy GUID used for the protocol.

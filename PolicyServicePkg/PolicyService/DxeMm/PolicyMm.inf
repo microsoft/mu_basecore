@@ -1,6 +1,6 @@
 ## @file
 #
-#  This is a driver for DXE policy service module.
+#  This is a driver for MM policy service module.
 #
 #  Copyright (C) Microsoft Corporation. All rights reserved.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
