@@ -13,6 +13,10 @@
 #include <gmock/gmock.h>
 #include <cstring>
 
+#ifndef GOOGLE_TESTING
+#error "Must define GOOGLE_TESTING in the use of GoogleTest, otherwise some function might not work!!!"
+#endif
+
 extern "C" {
 #include <Uefi.h>
 }

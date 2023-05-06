@@ -347,7 +347,12 @@ UnitTestDebugAssert (
   #if defined (__clang__) && defined (__FILE_NAME__)
 #define _ASSERT(Expression)  UnitTestDebugAssert (__FILE_NAME__, DEBUG_LINE_NUMBER, DEBUG_EXPRESSION_STRING (Expression))
   #else
+  #if defined (GOOGLE_TESTING)
+  #include <assert.h>
+#define _ASSERT(Expression)  assert(Expression)
+  #else
 #define _ASSERT(Expression)  UnitTestDebugAssert (__FILE__, DEBUG_LINE_NUMBER, DEBUG_EXPRESSION_STRING (Expression))
+  #endif
   #endif
 #else
   #if defined (__clang__) && defined (__FILE_NAME__)
