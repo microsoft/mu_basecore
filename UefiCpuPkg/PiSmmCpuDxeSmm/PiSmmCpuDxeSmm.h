@@ -21,6 +21,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/SmmCpuService.h>
 #include <Protocol/SmmMemoryAttribute.h>
 #include <Protocol/MmMp.h>
+#include <Protocol/SmmExceptionTestProtocol.h>
 
 #include <Guid/AcpiS3Context.h>
 #include <Guid/MemoryAttributesTable.h>
@@ -300,6 +301,7 @@ EFIAPI
 EnableCet (
   VOID
   );
+
 extern BOOLEAN  mSmmRebootOnException;                     // MS_CHANGE
 
 //
