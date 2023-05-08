@@ -59,6 +59,11 @@
   UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
   PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
+  OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
+  IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
+  SynchronizationLib|MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
+  TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
+  SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
 ##MSCHANGE End
 
 # MU_CHANGE [BEGIN]
@@ -98,14 +103,6 @@
   # Add support for stack protector
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
 
-
-[LibraryClasses.ARM]
-  ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
-
-[LibraryClasses.common.SEC]
-  BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf
-  TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
-
 [LibraryClasses.common.PEIM]
   PeimEntryPoint|MdePkg/Library/PeimEntryPoint/PeimEntryPoint.inf
   PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLib/PeiServicesTablePointerLib.inf
@@ -117,9 +114,23 @@
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/PeiCryptLib.inf
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
 
+[LibraryClasses.common.DXE_SMM_DRIVER]
+  SmmServicesTableLib|MdePkg/Library/SmmServicesTableLib/SmmServicesTableLib.inf
+  MemoryAllocationLib|MdePkg/Library/SmmMemoryAllocationLib/SmmMemoryAllocationLib.inf
+
+!if $(CRYPTO_SERVICES) != "PACKAGE"
+[LibraryClasses.ARM]
+  ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
+
+[LibraryClasses.common.SEC]
+  BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf
+  TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
+
 [LibraryClasses.IA32.PEIM, LibraryClasses.X64.PEIM]
   PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLibIdt/PeiServicesTablePointerLibIdt.inf
 
+[LibraryClasses.ARM.PEIM, LibraryClasses.AARCH64.PEIM]
+  PeiServicesTablePointerLib|ArmPkg/Library/PeiServicesTablePointerLib/PeiServicesTablePointerLib.inf
 
 [LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_APPLICATION] # MU_CHANGE add UEFI Application for UEFI TEsts
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
@@ -135,13 +146,13 @@
 [LibraryClasses.common.DXE_SMM_DRIVER]
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
   UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
-  SmmServicesTableLib|MdePkg/Library/SmmServicesTableLib/SmmServicesTableLib.inf
   MmServicesTableLib|MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
-  MemoryAllocationLib|MdePkg/Library/SmmMemoryAllocationLib/SmmMemoryAllocationLib.inf
   ReportStatusCodeLib|MdeModulePkg/Library/SmmReportStatusCodeLib/SmmReportStatusCodeLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf # MU_CHANGE add debug lib
+!endif
+
 [LibraryClasses.common.UEFI_APPLICATION]
   UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
   UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
@@ -181,60 +192,15 @@
 #
 ###################################################################################################
 #
-# If profile is TARGET_UNIT_TESTS, then build target-based unit tests
-# using the OpensslLib, BaseCryptLib, and TlsLib with the largest set of
-# available services.
-#
-!if $(CRYPTO_SERVICES) == TARGET_UNIT_TESTS
-[Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
-  #
-  # Target based unit tests
-  #
-  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf {
-    <LibraryClasses>
-      OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLibFull.inf
-      BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
-      TlsLib|CryptoPkg/Library/TlsLib/TlsLib.inf
-    <BuildOptions>
-      MSFT:*_*_*_DLINK_FLAGS     = /ALIGN:4096 /FILEALIGN:4096 /SUBSYSTEM:CONSOLE
-      MSFT:DEBUG_*_*_DLINK_FLAGS = /EXPORT:InitializeDriver=$(IMAGE_ENTRY_POINT) /BASE:0x10000
-      MSFT:DEBUG_*_*_DLINK_FLAGS = /EXPORT:InitializeDriver=$(IMAGE_ENTRY_POINT) /BASE:0x10000
-      MSFT:NOOPT_*_*_DLINK_FLAGS = /EXPORT:InitializeDriver=$(IMAGE_ENTRY_POINT) /BASE:0x10000
-  }
-
-[Components.IA32, Components.X64]
-  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf {
-    <Defines>
-      FILE_GUID = B91B9A95-4D52-4501-A98F-A1711C14ED93
-    <LibraryClasses>
-      OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLibFullAccel.inf
-      BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
-      TlsLib|CryptoPkg/Library/TlsLib/TlsLib.inf
-    <BuildOptions>
-      MSFT:*_*_*_DLINK_FLAGS     = /ALIGN:4096 /FILEALIGN:4096 /SUBSYSTEM:CONSOLE
-      MSFT:DEBUG_*_*_DLINK_FLAGS = /EXPORT:InitializeDriver=$(IMAGE_ENTRY_POINT) /BASE:0x10000
-      MSFT:DEBUG_*_*_DLINK_FLAGS = /EXPORT:InitializeDriver=$(IMAGE_ENTRY_POINT) /BASE:0x10000
-      MSFT:NOOPT_*_*_DLINK_FLAGS = /EXPORT:InitializeDriver=$(IMAGE_ENTRY_POINT) /BASE:0x10000
-  }
-
-[Components.RISCV64]
-  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf {
-    <LibraryClasses>
-      OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
-      BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
-      TlsLib|CryptoPkg/Library/TlsLib/TlsLib.inf
-  }
-!endif
-
-#
 # If profile is ALL, then do verification build of all library instances.
 #
-!if $(CRYPTO_SERVICES) == ALL
 [Components]
   #
   # Build verification of all library instances
   #
   CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
+  CryptoPkg/Library/HmacSha1Lib/HmacSha1Lib.inf
+  CryptoPkg/Library/HmacSha1Lib/HmacSha1LibNull.inf
   CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf
   CryptoPkg/Library/BaseCryptLib/PeiCryptLib.inf
   CryptoPkg/Library/BaseCryptLib/RuntimeCryptLib.inf
@@ -244,7 +210,7 @@
   CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
   CryptoPkg/Library/OpensslLib/OpensslLibCrypto.inf
   CryptoPkg/Library/OpensslLib/OpensslLib.inf
-  CryptoPkg/Library/OpensslLib/OpensslLibFull.inf
+  #CryptoPkg/Library/OpensslLib/OpensslLibFull.inf
   CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
 
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/PeiCryptLib.inf
@@ -259,33 +225,19 @@
 [Components.X64, Components.IA32]
   CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/SmmCryptLib.inf
-  #
-  # Build verification of target-based unit tests
-  #
-  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf {
-    <LibraryClasses>
-      UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLib.inf
-      UnitTestPersistenceLib|UnitTestFrameworkPkg/Library/UnitTestPersistenceLibNull/UnitTestPersistenceLibNull.inf
-      UnitTestResultReportLib|UnitTestFrameworkPkg/Library/UnitTestResultReportLib/UnitTestResultReportLibConOut.inf
-      OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
-      BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
-      TlsLib|CryptoPkg/Library/TlsLib/TlsLib.inf
-  }
 
 [Components.IA32, Components.X64]
   #
   # Build verification of IA32/X64 specific libraries
   #
-  CryptoPkg/Library/OpensslLib/OpensslLibAccel.inf
-  CryptoPkg/Library/OpensslLib/OpensslLibFullAccel.inf
-!endif
+  #CryptoPkg/Library/OpensslLib/OpensslLibAccel.inf
+  #CryptoPkg/Library/OpensslLib/OpensslLibFullAccel.inf
 
 [Components.IA32, Components.X64] # MU_CHANGE remove ARM and AARCH64
   CryptoPkg/Driver/CryptoPei.inf {
     <Defines>
       FILE_GUID = $(PEI_CRYPTO_DRIVER_FILE_GUID)  # MU_CHANGE updated File GUID
   }
-!endif
 
 
 [Components.IA32, Components.X64, Components.AARCH64]
@@ -299,25 +251,7 @@
     <Defines>
       FILE_GUID = $(SMM_CRYPTO_DRIVER_FILE_GUID)# MU_CHANGE updated File GUID
   }
-## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
-[Components.IA32, Components.X64, Components.AARCH64]
-  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibShell.inf {  ## Add unit-test application for the crypto tests.
-    ## MU_CHANGE [START] add library classes to allow crypto tests to run in uefi shell correctly
-    <LibraryClasses>
-      DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf # MU_CHANGE add debug lib
-      DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf # MU_CHANGE add debug lib
-      UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
-      OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
-      IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
-      ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
-      MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
-      BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
-    <PcdsFixedAtBuild>
-      gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
-    ## MU_CHANGE [END]
-  }
-  ## MU_CHANGE [END]
-## MU_CHANGE [END]
+
 
 ## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
 [Components.IA32, Components.X64, Components.AARCH64]
@@ -343,7 +277,7 @@
 [BuildOptions]
   RELEASE_*_*_CC_FLAGS = -DMDEPKG_NDEBUG
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
-!if $(CRYPTO_SERVICES) IN "PACKAGE ALL"
+!if $(CRYPTO_SERVICES) IN "ALL"
   MSFT:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
   INTEL:*_*_*_CC_FLAGS = /D ENABLE_MD5_DEPRECATED_INTERFACES
   GCC:*_*_*_CC_FLAGS = -D ENABLE_MD5_DEPRECATED_INTERFACES

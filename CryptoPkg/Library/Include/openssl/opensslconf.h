@@ -267,6 +267,7 @@ extern "C" {
 #  define OPENSSL_LINE __LINE__
 # endif
 #endif
+
 #ifndef OPENSSL_MIN_API
 # define OPENSSL_MIN_API 0
 #endif

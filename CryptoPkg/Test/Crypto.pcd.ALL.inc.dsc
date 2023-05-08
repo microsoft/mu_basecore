@@ -139,7 +139,5 @@
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceTlsGetHostPublicCert|TRUE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceTlsGetHostPrivateKey|TRUE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceTlsGetCertRevocationList|TRUE
-# Enable use of EC
-  gEfiCryptoPkgTokenSpaceGuid.PcdOpensslEcEnabled                       | TRUE
 # AUTOGEN ENDS
 # ****************************************************************************

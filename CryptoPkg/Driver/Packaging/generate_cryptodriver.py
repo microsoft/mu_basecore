@@ -74,8 +74,8 @@ def ParseCommandLineOptions():
     ParserObj = argparse.ArgumentParser()
     ParserObj.add_argument("-v", "--verbose", dest="verbose", default=False, action='store_true',
                            help="Logs verbosely")
-    ParserObj.add_argument("-index", "--pcd-index", dest="pcd_index", default="0x02",
-                           help="The hex index where the PCD will start (default 0x02")
+    ParserObj.add_argument("-index", "--pcd-index", dest="pcd_index", default="0x03",
+                           help="The hex index where the PCD will start (default 0x03")
     ParserObj.add_argument("-o", "--out", dest="out_dir", default=DEFAULT_OUTPUT_DIR,
                            help="The directory where the files are stored, relative to this script")
     ParserObj.add_argument("-in", "--template", dest="in_dir", default="./",
@@ -205,8 +205,8 @@ def read_header_file(options, path):
         @classmethod
         def valid_types(cls):
             ''' the valid types that the function can be '''
-            return ["HMACSHA256", "PKCS", "DH", "RANDOM", "RSA", "SHA1",
-                    "SHA256", "SHA384", "SHA512", "PARALLELHASH256", "X509", "TDES", "AES", "ARC4", "SM3", "HKDF", "TLS", "TLSSET", "TLSGET"]
+            return ["HMACSHA256", "HMACSHA384", "PKCS", "DH", "RANDOM", "RSA", "SHA1",
+                    "SHA256", "SHA384", "SHA512", "PARALLELHASH256", "AEADAESGCM", "X509", "ASN1", "BIGNUM", "TDES", "AES", "ARC4", "SM3", "HKDF", "TLS", "TLSSET", "TLSGET", "EC"]
 
         def get_escaped_name(self):
             ''' 
