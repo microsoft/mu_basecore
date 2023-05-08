@@ -6,8 +6,8 @@
 
 **/
 
-#ifndef _POLICY_COMMON_H_
-#define _POLICY_COMMON_H_
+#ifndef _POLICY_HOB_H_
+#define _POLICY_HOB_H_
 
 typedef struct _POLICY_HOB_HEADER {
   EFI_GUID    PolicyGuid;

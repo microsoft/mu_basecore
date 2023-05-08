@@ -18,7 +18,7 @@
 #include <Library/BaseMemoryLib.h>
 
 #include <Ppi/Policy.h>
-#include "../PolicyCommon.h"
+#include "../PolicyHob.h"
 
 /**
   Creates or updates a policy in the policy store. Will notify any applicable

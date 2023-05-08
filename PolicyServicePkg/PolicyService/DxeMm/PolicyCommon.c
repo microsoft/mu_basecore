@@ -1,60 +1,16 @@
 /** @file
-  Implements the DXE policy protocol, providing services to publish and access
-  system policy.
+  Common function implementations for storing and finding policies for the DXE/MM
+  policy service modules.
 
   Copyright (c) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#include "PolicyDxe.h"
+#include "PolicyCommon.h"
+#include "PolicyInterface.h"
 
 STATIC LIST_ENTRY  mPolicyListHead = INITIALIZE_LIST_HEAD_VARIABLE (mPolicyListHead);
-STATIC EFI_LOCK    mPolicyListLock = EFI_INITIALIZE_LOCK_VARIABLE (TPL_NOTIFY);
-STATIC EFI_HANDLE  mImageHandle    = NULL;
-
-POLICY_PROTOCOL  mPolicyProtocol = {
-  DxeSetPolicy,
-  DxeGetPolicy,
-  DxeRemovePolicy
-};
-
-/**
-  Creates and emptry protocol for a given GUID to notify or dispatch consumers of
-  this policy GUID. If the protocol already exists it will be reinstalled.
-
-  @param[in]  PolicyGuid        The policy GUID used for the protocol.
-
-  @retval     EFI_SUCCESS       The protocol was installed or reinstalled.
-**/
-EFI_STATUS
-EFIAPI
-DxeInstallPolicyIndicatorProtocol (
-  IN CONST EFI_GUID  *PolicyGuid
-  )
-{
-  EFI_STATUS  Status;
-  VOID        *Interface;
-
-  Status = gBS->LocateProtocol ((EFI_GUID *)PolicyGuid, NULL, &Interface);
-  if (EFI_ERROR (Status)) {
-    Status = gBS->InstallMultipleProtocolInterfaces (
-                    &mImageHandle,
-                    PolicyGuid,
-                    NULL,
-                    NULL
-                    );
-  } else {
-    Status = gBS->ReinstallProtocolInterface (
-                    mImageHandle,
-                    (EFI_GUID *)PolicyGuid,
-                    NULL,
-                    NULL
-                    );
-  }
-
-  return Status;
-}
 
 /**
   Retrieves the policy descriptor, buffer, and size for a given policy GUID.
@@ -72,7 +28,7 @@ DxeInstallPolicyIndicatorProtocol (
 **/
 EFI_STATUS
 EFIAPI
-DxeGetPolicyEntry (
+GetPolicyEntry (
   IN CONST EFI_GUID  *PolicyGuid,
   OUT POLICY_ENTRY   **PolicyEntry
   )
@@ -102,13 +58,13 @@ DxeGetPolicyEntry (
 **/
 BOOLEAN
 EFIAPI
-DxeCheckPolicyExists (
+CheckPolicyExists (
   IN CONST EFI_GUID  *PolicyGuid
   )
 {
   POLICY_ENTRY  *Entry;
 
-  return !EFI_ERROR (DxeGetPolicyEntry (PolicyGuid, &Entry));
+  return !EFI_ERROR (GetPolicyEntry (PolicyGuid, &Entry));
 }
 
 /**
@@ -126,7 +82,7 @@ DxeCheckPolicyExists (
 **/
 EFI_STATUS
 EFIAPI
-DxeGetPolicy (
+GetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
   OUT UINT64         *Attributes OPTIONAL,
   OUT VOID           *Policy,
@@ -143,8 +99,8 @@ DxeGetPolicy (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiAcquireLock (&mPolicyListLock);
-  Status = DxeGetPolicyEntry (PolicyGuid, &Entry);
+  PolicyLockAcquire ();
+  Status = GetPolicyEntry (PolicyGuid, &Entry);
   if (EFI_ERROR (Status)) {
     goto Exit;
   }
@@ -163,7 +119,7 @@ DxeGetPolicy (
   *PolicySize = Entry->PolicySize;
 
 Exit:
-  EfiReleaseLock (&mPolicyListLock);
+  PolicyLockRelease ();
   return Status;
 }
 
@@ -187,7 +143,7 @@ IngestPoliciesFromHob (
 
   PolicyCount = 0;
   Status      = EFI_SUCCESS;
-  EfiAcquireLock (&mPolicyListLock);
+  PolicyLockAcquire ();
   for (GuidHob = GetFirstGuidHob (&gPolicyHobGuid);
        GuidHob != NULL;
        GuidHob = GetNextGuidHob (&gPolicyHobGuid, GET_NEXT_HOB (GuidHob)))
@@ -201,7 +157,7 @@ IngestPoliciesFromHob (
       continue;
     }
 
-    ASSERT (!DxeCheckPolicyExists (&PolicyHob->PolicyGuid));
+    ASSERT (!CheckPolicyExists (&PolicyHob->PolicyGuid));
 
     PolicyEntry = AllocatePool (sizeof (POLICY_ENTRY));
     if (PolicyEntry == NULL) {
@@ -220,7 +176,7 @@ IngestPoliciesFromHob (
     InsertTailList (&mPolicyListHead, &PolicyEntry->Link);
     PolicyCount++;
 
-    Status = DxeInstallPolicyIndicatorProtocol (&PolicyEntry->PolicyGuid);
+    Status = InstallPolicyIndicatorProtocol (&PolicyEntry->PolicyGuid);
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a: Failed to install notification protocol. (%r)\n", __FUNCTION__, Status));
     }
@@ -230,7 +186,7 @@ IngestPoliciesFromHob (
     DEBUG ((DEBUG_INFO, "Found %d active policies in HOBs.\n", PolicyCount));
   }
 
-  EfiReleaseLock (&mPolicyListLock);
+  PolicyLockRelease ();
   return Status;
 }
 
@@ -245,7 +201,7 @@ IngestPoliciesFromHob (
 **/
 EFI_STATUS
 EFIAPI
-DxeRemovePolicy (
+RemovePolicy (
   IN CONST EFI_GUID  *PolicyGuid
   )
 {
@@ -256,8 +212,8 @@ DxeRemovePolicy (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiAcquireLock (&mPolicyListLock);
-  Status = DxeGetPolicyEntry (PolicyGuid, &Entry);
+  PolicyLockAcquire ();
+  Status = GetPolicyEntry (PolicyGuid, &Entry);
   if (!EFI_ERROR (Status)) {
     RemoveEntryList (&Entry->Link);
     if (!Entry->FromHob) {
@@ -267,7 +223,7 @@ DxeRemovePolicy (
     FreePool (Entry);
   }
 
-  EfiReleaseLock (&mPolicyListLock);
+  PolicyLockRelease ();
   return Status;
 }
 
@@ -287,7 +243,7 @@ DxeRemovePolicy (
 **/
 EFI_STATUS
 EFIAPI
-DxeSetPolicy (
+SetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
   IN UINT64          Attributes,
   IN VOID            *Policy,
@@ -302,8 +258,8 @@ DxeSetPolicy (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiAcquireLock (&mPolicyListLock);
-  Status = DxeGetPolicyEntry (PolicyGuid, &Entry);
+  PolicyLockAcquire ();
+  Status = GetPolicyEntry (PolicyGuid, &Entry);
   if (!EFI_ERROR (Status)) {
     if (Entry->Attributes & POLICY_ATTRIBUTE_FINALIZED) {
       Status = EFI_ACCESS_DENIED;
@@ -357,48 +313,13 @@ DxeSetPolicy (
     InsertTailList (&mPolicyListHead, &Entry->Link);
   }
 
-  Status = DxeInstallPolicyIndicatorProtocol (PolicyGuid);
+  Status = InstallPolicyIndicatorProtocol (PolicyGuid);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: Failed to install notification protocol. (%r)\n", __FUNCTION__, Status));
     goto Exit;
   }
 
 Exit:
-  EfiReleaseLock (&mPolicyListLock);
+  PolicyLockRelease ();
   return Status;
-}
-
-/**
-  DXE policy driver entry point. Initialized the policy store from the HOB list
-  and install the DXE policy protocol.
-
-  @param[in]  ImageHandle     The firmware allocated handle for the EFI image.
-  @param[in]  SystemTable     UNUSED.
-
-  @retval   EFI_SUCCESS           Policy store initialized and protocol installed.
-  @retval   EFI_OUT_OF_RESOURCES  Failed to allocate memory for policy and global structures.
-**/
-EFI_STATUS
-EFIAPI
-DxePolicyEntry (
-  IN EFI_HANDLE        ImageHandle,
-  IN EFI_SYSTEM_TABLE  *SystemTable
-  )
-{
-  EFI_STATUS  Status;
-
-  // Process the HOBs to consume any existing policies.
-  mImageHandle = ImageHandle;
-  Status       = IngestPoliciesFromHob ();
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to ingest HOB policies. (%r)\n", __FUNCTION__, Status));
-    return Status;
-  }
-
-  return gBS->InstallMultipleProtocolInterfaces (
-                &ImageHandle,
-                &gPolicyProtocolGuid,
-                &mPolicyProtocol,
-                NULL
-                );
 }
