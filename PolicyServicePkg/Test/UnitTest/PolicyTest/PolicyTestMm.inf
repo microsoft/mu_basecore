@@ -1,6 +1,6 @@
 ## @file
 #
-#  This is a sample DXE driver for using the policy service.
+#  This is a sample MM driver for using the policy service.
 #
 #  Copyright (C) Microsoft Corporation. All rights reserved.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -9,14 +9,15 @@
 
 [Defines]
   INF_VERSION                    = 0x00010017
-  BASE_NAME                      = PolicyTestPei
-  FILE_GUID                      = 28B53789-51B6-4B47-970C-10205C3DF660
-  MODULE_TYPE                    = PEIM
+  PI_SPECIFICATION_VERSION       = 0x00010032
+  BASE_NAME                      = PolicyTestMm
+  FILE_GUID                      = E190B7DB-1FCD-4B23-8310-5BF9622614EB
+  MODULE_TYPE                    = MM_STANDALONE
   VERSION_STRING                 = 1.0
-  ENTRY_POINT                    = PeiEntryPoint
+  ENTRY_POINT                    = MmEntryPoint
 
 [Sources]
-  PolicyTestPei.c
+  PolicyTestMm.c
   PolicyServiceTestCommon.c
   PolicyLibTestCommon.c
   PolicyTest.h
@@ -27,15 +28,15 @@
   PolicyServicePkg/PolicyServicePkg.dec
 
 [LibraryClasses]
-  PeimEntryPoint
   BaseLib
   DebugLib
+  StandaloneMmDriverEntryPoint
+  MmServicesTableLib
   UnitTestLib
-  PrintLib
   PolicyLib
 
-[Ppis]
-  gPeiPolicyPpiGuid                 ## CONSUMES
+[Protocols]
+  gMmPolicyProtocolGuid                 ## CONSUMES
 
 [Depex]
-  gPeiPolicyPpiGuid AND gEfiPeiMemoryDiscoveredPpiGuid
+  TRUE

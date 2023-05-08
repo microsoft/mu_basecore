@@ -17,7 +17,8 @@
 
 [Sources]
   PolicyDxe.c
-  PolicyDxe.h
+  PolicyCommon.c
+  PolicyCommon.h
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -43,4 +44,3 @@
 
 [Depex]
   TRUE
-
