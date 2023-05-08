@@ -207,7 +207,6 @@ SmiPFHandler (
 
 Exit:
   ReleaseSpinLock (mPFLock);
-
 }
 
 /**
