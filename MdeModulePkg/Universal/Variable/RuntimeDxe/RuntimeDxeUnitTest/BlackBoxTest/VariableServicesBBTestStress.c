@@ -5,12 +5,12 @@
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at 
+  which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
- 
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
- 
+
 **/
 /*++
 
@@ -24,7 +24,7 @@ Abstract:
 
 #include "VariableServicesBBTestMain.h"
 
-#define MULTIPLE_TEST_TIMES         50
+#define MULTIPLE_TEST_TIMES  50
 
 //
 // Prototypes (external)
@@ -32,18 +32,18 @@ Abstract:
 
 EFI_STATUS
 MultipleStressTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
 EFI_STATUS
 OverflowStressTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   );
 
 //
@@ -52,31 +52,31 @@ OverflowStressTest (
 
 EFI_STATUS
 MultipleStressTestSub1 (
-  IN EFI_RUNTIME_SERVICES                 *RT,
-  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib,
-  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL    *LoggingLib
+  IN EFI_RUNTIME_SERVICES                *RT,
+  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL  *StandardLib,
+  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL   *LoggingLib
   );
 
 EFI_STATUS
 MultipleStressTestSub2 (
-  IN EFI_RUNTIME_SERVICES                 *RT,
-  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib,
-  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL    *LoggingLib
+  IN EFI_RUNTIME_SERVICES                *RT,
+  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL  *StandardLib,
+  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL   *LoggingLib
   );
 
 EFI_STATUS
 MultipleStressTestSub3 (
-  IN EFI_RUNTIME_SERVICES                 *RT,
-  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib,
-  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL    *LoggingLib
+  IN EFI_RUNTIME_SERVICES                *RT,
+  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL  *StandardLib,
+  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL   *LoggingLib
   );
 
 EFI_STATUS
 OverflowStressTestSub1 (
-  IN EFI_RUNTIME_SERVICES                 *RT,
-  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib,
-  IN EFI_TEST_RECOVERY_LIBRARY_PROTOCOL   *RecoveryLib,
-  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL    *LoggingLib
+  IN EFI_RUNTIME_SERVICES                *RT,
+  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL  *StandardLib,
+  IN EFI_TEST_RECOVERY_LIBRARY_PROTOCOL  *RecoveryLib,
+  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL   *LoggingLib
   );
 
 //
@@ -94,10 +94,10 @@ OverflowStressTestSub1 (
  */
 EFI_STATUS
 MultipleStressTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   )
 {
   EFI_STATUS                          Status;
@@ -115,7 +115,7 @@ MultipleStressTest (
              &RecoveryLib,
              &LoggingLib
              );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
@@ -142,7 +142,6 @@ MultipleStressTest (
   return EFI_SUCCESS;
 }
 
-
 /**
  *  TDS 5.2 - Entry point for Variable Overflow Stress Test.
  *  @param This             A pointer to the EFI_BB_TEST_PROTOCOL instance.
@@ -154,10 +153,10 @@ MultipleStressTest (
  */
 EFI_STATUS
 OverflowStressTest (
-  IN EFI_BB_TEST_PROTOCOL       *This,
-  IN VOID                       *ClientInterface,
-  IN EFI_TEST_LEVEL             TestLevel,
-  IN EFI_HANDLE                 SupportHandle
+  IN EFI_BB_TEST_PROTOCOL  *This,
+  IN VOID                  *ClientInterface,
+  IN EFI_TEST_LEVEL        TestLevel,
+  IN EFI_HANDLE            SupportHandle
   )
 {
   EFI_STATUS                          Status;
@@ -165,6 +164,7 @@ OverflowStressTest (
   EFI_STANDARD_TEST_LIBRARY_PROTOCOL  *StandardLib;
   EFI_TEST_RECOVERY_LIBRARY_PROTOCOL  *RecoveryLib;
   EFI_TEST_LOGGING_LIBRARY_PROTOCOL   *LoggingLib;
+
   // UINTN                               RecoveryDataSize;
   // UINT8                               *RecoveryData;
 
@@ -177,7 +177,7 @@ OverflowStressTest (
              &RecoveryLib,
              &LoggingLib
              );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
@@ -219,7 +219,6 @@ OverflowStressTest (
   // step2:
   Status = OverflowStressTestSub1 (RT, StandardLib, RecoveryLib, LoggingLib);
 
-
   //
   // Free resources
   //
@@ -232,7 +231,6 @@ OverflowStressTest (
   return EFI_SUCCESS;
 }
 
-
 /**
  *  Multiple test for GetVariable.
  *  @param StandardLib    A pointer to EFI_STANDARD_TEST_LIBRARY_PROTOCOL
@@ -244,18 +242,18 @@ OverflowStressTest (
  */
 EFI_STATUS
 MultipleStressTestSub1 (
-  IN EFI_RUNTIME_SERVICES                 *RT,
-  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib,
-  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL    *LoggingLib
+  IN EFI_RUNTIME_SERVICES                *RT,
+  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL  *StandardLib,
+  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL   *LoggingLib
   )
 {
-  EFI_STATUS            Status;
-  EFI_TEST_ASSERTION    Result;
-  UINTN                 Index;
-  UINTN                 DataIndex;
-  UINTN                 DataSize;
-  UINT8                 Data[MAX_BUFFER_SIZE];
-  UINT32                Attributes;
+  EFI_STATUS          Status;
+  EFI_TEST_ASSERTION  Result;
+  UINTN               Index;
+  UINTN               DataIndex;
+  UINTN               DataSize;
+  UINT8               Data[MAX_BUFFER_SIZE];
+  UINT32              Attributes;
 
   //
   // Trace ...
@@ -282,7 +280,7 @@ MultipleStressTestSub1 (
                  10,                          // DataSize
                  Data                         // Data
                  );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     StandardLib->RecordAssertion (
                    StandardLib,
                    EFI_TEST_ASSERTION_WARNING,
@@ -310,13 +308,13 @@ MultipleStressTestSub1 (
   //
   for (Index = 0; Index < MULTIPLE_TEST_TIMES; Index++) {
     DataSize = MAX_BUFFER_SIZE;
-    Status = RT->GetVariable (
-                   L"TestVariable",             // VariableName
-                   &gTestVendor1Guid,           // VendorGuid
-                   &Attributes,                 // Attributes
-                   &DataSize,                   // DataSize
-                   Data                         // Data
-                   );
+    Status   = RT->GetVariable (
+                     L"TestVariable",           // VariableName
+                     &gTestVendor1Guid,         // VendorGuid
+                     &Attributes,               // Attributes
+                     &DataSize,                 // DataSize
+                     Data                       // Data
+                     );
     if (Status == EFI_SUCCESS) {
       Result = EFI_TEST_ASSERTION_PASSED;
     } else {
@@ -335,7 +333,8 @@ MultipleStressTestSub1 (
                    __FILE__,
                    (UINTN)__LINE__,
                    Index,
-                   Status,      EFI_SUCCESS
+                   Status,
+                   EFI_SUCCESS
                    );
   }
 
@@ -367,7 +366,6 @@ MultipleStressTestSub1 (
   return EFI_SUCCESS;
 }
 
-
 /**
  *  Multiple test for GetNextVariableName.
  *  @param StandardLib    A pointer to EFI_STANDARD_TEST_LIBRARY_PROTOCOL
@@ -379,19 +377,19 @@ MultipleStressTestSub1 (
  */
 EFI_STATUS
 MultipleStressTestSub2 (
-  IN EFI_RUNTIME_SERVICES                 *RT,
-  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib,
-  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL    *LoggingLib
+  IN EFI_RUNTIME_SERVICES                *RT,
+  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL  *StandardLib,
+  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL   *LoggingLib
   )
 {
-  EFI_STATUS            Status;
-  EFI_TEST_ASSERTION    Result;
-  UINTN                 Index;
-  UINTN                 DataIndex;
-  UINT8                 Data[MAX_BUFFER_SIZE];
-  UINTN                 VariableNameSize;
-  CHAR16                VariableName[MAX_BUFFER_SIZE];
-  EFI_GUID              VendorGuid;
+  EFI_STATUS          Status;
+  EFI_TEST_ASSERTION  Result;
+  UINTN               Index;
+  UINTN               DataIndex;
+  UINT8               Data[MAX_BUFFER_SIZE];
+  UINTN               VariableNameSize;
+  CHAR16              VariableName[MAX_BUFFER_SIZE];
+  EFI_GUID            VendorGuid;
 
   //
   // Trace ...
@@ -418,7 +416,7 @@ MultipleStressTestSub2 (
                  10,                          // DataSize
                  Data                         // Data
                  );
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     StandardLib->RecordAssertion (
                    StandardLib,
                    EFI_TEST_ASSERTION_WARNING,
@@ -445,14 +443,13 @@ MultipleStressTestSub2 (
   // Get the next variable name multiple times
   //
   for (Index = 0; Index < MULTIPLE_TEST_TIMES; Index++) {
-
     VariableNameSize = MAX_BUFFER_SIZE * sizeof (CHAR16);
-    VariableName[0] = L'\0';
-    Status = RT->GetNextVariableName (
-                   &VariableNameSize,
-                   VariableName,
-                   &VendorGuid
-                   );
+    VariableName[0]  = L'\0';
+    Status           = RT->GetNextVariableName (
+                             &VariableNameSize,
+                             VariableName,
+                             &VendorGuid
+                             );
     if (Status == EFI_SUCCESS) {
       Result = EFI_TEST_ASSERTION_PASSED;
     } else {
@@ -471,7 +468,8 @@ MultipleStressTestSub2 (
                    __FILE__,
                    (UINTN)__LINE__,
                    Index,
-                   Status,      EFI_SUCCESS
+                   Status,
+                   EFI_SUCCESS
                    );
   }
 
@@ -503,7 +501,6 @@ MultipleStressTestSub2 (
   return EFI_SUCCESS;
 }
 
-
 /**
  *  Multiple test for SetVariable.
  *  @param StandardLib    A pointer to EFI_STANDARD_TEST_LIBRARY_PROTOCOL
@@ -515,16 +512,16 @@ MultipleStressTestSub2 (
  */
 EFI_STATUS
 MultipleStressTestSub3 (
-  IN EFI_RUNTIME_SERVICES                 *RT,
-  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib,
-  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL    *LoggingLib
+  IN EFI_RUNTIME_SERVICES                *RT,
+  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL  *StandardLib,
+  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL   *LoggingLib
   )
 {
-  EFI_STATUS            Status;
-  EFI_TEST_ASSERTION    Result;
-  UINTN                 Index;
-  UINTN                 DataIndex;
-  UINT8                 Data[MAX_BUFFER_SIZE];
+  EFI_STATUS          Status;
+  EFI_TEST_ASSERTION  Result;
+  UINTN               Index;
+  UINTN               DataIndex;
+  UINT8               Data[MAX_BUFFER_SIZE];
 
   //
   // Trace ...
@@ -573,7 +570,8 @@ MultipleStressTestSub3 (
                    __FILE__,
                    (UINTN)__LINE__,
                    Index,
-                   Status,      EFI_SUCCESS
+                   Status,
+                   EFI_SUCCESS
                    );
   }
 
@@ -613,7 +611,8 @@ MultipleStressTestSub3 (
                    __FILE__,
                    (UINTN)__LINE__,
                    Index,
-                   Status,      EFI_SUCCESS
+                   Status,
+                   EFI_SUCCESS
                    );
   }
 
@@ -645,7 +644,6 @@ MultipleStressTestSub3 (
   return EFI_SUCCESS;
 }
 
-
 /**
  *  Reclaim test with system reset.
  *  @param StandardLib    A pointer to EFI_STANDARD_TEST_LIBRARY_PROTOCOL
@@ -659,17 +657,18 @@ MultipleStressTestSub3 (
  */
 EFI_STATUS
 OverflowStressTestSub1 (
-  IN EFI_RUNTIME_SERVICES                 *RT,
-  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL   *StandardLib,
-  IN EFI_TEST_RECOVERY_LIBRARY_PROTOCOL   *RecoveryLib,
-  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL    *LoggingLib
+  IN EFI_RUNTIME_SERVICES                *RT,
+  IN EFI_STANDARD_TEST_LIBRARY_PROTOCOL  *StandardLib,
+  IN EFI_TEST_RECOVERY_LIBRARY_PROTOCOL  *RecoveryLib,
+  IN EFI_TEST_LOGGING_LIBRARY_PROTOCOL   *LoggingLib
   )
 {
-  EFI_STATUS            Status;
-  UINTN                 Index;
-  CHAR16                *VariableName;
-  UINTN                 DataIndex;
-  UINT8                 Data[MAX_BUFFER_SIZE];
+  EFI_STATUS  Status;
+  UINTN       Index;
+  CHAR16      *VariableName;
+  UINTN       DataIndex;
+  UINT8       Data[MAX_BUFFER_SIZE];
+
   // UINTN                 RecoveryDataSize;
   // UINT8                 *RecoveryData;
 
@@ -745,7 +744,7 @@ OverflowStressTestSub1 (
 
     gtBS->FreePool (VariableName);
 
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       break;
     }
   }
@@ -790,7 +789,7 @@ OverflowStressTestSub1 (
 
     gtBS->FreePool (VariableName);
 
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR (Status)) {
       break;
     }
   }
