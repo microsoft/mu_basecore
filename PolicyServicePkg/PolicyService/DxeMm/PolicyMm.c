@@ -14,9 +14,9 @@
 STATIC EFI_HANDLE  mProtocolHandle = NULL;
 
 MM_POLICY_PROTOCOL  mPolicyProtocol = {
-  SetPolicy,
-  GetPolicy,
-  RemovePolicy
+  CommonSetPolicy,
+  CommonGetPolicy,
+  CommonRemovePolicy
 };
 
 /**
