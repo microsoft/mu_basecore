@@ -14,7 +14,7 @@
   FILE_GUID                      = C2A9C781-8D58-46DA-BC39-5385AB8D5C8A
   MODULE_TYPE                    = MM_STANDALONE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = PolicyLib | MM_CORE_STANDALONE MM_STANDALONE
+  LIBRARY_CLASS                  = PolicyLib | MM_STANDALONE
 
 [Sources]
   ../PolicyLibCommon.c
