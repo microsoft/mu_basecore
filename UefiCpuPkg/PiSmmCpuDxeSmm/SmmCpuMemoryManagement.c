@@ -1825,18 +1825,34 @@ IfReadOnlyPageTableNeeded (
   //      BIT3: SMM pool guard enabled
   //  - SMM profile feature enabled
   //
-  if (!IsRestrictedMemoryAccess () ||
+
+  // MU_CHANGE START
+
+  /*if (!IsRestrictedMemoryAccess () ||
       ((PcdGet8 (PcdHeapGuardPropertyMask) & (BIT3 | BIT2)) != 0) ||
       FeaturePcdGet (PcdCpuSmmProfileEnable))
+  {*/
+  // MU_CHANGE END
+  if (!IsRestrictedMemoryAccess () ||
+      ((gMmMps.HeapGuardPolicy.Fields.MmPageGuard | gMmMps.HeapGuardPolicy.Fields.MmPoolGuard) != 0) ||
+      FeaturePcdGet (PcdCpuSmmProfileEnable))
   {
+    // MU_CHANGE END
     if (sizeof (UINTN) == sizeof (UINT64)) {
       //
       // Restriction on access to non-SMRAM memory and heap guard could not be enabled at the same time.
       //
-      ASSERT (
+      // MU_CHANGE START
+
+      /*ASSERT (
         !(IsRestrictedMemoryAccess () &&
           (PcdGet8 (PcdHeapGuardPropertyMask) & (BIT3 | BIT2)) != 0)
+        ); */
+      ASSERT (
+        !(IsRestrictedMemoryAccess () &&
+          (gMmMps.HeapGuardPolicy.Fields.MmPageGuard | gMmMps.HeapGuardPolicy.Fields.MmPoolGuard) != 0)
         );
+      // MU_CHANGE END
 
       //
       // Restriction on access to non-SMRAM memory and SMM profile could not be enabled at the same time.
