@@ -14,7 +14,7 @@
 #include <Library/BaseMemoryLib.h>
 
 #include <PolicyInterface.h>
-#include <Library/VerifiedPolicy.h>
+#include <Library/PolicyLib.h>
 #include <Library/UnitTestLib.h>
 
 #include "PolicyTest.h"
