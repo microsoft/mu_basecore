@@ -74,8 +74,8 @@ def ParseCommandLineOptions():
     ParserObj = argparse.ArgumentParser()
     ParserObj.add_argument("-v", "--verbose", dest="verbose", default=False, action='store_true',
                            help="Logs verbosely")
-    ParserObj.add_argument("-index", "--pcd-index", dest="pcd_index", default="0x02",
-                           help="The hex index where the PCD will start (default 0x02")
+    ParserObj.add_argument("-index", "--pcd-index", dest="pcd_index", default="0x03",
+                           help="The hex index where the PCD will start (default 0x03")
     ParserObj.add_argument("-o", "--out", dest="out_dir", default=DEFAULT_OUTPUT_DIR,
                            help="The directory where the files are stored, relative to this script")
     ParserObj.add_argument("-in", "--template", dest="in_dir", default="./",
@@ -205,8 +205,8 @@ def read_header_file(options, path):
         @classmethod
         def valid_types(cls):
             ''' the valid types that the function can be '''
-            return ["HMACSHA256", "PKCS", "DH", "RANDOM", "RSA", "SHA1",
-                    "SHA256", "SHA384", "SHA512", "PARALLELHASH256", "X509", "TDES", "AES", "ARC4", "SM3", "HKDF", "TLS", "TLSSET", "TLSGET"]
+            return ["HMACSHA256", "HMACSHA384", "PKCS", "DH", "RANDOM", "RSA", "SHA1",
+                    "SHA256", "SHA384", "SHA512", "PARALLELHASH256", "AEADAESGCM", "X509", "ASN1", "BIGNUM", "TDES", "AES", "ARC4", "SM3", "HKDF", "TLS", "TLSSET", "TLSGET", "EC"]
 
         def get_escaped_name(self):
             ''' 
@@ -243,7 +243,7 @@ def read_header_file(options, path):
 
         def get_params_tuple(self):
             ''' get the parameters as a tuple. If there aren't any, it returns ["VOID"] '''
-            param_names = list(map(lambda x: x.strip(",").strip().strip(" OPTIONAL").strip("[]").strip().split()[-1].strip("*").strip(","), self.params))
+            param_names = list(map(lambda x: x.strip(",").strip().replace(" OPTIONAL", "").strip("[]").strip().split()[-1].strip("*").strip(","), self.params))
             if len(param_names) == 1 and param_names[0] == 'VOID':
                 return []
             return param_names
@@ -547,13 +547,13 @@ def get_crypto_h(options, functions):
     lines.append("///\n/// EDK II Crypto Protocol\n///")
     lines.append("struct _EDKII_CRYPTO_PROTOCOL {")
     lines.append("  // VERSION")
-    lines.append("  EDKII_CRYPTO_GET_VERSION                           GetVersion;")
+    lines.append("  EDKII_CRYPTO_GET_VERSION                            GetVersion;")
     # generate the struct memebers
     for valid_type, funcs in sorted_functions:
         lines.append(f"  // {valid_type}")
         for func in funcs:
             member_name = func.get_protocoled_name().ljust(50)  # make sure they're all the same size
-            lines.append(f"  {member_name} {func.name};")
+            lines.append(f"  {member_name}  {func.name};")
     lines.append("};")
     lines.append("")
 
@@ -788,13 +788,11 @@ def generate_platform_files():
     for flavor in flavors:
         for phase in phases:
             upper_phase = phase.upper()
-            comp_types = get_supported_module_types(phase)
 
             dsc_lines.append(
                 f"!if $({upper_phase}_CRYPTO_SERVICES) == {flavor}")
             for arch in arches:
-                comp_str = ", ".join(
-                    map(lambda x: "Components."+arch+"."+x.upper(), comp_types))
+                comp_str = f"Components.{arch}"
                 dsc_lines.append(
                     f" !if $({upper_phase}_CRYPTO_ARCH) == {arch}")
                 dsc_lines.append(f"  [{comp_str}]")
@@ -803,9 +801,7 @@ def generate_platform_files():
                 dsc_lines.append(" !endif")
             dsc_lines.append("")
             # Add the library as well
-            comp_types = get_supported_module_types(phase)
-            comp_str = ", ".join(
-                map(lambda x: "Components."+x.upper(), comp_types))
+            comp_str = "Components"
             dsc_lines.append(f" [{comp_str}]")
             dsc_lines.append(
                 f"   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/{phase}CryptLib.inf " + "{")
@@ -879,17 +875,6 @@ def delete_files_of_pattern(pattern):
     files = glob.iglob(os.path.join(SCRIPT_DIR, pattern))
     for file_path in files:
         os.remove(file_path)
-
-
-def get_supported_module_types(phase):
-    phase = phase.upper()
-    if phase == "PEI":
-        return ["PEIM", ]
-    elif phase == "DXE":
-        return ["DXE_DRIVER", "UEFI_DRIVER", "UEFI_APPLICATION"]
-    elif phase == "SMM":
-        return ["DXE_SMM_DRIVER", ]
-    return ["", ]
 
 
 def get_supported_library_types(phase):

@@ -188,6 +188,7 @@
   $(OPENSSL_PATH)/crypto/bn/bn_srp.c
   $(OPENSSL_PATH)/crypto/bn/bn_word.c
   $(OPENSSL_PATH)/crypto/bn/bn_x931p.c
+  $(OPENSSL_PATH)/crypto/bn/rsa_sup_mul.c
   $(OPENSSL_PATH)/crypto/buffer/buf_err.c
   $(OPENSSL_PATH)/crypto/buffer/buffer.c
   $(OPENSSL_PATH)/crypto/comp/c_zlib.c
@@ -255,6 +256,10 @@
   $(OPENSSL_PATH)/crypto/ec/eck_prn.c
   $(OPENSSL_PATH)/crypto/ec/ecp_mont.c
   $(OPENSSL_PATH)/crypto/ec/ecp_nist.c
+  $(OPENSSL_PATH)/crypto/ec/ecp_nistp224.c
+  $(OPENSSL_PATH)/crypto/ec/ecp_nistp256.c
+  $(OPENSSL_PATH)/crypto/ec/ecp_nistp521.c
+  $(OPENSSL_PATH)/crypto/ec/ecp_nistputil.c
   $(OPENSSL_PATH)/crypto/ec/ecp_oct.c
   $(OPENSSL_PATH)/crypto/ec/ecp_smpl.c
   $(OPENSSL_PATH)/crypto/ec/ecx_backend.c
