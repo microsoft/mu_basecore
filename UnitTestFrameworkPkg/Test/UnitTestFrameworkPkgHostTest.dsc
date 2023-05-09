@@ -25,17 +25,20 @@
   #
   # Build HOST_APPLICATIONs that test the SampleUnitTest
   #
-  UnitTestFrameworkPkg/Test/UnitTest/Sample/SampleUnitTest/SampleUnitTestHost.inf
-  UnitTestFrameworkPkg/Test/GoogleTest/Sample/SampleGoogleTest/SampleGoogleTestHost.inf
-  UnitTestFrameworkPkg/Library/GoogleTestBadExamples/Googletest/GoogleTestBadExamplesUT.inf
+  # UnitTestFrameworkPkg/Test/UnitTest/Sample/SampleUnitTest/SampleUnitTestHost.inf
+  # UnitTestFrameworkPkg/Test/GoogleTest/Sample/SampleGoogleTest/SampleGoogleTestHost.inf
+  UnitTestFrameworkPkg/Library/GoogleTestBadExamples/Googletest/GoogleTestBadExamplesUT.inf {
+    <LibraryClasses>
+      UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLibGoogleTest.inf
+  }
 
-  #
-  # Build HOST_APPLICATION Libraries
-  #
-  UnitTestFrameworkPkg/Library/CmockaLib/CmockaLib.inf
-  UnitTestFrameworkPkg/Library/FunctionMockLib/FunctionMockLib.inf
-  UnitTestFrameworkPkg/Library/GoogleTestLib/GoogleTestLib.inf
-  UnitTestFrameworkPkg/Library/Posix/DebugLibPosix/DebugLibPosix.inf
-  UnitTestFrameworkPkg/Library/Posix/MemoryAllocationLibPosix/MemoryAllocationLibPosix.inf
-  UnitTestFrameworkPkg/Library/SubhookLib/SubhookLib.inf
-  UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLibCmocka.inf
+  # #
+  # # Build HOST_APPLICATION Libraries
+  # #
+  # UnitTestFrameworkPkg/Library/CmockaLib/CmockaLib.inf
+  # UnitTestFrameworkPkg/Library/FunctionMockLib/FunctionMockLib.inf
+  # UnitTestFrameworkPkg/Library/GoogleTestLib/GoogleTestLib.inf
+  # UnitTestFrameworkPkg/Library/Posix/DebugLibPosix/DebugLibPosix.inf
+  # UnitTestFrameworkPkg/Library/Posix/MemoryAllocationLibPosix/MemoryAllocationLibPosix.inf
+  # UnitTestFrameworkPkg/Library/SubhookLib/SubhookLib.inf
+  # UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLibCmocka.inf

@@ -11,6 +11,8 @@ extern "C" {
 #include <Uefi.h>
 #include <Protocol/BootManagerPolicy.h>
 #include <Library/BaseLib.h>
+#include <Library/DebugLib.h>
+#include <Library/UnitTestLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 
 EFI_STATUS
@@ -76,6 +78,19 @@ EFI_STATUS Status;
 MockUefiBootServicesTableLib UefiBootServicesTableLib;
 };
 
+UNIT_TEST_STATUS
+EFIAPI
+UTShimTest (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  // pass in bad data, expect an assert
+  // mKnown_Bad_Config_Data is not in varlist format, so it should fail
+  UT_EXPECT_ASSERT_FAILURE (GetPolicy (), NULL);
+
+  return UNIT_TEST_PASSED;
+}
+
 /**
   Unit test for GetPolicy, expected death will pass with just a warning if no mocked values supplied.
 
@@ -83,7 +98,11 @@ MockUefiBootServicesTableLib UefiBootServicesTableLib;
   Actual:   PASSED, with a warning
 **/
 TEST_F (GoogleTestBadExample, GetPolicyExpectedAssertNotHappen) {
-  EXPECT_DEATH (GetPolicy (), "");
+  EXPECT_DEATH ({
+    EXPECT_CALL (UefiBootServicesTableLib, gBS_LocateProtocol (&gEfiBootManagerPolicyProtocolGuid,_,_))
+      .WillOnce(Return (EFI_NOT_FOUND));
+    GetPolicy ();
+    }, HasSubstr("GoogleTestBadExamplesSrc.c, line 39"));
 
   // Reason:
   //   The reason this passed is due to the fact that the LocateProtocol did not modify the pointer on its way out.
@@ -109,10 +128,13 @@ TEST_F (GoogleTestBadExample, GetPolicyExpectedAssertNotHappen) {
   Actual:   FAILED, due to an error regarding "1 leaked mock object".
 **/
 TEST_F (GoogleTestBadExample, GetPolicyExpectAssert) {
+  UNIT_TEST_STATUS TestStatus;
+
   EXPECT_CALL (UefiBootServicesTableLib, gBS_LocateProtocol (&gEfiBootManagerPolicyProtocolGuid,_,_))
       .WillOnce(Return (EFI_NOT_FOUND));
 
-  EXPECT_DEATH (GetPolicy (), "");
+  TestStatus = UTShimTest (NULL);
+  EXPECT_EQ (TestStatus, (UNIT_TEST_STATUS)UNIT_TEST_PASSED);
 
   // Reason:
   //   The reason this failed is due to the GetPolicy () runs in child process, and the access to gBS_LocateProtocol
