@@ -16,18 +16,18 @@ There may be firmware image size differences between the static and dynamic
 options. Some experimentation may be required to find the solution that
 provides the smallest overall firmware overhead.
 
-# Public Library Classes
+## Public Library Classes
 
 * **BaseCryptLib** - Provides library functions for cryptographic primitives.
 * **TlsLib**       - Provides TLS library functions for EFI TLS protocol.
 * **HashApiLib**   - Provides Unified API for different hash implementations.
 
-# Private Library Classes
+## Private Library Classes
 
 * **OpensslLib**   - Provides library functions from the openssl project.
 * **IntrinsicLib** - Provides C runtime library (CRT) required by openssl.
 
-# Private Protocols and PPIs
+## Private Protocols and PPIs
 
 * **EDK II Crypto PPI**          - PPI that provides all the services from
                                    the BaseCryptLib and TlsLib library classes.
@@ -37,7 +37,7 @@ provides the smallest overall firmware overhead.
                                    from the BaseCryptLib and TlsLib library
                                    classes.
 
-## Statically Linking Cryptographic Services
+### Statically Linking Cryptographic Services
 
 The figure below shows an example of a firmware module that requires the use of
 cryptographic services. The cryptographic services are provided by three library
@@ -56,7 +56,7 @@ service requirements in each UEFI/PI firmware phase (SEC, PEI, DXE, UEFI,
 UEFI RT, and SMM), firmware image size requirements, and firmware boot
 performance requirements.
 
-```
+```text
 +================================+
 | EDK II Firmware Module/Library |
 +================================+
@@ -101,7 +101,7 @@ to use static linking or dynamic linking. It is a platform configuration option
 to select static linking or dynamic linking. This choice can be made globally,
 per firmware module type, or for individual modules.
 
-```
+```text
 +===================+    +===================+     +===================+
 |    EDK II PEI     |    |  EDK II DXE/UEFI  |     |     EDK II SMM    |
 |   Module/Library  |    |   Module/Library  |     |   Module/Library  |
@@ -166,7 +166,7 @@ also configured.
 
 |Key      | Description                                                                    |
 |---------|--------------------------------------------------------------------------------|
-| <blank> | Family or service is always disabled.                                          |
+|  blank  | Family or service is always disabled.                                          |
 | C       | Configurable using PcdCryptoServiceFamilyEnable.                               |
 | C-Tls   | Configurable using PcdCryptoServiceFamilyEnable. Requires TlsLib.inf.          |
 | C-Full  | Configurable using PcdCryptoServiceFamilyEnable. Requires OpensslLibFull*.inf. |
@@ -255,7 +255,7 @@ following library mappings are recommended for the SEC Phase. It uses the SEC
 specific version of the BaseCryptLib and the null version of the TlsLib because
 TLS services are not typically used in SEC.
 
-```
+```text
 [LibraryClasses.common.SEC]
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf
@@ -271,7 +271,7 @@ services. The following library mappings are recommended for the PEI Phase. It
 uses the PEI specific version of the BaseCryptLib and the null version of the
 TlsLib because TLS services are not typically used in PEI.
 
-```
+```text
 [LibraryClasses.common.PEIM]
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/PeiCryptLib.inf
@@ -283,7 +283,7 @@ TlsLib because TLS services are not typically used in PEI.
 If dynamic linking is used, then all PEIMs except CryptoPei use the following
 library mappings. The CryptoPei module uses the static linking settings.
 
-```
+```text
 [LibraryClasses.common.PEIM]
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/PeiCryptLib.inf
@@ -306,7 +306,7 @@ It uses the DXE specific version of the BaseCryptLib and the full version of the
 OpensslLib and TlsLib. If ECC services are not required then a smaller
 OpensslLib instance can be used.
 
-```
+```text
 [LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_DRIVER, LibraryClasses.common.UEFI_APPLICATION]
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
@@ -319,7 +319,7 @@ If dynamic linking is used, then all DXE Drivers except CryptoDxe use the
 following library mappings. The CryptoDxe module uses the static linking
 settings.
 
-```
+```text
 [LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_DRIVER, LibraryClasses.common.UEFI_APPLICATION]
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/DxeCryptLib.inf
@@ -341,7 +341,7 @@ services. The following library mappings are recommended for the SMM Phase. It
 uses the SMM specific version of the BaseCryptLib and the null version of the
 TlsLib.
 
-```
+```text
 [LibraryClasses.common.DXE_SMM_DRIVER]
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
@@ -354,7 +354,7 @@ If dynamic linking is used, then all SMM Drivers except CryptoSmm use the
 following library mappings. The CryptoDxe module uses the static linking
 settings.
 
-```
+```text
 [LibraryClasses.common.DXE_SMM_DRIVER]
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/SmmCryptLib.inf
@@ -376,7 +376,7 @@ The following library mappings are recommended for UEFI Runtime Drivers. They
 use the runtime specific version of the BaseCryptLib and the null version of the
 TlsLib because TLS services are not typically used at runtime.
 
-```
+```text
 [LibraryClasses.common.DXE_RUNTIME_DRIVER]
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/RuntimeCryptLib.inf
@@ -446,7 +446,7 @@ and CryptoSmm modules.
 
 #### Common PEI PcdCryptoServiceFamilyEnable Settings
 
-```
+```text
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.HmacSha256.Family                    | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.HmacSha384.Family                    | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Sha1.Family                          | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
@@ -465,7 +465,7 @@ and CryptoSmm modules.
 
 #### Common DXE and SMM PcdCryptoServiceFamilyEnable Settings
 
-```
+```text
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.HmacSha256.Family                        | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.HmacSha384.Family                        | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceFamilyEnable.Hkdf.Family                              | PCD_CRYPTO_SERVICE_ENABLE_FAMILY
