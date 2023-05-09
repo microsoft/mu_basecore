@@ -12,7 +12,7 @@
 #include <Library/BaseLib.h>
 
 #include <Protocol/MmPolicy.h>
-#include <Library/VerifiedPolicy.h>
+#include <Library/PolicyLib.h>
 
 #include "../PolicyLibCommon.h"
 

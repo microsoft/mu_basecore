@@ -16,9 +16,9 @@ STATIC EFI_LOCK    mPolicyListLock = EFI_INITIALIZE_LOCK_VARIABLE (TPL_NOTIFY);
 STATIC EFI_HANDLE  mImageHandle    = NULL;
 
 POLICY_PROTOCOL  mPolicyProtocol = {
-  SetPolicy,
-  GetPolicy,
-  RemovePolicy
+  CommonSetPolicy,
+  CommonGetPolicy,
+  CommonRemovePolicy
 };
 
 /**
