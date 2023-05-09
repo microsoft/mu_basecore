@@ -53,10 +53,6 @@
   #
   UnitTestBootLib|PrivateInclude/Library/UnitTestBootLib.h
 
-  ## @libraryclass GoogleTest infrastructure
-  #
-  GoogleTestLib|Include/Library/GoogleTestLib.h
-
 [Guids]
   gUnitTestFrameworkPkgTokenSpaceGuid = { 0x833d3aba, 0x39b4, 0x43a2, { 0xb9, 0x30, 0x7a, 0x34, 0x53, 0x39, 0x31, 0xb3 } }
 
