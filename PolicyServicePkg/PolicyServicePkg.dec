@@ -16,7 +16,7 @@
   Include
 
 [LibraryClasses]
-  PolicyLib|Include/Library/VerifiedPolicy.h
+  PolicyLib|Include/Library/PolicyLib.h
 
 [Guids]
   ## GUID used for storing policy data in HOB.
