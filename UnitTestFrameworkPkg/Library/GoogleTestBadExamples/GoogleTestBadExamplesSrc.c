@@ -41,15 +41,11 @@ GetPolicy (
   }
 
   // Need to keep this here, so that the false negative will happen.
-  DEBUG ((DEBUG_ERROR, "%a: Failed to get Boot policy from database - %r!\n", __FUNCTION__, PolicyProtocol->Revision));
-  //                            &gZeroGuid,
-  //                            &PolicyAttribute,
-  //                            TestPolicy,
-  //                            &ActualPolicySize
-  //                            );
-  // if (EFI_ERROR (Status)) {
-  //   return Status;
-  // }
+  Status = PolicyProtocol->ConnectDevicePath (PolicyProtocol, NULL, TRUE);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: Failed to ConnectDevicePath - %r!\n", __FUNCTION__, Status));
+    return Status;
+  }
 
   return Status;
 }
