@@ -38,12 +38,18 @@ Breaking Changes-dev
 Main Changes-dev
 ----------------
 
-- Incomplete
+- Integrated reworked Openssl crypto.  Instead of having separate INF files for each architecture it is now consolidated
+  into a single Accel INF.
+- CodeQL fixes were applied throughout the repo to address some vulnerabilities.
+- Memory protections were cleaned up and reworked to make its progression more clear in history.
+- Integrated Google Test into project MU.
+- Removed VS2015 and VS2017 support from packages.
+- Added additional ARM packages for build capability.
 
 Bug Fixes-dev
 -------------
 
-- Incomplete
+- Fixed some TPL restore calls that were incorrect.
 
 2302_RefBoot Changes
 --------------------
@@ -53,13 +59,15 @@ Bug Fixes-dev
 2302_CIBuild Changes
 --------------------
 
-- Incomplete
+- Additional refactoring in CryptoPkg
 
 2302_Rebase Changes
 -------------------
 
 | Starting commit: 082b06d160 ("Edk2ToolsBuild.py: set arch to host arch if not specified on linux", 2023-04-27)
 | Destination Commit from upstream edk2: f80f052277 ("OvmfPkg/RiscVVirt: Add Stack HOB", 2023-03-01)
+
+- Many conflicts in CryptoPkg that needed to be resolved.
 
 Code of Conduct
 ===============
