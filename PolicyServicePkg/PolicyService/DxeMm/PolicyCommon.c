@@ -82,7 +82,7 @@ CheckPolicyExists (
 **/
 EFI_STATUS
 EFIAPI
-GetPolicy (
+CommonGetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
   OUT UINT64         *Attributes OPTIONAL,
   OUT VOID           *Policy,
@@ -201,7 +201,7 @@ IngestPoliciesFromHob (
 **/
 EFI_STATUS
 EFIAPI
-RemovePolicy (
+CommonRemovePolicy (
   IN CONST EFI_GUID  *PolicyGuid
   )
 {
@@ -243,7 +243,7 @@ RemovePolicy (
 **/
 EFI_STATUS
 EFIAPI
-SetPolicy (
+CommonSetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
   IN UINT64          Attributes,
   IN VOID            *Policy,

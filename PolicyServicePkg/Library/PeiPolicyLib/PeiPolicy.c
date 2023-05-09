@@ -12,7 +12,7 @@
 #include <Library/PeiServicesLib.h>
 
 #include <Ppi/Policy.h>
-#include <Library/VerifiedPolicy.h>
+#include <Library/PolicyLib.h>
 
 #include "../PolicyLibCommon.h"
 
