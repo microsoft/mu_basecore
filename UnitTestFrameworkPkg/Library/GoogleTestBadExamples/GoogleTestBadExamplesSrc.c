@@ -9,7 +9,7 @@
 #include <PiDxe.h>
 
 #include <Guid/ZeroGuid.h>
-#include <Protocol/Policy.h>
+#include <Protocol/BootManagerPolicy.h>
 
 #include <Library/DebugLib.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -26,14 +26,11 @@ GetPolicy (
   VOID
   )
 {
-  EFI_STATUS       Status;
-  UINT16           ActualPolicySize;
-  VOID             *TestPolicy = NULL;
-  UINT64           PolicyAttribute;
-  POLICY_PROTOCOL  *PolicyProtocol;
+  EFI_STATUS                        Status;
+  EFI_BOOT_MANAGER_POLICY_PROTOCOL  *PolicyProtocol;
 
   Status = gBS->LocateProtocol (
-                  &gPolicyProtocolGuid,
+                  &gEfiBootManagerPolicyProtocolGuid,
                   NULL,
                   (VOID **)&PolicyProtocol
                   );
@@ -44,16 +41,15 @@ GetPolicy (
   }
 
   // Need to keep this here, so that the false negative will happen.
-  Status = PolicyProtocol->GetPolicy (
-                             &gZeroGuid,
-                             &PolicyAttribute,
-                             TestPolicy,
-                             &ActualPolicySize
-                             );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to get Boot policy from database - %r!\n", __FUNCTION__, Status));
-    return Status;
-  }
+  DEBUG ((DEBUG_ERROR, "%a: Failed to get Boot policy from database - %r!\n", __FUNCTION__, PolicyProtocol->Revision));
+  //                            &gZeroGuid,
+  //                            &PolicyAttribute,
+  //                            TestPolicy,
+  //                            &ActualPolicySize
+  //                            );
+  // if (EFI_ERROR (Status)) {
+  //   return Status;
+  // }
 
   return Status;
 }

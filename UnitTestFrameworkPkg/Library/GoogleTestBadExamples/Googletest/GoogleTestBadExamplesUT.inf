@@ -19,14 +19,16 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
-  PolicyServicePkg/PolicyServicePkg.dec
   UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
 
 [Protocols]
-  gPolicyProtocolGuid
+  gEfiBootManagerPolicyProtocolGuid
 
 [Guids]
   gZeroGuid
 
 [LibraryClasses]
   GoogleTestLib
+
+[BuildOptions]
+  MSFT:*_*_*_CC_FLAGS = /std:c++latest

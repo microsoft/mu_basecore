@@ -9,7 +9,7 @@
 
 extern "C" {
 #include <Uefi.h>
-#include <Protocol/Policy.h>
+#include <Protocol/BootManagerPolicy.h>
 #include <Library/BaseLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 
@@ -109,7 +109,7 @@ TEST_F (GoogleTestBadExample, GetPolicyExpectedAssertNotHappen) {
   Actual:   FAILED, due to an error regarding "1 leaked mock object".
 **/
 TEST_F (GoogleTestBadExample, GetPolicyExpectAssert) {
-  EXPECT_CALL (UefiBootServicesTableLib, gBS_LocateProtocol (&gPolicyProtocolGuid,_,_))
+  EXPECT_CALL (UefiBootServicesTableLib, gBS_LocateProtocol (&gEfiBootManagerPolicyProtocolGuid,_,_))
       .WillOnce(Return (EFI_NOT_FOUND));
 
   EXPECT_DEATH (GetPolicy (), "");
