@@ -1740,7 +1740,7 @@ class CGenCfgData:
         lines.append ("#ifndef __%s__\n"   % file_name_def)
         lines.append ("#define __%s__\n\n" % file_name_def)
         if type == 'h':
-            lines.append ("#include <Library/VerifiedPolicy.h>\n\n")
+            lines.append ("#include <Library/PolicyLib.h>\n\n")
             lines.append ("#pragma pack(1)\n\n")
         lines.extend (txt_body)
         if type == 'h':

@@ -13,7 +13,7 @@
 #ifndef __POLICY_DATA_STRUCT_GFX_H__
 #define __POLICY_DATA_STRUCT_GFX_H__
 
-#include <Library/VerifiedPolicy.h>
+#include <Library/PolicyLib.h>
 
 #pragma pack(1)
 
@@ -23,16 +23,16 @@
 
 
 typedef struct {
-  
+
   /* Power state of GFX port 0 */
   UINT16                      Power_State_Port_0;
-  
+
   /* Power state of GFX port 1 */
   UINT16                      Power_State_Port_1;
-  
+
   /* Flag to skip this controller or not */
   UINT16                      Skip_Check_0;
-  
+
   /* Flag to skip this controller or not */
   UINT16                      Skip_Check_1;
 
