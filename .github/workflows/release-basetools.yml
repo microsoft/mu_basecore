@@ -52,7 +52,14 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.11"
+
+      - name: Install Linux Tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi g++-aarch64-linux-gnu g++-arm-linux-gnueabi
+          echo "GCC5_AARCH64_PREFIX=/usr/bin/aarch64-linux-gnu-" >> "$GITHUB_ENV"
+          echo "GCC5_ARM_PREFIX=/usr/bin/arm-linux-gnueabi-" >> "$GITHUB_ENV"
 
       - name: Install Pip Modules
         run: pip install -r pip-requirements.txt --upgrade
@@ -66,12 +73,15 @@ jobs:
       - name: Build Base Tools
         run: python BaseTools/Edk2ToolsBuild.py -t ${{ matrix.tool_chain}} -a ${{ matrix.target }} --skip_path_env
 
-      - name: Upload Build Log
+      - name: Upload Build Logs
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: buildlog-${{ matrix.tool_chain }}-${{ matrix.target }}
-          path: BaseTools/BaseToolsBuild
+          name: logs-${{ matrix.tool_chain }}-${{ matrix.target }}
+          path: |
+            Build/SETUPLOG.txt
+            Build/UPDATE_LOG.txt
+            BaseTools/BaseToolsBuild/BASETOOLS_BUILD.txt
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
