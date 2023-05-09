@@ -93,7 +93,7 @@ TEST_F (GoogleTestBadExample, GetPolicyExpectedAssertNotHappen) {
   // Solution:
   //   - One should NEVER EVER use "" for failed string matching!!
   //     Instead inspect what the real failure is and put that in the matcher field:
-  //     `EXPECT_DEATH (GetPolicy (), HasSubstr("GoogleTestBadExamplesSrc.c, line 42"));`
+  //     `EXPECT_DEATH (GetPolicy (), HasSubstr("GoogleTestBadExamplesSrc.c, line 39"));`
   //   - The MdePkg/Include/Library/DebugLib.h should hook up to the system assert pipeline
   //     so that the gtest can read error from stderr:
   //     ```
@@ -129,10 +129,10 @@ TEST_F (GoogleTestBadExample, GetPolicyExpectAssert) {
   //   - Move the expect call into the child process as well, so that it can be detected:
   //     ```
   //       EXPECT_DEATH ({
-  //       EXPECT_CALL (UefiBootServicesTableLib, gBS_LocateProtocol (&gPolicyProtocolGuid,_,_))
+  //       EXPECT_CALL (UefiBootServicesTableLib, gBS_LocateProtocol (&gEfiBootManagerPolicyProtocolGuid,_,_))
   //         .WillOnce(Return (EFI_NOT_FOUND));
   //       GetPolicy ();
-  //       }, HasSubstr("GoogleTestBadExamplesSrc.c, line 42"));
+  //       }, HasSubstr("GoogleTestBadExamplesSrc.c, line 39"));
   //     ```
 }
 
