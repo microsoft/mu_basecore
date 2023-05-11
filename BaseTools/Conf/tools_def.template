@@ -3318,12 +3318,12 @@ RELEASE_*_IA32_RUSTC_FLAGS  = --edition=2018 --target $(TARGET_TRIPLE) -C debugi
 ##########################
 # CARGO MAKE definitions #
 ##########################
-*_VS2019_*_CARGOMAKE_BUILDFLAGS  = "-Zunstable-options --timings=html --bins -- -C link-arg=/MAP:$(CARGO_BINDIR)\$(MODULE_NAME).map"
-*_VS2022_*_CARGOMAKE_BUILDFLAGS  = "-Zunstable-options --timings=html --bins -- -C link-arg=/MAP:$(CARGO_BINDIR)\$(MODULE_NAME).map"
-*_GCC5_*_CARGOMAKE_BUILDFLAGS  = "-Zunstable-options --timings=html --bins -- -C link-arg=/MAP:$(CARGO_BINDIR)/$(MODULE_NAME).map"
+*_VS2019_*_CARGOMAKE_RUSTFLAGS  = "-C link-arg=/MAP:$(CARGO_BINDIR)\$(MODULE_NAME).map"
+*_VS2022_*_CARGOMAKE_RUSTFLAGS  = "-C link-arg=/MAP:$(CARGO_BINDIR)\$(MODULE_NAME).map"
+*_GCC5_*_CARGOMAKE_RUSTFLAGS  = "-C link-arg=/MAP:$(CARGO_BINDIR)/$(MODULE_NAME).map"
 
-DEBUG_*_*_CARGOMAKE_BUILD    = make --cwd ENV(WORKSPACE) -p development -e TARGET_TRIPLE=$(TARGET_TRIPLE) -e BUILD_FLAGS=$(CARGOMAKE_BUILDFLAGS) build
-RELEASE_*_*_CARGOMAKE_BUILD  = make --cwd ENV(WORKSPACE) -p release -e TARGET_TRIPLE=$(TARGET_TRIPLE) -e BUILD_FLAGS=$(CARGOMAKE_BUILDFLAGS) build
+DEBUG_*_*_CARGOMAKE_BUILD    = make --cwd ENV(WORKSPACE) -p development -e TARGET_TRIPLE=$(TARGET_TRIPLE) -e RUSTFLAGS=$(CARGOMAKE_RUSTFLAGS) build
+RELEASE_*_*_CARGOMAKE_BUILD  = make --cwd ENV(WORKSPACE) -p release -e TARGET_TRIPLE=$(TARGET_TRIPLE) -e RUSTFLAGS=$(CARGOMAKE_RUSTFLAGS) build
 
 ##################
 # CARGO definitions
