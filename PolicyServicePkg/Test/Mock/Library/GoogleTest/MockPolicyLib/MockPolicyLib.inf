@@ -1,0 +1,31 @@
+## @file
+#  gMock instance of verified policy library.
+#
+#  Copyright (c) Microsoft Corporation.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 1.26
+  PI_SPECIFICATION_VERSION       = 0x00010032
+  BASE_NAME                      = MmPolicyLib
+  FILE_GUID                      = 569E5804-8D3D-43E6-B37E-8196A6D045FB
+  MODULE_TYPE                    = HOST_APPLICATION
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = PolicyLib | HOST_APPLICATION
+
+[Sources]
+  MockPolicyLib.cpp
+
+[Packages]
+  MdePkg/MdePkg.dec
+  PolicyServicePkg/PolicyServicePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  GoogleTestLib
+
+[BuildOptions]
+  MSFT:*_*_*_CC_FLAGS = /EHsc
