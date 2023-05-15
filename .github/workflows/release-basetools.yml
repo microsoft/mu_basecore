@@ -1,0 +1,120 @@
+# This workflow automatically publishes the basetools binaries for a given
+# release.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: Publish BaseTools
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  build:
+    name: Build Base Tools
+    strategy:
+      matrix:
+        include:
+          - os: windows-2022
+            tool_chain: VS2022
+            output_dir: "BaseTools\\Bin\\Win32"
+            target: IA32
+
+          - os: windows-2022
+            tool_chain: VS2022
+            output_dir: "BaseTools\\Bin\\Win32"
+            target: ARM
+
+          - os: windows-2022
+            tool_chain: VS2022
+            output_dir: "BaseTools\\Bin\\Win64"
+            target: AARCH64
+
+          - os: ubuntu-22.04
+            tool_chain: GCC5
+            output_dir: "BaseTools/Source/C/bin"
+            target: X64
+
+          - os: ubuntu-22.04
+            tool_chain: GCC5
+            output_dir: "BaseTools/Source/C/bin"
+            target: AARCH64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Linux Tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi g++-aarch64-linux-gnu g++-arm-linux-gnueabi
+          echo "GCC5_AARCH64_PREFIX=/usr/bin/aarch64-linux-gnu-" >> "$GITHUB_ENV"
+          echo "GCC5_ARM_PREFIX=/usr/bin/arm-linux-gnueabi-" >> "$GITHUB_ENV"
+
+      - name: Install Pip Modules
+        run: pip install -r pip-requirements.txt --upgrade
+
+      - name: Stuart Setup
+        run: stuart_setup -c .pytool/CISettings.py
+
+      - name: Stuart Update
+        run: stuart_update -c .pytool/CISettings.py TOOL_CHAIN_TAG=${{ matrix.tool_chain}} -a ${{ matrix.target }}
+
+      - name: Build Base Tools
+        run: python BaseTools/Edk2ToolsBuild.py -t ${{ matrix.tool_chain}} -a ${{ matrix.target }} --skip_path_env
+
+      - name: Upload Build Logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: logs-${{ matrix.tool_chain }}-${{ matrix.target }}
+          path: |
+            Build/SETUPLOG.txt
+            Build/UPDATE_LOG.txt
+            BaseTools/BaseToolsBuild/BASETOOLS_BUILD.txt
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: basetools-${{ matrix.tool_chain }}-${{ matrix.target }}
+          path: ${{ matrix.output_dir }}
+
+  publish:
+    name: Publish Base Tools
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ${{ runner.temp }}/artifacts
+
+      - name: Stage Files
+        run: mkdir ${{ runner.temp }}/basetools ;
+          mv ${{ runner.temp }}/artifacts/basetools-GCC5-X64       ${{ runner.temp }}/basetools/Linux-x86 ;
+          mv ${{ runner.temp }}/artifacts/basetools-GCC5-AARCH64   ${{ runner.temp }}/basetools/Linux-ARM-64 ;
+          mv ${{ runner.temp }}/artifacts/basetools-VS2022-IA32    ${{ runner.temp }}/basetools/Windows-x86 ;
+          mv ${{ runner.temp }}/artifacts/basetools-VS2022-ARM     ${{ runner.temp }}/basetools/Windows-ARM ;
+          mv ${{ runner.temp }}/artifacts/basetools-VS2022-AARCH64 ${{ runner.temp }}/basetools/Windows-ARM-64 ;
+
+      - name: Zip Files
+        run: cd ${{ runner.temp }} ; zip -r basetools-${{ github.event.release.tag_name }}.zip basetools/*
+
+      - name: Upload Release Asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload ${{ github.event.release.tag_name }} ${{ runner.temp }}/basetools-*.zip

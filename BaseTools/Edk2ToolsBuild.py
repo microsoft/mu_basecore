@@ -215,20 +215,26 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
                 shell_env.set_shell_var('HOST_ARCH', self.target_arch)
 
                 if "AARCH64" in self.target_arch:
-                    # now check for install dir.  If set then set the Prefix
-                    install_path = shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_INSTALL")
+                    prefix = shell_env.get_shell_var("GCC5_AARCH64_PREFIX")
+                    if prefix == None:
+                        # now check for install dir.  If set then set the Prefix
+                        install_path = shell_environment.GetEnvironment().get_shell_var("GCC5_AARCH64_INSTALL")
 
-                    # make GCC5_AARCH64_PREFIX to align with tools_def.txt
-                    prefix = os.path.join(install_path, "bin", "aarch64-none-linux-gnu-")
+                        # make GCC5_AARCH64_PREFIX to align with tools_def.txt
+                        prefix = os.path.join(install_path, "bin", "aarch64-none-linux-gnu-")
+
                     shell_environment.GetEnvironment().set_shell_var("GCC_PREFIX", prefix)
                     TargetInfoArch = "ARM"
 
                 elif "ARM" in self.target_arch:
-                    # now check for install dir.  If set then set the Prefix
-                    install_path = shell_environment.GetEnvironment().get_shell_var("GCC5_ARM_INSTALL")
+                    prefix = shell_env.get_shell_var("GCC5_ARM_PREFIX")
+                    if prefix == None:
+                        # now check for install dir.  If set then set the Prefix
+                        install_path = shell_environment.GetEnvironment().get_shell_var("GCC5_ARM_INSTALL")
 
-                    # make GCC5_ARM_PREFIX to align with tools_def.txt
-                    prefix = os.path.join(install_path, "bin", "arm-none-linux-gnueabihf-")
+                        # make GCC5_ARM_PREFIX to align with tools_def.txt
+                        prefix = os.path.join(install_path, "bin", "arm-none-linux-gnueabihf-")
+
                     shell_environment.GetEnvironment().set_shell_var("GCC_PREFIX", prefix)
                     TargetInfoArch = "ARM"
 
