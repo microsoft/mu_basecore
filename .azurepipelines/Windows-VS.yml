@@ -14,22 +14,87 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
-resources:
-  repositories:
-    - repository: mu_devops
-      type: github
-      endpoint: microsoft
-      name: microsoft/mu_devops
-      ref: refs/tags/v2.5.1
-
 variables:
 - group: architectures-x86-64
 - group: tool-chain-windows-visual-studio-latest
 
-jobs:
-- template: Matrix-Build-Job.yml
+extends:
+  template: MuDevOpsSync.yml
   parameters:
-    arch_list: $(arch_list)
-    extra_build_args: CODE_COVERAGE=TRUE
-    tool_chain_tag: $(tool_chain_tag)
-    vm_image: $(vm_image)
+    do_ci_build: true
+    do_ci_setup: false
+    do_non_ci_build: false
+    do_non_ci_setup: true
+    do_pr_eval: true
+    os_type: Windows_NT
+    build_matrix:
+      TARGET_MDE_CPU:
+        Pkgs: 'MdePkg,UefiCpuPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: false
+      TARGET_MDEMODULE_DEBUG:
+        Pkgs: 'MdeModulePkg'
+        Targets: 'DEBUG,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: false
+      TARGET_MDEMODULE_RELEASE:
+        Pkgs: 'MdeModulePkg'
+        Targets: 'RELEASE,NO-TARGET'
+        ArchList: $(arch_list)
+        SelfHostAgent: false
+      TARGET_NETWORK:
+        Pkgs: 'NetworkPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: false
+      TARGET_OTHER:
+        Pkgs: 'PcAtChipsetPkg,ShellPkg,StandaloneMmPkg,BaseTools'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: false
+      TARGET_TEST_POLICY:
+        Pkgs: 'UnitTestFrameworkPkg,PolicyServicePkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: false
+      TARGET_CRYPTO:
+        Pkgs: 'CryptoPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: false
+      TARGET_MDE_CPU_ARM:
+        Pkgs: 'MdePkg,UefiCpuPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: true
+      TARGET_MDEMODULE_DEBUG_ARM:
+        Pkgs: 'MdeModulePkg'
+        Targets: 'DEBUG,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: true
+      TARGET_MDEMODULE_RELEASE_ARM:
+        Pkgs: 'MdeModulePkg'
+        Targets: 'RELEASE,NO-TARGET'
+        ArchList: $(arch_list)
+        SelfHostAgent: true
+      TARGET_NETWORK_ARM:
+        Pkgs: 'NetworkPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: true
+      TARGET_OTHER_ARM:
+        Pkgs: 'PcAtChipsetPkg,ShellPkg,StandaloneMmPkg,BaseTools'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: true
+      TARGET_TEST_POLICY_ARM:
+        Pkgs: 'UnitTestFrameworkPkg,PolicyServicePkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: true
+      TARGET_CRYPTO_ARM:
+        Pkgs: 'CryptoPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: true
