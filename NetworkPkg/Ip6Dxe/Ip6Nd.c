@@ -1791,8 +1791,15 @@ Ip6ProcessNeighborAdvertise (
   } else {
     OptionLen = (UINT16)(Head->PayloadLength - IP6_ND_LENGTH);
     if (OptionLen != 0) {
+      // MU_CHANGE [BEGIN] - CodeQL change
       Option = NetbufGetByte (Packet, IP6_ND_LENGTH, NULL);
-      ASSERT (Option != NULL);
+      if (Option == NULL) {
+        ASSERT (Option != NULL);
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Exit;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
 
       //
       // All included options should have a length that is greater than zero.
@@ -2517,8 +2524,15 @@ Ip6ProcessRedirect (
   //
   OptionLen = (UINT16)(Head->PayloadLength - IP6_REDITECT_LENGTH);
   if (OptionLen != 0) {
+    // MU_CHANGE [BEGIN] - CodeQL change
     Option = NetbufGetByte (Packet, IP6_REDITECT_LENGTH, NULL);
-    ASSERT (Option != NULL);
+    if (Option == NULL) {
+      ASSERT (Option != NULL);
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Exit;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     if (!Ip6IsNDOptionValid (Option, OptionLen)) {
       goto Exit;

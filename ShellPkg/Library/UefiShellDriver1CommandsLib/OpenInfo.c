@@ -113,7 +113,7 @@ TraverseHandleDatabase (
 
           Name            = GetStringNameFromHandle (OpenInfo[OpenInfoIndex].AgentHandle, NULL);
           ControllerIndex = ConvertHandleToHandleIndex (OpenInfo[OpenInfoIndex].ControllerHandle);
-          if (ControllerIndex != 0) {
+          if ((ControllerIndex != 0) && (Name != NULL)) {
             ShellPrintHiiEx (
               -1,
               -1,

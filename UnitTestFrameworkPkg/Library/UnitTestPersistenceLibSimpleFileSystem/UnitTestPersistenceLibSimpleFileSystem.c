@@ -267,6 +267,14 @@ SaveUnitTestCache (
   // MU_CHANGE: Use file name and path instead of device path
   FileName = GetCacheFileName (FrameworkHandle);
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (FileName == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a - Failed to get cache file name.\n", __FUNCTION__));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   //
   // First lets open the file if it exists so we can delete it...This is the work around for truncation
   //
