@@ -2765,7 +2765,7 @@ BigNumAdd (
   OUT VOID       *BnRes
   )
 {
-  CALL_CRYPTO_SERVICE (BigNumAdd, (Bn, BnB, BnRes), FALSE);
+  CALL_CRYPTO_SERVICE (BigNumAdd, (BnA, BnB, BnRes), FALSE);
 }
 
 /**
@@ -2787,7 +2787,7 @@ BigNumSub (
   OUT VOID       *BnRes
   )
 {
-  CALL_CRYPTO_SERVICE (BigNumSub, (Bn, BnB, BnRes), FALSE);
+  CALL_CRYPTO_SERVICE (BigNumSub, (BnA, BnB, BnRes), FALSE);
 }
 
 /**
@@ -2809,7 +2809,7 @@ BigNumMod (
   OUT VOID       *BnRes
   )
 {
-  CALL_CRYPTO_SERVICE (BigNumMod, (Bn, BnB, BnRes), FALSE);
+  CALL_CRYPTO_SERVICE (BigNumMod, (BnA, BnB, BnRes), FALSE);
 }
 
 /**
@@ -2833,7 +2833,7 @@ BigNumExpMod (
   OUT VOID       *BnRes
   )
 {
-  CALL_CRYPTO_SERVICE (BigNumExpMod, (Bn, Bn, BnM, BnRes), FALSE);
+  CALL_CRYPTO_SERVICE (BigNumExpMod, (BnA, BnP, BnM, BnRes), FALSE);
 }
 
 /**
@@ -2855,7 +2855,7 @@ BigNumInverseMod (
   OUT VOID       *BnRes
   )
 {
-  CALL_CRYPTO_SERVICE (BigNumInverseMod, (Bn, BnM, BnRes), FALSE);
+  CALL_CRYPTO_SERVICE (BigNumInverseMod, (BnA, BnM, BnRes), FALSE);
 }
 
 /**
@@ -2877,7 +2877,7 @@ BigNumDiv (
   OUT VOID       *BnRes
   )
 {
-  CALL_CRYPTO_SERVICE (BigNumDiv, (Bn, BnB, BnRes), FALSE);
+  CALL_CRYPTO_SERVICE (BigNumDiv, (BnA, BnB, BnRes), FALSE);
 }
 
 /**
@@ -2901,7 +2901,7 @@ BigNumMulMod (
   OUT VOID       *BnRes
   )
 {
-  CALL_CRYPTO_SERVICE (BigNumMulMod, (Bn, BnB, BnM, BnRes), FALSE);
+  CALL_CRYPTO_SERVICE (BigNumMulMod, (BnA, BnB, BnM, BnRes), FALSE);
 }
 
 /**
@@ -2920,7 +2920,7 @@ BigNumCmp (
   IN CONST VOID  *BnB
   )
 {
-  CALL_CRYPTO_SERVICE (BigNumCmp, (Bn, BnB), 0);
+  CALL_CRYPTO_SERVICE (BigNumCmp, (BnA, BnB), 0);
 }
 
 /**
@@ -3024,7 +3024,7 @@ BigNumRShift (
   OUT VOID       *BnRes
   )
 {
-  CALL_CRYPTO_SERVICE (BigNumRShift, (Bn, U, BnRes), FALSE);
+  CALL_CRYPTO_SERVICE (BigNumRShift, (Bn, N, BnRes), FALSE);
 }
 
 /**
@@ -3062,7 +3062,7 @@ BigNumSqrMod (
   OUT VOID       *BnRes
   )
 {
-  CALL_CRYPTO_SERVICE (BigNumSqrMod, (Bn, BnM, BnRes), FALSE);
+  CALL_CRYPTO_SERVICE (BigNumSqrMod, (BnA, BnM, BnRes), FALSE);
 }
 
 /**
@@ -3132,7 +3132,7 @@ BigNumAddMod (
   OUT VOID       *BnRes
   )
 {
-  CALL_CRYPTO_SERVICE (BigNumAddMod, (Bn, BnB, BnM, BnRes), FALSE);
+  CALL_CRYPTO_SERVICE (BigNumAddMod, (BnA, BnB, BnM, BnRes), FALSE);
 }
 
 // =============================================================================
@@ -4559,7 +4559,7 @@ EcGroupGetCurve (
   IN VOID        *BnCtx
   )
 {
-  CALL_CRYPTO_SERVICE (EcGroupGetCurve, (EcGroup, BnPrime, Bn, BnB, BnCtx), FALSE);
+  CALL_CRYPTO_SERVICE (EcGroupGetCurve, (EcGroup, BnPrime, BnA, BnB, BnCtx), FALSE);
 }
 
 /**
@@ -4703,7 +4703,7 @@ EcPointAdd (
   IN VOID        *BnCtx
   )
 {
-  CALL_CRYPTO_SERVICE (EcPointAdd, (EcGroup, EcPointResult, EcPoint, EcPointB, BnCtx), FALSE);
+  CALL_CRYPTO_SERVICE (EcPointAdd, (EcGroup, EcPointResult, EcPointA, EcPointB, BnCtx), FALSE);
 }
 
 /**
@@ -4808,7 +4808,7 @@ EcPointEqual (
   IN VOID        *BnCtx
   )
 {
-  CALL_CRYPTO_SERVICE (EcPointEqual, (EcGroup, EcPoint, EcPointB, BnCtx), FALSE);
+  CALL_CRYPTO_SERVICE (EcPointEqual, (EcGroup, EcPointA, EcPointB, BnCtx), FALSE);
 }
 
 /**
