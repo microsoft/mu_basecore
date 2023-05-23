@@ -63,6 +63,7 @@ jobs:
       - name: Install Linux Tools
         if: runner.os == 'Linux'
         run: |
+          sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi g++-aarch64-linux-gnu g++-arm-linux-gnueabi
           echo "GCC5_AARCH64_PREFIX=/usr/bin/aarch64-linux-gnu-" >> "$GITHUB_ENV"
           echo "GCC5_ARM_PREFIX=/usr/bin/arm-linux-gnueabi-" >> "$GITHUB_ENV"
