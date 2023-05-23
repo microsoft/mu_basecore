@@ -79,6 +79,7 @@ jobs:
     build_matrix: ${{ parameters.build_matrix }}
     os_type: ${{ parameters.os_type }}
     pool_name: ${{ parameters.pool_name }}
+    extra_install_step: ${{ parameters.extra_install_step }}
     tool_chain_tag: $(tool_chain_tag)
     vm_image: $(vm_image)
     container_build: ${{ parameters.container_build }}
