@@ -728,6 +728,9 @@ typedef struct {
   //
 } EFI_IMAGE_DEBUG_CODEVIEW_MTOC_ENTRY;
 
+// avoid conflict with windows header files
+#ifndef RUNTIME_FUNCTION_INDIRECT
+
 //
 // .pdata entries for X64
 //
@@ -736,6 +739,8 @@ typedef struct {
   UINT32    FunctionEndAddress;
   UINT32    UnwindInfoAddress;
 } RUNTIME_FUNCTION;
+
+#endif
 
 typedef struct {
   UINT8    Version             : 3;
