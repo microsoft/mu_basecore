@@ -36,7 +36,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Guid/FfsSectionAlignmentPadding.h>
 
-#include "WinNtInclude.h"
 #include "GenFvInternalLib.h"
 #include "FvLib.h"
 #include "PeCoffLib.h"
