@@ -1071,8 +1071,7 @@ X509GetSerialNumber (
   }
 
   if (SerialNumber != NULL) {
-    *SerialNumberSize = MIN ((UINTN)Asn1Integer->length, *SerialNumberSize);
-    CopyMem (SerialNumber, Asn1Integer->data, *SerialNumberSize);
+    CopyMem (SerialNumber, Asn1Integer->data, (UINTN)Asn1Integer->length);  // MU_CHANGE
     Status = TRUE;
   }
 
