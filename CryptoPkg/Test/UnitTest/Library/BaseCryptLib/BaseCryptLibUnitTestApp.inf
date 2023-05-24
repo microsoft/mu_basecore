@@ -53,6 +53,7 @@
   UnitTestLib
   PrintLib
   BaseCryptLib
+  
 [FixedPcd]
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256New               ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Free              ## CONSUMES
@@ -62,7 +63,7 @@
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs5HashPassword           ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs1v2Encrypt              ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7Sign                   ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceVerifyEKUsInPkcs7Signature  ##CONSUMES
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceVerifyEKUsInPkcs7Signature  ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAuthenticodeVerify          ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceImageTimestampVerify        ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhNew                       ## CONSUMES
