@@ -32,37 +32,30 @@ extends:
         Pkgs: 'MdePkg,UefiCpuPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
-        SelfHostAgent: false
       TARGET_MDEMODULE_DEBUG:
         Pkgs: 'MdeModulePkg'
         Targets: 'DEBUG,NOOPT'
         ArchList: $(arch_list)
-        SelfHostAgent: false
       TARGET_MDEMODULE_RELEASE:
         Pkgs: 'MdeModulePkg'
         Targets: 'RELEASE,NO-TARGET'
         ArchList: $(arch_list)
-        SelfHostAgent: false
       TARGET_NETWORK:
         Pkgs: 'NetworkPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
-        SelfHostAgent: false
       TARGET_OTHER:
         Pkgs: 'PcAtChipsetPkg,ShellPkg,StandaloneMmPkg,BaseTools'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
-        SelfHostAgent: false
       TARGET_TEST_POLICY:
         Pkgs: 'UnitTestFrameworkPkg,PolicyServicePkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
-        SelfHostAgent: false
       TARGET_CRYPTO:
         Pkgs: 'CryptoPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
-        SelfHostAgent: false
       TARGET_MDE_CPU_ARM:
         Pkgs: 'MdePkg,UefiCpuPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
