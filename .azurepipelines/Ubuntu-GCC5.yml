@@ -20,10 +20,10 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: refs/tags/v2.5.1
+      ref: refs/tags/v3.0.0
   containers:
     - container: linux-gcc
-      image: ghcr.io/tianocore/containers/fedora-37-build:3b3eb8f
+      image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:4a1f8d3
 
 variables:
 - group: architectures-arm-64-x86-64
@@ -34,10 +34,6 @@ jobs:
   parameters:
     arch_list: $(arch_list)
     extra_build_args: CODE_COVERAGE=TRUE
-    extra_install_step:
-    - script: |
-              sudo dnf install --assumeyes mingw64-gcc
-      displayName: Install Windows Resource Compiler for Linux
     tool_chain_tag: 'GCC5'
     vm_image: $(vm_image)
     container_image: linux-gcc
