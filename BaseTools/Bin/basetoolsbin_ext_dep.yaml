@@ -1,6 +1,6 @@
 ##
-# Download the compiled basetools from nuget.org
-# - Nuget package contains different binaries based on the host os
+# Download the compiled basetools from the github release
+# - Release package contains different binaries based on the host os
 # Set this downloaded folder on path
 # Set a Shell variable to this path
 #
@@ -9,10 +9,13 @@
 ##
 {
   "scope": "global",
-  "type": "nuget",
+  "type": "web",
   "name": "Mu-Basetools",
-  "source": "https://pkgs.dev.azure.com/projectmu/mu/_packaging/Basetools-Binary/nuget/v3/index.json",
-  "version": "2022.08.4",
+  "source": "https://github.com/microsoft/mu_basecore/releases/download/v2023020000.0.0/basetools-v2023020000.0.0.zip",
+  "version": "2023020000.0.0",
+  "sha256": "6B357B018F7194683F6436908F215685038F93AB4222AA9E976A7A54C4404AA6",
+  "internal_path": "/basetools/",
+  "compression_type": "zip",
   "flags": ["set_shell_var", "set_path", "host_specific"],
   "var_name": "EDK_TOOLS_BIN"
 }
