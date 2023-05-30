@@ -5,7 +5,8 @@
 # Copyright (c) 2020 - 2022, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
-{   # MU_CHANGE begin
+{
+    # MU_CHANGE begin
     "PrEval": {
         "DscPath": "CryptoPkg.dsc",
     },
