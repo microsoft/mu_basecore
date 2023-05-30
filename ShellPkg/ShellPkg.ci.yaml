@@ -6,6 +6,11 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 {
+    # MU_CHANGE begin
+    "PrEval": {
+        "DscPath": "ShellPkg.dsc",
+    },
+    # MU_CHANGE end
     "LicenseCheck": {
         "IgnoreFiles": []
     },
