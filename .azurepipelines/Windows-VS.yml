@@ -19,7 +19,7 @@ variables:
 - group: tool-chain-windows-visual-studio-latest
 
 extends:
-  template: MuDevOpsSync.yml
+  template: MuDevOpsWrapper.yml
   parameters:
     do_ci_build: true
     do_ci_setup: false
