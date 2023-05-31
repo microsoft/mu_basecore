@@ -23,9 +23,9 @@ name: Update Release Draft
 on:
   push:
     branches:
-      - release/202208
+      - release/202302
 
 jobs:
   draft:
-    uses: microsoft/mu_devops/.github/workflows/ReleaseDrafter.yml@v2.5.1
+    uses: microsoft/mu_devops/.github/workflows/ReleaseDrafter.yml@v3.0.0
     secrets: inherit
