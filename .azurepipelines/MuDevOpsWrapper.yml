@@ -11,15 +11,13 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
-{% import '../../../Version.njk' as sync_version -%}
-
 resources:
   repositories:
     - repository: mu_devops
       type: github
       endpoint: microsoft
-      name: microsoft/mu_devops
-      ref: refs/tags/{{ sync_version.mu_devops }}
+      name: kuqin12/mu_devops
+      ref: test_arm64
 
 parameters:
 - name: do_ci_build
@@ -85,6 +83,6 @@ jobs:
     tool_chain_tag: $(tool_chain_tag)
     vm_image: $(vm_image)
     container_build: ${{ parameters.container_build }}
-    linux_container_image: {{ sync_version.linux_build_container }}
+    linux_container_image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:4a1f8d3
 
 - ${{ parameters.extra_jobs }}
