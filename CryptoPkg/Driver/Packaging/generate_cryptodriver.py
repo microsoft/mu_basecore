@@ -552,8 +552,8 @@ def get_crypto_h(options, functions):
     for valid_type, funcs in sorted_functions:
         lines.append(f"  // {valid_type}")
         for func in funcs:
-            member_name = func.get_protocoled_name().ljust(49)  # make sure they're all the same size
-            lines.append(f"  {member_name} {func.name};")
+            member_name = func.get_protocoled_name().ljust(50)  # make sure they're all the same size
+            lines.append(f"  {member_name}  {func.name};")
     lines.append("};")
     lines.append("")
 
