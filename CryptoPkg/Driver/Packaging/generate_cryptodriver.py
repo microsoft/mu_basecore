@@ -547,7 +547,7 @@ def get_crypto_h(options, functions):
     lines.append("///\n/// EDK II Crypto Protocol\n///")
     lines.append("struct _EDKII_CRYPTO_PROTOCOL {")
     lines.append("  // VERSION")
-    lines.append("  EDKII_CRYPTO_GET_VERSION                           GetVersion;")
+    lines.append("  EDKII_CRYPTO_GET_VERSION                            GetVersion;")
     # generate the struct memebers
     for valid_type, funcs in sorted_functions:
         lines.append(f"  // {valid_type}")
