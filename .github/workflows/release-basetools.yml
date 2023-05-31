@@ -113,15 +113,22 @@ jobs:
       - name: Stage Files
         run: mkdir ${{ runner.temp }}/basetools ;
           mv ${{ runner.temp }}/artifacts/basetools-GCC5-X64       ${{ runner.temp }}/basetools/Linux-x86 ;
+          chmod a+x ${{ runner.temp }}/basetools/Linux-x86/* ;
           mv ${{ runner.temp }}/artifacts/basetools-GCC5-AARCH64   ${{ runner.temp }}/basetools/Linux-ARM-64 ;
+          chmod a+x ${{ runner.temp }}/basetools/Linux-ARM-64/* ;
           mv ${{ runner.temp }}/artifacts/basetools-VS2022-IA32    ${{ runner.temp }}/basetools/Windows-x86 ;
           mv ${{ runner.temp }}/artifacts/basetools-VS2022-ARM     ${{ runner.temp }}/basetools/Windows-ARM ;
           mv ${{ runner.temp }}/artifacts/basetools-VS2022-AARCH64 ${{ runner.temp }}/basetools/Windows-ARM-64 ;
 
-      - name: Zip Files
-        run: cd ${{ runner.temp }} ; zip -r basetools-${{ github.event.release.tag_name }}.zip basetools/*
+      - name: Package Files
+        run: |
+          cd ${{ runner.temp }} ;
+          zip -r basetools-${{ github.event.release.tag_name }}.zip basetools/* ;
+          tar -czf basetools-${{ github.event.release.tag_name }}.tar.gz basetools/*
 
       - name: Upload Release Asset
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload ${{ github.event.release.tag_name }} ${{ runner.temp }}/basetools-*.zip
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} ${{ runner.temp }}/basetools-*.zip
+          gh release upload ${{ github.event.release.tag_name }} ${{ runner.temp }}/basetools-*.tar.gz
