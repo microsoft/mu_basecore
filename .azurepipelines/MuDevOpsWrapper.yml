@@ -71,6 +71,7 @@ parameters:
 jobs:
 - template: Jobs/PrGate.yml@mu_devops
   parameters:
+    linux_container_image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:4a1f8d3
     do_ci_build: ${{ parameters.do_ci_build }}
     do_ci_setup: ${{ parameters.do_ci_setup }}
     do_pr_eval: ${{ parameters.do_pr_eval }}
@@ -83,6 +84,6 @@ jobs:
     tool_chain_tag: $(tool_chain_tag)
     vm_image: $(vm_image)
     container_build: ${{ parameters.container_build }}
-    linux_container_image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:4a1f8d3
 
 - ${{ parameters.extra_jobs }}
+
