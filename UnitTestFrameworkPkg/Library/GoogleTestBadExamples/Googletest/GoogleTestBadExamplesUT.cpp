@@ -94,7 +94,7 @@ UTShimTest (
 
   Status: PASSED
 **/
-TEST_F (GoogleTestBadExample, GetPolicyExpectedAssertNotHappen) {
+TEST_F (GoogleTestBadExample, GetPolicyAndExpectInOnePlace) {
   EXPECT_DEATH ({
     EXPECT_CALL (UefiBootServicesTableLib, gBS_LocateProtocol (&gEfiBootManagerPolicyProtocolGuid,_,_))
       .WillOnce(Return (EFI_NOT_FOUND));
@@ -107,7 +107,7 @@ TEST_F (GoogleTestBadExample, GetPolicyExpectedAssertNotHappen) {
 
   Status: PASSED
 **/
-TEST_F (GoogleTestBadExample, GetPolicyExpectAssert) {
+TEST_F (GoogleTestBadExample, GetPolicyUTExpectAssert) {
   UNIT_TEST_STATUS TestStatus;
 
   EXPECT_CALL (UefiBootServicesTableLib, gBS_LocateProtocol (&gEfiBootManagerPolicyProtocolGuid,_,_))

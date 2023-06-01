@@ -1,0 +1,20 @@
+[2023-06-01 01:02:23] [info] Load coverage file: D:\Repos\mu_tiano_platforms_3\MU_BASECORE\Build\UnitTestFrameworkPkg\HostTest\NOOPT_VS2022\X64\GoogleTestBadExamplesUT.exe.cov
+[2023-06-01 01:02:23] [info] Load coverage file: D:\Repos\mu_tiano_platforms_3\MU_BASECORE\Build\UnitTestFrameworkPkg\HostTest\NOOPT_VS2022\X64\SampleGoogleTestHost.exe.cov
+[2023-06-01 01:02:23] [info] Load coverage file: D:\Repos\mu_tiano_platforms_3\MU_BASECORE\Build\UnitTestFrameworkPkg\HostTest\NOOPT_VS2022\X64\SampleUnitTestHost.exe.cov
+[2023-06-01 01:02:23] [info] Start Program:
+Modules: Selected: * Excluded: 
+Sources: Selected: * Excluded: 
+Log Level: Normal
+Cover Children: 0
+Aggregate by file: 1
+Continue after C++ exception: 0
+Optimized build support: 0
+Export: cobertura D:\Repos\mu_tiano_platforms_3\MU_BASECORE\Build/coverage.xml 
+Input coverage: D:\Repos\mu_tiano_platforms_3\MU_BASECORE\Build\UnitTestFrameworkPkg\HostTest\NOOPT_VS2022\X64\GoogleTestBadExamplesUT.exe.cov D:\Repos\mu_tiano_platforms_3\MU_BASECORE\Build\UnitTestFrameworkPkg\HostTest\NOOPT_VS2022\X64\SampleGoogleTestHost.exe.cov D:\Repos\mu_tiano_platforms_3\MU_BASECORE\Build\UnitTestFrameworkPkg\HostTest\NOOPT_VS2022\X64\SampleUnitTestHost.exe.cov 
+Unified diff: 
+Excluded line regular expressions: 
+Substitute pdb source paths: 
+[2023-06-01 01:02:24] [info] ----------------------------------------------------
+[2023-06-01 01:02:24] [info] Cobertura report generated: D:\Repos\mu_tiano_platforms_3\MU_BASECORE\Build/coverage.xml
+[2023-06-01 01:02:24] [info] ----------------------------------------------------
+[2023-06-01 01:02:24] [info] The code coverage report is not what you expect? See the FAQ https://github.com/OpenCppCoverage/OpenCppCoverage/wiki/FAQ.
