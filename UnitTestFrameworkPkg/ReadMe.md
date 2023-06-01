@@ -610,7 +610,7 @@ uses the same test fixture and makes use of its `RtServicesMock`, `Status`, and
 `SecureBootMode` variables.
 
 ```cpp
-TEST_F(SetSecureBootModeTest, PropagateModeToSetVar) {
+TEST_F(SetSecureBootModeTest, PropogateModeToSetVar) {
   EXPECT_CALL(RtServicesMock,
     gRT_SetVariable(
       Char16StrEq(EFI_CUSTOM_MODE_NAME),
