@@ -5,6 +5,11 @@
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 {
+    # MU_CHANGE begin
+    "PrEval": {
+        "DscPath": "StandaloneMmPkg.dsc",
+    },
+    # MU_CHANGE end
     "EccCheck": {
         ## Exception sample looks like below:
         ## "ExceptionList": [
