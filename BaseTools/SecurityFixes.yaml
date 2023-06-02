@@ -4,16 +4,13 @@ CVE_2017_5731__CVE_2017_5732__CVE_2017_5733__CVE_2017_5734__CVE_2017_5735:
             - "BaseTools: Add more checker in Decompress algorithm to access the valid buffer (CVE FIX)"
     cve:
         - CVE-2017-5731 # This is the only CVE that still is in use
-        - CVE-2017-5732 # Abandoned CVE
-        - CVE-2017-5733 # Abandoned CVE
-        - CVE-2017-5734 # Abandoned CVE
-        - CVE-2017-5735 # Abandoned CVE
     date_reported: 
         2017-08-30
     description: 
         Improper bounds checking within Tianocompress and Ueficompress leads to heap and stack based overflow
     notes:
         - Original Discussion on mailing list appears lost
+        - The following CVEs were created and abandoned CVE-2017-5732, CVE-2017-5733, CVE-2017-5734, CVE-2017-5735
     files_impacted:
         - # Upstream Patch from Tianocore Edk2
             - BaseTools/Source/C/Common/Decompress.c
@@ -24,4 +21,4 @@ CVE_2017_5731__CVE_2017_5732__CVE_2017_5733__CVE_2017_5734__CVE_2017_5735:
         - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-5731
         - https://github.com/tianocore/edk2/compare/2ec7953d49677142c5f7552e9e3d96fb406ba0c4..041d89bc0f0119df37a5fce1d0f16495ff905089?diff=split # Edk2 Master
     other_packages_impacted:
-        - IntelFrameworkModulePkg # - IntelFrameworkModulePkg/Library/BaseUefiTianoCustomDecompressLib/BaseUefiTianoCustomDecompressLib.c
+        - IntelFrameworkModulePkg # TODO IntelFrameworkModulePkg/Library/BaseUefiTianoCustomDecompressLib/BaseUefiTianoCustomDecompressLib.c
