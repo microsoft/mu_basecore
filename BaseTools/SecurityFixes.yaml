@@ -1,4 +1,4 @@
-CVE_2017_5731__CVE_2017_5732__CVE_2017_5733__CVE_2017_5734__CVE_2017_5735:
+CVE_2017_5731:
     commit_titles:
         - # Upstream Patch from Tianocore Edk2
             - "BaseTools: Add more checker in Decompress algorithm to access the valid buffer (CVE FIX)"
