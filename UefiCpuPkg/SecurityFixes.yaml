@@ -1,0 +1,118 @@
+CVE_2018_12182:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "UefiCpuPkg PiSmmCpuDxeSmm: Only support IN/OUT IO save state read (CVE-2018-12182)"
+    cve:
+        CVE-2018-12182
+    date_reported: 
+        2018-08-30
+    description: 
+        SMI Confused Deputy SmramSaveState.c
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - UefiCpuPkg/PiSmmCpuDxeSmm/SmramSaveState.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=1136
+        - https://nvd.nist.gov/vuln/detail/CVE-2018-12182
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-12182
+        - https://github.com/tianocore/edk2/commit/cf574f0a1838665498e43e9c029d8c1211cbbfa3
+    other_packages_impacted:
+
+CVE_2018_3614:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/DxeCore: Not update RtCode in MemAttrTable after EndOfDxe"
+            - "MdePkg/SmmMemLib: Check for untested memory in GCD"
+    cve:
+        CVE-2018-3614
+    date_reported:
+        2017-10-25
+    description: 
+        An untested memory might not be covered by the SMM page protection.
+    notes:
+        - This one was "presumeably fixed" in Edk2 - deserves a deeper inspection
+        - FLAG
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - TODO - FIND ME
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=751
+        - https://nvd.nist.gov/vuln/detail/CVE-2018-3614
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-3614
+        - https://github.com/tianocore/edk2/compare/4a723ed258367471eac8b4ae32558f09ef65672e..233ffa90ccd852a8c6a478eb0426731d64598316
+    other_packages_impacted:
+        MdePkg
+
+CVE_2019_14588:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "UefiCpuPkg/RegisterCpuFeaturesLib: Supports test then write new value logic."
+            - "UefiCpuPkg/PiSmmCpuDxeSmm: Supports test then write new value logic."
+            - 'UefiCpuPkg/RegisterCpuFeaturesLib: Add "Test Then Write" Macros.'
+            - "UefiCpuPkg/CpuCommonFeaturesLib: Use new macros."
+    cve:
+        CVE-2019-14588
+    date_reported: 
+        2019-08-01
+    description:
+        IA32_FEATURE_CONTROL stays unlocked in S3 after a warm reset
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - UefiCpuPkg/Library/RegisterCpuFeaturesLib/CpuFeaturesInitialize.c
+            - UefiCpuPkg/PiSmmCpuDxeSmm/CpuS3.c
+            - UefiCpuPkg/Include/AcpiCpuData.h
+            - UefiCpuPkg/Include/Library/RegisterCpuFeaturesLib.h
+            - UefiCpuPkg/Library/RegisterCpuFeaturesLib/RegisterCpuFeaturesLib.c
+            - UefiCpuPkg/Library/CpuCommonFeaturesLib/CpuCommonFeatures.h
+            - UefiCpuPkg/Library/CpuCommonFeaturesLib/CpuCommonFeaturesLib.c
+            - UefiCpuPkg/Library/CpuCommonFeaturesLib/FeatureControl.c
+            - UefiCpuPkg/Library/CpuCommonFeaturesLib/MachineCheck.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=2040
+        - https://nvd.nist.gov/vuln/detail/CVE-2019-14588
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-14588
+        - https://github.com/tianocore/edk2/commit/95cfe6c24714a11c894070a0bf2f2ba08f0ff68b
+        - https://github.com/tianocore/edk2/commit/cfbcaad25189c02627bf5c73ddeb25b91516f7d6
+    other_packages_impacted:
+
+CVE_2019_11098:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "UefiCpuPkg: Move MigrateGdt from DiscoverMemory to TempRamDone. (CVE-2019-11098)"
+            - "UefiCpuPkg/CpuMpPei: Enable paging and set NP flag to avoid TOCTOU (CVE-2019-11098)"
+            - "UefiCpuPkg/CpuMpPei: Add GDT migration support (CVE-2019-11098)"
+            - "UefiCpuPkg/SecMigrationPei: Add initial PEIM (CVE-2019-11098)"
+    cve:
+        CVE-2019-11098
+    date_reported:
+        2019-03-12
+    description:
+        BootGuard TOCTOU vulnerability
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - UefiCpuPkg/CpuMpPei/CpuMpPei.c
+            - UefiCpuPkg/CpuMpPei/CpuMpPei.h
+            - UefiCpuPkg/CpuMpPei/CpuMpPei.inf
+            - UefiCpuPkg/CpuMpPei/CpuPaging.c
+            - UefiCpuPkg/Include/Ppi/RepublishSecPpi.h
+            - UefiCpuPkg/Library/CpuExceptionHandlerLib/CpuExceptionCommon.h
+            - UefiCpuPkg/Library/CpuExceptionHandlerLib/Ia32/ArchExceptionHandler.c
+            - UefiCpuPkg/Library/CpuExceptionHandlerLib/SecPeiCpuException.c
+            - UefiCpuPkg/Library/CpuExceptionHandlerLib/X64/ArchExceptionHandler.c
+            - UefiCpuPkg/SecCore/SecCore.inf
+            - UefiCpuPkg/SecCore/SecMain.c
+            - UefiCpuPkg/SecCore/SecMain.h
+            - UefiCpuPkg/SecMigrationPei/SecMigrationPei.c
+            - UefiCpuPkg/SecMigrationPei/SecMigrationPei.h
+            - UefiCpuPkg/SecMigrationPei/SecMigrationPei.inf
+            - UefiCpuPkg/SecMigrationPei/SecMigrationPei.uni
+            - UefiCpuPkg/UefiCpuPkg.dec
+            - UefiCpuPkg/UefiCpuPkg.dsc
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=1614
+        - https://nvd.nist.gov/vuln/detail/CVE-2019-11098
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-11098
+        - https://github.com/tianocore/edk2/pull/830/files # Edk2 Master
+    other_packages_impacted:
+        - SecurityPkg
+        - MdeModulePkg

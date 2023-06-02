@@ -1,0 +1,52 @@
+CVE_2019_14553:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - 'CryptoPkg/TlsLib: Add the new API "TlsSetVerifyHost" (CVE-2019-14553)'
+            - 'CryptoPkg/Crt: import "inet_pton.c" (CVE-2019-14553)'
+            - 'CryptoPkg/TlsLib: TlsSetVerifyHost: parse IP address literals as such (CVE-2019-14553)'
+    cve:
+        CVE-2019-14553
+    date_reported:
+        2018-05-29
+    description: 
+        server certificate with invalid domain name (CN) accepted in HTTPS-over-IPv6 boot
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - CryptoPkg/Include/Library/TlsLib.h
+            - CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
+            - CryptoPkg/Library/BaseCryptLib/SysCall/CrtWrapper.c
+            - CryptoPkg/Library/BaseCryptLib/SysCall/inet_pton.c
+            - CryptoPkg/Library/Include/CrtLibSupport.h
+            - CryptoPkg/Library/Include/arpa/inet.h
+            - CryptoPkg/Library/Include/arpa/nameser.h
+            - CryptoPkg/Library/Include/netinet/in.h
+            - CryptoPkg/Library/Include/sys/param.h
+            - CryptoPkg/Library/Include/sys/socket.h
+            - CryptoPkg/Library/TlsLib/TlsConfig.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=960
+        - https://nvd.nist.gov/vuln/detail/CVE-2019-14553
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-14553
+        - https://github.com/tianocore/edk2/compare/31efec82796cb950e99d1622aa9c0eb8380613a0..e2fc50812895b17e8b23f5a9c43cde29531b200f?diff=split # Edk2 Master
+    other_packages_impacted:
+        - NetworkPkg
+
+CVE_2019_14584:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "CryptoPkg/BaseCryptLib: fix NULL dereference (CVE-2019-14584)"
+    cve:
+        CVE-2019-14584
+    date_reported:
+        2019-06-13
+    description: 
+        NULL pointer dereference in AuthenticodeVerify()
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - CryptoPkg/Library/BaseCryptLib/Pk/CryptAuthenticode.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=1914
+        - https://nvd.nist.gov/vuln/detail/CVE-2019-14584
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-14584
+        - https://github.com/tianocore/edk2/commit/26442d11e620a9e81c019a24a4ff38441c64ba10
+    other_packages_impacted:

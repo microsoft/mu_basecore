@@ -1,0 +1,101 @@
+CVE_2018_12178:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - 'NetworkPkg/DnsDxe: "[CVE-2018-12178] Check the received packet size before parsing the message"'
+    cve: 
+        CVE-2018-12178
+    date_reported:
+        2017-12-07
+    description:
+        DNS should check the received packet size before using
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - NetworkPkg/DnsDxe/DnsImpl.c
+            - NetworkPkg/DnsDxe/DnsImpl.h
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=809
+        - https://nvd.nist.gov/vuln/detail/CVE-2018-12178
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-12178
+        - https://github.com/tianocore/edk2/commit/84110bbe4bb3a346514b9bb12eadb7586bca7dfd # Edk2 Master
+    other_packages_impacted:
+
+CVE_2019_14553:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "NetworkPkg/HttpDxe: Set the HostName for the verification (CVE-2019-14553)"
+            - "NetworkPkg/TlsDxe: Add the support of host validation to TlsDxe driver (CVE-2019-14553)"
+    cve:
+        CVE-2019-14553
+    date_reported:
+        2018-05-29
+    description:
+        'server certificate with invalid domain name (CN) accepted in HTTPS-over-IPv6 boot'
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - NetworkPkg/HttpDxe/HttpProto.h
+            - NetworkPkg/HttpDxe/Http.c
+            - NetworkPkg/HttpDxe/HttpSupport.c
+            - NetworkPkg/TlsDxe/TlsProtocol.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=960
+        - https://nvd.nist.gov/vuln/detail/CVE-2019-14553
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-14553
+        - https://github.com/tianocore/edk2/compare/31efec82796cb950e99d1622aa9c0eb8380613a0..e2fc50812895b17e8b23f5a9c43cde29531b200f?diff=split # Edk2 Master
+    other_packages_impacted:
+        - CryptoPkg
+
+CVE_2019_14559:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "NetworkPkg/ArpDxe: Recycle invalid ARP packets (CVE-2019-14559)"
+            - "NetworkPkg/Ip4Dxe: Check the received package length (CVE-2019-14559)."
+    cve: 
+        CVE-2019-14559
+    date_reported: 
+        2020-02-23
+    description: 
+        'NetworkPkg: CVE-2019-14559 tracker'
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - NetworkPkg/ArpDxe/ArpImpl.c
+            - NetworkPkg/Ip4Dxe/Ip4Input.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=2550
+        - https://nvd.nist.gov/vuln/detail/CVE-2019-14559
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-14559
+        - https://github.com/tianocore/edk2/commit/1d3215fd24f47eaa4877542a59b4bbf5afc0cfe8 # Edk2 Master (NetworkPkg/ArpDxe: Recycle invalid ARP packets (CVE-2019-14559))
+        - https://github.com/tianocore/edk2/commit/578bcdc2605e3438b9cbdac4e68339f90f5bf8af # Edk2 Master (NetworkPkg/Ip4Dxe: Check the received package length (CVE-2019-14559).)
+    other_packages_impacted:
+
+CVE_2021_38575:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - 'NetworkPkg/IScsiDxe: check IScsiHexToBin() return values'
+            - 'NetworkPkg/IScsiDxe: fix IScsiHexToBin() buffer overflow'
+            - 'NetworkPkg/IScsiDxe: fix IScsiHexToBin() hex parsing'
+            - 'NetworkPkg/IScsiDxe: reformat IScsiHexToBin() leading comment block'
+            - 'NetworkPkg/IScsiDxe: fix potential integer overflow in IScsiBinToHex()'
+            - 'NetworkPkg/IScsiDxe: clean up library class dependencies'
+            - 'NetworkPkg/IScsiDxe: clean up "ISCSI_CHAP_AUTH_DATA.OutChallengeLength"'
+            - 'NetworkPkg/IScsiDxe: simplify "ISCSI_CHAP_AUTH_DATA.InChallenge" size'
+            - 'NetworkPkg/IScsiDxe: wrap IScsiCHAP source files to 80 characters'
+    cve:
+        CVE-2021-38575
+    date_reported:
+        2021-04-26
+    description: 
+        'NetworkPkg/IScsiDxe: remotely exploitable buffer overflows'
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - NetworkPkg/IScsiDxe/IScsiCHAP.c
+            - NetworkPkg/IScsiDxe/IScsiCHAP.h
+            - NetworkPkg/IScsiDxe/IScsiDxe.inf
+            - NetworkPkg/IScsiDxe/IScsiImpl.h
+            - NetworkPkg/IScsiDxe/IScsiMisc.c
+            - NetworkPkg/IScsiDxe/IScsiMisc.h
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=3356
+        - https://nvd.nist.gov/vuln/detail/CVE-2021-38575
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-38575
+        - https://github.com/tianocore/edk2/pull/1698 # Edk2 Master
+    other_packages_impacted:

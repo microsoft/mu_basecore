@@ -1,0 +1,302 @@
+CVE_2018_12180:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/PartitionDxe: Ensure blocksize holds MBR (CVE-2018-12180)"
+            - "MdeModulePkg/RamDiskDxe: Restrict on RAM disk size (CVE-2018-12180)"
+    cve:
+        CVE-2018-12180
+    date_reported:
+        2018-08-30
+    description:
+        Buffer Overflow in BlockIo service for RAM disk
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskBlockIo.c
+            - MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskImpl.h
+            - MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskProtocol.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=1134
+        - https://nvd.nist.gov/vuln/detail/CVE-2018-12180
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-12180
+        - https://github.com/tianocore/edk2/compare/fccdb88022c1f6d85c773fce506b10c879063f1d..38c9fbdcaa0219eb86fe82d90e3f8cfb5a54be9f?diff=split # Edk2 Master
+    other_packages_impacted:
+
+CVE_2018_12181:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/HiiDatabase: Fix potential integer overflow (CVE-2018-12181)"
+            - "MdeModulePkg/HiiImage: Fix stack overflow when corrupted BMP is parsed (CVE-2018-12181)"
+    cve: 
+        CVE-2018-12181
+    date_reported: 
+        2018-08-30
+    description: 
+        Stack Overflow on Corrupted BMP
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - MdeModulePkg/Universal/HiiDatabaseDxe/Image.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=1135
+        - https://nvd.nist.gov/vuln/detail/CVE-2018-12181
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-12181
+        - https://github.com/tianocore/edk2/compare/ffe5f7a6b4e978dffbe1df228963adc914451106..89910a39dcfd788057caa5d88b7e76e112d187b5?diff=split # Edk2 Master
+    other_packages_impacted:
+
+CVE_2018_3613:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg Variable: Fix Timestamp zeroing issue on APPEND_WRITE"
+    cve: 
+        CVE-2018-3613
+    date_reported: 
+        2017-03-02
+    description:
+        AuthVariable Timestamp zeroing issue on APPEND_WRITE
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - MdeModulePkg/Universal/Variable/RuntimeDxe/Variable.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=415
+        - https://nvd.nist.gov/vuln/detail/CVE-2018-3613
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-3613
+        - https://github.com/tianocore/edk2/commit/b7dc8888f31402f410c53242839271ba3b94b619
+    other_packages_impacted:
+
+CVE_2019_0160:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/UdfDxe: Refine boundary checks for file/path name string"
+            - "MdeModulePkg/UdfDxe: Add boundary check for ComponentIdentifier decode"
+            - "MdeModulePkg/PartitionDxe: Add check for underlying device block size"
+            - "MdeModulePkg/UdfDxe: Add boundary check for getting volume (free) size"
+            - "MdeModulePkg/UdfDxe: Add boundary check the read of FE/EFE"
+    cve:
+        CVE-2019-0160
+    date_reported: 
+        2017-12-27
+    description: 
+        '[MdeModulePkg][UDF] Potential buffer overflow on stack/heap within PartitionDxe\Udf.c & UdfDxe'
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - MdeModulePkg/Universal/Disk/UdfDxe/FileSystemOperations.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=828
+        - https://nvd.nist.gov/vuln/detail/CVE-2019-0160
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-0160
+        - https://github.com/tianocore/edk2/compare/b9ae1705adfdd43668027a25a2b03c2e81960219..5c0748f43f4e1cc15fdd0be64a764eacd7df92f6?diff=split # Edk2 Master
+    other_packages_impacted:
+
+CVE_2019_11098:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/Core: Create Migrated FV Info Hob for calculating hash (CVE-2019-11098)"
+            - "MdeModulePkg: Add new PCD to control the evacuate temporary memory feature (CVE-2019-11098)"
+            - "MdeModulePkg/PeiCore: Enable T-RAM evacuation in PeiCore (CVE-2019-11098)"
+    cve: 
+        CVE-2019-11098
+    date_reported: 
+        2019-03-12
+    description: 
+        BootGuard TOCTOU vulnerability
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - MdeModulePkg/Core/Pei/Dispatcher/Dispatcher.c
+            - MdeModulePkg/Core/Pei/Image/Image.c
+            - MdeModulePkg/Core/Pei/Memory/MemoryServices.c
+            - MdeModulePkg/Core/Pei/PeiMain.h
+            - MdeModulePkg/Core/Pei/PeiMain.inf
+            - MdeModulePkg/Core/Pei/PeiMain/PeiMain.c
+            - MdeModulePkg/Core/Pei/Ppi/Ppi.c
+            - MdeModulePkg/Include/Guid/MigratedFvInfo.h
+            - MdeModulePkg/MdeModulePkg.dec
+            - MdeModulePkg/MdeModulePkg.uni
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=1614
+        - https://nvd.nist.gov/vuln/detail/CVE-2019-11098
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-11098
+        - https://github.com/tianocore/edk2/compare/9bedaec05b7b8ba9aee248361bb61a85a26726cb..f6ec1dd34fb6b9757b5ead465ee2ea20c182b0ac?diff=split # Edk2 Master
+        - https://github.com/tianocore/edk2/pull/830/files # Edk2 Master
+    other_packages_impacted:
+        - SecurityPkg
+        - UefiCpuPkg
+
+CVE_2019_14558:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/DisplayEngine: Zero memory before free (CVE-2019-14558)"
+            - "MdeModulePkg/String.c: Zero memory before free (CVE-2019-14558)"
+    cve:
+        CVE-2019-14558
+    date_reported: 
+        2019-03-10
+    description: 
+        Password stored in HII database is not cleared after memory free
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - MdeModulePkg/Universal/DisplayEngineDxe/ProcessOptions.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=1611
+        - https://nvd.nist.gov/vuln/detail/CVE-2019-14558
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-14558
+        - https://github.com/tianocore/edk2/compare/764e8ba1389a617639d79d2c4f0d53f4ea4a7387..f1d78c489a39971b5aac5d2fc8a39bfa925c3c5d?diff=split # Edk2 Master
+    other_packages_impacted:
+
+CVE_2019_14563:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/PiDxeS3BootScriptLib: Fix potential numeric truncation (CVE-2019-14563)"
+    cve:
+        CVE-2019-14563
+    date_reported:
+        2019-07-19
+    description: 
+        Integer truncation issues in S3BootScript[Save]*() API
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - MdeModulePkg/Library/PiDxeS3BootScriptLib/BootScriptSave.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=2001
+        - https://nvd.nist.gov/vuln/detail/CVE-2019-14563
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-14563
+        - https://github.com/tianocore/edk2/commit/322ac05f8bbc1bce066af1dabd1b70ccdbe28891
+    other_packages_impacted:
+
+CVE_2019_14586:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/HiiDB: Remove configuration table when it's freed (CVE-2019-14586)"
+    cve:
+        CVE-2019-14586
+    date_reported:
+        2019-07-19
+    description:
+        Error corner cases in Hii Os Runtime support, where Host OS could trigger use after free
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/Universal/HiiDatabaseDxe/Database.c"
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=1995
+        - https://nvd.nist.gov/vuln/detail/CVE-2019-14586
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-14586
+        - https://github.com/tianocore/edk2/commit/c32be82e99ef272e7fa742c2f06ff9a4c3756613
+    other_packages_impacted:
+
+CVE_2019_14587:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/SdMmcPciHcDxe: Fix double PciIo Unmap in TRB creation (CVE-2019-14587)"
+    cve:
+        CVE-2019-14587
+    date_reported:
+        2019-07-19
+    description:
+        Double EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_UNMAP in SdMmcCreateTrb
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - MdeModulePkg/Bus/Pci/SdMmcPciHcDxe/SdMmcPciHci.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=1989
+        - https://nvd.nist.gov/vuln/detail/CVE-2019-14587
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-14587
+        - https://github.com/tianocore/edk2/commit/e36d5ac7d10a6ff5becb0f52fdfd69a1752b0d14
+        - https://github.com/tianocore/edk2/pull/389 # Edk2 Master
+    other_packages_impacted:
+
+CVE_2021_28210:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/Core/Dxe: limit FwVol encapsulation section recursion"
+    cve:
+        CVE-2021-28210
+    date_reported:
+        2019-04-23
+    description:
+        Unlimited FV Recursion, round 2
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - MdeModulePkg/Core/Dxe/DxeMain.inf
+            - MdeModulePkg/Core/Dxe/SectionExtraction/CoreSectionExtraction.c
+            - MdeModulePkg/MdeModulePkg.dec
+            - MdeModulePkg/MdeModulePkg.uni
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=1743
+        - https://nvd.nist.gov/vuln/detail/CVE-2021-28210
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-28210
+        - https://github.com/tianocore/edk2/commit/47343af30435302c087027177613412a1a83e919 # Edk2 Master
+    other_packages_impacted:
+    
+CVE_2021_28211:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/LzmaCustomDecompressLib: catch 4GB+ uncompressed buffer sizes"
+    cve:
+        CVE-2021-28211
+    date_reported:
+        2019-05-15
+    description:
+        Possible heap corruption with LzmaUefiDecompressGetInfo
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - MdeModulePkg/Library/LzmaCustomDecompressLib/LzmaDecompress.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=1816
+        - https://nvd.nist.gov/vuln/detail/CVE-2021-28211
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-28211
+        - https://github.com/tianocore/edk2/pull/1138/commits/6aeaea14e97f2a36f07ccd4fd2ffb971d68b3b0a # Edk2 Master
+    other_packages_impacted:
+
+CVE_2021_28216:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/FPDT: Lock boot performance table address variable at EndOfDxe"
+    cve:
+        CVE-2021-28216
+    date_reported:
+        2020-09-09
+    description:
+        BootPerformanceTable pointer is read from an NVRAM variable in PEI
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - MdeModulePkg/Library/DxeCorePerformanceLib/DxeCorePerformanceLib.c
+            - MdeModulePkg/Library/DxeCorePerformanceLib/DxeCorePerformanceLib.inf
+            - MdeModulePkg/Library/SmmCorePerformanceLib/SmmCorePerformanceLib.c
+            - MdeModulePkg/Library/SmmCorePerformanceLib/SmmCorePerformanceLib.inf
+            - MdeModulePkg/MdeModulePkg.dec
+            - MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTableDxe/FirmwarePerformanceDxe.c
+            - MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTableDxe/FirmwarePerformanceDxe.inf
+            - MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTableSmm/FirmwarePerformanceCommon.c
+            - MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTableSmm/FirmwarePerformanceCommon.h
+            - MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTableSmm/FirmwarePerformanceSmm.inf
+            - MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTableSmm/FirmwarePerformanceStandaloneMm.c
+            - MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTableSmm/FirmwarePerformanceStandaloneMm.inf
+            - MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTableSmm/FirmwarePerformanceTraditional.c
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=2957
+        - https://nvd.nist.gov/vuln/detail/CVE-2021-28216
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-28216
+        - https://github.com/tianocore/edk2/commit/466ebdd2e0919c1538d03cd59833704bd5e1c028 # Edk2 Master
+    other_packages_impacted:
+
+CVE_2021_38578:
+    commit_titles:
+        - # Upstream Patch from Tianocore Edk2
+            - "MdeModulePkg/PiSmmCore: SmmEntryPoint underflow (CVE-2021-38578)"
+    cve:
+        CVE-2021-38578
+    date_reported:
+        2021-05-10
+    description:
+        SmmEntryPoint underflow allowing potential SMM privilege escalation
+    files_impacted:
+        - # Upstream Patch from Tianocore Edk2
+            - MdeModulePkg/Core/PiSmmCore/PiSmmCore.c
+            - MdeModulePkg/Core/PiSmmCore/PiSmmCore.h
+            - MdeModulePkg/Core/PiSmmCore/PiSmmCore.inf
+            - MdeModulePkg/Core/PiSmmCore/PiSmmIpl.c
+            - MdeModulePkg/Core/PiSmmCore/PiSmmIpl.inf
+    links:
+        - https://bugzilla.tianocore.org/show_bug.cgi?id=3387
+        - https://nvd.nist.gov/vuln/detail/CVE-2021-38578
+        - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-38578
+        - https://github.com/tianocore/edk2/commit/cab1f02565d3b29081dd21afb074f35fdb4e1fd6 # Edk2 Master
+    other_packages_impacted:
