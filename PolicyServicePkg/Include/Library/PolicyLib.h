@@ -9,6 +9,8 @@
 #ifndef _POLICY_LIB_H_
 #define _POLICY_LIB_H_
 
+#include <PolicyInterface.h>
+
 #define VERIFIED_POLICY_LIB_VERSION  1
 
 #pragma pack(1)
@@ -82,6 +84,22 @@ EFI_STATUS
 EFIAPI
 RemovePolicy (
   IN CONST EFI_GUID  *PolicyGuid
+  );
+
+EFI_STATUS
+EFIAPI
+RegisterPolicyNotify (
+  IN CONST EFI_GUID           *PolicyGuid,
+  IN CONST UINT32             EventTypes,
+  IN CONST UINT32             Priority,
+  IN POLICY_HANDLER_CALLBACK  CallbackRoutine,
+  OUT VOID                    **Handle
+  );
+
+EFI_STATUS
+EFIAPI
+UnregisterPolicyNotify (
+  IN VOID  *Handle
   );
 
 /**

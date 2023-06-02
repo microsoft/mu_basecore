@@ -14,8 +14,9 @@ typedef struct _POLICY_HOB_HEADER {
   UINT64      Attributes;
   UINT16      PolicySize;
   UINT16      AllocationSize;
-  UINT32      Removed  : 1;
-  UINT32      Reserved : 31;
+  UINT16      Removed  : 1;
+  UINT16      Reserved : 15;
+  UINT16      NotifyDepth; // PEI Only
 } POLICY_HOB_HEADER;
 
 #define GET_HOB_POLICY_DATA(_hob_header)  ((VOID *)(((UINT8*)_hob_header) + sizeof(POLICY_HOB_HEADER)))
