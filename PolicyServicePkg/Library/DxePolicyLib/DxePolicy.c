@@ -16,8 +16,8 @@
 
 #include "../PolicyLibCommon.h"
 
-EFI_EVENT  mEfiExitBootServicesEvent;
-BOOLEAN    mEfiAtRuntime = FALSE;
+STATIC EFI_EVENT  mEfiExitBootServicesEvent;
+STATIC BOOLEAN    mPolicyAtRuntime = FALSE;
 
 /**
   A private helper function to retrieve the policy service protocol.
@@ -36,7 +36,7 @@ GetPolicyInterface (
   EFI_STATUS              Status;
   STATIC POLICY_PROTOCOL  *mPolicyProtocol = NULL;
 
-  if (mEfiAtRuntime) {
+  if (mPolicyAtRuntime) {
     mPolicyProtocol = NULL;
     return EFI_UNSUPPORTED;
   }
@@ -75,7 +75,7 @@ RuntimeLibExitBootServicesEvent (
   IN VOID       *Context
   )
 {
-  mEfiAtRuntime = TRUE;
+  mPolicyAtRuntime = TRUE;
 }
 
 /**
