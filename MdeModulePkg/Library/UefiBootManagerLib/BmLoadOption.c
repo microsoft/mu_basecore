@@ -160,6 +160,12 @@ BmGetFreeOptionNumber (
   Create the Boot####, Driver####, SysPrep####, PlatformRecovery#### variable
   from the load option.
 
+  // MU_CHANGE START
+  If the OptionNumber is LoadOptionTypePlatformRecovery and the call to
+  SetVariable was successful, a lock now variable policy will be registered
+  for the PlatformRecovery#### variable.
+  // MU_CHANGE END
+
   @param  LoadOption      Pointer to the load option.
 
   @retval EFI_SUCCESS     The variable was created.
@@ -241,6 +247,27 @@ structure.
 
   VariableAttributes = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE;
   if (Option->OptionType == LoadOptionTypePlatformRecovery) {
+    VariableAttributes = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS;
+  }
+
+  Status = gRT->SetVariable (
+                  OptionName,
+                  &gEfiGlobalVariableGuid,
+                  VariableAttributes,
+                  VariableSize,
+                  Variable
+                  );
+  FreePool (Variable);
+
+  // MU_CHANGE START: Don't register a variable policy if the SetVariable call failed
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  // MU_CHANGE END
+
+  // MU_CHANGE - Move RegisterBasicVariablePolicy after SetVariable for OptionName
+  if (Option->OptionType == LoadOptionTypePlatformRecovery) {
     //
     // Lock the PlatformRecovery####
     //
@@ -257,19 +284,21 @@ structure.
                  VARIABLE_POLICY_TYPE_LOCK_NOW
                  );
       ASSERT_EFI_ERROR (Status);
+
+      // VariableAttributes = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS;
     }
 
-    VariableAttributes = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS;
+    // Status = gRT->SetVariable (
+    //                 OptionName,
+    //                 &gEfiGlobalVariableGuid,
+    //                 VariableAttributes,
+    //                 VariableSize,
+    //                 Variable
+    //                 );
+    // FreePool (Variable);
   }
 
-  Status = gRT->SetVariable (
-                  OptionName,
-                  &gEfiGlobalVariableGuid,
-                  VariableAttributes,
-                  VariableSize,
-                  Variable
-                  );
-  FreePool (Variable);
+  // MU_CHANGE END
 
   return Status;
 }
