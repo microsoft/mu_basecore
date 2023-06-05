@@ -168,8 +168,8 @@ BmGetFreeOptionNumber (
 
   // MU_CHANGE START
   If the OptionNumber is LoadOptionTypePlatformRecovery and the call to
-  SetVariable was successful, a variable policy will be registered for
-  the PlatformRecovery#### variable.
+  SetVariable was successful, a lock now variable policy will be registered
+  for the PlatformRecovery#### variable.
   // MU_CHANGE END
 
   @param  LoadOption      Pointer to the load option.
