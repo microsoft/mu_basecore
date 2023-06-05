@@ -356,6 +356,7 @@ Exit:
 
   @retval   EFI_SUCCESS            The callback notification as successfully registered.
   @retval   EFI_INVALID_PARAMETER  EventTypes was 0 or Callback routine is invalid.
+  @retval   EFI_OUT_OF_RESOURCES   Tracking data for callback could not be allocated.
   @retval   Other                  The callback registration failed.
 **/
 EFI_STATUS
@@ -373,6 +374,8 @@ CommonRegisterNotify (
   POLICY_NOTIFY_ENTRY  *Entry;
 
   if ((CallbackRoutine == NULL) ||
+      (PolicyGuid == NULL) ||
+      (Handle == NULL) ||
       ((EventTypes & POLICY_NOTIFY_ALL) != EventTypes))
   {
     return EFI_INVALID_PARAMETER;
@@ -424,6 +427,10 @@ CommonUnregisterNotify (
 {
   POLICY_NOTIFY_ENTRY  *Entry;
 
+  if (Handle == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   Entry = (POLICY_NOTIFY_ENTRY *)Handle;
   if (Entry->Signature != POLICY_NOTIFY_ENTRY_SIGNATURE) {
     return EFI_INVALID_PARAMETER;
@@ -435,7 +442,7 @@ CommonUnregisterNotify (
   }
 
   //
-  // If this entry is the entry that currently being processed, step the entry
+  // If this entry is the entry that is currently being processed, step the entry
   // forward.
   //
   if (mNotifyInProgress) {
@@ -478,7 +485,12 @@ CommonPolicyNotify (
   // Per-policy recursion handling.
   //
 
-  ASSERT (PolicyEntry->NotifyDepth < MAX_UINT32);
+  if (PolicyEntry->NotifyDepth == MAX_UINT32) {
+    DEBUG ((DEBUG_ERROR, "%a: Maximum recursion hit in policy notification\n", __FUNCTION__));
+    ASSERT (FALSE);
+    return;
+  }
+
   PolicyEntry->NotifyDepth++;
   Depth = PolicyEntry->NotifyDepth;
 

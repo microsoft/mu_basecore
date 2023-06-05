@@ -363,6 +363,8 @@ PeiRegisterNotify (
   UINT16                 Index;
 
   if ((CallbackRoutine == NULL) ||
+      (PolicyGuid == NULL) ||
+      (Handle == NULL) ||
       ((EventTypes & POLICY_NOTIFY_ALL) != EventTypes))
   {
     return EFI_INVALID_PARAMETER;

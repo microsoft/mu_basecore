@@ -90,6 +90,14 @@ VOID
   IN VOID *CallbackHandle
   );
 
+/**
+  Flags used for policy callbacks.
+
+  POLICY_NOTIFY_SET - The policy content and/or attributes were set.
+  POLICY_NOTIFY_FINALIZED - The policy was set with the POLICY_ATTRIBUTE_FINALIZED set.
+  POLICY_NOTIFY_REMOVED - The policy was removed.
+
+**/
 #define POLICY_NOTIFY_SET        (BIT0)
 #define POLICY_NOTIFY_FINALIZED  (BIT1)
 #define POLICY_NOTIFY_REMOVED    (BIT2)
