@@ -106,15 +106,6 @@ the policy making it read-only or can be used to limit access to the policy to
 a phase of boot. See the PolicyInterface header definitions for full list of
 attributes.
 
-### Policy Notification Protocols & PPIs
-
-When a policy is set or updated a PPI or Protocol will be installed with the
-GUID of the policy. Consumers may use this GUID to either set Protocol/PPI
-notifications, or create a DEPEX dependency so that the consumer is not
-dispatched until the policy is made available. The protocol/PPI will not
-contain any useful interface and consumers are expected to use the protocol
-interface to retrieve the policy data after being notified or dispatched.
-
 ## Policy Interface
 
 Both the PEI and DXE implementation provide the following interfaces.
@@ -135,6 +126,51 @@ copied into.
 ### _RemovePolicy_
 
 Removes a policy from the policy list, freeing it when possible.
+
+### _RegisterNotify_
+
+Registers a callback that will be invoked when a policy is edited in some way. The
+reasons for the callback can be filtered through the EventTypes parameter.
+
+### _UnregisterNotify_
+
+Removes a policy notification callback, prevent any further invocation.
+
+## Policy Notifications
+
+Consumers may subscribe to policy updates in multiple ways. For end-consumers
+of a policy they may use the policy GUID in their `DEPEX` for the signal final policy,
+and all other consumers may use the policy notification callbacks.
+
+### Final Policy Signal Protocol & PPI
+
+When a policy is finalized a PPI or Protocol will be installed with the
+GUID of the policy. Consumers may use this GUID to either set Protocol/PPI
+notifications, or create a DEPEX dependency so that the consumer is not
+dispatched until the final policy is made available. The protocol/PPI will not
+contain any useful interface and consumers are expected to use the Policy Service protocol
+interface to retrieve the policy data after being notified or dispatched.
+
+### Policy Service Callbacks
+
+The policy service supports callbacks for various types of policy events such
+as a policy being created, updated, finalized, or removed. Consumers may use the
+`RegisterNotify` routine to set a callback in the event that a provided policy
+undergoes the event specified in the callback registration. A given callbacks may
+receive an event with multiple events at once. For example, a finalized event will
+always be accompanied by a set event since a policy must be set to be finalized.
+
+Registered callbacks will be invoked in order of ascending `Priority` with ties
+being resolved with a first-come-first-serve approach. Callbacks may make
+edits to the underlying policy which will result in all of the original still
+pending notifications being canceled and the all of callbacks being re-invoked
+with the new event. For example, if you have the notifications of ascending priority
+where B edits the policy the sequence of callbacks would be
+
+    A -> B (EDIT) -> A -> B -> C
+
+For this reason, callbacks that edit the policy should either remove their
+notification first or take precautions to not create a infinite notification loop.
 
 ## Policy Service Implementation
 
