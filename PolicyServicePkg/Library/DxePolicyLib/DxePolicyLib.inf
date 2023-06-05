@@ -14,7 +14,9 @@
   FILE_GUID                      = 66BE3195-F6D0-49D5-9C47-D3D7A6F7CC26
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = PolicyLib | DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION
+  LIBRARY_CLASS                  = PolicyLib | DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION DXE_RUNTIME_DRIVER
+  CONSTRUCTOR                    = PolicyLibConstructor
+  DESTRUCTOR                     = PolicyLibDestructor
 
 [Sources]
   ../PolicyLibCommon.c

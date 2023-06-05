@@ -18,7 +18,9 @@ STATIC EFI_HANDLE  mImageHandle    = NULL;
 POLICY_PROTOCOL  mPolicyProtocol = {
   CommonSetPolicy,
   CommonGetPolicy,
-  CommonRemovePolicy
+  CommonRemovePolicy,
+  CommonRegisterNotify,
+  CommonUnregisterNotify
 };
 
 /**
