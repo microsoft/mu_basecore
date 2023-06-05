@@ -16,6 +16,7 @@
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = PolicyLib | DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION DXE_RUNTIME_DRIVER
   CONSTRUCTOR                    = PolicyLibConstructor
+  DESTRUCTOR                     = PolicyLibDestructor
 
 [Sources]
   ../PolicyLibCommon.c

@@ -109,3 +109,27 @@ PolicyLibConstructor (
   ASSERT_EFI_ERROR (Status);
   return Status;
 }
+
+/**
+  This destructor closes the exit boot services event.
+
+  @param[in] ImageHandle  The firmware allocated handle for the EFI image.
+  @param[in] SystemTable  A pointer to the EFI System Table.
+
+  @retval EFI_SUCCESS   Successfully initialized the policy library.
+  @retval Other         Error returned by a subroutine.
+
+**/
+EFI_STATUS
+EFIAPI
+PolicyLibDestructor (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = gBS->CloseEvent (mPolicyExitBootServicesEvent);
+  ASSERT_EFI_ERROR (Status);
+  return Status;
+}
