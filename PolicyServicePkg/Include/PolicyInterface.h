@@ -75,10 +75,85 @@ EFI_STATUS
   IN CONST EFI_GUID *PolicyGuid
   );
 
+/**
+  Callback for a policy notification event.
+
+  @param[in]  PolicyGuid        The GUID of the policy being notified.
+  @param[in]  EventTypes        The events that occurred for the notification.
+  @param[in]  CallbackHandle    The handle for the callback being invoked.
+**/
+typedef
+VOID
+(EFIAPI *POLICY_HANDLER_CALLBACK)(
+  IN CONST EFI_GUID *PolicyGuid,
+  IN UINT32 EventTypes,
+  IN VOID *CallbackHandle
+  );
+
+/**
+  Flags used for policy callbacks.
+
+  POLICY_NOTIFY_SET - The policy content and/or attributes were set.
+  POLICY_NOTIFY_FINALIZED - The policy was set with the POLICY_ATTRIBUTE_FINALIZED set.
+  POLICY_NOTIFY_REMOVED - The policy was removed.
+
+**/
+#define POLICY_NOTIFY_SET        (BIT0)
+#define POLICY_NOTIFY_FINALIZED  (BIT1)
+#define POLICY_NOTIFY_REMOVED    (BIT2)
+#define POLICY_NOTIFY_ALL        (POLICY_NOTIFY_SET | \
+                                  POLICY_NOTIFY_FINALIZED | \
+                                  POLICY_NOTIFY_REMOVED)
+
+#define POLICY_NOTIFY_DEFAULT_PRIORITY  (512)
+
+/**
+  Registers a callback for a policy event notification. The provided routine
+  will be invoked when one of multiple of the provided event types for the specified
+  guid occurs.
+
+  @param[in]   PolicyGuid        The GUID of the policy the being watched.
+  @param[in]   EventTypes        The events to notify the callback for.
+  @param[in]   Priority          The priority of the callback where the lower values
+                                 will be called first.
+  @param[in]   CallbackRoutine   The function pointer of the callback to be invoked.
+  @param[out]  Handle            Returns the handle to this callback entry.
+
+  @retval   EFI_SUCCESS            The callback notification as successfully registered.
+  @retval   EFI_INVALID_PARAMETER  EventTypes was 0 or Callback routine is invalid.
+  @retval   Other                  The callback registration failed.
+**/
+typedef
+EFI_STATUS
+(EFIAPI *POLICY_REGISTER_CALLBACK)(
+  IN CONST EFI_GUID *PolicyGuid,
+  IN CONST UINT32 EventTypes,
+  IN CONST UINT32 Priority,
+  IN POLICY_HANDLER_CALLBACK CallbackRoutine,
+  OUT VOID **Handle
+  );
+
+/**
+  Removes a registered notification callback.
+
+  @param[in]   Handle     The handle for the registered callback.
+
+  @retval   EFI_SUCCESS            The callback notification as successfully removed.
+  @retval   EFI_INVALID_PARAMETER  The provided handle is invalid.
+  @retval   EFI_NOT_FOUND          The provided handle could not be found.
+**/
+typedef
+EFI_STATUS
+(EFIAPI *POLICY_UNREGISTER_CALLBACK)(
+  IN VOID *Handle
+  );
+
 typedef struct _POLICY_INTERFACE {
-  POLICY_SET_POLICY       SetPolicy;
-  POLICY_GET_POLICY       GetPolicy;
-  POLICY_REMOVE_POLICY    RemovePolicy;
+  POLICY_SET_POLICY             SetPolicy;
+  POLICY_GET_POLICY             GetPolicy;
+  POLICY_REMOVE_POLICY          RemovePolicy;
+  POLICY_REGISTER_CALLBACK      RegisterNotify;
+  POLICY_UNREGISTER_CALLBACK    UnregisterNotify;
 } POLICY_INTERFACE;
 
 #endif

@@ -110,6 +110,44 @@ RemovePolicy (
   return Status;
 }
 
+EFI_STATUS
+EFIAPI
+RegisterPolicyNotify (
+  IN CONST EFI_GUID           *PolicyGuid,
+  IN CONST UINT32             EventTypes,
+  IN CONST UINT32             Priority,
+  IN POLICY_HANDLER_CALLBACK  CallbackRoutine,
+  OUT VOID                    **Handle
+  )
+{
+  POLICY_INTERFACE  *PolicyService;
+  EFI_STATUS        Status;
+
+  Status = GetPolicyInterface (&PolicyService);
+  if (!EFI_ERROR (Status)) {
+    Status = PolicyService->RegisterNotify (PolicyGuid, EventTypes, Priority, CallbackRoutine, Handle);
+  }
+
+  return Status;
+}
+
+EFI_STATUS
+EFIAPI
+UnregisterPolicyNotify (
+  IN VOID  *Handle
+  )
+{
+  POLICY_INTERFACE  *PolicyService;
+  EFI_STATUS        Status;
+
+  Status = GetPolicyInterface (&PolicyService);
+  if (!EFI_ERROR (Status)) {
+    Status = PolicyService->UnregisterNotify (Handle);
+  }
+
+  return Status;
+}
+
 /**
   Retrieves a verified policy of the given type from the policy store.
 
