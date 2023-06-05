@@ -6,6 +6,11 @@
 ##
 
 {
+    # MU_CHANGE begin
+    "PrEval": {
+        "DscPath": "PolicyServicePkg.dsc",
+    },
+    # MU_CHANGE begin
     "LicenseCheck": {
         "IgnoreFiles": []
     },
