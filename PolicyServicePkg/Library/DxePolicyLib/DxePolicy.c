@@ -16,7 +16,7 @@
 
 #include "../PolicyLibCommon.h"
 
-STATIC EFI_EVENT  mEfiExitBootServicesEvent;
+STATIC EFI_EVENT  mPolicyExitBootServicesEvent;
 STATIC BOOLEAN    mPolicyAtRuntime = FALSE;
 
 /**
@@ -103,7 +103,7 @@ PolicyLibConstructor (
                   TPL_NOTIFY,
                   RuntimeLibExitBootServicesEvent,
                   NULL,
-                  &mEfiExitBootServicesEvent
+                  &mPolicyExitBootServicesEvent
                   );
 
   ASSERT_EFI_ERROR (Status);
