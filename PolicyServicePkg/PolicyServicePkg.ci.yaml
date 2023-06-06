@@ -23,6 +23,9 @@
     "CompilerPlugin": {
         "DscPath": "PolicyServicePkg.dsc"
     },
+    "HostUnitTestCompilerPlugin": {
+        "DscPath": "Test/PolicyServicePkgHostTest.dsc"
+    },
     "CharEncodingCheck": {
         "IgnoreFiles": []
     },
@@ -33,7 +36,9 @@
             "PolicyServicePkg/PolicyServicePkg.dec",
         ],
         # For host based unit tests
-        "AcceptableDependencies-HOST_APPLICATION":[],
+        "AcceptableDependencies-HOST_APPLICATION":[
+            "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec"
+        ],
         # For UEFI shell based apps
         "AcceptableDependencies-UEFI_APPLICATION":[],
         "IgnoreInf": []
@@ -41,6 +46,10 @@
     "DscCompleteCheck": {
         "DscPath": "PolicyServicePkg.dsc",
         "IgnoreInf": []
+    },
+    "HostUnitTestDscCompleteCheck": {
+        "IgnoreInf": [],
+        "DscPath": "Test/PolicyServicePkgHostTest.dsc"
     },
     "GuidCheck": {
         "IgnoreGuidName": [],

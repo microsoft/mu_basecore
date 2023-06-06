@@ -11,12 +11,14 @@
 #define _POLICY_COMMON_H_
 
 #include <Uefi.h>
+#include <Pi/PiMultiPhase.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/HobLib.h>
 #include <Library/DebugLib.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 
+#include <PolicyInterface.h>
 #include "../PolicyHob.h"
 
 typedef struct _POLICY_ENTRY {
@@ -28,10 +30,25 @@ typedef struct _POLICY_ENTRY {
   VOID          *Policy;
   UINT16        PolicySize;
   UINTN         AllocationSize;
+  UINT32        NotifyDepth;
+  BOOLEAN       FreeAfterNotify;
 } POLICY_ENTRY;
 
 #define POLICY_ENTRY_SIGNATURE  SIGNATURE_32('p', 'o', 'l', 'c')
 #define POLICY_ENTRY_FROM_LINK(a)  CR (a, POLICY_ENTRY, Link, POLICY_ENTRY_SIGNATURE)
+
+typedef struct _POLICY_NOTIFY_ENTRY {
+  UINT32                     Signature;
+  LIST_ENTRY                 Link;
+  EFI_GUID                   PolicyGuid;
+  UINT32                     EventTypes;
+  UINT32                     Priority;
+  POLICY_HANDLER_CALLBACK    CallbackRoutine;
+  BOOLEAN                    Tombstone;
+} POLICY_NOTIFY_ENTRY;
+
+#define POLICY_NOTIFY_ENTRY_SIGNATURE  SIGNATURE_32('p', 'o', 'l', 'n')
+#define POLICY_NOTIFY_ENTRY_FROM_LINK(a)  CR (a, POLICY_NOTIFY_ENTRY, Link, POLICY_NOTIFY_ENTRY_SIGNATURE)
 
 //
 // Macros for managing the critical section.
@@ -145,6 +162,60 @@ EFI_STATUS
 EFIAPI
 IngestPoliciesFromHob (
   VOID
+  );
+
+/**
+  Registers a callback for a policy event notification. The provided routine
+  will be invoked when one of multiple of the provided event types for the specified
+  guid occurs.
+
+  @param[in]   PolicyGuid        The GUID of the policy the being watched.
+  @param[in]   EventTypes        The events to notify the callback for.
+  @param[in]   Priority          The priority of the callback where the lower values
+                                 will be called first.
+  @param[in]   CallbackRoutine   The function pointer of the callback to be invoked.
+  @param[out]  Handle            Returns the handle to this callback entry.
+
+  @retval   EFI_SUCCESS            The callback notification as successfully registered.
+  @retval   EFI_INVALID_PARAMETER  EventTypes was 0 or Callback routine is invalid.
+  @retval   Other                  The callback registration failed.
+**/
+EFI_STATUS
+EFIAPI
+CommonRegisterNotify (
+  IN CONST EFI_GUID           *PolicyGuid,
+  IN CONST UINT32             EventTypes,
+  IN CONST UINT32             Priority,
+  IN POLICY_HANDLER_CALLBACK  CallbackRoutine,
+  OUT VOID                    **Handle
+  );
+
+/**
+  Removes a registered notification callback.
+
+  @param[in]   Handle     The handle for the registered callback.
+
+  @retval   EFI_SUCCESS            The callback notification as successfully removed.
+  @retval   EFI_INVALID_PARAMETER  The provided handle is invalid.
+  @retval   EFI_NOT_FOUND          The provided handle could not be found.
+**/
+EFI_STATUS
+EFIAPI
+CommonUnregisterNotify (
+  IN VOID  *Handle
+  );
+
+/**
+  Notifies all registered callbacks of a policy event.
+
+  @param[in]   EventTypes    The event that occurred.
+  @param[in]   PolicyEntry   The policy entry the event occurred for.
+**/
+VOID
+EFIAPI
+CommonPolicyNotify (
+  IN CONST UINT32  EventTypes,
+  IN POLICY_ENTRY  *PolicyEntry
   );
 
 #endif
