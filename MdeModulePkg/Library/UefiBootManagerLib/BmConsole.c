@@ -432,9 +432,9 @@ EfiBootManagerUpdateConsoleVariable (
   EFI_STATUS                Status = EFI_SUCCESS;    // MU_CHANGE
   EFI_DEVICE_PATH_PROTOCOL  *VarConsole;
   EFI_DEVICE_PATH_PROTOCOL  *NewDevicePath;
-  // MU_CHANGE [BEGIN] - Explicitly initialize pointers to NULL
+  // MU_CHANGE [BEGIN] - Check new device path before save
   EFI_DEVICE_PATH_PROTOCOL  *PreviouslySavedDevicePath;
-  // MU_CHANGE [END] - Explicitly initialize pointers to NULL
+  // MU_CHANGE [END] - Check new device path before save
   EFI_DEVICE_PATH_PROTOCOL  *TempNewDevicePath;
 
   if (ConsoleType >= ARRAY_SIZE (mConVarName)) {
