@@ -409,6 +409,10 @@ BmUpdateSystemTableConsole (
   This function updates the console variable based on ConVarName. It can
   add or remove one specific console device path from the variable
 
+  MU_CHANGE: This function will check if a newly formed device path differs
+  from the saved device path and not call the UEFI variable API if there is
+  not a difference.
+
   @param  ConsoleType              ConIn, ConOut, ErrOut, ConInDev, ConOutDev or ErrOutDev.
   @param  CustomizedConDevicePath  The console device path to be added to
                                    the console variable. Cannot be multi-instance.
