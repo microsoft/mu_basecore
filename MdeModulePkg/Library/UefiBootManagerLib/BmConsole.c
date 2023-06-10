@@ -409,6 +409,10 @@ BmUpdateSystemTableConsole (
   This function updates the console variable based on ConVarName. It can
   add or remove one specific console device path from the variable
 
+  MU_CHANGE: This function will check if a newly formed device path differs
+  from the saved device path and not call the UEFI variable API if there is
+  not a difference.
+
   @param  ConsoleType              ConIn, ConOut, ErrOut, ConInDev, ConOutDev or ErrOutDev.
   @param  CustomizedConDevicePath  The console device path to be added to
                                    the console variable. Cannot be multi-instance.
@@ -432,6 +436,9 @@ EfiBootManagerUpdateConsoleVariable (
   EFI_STATUS                Status = EFI_SUCCESS;    // MU_CHANGE
   EFI_DEVICE_PATH_PROTOCOL  *VarConsole;
   EFI_DEVICE_PATH_PROTOCOL  *NewDevicePath;
+  // MU_CHANGE [BEGIN] - Check new device path before save
+  EFI_DEVICE_PATH_PROTOCOL  *PreviouslySavedDevicePath;
+  // MU_CHANGE [END] - Check new device path before save
   EFI_DEVICE_PATH_PROTOCOL  *TempNewDevicePath;
 
   if (ConsoleType >= ARRAY_SIZE (mConVarName)) {
@@ -446,17 +453,32 @@ EfiBootManagerUpdateConsoleVariable (
     return EFI_UNSUPPORTED;
   }
 
+  // MU_CHANGE [BEGIN] - Explicitly initialize pointers to NULL
+  NewDevicePath = NULL;
+  VarConsole    = NULL;
+  // MU_CHANGE [END] - Explicitly initialize pointers to NULL
+
+  // MU_CHANGE [BEGIN] - Check new device path before save
+  PreviouslySavedDevicePath = NULL;
+  // MU_CHANGE [END] - Check new device path before save
+
   // MU_CHANGE - Initialize variable that might not be updated due to error checking
   TempNewDevicePath = NULL;
 
   //
   // Delete the ExclusiveDevicePath from current default console
   //
-  GetEfiGlobalVariable2 (mConVarName[ConsoleType], (VOID **)&VarConsole, NULL);
-  //
-  // Initialize NewDevicePath
-  //
-  NewDevicePath = VarConsole;
+  // MU_CHANGE [BEGIN] - Backup console UEFI variable value
+  Status = GetEfiGlobalVariable2 (mConVarName[ConsoleType], (VOID **)&VarConsole, NULL);
+  if (!EFI_ERROR (Status)) {
+    //
+    // Initialize NewDevicePath
+    //
+    NewDevicePath             = VarConsole;
+    PreviouslySavedDevicePath = DuplicateDevicePath (VarConsole);
+  }
+
+  // MU_CHANGE [BEGIN] - Backup console UEFI variable value
 
   //
   // If ExclusiveDevicePath is even the part of the instance in VarConsole, delete it.
@@ -492,17 +514,33 @@ EfiBootManagerUpdateConsoleVariable (
   }
 
   if (NewDevicePath != NULL) {
-    //
-    // Finally, Update the variable of the default console by NewDevicePath
-    //
-    Status = gRT->SetVariable (
-                    mConVarName[ConsoleType],
-                    &gEfiGlobalVariableGuid,
-                    EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS
-                    | ((ConsoleType < ConInDev) ? EFI_VARIABLE_NON_VOLATILE : 0),
-                    GetDevicePathSize (NewDevicePath),
-                    NewDevicePath
-                    );
+    // MU_CHANGE [BEGIN] - Skip UEFI variable update if new console device path matches already saved path
+    if ((PreviouslySavedDevicePath != NULL) &&
+        (GetDevicePathSize (NewDevicePath) == GetDevicePathSize (PreviouslySavedDevicePath)) &&
+        (CompareMem (NewDevicePath, PreviouslySavedDevicePath, GetDevicePathSize (NewDevicePath)) == 0))
+    {
+      DEBUG ((
+        DEBUG_VERBOSE,
+        "[%a] - Skipping %s device path update due to no change from previous UEFI variable value.\n",
+        __FUNCTION__,
+        mConVarName[ConsoleType]
+        ));
+      Status = EFI_SUCCESS;
+    } else {
+      //
+      // Finally, Update the variable of the default console by NewDevicePath
+      //
+      Status = gRT->SetVariable (
+                      mConVarName[ConsoleType],
+                      &gEfiGlobalVariableGuid,
+                      EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS
+                      | ((ConsoleType < ConInDev) ? EFI_VARIABLE_NON_VOLATILE : 0),
+                      GetDevicePathSize (NewDevicePath),
+                      NewDevicePath
+                      );
+    }
+
+    // MU_CHANGE [END] - Skip UEFI variable update if new console device path matches already saved path
   }
 
   if (VarConsole == NewDevicePath) {
@@ -518,6 +556,13 @@ EfiBootManagerUpdateConsoleVariable (
       FreePool (NewDevicePath);
     }
   }
+
+  // MU_CHANGE [BEGIN] - Free backed up console UEFI variable value
+  if (PreviouslySavedDevicePath != NULL) {
+    FreePool (PreviouslySavedDevicePath);
+  }
+
+  // MU_CHANGE [END] - Free backed up console UEFI variable value
 
   return Status;
 }
