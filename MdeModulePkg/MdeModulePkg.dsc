@@ -158,15 +158,12 @@
 ## MU_CHANGE - SmmLockBoxPeiLib only supports IA32 and X64.
   LockBoxLib|MdeModulePkg/Library/LockBoxNullLib/LockBoxNullLib.inf
   PcdDatabaseLoaderLib|MdeModulePkg/Library/PcdDatabaseLoaderLib/Pei/PcdDatabaseLoaderLibPei.inf  # MU_CHANGE
+  DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibBase.inf
 
 ## MU_CHANGE [BEGIN] - SmmLockBoxPeiLib only supports IA32 and X64.
 [LibraryClasses.IA32.PEIM, LibraryClasses.X64.PEIM]
   LockBoxLib|MdeModulePkg/Library/SmmLockBoxLib/SmmLockBoxPeiLib.inf
 ## MU_CHANGE [END]
-  DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibBase.inf
-
-[LibraryClasses.AARCH64.PEIM]
-  DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibBase.inf
 
 [LibraryClasses.common.DXE_CORE]
   HobLib|MdePkg/Library/DxeCoreHobLib/DxeCoreHobLib.inf
