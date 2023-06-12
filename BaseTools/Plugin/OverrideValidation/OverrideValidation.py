@@ -334,7 +334,7 @@ try:
                 if tagtype == 'override':
                     logging.error(pnt_str)
                 else:
-                    logging.debug(pnt_str)  # MU_CHANGE
+                    logging.debug(pnt_str) # MU_CHANGE
 
             # Step 7: Do depth-first-search for cascaded modules
             m_result = self.override_detect_process(thebuilder, fullpath, filelist, m_node, status)
