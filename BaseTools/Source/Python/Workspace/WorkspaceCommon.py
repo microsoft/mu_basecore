@@ -126,7 +126,7 @@ def GetModuleLibInstances(Module, Platform, BuildDatabase, Arch, Target, Toolcha
             
             if not match:
                 EdkLogger.error("build", BUILD_ERROR,
-                              "Library override [%s] library class does not match specified library class: [%s]" % (path, LibraryClass),
+                              "LIBRARY_CLASS for override: [%s] does not match the library class being overridden: [%s]" % (path, LibraryClass),
                               File=FileName)
         # MU_CHANGE end
 
