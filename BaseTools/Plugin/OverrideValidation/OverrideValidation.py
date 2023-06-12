@@ -334,7 +334,7 @@ try:
                 if tagtype == 'override':
                     logging.error(pnt_str)
                 else:
-                    logging.info(pnt_str)
+                    logging.debug(pnt_str)
 
             # Step 7: Do depth-first-search for cascaded modules
             m_result = self.override_detect_process(thebuilder, fullpath, filelist, m_node, status)
@@ -539,7 +539,7 @@ def ModuleGitPatch(path, git_hash):
     GitOutput = io.StringIO()
     # TODO - let this go to console so we get colors
     path_dir = os.path.dirname(path)
-    ret = RunCmd("git", f"diff {git_hash} {path}", workingdir=path_dir, outstream=GitOutput)
+    ret = RunCmd("git", f"diff {git_hash} {path}", workingdir=path_dir, outstream=GitOutput, logging_level=logging.DEBUG)
     if ret != 0:
         return ""
     GitOutput.seek(0)
@@ -552,7 +552,7 @@ def ModuleGitHash(path):
     ''' gets the current git hash of the given directory that path is '''
     abspath_dir = os.path.dirname(os.path.abspath(path))
     git_stream = StringIO()
-    ret = RunCmd("git", "rev-parse --verify HEAD", workingdir=abspath_dir, outstream=git_stream)
+    ret = RunCmd("git", "rev-parse --verify HEAD", workingdir=abspath_dir, outstream=git_stream, logging_level=logging.DEBUG)
     if ret != 0:
         return None
     git_stream.seek(0)
