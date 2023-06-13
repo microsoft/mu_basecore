@@ -71,7 +71,7 @@ parameters:
 jobs:
 - template: Jobs/PrGate.yml@mu_devops
   parameters:
-    linux_container_image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:4a1f8d3
+    linux_container_image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:bc713a5
     do_ci_build: ${{ parameters.do_ci_build }}
     do_ci_setup: ${{ parameters.do_ci_setup }}
     do_pr_eval: ${{ parameters.do_pr_eval }}
