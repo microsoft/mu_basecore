@@ -443,6 +443,58 @@ Returns:
   return STATUS_SUCCESS;
 }
 
+// MU_CHANGE begin
+BOOLEAN
+IsNxCompatCompliant (
+  EFI_IMAGE_OPTIONAL_HEADER_UNION  *PeHdr
+  )
+/*++
+
+Routine Description:
+
+  Checks if the Pe image is nxcompat. i.e. section alignment >= 4k, not Write/Execute
+
+Arguments:
+
+  PeHdr      The Pe header
+
+Returns:
+
+  TRUE       The PE is nx compat compliant
+  FALSE      The PE is not nx compat compliant
+--*/
+{
+  EFI_IMAGE_SECTION_HEADER     *SectionHeader;
+  EFI_IMAGE_OPTIONAL_HEADER64  *Optional64;
+  UINT32                       Index;
+  UINT32                       Mask;
+
+  // Verify PE is 64 bit
+  if (!(PeHdr->Pe32.OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC)) {
+    return FALSE;
+  }
+
+  // Verify Section Alignment is divisible by 4K
+  Optional64 = (EFI_IMAGE_OPTIONAL_HEADER64 *)&PeHdr->Pe32.OptionalHeader;
+  if (!((Optional64->SectionAlignment % 0x1000) == 0)) {
+    return FALSE;
+  }
+  
+  // Verify sections are not Write & Execute
+  Mask = EFI_IMAGE_SCN_MEM_EXECUTE | EFI_IMAGE_SCN_MEM_WRITE;
+  SectionHeader = (EFI_IMAGE_SECTION_HEADER *) ((UINT8 *) &(PeHdr->Pe32.OptionalHeader) + PeHdr->Pe32.FileHeader.SizeOfOptionalHeader);
+  for (Index = 0; Index < PeHdr->Pe32.FileHeader.NumberOfSections; Index ++, SectionHeader ++) {
+    
+    if ((SectionHeader->Characteristics & Mask) == Mask) {
+      return FALSE;
+    }  
+  }
+
+  // Passed all requirements, return TRUE
+  return TRUE;
+}
+// MU_CHANGE end
+
 VOID
 SetHiiResourceHeader (
   UINT8   *HiiBinData,
@@ -2465,6 +2517,13 @@ Returns:
     TEImageHeader.AddressOfEntryPoint = Optional64->AddressOfEntryPoint;
     TEImageHeader.BaseOfCode          = Optional64->BaseOfCode;
     TEImageHeader.ImageBase           = (UINT64) (Optional64->ImageBase);
+
+    // MU_CHANGE begin
+    // Set NxCompat flag
+    if (IsNxCompatCompliant (PeHdr)) {
+      Optional64->DllCharacteristics |= (1 << 8);
+    }
+    // MU_CHANGE end
 
     if (Optional64->NumberOfRvaAndSizes > EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC) {
       TEImageHeader.DataDirectory[EFI_TE_IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress = Optional64->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress;
