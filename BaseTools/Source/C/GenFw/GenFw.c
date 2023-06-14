@@ -444,6 +444,7 @@ Returns:
 }
 
 // MU_CHANGE begin
+STATIC
 BOOLEAN
 IsNxCompatCompliant (
   EFI_IMAGE_OPTIONAL_HEADER_UNION  *PeHdr
@@ -453,7 +454,7 @@ IsNxCompatCompliant (
 Routine Description:
 
   Checks if the Pe image is nxcompat. i.e. PE is 64bit, section alignment is
-  divisibly by 4k, and all sections are not Write/Execute
+  divisible by 4k, and all sections are not Write/Execute
 
 Arguments:
 
@@ -482,7 +483,8 @@ Returns:
 
   // Verify Section Alignment is divisible by 4K
   Optional64 = (EFI_IMAGE_OPTIONAL_HEADER64 *)&PeHdr->Pe32.OptionalHeader;
-  if (!((Optional64->SectionAlignment % 0x1000) == 0)) {
+  if (!((Optional64->SectionAlignment % EFI_PAGE_SIZE) == 0)) {
+
     return FALSE;
   }
   
