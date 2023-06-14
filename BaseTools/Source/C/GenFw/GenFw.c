@@ -452,7 +452,8 @@ IsNxCompatCompliant (
 
 Routine Description:
 
-  Checks if the Pe image is nxcompat. i.e. section alignment >= 4k, not Write/Execute
+  Checks if the Pe image is nxcompat. i.e. PE is 64bit, section alignment is
+  divisibly by 4k, and all sections are not Write/Execute
 
 Arguments:
 
@@ -468,6 +469,11 @@ Returns:
   EFI_IMAGE_OPTIONAL_HEADER64  *Optional64;
   UINT32                       Index;
   UINT32                       Mask;
+
+  // Must have an optional header to perform verification
+  if (PeHdr->Pe32.FileHeader.SizeOfOptionalHeader == 0) {
+    return FALSE;
+  }
 
   // Verify PE is 64 bit
   if (!(PeHdr->Pe32.OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC)) {
