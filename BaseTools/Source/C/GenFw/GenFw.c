@@ -483,7 +483,8 @@ Returns:
 
   // Verify Section Alignment is divisible by 4K
   Optional64 = (EFI_IMAGE_OPTIONAL_HEADER64 *)&PeHdr->Pe32.OptionalHeader;
-  if (!((Optional64->SectionAlignment % 0x1000) == 0)) {
+  if (!((Optional64->SectionAlignment % EFI_PAGE_SIZE) == 0)) {
+
     return FALSE;
   }
   
