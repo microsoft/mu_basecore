@@ -444,6 +444,7 @@ Returns:
 }
 
 // MU_CHANGE begin
+STATIC
 BOOLEAN
 IsNxCompatCompliant (
   EFI_IMAGE_OPTIONAL_HEADER_UNION  *PeHdr
