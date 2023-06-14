@@ -2527,7 +2527,7 @@ Returns:
     // MU_CHANGE begin
     // Set NxCompat flag
     if (IsNxCompatCompliant (PeHdr)) {
-      Optional64->DllCharacteristics |= (1 << 8);
+      Optional64->DllCharacteristics |= IMAGE_DLLCHARACTERISTICS_NX_COMPAT;
     }
     // MU_CHANGE end
 
