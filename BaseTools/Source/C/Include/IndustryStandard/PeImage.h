@@ -286,6 +286,7 @@ typedef struct {
 #define EFI_IMAGE_SUBSYSTEM_OS2_CUI     5
 #define EFI_IMAGE_SUBSYSTEM_POSIX_CUI   7
 
+// MU_CHANGE begin
 //
 // DLL Characteristics
 //
@@ -300,6 +301,7 @@ typedef struct {
 #define IMAGE_DLLCHARACTERISTICS_WDM_DRIVER            0x2000
 #define IMAGE_DLLCHARACTERISTICS_GUARD_CF              0x4000
 #define IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE 0x8000
+// MU_CHANGE end
 
 //
 // Directory Entries
