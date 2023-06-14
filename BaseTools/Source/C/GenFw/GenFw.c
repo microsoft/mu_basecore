@@ -467,7 +467,6 @@ Returns:
 --*/
 {
   EFI_IMAGE_SECTION_HEADER     *SectionHeader;
-  EFI_IMAGE_OPTIONAL_HEADER64  *Optional64;
   UINT32                       Index;
   UINT32                       Mask;
 
@@ -482,16 +481,15 @@ Returns:
   }
 
   // Verify Section Alignment is divisible by 4K
-  Optional64 = (EFI_IMAGE_OPTIONAL_HEADER64 *)&PeHdr->Pe32.OptionalHeader;
-  if (!((Optional64->SectionAlignment % EFI_PAGE_SIZE) == 0)) {
+  if (!((PeHdr->Pe32Plus.OptionalHeader.SectionAlignment % EFI_PAGE_SIZE) == 0)) {
 
     return FALSE;
   }
   
   // Verify sections are not Write & Execute
   Mask = EFI_IMAGE_SCN_MEM_EXECUTE | EFI_IMAGE_SCN_MEM_WRITE;
-  SectionHeader = (EFI_IMAGE_SECTION_HEADER *) ((UINT8 *) &(PeHdr->Pe32.OptionalHeader) + PeHdr->Pe32.FileHeader.SizeOfOptionalHeader);
-  for (Index = 0; Index < PeHdr->Pe32.FileHeader.NumberOfSections; Index ++, SectionHeader ++) {
+  SectionHeader = (EFI_IMAGE_SECTION_HEADER *) ((UINT8 *) &(PeHdr->Pe32Plus.OptionalHeader) + PeHdr->Pe32Plus.FileHeader.SizeOfOptionalHeader);
+  for (Index = 0; Index < PeHdr->Pe32Plus.FileHeader.NumberOfSections; Index ++, SectionHeader ++) {
     
     if ((SectionHeader->Characteristics & Mask) == Mask) {
       return FALSE;
