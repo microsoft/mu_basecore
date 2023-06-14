@@ -453,7 +453,7 @@ IsNxCompatCompliant (
 Routine Description:
 
   Checks if the Pe image is nxcompat. i.e. PE is 64bit, section alignment is
-  divisibly by 4k, and all sections are not Write/Execute
+  divisible by 4k, and all sections are not Write/Execute
 
 Arguments:
 
