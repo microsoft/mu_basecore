@@ -482,7 +482,6 @@ Returns:
 
   // Verify Section Alignment is divisible by 4K
   if (!((PeHdr->Pe32Plus.OptionalHeader.SectionAlignment % EFI_PAGE_SIZE) == 0)) {
-
     return FALSE;
   }
   
@@ -490,7 +489,6 @@ Returns:
   Mask = EFI_IMAGE_SCN_MEM_EXECUTE | EFI_IMAGE_SCN_MEM_WRITE;
   SectionHeader = (EFI_IMAGE_SECTION_HEADER *) ((UINT8 *) &(PeHdr->Pe32Plus.OptionalHeader) + PeHdr->Pe32Plus.FileHeader.SizeOfOptionalHeader);
   for (Index = 0; Index < PeHdr->Pe32Plus.FileHeader.NumberOfSections; Index ++, SectionHeader ++) {
-    
     if ((SectionHeader->Characteristics & Mask) == Mask) {
       return FALSE;
     }  
