@@ -212,6 +212,44 @@ Once all the suites and cases are added, it's time to run the Framework.
 Status = RunAllTestSuites( Framework );
 ```
 
+// TODO - is this the right pkave for the following three sections?
+### Hooking BaseLib
+
+Most unit test mocking can be performed by the functions provided in the UnitTestFrameworkPkg libraries, but since
+BaseLib is consumed by the Framework itself, it requires different techniques to substitute parts of the
+functionality.
+
+To solve some of this, the UnitTestFrameworkPkg consumes a special implementation of BaseLib for host-based tests.
+This implementation contains a [hook table](https://github.com/tianocore/edk2/blob/e188ecc8b4aed8fdd26b731d43883861f5e5e7b4/MdePkg/Test/UnitTest/Include/Library/UnitTestHostBaseLib.h#L507)
+that can be used to substitute test functionality for any of the BaseLib functions. By default, this implementation
+will use the underlying BaseLib implementation, so the unit test writer only has to supply minimal code to test a
+particular case.
+
+### Debugging the Framework Itself
+
+While most of the tests that are produced by the UnitTestFrameworkPkg are easy to step through in a debugger, the Framework
+itself consumes code (mostly Cmocka) that sets its own build flags. These flags cause parts of the Framework to not
+export symbols and captures exceptions, and as such are harder to debug. We have provided a Stuart parameter to force
+symbolic debugging to be enabled.
+
+You can run a build by adding the `BLD_*_UNIT_TESTING_DEBUG=TRUE` parameter to enable this build option.
+
+```bash
+stuart_ci_build -c .pytool/CISettings.py TOOL_CHAIN_TAG=VS2019 -p MdePkg -t NOOPT BLD_*_UNIT_TESTING_DEBUG=TRUE
+```
+
+### Host-Based Support vs Other Tests
+
+The host-based test framework is powered internally by the Cmocka framework. As such, it has abilities
+that the target-based tests don't (yet). It would be awesome if this meant that it was a super set of
+the target-based tests, and it worked just like the target-based tests but with more features. Unfortunately,
+this is not the case. While care has been taken to keep them as close as possible, there are a few known
+inconsistencies that we're still ironing out. For example, the logging messages in the target-based tests
+are cached internally and associated with the running test case. They can be saved later as part of the
+reporting lib. This isn't currently possible with host-based. Only the assertion failures are logged.
+
+We will continue trying to make these as similar as possible.
+
 ### Framework - A Simple Test Case
 
 We'll take a look at the below test case from 'SampleUnitTestApp'...
