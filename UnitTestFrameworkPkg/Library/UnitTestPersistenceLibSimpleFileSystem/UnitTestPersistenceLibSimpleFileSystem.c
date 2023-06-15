@@ -399,6 +399,7 @@ LoadUnitTestCache (
   // MU_CHANGE START: Use file name and path instead of device path
   if (FileName == NULL) {
     DEBUG ((DEBUG_ERROR, "%a - Failed to generate file name and path to cache file!\n", __FUNCTION__));
+    Status = EFI_INVALID_PARAMETER;
     goto Exit;
   }
 
