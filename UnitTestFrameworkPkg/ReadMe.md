@@ -73,8 +73,8 @@ reviewed. The paths to the SecureBootVariableLib unit tests are:
 
 Please see our separate documents for detailed instructions and sample usage of both frameworks:
 
-![Framework](Framework.md)
-![GoogleTest](GoogleTest.md)
+[Framework](./Framework.md)
+[GoogleTest](./GoogleTest.md)
 
 ## Development
 
