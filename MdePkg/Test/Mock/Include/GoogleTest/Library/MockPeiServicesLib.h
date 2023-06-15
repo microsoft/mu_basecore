@@ -1,6 +1,7 @@
 /** @file MockPeiServicesLib.h
   Google Test mocks for PeiServicesLib
-  Copyright (c) 2022, Microsoft Corporation. All rights reserved.
+Copyright (c) Microsoft Corporation.
+
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
