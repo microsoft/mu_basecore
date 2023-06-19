@@ -235,7 +235,7 @@ symbolic debugging to be enabled.
 You can run a build by adding the `BLD_*_UNIT_TESTING_DEBUG=TRUE` parameter to enable this build option.
 
 ```bash
-stuart_ci_build -c .pytool/CISettings.py TOOL_CHAIN_TAG=VS2019 -p MdePkg -t NOOPT BLD_*_UNIT_TESTING_DEBUG=TRUE
+stuart_ci_build -c .pytool/CISettings.py TOOL_CHAIN_TAG=VS2022 -p MdePkg -t NOOPT BLD_*_UNIT_TESTING_DEBUG=TRUE
 ```
 
 ### Host-Based Support vs Other Tests
@@ -298,7 +298,7 @@ Documentation for Cmocka can be found [here](https://api.cmocka.org/).
 
 ### If still in doubt
 
-Hop on GitHub and ask @corthon, @mdkinney, or @spbrogan. ;)
+Hop on GitHub and ask @mdkinney or @spbrogan. ;)
 
 ## Copyright
 
