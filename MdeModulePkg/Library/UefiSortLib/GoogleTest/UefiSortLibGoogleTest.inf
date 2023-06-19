@@ -28,4 +28,4 @@
 
 [LibraryClasses]
   GoogleTestLib
-  UefiSortLib
+  SortLib
