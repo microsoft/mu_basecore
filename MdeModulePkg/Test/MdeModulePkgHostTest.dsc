@@ -74,7 +74,7 @@
 
   MdeModulePkg/Library/UefiSortLib/UnitTest/UefiSortLibUnitTest.inf {
     <LibraryClasses>
-      UefiSortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+      SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
       DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
       # MU_CHANGE
       # The UefiBootServicesTableLib cannot be used in a generic way, but is
@@ -128,6 +128,6 @@
 
   MdeModulePkg/Library/UefiSortLib/GoogleTest/UefiSortLibGoogleTest.inf {
     <LibraryClasses>
-      UefiSortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+      SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
       DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
   }
