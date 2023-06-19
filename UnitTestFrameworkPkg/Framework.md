@@ -1,4 +1,3 @@
-// TODO - should there be an intro blurb linking back to the main ReadMe?
 # Framework - Unit Testing Framework 
 
 ## About
