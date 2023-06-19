@@ -1,5 +1,14 @@
 // TODO - should there be an intro blurb linking back to the main ReadMe?
+# Framework - Unit Testing Framework 
 
+## About
+This unit test framework, called **Framework** is implemented as a set of EDK II libraries. It is one of two unit test frameworks supported by EDK II. Please refer to [the ReadMe](./ReadMe.md) for a comparison of the two.
+
+The Framework supports both host-based unit tests and target-based unit tests that share the same
+source style, macros, and APIs. In some scenarios, the same unit test case sources can be built
+for both host-based unit test execution and target-based unit test execution. Host-based unit tests
+that require mocked interfaces can use the mocking infrastructure provided by
+[cmocka](https://api.cmocka.org/) that is included in the UnitTestFrameworkPkg as a submodule.
 
 ## Framework Libraries
 

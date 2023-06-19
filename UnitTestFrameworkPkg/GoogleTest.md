@@ -1,3 +1,11 @@
+# GoogleTest - Unit Testing Framework 
+
+## About
+This unit test framework, called **GoogleTest** is implemented as a set of EDK II libraries. It is one of two unit test frameworks supported by EDK II. Please refer to [the ReadMe](./ReadMe.md) for a comparison of the two.
+[GoogleTest](http://google.github.io/googletest/) and can be used to implement host-based unit tests. [GoogleTest on GitHub](https://github.com/google/googletest) is included in the UnitTestFrameworkPkg as a submodule. Use of GoogleTest for target-based unit tests of EDK II components is not supported.
+Host-based unit tests that require mocked interfaces can use the mocking infrastructure included with GoogleTest called [gMock](https://github.com/google/googletest/tree/main/googlemock).
+
+
 ## GoogleTest Samples
 
 There is a sample unit test provided as both an example of how to write a unit test and leverage
@@ -54,7 +62,7 @@ to make sure that the module `BASE_NAME` contains the word `Test`...
 
 ### GoogleTest Requirements - DSC
 
-In our DSC file, we'll need to bring in the INF file that was just created into the `[Components]`
+In our DSC fiele, we'll need to bring in the INF file that was just created into the `[Components]`
 section so that the unit tests will be built.
 
 See this example in `UnitTestFrameworkPkgHostTest.dsc`...
