@@ -113,7 +113,17 @@ typedef struct {
 //
 // DLL Characteristics
 //
-#define IMAGE_DLLCHARACTERISTICS_NX_COMPAT  BIT8     ///< 0x0100 Image is NX compatible
+#define IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA        0x0020
+#define IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE           0x0040
+#define IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY        0x0080
+#define IMAGE_DLLCHARACTERISTICS_NX_COMPAT              0x0100
+#define IMAGE_DLLCHARACTERISTICS_NO_ISOLATION           0x0200
+#define IMAGE_DLLCHARACTERISTICS_NO_SEH                 0x0400
+#define IMAGE_DLLCHARACTERISTICS_NO_BIND                0x0800
+#define IMAGE_DLLCHARACTERISTICS_APPCONTAINER           0x1000
+#define IMAGE_DLLCHARACTERISTICS_WDM_DRIVER             0x2000
+#define IMAGE_DLLCHARACTERISTICS_GUARD_CF               0x4000
+#define IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE  0x8000
 // MU_CHANGE END
 
 ///
@@ -738,7 +748,7 @@ typedef struct {
   UINT32    FunctionStartAddress;
   UINT32    FunctionEndAddress;
   UINT32    UnwindInfoAddress;
-} RUNTIME_FUNCTION;
+} PD_RUNTIME_FUNCTION; // MU_CHANGE: Resolve definition conflict in winnt.h for ARM target.
 
 #endif
 
