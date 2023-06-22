@@ -6,6 +6,7 @@
 **/
 #include <GoogleTest/Ppi/MockReadOnlyVariable2.h>
 
+MOCK_INTERFACE_DEFINITION(MockReadOnlyVariable2);
 MOCK_FUNCTION_DEFINITION(MockReadOnlyVariable2, pei_GetVariable, 6, EFIAPI);
   
 // Normally PPIVariableServices is "found"
