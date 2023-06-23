@@ -1,5 +1,5 @@
 /** @file
-  Implements the Standalone MM policy protocol, providing services to publish and
+  Implements the MM policy protocol, providing services to publish and
   access system policy.
 
   Copyright (c) Microsoft Corporation
@@ -87,20 +87,15 @@ InstallPolicyIndicatorProtocol (
 }
 
 /**
-  Entry to the Standalone MM policy service module.
-
-  @param[in] ImageHandle                The image handle.
-  @param[in] SystemTable                The system table.
+  Common Entry of the MM policy service module.
 
   @retval Status                        From internal routine or boot object, should not fail
 **/
 EFI_STATUS
 EFIAPI
-PolicyStandaloneEntry (
-  IN EFI_HANDLE           ImageHandle,
-  IN EFI_MM_SYSTEM_TABLE  *SystemTable
+PolicyMmCommonEntry (
+  VOID
   )
-
 {
   EFI_STATUS  Status;
 
