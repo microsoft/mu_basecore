@@ -1,6 +1,6 @@
 ## @file
 #
-#  This is a driver for MM policy service module.
+#  This is a driver for Traditional MM policy service module.
 #
 #  Copyright (C) Microsoft Corporation. All rights reserved.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -10,14 +10,14 @@
 [Defines]
   INF_VERSION                    = 0x00010017
   PI_SPECIFICATION_VERSION       = 0x00010032
-  BASE_NAME                      = PolicyMm
-  FILE_GUID                      = 9FF65AAD-5982-4609-9702-05EFD584148C
-  MODULE_TYPE                    = MM_STANDALONE
+  BASE_NAME                      = PolicyTraditionalMm
+  FILE_GUID                      = 51084E31-393D-4D06-A867-BDE321D4E4F5
+  MODULE_TYPE                    = DXE_SMM_DRIVER
   VERSION_STRING                 = 1.0
-  ENTRY_POINT                    = PolicyStandaloneMmEntry
+  ENTRY_POINT                    = PolicyTraditionalMmEntry
 
 [Sources]
-  PolicyStandaloneMm.c
+  PolicyTraditionalMm.c
   PolicyMm.c
   PolicyCommon.c
   PolicyCommon.h
@@ -31,7 +31,7 @@
   BaseLib
   DebugLib
   HobLib
-  StandaloneMmDriverEntryPoint
+  UefiDriverEntryPoint
   MmServicesTableLib
   MemoryAllocationLib
 
