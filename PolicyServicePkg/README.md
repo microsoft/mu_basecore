@@ -207,7 +207,7 @@ Like the PEIM, the DXE driver will install/reinstall a NULL protocol with the
 given policies GUID when it is created or updated to allow for notification and
 dispatch on the policy availability.
 
-### Standalone MM
+### Traditional/Standalone MM
 
 Like the DXE phase, the MM policy service will ingest any policies from the HOB
 list for architectures. The MM policy service is implemented identically to the
@@ -215,11 +215,11 @@ DXE phase module with the exception of using the MM specific protocols.
 
 Policies in the MM service are isolated from PEI and DXE. The MM module will ingest
 any policies available in the hob list from PEI where applicable but no policies
-created or modified by PEI or DXE after Standalone MM has been launched will be
+created or modified by PEI or DXE after Traditional/Standalone MM has been launched will be
 available from the MM policy service. Similarly, no policy created or edited in
 the MM policy service will be readable from the PEI or DXE policies services.
 
-Policies are not shared with the standalone MM module after initialization. Any
+Policies are not shared with the traditional/standalone MM module after initialization. Any
 policy created in MM will not be readable by DXE and PEI, and any policy made after
 MM initialization will not be readable from MM.
 
