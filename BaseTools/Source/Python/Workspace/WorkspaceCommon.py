@@ -110,6 +110,26 @@ def GetModuleLibInstances(Module, Platform, BuildDatabase, Arch, Target, Toolcha
         if LibraryClass.startswith("NULL"):
             Module.LibraryClasses[LibraryClass] = Platform.Modules[str(Module)].LibraryClasses[LibraryClass]
 
+        # MU_CHANGE begin
+
+        # Compares the Library class being over written (var: LibraryClass) to the actual library class that is
+        # is doing the overridding.
+        # 
+        # i.e. ExampleLib|Path/To/ExampleLibBase.inf:
+        #     ensuring ExampleLib == LIBRARY_CLASS in the define section of ExampleLibBase.inf
+        else:
+            path = Platform.Modules[str(Module)].LibraryClasses[LibraryClass]
+            match = False
+            for LibraryClassObj in BuildDatabase[path, Arch, Target, Toolchain].LibraryClass:
+                if LibraryClass == LibraryClassObj.LibraryClass:
+                    match = True
+            
+            if not match:
+                EdkLogger.error("build", BUILD_ERROR,
+                              "LIBRARY_CLASS for override: [%s] does not match the library class being overridden: [%s]" % (path, LibraryClass),
+                              File=FileName)
+        # MU_CHANGE end
+
     # EdkII module
     LibraryConsumerList = [Module]
     Constructor = []
