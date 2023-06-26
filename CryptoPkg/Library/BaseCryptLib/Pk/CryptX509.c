@@ -1909,7 +1909,8 @@ Asn1GetTag (
   long   ObjLength;
 
   // MU_CHANGE [BEGIN] - CodeQL change
-  INT32        Ret;
+  INT32  Ret;
+
   // MU_CHANGE [END] - CodeQL change
 
   //
@@ -1923,6 +1924,7 @@ Asn1GetTag (
   if (Ret & 0x80) {
     return FALSE;
   }
+
   // MU_CHANGE [END] - CodeQL change
 
   if ((ObjTag == (INT32)(Tag & CRYPTO_ASN1_TAG_VALUE_MASK)) &&
