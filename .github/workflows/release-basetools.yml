@@ -39,12 +39,12 @@ jobs:
             output_dir: "BaseTools\\Bin\\Win64"
             target: AARCH64
 
-          - os: ubuntu-22.04
+          - os: ubuntu-20.04
             tool_chain: GCC5
             output_dir: "BaseTools/Source/C/bin"
             target: X64
 
-          - os: ubuntu-22.04
+          - os: ubuntu-20.04
             tool_chain: GCC5
             output_dir: "BaseTools/Source/C/bin"
             target: AARCH64
