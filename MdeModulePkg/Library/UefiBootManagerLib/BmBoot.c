@@ -1509,7 +1509,7 @@ BmExpandLoadFile (
 
   Status = LoadFile->LoadFile (LoadFile, FilePath, TRUE, &BufferSize, FileBuffer);
   if (EFI_ERROR (Status)) {
-    FreePages (FileBuffer, EFI_SIZE_TO_PAGES (BufferSize));
+    FreeAlignedPages (FileBuffer, EFI_SIZE_TO_PAGES (BufferSize));
     return NULL;
   }
 
