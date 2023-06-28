@@ -916,7 +916,6 @@ SplitTable (
   // Let old record point to end of valid MemoryMap buffer.
   //
   IndexOld = ((*MemoryMapSize) / DescriptorSize) - 1;
-
   //
   // Let new record point to end of full MemoryMap buffer.
   //
@@ -945,21 +944,20 @@ SplitTable (
     IndexNew--;
   }
 
+  //
   // Move all records to the beginning.
+  //
   CopyMem (
     MemoryMap,
     (UINT8 *)MemoryMap + ((IndexNew + 1) * DescriptorSize),
     (IndexNewStarting - IndexNew) * DescriptorSize
     );
 
-  // Sort from low to high
-  SortMemoryMap (
-    MemoryMap,
-    (IndexNewStarting - IndexNew) * DescriptorSize,
-    DescriptorSize
-    );
+  //
+  // Sort from low to high (Just in case)
+  //
+  SortMemoryMap (MemoryMap, (IndexNewStarting - IndexNew) * DescriptorSize, DescriptorSize);
 
-  // Update the memory map size to be the actual number of used records
   *MemoryMapSize = (IndexNewStarting - IndexNew - TotalSkippedRecords) * DescriptorSize;
   // MU_CHANGE END
   //
