@@ -7,8 +7,8 @@
 #include <Library/GoogleTestLib.h>
 
 extern "C" {
-#include <Uefi.h>
-#include <Library/SortLib.h>
+  #include <Uefi.h>
+  #include <Library/SortLib.h>
 }
 
 using namespace testing;

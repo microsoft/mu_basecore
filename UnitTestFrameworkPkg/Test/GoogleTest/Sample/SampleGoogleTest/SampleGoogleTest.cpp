@@ -9,9 +9,9 @@
 
 #include <gtest/gtest.h>
 extern "C" {
-#include <Uefi.h>
-#include <Library/BaseLib.h>
-#include <Library/DebugLib.h>
+  #include <Uefi.h>
+  #include <Library/BaseLib.h>
+  #include <Library/DebugLib.h>
 }
 
 /**
@@ -35,7 +35,7 @@ TEST (SimpleMathTests, OnePlusOneShouldEqualTwo) {
 **/
 class GlobalBooleanVarTests : public ::testing::Test {
 public:
-BOOLEAN SampleGlobalTestBoolean = FALSE;
+  BOOLEAN SampleGlobalTestBoolean = FALSE;
 };
 
 TEST_F (GlobalBooleanVarTests, GlobalBooleanShouldBeChangeable) {
@@ -52,22 +52,22 @@ TEST_F (GlobalBooleanVarTests, GlobalBooleanShouldBeChangeable) {
 **/
 class GlobalVarTests : public ::testing::Test {
 public:
-VOID *SampleGlobalTestPointer = NULL;
+  VOID *SampleGlobalTestPointer = NULL;
 
 protected:
-void
-SetUp (
-  ) override
-{
-  ASSERT_EQ ((UINTN)SampleGlobalTestPointer, (UINTN)NULL);
-}
+  void
+  SetUp (
+    ) override
+  {
+    ASSERT_EQ ((UINTN)SampleGlobalTestPointer, (UINTN)NULL);
+  }
 
-void
-TearDown (
-  )
-{
-  SampleGlobalTestPointer = NULL;
-}
+  void
+  TearDown (
+    )
+  {
+    SampleGlobalTestPointer = NULL;
+  }
 };
 
 TEST_F (GlobalVarTests, GlobalPointerShouldBeChangeable) {
@@ -79,12 +79,12 @@ TEST_F (GlobalVarTests, GlobalPointerShouldBeChangeable) {
   Set PcdDebugPropertyMask for each MacroTestsAssertsEnabledDisabled test
 **/
 class MacroTestsAssertsEnabledDisabled : public testing::TestWithParam<UINT8> {
-void
-SetUp (
-  )
-{
-  PatchPcdSet8 (PcdDebugPropertyMask, GetParam ());
-}
+  void
+  SetUp (
+    )
+  {
+    PatchPcdSet8 (PcdDebugPropertyMask, GetParam ());
+  }
 };
 
 /**
