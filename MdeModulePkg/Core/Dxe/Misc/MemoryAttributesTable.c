@@ -905,16 +905,18 @@ SplitTable (
   IN UINTN                      DescriptorSize
   )
 {
+  // MU_CHANGE START: TCBZ 4492 - Fix SplitTable() Logic
   INTN   IndexOld;
   INTN   IndexNew;
+  INTN   IndexNewStarting;
   UINTN  MaxSplitRecordCount;
   UINTN  RealSplitRecordCount;
-  UINTN  TotalSplitRecordCount;
   UINTN  AdditionalRecordCount;
+  UINTN  TotalSkippedRecords;
 
   AdditionalRecordCount = (2 * mImagePropertiesPrivateData.CodeSegmentCountMax + 1) * mImagePropertiesPrivateData.ImageRecordCount;
 
-  TotalSplitRecordCount = 0;
+  TotalSkippedRecords = 0;
   //
   // Let old record point to end of valid MemoryMap buffer.
   //
@@ -922,7 +924,8 @@ SplitTable (
   //
   // Let new record point to end of full MemoryMap buffer.
   //
-  IndexNew = ((*MemoryMapSize) / DescriptorSize) - 1 + AdditionalRecordCount;
+  IndexNew         = ((*MemoryMapSize) / DescriptorSize) - 1 + AdditionalRecordCount;
+  IndexNewStarting = IndexNew;
   for ( ; IndexOld >= 0; IndexOld--) {
     MaxSplitRecordCount = GetMaxSplitRecordCount ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + IndexOld * DescriptorSize));
     //
@@ -935,16 +938,14 @@ SplitTable (
                              MaxSplitRecordCount,
                              DescriptorSize
                              );
-    //
-    // Adjust IndexNew according to real split.
-    //
-    CopyMem (
-      ((UINT8 *)MemoryMap + (IndexNew + MaxSplitRecordCount - RealSplitRecordCount) * DescriptorSize),
-      ((UINT8 *)MemoryMap + IndexNew * DescriptorSize),
-      RealSplitRecordCount * DescriptorSize
-      );
-    IndexNew               = IndexNew + MaxSplitRecordCount - RealSplitRecordCount;
-    TotalSplitRecordCount += RealSplitRecordCount;
+
+    // If we didn't utilize all the extra allocated descriptor slots, set the physical address of the unused slots
+    // to MAX_ADDRESS so they are moved to the bottom of the list when sorting.
+    for ( ; RealSplitRecordCount < MaxSplitRecordCount; RealSplitRecordCount++) {
+      ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + ((IndexNew + RealSplitRecordCount + 1) * DescriptorSize)))->PhysicalStart = MAX_ADDRESS;
+      TotalSkippedRecords++;
+    }
+
     IndexNew--;
   }
 
@@ -953,17 +954,17 @@ SplitTable (
   //
   CopyMem (
     MemoryMap,
-    (UINT8 *)MemoryMap + (AdditionalRecordCount - TotalSplitRecordCount) * DescriptorSize,
-    (*MemoryMapSize) + TotalSplitRecordCount * DescriptorSize
+    (UINT8 *)MemoryMap + ((IndexNew + 1) * DescriptorSize),
+    (IndexNewStarting - IndexNew) * DescriptorSize
     );
-
-  *MemoryMapSize = (*MemoryMapSize) + DescriptorSize * TotalSplitRecordCount;
 
   //
   // Sort from low to high (Just in case)
   //
-  SortMemoryMap (MemoryMap, *MemoryMapSize, DescriptorSize);
+  SortMemoryMap (MemoryMap, (IndexNewStarting - IndexNew) * DescriptorSize, DescriptorSize);
 
+  *MemoryMapSize = (IndexNewStarting - IndexNew - TotalSkippedRecords) * DescriptorSize;
+  // MU_CHANGE END
   //
   // Set RuntimeData to XP
   //
