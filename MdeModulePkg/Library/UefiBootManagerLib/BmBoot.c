@@ -1463,8 +1463,12 @@ BmExpandLoadFile (
 
   //
   // The load option resides in a RAM disk.
+  // Use a reasonable default of 2MB for alignment as the ramdisk device is
+  // implemented as an NVDIMM persistent memory and operating systems may
+  // wish to map this with huge page support.
   //
-  FileBuffer = AllocateReservedPages (EFI_SIZE_TO_PAGES (BufferSize));
+
+  FileBuffer = AllocateAlignedReservedPages (EFI_SIZE_TO_PAGES (BufferSize), SIZE_2MB);
   if (FileBuffer == NULL) {
     DEBUG_CODE_BEGIN ();
     EFI_DEVICE_PATH  *LoadFilePath;
