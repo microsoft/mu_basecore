@@ -899,6 +899,7 @@ SplitTable (
   IN UINTN                      DescriptorSize
   )
 {
+  // MU_CHANGE START: TCBZ 4492 - Fix SplitTable() Logic
   INTN   IndexOld;
   INTN   IndexNew;
   INTN   IndexNewStarting;
@@ -960,7 +961,7 @@ SplitTable (
 
   // Update the memory map size to be the actual number of used records
   *MemoryMapSize = (IndexNewStarting - IndexNew - TotalSkippedRecords) * DescriptorSize;
-
+  // MU_CHANGE END
   //
   // Set RuntimeData to XP
   //
