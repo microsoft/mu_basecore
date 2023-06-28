@@ -911,7 +911,6 @@ SplitTable (
   AdditionalRecordCount = (2 * mImagePropertiesPrivateData.CodeSegmentCountMax + 1) * mImagePropertiesPrivateData.ImageRecordCount;
 
   TotalSkippedRecords = 0;
-
   //
   // Let old record point to end of valid MemoryMap buffer.
   //
