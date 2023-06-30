@@ -27,9 +27,9 @@ typedef enum {
 // MU_CHANGE begin
 // Only processor type X64 has IO resource
 #if defined(MDE_CPU_X64)
-#define PCI_RESOURCE_TYPE_ENUM_START TypeIo
+#define PCI_RESOURCE_TYPE_ENUM_START  TypeIo
 #else
-#define PCI_RESOURCE_TYPE_ENUM_START TypeMem32
+#define PCI_RESOURCE_TYPE_ENUM_START  TypeMem32
 #endif
 // MU_CHANGE end
 
