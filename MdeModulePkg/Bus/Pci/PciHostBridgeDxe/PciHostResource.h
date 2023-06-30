@@ -15,7 +15,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define PCI_RESOURCE_LESS  0xFFFFFFFFFFFFFFFEULL
 
 typedef enum {
-  TypeIo,  // MU_CHANGE
+  TypeIo = 0,
   TypeMem32,
   TypePMem32,
   TypeMem64,
