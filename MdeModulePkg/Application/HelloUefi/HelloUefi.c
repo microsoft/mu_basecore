@@ -1,10 +1,8 @@
 /** @file
-  This sample application bases on HelloWorld PCD setting
-  to print "UEFI Hello World!" to the UEFI Console.
+  This sample application uses LocateProtocol, to print "Hello Uefi!" to the UEFI Console.
 
-  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (C) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
-
 **/
 
 #include <Uefi.h>
@@ -43,7 +41,7 @@ UefiMain (
     return Status;
   }
 
-  mTextOut->OutputString (mTextOut, L"Hello Uefi\r\n");
+  mTextOut->OutputString (mTextOut, L"Hello Uefi!\r\n");
 
   return EFI_SUCCESS;
 }
