@@ -13,7 +13,7 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = HelloUefi
-  MODULE_UNI_FILE                = HelloWorld.uni
+  MODULE_UNI_FILE                = HelloUefi.uni
   FILE_GUID                      = 1C50FE8C-8607-4CB0-9050-48F6EE46BB82
   MODULE_TYPE                    = UEFI_APPLICATION
   VERSION_STRING                 = 1.0
@@ -26,13 +26,17 @@
 #
 
 [Sources]
-  HelloWorld.c
-  HelloWorldStr.uni
-  HelloWorld.ver
+  HelloUefi.c
+  HelloUefi.ver
+
+[LibraryClasses]
+  UefiBootServicesTableLib
+  UefiApplicationEntryPoint
+  DebugLib
+
+[Protocols]
+  gEfiSimpleTextOutProtocolGuid                           ## CONSUMES
 
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
-
-[LibraryClasses]
-  UefiApplicationEntryPoint

@@ -8,7 +8,7 @@
 **/
 
 #include <Uefi.h>
-#include <DebugLib.h>
+#include <Library/DebugLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
 
@@ -31,7 +31,6 @@ UefiMain (
   )
 {
   EFI_STATUS  Status;
-  UINT32  Index;
   EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *mTextOut;
 
   Status = gBS->LocateProtocol (
