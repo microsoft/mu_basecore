@@ -685,7 +685,7 @@ ResourceConflict (
 
   for (Link = GetFirstNode (&HostBridge->RootBridges), Descriptor = Resources; !IsNull (&HostBridge->RootBridges, Link); Link = GetNextNode (&HostBridge->RootBridges, Link)) {
     RootBridge = ROOT_BRIDGE_FROM_LINK (Link);
-    for (Index = TypeIo; Index < TypeMax; Index++) {
+    for (Index = PCI_RESOURCE_TYPE_ENUM_START; Index < TypeMax; Index++) {  // MU_CHANGE
       ResAllocNode = &RootBridge->ResAllocNode[Index];
 
       Descriptor->Desc         = ACPI_ADDRESS_SPACE_DESCRIPTOR;
@@ -928,7 +928,7 @@ NotifyPhase (
         RootBridge = ROOT_BRIDGE_FROM_LINK (Link);
         DEBUG ((DEBUG_INFO, " RootBridge: %s\n", RootBridge->DevicePathStr));
 
-        for (Index1 = TypeIo; Index1 < TypeBus; Index1++) {
+        for (Index1 = PCI_RESOURCE_TYPE_ENUM_START; Index1 < TypeBus; Index1++) {  // MU_CHANGE
           if (RootBridge->ResAllocNode[Index1].Status == ResNone) {
             ResNodeHandled[Index1] = TRUE;
           } else {
@@ -937,7 +937,7 @@ NotifyPhase (
             //
             MaxAlignment = 0;
             Index        = TypeMax;
-            for (Index2 = TypeIo; Index2 < TypeBus; Index2++) {
+            for (Index2 = PCI_RESOURCE_TYPE_ENUM_START; Index2 < TypeBus; Index2++) {  // MU_CHANGE
               if (ResNodeHandled[Index2]) {
                 continue;
               }
@@ -1142,7 +1142,7 @@ NotifyPhase (
            )
       {
         RootBridge = ROOT_BRIDGE_FROM_LINK (Link);
-        for (Index = TypeIo; Index < TypeBus; Index++) {
+        for (Index = PCI_RESOURCE_TYPE_ENUM_START; Index < TypeBus; Index++) {  // MU_CHANGE
           if (RootBridge->ResAllocNode[Index].Status == ResAllocated) {
             switch (Index) {
               case TypeIo:
@@ -1642,7 +1642,7 @@ GetProposedResources (
       }
 
       Descriptor = (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *)Buffer;
-      for (Index = 0; Index < TypeBus; Index++) {
+      for (Index = PCI_RESOURCE_TYPE_ENUM_START; Index < TypeBus; Index++) { // MU_CHANGE
         ResStatus = RootBridge->ResAllocNode[Index].Status;
         if (ResStatus != ResNone) {
           Descriptor->Desc    = ACPI_ADDRESS_SPACE_DESCRIPTOR;

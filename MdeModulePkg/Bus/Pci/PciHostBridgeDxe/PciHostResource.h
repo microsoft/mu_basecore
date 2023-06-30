@@ -15,7 +15,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define PCI_RESOURCE_LESS  0xFFFFFFFFFFFFFFFEULL
 
 typedef enum {
-  TypeIo = 0,
+  TypeIo,  // MU_CHANGE
   TypeMem32,
   TypePMem32,
   TypeMem64,
@@ -23,6 +23,15 @@ typedef enum {
   TypeBus,
   TypeMax
 } PCI_RESOURCE_TYPE;
+
+// MU_CHANGE begin
+// Only x86_64 has IO resource
+#if defined(__x86_64__)
+#define PCI_RESOURCE_TYPE_ENUM_START TypeIo
+#else
+#define PCI_RESOURCE_TYPE_ENUM_START TypeMem32
+#endif
+// MU_CHANGE end
 
 typedef enum {
   ResNone,
