@@ -1,5 +1,6 @@
 /** @file
-  This sample application uses LocateProtocol, to print "Hello Uefi!" to the UEFI Console.
+  This sample application that is the simplest UEFI application possible.
+  It simply prints "Hello Uefi!" to the UEFI Console Out device.
 
   Copyright (C) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -7,7 +8,6 @@
 
 #include <Uefi.h>
 #include <Library/DebugLib.h>
-#include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
 
 /**
@@ -29,19 +29,12 @@ UefiMain (
   )
 {
   EFI_STATUS  Status;
-  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *mTextOut;
 
-  Status = gBS->LocateProtocol (
-                  &gEfiSimpleTextOutProtocolGuid,
-                  NULL,
-                  (VOID **)&mTextOut
-                  );
+  Status = SystemTable->ConOut->OutputString (SystemTable->ConOut, L"Hello Uefi!\r\n");
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Failed to locate Simple Text Out: Status(%r)\n", Status));
+    DEBUG ((DEBUG_ERROR, "Failed to print Hello Uefi!\r\n"));
     return Status;
   }
-
-  mTextOut->OutputString (mTextOut, L"Hello Uefi!\r\n");
 
   return EFI_SUCCESS;
 }

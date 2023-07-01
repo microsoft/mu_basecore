@@ -1,10 +1,8 @@
 ## @file
 #  Sample UEFI Application Reference EDKII Module.
 #
-#  This is a sample shell application that will print "Hello UEFI!" to the
-#  UEFI Console.
-#
-#  It demos how to use the LocateProtocol with SimpleTextOut protocol
+# This sample application that is the simplest UEFI application possible.
+#  It simply prints "Hello Uefi!" to the UEFI Console Out device.
 #
 #  Copyright (C) Microsoft Corporation
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -30,12 +28,8 @@
   HelloUefi.ver
 
 [LibraryClasses]
-  UefiBootServicesTableLib
   UefiApplicationEntryPoint
   DebugLib
-
-[Protocols]
-  gEfiSimpleTextOutProtocolGuid                           ## CONSUMES
 
 [Packages]
   MdePkg/MdePkg.dec
