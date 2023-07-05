@@ -1,0 +1,12 @@
+## @file RustHostUnitTest_plug_in.yaml
+# IUefiBuildPlugin used to compile and run any rust unit tests.
+# Will also calculate code coverage.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+{
+  "scope": "rust-ci",
+  "name": "Rust Host-Based Unit Test Runner",
+  "module": "RustHostUnitTestPlugin"
+}
