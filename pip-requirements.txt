@@ -19,3 +19,4 @@ regex
 lcov-cobertura==2.0.2
 pygount==1.8.0 # MU_CHANGE
 toml==0.10.2 # MU_CHANGE
+regex==2023.12.25
