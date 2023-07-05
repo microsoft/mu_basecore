@@ -94,7 +94,12 @@ The following command line options are available:
 cargo make test <Optional: Module Name>
 ```
 
-- Note: If a package is not specified, all packages will be tested.
+```cmd
+cargo make coverage <Optional: Module Name>
+```
+
+- Note: If a package is not specified, all packages will be tested. Multiple packages can be provided, comma separated.
+- cargo make coverage to generate coverage results on top of testing.
 
 ### Supported Build Combinations
 
