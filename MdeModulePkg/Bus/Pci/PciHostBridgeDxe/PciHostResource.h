@@ -24,6 +24,16 @@ typedef enum {
   TypeMax
 } PCI_RESOURCE_TYPE;
 
+// MU_CHANGE [BEGIN]
+// Only processor type X64 has IO resource
+#if defined (MDE_CPU_IA32) || defined (MDE_CPU_X64)
+
+#define PCI_RESOURCE_TYPE_ENUM_START  TypeIo
+#else
+#define PCI_RESOURCE_TYPE_ENUM_START  TypeMem32
+#endif
+// MU_CHANGE [END]
+
 typedef enum {
   ResNone,
   ResSubmitted,
