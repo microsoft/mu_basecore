@@ -7,18 +7,18 @@
 **/
 
 #include <Uefi.h>
-#include <Library/DebugLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
 
 /**
   The user Entry Point for Application. The user code starts with this function
   as the real entry point for the application.
 
-  @param[in] ImageHandle    The firmware allocated handle for the EFI image.
-  @param[in] SystemTable    A pointer to the EFI System Table.
+  @param[in] ImageHandle        The firmware allocated handle for the EFI image.
+  @param[in] SystemTable        A pointer to the EFI System Table.
 
-  @retval EFI_SUCCESS       The entry point is executed successfully.
-  @retval other             Some error occurs when executing this entry point.
+  @retval EFI_SUCCESS           The entry point is executed successfully.
+  @retval EFI_INVALID_PARAMETER SystemTable provided was not valid.
+  @retval other                 Some error occurs when executing this entry point.
 
 **/
 EFI_STATUS
@@ -30,9 +30,12 @@ UefiMain (
 {
   EFI_STATUS  Status;
 
+  if (SystemTable == NULL || SystemTable->ConOut == NULL || SystemTable->ConOut->OutputString == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   Status = SystemTable->ConOut->OutputString (SystemTable->ConOut, L"Hello Uefi!\r\n");
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Failed to print Hello Uefi!\r\n"));
     return Status;
   }
 
