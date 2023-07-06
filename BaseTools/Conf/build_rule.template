@@ -260,6 +260,46 @@
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.ii
         "$(NASM)" -I${s_path}(+) $(NASM_INC) $(NASM_FLAGS) -o $dst ${d_path}(+)${s_base}.iii
 
+# MU_CHANGE [BEGIN] - Add Rust build support
+
+[Rust-To-Lib-File]
+    <InputFile>
+        ?.rs
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.lib
+
+    <Command>
+        $(RUSTC) $(RUSTC_FLAGS) ${src} --emit link=${dst}
+
+[Toml-File]
+    <InputFile>
+        ?.toml
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
+
+    <Command>
+        $(CARGO) $(CARGOMAKE_BUILD) $(MODULE_NAME)
+        $(CP) $(CARGO_BINDIR)(+)*.a $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
+
+[Toml-File.RUST_MODULE]
+    <InputFile>
+        ?.toml
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+
+    <Command>
+        # Temporary_Rust_Todo - Remove .efi files to better support Rust incremental build for now.
+        $(RM) $(OUTPUT_DIR)(+)*.efi
+        $(CARGO) $(CARGOMAKE_BUILD) $(MODULE_NAME)
+        $(CP) $(CARGO_BINDIR)(+)$(MODULE_NAME).map $(OUTPUT_DIR)(+)$(MODULE_NAME).map
+        $(CP) $(CARGO_BINDIR)(+)$(MODULE_NAME).efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+        $(CP) $(CARGO_BINDIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
+
+# MU_CHANGE [END] - Add Rust build support
+
 [Device-Tree-Source-File]
     <InputFile>
         ?.dts
@@ -304,7 +344,7 @@
     <Command.GCC>
         $(RM) ${dst}
         "$(SLINK)" cr ${dst} $(SLINK_FLAGS) @$(OBJECT_FILES_LIST)
-    
+
     <Command.XCODE>
         "$(SLINK)" $(SLINK_FLAGS) ${dst} -filelist $(OBJECT_FILES_LIST)
 
