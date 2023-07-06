@@ -101,6 +101,7 @@ typedef struct {
 #define EFI_IMAGE_FILE_EXECUTABLE_IMAGE     BIT1     ///< 0x0002  File is executable  (i.e. no unresolved externel references).
 #define EFI_IMAGE_FILE_LINE_NUMS_STRIPPED   BIT2     ///< 0x0004  Line numbers stripped from file.
 #define EFI_IMAGE_FILE_LOCAL_SYMS_STRIPPED  BIT3     ///< 0x0008  Local symbols stripped from file.
+#define EFI_IMAGE_FILE_LARGE_ADDRESS_AWARE  BIT5     ///< 0x0020  Supports addresses > 2-GB
 #define EFI_IMAGE_FILE_BYTES_REVERSED_LO    BIT7     ///< 0x0080  Bytes of machine word are reversed.
 #define EFI_IMAGE_FILE_32BIT_MACHINE        BIT8     ///< 0x0100  32 bit word machine.
 #define EFI_IMAGE_FILE_DEBUG_STRIPPED       BIT9     ///< 0x0200  Debugging info stripped from file in .DBG file.
@@ -112,7 +113,17 @@ typedef struct {
 //
 // DLL Characteristics
 //
-#define IMAGE_DLLCHARACTERISTICS_NX_COMPAT  BIT8     ///< 0x0100 Image is NX compatible
+#define IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA        0x0020
+#define IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE           0x0040
+#define IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY        0x0080
+#define IMAGE_DLLCHARACTERISTICS_NX_COMPAT              0x0100
+#define IMAGE_DLLCHARACTERISTICS_NO_ISOLATION           0x0200
+#define IMAGE_DLLCHARACTERISTICS_NO_SEH                 0x0400
+#define IMAGE_DLLCHARACTERISTICS_NO_BIND                0x0800
+#define IMAGE_DLLCHARACTERISTICS_APPCONTAINER           0x1000
+#define IMAGE_DLLCHARACTERISTICS_WDM_DRIVER             0x2000
+#define IMAGE_DLLCHARACTERISTICS_GUARD_CF               0x4000
+#define IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE  0x8000
 // MU_CHANGE END
 
 ///
@@ -612,6 +623,13 @@ typedef struct {
   UINT32    AddressOfNameOrdinals;
 } EFI_IMAGE_EXPORT_DIRECTORY;
 
+//
+// Based export types.
+//
+#define EFI_IMAGE_EXPORT_ORDINAL_BASE  1
+#define EFI_IMAGE_EXPORT_ADDR_SIZE     4
+#define EFI_IMAGE_EXPORT_ORDINAL_SIZE  2
+
 ///
 /// Hint/Name Table.
 ///
@@ -703,6 +721,29 @@ typedef struct {
   //  Filename of .DLL (Mach-O with debug info) goes here
   //
 } EFI_IMAGE_DEBUG_CODEVIEW_MTOC_ENTRY;
+
+// avoid conflict with windows header files
+#ifndef RUNTIME_FUNCTION_INDIRECT
+
+//
+// .pdata entries for X64
+//
+typedef struct {
+  UINT32    FunctionStartAddress;
+  UINT32    FunctionEndAddress;
+  UINT32    UnwindInfoAddress;
+} PD_RUNTIME_FUNCTION; // MU_CHANGE: Resolve definition conflict in winnt.h for ARM target.
+
+#endif
+
+typedef struct {
+  UINT8    Version             : 3;
+  UINT8    Flags               : 5;
+  UINT8    SizeOfProlog;
+  UINT8    CountOfUnwindCodes;
+  UINT8    FrameRegister       : 4;
+  UINT8    FrameRegisterOffset : 4;
+} UNWIND_INFO;
 
 ///
 /// Resource format.

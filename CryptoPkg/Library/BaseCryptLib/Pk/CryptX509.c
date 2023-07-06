@@ -1908,12 +1908,25 @@ Asn1GetTag (
   INT32  ObjCls;
   long   ObjLength;
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  INT32  Ret;
+
+  // MU_CHANGE [END] - CodeQL change
+
   //
   // Save Ptr position
   //
   PtrOld = *Ptr;
 
-  ASN1_get_object ((CONST UINT8 **)Ptr, &ObjLength, &ObjTag, &ObjCls, (INT32)(End - (*Ptr)));
+  // MU_CHANGE [BEGIN] - CodeQL change
+  // ASN1_get_object ((CONST UINT8 **)Ptr, &ObjLength, &ObjTag, &ObjCls, (INT32)(End - (*Ptr)));
+  Ret = ASN1_get_object ((CONST UINT8 **)Ptr, &ObjLength, &ObjTag, &ObjCls, (INT32)(End - (*Ptr)));
+  if (Ret & 0x80) {
+    return FALSE;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   if ((ObjTag == (INT32)(Tag & CRYPTO_ASN1_TAG_VALUE_MASK)) &&
       (ObjCls == (INT32)(Tag & CRYPTO_ASN1_TAG_CLASS_MASK)))
   {

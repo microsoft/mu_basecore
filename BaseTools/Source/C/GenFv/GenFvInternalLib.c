@@ -36,7 +36,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Guid/FfsSectionAlignmentPadding.h>
 
-#include "WinNtInclude.h"
 #include "GenFvInternalLib.h"
 #include "FvLib.h"
 #include "PeCoffLib.h"
@@ -1667,8 +1666,8 @@ Returns:
 
   if (
        Vtf0Detected &&
-       (MachineType == EFI_IMAGE_MACHINE_IA32 ||
-        MachineType == EFI_IMAGE_MACHINE_X64)
+       (MachineType == IMAGE_FILE_MACHINE_I386 ||
+        MachineType == IMAGE_FILE_MACHINE_X64)
      ) {
     //
     // If the SEC core code is IA32 or X64 and the VTF-0 signature
@@ -1726,7 +1725,7 @@ Returns:
     DebugMsg (NULL, 0, 9, "PeiCore physical entry point address", "Address = 0x%llX", (unsigned long long) PeiCorePhysicalAddress);
   }
 
-if (MachineType == EFI_IMAGE_MACHINE_IA32 || MachineType == EFI_IMAGE_MACHINE_X64) {
+if (MachineType == IMAGE_FILE_MACHINE_I386 || MachineType == IMAGE_FILE_MACHINE_X64) {
     if (PeiCorePhysicalAddress != 0) {
       //
       // Get the location to update
@@ -1816,12 +1815,12 @@ if (MachineType == EFI_IMAGE_MACHINE_IA32 || MachineType == EFI_IMAGE_MACHINE_X6
     //
     Ia32ResetAddressPtr   = (UINT32 *) ((UINTN) FvImage->Eof - 8);
     *Ia32ResetAddressPtr  = IpiVector;
-  } else if (MachineType == EFI_IMAGE_MACHINE_ARMT) {
+  } else if (MachineType == IMAGE_FILE_MACHINE_ARMTHUMB_MIXED) {
     //
     // Since the ARM reset vector is in the FV Header you really don't need a
     // Volume Top File, but if you have one for some reason don't crash...
     //
-  } else if (MachineType == EFI_IMAGE_MACHINE_AARCH64) {
+  } else if (MachineType == IMAGE_FILE_MACHINE_ARM64) {
     //
     // Since the AArch64 reset vector is in the FV Header you really don't need a
     // Volume Top File, but if you have one for some reason don't crash...
@@ -2216,7 +2215,7 @@ Returns:
     return EFI_SUCCESS;
   }
 
-  if (MachineType == EFI_IMAGE_MACHINE_ARMT) {
+  if (MachineType == IMAGE_FILE_MACHINE_ARMTHUMB_MIXED) {
     // ARM: Array of 4 UINT32s:
     // 0 - is branch relative to SEC entry point
     // 1 - PEI Entry Point
@@ -2270,7 +2269,7 @@ Returns:
     //
     memcpy(FvImage->FileImage, ResetVector, sizeof (ResetVector));
 
-  } else if (MachineType == EFI_IMAGE_MACHINE_AARCH64) {
+  } else if (MachineType == IMAGE_FILE_MACHINE_ARM64) {
     // AArch64: Used as UINT64 ResetVector[2]
     // 0 - is branch relative to SEC entry point
     // 1 - PEI Entry Point
@@ -2389,7 +2388,7 @@ Returns:
     return EFI_ABORTED;
   }
 
-  if (MachineType != EFI_IMAGE_MACHINE_RISCV64) {
+  if (MachineType != IMAGE_FILE_MACHINE_RISCV64) {
     Error(NULL, 0, 3000, "Invalid", "Could not update SEC core because Machine type is not RiscV.");
     return EFI_ABORTED;
   }
@@ -2489,7 +2488,7 @@ Returns:
   if (!UpdateVectorSec)
     return EFI_SUCCESS;
 
-  if (MachineType == EFI_IMAGE_MACHINE_LOONGARCH64) {
+  if (MachineType == IMAGE_FILE_MACHINE_LOONGARCH64) {
     UINT32                      ResetVector[1];
 
     memset(ResetVector, 0, sizeof (ResetVector));
@@ -2606,9 +2605,9 @@ Returns:
   //
   // Verify machine type is supported
   //
-  if ((*MachineType != EFI_IMAGE_MACHINE_IA32) &&  (*MachineType != EFI_IMAGE_MACHINE_X64) && (*MachineType != EFI_IMAGE_MACHINE_EBC) &&
-      (*MachineType != EFI_IMAGE_MACHINE_ARMT) && (*MachineType != EFI_IMAGE_MACHINE_AARCH64) &&
-      (*MachineType != EFI_IMAGE_MACHINE_RISCV64) && (*MachineType != EFI_IMAGE_MACHINE_LOONGARCH64)) {
+  if ((*MachineType != IMAGE_FILE_MACHINE_I386) &&  (*MachineType != IMAGE_FILE_MACHINE_X64) && (*MachineType != IMAGE_FILE_MACHINE_EBC) &&
+      (*MachineType != IMAGE_FILE_MACHINE_ARMTHUMB_MIXED) && (*MachineType != IMAGE_FILE_MACHINE_ARM64) &&
+      (*MachineType != IMAGE_FILE_MACHINE_RISCV64) && (*MachineType != IMAGE_FILE_MACHINE_LOONGARCH64)) {
     Error (NULL, 0, 3000, "Invalid", "Unrecognized machine type in the PE32 file.");
     return EFI_UNSUPPORTED;
   }
@@ -3558,13 +3557,13 @@ Returns:
       }
 
       // machine type is ARM, set a flag so ARM reset vector processing occurs
-      if ((MachineType == EFI_IMAGE_MACHINE_ARMT) || (MachineType == EFI_IMAGE_MACHINE_AARCH64)) {
+      if ((MachineType == IMAGE_FILE_MACHINE_ARMTHUMB_MIXED) || (MachineType == IMAGE_FILE_MACHINE_ARM64)) {
         VerboseMsg("Located ARM/AArch64 SEC/PEI core in child FV");
         mArm = TRUE;
       }
 
       // Machine type is LOONGARCH64, set a flag so LoongArch64 reset vector processed.
-      if (MachineType == EFI_IMAGE_MACHINE_LOONGARCH64) {
+      if (MachineType == IMAGE_FILE_MACHINE_LOONGARCH64) {
         VerboseMsg("Located LoongArch64 SEC core in child FV");
         mLoongArch = TRUE;
       }
@@ -3717,16 +3716,16 @@ Returns:
       return Status;
     }
 
-    if ( (ImageContext.Machine == EFI_IMAGE_MACHINE_ARMT) ||
-         (ImageContext.Machine == EFI_IMAGE_MACHINE_AARCH64) ) {
+    if ( (ImageContext.Machine == IMAGE_FILE_MACHINE_ARMTHUMB_MIXED) ||
+         (ImageContext.Machine == IMAGE_FILE_MACHINE_ARM64) ) {
       mArm = TRUE;
     }
 
-    if (ImageContext.Machine == EFI_IMAGE_MACHINE_RISCV64) {
+    if (ImageContext.Machine == IMAGE_FILE_MACHINE_RISCV64) {
       mRiscV = TRUE;
     }
 
-    if (ImageContext.Machine == EFI_IMAGE_MACHINE_LOONGARCH64) {
+    if (ImageContext.Machine == IMAGE_FILE_MACHINE_LOONGARCH64) {
       mLoongArch = TRUE;
     }
 
@@ -4002,12 +4001,12 @@ Returns:
       return Status;
     }
 
-    if ( (ImageContext.Machine == EFI_IMAGE_MACHINE_ARMT) ||
-         (ImageContext.Machine == EFI_IMAGE_MACHINE_AARCH64) ) {
+    if ( (ImageContext.Machine == IMAGE_FILE_MACHINE_ARMTHUMB_MIXED) ||
+         (ImageContext.Machine == IMAGE_FILE_MACHINE_ARM64) ) {
       mArm = TRUE;
     }
 
-    if (ImageContext.Machine == EFI_IMAGE_MACHINE_LOONGARCH64) {
+    if (ImageContext.Machine == IMAGE_FILE_MACHINE_LOONGARCH64) {
       mLoongArch = TRUE;
     }
 

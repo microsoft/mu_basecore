@@ -283,6 +283,9 @@ class DscBuildData(PlatformBuildClassObject):
         self._VpdToolGuid       = None
         self._MacroDict         = None
         self.DefaultStores      = None
+        # MU_CHANGE [BEGIN]: Add Rust build support
+        self._RustModules       = None
+        # MU_CHANGE [END]: Add Rust build support
 
     ## Get current effective macros
     @property
@@ -834,6 +837,56 @@ class DscBuildData(PlatformBuildClassObject):
             self._Modules[ModuleFile] = Module
         return self._Modules
 
+    # MU_CHANGE [BEGIN]: Add Rust build support
+
+    @property
+    def RustLibraries(self):
+        if self._RustLibraries is not None:
+            return self._RustLibraries
+        self._RustLibraries = []
+        LibraryRecordList = self._RawData[MODEL_EFI_LIBRARY_CLASS, self._Arch]
+        for Record in LibraryRecordList:
+            ModuleFile = PathClass(NormPath(Record[1]), GlobalData.gWorkspace, Arch=self._Arch)
+            if ModuleFile.Ext != ".toml":
+                continue
+            ModuleId = Record[6]
+            LineNo = Record[7]
+            self._RustLibraries.append((Record[0], ModuleFile))
+        return self._RustLibraries
+
+    @property
+    def RustModules(self):
+        if self._RustModules is not None:
+            return self._RustModules
+        self._RustModules = []
+
+        LibraryRecordList = self._RawData[MODEL_EFI_LIBRARY_CLASS, self._Arch]
+        for Record in LibraryRecordList:
+            ModuleFile = PathClass(NormPath(Record[1]), GlobalData.gWorkspace, Arch=self._Arch)
+            if ModuleFile.Ext != ".toml":
+                continue
+            ModuleId = Record[6]
+            LineNo = Record[7]
+            self._RustModules.append((ModuleFile))
+
+        RecordList = self._RawData[MODEL_META_DATA_RUST_COMPONENT, self._Arch]
+        for Record in RecordList:
+            ModuleFile = PathClass(NormPath(Record[0]), GlobalData.gWorkspace, Arch=self._Arch)
+            if ModuleFile.Ext != ".toml":
+                continue
+            ModuleId = Record[6]
+            LineNo = Record[7]
+
+            # check file validation
+            ErrorCode, ErrorInfo = ModuleFile.Validate('.toml')
+            if ErrorCode != 0:
+                EdkLogger.error('build', ErrorCode, File=self.MetaFile, Line=LineNo,
+                                ExtraData=ErrorInfo)
+            self._RustModules.append(ModuleFile)
+        return self._RustModules
+
+    # MU_CHANGE [END]: Add Rust build support
+
     ## Retrieve all possible library instances used in this platform
     @property
     def LibraryInstances(self):
@@ -868,6 +921,15 @@ class DscBuildData(PlatformBuildClassObject):
                 if ErrorCode != 0:
                     EdkLogger.error('build', ErrorCode, File=self.MetaFile, Line=LineNo,
                                     ExtraData=ErrorInfo)
+
+                    # MU_CHANGE [BEGIN]: Add Rust build support
+
+                    ErrorCode, ErrorInfo = LibraryInstance.Validate('.toml')
+                    if ErrorCode != 0:
+                        EdkLogger.error('build', ErrorCode, File=self.MetaFile, Line=LineNo,
+                                        ExtraData=ErrorInfo)
+
+                    # MU_CHANGE [END]: Add Rust build support
 
                 if ModuleType != TAB_COMMON and ModuleType not in SUP_MODULE_LIST:
                     EdkLogger.error('build', OPTION_UNKNOWN, "Unknown module type [%s]" % ModuleType,
