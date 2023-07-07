@@ -226,7 +226,8 @@ CreateRootBridge (
   CopyMem (&RootBridge->PMem, &Bridge->PMem, sizeof (PCI_ROOT_BRIDGE_APERTURE));
   CopyMem (&RootBridge->PMemAbove4G, &Bridge->PMemAbove4G, sizeof (PCI_ROOT_BRIDGE_APERTURE));
 
-  for (Index = TypeIo; Index < TypeMax; Index++) {
+  // MU_CHANGE - PCI_RESOURCE_TYPE_ENUM_START
+  for (Index = PCI_RESOURCE_TYPE_ENUM_START; Index < TypeMax; Index++) {
     switch (Index) {
       case TypeBus:
         Aperture = &RootBridge->Bus;
@@ -1940,7 +1941,8 @@ RootBridgeIoConfiguration (
     TypeMax * sizeof (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR) + sizeof (EFI_ACPI_END_TAG_DESCRIPTOR)
     );
   Descriptor = RootBridge->ConfigBuffer;
-  for (Index = TypeIo; Index < TypeMax; Index++) {
+  // MU_CHANGE - PCI_RESOURCE_TYPE_ENUM_START
+  for (Index = PCI_RESOURCE_TYPE_ENUM_START; Index < TypeMax; Index++) {
     ResAllocNode = &RootBridge->ResAllocNode[Index];
 
     if (ResAllocNode->Status != ResAllocated) {
