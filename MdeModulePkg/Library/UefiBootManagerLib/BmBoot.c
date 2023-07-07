@@ -1435,7 +1435,8 @@ BmDestroyRamDisk (
 
   Status = mRamDisk->Unregister (RamDiskDevicePath);
   ASSERT_EFI_ERROR (Status);
-  FreePages (RamDiskBuffer, RamDiskSizeInPages);
+  // MU_CHANGE - Ramdisk is now allocated with alignment.
+  FreeAlignedPages (RamDiskBuffer, RamDiskSizeInPages);
 }
 
 /**
@@ -1483,10 +1484,17 @@ BmExpandLoadFile (
     return DuplicateDevicePath (DevicePathFromHandle (LoadFileHandle));
   }
 
+  // MU_CHANGE [BEGIN] - Ramdisk is now allocated with 2MB alignment.
+
   //
   // The load option resides in a RAM disk.
+  // Use a reasonable default of 2MB for alignment as the ramdisk device is
+  // implemented as an NVDIMM persistent memory and operating systems may
+  // wish to map this with huge page support.
   //
-  FileBuffer = AllocateReservedPages (EFI_SIZE_TO_PAGES (BufferSize));
+
+  FileBuffer = AllocateAlignedReservedPages (EFI_SIZE_TO_PAGES (BufferSize), SIZE_2MB);
+  // MU_CHANGE [END] - Ramdisk is now allocated with 2MB alignment.
   if (FileBuffer == NULL) {
     DEBUG_CODE_BEGIN ();
     EFI_DEVICE_PATH  *LoadFilePath;
@@ -1527,7 +1535,8 @@ BmExpandLoadFile (
 
   Status = LoadFile->LoadFile (LoadFile, FilePath, TRUE, &BufferSize, FileBuffer);
   if (EFI_ERROR (Status)) {
-    FreePages (FileBuffer, EFI_SIZE_TO_PAGES (BufferSize));
+    // MU_CHANGE - Ramdisk is now allocated with alignment.
+    FreeAlignedPages (FileBuffer, EFI_SIZE_TO_PAGES (BufferSize));
     return NULL;
   }
 
