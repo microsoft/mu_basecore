@@ -133,7 +133,7 @@ TcpSynBuildOption (
     // MU_CHANGE [BEGIN] - CodeQL change
     if (Data == NULL) {
       ASSERT (Data != NULL);
-      return -1;  // Returning Len of -1 if we fail allocating space
+      return 0;  // Returning Len of 0 if we fail allocating space
     }
     // MU_CHANGE [END] - CodeQL change
     Len += TCP_OPTION_TS_ALIGNED_LEN;
@@ -162,7 +162,7 @@ TcpSynBuildOption (
     // MU_CHANGE [BEGIN] - CodeQL change
     if (Data == NULL) {
       ASSERT (Data != NULL);
-      return -1; // Returning Len of -1 if we fail allocating space
+      return 0; // Returning Len of -1 if we fail allocating space
     }
     // MU_CHANGE [END] - CodeQL change
 
@@ -177,7 +177,7 @@ TcpSynBuildOption (
   // MU_CHANGE [BEGIN] - CodeQL change
   if (Data == NULL) {
     ASSERT (Data != NULL);
-    return -1; // Returning Len of -1 if we fail allocating space
+    return 0; // Returning Len of -1 if we fail allocating space
   }
   // MU_CHANGE [END] - CodeQL change
 

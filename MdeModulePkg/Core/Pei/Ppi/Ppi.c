@@ -329,10 +329,10 @@ ConvertPpiPointersFv (
       // Instead we compare the GUID as INT32 at a time and branch
       // on the first failed comparison.
       //
-      if ((((INT32 *)Guid)[0] == ((INT32 *)GuidCheckList[GuidIndex])[0]) &&
-          (((INT32 *)Guid)[1] == ((INT32 *)GuidCheckList[GuidIndex])[1]) &&
-          (((INT32 *)Guid)[2] == ((INT32 *)GuidCheckList[GuidIndex])[2]) &&
-          (((INT32 *)Guid)[3] == ((INT32 *)GuidCheckList[GuidIndex])[3]))
+      if ((((INT32 *)Guid)[0] == ((INT32 *)(GuidCheckList[GuidIndex]))[0]) &&
+          (((INT32 *)Guid)[1] == ((INT32 *)(GuidCheckList[GuidIndex]))[1]) &&
+          (((INT32 *)Guid)[2] == ((INT32 *)(GuidCheckList[GuidIndex]))[2]) &&
+          (((INT32 *)Guid)[3] == ((INT32 *)(GuidCheckList[GuidIndex]))[3]))
       {
         FvInfoPpi = PrivateData->PpiData.PpiList.PpiPtrs[Index].Ppi->Ppi;
         DEBUG ((DEBUG_VERBOSE, "      FvInfo: %p -> ", FvInfoPpi->FvInfo));
