@@ -392,7 +392,6 @@ BootBootOptions (
   //
 
   for (Index = 0; Index < BootOptionCount; Index++) {
-
     //
     // According to EFI Specification, if a load option is not marked
     // as LOAD_OPTION_ACTIVE, the boot manager will not automatically
