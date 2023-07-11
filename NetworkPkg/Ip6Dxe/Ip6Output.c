@@ -866,7 +866,13 @@ Ip6Output (
       // Allocate the space to contain the fragmentable hdrs and copy the data.
       //
       Buf = NetbufAllocSpace (TmpPacket, FragmentHdrsLen, TRUE);
-      ASSERT (Buf != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (Buf == NULL) {
+        ASSERT (Buf != NULL);
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Error;
+      }
+      // MU_CHANGE [BEGIN] - CodeQL change
       CopyMem (Buf, ExtHdrs + UnFragmentHdrsLen, FragmentHdrsLen);
 
       //

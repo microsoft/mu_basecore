@@ -1181,8 +1181,8 @@ IfrToString (
         ASSERT (TmpBuf != NULL);
         return EFI_OUT_OF_RESOURCES;
       }
-
       // MU_CHANGE [END] - CodeQL change
+      
       if (Format == EFI_IFR_STRING_ASCII) {
         CopyMem (TmpBuf, SrcBuf, SrcLen);
         PrintFormat = L"%a";
@@ -1377,10 +1377,20 @@ IfrCatenate (
     ASSERT (Result->Buffer != NULL);
 
     TmpBuf = GetBufferForValue (&Value[0]);
-    ASSERT (TmpBuf != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (TmpBuf == NULL) {
+      ASSERT (TmpBuf != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
+    // MU_CHANGE [BEGIN] - CodeQL change
     CopyMem (Result->Buffer, TmpBuf, Length0);
     TmpBuf = GetBufferForValue (&Value[1]);
-    ASSERT (TmpBuf != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (TmpBuf == NULL) {
+      ASSERT (TmpBuf != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
+    // MU_CHANGE [BEGIN] - CodeQL change
     CopyMem (&Result->Buffer[Length0], TmpBuf, Length1);
   }
 

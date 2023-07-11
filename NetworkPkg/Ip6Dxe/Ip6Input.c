@@ -1522,7 +1522,12 @@ Ip6InstanceDeliverPacket (
       // may be not continuous before the data.
       //
       Head = NetbufAllocSpace (Dup, sizeof (EFI_IP6_HEADER), NET_BUF_HEAD);
-      ASSERT (Head != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (Head == NULL) {
+        ASSERT (Head != NULL);
+        return EFI_OUT_OF_RESOURCES;
+      }
+      // MU_CHANGE [END] - CodeQL change
       Dup->Ip.Ip6 = (EFI_IP6_HEADER *)Head;
 
       CopyMem (Head, Packet->Ip.Ip6, sizeof (EFI_IP6_HEADER));

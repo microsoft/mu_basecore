@@ -388,6 +388,11 @@ LoadUnitTestCache (
   // MU_CHANGE: Use file name and path instead of device path
   FileName = GetCacheFileName (FrameworkHandle);
 
+  if (FileName == NULL) {
+    ASSERT (FileName != NULL);
+    return EFI_NOT_FOUND;
+  }
+
   //
   // Now that we know the path to the file... let's open it for writing.
   //

@@ -1318,7 +1318,12 @@ Ip4InstanceDeliverPacket (
         // may be not continuous before the data.
         //
         Head = NetbufAllocSpace (Dup, IP4_MAX_HEADLEN, NET_BUF_HEAD);
-        ASSERT (Head != NULL);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if (Head == NULL) {
+          ASSERT (Head != NULL);
+          return EFI_OUT_OF_RESOURCES;
+        }
+        // MU_CHANGE [END] - CodeQL change
 
         Dup->Ip.Ip4 = (IP4_HEAD *)Head;
 

@@ -1134,6 +1134,12 @@ GetAcpiCpuData (
   // For a native platform, copy the CPU S3 data into SMRAM for use on CPU S3 Resume.
   //
   CopyMem (&mAcpiCpuData, AcpiCpuData, sizeof (mAcpiCpuData));
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (&mAcpiCpuData == 0) {
+    ASSERT (&mAcpiCpuData == 0);
+    return;
+  }
+  // MU_CHANGE [END] - CodeQL change
 
   mAcpiCpuData.MtrrTable = (EFI_PHYSICAL_ADDRESS)(UINTN)AllocatePool (sizeof (MTRR_SETTINGS));
   ASSERT (mAcpiCpuData.MtrrTable != 0);

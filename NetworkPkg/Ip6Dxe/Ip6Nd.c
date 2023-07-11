@@ -1445,7 +1445,12 @@ Ip6SendNeighborSolicit (
   IcmpHead->Head.Code = 0;
 
   Target = (EFI_IPv6_ADDRESS *)NetbufAllocSpace (Packet, sizeof (EFI_IPv6_ADDRESS), FALSE);
-  ASSERT (Target != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Target == NULL) {
+    ASSERT (Target != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
+  // MU_CHANGE [END] - CodeQL change
   IP6_COPY_ADDRESS (Target, TargetIp6Address);
 
   LinkLayerOption = NULL;
