@@ -1,60 +1,24 @@
 /** @file
-  Implements the DXE policy protocol, providing services to publish and access
-  system policy.
+  Common function implementations for storing and finding policies for the DXE/MM
+  policy service modules.
 
   Copyright (c) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#include "PolicyDxe.h"
+#include "PolicyCommon.h"
+#include "PolicyInterface.h"
 
-STATIC LIST_ENTRY  mPolicyListHead = INITIALIZE_LIST_HEAD_VARIABLE (mPolicyListHead);
-STATIC EFI_LOCK    mPolicyListLock = EFI_INITIALIZE_LOCK_VARIABLE (TPL_NOTIFY);
-STATIC EFI_HANDLE  mImageHandle    = NULL;
+LIST_ENTRY  mPolicyListHead = INITIALIZE_LIST_HEAD_VARIABLE (mPolicyListHead);
+LIST_ENTRY  mNotifyListHead = INITIALIZE_LIST_HEAD_VARIABLE (mNotifyListHead);
 
-POLICY_PROTOCOL  mPolicyProtocol = {
-  DxeSetPolicy,
-  DxeGetPolicy,
-  DxeRemovePolicy
-};
+//
+// Global state for the potentially recursive notify routine.
+//
 
-/**
-  Creates and emptry protocol for a given GUID to notify or dispatch consumers of
-  this policy GUID. If the protocol already exists it will be reinstalled.
-
-  @param[in]  PolicyGuid        The policy GUID used for the protocol.
-
-  @retval     EFI_SUCCESS       The protocol was installed or reinstalled.
-**/
-EFI_STATUS
-EFIAPI
-DxeInstallPolicyIndicatorProtocol (
-  IN CONST EFI_GUID  *PolicyGuid
-  )
-{
-  EFI_STATUS  Status;
-  VOID        *Interface;
-
-  Status = gBS->LocateProtocol ((EFI_GUID *)PolicyGuid, NULL, &Interface);
-  if (EFI_ERROR (Status)) {
-    Status = gBS->InstallMultipleProtocolInterfaces (
-                    &mImageHandle,
-                    PolicyGuid,
-                    NULL,
-                    NULL
-                    );
-  } else {
-    Status = gBS->ReinstallProtocolInterface (
-                    mImageHandle,
-                    (EFI_GUID *)PolicyGuid,
-                    NULL,
-                    NULL
-                    );
-  }
-
-  return Status;
-}
+BOOLEAN  mNotifyInProgress = FALSE;
+BOOLEAN  mCallbacksDeleted = FALSE;
 
 /**
   Retrieves the policy descriptor, buffer, and size for a given policy GUID.
@@ -72,7 +36,7 @@ DxeInstallPolicyIndicatorProtocol (
 **/
 EFI_STATUS
 EFIAPI
-DxeGetPolicyEntry (
+GetPolicyEntry (
   IN CONST EFI_GUID  *PolicyGuid,
   OUT POLICY_ENTRY   **PolicyEntry
   )
@@ -102,13 +66,13 @@ DxeGetPolicyEntry (
 **/
 BOOLEAN
 EFIAPI
-DxeCheckPolicyExists (
+CheckPolicyExists (
   IN CONST EFI_GUID  *PolicyGuid
   )
 {
   POLICY_ENTRY  *Entry;
 
-  return !EFI_ERROR (DxeGetPolicyEntry (PolicyGuid, &Entry));
+  return !EFI_ERROR (GetPolicyEntry (PolicyGuid, &Entry));
 }
 
 /**
@@ -126,7 +90,7 @@ DxeCheckPolicyExists (
 **/
 EFI_STATUS
 EFIAPI
-DxeGetPolicy (
+CommonGetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
   OUT UINT64         *Attributes OPTIONAL,
   OUT VOID           *Policy,
@@ -143,8 +107,8 @@ DxeGetPolicy (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiAcquireLock (&mPolicyListLock);
-  Status = DxeGetPolicyEntry (PolicyGuid, &Entry);
+  PolicyLockAcquire ();
+  Status = GetPolicyEntry (PolicyGuid, &Entry);
   if (EFI_ERROR (Status)) {
     goto Exit;
   }
@@ -163,7 +127,7 @@ DxeGetPolicy (
   *PolicySize = Entry->PolicySize;
 
 Exit:
-  EfiReleaseLock (&mPolicyListLock);
+  PolicyLockRelease ();
   return Status;
 }
 
@@ -187,7 +151,7 @@ IngestPoliciesFromHob (
 
   PolicyCount = 0;
   Status      = EFI_SUCCESS;
-  EfiAcquireLock (&mPolicyListLock);
+  PolicyLockAcquire ();
   for (GuidHob = GetFirstGuidHob (&gPolicyHobGuid);
        GuidHob != NULL;
        GuidHob = GetNextGuidHob (&gPolicyHobGuid, GET_NEXT_HOB (GuidHob)))
@@ -201,7 +165,7 @@ IngestPoliciesFromHob (
       continue;
     }
 
-    ASSERT (!DxeCheckPolicyExists (&PolicyHob->PolicyGuid));
+    ASSERT (!CheckPolicyExists (&PolicyHob->PolicyGuid));
 
     PolicyEntry = AllocatePool (sizeof (POLICY_ENTRY));
     if (PolicyEntry == NULL) {
@@ -220,9 +184,11 @@ IngestPoliciesFromHob (
     InsertTailList (&mPolicyListHead, &PolicyEntry->Link);
     PolicyCount++;
 
-    Status = DxeInstallPolicyIndicatorProtocol (&PolicyEntry->PolicyGuid);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: Failed to install notification protocol. (%r)\n", __FUNCTION__, Status));
+    if (PolicyEntry->Attributes & POLICY_ATTRIBUTE_FINALIZED) {
+      Status = InstallPolicyIndicatorProtocol (&PolicyEntry->PolicyGuid);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: Failed to install notification protocol. (%r)\n", __FUNCTION__, Status));
+      }
     }
   }
 
@@ -230,7 +196,7 @@ IngestPoliciesFromHob (
     DEBUG ((DEBUG_INFO, "Found %d active policies in HOBs.\n", PolicyCount));
   }
 
-  EfiReleaseLock (&mPolicyListLock);
+  PolicyLockRelease ();
   return Status;
 }
 
@@ -245,7 +211,7 @@ IngestPoliciesFromHob (
 **/
 EFI_STATUS
 EFIAPI
-DxeRemovePolicy (
+CommonRemovePolicy (
   IN CONST EFI_GUID  *PolicyGuid
   )
 {
@@ -256,18 +222,19 @@ DxeRemovePolicy (
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiAcquireLock (&mPolicyListLock);
-  Status = DxeGetPolicyEntry (PolicyGuid, &Entry);
+  PolicyLockAcquire ();
+  Status = GetPolicyEntry (PolicyGuid, &Entry);
   if (!EFI_ERROR (Status)) {
     RemoveEntryList (&Entry->Link);
     if (!Entry->FromHob) {
       FreePool (Entry->Policy);
     }
 
-    FreePool (Entry);
+    Entry->FreeAfterNotify = TRUE;
+    CommonPolicyNotify (POLICY_NOTIFY_REMOVED, Entry);
   }
 
-  EfiReleaseLock (&mPolicyListLock);
+  PolicyLockRelease ();
   return Status;
 }
 
@@ -287,7 +254,7 @@ DxeRemovePolicy (
 **/
 EFI_STATUS
 EFIAPI
-DxeSetPolicy (
+CommonSetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
   IN UINT64          Attributes,
   IN VOID            *Policy,
@@ -297,13 +264,14 @@ DxeSetPolicy (
   EFI_STATUS    Status;
   POLICY_ENTRY  *Entry;
   VOID          *AllocatedPolicy;
+  UINT32        Events;
 
   if ((PolicyGuid == NULL) || (Policy == NULL) || (PolicySize == 0)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  EfiAcquireLock (&mPolicyListLock);
-  Status = DxeGetPolicyEntry (PolicyGuid, &Entry);
+  PolicyLockAcquire ();
+  Status = GetPolicyEntry (PolicyGuid, &Entry);
   if (!EFI_ERROR (Status)) {
     if (Entry->Attributes & POLICY_ATTRIBUTE_FINALIZED) {
       Status = EFI_ACCESS_DENIED;
@@ -355,50 +323,228 @@ DxeSetPolicy (
     Entry->AllocationSize = PolicySize;
     CopyMem (Entry->Policy, Policy, PolicySize);
     InsertTailList (&mPolicyListHead, &Entry->Link);
+    Status = EFI_SUCCESS;
   }
 
-  Status = DxeInstallPolicyIndicatorProtocol (PolicyGuid);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to install notification protocol. (%r)\n", __FUNCTION__, Status));
-    goto Exit;
+  Events = POLICY_NOTIFY_SET | (Entry->Attributes & POLICY_ATTRIBUTE_FINALIZED ? POLICY_NOTIFY_FINALIZED : 0);
+  CommonPolicyNotify (Events, Entry);
+
+  if (Attributes & POLICY_ATTRIBUTE_FINALIZED) {
+    Status = InstallPolicyIndicatorProtocol (PolicyGuid);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: Failed to install notification protocol. (%r)\n", __FUNCTION__, Status));
+      goto Exit;
+    }
   }
 
 Exit:
-  EfiReleaseLock (&mPolicyListLock);
+  PolicyLockRelease ();
   return Status;
 }
 
 /**
-  DXE policy driver entry point. Initialized the policy store from the HOB list
-  and install the DXE policy protocol.
+  Registers a callback for a policy event notification. The provided routine
+  will be invoked when one of multiple of the provided event types for the specified
+  guid occurs.
 
-  @param[in]  ImageHandle     The firmware allocated handle for the EFI image.
-  @param[in]  SystemTable     UNUSED.
+  @param[in]   PolicyGuid        The GUID of the policy the being watched.
+  @param[in]   EventTypes        The events to notify the callback for.
+  @param[in]   Priority          The priority of the callback where the lower values
+                                 will be called first.
+  @param[in]   CallbackRoutine   The function pointer of the callback to be invoked.
+  @param[out]  Handle            Returns the handle to this callback entry.
 
-  @retval   EFI_SUCCESS           Policy store initialized and protocol installed.
-  @retval   EFI_OUT_OF_RESOURCES  Failed to allocate memory for policy and global structures.
+  @retval   EFI_SUCCESS            The callback notification as successfully registered.
+  @retval   EFI_INVALID_PARAMETER  EventTypes was 0 or Callback routine is invalid.
+  @retval   EFI_OUT_OF_RESOURCES   Tracking data for callback could not be allocated.
+  @retval   Other                  The callback registration failed.
 **/
 EFI_STATUS
 EFIAPI
-DxePolicyEntry (
-  IN EFI_HANDLE        ImageHandle,
-  IN EFI_SYSTEM_TABLE  *SystemTable
+CommonRegisterNotify (
+  IN CONST EFI_GUID           *PolicyGuid,
+  IN CONST UINT32             EventTypes,
+  IN CONST UINT32             Priority,
+  IN POLICY_HANDLER_CALLBACK  CallbackRoutine,
+  OUT VOID                    **Handle
   )
 {
-  EFI_STATUS  Status;
+  LIST_ENTRY           *Link;
+  POLICY_NOTIFY_ENTRY  *CheckEntry;
+  POLICY_NOTIFY_ENTRY  *Entry;
 
-  // Process the HOBs to consume any existing policies.
-  mImageHandle = ImageHandle;
-  Status       = IngestPoliciesFromHob ();
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to ingest HOB policies. (%r)\n", __FUNCTION__, Status));
-    return Status;
+  if ((CallbackRoutine == NULL) ||
+      (PolicyGuid == NULL) ||
+      (Handle == NULL) ||
+      ((EventTypes & POLICY_NOTIFY_ALL) != EventTypes))
+  {
+    return EFI_INVALID_PARAMETER;
   }
 
-  return gBS->InstallMultipleProtocolInterfaces (
-                &ImageHandle,
-                &gPolicyProtocolGuid,
-                &mPolicyProtocol,
-                NULL
-                );
+  Entry = AllocatePool (sizeof (POLICY_NOTIFY_ENTRY));
+  if (Entry == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  ZeroMem (Entry, sizeof (POLICY_NOTIFY_ENTRY));
+  Entry->Signature       = POLICY_NOTIFY_ENTRY_SIGNATURE;
+  Entry->PolicyGuid      = *PolicyGuid;
+  Entry->EventTypes      = EventTypes;
+  Entry->Priority        = Priority;
+  Entry->CallbackRoutine = CallbackRoutine;
+
+  //
+  // Find the entry to insert this new entry before. If the list is empty then
+  // this is the head.
+  //
+
+  BASE_LIST_FOR_EACH (Link, &mNotifyListHead) {
+    CheckEntry = POLICY_NOTIFY_ENTRY_FROM_LINK (Link);
+    if (CheckEntry->Priority > Priority) {
+      break;
+    }
+  }
+
+  InsertTailList (Link, &Entry->Link);
+  *Handle = (VOID *)Entry;
+  return EFI_SUCCESS;
+}
+
+/**
+  Removes a registered notification callback.
+
+  @param[in]   Handle     The handle for the registered callback.
+
+  @retval   EFI_SUCCESS            The callback notification as successfully removed.
+  @retval   EFI_INVALID_PARAMETER  The provided handle is invalid.
+  @retval   EFI_NOT_FOUND          The provided handle could not be found.
+**/
+EFI_STATUS
+EFIAPI
+CommonUnregisterNotify (
+  IN VOID  *Handle
+  )
+{
+  POLICY_NOTIFY_ENTRY  *Entry;
+
+  if (Handle == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Entry = (POLICY_NOTIFY_ENTRY *)Handle;
+  if (Entry->Signature != POLICY_NOTIFY_ENTRY_SIGNATURE) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (!IsNodeInList (&mNotifyListHead, &Entry->Link)) {
+    ASSERT (FALSE);
+    return EFI_NOT_FOUND;
+  }
+
+  //
+  // If this entry is the entry that is currently being processed, step the entry
+  // forward.
+  //
+  if (mNotifyInProgress) {
+    Entry->Tombstone  = TRUE;
+    mCallbacksDeleted = TRUE;
+  } else {
+    RemoveEntryList (&Entry->Link);
+    FreePool (Entry);
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Notifies all registered callbacks of a policy event.
+
+  @param[in]   EventTypes    The event that occurred.
+  @param[in]   PolicyEntry   The policy entry the event occurred for.
+**/
+VOID
+EFIAPI
+CommonPolicyNotify (
+  IN CONST UINT32  EventTypes,
+  IN POLICY_ENTRY  *PolicyEntry
+  )
+{
+  LIST_ENTRY           *Link;
+  POLICY_NOTIFY_ENTRY  *NotifyEntry;
+  BOOLEAN              FirstNotification;
+  UINT32               Depth;
+
+  //
+  // Global recursion handling.
+  //
+
+  FirstNotification = !mNotifyInProgress;
+  mNotifyInProgress = TRUE;
+
+  //
+  // Per-policy recursion handling.
+  //
+
+  if (PolicyEntry->NotifyDepth == MAX_UINT32) {
+    DEBUG ((DEBUG_ERROR, "%a: Maximum recursion hit in policy notification\n", __FUNCTION__));
+    ASSERT (FALSE);
+    return;
+  }
+
+  PolicyEntry->NotifyDepth++;
+  Depth = PolicyEntry->NotifyDepth;
+
+  BASE_LIST_FOR_EACH (Link, &mNotifyListHead) {
+    NotifyEntry = POLICY_NOTIFY_ENTRY_FROM_LINK (Link);
+    if (CompareGuid (&PolicyEntry->PolicyGuid, &NotifyEntry->PolicyGuid) &&
+        ((EventTypes & NotifyEntry->EventTypes) != 0) &&
+        !NotifyEntry->Tombstone)
+    {
+      NotifyEntry->CallbackRoutine (&PolicyEntry->PolicyGuid, EventTypes, NotifyEntry);
+
+      //
+      // If there was a newer notify then this notification is now moot.
+      //
+
+      if (PolicyEntry->NotifyDepth != Depth) {
+        break;
+      }
+    }
+  }
+
+  //
+  // If this is the top of the stack for the policy then clear that depth and
+  // free in the case that the policy was removed during the callbacks.
+  //
+
+  if (Depth == 1) {
+    PolicyEntry->NotifyDepth = 0;
+    if (PolicyEntry->FreeAfterNotify) {
+      FreePool (PolicyEntry);
+      PolicyEntry = NULL;
+    }
+  }
+
+  //
+  // To simplify potential link list edge cases with the recursion, removed
+  // callbacks that occur during the recursion are only tomb-stoned, if this
+  // is the top of the stack then go through and remove those.
+  //
+
+  if (FirstNotification) {
+    if (mCallbacksDeleted) {
+      BASE_LIST_FOR_EACH (Link, &mNotifyListHead) {
+        NotifyEntry = POLICY_NOTIFY_ENTRY_FROM_LINK (Link);
+        if (NotifyEntry->Tombstone) {
+          Link = Link->BackLink;
+          RemoveEntryList (&NotifyEntry->Link);
+          FreePool (NotifyEntry);
+        }
+      }
+
+      mCallbacksDeleted = FALSE;
+    }
+
+    mNotifyInProgress = FALSE;
+  }
 }

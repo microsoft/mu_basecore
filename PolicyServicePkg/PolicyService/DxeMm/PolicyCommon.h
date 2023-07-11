@@ -1,32 +1,45 @@
 /** @file
-  Prototypes and type definitions for the PEI Policy service
-  module.
+  Common prototypes and type definitions for the DXE/MM Policy service
+  modules.
 
   Copyright (c) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef _POLICY_PEI_H_
-#define _POLICY_PEI_H_
+#ifndef _POLICY_COMMON_H_
+#define _POLICY_COMMON_H_
 
 #include <Uefi.h>
-#include <PiPei.h>
-#include <Library/DebugLib.h>
-#include <Library/PeiServicesLib.h>
+#include <Pi/PiMultiPhase.h>
+#include <Library/MemoryAllocationLib.h>
 #include <Library/HobLib.h>
+#include <Library/DebugLib.h>
+#include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 
-#include <Ppi/Policy.h>
+#include <PolicyInterface.h>
 #include "../PolicyHob.h"
 
-//
-// Structures for tracking policy callbacks.
-//
+typedef struct _POLICY_ENTRY {
+  UINT32        Signature;
+  LIST_ENTRY    Link;
+  EFI_GUID      PolicyGuid;
+  UINT64        Attributes;
+  BOOLEAN       FromHob;
+  VOID          *Policy;
+  UINT16        PolicySize;
+  UINTN         AllocationSize;
+  UINT32        NotifyDepth;
+  BOOLEAN       FreeAfterNotify;
+} POLICY_ENTRY;
 
-#define NOTIFY_ENTRIES_PER_HOB  (64)
+#define POLICY_ENTRY_SIGNATURE  SIGNATURE_32('p', 'o', 'l', 'c')
+#define POLICY_ENTRY_FROM_LINK(a)  CR (a, POLICY_ENTRY, Link, POLICY_ENTRY_SIGNATURE)
 
 typedef struct _POLICY_NOTIFY_ENTRY {
+  UINT32                     Signature;
+  LIST_ENTRY                 Link;
   EFI_GUID                   PolicyGuid;
   UINT32                     EventTypes;
   UINT32                     Priority;
@@ -34,20 +47,16 @@ typedef struct _POLICY_NOTIFY_ENTRY {
   BOOLEAN                    Tombstone;
 } POLICY_NOTIFY_ENTRY;
 
-typedef struct _PEI_POLICY_NOTIFY_HOB {
-  UINT16                 Index;
-  UINT16                 Count;
-  POLICY_NOTIFY_ENTRY    Entries[NOTIFY_ENTRIES_PER_HOB];
-} PEI_POLICY_NOTIFY_HOB;
+#define POLICY_NOTIFY_ENTRY_SIGNATURE  SIGNATURE_32('p', 'o', 'l', 'n')
+#define POLICY_NOTIFY_ENTRY_FROM_LINK(a)  CR (a, POLICY_NOTIFY_ENTRY, Link, POLICY_NOTIFY_ENTRY_SIGNATURE)
 
 //
-// Pointers to HOBs should be avoided. For this reason, the PEI handle is
-// actually just the index of the HOB and index in that HOB.
+// Macros for managing the critical section.
 //
 
-#define NOTIFY_HANDLE(_hobindex, _entryindex)  (VOID *)(UINTN)((_hobindex << 16) | _entryindex)
-#define NOTIFY_HANDLE_HOB_INDEX(_handle)       (UINT16)((((UINTN)_handle) >> 16) & MAX_UINT16)
-#define NOTIFY_HANDLE_ENTRY_INDEX(_handle)     (UINT16)((UINTN)_handle & MAX_UINT16)
+#define POLICY_CS_INIT   EFI_TPL OldTpl
+#define POLICY_CS_ENTER  OldTpl = gBS->RaiseTPL (TPL_HIGH_LEVEL)
+#define POLICY_CS_EXIT   gBS->RestoreTPL (OldTpl)
 
 /**
   Creates or updates a policy in the policy store. Will notify any applicable
@@ -65,7 +74,7 @@ typedef struct _PEI_POLICY_NOTIFY_HOB {
 **/
 EFI_STATUS
 EFIAPI
-PeiSetPolicy (
+CommonSetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
   IN UINT64          Attributes,
   IN VOID            *Policy,
@@ -87,7 +96,7 @@ PeiSetPolicy (
 **/
 EFI_STATUS
 EFIAPI
-PeiGetPolicy (
+CommonGetPolicy (
   IN CONST EFI_GUID  *PolicyGuid,
   OUT UINT64         *Attributes OPTIONAL,
   OUT VOID           *Policy,
@@ -105,8 +114,54 @@ PeiGetPolicy (
 **/
 EFI_STATUS
 EFIAPI
-PeiRemovePolicy (
+CommonRemovePolicy (
   IN CONST EFI_GUID  *PolicyGuid
+  );
+
+/**
+  Acquires the environment specific lock for the policy list.
+
+**/
+VOID
+EFIAPI
+PolicyLockAcquire (
+  VOID
+  );
+
+/**
+  Release the environment specific lock for the policy list.
+
+**/
+VOID
+EFIAPI
+PolicyLockRelease (
+  VOID
+  );
+
+/**
+  Creates and empty protocol for a given GUID to notify or dispatch consumers of
+  this policy GUID. If the protocol already exists it will be reinstalled.
+
+  @param[in]  PolicyGuid        The policy GUID used for the protocol.
+
+  @retval     EFI_SUCCESS       The protocol was installed or reinstalled.
+**/
+EFI_STATUS
+EFIAPI
+InstallPolicyIndicatorProtocol (
+  IN CONST EFI_GUID  *PolicyGuid
+  );
+
+/**
+  Parses the HOB list to find active policies to add to the policy store.
+
+  @retval   EFI_SUCCESS           Policies added to the policy store.
+  @retval   EFI_OUT_OF_RESOURCES  Failed to allocate memory for policy.
+**/
+EFI_STATUS
+EFIAPI
+IngestPoliciesFromHob (
+  VOID
   );
 
 /**
@@ -127,7 +182,7 @@ PeiRemovePolicy (
 **/
 EFI_STATUS
 EFIAPI
-PeiRegisterNotify (
+CommonRegisterNotify (
   IN CONST EFI_GUID           *PolicyGuid,
   IN CONST UINT32             EventTypes,
   IN CONST UINT32             Priority,
@@ -146,7 +201,7 @@ PeiRegisterNotify (
 **/
 EFI_STATUS
 EFIAPI
-PeiUnregisterNotify (
+CommonUnregisterNotify (
   IN VOID  *Handle
   );
 
@@ -154,13 +209,13 @@ PeiUnregisterNotify (
   Notifies all registered callbacks of a policy event.
 
   @param[in]   EventTypes    The event that occurred.
-  @param[in]   PolicyHob     The policy entry the event occurred for.
+  @param[in]   PolicyEntry   The policy entry the event occurred for.
 **/
 VOID
 EFIAPI
-PeiPolicyNotify (
-  IN CONST UINT32       EventTypes,
-  IN POLICY_HOB_HEADER  *PolicyHob
+CommonPolicyNotify (
+  IN CONST UINT32  EventTypes,
+  IN POLICY_ENTRY  *PolicyEntry
   );
 
 #endif

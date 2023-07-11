@@ -267,6 +267,14 @@ SaveUnitTestCache (
   // MU_CHANGE: Use file name and path instead of device path
   FileName = GetCacheFileName (FrameworkHandle);
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (FileName == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a - Failed to get cache file name.\n", __FUNCTION__));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   //
   // First lets open the file if it exists so we can delete it...This is the work around for truncation
   //
@@ -383,13 +391,19 @@ LoadUnitTestCache (
   //
   // Now that we know the path to the file... let's open it for writing.
   //
-  // MU_CHANGE: Use file name and path instead of device path
+  // MU_CHANGE START: Use file name and path instead of device path
+  if (FileName == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a - Failed to generate file name and path to cache file!\n", __FUNCTION__));
+    goto Exit;
+  }
+
   Status = ShellOpenFileByName (
              FileName,
              &FileHandle,
              EFI_FILE_MODE_READ,
              0
              );
+  // MU_CHANGE END
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a - Opening file for writing failed! %r\n", __FUNCTION__, Status));
     goto Exit;

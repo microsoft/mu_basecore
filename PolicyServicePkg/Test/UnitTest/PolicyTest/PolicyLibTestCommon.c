@@ -14,7 +14,7 @@
 #include <Library/BaseMemoryLib.h>
 
 #include <PolicyInterface.h>
-#include <Library/VerifiedPolicy.h>
+#include <Library/PolicyLib.h>
 #include <Library/UnitTestLib.h>
 
 #include "PolicyTest.h"
@@ -130,6 +130,48 @@ BasicVerifiedPolicyTest (
 }
 
 /**
+  Tests the basic test scenario.
+
+  @param[in]  Context                     Unused.
+
+  @retval   UNIT_TEST_PASSED              Test passed.
+  @retval   UNIT_TEST_ERROR_TEST_FAILED   Test failed.
+**/
+UNIT_TEST_STATUS
+EFIAPI
+BasicPolicyTest (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+
+{
+  EFI_STATUS      Status;
+  UINT8           TestData[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+  UINT8           ReadData[16] = { 0 };
+  UINT16          PolicySize;
+  CONST EFI_GUID  PolicyGuid = {
+    0x30c24026, 0xee8f, 0x494a, { 0x92, 0x48, 0xc0, 0x05, 0x28, 0xc6, 0x7f, 0x5b }
+  };
+
+  PolicySize = sizeof (ReadData);
+  Status     = GetPolicy (&PolicyGuid, NULL, &ReadData[0], &PolicySize);
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
+
+  Status = SetPolicy (&PolicyGuid, 0, &TestData[0], sizeof (TestData));
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+
+  Status = GetPolicy (&PolicyGuid, NULL, &ReadData[0], &PolicySize);
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+  UT_ASSERT_MEM_EQUAL (&TestData[0], &ReadData[0], sizeof (TestData));
+
+  Status = RemovePolicy (&PolicyGuid);
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+  Status = RemovePolicy (&PolicyGuid);
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
+
+  return UNIT_TEST_PASSED;
+}
+
+/**
   Add the common policy library tests.
 
   @param[in]  Framework       The test framework to add the common policy
@@ -160,6 +202,7 @@ PolicyLibCommonCreateTests (
     return Status;
   }
 
+  AddTestCase (LibCommonTests, "Tests the basic policy lib interfaces", "BasicPolicyTest", BasicPolicyTest, NULL, NULL, NULL);
   AddTestCase (LibCommonTests, "Test basic verified policy creation", "BasicVerifiedPolicyTest", BasicVerifiedPolicyTest, NULL, NULL, NULL);
   AddTestCase (LibCommonTests, "Test change of major version", "MajorVersionChangeTest", MajorVersionChangeTest, NULL, NULL, NULL);
 

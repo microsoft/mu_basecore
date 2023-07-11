@@ -106,15 +106,6 @@ the policy making it read-only or can be used to limit access to the policy to
 a phase of boot. See the PolicyInterface header definitions for full list of
 attributes.
 
-### Policy Notification Protocols & PPIs
-
-When a policy is set or updated a PPI or Protocol will be installed with the
-GUID of the policy. Consumers may use this GUID to either set Protocol/PPI
-notifications, or create a DEPEX dependency so that the consumer is not
-dispatched until the policy is made available. The protocol/PPI will not
-contain any useful interface and consumers are expected to use the protocol
-interface to retrieve the policy data after being notified or dispatched.
-
 ## Policy Interface
 
 Both the PEI and DXE implementation provide the following interfaces.
@@ -135,6 +126,51 @@ copied into.
 ### _RemovePolicy_
 
 Removes a policy from the policy list, freeing it when possible.
+
+### _RegisterNotify_
+
+Registers a callback that will be invoked when a policy is edited in some way. The
+reasons for the callback can be filtered through the EventTypes parameter.
+
+### _UnregisterNotify_
+
+Removes a policy notification callback, prevent any further invocation.
+
+## Policy Notifications
+
+Consumers may subscribe to policy updates in multiple ways. For end-consumers
+of a policy they may use the policy GUID in their `DEPEX` for the signal final policy,
+and all other consumers may use the policy notification callbacks.
+
+### Final Policy Signal Protocol & PPI
+
+When a policy is finalized a PPI or Protocol will be installed with the
+GUID of the policy. Consumers may use this GUID to either set Protocol/PPI
+notifications, or create a DEPEX dependency so that the consumer is not
+dispatched until the final policy is made available. The protocol/PPI will not
+contain any useful interface and consumers are expected to use the Policy Service protocol
+interface to retrieve the policy data after being notified or dispatched.
+
+### Policy Service Callbacks
+
+The policy service supports callbacks for various types of policy events such
+as a policy being created, updated, finalized, or removed. Consumers may use the
+`RegisterNotify` routine to set a callback in the event that a provided policy
+undergoes the event specified in the callback registration. A given callbacks may
+receive an event with multiple events at once. For example, a finalized event will
+always be accompanied by a set event since a policy must be set to be finalized.
+
+Registered callbacks will be invoked in order of ascending `Priority` with ties
+being resolved with a first-come-first-serve approach. Callbacks may make
+edits to the underlying policy which will result in all of the original still
+pending notifications being canceled and the all of callbacks being re-invoked
+with the new event. For example, if you have the notifications of ascending priority
+where B edits the policy the sequence of callbacks would be
+
+    A -> B (EDIT) -> A -> B -> C
+
+For this reason, callbacks that edit the policy should either remove their
+notification first or take precautions to not create a infinite notification loop.
 
 ## Policy Service Implementation
 
@@ -171,67 +207,96 @@ Like the PEIM, the DXE driver will install/reinstall a NULL protocol with the
 given policies GUID when it is created or updated to allow for notification and
 dispatch on the policy availability.
 
+### Standalone MM
+
+Like the DXE phase, the MM policy service will ingest any policies from the HOB
+list for architectures. The MM policy service is implemented identically to the
+DXE phase module with the exception of using the MM specific protocols.
+
+Policies in the MM service are isolated from PEI and DXE. The MM module will ingest
+any policies available in the hob list from PEI where applicable but no policies
+created or modified by PEI or DXE after Standalone MM has been launched will be
+available from the MM policy service. Similarly, no policy created or edited in
+the MM policy service will be readable from the PEI or DXE policies services.
+
+Policies are not shared with the standalone MM module after initialization. Any
+policy created in MM will not be readable by DXE and PEI, and any policy made after
+MM initialization will not be readable from MM.
+
 ## YAML Based Policy Definition
 
-This section provides an overview of YAML based policy definition and how platform can
-integrate them.
+This section provides an overview of YAML based policy definition and how
+platform can integrate them.
 
 ### YAML Definition for Policy Structures
 
-When used, the YAML based policy definition is treated as the ground truth of policy structure
-and default data. The YAML parser is largely inheritted from [Intel's slim bootloader](https://github.com/slimbootloader/slimbootloader).
+When used, the YAML based policy definition is treated as the ground truth of
+policy structure and default data. The YAML parser is largely inheritted from
+[Intel's slim bootloader](https://github.com/slimbootloader/slimbootloader).
 Thus, the YAML syntax follows the specification defined in [slim bootloader](https://slimbootloader.github.io/specs/config.html#configuration-description-yaml-explained)
 as well.
 
-Such YAML definition will be used to generate header files and the field accessors for platform consumption.
+Such YAML definition will be used to generate header files and the field
+accessors for platform consumption.
 
 ### MU Added Rules
 
-In addition to aforementioned YAML specification from slim bootloader, a few extra rules was added to the existing
-specification to facilitate the adaptation of policy specific usage. These rules will be enforced by a Pre-Build
-plugin, more details in its [implementation section](#Pre-Build-Plugin).
+In addition to aforementioned YAML specification from slim bootloader, a few
+extra rules was added to the existing specification to facilitate the adaptation
+of policy specific usage. These rules will be enforced by a Pre-Build plugin,
+more details in its [implementation section](#pre-build-plugin).
 
-1. Each policy definition group must include a `POLICY_HEADER_TMPL` section, as provided in this template [here](CommonPolicy/Template_PolicyHeader.yaml).
-This section should include a 64-bit signature, an expected major version, an maximally expected minor version and
-a size of such structure. This data will mainly be used as metadata instead of policy data. Platforms could `!include`
+1. Each policy definition group must include a `POLICY_HEADER_TMPL` section, as
+provided in this template [here](CommonPolicy/Template_PolicyHeader.yaml).
+This section should include a 64-bit signature, an expected major version, an
+maximally expected minor version and a size of such structure. This data will
+mainly be used as metadata instead of policy data. Platforms could `!include`
 the provided template for easier inclusion.
 
-1. For each non-header fields defined in the YAML policy file, developers could optionally add a `minver` field, which
-denotes at which minor version this field is added. If not added, this field will be treated as 0 for default value.
+1. For each non-header fields defined in the YAML policy file, developers could
+optionally add a `minver` field, which denotes at which minor version this field
+is added. If not added, this field will be treated as 0 for default value.
 
-1. Under the same major value, all new minor fields should only be appended after the fields with lower minor version
-values, otherwise the build will break.
+1. Under the same major value, all new minor fields should only be appended
+after the fields with lower minor version values, otherwise the build will break.
 
-1. This YAML definition is not created to support UI configuration features, thus no UI related configuration fields
-will be recognized in the context of policy YAML definition.
+1. This YAML definition is not created to support UI configuration features,
+thus no UI related configuration fields will be recognized in the context of
+policy YAML definition.
 
 ### Field Accessors
 
-For each fields defined in YAML structures, 4 accessor functions will be created. These functions will cover the
-functionality of setting this field to target value or default value, get current or default value from policy handle.
+For each fields defined in YAML structures, 4 accessor functions will be
+created. These functions will cover the functionality of setting this field to
+target value or default value, get current or default value from policy handle.
 
-All autogen functions will be created under the naming scheme of `SET_POLICY_STRUCTURE_NAME_Field_Name`,
-`SET_POLICY_STRUCTURE_NAME_Field_Name_default`, `GET_POLICY_STRUCTURE_NAME_Field_Name` and
-`GET_POLICY_STRUCTURE_NAME_Field_Name_default`.
+All autogen functions will be created under the naming scheme of
+`SET_POLICY_STRUCTURE_NAME_Field_Name`, `SET_POLICY_STRUCTURE_NAME_Field_Name_default`,
+`GET_POLICY_STRUCTURE_NAME_Field_Name` and `GET_POLICY_STRUCTURE_NAME_Field_Name_default`.
 
-The internal implementation of these functions are dependent on `PolicyLib`, specifically the verified policy related
-functionalities.
+The internal implementation of these functions are dependent on `PolicyLib`,
+specifically the verified policy related functionalities.
 
-In order to simplify the usage of policy initialization, a function of `SET_POLICY_STRUCTURE_NAME_default` is created.
-This function could be invoked for a platform to initialize the newly created policy handle.
+In order to simplify the usage of policy initialization, a function of
+`SET_POLICY_STRUCTURE_NAME_default` is created. This function could be invoked
+for a platform to initialize the newly created policy handle.
 
 ### Pre-Build Plugin
 
-A pre-build plugin is created to enforce rules indicated in the previous [section](#Field-Accessors).
+A pre-build plugin is created to enforce rules indicated in the previous
+[section](#field-accessors).
 
 This plugin requires 3 build environment variable to execute properly:
 
-- `BUILD_OUTPUT_BASE`: This is used to create a temporary folder to contain intermediate files
+- `BUILD_OUTPUT_BASE`: This is used to create a temporary folder to contain
+intermediate files
 - `UPDATE_SETTINGS`: Setting this to `false` to disable this plugin
-- `POLICY_REPORT_FOLDER`: This optional variable can be used to indicate where the plugin should output the report.
-- `POLICY_IGNORE_PATHS`: This optional variable can be used by platform to specify which directories or files the autogen
-should ignore. Each entry should be relative UEFI path separated by colons (';').
-If not supplied this report will be save to the same folder of `ACTIVE_PLATFORM`.
+- `POLICY_REPORT_FOLDER`: This optional variable can be used to indicate where
+the plugin should output the report.
+- `POLICY_IGNORE_PATHS`: This optional variable can be used by platform to
+specify which directories or files the autogen should ignore. Each entry should
+be relative UEFI path separated by colons (';'). If not supplied this report
+will be save to the same folder of `ACTIVE_PLATFORM`.
 
 A policy report is the collateral output after codebase analyzing:
 

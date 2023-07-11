@@ -35,6 +35,7 @@
 
 [Guids]
   gPolicyHobGuid
+  gPolicyCallbackHobGuid
 
 [Ppis]
   gPeiPolicyPpiGuid             ## PRODUCES
