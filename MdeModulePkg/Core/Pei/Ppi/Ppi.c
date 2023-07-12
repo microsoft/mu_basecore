@@ -223,6 +223,9 @@ ConvertPpiPointersFv (
   EFI_PEI_FIRMWARE_VOLUME_INFO_PPI  *FvInfoPpi;
   UINT8                             GuidIndex;
   EFI_GUID                          *Guid;
+  // MU_CHANGE [BEGIN] - CodeQL change
+  EFI_GUID                          *CheckGuid;
+  // MU_CHANGE [END] - CodeQL change
   EFI_GUID                          *GuidCheckList[2];
 
   GuidCheckList[0] = &gEfiPeiFirmwareVolumeInfoPpiGuid;
@@ -330,10 +333,11 @@ ConvertPpiPointersFv (
       // on the first failed comparison.
       //
       // MU_CHANGE [BEGIN] - CodeQL change
-      if ((((INT32 *)Guid)[0] == ((INT32 *)(GuidCheckList[GuidIndex]))[0]) &&
-          (((INT32 *)Guid)[1] == ((INT32 *)(GuidCheckList[GuidIndex]))[1]) &&
-          (((INT32 *)Guid)[2] == ((INT32 *)(GuidCheckList[GuidIndex]))[2]) &&
-          (((INT32 *)Guid)[3] == ((INT32 *)(GuidCheckList[GuidIndex]))[3]))
+      CheckGuid = GuidCheckList[GuidIndex];
+      if ((((INT32 *)Guid)[0] == ((INT32 *)CheckGuid)[0]) &&
+          (((INT32 *)Guid)[1] == ((INT32 *)CheckGuid)[1]) &&
+          (((INT32 *)Guid)[2] == ((INT32 *)CheckGuid)[2]) &&
+          (((INT32 *)Guid)[3] == ((INT32 *)CheckGuid)[3]))
       // MU_CHANGE [END] - CodeQL change
       {
         FvInfoPpi = PrivateData->PpiData.PpiList.PpiPtrs[Index].Ppi->Ppi;
