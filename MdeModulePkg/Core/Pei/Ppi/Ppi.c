@@ -329,10 +329,12 @@ ConvertPpiPointersFv (
       // Instead we compare the GUID as INT32 at a time and branch
       // on the first failed comparison.
       //
+      // MU_CHANGE [BEGIN] - CodeQL change
       if ((((INT32 *)Guid)[0] == ((INT32 *)(GuidCheckList[GuidIndex]))[0]) &&
           (((INT32 *)Guid)[1] == ((INT32 *)(GuidCheckList[GuidIndex]))[1]) &&
           (((INT32 *)Guid)[2] == ((INT32 *)(GuidCheckList[GuidIndex]))[2]) &&
           (((INT32 *)Guid)[3] == ((INT32 *)(GuidCheckList[GuidIndex]))[3]))
+      // MU_CHANGE [END] - CodeQL change
       {
         FvInfoPpi = PrivateData->PpiData.PpiList.PpiPtrs[Index].Ppi->Ppi;
         DEBUG ((DEBUG_VERBOSE, "      FvInfo: %p -> ", FvInfoPpi->FvInfo));

@@ -1450,6 +1450,7 @@ Ip6SendNeighborSolicit (
     ASSERT (Target != NULL);
     return EFI_OUT_OF_RESOURCES;
   }
+
   // MU_CHANGE [END] - CodeQL change
   IP6_COPY_ADDRESS (Target, TargetIp6Address);
 

@@ -1527,6 +1527,7 @@ Ip6InstanceDeliverPacket (
         ASSERT (Head != NULL);
         return EFI_OUT_OF_RESOURCES;
       }
+
       // MU_CHANGE [END] - CodeQL change
       Dup->Ip.Ip6 = (EFI_IP6_HEADER *)Head;
 

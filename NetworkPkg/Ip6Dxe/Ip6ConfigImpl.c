@@ -867,7 +867,8 @@ Ip6ManualAddrDadCallback (
         // MU_CHANGE [BEGIN] - CodeQL change
         if (PassedAddr == NULL) {
           ASSERT (PassedAddr != NULL);
-          Item->Status = EFI_OUT_OF_RESOURCES;
+          Item->Data.Ptr = NULL;
+          Item->Status   = EFI_OUT_OF_RESOURCES;
         } else {
           Item->Data.Ptr = PassedAddr;
           Item->Status   = EFI_SUCCESS;
@@ -881,6 +882,7 @@ Ip6ManualAddrDadCallback (
 
           ASSERT ((UINTN)PassedAddr - (UINTN)Item->Data.Ptr == Item->DataSize);
         }
+
         // MU_CHANGE [END] - CodeQL change
       }
     } else {

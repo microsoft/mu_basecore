@@ -1173,6 +1173,14 @@ IfrToString (
       } else {
         SrcBuf = GetBufferForValue (&Value);
         SrcLen = GetLengthForValue (&Value);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        if ((SrcBuf == NULL) || (SrcLen == NULL)) {
+          ASSERT (SrcBuf != NULL);
+          ASSERT (SrcLen != NULL);
+          return EFI_NOT_FOUND;
+        }
+
+        // MU_CHANGE [END] - CodeQL change
       }
 
       TmpBuf = AllocateZeroPool (SrcLen + 3);
@@ -1181,8 +1189,9 @@ IfrToString (
         ASSERT (TmpBuf != NULL);
         return EFI_OUT_OF_RESOURCES;
       }
+
       // MU_CHANGE [END] - CodeQL change
-      
+
       if (Format == EFI_IFR_STRING_ASCII) {
         CopyMem (TmpBuf, SrcBuf, SrcLen);
         PrintFormat = L"%a";
@@ -1292,7 +1301,8 @@ IfrToUint (
   Evaluate opcode EFI_IFR_CATENATE.
 
   @param  FormSet                Formset which contains this opcode.
-  @param  Result                 Evaluation result for this opcode.
+  @param  Result                 Evaluation result for this opcode.  Result
+                                 will be NULL on a failure.
 
   @retval EFI_SUCCESS            Opcode evaluation success.
   @retval Other                  Opcode evaluation failed.
@@ -1380,17 +1390,21 @@ IfrCatenate (
     // MU_CHANGE [BEGIN] - CodeQL change
     if (TmpBuf == NULL) {
       ASSERT (TmpBuf != NULL);
-      return EFI_OUT_OF_RESOURCES;
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Done;
     }
-    // MU_CHANGE [BEGIN] - CodeQL change
+
+    // MU_CHANGE [END] - CodeQL change
     CopyMem (Result->Buffer, TmpBuf, Length0);
     TmpBuf = GetBufferForValue (&Value[1]);
     // MU_CHANGE [BEGIN] - CodeQL change
     if (TmpBuf == NULL) {
       ASSERT (TmpBuf != NULL);
-      return EFI_OUT_OF_RESOURCES;
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Done;
     }
-    // MU_CHANGE [BEGIN] - CodeQL change
+
+    // MU_CHANGE [END] - CodeQL change
     CopyMem (&Result->Buffer[Length0], TmpBuf, Length1);
   }
 
@@ -1414,6 +1428,13 @@ Done:
   if (StringPtr != NULL) {
     FreePool (StringPtr);
   }
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (EFI_ERROR (Status) && (Result != NULL)) {
+    FreePool (Result);
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   return Status;
 }

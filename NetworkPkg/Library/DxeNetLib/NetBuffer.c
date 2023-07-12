@@ -303,10 +303,13 @@ NetbufDuplicate (
   NetbufReserve (Duplicate, HeadSpace);
 
   Dst = NetbufAllocSpace (Duplicate, Nbuf->TotalSize, NET_BUF_TAIL);
+  // MU_CHANGE [BEGIN] - CodeQL change
   if (Dst == NULL) {
     ASSERT (Dst != NULL);
     return NULL;
   }
+
+  // MU_CHANGE [END] - CodeQL change
   NetbufCopy (Nbuf, 0, Nbuf->TotalSize, Dst);
 
   return Duplicate;

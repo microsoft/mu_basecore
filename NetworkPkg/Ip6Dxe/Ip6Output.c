@@ -872,7 +872,8 @@ Ip6Output (
         Status = EFI_OUT_OF_RESOURCES;
         goto Error;
       }
-      // MU_CHANGE [BEGIN] - CodeQL change
+
+      // MU_CHANGE [END] - CodeQL change
       CopyMem (Buf, ExtHdrs + UnFragmentHdrsLen, FragmentHdrsLen);
 
       //

@@ -1323,6 +1323,7 @@ Ip4InstanceDeliverPacket (
           ASSERT (Head != NULL);
           return EFI_OUT_OF_RESOURCES;
         }
+
         // MU_CHANGE [END] - CodeQL change
 
         Dup->Ip.Ip4 = (IP4_HEAD *)Head;

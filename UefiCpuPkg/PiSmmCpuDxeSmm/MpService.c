@@ -1849,6 +1849,7 @@ InitializeSmmCpuSemaphores (
     ASSERT (SemaphoreBlock != NULL);
     return;
   }
+
   // MU_CHANGE [END] - CodeQL change
   ZeroMem (SemaphoreBlock, TotalSize);
 
