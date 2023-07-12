@@ -1174,9 +1174,9 @@ IfrToString (
         SrcBuf = GetBufferForValue (&Value);
         SrcLen = GetLengthForValue (&Value);
         // MU_CHANGE [BEGIN] - CodeQL change
-        if ((SrcBuf == NULL) || (SrcLen == NULL)) {
+        if ((SrcBuf == NULL) || (SrcLen == 0)) {
           ASSERT (SrcBuf != NULL);
-          ASSERT (SrcLen != NULL);
+          ASSERT (SrcLen != 0);
           return EFI_NOT_FOUND;
         }
 
