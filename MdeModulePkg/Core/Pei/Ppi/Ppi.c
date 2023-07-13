@@ -325,9 +325,8 @@ ConvertPpiPointersFv (
     Guid = PrivateData->PpiData.PpiList.PpiPtrs[Index].Ppi->Guid;
     for (GuidIndex = 0; GuidIndex < ARRAY_SIZE (GuidCheckList); ++GuidIndex) {
       // MU_CHANGE [BEGIN] - CodeQL change
-      if (CompareMem (Guid, GuidCheckList[GuidIndex], 16) == 0)
-      // MU_CHANGE [END] - CodeQL change
-      {
+      if (CompareMem (Guid, GuidCheckList[GuidIndex], 16) == 0) {
+        // MU_CHANGE [END] - CodeQL change
         FvInfoPpi = PrivateData->PpiData.PpiList.PpiPtrs[Index].Ppi->Ppi;
         DEBUG ((DEBUG_VERBOSE, "      FvInfo: %p -> ", FvInfoPpi->FvInfo));
         if ((UINTN)FvInfoPpi->FvInfo == OrgFvHandle) {
