@@ -507,6 +507,7 @@ TcpGetSegmentSndQue (
       ASSERT (Data != NULL);
       goto OnError;
     }
+
     // MU_CHANGE [END] - CodeQL change
 
     if ((INT32)NetbufCopy (Node, Offset, CopyLen, Data) != CopyLen) {
