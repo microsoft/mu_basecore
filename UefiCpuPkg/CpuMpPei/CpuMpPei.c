@@ -544,7 +544,7 @@ InitializeMpExceptionStackSwitchHandlers (
   // MU_CHANGE [BEGIN] - CodeQL change
   Status = MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
   if (EFI_ERROR (Status)) {
-    ASSERT (NumberOfProcessors != NULL);
+    ASSERT_EFI_ERROR (Status);
     DEBUG ((DEBUG_ERROR, "%a - Failed to get number of processors.  Status = %r\n", __FUNCTION__, Status));
     return;
   }
