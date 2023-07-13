@@ -541,9 +541,25 @@ InitializeMpExceptionStackSwitchHandlers (
   // }
   // MU_CHANGE END
 
-  MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  Status = MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
+  if (EFI_ERROR (Status)) {
+    ASSERT (NumberOfProcessors != NULL);
+    DEBUG ((DEBUG_ERROR, "%a - Failed to get number of processors.  Status = %r\n", __FUNCTION__, Status));
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   SwitchStackData = AllocatePages (EFI_SIZE_TO_PAGES (NumberOfProcessors * sizeof (EXCEPTION_STACK_SWITCH_CONTEXT)));
-  ASSERT (SwitchStackData != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (SwitchStackData == NULL) {
+    ASSERT (SwitchStackData != NULL);
+    DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Switch Stack pages.\n", __FUNCTION__));
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   ZeroMem (SwitchStackData, NumberOfProcessors * sizeof (EXCEPTION_STACK_SWITCH_CONTEXT));
   for (Index = 0; Index < NumberOfProcessors; ++Index) {
     //
@@ -573,7 +589,14 @@ InitializeMpExceptionStackSwitchHandlers (
 
   if (BufferSize != 0) {
     Buffer = AllocatePages (EFI_SIZE_TO_PAGES (BufferSize));
-    ASSERT (Buffer != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Buffer == NULL) {
+      ASSERT (Buffer != NULL);
+      DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Buffer pages.\n", __FUNCTION__));
+      return;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     BufferSize = 0;
     for (Index = 0; Index < NumberOfProcessors; ++Index) {
       if (SwitchStackData[Index].Status == EFI_BUFFER_TOO_SMALL) {
