@@ -502,7 +502,13 @@ TcpGetSegmentSndQue (
   //
   if (CopyLen != 0) {
     Data = NetbufAllocSpace (Nbuf, CopyLen, NET_BUF_TAIL);
-    ASSERT (Data != NULL);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Data == NULL) {
+      ASSERT (Data != NULL);
+      goto OnError;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
 
     if ((INT32)NetbufCopy (Node, Offset, CopyLen, Data) != CopyLen) {
       goto OnError;

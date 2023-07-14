@@ -1844,7 +1844,13 @@ InitializeSmmCpuSemaphores (
   DEBUG ((DEBUG_INFO, "Total Semaphores Size = 0x%x\n", TotalSize));
   Pages          = EFI_SIZE_TO_PAGES (TotalSize);
   SemaphoreBlock = AllocatePages (Pages);
-  ASSERT (SemaphoreBlock != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (SemaphoreBlock == NULL) {
+    ASSERT (SemaphoreBlock != NULL);
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   ZeroMem (SemaphoreBlock, TotalSize);
 
   SemaphoreAddr                                   = (UINTN)SemaphoreBlock;
