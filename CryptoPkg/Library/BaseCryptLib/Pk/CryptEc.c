@@ -628,8 +628,16 @@ EcGetPubKey (
   RetVal = TRUE;
 
 fail:
-  BN_free (BnX);
-  BN_free (BnY);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (BnX != NULL) {
+    BN_free (BnX);
+  }
+
+  if (BnY != NULL) {
+    BN_free (BnY);
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   return RetVal;
 }
 
