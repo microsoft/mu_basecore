@@ -63,6 +63,7 @@
   SafeIntLib
   BaseBinSecurityLib  ## MS_CHANGE_?
   MmMemoryProtectionHobLib ## MU_CHANGE
+  ImagePropertiesRecordLib
 
 [Protocols]
   gEfiDxeSmmReadyToLockProtocolGuid             ## UNDEFINED # SmiHandlerRegister

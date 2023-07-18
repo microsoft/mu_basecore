@@ -1122,28 +1122,30 @@ SetMemMapAttributes (
   MemoryMap = MemoryMapStart;
   for (Index = 0; Index < MemoryMapEntryCount; Index++) {
     DEBUG ((DEBUG_VERBOSE, "SetAttribute: Memory Entry - 0x%lx, 0x%x\n", MemoryMap->PhysicalStart, MemoryMap->NumberOfPages));
-    switch (MemoryMap->Type) {
-      case EfiRuntimeServicesCode:
-        SmmSetMemoryAttributes (
-          MemoryMap->PhysicalStart,
-          EFI_PAGES_TO_SIZE ((UINTN)MemoryMap->NumberOfPages),
-          EFI_MEMORY_RO
-          );
-        break;
-      case EfiRuntimeServicesData:
-        SmmSetMemoryAttributes (
-          MemoryMap->PhysicalStart,
-          EFI_PAGES_TO_SIZE ((UINTN)MemoryMap->NumberOfPages),
-          EFI_MEMORY_XP
-          );
-        break;
-      default:
-        SmmSetMemoryAttributes (
-          MemoryMap->PhysicalStart,
-          EFI_PAGES_TO_SIZE ((UINTN)MemoryMap->NumberOfPages),
-          EFI_MEMORY_XP
-          );
-        break;
+    if ((MemoryMap->Attribute & EFI_MEMORY_ACCESS_MASK) == 0) {
+      switch (MemoryMap->Type) {
+        case EfiRuntimeServicesCode:
+          SmmSetMemoryAttributes (
+            MemoryMap->PhysicalStart,
+            EFI_PAGES_TO_SIZE ((UINTN)MemoryMap->NumberOfPages),
+            EFI_MEMORY_RO
+            );
+          break;
+        case EfiRuntimeServicesData:
+          SmmSetMemoryAttributes (
+            MemoryMap->PhysicalStart,
+            EFI_PAGES_TO_SIZE ((UINTN)MemoryMap->NumberOfPages),
+            EFI_MEMORY_XP
+            );
+          break;
+        default:
+          SmmSetMemoryAttributes (
+            MemoryMap->PhysicalStart,
+            EFI_PAGES_TO_SIZE ((UINTN)MemoryMap->NumberOfPages),
+            EFI_MEMORY_XP
+            );
+          break;
+      }
     }
 
     MemoryMap = NEXT_MEMORY_DESCRIPTOR (MemoryMap, DescriptorSize);

@@ -99,6 +99,7 @@
   BaseBinSecurityLib         ## MS_CHANGE_?
   DxeMemoryProtectionHobLib        ## MU_CHANGE
   MemoryBinOverrideLib      ## MU_CHANGE
+  ImagePropertiesRecordLib
 
 [Guids]
   gEfiEventMemoryMapChangeGuid                  ## PRODUCES             ## Event
