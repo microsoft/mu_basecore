@@ -585,6 +585,11 @@ EcGetPubKey (
     return FALSE;
   }
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  BnX = NULL;
+  BnY = NULL;
+  // MU_CHANGE [END] - CodeQL change
+
   EcKey    = (EC_KEY *)EcContext;
   Group    = EC_KEY_get0_group (EcKey);
   HalfSize = (EC_GROUP_get_degree (Group) + 7) / 8;
