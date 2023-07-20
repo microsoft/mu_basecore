@@ -38,6 +38,8 @@ from Common.Misc import SaveFileOnChange
 from Workspace.BuildClassObject import PlatformBuildClassObject, StructurePcd, PcdClassObject, ModuleBuildClassObject
 from collections import OrderedDict, defaultdict
 
+LoggedLibraryWarnings = [] # MU_CHANGE
+
 def _IsFieldValueAnArray (Value):
     Value = Value.strip()
     if Value.startswith(TAB_GUID) and Value.endswith(')'):
@@ -763,6 +765,14 @@ class DscBuildData(PlatformBuildClassObject):
                 LibraryPath = PathClass(NormPath(Record[1], Macros), GlobalData.gWorkspace, Arch=self._Arch)
                 LineNo = Record[-1]
 
+                # MU_CHANGE begin
+                # Validate that the Library instance implements the Library Class
+                if not self._ValidateLibraryClass(LibraryClass, LibraryPath) and self._ShouldLogLibrary(LineNo):
+                    EdkLogger.warn("build",
+                                   f"{str(LibraryPath)} does not support LIBRARY_CLASS {LibraryClass}",
+                                   File=self.MetaFile)
+                # MU_CHANGE end
+
                 # check the file validation
                 ErrorCode, ErrorInfo = LibraryPath.Validate('.inf')
                 if ErrorCode != 0:
@@ -916,6 +926,15 @@ class DscBuildData(PlatformBuildClassObject):
                     EdkLogger.verbose("Found forced library for arch=%s\n\t%s [%s]" % (Arch, LibraryInstance, LibraryClass))
                 LibraryClassSet.add(LibraryClass)
                 LibraryInstance = PathClass(NormPath(LibraryInstance, Macros), GlobalData.gWorkspace, Arch=self._Arch)
+                
+                # MU_CHANGE begin
+                # Validate that the Library instance implements the Library Class
+                if not self._ValidateLibraryClass(LibraryClass, LibraryInstance) and self._ShouldLogLibrary(LineNo):
+                    EdkLogger.warn("build",
+                                   f"{str(LibraryInstance)} does not support LIBRARY_CLASS {LibraryClass}",
+                                   File=self.MetaFile)
+                # MU_CHANGE end
+
                 # check the file validation
                 ErrorCode, ErrorInfo = LibraryInstance.Validate('.inf')
                 if ErrorCode != 0:
@@ -1189,6 +1208,26 @@ class DscBuildData(PlatformBuildClassObject):
                         field_assign[TokenSpaceGuid, Token] = []
             for item in delete_assign:
                 GlobalData.BuildOptionPcd.remove(item)
+
+    # MU_CHANGE begin
+    def _ValidateLibraryClass(self, LibraryClass: str, LibraryInstance: PathClass) -> bool:
+        if LibraryClass.upper().startswith('NULL'):
+            return True
+
+        ParsedLibraryInfo = self._Bdb[LibraryInstance, self._Arch, self._Target, self._Toolchain]
+        
+        for LibraryClassObject in ParsedLibraryInfo.LibraryClass:
+            if LibraryClassObject.LibraryClass == LibraryClass:
+                return True
+        return False
+
+    def _ShouldLogLibrary(self, LineNo) -> bool:
+        if LineNo in LoggedLibraryWarnings:
+            return False
+
+        LoggedLibraryWarnings.append(LineNo)
+        return True
+    # MU_CHANGE end
 
     @staticmethod
     def HandleFlexiblePcd(TokenSpaceGuidCName, TokenCName, PcdValue, PcdDatumType, GuidDict, FieldName=''):
