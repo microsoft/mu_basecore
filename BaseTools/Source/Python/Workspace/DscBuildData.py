@@ -1222,6 +1222,9 @@ class DscBuildData(PlatformBuildClassObject):
         return False
 
     def _ShouldLogLibrary(self, LineNo) -> bool:
+        if not GlobalData.gLogLibraryMismatch:
+            return False
+
         if LineNo in LoggedLibraryWarnings:
             return False
 
