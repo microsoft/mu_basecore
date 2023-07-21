@@ -2210,7 +2210,6 @@ WriteDebug64 (
   Nb10->Signature = CODEVIEW_SIGNATURE_NB10;
   strcpy ((char *)(Nb10 + 1), mInImageName);
 
-
   NtHdr = (EFI_IMAGE_OPTIONAL_HEADER_UNION *)(mCoffFile + mNtHdrOffset);
   DataDir = &NtHdr->Pe32Plus.OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG];
   DataDir->VirtualAddress = mDebugOffset;
@@ -2311,4 +2310,3 @@ WriteExport64 (
   DataDir->Size = mExportSize;
 
 }
-

@@ -218,8 +218,10 @@ ConvertElf (
   //
   // Write debug info.
   //
-  VerboseMsg ("Write debug info.");
-  ElfFunctions.WriteDebug ();
+  if (mIncludeDebugInformation) {
+    VerboseMsg ("Write debug info.");
+    ElfFunctions.WriteDebug ();
+  }
 
   //
   // For PRM Driver to Write export info.

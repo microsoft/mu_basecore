@@ -86,6 +86,7 @@ UINT32 mImageSize = 0;
 UINT32 mOutImageType = FW_DUMMY_IMAGE;
 BOOLEAN mIsConvertXip = FALSE;
 BOOLEAN mExportFlag = FALSE;
+BOOLEAN mIncludeDebugInformation = FALSE;
 
 STATIC
 EFI_STATUS
@@ -1489,6 +1490,13 @@ Returns:
 
     if (stricmp (argv[0], "--hiibinpackage") == 0) {
       mOutImageType = FW_HII_PACKAGE_LIST_BINIMAGE;
+      argc --;
+      argv ++;
+      continue;
+    }
+
+    if (stricmp (argv[0], "--debuginfo") == 0) {
+      mIncludeDebugInformation = TRUE;
       argc --;
       argv ++;
       continue;
