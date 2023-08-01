@@ -351,7 +351,7 @@ NvmeDisableController (
   }
 
   for (Index = (Timeout * 500); Index != 0; --Index) {
-    gBS->Stall (1000);
+    // gBS->Stall (1000);  // MU_CHANGE
 
     //
     // Check if the controller is initialized
@@ -365,6 +365,8 @@ NvmeDisableController (
     if (Csts.Rdy == 0) {
       break;
     }
+
+    gBS->Stall (1000);  // MU_CHANGE
   }
 
   if (Index == 0) {
@@ -430,7 +432,7 @@ NvmeEnableController (
   }
 
   for (Index = (Timeout * 500); Index != 0; --Index) {
-    gBS->Stall (1000);
+    // gBS->Stall (1000);  // MU_CHANGE
 
     //
     // Check if the controller is initialized
@@ -446,6 +448,8 @@ NvmeEnableController (
     if (Csts.Rdy) {
       break;
     }
+
+    gBS->Stall (1000);  // MU_CHANGE
   }
 
   if (Index == 0) {
