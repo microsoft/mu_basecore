@@ -214,7 +214,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                 return 1
 
         # Generate and XML file if requested.by each package
-        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{os.path.join(buildOutputBase, 'coverage.xml')} --working_dir={workspace}Build/ {coverageFile}", workingdir=f"{workspace}Build/")
+        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{os.path.join(buildOutputBase, 'coverage.xml')} {coverageFile}", workingdir=f"{workspace}Build/")
         if ret != 0:
             logging.error("UnitTest Coverage: Failed to generate cobertura format xml in single package.")
             return 1
@@ -225,7 +225,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         for testCoverage in testCoverageList:
             coverageFile += " --input_coverage=" + testCoverage
 
-        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{workspace}Build/coverage.xml --working_dir={workspace}Build/ {coverageFile}", workingdir=f"{workspace}Build/")
+        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{workspace}Build/coverage.xml {coverageFile}", workingdir=f"{workspace}Build/")
         if ret != 0:
             logging.error("UnitTest Coverage: Failed to generate cobertura format xml.")
             return 1
