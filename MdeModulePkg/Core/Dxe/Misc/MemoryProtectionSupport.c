@@ -64,89 +64,6 @@ EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
 #define CHECK_SUBSET(A, B)  ((A | B) == B)
 
 /**
-  Swap two image records.
-
-  @param  FirstImageRecord   first image record.
-  @param  SecondImageRecord  second image record.
-**/
-VOID
-SwapImageRecord (
-  IN IMAGE_PROPERTIES_RECORD  *FirstImageRecord,
-  IN IMAGE_PROPERTIES_RECORD  *SecondImageRecord
-  );
-
-/**
-  Swap two code sections in image record.
-
-  @param  FirstImageRecordCodeSection    first code section in image record
-  @param  SecondImageRecordCodeSection   second code section in image record
-**/
-VOID
-SwapImageRecordCodeSection (
-  IN IMAGE_PROPERTIES_RECORD_CODE_SECTION  *FirstImageRecordCodeSection,
-  IN IMAGE_PROPERTIES_RECORD_CODE_SECTION  *SecondImageRecordCodeSection
-  );
-
-/**
-  Check if code section in image record is valid.
-
-  @param  ImageRecord    image record to be checked
-
-  @retval TRUE  image record is valid
-  @retval FALSE image record is invalid
-**/
-BOOLEAN
-IsImageRecordCodeSectionValid (
-  IN IMAGE_PROPERTIES_RECORD  *ImageRecord
-  );
-
-/**
-  Find image record according to image base and size.
-
-  @param  ImageBase    Base of PE image
-  @param  ImageSize    Size of PE image
-
-  @return image record
-**/
-IMAGE_PROPERTIES_RECORD *
-EFIAPI
-FindImageRecord (
-  IN EFI_PHYSICAL_ADDRESS  ImageBase,
-  IN UINT64                ImageSize
-  );
-
-/**
-  Converts a number of EFI_PAGEs to a size in bytes.
-
-  NOTE: Do not use EFI_PAGES_TO_SIZE because it handles UINTN only.
-
-  @param  Pages     The number of EFI_PAGES.
-
-  @return  The number of bytes associated with the number of EFI_PAGEs specified
-           by Pages.
-**/
-UINT64
-EfiPagesToSize (
-  IN UINT64  Pages
-  );
-
-/**
-  Converts a size, in bytes, to a number of EFI_PAGESs.
-
-  NOTE: Do not use EFI_SIZE_TO_PAGES because it handles UINTN only.
-
-  @param  Size      A size in bytes.
-
-  @return  The number of EFI_PAGESs associated with the number of bytes specified
-           by Size.
-
-**/
-UINT64
-EfiSizeToPages (
-  IN UINT64  Size
-  );
-
-/**
   Get UEFI image protection policy based upon loaded image device path.
 
   @param[in]  LoadedImage              The loaded image protocol
@@ -193,27 +110,6 @@ BOOLEAN
 IsMemoryProtectionSectionAligned (
   IN UINT32           SectionAlignment,
   IN EFI_MEMORY_TYPE  MemoryType
-  );
-
-/**
-  Set the memory map to new entries, according to one old entry,
-  based upon PE code section and data section in image record
-
-  @param  ImageRecord            An image record whose [ImageBase, ImageSize] covered
-                                 by old memory map entry.
-  @param  NewRecord              A pointer to several new memory map entries.
-                                 The caller gurantee the buffer size be 1 +
-                                 (SplitRecordCount * DescriptorSize) calculated
-                                 below.
-  @param  OldRecord              A pointer to one old memory map entry.
-  @param  DescriptorSize         Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
-**/
-UINTN
-SetNewRecord (
-  IN IMAGE_PROPERTIES_RECORD    *ImageRecord,
-  IN OUT EFI_MEMORY_DESCRIPTOR  *NewRecord,
-  IN EFI_MEMORY_DESCRIPTOR      *OldRecord,
-  IN UINTN                      DescriptorSize
   );
 
 /**
@@ -275,6 +171,43 @@ SetUefiImageMemoryAttributes (
   );
 
 extern LIST_ENTRY  mGcdMemorySpaceMap;
+
+/**
+  Converts a number of pages to a size in bytes.
+
+  NOTE: Do not use EFI_PAGES_TO_SIZE because it handles UINTN only.
+
+  @param[in]  Pages     The number of EFI_PAGES.
+
+  @retval  The number of bytes associated with the input number of pages.
+**/
+STATIC
+UINT64
+EfiPagesToSize (
+  IN UINT64  Pages
+  )
+{
+  return LShiftU64 (Pages, EFI_PAGE_SHIFT);
+}
+
+/**
+  Converts a size, in bytes, to a number of EFI_PAGESs.
+
+  NOTE: Do not use EFI_SIZE_TO_PAGES because it handles UINTN only.
+
+  @param[in]  Size      A size in bytes.
+
+  @retval  The number of pages associated with the input number of bytes.
+
+**/
+STATIC
+UINT64
+EfiSizeToPages (
+  IN UINT64  Size
+  )
+{
+  return RShiftU64 (Size, EFI_PAGE_SHIFT) + ((((UINTN)Size) & EFI_PAGE_MASK) ? 1 : 0);
+}
 
 // ---------------------------------------
 //     LINKED LIST SUPPORT FUNCTIONS
@@ -912,84 +845,6 @@ CoreInitializeMemoryProtectionSpecialRegions (
 // ---------------------------------------
 
 /**
-  Debug dumps the input list of IMAGE_PROPERTIES_RECORD_CODE_SECTION structs
-
-  @param[in] ImageRecordCodeSectionList Head of the IMAGE_PROPERTIES_RECORD_CODE_SECTION list
-**/
-STATIC
-VOID
-DumpCodeSectionList (
-  IN CONST LIST_ENTRY  *ImageRecordCodeSectionList
-  )
-{
-  LIST_ENTRY                            *CodeSectionLink;
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CurrentImageRecord;
-
-  if (ImageRecordCodeSectionList == NULL) {
-    return;
-  }
-
-  CodeSectionLink = ImageRecordCodeSectionList->ForwardLink;
-
-  while (CodeSectionLink != ImageRecordCodeSectionList) {
-    CurrentImageRecord = CR (
-                           CodeSectionLink,
-                           IMAGE_PROPERTIES_RECORD_CODE_SECTION,
-                           Link,
-                           IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
-                           );
-
-    DEBUG ((
-      DEBUG_INFO,
-      "\tCode Section Memory Range 0x%llx - 0x%llx\n",
-      CurrentImageRecord->CodeSegmentBase,
-      CurrentImageRecord->CodeSegmentBase + CurrentImageRecord->CodeSegmentSize
-      ));
-
-    CodeSectionLink = CodeSectionLink->ForwardLink;
-  }
-}
-
-/**
-  Debug dumps the input list of IMAGE_PROPERTIES_RECORD structs
-
-  @param[in] ImageRecordList Head of the IMAGE_PROPERTIES_RECORD list
-**/
-STATIC
-VOID
-DumpImageRecords (
-  IN CONST LIST_ENTRY  *ImageRecordList
-  )
-{
-  LIST_ENTRY               *ImageRecordLink;
-  IMAGE_PROPERTIES_RECORD  *CurrentImageRecord;
-
-  if (ImageRecordList == NULL) {
-    return;
-  }
-
-  ImageRecordLink = ImageRecordList->ForwardLink;
-
-  while (ImageRecordLink != ImageRecordList) {
-    CurrentImageRecord = CR (
-                           ImageRecordLink,
-                           IMAGE_PROPERTIES_RECORD,
-                           Link,
-                           IMAGE_PROPERTIES_RECORD_SIGNATURE
-                           );
-
-    DEBUG ((
-      DEBUG_INFO,
-      "Image Record Memory Range 0x%llx - 0x%llx\n",
-      CurrentImageRecord->ImageBase,
-      CurrentImageRecord->ImageBase + CurrentImageRecord->ImageSize
-      ));
-    DumpCodeSectionList (&CurrentImageRecord->CodeSegmentList);
-    ImageRecordLink = ImageRecordLink->ForwardLink;
-  }
-}
-
-/**
   Debug dumps the memory map.
 
   @param[in]  MemoryMapSize     A pointer to the size, in bytes, of the MemoryMap buffer
@@ -1419,48 +1274,6 @@ FillInMemoryMap (
 // ---------------------------------------
 
 /**
-  Find the first image record contained by the memory range Buffer -> Buffer + Length
-
-  @param[in] Buffer           Start Address to check
-  @param[in] Length           Length to check
-  @param[in] ImageRecordList  A list of IMAGE_PROPERTIES_RECORD entries to check against
-                              the memory range Buffer -> Buffer + Length
-
-  @retval A pointer to the image properties record contained by the input buffer or NULL
-**/
-STATIC
-IMAGE_PROPERTIES_RECORD *
-GetImageRecordContainedByBuffer (
-  IN EFI_PHYSICAL_ADDRESS  Buffer,
-  IN UINT64                Length,
-  IN LIST_ENTRY            *ImageRecordList
-  )
-{
-  IMAGE_PROPERTIES_RECORD  *ImageRecord;
-  LIST_ENTRY               *ImageRecordLink;
-
-  for (ImageRecordLink = ImageRecordList->ForwardLink;
-       ImageRecordLink != ImageRecordList;
-       ImageRecordLink = ImageRecordLink->ForwardLink)
-  {
-    ImageRecord = CR (
-                    ImageRecordLink,
-                    IMAGE_PROPERTIES_RECORD,
-                    Link,
-                    IMAGE_PROPERTIES_RECORD_SIGNATURE
-                    );
-
-    if ((Buffer <= ImageRecord->ImageBase) &&
-        (Buffer + Length >= (ImageRecord->ImageBase + ImageRecord->ImageSize)))
-    {
-      return ImageRecord;
-    }
-  }
-
-  return NULL;
-}
-
-/**
  Generate a list of IMAGE_RANGE_DESCRIPTOR structs which describe the data/code regions of protected images or
  the memory ranges of nonprotected images.
 
@@ -1669,7 +1482,7 @@ CreateNonProtectedImagePropertiesRecord (
 **/
 STATIC
 EFI_STATUS
-CreateImagePropertiesRecord (
+CreateImageRecord (
   IN    VOID                     *ImageBase,
   IN    UINT64                   ImageSize,
   IN    EFI_MEMORY_TYPE          ImageCodeType,
@@ -1841,258 +1654,6 @@ CreateImagePropertiesRecord (
   ImageRecord->ImageSize = ALIGN_VALUE (ImageSize, EFI_PAGE_SIZE);
 
   return Status;
-}
-
-/**
-  Split the memory map to new entries, according to one old entry,
-  based upon PE code section and data section.
-
-  @param[in]        OldRecord             A pointer to one old memory map entry.
-  @param[in, out]   NewRecord             A pointer to several new memory map entries.
-                                          The caller gurantee the buffer size be 1 +
-                                          (SplitRecordCount * DescriptorSize) calculated
-                                          below.
-  @param[in]        MaxSplitRecordCount   The max number of splitted entries
-  @param[in]        DescriptorSize        Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
-  @param[in]        ImageRecordList       A list of IMAGE_PROPERTIES_RECORD entries used when searching
-                                          for an image record contained by the memory range described in
-                                          the existing EFI memory map descriptor OldRecord
-
-  @retval  0 no entry is splitted.
-  @return  the real number of splitted record.
-**/
-STATIC
-UINTN
-SplitMemoryDescriptor (
-  IN EFI_MEMORY_DESCRIPTOR      *OldRecord,
-  IN OUT EFI_MEMORY_DESCRIPTOR  *NewRecord,
-  IN UINTN                      MaxSplitRecordCount,
-  IN UINTN                      DescriptorSize,
-  IN LIST_ENTRY                 *ImageRecordList
-  )
-{
-  EFI_MEMORY_DESCRIPTOR    TempRecord;
-  IMAGE_PROPERTIES_RECORD  *ImageRecord;
-  IMAGE_PROPERTIES_RECORD  *NewImageRecord;
-  UINT64                   PhysicalStart;
-  UINT64                   PhysicalEnd;
-  UINTN                    NewRecordCount;
-  UINTN                    TotalNewRecordCount;
-
-  if (MaxSplitRecordCount == 0) {
-    CopyMem (NewRecord, OldRecord, DescriptorSize);
-    return 0;
-  }
-
-  TotalNewRecordCount = 0;
-
-  //
-  // Override previous record
-  //
-  CopyMem (&TempRecord, OldRecord, sizeof (EFI_MEMORY_DESCRIPTOR));
-  PhysicalStart = TempRecord.PhysicalStart;
-  PhysicalEnd   = TempRecord.PhysicalStart + EfiPagesToSize (TempRecord.NumberOfPages);
-
-  ImageRecord = NULL;
-  do {
-    NewImageRecord = GetImageRecordContainedByBuffer (PhysicalStart, PhysicalEnd - PhysicalStart, ImageRecordList);
-    if (NewImageRecord == NULL) {
-      //
-      // No more images cover this range, check if we've reached the end of the old descriptor. If not,
-      // add the remaining range to the new descriptor list.
-      //
-      if (PhysicalEnd > PhysicalStart) {
-        NewRecord->Type          = TempRecord.Type;
-        NewRecord->PhysicalStart = PhysicalStart;
-        NewRecord->VirtualStart  = 0;
-        NewRecord->NumberOfPages = EfiSizeToPages (PhysicalEnd - PhysicalStart);
-        NewRecord->Attribute     = TempRecord.Attribute;
-        TotalNewRecordCount++;
-      }
-
-      break;
-    }
-
-    ImageRecord = NewImageRecord;
-
-    //
-    // Update PhysicalStart to exclude the portion before the image buffer
-    //
-    if (TempRecord.PhysicalStart < ImageRecord->ImageBase) {
-      NewRecord->Type          = TempRecord.Type;
-      NewRecord->PhysicalStart = TempRecord.PhysicalStart;
-      NewRecord->VirtualStart  = 0;
-      NewRecord->NumberOfPages = EfiSizeToPages (ImageRecord->ImageBase - TempRecord.PhysicalStart);
-      NewRecord->Attribute     = TempRecord.Attribute;
-      TotalNewRecordCount++;
-
-      PhysicalStart            = ImageRecord->ImageBase;
-      TempRecord.PhysicalStart = PhysicalStart;
-      TempRecord.NumberOfPages = EfiSizeToPages (PhysicalEnd - PhysicalStart);
-
-      NewRecord = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)NewRecord + DescriptorSize);
-    }
-
-    //
-    // Set new record
-    //
-    NewRecordCount       = SetNewRecord (ImageRecord, NewRecord, &TempRecord, DescriptorSize);
-    TotalNewRecordCount += NewRecordCount;
-    NewRecord            = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)NewRecord + (NewRecordCount * DescriptorSize));
-
-    //
-    // Update PhysicalStart, in order to exclude the image buffer which was already split.
-    //
-    PhysicalStart            = ImageRecord->ImageBase + ImageRecord->ImageSize;
-    TempRecord.PhysicalStart = PhysicalStart;
-    TempRecord.NumberOfPages = EfiSizeToPages (PhysicalEnd - PhysicalStart);
-  } while ((ImageRecord != NULL) && (PhysicalStart < PhysicalEnd));
-
-  //
-  // This function will only be entered if we need to split a record, so ensure at least one split was made.
-  //
-  ASSERT (TotalNewRecordCount != 0);
-  return TotalNewRecordCount - 1;
-}
-
-/**
-  Return the max number of new splitted entries, according to one old entry,
-  based upon PE code section and data section.
-
-  @param[in]  OldRecord         A pointer to one old memory map entry.
-  @param[in]  ImageRecordList   A list of IMAGE_PROPERTIES_RECORD entries used when searching
-                                for an image record contained by the memory range described in
-                                the existing EFI memory map descriptor OldRecord
-
-  @retval  0 no entry needs to be split
-  @return  the maximum number of new splitted entries
-**/
-STATIC
-UINTN
-GetMaximumRecordSplit (
-  IN EFI_MEMORY_DESCRIPTOR  *OldRecord,
-  IN LIST_ENTRY             *ImageRecordList
-  )
-{
-  IMAGE_PROPERTIES_RECORD  *ImageRecord;
-  UINTN                    SplitRecordCount;
-  UINT64                   PhysicalStart;
-  UINT64                   PhysicalEnd;
-
-  SplitRecordCount = 0;
-  PhysicalStart    = OldRecord->PhysicalStart;
-  PhysicalEnd      = OldRecord->PhysicalStart + EfiPagesToSize (OldRecord->NumberOfPages);
-
-  do {
-    ImageRecord = GetImageRecordContainedByBuffer (PhysicalStart, PhysicalEnd - PhysicalStart, ImageRecordList);
-    if (ImageRecord == NULL) {
-      break;
-    }
-
-    PhysicalStart     = ImageRecord->ImageBase + ImageRecord->ImageSize;
-    SplitRecordCount += (2 * ImageRecord->CodeSegmentCount + 3);
-  } while ((ImageRecord != NULL) && (PhysicalStart < PhysicalEnd));
-
-  if (SplitRecordCount != 0) {
-    SplitRecordCount--;
-  }
-
-  return SplitRecordCount;
-}
-
-/**
-  Update the input memory map to add entries which describe PE code section and data sections for
-  images within the described memory ranges. Within the updated memory map, image code sections
-  can be identified by the attribute EFI_MEMORY_RP and image data sections can be identified
-  by the attribute EFI_MEMORY_XP. The memory map will be sorted by base address.
-
-  NOTE: This logic assumes PE code/data section are page-aligned
-
-  @param[in, out] MemoryMapSize                   IN:   The size, in bytes, of the old memory map before the split.
-                                                  OUT:  The size, in bytes, of the used descriptors of the split
-                                                        memory map
-  @param[in, out] MemoryMap                       IN:   A pointer to the buffer containing the current memory map.
-                                                        This buffer must have enough space to accomodate the "worst case"
-                                                        scenario where every image in ImageRecordList needs a new descriptor
-                                                        to describe its code and data sections.
-                                                  OUT:  A pointer to the updated memory map with separated image section
-                                                        descriptors.
-  @param[in]      DescriptorSize                  The size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
-  @param[in]      ImageRecordList                 A list of IMAGE_PROPERTIES_RECORD entries used when searching
-                                                  for an image record contained by the memory range described in
-                                                  EFI memory map descriptors.
-  @param[in]      NumberOfAdditionalDescriptors   The number of unused descriptors at the end of the input MemoryMap.
-**/
-VOID
-SeparateImagesInMemoryMap (
-  IN OUT UINTN                  *MemoryMapSize,
-  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN     UINTN                  DescriptorSize,
-  IN     LIST_ENTRY             *ImageRecordList,
-  IN     UINTN                  NumberOfAdditionalDescriptors
-  )
-{
-  INTN   IndexOld;
-  INTN   IndexNewCurrent;
-  INTN   IndexNewStarting;
-  UINTN  MaxSplitRecordCount;
-  UINTN  RealSplitRecordCount;
-  UINTN  TotalSkippedRecords;
-
-  TotalSkippedRecords = 0;
-
-  //
-  // Let old record point to end of valid MemoryMap buffer.
-  //
-  IndexOld = ((*MemoryMapSize) / DescriptorSize) - 1;
-
-  //
-  // Let new record point to end of full MemoryMap buffer.
-  //
-  IndexNewCurrent  = ((*MemoryMapSize) / DescriptorSize) - 1 + NumberOfAdditionalDescriptors;
-  IndexNewStarting = IndexNewCurrent;
-  for ( ; IndexOld >= 0; IndexOld--) {
-    MaxSplitRecordCount = GetMaximumRecordSplit ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + (IndexOld * DescriptorSize)), ImageRecordList);
-    //
-    // Split this MemoryMap record
-    //
-    IndexNewCurrent     -= MaxSplitRecordCount;
-    RealSplitRecordCount = SplitMemoryDescriptor (
-                             (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + (IndexOld * DescriptorSize)),
-                             (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + (IndexNewCurrent * DescriptorSize)),
-                             MaxSplitRecordCount,
-                             DescriptorSize,
-                             ImageRecordList
-                             );
-
-    // If we didn't utilize all the extra allocated descriptor slots, set the physical address of the unused slots
-    // to MAX_ADDRESS so they are moved to the bottom of the list when sorting.
-    for ( ; RealSplitRecordCount < MaxSplitRecordCount; RealSplitRecordCount++) {
-      ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + ((IndexNewCurrent + RealSplitRecordCount + 1) * DescriptorSize)))->PhysicalStart = MAX_ADDRESS;
-      TotalSkippedRecords++;
-    }
-
-    IndexNewCurrent--;
-  }
-
-  // Move all records to the beginning.
-  CopyMem (
-    MemoryMap,
-    (UINT8 *)MemoryMap + ((IndexNewCurrent + 1) * DescriptorSize),
-    (IndexNewStarting - IndexNewCurrent) * DescriptorSize
-    );
-
-  // Sort from low to high
-  SortMemoryMap (
-    MemoryMap,
-    (IndexNewStarting - IndexNewCurrent) * DescriptorSize,
-    DescriptorSize
-    );
-
-  // Update the memory map size to be the actual number of used records
-  *MemoryMapSize = (IndexNewStarting - IndexNewCurrent - TotalSkippedRecords) * DescriptorSize;
-
-  return;
 }
 
 /**
@@ -2688,7 +2249,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
 
   // Break up the memory map so every image range divides evenly into some number of
   // EFI memory descriptors
-  SeparateImagesInMemoryMap (
+  SplitTable (
     MemoryMapSize,
     *MemoryMap,
     *DescriptorSize,
@@ -2813,82 +2374,6 @@ Cleanup:
 }
 
 /**
-  Copy an existing image properties record created by MemoryAttributesTable
-
-  @param[in]  LoadedImage              The loaded image protocol
-  @param[in]  LoadedImageDevicePath    The loaded image device path protocol
-
-  @retval     EFI_INVALID_PARAMETER   This function was called in SMM or the image
-                                      type has an undefined protection policy
-  @retval     EFI_OUT_OF_RESOURCES    Failure to Allocate()
-  @retval     EFI_UNSUPPORTED         Image type will not be protected in accordance with memory
-                                      protection policy settings
-  @retval     EFI_LOAD_ERROR          The image is unaligned or the code segment count is zero
-  @retval     EFI_SUCCESS             The image was successfully protected or the protection policy
-                                      is PROTECT_IF_ALIGNED_ELSE_ALLOW
-**/
-EFI_STATUS
-CopyExistingPropertiesRecord (
-  IN  EFI_PHYSICAL_ADDRESS     ImageBase,
-  IN  UINT64                   ImageSize,
-  OUT IMAGE_PROPERTIES_RECORD  *NewImageRecord
-  )
-{
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *NewImageRecordCodeSection;
-  IMAGE_PROPERTIES_RECORD               *ExistingImageRecord;
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *ExistingImageRecordCodeSection;
-  LIST_ENTRY                            *ExistingImageRecordCodeSectionLink;
-  LIST_ENTRY                            *ExistingImageRecordCodeSectionEndLink;
-
-  if (NewImageRecord == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  // If the image is a runtime image, the properties record may already have been created in
-  // MemoryAttributesTable.c, so fetch that record if it exists for performance
-  ExistingImageRecord = FindImageRecord (ImageBase, ImageSize);
-
-  if (ExistingImageRecord == NULL) {
-    return EFI_NOT_FOUND;
-  }
-
-  NewImageRecord->Signature        = ExistingImageRecord->Signature;
-  NewImageRecord->ImageBase        = ExistingImageRecord->ImageBase;
-  NewImageRecord->ImageSize        = ExistingImageRecord->ImageSize;
-  NewImageRecord->CodeSegmentCount = ExistingImageRecord->CodeSegmentCount;
-
-  InitializeListHead (&NewImageRecord->CodeSegmentList);
-
-  ExistingImageRecordCodeSectionLink    = GetFirstNode (&ExistingImageRecord->CodeSegmentList);
-  ExistingImageRecordCodeSectionEndLink = &ExistingImageRecord->CodeSegmentList;
-
-  while (ExistingImageRecordCodeSectionLink != ExistingImageRecordCodeSectionEndLink) {
-    NewImageRecordCodeSection = AllocatePool (sizeof (*NewImageRecordCodeSection));
-
-    if (NewImageRecordCodeSection == NULL) {
-      return EFI_OUT_OF_RESOURCES;
-    }
-
-    ExistingImageRecordCodeSection = CR (
-                                       ExistingImageRecordCodeSectionLink,
-                                       IMAGE_PROPERTIES_RECORD_CODE_SECTION,
-                                       Link,
-                                       IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE
-                                       );
-
-    NewImageRecordCodeSection->Signature       = ExistingImageRecordCodeSection->Signature;
-    NewImageRecordCodeSection->CodeSegmentSize = EfiPagesToSize (EfiSizeToPages (ExistingImageRecordCodeSection->CodeSegmentSize));
-    NewImageRecordCodeSection->CodeSegmentBase = ExistingImageRecordCodeSection->CodeSegmentBase;
-
-    InsertTailList (&NewImageRecord->CodeSegmentList, &NewImageRecordCodeSection->Link);
-
-    ExistingImageRecordCodeSectionLink = ExistingImageRecordCodeSectionLink->ForwardLink;
-  }
-
-  return EFI_SUCCESS;
-}
-
-/**
   Protect UEFI PE/COFF image (Project Mu Version).
 
   @param[in]  LoadedImage              The loaded image protocol
@@ -2941,13 +2426,7 @@ ProtectUefiImageMu (
   }
 
   if (!EFI_ERROR (Status)) {
-    // If a record was already created for the memory attributes table, copy it
-    Status = CopyExistingPropertiesRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize, ImageRecord);
-
-    if (EFI_ERROR (Status)) {
-      // Create a new image properties record
-      Status = CreateImagePropertiesRecord (LoadedImage->ImageBase, LoadedImage->ImageSize, LoadedImage->ImageCodeType, ImageRecord);
-    }
+    Status = CreateImageRecord (LoadedImage->ImageBase, LoadedImage->ImageSize, LoadedImage->ImageCodeType, ImageRecord);
 
     if (!EFI_ERROR (Status)) {
       // Record the image record in the list so we can undo the protections later
