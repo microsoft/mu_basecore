@@ -1,6 +1,7 @@
 # @file NestedPackageCheck.py
 #
 # A CI Check that verifies there are no nested packages in the package being tested.
+# Review the readme for a description of nested packages and why they are not allowed.
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
