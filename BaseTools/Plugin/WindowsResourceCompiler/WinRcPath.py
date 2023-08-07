@@ -13,6 +13,7 @@ from edk2toolext.environment import shell_environment
 from edk2toolext.environment import version_aggregator
 from pathlib import Path
 
+# MU_CHANGE Entire File - Perf improvements
 class WinRcPath(IUefiBuildPlugin):
 
     def do_pre_build(self, thebuilder):
@@ -36,6 +37,7 @@ class WinRcPath(IUefiBuildPlugin):
 
         path = Path(path).absolute().parent
         self._set_path(path)
+        cache_path.unlink(missing_ok=True)
         with cache_path.open("w") as f:
             f.write(str(path))
         return 0
