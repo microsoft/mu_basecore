@@ -7,7 +7,7 @@ This CiBuildPlugin detects nested packages and fails if the nested package is du
 As the name suggests, a nested package is when one package is located in a subdirectory of another package. Depending on
 multiple factors (such as package layouts, the `PACKAGES_PATH` environment variable, and the order of paths in the
 `PACKAGES_PATH ` environment variable), nested packages can cause hard to diagnose, or silent, build issues due to
-incorrect path resolution. Due to this, the DEC Specification requires that EDK II packages cannot be nested  within
+incorrect path resolution. Due to this, the DEC Specification requires that EDK II packages cannot be nested within
 other EDKII Packages.
 
 [DEC Specification v1.27](https://tianocore-docs.github.io/edk2-DecSpecification/release-1.27/2_dec_file_overview/#2-dec-file-overview)

@@ -54,7 +54,7 @@ class NestedPackageCheck(ICiBuildPlugin):
                 tc.SetSkipped()
                 return -1
             else:
-                tc.SetFailed(f"Nested Packages Check {packagename} failed.  Errors P{failed}", "CHECK_FAILED")
+                tc.SetFailed(f"Nested Packages Check {packagename} failed.  Errors: {failed}", "CHECK_FAILED")
                 return failed
         
         tc.SetSuccess()
