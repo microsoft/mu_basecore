@@ -30,35 +30,36 @@
 ### 
 from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
 import logging
-import shutil
-import os
+from pathlib import Path
 
+# MU_CHANGE Entire File - Perf improvements
 class FlattenPdbs(IUefiBuildPlugin):
 
     def do_post_build(self, thebuilder):
         #Path to Build output
-        BuildPath = thebuilder.env.GetValue("BUILD_OUTPUT_BASE")
+        build_path = Path(thebuilder.env.GetValue("BUILD_OUTPUT_BASE"))
         #Path to where the PDBs will be stored
-        PDBpath = os.path.join(BuildPath, "PDB")
-
-        IgnorePdbs = ['vc1']  #make lower case
+        pdb_path = Path(build_path, "PDB")
 
         try:
-            if not os.path.isdir(PDBpath):
-                os.mkdir(PDBpath)
-        except:
+            if not pdb_path.is_dir():
+                pdb_path.mkdir()
+        except Exception:
             logging.critical("Error making PDB directory")
 
         logging.critical("Copying PDBs to flat directory")
-        for dirpath, dirnames, filenames in os.walk(BuildPath):
-            if PDBpath in dirpath:
+        for file in Path(build_path).rglob("*.pdb"):
+            # pdb exists in DEBUG and OUTPUT directory. Same file.
+            pdb_out = Path(pdb_path / file.name)
+            if file.parent.name != "OUTPUT":
                 continue
-            for filename in filenames:
-                fnl = filename.strip().lower()
-                if(fnl.endswith(".pdb")):
-                    if(any(e for e in IgnorePdbs if e in fnl)):
-                        # too much info. logging.debug("Flatten PDB - Ignore Pdb: %s" % filename)
-                        pass
-                    else:
-                        shutil.copy(os.path.join(dirpath, filename), os.path.join(PDBpath, filename))
+            # If it exists and has the same file identifier, skip it.
+            if pdb_out.exists() and file.stat().st_ino == pdb_out.stat().st_ino:
+                continue
+            if "vc1" in file.name.lower():
+                continue
+            # Hard link it, which is slightly faster, but mainly allows us to tell
+            # if the file has changed (st_ino is different)
+            pdb_out.unlink(missing_ok=True)
+            pdb_out.hardlink_to(file)
         return 0
