@@ -37,20 +37,20 @@ class FlattenPdbs(IUefiBuildPlugin):
 
     def do_post_build(self, thebuilder):
         #Path to Build output
-        BuildPath = Path(thebuilder.env.GetValue("BUILD_OUTPUT_BASE"))
+        build_path = Path(thebuilder.env.GetValue("BUILD_OUTPUT_BASE"))
         #Path to where the PDBs will be stored
-        PDBpath = Path(BuildPath, "PDB")
+        pdb_path = Path(build_path, "PDB")
 
         try:
-            if not PDBpath.is_dir():
-                PDBpath.mkdir()
+            if not pdb_path.is_dir():
+                pdb_path.mkdir()
         except Exception:
             logging.critical("Error making PDB directory")
 
         logging.critical("Copying PDBs to flat directory")
-        for file in Path(BuildPath).rglob("*.pdb"):
+        for file in Path(build_path).rglob("*.pdb"):
             # pdb exists in DEBUG and OUTPUT directory. Same file.
-            pdb_out = Path(PDBpath / file.name)
+            pdb_out = Path(pdb_path / file.name)
             if file.parent.name != "OUTPUT":
                 continue
             # If it exists and has the same file identifier, skip it.
