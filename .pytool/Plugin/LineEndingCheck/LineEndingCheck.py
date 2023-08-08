@@ -260,47 +260,27 @@ class LineEndingCheck(ICiBuildPlugin):
             tc.LogStdError(f"Package folder not found {self._abs_pkg_path}")
             return 0
 
-        all_files = [Path(n) for n in glob.glob(
-                        os.path.join(self._abs_pkg_path, '**/*.*'),
-                        recursive=True)]
-        ignored_files = list(filter(
-                            self._get_files_ignored_in_config(
-                                package_config, self._abs_pkg_path), all_files))
-        ignored_files = [Path(f) for f in ignored_files]
-
-        all_files = list(set(all_files) - set(ignored_files))
-        if not all_files:
-            tc.SetSuccess()
-            return 0
-
-        all_files_before_git_removal = set(all_files)
-        git_ignored_paths = set(self._get_git_ignored_paths() + self._get_git_submodule_paths())
-        all_files = list(all_files_before_git_removal - git_ignored_paths)
-        git_ignored_paths = git_ignored_paths - (all_files_before_git_removal - set(all_files))
-        if not all_files:
-            tc.SetSuccess()
-            return 0
-
-        git_ignored_paths = {p for p in git_ignored_paths if p.is_dir()}
-
-        ignored_files = []
-        for file in all_files:
-            for ignored_path in git_ignored_paths:
-                if Path(file).is_relative_to(ignored_path):
-                    ignored_files.append(file)
-                    break
-
-        all_files = list(set(all_files) - set(ignored_files))
-        if not all_files:
-            tc.SetSuccess()
-            return 0
+        # MU_CHANGE begin: Perf Improvements
+        ignore_files = set(self._get_git_ignored_paths())
+        ignore_dirs = set(self._get_git_submodule_paths())
+        ignore_filter = self._get_files_ignored_in_config(package_config, self._abs_pkg_path)
 
         file_count = 0
         line_ending_count = dict.fromkeys(LINE_ENDINGS, 0)
-
-        for file in all_files:
+        for file in Path(self._abs_pkg_path).rglob('*'):
             if file.is_dir():
                 continue
+            
+            if any(file.is_relative_to(ignore_dir) for ignore_dir in ignore_dirs):
+                continue
+
+            if ignore_filter(file):
+                continue
+
+            if file in ignore_files:
+                continue
+            
+        # MU_CHANGE end: Perf Improvements
             with open(file.resolve(), 'rb') as fb:
                 if not fb.readable() or _is_binary_string(fb.read(1024)):
                     continue
