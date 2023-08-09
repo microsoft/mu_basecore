@@ -743,13 +743,36 @@ NvmeControllerInit (
   NVME_AQA             Aqa;
   NVME_ASQ             Asq;
   NVME_ACQ             Acq;
+  UINT16               VidDid[2]; // MU_CHANGE - Improve NVMe controller init robustness
   UINT8                Sn[21];
   UINT8                Mn[41];
+
+  // MU_CHANGE [BEGIN] - Improve NVMe controller init robustness
+  PciIo = Private->PciIo;
+
+  //
+  // Verify the controller is still accessible
+  //
+  Status = PciIo->Pci.Read (
+                        PciIo,
+                        EfiPciIoWidthUint16,
+                        PCI_VENDOR_ID_OFFSET,
+                        ARRAY_SIZE (VidDid),
+                        VidDid
+                        );
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return EFI_DEVICE_ERROR;
+  }
+
+  if ((VidDid[0] == 0xFFFF) || (VidDid[1] == 0xFFFF)) {
+    return EFI_DEVICE_ERROR;
+  }
 
   //
   // Enable this controller.
   //
-  PciIo  = Private->PciIo;
+  // MU_CHANGE [END] - Improve NVMe controller init robustness
   Status = PciIo->Attributes (
                     PciIo,
                     EfiPciIoAttributeOperationSupported,
@@ -788,7 +811,17 @@ NvmeControllerInit (
   //
   // Currently the driver only supports 4k page size.
   //
-  ASSERT ((Private->Cap.Mpsmin + 12) <= EFI_PAGE_SHIFT);
+
+  // MU_CHANGE [BEGIN] - Improve NVMe controller init robustness
+
+  // Currently, this means Cap.Mpsmin must be zero for an EFI_PAGE_SHIFT size of 12.
+  // ASSERT ((Private->Cap.Mpsmin + 12) <= EFI_PAGE_SHIFT);
+  if ((Private->Cap.Mpsmin + 12) > EFI_PAGE_SHIFT) {
+    DEBUG ((DEBUG_ERROR, "NvmeControllerInit: Mpsmin is larger than expected (0x%02x).\n", Private->Cap.Mpsmin));
+    return EFI_DEVICE_ERROR;
+  }
+
+  // MU_CHANGE [END] - Improve NVMe controller init robustness
 
   Private->Cid[0]        = 0;
   Private->Cid[1]        = 0;
