@@ -262,7 +262,6 @@ class LineEndingCheck(ICiBuildPlugin):
             tc.LogStdError(f"Package folder not found {self._abs_pkg_path}")
             return 0
 
-        # MU_CHANGE begin: Perf Improvements
         ignore_files = set(self._get_git_ignored_paths())
         ignore_dirs = set(self._get_git_submodule_paths())
         ignore_filter = self._get_files_ignored_in_config(package_config, self._abs_pkg_path)
@@ -282,7 +281,6 @@ class LineEndingCheck(ICiBuildPlugin):
             if file in ignore_files:
                 continue
             
-        # MU_CHANGE end: Perf Improvements
             with open(file.resolve(), 'rb') as fb:
                 if not fb.readable() or _is_binary_string(fb.read(1024)):
                     continue
