@@ -30,4 +30,4 @@ An **optional** list of git ignore patterns relative to the package root used to
 ### IgnoreFilesWithNoExtension
 
 An **optional** value that, if True, will insert the gitignore rules necessary to have this check ignore files
-that do not contain a file extension. Neccessary for binary files and/or POSIX like executables.
+that do not contain a file extension. Necessary for binary files and/or POSIX like executables.
