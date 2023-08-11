@@ -5,7 +5,7 @@ default_to_workspace = false
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 RUSTC_BOOTSTRAP = 1
 ARCH = "X64"
-TARGET_TRIPLE = { source = "${ARCH}", mapping = { "X64" = "x86_64-unknown-uefi", "IA32" = "i686-unknown-uefi", "LOCAL" = "${CARGO_MAKE_RUST_TARGET_TRIPLE}" }, condition = { env_not_set = [ "TARGET_TRIPLE" ] } }
+TARGET_TRIPLE = { source = "${ARCH}", mapping = { "X64" = "x86_64-unknown-uefi", "IA32" = "i686-unknown-uefi", "AARCH64" = "aarch64-unknown-uefi", "LOCAL" = "${CARGO_MAKE_RUST_TARGET_TRIPLE}" }, condition = { env_not_set = [ "TARGET_TRIPLE" ] } }
 PACKAGE_TARGET = {value = "-p ${CARGO_MAKE_TASK_ARGS}",condition = { env_true = [ "CARGO_MAKE_TASK_ARGS", ] } }
 
 BUILD_FLAGS = "--profile ${RUSTC_PROFILE} --target ${TARGET_TRIPLE} -Zbuild-std=core,compiler_builtins,alloc -Zbuild-std-features=compiler-builtins-mem -Zunstable-options --timings=html"
@@ -25,7 +25,7 @@ description = """Builds a single rust package.
 
 Customizations:
     -p [development|release]: Builds in debug or release. Default: development
-    -e ARCH=[IA32|X64|LOCAL]: Builds with specifed arch. Default: X64
+    -e ARCH=[IA32|X64|AARCH64|LOCAL]: Builds with specifed arch. Default: X64
 
 Example:
     `cargo make build RustModule`
