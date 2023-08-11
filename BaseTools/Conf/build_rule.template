@@ -280,8 +280,9 @@
         $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
 
     <Command>
-        $(CARGO) $(CARGOMAKE_BUILD) $(MODULE_NAME)
-        $(CP) $(CARGO_BINDIR)(+)*.a $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
+        $(CARGO) make $(CARGOMAKE_FLAGS) -e RUSTFLAGS="-C link-arg=/MAP:$(DEBUG_DIR)(+)$(MODULE_NAME).map $(RUST_FLAGS)" build $(MODULE_NAME)
+        $(CP) $(DEBUG_DIR)(+)$(TARGET_TRIPLE)(+)$(RUST_TARGET)(+)*.a $(DEBUG_DIR)(+)$(MODULE_NAME)rust.lib
+        $(CP) $(DEBUG_DIR)(+)$(TARGET_TRIPLE)(+)$(RUST_TARGET)(+)*.a $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
 
 [Toml-File.RUST_MODULE]
     <InputFile>
@@ -293,11 +294,12 @@
     <Command>
         # Temporary_Rust_Todo - Remove .efi files to better support Rust incremental build for now.
         $(RM) $(OUTPUT_DIR)(+)*.efi
-        $(CARGO) $(CARGOMAKE_BUILD) $(MODULE_NAME)
-        "$(GENFW)" -e $(MODULE_TYPE) -o $(CARGO_BINDIR)(+)$(MODULE_NAME).efi $(CARGO_BINDIR)(+)$(MODULE_NAME).efi $(GENFW_FLAGS)
-        $(CP) $(CARGO_BINDIR)(+)$(MODULE_NAME).map $(OUTPUT_DIR)(+)$(MODULE_NAME).map
-        $(CP) $(CARGO_BINDIR)(+)$(MODULE_NAME).efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
-        $(CP) $(CARGO_BINDIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
+        $(CARGO) make $(CARGOMAKE_FLAGS) -e RUSTFLAGS="-C link-arg=/MAP:$(DEBUG_DIR)(+)$(MODULE_NAME).map $(RUST_FLAGS)" build $(MODULE_NAME)
+        "$(GENFW)" -e $(MODULE_TYPE) -o $(DEBUG_DIR)(+)$(MODULE_NAME).efi $(DEBUG_DIR)(+)$(TARGET_TRIPLE)(+)$(RUST_TARGET)(+)$(MODULE_NAME).efi $(GENFW_FLAGS)
+        $(CP) $(DEBUG_DIR)(+)$(MODULE_NAME).map  $(OUTPUT_DIR)(+)$(MODULE_NAME).map
+        $(CP) $(DEBUG_DIR)(+)$(MODULE_NAME).efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+        $(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
+
 [Static-Library-File.RUST_MODULE]
     <InputFile>
         *.lib
