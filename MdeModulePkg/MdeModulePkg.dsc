@@ -406,6 +406,7 @@
   MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
   MdeModulePkg/Library/DisplayUpdateProgressLibGraphics/DisplayUpdateProgressLibGraphics.inf
   MdeModulePkg/Library/DisplayUpdateProgressLibText/DisplayUpdateProgressLibText.inf
+  MdeModulePkg/Library/BaseRngLibTimerLib/BaseRngLibTimerLib.inf
   MdeModulePkg/Library/AdvLoggerAccessLibNull/AdvLoggerAccessLib.inf              # MU_CHANGE
 
   MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
