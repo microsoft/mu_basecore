@@ -32,6 +32,12 @@ SnpNotifyExitBootServices (
   //
   PxeShutdown (Snp);
   PxeStop (Snp);
+
+  // MU_CHANGE [BEGIN] - Shutdown SnpDxe in BeforeExitBootServices
+  // Since BeforeExitBootServices is run on each call, close event
+  // to prevent reentry.
+  gBS->CloseEvent (Event);
+  // MU_CHANGE [END]
 }
 
 /**
@@ -655,7 +661,7 @@ SimpleNetworkDriverStart (
                     TPL_CALLBACK,
                     SnpNotifyExitBootServices,
                     Snp,
-                    &gEfiEventExitBootServicesGuid,
+                    &gEfiEventBeforeExitBootServicesGuid,   // MU_CHANGE - Shutdown SnpDxe in BeforeExitBootServices
                     &Snp->ExitBootServicesEvent
                     );
     if (EFI_ERROR (Status)) {
