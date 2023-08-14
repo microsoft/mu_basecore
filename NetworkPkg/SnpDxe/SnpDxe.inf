@@ -65,7 +65,7 @@
   NetLib
 
 [Guids]
-  gEfiEventExitBootServicesGuid                 ## SOMETIMES_CONSUMES ## Event
+  gMuEventPreExitBootServicesGuid               ## SOMETIMES_CONSUMES ## Event
   # MU_CHANGE - Signal gSnpNetworkInitializedEventGuid when Snp->Initialized() called.
   gSnpNetworkInitializedEventGuid               ## SOMETIMES_PRODUCES
 
