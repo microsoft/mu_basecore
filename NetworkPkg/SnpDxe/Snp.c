@@ -655,7 +655,7 @@ SimpleNetworkDriverStart (
                     TPL_CALLBACK,
                     SnpNotifyExitBootServices,
                     Snp,
-                    &gMuEventPreExitBootServicesGuid,
+                    &gMuEventPreExitBootServicesGuid,   // MU_CHANGE
                     &Snp->ExitBootServicesEvent
                     );
     if (EFI_ERROR (Status)) {
