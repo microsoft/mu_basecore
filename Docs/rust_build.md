@@ -76,7 +76,7 @@ be produced.
 The following command line options are available:
 
 1. `-p PROFILE [development|release]`. `DEFAULT` = `development (debug)`
-2. `-e ARCH=[IA32|X64|LOCAL]`. `DEFAULT` = `X64`
+2. `-e ARCH=[IA32|X64|AARCH64|LOCAL]`. `DEFAULT` = `X64`
 3. `-e TARGET_TRIPLE=[triple]`.
 
 - `ARCH=LOCAL` is used to build any locally executable tools associated with a Rust library package (e.g., a
