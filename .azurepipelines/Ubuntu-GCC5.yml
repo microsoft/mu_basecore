@@ -10,15 +10,6 @@ trigger:
 - dev/*
 - release/*
 
-schedules:
-- cron: "30 9 * * 0,3"  # Sun/Wed at 2:30AM Pacific
-  displayName: Sun/Wed Build
-  branches:
-    include:
-    - dev/*
-    - release/*
-  always: true          # Always build, even if no changes
-
 pr:
 - dev/*
 - release/*
