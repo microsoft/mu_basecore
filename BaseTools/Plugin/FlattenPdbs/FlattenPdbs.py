@@ -61,5 +61,5 @@ class FlattenPdbs(IUefiBuildPlugin):
             # Hard link it, which is slightly faster, but mainly allows us to tell
             # if the file has changed (st_ino is different)
             pdb_out.unlink(missing_ok=True)
-            pdb_out.hardlink_to(file)
+            file.link_to(pdb_out) # Replace with pdb_out.hardlink_to(file) when support for python 3.9 is dropped
         return 0
