@@ -1993,6 +1993,10 @@
   ## Include/Protocol/MemoryProtectionNonstopMode.h
   # 896306BA-1722-414D-93CF-14244F5E315D
   gMemoryProtectionNonstopModeProtocolGuid = {0x896306BA, 0x1722, 0x414D, {0x93, 0xCF, 0x14, 0x24, 0x4F, 0x5E, 0x31, 0x5D }}
+  
+  ## Include/Protocol/StackCookieCheckFailureHook.h
+  # C1F15632-4E68-4503-986C-618964D11AB5
+  gStackCookieCheckFailureHookProtocolGuid = { 0xC1F15632, 0x4E68, 0x4503, { 0x98, 0x6C, 0x61, 0x89, 0x64, 0xD1, 0x1A, 0xB5 }}
   # MU_CHANGE END
 
 [PcdsFeatureFlag]

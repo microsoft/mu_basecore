@@ -1,0 +1,41 @@
+## @file BaseBinSecurityLibRng.inf
+#
+# MS_CHANGE_?
+#
+##
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = DxeBinSecurityLibRng
+  FILE_GUID                      = 73a37eb5-df40-4674-8b02-70336c718c63
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = BaseBinSecurityLib|UEFI_APPLICATION UEFI_DRIVER UEFI_DRIVER DXE_RUNTIME_DRIVER DXE_DRIVER DXE_CORE
+
+[Sources]
+  DxeBinSecurityLibRng.c
+
+[Sources.X64]
+  X64/report_rangecheckfailure.asm
+  X64/GSHandlerCheck.asm
+  X64/security_check_cookie.asm
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  BaseMemoryLib
+  DebugLib
+  BaseLib
+  RngLib
+  PcdLib
+
+[Protocols]
+  gStackCookieCheckFailureHookProtocolGuid
+
+[FixedPcd]
+  gEfiMdePkgTokenSpaceGuid.PcdStackCookieExceptionVector
