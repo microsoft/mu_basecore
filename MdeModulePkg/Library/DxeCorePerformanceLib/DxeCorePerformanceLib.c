@@ -1191,7 +1191,11 @@ InsertFpdtRecord (
     case PERF_INMODULE_END_ID:
     case PERF_CROSSMODULE_START_ID:
     case PERF_CROSSMODULE_END_ID:
-      GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+      Status = GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "Failed to get Module Info from Handle! Status = %r\n", Status));
+      }
+
       if (String != NULL) {
         StringPtr = String;
       } else {
@@ -1216,7 +1220,11 @@ InsertFpdtRecord (
 
     default:
       if (Attribute != PerfEntry) {
-        GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+        Status = GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+        if (EFI_ERROR (Status)) {
+          DEBUG ((DEBUG_ERROR, "Failed to get Module Info from Handle! Status = %r\n", Status));
+        }
+
         if (String != NULL) {
           StringPtr = String;
         } else {
