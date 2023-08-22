@@ -693,10 +693,13 @@ InsertFpdtRecord (
     case PERF_INMODULE_END_ID:
     case PERF_CROSSMODULE_START_ID:
     case PERF_CROSSMODULE_END_ID:
+      // MU_CHANGE [BEGIN] - CodeQL change
       Status = GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "Failed to get Module Info from Handle! Status = %r\n", Status));
       }
+
+      // MU_CHANGE [END] - CodeQL change
 
       if (String != NULL) {
         StringPtr = String;
@@ -722,10 +725,13 @@ InsertFpdtRecord (
 
     default:
       if (Attribute != PerfEntry) {
+        // MU_CHANGE [BEGIN] - CodeQL change
         Status = GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_ERROR, "Failed to get Module Info from Handle! Status = %r\n", Status));
         }
+
+        // MU_CHANGE [END] - CodeQL change
 
         if (String != NULL) {
           StringPtr = String;
