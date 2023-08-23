@@ -1,6 +1,6 @@
-## @file BaseBinSecurityLibRng.inf
-#
-# MS_CHANGE_?
+## @file DxeBaseBinSecurityLibRng.c
+#  Library for initializing the security cookie using
+#  a random number generator.
 #
 ##
 # Copyright (c) Microsoft Corporation. All rights reserved.

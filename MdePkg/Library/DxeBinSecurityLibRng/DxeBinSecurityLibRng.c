@@ -1,6 +1,6 @@
-/** @file -- BaseBinSecurityLibRng.c
-
-MS_CHANGE_?
+/** @file DxeBaseBinSecurityLibRng.c
+  Library for initializing the security cookie using
+  a random number generator.
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -80,12 +80,11 @@ StackCookieFailure (
 }
 
 /**
-Initialize the security cookie present in this module
+  Initialize the security cookie present in this module
 
-This function uses the function below to initialize the __security_cookie
-value that's inserted by the compiler when the security cookie compiler
-flag is not disabled.
-
+  This function uses the function below to initialize the __security_cookie
+  value that's inserted by the compiler when the security cookie compiler
+  flag is not disabled.
 **/
 VOID
 EFIAPI
@@ -99,16 +98,16 @@ InitializeSecurityCookie (
 }
 
 /**
-Initialize a security cookie
+  Initialize a security cookie
 
-This function initializes the security cookie of which the address is passed.
+  This function initializes the security cookie of which the address is passed.
 
-@param  SecurityCookieAddress     The address of the cookie to be initialized
+  @param[in]  SecurityCookieAddress     The address of the cookie to be initialized
 **/
 VOID
 EFIAPI
 InitializeSecurityCookieAddress (
-  UINT64  *SecurityCookieAddress
+  IN UINT64  *SecurityCookieAddress
   )
 {
   GetRandomNumber64 (SecurityCookieAddress);
