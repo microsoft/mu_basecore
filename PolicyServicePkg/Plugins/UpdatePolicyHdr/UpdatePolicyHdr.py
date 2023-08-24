@@ -85,7 +85,7 @@ class UpdatePolicyHdr(IUefiBuildPlugin):
     def do_pre_build(self, thebuilder):
         need_check = thebuilder.env.GetValue("UPDATE_SETTINGS")
         if need_check is not None and need_check.upper() == "FALSE":
-            logging.warn ("Platform indicated as not checking YAML file changes, will not be updated!")
+            logging.warning("Platform indicated as not checking YAML file changes, will not be updated!")
             return 0
 
         yaml_list = []
@@ -159,7 +159,7 @@ class UpdatePolicyHdr(IUefiBuildPlugin):
 
             conf_file = setting
             if conf_file is None:
-                logging.warn ("YAML file not specified, system might not work as expected!!!")
+                logging.warning("YAML file not specified, system might not work as expected!!!")
                 return 0
             if not os.path.isfile(conf_file):
                 logging.error ("YAML file specified is not found!!!")
