@@ -11,9 +11,9 @@
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
 extern "C" {
-  #include <Uefi.h>
-  #include <Pi/PiPeiCis.h>
-  #include <Ppi/ReadOnlyVariable2.h>
+#include <Uefi.h>
+#include <Pi/PiPeiCis.h>
+#include <Ppi/ReadOnlyVariable2.h>
 }
 
 struct MockReadOnlyVariable2 {
