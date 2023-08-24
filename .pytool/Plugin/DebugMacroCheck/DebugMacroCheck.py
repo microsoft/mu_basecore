@@ -68,7 +68,7 @@ class GitHelpers:
                         list will be returned.
         """
         if not shutil.which("git"):
-            logging.warn(
+            logging.warning(
                 "Git is not found on this system. Git submodule paths will "
                 "not be considered.")
             return []
