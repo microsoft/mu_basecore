@@ -102,7 +102,7 @@ class ImageValidation(IUefiBuildPlugin):
                         efi_path = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
                             efi_path)
                         if efi_path == None:
-                            logging.warn(
+                            logging.warning(
                                 "Unable to parse the path to the pre-compiled efi")
                             continue
                         if os.path.basename(efi_path) in self.ignore_list:
@@ -119,11 +119,11 @@ class ImageValidation(IUefiBuildPlugin):
         for arch in thebuilder.env.GetValue("TARGET_ARCH").split():
             efi_path_list = self._walk_directory_for_extension(
                 ['.efi'], f'{thebuilder.env.GetValue("BUILD_OUTPUT_BASE")}/{arch}')
-            
+
             for efi_path in efi_path_list:
                 if os.path.basename(efi_path) in self.ignore_list:
                     continue
-                
+
                 # Perform Image Verification on any output efi's
                 # Grab profile from makefile
                 if efi_path.__contains__("OUTPUT"):
@@ -131,27 +131,27 @@ class ImageValidation(IUefiBuildPlugin):
                         if tool_chain_tag.__contains__("VS"):
                             profile = self._get_profile_from_makefile(
                                 f'{Path(efi_path).parent.parent}/Makefile')
-                    
+
                         elif tool_chain_tag.__contains__("GCC"):
                             profile = self._get_profile_from_makefile(
                                 f'{Path(efi_path).parent.parent}/GNUmakefile')
-                        
+
                         elif tool_chain_tag.__contains__("CLANG"):
                             profile = self._get_profile_from_makefile(
                                 f'{Path(efi_path).parent.parent}/GNUmakefile')
                         else:
-                            logging.warn("Unexpected TOOL_CHAIN_TAG... Cannot parse makefile. Using DEFAULT profile.")
+                            logging.warning("Unexpected TOOL_CHAIN_TAG... Cannot parse makefile. Using DEFAULT profile.")
                             profile = "DEFAULT"
                     except:
-                        logging.warn(f'Failed to parse makefile at [{Path(efi_path).parent.parent}/GNUmakefile]')
-                        logging.warn(f'Using DEFAULT profile')
+                        logging.warning(f'Failed to parse makefile at [{Path(efi_path).parent.parent}/GNUmakefile]')
+                        logging.warning(f'Using DEFAULT profile')
                         profile = "DEFAULT"
 
                     logging.info(
                         f'Performing Image Verification ... {os.path.basename(efi_path)}')
                     if self._validate_image(efi_path, profile) == Result.FAIL:
                         result = Result.FAIL
-                    count += 1                
+                    count += 1
         # End Built Time Compiled Image Verification
 
         endtime = datetime.now()

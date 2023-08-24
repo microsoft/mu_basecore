@@ -88,7 +88,7 @@ class LineEndingCheck(ICiBuildPlugin):
 
     # Note: This function access git via the command line
     #
-    #   function to check and warn if git config reports that 
+    #   function to check and warn if git config reports that
     #   autocrlf is configured to TRUE
     def _check_autocrlf(self):
         r = Repo(".")
@@ -121,7 +121,7 @@ class LineEndingCheck(ICiBuildPlugin):
             If git is not found, an empty list will be returned.
         """
         if not shutil.which("git"):
-            logging.warn(
+            logging.warning(
                 "Git is not found on this system. Git submodule paths will "
                 "not be considered.")
             return []
@@ -162,7 +162,7 @@ class LineEndingCheck(ICiBuildPlugin):
             If git is not found, an empty list will be returned.
         """
         if not shutil.which("git"):
-            logging.warn(
+            logging.warning(
                 "Git is not found on this system. Git submodule paths will "
                 "not be considered.")
             return []
@@ -271,7 +271,7 @@ class LineEndingCheck(ICiBuildPlugin):
         for file in Path(self._abs_pkg_path).rglob('*'):
             if file.is_dir():
                 continue
-            
+
             if any(file.is_relative_to(ignore_dir) for ignore_dir in ignore_dirs):
                 continue
 
@@ -280,7 +280,7 @@ class LineEndingCheck(ICiBuildPlugin):
 
             if file in ignore_files:
                 continue
-            
+
             with open(file.resolve(), 'rb') as fb:
                 if not fb.readable() or _is_binary_string(fb.read(1024)):
                     continue
