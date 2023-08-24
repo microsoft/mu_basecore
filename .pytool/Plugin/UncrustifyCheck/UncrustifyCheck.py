@@ -579,7 +579,6 @@ class UncrustifyCheck(ICiBuildPlugin):
                 "how to find the detailed formatting errors in Azure "
                 "DevOps CI: "
                 "https://github.com/tianocore/tianocore.github.io/wiki/EDK-II-Code-Formatting#how-to-find-uncrustify-formatting-errors-in-continuous-integration-ci")
-            
 
             if self._output_file_diffs:
                 logging.info("Calculating file diffs. This might take a while...")
