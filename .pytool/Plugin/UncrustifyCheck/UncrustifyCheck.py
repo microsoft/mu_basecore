@@ -12,7 +12,6 @@ import logging
 import os
 import pathlib
 import shutil
-import stat
 import timeit
 from edk2toolext.environment import version_aggregator
 from edk2toolext.environment.plugin_manager import PluginManager
@@ -495,7 +494,6 @@ class UncrustifyCheck(ICiBuildPlugin):
         for path in rel_file_paths_to_format:
             self._abs_file_paths_to_format.extend(
                 [str(path.resolve()) for path in pathlib.Path(self._abs_package_path).rglob(path)])
-
         # Remove files ignore in the plugin configuration file
         plugin_ignored_files = list(filter(self._get_files_ignored_in_config(), self._abs_file_paths_to_format))
 
@@ -639,7 +637,7 @@ class UncrustifyCheck(ICiBuildPlugin):
             """
             Private function to attempt to change permissions on file/folder being deleted.
             """
-            os.chmod(path, stat.S_IWRITE)
+            os.chmod(path, os.stat.S_IWRITE)
             func(path)
 
         for _ in range(3):  # retry up to 3 times
