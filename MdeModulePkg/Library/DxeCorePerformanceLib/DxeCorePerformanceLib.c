@@ -1197,17 +1197,19 @@ InsertFpdtRecord (
         DEBUG ((DEBUG_ERROR, "Failed to get Module Info from Handle! Status = %r\n", Status));
       }
 
-      // MU_CHANGE [END] - CodeQL change
+      StringPtr = NULL;
 
       if (String != NULL) {
         StringPtr = String;
-      } else {
+      } else if (ModuleName != NULL) {
         StringPtr = ModuleName;
       }
 
-      if (AsciiStrLen (StringPtr) == 0) {
+      if ((StringPtr == NULL) || (AsciiStrLen (StringPtr) == 0)) {
         StringPtr = "unknown name";
       }
+
+      // MU_CHANGE [END] - CodeQL change
 
       if (!PcdGetBool (PcdEdkiiFpdtStringRecordEnableOnly)) {
         FpdtRecordPtr.DynamicStringEvent->Header.Type     = FPDT_DYNAMIC_STRING_EVENT_TYPE;
@@ -1229,17 +1231,19 @@ InsertFpdtRecord (
           DEBUG ((DEBUG_ERROR, "Failed to get Module Info from Handle! Status = %r\n", Status));
         }
 
-        // MU_CHANGE [END] - CodeQL change
+        StringPtr = NULL;
 
         if (String != NULL) {
           StringPtr = String;
-        } else {
+        } else if (ModuleName != NULL) {
           StringPtr = ModuleName;
         }
 
-        if (AsciiStrLen (StringPtr) == 0) {
+        if ((StringPtr == NULL) || (AsciiStrLen (StringPtr) == 0)) {
           StringPtr = "unknown name";
         }
+
+        // MU_CHANGE [END] - CodeQL change
 
         if (!PcdGetBool (PcdEdkiiFpdtStringRecordEnableOnly)) {
           FpdtRecordPtr.DynamicStringEvent->Header.Type     = FPDT_DYNAMIC_STRING_EVENT_TYPE;
