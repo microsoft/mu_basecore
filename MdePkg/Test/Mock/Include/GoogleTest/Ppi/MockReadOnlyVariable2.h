@@ -5,8 +5,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef __MOCK_PEI_READ_ONLY_VARIABLE2_PPI_H__
-#define __MOCK_PEI_READ_ONLY_VARIABLE2_PPI_H__
+#ifndef MOCK_PEI_READ_ONLY_VARIABLE2_PPI_H
+#define MOCK_PEI_READ_ONLY_VARIABLE2_PPI_H
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
