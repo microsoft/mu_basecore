@@ -88,11 +88,7 @@ class CodeQlBuildPlugin(IUefiBuildPlugin):
             # Since it's unclear how quotes are handled and may change in the
             # future, this code is going to use the workaround to place the
             # command in an executable file that is instead passed to CodeQL.
-            self.codeql_cmd_path = Path(
-                builder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
-                    self.build_output_dir, "codeql_build_command"
-                )
-            )
+            self.codeql_cmd_path = Path(self.build_output_dir, "codeql_build_command")
 
             build_params = self._get_build_params()
 
