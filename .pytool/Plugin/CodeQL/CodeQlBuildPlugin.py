@@ -37,7 +37,7 @@ class CodeQlBuildPlugin(IUefiBuildPlugin):
 
         if not builder.SkipBuild:
             self.builder = builder
-            self.package = builder.GetContainingPackage(
+            self.package = builder.edk2path.GetContainingPackage(
                 builder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
                     builder.env.GetValue("ACTIVE_PLATFORM")
                 )
