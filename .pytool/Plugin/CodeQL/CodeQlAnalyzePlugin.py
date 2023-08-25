@@ -35,18 +35,18 @@ class CodeQlAnalyzePlugin(IUefiBuildPlugin):
             int: The number of CodeQL errors found. Zero indicates that
             AuditOnly mode is enabled or no failures were found.
         """
-
-        pp = builder.pp.split(os.pathsep)
-        edk2_path = Edk2Path(builder.ws, pp)
-
         self.builder = builder
-        self.package = edk2_path.GetContainingPackage(
-                            builder.mws.join(builder.ws,
-                                             builder.env.GetValue(
-                                                "ACTIVE_PLATFORM")))
+        self.package = builder.edk2path.GetContainingPackage(
+            builder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
+                builder.env.GetValue("ACTIVE_PLATFORM")
+            )
+        )
+
         self.package_path = Path(
-            edk2_path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
-                self.package))
+            builder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
+                self.package
+            )
+        )
         self.target = builder.env.GetValue("TARGET")
 
         self.codeql_db_path = codeql_plugin.get_codeql_db_path(

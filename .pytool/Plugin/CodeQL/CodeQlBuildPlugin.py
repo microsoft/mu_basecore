@@ -36,14 +36,13 @@ class CodeQlBuildPlugin(IUefiBuildPlugin):
         """
 
         if not builder.SkipBuild:
-            pp = builder.pp.split(os.pathsep)
-            edk2_path = Edk2Path(builder.ws, pp)
-
             self.builder = builder
-            self.package = edk2_path.GetContainingPackage(
-                                builder.mws.join(builder.ws,
-                                                builder.env.GetValue(
-                                                    "ACTIVE_PLATFORM")))
+            self.package = builder.GetContainingPackage(
+                builder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
+                    builder.env.GetValue("ACTIVE_PLATFORM")
+                )
+            )
+
             self.target = builder.env.GetValue("TARGET")
 
             self.build_output_dir = builder.env.GetValue("BUILD_OUTPUT_BASE")
@@ -89,9 +88,11 @@ class CodeQlBuildPlugin(IUefiBuildPlugin):
             # Since it's unclear how quotes are handled and may change in the
             # future, this code is going to use the workaround to place the
             # command in an executable file that is instead passed to CodeQL.
-            self.codeql_cmd_path = Path(builder.mws.join(
-                                        builder.ws, self.build_output_dir,
-                                        "codeql_build_command"))
+            self.codeql_cmd_path = Path(
+                builder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
+                    self.build_output_dir, "codeql_build_command"
+                )
+            )
 
             build_params = self._get_build_params()
 

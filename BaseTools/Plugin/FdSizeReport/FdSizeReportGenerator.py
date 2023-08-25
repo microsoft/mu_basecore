@@ -53,7 +53,7 @@ try:
             #1 - Get the output path for report file
             OutF = thebuilder.env.GetValue("FDSIZEREPORT_FILE")
             #2 - Get the FDF path
-            FdfF = thebuilder.mws.join(thebuilder.ws, thebuilder.env.GetValue("FLASH_DEFINITION"))
+            FdfF = thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(thebuilder.env.GetValue("FLASH_DEFINITION"))
             #3 - Get the product name
             Product = thebuilder.env.GetValue("PRODUCT_NAME")
             if Product is None:
