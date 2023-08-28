@@ -91,7 +91,7 @@ class LineEndingCheck(ICiBuildPlugin):
     #   function to check and warn if git config reports that
     #   autocrlf is configured to TRUE
     def _check_autocrlf(self):
-        r = Repo(".")
+        r = Repo(self._abs_workspace_path)
         try:
             result = r.config_reader().get_value("core", "autocrlf")
             if result:
@@ -250,9 +250,8 @@ class LineEndingCheck(ICiBuildPlugin):
           0  : Ran successfully
           -1 : Skipped due to a missing pre-requisite
         """
+        self._abs_workspace_path = edk2_path.WorkspacePath
         self._check_autocrlf()
-        self._abs_workspace_path = \
-            edk2_path.GetAbsolutePathOnThisSystemFromEdk2RelativePath('.')
         self._abs_pkg_path = \
             edk2_path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
                         package_rel_path)
