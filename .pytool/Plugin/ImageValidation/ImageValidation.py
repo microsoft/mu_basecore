@@ -68,9 +68,7 @@ class ImageValidation(IUefiBuildPlugin):
         fdf_parser = FdfParser()
         dsc_parser = DscParser()
 
-        ws = thebuilder.ws
-        pp = thebuilder.pp.split(os.pathsep)
-        edk2 = Edk2Path(ws, pp)
+        edk2 = thebuilder.edk2path
 
         ActiveDsc = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
             thebuilder.env.GetValue("ACTIVE_PLATFORM"))

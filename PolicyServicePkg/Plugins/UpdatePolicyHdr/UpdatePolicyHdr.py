@@ -90,17 +90,15 @@ class UpdatePolicyHdr(IUefiBuildPlugin):
 
         yaml_list = []
         exception_list = []
-        ws = thebuilder.ws
-        pp = thebuilder.pp.split(os.pathsep)
-        edk2 = Edk2Path(ws, pp)
+        edk2 = thebuilder.edk2path
 
         # Form the exception list of formatted absolute paths. And always ignore our own samples.
-        exception_list.append (thebuilder.mws.join (thebuilder.ws, "PolicyServicePkg", "Samples"))
+        exception_list.append (edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath("PolicyServicePkg", "Samples"))
         platform_exception = thebuilder.env.GetValue("POLICY_IGNORE_PATHS")
         if platform_exception is not None:
           plat_list = platform_exception.split(';')
           for each in plat_list:
-            exception_list.append(os.path.normpath (thebuilder.mws.join (thebuilder.ws, each)))
+            exception_list.append(os.path.normpath (edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(each)))
 
         # Look for *_policy_def.yaml files in all package paths.
         for pkg_path in pp:
@@ -151,11 +149,11 @@ class UpdatePolicyHdr(IUefiBuildPlugin):
               os.mkdir (final_dir)
 
             # Set up a playground first
-            op_dir = thebuilder.mws.join(thebuilder.ws, thebuilder.env.GetValue("BUILD_OUTPUT_BASE"), "ConfPolicy")
+            op_dir = thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(thebuilder.env.GetValue("BUILD_OUTPUT_BASE"), "ConfPolicy")
             if not os.path.isdir(op_dir):
                 os.makedirs(op_dir)
 
-            cmd = thebuilder.mws.join(thebuilder.ws, "PolicyServicePkg", "Tools", "GenCfgData.py")
+            cmd = thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath("PolicyServicePkg", "Tools", "GenCfgData.py")
 
             conf_file = setting
             if conf_file is None:
