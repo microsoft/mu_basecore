@@ -106,9 +106,7 @@ try:
             result = self.OverrideResult.OR_ALL_GOOD
             InfFileList = self.get_dsc_inf_list(thebuilder)
 
-            ws = thebuilder.ws
-            pp = thebuilder.pp.split(os.pathsep)
-            self.PathTool = Edk2Path(ws, pp)
+            self.PathTool = thebuilder.edk2path
 
             if (InfFileList == []):
                 return result
@@ -120,7 +118,7 @@ try:
             for file in InfFileList:
                 temp_list = []
                 modulenode = self.ModuleNode(file, self.OverrideResult.OR_ALL_GOOD, 0)
-                fullpath = thebuilder.mws.join(thebuilder.ws, file)
+                fullpath = thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(file)
 
                 m_result = self.override_detect_process(thebuilder, fullpath, temp_list, modulenode, status)
                 # Do not log the module that does not have any override records
@@ -291,7 +289,7 @@ try:
             # Step 2: Process the path to overridden module
             # Normalize the path to support different slashes, then strip the initial '\\' to make sure os.path.join will work correctly
             overriddenpath = os.path.normpath(OverrideEntry[1].strip()).strip('\\')
-            fullpath = os.path.normpath(thebuilder.mws.join(thebuilder.ws, overriddenpath))
+            fullpath = os.path.normpath(thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(overriddenpath))
             # Search overridden module in workspace
             if not os.path.isfile(fullpath) and not os.path.isdir(fullpath):
                 logging.info("Inf Overridden File/Path Not Found in Workspace or Packages_Path: %s" %(overriddenpath))
@@ -354,7 +352,7 @@ try:
             # if we failed, do a diff of the overridden file (as long as exist) and show the output
             if result != self.OverrideResult.OR_ALL_GOOD and result != self.OverrideResult.OR_TARGET_INF_NOT_FOUND:
                 overriddenpath = os.path.normpath(OverrideEntry[1].strip()).strip('\\')
-                fullpath = os.path.normpath(thebuilder.mws.join(thebuilder.ws, overriddenpath))
+                fullpath = os.path.normpath(thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(overriddenpath))
                 if os.path.exists(fullpath):
                     patch = ModuleGitPatch(fullpath, GitHash)
                     # TODO: figure out how to get the log file
@@ -429,7 +427,7 @@ try:
         # stack: the stack of paths collected during a dfs for loop detection, should be absolute path and lower case all the time
         # log: log file object, must be readily open for file write when called
         def node_dfs(self, thebuilder, node, stack, log):
-            fullpath = os.path.normpath(thebuilder.mws.join(thebuilder.ws, node.path)).lower()
+            fullpath = os.path.normpath(thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(node.path)).lower()
             if (node.path in stack):
                 return
             stack.append(fullpath)
@@ -458,19 +456,19 @@ try:
             logging.debug("Parse Active Platform DSC file")
             input_vars = thebuilder.env.GetAllBuildKeyValues()
             input_vars["TARGET"] = thebuilder.env.GetValue("TARGET")
-            dscp = DscParser().SetEdk2Path(Edk2Path(thebuilder.ws, thebuilder.pp.split(os.pathsep))).SetInputVars(input_vars)
+            dscp = DscParser().SetEdk2Path(thebuilder.edk2path).SetInputVars(input_vars)
             plat_dsc = thebuilder.env.GetValue("ACTIVE_PLATFORM")
             if (plat_dsc is None):
                 return InfFileList
 
             # Parse the DSC
-            pa = thebuilder.mws.join(thebuilder.ws, plat_dsc)
+            pa = thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(plat_dsc)
             dscp.ParseFile(pa)
             # Add the DSC itself (including all the includes)
             InfFileList.extend(dscp.GetAllDscPaths())
             # Add the FDF
             if "FLASH_DEFINITION" in dscp.LocalVars:
-                fd = thebuilder.mws.join(thebuilder.ws, dscp.LocalVars["FLASH_DEFINITION"])
+                fd = thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(dscp.LocalVars["FLASH_DEFINITION"])
                 InfFileList.append(fd)
             # Here we collect all the reference libraries, IA-32 modules, x64 modules and other modules
             if (dscp.Parsed) :
