@@ -41,7 +41,6 @@
   TimerLib
   PeCoffGetEntryPointLib
   DxeMemoryProtectionHobLib ## MU_CHANGE
-  DeviceStateLib            ## MU_CHANGE
 
 [Sources]
   CpuDxe.c
@@ -86,6 +85,7 @@
   gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList              ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize                    ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdTdxSharedBitMask                    ## CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdUnitTestModeActive                        ## CONSUMES   MU_CHANGE
 
 [Depex]
   TRUE

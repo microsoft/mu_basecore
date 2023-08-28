@@ -19,8 +19,6 @@ states or to define any of the unused bits:
 * BIT 3:  DEVICE_STATE_SOURCE_DEBUG_ENABLED - Source debug mode is enabled
   allowing a user to connect and control the device
 * BIT 4:  DEVICE_STATE_UNDEFINED - Set by the platform
-* BIT 5:  DEVICE_STATE_UNIT_TEST_MODE - Device has a unit test build. Some
-  features are disabled to allow for unit tests in UEFI Shell
 * BIT 24: DEVICE_STATE_PLATFORM_MODE_0
 * BIT 25: DEVICE_STATE_PLATFORM_MODE_1
 * BIT 26: DEVICE_STATE_PLATFORM_MODE_2

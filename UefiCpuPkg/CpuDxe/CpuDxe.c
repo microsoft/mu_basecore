@@ -9,7 +9,7 @@
 #include "CpuDxe.h"
 #include "CpuMp.h"
 #include "CpuPageTable.h"
-#include <Library/DeviceStateLib.h> // MU_CHANGE
+#include <Library/PcdLib.h>         // MU_CHANGE
 #define CPU_INTERRUPT_NUM  256
 
 //
@@ -1285,7 +1285,7 @@ InitializeCpu (
 
   InitializeMpSupport ();
   // MU_CHANGE START
-  if ((GetDeviceState () & DEVICE_STATE_UNIT_TEST_MODE) != 0) {
+  if (FixedPcdGetBool (PcdUnitTestModeActive)) {
     InstallMemoryProtectionNonstopModeProtocol ();
   }
 

@@ -2264,6 +2264,9 @@
   ## MU_CHANGE START: Add Stack Cookie Exception Vector
   ## This PCD specifies the interrupt vector for stack cookie check failures
   gEfiMdePkgTokenSpaceGuid.PcdStackCookieExceptionVector|0x42|UINT8|0x30001019
+
+  ## This PCD indicates if the platform is in unit test mode
+  gEfiMdePkgTokenSpaceGuid.PcdUnitTestModeActive|FALSE|BOOLEAN|0x3000101a
   ## MU_CHANGE END
 
 [PcdsFixedAtBuild,PcdsPatchableInModule]
