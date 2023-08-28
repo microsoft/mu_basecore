@@ -3,31 +3,29 @@
 #
 # Copyright (C) Microsoft Corporation. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
-#
-# MU_CHANGE: new file
 ##
 
 
 [Defines]
-INF_VERSION = 0x00010017
-BASE_NAME = DeviceStateLib
-FILE_GUID = 49F18455-FE0D-4DFC-B88B-BEC283BB46DD
-VERSION_STRING = 1.0
-MODULE_TYPE = BASE
-LIBRARY_CLASS = DeviceStateLib
+  INF_VERSION                     = 0x00010017
+  BASE_NAME                       = DeviceStateLib
+  FILE_GUID                       = 49F18455-FE0D-4DFC-B88B-BEC283BB46DD
+  VERSION_STRING                  = 1.0
+  MODULE_TYPE                     = BASE
+  LIBRARY_CLASS                   = DeviceStateLib
 
 [LibraryClasses]
-DebugLib
-MemoryAllocationLib
-BaseMemoryLib
-PcdLib
+  DebugLib
+  MemoryAllocationLib
+  BaseMemoryLib
+  PcdLib
 
 [Packages]
-MdePkg/MdePkg.dec
-MdeModulePkg/MdeModulePkg.dec
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
 
 [Sources]
-DeviceStateLib.c
+  DeviceStateLib.c
 
 [Pcd]
-gEfiMdeModulePkgTokenSpaceGuid.PcdDeviceStateBitmask
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDeviceStateBitmask
