@@ -28,6 +28,7 @@
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
   UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+  SecurityPkg/SecurityPkg.dec
 
 [LibraryClasses]
   UefiApplicationEntryPoint
@@ -40,6 +41,7 @@
   UefiRuntimeServicesTableLib
   MemoryAllocationLib
   VariablePolicyHelperLib
+  PlatformSecureLib
 
 [Guids]
   gEfiCertPkcs7Guid

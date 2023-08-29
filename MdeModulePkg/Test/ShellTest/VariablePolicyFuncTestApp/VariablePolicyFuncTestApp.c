@@ -17,6 +17,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/PlatformSecureLib.h>
 
 #include "VariablePolicyFuncTestInternal.h"
 
@@ -2278,6 +2279,15 @@ TestAuthVarPart1 (
   UINTN       DataSize;
   UINT8       *DeleteData;
 
+  if (UserPhysicalPresent ()) {
+    UT_LOG_INFO (
+      "User is present. Testing the deletion of time-based authenticated variables \
+is not possible because deletion is allowed when the user is physically present. \
+See PlatformSecureLib for more info.\n"
+      );
+    return UNIT_TEST_SKIPPED;
+  }
+
   // First, we need to create our dummy Authenticated Variable.
   Status = gRT->SetVariable (
                   TEST_AUTH_VAR_NAME,
@@ -2335,6 +2345,15 @@ TestAuthVarPart2 (
   UINT32      Data;
   UINTN       DataSize;
   UINT8       *DeleteData;
+
+  if (UserPhysicalPresent ()) {
+    UT_LOG_INFO (
+      "User is present. Testing the deletion of time-based authenticated variables \
+is not possible because deletion is allowed when the user is physically present. \
+See PlatformSecureLib for more info.\n"
+      );
+    return UNIT_TEST_SKIPPED;
+  }
 
   // Prove that it exists.
   DataSize = sizeof (Data);
