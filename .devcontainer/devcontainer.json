@@ -1,6 +1,6 @@
 {
   "image": "ghcr.io/microsoft/mu_devops/ubuntu-22-dev:latest",
-  "postCreateCommand": "git config --global --add safe.directory '*' && pip install --upgrade -r pip-requirements.txt",
+  "postCreateCommand": "git config --global --add safe.directory '*' && git config --global --add core.autocrlf false && pip install --upgrade -r pip-requirements.txt",
   "customizations": {
     "vscode": {
       "extensions": [
