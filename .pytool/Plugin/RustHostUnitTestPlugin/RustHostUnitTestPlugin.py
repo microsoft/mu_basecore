@@ -85,18 +85,19 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
 
         # Move coverage.xml to Build Directory
         xml = Path(rust_ws.path) / "target" / "cobertura.xml"
-        out = Path(rust_ws.path) / "Build"
+        if xml.exists():
+            out = Path(rust_ws.path) / "Build"
 
-        if (out / "coverage.xml").exists():
-            (out / "coverage.xml").unlink()
-        xml = xml.rename(out / "coverage.xml")
+            if (out / "coverage.xml").exists():
+                (out / "coverage.xml").unlink()
+            xml = xml.rename(out / "coverage.xml")
 
-        with open(xml, 'r') as f:
-            contents = f.read()
-            contents = re.sub(r'<source>(.*?)</source>', r'<source>.</source>', contents)
+            with open(xml, 'r') as f:
+                contents = f.read()
+                contents = re.sub(r'<source>(.*?)</source>', r'<source>.</source>', contents)
 
-        with open (xml, "w") as f:
-            f.write(contents)
+            with open (xml, "w") as f:
+                f.write(contents)
 
         # Return
         if failed > 0:
