@@ -105,7 +105,7 @@ jobs:
         git config --system core.longpaths true
 
     - name: Install/Upgrade pip Modules
-      run: pip install -r pip-requirements.txt --upgrade
+      run: pip install -r pip-requirements.txt --upgrade requests
 
     - name: Determine CI Settings File Supported Operations
       id: get_ci_file_operations
@@ -148,6 +148,78 @@ jobs:
         with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
             print(f'ci_setup_supported={str(ci_setup_supported).lower()}', file=fh)
             print(f'setup_supported={str(setup_supported).lower()}', file=fh)
+
+    - name: Get Cargo Tool Details
+      id: get_cargo_tool_details
+      shell: python
+      run: |
+        import os
+        import requests
+
+        GITHUB_REPO = "sagiegurari/cargo-make"
+        API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+
+        # Default value in case getting latest fails, cache will fall
+        # back on this version.
+        latest_cargo_make_version = "0.36.13"
+        response = requests.get(API_URL)
+
+        if response.status_code == 200:
+          latest_cargo_make_version = response.json()["tag_name"]
+        else:
+          print("::error title=GitHub Release Error!::Failed to get latest cargo-make version!")
+
+        cache_key = f'cargo-make-{latest_cargo_make_version}'
+
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+          print(f'cargo_bin_path={os.path.join(os.environ["USERPROFILE"], ".cargo", "bin")}', file=fh)
+          print(f'cargo_make_cache_key={cache_key}', file=fh)
+          print(f'cargo_make_version={latest_cargo_make_version}', file=fh)
+
+    - name: Attempt to Load cargo-make From Cache
+      id: cargo_make_cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.get_cargo_tool_details.outputs.cargo_bin_path }}
+        key: ${{ steps.get_cargo_tool_details.outputs.cargo_make_cache_key }}
+
+    - name: Download cargo-make
+      if: steps.cargo_make_cache.outputs.cache-hit != 'true'
+      uses: robinraju/release-downloader@v1.8
+      with:
+        repository: 'sagiegurari/cargo-make'
+        tag: '${{ steps.get_cargo_tool_details.outputs.cargo_make_version }}'
+        fileName: 'cargo-make-v${{ steps.get_cargo_tool_details.outputs.cargo_make_version }}-x86_64-pc-windows-msvc.zip'
+        out-file-path: 'cargo-make-download'
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract cargo-make
+      if: steps.cargo_make_cache.outputs.cache-hit != 'true'
+      env:
+        CARGO_MAKE_VERSION: ${{ steps.get_cargo_tool_details.outputs.cargo_make_version }}
+        DEST_DIR: ${{steps.get_cargo_tool_details.outputs.cargo_bin_path }}
+      shell: python
+      run: |
+        import os
+        import shutil
+        import zipfile
+        from pathlib import Path
+
+        DOWNLOAD_DIR = Path(os.environ["GITHUB_WORKSPACE"], "cargo-make-download")
+        ZIP_FILE_NAME = f"cargo-make-v{os.environ['CARGO_MAKE_VERSION']}-x86_64-pc-windows-msvc.zip"
+        ZIP_FILE_PATH = Path(DOWNLOAD_DIR, ZIP_FILE_NAME)
+        EXTRACT_DIR = Path(DOWNLOAD_DIR, "cargo-make-contents")
+
+        with zipfile.ZipFile(ZIP_FILE_PATH, 'r') as zip_ref:
+            zip_ref.extractall(EXTRACT_DIR)
+
+        for extracted_file in EXTRACT_DIR.iterdir():
+            if extracted_file.name == "cargo-make.exe":
+                shutil.copy2(extracted_file, os.environ["DEST_DIR"])
+                break
+
+    - name: Rust Prep
+      run: rustup component add rust-src
 
     - name: Setup
       if: steps.get_ci_file_operations.outputs.setup_supported == 'true'
