@@ -21,7 +21,7 @@ struct MockReadOnlyVariable2 {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
-    pei_GetVariable,
+    GetVariable,
     (IN CONST  EFI_PEI_READ_ONLY_VARIABLE2_PPI  *This,
      IN CONST  CHAR16                           *VariableName,
      IN CONST  EFI_GUID                         *VariableGuid,
@@ -32,7 +32,7 @@ struct MockReadOnlyVariable2 {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
-    pei_NextVariableName,
+    NextVariableName,
     (IN CONST  EFI_PEI_READ_ONLY_VARIABLE2_PPI *This,
      IN OUT    UINTN                           *VariableNameSize,
      IN OUT    CHAR16                          *VariableName,
