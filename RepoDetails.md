@@ -21,10 +21,9 @@ more of the following
   logic, or memory management logic
   - This can also include central technologies like variable services
 
-The repo also includes some changes for building Rust code. See the following documents for more information:
-
-- [Build Support](./Docs/rust_build.md)
-- [Rust Documentation Conventions](./Docs/rust_documentation_conventions.md)
+This repo, and Project Mu as a whole, also include support for Rust code. See the Rust section in the
+[Project Mu features list](https://microsoft.github.io/mu/WhatAndWhy/features/#feature-list) for more information about
+how to use it and why Project Mu is adopting Rust.
 
 ## More Info
 
