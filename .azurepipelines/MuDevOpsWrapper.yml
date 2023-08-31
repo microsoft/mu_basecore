@@ -71,6 +71,11 @@ parameters:
   displayName: Whether Rust code is being built
   type: boolean
   default: false
+- name: extra_cargo_steps
+  displayName: Extra Steps to Run Before Standard Cargo Steps
+  type: stepList
+  default:
+    - script: echo No extra cargo steps provided
 
 jobs:
 - template: Jobs/PrGate.yml@mu_devops
@@ -106,6 +111,7 @@ jobs:
     - checkout: self
       fetchDepth: 1
       clean: true
+    - ${{ parameters.extra_cargo_steps }}
     - template: Steps/RustCargoSteps.yml@mu_devops
 
 - ${{ parameters.extra_jobs }}
