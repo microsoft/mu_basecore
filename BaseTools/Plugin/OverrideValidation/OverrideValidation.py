@@ -289,9 +289,9 @@ try:
             # Step 2: Process the path to overridden module
             # Normalize the path to support different slashes, then strip the initial '\\' to make sure os.path.join will work correctly
             overriddenpath = os.path.normpath(OverrideEntry[1].strip()).strip('\\')
-            fullpath = os.path.normpath(thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(overriddenpath))
+            fullpath = thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(overriddenpath, log_errors=False)
             # Search overridden module in workspace
-            if not os.path.isfile(fullpath) and not os.path.isdir(fullpath):
+            if fullpath is None:
                 logging.info("Inf Overridden File/Path Not Found in Workspace or Packages_Path: %s" %(overriddenpath))
                 result = self.OverrideResult.OR_TARGET_INF_NOT_FOUND
                 m_node.path = overriddenpath
@@ -352,8 +352,8 @@ try:
             # if we failed, do a diff of the overridden file (as long as exist) and show the output
             if result != self.OverrideResult.OR_ALL_GOOD and result != self.OverrideResult.OR_TARGET_INF_NOT_FOUND:
                 overriddenpath = os.path.normpath(OverrideEntry[1].strip()).strip('\\')
-                fullpath = os.path.normpath(thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(overriddenpath))
-                if os.path.exists(fullpath):
+                fullpath = thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(overriddenpath, log_errors=False)
+                if fullpath is not None:
                     patch = ModuleGitPatch(fullpath, GitHash)
                     # TODO: figure out how to get the log file
                 pnt_str = f"Override diff since last update at commit {GitHash}"
