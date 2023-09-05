@@ -15,6 +15,7 @@
 
 {
   "Filters": [
+    "-**/CryptoPkg/Library/**:cpp/missing-header-guard",
     "-**/CryptoPkg/Library/BaseCryptLib/**/*.c:SM02690",
     "-**/CryptoPkg/Library/BaseCryptLib/Pk/CryptDh.c:SM02311",
     "-**/CryptoPkg/Library/BaseCryptLib/Pk/CryptRsaBasic.c:SM02311",
@@ -22,6 +23,7 @@
     "-**/CryptoPkg/Library/OpensslLib/**/*.c:*",
     "-**/MdeModulePkg/Bus/Pci/PciBusDxe/PciResourceSupport.c:SM02311",
     "-**/MdeModulePkg/Core/Pei/Ppi/Ppi.c:cpp/overflow-buffer",
+    "-**/MdeModulePkg/Core/PiSmmCore/MemoryAttributesTable.c:cpp/unused-static-function",
     "-**/MdeModulePkg/Library/UefiBootManagerLib/BmConsole.c:SM02311",
     "-**/MdeModulePkg/Library/UefiBootManagerLib/BmMisc.c:SM02311",
     "-**/MdeModulePkg/Universal/Acpi/S3SaveStateDxe/AcpiS3ContextSave.c:SM02311",
@@ -39,8 +41,11 @@
     "-**/NetworkPkg/Ip6Dxe/Ip6Output.c:SM02313",
     # Todo: Exclude for now, needs more review and testing
     "-**/NetworkPkg/Ip6Dxe/Ip6Output.c:cpp/likely-bugs/memory-management/v2/conditionally-uninitialized-variable",
+    "-**/NetworkPkg/IScsiDxe/IScsiDhcp.c:cpp/offset-use-before-range-check",
+    "-**/NetworkPkg/IScsiDxe/IScsiDhcp6.c:cpp/offset-use-before-range-check",
     "-**/ShellPkg/Application/Shell/ShellManParser.c:cpp/redundant-null-check-param",
     "-**/ShellPkg/Application/Shell/ShellProtocol.c:SM02311",
+    "-**/ShellPkg/Library/**:cpp/redundant-null-check-simple",
     "-**/ShellPkg/Library/UefiShellAcpiViewCommandLib/Parsers/Aest/AestParser.c:cpp/overflow-buffer",
     "-**/ShellPkg/Library/UefiShellAcpiViewCommandLib/Parsers/Iort/IortParser.c:cpp/overflow-buffer",
     "-**/ShellPkg/Library/UefiShellDebug1CommandsLib/DmpStore.c:SM02311",
