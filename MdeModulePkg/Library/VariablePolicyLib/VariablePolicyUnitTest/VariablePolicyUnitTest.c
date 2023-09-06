@@ -27,7 +27,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/VariablePolicyLib.h>
 
 #ifndef INTERNAL_UNIT_TEST
-  #error Make sure to build thie with INTERNAL_UNIT_TEST enabled! Otherwise, some important tests may be skipped!
+  #error Make sure to build this with INTERNAL_UNIT_TEST enabled! Otherwise, some important tests may be skipped!
 #endif
 
 #define UNIT_TEST_NAME     "UEFI Variable Policy UnitTest"
@@ -489,6 +489,37 @@ WildcardPoliciesShouldMatchDigitsAdvanced (
   UT_ASSERT_TRUE (EvaluatePolicyMatch (&MatchCheckPolicy.Header, CheckValidString, &mTestGuid1, &MatchPriority));
   UT_ASSERT_TRUE (EvaluatePolicyMatch (&MatchCheckPolicy.Header, CheckValidHexString, &mTestGuid1, &MatchPriority));
   UT_ASSERT_EQUAL (MatchPriority, MAX_UINT8);
+
+  return UNIT_TEST_PASSED;
+}
+
+/**
+  Test case to check that excessive wildcard characters are rejected.
+
+  @param        Context
+  **/
+UNIT_TEST_STATUS
+EFIAPI
+ExcessiveWilcardCharactersShouldBeRejected (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  SIMPLE_VARIABLE_POLICY_ENTRY  TestPolicy = {
+    {
+      VARIABLE_POLICY_ENTRY_REVISION,
+      sizeof (VARIABLE_POLICY_ENTRY) + sizeof (TEST_300_HASHES_STRING),
+      sizeof (VARIABLE_POLICY_ENTRY),
+      TEST_GUID_1,
+      TEST_POLICY_MIN_SIZE_NULL,
+      TEST_POLICY_MAX_SIZE_NULL,
+      TEST_POLICY_ATTRIBUTES_NULL,
+      TEST_POLICY_ATTRIBUTES_NULL,
+      VARIABLE_POLICY_TYPE_NO_LOCK
+    },
+    TEST_300_HASHES_STRING
+  };
+
+  UT_ASSERT_TRUE (EFI_ERROR (RegisterVariablePolicy (&TestPolicy.Header)));
 
   return UNIT_TEST_PASSED;
 }
@@ -3978,6 +4009,15 @@ UnitTestMain (
     "Digit wildcards should check edge cases",
     "VarPolicy.Internal.WildDigitsAdvanced",
     WildcardPoliciesShouldMatchDigitsAdvanced,
+    LibInitMocked,
+    LibCleanup,
+    NULL
+    );
+  AddTestCase (
+    InternalTests,
+    "Excessive wildcard characters in var name should be rejected",
+    "VarPolicy.Internal.ExcessiveWildcardChars",
+    ExcessiveWilcardCharactersShouldBeRejected,
     LibInitMocked,
     LibCleanup,
     NULL
