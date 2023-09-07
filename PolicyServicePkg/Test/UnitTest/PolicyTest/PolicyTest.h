@@ -6,6 +6,9 @@
 
 **/
 
+#ifndef POLICY_TEST_H_
+#define POLICY_TEST_H_
+
 extern POLICY_INTERFACE  *mPolicyInterface;
 
 //
@@ -40,3 +43,5 @@ EFI_STATUS
 PolicyLibCommonCreateTests (
   UNIT_TEST_FRAMEWORK_HANDLE  Framework
   );
+
+#endif
