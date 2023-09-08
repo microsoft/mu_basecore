@@ -10,6 +10,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Uefi.h>
 #include <Library/UefiLib.h>
 #include <Library/DebugLib.h>
+#include <Library/DeviceStateLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 
 #include <Protocol/VariablePolicy.h>
@@ -60,6 +61,11 @@ LockPolicyInterfaceAtReadyToBoot (
   )
 {
   EFI_STATUS  Status;
+
+  if ((GetDeviceState() & DEVICE_STATE_UNIT_TEST_MODE) != 0) {
+    DEBUG ((DEBUG_INFO, "[%a] Unit test mode is enabled. Skipping lock.\n", __FUNCTION__));
+    return;
+  }
 
   if (mCallbackInterface != NULL) {
     DEBUG ((DEBUG_INFO, "[%a] Invoking pre-lock callback.\n", __FUNCTION__));
