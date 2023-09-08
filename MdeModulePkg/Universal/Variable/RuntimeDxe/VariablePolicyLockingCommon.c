@@ -62,7 +62,7 @@ LockPolicyInterfaceAtReadyToBoot (
 {
   EFI_STATUS  Status;
 
-  if ((GetDeviceState() & DEVICE_STATE_UNIT_TEST_MODE) != 0) {
+  if ((GetDeviceState () & DEVICE_STATE_UNIT_TEST_MODE) != 0) {
     DEBUG ((DEBUG_INFO, "[%a] Unit test mode is enabled. Skipping lock.\n", __FUNCTION__));
     return;
   }
