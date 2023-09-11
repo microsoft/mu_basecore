@@ -1258,11 +1258,20 @@ DebugExceptionHandler (
   IN EFI_SYSTEM_CONTEXT  SystemContext
   )
 {
-  UINTN    CpuIndex;
-  UINTN    PFEntry;
-  BOOLEAN  IsWpEnabled;
+  UINTN       CpuIndex;
+  UINTN       PFEntry;
+  BOOLEAN     IsWpEnabled;
+  EFI_STATUS  Status;  // MU_CHANGE - CodeQL change
 
-  MpInitLibWhoAmI (&CpuIndex);
+  // MU_CHANGE [START] - CodeQL change
+  Status = MpInitLibWhoAmI (&CpuIndex);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Failed to get processor number.  Failed to get MpInit Processor info.\n"));
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   //
   // Clear last PF entries
@@ -1337,7 +1346,15 @@ PageFaultExceptionHandler (
   }
 
   if (NonStopMode) {
-    MpInitLibWhoAmI (&CpuIndex);
+    // MU_CHANGE [START] - CodeQL change
+    Status = MpInitLibWhoAmI (&CpuIndex);
+
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "Failed to get processor number.  Failed to get MpInit Processor info.\n"));
+      return;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     GetCurrentPagingContext (&PagingContext);
     //
     // Memory operation cross page boundary, like "rep mov" instruction, will
