@@ -551,7 +551,14 @@ SetupStackGuardPage (
   Status = MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
   ASSERT_EFI_ERROR (Status);
   if (!EFI_ERROR (Status)) {
-    MpInitLibWhoAmI (&Bsp);
+    Status = MpInitLibWhoAmI (&Bsp);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "Failed to get processor number.  Aborting Stack Guard Page setup.\n"));
+      return;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     for (Index = 0; Index < NumberOfProcessors; ++Index) {
       StackBase = 0;
 

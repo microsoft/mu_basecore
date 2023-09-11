@@ -504,8 +504,18 @@ InitializeExceptionStackSwitchHandlers (
 {
   EXCEPTION_STACK_SWITCH_CONTEXT  *SwitchStackData;
   UINTN                           Index;
+  EFI_STATUS                      Status;
 
-  MpInitLibWhoAmI (&Index);
+  Status = MpInitLibWhoAmI (&Index);
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Failed to get processor number.  Aborting Exception Stack Switch handler setup.\n"));
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   SwitchStackData = (EXCEPTION_STACK_SWITCH_CONTEXT *)Buffer;
   //
   // This function may be called twice for each Cpu. Only run InitializeSeparateExceptionStacks
