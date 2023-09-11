@@ -300,6 +300,14 @@ ResetSystem2 (
     RecursionDepthPointer = (UINT8 *)GET_GUID_HOB_DATA (Hob);
   }
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (RecursionDepthPointer == NULL) {
+    DEBUG ((DEBUG_ERROR, "Failed to build the RecursionDepthPointer Hob.\n"));
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   //
   // Only do REPORT_STATUS_CODE() on first call to ResetSystem()
   //

@@ -160,7 +160,8 @@ PcdSetNvStoreDefaultIdCallBack (
 
   DefaultId = *(UINT16 *)TokenData;
   SkuId     = GetPcdDatabase ()->SystemSkuId;
-  IsFound   = FALSE;
+
+  IsFound = FALSE;
 
   if (PeiPcdGetSizeEx (&gEfiMdeModulePkgTokenSpaceGuid, PcdToken (PcdNvStoreDefaultValueBuffer)) > sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER)) {
     DataBuffer = (UINT8 *)PeiPcdGetPtrEx (&gEfiMdeModulePkgTokenSpaceGuid, PcdToken (PcdNvStoreDefaultValueBuffer));
@@ -172,7 +173,14 @@ PcdSetNvStoreDefaultIdCallBack (
       //
       NvStoreBuffer   = (VARIABLE_STORE_HEADER *)((UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize);
       VarStoreHobData = (UINT8 *)BuildGuidHob (&NvStoreBuffer->Signature, NvStoreBuffer->Size);
-      ASSERT (VarStoreHobData != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (VarStoreHobData == NULL) {
+        ASSERT (VarStoreHobData != NULL);
+        return;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
+
       CopyMem (VarStoreHobData, NvStoreBuffer, NvStoreBuffer->Size);
       //
       // Find the matched SkuId and DefaultId in the first section
@@ -316,6 +324,14 @@ EndOfPeiSignalPpiNotifyCallback (
   if (PcdDb != NULL) {
     Length   = PeiPcdDb->LengthForAllSkus;
     Database = BuildGuidHob (&gPcdDataBaseHobGuid, Length);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Database == NULL) {
+      DEBUG ((DEBUG_ERROR, "Failed build PCD guid hob.\n"));
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+
     CopyMem (Database, PcdDb, Length);
   }
 

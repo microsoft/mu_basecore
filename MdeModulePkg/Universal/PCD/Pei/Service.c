@@ -442,6 +442,14 @@ BuildPcdDatabase (
 
   Database = BuildGuidHob (&gPcdDataBaseHobGuid, PeiPcdDbBinary->Length + PeiPcdDbBinary->UninitDataBaseSize);
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Database == NULL) {
+    DEBUG ((DEBUG_ERROR, "Failed build PCD Database guid hob.\n"));
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   ZeroMem (Database, PeiPcdDbBinary->Length  + PeiPcdDbBinary->UninitDataBaseSize);
 
   //
@@ -452,6 +460,14 @@ BuildPcdDatabase (
   SizeOfCallbackFnTable = Database->LocalTokenCount * sizeof (PCD_PPI_CALLBACK) * PcdGet32 (PcdMaxPeiPcdCallBackNumberPerPcdEntry);
 
   CallbackFnTable = BuildGuidHob (&gEfiCallerIdGuid, SizeOfCallbackFnTable);
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (CallbackFnTable == NULL) {
+    DEBUG ((DEBUG_ERROR, "Failed build CallbackFnTable guid hob.\n"));
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   ZeroMem (CallbackFnTable, SizeOfCallbackFnTable);
 

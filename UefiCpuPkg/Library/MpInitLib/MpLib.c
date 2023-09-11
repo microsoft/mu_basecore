@@ -1565,6 +1565,14 @@ ResetProcessorToIdleState (
 
   CpuMpData = GetCpuMpData ();
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "Failed to get CpuMpData.\n"));
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   CpuMpData->InitFlag = ApInitReconfig;
   WakeUpAP (CpuMpData, FALSE, ProcessorNumber, NULL, NULL, TRUE);
   while (CpuMpData->FinishedCount < 1) {
@@ -1597,6 +1605,14 @@ GetNextWaitingProcessorNumber (
 
   CpuMpData = GetCpuMpData ();
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "Failed to get CpuMpData.\n"));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   for (ProcessorNumber = 0; ProcessorNumber < CpuMpData->CpuCount; ProcessorNumber++) {
     if (CpuMpData->CpuData[ProcessorNumber].Waiting) {
       *NextProcessorNumber = ProcessorNumber;
@@ -1627,7 +1643,16 @@ CheckThisAP (
   CPU_AP_DATA  *CpuData;
 
   CpuMpData = GetCpuMpData ();
-  CpuData   = &CpuMpData->CpuData[ProcessorNumber];
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "Failed to get CpuMpData.\n"));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
+  CpuData = &CpuMpData->CpuData[ProcessorNumber];
 
   //
   //  Check the CPU state of AP. If it is CpuStateIdle, then the AP has finished its task.
@@ -2127,7 +2152,16 @@ MpInitLibGetProcessorInfo (
   CPU_INFO_IN_HOB  *CpuInfoInHob;
   UINTN            OriginalProcessorNumber;
 
-  CpuMpData    = GetCpuMpData ();
+  CpuMpData = GetCpuMpData ();
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "Failed to get CpuMpData.\n"));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   CpuInfoInHob = (CPU_INFO_IN_HOB *)(UINTN)CpuMpData->CpuInfoInHob;
 
   //
@@ -2241,6 +2275,14 @@ SwitchBSPWorker (
   DisableLvtInterrupts ();
 
   CpuMpData = GetCpuMpData ();
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "Failed to get CpuMpData.\n"));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   //
   // Check whether caller processor is BSP
@@ -2428,6 +2470,14 @@ MpInitLibWhoAmI (
 
   CpuMpData = GetCpuMpData ();
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "Failed to get CpuMpData.\n"));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   return GetProcessorNumber (CpuMpData, ProcessorNumber);
 }
 
@@ -2554,6 +2604,14 @@ StartupAllCPUsWorker (
   if (FailedCpuList != NULL) {
     *FailedCpuList = NULL;
   }
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "Failed to get CpuMpData.\n"));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   if ((CpuMpData->CpuCount == 1) && ExcludeBsp) {
     return EFI_NOT_STARTED;
