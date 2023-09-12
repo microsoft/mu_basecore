@@ -1802,6 +1802,18 @@ PciHostBridgeEnumerator (
       return Status;
     }
 
+    // MU_CHANGE BEGIN: Add support for initializing PCIe MPS
+    if (PcdGetBool (PcdPcieInitializeMps) && gFullEnumeration) {
+      UINT8  MaxPayloadSize;
+      Status =  PciGetMaxPayloadSize (RootBridgeDev, &MaxPayloadSize);
+      if (!EFI_ERROR (Status)) {
+        Status =  PciProgramMps (RootBridgeDev, MaxPayloadSize);
+        ASSERT (!EFI_ERROR (Status));
+      }
+    }
+
+    // MU_CHANGE END: Add support for initializing PCIe MPS
+
     InsertRootBridge (RootBridgeDev);
 
     //
