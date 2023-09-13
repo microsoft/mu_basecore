@@ -284,7 +284,7 @@ struct _PCI_IO_DEVICE {
   UINT16                                       BridgeIoAlignment;
   UINT32                                       ResizableBarOffset;
   UINT32                                       ResizableBarNumber;
-  BOOLEAN                                      IgnoreROM;     // MS_CHANGE
+  BOOLEAN                                      IgnoreROM;      // MS_CHANGE
   UINT8                                        MaxPayloadSize; // MU_CHANGE: Add support for initializing PCIe MPS
 };
 

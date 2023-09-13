@@ -2697,7 +2697,7 @@ CreatePciIoDevice (
                                       );
 
     ASSERT (!EFI_ERROR (Status));
-    PciIoDevice->MaxPayloadSize = DeviceCapabilities.Bits.MaxPayloadSize;
+    PciIoDevice->MaxPayloadSize = (UINT8)DeviceCapabilities.Bits.MaxPayloadSize;
   }
 
   // MU_CHANGE END

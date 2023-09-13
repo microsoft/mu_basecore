@@ -1808,7 +1808,9 @@ PciHostBridgeEnumerator (
       Status =  PciGetMaxPayloadSize (RootBridgeDev, &MaxPayloadSize);
       if (!EFI_ERROR (Status)) {
         Status =  PciProgramMps (RootBridgeDev, MaxPayloadSize);
-        ASSERT (!EFI_ERROR (Status));
+        if (EFI_ERROR (Status)) {
+          DEBUG ((DEBUG_ERROR, "%a: Failed to set root bridge MPS to %x. %r\n", __FUNCTION__, MaxPayloadSize, Status));
+        }
       }
     }
 
