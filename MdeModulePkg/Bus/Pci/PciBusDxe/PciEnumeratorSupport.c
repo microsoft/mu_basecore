@@ -252,11 +252,7 @@ PciGetMaxPayloadSize (
   while (CurrentLink != NULL && CurrentLink != &PciIoDevice->ChildList) {
     Child  = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
     Status = PciGetMaxPayloadSize (Child, &ChildMps);
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
-
-    if (ChildMps < *MaxPayloadSize) {
+    if (!EFI_ERROR (Status) && (ChildMps < *MaxPayloadSize)) {
       *MaxPayloadSize = ChildMps;
     }
 
@@ -356,12 +352,8 @@ PciProgramMps (
   //
   CurrentLink = PciIoDevice->ChildList.ForwardLink;
   while (CurrentLink != NULL && CurrentLink != &PciIoDevice->ChildList) {
-    Child  = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
-    Status = PciProgramMps (Child, MaxPayloadSize);
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
-
+    Child = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
+    PciProgramMps (Child, MaxPayloadSize);
     CurrentLink = CurrentLink->ForwardLink;
   }
 
