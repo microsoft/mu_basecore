@@ -309,10 +309,16 @@ PciProgramMps (
                                       &DeviceControl.Uint16
                                       );
     if (EFI_ERROR (Status)) {
-      return Status;
-    }
-
-    if (DeviceControl.Bits.MaxPayloadSize != MaxPayloadSize) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: Failed to read MPS for device %02x %02x %02x. %r\n",
+        __FUNCTION__,
+        PciIoDevice->BusNumber,
+        PciIoDevice->DeviceNumber,
+        PciIoDevice->FunctionNumber,
+        Status
+        ));
+    } else if (DeviceControl.Bits.MaxPayloadSize != MaxPayloadSize) {
       DeviceControl.Bits.MaxPayloadSize = MaxPayloadSize;
       DEBUG ((
         DEBUG_INFO,
@@ -332,7 +338,15 @@ PciProgramMps (
                                         &DeviceControl.Uint16
                                         );
       if (EFI_ERROR (Status)) {
-        return Status;
+        DEBUG ((
+          DEBUG_ERROR,
+          "%a: Failed to set MPS for device %02x %02x %02x. %r\n",
+          __FUNCTION__,
+          PciIoDevice->BusNumber,
+          PciIoDevice->DeviceNumber,
+          PciIoDevice->FunctionNumber,
+          Status
+          ));
       }
     }
   }
