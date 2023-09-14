@@ -317,7 +317,7 @@ PciProgramMps (
     } else if (DeviceControl.Bits.MaxPayloadSize != MaxPayloadSize) {
       DeviceControl.Bits.MaxPayloadSize = MaxPayloadSize;
       DEBUG ((
-        DEBUG_INFO,
+        DEBUG_VERBOSE,
         "%a: %02x %02x %02x Setting MPS: %x\n",
         __FUNCTION__,
         PciIoDevice->BusNumber,
