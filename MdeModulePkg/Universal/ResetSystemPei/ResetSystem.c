@@ -302,7 +302,7 @@ ResetSystem2 (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (RecursionDepthPointer == NULL) {
-    DEBUG ((DEBUG_ERROR, "Failed to build the RecursionDepthPointer Hob.\n"));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to build the RecursionDepthPointer Hob.\n", __FUNCTION__));
     return;
   }
 

@@ -1267,7 +1267,7 @@ DebugExceptionHandler (
   Status = MpInitLibWhoAmI (&CpuIndex);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Failed to get processor number.  Failed to get MpInit Processor info.\n"));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __FUNCTION__));
     return;
   }
 
@@ -1350,7 +1350,7 @@ PageFaultExceptionHandler (
     Status = MpInitLibWhoAmI (&CpuIndex);
 
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "Failed to get processor number.  Failed to get MpInit Processor info.\n"));
+      DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __FUNCTION__));
       return;
     }
 

@@ -160,8 +160,7 @@ PcdSetNvStoreDefaultIdCallBack (
 
   DefaultId = *(UINT16 *)TokenData;
   SkuId     = GetPcdDatabase ()->SystemSkuId;
-
-  IsFound = FALSE;
+  IsFound   = FALSE;
 
   if (PeiPcdGetSizeEx (&gEfiMdeModulePkgTokenSpaceGuid, PcdToken (PcdNvStoreDefaultValueBuffer)) > sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER)) {
     DataBuffer = (UINT8 *)PeiPcdGetPtrEx (&gEfiMdeModulePkgTokenSpaceGuid, PcdToken (PcdNvStoreDefaultValueBuffer));
@@ -326,7 +325,7 @@ EndOfPeiSignalPpiNotifyCallback (
     Database = BuildGuidHob (&gPcdDataBaseHobGuid, Length);
     // MU_CHANGE [BEGIN] - CodeQL change
     if (Database == NULL) {
-      DEBUG ((DEBUG_ERROR, "Failed build PCD guid hob.\n"));
+      DEBUG ((DEBUG_ERROR, "[%a] - Failed build PCD guid hob.\n", __FUNCTION__));
       return EFI_OUT_OF_RESOURCES;
     }
 

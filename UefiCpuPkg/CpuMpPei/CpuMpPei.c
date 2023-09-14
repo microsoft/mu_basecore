@@ -510,7 +510,7 @@ InitializeExceptionStackSwitchHandlers (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Failed to get processor number.  Aborting Exception Stack Switch handler setup.\n"));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Aborting Exception Stack Switch handler setup.\n", __FUNCTION__));
     return;
   }
 

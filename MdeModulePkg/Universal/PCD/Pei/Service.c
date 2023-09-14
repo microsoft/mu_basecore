@@ -428,6 +428,7 @@ BuildPcdDatabase (
   IN EFI_PEI_FILE_HANDLE  FileHandle
   )
 {
+  VOID              *Hob;
   PEI_PCD_DATABASE  *Database;
   PEI_PCD_DATABASE  *PeiPcdDbBinary;
   VOID              *CallbackFnTable;
@@ -438,13 +439,23 @@ BuildPcdDatabase (
   //
   PeiPcdDbBinary = LocateExPcdBinary (FileHandle);
 
-  ASSERT (PeiPcdDbBinary != NULL);
-
-  Database = BuildGuidHob (&gPcdDataBaseHobGuid, PeiPcdDbBinary->Length + PeiPcdDbBinary->UninitDataBaseSize);
+  if (PeiPcdDbBinary == NULL) {
+    ASSERT (PeiPcdDbBinary != NULL);
+    return NULL;
+  }
 
   // MU_CHANGE [BEGIN] - CodeQL change
+  // Check to see if the Hob already exists because we can error out of this function when
+  // creating the CallbackFnTable Hob and call into this function again.
+  Hob = GetFirstGuidHob (&gPcdDataBaseHobGuid);
+  if (Hob == NULL) {
+    Database = BuildGuidHob (&gPcdDataBaseHobGuid, PeiPcdDbBinary->Length + PeiPcdDbBinary->UninitDataBaseSize);
+  } else {
+    Database = (PEI_PCD_DATABASE *)GET_GUID_HOB_DATA (Hob);
+  }
+
   if (Database == NULL) {
-    DEBUG ((DEBUG_ERROR, "Failed build PCD Database guid hob.\n"));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed build PCD Database guid hob.\n", __FUNCTION__));
     return NULL;
   }
 
@@ -463,7 +474,7 @@ BuildPcdDatabase (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CallbackFnTable == NULL) {
-    DEBUG ((DEBUG_ERROR, "Failed build CallbackFnTable guid hob.\n"));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed build CallbackFnTable guid hob.\n", __FUNCTION__));
     return NULL;
   }
 
