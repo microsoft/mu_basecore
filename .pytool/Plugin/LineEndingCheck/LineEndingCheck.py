@@ -88,10 +88,10 @@ class LineEndingCheck(ICiBuildPlugin):
 
     # Note: This function access git via the command line
     #
-    #   function to check and warn if git config reports that 
+    #   function to check and warn if git config reports that
     #   autocrlf is configured to TRUE
     def _check_autocrlf(self):
-        r = Repo(".")
+        r = Repo(self._abs_workspace_path)
         try:
             result = r.config_reader().get_value("core", "autocrlf")
             if result:
@@ -121,7 +121,7 @@ class LineEndingCheck(ICiBuildPlugin):
             If git is not found, an empty list will be returned.
         """
         if not shutil.which("git"):
-            logging.warn(
+            logging.warning(
                 "Git is not found on this system. Git submodule paths will "
                 "not be considered.")
             return []
@@ -162,7 +162,7 @@ class LineEndingCheck(ICiBuildPlugin):
             If git is not found, an empty list will be returned.
         """
         if not shutil.which("git"):
-            logging.warn(
+            logging.warning(
                 "Git is not found on this system. Git submodule paths will "
                 "not be considered.")
             return []
@@ -207,8 +207,10 @@ class LineEndingCheck(ICiBuildPlugin):
             Callable[[None], None]: A test case function.
         """
         ignored_files = []
+        if pkg_config.get("IgnoreFilesWithNoExtension", False):
+            ignored_files.extend(['*', '!*.*', '!*/'])
         if "IgnoreFiles" in pkg_config:
-            ignored_files = pkg_config["IgnoreFiles"]
+            ignored_files.extend(pkg_config["IgnoreFiles"])
 
         # Pass "Package configuration file" as the source file path since
         # the actual configuration file name is unknown to this plugin and
@@ -248,9 +250,8 @@ class LineEndingCheck(ICiBuildPlugin):
           0  : Ran successfully
           -1 : Skipped due to a missing pre-requisite
         """
+        self._abs_workspace_path = edk2_path.WorkspacePath
         self._check_autocrlf()
-        self._abs_workspace_path = \
-            edk2_path.GetAbsolutePathOnThisSystemFromEdk2RelativePath('.')
         self._abs_pkg_path = \
             edk2_path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
                         package_rel_path)
@@ -260,47 +261,25 @@ class LineEndingCheck(ICiBuildPlugin):
             tc.LogStdError(f"Package folder not found {self._abs_pkg_path}")
             return 0
 
-        all_files = [Path(n) for n in glob.glob(
-                        os.path.join(self._abs_pkg_path, '**/*.*'),
-                        recursive=True)]
-        ignored_files = list(filter(
-                            self._get_files_ignored_in_config(
-                                package_config, self._abs_pkg_path), all_files))
-        ignored_files = [Path(f) for f in ignored_files]
-
-        all_files = list(set(all_files) - set(ignored_files))
-        if not all_files:
-            tc.SetSuccess()
-            return 0
-
-        all_files_before_git_removal = set(all_files)
-        git_ignored_paths = set(self._get_git_ignored_paths() + self._get_git_submodule_paths())
-        all_files = list(all_files_before_git_removal - git_ignored_paths)
-        git_ignored_paths = git_ignored_paths - (all_files_before_git_removal - set(all_files))
-        if not all_files:
-            tc.SetSuccess()
-            return 0
-
-        git_ignored_paths = {p for p in git_ignored_paths if p.is_dir()}
-
-        ignored_files = []
-        for file in all_files:
-            for ignored_path in git_ignored_paths:
-                if Path(file).is_relative_to(ignored_path):
-                    ignored_files.append(file)
-                    break
-
-        all_files = list(set(all_files) - set(ignored_files))
-        if not all_files:
-            tc.SetSuccess()
-            return 0
+        ignore_files = set(self._get_git_ignored_paths())
+        ignore_dirs = set(self._get_git_submodule_paths())
+        ignore_filter = self._get_files_ignored_in_config(package_config, self._abs_pkg_path)
 
         file_count = 0
         line_ending_count = dict.fromkeys(LINE_ENDINGS, 0)
-
-        for file in all_files:
+        for file in Path(self._abs_pkg_path).rglob('*'):
             if file.is_dir():
                 continue
+
+            if any(file.is_relative_to(ignore_dir) for ignore_dir in ignore_dirs):
+                continue
+
+            if ignore_filter(file):
+                continue
+
+            if file in ignore_files:
+                continue
+
             with open(file.resolve(), 'rb') as fb:
                 if not fb.readable() or _is_binary_string(fb.read(1024)):
                     continue

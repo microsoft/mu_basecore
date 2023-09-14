@@ -121,9 +121,7 @@ class BmpCheckPlugin(IUefiBuildPlugin):
             fp = FdfParser()
             dp = DscParser()
 
-            ws = thebuilder.ws
-            pp = thebuilder.pp.split(";")
-            edk2 = Edk2Path(ws, pp)
+            edk2 = thebuilder.edk2path
 
             ActiveDsc = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
                 thebuilder.env.GetValue("ACTIVE_PLATFORM"))

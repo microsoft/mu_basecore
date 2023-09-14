@@ -207,14 +207,14 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         # Generate coverage file
         coverageFile = ""
         for testFile in testList:
-            ret = RunCmd("OpenCppCoverage", f"--source {workspace} --export_type binary:{testFile}.cov -- {testFile}")
+            ret = RunCmd("OpenCppCoverage", f"--source {workspace} --export_type binary:{testFile}.cov -- {testFile}", workingdir=f"{workspace}Build/")
             coverageFile += " --input_coverage=" + testFile + ".cov"
             if ret != 0:
                 logging.error("UnitTest Coverage: Failed to collect coverage data.")
                 return 1
 
         # Generate and XML file if requested.by each package
-        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{os.path.join(buildOutputBase, 'coverage.xml')} --working_dir={workspace}Build {coverageFile}")
+        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{os.path.join(buildOutputBase, 'coverage.xml')} {coverageFile}", workingdir=f"{workspace}Build/")
         if ret != 0:
             logging.error("UnitTest Coverage: Failed to generate cobertura format xml in single package.")
             return 1
@@ -225,7 +225,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         for testCoverage in testCoverageList:
             coverageFile += " --input_coverage=" + testCoverage
 
-        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{workspace}Build/coverage.xml --working_dir={workspace}Build {coverageFile}")
+        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{workspace}Build/coverage.xml {coverageFile}", workingdir=f"{workspace}Build/")
         if ret != 0:
             logging.error("UnitTest Coverage: Failed to generate cobertura format xml.")
             return 1

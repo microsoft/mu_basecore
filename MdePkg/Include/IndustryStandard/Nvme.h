@@ -52,23 +52,25 @@
 //
 // 3.1.1 Offset 00h: CAP - Controller Capabilities
 //
+// MU_CHANGE [BEGIN] - Add missing capability descriptions
 typedef struct {
   UINT16    Mqes;       // Maximum Queue Entries Supported
   UINT8     Cqr    : 1; // Contiguous Queues Required
   UINT8     Ams    : 2; // Arbitration Mechanism Supported
   UINT8     Rsvd1  : 5;
-  UINT8     To;     // Timeout
-  UINT16    Dstrd  : 4;
+  UINT8     To;         // Timeout
+  UINT16    Dstrd  : 4; // Doorbell Stride
   UINT16    Nssrs  : 1; // NVM Subsystem Reset Supported NSSRS
   UINT16    Css    : 8; // Command Sets Supported - Bit 37
   UINT16    Bps    : 1; // Boot Partition Support - Bit 45 in NVMe1.4
   UINT16    Rsvd3  : 2;
-  UINT8     Mpsmin : 4;
-  UINT8     Mpsmax : 4;
-  UINT8     Pmrs   : 1;
-  UINT8     Cmbs   : 1;
+  UINT8     Mpsmin : 4; // Memory Page Size Minimum
+  UINT8     Mpsmax : 4; // Memory Page Size Maximum
+  UINT8     Pmrs   : 1; // Persistent Memory Region Supported
+  UINT8     Cmbs   : 1; // Controller Memory Buffer Supported
   UINT8     Rsvd4  : 6;
 } NVME_CAP;
+// MU_CHANGE [END] - Add missing capability descriptions
 
 //
 // 3.1.2 Offset 08h: VS - Version
