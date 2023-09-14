@@ -455,7 +455,7 @@ BuildPcdDatabase (
   }
 
   if (Database == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed build PCD Database guid hob.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed build PCD Database guid hob.\n", __func__));
     return NULL;
   }
 
@@ -474,7 +474,7 @@ BuildPcdDatabase (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CallbackFnTable == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed build CallbackFnTable guid hob.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed build CallbackFnTable guid hob.\n", __func__));
     return NULL;
   }
 

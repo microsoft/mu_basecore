@@ -1567,7 +1567,7 @@ ResetProcessorToIdleState (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return;
   }
 
@@ -1607,7 +1607,7 @@ GetNextWaitingProcessorNumber (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return EFI_LOAD_ERROR;
   }
 
@@ -1646,7 +1646,7 @@ CheckThisAP (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return EFI_LOAD_ERROR;
   }
 
@@ -1716,7 +1716,7 @@ CheckAllAPs (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return EFI_LOAD_ERROR;
   }
 
@@ -2165,7 +2165,7 @@ MpInitLibGetProcessorInfo (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return EFI_LOAD_ERROR;
   }
 
@@ -2186,7 +2186,7 @@ MpInitLibGetProcessorInfo (
   Status = MpInitLibWhoAmI (&CallerNumber);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
     return Status;
   }
 
@@ -2297,7 +2297,7 @@ SwitchBSPWorker (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return EFI_LOAD_ERROR;
   }
 
@@ -2310,7 +2310,7 @@ SwitchBSPWorker (
   Status = MpInitLibWhoAmI (&CallerNumber);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
     return Status;
   }
 
@@ -2441,7 +2441,7 @@ EnableDisableApWorker (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return EFI_LOAD_ERROR;
   }
 
@@ -2454,7 +2454,7 @@ EnableDisableApWorker (
   Status = MpInitLibWhoAmI (&CallerNumber);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
     return Status;
   }
 
@@ -2517,7 +2517,7 @@ MpInitLibWhoAmI (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return EFI_LOAD_ERROR;
   }
 
@@ -2564,7 +2564,7 @@ MpInitLibGetNumberOfProcessors (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return EFI_LOAD_ERROR;
   }
 
@@ -2581,7 +2581,7 @@ MpInitLibGetNumberOfProcessors (
   Status = MpInitLibWhoAmI (&CallerNumber);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
     return Status;
   }
 
@@ -2670,7 +2670,7 @@ StartupAllCPUsWorker (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return EFI_LOAD_ERROR;
   }
 
@@ -2691,7 +2691,7 @@ StartupAllCPUsWorker (
   Status = MpInitLibWhoAmI (&CallerNumber);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
     return Status;
   }
 
@@ -2839,7 +2839,7 @@ StartupThisAPWorker (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return EFI_LOAD_ERROR;
   }
 
@@ -2852,7 +2852,7 @@ StartupThisAPWorker (
   Status = MpInitLibWhoAmI (&CallerNumber);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
     return Status;
   }
 

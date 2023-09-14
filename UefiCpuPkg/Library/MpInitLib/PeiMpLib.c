@@ -88,7 +88,7 @@ NotifyOnS3SmmInitDonePpi (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return EFI_LOAD_ERROR;
   }
 
@@ -385,7 +385,7 @@ CheckAndUpdateApsStatus (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
     return;
   }
 

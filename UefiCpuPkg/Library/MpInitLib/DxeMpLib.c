@@ -617,7 +617,7 @@ RelocateApLoop (
   Status = MpInitLibWhoAmI (&ProcessorNumber);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
     return;
   }
 

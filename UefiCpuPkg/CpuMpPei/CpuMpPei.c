@@ -510,7 +510,7 @@ InitializeExceptionStackSwitchHandlers (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Aborting Exception Stack Switch handler setup.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Aborting Exception Stack Switch handler setup.\n", __func__));
     return;
   }
 
@@ -555,7 +555,7 @@ InitializeMpExceptionStackSwitchHandlers (
   Status = MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
-    DEBUG ((DEBUG_ERROR, "%a - Failed to get number of processors.  Status = %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a - Failed to get number of processors.  Status = %r\n", __func__, Status));
     return;
   }
 
@@ -565,7 +565,7 @@ InitializeMpExceptionStackSwitchHandlers (
   // MU_CHANGE [BEGIN] - CodeQL change
   if (SwitchStackData == NULL) {
     ASSERT (SwitchStackData != NULL);
-    DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Switch Stack pages.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Switch Stack pages.\n", __func__));
     return;
   }
 
@@ -602,7 +602,7 @@ InitializeMpExceptionStackSwitchHandlers (
     // MU_CHANGE [BEGIN] - CodeQL change
     if (Buffer == NULL) {
       ASSERT (Buffer != NULL);
-      DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Buffer pages.\n", __FUNCTION__));
+      DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Buffer pages.\n", __func__));
       return;
     }
 
