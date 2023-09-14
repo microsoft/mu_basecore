@@ -112,6 +112,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDisableBusEnumeration    ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPcieResizableBarSupport     ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdDisableBMEonEBS             ## MU_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPcieInitializeMps           ## MU_CHANGE: Add support for initializing PCIe MPS
 
 [UserExtensions.TianoCore."ExtraFiles"]
   PciBusDxeExtra.uni
