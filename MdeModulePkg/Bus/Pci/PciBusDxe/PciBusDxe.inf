@@ -106,6 +106,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciCrsRetryIntervalUs       ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciCrsTimeoutSeconds        ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdDisableBMEonEBS             ## MU_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPcieInitializeMps           ## MU_CHANGE: Add support for initializing PCIe MPS
 
 [UserExtensions.TianoCore."ExtraFiles"]
   PciBusDxeExtra.uni
