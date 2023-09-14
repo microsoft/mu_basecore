@@ -1,9 +1,7 @@
 /** @file
-  IPMI Command - NetFnApp NULL instance library.
+  IPMI Command - NetFnSensor NULL instance library.
 
-  Copyright (c) 2018 - 2021, Intel Corporation. All rights reserved.<BR>
-  Copyright (C) 2023 Advanced Micro Devices, Inc. All rights reserved.<BR>
-
+  Copyright (c) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 #include <Uefi.h>
@@ -15,8 +13,7 @@
  * @param[in]   SetSensorThresholdRequestData   The filled out Set Sensor Threshold command structure
  * @param[out]  CompletionCode                  Pointer to a buffer for returning the completion code
  *
- * @retval  EFI_SUCCESS
- * @retval  EFI_INVALID_PARAMETER
+ * @retval EFI_UNSUPPORTED  Unsupported in the NULL lib.
  */
 EFI_STATUS
 EFIAPI
@@ -34,8 +31,7 @@ IpmiSetSensorThreshold (
  * @param[in]   SensorNumber                The unique identifier of the sensor being queried.
  * @param[out]  GetSensorThresholdResponse  Pointer to a buffer for returning the threshold response data.
  *
- * @retval  EFI_SUCCESS
- * @retval  EFI_INVALID_PARAMETER
+ * @retval EFI_UNSUPPORTED  Unsupported in the NULL lib.
  */
 EFI_STATUS
 EFIAPI

@@ -680,14 +680,16 @@ IpmiGetSdr (
   IN OUT UINT32              *GetSdrResponseSize
   );
 
+// MU_CHANGE [BEGIN]
+
 /**
  * Send the Set Sensor Threshold command for a specified SensorNumber
  *
  * @param[in]   SetSensorThresholdRequestData   The filled out Set Sensor Threshold command structure
  * @param[out]  CompletionCode                  Pointer to a buffer for returning the completion code
  *
- * @retval  EFI_SUCCESS
- * @retval  EFI_INVALID_PARAMETER
+ * @retval  EFI_SUCCESS                         Setting Sensor Threshold command structure successful
+ * @retval  EFI_INVALID_PARAMETER               Unable to set threshold command for this sensor
  */
 EFI_STATUS
 EFIAPI
@@ -702,8 +704,8 @@ IpmiSetSensorThreshold (
  * @param[in]   SensorNumber                The unique identifier of the sensor being queried.
  * @param[out]  GetSensorThresholdResponse  Pointer to a buffer for returning the threshold response data.
  *
- * @retval  EFI_SUCCESS
- * @retval  EFI_INVALID_PARAMETER
+ * @retval  EFI_SUCCESS                     Getting Sensor Threshold response data successful
+ * @retval  EFI_INVALID_PARAMETER           Unable to get threshold data for this sensor
  */
 EFI_STATUS
 EFIAPI
@@ -711,5 +713,7 @@ IpmiGetSensorThreshold (
   IN UINT8                                            SensorNumber,
   OUT IPMI_SENSOR_GET_SENSOR_THRESHOLD_RESPONSE_DATA  *GetSensorThresholdResponse
   );
+
+// MU_CHANGE [END]
 
 #endif

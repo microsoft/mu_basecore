@@ -23,7 +23,7 @@
   IpmiCommandLibNetFnTransport.c
   IpmiCommandLibNetFnChassis.c
   IpmiCommandLibNetFnStorage.c
-  IpmiCommandLibNetFnSensor.c
+  IpmiCommandLibNetFnSensor.c # MU_CHANGE
 
 [Packages]
   MdePkg/MdePkg.dec
