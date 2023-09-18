@@ -63,6 +63,7 @@
   SafeIntLib
   PcdLib
   MmUnblockMemoryLib
+  DeviceStateLib # MU_CHANGE - Check device state before locking variable policy
 
 [Protocols]
   gEfiVariableWriteArchProtocolGuid             ## PRODUCES
