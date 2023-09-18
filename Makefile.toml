@@ -36,6 +36,18 @@ clear = true
 command = "cargo"
 args = ["build", "@@split(PACKAGE_TARGET, )", "@@split(BUILD_FLAGS, )"]
 
+[tasks.check]
+description = "Checks rust code for errors. Example `cargo make check`"
+clear = true
+command = "cargo"
+args = ["check", "@@split(PACKAGE_TARGET, )", "@@split(BUILD_FLAGS, )"]
+
+[tasks.check_json]
+description = "Checks rust code for errors with results in JSON. Example `cargo make check_json`"
+clear = true
+command = "cargo"
+args = ["check", "@@split(PACKAGE_TARGET, )", "@@split(BUILD_FLAGS, )", "--message-format=json"]
+
 [tasks.test]
 description = "Builds all rust tests in the workspace. Example `cargo make test`"
 clear = true
