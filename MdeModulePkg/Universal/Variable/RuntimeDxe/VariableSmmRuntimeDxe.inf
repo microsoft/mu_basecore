@@ -63,6 +63,7 @@
   SafeIntLib
   PcdLib
   HobLib
+  DeviceStateLib # MU_CHANGE - Don't Lock Variable Policy in Unit Test Mode
 
 [Protocols]
   gEfiVariableWriteArchProtocolGuid             ## PRODUCES

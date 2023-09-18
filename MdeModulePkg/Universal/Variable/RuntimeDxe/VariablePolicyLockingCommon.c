@@ -10,6 +10,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Uefi.h>
 #include <Library/UefiLib.h>
 #include <Library/DebugLib.h>
+#include <Library/DeviceStateLib.h> // MU_CHANGE - Don't Lock Variable Policy in Unit Test Mode
 #include <Library/UefiBootServicesTableLib.h>
 
 #include <Protocol/VariablePolicy.h>
@@ -60,6 +61,16 @@ LockPolicyInterfaceAtReadyToBoot (
   )
 {
   EFI_STATUS  Status;
+
+  // MU_CHANGE - Don't Lock Variable Policy in Unit Test Mode
+  DEBUG_CODE_BEGIN ();
+  if ((GetDeviceState () & DEVICE_STATE_UNIT_TEST_MODE) != 0) {
+    DEBUG ((DEBUG_INFO, "[%a] Unit test mode is enabled -- skipping variable policy lock.\n", __func__));
+    return;
+  }
+
+  DEBUG_CODE_END ();
+  // MU_CHANGE - Don't Lock Variable Policy in Unit Test Mode
 
   if (mCallbackInterface != NULL) {
     DEBUG ((DEBUG_INFO, "[%a] Invoking pre-lock callback.\n", __func__));
