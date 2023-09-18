@@ -78,6 +78,7 @@
   VariablePolicyHelperLib
   SafeIntLib
   MemoryTypeInfoSecVarCheckLib  # MU_CHANGE TCBZ1086 - Mitigate potential system brick due to UEFI MemoryTypeInformation var changes
+  DeviceStateLib  # MU_CHANGE - Check device state before locking variable policy
 
 [Protocols]
   gEfiFirmwareVolumeBlockProtocolGuid           ## CONSUMES
