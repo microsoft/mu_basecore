@@ -21,7 +21,7 @@ struct MockReadOnlyVariable2 {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
-    GetVariable,
+    PPIVariableServices_GetVariable,
     (IN CONST  EFI_PEI_READ_ONLY_VARIABLE2_PPI  *This,
      IN CONST  CHAR16                           *VariableName,
      IN CONST  EFI_GUID                         *VariableGuid,
@@ -32,7 +32,7 @@ struct MockReadOnlyVariable2 {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
-    NextVariableName,
+    PPIVariableServices_NextVariableName,
     (IN CONST  EFI_PEI_READ_ONLY_VARIABLE2_PPI *This,
      IN OUT    UINTN                           *VariableNameSize,
      IN OUT    CHAR16                          *VariableName,
@@ -41,14 +41,14 @@ struct MockReadOnlyVariable2 {
 };
 
 MOCK_INTERFACE_DEFINITION (MockReadOnlyVariable2);
-MOCK_FUNCTION_DEFINITION (MockReadOnlyVariable2, GetVariable, 6, EFIAPI);
-MOCK_FUNCTION_DEFINITION (MockReadOnlyVariable2, NextVariableName, 4, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockReadOnlyVariable2, PPIVariableServices_GetVariable, 6, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockReadOnlyVariable2, PPIVariableServices_NextVariableName, 4, EFIAPI);
 
 // Normally PPIVariableServices is "found"
 // This will be defined INSIDE the test, with its definition pointing to the mock function getVariable
 static EFI_PEI_READ_ONLY_VARIABLE2_PPI  peiReadOnlyVariablePpi = {
-  GetVariable,      // EFI_PEI_GET_VARIABLE2
-  NextVariableName  // EFI_PEI_GET_NEXT_VARIABLE_NAME2
+  PPIVariableServices_GetVariable,      // EFI_PEI_GET_VARIABLE2
+  PPIVariableServices_NextVariableName  // EFI_PEI_GET_NEXT_VARIABLE_NAME2
 };
 
 extern "C" {
