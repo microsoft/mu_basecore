@@ -62,10 +62,13 @@ LockPolicyInterfaceAtReadyToBoot (
 {
   EFI_STATUS  Status;
 
+  DEBUG_CODE_BEGIN ();
   if ((GetDeviceState () & DEVICE_STATE_UNIT_TEST_MODE) != 0) {
-    DEBUG ((DEBUG_INFO, "[%a] Unit test mode is enabled. Skipping lock.\n", __FUNCTION__));
+    DEBUG ((DEBUG_INFO, "[%a] Unit test mode is enabled -- skipping variable policy lock.\n", __FUNCTION__));
     return;
   }
+
+  DEBUG_CODE_END ();
 
   if (mCallbackInterface != NULL) {
     DEBUG ((DEBUG_INFO, "[%a] Invoking pre-lock callback.\n", __FUNCTION__));
