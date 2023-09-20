@@ -1567,7 +1567,7 @@ ResetProcessorToIdleState (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CpuMpData == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.  Aborting the AP reset to idle.\n", __func__));
     return;
   }
 

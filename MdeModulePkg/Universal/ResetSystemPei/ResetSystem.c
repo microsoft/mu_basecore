@@ -302,8 +302,10 @@ ResetSystem2 (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (RecursionDepthPointer == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to build the RecursionDepthPointer Hob.\n", __func__));
-    return;
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to build or get the RecursionDepthPointer Hob.\n", __func__));
+    ASSERT (RecursionDepthPointer != NULL);
+    // Reset anyway if we can't get the RecursionDepthPointer
+    goto Done;
   }
 
   // MU_CHANGE [END] - CodeQL change
@@ -346,6 +348,7 @@ ResetSystem2 (
     DEBUG ((DEBUG_ERROR, "PEI ResetSystem2: Maximum reset call depth is met. Use the current reset type: %s!\n", mResetTypeStr[ResetType]));
   }
 
+Done:
   switch (ResetType) {
     case EfiResetWarm:
       ResetWarm ();

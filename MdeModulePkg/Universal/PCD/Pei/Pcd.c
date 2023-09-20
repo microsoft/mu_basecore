@@ -174,6 +174,7 @@ PcdSetNvStoreDefaultIdCallBack (
       VarStoreHobData = (UINT8 *)BuildGuidHob (&NvStoreBuffer->Signature, NvStoreBuffer->Size);
       // MU_CHANGE [BEGIN] - CodeQL change
       if (VarStoreHobData == NULL) {
+        DEBUG ((DEBUG_ERROR, "[%a] - Failed build NV Store guid hob.\n", __func__));
         ASSERT (VarStoreHobData != NULL);
         return;
       }
@@ -325,7 +326,7 @@ EndOfPeiSignalPpiNotifyCallback (
     Database = BuildGuidHob (&gPcdDataBaseHobGuid, Length);
     // MU_CHANGE [BEGIN] - CodeQL change
     if (Database == NULL) {
-      DEBUG ((DEBUG_ERROR, "[%a] - Failed build PCD guid hob.\n", __func__));
+      DEBUG ((DEBUG_ERROR, "[%a] - Failed to build PCD guid hob.\n", __func__));
       return EFI_OUT_OF_RESOURCES;
     }
 

@@ -440,6 +440,7 @@ BuildPcdDatabase (
   PeiPcdDbBinary = LocateExPcdBinary (FileHandle);
 
   if (PeiPcdDbBinary == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed To locate the Pcd Db binaray.\n", __func__));
     ASSERT (PeiPcdDbBinary != NULL);
     return NULL;
   }
@@ -455,7 +456,7 @@ BuildPcdDatabase (
   }
 
   if (Database == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed build PCD Database guid hob.\n", __func__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to build the PCD Database guid hob.\n", __func__));
     return NULL;
   }
 
@@ -474,7 +475,7 @@ BuildPcdDatabase (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (CallbackFnTable == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed build CallbackFnTable guid hob.\n", __func__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to build the CallbackFnTable guid hob.\n", __func__));
     return NULL;
   }
 

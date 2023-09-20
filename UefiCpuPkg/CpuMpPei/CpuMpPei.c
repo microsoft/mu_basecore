@@ -510,7 +510,8 @@ InitializeExceptionStackSwitchHandlers (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Aborting Exception Stack Switch handler setup.\n", __func__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Critical failure intializing stack exception handlers so deadlooping.\n", __func__));
+    CpuDeadLoop ();
     return;
   }
 

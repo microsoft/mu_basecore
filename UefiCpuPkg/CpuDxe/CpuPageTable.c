@@ -1267,8 +1267,8 @@ DebugExceptionHandler (
   Status = MpInitLibWhoAmI (&CpuIndex);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
-    return;
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Jumping to TLB flush.\n", __func__));
+    goto Done;
   }
 
   // MU_CHANGE [END] - CodeQL change
@@ -1296,6 +1296,7 @@ DebugExceptionHandler (
   //
   mPFEntryCount[CpuIndex] = 0;
 
+Done:
   //
   // Flush TLB
   //
@@ -1350,8 +1351,8 @@ PageFaultExceptionHandler (
     Status = MpInitLibWhoAmI (&CpuIndex);
 
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
-      return;
+      DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Jumping to context dumping and deadloop.\n", __func__));
+      goto Done;
     }
 
     // MU_CHANGE [END] - CodeQL change
@@ -1395,6 +1396,7 @@ PageFaultExceptionHandler (
     }
   }
 
+Done:
   //
   // Initialize the serial port before dumping.
   //

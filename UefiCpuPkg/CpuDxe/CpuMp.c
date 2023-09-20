@@ -628,7 +628,7 @@ InitializeExceptionStackSwitchHandlers (
   Status = MpInitLibWhoAmI (&Index);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Exception Stack were not initialized.\n", __func__));
     return;
   }
 
