@@ -2454,6 +2454,9 @@ FinalCleanup (
                   NULL
                   );
   UT_LOG_INFO ("Delete ExistingLockOnVarStateVar status: %r\n", Status);
+
+  // Reset the system
+  SaveStateAndReboot ();
 }
 
 /**
