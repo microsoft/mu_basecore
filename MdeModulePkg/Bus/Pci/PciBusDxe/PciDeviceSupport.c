@@ -888,7 +888,8 @@ StartPciDevices (
 
   RootBridge = GetRootBridgeByHandle (Controller);
   if (RootBridge == NULL) {
-    ASSERT (RootBridge != NULL);
+    // ASSERT (RootBridge != NULL);                    // MU_CHANGE
+    ASSERT (PcdGetBool (PcdPciDisableBusEnumeration)); // MU_CHANGE
     return EFI_NOT_READY;
   }
 
