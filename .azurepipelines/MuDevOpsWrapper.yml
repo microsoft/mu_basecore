@@ -15,9 +15,9 @@ resources:
   repositories:
     - repository: mu_devops
       type: github
-      endpoint: microsoft
-      name: microsoft/mu_devops
-      ref: refs/tags/v6.1.0
+      endpoint: javagedes
+      name: javagedes/mu_devops
+      ref: use-stuart_report
 
 parameters:
 - name: do_ci_build
