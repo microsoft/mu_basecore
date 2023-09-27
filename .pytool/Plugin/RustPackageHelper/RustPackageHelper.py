@@ -68,14 +68,14 @@ class RustWorkspace:
         command = "cargo"
         params = "make"
         if ignore_list:
-            params += f' -e COV_FLAGS="--out {report_type} --exclude-files {",".join(ignore_list)}"'
+            params += f' -e COV_FLAGS="--out {report_type} --exclude-files {" --exclude-files ".join(ignore_list)}"'
         else:
             params += f' -e COV_FLAGS="--out {report_type}"'
         params += f" coverage {','.join(pkg_list)}"
 
         # Run the command
         output = io.StringIO()
-        RunCmd(command, params, workingdir=self.path, outstream=output)
+        return_value = RunCmd(command, params, workingdir=self.path, outstream=output)
         output.seek(0)
         lines = output.readlines()
         
@@ -88,7 +88,7 @@ class RustWorkspace:
         # Determine passed and failed tests
         for line in lines:
             line = line.strip().strip("\n")
-            
+
             if line.startswith("test result:"):
                 continue
             
@@ -99,7 +99,11 @@ class RustWorkspace:
                 else:
                     result["fail"].append(line.replace(" ... FAILED", "")) 
                 continue
-        
+
+        # Command failed, but we didn't parse any failed tests
+        if return_value != 0 and len(result["fail"]) == 0:
+            raise RuntimeError("Failed to compile tests or run command.")
+
         if len(result["fail"]) > 0:
             return result
         

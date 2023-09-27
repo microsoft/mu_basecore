@@ -26,9 +26,9 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
 
         # Build list of packages that are in the EDK2 package we are running CI on
         pp = Path(Edk2pathObj.GetAbsolutePathOnThisSystemFromEdk2RelativePath(packagename))
-        package_name_list = [pkg.name for pkg in filter(lambda pkg: Path(pkg.path).is_relative_to(pp), rust_ws.members)]
-        package_path_list = [pkg.path for pkg in filter(lambda pkg: Path(pkg.path).is_relative_to(pp), rust_ws.members)]
-        logging.debug(f"Rust Packages to test: {' '.join(package_name_list)}")
+        crate_name_list = [pkg.name for pkg in filter(lambda pkg: Path(pkg.path).is_relative_to(pp), rust_ws.members)]
+        crate_path_list = [pkg.path for pkg in filter(lambda pkg: Path(pkg.path).is_relative_to(pp), rust_ws.members)]
+        logging.debug(f"Rust Crates to test: {' '.join(crate_name_list)}")
 
         # Build a list of paths to ignore when computing results. This includes:
         # 1. Any tests folder in a rust package
@@ -36,12 +36,19 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
         # 3. Everything in an EDK2 package not being tested.
         ignore_list = [Path("**", "tests", "*")]
         ignore_list.extend([Path(s, "**", "*") for s in repo_details(ws)["Submodules"]])
-        ignore_list.extend(list(set([pkg.path for pkg in rust_ws.members]) - set(package_path_list)))
+        ignored_local_crates = list(set(crate.path for crate in rust_ws.members) - set(crate_path_list))
+        ignore_list.extend([Path(crate, "**", "*").relative_to(ws) for crate in ignored_local_crates])
         ignore_list = [str(i) for i in ignore_list]
         logging.debug(f"Paths to ignore when computing coverage: {' '.join(ignore_list)}")
 
         # Run tests and evaluate results
-        results = rust_ws.coverage(package_name_list, ignore_list = ignore_list, report_type = "xml")
+        try:
+            results = rust_ws.coverage(crate_name_list, ignore_list = ignore_list, report_type = "xml")
+        except RuntimeError as e:
+            logging.warning(str(e))
+            tc.LogStdError(str(e))
+            tc.SetFailed(str(e), "CHECK_FAILED")
+            return 1
 
         # Evaluate unit test results
         failed = 0
@@ -49,7 +56,9 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
             tc.LogStdOut(f'{test} ... PASS')
 
         for test in results["fail"]:
-            tc.LogStdError(f'{test} ... FAIL')
+            e = f'{test} ... FAIL'
+            logging.warning(e)
+            tc.LogStdError(e)
             failed += 1
 
         # If we failed a unit test, we have no coverage data to evaluate
@@ -61,7 +70,11 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
         coverage = {}
         for file, cov in results["coverage"].items():
             try:
-                package = next(pkg.name for pkg in rust_ws.members if Path(ws,file).is_relative_to(pkg.path))
+                package = next(
+                    crate.name
+                    for crate in rust_ws.members
+                    if Path(ws, file).is_relative_to(crate.path)
+                )
             except StopIteration:
                 continue
             covered, total = cov.split("/")
@@ -80,7 +93,9 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
             if calc_cov >= required_cov:
                 tc.LogStdOut(f'coverage::{pkg}: {calc_cov} greater than {required_cov} ... PASS')
             else:
-                tc.LogStdError(f'coverage::{pkg}: {calc_cov} less than {required_cov} ... FAIL')
+                e = f'coverage::{pkg}: {calc_cov}% less than {required_cov}% ... FAIL'
+                logging.warning(e)
+                tc.LogStdError(e)
                 failed += 1
 
         # Move coverage.xml to Build Directory
