@@ -1,6 +1,6 @@
 /** @file MockReadOnlyVariable2.h
   This file declares a mock of Read-only Variable Service2 PPI.
-  
+
   This PPI permits read-only access to the UEFI variable store during the PEI phase.
 
   Copyright (c) Microsoft Corporation.
