@@ -1,6 +1,8 @@
 /** @file MockReadOnlyVariable2.h
   This file declares a mock of Read-only Variable Service2 PPI.
-  This ppi permits read-only access to the UEFI variable store during the PEI phase.
+  
+  This PPI permits read-only access to the UEFI variable store during the PEI phase.
+
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -41,7 +43,7 @@ struct MockReadOnlyVariable2 {
 };
 
 extern "C" {
-extern EFI_PEI_READ_ONLY_VARIABLE2_PPI  *PPIReadOnlyVariableServices;
+extern EFI_PEI_READ_ONLY_VARIABLE2_PPI  *PpiReadOnlyVariableServices;
 }
 
 #endif
