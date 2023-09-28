@@ -11,6 +11,7 @@ from edk2toolext.environment.repo_resolver import repo_details
 from pathlib import Path
 import re
 import logging
+import platform
 
 class RustHostUnitTestPlugin(ICiBuildPlugin):
     def GetTestName(self, packagename: str, environment: object) -> tuple[str, str]:
@@ -20,9 +21,14 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
         return ["NO-TARGET"]
 
     def RunBuildPlugin(self, packagename, Edk2pathObj, pkgconfig, environment, PLM, PLMHelper, tc, output_stream):
-
         ws = Edk2pathObj.WorkspacePath
         rust_ws = PLMHelper.RustWorkspace(ws)  # .pytool/Plugin/RustPackageHelper
+        
+        with_coverage = pkgconfig.get("CalculateCoverage", True)
+        
+        if platform.system() == "Windows" and platform.machine() in ["i386", "i686"]:
+            logging.debug("Coverage skipped by plugin, not supported on Windows ARM")
+            with_coverage = False
 
         # Build list of packages that are in the EDK2 package we are running CI on
         pp = Path(Edk2pathObj.GetAbsolutePathOnThisSystemFromEdk2RelativePath(packagename))
@@ -43,7 +49,7 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
 
         # Run tests and evaluate results
         try:
-            results = rust_ws.coverage(crate_name_list, ignore_list = ignore_list, report_type = "xml")
+            results = rust_ws.test(crate_name_list, ignore_list = ignore_list, report_type = "xml", coverage=with_coverage)
         except RuntimeError as e:
             logging.warning(str(e))
             tc.LogStdError(str(e))
@@ -65,6 +71,11 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
         if failed > 0:
             tc.SetFailed(f'Host unit tests failed. Failures {failed}', "CHECK_FAILED")
             return failed
+
+        # Return if we are not running with coverage
+        if not with_coverage:
+            tc.SetSuccess()
+            return 0
 
         # Calculate coverage
         coverage = {}
