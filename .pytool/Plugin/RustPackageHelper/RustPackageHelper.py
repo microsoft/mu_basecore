@@ -55,11 +55,10 @@ class RustWorkspace:
         
         self.members = list(members)
 
-    def coverage(self, pkg_list = None, ignore_list = None, report_type: str = "html" ):
-        """Runs coverage at the workspace level.
+    def test(self, pkg_list: list[str] = None, ignore_list: list[str] = None, report_type: str = "html", coverage: bool = True):
+        """Runs tests on a list of rust packages / crates.
         
-        Generates a single report that provides coverage information for all
-        packages in the workspace.
+        Will additionally calculate code coverage if coverage is set to True.
         """ 
         if pkg_list is None:
             pkg_list = [pkg.name for pkg in self.members]
@@ -67,11 +66,15 @@ class RustWorkspace:
         # Set up the command
         command = "cargo"
         params = "make"
-        if ignore_list:
-            params += f' -e COV_FLAGS="--out {report_type} --exclude-files {" --exclude-files ".join(ignore_list)}"'
+
+        if coverage:
+            if ignore_list:
+                params += f' -e COV_FLAGS="--out {report_type} --exclude-files {" --exclude-files ".join(ignore_list)}"'
+            else:
+                params += f' -e COV_FLAGS="--out {report_type}"'
+            params += f" coverage {','.join(pkg_list)}"
         else:
-            params += f' -e COV_FLAGS="--out {report_type}"'
-        params += f" coverage {','.join(pkg_list)}"
+            params += f" test {','.join(pkg_list)}"
 
         # Run the command
         output = io.StringIO()
@@ -96,9 +99,10 @@ class RustWorkspace:
                 line = line.replace("test ", "")
                 if line.endswith("... ok"):
                     result["pass"].append(line.replace(" ... ok", ""))
+                elif line.endswith("... ignored"):
+                    continue
                 else:
                     result["fail"].append(line.replace(" ... FAILED", "")) 
-                continue
 
         # Command failed, but we didn't parse any failed tests
         if return_value != 0 and len(result["fail"]) == 0:
@@ -107,6 +111,9 @@ class RustWorkspace:
         if len(result["fail"]) > 0:
             return result
         
+        if not coverage:
+            return result
+
         # Determine coverage if all tests passed
         for line in lines:
             line = line.strip().strip("\n")
