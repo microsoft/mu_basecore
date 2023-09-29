@@ -5,13 +5,13 @@
   of size reduction when compiler optimization is disabled. If MDEPKG_NDEBUG is
   defined, then panic related macros wrapped by it are the NULL implementations.
 
-Copyright (c) 2023, Microsoft Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef __PANIC_LIB_H__
-#define __PANIC_LIB_H__
+#ifndef PANIC_LIB_H_
+#define PANIC_LIB_H_
 
 /**
   Prints a panic message containing a filename, line number, and description.
@@ -65,14 +65,10 @@ PanicReport (
   @param  Expression  A format string
 
 **/
-#if !defined (MDEPKG_NDEBUG)
 #define PANIC(Message)        \
     do {                            \
       _PANIC (Message);     \
       ANALYZER_UNREACHABLE ();  \
     } while (FALSE)
-#else
-#define PANIC(Message)
-#endif
 
-#endif // __PANIC_LIB_H__
+#endif // PANIC_LIB_H_

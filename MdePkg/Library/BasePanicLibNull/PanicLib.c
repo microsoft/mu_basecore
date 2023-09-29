@@ -1,7 +1,7 @@
 /** @file
   Base Panic Library with empty functions.
 
-  Copyright (c) 2023, Microsoft Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/

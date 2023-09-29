@@ -1,7 +1,7 @@
 /** @file
   Base Panic Library.
 
-  Copyright (c) 2023, Microsoft Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -46,6 +46,9 @@ PanicReport (
   // Generate the PANIC message in ASCII format
   //
   AsciiSPrint (Buffer, sizeof (Buffer), "PANIC [%a] %a(%d): %a\n", gEfiCallerBaseName, FileName, LineNumber, Description);
+
+  // Initialize Serial Port to write the panic message
+  SerialPortInitialize ();
 
   //
   // Send the print string to the Logging device device

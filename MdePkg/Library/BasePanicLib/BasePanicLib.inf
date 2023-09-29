@@ -1,10 +1,9 @@
 ## @file
 #  Panic Library.
 #
-#  Copyright (c) 2023, Microsoft Corporation. All rights reserved.<BR>
+#  Copyright (c) Microsoft Corporation.
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
-#
 #
 ##
 
@@ -19,7 +18,7 @@
 
 
 #
-#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#  VALID_ARCHITECTURES           = ANY
 #
 
 [Sources]
