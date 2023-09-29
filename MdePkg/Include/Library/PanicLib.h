@@ -1,12 +1,7 @@
 /** @file
   Provides services to print panic messages to a debug output device.
 
-  Note that a reserved macro named MDEPKG_NDEBUG is brought from debuglib for the intention
-  of size reduction when compiler optimization is disabled. If MDEPKG_NDEBUG is
-  defined, then panic related macros wrapped by it are the NULL implementations.
-
 Copyright (c) Microsoft Corporation.
-SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -59,10 +54,7 @@ PanicReport (
 /**
   Macro that calls PanicReport().
 
-  If MDEPKG_NDEBUG is not defined PanicReport() is called passing
-  in the source filename, source line number, and Message.
-
-  @param  Expression  A format string
+  @param  Message  A format string
 
 **/
 #define PANIC(Message)        \
