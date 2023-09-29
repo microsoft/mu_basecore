@@ -294,7 +294,7 @@
   ArmTrngLib|Include/Library/ArmTrngLib.h
 
 # MU_CHANGE [START]
-  ##  @libraryclass  Provides services panic functionality.
+  ##  @libraryclass  Provides panic functionality.
   #
   PanicLib|Include/Library/PanicLib.h
 
