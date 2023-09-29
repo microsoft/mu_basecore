@@ -1,7 +1,8 @@
 /** @file
-  Base Panic Library.
+  Base Serial Port Panic Library.
 
   Copyright (c) Microsoft Corporation.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -40,6 +41,14 @@ PanicReport (
   )
 {
   CHAR8  Buffer[MAX_PANIC_MESSAGE_LENGTH];
+
+  if (FileName == NULL) {
+    FileName = "(NULL) Filename";
+  }
+
+  if (Description == NULL) {
+    Description = "(NULL) Description";
+  }
 
   //
   // Generate the PANIC message in ASCII format

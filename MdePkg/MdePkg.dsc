@@ -68,7 +68,7 @@
   MdePkg/Library/PciSegmentLibSegmentInfo/DxeRuntimePciSegmentLibSegmentInfo.inf
   MdePkg/Library/BaseS3PciSegmentLib/BaseS3PciSegmentLib.inf
   MdePkg/Library/BaseArmTrngLibNull/BaseArmTrngLibNull.inf
-  MdePkg/Library/BasePanicLib/BasePanicLib.inf  # MU_CHANGE
+  MdePkg/Library/BasePanicLibSerialPort/BasePanicLibSerialPort.inf  # MU_CHANGE
   MdePkg/Library/BasePanicLibNull/BasePanicLibNull.inf  # MU_CHANGE
   MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
   MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf

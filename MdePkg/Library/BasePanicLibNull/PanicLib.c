@@ -2,16 +2,12 @@
   Base Panic Library with empty functions.
 
   Copyright (c) Microsoft Corporation.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include <Base.h>
 #include <Library/PanicLib.h>
-
-//
-// Define the maximum panic message length that this library supports
-//
-#define MAX_PANIC_MESSAGE_LENGTH  0x100
 
 /**
   This would usually print a panic message containing a filename, line number,

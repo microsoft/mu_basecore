@@ -2,13 +2,13 @@
 #  Panic Library.
 #
 #  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = BasePanicLib
-  MODULE_UNI_FILE                = BasePanicLib.uni
+  BASE_NAME                      = BasePanicLibSerialPort
   FILE_GUID                      = DF456972-AF4A-4F3A-B33C-DD31368BF490
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
