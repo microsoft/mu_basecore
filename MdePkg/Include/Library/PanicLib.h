@@ -1,12 +1,9 @@
 /** @file
-  Provides services to print debug and assert messages to a debug output device.
+  Provides services to print panic messages to a debug output device.
 
-  The Debug library supports debug print and asserts based on a combination of macros and code.
-  The debug library can be turned on and off so that the debug code does not increase the size of an image.
-
-  Note that a reserved macro named MDEPKG_NDEBUG is introduced for the intention
+  Note that a reserved macro named MDEPKG_NDEBUG is brought from debuglib for the intention
   of size reduction when compiler optimization is disabled. If MDEPKG_NDEBUG is
-  defined, then debug and assert related macros wrapped by it are the NULL implementations.
+  defined, then panic related macros wrapped by it are the NULL implementations.
 
 Copyright (c) 2023, Microsoft Corporation. All rights reserved.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -54,31 +51,28 @@ PanicReport (
 #endif
 
 #if defined (__clang__) && defined (__FILE_NAME__)
-#define _PANIC(Expression)  PanicReport (__FILE_NAME__, PANIC_LINE_NUMBER, Expression)
+#define _PANIC(Message)  PanicReport (__FILE_NAME__, PANIC_LINE_NUMBER, Message)
 #else
-#define _PANIC(Expression)  PanicReport (__FILE__, PANIC_LINE_NUMBER, Expression)
+#define _PANIC(Message)  PanicReport (__FILE__, PANIC_LINE_NUMBER, Message)
 #endif
 
 /**
   Macro that calls PanicReport().
 
-  If MDEPKG_NDEBUG is not defined and the DEBUG_PROPERTY_DEBUG_ASSERT_ENABLED
-  bit of PcdDebugProperyMask is set, then this macro evaluates the Boolean
-  expression specified by Expression.  If Expression evaluates to FALSE, then
-  DebugAssert() is called passing in the source filename, source line number,
-  and Expression.
+  If MDEPKG_NDEBUG is not defined PanicReport() is called passing
+  in the source filename, source line number, and Message.
 
   @param  Expression  A format string
 
 **/
 #if !defined (MDEPKG_NDEBUG)
-#define PANIC(Expression)        \
+#define PANIC(Message)        \
     do {                            \
-      _PANIC (Expression);     \
-      ANALYZER_UNREACHABLE ();  \                          \
+      _PANIC (Message);     \
+      ANALYZER_UNREACHABLE ();  \
     } while (FALSE)
 #else
-#define PANIC(Expression)
+#define PANIC(Message)
 #endif
 
 #endif // __PANIC_LIB_H__
