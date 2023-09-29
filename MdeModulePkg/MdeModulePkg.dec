@@ -227,6 +227,12 @@
   #
   MemoryBinOverrideLib|Include/Library/MemoryBinOverrideLib.h
 
+  # MU_CHANGE - Add PageTableAttributeLib to MdeModulePkg
+  ## @libraryclass Provides a way to parse the page/translation table
+  #                entries into a flat map.
+  #
+  PageTableAttributeLib|Include/Library/PageTableAttributeLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
