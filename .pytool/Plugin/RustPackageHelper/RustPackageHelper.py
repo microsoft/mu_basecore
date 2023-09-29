@@ -55,11 +55,10 @@ class RustWorkspace:
         
         self.members = list(members)
 
-    def test(self, pkg_list = None, ignore_list = None, report_type: str = "html", coverage = True):
-        """Runs coverage at the workspace level.
+    def test(self, pkg_list: list[str] = None, ignore_list: list[str] = None, report_type: str = "html", coverage: bool = True):
+        """Runs tests on a list of rust packages / crates.
         
-        Generates a single report that provides coverage information for all
-        packages in the workspace.
+        Will additionally calculate code coverage if coverage is set to True.
         """ 
         if pkg_list is None:
             pkg_list = [pkg.name for pkg in self.members]
