@@ -1,0 +1,16 @@
+// /** @file
+// Panic Library.
+//
+// Panic Library.
+//
+// Copyright (c) 2023, Microsoft Corporation. All rights reserved.<BR>
+//
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+// **/
+
+
+#string STR_MODULE_ABSTRACT             #language en-US "Panic Library"
+
+#string STR_MODULE_DESCRIPTION          #language en-US "Panic Library"
+

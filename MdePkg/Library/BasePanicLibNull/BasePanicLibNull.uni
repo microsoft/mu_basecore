@@ -1,0 +1,16 @@
+// /** @file
+// Panic Library with empty functions.
+//
+// Panic Library with empty functions.
+//
+// Copyright (c) 2023, Microsoft Corporation. All rights reserved.<BR>
+//
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+// **/
+
+
+#string STR_MODULE_ABSTRACT             #language en-US "Panic Library with empty functions"
+
+#string STR_MODULE_DESCRIPTION          #language en-US "Panic Library with empty functions"
+

@@ -1,0 +1,35 @@
+## @file
+#  Panic Library.
+#
+#  Copyright (c) 2023, Microsoft Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = BasePanicLib
+  MODULE_UNI_FILE                = BasePanicLib.uni
+  FILE_GUID                      = DF456972-AF4A-4F3A-B33C-DD31368BF490
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = PanicLib
+
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#
+
+[Sources]
+  PanicLib.c
+
+[LibraryClasses]
+  PrintLib
+  SerialPortLib
+  BaseLib
+
+[Packages]
+  MdePkg/MdePkg.dec
+

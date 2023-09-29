@@ -293,6 +293,13 @@
   #
   ArmTrngLib|Include/Library/ArmTrngLib.h
 
+# MU_CHANGE [START]
+  ##  @libraryclass  Provides services panic functionality.
+  #
+  PanicLib|Include/Library/PanicLib.h
+
+# MU_CHANGE [END]
+
 [LibraryClasses.IA32, LibraryClasses.X64, LibraryClasses.AARCH64]
   ##  @libraryclass  Provides services to generate random number.
   #
