@@ -25,8 +25,8 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
         rust_ws = PLMHelper.RustWorkspace(ws)  # .pytool/Plugin/RustPackageHelper
         
         with_coverage = pkgconfig.get("CalculateCoverage", True)
-        
-        if platform.system() == "Windows" and platform.machine() in ["i386", "i686"]:
+
+        if platform.system() == "Windows" and platform.machine() == 'aarch64':
             logging.debug("Coverage skipped by plugin, not supported on Windows ARM")
             with_coverage = False
 
