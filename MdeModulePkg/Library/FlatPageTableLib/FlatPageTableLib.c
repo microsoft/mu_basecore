@@ -9,7 +9,7 @@
 #include <Uefi.h>
 #include <Library/BaseLib.h>
 #include <Library/SafeIntLib.h>
-#include <Library/PageTableAttributeLib.h>
+#include <Library/FlatPageTableLib.h>
 
 // TRUE if A and B have overlapping intervals
 #define CHECK_OVERLAP(AStart, AEnd, BStart, BEnd) \

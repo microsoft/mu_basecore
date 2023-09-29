@@ -10,7 +10,7 @@
 #include <Library/BaseLib.h>
 #include <Library/CpuPageTableLib.h>
 #include <Library/DebugLib.h>
-#include <Library/PageTableAttributeLib.h>
+#include <Library/FlatPageTableLib.h>
 
 #define X64_PRESENT_BIT  BIT0
 #define X64_RW_BIT       BIT1
@@ -38,7 +38,7 @@ CreateFlatPageTable (
 
   ASSERT (sizeof (PAGE_MAP_ENTRY) == sizeof (IA32_MAP_ENTRY));
 
-  if ((Map == NULL) || (Map->Entries != NULL) || ((Map->Entries == NULL) && (Map->EntryCount != 0))) {
+  if ((Map == NULL) || ((Map->Entries == NULL) && (Map->EntryCount != 0))) {
     return EFI_INVALID_PARAMETER;
   }
 

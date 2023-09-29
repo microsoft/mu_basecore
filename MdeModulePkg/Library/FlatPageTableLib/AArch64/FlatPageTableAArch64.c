@@ -10,7 +10,7 @@
 #include <Library/ArmLib.h>
 #include <Chipset/AArch64Mmu.h>
 #include <Library/DebugLib.h>
-#include <Library/PageTableAttributeLib.h>
+#include <Library/FlatPageTableLib.h>
 
 #define TCR_EL1_HPD_FIELD             BIT41   // Assumes translation table is located at TTBR0 (UEFI spec dictated)
 #define TCR_EL2_HPD_FIELD             BIT24
@@ -23,31 +23,6 @@
 #define ROOT_TABLE_LEN(T0SZ)           (TT_ENTRY_COUNT >> ((T0SZ) - 16) % 9)
 #define ARM_TT_BASE_ADDRESS(page)      (page & TT_ADDRESS_MASK_BLOCK_ENTRY)
 #define ARM_TT_BLOCK_ATTRIBUTES(page)  (page & AARCH64_ATTRIBUTES_MASK)
-
-typedef union {
-  struct {
-    UINT64    Valid                      : 1;  // BIT0
-    UINT64    BlockOrTable               : 1;  // BIT1
-    UINT64    AttributeIndex             : 3;  // BIT2-4
-    UINT64    NonSecure                  : 1;  // BIT5
-    UINT64    AccessPermissions          : 2;  // BIT6-7
-    UINT64    Sharability                : 2;  // BIT8-9
-    UINT64    AccessFlag                 : 1;  // BIT10
-    UINT64    NonGlobal                  : 1;  // BIT11
-    UINT64    Oa                         : 4;  // BIT12-15
-    UINT64    Nt                         : 1;  // BIT16
-    UINT64    OutputAddress              : 33; // BIT17-49
-    UINT64    Guarded                    : 1;  // BIT50
-    UINT64    Dirty                      : 1;  // BIT51
-    UINT64    Contiguous                 : 1;  // BIT52
-    UINT64    Pxn                        : 1;  // BIT53
-    UINT64    Xn                         : 1;  // BIT54
-    UINT64    Ignored                    : 4;  // BIT55-58
-    UINT64    PageBasedHardwareAttribute : 4;  // BIT59-62
-    UINT64    Reserved                   : 1;  // BIT63
-  } Bits;
-  UINT64    Uint64;
-} TRANSLATION_TABLE_ATTRIBUTE;
 
 typedef union {
   struct {
@@ -84,7 +59,7 @@ typedef union {
   UINT64    Uint64;
 } TRANSLATION_TABLE_ENTRY_TABLE;
 
-typedef TRANSLATION_TABLE_ATTRIBUTE TRANSLATION_TABLE_ENTRY_BLOCK;
+typedef AARCH64_PAGE_MAP_ENTRY TRANSLATION_TABLE_ENTRY_BLOCK;
 
 typedef union {
   TRANSLATION_TABLE_ENTRY_BLOCK        Tteb;
@@ -308,9 +283,9 @@ CreateFlatPageTable (
   TRANSLATION_TABLE_ENTRY_HERITABLE  HeritableAttributes;
   UINTN                              T0SZ;
 
-  ASSERT (sizeof (OneEntry.PageEntry) == sizeof (TRANSLATION_TABLE_ATTRIBUTE));
+  ASSERT (sizeof (OneEntry.PageEntry) == sizeof (AARCH64_PAGE_MAP_ENTRY));
 
-  if ((Map == NULL) || (Map->Entries != NULL) || ((Map->Entries == NULL) && (Map->EntryCount != 0))) {
+  if ((Map == NULL) || ((Map->Entries == NULL) && (Map->EntryCount != 0))) {
     return EFI_INVALID_PARAMETER;
   }
 
