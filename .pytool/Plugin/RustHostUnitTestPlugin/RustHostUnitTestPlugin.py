@@ -34,6 +34,10 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
         pp = Path(Edk2pathObj.GetAbsolutePathOnThisSystemFromEdk2RelativePath(packagename))
         crate_name_list = [pkg.name for pkg in filter(lambda pkg: Path(pkg.path).is_relative_to(pp), rust_ws.members)]
         crate_path_list = [pkg.path for pkg in filter(lambda pkg: Path(pkg.path).is_relative_to(pp), rust_ws.members)]
+        if not crate_name_list: 
+            logging.debug("No Rust crates found in package, skipping...")
+            tc.SetSkipped()
+            return -1
         logging.debug(f"Rust Crates to test: {' '.join(crate_name_list)}")
 
         # Build a list of paths to ignore when computing results. This includes:
