@@ -26,7 +26,7 @@ class RustHostUnitTestPlugin(ICiBuildPlugin):
         
         with_coverage = pkgconfig.get("CalculateCoverage", True)
 
-        if platform.system() == "Windows" and platform.machine() == 'aarch64':
+        if platform.system() == "Windows" and platform.machine() == 'ARM64':
             logging.debug("Coverage skipped by plugin, not supported on Windows ARM")
             with_coverage = False
 
