@@ -671,10 +671,10 @@ if __name__ == '__main__':
                         VERSION_INDEX = Paths.Version - 1
 
                         if VERSION_INDEX == 0:
-                            line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"))
+                            line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"))
                         elif VERSION_INDEX == 1:
                             git_hash = ModuleGitHash(abs_path)
-                            line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash)
+                            line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"), git_hash)
                         print("Updating:\n" + line)
                 else:
                     print(f"Warning: Could not resolve relative path {rel_path}. Override line not updated.\n")
@@ -706,9 +706,9 @@ if __name__ == '__main__':
 
         if VERSION_INDEX == 0:
             print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-            print('#%s : %08d | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S")))
+            print('#%s : %08d | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")))
 
         elif VERSION_INDEX == 1:
             git_hash = ModuleGitHash(Paths.TargetPath)
             print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-            print('#%s : %08d | %s | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
+            print('#%s : %08d | %s | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
