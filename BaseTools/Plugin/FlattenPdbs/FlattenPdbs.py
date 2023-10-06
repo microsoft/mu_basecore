@@ -28,12 +28,9 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
 ###
+from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
 import logging
 from pathlib import Path
-
-from edk2toolext.environment.plugintypes.uefi_build_plugin import \
-    IUefiBuildPlugin
-
 
 # MU_CHANGE Entire File - Perf improvements
 class FlattenPdbs(IUefiBuildPlugin):
@@ -64,5 +61,5 @@ class FlattenPdbs(IUefiBuildPlugin):
             # Hard link it, which is slightly faster, but mainly allows us to tell
             # if the file has changed (st_ino is different)
             pdb_out.unlink(missing_ok=True)
-            file.hardlink_to(pdb_out)
+            pdb_out.hardlink_to(file)
         return 0
