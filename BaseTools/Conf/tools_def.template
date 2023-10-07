@@ -23,6 +23,7 @@
 # 2.41 - Can't have comment inline as it breaks concatenation see - # MU_CHANGE - Move GccLto to tools dir for better alignment
 # 2.42 - VS2022 toolchain incorrectly defined for ASL
 # 2.43 - Enable stack cookies to VS2019 and VS20222 X64 builds via /GS flag
+# 2.44 - Add Rust build support
 # 3.00 - Update toolchains
 #      - Add support for ARM and AARCH64 to CLANGDWARF
 #      - Remove VS2008, VS2010, VS2012, VS2013, CLANG35, CLANG38, EBC
@@ -2470,7 +2471,7 @@ DEBUG_*_*_RUST_TARGET      = debug
 RELEASE_*_*_RUST_TARGET    = release
 NOOPT_*_*_RUST_TARGET      = debug
 
-*_*_*_RUST_FLAGS           =    
+*_*_*_RUST_FLAGS           =
 
 ####################
 # CARGO defintions #
