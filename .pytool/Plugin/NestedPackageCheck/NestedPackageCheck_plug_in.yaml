@@ -1,0 +1,12 @@
+## @file
+# CiBuildPlugin used to check for nested packages in the repo.
+# Ignores packages coming from submodules / subrepos
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+{
+  "scope": "cibuild",
+  "name": "Nested Package Check",
+  "module": "NestedPackageCheck"
+}
