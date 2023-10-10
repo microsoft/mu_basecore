@@ -20,7 +20,7 @@
 #
 
 [Sources]
-  PanicLib.c
+  BasePanicLibNull.c
 
 [Packages]
   MdePkg/MdePkg.dec

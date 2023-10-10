@@ -20,7 +20,7 @@
 #
 
 [Sources]
-  PanicLib.c
+  BasePanicLibSerialPort.c
 
 [LibraryClasses]
   PrintLib
