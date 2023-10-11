@@ -510,8 +510,7 @@ InitializeExceptionStackSwitchHandlers (
 
   // MU_CHANGE [BEGIN] - CodeQL change
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Critical failure intializing stack exception handlers so deadlooping.\n", __func__));
-    CpuDeadLoop ();
+    PANIC ("Failed to get processor number when initializing the stack switch exception handlers.");
     return;
   }
 

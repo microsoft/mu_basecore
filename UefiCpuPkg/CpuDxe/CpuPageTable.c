@@ -14,6 +14,7 @@
 #include <Library/SerialPortLib.h>
 #include <Library/SynchronizationLib.h>
 #include <Library/PrintLib.h>
+#include <Library/PanicLib.h>  // MU_CHANGE
 #include <Protocol/SmmBase2.h>
 #include <Register/Intel/Cpuid.h>
 #include <Register/Intel/Msr.h>
@@ -1267,7 +1268,7 @@ DebugExceptionHandler (
   Status = MpInitLibWhoAmI (&CpuIndex);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Jumping to TLB flush.\n", __func__));
+    PANIC ("Failed to get processor number in the DebugExceptionHandler");
     goto Done;
   }
 
@@ -1351,7 +1352,7 @@ PageFaultExceptionHandler (
     Status = MpInitLibWhoAmI (&CpuIndex);
 
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Jumping to context dumping and deadloop.\n", __func__));
+      PANIC ("Failed to get processor number in the PageFaultExceptionHandler");
       goto Done;
     }
 
