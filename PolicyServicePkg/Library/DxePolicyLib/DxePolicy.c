@@ -68,9 +68,10 @@ GetPolicyInterface (
   @param[in]  Context The Event Context.
 
 **/
+STATIC
 VOID
 EFIAPI
-RuntimeLibExitBootServicesEvent (
+PolicyExitBootServicesEventCallback (
   IN EFI_EVENT  Event,
   IN VOID       *Context
   )
@@ -101,7 +102,7 @@ PolicyLibConstructor (
   Status = gBS->CreateEvent (
                   EVT_SIGNAL_EXIT_BOOT_SERVICES,
                   TPL_NOTIFY,
-                  RuntimeLibExitBootServicesEvent,
+                  PolicyExitBootServicesEventCallback,
                   NULL,
                   &mPolicyExitBootServicesEvent
                   );

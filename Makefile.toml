@@ -6,11 +6,10 @@ CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 RUSTC_BOOTSTRAP = 1
 ARCH = "X64"
 TARGET_TRIPLE = { source = "${ARCH}", mapping = { "X64" = "x86_64-unknown-uefi", "IA32" = "i686-unknown-uefi", "AARCH64" = "aarch64-unknown-uefi", "LOCAL" = "${CARGO_MAKE_RUST_TARGET_TRIPLE}" }, condition = { env_not_set = [ "TARGET_TRIPLE" ] } }
-PACKAGE_TARGET = {value = "-p ${CARGO_MAKE_TASK_ARGS}",condition = { env_true = [ "CARGO_MAKE_TASK_ARGS", ] } }
 
 BUILD_FLAGS = "--profile ${RUSTC_PROFILE} --target ${TARGET_TRIPLE} -Zbuild-std=core,compiler_builtins,alloc -Zbuild-std-features=compiler-builtins-mem -Zunstable-options --timings=html"
 TEST_FLAGS = { value = "", condition = { env_not_set = ["TEST_FLAGS"] } }
-COV_FLAGS = { value = "--out Html --exclude-files **/tests/*", condition = { env_not_set = ["COV_FLAGS"] } }
+COV_FLAGS = { value = "--out html --exclude-files **/tests/*", condition = { env_not_set = ["COV_FLAGS"] } }
 
 [env.development]
 RUSTC_PROFILE = "dev"
@@ -19,6 +18,28 @@ RUSTC_TARGET = "debug"
 [env.release]
 RUSTC_PROFILE = "release"
 RUSTC_TARGET = "release"
+
+[tasks.individual-package-targets]
+script_runner = "@duckscript"
+script = '''
+args = get_env CARGO_MAKE_TASK_ARGS
+
+if is_empty ${args}
+  exit
+end
+
+1 = array ""
+2 = split ${args} ,
+3 = array_concat ${1} ${2}
+joined_args = array_join ${3} " -p "
+release ${1}
+release ${2}
+release ${3}
+
+joined_args = trim ${joined_args}
+set_env INDIVIDUAL_PACKAGE_TARGETS ${joined_args}
+release ${joined_args}
+'''
 
 [tasks.build]
 description = """Builds a single rust package.
@@ -34,16 +55,33 @@ Example:
 """
 clear = true
 command = "cargo"
-args = ["build", "@@split(PACKAGE_TARGET, )", "@@split(BUILD_FLAGS, )"]
+args = ["build", "@@split(INDIVIDUAL_PACKAGE_TARGETS, )", "@@split(BUILD_FLAGS, )"]
+dependencies = ["individual-package-targets"]
+
+[tasks.check]
+description = "Checks rust code for errors. Example `cargo make check`"
+clear = true
+command = "cargo"
+args = ["check", "@@split(INDIVIDUAL_PACKAGE_TARGETS, )", "@@split(BUILD_FLAGS, )"]
+dependencies = ["individual-package-targets"]
+
+[tasks.check_json]
+description = "Checks rust code for errors with results in JSON. Example `cargo make check_json`"
+clear = true
+command = "cargo"
+args = ["check", "@@split(INDIVIDUAL_PACKAGE_TARGETS, )", "@@split(BUILD_FLAGS, )", "--message-format=json"]
+dependencies = ["individual-package-targets"]
 
 [tasks.test]
 description = "Builds all rust tests in the workspace. Example `cargo make test`"
 clear = true
 command = "cargo"
-args = ["test", "@@split(PACKAGE_TARGET, )", "@@split(TEST_FLAGS, )"]
+args = ["test", "@@split(INDIVIDUAL_PACKAGE_TARGETS, )", "@@split(TEST_FLAGS, )"]
+dependencies = ["individual-package-targets"]
 
 [tasks.coverage]
 description = "Build and run all tests and calculate coverage."
 clear = true
 command = "cargo"
-args = ["tarpaulin", "@@split(PACKAGE_TARGET, )", "@@split(COV_FLAGS, )", "--output-dir", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target"]
+args = ["tarpaulin", "@@split(INDIVIDUAL_PACKAGE_TARGETS, )", "@@split(COV_FLAGS, )", "--output-dir", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target"]
+dependencies = ["individual-package-targets"]

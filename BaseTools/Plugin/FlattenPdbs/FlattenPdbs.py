@@ -1,7 +1,7 @@
 ## @file FlattenPdbs.py
 # Plugin to support copying all PDBs to 1 directory.
 # This makes symbol publishing easier and with the usage of
-# ALT PDB PATH can shrink the size of each module. 
+# ALT PDB PATH can shrink the size of each module.
 #
 ##
 # Copyright (c) Microsoft Corporation. All rights reserved.
@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-### 
+###
 from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
 import logging
 from pathlib import Path
@@ -61,5 +61,5 @@ class FlattenPdbs(IUefiBuildPlugin):
             # Hard link it, which is slightly faster, but mainly allows us to tell
             # if the file has changed (st_ino is different)
             pdb_out.unlink(missing_ok=True)
-            file.link_to(pdb_out) # Replace with pdb_out.hardlink_to(file) when support for python 3.9 is dropped
+            pdb_out.hardlink_to(file)
         return 0

@@ -1278,9 +1278,9 @@
   # MU_CHANGE [END]
 
   # MU_CHANGE [BEGIN] - Support indefinite boot retries
-  # # Some platforms require that all EfiLoadOptions are retried until one of the options 
-  # # succeeds. When True, this Pcd will force Bds to retry all the valid EfiLoadOptions 
-  # # indefinitely until one of the options succeeds. 
+  # # Some platforms require that all EfiLoadOptions are retried until one of the options
+  # # succeeds. When True, this Pcd will force Bds to retry all the valid EfiLoadOptions
+  # # indefinitely until one of the options succeeds.
   # #   TRUE  - Efi boot options will be retried indefinitely.
   # #   FALSE - Efi boot options will not be retried.
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportInfiniteBootRetries|FALSE|BOOLEAN|0x40000152
@@ -2146,6 +2146,13 @@
   #   FALSE - Full PCI enumeration is not disabled.<BR>
   # @Prompt Disable full PCI enumeration.
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDisableBusEnumeration|FALSE|BOOLEAN|0x10000048
+
+  # MU_CHANGE: Add support for initializing PCIe MPS
+  ## Indicates if Max Payload Size should be set for PCIe devices
+  #   TRUE  - Initialize MPS for PCI devices.
+  #   FALSE - Leave MPS to the default value.
+  # @Prompt Enable initializing PCIe Max Payload Sizes.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPcieInitializeMps|FALSE|BOOLEAN|0x10000049
 
   ## Disk I/O - Number of Data Buffer block.
   # Define the size in block of the pre-allocated buffer. It provide better
