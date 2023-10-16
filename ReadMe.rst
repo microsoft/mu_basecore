@@ -15,59 +15,71 @@ For more details about the repository, refer to `RepoDetails.md`_.
 
 .. _`RepoDetails.md`: https://github.com/microsoft/mu_basecore/blob/HEAD/RepoDetails.md
 
-Branch Status - release/202302
+Branch Status - release/202308
 ==============================
 
 :Status:
   In Development
 
 :Entered Development:
-  2023/04/27
+  2023/10/16
 
 :Anticipated Stabilization:
-  Aug 2023
+  Feb 2024
 
-Branch Changes - release/202302
+Branch Changes - release/202308
 ===============================
 
 Breaking Changes-dev
 --------------------
 
-- Incomplete
+- UefiCpuPkg/ResetVector/Bin/IA32/ResetVector.inf was removed along with all pre-built reset vector binaries.
+The Readme.txt was updated to describe the new way to integrate the rest vector.
 
 Main Changes-dev
 ----------------
 
-- Integrated reworked Openssl crypto.  Instead of having separate INF files for each architecture it is now consolidated
-  into a single Accel INF.
-- CodeQL fixes were applied throughout the repo to address some vulnerabilities.
-- Memory protections were cleaned up and reworked to make its progression more clear in history.
-- Integrated Google Test into project MU.
-- Removed VS2015 and VS2017 support from packages.
-- Added additional ARM packages for build capability.
+- Moved to openssl 3.0.9 from 1.1.1t.  This comes with a large size increase.
+- Added TraceHubLib suport
+- Added suport FDT library in MdePkg
+- Updated PEI to use restricted memory mappings
+- Added SmmCpuFeaturesLib implementation for AMD processor family
+- Cleaned up and removed definitions and tool chains in BaseTools
 
 Bug Fixes-dev
 -------------
 
-- Fixed some TPL restore calls that were incorrect.
+- A bunch of Codeql fixes for changes from edk2
+- Fixed AMD hardware specific bugs
 
-2302_RefBoot Changes
+2308_RefBoot Changes
 --------------------
 
 - Incomplete
 
-2302_CIBuild Changes
+2308_CIBuild Changes
 --------------------
 
-- Additional refactoring in CryptoPkg
+- Fixed markdown errors in multiple readme files from edk2
+- Updated MdeModulePkg Pcd indentifier values to work with tracehub additions
+- Disabled Vtf0.inf to be able to build CI
+- Updated PiSmmCpuCpuDxe and DxeMpLib.c to work with edk2 Changes
+- Removed some rebase artifacts from CryptoPkg.dsc
+- Updated tools_def.template to use the new MdePkg GnuNoteBti.bin
+- Fixed header file issue in StandaloneMmPeCoffExtraActionLib.c
+- Updated Crypto tests to not use native instructions for non IA32 and X64 build_status_windows
 
-2302_Rebase Changes
+2308_Rebase Changes
 -------------------
 
-| Starting commit: 082b06d160 ("Edk2ToolsBuild.py: set arch to host arch if not specified on linux", 2023-04-27)
-| Destination Commit from upstream edk2: f80f052277 ("OvmfPkg/RiscVVirt: Add Stack HOB", 2023-03-01)
+| Starting commit: 1f4f0a4243 ("Repo File Sync: Update to Mu DevOps 7.0.1 and Rust 1.73.0", 2023-10-13)
+| Destination Commit from upstream edk2: 819cfc6b42 ("OvmfPkg/RiscVVirt: Fix issues in VarStore Blockmap config", 2023-08-24)
 
-- Many conflicts in CryptoPkg that needed to be resolved.
+- In PcRtc.c the default year was changed.
+  - Keeping our default year but using new logic
+- BdsEntry.c default boot behavior slightly changed.
+  - Staying with MU_CHANGE that prevents loading the default boot option.
+
 
 Code of Conduct
 ===============
@@ -152,14 +164,14 @@ POSSIBILITY OF SUCH DAMAGE.
 
 .. CoreCI
 
-.. _Windows_VS2019: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=39&&branchName=release%2F202302
-.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202302
+.. _Windows_VS2019: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=39&&branchName=release%2F202308
+.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202308
 .. |WindowsCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/39.svg
 .. |WindowsCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
 
-.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=40&branchName=release%2F202302
-.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20Ubuntu%20GCC5?branchName=release%2F202302
+.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=40&branchName=release%2F202308
+.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20Ubuntu%20GCC5?branchName=release%2F202308
 .. |UbuntuCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/40.svg
 .. |UbuntuCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
 
-.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202302
+.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202308
