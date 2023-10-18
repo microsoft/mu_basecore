@@ -19,6 +19,17 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Guid/MemoryTypeInformation.h>
 
+//
+// The following 6 runtime visible memory types are currently expected in the
+// memory type information variable:
+//
+//   1. EfiACPIMemoryNVS
+//   2. EfiACPIReclaimMemory
+//   3. EfiReservedMemoryType
+//   4. EfiRuntimeServicesCode
+//   5. EfiRuntimeServicesData
+//   6. EfiMaxMemoryType
+//
 #define   EFI_MEMORY_TYPE_INFORMATION_VARIABLE_INFO_COUNT  6
 #define   EFI_MEMORY_TYPE_INFORMATION_VARIABLE_SIZE        (sizeof(EFI_MEMORY_TYPE_INFORMATION) * EFI_MEMORY_TYPE_INFORMATION_VARIABLE_INFO_COUNT)
 
@@ -84,7 +95,7 @@ MemoryTypeInfoVarCheckHandler (
   if (DataSize != EFI_MEMORY_TYPE_INFORMATION_VARIABLE_SIZE) {
     DEBUG ((
       DEBUG_ERROR,
-      "ERROR: %a() - DataSize = 0x%x Expected = 0x%x\n",
+      "ERROR: %a() - DataSize = 0x%x Expected = 0x%x. Check actual memory types against expected memory types.\n",
       __FUNCTION__,
       DataSize,
       EFI_MEMORY_TYPE_INFORMATION_VARIABLE_SIZE
