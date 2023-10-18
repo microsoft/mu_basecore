@@ -19,8 +19,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Guid/MemoryTypeInformation.h>
 
-// MU_CHANGE [BEGIN] - Better describe expected memory type info memory types
-
 //
 // The following 6 runtime visible memory types are currently expected in the
 // memory type information variable:
@@ -32,9 +30,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //   5. EfiRuntimeServicesData
 //   6. EfiMaxMemoryType
 //
-
-// MU_CHANGE [END] - Better describe expected memory type info memory types
-
 #define   EFI_MEMORY_TYPE_INFORMATION_VARIABLE_INFO_COUNT  6
 #define   EFI_MEMORY_TYPE_INFORMATION_VARIABLE_SIZE        (sizeof(EFI_MEMORY_TYPE_INFORMATION) * EFI_MEMORY_TYPE_INFORMATION_VARIABLE_INFO_COUNT)
 
@@ -98,7 +93,6 @@ MemoryTypeInfoVarCheckHandler (
   // Check DataSize.
   //
   if (DataSize != EFI_MEMORY_TYPE_INFORMATION_VARIABLE_SIZE) {
-    // MU_CHANGE [BEGIN] - Better describe expected memory type info memory types
     DEBUG ((
       DEBUG_ERROR,
       "ERROR: %a() - DataSize = 0x%x Expected = 0x%x. Check actual memory types against expected memory types.\n",
@@ -106,7 +100,6 @@ MemoryTypeInfoVarCheckHandler (
       DataSize,
       EFI_MEMORY_TYPE_INFORMATION_VARIABLE_SIZE
       ));
-    // MU_CHANGE [END] - Better describe expected memory type info memory types
     return EFI_SECURITY_VIOLATION;
   }
 
