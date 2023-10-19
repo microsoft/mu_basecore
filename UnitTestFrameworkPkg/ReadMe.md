@@ -7,6 +7,7 @@ the UEFI shell environment and host-based environments. It allows for unit test 
 on the tests and leave error logging, result formatting, context persistence, and test running to the framework.
 The unit test framework works well for low level unit tests as well as system level tests and
 fits easily in automation frameworks.
+
 ### Framework
 
 The first unit test framework is called **Framework** and is implemented as a set of EDK II libraries.
@@ -65,61 +66,6 @@ reviewed. The paths to the SecureBootVariableLib unit tests are:
 | Type-Parameterized Tests    |    NO     |    YES     |
 | Timeout Support             |    NO     |    YES     |
 | Mocking Support             |   Cmocka  |   gMock    |
-| JUNIT XML Reports           |    YES    |    YES     |
-| Execute subset of tests     |    NO     |    YES     |
-| VS Code Extensions          |    NO     |    YES     |
-
-## Framework Libraries
-
-### Framework
-
-The first unit test framework is called **Framework** and is implemented as a set of EDK II libraries.
-The Framework supports both host-based unit tests and target-based unit tests that share the same
-source style, macros, and APIs. In some scenarios, the same unit test case sources can be built
-for both host-based unit test execution and target-based unit test execution. Host-based unit tests
-that require mocked interfaces can use the mocking infrastructure provided by
-[cmocka](https://api.cmocka.org/) that is included in the UnitTestFrameworkPkg as a submodule.
-
-### GoogleTest
-
-The second unit test framework supported by the UnitTestFrameworkPkg is
-[GoogleTest](http://google.github.io/googletest/) that can be used to implement host-based unit tests.
-Use of GoogleTest for target-based unit tests of EDK II components is not supported. If a
-host-based unit test requires mocked interfaces, then the Framework with cmocka support should be
-used instead. Enabling support for mocked interfaces with GoogleTest is being actively investigated.
-[GoogleTest on GitHub](https://github.com/google/googletest) is included in the UnitTestFrameworkPkg
-as a submodule.
-
-GoogleTest requires less overhead to register test suites and test cases compared to the Framework.
-There are also a number of tools that layer on top of GoogleTest that improve developer productivity.
-One example is the VS Code extension
-[C++ TestMate](https://marketplace.visualstudio.com/items?itemName=matepek.vscode-catch2-test-adapter)
-that may be used to implement, run, and debug unit tests implemented using GoogleTest.
-
-If a component can be tested with host-based unit tests without support for mocked interfaces,
-then GoogleTest is recommended. The MdePkg contains a port of the BaseSafeIntLib unit tests in
-the GoogleTest style so the differences between GoogleTest and Framework unit tests can be reviewed.
-The paths to the BaseSafeIntLib unit tests are:
-
-* MdePkg\Test\UnitTest\Library\BaseSafeIntLib
-* MdePkg\Test\GoogleTest\Library\BaseSafeIntLib
-
-## Framework and GoogleTest Feature Comparison
-
-| Feature                     | Framework | GoogleTest |
-|:----------------------------|:---------:|:----------:|
-| Host Based Unit Tests       |    YES    |    YES     |
-| Target Based Unit Tests     |    YES    |     NO     |
-| Unit Test Source Language   |     C     |    C++     |
-| Register Test Suite         |    YES    |    Auto    |
-| Register Test Case          |    YES    |    Auto    |
-| Death/Expected Assert Tests |    YES    |    YES     |
-| Setup/Teardown Hooks        |    YES    |    YES     |
-| Value-Parameterized Tests   |    NO     |    YES     |
-| Typed Tests                 |    NO     |    YES     |
-| Type-Parameterized Tests    |    NO     |    YES     |
-| Timeout Support             |    NO     |    YES     |
-| Mocking Support             |   Cmocka  |     NO     |
 | JUNIT XML Reports           |    YES    |    YES     |
 | Execute subset of tests     |    NO     |    YES     |
 | VS Code Extensions          |    NO     |    YES     |
@@ -408,7 +354,7 @@ the following tables.
 | Matcher Name | Similar gMock Generic Matcher | Usage |
 |:--- |:--- |:--- |
 | `BufferEq()` | `Pointee(Eq())` | Used to compare two buffer pointer types (such as UINT8*, VOID*, a structure pointer, etc.). Can be used in an `EXPECT_CALL()`, `EXPECT_THAT()`, or anywhere else a matcher to compare two buffers is needed. |
-| `Char16StrEq()` | `Pointee(Eq())` | Used to compare two CHAR16* strings. Can be used in an `EXPECT_CALL()`, `EXPECT_THAT()`, or anywhere else a matcher to compare two CHAR16* strings is needed. |
+| `Char16StrEq()` | `Pointee(Eq())` | Used to compare two CHAR16 string pointers. Can be used in an `EXPECT_CALL()`, `EXPECT_THAT()`, or anywhere else a matcher to compare two CHAR16* strings is needed. |
 
 ### FunctionMockLib
 
@@ -424,6 +370,7 @@ the mock functions, and the other two macros are related to creating an interfac
 to contain the mock functions and connect them into the gMock framework.
 
 The macros used to create the interface are...
+
 1. `MOCK_INTERFACE_DECLARATION(MOCK)`
 2. `MOCK_INTERFACE_DEFINITION(MOCK)`
 
@@ -446,6 +393,7 @@ MOCK_INTERFACE_DEFINITION(MockUefiLib);
 ```
 
 The macros used to create the mock functions are...
+
 1. `MOCK_FUNCTION_DECLARATION(RET_TYPE, FUNC, ARGS)`
 2. `MOCK_FUNCTION_DEFINITION(MOCK, FUNC, NUM_ARGS, CALL_TYPE)`
 3. `MOCK_FUNCTION_INTERNAL_DECLARATION(RET_TYPE, FUNC, ARGS)`
@@ -893,7 +841,7 @@ the `GoogleTestLib`, and the `[BuildOptions]` will need to append the `/EHsc`
 compilation flag to all MSFT builds to enable proper use of the C++ exception
 handler. Below is the complete `MockUefiLib.inf` as an example.
 
-```
+```text
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = MockUefiLib
@@ -928,7 +876,7 @@ if no test uses it yet, this created INF file needs to be added into the
 which this INF file resides. For example, the above `MockUefiLib.inf` would
 need to be added to the `MdePkg/Test/MdePkgHostTest.dsc` file as shown below.
 
-```
+```text
 [Components]
   MdePkg/Test/Mock/Library/GoogleTest/MockUefiLib/MockUefiLib.inf
 ```
@@ -946,7 +894,7 @@ locate the mock function header file. For example, if `MockUefiLib.inf` were
 the first mock added to the `MdePkg`, then the below snippet would need to be
 added to the `MdePkg.dec` file.
 
-```
+```text
 [Includes]
   Test/Mock/Include
 ```
@@ -966,7 +914,7 @@ mock function definitions file be added to the `[Sources]` section, the
 Below is a minimal contrived example for a `MyModuleGoogleTest.inf` that uses a
 `MockMyModuleInternalFunctions.cpp` source file for its internal mock functions.
 
-```
+```text
 [Defines]
   INF_VERSION         = 0x00010017
   BASE_NAME           = MyModuleGoogleTest
@@ -1028,7 +976,7 @@ you should be good to go.
 
 See this example in `SampleGoogleTestHost.inf`...
 
-```
+```text
 [Packages]
   MdePkg/MdePkg.dec
   UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
@@ -1042,7 +990,7 @@ See this example in `SampleGoogleTestHost.inf`...
 Also, if you want your test to automatically be picked up by the Test Runner plugin, you will need
 to make sure that the module `BASE_NAME` contains the word `Test`...
 
-```
+```text
 [Defines]
   BASE_NAME      = SampleGoogleTestHost
 ```
@@ -1054,7 +1002,7 @@ section so that the unit tests will be built.
 
 See this example in `UnitTestFrameworkPkgHostTest.dsc`...
 
-```
+```text
 [Components]
   UnitTestFrameworkPkg/Test/GoogleTest/Sample/SampleGoogleTest/SampleGoogleTestHost.inf
 ```
@@ -1063,7 +1011,7 @@ Also, based on the type of tests that are being created, the associated DSC incl
 UnitTestFrameworkPkg for Host or Target based tests should also be included at the top of the DSC
 file.
 
-```
+```text
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgHost.dsc.inc
 ```
 
@@ -1076,7 +1024,7 @@ See this example in `SecurityPkgHostTest.dsc` where the `SecureBootVariableLib` 
 being tested using mock versions of `UefiRuntimeServicesTableLib`, `PlatformPKProtectionLib`,
 and `UefiLib`...
 
-```
+```text
 [Components]
   SecurityPkg/Library/SecureBootVariableLib/GoogleTest/SecureBootVariableLibGoogleTest.inf {
     <LibraryClasses>
@@ -1371,139 +1319,6 @@ leave those details to be explained in the gMock documentation.
 To write more advanced tests, take a look at the
 [GoogleTest User's Guide](http://google.github.io/googletest/).
 
-## GoogleTest Samples
-
-There is a sample unit test provided as both an example of how to write a unit test and leverage
-many of the GoogleTest features. This sample can be found in the `Test/GoogleTest/Sample/SampleGoogleTest`
-directory.
-
-The sample is provided for the HOST_APPLICATION build type, which can be run on a host system without
-needing a target.
-
-## GoogleTest Usage
-
-This section is built a lot like a "Getting Started". We'll go through some of the components that are needed
-when constructing a unit test and some of the decisions that are made by the test writer. We'll also describe
-how to check for expected conditions in test cases and a bit of the logging characteristics.
-
-Most of these examples will refer to the SampleGoogleTestHost app found in this package.
-
-### GoogleTest Requirements - INF
-
-In our INF file, we'll need to bring in the `GoogleTest` library. Conveniently, the interface
-header for the `GoogleTest` is in `UnitTestFrameworkPkg`, so you shouldn't need to depend on any other
-packages. As long as your DSC file knows where to find the lib implementation that you want to use,
-you should be good to go.
-
-See this example in 'SampleGoogleTestHost.inf'...
-
-```inf
-[Packages]
-  MdePkg/MdePkg.dec
-  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
-
-[LibraryClasses]
-  GoogleTestLib
-  BaseLib
-  DebugLib
-```
-
-Also, if you want you test to automatically be picked up by the Test Runner plugin, you will need
-to make sure that the module `BASE_NAME` contains the word `Test`...
-
-```inf
-[Defines]
-  BASE_NAME      = SampleGoogleTestHost
-```
-
-### GoogleTest Requirements - Code
-
-Not to state the obvious, but let's make sure we have the following include before getting too far along...
-
-```c
-#include <gtest/gtest.h>
-extern "C" {
-  #include <Uefi.h>
-  #include <Library/BaseLib.h>
-  #include <Library/DebugLib.h>
-}
-```
-
-GoogleTest applications are implemented in C++. The first include brings in the
-GoogleTest definitions. Other EDK II related include files must be wrapped in
-`extern "C" {}` because they are C include files. Link failures will occur if
-this is not done.
-
-Now that we've got that squared away, let's look at our 'Main()'' routine (or DriverEntryPoint() or whatever).
-
-### GoogleTest Configuration
-
-Unlike the Framework, GoogleTest does not require test suites or test cases to
-be registered. Instead, the test cases declare the test suite name and test
-case name as part of their implementation. The only requirement for GoogleTest
-is to have a `main()` function that initialize the GoogleTest infrastructure and
-call the service `RUN_ALL_TESTS()` to run all the unit tests.
-
-```c
-int main(int argc, char* argv[]) {
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
-```
-
-### GoogleTest - A Simple Test Case
-
-We'll look at the below test case from 'SampleGoogleTestHost'...
-
-```c
-TEST(SimpleMathTests, OnePlusOneShouldEqualTwo) {
-  UINTN  A;
-  UINTN  B;
-  UINTN  C;
-
-  A = 1;
-  B = 1;
-  C = A + B;
-
-  ASSERT_EQ (C, 2);
-}
-```
-
-This uses the simplest form of a GoogleTest unit test using `TEST()` that
-declares the test suite name and the unit test name within that test suite.
-The unit test performs actions and typically makes calls to the code under test
-and contains test assertions to verify that the code under test behaves as
-expected for the given inputs.
-
-In this test case, the `ASSERT_EQ` assertion is being used to establish that the business logic has functioned
-correctly. There are several assertion macros, and you are encouraged to use one that matches as closely to your
-intended test criterium as possible, because the logging is specific to the macro and more specific macros have more
-detailed logs. When in doubt, there are always `ASSERT_TRUE` and `ASSERT_FALSE`. Assertion macros that fail their
-test criterium will immediately return from the test case with a failed status and log an error string.
-_Note_ that this early return can have implications for memory leakage.
-
-There is no return status from a GooglTest unit test. If no assertions are
-triggered then the unit test has a passing status.
-
-### GoogleTest - More Complex Cases
-
-To write more advanced tests, take a look at the
-[GoogleTest User's Guide](http://google.github.io/googletest/).
-
-## Development
-
-### Iterating on a Single Test
-
-When using the EDK2 Pytools for CI testing, the host-based unit tests will be built and run on any build that includes
-the `NOOPT` build target.
-
-If you are trying to iterate on a single test, a convenient pattern is to build only that test module. For example,
-the following command will build only the SafeIntLib host-based test from the MdePkg...
-
-```bash
-stuart_ci_build -c .pytool/CISettings.py TOOL_CHAIN_TAG=VS2017 -p MdePkg -t NOOPT BUILDMODULE=MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLib.inf
-```
-
 ### Hooking BaseLib
 
 Most unit test mocking can be performed by the functions provided in the UnitTestFrameworkPkg libraries, but since
@@ -1701,23 +1516,24 @@ OpenCppCoverage windows tool to parse coverage data to cobertura xml format.
     Click "Tools" -> "Run OpenCppCoverage"
     ```
 
-
 For Linux, this is primarily leveraged for pipeline builds, but this can be leveraged locally using the
 lcov linux tool, and parsed using the lcov_cobertura python tool to parse it to cobertura xml format.
 
-- Linux Prerequisite
+* Linux Prerequisite
+
   ```bash
   sudo apt-get install -y lcov
   python -m pip install --upgrade -r ./pip-requirements.txt
   stuart_ci_build -c .pytool/CISettings.py  -t NOOPT TOOL_CHAIN_TAG=GCC5 -p MdeModulePkg
   Open Build/coverage.xml
   ```
-  - How to see code coverage data on IDE Visual Studio Code
-    ```
+
+  * How to see code coverage data on IDE Visual Studio Code
+
+    ```bash
     Download plugin "Coverage Gutters"
     Press Hot Key "Ctrl + Shift + P" and click option "Coverage Gutters: Display Coverage"
     ```
-
 
 ### Important Note
 
