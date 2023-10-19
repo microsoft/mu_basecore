@@ -1679,12 +1679,16 @@ GenSmmPageTable (
     }
   }
 
-  if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0) {
+  // MU_CHANGE START
+  // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0) {
+  if (gMmMps.NullPointerDetectionPolicy) {
     //
     // Mark [0, 4k] as non-present
     //
     Status = ConvertMemoryPageAttributes (PageTable, PagingMode, 0, SIZE_4KB, EFI_MEMORY_RP, TRUE, NULL);
   }
+
+  // MU_CHANGE END
 
   return (UINTN)PageTable;
 }
