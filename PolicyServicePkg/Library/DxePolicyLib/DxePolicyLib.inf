@@ -30,6 +30,7 @@
 [LibraryClasses]
   BaseLib
   DebugLib
+  MemoryAllocationLib ## MU_CHANGE
   UefiBootServicesTableLib
 
 [Protocols]
