@@ -30,6 +30,7 @@
 [LibraryClasses]
   BaseLib
   DebugLib
+  MemoryAllocationLib
   UefiBootServicesTableLib
 
 [Protocols]
