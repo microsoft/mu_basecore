@@ -30,8 +30,8 @@
 [LibraryClasses]
   BaseLib
   DebugLib
-  UefiBootServicesTableLib
   MemoryAllocationLib
+  UefiBootServicesTableLib
 
 [Protocols]
   gPolicyProtocolGuid                 ## CONSUMES
