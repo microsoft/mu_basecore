@@ -217,7 +217,8 @@
       MmSaveStateLib|UefiCpuPkg/Library/MmSaveStateLib/AmdMmSaveStateLib.inf
   }
   UefiCpuPkg/Universal/Acpi/S3Resume2Pei/S3Resume2Pei.inf
-  UefiCpuPkg/ResetVector/Vtf0/Vtf0.inf
+  # MU_CHANGE - Disable Vtf0.inf temporarily to build CI
+  #UefiCpuPkg/ResetVector/Vtf0/Vtf0.inf
   UefiCpuPkg/Library/SmmCpuRendezvousLib/SmmCpuRendezvousLib.inf
   UefiCpuPkg/Library/CpuPageTableLib/CpuPageTableLib.inf
   UefiCpuPkg/Library/CpuExceptionHandlerLib/UnitTest/PeiCpuExceptionHandlerLibUnitTest.inf
