@@ -674,8 +674,8 @@ MpInitChangeApLoopCallback (
   mNumberToFinish            = CpuMpData->CpuCount - 1;
   // MU_CHANGE START: Remove NX from AP Loop Buffer
   BufferRemoveNoExecute (
-    (EFI_PHYSICAL_ADDRESS)(UINTN)mReservedApLoopFunc,
-    EFI_PAGES_TO_SIZE (EFI_SIZE_TO_PAGES (CpuMpData->AddressMap.RelocateApLoopFuncSize))
+    (EFI_PHYSICAL_ADDRESS)(UINTN)mReservedApLoop.Data,
+    EFI_PAGES_TO_SIZE (EFI_SIZE_TO_PAGES (CpuMpData->AddressMap.RelocateApLoopFuncSizeAmdSev))
     );
   // MU_CHANGE END
   WakeUpAP (CpuMpData, TRUE, 0, RelocateApLoop, NULL, TRUE);
