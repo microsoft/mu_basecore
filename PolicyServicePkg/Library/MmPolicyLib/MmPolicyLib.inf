@@ -29,6 +29,7 @@
   BaseLib
   DebugLib
   MmServicesTableLib
+  MemoryAllocationLib
 
 [Protocols]
   gMmPolicyProtocolGuid                 ## CONSUMES

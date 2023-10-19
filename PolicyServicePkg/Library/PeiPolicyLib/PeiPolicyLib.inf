@@ -28,6 +28,7 @@
 [LibraryClasses]
   BaseLib
   DebugLib
+  MemoryAllocationLib
 
 [Ppis]
   gPeiPolicyPpiGuid                ## CONSUMES
