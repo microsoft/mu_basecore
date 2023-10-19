@@ -1086,7 +1086,7 @@
   #   TRUE  - IOMMU protocol required for DMA access.<BR>
   #   FALSE - DMA Access can happen before IOMMU protocol install.<BR>
   # @Prompt Enable DMA before IOMMU protocol.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdRequireIommu|TRUE|BOOLEAN|0x30001057
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRequireIommu|TRUE|BOOLEAN|0x30001060
 
   ## MU_CHANGE
   ## Indicates if the InternalEventServices protocol is published to gBS. This protocol provides access to the
@@ -1164,7 +1164,7 @@
 
   ## Delayed Dispatch Max Entries    //MS_CHANGE
   # Maximum number of delayed dispatch entries
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxEntries|8|UINT32|0x30001056
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxEntries|8|UINT32|0x30001059
 
   # MU_CHANGE START Remove Memory Protection PCDs
   # ## Mask to control the NULL address detection in code for different phases.
