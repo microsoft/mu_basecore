@@ -193,6 +193,7 @@ SmmInitPageTable (
   UINT64                    *Pml4Entry;
   UINT64                    *Pml5Entry;
   UINT8                     PhysicalAddressBits;
+
   Pml4Entry = NULL; // MU_CHANGE - CodeQL change
   Pml5Entry = NULL; // MU_CHANGE - CodeQL change
 
