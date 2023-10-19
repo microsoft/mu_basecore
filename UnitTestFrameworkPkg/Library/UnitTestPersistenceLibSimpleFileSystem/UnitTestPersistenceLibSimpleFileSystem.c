@@ -87,14 +87,14 @@ GetCacheFileName (
   //     if (PathRemoveLastItem (FileNameCopy)) {
   //
   if (mCachePath == NULL) {
-  	AppPath              = ConvertDevicePathToText (LoadedImage->FilePath, TRUE, TRUE); // NOTE: This must be freed.
-  	// MU_CHANGE [BEGIN] - CodeQL change
+    AppPath = ConvertDevicePathToText (LoadedImage->FilePath, TRUE, TRUE);                  // NOTE: This must be freed.
+    // MU_CHANGE [BEGIN] - CodeQL change
     if (AppPath == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a - Failed to convert device path to text.\n", __FUNCTION__));
+      DEBUG ((DEBUG_ERROR, "%a - Failed to convert device path to text.\n", __FUNCTION__));
       goto Exit;
     }
 
-  	// MU_CHANGE [END] - CodeQL change
+    // MU_CHANGE [END] - CodeQL change
     DirectorySlashOffset = StrLen (AppPath);
     //
     // Make sure we didn't get any weird data.
@@ -371,7 +371,7 @@ LoadUnitTestCache (
   )
 {
   EFI_STATUS         Status;
-  CHAR16                 *FileName; // MU_CHANGE: Use file name and path instead of device path
+  CHAR16             *FileName;     // MU_CHANGE: Use file name and path instead of device path
   SHELL_FILE_HANDLE  FileHandle;
   BOOLEAN            IsFileOpened;
   UINT64             LargeFileSize;

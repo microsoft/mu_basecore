@@ -1126,10 +1126,10 @@ BdsEntry (
   if (!BootSuccess) {
     if (PcdGetBool (PcdPlatformRecoverySupport)) {
       LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionTypePlatformRecovery);
-	  if ((LoadOptionCount != 0) && (LoadOptions != NULL)) {
-      	ProcessLoadOptions (LoadOptions, LoadOptionCount);
-      	EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
-	  }
+      if ((LoadOptionCount != 0) && (LoadOptions != NULL)) {
+        ProcessLoadOptions (LoadOptions, LoadOptionCount);
+        EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
+      }
     } else if (PlatformDefaultBootOptionValid) {
       // MU_CHANGE TCBZ2523 - Bds should NEVER boot anything the platform has not specified.
       //

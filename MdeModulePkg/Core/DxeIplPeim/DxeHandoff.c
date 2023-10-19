@@ -40,22 +40,22 @@ HandOffToDxeCore (
   ASSERT (BaseOfStack != NULL);
   // MU_CHANGE Start Always set NX for stack
   // if (PcdGetBool (PcdSetNxForStack)) {
-    Status = PeiServicesLocatePpi (
-               &gEdkiiMemoryAttributePpiGuid,
-               0,
-               NULL,
-               (VOID **)&MemoryPpi
-               );
+  Status = PeiServicesLocatePpi (
+             &gEdkiiMemoryAttributePpiGuid,
+             0,
+             NULL,
+             (VOID **)&MemoryPpi
+             );
   ASSERT_EFI_ERROR (Status);
 
-    Status = MemoryPpi->SetPermissions (
-                          MemoryPpi,
-                          (UINTN)BaseOfStack,
-                          STACK_SIZE,
-                          EFI_MEMORY_XP,
-                          EFI_MEMORY_XP
-                          );
-    ASSERT_EFI_ERROR (Status);
+  Status = MemoryPpi->SetPermissions (
+                        MemoryPpi,
+                        (UINTN)BaseOfStack,
+                        STACK_SIZE,
+                        EFI_MEMORY_XP,
+                        EFI_MEMORY_XP
+                        );
+  ASSERT_EFI_ERROR (Status);
   // }
   // MU_CHANGE END
   //
