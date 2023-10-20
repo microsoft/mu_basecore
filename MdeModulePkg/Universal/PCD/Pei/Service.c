@@ -446,7 +446,7 @@ BuildPcdDatabase (
     return NULL;
   }
 
-  // MU_CHANGE [BEGIN] - CodeQL change
+  // MU_CHANGE [END] - CodeQL change
 
   // MU_CHANGE [BEGIN] - CodeQL change
   // Check to see if the Hob already exists because we can error out of this function when
