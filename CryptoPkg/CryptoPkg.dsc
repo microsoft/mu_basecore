@@ -238,9 +238,6 @@
     <Defines>
       FILE_GUID = $(PEI_CRYPTO_DRIVER_FILE_GUID)  # MU_CHANGE updated File GUID
   }
-      MSFT:*_*_IA32_DLINK_FLAGS = /ALIGN:64
-      MSFT:*_*_X64_DLINK_FLAGS  = /ALIGN:256
-
 
 [Components.IA32, Components.X64, Components.AARCH64]
   CryptoPkg/Driver/CryptoDxe.inf {
@@ -248,17 +245,7 @@
       FILE_GUID = $(DXE_CRYPTO_DRIVER_FILE_GUID)  # MU_CHANGE updated File GUID
   }
 
-[Components.IA32, Components.X64]
-      MSFT:*_*_IA32_DLINK_FLAGS = /ALIGN:64
-      MSFT:*_*_X64_DLINK_FLAGS  = /ALIGN:256
-  CryptoPkg/Driver/CryptoSmm.inf {
-    <Defines>
-      FILE_GUID = $(SMM_CRYPTO_DRIVER_FILE_GUID)# MU_CHANGE updated File GUID
-  }
-
-
-## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
-[Components.IA32, Components.X64, Components.AARCH64]
+  ## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
   CryptoPkg/Test/UnitTest/Library/BaseCryptLib/BaseCryptLibUnitTestApp.inf {  ## Add unit-test application for the crypto tests.
     ## MU_CHANGE [START] add library classes to allow crypto tests to run in uefi shell correctly
     <LibraryClasses>
@@ -277,6 +264,12 @@
   }
   ## MU_CHANGE [END]
 ## MU_CHANGE [END]
+
+[Components.IA32, Components.X64]
+  CryptoPkg/Driver/CryptoSmm.inf {
+    <Defines>
+      FILE_GUID = $(SMM_CRYPTO_DRIVER_FILE_GUID)# MU_CHANGE updated File GUID
+  }
 
 [BuildOptions]
   RELEASE_*_*_CC_FLAGS = -DMDEPKG_NDEBUG
