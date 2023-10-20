@@ -504,7 +504,7 @@ InitializeExceptionStackSwitchHandlers (
 {
   EXCEPTION_STACK_SWITCH_CONTEXT  *SwitchStackData;
   UINTN                           Index;
-  EFI_STATUS                      Status;
+  EFI_STATUS                      Status;  // MU_CHANGE - CodeQL change
 
   Status = MpInitLibWhoAmI (&Index);
 

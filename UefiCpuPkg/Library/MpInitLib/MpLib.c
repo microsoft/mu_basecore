@@ -2272,7 +2272,7 @@ SwitchBSPWorker (
   MSR_IA32_APIC_BASE_REGISTER  ApicBaseMsr;
   BOOLEAN                      OldInterruptState;
   BOOLEAN                      OldTimerInterruptState;
-  EFI_STATUS                   Status;
+  EFI_STATUS                   Status;  // MU_CHANGE - CodeQL change
 
   //
   // Save and Disable Local APIC timer interrupt

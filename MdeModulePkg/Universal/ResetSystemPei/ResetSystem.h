@@ -24,7 +24,7 @@
 #include <Library/HobLib.h>
 #include <Library/ResetSystemLib.h>
 #include <Library/ReportStatusCodeLib.h>
-#include <Library/PanicLib.h>
+#include <Library/PanicLib.h> // MU_CHANGE
 
 //
 // The maximum recursion depth to ResetSystem() by reset notification handlers

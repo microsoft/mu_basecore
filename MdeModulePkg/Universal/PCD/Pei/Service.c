@@ -428,7 +428,7 @@ BuildPcdDatabase (
   IN EFI_PEI_FILE_HANDLE  FileHandle
   )
 {
-  VOID              *Hob;
+  VOID              *Hob;  // MU_CHANGE - CodeQL change
   PEI_PCD_DATABASE  *Database;
   PEI_PCD_DATABASE  *PeiPcdDbBinary;
   VOID              *CallbackFnTable;
@@ -439,11 +439,14 @@ BuildPcdDatabase (
   //
   PeiPcdDbBinary = LocateExPcdBinary (FileHandle);
 
+  // MU_CHANGE [BEGIN] - CodeQL change
   if (PeiPcdDbBinary == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed To locate the Pcd Db binaray.\n", __func__));
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed To locate the Pcd Db binary.\n", __func__));
     ASSERT (PeiPcdDbBinary != NULL);
     return NULL;
   }
+
+  // MU_CHANGE [BEGIN] - CodeQL change
 
   // MU_CHANGE [BEGIN] - CodeQL change
   // Check to see if the Hob already exists because we can error out of this function when
