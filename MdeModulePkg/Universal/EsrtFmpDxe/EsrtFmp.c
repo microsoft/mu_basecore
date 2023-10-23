@@ -103,6 +103,12 @@ IsSystemFmp (
 
   Guid  = PcdGetPtr (PcdSystemFmpCapsuleImageTypeIdGuid);
   Count = PcdGetSize (PcdSystemFmpCapsuleImageTypeIdGuid) / sizeof (GUID);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (Guid == NULL) {
+    return FALSE;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   for (Index = 0; Index < Count; Index++, Guid++) {
     if (CompareGuid (&FmpImageInfo->ImageTypeId, Guid)) {
@@ -314,14 +320,14 @@ FmpGetFirmwareImageDescriptor (
 
   ImageInfoSize = 0;
   Status        = Fmp->GetImageInfo (
-                         Fmp,                       // FMP Pointer
-                         &ImageInfoSize,            // Buffer Size (in this case 0)
-                         NULL,                      // NULL so we can get size
-                         FmpImageInfoDescriptorVer, // DescriptorVersion
-                         FmpImageInfoCount,         // DescriptorCount
-                         DescriptorSize,            // DescriptorSize
-                         &PackageVersion,           // PackageVersion
-                         &PackageVersionName        // PackageVersionName
+                         Fmp,                         // FMP Pointer
+                         &ImageInfoSize,              // Buffer Size (in this case 0)
+                         NULL,                        // NULL so we can get size
+                         FmpImageInfoDescriptorVer,   // DescriptorVersion
+                         FmpImageInfoCount,           // DescriptorCount
+                         DescriptorSize,              // DescriptorSize
+                         &PackageVersion,             // PackageVersion
+                         &PackageVersionName          // PackageVersionName
                          );
   if (Status != EFI_BUFFER_TOO_SMALL) {
     DEBUG ((DEBUG_ERROR, "EsrtFmpDxe: Unexpected Failure in GetImageInfo.  Status = %r\n", Status));
@@ -336,14 +342,14 @@ FmpGetFirmwareImageDescriptor (
 
   PackageVersionName = NULL;
   Status             = Fmp->GetImageInfo (
-                              Fmp,                       // FMP Pointer
-                              &ImageInfoSize,            // ImageInfoSize
-                              FmpImageInfoBuf,           // ImageInfo
-                              FmpImageInfoDescriptorVer, // DescriptorVersion
-                              FmpImageInfoCount,         // DescriptorCount
-                              DescriptorSize,            // DescriptorSize
-                              &PackageVersion,           // PackageVersion
-                              &PackageVersionName        // PackageVersionName
+                              Fmp,                         // FMP Pointer
+                              &ImageInfoSize,              // ImageInfoSize
+                              FmpImageInfoBuf,             // ImageInfo
+                              FmpImageInfoDescriptorVer,   // DescriptorVersion
+                              FmpImageInfoCount,           // DescriptorCount
+                              DescriptorSize,              // DescriptorSize
+                              &PackageVersion,             // PackageVersion
+                              &PackageVersionName          // PackageVersionName
                               );
   if (PackageVersionName != NULL) {
     FreePool (PackageVersionName);
@@ -505,7 +511,7 @@ EsrtReadyToBootEventNotify (
   EFI_STATUS                 Status;
   EFI_SYSTEM_RESOURCE_TABLE  *Table;
 
-  PERF_CALLBACK_BEGIN (&gEfiEventReadyToBootGuid); // MU_CHANGE
+  PERF_CALLBACK_BEGIN (&gEfiEventReadyToBootGuid);   // MU_CHANGE
 
   Table = CreateFmpBasedEsrt ();
   if (Table != NULL) {
@@ -529,7 +535,7 @@ EsrtReadyToBootEventNotify (
   //
   gBS->CloseEvent (Event);
 
-  PERF_CALLBACK_END (&gEfiEventReadyToBootGuid); // MU_CHANGE
+  PERF_CALLBACK_END (&gEfiEventReadyToBootGuid);   // MU_CHANGE
 }
 
 /**
