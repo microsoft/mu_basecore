@@ -33,17 +33,24 @@ Branch Changes - release/202308
 Breaking Changes-dev
 --------------------
 
-- Incomplete
+- UefiCpuPkg/ResetVector/Bin/IA32/ResetVector.inf was removed along with all pre-built reset vector binaries.
+The Readme.txt was updated to describe the new way to integrate the rest vector.
 
 Main Changes-dev
 ----------------
 
-- Incomplete
+- Moved to openssl 3.0.9 from 1.1.1t.  This comes with a large size increase.
+- Added TraceHubLib suport
+- Added suport FDT library in MdePkg
+- Updated PEI to use restricted memory mappings
+- Added SmmCpuFeaturesLib implementation for AMD processor family
+- Cleaned up and removed definitions and tool chains in BaseTools
 
 Bug Fixes-dev
 -------------
 
-- Incomplete
+- A bunch of Codeql fixes for changes from edk2
+- Fixed AMD hardware specific bugs
 
 2308_RefBoot Changes
 --------------------
@@ -53,13 +60,25 @@ Bug Fixes-dev
 2308_CIBuild Changes
 --------------------
 
-- Incomplete
+- Fixed markdown errors in multiple readme files from edk2
+- Updated MdeModulePkg Pcd indentifier values to work with tracehub additions
+- Disabled Vtf0.inf to be able to build CI
+- Updated PiSmmCpuCpuDxe and DxeMpLib.c to work with edk2 Changes
+- Removed some rebase artifacts from CryptoPkg.dsc
+- Updated tools_def.template to use the new MdePkg GnuNoteBti.bin
+- Fixed header file issue in StandaloneMmPeCoffExtraActionLib.c
+- Updated Crypto tests to not use native instructions for non IA32 and X64 build_status_windows
 
 2308_Rebase Changes
 -------------------
 
 | Starting commit: 1f4f0a4243 ("Repo File Sync: Update to Mu DevOps 7.0.1 and Rust 1.73.0", 2023-10-13)
 | Destination Commit from upstream edk2: 819cfc6b42 ("OvmfPkg/RiscVVirt: Fix issues in VarStore Blockmap config", 2023-08-24)
+
+- In PcRtc.c the default year was changed.
+  - Keeping our default year but using new logic
+- BdsEntry.c default boot behavior slightly changed.
+  - Staying with MU_CHANGE that prevents loading the default boot option.
 
 
 Code of Conduct
