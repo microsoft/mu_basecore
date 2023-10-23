@@ -172,7 +172,15 @@ PcdSetNvStoreDefaultIdCallBack (
       //
       NvStoreBuffer   = (VARIABLE_STORE_HEADER *)((UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize);
       VarStoreHobData = (UINT8 *)BuildGuidHob (&NvStoreBuffer->Signature, NvStoreBuffer->Size);
-      ASSERT (VarStoreHobData != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (VarStoreHobData == NULL) {
+        DEBUG ((DEBUG_ERROR, "[%a] - Failed build NV Store guid hob.\n", __func__));
+        ASSERT (VarStoreHobData != NULL);
+        return;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
+
       CopyMem (VarStoreHobData, NvStoreBuffer, NvStoreBuffer->Size);
       //
       // Find the matched SkuId and DefaultId in the first section
@@ -316,6 +324,14 @@ EndOfPeiSignalPpiNotifyCallback (
   if (PcdDb != NULL) {
     Length   = PeiPcdDb->LengthForAllSkus;
     Database = BuildGuidHob (&gPcdDataBaseHobGuid, Length);
+    // MU_CHANGE [BEGIN] - CodeQL change
+    if (Database == NULL) {
+      DEBUG ((DEBUG_ERROR, "[%a] - Failed to build PCD guid hob.\n", __func__));
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+
     CopyMem (Database, PcdDb, Length);
   }
 

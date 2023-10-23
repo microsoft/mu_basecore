@@ -622,8 +622,17 @@ InitializeExceptionStackSwitchHandlers (
 {
   EXCEPTION_STACK_SWITCH_CONTEXT  *SwitchStackData;
   UINTN                           Index;
+  EFI_STATUS                      Status;  // MU_CHANGE - CodeQL change
 
-  MpInitLibWhoAmI (&Index);
+  // MU_CHANGE [START] - CodeQL change
+  Status = MpInitLibWhoAmI (&Index);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  The exception stack was not initialized.\n", __func__));
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   SwitchStackData = (EXCEPTION_STACK_SWITCH_CONTEXT *)Buffer;
   //
   // This may be called twice for each Cpu. Only run InitializeSeparateExceptionStacks

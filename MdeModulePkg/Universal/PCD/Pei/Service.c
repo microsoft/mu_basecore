@@ -428,6 +428,7 @@ BuildPcdDatabase (
   IN EFI_PEI_FILE_HANDLE  FileHandle
   )
 {
+  VOID              *Hob;  // MU_CHANGE - CodeQL change
   PEI_PCD_DATABASE  *Database;
   PEI_PCD_DATABASE  *PeiPcdDbBinary;
   VOID              *CallbackFnTable;
@@ -438,9 +439,31 @@ BuildPcdDatabase (
   //
   PeiPcdDbBinary = LocateExPcdBinary (FileHandle);
 
-  ASSERT (PeiPcdDbBinary != NULL);
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (PeiPcdDbBinary == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed To locate the Pcd Db binary.\n", __func__));
+    ASSERT (PeiPcdDbBinary != NULL);
+    return NULL;
+  }
 
-  Database = BuildGuidHob (&gPcdDataBaseHobGuid, PeiPcdDbBinary->Length + PeiPcdDbBinary->UninitDataBaseSize);
+  // MU_CHANGE [END] - CodeQL change
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+  // Check to see if the Hob already exists because we can error out of this function when
+  // creating the CallbackFnTable Hob and call into this function again.
+  Hob = GetFirstGuidHob (&gPcdDataBaseHobGuid);
+  if (Hob == NULL) {
+    Database = BuildGuidHob (&gPcdDataBaseHobGuid, PeiPcdDbBinary->Length + PeiPcdDbBinary->UninitDataBaseSize);
+  } else {
+    Database = (PEI_PCD_DATABASE *)GET_GUID_HOB_DATA (Hob);
+  }
+
+  if (Database == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to build the PCD Database guid hob.\n", __func__));
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   ZeroMem (Database, PeiPcdDbBinary->Length  + PeiPcdDbBinary->UninitDataBaseSize);
 
@@ -452,6 +475,14 @@ BuildPcdDatabase (
   SizeOfCallbackFnTable = Database->LocalTokenCount * sizeof (PCD_PPI_CALLBACK) * PcdGet32 (PcdMaxPeiPcdCallBackNumberPerPcdEntry);
 
   CallbackFnTable = BuildGuidHob (&gEfiCallerIdGuid, SizeOfCallbackFnTable);
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (CallbackFnTable == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to build the CallbackFnTable guid hob.\n", __func__));
+    return NULL;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   ZeroMem (CallbackFnTable, SizeOfCallbackFnTable);
 

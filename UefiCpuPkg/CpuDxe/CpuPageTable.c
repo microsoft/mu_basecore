@@ -14,6 +14,7 @@
 #include <Library/SerialPortLib.h>
 #include <Library/SynchronizationLib.h>
 #include <Library/PrintLib.h>
+#include <Library/PanicLib.h>  // MU_CHANGE
 #include <Protocol/SmmBase2.h>
 #include <Register/Intel/Cpuid.h>
 #include <Register/Intel/Msr.h>
@@ -1258,11 +1259,20 @@ DebugExceptionHandler (
   IN EFI_SYSTEM_CONTEXT  SystemContext
   )
 {
-  UINTN    CpuIndex;
-  UINTN    PFEntry;
-  BOOLEAN  IsWpEnabled;
+  UINTN       CpuIndex;
+  UINTN       PFEntry;
+  BOOLEAN     IsWpEnabled;
+  EFI_STATUS  Status;  // MU_CHANGE - CodeQL change
 
-  MpInitLibWhoAmI (&CpuIndex);
+  // MU_CHANGE [START] - CodeQL change
+  Status = MpInitLibWhoAmI (&CpuIndex);
+
+  if (EFI_ERROR (Status)) {
+    PANIC ("Failed to get processor number in the DebugExceptionHandler");
+    goto Done;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   //
   // Clear last PF entries
@@ -1287,6 +1297,7 @@ DebugExceptionHandler (
   //
   mPFEntryCount[CpuIndex] = 0;
 
+Done:
   //
   // Flush TLB
   //
@@ -1337,7 +1348,15 @@ PageFaultExceptionHandler (
   }
 
   if (NonStopMode) {
-    MpInitLibWhoAmI (&CpuIndex);
+    // MU_CHANGE [START] - CodeQL change
+    Status = MpInitLibWhoAmI (&CpuIndex);
+
+    if (EFI_ERROR (Status)) {
+      PANIC ("Failed to get processor number in the PageFaultExceptionHandler");
+      goto Done;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
     GetCurrentPagingContext (&PagingContext);
     //
     // Memory operation cross page boundary, like "rep mov" instruction, will
@@ -1378,6 +1397,7 @@ PageFaultExceptionHandler (
     }
   }
 
+Done:
   //
   // Initialize the serial port before dumping.
   //
