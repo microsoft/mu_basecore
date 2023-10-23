@@ -611,8 +611,17 @@ RelocateApLoop (
   ASM_RELOCATE_AP_LOOP  AsmRelocateApLoopFunc;
   UINTN                 ProcessorNumber;
   UINTN                 StackStart;
+  EFI_STATUS            Status;  // MU_CHANGE - CodeQL change
 
-  MpInitLibWhoAmI (&ProcessorNumber);
+  // MU_CHANGE [START] - CodeQL change
+  Status = MpInitLibWhoAmI (&ProcessorNumber);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Aborting AP sync.\n", __func__));
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
   CpuMpData    = GetCpuMpData ();
   MwaitSupport = IsMwaitSupport ();
   if (CpuMpData->UseSevEsAPMethod) {

@@ -86,6 +86,14 @@ NotifyOnS3SmmInitDonePpi (
 
   CpuMpData = GetCpuMpData ();
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   //
   // PiSmmCpuDxeSmm driver hardcode change the loop mode to HLT mode.
   // So in this notify function, code need to check the current loop
@@ -374,6 +382,14 @@ CheckAndUpdateApsStatus (
   CPU_MP_DATA  *CpuMpData;
 
   CpuMpData = GetCpuMpData ();
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.  Aborting AP checkup and update.\n", __func__));
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
 
   //
   // check whether pending StartupThisAPs() callings exist.

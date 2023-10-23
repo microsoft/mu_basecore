@@ -46,6 +46,7 @@
   BaseMemoryLib
   CpuLib
   MemoryAllocationLib
+  PanicLib                         ## MU_CHANGE
 
 [Guids]
   gEdkiiMigratedFvInfoGuid                                             ## SOMETIMES_CONSUMES     ## HOB
