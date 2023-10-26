@@ -7,6 +7,13 @@
 # fail much later during firmware code compilation when Rust tools are invoked
 # with messages that are ambiguous or difficult to find.
 #
+# Note:
+#   - The entire plugin is enabled/disabled by scope.
+#   - Individual tools can be opted out by setting the environment variable
+#     `RUST_ENV_CHECK_TOOL_EXCLUSIONS` with a comma separated list of the tools
+#     to exclude. For example, "rustup, cargo tarpaulin" would not require that
+#     those tools be installed.
+#
 # Copyright (c) Microsoft Corporation.
 #
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -14,6 +21,7 @@
 import logging
 import re
 from collections import namedtuple
+from edk2toolext.environment import shell_environment
 from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
 from edk2toolext.environment.uefi_build import UefiBuilder
 from edk2toollib.utility_functions import RunCmd
@@ -142,9 +150,15 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
                 ),
         }
 
+        excluded_tools_in_shell = shell_environment.GetEnvironment().get_shell_var(
+            "RUST_ENV_CHECK_TOOL_EXCLUSIONS")
+        excluded_tools = ([t.strip() for t in
+                           excluded_tools_in_shell.split(",")] if
+                          excluded_tools_in_shell else [])
+
         errors = 0
         for tool_name, tool_info in tools.items():
-            if not verify_cmd(*tool_info.presence_cmd):
+            if tool_name not in excluded_tools and not verify_cmd(*tool_info.presence_cmd):
                 logging.error(
                     f"Rust Environment Failure: {tool_name} is not installed "
                     "or not on the system path.\n\n"
