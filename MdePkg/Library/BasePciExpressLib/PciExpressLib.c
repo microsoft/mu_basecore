@@ -154,8 +154,15 @@ PciExpressWrite8 (
   if (Address >= PcdPciExpressBaseSize ()) {
     return (UINT8)-1;
   }
+  // MU_CHANGE START
+  UINT8 ReturnValue = MmioWrite8 ((UINTN)GetPciExpressBaseAddress () + Address, Value);
 
-  return MmioWrite8 ((UINTN)GetPciExpressBaseAddress () + Address, Value);
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -191,7 +198,15 @@ PciExpressOr8 (
     return (UINT8)-1;
   }
 
-  return MmioOr8 ((UINTN)GetPciExpressBaseAddress () + Address, OrData);
+  // MU_CHANGE START
+  UINT8 ReturnValue = MmioOr8 ((UINTN)GetPciExpressBaseAddress () + Address, OrData);
+
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -227,7 +242,15 @@ PciExpressAnd8 (
     return (UINT8)-1;
   }
 
-  return MmioAnd8 ((UINTN)GetPciExpressBaseAddress () + Address, AndData);
+  // MU_CHANGE START
+  UINT8 ReturnValue = MmioAnd8 ((UINTN)GetPciExpressBaseAddress () + Address, AndData);
+
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -266,11 +289,18 @@ PciExpressAndThenOr8 (
     return (UINT8)-1;
   }
 
-  return MmioAndThenOr8 (
+  // MU_CHANGE START
+  UINT8 ReturnValue = MmioAndThenOr8 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            AndData,
            OrData
            );
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -355,12 +385,20 @@ PciExpressBitFieldWrite8 (
     return (UINT8)-1;
   }
 
-  return MmioBitFieldWrite8 (
+  // MU_CHANGE START
+  UINT8 ReturnValue = MmioBitFieldWrite8 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit,
            Value
            );
+
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -405,12 +443,20 @@ PciExpressBitFieldOr8 (
     return (UINT8)-1;
   }
 
-  return MmioBitFieldOr8 (
+  // MU_CHANGE START
+  UINT8 ReturnValue = MmioBitFieldOr8 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit,
            OrData
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -455,12 +501,20 @@ PciExpressBitFieldAnd8 (
     return (UINT8)-1;
   }
 
-  return MmioBitFieldAnd8 (
+  // MU_CHANGE START
+  UINT8 ReturnValue = MmioBitFieldAnd8 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit,
            AndData
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -510,13 +564,21 @@ PciExpressBitFieldAndThenOr8 (
     return (UINT8)-1;
   }
 
-  return MmioBitFieldAndThenOr8 (
+  // MU_CHANGE START
+  UINT8 ReturnValue = MmioBitFieldAndThenOr8 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit,
            AndData,
            OrData
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -580,7 +642,15 @@ PciExpressWrite16 (
     return (UINT16)-1;
   }
 
-  return MmioWrite16 ((UINTN)GetPciExpressBaseAddress () + Address, Value);
+  // MU_CHANGE START
+  UINT16 ReturnValue = MmioWrite16 ((UINTN)GetPciExpressBaseAddress () + Address, Value);
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -617,7 +687,15 @@ PciExpressOr16 (
     return (UINT16)-1;
   }
 
-  return MmioOr16 ((UINTN)GetPciExpressBaseAddress () + Address, OrData);
+  // MU_CHANGE START
+  UINT16 ReturnValue = MmioOr16 ((UINTN)GetPciExpressBaseAddress () + Address, OrData);
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -654,7 +732,15 @@ PciExpressAnd16 (
     return (UINT16)-1;
   }
 
-  return MmioAnd16 ((UINTN)GetPciExpressBaseAddress () + Address, AndData);
+  // MU_CHANGE START
+  UINT16 ReturnValue = MmioAnd16 ((UINTN)GetPciExpressBaseAddress () + Address, AndData);
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -694,11 +780,19 @@ PciExpressAndThenOr16 (
     return (UINT16)-1;
   }
 
-  return MmioAndThenOr16 (
+  // MU_CHANGE START
+  UINT16 ReturnValue = MmioAndThenOr16 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            AndData,
            OrData
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -785,12 +879,20 @@ PciExpressBitFieldWrite16 (
     return (UINT16)-1;
   }
 
-  return MmioBitFieldWrite16 (
+  // MU_CHANGE START
+  UINT16 ReturnValue = MmioBitFieldWrite16 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit,
            Value
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -836,12 +938,20 @@ PciExpressBitFieldOr16 (
     return (UINT16)-1;
   }
 
-  return MmioBitFieldOr16 (
+  // MU_CHANGE START
+  UINT16 ReturnValue = MmioBitFieldOr16 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit,
            OrData
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -887,12 +997,20 @@ PciExpressBitFieldAnd16 (
     return (UINT16)-1;
   }
 
-  return MmioBitFieldAnd16 (
+  // MU_CHANGE START
+  UINT16 ReturnValue = MmioBitFieldAnd16 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit,
            AndData
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -943,13 +1061,21 @@ PciExpressBitFieldAndThenOr16 (
     return (UINT16)-1;
   }
 
-  return MmioBitFieldAndThenOr16 (
+  // MU_CHANGE START
+  UINT16 ReturnValue = MmioBitFieldAndThenOr16 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit,
            AndData,
            OrData
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -1013,7 +1139,15 @@ PciExpressWrite32 (
     return (UINT32)-1;
   }
 
-  return MmioWrite32 ((UINTN)GetPciExpressBaseAddress () + Address, Value);
+  // MU_CHANGE START
+  UINT32 ReturnValue = MmioWrite32 ((UINTN)GetPciExpressBaseAddress () + Address, Value);
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -1050,7 +1184,15 @@ PciExpressOr32 (
     return (UINT32)-1;
   }
 
-  return MmioOr32 ((UINTN)GetPciExpressBaseAddress () + Address, OrData);
+  // MU_CHANGE START
+  UINT32 ReturnValue = MmioOr32 ((UINTN)GetPciExpressBaseAddress () + Address, OrData);
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -1087,7 +1229,15 @@ PciExpressAnd32 (
     return (UINT32)-1;
   }
 
-  return MmioAnd32 ((UINTN)GetPciExpressBaseAddress () + Address, AndData);
+  // MU_CHANGE START
+  UINT32 ReturnValue = MmioAnd32 ((UINTN)GetPciExpressBaseAddress () + Address, AndData);
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -1127,11 +1277,19 @@ PciExpressAndThenOr32 (
     return (UINT32)-1;
   }
 
-  return MmioAndThenOr32 (
+  // MU_CHANGE START
+  UINT32 ReturnValue = MmioAndThenOr32 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            AndData,
            OrData
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -1171,11 +1329,19 @@ PciExpressBitFieldRead32 (
     return (UINT32)-1;
   }
 
-  return MmioBitFieldRead32 (
+  // MU_CHANGE START
+  UINT32 ReturnValue = MmioBitFieldRead32 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit
            );
+
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -1218,12 +1384,20 @@ PciExpressBitFieldWrite32 (
     return (UINT32)-1;
   }
 
-  return MmioBitFieldWrite32 (
+  // MU_CHANGE START
+  UINT32 ReturnValue = MmioBitFieldWrite32 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit,
            Value
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -1269,12 +1443,20 @@ PciExpressBitFieldOr32 (
     return (UINT32)-1;
   }
 
-  return MmioBitFieldOr32 (
+  // MU_CHANGE START
+  UINT32 ReturnValue = MmioBitFieldOr32 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit,
            OrData
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -1320,12 +1502,20 @@ PciExpressBitFieldAnd32 (
     return (UINT32)-1;
   }
 
-  return MmioBitFieldAnd32 (
+  // MU_CHANGE START
+  UINT32 ReturnValue = MmioBitFieldAnd32 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit,
            AndData
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**
@@ -1376,13 +1566,21 @@ PciExpressBitFieldAndThenOr32 (
     return (UINT32)-1;
   }
 
-  return MmioBitFieldAndThenOr32 (
+  // MU_CHANGE START
+  UINT32 ReturnValue = MmioBitFieldAndThenOr32 (
            (UINTN)GetPciExpressBaseAddress () + Address,
            StartBit,
            EndBit,
            AndData,
            OrData
            );
+  
+  #ifdef MDE_CPU_AARCH64
+    MemoryFence();
+  #endif
+
+  return ReturnValue;
+  // MU_CHANGE END
 }
 
 /**

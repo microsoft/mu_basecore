@@ -412,11 +412,7 @@ MmioRead8 (
 
   Flag = FilterBeforeMmIoRead (FilterWidth8, Address, &Value);
   if (Flag) {
-    MemoryFence ();
-
     Value = *(volatile UINT8 *)Address;
-
-    MemoryFence ();
   }
 
   FilterAfterMmIoRead (FilterWidth8, Address, &Value);
@@ -448,11 +444,7 @@ MmioWrite8 (
 
   Flag = FilterBeforeMmIoWrite (FilterWidth8, Address, &Value);
   if (Flag) {
-    MemoryFence ();
-
     *(volatile UINT8 *)Address = Value;
-
-    MemoryFence ();
   }
 
   FilterAfterMmIoWrite (FilterWidth8, Address, &Value);
@@ -487,11 +479,7 @@ MmioRead16 (
 
   Flag = FilterBeforeMmIoRead (FilterWidth16, Address, &Value);
   if (Flag) {
-    MemoryFence ();
-
     Value = *(volatile UINT16 *)Address;
-
-    MemoryFence ();
   }
 
   FilterAfterMmIoRead (FilterWidth16, Address, &Value);
@@ -525,11 +513,7 @@ MmioWrite16 (
 
   Flag = FilterBeforeMmIoWrite (FilterWidth16, Address, &Value);
   if (Flag) {
-    MemoryFence ();
-
     *(volatile UINT16 *)Address = Value;
-
-    MemoryFence ();
   }
 
   FilterAfterMmIoWrite (FilterWidth16, Address, &Value);
@@ -564,11 +548,7 @@ MmioRead32 (
 
   Flag = FilterBeforeMmIoRead (FilterWidth32, Address, &Value);
   if (Flag) {
-    MemoryFence ();
-
     Value = *(volatile UINT32 *)Address;
-
-    MemoryFence ();
   }
 
   FilterAfterMmIoRead (FilterWidth32, Address, &Value);
@@ -602,11 +582,7 @@ MmioWrite32 (
 
   Flag = FilterBeforeMmIoWrite (FilterWidth32, Address, &Value);
   if (Flag) {
-    MemoryFence ();
-
     *(volatile UINT32 *)Address = Value;
-
-    MemoryFence ();
   }
 
   FilterAfterMmIoWrite (FilterWidth32, Address, &Value);
@@ -641,11 +617,7 @@ MmioRead64 (
 
   Flag = FilterBeforeMmIoRead (FilterWidth64, Address, &Value);
   if (Flag) {
-    MemoryFence ();
-
     Value = *(volatile UINT64 *)Address;
-
-    MemoryFence ();
   }
 
   FilterAfterMmIoRead (FilterWidth64, Address, &Value);
@@ -679,11 +651,7 @@ MmioWrite64 (
 
   Flag = FilterBeforeMmIoWrite (FilterWidth64, Address, &Value);
   if (Flag) {
-    MemoryFence ();
-
     *(volatile UINT64 *)Address = Value;
-
-    MemoryFence ();
   }
 
   FilterAfterMmIoWrite (FilterWidth64, Address, &Value);
