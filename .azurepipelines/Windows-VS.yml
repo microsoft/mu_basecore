@@ -26,6 +26,7 @@ extends:
     do_non_ci_build: false
     do_non_ci_setup: true
     do_pr_eval: true
+    calculate_code_coverage: true
     os_type: Windows_NT
     build_matrix:
       TARGET_MDE_CPU:

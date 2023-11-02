@@ -27,6 +27,7 @@ extends:
     do_non_ci_setup: true
     do_pr_eval: true
     container_build: true
+    calculate_code_coverage: true
     os_type: Linux
     build_matrix:
       TARGET_MDE_CPU:
