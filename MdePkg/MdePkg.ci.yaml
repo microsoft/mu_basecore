@@ -117,9 +117,6 @@
     ## options defined ci/Plugin/DscCompleteCheck
     "DscCompleteCheck": {
         "IgnoreInf": [
-            # MU_CHANGE Ignore StackCookie libs for toolchains that don't support it.
-            "MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf",
-            "MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf",
             "MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf",   # MU_CHANGE - Ignore intrinsics for toolchains that don't support it.
             "MdePkg/Library/FltUsedLib/FltUsedLib.inf", # MU_CHANGE this isn't compilable since it has no code
         ],

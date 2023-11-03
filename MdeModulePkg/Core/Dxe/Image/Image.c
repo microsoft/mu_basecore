@@ -606,7 +606,6 @@ CoreLoadPeImage (
   EFI_STATUS  Status;
   BOOLEAN     DstBufAlocated;
   UINTN       Size;
-  UINT64      *SecurityCookieAddress;                // MS_CHANGE_? - TODO
 
   ZeroMem (&Image->ImageContext, sizeof (Image->ImageContext));
 
@@ -924,14 +923,6 @@ CoreLoadPeImage (
 
   // MS_CHANGE_304324
   // DEBUG_CODE_END ();
-  // END
-  // MS_CHANGE_?
-  Status = PeCoffLoaderGetSecurityCookieAddress (&Image->ImageContext, &SecurityCookieAddress);
-  if (!EFI_ERROR (Status)) {
-    InitializeSecurityCookieAddress (SecurityCookieAddress);
-    DEBUG ((DEBUG_VERBOSE | DEBUG_LOAD, "SecurityCookie set to %lld\n", (*SecurityCookieAddress)));
-  }
-
   // END
 
   return EFI_SUCCESS;
