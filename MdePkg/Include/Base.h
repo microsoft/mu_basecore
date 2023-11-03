@@ -206,6 +206,19 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #define PACKED
 
+// MU_CHANGE [START]: Stack Cookie Support.
+// Omit Function from Stack Overflow Protection.
+#ifndef NO_STACK_COOKIE
+  #if defined (__GNUC__) || defined (__clang__)
+#define NO_STACK_COOKIE  __attribute__ ((no_stack_protector))
+  #elif defined (_MSC_VER)
+#define NO_STACK_COOKIE  __declspec(safebuffers)
+  #else
+#define NO_STACK_COOKIE
+  #endif
+#endif
+// MU_CHANGE [END]: Stack Cookie Support.
+
 ///
 /// 128 bit buffer containing a unique identifier value.
 /// Unless otherwise specified, aligned on a 64 bit boundary.
