@@ -61,7 +61,6 @@
   HobLib
   SmmMemLib
   SafeIntLib
-  BaseBinSecurityLib  ## MS_CHANGE_?
   MmMemoryProtectionHobLib ## MU_CHANGE
 
 [Protocols]

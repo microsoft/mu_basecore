@@ -96,7 +96,6 @@
   DebugAgentLib
   CpuExceptionHandlerLib
   PcdLib
-  BaseBinSecurityLib
   DxeMemoryProtectionHobLib
   MemoryBinOverrideLib
 

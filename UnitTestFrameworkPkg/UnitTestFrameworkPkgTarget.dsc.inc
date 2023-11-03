@@ -27,6 +27,13 @@
 
   UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLib.inf
 
+# MU_CHANGE [BEGIN] - Add Stack Cookie Support
+[LibraryClasses.X64]
+  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
+  NULL|MdePkg/Library/StackCheckLib/StackCheckLib.inf
+  StackCheckFailureLib|MdePkg/Library/StackCheckFailureLibNull/StackCheckFailureLibNull.inf
+# MU_CHANGE [END] - Add Stack Cookie Support
+
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
   #
   # It is not possible to prevent ARM compiler calls to generic intrinsic functions.

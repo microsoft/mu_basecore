@@ -326,8 +326,6 @@ SmmLoadImage (
   EFI_FIRMWARE_VOLUME2_PROTOCOL  *Fv;
   PE_COFF_LOADER_IMAGE_CONTEXT   ImageContext;
 
-  UINT64  *SecurityCookieAddress;                           // MS_CHANGE_?
-
   PERF_LOAD_IMAGE_BEGIN (DriverEntry->ImageHandle);
 
   Buffer   = NULL;
@@ -728,19 +726,6 @@ SmmLoadImage (
   }
 
   DEBUG ((DEBUG_ERROR | DEBUG_LOAD, "\n"));                                                                    // MS_CHANGE_304324
-
-  // MS_CHANGE_304324
-  // DEBUG_CODE_END ();
-  // END
-
-  // MS_CHANGE_?
-  Status = PeCoffLoaderGetSecurityCookieAddress (&ImageContext, &SecurityCookieAddress);
-  if (!EFI_ERROR (Status)) {
-    InitializeSecurityCookieAddress (SecurityCookieAddress);
-    DEBUG ((DEBUG_VERBOSE | DEBUG_LOAD, "SMM SecurityCookie set to %lld\n", (*SecurityCookieAddress)));
-  }
-
-  // END
 
   //
   // Free buffer allocated by Fv->ReadSection.

@@ -46,15 +46,6 @@
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
   VariablePolicyHelperLib|MdeModulePkg/Library/VariablePolicyHelperLib/VariablePolicyHelperLib.inf    # MU_CHANGE
 
-## MS_CHANGE Begin
-[LibraryClasses.X64]
-!if $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022
-  # Provide StackCookie support lib so that we can link to /GS exports for VS builds
-  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
-  NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
-!endif
-## MS_CHANGE End
-
 [Components]
   PcAtChipsetPkg/HpetTimerDxe/HpetTimerDxe.inf
   PcAtChipsetPkg/Bus/Pci/IdeControllerDxe/IdeControllerDxe.inf
