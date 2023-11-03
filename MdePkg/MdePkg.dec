@@ -101,10 +101,12 @@
   #                  All combinations of Unicode and ASCII strings are supported.
   ##
   PrintLib|Include/Library/PrintLib.h
-## MSCHANGE BEGIN
-  ##  @libraryclass  Provides and interface to initialize security cookies
-  BaseBinSecurityLib|Include/Library/BaseBinSecurityLib.h
-## MSCHANGE END
+
+## MU_CHANGE [BEGIN]
+  ##  @libraryclass  Provides a hook called when a stack cookie check fails.
+  StackCheckFailureLib|Include/Library/StackCheckFailureLib.h
+## MU_CHANGE [END]
+
   ##  @libraryclass  Provides an ordered collection data structure.
   OrderedCollectionLib|Include/Library/OrderedCollectionLib.h
 

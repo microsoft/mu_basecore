@@ -69,19 +69,6 @@
 
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf # MU_CHANGE - CodeQL change
 
-## MU_CHANGE Begin
-[LibraryClasses.common]
-  BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibNull/BaseBinSecurityLibNull.inf
-!if $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022
-[LibraryClasses.X64]
-  # Provide StackCookie support lib so that we can link to /GS exports for VS builds
-  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
-[LibraryClasses.X64]
-  BaseBinSecurityLib|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
-  NULL|MdePkg/Library/BaseBinSecurityLibRng/BaseBinSecurityLibRng.inf
-!endif
-## MU_CHANGE End
-
 [LibraryClasses.ARM,LibraryClasses.AARCH64]
   #
   # It is not possible to prevent the ARM compiler for generic intrinsic functions.

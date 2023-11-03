@@ -24,8 +24,8 @@
 
 [BuildOptions]
 # MU_CHANGE [BEGIN] - Add build flag to detect when building host-based unit tests
-  MSFT:*_*_*_CC_FLAGS  = -D HOST_UNIT_TEST_BUILD=1
-  GCC:*_*_*_CC_FLAGS   = -D HOST_UNIT_TEST_BUILD=1
+  MSFT:*_*_*_CC_FLAGS  = -D HOST_UNIT_TEST_BUILD=1 \GS- # Disable Stack Protection for Host-Based Unit Tests
+  GCC:*_*_*_CC_FLAGS   = -D HOST_UNIT_TEST_BUILD=1 -fno-stack-protector # Disable Stack Protection for Host-Based Unit Tests
   XCODE:*_*_*_CC_FLAGS = -D HOST_UNIT_TEST_BUILD=1
 # MU_CHANGE [END] - Add build flag to detect when building host-based unit tests
   GCC:*_*_*_CC_FLAGS = -fno-pie
