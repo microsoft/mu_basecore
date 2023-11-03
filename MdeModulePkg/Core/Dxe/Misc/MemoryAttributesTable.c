@@ -560,8 +560,9 @@ EnforceMemoryMapAttribute (
 /**
   Return the first image record, whose [ImageBase, ImageSize] covered by [Buffer, Length].
 
-  @param Buffer  Start Address
-  @param Length  Address length
+  @param Buffer           Start Address
+  @param Length           Address length
+  @param ImageRecordList  Image record list
 
   @return first image record covered by [buffer, length]
 **/
@@ -569,14 +570,12 @@ STATIC
 IMAGE_PROPERTIES_RECORD *
 GetImageRecordByAddress (
   IN EFI_PHYSICAL_ADDRESS  Buffer,
-  IN UINT64                Length
+  IN UINT64                Length,
+  IN LIST_ENTRY            *ImageRecordList
   )
 {
   IMAGE_PROPERTIES_RECORD  *ImageRecord;
   LIST_ENTRY               *ImageRecordLink;
-  LIST_ENTRY               *ImageRecordList;
-
-  ImageRecordList = &mImagePropertiesPrivateData.ImageRecordList;
 
   for (ImageRecordLink = ImageRecordList->ForwardLink;
        ImageRecordLink != ImageRecordList;
@@ -711,7 +710,8 @@ SetNewRecord (
 STATIC
 UINTN
 GetMaxSplitRecordCount (
-  IN EFI_MEMORY_DESCRIPTOR  *OldRecord
+  IN EFI_MEMORY_DESCRIPTOR  *OldRecord,
+  IN LIST_ENTRY             *ImageRecordList
   )
 {
   IMAGE_PROPERTIES_RECORD  *ImageRecord;
@@ -724,7 +724,7 @@ GetMaxSplitRecordCount (
   PhysicalEnd      = OldRecord->PhysicalStart + EfiPagesToSize (OldRecord->NumberOfPages);
 
   do {
-    ImageRecord = GetImageRecordByAddress (PhysicalStart, PhysicalEnd - PhysicalStart);
+    ImageRecord = GetImageRecordByAddress (PhysicalStart, PhysicalEnd - PhysicalStart, ImageRecordList);
     if (ImageRecord == NULL) {
       break;
     }
@@ -744,13 +744,16 @@ GetMaxSplitRecordCount (
   Split the memory map to new entries, according to one old entry,
   based upon PE code section and data section.
 
-  @param  OldRecord              A pointer to one old memory map entry.
-  @param  NewRecord              A pointer to several new memory map entries.
-                                 The caller gurantee the buffer size be 1 +
-                                 (SplitRecordCount * DescriptorSize) calculated
-                                 below.
-  @param  MaxSplitRecordCount    The max number of splitted entries
-  @param  DescriptorSize         Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+  @param        OldRecord             A pointer to one old memory map entry.
+  @param        NewRecord             A pointer to several new memory map entries.
+                                      The caller gurantee the buffer size be 1 +
+                                      (SplitRecordCount * DescriptorSize) calculated
+                                      below.
+  @param        MaxSplitRecordCount   The max number of splitted entries
+  @param        DescriptorSize        Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+  @param        ImageRecordList       A list of IMAGE_PROPERTIES_RECORD entries used when searching
+                                      for an image record contained by the memory range described in
+                                      the existing EFI memory map descriptor OldRecord
 
   @retval  0 no entry is splitted.
   @return  the real number of splitted record.
@@ -761,7 +764,8 @@ SplitRecord (
   IN EFI_MEMORY_DESCRIPTOR      *OldRecord,
   IN OUT EFI_MEMORY_DESCRIPTOR  *NewRecord,
   IN UINTN                      MaxSplitRecordCount,
-  IN UINTN                      DescriptorSize
+  IN UINTN                      DescriptorSize,
+  IN LIST_ENTRY                 *ImageRecordList
   )
 {
   EFI_MEMORY_DESCRIPTOR    TempRecord;
@@ -789,7 +793,7 @@ SplitRecord (
 
   ImageRecord = NULL;
   do {
-    NewImageRecord = GetImageRecordByAddress (PhysicalStart, PhysicalEnd - PhysicalStart);
+    NewImageRecord = GetImageRecordByAddress (PhysicalStart, PhysicalEnd - PhysicalStart, ImageRecordList);
     if (NewImageRecord == NULL) {
       //
       // No more image covered by this range, stop
@@ -886,23 +890,29 @@ SplitRecord (
    | Record Y      |
    +---------------+
 
-  @param  MemoryMapSize          A pointer to the size, in bytes, of the
-                                 MemoryMap buffer. On input, this is the size of
-                                 old MemoryMap before split. The actual buffer
-                                 size of MemoryMap is MemoryMapSize +
-                                 (AdditionalRecordCount * DescriptorSize) calculated
-                                 below. On output, it is the size of new MemoryMap
-                                 after split.
-  @param  MemoryMap              A pointer to the buffer in which firmware places
-                                 the current memory map.
-  @param  DescriptorSize         Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+  @param  MemoryMapSize                   A pointer to the size, in bytes, of the
+                                          MemoryMap buffer. On input, this is the size of
+                                          old MemoryMap before split. The actual buffer
+                                          size of MemoryMap is MemoryMapSize +
+                                          (AdditionalRecordCount * DescriptorSize) calculated
+                                          below. On output, it is the size of new MemoryMap
+                                          after split.
+  @param  MemoryMap                       A pointer to the buffer in which firmware places
+                                          the current memory map.
+  @param  DescriptorSize                  Size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
+  @param  ImageRecordList                 A list of IMAGE_PROPERTIES_RECORD entries used when searching
+                                          for an image record contained by the memory range described in
+                                          EFI memory map descriptors.
+  @param  NumberOfAdditionalDescriptors   The number of unused descriptors at the end of the input MemoryMap.
 **/
 STATIC
 VOID
 SplitTable (
   IN OUT UINTN                  *MemoryMapSize,
   IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN UINTN                      DescriptorSize
+  IN     UINTN                  DescriptorSize,
+  IN     LIST_ENTRY             *ImageRecordList,
+  IN     UINTN                  NumberOfAdditionalDescriptors
   )
 {
   INTN   IndexOld;
@@ -910,9 +920,6 @@ SplitTable (
   UINTN  MaxSplitRecordCount;
   UINTN  RealSplitRecordCount;
   UINTN  TotalSplitRecordCount;
-  UINTN  AdditionalRecordCount;
-
-  AdditionalRecordCount = (2 * mImagePropertiesPrivateData.CodeSegmentCountMax + 1) * mImagePropertiesPrivateData.ImageRecordCount;
 
   TotalSplitRecordCount = 0;
   //
@@ -922,9 +929,9 @@ SplitTable (
   //
   // Let new record point to end of full MemoryMap buffer.
   //
-  IndexNew = ((*MemoryMapSize) / DescriptorSize) - 1 + AdditionalRecordCount;
+  IndexNew = ((*MemoryMapSize) / DescriptorSize) - 1 + NumberOfAdditionalDescriptors;
   for ( ; IndexOld >= 0; IndexOld--) {
-    MaxSplitRecordCount = GetMaxSplitRecordCount ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + IndexOld * DescriptorSize));
+    MaxSplitRecordCount = GetMaxSplitRecordCount ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + IndexOld * DescriptorSize), ImageRecordList);
     //
     // Split this MemoryMap record
     //
@@ -933,7 +940,8 @@ SplitTable (
                              (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + IndexOld * DescriptorSize),
                              (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + IndexNew * DescriptorSize),
                              MaxSplitRecordCount,
-                             DescriptorSize
+                             DescriptorSize,
+                             ImageRecordList
                              );
     //
     // Adjust IndexNew according to real split.
@@ -953,7 +961,7 @@ SplitTable (
   //
   CopyMem (
     MemoryMap,
-    (UINT8 *)MemoryMap + (AdditionalRecordCount - TotalSplitRecordCount) * DescriptorSize,
+    (UINT8 *)MemoryMap + (NumberOfAdditionalDescriptors - TotalSplitRecordCount) * DescriptorSize,
     (*MemoryMapSize) + TotalSplitRecordCount * DescriptorSize
     );
 
@@ -1054,7 +1062,7 @@ CoreGetMemoryMapWithSeparatedImageSection (
       //
       // Split PE code/data
       //
-      SplitTable (MemoryMapSize, MemoryMap, *DescriptorSize);
+      SplitTable (MemoryMapSize, MemoryMap, *DescriptorSize, &mImagePropertiesPrivateData.ImageRecordList, AdditionalRecordCount);
     }
   }
 
@@ -1252,11 +1260,13 @@ SwapImageRecord (
 
 /**
   Sort image record based upon the ImageBase from low to high.
+
+  @param ImageRecordList    Image record list to be sorted
 **/
 STATIC
 VOID
 SortImageRecord (
-  VOID
+  IN LIST_ENTRY  *ImageRecordList
   )
 {
   IMAGE_PROPERTIES_RECORD  *ImageRecord;
@@ -1264,9 +1274,6 @@ SortImageRecord (
   LIST_ENTRY               *ImageRecordLink;
   LIST_ENTRY               *NextImageRecordLink;
   LIST_ENTRY               *ImageRecordEndLink;
-  LIST_ENTRY               *ImageRecordList;
-
-  ImageRecordList = &mImagePropertiesPrivateData.ImageRecordList;
 
   ImageRecordLink     = ImageRecordList->ForwardLink;
   NextImageRecordLink = ImageRecordLink->ForwardLink;
@@ -1475,7 +1482,7 @@ InsertImageRecord (
     mImagePropertiesPrivateData.CodeSegmentCountMax = ImageRecord->CodeSegmentCount;
   }
 
-  SortImageRecord ();
+  SortImageRecord (&mImagePropertiesPrivateData.ImageRecordList);
 
 Finish:
   return;
@@ -1484,8 +1491,9 @@ Finish:
 /**
   Find image record according to image base and size.
 
-  @param  ImageBase    Base of PE image
-  @param  ImageSize    Size of PE image
+  @param  ImageBase           Base of PE image
+  @param  ImageSize           Size of PE image
+  @param  ImageRecordList     Image record list to be searched
 
   @return image record
 **/
@@ -1493,14 +1501,12 @@ Finish:
 IMAGE_PROPERTIES_RECORD *
 FindImageRecord (
   IN EFI_PHYSICAL_ADDRESS  ImageBase,
-  IN UINT64                ImageSize
+  IN UINT64                ImageSize,
+  IN LIST_ENTRY            *ImageRecordList
   )
 {
   IMAGE_PROPERTIES_RECORD  *ImageRecord;
   LIST_ENTRY               *ImageRecordLink;
-  LIST_ENTRY               *ImageRecordList;
-
-  ImageRecordList = &mImagePropertiesPrivateData.ImageRecordList;
 
   for (ImageRecordLink = ImageRecordList->ForwardLink;
        ImageRecordLink != ImageRecordList;
@@ -1545,7 +1551,7 @@ RemoveImageRecord (
     return;
   }
 
-  ImageRecord = FindImageRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)RuntimeImage->ImageBase, RuntimeImage->ImageSize);
+  ImageRecord = FindImageRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)RuntimeImage->ImageBase, RuntimeImage->ImageSize, &mImagePropertiesPrivateData.ImageRecordList);
   if (ImageRecord == NULL) {
     DEBUG ((DEBUG_ERROR, "!!!!!!!! ImageRecord not found !!!!!!!!\n"));
     return;
