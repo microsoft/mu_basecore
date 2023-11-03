@@ -96,6 +96,7 @@
   DebugAgentLib
   CpuExceptionHandlerLib
   PcdLib
+  ImagePropertiesRecordLib
   DxeMemoryProtectionHobLib        ## MU_CHANGE
   MemoryBinOverrideLib      ## MU_CHANGE
 
