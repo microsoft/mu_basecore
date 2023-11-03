@@ -712,7 +712,7 @@ ${BEGIN}  RETURN_STATUS  Status;
 ${FunctionCall}${END}
 }
 """),
-
+# MU_CHANGE [BEGIN]: Add StackCookieSupport marker for stack cookie support.
 'PEI'   :   TemplateString("""
 ${BEGIN}${FunctionPrototype}${END}
 
@@ -731,6 +731,7 @@ ${FunctionCall}${END}
 'DXE'   :   TemplateString("""
 ${BEGIN}${FunctionPrototype}${END}
 
+${StackCookieSupport}
 VOID
 EFIAPI
 ProcessLibrary${Type}List (
@@ -742,7 +743,7 @@ ${BEGIN}  EFI_STATUS  Status;
 ${FunctionCall}${END}
 }
 """),
-
+# MU_CHANGE [END]: Add StackCookieSupport marker for stack cookie support.
 'MM'   :   TemplateString("""
 ${BEGIN}${FunctionPrototype}${END}
 
@@ -1360,12 +1361,14 @@ def CreateLibraryConstructorCode(Info, AutoGenC, AutoGenH):
         ConstructorCallingList = []
     else:
         ConstructorCallingList = [str(ConstructorCallingString)]
-
+    # MU_CHANGE [BEGIN]: Add StackCookieSupport marker for stack cookie support.
     Dict = {
         'Type'              :   'Constructor',
         'FunctionPrototype' :   ConstructorPrototypeList,
-        'FunctionCall'      :   ConstructorCallingList
+        'FunctionCall'      :   ConstructorCallingList,
+        "StackCookieSupport":   "NO_STACK_COOKIE"
     }
+    # MU_CHANGE [END]: Add StackCookieSupport marker for stack cookie support.
     if Info.IsLibrary:
         AutoGenH.Append("${BEGIN}${FunctionPrototype}${END}", Dict)
     else:
@@ -1423,12 +1426,14 @@ def CreateLibraryDestructorCode(Info, AutoGenC, AutoGenH):
         DestructorCallingList = []
     else:
         DestructorCallingList = [str(DestructorCallingString)]
-
+    # MU_CHANGE [BEGIN]: Add StackCookieSupport marker for stack cookie support.
     Dict = {
         'Type'              :   'Destructor',
         'FunctionPrototype' :   DestructorPrototypeList,
-        'FunctionCall'      :   DestructorCallingList
+        'FunctionCall'      :   DestructorCallingList,
+        "StackCookieSupport":   ""
     }
+    # MU_CHANGE [END]: Add StackCookieSupport marker for stack cookie support.
     if Info.IsLibrary:
         AutoGenH.Append("${BEGIN}${FunctionPrototype}${END}", Dict)
     else:

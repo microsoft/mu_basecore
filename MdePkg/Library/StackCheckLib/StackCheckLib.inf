@@ -1,0 +1,43 @@
+## @file
+#  Provides the required functionality for initializing and
+#  checking the stack cookie.
+#
+#  Copyright (c) Microsoft Corporation. All rights reserved.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = StackCheckLib
+  FILE_GUID                      = 495b10c8-7148-4b62-92b0-7cf4551df83d
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = NULL
+  CONSTRUCTOR                    = InitializeSecurityCookie
+
+[Sources]
+  StackCheckLib.c
+  StackCheckFunctionsGcc.nasm |GCC
+
+[Sources.IA32]
+  IA32/StackCheckFunctionsMsvc.nasm | MSFT
+
+[Sources.X64]
+  X64/StackCheckFunctionsMsvc.nasm | MSFT
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  RngLib
+  StackCheckFailureLib
+
+[FixedPcd]
+  gEfiMdePkgTokenSpaceGuid.PcdStackCookieExceptionVector
+
+[BuildOptions]
+  GCC:*_*_*_CC_FLAGS = -fno-lto
+  MSFT:*_*_*_CC_FLAGS = /GL-
