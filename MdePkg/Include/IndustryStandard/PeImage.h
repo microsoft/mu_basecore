@@ -134,34 +134,6 @@ typedef struct {
   UINT32    Size;
 } EFI_IMAGE_DATA_DIRECTORY;
 
-// MS_CHANGE_? - Something to do with Stack Cookies?
-//
-// Load Config Directory from PeCoff
-//
-typedef struct {
-  UINTN    Size;
-  UINTN    TimeDateStamp;
-  UINT8    MajorVersion;
-  UINT8    MinorVersion;
-  UINTN    GlobalFlagsClear;
-  UINTN    GlobalFlagsSet;
-  UINTN    CriticalSectionDefaultTimeout;
-  UINTN    DeCommitFreeBlockThreshold;
-  UINTN    DeCommitTotalFreeThreshold;
-  UINTN    LockPrefixTable;                 // VA
-  UINTN    MaximumAllocationSize;
-  UINTN    VirtualMemoryThreshold;
-  UINTN    ProcessHeapFlags;
-  UINTN    ProcessAffinityMask;
-  UINT8    CSDVersion;
-  UINT8    Reserved1;
-  UINTN    EditList;                        // VA
-  UINTN    SecurityCookie;
-  VOID     **SEHandlerTable;
-  UINTN    SEHandlerCount;
-} EFI_IMAGE_LOAD_CONFIG_DIRECTORY;
-// END
-
 //
 // Directory Entries
 //
