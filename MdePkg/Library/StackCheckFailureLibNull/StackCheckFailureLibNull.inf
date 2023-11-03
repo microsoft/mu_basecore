@@ -1,0 +1,24 @@
+## @file
+#  Provides the handler when a stack cookie check failure occurs.
+#
+#  Copyright (c) Microsoft Corporation. All rights reserved.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = StackCheckFailureLibNull
+  FILE_GUID                      = 0a4f7cde-a567-485d-8c9a-98ea271ba322
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = StackCheckFailureLib
+
+[Sources]
+  StackCheckFailureLibNull.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib

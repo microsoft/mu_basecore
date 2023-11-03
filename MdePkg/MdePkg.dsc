@@ -206,6 +206,13 @@
   MdePkg/Library/MipiSysTLib/MipiSysTLib.inf
   MdePkg/Library/TraceHubDebugSysTLibNull/TraceHubDebugSysTLibNull.inf
 
+# MU_CHANGE [BEGIN] - Stack Cookie Support
+[Components.X64]
+  MdePkg/Library/StackCheckLib/StackCheckLib.inf
+  MdePkg/Library/StackCheckFailureLibNull/StackCheckFailureLibNull.inf
+  MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf
+# MU_CHANGE [END] - Add Stack Cookie Support
+
 
 
 # MS_CHANGE Begin
