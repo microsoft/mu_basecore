@@ -102,6 +102,7 @@
   VarCheckLib|MdeModulePkg/Library/VarCheckLib/VarCheckLib.inf
   FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
   NonDiscoverableDeviceRegistrationLib|MdeModulePkg/Library/NonDiscoverableDeviceRegistrationLib/NonDiscoverableDeviceRegistrationLib.inf
+  ImagePropertiesRecordLib|MdeModulePkg/Library/ImagePropertiesRecordLib/ImagePropertiesRecordLib.inf
 
   FmpAuthenticationLib|MdeModulePkg/Library/FmpAuthenticationLibNull/FmpAuthenticationLibNull.inf
   CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibNull/DxeCapsuleLibNull.inf
@@ -294,6 +295,7 @@
   MdeModulePkg/Library/BaseHobLibNull/BaseHobLibNull.inf
   MdeModulePkg/Library/BaseMemoryAllocationLibNull/BaseMemoryAllocationLibNull.inf
   MdeModulePkg/Library/VariablePolicyHelperLib/VariablePolicyHelperLib.inf
+  MdeModulePkg/Library/ImagePropertiesRecordLib/ImagePropertiesRecordLib.inf
   MdeModulePkg/Library/MemoryTypeInfoSecVarCheckLib/MemoryTypeInfoSecVarCheckLib.inf     # MU_CHANGE TCBZ1086
 
   MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf
