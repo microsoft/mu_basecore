@@ -43,6 +43,10 @@ parameters:
 - name: calculate_code_coverage
   displayName: Calculate Code Coverage
   default: false
+- name: coverage_publish_target
+  displayName: Publish Code Coverage Target
+  type: string
+  default: 'ado'
 - name: container_build
   displayName: Flag for whether this repo should do stuart_setup
   type: boolean
