@@ -1246,6 +1246,7 @@ RootBridgeIoPciAccess (
     }
   }
 
+  // MU_CHANGE BEGIN
   //
   // Perform readback after write to confirm completion was received for the last write
   // before subsequent memory operations can be issued.
@@ -1253,6 +1254,7 @@ RootBridgeIoPciAccess (
   if (!Read) {
   PciSegmentRead8 (Address - InStride);
   }
+  // MU_CHANGE END
 
   return EFI_SUCCESS;
 }
