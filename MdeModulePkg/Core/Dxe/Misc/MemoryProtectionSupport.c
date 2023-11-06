@@ -2573,25 +2573,15 @@ GetMemoryMapWithPopulatedAccessAttributes (
     return EFI_INVALID_PARAMETER;
   }
 
-  *MemoryMapSize = 0;
-
-  Status = CoreGetMemoryMap (
-             MemoryMapSize,
-             *MemoryMap,
-             &MapKey,
-             DescriptorSize,
-             &DescriptorVersion
-             );
-
-  ASSERT (Status == EFI_BUFFER_TOO_SMALL);
-
-  do {
-    *MemoryMap = (EFI_MEMORY_DESCRIPTOR *)AllocatePool (*MemoryMapSize);
-    if (*MemoryMap == NULL) {
-      Status = EFI_OUT_OF_RESOURCES;
-      ASSERT_EFI_ERROR (Status);
-      goto Cleanup;
-    }
+  // STEP 1: Get the Initial Memory Map
+  //
+  // The memory map fetched from this routine will be used to determine
+  // the amount of memory needed to create a hybrid memory map which
+  // describes the full address space with all the attributes required
+  // to secure memory as much as possible based on the platform protection
+  // policy.
+  {
+    *MemoryMapSize = 0;
 
     Status = CoreGetMemoryMap (
                MemoryMapSize,
@@ -2600,57 +2590,28 @@ GetMemoryMapWithPopulatedAccessAttributes (
                DescriptorSize,
                &DescriptorVersion
                );
-    if (EFI_ERROR (Status)) {
-      FreePool (*MemoryMap);
-    }
-  } while (Status == EFI_BUFFER_TOO_SMALL);
 
-  if (EFI_ERROR (Status)) {
-    ASSERT_EFI_ERROR (Status);
-    goto Cleanup;
-  }
+    ASSERT (Status == EFI_BUFFER_TOO_SMALL);
 
-  Status = CoreGetMemorySpaceMap (&NumMemorySpaceMapDescriptors, &MemorySpaceMap);
-  ASSERT_EFI_ERROR (Status);
+    do {
+      *MemoryMap = (EFI_MEMORY_DESCRIPTOR *)AllocatePool (*MemoryMapSize);
+      if (*MemoryMap == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        ASSERT_EFI_ERROR (Status);
+        goto Cleanup;
+      }
 
-  if (MemorySpaceMap != NULL) {
-    MemorySpaceMapDescriptorSize = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR);
-
-    // Determine how large the filled in memory map will be.
-    Status = FillInMemoryMap (
-               MemoryMapSize,
-               *MemoryMap,
-               *MemoryMapSize,
-               NULL,
-               DescriptorSize,
-               &NumMemorySpaceMapDescriptors,
-               MemorySpaceMap,
-               &MemorySpaceMapDescriptorSize,
-               TRUE
-               );
-
-    ASSERT_EFI_ERROR (Status);
-  }
-
-  // Set MergedImageList to the list of IMAGE_PROPERTIES_RECORD entries which will
-  // be used to breakup the memory map
-  if (mImagePropertiesPrivate.ImageRecordCount == 0) {
-    MergedImageList = &mNonProtectedImageRangesPrivate.NonProtectedImageList;
-  } else if (mNonProtectedImageRangesPrivate.NonProtectedImageCount == 0) {
-    MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
-  }
-  // If both protected and non-protected images are loaded, merge the two lists
-  else {
-    MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
-    Status          = MergeListsUint64Comparison (
-                        MergedImageList,
-                        &mNonProtectedImageRangesPrivate.NonProtectedImageList,
-                        &mNonProtectedImageRangesPrivate.NonProtectedImageCount,
-                        &mArrayOfListEntryPointers,
-                        OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
-                        OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
-                        IMAGE_PROPERTIES_RECORD_SIGNATURE
-                        );
+      Status = CoreGetMemoryMap (
+                 MemoryMapSize,
+                 *MemoryMap,
+                 &MapKey,
+                 DescriptorSize,
+                 &DescriptorVersion
+                 );
+      if (EFI_ERROR (Status)) {
+        FreePool (*MemoryMap);
+      }
+    } while (Status == EFI_BUFFER_TOO_SMALL);
 
     if (EFI_ERROR (Status)) {
       ASSERT_EFI_ERROR (Status);
@@ -2658,6 +2619,88 @@ GetMemoryMapWithPopulatedAccessAttributes (
     }
   }
 
+  // STEP 2: Get the GCD Memory Map
+  //
+  // The GCD memory map will be used to fill in memory regions contained
+  // in the full address space but not described by the EFI memory map.
+  // While the logic could get the address width from the CPU info HOB,
+  // the GCD memory type of regions being filled in will be used to
+  // deterimine the appropriate access attributes.
+  {
+    Status = CoreGetMemorySpaceMap (&NumMemorySpaceMapDescriptors, &MemorySpaceMap);
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // STEP 3: Determine the Space Required for the Memory Map with Gaps Filled in
+  //
+  // Calling FillInMemoryMap() with DetermineSize == TRUE will return the
+  // size required to add the extra descriptors which fill in the address gaps.
+  {
+    if (MemorySpaceMap != NULL) {
+      MemorySpaceMapDescriptorSize = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR);
+
+      // Determine how large the filled in memory map will be.
+      Status = FillInMemoryMap (
+                 MemoryMapSize,
+                 *MemoryMap,
+                 *MemoryMapSize,
+                 NULL,
+                 DescriptorSize,
+                 &NumMemorySpaceMapDescriptors,
+                 MemorySpaceMap,
+                 &MemorySpaceMapDescriptorSize,
+                 TRUE
+                 );
+
+      ASSERT_EFI_ERROR (Status);
+    }
+  }
+
+  // STEP 4: Create a Unified List Describing All Images Loaded on the Platform
+  //
+  // To ensure attributes are not applied to image memory ranges based on the
+  // memory type, the logic needs to track all loaded images. This module hosts
+  // a list of protected and non-protected images present on the system which is
+  // updated each time an image is loaded. For obvious reasons, this logic must
+  // differentiate between protected and non-protected images when determining
+  // the appropriate access attributes.
+  //
+  // To split up the memory map based on loaded images, this logic unifies
+  // both lists of protected and non-protected images into a single list.
+  // After the memory map has been broken up and before the access attributes
+  // for each range are determined, the list will be split back to its original
+  // state.
+  {
+    if (mImagePropertiesPrivate.ImageRecordCount == 0) {
+      MergedImageList = &mNonProtectedImageRangesPrivate.NonProtectedImageList;
+    } else if (mNonProtectedImageRangesPrivate.NonProtectedImageCount == 0) {
+      MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
+    }
+    // If both protected and non-protected images are loaded, merge the two lists
+    else {
+      MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
+      Status          = MergeListsUint64Comparison (
+                          MergedImageList,
+                          &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+                          &mNonProtectedImageRangesPrivate.NonProtectedImageCount,
+                          &mArrayOfListEntryPointers,
+                          OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                          OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                          IMAGE_PROPERTIES_RECORD_SIGNATURE
+                          );
+
+      if (EFI_ERROR (Status)) {
+        ASSERT_EFI_ERROR (Status);
+        goto Cleanup;
+      }
+    }
+  }
+
+  // STEP 5: Determine the Number of Descriptors Required for Loaded Images
+  //
+  // The below formula is used to determine the number of descriptors
+  // required to describe loaded images in the worst case.
+  //
   // |         |      |      |      |      |      |         |
   // | 4K PAGE | DATA | CODE | DATA | CODE | DATA | 4K PAGE |
   // |         |      |      |      |      |      |         |
@@ -2677,9 +2720,13 @@ GetMemoryMapWithPopulatedAccessAttributes (
   // image (so we don't split it by code/data sections) with flanking unrelated memory regions. In this case, the
   // number of descriptors required to describe this region will be 3. To ensure we have enough descriptors to
   // describe every nonprotected image, we must have 3 * <number of nonprotected images> additional descriptors.
-  AdditionalRecordsForImages = ((2 * mImagePropertiesPrivate.CodeSegmentCountMax + 3) * mImagePropertiesPrivate.ImageRecordCount) +
-                               (mNonProtectedImageRangesPrivate.NonProtectedImageCount * 3);
+  {
+    AdditionalRecordsForImages = ((2 * mImagePropertiesPrivate.CodeSegmentCountMax + 3) * mImagePropertiesPrivate.ImageRecordCount) +
+                                 (mNonProtectedImageRangesPrivate.NonProtectedImageCount * 3);
+  }
 
+  // STEP 6: Determine the Size of the Final Memory Map
+  //
   // The final memory map buffer size will include:
   //
   // 1. The size required to describe the EFI memory map returned from GetMemoryMap()
@@ -2688,56 +2735,84 @@ GetMemoryMapWithPopulatedAccessAttributes (
   //    from the CPU info HOB).
   // 3. The size required to split all protected and non-protected image ranges into their own descriptors.
   // 4. The size required to split all special regions into their own descriptors (done by multiplying
-  //    the memory map size by 2 to accomodate the worst-case scenario). BEEBE TODO: Include image ranges before multiplying?
-  *MemoryMapSize           = (*MemoryMapSize * 2) + ((*DescriptorSize) * AdditionalRecordsForImages);
-  FinalMemoryMapBufferSize = *MemoryMapSize;
-  FreePool (*MemoryMap);
-  *MemoryMap = AllocateZeroPool (FinalMemoryMapBufferSize);
-
-  if (*MemoryMap == NULL) {
-    Status = EFI_OUT_OF_RESOURCES;
-    ASSERT_EFI_ERROR (Status);
-    goto Cleanup;
+  //    the memory map size by 2 to accomodate the worst-case scenario).
+  {
+    *MemoryMapSize           = (*MemoryMapSize * 2) + ((*DescriptorSize) * AdditionalRecordsForImages);
+    FinalMemoryMapBufferSize = *MemoryMapSize;
   }
 
-  // Create a bitmap to track which descriptors have been updated with the correct attributes
-  NumMemoryMapDescriptors = FinalMemoryMapBufferSize / *DescriptorSize;
-  NumBitmapEntries        = (NumMemoryMapDescriptors % 8) == 0 ? NumMemoryMapDescriptors : (((NumMemoryMapDescriptors / 8) * 8) + 8);
-  mBitmapGlobal           = AllocateZeroPool (NumBitmapEntries / 8);
+  // STEP 7: Allocate Memory for the Final Memory Map
+  {
+    FreePool (*MemoryMap);
+    *MemoryMap = AllocateZeroPool (FinalMemoryMapBufferSize);
 
-  if (mBitmapGlobal == NULL) {
-    Status = EFI_OUT_OF_RESOURCES;
-    ASSERT_EFI_ERROR (Status);
-    goto Cleanup;
+    if (*MemoryMap == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      ASSERT_EFI_ERROR (Status);
+      goto Cleanup;
+    }
   }
 
-  Status = CoreGetMemoryMap (
-             MemoryMapSize,
-             *MemoryMap,
-             &MapKey,
-             DescriptorSize,
-             &DescriptorVersion
-             );
+  // STEP 8: Create a Bitmap to Track Which Descriptors Have Been Updated with Attributes
+  //
+  // The pool allocated for the bitmap will be large enough to hold a bit for every descriptor
+  // in the expanded memory map, but in almost all cases the bitmap will be smaller than this.
+  // This bitmap must be freed after the memory map is no longer in use to avoid changing the
+  // real memory map layout.
+  {
+    NumMemoryMapDescriptors = FinalMemoryMapBufferSize / *DescriptorSize;
+    NumBitmapEntries        = (NumMemoryMapDescriptors % 8) == 0 ? NumMemoryMapDescriptors : (((NumMemoryMapDescriptors / 8) * 8) + 8);
+    mBitmapGlobal           = AllocateZeroPool (NumBitmapEntries / 8);
 
-  ASSERT_EFI_ERROR (Status);
+    if (mBitmapGlobal == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      ASSERT_EFI_ERROR (Status);
+      goto Cleanup;
+    }
+  }
 
-  // Fill in the memory map with regions described in the GCD memory map but not the EFI memory map
-  Status = FillInMemoryMap (
-             MemoryMapSize,
-             *MemoryMap,
-             FinalMemoryMapBufferSize,
-             (EFI_MEMORY_DESCRIPTOR *)(((UINT8 *)*MemoryMap) + *MemoryMapSize),
-             DescriptorSize,
-             &NumMemorySpaceMapDescriptors,
-             MemorySpaceMap,
-             &MemorySpaceMapDescriptorSize,
-             FALSE
-             );
+  // STEP 9: Get the EFI Memory Map
+  //
+  // From this point onward there will be no more allocations or frees within this function
+  // to ensure the memory map is not changed during the creation process. This block fetches
+  // the current EFI memory map now that it has stabilized.
+  {
+    Status = CoreGetMemoryMap (
+               MemoryMapSize,
+               *MemoryMap,
+               &MapKey,
+               DescriptorSize,
+               &DescriptorVersion
+               );
 
-  ASSERT_EFI_ERROR (Status);
+    ASSERT_EFI_ERROR (Status);
+  }
 
-  // Filter each map entry to only contain access attributes
-  FilterMemoryMapAttributes (MemoryMapSize, *MemoryMap, DescriptorSize);
+  // STEP 10: Update the EFI Memory Map to Describe the Full Address Space
+  {
+    Status = FillInMemoryMap (
+               MemoryMapSize,
+               *MemoryMap,
+               FinalMemoryMapBufferSize,
+               (EFI_MEMORY_DESCRIPTOR *)(((UINT8 *)*MemoryMap) + *MemoryMapSize),
+               DescriptorSize,
+               &NumMemorySpaceMapDescriptors,
+               MemorySpaceMap,
+               &MemorySpaceMapDescriptorSize,
+               FALSE
+               );
+
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // STEP 11: Filter the Memory Map Attributes to Only Access Attributes
+  //
+  // The memory map returned from CoreGetMemoryMap() may include non-access
+  // attributes such as caching attributes. These extra attributes are
+  // not the output of this function so they should be filtered out.
+  {
+    FilterMemoryMapAttributes (MemoryMapSize, *MemoryMap, DescriptorSize);
+  }
 
   DEBUG_CODE (
     DEBUG ((DEBUG_INFO, "---Currently Protected Images---\n"));
@@ -2749,88 +2824,143 @@ GetMemoryMapWithPopulatedAccessAttributes (
     DumpMemoryProtectionSpecialRegions ();
     );
 
-  // Break up the memory map so every image range divides evenly into some number of
-  // EFI memory descriptors
-  SeparateImagesInMemoryMap (
-    MemoryMapSize,
-    *MemoryMap,
-    *DescriptorSize,
-    MergedImageList,
-    AdditionalRecordsForImages
-    );
+  // STEP 12: Break up the Memory Map Based on Loaded Images
+  //
+  // Because images are loaded into memory with a single type, descriptors
+  // need to be broken up so that image sections are isolated to their
+  // own descriptors. See STEP 5 for examples.
+  //
+  // After the following function, image sections containing CODE
+  // will have the EFI_MEMORY_RO attribute set and image sections
+  // containing DATA will have the EFI_MEMORY_XP attribute set.
+  // These attributes will be cleared for nonprotected images
+  // in STEP 17.
+  {
+    SeparateImagesInMemoryMap (
+      MemoryMapSize,
+      *MemoryMap,
+      *DescriptorSize,
+      MergedImageList,
+      AdditionalRecordsForImages
+      );
+  }
 
-  // Update the separated memory map based on the special regions (if any)
-  if (mSpecialMemoryRegionsPrivate.Count > 0) {
-    Status = SeparateSpecialRegionsInMemoryMap (
-               MemoryMapSize,
-               *MemoryMap,
-               DescriptorSize,
-               &FinalMemoryMapBufferSize,
-               &mSpecialMemoryRegionsPrivate.SpecialRegionList
-               );
-    if (EFI_ERROR (Status)) {
-      ASSERT_EFI_ERROR (Status);
-      goto Cleanup;
+  // STEP 13: Break up the Memory Map Based on Special Regions
+  //
+  // Memory Protection Special Regions describe sections of memory
+  // which should have their access attributes set to a specific
+  // value. This functionality is used when it is critical for
+  // regions to have specific attributes which may deviate from
+  // the platform protection policy or which are not configurable
+  // by the policy knobs.
+  {
+    if (mSpecialMemoryRegionsPrivate.Count > 0) {
+      Status = SeparateSpecialRegionsInMemoryMap (
+                 MemoryMapSize,
+                 *MemoryMap,
+                 DescriptorSize,
+                 &FinalMemoryMapBufferSize,
+                 &mSpecialMemoryRegionsPrivate.SpecialRegionList
+                 );
+      if (EFI_ERROR (Status)) {
+        ASSERT_EFI_ERROR (Status);
+        goto Cleanup;
+      }
     }
   }
 
-  NumMemoryMapDescriptors = *MemoryMapSize / *DescriptorSize;
-  NumBitmapEntries        = (NumMemoryMapDescriptors % 8) == 0 ? NumMemoryMapDescriptors : (((NumMemoryMapDescriptors / 8) * 8) + 8);
+  // STEP 14: Update the Bitmap Variables to Isolate Used Descriptors
+  //
+  // STEP 8 ensured a pool large was allocated to handle the worst case
+  // scenario. Now that the memory map has been broken up, the bitmap
+  // variables need to be updated to reflect the number of descriptors
+  // which are actually in use.
+  {
+    NumMemoryMapDescriptors = *MemoryMapSize / *DescriptorSize;
+    NumBitmapEntries        = (NumMemoryMapDescriptors % 8) == 0 ? NumMemoryMapDescriptors : (((NumMemoryMapDescriptors / 8) * 8) + 8);
 
-  // Set the extra bits
-  if ((NumMemoryMapDescriptors % 8) != 0) {
-    mBitmapGlobal[NumMemoryMapDescriptors / 8] |= ~((1 << (NumMemoryMapDescriptors % 8)) - 1);
+    // Set the extra bits
+    if ((NumMemoryMapDescriptors % 8) != 0) {
+      mBitmapGlobal[NumMemoryMapDescriptors / 8] |= ~((1 << (NumMemoryMapDescriptors % 8)) - 1);
+    }
   }
 
-  // Restore the nonprotected image list if it was merged with the protected image list
-  if (mArrayOfListEntryPointers != NULL) {
-    Status = OrderedInsertArrayUint64Comparison (
-               &mNonProtectedImageRangesPrivate.NonProtectedImageList,
-               mArrayOfListEntryPointers,
-               mNonProtectedImageRangesPrivate.NonProtectedImageCount,
-               OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
-               OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
-               IMAGE_PROPERTIES_RECORD_SIGNATURE
-               );
-
+  // STEP 15: Sync the Bitmap with the Memory Map
+  //
+  // The bitmap is used to track which descriptors have been updated
+  // with access attributes. This function will set the bits in the
+  // bitmap which correspond to descriptors which have nonzero attributes so
+  // they are not updated again based on memory type.
+  //
+  // After SyncBitmap(), Descriptors covering special regions will have their
+  // virtual address set to SPECIAL_REGION_PATTERN so they can be identified
+  // in subsequent steps.
+  {
+    Status = SyncBitmap (MemoryMapSize, *MemoryMap, DescriptorSize, mBitmapGlobal);
     ASSERT_EFI_ERROR (Status);
   }
 
-  // All image regions will now have nonzero attributes and special regions will have their
-  // virtual address set to SPECIAL_REGION_PATTERN
+  // STEP 16: Restore the Non-Protected Image List
   //
-  // Set the bits in the bitmap to mark that the corresponding memory descriptor
-  // has been set based on the memory protection policy and special regions
-  Status = SyncBitmap (MemoryMapSize, *MemoryMap, DescriptorSize, mBitmapGlobal);
-  ASSERT_EFI_ERROR (Status);
+  // If the non-protected image list was merged with the protected image list
+  // in STEP 4 to create a unified list, split the list back into its original
+  // state.
+  {
+    if (mArrayOfListEntryPointers != NULL) {
+      Status = OrderedInsertArrayUint64Comparison (
+                 &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+                 mArrayOfListEntryPointers,
+                 mNonProtectedImageRangesPrivate.NonProtectedImageCount,
+                 OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                 OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                 IMAGE_PROPERTIES_RECORD_SIGNATURE
+                 );
 
-  // Remove the access attributes from descriptors which correspond to nonprotected images
-  if (mNonProtectedImageRangesPrivate.NonProtectedImageCount > 0) {
-    Status = RemoveAttributesOfNonProtectedImageRanges (
-               MemoryMapSize,
-               *MemoryMap,
-               DescriptorSize,
-               &mNonProtectedImageRangesPrivate.NonProtectedImageList
-               );
-    if (EFI_ERROR (Status)) {
       ASSERT_EFI_ERROR (Status);
-      goto Cleanup;
     }
   }
 
+  // STEP 17: Remove Access Attributes from Non-Protected Images
+  //
+  // A side effect of STEP 12 was all image section descriptors were given
+  // access attributes. This step will clear the attributes for non-protected
+  // image regions.
+  {
+    if (mNonProtectedImageRangesPrivate.NonProtectedImageCount > 0) {
+      Status = RemoveAttributesOfNonProtectedImageRanges (
+                 MemoryMapSize,
+                 *MemoryMap,
+                 DescriptorSize,
+                 &mNonProtectedImageRangesPrivate.NonProtectedImageList
+                 );
+      if (EFI_ERROR (Status)) {
+        ASSERT_EFI_ERROR (Status);
+        goto Cleanup;
+      }
+    }
+  }
+
+  // STEP 18: Set the Remaining Access Attributes of the Memory Map
+  //
   // Set the access attributes of descriptor ranges which have not been checked
-  // against our memory protection policy
-  Status = SetAccessAttributesInMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize, mBitmapGlobal);
-  ASSERT_EFI_ERROR (Status);
+  // against our memory protection policy (determined by the bitmap).
+  {
+    Status = SetAccessAttributesInMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize, mBitmapGlobal);
+    ASSERT_EFI_ERROR (Status);
+  }
 
   DEBUG_CODE (
     DEBUG ((DEBUG_INFO, "---Final Bitmap---\n"));
     DumpBitmap (mBitmapGlobal, NumBitmapEntries);
     );
 
-  // ASSERT if a bit in the bitmap is not set
-  for (BitmapIndex = 0; BitmapIndex < NumBitmapEntries; BitmapIndex++) {
-    ASSERT (IS_BITMAP_INDEX_SET (mBitmapGlobal, BitmapIndex));
+  // STEP 19: Ensure Every Bit in the Bitmap is Set
+  //
+  // Every bit in the bitmap should be set at this point.
+  {
+    for (BitmapIndex = 0; BitmapIndex < NumBitmapEntries; BitmapIndex++) {
+      ASSERT (IS_BITMAP_INDEX_SET (mBitmapGlobal, BitmapIndex));
+    }
   }
 
   DEBUG_CODE (
@@ -2841,6 +2971,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
 
   return Status;
 
+  // This point should only be reached if there was an error.
 Cleanup:
   if (*MemoryMap != NULL) {
     FreePool (*MemoryMap);
