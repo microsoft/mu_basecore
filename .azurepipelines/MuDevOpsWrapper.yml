@@ -17,7 +17,7 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: personal/joeyvagedes/pkg_codecov
+      ref: personal/joeyvagedes/pkg_per_matrix
 
 parameters:
 - name: do_ci_build
