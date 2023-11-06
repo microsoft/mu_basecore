@@ -10,6 +10,7 @@
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
+
 extern "C" {
 #include <Uefi.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
@@ -36,6 +37,13 @@ struct MockUefiRuntimeServicesTableLib {
      IN UINT32    Attributes,
      IN UINTN     DataSize,
      IN VOID      *Data)
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    gRT_GetTime,
+    (OUT  EFI_TIME                    *Time,
+     OUT  EFI_TIME_CAPABILITIES       *Capabilities OPTIONAL)
     );
 };
 
