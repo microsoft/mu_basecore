@@ -1252,7 +1252,7 @@ RootBridgeIoPciAccess (
   // before subsequent memory operations can be issued.
   //
   if (!Read) {
-  PciSegmentRead8 (Address - InStride);
+    PciSegmentRead8 (Address - InStride);
   }
   // MU_CHANGE END
 
