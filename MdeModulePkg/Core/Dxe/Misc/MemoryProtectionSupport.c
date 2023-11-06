@@ -25,8 +25,10 @@ MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD  mSpecialMemoryRegionsPrivate
   INITIALIZE_LIST_HEAD_VARIABLE (mSpecialMemoryRegionsPrivate.SpecialRegionList)
 };
 
-BOOLEAN                        mIsSystemNxCompatible    = TRUE;
-EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol = NULL;
+BOOLEAN                        mIsSystemNxCompatible       = TRUE;
+EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol    = NULL;
+UINT8                          *mBitmapGlobal              = NULL;
+LIST_ENTRY                     **mArrayOfListEntryPointers = NULL;
 
 #define IS_BITMAP_INDEX_SET(Bitmap, Index)  ((((UINT8*)Bitmap)[Index / 8] & (1 << (Index % 8))) != 0 ? TRUE : FALSE)
 #define SET_BITMAP_INDEX(Bitmap, Index)     (((UINT8*)Bitmap)[Index / 8] |= (1 << (Index % 8)))
@@ -1232,184 +1234,197 @@ GetOverlappingMemorySpaceRegion (
 
 /**
   Updates the memory map to contain contiguous entries from StartOfAddressSpace to
-  max(EndOfAddressSpace, address + length of the final memory map entry). Gaps in the
-  input EFI memory map which correlate with the non-existent GCD type will not be added
-  to the map.
+  max(EndOfAddressSpace, address + length of the final memory map entry). If DetermineSize
+  is TRUE, then this function will just determine the required buffer size for the output
+  memory map.
 
-  @param[in, out] MemoryMapSize         Size, in bytes, of MemoryMap
-  @param[in, out] MemoryMap             IN:  Pointer to the EFI memory map which will have all gaps filled. The
-                                             original buffer will be freed and updated to a newly allocated buffer
-                                        OUT: A sorted memory map describing the entire memory region
-  @param[in]      DescriptorSize        Size, in bytes, of each descriptor region in the array
-  @param[in]      StartOfAddressSpace   Starting address from which there should be contiguous entries
-  @param[in]      EndOfAddressSpace     Ending address at which the memory map should at least reach
+  NOTE: Gaps in the input EFI memory map which correlate with the non-existent GCD type
+        will not be added to the map.
+
+  @param[in, out] MemoryMapSize                   IN: Size, in bytes, of MemoryMap.
+                                                  OUT: Size, in bytes, of the filled in memory map or the size
+                                                       required to fill in the memory map if DetermineSize is TRUE
+  @param[in, out] MemoryMap                       IN:  Pointer to the EFI memory map
+                                                  OUT: A sorted memory map describing the entire address range
+                                                  described in MemorySpaceMap
+  @param[in]      MemoryMapBufferSize             Size, in bytes, of the full buffer pointed to by MemoryMap
+  @param[in]      InsertionPoint                  Pointer to the pointer where new memory map entries should
+                                                  be inserted. This insertion point should be between MemoryMap
+                                                  and MemoryMap + MemoryMapBufferSize. If this is NULL, then
+                                                  DetermineSize must be TRUE.
+  @param[in]      DescriptorSize                  Size, in bytes, of each descriptor region in the array
+  @param[in]      MemorySpaceMapDescriptorCount   Number of entries in the MemorySpaceMap array
+  @param[in]      MemorySpaceMap                  The system memory space map (GCD memory map)
+  @param[in]      MemorySpaceMapDescriptorSize    Size, in bytes, of each descriptor region in the memory space
+                                                  map array
+  @param[in]      DetermineSize                   If TRUE, then this function will only determine the required
+                                                  buffer size for the output memory map. If FALSE, then this
+                                                  function will fill in the memory map
 
   @retval EFI_SUCCESS                   Successfully filled in the memory map
-  @retval EFI_OUT_OF_RECOURCES          Failed to allocate pools
-  @retval EFI_INVALID_PARAMETER         MemoryMap == NULL, *MemoryMap == NULL, *MemoryMapSize == 0, or
-                                        DescriptorSize == 0
+  @retval EFI_INVALID_PARAMETER         An input parameter was invalid.
 **/
 EFI_STATUS
 FillInMemoryMap (
   IN OUT    UINTN                            *MemoryMapSize,
-  IN OUT    EFI_MEMORY_DESCRIPTOR            **MemoryMap,
+  IN OUT    EFI_MEMORY_DESCRIPTOR            *MemoryMap,
+  IN        UINTN                            MemoryMapBufferSize,
+  IN        EFI_MEMORY_DESCRIPTOR            *InsertionPoint,
   IN CONST  UINTN                            *DescriptorSize,
   IN CONST  UINTN                            *MemorySpaceMapDescriptorCount,
   IN        EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemorySpaceMap,
-  IN CONST  UINTN                            *MemorySpaceMapDescriptorSize
+  IN CONST  UINTN                            *MemorySpaceMapDescriptorSize,
+  IN OUT    BOOLEAN                          DetermineSize
   )
 {
-  EFI_MEMORY_DESCRIPTOR  *OldMemoryMapCurrent, *OldMemoryMapEnd, *NewMemoryMapStart, *NewMemoryMapCurrent;
+  EFI_MEMORY_DESCRIPTOR  *MemoryMapCurrent, *MemoryMapEnd;
   EFI_PHYSICAL_ADDRESS   LastEntryEnd, NextEntryStart, StartOfAddressSpace, EndOfAddressSpace;
   EFI_GCD_MEMORY_TYPE    GcdType = 0;
   UINT64                 RemainingLength, OverlapLength;
-  UINTN                  NewMemoryMapSize, AdditionalEntriesCount, LoopIteration;
+  UINTN                  AdditionalEntriesCount;
 
-  if ((MemoryMap == NULL) || (*MemoryMap == NULL) ||
-      (MemoryMapSize == NULL) || (*MemoryMapSize == 0) ||
-      (*DescriptorSize == 0) || (MemorySpaceMap == NULL) ||
-      (MemorySpaceMapDescriptorSize == NULL) || (MemorySpaceMapDescriptorCount == NULL))
+  if ((MemoryMap == NULL) ||
+      (MemoryMapSize == NULL) || (MemorySpaceMap == NULL) ||
+      (MemorySpaceMapDescriptorSize == NULL) || (MemorySpaceMapDescriptorCount == NULL) ||
+      (!DetermineSize && (InsertionPoint == NULL)))
   {
+    DEBUG ((DEBUG_ERROR, "%a - Function had NULL input(s)!\n", __func__));
     return EFI_INVALID_PARAMETER;
   }
 
-  SortMemoryMap (*MemoryMap, *MemoryMapSize, *DescriptorSize);
-  SortMemorySpaceMap (MemorySpaceMap, MemorySpaceMapDescriptorCount, MemorySpaceMapDescriptorSize);
-
-  AdditionalEntriesCount = 0;
-  NewMemoryMapSize       = 0;
-  NewMemoryMapStart      = NULL;
-  for (LoopIteration = 0; LoopIteration < 2; LoopIteration++) {
-    StartOfAddressSpace = MemorySpaceMap[0].BaseAddress;
-    EndOfAddressSpace   = MemorySpaceMap[*MemorySpaceMapDescriptorCount - 1].BaseAddress +
-                          MemorySpaceMap[*MemorySpaceMapDescriptorCount - 1].Length;
-
-    if (LoopIteration == 1) {
-      NewMemoryMapSize = *MemoryMapSize + (AdditionalEntriesCount * *DescriptorSize);
-      // Allocate a buffer for the new memory map
-      NewMemoryMapStart = AllocatePool (NewMemoryMapSize);
-
-      if (NewMemoryMapStart == NULL) {
-        return EFI_OUT_OF_RESOURCES;
-      }
-    }
-
-    NewMemoryMapCurrent = NewMemoryMapStart;
-    OldMemoryMapCurrent = *MemoryMap;
-    OldMemoryMapEnd     = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)*MemoryMap + *MemoryMapSize);
-
-    // Check if we need to insert a new entry at the start of the memory map
-    if (OldMemoryMapCurrent->PhysicalStart > StartOfAddressSpace) {
-      do {
-        OverlapLength   = OldMemoryMapCurrent->PhysicalStart - StartOfAddressSpace;
-        RemainingLength = GetOverlappingMemorySpaceRegion (
-                            MemorySpaceMap,
-                            MemorySpaceMapDescriptorCount,
-                            &StartOfAddressSpace,
-                            &OverlapLength,
-                            &GcdType
-                            );
-        if ((GcdType != EfiGcdMemoryTypeNonExistent)) {
-          if ((LoopIteration == 1)) {
-            POPULATE_MEMORY_DESCRIPTOR_ENTRY (
-              NewMemoryMapCurrent,
-              StartOfAddressSpace,
-              EfiSizeToPages (OldMemoryMapCurrent->PhysicalStart - StartOfAddressSpace - RemainingLength),
-              GcdTypeToEfiType (&GcdType)
-              );
-
-            NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
-          } else {
-            AdditionalEntriesCount++;
-          }
-        }
-
-        StartOfAddressSpace = OldMemoryMapCurrent->PhysicalStart - RemainingLength;
-      } while (RemainingLength > 0);
-    }
-
-    while (OldMemoryMapCurrent < OldMemoryMapEnd) {
-      if (LoopIteration == 1) {
-        CopyMem (NewMemoryMapCurrent, OldMemoryMapCurrent, *DescriptorSize);
-      }
-
-      if (NEXT_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize) < OldMemoryMapEnd) {
-        LastEntryEnd   = OldMemoryMapCurrent->PhysicalStart + EfiPagesToSize (OldMemoryMapCurrent->NumberOfPages);
-        NextEntryStart = NEXT_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize)->PhysicalStart;
-        // Check for a gap in the memory map
-        if (NextEntryStart > LastEntryEnd) {
-          // Fill in missing region based on the GCD Memory Map
-          do {
-            OverlapLength   = NextEntryStart - LastEntryEnd;
-            RemainingLength = GetOverlappingMemorySpaceRegion (
-                                MemorySpaceMap,
-                                MemorySpaceMapDescriptorCount,
-                                &LastEntryEnd,
-                                &OverlapLength,
-                                &GcdType
-                                );
-            if ((GcdType != EfiGcdMemoryTypeNonExistent)) {
-              if ((LoopIteration == 1)) {
-                NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
-                POPULATE_MEMORY_DESCRIPTOR_ENTRY (
-                  NewMemoryMapCurrent,
-                  LastEntryEnd,
-                  EfiSizeToPages (NextEntryStart - LastEntryEnd - RemainingLength),
-                  GcdTypeToEfiType (&GcdType)
-                  );
-              } else {
-                AdditionalEntriesCount++;
-              }
-            }
-
-            LastEntryEnd = NextEntryStart - RemainingLength;
-          } while (RemainingLength > 0);
-        }
-      }
-
-      if (LoopIteration == 1) {
-        NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
-      }
-
-      OldMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize);
-    }
-
-    LastEntryEnd = PREVIOUS_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize)->PhysicalStart +
-                   EfiPagesToSize (PREVIOUS_MEMORY_DESCRIPTOR (OldMemoryMapCurrent, *DescriptorSize)->NumberOfPages);
-
-    // Check if we need to insert a new entry at the end of the memory map
-    if (EndOfAddressSpace > LastEntryEnd) {
-      do {
-        OverlapLength   = EndOfAddressSpace - LastEntryEnd;
-        RemainingLength = GetOverlappingMemorySpaceRegion (
-                            MemorySpaceMap,
-                            MemorySpaceMapDescriptorCount,
-                            &LastEntryEnd,
-                            &OverlapLength,
-                            &GcdType
-                            );
-        if ((GcdType != EfiGcdMemoryTypeNonExistent)) {
-          if ((LoopIteration == 1)) {
-            POPULATE_MEMORY_DESCRIPTOR_ENTRY (
-              NewMemoryMapCurrent,
-              LastEntryEnd,
-              EfiSizeToPages (EndOfAddressSpace - LastEntryEnd - RemainingLength),
-              GcdTypeToEfiType (&GcdType)
-              );
-            NewMemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (NewMemoryMapCurrent, *DescriptorSize);
-          } else {
-            AdditionalEntriesCount++;
-          }
-        }
-
-        LastEntryEnd = EndOfAddressSpace - RemainingLength;
-      } while (RemainingLength > 0);
-    }
+  if ((*MemoryMapSize == 0) || (*DescriptorSize == 0)) {
+    DEBUG ((DEBUG_ERROR, "%a - MemoryMapSize or DescriptorSize is zero!\n", __func__));
+    return EFI_INVALID_PARAMETER;
   }
 
-  FreePool (*MemoryMap);
-  *MemoryMap     = NewMemoryMapStart;
-  *MemoryMapSize = NewMemoryMapSize;
+  if ((!DetermineSize) &&
+      !(((UINTN)MemoryMap < (UINTN)InsertionPoint) &&
+        ((UINTN)InsertionPoint >= (UINTN)MemoryMap + *MemoryMapSize) &&
+        ((UINTN)InsertionPoint < (UINTN)MemoryMap + MemoryMapBufferSize)))
+  {
+    DEBUG ((DEBUG_ERROR, "%a - Input InsertionPoint is Invalid!\n", __func__));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  SortMemoryMap (MemoryMap, *MemoryMapSize, *DescriptorSize);
+  SortMemorySpaceMap (MemorySpaceMap, MemorySpaceMapDescriptorCount, MemorySpaceMapDescriptorSize);
+  if ((InsertionPoint != NULL) && !DetermineSize) {
+    ZeroMem (InsertionPoint, MemoryMapBufferSize - *MemoryMapSize);
+  }
+
+  AdditionalEntriesCount = 0;
+  StartOfAddressSpace    = MemorySpaceMap[0].BaseAddress;
+  EndOfAddressSpace      = MemorySpaceMap[*MemorySpaceMapDescriptorCount - 1].BaseAddress +
+                           MemorySpaceMap[*MemorySpaceMapDescriptorCount - 1].Length;
+  MemoryMapCurrent = MemoryMap;
+  MemoryMapEnd     = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+
+  // Check if we need to insert a new entry at the start of the memory map
+  if (MemoryMapCurrent->PhysicalStart > StartOfAddressSpace) {
+    do {
+      OverlapLength   = MemoryMapCurrent->PhysicalStart - StartOfAddressSpace;
+      RemainingLength = GetOverlappingMemorySpaceRegion (
+                          MemorySpaceMap,
+                          MemorySpaceMapDescriptorCount,
+                          &StartOfAddressSpace,
+                          &OverlapLength,
+                          &GcdType
+                          );
+      if ((GcdType != EfiGcdMemoryTypeNonExistent)) {
+        if (!DetermineSize) {
+          POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+            InsertionPoint,
+            StartOfAddressSpace,
+            EfiSizeToPages (MemoryMapCurrent->PhysicalStart - StartOfAddressSpace - RemainingLength),
+            GcdTypeToEfiType (&GcdType)
+            );
+
+          InsertionPoint = NEXT_MEMORY_DESCRIPTOR (InsertionPoint, *DescriptorSize);
+        } else {
+          AdditionalEntriesCount++;
+        }
+      }
+
+      StartOfAddressSpace = MemoryMapCurrent->PhysicalStart - RemainingLength;
+    } while (RemainingLength > 0);
+  }
+
+  while (MemoryMapCurrent < MemoryMapEnd) {
+    if (NEXT_MEMORY_DESCRIPTOR (MemoryMapCurrent, *DescriptorSize) < MemoryMapEnd) {
+      LastEntryEnd   = MemoryMapCurrent->PhysicalStart + EfiPagesToSize (MemoryMapCurrent->NumberOfPages);
+      NextEntryStart = NEXT_MEMORY_DESCRIPTOR (MemoryMapCurrent, *DescriptorSize)->PhysicalStart;
+      // Check for a gap in the memory map
+      if (NextEntryStart > LastEntryEnd) {
+        // Fill in missing region based on the GCD Memory Map
+        do {
+          OverlapLength   = NextEntryStart - LastEntryEnd;
+          RemainingLength = GetOverlappingMemorySpaceRegion (
+                              MemorySpaceMap,
+                              MemorySpaceMapDescriptorCount,
+                              &LastEntryEnd,
+                              &OverlapLength,
+                              &GcdType
+                              );
+          if ((GcdType != EfiGcdMemoryTypeNonExistent)) {
+            if (!DetermineSize) {
+              POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+                InsertionPoint,
+                LastEntryEnd,
+                EfiSizeToPages (NextEntryStart - LastEntryEnd - RemainingLength),
+                GcdTypeToEfiType (&GcdType)
+                );
+              InsertionPoint = NEXT_MEMORY_DESCRIPTOR (InsertionPoint, *DescriptorSize);
+            } else {
+              AdditionalEntriesCount++;
+            }
+          }
+
+          LastEntryEnd = NextEntryStart - RemainingLength;
+        } while (RemainingLength > 0);
+      }
+    }
+
+    MemoryMapCurrent = NEXT_MEMORY_DESCRIPTOR (MemoryMapCurrent, *DescriptorSize);
+  }
+
+  LastEntryEnd = PREVIOUS_MEMORY_DESCRIPTOR (MemoryMapCurrent, *DescriptorSize)->PhysicalStart +
+                 EfiPagesToSize (PREVIOUS_MEMORY_DESCRIPTOR (MemoryMapCurrent, *DescriptorSize)->NumberOfPages);
+
+  // Check if we need to insert a new entry at the end of the memory map
+  if (EndOfAddressSpace > LastEntryEnd) {
+    do {
+      OverlapLength   = EndOfAddressSpace - LastEntryEnd;
+      RemainingLength = GetOverlappingMemorySpaceRegion (
+                          MemorySpaceMap,
+                          MemorySpaceMapDescriptorCount,
+                          &LastEntryEnd,
+                          &OverlapLength,
+                          &GcdType
+                          );
+      if ((GcdType != EfiGcdMemoryTypeNonExistent)) {
+        if (!DetermineSize) {
+          POPULATE_MEMORY_DESCRIPTOR_ENTRY (
+            InsertionPoint,
+            LastEntryEnd,
+            EfiSizeToPages (EndOfAddressSpace - LastEntryEnd - RemainingLength),
+            GcdTypeToEfiType (&GcdType)
+            );
+          InsertionPoint = NEXT_MEMORY_DESCRIPTOR (InsertionPoint, *DescriptorSize);
+        } else {
+          AdditionalEntriesCount++;
+        }
+      }
+
+      LastEntryEnd = EndOfAddressSpace - RemainingLength;
+    } while (RemainingLength > 0);
+  }
+
+  if (DetermineSize) {
+    *MemoryMapSize = *MemoryMapSize + (AdditionalEntriesCount * *DescriptorSize);
+  } else {
+    *MemoryMapSize = (UINTN)InsertionPoint - (UINTN)MemoryMap;
+    SortMemoryMap (MemoryMap, *MemoryMapSize, *DescriptorSize);
+  }
 
   return EFI_SUCCESS;
 }
@@ -2519,6 +2534,12 @@ RemoveAttributesOfNonProtectedImageRanges (
   attributes (EFI_MEMORY_XP, EFI_MEMORY_RP, EFI_MEMORY_RO) consistent with
   the memory protection policy and can be used to secure system memory.
 
+  NOTE: To create the memory map, several allocation and free calls will need to be performed.
+        To avoid changing the memory map during the creation process, some calls to free memory
+        will be deferred until the caller is done with the produced memory map. The caller of
+        this function is responsible for calling CleanupMemoryMapWithPopulatedAccessAttributes()
+        to free the memory allocated by this function.
+
   @param[out]     MemoryMapSize           A pointer to the size, in bytes, of the
                                           MemoryMap buffer
   @param[out]     MemoryMap               A pointer to the buffer containing the memory map
@@ -2539,15 +2560,12 @@ GetMemoryMapWithPopulatedAccessAttributes (
   )
 {
   EFI_STATUS  Status;
-  UINTN       AdditionalRecordCount, NumMemoryMapDescriptors, NumBitmapEntries, \
+  UINTN       AdditionalRecordsForImages, NumMemoryMapDescriptors, NumBitmapEntries, \
               NumMemorySpaceMapDescriptors, MemorySpaceMapDescriptorSize, MapKey, \
-              ExpandedMemoryMapSize, BitmapIndex;
+              BitmapIndex, FinalMemoryMapBufferSize;
   UINT32                           DescriptorVersion;
-  UINT8                            *Bitmap                    = NULL;
-  EFI_MEMORY_DESCRIPTOR            *ExpandedMemoryMap         = NULL;
-  LIST_ENTRY                       *MergedImageList           = NULL;
-  LIST_ENTRY                       **ArrayOfListEntryPointers = NULL;
-  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemorySpaceMap            = NULL;
+  LIST_ENTRY                       *MergedImageList = NULL;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemorySpaceMap  = NULL;
 
   if ((MemoryMapSize == NULL) || (MemoryMap == NULL) ||
       (*MemoryMap != NULL) || (DescriptorSize == NULL))
@@ -2592,26 +2610,52 @@ GetMemoryMapWithPopulatedAccessAttributes (
     goto Cleanup;
   }
 
-  // Filter each map entry to only contain access attributes
-  FilterMemoryMapAttributes (MemoryMapSize, *MemoryMap, DescriptorSize);
-
   Status = CoreGetMemorySpaceMap (&NumMemorySpaceMapDescriptors, &MemorySpaceMap);
   ASSERT_EFI_ERROR (Status);
 
   if (MemorySpaceMap != NULL) {
     MemorySpaceMapDescriptorSize = sizeof (EFI_GCD_MEMORY_SPACE_DESCRIPTOR);
 
-    // Fill in the memory map with regions described in the GCD memory map but not the EFI memory map
+    // Determine how large the filled in memory map will be.
     Status = FillInMemoryMap (
                MemoryMapSize,
-               MemoryMap,
+               *MemoryMap,
+               *MemoryMapSize,
+               NULL,
                DescriptorSize,
                &NumMemorySpaceMapDescriptors,
                MemorySpaceMap,
-               &MemorySpaceMapDescriptorSize
+               &MemorySpaceMapDescriptorSize,
+               TRUE
                );
 
     ASSERT_EFI_ERROR (Status);
+  }
+
+  // Set MergedImageList to the list of IMAGE_PROPERTIES_RECORD entries which will
+  // be used to breakup the memory map
+  if (mImagePropertiesPrivate.ImageRecordCount == 0) {
+    MergedImageList = &mNonProtectedImageRangesPrivate.NonProtectedImageList;
+  } else if (mNonProtectedImageRangesPrivate.NonProtectedImageCount == 0) {
+    MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
+  }
+  // If both protected and non-protected images are loaded, merge the two lists
+  else {
+    MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
+    Status          = MergeListsUint64Comparison (
+                        MergedImageList,
+                        &mNonProtectedImageRangesPrivate.NonProtectedImageList,
+                        &mNonProtectedImageRangesPrivate.NonProtectedImageCount,
+                        &mArrayOfListEntryPointers,
+                        OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                        OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
+                        IMAGE_PROPERTIES_RECORD_SIGNATURE
+                        );
+
+    if (EFI_ERROR (Status)) {
+      ASSERT_EFI_ERROR (Status);
+      goto Cleanup;
+    }
   }
 
   // |         |      |      |      |      |      |         |
@@ -2633,22 +2677,67 @@ GetMemoryMapWithPopulatedAccessAttributes (
   // image (so we don't split it by code/data sections) with flanking unrelated memory regions. In this case, the
   // number of descriptors required to describe this region will be 3. To ensure we have enough descriptors to
   // describe every nonprotected image, we must have 3 * <number of nonprotected images> additional descriptors.
-  AdditionalRecordCount = ((2 * mImagePropertiesPrivate.CodeSegmentCountMax + 3) * mImagePropertiesPrivate.ImageRecordCount) +
-                          (mNonProtectedImageRangesPrivate.NonProtectedImageCount * 3);
+  AdditionalRecordsForImages = ((2 * mImagePropertiesPrivate.CodeSegmentCountMax + 3) * mImagePropertiesPrivate.ImageRecordCount) +
+                               (mNonProtectedImageRangesPrivate.NonProtectedImageCount * 3);
 
-  ExpandedMemoryMapSize = (*MemoryMapSize * 2) + ((*DescriptorSize) * AdditionalRecordCount);
-  ExpandedMemoryMap     = AllocatePool (ExpandedMemoryMapSize);
+  // The final memory map buffer size will include:
+  //
+  // 1. The size required to describe the EFI memory map returned from GetMemoryMap()
+  // 2. The size required to populate entries which are not in the EFI memory map but are included
+  //    in the full address space described by the GCD memory map (which inherits its address width
+  //    from the CPU info HOB).
+  // 3. The size required to split all protected and non-protected image ranges into their own descriptors.
+  // 4. The size required to split all special regions into their own descriptors (done by multiplying
+  //    the memory map size by 2 to accomodate the worst-case scenario). BEEBE TODO: Include image ranges before multiplying?
+  *MemoryMapSize           = (*MemoryMapSize * 2) + ((*DescriptorSize) * AdditionalRecordsForImages);
+  FinalMemoryMapBufferSize = *MemoryMapSize;
+  FreePool (*MemoryMap);
+  *MemoryMap = AllocateZeroPool (FinalMemoryMapBufferSize);
 
-  if (ExpandedMemoryMap == NULL) {
+  if (*MemoryMap == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
     ASSERT_EFI_ERROR (Status);
     goto Cleanup;
   }
 
-  CopyMem (ExpandedMemoryMap, *MemoryMap, *MemoryMapSize);
-  FreePool (*MemoryMap);
+  // Create a bitmap to track which descriptors have been updated with the correct attributes
+  NumMemoryMapDescriptors = FinalMemoryMapBufferSize / *DescriptorSize;
+  NumBitmapEntries        = (NumMemoryMapDescriptors % 8) == 0 ? NumMemoryMapDescriptors : (((NumMemoryMapDescriptors / 8) * 8) + 8);
+  mBitmapGlobal           = AllocateZeroPool (NumBitmapEntries / 8);
 
-  *MemoryMap = ExpandedMemoryMap;
+  if (mBitmapGlobal == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    ASSERT_EFI_ERROR (Status);
+    goto Cleanup;
+  }
+
+  Status = CoreGetMemoryMap (
+             MemoryMapSize,
+             *MemoryMap,
+             &MapKey,
+             DescriptorSize,
+             &DescriptorVersion
+             );
+
+  ASSERT_EFI_ERROR (Status);
+
+  // Fill in the memory map with regions described in the GCD memory map but not the EFI memory map
+  Status = FillInMemoryMap (
+             MemoryMapSize,
+             *MemoryMap,
+             FinalMemoryMapBufferSize,
+             (EFI_MEMORY_DESCRIPTOR *)(((UINT8 *)*MemoryMap) + *MemoryMapSize),
+             DescriptorSize,
+             &NumMemorySpaceMapDescriptors,
+             MemorySpaceMap,
+             &MemorySpaceMapDescriptorSize,
+             FALSE
+             );
+
+  ASSERT_EFI_ERROR (Status);
+
+  // Filter each map entry to only contain access attributes
+  FilterMemoryMapAttributes (MemoryMapSize, *MemoryMap, DescriptorSize);
 
   DEBUG_CODE (
     DEBUG ((DEBUG_INFO, "---Currently Protected Images---\n"));
@@ -2660,32 +2749,6 @@ GetMemoryMapWithPopulatedAccessAttributes (
     DumpMemoryProtectionSpecialRegions ();
     );
 
-  // Set MergedImageList to the list of IMAGE_PROPERTIES_RECORD entries which will
-  // be used to breakup the memory map
-  if (mImagePropertiesPrivate.ImageRecordCount == 0) {
-    MergedImageList = &mNonProtectedImageRangesPrivate.NonProtectedImageList;
-  } else if (mNonProtectedImageRangesPrivate.NonProtectedImageCount == 0) {
-    MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
-  }
-  // If both protected and non-protected images are loaded, merge the two lists
-  else {
-    MergedImageList = &mImagePropertiesPrivate.ImageRecordList;
-    Status          = MergeListsUint64Comparison (
-                        MergedImageList,
-                        &mNonProtectedImageRangesPrivate.NonProtectedImageList,
-                        &mNonProtectedImageRangesPrivate.NonProtectedImageCount,
-                        &ArrayOfListEntryPointers,
-                        OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
-                        OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
-                        IMAGE_PROPERTIES_RECORD_SIGNATURE
-                        );
-
-    if (EFI_ERROR (Status)) {
-      ASSERT_EFI_ERROR (Status);
-      goto Cleanup;
-    }
-  }
-
   // Break up the memory map so every image range divides evenly into some number of
   // EFI memory descriptors
   SeparateImagesInMemoryMap (
@@ -2693,7 +2756,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
     *MemoryMap,
     *DescriptorSize,
     MergedImageList,
-    AdditionalRecordCount
+    AdditionalRecordsForImages
     );
 
   // Update the separated memory map based on the special regions (if any)
@@ -2702,7 +2765,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
                MemoryMapSize,
                *MemoryMap,
                DescriptorSize,
-               &ExpandedMemoryMapSize,
+               &FinalMemoryMapBufferSize,
                &mSpecialMemoryRegionsPrivate.SpecialRegionList
                );
     if (EFI_ERROR (Status)) {
@@ -2711,28 +2774,19 @@ GetMemoryMapWithPopulatedAccessAttributes (
     }
   }
 
-  // Create a bitmap to track which descriptors have been updated with the correct attributes
   NumMemoryMapDescriptors = *MemoryMapSize / *DescriptorSize;
   NumBitmapEntries        = (NumMemoryMapDescriptors % 8) == 0 ? NumMemoryMapDescriptors : (((NumMemoryMapDescriptors / 8) * 8) + 8);
-  Bitmap                  = AllocateZeroPool (NumBitmapEntries / 8);
-
-  if (Bitmap == NULL) {
-    Status = EFI_OUT_OF_RESOURCES;
-    ASSERT_EFI_ERROR (Status);
-    goto Cleanup;
-  }
 
   // Set the extra bits
   if ((NumMemoryMapDescriptors % 8) != 0) {
-    Bitmap[NumMemoryMapDescriptors / 8] |= ~((1 << (NumMemoryMapDescriptors % 8)) - 1);
+    mBitmapGlobal[NumMemoryMapDescriptors / 8] |= ~((1 << (NumMemoryMapDescriptors % 8)) - 1);
   }
 
-  // Restore the nonprotected image list if it was merged with the protected
-  // image list
-  if (ArrayOfListEntryPointers != NULL) {
+  // Restore the nonprotected image list if it was merged with the protected image list
+  if (mArrayOfListEntryPointers != NULL) {
     Status = OrderedInsertArrayUint64Comparison (
                &mNonProtectedImageRangesPrivate.NonProtectedImageList,
-               ArrayOfListEntryPointers,
+               mArrayOfListEntryPointers,
                mNonProtectedImageRangesPrivate.NonProtectedImageCount,
                OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
                OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
@@ -2740,7 +2794,6 @@ GetMemoryMapWithPopulatedAccessAttributes (
                );
 
     ASSERT_EFI_ERROR (Status);
-    FreePool (ArrayOfListEntryPointers);
   }
 
   // All image regions will now have nonzero attributes and special regions will have their
@@ -2748,7 +2801,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
   //
   // Set the bits in the bitmap to mark that the corresponding memory descriptor
   // has been set based on the memory protection policy and special regions
-  Status = SyncBitmap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
+  Status = SyncBitmap (MemoryMapSize, *MemoryMap, DescriptorSize, mBitmapGlobal);
   ASSERT_EFI_ERROR (Status);
 
   // Remove the access attributes from descriptors which correspond to nonprotected images
@@ -2767,17 +2820,17 @@ GetMemoryMapWithPopulatedAccessAttributes (
 
   // Set the access attributes of descriptor ranges which have not been checked
   // against our memory protection policy
-  Status = SetAccessAttributesInMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize, Bitmap);
+  Status = SetAccessAttributesInMemoryMap (MemoryMapSize, *MemoryMap, DescriptorSize, mBitmapGlobal);
   ASSERT_EFI_ERROR (Status);
 
   DEBUG_CODE (
     DEBUG ((DEBUG_INFO, "---Final Bitmap---\n"));
-    DumpBitmap (Bitmap, NumBitmapEntries);
+    DumpBitmap (mBitmapGlobal, NumBitmapEntries);
     );
 
   // ASSERT if a bit in the bitmap is not set
   for (BitmapIndex = 0; BitmapIndex < NumBitmapEntries; BitmapIndex++) {
-    ASSERT (IS_BITMAP_INDEX_SET (Bitmap, BitmapIndex));
+    ASSERT (IS_BITMAP_INDEX_SET (mBitmapGlobal, BitmapIndex));
   }
 
   DEBUG_CODE (
@@ -2793,23 +2846,48 @@ Cleanup:
     FreePool (*MemoryMap);
   }
 
-  if (ArrayOfListEntryPointers != NULL) {
+  if (mArrayOfListEntryPointers != NULL) {
     Status = OrderedInsertArrayUint64Comparison (
                &mNonProtectedImageRangesPrivate.NonProtectedImageList,
-               ArrayOfListEntryPointers,
+               mArrayOfListEntryPointers,
                mNonProtectedImageRangesPrivate.NonProtectedImageCount,
                OFFSET_OF (IMAGE_PROPERTIES_RECORD, ImageBase) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
                OFFSET_OF (IMAGE_PROPERTIES_RECORD, Signature) - OFFSET_OF (IMAGE_PROPERTIES_RECORD, Link),
                IMAGE_PROPERTIES_RECORD_SIGNATURE
                );
     ASSERT_EFI_ERROR (Status);
-    FreePool (ArrayOfListEntryPointers);
+    FreePool (mArrayOfListEntryPointers);
   }
 
   *MemoryMapSize  = 0;
   *DescriptorSize = 0;
 
   return Status;
+}
+
+/**
+  Frees the memory allocated by GetMemoryMapWithPopulatedAccessAttributes().
+
+  @param[in]     MemoryMap               A pointer to the buffer containing the memory map
+                                          with EFI access attributes which should be applied
+**/
+VOID
+EFIAPI
+CleanupMemoryMapWithPopulatedAccessAttributes (
+  IN EFI_MEMORY_DESCRIPTOR  *MemoryMap
+  )
+{
+  if (mArrayOfListEntryPointers != NULL) {
+    FreePool (mArrayOfListEntryPointers);
+  }
+
+  if (mBitmapGlobal != NULL) {
+    FreePool (mBitmapGlobal);
+  }
+
+  if (MemoryMap != NULL) {
+    FreePool (MemoryMap);
+  }
 }
 
 /**
@@ -3165,7 +3243,7 @@ InitializePageAttributesForMemoryProtectionPolicy (
     MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, DescriptorSize);
   }
 
-  FreePool (MemoryMap);
+  CleanupMemoryMapWithPopulatedAccessAttributes (MemoryMap);
 }
 
 /**
