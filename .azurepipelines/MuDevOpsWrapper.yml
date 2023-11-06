@@ -90,6 +90,7 @@ jobs:
     do_ci_setup: ${{ parameters.do_ci_setup }}
     do_pr_eval: ${{ parameters.do_pr_eval }}
     calculate_code_coverage: ${{ parameters.calculate_code_coverage }}
+    coverage_publish_target: ${{ parameters.coverage_publish_target }}
     do_non_ci_setup: ${{ parameters.do_non_ci_setup }}
     do_non_ci_build: ${{ parameters.do_non_ci_build }}
     build_matrix: ${{ parameters.build_matrix }}
