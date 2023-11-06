@@ -27,6 +27,8 @@ from edk2toolext.environment.uefi_build import UefiBuilder
 from edk2toollib.utility_functions import RunCmd
 from io import StringIO
 
+WORKSPACE_TOOLCHAIN_FILE = "rust-toolchain.toml"
+
 RustToolInfo = namedtuple("RustToolInfo", ["presence_cmd", "install_help"])
 RustToolChainInfo = namedtuple("RustToolChainInfo", ["error", "toolchain"])
 
@@ -59,6 +61,26 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
                          logging_level=logging.DEBUG)
             return ret == 0
 
+        def get_workspace_toolchain_version() -> RustToolChainInfo:
+            """Returns the rust toolchain version specified in the workspace
+            toolchain file.
+
+            Returns:
+                RustToolChainInfo: The rust toolchain information. If an error
+                occurs, the error field will be True with no toolchain info.
+            """
+            toolchain_version = None
+            try:
+                with open(WORKSPACE_TOOLCHAIN_FILE, 'r') as toml_file:
+                    content = toml_file.read()
+                    match = re.search(r'channel\s*=\s*"([^"]+)"', content)
+                    if match:
+                        toolchain_version = match.group(1)
+                return RustToolChainInfo(error=False, toolchain=toolchain_version)
+            except FileNotFoundError:
+                # If a file is not found. Do not check any further.
+                return RustToolChainInfo(error=True, toolchain=None)
+
         def verify_workspace_rust_toolchain_is_installed() -> RustToolChainInfo:
             """Verifies the rust toolchain used in the workspace is available.
 
@@ -70,23 +92,13 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
                 RustToolChainInfo: A tuple that indicates if the toolchain is
                 available and any the toolchain version if found.
             """
-            WORKSPACE_TOOLCHAIN_FILE = "rust-toolchain.toml"
-
-            toolchain_version = None
-            try:
-                with open(WORKSPACE_TOOLCHAIN_FILE, 'r') as toml_file:
-                    content = toml_file.read()
-                    match = re.search(r'channel\s*=\s*"([^"]+)"', content)
-                    if match:
-                        toolchain_version = match.group(1)
-            except FileNotFoundError:
-                # If a file is not found. Do not check any further.
-                return RustToolChainInfo(error=False, toolchain=None)
-
-            if not toolchain_version:
+            toolchain_version = get_workspace_toolchain_version()
+            if toolchain_version.error or not toolchain_version:
                 # If the file is not in an expected format, let that be handled
                 # elsewhere and do not look further.
                 return RustToolChainInfo(error=False, toolchain=None)
+
+            toolchain_version = toolchain_version.toolchain
 
             installed_toolchains = StringIO()
             ret = RunCmd("rustup", "toolchain list",
@@ -103,6 +115,58 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
                 error=not any(toolchain_version in toolchain
                               for toolchain in installed_toolchains),
                 toolchain=toolchain_version)
+
+        def verify_rust_src_component_is_installed() -> bool:
+            """Verifies the rust-src component is installed.
+
+            Returns:
+                bool: True if the rust-src component is installed for the default
+                toolchain or the status could not be determined, otherwise, False.
+            """
+            toolchain_version = get_workspace_toolchain_version()
+            if toolchain_version.error or not toolchain_version:
+                # If the file is not in an expected format, let that be handled
+                # elsewhere and do not look further.
+                return True
+
+            toolchain_version = toolchain_version.toolchain
+
+            rustup_output = StringIO()
+            ret = RunCmd("rustc", "--version --verbose",
+                         outstream=rustup_output,
+                         logging_level=logging.DEBUG)
+            if ret != 0:
+                # rustc installation is checked elsewhere. Exit here on failure.
+                return True
+
+            for line in rustup_output.getvalue().splitlines():
+                start_index = line.lower().strip().find("host: ")
+                if start_index != -1:
+                    target_triple = line[start_index + len("host: "):]
+                    break
+            else:
+                logging.error("Failed to get host target triple information.")
+                return False
+
+            rustup_output = StringIO()
+            ret = RunCmd("rustup", f"component list --toolchain {toolchain_version}",
+                         outstream=rustup_output,
+                         logging_level=logging.DEBUG)
+            if ret != 0:
+                # rustup installation and the toolchain are checked elsewhere.
+                # Exit here on failure.
+                return True
+
+            for component in rustup_output.getvalue().splitlines():
+                if "rust-src (installed)" in component:
+                    return True
+
+            logging.error("The Rust toolchain is installed but the rust-src component "
+                          "needs to be installed:\n\n"
+                          f"  rustup component add --toolchain {toolchain_version}-"
+                          f"{target_triple} rust-src")
+
+            return False
 
         generic_rust_install_instructions = \
             "Visit https://rustup.rs/ to install Rust and cargo."
@@ -182,6 +246,9 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
                 "<host>\"\n\n"
                 "  \"rustup component add rust-src "
                 f"{rust_toolchain_info.toolchain}-<host>\"")
+            errors += 1
+
+        if not verify_rust_src_component_is_installed():
             errors += 1
 
         return errors
