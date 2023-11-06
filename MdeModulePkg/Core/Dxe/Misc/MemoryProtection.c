@@ -78,6 +78,9 @@ STATIC MEMORY_PROTECTION_DEBUG_PROTOCOL  mMemoryProtectionDebug =
   IsGuardPage,
   GetImageList
 };
+
+BOOLEAN  mPageAttributesInitialized = FALSE;
+
 // MS_CHANGE - END
 
 /**
@@ -727,18 +730,25 @@ GetPermissionAttributeForMemoryType (
   // } else {
   //   return 0;
   // }
+  // MU_CHANGE END
+
+  UINT64  Attributes = 0;
 
   // Handle code allocations according to the NX_COMPAT DLL flag. If the flag is
   // set, the image should update the attributes of code type allocates when it's ready to execute them.
   if (!IsEnhancedMemoryProtectionActive ()) {
     return 0;
-  } else if (GetDxeMemoryTypeSettingFromBitfield (MemoryType, gDxeMps.NxProtectionPolicy)) {
-    return EFI_MEMORY_XP;
   }
 
-  return 0;
+  if (GetDxeMemoryTypeSettingFromBitfield (MemoryType, gDxeMps.NxProtectionPolicy)) {
+    Attributes |= EFI_MEMORY_XP;
+  }
 
-  // MU_CHANGE END
+  if ((MemoryType == EfiConventionalMemory) && gDxeMps.MarkFreeMemoryReadOnly && mPageAttributesInitialized) {
+    Attributes |= EFI_MEMORY_RP;
+  }
+
+  return Attributes;
 }
 
 /**
@@ -846,214 +856,216 @@ MergeMemoryMapForProtectionPolicy (
   return;
 }
 
-/**
-  Remove exec permissions from all regions whose type is identified by
-  the Dxe NX Protection Policy. // MU_CHANGE
-**/
-STATIC
-VOID
-InitializeDxeNxMemoryProtectionPolicy (
-  VOID
-  )
-{
-  UINTN                      MemoryMapSize;
-  UINTN                      MapKey;
-  UINTN                      DescriptorSize;
-  UINT32                     DescriptorVersion;
-  EFI_MEMORY_DESCRIPTOR      *MemoryMap;
-  EFI_MEMORY_DESCRIPTOR      *MemoryMapEntry;
-  EFI_MEMORY_DESCRIPTOR      *MemoryMapEnd;
-  EFI_STATUS                 Status;
-  UINT64                     Attributes;
-  LIST_ENTRY                 *Link;
-  EFI_GCD_MAP_ENTRY          *Entry;
-  EFI_PEI_HOB_POINTERS       Hob;
-  EFI_HOB_MEMORY_ALLOCATION  *MemoryHob;
-  EFI_PHYSICAL_ADDRESS       StackBase;
+// MU_CHANGE START: Comment out unused function
+// /**
+//   Remove exec permissions from all regions whose type is identified by
+//   the Dxe NX Protection Policy. // MU_CHANGE
+// **/
+// STATIC
+// VOID
+// InitializeDxeNxMemoryProtectionPolicy (
+//   VOID
+//   )
+// {
+//   UINTN                      MemoryMapSize;
+//   UINTN                      MapKey;
+//   UINTN                      DescriptorSize;
+//   UINT32                     DescriptorVersion;
+//   EFI_MEMORY_DESCRIPTOR      *MemoryMap;
+//   EFI_MEMORY_DESCRIPTOR      *MemoryMapEntry;
+//   EFI_MEMORY_DESCRIPTOR      *MemoryMapEnd;
+//   EFI_STATUS                 Status;
+//   UINT64                     Attributes;
+//   LIST_ENTRY                 *Link;
+//   EFI_GCD_MAP_ENTRY          *Entry;
+//   EFI_PEI_HOB_POINTERS       Hob;
+//   EFI_HOB_MEMORY_ALLOCATION  *MemoryHob;
+//   EFI_PHYSICAL_ADDRESS       StackBase;
 
-  //
-  // Get the EFI memory map.
-  //
-  MemoryMapSize = 0;
-  MemoryMap     = NULL;
+//   //
+//   // Get the EFI memory map.
+//   //
+//   MemoryMapSize = 0;
+//   MemoryMap     = NULL;
 
-  Status = gBS->GetMemoryMap (
-                  &MemoryMapSize,
-                  MemoryMap,
-                  &MapKey,
-                  &DescriptorSize,
-                  &DescriptorVersion
-                  );
-  ASSERT (Status == EFI_BUFFER_TOO_SMALL);
-  do {
-    MemoryMap = (EFI_MEMORY_DESCRIPTOR *)AllocatePool (MemoryMapSize);
-    // MU_CHANGE [BEGIN] - CodeQL change
-    if (MemoryMap == NULL) {
-      ASSERT (MemoryMap != NULL);
-      return;
-    }
+//   Status = gBS->GetMemoryMap (
+//                   &MemoryMapSize,
+//                   MemoryMap,
+//                   &MapKey,
+//                   &DescriptorSize,
+//                   &DescriptorVersion
+//                   );
+//   ASSERT (Status == EFI_BUFFER_TOO_SMALL);
+//   do {
+//     MemoryMap = (EFI_MEMORY_DESCRIPTOR *)AllocatePool (MemoryMapSize);
+//     // MU_CHANGE [BEGIN] - CodeQL change
+//     if (MemoryMap == NULL) {
+//       ASSERT (MemoryMap != NULL);
+//       return;
+//     }
 
-    // MU_CHANGE [END] - CodeQL change
-    Status = gBS->GetMemoryMap (
-                    &MemoryMapSize,
-                    MemoryMap,
-                    &MapKey,
-                    &DescriptorSize,
-                    &DescriptorVersion
-                    );
-    if (EFI_ERROR (Status)) {
-      FreePool (MemoryMap);
-    }
-  } while (Status == EFI_BUFFER_TOO_SMALL);
+//     // MU_CHANGE [END] - CodeQL change
+//     Status = gBS->GetMemoryMap (
+//                     &MemoryMapSize,
+//                     MemoryMap,
+//                     &MapKey,
+//                     &DescriptorSize,
+//                     &DescriptorVersion
+//                     );
+//     if (EFI_ERROR (Status)) {
+//       FreePool (MemoryMap);
+//     }
+//   } while (Status == EFI_BUFFER_TOO_SMALL);
 
-  ASSERT_EFI_ERROR (Status);
+//   ASSERT_EFI_ERROR (Status);
 
-  StackBase = 0;
-  // MU_CHANGE START Update to use memory protection settings HOB
-  // if (PcdGetBool (PcdCpuStackGuard)) {
-  if (gDxeMps.CpuStackGuard) {
-    // MU_CHANGE END
-    //
-    // Get the base of stack from Hob.
-    //
-    Hob.Raw = GetHobList ();
-    while ((Hob.Raw = GetNextHob (EFI_HOB_TYPE_MEMORY_ALLOCATION, Hob.Raw)) != NULL) {
-      MemoryHob = Hob.MemoryAllocation;
-      if (CompareGuid (&gEfiHobMemoryAllocStackGuid, &MemoryHob->AllocDescriptor.Name)) {
-        DEBUG ((
-          DEBUG_INFO,
-          "%a: StackBase = 0x%016lx  StackSize = 0x%016lx\n",
-          __func__,
-          MemoryHob->AllocDescriptor.MemoryBaseAddress,
-          MemoryHob->AllocDescriptor.MemoryLength
-          ));
+//   StackBase = 0;
+//   // MU_CHANGE START Update to use memory protection settings HOB
+//   // if (PcdGetBool (PcdCpuStackGuard)) {
+//   if (gDxeMps.CpuStackGuard) {
+//     // MU_CHANGE END
+//     //
+//     // Get the base of stack from Hob.
+//     //
+//     Hob.Raw = GetHobList ();
+//     while ((Hob.Raw = GetNextHob (EFI_HOB_TYPE_MEMORY_ALLOCATION, Hob.Raw)) != NULL) {
+//       MemoryHob = Hob.MemoryAllocation;
+//       if (CompareGuid (&gEfiHobMemoryAllocStackGuid, &MemoryHob->AllocDescriptor.Name)) {
+//         DEBUG ((
+//           DEBUG_INFO,
+//           "%a: StackBase = 0x%016lx  StackSize = 0x%016lx\n",
+//           __func__,
+//           MemoryHob->AllocDescriptor.MemoryBaseAddress,
+//           MemoryHob->AllocDescriptor.MemoryLength
+//           ));
 
-        StackBase = MemoryHob->AllocDescriptor.MemoryBaseAddress;
-        //
-        // Ensure the base of the stack is page-size aligned.
-        //
-        ASSERT ((StackBase & EFI_PAGE_MASK) == 0);
-        break;
-      }
+//         StackBase = MemoryHob->AllocDescriptor.MemoryBaseAddress;
+//         //
+//         // Ensure the base of the stack is page-size aligned.
+//         //
+//         ASSERT ((StackBase & EFI_PAGE_MASK) == 0);
+//         break;
+//       }
 
-      Hob.Raw = GET_NEXT_HOB (Hob);
-    }
+//       Hob.Raw = GET_NEXT_HOB (Hob);
+//     }
 
-    //
-    // Ensure the base of stack can be found from Hob when stack guard is
-    // enabled.
-    //
-    ASSERT (StackBase != 0);
-  }
+//     //
+//     // Ensure the base of stack can be found from Hob when stack guard is
+//     // enabled.
+//     //
+//     ASSERT (StackBase != 0);
+//   }
 
-  DEBUG ((
-    DEBUG_INFO,
-    "%a: applying strict permissions to active memory regions\n",
-    __func__
-    ));
+//   DEBUG ((
+//     DEBUG_INFO,
+//     "%a: applying strict permissions to active memory regions\n",
+//     __func__
+//     ));
 
-  MergeMemoryMapForProtectionPolicy (MemoryMap, &MemoryMapSize, DescriptorSize);
+//   MergeMemoryMapForProtectionPolicy (MemoryMap, &MemoryMapSize, DescriptorSize);
 
-  MemoryMapEntry = MemoryMap;
-  MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + MemoryMapSize);
-  while ((UINTN)MemoryMapEntry < (UINTN)MemoryMapEnd) {
-    Attributes = GetPermissionAttributeForMemoryType (MemoryMapEntry->Type);
-    if (Attributes != 0) {
-      SetUefiImageMemoryAttributes (
-        MemoryMapEntry->PhysicalStart,
-        LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT),
-        Attributes
-        );
+//   MemoryMapEntry = MemoryMap;
+//   MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + MemoryMapSize);
+//   while ((UINTN)MemoryMapEntry < (UINTN)MemoryMapEnd) {
+//     Attributes = GetPermissionAttributeForMemoryType (MemoryMapEntry->Type);
+//     if (Attributes != 0) {
+//       SetUefiImageMemoryAttributes (
+//         MemoryMapEntry->PhysicalStart,
+//         LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT),
+//         Attributes
+//         );
 
-      //
-      // Add EFI_MEMORY_RP attribute for page 0 if NULL pointer detection is
-      // enabled.
-      //
-      // MU_CHANGE START: We Enable NULL detection via the function EnableNullDetection
-      // if (MemoryMapEntry->PhysicalStart == 0 &&
-      //     // PcdGet8 (PcdNullPointerDetectionPropertyMask) != 0) {
-      //   ASSERT (MemoryMapEntry->NumberOfPages > 0);
-      //   SetUefiImageMemoryAttributes (
-      //     0,
-      //     EFI_PAGES_TO_SIZE (1),
-      //     EFI_MEMORY_RP | Attributes);
-      // }
-      // MU_CHANGE END
+//       //
+//       // Add EFI_MEMORY_RP attribute for page 0 if NULL pointer detection is
+//       // enabled.
+//       //
+//       // MU_CHANGE START: We Enable NULL detection via the function EnableNullDetection
+//       // if (MemoryMapEntry->PhysicalStart == 0 &&
+//       //     // PcdGet8 (PcdNullPointerDetectionPropertyMask) != 0) {
+//       //   ASSERT (MemoryMapEntry->NumberOfPages > 0);
+//       //   SetUefiImageMemoryAttributes (
+//       //     0,
+//       //     EFI_PAGES_TO_SIZE (1),
+//       //     EFI_MEMORY_RP | Attributes);
+//       // }
+//       // MU_CHANGE END
 
-      //
-      // Add EFI_MEMORY_RP attribute for the first page of the stack if stack
-      // guard is enabled.
-      //
-      if ((StackBase != 0) &&
-          ((StackBase >= MemoryMapEntry->PhysicalStart) &&
-           (StackBase <  MemoryMapEntry->PhysicalStart +
-            LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT))) &&
-          // MU_CHANGE START Update to use memory protection settings HOB
-          // PcdGetBool (PcdCpuStackGuard)) {
-          gDxeMps.CpuStackGuard)
-      {
-        // MU_CHANGE END
-        SetUefiImageMemoryAttributes (
-          StackBase,
-          EFI_PAGES_TO_SIZE (1),
-          EFI_MEMORY_RP | Attributes
-          );
-      }
-    }
+//       //
+//       // Add EFI_MEMORY_RP attribute for the first page of the stack if stack
+//       // guard is enabled.
+//       //
+//       if ((StackBase != 0) &&
+//           ((StackBase >= MemoryMapEntry->PhysicalStart) &&
+//            (StackBase <  MemoryMapEntry->PhysicalStart +
+//             LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT))) &&
+//           // MU_CHANGE START Update to use memory protection settings HOB
+//           // PcdGetBool (PcdCpuStackGuard)) {
+//           gDxeMps.CpuStackGuard)
+//       {
+//         // MU_CHANGE END
+//         SetUefiImageMemoryAttributes (
+//           StackBase,
+//           EFI_PAGES_TO_SIZE (1),
+//           EFI_MEMORY_RP | Attributes
+//           );
+//       }
+//     }
 
-    MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, DescriptorSize);
-  }
+//     MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, DescriptorSize);
+//   }
 
-  FreePool (MemoryMap);
+//   FreePool (MemoryMap);
 
-  //
-  // Apply the policy for RAM regions that we know are present and
-  // accessible, but have not been added to the UEFI memory map (yet).
-  //
-  if (GetPermissionAttributeForMemoryType (EfiConventionalMemory) != 0) {
-    DEBUG ((
-      DEBUG_INFO,
-      "%a: applying strict permissions to inactive memory regions\n",
-      __func__
-      ));
+//   //
+//   // Apply the policy for RAM regions that we know are present and
+//   // accessible, but have not been added to the UEFI memory map (yet).
+//   //
+//   if (GetPermissionAttributeForMemoryType (EfiConventionalMemory) != 0) {
+//     DEBUG ((
+//       DEBUG_INFO,
+//       "%a: applying strict permissions to inactive memory regions\n",
+//       __func__
+//       ));
 
-    CoreAcquireGcdMemoryLock ();
+//     CoreAcquireGcdMemoryLock ();
 
-    Link = mGcdMemorySpaceMap.ForwardLink;
-    while (Link != &mGcdMemorySpaceMap) {
-      Entry = CR (Link, EFI_GCD_MAP_ENTRY, Link, EFI_GCD_MAP_SIGNATURE);
+//     Link = mGcdMemorySpaceMap.ForwardLink;
+//     while (Link != &mGcdMemorySpaceMap) {
+//       Entry = CR (Link, EFI_GCD_MAP_ENTRY, Link, EFI_GCD_MAP_SIGNATURE);
 
-      if ((Entry->GcdMemoryType == EfiGcdMemoryTypeReserved) &&
-          (Entry->EndAddress < MAX_ADDRESS) &&
-          ((Entry->Capabilities & (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED)) ==
-           (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED)))
-      {
-        Attributes = GetPermissionAttributeForMemoryType (EfiConventionalMemory) |
-                     (Entry->Attributes & EFI_CACHE_ATTRIBUTE_MASK);
+//       if ((Entry->GcdMemoryType == EfiGcdMemoryTypeReserved) &&
+//           (Entry->EndAddress < MAX_ADDRESS) &&
+//           ((Entry->Capabilities & (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED)) ==
+//            (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED)))
+//       {
+//         Attributes = GetPermissionAttributeForMemoryType (EfiConventionalMemory) |
+//                      (Entry->Attributes & EFI_CACHE_ATTRIBUTE_MASK);
 
-        DEBUG ((
-          DEBUG_INFO,
-          "Untested GCD memory space region: - 0x%016lx - 0x%016lx (0x%016lx)\n",
-          Entry->BaseAddress,
-          Entry->EndAddress - Entry->BaseAddress + 1,
-          Attributes
-          ));
+//         DEBUG ((
+//           DEBUG_INFO,
+//           "Untested GCD memory space region: - 0x%016lx - 0x%016lx (0x%016lx)\n",
+//           Entry->BaseAddress,
+//           Entry->EndAddress - Entry->BaseAddress + 1,
+//           Attributes
+//           ));
 
-        ASSERT (gCpu != NULL);
-        gCpu->SetMemoryAttributes (
-                gCpu,
-                Entry->BaseAddress,
-                Entry->EndAddress - Entry->BaseAddress + 1,
-                Attributes
-                );
-      }
+//         ASSERT (gCpu != NULL);
+//         gCpu->SetMemoryAttributes (
+//                 gCpu,
+//                 Entry->BaseAddress,
+//                 Entry->EndAddress - Entry->BaseAddress + 1,
+//                 Attributes
+//                 );
+//       }
 
-      Link = Link->ForwardLink;
-    }
+//       Link = Link->ForwardLink;
+//     }
 
-    CoreReleaseGcdMemoryLock ();
-  }
-}
+//     CoreReleaseGcdMemoryLock ();
+//   }
+// }
+// MU_CHANGE END
 
 /**
   A notification for CPU_ARCH protocol.
@@ -1086,12 +1098,11 @@ MemoryProtectionCpuArchProtocolNotify (
   //
   // Apply the memory protection policy on non-BScode/RTcode regions.
   //
-  // MU_CHANGE START Update to use memory protection settings HOB
+  // MU_CHANGE START: This function is now called after the GCD sync process has completed
   // if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0) {
-  if (gDxeMps.NxProtectionPolicy.Data) {
-    // MU_CHANGE END
-    InitializeDxeNxMemoryProtectionPolicy ();
-  }
+  //   InitializeDxeNxMemoryProtectionPolicy ();
+  // }
+  // MU_CHANGE END
 
   //
   // Call notify function meant for Heap Guard.
@@ -1311,11 +1322,11 @@ CoreInitializeMemoryProtection (
   )
 {
   EFI_STATUS  Status;
-  EFI_EVENT   Event;
-  EFI_EVENT   DisableNullDetectionEvent;
-  EFI_EVENT   EnableNullDetectionEvent;     // MU_CHANGE
-  EFI_EVENT   MemoryAttributeProtocolEvent; // MU_CHANGE
-  VOID        *Registration;
+  // EFI_EVENT   Event;
+  EFI_EVENT  DisableNullDetectionEvent;
+  EFI_EVENT  EnableNullDetectionEvent;      // MU_CHANGE
+  EFI_EVENT  MemoryAttributeProtocolEvent;  // MU_CHANGE
+  VOID       *Registration;
 
   // mImageProtectionPolicy = gDxeMps.ImageProtectionPolicy; // MU_CHANGE
 
@@ -1327,37 +1338,38 @@ CoreInitializeMemoryProtection (
   // - EfiConventionalMemory and EfiBootServicesData should use the
   //   same attribute
   //
-  // MU_CHANGE START: We allow code types to have NX
+  // MU_CHANGE START: We allow code types to have NX and EfiBootServicesData to differ in attributes from
+  //                  EfiConventionalMemory
   // ASSERT ((GetPermissionAttributeForMemoryType (EfiBootServicesCode) & EFI_MEMORY_XP) == 0);
   // ASSERT ((GetPermissionAttributeForMemoryType (EfiRuntimeServicesCode) & EFI_MEMORY_XP) == 0);
   // ASSERT ((GetPermissionAttributeForMemoryType (EfiLoaderCode) & EFI_MEMORY_XP) == 0);
+  // ASSERT (
+  //   GetPermissionAttributeForMemoryType (EfiBootServicesData) ==
+  //   GetPermissionAttributeForMemoryType (EfiConventionalMemory)
+  //   );
   // MU_CHANGE END
-  ASSERT (
-    GetPermissionAttributeForMemoryType (EfiBootServicesData) ==
-    GetPermissionAttributeForMemoryType (EfiConventionalMemory)
-    );
 
-  Status = CoreCreateEvent (
-             EVT_NOTIFY_SIGNAL,
-             // MU_CHANGE START: Use Project Mu Arch Protocol Notify
-             TPL_CALLBACK - 1,
-             //  MemoryProtectionCpuArchProtocolNotify,
-             MemoryProtectionCpuArchProtocolNotifyMu,
-             // MU_CHANGE END
-             NULL,
-             &Event
-             );
-  ASSERT_EFI_ERROR (Status);
+  // Status = CoreCreateEvent (
+  //            EVT_NOTIFY_SIGNAL,
+  //            // MU_CHANGE START: Use Project Mu Arch Protocol Notify
+  //            TPL_CALLBACK - 1,
+  //            //  MemoryProtectionCpuArchProtocolNotify,
+  //            MemoryProtectionCpuArchProtocolNotifyMu,
+  //            // MU_CHANGE END
+  //            NULL,
+  //            &Event
+  //            );
+  // ASSERT_EFI_ERROR (Status);
 
-  //
-  // Register for protocol notifactions on this event
-  //
-  Status = CoreRegisterProtocolNotify (
-             &gEfiCpuArchProtocolGuid,
-             Event,
-             &Registration
-             );
-  ASSERT_EFI_ERROR (Status);
+  // //
+  // // Register for protocol notifactions on this event
+  // //
+  // Status = CoreRegisterProtocolNotify (
+  //            &gEfiCpuArchProtocolGuid,
+  //            Event,
+  //            &Registration
+  //            );
+  // ASSERT_EFI_ERROR (Status);
 
   // MU_CHANGE START: Register an event to populate the memory attribute protocol
   Status = CoreCreateEvent (
@@ -1379,6 +1391,13 @@ CoreInitializeMemoryProtection (
              );
   ASSERT_EFI_ERROR (Status);
   // MU_CHANGE END
+
+  // MU_CHANGE START: Add event to apply page attribues according to the memory protection policy
+  //                  after the GCD has synced.
+  Status = RegisterPageAccessAttributesUpdateOnGcdSyncComplete ();
+  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE END
+
   //
   // Register a callback to disable NULL pointer detection at EndOfDxe
   //
@@ -1507,8 +1526,10 @@ ApplyMemoryProtectionPolicy (
   UINT64  OldAttributes;
   UINT64  NewAttributes;
 
+  // DEBUG ((DEBUG_INFO, "ApplyMemoryProtectionPolicy: 0x%016lx - 0x%016lx\n", Memory, Length));
+
   //
-  // The policy configured in Dxe NX Protection Policy // MU_CHANGE
+  // The policy configured in gDxeMps.NxProtectionPolicy // MU_CHANGE
   // does not apply to allocations performed in SMM mode.
   //
   if (IsInSmm ()) {
@@ -1520,7 +1541,7 @@ ApplyMemoryProtectionPolicy (
   // permission attributes, and it is the job of the driver that installs this
   // protocol to set the permissions on existing allocations.
   //
-  if (gCpu == NULL) {
+  if ((gCpu == NULL) || !mPageAttributesInitialized) {
     return EFI_SUCCESS;
   }
 

@@ -284,7 +284,6 @@ Overhead is same as [Page Guards](#page-guards) and [Pool Guards](#pool-guards).
 
 - UefiPageGuard - Enable UEFI page guard
 - UefiPoolGuard - Enable UEFI pool guard
-- UefiFreedMemoryGuard - Enable Use-After-Free memory detection
 - Direction - Specifies the direction of Guard Page for Pool Guard. If 0, the returned
 pool is near the tail guard page. If 1, the returned pool is near the head guard page. The
 default value for this is 0
