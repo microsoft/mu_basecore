@@ -1254,6 +1254,7 @@ RootBridgeIoPciAccess (
   if (!Read) {
     PciSegmentRead8 (Address - InStride);
   }
+
   // MU_CHANGE END
 
   return EFI_SUCCESS;
