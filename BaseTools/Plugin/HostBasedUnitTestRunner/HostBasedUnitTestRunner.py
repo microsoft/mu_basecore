@@ -16,6 +16,8 @@ import edk2toollib.windows.locate_tools as locate_tools
 from edk2toolext.environment import shell_environment
 from edk2toollib.utility_functions import RunCmd
 from edk2toollib.utility_functions import GetHostInfo
+from edk2toollib.database import Edk2DB
+from edk2toollib.database.tables import SourceTable, PackageTable, InfTable  
 from textwrap import dedent
 
 
@@ -132,9 +134,15 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                 if thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "GCC5":
                     self.gen_code_coverage_gcc(thebuilder)
                 elif thebuilder.env.GetValue("TOOL_CHAIN_TAG").startswith ("VS"):
-                    self.gen_code_coverage_msvc(thebuilder)
+                    self.gen_code_coverage_msvc(thebuilder) 
                 else:
                     logging.info("Skipping code coverage. Currently, support GCC and MSVC compiler.")
+                    return failure_count
+
+                ret = self.organize_coverage(thebuilder)
+                if ret != 0:
+                    logging.error("Failed to reorganize coverage data by INF.")
+                    return -1
 
         return failure_count
 
@@ -231,3 +239,22 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
             return 1
 
         return 0
+
+    def organize_coverage(self, thebuilder) -> int:
+        """Organize the generated coverage file by INF."""
+        db = self.parse_workspace(thebuilder)
+        workspace = thebuilder.env.GetValue("WORKSPACE")
+        cov_file = os.path.join(workspace, "Build", "coverage.xml")
+        return RunCmd("stuart_report", f"--database {db} coverage {cov_file} -o {cov_file} --by-package")
+
+    def parse_workspace(self, thebuilder) -> str:
+        """Parses the workspace with Edk2DB with the tables necessarty to run stuart_report."""
+        db_path = os.path.join(thebuilder.env.GetValue("BUILD_OUTPUT_BASE"), "DATABASE.db")
+        with Edk2DB(db_path, thebuilder.edk2path) as db:
+
+            db.register(SourceTable(), PackageTable(), InfTable())
+            env_dict = thebuilder.env.GetAllBuildKeyValues() | thebuilder.env.GetAllNonBuildKeyValues()
+
+            db.parse(env_dict)
+        
+        return db_path
