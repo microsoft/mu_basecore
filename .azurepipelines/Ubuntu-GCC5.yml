@@ -26,6 +26,7 @@ extends:
     do_non_ci_build: false
     do_non_ci_setup: true
     do_pr_eval: true
+    calculate_code_coverage: true
     container_build: true
     os_type: Linux
     build_matrix:
