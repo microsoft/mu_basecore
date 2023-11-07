@@ -178,7 +178,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
             return 1
 
         # Filter out auto-generated and test code
-        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {buildOutputBase}/coverage.xml")
+        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {buildOutputBase}/{file_out}")
         if ret != 0:
             logging.error("UnitTest Coverage: Failed generate filtered coverage XML.")
             return 1
