@@ -134,7 +134,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                 if thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "GCC5":
                     self.gen_code_coverage_gcc(thebuilder)
                 elif thebuilder.env.GetValue("TOOL_CHAIN_TAG").startswith ("VS"):
-                    self.gen_code_coverage_msvc(thebuilder) 
+                    self.gen_code_coverage_msvc(thebuilder)
                 else:
                     logging.info("Skipping code coverage. Currently, support GCC and MSVC compiler.")
                     return failure_count
