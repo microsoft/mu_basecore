@@ -171,7 +171,8 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
             return 1
 
         # Generate coverage XML
-        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info -o {buildOutputBase}/compare.xml")
+        file_out = thebuilder.env.GetValue("PLATFORM_NAME", "") + "_coverage.xml"
+        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info -o {buildOutputBase}/{file_out}")
         if ret != 0:
             logging.error("UnitTest Coverage: Failed to generate coverage XML.")
             return 1
@@ -222,7 +223,8 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                 return 1
 
         # Generate and XML file if requested.by each package
-        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{os.path.join(buildOutputBase, 'coverage.xml')} {coverageFile}", workingdir=f"{workspace}Build/")
+        file_out = thebuilder.env.GetValue("PLATFORM_NAME", "") + "_coverage.xml"
+        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{os.path.join(buildOutputBase, file_out)} {coverageFile}", workingdir=f"{workspace}Build/")
         if ret != 0:
             logging.error("UnitTest Coverage: Failed to generate cobertura format xml in single package.")
             return 1
@@ -243,8 +245,10 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
     def organize_coverage(self, thebuilder) -> int:
         """Organize the generated coverage file by INF."""
         db = self.parse_workspace(thebuilder)
-        workspace = thebuilder.env.GetValue("WORKSPACE")
-        cov_file = os.path.join(workspace, "Build", "coverage.xml")
+        buildOutputBase = thebuilder.env.GetValue("BUILD_OUTPUT_BASE")
+        file_out = thebuilder.env.GetValue("PLATFORM_NAME", "") + "_coverage.xml"
+        cov_file = os.path.join(buildOutputBase, file_out)
+
         return RunCmd("stuart_report", f"--database {db} coverage {cov_file} -o {cov_file} --by-package")
 
     def parse_workspace(self, thebuilder) -> str:
@@ -254,7 +258,6 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
 
             db.register(SourceTable(), PackageTable(), InfTable())
             env_dict = thebuilder.env.GetAllBuildKeyValues() | thebuilder.env.GetAllNonBuildKeyValues()
-
             db.parse(env_dict)
         
         return db_path
