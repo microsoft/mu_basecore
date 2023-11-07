@@ -16,6 +16,8 @@ import edk2toollib.windows.locate_tools as locate_tools
 from edk2toolext.environment import shell_environment
 from edk2toollib.utility_functions import RunCmd
 from edk2toollib.utility_functions import GetHostInfo
+from edk2toollib.database import Edk2DB  # MU_CHANGE - reformat coverage data
+from edk2toollib.database.tables import SourceTable, PackageTable, InfTable  # MU_CHANGE - reformat coverage data
 from textwrap import dedent
 
 
@@ -135,6 +137,14 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                     self.gen_code_coverage_msvc(thebuilder)
                 else:
                     logging.info("Skipping code coverage. Currently, support GCC and MSVC compiler.")
+                    return failure_count # MU_CHANGE - reformat coverage data
+
+                # MU_CHANGE begin - reformat coverage data
+                ret = self.organize_coverage(thebuilder)
+                if ret != 0:
+                    logging.error("Failed to reorganize coverage data by INF.")
+                    return -1
+                # MU_CHANGE end - reformat coverage data
 
         return failure_count
 
@@ -162,14 +172,11 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
             logging.error("UnitTest Coverage: Failed to aggregate coverage data.")
             return 1
 
-        # Generate coverage XML
-        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info -o {buildOutputBase}/compare.xml")
-        if ret != 0:
-            logging.error("UnitTest Coverage: Failed to generate coverage XML.")
-            return 1
-
         # Filter out auto-generated and test code
-        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {buildOutputBase}/coverage.xml")
+        # MU_CHANGE begin - reformat coverage data
+        file_out = thebuilder.env.GetValue("PLATFORM_NAME", "") + "_coverage.xml"
+        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {buildOutputBase}/{file_out}")
+        # MU_CHANGE end - reformat coverage data
         if ret != 0:
             logging.error("UnitTest Coverage: Failed generate filtered coverage XML.")
             return 1
@@ -214,7 +221,10 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                 return 1
 
         # Generate and XML file if requested.by each package
-        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{os.path.join(buildOutputBase, 'coverage.xml')} {coverageFile}", workingdir=f"{workspace}Build/")
+        # MU_CHANGE begin - reformat coverage data
+        file_out = thebuilder.env.GetValue("PLATFORM_NAME", "") + "_coverage.xml"
+        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{os.path.join(buildOutputBase, file_out)} {coverageFile}", workingdir=f"{workspace}Build/")
+        # MU_CHANGE end - reformat coverage data
         if ret != 0:
             logging.error("UnitTest Coverage: Failed to generate cobertura format xml in single package.")
             return 1
@@ -231,3 +241,25 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
             return 1
 
         return 0
+
+    # MU_CHANGE begin - reformat coverage data
+    def organize_coverage(self, thebuilder) -> int:
+        """Organize the generated coverage file by INF."""
+        db = self.parse_workspace(thebuilder)
+        buildOutputBase = thebuilder.env.GetValue("BUILD_OUTPUT_BASE")
+        file_out = thebuilder.env.GetValue("PLATFORM_NAME", "") + "_coverage.xml"
+        cov_file = os.path.join(buildOutputBase, file_out)
+
+        return RunCmd("stuart_report", f"--database {db} coverage {cov_file} -o {cov_file} --by-package")
+
+    def parse_workspace(self, thebuilder) -> str:
+        """Parses the workspace with Edk2DB with the tables necessarty to run stuart_report."""
+        db_path = os.path.join(thebuilder.env.GetValue("BUILD_OUTPUT_BASE"), "DATABASE.db")
+        with Edk2DB(db_path, thebuilder.edk2path) as db:
+
+            db.register(SourceTable(), PackageTable(), InfTable())
+            env_dict = thebuilder.env.GetAllBuildKeyValues() | thebuilder.env.GetAllNonBuildKeyValues()
+            db.parse(env_dict)
+        
+        return db_path
+    # MU_CHANGE end - reformat coverage data
