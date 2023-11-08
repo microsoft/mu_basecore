@@ -246,6 +246,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
     def organize_coverage(self, thebuilder) -> int:
         """Organize the generated coverage file by INF."""
         db_path = self.parse_workspace(thebuilder)
+
         buildOutputBase = thebuilder.env.GetValue("BUILD_OUTPUT_BASE")
         package = thebuilder.env.GetValue("CI_PACKAGE_NAME", "")
         file_out = package + "_coverage.xml"
@@ -261,7 +262,6 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         """Parses the workspace with Edk2DB with the tables necessarty to run stuart_report."""
         db_path = os.path.join(thebuilder.env.GetValue("BUILD_OUTPUT_BASE"), "DATABASE.db")
         with Edk2DB(db_path, thebuilder.edk2path) as db:
-
             db.register(SourceTable(), PackageTable(), InfTable())
             env_dict = thebuilder.env.GetAllBuildKeyValues() | thebuilder.env.GetAllNonBuildKeyValues()
             db.parse(env_dict)
