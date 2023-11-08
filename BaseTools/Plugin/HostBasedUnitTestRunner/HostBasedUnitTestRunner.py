@@ -174,7 +174,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
 
         # Filter out auto-generated and test code
         # MU_CHANGE begin - reformat coverage data
-        file_out = thebuilder.env.GetValue("PLATFORM_NAME", "") + "_coverage.xml"
+        file_out = thebuilder.env.GetValue("CI_PACKAGE_NAME", "") + "_coverage.xml"
         ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {buildOutputBase}/{file_out}")
         # MU_CHANGE end - reformat coverage data
         if ret != 0:
@@ -222,7 +222,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
 
         # Generate and XML file if requested.by each package
         # MU_CHANGE begin - reformat coverage data
-        file_out = thebuilder.env.GetValue("PLATFORM_NAME", "") + "_coverage.xml"
+        file_out = thebuilder.env.GetValue("CI_PACKAGE_NAME", "") + "_coverage.xml"
         ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{os.path.join(buildOutputBase, file_out)} {coverageFile}", workingdir=f"{workspace}Build/")
         # MU_CHANGE end - reformat coverage data
         if ret != 0:
@@ -247,7 +247,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         """Organize the generated coverage file by INF."""
         db = self.parse_workspace(thebuilder)
         buildOutputBase = thebuilder.env.GetValue("BUILD_OUTPUT_BASE")
-        file_out = thebuilder.env.GetValue("PLATFORM_NAME", "") + "_coverage.xml"
+        file_out = thebuilder.env.GetValue("CI_PACKAGE_NAME", "") + "_coverage.xml"
         cov_file = os.path.join(buildOutputBase, file_out)
 
         return RunCmd("stuart_report", f"--database {db} coverage {cov_file} -o {cov_file} --by-package")
