@@ -245,12 +245,17 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
     # MU_CHANGE begin - reformat coverage data
     def organize_coverage(self, thebuilder) -> int:
         """Organize the generated coverage file by INF."""
-        db = self.parse_workspace(thebuilder)
+        db_path = self.parse_workspace(thebuilder)
         buildOutputBase = thebuilder.env.GetValue("BUILD_OUTPUT_BASE")
-        file_out = thebuilder.env.GetValue("CI_PACKAGE_NAME", "") + "_coverage.xml"
+        package = thebuilder.env.GetValue("CI_PACKAGE_NAME", "")
+        file_out = package + "_coverage.xml"
         cov_file = os.path.join(buildOutputBase, file_out)
 
-        return RunCmd("stuart_report", f"--database {db} coverage {cov_file} -o {cov_file} --by-package")
+        params = f"--database {db_path} coverage {cov_file} -o {cov_file} --by-package"
+        if package:
+            params += f" -p {package}"
+
+        return RunCmd("stuart_report", params)
 
     def parse_workspace(self, thebuilder) -> str:
         """Parses the workspace with Edk2DB with the tables necessarty to run stuart_report."""
