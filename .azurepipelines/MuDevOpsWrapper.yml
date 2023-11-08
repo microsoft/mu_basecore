@@ -1,5 +1,5 @@
 ## @file
-# Azure Pipeline build file for a build using mu_devops.
+# Azure Pipeline build file for a build using mu_devops...................
 #
 # NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
 #       instead of the file in this repo.
@@ -17,7 +17,7 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: refs/tags/v7.1.0
+      ref: personal/joeyvagedes/pkg-codecov
 
 parameters:
 - name: do_ci_build
@@ -43,6 +43,10 @@ parameters:
 - name: calculate_code_coverage
   displayName: Calculate Code Coverage From Unit Tests
   default: false
+- name: coverage_publish_target
+  displayName: Code Coverage Publish Target
+  type: string
+  default: 'ado' # 'ado', 'codecov'
 - name: container_build
   displayName: Flag for whether this repo should do stuart_setup
   type: boolean
@@ -90,6 +94,7 @@ jobs:
     do_ci_setup: ${{ parameters.do_ci_setup }}
     do_pr_eval: ${{ parameters.do_pr_eval }}
     calculate_code_coverage: ${{ parameters.calculate_code_coverage }}
+    coverage_publish_target: ${{ parameters.coverage_publish_target }}
     do_non_ci_setup: ${{ parameters.do_non_ci_setup }}
     do_non_ci_build: ${{ parameters.do_non_ci_build }}
     build_matrix: ${{ parameters.build_matrix }}
