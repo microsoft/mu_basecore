@@ -27,7 +27,8 @@ PageTableLibSetPte4K (
   )
 {
   if (Mask->Bits.PageTableBaseAddressLow || Mask->Bits.PageTableBaseAddressHigh) {
-    Pte4K->Uint64 = (IA32_MAP_ATTRIBUTE_PAGE_TABLE_BASE_ADDRESS (Attribute) + Offset) | (Pte4K->Uint64 & ~IA32_PE_BASE_ADDRESS_MASK_40);
+    // MU_CHANGE: Should not apply all the bits to child entry...
+    Pte4K->Uint64 = (IA32_MAP_ATTRIBUTE_PAGE_TABLE_BASE_ADDRESS (Attribute) + Offset);
   }
 
   if (Mask->Bits.Present) {
@@ -94,7 +95,8 @@ PageTableLibSetPleB (
   )
 {
   if (Mask->Bits.PageTableBaseAddressLow || Mask->Bits.PageTableBaseAddressHigh) {
-    PleB->Uint64 = (IA32_MAP_ATTRIBUTE_PAGE_TABLE_BASE_ADDRESS (Attribute) + Offset) | (PleB->Uint64 & ~IA32_PE_BASE_ADDRESS_MASK_39);
+    // MU_CHANGE: Should not apply all the bits to child entry...
+    PleB->Uint64 = (IA32_MAP_ATTRIBUTE_PAGE_TABLE_BASE_ADDRESS (Attribute) + Offset);
   }
 
   PleB->Bits.MustBeOne = 1;
@@ -323,11 +325,23 @@ PageTableLibMapInLevel (
   IA32_PAGING_ENTRY   OriginalParentPagingEntry;
   IA32_PAGING_ENTRY   OriginalCurrentPagingEntry;
 
+  // MU_CHANGE: Configure propagate bit mask.
+  IA32_MAP_ATTRIBUTE  PropagateMask;
+
   ASSERT (Level != 0);
   ASSERT ((Attribute != NULL) && (Mask != NULL));
 
   CreateNew         = FALSE;
   AllOneMask.Uint64 = ~0ull;
+
+  // MU_CHANGE: Configure propagate bit mask.
+  PropagateMask.Uint64              = IA32_MAP_ATTRIBUTE_PAGE_TABLE_BASE_ADDRESS_MASK;
+  PropagateMask.Bits.Present        = 1;
+  PropagateMask.Bits.ReadWrite      = 1;
+  PropagateMask.Bits.UserSupervisor = 1;
+  PropagateMask.Bits.Dirty          = 1;
+  PropagateMask.Bits.Accessed       = 1;
+  PropagateMask.Bits.Nx             = 1;
 
   NopAttribute.Uint64              = 0;
   NopAttribute.Bits.Present        = 1;
@@ -368,7 +382,14 @@ PageTableLibMapInLevel (
         return Status;
       }
 
-      OneOfPagingEntry.Pnle.Uint64 = 0;
+      // MU_CHANGE: Apply propagate bits for non-root entries.
+      //            Otherwise, start with PleBAttribute sans present bit.
+      // OneOfPagingEntry.Pnle.Uint64 = 0;
+      if (Level != 1 && Level != 2 && Level != 3) {
+        OneOfPagingEntry.Pnle.Uint64 = (PleBAttribute.Uint64 & PropagateMask.Uint64) & (~BIT0);
+      } else {
+        PageTableLibSetPle (Level, &OneOfPagingEntry, 0, &PleBAttribute, &PropagateMask);
+      }
     } else {
       PageTableLibSetPle (Level, &OneOfPagingEntry, 0, &PleBAttribute, &AllOneMask);
     }
@@ -405,14 +426,13 @@ PageTableLibMapInLevel (
       PagingEntry = (IA32_PAGING_ENTRY *)((UINTN)Buffer + *BufferSize);
       ZeroMem (PagingEntry, SIZE_4KB);
 
-      if (ParentPagingEntry->Pce.Present) {
-        //
-        // Create 512 child-level entries that map to 2M/4K.
-        //
-        for (SubOffset = 0, Index = 0; Index < 512; Index++) {
-          PagingEntry[Index].Uint64 = OneOfPagingEntry.Uint64 + SubOffset;
-          SubOffset                += RegionLength;
-        }
+      // MU_CHANGE: Populate contents for both present and non-present pages
+      //
+      // Create 512 child-level entries that map to 2M/4K.
+      //
+      for (SubOffset = 0, Index = 0; Index < 512; Index++) {
+        PagingEntry[Index].Uint64 = OneOfPagingEntry.Uint64 + SubOffset;
+        SubOffset                += RegionLength;
       }
 
       //
@@ -496,9 +516,10 @@ PageTableLibMapInLevel (
         // e.g.: Set PDE[0-255].ReadWrite = 0
         //
         for (Index = 0; Index < 512; Index++) {
-          if (PagingEntry[Index].Pce.Present == 0) {
-            continue;
-          }
+          // MU_CHANGE: Count in the space for non-present pages as well.
+          // if (PagingEntry[Index].Pce.Present == 0) {
+          //   continue;
+          // }
 
           if (IsPle (&PagingEntry[Index], Level)) {
             PageTableLibSetPle (Level, &PagingEntry[Index], 0, &ChildAttribute, &ChildMask);
