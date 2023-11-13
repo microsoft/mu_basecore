@@ -17,7 +17,7 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: refs/tags/v6.1.0
+      ref: refs/tags/v7.2.0
 
 parameters:
 - name: do_ci_build
@@ -40,6 +40,13 @@ parameters:
   displayName: Perform Stuart PR Evaluation
   type: boolean
   default: true
+- name: calculate_code_coverage
+  displayName: Calculate Code Coverage From Unit Tests
+  default: false
+- name: coverage_publish_target
+  displayName: Code Coverage Publish Target
+  type: string
+  default: 'ado' # 'ado', 'codecov'
 - name: container_build
   displayName: Flag for whether this repo should do stuart_setup
   type: boolean
@@ -80,14 +87,14 @@ parameters:
 jobs:
 - template: Jobs/PrGate.yml@mu_devops
   parameters:
-    linux_container_image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:9ab29bc
+    linux_container_image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:1082f35
     ${{ if eq(parameters.rust_build, true) }}:
       linux_container_options: --security-opt seccomp=unconfined
-      extra_steps:
-      - template: Steps/RustSetupSteps.yml@mu_devops
     do_ci_build: ${{ parameters.do_ci_build }}
     do_ci_setup: ${{ parameters.do_ci_setup }}
     do_pr_eval: ${{ parameters.do_pr_eval }}
+    calculate_code_coverage: ${{ parameters.calculate_code_coverage }}
+    coverage_publish_target: ${{ parameters.coverage_publish_target }}
     do_non_ci_setup: ${{ parameters.do_non_ci_setup }}
     do_non_ci_build: ${{ parameters.do_non_ci_build }}
     build_matrix: ${{ parameters.build_matrix }}
@@ -97,6 +104,7 @@ jobs:
     tool_chain_tag: $(tool_chain_tag)
     vm_image: $(vm_image)
     container_build: ${{ parameters.container_build }}
+    rust_build: ${{ parameters.rust_build }}
 
 - ${{ if eq(parameters.rust_build, true) }}:
   - job: CargoCmds
@@ -104,7 +112,7 @@ jobs:
 
     container:
 
-      image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:9ab29bc
+      image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:1082f35
       options: --user root --name mu_devops_build_container --security-opt seccomp=unconfined
 
     steps:
@@ -113,6 +121,8 @@ jobs:
       clean: true
     - ${{ parameters.extra_cargo_steps }}
     - template: Steps/RustCargoSteps.yml@mu_devops
+      parameters:
+        container_build: true
 
 - ${{ parameters.extra_jobs }}
 

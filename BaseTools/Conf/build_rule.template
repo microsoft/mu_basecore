@@ -118,8 +118,9 @@
 # 2.24 - Add .arc and .ver file type to add .rsrc sections to EFI images.
 # 2.25 - Split OemData rule into intermediate binary and final binary rules.
 # 2.26 - Rename OemData to ProductData.
+# 2.27 - Add Rust build support.
 
-#!VERSION=2.26
+#!VERSION=2.27
 
 [C-Code-File]
     <InputFile>

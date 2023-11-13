@@ -38,7 +38,7 @@
   UefiRuntimeLib
   UefiDriverEntryPoint
   BaseLib
-  VariablePolicyHelperLib              // MU_CHANGE
+  VariablePolicyHelperLib              # MU_CHANGE
 
 [Guids]
   ## PRODUCES ## Variable:L"MTC"

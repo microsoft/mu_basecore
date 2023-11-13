@@ -504,8 +504,18 @@ InitializeExceptionStackSwitchHandlers (
 {
   EXCEPTION_STACK_SWITCH_CONTEXT  *SwitchStackData;
   UINTN                           Index;
+  EFI_STATUS                      Status;  // MU_CHANGE - CodeQL change
 
-  MpInitLibWhoAmI (&Index);
+  Status = MpInitLibWhoAmI (&Index);
+
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (EFI_ERROR (Status)) {
+    PANIC ("Failed to get processor number when initializing the stack switch exception handlers.");
+    return;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   SwitchStackData = (EXCEPTION_STACK_SWITCH_CONTEXT *)Buffer;
   //
   // This function may be called twice for each Cpu. Only run InitializeSeparateExceptionStacks
@@ -545,7 +555,7 @@ InitializeMpExceptionStackSwitchHandlers (
   Status = MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
-    DEBUG ((DEBUG_ERROR, "%a - Failed to get number of processors.  Status = %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a - Failed to get number of processors.  Status = %r\n", __func__, Status));
     return;
   }
 
@@ -555,7 +565,7 @@ InitializeMpExceptionStackSwitchHandlers (
   // MU_CHANGE [BEGIN] - CodeQL change
   if (SwitchStackData == NULL) {
     ASSERT (SwitchStackData != NULL);
-    DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Switch Stack pages.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Switch Stack pages.\n", __func__));
     return;
   }
 
@@ -592,7 +602,7 @@ InitializeMpExceptionStackSwitchHandlers (
     // MU_CHANGE [BEGIN] - CodeQL change
     if (Buffer == NULL) {
       ASSERT (Buffer != NULL);
-      DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Buffer pages.\n", __FUNCTION__));
+      DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Buffer pages.\n", __func__));
       return;
     }
 

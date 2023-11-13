@@ -8,15 +8,14 @@
 ##
 
 
-import logging
-import os
-import io
-import sys
-from datetime import datetime
-import subprocess
 import argparse
 import hashlib
+import io
+import logging
+import os
 import re
+import sys
+from datetime import datetime, timezone
 from io import StringIO
 
 #
@@ -25,11 +24,12 @@ from io import StringIO
 #
 #
 try:
-    from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
-    from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
-    from edk2toollib.utility_functions import RunCmd
+    from edk2toolext.environment.plugintypes.uefi_build_plugin import \
+        IUefiBuildPlugin
     from edk2toollib.uefi.edk2.parsers.dsc_parser import *
+    from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
     from edk2toollib.uefi.edk2.path_utilities import Edk2Path
+    from edk2toollib.utility_functions import RunCmd
 
     #Tuple for (version, entrycount)
     FORMAT_VERSION_1 = (1, 4)   #Version 1: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss
@@ -304,6 +304,7 @@ try:
             # Step 4: Parse the time of hash generation
             try:
                 EntryTimestamp = datetime.strptime(OverrideEntry[3].strip(), "%Y-%m-%dT%H-%M-%S")
+                EntryTimestamp = EntryTimestamp.replace(tzinfo=timezone.utc)
             except ValueError:
                 logging.error("Inf Override Parse Error, override parameter has invalid timestamp %s" %(OverrideEntry[3].strip()))
                 result = self.OverrideResult.OR_INVALID_FORMAT
@@ -318,7 +319,7 @@ try:
             # Step 6: House keeping
             # Process the path to workspace/package path based add it to the parent node
             overridden_rel_path = self.PathTool.GetEdk2RelativePathFromAbsolutePath(fullpath)
-            date_delta = datetime.utcnow() - EntryTimestamp
+            date_delta = datetime.now(timezone.utc) - EntryTimestamp
 
             m_node.entry_hash = EntryHash
             m_node.path = overridden_rel_path
@@ -401,7 +402,7 @@ try:
             with open(logfile, 'w') as log:
                 log.write("Platform:     %s\n" %(thebuilder.env.GetValue("PRODUCT_NAME")))
                 log.write("Version:      %s\n" %(thebuilder.env.GetValue("BLD_*_BUILDID_STRING")))
-                log.write("Date:         %s\n" %(datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S")))
+                log.write("Date:         %s\n" %(datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")))
                 log.write("Commit:       %s\n" %(thebuilder.env.GetValue("BLD_*_BUILDSHA")))
                 log.write("State:        %d/%d\n" %(status[0], status[1]))
 
@@ -670,10 +671,10 @@ if __name__ == '__main__':
                         VERSION_INDEX = Paths.Version - 1
 
                         if VERSION_INDEX == 0:
-                            line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"))
+                            line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"))
                         elif VERSION_INDEX == 1:
                             git_hash = ModuleGitHash(abs_path)
-                            line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash)
+                            line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"), git_hash)
                         print("Updating:\n" + line)
                 else:
                     print(f"Warning: Could not resolve relative path {rel_path}. Override line not updated.\n")
@@ -705,9 +706,9 @@ if __name__ == '__main__':
 
         if VERSION_INDEX == 0:
             print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-            print('#%s : %08d | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S")))
+            print('#%s : %08d | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")))
 
         elif VERSION_INDEX == 1:
             git_hash = ModuleGitHash(Paths.TargetPath)
             print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-            print('#%s : %08d | %s | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
+            print('#%s : %08d | %s | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
