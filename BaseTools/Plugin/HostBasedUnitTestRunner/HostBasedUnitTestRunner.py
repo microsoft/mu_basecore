@@ -247,14 +247,17 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         """Organize the generated coverage file by INF."""
         db_path = self.parse_workspace(thebuilder)
 
+        workspace = thebuilder.env.GetValue("WORKSPACE")
         buildOutputBase = thebuilder.env.GetValue("BUILD_OUTPUT_BASE")
         package = thebuilder.env.GetValue("CI_PACKAGE_NAME", "")
         file_out = package + "_coverage.xml"
         cov_file = os.path.join(buildOutputBase, file_out)
 
-        params = f"--database {db_path} coverage {cov_file} -o {cov_file} --by-package"
+        params = f"--database {db_path} coverage {cov_file} -o {cov_file} --by-package -ws {workspace}"
         if package:
             params += f" -p {package}"
+        params += " --full" * int(thebuilder.env.GetValue("FULL_COVERAGE", "FALSE") == "TRUE")
+        params += " --flatten" * int(thebuilder.env.GetValue("FLATTEN_COVERAGE", "FALSE") == "TRUE")
 
         return RunCmd("stuart_report", params)
 
