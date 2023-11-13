@@ -143,5 +143,6 @@ extern EFI_GUID  gEfiBootManagerPolicyProtocolGuid;
 extern EFI_GUID  gEfiBootManagerPolicyConsoleGuid;
 extern EFI_GUID  gEfiBootManagerPolicyNetworkGuid;
 extern EFI_GUID  gEfiBootManagerPolicyConnectAllGuid;
+extern EFI_GUID  gEfiBootManagerPolicyStorageGuid; // MU_CHANGE: Introduce disk connect guid
 
 #endif
