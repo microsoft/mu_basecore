@@ -31,6 +31,13 @@
     0x113B2126, 0xFC8A, 0x11E3, { 0xBD, 0x6C, 0xB8, 0xE8, 0x56, 0x2C, 0xBA, 0xFA } \
   }
 
+// MU_CHANGE START: Introduce disk connect guid
+#define EFI_BOOT_MANAGER_POLICY_STORAGE_GUID \
+  { \
+    0XCD68FE79, 0XD3CB, 0X436E, {0XA8, 0X50, 0XF4, 0X43, 0XC8, 0X8C, 0XFB, 0X49 }\
+  }
+// MU_CHANGE END
+
 typedef struct _EFI_BOOT_MANAGER_POLICY_PROTOCOL EFI_BOOT_MANAGER_POLICY_PROTOCOL;
 
 #define EFI_BOOT_MANAGER_POLICY_PROTOCOL_REVISION  0x00010000
@@ -97,6 +104,14 @@ EFI_STATUS
   will connect all UEFI drivers using the UEFI Boot Service
   EFI_BOOT_SERVICES.ConnectController(). If the Boot Manager has policy
   associated with connect all UEFI drivers this policy will be used.
+
+  MU_CHANGE START: Introduce disk connect guid
+  If Class is EFI_BOOT_MANAGER_POLICY_STORAGE_GUID then the Boot Manager will
+  connect the protocols associated with the discoverable storage disks. This may include
+  EFI_BLOCK_IO_PROTOCOL, EFI_SIMPLE_FILE_SYSTEM_PROTOCOL, or other storage protocols
+  appropriate to the device. Some platforms may choose to restrict the connected
+  devices to exclude USB or other peripherals.
+  MU_CHANGE END
 
   A platform can also define platform specific Class values as a properly generated
   EFI_GUID would never conflict with this specification.
