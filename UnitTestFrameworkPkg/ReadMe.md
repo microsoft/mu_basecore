@@ -864,7 +864,7 @@ Code coverage generation has two config knobs:
 1. `CC_FULL`: If set to `TRUE`, will generate zero'd out coverage data for untested source files in the package.
 2. `CC_FLATTEN`: If Set to `TRUE`, will group all source files together, rather than by INF.
 
-**TIP: `CC_FLATTEN=TRUE/FALSE` will produce different coverage percentage results as `TRUE` de-deplicates source files
+**TIP: `CC_FLATTEN=TRUE/FALSE` will produce different coverage percentage results as `TRUE` de-duplicates source files
 that are consumed by multiple INFs.
 
 For Windows, this is primarily leverage for pipeline builds, but this can be leveraged locally using the
@@ -883,7 +883,6 @@ coverage files as noted below.
 
   1. lcov: sudo apt-get install -y lcov
 
-
 #### Examples
 
 ```bash
@@ -891,14 +890,14 @@ stuart_ci_build -c .pytool/CISettings.py -t NOOPT TOOL_CHAIN_TAG=VS2019 -p MdeMo
 stuart_ci_build -c .pytool/CISettings.py -t NOOPT TOOL_CHAIN_TAG=VS2019 CODE_COVERAGE=TRUE CC_FLATTEN=TRUE CC_FULL=FALSE
 ```
 
-  * How to see code coverage data on IDE Visual Studio
+How to see code coverage data on IDE Visual Studio
 
-    ```text
-    Open Visual Studio VS2019 or above version
-    Click "Tools" -> "OpenCppCoverage Settings"
-    Fill your execute file into "Program to run:"
-    Click "Tools" -> "Run OpenCppCoverage"
-    ```
+```text
+Open Visual Studio VS2019 or above version
+Click "Tools" -> "OpenCppCoverage Settings"
+Fill your execute file into "Program to run:"
+Click "Tools" -> "Run OpenCppCoverage"
+```
 
 #### Additional Tools
 
@@ -907,7 +906,6 @@ the output file format. Tools such as pycobertura (`pip install pycobertura`) an
 can be utilized to generate different report types, such as local html reports. VSCode Extensions such as [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters)
 can highlight coverage results directly in the file, and cloud tools such as [CodeCov](https://about.codecov.io/) can
 consume cobertura files to provide PR checks and general code coverage statistics for the repository.
-
 
 *** REMINDER: During CI builds, use the ``CODE_COVERAGE=TRUE` flag to generate the code coverage XML files,
 and additionally use the `CC_FLATTEN=TRUE` or `CC_FULL=TRUE` flags to customize coverage results.
