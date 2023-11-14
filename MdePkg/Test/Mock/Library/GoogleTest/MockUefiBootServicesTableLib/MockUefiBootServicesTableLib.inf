@@ -8,7 +8,7 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = MockUefiBootServicesTableLib
-  FILE_GUID                      = 0A0E13C2-4176-4293-89C7-C2497AA31B92
+  FILE_GUID                      = 0BAFDBA6-411A-4094-931B-C29B98483043
   MODULE_TYPE                    = HOST_APPLICATION
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = UefiBootServicesTableLib
