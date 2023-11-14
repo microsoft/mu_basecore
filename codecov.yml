@@ -1,0 +1,24 @@
+flags:
+  CryptoPkg:
+    carryforward: true
+  MdeModulePkg:
+    carryforward: true
+  MdePkg:
+    carryforward: true
+  NetworkPkg:
+    carryforward: true
+  PcAtChipsetPkg:
+    carryforward: true
+  PerformancePkg:
+    carryforward: true
+  PolicyServicePkg:
+    carryforward: true
+  ShellPkg:
+    carryforward: true
+  StandaloneMmPkg:
+    carryforward: true
+  UefiCpuPkg:
+    carryforward: true
+  UnitTestFrameworkPkg:
+    carryforward: true
+  
