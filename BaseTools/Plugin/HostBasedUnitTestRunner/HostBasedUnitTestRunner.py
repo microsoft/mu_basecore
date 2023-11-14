@@ -212,37 +212,48 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         workspace = thebuilder.env.GetValue("WORKSPACE")
         workspace = (workspace + os.sep) if workspace[-1] != os.sep else workspace
         # Generate coverage file
-        coverageFile = ""
-        for testFile in testList:
-            ret = RunCmd("OpenCppCoverage", f"--source {workspace} --export_type binary:{testFile}.cov -- {testFile}", workingdir=f"{workspace}Build/")
-            coverageFile += " --input_coverage=" + testFile + ".cov"
-            if ret != 0:
-                logging.error("UnitTest Coverage: Failed to collect coverage data.")
-                return 1
+        # MU_CHANGE begin - reformat coverage data
+        pkg_cfg_file = os.path.join(buildOutputBase, "pkg-opencppcoverage.cfg")
+        if os.path.isfile(pkg_cfg_file):
+            os.remove(pkg_cfg_file)
+        
+        with open(pkg_cfg_file, "w") as f:
+            for testFile in testList:
+                ret = RunCmd("OpenCppCoverage", f"--source {workspace} --export_type binary:{testFile}.cov -- {testFile}", workingdir=f"{workspace}Build/")
+                f.write(f"input_coverage={testFile}.cov\n")
+                if ret != 0:
+                    logging.error("UnitTest Coverage: Failed to collect coverage data.")
+                    return 1
 
         # Generate and XML file if requested.by each package
-        # MU_CHANGE begin - reformat coverage data
+
         file_out = thebuilder.env.GetValue("CI_PACKAGE_NAME", "") + "_coverage.xml"
-        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{os.path.join(buildOutputBase, file_out)} {coverageFile}", workingdir=f"{workspace}Build/")
-        # MU_CHANGE end - reformat coverage data
+        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{os.path.join(buildOutputBase, file_out)} --config_file={pkg_cfg_file}", workingdir=f"{workspace}Build/")
+        os.remove(pkg_cfg_file)
+       
         if ret != 0:
             logging.error("UnitTest Coverage: Failed to generate cobertura format xml in single package.")
             return 1
 
         # Generate total report XML file for all package
         testCoverageList = glob.glob(os.path.join(workspace, "Build", "**","*Test*.exe.cov"), recursive=True)
-        coverageFile = ""
-        for testCoverage in testCoverageList:
-            coverageFile += " --input_coverage=" + testCoverage
+        total_cfg_file = os.path.join(buildOutputBase, "total-opencppcoverage.cfg")
+        if os.path.isfile(total_cfg_file):
+            os.remove(total_cfg_file)
+        
+        with open(total_cfg_file, "w") as f:
+            for testCoverage in testCoverageList:
+                f.write(f"input_coverage={testCoverage}\n")
 
-        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{workspace}Build/coverage.xml {coverageFile}", workingdir=f"{workspace}Build/")
+        ret = RunCmd("OpenCppCoverage", f"--export_type cobertura:{workspace}Build/coverage.xml --config_file={total_cfg_file}", workingdir=f"{workspace}Build/")
+        os.remove(total_cfg_file)
+
         if ret != 0:
             logging.error("UnitTest Coverage: Failed to generate cobertura format xml.")
             return 1
 
         return 0
 
-    # MU_CHANGE begin - reformat coverage data
     def organize_coverage(self, thebuilder) -> int:
         """Organize the generated coverage file by INF."""
         db_path = self.parse_workspace(thebuilder)
