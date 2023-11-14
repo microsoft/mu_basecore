@@ -24,21 +24,21 @@ struct MockUefiBootServicesTableLib {
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
     gBS_GetMemoryMap,
-    (IN OUT UINTN                       *MemoryMapSize,
-     OUT    EFI_MEMORY_DESCRIPTOR       *MemoryMap,
-     OUT    UINTN                       *MapKey,
-     OUT    UINTN                       *DescriptorSize,
-     OUT    UINT32                      *DescriptorVersion)
+    (IN OUT UINTN                 *MemoryMapSize,
+     OUT    EFI_MEMORY_DESCRIPTOR *MemoryMap,
+     OUT    UINTN                 *MapKey,
+     OUT    UINTN                 *DescriptorSize,
+     OUT    UINT32                *DescriptorVersion)
     );
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
     gBS_CreateEvent,
-    (IN  UINT32 Type,
-     IN  EFI_TPL NotifyTpl,
+    (IN  UINT32           Type,
+     IN  EFI_TPL          NotifyTpl,
      IN  EFI_EVENT_NOTIFY NotifyFunction,
-     IN  VOID *NotifyContext,
-     OUT EFI_EVENT *Event)
+     IN  VOID             *NotifyContext,
+     OUT EFI_EVENT        *Event)
     );
 
   MOCK_FUNCTION_DECLARATION (
@@ -50,15 +50,15 @@ struct MockUefiBootServicesTableLib {
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
     gBS_HandleProtocol,
-    (IN  EFI_HANDLE               Handle,
-     IN  EFI_GUID                 *Protocol,
-     OUT VOID                     **Interface)
+    (IN  EFI_HANDLE Handle,
+     IN  EFI_GUID   *Protocol,
+     OUT VOID       **Interface)
     );
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
     gBS_LocateProtocol,
-    (IN  EFI_GUID  *Protocol,
+    (IN  EFI_GUID *Protocol,
      IN  VOID      *Registration  OPTIONAL,
      OUT VOID      **Interface)
     );
@@ -66,12 +66,12 @@ struct MockUefiBootServicesTableLib {
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
     gBS_CreateEventEx,
-    (IN UINT32 Type,
-     IN EFI_TPL NotifyTpl,
+    (IN UINT32            Type,
+     IN EFI_TPL           NotifyTpl,
      IN EFI_EVENT_NOTIFY  NotifyFunction OPTIONAL,
-     IN CONST VOID *NotifyContext OPTIONAL,
-     IN CONST EFI_GUID *EventGroup OPTIONAL,
-     OUT EFI_EVENT *Event)
+     IN CONST VOID        *NotifyContext OPTIONAL,
+     IN CONST EFI_GUID    *EventGroup OPTIONAL,
+     OUT EFI_EVENT        *Event)
     );
 };
 
