@@ -265,10 +265,10 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         cov_file = os.path.join(buildOutputBase, file_out)
 
         params = f"--database {db_path} coverage {cov_file} -o {cov_file} --by-package -ws {workspace}"
-        if package:
-            params += f" -p {package}"
-        params += " --full" * int(thebuilder.env.GetValue("FULL_COVERAGE", "FALSE") == "TRUE")
-        params += " --flatten" * int(thebuilder.env.GetValue("FLATTEN_COVERAGE", "FALSE") == "TRUE")
+
+        params += f" -p {package}" * int(package != "")
+        params += " --full" * int(thebuilder.env.GetValue("CC_FULL", "FALSE") == "TRUE")
+        params += " --flatten" * int(thebuilder.env.GetValue("CC_FLATTEN", "FALSE") == "TRUE")
 
         return RunCmd("stuart_report", params)
 
