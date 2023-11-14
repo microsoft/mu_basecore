@@ -140,10 +140,11 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                     return failure_count # MU_CHANGE - reformat coverage data
 
                 # MU_CHANGE begin - reformat coverage data
-                ret = self.organize_coverage(thebuilder)
-                if ret != 0:
-                    logging.error("Failed to reorganize coverage data by INF.")
-                    return -1
+                if thebuilder.env.GetValue("CC_REORGANIZE", "TRUE") == "TRUE":
+                    ret = self.organize_coverage(thebuilder)
+                    if ret != 0:
+                        logging.error("Failed to reorganize coverage data by INF.")
+                        return -1
                 # MU_CHANGE end - reformat coverage data
 
         return failure_count
