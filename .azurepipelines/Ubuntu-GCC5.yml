@@ -1,4 +1,4 @@
-## @file
+## @file.
 # Azure Pipeline build file for a build using Ubuntu and GCC..
 #
 # IMPORTANT: This file requires the local repo to contain a .azurepipelines/Matrix-Build-Job.yml file that
