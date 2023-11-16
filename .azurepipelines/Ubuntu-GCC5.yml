@@ -1,5 +1,5 @@
 ## @file
-# Azure Pipeline build file for a build using Ubuntu and GCC.
+# Azure Pipeline build file for a build using Ubuntu and GCC..
 #
 # IMPORTANT: This file requires the local repo to contain a .azurepipelines/Matrix-Build-Job.yml file that
 #            performs the actual build steps for the configurations and packages supported by the repo.
@@ -27,7 +27,12 @@ extends:
     do_non_ci_build: false
     do_non_ci_setup: true
     do_pr_eval: true
-    coverage_publish_target: $(coverage_publish_target)
+    ${{ if eq(variables['coverage_publish_target'], 'codecov') }}:
+      coverage_publish_target: 'codecov'
+    ${{ elseif eq(variables['variablegroups.coverage.coverage_publish_target '], 'codecov') }}:
+      coverage_publish_target: 'codecov2'
+    ${{ else}}:
+      coverage_publish_target: 'ado'
     container_build: true
     os_type: Linux
     build_matrix:
