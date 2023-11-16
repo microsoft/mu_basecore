@@ -17,7 +17,7 @@
 variables:
 - group: architectures-x86-64
 - group: tool-chain-windows-visual-studio-latest
-- name: COVERAGE_PUBLISH_TARGET
+- name: COVERAGE_TARGET
   value: $(coverage_publish_target)
 
 extends:
@@ -29,7 +29,7 @@ extends:
     do_non_ci_setup: true
     do_pr_eval: true
     calculate_code_coverage: true
-    coverage_publish_target: $(COVERAGE_PUBLISH_TARGET)
+    coverage_publish_target: $(COVERAGE_TARGET)
     os_type: Windows_NT
     build_matrix:
       TARGET_MDE_CPU:
