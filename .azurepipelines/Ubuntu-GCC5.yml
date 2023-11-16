@@ -27,12 +27,7 @@ extends:
     do_non_ci_build: false
     do_non_ci_setup: true
     do_pr_eval: true
-    ${{ if eq(variables['coverage_publish_target'], 'codecov') }}:
-      coverage_publish_target: 'codecov'
-    ${{ elseif eq(variables['variablegroups.coverage.coverage_publish_target '], 'codecov') }}:
-      coverage_publish_target: 'codecov2'
-    ${{ else}}:
-      coverage_publish_target: 'ado'
+    coverage_publish_target: ado
     container_build: true
     os_type: Linux
     build_matrix:
