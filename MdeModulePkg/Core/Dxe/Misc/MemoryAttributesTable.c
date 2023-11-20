@@ -536,7 +536,7 @@ CoreGetMemoryMapWithSeparatedImageSection (
 
   CoreAcquiremMemoryAttributesTableLock ();
 
-  AdditionalRecordCount = (2 * mImagePropertiesPrivateData.CodeSegmentCountMax + 1) * mImagePropertiesPrivateData.ImageRecordCount;
+  AdditionalRecordCount = (2 * mImagePropertiesPrivateData.CodeSegmentCountMax + 3) * mImagePropertiesPrivateData.ImageRecordCount;
 
   OldMemoryMapSize = *MemoryMapSize;
   Status           = CoreGetMemoryMap (MemoryMapSize, MemoryMap, MapKey, DescriptorSize, DescriptorVersion);
