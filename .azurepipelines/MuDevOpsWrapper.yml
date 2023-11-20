@@ -40,10 +40,6 @@ parameters:
   displayName: Perform Stuart PR Evaluation
   type: boolean
   default: true
-- name: coverage_publish_target
-  displayName: Code Coverage Publish Target
-  type: string
-  default: 'ado'
 - name: container_build
   displayName: Flag for whether this repo should do stuart_setup
   type: boolean
@@ -90,7 +86,6 @@ jobs:
     do_ci_build: ${{ parameters.do_ci_build }}
     do_ci_setup: ${{ parameters.do_ci_setup }}
     do_pr_eval: ${{ parameters.do_pr_eval }}
-    coverage_publish_target: ${{ parameters.coverage_publish_target }}
     do_non_ci_setup: ${{ parameters.do_non_ci_setup }}
     do_non_ci_build: ${{ parameters.do_non_ci_build }}
     build_matrix: ${{ parameters.build_matrix }}
