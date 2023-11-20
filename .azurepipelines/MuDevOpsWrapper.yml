@@ -17,7 +17,7 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: codecov-fix
+      ref: mudevopswrapper-bugfix
 
 parameters:
 - name: do_ci_build
