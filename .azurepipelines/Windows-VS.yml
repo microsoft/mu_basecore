@@ -27,7 +27,7 @@ extends:
     do_non_ci_build: false
     do_non_ci_setup: true
     do_pr_eval: true
-    coverage_publish_target: $(coverage_publish_target)
+    coverage_publish_target: ${{coverage_publish_target}}
     os_type: Windows_NT
     build_matrix:
       TARGET_MDE_CPU:

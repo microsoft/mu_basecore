@@ -1,5 +1,5 @@
 ## @file
-# Azure Pipeline build file for a build using mu_devops.
+# Azure Pipeline build file for a build using mu_devops..
 #
 # NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
 #       instead of the file in this repo.
@@ -43,6 +43,10 @@ parameters:
 - name: coverage_publish_target
   displayName: Code Coverage Publish Target
   type: string
+  values:
+  - 'ado'
+  - 'codecov'
+  - 'none'
   default: 'ado'
 - name: container_build
   displayName: Flag for whether this repo should do stuart_setup
