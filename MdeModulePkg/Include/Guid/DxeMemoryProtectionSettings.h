@@ -47,6 +47,7 @@ typedef union {
     UINT8    EfiMemoryMappedIOPortSpace : 1;
     UINT8    EfiPalCode                 : 1;
     UINT8    EfiPersistentMemory        : 1;
+    UINT8    EfiUnacceptedMemoryType    : 1;
     UINT8    OEMReserved                : 1;
     UINT8    OSReserved                 : 1;
   } Fields;
@@ -218,6 +219,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace      = 1,      \
               .Fields.EfiPalCode                      = 1,      \
               .Fields.EfiPersistentMemory             = 0,      \
+              .Fields.EfiUnacceptedMemoryType         = 1,      \
               .Fields.OEMReserved                     = 1,      \
               .Fields.OSReserved                      = 1       \
             },                                                  \
@@ -237,6 +239,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace      = 1,      \
               .Fields.EfiPalCode                      = 1,      \
               .Fields.EfiPersistentMemory             = 0,      \
+              .Fields.EfiUnacceptedMemoryType         = 1,      \
               .Fields.OEMReserved                     = 1,      \
               .Fields.OSReserved                      = 1       \
             },                                                  \
@@ -256,6 +259,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace      = 1,      \
               .Fields.EfiPalCode                      = 1,      \
               .Fields.EfiPersistentMemory             = 0,      \
+              .Fields.EfiUnacceptedMemoryType         = 1,      \
               .Fields.OEMReserved                     = 1,      \
               .Fields.OSReserved                      = 1       \
             },                                                  \
@@ -304,6 +308,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace      = 0,      \
               .Fields.EfiPalCode                      = 0,      \
               .Fields.EfiPersistentMemory             = 0,      \
+              .Fields.EfiUnacceptedMemoryType         = 0,      \
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
             },                                                  \
@@ -323,6 +328,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace      = 0,      \
               .Fields.EfiPalCode                      = 0,      \
               .Fields.EfiPersistentMemory             = 0,      \
+              .Fields.EfiUnacceptedMemoryType         = 0,      \
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
             },                                                  \
@@ -342,6 +348,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace      = 1,      \
               .Fields.EfiPalCode                      = 1,      \
               .Fields.EfiPersistentMemory             = 1,      \
+              .Fields.EfiUnacceptedMemoryType         = 1,      \
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
             },                                                  \
@@ -389,6 +396,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace      = 0,      \
               .Fields.EfiPalCode                      = 0,      \
               .Fields.EfiPersistentMemory             = 0,      \
+              .Fields.EfiUnacceptedMemoryType         = 0,      \
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
             },                                                  \
@@ -408,6 +416,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace      = 0,      \
               .Fields.EfiPalCode                      = 0,      \
               .Fields.EfiPersistentMemory             = 0,      \
+              .Fields.EfiUnacceptedMemoryType         = 0,      \
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
             },                                                  \
@@ -427,6 +436,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace      = 1,      \
               .Fields.EfiPalCode                      = 1,      \
               .Fields.EfiPersistentMemory             = 1,      \
+              .Fields.EfiUnacceptedMemoryType         = 1,      \
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
             },                                                  \
@@ -473,6 +483,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace      = 0,      \
               .Fields.EfiPalCode                      = 0,      \
               .Fields.EfiPersistentMemory             = 0,      \
+              .Fields.EfiUnacceptedMemoryType         = 0,      \
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
             },                                                  \
@@ -492,6 +503,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace      = 0,      \
               .Fields.EfiPalCode                      = 0,      \
               .Fields.EfiPersistentMemory             = 0,      \
+              .Fields.EfiUnacceptedMemoryType         = 0,      \
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
             },                                                  \
@@ -511,6 +523,7 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace      = 0,      \
               .Fields.EfiPalCode                      = 0,      \
               .Fields.EfiPersistentMemory             = 0,      \
+              .Fields.EfiUnacceptedMemoryType         = 0,      \
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
             },                                                  \
