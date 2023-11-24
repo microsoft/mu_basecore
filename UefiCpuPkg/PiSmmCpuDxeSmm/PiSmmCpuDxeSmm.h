@@ -14,7 +14,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <PiSmm.h>
 
-#include <Protocol/MpService.h>
 #include <Protocol/SmmConfiguration.h>
 #include <Protocol/SmmCpu.h>
 #include <Protocol/SmmAccess2.h>
@@ -28,6 +27,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Guid/MemoryAttributesTable.h>
 #include <Guid/PiSmmMemoryAttributesTable.h>
 #include <Guid/SmmBaseHob.h>
+#include <Guid/MpInformation2.h>
 
 #include <Library/BaseLib.h>
 #include <Library/IoLib.h>
