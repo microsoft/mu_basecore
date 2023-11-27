@@ -338,7 +338,7 @@ PageTableLibMapInLevel (
   ParentAttribute             = &LocalParentAttribute;
 
   OriginalParentPagingEntry.Uint64 = ParentPagingEntry->Uint64;
-
+  OneOfPagingEntry.Uint64          = 0;
   //
   // RegionLength: 256T (1 << 48) 512G (1 << 39), 1G (1 << 30), 2M (1 << 21) or 4K (1 << 12).
   //
@@ -368,7 +368,6 @@ PageTableLibMapInLevel (
         return Status;
       }
 
-      OneOfPagingEntry.Pnle.Uint64 = 0;
       // MU_CHANGE: Populate base address bits for non present pages
       // TODO: Author unit test to verify the splitted pages meet expected attribute bits.
       if ((Level != 1) && (Level != 2) && (Level != 3)) {
