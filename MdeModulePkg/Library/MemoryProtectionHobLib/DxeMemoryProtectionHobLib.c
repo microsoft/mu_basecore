@@ -63,6 +63,8 @@ GetDxeMemoryTypeSettingFromBitfield (
       return HeapGuardMemoryType.Fields.EfiPalCode;
     case EfiPersistentMemory:
       return HeapGuardMemoryType.Fields.EfiPersistentMemory;
+    case EfiUnacceptedMemoryType:
+      return HeapGuardMemoryType.Fields.EfiUnacceptedMemoryType;
     default:
       return FALSE;
   }
