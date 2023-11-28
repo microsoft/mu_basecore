@@ -26,7 +26,7 @@
 # 2.44 - Add Rust build support
 # 2.45 - Enable stack cookies to GCC X64 builds via -fstack-protector flag
 #
-#!VERSION=2.44
+#!VERSION=2.45
 
 IDENTIFIER = Default TOOL_CHAIN_CONF
 
