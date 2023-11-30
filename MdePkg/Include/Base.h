@@ -210,12 +210,14 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // Omit Function from Stack Overflow Protection.
 #ifndef NO_STACK_COOKIE
   #if defined (__GNUC__)
+    #if defined (__clang__)
+      #if __has_attribute (no_stack_protector)
 #define NO_STACK_COOKIE  __attribute__ ((no_stack_protector))
-  #elif defined (__clang__)
-    #if __has_attribute (no_stack_protector)
-#define NO_STACK_COOKIE  __attribute__ ((no_stack_protector))
-    #else
+      #else
 #define NO_STACK_COOKIE
+      #endif
+    #else
+#define NO_STACK_COOKIE  __attribute__ ((no_stack_protector))
     #endif
   #elif defined (_MSC_VER)
 #define NO_STACK_COOKIE  __declspec(safebuffers)
