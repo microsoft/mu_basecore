@@ -37,6 +37,7 @@ typedef union {
     UINT8    EfiMemoryMappedIOPortSpace : 1;
     UINT8    EfiPalCode                 : 1;
     UINT8    EfiPersistentMemory        : 1;
+    UINT8    EfiUnacceptedMemoryType    : 1;
     UINT8    OEMReserved                : 1;
     UINT8    OSReserved                 : 1;
   } Fields;
@@ -44,7 +45,7 @@ typedef union {
 
 typedef UINT8 MM_MEMORY_PROTECTION_SETTINGS_VERSION;
 
-#define MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  1 // Current iteration of MM_MEMORY_PROTECTION_SETTINGS
+#define MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  2 // Current iteration of MM_MEMORY_PROTECTION_SETTINGS
 
 //
 // Memory Protection Settings struct
@@ -137,6 +138,7 @@ extern GUID  gMmMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
               .Fields.EfiPalCode                   = 0,         \
               .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.EfiUnacceptedMemoryType      = 0,         \
               .Fields.OEMReserved                  = 0,         \
               .Fields.OSReserved                   = 0          \
             },                                                  \
@@ -156,6 +158,7 @@ extern GUID  gMmMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
               .Fields.EfiPalCode                   = 0,         \
               .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.EfiUnacceptedMemoryType      = 0,         \
               .Fields.OEMReserved                  = 0,         \
               .Fields.OSReserved                   = 0          \
             }                                                   \
@@ -189,6 +192,7 @@ extern GUID  gMmMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
               .Fields.EfiPalCode                   = 0,         \
               .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.EfiUnacceptedMemoryType      = 0,         \
               .Fields.OEMReserved                  = 0,         \
               .Fields.OSReserved                   = 0          \
             },                                                  \
@@ -208,6 +212,7 @@ extern GUID  gMmMemoryProtectionSettingsGuid;
               .Fields.EfiMemoryMappedIOPortSpace   = 0,         \
               .Fields.EfiPalCode                   = 0,         \
               .Fields.EfiPersistentMemory          = 0,         \
+              .Fields.EfiUnacceptedMemoryType      = 0,         \
               .Fields.OEMReserved                  = 0,         \
               .Fields.OSReserved                   = 0          \
             }                                                   \
