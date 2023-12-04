@@ -85,6 +85,7 @@
   DxeMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/DxeMemoryProtectionHobLibNull.inf
   MmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/MmMemoryProtectionHobLibNull.inf
   DeviceStateLib|MdeModulePkg/Library/DeviceStateLib/DeviceStateLib.inf
+  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
 
   PanicLib|MdePkg/Library/BasePanicLibNull/BasePanicLibNull.inf   # MU_CHANGE
 [LibraryClasses.X64, LibraryClasses.IA32]
