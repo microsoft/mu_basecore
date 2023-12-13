@@ -68,7 +68,7 @@ try:
 
             Report = FdReport()
 
-            ret = Report.MakeReport(Product, FwVersion, OutF, FdfF, BuildReportF, thebuilder.ws, thebuilder.pp)
+            ret = Report.MakeReport(Product, FwVersion, OutF, FdfF, BuildReportF)
             logging.debug("Build Report generation returned %d" % ret)
             return ret
 
@@ -502,9 +502,8 @@ class FlashReportParser(object):
             "product_date": datetime.datetime.now().strftime("%A, %B %d, %Y %I:%M %p")
         }
 
-        template = open(os.path.join(FdReport.MY_FOLDER, "FdReport_Template2.html"), "r")
         f = open(out_path, "w")
-        template = open(os.path.join(FdReport.MY_FOLDER, "FdReport_Template2.html"), "r")
+        template = open(os.path.join(FdReport.MY_FOLDER, "FdReport_Template.html"), "r")
         for line in template.readlines():
             if "%TO_BE_FILLED_IN_BY_PYTHON_SCRIPT%" in line:
                 new_str = f'''
@@ -525,7 +524,7 @@ class FdReport(object):
     def __init__(self):
         pass
 
-    def MakeReport(self, ProductName, ProductVersion, OutputReport, InputFdf, InputBuildReport, Workspace, PackagesPathList=[]):
+    def MakeReport(self, ProductName, ProductVersion, OutputReport, InputFdf, InputBuildReport):
 
         if not os.path.isfile(InputFdf):
             logging.critical("Invalid path to input FDF file")
@@ -534,11 +533,6 @@ class FdReport(object):
         if not os.path.isfile(InputBuildReport):
             logging.critical("Invalid path to input Build Report file")
             return -1
-
-        if not os.path.isdir(Workspace):
-            logging.critical("Invalid path to workspace dir")
-            return -3
-
 
         f = open(InputBuildReport, "r")
         lines = f.readlines()
@@ -577,7 +571,6 @@ if __name__ == '__main__':
     parser.add_option("-o", dest="OutputFile", help="Output file (Will be HTML file) : ie -o MyOutput.html", default=None)
     parser.add_option("-i", dest="InputReport", help="Input Report File." , default=None)
     parser.add_option("-f", dest="FdfFile", help="Input Fdf File used for additional information gathering (optional).", default=None)
-    parser.add_option("-w", dest="Workspace", help="Absolute path to workspace", default=None)
     parser.add_option("--product", dest="ProductName", help="Name of product for report", default="Unknown")
     parser.add_option("--fwVersion", dest="FirmwareVersion", help="Firmware Version", default="Unknown")
     #Turn on dubug level logging
@@ -615,12 +608,8 @@ if __name__ == '__main__':
         logging.critical("No Output file")
         sys.exit(-3)
 
-    if not options.Workspace:
-        logging.critical("No workspace specified")
-        sys.exit(-4)
-
     Report = FdReport()
-    ret = Report.MakeReport(options.ProductName, options.FirmwareVersion, options.OutputFile, options.FdfFile, options.InputReport, options.Workspace)
+    ret = Report.MakeReport(options.ProductName, options.FirmwareVersion, options.OutputFile, options.FdfFile, options.InputReport)
     logging.debug("Build Report generation returned %d" % ret)
 
     if ret != 0:
