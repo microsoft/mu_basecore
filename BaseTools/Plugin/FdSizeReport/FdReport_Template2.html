@@ -18,11 +18,12 @@
 <body>
     <div class="container-fluid">
         <h1>Firmware FD Size & Module Analysis</h1>
-        <ul class="nav nav-tabs">
+        <ul id="NavTabs" class="nav nav-tabs">
             <li class="active"><a data-toggle="tab" href="#tabs-1">Basic Info</a></li>
-            {% for key, value in fds.items() %}
-                <li><a data-toggle="tab", href=#{{key}}>{{key}}</a></li>
-            {% endfor %}
+            <li class="dropdown" id>
+                <a class="dropdown-toggle" data-toggle="dropdown"> FDs <span class="caret"></span></a>
+                <ul id="FdDropdownTabs" class="dropdown-menu"></ul>
+            </li>
             <li><a data-toggle="tab" href="#tabs-3">Modules</a></li>
             <li><a data-toggle="tab" href="#tabs-4">Messages</a></li>
             <li><a data-toggle="tab" href="#tabs-5">About</a></li>
@@ -31,11 +32,11 @@
             <div id="tabs-1" class="tab-pane fade in active" style="width:40rem;">
                 <div class="panel panel-primary">
                     <div class="panel-heading">
-                        <h3 class="panel-title">Product: {{env.product_name}}</h3>
+                        <h3, class="panel-title"><span id='ProductName'></span></h3>
                     </div>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item">Version {{env.product_version}}</li>
-                        <li class="list-group-item">Date Collected: {{env.date}}</li>
+                        <li class="list-group-item">Version: <span id='ProductVersion'></span></li>
+                        <li class="list-group-item">Date Collected: <span id='RunDate'></span></li>
                     </ul>
                     {% for key, value in fds.items() %}
                     <div class="panel panel-success" style="margin: 1rem;">
@@ -128,9 +129,9 @@
     </div>
 
     <script>
-        var EmbeddedJd = {{ EmbeddedJd }}
         var all_mods = {{ all_modules }}
-        var fds = {{ fds}}
+        var fds = {{ fds }}
+        var env = {{ env }}
     </script>
 
 <script>
@@ -152,7 +153,21 @@
         var MODULE_TABLE_OFFSET = 350;  //Space needed for other stuff besides the Table
 
         $(document).ready(function () {
-
+            
+            
+            //
+            // Set Product information
+            //
+            $('span#ProductName').text(env.product_name);
+            $('span#ProductVersion').text(env.product_version);
+            $('span#RunDate').text(env.product_date);
+            
+            //
+            // Add Tabs per FD
+            //
+            for (var key in fds) {
+                $('ul#FdDropdownTabs').append('<li><a data-toggle="tab" href="#' + key + '">' + key + '</a></li>')
+            }
             //To support tabs and correct column width we need this change
             $('a[data-toggle="tab"][href="#tabs-3"]').on('shown.bs.tab', function (e) {
                 $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
@@ -436,7 +451,7 @@
         }
 
         //
-        //To handle scroll tables adjust the height based on the window height. 
+        // To handle scroll tables adjust the height based on the window height. 
         //
         $(window).resize(function() {
             var newH = $(window).height() - MODULE_TABLE_OFFSET;

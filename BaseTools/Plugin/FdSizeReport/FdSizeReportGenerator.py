@@ -500,18 +500,14 @@ class FlashReportParser(object):
             "size": module.size or "0"
         } for module in self.module_summary.values()]
 
-        Embedded = {
-            "modules": []
-        }
-
         env = {
             "product_name": self.ProductName,
             "product_version": self.ProductVersion,
-            "date": datetime.datetime.now()
+            "product_date": datetime.datetime.now().strftime("%A, %B %d, %Y %I:%M %p")
         }
-        
+        print(env)
         with open(out_path, "w") as f:
-            f.write(template.render(EmbeddedJd = Embedded, fds = data, all_modules=all_modules, env=env))
+            f.write(template.render(fds = data, all_modules=all_modules, env=env))
 
 
 class FdReport(object):
@@ -580,7 +576,6 @@ if __name__ == '__main__':
     parser.add_option("--debug", action="store_true", dest="debug", help="turn on debug logging level for file log",  default=False)
 
     (options, args) = parser.parse_args()
-
     #setup file based logging if outputReport specified
     if(options.OutputReport):
         if(len(options.OutputReport) < 2):
