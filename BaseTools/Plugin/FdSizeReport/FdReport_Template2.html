@@ -30,7 +30,7 @@
         </ul>
         <div class="tab-content">
             <div id="tabs-1" class="tab-pane fade in active" style="width:40rem;">
-                <div class="panel panel-primary">
+                <div id = "Tab1Content" class="panel panel-primary">
                     <div class="panel-heading">
                         <h3, class="panel-title"><span id='ProductName'></span></h3>
                     </div>
@@ -38,20 +38,6 @@
                         <li class="list-group-item">Version: <span id='ProductVersion'></span></li>
                         <li class="list-group-item">Date Collected: <span id='RunDate'></span></li>
                     </ul>
-                    {% for key, value in fds.items() %}
-                    <div class="panel panel-success" style="margin: 1rem;">
-                        <div class="panel-heading">
-                        FD Name: {{key}}
-                        </div>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item">Base Address: {{value.base}}</li>
-                            <li class="list-group-item">Size: {{value.size}}</li>
-                            <li class="list-group-item">
-                                <button type="button" class="btn btn-primary" onclick="switchToTab('{{key}}')">Go To Results</button>
-                            </li>
-                        </ul>
-                    </div>
-                    {% endfor %}
                 </div>
             </div>
             {% for key, value in fds.items() %}
@@ -163,11 +149,30 @@
             $('span#RunDate').text(env.product_date);
             
             //
-            // Add Tabs per FD
+            // Register the Dropdown tabs for each FD and the Mini FD information
+            // On the front page
             //
             for (var key in fds) {
+                // Register Tab
                 $('ul#FdDropdownTabs').append('<li><a data-toggle="tab" href="#' + key + '">' + key + '</a></li>')
+                
+                // FD information that goes on the "Basic Info" tab
+                var tab1_content = `
+                    <div class="panel panel-success" style="margin: 1rem;">
+                        <div class="panel-heading"> FD Name: ${key} </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">Base Address: ${fds[key].base}</li>
+                            <li class="list-group-item">Size: ${fds[key].size}</li>
+                            <li class="list-group-item">
+                                <button type="button" class="btn btn-primary" onclick="switchToTab('${key}')">Go To Results</button>
+                            </li>
+                        </ul>
+                    </div>
+                `;
+                // Register Tab Content
+                $('div#Tab1Content').append(tab1_content)
             }
+
             //To support tabs and correct column width we need this change
             $('a[data-toggle="tab"][href="#tabs-3"]').on('shown.bs.tab', function (e) {
                 $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
