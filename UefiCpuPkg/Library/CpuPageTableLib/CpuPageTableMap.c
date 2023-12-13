@@ -380,14 +380,7 @@ PageTableLibMapInLevel (
         return Status;
       }
 
-      // MU_CHANGE: Apply propagate bits for non-root entries.
-      //            Otherwise, start with PleBAttribute sans present bit.
-      // OneOfPagingEntry.Pnle.Uint64 = 0;
-      if ((Level != 1) && (Level != 2) && (Level != 3)) {
-        OneOfPagingEntry.Pnle.Uint64 = (PleBAttribute.Uint64 & PropagateMask.Uint64) & (~BIT0);
-      } else {
-        PageTableLibSetPle (Level, &OneOfPagingEntry, 0, &PleBAttribute, &PropagateMask);
-      }
+      OneOfPagingEntry.Pnle.Uint64 = 0;
     } else {
       PageTableLibSetPle (Level, &OneOfPagingEntry, 0, &PleBAttribute, &AllOneMask);
     }
