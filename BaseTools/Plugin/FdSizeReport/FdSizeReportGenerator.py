@@ -14,7 +14,6 @@ import re
 import logging
 import datetime
 from typing import Optional, Dict, Iterable, Tuple
-from jinja2 import Environment, FileSystemLoader
 
 
 #
@@ -487,9 +486,6 @@ class FlashReportParser(object):
     
     def write_report(self, out_path: str):
         """Writes the report to a file."""
-        env = Environment(loader=FileSystemLoader(searchpath=os.path.join(os.path.dirname(__file__))))
-        template = env.get_template("FdReport_Template2.html")
-        
         data = {}
         for fd in self.fd_list:
             data[fd.name] = fd.to_json(self.module_summary)
@@ -505,9 +501,21 @@ class FlashReportParser(object):
             "product_version": self.ProductVersion,
             "product_date": datetime.datetime.now().strftime("%A, %B %d, %Y %I:%M %p")
         }
-        print(env)
-        with open(out_path, "w") as f:
-            f.write(template.render(fds = data, all_modules=all_modules, env=env))
+
+        template = open(os.path.join(FdReport.MY_FOLDER, "FdReport_Template2.html"), "r")
+        f = open(out_path, "w")
+        template = open(os.path.join(FdReport.MY_FOLDER, "FdReport_Template2.html"), "r")
+        for line in template.readlines():
+            if "%TO_BE_FILLED_IN_BY_PYTHON_SCRIPT%" in line:
+                new_str = f'''
+                    var all_mods = {all_modules};
+                    var fds = {data};
+                    var env = {env};
+                '''
+                line = line.replace("%TO_BE_FILLED_IN_BY_PYTHON_SCRIPT%", new_str)
+            f.write(line)
+        template.close()
+        f.close()
 
 
 class FdReport(object):
