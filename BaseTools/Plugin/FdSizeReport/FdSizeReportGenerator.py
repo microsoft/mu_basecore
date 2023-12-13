@@ -13,7 +13,7 @@ import sys
 import re
 import logging
 import datetime
-from typing import Optional, Dict, Iterable, Tuple
+from typing import Optional, Dict, Iterable, Tuple # MU_CHANGE - Add Multiple FD support
 
 
 #
@@ -68,7 +68,7 @@ try:
 
             Report = FdReport()
 
-            ret = Report.MakeReport(Product, FwVersion, OutF, FdfF, BuildReportF)
+            ret = Report.MakeReport(Product, FwVersion, OutF, FdfF, BuildReportF) # MU_CHANGE begin - Add Multiple FD support
             logging.debug("Build Report generation returned %d" % ret)
             return ret
 
@@ -86,10 +86,10 @@ class FdfMiniParser(object):
 
     def GetRegionDescComment(self, BaseAddress: str) -> str:
         """Returns the comment for a region with the given base address.
-        
+
         Args:
             BaseAddress (str): The base address (hex) of the region to find the comment for.
-        
+
         Returns:
             str: The comment for the region, or an empty string if no comment was found.
         """
@@ -121,12 +121,12 @@ class FirmwareDevice(SectionType):
         This should not be initialized manually. Use the SectionFactory to
         parse the section and produce the correct section type.
     """
-    
+
     SECTION = r">-{118}<(.*?)(?=<-{118}>)"
 
     def __init__(self, name: str, base: str, size: str, raw_section: str) -> None:
         """Initializes a FD object.
-        
+
         Args:
             name (str): The raw string parsed from the 'FD Name:' line
             base (str): The raw string parsed from the 'Base Address:' line
@@ -140,14 +140,14 @@ class FirmwareDevice(SectionType):
 
     def process_section(self, raw_section: str) -> None:
         """Processes the different FD regions.
-         
+
         Create a list of regions that are inside the FD section.
 
         Args:
             raw_section (str): The raw string of the entire FD section
         """
         sections = re.findall(self.SECTION, raw_section, re.DOTALL)
-        
+
         for section in sections:
             if section.strip().lower().startswith("fd region"):
                 self.regions.append(FdRegion.from_raw(section, False))
@@ -156,7 +156,7 @@ class FirmwareDevice(SectionType):
 
     def to_json(self, module_summary_dict: Dict[str, 'ModuleSummary']) -> dict:
         """Creates a JSON representation of the FD object.
-        
+
         Args:
             module_summary_dict (Dict[str, 'ModuleSummary']): A dictionary of
                 ModuleSummary objects, which represent a Module Summary
@@ -175,7 +175,7 @@ class FdRegion:
     Will process a raw FD Region subsection (of the Firmware Device section). Certain
     types of region subsections will contain different information in the header and
     may contain a sub-sub section containing the modules in the region.
-    
+
     Unlike the other classes representing the different parts of the build report,
     we use a "from_raw" function, which acts somewhat 
     !!! Note
@@ -209,10 +209,10 @@ class FdRegion:
         self.free_size = None
         self.free_percent = None
         self.raw_modules = []
-           
+
     def parse_fv_type_region(nested: bool, match: re.Match) -> 'FdRegion':
         """Parses a FV type FD region header and the module list subsection.
-        
+
         Args:
             nested (bool): Whether or not the region is nested in another FV region.
             match (re.Match): The match object from the regex search.
@@ -242,7 +242,7 @@ class FdRegion:
 
     def parse_capsule_file_type_region(match: re.Match) -> 'FdRegion':
         """Parses a Capsule or File type FD region header.
-        
+
         Args:
             match (re.Match): The match object from the regex search.
         """
@@ -261,7 +261,7 @@ class FdRegion:
 
     def parse_generic_region(match: re.match) -> 'FdRegion':
         """Parses a generic FD region header.
-        
+
         Args:
             match (re.Match): The match object from the regex search.
         """
@@ -276,7 +276,7 @@ class FdRegion:
 
     def from_raw(raw_region: str, nested):
         """Somewhat follows a Factory pattern to create a FdRegion object.
-        
+
         Args:
             raw_region (str): The raw string of the FD region.
             nested (bool): Whether or not the region is nested in another FV region.
@@ -288,13 +288,13 @@ class FdRegion:
             region = FdRegion.parse_fv_type_region(nested, match)
             region.raw_modules = FdRegion.parse_module_memory_table(raw_region)
             return region
-        
+
         # Capsule Type region
         match = re.search(FdRegion.FD_REGION+FdRegion.TYPE_CAPSULE, raw_region, re.DOTALL)
         if match:
             logging.debug("Capsule Type FD Region found.")
             return FdRegion.parse_capsule_file_type_region(match)
-        
+
         # Fv Type Region
         match = re.search(FdRegion.FD_REGION+FdRegion.TYPE_FILE, raw_region, re.DOTALL)
         if match:
@@ -306,7 +306,7 @@ class FdRegion:
         if match:
             logging.debug("Generic FD Region found.")
             return FdRegion.parse_generic_region(match)
-        
+
         logging.error("No match found for FD Region")
         return None
 
@@ -319,10 +319,10 @@ class FdRegion:
 
         Args:
             region (str): The raw string of the FD region.
-        
+
         Returns:
             Iterable[Tuple[str, str, str]]: (hex offset, module name, module path)
-        
+
         !!! Example:
             Offset     Module
             -----------------------------------------------------------------
@@ -340,7 +340,7 @@ class FdRegion:
 
     def to_json(self, base: int, module_summary_dict: Dict[str, 'ModuleSummary']) -> dict:
         """Converts the FD region to a JSON format.
-        
+
         When converting the modules inside the FD to JSON, it looks up
         additional module information from the dict of ModuleSummary objects.
 
@@ -350,7 +350,7 @@ class FdRegion:
             module_summary_dict (Dict[str, 'ModuleSummary']): A dictionary of
                 ModuleSummary objects, to look up additional module
                 information.
-        
+
         Returns:
             dict: A dict with information about the FD region
         """
@@ -413,7 +413,7 @@ class ModuleSummary(SectionType):
 
     def __init__(self, name: str, arch: str, path: str, guid: str, raw_section: str) -> None:
         """Initializes a Module Summary object.
-        
+
         size and driver_type are set to default values until the rest of the
         section is processed. These values are not always available (suc as if)
         the module built is a library.
@@ -437,7 +437,7 @@ class ModuleSummary(SectionType):
         if match:
             # ex: `0x7 (DRIVER)` -> `DRIVER`
             self.driver_type = match.group(1).strip().split()[1].strip('()')
-        
+
         match = re.search(self.SIZE_PATTERN, raw)
         if match:
             # ex: `0x3C00 (15.00K)` -> `0x3C00`
@@ -469,7 +469,7 @@ class FlashReportParser(object):
 
     def parse_report_sections(self):
         """Splits the build report into sections and parses each section depending on the detected section type.
-        
+
         A section is all content between a >=..=< and a <=..=>. line.
         """
         section_pattern = r">={118}<(.*?)(?=<={118}>)"
@@ -483,7 +483,7 @@ class FlashReportParser(object):
                 self.fd_list.append(parsed_section)
             elif isinstance(parsed_section, ModuleSummary):
                 self.module_summary[parsed_section.name] = parsed_section
-    
+
     def write_report(self, out_path: str):
         """Writes the report to a file."""
         data = {}
@@ -518,14 +518,12 @@ class FlashReportParser(object):
 
 
 class FdReport(object):
+    """A Class representing a Flash Report."""
     MY_FOLDER = os.path.dirname(os.path.realpath(__file__))
     VERSION = "3.00"
 
-    def __init__(self):
-        pass
-
     def MakeReport(self, ProductName, ProductVersion, OutputReport, InputFdf, InputBuildReport):
-
+        """Creates a Flash Report."""
         if not os.path.isfile(InputFdf):
             logging.critical("Invalid path to input FDF file")
             return -2
@@ -546,6 +544,7 @@ class FdReport(object):
         rep.parse_report_sections()
         rep.write_report(OutputReport)
         return 0
+# MU_CHANGE end - Add Multiple FD support
 
 
 ################################################
@@ -609,7 +608,7 @@ if __name__ == '__main__':
         sys.exit(-3)
 
     Report = FdReport()
-    ret = Report.MakeReport(options.ProductName, options.FirmwareVersion, options.OutputFile, options.FdfFile, options.InputReport)
+    ret = Report.MakeReport(options.ProductName, options.FirmwareVersion, options.OutputFile, options.FdfFile, options.InputReport) # MU_CHANGE begin - Add Multiple FD support
     logging.debug("Build Report generation returned %d" % ret)
 
     if ret != 0:
