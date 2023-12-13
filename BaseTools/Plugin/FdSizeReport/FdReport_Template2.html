@@ -221,7 +221,16 @@
                         }
                     },
                     "aoColumnDefs": [
-                        { "mData": "description", "aTargets": [2] },
+                        {
+                            "mData": "description", "aTargets": [2],
+                            "mRender": function (source, type, row) {
+                                if (row.description == '') {
+                                    return row.name;
+                                } else {
+                                    return row.name + "<br />" + row.description;
+                                }
+                            }
+                        },
                         {
                             "aTargets": [0], "mData": "system_address",
                             "mRender": function (source, type, row) {
@@ -274,7 +283,7 @@
                         console.log("Skipping FV Region: [" + key + "] " + fds[key].regions.base)
                         //skip this fv for the chart
                     } else {
-                        name = fds[key].regions[i].description;
+                        name = fds[key].regions[i].name;
                         FVC_CAT.push(name);
                         FVC_AV.push((parseInt(fds[key].regions[i].free, 16) / 1024.0).toFixed(1));
                         FVC_OC.push((parseInt(fds[key].regions[i].used, 16) / 1024.0).toFixed(1));
@@ -360,7 +369,7 @@
 
                     console.log(dataForPie)
 
-                    var name = fds[key].regions[i].description;
+                    var name = fds[key].regions[i].name;
                     
                     var fvtabchart_id = key + name + '-fvtab_chart';
                     var fvtab_id = key + "-fvtab";

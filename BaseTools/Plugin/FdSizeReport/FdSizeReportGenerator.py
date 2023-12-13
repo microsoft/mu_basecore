@@ -13,8 +13,7 @@ import sys
 import re
 import logging
 import datetime
-from decimal import Decimal
-from typing import Optional, Dict
+from typing import Optional, Dict, Iterable, Tuple
 from jinja2 import Environment, FileSystemLoader
 
 
@@ -77,67 +76,24 @@ try:
 except ImportError:
     pass
 
-
-##
-# Support code/classes for parsing and creating report
-##
-
-class FvModule(object):
-
-    def __init__(self):
-        self.Path = ''
-        self.Name = ''
-
-
-class FdRegion(object):
-
-    def __init__(self):
-        self.Type = ''
-        self.Base = ''
-        self.Size = ''
-        self.Desc = 'Unknown'
-        self.Used = ''
-        self.Free = ''
-        self.SystemAddress = '0'
-        self.FvModuleList = []
-        self.Nested = "False"
-
-    def GetFreePercent(self):
-        try:
-            v = Decimal(int(self.Free, 0)) *100 / Decimal(int(self.Size, 0))
-            return "%0.2f%%" % v
-        except:
-            return 'NA'
-
-    def GetUsedPercent(self):
-        try:
-            v = Decimal(int(self.Used, 0)) *100 / Decimal(int(self.Size, 0))
-            return "%0.2f%%" % v
-        except:
-            return "NA"
-
-class ModuleSummary(object):
-
-    def __init__(self):
-        self.Name = ''
-        self.Size = 0
-        self.SizeString = ''
-        self.Guid = ''
-        self.InfPath = ''
-        self.Type = ''
-        self.MapFilePath = ''
-        self.FvList = []
-
+# MU_CHANGE begin - Add Multiple FD support
 class FdfMiniParser(object):
-
-
-    def __init__(self, fdfFileLines):
+    """A simple FDF parser that looks for comments describing a Region."""
+    def __init__(self, fdfFileLines: Iterable[str]) -> None:
+        """Initializes the FDF parser"""
         self.FileLines = fdfFileLines
         self.MaxLines = len(self.FileLines)
         self.RE_RegionDescLine = re.compile('^ *#Region_Description:')
 
-
-    def GetRegionDescComment(self, BaseAddress):
+    def GetRegionDescComment(self, BaseAddress: str) -> str:
+        """Returns the comment for a region with the given base address.
+        
+        Args:
+            BaseAddress (str): The base address (hex) of the region to find the comment for.
+        
+        Returns:
+            str: The comment for the region, or an empty string if no comment was found.
+        """
         current = 0
         while(current < self.MaxLines):
             if self.RE_RegionDescLine.match(self.FileLines[current]):
@@ -145,48 +101,95 @@ class FdfMiniParser(object):
                 if al.count("|") == 1 and al.count("x") == 2:
                     #found a good base address. Now compare
                     add = int(al.strip().partition('|')[0], 0)
-                    if add == BaseAddress:
+                    if hex(add) == BaseAddress:
                         return self.FileLines[current].partition(":")[2].strip()
             current = current + 1
         return ""
 
-# Understanding a Build Report
-###############################################################################
-# Section Type: Firmware Device (FD). One or more Firmware Devices (FDs).     #
-# Each FD is a separate file.                                                 #
-###############################################################################
-#                                                                             #
-#  #########################################################################  #
-#  # Subsection Type: FD Region. One or more FD Regions. Each region is    #  #
-#  # has a type. We mainly care about FV Types, but there are also capsule #  #
-#  # and file types. This will contain Modules and their offsets.          #  #
-#  #########################################################################  #
-#  #                                                                       #  #
-#  #  ###################################################################  #  #
-#  #  # Sub-subsection Type: One or more modules. This section is used  #  #  #
-#  #  # when the FD region is of type FV. This will contain a list of   #  #  #
-#  #  # modules and their relative offsets to the FD region. Must look  #  #  #
-#  #  # up the module information in the Module Summary section, which  #  #  #
-#  #  # is a Section Type.                                              #  #  #
-#  #  ###################################################################  #  #
-#  #                                                                       #  #
-#  #########################################################################  #
-#                                                                             #
-###############################################################################
-# Section Type: Module Summary. One  or more Module Summary sections. Each    #
-# section contains generic information about a compiled module. Associate     #
-# this information with the modules in the FD Regions.                        #
-###############################################################################
-#                                                                             #
-#  #########################################################################  #
-#  # Subsection Type: Module Summary. Contains Generic information about a #  #
-#  # module, including name, arch, path, and guid. Contains additional     #  #
-#  # subsections or more information about the module, such as PCD values, #  #
-#  # build flags, specific libraries used, dependency expressions, etc.    #  #
-#  #########################################################################  #
-#                                                                             #
-###############################################################################
-class _FdRegion:    
+
+class SectionType:
+    """A interface for section types that parse their type of section."""
+    pass
+
+
+class FirmwareDevice(SectionType):
+    """A struct representing a "Firmware Device (FD)" Section in the build report.
+
+    Will process the entire FirmwareDevice section, including sub-sections
+    when initialized with __init__.
+
+    !!! Note
+        This should not be initialized manually. Use the SectionFactory to
+        parse the section and produce the correct section type.
+    """
+    
+    SECTION = r">-{118}<(.*?)(?=<-{118}>)"
+
+    def __init__(self, name: str, base: str, size: str, raw_section: str) -> None:
+        """Initializes a FD object.
+        
+        Args:
+            name (str): The raw string parsed from the 'FD Name:' line
+            base (str): The raw string parsed from the 'Base Address:' line
+            size (str): The raw string parsed from the 'Size:' line
+        """
+        self.name = name.strip()
+        self.base = base.strip()
+        self.size = size.strip()
+        self.regions: list[FdRegion] = []
+        self.process_section(raw_section)
+
+    def process_section(self, raw_section: str) -> None:
+        """Processes the different FD regions.
+         
+        Create a list of regions that are inside the FD section.
+
+        Args:
+            raw_section (str): The raw string of the entire FD section
+        """
+        sections = re.findall(self.SECTION, raw_section, re.DOTALL)
+        
+        for section in sections:
+            if section.strip().lower().startswith("fd region"):
+                self.regions.append(FdRegion.from_raw(section, False))
+            elif section.strip().lower().startswith("nested fv"):
+                self.regions.append(FdRegion.from_raw(section, True))
+
+    def to_json(self, module_summary_dict: Dict[str, 'ModuleSummary']) -> dict:
+        """Creates a JSON representation of the FD object.
+        
+        Args:
+            module_summary_dict (Dict[str, 'ModuleSummary']): A dictionary of
+                ModuleSummary objects, which represent a Module Summary
+                section in the build report. Key is the name of the module.
+        """
+        return {
+            "base": self.base,
+            "size": self.size,
+            "regions": [region.to_json(self.base, module_summary_dict) for region in self.regions],
+        }
+
+
+class FdRegion:
+    """A struct representing a Firmware Device Region subsection in the build report.
+
+    Will process a raw FD Region subsection (of the Firmware Device section). Certain
+    types of region subsections will contain different information in the header and
+    may contain a sub-sub section containing the modules in the region.
+    
+    Unlike the other classes representing the different parts of the build report,
+    we use a "from_raw" function, which acts somewhat 
+    !!! Note
+        Different types of FD regions exist (specified by the "Type" line),
+        which contain different information. Due to this, it may be necessary
+        in the future to use another Factory class, but for now, we do not
+        do this because the information we want from the FdRegion is available
+        in all types of FD regions.
+
+        Unlike other classes representing the different portions of the build
+        report, we use "from_raw" rather than "__init__" to create the object
+        as we can pseudo treat it like a factory class.
+    """
     FD_REGION = r"Type:\s+(.*?)(?:\r?\n|\r)Base Address:\s+(.*?)(?:\r?\n|\r)Size:\s+(.*?)(?:\r?\n|\r)"
 
     TYPE_FV = r"Fv Name:\s+(.*?)(?:\r?\n|\r)Occupied Size:\s+(.*?)(?:\r?\n|\r)Free Size:\s+(.*?)(?:\r?\n|\r)"
@@ -194,9 +197,9 @@ class _FdRegion:
     TYPE_FILE = r"File Name:\s+(.*?)(?:\r?\n|\r)?File Size:\s+(.*?)"
 
     MEM_LOC = r'(?i)(0x[0-9A-Fa-f]+)\s+([^\n(]+(?:\n[^\n(]+)*)\s*(?:\(([^)]*)\))?'
-    MEM_LOC2  = r'([0-9xA-F]+)\s+([\w\s]+)\s+(?:\(([^)]*)\))?\r?\n'
 
     def __init__(self):
+        """Initializes an empty FD region. Does not parse the region."""
         self.nested = None
         self.type = None
         self.base = None
@@ -207,61 +210,151 @@ class _FdRegion:
         self.free_size = None
         self.free_percent = None
         self.raw_modules = []
-
-    def parse_mem_regions(self, region: str) -> list:
-        nregion = region.split("------------------------------------------------------------------------------------------------------------------------")
-        if len(nregion) == 1:
-            return []
-        return re.findall(_FdRegion.MEM_LOC, nregion[1])
            
-    def from_raw(raw_region: str, nested):
-        fd_region = _FdRegion()
-        fd_region.nested = nested
+    def parse_fv_type_region(nested: bool, match: re.Match) -> 'FdRegion':
+        """Parses a FV type FD region header and the module list subsection.
         
+        Args:
+            nested (bool): Whether or not the region is nested in another FV region.
+            match (re.Match): The match object from the regex search.
+        """
+        region = FdRegion()
+        region.nested = nested
+
+        region.type = match.group(1).strip()
+        region.base = match.group(2).strip()
+
+        # `0x348000 (3360K)` -> `0x348000`
+        region.size = match.group(3).strip().split()[0]
+
+        # `FVMAIN_COMPACT (79.9% Full)` -> (`FVMAIN_COMPACT`, `79.9`)
+        (name, percent, _) = match.group(4).strip().split(' ', maxsplit=2)
+        region.name = name
+        region.used_percent = percent.strip('(%)')
+
+        # `0x29ED18 (2683K)` -> `0x29ED18`
+        region.used_size = match.group(5).strip().split()[0]
+
+        # `0x6A000 (664K)` -> `0x6A000`
+        region.free_size = match.group(6).strip().split()[0]
+
+        region.free_percent = str(round(100 - float(region.used_percent), 2))
+        return region
+
+    def parse_capsule_file_type_region(match: re.Match) -> 'FdRegion':
+        """Parses a Capsule or File type FD region header.
+        
+        Args:
+            match (re.Match): The match object from the regex search.
+        """
+        region = FdRegion()
+        region.type = match.group(1).strip()
+        region.base = match.group(2).strip()
+
+        # `0x348000 (3360K)` -> `0x348000`
+        region.size = match.group(3).strip().split()[0]
+
+        # "Capsule Name" or "File Name:""
+        region.name = match.group(4).strip()
+
+        # "Capsule Size:" or "File Size:", `0x348000 (3360K)` -> `0x348000`
+        region.size = match.group(5).strip().split()[0]
+
+    def parse_generic_region(match: re.match) -> 'FdRegion':
+        """Parses a generic FD region header.
+        
+        Args:
+            match (re.Match): The match object from the regex search.
+        """
+        region = FdRegion()
+
+        region.type = match.group(1).strip()
+        region.base = match.group(2).strip()
+
+        # `0x348000 (3360K)` -> `0x348000`
+        region.size = match.group(3).strip().split()[0]
+        return region
+
+    def from_raw(raw_region: str, nested):
+        """Somewhat follows a Factory pattern to create a FdRegion object.
+        
+        Args:
+            raw_region (str): The raw string of the FD region.
+            nested (bool): Whether or not the region is nested in another FV region.
+        """        
         # FV Type region
-        match = re.search(_FdRegion.FD_REGION+_FdRegion.TYPE_FV, raw_region, re.DOTALL)
+        match = re.search(FdRegion.FD_REGION+FdRegion.TYPE_FV, raw_region, re.DOTALL)
         if match:
             logging.debug("FV Type FD Region found.")
-            fd_region.type = match.group(1).strip()
-            fd_region.base = match.group(2).strip()
-            fd_region.size = match.group(3).strip().split()[0]
-            (name, percent, _) = match.group(4).strip().split(' ', maxsplit=2)
-            fd_region.name = name
-            fd_region.used_percent = percent.strip('(%)')
-            fd_region.used_size = match.group(5).strip().split()[0]
-            fd_region.free_size = match.group(6).strip().split()[0]
-            fd_region.free_percent = str(round(100 - float(fd_region.used_percent), 2))
-            fd_region.raw_modules = fd_region.parse_mem_regions(raw_region)
-            return fd_region
+            region = FdRegion.parse_fv_type_region(nested, match)
+            region.raw_modules = FdRegion.parse_module_memory_table(raw_region)
+            return region
         
-        # Capsule or File Type region (Treated the same) //TODO
-        match = re.search(_FdRegion.FD_REGION+_FdRegion.TYPE_CAPSULE, raw_region, re.DOTALL) or re.search(_FdRegion.FD_REGION+_FdRegion.TYPE_FILE, raw_region, re.DOTALL)
+        # Capsule Type region
+        match = re.search(FdRegion.FD_REGION+FdRegion.TYPE_CAPSULE, raw_region, re.DOTALL)
         if match:
             logging.debug("Capsule Type FD Region found.")
-            fd_region.type = match.group(1).strip()
-            fd_region.base = match.group(2).strip()
-            fd_region.size = match.group(3).strip()
-            fd_region.name = match.group(4).strip()
-            fd_region.used_percent = match.group(5).strip()
-            fd_region.free_size = str("0x%X" % (int(fd_region.size, 0) - int(fd_region.occupied_size, 0)))
-            fd_region.raw_modules = fd_region.parse_mem_regions(raw_region)
-            return fd_region
+            return FdRegion.parse_capsule_file_type_region(match)
+        
+        # Fv Type Region
+        match = re.search(FdRegion.FD_REGION+FdRegion.TYPE_FILE, raw_region, re.DOTALL)
+        if match:
+            logging.debug("File Type FD Region found.")
+            return FdRegion.parse_capsule_file_type_region(match)
 
         # Generic FD Region
-        match = re.search(_FdRegion.FD_REGION, raw_region, re.DOTALL)
+        match = re.search(FdRegion.FD_REGION, raw_region, re.DOTALL)
         if match:
             logging.debug("Generic FD Region found.")
-            fd_region.type = match.group(1).strip()
-            fd_region.base = match.group(2).strip()
-            fd_region.size = match.group(3).strip()
-            fd_region.raw_modules = fd_region.parse_mem_regions(raw_region)
-            return fd_region
+            return FdRegion.parse_generic_region(match)
         
-        print("No match found for FD Region")
-        return fd_region
+        logging.error("No match found for FD Region")
+        return None
 
-    def to_json(self, base: int, module_summary_dict: Dict[str, '_ModuleSummary']) -> dict:
+    def parse_module_memory_table(region: str) -> Iterable[Tuple[str, str, str]]:
+        """Parses the table of modules in the FV region.
+
+        Can be tricky as new lines will occur, typically in the module path. 
+        The MEM_LOC regex is able to handle this, but the newline remains in
+        the line.
+
+        Args:
+            region (str): The raw string of the FD region.
         
+        Returns:
+            Iterable[Tuple[str, str, str]]: (hex offset, module name, module path)
+        
+        !!! Example:
+            Offset     Module
+            -----------------------------------------------------------------
+            0x00000078 PeiCore (c:\\src\\mu_tiano_platforms\\MU_BASECORE\\MdeModulePkg\\Core\\Pei\\PeiMain.inf)
+        """
+        table = region.split("------------------------------------------------------------------------------------------------------------------------")
+        if len(table) == 1:
+            return []
+        table_rows = re.findall(FdRegion.MEM_LOC, table[1])
+
+        return_rows = []
+        for row in table_rows:
+            return_rows.append(tuple(item.replace('\n', '') for item in row))
+        return return_rows
+
+    def to_json(self, base: int, module_summary_dict: Dict[str, 'ModuleSummary']) -> dict:
+        """Converts the FD region to a JSON format.
+        
+        When converting the modules inside the FD to JSON, it looks up
+        additional module information from the dict of ModuleSummary objects.
+
+        Args:
+            base (int): The base address of the FD, to calculate the system
+                address of the FD.
+            module_summary_dict (Dict[str, 'ModuleSummary']): A dictionary of
+                ModuleSummary objects, to look up additional module
+                information.
+        
+        Returns:
+            dict: A dict with information about the FD region
+        """
         mods = []
         for mod in self.raw_modules:
             mod_summary = module_summary_dict.get(mod[1].strip())
@@ -270,9 +363,9 @@ class _FdRegion:
                     "name": mod_summary.name,
                     "size": mod_summary.size
                 })
-        
         return {
-            "description": self.name or self.type,
+            "name": self.name or self.type,
+            "description": FlashReportParser.FDF_MINI_PARSER.GetRegionDescComment(self.base),
             "base": self.base,
             "system_address": hex(int(base, 0) + int(self.base, 0)),
             "size": self.size or "NA",
@@ -285,100 +378,95 @@ class _FdRegion:
         }
 
 
-class SectionType:
-    """A interface for section types that parse their type of section."""
-    pass
+class SectionFactory(object):
+    """A factory class for parsing a BuildReport section, and returning the correct section type."""
+
+    FD_SECTION = r"FD Name:\s+(.*?)(?:\r?\n|\r)Base Address:\s+(.*?)(?:\r?\n|\r)Size:\s+(.*?)(?:\r?\n|\r|$)"
+    MODULE_SUMMARY = r"Module Name:\s+(.*?)(?:\r?\n|\r)Module Arch:\s+(.*?)(?:\r?\n|\r)Module INF Path:\s+(.*?)(?:\r?\n|\r)File GUID:\s+(.*?)(?:\r?\n|\r)"
+
+    def parse_section(self, raw_section: str) -> Optional[SectionType]:
+        """Attempts to determine the section type, and parses the section accordingly.
+
+        Args:
+            raw_section (str): The raw string of the section to parse.
+        """
+        match = re.search(self.FD_SECTION, raw_section, re.DOTALL)
+        if match:
+            return FirmwareDevice(match.group(1), match.group(2), match.group(3), raw_section)
+        match = re.search(self.MODULE_SUMMARY, raw_section, re.DOTALL)
+        if match:
+            return ModuleSummary(match.group(1), match.group(2), match.group(3), match.group(4), raw_section)
+        return None
 
 
-class FirmwareDevice(SectionType):
-    SECTION = r">-{118}<(.*?)(?=<-{118}>)"
+class ModuleSummary(SectionType):
+    """A struct representing a Module Summary Section in the build report.
 
-    def __init__(self, name, base, size, raw_section):
-        self.name = name.strip()
-        self.base = base.strip()
-        self.size = size.strip()
-        self.regions: list[_FdRegion] = []
-        self.process_section(raw_section)
+    Will process the entire Module Summary section, including sub-sections
+    when initialized with __init__.
 
-    def process_section(self, raw_section):
-        sections = re.findall(self.SECTION, raw_section, re.DOTALL)
-        
-        for section in sections:
-            if section.strip().lower().startswith("fd region"):
-                self.regions.append(_FdRegion.from_raw(section, False))
-            elif section.strip().lower().startswith("nested fv"):
-                self.regions.append(_FdRegion.from_raw(section, True))
-
-    def to_json(self, module_summary_dict: Dict[str, '_ModuleSummary']) -> dict:
-        return {
-            "base": self.base,
-            "size": self.size,
-            "regions": [region.to_json(self.base, module_summary_dict) for region in self.regions],
-        }
-
-
-class _ModuleSummary(SectionType):
+    !!! Note
+        This should not be initialized manually. Use the SectionFactory to
+        parse the section and produce the correct section type.
+    """
     DRIVER_PATTERN = r"Driver Type:\s*(.*?)(?:\r?\n|\r|$)"
     SIZE_PATTERN = r"Size:\s+(.*?)(?:\r?\n|\r)"
 
-    def __init__(self, name, arch, path, guid, raw_section):
+    def __init__(self, name: str, arch: str, path: str, guid: str, raw_section: str) -> None:
+        """Initializes a Module Summary object.
+        
+        size and driver_type are set to default values until the rest of the
+        section is processed. These values are not always available (suc as if)
+        the module built is a library.
+ 
+        Args:
+            name (str): The raw string parsed from the 'Module Name:' line
+            arch (str): The raw string parsed from the 'Module Arch:' line
+            path (str): The raw string parsed from the 'Module INF Path:' line
+            guid (str): The raw string parsed from the 'File GUID:' line
+        """
         self.name = name.strip()
         self.arch = arch.strip()
         self.path = path.strip()
         self.guid = guid.strip()
-        self.size = 0
+        self.size = "0x0"
         self.driver_type = ""
         self.process_raw(raw_section)
 
     def process_raw(self, raw):
         match = re.search(self.DRIVER_PATTERN, raw)
         if match:
+            # ex: `0x7 (DRIVER)` -> `DRIVER`
             self.driver_type = match.group(1).strip().split()[1].strip('()')
         
         match = re.search(self.SIZE_PATTERN, raw)
         if match:
+            # ex: `0x3C00 (15.00K)` -> `0x3C00`
             self.size = match.group(1).strip().split()[0]
 
 
-class SectionFactory(object):
-    FD_SECTION = r"FD Name:\s+(.*?)(?:\r?\n|\r)Base Address:\s+(.*?)(?:\r?\n|\r)Size:\s+(.*?)(?:\r?\n|\r|$)"
-    MODULE_SUMMARY = r"Module Name:\s+(.*?)(?:\r?\n|\r)Module Arch:\s+(.*?)(?:\r?\n|\r)Module INF Path:\s+(.*?)(?:\r?\n|\r)File GUID:\s+(.*?)(?:\r?\n|\r)"
-
-    def parse_section(self, raw_section: str) -> Optional[SectionType]:
-        """Attempts to determine the section type, and parses the section accordingly."""
-        match = re.search(self.FD_SECTION, raw_section, re.DOTALL)
-        if match:
-            return FirmwareDevice(match.group(1), match.group(2), match.group(3), raw_section)
-        match = re.search(self.MODULE_SUMMARY, raw_section, re.DOTALL)
-        if match:
-            return _ModuleSummary(match.group(1), match.group(2), match.group(3), match.group(4), raw_section)
-        return None
-
 class FlashReportParser(object):
-    SECTION_START = ">======================================================================================================================<"
-    SECTION_END = "<======================================================================================================================>"
+    """"A class for parsing a build report and generating a flash report."""
+
+    # Warning, poor design. If you need to instantiate this class multiple
+    # time for some reason, the FDF mini parser will break as this is global
+    # to any class.
+    FDF_MINI_PARSER = None
+
     def __init__(self, ReportFileLines, FdfFileLines = None, ToolVersion="1.00", ProductName="Unset", ProductVersion="Unset"):
+        """Initializes the object."""
         self.fd_list: list[FirmwareDevice] = []
-        self.module_summary: Dict[str, _ModuleSummary] = {}
+        self.module_summary: Dict[str, ModuleSummary] = {}
 
         self.ReportFile = ReportFileLines
-        self.Parsed = False
-        self.FdRegions = []
-        self.Modules = []
-        self.TotalLines = len(ReportFileLines)
 
-        self.FdBase = ''
-        self.FdName = ''
-        self.FdSize = ''
-        self.FdSizeNum = 0
-        self.FdBaseNum = 0
         self.FdfMiniParser = None
         self.ToolVersion = ToolVersion
         self.ProductVersion = ProductVersion
         self.ProductName = ProductName
 
-        if FdfFileLines != None and len(FdfFileLines) > 0:
-            self.FdfMiniParser = FdfMiniParser(FdfFileLines)
+        if FdfFileLines is not None and len(FdfFileLines) > 0:
+            FlashReportParser.FDF_MINI_PARSER = FdfMiniParser(FdfFileLines)
 
     def parse_report_sections(self):
         """Splits the build report into sections and parses each section depending on the detected section type.
@@ -394,10 +482,10 @@ class FlashReportParser(object):
 
             if isinstance(parsed_section, FirmwareDevice):
                 self.fd_list.append(parsed_section)
-            elif isinstance(parsed_section, _ModuleSummary):
+            elif isinstance(parsed_section, ModuleSummary):
                 self.module_summary[parsed_section.name] = parsed_section
     
-    def write_report(self):
+    def write_report(self, out_path: str):
         """Writes the report to a file."""
         env = Environment(loader=FileSystemLoader(searchpath=os.path.join(os.path.dirname(__file__))))
         template = env.get_template("FdReport_Template2.html")
@@ -412,8 +500,6 @@ class FlashReportParser(object):
             "size": module.size or "0"
         } for module in self.module_summary.values()]
 
-        import pprint
-        pprint.pprint(data)
         Embedded = {
             "modules": []
         }
@@ -424,241 +510,13 @@ class FlashReportParser(object):
             "date": datetime.datetime.now()
         }
         
-        with open("myreport.html", "w") as f:
-            #f.write(template.render(results=results, tool_version=self.ToolVersion, product_name=self.ProductName, product_version=self.ProductVersion, date=datetime.datetime.now().strftime("%A, %B %d, %Y %I:%M%p")))
+        with open(out_path, "w") as f:
             f.write(template.render(EmbeddedJd = Embedded, fds = data, all_modules=all_modules, env=env))
-        exit()
-    def ParseFdInfo(self):
-        self.parse_report_sections()
-        self.write_report()
-
-        CurrentLine = 0
-        FoundAll = False
-        FoundIt = False
-        while(CurrentLine < self.TotalLines) and not FoundAll:
-            line = self.ReportFile[CurrentLine]
-
-            if FoundIt:
-                tokens = line.strip().split(':')
-                if len(tokens) == 2:
-                    if(tokens[0].strip().lower() == "fd name"):
-                        self.FdName = tokens[1]
-                    elif(tokens[0].strip().lower() == 'base address'):
-                        self.FdBase=tokens[1]
-                        self.FdBaseNum = int(self.FdBase, 0)
-                    elif(tokens[0].strip().lower() == 'size'):
-                        self.FdSize = tokens[1].split()[0].strip()
-                        self.FdSizeNum = int(self.FdSize, 0)
-                        FoundAll = True
-            elif line.strip().lower() == 'firmware device (fd)':
-                FoundIt = True
-
-            CurrentLine = CurrentLine + 1
-
-    def ParseAllModules(self):
-        InModSummary = False
-        CurrentMod = 0
-        CurrentLine = 0
-        while(CurrentLine < self.TotalLines):
-            line = self.ReportFile[CurrentLine]
-
-            #look for module summary section region
-            if  line.strip().lower() == 'module summary':
-                #new summary
-                InModSummary = True
-                mod = ModuleSummary()
-                self.Modules.append(mod)
-                CurrentMod = len(self.Modules) - 1
-
-            #parse within mod summary
-            elif InModSummary:
-                tokens = line.strip().split()
-                if len(tokens) > 0:
-                    if tokens[0].strip() == 'Module':
-                        if tokens[1].strip() == 'Name:':
-                            (self.Modules[CurrentMod]).Name = tokens[2].strip()
-                        elif tokens[1].strip() == 'INF':
-                            self.Modules[CurrentMod].InfPath = tokens[3].strip().replace("\\", "/")
-                            if(not tokens[3].strip().lower().endswith(".inf")):
-                                #get next line
-                                CurrentLine += 1
-                                line = self.ReportFile[CurrentLine]
-                                self.Modules[CurrentMod].InfPath += line.strip().replace("\\", "/")
-
-                    elif (tokens[0].strip() == 'File'):
-                        if(tokens[1].strip() == 'GUID:'):
-                            (self.Modules[CurrentMod]).Guid = tokens[2].strip()
-                            
-                    elif (tokens[0].strip() == 'Size:'):
-                        (self.Modules[CurrentMod]).SizeString = tokens[1].strip()
-                        (self.Modules[CurrentMod]).Size = int(tokens[1].strip(), 0)  
-                    
-                    elif (tokens[0].strip() == 'Driver'):
-                        (self.Modules[CurrentMod]).Type = tokens[3].strip()                     
-
-                    elif tokens[0].strip() == '========================================================================================================================':
-                        InModSummary = False
-
-            #increment the currentline
-            CurrentLine = CurrentLine + 1
-        #done processing report file.
-        #sort list descending
-        self.Modules.sort(key=lambda x: x.Size, reverse=True)
-        
-
-
-    def ParseFdRegions(self):
-        InFdRegion = False
-        CurrentRegion = 0
-        CurrentLine = 0
-        while(CurrentLine < self.TotalLines):
-            line = self.ReportFile[CurrentLine]
-
-            #look for fd region
-            if  line.strip().lower() == 'fd region':
-                #new fd region
-                InFdRegion = True
-                Region = FdRegion()
-                self.FdRegions.append(Region)
-                CurrentRegion = len(self.FdRegions) - 1
-
-            elif line.strip().lower() == "nested fv":
-                #nested fv region.  just track the module info
-                Region = FdRegion()
-                Region.Nested = "True"
-                InFdRegion = True
-                self.FdRegions.append(Region)
-                CurrentRegion = len(self.FdRegions) -1
-
-
-            #parse within fd region
-            elif InFdRegion:
-                tokens = line.strip().split()
-                if len(tokens) > 0:
-                    if tokens[0].strip() == 'Type:':
-                        (self.FdRegions[CurrentRegion]).Type = tokens[1]
-                        (self.FdRegions[CurrentRegion]).Desc = (self.FdRegions[CurrentRegion]).Type
-                    elif tokens[0].strip() == 'Base':
-                        (self.FdRegions[CurrentRegion]).Base = tokens[2]
-                        bv = int(tokens[2], 0)
-                        (self.FdRegions[CurrentRegion]).SystemAddress = str("0x%X" % (self.FdBaseNum + bv))
-                    elif tokens[0].strip() == 'Size:':
-                        (self.FdRegions[CurrentRegion]).Size = tokens[1]
-                    elif tokens[0].strip() == 'Occupied':
-                        (self.FdRegions[CurrentRegion]).Used = tokens[2]
-                    elif tokens[0].strip() == 'Free':
-                        (self.FdRegions[CurrentRegion]).Free = tokens[2]
-                    elif (tokens[0].strip() == 'Fv'):
-                        if(tokens[1].strip() == 'Name:'):
-                            if len((self.FdRegions[CurrentRegion]).Desc) > len((self.FdRegions[CurrentRegion]).Type):
-                                (self.FdRegions[CurrentRegion]).Desc =  (self.FdRegions[CurrentRegion]).Desc + " --> FV: " + tokens[2]
-                            else:
-                                (self.FdRegions[CurrentRegion]).Desc =  "FV: " + tokens[2]
-
-                    elif  (tokens[0].strip() == 'Capsule'):
-                        if (tokens[1].strip() == "Name:"):
-                            (self.FdRegions[CurrentRegion]).Desc = "Capsule: " + tokens[2]
-                        elif (tokens[1].strip() == 'Size:'):
-                            (self.FdRegions[CurrentRegion]).Used = tokens[2]
-                            filed = int((self.FdRegions[CurrentRegion]).Used, 0)
-                            total = int((self.FdRegions[CurrentRegion]).Size, 0)
-                            free = total - filed
-                            (self.FdRegions[CurrentRegion]).Free = str("0x%X" % free)
-
-                    elif  (tokens[0].strip() == 'File'):
-                        if (tokens[1].strip() == "Name:"):
-                            (self.FdRegions[CurrentRegion]).Desc = "File: " + tokens[2]
-                        elif (tokens[1].strip() == 'Size:'):
-                            (self.FdRegions[CurrentRegion]).Used = tokens[2]
-                            filed = int((self.FdRegions[CurrentRegion]).Used, 0)
-                            total = int((self.FdRegions[CurrentRegion]).Size, 0)
-                            free = total - filed
-                            (self.FdRegions[CurrentRegion]).Free = str("0x%X" % free)
-
-
-                    elif tokens[0].strip() == '<---------------------------------------------------------------------------------------------------------------------->':
-                        InFdRegion = False
-                        if (self.FdfMiniParser != None):
-                            #try to get comment for region
-                            desc = self.FdfMiniParser.GetRegionDescComment(int((self.FdRegions[CurrentRegion]).Base, 0))
-                            if len (desc) > 0:
-                                (self.FdRegions[CurrentRegion]).Desc = (self.FdRegions[CurrentRegion]).Desc + " - " + desc
-                    elif len(tokens) == 3 and tokens[0].lower().startswith("0x"):
-                        #This is the module section
-                        mo = FvModule()
-                        mo.Name = tokens[1]
-                        mo.Path = tokens[2]
-                        if(mo.Path.startswith('(') and not mo.Path.endswith(')')):
-                           #build report line wrapped around.  Go get next line
-                           CurrentLine += 1
-                           mo.Path = mo.Path.strip() + self.ReportFile[CurrentLine].strip()
-                        mo.Path = mo.Path.rstrip(')').lstrip('(')
-                        self.FdRegions[CurrentRegion].FvModuleList.append(mo)
-
-            #increment the currentline
-            CurrentLine = CurrentLine + 1
-
-    #
-    #loop thru all the mods and all the fv regions trying to match up
-    #
-    def UpdateModsWithFvs(self, ws):
-        #go thru each Module Summary
-        for ms in self.Modules:
-            logging.debug("Looking for FVs for Mod named %s path: %s" % (ms.Name, ms.InfPath))
-            #loop thru all modules in all FVs to find all matches
-            for fv in self.FdRegions:
-                for modinfv in fv.FvModuleList:
-                    #to much output logging.debug("Comparing against mod %s" % modinfv.Name)
-                    if(ms.Name.lower() == modinfv.Name.lower()):
-                        #possible match
-                        logging.debug("Name Match.  P1 %s p2 %s" % (ms.InfPath.lower().replace("/", "\\"), modinfv.Path.lower().replace("/", "\\")))
-                        #if(os.path.join(ws, ms.InfPath).lower().replace("/", "\\") == modinfv.Path.lower().replace("/", "\\") ):
-                        if((modinfv.Path.lower().replace("/", "\\")).endswith(ms.InfPath.lower().replace("/", "\\")) ):
-                            #good match
-                            logging.debug("Match found for ModInFV.  Mod %s is in FV %s" % (ms.InfPath, fv.Desc))
-                            if(fv.Desc not in ms.FvList):
-                                ms.FvList.append(fv.Desc)
-                            break #break out of this FV
-
-
-
-    def JS(self, key, value, comma=True):
-        r = '"' + key.strip() + '": "' + value.strip() + '"'
-        if comma:
-             r = r + ","
-        return r
-
-    def JSRegion(self, region):
-        return "{" + self.JS("nested", region.Nested) + self.JS("description", region.Desc) + self.JS("systemAddress", region.SystemAddress) + self.JS("baseAddress", region.Base) + self.JS("size", region.Size) + self.JS("used", region.Used) + self.JS("usedPercentage", region.GetUsedPercent()) + self.JS("free", region.Free) + self.JS("freePercentage", region.GetFreePercent(), False) + "},"
-
-    def JSModule(self, mod):
-        fvlistjson = '"FV":['
-        for f in mod.FvList:
-            fvlistjson += "'" + f + "',"
-        fvlistjson = fvlistjson.rstrip(',') + ']'
-
-        return "{" + self.JS("name", mod.Name) + self.JS("path", mod.InfPath) + self.JS("guid", mod.Guid) + self.JS("size", str(mod.Size)) + self.JS("sizeString", mod.SizeString) + self.JS("type", mod.Type) + fvlistjson + "},"
-
-    def ToJsonString(self):
-        js = "{" + self.JS("FdSizeReportGeneratorVersion", self.ToolVersion) + self.JS("ProductName", self.ProductName) 
-        js += self.JS("ProductVersion", self.ProductVersion) + self.JS("DateCollected", datetime.datetime.strftime(datetime.datetime.now(), "%A, %B %d, %Y %I:%M%p" ))
-        js += self.JS("fdName", self.FdName) + self.JS("fdBase", self.FdBase) + self.JS("fdSize", self.FdSize) + '"fdRegions": ['
-        for fdr in self.FdRegions:
-            js = js + self.JSRegion(fdr)
-
-        js = js.rstrip(",")
-        js = js + '], "modules": ['
-
-        for mod in self.Modules:
-            js = js + self.JSModule(mod)
-        js = js.rstrip(",")
-        js = js + "]}"
-        return js
 
 
 class FdReport(object):
     MY_FOLDER = os.path.dirname(os.path.realpath(__file__))
-    VERSION = "2.02"
+    VERSION = "3.00"
 
     def __init__(self):
         pass
@@ -687,21 +545,8 @@ class FdReport(object):
         f.close()
 
         rep = FlashReportParser(lines, fdfLines, FdReport.VERSION, ProductName, ProductVersion)
-        rep.ParseFdInfo()
-        rep.ParseFdRegions()
-        rep.ParseAllModules()
-        rep.UpdateModsWithFvs(Workspace)
-
-
-        f = open(OutputReport, "w")
-        template = open(os.path.join(FdReport.MY_FOLDER, "FdReport_Template.html"), "r")
-        for line in template.readlines():
-            if "%TO_BE_FILLED_IN_BY_PYTHON_SCRIPT%" in line:
-                line = line.replace("%TO_BE_FILLED_IN_BY_PYTHON_SCRIPT%", rep.ToJsonString())
-            f.write(line)
-        template.close()
-        f.close()
-
+        rep.parse_report_sections()
+        rep.write_report(OutputReport)
         return 0
 
 
