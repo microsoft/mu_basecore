@@ -323,23 +323,11 @@ PageTableLibMapInLevel (
   IA32_PAGING_ENTRY   OriginalParentPagingEntry;
   IA32_PAGING_ENTRY   OriginalCurrentPagingEntry;
 
-  // MU_CHANGE: Configure propagate bit mask.
-  IA32_MAP_ATTRIBUTE  PropagateMask;
-
   ASSERT (Level != 0);
   ASSERT ((Attribute != NULL) && (Mask != NULL));
 
   CreateNew         = FALSE;
   AllOneMask.Uint64 = ~0ull;
-
-  // MU_CHANGE: Configure propagate bit mask.
-  PropagateMask.Uint64              = IA32_MAP_ATTRIBUTE_PAGE_TABLE_BASE_ADDRESS_MASK;
-  PropagateMask.Bits.Present        = 1;
-  PropagateMask.Bits.ReadWrite      = 1;
-  PropagateMask.Bits.UserSupervisor = 1;
-  PropagateMask.Bits.Dirty          = 1;
-  PropagateMask.Bits.Accessed       = 1;
-  PropagateMask.Bits.Nx             = 1;
 
   NopAttribute.Uint64              = 0;
   NopAttribute.Bits.Present        = 1;
