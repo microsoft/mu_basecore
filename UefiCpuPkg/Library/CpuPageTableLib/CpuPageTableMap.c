@@ -380,7 +380,12 @@ PageTableLibMapInLevel (
         return Status;
       }
 
-      OneOfPagingEntry.Pnle.Uint64 = 0;
+      OneOfPagingEntry.Uint64 = 0;
+      if (Level != 1 && Level != 2 && Level != 3) {
+        PageTableLibSetPnle (&OneOfPagingEntry.Pnle, &PleBAttribute, &AllOneMask);
+      } else {
+        PageTableLibSetPle (Level, &OneOfPagingEntry, 0, &PleBAttribute, &AllOneMask);
+      }
     } else {
       PageTableLibSetPle (Level, &OneOfPagingEntry, 0, &PleBAttribute, &AllOneMask);
     }
