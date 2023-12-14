@@ -369,6 +369,13 @@ PageTableLibMapInLevel (
       }
 
       OneOfPagingEntry.Pnle.Uint64 = 0;
+      // MU_CHANGE: Populate base address bits for non present pages
+      // TODO: Author unit test to verify the splitted pages meet expected attribute bits.
+      if ((Level != 1) && (Level != 2) && (Level != 3)) {
+        PageTableLibSetPnle (&OneOfPagingEntry.Pnle, &PleBAttribute, &AllOneMask);
+      } else {
+        PageTableLibSetPle (Level, &OneOfPagingEntry, 0, &PleBAttribute, &AllOneMask);
+      }
     } else {
       PageTableLibSetPle (Level, &OneOfPagingEntry, 0, &PleBAttribute, &AllOneMask);
     }
@@ -405,14 +412,13 @@ PageTableLibMapInLevel (
       PagingEntry = (IA32_PAGING_ENTRY *)((UINTN)Buffer + *BufferSize);
       ZeroMem (PagingEntry, SIZE_4KB);
 
-      if (ParentPagingEntry->Pce.Present) {
-        //
-        // Create 512 child-level entries that map to 2M/4K.
-        //
-        for (SubOffset = 0, Index = 0; Index < 512; Index++) {
-          PagingEntry[Index].Uint64 = OneOfPagingEntry.Uint64 + SubOffset;
-          SubOffset                += RegionLength;
-        }
+      // MU_CHANGE: Populate contents for both present and non-present pages
+      //
+      // Create 512 child-level entries that map to 2M/4K.
+      //
+      for (SubOffset = 0, Index = 0; Index < 512; Index++) {
+        PagingEntry[Index].Uint64 = OneOfPagingEntry.Uint64 + SubOffset;
+        SubOffset                += RegionLength;
       }
 
       //
@@ -496,9 +502,10 @@ PageTableLibMapInLevel (
         // e.g.: Set PDE[0-255].ReadWrite = 0
         //
         for (Index = 0; Index < 512; Index++) {
-          if (PagingEntry[Index].Pce.Present == 0) {
-            continue;
-          }
+          // MU_CHANGE: Count in the space for non-present pages as well.
+          // if (PagingEntry[Index].Pce.Present == 0) {
+          //   continue;
+          // }
 
           if (IsPle (&PagingEntry[Index], Level)) {
             PageTableLibSetPle (Level, &PagingEntry[Index], 0, &ChildAttribute, &ChildMask);
