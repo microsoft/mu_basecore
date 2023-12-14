@@ -34,7 +34,7 @@
   Hash/CryptSha1.c
   Hash/CryptSha256.c
   Hash/CryptSha512.c
-  Hash/CryptSm3.c
+  Hash/CryptSm3Null.c
   Hash/CryptSha3.c
   Hash/CryptXkcp.c
   Hash/CryptCShake256.c
@@ -52,7 +52,7 @@
   Pk/CryptPkcs7VerifyCommon.c
   Pk/CryptPkcs7VerifyBase.c
   Pk/CryptPkcs7VerifyEku.c
-  Pk/CryptDh.c
+  Pk/CryptDhNull.c
   Pk/CryptX509.c
   Pk/CryptAuthenticode.c
   Pk/CryptTs.c

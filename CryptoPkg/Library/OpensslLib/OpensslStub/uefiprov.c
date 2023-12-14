@@ -124,26 +124,26 @@ static const OSSL_ALGORITHM deflt_digests[] = {
     { NULL, NULL, NULL }
 };
 
-static const OSSL_ALGORITHM_CAPABLE deflt_ciphers[] = {
-    ALG(PROV_NAMES_NULL, ossl_null_functions),
-    ALG(PROV_NAMES_AES_256_ECB, ossl_aes256ecb_functions),
+//static const OSSL_ALGORITHM_CAPABLE deflt_ciphers[] = {
+    //ALG(PROV_NAMES_NULL, ossl_null_functions),
+    /*ALG(PROV_NAMES_AES_256_ECB, ossl_aes256ecb_functions),
     ALG(PROV_NAMES_AES_192_ECB, ossl_aes192ecb_functions),
-    ALG(PROV_NAMES_AES_128_ECB, ossl_aes128ecb_functions),
-    ALG(PROV_NAMES_AES_256_CBC, ossl_aes256cbc_functions),
-    ALG(PROV_NAMES_AES_192_CBC, ossl_aes192cbc_functions),
-    ALG(PROV_NAMES_AES_128_CBC, ossl_aes128cbc_functions),
+    ALG(PROV_NAMES_AES_128_ECB, ossl_aes128ecb_functions),*/
+    //ALG(PROV_NAMES_AES_256_CBC, ossl_aes256cbc_functions),
+    //ALG(PROV_NAMES_AES_192_CBC, ossl_aes192cbc_functions),
+    //ALG(PROV_NAMES_AES_128_CBC, ossl_aes128cbc_functions),
 
-    ALG(PROV_NAMES_AES_256_CTR, ossl_aes256ctr_functions),
+    /*ALG(PROV_NAMES_AES_256_CTR, ossl_aes256ctr_functions),
     ALG(PROV_NAMES_AES_192_CTR, ossl_aes192ctr_functions),
     ALG(PROV_NAMES_AES_128_CTR, ossl_aes128ctr_functions),
 
     ALG(PROV_NAMES_AES_256_GCM, ossl_aes256gcm_functions),
     ALG(PROV_NAMES_AES_192_GCM, ossl_aes192gcm_functions),
-    ALG(PROV_NAMES_AES_128_GCM, ossl_aes128gcm_functions),
+    ALG(PROV_NAMES_AES_128_GCM, ossl_aes128gcm_functions),*/
 
-    { { NULL, NULL, NULL }, NULL }
-};
-static OSSL_ALGORITHM exported_ciphers[OSSL_NELEM(deflt_ciphers)];
+    //{ { NULL, NULL, NULL }, NULL }
+//};
+//static OSSL_ALGORITHM exported_ciphers[OSSL_NELEM(deflt_ciphers)];
 
 static const OSSL_ALGORITHM deflt_macs[] = {
     { PROV_NAMES_HMAC, "provider=default", ossl_hmac_functions },
@@ -230,7 +230,8 @@ static const OSSL_ALGORITHM *deflt_query(void *provctx, int operation_id,
     case OSSL_OP_DIGEST:
         return deflt_digests;
     case OSSL_OP_CIPHER:
-        return exported_ciphers;
+        //return exported_ciphers;
+        return NULL;
     case OSSL_OP_MAC:
         return deflt_macs;
     case OSSL_OP_KDF:
@@ -322,7 +323,7 @@ int ossl_uefi_provider_init(const OSSL_CORE_HANDLE *handle,
     ossl_prov_ctx_set0_core_bio_method(*provctx, corebiometh);
 
     *out = deflt_dispatch_table;
-    ossl_prov_cache_exported_algorithms(deflt_ciphers, exported_ciphers);
+    //ossl_prov_cache_exported_algorithms(deflt_ciphers, exported_ciphers);
 
     return 1;
 }

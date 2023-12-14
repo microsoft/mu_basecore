@@ -19,7 +19,9 @@ def openssl_configure(openssldir, target, ec = True):
         target,
         'no-afalgeng',
         'no-aria',
+        'no-asan',
         'no-async',
+        'no-autoalginit',
         'no-autoerrinit',
         'no-autoload-config',
         'no-bf',
@@ -35,6 +37,7 @@ def openssl_configure(openssldir, target, ec = True):
         'no-deprecated',
         'no-des',
         'no-dgram',
+        'no-dh',
         'no-dsa',
         'no-dso',
         'no-dtls',
@@ -42,6 +45,7 @@ def openssl_configure(openssldir, target, ec = True):
         'no-dtls1_2-method',
         'no-dynamic-engine',
         'no-ec2m',
+        'no-ecdh',
         'no-engine',
         'no-err',
         'no-filenames',
@@ -73,6 +77,7 @@ def openssl_configure(openssldir, target, ec = True):
         'no-siphash',
         'no-siv',
         'no-sm2',
+        'no-sm3',
         'no-sm4',
         'no-sock',
         'no-srp',
@@ -136,9 +141,9 @@ def is_asm(filename):
 
 def copy_generated_file(src, dst):
     src_file = []
-    with open(src, 'r') as fsrc:
+    with open(src, 'r', newline='') as fsrc:
         src_file = fsrc.readlines()
-    with open(dst, 'w') as fdst:
+    with open(dst, 'w', newline='') as fdst:
         for lines in range(len(src_file)):
             s = src_file[lines]
             s = s.rstrip() + "\r\n"
@@ -298,7 +303,7 @@ def update_inf(filename, sources, arch = None, defines = []):
         state = 1
 
     # read and parse file
-    with open(filename, 'r') as f:
+    with open(filename, 'r', newline='') as f:
         while True:
             line = f.readline()
             if line == '':
@@ -321,7 +326,7 @@ def update_inf(filename, sources, arch = None, defines = []):
                 tail += line.rstrip() + '\r\n'
 
     # write updated file
-    with open(filename, 'w') as f:
+    with open(filename, 'w', newline='') as f:
         f.write(head)
         for src in sources:
             f.write(f'  {src}\r\n')
@@ -405,7 +410,7 @@ def main():
 
     # wrap header file
     confighdr = os.path.join(opensslgendir, 'include', 'openssl', 'configuration.h')
-    with open(confighdr, 'w') as f:
+    with open(confighdr, 'w', newline='') as f:
         f.write('#ifdef EDK2_OPENSSL_NOEC\r\n'
                 '# include "configuration-noec.h"\r\n'
                 '#else\r\n'

@@ -186,20 +186,6 @@
   $(OPENSSL_PATH)/crypto/conf/conf_mod.c
   $(OPENSSL_PATH)/crypto/conf/conf_sap.c
   $(OPENSSL_PATH)/crypto/conf/conf_ssl.c
-  $(OPENSSL_PATH)/crypto/dh/dh_ameth.c
-  $(OPENSSL_PATH)/crypto/dh/dh_asn1.c
-  $(OPENSSL_PATH)/crypto/dh/dh_backend.c
-  $(OPENSSL_PATH)/crypto/dh/dh_check.c
-  $(OPENSSL_PATH)/crypto/dh/dh_err.c
-  $(OPENSSL_PATH)/crypto/dh/dh_gen.c
-  $(OPENSSL_PATH)/crypto/dh/dh_group_params.c
-  $(OPENSSL_PATH)/crypto/dh/dh_kdf.c
-  $(OPENSSL_PATH)/crypto/dh/dh_key.c
-  $(OPENSSL_PATH)/crypto/dh/dh_lib.c
-  $(OPENSSL_PATH)/crypto/dh/dh_meth.c
-  $(OPENSSL_PATH)/crypto/dh/dh_pmeth.c
-  $(OPENSSL_PATH)/crypto/dh/dh_prn.c
-  $(OPENSSL_PATH)/crypto/dh/dh_rfc5114.c
   $(OPENSSL_PATH)/crypto/dso/dso_dl.c
   $(OPENSSL_PATH)/crypto/dso/dso_dlfcn.c
   $(OPENSSL_PATH)/crypto/dso/dso_err.c
@@ -470,8 +456,6 @@
   $(OPENSSL_PATH)/crypto/sha/sha256.c
   $(OPENSSL_PATH)/crypto/sha/sha3.c
   $(OPENSSL_PATH)/crypto/sha/sha512.c
-  $(OPENSSL_PATH)/crypto/sm3/legacy_sm3.c
-  $(OPENSSL_PATH)/crypto/sm3/sm3.c
   $(OPENSSL_PATH)/crypto/stack/stack.c
   $(OPENSSL_PATH)/crypto/txt_db/txt_db.c
   $(OPENSSL_PATH)/crypto/ui/ui_err.c
@@ -586,7 +570,6 @@
   $(OPENSSL_PATH)/providers/implementations/digests/null_prov.c
   $(OPENSSL_PATH)/providers/implementations/digests/sha2_prov.c
   $(OPENSSL_PATH)/providers/implementations/digests/sha3_prov.c
-  $(OPENSSL_PATH)/providers/implementations/digests/sm3_prov.c
   $(OPENSSL_PATH)/providers/implementations/encode_decode/decode_der2key.c
   $(OPENSSL_PATH)/providers/implementations/encode_decode/decode_epki2pki.c
   $(OPENSSL_PATH)/providers/implementations/encode_decode/decode_msblob2key.c
@@ -594,7 +577,6 @@
   $(OPENSSL_PATH)/providers/implementations/encode_decode/decode_pvk2key.c
   $(OPENSSL_PATH)/providers/implementations/encode_decode/decode_spki2typespki.c
   $(OPENSSL_PATH)/providers/implementations/encode_decode/endecoder_common.c
-  $(OPENSSL_PATH)/providers/implementations/exchange/dh_exch.c
   $(OPENSSL_PATH)/providers/implementations/exchange/ecdh_exch.c
   $(OPENSSL_PATH)/providers/implementations/exchange/ecx_exch.c
   $(OPENSSL_PATH)/providers/implementations/exchange/kdf_exch.c
@@ -610,7 +592,6 @@
   $(OPENSSL_PATH)/providers/implementations/kdfs/tls1_prf.c
   $(OPENSSL_PATH)/providers/implementations/kdfs/x942kdf.c
   $(OPENSSL_PATH)/providers/implementations/kem/rsa_kem.c
-  $(OPENSSL_PATH)/providers/implementations/keymgmt/dh_kmgmt.c
   $(OPENSSL_PATH)/providers/implementations/keymgmt/ec_kmgmt.c
   $(OPENSSL_PATH)/providers/implementations/keymgmt/ecx_kmgmt.c
   $(OPENSSL_PATH)/providers/implementations/keymgmt/kdf_legacy_kmgmt.c

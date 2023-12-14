@@ -38,7 +38,7 @@
   Hash/CryptMd5Null.c         ## MS_CHANGE_162948 MSChange - Remove support for deprecated crypto.
   Hash/CryptSha1.c
   Hash/CryptSha256.c
-  Hash/CryptSm3.c
+  Hash/CryptSm3Null.c
   Hash/CryptSha512.c
   Hash/CryptSha3.c
   Hash/CryptXkcp.c
