@@ -551,12 +551,6 @@ PageTableLibMapInLevel (
       //
       // Create one entry mapping the entire region (1G, 2M or 4K).
       //
-      if ((CurrentPagingEntry->Pce.Present == 0) && (Attribute->Bits.Present == 0)) {
-        Offset      += SubLength;
-        RegionStart += RegionLength;
-        Index++;
-        continue;
-      }
       if (Modify) {
         //
         // When the inheritable attributes in parent entry could override the child attributes,
