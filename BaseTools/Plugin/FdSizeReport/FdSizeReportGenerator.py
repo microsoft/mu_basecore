@@ -176,8 +176,6 @@ class FdRegion:
     types of region subsections will contain different information in the header and
     may contain a sub-sub section containing the modules in the region.
 
-    Unlike the other classes representing the different parts of the build report,
-    we use a "from_raw" function, which acts somewhat 
     !!! Note
         Different types of FD regions exist (specified by the "Type" line),
         which contain different information. Due to this, it may be necessary
