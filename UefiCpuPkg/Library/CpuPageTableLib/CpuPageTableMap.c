@@ -383,7 +383,7 @@ PageTableLibMapInLevel (
       OneOfPagingEntry.Pnle.Uint64 = 0;
       // MU_CHANGE: Populate base address bits for non present pages
       // TODO: Author unit test to verify the splitted pages meet expected attribute bits.
-      if (Level != 1 && Level != 2 && Level != 3) {
+      if ((Level != 1) && (Level != 2) && (Level != 3)) {
         PageTableLibSetPnle (&OneOfPagingEntry.Pnle, &PleBAttribute, &AllOneMask);
       } else {
         PageTableLibSetPle (Level, &OneOfPagingEntry, 0, &PleBAttribute, &AllOneMask);
