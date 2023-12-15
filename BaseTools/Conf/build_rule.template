@@ -119,8 +119,9 @@
 # 2.25 - Split OemData rule into intermediate binary and final binary rules.
 # 2.26 - Rename OemData to ProductData.
 # 2.27 - Add Rust build support.
+# 2.28 - Remove Rust Incremental Build Support Hack
 
-#!VERSION=2.27
+#!VERSION=2.28
 
 [C-Code-File]
     <InputFile>
