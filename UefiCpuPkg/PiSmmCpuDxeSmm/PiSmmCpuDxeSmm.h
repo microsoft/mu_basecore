@@ -55,6 +55,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PerformanceLib.h>
 #include <Library/CpuPageTableLib.h>
 #include <Library/MmSaveStateLib.h>
+#include <Library/SmmCpuSyncLib.h>
 
 #include <AcpiCpuData.h>
 #include <CpuHotPlugData.h>
@@ -413,7 +414,6 @@ typedef struct {
   SPIN_LOCK                     *Busy;
   volatile EFI_AP_PROCEDURE2    Procedure;
   volatile VOID                 *Parameter;
-  volatile UINT32               *Run;
   volatile BOOLEAN              *Present;
   PROCEDURE_TOKEN               *Token;
   EFI_STATUS                    *Status;
@@ -431,7 +431,6 @@ typedef struct {
   // so that UC cache-ability can be set together.
   //
   SMM_CPU_DATA_BLOCK            *CpuData;
-  volatile UINT32               *Counter;
   volatile UINT32               BspIndex;
   volatile BOOLEAN              *InsideSmm;
   volatile BOOLEAN              *AllCpusInSync;
@@ -441,6 +440,7 @@ typedef struct {
   volatile BOOLEAN              AllApArrivedWithException;
   EFI_AP_PROCEDURE              StartupProcedure;
   VOID                          *StartupProcArgs;
+  SMM_CPU_SYNC_CONTEXT          *SyncContext;
 } SMM_DISPATCHER_MP_SYNC_DATA;
 
 #define SMM_PSD_OFFSET  0xfb00
@@ -449,7 +449,6 @@ typedef struct {
 /// All global semaphores' pointer
 ///
 typedef struct {
-  volatile UINT32     *Counter;
   volatile BOOLEAN    *InsideSmm;
   volatile BOOLEAN    *AllCpusInSync;
   SPIN_LOCK           *PFLock;
@@ -461,7 +460,6 @@ typedef struct {
 ///
 typedef struct {
   SPIN_LOCK           *Busy;
-  volatile UINT32     *Run;
   volatile BOOLEAN    *Present;
   SPIN_LOCK           *Token;
 } SMM_CPU_SEMAPHORE_CPU;
