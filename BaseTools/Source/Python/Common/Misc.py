@@ -1931,30 +1931,3 @@ def CopyDict(ori_dict):
 #
 def RemoveCComments(ctext):
     return re.sub('//.*?\n|/\*.*?\*/', '\n', ctext, flags=re.S)
-
-
-# MU_CHANGE [BEGIN] - Add Rust build support
-
-#  Update all .toml file's mtime
-#   If toml related source file changed. update .toml file's mtime
-#   all toml file saved in file TomlFileListFileName
-#
-def UpdateTomlFileMTime(TomlFileListFileName):
-    try:
-        with open(TomlFileListFileName, 'r') as file:
-            lines = file.readlines()
-            for toml in lines:
-                TomlFile = toml[0:-1]
-                TomlSourceDir = os.path.join(PathClass(TomlFile).Dir, "src")
-                TomlSourceFiles = glob.glob(TomlSourceDir + "/*.rs")
-                LatestFile = max(TomlSourceFiles, key=os.path.getmtime)
-                LatestFileMTime = os.path.getmtime(LatestFile)
-                CurrentMTime = os.path.getmtime(str(TomlFile))
-                if CurrentMTime < LatestFileMTime:
-                    os.utime(str(TomlFile), (os.path.getatime(LatestFile), LatestFileMTime))
-    except FileNotFoundError:
-        pass
-    except:
-        pass
-
-# MU_CHANGE [END] - Add Rust build support
