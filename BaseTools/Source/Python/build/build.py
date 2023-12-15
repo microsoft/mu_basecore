@@ -28,6 +28,7 @@ import threading
 from linecache import getlines
 from subprocess import Popen,PIPE, STDOUT
 from collections import OrderedDict, defaultdict
+import pathlib
 
 from AutoGen.PlatformAutoGen import PlatformAutoGen
 from AutoGen.ModuleAutoGen import ModuleAutoGen
@@ -66,9 +67,6 @@ from GenFds.FdfParser import FdfParser
 from AutoGen.IncludesAutoGen import IncludesAutoGen
 from GenFds.GenFds import resetFdsGlobalVariable
 from AutoGen.AutoGen import CalculatePriorityValue
-# MU_CHANGE [BEGIN] - Add Rust build support
-from Common.Misc import UpdateTomlFileMTime
-# MU_CHANGE [END] - Add Rust build support
 
 ## standard targets of build command
 gSupportedTarget = ['all', 'genc', 'genmake', 'modules', 'libraries', 'fds', 'clean', 'cleanall', 'cleanlib', 'run']
@@ -2345,10 +2343,13 @@ class Build():
                     EdkLogger.quiet("[cache Summary]: Makecache miss num: %s " % len(self.MakeCacheMiss))
 
                 # MU_CHANGE [BEGIN] - Add Rust build support
-
-                # if .tmol releated rust src changed, update .toml file's modified time
-                UpdateTomlFileMTime(os.path.join(Wa.BuildDir, 'RustFileWatch.lst'))
-
+                # Touch all toml files (to update the last modified time) so
+                # that make will actually see that a source file is newer than
+                # the .efi file and copy it to the expected directory(s).
+                for m in self.AllModules:
+                    for src in m.SourceFileList:
+                        if ".toml" in src.Path.lower():
+                            pathlib.Path(src.Path).touch(exist_ok=True)
                 # MU_CHANGE [END] - Add Rust build support
 
                 for Arch in Wa.ArchList:

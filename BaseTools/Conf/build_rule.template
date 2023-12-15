@@ -119,8 +119,9 @@
 # 2.25 - Split OemData rule into intermediate binary and final binary rules.
 # 2.26 - Rename OemData to ProductData.
 # 2.27 - Add Rust build support.
+# 2.28 - Remove Rust Incremental Build Support Hack
 
-#!VERSION=2.27
+#!VERSION=2.28
 
 [C-Code-File]
     <InputFile>
@@ -293,8 +294,6 @@
         $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
 
     <Command>
-        # Temporary_Rust_Todo - Remove .efi files to better support Rust incremental build for now.
-        $(RM) $(OUTPUT_DIR)(+)*.efi
         $(CARGO) make $(CARGOMAKE_FLAGS) -e RUSTFLAGS="-C link-arg=/MAP:$(DEBUG_DIR)(+)$(MODULE_NAME).map $(RUST_FLAGS)" build $(MODULE_NAME)
         "$(GENFW)" -e $(MODULE_TYPE) -o $(DEBUG_DIR)(+)$(MODULE_NAME).efi $(DEBUG_DIR)(+)$(TARGET_TRIPLE)(+)$(RUST_TARGET)(+)$(MODULE_NAME).efi $(GENFW_FLAGS)
         $(CP) $(DEBUG_DIR)(+)$(MODULE_NAME).map  $(OUTPUT_DIR)(+)$(MODULE_NAME).map
