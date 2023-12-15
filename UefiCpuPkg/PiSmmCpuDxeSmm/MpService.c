@@ -1325,7 +1325,7 @@ InternalSmmStartupAllAPs (
       // Decrease the count to mark this processor(AP or BSP) as finished.
       //
       if (ProcToken != NULL) {
-        WaitForSemaphore (&ProcToken->RunningApCount);
+        InterlockedDecrement (&ProcToken->RunningApCount);
       }
     }
   }
