@@ -148,6 +148,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfilePropertyMask
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfileDriverPath
   gEfiMdeModulePkgTokenSpaceGuid.PcdFwVolDxeMaxEncapsulationDepth
+  gEfiMdeModulePkgTokenSpaceGuid.PcdImageLargeAddressLoad
 
 [FeaturePcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdInternalEventServicesEnabled
