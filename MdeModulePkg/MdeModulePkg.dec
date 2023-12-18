@@ -1164,7 +1164,7 @@
 
   ## Delayed Dispatch Max Entries    //MS_CHANGE
   # Maximum number of delayed dispatch entries
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxEntries|8|UINT32|0x30001059
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxEntries|8|UINT32|0x3000104C
 
   # MU_CHANGE START Remove Memory Protection PCDs
   # ## Mask to control the NULL address detection in code for different phases.
