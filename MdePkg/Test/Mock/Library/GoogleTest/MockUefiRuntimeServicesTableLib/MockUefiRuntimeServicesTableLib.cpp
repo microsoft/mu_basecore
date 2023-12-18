@@ -13,7 +13,7 @@ MOCK_FUNCTION_DEFINITION (MockUefiRuntimeServicesTableLib, gRT_SetVariable, 5, E
 MOCK_FUNCTION_DEFINITION (MockUefiRuntimeServicesTableLib, gRT_GetTime, 2, EFIAPI);
 
 static EFI_RUNTIME_SERVICES  localRt = {
-  {0},              // EFI_TABLE_HEADER
+  { 0 },            // EFI_TABLE_HEADER
   gRT_GetTime,      // EFI_GET_TIME
   NULL,             // EFI_SET_TIME
   NULL,             // EFI_GET_WAKEUP_TIME
@@ -36,5 +36,5 @@ static EFI_RUNTIME_SERVICES  localRt = {
 };
 
 extern "C" {
-  EFI_RUNTIME_SERVICES* gRT = &localRt;
+  EFI_RUNTIME_SERVICES  *gRT = &localRt;
 }

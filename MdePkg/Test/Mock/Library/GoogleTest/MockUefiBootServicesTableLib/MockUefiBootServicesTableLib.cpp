@@ -63,5 +63,5 @@ static EFI_BOOT_SERVICES  LocalBs = {
 };
 
 extern "C" {
-EFI_BOOT_SERVICES  *gBS = &LocalBs;
+  EFI_BOOT_SERVICES  *gBS = &LocalBs;
 }

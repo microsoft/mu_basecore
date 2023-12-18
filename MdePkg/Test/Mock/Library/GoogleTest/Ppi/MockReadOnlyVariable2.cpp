@@ -19,5 +19,5 @@ EFI_PEI_READ_ONLY_VARIABLE2_PPI  PeiReadOnlyVariablePpi = {
 };
 
 extern "C" {
-EFI_PEI_READ_ONLY_VARIABLE2_PPI  *PpiReadOnlyVariableServices = &PeiReadOnlyVariablePpi;
+  EFI_PEI_READ_ONLY_VARIABLE2_PPI  *PpiReadOnlyVariableServices = &PeiReadOnlyVariablePpi;
 }
