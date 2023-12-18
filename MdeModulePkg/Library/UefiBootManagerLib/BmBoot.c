@@ -1032,7 +1032,7 @@ BmExpandPartitionDevicePath (
           continue;
         }
 
-        FullPath       = BmGetNextLoadOptionDevicePath (TempDevicePath, NULL);
+        FullPath = BmGetNextLoadOptionDevicePath (TempDevicePath, NULL);
         FreePool (TempDevicePath);
 
         if (FullPath != NULL) {
