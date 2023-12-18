@@ -38,12 +38,19 @@ Breaking Changes-dev
 Main Changes-dev
 ----------------
 
-- Incomplete
+- BPDT is now installed in the config table
+- Added more granular variable policy querying
+- We now wait for all APs before finishing initialization
+- Added MbedTLS to crypto library
+- Removed AP waking vector from ResetVector
+- Removed AP waking vector logic in SecCore
 
 Bug Fixes-dev
 -------------
 
-- Incomplete
+- Applied TCBZ3923 to MbedTLS
+- Corrected the description for th MpHandOff header file
+- Optimized BmExpandPartitionDevicePath
 
 2311_RefBoot Changes
 --------------------
@@ -53,7 +60,10 @@ Bug Fixes-dev
 2311_CIBuild Changes
 --------------------
 
-- Incomplete
+- Changed PcdDelayedDispatchMaxEntries token value to get rid of a conflict
+- Added missing PCD to MemoryProtectionUnitTestHost.inf
+- Applied TCBZ3923 to MbedTLS
+- Added MbedTLS to the Markdown Lint exclusion
 
 2311_Rebase Changes
 -------------------
