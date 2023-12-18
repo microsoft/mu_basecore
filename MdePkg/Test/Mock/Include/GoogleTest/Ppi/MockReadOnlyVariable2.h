@@ -13,9 +13,9 @@
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
 extern "C" {
-#include <Uefi.h>
-#include <Pi/PiPeiCis.h>
-#include <Ppi/ReadOnlyVariable2.h>
+  #include <Uefi.h>
+  #include <Pi/PiPeiCis.h>
+  #include <Ppi/ReadOnlyVariable2.h>
 }
 
 struct MockReadOnlyVariable2 {
@@ -43,7 +43,7 @@ struct MockReadOnlyVariable2 {
 };
 
 extern "C" {
-extern EFI_PEI_READ_ONLY_VARIABLE2_PPI  *PpiReadOnlyVariableServices;
+  extern EFI_PEI_READ_ONLY_VARIABLE2_PPI  *PpiReadOnlyVariableServices;
 }
 
 #endif

@@ -12,8 +12,8 @@
 #include <Library/FunctionMockLib.h>
 
 extern "C" {
-#include <Uefi.h>
-#include <Protocol\Hash2.h>
+  #include <Uefi.h>
+  #include <Protocol\Hash2.h>
 }
 
 struct MockHash2 {
@@ -61,7 +61,7 @@ struct MockHash2 {
 };
 
 extern "C" {
-extern EFI_HASH2_PROTOCOL  *gHash2Protocol;
+  extern EFI_HASH2_PROTOCOL  *gHash2Protocol;
 }
 
 #endif // MOCK_HASH2_H
