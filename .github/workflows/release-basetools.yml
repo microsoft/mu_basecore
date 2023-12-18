@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload Build Logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: logs-${{ matrix.tool_chain }}-${{ matrix.target }}
           path: |
@@ -91,7 +91,7 @@ jobs:
             BaseTools/BaseToolsBuild/BASETOOLS_BUILD.txt
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: basetools-${{ matrix.tool_chain }}-${{ matrix.target }}
           path: ${{ matrix.output_dir }}
