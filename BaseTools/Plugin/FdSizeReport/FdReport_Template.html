@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -18,51 +18,31 @@
 <body>
     <div class="container-fluid">
         <h1>Firmware FD Size & Module Analysis</h1>
-        <ul class="nav nav-tabs">
+        <ul id="NavTabs" class="nav nav-tabs">
             <li class="active"><a data-toggle="tab" href="#tabs-1">Basic Info</a></li>
-            <li><a data-toggle="tab" href="#tabs-2">Flash Layout and Usage</a></li>
+            <li class="dropdown" id>
+                <a class="dropdown-toggle" data-toggle="dropdown"> FDs <span class="caret"></span></a>
+                <ul id="FdDropdownTabs" class="dropdown-menu"></ul>
+            </li>
             <li><a data-toggle="tab" href="#tabs-3">Modules</a></li>
             <li><a data-toggle="tab" href="#tabs-4">Messages</a></li>
             <li><a data-toggle="tab" href="#tabs-5">About</a></li>
         </ul>
-        <div class="tab-content">
-            <div id="tabs-1" class="tab-pane fade in active">
-                <h2>Product: <span id='ProductName'></span></h2>
-                <h2>Version: <span id='ProductVersion'></span></h2>
-                <h2>Date Collected: <span id='RunDate'></span></h2>
-                <h2>FD Name: <span id='FdName'></span></h2>
-                <h2>Base Address:  <span id='FdBase'></span></h2>
-                <h2>Size:  <span id='FdSize'></span></h2>
-            </div>
-            <div id="tabs-2" class="tab-pane">
-                <h2>Flash Usage</h2>
-                <div class="row">
-                    <div class="col-md-5">
-                        <canvas id="StackedChartId"></canvas>
-                        <ul id="fvtablist" class="nav nav-tabs" style="padding-top: 20px"></ul>
-                        <div id="fvtab" class="tab-content"></div>
+        <div id="all-tabs" class="tab-content">
+            <div id="tabs-1" class="tab-pane fade in active" style="width:40rem;">
+                <div id = "Tab1Content" class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3, class="panel-title"><span id='ProductName'></span></h3>
                     </div>
-                    <div class="col-md-7">
-                        <table id="fdrinfo" class="table table-striped table-bordered table-hover" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>Offset/System Address</th>
-                                    <th>Size</th>
-                                    <th>Name/Description</th>
-                                    <th>Used Space (%)</th>
-                                    <th>Free Space (%)</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Version: <span id='ProductVersion'></span></li>
+                        <li class="list-group-item">Date Collected: <span id='RunDate'></span></li>
+                    </ul>
                 </div>
-                <p></p>
-                <div id="EmbeddedFVPie"></div>
             </div>
             <div id="tabs-3" class="tab-pane">
                 <h2>Module List</h2>
-                <table id="modinfo" class="table table-striped table-bordered table-hover" cellspacing="0">
+                <table id="modinfo" class="table table-striped table-bordered table-hover display" cellspacing="0">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -107,8 +87,15 @@
     </div>
 
     <script>
-        var EmbeddedJd = %TO_BE_FILLED_IN_BY_PYTHON_SCRIPT%;
+        %TO_BE_FILLED_IN_BY_PYTHON_SCRIPT%
     </script>
+
+<script>
+    function switchToTab(tabId) {
+      // Activate the specified tab
+      $('.nav-tabs a[href="#' + tabId + '"]').tab('show');
+    }
+  </script>
 
     <!-- Javascript libraries -->
     <script type="text/javascript" charset="utf8" src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.2.1.min.js"></script>
@@ -122,13 +109,74 @@
         var MODULE_TABLE_OFFSET = 350;  //Space needed for other stuff besides the Table
 
         $(document).ready(function () {
-            $('span#ProductName').text(EmbeddedJd.ProductName);
-            $('span#ProductVersion').text(EmbeddedJd.ProductVersion);
-            $('#RunDate').text(EmbeddedJd.DateCollected);
-            $('span#FdName').text(EmbeddedJd.fdName);
-            $('span#FdSize').text(EmbeddedJd.fdSize);
-            $('span#FdBase').text(EmbeddedJd.fdBase);
-            $('span#ReportToolVersion').text(EmbeddedJd.FdSizeReportGeneratorVersion);
+            
+            
+            //
+            // Set Product information
+            //
+            $('span#ProductName').text(env.product_name);
+            $('span#ProductVersion').text(env.product_version);
+            $('span#RunDate').text(env.product_date);
+            
+            //
+            // Register the Dropdown tabs for each FD and the Mini FD information
+            // On the front page
+            //
+            for (var key in fds) {
+                // Register Tab
+                $('ul#FdDropdownTabs').append('<li><a data-toggle="tab" href="#' + key + '">' + key + '</a></li>')
+                
+                // FD information that goes on the "Basic Info" tab
+                var tab1_content = `
+                    <div class="panel panel-success" style="margin: 1rem;">
+                        <div class="panel-heading"> FD Name: ${key} </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">Base Address: ${fds[key].base}</li>
+                            <li class="list-group-item">Size: ${fds[key].size}</li>
+                            <li class="list-group-item">
+                                <button type="button" class="btn btn-primary" onclick="switchToTab('${key}')">Go To Results</button>
+                            </li>
+                        </ul>
+                    </div>
+                `;
+                // Register Tab Content
+                $('div#Tab1Content').append(tab1_content)
+            }
+
+            //
+            // Generate the individual tabs for each FD
+            //
+            for (var key in fds) {
+                var fd_tab_content = `
+                    <div id="${key}" class="tab-pane fade">
+                        <h2>${key} Flash Usage</h2>
+                        <div class="row">
+                            <div class="col-md-5">
+                                <canvas id="${key}-bar-graph"></canvas>
+                                <ul id="${key}-fvtablist" class="nav nav-tabs" style="padding-top: 20px"></ul>
+                                <div id="${key}-fvtab" class="tab-content"></div>
+                            </div>
+                            <div class="col-md-7">
+                                <table id="${key}-info" class="table table-striped table-bordered table-hover" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>Offset/System Address</th>
+                                            <th>Size</th>
+                                            <th>Name/Description</th>
+                                            <th>Used Space (%)</th>
+                                            <th>Free Space (%)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <p></p>
+                            <div id="EmbeddedFVPie"></div>
+                        </div>
+                    </div>
+                `
+                $('div#all-tabs').append(fd_tab_content)
+            }
 
             //To support tabs and correct column width we need this change
             $('a[data-toggle="tab"][href="#tabs-3"]').on('shown.bs.tab', function (e) {
@@ -138,74 +186,11 @@
                 $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
             });
 
-            //table for fd layout
-            var fTable = $('table#fdrinfo').dataTable({
-                "aaData": EmbeddedJd.fdRegions,
-                "paginate": false,
-                "autoWidth": false,
-                "sort": false,
-                "info": false,
-                "searching": false,
-                "fnCreatedRow": function (nRow, row, iDataIndex) {
-                    if (row.used == '' || row.nested == "True") {
-                        $(nRow).toggleClass('small');
-                    } else {
-                        if (row.usedPercentage != 'NA') {
-                            var percent = parseFloat(row.usedPercentage.slice(0, -1));
-                            if (percent > 85.0) {
-                                $(nRow).addClass("danger");
-                            } else if (percent > 65.0) {
-                                $(nRow).addClass("warning");
-                            } else {
-                                $(nRow).addClass("success");
-                            }
-                        }
-                    }
-                },
-                "aoColumnDefs": [
-                    { "mData": "description", "aTargets": [2] },
-                    {
-                        "aTargets": [0], "mData": "systemAddress",
-                        "mRender": function (source, type, row) {
-                            if (row.nested == "True") {
-                                return "Nested FV - Size Info Not relevant";
-                            }
-                            return "Offset: " + row.baseAddress + "<br />System Address: " + source;
-                        }
-                    },
-                    {
-                        "aTargets": [1], "mData": "size",
-                        "mRender": function (source, type, row) {
-                            return (parseInt(source, 16) / 1024.0).toFixed(1) + "KB";
-                        }
-                    },
-                    {
-                        "mData": "used", "aTargets": [3],
-                        "mRender": function (source, type, row) {
-                            if (parseInt(source, 16) < 1) {
-                                return 'NA';
-                            } else {
-                                return (parseInt(source, 16) / 1024.0).toFixed(1) + "KB <br />(" + row.usedPercentage + ")";
-                            }
-                        }
-                    },
-                    {
-                        "mData": "free",
-                        "aTargets": [4],
-                        "mRender": function (source, type, row) {
-                            if (parseInt(source, 16) < 1) {
-                                return 'NA';
-                            } else {
-                                return (parseInt(source, 16) / 1024.0).toFixed(1) + "KB <br />(" + row.freePercentage + ")";
-                            }
-                        }
-                    }
-                ] //end of column def
-            }); //end of flash layout data table
-
-            //table for modules
+            //
+            // Create the table found in the "Modules" section
+            //
             var mTable = $('table#modinfo').dataTable({
-                "aaData": EmbeddedJd.modules,
+                "aaData": all_mods,
                 "paginate": false,
                 "autoWidth": false,
                 "scrollY": ($(window).height() - MODULE_TABLE_OFFSET) + "px",
@@ -231,138 +216,221 @@
                         }
                     }
                 ] //end of column def
-            }); //end of modules table
-
+            }); 
+            
             //
-            //Write out errors or warnings in the data processing
+            // Generate the Table found in each FD section
             //
-            var FvModList = {};
-            EmbeddedJd.modules.forEach(function (element, index, array) {
-                if (element.FV.length == 0) {
-                    $("div#messages > ol").append("<li>Module: " + element.name + " is not in any FVs!  Might be parsing error with tool or mod not in fv.");
-                }
-                element.FV.forEach(function (e, ind, ar) {
-                    if (FvModList[e] === undefined) {
-                        FvModList[e] = new Array();
-                    }
-                    FvModList[e].push(element);
-                }); //end inner foreach
-            });  //end forEach
-
-            //populate chart of firmware layout (stacked bar graph)
-            var FVC_CAT = [];  //fill in with array of FV names
-            var FVC_AV = [];  //fill in same order available space for each fv
-            var FVC_OC = [];  //fill in same order occupied space for each fv
-            for (i = 0; i < EmbeddedJd.fdRegions.length; i++) {
-                if (EmbeddedJd.fdRegions[i].free == "" || EmbeddedJd.fdRegions[i].nested == "True") {
-                    //skip this fv for the chart
-                } else {
-                    name = EmbeddedJd.fdRegions[i].description.slice(4);  //remove the "FV: ""
-                    FVC_CAT.push(name);
-                    FVC_AV.push((parseInt(EmbeddedJd.fdRegions[i].free, 16) / 1024.0).toFixed(1));
-                    FVC_OC.push((parseInt(EmbeddedJd.fdRegions[i].used, 16) / 1024.0).toFixed(1));
-                }
-            }
-
-            //Create Stacked Bar Chart
-            var StackedCtx = $("#StackedChartId");
-            var BarChartData = {
-                labels: FVC_CAT,
-                datasets: [{
-                    label: 'Used Space',
-                    backgroundColor: "#d44f4f",
-                    data: FVC_OC
-                }, {
-                    label: 'Free Space',
-                    backgroundColor: '#494949',
-                    data: FVC_AV
-                }]
-            };
-            var myBar = new Chart(StackedCtx, {
-                type: 'bar',
-                data: BarChartData,
-                options: {
-                    title: {
-                        display: true,
-                        text: "FV Space"
-                    },
-                    tooltips: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    responsive: true,
-                    scales: {
-                        xAxes: [{
-                            stacked: true,
-                        }],
-                        yAxes: [{
-                            stacked: true
-                        }]
-                    }
-                }
-            });
-
-            //
-            //for each FV
-            //
-            for (a in FvModList) {
-                fvSizes = GetFvSize(a);
-                var dataForPie = { datasets: [{ data: new Array(), backgroundColor: new Array() }], labels: new Array() };
-                dataForPie.datasets[0].data.push(fvSizes.free / 1024.00);
-                dataForPie.labels.push("Available");
-                dataForPie.datasets[0].backgroundColor.push(MakeRandomColor());
-                var smallentries = 0;
-                var smallentrycount = 0;
-
-                FvModList[a].forEach(function (element, index, array) {
-                    var v = parseFloat(element.size) * 100 / fvSizes.total;
-                    if (v < 1.1) {//if less than 1.1% put it in the small entries list
-                        smallentries += parseFloat(element.size);
-                        smallentrycount++;
-                    } else {
-                        dataForPie.datasets[0].data.push(parseFloat(element.size) / 1024.00);
-                        dataForPie.labels.push(element.name);
-                        dataForPie.datasets[0].backgroundColor.push(MakeRandomColor());
-                    }
-                });
-
-                //add the combined small entry element
-                if (smallentries > 0) {
-                    dataForPie.datasets[0].data.push(smallentries / 1024.00);
-                    dataForPie.labels.push("Small Mods [" + smallentrycount + "]");
-                    dataForPie.datasets[0].backgroundColor.push(MakeRandomColor());
-                }
-
-                var name = a.slice(4);
-                var fvtab_id = 'fvtab_chart_' + name;
-                $("#fvtab").append('<div id="fvtab_chart_' + name + '" class="tab-pane"></div>');
-                $("#fvtablist").append("<li><a data-toggle='tab' href='#fvtab_chart_" + name + "'>" + name + "</a></li>");
-                var htm = '<canvas id="' + name + '" width="200" height="200"></canvas>'
-                $("div#" + fvtab_id).append(htm);
-                var myPieChart = new Chart(name, {
-                    type: 'pie',
-                    data: dataForPie,
-                    options: {
-                        tooltips: {
-                            callbacks: {
-                                label: function (tooltipItem, data) {
-                                    var dataset = data.datasets[tooltipItem.datasetIndex];
-                                    var total = dataset.data.reduce(function (previousValue, currentValue, currentIndex, array) {
-                                        return previousValue + currentValue;
-                                    });
-                                    var currentValue = dataset.data[tooltipItem.index];
-                                    var precentage = Math.floor(((currentValue / total) * 100) + 0.5);
-                                    return data.labels[tooltipItem.index] + ": " + (currentValue).toFixed(1) + "KB (" + precentage + "%" + ")";
+            for (var key in fds) {
+                var fTable = $('table#'+key+'-info').dataTable({
+                    "aaData": fds[key].regions,
+                    "paginate": false,
+                    "autoWidth": false,
+                    "sort": false,
+                    "info": false,
+                    "searching": false,
+                    "fnCreatedRow": function (nRow, row, iDataIndex) {
+                        if (row.used == '' || row.nested == "True") {
+                            $(nRow).toggleClass('small');
+                        } else {
+                            if (row.used_percent != 'NA') {
+                                var percent = parseFloat(row.used_percent.slice(0, -1));
+                                if (percent > 85.0) {
+                                    $(nRow).addClass("danger");
+                                } else if (percent > 65.0) {
+                                    $(nRow).addClass("warning");
+                                } else {
+                                    $(nRow).addClass("success");
                                 }
                             }
                         }
+                    },
+                    "aoColumnDefs": [
+                        {
+                            "mData": "description", "aTargets": [2],
+                            "mRender": function (source, type, row) {
+                                if (row.description == '') {
+                                    return row.name;
+                                } else {
+                                    return row.name + "<br />" + row.description;
+                                }
+                            }
+                        },
+                        {
+                            "aTargets": [0], "mData": "system_address",
+                            "mRender": function (source, type, row) {
+                                if (row.nested == "True") {
+                                    return "Nested FV - Address Information not Relevant";
+                                }
+                                return "Offset: " + row.base + "<br />System Address: " + source;
+                            }
+                        },
+                        {
+                            "aTargets": [1], "mData": "size",
+                            "mRender": function (source, type, row) {
+                                return (parseInt(source, 16) / 1024.0).toFixed(1) + " KB";
+                            }
+                        },
+                        {
+                            "mData": "used", "aTargets": [3],
+                            "mRender": function (source, type, row) {
+                                if (parseInt(source, 16) < 1) {
+                                    return 'NA';
+                                } else {
+                                    return (parseInt(source, 16) / 1024.0).toFixed(1) + " KB <br />(" + row.used_percent + ")";
+                                }
+                            }
+                        },
+                        {
+                            "mData": "free",
+                            "aTargets": [4],
+                            "mRender": function (source, type, row) {
+                                if (parseInt(source, 16) < 1) {
+                                    return 'NA';
+                                } else {
+                                    return (parseInt(source, 16) / 1024.0).toFixed(1) + " KB <br />(" + row.free_percent + ")";
+                                }
+                            }
+                        }
+                    ] //end of column def
+                }); //end of flash layout data table
+            }
+            
+            //
+            //Generate the stacked bar graph found in each FD section
+            //
+            for (var key in fds) {
+                var FVC_CAT = [];  //fill in with array of FV names
+                var FVC_AV = [];  //fill in same order available space for each fv
+                var FVC_OC = [];  //fill in same order occupied space for each fv
+                for (let i = 0; i < fds[key].regions.length; i++) {
+                    if (fds[key].regions[i].free == "NA" || fds[key].regions[i].nested == "True") {
+                        console.log("Skipping FV Region: [" + key + "] " + fds[key].regions.base)
+                        //skip this fv for the chart
+                    } else {
+                        name = fds[key].regions[i].name;
+                        FVC_CAT.push(name);
+                        FVC_AV.push((parseInt(fds[key].regions[i].free, 16) / 1024.0).toFixed(1));
+                        FVC_OC.push((parseInt(fds[key].regions[i].used, 16) / 1024.0).toFixed(1));
+                    }
+                }
+
+                //Create Stacked Bar Chart
+                var StackedCtx = $("#"+key+"-bar-graph");
+                var BarChartData = {
+                    labels: FVC_CAT,
+                    datasets: [{
+                        label: 'Used Space',
+                        backgroundColor: "#d44f4f",
+                        data: FVC_OC
+                    }, {
+                        label: 'Free Space',
+                        backgroundColor: '#494949',
+                        data: FVC_AV
+                    }]
+                };
+                var myBar = new Chart(StackedCtx, {
+                    type: 'bar',
+                    data: BarChartData,
+                    options: {
+                        title: {
+                            display: true,
+                            text: "FV Space"
+                        },
+                        tooltips: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        responsive: true,
+                        scales: {
+                            xAxes: [{
+                                stacked: true,
+                            }],
+                            yAxes: [{
+                                stacked: true
+                            }]
+                        }
                     }
                 });
-            } //for each FV
-            $('#fvtablist a:first').tab('show'); //set the first one active
+            }
+
             //
-            // Create Attribution List for all external libraries used
+            // Generate the pie chart found in each FD section 
             //
+            
+            for (var key in fds) {
+                for (let i = 0; i < fds[key].regions.length; i++) {
+                    var modules = fds[key].regions[i].modules;
+                    if (fds[key].regions[i].modules.length == 0) {
+                        continue;
+                    }
+                    fvSizes = GetFvSize(fds[key].regions[i])
+                    var dataForPie = { datasets: [{ data: new Array(), backgroundColor: new Array() }], labels: new Array() };
+                    dataForPie.datasets[0].data.push(fvSizes.free / 1024.00);
+                    dataForPie.labels.push("Available");
+                    dataForPie.datasets[0].backgroundColor.push(MakeRandomColor());
+                    var smallentries = 0;
+                    var smallentrycount = 0;
+                    
+                    console.log(modules)
+                    modules.forEach(function (element, index, array) {
+                        var v = (parseInt(element.size) / fvSizes.total) * 100;
+                        if (v < 1.1) {//if less than 1.1% put it in the small entries list
+                            smallentries += parseInt(element.size);
+                            smallentrycount++;
+                        } else {
+                            dataForPie.datasets[0].data.push(parseInt(element.size) / 1024.00);
+                            dataForPie.labels.push(element.name);
+                            dataForPie.datasets[0].backgroundColor.push(MakeRandomColor());
+                        }
+                    });
+
+                    //add the combined small entry element
+                    if (smallentries > 0) {
+                        dataForPie.datasets[0].data.push(smallentries / 1024.00);
+                        dataForPie.labels.push("Small Mods [" + smallentrycount + "]");
+                        dataForPie.datasets[0].backgroundColor.push(MakeRandomColor());
+                    }
+
+                    console.log(dataForPie)
+
+                    var name = fds[key].regions[i].name;
+                    
+                    var fvtabchart_id = key + name + '-fvtab_chart';
+                    var fvtab_id = key + "-fvtab";
+                    var fvtablist_id = key + "-fvtablist";
+                    console.log(fvtab_id)
+
+                    $("#" + fvtab_id).append('<div id="' + fvtabchart_id +'" class="tab-pane"></div>');
+                    $("#" + fvtablist_id).append("<li><a data-toggle='tab' href='#" + fvtabchart_id + "'>" + name + "</a></li>");
+                    var htm = '<canvas id="' + key + "-" + name + '" width="200" height="200"></canvas>'
+                    $("div#" + fvtabchart_id).append(htm);
+                    var myPieChart = new Chart(key +"-" + name, {
+                        type: 'pie',
+                        data: dataForPie,
+                        options: {
+                            tooltips: {
+                                callbacks: {
+                                    label: function (tooltipItem, data) {
+                                        var dataset = data.datasets[tooltipItem.datasetIndex];
+                                        var total = dataset.data.reduce(function (previousValue, currentValue, currentIndex, array) {
+                                            return previousValue + currentValue;
+                                        });
+                                        var currentValue = dataset.data[tooltipItem.index];
+                                        var precentage = Math.floor(((currentValue / total) * 100) + 0.5);
+                                        return data.labels[tooltipItem.index] + ": " + (currentValue).toFixed(1) + "KB (" + precentage + "%" + ")";
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    $("#" + fvtablist_id + ' a:first').tab('show');
+                } //for each FV
+                //
+                // Create Attribution List for all external libraries used
+                //
+            }
+
             [
                 { Title: "JQuery", Copyright: "Copyright 2017 The jQuery Foundation", Version: $.fn.jquery, LicenseType: "MIT", LicenseLink: "https://jquery.org/license/" },
                 { Title: "DataTables", Copyright: "DataTables designed and created by SpryMedia Ltd Copyright 2007-2017", Version: $.fn.dataTable.version, LicenseType: "MIT", LicenseLink: "https://datatables.net/license/mit" },
@@ -374,27 +442,10 @@
             });
         }); //end on ready
 
-        function GetFvSize(fvname) {
-
-            var retval = {}
-
-            retval.free = 1;
-
-            retval.total = 1;
-
-            for (i = 0; i < EmbeddedJd.fdRegions.length; i++) {
-
-                if (EmbeddedJd.fdRegions[i].description == fvname) {
-
-                    retval.free = parseInt(EmbeddedJd.fdRegions[i].free, 16)
-
-                    retval.total = parseInt(EmbeddedJd.fdRegions[i].size, 16)
-
-                    break;
-
-                }
-
-            }
+        function GetFvSize(fv_dict) {
+            var retval = {};
+            retval.free = parseInt(fv_dict.free);
+            retval.total = parseInt(fv_dict.size);
             return retval;
         }
 
@@ -411,7 +462,7 @@
         }
 
         //
-        //To handle scroll tables adjust the height based on the window height. 
+        // To handle scroll tables adjust the height based on the window height. 
         //
         $(window).resize(function() {
             var newH = $(window).height() - MODULE_TABLE_OFFSET;
