@@ -226,10 +226,10 @@ jobs:
       run: stuart_setup -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }}
 
     - name: Upload Setup Log As An Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: (success() || failure()) && steps.get_ci_file_operations.outputs.setup_supported == 'true'
       with:
-        name: ${{ matrix.package }}-Logs
+        name: ${{ matrix.package }}-Setup-Log
         path: |
           **/SETUPLOG.txt
           retention-days: 7
@@ -240,10 +240,10 @@ jobs:
       run: stuart_ci_setup -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }}
 
     - name: Upload CI Setup Log As An Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: (success() || failure()) && steps.get_ci_file_operations.outputs.ci_setup_supported == 'true'
       with:
-        name: ${{ matrix.package }}-Logs
+        name: ${{ matrix.package }}-CI-Setup-Log
         path: |
           **/CISETUP.txt
           retention-days: 7
@@ -253,10 +253,10 @@ jobs:
       run: stuart_update -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }}
 
     - name: Upload Update Log As An Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: success() || failure()
       with:
-        name: ${{ matrix.package }}-Logs
+        name: ${{ matrix.package }}-Update-Log
         path: |
           **/UPDATE_LOG.txt
         retention-days: 7
@@ -367,10 +367,10 @@ jobs:
         delete_dirs(build_path)
 
     - name: Upload Build Logs As An Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: success() || failure()
       with:
-        name: ${{ matrix.package }}-Logs
+        name: ${{ matrix.package }}-Build-Logs
         path: |
           **/BUILD_REPORT.TXT
           **/OVERRIDELOG.TXT
@@ -398,7 +398,7 @@ jobs:
             print(f'sarif_file_path={sarif_path}', file=fh)
 
     - name: Upload CodeQL Results (SARIF) As An Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.package }}-CodeQL-SARIF
         path: ${{ steps.env_data.outputs.sarif_file_path }}
@@ -406,7 +406,7 @@ jobs:
         if-no-files-found: warn
 
     - name: Upload CodeQL Results (SARIF) To GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         # Path to SARIF file relative to the root of the repository.
         sarif_file: ${{ steps.env_data.outputs.sarif_file_path }}
