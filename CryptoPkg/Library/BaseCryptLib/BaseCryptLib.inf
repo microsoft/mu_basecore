@@ -34,7 +34,7 @@
   Hash/CryptSha1.c
   Hash/CryptSha256.c
   Hash/CryptSha512.c
-  Hash/CryptSm3Null.c
+  Hash/CryptSm3.c
   Hash/CryptSha3.c
   Hash/CryptXkcp.c
   Hash/CryptCShake256.c

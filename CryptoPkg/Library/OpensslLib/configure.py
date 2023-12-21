@@ -77,7 +77,6 @@ def openssl_configure(openssldir, target, ec = True):
         'no-siphash',
         'no-siv',
         'no-sm2',
-        'no-sm3',
         'no-sm4',
         'no-sock',
         'no-srp',

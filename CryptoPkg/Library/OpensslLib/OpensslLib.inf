@@ -413,6 +413,8 @@
   $(OPENSSL_PATH)/crypto/sha/sha256.c
   $(OPENSSL_PATH)/crypto/sha/sha3.c
   $(OPENSSL_PATH)/crypto/sha/sha512.c
+  $(OPENSSL_PATH)/crypto/sm3/legacy_sm3.c
+  $(OPENSSL_PATH)/crypto/sm3/sm3.c
   $(OPENSSL_PATH)/crypto/stack/stack.c
   $(OPENSSL_PATH)/crypto/txt_db/txt_db.c
   $(OPENSSL_PATH)/crypto/ui/ui_err.c
@@ -527,6 +529,7 @@
   $(OPENSSL_PATH)/providers/implementations/digests/null_prov.c
   $(OPENSSL_PATH)/providers/implementations/digests/sha2_prov.c
   $(OPENSSL_PATH)/providers/implementations/digests/sha3_prov.c
+  $(OPENSSL_PATH)/providers/implementations/digests/sm3_prov.c
   $(OPENSSL_PATH)/providers/implementations/encode_decode/decode_der2key.c
   $(OPENSSL_PATH)/providers/implementations/encode_decode/decode_epki2pki.c
   $(OPENSSL_PATH)/providers/implementations/encode_decode/decode_msblob2key.c
