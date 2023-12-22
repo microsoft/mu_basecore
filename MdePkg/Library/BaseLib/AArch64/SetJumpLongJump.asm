@@ -7,6 +7,7 @@
 
   EXPORT SetJump
   EXPORT InternalLongJump
+  IMPORT InternalAssertJumpBuffer  ; MU_CHANGE: to resolve the symbol
 ; MS_CHANGE: change area name to |.text| and add an ALIGN directive
   AREA |.text|, ALIGN=3, CODE, READONLY
 

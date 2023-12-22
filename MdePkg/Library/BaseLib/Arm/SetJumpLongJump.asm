@@ -8,6 +8,7 @@
 
   EXPORT  SetJump
   EXPORT  InternalLongJump
+  IMPORT InternalAssertJumpBuffer ; MU_CHANGE: to resolve the symbol
 
   AREA  BaseLib, CODE, READONLY
 
