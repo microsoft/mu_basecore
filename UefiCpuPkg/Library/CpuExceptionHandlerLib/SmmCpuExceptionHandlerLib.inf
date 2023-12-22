@@ -63,3 +63,5 @@
 
 [BuildOptions]
   XCODE:*_*_X64_NASM_FLAGS = -D NO_ABSOLUTE_RELOCS_IN_TEXT
+  # MU_CHANGE: Disable absolute relocations in text for GCC as well
+  GCC:*_*_X64_NASM_FLAGS = -D NO_ABSOLUTE_RELOCS_IN_TEXT
