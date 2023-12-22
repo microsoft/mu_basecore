@@ -41,7 +41,7 @@
   Pk/CryptPkcs7VerifyCommon.c
   Pk/CryptPkcs7VerifyBase.c
   Pk/CryptPkcs7VerifyEku.c
-  Pk/CryptDh.c
+  Pk/CryptDhNull.c
   Pk/CryptX509.c
   Pk/CryptAuthenticode.c
   Pk/CryptTs.c
