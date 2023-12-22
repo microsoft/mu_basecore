@@ -36,5 +36,5 @@ static EFI_RUNTIME_SERVICES  localRt = {
 };
 
 extern "C" {
-EFI_RUNTIME_SERVICES  *gRT = &localRt;
+  EFI_RUNTIME_SERVICES  *gRT = &localRt;
 }
