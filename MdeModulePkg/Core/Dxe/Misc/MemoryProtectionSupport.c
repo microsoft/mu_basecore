@@ -2217,7 +2217,8 @@ SeparateSpecialRegionsInMemoryMap (
             EFI_SIZE_TO_PAGES (SpecialRegionEnd - SpecialRegionStart),
             MemoryMapEntry->Type
             );
-          MapEntryInsert->Attribute = SpecialRegionEntry->SpecialRegion.EfiAttributes;
+          MapEntryInsert->Attribute    = SpecialRegionEntry->SpecialRegion.EfiAttributes;
+          MapEntryInsert->VirtualStart = SPECIAL_REGION_PATTERN;
 
           // Trim the current memory map entry
           MemoryMapEntry->NumberOfPages -= MapEntryInsert->NumberOfPages;
