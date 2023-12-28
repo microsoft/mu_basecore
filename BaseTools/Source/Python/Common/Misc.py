@@ -1930,4 +1930,6 @@ def CopyDict(ori_dict):
 # Remove the c/c++ comments: // and /* */
 #
 def RemoveCComments(ctext):
-    return re.sub(r'//.*?\n|/\*.*?\*/', '\n', ctext, flags=re.S)
+    # MU_CHANGE begin
+    return re.sub('//.*?\n|/\\*.*?\\*/', '\n', ctext, flags=re.S)
+    # MU_CHANGE end
