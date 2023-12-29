@@ -2944,7 +2944,9 @@ class DscBuildData(PlatformBuildClassObject):
         # start generating makefile
         MakeApp = PcdMakefileHeader
         if sys.platform == "win32":
-            MakeApp = MakeApp + r'APPFILE = %s\%s.exe\n' % (self.OutputPath, PcdValueInitName) + r'APPNAME = %s\n' % (PcdValueInitName) + r'OBJECTS = %s\%s.obj %s.obj\n' % (self.OutputPath, PcdValueInitName, os.path.join(self.OutputPath, PcdValueCommonName)) + 'INC = '
+            # MU_CHANGE begin
+            MakeApp = MakeApp + 'APPFILE = %s\\%s.exe\n' % (self.OutputPath, PcdValueInitName) + 'APPNAME = %s\n' % (PcdValueInitName) + 'OBJECTS = %s\\%s.obj %s.obj\n' % (self.OutputPath, PcdValueInitName, os.path.join(self.OutputPath, PcdValueCommonName)) + 'INC = '
+            # MU_CHANGE end
         else:
             MakeApp = MakeApp + PcdGccMakefile
             MakeApp = MakeApp + 'APPFILE = %s/%s\n' % (self.OutputPath, PcdValueInitName) + 'APPNAME = %s\n' % (PcdValueInitName) + 'OBJECTS = %s/%s.o %s.o\n' % (self.OutputPath, PcdValueInitName, os.path.join(self.OutputPath, PcdValueCommonName)) + \
@@ -3054,7 +3056,9 @@ class DscBuildData(PlatformBuildClassObject):
             MakeApp += "$(OBJECTS) : %s\n" % include_file
         if sys.platform == "win32":
             PcdValueCommonPath = os.path.normpath(mws.join(GlobalData.gGlobalDefines["EDK_TOOLS_PATH"], "Source\C\Common\PcdValueCommon.c"))
-            MakeApp = MakeApp + r'%s\PcdValueCommon.c : %s\n' % (self.OutputPath, PcdValueCommonPath)
+            # MU_CHANGE begin
+            MakeApp = MakeApp + '%s\\PcdValueCommon.c : %s\n' % (self.OutputPath, PcdValueCommonPath)
+            # MU_CHANGE end
             MakeApp = MakeApp + '\tcopy /y %s $@\n' % (PcdValueCommonPath)
         else:
             PcdValueCommonPath = os.path.normpath(mws.join(GlobalData.gGlobalDefines["EDK_TOOLS_PATH"], "Source/C/Common/PcdValueCommon.c"))
