@@ -188,6 +188,7 @@ class FdRegion:
         as we can pseudo treat it like a factory class.
     """
     FD_REGION = r"Type:\s+(.*?)(?:\r?\n|\r)Base Address:\s+(.*?)(?:\r?\n|\r)Size:\s+(.*?)(?:\r?\n|\r)"
+    FD_EMPTY_REGION = r"Type:\s+(.*?)(?:\r?\n|\r)Base Address:\s+(.*?)(?:\r?\n|\r)"
 
     TYPE_FV = r"Fv Name:\s+(.*?)(?:\r?\n|\r)Occupied Size:\s+(.*?)(?:\r?\n|\r)Free Size:\s+(.*?)(?:\r?\n|\r)"
     TYPE_CAPSULE = r"Capsule Name:\s+(.*?)(?:\r?\n|\r)?Capsule Size:\s+(.*?)"
@@ -257,7 +258,7 @@ class FdRegion:
         # "Capsule Size:" or "File Size:", `0x348000 (3360K)` -> `0x348000`
         region.size = match.group(5).strip().split()[0]
 
-    def parse_generic_region(match: re.match) -> 'FdRegion':
+    def parse_generic_region(match: re.match, empty: bool) -> 'FdRegion':
         """Parses a generic FD region header.
 
         Args:
@@ -269,7 +270,8 @@ class FdRegion:
         region.base = match.group(2).strip()
 
         # `0x348000 (3360K)` -> `0x348000`
-        region.size = match.group(3).strip().split()[0]
+        if not empty:
+            region.size = match.group(3).strip().split()[0]
         return region
 
     def from_raw(raw_region: str, nested):
@@ -303,7 +305,12 @@ class FdRegion:
         match = re.search(FdRegion.FD_REGION, raw_region, re.DOTALL)
         if match:
             logging.debug("Generic FD Region found.")
-            return FdRegion.parse_generic_region(match)
+            return FdRegion.parse_generic_region(match, False)
+        
+        match = re.search(FdRegion.FD_EMPTY_REGION, raw_region, re.DOTALL)
+        if match:
+            logging.debug("Empty FD Region found.")
+            return FdRegion.parse_generic_region(match, True)
 
         logging.error("No match found for FD Region")
         return None
