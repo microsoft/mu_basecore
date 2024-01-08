@@ -2171,9 +2171,9 @@ SeparateSpecialRegionsInMemoryMap (
     {
       MapEntryStart = (UINTN)MemoryMapEntry->PhysicalStart;
       MapEntryEnd   = (UINTN)MemoryMapEntry->PhysicalStart + (UINTN)EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages);
-      if ((MapEntryStart <= SpecialRegionStart) && (MapEntryEnd > SpecialRegionStart)) {
-        // Check if some portion of the map entry isn't covered by the special region
-        if (MapEntryStart != SpecialRegionStart) {
+      if (CHECK_OVERLAP (SpecialRegionStart, SpecialRegionEnd, MapEntryStart, MapEntryEnd)) {
+        // Check if some portion before the map entry isn't covered by the special region
+        if (MapEntryStart < SpecialRegionStart) {
           // Populate a new descriptor for the region before the special region. This entry can go to the end
           // of the memory map because the special region list is sorted
           POPULATE_MEMORY_DESCRIPTOR_ENTRY (
@@ -2217,7 +2217,8 @@ SeparateSpecialRegionsInMemoryMap (
             EFI_SIZE_TO_PAGES (SpecialRegionEnd - SpecialRegionStart),
             MemoryMapEntry->Type
             );
-          MapEntryInsert->Attribute = SpecialRegionEntry->SpecialRegion.EfiAttributes;
+          MapEntryInsert->Attribute    = SpecialRegionEntry->SpecialRegion.EfiAttributes;
+          MapEntryInsert->VirtualStart = SPECIAL_REGION_PATTERN;
 
           // Trim the current memory map entry
           MemoryMapEntry->NumberOfPages -= MapEntryInsert->NumberOfPages;
