@@ -270,7 +270,9 @@ DxeMain (
   {
     Status = InitializeSeparateExceptionStacks (NULL, NULL);
     // ASSERT_EFI_ERROR (Status);
-    DEBUG ((DEBUG_ERROR, "%a: Failed to create exception stacks!\n", __FUNCTION__));
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: Failed to create exception stacks!\n", __FUNCTION__));
+    }
   }
 
   // }
