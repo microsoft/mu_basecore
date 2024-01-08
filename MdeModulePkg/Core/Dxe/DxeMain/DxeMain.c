@@ -261,7 +261,7 @@ DxeMain (
   //
   // Setup Stack Guard
   //
-  // MU_CHANGE START: Check Memory Protection HOB, don't ASSERT if the exception stacks can't be created
+  // MU_CHANGE START: Check Memory Protection HOB, don't ASSERT if the exception stack init returns unsupported
   // if (PcdGetBool (PcdCpuStackGuard)) {
   GuidHob2 = GetFirstGuidHob (&gDxeMemoryProtectionSettingsGuid);
   if ((GuidHob2 != NULL) &&
