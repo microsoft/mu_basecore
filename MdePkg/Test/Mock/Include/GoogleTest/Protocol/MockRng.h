@@ -12,8 +12,8 @@
 #include <Library/FunctionMockLib.h>
 
 extern "C" {
-#include <Uefi.h>
-#include <Protocol\Rng.h>
+  #include <Uefi.h>
+  #include <Protocol\Rng.h>
 }
 
 struct MockRng {
@@ -41,7 +41,7 @@ struct MockRng {
 };
 
 extern "C" {
-extern EFI_RNG_PROTOCOL  *gRngProtocol;
+  extern EFI_RNG_PROTOCOL  *gRngProtocol;
 }
 
 #endif // MOCK_RNG_H
