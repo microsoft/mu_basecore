@@ -269,7 +269,7 @@ DxeMain (
       ((DXE_MEMORY_PROTECTION_SETTINGS *)GET_GUID_HOB_DATA (GuidHob2))->CpuStackGuard)
   {
     Status = InitializeSeparateExceptionStacks (NULL, NULL);
-    // ASSERT_EFI_ERROR (Status);
+    ASSERT (Status == EFI_UNSUPPORTED || !EFI_ERROR (Status));
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a: Failed to create exception stacks!\n", __FUNCTION__));
     }
