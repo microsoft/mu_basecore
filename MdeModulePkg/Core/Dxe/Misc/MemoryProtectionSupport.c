@@ -3355,21 +3355,21 @@ InitializePageAttributesForMemoryProtectionPolicy (
         LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT),
         MemoryMapEntry->Attribute
         );
+    }
 
-      // Add EFI_MEMORY_RP attribute for the first page of the stack if stack
-      // guard is enabled.
-      if ((StackBase != 0) &&
-          ((StackBase >= MemoryMapEntry->PhysicalStart) &&
-           (StackBase <  MemoryMapEntry->PhysicalStart +
-            LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT))) &&
-          gDxeMps.CpuStackGuard)
-      {
-        SetUefiImageMemoryAttributes (
-          StackBase,
-          EFI_PAGES_TO_SIZE (1),
-          EFI_MEMORY_RP | MemoryMapEntry->Attribute
-          );
-      }
+    // Add EFI_MEMORY_RP attribute for the first page of the stack if stack
+    // guard is enabled.
+    if ((StackBase != 0) &&
+        ((StackBase >= MemoryMapEntry->PhysicalStart) &&
+         (StackBase <  MemoryMapEntry->PhysicalStart +
+          LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT))) &&
+        gDxeMps.CpuStackGuard)
+    {
+      SetUefiImageMemoryAttributes (
+        StackBase,
+        EFI_PAGES_TO_SIZE (1),
+        EFI_MEMORY_RP | MemoryMapEntry->Attribute
+        );
     }
 
     MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, DescriptorSize);
