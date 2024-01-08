@@ -1,0 +1,69 @@
+###################################################
+# Line Ending Only Changes                        #
+###################################################
+# Convert relevant files to CRLF
+51e1aef5fa84ca61f2785be6bac8473552c82591
+# Fix line endings (LF to CRLF)
+811a5b2a7ba3888310458c6bd0d9ae82ac128bc0
+# NetworkPkg: Convert files to CRLF line ending
+7618784b85c5df91fae4c0d7a910bfb07b248caf
+# MdePkg: Convert files to CRLF line ending
+973f8862f2b44a16b028f5afabbc8a0042029a29
+# CryptoPkg: Convert files to CRLF line ending
+264702a04b88e612f44615a8b968ca06c9d5435e
+# ShellPkg: Correct files with CRLF line ending
+9b7143c9041c9e9e7d431e3dc3788feda475d9bc
+# MdePkg PeiDxePostCodeLibReportStatusCode: Correct files with CRLF line ending
+8e2de237520df9130a871531cb0b77a397eb2845
+# MdePkg: Fix CRLF format.
+6f7c885a96c0125b5c69ab6fb278e280dd403714
+# MdePkg Ppi/Reset2.h: Fix CRLF format.
+5e093ebb3f3c4539a6784044aac316ed263e7552
+# Fix CRLF format
+5c1e62f35a5a5ad28b2f7f29ae0bf1d255b229a3
+# Fix CRLF format
+2b53e39435ee46ccf7addaef2a9b32fdfbc30fc0
+# Fix CRLF format
+7798fb83de4b2505a8e17457256b113a05d8475c
+# Fix CRLF format
+af0202a4ca3ca50c4c0166531980ce9b3884d6c6
+# Fix CRLF format
+d42aab6e615abc574064e949f0b194a3ccaf01f0
+# Fix CRLF format
+1f345b7d29d4619168885f522e665d3138a48850
+# Fix CRLF format
+1cc799c5b3d41f6f24078752e8ebee38c1f6a0b2
+# Fix CRLF format
+44de1013cfcd481efee629c1f75f4eebd99bc13c
+# Fix CRLF format
+8db92ab59be3f6eb6039575d1baa2b2e044edede
+# Fix CRLF format
+4b738c76f56f8eda171f14b8f9b20e34b66be476
+# Fix CRLF format
+4c8f6044a2ae275071ab6cd6557b584784c093ce
+# Fix CRLF format
+c27b9ffe86a8c1d8476154f725682ad2afa8e7d5
+
+###################################################
+# Code Formatting (Uncrustify) Only Changes       #
+###################################################
+# Cherry pick and apply uncrustify changes
+6d2cf75fc444ed80b967092d5044fb69ef8016b0
+# UnitTestFrameworkPkg: Apply uncrustify changes
+7c0ad2c33810ead45b7919f8f8d0e282dae52e71
+#UefiCpuPkg: Apply uncrustify changes
+053e878bfb5c9d5eca779789b62891add30b14ba
+# StandaloneMmPkg: Apply uncrustify changes
+91415a36ae7aaeabb2bbab3762f39544f9aed683
+# ShellPkg: Apply uncrustify changes
+47d20b54f9a65b08aa602a1866c1b59a69088dfc
+# PcAtChipsetPkg: Apply uncrustify changes
+5220bd211df890f2672c23c050082862cd1e82d6
+# NetworkPkg: Apply uncrustify changes
+d1050b9dff1cace252aff86630bfdb59dff5f507
+# MdePkg: Apply uncrustify changes
+2f88bd3a1296c522317f1c21377876de63de5be7
+# MdeModulePkg: Apply uncrustify changes
+1436aea4d5707e672672a11bda72be2c63c936c3
+# CryptoPkg: Apply uncrustify changes
+7c342378317039e632d9a1a5d4cf7c21aec8cb7a
