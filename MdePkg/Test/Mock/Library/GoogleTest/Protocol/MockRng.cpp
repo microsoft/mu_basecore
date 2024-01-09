@@ -1,3 +1,10 @@
+/** @file MockRng.cpp
+  Google Test mock for Rng Protocol
+
+  Copyright (c) Microsoft Corporation.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
+**/
+
 #include <GoogleTest/Protocol/MockRng.h>
 
 MOCK_INTERFACE_DEFINITION (MockRng);
