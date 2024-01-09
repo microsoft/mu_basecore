@@ -63,5 +63,7 @@ static EFI_BOOT_SERVICES  LocalBs = {
 };
 
 extern "C" {
-  EFI_BOOT_SERVICES  *gBS = &LocalBs;
+  EFI_BOOT_SERVICES  *gBS         = &LocalBs;
+  EFI_HANDLE         gImageHandle = NULL;
+  EFI_SYSTEM_TABLE   *gST         = NULL;
 }
