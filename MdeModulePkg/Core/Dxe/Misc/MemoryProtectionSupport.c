@@ -3359,11 +3359,11 @@ InitializePageAttributesForMemoryProtectionPolicy (
 
     // Add EFI_MEMORY_RP attribute for the first page of the stack if stack
     // guard is enabled.
-    if ((StackBase != 0) &&
+    if (gDxeMps.CpuStackGuard &&
+        (StackBase != 0) &&
         ((StackBase >= MemoryMapEntry->PhysicalStart) &&
          (StackBase <  MemoryMapEntry->PhysicalStart +
-          LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT))) &&
-        gDxeMps.CpuStackGuard)
+          LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT))))
     {
       SetUefiImageMemoryAttributes (
         StackBase,
