@@ -261,7 +261,7 @@ DxeMain (
   //
   // Setup Stack Guard
   //
-  // MU_CHANGE START: Check Memory Protection HOB
+  // MU_CHANGE START: Check Memory Protection HOB, don't ASSERT if the exception stack init returns unsupported
   // if (PcdGetBool (PcdCpuStackGuard)) {
   GuidHob2 = GetFirstGuidHob (&gDxeMemoryProtectionSettingsGuid);
   if ((GuidHob2 != NULL) &&
@@ -269,7 +269,10 @@ DxeMain (
       ((DXE_MEMORY_PROTECTION_SETTINGS *)GET_GUID_HOB_DATA (GuidHob2))->CpuStackGuard)
   {
     Status = InitializeSeparateExceptionStacks (NULL, NULL);
-    ASSERT_EFI_ERROR (Status);
+    ASSERT (Status == EFI_UNSUPPORTED || !EFI_ERROR (Status));
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: Failed to create exception stacks!\n", __FUNCTION__));
+    }
   }
 
   // }
