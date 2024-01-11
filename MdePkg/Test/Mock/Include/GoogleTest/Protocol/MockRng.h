@@ -20,23 +20,24 @@ struct MockRng {
   MOCK_INTERFACE_DECLARATION (MockRng);
 
   MOCK_FUNCTION_DECLARATION (
-    EFI_STATUS
-    GetInfo (
-      IN EFI_RNG_PROTOCOL             *This,
-      IN OUT UINTN                    *RNGAlgorithmListSize,
-      OUT EFI_RNG_ALGORITHM           *RNGAlgorithmList
-      )
+    EFI_STATUS,
+    GetInfo,
+    (
+     IN EFI_RNG_PROTOCOL             *This,
+     IN OUT UINTN                    *RNGAlgorithmListSize,
+     OUT EFI_RNG_ALGORITHM           *RNGAlgorithmList
+    )
     );
 
   MOCK_FUNCTION_DECLARATION (
-    EFI_STATUS
-    GetRNG (
-      IN EFI_RNG_PROTOCOL             *This,
-      IN EFI_RNG_ALGORITHM            *RNGAlgorithmList,
-      IN UINTN                        RNGAlgorithmListSize,
-      IN OUT UINT8                    *RandomNumber,
-      IN UINTN                        RandomNumberLength
-      )
+    EFI_STATUS,
+    GetRng,
+    (
+     IN EFI_RNG_PROTOCOL            *This,
+     IN EFI_RNG_ALGORITHM           *RNGAlgorithm,
+     IN UINTN                       RNGValueLength,
+     OUT UINT8                      *RNGValue
+    )
     );
 };
 
