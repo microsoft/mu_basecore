@@ -24,7 +24,8 @@ APPLICATIONS = \
   LzmaCompress \
   TianoCompress \
   VolInfo \
-  DevicePath
+  DevicePath \
+  GenStm
 
 all: libs apps install
 

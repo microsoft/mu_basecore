@@ -62,7 +62,8 @@ APPLICATIONS = \
   LzmaCompress \
   TianoCompress \
   VolInfo \
-  DevicePath
+  DevicePath \
+  GenStm
 
 SUBDIRS := $(LIBRARIES) $(APPLICATIONS)
 
