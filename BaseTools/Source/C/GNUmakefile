@@ -21,6 +21,7 @@ export HOST_ARCH
 all: makerootdir subdirs
 	@echo Finished building BaseTools C Tools with HOST_ARCH=$(HOST_ARCH)
 
+# MU_CHANGE [BEGIN] - Add the GenStm application
 LIBRARIES = Common
 APPLICATIONS = \
   BrotliCompress \
@@ -34,7 +35,9 @@ APPLICATIONS = \
   LzmaCompress \
   TianoCompress \
   VolInfo \
-  DevicePath
+  DevicePath \
+  GenStm
+# MU_CHANGE [END] - Add the GenStm application
 
 SUBDIRS := $(LIBRARIES) $(APPLICATIONS)
 
