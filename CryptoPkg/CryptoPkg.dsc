@@ -156,6 +156,15 @@
   ReportStatusCodeLib|MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
   PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
 
+[LibraryClasses.common.MM_STANDALONE]
+  BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
+  DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
+  MemoryAllocationLib|StandaloneMmPkg/Library/StandaloneMmMemoryAllocationLib/StandaloneMmMemoryAllocationLib.inf
+  MmServicesTableLib|MdePkg/Library/StandaloneMmServicesTableLib/StandaloneMmServicesTableLib.inf
+  ReportStatusCodeLib|MdeModulePkg/Library/SmmReportStatusCodeLib/StandaloneMmReportStatusCodeLib.inf
+  StandaloneMmDriverEntryPoint|MdePkg/Library/StandaloneMmDriverEntryPoint/StandaloneMmDriverEntryPoint.inf
+  TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
+
 ################################################################################
 #
 # Pcd Section - list of all EDK II PCD Entries defined by this Platform
@@ -218,6 +227,7 @@
 
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/PeiCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/DxeCryptLib.inf
+  CryptoPkg/Library/BaseCryptLibOnProtocolPpi/StandaloneMmCryptLib.inf  # MU_CHANGE: Add StandaloneMmCryptLib
   # MU_CHANGE [BEGIN] The prebuilt versions of CryptoDriver
 !if $(CRYPTO_BINARY_EXTDEP_PATH) != FALSE
   !include CryptoPkg/Driver/Bin/CryptoPkg.ci.inc.dsc
@@ -248,7 +258,22 @@
       FILE_GUID = $(DXE_CRYPTO_DRIVER_FILE_GUID)  # MU_CHANGE updated File GUID
   }
 
-  ## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
+[Components.IA32, Components.X64]
+  CryptoPkg/Driver/CryptoSmm.inf {
+    <Defines>
+      FILE_GUID = $(SMM_CRYPTO_DRIVER_FILE_GUID)# MU_CHANGE updated File GUID
+  }
+
+# MU_CHANGE [BEGIN]: Add CryptoStandaloneMm
+[Components.IA32, Components.X64, Components.AARCH64]
+  CryptoPkg/Driver/CryptoStandaloneMm.inf {
+    <Defines>
+      FILE_GUID = $(STANDALONEMM_CRYPTO_DRIVER_FILE_GUID)  # MU_CHANGE updated File GUID
+  }
+# MU_CHANGE [END]: Add CryptoStandaloneMm
+
+## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
+[Components.IA32, Components.X64, Components.AARCH64]
   CryptoPkg/Test/UnitTest/Library/BaseCryptLib/BaseCryptLibUnitTestApp.inf {  ## Add unit-test application for the crypto tests.
     ## MU_CHANGE [START] add library classes to allow crypto tests to run in uefi shell correctly
     <LibraryClasses>
@@ -267,12 +292,6 @@
   }
   ## MU_CHANGE [END]
 ## MU_CHANGE [END]
-
-[Components.IA32, Components.X64]
-  CryptoPkg/Driver/CryptoSmm.inf {
-    <Defines>
-      FILE_GUID = $(SMM_CRYPTO_DRIVER_FILE_GUID)# MU_CHANGE updated File GUID
-  }
 
 [BuildOptions]
   RELEASE_*_*_CC_FLAGS = -DMDEPKG_NDEBUG
