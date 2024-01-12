@@ -11,6 +11,7 @@ HOST_ARCH = IA32
 
 !INCLUDE Makefiles\ms.common
 
+# MU_CHANGE [BEGIN] - Add the GenStm application
 LIBRARIES = Common
 APPLICATIONS = \
   VfrCompile \
@@ -24,7 +25,9 @@ APPLICATIONS = \
   LzmaCompress \
   TianoCompress \
   VolInfo \
-  DevicePath
+  DevicePath \
+  GenStm
+# MU_CHANGE [END] - Add the GenStm application
 
 all: libs apps install
 
