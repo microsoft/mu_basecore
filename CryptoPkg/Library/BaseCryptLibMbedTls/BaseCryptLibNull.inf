@@ -28,18 +28,18 @@
 [Sources]
   InternalCryptLib.h
   Cipher/CryptAeadAesGcmNull.c
-  Cipher/CryptAes.c
-  Hash/CryptSha256.c
-  Hash/CryptSha512.c
+  Cipher/CryptAesNull.c
+  Hash/CryptSha256Null.c
+  Hash/CryptSha512Null.c
   Hash/CryptParallelHashNull.c
   Hash/CryptSm3Null.c
-  Hash/CryptMd5.c
-  Hash/CryptSha1.c
-  Hmac/CryptHmac.c
-  Kdf/CryptHkdf.c
-  Pk/CryptRsaBasic.c
+  Hash/CryptMd5Null.c
+  Hash/CryptSha1Null.c
+  Hmac/CryptHmacNull.c
+  Kdf/CryptHkdfNull.c
+  Pk/CryptRsaBasicNull.c
   Pk/CryptRsaExtNull.c
-  Pk/CryptRsaPss.c
+  Pk/CryptRsaPssNull.c
   Pk/CryptRsaPssSignNull.c
   Bn/CryptBnNull.c
   Pem/CryptPemNull.c
@@ -67,7 +67,6 @@
   MemoryAllocationLib
   UefiRuntimeServicesTableLib
   DebugLib
-  MbedTlsLib
   PrintLib
   IntrinsicLib
   RngLib

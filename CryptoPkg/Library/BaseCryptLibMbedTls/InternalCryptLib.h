@@ -20,6 +20,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // We should alwasy add mbedtls/config.h here
 // to ensure the config override takes effect.
 //
-#include <mbedtls/mbedtls_config.h>
+// #include <mbedtls/mbedtls_config.h>
 
 #endif

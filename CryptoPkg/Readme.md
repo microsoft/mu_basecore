@@ -29,7 +29,6 @@ provides the smallest overall firmware overhead.
 ## Private Library Classes
 
 * **OpensslLib**   - Provides library functions from the openssl project.
-* **MbedTlsLib**   - Provides library functions from the mbedtls project.
 * **IntrinsicLib** - Provides C runtime library (CRT) required by openssl
                      and mbedtls.
 
