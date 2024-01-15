@@ -48,18 +48,30 @@ class FlattenPdbs(IUefiBuildPlugin):
             logging.critical("Error making PDB directory")
 
         logging.critical("Copying PDBs to flat directory")
+
+        symbols = set()
         for file in Path(build_path).rglob("*.pdb"):
-            # pdb exists in DEBUG and OUTPUT directory. Same file.
             pdb_out = Path(pdb_path / file.name)
-            if file.parent.name != "OUTPUT":
-                continue
-            # If it exists and has the same file identifier, skip it.
-            if pdb_out.exists() and file.stat().st_ino == pdb_out.stat().st_ino:
-                continue
+
+            # Skip MSVC symbols
             if "vc1" in file.name.lower():
                 continue
-            # Hard link it, which is slightly faster, but mainly allows us to tell
-            # if the file has changed (st_ino is different)
-            pdb_out.unlink(missing_ok=True)
-            pdb_out.hardlink_to(file)
+
+            # Deduplicate
+            if not file.name in symbols:
+                symbols.add(file.name)
+
+                # If it exists and has the same file identifier, skip it.
+                if pdb_out.exists() and file.stat().st_ino == pdb_out.stat().st_ino:
+                    continue
+
+                # Hard link it, which is slightly faster, but mainly allows us to tell
+                # if the file has changed (st_ino is different)
+                pdb_out.unlink(missing_ok=True)
+                pdb_out.hardlink_to(file)
+
+        if not symbols:
+            logging.error('No symbols were copied')
+            return -1
+
         return 0
