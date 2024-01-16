@@ -131,7 +131,6 @@
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
   ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
   PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
-  TlsLib|CryptoPkg/Library/TlsLib/TlsLib.inf
   DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf # MU_CHANGE add debug lib
 
 [LibraryClasses.common.DXE_SMM_DRIVER]
@@ -189,11 +188,9 @@
   # Build verification of all library instances
   #
 
-  CryptoPkg/Library/HmacSha1Lib/HmacSha1Lib.inf
   CryptoPkg/Library/HmacSha1Lib/HmacSha1LibNull.inf
   CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
   CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
-  CryptoPkg/Library/TlsLib/TlsLib.inf
   CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
   CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
 
