@@ -115,7 +115,7 @@ def ParseCommandLineOptions():
 
 # This is the place to define the flavors
 def get_flavors():
-    ''' 
+    '''
     The flavors of shared crypto to use.
     families are the types to turn on (SHA1 for example), it must be uppercase
     individuals are the functions to turn on and must be spelled correctly
@@ -209,7 +209,7 @@ def read_header_file(options, path):
                     "SHA256", "SHA384", "SHA512", "PARALLELHASH256", "AEADAESGCM", "X509", "ASN1", "BIGNUM", "TDES", "AES", "ARC4", "SM3", "HKDF", "TLS", "TLSSET", "TLSGET", "EC"]
 
         def get_escaped_name(self):
-            ''' 
+            '''
             get the name seperated by _ in all upper case
             example: HmacSha1New -> HMAC_SHA1_NEW
             '''
@@ -830,46 +830,25 @@ def generate_platform_files():
     generate_file_replacement(
         dsc_lines, None, "CryptoDriver.inc.dsc", options(), comment="#")
 
-    # now we generate the FDF includes (there should be two, one for BOOTBLOCK and one for DXE)
-    fdf_bb_lines = []
-    fdf_bb_lines.append(
-        "# this is to be included a platform inside the BOOTBLOCK or other PEI FV")
-    fdf_bb_lines.append("!ifndef PEI_CRYPTO_SERVICES")
-    fdf_bb_lines.append("!error You need to define PEI_CRYPTO_SERVICES")
-    fdf_bb_lines.append("!endif")
-    for flavor in flavors:
-        fdf_bb_lines.append(f"!if $(PEI_CRYPTO_SERVICES) == {flavor}")
-        for target in targets:
-            fdf_bb_lines.append(f" !if $(TARGET) == {target}")
-            fdf_bb_lines.append(
-                f"    INF  CryptoPkg/Driver/Bin/{inf_start}_{flavor}_Pei_{target}_$(PEI_CRYPTO_ARCH).inf")
-            fdf_bb_lines.append("  !endif")
-        fdf_bb_lines.append("!endif\n")
-    generate_file_replacement(
-        fdf_bb_lines, None, "CryptoDriver.BOOTBLOCK.inc.fdf", options(), comment="#")
-
-    fdf_dxe_lines = []
-    fdf_dxe_lines.append(
-        "# this is to be included a platform inside the BOOTBLOCK or other PEI FV")
-    fdf_dxe_lines.append("!ifndef DXE_CRYPTO_SERVICES")
-    fdf_dxe_lines.append(
-        " !error You need to define in your platform DXE_CRYPTO_SERVICES")
-    fdf_dxe_lines.append("!endif")
-    fdf_dxe_lines.append("!ifndef SMM_CRYPTO_SERVICES")
-    fdf_dxe_lines.append(
-        " !error You need to define in your platform SMM_CRYPTO_SERVICES")
-    fdf_dxe_lines.append("!endif")
-    fdf_dxe_lines.append("")
-    for target in targets:
-        fdf_dxe_lines.append(f"!if $(TARGET) == {target}")
-        fdf_dxe_lines.append(
-            f"  INF  CryptoPkg/Driver/Bin/CryptoDriverBin_$(DXE_CRYPTO_SERVICES)_Dxe_{target}_$(DXE_CRYPTO_ARCH).inf")
-        fdf_dxe_lines.append(
-            f"  INF  CryptoPkg/Driver/Bin/CryptoDriverBin_$(SMM_CRYPTO_SERVICES)_Smm_{target}_$(SMM_CRYPTO_ARCH).inf")
-        fdf_dxe_lines.append("!endif")
-    generate_file_replacement(
-        fdf_dxe_lines, None, "CryptoDriver.DXE.inc.fdf", options(), comment="#")
-
+    for phase in phases:
+        upper_phase = phase.upper()
+        # now we generate the FDF includes
+        fdf_bb_lines = []
+        fdf_bb_lines.append(
+            f"# include this in the platform {upper_phase} FV")
+        fdf_bb_lines.append(f"!ifndef {upper_phase}_CRYPTO_SERVICES")
+        fdf_bb_lines.append(f"!error You need to define {upper_phase}_CRYPTO_SERVICES")
+        fdf_bb_lines.append("!endif")
+        for flavor in flavors:
+            fdf_bb_lines.append(f"!if $({upper_phase}_CRYPTO_SERVICES) == {flavor}")
+            for target in targets:
+                fdf_bb_lines.append(f" !if $(TARGET) == {target}")
+                fdf_bb_lines.append(
+                    f"    INF  CryptoPkg/Driver/Bin/{inf_start}_{flavor}_{phase}_{target}_$({upper_phase}_CRYPTO_ARCH).inf")
+                fdf_bb_lines.append("  !endif")
+            fdf_bb_lines.append("!endif\n")
+        generate_file_replacement(
+            fdf_bb_lines, None, f"CryptoDriver.{upper_phase}.inc.fdf", options(), comment="#")
 
 def delete_files_of_pattern(pattern):
     files = glob.iglob(os.path.join(SCRIPT_DIR, pattern))
