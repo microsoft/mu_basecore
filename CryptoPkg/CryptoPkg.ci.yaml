@@ -40,18 +40,14 @@
             # The unit testing folder is not to be checked
             "Test/UnitTest",
             # This has OpenSSL interfaces that aren't UEFI spec compliant
-            "Library/BaseCryptLib/SysCall",
-            # This has OpenSSL interfaces that aren't UEFI spec compliant
             "Library/OpensslLib/rand_pool.c",
             # This has OpenSSL interfaces that aren't UEFI spec compliant
             "Library/Include/CrtLibSupport.h",
             # This has OpenSSL interfaces that aren't UEFI spec compliant
-            "Library/BaseCryptLib/Hash/CryptParallelHash.h",
             "Library/Include/fcntl.h",
             # These directories contain auto-generated OpenSSL content
             "Library/OpensslLib",
-            "Library/IntrinsicLib",
-            "Library/BaseCryptLib/Pk/CryptPkcs7VerifyBase.c"
+            "Library/IntrinsicLib"
         ]
     },
     "CompilerPlugin": {
