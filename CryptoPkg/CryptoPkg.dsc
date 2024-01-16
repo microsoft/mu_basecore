@@ -58,7 +58,6 @@
   UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
   PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
-  OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
   IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
   SynchronizationLib|MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
   TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
@@ -203,9 +202,6 @@
   CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
   CryptoPkg/Library/TlsLib/TlsLib.inf
   CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
-  CryptoPkg/Library/OpensslLib/OpensslLibCrypto.inf
-  CryptoPkg/Library/OpensslLib/OpensslLib.inf
-  #CryptoPkg/Library/OpensslLib/OpensslLibFull.inf
   CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
 
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/PeiCryptLib.inf
@@ -225,8 +221,6 @@
   #
   # Build verification of IA32/X64 specific libraries
   #
-  #CryptoPkg/Library/OpensslLib/OpensslLibAccel.inf
-  #CryptoPkg/Library/OpensslLib/OpensslLibFullAccel.inf
 
 [Components.IA32, Components.X64] # MU_CHANGE remove ARM and AARCH64
   CryptoPkg/Driver/CryptoPei.inf {
@@ -256,7 +250,6 @@
       DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf # MU_CHANGE add debug lib
       DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf # MU_CHANGE add debug lib
       UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
-      OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
       IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
       ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
       MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
