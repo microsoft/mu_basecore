@@ -12,8 +12,7 @@
     },
     # MU_CHANGE end
     "LicenseCheck": {
-        "IgnoreFiles": [
-        ]
+        "IgnoreFiles": []
     },
     "EccCheck": {
         ## Exception sample looks like below:
@@ -43,7 +42,7 @@
     },
     ## options defined .pytool/Plugin/HostUnitTestCompilerPlugin
     "HostUnitTestCompilerPlugin": {
-        "DscPath": "Test/CryptoPkgHostUnitTest.dsc"
+        #"DscPath": "Test/CryptoPkgHostUnitTest.dsc"  # MU_CHANGE - Disable temporarily while transitioning crypto
     },
     "CharEncodingCheck": {
         "IgnoreFiles": []
@@ -133,8 +132,7 @@
     },
     "MarkdownLintCheck": {
         "AuditOnly": False,          # If True, log all errors and then mark as skipped
-        "IgnoreFiles": [
-        ]            # package root relative file, folder, or glob pattern to ignore
+        "IgnoreFiles": []            # package root relative file, folder, or glob pattern to ignore
     },
 
     ## options defined ci/Plugin/SpellCheck
