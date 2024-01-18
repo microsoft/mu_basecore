@@ -314,6 +314,7 @@ DEST_DIR_DEBUG = $(DEBUG_DIR)
 
 # MU_CHANGE [BEGIN] - Add Rust build support
 CARGO_OUTPUT_DIR = ${cargo_module_output_directory}
+CARGO_FEATURES = ${cargo_module_enabled_features}
 # MU_CHANGE [END] - Add Rust build support
 
 #
@@ -729,6 +730,7 @@ cleanlib:
             "module_output_directory"   : MyAgo.OutputDir,
             # MU_CHANGE [BEGIN] - Add Rust build support
             "cargo_module_output_directory": MyAgo.OutputDir,
+            "cargo_module_enabled_features": self.GetModuleEnabledRustFeatures(),
             # MU_CHANGE [END] - Add Rust build support
             "module_debug_directory"    : MyAgo.DebugDir,
 
@@ -1196,6 +1198,19 @@ cleanlib:
             Dependency[F] = GetDependencyList(self._AutoGenObject, self.FileCache, F, ForceInculeList, SearchPathList)
         return Dependency
 
+    ## Returns a comma delimited string of enabled cargo features for this module
+    #
+    #   @retval     str            comma delimited string of cargo feature flags
+    #
+    def GetModuleEnabledRustFeatures(self):
+        if self._AutoGenObject.BuildType != "RUST_MODULE":
+            return ""
+        
+        features = ""
+        for pcd in self._AutoGenObject.ModulePcdList:
+            if pcd.Type == "FeatureFlag" and bool(pcd.DefaultValue):
+                features += f'{pcd.TokenCName},'
+        return features
 
 ## CustomMakefile class
 #
