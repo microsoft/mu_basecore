@@ -33,8 +33,7 @@
             # This has OpenSSL interfaces that aren't UEFI spec compliant
             "Library/Include/CrtLibSupport.h",
             # This has OpenSSL interfaces that aren't UEFI spec compliant
-            "Library/Include/fcntl.h",
-            "Library/IntrinsicLib"
+            "Library/Include/fcntl.h"
         ]
     },
     "CompilerPlugin": {

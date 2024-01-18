@@ -20,7 +20,6 @@
   Include
 
 [Includes.Common.Private]
-  Private
   Library/Include
 
 [LibraryClasses]
@@ -39,11 +38,6 @@
   ##  @libraryclass  Provides HmacSha1 functionality
   #
   HmacSha1Lib|Include/Library/HmacSha1Lib.h
-
-[LibraryClasses.common.Private]
-  ##  @libraryclass  Provides compiler intrinsic functions required to link openssl project.
-  #
-  InstrinsicLib|Private/Library/IntrinsicLib.h
 
 [Protocols]
   ## EDK II Crypto DXE protocol
