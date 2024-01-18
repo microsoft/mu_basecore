@@ -1198,6 +1198,7 @@ cleanlib:
             Dependency[F] = GetDependencyList(self._AutoGenObject, self.FileCache, F, ForceInculeList, SearchPathList)
         return Dependency
 
+    # MU_CHANGE [BEGIN] - Add Rust build support
     ## Returns a comma delimited string of enabled cargo features for this module
     #
     #   @retval     str            comma delimited string of cargo feature flags
@@ -1208,6 +1209,7 @@ cleanlib:
             if pcd.Type == "FeatureFlag" and bool(pcd.DefaultValue):
                 features += f'{pcd.TokenCName},'
         return features
+    # MU_CHANGE [END] - Add Rust build support
 
 ## CustomMakefile class
 #
