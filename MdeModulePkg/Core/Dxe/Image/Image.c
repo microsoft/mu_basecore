@@ -665,7 +665,7 @@ CoreLoadPeImage (
       return EFI_SECURITY_VIOLATION;
     }
 
-    TurnOffNxCompatibility ();
+    ActivateCompatibilityMode ();
   }
 
   // MU_CHANGE END
