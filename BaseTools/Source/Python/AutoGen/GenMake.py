@@ -1202,10 +1202,7 @@ cleanlib:
     #
     #   @retval     str            comma delimited string of cargo feature flags
     #
-    def GetModuleEnabledRustFeatures(self):
-        if self._AutoGenObject.BuildType != "RUST_MODULE":
-            return ""
-        
+    def GetModuleEnabledRustFeatures(self):        
         features = ""
         for pcd in self._AutoGenObject.ModulePcdList:
             if pcd.Type == "FeatureFlag" and bool(pcd.DefaultValue):
