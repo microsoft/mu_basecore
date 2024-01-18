@@ -5,6 +5,7 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
+#include <Library/SafeIntLib.h>
 #include "MemoryProtectionSupport.h"
 
 IMAGE_PROPERTIES_PRIVATE_DATA  mImagePropertiesPrivate = {
@@ -25,10 +26,12 @@ MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD  mSpecialMemoryRegionsPrivate
   INITIALIZE_LIST_HEAD_VARIABLE (mSpecialMemoryRegionsPrivate.SpecialRegionList)
 };
 
-BOOLEAN                        mIsSystemNxCompatible       = TRUE;
-EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttributeProtocol   = NULL;
-UINT8                          *mBitmapGlobal              = NULL;
-LIST_ENTRY                     **mArrayOfListEntryPointers = NULL;
+BOOLEAN                        mEnhancedMemoryProtectionActive = TRUE;
+EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttributeProtocol       = NULL;
+UINT8                          *mBitmapGlobal                  = NULL;
+LIST_ENTRY                     **mArrayOfListEntryPointers     = NULL;
+
+#define LEGACY_BIOS_WB_LENGTH  0xA0000
 
 /**
   Return the section alignment requirement for the PE image section type.
@@ -123,6 +126,15 @@ SetUefiImageMemoryAttributes (
   IN UINT64  BaseAddress,
   IN UINT64  Length,
   IN UINT64  Attributes
+  );
+
+/**
+  Disable NULL pointer detection.
+**/
+VOID
+EFIAPI
+DisableNullDetection (
+  VOID
   );
 
 extern LIST_ENTRY  mGcdMemorySpaceMap;
@@ -2505,30 +2517,209 @@ GetDxeMemoryProtectionSettings (
 }
 
 /**
-  Sets the NX compatibility global to FALSE so future checks to
-  IsSystemNxCompatible() will return FALSE.
+  Uninstalls the Memory Attribute Protocol from all handles.
 **/
 VOID
 EFIAPI
-TurnOffNxCompatibility (
+UninstallMemoryAttributeProtocol (
   VOID
   )
 {
-  if (mIsSystemNxCompatible) {
-    DEBUG ((DEBUG_INFO, "%a - Setting Nx on Code types to FALSE\n", __FUNCTION__));
+  EFI_STATUS  Status;
+  UINTN       HandleCount;
+  UINTN       Index;
+  EFI_HANDLE  *HandleBuffer;
+
+  if (mMemoryAttributeProtocol == NULL) {
+    Status = gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&mMemoryAttributeProtocol);
+    if (EFI_ERROR (Status)) {
+      return;
+    }
   }
 
-  mIsSystemNxCompatible = FALSE;
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiMemoryAttributeProtocolGuid,
+                  NULL,
+                  &HandleCount,
+                  &HandleBuffer
+                  );
+
+  if (!EFI_ERROR (Status)) {
+    for (Index = 0; Index < HandleCount; Index++) {
+      Status = gBS->UninstallProtocolInterface (
+                      HandleBuffer[Index],
+                      &gEfiMemoryAttributeProtocolGuid,
+                      mMemoryAttributeProtocol
+                      );
+      ASSERT_EFI_ERROR (Status);
+    }
+  }
+
+  if (HandleBuffer != NULL) {
+    FreePool (HandleBuffer);
+  }
 }
 
 /**
-  Returns TRUE if TurnOffNxCompatibility() has never been called.
+  Maps memory below 640K (legacy BIOS write-back memory) as readable, writeable, and executable.
 **/
-BOOLEAN
-EFIAPI
-IsSystemNxCompatible (
+STATIC
+VOID
+MapLegacyBiosMemoryRWX (
   VOID
   )
 {
-  return mIsSystemNxCompatible;
+  EFI_STATUS                       Status = EFI_SUCCESS;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  Desc;
+  EFI_PHYSICAL_ADDRESS             Start = 0x0;
+  UINT64                           Length;
+  UINT64                           DescLengthFromStart;
+
+  if (gCpu == NULL) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a cannot remap Legacy BIOS memory as RWX because gCpu is NULL\n",
+      __func__
+      ));
+    return;
+  }
+
+  // Ensure that this memory is marked as system memory. If it is not system memory, do not change
+  // the memory attributes as we do not want to map something that shouldn't be mapped or map something
+  // incorrectly
+  while (Start < LEGACY_BIOS_WB_LENGTH) {
+    Status = CoreGetMemorySpaceDescriptor (Start, &Desc);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a - Failed to get memory space descriptor for address 0x%llx! Status = %r\n",
+        __func__,
+        Start,
+        Status
+        ));
+      return;
+    }
+
+    // find the length from Start to the end of this descriptor, in the case Start != Desc.BaseAddress
+    // these should all be well formed descriptors, but use SafeIntLib functions just to be sure we don't
+    // over/underflow
+    Status = SafeUint64Add (Desc.BaseAddress, Desc.Length, &DescLengthFromStart);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a - Memory space descriptor has UINT64 overflowing address 0x%llx + length 0x%llx! Status = %r\n",
+        __func__,
+        Desc.BaseAddress,
+        Desc.Length,
+        Status
+        ));
+
+      // if we fail here this is very bad and means the GCD is malformed
+      ASSERT (FALSE);
+      return;
+    }
+
+    Status = SafeUint64Sub (DescLengthFromStart, Start, &DescLengthFromStart);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a - Memory space descriptor has UINT64 underflowing address 0x%llx + length 0x%llx Start: 0x%llx! Status = %r\n",
+        __func__,
+        Desc.BaseAddress,
+        Desc.Length,
+        Start,
+        Status
+        ));
+
+      // if we fail here this is very bad and means the GCD is malformed
+      ASSERT (FALSE);
+      return;
+    }
+
+    // Ensure we only go up to LEGACY_BIOS_WB_LENGTH here, we know Start is less than it due to while condition
+    // We also know Start + DescLengthFromStart won't overflow because above we did a safe subtraction of Start from
+    // DescLengthFromStart
+    if (Start + DescLengthFromStart > LEGACY_BIOS_WB_LENGTH) {
+      Length = LEGACY_BIOS_WB_LENGTH - Start;
+    } else {
+      Length = DescLengthFromStart;
+    }
+
+    // remove this chunk from being remapped if it is not system memory
+    if (Desc.GcdMemoryType != EfiGcdMemoryTypeSystemMemory) {
+      DEBUG ((
+        DEBUG_WARN,
+        "%a Not mapping 0x%llx for 0x%llx as RWX because it is not system memory\n",
+        __func__,
+        Desc.BaseAddress,
+        Length
+        ));
+
+      // we know this doesn't overflow because we did a safe subtraction of Start from DescLengthFromStart above
+      Start += DescLengthFromStart;
+      continue;
+    }
+
+    // https://wiki.osdev.org/Memory_Map_(x86)
+    //
+    // Map the legacy BIOS write-back memory as RWX.
+    Status = gCpu->SetMemoryAttributes (
+                     gCpu,
+                     Start,
+                     Length,
+                     0
+                     );
+
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a failed to map 0x%llx for length 0x%llx as RWX\n",
+        __func__,
+        Start,
+        Length
+        ));
+
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    // we know this doesn't overflow because we did a safe subtraction of Start from DescLengthFromStart above
+    Start += DescLengthFromStart;
+  }
+}
+
+/**
+  Sets the NX compatibility global to FALSE so future checks to
+  IsEnhancedMemoryProtectionActive() will return FALSE.
+**/
+VOID
+EFIAPI
+ActivateCompatibilityMode (
+  VOID
+  )
+{
+  if (!mEnhancedMemoryProtectionActive) {
+    return;
+  }
+
+  DEBUG ((DEBUG_ERROR, "%a - Activating Memory Protection Compatibility Mode!\n", __FUNCTION__));
+
+  mEnhancedMemoryProtectionActive = FALSE;
+
+  DisableNullDetection ();
+  UninstallMemoryAttributeProtocol ();
+  MapLegacyBiosMemoryRWX ();
+  CoreNotifySignalList (&gCompatibilityModeActivatedEventGuid);
+}
+
+/**
+  Returns TRUE if ActivateCompatibilityMode() has never been called.
+**/
+BOOLEAN
+EFIAPI
+IsEnhancedMemoryProtectionActive (
+  VOID
+  )
+{
+  return mEnhancedMemoryProtectionActive;
 }
