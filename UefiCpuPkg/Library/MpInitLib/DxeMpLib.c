@@ -22,7 +22,7 @@
 
 // MU_CHANGE START: Update to enable removal of NX attribute from buffer
 #include <Uefi.h>
-#include <Protocol/MemoryAttribute.h>
+#include <Protocol/Cpu.h>
 // MU_CHANGE END
 
 // MU_CHANGE: Add protocol for reporting multi-processor debug info
@@ -73,98 +73,30 @@ BufferRemoveNoExecuteSetReadOnly (
   IN UINTN                 Size
   )
 {
-  EFI_STATUS                     Status;
-  EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttribute;
+  EFI_CPU_ARCH_PROTOCOL  *CpuProtocol = NULL;
+  EFI_STATUS             Status;
 
   if ((Buffer == 0) || (Buffer % EFI_PAGE_SIZE != 0) || (Size % EFI_PAGE_SIZE != 0)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = gBS->LocateProtocol (
-                  &gEfiMemoryAttributeProtocolGuid,
-                  NULL,
-                  (VOID **)&MemoryAttribute
-                  );
+  Status = gBS->LocateProtocol (&gEfiCpuArchProtocolGuid, NULL, (VOID **)&CpuProtocol);
 
-  if EFI_ERROR (Status) {
-    DEBUG ((DEBUG_INFO, "%a - Unable to locate Memory Attribute Protocol\n", __FUNCTION__));
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - Unable to locate gEfiCpuArchProtocolGuid\n", __FUNCTION__));
     ASSERT_EFI_ERROR (Status);
     return Status;
   }
 
-  Status = MemoryAttribute->SetMemoryAttributes (
-                              MemoryAttribute,
-                              Buffer,
-                              Size,
-                              EFI_MEMORY_RO
-                              );
+  Status = CpuProtocol->SetMemoryAttributes (
+                          CpuProtocol,
+                          Buffer,
+                          Size,
+                          EFI_MEMORY_RO
+                          );
 
   if EFI_ERROR (Status) {
-    DEBUG ((DEBUG_INFO, "%a - Unable to apply RO attribute to buffer\n", __FUNCTION__));
-    ASSERT_EFI_ERROR (Status);
-  }
-
-  Status = MemoryAttribute->ClearMemoryAttributes (
-                              MemoryAttribute,
-                              Buffer,
-                              Size,
-                              EFI_MEMORY_XP
-                              );
-
-  if EFI_ERROR (Status) {
-    DEBUG ((DEBUG_INFO, "%a - Unable to clear NX attribute from buffer\n", __FUNCTION__));
-    ASSERT_EFI_ERROR (Status);
-  }
-
-  return Status;
-}
-
-/**
-  Remove NX attribute from Buffer
-
-  @param[in]  Buffer      Buffer whose attributes will be altered
-  @param[in]  Size        Size of the buffer
-
-  @retval EFI_SUCCESS             NX attribute removed
-  @retval EFI_INVALID_PARAMETER   Buffer is not page-aligned or Buffer is 0 or Size of buffer
-                                  is not page-aligned
-  @retval Other                   Return value of LocateProtocol or ClearMemoryAttributes
-**/
-EFI_STATUS
-BufferRemoveNoExecute (
-  IN EFI_PHYSICAL_ADDRESS  Buffer,
-  IN UINTN                 Size
-  )
-{
-  EFI_STATUS                     Status;
-  EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttribute;
-
-  if ((Buffer == 0) || (Buffer % EFI_PAGE_SIZE != 0) || (Size % EFI_PAGE_SIZE != 0)) {
-    DEBUG ((DEBUG_INFO, "%a - Invalid Parameter!\n", __FUNCTION__));
-    return EFI_INVALID_PARAMETER;
-  }
-
-  Status = gBS->LocateProtocol (
-                  &gEfiMemoryAttributeProtocolGuid,
-                  NULL,
-                  (VOID **)&MemoryAttribute
-                  );
-
-  if EFI_ERROR (Status) {
-    DEBUG ((DEBUG_INFO, "%a - Unable to locate Memory Attribute Protocol\n", __FUNCTION__));
-    ASSERT_EFI_ERROR (Status);
-    return Status;
-  }
-
-  Status = MemoryAttribute->ClearMemoryAttributes (
-                              MemoryAttribute,
-                              Buffer,
-                              Size,
-                              EFI_MEMORY_XP
-                              );
-
-  if EFI_ERROR (Status) {
-    DEBUG ((DEBUG_INFO, "%a - Unable to clear NX attribute from buffer\n", __FUNCTION__));
+    DEBUG ((DEBUG_INFO, "%a - Unable to update buffer attributes!\n", __FUNCTION__));
     ASSERT_EFI_ERROR (Status);
   }
 
@@ -682,7 +614,7 @@ MpInitChangeApLoopCallback (
   CpuMpData->ApLoopMode      = PcdGet8 (PcdCpuApLoopMode);
   mNumberToFinish            = CpuMpData->CpuCount - 1;
   // MU_CHANGE START: Remove NX from AP Loop Buffer
-  BufferRemoveNoExecute (
+  BufferRemoveNoExecuteSetReadOnly (
     (EFI_PHYSICAL_ADDRESS)(UINTN)mReservedApLoop.Data,
     EFI_PAGES_TO_SIZE (EFI_SIZE_TO_PAGES (CpuMpData->AddressMap.RelocateApLoopFuncSizeAmdSev))
     );
