@@ -7,6 +7,7 @@ RUSTC_BOOTSTRAP = 1
 ARCH = "X64"
 TARGET_TRIPLE = { source = "${ARCH}", mapping = { "X64" = "x86_64-unknown-uefi", "IA32" = "i686-unknown-uefi", "AARCH64" = "aarch64-unknown-uefi", "LOCAL" = "${CARGO_MAKE_RUST_TARGET_TRIPLE}" }, condition = { env_not_set = [ "TARGET_TRIPLE" ] } }
 
+CARGO_FEATURES_FLAG = {value = "--features ${FEATURES}", condition = {env_set = ["FEATURES"], env_true = ["FEATURES"]}}
 BUILD_FLAGS = "--profile ${RUSTC_PROFILE} --target ${TARGET_TRIPLE} -Zbuild-std=core,compiler_builtins,alloc -Zbuild-std-features=compiler-builtins-mem -Zunstable-options --timings=html"
 TEST_FLAGS = { value = "", condition = { env_not_set = ["TEST_FLAGS"] } }
 COV_FLAGS = { value = "--out html --exclude-files **/tests/*", condition = { env_not_set = ["COV_FLAGS"] } }
@@ -47,15 +48,17 @@ description = """Builds a single rust package.
 Customizations:
     -p [development|release]: Builds in debug or release. Default: development
     -e ARCH=[IA32|X64|AARCH64|LOCAL]: Builds with specifed arch. Default: X64
+    -e FEATURES=[feature,...]: Builds with the specified features. Default: none
 
 Example:
     `cargo make build RustModule`
     `cargo make -p release build RustModule`
     `cargo make -e ARCH=IA32 build RustLib`
+    `cargo make -e FEATURES=feature1,feature2 build RustLib`
 """
 clear = true
 command = "cargo"
-args = ["build", "@@split(INDIVIDUAL_PACKAGE_TARGETS, )", "@@split(BUILD_FLAGS, )"]
+args = ["build", "@@split(INDIVIDUAL_PACKAGE_TARGETS, )", "@@split(BUILD_FLAGS, )", "@@split(CARGO_FEATURES_FLAG, ,remove-empty)"]
 dependencies = ["individual-package-targets"]
 
 [tasks.check]
