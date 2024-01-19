@@ -1570,8 +1570,8 @@ CoreInternalFreePages (
   // MU_CHANGE Start: Unprotect page(s) before free if the memory will be cleared on free
   UINT64  Attributes;
 
-  if (DebugClearMemoryEnabled () && (MemoryAttributeProtocol != NULL)) {
-    Status = MemoryAttributeProtocol->GetMemoryAttributes (MemoryAttributeProtocol, Memory, EFI_PAGES_TO_SIZE (NumberOfPages), &Attributes);
+  if (DebugClearMemoryEnabled () && (mMemoryAttributeProtocol != NULL)) {
+    Status = mMemoryAttributeProtocol->GetMemoryAttributes (mMemoryAttributeProtocol, Memory, EFI_PAGES_TO_SIZE (NumberOfPages), &Attributes);
 
     if ((Attributes & EFI_MEMORY_RO) || (Attributes & EFI_MEMORY_RP) || (Status == EFI_NO_MAPPING)) {
       Status = ClearAccessAttributesFromMemoryRange (Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
