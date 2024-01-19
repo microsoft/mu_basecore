@@ -19,9 +19,6 @@
 [Includes]
   Include
 
-[Includes.Common.Private]
-  Library/Include
-
 [LibraryClasses]
   ##  @libraryclass  Provides basic library functions for cryptographic primitives.
   ##
