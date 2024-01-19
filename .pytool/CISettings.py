@@ -208,8 +208,6 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         '''
         rs = []
         rs.append(RequiredSubmodule(
-            "CryptoPkg/Library/OpensslLib/openssl", False))
-        rs.append(RequiredSubmodule(
             "UnitTestFrameworkPkg/Library/CmockaLib/cmocka", False))
         rs.append(RequiredSubmodule(
             "UnitTestFrameworkPkg/Library/GoogleTestLib/googletest", False))

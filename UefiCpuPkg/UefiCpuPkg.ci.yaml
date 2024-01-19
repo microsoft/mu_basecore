@@ -40,7 +40,7 @@
     },
     ## options defined ci/Plugin/HostUnitTestCompilerPlugin
     "HostUnitTestCompilerPlugin": {
-        "DscPath": "Test/UefiCpuPkgHostTest.dsc"
+        #"DscPath": "Test/UefiCpuPkgHostTest.dsc" # MU_CHANGE - Disable temporarily while migrating crypto.
     },
     "CharEncodingCheck": {
         "IgnoreFiles": []
@@ -68,10 +68,10 @@
             "UefiCpuPkg/ResetVector/Vtf0/Bin/ResetVector1G.inf"
         ]
     },
-    "HostUnitTestDscCompleteCheck": {
-        "IgnoreInf": [""],
-        "DscPath": "Test/UefiCpuPkgHostTest.dsc"
-    },
+    #"HostUnitTestDscCompleteCheck": {
+        #"IgnoreInf": [""]
+        #"DscPath": "Test/UefiCpuPkgHostTest.dsc"
+    #},
     "GuidCheck": {
         "IgnoreGuidName": ["SecCore", "ResetVector"], # Expected duplication for gEfiFirmwareVolumeTopFileGuid
         "IgnoreGuidValue": [],

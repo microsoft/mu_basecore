@@ -58,8 +58,6 @@
   UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
   PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
-  OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
-  IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
   SynchronizationLib|MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
   TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
@@ -106,7 +104,6 @@
   HobLib|MdePkg/Library/PeiHobLib/PeiHobLib.inf
   PcdLib|MdePkg/Library/PeiPcdLib/PeiPcdLib.inf
   ReportStatusCodeLib|MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
-  BaseCryptLib|CryptoPkg/Library/BaseCryptLib/PeiCryptLib.inf
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
 
 [LibraryClasses.common.DXE_SMM_DRIVER]
@@ -118,7 +115,6 @@
   ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
 
 [LibraryClasses.common.SEC]
-  BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
 
 [LibraryClasses.IA32.PEIM, LibraryClasses.X64.PEIM]
@@ -134,8 +130,6 @@
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
   ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
   PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
-  BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
-  TlsLib|CryptoPkg/Library/TlsLib/TlsLib.inf
   DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf # MU_CHANGE add debug lib
 
 [LibraryClasses.common.DXE_SMM_DRIVER]
@@ -143,7 +137,6 @@
   UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
   MmServicesTableLib|MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
   ReportStatusCodeLib|MdeModulePkg/Library/SmmReportStatusCodeLib/SmmReportStatusCodeLib.inf
-  BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
   TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf # MU_CHANGE add debug lib
 !endif
@@ -157,7 +150,6 @@
   PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
 
 [LibraryClasses.common.MM_STANDALONE]
-  BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
   MemoryAllocationLib|StandaloneMmPkg/Library/StandaloneMmMemoryAllocationLib/StandaloneMmMemoryAllocationLib.inf
   MmServicesTableLib|MdePkg/Library/StandaloneMmServicesTableLib/StandaloneMmServicesTableLib.inf
@@ -202,12 +194,8 @@
   #
   # Build verification of all library instances
   #
-  CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
-  CryptoPkg/Library/HmacSha1Lib/HmacSha1Lib.inf
+
   CryptoPkg/Library/HmacSha1Lib/HmacSha1LibNull.inf
-  CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf
-  CryptoPkg/Library/BaseCryptLib/PeiCryptLib.inf
-  CryptoPkg/Library/BaseCryptLib/RuntimeCryptLib.inf
   CryptoPkg/Library/BaseCryptLibMbedTls/BaseCryptLib.inf
   CryptoPkg/Library/BaseCryptLibMbedTls/SecCryptLib.inf
   CryptoPkg/Library/BaseCryptLibMbedTls/PeiCryptLib.inf
@@ -217,12 +205,7 @@
   CryptoPkg/Library/MbedTlsLib/MbedTlsLib.inf
   CryptoPkg/Library/MbedTlsLib/MbedTlsLibFull.inf
   CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
-  CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
-  CryptoPkg/Library/TlsLib/TlsLib.inf
   CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
-  CryptoPkg/Library/OpensslLib/OpensslLibCrypto.inf
-  CryptoPkg/Library/OpensslLib/OpensslLib.inf
-  #CryptoPkg/Library/OpensslLib/OpensslLibFull.inf
   CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
 
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/PeiCryptLib.inf
@@ -236,15 +219,12 @@
 
 # MU_CHANGE START
 [Components.X64, Components.IA32]
-  CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/SmmCryptLib.inf
 
 [Components.IA32, Components.X64]
   #
   # Build verification of IA32/X64 specific libraries
   #
-  #CryptoPkg/Library/OpensslLib/OpensslLibAccel.inf
-  #CryptoPkg/Library/OpensslLib/OpensslLibFullAccel.inf
 
 [Components.IA32, Components.X64] # MU_CHANGE remove ARM and AARCH64
   CryptoPkg/Driver/CryptoPei.inf {
@@ -280,11 +260,8 @@
       DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf # MU_CHANGE add debug lib
       DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf # MU_CHANGE add debug lib
       UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
-      OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
-      IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
       ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
       MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
-      BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
     <PcdsFixedAtBuild>
       gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
       !include CryptoPkg/Test/Crypto.pcd.ALL.inc.dsc

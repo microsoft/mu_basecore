@@ -19,19 +19,6 @@
 [Includes]
   Include
 
-[Includes.Common.Private]
-  Private
-  Library/Include
-  Library/OpensslLib/openssl/include
-  Library/OpensslLib/openssl/providers/common/include
-  Library/OpensslLib/openssl/providers/implementations/include
-  Library/OpensslLib/OpensslGen/include
-  Library/OpensslLib/OpensslGen/providers/common/include
-  Library/MbedTlsLib/Include
-  Library/MbedTlsLib/mbedtls/include
-  Library/MbedTlsLib/mbedtls/include/mbedtls
-  Library/MbedTlsLib/mbedtls/library
-
 [LibraryClasses]
   ##  @libraryclass  Provides basic library functions for cryptographic primitives.
   ##
@@ -48,16 +35,6 @@
   ##  @libraryclass  Provides HmacSha1 functionality
   #
   HmacSha1Lib|Include/Library/HmacSha1Lib.h
-
-[LibraryClasses.common.Private]
-  ##  @libraryclass  Provides library functions from the openssl project.
-  #
-  OpensslLib|Private/Library/OpensslLib.h
-  MbedTlsLib|Private/Library/MbedTlsLib.h
-
-  ##  @libraryclass  Provides compiler intrinsic functions required to link openssl project.
-  #
-  InstrinsicLib|Private/Library/IntrinsicLib.h
 
 [Protocols]
   ## EDK II Crypto DXE protocol
