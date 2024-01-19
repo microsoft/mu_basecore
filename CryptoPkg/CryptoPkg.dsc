@@ -196,7 +196,6 @@
   #
 
   CryptoPkg/Library/HmacSha1Lib/HmacSha1LibNull.inf
-  CryptoPkg/Library/BaseCryptLibMbedTls/BaseCryptLibNull.inf
   CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
   CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
   CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
