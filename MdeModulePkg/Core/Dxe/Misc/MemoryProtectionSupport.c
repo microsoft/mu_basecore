@@ -26,7 +26,7 @@ MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD  mSpecialMemoryRegionsPrivate
 };
 
 BOOLEAN                        mEnhancedMemoryProtectionActive = TRUE;
-EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol        = NULL;
+EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttributeProtocol       = NULL;
 UINT8                          *mBitmapGlobal                  = NULL;
 LIST_ENTRY                     **mArrayOfListEntryPointers     = NULL;
 
@@ -3434,7 +3434,7 @@ MemoryAttributeProtocolNotify (
 {
   EFI_STATUS  Status;
 
-  Status = gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&MemoryAttributeProtocol);
+  Status = gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&mMemoryAttributeProtocol);
 
   if (EFI_ERROR (Status)) {
     DEBUG ((
@@ -3529,8 +3529,8 @@ UninstallMemoryAttributeProtocol (
   UINTN       Index;
   EFI_HANDLE  *HandleBuffer;
 
-  if (MemoryAttributeProtocol == NULL) {
-    Status = gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&MemoryAttributeProtocol);
+  if (mMemoryAttributeProtocol == NULL) {
+    Status = gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&mMemoryAttributeProtocol);
     if (EFI_ERROR (Status)) {
       return;
     }
@@ -3549,7 +3549,7 @@ UninstallMemoryAttributeProtocol (
       Status = gBS->UninstallProtocolInterface (
                       HandleBuffer[Index],
                       &gEfiMemoryAttributeProtocolGuid,
-                      MemoryAttributeProtocol
+                      mMemoryAttributeProtocol
                       );
       ASSERT_EFI_ERROR (Status);
     }
