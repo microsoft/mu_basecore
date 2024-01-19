@@ -1580,8 +1580,8 @@ ApplyMemoryProtectionPolicy (
   // To catch the edge case where the attributes are not consistent across the range, get the
   // attributes from the page table to see if they are consistent. If they are not consistent,
   // GetMemoryAttributes() will return an error.
-  if (MemoryAttributeProtocol != NULL) {
-    if (!EFI_ERROR (MemoryAttributeProtocol->GetMemoryAttributes (MemoryAttributeProtocol, Memory, Length, &OldAttributes)) &&
+  if (mMemoryAttributeProtocol != NULL) {
+    if (!EFI_ERROR (mMemoryAttributeProtocol->GetMemoryAttributes (mMemoryAttributeProtocol, Memory, Length, &OldAttributes)) &&
         (OldAttributes == NewAttributes))
     {
       return EFI_SUCCESS;
