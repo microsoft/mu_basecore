@@ -27,7 +27,6 @@
         ],
         ## Both file path and directory path are accepted.
         "IgnoreFiles": [
-            "Library/Include/crypto",
             # The unit testing folder is not to be checked
             "Test/UnitTest"
         ]
