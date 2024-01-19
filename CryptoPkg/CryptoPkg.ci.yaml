@@ -29,11 +29,7 @@
         "IgnoreFiles": [
             "Library/Include/crypto",
             # The unit testing folder is not to be checked
-            "Test/UnitTest",
-            # This has OpenSSL interfaces that aren't UEFI spec compliant
-            "Library/Include/CrtLibSupport.h",
-            # This has OpenSSL interfaces that aren't UEFI spec compliant
-            "Library/Include/fcntl.h"
+            "Test/UnitTest"
         ]
     },
     "CompilerPlugin": {
@@ -162,9 +158,7 @@
     # options defined in .pytool/Plugin/UncrustifyCheck
     "UncrustifyCheck": {
         "IgnoreFiles": [
-            "opensslconf.h",
-            "dso_conf.h",
-            "opensslconf_generated.h"
+            "opensslconf.h"
         ]
     }
 }
