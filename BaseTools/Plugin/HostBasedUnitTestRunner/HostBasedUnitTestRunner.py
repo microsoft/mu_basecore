@@ -17,7 +17,7 @@ from edk2toolext.environment import shell_environment
 from edk2toollib.utility_functions import RunCmd
 from edk2toollib.utility_functions import GetHostInfo
 from edk2toollib.database import Edk2DB  # MU_CHANGE - reformat coverage data
-from edk2toollib.database.tables import SourceTable, PackageTable, InfTable  # MU_CHANGE - reformat coverage data
+from edk2toollib.database.tables import EnvironmentTable, SourceTable, PackageTable, InfTable  # MU_CHANGE - reformat coverage data
 from textwrap import dedent
 
 
@@ -280,10 +280,10 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
     def parse_workspace(self, thebuilder) -> str:
         """Parses the workspace with Edk2DB with the tables necessarty to run stuart_report."""
         db_path = os.path.join(thebuilder.env.GetValue("BUILD_OUTPUT_BASE"), "DATABASE.db")
-        with Edk2DB(db_path, thebuilder.edk2path) as db:
-            db.register(SourceTable(), PackageTable(), InfTable())
-            env_dict = thebuilder.env.GetAllBuildKeyValues() | thebuilder.env.GetAllNonBuildKeyValues()
-            db.parse(env_dict)
+        db = Edk2DB(db_path, thebuilder.edk2path)
+        db.register(EnvironmentTable(), SourceTable(), PackageTable(), InfTable())
+        env_dict = thebuilder.env.GetAllBuildKeyValues() | thebuilder.env.GetAllNonBuildKeyValues()
+        db.parse(env_dict)
         
         return db_path
     # MU_CHANGE end - reformat coverage data
