@@ -332,7 +332,7 @@ jobs:
 
         # This should only be found once
         if len(plugin_dir) == 1:
-            plugin_dir = str(plugin_dir[0]).parent
+            plugin_dir = str(plugin_dir[0].parent)
 
             with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
                 print(f'pytool_plugin_dir={plugin_dir}', file=fh)
