@@ -328,16 +328,16 @@ jobs:
         from pathlib import Path
 
         # Find the plugin directory that contains the CodeQL plugin
-        plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('.pytool/Plugin/'))
+        plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('.pytool/Plugin'))
 
         # This should only be found once
         if len(plugin_dir) == 1:
             plugin_dir = str(plugin_dir[0])
 
             with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-                print(f'codeql_plugin_dir={plugin_dir}', file=fh)
+                print(f'pytool_plugin_dir={plugin_dir}', file=fh)
         else:
-            print("::error title=Workspace Error!::Failed to find Mu Basecore plugin directory!")
+            print("::error title=Workspace Error!::Failed to find Mu Basecore pytool plugin directory!")
             sys.exit(1)
 
     - name: Remove CI Plugins Irrelevant to CodeQL
