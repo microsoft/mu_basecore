@@ -271,7 +271,9 @@ jobs:
         from pathlib import Path
 
         # Find the plugin directory that contains the CodeQL plugin
-        plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('.pytool/Plugin/CodeQL'))
+        plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('BaseTools/Plugin/CodeQL'))
+        if not plugin_dir:
+          plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('.pytool/Plugin/CodeQL'))
 
         # This should only be found once
         if len(plugin_dir) == 1:
