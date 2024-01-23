@@ -328,11 +328,11 @@ jobs:
         from pathlib import Path
 
         # Find the plugin directory that contains the CodeQL plugin
-        plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('.pytool/Plugin'))
+        plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('.pytool/Plugin/CompilerPlugin'))
 
         # This should only be found once
         if len(plugin_dir) == 1:
-            plugin_dir = str(plugin_dir[0])
+            plugin_dir = str(plugin_dir[0]).parent
 
             with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
                 print(f'pytool_plugin_dir={plugin_dir}', file=fh)
@@ -352,7 +352,7 @@ jobs:
         # Only this plugin is needed for CodeQL
         plugins_to_keep = ['CompilerPlugin']
 
-        plugin_dir = Path(os.environ['PYTOOL_PLUGIN_DIR']).parent.absolute()
+        plugin_dir = Path(os.environ['PYTOOL_PLUGIN_DIR']).absolute()
         if plugin_dir.is_dir():
             for dir in plugin_dir.iterdir():
                 if str(dir.stem) not in plugins_to_keep:
