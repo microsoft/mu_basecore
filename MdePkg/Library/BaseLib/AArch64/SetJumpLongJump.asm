@@ -10,7 +10,7 @@
 ; MS_CHANGE: change area name to |.text| and add an ALIGN directive
   AREA |.text|, ALIGN=3, CODE, READONLY
 
-
+  EXTERN InternalAssertJumpBuffer
 ;/**
 ;  Saves the current CPU context that can be restored with a call to LongJump() and returns 0.#
 ;
