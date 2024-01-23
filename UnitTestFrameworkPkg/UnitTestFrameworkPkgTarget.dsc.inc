@@ -7,6 +7,7 @@
 ##
 
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgCommon.dsc.inc
+!include MdePkg/MdeLibs.dsc.inc # MU_CHANGE: Add Stack Cookie Support
 
 [LibraryClasses]
   #
@@ -26,13 +27,6 @@
   UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
 
   UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLib.inf
-
-# MU_CHANGE [BEGIN] - Add Stack Cookie Support
-[LibraryClasses.X64]
-  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
-  NULL|MdePkg/Library/StackCheckLib/StackCheckLib.inf
-  StackCheckFailureLib|MdePkg/Library/StackCheckFailureLibNull/StackCheckFailureLibNull.inf
-# MU_CHANGE [END] - Add Stack Cookie Support
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
   #

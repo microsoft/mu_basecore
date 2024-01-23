@@ -29,12 +29,7 @@
   NETWORK_ALLOW_HTTP_CONNECTIONS = TRUE
   NETWORK_SNP_ENABLE = TRUE
   !include NetworkPkg/NetworkDefines.dsc.inc
-
-
-## MU_CHANGE Begin
-[LibraryClasses.ARM, LibraryClasses.AARCH64]
-  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
-## MU_CHANGE End
+  !include MdePkg/MdeLibs.dsc.inc # MU_CHANGE: Add Stack Cookie Support
 
 [LibraryClasses]
   !include NetworkPkg/NetworkLibs.dsc.inc
@@ -79,12 +74,6 @@
 [LibraryClasses.x64.DXE_SMM_DRIVER, LibraryClasses.x64.SMM_CORE]
     BaseCryptLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/SmmCryptLib.inf
     TlsLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/SmmCryptLib.inf
-
-# MU_CHANGE [BEGIN] - Add Stack Cookie Support
-[LibraryClasses.X64]
-  NULL|MdePkg/Library/StackCheckLib/StackCheckLib.inf
-  StackCheckFailureLib|MdePkg/Library/StackCheckFailureLibNull/StackCheckFailureLibNull.inf
-# MU_CHANGE [END] - Add Stack Cookie Support
 
 [LibraryClasses.DXE_RUNTIME_DRIVER, LibraryClasses.DXE_CORE]
   DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf
