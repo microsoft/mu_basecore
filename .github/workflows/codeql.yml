@@ -321,10 +321,32 @@ jobs:
       if: steps.codeqlcli_cache.outputs.cache-hit != 'true'
       run: stuart_update -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }} --codeql
 
+    - name: Find pytool Plugin Directory
+      id: find_pytool_dir
+      shell: python
+      run: |
+        import os
+        import sys
+        from pathlib import Path
+
+        # Find the plugin directory that contains the Compiler plugin
+        plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('.pytool/Plugin/CompilerPlugin'))
+
+        # This should only be found once
+        if len(plugin_dir) == 1:
+            # If the directory is found get the parent Plugin directory
+            plugin_dir = str(plugin_dir[0].parent)
+
+            with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+                print(f'pytool_plugin_dir={plugin_dir}', file=fh)
+        else:
+            print("::error title=Workspace Error!::Failed to find Mu Basecore .pytool/Plugin directory!")
+            sys.exit(1)
+
     - name: Remove CI Plugins Irrelevant to CodeQL
       shell: python
       env:
-        CODEQL_PLUGIN_DIR: ${{ steps.find_dir.outputs.codeql_plugin_dir }}
+        PYTOOL_PLUGIN_DIR: ${{ steps.find_pytool_dir.outputs.pytool_plugin_dir }}
       run: |
         import os
         import shutil
@@ -333,7 +355,7 @@ jobs:
         # Only these two plugins are needed for CodeQL
         plugins_to_keep = ['CodeQL', 'CompilerPlugin']
 
-        plugin_dir = Path(os.environ['CODEQL_PLUGIN_DIR']).parent.absolute()
+        plugin_dir = Path(os.environ['PYTOOL_PLUGIN_DIR']).absolute()
         if plugin_dir.is_dir():
             for dir in plugin_dir.iterdir():
                 if str(dir.stem) not in plugins_to_keep:
