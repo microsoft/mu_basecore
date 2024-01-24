@@ -433,14 +433,29 @@ CpuDxeInitialize (
                   &CpuHandle,
                   &gEfiCpuArchProtocolGuid,
                   &mCpu,
-                  &gEfiMemoryAttributeProtocolGuid,
-                  &mMemoryAttribute,
+                  // &gEfiMemoryAttributeProtocolGuid, // MU_CHANGE - Only install Memory Attributes on policy
+                  // &mMemoryAttribute, // MU_CHANGE - Only install Memory Attributes on policy
                   NULL
                   );
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
     return Status;
   }
+
+  // MU_CHANGE [START]: Only install Memory Attribute Protocol if policy is enabled
+  if (gDxeMps.InstallMemoryAttributeProtocol) {
+    Status = gBS->InstallMultipleProtocolInterfaces (
+                    &CpuHandle,
+                    &gEfiMemoryAttributeProtocolGuid,
+                    &mMemoryAttribute,
+                    NULL
+                    );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "Failed to install Memory Attribute Protocol!\n"));
+    }
+  }
+
+  // MU_CHANGE [END]
 
   //
   // Make sure GCD and MMU settings match. This API calls gDS->SetMemorySpaceAttributes ()
