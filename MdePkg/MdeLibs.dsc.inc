@@ -18,14 +18,16 @@
   SmmCpuRendezvousLib|MdePkg/Library/SmmCpuRendezvousLibNull/SmmCpuRendezvousLibNull.inf
 
 # MU_CHANGE [BEGIN] - Add Stack Cookie Support
-[LibraryClasses.X64.SEC, LibraryClasses.X64.PEIM, LibraryClasses.X64.PEI_CORE]
-  NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf
+  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
 
 [LibraryClasses.X64.SMM_CORE, LibraryClasses.X64.DXE_SMM_DRIVER, LibraryClasses.X64.MM_CORE_STANDALONE, LibraryClasses.X64.MM_STANDALONE, LibraryClasses.X64.DXE_CORE, LibraryClasses.X64.DXE_DRIVER, LibraryClasses.X64.DXE_RUNTIME_DRIVER, LibraryClasses.X64.DXE_SAL_DRIVER, LibraryClasses.X64.UEFI_DRIVER, LibraryClasses.X64.UEFI_APPLICATION]
-  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
   NULL|MdePkg/Library/StackCheckLib/StackCheckLib.inf
+  StackCheckFailureLib|MdePkg/Library/StackCheckFailureLibNull/StackCheckFailureLibNull.inf
+
+[LibraryClasses.X64.SEC, LibraryClasses.X64.PEIM, LibraryClasses.X64.PEI_CORE]
+  NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf
   StackCheckFailureLib|MdePkg/Library/StackCheckFailureLibNull/StackCheckFailureLibNull.inf
 # MU_CHANGE [END] - Add Stack Cookie Support
