@@ -45,7 +45,7 @@ def main():
         if options.copy:
             # TODO: define this somewhere globally
             h_file_path = os.path.join(options.out_dir, "temp_Crypto.h")
-            shutil.copyfile(h_file_path, os.path.join(ROOT_DIR, "CryptoPkg", "Private", "Protocol", "Crypto.h"))
+            shutil.copyfile(h_file_path, os.path.join(ROOT_DIR, "CryptoPkg", "Include", "Protocol", "Crypto.h"))
     if options.p_file:
         get_crypto_pcds(options, crypto_functions)
     if options.d_file:
