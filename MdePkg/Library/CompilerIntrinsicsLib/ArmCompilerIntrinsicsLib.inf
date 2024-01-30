@@ -16,9 +16,11 @@
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = CompilerIntrinsicsLib
+  LIBRARY_CLASS                  = IntrinsicLib           # MU_CHANGE: Support IntrinsicLib linking
 
 [Sources]
 
+  strcmp.c             # MU_CHANGE: Add strcmp implementation
   memcpy.c             | GCC
   memset.c             | GCC
 
