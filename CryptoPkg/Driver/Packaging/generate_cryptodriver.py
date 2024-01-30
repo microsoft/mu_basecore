@@ -689,9 +689,9 @@ def generate_platform_files():
                 for arch in arches:
                     if arch == "ARM":
                         continue
-                    if arch == "AARCH64" and phase != "Dxe":
+                    if arch in ["ARM","AARCH64"] and phase == "Smm":
                         continue
-                    if arch != "X64" and phase == "StandaloneMm":
+                    if arch in ["ARM","IA32"] and phase == "StandaloneMm":
                         continue
                     inf_files.append((flavor, phase, target, arch))
     print(f"Generating {len(inf_files)} inf files")
@@ -798,7 +798,9 @@ def generate_platform_files():
             dsc_lines.append(
                 f"!if $({upper_phase}_CRYPTO_SERVICES) == {flavor}")
             for arch in arches:
-                if phase == "StandaloneMm" and arch != "X64":
+                if arch in ["ARM","IA32"] and phase == "StandaloneMm":
+                    continue
+                if arch in ["ARM","AARCH64"] and phase == "Smm":
                     continue
                 comp_str = f"Components.{arch}"
                 dsc_lines.append(
@@ -825,7 +827,9 @@ def generate_platform_files():
         comp_types = get_supported_library_types(phase)
         upper_phase = phase.upper()
         for arch in arches:
-            if phase == "StandaloneMm" and arch != "X64":
+            if arch in ["ARM","IA32"] and phase == "StandaloneMm":
+                continue
+            if arch in ["ARM","AARCH64"] and phase == "Smm":
                 continue
             dsc_lines.append(f"!if $({upper_phase}_CRYPTO_ARCH) == {arch}")
             lib_class_str = ", ".join(map(lambda x: ".".join(
