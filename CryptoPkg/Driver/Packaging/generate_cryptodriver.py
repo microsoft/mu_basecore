@@ -771,7 +771,7 @@ def generate_platform_files():
     dsc_lines = []
     dsc_lines.append("# this is to be included by a platform :)")
     dsc_lines.append("[Defines]")
-    all_flavors = "ALL "+" ".join(list(flavors))
+    all_flavors = "ALL NONE "+" ".join(list(flavors))
     for phase in phases:
         phase = phase.upper()
         dsc_lines.append(f"!ifndef {phase}_CRYPTO_SERVICES")
@@ -779,14 +779,17 @@ def generate_platform_files():
         dsc_lines.append("!endif")
         dsc_lines.append(
             f"!if $({phase}_CRYPTO_SERVICES) IN \"{all_flavors}\"")
-        dsc_lines.append(" # we don't have a problem")
+        dsc_lines.append(f"  !if $({phase}_CRYPTO_SERVICES) != NONE")
+        dsc_lines.append(f"    !ifndef {phase}_CRYPTO_ARCH")
+        dsc_lines.append(
+            f"      !error Please define {phase}_CRYPTO_ARCH for your platform")
+        dsc_lines.append("    !endif")
+        dsc_lines.append("  !else")
+        dsc_lines.append("     # we don't have a problem")
+        dsc_lines.append("  !endif")
         dsc_lines.append("!else")
         dsc_lines.append(
-            f" !error CRYPTO_SERVICES must be set to one of {all_flavors}.")
-        dsc_lines.append("!endif")
-        dsc_lines.append(f"!ifndef {phase}_CRYPTO_ARCH")
-        dsc_lines.append(
-            f" !error Please define {phase}_CRYPTO_ARCH for your platform")
+            f"  !error {phase}_CRYPTO_SERVICES must be set to one of {all_flavors}.")
         dsc_lines.append("!endif")
         dsc_lines.append("")
 
