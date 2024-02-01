@@ -21,6 +21,8 @@ from .StrGather import *
 from .GenPcdDb import CreatePcdDatabaseCode
 from .IdfClassObject import *
 
+import secrets # MU_CHANGE: Add Stack Cookie Support
+
 ## PCD type string
 gItemTypeStringDatabase  = {
     TAB_PCDS_FEATURE_FLAG       :   TAB_PCDS_FIXED_AT_BUILD,
@@ -2041,6 +2043,22 @@ def CreateFooterCode(Info, AutoGenC, AutoGenH):
 #
 def CreateCode(Info, AutoGenC, AutoGenH, StringH, UniGenCFlag, UniGenBinBuffer, StringIdf, IdfGenCFlag, IdfGenBinBuffer):
     CreateHeaderCode(Info, AutoGenC, AutoGenH)
+
+    # MU_CHANGE [START]: Add Stack Cookie Support
+    if Info.ModuleType != SUP_MODULE_HOST_APPLICATION:
+        if Info.Arch not in ['X64', 'IA32', 'ARM', 'AARCH64']:
+            EdkLogger.error("build", AUTOGEN_ERROR, "Unsupported Arch %s" % Info.Arch, ExtraData="[%s]" % str(Info))
+        else:
+            Bitwidth = 64 if Info.Arch == 'X64' or Info.Arch == 'AARCH64' else 32
+
+        CookieValue = secrets.randbelow(0xFFFFFFFFFFFFFFFF if Bitwidth == 64 else 0xFFFFFFFF)
+
+        AutoGenH.Append((
+            '#define STACK_COOKIE_VALUE 0x%XULL\n' % CookieValue
+            if Bitwidth == 64 else
+            '#define STACK_COOKIE_VALUE 0x%X\n' % CookieValue
+        ))
+    # MU_CHANGE [END]: Add Stack Cookie Support
 
     CreateGuidDefinitionCode(Info, AutoGenC, AutoGenH)
     CreateProtocolDefinitionCode(Info, AutoGenC, AutoGenH)
