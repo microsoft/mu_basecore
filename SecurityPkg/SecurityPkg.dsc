@@ -91,6 +91,11 @@
   PlatformLibWrapper|SecurityPkg/DeviceSecurity/OsStub/PlatformLibWrapper/PlatformLibWrapper.inf
   MemLibWrapper|SecurityPkg/DeviceSecurity/OsStub/MemLibWrapper/MemLibWrapper.inf
 
+# MU_CHANGE - Add PreUefiEventLog
+[LibraryClasses.X64, LibraryClasses.IA32]
+  Tcg2PreUefiEventLogLib|SecurityPkg/Library/Tcg2PreUefiEventLogLibNull/Tcg2PreUefiEventLogLibNull.inf
+# MU_CHANGE - Add PreUefiEventLog
+  
 [LibraryClasses.AARCH64]
   ArmTrngLib|MdePkg/Library/BaseArmTrngLibNull/BaseArmTrngLibNull.inf
   ArmSmcLib|MdePkg/Library/ArmSmcLib/ArmSmcLib.inf
@@ -256,6 +261,8 @@
   SecurityPkg/Library/OemTpm2InitLibNull/OemTpm2InitLibVendorNull.inf
   SecurityPkg/Library/BaseHash2CryptoLibNull/BaseHash2CryptoLibNull.inf
   SecurityPkg/Library/DxeHash2CryptoLib/DxeHash2CryptoLib.inf
+  SecurityPkg/Library/Tcg2PhysicalPresencePromptLib/Tcg2PhysicalPresencePromptLibConsole.inf
+  SecurityPkg/Library/Tcg2PreUefiEventLogLibNull/Tcg2PreUefiEventLogLibNull.inf
 # MU_CHANGE [END]
 [Components.IA32, Components.X64, Components.AARCH64]
   SecurityPkg/Library/AuthVariableLib/AuthVariableLib.inf
