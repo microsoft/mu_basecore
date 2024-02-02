@@ -272,6 +272,8 @@ jobs:
 
         # Find the plugin directory that contains the CodeQL plugin
         plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('BaseTools/Plugin/CodeQL'))
+        if not plugin_dir:
+          plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('.pytool/Plugin/CodeQL'))
 
         # This should only be found once
         if len(plugin_dir) == 1:
@@ -327,17 +329,18 @@ jobs:
         import sys
         from pathlib import Path
 
-        # Find the plugin directory that contains the CodeQL plugin
+        # Find the plugin directory that contains the Compiler plugin
         plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('.pytool/Plugin/CompilerPlugin'))
 
         # This should only be found once
         if len(plugin_dir) == 1:
+            # If the directory is found get the parent Plugin directory
             plugin_dir = str(plugin_dir[0].parent)
 
             with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
                 print(f'pytool_plugin_dir={plugin_dir}', file=fh)
         else:
-            print("::error title=Workspace Error!::Failed to find Mu Basecore pytool plugin directory!")
+            print("::error title=Workspace Error!::Failed to find Mu Basecore .pytool/Plugin directory!")
             sys.exit(1)
 
     - name: Remove CI Plugins Irrelevant to CodeQL
@@ -349,8 +352,8 @@ jobs:
         import shutil
         from pathlib import Path
 
-        # Only this plugin is needed for CodeQL
-        plugins_to_keep = ['CompilerPlugin']
+        # Only these two plugins are needed for CodeQL
+        plugins_to_keep = ['CodeQL', 'CompilerPlugin']
 
         plugin_dir = Path(os.environ['PYTOOL_PLUGIN_DIR']).absolute()
         if plugin_dir.is_dir():
