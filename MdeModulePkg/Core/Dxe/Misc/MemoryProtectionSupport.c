@@ -25,10 +25,10 @@ MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD  mSpecialMemoryRegionsPrivate
   INITIALIZE_LIST_HEAD_VARIABLE (mSpecialMemoryRegionsPrivate.SpecialRegionList)
 };
 
-BOOLEAN                        mIsSystemNxCompatible       = TRUE;
-EFI_MEMORY_ATTRIBUTE_PROTOCOL  *MemoryAttributeProtocol    = NULL;
-UINT8                          *mBitmapGlobal              = NULL;
-LIST_ENTRY                     **mArrayOfListEntryPointers = NULL;
+BOOLEAN                        mEnhancedMemoryProtectionActive = TRUE;
+EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttributeProtocol       = NULL;
+UINT8                          *mBitmapGlobal                  = NULL;
+LIST_ENTRY                     **mArrayOfListEntryPointers     = NULL;
 
 #define IS_BITMAP_INDEX_SET(Bitmap, Index)  ((((UINT8*)Bitmap)[Index / 8] & (1 << (Index % 8))) != 0 ? TRUE : FALSE)
 #define SET_BITMAP_INDEX(Bitmap, Index)     (((UINT8*)Bitmap)[Index / 8] |= (1 << (Index % 8)))
@@ -274,6 +274,15 @@ SetUefiImageMemoryAttributes (
   IN UINT64  BaseAddress,
   IN UINT64  Length,
   IN UINT64  Attributes
+  );
+
+/**
+  Disable NULL pointer detection.
+**/
+VOID
+EFIAPI
+DisableNullDetection (
+  VOID
   );
 
 extern LIST_ENTRY  mGcdMemorySpaceMap;
@@ -3425,7 +3434,7 @@ MemoryAttributeProtocolNotify (
 {
   EFI_STATUS  Status;
 
-  Status = gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&MemoryAttributeProtocol);
+  Status = gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&mMemoryAttributeProtocol);
 
   if (EFI_ERROR (Status)) {
     DEBUG ((
@@ -3507,30 +3516,80 @@ GetDxeMemoryProtectionSettings (
 }
 
 /**
-  Sets the NX compatibility global to FALSE so future checks to
-  IsSystemNxCompatible() will return FALSE.
+  Uninstalls the Memory Attribute Protocol from all handles.
 **/
 VOID
 EFIAPI
-TurnOffNxCompatibility (
+UninstallMemoryAttributeProtocol (
   VOID
   )
 {
-  if (mIsSystemNxCompatible) {
-    DEBUG ((DEBUG_INFO, "%a - Setting Nx on Code types to FALSE\n", __FUNCTION__));
+  EFI_STATUS  Status;
+  UINTN       HandleCount;
+  UINTN       Index;
+  EFI_HANDLE  *HandleBuffer;
+
+  if (mMemoryAttributeProtocol == NULL) {
+    Status = gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&mMemoryAttributeProtocol);
+    if (EFI_ERROR (Status)) {
+      return;
+    }
   }
 
-  mIsSystemNxCompatible = FALSE;
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiMemoryAttributeProtocolGuid,
+                  NULL,
+                  &HandleCount,
+                  &HandleBuffer
+                  );
+
+  if (!EFI_ERROR (Status)) {
+    for (Index = 0; Index < HandleCount; Index++) {
+      Status = gBS->UninstallProtocolInterface (
+                      HandleBuffer[Index],
+                      &gEfiMemoryAttributeProtocolGuid,
+                      mMemoryAttributeProtocol
+                      );
+      ASSERT_EFI_ERROR (Status);
+    }
+  }
+
+  if (HandleBuffer != NULL) {
+    FreePool (HandleBuffer);
+  }
 }
 
 /**
-  Returns TRUE if TurnOffNxCompatibility() has never been called.
+  Sets the NX compatibility global to FALSE so future checks to
+  IsEnhancedMemoryProtectionActive() will return FALSE.
 **/
-BOOLEAN
+VOID
 EFIAPI
-IsSystemNxCompatible (
+ActivateCompatibilityMode (
   VOID
   )
 {
-  return mIsSystemNxCompatible;
+  if (!mEnhancedMemoryProtectionActive) {
+    return;
+  }
+
+  DEBUG ((DEBUG_ERROR, "%a - Activating Memory Protection Compatibility Mode!\n", __FUNCTION__));
+
+  mEnhancedMemoryProtectionActive = FALSE;
+
+  DisableNullDetection ();
+  UninstallMemoryAttributeProtocol ();
+}
+
+/**
+  Returns TRUE if ActivateCompatibilityMode() has never been called.
+**/
+BOOLEAN
+EFIAPI
+IsEnhancedMemoryProtectionActive (
+  VOID
+  )
+{
+  return mEnhancedMemoryProtectionActive;
 }

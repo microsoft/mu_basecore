@@ -145,20 +145,20 @@ MemoryAttributeProtocolNotify (
 
 /**
   Sets the NX compatibility global to FALSE so future checks to
-  IsSystemNxCompatible() will return FALSE.
+  IsEnhancedMemoryProtectionActive() will return FALSE.
 **/
 VOID
 EFIAPI
-TurnOffNxCompatibility (
+ActivateCompatibilityMode (
   VOID
   );
 
 /**
-  Returns TRUE if TurnOffNxCompatibility() has never been called.
+  Returns TRUE if ActivateCompatibilityMode() has never been called.
 **/
 BOOLEAN
 EFIAPI
-IsSystemNxCompatible (
+IsEnhancedMemoryProtectionActive (
   VOID
   );
 
