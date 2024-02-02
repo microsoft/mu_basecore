@@ -36,6 +36,20 @@
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha256Duplicate           | TRUE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha256Update              | TRUE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha256Final               | TRUE
+# SHA384 family
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha384GetContextSize      | TRUE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha384Init                | TRUE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha384Duplicate           | TRUE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha384Update              | TRUE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha384Final               | TRUE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha384HashAll             | TRUE
+# SHA512 family
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha512GetContextSize      | TRUE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha512Init                | TRUE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha512Duplicate           | TRUE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha512Update              | TRUE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha512Final               | TRUE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha512HashAll             | TRUE
 # TLS family
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceTlsInitialize             | TRUE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceTlsCtxFree                | TRUE
