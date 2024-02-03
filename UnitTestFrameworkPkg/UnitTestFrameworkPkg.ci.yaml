@@ -62,7 +62,12 @@
     },
     ## options defined .pytool/Plugin/HostUnitTestDscCompleteCheck
     "HostUnitTestDscCompleteCheck": {
-        "IgnoreInf": [],
+        "IgnoreInf": [
+            "UnitTestFrameworkPkg/Test/GoogleTest/Sample/SampleGoogleTestExpectFail/SampleGoogleTestHostExpectFail.inf",
+            "UnitTestFrameworkPkg/Test/GoogleTest/Sample/SampleGoogleTestGenerateException/SampleGoogleTestHostGenerateException.inf",
+            "UnitTestFrameworkPkg/Test/UnitTest/Sample/SampleUnitTestExpectFail/SampleUnitTestHostExpectFail.inf",
+            "UnitTestFrameworkPkg/Test/UnitTest/Sample/SampleUnitTestGenerateException/SampleUnitTestHostGenerateException.inf"
+        ],
         "DscPath": "Test/UnitTestFrameworkPkgHostTest.dsc"
     },
     ## options defined .pytool/Plugin/GuidCheck
@@ -122,5 +127,14 @@
           "Library/CmockaLib/cmocka",         # cmocka is submodule outside of control
           "Library/GoogleTestLib/googletest"  # googletest is submodule outside of control
         ] # package root relative file, folder, or glob pattern to ignore
+    },
+
+    # options defined in .pytool/Plugin/UncrustifyCheck
+    "UncrustifyCheck": {
+        "IgnoreFiles": [
+            "Library/CmockaLib/cmocka/**",
+            "Library/GoogleTestLib/googletest/**",
+            "Library/SubhookLib/subhook/**"
+        ]
     }
 }
