@@ -1,6 +1,6 @@
 /** @file
-  Provides the required functionality for initializing and
-  checking the stack cookie.
+  Provides the required functionality for initializing
+  the stack cookie value.
 
   Copyright (c) Microsoft Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -8,17 +8,13 @@
 
 #include <Base.h>
 #include <Uefi.h>
-#include <Uefi/UefiBaseType.h>
-#include <Library/BaseLib.h>
-#include <Library/DebugLib.h>
-#include <Library/PeCoffLib.h>
+
 #include <Library/RngLib.h>
-#include <Library/StackCheckFailureLib.h>
 
 #if defined (__GNUC__) || defined (__clang__)
-VOID  *__stack_chk_guard = (VOID *)0xBEEBE;
+extern VOID  *__stack_chk_guard;
 #elif defined (_MSC_VER)
-UINTN  __security_cookie = 0xBEEBE;
+extern VOID  *__security_cookie;
 #endif
 
 /**
