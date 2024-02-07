@@ -22,10 +22,6 @@
   DEFINE NETWORK_ISCSI_ENABLE    = TRUE
 
 !include MdePkg/MdeLibs.dsc.inc
-## MU_CHANGE Begin
-[LibraryClasses.ARM, LibraryClasses.AARCH64]
-  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
-## MU_CHANGE End
 
 [LibraryClasses]
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
@@ -58,6 +54,7 @@
   FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
   FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
   SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+  NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf # MU_CHANGE: /GS and -fstack-protector support
 
 [LibraryClasses.common.UEFI_DRIVER]
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
@@ -80,7 +77,7 @@
   NULL|MdePkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf
 !endif
   # MU_CHANGE End
-  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+  # NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf # MU_CHANGE: Use Project Mu StackCheckLib
   #ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf   # MU_CHANGE
 
 [LibraryClasses.ARM]
