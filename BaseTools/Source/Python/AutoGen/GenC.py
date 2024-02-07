@@ -700,10 +700,12 @@ SUP_MODULE_BASE  : TemplateString("""${BEGIN}
 }
 
 ## Library Constructor and Destructor Templates
+# MU_CHANGE [BEGIN]: Add StackCookieSupport marker for stack cookie support.
 gLibraryString = {
 SUP_MODULE_BASE  :   TemplateString("""
 ${BEGIN}${FunctionPrototype}${END}
 
+${StackCookieSupport}
 VOID
 EFIAPI
 ProcessLibrary${Type}List (
@@ -714,10 +716,10 @@ ${BEGIN}  RETURN_STATUS  Status;
 ${FunctionCall}${END}
 }
 """),
-# MU_CHANGE [BEGIN]: Add StackCookieSupport marker for stack cookie support.
 'PEI'   :   TemplateString("""
 ${BEGIN}${FunctionPrototype}${END}
 
+${StackCookieSupport}
 VOID
 EFIAPI
 ProcessLibrary${Type}List (
@@ -745,10 +747,10 @@ ${BEGIN}  EFI_STATUS  Status;
 ${FunctionCall}${END}
 }
 """),
-# MU_CHANGE [END]: Add StackCookieSupport marker for stack cookie support.
 'MM'   :   TemplateString("""
 ${BEGIN}${FunctionPrototype}${END}
 
+${StackCookieSupport}
 VOID
 EFIAPI
 ProcessLibrary${Type}List (
@@ -761,6 +763,7 @@ ${FunctionCall}${END}
 }
 """),
 }
+# MU_CHANGE [END]: Add StackCookieSupport marker for stack cookie support.
 
 gBasicHeaderFile = "Base.h"
 

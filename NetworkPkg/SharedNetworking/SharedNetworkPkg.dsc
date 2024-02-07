@@ -30,12 +30,6 @@
   NETWORK_SNP_ENABLE = TRUE
   !include NetworkPkg/NetworkDefines.dsc.inc
 
-
-## MU_CHANGE Begin
-[LibraryClasses.ARM, LibraryClasses.AARCH64]
-  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
-## MU_CHANGE End
-
 [LibraryClasses]
   !include NetworkPkg/NetworkLibs.dsc.inc
   DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf
@@ -66,6 +60,7 @@
   FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
   FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
   SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+  NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf # MU_CHANGE: /GS and -fstack-protector support
 
 [LibraryClasses.common.DXE_CORE, LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.DXE_RUNTIME_DRIVER, LibraryClasses.common.UEFI_DRIVER]
     # Common\MU_TIANO\CryptoPkg\Library\BaseCryptLibOnProtocolPpi\DxeCryptLib.inf
@@ -79,12 +74,6 @@
 [LibraryClasses.x64.DXE_SMM_DRIVER, LibraryClasses.x64.SMM_CORE]
     BaseCryptLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/SmmCryptLib.inf
     TlsLib|CryptoPkg/Library/BaseCryptLibOnProtocolPpi/SmmCryptLib.inf
-
-# MU_CHANGE [BEGIN] - Add Stack Cookie Support
-[LibraryClasses.X64]
-  NULL|MdePkg/Library/StackCheckLib/StackCheckLib.inf
-  StackCheckFailureLib|MdePkg/Library/StackCheckFailureLibNull/StackCheckFailureLibNull.inf
-# MU_CHANGE [END] - Add Stack Cookie Support
 
 [LibraryClasses.DXE_RUNTIME_DRIVER, LibraryClasses.DXE_CORE]
   DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf
@@ -126,7 +115,7 @@
   NULL|MdePkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf  # MU_CHANGE
   BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf  # while building with MSVC, we can't process the s files
 !endif
-  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+  # NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf # MU_CHANGE: Use Project Mu StackCheckLib
   # ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf    # MU_CHANGE
 
 
