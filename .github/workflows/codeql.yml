@@ -2,13 +2,15 @@
 #
 # Results are uploaded to GitHub Code Scanning.
 #
-# Note: Important: This file currently only works with "CI" builds. "Platform" builds can
-#                   be supported without much effort but that will be done in the future.
+# Note: Important: This file only works with "CI" builds. "Platform" builds are
+#                  supported with the codeql-platform.yml file.
 #
 # Note: This workflow only supports Windows as CodeQL CLI has confirmed issues running
 #       against edk2-style codebases on Linux (only tested on Ubuntu). Therefore, this
 #       workflow is written only for Windows but could easily be adapted to run on Linux
-#       in the future if needed (e.g. swap out "windows" with agent OS var value, etc.)
+#       in the future if needed (e.g. swap out "windows" with agent OS var value, etc.).
+#
+#       For details about the Linux issue see: https://github.com/github/codeql-action/issues/1338
 #
 # NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
 #       instead of the file in this repo.
@@ -270,7 +272,14 @@ jobs:
         import sys
         from pathlib import Path
 
-        # Find the plugin directory that contains the CodeQL plugin
+        #
+        # Find the plugin directory that contains the CodeQL plugin.
+        #
+        # Prior to Mu Basecore 202311, the CodeQL plugin was located in .pytool. After it
+        # is located in BaseTools. First check BaseTools, but consider .pytool as a backup
+        # for backward compatibility. The .pytool backup can be removed when no longer needed
+        # for supported branches.
+        #
         plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('BaseTools/Plugin/CodeQL'))
         if not plugin_dir:
           plugin_dir = list(Path(os.environ['GITHUB_WORKSPACE']).rglob('.pytool/Plugin/CodeQL'))
@@ -352,7 +361,14 @@ jobs:
         import shutil
         from pathlib import Path
 
-        # Only these two plugins are needed for CodeQL
+        # Only these two plugins are needed for CodeQL.
+        #
+        # CodeQL build time is reduced by removing other plugins that are not needed for the CodeQL
+        # build in the .pytool directory. The CompilerPlugin is required to compile code for CodeQL
+        # to extract results from and the CodeQL plugin is necessary to to analyze the results and
+        # build the CodeQL database from them. The CodeQL plugin should be in BaseTools moving forward
+        # but still might be in .pytool in older branches so it is kept here as an exception.
+        #
         plugins_to_keep = ['CodeQL', 'CompilerPlugin']
 
         plugin_dir = Path(os.environ['PYTOOL_PLUGIN_DIR']).absolute()
