@@ -204,6 +204,7 @@
 
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/PeiCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/DxeCryptLib.inf
+  CryptoPkg/Library/BaseCryptLibOnProtocolPpi/RuntimeDxeCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/StandaloneMmCryptLib.inf  # MU_CHANGE: Add StandaloneMmCryptLib
   # MU_CHANGE [BEGIN] The prebuilt versions of CryptoDriver
 !if $(CRYPTO_BINARY_EXTDEP_PATH) != FALSE
