@@ -9,6 +9,7 @@ from edk2toolext.environment.plugintypes.ci_build_plugin import ICiBuildPlugin
 from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
 from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
 from edk2toolext.environment.var_dict import VarDict
+from edk2toollib.gitignore_parser import parse_gitignore_lines  # MU_CHANGE - Add git ignore syntax
 from pathlib import Path
 from edk2toollib.uefi.edk2.path_utilities import Edk2Path
 
@@ -77,10 +78,17 @@ class DscCompleteCheck(ICiBuildPlugin):
             x) for x in INFFiles]  # make edk2relative path so can compare with DSC
 
         # remove ignores
-
+        # MU_CHANGE [BEGIN] - Add git ignore syntax
+        ignored_paths = []
         if "IgnoreInf" in pkgconfig:
-            for a in pkgconfig["IgnoreInf"]:
-                a = a.replace(os.sep, "/")
+            ignore_filter = parse_gitignore_lines(
+                pkgconfig["IgnoreInf"],
+                "DSC Complete Check Config",
+                os.path.dirname(abs_pkg_path))
+            ignored_paths = list(filter(ignore_filter, INFFiles))
+        # MU_CHANGE [END] - Add git ignore syntax
+
+            for a in ignored_paths:  # MU_CHANGE - Add git ignore syntax
                 try:
                     tc.LogStdOut("Ignoring INF {0}".format(a))
                     INFFiles.remove(a)
