@@ -45,7 +45,7 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
             int: The number of environment issues found. Zero indicates no
             action is needed.
         """
-        def verify_cmd(tool: RustToolInfo) -> bool:
+        def verify_cmd(tool: RustToolInfo) -> int:
             """Indicates if a command can successfully be executed.
 
             Args:
@@ -77,7 +77,6 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
                     return 2
 
             return 0
-
 
         def get_workspace_toolchain_version() -> RustToolChainInfo:
             """Returns the rust toolchain version specified in the workspace
@@ -257,18 +256,18 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
             "cargo make": RustToolInfo(
                 presence_cmd=("cargo", "make --version"),
                 install_help= \
-                f"  cargo install cargo-make {('--version ' + tool_versions.get("cargo-make", "")) if "cargo-make" in tool_versions else ""}"
+                f"  cargo binstall cargo-make {('--version ' + tool_versions.get("cargo-make", "")) if "cargo-make" in tool_versions else ""}"
                 "\nOR\n"
-                f"  cargo binstall cargo-make {('--version ' + tool_versions.get("cargo-make", "")) if "cargo-make" in tool_versions else ""}\n",
+                f"  cargo install cargo-make {('--version ' + tool_versions.get("cargo-make", "")) if "cargo-make" in tool_versions else ""}\n",
                 required_version=tool_versions.get("cargo-make"),
                 regex = r'\d+\.\d+\.\d+'
                 ),
             "cargo tarpaulin": RustToolInfo(
                 presence_cmd=("cargo", "tarpaulin --version"),
                 install_help= \
-                f"  cargo install cargo-tarpaulin {('--version ' + tool_versions.get("cargo-tarpaulin", "")) if "cargo-tarpaulin" in tool_versions else ""}"
+                f"  cargo binstall cargo-tarpaulin {('--version ' + tool_versions.get("cargo-tarpaulin", "")) if "cargo-tarpaulin" in tool_versions else ""}"
                 "\nOR\n"
-                f"  cargo binstall cargo-tarpaulin {('--version ' + tool_versions.get("cargo-tarpaulin", "")) if "cargo-tarpaulin" in tool_versions else ""}\n",
+                f"  cargo install cargo-tarpaulin {('--version ' + tool_versions.get("cargo-tarpaulin", "")) if "cargo-tarpaulin" in tool_versions else ""}\n",
                 required_version=tool_versions.get("cargo-tarpaulin"),
                 regex = r'\d+\.\d+\.\d+'
                 ),
