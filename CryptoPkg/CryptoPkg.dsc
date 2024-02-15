@@ -23,9 +23,6 @@
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
-# MU_CHANGE
-!include CryptoPkg/Driver/Bin/Crypto.inc.dsc
-
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgTarget.dsc.inc
 
 ################################################################################
@@ -49,38 +46,8 @@
   HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
   RngLib|MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
 
-##MSCHANGE Begin
-  FltUsedLib|MdePkg/Library/FltUsedLib/FltUsedLib.inf
-  UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLib.inf
-  UnitTestPersistenceLib|UnitTestFrameworkPkg/Library/UnitTestPersistenceLibNull/UnitTestPersistenceLibNull.inf
-  UnitTestBootLib|UnitTestFrameworkPkg/Library/UnitTestBootLibNull/UnitTestBootLibNull.inf
-  UnitTestResultReportLib|UnitTestFrameworkPkg/Library/UnitTestResultReportLib/UnitTestResultReportLibDebugLib.inf
-  UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
-  PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
-  MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
-  IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
-  SynchronizationLib|MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
-  TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
-  SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
-##MSCHANGE End
-
-# MU_CHANGE [BEGIN]
-# Add RNG Libs for ARM
-[LibraryClasses]
-  RngLib|MdePkg/Library/BaseRngLibNull/BaseRngLibNull.inf
-
-[LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_APPLICATION]
+[LibraryClasses.common.UEFI_APPLICATION]
   RngLib|MdePkg/Library/DxeRngLib/DxeRngLib.inf
-
-!if $(TOOL_CHAIN_TAG) == VS2019 or $(TOOL_CHAIN_TAG) == VS2022 ## MU_CHANGE
-[LibraryClasses.IA32]
-  NULL|MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf
-  ReportStatusCodeLib|MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
-[LibraryClasses.X64.DXE_CORE, LibraryClasses.X64.UEFI_DRIVER, LibraryClasses.X64.DXE_DRIVER, LibraryClasses.X64.UEFI_APPLICATION]
-  # this is currently X64 only because MSVC doesn't support BaseMemoryLibOptDxe for AARCH64
-  BaseMemoryLib|MdePkg/Library/BaseMemoryLibOptDxe/BaseMemoryLibOptDxe.inf
-!endif ##MSCHANGE
-# MU_CHANGE [END]
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
 
@@ -96,67 +63,6 @@
 
   # Add support for stack protector
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
-
-[LibraryClasses.common.PEIM]
-  PeimEntryPoint|MdePkg/Library/PeimEntryPoint/PeimEntryPoint.inf
-  PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLib/PeiServicesTablePointerLib.inf
-  PeiServicesLib|MdePkg/Library/PeiServicesLib/PeiServicesLib.inf
-  MemoryAllocationLib|MdePkg/Library/PeiMemoryAllocationLib/PeiMemoryAllocationLib.inf
-  HobLib|MdePkg/Library/PeiHobLib/PeiHobLib.inf
-  PcdLib|MdePkg/Library/PeiPcdLib/PeiPcdLib.inf
-  ReportStatusCodeLib|MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
-  TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
-
-[LibraryClasses.common.DXE_SMM_DRIVER]
-  SmmServicesTableLib|MdePkg/Library/SmmServicesTableLib/SmmServicesTableLib.inf
-  MemoryAllocationLib|MdePkg/Library/SmmMemoryAllocationLib/SmmMemoryAllocationLib.inf
-
-!if $(CRYPTO_SERVICES) != "PACKAGE"
-[LibraryClasses.ARM]
-  ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
-
-[LibraryClasses.common.SEC]
-  TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
-
-[LibraryClasses.IA32.PEIM, LibraryClasses.X64.PEIM]
-  PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLibIdt/PeiServicesTablePointerLibIdt.inf
-
-[LibraryClasses.ARM.PEIM, LibraryClasses.AARCH64.PEIM]
-  PeiServicesTablePointerLib|ArmPkg/Library/PeiServicesTablePointerLib/PeiServicesTablePointerLib.inf
-
-[LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_APPLICATION] # MU_CHANGE add UEFI Application for UEFI TEsts
-  UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
-  UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
-  UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
-  MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
-  ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
-  PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
-  DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf # MU_CHANGE add debug lib
-
-[LibraryClasses.common.DXE_SMM_DRIVER]
-  UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
-  UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
-  MmServicesTableLib|MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
-  ReportStatusCodeLib|MdeModulePkg/Library/SmmReportStatusCodeLib/SmmReportStatusCodeLib.inf
-  TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
-  DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf # MU_CHANGE add debug lib
-!endif
-
-[LibraryClasses.common.UEFI_APPLICATION]
-  UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
-  UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
-  UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
-  MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
-  ReportStatusCodeLib|MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
-  PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
-
-[LibraryClasses.common.MM_STANDALONE]
-  DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
-  MemoryAllocationLib|StandaloneMmPkg/Library/StandaloneMmMemoryAllocationLib/StandaloneMmMemoryAllocationLib.inf
-  MmServicesTableLib|MdePkg/Library/StandaloneMmServicesTableLib/StandaloneMmServicesTableLib.inf
-  ReportStatusCodeLib|MdeModulePkg/Library/SmmReportStatusCodeLib/StandaloneMmReportStatusCodeLib.inf
-  StandaloneMmDriverEntryPoint|MdePkg/Library/StandaloneMmDriverEntryPoint/StandaloneMmDriverEntryPoint.inf
-  TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
 
 ################################################################################
 #
@@ -206,46 +112,10 @@
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/DxeCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/RuntimeDxeCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/StandaloneMmCryptLib.inf  # MU_CHANGE: Add StandaloneMmCryptLib
-  # MU_CHANGE [BEGIN] The prebuilt versions of CryptoDriver
-!if $(CRYPTO_BINARY_EXTDEP_PATH) != FALSE
-  !include CryptoPkg/Driver/Bin/CryptoPkg.ci.inc.dsc
-!endif
-  # MU_CHANGE [END] The prebuilt versions of CryptoDriver
 
 # MU_CHANGE START
 [Components.X64, Components.IA32]
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/SmmCryptLib.inf
-
-[Components.IA32, Components.X64]
-  #
-  # Build verification of IA32/X64 specific libraries
-  #
-
-[Components.IA32, Components.X64] # MU_CHANGE remove ARM and AARCH64
-  CryptoPkg/Driver/CryptoPei.inf {
-    <Defines>
-      FILE_GUID = $(PEI_CRYPTO_DRIVER_FILE_GUID)  # MU_CHANGE updated File GUID
-  }
-
-[Components.IA32, Components.X64, Components.AARCH64]
-  CryptoPkg/Driver/CryptoDxe.inf {
-    <Defines>
-      FILE_GUID = $(DXE_CRYPTO_DRIVER_FILE_GUID)  # MU_CHANGE updated File GUID
-  }
-
-[Components.IA32, Components.X64]
-  CryptoPkg/Driver/CryptoSmm.inf {
-    <Defines>
-      FILE_GUID = $(SMM_CRYPTO_DRIVER_FILE_GUID)# MU_CHANGE updated File GUID
-  }
-
-# MU_CHANGE [BEGIN]: Add CryptoStandaloneMm
-[Components.IA32, Components.X64, Components.AARCH64]
-  CryptoPkg/Driver/CryptoStandaloneMm.inf {
-    <Defines>
-      FILE_GUID = $(STANDALONEMM_CRYPTO_DRIVER_FILE_GUID)  # MU_CHANGE updated File GUID
-  }
-# MU_CHANGE [END]: Add CryptoStandaloneMm
 
 ## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib
 [Components.IA32, Components.X64, Components.AARCH64]
