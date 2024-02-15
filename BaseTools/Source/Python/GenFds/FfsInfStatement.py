@@ -19,6 +19,7 @@ from .GenFdsGlobalVariable import GenFdsGlobalVariable
 from .Ffs import SectionSuffix,FdfFvFileTypeToFileType
 import subprocess
 import sys
+from pathlib import Path        # MU_CHANGE - Consolidate absolute INF paths
 from . import Section
 from . import RuleSimpleFile
 from . import RuleComplexFile
@@ -156,7 +157,14 @@ class FfsInfStatement(FfsInfStatementClassObject):
         if len(self.InfFileName) > 1 and self.InfFileName[0] == '\\' and self.InfFileName[1] == '\\':
             pass
         elif self.InfFileName[0] == '\\' or self.InfFileName[0] == '/' :
-            self.InfFileName = self.InfFileName[1:]
+            # MU_CHANGE [BEGIN] - Consolidate absolute INF paths
+            ws_path = Path(GenFdsGlobalVariable.WorkSpaceDir)
+            inf_path = Path(self.InfFileName)
+            if ws_path in inf_path.parents:
+                self.InfFileName = str(inf_path.relative_to(ws_path))
+            else:
+                self.InfFileName = self.InfFileName[1:]
+            # MU_CHANGE [END] - Consolidate absolute INF paths
 
         if self.InfFileName.find('$') == -1:
             InfPath = NormPath(self.InfFileName)
