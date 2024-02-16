@@ -317,8 +317,13 @@ SetupStackGuardPage (
   }
 
   ZeroMem (StackBase, sizeof (EFI_PHYSICAL_ADDRESS) * NumberOfProcessors);
-  MpInitLibStartupAllAPs (GetStackBase, FALSE, NULL, 0, (VOID *)StackBase, NULL);
   // MU_CHANGE [BEGIN] - CodeQL change
+  Status = MpInitLibStartupAllAPs (GetStackBase, FALSE, NULL, 0, (VOID *)StackBase, NULL);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to startup all APs.  Aborting Stack Guard Page setup.\n", __func__));
+    return;
+  }
+
   Status = MpInitLibWhoAmI (&Bsp);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Aborting Stack Guard Page setup.\n", __func__));
