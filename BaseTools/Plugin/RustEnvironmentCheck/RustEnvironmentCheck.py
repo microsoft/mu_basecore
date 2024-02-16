@@ -49,8 +49,7 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
             """Indicates if a command can successfully be executed.
 
             Args:
-                name (str): Tool name.
-                params (str, optional): Tool params. Defaults to "--version".
+                tool (RustToolInfo): Tool information
 
             Returns:
                 int: 0 for success, 1 for missing tool, 2 for version mismatch
