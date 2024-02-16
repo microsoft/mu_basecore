@@ -11,6 +11,4 @@
 #include <Library/MmServicesTableLib.h>
 #include <Library/DebugLib.h>
 
-extern EFI_MM_SYSTEM_TABLE  gMmCoreMmst;
-
-EFI_MM_SYSTEM_TABLE  *gMmst = &gMmCoreMmst;
+EFI_MM_SYSTEM_TABLE  *gMmst = NULL;
