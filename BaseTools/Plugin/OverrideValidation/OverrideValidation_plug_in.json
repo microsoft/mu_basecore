@@ -1,5 +1,5 @@
 {
   "scope": "global",
-  "name": "Override Validation Pre Build Plugin",
+  "name": "Override Validation and Deprecation Warning Pre Build Plugin",
   "module": "OverrideValidation"
 }

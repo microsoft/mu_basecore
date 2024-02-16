@@ -3,6 +3,8 @@
 # This tool depends on EDK2 and will parse dsc files, inf files and other standard
 # EDK2 assets
 #
+# This tool also generates deprecation warnings if a given file is deprecated
+#
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
@@ -32,20 +34,21 @@ try:
     from edk2toollib.utility_functions import RunCmd
 
     #Tuple for (version, entrycount)
-    FORMAT_VERSION_1 = (1, 4)   #Version 1: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss
-    FORMAT_VERSION_2 = (2, 5)   #Version 2: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss | GIT_COMMIT
-    FORMAT_VERSIONS = [FORMAT_VERSION_1, FORMAT_VERSION_2]
-
+    OVERRIDE_FORMAT_VERSION_1 = (1, 4)   #Version 1: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss
+    OVERRIDE_FORMAT_VERSION_2 = (2, 5)   #Version 2: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss | GIT_COMMIT
+    DEPRECATION_FORMAT_VERSION_1 = (1, 3)   # Version 1: # DEPRECATED : VERSION | PATH_TO_NEW_MODULE_TO_USE | YYYY-MM-DDThh-mm-ss
+    FORMAT_VERSIONS = [OVERRIDE_FORMAT_VERSION_1, OVERRIDE_FORMAT_VERSION_2, DEPRECATION_FORMAT_VERSION_1]
 
     class OverrideValidation(IUefiBuildPlugin):
 
         class OverrideResult(object):
-            OR_ALL_GOOD             = 0
-            OR_FILE_CHANGE          = 1
-            OR_VER_UNRECOG          = 2
-            OR_INVALID_FORMAT       = 3
-            OR_DSC_INF_NOT_FOUND    = 4
-            OR_TARGET_INF_NOT_FOUND = 5
+            OR_ALL_GOOD               = 0
+            OR_FILE_CHANGE            = 1
+            OR_VER_UNRECOG            = 2
+            OR_INVALID_FORMAT         = 3
+            OR_DSC_INF_NOT_FOUND      = 4
+            OR_TARGET_INF_NOT_FOUND   = 5
+            OR_DEPRECATED_MODULE_USED = 6
 
             @classmethod
             def GetErrStr (cls, errcode):
@@ -62,6 +65,8 @@ try:
                     str = 'FILE_NOT_FOUND'
                 elif (errcode == cls.OR_TARGET_INF_NOT_FOUND):
                     str = 'INF_FILE_NOT_FOUND'
+                elif (errcode == cls.OR_DEPRECATED_MODULE_USED):
+                    str = 'DEPRECATED_MODULE_USED'
                 else:
                     str = 'UNKNOWN'
                 return str
@@ -176,20 +181,21 @@ try:
                     CommentLine = Line.strip('#').split(':')
                     if (len(CommentLine) != 2) or\
                        ((CommentLine[0].strip().lower() != 'override') and\
-                        (CommentLine[0].strip().lower() != 'track')):
+                        (CommentLine[0].strip().lower() != 'track') and
+                        (CommentLine[0].strip().lower() != 'deprecated')):
                         continue
 
                     # Process the override content, 1. Bail on bad data; 2. Print on formatted data (matched or not)
                     tagtype = CommentLine[0].strip().lower()
                     m_result = self.override_process_line(thebuilder, CommentLine[1], filepath, filelist, modulenode, status, tagtype)
 
-                    if CommentLine[0].strip().lower() == 'override':
+                    if tagtype == 'override':
                         # For override tags, the hash has to match
                         if m_result != self.OverrideResult.OR_ALL_GOOD:
                             result = m_result
                             logging.error("At Line %d: %s" %(lineno, Line))
 
-                    elif CommentLine[0].strip().lower() == 'track':
+                    elif tagtype == 'track':
                         # For track tags, ignore the tags of which inf modules are not found
                         trackno = trackno + 1
                         if m_result == self.OverrideResult.OR_TARGET_INF_NOT_FOUND:
@@ -203,6 +209,10 @@ try:
                             logging.error("At Line %d: %s" %(lineno, Line))
                         else:
                             track_ag.append(modulenode.reflist[-1].path)
+
+                    elif tagtype == 'deprecated':
+                        if m_result == self.OverrideResult.OR_DEPRECATED_MODULE_USED:
+                            logging.warning("At Line %d: %s" %(lineno, Line))
 
             if trackno != 0 and len(track_nf) == trackno:
                 # All track tags in this file are not found, this will enforce a failure, if not already failed
@@ -275,7 +285,9 @@ try:
                 m_node.status = result
                 return result
 
-            if version_match[0] == 1:
+            if version_match[0] == 1 and tagtype == 'deprecated':
+                return self.deprecation_process_line_with_version1(thebuilder, filepath, OverrideEntry)
+            elif version_match[0] == 1:
                 return self.override_process_line_with_version1(thebuilder, filelist, OverrideEntry, m_node, status, tagtype)
             elif version_match[0] == 2:
                 return self.override_process_line_with_version2(thebuilder, filelist, OverrideEntry, m_node, status, tagtype)
@@ -366,6 +378,12 @@ try:
             return result
         # END: override_process_line_version2(self, thebuilder, filelist, OverrideEntry, m_node, status)
 
+        def deprecation_process_line_with_version1(self, thebuilder, filepath, DeprecationEntry):
+            if thebuilder.env.GetValue("ALLOW_DEPRECATED_MODULES") == "TRUE":
+                logging.info("Deprecated modules check is disabled")
+                return self.OverrideResult.OR_ALL_GOOD
+            logging.warning("Use of Deprecated module: %s, Please switch to: %s.", filepath, thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(DeprecationEntry[1].strip()))
+
         # Check override record against parsed entries
         # version: Override record's version number, normally parsed from the override record line
         # hash: Override record's hash field, normally parsed from the override record line, calculated by the standalone ModuleHash tool
@@ -375,7 +393,7 @@ try:
             hash_val = ''
 
             # Error out the unknown version
-            if (version == FORMAT_VERSION_1[0]):
+            if (version == OVERRIDE_FORMAT_VERSION_1[0]):
                 hash_val = ModuleHashCal(fullpath)
                 if (hash_val != hash):
                     result = self.OverrideResult.OR_FILE_CHANGE
@@ -582,6 +600,14 @@ def path_parse():
         '-r', '--regenpath', dest = 'RegenPath', type=str,
         help = '''Specify the absolute path to an inf with existing overrides to regen by passing r Path/To/Target or --regenpath Path/To/Target.'''
         )
+    group.add_argument (
+        '-d', '--deprecatepath', dest = 'DeprecatedPath', type=str,
+        help = '''Specify the absolute path to the file to be deprecated by passing -d DEPRECATED_MODULE_PATH or --deprecatepath DEPRECATED_MODULE_PATH.'''
+        )
+    parser.add_argument (
+        '-dr', '--deprecationreplacementpath', dest = 'DeprecationReplacementPath', type=str,
+        help = '''Specify the relative path from the package to the replacement module by passing -dr Path/To/ReplacementPath or --deprecationreplacementpath Path/To/Target.'''
+        )
     parser.add_argument (
         '-p', '--packagepath', dest = 'RegenPackagePath', nargs="*", default=[],
         help = '''Specify the packages path to be used to resolve relative paths when using --regenpath. ignored otherwise. Workspace is always included.'''
@@ -608,7 +634,7 @@ def path_parse():
         if not os.path.isfile(Paths.TargetPath):
             raise RuntimeError("Module path is invalid.")
 
-    if Paths.Version < 1 or Paths.Version > len(FORMAT_VERSIONS):
+    if Paths.Version not in [version_format[0] for version_format in FORMAT_VERSIONS]:
         raise RuntimeError("Version is invalid")
 
     if not os.path.isdir(Paths.WorkSpace):
@@ -629,6 +655,15 @@ def path_parse():
         # For a folder, this will do nothing on a formatted abspath
         # For a drive root, this will rip off the os.sep
         if not os.path.normcase(Paths.RegenPath).startswith(os.path.normcase(Paths.WorkSpace.rstrip(os.sep)) + os.sep):
+            raise RuntimeError("Module is not within specified Workspace.")
+
+    if Paths.DeprecatedPath is not None:
+        if not os.path.isfile(Paths.DeprecatedPath):
+            raise RuntimeError("Deprecation path module is invalid")
+        # Needs to strip os.sep is to take care of the root path case
+        # For a folder, this will do nothing on a formatted abspath
+        # For a drive root, this will rip off the os.sep
+        if not os.path.normcase(Paths.DeprecatedPath).startswith(os.path.normcase(Paths.WorkSpace.rstrip(os.sep)) + os.sep):
             raise RuntimeError("Module is not within specified Workspace.")
 
     return Paths
@@ -671,10 +706,10 @@ if __name__ == '__main__':
                         VERSION_INDEX = Paths.Version - 1
 
                         if VERSION_INDEX == 0:
-                            line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"))
+                            line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), OVERRIDE_FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"))
                         elif VERSION_INDEX == 1:
                             git_hash = ModuleGitHash(abs_path)
-                            line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"), git_hash)
+                            line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), OVERRIDE_FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"), git_hash)
                         print("Updating:\n" + line)
                 else:
                     print(f"Warning: Could not resolve relative path {rel_path}. Override line not updated.\n")
@@ -687,28 +722,50 @@ if __name__ == '__main__':
     else:
         dummy_list = []
         pathtool = Edk2Path(Paths.WorkSpace, dummy_list)
+        if Paths.DeprecatedPath is not None:
+            # Generate deprecation warning line
+            #    DEPRECATION_FORMAT_VERSION_1 = (1, 4)   # Version 1: # DEPRECATED : VERSION | PATH_TO_NEW_MODULE_TO_USE | YYYY-MM-DDThh-mm-ss
 
-        # Generate and print the override for pasting into the file.
-        # Use absolute module path to find package path
-        pkg_path = pathtool.GetContainingPackage(Paths.TargetPath)
-        if pkg_path is not None:
-            rel_path = Paths.TargetPath[Paths.TargetPath.find(pkg_path):]
+            if Paths.DeprecationReplacementPath is not None:
+                pkg_path = pathtool.GetContainingPackage(Paths.DeprecationReplacementPath)
+                if pkg_path is not None:
+                    rel_path = Paths.DeprecationReplacementPath[Paths.DeprecationReplacementPath.find(pkg_path):]
+                else:
+                    rel_path = pathtool.GetEdk2RelativePathFromAbsolutePath(Paths.DeprecationReplacementPath)
+                    if not rel_path:
+                        print(f"{Paths.DeprecationReplacementPath} is invalid for this workspace.")
+                        sys.exit(1)
+                rel_path = rel_path.replace('\\', '/')
+            else:
+                rel_path = "REMOVED_COMPLETELY"
+
+            print("Copy and paste the following line(s) to your deprecated inf file(s):\n")
+            print('#%s : %08d | %s | %s \n' % ('Deprecated', DEPRECATION_FORMAT_VERSION_1[0], rel_path, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")))
+
         else:
-            rel_path = pathtool.GetEdk2RelativePathFromAbsolutePath(Paths.TargetPath)
-            if not rel_path:
-                print(f"{Paths.TargetPath} is invalid for this workspace.")
-                sys.exit(1)
+            # Generate override hash
 
-        rel_path = rel_path.replace('\\', '/')
-        mod_hash = ModuleHashCal(Paths.TargetPath)
+            # Generate and print the override for pasting into the file.
+            # Use absolute module path to find package path
+            pkg_path = pathtool.GetContainingPackage(Paths.TargetPath)
+            if pkg_path is not None:
+                rel_path = Paths.TargetPath[Paths.TargetPath.find(pkg_path):]
+            else:
+                rel_path = pathtool.GetEdk2RelativePathFromAbsolutePath(Paths.TargetPath)
+                if not rel_path:
+                    print(f"{Paths.TargetPath} is invalid for this workspace.")
+                    sys.exit(1)
 
-        VERSION_INDEX = Paths.Version - 1
+            rel_path = rel_path.replace('\\', '/')
+            mod_hash = ModuleHashCal(Paths.TargetPath)
 
-        if VERSION_INDEX == 0:
-            print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-            print('#%s : %08d | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")))
+            VERSION_INDEX = Paths.Version - 1
 
-        elif VERSION_INDEX == 1:
-            git_hash = ModuleGitHash(Paths.TargetPath)
-            print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-            print('#%s : %08d | %s | %s | %s | %s' % ("Override" if not Paths.Track else "Track", FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
+            if VERSION_INDEX == 0:
+                print("Copy and paste the following line(s) to your overrider inf file(s):\n")
+                print('#%s : %08d | %s | %s | %s' % ("Override" if not Paths.Track else "Track", OVERRIDE_FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")))
+
+            elif VERSION_INDEX == 1:
+                git_hash = ModuleGitHash(Paths.TargetPath)
+                print("Copy and paste the following line(s) to your overrider inf file(s):\n")
+                print('#%s : %08d | %s | %s | %s | %s' % ("Override" if not Paths.Track else "Track", OVERRIDE_FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
