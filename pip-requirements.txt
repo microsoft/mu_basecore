@@ -14,7 +14,6 @@
 
 edk2-pytool-library~=0.21.3 # MU_CHANGE
 edk2-pytool-extensions~=0.27.2 # MU_CHANGE
-edk2-basetools==0.1.49
 antlr4-python3-runtime==4.13.1
 regex
 lcov-cobertura==2.0.2
