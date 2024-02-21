@@ -39,6 +39,7 @@
 
 [LibraryClasses]
   RngLib
+  StackCheckFailureHookLib
 
 [FixedPcd]
   gEfiMdePkgTokenSpaceGuid.PcdStackCookieExceptionVector
