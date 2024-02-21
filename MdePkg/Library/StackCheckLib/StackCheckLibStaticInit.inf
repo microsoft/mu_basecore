@@ -34,6 +34,9 @@
 [Packages]
   MdePkg/MdePkg.dec
 
+[LibraryClasses]
+  StackCheckFailureHookLib
+
 [FixedPcd]
   gEfiMdePkgTokenSpaceGuid.PcdStackCookieExceptionVector
 
