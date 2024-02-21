@@ -10,6 +10,7 @@
 
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
+#include <Library/StackCheckFailureHookLib.h>
 
 /**
   Calls an interrupt using the vector specified by PcdStackCookieExceptionVector
@@ -28,6 +29,7 @@ __stack_chk_fail (
   VOID
   )
 {
+  StackCheckFailureHook (RETURN_ADDRESS (0));
   TriggerStackCookieInterrupt ();
 }
 
@@ -55,6 +57,7 @@ StackCheckFailure (
   VOID  *ActualCookieValue
   )
 {
+  StackCheckFailureHook (RETURN_ADDRESS (0));
   TriggerStackCookieInterrupt ();
 }
 

@@ -142,10 +142,9 @@
   MdePkg/Library/JedecJep106Lib/JedecJep106Lib.inf
   MdePkg/Library/BaseFdtLib/BaseFdtLib.inf
   MdePkg/Library/BaseMmuLibNull/BaseMmuLibNull.inf      ## MU_CHANGE
-  MdePkg/Library/StackCheckFailureLibNull/StackCheckFailureLibNull.inf  ## MU_CHANGE
   MdePkg/Library/StackCheckLib/StackCheckLibStaticInit.inf      ## MU_CHANGE
   MdePkg/Library/StackCheckLib/StackCheckLibDynamicInit.inf     ## MU_CHANGE
-  MdePkg/Library/StackCheckFailureLib/StackCheckFailureLib.inf  ## MU_CHANGE
+  MdePkg/Library/StackCheckFailureHookLibNull/StackCheckFailureHookLibNull.inf  ## MU_CHANGE
   MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf        ## MU_CHANGE
 
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
