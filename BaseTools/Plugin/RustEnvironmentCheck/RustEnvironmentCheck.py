@@ -61,10 +61,10 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
                 params = tool.presence_cmd[1]
             ret = RunCmd(name, params, outstream=cmd_output,
                          logging_level=logging.DEBUG)
-            
+
             if ret != 0:
                 return 1
-            
+
             # If a specific version is required, check the version, returning
             # false if there is a version mismatch
             if tool.required_version:
@@ -110,9 +110,10 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
                 with open(WORKSPACE_TOOLCHAIN_FILE, 'r') as toml_file:
                     content = toml_file.read()
                     match = re.search(r'\[tool\]\n((?:.+\s*=\s*.+\n)*)', content)
-                    for line in match.group(1).splitlines():
-                        (tool, version) = line.split('=',maxsplit=1)
-                        tool_versions[tool.strip()] = version.strip(" \"'")
+                    if match:
+                        for line in match.group(1).splitlines():
+                            (tool, version) = line.split('=',maxsplit=1)
+                            tool_versions[tool.strip()] = version.strip(" \"'")
                 return tool_versions
             except FileNotFoundError:
                 # If a file is not found. Do not check any further.
@@ -208,7 +209,7 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
         generic_rust_install_instructions = \
             "Visit https://rustup.rs/ to install Rust and cargo."
         tool_versions = get_required_tool_versions()
-        
+
         tools = {
             "rustup": RustToolInfo(
                 presence_cmd=("rustup",),

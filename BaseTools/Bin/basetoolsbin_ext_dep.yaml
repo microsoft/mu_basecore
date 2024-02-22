@@ -9,6 +9,7 @@
 ##
 {
   "scope": "global",
+  "id": "edk-tools-bin",
   "type": "web",
   "name": "Mu-Basetools",
   "source": "https://github.com/microsoft/mu_basecore/releases/download/v2023020002.0.3/basetools-v2023020002.0.3.tar.gz",
