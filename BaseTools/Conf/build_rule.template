@@ -120,8 +120,28 @@
 # 2.26 - Rename OemData to ProductData.
 # 2.27 - Add Rust build support.
 # 2.28 - Remove Rust Incremental Build Support Hack
+# 2.29 - Add STM aux file build rule
 
-#!VERSION=2.28
+#!VERSION=2.29
+
+# MU_CHANGE [BEGIN] - Add STM aux file build rule
+
+[Aux-File]
+    <InputFile>
+        *.sea.cfg
+
+    <ExtraDependency>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).map
+
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).aux
+
+    <Command>
+        GenAux -c ${src} -o ${dst} -p $(OUTPUT_DIR)(+)$(MODULE_NAME).pdb -e $(OUTPUT_DIR)(+)$(MODULE_NAME).efi -d
+        $(CP) ${dst} $(DEBUG_DIR)(+)$(MODULE_NAME).aux
+
+# MU_CHANGE [END] - Add STM aux file build rule
 
 [C-Code-File]
     <InputFile>
