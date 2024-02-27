@@ -380,10 +380,10 @@ FfsFindSectionData (
     if (Section->Type == SectionType) {
       if (IS_SECTION2 (Section)) {
         *SectionData     = (VOID *)((EFI_COMMON_SECTION_HEADER2 *)Section + 1);
-        *SectionDataSize = SECTION2_SIZE (Section);
+        *SectionDataSize = SECTION2_SIZE (Section) - sizeof (EFI_COMMON_SECTION_HEADER2);
       } else {
         *SectionData     = (VOID *)(Section + 1);
-        *SectionDataSize = SECTION_SIZE (Section);
+        *SectionDataSize = SECTION_SIZE (Section) - sizeof (EFI_COMMON_SECTION_HEADER);
       }
 
       return EFI_SUCCESS;
