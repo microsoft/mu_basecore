@@ -123,6 +123,21 @@
 
 #!VERSION=2.28
 
+[Aux-File]
+    <InputFile>
+        *.spam.cfg
+
+    <ExtraDependency>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).map
+    
+    <OutputFile>
+        $(OUTPUT_DIR)(+)$(MODULE_NAME).aux
+    
+    <Command>
+        GenAux -c ${src} -o ${dst} -m $(OUTPUT_DIR)(+)$(MODULE_NAME).map -e $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+        $(CP) ${dst} $(DEBUG_DIR)(+)$(MODULE_NAME).aux
+
 [C-Code-File]
     <InputFile>
         ?.c
