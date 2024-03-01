@@ -379,9 +379,9 @@ UnitTestDebugAssert (
         DebugPrint (PrintLevel, ##__VA_ARGS__);      \
       }                                              \
     } while (FALSE)
-#define _DEBUG(Expression)  _DEBUG_PRINT Expression
+#define _DEBUGLIB_DEBUG(Expression)  _DEBUG_PRINT Expression
 #else
-#define _DEBUG(Expression)  DebugPrint Expression
+#define _DEBUGLIB_DEBUG(Expression)  DebugPrint Expression
 #endif
 
 /**
@@ -426,7 +426,7 @@ UnitTestDebugAssert (
 #define DEBUG(Expression)        \
     do {                           \
       if (DebugPrintEnabled ()) {  \
-        _DEBUG (Expression);       \
+        _DEBUGLIB_DEBUG (Expression);       \
       }                            \
     } while (FALSE)
 #else
