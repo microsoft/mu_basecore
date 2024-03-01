@@ -716,10 +716,13 @@ ProcessVarWithPk (
   // Init state of Del. State may change due to secure check
   //
   Del = FALSE;
-  if (  (InCustomMode () && UserPhysicalPresent ())
+  // MU_CHANGE [START] SecurityPkg/Secureboot: Support Fix delete PK failing bug
+  if (  ((InCustomMode () && UserPhysicalPresent ()) || (!IsVariablePolicyEnabled ()))
      || (  (mPlatformMode == SETUP_MODE)
         && !(FeaturePcdGet (PcdRequireSelfSignedPk) && IsPk)))
   {
+    // MU_CHANGE [END] SecurityPkg/Secureboot: Support Fix delete PK failing bug
+
     Payload     = (UINT8 *)Data + AUTHINFO2_SIZE (Data);
     PayloadSize = DataSize - AUTHINFO2_SIZE (Data);
     if (PayloadSize == 0) {
