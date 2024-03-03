@@ -8,7 +8,7 @@
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = StackCheckLib
+  BASE_NAME                      = StackCheckLibDynamicInit
   FILE_GUID                      = 495b10c8-7148-4b62-92b0-7cf4551df83d
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
@@ -16,28 +16,35 @@
   CONSTRUCTOR                    = InitializeSecurityCookie
 
 [Sources]
-  StackCheckLib.c
-  StackCheckFunctionsGcc.nasm |GCC
+  StackCheckLibCommon.c
+  StackCheckLibDynamicInit.c
 
 [Sources.IA32]
-  IA32/StackCheckFunctionsMsvc.nasm | MSFT
+  IA32/CheckCookieMsvc.nasm | MSFT
 
 [Sources.X64]
-  X64/StackCheckFunctionsMsvc.nasm | MSFT
+  X64/CheckCookieMsvc.nasm | MSFT
+
+[Sources.IA32, Sources.X64]
+  IA32/StackCookieInterrupt.nasm
+
+[Sources.ARM]
+  Arm/StackCookieInterrupt.S |GCC
+
+[Sources.AARCH64]
+  AArch64/StackCookieInterrupt.S |GCC
 
 [Packages]
   MdePkg/MdePkg.dec
 
 [LibraryClasses]
-  BaseLib
-  BaseMemoryLib
-  DebugLib
   RngLib
-  StackCheckFailureLib
+  StackCheckFailureHookLib
 
 [FixedPcd]
   gEfiMdePkgTokenSpaceGuid.PcdStackCookieExceptionVector
 
+# Disable LTO to ensure the linker doesn't optimize out the stack cookie
 [BuildOptions]
   GCC:*_*_*_CC_FLAGS = -fno-lto
   MSFT:*_*_*_CC_FLAGS = /GL-

@@ -1,17 +1,21 @@
 ;------------------------------------------------------------------------------
-; StackCheckFunctionsGcc.nasm
+; IA32/StackCheckFunctionsMsvc.nasm
 ;
 ; Copyright (c) Microsoft Corporation. All rights reserved.
 ; SPDX-License-Identifier: BSD-2-Clause-Patent
 ;------------------------------------------------------------------------------
+
     DEFAULT REL
     SECTION .text
 
-extern ASM_PFX(StackCheckFailure)
+global ASM_PFX(__report_rangecheckfailure)
+ASM_PFX(__report_rangecheckfailure):
+    ret
 
-; Called when a stack cookie check fails.
-global ASM_PFX(__stack_chk_fail)
-ASM_PFX(__stack_chk_fail):
-    call StackCheckFailure
-    int FixedPcdGet8 (PcdStackCookieExceptionVector)
+global ASM_PFX(__GSHandlerCheck)
+ASM_PFX(__GSHandlerCheck):
+    ret
+
+global @__security_check_cookie@4
+@__security_check_cookie@4:
     ret
