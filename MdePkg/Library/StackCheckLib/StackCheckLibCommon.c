@@ -9,7 +9,6 @@
 #include <Base.h>
 
 #include <Library/BaseLib.h>
-#include <Library/DebugLib.h>
 #include <Library/StackCheckFailureHookLib.h>
 
 /**
@@ -35,22 +34,6 @@ __stack_chk_fail (
 
 #elif defined (_MSC_VER)
 VOID  *__security_cookie = (VOID *)(UINTN)STACK_COOKIE_VALUE;
-
-NORETURN VOID __cdecl
-__report_rangecheckfailure (
-  VOID
-  )
-{
-  CpuDeadLoop ();
-}
-
-NORETURN VOID __cdecl
-__GSHandlerCheck (
-  VOID
-  )
-{
-  CpuDeadLoop ();
-}
 
 VOID
 StackCheckFailure (
