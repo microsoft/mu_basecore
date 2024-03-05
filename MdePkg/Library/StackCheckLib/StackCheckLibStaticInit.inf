@@ -36,6 +36,7 @@
 
 [LibraryClasses]
   StackCheckFailureHookLib
+  BaseLib
 
 [FixedPcd]
   gEfiMdePkgTokenSpaceGuid.PcdStackCookieExceptionVector
