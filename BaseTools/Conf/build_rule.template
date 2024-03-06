@@ -135,7 +135,7 @@
         $(OUTPUT_DIR)(+)$(MODULE_NAME).aux
     
     <Command>
-        GenAux -c ${src} -o ${dst} -m $(OUTPUT_DIR)(+)$(MODULE_NAME).map -e $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
+        GenAux -c ${src} -o ${dst} -p $(OUTPUT_DIR)(+)$(MODULE_NAME).pdb -e $(OUTPUT_DIR)(+)$(MODULE_NAME).efi -d
         $(CP) ${dst} $(DEBUG_DIR)(+)$(MODULE_NAME).aux
 
 [C-Code-File]
