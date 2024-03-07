@@ -171,6 +171,99 @@ inactive but RaiseErrorIfProtectionFails is active. RaiseErrorIfProtectionFails 
       ));
     gDxeMps.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails = 0;
   }
+
+  //
+  // the heap guard system does not support non-EFI_PAGE_SIZE alignments
+  // architectures that require larger RUNTIME_PAGE_ALLOCATION_GRANULARITY
+  // cannot have EfiRuntimeServicesCode, EfiRuntimeServicesData, EfiReservedMemoryType,
+  // and EfiACPIMemoryNVS guarded. OSes do not map guard pages anyway, so this is a
+  // minimal loss. Not guarding prevents alignment mismatches
+  //
+  if (RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE) {
+    if (gDxeMps.HeapGuardPolicy.Fields.UefiPageGuard) {
+      if (gDxeMps.HeapGuardPageType.Fields.EfiACPIMemoryNVS != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Page Guard set on \
+          EfiACPIMemoryNVS. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPageType.Fields.EfiACPIMemoryNVS = 0;
+      }
+
+      if (gDxeMps.HeapGuardPageType.Fields.EfiReservedMemoryType != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Page Guard set on \
+          EfiReservedMemoryType. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPageType.Fields.EfiReservedMemoryType = 0;
+      }
+
+      if (gDxeMps.HeapGuardPageType.Fields.EfiRuntimeServicesCode != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Page Guard set on \
+          EfiRuntimeServicesCode. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPageType.Fields.EfiRuntimeServicesCode = 0;
+      }
+
+      if (gDxeMps.HeapGuardPageType.Fields.EfiRuntimeServicesData != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Page Guard set on \
+          EfiRuntimeServicesData. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPageType.Fields.EfiRuntimeServicesData = 0;
+      }
+    }
+
+    if (gDxeMps.HeapGuardPolicy.Fields.UefiPoolGuard) {
+      if (gDxeMps.HeapGuardPoolType.Fields.EfiACPIMemoryNVS != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Pool Guard set on \
+          EfiACPIMemoryNVS. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPoolType.Fields.EfiACPIMemoryNVS = 0;
+      }
+
+      if (gDxeMps.HeapGuardPoolType.Fields.EfiReservedMemoryType != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Pool Guard set on \
+          EfiReservedMemoryType. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPoolType.Fields.EfiReservedMemoryType = 0;
+      }
+
+      if (gDxeMps.HeapGuardPoolType.Fields.EfiRuntimeServicesCode != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Pool Guard set on \
+          EfiRuntimeServicesCode. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPoolType.Fields.EfiRuntimeServicesCode = 0;
+      }
+
+      if (gDxeMps.HeapGuardPoolType.Fields.EfiRuntimeServicesData != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Pool Guard set on \
+          EfiRuntimeServicesData. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPoolType.Fields.EfiRuntimeServicesData = 0;
+      }
+    }
+  }
 }
 
 /**

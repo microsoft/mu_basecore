@@ -476,11 +476,13 @@ extern BOOLEAN  mOnGuarding;
 // and EfiACPIMemoryNVS guarded. OSes do not map guard pages anyway, so this is a
 // minimal loss. Not guarding prevents alignment mismatches
 //
-STATIC_ASSERT (
-  RUNTIME_PAGE_ALLOCATION_GRANULARITY == EFI_PAGE_SIZE ||
-  (((FixedPcdGet64 (PcdHeapGuardPageType) & 0x461) == 0) &&
-   ((FixedPcdGet64 (PcdHeapGuardPoolType) & 0x461) == 0)),
-  "Unsupported Heap Guard configuration on system with greater than EFI_PAGE_SIZE RUNTIME_PAGE_ALLOCATION_GRANULARITY"
-  );
+// MU_CHANGE BEGIN: Remove Static Assert, this conflicts with HOB based memory protections
+// STATIC_ASSERT (
+//   RUNTIME_PAGE_ALLOCATION_GRANULARITY == EFI_PAGE_SIZE ||
+//   (((FixedPcdGet64 (PcdHeapGuardPageType) & 0x461) == 0) &&
+//    ((FixedPcdGet64 (PcdHeapGuardPoolType) & 0x461) == 0)),
+//   "Unsupported Heap Guard configuration on system with greater than EFI_PAGE_SIZE RUNTIME_PAGE_ALLOCATION_GRANULARITY"
+//   );
+// MU_CHANGE: END Remove Static Assert
 
 #endif
