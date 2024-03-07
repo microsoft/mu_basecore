@@ -1608,9 +1608,17 @@ CoreInternalFreePages (
     goto Done;
   }
 
+  // MU_CHANGE: 64k exposed CodeQL issue
+  if (Entry == NULL) {
+    ASSERT (Entry != NULL);
+    Status = EFI_NOT_FOUND;
+    goto Done;
+  }
+
+  // MU_CHANGE END
+
   Alignment = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
 
-  ASSERT (Entry != NULL);
   if ((Entry->Type == EfiACPIReclaimMemory) ||
       (Entry->Type == EfiACPIMemoryNVS) ||
       (Entry->Type == EfiRuntimeServicesCode) ||
