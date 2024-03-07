@@ -380,6 +380,20 @@ CoreAllocatePoolI (
     Granularity = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
   }
 
+  // MU_CHANGE: 64k don't guard too large pages
+  //
+  // The heap guard system does not support non-EFI_PAGE_SIZE alignments.
+  // Architectures that require larger RUNTIME_PAGE_ALLOCATION_GRANULARITY
+  // will have the runtime memory regions unguarded. OSes do not
+  // map guard pages anyway, so this is a minimal loss. Not guarding prevents
+  // alignment mismatches
+  //
+  if (Granularity != EFI_PAGE_SIZE) {
+    NeedGuard = FALSE;
+  }
+
+  // MU_CHANGE END
+
   //
   // Adjust the size by the pool header & tail overhead
   //
