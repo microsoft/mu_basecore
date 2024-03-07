@@ -1334,7 +1334,7 @@ CoreInternalAllocatePages (
 
   Alignment = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
 
-  if ((MemoryType == EfiACPIReclaimMemory) ||
+  if ((MemoryType == EfiReservedMemoryType) ||
       (MemoryType == EfiACPIMemoryNVS) ||
       (MemoryType == EfiRuntimeServicesCode) ||
       (MemoryType == EfiRuntimeServicesData))
@@ -1606,10 +1606,15 @@ CoreInternalFreePages (
     goto Done;
   }
 
+  if (Entry == NULL) {
+    ASSERT (Entry != NULL);
+    Status = EFI_NOT_FOUND;
+    goto Done;
+  }
+
   Alignment = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
 
-  ASSERT (Entry != NULL);
-  if ((Entry->Type == EfiACPIReclaimMemory) ||
+  if ((Entry->Type == EfiReservedMemoryType) ||
       (Entry->Type == EfiACPIMemoryNVS) ||
       (Entry->Type == EfiRuntimeServicesCode) ||
       (Entry->Type == EfiRuntimeServicesData))
