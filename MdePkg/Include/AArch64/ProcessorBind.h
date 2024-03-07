@@ -161,8 +161,7 @@ typedef INT64 INTN;
 /// Page allocation granularity for AARCH64
 ///
 #define DEFAULT_PAGE_ALLOCATION_GRANULARITY  (0x1000)
-// MS_CHANGE: Change from 64K to 4K.
-#define RUNTIME_PAGE_ALLOCATION_GRANULARITY  (0x1000)
+#define RUNTIME_PAGE_ALLOCATION_GRANULARITY  (0x10000)
 
 //
 // Modifier to ensure that all protocol member functions and EFI intrinsics
