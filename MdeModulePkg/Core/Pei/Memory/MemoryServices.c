@@ -624,7 +624,7 @@ PeiAllocatePages (
   }
 
   if ((RUNTIME_PAGE_ALLOCATION_GRANULARITY > DEFAULT_PAGE_ALLOCATION_GRANULARITY) &&
-      ((MemoryType == EfiACPIReclaimMemory) ||
+      ((MemoryType == EfiReservedMemoryType) || // MU_CHANGE: 64k fix spec defined types
        (MemoryType == EfiACPIMemoryNVS) ||
        (MemoryType == EfiRuntimeServicesCode) ||
        (MemoryType == EfiRuntimeServicesData)))
