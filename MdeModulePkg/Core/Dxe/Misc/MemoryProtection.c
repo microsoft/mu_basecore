@@ -379,26 +379,29 @@ IsMemoryProtectionSectionAligned (
 {
   UINT32  PageAlignment;
 
+  // MU_CHANGE: 64k fix spec defined types
   switch (MemoryType) {
     case EfiRuntimeServicesCode:
     case EfiACPIMemoryNVS:
+    case EfiReservedMemoryType:
       PageAlignment = RUNTIME_PAGE_ALLOCATION_GRANULARITY;
       break;
     case EfiRuntimeServicesData:
-    case EfiACPIReclaimMemory:
       ASSERT (FALSE);
       PageAlignment = RUNTIME_PAGE_ALLOCATION_GRANULARITY;
       break;
     case EfiBootServicesCode:
     case EfiLoaderCode:
-    case EfiReservedMemoryType:
       PageAlignment = EFI_PAGE_SIZE;
       break;
+    case EfiACPIReclaimMemory:
     default:
       ASSERT (FALSE);
       PageAlignment = EFI_PAGE_SIZE;
       break;
   }
+
+  // MU_CHANGE END
 
   if ((SectionAlignment & (PageAlignment - 1)) != 0) {
     return FALSE;

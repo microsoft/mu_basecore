@@ -1336,7 +1336,7 @@ CoreInternalAllocatePages (
 
   Alignment = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
 
-  if ((MemoryType == EfiACPIReclaimMemory) ||
+  if ((MemoryType == EfiReservedMemoryType) || // MU_CHANGE: 64k fix spec defined types
       (MemoryType == EfiACPIMemoryNVS) ||
       (MemoryType == EfiRuntimeServicesCode) ||
       (MemoryType == EfiRuntimeServicesData))
@@ -1619,7 +1619,7 @@ CoreInternalFreePages (
 
   Alignment = DEFAULT_PAGE_ALLOCATION_GRANULARITY;
 
-  if ((Entry->Type == EfiACPIReclaimMemory) ||
+  if ((Entry->Type == EfiReservedMemoryType) || // MU_CHANGE: 64k fix spec defined types
       (Entry->Type == EfiACPIMemoryNVS) ||
       (Entry->Type == EfiRuntimeServicesCode) ||
       (Entry->Type == EfiRuntimeServicesData))
