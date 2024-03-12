@@ -646,6 +646,12 @@
   ## Include/Ppi/MemoryAttribute.h
   gEdkiiMemoryAttributePpiGuid              = { 0x1be840de, 0x2d92, 0x41ec, { 0xb6, 0xd3, 0x19, 0x64, 0x13, 0x50, 0x51, 0xfb } }
 
+  ## Include/Ppi/VariableStorage.h
+  gEdkiiVariableStoragePpiGuid              =  { 0x90d915c5, 0xe4c1, 0x4da8, { 0xa7, 0x6f, 0x9,  0xe5, 0x78, 0x91, 0x65, 0x48 } }
+
+  ## Include/Ppi/VariableStorageSelector.h
+  gEdkiiVariableStorageSelectorPpiGuid      =  { 0x782546d1, 0x03ab, 0x41e4, { 0xa0, 0x1d, 0x7a, 0x9b, 0x22, 0xba, 0x2e, 0x1e } }
+
 [Protocols]
   ## Load File protocol provides capability to load and unload EFI image into memory and execute it.
   #  Include/Protocol/LoadPe32Image.h
@@ -713,6 +719,15 @@
 
   ## Include/Protocol/SmmVarCheck.h
   gEdkiiSmmVarCheckProtocolGuid  = { 0xb0d8f3c1, 0xb7de, 0x4c11, { 0xbc, 0x89, 0x2f, 0xb5, 0x62, 0xc8, 0xc4, 0x11 } }
+
+  ## Include/Protocol/VariableStorageSelector.h
+  gEdkiiVariableStorageSelectorProtocolGuid = { 0xd56ede61, 0x81f5, 0x48f3, { 0xaf, 0x4b, 0x8d, 0x54, 0x83, 0xb9, 0xec, 0xc9 } }
+
+  ## Include/Protocol/VariableStorageSelector.h
+  gEdkiiSmmVariableStorageSelectorProtocolGuid  =  { 0x1dbbe48c, 0x9087, 0x44e7, { 0x96, 0x6e, 0x80, 0x75, 0xe4, 0x12, 0x0b, 0xd8 } }
+
+  ## Include/Protocol/VariableStorage.h
+  gEdkiiVariableStorageProtocolGuid = { 0xa073a3a6, 0x96ec, 0x4173, { 0xa9, 0xbc, 0x39, 0x95, 0x06, 0xcd, 0xea, 0xc6 } }
 
   ## This protocol is similar with DXE FVB protocol and used in the UEFI SMM evvironment.
   #  Include/Protocol/SmmFirmwareVolumeBlock.h
@@ -1311,7 +1326,7 @@
   # Size in pages. Current default is roughly 1.6GB.
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxMemoryTypeInfoPages            |0x60000|UINT32|0x40000150
   # MU_CHANGE TCBZ1086 [END]
-  
+
   # MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportAlternativeQueueSize|FALSE|BOOLEAN|0x40000151
   # MU_CHANGE [END]
@@ -2390,7 +2405,7 @@
   ## The value of rate limiter event for timeout check. Default value is 100(unit 1ms).
   # @Prompt The value is use for Usb Network rate limiting supported.
   gEfiMdeModulePkgTokenSpaceGuid.PcdUsbNetworkRateLimitingFactor|100|UINT32|0x10000028
-  
+
   ## MU_CHANGE - Configuring timer interval in terminal DXE driver
   ## This PCD determines the timer interval to be set when using serial console.
   # @Prompt Sets the serial console timer interval, in the unit of 100ns.
