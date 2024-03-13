@@ -64,7 +64,7 @@ typedef union {
 
 typedef UINT8 DXE_MEMORY_PROTECTION_SETTINGS_VERSION;
 
-#define DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  6 // Current iteration of DXE_MEMORY_PROTECTION_SETTINGS
+#define DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  7 // Current iteration of DXE_MEMORY_PROTECTION_SETTINGS
 
 //
 // Memory Protection Settings struct
@@ -456,8 +456,8 @@ extern GUID  gDxeMemoryProtectionSettingsGuid;
 #define DXE_MEMORY_PROTECTION_SETTINGS_OFF                      \
           {                                                     \
             DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,     \
-            FALSE,   /* Stack Guard On */                       \
-            FALSE,   /* Free Memory Guard On*/                  \
+            FALSE,   /* Stack Guard Off */                      \
+            FALSE,   /* Free Memory Guard Off */                \
             {                                                   \
               .Fields.UefiNullDetection               = 0,      \
               .Fields.DisableEndOfDxe                 = 0,      \
