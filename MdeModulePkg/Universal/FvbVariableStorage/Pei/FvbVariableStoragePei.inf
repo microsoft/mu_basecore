@@ -1,0 +1,63 @@
+## @file
+#  Firmware Volume Block (FVB) PEIM that produces a Variable Storage PPI instance.
+#
+#  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION       = 0x00010017
+  BASE_NAME         = FvbVariableStoragePei
+  FILE_GUID         = 531E5D9B-419B-4C3C-9561-B894F695DDE4
+  MODULE_TYPE       = PEIM
+  VERSION_STRING    = 1.0
+  ENTRY_POINT       = PeimInitializeFvbVariableStorageServices
+
+[Sources]
+  FvbVariableStoragePei.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  PcdLib
+  HobLib
+  PeimEntryPoint
+  PeiServicesLib
+  SafeIntLib
+  VariableFlashInfoLib
+
+[Guids]
+  ## CONSUMES             ## GUID
+  gFvbVariableStoragePpiInstanceGuid
+  ## CONSUMES             ## GUID # Variable store header
+  ## SOMETIMES_CONSUMES   ## HOB
+  gEfiAuthenticatedVariableGuid
+  ## SOMETIMES_CONSUMES   ## GUID # Variable store header
+  ## SOMETIMES_CONSUMES   ## HOB
+  gEfiVariableGuid
+  ## SOMETIMES_PRODUCES   ## HOB
+  ## SOMETIMES_CONSUMES   ## HOB
+  gEfiVariableIndexTableGuid
+  ## SOMETIMES_CONSUMES   ## GUID
+  gEfiSystemNvDataFvGuid
+  ## SOMETIMES_CONSUMES   ## HOB
+  ## CONSUMES             ## GUID # Dependence
+  gEdkiiFaultTolerantWriteGuid
+
+[Ppis]
+  gEdkiiVariableStoragePpiGuid                                        ## PRODUCES
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable           ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEnableFvbVariableStorage          ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdReinstallFvbVariablePpi           ## CONSUMES
+
+[Depex]
+  gEdkiiFaultTolerantWriteGuid

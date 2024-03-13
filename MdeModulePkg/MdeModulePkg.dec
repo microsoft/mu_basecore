@@ -1330,6 +1330,10 @@
   # @Prompt Enable large address image loading.
   gEfiMdeModulePkgTokenSpaceGuid.PcdImageLargeAddressLoad|TRUE|BOOLEAN|0x30001059
 
+  ## Determines whether to reinstall the FVB Variable Storage PPI after memory is installed.
+  ##   This can be disabled if the PEIM does not need shadow logic in PEI (e.g. loaded in post-memory).
+  gEfiMdeModulePkgTokenSpaceGuid.PcdReinstallFvbVariablePpi|TRUE|BOOLEAN|0x30001061
+
   # MU_CHANGE TCBZ1086 [BEGIN] - Mitigate potential system brick due to uefi MemoryTypeInformation var changes
   ## Maximum total pages that can be reserved by MemoryTypeInfo buckets.
   # Size in pages. Current default is roughly 1.6GB.
