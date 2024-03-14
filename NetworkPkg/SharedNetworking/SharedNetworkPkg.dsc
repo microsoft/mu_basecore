@@ -111,11 +111,12 @@
   # [LibraryClasses.ARM] and NULL mean link this library into all ARM images.
   #
 !if $(TOOL_CHAIN_TAG) != VS2017 or $(TOOL_CHAIN_TAG) != VS2015 or $(TOOL_CHAIN_TAG) != VS2019 or $(TOOL_CHAIN_TAG) != VS2022 ## MS_CHANGE only applies to ARM compiler
-  NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+  # NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf   # MU_CHANGE: Remove ArmPkg Dependencies
+  NULL|MdePkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf  # MU_CHANGE: Remove ArmPkg Dependencies
   BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf  # while building with MSVC, we can't process the s files
 !endif
   # NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf # MU_CHANGE: Use Project Mu StackCheckLib
-  ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
+  # ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf # MU_CHANGE: Remove ArmPkg Dependencies
 
 
 [PcdsFeatureFlag]
