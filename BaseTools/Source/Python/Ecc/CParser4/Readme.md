@@ -3,7 +3,7 @@
 Files CLexer.py, CListener.py and CParser.py are auto generated through antlr4. The files are tied directly to the
 verison of antlr4-python3-runtime that was installed while generating the files. Inside of the file, there is a check
 that verifies the version of `antlr4-python3-runtime` installed in the system matches the version used to generate
-the files..
+the files.
 
 ## Setup required to generate a new version of CParser4 files
 
