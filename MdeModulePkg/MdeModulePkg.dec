@@ -1968,6 +1968,12 @@
   # @Prompt EMU variable NV mode enable.
   gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable|FALSE|BOOLEAN|0x01100001
 
+  ## Enables or disables storage of UEFI variables using the FVB Variable Storage drivers/
+  # Used by FVB variable storage drivers that my be present on a platform to determine whether
+  # to install a Variable Storage PPI/Protocol instance.
+  ##  If disabled at runtime, it must be set before the FVB Variable Storage driver loads.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEnableFvbVariableStorage|TRUE|BOOLEAN|0x01100002
+
   ## This PCD defines the base address of reserved memory range for EMU variable NV storage.
   #  A non-ZERO value indicates a valid range reserved with size given by PcdVariableStoreSize.
   # @Prompt Base of reserved memory range for EMU variable NV storage.
