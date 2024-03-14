@@ -138,11 +138,23 @@ class EccCheck(ICiBuildPlugin):
             return 1
 
     def GetDiff(self, pkg: str, temp_diff_output: str) -> List[str]:
+        # MU_CHANGE [BEGIN]
+        #
+        # Run git command to determine repos default branch
+        #
+        result = StringIO()
+        params = "symbolic-ref refs/remotes/origin/HEAD --short"
+        ret = RunCmd("git", params, outstream=result)
+        if ret == 0:
+            defaultbranch = result.getvalue()
+        else: 
+            defaultbranch = "origin/master"
+        # MU_CHANGE [END]        
         patch = []
         #
-        # Generate unified diff between origin/master and HEAD.
+        # Generate unified diff between origin/<defaultbranch> and HEAD. # MU_CHANGE
         #
-        params = "diff --output={} --unified=0 origin/master HEAD".format(temp_diff_output)
+        params = f"diff --output={temp_diff_output} --unified=0 {defaultbranch} HEAD"   # MU_CHANGE
         RunCmd("git", params)
         with open(temp_diff_output) as file:
             patch = file.read().strip().split('\n')
@@ -160,7 +172,19 @@ class EccCheck(ICiBuildPlugin):
         #   M       MdeModulePkg/Application/CapsuleApp/CapsuleApp.h
         #   M       MdeModulePkg/Application/UiApp/FrontPage.h
         #
-        params = "diff --output={} --diff-filter=dr --name-status origin/master HEAD".format(temp_diff_output)
+        # MU_CHANGE [BEGIN]        
+        #
+        # Run git command to determine repos default branch
+        #
+        result = StringIO()
+        params = "symbolic-ref refs/remotes/origin/HEAD --short"
+        ret = RunCmd("git", params, outstream=result)
+        if ret == 0:
+            defaultbranch = result.getvalue()
+        else: 
+            defaultbranch = "origin/master"
+        # MU_CHANGE [END ]
+        params = f"diff --output={temp_diff_output} --diff-filter=dr --name-status {defaultbranch} HEAD" # MU_CHANGE
         RunCmd("git", params)
         dir_list = []
         with open(temp_diff_output) as file:
