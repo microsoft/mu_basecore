@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 {
-  "scope": "cibuild-disabled", # MU_CHANGE Disable EccCheck until Git issues are resolved
+  "scope": "cibuild-edk2", # MU_CHANGE set scope cibuild-edk2 for limited scope runs
   "name": "EccCheck Test",
-  "module": "EccCheck"
+  "module": "EccCheck",
 }
