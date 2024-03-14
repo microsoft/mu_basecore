@@ -118,8 +118,6 @@
   ExceptionPersistenceLib|MdeModulePkg/Library/BaseExceptionPersistenceLibNull/BaseExceptionPersistenceLibNull.inf # MU_CHANGE
   DeviceStateLib|MdeModulePkg/Library/DeviceStateLib/DeviceStateLib.inf                                            # MU_CHANGE
 
-  MmuLib|MdePkg/Library/BaseMmuLibNull/BaseMmuLibNull.inf       ## MU_CHANGE
-
   PanicLib|MdePkg/Library/BasePanicLibNull/BasePanicLibNull.inf  # MU_CHANGE
 
   NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf # MU_CHANGE: /GS and -fstack-protector support
@@ -217,10 +215,8 @@
   MemLib|StandaloneMmPkg/Library/StandaloneMmMemLib/StandaloneMmMemLib.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
-  # MU_CHANGE [BEGIN]
-  #ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
-  #ArmMmuLib|ArmPkg/Library/ArmMmuLib/ArmMmuBaseLib.inf
-  # MU_CHANGE [END]
+  ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
+  ArmMmuLib|ArmPkg/Library/ArmMmuLib/ArmMmuBaseLib.inf
   LockBoxLib|MdeModulePkg/Library/LockBoxNullLib/LockBoxNullLib.inf
 
   #
