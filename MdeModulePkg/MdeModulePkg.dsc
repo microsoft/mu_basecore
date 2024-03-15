@@ -474,6 +474,8 @@
   MdeModulePkg/Application/VariableInfo/VariableInfo.inf
   MdeModulePkg/Universal/FaultTolerantWritePei/FaultTolerantWritePei.inf
   MdeModulePkg/Universal/FvbVariableStorage/Pei/FvbVariableStoragePei.inf
+  MdeModulePkg/Universal/FvbVariableStorage/RuntimeDxe/FvbVariableStorageRuntimeDxe.inf
+  MdeModulePkg/Universal/FvbVariableStorage/RuntimeDxe/FvbVariableStorageSmm.inf
   MdeModulePkg/Universal/Variable/Pei/VariablePei.inf
   MdeModulePkg/Universal/Variable/MmVariablePei/MmVariablePei.inf
   MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf

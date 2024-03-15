@@ -1,0 +1,79 @@
+## @file
+#  Firmware Volume Block (FVB) Runtime DXE driver that produces a DXE FVB Variable Storage Protocol instance.
+#
+#  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION         = 0x00010017
+  BASE_NAME           = FvbVariableStorageSmmRuntimeDxe
+  FILE_GUID           = FF391B6E-07CE-4904-BFFF-12BE96D4ACF1
+  MODULE_TYPE         = DXE_RUNTIME_DRIVER
+  VERSION_STRING      = 1.0
+  ENTRY_POINT         = FvbVariableStorageRuntimeDxeInitialize
+
+[Sources]
+  FvbVariableStorage.c
+  FvbVariableStorageRuntimeDxe.c
+  FvbVariableStorageReclaim.c
+  FvbVariableStorage.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  DxeServicesTableLib
+  HobLib
+  PcdLib
+  SafeIntLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiLib
+  UefiRuntimeLib
+  VariableFlashInfoLib
+
+[Guids]
+  gFvbVariableStorageProtocolInstanceGuid    ## PRODUCES
+  gEfiEventVirtualAddressChangeGuid          ## CONSUMES             ## Event
+  ## PRODUCES             ## GUID # Signature of Variable store header
+  ## CONSUMES             ## GUID # Signature of Variable store header
+  ## SOMETIMES_CONSUMES   ## HOB
+  ## SOMETIMES_PRODUCES   ## SystemTable
+  gEfiAuthenticatedVariableGuid
+
+  ## PRODUCES             ## GUID # Signature of Variable store header
+  ## CONSUMES             ## GUID # Signature of Variable store header
+  ## SOMETIMES_CONSUMES   ## HOB
+  ## SOMETIMES_PRODUCES   ## SystemTable
+  gEfiVariableGuid
+  gEfiSystemNvDataFvGuid                     ## CONSUMES             ## GUID
+  gEdkiiFaultTolerantWriteGuid               ## SOMETIMES_CONSUMES   ## HOB
+  gEdkiiVarErrorFlagGuid                     ## CONSUMES             ## GUID
+
+[Protocols]
+  gEdkiiVariableStorageProtocolGuid          ## PRODUCES
+  gEfiFirmwareVolumeBlockProtocolGuid        ## CONSUMES
+  ## CONSUMES
+  ## NOTIFY
+  gEfiFaultTolerantWriteProtocolGuid
+  ## CONSUMES
+  ## NOTIFY
+  gEdkiiVariableStorageSupportProtocolGuid
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize                  ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxAuthVariableSize              ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxHardwareErrorVariableSize     ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHwErrStorageSize                 ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable          ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEnableFvbVariableStorage         ## CONSUMES
+
+[Depex]
+  TRUE
