@@ -1,0 +1,4 @@
+/.github/CODEOWNERS @makubacki
+/MdeModulePkg/MdeModulePkg.dec @makubacki
+/MdeModulePkg/MdeModulePkg.dsc @makubacki
+/MdeModulePkg/Universal/Variable/ @makubacki
