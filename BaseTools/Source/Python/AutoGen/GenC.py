@@ -2053,8 +2053,11 @@ def CreateCode(Info, AutoGenC, AutoGenH, StringH, UniGenCFlag, UniGenBinBuffer, 
             EdkLogger.error("build", AUTOGEN_ERROR, "Unsupported Arch %s" % Info.Arch, ExtraData="[%s]" % str(Info))
         else:
             Bitwidth = 64 if Info.Arch == 'X64' or Info.Arch == 'AARCH64' else 32
-
-        CookieValue = secrets.randbelow(0xFFFFFFFFFFFFFFFF if Bitwidth == 64 else 0xFFFFFFFF)
+        
+        if "DEBUG" in Info.BuildTarget.upper():
+            CookieValue = 0xFEEDBEEBEF00D if Bitwidth == 64 else 0xBEEBE
+        else:
+            CookieValue = secrets.randbelow(0xFFFFFFFFFFFFFFFF if Bitwidth == 64 else 0xFFFFFFFF)
 
         AutoGenH.Append((
             '#define STACK_COOKIE_VALUE 0x%XULL\n' % CookieValue
