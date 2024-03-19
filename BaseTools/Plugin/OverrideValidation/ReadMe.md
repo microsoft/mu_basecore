@@ -102,6 +102,29 @@ Override record to be included in overriding module's inf:
 #Override : 00000002 | MdeModulePkg/Library/BaseSerialPortLib16550 | 140759cf30a73b02f48cc1f226b015d8 | 2021-12-07T05-30-10 | fa99a33fdb7e8bf6063513fddb807105ec2fad81
 ```
 
+Command to generate a deprecation record:
+
+``` cmd
+OverrideValidation.py -w C:\Repo -d C:\Repo\MU_BASECORE\MdeModulePkg\BaseMemoryLib\BaseMemoryLib.inf -dr C:\Repo\MU_BASECORE\MdeModulePkg\BaseMemoryLibV2\BaseMemoryLib.inf
+```
+
+Deprecation record to be included in the deprecated module's inf:
+
+``` cmd
+#Deprecated : 00000001 | MdeModulePkg/BaseMemoryLibV2/BaseMemoryLib.inf | 2024-02-16T04-00-28
+```
+
+Deprecation warning example:
+
+``` cmd
+WARNING - Use of Deprecated module: C:\Repo\MU_BASECORE\MdeModulePkg\BaseMemoryLib\BaseMemoryLib.inf, Please switch to:  C:\Repo\MU_BASECORE\MdeModulePkg\BaseMemoryLibV2\BaseMemoryLib.inf.
+```
+
+To disable Deprecation warnings, Set the following value in the build scripts.
+
+``` cmd
+self.env.SetValue("ALLOW_DEPRECATED_MODULES", "TRUE", "Allow the usage of deprecated modules")
+```
 Override log generated during pre-build process:
 
 ``` cmd
@@ -151,15 +174,15 @@ index 2d4ca47299..90da207a39 100644
 
 ## Versions
 
-There are two versions of the override format.
+There are two versions of the override format and one version of the deprecation format
 
-### Version 1
+### Override Version 1
 
 ``` cmd
 #Override : 00000001 | MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | cc255d9de141fccbdfca9ad02e0daa47 | 2018-05-09T17-54-17
 ```
 
-### Version 2
+### Override Version 2
 
 ``` cmd
 #Override : 00000002 | MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | cc255d9de141fccbdfca9ad02e0daa47 | 2018-05-09T17-54-17 | 575096df6a
@@ -169,6 +192,12 @@ Version 2 includes a second hash at the end, which is the git commit that the
 upstream was last updated. This allows to tools to do a `git diff` between what
 you currently have and what is in the tree. It currently only diffs the
 overridden file (the INF or DSC) and the overriding file.
+
+### Deprecation Version 1
+
+``` cmd
+#Deprecated : 00000001 | MdeModulePkg/BaseMemoryLibV2/BaseMemoryLib.inf | 2024-02-16T04-00-28
+```
 
 ## Copyright & License
 
