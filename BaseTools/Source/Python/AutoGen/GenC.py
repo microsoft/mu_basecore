@@ -2049,15 +2049,25 @@ def CreateCode(Info, AutoGenC, AutoGenH, StringH, UniGenCFlag, UniGenBinBuffer, 
 
     # MU_CHANGE [START]: Add Stack Cookie Support
     if Info.ModuleType != SUP_MODULE_HOST_APPLICATION:
+        cache_file_path = os.path.join(GlobalData.gConfDirectory, '.cache', 'stack_cookie_value.txt')
+
+        if not os.path.exists(cache_file_path):
+            os.makedirs(os.path.dirname(cache_file_path), exist_ok=True)
+            with open(cache_file_path, 'w') as f:
+                f.write('32_bit_stack_cookie_value=0x%X\n' % secrets.randbelow(0xFFFFFFFF))
+                f.write('64_bit_stack_cookie_value=0x%X\n' % secrets.randbelow(0xFFFFFFFFFFFFFFFF))
+
         if Info.Arch not in ['X64', 'IA32', 'ARM', 'AARCH64']:
             EdkLogger.error("build", AUTOGEN_ERROR, "Unsupported Arch %s" % Info.Arch, ExtraData="[%s]" % str(Info))
         else:
             Bitwidth = 64 if Info.Arch == 'X64' or Info.Arch == 'AARCH64' else 32
-        
-        if "DEBUG" in Info.BuildTarget.upper():
-            CookieValue = 0xFEEDBEEBEF00D if Bitwidth == 64 else 0xBEEBE
-        else:
-            CookieValue = secrets.randbelow(0xFFFFFFFFFFFFFFFF if Bitwidth == 64 else 0xFFFFFFFF)
+        with open(cache_file_path, 'r') as f:
+            for line in f:
+                if line.startswith('%d_bit_stack_cookie_value=' % (Info.Name, Bitwidth)):
+                    CookieValue = int(line.split('=')[1], 16)
+                    break
+            else:
+                EdkLogger.error("build", AUTOGEN_ERROR, "Failed to read stack cookie value from cache file", ExtraData="[%s]" % str(Info))
 
         AutoGenH.Append((
             '#define STACK_COOKIE_VALUE 0x%XULL\n' % CookieValue
