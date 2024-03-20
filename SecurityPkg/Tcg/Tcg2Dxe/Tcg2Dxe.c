@@ -879,6 +879,7 @@ TcgCommLogEvent (
     DEBUG ((DEBUG_INFO, "  NewLogSize - 0x%x\n", NewLogSize));
     DEBUG ((DEBUG_INFO, "  LogSize    - 0x%x\n", EventLogAreaStruct->EventLogSize));
     DEBUG ((DEBUG_INFO, "TcgCommLogEvent - %r\n", EFI_OUT_OF_RESOURCES));
+    ASSERT (FALSE); // MU_CHANGE: Assert to catch systematic TCG log truncation during DEBUG testing.
     return EFI_OUT_OF_RESOURCES;
   }
 
