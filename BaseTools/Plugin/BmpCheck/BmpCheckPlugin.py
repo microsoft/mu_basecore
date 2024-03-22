@@ -132,10 +132,13 @@ class BmpCheckPlugin(IUefiBuildPlugin):
                 self.logger.info("No FDF found- BMP check skipped")
                 return 0
             # parse the DSC and the FDF
+            env_vars = thebuilder.env.GetAllBuildKeyValues()
             dp.SetEdk2Path(edk2)
-            dp.SetInputVars(thebuilder.env.GetAllBuildKeyValues()).ParseFile(ActiveDsc)  # parse the DSC for build vars
+            dp.SetInputVars(env_vars).ParseFile(ActiveDsc)
+
+            env_vars.update(dp.LocalVars)
             fp.SetEdk2Path(edk2)
-            fp.SetInputVars(dp.LocalVars).ParseFile(ActiveFdf)  # give FDF parser the vars from DSC
+            fp.SetInputVars(env_vars).ParseFile(ActiveFdf)  # give FDF parser the vars from DSC
 
             # for each FV section in the DSC
             for FV_name in fp.FVs:
