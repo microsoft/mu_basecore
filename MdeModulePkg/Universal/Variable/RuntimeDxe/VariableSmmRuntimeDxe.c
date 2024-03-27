@@ -36,6 +36,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/UefiLib.h>
 #include <Library/BaseLib.h>
 #include <Library/MmUnblockMemoryLib.h>
+#include <Library/PerformanceLib.h> // MU_CHANGE
 
 #include <Guid/EventGroup.h>
 #include <Guid/SmmVariableCommon.h>
@@ -627,6 +628,19 @@ FindVariableInRuntimeCache (
     return EFI_INVALID_PARAMETER;
   }
 
+  // MU_CHANGE
+  DEBUG ((DEBUG_VARIABLE, "Enter: FunctionName(%a) FunctionPointer(%p) VariableName(%s) VendorGuid(%g) &Attributes(0x%p) DataSize(0x%Lx) &Data(%p) \n",
+    __FUNCTION__,
+    FindVariableInRuntimeCache,
+    VariableName,
+    VendorGuid,
+    Attributes,
+    (UINT64)*DataSize,
+    Data));
+
+  // MU_CHANGE
+  PERF_VARIABLE_BEGIN(VendorGuid, VariableName, FindVariableInRuntimeCache);
+
   ZeroMem (&RtPtrTrack, sizeof (RtPtrTrack));
 
   //
@@ -697,8 +711,18 @@ Done:
   if ((Status == EFI_SUCCESS) || (Status == EFI_BUFFER_TOO_SMALL)) {
     if ((Attributes != NULL) && (RtPtrTrack.CurrPtr != NULL)) {
       *Attributes = RtPtrTrack.CurrPtr->Attributes;
+
+      // MU_CHANGE
+      DEBUG ((DEBUG_VARIABLE, "Exit: FunctionName(%a) VariableName(%s) VendorGuid(%g) Attributes(0x%x)\n",
+        __FUNCTION__,
+        VariableName,
+        VendorGuid,
+        *Attributes));
     }
   }
+
+  // MU_CHANGE
+  PERF_VARIABLE_END(VendorGuid, VariableName, FindVariableInRuntimeCache);
 
   mVariableRuntimeCacheReadLock = FALSE;
 

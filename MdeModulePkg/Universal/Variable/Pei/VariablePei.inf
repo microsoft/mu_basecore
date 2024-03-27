@@ -41,6 +41,7 @@
   PeiServicesLib
   SafeIntLib
   VariableFlashInfoLib
+  PerformanceLib
 
 [Guids]
   ## CONSUMES             ## GUID # Variable store header

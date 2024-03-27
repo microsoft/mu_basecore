@@ -406,6 +406,17 @@ RegisterVariablePolicy (
     return EFI_ALREADY_STARTED;
   }
 
+  // MU_CHANGE
+  DEBUG(( DEBUG_VARIABLE, "Enter: FunctionName(%a) VariableName(%s) VendorGuid(%g) MinSize(%d) MaxSize(%d) AttrMustHave(0x%x) AttrCantHave(0x%x) LockType(0x%x)\n",
+    __FUNCTION__,
+    (NewPolicy->Size == NewPolicy->OffsetToName) ? L"" : GET_POLICY_NAME(NewPolicy),
+    NewPolicy->Namespace,
+    NewPolicy->MinSize,
+    NewPolicy->MaxSize,
+    NewPolicy->AttributesMustHave,
+    NewPolicy->AttributesCantHave,
+    NewPolicy->LockPolicyType ));
+
   // If none exists, create it.
   // If we need more space, allocate that now.
   Status = SafeUint32Add (mCurrentTableUsage, NewPolicy->Size, &NewSize);
