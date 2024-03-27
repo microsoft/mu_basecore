@@ -25,3 +25,7 @@
   PolicyServicePkg/PolicyService/DxeMm/UnitTest/DxeMmPolicyUnitTest.inf
   PolicyServicePkg/PolicyService/Pei/UnitTest/PeiPolicyUnitTest.inf
 
+  #
+  # Build HOST_APPLICATION Libraries With GoogleTest
+  #
+  PolicyServicePkg/Test/Mock/Library/GoogleTest/MockPolicyLibCommon/MockPolicyLibCommon.inf
