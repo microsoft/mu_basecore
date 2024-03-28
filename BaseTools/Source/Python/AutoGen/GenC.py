@@ -21,7 +21,10 @@ from .StrGather import *
 from .GenPcdDb import CreatePcdDatabaseCode
 from .IdfClassObject import *
 
+# MU_CHANGE [BEGIN]: Add build-time random stack cookie support
+import json
 import secrets # MU_CHANGE: Add Stack Cookie Support
+# MU_CHANGE [END]
 
 ## PCD type string
 gItemTypeStringDatabase  = {
@@ -2047,27 +2050,31 @@ def CreateFooterCode(Info, AutoGenC, AutoGenH):
 def CreateCode(Info, AutoGenC, AutoGenH, StringH, UniGenCFlag, UniGenBinBuffer, StringIdf, IdfGenCFlag, IdfGenBinBuffer):
     CreateHeaderCode(Info, AutoGenC, AutoGenH)
 
-    # MU_CHANGE [START]: Add Stack Cookie Support
+    # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
     if Info.ModuleType != SUP_MODULE_HOST_APPLICATION:
-        cache_file_path = os.path.join(GlobalData.gConfDirectory, '.cache', 'stack_cookie_value.txt')
-
-        if not os.path.exists(cache_file_path):
-            os.makedirs(os.path.dirname(cache_file_path), exist_ok=True)
-            with open(cache_file_path, 'w') as f:
-                f.write('32_bit_stack_cookie_value=0x%X\n' % secrets.randbelow(0xFFFFFFFF))
-                f.write('64_bit_stack_cookie_value=0x%X\n' % secrets.randbelow(0xFFFFFFFFFFFFFFFF))
-
         if Info.Arch not in ['X64', 'IA32', 'ARM', 'AARCH64']:
             EdkLogger.error("build", AUTOGEN_ERROR, "Unsupported Arch %s" % Info.Arch, ExtraData="[%s]" % str(Info))
         else:
             Bitwidth = 64 if Info.Arch == 'X64' or Info.Arch == 'AARCH64' else 32
-        with open(cache_file_path, 'r') as f:
-            for line in f:
-                if line.startswith('%d_bit_stack_cookie_value=' % (Info.Name, Bitwidth)):
-                    CookieValue = int(line.split('=')[1], 16)
-                    break
+
+        if GlobalData.gStackCookieValues64 == [] and os.path.exists(os.path.join(Info.PlatformInfo.BuildDir, "StackCookieValues64.json")):
+            with open (os.path.join(Info.PlatformInfo.BuildDir, "StackCookieValues64.json"), "r") as file:
+                GlobalData.gStackCookieValues64 = json.load(file)
+        if GlobalData.gStackCookieValues32 == [] and os.path.exists(os.path.join(Info.PlatformInfo.BuildDir, "StackCookieValues32.json")):
+            with open (os.path.join(Info.PlatformInfo.BuildDir, "StackCookieValues32.json"), "r") as file:
+                GlobalData.gStackCookieValues32 = json.load(file)
+
+        try:
+            if Bitwidth == 32:
+                CookieValue = int(GlobalData.gStackCookieValues32[hash(Info.Guid) % len(GlobalData.gStackCookieValues32)])
             else:
-                EdkLogger.error("build", AUTOGEN_ERROR, "Failed to read stack cookie value from cache file", ExtraData="[%s]" % str(Info))
+                CookieValue = int(GlobalData.gStackCookieValues64[hash(Info.Guid) % len(GlobalData.gStackCookieValues64)])
+        except:
+            EdkLogger.error("build", AUTOGEN_ERROR, "Failed to get Stack Cookie Value List! Generating random value.", ExtraData="[%s]" % str(Info))
+            if Bitwidth == 32:
+                CookieValue = secrets.randbelow (0xFFFFFFFF)
+            else:
+                CookieValue = secrets.randbelow (0xFFFFFFFFFFFFFFFF)
 
         AutoGenH.Append((
             '#define STACK_COOKIE_VALUE 0x%XULL\n' % CookieValue
