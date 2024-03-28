@@ -1870,9 +1870,7 @@ class Build():
                         self.UniFlag,
                         self.Progress
                         )
-                # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
-                GenerateStackCookieValues()
-                # MU_CHANGE [END]
+                GenerateStackCookieValues() # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
                 self.Fdf = Wa.FdfFile
                 self.LoadFixAddress = Wa.Platform.LoadFixAddress
                 self.BuildReport.AddPlatformReport(Wa)
@@ -2225,10 +2223,8 @@ class Build():
                 self.SkuId,
                 self.UniFlag,
                 self.Progress
-                )
-        # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
-        GenerateStackCookieValues()
-        # MU_CHANGE [END]
+                )        
+        GenerateStackCookieValues() # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
         self.Fdf = Wa.FdfFile
         self.LoadFixAddress = Wa.Platform.LoadFixAddress
         self.BuildReport.AddPlatformReport(Wa)

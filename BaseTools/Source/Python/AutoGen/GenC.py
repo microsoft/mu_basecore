@@ -23,7 +23,7 @@ from .IdfClassObject import *
 
 # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
 import json
-import secrets # MU_CHANGE: Add Stack Cookie Support
+import secrets
 # MU_CHANGE [END]
 
 ## PCD type string
@@ -2081,7 +2081,7 @@ def CreateCode(Info, AutoGenC, AutoGenH, StringH, UniGenCFlag, UniGenBinBuffer, 
             if Bitwidth == 64 else
             '#define STACK_COOKIE_VALUE 0x%X\n' % CookieValue
         ))
-    # MU_CHANGE [END]: Add Stack Cookie Support
+    # MU_CHANGE [END]
 
     CreateGuidDefinitionCode(Info, AutoGenC, AutoGenH)
     CreateProtocolDefinitionCode(Info, AutoGenC, AutoGenH)
