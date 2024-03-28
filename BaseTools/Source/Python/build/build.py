@@ -312,7 +312,7 @@ def LaunchCommand(Command, WorkingDir,ModuleAuto = None):
     return "%dms" % (int(round((time.time() - BeginTime) * 1000)))
 
 # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
-def CollectStackCookieValues():
+def GenerateStackCookieValues():
     if GlobalData.gBuildDirectory == "":
         return
 
@@ -1871,7 +1871,7 @@ class Build():
                         self.Progress
                         )
                 # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
-                CollectStackCookieValues()
+                GenerateStackCookieValues()
                 # MU_CHANGE [END]
                 self.Fdf = Wa.FdfFile
                 self.LoadFixAddress = Wa.Platform.LoadFixAddress
@@ -2227,7 +2227,7 @@ class Build():
                 self.Progress
                 )
         # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
-        CollectStackCookieValues()
+        GenerateStackCookieValues()
         # MU_CHANGE [END]
         self.Fdf = Wa.FdfFile
         self.LoadFixAddress = Wa.Platform.LoadFixAddress
