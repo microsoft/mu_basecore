@@ -763,8 +763,8 @@ CalculateCrc32c (
   return ~Crc;
 }
 
-// MU_CHANGE Starts: Adding CRC16-CCITT implementation
-GLOBAL_REMOVE_IF_UNREFERENCED STATIC CONST UINT16  mCrc16CcittLookupTable[256] = {
+// MU_CHANGE Starts: Adds CRC16-CCITT-FALSE implementation
+GLOBAL_REMOVE_IF_UNREFERENCED STATIC CONST UINT16  mCrc16CcittFLookupTable[256] = {
   0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
   0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
   0x1231, 0x0210, 0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
@@ -800,17 +800,17 @@ GLOBAL_REMOVE_IF_UNREFERENCED STATIC CONST UINT16  mCrc16CcittLookupTable[256] =
 };
 
 /**
-  Calculates the CRC16-CCITT checksum of the given buffer.
+  Calculates the CRC16-CCITT-FALSE checksum of the given buffer.
 
   @param[in]      Buffer        Pointer to the buffer.
   @param[in]      Length        Length of the buffer, in bytes.
   @param[in]      InitialValue  Initial value of the CRC.
 
-  @return The CRC16-CCITT checksum.
+  @return The CRC16-CCITT-FALSE checksum.
 **/
-UINT32
+UINT16
 EFIAPI
-CalculateCrc16Ccitt (
+CalculateCrc16CcittF (
   IN CONST VOID  *Buffer,
   IN UINTN       Length,
   IN UINT16      InitialValue
@@ -823,7 +823,7 @@ CalculateCrc16Ccitt (
   Crc = InitialValue;
 
   while (Length-- != 0) {
-    Crc = mCrc16CcittLookupTable[((Crc >> 8) ^ *(Buf++)) & 0xFF] ^ (Crc << 8);
+    Crc = mCrc16CcittFLookupTable[((Crc >> 8) ^ *(Buf++)) & 0xFF] ^ (Crc << 8);
   }
 
   return Crc;
