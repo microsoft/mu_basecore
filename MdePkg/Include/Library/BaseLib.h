@@ -4617,6 +4617,7 @@ CalculateCrc32c (
   );
 
 // MU_CHANGE: Adds CRC16-CCITT-FALSE implementation.
+
 /**
   Calculates the CRC16-CCITT-FALSE checksum of the given buffer.
 
