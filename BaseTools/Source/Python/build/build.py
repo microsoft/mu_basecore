@@ -29,6 +29,10 @@ from linecache import getlines
 from subprocess import Popen,PIPE, STDOUT
 from collections import OrderedDict, defaultdict
 import pathlib
+# MU_CHANGE [BEGIN]: Add build-time random stack cookie support
+import json
+import secrets
+# MU_CHANGE [END]
 
 from AutoGen.PlatformAutoGen import PlatformAutoGen
 from AutoGen.ModuleAutoGen import ModuleAutoGen
@@ -306,6 +310,24 @@ def LaunchCommand(Command, WorkingDir,ModuleAuto = None):
         iau.CreateDepsInclude()
         iau.CreateDepsTarget()
     return "%dms" % (int(round((time.time() - BeginTime) * 1000)))
+
+# MU_CHANGE [BEGIN]: Add build-time random stack cookie support
+def GenerateStackCookieValues():
+    if GlobalData.gBuildDirectory == "":
+        return
+
+    # Check if the 32 bit values array needs to be created
+    if not os.path.exists(os.path.join(GlobalData.gBuildDirectory, "StackCookieValues32.json")):
+        StackCookieValues32 = [secrets.randbelow(0xFFFFFFFF) for _ in range(0, 100)]
+        with open (os.path.join(GlobalData.gBuildDirectory, "StackCookieValues32.json"), "w") as file:
+            json.dump(StackCookieValues32, file)
+
+    # Check if the 64 bit values array needs to be created
+    if not os.path.exists(os.path.join(GlobalData.gBuildDirectory, "StackCookieValues64.json")):
+        StackCookieValues64 = [secrets.randbelow(0xFFFFFFFFFFFFFFFF) for _ in range(0, 100)]
+        with open (os.path.join(GlobalData.gBuildDirectory, "StackCookieValues64.json"), "w") as file:
+            json.dump(StackCookieValues64, file)
+# MU_CHANGE [END]
 
 ## The smallest unit that can be built in multi-thread build mode
 #
@@ -1848,6 +1870,7 @@ class Build():
                         self.UniFlag,
                         self.Progress
                         )
+                GenerateStackCookieValues() # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
                 self.Fdf = Wa.FdfFile
                 self.LoadFixAddress = Wa.Platform.LoadFixAddress
                 self.BuildReport.AddPlatformReport(Wa)
@@ -2200,7 +2223,8 @@ class Build():
                 self.SkuId,
                 self.UniFlag,
                 self.Progress
-                )
+                )        
+        GenerateStackCookieValues() # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
         self.Fdf = Wa.FdfFile
         self.LoadFixAddress = Wa.Platform.LoadFixAddress
         self.BuildReport.AddPlatformReport(Wa)
