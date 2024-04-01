@@ -1,4 +1,4 @@
-## @file
+## @file MockSmmServicesTableLib.inf
 # Google Test mocks for SmmServicesTableLib
 #
 # Copyright (c) Microsoft Corporation.

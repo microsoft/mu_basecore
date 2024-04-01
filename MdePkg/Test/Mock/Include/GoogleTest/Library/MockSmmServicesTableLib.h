@@ -1,4 +1,4 @@
-/** @file
+/** @file MockSmmServicesTableLib.h
   Google Test mocks for SmmServicesTableLib
 
   Copyright (c) Microsoft Corporation.

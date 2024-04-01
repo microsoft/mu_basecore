@@ -1,4 +1,4 @@
-/** @file
+/** @file MockSmmCpu.h
   This file declares a mock of Smm CPU Protocol.
 
   Copyright (c) Microsoft Corporation.
