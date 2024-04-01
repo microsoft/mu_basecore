@@ -828,4 +828,5 @@ CalculateCrc16CcittF (
 
   return Crc;
 }
+
 // MU_CHANGE Ends
