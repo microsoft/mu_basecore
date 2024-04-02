@@ -1824,7 +1824,7 @@ CreateImagePropertiesRecord (
       ImageRecordCodeSection->Signature = IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE;
 
       ImageRecordCodeSection->CodeSegmentBase = (UINTN)ImageAddress + Section[Index].VirtualAddress;
-      ImageRecordCodeSection->CodeSegmentSize = ALIGN_VALUE (Section[Index].SizeOfRawData, SectionAlignment);
+      ImageRecordCodeSection->CodeSegmentSize = ALIGN_VALUE (Section[Index].VirtualSize, SectionAlignment);
 
       OrderedInsertUint64Comparison (
         &ImageRecord->CodeSegmentList,
