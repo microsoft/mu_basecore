@@ -819,6 +819,9 @@ CalculateCrc16CcittF (
   CONST UINT8  *Buf;
   UINT16       Crc;
 
+  ASSERT (Buffer != NULL);
+  ASSERT (Length <= (MAX_ADDRESS - ((UINTN)Buffer) + 1));
+
   Buf = Buffer;
   Crc = InitialValue;
 
