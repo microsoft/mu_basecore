@@ -597,7 +597,7 @@ class InfBuildData(ModuleBuildClassObject):
         RecordList = self._RawData[MODEL_EFI_PROTOCOL, self._Arch, self._Platform]
         for Record in RecordList:
             CName = Record[0]
-            Value = _ProtocolValue(CName, self.Packages, self.MetaFile.Path)
+            Value = _ProtocolValue(CName, self.Packages, self.MetaFile.OriginalPath.Path) # MU_CHANGE: BZ4730
             if Value is None:
                 PackageList = "\n\t".join(str(P) for P in self.Packages)
                 EdkLogger.error('build', RESOURCE_NOT_AVAILABLE,
@@ -621,7 +621,7 @@ class InfBuildData(ModuleBuildClassObject):
         RecordList = self._RawData[MODEL_EFI_PPI, self._Arch, self._Platform]
         for Record in RecordList:
             CName = Record[0]
-            Value = _PpiValue(CName, self.Packages, self.MetaFile.Path)
+            Value = _PpiValue(CName, self.Packages, self.MetaFile.OriginalPath.Path) # MU_CHANGE: BZ4730
             if Value is None:
                 PackageList = "\n\t".join(str(P) for P in self.Packages)
                 EdkLogger.error('build', RESOURCE_NOT_AVAILABLE,
@@ -645,7 +645,7 @@ class InfBuildData(ModuleBuildClassObject):
         RecordList = self._RawData[MODEL_EFI_GUID, self._Arch, self._Platform]
         for Record in RecordList:
             CName = Record[0]
-            Value = GuidValue(CName, self.Packages, self.MetaFile.Path)
+            Value = GuidValue(CName, self.Packages, self.MetaFile.OriginalPath.Path) # MU_CHANGE: BZ4730
             if Value is None:
                 PackageList = "\n\t".join(str(P) for P in self.Packages)
                 EdkLogger.error('build', RESOURCE_NOT_AVAILABLE,
@@ -660,7 +660,7 @@ class InfBuildData(ModuleBuildClassObject):
             for TokenSpaceGuid, _, _, _, _, _, LineNo in RecordList:
                 # get the guid value
                 if TokenSpaceGuid not in RetVal:
-                    Value = GuidValue(TokenSpaceGuid, self.Packages, self.MetaFile.Path)
+                    Value = GuidValue(TokenSpaceGuid, self.Packages, self.MetaFile.OriginalPath.Path) # MU_CHANGE: BZ4730
                     if Value is None:
                         PackageList = "\n\t".join(str(P) for P in self.Packages)
                         EdkLogger.error('build', RESOURCE_NOT_AVAILABLE,
@@ -823,11 +823,11 @@ class InfBuildData(ModuleBuildClassObject):
                         Value = Token
                     else:
                         # get the GUID value now
-                        Value = _ProtocolValue(Token, self.Packages, self.MetaFile.Path)
+                        Value = _ProtocolValue(Token, self.Packages, self.MetaFile.OriginalPath.Path) # MU_CHANGE: BZ4730
                         if Value is None:
-                            Value = _PpiValue(Token, self.Packages, self.MetaFile.Path)
+                            Value = _PpiValue(Token, self.Packages, self.MetaFile.OriginalPath.Path) # MU_CHANGE: BZ4730
                             if Value is None:
-                                Value = GuidValue(Token, self.Packages, self.MetaFile.Path)
+                                Value = GuidValue(Token, self.Packages, self.MetaFile.OriginalPath.Path) # MU_CHANGE: BZ4730
 
                     if Value is None:
                         PackageList = "\n\t".join(str(P) for P in self.Packages)
