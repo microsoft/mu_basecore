@@ -20,14 +20,6 @@ struct MockIoLib {
 
   MOCK_FUNCTION_DECLARATION (
     UINT32,
-    MmioRead32,
-    (
-     IN      UINTN  Address
-    )
-    );
-
-  MOCK_FUNCTION_DECLARATION (
-    UINT32,
     MmioAndThenOr32,
     (
      IN      UINTN   Address,
@@ -50,6 +42,91 @@ struct MockIoLib {
     IoRead8,
     (
      IN      UINTN  Port
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    UINT64,
+    IoRead64,
+    (
+     IN      UINTN  Port
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    UINT64,
+    IoWrite64,
+    (
+     IN      UINTN   Port,
+     IN      UINT64  Value
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    UINT8,
+    MmioRead8,
+    (
+     IN      UINTN  Address
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    UINT8,
+    MmioWrite8,
+    (
+     IN      UINTN  Address,
+     IN      UINT8  Value
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    UINT16,
+    MmioRead16,
+    (
+     IN      UINTN  Address
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    UINT16,
+    MmioWrite16,
+    (
+     IN      UINTN   Address,
+     IN      UINT16  Value
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    UINT32,
+    MmioRead32,
+    (
+     IN      UINTN  Address
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    UINT32,
+    MmioWrite32,
+    (
+     IN      UINTN   Address,
+     IN      UINT16  Value
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    UINT64,
+    MmioRead64,
+    (
+     IN      UINTN  Address
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    UINT64,
+    MmioWrite64,
+    (
+     IN      UINTN   Address,
+     IN      UINT16  Value
     )
     );
 };
