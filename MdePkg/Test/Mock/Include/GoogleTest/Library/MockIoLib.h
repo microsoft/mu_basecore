@@ -109,7 +109,7 @@ struct MockIoLib {
     MmioWrite32,
     (
      IN      UINTN   Address,
-     IN      UINT16  Value
+     IN      UINT32  Value
     )
     );
 
@@ -126,7 +126,7 @@ struct MockIoLib {
     MmioWrite64,
     (
      IN      UINTN   Address,
-     IN      UINT16  Value
+     IN      UINT64  Value
     )
     );
 };
