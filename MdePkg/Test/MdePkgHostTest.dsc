@@ -49,4 +49,6 @@
   MdePkg/Test/Mock/Library/GoogleTest/MockPeiServicesLib/MockPeiServicesLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockHobLib/MockHobLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockIoLib/MockIoLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockSmmServicesTableLib/MockSmmServicesTableLib.inf
+
