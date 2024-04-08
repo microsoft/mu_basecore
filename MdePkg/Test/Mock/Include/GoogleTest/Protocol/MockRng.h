@@ -13,7 +13,7 @@
 
 extern "C" {
   #include <Uefi.h>
-  #include <Protocol\Rng.h>
+  #include <Protocol/Rng.h>
 }
 
 struct MockRng {
