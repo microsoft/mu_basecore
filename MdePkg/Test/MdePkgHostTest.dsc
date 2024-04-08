@@ -52,3 +52,4 @@
   MdePkg/Test/Mock/Library/GoogleTest/MockIoLib/MockIoLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockSmmServicesTableLib/MockSmmServicesTableLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockMmServicesTableLib/MockMmServicesTableLib.inf
+

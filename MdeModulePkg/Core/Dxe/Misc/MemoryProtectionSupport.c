@@ -111,7 +111,6 @@ IsImageRecordCodeSectionValid (
   @return image record
 **/
 IMAGE_PROPERTIES_RECORD *
-EFIAPI
 FindImageRecord (
   IN EFI_PHYSICAL_ADDRESS  ImageBase,
   IN UINT64                ImageSize
@@ -280,7 +279,6 @@ SetUefiImageMemoryAttributes (
   Disable NULL pointer detection.
 **/
 VOID
-EFIAPI
 DisableNullDetection (
   VOID
   );
