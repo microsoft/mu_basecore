@@ -3559,6 +3559,29 @@ UninstallMemoryAttributeProtocol (
 }
 
 /**
+  Maps memory below 1MB (legacy BIOS memory) as readable, writeable, and executable.
+**/
+STATIC
+VOID
+MapLegacyBiosMemoryRWX (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+
+  if (gCpu != NULL) {
+    Status = gCpu->SetMemoryAttributes (
+                     gCpu,
+                     0x0,
+                     0x100000,
+                     0
+                     );
+  }
+
+  ASSERT_EFI_ERROR (Status);
+}
+
+/**
   Sets the NX compatibility global to FALSE so future checks to
   IsEnhancedMemoryProtectionActive() will return FALSE.
 **/
@@ -3578,6 +3601,7 @@ ActivateCompatibilityMode (
 
   DisableNullDetection ();
   UninstallMemoryAttributeProtocol ();
+  MapLegacyBiosMemoryRWX ();
 }
 
 /**
