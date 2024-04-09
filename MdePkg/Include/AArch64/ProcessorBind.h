@@ -159,9 +159,17 @@ typedef INT64 INTN;
 
 ///
 /// Page allocation granularity for AARCH64
+/// MU_CHANGE BEGIN: Enable Deprecated 4k Granularity Mode for Platforms
+/// that do not support 64k runtime allocation
 ///
 #define DEFAULT_PAGE_ALLOCATION_GRANULARITY  (0x1000)
+#ifdef __DEPRECATED_AARCH64_4K_RUNTIME_GRANULARITY
+#define RUNTIME_PAGE_ALLOCATION_GRANULARITY  (0x1000)
+#else
 #define RUNTIME_PAGE_ALLOCATION_GRANULARITY  (0x10000)
+#endif
+
+// MU_CHANGE END
 
 //
 // Modifier to ensure that all protocol member functions and EFI intrinsics
