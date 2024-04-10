@@ -3559,7 +3559,7 @@ UninstallMemoryAttributeProtocol (
 }
 
 /**
-  Maps memory below 1MB (legacy BIOS memory) as readable, writeable, and executable.
+  Maps memory below 640K (legacy BIOS write-back memory) as readable, writeable, and executable.
 **/
 STATIC
 VOID
@@ -3569,11 +3569,14 @@ MapLegacyBiosMemoryRWX (
 {
   EFI_STATUS  Status;
 
+  // https://wiki.osdev.org/Memory_Map_(x86)
+  //
+  // Map the legacy BIOS write-back memory as RWX.
   if (gCpu != NULL) {
     Status = gCpu->SetMemoryAttributes (
                      gCpu,
                      0x0,
-                     0x100000,
+                     0xa0000,
                      0
                      );
   }
