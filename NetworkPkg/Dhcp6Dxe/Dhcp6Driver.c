@@ -123,6 +123,13 @@ Dhcp6CreateService (
 {
   DHCP6_SERVICE  *Dhcp6Srv;
   EFI_STATUS     Status;
+  UINT32         Random;
+
+  Status = PseudoRandomU32 (&Random);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a failed to generate random number: %r\n", __func__, Status));
+    return Status;
+  }
 
   *Service = NULL;
   Dhcp6Srv = AllocateZeroPool (sizeof (DHCP6_SERVICE));
@@ -147,7 +154,7 @@ Dhcp6CreateService (
   Dhcp6Srv->Signature  = DHCP6_SERVICE_SIGNATURE;
   Dhcp6Srv->Controller = Controller;
   Dhcp6Srv->Image      = ImageHandle;
-  Dhcp6Srv->Xid        = (0xffffff & NET_RANDOM (NetRandomInitSeed ()));
+  Dhcp6Srv->Xid        = (0xffffff & Random);
 
   CopyMem (
     &Dhcp6Srv->ServiceBinding,
