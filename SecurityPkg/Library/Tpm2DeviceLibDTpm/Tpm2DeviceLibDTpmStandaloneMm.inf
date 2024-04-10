@@ -22,7 +22,7 @@
   FILE_GUID                      = 9A5DB21A-FF0B-46D0-8672-B4F83FEF1F0E
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = Tpm2DeviceLib|MM_STANDALONE
+  LIBRARY_CLASS                  = Tpm2DeviceLib|MM_STANDALONE MM_CORE_STANDALONE # MU_CHANGE
   CONSTRUCTOR                    = Tpm2DeviceLibConstructor
 
 #
