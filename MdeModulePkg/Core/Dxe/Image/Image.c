@@ -663,7 +663,16 @@ CoreLoadPeImage (
   // Or, if our memory protection policy specifies that we shouldn't allow such images, return a failure.
   if (!(Image->ImageContext.SupportsNx) && (Image->ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION)) {
     if (gDxeMps.ImageProtectionPolicy.Fields.BlockImagesWithoutNxFlag) {
-      return EFI_SECURITY_VIOLATION;
+      DEBUG ((DEBUG_ERROR, "\n"));
+      DEBUG ((DEBUG_ERROR, "The platform attempted to load an EFI application which does not have the NX_COMPAT DLL Charactersistic.\n"));
+      DEBUG ((DEBUG_ERROR, "This is not allowed by the platform memory protection policy and so the image will not be loaded.\n"));
+      DEBUG ((DEBUG_ERROR, "This can be fixed by setting the NX_COMPAT flag in the image's PE header after validating that the\n"));
+      DEBUG ((DEBUG_ERROR, "image is safe to run with enhanced memory protections enabled. The image can also be executed in compatibility\n"));
+      DEBUG ((DEBUG_ERROR, "mode by updating the platform DXE_MEMORY_PROTECTION_SETTINGS so ImageProtectionPolicy.BlockImagesWithoutNxFlag is 0.\n"));
+      DEBUG ((DEBUG_ERROR, "Compatibility mode reduces firmware security so careful consideration should be made.\n"));
+      Status = EFI_SECURITY_VIOLATION;
+      ASSERT_EFI_ERROR (Status);
+      return Status;
     }
 
     ActivateCompatibilityMode ();
