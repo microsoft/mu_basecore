@@ -576,16 +576,24 @@ IScsiCHAPToSendReq (
         //
         // CHAP_I=<I>
         //
-        IScsiGenRandom ((UINT8 *)&AuthData->OutIdentifier, 1);
+        Status = IScsiGenRandom ((UINT8 *)&AuthData->OutIdentifier, 1);
+        if (EFI_ERROR (Status)) {
+          break;
+        }
+
         AsciiSPrint (ValueStr, sizeof (ValueStr), "%d", AuthData->OutIdentifier);
         IScsiAddKeyValuePair (Pdu, ISCSI_KEY_CHAP_IDENTIFIER, ValueStr);
         //
         // CHAP_C=<C>
         //
-        IScsiGenRandom (
-          (UINT8 *)AuthData->OutChallenge,
-          AuthData->Hash->DigestSize
-          );
+        Status = IScsiGenRandom (
+                   (UINT8 *)AuthData->OutChallenge,
+                   AuthData->Hash->DigestSize
+                   );
+        if (EFI_ERROR (Status)) {
+          break;
+        }
+
         BinToHexStatus = IScsiBinToHex (
                            (UINT8 *)AuthData->OutChallenge,
                            AuthData->Hash->DigestSize,

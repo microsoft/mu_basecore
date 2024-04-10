@@ -1963,6 +1963,14 @@ ConstructDNSQuery (
   NET_FRAGMENT       Frag;
   DNS_HEADER         *DnsHeader;
   DNS_QUERY_SECTION  *DnsQuery;
+  EFI_STATUS         Status;
+  UINT32             Random;
+
+  Status = PseudoRandomU32 (&Random);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a failed to generate random number: %r\n", __func__, Status));
+    return Status;
+  }
 
   //
   // Messages carried by UDP are restricted to 512 bytes (not counting the IP
@@ -1977,7 +1985,7 @@ ConstructDNSQuery (
   // Fill header
   //
   DnsHeader                    = (DNS_HEADER *)Frag.Bulk;
-  DnsHeader->Identification    = (UINT16)NET_RANDOM (NetRandomInitSeed ());
+  DnsHeader->Identification    = (UINT16)Random;
   DnsHeader->Flags.Uint16      = 0x0000;
   DnsHeader->Flags.Bits.RD     = 1;
   DnsHeader->Flags.Bits.OpCode = DNS_FLAGS_OPCODE_STANDARD;

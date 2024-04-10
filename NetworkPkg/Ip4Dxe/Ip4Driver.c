@@ -549,10 +549,17 @@ Ip4DriverBindingStart (
   EFI_IP4_CONFIG2_PROTOCOL  *Ip4Cfg2;
   UINTN                     Index;
   IP4_CONFIG2_DATA_ITEM     *DataItem;
+  UINT32                    Random;
 
   IpSb     = NULL;
   Ip4Cfg2  = NULL;
   DataItem = NULL;
+
+  Status = PseudoRandomU32 (&Random);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a failed to generate random number: %r\n", __func__, Status));
+    return Status;
+  }
 
   //
   // Test for the Ip4 service binding protocol
@@ -653,7 +660,7 @@ Ip4DriverBindingStart (
   //
   // Initialize the IP4 ID
   //
-  mIp4Id = (UINT16)NET_RANDOM (NetRandomInitSeed ());
+  mIp4Id = (UINT16)Random;
 
   return Status;
 

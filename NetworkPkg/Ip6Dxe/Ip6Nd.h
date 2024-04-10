@@ -780,10 +780,10 @@ Ip6OnArpResolved (
 /**
   Update the ReachableTime in IP6 service binding instance data, in milliseconds.
 
-  @param[in, out] IpSb     Points to the IP6_SERVICE.
-
+  @retval EFI_SUCCESS           ReachableTime Updated
+  @retval others                Failed to update ReachableTime
 **/
-VOID
+EFI_STATUS
 Ip6UpdateReachableTime (
   IN OUT IP6_SERVICE  *IpSb
   );
