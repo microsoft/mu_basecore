@@ -27,6 +27,7 @@ extern CONST UINT32  _gPeimRevision;
   @retval  EFI_SUCCESS   The PEIM executed normally.
   @retval  !EFI_SUCCESS  The PEIM failed to execute normally.
 **/
+NO_STACK_COOKIE // MU_CHANGE: Project Mu Runtime Randomized Stack Cookie Support
 EFI_STATUS
 EFIAPI
 _ModuleEntryPoint (

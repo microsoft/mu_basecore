@@ -1381,6 +1381,12 @@ PxeBcDhcp4Discover (
   UINT8                             VendorOptLen;
   UINT32                            Xid;
 
+  Status = PseudoRandomU32 (&Xid);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a failed to generate random number: %r\n", __func__, Status));
+    return Status;
+  }
+
   Mode   = Private->PxeBc.Mode;
   Dhcp4  = Private->Dhcp4;
   Status = EFI_SUCCESS;
@@ -1471,7 +1477,6 @@ PxeBcDhcp4Discover (
   //
   // Set fields of the token for the request packet.
   //
-  Xid                                 = NET_RANDOM (NetRandomInitSeed ());
   Token.Packet->Dhcp4.Header.Xid      = HTONL (Xid);
   Token.Packet->Dhcp4.Header.Reserved = HTONS ((UINT16)((IsBCast) ? 0x8000 : 0x0));
   CopyMem (&Token.Packet->Dhcp4.Header.ClientAddr, &Private->StationIp, sizeof (EFI_IPv4_ADDRESS));

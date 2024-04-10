@@ -13,7 +13,7 @@
 
 extern "C" {
   #include <Uefi.h>
-  #include <Protocol\SmmCpu.h>
+  #include <Protocol/SmmCpu.h>
 }
 
 struct MockSmmCpu {

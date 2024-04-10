@@ -13,7 +13,7 @@
 
 extern "C" {
   #include <Uefi.h>
-  #include <Protocol\Hash2.h>
+  #include <Protocol/Hash2.h>
 }
 
 struct MockHash2 {

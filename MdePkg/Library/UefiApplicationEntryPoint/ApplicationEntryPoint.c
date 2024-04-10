@@ -29,6 +29,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   @retval  Other                     Return value from ProcessModuleEntryPointList().
 
 **/
+NO_STACK_COOKIE // MU_CHANGE: Project Mu Runtime Randomized Stack Cookie Support
 EFI_STATUS
 EFIAPI
 _ModuleEntryPoint (
