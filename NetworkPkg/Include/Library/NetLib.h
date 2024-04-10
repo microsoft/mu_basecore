@@ -578,6 +578,24 @@ NetPutUint32 (
   );
 
 /*
+Generate a Random output data given a length.
+
+@param[out] Output - The buffer to store the generated random data.
+@param[in] OutputLength - The length of the output buffer.
+
+@retval EFI_SUCCESS           On Success
+@retval EFI_INVALID_PARAMETER Pointer is null or size is zero
+@retval EFI_NOT_FOUND         RNG protocol not found
+@Retval Others                Error from RngProtocol->GetRNG()
+*/
+EFI_STATUS
+EFIAPI
+PseudoRandom (
+  OUT  VOID   *Output,
+  IN   UINTN  OutputLength
+  );
+
+/*
 Generate a 32-bit pseudo-random number.
 
 @param[out] Output - The buffer to store the generated random number.

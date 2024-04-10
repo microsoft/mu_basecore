@@ -68,7 +68,6 @@
   NetLib
   IpIoLib
 
-
 [Protocols]
   ## SOMETIMES_CONSUMES
   ## SOMETIMES_PRODUCES
@@ -81,6 +80,12 @@
   gEfiIp6ServiceBindingProtocolGuid             ## TO_START
   gEfiTcp6ProtocolGuid                          ## BY_START
   gEfiTcp6ServiceBindingProtocolGuid            ## BY_START
+  gEfiHash2ProtocolGuid                         ## BY_START
+  gEfiHash2ServiceBindingProtocolGuid           ## BY_START
+
+[Guids]
+  gEfiHashAlgorithmMD5Guid                      ## CONSUMES
+  gEfiHashAlgorithmSha256Guid                   ## CONSUMES
 
 [UserExtensions.TianoCore."ExtraFiles"]
   TcpDxeExtra.uni

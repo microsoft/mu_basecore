@@ -483,7 +483,6 @@ TcpTickingDpc (
   INT16       Index;
 
   mTcpTick++;
-  mTcpGlobalIss += TCP_ISS_INCREMENT_2;
 
   //
   // Don't use LIST_FOR_EACH, which isn't delete safe.
