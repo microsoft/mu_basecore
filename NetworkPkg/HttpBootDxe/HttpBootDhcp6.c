@@ -951,6 +951,7 @@ HttpBootDhcp6Sarr (
   UINT32                    OptCount;
   UINT8                     Buffer[HTTP_BOOT_DHCP6_OPTION_MAX_SIZE];
   EFI_STATUS                Status;
+  UINT32                    Random;
 
   Dhcp6 = Private->Dhcp6;
   ASSERT (Dhcp6 != NULL);
@@ -960,6 +961,12 @@ HttpBootDhcp6Sarr (
   //
   OptCount = HttpBootBuildDhcp6Options (Private, OptList, Buffer);
   ASSERT (OptCount > 0);
+
+  Status = PseudoRandomU32 (&Random);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a failed to generate random number: %r\n", __func__, Status));
+    return Status;
+  }
 
   Retransmit = AllocateZeroPool (sizeof (EFI_DHCP6_RETRANSMISSION));
   if (Retransmit == NULL) {
@@ -976,7 +983,7 @@ HttpBootDhcp6Sarr (
   Config.IaInfoEvent           = NULL;
   Config.RapidCommit           = FALSE;
   Config.ReconfigureAccept     = FALSE;
-  Config.IaDescriptor.IaId     = NET_RANDOM (NetRandomInitSeed ());
+  Config.IaDescriptor.IaId     = Random;
   Config.IaDescriptor.Type     = EFI_DHCP6_IA_TYPE_NA;
   Config.SolicitRetransmission = Retransmit;
   Retransmit->Irt              = 4;
