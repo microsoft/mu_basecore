@@ -914,6 +914,7 @@ Generate a Random output data given a length.
 @Retval Others                Error from RngProtocol->GetRNG()
 */
 EFI_STATUS
+EFIAPI
 PseudoRandom (
   OUT  VOID   *Output,
   IN   UINTN  OutputLength
@@ -974,7 +975,7 @@ PseudoRandom (
   //
   Status = RngProtocol->GetRNG (RngProtocol, NULL, OutputLength, (UINT8 *)Output);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Failed to generate random data: %r\n", Status));
+    DEBUG ((DEBUG_ERROR, "%a failed to generate random data: %r\n", __func__, Status));
     ASSERT_EFI_ERROR (Status);
     return Status;
   }
