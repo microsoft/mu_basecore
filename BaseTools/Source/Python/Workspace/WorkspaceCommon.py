@@ -123,6 +123,10 @@ def GetModuleLibInstances(Module, Platform, BuildDatabase, Arch, Target, Toolcha
     while len(LibraryConsumerList) > 0:
         M = LibraryConsumerList.pop()
         for LibraryClassName in M.LibraryClasses:
+        # MU_CHANGE [START]: Fix NULL LibraryClass Inclusion Issue
+            if LibraryClassName.startswith("NULL") and bool(M.LibraryClass):
+                continue
+        # MU_CHANGE [END]: Fix NULL LibraryClass Inclusion Issue
             if LibraryClassName not in LibraryInstance:
                 # override library instance for this module
                 LibraryPath = Platform.Modules[str(Module)].LibraryClasses.get(LibraryClassName,Platform.LibraryClasses[LibraryClassName, ModuleType])

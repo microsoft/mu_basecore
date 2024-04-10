@@ -14,8 +14,8 @@
 #include <Library/UefiRuntimeLib.h>
 #include <Protocol/Crypto.h>
 
-EDKII_CRYPTO_PROTOCOL  *mCryptoProtocol           = NULL;
-EFI_EVENT              mVirtualAddressChangeEvent = NULL;
+STATIC  EDKII_CRYPTO_PROTOCOL  *mCryptoProtocol           = NULL;
+STATIC  EFI_EVENT              mVirtualAddressChangeEvent = NULL;
 
 /**
   Internal worker function that returns the pointer to an EDK II Crypto

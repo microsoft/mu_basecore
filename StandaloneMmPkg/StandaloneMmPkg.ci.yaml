@@ -40,8 +40,8 @@
     ## options defined .pytool/Plugin/DependencyCheck
     "DependencyCheck": {
         "AcceptableDependencies": [
-            # "ArmPkg/ArmPkg.dec",              # MU_CHANGE
-            #"EmbeddedPkg/EmbeddedPkg.dec",     # MU_CHANGE
+            # "ArmPkg/ArmPkg.dec",            # MU_CHANGE: Remove ArmPkg Dependency
+            # "EmbeddedPkg/EmbeddedPkg.dec",  # MU_CHANGE: Remove EmbeddePkg Dependency
             "StandaloneMmPkg/StandaloneMmPkg.dec",
             "MdeModulePkg/MdeModulePkg.dec",
             "MdePkg/MdePkg.dec"

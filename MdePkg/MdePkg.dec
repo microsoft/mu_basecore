@@ -107,7 +107,7 @@
 
 ## MU_CHANGE [BEGIN]
   ##  @libraryclass  Provides a hook called when a stack cookie check fails.
-  StackCheckFailureLib|Include/Library/StackCheckFailureLib.h
+  StackCheckFailureHookLib|Include/Library/StackCheckFailureHookLib.h
 ## MU_CHANGE [END]
 
   ##  @libraryclass  Provides an ordered collection data structure.

@@ -29,9 +29,8 @@ from io import StringIO
 
 WORKSPACE_TOOLCHAIN_FILE = "rust-toolchain.toml"
 
-RustToolInfo = namedtuple("RustToolInfo", ["presence_cmd", "install_help"])
+RustToolInfo = namedtuple("RustToolInfo", ["presence_cmd", "install_help", "required_version", "regex"])
 RustToolChainInfo = namedtuple("RustToolChainInfo", ["error", "toolchain"])
-
 
 class RustEnvironmentCheck(IUefiBuildPlugin):
     """Checks that the system environment is ready to build Rust code."""
@@ -46,20 +45,37 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
             int: The number of environment issues found. Zero indicates no
             action is needed.
         """
-        def verify_cmd(name: str, params: str = "--version") -> bool:
+        def verify_cmd(tool: RustToolInfo) -> int:
             """Indicates if a command can successfully be executed.
 
             Args:
-                name (str): Tool name.
-                params (str, optional): Tool params. Defaults to "--version".
+                tool (RustToolInfo): Tool information
 
             Returns:
-                bool: True on success. False on failure to run the command.
+                int: 0 for success, 1 for missing tool, 2 for version mismatch
             """
             cmd_output = StringIO()
+            params = "--version"
+            name = tool.presence_cmd[0]
+            if len(tool.presence_cmd) == 2:
+                params = tool.presence_cmd[1]
             ret = RunCmd(name, params, outstream=cmd_output,
                          logging_level=logging.DEBUG)
-            return ret == 0
+
+            if ret != 0:
+                return 1
+
+            # If a specific version is required, check the version, returning
+            # false if there is a version mismatch
+            if tool.required_version:
+                match = re.search(tool.regex, cmd_output.getvalue())
+                if match is None:
+                    logging.warning(f"Failed to verify version: {tool.required_version}")
+                    return 0
+                if match.group(0) != tool.required_version:
+                    return 2
+
+            return 0
 
         def get_workspace_toolchain_version() -> RustToolChainInfo:
             """Returns the rust toolchain version specified in the workspace
@@ -80,6 +96,28 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
             except FileNotFoundError:
                 # If a file is not found. Do not check any further.
                 return RustToolChainInfo(error=True, toolchain=None)
+
+        def get_required_tool_versions() -> dict[str,str]:
+            """Returns any tools and their required versions from the workspace
+            toolchain file.
+
+            Returns:
+                dict[str,str]: dict where the key is the tool name and the
+                value is the version
+            """
+            tool_versions = {}
+            try:
+                with open(WORKSPACE_TOOLCHAIN_FILE, 'r') as toml_file:
+                    content = toml_file.read()
+                    match = re.search(r'\[tool\]\n((?:.+\s*=\s*.+\n)*)', content)
+                    if match:
+                        for line in match.group(1).splitlines():
+                            (tool, version) = line.split('=',maxsplit=1)
+                            tool_versions[tool.strip()] = version.strip(" \"'")
+                return tool_versions
+            except FileNotFoundError:
+                # If a file is not found. Do not check any further.
+                return tool_versions
 
         def verify_workspace_rust_toolchain_is_installed() -> RustToolChainInfo:
             """Verifies the rust toolchain used in the workspace is available.
@@ -170,47 +208,68 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
 
         generic_rust_install_instructions = \
             "Visit https://rustup.rs/ to install Rust and cargo."
+        tool_versions = get_required_tool_versions()
 
         tools = {
             "rustup": RustToolInfo(
                 presence_cmd=("rustup",),
-                install_help=generic_rust_install_instructions
+                install_help=generic_rust_install_instructions,
+                required_version=None,
+                regex=None,
                 ),
             "rustc": RustToolInfo(
                 presence_cmd=("rustc",),
-                install_help=generic_rust_install_instructions
+                install_help=generic_rust_install_instructions,
+                required_version=None,
+                regex=None,
                 ),
             "cargo": RustToolInfo(
                 presence_cmd=("cargo",),
-                install_help=generic_rust_install_instructions
+                install_help=generic_rust_install_instructions,
+                required_version=None,
+                regex=None,
                 ),
             "cargo build": RustToolInfo(
                 presence_cmd=("cargo", "build --help"),
-                install_help=generic_rust_install_instructions
+                install_help=generic_rust_install_instructions,
+                required_version=None,
+                regex=None,
                 ),
             "cargo check": RustToolInfo(
                 presence_cmd=("cargo", "check --help"),
-                install_help=generic_rust_install_instructions
+                install_help=generic_rust_install_instructions,
+                required_version=None,
+                regex=None,
                 ),
             "cargo fmt": RustToolInfo(
                 presence_cmd=("cargo", "fmt --help"),
-                install_help=generic_rust_install_instructions
+                install_help=generic_rust_install_instructions,
+                required_version=None,
+                regex=None,
                 ),
             "cargo test": RustToolInfo(
                 presence_cmd=("cargo", "test --help"),
-                install_help=generic_rust_install_instructions
+                install_help=generic_rust_install_instructions,
+                required_version=None,
+                regex=None,
                 ),
             "cargo make": RustToolInfo(
                 presence_cmd=("cargo", "make --version"),
-                install_help="Read installation instructions at "
-                "https://github.com/sagiegurari/cargo-make#installation "
-                "to install Cargo make."
+                install_help= \
+                f"  cargo binstall cargo-make {('--version ' + tool_versions.get('cargo-make', '')) if 'cargo-make' in tool_versions else ''}"
+                "\nOR\n"
+                f"  cargo install cargo-make {('--version ' + tool_versions.get('cargo-make', '')) if 'cargo-make' in tool_versions else ''}\n",
+                required_version=tool_versions.get("cargo-make"),
+                regex = r'\d+\.\d+\.\d+'
                 ),
             "cargo tarpaulin": RustToolInfo(
                 presence_cmd=("cargo", "tarpaulin --version"),
-                install_help="View the installation instructions at "
-                "https://crates.io/crates/cargo-tarpaulin to install Cargo "
-                "tarpaulin. A tool used for Rust code coverage."
+                install_help= \
+                f"  cargo binstall cargo-tarpaulin {('--version ' + tool_versions.get('cargo-tarpaulin', '')) if 'cargo-tarpaulin' in tool_versions else ''}"
+                "\nOR\n"
+                f"  cargo install cargo-tarpaulin {('--version ' + tool_versions.get('cargo-tarpaulin', '')) if 'cargo-tarpaulin' in tool_versions else ''}\n",
+                required_version=tool_versions.get("cargo-tarpaulin"),
+                regex = r'\d+\.\d+\.\d+'
                 ),
         }
 
@@ -222,14 +281,23 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
 
         errors = 0
         for tool_name, tool_info in tools.items():
-            if tool_name not in excluded_tools and not verify_cmd(*tool_info.presence_cmd):
-                logging.error(
-                    f"Rust Environment Failure: {tool_name} is not installed "
-                    "or not on the system path.\n\n"
-                    f"Instructions:\n{tool_info.install_help}\n\n"
-                    f"Ensure \"{' '.join(tool_info.presence_cmd)}\" can "
-                    "successfully be run from a terminal before trying again.")
-                errors += 1
+            if tool_name not in excluded_tools:
+                ret = verify_cmd(tool_info)
+                if ret == 1:
+                    logging.error(
+                        f"Rust Environment Failure: {tool_name} is not installed "
+                        "or not on the system path.\n\n"
+                        f"Instructions:\n{tool_info.install_help}\n\n"
+                        f"Ensure \"{' '.join(tool_info.presence_cmd)}\" can "
+                        "successfully be run from a terminal before trying again.")
+                    errors += 1
+                if ret == 2:
+                    logging.error(
+                        f"Rust Environment Failure: {tool_name} version mismatch.\n\n"
+                        f"Expected version: {tool_info.required_version}\n\n"
+                        f"Instructions:\n{tool_info.install_help}"
+                    )
+                    errors += 1
 
         rust_toolchain_info = verify_workspace_rust_toolchain_is_installed()
         if rust_toolchain_info.error:

@@ -21,6 +21,11 @@ from .StrGather import *
 from .GenPcdDb import CreatePcdDatabaseCode
 from .IdfClassObject import *
 
+# MU_CHANGE [BEGIN]: Add build-time random stack cookie support
+import json
+import secrets
+# MU_CHANGE [END]
+
 ## PCD type string
 gItemTypeStringDatabase  = {
     TAB_PCDS_FEATURE_FLAG       :   TAB_PCDS_FIXED_AT_BUILD,
@@ -698,10 +703,12 @@ SUP_MODULE_BASE  : TemplateString("""${BEGIN}
 }
 
 ## Library Constructor and Destructor Templates
+# MU_CHANGE [BEGIN]: Add StackCookieSupport marker for stack cookie support.
 gLibraryString = {
 SUP_MODULE_BASE  :   TemplateString("""
 ${BEGIN}${FunctionPrototype}${END}
 
+${StackCookieSupport}
 VOID
 EFIAPI
 ProcessLibrary${Type}List (
@@ -712,10 +719,10 @@ ${BEGIN}  RETURN_STATUS  Status;
 ${FunctionCall}${END}
 }
 """),
-# MU_CHANGE [BEGIN]: Add StackCookieSupport marker for stack cookie support.
 'PEI'   :   TemplateString("""
 ${BEGIN}${FunctionPrototype}${END}
 
+${StackCookieSupport}
 VOID
 EFIAPI
 ProcessLibrary${Type}List (
@@ -743,10 +750,10 @@ ${BEGIN}  EFI_STATUS  Status;
 ${FunctionCall}${END}
 }
 """),
-# MU_CHANGE [END]: Add StackCookieSupport marker for stack cookie support.
 'MM'   :   TemplateString("""
 ${BEGIN}${FunctionPrototype}${END}
 
+${StackCookieSupport}
 VOID
 EFIAPI
 ProcessLibrary${Type}List (
@@ -759,6 +766,7 @@ ${FunctionCall}${END}
 }
 """),
 }
+# MU_CHANGE [END]: Add StackCookieSupport marker for stack cookie support.
 
 gBasicHeaderFile = "Base.h"
 
@@ -2041,6 +2049,39 @@ def CreateFooterCode(Info, AutoGenC, AutoGenH):
 #
 def CreateCode(Info, AutoGenC, AutoGenH, StringH, UniGenCFlag, UniGenBinBuffer, StringIdf, IdfGenCFlag, IdfGenBinBuffer):
     CreateHeaderCode(Info, AutoGenC, AutoGenH)
+
+    # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
+    if Info.ModuleType != SUP_MODULE_HOST_APPLICATION:
+        if Info.Arch not in ['X64', 'IA32', 'ARM', 'AARCH64']:
+            EdkLogger.error("build", AUTOGEN_ERROR, "Unsupported Arch %s" % Info.Arch, ExtraData="[%s]" % str(Info))
+        else:
+            Bitwidth = 64 if Info.Arch == 'X64' or Info.Arch == 'AARCH64' else 32
+
+        if GlobalData.gStackCookieValues64 == [] and os.path.exists(os.path.join(Info.PlatformInfo.BuildDir, "StackCookieValues64.json")):
+            with open (os.path.join(Info.PlatformInfo.BuildDir, "StackCookieValues64.json"), "r") as file:
+                GlobalData.gStackCookieValues64 = json.load(file)
+        if GlobalData.gStackCookieValues32 == [] and os.path.exists(os.path.join(Info.PlatformInfo.BuildDir, "StackCookieValues32.json")):
+            with open (os.path.join(Info.PlatformInfo.BuildDir, "StackCookieValues32.json"), "r") as file:
+                GlobalData.gStackCookieValues32 = json.load(file)
+
+        try:
+            if Bitwidth == 32:
+                CookieValue = int(GlobalData.gStackCookieValues32[hash(Info.Guid) % len(GlobalData.gStackCookieValues32)])
+            else:
+                CookieValue = int(GlobalData.gStackCookieValues64[hash(Info.Guid) % len(GlobalData.gStackCookieValues64)])
+        except:
+            EdkLogger.error("build", AUTOGEN_ERROR, "Failed to get Stack Cookie Value List! Generating random value.", ExtraData="[%s]" % str(Info))
+            if Bitwidth == 32:
+                CookieValue = secrets.randbelow (0xFFFFFFFF)
+            else:
+                CookieValue = secrets.randbelow (0xFFFFFFFFFFFFFFFF)
+
+        AutoGenH.Append((
+            '#define STACK_COOKIE_VALUE 0x%XULL\n' % CookieValue
+            if Bitwidth == 64 else
+            '#define STACK_COOKIE_VALUE 0x%X\n' % CookieValue
+        ))
+    # MU_CHANGE [END]
 
     CreateGuidDefinitionCode(Info, AutoGenC, AutoGenH)
     CreateProtocolDefinitionCode(Info, AutoGenC, AutoGenH)

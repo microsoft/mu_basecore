@@ -34,6 +34,7 @@
 
 [LibraryClasses]
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
+  NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf # MU_CHANGE: /GS and -fstack-protector support
 
 [Components]
   MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
@@ -141,6 +142,10 @@
   MdePkg/Library/JedecJep106Lib/JedecJep106Lib.inf
   MdePkg/Library/BaseFdtLib/BaseFdtLib.inf
   MdePkg/Library/BaseMmuLibNull/BaseMmuLibNull.inf      ## MU_CHANGE
+  MdePkg/Library/StackCheckLib/StackCheckLibStaticInit.inf      ## MU_CHANGE
+  MdePkg/Library/StackCheckLib/StackCheckLibDynamicInit.inf     ## MU_CHANGE
+  MdePkg/Library/StackCheckFailureHookLibNull/StackCheckFailureHookLibNull.inf  ## MU_CHANGE
+  MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf        ## MU_CHANGE
 
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
   #
@@ -189,15 +194,6 @@
   MdePkg/Library/TdxLib/TdxLib.inf
   MdePkg/Library/MipiSysTLib/MipiSysTLib.inf
   MdePkg/Library/TraceHubDebugSysTLibNull/TraceHubDebugSysTLibNull.inf
-
-# MU_CHANGE [BEGIN] - Stack Cookie Support
-[Components.X64]
-  MdePkg/Library/StackCheckLib/StackCheckLib.inf
-  MdePkg/Library/StackCheckFailureLibNull/StackCheckFailureLibNull.inf
-  MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf
-# MU_CHANGE [END] - Add Stack Cookie Support
-
-
 
 # MS_CHANGE Begin
 !if $(TOOLCHAIN) == VS2017 or $(TOOLCHAIN) == VS2019 or $(TOOLCHAIN) == VS2022

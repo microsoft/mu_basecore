@@ -104,6 +104,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
 ##
 {
   "id": "You-Built-BaseTools",
+  "id_override": "edk-tools-bin", # MU_CHANGE
   "scope": "edk2-build",
   "flags": ["set_shell_var", "set_path"],
   "var_name": "EDK_TOOLS_BIN"

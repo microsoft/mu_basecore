@@ -20,15 +20,7 @@
   PLATFORM_VERSION               = 1.0
   DSC_SPECIFICATION              = 0x00010011
   OUTPUT_DIRECTORY               = Build/StandaloneMm
-  # MU_CHANGE [BEGIN]
-  # ARM was recently enabled in EDK2.
-  # For now, building ARM causes:
-  # cspell:disable-next-line
-  # BaseTools/Bin/gcc_arm_linux_extdep/bin/../lib/gcc/arm-linux-gnueabihf/7.4.1/../../../../arm-linux-gnueabihf/bin/ld: read-only segment has dynamic relocations.
-  # Need to investigate further.
-  #SUPPORTED_ARCHITECTURES        = AARCH64|X64|ARM
-  SUPPORTED_ARCHITECTURES        = AARCH64|X64
-  # MU_CHANGE [END]
+  SUPPORTED_ARCHITECTURES        = AARCH64|X64|ARM
   BUILD_TARGETS                  = DEBUG|RELEASE
   SKUID_IDENTIFIER               = DEFAULT
 
@@ -52,7 +44,7 @@
   CacheMaintenanceLib|MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
   DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
-  ExtractGuidedSectionLib|MdePkg/Library/BaseExtractGuidedSectionLib/BaseExtractGuidedSectionLib.inf  # MU_CHANGE - can't use EmbeddedPkg
+  ExtractGuidedSectionLib|MdePkg/Library/BaseExtractGuidedSectionLib/BaseExtractGuidedSectionLib.inf # MU_CHANGE: Remove EmbeddedPkg Dependency
   FvLib|StandaloneMmPkg/Library/FvLib/FvLib.inf
   HobLib|StandaloneMmPkg/Library/StandaloneMmHobLib/StandaloneMmHobLib.inf
   IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
@@ -69,24 +61,25 @@
   StandaloneMmDriverEntryPoint|MdePkg/Library/StandaloneMmDriverEntryPoint/StandaloneMmDriverEntryPoint.inf
   VariableMmDependency|StandaloneMmPkg/Library/VariableMmDependency/VariableMmDependency.inf
   MmuLib|MdePkg/Library/BaseMmuLibNull/BaseMmuLibNull.inf   # MU_CHANGE
+  NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf # MU_CHANGE: /GS and -fstack-protector support
 
 [LibraryClasses.X64]                                                                                                    # MU_CHANGE
   StandaloneMmCoreEntryPoint|StandaloneMmPkg/Library/StandaloneMmCoreEntryPoint/StandaloneMmCoreEntryPoint.inf          # MU_CHANGE
 
 [LibraryClasses.AARCH64, LibraryClasses.ARM]
-# MU_CHANGE [BEGIN]
-  #ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
-  #StandaloneMmMmuLib|ArmPkg/Library/StandaloneMmMmuLib/ArmMmuStandaloneMmLib.inf
-  #ArmSvcLib|ArmPkg/Library/ArmSvcLib/ArmSvcLib.inf
-  #CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
-# MU_CHANGE [END]
+  # MU_CHANGE [BEGIN]: Remove ArmPkg Dependencies
+  # ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
+  # StandaloneMmMmuLib|ArmPkg/Library/StandaloneMmMmuLib/ArmMmuStandaloneMmLib.inf
+  # ArmSvcLib|ArmPkg/Library/ArmSvcLib/ArmSvcLib.inf
+  # CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
+  # MU_CHANGE [END]: Remove ArmPkg Dependencies
   PeCoffExtraActionLib|StandaloneMmPkg/Library/StandaloneMmPeCoffExtraActionLib/StandaloneMmPeCoffExtraActionLib.inf
 
 # MU_CHANGE [BEGIN]
   #NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
   NULL|MdePkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf
 # MU_CHANGE [END]
-  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+  # NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf # MU_CHANGE: Use Project Mu StackCheckLib
 
 [LibraryClasses.common.MM_CORE_STANDALONE]
   HobLib|StandaloneMmPkg/Library/StandaloneMmCoreHobLib/StandaloneMmCoreHobLib.inf

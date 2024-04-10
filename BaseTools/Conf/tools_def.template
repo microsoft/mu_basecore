@@ -30,8 +30,10 @@
 #      - Remove VS2008, VS2010, VS2012, VS2013, CLANG35, CLANG38, EBC
 #      - Add GCC and GCCNOLTO
 #      - Deprecate GCC48, GCC49 and GCC5.
+# 3.01 - Enable stack cookies for IA32, ARM, and AARCH64 builds for GCC and MSVC
+# 3.02 - Target stack protector global build flag to GCC5
 #
-#!VERSION=3.00
+#!VERSION=3.02
 
 IDENTIFIER = Default TOOL_CHAIN_CONF
 
@@ -643,9 +645,9 @@ NOOPT_VS2017_AARCH64_DLINK_FLAGS   = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF
 *_VS2019_IA32_PP_PATH      = DEF(VS2019_BIN_IA32)\cl.exe
 *_VS2019_IA32_ASM_PATH     = DEF(VS2019_BIN_IA32)\ml.exe
 
-  DEBUG_VS2019_IA32_CC_FLAGS    = /nologo /arch:IA32 /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Z7 /Gw
-RELEASE_VS2019_IA32_CC_FLAGS    = /nologo /arch:IA32 /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw
-NOOPT_VS2019_IA32_CC_FLAGS      = /nologo /arch:IA32 /c /WX /GS- /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Z7 /Od
+  DEBUG_VS2019_IA32_CC_FLAGS    = /nologo /arch:IA32 /c /WX /GS /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Z7 /Gw
+RELEASE_VS2019_IA32_CC_FLAGS    = /nologo /arch:IA32 /c /WX /GS /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw
+NOOPT_VS2019_IA32_CC_FLAGS      = /nologo /arch:IA32 /c /WX /GS /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Z7 /Od
 
   DEBUG_VS2019_IA32_ASM_FLAGS   = /nologo /c /WX /W3 /Cx /coff /Zd /Zi
 RELEASE_VS2019_IA32_ASM_FLAGS   = /nologo /c /WX /W3 /Cx /coff /Zd
@@ -786,9 +788,9 @@ NOOPT_VS2019_AARCH64_DLINK_FLAGS   = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF
 *_VS2022_IA32_ASM_PATH     = DEF(VS2022_BIN_IA32)\ml.exe
 
       *_VS2022_IA32_MAKE_FLAGS  = /nologo
-  DEBUG_VS2022_IA32_CC_FLAGS    = /nologo /arch:IA32 /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Z7 /Gw
-RELEASE_VS2022_IA32_CC_FLAGS    = /nologo /arch:IA32 /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw
-NOOPT_VS2022_IA32_CC_FLAGS      = /nologo /arch:IA32 /c /WX /GS- /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Z7 /Od
+  DEBUG_VS2022_IA32_CC_FLAGS    = /nologo /arch:IA32 /c /WX /GS /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Z7 /Gw
+RELEASE_VS2022_IA32_CC_FLAGS    = /nologo /arch:IA32 /c /WX /GS /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw
+NOOPT_VS2022_IA32_CC_FLAGS      = /nologo /arch:IA32 /c /WX /GS /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Z7 /Od
 
   DEBUG_VS2022_IA32_ASM_FLAGS   = /nologo /c /WX /W3 /Cx /coff /Zd /Zi
 RELEASE_VS2022_IA32_ASM_FLAGS   = /nologo /c /WX /W3 /Cx /coff /Zd
@@ -944,8 +946,8 @@ DEFINE GCC_DEPS_FLAGS              = -MMD -MF $@.deps
 
 DEFINE GCC48_ALL_CC_FLAGS            = DEF(GCC_ALL_CC_FLAGS) -ffunction-sections -fdata-sections -DSTRING_ARRAY_NAME=$(BASE_NAME)Strings
 DEFINE GCC48_IA32_X64_DLINK_COMMON   = -nostdlib -Wl,-n,-q,--gc-sections -z common-page-size=0x20
-DEFINE GCC48_IA32_CC_FLAGS           = DEF(GCC48_ALL_CC_FLAGS) -m32 -march=i586 -malign-double -fno-stack-protector -D EFI32 -fno-asynchronous-unwind-tables -Wno-address -fno-omit-frame-pointer
-DEFINE GCC48_X64_CC_FLAGS            = DEF(GCC48_ALL_CC_FLAGS) -m64 -fstack-protector -mstack-protector-guard=global "-DEFIAPI=__attribute__((ms_abi))" -maccumulate-outgoing-args -mno-red-zone -Wno-address -mcmodel=small -fpie -fno-asynchronous-unwind-tables -Wno-address  -fno-omit-frame-pointer
+DEFINE GCC48_IA32_CC_FLAGS           = DEF(GCC48_ALL_CC_FLAGS) -m32 -march=i586 -malign-double -D EFI32 -fno-asynchronous-unwind-tables -Wno-address -fno-omit-frame-pointer
+DEFINE GCC48_X64_CC_FLAGS            = DEF(GCC48_ALL_CC_FLAGS) -m64 "-DEFIAPI=__attribute__((ms_abi))" -maccumulate-outgoing-args -mno-red-zone -Wno-address -mcmodel=small -fpie -fno-asynchronous-unwind-tables -Wno-address  -fno-omit-frame-pointer
 DEFINE GCC48_IA32_X64_ASLDLINK_FLAGS = DEF(GCC48_IA32_X64_DLINK_COMMON) -Wl,--entry,ReferenceAcpiTable -u ReferenceAcpiTable
 DEFINE GCC48_IA32_X64_DLINK_FLAGS    = DEF(GCC48_IA32_X64_DLINK_COMMON) -Wl,--entry,$(IMAGE_ENTRY_POINT) -u $(IMAGE_ENTRY_POINT) -Wl,-Map,$(DEST_DIR_DEBUG)/$(BASE_NAME).map,--whole-archive
 DEFINE GCC48_IA32_DLINK2_FLAGS       = -Wl,--defsym=PECOFF_HEADER_SIZE=0x220 DEF(GCC_DLINK2_FLAGS_COMMON)
@@ -989,8 +991,8 @@ DEFINE GCC49_ARM_ASLDLINK_FLAGS      = DEF(GCC48_ARM_ASLDLINK_FLAGS)
 DEFINE GCC49_AARCH64_ASLDLINK_FLAGS  = DEF(GCC48_AARCH64_ASLDLINK_FLAGS)
 DEFINE GCC49_ASLCC_FLAGS             = DEF(GCC48_ASLCC_FLAGS)
 
-DEFINE GCC5_IA32_CC_FLAGS            = DEF(GCC49_IA32_CC_FLAGS)
-DEFINE GCC5_X64_CC_FLAGS             = DEF(GCC49_X64_CC_FLAGS)
+DEFINE GCC5_IA32_CC_FLAGS            = DEF(GCC49_IA32_CC_FLAGS) -fstack-protector -mstack-protector-guard=global
+DEFINE GCC5_X64_CC_FLAGS             = DEF(GCC49_X64_CC_FLAGS) -fstack-protector -mstack-protector-guard=global
 DEFINE GCC5_IA32_X64_DLINK_COMMON    = DEF(GCC49_IA32_X64_DLINK_COMMON)
 DEFINE GCC5_IA32_X64_ASLDLINK_FLAGS  = DEF(GCC49_IA32_X64_ASLDLINK_FLAGS)
 DEFINE GCC5_IA32_X64_DLINK_FLAGS     = DEF(GCC49_IA32_X64_DLINK_FLAGS)
@@ -1000,10 +1002,10 @@ DEFINE GCC5_X64_DLINK2_FLAGS         = DEF(GCC49_X64_DLINK2_FLAGS) -Wno-error
 DEFINE GCC5_ASM_FLAGS                = DEF(GCC49_ASM_FLAGS)
 DEFINE GCC5_ARM_ASM_FLAGS            = DEF(GCC49_ARM_ASM_FLAGS)
 DEFINE GCC5_AARCH64_ASM_FLAGS        = DEF(GCC49_AARCH64_ASM_FLAGS)
-DEFINE GCC5_ARM_CC_FLAGS             = DEF(GCC49_ARM_CC_FLAGS)
-DEFINE GCC5_ARM_CC_XIPFLAGS          = DEF(GCC49_ARM_CC_XIPFLAGS)
-DEFINE GCC5_AARCH64_CC_FLAGS         = DEF(GCC49_AARCH64_CC_FLAGS)
-DEFINE GCC5_AARCH64_CC_XIPFLAGS      = DEF(GCC49_AARCH64_CC_XIPFLAGS)
+DEFINE GCC5_ARM_CC_FLAGS             = DEF(GCC49_ARM_CC_FLAGS) -fstack-protector -mstack-protector-guard=global
+DEFINE GCC5_ARM_CC_XIPFLAGS          = DEF(GCC49_ARM_CC_XIPFLAGS) -fstack-protector -mstack-protector-guard=global
+DEFINE GCC5_AARCH64_CC_FLAGS         = DEF(GCC49_AARCH64_CC_FLAGS) -fstack-protector -mstack-protector-guard=global
+DEFINE GCC5_AARCH64_CC_XIPFLAGS      = DEF(GCC49_AARCH64_CC_XIPFLAGS) -fstack-protector -mstack-protector-guard=global
 DEFINE GCC5_ARM_DLINK_FLAGS          = DEF(GCC49_ARM_DLINK_FLAGS)
 DEFINE GCC5_ARM_DLINK2_FLAGS         = DEF(GCC49_ARM_DLINK2_FLAGS) -Wno-error
 DEFINE GCC5_AARCH64_DLINK_FLAGS      = DEF(GCC49_AARCH64_DLINK_FLAGS)

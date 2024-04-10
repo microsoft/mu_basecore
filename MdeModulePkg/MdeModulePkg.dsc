@@ -118,9 +118,9 @@
   ExceptionPersistenceLib|MdeModulePkg/Library/BaseExceptionPersistenceLibNull/BaseExceptionPersistenceLibNull.inf # MU_CHANGE
   DeviceStateLib|MdeModulePkg/Library/DeviceStateLib/DeviceStateLib.inf                                            # MU_CHANGE
 
-  MmuLib|MdePkg/Library/BaseMmuLibNull/BaseMmuLibNull.inf       ## MU_CHANGE
-
   PanicLib|MdePkg/Library/BasePanicLibNull/BasePanicLibNull.inf  # MU_CHANGE
+
+  NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf # MU_CHANGE: /GS and -fstack-protector support
 
 # MU_CHANGE START Include MemoryProtectionHobLib
 [LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.DXE_CORE, LibraryClasses.common.UEFI_APPLICATION]
@@ -215,10 +215,6 @@
   MemLib|StandaloneMmPkg/Library/StandaloneMmMemLib/StandaloneMmMemLib.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
-  # MU_CHANGE [BEGIN]
-  #ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
-  #ArmMmuLib|ArmPkg/Library/ArmMmuLib/ArmMmuBaseLib.inf
-  # MU_CHANGE [END]
   LockBoxLib|MdeModulePkg/Library/LockBoxNullLib/LockBoxNullLib.inf
 
   #
@@ -235,7 +231,7 @@
   # Since software stack checking may be heuristically enabled by the compiler
   # include BaseStackCheckLib unconditionally.
   #
-  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+  # NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf # MU_CHANGE: Use Project Mu StackCheckLib
 
 [LibraryClasses.EBC, LibraryClasses.RISCV64, LibraryClasses.LOONGARCH64]
   LockBoxLib|MdeModulePkg/Library/LockBoxNullLib/LockBoxNullLib.inf
