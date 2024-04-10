@@ -539,8 +539,6 @@ extern EFI_IPv4_ADDRESS  mZeroIp4Addr;
 #define TICKS_PER_MS      10000U
 #define TICKS_PER_SECOND  10000000U
 
-#define NET_RANDOM(Seed)  ((UINT32) ((UINT32) (Seed) * 1103515245UL + 12345) % 4294967295UL)
-
 /**
   Extract a UINT32 from a byte stream.
 
@@ -579,20 +577,35 @@ NetPutUint32 (
   IN     UINT32  Data
   );
 
-/**
-  Initialize a random seed using current time and monotonic count.
+/*
+Generate a Random output data given a length.
 
-  Get current time and monotonic count first. Then initialize a random seed
-  based on some basic mathematics operation on the hour, day, minute, second,
-  nanosecond and year of the current time and the monotonic count value.
+@param[out] Output - The buffer to store the generated random data.
+@param[in] OutputLength - The length of the output buffer.
 
-  @return The random seed initialized with current time.
-
-**/
-UINT32
+@retval EFI_SUCCESS           On Success
+@retval EFI_INVALID_PARAMETER Pointer is null or size is zero
+@retval EFI_NOT_FOUND         RNG protocol not found
+@Retval Others                Error from RngProtocol->GetRNG()
+*/
+EFI_STATUS
 EFIAPI
-NetRandomInitSeed (
-  VOID
+PseudoRandom (
+  OUT  VOID   *Output,
+  IN   UINTN  OutputLength
+  );
+
+/*
+Generate a 32-bit pseudo-random number.
+
+@param[out] Output - The buffer to store the generated random number.
+
+@return EFI_SUCCESS on success, error code on failure.
+*/
+EFI_STATUS
+EFIAPI
+PseudoRandomU32 (
+  OUT  UINT32  *Output
   );
 
 #define NET_LIST_USER_STRUCT(Entry, Type, Field)        \
