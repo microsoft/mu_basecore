@@ -3567,7 +3567,7 @@ MapLegacyBiosMemoryRWX (
   VOID
   )
 {
-  EFI_STATUS  Status;
+  EFI_STATUS  Status = EFI_SUCCESS;
 
   // https://wiki.osdev.org/Memory_Map_(x86)
   //
