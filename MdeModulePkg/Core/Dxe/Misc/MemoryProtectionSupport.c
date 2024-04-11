@@ -3559,6 +3559,32 @@ UninstallMemoryAttributeProtocol (
 }
 
 /**
+  Maps memory below 640K (legacy BIOS write-back memory) as readable, writeable, and executable.
+**/
+STATIC
+VOID
+MapLegacyBiosMemoryRWX (
+  VOID
+  )
+{
+  EFI_STATUS  Status = EFI_SUCCESS;
+
+  // https://wiki.osdev.org/Memory_Map_(x86)
+  //
+  // Map the legacy BIOS write-back memory as RWX.
+  if (gCpu != NULL) {
+    Status = gCpu->SetMemoryAttributes (
+                     gCpu,
+                     0x0,
+                     0xa0000,
+                     0
+                     );
+  }
+
+  ASSERT_EFI_ERROR (Status);
+}
+
+/**
   Sets the NX compatibility global to FALSE so future checks to
   IsEnhancedMemoryProtectionActive() will return FALSE.
 **/
@@ -3578,6 +3604,7 @@ ActivateCompatibilityMode (
 
   DisableNullDetection ();
   UninstallMemoryAttributeProtocol ();
+  MapLegacyBiosMemoryRWX ();
 }
 
 /**
