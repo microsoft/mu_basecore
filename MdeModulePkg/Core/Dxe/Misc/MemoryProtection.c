@@ -348,7 +348,7 @@ SetUefiImageProtectionAttributes (
   @retval     The required section alignment for this memory type
 
 **/
-STATIC
+// STATIC // MU_CHANGE
 UINT32
 GetMemoryProtectionSectionAlignment (
   IN EFI_MEMORY_TYPE  MemoryType
