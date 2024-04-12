@@ -11,6 +11,7 @@
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
+#include <Library/ImagePropertiesRecordLib.h>
 #include <Protocol/MemoryProtectionDebug.h>
 #include <Protocol/MemoryProtectionSpecialRegionProtocol.h>
 

@@ -277,6 +277,7 @@ GetDns4ServerFromDhcp4 (
   EFI_DHCP4_TRANSMIT_RECEIVE_TOKEN  Token;
   BOOLEAN                           IsDone;
   UINTN                             Index;
+  UINT32                            Random;
 
   Image      = Instance->Service->ImageHandle;
   Controller = Instance->Service->ControllerHandle;
@@ -291,6 +292,12 @@ GetDns4ServerFromDhcp4 (
   DataSize      = 0;
   Data          = NULL;
   InterfaceInfo = NULL;
+
+  Status = PseudoRandomU32 (&Random);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a failed to generate random number: %r\n", __func__, Status));
+    return Status;
+  }
 
   ZeroMem ((UINT8 *)ParaList, sizeof (ParaList));
 
@@ -467,7 +474,7 @@ GetDns4ServerFromDhcp4 (
 
   Status = Dhcp4->Build (Dhcp4, &SeedPacket, 0, NULL, 2, ParaList, &Token.Packet);
 
-  Token.Packet->Dhcp4.Header.Xid = HTONL (NET_RANDOM (NetRandomInitSeed ()));
+  Token.Packet->Dhcp4.Header.Xid = Random;
 
   Token.Packet->Dhcp4.Header.Reserved = HTONS ((UINT16)0x8000);
 

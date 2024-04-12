@@ -1,5 +1,5 @@
 /** @file
-  Unit tests of the Memory Protection logic of the DXE Core
+  Unit tests the SplitTable() ImagePropertiesRecordLib Logic
 
   Copyright (C) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -19,45 +19,13 @@
 #include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UnitTestLib.h>
+#include <Library/ImagePropertiesRecordLib.h>
 
-#include "../DxeMain.h"
-
-#define UNIT_TEST_APP_NAME     "Memory Protection Unit Tests"
+#define UNIT_TEST_APP_NAME     "Image Properties Record Lib Unit Test"
 #define UNIT_TEST_APP_VERSION  "1.0"
 
-VOID  *gHobList = NULL;
-
-/**
-  Update the input memory map to add entries which describe PE code section and data sections for
-  images within the described memory ranges. Within the updated memory map, image code sections
-  can be identified by the attribute EFI_MEMORY_RP and image data sections can be identified
-  by the attribute EFI_MEMORY_XP. The memory map will be sorted by base address.
-
-  NOTE: This logic assumes PE code/data section are page-aligned
-
-  @param[in, out] MemoryMapSize                   IN:   The size, in bytes, of the old memory map before the split.
-                                                  OUT:  The size, in bytes, of the used descriptors of the split
-                                                        memory map
-  @param[in, out] MemoryMap                       IN:   A pointer to the buffer containing the current memory map.
-                                                        This buffer must have enough space to accomodate the "worst case"
-                                                        scenario where every image in ImageRecordList needs a new descriptor
-                                                        to describe its code and data sections.
-                                                  OUT:  A pointer to the updated memory map with separated image section
-                                                        descriptors.
-  @param[in]      DescriptorSize                  The size, in bytes, of an individual EFI_MEMORY_DESCRIPTOR.
-  @param[in]      ImageRecordList                 A list of IMAGE_PROPERTIES_RECORD entries used when searching
-                                                  for an image record contained by the memory range described in
-                                                  EFI memory map descriptors.
-  @param[in]      NumberOfAdditionalDescriptors   The number of unused descriptors at the end of the input MemoryMap.
-**/
-VOID
-SeparateImagesInMemoryMap (
-  IN OUT UINTN                  *MemoryMapSize,
-  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN     UINTN                  DescriptorSize,
-  IN     LIST_ENTRY             *ImageRecordList,
-  IN     UINTN                  NumberOfAdditionalDescriptors
-  );
+#define NEXT_MEMORY_DESCRIPTOR(MemoryDescriptor, Size) \
+  ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)(MemoryDescriptor) + (Size)))
 
 // The starting memory map will contain 6 entries
 #define NUMBER_OF_MEMORY_MAP_DESCRIPTORS  6
@@ -88,7 +56,7 @@ SeparateImagesInMemoryMap (
 #define MAX_DESCRIPTORS_PER_IMAGE  7
 
 // Number of unused additional descriptors in the starting memory map buffer which is used by the
-// SeparateImagesInMemoryMap() logic
+// SplitTable() logic
 #define NUMBER_OF_ADDITIONAL_DESCRIPTORS  (NUMBER_OF_IMAGES_TO_SPLIT * MAX_DESCRIPTORS_PER_IMAGE)
 
 // Size of the memory map with enough space for the starting descriptors and the split descriptors
@@ -103,7 +71,7 @@ typedef enum {
 typedef struct {
   EFI_MEMORY_DESCRIPTOR    *MemoryMap;
   LIST_ENTRY               ImageList;
-} MEMORY_PROTECTION_HOST_TEST_CONTEXT;
+} IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT;
 
 EFI_MEMORY_DESCRIPTOR  BaseMemoryMap[] = {
   {
@@ -171,12 +139,15 @@ GetImageSectionBitmap (
   LIST_ENTRY                            *ImageRecordLink;
   LIST_ENTRY                            *ImageRecordCodeSectionLink;
   EFI_PHYSICAL_ADDRESS                  SectionBase;
-  UINT64                                ReturnBitmap = 0;
-  UINT64                                Shift        = 0;
+  UINT64                                ReturnBitmap;
+  UINT64                                Shift;
 
   if (ImageRecordList == NULL) {
     return 0;
   }
+
+  ReturnBitmap = 0;
+  Shift        = 0;
 
   // Walk through each image record
   for (ImageRecordLink = ImageRecordList->ForwardLink;
@@ -251,7 +222,9 @@ MatchDescriptorToImageSection (
   LIST_ENTRY                            *ImageRecordLink;
   LIST_ENTRY                            *ImageRecordCodeSectionLink;
   EFI_PHYSICAL_ADDRESS                  SectionBase;
-  UINT8                                 Shift = 0;
+  UINT8                                 Shift;
+
+  Shift = 0;
 
   if (ImageRecordList == NULL) {
     return 1;
@@ -344,10 +317,14 @@ IsMemoryMapValid (
   IN LIST_ENTRY             *ImageRecordList
   )
 {
-  UINT64        ImageSectionsBitmap, ReturnSectionBitmask;
-  UINT64        NumberOfDescriptors = MemoryMapSize / DESCRIPTOR_SIZE;
-  UINT8         Index               = 0;
+  UINT64        ImageSectionsBitmap;
+  UINT64        ReturnSectionBitmask;
+  UINT64        NumberOfDescriptors;
+  UINT8         Index;
   SECTION_TYPE  Type;
+
+  Index               = 0;
+  NumberOfDescriptors = MemoryMapSize / DESCRIPTOR_SIZE;
 
   UT_ASSERT_EQUAL (MemoryMapSize % DESCRIPTOR_SIZE, 0);
   UT_ASSERT_NOT_NULL (MemoryMap);
@@ -397,7 +374,7 @@ IsMemoryMapValid (
 }
 
 /**
-  Separate the image sections in the memory map and run a check to ensure the output is valid
+  Separate the image sections in the memory map and run a check to ensure the output is valid.
 
   @param[in]  Context   Context containing the memory map and image record pointers
 
@@ -406,13 +383,15 @@ IsMemoryMapValid (
 STATIC
 BOOLEAN
 SeparateAndCheck (
-  IN MEMORY_PROTECTION_HOST_TEST_CONTEXT  *Context
+  IN IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT  *Context
   )
 {
-  UINTN  MemoryMapSize = BASE_MEMORY_MAP_SIZE;
+  UINTN  MemoryMapSize;
+
+  MemoryMapSize = BASE_MEMORY_MAP_SIZE;
 
   // Separate the memory map so each image section has its own descriptor
-  SeparateImagesInMemoryMap (
+  SplitTable (
     &MemoryMapSize,
     Context->MemoryMap,
     DESCRIPTOR_SIZE,
@@ -440,10 +419,18 @@ MaxOutAdditionalDescriptors (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  IMAGE_PROPERTIES_RECORD               *Image1, *Image2, *Image3;
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSectionInImage1, *CodeSectionInImage2, *CodeSectionInImage3;
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *AddCodeSectionInImage1, *AddCodeSectionInImage2, *AddCodeSectionInImage3;
-  MEMORY_PROTECTION_HOST_TEST_CONTEXT   *TestContext = (MEMORY_PROTECTION_HOST_TEST_CONTEXT *)Context;
+  IMAGE_PROPERTIES_RECORD                    *Image1;
+  IMAGE_PROPERTIES_RECORD                    *Image2;
+  IMAGE_PROPERTIES_RECORD                    *Image3;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *CodeSectionInImage1;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *CodeSectionInImage2;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *CodeSectionInImage3;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *AddCodeSectionInImage1;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *AddCodeSectionInImage2;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *AddCodeSectionInImage3;
+  IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT  *TestContext;
+
+  TestContext = (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT *)Context;
 
   Image1 = CR (TestContext->ImageList.ForwardLink, IMAGE_PROPERTIES_RECORD, Link, IMAGE_PROPERTIES_RECORD_SIGNATURE);
   Image2 = CR (Image1->Link.ForwardLink, IMAGE_PROPERTIES_RECORD, Link, IMAGE_PROPERTIES_RECORD_SIGNATURE);
@@ -536,9 +523,15 @@ MultipleImagesInOneDescriptor (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  IMAGE_PROPERTIES_RECORD               *Image1, *Image2, *Image3;
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSectionInImage1, *CodeSectionInImage2, *CodeSectionInImage3;
-  MEMORY_PROTECTION_HOST_TEST_CONTEXT   *TestContext = (MEMORY_PROTECTION_HOST_TEST_CONTEXT *)Context;
+  IMAGE_PROPERTIES_RECORD                    *Image1;
+  IMAGE_PROPERTIES_RECORD                    *Image2;
+  IMAGE_PROPERTIES_RECORD                    *Image3;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *CodeSectionInImage1;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *CodeSectionInImage2;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *CodeSectionInImage3;
+  IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT  *TestContext;
+
+  TestContext = (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT *)Context;
 
   Image1 = CR (TestContext->ImageList.ForwardLink, IMAGE_PROPERTIES_RECORD, Link, IMAGE_PROPERTIES_RECORD_SIGNATURE);
   Image2 = CR (Image1->Link.ForwardLink, IMAGE_PROPERTIES_RECORD, Link, IMAGE_PROPERTIES_RECORD_SIGNATURE);
@@ -594,9 +587,15 @@ ImagesDontFitDescriptors (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  IMAGE_PROPERTIES_RECORD               *Image1, *Image2, *Image3;
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSectionInImage1, *CodeSectionInImage2, *CodeSectionInImage3;
-  MEMORY_PROTECTION_HOST_TEST_CONTEXT   *TestContext = (MEMORY_PROTECTION_HOST_TEST_CONTEXT *)Context;
+  IMAGE_PROPERTIES_RECORD                    *Image1;
+  IMAGE_PROPERTIES_RECORD                    *Image2;
+  IMAGE_PROPERTIES_RECORD                    *Image3;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *CodeSectionInImage1;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *CodeSectionInImage2;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *CodeSectionInImage3;
+  IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT  *TestContext;
+
+  TestContext = (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT *)Context;
 
   Image1 = CR (TestContext->ImageList.ForwardLink, IMAGE_PROPERTIES_RECORD, Link, IMAGE_PROPERTIES_RECORD_SIGNATURE);
   Image2 = CR (Image1->Link.ForwardLink, IMAGE_PROPERTIES_RECORD, Link, IMAGE_PROPERTIES_RECORD_SIGNATURE);
@@ -668,9 +667,15 @@ ImagesFitDescriptors (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  IMAGE_PROPERTIES_RECORD               *Image1, *Image2, *Image3;
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSectionInImage1, *CodeSectionInImage2, *CodeSectionInImage3;
-  MEMORY_PROTECTION_HOST_TEST_CONTEXT   *TestContext = (MEMORY_PROTECTION_HOST_TEST_CONTEXT *)Context;
+  IMAGE_PROPERTIES_RECORD                    *Image1;
+  IMAGE_PROPERTIES_RECORD                    *Image2;
+  IMAGE_PROPERTIES_RECORD                    *Image3;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *CodeSectionInImage1;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *CodeSectionInImage2;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *CodeSectionInImage3;
+  IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT  *TestContext;
+
+  TestContext = (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT *)Context;
 
   Image1 = CR (TestContext->ImageList.ForwardLink, IMAGE_PROPERTIES_RECORD, Link, IMAGE_PROPERTIES_RECORD_SIGNATURE);
   Image2 = CR (Image1->Link.ForwardLink, IMAGE_PROPERTIES_RECORD, Link, IMAGE_PROPERTIES_RECORD_SIGNATURE);
@@ -729,6 +734,8 @@ ImagesFitDescriptors (
 
 /**
   Free all allocated memory.
+
+  @param[in]  Context   Context containing the memory map and image record pointers
 **/
 VOID
 EFIAPI
@@ -736,12 +743,13 @@ TestCleanup (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  IMAGE_PROPERTIES_RECORD               *ImageRecord;
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *ImageRecordCodeSection;
-  LIST_ENTRY                            *ImageRecordLink;
-  LIST_ENTRY                            *CodeSegmentListHead;
-  MEMORY_PROTECTION_HOST_TEST_CONTEXT   *TestContext = ((MEMORY_PROTECTION_HOST_TEST_CONTEXT *)Context);
+  IMAGE_PROPERTIES_RECORD                    *ImageRecord;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION       *ImageRecordCodeSection;
+  LIST_ENTRY                                 *ImageRecordLink;
+  LIST_ENTRY                                 *CodeSegmentListHead;
+  IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT  *TestContext;
 
+  TestContext     = (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT *)Context;
   ImageRecordLink = &TestContext->ImageList;
 
   while (!IsListEmpty (ImageRecordLink)) {
@@ -782,43 +790,47 @@ TestCleanup (
 STATIC
 VOID
 CreateBaseContextEntry (
-  OUT MEMORY_PROTECTION_HOST_TEST_CONTEXT  *TestContext
+  OUT IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT  *TestContext
   )
 {
-  IMAGE_PROPERTIES_RECORD               *Image1, *Image2, *Image3;
-  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSection1, *CodeSection2, *CodeSection3;
+  IMAGE_PROPERTIES_RECORD               *Image1;
+  IMAGE_PROPERTIES_RECORD               *Image2;
+  IMAGE_PROPERTIES_RECORD               *Image3;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSectionInImage1;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSectionInImage2;
+  IMAGE_PROPERTIES_RECORD_CODE_SECTION  *CodeSectionInImage3;
 
   InitializeListHead (&TestContext->ImageList);
 
-  Image1       = AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD));
-  CodeSection1 = AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD_CODE_SECTION));
+  Image1              = AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD));
+  CodeSectionInImage1 = AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD_CODE_SECTION));
 
-  Image1->Signature       = IMAGE_PROPERTIES_RECORD_SIGNATURE;
-  CodeSection1->Signature = IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE;
+  Image1->Signature              = IMAGE_PROPERTIES_RECORD_SIGNATURE;
+  CodeSectionInImage1->Signature = IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE;
   InitializeListHead (&Image1->CodeSegmentList);
 
   InsertTailList (&TestContext->ImageList, &Image1->Link);
-  InsertTailList (&Image1->CodeSegmentList, &CodeSection1->Link);
+  InsertTailList (&Image1->CodeSegmentList, &CodeSectionInImage1->Link);
 
-  Image2       = AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD));
-  CodeSection2 = AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD_CODE_SECTION));
+  Image2              = AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD));
+  CodeSectionInImage2 = AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD_CODE_SECTION));
 
-  Image2->Signature       = IMAGE_PROPERTIES_RECORD_SIGNATURE;
-  CodeSection2->Signature = IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE;
+  Image2->Signature              = IMAGE_PROPERTIES_RECORD_SIGNATURE;
+  CodeSectionInImage2->Signature = IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE;
   InitializeListHead (&Image2->CodeSegmentList);
 
   InsertTailList (&TestContext->ImageList, &Image2->Link);
-  InsertTailList (&Image2->CodeSegmentList, &CodeSection2->Link);
+  InsertTailList (&Image2->CodeSegmentList, &CodeSectionInImage2->Link);
 
-  Image3       = AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD));
-  CodeSection3 = AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD_CODE_SECTION));
+  Image3              = AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD));
+  CodeSectionInImage3 = AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD_CODE_SECTION));
 
-  Image3->Signature       = IMAGE_PROPERTIES_RECORD_SIGNATURE;
-  CodeSection3->Signature = IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE;
+  Image3->Signature              = IMAGE_PROPERTIES_RECORD_SIGNATURE;
+  CodeSectionInImage3->Signature = IMAGE_PROPERTIES_RECORD_CODE_SECTION_SIGNATURE;
   InitializeListHead (&Image3->CodeSegmentList);
 
   InsertTailList (&TestContext->ImageList, &Image3->Link);
-  InsertTailList (&Image3->CodeSegmentList, &CodeSection3->Link);
+  InsertTailList (&Image3->CodeSegmentList, &CodeSectionInImage3->Link);
 
   TestContext->MemoryMap = AllocateZeroPool (SPLIT_MEMORY_MAP_SIZE);
   CopyMem (TestContext->MemoryMap, &BaseMemoryMap, BASE_MEMORY_MAP_SIZE);
@@ -840,19 +852,22 @@ UnitTestingEntry (
   VOID
   )
 {
-  EFI_STATUS                           Status;
-  UNIT_TEST_FRAMEWORK_HANDLE           Framework;
-  UNIT_TEST_SUITE_HANDLE               MemoryProtectionTests;
-  MEMORY_PROTECTION_HOST_TEST_CONTEXT  *Context1, *Context2, *Context3, *Context4;
+  EFI_STATUS                                 Status;
+  UNIT_TEST_FRAMEWORK_HANDLE                 Framework;
+  UNIT_TEST_SUITE_HANDLE                     ImagePropertiesRecordTests;
+  IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT  *Context1;
+  IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT  *Context2;
+  IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT  *Context3;
+  IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT  *Context4;
 
   DEBUG ((DEBUG_INFO, "%a v%a\n", UNIT_TEST_APP_NAME, UNIT_TEST_APP_VERSION));
 
   Framework = NULL;
 
-  Context1 = (MEMORY_PROTECTION_HOST_TEST_CONTEXT *)AllocateZeroPool (sizeof (MEMORY_PROTECTION_HOST_TEST_CONTEXT));
-  Context2 = (MEMORY_PROTECTION_HOST_TEST_CONTEXT *)AllocateZeroPool (sizeof (MEMORY_PROTECTION_HOST_TEST_CONTEXT));
-  Context3 = (MEMORY_PROTECTION_HOST_TEST_CONTEXT *)AllocateZeroPool (sizeof (MEMORY_PROTECTION_HOST_TEST_CONTEXT));
-  Context4 = (MEMORY_PROTECTION_HOST_TEST_CONTEXT *)AllocateZeroPool (sizeof (MEMORY_PROTECTION_HOST_TEST_CONTEXT));
+  Context1 = (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT *)AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT));
+  Context2 = (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT *)AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT));
+  Context3 = (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT *)AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT));
+  Context4 = (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT *)AllocateZeroPool (sizeof (IMAGE_PROPERTIES_RECORD_HOST_TEST_CONTEXT));
 
   CreateBaseContextEntry (Context1);
   CreateBaseContextEntry (Context2);
@@ -871,9 +886,9 @@ UnitTestingEntry (
   //
   // Populate the Unit Test Suite.
   //
-  Status = CreateUnitTestSuite (&MemoryProtectionTests, Framework, "Memory Protection Tests", "MemoryProtectionSupport.SeparateImagesInMemoryMap", NULL, NULL);
+  Status = CreateUnitTestSuite (&ImagePropertiesRecordTests, Framework, "Image Properties Record Tests", "ImagePropertiesRecordLib.SplitTable", NULL, NULL);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Failed in CreateUnitTestSuite for the Memory Protection Tests\n"));
+    DEBUG ((DEBUG_ERROR, "Failed in CreateUnitTestSuite for the Image Properties Record Tests\n"));
     Status = EFI_OUT_OF_RESOURCES;
     goto EXIT;
   }
@@ -881,10 +896,10 @@ UnitTestingEntry (
   //
   // --------------Suite-----------Description--------------Name----------Function--------Pre---Post-------------------Context-----------
   //
-  AddTestCase (MemoryProtectionTests, "All images fit perfectly into existing descriptors", "ImagesFitDescriptors", ImagesFitDescriptors, NULL, TestCleanup, Context1);
-  AddTestCase (MemoryProtectionTests, "All images don't fit perfectly into existing descriptors", "ImagesDontFitDescriptors", ImagesDontFitDescriptors, NULL, TestCleanup, Context2);
-  AddTestCase (MemoryProtectionTests, "All Images are contined In single descriptor", "MultipleImagesInOneDescriptor", MultipleImagesInOneDescriptor, NULL, TestCleanup, Context3);
-  AddTestCase (MemoryProtectionTests, "Multiple code sections each image", "MaxOutAdditionalDescriptors", MaxOutAdditionalDescriptors, NULL, TestCleanup, Context4);
+  AddTestCase (ImagePropertiesRecordTests, "All images fit perfectly into existing descriptors", "ImagesFitDescriptors", ImagesFitDescriptors, NULL, TestCleanup, Context1);
+  AddTestCase (ImagePropertiesRecordTests, "All images don't fit perfectly into existing descriptors", "ImagesDontFitDescriptors", ImagesDontFitDescriptors, NULL, TestCleanup, Context2);
+  AddTestCase (ImagePropertiesRecordTests, "All Images are contined In single descriptor", "MultipleImagesInOneDescriptor", MultipleImagesInOneDescriptor, NULL, TestCleanup, Context3);
+  AddTestCase (ImagePropertiesRecordTests, "Multiple code sections each image", "MaxOutAdditionalDescriptors", MaxOutAdditionalDescriptors, NULL, TestCleanup, Context4);
 
   //
   // Execute the tests.
@@ -899,13 +914,24 @@ EXIT:
   return Status;
 }
 
+///
+/// Avoid ECC error for function name that starts with lower case letter
+///
+#define ImagePropertiesRecordLibUnitTestMain  main
+
 /**
   Standard POSIX C entry point for host based unit test execution.
+
+  @param[in] Argc  Number of arguments
+  @param[in] Argv  Array of pointers to arguments
+
+  @retval 0      Success
+  @retval other  Error
 **/
-int
-main (
-  int   argc,
-  char  *argv[]
+INT32
+ImagePropertiesRecordLibUnitTestMain (
+  IN INT32  Argc,
+  IN CHAR8  *Argv[]
   )
 {
   return UnitTestingEntry ();
