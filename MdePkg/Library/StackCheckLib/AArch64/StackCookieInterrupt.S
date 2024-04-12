@@ -17,5 +17,5 @@
 //------------------------------------------------------------------------------
 .global ASM_PFX(TriggerStackCookieInterrupt)
 ASM_PFX(TriggerStackCookieInterrupt):
-    smc FixedPcdGet8 (PcdStackCookieExceptionVector)
+    svc FixedPcdGet8 (PcdStackCookieExceptionVector)
     ret
