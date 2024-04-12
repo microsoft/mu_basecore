@@ -73,21 +73,19 @@ class DscCompleteCheck(ICiBuildPlugin):
             return 0
 
         # Get INF Files
+        # MU_CHANGE [BEGIN] - Add git ignore syntax
         INFFiles = self.WalkDirectoryForExtension([".inf"], abs_pkg_path)
-        INFFiles = [Edk2pathObj.GetEdk2RelativePathFromAbsolutePath(
-            x) for x in INFFiles]  # make edk2relative path so can compare with DSC
 
         # remove ignores
-        # MU_CHANGE [BEGIN] - Add git ignore syntax
         ignored_paths = []
         if "IgnoreInf" in pkgconfig:
             ignore_filter = parse_gitignore_lines(
                 pkgconfig["IgnoreInf"],
                 "DSC Complete Check Config",
                 os.path.dirname(abs_pkg_path))
+            
+            # INFFiles must be a list of absolute paths
             ignored_paths = list(filter(ignore_filter, INFFiles))
-        # MU_CHANGE [END] - Add git ignore syntax
-
             for a in ignored_paths:  # MU_CHANGE - Add git ignore syntax
                 try:
                     tc.LogStdOut("Ignoring INF {0}".format(a))
@@ -97,6 +95,10 @@ class DscCompleteCheck(ICiBuildPlugin):
                         "DscCompleteCheck.IgnoreInf -> {0} not found in filesystem.  Invalid ignore file".format(a))
                     logging.info(
                         "DscCompleteCheck.IgnoreInf -> {0} not found in filesystem.  Invalid ignore file".format(a))
+
+        INFFiles = [Edk2pathObj.GetEdk2RelativePathFromAbsolutePath(
+            x) for x in INFFiles]  # make edk2relative path so can compare with DSC
+        # MU_CHANGE [END] - Add git ignore syntax
 
         # DSC Parser
         dp = DscParser().SetEdk2Path(Edk2pathObj)
