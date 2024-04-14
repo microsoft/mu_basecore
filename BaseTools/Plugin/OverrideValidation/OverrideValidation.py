@@ -36,7 +36,7 @@ try:
     #Tuple for (version, entrycount)
     OVERRIDE_FORMAT_VERSION_1 = (1, 4)   #Version 1: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss
     OVERRIDE_FORMAT_VERSION_2 = (2, 5)   #Version 2: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss | GIT_COMMIT
-    DEPRECATION_FORMAT_VERSION_1 = (1, 3)   # Version 1: # DEPRECATED : VERSION | PATH_TO_NEW_MODULE_TO_USE | YYYY-MM-DDThh-mm-ss
+    DEPRECATION_FORMAT_VERSION_1 = (1, 4)   # Version 1: # DEPRECATED : VERSION | PATH_TO_NEW_MODULE_TO_USE | YYYY-MM-DDThh-mm-ss | DEPRECATION_TIMELINE
     FORMAT_VERSIONS = [OVERRIDE_FORMAT_VERSION_1, OVERRIDE_FORMAT_VERSION_2, DEPRECATION_FORMAT_VERSION_1]
     TIMESTAMP_FORMAT = "%Y-%m-%dT%H-%M-%S"
 
@@ -411,7 +411,8 @@ try:
                     return self.OverrideResult.DR_ALL_GOOD
 
             # Check if the module has passed the deprecation date
-            deprecation_dt = datetime.strptime(DeprecationEntry[2].strip(), TIMESTAMP_FORMAT).replace(tzinfo=timezone.utc)
+            deprecation_timeline = int(DeprecationEntry[3])
+            deprecation_dt = datetime.strptime(DeprecationEntry[2].strip(), TIMESTAMP_FORMAT).replace(tzinfo=timezone.utc) + timedelta(days=deprecation_timeline)
             current_dt = datetime.now(timezone.utc)
 
             # Module has crossed date of deprecation
@@ -642,12 +643,16 @@ def path_parse():
         help = '''Specify the absolute path to an inf with existing overrides to regen by passing r Path/To/Target or --regenpath Path/To/Target.'''
         )
     group.add_argument (
-        '-d', '--deprecatepath', dest = 'DeprecatedPath', type=str,
+        '-d', '--deprecatepath', dest = 'DeprecatedPath', type=str, default=None,
         help = '''Specify the absolute path to the file to be deprecated by passing -d DEPRECATED_MODULE_PATH or --deprecatepath DEPRECATED_MODULE_PATH.'''
         )
     parser.add_argument (
-        '-dr', '--deprecationreplacementpath', dest = 'DeprecationReplacementPath', type=str,
+        '-dr', '--deprecationreplacementpath', dest = 'DeprecationReplacementPath', type=str, default=None,
         help = '''Specify the relative path from the package to the replacement module by passing -dr Path/To/ReplacementPath or --deprecationreplacementpath Path/To/Target.'''
+        )
+    parser.add_argument (
+        '-dt', '--deprecationtimeline', dest = 'DeprecationTimelineInDays', type=int, default=90,
+        help = '''Specify the deprecation timeline in days. default is 90 days.'''
         )
     parser.add_argument (
         '-p', '--packagepath', dest = 'RegenPackagePath', nargs="*", default=[],
@@ -765,7 +770,7 @@ if __name__ == '__main__':
         pathtool = Edk2Path(Paths.WorkSpace, dummy_list)
         if Paths.DeprecatedPath is not None:
             # Generate deprecation warning line
-            #    DEPRECATION_FORMAT_VERSION_1 = (1, 4)   # Version 1: # DEPRECATED : VERSION | PATH_TO_NEW_MODULE_TO_USE | YYYY-MM-DDThh-mm-ss
+            #    DEPRECATION_FORMAT_VERSION_1 = (1, 4)   # Version 1: # DEPRECATED : VERSION | PATH_TO_NEW_MODULE_TO_USE | YYYY-MM-DDThh-mm-ss | DEPRECATION_TIMELINE
 
             if Paths.DeprecationReplacementPath is not None:
                 pkg_path = pathtool.GetContainingPackage(Paths.DeprecationReplacementPath)
@@ -780,10 +785,10 @@ if __name__ == '__main__':
             else:
                 rel_path = "REMOVED_COMPLETELY"
 
-            print("The module will be deprecated in 90 days")
+            print(f"The module will be deprecated in {Paths.DeprecationTimelineInDays} days")
             print("Copy and paste the following line(s) to your deprecated inf file(s):\n")
-            print('#%s : %08d | %s | %s \n' % ('Deprecated', DEPRECATION_FORMAT_VERSION_1[0], rel_path, 
-                                               (datetime.now(timezone.utc) + timedelta(days=90)).strftime(TIMESTAMP_FORMAT)))
+            print('#%s : %08d | %s | %s | %s\n' % ('Deprecated', DEPRECATION_FORMAT_VERSION_1[0], rel_path, 
+                                               datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT), str(Paths.DeprecationTimelineInDays)))
 
         else:
             # Generate override hash
