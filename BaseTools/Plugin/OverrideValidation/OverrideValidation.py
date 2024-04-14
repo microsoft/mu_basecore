@@ -17,7 +17,7 @@ import logging
 import os
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from io import StringIO
 
 #
@@ -38,17 +38,20 @@ try:
     OVERRIDE_FORMAT_VERSION_2 = (2, 5)   #Version 2: #OVERRIDE : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss | GIT_COMMIT
     DEPRECATION_FORMAT_VERSION_1 = (1, 3)   # Version 1: # DEPRECATED : VERSION | PATH_TO_NEW_MODULE_TO_USE | YYYY-MM-DDThh-mm-ss
     FORMAT_VERSIONS = [OVERRIDE_FORMAT_VERSION_1, OVERRIDE_FORMAT_VERSION_2, DEPRECATION_FORMAT_VERSION_1]
+    TIMESTAMP_FORMAT = "%Y-%m-%dT%H-%M-%S"
 
     class OverrideValidation(IUefiBuildPlugin):
 
         class OverrideResult(object):
-            OR_ALL_GOOD               = 0
-            OR_FILE_CHANGE            = 1
-            OR_VER_UNRECOG            = 2
-            OR_INVALID_FORMAT         = 3
-            OR_DSC_INF_NOT_FOUND      = 4
-            OR_TARGET_INF_NOT_FOUND   = 5
-            OR_DEPRECATED_MODULE_USED = 6
+            OR_ALL_GOOD             = 0
+            DR_ALL_GOOD             = 0
+            OR_FILE_CHANGE          = 1
+            OR_VER_UNRECOG          = 2
+            OR_INVALID_FORMAT       = 3
+            OR_DSC_INF_NOT_FOUND    = 4
+            OR_TARGET_INF_NOT_FOUND = 5
+            DR_DEPRECATION_WARNING  = 6
+            DR_DEPRECATED_ERROR     = 7
 
             @classmethod
             def GetErrStr (cls, errcode):
@@ -65,8 +68,10 @@ try:
                     str = 'FILE_NOT_FOUND'
                 elif (errcode == cls.OR_TARGET_INF_NOT_FOUND):
                     str = 'INF_FILE_NOT_FOUND'
-                elif (errcode == cls.OR_DEPRECATED_MODULE_USED):
-                    str = 'DEPRECATED_MODULE_USED'
+                elif (errcode == cls.DR_DEPRECATION_WARNING):
+                    str = 'DEPRECATION_WARNING'
+                elif (errcode == cls.DR_DEPRECATED_ERROR):
+                    str = 'DEPRECATED_ERROR'
                 else:
                     str = 'UNKNOWN'
                 return str
@@ -86,22 +91,22 @@ try:
         def do_pre_build(self, thebuilder):
             # Setup timestamp to log time cost in this section
             starttime = datetime.now()
-            logging.info("---------------------------------------------------------")
-            logging.info("--------------Override Validation Starting---------------")
-            logging.info("---------------------------------------------------------")
+            logging.info("---------------------------------------------------------------------")
+            logging.info("--------------Override/Deprecation Validation Starting---------------")
+            logging.info("---------------------------------------------------------------------")
 
             rc = self.override_plat_validate(thebuilder)
             if(rc == self.OverrideResult.OR_ALL_GOOD):
-                logging.debug("Override validation all in sync")
+                logging.debug("Override/Deprecation validation all in sync")
             else:
-                logging.error("Override validation failed")
+                logging.error("Override/Deprecation validation failed")
 
             endtime = datetime.now()
             delta = endtime - starttime
-            logging.info("---------------------------------------------------------")
-            logging.info("--------------Override Validation Finished---------------")
-            logging.info("-------------- Running Time (mm:ss): {0[0]:02}:{0[1]:02} --------------".format(divmod(delta.seconds, 60)))
-            logging.info("---------------------------------------------------------")
+            logging.info("----------------------------------------------------------------------")
+            logging.info("--------------Override/Deprecation Validation Finished----------------")
+            logging.info("-------------- Running Time (mm:ss): {0[0]:02}:{0[1]:02} -------------".format(divmod(delta.seconds, 60)))
+            logging.info("----------------------------------------------------------------------")
 
             return rc
         # END: do_pre_build(self, thebuilder)
@@ -133,7 +138,7 @@ try:
                 if m_result != self.OverrideResult.OR_ALL_GOOD:
                     if m_result != self.OverrideResult.OR_DSC_INF_NOT_FOUND:
                         result = m_result
-                    logging.error("Override processing error %s in file/dir %s" % (self.OverrideResult.GetErrStr(m_result), file))
+                    logging.error("Override/Deprecation processing error %s in file/dir %s" % (self.OverrideResult.GetErrStr(m_result), file))
 
             self.override_log_print(thebuilder, modulelist, status)
 
@@ -211,8 +216,11 @@ try:
                             track_ag.append(modulenode.reflist[-1].path)
 
                     elif tagtype == 'deprecated':
-                        if m_result == self.OverrideResult.OR_DEPRECATED_MODULE_USED:
+                        if m_result == self.OverrideResult.DR_DEPRECATION_WARNING:
                             logging.warning("At Line %d: %s" %(lineno, Line))
+                        elif m_result == self.OverrideResult.DR_DEPRECATED_ERROR:
+                            logging.error("At Line %d: %s" %(lineno, Line))
+                            result = m_result
 
             if trackno != 0 and len(track_nf) == trackno:
                 # All track tags in this file are not found, this will enforce a failure, if not already failed
@@ -285,10 +293,11 @@ try:
                 m_node.status = result
                 return result
 
-            if version_match[0] == 1 and tagtype == 'deprecated':
-                return self.deprecation_process_line_with_version1(thebuilder, filepath, OverrideEntry)
-            elif version_match[0] == 1:
-                return self.override_process_line_with_version1(thebuilder, filelist, OverrideEntry, m_node, status, tagtype)
+            if version_match[0] == 1:
+                if tagtype == 'deprecated':
+                    return self.deprecation_process_line_with_version1(thebuilder, filepath, OverrideEntry)
+                else:
+                    return self.override_process_line_with_version1(thebuilder, filelist, OverrideEntry, m_node, status, tagtype)
             elif version_match[0] == 2:
                 return self.override_process_line_with_version2(thebuilder, filelist, OverrideEntry, m_node, status, tagtype)
             else:
@@ -315,7 +324,7 @@ try:
 
             # Step 4: Parse the time of hash generation
             try:
-                EntryTimestamp = datetime.strptime(OverrideEntry[3].strip(), "%Y-%m-%dT%H-%M-%S")
+                EntryTimestamp = datetime.strptime(OverrideEntry[3].strip(), TIMESTAMP_FORMAT)
                 EntryTimestamp = EntryTimestamp.replace(tzinfo=timezone.utc)
             except ValueError:
                 logging.error("Inf Override Parse Error, override parameter has invalid timestamp %s" %(OverrideEntry[3].strip()))
@@ -379,10 +388,42 @@ try:
         # END: override_process_line_version2(self, thebuilder, filelist, OverrideEntry, m_node, status)
 
         def deprecation_process_line_with_version1(self, thebuilder, filepath, DeprecationEntry):
-            if thebuilder.env.GetValue("ALLOW_DEPRECATED_MODULES") == "TRUE":
-                logging.info("Deprecated modules check is disabled")
-                return self.OverrideResult.OR_ALL_GOOD
-            logging.warning("Use of Deprecated module: %s, Please switch to: %s.", filepath, thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(DeprecationEntry[1].strip()))
+            """
+            This method checks if a module is deprecated.
+            If the module is deprecated, it checks if the deprecation date has passed.
+            If current date is greater than the deprecation date, the build is failed.
+            Otherwise, a warning is thrown.
+
+            If a older platform uses a deprecated module, it can add the deprecated module to a skip list
+            """
+
+            normalized_file_path = filepath.replace("\\", "/")
+
+            # Check if the module is part of the skip list
+            skip_list = thebuilder.env.GetValue("DEPRECATED_MODULES_SKIPLIST").split(";")
+            for module in skip_list:
+                if module.strip() == "":
+                    continue
+
+                normalized_relative_path = module.strip().replace("\\", "/")
+                if normalized_file_path.endswith(normalized_relative_path):
+                    logging.info("Use of Deprecated module: %s skipped as part of platform skip list", filepath)
+                    return self.OverrideResult.DR_ALL_GOOD
+
+            # Check if the module has passed the deprecation date
+            deprecation_dt = datetime.strptime(DeprecationEntry[2].strip(), TIMESTAMP_FORMAT).replace(tzinfo=timezone.utc)
+            current_dt = datetime.now(timezone.utc)
+
+            # Module has crossed date of deprecation
+            if current_dt > deprecation_dt:
+                logging.error("Use of Deprecated module: %s post date of deprecation.\nPlease switch to: %s.",
+                              filepath, thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(DeprecationEntry[1].strip()))
+                return self.OverrideResult.DR_DEPRECATED_ERROR
+            # Module is not deprecated yet
+            else:
+                logging.warning("Use of Deprecated module: %s.\nPlease switch to: %s before %s.",
+                                filepath, thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(DeprecationEntry[1].strip()), DeprecationEntry[2].strip())
+                return self.OverrideResult.DR_DEPRECATION_WARNING
 
         # Check override record against parsed entries
         # version: Override record's version number, normally parsed from the override record line
@@ -420,7 +461,7 @@ try:
             with open(logfile, 'w') as log:
                 log.write("Platform:     %s\n" %(thebuilder.env.GetValue("PRODUCT_NAME")))
                 log.write("Version:      %s\n" %(thebuilder.env.GetValue("BLD_*_BUILDID_STRING")))
-                log.write("Date:         %s\n" %(datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")))
+                log.write("Date:         %s\n" %(datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT)))
                 log.write("Commit:       %s\n" %(thebuilder.env.GetValue("BLD_*_BUILDSHA")))
                 log.write("State:        %d/%d\n" %(status[0], status[1]))
 
@@ -706,10 +747,10 @@ if __name__ == '__main__':
                         VERSION_INDEX = Paths.Version - 1
 
                         if VERSION_INDEX == 0:
-                            line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), OVERRIDE_FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"))
+                            line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), OVERRIDE_FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT))
                         elif VERSION_INDEX == 1:
                             git_hash = ModuleGitHash(abs_path)
-                            line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), OVERRIDE_FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"), git_hash)
+                            line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), OVERRIDE_FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT), git_hash)
                         print("Updating:\n" + line)
                 else:
                     print(f"Warning: Could not resolve relative path {rel_path}. Override line not updated.\n")
@@ -739,8 +780,10 @@ if __name__ == '__main__':
             else:
                 rel_path = "REMOVED_COMPLETELY"
 
+            print("The module will be deprecated in 90 days")
             print("Copy and paste the following line(s) to your deprecated inf file(s):\n")
-            print('#%s : %08d | %s | %s \n' % ('Deprecated', DEPRECATION_FORMAT_VERSION_1[0], rel_path, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")))
+            print('#%s : %08d | %s | %s \n' % ('Deprecated', DEPRECATION_FORMAT_VERSION_1[0], rel_path, 
+                                               (datetime.now(timezone.utc) + timedelta(days=90)).strftime(TIMESTAMP_FORMAT)))
 
         else:
             # Generate override hash
@@ -763,9 +806,9 @@ if __name__ == '__main__':
 
             if VERSION_INDEX == 0:
                 print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-                print('#%s : %08d | %s | %s | %s' % ("Override" if not Paths.Track else "Track", OVERRIDE_FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")))
+                print('#%s : %08d | %s | %s | %s' % ("Override" if not Paths.Track else "Track", OVERRIDE_FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT)))
 
             elif VERSION_INDEX == 1:
                 git_hash = ModuleGitHash(Paths.TargetPath)
                 print("Copy and paste the following line(s) to your overrider inf file(s):\n")
-                print('#%s : %08d | %s | %s | %s | %s' % ("Override" if not Paths.Track else "Track", OVERRIDE_FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S"), git_hash))
+                print('#%s : %08d | %s | %s | %s | %s' % ("Override" if not Paths.Track else "Track", OVERRIDE_FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT), git_hash))
