@@ -83,6 +83,8 @@
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable     ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision                 ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEnableSpdmDeviceAuthentication             ## PRODUCES AND CONSUMES
 
 [Guids]
   ## PRODUCES             ## GUID # Signature of Variable store header
@@ -114,6 +116,7 @@
 
   gVarCheckPolicyLibMmiHandlerGuid
   gEfiEndOfDxeEventGroupGuid
+  gEfiDeviceSignatureDatabaseGuid
 
 [Depex]
   gEfiMmCommunication2ProtocolGuid
