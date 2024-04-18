@@ -53,6 +53,7 @@
   ResetSystemLib
   ExceptionPersistenceLib
   CpuExceptionHookLib  # MU_CHANGE
+
 [Pcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList
   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize

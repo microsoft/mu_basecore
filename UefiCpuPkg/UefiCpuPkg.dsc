@@ -137,7 +137,7 @@
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
 
 # MU_CHANGE [BEGIN]
-[LIbraryClasses.common] 
+[LibraryClasses.common] 
   CpuExceptionHookLib|UefiCpuPkg/Library/CpuExceptionHookLibNull/CpuExceptionHookLibNull.inf
 # MU_CHANGE [END]
 #

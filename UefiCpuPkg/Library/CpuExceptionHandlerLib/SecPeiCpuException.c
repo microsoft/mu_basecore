@@ -79,7 +79,7 @@ CommonExceptionHandler (
   // Display ExceptionType, CPU information and Image information
   //
   DumpImageAndCpuContent (ExceptionType, SystemContext);
-  // MU_CHANGE [BEING]
+  // MU_CHANGE [BEGIN]
   // Call out to hook lib to allow platform specific action when an
   // exception occurs.
   CpuExceptionHookLib (ExceptionType, SystemContext);
