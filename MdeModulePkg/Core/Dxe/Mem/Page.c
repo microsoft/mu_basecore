@@ -949,6 +949,21 @@ CoreConvertPagesEx (
       Entry = NULL;
     }
 
+    // MU_CHANGE [BEGIN]
+    // The below call may allocate pages which, if we're freeing memory (implied by
+    // the new type being EfiConventionalMemory), could cause the memory we're currently
+    // freeing to be allocated before we're done freeing it if CoreFreeMemoryMapStack()
+    // is called after AddRange(). So, if we are freeing, let's free the memory map
+    // stack before adding memory we're converting to the free list.
+    if (NewType == EfiConventionalMemory) {
+      //
+      // Move any map descriptor stack to general pool
+      //
+      CoreFreeMemoryMapStack ();
+    }
+
+    // MU_CHANGE [END]
+
     //
     // Add our new range in. Don't do this for freed pages if freed-memory
     // guard is enabled.
@@ -975,10 +990,20 @@ CoreConvertPagesEx (
       }
     }
 
-    //
-    // Move any map descriptor stack to general pool
-    //
-    CoreFreeMemoryMapStack ();
+    // MU_CHANGE [BEGIN]
+    // The below call may allocate pages which, if we're allocating memory (implied by
+    // the new type not being EfiConventionalMemory), could cause the range we're currently
+    // converting to also be allocated in the below call. To avoid this case, we should
+    // call CoreFreeMemoryMapStack() after we've called AddRange() to mark this memory
+    // as allocated.
+    if (NewType != EfiConventionalMemory) {
+      //
+      // Move any map descriptor stack to general pool
+      //
+      CoreFreeMemoryMapStack ();
+    }
+
+    // MU_CHANGE [END]
 
     //
     // Bump the starting address, and convert the next range
