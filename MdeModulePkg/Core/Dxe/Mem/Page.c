@@ -955,7 +955,7 @@ CoreConvertPagesEx (
     // freeing to be allocated before we're done freeing it if CoreFreeMemoryMapStack()
     // is called after AddRange(). So, if we are freeing, let's free the memory map
     // stack before adding memory we're converting to the free list.
-    if (NewType == EfiConventionalMemory) {
+    if (ChangingType && (NewType == EfiConventionalMemory)) {
       //
       // Move any map descriptor stack to general pool
       //
@@ -996,7 +996,7 @@ CoreConvertPagesEx (
     // converting to also be allocated in the below call. To avoid this case, we should
     // call CoreFreeMemoryMapStack() after we've called AddRange() to mark this memory
     // as allocated.
-    if (NewType != EfiConventionalMemory) {
+    if (!ChangingType || (ChangingType && (NewType != EfiConventionalMemory))) {
       //
       // Move any map descriptor stack to general pool
       //
