@@ -10,7 +10,12 @@
 #include <Library/CpuExceptionHookLib.h>
 
 /**
-*/
+  Get CpuCacheInfo data array. The array is sorted by CPU package ID, core type, cache level and cache type.
+
+  @param[in] ExceptionType       Cpu Exception Type which was triggered
+  @param[in] SystemContext       Pointer the the CPU Context when the exception was triggered. Hook library
+                                 is responsible for determining the correct cpu architecture type.
+**/
 NO_STACK_COOKIE
 VOID
 EFIAPI
