@@ -1,5 +1,5 @@
 /** @file
-  Library provides a hook called when a stack cookie check fails.
+  Library which provides a hook that is called when a cpu exception occurs
 
   Copyright (c) Microsoft Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
