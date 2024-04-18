@@ -49,6 +49,7 @@
   LocalApicLib
   PeCoffGetEntryPointLib
   CcExitLib
+  CpuExceptionHookLib  # MU_CHANGE
 
 [Pcd]
   #gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard  # MU_CHANGE

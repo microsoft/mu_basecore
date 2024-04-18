@@ -67,6 +67,11 @@
   ## @libraryclass   Provides functions for SMM CPU Sync Operation.
   SmmCpuSyncLib|Include/Library/SmmCpuSyncLib.h
 
+# MU_CHANGE [BEGIN]
+  ## @libraryclass   Library to inject functionality for when a CPU exception occurs
+  CpuExceptionHookLib|Include/Library/CpuExceptionHookLib.h
+# MU_CHANGE [END]
+
 [LibraryClasses.RISCV64]
   ##  @libraryclass  Provides functions to manage MMU features on RISCV64 CPUs.
   ##

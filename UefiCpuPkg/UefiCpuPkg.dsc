@@ -136,6 +136,10 @@
   UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
 
+# MU_CHANGE [BEGIN]
+[LIbraryClasses.common] 
+  CpuExceptionHookLib|UefiCpuPkg/Library/CpuExceptionHookLibNull/CpuExceptionHookLibNull.inf
+# MU_CHANGE [END]
 #
 # Drivers/Libraries within this package
 #
@@ -151,6 +155,9 @@
   #UefiCpuPkg/CpuIoPei/CpuIoPei.inf                           # MU_CHANGE - Move to X64, IA32 section.
   UefiCpuPkg/Library/SecPeiDxeTimerLibUefiCpu/SecPeiDxeTimerLibUefiCpu.inf
   #UefiCpuPkg/Application/Cpuid/Cpuid.inf                     # MU_CHANGE - Move to X64, IA32 section.
+# MU_CHANGE [BEGIN]
+  UefiCpuPkg/Library/CpuExceptionHookLibNull/CpuExceptionHookLibNull.inf
+# MU_CHANGE [END]
 [Components.IA32, Components.X64]
 # MU_CHANGE END
   UefiCpuPkg/Library/CpuTimerLib/BaseCpuTimerLib.inf

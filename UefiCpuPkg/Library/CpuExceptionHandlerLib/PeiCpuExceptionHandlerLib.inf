@@ -53,6 +53,7 @@
   MemoryAllocationLib
   SynchronizationLib
   CcExitLib
+  CpuExceptionHookLib  # MU_CHANGE
 
 [Pcd]
   #gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard    # CONSUMES  # MU_CHANGE

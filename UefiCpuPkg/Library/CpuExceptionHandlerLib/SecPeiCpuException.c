@@ -9,6 +9,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <PiPei.h>
 #include <Library/CcExitLib.h>
 #include "CpuExceptionCommon.h"
+// MU_CHANGE [BEGIN]
+#include <Library/CpuExceptionHookLib.h>
+// MU_CHANGE [END]
 
 CONST UINTN  mDoFarReturnFlag = 0;
 
@@ -76,7 +79,11 @@ CommonExceptionHandler (
   // Display ExceptionType, CPU information and Image information
   //
   DumpImageAndCpuContent (ExceptionType, SystemContext);
-
+  // MU_CHANGE [BEING]
+  // Call out to hook lib to allow platform specific action when an
+  // exception occurs.
+  CpuExceptionHookLib (ExceptionType, SystemContext);
+  // MU_CHANGE [END]
   //
   // Enter a dead loop.
   //

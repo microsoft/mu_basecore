@@ -9,6 +9,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DebugLib.h>
 #include <Library/CcExitLib.h>
 #include "CpuExceptionCommon.h"
+// MU_CHANGE [BEGIN]
+#include <Library/CpuExceptionHookLib.h>
+// MU_CHANGE [END]
 
 /**
   Internal worker function for common exception handler.
@@ -150,6 +153,11 @@ CommonExceptionHandlerWorker (
     // Display ExceptionType, CPU information and Image information
     //
     DumpImageAndCpuContent (ExceptionType, SystemContext);
+    // MU_CHANGE [BEING]
+    // Call out to hook lib to allow platform specific action when an
+    // exception occurs.
+    CpuExceptionHookLib (ExceptionType, SystemContext);
+    // MU_CHANGE [END]
     //
     // Release Spinlock of output message
     //
