@@ -718,16 +718,21 @@ BmExpandFileDevicePath (
           ((MediaType == 2) && (BlockIo == NULL))
           )
       {
+        NextFullPath = AppendDevicePath (DevicePathFromHandle (Handles[Index]), FilePath);
+        if (NextFullPath == NULL) {
+          continue;
+        }
+
         if (GetNext) {
+          // this is the break/exit condition.  Occurs on first if FullPath input parameter was NULL
+          // or on the next loop after input parameter FullPath matches NextFullPath.
+          // NextFullPath will not be NULL so outer loop is broken too
           break;
         }
 
-        NextFullPath = AppendDevicePath (DevicePathFromHandle (Handles[Index]), FilePath);
-        if (NextFullPath != NULL) {
-          GetNext = (BOOLEAN)(CompareMem (NextFullPath, FullPath, GetDevicePathSize (NextFullPath)) == 0);
-          FreePool (NextFullPath);
-          NextFullPath = NULL;
-        }
+        GetNext = (BOOLEAN)(CompareMem (NextFullPath, FullPath, GetDevicePathSize (NextFullPath)) == 0);
+        FreePool (NextFullPath);
+        NextFullPath = NULL;
       }
     }
 
