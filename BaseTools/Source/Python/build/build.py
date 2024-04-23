@@ -1974,6 +1974,7 @@ class Build():
                         self.Progress,
                         self.ModuleFile
                         )
+                GenerateStackCookieValues() # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
                 self.Fdf = Wa.FdfFile
                 self.LoadFixAddress = Wa.Platform.LoadFixAddress
                 Wa.CreateMakeFile(False)
