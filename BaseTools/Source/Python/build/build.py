@@ -1870,7 +1870,7 @@ class Build():
                         self.UniFlag,
                         self.Progress
                         )
-                GenerateStackCookieValues() # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
+                GenerateStackCookieValues() # MU_CHANGE: Add build-time random stack cookie support
                 self.Fdf = Wa.FdfFile
                 self.LoadFixAddress = Wa.Platform.LoadFixAddress
                 self.BuildReport.AddPlatformReport(Wa)
@@ -1974,7 +1974,7 @@ class Build():
                         self.Progress,
                         self.ModuleFile
                         )
-                GenerateStackCookieValues() # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
+                GenerateStackCookieValues() # MU_CHANGE: Add build-time random stack cookie support
                 self.Fdf = Wa.FdfFile
                 self.LoadFixAddress = Wa.Platform.LoadFixAddress
                 Wa.CreateMakeFile(False)
@@ -2225,7 +2225,7 @@ class Build():
                 self.UniFlag,
                 self.Progress
                 )        
-        GenerateStackCookieValues() # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
+        GenerateStackCookieValues() # MU_CHANGE: Add build-time random stack cookie support
         self.Fdf = Wa.FdfFile
         self.LoadFixAddress = Wa.Platform.LoadFixAddress
         self.BuildReport.AddPlatformReport(Wa)
