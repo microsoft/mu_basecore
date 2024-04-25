@@ -8,6 +8,7 @@
 
 #include <Base.h>
 
+#include <Library/DebugLib.h>
 #include <Library/BaseLib.h>
 #include <Library/StackCheckFailureHookLib.h>
 
@@ -28,6 +29,7 @@ __stack_chk_fail (
   VOID
   )
 {
+  DEBUG ((DEBUG_ERROR, "Stack cookie check failed at address 0x%llx!\n", RETURN_ADDRESS (0)));
   StackCheckFailureHook (RETURN_ADDRESS (0));
   TriggerStackCookieInterrupt ();
 }
@@ -40,6 +42,7 @@ StackCheckFailure (
   VOID  *ActualCookieValue
   )
 {
+  DEBUG ((DEBUG_ERROR, "Stack cookie check failed at address 0x%llx!\n", RETURN_ADDRESS (0)));
   StackCheckFailureHook (RETURN_ADDRESS (0));
   TriggerStackCookieInterrupt ();
 }

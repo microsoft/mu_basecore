@@ -43,6 +43,7 @@
   RngLib
   StackCheckFailureHookLib
   BaseLib
+  DebugLib
 
 [FixedPcd]
   gEfiMdePkgTokenSpaceGuid.PcdStackCookieExceptionVector
