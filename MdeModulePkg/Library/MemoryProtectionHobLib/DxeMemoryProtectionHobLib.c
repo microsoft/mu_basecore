@@ -80,22 +80,6 @@ DxeMemoryProtectionSettingsConsistencyCheck (
   VOID
   )
 {
-  if ((gDxeMps.HeapGuardPolicy.Fields.UefiPoolGuard || gDxeMps.HeapGuardPolicy.Fields.UefiPageGuard) &&
-      gDxeMps.HeapGuardPolicy.Fields.UefiFreedMemoryGuard)
-  {
-    DEBUG ((
-      DEBUG_WARN,
-      "%a: - HeapGuardPolicy.UefiFreedMemoryGuard and \
-      UEFI HeapGuardPolicy.UefiPoolGuard/HeapGuardPolicy.UefiPageGuard \
-      cannot be active at the same time. Setting all three to ZERO in \
-      the memory protection settings global.\n",
-      __func__
-      ));
-    gDxeMps.HeapGuardPolicy.Fields.UefiPoolGuard        = 0;
-    gDxeMps.HeapGuardPolicy.Fields.UefiPageGuard        = 0;
-    gDxeMps.HeapGuardPolicy.Fields.UefiFreedMemoryGuard = 0;
-  }
-
   if (!gDxeMps.ImageProtectionPolicy.Data &&
       (gDxeMps.NxProtectionPolicy.Fields.EfiLoaderData       ||
        gDxeMps.NxProtectionPolicy.Fields.EfiBootServicesData ||

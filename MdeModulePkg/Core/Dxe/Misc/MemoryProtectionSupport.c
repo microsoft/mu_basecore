@@ -30,6 +30,7 @@ BOOLEAN                        mEnhancedMemoryProtectionActive = TRUE;
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttributeProtocol       = NULL;
 UINT8                          *mBitmapGlobal                  = NULL;
 LIST_ENTRY                     **mArrayOfListEntryPointers     = NULL;
+extern BOOLEAN                 mGcdSyncComplete;
 
 #define LEGACY_BIOS_WB_LENGTH  0xA0000
 
@@ -2722,4 +2723,62 @@ IsEnhancedMemoryProtectionActive (
   )
 {
   return mEnhancedMemoryProtectionActive;
+}
+
+/**
+  Event function called when gEdkiiGcdSyncCompleteProtocolGuid is
+  installed to initialize access attributes on tested and untested memory.
+**/
+VOID
+EFIAPI
+InitializePageAttributesCallback (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  InitializePageAttributesForMemoryProtectionPolicy ();
+
+  HeapGuardCpuArchProtocolNotify ();
+
+  mGcdSyncComplete = TRUE;
+
+  CoreCloseEvent (Event);
+}
+
+/**
+  Registers a callback on gEdkiiGcdSyncCompleteProtocolGuid to initialize page attributes
+  in accordance with to the memory protection policy.
+
+  @retval EFI_SUCCESS Event successfully registered
+  @retval other       Event was not registered
+ */
+EFI_STATUS
+EFIAPI
+RegisterPageAccessAttributesUpdateOnGcdSyncComplete (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+  EFI_EVENT   Event;
+  VOID        *Registration;
+
+  Status = CoreCreateEvent (
+             EVT_NOTIFY_SIGNAL,
+             TPL_CALLBACK,
+             InitializePageAttributesCallback,
+             NULL,
+             &Event
+             );
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = CoreRegisterProtocolNotify (
+             &gEdkiiGcdSyncCompleteProtocolGuid,
+             Event,
+             &Registration
+             );
+
+  return Status;
 }

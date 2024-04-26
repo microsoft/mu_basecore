@@ -1049,6 +1049,15 @@ InitializeCpu (
   //
   RefreshGcdMemoryAttributes ();
 
+  // MU_CHANGE START: Install blank protocol to signal the end of the GCD sync
+  gBS->InstallMultipleProtocolInterfaces (
+         &ImageHandle,
+         &gEdkiiGcdSyncCompleteProtocolGuid,
+         NULL,
+         NULL
+         );
+  // MU_CHANGE END
+
   //
   // Add and allocate local APIC memory mapped space
   //
