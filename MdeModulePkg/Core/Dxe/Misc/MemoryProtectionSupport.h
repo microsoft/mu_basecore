@@ -183,4 +183,17 @@ GetImageList (
   IN IMAGE_RANGE_PROTECTION_STATUS  ProtectedOrNonProtected
   );
 
+/**
+  Registers a callback on gEdkiiGcdSyncCompleteProtocolGuid to initialize
+  page attributes in accordance with to the memory protection policy.
+
+  @retval EFI_SUCCESS Event successfully registered
+  @retval other       Event was not registered
+**/
+EFI_STATUS
+EFIAPI
+RegisterPageAccessAttributesUpdateOnGcdSyncComplete (
+  VOID
+  );
+
 #endif

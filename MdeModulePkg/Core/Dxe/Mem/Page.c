@@ -288,6 +288,15 @@ AllocateMemoryMapEntry (
                               DEFAULT_PAGE_ALLOCATION_GRANULARITY,
                               FALSE
                               );
+    // MU_CHANGE START: The above call to CoreAllocatePoolPages() sidesteps the application of the
+    //                  memory protection policy so apply it here to avoid a potential page fault
+    ApplyMemoryProtectionPolicy (
+      EfiConventionalMemory,
+      EfiBootServicesData,
+      (EFI_PHYSICAL_ADDRESS)(UINTN)FreeDescriptorEntries,
+      DEFAULT_PAGE_ALLOCATION_GRANULARITY
+      );
+    // MU_CHANGE END
     if (FreeDescriptorEntries != NULL) {
       //
       // Enque the free memmory map entries into the list
@@ -947,6 +956,21 @@ CoreConvertPagesEx (
       Entry = NULL;
     }
 
+    // MU_CHANGE [BEGIN]
+    // The below call may allocate pages which, if we're freeing memory (implied by
+    // the new type being EfiConventionalMemory), could cause the memory we're currently
+    // freeing to be allocated before we're done freeing it if CoreFreeMemoryMapStack()
+    // is called after AddRange(). So, if we are freeing, let's free the memory map
+    // stack before adding memory we're converting to the free list.
+    if (ChangingType && (NewType == EfiConventionalMemory)) {
+      //
+      // Move any map descriptor stack to general pool
+      //
+      CoreFreeMemoryMapStack ();
+    }
+
+    // MU_CHANGE [END]
+
     //
     // Add our new range in. Don't do this for freed pages if freed-memory
     // guard is enabled.
@@ -973,10 +997,20 @@ CoreConvertPagesEx (
       }
     }
 
-    //
-    // Move any map descriptor stack to general pool
-    //
-    CoreFreeMemoryMapStack ();
+    // MU_CHANGE [BEGIN]
+    // The below call may allocate pages which, if we're allocating memory (implied by
+    // the new type not being EfiConventionalMemory), could cause the range we're currently
+    // converting to also be allocated in the below call. To avoid this case, we should
+    // call CoreFreeMemoryMapStack() after we've called AddRange() to mark this memory
+    // as allocated.
+    if (!ChangingType || (ChangingType && (NewType != EfiConventionalMemory))) {
+      //
+      // Move any map descriptor stack to general pool
+      //
+      CoreFreeMemoryMapStack ();
+    }
+
+    // MU_CHANGE [END]
 
     //
     // Bump the starting address, and convert the next range
@@ -1577,23 +1611,6 @@ CoreInternalFreePages (
   MEMORY_MAP  *Entry;
   UINTN       Alignment;
   BOOLEAN     IsGuarded;
-
-  // MU_CHANGE Start: Unprotect page(s) before free if the memory will be cleared on free
-  UINT64  Attributes;
-
-  if (DebugClearMemoryEnabled () && (mMemoryAttributeProtocol != NULL)) {
-    Status = mMemoryAttributeProtocol->GetMemoryAttributes (mMemoryAttributeProtocol, Memory, EFI_PAGES_TO_SIZE (NumberOfPages), &Attributes);
-
-    if ((Attributes & EFI_MEMORY_RO) || (Attributes & EFI_MEMORY_RP) || (Status == EFI_NO_MAPPING)) {
-      Status = ClearAccessAttributesFromMemoryRange (Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
-
-      if (EFI_ERROR (Status) && (Status != EFI_NOT_READY)) {
-        DEBUG ((DEBUG_WARN, "%a - Unable to clear attributes from memory at base: 0x%llx\n", __FUNCTION__, Memory));
-      }
-    }
-  }
-
-  // MU_CHANGE End
 
   //
   // Free the range

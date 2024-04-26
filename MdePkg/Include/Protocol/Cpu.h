@@ -16,6 +16,13 @@
 #define EFI_CPU_ARCH_PROTOCOL_GUID \
   { 0x26baccb1, 0x6f42, 0x11d4, {0xbc, 0xe7, 0x0, 0x80, 0xc7, 0x3c, 0x88, 0x81 } }
 
+// MU_CHANGE START: Guid used to signal the completion of GCD sync
+#define GCD_SYNC_COMPLETE_PROTOCOL_GUID \
+  { 0x650B7F40, 0x6564, 0x4FA9, {0x93, 0x75, 0xCD, 0x6B, 0x52, 0x1B, 0x6E, 0x50 } }
+
+extern EFI_GUID  gEdkiiGcdSyncCompleteProtocolGuid;
+// MU_CHANGE_END
+
 typedef struct _EFI_CPU_ARCH_PROTOCOL EFI_CPU_ARCH_PROTOCOL;
 
 ///
