@@ -182,6 +182,7 @@
   gMemoryProtectionDebugProtocolGuid            ## SOMETIMES_PRODUCES        ## MU_CHANGE
   gEfiMemoryAttributeProtocolGuid               ## CONSUMES                  ## MU_CHANGE
   gMemoryProtectionSpecialRegionProtocolGuid    ## PRODUCES                  ## MU_CHANGE
+  gEdkiiGcdSyncCompleteProtocolGuid             ## CONSUMES                  ## MU_CHANGE
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdLoadFixAddressBootTimeCodePageNumber    ## SOMETIMES_CONSUMES
