@@ -252,8 +252,14 @@ FindGuardedMemoryMap (
                  &MapMemory,
                  FALSE
                  );
-      ASSERT_EFI_ERROR (Status);
-      ASSERT (MapMemory != 0);
+      // MU_CHANGE START: Check if memory was successfully allocated
+      if (EFI_ERROR (Status) || (MapMemory == 0)) {
+        ASSERT_EFI_ERROR (Status);
+        ASSERT (MapMemory != 0);
+        return 0;
+      }
+
+      // MU_CHANGE END
       // MU_CHANGE START: Apply Protection policy to the allocated memory
       ApplyMemoryProtectionPolicy (
         EfiConventionalMemory,
@@ -291,8 +297,14 @@ FindGuardedMemoryMap (
                  &MapMemory,
                  FALSE
                  );
-      ASSERT_EFI_ERROR (Status);
-      ASSERT (MapMemory != 0);
+      // MU_CHANGE START: Check if memory was successfully allocated
+      if (EFI_ERROR (Status) || (MapMemory == 0)) {
+        ASSERT_EFI_ERROR (Status);
+        ASSERT (MapMemory != 0);
+        return 0;
+      }
+
+      // MU_CHANGE END
       // MU_CHANGE START: Apply Protection policy to the allocated memory
       ApplyMemoryProtectionPolicy (
         EfiConventionalMemory,
