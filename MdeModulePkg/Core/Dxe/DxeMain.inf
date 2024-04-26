@@ -184,6 +184,7 @@
   gMemoryProtectionDebugProtocolGuid            ## SOMETIMES_PRODUCES        ## MS_CHANGE
   gEfiMemoryAttributeProtocolGuid               ## CONSUMES                  ## MS_CHANGE
   gMemoryProtectionSpecialRegionProtocolGuid    ## PRODUCES                  ## MU_CHANGE
+  gEdkiiGcdSyncCompleteProtocolGuid             ## CONSUMES                  ## MU_CHANGE
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdLoadFixAddressBootTimeCodePageNumber    ## SOMETIMES_CONSUMES
