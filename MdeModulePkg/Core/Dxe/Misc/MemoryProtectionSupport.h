@@ -180,4 +180,18 @@ GetImageList (
   IN IMAGE_RANGE_PROTECTION_STATUS  ProtectedOrNonProtected
   );
 
+/**
+  Event function called when gEdkiiGcdSyncCompleteProtocolGuid is
+  installed to initialize access attributes on tested and untested memory.
+
+  @param[in]  Event   The event that fired to call this function
+  @param[in]  Context The event context provided by the registration
+**/
+VOID
+EFIAPI
+InitializePageAttributesCallback (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  );
+
 #endif
