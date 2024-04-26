@@ -833,6 +833,10 @@
   ## Include/Protocol/UsbEthernetProtocol.h
   gEdkIIUsbEthProtocolGuid = { 0x8d8969cc, 0xfeb0, 0x4303, { 0xb2, 0x1a, 0x1f, 0x11, 0x6f, 0x38, 0x56, 0x43 } }
 
+  ## MU_CHANGE START: Add protocol to indicate the GCD sync has completed
+  ## Include/Protocol/Cpu.h
+  gEdkiiGcdSyncCompleteProtocolGuid = { 0x650B7F40, 0x6564, 0x4FA9, { 0x93, 0x75, 0xCD, 0x6B, 0x52, 0x1B, 0x6E, 0x50 }}
+  ## MU_CHANGE END
 [PcdsFeatureFlag]
   ## Indicates if the platform can support update capsule across a system reset.<BR><BR>
   #   TRUE  - Supports update capsule across a system reset.<BR>

@@ -30,6 +30,8 @@ EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttributeProtocol       = NULL;
 UINT8                          *mBitmapGlobal                  = NULL;
 LIST_ENTRY                     **mArrayOfListEntryPointers     = NULL;
 
+extern BOOLEAN  mPageAttributesInitialized;
+
 #define IS_BITMAP_INDEX_SET(Bitmap, Index)  ((((UINT8*)Bitmap)[Index / 8] & (1 << (Index % 8))) != 0 ? TRUE : FALSE)
 #define SET_BITMAP_INDEX(Bitmap, Index)     (((UINT8*)Bitmap)[Index / 8] |= (1 << (Index % 8)))
 
@@ -1735,8 +1737,9 @@ SetAccessAttributesInMemoryMap (
     return EFI_INVALID_PARAMETER;
   }
 
-  MemoryMapEntry = MemoryMap;
-  MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+  mPageAttributesInitialized = TRUE;
+  MemoryMapEntry             = MemoryMap;
+  MemoryMapEnd               = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
 
   while (MemoryMapEntry < MemoryMapEnd) {
     if (!IS_BITMAP_INDEX_SET (Bitmap, Index)) {
@@ -1748,6 +1751,7 @@ SetAccessAttributesInMemoryMap (
     MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
   }
 
+  mPageAttributesInitialized = FALSE;
   return EFI_SUCCESS;
 }
 
@@ -2681,8 +2685,6 @@ MemoryProtectionCpuArchProtocolNotifyMu (
     goto Done;
   }
 
-  InitializePageAttributesForMemoryProtectionPolicy ();
-
   //
   // Call notify function meant for Heap Guard.
   //
@@ -2894,4 +2896,62 @@ IsEnhancedMemoryProtectionActive (
   )
 {
   return mEnhancedMemoryProtectionActive;
+}
+
+/**
+  Event function called when gEdkiiGcdSyncCompleteProtocolGuid is
+  installed to initialize access attributes on tested and untested memory.
+**/
+VOID
+EFIAPI
+InitializePageAttributesCallback (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  InitializePageAttributesForMemoryProtectionPolicy ();
+
+  HeapGuardCpuArchProtocolNotify ();
+
+  mPageAttributesInitialized = TRUE;
+
+  CoreCloseEvent (Event);
+}
+
+/**
+  Registers a callback on gEdkiiGcdSyncCompleteProtocolGuid to initialize page attributes
+  in accordance with to the memory protection policy.
+
+  @retval EFI_SUCCESS Event successfully registered
+  @retval other       Event was not registered
+ */
+EFI_STATUS
+EFIAPI
+RegisterPageAccessAttributesUpdateOnGcdSyncComplete (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+  EFI_EVENT   Event;
+  VOID        *Registration;
+
+  Status = CoreCreateEvent (
+             EVT_NOTIFY_SIGNAL,
+             TPL_CALLBACK,
+             InitializePageAttributesCallback,
+             NULL,
+             &Event
+             );
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = CoreRegisterProtocolNotify (
+             &gEdkiiGcdSyncCompleteProtocolGuid,
+             Event,
+             &Registration
+             );
+
+  return Status;
 }
