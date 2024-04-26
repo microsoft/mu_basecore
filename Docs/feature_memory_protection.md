@@ -1,7 +1,7 @@
 # Project Mu Memory Protection
 
 The Project Mu Memory Protection Settings add safety functionality such as page and pool guards,
-stack guard and null pointer detection. The settings are split between MM and DXE environments
+stack guard, and null pointer detection. The settings are split between MM and DXE environments
 for modularity.
 
 ## UEFI Paging Protection Attributes
@@ -50,14 +50,19 @@ is installed.
 - **DisableReadyToBoot**: Disable NULL pointer detection just after the ready to boot
 protocol is installed.
 
+DisableEndOfDxe and DisableReadyToBoot are provided to deal with problematic legacy
+drivers, option ROMs, and bootloaders which may access memory below 4KB such as older
+linux distros.
+
 The **MM environment** only has a single option indicating whether NULL detection
 is active or not.
 
 ## FreeMemoryReadProtected
 
 If enabled, all EfiConventionalMemory (free memory) will be marked with the
-[EFI_MEMORY_RP](#efi_memory_rp) attribute. This can be used in conjunction with the
-NX setting for EfiConventionalMemory.
+[EFI_MEMORY_RP](#efi_memory_rp) attribute. This policy will cause accesses to uanallocated
+or freed memory to trigger a page fault and target one of the most common programmer errors.
+This can be used in conjunction with the NX setting for EfiConventionalMemory.
 
 ## Image Protection Policy
 
@@ -70,16 +75,23 @@ images must adhere to the following rules for this policy to work:
 3. A platform may not disable XN/NX in the configuration
 registers in the DXE phase.
 4. CODE sections must not be self-modifying
+5. Modules of type DXE_RUNTIME_DRIVER must have their section alignment set to
+RUNTIME_PAGE_ALLOCATION_GRANULARITY which may differ from EFI_PAGE_SIZE. File
+alignment can still be EFI_PAGE_SIZE.
 
 This policy **only applies to DXE**.
 
 - **FromFv**: Protect images from firmware volumes.
 - **FromUnknown**: Protect images not from firmware volumes.
 - **RaiseErrorIfProtectionFails**: If set, images which fail to be protected will be
-unloaded. This excludes failure because CPU Arch Protocol has not yet been installed.
+unloaded which will trigger an ASSERT on DEBUG builds. An image will still be loaded
+if it follows the above rules but was loaded before the CPU Arch Protocol was installed.
+Images loaded before the CPU Arch Protocol was installed will be protected when the
+protocol is installed.
 - **BlockImagesWithoutNxFlag**: Images which do not have the NX_COMPAT DLL characteristic
-set will be blocked from loading. If this is set to FALSE, images without the NX_COMPAT
-DLL characteristic will still be loaded but will trigger Compatibility Mode. See
+set will be blocked from loading and trigger an ASSERT on DEBUG builds. If this is set to
+FALSE, images without the NX_COMPAT DLL characteristic will still be loaded but will trigger
+Compatibility Mode. See
 [Enhanced Memory Protection and Compatibility Mode](#enhanced-memory-protection-and-compatibility-mode)
 for more information.
 
@@ -160,31 +172,27 @@ of the stack. This page is reserved for use by the exception handler and ensures
 valid stack is always present when an exception occurs for error reporting.
 
 **A note on SMM:** An equivalent SMM stack guard feature is contained in
-[PiSmmCpuDxeSmm](https://github.com/tianocore/edk2/tree/master/UefiCpuPkg/PiSmmCpuDxeSmm)
-and is not dictated by this policy.
+UefiCpuPkg/PiSmmCpuDxeSmm and is not dictated by this policy.
 
 **Note that the UEFI:** stack protection starts in DxeIpl, because the region is fixed,
-and requires
-[PcdDxeIplBuildPageTables](https://github.com/tianocore/edk2/blob/master/MdeModulePkg/MdeModulePkg.dec)
-to be TRUE. In Project Mu, we have hard-coded CpuStackGuard to be TRUE in PEI phase, so we
-always set up a switch stack and guard page in PEI. However, the stack switch handlers
-will still only be installed in DXE phase if CpuStackGuard is TRUE. If the stack guard is
-disabled in DXE, the paging attributes at the stack base will be removed during memory
-protection initialization.
+and requires PcdDxeIplBuildPageTables to be TRUE. In Project Mu, we have hard-coded CpuStackGuard
+to be TRUE in PEI phase, so we always set up a switch stack and guard page in PEI. However,
+the stack switch handlers will still only be installed in DXE phase if CpuStackGuard is TRUE.
+If the stack guard is disabled in DXE, the paging attributes at the stack base will be
+removed during memory protection initialization.
 
 ## Stack Cookies
 
 A stack cookie (also called stack canary) is an integer placed in memory just before the stack
-return pointer.Most buffer overflows overwrite memory from lower to higher memory addresses,
+return pointer. Most buffer overflows overwrite memory from lower to higher memory addresses,
 so in order to overwrite the return pointer (and thus take control of the process) the canary
 value must also be overwritten. This value is checked to make sure it has not changed before a
 routine uses the return pointer on the stack.
 
-[Stack Cookies](#stack-cookies) enable protection of the stack return pointer. The stack cookie
-value is specific to each loaded image and is generated at random on image load. Stack cookies are
-enabled at compile time, but if this setting is FALSE the interrupts generated by stack cookie
-check failures will be ignored **which is extremely unsafe**. Stack cookie failures will trigger
-a warm reset if this policy is TRUE.
+The stack cookie value is specific to each loaded image and is generated at random on image load
+in DXE. Stack cookies are enabled at compile time, but if this setting is FALSE the interrupts
+generated by stack cookie check failures will be ignored **which is extremely unsafe**. Stack
+cookie failures will trigger a warm reset if this policy is TRUE.
 
 ## How to Set the Memory Protection Policy
 
