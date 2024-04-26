@@ -50,7 +50,14 @@ is installed.
 - **DisableReadyToBoot**: Disable NULL pointer detection just after the ready to boot
 protocol is installed.
 
-The **MM environment** only has a single option indicating whether NULL detection is active or not.
+The **MM environment** only has a single option indicating whether NULL detection
+is active or not.
+
+## FreeMemoryReadProtected
+
+If enabled, all EfiConventionalMemory (free memory) will be marked with the
+[EFI_MEMORY_RP](#efi_memory_rp) attribute. This can be used in conjunction with the
+NX setting for EfiConventionalMemory.
 
 ## Image Protection Policy
 
