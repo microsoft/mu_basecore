@@ -125,7 +125,7 @@ multiple of the size of a page. In this case, the pool must align with either th
 guard page, meaning either overflow or underflow can be caught consistently but not both.
 The head/tail alignment is set in [HeapGuardPolicy](#heapguardpolicy).
 
-The avialable settings match the EFI memory types as well as the OEMReserved
+The available settings match the EFI memory types as well as the OEMReserved
 and OSReserved regions defined in the UEFI specification.
 
 ## HeapGuardPolicy
