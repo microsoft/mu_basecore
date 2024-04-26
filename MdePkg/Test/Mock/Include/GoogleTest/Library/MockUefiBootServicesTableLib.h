@@ -49,6 +49,15 @@ struct MockUefiBootServicesTableLib {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
+    gBS_InstallProtocolInterface,
+    (IN OUT EFI_HANDLE      *UserHandle,
+     IN EFI_GUID            *Protocol,
+     IN EFI_INTERFACE_TYPE  InterfaceType,
+     IN VOID                *Interface)
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
     gBS_HandleProtocol,
     (IN  EFI_HANDLE Handle,
      IN  EFI_GUID   *Protocol,
