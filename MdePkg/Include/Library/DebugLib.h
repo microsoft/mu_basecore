@@ -570,12 +570,9 @@ UnitTestDebugAssert (
   @param  Length   The number of bytes in the buffer to set.
 
 **/
-#define DEBUG_CLEAR_MEMORY(Address, Length)  \
-  do {                                       \
-    if (DebugClearMemoryEnabled ()) {        \
-      DebugClearMemory (Address, Length);    \
-    }                                        \
-  } while (FALSE)
+// MU_CHANGE START: Disable debug clear memory to support RP on free memory
+#define DEBUG_CLEAR_MEMORY(Address, Length)
+// MU_CHANGE END
 
 /**
   Macro that calls DebugAssert() if the containing record does not have a
