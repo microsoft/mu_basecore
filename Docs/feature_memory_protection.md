@@ -1,33 +1,57 @@
 # Project Mu Memory Protection
 
+- [Project Mu Memory Protection](#project-mu-memory-protection)
+  - [Introduction and Primer](#introduction-and-primer)
+    - [UEFI Paging Protection Attributes](#uefi-paging-protection-attributes)
+      - [EFI\_MEMORY\_RP](#efi_memory_rp)
+      - [EFI\_MEMORY\_RO](#efi_memory_ro)
+      - [EFI\_MEMORY\_XP](#efi_memory_xp)
+    - [Enhanced Memory Protection and Compatibility Mode](#enhanced-memory-protection-and-compatibility-mode)
+  - [Available Memory Protection Settings](#available-memory-protection-settings)
+    - [Null Pointer Detection](#null-pointer-detection)
+    - [Read Protection on Free Memory](#read-protection-on-free-memory)
+    - [Image Protection Policy](#image-protection-policy)
+    - [XN/NX Memory Protection Policy](#xnnx-memory-protection-policy)
+    - [Page Guards](#page-guards)
+    - [Pool Guards](#pool-guards)
+    - [Heap Guard Policy](#heap-guard-policy)
+    - [CPU Stack Guard](#cpu-stack-guard)
+    - [Stack Cookies](#stack-cookies)
+  - [How to Set the Memory Protection Policy](#how-to-set-the-memory-protection-policy)
+  - [Memory Protection Special Regions](#memory-protection-special-regions)
+    - [Example Declaration of Special Region in PEI](#example-declaration-of-special-region-in-pei)
+    - [Example Declaration of Special Region in DXE](#example-declaration-of-special-region-in-dxe)
+
+## Introduction and Primer
+
 The Project Mu Memory Protection Settings add safety functionality such as page and pool guards,
 stack guard, and null pointer detection. The settings are split between MM and DXE environments
 for modularity.
 
-## UEFI Paging Protection Attributes
+### UEFI Paging Protection Attributes
 
 There are 3 UEFI attributes which are manipulated to apply the protections described in this
 document. Each UEFI attribute corresponds to some number of architecture specific bits on
 either ARM or x86 silicon.
 
-### EFI_MEMORY_RP
+#### EFI_MEMORY_RP
 
 This EFI attribute manipulates the writeable and readable attributes of a page. When set,
-the memory is read protected.
+the memory is read-protected.
 
-### EFI_MEMORY_RO
+#### EFI_MEMORY_RO
 
 This EFI attribute manipulates writeable attribute of a page. When set, the
 memory is read-only.
 
-### EFI_MEMORY_XP
+#### EFI_MEMORY_XP
 
 This EFI attribute manipulates execute attribute of a page. When set, the memory is
 non-executable. In order for this attribute to work, architecture-specific register
 configuration bits must be set properly. For example, on x86 the IA32_EFER.NXE bit in
 the IA32_EFER MSR register must be set.
 
-## Enhanced Memory Protection and Compatibility Mode
+### Enhanced Memory Protection and Compatibility Mode
 
 Microsoft has defined a set of paging protections which will be required for UEFI
 distributions booting Windows (Enhanced Memory Protections). Microsoft also defined
@@ -36,7 +60,9 @@ ROMs and older Linux distributions. The specifics of these two modes are detaile
 in the
 [Project Mu documentation](https://microsoft.github.io/mu/WhatAndWhy/enhancedmemoryprotection/).
 
-## Null Pointer Detection
+## Available Memory Protection Settings
+
+### Null Pointer Detection
 
 Pages are allocated in 4KB chunks (UEFI Spec Required). This policy sets the attributes of the
 4KB page at the NULL address to [EFI_MEMORY_RP](#efi_memory_rp) to detect NULL pointer
@@ -57,14 +83,14 @@ linux distros.
 The **MM environment** only has a single option indicating whether NULL detection
 is active or not.
 
-## FreeMemoryReadProtected
+### Read Protection on Free Memory
 
 If enabled, all EfiConventionalMemory (free memory) will be marked with the
 [EFI_MEMORY_RP](#efi_memory_rp) attribute. This policy will cause accesses to uanallocated
 or freed memory to trigger a page fault and target one of the most common programmer errors.
 This can be used in conjunction with the NX setting for EfiConventionalMemory.
 
-## Image Protection Policy
+### Image Protection Policy
 
 This policy enables a loaded EFI image to have [EFI_MEMORY_XP](#efi_memory_xp) to its
 DATA sections and [EFI_MEMORY_RO](#efi_memory_ro) to its CODE sections. Loaded EFI
@@ -72,8 +98,8 @@ images must adhere to the following rules for this policy to work:
 
 1. The PE code section and data sections are not merged.
 2. The PE image sections must be page aligned.
-3. A platform may not disable XN/NX in the configuration
-registers in the DXE phase.
+3. A platform may not disable XN (AARCH64)/NX (X86_X64) in the
+configuration registers in the DXE phase.
 4. CODE sections must not be self-modifying
 5. Modules of type DXE_RUNTIME_DRIVER must have their section alignment set to
 RUNTIME_PAGE_ALLOCATION_GRANULARITY which may differ from EFI_PAGE_SIZE. File
@@ -95,7 +121,7 @@ Compatibility Mode. See
 [Enhanced Memory Protection and Compatibility Mode](#enhanced-memory-protection-and-compatibility-mode)
 for more information.
 
-## NX Memory Protection Policy
+### XN/NX Memory Protection Policy
 
 This policy applies [EFI_MEMORY_XP](#efi_memory_xp) to memory of the
 associated memory type. **This policy only applies to DXE**
@@ -103,7 +129,7 @@ associated memory type. **This policy only applies to DXE**
 The available settings match the EFI memory types as well as the OEMReserved
 and OSReserved regions defined in the UEFI specification.
 
-## Page Guards
+### Page Guards
 
 The HeapGuardPageType policy implements guard pages on the specified memory types
 to detect heap overflow. If a bit is set, a guard page will be added before and
@@ -115,7 +141,7 @@ that only one guard page separates two allocated pages to avoid wasted space.
 The available settings match the EFI memory types as well as the OEMReserved
 and OSReserved regions defined in the UEFI specification.
 
-## Pool Guards
+### Pool Guards
 
 The HeapGuardPoolType policy is essentially the same as HeapGuardPageType policy.
 For each active memory type, a guard page with the [EFI_MEMORY_RP](#efi_memory_rp) attribute
@@ -123,12 +149,12 @@ will be added just before and after the portion of memory which the
 allocated pool occupies. The only added complexity comes when the allocated pool is not a
 multiple of the size of a page. In this case, the pool must align with either the head or tail
 guard page, meaning either overflow or underflow can be caught consistently but not both.
-The head/tail alignment is set in [HeapGuardPolicy](#heapguardpolicy).
+The head/tail alignment is set in [Heap Guard Policy](#heap-guard-policy).
 
 The available settings match the EFI memory types as well as the OEMReserved
 and OSReserved regions defined in the UEFI specification.
 
-## HeapGuardPolicy
+### Heap Guard Policy
 
 While the above two policies ([Pool Guards](#pool-guards) and [Page Guards](#page-guards))
 act as a switch for each memory type, this policy is an enable/disable
@@ -147,21 +173,21 @@ On free the pool head/tail is checked to ensure it was not overwritten while the
 
 The **DXE environment** has the following settings available:
 
-- UefiPageGuard - Enable UEFI page guard
-- UefiPoolGuard - Enable UEFI pool guard
-- Direction - Specifies the direction of Guard Page for Pool Guard. If 0, the returned
+- **UefiPageGuard**: Enable UEFI page guard
+- **UefiPoolGuard**: Enable UEFI pool guard
+- **Direction**: Specifies the direction of Guard Page for Pool Guard. If 0, the returned
 pool is near the tail guard page. If 1, the returned pool is near the head guard page. The
 default value for this is 0
 
 The **MM environment** has the following settings available:
 
-- SmmPageGuard - Enable SMM page guard
-- SmmPoolGuard - Enable SMM pool guard
-- Direction - Specifies the direction of Guard Page for Pool Guard. If 0, the returned
+- **SmmPageGuard**: Enable SMM page guard
+- **SmmPoolGuard**: Enable SMM pool guard
+- **Direction**: Specifies the direction of Guard Page for Pool Guard. If 0, the returned
 pool is near the tail guard page. If 1, the returned pool is near the head guard page. The
 default value for this is 0
 
-## CPU Stack Guard
+### CPU Stack Guard
 
 CPU Stack Guard adds two additional pages to the stack base for each core. The first page is
 simply a guard page with the [EFI_MEMORY_RP](#efi_memory_rp) attribute. When a page fault
@@ -181,7 +207,7 @@ the stack switch handlers will still only be installed in DXE phase if CpuStackG
 If the stack guard is disabled in DXE, the paging attributes at the stack base will be
 removed during memory protection initialization.
 
-## Stack Cookies
+### Stack Cookies
 
 A stack cookie (also called stack canary) is an integer placed in memory just before the stack
 return pointer. Most buffer overflows overwrite memory from lower to higher memory addresses,
@@ -189,10 +215,14 @@ so in order to overwrite the return pointer (and thus take control of the proces
 value must also be overwritten. This value is checked to make sure it has not changed before a
 routine uses the return pointer on the stack.
 
-The stack cookie value is specific to each loaded image and is generated at random on image load
-in DXE. Stack cookies are enabled at compile time, but if this setting is FALSE the interrupts
-generated by stack cookie check failures will be ignored **which is extremely unsafe**. Stack
-cookie failures will trigger a warm reset if this policy is TRUE.
+The stack cookie value is specific to each loaded image and is generated at random on image
+load in DXE. Stack cookies are enabled at compile time via `/GS` on MSVC toolchains and
+`-fstack-protector` on GCC/Clang, but if this setting is FALSE the interrupts generated by
+stack cookie check failures will be ignored **which is extremely unsafe**. Stack cookie failures
+will trigger a warm reset if this policy is TRUE.
+
+For more information on stack cookie support in Project Mu, see the
+[StackCheckLib documentation](https://github.com/microsoft/mu_basecore/tree/HEAD/MdePkg/Library/StackCheckLib/Readme.md)
 
 ## How to Set the Memory Protection Policy
 
