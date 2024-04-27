@@ -2884,6 +2884,7 @@ ActivateCompatibilityMode (
   DisableNullDetection ();
   UninstallMemoryAttributeProtocol ();
   MapLegacyBiosMemoryRWX ();
+  CoreNotifySignalList (&gCompatibilityModeActivatedEventGuid);
 }
 
 /**
