@@ -1,6 +1,8 @@
 /** @file
-
 Defines memory protection settings guid and struct
+
+For information on the available settings, see:
+https://github.com/microsoft/mu_basecore/tree/HEAD/Docs/feature_memory_protection.md
 
 Copyright (C) Microsoft Corporation. All rights reserved.
 SPDX-License-Identifier: BSD-2-Clause-Patent
