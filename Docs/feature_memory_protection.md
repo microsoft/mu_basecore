@@ -21,6 +21,9 @@
   - [Memory Protection Special Regions](#memory-protection-special-regions)
     - [Example Declaration of Special Region in PEI](#example-declaration-of-special-region-in-pei)
     - [Example Declaration of Special Region in DXE](#example-declaration-of-special-region-in-dxe)
+  - [Debugging](#debugging)
+    - [Example 1](#example-1)
+    - [Example 2](#example-2)
 
 ## Introduction and Primer
 
@@ -293,20 +296,22 @@ before building the HOB.
 
 ## Memory Protection Special Regions
 
-Memory protection is not activated until the CPU Architecture Protocol has been installed because the
-protocol facilitates access to the attribute manipulation functions in CpuDxe which update the translation/page tables.
-Many allocations and image loads will have occurred by the time the protocol is published so careful accounting
-is required to ensure appropriate attributes are applied. An event notification triggered on the CPU Architecture
-Protocol installation will combine the GCD and EFI memory maps to create a full map of memory for use internally
-by the memory protection initialization logic. Because image memory is allocated for the entire image and not each
-section (code and data), the images are separated within
-the combined map so NX can be applied to data regions and RO can be applied to code regions. After breaking
-up the map so each DXE image section has its own descriptor, every non-image descriptor will have its attributes
-set based on its EFI memory type. There are cases where the platform will want to apply attributes to
-a region of memory which is different than what would be applied based on its EFI memory type. In this case,
+Memory protection is not activated until the CPU Architecture Protocol has been installed
+because the protocol facilitates access to the attribute manipulation functions in CpuDxe
+which update the translation/page tables. Many allocations and image loads will have occurred
+by the time the protocol is published so careful accounting is required to ensure appropriate
+attributes are applied. An event notification triggered on the CPU Architecture Protocol
+installation will combine the GCD and EFI memory maps to create a full map of memory for use
+internally by the memory protection initialization logic. Because image memory is allocated
+for the entire image and not each section (code and data), the images are separated within
+the combined map so NX can be applied to data regions and RO can be applied to code regions.
+After breaking up the map so each DXE image section has its own descriptor, every non-image
+descriptor will have its attributes set based on its EFI memory type. There are cases where
+the platform will want to apply attributes to a region of memory which is different than what
+would be applied based on its EFI memory type. In this case,
 
-platforms can utilize the Memory Protection Special Region interface to specify regions which should have specific
-attributes applied during memory protection initialization.
+platforms can utilize the Memory Protection Special Region interface to specify regions
+which should have specific attributes applied during memory protection initialization.
 
 ### Example Declaration of Special Region in PEI
 
@@ -349,8 +354,192 @@ if (SpecialRegionProtocol != NULL) {
 }
 ```
 
-These special regions also may be used during paging audit tests which check if the page table has secure
-attributes. For example, an existing test checks to see if there are any Read/Write/Execute memory regions and fail
-if true. During this test, if a Read/Write/Execute region is found, it will be checked against the special regions
-and a test failure will not be emitted if the page attributes are consistent with the attributes identified in
-the overlapping special region.
+These special regions also may be used during paging audit tests which check if the
+page table has secure attributes. For example, an existing test checks to see if there
+are any Read/Write/Execute memory regions and fail if true. During this test, if a
+Read/Write/Execute region is found, it will be checked against the special regions
+and a test failure will not be emitted if the page attributes are consistent with the
+attributes identified in the overlapping special region.
+
+## Debugging
+
+After a page fault is triggered, it is time to debug what caused it. The following is
+an example of debugging an x86 platform. The same principles apply to ARM platforms
+though the register names and Assembly instructions will be different.
+
+### Example 1
+
+Page faults result in an exception message in UEFI, such as the example exception below:
+
+```text
+!!!! X64 Exception Type - 0E(#PF - Page-Fault)  CPU Apic ID - 00000000 !!!!
+ExceptionData - 0000000000000002  I:0 R:0 U:0 W:1 P:0 PK:0 SS:0 SGX:0
+RIP  - 000000007A5B100A, CS  - 0000000000000038, RFLAGS - 0000000000000206
+RAX  - 0000000000000000, RCX - 0000000000000001, RDX - 000000007A127C00
+RBX  - 00000000FFFFFFFF, RSP - 000000007EEDC5F0, RBP - 000000007A5CAFC8
+RSI  - 000000007A5D2E98, RDI - 000000007A128000
+R8   - 0000000000000000, R9  - 000000007CC24938, R10 - 000000007D0212A0
+R11  - 0000000000000000, R12 - 0000000000000000, R13 - 0000000000000000
+R14  - 000000000000017D, R15 - 0000000000000000
+DS   - 0000000000000030, ES  - 0000000000000030, FS  - 0000000000000030
+GS   - 0000000000000030, SS  - 0000000000000030
+CR0  - 0000000080010033, CR2 - 000000007A128000, CR3 - 000000007EC01000
+CR4  - 0000000000000668, CR8 - 0000000000000000
+DR0  - 0000000000000000, DR1 - 0000000000000000, DR2 - 0000000000000000
+DR3  - 0000000000000000, DR6 - 00000000FFFF0FF0, DR7 - 0000000000000400
+GDTR - 000000007E50BF30 0000000000000057, LDTR - 0000000000000000
+IDTR - 000000007D044000 0000000000000FFF,   TR - 0000000000000048
+FXSAVE_STATE - 000000007E50B380
+```
+
+The exception information contains a dump of the register values of the CPU
+that tripped the exception. One item to note is `CR2`, which is the Page Fault
+Linear Address (PFLA) register. When a page fault occurs, `CR2` is filled with
+the address that was accessed and triggered the page fault.
+
+To help decipher the information, it is also helpful to have the following item:
+
+- Debug Log from the system
+- Access to the binary files
+- Access to the build folders
+
+From the exception information, find the RIP, which gives the memory address
+that was being executed when the exception was triggered. In this case it is
+`000000007A5B100A`.
+
+From the debug log, find the driver associated with instruction pointer address.
+This can usually be done by masking off the lower bits of the instruction pointer,
+in this case looking for `7A5B0000` results in the line:
+
+```text
+Loading driver at 0x0007A5B0000 EntryPoint=0x0007A5B1160 MemoryFaultApp.efi
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7A5C6F88
+ProtectUefiImageMu - 0x7A5D2EA0
+   0x000000007A5B0000 - 0x000000000000C000
+ CreateImagePropertiesRecord - Enter...
+   Image: Build\QemuQ35Pkg\DEBUG_VS2022\X64\MemoryFaultApp\MemoryFaultApp\DEBUG\MemoryFaultApp.pdb
+```
+
+`7A5B100A - 7A5B0000 = 100A` which is the the offset within the image where the
+page fault occurred.
+
+If the driver binary is available, `dumpbin` can be helpful. Dumpbin is part
+of Visual Studio and can be used to disassemble the executable to locate
+the instruction which triggered the page fault. The command is:
+`dumpbin.exe <application name> /disasm /out:outputfile.txt`
+
+Note: If this is performed on the system where the PDB files still exist, the disassembly
+will contain function names. Otherwise the disassembly will only contain Assembly code.
+
+Without PDB Files:
+
+```text
+  0000000000001000: 57                 push        rdi
+  0000000000001001: 4C 89 C0           mov         rax,r8
+  0000000000001004: 48 89 CF           mov         rdi,rcx
+  0000000000001007: 48 87 CA           xchg        rcx,rdx
+  000000000000100A: F3 AA              rep stos    byte ptr [rdi]
+  000000000000100C: 48 89 D0           mov         rax,rdx
+  000000000000100F: 5F                 pop         rdi
+  0000000000001010: C3                 ret
+```
+
+With PDB Files:
+
+```text
+InternalMemSetMem:
+  0000000000001000: 57                 push        rdi
+  0000000000001001: 4C 89 C0           mov         rax,r8
+  0000000000001004: 48 89 CF           mov         rdi,rcx
+  0000000000001007: 48 87 CA           xchg        rcx,rdx
+  000000000000100A: F3 AA              rep stos    byte ptr [rdi]
+  000000000000100C: 48 89 D0           mov         rax,rdx
+  000000000000100F: 5F                 pop         rdi
+  0000000000001010: C3                 ret
+```
+
+In this case, the store string instruction `stos` caused the page fault. Checking RDI and seeing
+that its value is `000000007A128000`, gives a clue that the instruction appears to accessing
+memory that is not inside of the image. This memory may be allocated. Checking the
+RCX shows that the `rep` is almost of the end of the loop that it is executing, meaning
+that this scenario may be that the loop is writing to past the memory that it allocated.
+
+If the map file is available, it's possible to work back to the function name that triggered the
+page fault. The map file is usually located in the same directory as the PDB file. In the Map
+file, the `Rva+Base` is the starting address of the function, and `100A` falls into the
+`InternalMemSetMem` function.
+
+```text
+ Address             Publics by Value           Rva+Base             Lib:Object
+
+ 0001:00000000       InternalMemSetMem          0000000000001000     BaseMemoryLibRepStr:SetMem.obj
+ 0001:00000020       InternalMemSetMem64        0000000000001020     BaseMemoryLibRepStr:SetMem64.obj
+ 0001:00000040       InternalMemSetMem32        0000000000001040     BaseMemoryLibRepStr:SetMem32.obj
+ 0001:00000060       CpuPause                   0000000000001060     BaseLib:CpuPause.obj
+```
+
+From this information, it should be possible to examine the source code and determine what
+functions could trigger this fault, and fix any logic error that caused the page fault to trigger.
+
+### Example 2
+
+Another example, this time of a NULL pointer dereference.
+
+```text
+INFO - !!!! X64 Exception Type - 0E(#PF - Page-Fault)  CPU Apic ID - 00000000 !!!!
+INFO - ExceptionData - 0000000000000000  I:0 R:0 U:0 W:0 P:0 PK:0 SS:0 SGX:0
+INFO - RIP  - 000000007A642A67, CS  - 0000000000000038, RFLAGS - 0000000000000246
+INFO - RAX  - 0000000000000000, RCX - 0000000000000000, RDX - 0000000000000000
+INFO - RBX  - 00000000FFFFFFFF, RSP - 000000007EEDC600, RBP - 000000007A65BFC8
+INFO - RSI  - 000000007A663E98, RDI - 0000000000000000
+INFO - R8   - 000000007EA803D0, R9  - 000000007CE24D50, R10 - 000000007D0BF2A0
+INFO - R11  - 000000007EEDC5A0, R12 - 0000000000000000, R13 - 0000000000000000
+INFO - R14  - 000000000000017D, R15 - 0000000000000000
+INFO - DS   - 0000000000000030, ES  - 0000000000000030, FS  - 0000000000000030
+INFO - GS   - 0000000000000030, SS  - 0000000000000030
+INFO - CR0  - 0000000080010033, CR2 - 0000000000000010, CR3 - 000000007EC01000
+INFO - CR4  - 0000000000000668, CR8 - 0000000000000000
+INFO - DR0  - 0000000000000000, DR1 - 0000000000000000, DR2 - 0000000000000000
+INFO - DR3  - 0000000000000000, DR6 - 00000000FFFF0FF0, DR7 - 0000000000000400
+INFO - GDTR - 000000007E9A9F30 0000000000000057, LDTR - 0000000000000000
+INFO - IDTR - 000000007D0E2000 0000000000000FFF,   TR - 0000000000000048
+```
+
+Please note that the `CR2` register, PFLA, is `10h`. When a page fault occurs,
+the PFLA register is filled with the address that the offending code attempts to
+access, in this case it is address `10h`. Based on the `CR2` value, and knowing
+that this is in the first page of memory on the system, we can assume this is a
+NULL pointer dereference. But to be sure, following the same steps as above
+will lead to the offending code.
+
+Finding the module that the `000000007A642A67` memory address references from
+the debug log.
+
+```text
+Loading driver at 0x0007A641000 EntryPoint=0x0007A642160 MemoryFaultApp.efi
+SecurityCookie set to -7238034631654355074
+InstallProtocolInterface: BC62157E-3E33-4FEC-9920-2D3B36D750DF 7A657F88
+ProtectUefiImageMu - 0x7A663EA0
+  - 0x000000007A641000 - 0x000000000000C000
+CreateImagePropertiesRecord - Enter...
+  Image: Build\QemuQ35Pkg\DEBUG_VS2022\X64\MemoryFaultApp\MemoryFaultApp\DEBUG\MemoryFaultApp.pdb
+```
+
+From the Loading Driver address, it shows that offset `0x1A67` is the code that triggered the
+page fault.
+
+Running `dumpbin` over the binary, and finding instructions at address `1A67`.
+
+```text
+  0000000000001A5A: 8B D3              mov         edx,ebx
+  0000000000001A5C: 8B CB              mov         ecx,ebx
+  0000000000001A5E: E8 41 36 00 00     call        ShellPrintEx
+  0000000000001A63: 33 D2              xor         edx,edx
+  0000000000001A65: 33 C9              xor         ecx,ecx
+  0000000000001A67: FF 14 25 10 00 00  call        qword ptr [10h]
+                    00
+```
+
+In this case, there is a call a function whose address is supposed to be stored
+at memory address 10h. This address is in the first page of memory, which is protected
+by the NULL page guard.  This indicates that a NULL pointer is being dereferenced.
