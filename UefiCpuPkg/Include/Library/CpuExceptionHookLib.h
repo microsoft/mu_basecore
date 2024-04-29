@@ -12,10 +12,12 @@
 #include <Protocol/DebugSupport.h>
 
 /**
-  Get CpuCacheInfo data array. The array is sorted by CPU package ID, core type, cache level and cache type.
+  Hook function called when an exception has occured. The exception context is passed
+  to allow the add in functionality to use the exception context to perform platform
+  specific tasks.
 
   @param[in] ExceptionType       Cpu Exception Type which was triggered
-  @param[in] SystemContext       Pointer the the CPU Context when the exception was triggered. Hook library
+  @param[in] SystemContext       Pointer to the CPU Context when the exception was triggered. Hook library
                                  is responsible for determining the correct cpu architecture type.
 **/
 NO_STACK_COOKIE
