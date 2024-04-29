@@ -540,6 +540,7 @@ Running `dumpbin` over the binary, and finding instructions at address `1A67`.
                     00
 ```
 
-In this case, there is a call a function whose address is supposed to be stored
+In this case, there is a call to a function whose address is supposed to be stored
+
 at memory address 10h. This address is in the first page of memory, which is protected
 by the NULL page guard.  This indicates that a NULL pointer is being dereferenced.
