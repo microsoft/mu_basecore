@@ -171,11 +171,9 @@ InitializePageAttributesForMemoryProtectionPolicy (
 
 /**
   A notification for the Memory Attribute Protocol.
-
   @param[in]  Event                 Event whose notification function is being invoked.
   @param[in]  Context               Pointer to the notification function's context,
                                     which is implementation-dependent.
-
 **/
 VOID
 EFIAPI
@@ -224,16 +222,17 @@ GetImageList (
   );
 
 /**
-  Registers a callback on gEdkiiGcdSyncCompleteProtocolGuid to initialize
-  page attributes in accordance with to the memory protection policy.
+  Event function called when gEdkiiGcdSyncCompleteProtocolGuid is
+  installed to initialize access attributes on tested and untested memory.
 
-  @retval EFI_SUCCESS Event successfully registered
-  @retval other       Event was not registered
+  @param[in]  Event   The event that fired to call this function
+  @param[in]  Context The event context provided by the registration
 **/
-EFI_STATUS
+VOID
 EFIAPI
-RegisterPageAccessAttributesUpdateOnGcdSyncComplete (
-  VOID
+InitializePageAttributesCallback (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
   );
 
 #endif
