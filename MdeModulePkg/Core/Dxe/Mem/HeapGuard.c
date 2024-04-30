@@ -537,7 +537,11 @@ SetGuardPage (
 {
   EFI_STATUS  Status;
 
-  if (gCpu == NULL) {
+  // MU_CHANGE: Because the memory protection initialization routine
+  //            is no longer triggered by the CPU arch protocol, check
+  //            if the initialization routine has run before allowing
+  //            this function to execute.
+  if ((gCpu == NULL) || !mGcdSyncComplete) {
     return;
   }
 
@@ -573,7 +577,11 @@ UnsetGuardPage (
   UINT64      Attributes;
   EFI_STATUS  Status;
 
-  if (gCpu == NULL) {
+  // MU_CHANGE: Because the memory protection initialization routine
+  //            is no longer triggered by the CPU arch protocol, check
+  //            if the initialization routine has run before allowing
+  //            this function to execute.
+  if ((gCpu == NULL) || !mGcdSyncComplete) {
     return;
   }
 
