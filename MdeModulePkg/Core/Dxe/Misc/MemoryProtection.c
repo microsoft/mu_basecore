@@ -1001,90 +1001,92 @@ MergeMemoryMapForProtectionPolicy (
                                     which is implementation-dependent.
 
 **/
-VOID
-EFIAPI
-MemoryProtectionCpuArchProtocolNotify (
-  IN EFI_EVENT  Event,
-  IN VOID       *Context
-  )
-{
-  EFI_STATUS                 Status;
-  EFI_LOADED_IMAGE_PROTOCOL  *LoadedImage;
-  EFI_DEVICE_PATH_PROTOCOL   *LoadedImageDevicePath;
-  UINTN                      NoHandles;
-  EFI_HANDLE                 *HandleBuffer;
-  UINTN                      Index;
+// MU_CHANGE Start: Remove Unused Function
+// VOID
+// EFIAPI
+// MemoryProtectionCpuArchProtocolNotify (
+//   IN EFI_EVENT  Event,
+//   IN VOID       *Context
+//   )
+// {
+//   EFI_STATUS                 Status;
+//   EFI_LOADED_IMAGE_PROTOCOL  *LoadedImage;
+//   EFI_DEVICE_PATH_PROTOCOL   *LoadedImageDevicePath;
+//   UINTN                      NoHandles;
+//   EFI_HANDLE                 *HandleBuffer;
+//   UINTN                      Index;
 
-  /* MU_CHANGE Start: Use Enhanced Memory Protections
-  DEBUG ((DEBUG_INFO, "MemoryProtectionCpuArchProtocolNotify:\n"));
-  Status = CoreLocateProtocol (&gEfiCpuArchProtocolGuid, NULL, (VOID **)&gCpu);
-  if (EFI_ERROR (Status)) {
-    goto Done;
-  }
+//   /* MU_CHANGE Start: Use Enhanced Memory Protections
+//   DEBUG ((DEBUG_INFO, "MemoryProtectionCpuArchProtocolNotify:\n"));
+//   Status = CoreLocateProtocol (&gEfiCpuArchProtocolGuid, NULL, (VOID **)&gCpu);
+//   if (EFI_ERROR (Status)) {
+//     goto Done;
+//   }
 
-  //
-  // Apply the memory protection policy on non-BScode/RTcode regions.
-  //
-  if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0) {
-    InitializeDxeNxMemoryProtectionPolicy ();
-  }
-  */
+//   //
+//   // Apply the memory protection policy on non-BScode/RTcode regions.
+//   //
+//   if (PcdGet64 (PcdDxeNxMemoryProtectionPolicy) != 0) {
+//     InitializeDxeNxMemoryProtectionPolicy ();
+//   }
+//   */
 
-  if (gCpu == NULL) {
-    goto Done;
-  }
+//   if (gCpu == NULL) {
+//     goto Done;
+//   }
 
-  InitializePageAttributesForMemoryProtectionPolicy ();
+//   InitializePageAttributesForMemoryProtectionPolicy ();
 
-  //
-  // Call notify function meant for Heap Guard.
-  //
-  HeapGuardCpuArchProtocolNotify ();
+//   //
+//   // Call notify function meant for Heap Guard.
+//   //
+//   HeapGuardCpuArchProtocolNotify ();
 
-  /*
-  if (mImageProtectionPolicy == 0) {
-    goto Done;
-  }
+//   /*
+//   if (mImageProtectionPolicy == 0) {
+//     goto Done;
+//   }
 
-  Status = gBS->LocateHandleBuffer (
-                  ByProtocol,
-                  &gEfiLoadedImageProtocolGuid,
-                  NULL,
-                  &NoHandles,
-                  &HandleBuffer
-                  );
-  if (EFI_ERROR (Status) && (NoHandles == 0)) {
-    goto Done;
-  }
+//   Status = gBS->LocateHandleBuffer (
+//                   ByProtocol,
+//                   &gEfiLoadedImageProtocolGuid,
+//                   NULL,
+//                   &NoHandles,
+//                   &HandleBuffer
+//                   );
+//   if (EFI_ERROR (Status) && (NoHandles == 0)) {
+//     goto Done;
+//   }
 
-  for (Index = 0; Index < NoHandles; Index++) {
-    Status = gBS->HandleProtocol (
-                    HandleBuffer[Index],
-                    &gEfiLoadedImageProtocolGuid,
-                    (VOID **)&LoadedImage
-                    );
-    if (EFI_ERROR (Status)) {
-      continue;
-    }
+//   for (Index = 0; Index < NoHandles; Index++) {
+//     Status = gBS->HandleProtocol (
+//                     HandleBuffer[Index],
+//                     &gEfiLoadedImageProtocolGuid,
+//                     (VOID **)&LoadedImage
+//                     );
+//     if (EFI_ERROR (Status)) {
+//       continue;
+//     }
 
-    Status = gBS->HandleProtocol (
-                    HandleBuffer[Index],
-                    &gEfiLoadedImageDevicePathProtocolGuid,
-                    (VOID **)&LoadedImageDevicePath
-                    );
-    if (EFI_ERROR (Status)) {
-      LoadedImageDevicePath = NULL;
-    }
+//     Status = gBS->HandleProtocol (
+//                     HandleBuffer[Index],
+//                     &gEfiLoadedImageDevicePathProtocolGuid,
+//                     (VOID **)&LoadedImageDevicePath
+//                     );
+//     if (EFI_ERROR (Status)) {
+//       LoadedImageDevicePath = NULL;
+//     }
 
-    ProtectUefiImage (LoadedImage, LoadedImageDevicePath);
-  }
+//     ProtectUefiImage (LoadedImage, LoadedImageDevicePath);
+//   }
 
-  FreePool (HandleBuffer);
-  MU_CHANGE End: Use Enhanced Memory Protections */
+//   FreePool (HandleBuffer);
+//   MU_CHANGE End: Use Enhanced Memory Protections */
 
-Done:
-  CoreCloseEvent (Event);
-}
+// Done:
+//   CoreCloseEvent (Event);
+// }
+// MU_CHANGE End: Remove Unused function
 
 /**
   ExitBootServices Callback function for memory protection.
@@ -1136,7 +1138,16 @@ DisableNullDetection (
   // Disable NULL pointer detection by enabling first 4K page
   //
   Status = CoreGetMemorySpaceDescriptor (0, &Desc);
-  ASSERT_EFI_ERROR (Status);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a - Failed to get memory space descriptor for NULL address! Status = %r\n",
+      __func__,
+      Status
+      ));
+    return;
+  }
 
   // Only re-enable the null page if it is system memory. If this page belongs to
   // another memory type or is unmapped in general, leave it RP
@@ -1147,15 +1158,6 @@ DisableNullDetection (
       __func__
       ));
     return;
-  }
-
-  if ((Desc.Capabilities & EFI_MEMORY_RP) == 0) {
-    Status = CoreSetMemorySpaceCapabilities (
-               0,
-               EFI_PAGE_SIZE,
-               Desc.Capabilities | EFI_MEMORY_RP
-               );
-    ASSERT_EFI_ERROR (Status);
   }
 
   Status = CoreSetMemorySpaceAttributes (
@@ -1205,8 +1207,7 @@ DisableNullDetectionEventFunction (
 VOID
 EFIAPI
 EnableNullDetection (
-  EFI_EVENT  Event,
-  VOID       *Context
+  VOID
   )
 {
   EFI_STATUS                       Status;
@@ -1216,7 +1217,7 @@ EnableNullDetection (
 
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
-    goto Done;
+    return;
   }
 
   if ((Desc.Capabilities & EFI_MEMORY_RP) == 0) {
@@ -1227,7 +1228,7 @@ EnableNullDetection (
                );
     if (EFI_ERROR (Status)) {
       ASSERT_EFI_ERROR (Status);
-      goto Done;
+      return;
     }
   }
 
@@ -1237,13 +1238,6 @@ EnableNullDetection (
              Desc.Attributes | EFI_MEMORY_RP
              );
   ASSERT_EFI_ERROR (Status);
-
-Done:
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a failed to enable null detection. Status: %r\n", __func__, Status));
-  }
-
-  CoreCloseEvent (Event);
 }
 
 // MU_CHANGE END
@@ -1257,136 +1251,135 @@ CoreInitializeMemoryProtection (
   VOID
   )
 {
-  EFI_STATUS  Status;
-  // MU_CHANGE START: Update to use memory protection settings HOB,
-  //                  add support for RP on free memory.
-  EFI_EVENT  DisableNullDetectionEvent;
-  EFI_EVENT  EnableNullDetectionEvent;
-  EFI_EVENT  MemoryAttributeProtocolEvent;
-  VOID       *Registration;
+  // MU_CHANGE Start: Consolidate MU_CHANGEs
+  // EFI_STATUS  Status;
+  // // MU_CHANGE START: Update to use memory protection settings HOB,
+  // //                  add support for RP on free memory.
+  // EFI_EVENT  DisableNullDetectionEvent;
+  // EFI_EVENT  EnableNullDetectionEvent;
+  // EFI_EVENT  MemoryAttributeProtocolEvent;
+  // VOID       *Registration;
 
-  // mImageProtectionPolicy = gDxeMps.ImageProtectionPolicy;
-  // MU_CHANGE END
-
-  // InitializeListHead (&mProtectedImageRecordList); MU_CHANGE
-
-  //
-  // Sanity check the Image Protection Policy setting: // MU_CHANGE
-  // - code regions should have no EFI_MEMORY_XP attribute
-  // - EfiConventionalMemory and EfiBootServicesData should use the
-  //   same attribute
-  //
-  // MU_CHANGE START: We allow code types to have NX and EfiBootServicesData to differ in attributes from
-  //                  EfiConventionalMemory
-  // ASSERT ((GetPermissionAttributeForMemoryType (EfiBootServicesCode) & EFI_MEMORY_XP) == 0);
-  // ASSERT ((GetPermissionAttributeForMemoryType (EfiRuntimeServicesCode) & EFI_MEMORY_XP) == 0);
-  // ASSERT ((GetPermissionAttributeForMemoryType (EfiLoaderCode) & EFI_MEMORY_XP) == 0);
-  // ASSERT (
-  //   GetPermissionAttributeForMemoryType (EfiBootServicesData) ==
-  //   GetPermissionAttributeForMemoryType (EfiConventionalMemory)
-  //   );
-  // MU_CHANGE END
-
-  // Status = CoreCreateEvent (
-  //            EVT_NOTIFY_SIGNAL,
-  //            TPL_CALLBACK,
-  //            MemoryProtectionCpuArchProtocolNotify,
-  //            NULL,
-  //            &Event
-  //            );
-  // ASSERT_EFI_ERROR (Status);
+  // // mImageProtectionPolicy = gDxeMps.ImageProtectionPolicy;
+  // // MU_CHANGE END
+  // InitializeListHead (&mProtectedImageRecordList);
 
   // //
-  // // Register for protocol notifactions on this event
+  // // Sanity check the Image Protection Policy setting: // MU_CHANGE
+  // // - code regions should have no EFI_MEMORY_XP attribute
+  // // - EfiConventionalMemory and EfiBootServicesData should use the
+  // //   same attribute
   // //
-  // Status = CoreRegisterProtocolNotify (
-  //            &gEfiCpuArchProtocolGuid,
-  //            Event,
-  //            &Registration
-  //            );
-  // ASSERT_EFI_ERROR (Status);
-  // MU_CHANGE END
+  // // MU_CHANGE START: We allow code types to have NX and EfiBootServicesData to differ in attributes from
+  // //                  EfiConventionalMemory
+  // // ASSERT ((GetPermissionAttributeForMemoryType (EfiBootServicesCode) & EFI_MEMORY_XP) == 0);
+  // // ASSERT ((GetPermissionAttributeForMemoryType (EfiRuntimeServicesCode) & EFI_MEMORY_XP) == 0);
+  // // ASSERT ((GetPermissionAttributeForMemoryType (EfiLoaderCode) & EFI_MEMORY_XP) == 0);
+  // // ASSERT (
+  // //   GetPermissionAttributeForMemoryType (EfiBootServicesData) ==
+  // //   GetPermissionAttributeForMemoryType (EfiConventionalMemory)
+  // //   );
+  // // MU_CHANGE END
 
-  // MU_CHANGE START: Change ordering of GCD sync and memory protection initialization
-  // Status = CoreCreateEvent (
-  //            EVT_NOTIFY_SIGNAL,
-  //            TPL_CALLBACK - 1, // MU_CHANGE Update CpuArchProtocolNotify
-  //            MemoryAttributeProtocolNotify,
-  //            NULL,
-  //            &MemoryAttributeProtocolEvent
-  //            );
+  // // Status = CoreCreateEvent (
+  // //            EVT_NOTIFY_SIGNAL,
+  // //            TPL_CALLBACK,
+  // //            MemoryProtectionCpuArchProtocolNotify,
+  // //            NULL,
+  // //            &Event
+  // //            );
+  // // ASSERT_EFI_ERROR (Status);
+
+  // // //
+  // // // Register for protocol notifactions on this event
+  // // //
+  // // Status = CoreRegisterProtocolNotify (
+  // //            &gEfiCpuArchProtocolGuid,
+  // //            Event,
+  // //            &Registration
+  // //            );
+  // // ASSERT_EFI_ERROR (Status);
+  // // MU_CHANGE END
+
+  // // MU_CHANGE START: Change ordering of GCD sync and memory protection initialization
+  // // Status = CoreCreateEvent (
+  // //            EVT_NOTIFY_SIGNAL,
+  // //            TPL_CALLBACK - 1, // MU_CHANGE Update CpuArchProtocolNotify
+  // //            MemoryAttributeProtocolNotify,
+  // //            NULL,
+  // //            &MemoryAttributeProtocolEvent
+  // //            );
+  // // ASSERT_EFI_ERROR (Status);
+
+  // // //
+  // // // Register for protocol notification
+  // // //
+  // // Status = CoreRegisterProtocolNotify (
+  // //            &gEfiMemoryAttributeProtocolGuid,
+  // //            MemoryAttributeProtocolEvent,
+  // //            &Registration
+  // //            );
+  // // ASSERT_EFI_ERROR (Status);
+  // // MU_CHANGE END
+
+  // // MU_CHANGE START: Add event to apply page attribues according to the memory protection policy
+  // //                  after the GCD has synced.
+  // Status = RegisterPageAccessAttributesUpdateOnGcdSyncComplete ();
   // ASSERT_EFI_ERROR (Status);
+  // // MU_CHANGE END
 
   // //
-  // // Register for protocol notification
+  // // Register a callback to disable NULL pointer detection at EndOfDxe
   // //
-  // Status = CoreRegisterProtocolNotify (
-  //            &gEfiMemoryAttributeProtocolGuid,
-  //            MemoryAttributeProtocolEvent,
-  //            &Registration
-  //            );
-  // ASSERT_EFI_ERROR (Status);
-  // MU_CHANGE END
+  // // MU_CHANGE START Update to use memory protection settings HOB, added
+  // //                 disable functionality at ReadyToBoot, create NULL
+  // //                 detection enable event
+  // // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & (BIT0|BIT7))
+  // //      == (BIT0|BIT7)) {
+  // if (gDxeMps.NullPointerDetectionPolicy.Fields.UefiNullDetection) {
+  //   // PEI phase has been updated to always set page zero as allocated
+  //   // so it can be safely set as RP
+  //   Status = CoreCreateEvent (
+  //              EVT_NOTIFY_SIGNAL,
+  //              TPL_CALLBACK - 1,
+  //              EnableNullDetection,
+  //              NULL,
+  //              &EnableNullDetectionEvent
+  //              );
+  //   ASSERT_EFI_ERROR (Status);
 
-  // MU_CHANGE START: Add event to apply page attribues according to the memory protection policy
-  //                  after the GCD has synced.
-  Status = RegisterPageAccessAttributesUpdateOnGcdSyncComplete ();
-  ASSERT_EFI_ERROR (Status);
-  // MU_CHANGE END
+  //   Status = CoreRegisterProtocolNotify (
+  //              &gEfiCpuArchProtocolGuid,
+  //              EnableNullDetectionEvent,
+  //              &Registration
+  //              );
+  //   ASSERT_EFI_ERROR (Status);
 
-  //
-  // Register a callback to disable NULL pointer detection at EndOfDxe
-  //
-  // MU_CHANGE START Update to use memory protection settings HOB, added
-  //                 disable functionality at ReadyToBoot, create NULL
-  //                 detection enable event
-  // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & (BIT0|BIT7))
-  //      == (BIT0|BIT7)) {
-  if (gDxeMps.NullPointerDetectionPolicy.Fields.UefiNullDetection) {
-    // PEI phase has been updated to always set page zero as allocated
-    // so it can be safely set as RP
-    Status = CoreCreateEvent (
-               EVT_NOTIFY_SIGNAL,
-               TPL_CALLBACK - 1,
-               EnableNullDetection,
-               NULL,
-               &EnableNullDetectionEvent
-               );
-    ASSERT_EFI_ERROR (Status);
+  //   if (!EFI_ERROR (Status)) {
+  //     // If both DisableEndOfDxe and DisableReadyToBoot are enabled, just
+  //     // create the event to disable at EndOfDxe because that event is sooner
+  //     if (gDxeMps.NullPointerDetectionPolicy.Fields.DisableEndOfDxe) {
+  //       Status = CoreCreateEventEx (
+  //                  EVT_NOTIFY_SIGNAL,
+  //                  TPL_NOTIFY,
+  //                  DisableNullDetectionEventFunction,
+  //                  NULL,
+  //                  &gEfiEndOfDxeEventGroupGuid,
+  //                  &DisableNullDetectionEvent
+  //                  );
+  //     } else if (gDxeMps.NullPointerDetectionPolicy.Fields.DisableReadyToBoot) {
+  //       Status = CoreCreateEventEx (
+  //                  EVT_NOTIFY_SIGNAL,
+  //                  TPL_NOTIFY,
+  //                  DisableNullDetectionEventFunction,
+  //                  NULL,
+  //                  &gEfiEventReadyToBootGuid,
+  //                  &DisableNullDetectionEvent
+  //                  );
+  //     }
+  //   }
 
-    Status = CoreRegisterProtocolNotify (
-               &gEfiCpuArchProtocolGuid,
-               EnableNullDetectionEvent,
-               &Registration
-               );
-    ASSERT_EFI_ERROR (Status);
-
-    if (!EFI_ERROR (Status)) {
-      // If both DisableEndOfDxe and DisableReadyToBoot are enabled, just
-      // create the event to disable at EndOfDxe because that event is sooner
-      if (gDxeMps.NullPointerDetectionPolicy.Fields.DisableEndOfDxe) {
-        Status = CoreCreateEventEx (
-                   EVT_NOTIFY_SIGNAL,
-                   TPL_NOTIFY,
-                   DisableNullDetectionEventFunction,
-                   NULL,
-                   &gEfiEndOfDxeEventGroupGuid,
-                   &DisableNullDetectionEvent
-                   );
-      } else if (gDxeMps.NullPointerDetectionPolicy.Fields.DisableReadyToBoot) {
-        Status = CoreCreateEventEx (
-                   EVT_NOTIFY_SIGNAL,
-                   TPL_NOTIFY,
-                   DisableNullDetectionEventFunction,
-                   NULL,
-                   &gEfiEventReadyToBootGuid,
-                   &DisableNullDetectionEvent
-                   );
-      }
-    }
-
-    ASSERT_EFI_ERROR (Status);
-  }
+  //   ASSERT_EFI_ERROR (Status);
 
   // MU_CHANGE END
 
@@ -1395,11 +1388,70 @@ CoreInitializeMemoryProtection (
   // Install protocol for validating Heap Guard if Heap Guard is turned on
   // Update to use memory protection settings HOB
   // if (PcdGet8(PcdHeapGuardPropertyMask)) {
+  // if (gDxeMps.HeapGuardPolicy.Data ||
+  //     gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv ||
+  //     gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromUnknown)
+  // {
+  //   EFI_HANDLE  HgBmHandle = NULL;
+  //   Status = CoreInstallMultipleProtocolInterfaces (
+  //              &HgBmHandle,
+  //              &gMemoryProtectionDebugProtocolGuid,
+  //              &mMemoryProtectionDebug,
+  //              NULL
+  //              );
+  //   DEBUG ((DEBUG_INFO, "Installed gMemoryProtectionDebugProtocolGuid - %r\n", Status));
+  // }
+
+  // // MSCHANGE END
+
+  // return;
+
+  EFI_STATUS  Status;
+  VOID        *Registration;
+  EFI_EVENT   Event;
+  EFI_HANDLE  HgBmHandle = NULL;
+
+  // Register an event to populate the memory attribute protocol
+  Status = CoreCreateEvent (
+             EVT_NOTIFY_SIGNAL,
+             TPL_CALLBACK,
+             MemoryAttributeProtocolNotify,
+             NULL,
+             &Event
+             );
+  ASSERT_EFI_ERROR (Status);
+
+  // Register for protocol notification
+  Status = CoreRegisterProtocolNotify (
+             &gEfiMemoryAttributeProtocolGuid,
+             Event,
+             &Registration
+             );
+  ASSERT_EFI_ERROR (Status);
+
+  // Register an event to initialize memory protection
+  Status = CoreCreateEvent (
+             EVT_NOTIFY_SIGNAL,
+             TPL_CALLBACK,
+             InitializePageAttributesCallback,
+             NULL,
+             &Event
+             );
+  ASSERT_EFI_ERROR (Status);
+
+  // Register for protocol notification
+  Status = CoreRegisterProtocolNotify (
+             &gEdkiiGcdSyncCompleteProtocolGuid,
+             Event,
+             &Registration
+             );
+  ASSERT_EFI_ERROR (Status);
+
+  // Register protocol for auditing memory protection (used by DxePagingAuditTestApp)
   if (gDxeMps.HeapGuardPolicy.Data ||
       gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromFv ||
       gDxeMps.ImageProtectionPolicy.Fields.ProtectImageFromUnknown)
   {
-    EFI_HANDLE  HgBmHandle = NULL;
     Status = CoreInstallMultipleProtocolInterfaces (
                &HgBmHandle,
                &gMemoryProtectionDebugProtocolGuid,
@@ -1409,9 +1461,8 @@ CoreInitializeMemoryProtection (
     DEBUG ((DEBUG_INFO, "Installed gMemoryProtectionDebugProtocolGuid - %r\n", Status));
   }
 
-  // MSCHANGE END
-
   return;
+  // MU_CHANGE End: Consolidate MU_CHANGEs
 }
 
 // MU_CHANGE START
