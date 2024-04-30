@@ -130,12 +130,41 @@ SetUefiImageMemoryAttributes (
   );
 
 /**
+  Enable NULL pointer detection by changing the attributes of page 0. The assumption is that PEI
+  has set page zero to allocated so this operation can be done safely.
+
+  @retval EFI_SUCCESS       Page zero successfully marked as read protected
+  @retval Other             Page zero could not be marked as read protected
+
+**/
+VOID
+EFIAPI
+EnableNullDetection (
+  VOID
+  );
+
+/**
   Disable NULL pointer detection.
 **/
 VOID
 EFIAPI
 DisableNullDetection (
   VOID
+  );
+
+/**
+  Disable NULL pointer detection after EndOfDxe. This is a workaround resort in
+  order to skip unfixable NULL pointer access issues detected in OptionROM or
+  boot loaders.
+
+  @param[in]  Event     The Event this notify function registered to.
+  @param[in]  Context   Pointer to the context data registered to the Event.
+**/
+VOID
+EFIAPI
+DisableNullDetectionEventFunction (
+  EFI_EVENT  Event,
+  VOID       *Context
   );
 
 extern LIST_ENTRY  mGcdMemorySpaceMap;
@@ -2728,6 +2757,9 @@ IsEnhancedMemoryProtectionActive (
 /**
   Event function called when gEdkiiGcdSyncCompleteProtocolGuid is
   installed to initialize access attributes on tested and untested memory.
+
+  @param[in]  Event   The event that fired to call this function
+  @param[in]  Context The event context provided by the registration
 **/
 VOID
 EFIAPI
@@ -2736,49 +2768,51 @@ InitializePageAttributesCallback (
   IN VOID       *Context
   )
 {
-  InitializePageAttributesForMemoryProtectionPolicy ();
+  EFI_STATUS  Status;
+  EFI_EVENT   DisableNullDetectionEvent;
 
-  HeapGuardCpuArchProtocolNotify ();
-
+  // Indicates that the GCD sync process has been completed. This BOOLEAN
+  // must set this to TRUE so calls to ApplyMemoryProtectionPolicy() are not
+  // blocked. This BOOLEAN also allows guard pages to be set.
   mGcdSyncComplete = TRUE;
 
-  CoreCloseEvent (Event);
-}
+  // Initialize paging attributes
+  InitializePageAttributesForMemoryProtectionPolicy ();
 
-/**
-  Registers a callback on gEdkiiGcdSyncCompleteProtocolGuid to initialize page attributes
-  in accordance with to the memory protection policy.
+  // Set all the guard pages
+  HeapGuardCpuArchProtocolNotify ();
 
-  @retval EFI_SUCCESS Event successfully registered
-  @retval other       Event was not registered
- */
-EFI_STATUS
-EFIAPI
-RegisterPageAccessAttributesUpdateOnGcdSyncComplete (
-  VOID
-  )
-{
-  EFI_STATUS  Status;
-  EFI_EVENT   Event;
-  VOID        *Registration;
+  if (gDxeMps.NullPointerDetectionPolicy.Fields.UefiNullDetection) {
+    // Enable NULL pointer detection
+    EnableNullDetection ();
 
-  Status = CoreCreateEvent (
-             EVT_NOTIFY_SIGNAL,
-             TPL_CALLBACK,
-             InitializePageAttributesCallback,
-             NULL,
-             &Event
-             );
+    // Register for NULL pointer detection disabling if policy dictates
+    if (gDxeMps.NullPointerDetectionPolicy.Fields.DisableEndOfDxe) {
+      Status = CoreCreateEventEx (
+                 EVT_NOTIFY_SIGNAL,
+                 TPL_NOTIFY,
+                 DisableNullDetectionEventFunction,
+                 NULL,
+                 &gEfiEndOfDxeEventGroupGuid,
+                 &DisableNullDetectionEvent
+                 );
+    } else if (gDxeMps.NullPointerDetectionPolicy.Fields.DisableReadyToBoot) {
+      Status = CoreCreateEventEx (
+                 EVT_NOTIFY_SIGNAL,
+                 TPL_NOTIFY,
+                 DisableNullDetectionEventFunction,
+                 NULL,
+                 &gEfiEventReadyToBootGuid,
+                 &DisableNullDetectionEvent
+                 );
+    }
 
-  if (EFI_ERROR (Status)) {
-    return Status;
+    ASSERT_EFI_ERROR (Status);
+  } else {
+    // The NULL page may be EFI_MEMORY_RP in the page tables inherited
+    // from PEI so clear the attribute now
+    DisableNullDetection ();
   }
 
-  Status = CoreRegisterProtocolNotify (
-             &gEdkiiGcdSyncCompleteProtocolGuid,
-             Event,
-             &Registration
-             );
-
-  return Status;
+  CoreCloseEvent (Event);
 }
