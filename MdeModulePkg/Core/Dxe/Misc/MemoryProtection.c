@@ -70,7 +70,7 @@ UINT32  mImageProtectionPolicy;
 extern LIST_ENTRY  mGcdMemorySpaceMap;
 
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttribute = NULL;          // MU_CHANGE
-extern BOOLEAN                 mPageAttributesInitialized;        // MU_CHANGE
+extern BOOLEAN                 mGcdSyncComplete;                  // MU_CHANGE
 
 STATIC LIST_ENTRY  mProtectedImageRecordList = INITIALIZE_LIST_HEAD_VARIABLE (mProtectedImageRecordList); // MU_CHANGE: Initialize at compile time
 
@@ -527,7 +527,7 @@ GetPermissionAttributeForMemoryType (
     Attributes |= EFI_MEMORY_XP;
   }
 
-  if ((MemoryType == EfiConventionalMemory) && gDxeMps.FreeMemoryReadProtected && mPageAttributesInitialized) {
+  if ((MemoryType == EfiConventionalMemory) && gDxeMps.FreeMemoryReadProtected) {
     Attributes |= EFI_MEMORY_RP;
   }
 
@@ -1173,7 +1173,7 @@ ApplyMemoryProtectionPolicy (
   // MU_CHANGE: Because GCD sync and memory protection initialization
   //            ordering is reversed, check if the initialization routine
   //            has run before allowing this function to execute.
-  if ((gCpu == NULL) || !mPageAttributesInitialized) {
+  if ((gCpu == NULL) || !mGcdSyncComplete) {
     return EFI_SUCCESS;
   }
 
