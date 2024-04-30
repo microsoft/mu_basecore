@@ -3364,7 +3364,7 @@ ReclaimForOS (
   UINTN       RemainingCommonRuntimeVariableSpace;
   // MS_CHANGE Starts: HwError record quota state should not trigger variable store reclaim
   // UINTN                          RemainingHwErrVariableSpace;
-  STATIC BOOLEAN  Reclaimed;
+  static BOOLEAN  Reclaimed; // MU_CHANGE: Use lowercase static for static lifetime
 
   //
   // This function will be called only once at EndOfDxe or ReadyToBoot event.
