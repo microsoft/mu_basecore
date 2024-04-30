@@ -130,21 +130,6 @@ MemoryProtectionCpuArchProtocolNotifyMu (
   );
 
 /**
-  A notification for the Memory Attribute Protocol.
-
-  @param[in]  Event                 Event whose notification function is being invoked.
-  @param[in]  Context               Pointer to the notification function's context,
-                                    which is implementation-dependent.
-
-**/
-VOID
-EFIAPI
-MemoryAttributeProtocolNotify (
-  IN EFI_EVENT  Event,
-  IN VOID       *Context
-  );
-
-/**
   Sets the NX compatibility global to FALSE so future checks to
   IsEnhancedMemoryProtectionActive() will return FALSE.
 **/
@@ -181,19 +166,6 @@ EFIAPI
 GetImageList (
   IN IMAGE_RANGE_DESCRIPTOR         **ImageList,
   IN IMAGE_RANGE_PROTECTION_STATUS  ProtectedOrNonProtected
-  );
-
-/**
-  Registers a callback on gEdkiiGcdSyncCompleteProtocolGuid to initialize
-  page attributes in accordance with to the memory protection policy.
-
-  @retval EFI_SUCCESS Event successfully registered
-  @retval other       Event was not registered
-**/
-EFI_STATUS
-EFIAPI
-RegisterPageAccessAttributesUpdateOnGcdSyncComplete (
-  VOID
   );
 
 #endif
