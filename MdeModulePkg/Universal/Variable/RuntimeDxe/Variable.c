@@ -3204,7 +3204,7 @@ ReclaimForOS (
   EFI_STATUS      Status;
   UINTN           RemainingCommonRuntimeVariableSpace;
   UINTN           RemainingHwErrVariableSpace;
-  STATIC BOOLEAN  Reclaimed;
+  static BOOLEAN  Reclaimed; // MU_CHANGE: Use lowercase static for static lifetime
 
   //
   // This function will be called only once at EndOfDxe or ReadyToBoot event.
