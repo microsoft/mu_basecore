@@ -484,7 +484,7 @@ DxeMain (
   MemoryProfileInstallProtocol ();
 
   CoreInitializeMemoryAttributesTable ();
-  CoreInitializeMemoryProtection ();
+  CoreInitializeMemoryProtectionMu (); // MU_CHANGE: Use Project Mu CoreInitializeMemoryProtection()
 
   //
   // Get persisted vector hand-off info from GUIDeed HOB again due to HobStart may be updated,

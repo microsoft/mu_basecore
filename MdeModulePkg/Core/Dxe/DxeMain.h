@@ -2733,7 +2733,8 @@ CoreInitializeMemoryAttributesTable (
 **/
 VOID
 EFIAPI
-CoreInitializeMemoryProtection (
+// MU_CHANGE: Use Project Mu CoreInitializeMemoryProtection()
+CoreInitializeMemoryProtectionMu (
   VOID
   );
 
