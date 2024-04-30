@@ -29,7 +29,7 @@ BOOLEAN                        mEnhancedMemoryProtectionActive = TRUE;
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttributeProtocol       = NULL;
 UINT8                          *mBitmapGlobal                  = NULL;
 LIST_ENTRY                     **mArrayOfListEntryPointers     = NULL;
-BOOLEAN                        mPageAttributesInitialized      = FALSE;
+BOOLEAN                        mGcdSyncComplete                = FALSE;
 
 #define IS_BITMAP_INDEX_SET(Bitmap, Index)  ((((UINT8*)Bitmap)[Index / 8] & (1 << (Index % 8))) != 0 ? TRUE : FALSE)
 #define SET_BITMAP_INDEX(Bitmap, Index)     (((UINT8*)Bitmap)[Index / 8] |= (1 << (Index % 8)))
@@ -1734,9 +1734,8 @@ SetAccessAttributesInMemoryMap (
     return EFI_INVALID_PARAMETER;
   }
 
-  mPageAttributesInitialized = TRUE;
-  MemoryMapEntry             = MemoryMap;
-  MemoryMapEnd               = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
+  MemoryMapEntry = MemoryMap;
+  MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + *MemoryMapSize);
 
   while (MemoryMapEntry < MemoryMapEnd) {
     if (!IS_BITMAP_INDEX_SET (Bitmap, Index)) {
@@ -1748,7 +1747,6 @@ SetAccessAttributesInMemoryMap (
     MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
   }
 
-  mPageAttributesInitialized = FALSE;
   return EFI_SUCCESS;
 }
 
@@ -3010,13 +3008,13 @@ InitializePageAttributesCallback (
   EFI_STATUS  Status;
   EFI_EVENT   DisableNullDetectionEvent;
 
+  // Inidcates that the GCD sync process has been completed. This BOOLEAN
+  // must set this to TRUE so calls to ApplyMemoryProtectionPolicy() are not
+  // blocked. This BOOLEAN also allows guard pages to be set.
+  mGcdSyncComplete = TRUE;
+
   // Initialize paging attributes
   InitializePageAttributesForMemoryProtectionPolicy ();
-
-  // Must set this to TRUE so calls to ApplyMemoryProtectionPolicy() are not
-  // blocked. This BOOLEAN also allows guard pages to be set and EFI_MEMORY_RP
-  // to be applied to memory being freed.
-  mPageAttributesInitialized = TRUE;
 
   // Set all the guard pages
   HeapGuardCpuArchProtocolNotify ();

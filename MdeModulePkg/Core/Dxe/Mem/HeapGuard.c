@@ -16,7 +16,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 GLOBAL_REMOVE_IF_UNREFERENCED BOOLEAN  mOnGuarding = FALSE;
 
-extern BOOLEAN  mPageAttributesInitialized; // MU_CHANGE
+extern BOOLEAN  mGcdSyncComplete; // MU_CHANGE
 
 //
 // Pointer to table tracking the Guarded memory with bitmap, in which  '1'
