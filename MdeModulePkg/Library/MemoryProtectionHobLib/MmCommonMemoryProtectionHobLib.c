@@ -130,7 +130,7 @@ MmMemoryProtectionHobLibConstructorCommon (
         *((UINT8 *)GET_GUID_HOB_DATA (Ptr))
         ));
       DEBUG ((DEBUG_ERROR, "This usually happens when the Memory Protection Settings version was incremented\n"));
-      DEBUG ((DEBUG_ERROR, "but all modules have not been rebuilt with the new version number. Less likely but\n"));
+      DEBUG ((DEBUG_ERROR, "and all modules have not been rebuilt with the new version number. Less likely but\n"));
       DEBUG ((DEBUG_ERROR, "also possible is the HOB entry was corrupted or the producer of the HOB entry\n"));
       DEBUG ((DEBUG_ERROR, "did not set the StructVersion field to MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION.\n"));
       ASSERT (FALSE);
