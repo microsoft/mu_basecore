@@ -117,10 +117,23 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                                  os.path.basename(test))
                     file_match_pattern = test + ".*." + arch + ".result.xml"
                     xml_results_list = glob.glob(file_match_pattern)
+                    # MU_CHANGE [BEGIN] - Check for invalid tests
+                    if len(xml_results_list) == 0:
+                        logging.error(f'{os.path.basename(test)} did not generate any test suites.')
+                        logging.error('Review Code to ensure Test suites are created and tests are registered!')
+                        failure_count += 1
+                    # MU_CHANGE [END] - Check for invalid tests
                     for xml_result_file in xml_results_list:
                         root = xml.etree.ElementTree.parse(
                             xml_result_file).getroot()
                         for suite in root:
+                            # MU_CHANGE [BEGIN] - Check for invalid tests
+                            if len(suite) == 0:
+                                logging.error(f'TestSuite [{suite.attrib["name"]}] for test {test} did '
+                                              'not contain any test case.')
+                                logging.error('Review Code to ensure test cases are registered to the suite!')
+                                failure_count += 1
+                            # MU_CHANGE [END] - Check for invalid tests
                             for case in suite:
                                 for result in case:
                                     if result.tag == 'failure':
@@ -130,7 +143,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                                             "  %s - %s" % (case.attrib['name'], result.text))
                                         failure_count += 1
 
-            if thebuilder.env.GetValue("CODE_COVERAGE") != "FALSE":
+            if thebuilder.env.GetValue("CODE_COVERAGE", "FALSE") == "TRUE": # MU_CHANGE
                 if thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "GCC5":
                     ret = self.gen_code_coverage_gcc(thebuilder)
                     if ret != 0:

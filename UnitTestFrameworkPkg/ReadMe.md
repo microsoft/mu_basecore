@@ -1491,6 +1491,18 @@ GTEST_OUTPUT=xml:<absolute or relative path to output file>
 
 This mode is used by the test running plugin to aggregate the results for CI test status reporting in the web view.
 
+### XML Reporting Test Consolidation
+
+There exists multiple tools for consolidating and generating consolidated test results from the
+test xml files that are generated. The arguably most convenient tool available is the
+`xunit-viewer` node package, installed via `npm install -g xunit-viewer`. This tool can
+consolidate all generated xml reports and create an html or cli summary of test results.
+
+The following command will generate a consolidated report at `<report_name>.html` and
+also print summary overview of the test results to the command line:
+
+`xunit-viewer --results Build --output <report_name>.html --console`
+
 ### Code Coverage
 
 Code coverage can be enabled for Host based Unit Tests with `CODE_COVERAGE=TRUE`, which generates a cobertura report
@@ -1498,10 +1510,17 @@ per package tested, and combined cobertura report for all packages tested. The p
 present at `Build/<Pkg>/HostTest/<Target_Toolchain>/<Pkg>_coverage.xml`. The overall cobertura report will be present
 at `Build/coverage.xml`
 
-Code coverage generation has two config knobs:
+Code coverage generation has three config knobs. Each can be turned on/off by setting it to TRUE
+or FALSE e.g. `CC_REORGANIZE=TRUE`:
 
-1. `CC_FULL`: If set to `TRUE`, will generate zero'd out coverage data for untested source files in the package.
-2. `CC_FLATTEN`: If Set to `TRUE`, will group all source files together, rather than by INF.
+1. `CC_REORGANIZE`: Controls if code coverage results are re-formatted into a "by-inf" folder
+   structure rather than the default "by-test" folder structure. Default: `TRUE`
+1. `CC_FULL`: Generates zero'd out coverage data for untested source files in the package. 
+   Default: `FALSE`
+2. `CC_FLATTEN`: Groups all source files together, rather than by INF. Default: `FALSE`
+
+** NOTE: `CC_FULL` and `CC_FLATTEN` values only matter if `CC_REORGANIZE=TRUE`, as they only
+effect how the coverage report is reorganized.
 
 **TIP: `CC_FLATTEN=TRUE/FALSE` will produce different coverage percentage results as `TRUE` de-duplicates source files
 that are consumed by multiple INFs.
