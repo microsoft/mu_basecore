@@ -125,7 +125,7 @@ MmMemoryProtectionHobLibConstructorCommon (
     if (*((UINT8 *)GET_GUID_HOB_DATA (Ptr)) != (UINT8)MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION) {
       DEBUG ((
         DEBUG_ERROR,
-        "\nThe version number of the Memory Protection Settings HOB is invalid! Expected: %d, Actual: %d\n",
+        "\nThe version number of the MM Memory Protection Settings HOB is invalid! Expected: %d, Actual: %d\n",
         MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,
         *((UINT8 *)GET_GUID_HOB_DATA (Ptr))
         ));

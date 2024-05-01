@@ -274,7 +274,7 @@ DxeMemoryProtectionHobLibConstructor (
     if (*((UINT8 *)GET_GUID_HOB_DATA (Ptr)) != (UINT8)DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION) {
       DEBUG ((
         DEBUG_ERROR,
-        "\nThe version number of the Memory Protection Settings HOB is invalid! Expected: %d, Actual: %d\n",
+        "\nThe version number of the DXE Memory Protection Settings HOB is invalid! Expected: %d, Actual: %d\n",
         DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,
         *((UINT8 *)GET_GUID_HOB_DATA (Ptr))
         ));
