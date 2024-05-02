@@ -125,13 +125,15 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                         # MU_CHANGE [BEGIN] - Check for invalid tests
                         if len(root) == 0:
                             error_messages.append(f'{os.path.basename(test)} did not generate a test suite(s).')
-                            error_messages.append(' Review source code to ensure Test suites are created and tests are registered!')
+                            error_messages.append(' Review source code to ensure Test suites are created and tests '
+                                                  ' are registered!')
                             failure_count += 1
                         for suite in root:
                             if len(suite) == 0:
-                                error_messages.append(f'TestSuite [{suite.attrib["name"]}] for test {test} did '
-                                              'not contain a test case(s).')
-                                error_messages.append(' Review source code to ensure test cases are registered to the suite!')
+                                error_messages.append(f'TestSuite [{suite.attrib["name"]}] for test {test} did not '
+                                                      'contain a test case(s).')
+                                error_messages.append(' Review source code to ensure test cases are registered to '
+                                                      'the suite!')
                                 failure_count += 1
                         # MU_CHANGE [END] - Check for invalid tests
                             for case in suite:
