@@ -99,6 +99,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                     """).strip())
                 return 0
 
+            error_messages = []  # MU_CHANGE- Check for invalid tests
             for test in testList:
                 # Configure output name if test uses cmocka.
                 shell_env.set_shell_var(
@@ -117,23 +118,22 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                                  os.path.basename(test))
                     file_match_pattern = test + ".*." + arch + ".result.xml"
                     xml_results_list = glob.glob(file_match_pattern)
-                    # MU_CHANGE [BEGIN] - Check for invalid tests
-                    if len(xml_results_list) == 0:
-                        logging.error(f'{os.path.basename(test)} did not generate any test suites.')
-                        logging.error('Review Code to ensure Test suites are created and tests are registered!')
-                        failure_count += 1
-                    # MU_CHANGE [END] - Check for invalid tests
+
                     for xml_result_file in xml_results_list:
                         root = xml.etree.ElementTree.parse(
                             xml_result_file).getroot()
+                        # MU_CHANGE [BEGIN] - Check for invalid tests
+                        if len(root) == 0:
+                            error_messages.append(f'{os.path.basename(test)} did not generate a test suite(s).')
+                            error_messages.append(' Review source code to ensure Test suites are created and tests are registered!')
+                            failure_count += 1
                         for suite in root:
-                            # MU_CHANGE [BEGIN] - Check for invalid tests
                             if len(suite) == 0:
-                                logging.error(f'TestSuite [{suite.attrib["name"]}] for test {test} did '
-                                              'not contain any test case.')
-                                logging.error('Review Code to ensure test cases are registered to the suite!')
+                                error_messages.append(f'TestSuite [{suite.attrib["name"]}] for test {test} did '
+                                              'not contain a test case(s).')
+                                error_messages.append(' Review source code to ensure test cases are registered to the suite!')
                                 failure_count += 1
-                            # MU_CHANGE [END] - Check for invalid tests
+                        # MU_CHANGE [END] - Check for invalid tests
                             for case in suite:
                                 for result in case:
                                     if result.tag == 'failure':
@@ -164,6 +164,10 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                         return -1
                 # MU_CHANGE end - reformat coverage data
 
+        # MU_CHANGE [BEGIN] - Check for invalid tests
+        for error in error_messages:
+            logging.error(error)
+        # MU_CHANGE [END] - Check for invalid tests
         return failure_count
 
     def gen_code_coverage_gcc(self, thebuilder):

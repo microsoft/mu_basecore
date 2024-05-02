@@ -1515,9 +1515,9 @@ or FALSE e.g. `CC_REORGANIZE=TRUE`:
 
 1. `CC_REORGANIZE`: Controls if code coverage results are re-formatted into a "by-inf" folder
    structure rather than the default "by-test" folder structure. Default: `TRUE`
-1. `CC_FULL`: Generates zero'd out coverage data for untested source files in the package. 
+1. `CC_FULL`: Generates zero'd out coverage data for untested source files in the package.
    Default: `FALSE`
-2. `CC_FLATTEN`: Groups all source files together, rather than by INF. Default: `FALSE`
+1. `CC_FLATTEN`: Groups all source files together, rather than by INF. Default: `FALSE`
 
 ** NOTE: `CC_FULL` and `CC_FLATTEN` values only matter if `CC_REORGANIZE=TRUE`, as they only
 effect how the coverage report is reorganized.
