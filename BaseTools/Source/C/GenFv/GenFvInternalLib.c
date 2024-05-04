@@ -3837,8 +3837,10 @@ Returns:
           //
           // Xip module has the same section alignment and file alignment.
           //
-          Error (NULL, 0, 3000, "Invalid", "PE image Section-Alignment and File-Alignment do not match : %s.", FileName);
-          return EFI_ABORTED;
+          //Error (NULL, 0, 3000, "Invalid", "PE image Section-Alignment and File-Alignment do not match : %s.", FileName);
+          //return EFI_ABORTED;
+          // mu change - avoid forcing DXE core and drivers to be XIP.  
+          continue;
         }
         NewPe32BaseAddress = XipBase + (UINTN) CurrentPe32Section.Pe32Section + CurSecHdrSize - (UINTN)FfsFile;
         break;
