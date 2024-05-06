@@ -45,6 +45,23 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
             int: The number of environment issues found. Zero indicates no
             action is needed.
         """
+        def is_corrupted_component(tool: RustToolInfo, cmd_output: str) -> bool:
+            """Checks if a component should be removed and reinstalled.
+
+            Args:
+                tool (RustToolInfo): Tool information.
+                cmd_output (str): The output from a command that will be
+                inspected by this function.
+
+            Returns:
+                bool: True if the component should be removed and added back to
+                correct its installation.
+            """
+            return (
+                f"error: the '{tool.presence_cmd[0]}' binary, normally "
+                f"provided by the '{tool.presence_cmd[0]}' component, is "
+                f"not applicable to the ") in cmd_output
+
         def verify_cmd(tool: RustToolInfo) -> int:
             """Indicates if a command can successfully be executed.
 
@@ -52,7 +69,8 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
                 tool (RustToolInfo): Tool information
 
             Returns:
-                int: 0 for success, 1 for missing tool, 2 for version mismatch
+                int: 0 for success, 1 for missing tool, 2 for version mismatch,
+                3 if a component is present but broken
             """
             cmd_output = StringIO()
             params = "--version"
@@ -63,6 +81,8 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
                          logging_level=logging.DEBUG)
 
             if ret != 0:
+                if is_corrupted_component(tool, cmd_output.getvalue()):
+                    return 3
                 return 1
 
             # If a specific version is required, check the version, returning
@@ -297,6 +317,14 @@ class RustEnvironmentCheck(IUefiBuildPlugin):
                         f"Expected version: {tool_info.required_version}\n\n"
                         f"Instructions:\n{tool_info.install_help}"
                     )
+                    errors += 1
+                if ret == 3:
+                    logging.error(
+                        f"Rust Environment Failure: {tool_name} is installed "
+                        "but does not run correctly.\n\n"
+                        f"Run \"rustup component remove {tool_name}\"\n"
+                        f"    \"rustup component add {tool_name}\"\n\n"
+                        f"Then try again.")
                     errors += 1
 
         rust_toolchain_info = verify_workspace_rust_toolchain_is_installed()
