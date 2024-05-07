@@ -105,13 +105,13 @@ Override record to be included in overriding module's inf:
 Command to generate a deprecation record:
 
 ``` cmd
-OverrideValidation.py -w C:\Repo -d C:\Repo\MU_BASECORE\MdeModulePkg\BaseMemoryLib\BaseMemoryLib.inf -dr C:\Repo\MU_BASECORE\MdeModulePkg\BaseMemoryLibV2\BaseMemoryLib.inf
+OverrideValidation.py -w C:\Repo -d C:\Repo\MU_BASECORE\MdeModulePkg\BaseMemoryLib\BaseMemoryLib.inf -dr C:\Repo\MU_BASECORE\MdeModulePkg\BaseMemoryLibV2\BaseMemoryLib.inf -dt 120
 ```
 
 Deprecation record to be included in the deprecated module's inf:
 
 ``` cmd
-#Deprecated : 00000001 | MdeModulePkg/BaseMemoryLibV2/BaseMemoryLib.inf | 2024-02-16T04-00-28
+#Deprecated : 00000001 | MdeModulePkg/BaseMemoryLibV2/BaseMemoryLib.inf | 2024-02-16T04-00-28 | 120
 ```
 
 Deprecation warning example:
@@ -120,10 +120,10 @@ Deprecation warning example:
 WARNING - Use of Deprecated module: C:\Repo\MU_BASECORE\MdeModulePkg\BaseMemoryLib\BaseMemoryLib.inf, Please switch to:  C:\Repo\MU_BASECORE\MdeModulePkg\BaseMemoryLibV2\BaseMemoryLib.inf.
 ```
 
-To disable Deprecation warnings, Set the following value in the build scripts.
+To disable Deprecation warnings for a given module, add it to the deprecation modules skip list.
 
 ``` cmd
-self.env.SetValue("ALLOW_DEPRECATED_MODULES", "TRUE", "Allow the usage of deprecated modules")
+self.env.SetValue("DEPRECATED_MODULES_SKIPLIST", ["MdeModulePkg\BaseMemoryLib\BaseMemoryLib.inf"], "Skip list for platforms")
 ```
 Override log generated during pre-build process:
 

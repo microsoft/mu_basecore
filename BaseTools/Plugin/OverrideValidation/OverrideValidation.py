@@ -400,7 +400,7 @@ try:
             normalized_file_path = filepath.replace("\\", "/")
 
             # Check if the module is part of the skip list
-            skip_list = thebuilder.env.GetValue("DEPRECATED_MODULES_SKIPLIST").split(";")
+            skip_list = thebuilder.env.GetValue("DEPRECATED_MODULES_SKIPLIST")
             for module in skip_list:
                 if module.strip() == "":
                     continue
@@ -705,12 +705,12 @@ def path_parse():
 
     if Paths.DeprecatedPath is not None:
         if not os.path.isfile(Paths.DeprecatedPath):
-            raise RuntimeError("Deprecation path module is invalid")
+            raise RuntimeError(f"Deprecation path {Paths.DeprecatedPath} module is invalid")
         # Needs to strip os.sep is to take care of the root path case
         # For a folder, this will do nothing on a formatted abspath
         # For a drive root, this will rip off the os.sep
         if not os.path.normcase(Paths.DeprecatedPath).startswith(os.path.normcase(Paths.WorkSpace.rstrip(os.sep)) + os.sep):
-            raise RuntimeError("Module is not within specified Workspace.")
+            raise RuntimeError(f"Module {Paths.DeprecatedPath} is not within the specified Workspace {Paths.WorkSpace.rstrip(os.sep)}.")
 
     return Paths
 
