@@ -123,7 +123,7 @@ WARNING - Use of Deprecated module: C:\Repo\MU_BASECORE\MdeModulePkg\BaseMemoryL
 To disable Deprecation warnings for a given module, add it to the deprecation modules skip list.
 
 ``` cmd
-self.env.SetValue("DEPRECATED_MODULES_SKIPLIST", ["MdeModulePkg\BaseMemoryLib\BaseMemoryLib.inf"], "Skip list for platforms")
+self.env.SetValue("DEPRECATED_MODULES_SKIPLIST", "MdeModulePkg\BaseMemoryLib\BaseMemoryLib.inf; MdeModulePkg\MemoryAllocationLib\MemoryAllocationLib.inf", "Skip list for platforms")
 ```
 Override log generated during pre-build process:
 
@@ -196,7 +196,7 @@ overridden file (the INF or DSC) and the overriding file.
 ### Deprecation Version 1
 
 ``` cmd
-#Deprecated : 00000001 | MdeModulePkg/BaseMemoryLibV2/BaseMemoryLib.inf | 2024-02-16T04-00-28
+#Deprecated : 00000001 | MdeModulePkg/BaseMemoryLibV2/BaseMemoryLib.inf | 2024-02-16T04-00-28 | 90
 ```
 
 ## Copyright & License

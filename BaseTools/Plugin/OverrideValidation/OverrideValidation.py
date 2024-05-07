@@ -400,30 +400,50 @@ try:
             normalized_file_path = filepath.replace("\\", "/")
 
             # Check if the module is part of the skip list
-            skip_list = thebuilder.env.GetValue("DEPRECATED_MODULES_SKIPLIST")
-            for module in skip_list:
-                if module.strip() == "":
-                    continue
+            skip_list_str = thebuilder.env.GetValue("DEPRECATED_MODULES_SKIPLIST")
 
-                normalized_relative_path = module.strip().replace("\\", "/")
-                if normalized_file_path.endswith(normalized_relative_path):
-                    logging.info("Use of Deprecated module: %s skipped as part of platform skip list", filepath)
-                    return self.OverrideResult.DR_ALL_GOOD
+            # Skip the modules that are part of skiplist
+            if skip_list_str is not None:
+                skip_list = skip_list_str.split(";")
+                for skipped_module in skip_list:
+                    if skipped_module.strip() == "":
+                        continue
+
+                    skipped_module_path = skipped_module.strip().replace("\\", "/")
+                    if normalized_file_path.endswith(skipped_module_path):
+                        logging.info("Use of Deprecated module: %s skipped as part of platform skip list", filepath)
+                        return self.OverrideResult.DR_ALL_GOOD
 
             # Check if the module has passed the deprecation date
             deprecation_timeline = int(DeprecationEntry[3])
             deprecation_dt = datetime.strptime(DeprecationEntry[2].strip(), TIMESTAMP_FORMAT).replace(tzinfo=timezone.utc) + timedelta(days=deprecation_timeline)
             current_dt = datetime.now(timezone.utc)
 
+            # Check if replacement file exists
+            if DeprecationEntry[1].strip() == "REMOVED_COMPLETELY":
+                replacement_path = None
+            else:
+                replacement_path = thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(DeprecationEntry[1].strip())
+
             # Module has crossed date of deprecation
             if current_dt > deprecation_dt:
-                logging.error("Use of Deprecated module: %s post date of deprecation.\nPlease switch to: %s.",
-                              filepath, thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(DeprecationEntry[1].strip()))
+                logging.error("Use of Deprecated module: %s post date of deprecation.", filepath)
+                if replacement_path is None:
+                    logging.error("Please remove the module (or) Add to DEPRECATED_MODULES_SKIPLIST")
+                else:
+                    logging.error("Replace with: %s (or) Add to DEPRECATED_MODULES_SKIPLIST", replacement_path)
+
                 return self.OverrideResult.DR_DEPRECATED_ERROR
+
             # Module is not deprecated yet
             else:
-                logging.warning("Use of Deprecated module: %s.\nPlease switch to: %s before %s.",
-                                filepath, thebuilder.edk2path.GetAbsolutePathOnThisSystemFromEdk2RelativePath(DeprecationEntry[1].strip()), DeprecationEntry[2].strip())
+                logging.warning("Use of Deprecated module: %s.", filepath)
+                
+                if replacement_path is None:
+                    logging.warning("Please remove the module (or) Add to DEPRECATED_MODULES_SKIPLIST before %s", deprecation_dt.strftime(TIMESTAMP_FORMAT))
+                else:
+                    logging.warning("Replace with: %s (or) Add to DEPRECATED_MODULES_SKIPLIST before %s", deprecation_dt.strftime(TIMESTAMP_FORMAT))
+
                 return self.OverrideResult.DR_DEPRECATION_WARNING
 
         # Check override record against parsed entries
