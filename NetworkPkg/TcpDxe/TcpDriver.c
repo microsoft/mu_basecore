@@ -171,6 +171,23 @@ TcpDriverEntryPoint (
   EFI_STATUS  Status;
   UINT32      Random;
 
+  //
+  // Initialize the Secret used for hashing TCP sequence numbers
+  //
+  // Normally this should be regenerated periodically, but since
+  // this is only used for UEFI networking and not a general purpose
+  // operating system, it is not necessary to regenerate it.
+  //
+  Status = PseudoRandomU32 (&mTcpGlobalSecret);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a failed to generate random number: %r\n", __func__, Status));
+    return Status;
+  }
+
+  //
+  // Get a random number used to generate a random port number
+  // Intentionally not linking this to mTcpGlobalSecret to avoid leaking information about the secret
+  //
   Status = PseudoRandomU32 (&Random);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a Failed to generate random number: %r\n", __func__, Status));

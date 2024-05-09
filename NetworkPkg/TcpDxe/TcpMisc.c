@@ -3,7 +3,7 @@
 
   (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
   Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
-
+  Copyright (c) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -27,20 +27,26 @@ LIST_ENTRY  mTcpListenQue = {
 TCP_SEQNO  mTcpGlobalSecret;
 
 //
+// Union to hold either an IPv4 or IPv6 address
+// This is used to simplify the ISN hash computation
+//
+typedef union {
+  UINT8    IPv4[4];
+  UINT8    IPv6[16];
+} NETWORK_ADDRESS;
+
+//
 // The ISN is computed by hashing this structure
 // It is initialized with the local and remote IP addresses and ports
 // and the secret
 //
 //
 typedef struct {
-  UINT16       LocalPort;
-  UINT16       RemotePort;
-  union {
-    UINT8    IPv4[4];
-    UINT8    IPv6[16];
-  } LocalAddress,
-    RemoteAddress;
-  TCP_SEQNO    Secret;
+  UINT16             LocalPort;
+  UINT16             RemotePort;
+  NETWORK_ADDRESS    LocalAddress;
+  NETWORK_ADDRESS    RemoteAddress;
+  TCP_SEQNO          Secret;
 } ISN_HASH_CTX;
 
 CHAR16  *mTcpStateName[] = {
