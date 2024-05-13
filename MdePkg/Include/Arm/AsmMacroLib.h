@@ -12,12 +12,22 @@
 #ifndef ASM_MACRO_IO_LIB_H_
 #define ASM_MACRO_IO_LIB_H_
 
+#ifndef __clang__ // MU_CHANGE: Clang does not support the .type
 #define _ASM_FUNC(Name, Section)    \
   .global   Name                  ; \
   .section  #Section, "ax"        ; \
   .type     Name, %function       ; \
   .p2align  2                     ; \
   Name:
+// MU_CHANGE Starts: Clang does not support the .type
+#else
+#define _ASM_FUNC(Name, Section)    \
+  .global   Name                  ; \
+  .section  #Section, "ax"        ; \
+  .p2align  2                     ; \
+  Name:
+#endif
+// MU_CHANGE Ends
 
 #define ASM_FUNC(Name)  _ASM_FUNC(ASM_PFX(Name), .text. ## Name)
 
