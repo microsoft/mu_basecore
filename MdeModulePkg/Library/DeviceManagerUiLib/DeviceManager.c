@@ -534,6 +534,7 @@ CreateDeviceManagerForm (
   TempSize   = 0;
   BufferSize = 0;
   Buffer     = NULL;
+  HiiHandles = NULL; // MU_CHANGE - Initialize HiiHandles to NULL
 
   HiiHandle      = gDeviceManagerPrivate.HiiHandle;
   AddNetworkMenu = FALSE;
@@ -745,7 +746,10 @@ CreateDeviceManagerForm (
 
   HiiFreeOpCodeHandle (StartOpCodeHandle);
   HiiFreeOpCodeHandle (EndOpCodeHandle);
-  FreePool (HiiHandles);
+  // MU_CHANGE: Only free HiiHandles if it is not NULL
+  if (HiiHandles != NULL) {
+    FreePool (HiiHandles);
+  }
 }
 
 /**
