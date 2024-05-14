@@ -291,9 +291,9 @@ Output1bitPixel (
       Byte = *(Data + OffsetY + Xpos);
       for (Index = 0; Index < 8; Index++) {
         if ((Byte & (1 << Index)) != 0) {
-          BitMapPtr[Ypos * Image->Width + Xpos * 8 + (8 - Index - 1)] = PaletteValue[1];
+          CopyMem (&BitMapPtr[Ypos * Image->Width + Xpos * 8 + (8 - Index - 1)], &PaletteValue[1], sizeof (*BitMapPtr));
         } else {
-          BitMapPtr[Ypos * Image->Width + Xpos * 8 + (8 - Index - 1)] = PaletteValue[0];
+          CopyMem (&BitMapPtr[Ypos * Image->Width + Xpos * 8 + (8 - Index - 1)], &PaletteValue[0], sizeof (*BitMapPtr));
         }
       }
     }
@@ -305,9 +305,9 @@ Output1bitPixel (
       Byte = *(Data + OffsetY + Xpos);
       for (Index = 0; Index < Image->Width % 8; Index++) {
         if ((Byte & (1 << (8 - Index - 1))) != 0) {
-          BitMapPtr[Ypos * Image->Width + Xpos * 8 + Index] = PaletteValue[1];
+          CopyMem (&BitMapPtr[Ypos * Image->Width + Xpos * 8 + Index], &PaletteValue[1], sizeof (*BitMapPtr));
         } else {
-          BitMapPtr[Ypos * Image->Width + Xpos * 8 + Index] = PaletteValue[0];
+          CopyMem (&BitMapPtr[Ypos * Image->Width + Xpos * 8 + Index], &PaletteValue[0], sizeof (*BitMapPtr));
         }
       }
     }
@@ -379,8 +379,8 @@ Output4bitPixel (
     //
     for (Xpos = 0; Xpos < Image->Width / 2; Xpos++) {
       Byte = *(Data + OffsetY + Xpos);
-      BitMapPtr[Ypos * Image->Width + Xpos * 2]     = PaletteValue[Byte >> 4];
-      BitMapPtr[Ypos * Image->Width + Xpos * 2 + 1] = PaletteValue[Byte & 0x0F];
+      CopyMem (&BitMapPtr[Ypos * Image->Width + Xpos * 2], &PaletteValue[Byte >> 4], sizeof (*BitMapPtr));
+      CopyMem (&BitMapPtr[Ypos * Image->Width + Xpos * 2 + 1], &PaletteValue[Byte & 0x0F], sizeof (*BitMapPtr));
     }
 
     if (Image->Width % 2 != 0) {
@@ -388,7 +388,7 @@ Output4bitPixel (
       // Padding bits in this byte should be ignored.
       //
       Byte = *(Data + OffsetY + Xpos);
-      BitMapPtr[Ypos * Image->Width + Xpos * 2]     = PaletteValue[Byte >> 4];
+      CopyMem (&BitMapPtr[Ypos * Image->Width + Xpos * 2], &PaletteValue[Byte >> 4], sizeof (*BitMapPtr));
     }
   }
 }
@@ -457,7 +457,7 @@ Output8bitPixel (
     //
     for (Xpos = 0; Xpos < Image->Width; Xpos++) {
       Byte = *(Data + OffsetY + Xpos);
-      BitMapPtr[OffsetY + Xpos] = PaletteValue[Byte];
+      CopyMem (&BitMapPtr[OffsetY + Xpos], &PaletteValue[Byte], sizeof (*BitMapPtr));
     }
   }
 
@@ -558,13 +558,13 @@ ImageToBlt (
     OffsetY1 = Width * Ypos;
     OffsetY2 = ImageOut->Width * (BltY + Ypos);
     for (Xpos = 0; Xpos < Width; Xpos++) {
-      SrcPixel = BltBuffer[OffsetY1 + Xpos];
+      CopyMem (&SrcPixel, &BltBuffer[OffsetY1 + Xpos], sizeof (SrcPixel));
       if (Transparent) {
-        if (CompareMem (&SrcPixel, &ZeroPixel, 3) != 0) {
-          ImageOut->Image.Bitmap[OffsetY2 + BltX + Xpos] = SrcPixel;
+        if (CompareMem (&SrcPixel, &ZeroPixel, 3) != 0) { \
+          CopyMem (&ImageOut->Image.Bitmap[OffsetY2 + BltX + Xpos], &SrcPixel, sizeof (SrcPixel));
         }
       } else {
-        ImageOut->Image.Bitmap[OffsetY2 + BltX + Xpos] = SrcPixel;
+        CopyMem (&ImageOut->Image.Bitmap[OffsetY2 + BltX + Xpos], &SrcPixel, sizeof (SrcPixel));
       }
     }
   }
@@ -1374,7 +1374,7 @@ HiiDrawImage (
         OffsetY1 = Image->Width * Ypos;
         OffsetY2 = Width * Ypos;
         for (Xpos = 0; Xpos < Width; Xpos++) {
-          BltBuffer[OffsetY2 + Xpos] = Image->Bitmap[OffsetY1 + Xpos];
+          CopyMem (&BltBuffer[OffsetY2 + Xpos], &Image->Bitmap[OffsetY1 + Xpos], sizeof (*BltBuffer));
         }
       }
     }
