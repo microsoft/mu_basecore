@@ -32,12 +32,18 @@
         .macro          fn_start, name:req
         .section        .text.\name
         .globl          \name
+# MU_CHANGE: Clang does not support the .type
+#ifndef __clang__
         .type           \name, %function
+#endif
 \name\():
         .endm
 
         .macro          fn_end, name:req
+# MU_CHANGE: Clang does not support the .size
+#ifndef __clang__
         .size           \name, . - \name
+#endif
         .endm
 
         /*
