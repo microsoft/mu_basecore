@@ -16,6 +16,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #define MINIMUM_INITIAL_MEMORY_SIZE  0x10000
 
+// MU_CHANGE BEGIN: Add EFI_MEMORY_SP
+
 #define MEMORY_ATTRIBUTE_MASK  (EFI_RESOURCE_ATTRIBUTE_PRESENT             |        \
                                        EFI_RESOURCE_ATTRIBUTE_INITIALIZED         | \
                                        EFI_RESOURCE_ATTRIBUTE_TESTED              | \
@@ -26,7 +28,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
                                        EFI_RESOURCE_ATTRIBUTE_16_BIT_IO           | \
                                        EFI_RESOURCE_ATTRIBUTE_32_BIT_IO           | \
                                        EFI_RESOURCE_ATTRIBUTE_64_BIT_IO           | \
-                                       EFI_RESOURCE_ATTRIBUTE_PERSISTENT          )
+                                       EFI_RESOURCE_ATTRIBUTE_PERSISTENT          | \
+                                       EFI_RESOURCE_ATTRIBUTE_SPECIAL_PURPOSE     )
+
+// MU_CHANGE END: Add EFI_MEMORY_SP
 
 #define TESTED_MEMORY_ATTRIBUTES  (EFI_RESOURCE_ATTRIBUTE_PRESENT     |     \
                                        EFI_RESOURCE_ATTRIBUTE_INITIALIZED | \
@@ -691,6 +696,12 @@ ConverToCpuArchAttributes (
   } else if ((Attributes & EFI_MEMORY_WP) == EFI_MEMORY_WP) {
     CpuArchAttributes |= EFI_MEMORY_WP;
   }
+  // MU_CHANGE BEGIN: Add EFI_MEMORY_SP
+  else if ((Attributes & EFI_MEMORY_SP) == EFI_MEMORY_SP) {
+    CpuArchAttributes |= EFI_MEMORY_SP;
+  }
+
+  // MU_CHANGE END: Add EFI_MEMORY_SP
 
   return CpuArchAttributes;
 }
@@ -2656,6 +2667,14 @@ CoreInitializeGcdServices (
           if ((ResourceHob->ResourceAttribute & MEMORY_ATTRIBUTE_MASK) == PRESENT_MEMORY_ATTRIBUTES) {
             GcdMemoryType = EfiGcdMemoryTypeReserved;
           }
+
+          // MU_CHANGE BEGIN: Add EFI_MEMORY_SP
+
+          if ((ResourceHob->ResourceAttribute & EFI_RESOURCE_ATTRIBUTE_SPECIAL_PURPOSE) == EFI_RESOURCE_ATTRIBUTE_SPECIAL_PURPOSE) {
+            GcdMemoryType = EfiGcdMemoryTypeReserved;
+          }
+
+          // MU_CHANGE END: Add EFI_MEMORY_SP
 
           if ((ResourceHob->ResourceAttribute & EFI_RESOURCE_ATTRIBUTE_PERSISTENT) == EFI_RESOURCE_ATTRIBUTE_PERSISTENT) {
             GcdMemoryType = EfiGcdMemoryTypePersistent;
