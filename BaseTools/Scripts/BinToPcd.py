@@ -10,13 +10,14 @@ BinToPcd
 '''
 from __future__ import print_function
 
-import sys
+# MU_CHANGE BEGIN: isort imports
 import argparse
-import re
-import xdrlib
 import io
-import struct
 import math
+import re
+import struct
+import sys
+# MU_CHANGE END
 
 #
 # Globals for help information
