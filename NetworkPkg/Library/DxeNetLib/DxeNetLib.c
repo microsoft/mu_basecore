@@ -139,9 +139,11 @@ GLOBAL_REMOVE_IF_UNREFERENCED VLAN_DEVICE_PATH  mNetVlanDevicePathTemplate = {
 // then you should place that algorithm first in the array.
 //
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_GUID  *mSecureHashAlgorithms[] = {
-  &gEfiRngAlgorithmSp80090Ctr256Guid,  // SP800-90A DRBG CTR using AES-256
-  &gEfiRngAlgorithmSp80090Hmac256Guid, // SP800-90A DRBG HMAC using SHA-256
-  &gEfiRngAlgorithmSp80090Hash256Guid  // SP800-90A DRBG Hash using SHA-256
+  &gEfiRngAlgorithmSp80090Ctr256Guid,   // SP800-90A DRBG CTR using AES-256
+  &gEfiRngAlgorithmSp80090Hmac256Guid,  // SP800-90A DRBG HMAC using SHA-256
+  &gEfiRngAlgorithmSp80090Hash256Guid,  // SP800-90A DRBG Hash using SHA-256
+  &gEfiRngAlgorithmArmRndr,             // SP800-90A DRBG unspecified algorithm via the Arm RNDR register
+  &gEfiRngAlgorithmRaw                  // Raw data from a NRBG (or a TRNG)
 };
 
 #define mSecureHashAlgorithmsSize  (sizeof (mSecureHashAlgorithms) / sizeof (EFI_GUID *))
