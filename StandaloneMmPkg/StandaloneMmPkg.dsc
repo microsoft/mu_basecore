@@ -60,6 +60,7 @@
   StandaloneMmCoreEntryPoint|StandaloneMmPkg/Library/StandaloneMmCoreEntryPointNull/StandaloneMmCoreEntryPointNull.inf  # MU_CHANGE
   StandaloneMmDriverEntryPoint|MdePkg/Library/StandaloneMmDriverEntryPoint/StandaloneMmDriverEntryPoint.inf
   VariableMmDependency|StandaloneMmPkg/Library/VariableMmDependency/VariableMmDependency.inf
+  HobPrintLib|MdeModulePkg/Library/HobPrintLib/HobPrintLib.inf
   MmuLib|MdePkg/Library/BaseMmuLibNull/BaseMmuLibNull.inf   # MU_CHANGE
   NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf # MU_CHANGE: /GS and -fstack-protector support
 
