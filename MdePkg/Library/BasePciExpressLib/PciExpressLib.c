@@ -87,7 +87,6 @@ GetPciExpressBaseAddress (
   @return The base size of PCI Express.
 
 **/
-STATIC
 UINTN
 PcdPciExpressBaseSize (
   VOID
