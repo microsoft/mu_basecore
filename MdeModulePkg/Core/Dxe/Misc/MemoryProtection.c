@@ -1110,25 +1110,6 @@ DisableNullDetectionAtTheEndOfDxe (
 // MU_CHANGE END
 
 /**
-  Returns whether we are currently executing in SMM mode.
-**/
-STATIC
-BOOLEAN
-IsInSmm (
-  VOID
-  )
-{
-  BOOLEAN  InSmm;
-
-  InSmm = FALSE;
-  if (gSmmBase2 != NULL) {
-    gSmmBase2->InSmm (gSmmBase2, &InSmm);
-  }
-
-  return InSmm;
-}
-
-/**
   Manage memory permission attributes on a memory range, according to the
   configured DXE memory protection policy.
 
@@ -1156,14 +1137,6 @@ ApplyMemoryProtectionPolicy (
 {
   UINT64  OldAttributes;
   UINT64  NewAttributes;
-
-  //
-  // The policy configured in Dxe NX Protection Policy // MU_CHANGE
-  // does not apply to allocations performed in SMM mode.
-  //
-  if (IsInSmm ()) {
-    return EFI_SUCCESS;
-  }
 
   //
   // If the CPU arch protocol is not installed yet, we cannot manage memory
