@@ -43,7 +43,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
-#include "MemoryProtectionSupport.h"
+#include "MemoryProtectionSupport.h"        // MU_CHANGE
 
 //
 // Image type definitions
@@ -172,7 +172,7 @@ GetUefiImageProtectionPolicy (
   BOOLEAN                         InSmm;
   UINT32                          ImageType;
   UINT32                          ProtectionPolicy;
-  DXE_MEMORY_PROTECTION_SETTINGS  *Settings = NULL;
+  DXE_MEMORY_PROTECTION_SETTINGS  *Settings = NULL; // MU_CHANGE
 
   //
   // Check SMM
@@ -1109,6 +1109,31 @@ DisableNullDetectionAtTheEndOfDxe (
 
 // MU_CHANGE END
 
+// MU_CHANGE START
+// With memory being marked as RP, if a SMM driver makes a BS allocation (from within the
+// SMM driver's entry point) the memory will need to have its protection policy
+// updated appropiately.
+
+/**
+  Returns whether we are currently executing in SMM mode.
+**/
+// STATIC
+// BOOLEAN
+// IsInSmm (
+//  VOID
+//  )
+// {
+//  BOOLEAN  InSmm;
+//
+//  InSmm = FALSE;
+//  if (gSmmBase2 != NULL) {
+//    gSmmBase2->InSmm (gSmmBase2, &InSmm);
+//  }
+//
+//  return InSmm;
+// }
+// MU_CHANGE END
+
 /**
   Manage memory permission attributes on a memory range, according to the
   configured DXE memory protection policy.
@@ -1138,6 +1163,18 @@ ApplyMemoryProtectionPolicy (
   UINT64  OldAttributes;
   UINT64  NewAttributes;
 
+  // MU_CHANGE START
+  // With memory being marked as RP, if a SMM driver makes a BS allocation (from within the
+  // SMM driver's entry point) the memory will need to have its protection policy
+  // updated appropiately.
+  //  //
+  //  // The policy configured in PcdDxeNxMemoryProtectionPolicy
+  //  // does not apply to allocations performed in SMM mode.
+  //  //
+  //  if (IsInSmm ()) {
+  //    return EFI_SUCCESS;
+  //  }
+  // MU_CHANGE END
   //
   // If the CPU arch protocol is not installed yet, we cannot manage memory
   // permission attributes, and it is the job of the driver that installs this
