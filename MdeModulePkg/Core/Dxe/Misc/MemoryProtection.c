@@ -1166,7 +1166,8 @@ ApplyMemoryProtectionPolicy (
   // MU_CHANGE START
   // With memory being marked as RP, if a SMM driver makes a BS allocation (from within the
   // SMM driver's entry point) the memory will need to have its protection policy
-  // updated appropiately.
+  // updated appropiately based upon the dxe memory protection policy, not the smm
+  // policy.
   //  //
   //  // The policy configured in PcdDxeNxMemoryProtectionPolicy
   //  // does not apply to allocations performed in SMM mode.
