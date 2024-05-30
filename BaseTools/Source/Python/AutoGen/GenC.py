@@ -2076,7 +2076,7 @@ def CreateCode(Info, AutoGenC, AutoGenH, StringH, UniGenCFlag, UniGenBinBuffer, 
             else:
                 CookieValue = int(GlobalData.gStackCookieValues64[hash(Info.Guid) % len(GlobalData.gStackCookieValues64)])
         except:
-            EdkLogger.error("build", AUTOGEN_ERROR, "Failed to get Stack Cookie Value List! Generating random value.", ExtraData="[%s]" % str(Info))
+            EdkLogger.warn("build", "Failed to get Stack Cookie Value List! Generating random value.", ExtraData="[%s]" % str(Info))
             if Bitwidth == 32:
                 CookieValue = secrets.randbelow (0xFFFFFFFF)
             else:
