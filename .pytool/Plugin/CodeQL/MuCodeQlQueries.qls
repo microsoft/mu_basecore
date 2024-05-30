@@ -2,7 +2,7 @@
 - description: Project Mu UEFI (C++) queries
 
 - queries: '.'
-  from: codeql/cpp-queries
+  from: codeql/cpp-queries@0.9.12
 
 ##########################################################################################
 # "Core" Queries - Part of Core SDL
