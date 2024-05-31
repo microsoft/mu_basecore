@@ -144,6 +144,7 @@
   MdePkg/Library/StackCheckLib/StackCheckLibDynamicInit.inf     ## MU_CHANGE
   MdePkg/Library/StackCheckFailureHookLibNull/StackCheckFailureHookLibNull.inf  ## MU_CHANGE
   MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf        ## MU_CHANGE
+  MdePkg/Library/PeiRngLib/PeiRngLib.inf    # MU_CHANGE: Add PeiRngLib
 
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
   #
