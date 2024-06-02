@@ -458,6 +458,7 @@ try:
             input_vars = thebuilder.env.GetAllBuildKeyValues()
             input_vars["TARGET"] = thebuilder.env.GetValue("TARGET")
             dscp = DscParser().SetEdk2Path(thebuilder.edk2path).SetInputVars(input_vars)
+            dscp.SetNoFailMode()
             plat_dsc = thebuilder.env.GetValue("ACTIVE_PLATFORM")
             if (plat_dsc is None):
                 return InfFileList
