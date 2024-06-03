@@ -118,7 +118,6 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                                  os.path.basename(test))
                     file_match_pattern = test + ".*." + arch + ".result.xml"
                     xml_results_list = glob.glob(file_match_pattern)
-
                     for xml_result_file in xml_results_list:
                         root = xml.etree.ElementTree.parse(
                             xml_result_file).getroot()
