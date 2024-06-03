@@ -1,0 +1,21 @@
+[package]
+name = "mu_pi"
+version = "0.1.0"
+edition = "2021"
+license = "BSD-2-Clause-Patent"
+description = "Platform Initialization (PI) Specification definitions and support code in Rust."
+repository = "https://github.com/microsoft/mu_rust_pi"
+readme = "Readme.md"
+rust-version = "1.68"
+keywords = ["firmware", "mu", "pi", "uefi"]
+categories = ["embedded", "hardware-support", "no-std"]
+
+[dependencies]
+indoc = "2.0"
+num-traits = { version = "0.2", default-features = false }
+r-efi = { version = "4.4.0", default_features = false }
+uuid = { version = "1.8", default_features = false }
+
+[dev-dependencies]
+serde = { version = "1.0.197", features = ["derive"]}
+serde_yaml = "0.9.34"

@@ -1,0 +1,8 @@
+# Ignore build directory
+/Build/
+
+# Ignore external dependencies
+*_extdep/
+
+# Ignore submdules
+/Common

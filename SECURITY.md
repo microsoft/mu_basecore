@@ -1,34 +1,34 @@
-<!-- BEGIN MICROSOFT SECURITY.MD V0.0.9 BLOCK -->
+# Project Mu Security Policy
 
-## Security
+Project Mu is an open source firmware project that is leveraged by and combined into
+other projects to build the firmware for a given product.  We build and maintain this
+code with the intent that any consuming projects can use this code as-is.  If features
+or fixes are necessary we ask that they contribute them back to the project.  **But**, that
+said, in the firmware ecosystem there is a lot of variation and differentiation, and
+the license in this project allows flexibility for use without contribution back to
+Project Mu. Therefore, any issues found here may or may not exist in products using Project Mu.
 
-Microsoft takes the security of our software products and services seriously, which includes all source code repositories managed through our GitHub organizations, which include [Microsoft](https://github.com/Microsoft), [Azure](https://github.com/Azure), [DotNet](https://github.com/dotnet), [AspNet](https://github.com/aspnet) and [Xamarin](https://github.com/xamarin).
+## Supported Versions
 
-If you believe you have found a security vulnerability in any Microsoft-owned repository that meets [Microsoft's definition of a security vulnerability](https://aka.ms/security.md/definition), please report it to us as described below.
+Due to the usage model we generally only supply fixes to the most recent release branch (or main).
+For a serious vulnerability we may patch older release branches.
 
-## Reporting Security Issues
+## Additional Notes
+
+Project Mu contains code that is available and/or originally authored in other
+repositories (see <https://github.com/tianocore/edk2> as one such example).  For any
+vulnerability found, we may be subject to their security policy and may need to work
+with those groups to resolve amicably and patch the "upstream".  This might involve
+additional time to release and/or additional confidentiality requirements.
+
+## Reporting a Vulnerability
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, please report them to the Microsoft Security Response Center (MSRC) at [https://msrc.microsoft.com/create-report](https://aka.ms/security.md/msrc/create-report).
+Instead please use **Github Private vulnerability reporting**, which is enabled for each Project Mu
+repository. This process is well documented by github in their documentation [here](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability#privately-reporting-a-security-vulnerability).
 
-If you prefer to submit without logging in, send email to [secure@microsoft.com](mailto:secure@microsoft.com).  If possible, encrypt your message with our PGP key; please download it from the [Microsoft Security Response Center PGP Key page](https://aka.ms/security.md/msrc/pgp).
-
-You should receive a response within 24 hours. If for some reason you do not, please follow up via email to ensure we received your original message. Additional information can be found at [microsoft.com/msrc](https://www.microsoft.com/msrc). 
-
-Please include the requested information listed below (as much as you can provide) to help us better understand the nature and scope of the possible issue:
-
-  * Type of issue (e.g. buffer overflow, SQL injection, cross-site scripting, etc.)
-  * Full paths of source file(s) related to the manifestation of the issue
-  * The location of the affected source code (tag/branch/commit or direct URL)
-  * Any special configuration required to reproduce the issue
-  * Step-by-step instructions to reproduce the issue
-  * Proof-of-concept or exploit code (if possible)
-  * Impact of the issue, including how an attacker might exploit the issue
-
-This information will help us triage your report more quickly.
-
-If you are reporting for a bug bounty, more complete reports can contribute to a higher bounty award. Please visit our [Microsoft Bug Bounty Program](https://aka.ms/security.md/msrc/bounty) page for more details about our active programs.
+This process will allow us to privately discuss the issue, collaborate on a solution, and then disclose the vulnerability.
 
 ## Preferred Languages
 
@@ -36,6 +36,4 @@ We prefer all communications to be in English.
 
 ## Policy
 
-Microsoft follows the principle of [Coordinated Vulnerability Disclosure](https://aka.ms/security.md/cvd).
-
-<!-- END MICROSOFT SECURITY.MD BLOCK -->
+Microsoft follows the principle of [Coordinated Vulnerability Disclosure](https://www.microsoft.com/en-us/msrc/cvd).

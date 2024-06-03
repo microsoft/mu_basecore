@@ -1,0 +1,88 @@
+## @file
+# Azure Pipeline build file to build and test code in this repo.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+trigger:
+- main
+
+pr:
+- main
+
+resources:
+  repositories:
+    - repository: mu_devops
+      type: github
+      endpoint: microsoft
+      name: microsoft/mu_devops
+      ref: main
+
+parameters:
+  - name: matrix
+    type: object
+    default:
+      Linux:
+        ImageName: ubuntu-latest
+        ContainerImage: ghcr.io/microsoft/mu_devops/ubuntu-22-build:latest
+      Windows:
+        ImageName: windows-latest
+
+variables:
+- group: coverage
+
+jobs:
+  - ${{ each item in parameters.matrix }}:
+    - job: BuildAndTest_${{ item.Key }}
+      displayName: Build and Test ${{ item.Key }}
+
+      pool:
+        vmImage: ${{ item.Value.ImageName }}
+
+      ${{ if item.Value.ContainerImage }}:
+        container:
+          image: ${{ item.Value.ContainerImage }}
+          options: --user root --name mu_devops_build_container --security-opt seccomp=unconfined
+
+      workspace:
+        clean: all
+
+      steps:
+      - checkout: self
+        fetchDepth: 1
+        clean: true
+
+      # Only run on Windows since it does not use a container and can
+      # depend on a wider toolset provided in the VM image.
+      - ${{ if eq(item.Value.ImageName, 'windows-latest') }}:
+        - template: Steps/InstallMarkdownLint.yml@mu_devops
+        - template: Steps/RunMarkdownLint.yml@mu_devops
+        - template: Steps/InstallSpellCheck.yml@mu_devops
+        - template: Steps/RunSpellCheck.yml@mu_devops
+          parameters:
+            spell_check_parameters: "-c cspell.json **/*.md **/*.py **/*.rs"
+      - template: Steps/RustSetupSteps.yml@mu_devops
+      - template: Steps/RustCargoSteps.yml@mu_devops
+        parameters:
+          test_command: "cargo tarpaulin --all --out xml --output-dir $(Build.StagingDirectory)"
+          build_command: "cargo build"
+      - task: PythonScript@0
+        displayName: Rename coverage file
+        env:
+          OUTPUT_DIR: $(Build.StagingDirectory)
+        inputs:
+          scriptSource: inline
+          script: |
+            import os
+            import pathlib
+
+            OUTPUT_DIR = os.environ['OUTPUT_DIR']
+            original = pathlib.Path(OUTPUT_DIR, 'cobertura.xml')
+            new = pathlib.Path(OUTPUT_DIR, 'coverage.xml')
+            original.replace(new)
+
+      - template: Steps/UploadCodeCoverage.yml@mu_devops
+        parameters:
+          report_dir: $(Build.StagingDirectory)
+          install_dependencies: false
