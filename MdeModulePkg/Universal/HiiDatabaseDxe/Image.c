@@ -1292,7 +1292,6 @@ HiiDrawImage (
   UINTN                          BufferLen;
   UINT16                         Width;
   UINT16                         Height;
-  UINTN                          Xpos;
   UINTN                          Ypos;
   UINTN                          OffsetY1;
   UINTN                          OffsetY2;
@@ -1394,9 +1393,11 @@ HiiDrawImage (
       for (Ypos = 0; Ypos < Height; Ypos++) {
         OffsetY1 = Image->Width * Ypos;
         OffsetY2 = Width * Ypos;
-        for (Xpos = 0; Xpos < Width; Xpos++) {
-          CopyMem (&BltBuffer[OffsetY2 + Xpos], &Image->Bitmap[OffsetY1 + Xpos], sizeof (*BltBuffer));
-        }
+        CopyMem (
+          &BltBuffer[OffsetY2],
+          &Image->Bitmap[OffsetY1],
+          Width * sizeof (*BltBuffer)
+          );
       }
     }
 
