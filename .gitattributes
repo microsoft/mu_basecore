@@ -1,3 +1,1 @@
-* text=auto
-* text eol=crlf
-*.Fv binary
+* -text

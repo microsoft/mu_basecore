@@ -21,7 +21,7 @@ submitted in the issues section.
 ## Security Vulnerabilities
 
 Please review the repos `Security Policy` but in general every Project Mu repo has `Private vulnerability reporting`
-enabled.  Please use the security tab to report a potential issue.
+enabled.  Please use the security tab to report a potential issue.  
 
 ### Identify Where to Report
 
