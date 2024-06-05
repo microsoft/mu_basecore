@@ -1,7 +1,7 @@
 /** @file MockLocalApicLib.h
   Google Test mocks for LocalApicLib
 
-  Copyright (c) 2023, Intel Corporation. All rights reserved.
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
