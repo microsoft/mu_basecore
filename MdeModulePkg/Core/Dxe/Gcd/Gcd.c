@@ -2676,8 +2676,10 @@ CoreInitializeGcdServices (
 
           // MU_CHANGE BEGIN: Add EFI_MEMORY_SP
 
+          // Mark special purpose memory as system memory, if it was system memory in the HOB
+          // However, if this is also marked as persistent, let persistent take precedence
           if ((ResourceHob->ResourceAttribute & EFI_RESOURCE_ATTRIBUTE_SPECIAL_PURPOSE) == EFI_RESOURCE_ATTRIBUTE_SPECIAL_PURPOSE) {
-            GcdMemoryType = EfiGcdMemoryTypeReserved;
+            GcdMemoryType = EfiGcdMemoryTypeSystemMemory;
           }
 
           // MU_CHANGE END: Add EFI_MEMORY_SP
