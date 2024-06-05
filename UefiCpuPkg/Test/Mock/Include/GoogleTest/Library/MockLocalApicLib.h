@@ -1,4 +1,4 @@
-/** @file
+/** @file MockLocalApicLib.h
   Google Test mocks for LocalApicLib
 
   Copyright (c) 2023, Intel Corporation. All rights reserved.
