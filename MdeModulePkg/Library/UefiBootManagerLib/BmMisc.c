@@ -115,6 +115,69 @@ BmMatchDevicePaths (
   return FALSE;
 }
 
+// MU_CHANGE Begin: Minimum Allocation
+
+/**
+  This routine returns the minimum allocation for the given memory type.
+
+  @param Type     MemoryType to get the minimum allocation for.
+
+  @return The minimum allocation (in pages) for this memory type, or 0 if
+          no minimum is provided.
+**/
+UINT32
+GetMinimumAllocation (
+  IN UINT32  Type
+  )
+{
+  EFI_HOB_GUID_TYPE            *GuidHob;
+  EFI_MEMORY_TYPE_INFORMATION  *MinimumMemoryAllocations;
+  UINTN                        VariableSize;
+  UINTN                        Index;
+  UINT32                       MinAllocation;
+
+  //
+  // Get the Minimum Allocation for each Memory Type from Hob if they exist.
+  // PEI is responsible for creating the MinimumAllocation Hob if platform
+  // needs a minimum allocation.
+  //
+  GuidHob = GetFirstGuidHob (&gEfiMemoryTypeMinimumAllocationGuid);
+  if (GuidHob == NULL) {
+    //
+    // If no hob exists, platform does not specify a minimum allocation - so return zero.
+    //
+    return 0;
+  }
+
+  VariableSize             = GET_GUID_HOB_DATA_SIZE (GuidHob);
+  MinimumMemoryAllocations = AllocateCopyPool (VariableSize, GET_GUID_HOB_DATA (GuidHob));
+  if (MinimumMemoryAllocations == NULL) {
+    ASSERT_EFI_ERROR (EFI_OUT_OF_RESOURCES);
+    return 0;
+  }
+
+  MinAllocation = 0;
+  for (Index = 0; MinimumMemoryAllocations[Index].Type != EfiMaxMemoryType; Index++) {
+    if (MinimumMemoryAllocations[Index].Type == Type) {
+      break;
+    }
+  }
+
+  if (MinimumMemoryAllocations[Index].Type == EfiMaxMemoryType) {
+    MinAllocation = 0;
+  } else {
+    MinAllocation = MinimumMemoryAllocations[Index].NumberOfPages;
+  }
+
+  if (MinimumMemoryAllocations != NULL) {
+    FreePool (MinimumMemoryAllocations);
+  }
+
+  return MinAllocation;
+}
+
+// MU_CHANGE End: Minimum Allocation
+
 /**
   This routine adjust the memory information for different memory type and
   save them into the variables for next boot. It resets the system when
@@ -138,6 +201,7 @@ BmSetMemoryTypeInformationVariable (
   UINTN                        Index1;
   UINT32                       Previous;
   UINT32                       Current;
+  UINT32                       Minimum; // MU_CHANGE
   UINT32                       Next;
   EFI_HOB_GUID_TYPE            *GuidHob;
   BOOLEAN                      MemoryTypeInformationModified;
@@ -208,9 +272,11 @@ BmSetMemoryTypeInformationVariable (
   //
   // Use a heuristic to adjust the Memory Type Information for the next boot
   //
-  DEBUG ((DEBUG_INFO, "Memory  Previous  Current    Next   \n"));
-  DEBUG ((DEBUG_INFO, " Type    Pages     Pages     Pages  \n"));
-  DEBUG ((DEBUG_INFO, "======  ========  ========  ========\n"));
+  // MU_CHANGE: Begin Minimum Allocation
+  DEBUG ((DEBUG_INFO, "Memory  Previous  Current   Minimum    Next\n"));
+  DEBUG ((DEBUG_INFO, " Type    Pages     Pages     Pages     Pages\n"));
+  DEBUG ((DEBUG_INFO, "======  ========  ========  ========  =======\n"));
+  // MU_CHANGE: End Minimum Allocation
 
   for (Index = 0; PreviousMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
     for (Index1 = 0; CurrentMemoryTypeInformation[Index1].Type != EfiMaxMemoryType; Index1++) {
@@ -249,12 +315,32 @@ BmSetMemoryTypeInformationVariable (
       Next = 4;
     }
 
+    // MU_CHANGE Begin: Minimum Allocation
+    // If platform has expressed a minimum allocation requirement, apply it here.
+    Minimum = GetMinimumAllocation (PreviousMemoryTypeInformation[Index].Type);
+    if (Next < Minimum) {
+      Next = Minimum;
+    }
+
+    // MU_CHANGE End: Minimum Allocation
+
     if (Next != Previous) {
       PreviousMemoryTypeInformation[Index].NumberOfPages = Next;
       MemoryTypeInformationModified                      = TRUE;
+
+      // MU_CHANGE Begin: MemoryTypeInformationChangeLib
+      //
+      // Log telemetry with ReportMemoryTypeInformationChange
+      //
+      ReportMemoryTypeInformationChange (
+        PreviousMemoryTypeInformation[Index].Type,
+        Previous,
+        Next
+        );
+      // MU_CHANGE End: MemoryTypeInformationChangeLib
     }
 
-    DEBUG ((DEBUG_INFO, "  %02x    %08x  %08x  %08x\n", PreviousMemoryTypeInformation[Index].Type, Previous, Current, Next));
+    DEBUG ((DEBUG_INFO, "  %02x    %08x  %08x  %08x  %08x\n", PreviousMemoryTypeInformation[Index].Type, Previous, Current, Minimum, Next)); // MU_CHANGE
   }
 
   //
