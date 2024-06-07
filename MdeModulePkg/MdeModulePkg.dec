@@ -190,6 +190,12 @@
   ## @libraryclass Provides an interface for AdvLogger through GetVariable
   #
   AdvLoggerAccessLib|Include/Library/AdvLoggerAccessLib.h
+
+  ## MU_CHANGE
+  ## @libraryclass  This library is used to report memory type information change
+  ##                across a reboot.
+  MemoryTypeInformationChangeLib|Include/Library/MemoryTypeInformationChangeLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
@@ -238,6 +244,11 @@
   ## Hob and Variable guid specify the platform memory type information.
   #  Include/Guid/MemoryTypeInformation.h
   gEfiMemoryTypeInformationGuid  = { 0x4C19049F, 0x4137, 0x4DD3, { 0x9C, 0x10, 0x8B, 0x97, 0xA8, 0x3F, 0xFD, 0xFA }}
+
+  ## MU_CHANGE
+  ## Hob and Variable guid specify the minimum allocations for memory types.
+  #  Include/Guid/MemoryTypeInformation.h
+  gEfiMemoryTypeMinimumAllocationGuid = { 0xE4FFE60B, 0x2499, 0x4848, { 0x88, 0x9A, 0xF4, 0x24, 0xC1, 0xC9, 0xC3, 0x47 }}
 
   ## Capsule update hob and variable guid
   #  Include/Guid/CapsuleVendor.h
@@ -446,6 +457,8 @@
   gAdvLoggerAccessGuid = { 0xa021bf2b, 0x34ed, 0x4a98, {0x85, 0x9c, 0x42, 0x0e, 0xf9, 0x4f, 0x3e, 0x94 }}
 
 ## MU_CHANGE END
+
+
   ## Used (similar to Variable Services) to communicate policies to the enforcement engine.
   # {DA1B0D11-D1A7-46C4-9DC9-F3714875C6EB}
   gVarCheckPolicyLibMmiHandlerGuid = { 0xda1b0d11, 0xd1a7, 0x46c4, { 0x9d, 0xc9, 0xf3, 0x71, 0x48, 0x75, 0xc6, 0xeb }}
