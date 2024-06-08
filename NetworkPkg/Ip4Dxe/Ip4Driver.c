@@ -2,6 +2,7 @@
   The driver binding and service binding protocol for IP4 driver.
 
 Copyright (c) 2005 - 2019, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation
 (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
 
 SPDX-License-Identifier: BSD-2-Clause-Patent

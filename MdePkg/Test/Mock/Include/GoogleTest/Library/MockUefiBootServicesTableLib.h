@@ -84,4 +84,4 @@ struct MockUefiBootServicesTableLib {
     );
 };
 
-#endif
+#endif // MOCK_UEFI_BOOT_SERVICES_TABLE_LIB_H_
