@@ -3,6 +3,7 @@
   It provides basic functions for the UEFI network stack.
 
 Copyright (c) 2005 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -577,17 +578,19 @@ NetPutUint32 (
   IN     UINT32  Data
   );
 
-/*
-Generate a Random output data given a length.
+/**
+  Generate a Random output data given a length.
 
-@param[out] Output - The buffer to store the generated random data.
-@param[in] OutputLength - The length of the output buffer.
+  @param[out] Output - The buffer to store the generated random data.
+  @param[in] OutputLength - The length of the output buffer.
 
-@retval EFI_SUCCESS           On Success
-@retval EFI_INVALID_PARAMETER Pointer is null or size is zero
-@retval EFI_NOT_FOUND         RNG protocol not found
-@Retval Others                Error from RngProtocol->GetRNG()
-*/
+  @retval EFI_SUCCESS           On Success
+  @retval EFI_INVALID_PARAMETER Pointer is null or size is zero
+  @retval EFI_NOT_FOUND         RNG protocol not found
+  @retval Others                Error from RngProtocol->GetRNG()
+
+  @return Status code
+**/
 EFI_STATUS
 EFIAPI
 PseudoRandom (
@@ -595,13 +598,17 @@ PseudoRandom (
   IN   UINTN  OutputLength
   );
 
-/*
-Generate a 32-bit pseudo-random number.
+/**
+  Generate a 32-bit pseudo-random number.
 
-@param[out] Output - The buffer to store the generated random number.
+  @param[out] Output - The buffer to store the generated random number.
 
-@return EFI_SUCCESS on success, error code on failure.
-*/
+  @retval EFI_SUCCESS           On Success
+  @retval EFI_NOT_FOUND         RNG protocol not found
+  @retval Others                Error from RngProtocol->GetRNG()
+
+  @return Status code
+**/
 EFI_STATUS
 EFIAPI
 PseudoRandomU32 (
