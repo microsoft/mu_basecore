@@ -2,6 +2,7 @@
   Functions implementation related with DHCPv6 for HTTP boot driver.
 
 Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/

@@ -6,6 +6,7 @@
 #  stack has been loaded in system. This driver supports both IPv4 and IPv6 network stack.
 #
 #  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) Microsoft Corporation
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -86,6 +87,9 @@
 [Guids]
   gEfiHashAlgorithmMD5Guid                      ## CONSUMES
   gEfiHashAlgorithmSha256Guid                   ## CONSUMES
+
+[Depex]
+  gEfiHash2ServiceBindingProtocolGuid
 
 [UserExtensions.TianoCore."ExtraFiles"]
   TcpDxeExtra.uni

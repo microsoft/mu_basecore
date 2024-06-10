@@ -2,7 +2,7 @@
   The driver binding and service binding protocol for the TCP driver.
 
   Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
-
+  Copyright (c) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/

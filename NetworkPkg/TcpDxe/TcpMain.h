@@ -3,7 +3,7 @@
   It is the common head file for all Tcp*.c in TCP driver.
 
   Copyright (c) 2009 - 2016, Intel Corporation. All rights reserved.<BR>
-
+  Copyright (c) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/

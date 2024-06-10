@@ -2,7 +2,7 @@
   TCP timer related functions.
 
   Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
-
+  Copyright (c) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
