@@ -5,8 +5,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef MOCK_SMBIOS_PROTOCOL_H
-#define MOCK_SMBIOS_PROTOCOL_H
+#ifndef MOCK_SMBIOS_PROTOCOL_H_
+#define MOCK_SMBIOS_PROTOCOL_H_
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
@@ -67,4 +67,4 @@ extern "C" {
   extern EFI_SMBIOS_PROTOCOL  *gSmbiosProtocol;
 }
 
-#endif // MOCK_SMBIOS_PROTOCOL_H
+#endif // MOCK_SMBIOS_PROTOCOL_H_

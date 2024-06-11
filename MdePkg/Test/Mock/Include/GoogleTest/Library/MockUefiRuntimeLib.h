@@ -1,6 +1,7 @@
-/** @file
+/** @file MockUefiRuntimeLib.h
   Google Test mocks for UefiRuntimeLib
 
+  Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -97,6 +98,15 @@ struct MockUefiRuntimeLib {
     );
 
   MOCK_FUNCTION_DECLARATION (
+    VOID,
+    EfiResetSystem,
+    (IN EFI_RESET_TYPE  ResetType,
+     IN EFI_STATUS      ResetStatus,
+     IN UINTN           DataSize,
+     IN VOID            *ResetData OPTIONAL)
+    );
+
+  MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
     EfiConvertPointer,
     (IN     UINTN  DebugDisposition,
@@ -153,4 +163,4 @@ struct MockUefiRuntimeLib {
     );
 };
 
-#endif
+#endif // MOCK_UEFI_RUNTIME_LIB_H_

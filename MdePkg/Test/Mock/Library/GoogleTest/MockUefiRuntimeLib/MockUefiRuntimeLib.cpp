@@ -23,6 +23,7 @@ MOCK_FUNCTION_DEFINITION (MockUefiRuntimeLib, EfiGetVariable, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiRuntimeLib, EfiGetNextVariableName, 3, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiRuntimeLib, EfiSetVariable, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiRuntimeLib, EfiGetNextHighMonotonicCount, 1, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockUefiRuntimeLib, EfiResetSystem, 4, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiRuntimeLib, EfiConvertPointer, 2, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiRuntimeLib, EfiConvertFunctionPointer, 2, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiRuntimeLib, EfiSetVirtualAddressMap, 4, EFIAPI);

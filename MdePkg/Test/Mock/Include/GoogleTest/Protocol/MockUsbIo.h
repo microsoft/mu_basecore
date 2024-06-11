@@ -5,8 +5,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef MOCK_USB_IO_H
-#define MOCK_USB_IO_H
+#ifndef MOCK_USB_IO_H_
+#define MOCK_USB_IO_H_
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
@@ -169,4 +169,4 @@ extern "C" {
   extern EFI_USB_IO_PROTOCOL  *gUsbIoProtocol;
 }
 
-#endif // MOCK_USB_IO_H
+#endif // MOCK_USB_IO_H_

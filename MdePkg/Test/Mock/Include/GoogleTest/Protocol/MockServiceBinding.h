@@ -5,8 +5,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef MOCK_SERVICE_BINDING_H
-#define MOCK_SERVICE_BINDING_H
+#ifndef MOCK_SERVICE_BINDING_H_
+#define MOCK_SERVICE_BINDING_H_
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
@@ -42,4 +42,4 @@ extern "C" {
   extern EFI_SERVICE_BINDING_PROTOCOL  *gServiceBindingProtocol;
 }
 
-#endif // MOCK_SERVICE_BINDING_H
+#endif // MOCK_SERVICE_BINDING_H_

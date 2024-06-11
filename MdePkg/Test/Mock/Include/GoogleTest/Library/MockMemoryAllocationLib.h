@@ -1,6 +1,7 @@
-/** @file
+/** @file MockMemoryAllocationLib.h
   Google Test mocks for MemoryAllocationLib
 
+  Copyright (c) 2024, Intel Corporation. All rights reserved.
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -163,4 +164,4 @@ struct MockMemoryAllocationLib {
     );
 };
 
-#endif
+#endif // MOCK_MEMORY_ALLOCATION_LIB_H_

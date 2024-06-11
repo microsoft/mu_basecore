@@ -1,4 +1,4 @@
-## @file
+## @file MockUefiRuntimeLib.inf
 # Google Test mocks for UefiRuntimeLib
 #
 # Copyright (c) Microsoft Corporation.
@@ -24,11 +24,10 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-  MdePkg/MdePkg.dec
   UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
 
 [LibraryClasses]
   GoogleTestLib
 
 [BuildOptions]
-  MSFT:*_*_*_CC_FLAGS = /EHs /bigobj
+  MSFT:*_*_*_CC_FLAGS = /EHsc /bigobj

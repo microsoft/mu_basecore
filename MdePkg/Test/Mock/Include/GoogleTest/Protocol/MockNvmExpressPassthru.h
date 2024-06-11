@@ -5,8 +5,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef MOCK_NVM_EXPRESS_PASS_THRU_H
-#define MOCK_NVM_EXPRESS_PASS_THRU_H
+#ifndef MOCK_NVM_EXPRESS_PASS_THRU_H_
+#define MOCK_NVM_EXPRESS_PASS_THRU_H_
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
@@ -64,4 +64,4 @@ extern "C" {
   extern EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL  *gNvmePassThruProtocol;
 }
 
-#endif // NVM_EXPRESS_PASS_THRU_H
+#endif // NVM_EXPRESS_PASS_THRU_H_

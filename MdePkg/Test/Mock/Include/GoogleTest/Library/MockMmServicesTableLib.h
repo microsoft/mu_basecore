@@ -1,6 +1,8 @@
 /** @file MockMmServicesTableLib.h
   Google Test mocks for MmServicesTableLib
 
+  Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2016 - 2018, ARM Limited. All rights reserved.<BR>
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -15,9 +17,6 @@ extern "C" {
   #include <Library/MmServicesTableLib.h>
 }
 
-//
-// Declarations to handle usage of the MmServicesTableLib by creating mock
-//
 struct MockMmServicesTableLib {
   MOCK_INTERFACE_DECLARATION (MockMmServicesTableLib);
 

@@ -5,8 +5,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef MOCK_SMM_CPU_H
-#define MOCK_SMM_CPU_H
+#ifndef MOCK_SMM_CPU_H_
+#define MOCK_SMM_CPU_H_
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
@@ -48,4 +48,4 @@ extern "C" {
   extern EFI_SMM_CPU_PROTOCOL  *gSmmCpuProtocol;
 }
 
-#endif // MOCK_SMM_CPU_H
+#endif // MOCK_SMM_CPU_H_

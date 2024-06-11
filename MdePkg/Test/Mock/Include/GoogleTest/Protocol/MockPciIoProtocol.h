@@ -1,12 +1,12 @@
-/** @file
+/** @file MockPciIoProtocol.h
   This file declares a mock of PCI IO Protocol.
 
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef MOCK_PCIIOPROTOCOL_H
-#define MOCK_PCIIOPROTOCOL_H
+#ifndef MOCK_PCIIOPROTOCOL_H_
+#define MOCK_PCIIOPROTOCOL_H_
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
@@ -64,4 +64,4 @@ extern "C" {
   extern EFI_PCI_IO_PROTOCOL  *gPciIoProtocol;
 }
 
-#endif // MOCK_PCIIOPROTOCOL_H
+#endif // MOCK_PCIIOPROTOCOL_H_

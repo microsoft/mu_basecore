@@ -1,6 +1,7 @@
 ## @file MockPciExpressLib.inf
 # Google Test mocks for PciExpressLib
 #
+# Copyright (c) 2024, Intel Corporation. All rights reserved.<BR>
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
@@ -30,4 +31,4 @@
   GoogleTestLib
 
 [BuildOptions]
-  MSFT:*_*_*_CC_FLAGS = /EHsc
+  MSFT:*_*_*_CC_FLAGS = /EHsc /bigobj
