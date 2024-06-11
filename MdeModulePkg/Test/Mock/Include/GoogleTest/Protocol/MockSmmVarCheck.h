@@ -5,8 +5,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef MOCK_SMM_VAR_CHECK_H
-#define MOCK_SMM_VAR_CHECK_H
+#ifndef MOCK_SMM_VAR_CHECK_H_
+#define MOCK_SMM_VAR_CHECK_H_
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
@@ -32,4 +32,4 @@ extern "C" {
   extern EDKII_SMM_VAR_CHECK_PROTOCOL  *gEdkiiSmmVarCheckProtocol;
 }
 
-#endif // MOCK_SMM_VAR_CHECK_H
+#endif // MOCK_SMM_VAR_CHECK_H_
