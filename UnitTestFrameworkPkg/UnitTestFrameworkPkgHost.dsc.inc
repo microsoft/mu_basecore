@@ -52,8 +52,11 @@
   #
   # MSFT
   #
-  MSFT:*_*_*_CC_FLAGS               = /EHs
-  MSFT:*_*_*_DLINK_FLAGS            == /nologo /SUBSYSTEM:CONSOLE /DEBUG /out:"$(BIN_DIR)\$(MODULE_NAME_GUID).exe" /pdb:"$(BIN_DIR)\$(MODULE_NAME_GUID).pdb"
+# MU_CHANGE: Allow GoogleTest to Test STATIC Functions
+  MSFT:*_*_*_CC_FLAGS               = /EHs -D GOOGLETEST_HOST_UNIT_TEST_BUILD=1 
+  MSFT:*_*_*_DLINK_FLAGS            == /out:"$(BIN_DIR)\$(MODULE_NAME_GUID).exe" /pdb:"$(BIN_DIR)\$(MODULE_NAME_GUID).pdb" /IGNORE:4001 /NOLOGO /SUBSYSTEM:CONSOLE /DEBUG /STACK:0x40000,0x40000 /WHOLEARCHIVE
+  MSFT:*_*_IA32_DLINK_FLAGS         = /MACHINE:I386
+  MSFT:*_*_X64_DLINK_FLAGS          = /MACHINE:AMD64
 
   MSFT:*_VS2015_IA32_DLINK_FLAGS    = /LIBPATH:"%VS2015_PREFIX%Lib" /LIBPATH:"%VS2015_PREFIX%VC\Lib" /LIBPATH:"%UniversalCRTSdkDir%lib\%UCRTVersion%\ucrt\x86" /LIBPATH:"%WindowsSdkDir%lib\%WindowsSDKLibVersion%\um\x86"
   MSFT:*_VS2015x86_IA32_DLINK_FLAGS = /LIBPATH:"%VS2015_PREFIX%Lib" /LIBPATH:"%VS2015_PREFIX%VC\Lib" /LIBPATH:"%UniversalCRTSdkDir%lib\%UCRTVersion%\ucrt\x86" /LIBPATH:"%WindowsSdkDir%lib\%WindowsSDKLibVersion%\um\x86"
@@ -70,6 +73,8 @@
   #
   # GCC
   #
+  # MU_CHANGE: Allow GoogleTest to Test STATIC Functions
+  GCC:*_*_*_CC_FLAGS       = -D GOOGLETEST_HOST_UNIT_TEST_BUILD=1 
   GCC:*_*_IA32_DLINK_FLAGS == -o $(BIN_DIR)/$(MODULE_NAME_GUID) -m32 -no-pie
   GCC:*_*_X64_DLINK_FLAGS  == -o $(BIN_DIR)/$(MODULE_NAME_GUID) -m64 -no-pie
   #
@@ -88,6 +93,8 @@
   #
   # Need to do this link via gcc and not ld as the pathing to libraries changes from OS version to OS version
   #
+  # MU_CHANGE: Allow GoogleTest to Test STATIC Functions
+  XCODE:*_*_*_CC_FLAGS      = -D GOOGLETEST_HOST_UNIT_TEST_BUILD=1 
   XCODE:*_*_IA32_DLINK_PATH == gcc
   XCODE:*_*_IA32_CC_FLAGS = -I$(WORKSPACE)/EmulatorPkg/Unix/Host/X11IncludeHack
   XCODE:*_*_IA32_DLINK_FLAGS == -arch i386 -o $(BIN_DIR)/$(MODULE_NAME_GUID) -L/usr/X11R6/lib -lXext -lX11 -framework Carbon
