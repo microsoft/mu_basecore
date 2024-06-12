@@ -159,6 +159,9 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
 
         buildOutputBase = thebuilder.env.GetValue("BUILD_OUTPUT_BASE")
         workspace = thebuilder.env.GetValue("WORKSPACE")
+        # MU_CHANGE begin - regex string for exclude paths
+        regex_exclude = r"^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG"
+        # MU_CHANGE end - regex string for exclude paths
 
         # Generate base code coverage for all source files
         ret = RunCmd("lcov", f"--no-external --capture --initial --directory {buildOutputBase} --output-file {buildOutputBase}/cov-base.info --rc lcov_branch_coverage=1")
@@ -181,7 +184,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         # Filter out auto-generated and test code
         # MU_CHANGE begin - reformat coverage data
         file_out = thebuilder.env.GetValue("CI_PACKAGE_NAME", "") + "_coverage.xml"
-        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {buildOutputBase}/{file_out}")
+        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info --excludes {regex_exclude} -o {buildOutputBase}/{file_out}")
         # MU_CHANGE end - reformat coverage data
         if ret != 0:
             logging.error("UnitTest Coverage: Failed generate filtered coverage XML.")
@@ -201,7 +204,9 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         # Generate and XML file if requested.for all package
         if os.path.isfile(f"{workspace}/Build/coverage.xml"):
             os.remove(f"{workspace}/Build/coverage.xml")
-        ret = RunCmd("lcov_cobertura",f"{workspace}/Build/all-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {workspace}/Build/coverage.xml")
+        # MU_CHANGE begin - regex string for exclude paths
+        ret = RunCmd("lcov_cobertura",f"{workspace}/Build/all-coverage.info --excludes {regex_exclude} -o {workspace}/Build/coverage.xml")
+        # MU_CHANGE end - regex string for exclude paths
         if ret != 0:
             logging.error("UnitTest Coverage: Failed generate all coverage XML.")
             return 1
