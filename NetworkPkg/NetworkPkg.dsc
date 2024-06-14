@@ -62,6 +62,7 @@
   FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
   FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
   SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+  NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf # MU_CHANGE: /GS and -fstack-protector support
 
 [LibraryClasses.common.UEFI_DRIVER]
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
@@ -82,7 +83,7 @@
   #NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
   NULL|MdePkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf
   # MU_CHANGE [END]
-  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+  # NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf        # MU_CHANGE: Use Project Mu StackCheckLib
   # ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf # MU_CHANGE: Remove ArmPkg Dependencies
 
 [LibraryClasses.ARM]
