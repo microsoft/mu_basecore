@@ -105,6 +105,11 @@
   ##
   PrintLib|Include/Library/PrintLib.h
 
+## MU_CHANGE [BEGIN]
+  ##  @libraryclass  Provides a hook called when a stack cookie check fails.
+  StackCheckFailureHookLib|Include/Library/StackCheckFailureHookLib.h
+## MU_CHANGE [END]
+
   ##  @libraryclass  Provides an ordered collection data structure.
   OrderedCollectionLib|Include/Library/OrderedCollectionLib.h
 
