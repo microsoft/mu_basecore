@@ -74,6 +74,12 @@
   HwResetSystemLib|MdeModulePkg/Library/BaseResetSystemLibNull/BaseResetSystemLibNull.inf
 # MU_CHANGE [END] - Add HwResetSystemLib
 
+# MU_CHANGE [BEGIN] - /GS and -fstack-protector support
+# ASM only SEC files cannot link against this in MSVC as it tries to link the ModuleEntryPoint, which doesn't exist
+[LibraryClasses.common.PEIM, LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.DXE_SMM_DRIVER, LibraryClasses.common.MM_STANDALONE, LibraryClasses.common.UEFI_APPLICATION]
+  NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf
+# MU_CHANGE [END] - /GS and -fstack-protector support
+
 [LibraryClasses.common.SEC]
   PlatformSecLib|UefiCpuPkg/Library/PlatformSecLibNull/PlatformSecLibNull.inf
   CpuExceptionHandlerLib|UefiCpuPkg/Library/CpuExceptionHandlerLib/SecPeiCpuExceptionHandlerLib.inf
@@ -171,8 +177,16 @@
   UefiCpuPkg/Library/AmdSvsmLibNull/AmdSvsmLibNull.inf
   UefiCpuPkg/PiSmmCommunication/PiSmmCommunicationPei.inf
   UefiCpuPkg/PiSmmCommunication/PiSmmCommunicationSmm.inf
-  UefiCpuPkg/SecCore/SecCore.inf
-  UefiCpuPkg/SecCore/SecCoreNative.inf
+  # MU_CHANGE [BEGIN]: /GS and -fstack-protector support
+  UefiCpuPkg/SecCore/SecCore.inf {
+    <LibraryClasses>
+      NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf
+  }
+  UefiCpuPkg/SecCore/SecCoreNative.inf {
+    <LibraryClasses>
+      NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf
+  }
+  # MU_CHANGE [END]: /GS and -fstack-protector support
   UefiCpuPkg/SecMigrationPei/SecMigrationPei.inf
   UefiCpuPkg/PiSmmCpuDxeSmm/PiSmmCpuDxeSmm.inf
   UefiCpuPkg/PiSmmCpuDxeSmm/PiSmmCpuDxeSmm.inf {
