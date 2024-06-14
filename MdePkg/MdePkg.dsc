@@ -34,6 +34,7 @@
 
 [LibraryClasses]
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
+  NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf # MU_CHANGE: /GS and -fstack-protector support
 
 [Components]
   MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
@@ -139,6 +140,10 @@
   MdePkg/Library/JedecJep106Lib/JedecJep106Lib.inf
   MdePkg/Library/BaseFdtLib/BaseFdtLib.inf
   MdePkg/Library/BaseMmuLibNull/BaseMmuLibNull.inf      ## MU_CHANGE
+  MdePkg/Library/StackCheckLib/StackCheckLibStaticInit.inf      ## MU_CHANGE
+  MdePkg/Library/StackCheckLib/StackCheckLibDynamicInit.inf     ## MU_CHANGE
+  MdePkg/Library/StackCheckFailureHookLibNull/StackCheckFailureHookLibNull.inf  ## MU_CHANGE
+  MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf        ## MU_CHANGE
 
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
   #
