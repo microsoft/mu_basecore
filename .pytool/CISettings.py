@@ -58,6 +58,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                 "MdeModulePkg",
                 "NetworkPkg",
                 "PcAtChipsetPkg",
+                "PolicyServicePkg",
                 "ShellPkg",
                 "UefiCpuPkg",
                 "StandaloneMmPkg",
