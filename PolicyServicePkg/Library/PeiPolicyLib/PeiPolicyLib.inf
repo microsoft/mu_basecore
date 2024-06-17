@@ -1,0 +1,35 @@
+## @file
+#  PEI instance of verified policy library.
+#
+#  Copyright (c) Microsoft Corporation.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 1.26
+  BASE_NAME                      = PeiPolicyLib
+  MODULE_UNI_FILE                = PeiPolicyLib.uni
+  FILE_GUID                      = 62407A0E-707F-4E3D-B661-358FDEA7F252
+  MODULE_TYPE                    = PEIM
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = PolicyLib|PEIM PEI_CORE SEC
+
+[Sources]
+  ../PolicyLibCommon.c
+  ../PolicyLibCommon.h
+  PeiPolicy.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  PolicyServicePkg/PolicyServicePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+
+[Ppis]
+  gPeiPolicyPpiGuid                ## CONSUMES
+
+[Pcd]
