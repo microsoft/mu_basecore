@@ -12,7 +12,7 @@
   PLATFORM_VERSION        = 0.1
   DSC_SPECIFICATION       = 0x00010005
   OUTPUT_DIRECTORY        = Build/PolicyServicePkg/HostTest
-  SUPPORTED_ARCHITECTURES = IA32|X64|AARCH64
+  SUPPORTED_ARCHITECTURES = IA32|X64
   BUILD_TARGETS           = NOOPT
   SKUID_IDENTIFIER        = DEFAULT
 
@@ -25,3 +25,7 @@
   PolicyServicePkg/PolicyService/DxeMm/UnitTest/DxeMmPolicyUnitTest.inf
   PolicyServicePkg/PolicyService/Pei/UnitTest/PeiPolicyUnitTest.inf
 
+  #
+  # Build HOST_APPLICATION Libraries With GoogleTest
+  #
+  PolicyServicePkg/Test/Mock/Library/GoogleTest/MockPolicyLibCommon/MockPolicyLibCommon.inf

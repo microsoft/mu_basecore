@@ -1,0 +1,12 @@
+## @file UpdatePolicyHdr/UpdatePolicyHdr_plug_in.yaml
+# This plugin generates policy header files
+# from platform supplied YAML policies.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+{
+  "scope": "policydata",
+  "name": "Update Policy Data Headers",
+  "module": "UpdatePolicyHdr"
+}
