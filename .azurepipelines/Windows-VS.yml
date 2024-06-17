@@ -49,6 +49,10 @@ extends:
         Pkgs: 'PcAtChipsetPkg,ShellPkg,StandaloneMmPkg,BaseTools'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
+      TARGET_TEST_POLICY:
+        Pkgs: 'UnitTestFrameworkPkg,PolicyServicePkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
       TARGET_CRYPTO:
         Pkgs: 'CryptoPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
@@ -78,8 +82,8 @@ extends:
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
         SelfHostAgent: true
-      TARGET_TEST_ARM:
-        Pkgs: 'UnitTestFrameworkPkg'
+      TARGET_TEST_POLICY_ARM:
+        Pkgs: 'UnitTestFrameworkPkg,PolicyServicePkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
         SelfHostAgent: true
