@@ -1,0 +1,33 @@
+## @file
+# UnitTests for the DXE/MM policy service.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010006
+  BASE_NAME      = DxeMmPolicyUnitTest
+  FILE_GUID      = 5CC7D0F0-5B77-4C4C-84E8-95FEE089E342
+  MODULE_TYPE    = HOST_APPLICATION
+  VERSION_STRING = 1.0
+
+[Sources]
+  DxeMmPolicyUnitTest.c
+  ../PolicyCommon.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+  PolicyServicePkg/PolicyServicePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UnitTestLib
+  HobLib
+
+[Guids]
+  gPolicyHobGuid
+
+[Pcd]
