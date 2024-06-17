@@ -1,0 +1,37 @@
+## @file
+# UnitTests for the PEI policy service.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010006
+  BASE_NAME      = PeiPolicyUnitTest
+  FILE_GUID      = 96A4234C-7D6E-4321-A3AB-77FCEE7B972A
+  MODULE_TYPE    = HOST_APPLICATION
+  VERSION_STRING = 1.0
+
+[Sources]
+  PeiPolicyUnitTest.c
+  PeiPolicyUnitTestMocks.c
+  ../PolicyPei.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+  PolicyServicePkg/PolicyServicePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UnitTestLib
+
+[Guids]
+  gPolicyHobGuid
+  gPolicyCallbackHobGuid
+
+[Ppis]
+  gPeiPolicyPpiGuid
+
+[Pcd]
