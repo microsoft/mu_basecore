@@ -1,0 +1,43 @@
+## @file
+#
+#  Slim Bootloader CFGDATA Default File.
+#
+#  Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+# Template section for common structure definitions, template name has to end with `_TMPL`
+template:
+  - !include PolicyServicePkg/CommonPolicy/Template_PolicyHeader.yaml
+
+  # Template for minor version 0 of GFX structure, $(#) are replacable parameters through !expand syntax
+  GFX_POLICY_TMPL: >
+    - Power_State_Port_$(1)  :
+        name         : Power state of GFX port $(1)
+        length       : 0x02
+        value        : $(2)
+
+  # Template for minor version 1 of GFX structure, these should always be appended after
+  # all existed minor 0 structures, $(#) are replacable parameters through !expand syntax
+  GFX_POLICY_SUP1_TMPL: >
+    - Skip_Check_$(1)   :
+        name         : Flag to skip this controller or not
+        length       : 0x02
+        value        : $(2)
+        minver       : 0x01
+
+configs:
+  # Policy structure metadata, will be used for policy headers and genereating unique macro definitions
+  - PolicyHeader:
+    - !expand { POLICY_HEADER_TMPL : [GFX, 'PDATAGFX', 0x01, _LENGTH_GFX_POLICY_DATA_] }
+
+  # Main structure definitions for this policy
+  - GFX_POLICY_DATA :
+    # Structure filled with populated templates, minor version 0 first
+    - !expand { GFX_POLICY_TMPL : [ 0, 1] }
+    - !expand { GFX_POLICY_TMPL : [ 1, 1] }
+
+    # Structure filled with populated templates, minor version 1 second
+    - !expand { GFX_POLICY_SUP1_TMPL : [ 0, 0] }
+    - !expand { GFX_POLICY_SUP1_TMPL : [ 1, 0] }

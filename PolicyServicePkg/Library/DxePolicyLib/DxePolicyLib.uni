@@ -1,0 +1,14 @@
+// /** @file
+// DXE Instance of Policy Library
+//
+// Copyright (c) Microsoft Corporation
+//
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+// **/
+
+
+#string STR_MODULE_ABSTRACT             #language en-US "DXE Instance of Policy Library"
+
+#string STR_MODULE_DESCRIPTION          #language en-US "Accesses the policy service and validates policy data"
+

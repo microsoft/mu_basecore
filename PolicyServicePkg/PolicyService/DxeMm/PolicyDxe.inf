@@ -1,0 +1,46 @@
+## @file
+#
+#  This is a driver for DXE policy service module.
+#
+#  Copyright (C) Microsoft Corporation. All rights reserved.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  BASE_NAME                      = PolicyDxe
+  FILE_GUID                      = fa1bb8af-71f0-4e2e-ba78-0fb10f8367dd
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = DxePolicyEntry
+
+[Sources]
+  PolicyDxe.c
+  PolicyCommon.c
+  PolicyCommon.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  PolicyServicePkg/PolicyServicePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  UefiDriverEntryPoint
+  DebugLib
+  HobLib
+  UefiRuntimeServicesTableLib
+  MemoryAllocationLib
+  UefiLib
+
+[Pcd]
+
+[Guids]
+  gPolicyHobGuid
+
+[Protocols]
+  gPolicyProtocolGuid                 ## PRODUCES
+
+[Depex]
+  TRUE

@@ -1,0 +1,37 @@
+## @file
+#
+#  This is a sample PEIM for using the policy service.
+#
+#  Copyright (C) Microsoft Corporation. All rights reserved.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010017
+  BASE_NAME                      = PolicySamplePei
+  FILE_GUID                      = 8544E9C8-8D76-433F-9F2B-B2D511110769
+  MODULE_TYPE                    = PEIM
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = PeiPolicySampleEntry
+
+[Sources]
+  PolicySamplePei.c
+  SamplePolicy.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  PolicyServicePkg/PolicyServicePkg.dec
+
+[LibraryClasses]
+  PeimEntryPoint
+  DebugLib
+  PeiServicesLib
+  BaseLib
+
+[Ppis]
+  gPeiPolicyPpiGuid             ## CONSUMES
+
+[Depex]
+  gPeiPolicyPpiGuid
