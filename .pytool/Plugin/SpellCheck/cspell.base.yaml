@@ -28,6 +28,7 @@
         "muchange"
     ],
     "words": [
+        "MU_CHANGE",        # MU_CHANGE for MU_CHANGE
         "MTRRs",
         "Microarchitecture",
         "Goldmont",
@@ -179,6 +180,7 @@
         "ucrtd",
         "msvcrtd",
         "XIPFLAGS",
+        "markdownlint",
         "bootflow",
         "bootup",
         "cacheability",

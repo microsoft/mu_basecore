@@ -1,0 +1,216 @@
+## @file
+# Azure Pipeline to construct the final Nuget package for a binary release
+# of BaseTools.
+#
+# Copyright (C) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+resources:
+  repositories:
+    - repository: mu_devops
+      type: github
+      endpoint: microsoft
+      name: microsoft/mu_devops
+      ref: main
+
+name: BaseTools_Bin_$(release_version)_$(Rev:r)
+
+variables:
+  linux_build_output_path: '$(Build.Repository.LocalPath)/BaseTools/Source/C/bin'
+  linux_artifact_name: 'LinuxOutput'
+  windows_build_output_path: '$(Build.Repository.LocalPath)\BaseTools\Bin'
+  windows_artifact_name: 'WindowsOutput'
+  temp_publication_directory: 'PackageStaging'
+  package_artifact_name: 'NugetReleasePackage'
+  python_version: '3.10.x'
+  # Force at least one package so the basetools-build-steps template runs.
+  # TODO: Clean this up once all the templates land.
+  pkg_count: 1
+
+jobs:
+  - job: linux_build
+    # Use matrix to speed up the build process
+    strategy:
+      matrix:
+        TARGET_x64:
+          Build.Targets: 'X64'
+        TARGET_AArch64:
+          Build.Targets: 'AARCH64'
+
+    displayName: Linux Build
+    pool:
+      vmImage: ubuntu-20.04
+
+    workspace:
+      clean: all
+
+    steps:
+    - checkout: self
+      clean: true
+
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python_version)
+        architecture: 'x64'
+      displayName: Install correct Python
+
+    - script: pip install -r pip-requirements.txt --upgrade
+      displayName: 'Install/Upgrade pip modules'
+
+    - task: CmdLine@1
+      displayName: Fetch Submodules
+      inputs:
+        filename: stuart_setup
+        arguments: -c .pytool/CISettings.py
+
+    - task: CmdLine@1
+      displayName: Update Environment
+      inputs:
+        filename: stuart_update
+        arguments: -c .pytool/CISettings.py TOOL_CHAIN_TAG=GCC5 -a $(Build.Targets)
+
+    - template: Steps/BuildBaseTools.yml@mu_devops
+      parameters:
+        extra_parameters: '--skip_path_env -a $(Build.Targets)'
+        tool_chain_tag: 'GCC5'
+
+    - publish: $(linux_build_output_path)
+      artifact: $(linux_artifact_name)_$(Build.Targets)
+      displayName: Publish To Pipeline
+      condition: SucceededOrFailed()
+
+  - job: windows_build
+    # Use matrix to speed up the build process
+    strategy:
+      matrix:
+        TARGET_x86:
+          Build.Targets: 'IA32'
+          Build.TargetFolder: 'Win32'
+        TARGET_ARM:
+          Build.Targets: 'ARM'
+          Build.TargetFolder: 'Win32'
+        TARGET_AArch64:
+          Build.Targets: 'AARCH64'
+          Build.TargetFolder: 'Win64'
+
+    pool:
+      vmImage: windows-latest
+
+    workspace:
+      clean: all
+
+    steps:
+    - checkout: self
+      clean: true
+
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python_version)
+        addToPath: true
+        architecture: 'x64'
+      displayName: Install correct Python
+
+    - script: pip install -r pip-requirements.txt --upgrade
+      displayName: 'Install/Upgrade pip modules'
+
+    - task: CmdLine@1
+      displayName: Fetch Submodules
+      inputs:
+        filename: stuart_setup
+        arguments: -c .pytool/CISettings.py
+
+    - task: CmdLine@1
+      displayName: Update Environment
+      inputs:
+        filename: stuart_update
+        arguments: -c .pytool/CISettings.py
+
+    - template: Steps/BuildBaseTools.yml@mu_devops
+      parameters:
+        extra_parameters: '--skip_path_env -a $(Build.Targets)'
+        tool_chain_tag: 'VS2022'
+
+    - publish: '$(windows_build_output_path)\$(Build.TargetFolder)'
+      artifact: $(windows_artifact_name)_$(Build.Targets)
+      displayName: Publish To Pipeline
+      condition: SucceededOrFailed()
+
+  - job: assemble_package
+    displayName: Assemble Release Package
+    dependsOn:
+    - linux_build
+    - windows_build
+    pool:
+      vmImage: windows-latest
+
+    workspace:
+      clean: all
+
+    steps:
+    - checkout: none
+
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python_version)
+        addToPath: true
+        architecture: 'x64'
+      displayName: Install correct Python
+
+    - template: Steps/FetchGitHubFile.yml@mu_devops
+      parameters:
+        dest_file_path: $(Build.StagingDirectory)/pip-requirements.txt
+        display_name: Fetch Pip Requirements
+        github_repo: microsoft/mu_basecore
+        source_branch: $(Build.SourceBranch)
+        source_file_path: pip-requirements.txt
+
+    - script: pip install -r $(Build.StagingDirectory)/pip-requirements.txt --upgrade
+      displayName: 'Install/Upgrade Pip Modules'
+
+    - download: current
+      displayName: Grab Artifacts from Builds
+
+    - template: Steps/FetchGitHubFile.yml@mu_devops
+      parameters:
+        github_repo: microsoft/mu_basecore
+        source_branch: $(Build.SourceBranch)
+        source_file_path: BaseTools/NugetPublishing/Mu-Basetools.config.json
+        dest_file_path: $(Build.StagingDirectory)/NugetPackageConfig.json
+        display_name: Fetch Nuget Publishing Config
+
+    - template: Steps/FetchGitHubFile.yml@mu_devops
+      parameters:
+        github_repo: microsoft/mu_basecore
+        source_branch: $(Build.SourceBranch)
+        source_file_path: License.txt
+        dest_file_path: $(Build.StagingDirectory)/License.txt
+        display_name: Fetch BASECORE License
+
+    - powershell:
+        mkdir $(Build.StagingDirectory)/$(temp_publication_directory);
+        mv $(Pipeline.Workspace)/$(linux_artifact_name)_X64 $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-x86;
+        mv $(Pipeline.Workspace)/$(linux_artifact_name)_AARCH64 $(Build.StagingDirectory)/$(temp_publication_directory)/Linux-ARM-64;
+        mv $(Pipeline.Workspace)/$(windows_artifact_name)_IA32 $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-x86;
+        mv $(Pipeline.Workspace)/$(windows_artifact_name)_ARM $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-ARM;
+        mv $(Pipeline.Workspace)/$(windows_artifact_name)_AARCH64 $(Build.StagingDirectory)/$(temp_publication_directory)/Windows-ARM-64;
+      displayName: Stage Package Files
+
+    - powershell:
+        mkdir $(Build.StagingDirectory)/PackageOutput;
+        nuget-publish --Operation Pack --OutputLog $(Build.StagingDirectory)/NugetPackagingLog.txt --ConfigFilePath $(Build.StagingDirectory)/NugetPackageConfig.json --InputFolderPath $(Build.StagingDirectory)/$(temp_publication_directory) --Version $(release_version) --CustomLicensePath $(Build.StagingDirectory)/License.txt --OutputFolderPath $(Build.StagingDirectory)/PackageOutput;
+        Get-Content $(Build.StagingDirectory)/NugetPackagingLog.txt;
+      displayName: Nuget Packaging
+
+    - publish: $(Build.StagingDirectory)/PackageOutput
+      displayName: Save the Release Package for Publishing
+      artifact: $(package_artifact_name)
+
+    - task: NuGetAuthenticate@0
+      displayName: 'DevOps NuGet Authenticate'
+    - task: NuGetCommand@2
+      displayName: 'DevOps NuGet Push'
+      inputs:
+          command: 'push'
+          packagesToPush: "$(Build.StagingDirectory)/PackageOutput/**/*.nupkg"
+          publishVstsFeed: 'mu/BaseTools-Binary'

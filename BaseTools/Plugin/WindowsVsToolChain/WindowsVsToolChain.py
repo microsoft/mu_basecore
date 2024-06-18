@@ -66,8 +66,8 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 "x86": "x86", "x64": "AMD64", "arm": "not supported", "arm64": "not supported"}
 
             # check to see if full path already configured
-            if shell_environment.GetEnvironment().get_shell_var("VS2017_PREFIX") != None:
-                self.Logger.info("VS2017_PREFIX is already set.")
+            if shell_environment.GetEnvironment().get_shell_var("VS2017_PREFIX") is not None:
+                self.Logger.debug("VS2017_PREFIX is already set.")
 
             else:
                 install_path = self._get_vs_install_path(
@@ -109,7 +109,7 @@ class WindowsVsToolChain(IUefiBuildPlugin):
         # VS160INSTALLPATH:  base install path on system to VC install dir.  Here you will find the VC folder, etc
         # VS160TOOLVER:      version number for the VC compiler tools
         # VS2019_PREFIX:     path to MSVC compiler folder with trailing slash (can be used instead of two vars above)
-        # VS2017_HOST:       set the host architecture to use for host tools, and host libs, etc
+        # VS2019_HOST:       set the host architecture to use for host tools, and host libs, etc
         elif thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "VS2019":
 
             # check to see if host is configured
@@ -139,8 +139,8 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 "x86": "x86", "x64": "AMD64", "arm": "not supported", "arm64": "not supported"}
 
             # check to see if full path already configured
-            if shell_environment.GetEnvironment().get_shell_var("VS2019_PREFIX") != None:
-                self.Logger.info("VS2019_PREFIX is already set.")
+            if shell_environment.GetEnvironment().get_shell_var("VS2019_PREFIX") is not None:
+                self.Logger.debug("VS2019_PREFIX is already set.")
 
             else:
                 install_path = self._get_vs_install_path(
@@ -204,12 +204,19 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                         HostType = "x86"
                     elif HostInfo.bit == "64":
                         HostType = "x64"
+                # MU_CHANGE: Support Windows-ARM
+                elif HostInfo.arch == "ARM":
+                    if HostInfo.bit == "32":
+                        HostType = "arm"
+                    elif HostInfo.bit == "64":
+                        HostType = "arm64"
+                # MU_CHANGE
                 else:
                     raise NotImplementedError()
 
             # VS2022_HOST options are not exactly the same as QueryVcVariables. This translates.
             VC_HOST_ARCH_TRANSLATOR = {
-                "x86": "x86", "x64": "AMD64", "arm": "not supported", "arm64": "not supported"}
+                "x86": "x86", "x64": "AMD64", "arm": "x86_arm", "arm64": "amd64_arm64"} # MU_CHANGE: Support Windows-ARM
 
             # check to see if full path already configured
             if shell_environment.GetEnvironment().get_shell_var("VS2022_PREFIX") is not None:
@@ -339,12 +346,17 @@ class WindowsVsToolChain(IUefiBuildPlugin):
 
         if(path is None):
             # Not specified...find latest
-            (rc, path) = FindWithVsWhere(vs_version=vs_version)
-            if rc == 0 and path is not None and os.path.exists(path):
+            try:
+                path = FindWithVsWhere(vs_version=vs_version)
+            except (EnvironmentError, ValueError, RuntimeError) as e:
+                self.Logger.error(str(e))
+                return None
+
+            if path is not None and os.path.exists(path):
                 self.Logger.debug("Found VS instance for %s", vs_version)
             else:
                 self.Logger.error(
-                    "Failed to find VS instance with VsWhere (%d)" % rc)
+                    f"VsWhere successfully executed, but could not find VS instance for {vs_version}.")
         return path
 
     def _get_vc_version(self, path, varname):
