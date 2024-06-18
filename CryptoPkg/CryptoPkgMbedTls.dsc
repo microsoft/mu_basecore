@@ -80,8 +80,10 @@
   IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
 
-[LibraryClasses.ARM]
-  ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
+# MU_CHANGE [BEGIN]: Remove ArmSoftFloatLib from LibraryClasses.ARM due to ArmPkg removal
+# [LibraryClasses.ARM]
+#   ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
+# MU_CHANGE [END]: Remove ArmSoftFloatLib from LibraryClasses.ARM due to ArmPkg removal
 
 [LibraryClasses.common.PEIM]
   PcdLib|MdePkg/Library/PeiPcdLib/PeiPcdLib.inf
