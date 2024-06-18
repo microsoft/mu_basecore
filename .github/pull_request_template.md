@@ -1,22 +1,15 @@
-# Description
+## Description
 
 <_Include a description of the change and why this change was made._>
 
-<_For each item, place an "x" in between `[` and `]` if true. Example: `[x]` (you can also check items in GitHub UI)_>
+For details on how to complete these options and their meaning refer to [CONTRIBUTING.md](https://github.com/microsoft/mu/blob/HEAD/CONTRIBUTING.md).
 
-<_Create the PR as a Draft PR if it is only created to run CI checks._>
-
-<_Delete lines in \<\> tags before creating the PR._>
-
-- [ ] Breaking change?
-  - **Breaking change** - Does this PR cause a break in build or boot behavior?
-  - Examples: Does it add a new library class or move a module to a different repo.
+- [ ] Impacts functionality?
 - [ ] Impacts security?
-  - **Security** - Does this PR have a direct security impact?
-  - Examples: Crypto algorithm change or buffer overflow fix.
+- [ ] Breaking change?
 - [ ] Includes tests?
-  - **Tests** - Does this PR include any explicit test code?
-  - Examples: Unit tests or integration tests.
+- [ ] Includes documentation?
+- [ ] Backport to release branch?
 
 ## How This Was Tested
 
