@@ -93,7 +93,10 @@
   # [LibraryClasses.ARM] and NULL mean link this library into all ARM images.
   #
 !if $(TOOL_CHAIN_TAG) != VS2017 and $(TOOL_CHAIN_TAG) != VS2015 and $(TOOL_CHAIN_TAG) != VS2019
-  NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+  # MU_CHANGE [BEGIN]
+  # NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+  NULL|MdePkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf
+  # MU_CHANGE [END]
 !endif
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
 [LibraryClasses.ARM]
