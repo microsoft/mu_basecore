@@ -1,0 +1,19 @@
+## @file
+# CodeQL Result Filters for Packages in Mu Basecore
+#
+# Note:
+#   1. Packages that use Mu Basecore can reuse this file to quickly pick up the
+#      same filters applied to results in the Mu Basecore repo.
+#   2. It is recommended paths begin with `**/` in filter files residing in repos that
+#      are used as dependencies by other repos (e.g. MU_BASECORE). That way the filter
+#      will apply both in MU_BASECORE directly and regardless of where MU_BASECORE is
+#      located within a downstream repos directory hierarchy.
+#
+# Copyright (c) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+{
+  "Filters": [
+  ]
+}

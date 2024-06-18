@@ -1,0 +1,8 @@
+{
+    "name": "Mu-Basetools",
+    "author_string": "ProjectMu, TianoCore",
+    "server_url": "https://api.nuget.org/v3/index.json",
+    "project_url": "https://aka.ms/projectmu",
+    "description_string": "Edk2 Basetools compiled for Windows and Linux; packaged for Project Mu",
+    "copyright_string": "Copyright 2018 - 2019"
+}
