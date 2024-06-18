@@ -5,8 +5,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef MOCK_HASH2_H
-#define MOCK_HASH2_H
+#ifndef MOCK_HASH2_H_
+#define MOCK_HASH2_H_
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
@@ -64,4 +64,4 @@ extern "C" {
   extern EFI_HASH2_PROTOCOL  *gHash2Protocol;
 }
 
-#endif // MOCK_HASH2_H
+#endif // MOCK_HASH2_H_
