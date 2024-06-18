@@ -292,6 +292,8 @@
         "xformed",
         "XIPFLAGS",
         "xmlef",
-        "yesno"
+        "yesno",
+        "MU_CHANGE",        # MU_CHANGE for MU_CHANGE
+        "markdownlint",     # MU_CHANGE for markdownlint
     ]
 }

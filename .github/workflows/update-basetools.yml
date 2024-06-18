@@ -1,0 +1,203 @@
+name: Update BaseTools Binaries External Dependency
+
+on:
+  schedule:
+    # NOTE: If changing the schedule, CUTOFF_DATE in the `check` job must also be updated to match
+    - cron: '0 22 * * 6' # Every Saturday at 22:00 UTC
+  workflow_dispatch: # Manual trigger
+
+env:
+  REPO: ${{ github.repository }}
+
+jobs:
+  # This job pulls all releases made in the last 7 days (This job runs weekly), and finds the newest unique tag, which
+  # is then used to generate a matrix for the next job, responsible for updating the BaseTools binaries for each branch.
+  #
+  # By "unique tag", it is meant that the semver versioning scheme is ignored, and only the date prefix is used.
+  # e.g. for `v2025020000.0.2`, it is finding the newest unique `202502`.
+  check:
+    name: Find New Releases
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      releases: ${{ steps.releases.outputs.releases }}
+  
+    steps:
+      - name: Build PR Creation Matrix
+        id: releases
+        env:
+          REPO: ${{ env.REPO }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # We can use the normal token here, as we are just reading releases.
+        shell: bash
+        run: |
+          CUTOFF_DATE=$(date -u --date='7 days ago' +%Y-%m-%dT%H:%M:%SZ)
+          echo "Checking for releases since $CUTOFF_DATE..."
+ 
+          # This monster of a command grabs the latest 100 releases, removes any releases older than the cutoff date,
+          # calculates the unique key (The release date prefix), groups entries by that key, selects only the newest
+          # entry in each group, and then re-maps it to a single list of tag/branch pairs.
+          MAPPED_RELEASES=$(gh release list --repo "$REPO" --limit 100 --json tagName,publishedAt | \
+            jq -c --arg cutoff "$CUTOFF_DATE" '
+              [ .[] 
+              | select(.publishedAt >= $cutoff)
+              | {
+                  tag: .tagName,
+                  publishedAt: .publishedAt,
+                  key: (
+                      .tagName
+                      | capture("^v(?<release>\\d{6})")  # extract first 6 digits after 'v'
+                      | .release
+                  ),
+                  }
+              ] 
+              | group_by(.key) 
+              | map(max_by(.publishedAt))
+              | map({
+                  tagName: .tag,
+                  branchName: ("release/" + .key)
+              })
+            ')
+
+          echo "Latest releases found since $CUTOFF_DATE:"
+          echo "$MAPPED_RELEASES"
+          echo "releases=$MAPPED_RELEASES" >> $GITHUB_OUTPUT
+  
+  update:
+    name: "[${{ matrix.release.branchName }}] Update BaseTools Binary to ${{ matrix.release.tagName }}"
+
+    if: ${{ needs.check.outputs.releases != '[]' }}
+
+    needs: check
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+    
+    env:
+      ARTIFACT_BASE_URL: https://github.com/${{ github.repository }}/releases/download
+      BASETOOLS_PATH: BaseTools/Bin/basetoolsbin_ext_dep.yaml
+      TAG_NAME: ${{ matrix.release.tagName }}
+      BRANCH_NAME: ${{ matrix.release.branchName }}
+      PR_BRANCH_PREFIX: sync-basetools/${{ matrix.release.branchName }}
+      PR_BRANCH_NAME: sync-basetools/${{ matrix.release.branchName }}/${{ matrix.release.tagName }}
+
+    strategy:
+      matrix:
+        release: ${{ fromJson(needs.check.outputs.releases) }}
+      
+    steps:
+      # If testing on a local fork with less strict permissions, you can remove this step, and update token usage to
+      # use ${{ secrets.GITHUB_TOKEN }} instead of the app token. You must also add the permission `pull-requests: write`
+      # to this job.
+      - name: Generate Token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.MU_ACCESS_APP_ID }}
+          private-key: ${{ secrets.MU_ACCESS_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Check if PR already exists
+        id: pr-check
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_BRANCH_NAME: ${{ env.PR_BRANCH_NAME }}
+          REPO: ${{ env.REPO }}
+        run: |
+          echo "Checking if PR already exists for branch: $PR_BRANCH_NAME"
+          RESULT=$(gh pr list --repo "$REPO" --state open --head "$PR_BRANCH_NAME" --json number --jq '.[0].number')
+
+          if [[ -n "$RESULT" ]]; then
+            echo "PR already exists: Pr Number $RESULT."
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "No existing PR found."
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout Code
+        if: steps.pr-check.outputs.exists != 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH_NAME }}
+
+      - name: Install Dependencies
+        if: steps.pr-check.outputs.exists != 'true'
+        shell: bash
+        run: sudo apt install curl coreutils moreutils -y
+
+      - name: Calculate BaseTools SHA256
+        if: steps.pr-check.outputs.exists != 'true'
+        id: sha256
+        shell: bash
+        env:
+          SOURCE_URL: ${{ env.ARTIFACT_BASE_URL }}/${{ env.TAG_NAME }}/basetools-${{ env.TAG_NAME }}.tar.gz
+        run: |
+          SHA256=$(curl -sSL "$SOURCE_URL" | sha256sum | awk '{print $1}')
+          echo "sha256=${SHA256}" >> $GITHUB_OUTPUT
+
+      - name: Update BaseTools External Dependency File
+        if: steps.pr-check.outputs.exists != 'true'
+        env:
+          BASETOOLS_PATH: ${{ env.BASETOOLS_PATH }}
+          SOURCE_URL: ${{ env.ARTIFACT_BASE_URL }}/${{ env.TAG_NAME }}/basetools-${{ env.TAG_NAME }}.tar.gz
+          VERSION: ${{ env.TAG_NAME }}
+          SHA256: ${{ steps.sha256.outputs.sha256 }}
+        uses: mikefarah/yq@v4
+        with:
+          cmd: yq -i -P '.source = strenv(SOURCE_URL) | .version = strenv(VERSION) | .sha256 = strenv(SHA256)' ${BASETOOLS_PATH}
+        
+      - name: Commit and push changes
+        if: steps.pr-check.outputs.exists != 'true'
+        env:
+          BASETOOLS_PATH: ${{ env.BASETOOLS_PATH }}
+          TAG_NAME: ${{ env.TAG_NAME }}
+          PR_BRANCH_NAME: ${{ env.PR_BRANCH_NAME }}
+        shell: bash
+        run: |
+          git config user.name "uefibot"
+          git config user.email "uefibot@microsoft.com"
+          git add $BASETOOLS_PATH
+          git commit -m "Update BaseTools external dependency to $TAG_NAME" -m "" -m "Signed-off-by: Project Mu UEFI Bot <uefibot@microsoft.com>"
+          git push origin HEAD:refs/heads/$PR_BRANCH_NAME
+
+      - name: Create Pull Request
+        if: steps.pr-check.outputs.exists != 'true'
+        id: pr
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ env.REPO }}
+          HEAD: ${{ env.PR_BRANCH_NAME}}
+          BASE: ${{ env.BRANCH_NAME }}
+        run: |
+          gh pr create \
+            --repo "$REPO" \
+            --head "$HEAD" \
+            --base "$BASE" \
+            --title "[${{ env.BRANCH_NAME }}] Update BaseTools ext dep to ${{ env.TAG_NAME }}" \
+            --body "This PR updates the BaseTools external dependency to version ${{ env.TAG_NAME }}."
+          
+          PR_NUMBER=$(gh pr view "$HEAD" --repo "$REPO" --json number -q '.number')
+          echo "Pr Created: Pr Number $PR_NUMBER."
+          echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+
+      - name: Close Existing Pull Request
+        if: steps.pr-check.outputs.exists != 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_BRANCH_PREFIX: ${{ env.PR_BRANCH_PREFIX}}
+          KEEP_PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        run: |
+          OPEN_PRS=$(gh pr list --state open --json number,headRefName \
+            -q ".[] | select(.headRefName | startswith(\"${PR_BRANCH_PREFIX}\")) | .number")
+          
+          for PR in $OPEN_PRS; do
+            if [[ "$PR" != "$KEEP_PR_NUMBER" ]]; then
+              echo "Closing PR #$PR"
+              gh pr comment "$PR" --body "Closing in favor of #${KEEP_PR_NUMBER}."
+              gh pr close "$PR" --delete-branch
+            fi
+          done
