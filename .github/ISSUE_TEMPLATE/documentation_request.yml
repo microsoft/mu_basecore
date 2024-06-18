@@ -1,4 +1,10 @@
-# TianoCore edk2 GitHub Documentation Request Template
+# Project Mu GitHub Documentation Request Template
+#
+# NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
+#       instead of the file in this repo.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -7,38 +13,19 @@
 name: 📖 Documentation Request
 description: Request a documentation change
 title: "[Documentation]: <title>"
-labels: ["type:documentation-request", "state:needs-triage"]
+labels: ["type:documentation", "state:needs-triage"]
 
 body:
   - type: markdown
     attributes:
-      value: >
-        👋 Thanks for taking the time to help us improve our documentation!
-
-
-        This form is used to request documentation changes that should be contributed to the **edk2** repository.
-
-
-        For example, to improve API documentation in a library class header file or add a markdown file to sit
-        alongside the code implementation of a particularly complex feature or module.
-
-
-        - To file an issue for a TianoCore specification, refer to [these instructions](https://github.com/tianocore-docs/edk2-TemplateSpecification/wiki/TianoCore-Documents-GitBook-Overview)
-        and reference the specifications In the [TianoCore Docs organization](https://github.com/tianocore-docs).
-
-        - For UEFI specifications, refer to the [UEFI Forum](https://uefi.org/specifications) website.
-
-  - type: markdown
-    attributes:
       value: |
-        ---
+        👋 Thanks for taking the time to help us improve our documentation!
 
   - type: textarea
     id: request_description
     attributes:
       label: Request Description
-      description: |
-        A clear and concise description of what needs to change (*insert images or attachments if relevant*)
+      description: A clear and concise description of what needs to change.
     validations:
       required: true
 
@@ -65,15 +52,6 @@ body:
         - Maintainer feedback requested
     validations:
       required: true
-
-  - type: checkboxes
-    id: code_first
-    attributes:
-      label: Code first?
-      description: |
-        Is this part of a [code first](https://github.com/tianocore/tianocore.github.io/wiki/EDK-II-Code-First-Process) change?
-      options:
-        - label: "Yes"
 
   - type: textarea
     id: anything_else

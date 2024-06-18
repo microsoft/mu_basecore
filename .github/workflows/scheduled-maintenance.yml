@@ -1,5 +1,14 @@
 # This workflow performs scheduled maintenance tasks.
 #
+# NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
+#       instead of the file in this repo.
+#
+# NOTE: This file uses reusable workflows. Do not make changes to the file that should be made
+#       in the common/reusable workflows.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
+#
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -11,7 +20,6 @@ on:
     # * is a special character in YAML so you have to quote this string
     # Run every hour - https://crontab.guru/#0_*_*_*_*
     - cron:  '0 * * * *'
-  workflow_dispatch:
 
 jobs:
   repo_cleanup:
@@ -22,13 +30,17 @@ jobs:
       issues: write
 
     steps:
+      - name: Get Repository Info
+        run: echo "REPOSITORY_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
+
       - name: Prune Won't Fix Pull Requests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ env.REPOSITORY_NAME }}
         run: |
           gh api \
             -H "Accept: application/vnd.github+json" \
-            /repos/${GITHUB_REPOSITORY}/pulls | jq -r '.[]' | jq -rc '.html_url,.labels' | \
+            /repos/microsoft/${REPOSITORY}/pulls | jq -r '.[]' | jq -rc '.html_url,.labels' | \
           while read -r html_url ; do
             read -r labels
             if [[ $labels == *"state:wont-fix"* ]]; then
@@ -43,7 +55,7 @@ jobs:
         run: |
           gh api \
             -H "Accept: application/vnd.github+json" \
-            /repos/${GITHUB_REPOSITORY}/issues | jq -r '.[]' | jq -rc '.html_url,.labels' | \
+            /repos/microsoft/${REPOSITORY}/issues | jq -r '.[]' | jq -rc '.html_url,.labels' | \
           while read -r html_url ; do
             read -r labels
             if [[ $labels == *"state:wont-fix"* ]]; then

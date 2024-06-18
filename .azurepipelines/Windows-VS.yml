@@ -1,5 +1,5 @@
 ## @file
-# Azure Pipeline build file for a build using Ubuntu and GCC.
+# Azure Pipeline build file for a build using Windows and the latest Visual Studio toolchain supported.
 #
 # IMPORTANT: This file requires the local repo to contain a .azurepipelines/Matrix-Build-Job.yml file that
 #            performs the actual build steps for the configurations and packages supported by the repo.
@@ -15,8 +15,8 @@
 ##
 
 variables:
-- group: architectures-arm-64-x86-64
-- group: tool-chain-ubuntu-gcc
+- group: architectures-x86-64
+- group: tool-chain-windows-visual-studio-latest
 - group: coverage
 
 extends:
@@ -27,8 +27,7 @@ extends:
     do_non_ci_build: false
     do_non_ci_setup: true
     do_pr_eval: true
-    container_build: true
-    os_type: Linux
+    os_type: Windows_NT
     build_matrix:
       TARGET_MDE_CPU:
         Pkgs: 'MdePkg,UefiCpuPkg'
@@ -48,10 +47,6 @@ extends:
         ArchList: $(arch_list)
       TARGET_OTHER:
         Pkgs: 'PcAtChipsetPkg,ShellPkg,StandaloneMmPkg,BaseTools'
-        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-        ArchList: $(arch_list)
-      TARGET_TEST:
-        Pkgs: 'UnitTestFrameworkPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
       TARGET_CRYPTO:

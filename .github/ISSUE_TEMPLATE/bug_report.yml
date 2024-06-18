@@ -1,4 +1,10 @@
-# TianoCore edk2 GitHub Bug Report Template
+# Project Mu GitHub Bug Report Template
+#
+# NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
+#       instead of the file in this repo.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -18,85 +24,10 @@ body:
   - type: checkboxes
     attributes:
       label: Is there an existing issue for this?
-      description: |
-        Please search to see if an issue already exists for the bug you encountered.
-        &nbsp;&nbsp;[Seach existing issues](https://github.com/tianocore/edk2/issues)
+      description: Please search to see if an issue already exists for the bug you encountered.
       options:
       - label: I have searched existing issues
         required: true
-
-  - type: checkboxes
-    id: bug_type
-    attributes:
-      label: Bug Type
-      description: |
-        What type of code does this bug affect?
-      options:
-        - label: Firmware
-        - label: Tool
-        - label: Unit Test
-
-  - type: checkboxes
-    id: code_first
-    attributes:
-      label: Code first?
-      description: |
-        Is this part of a [code first](https://github.com/tianocore/tianocore.github.io/wiki/EDK-II-Code-First-Process) change?
-      options:
-        - label: "Yes"
-
-  - type: dropdown
-    id: packages_impacted
-    attributes:
-      label:  What packages are impacted?
-      description: |
-        *Select all that apply*
-      multiple: true
-      options:
-        - ArmPkg
-        - ArmPlatformPkg
-        - ArmVirtPkg
-        - BaseTools
-        - Build or CI Code
-        - CryptoPkg
-        - DynamicTablesPkg
-        - EmbeddedPkg
-        - EmulatorPkg
-        - FatPkg
-        - FmpDevicePkg
-        - IntelFsp2Pkg
-        - IntelFsp2WrapperPkg
-        - MdeModulePkg
-        - MdePkg
-        - NetworkPkg
-        - OvmfPkg
-        - PcAtChipsetPkg
-        - PrmPkg
-        - RedfishPkg
-        - SecurityPkg
-        - ShellPkg
-        - SignedCapsulePkg
-        - SourceLevelDebugPkg
-        - StandaloneMmPkg
-        - UefiCpuPkg
-        - UefiPayloadPkg
-        - UnitTestFrameworkPkg
-        - Other
-    validations:
-      required: true
-
-  - type: dropdown
-    id: targets_impacted
-    attributes:
-      label: Which targets are impacted by this bug?
-      description: |
-        *Select all that apply*
-      multiple: true
-      options:
-        - DEBUG
-        - NO-TARGET
-        - NOOPT
-        - RELEASE
 
   - type: textarea
     id: current_behavior
@@ -121,13 +52,11 @@ body:
       description: Steps to reproduce the behavior.
       placeholder: |
         <example>
-        1. In this environment (OS, toolchain, platform info, etc.)...
-        2. Acquire the source code using these commands...
-        3. Build the code using these commands...
-        4. Flash the image using these commands...
-        5. Boot using this process...
-        6. Change option(s)...
-        7. See error...
+        1. In this environment...
+        2. With this config...
+        3. Boot to '...'
+        4. Change option '...'
+        4. See error...
     validations:
       required: true
 
@@ -136,12 +65,14 @@ body:
     attributes:
       label: Build Environment
       description: |
-        Examples:
-          - **OS**: Ubuntu 24.04 or Windows 11...
+        examples:
+          - **OS**: Ubuntu 20.04 or Windows 11...
           - **Tool Chain**: GCC5 or VS2022 or CLANGPDB...
+          - **Targets Impacted**: RELEASE, DEBUG, NO-TARGET, NOOPT...
       value: |
           - OS(s):
           - Tool Chain(s):
+          - Targets Impacted:
       render: markdown
     validations:
       required: true
@@ -150,12 +81,7 @@ body:
     id: version_info
     attributes:
       label: Version Information
-      description: >
-        What version of this repo is known to reproduce the problem?
-
-
-        The problem is assumed to be present from this version and later. If an earlier version is not known other than
-        the latest commit, indicate that and put the current *edk2/master* commit SHA.
+      description: What version of this repo reproduces the problem?
       placeholder: |
         Commit: <SHA>
         -or-

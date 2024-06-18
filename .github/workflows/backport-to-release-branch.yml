@@ -1,0 +1,233 @@
+# This workflow moves marked commits from a development branch to a release branch.
+#
+# Each commit in the development branch is cherry-picked to the release branch if the commit originates from a merged
+# PR that is marked for backport.
+#
+# Merge conflicts should be rare. Should one occur, the changes are committed to a new branch with merge markers and
+# then a PR is created into the target branch with those markers. The PR is labeled with "type:release-merge-conflict"
+# to indicate that it needs manual resolution.
+#
+# The PR is expected to fail compilation and status checks (of course) due to the merge conflict markers. A human
+# should then checkout the PR branch, resolve the conflicts, and push the changes back to the PR branch.
+#
+# NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
+#       instead of the file in this repo.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: Backport Commits to Release Branch
+
+on:
+  push:
+    branches:
+      - dev/202405
+
+jobs:
+  backport:
+    name: Backport Dev Branch Commits to Release Branch
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.CHERRY_PICK_TOKEN }}
+
+    - name: Determine Contribution Info
+      id: backport_info
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const BOLD = "\u001b[1m";
+          const GREEN = "\u001b[32m";
+
+          const ref = process.env.GITHUB_REF;
+          const sourceBranchName = ref.replace('refs/heads/', '');
+          const targetBranchName = sourceBranchName.replace('dev', 'release');
+
+          const commits = context.payload.commits;
+          const commitCount = commits.length;
+
+          if (commits.length === 0) {
+            console.log(GREEN + "No commits found. Exiting workflow.");
+            core.setOutput('backport_needed', 'false');
+            process.exit(0);
+          }
+
+          console.log(`Source branch name is ${sourceBranchName}`);
+          console.log(`Target branch name is ${targetBranchName}\n`);
+
+          core.startGroup(`${commitCount} Commit(s) in this Contribution`);
+          commits.forEach((commit, index) => {
+            console.log(BOLD + `Commit #${index + 1}: ${commit.id}`);
+            console.log(`${commit.message}\n`);
+          });
+          core.endGroup();
+
+          core.setOutput('backport_needed', 'true');
+          core.setOutput('source_branch_name', sourceBranchName);
+          core.setOutput('target_branch_name', targetBranchName);
+          core.setOutput('first_commit_id', commits[0].id);
+          core.setOutput('commits', JSON.stringify(commits));
+          core.setOutput('commit_by_id', commits.map(commit => commit.id).join(' '));
+          core.setOutput('commit_messages', commits.map(commit => `${commit.message.split('\n')[0]}\n${commit.message.split('\n').slice(1).join('\n')}\n---`).join('\n'));
+          core.setOutput('commit_count', commitCount);
+
+    - name: Check if Backport is Requested
+      id: backport_check
+      uses: actions/github-script@v7
+      with:
+        script: |
+          if (${{ steps.backport_info.outputs.backport_needed }} === 'false') {
+            core.setOutput('backport_needed', 'false');
+            process.exit(0);
+          }
+
+          const BOLD = "\u001b[1m";
+          const GREEN = "\u001b[32m";
+          const MAGENTA = "\u001b[35m";
+
+          const response = await github.request("GET /repos/${{ github.repository }}/commits/${{ steps.backport_info.outputs.first_commit_id }}/pulls", {
+                  headers: {
+                    authorization: `token ${process.env.GITHUB_TOKEN}`
+                  }
+                });
+
+          const prNumber = response.data.length > 0 ? response.data[0].number : null;
+
+          console.log(`Associated Pull Request Number: ${prNumber}\n`);
+
+          if (!prNumber) {
+            console.log(GREEN + "No associated pull request found. Nothing to backport! Exiting.");
+            core.setOutput('backport_needed', 'false');
+            process.exit(0);
+          }
+
+          const { data: pull } = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: prNumber
+            });
+
+          core.startGroup(`${pull.labels.length} Label(s) in the PR`);
+          pull.labels.forEach((label, index) => {
+            console.log(BOLD + `Label #${index + 1}: \"${label.name}\"`);
+            });
+          core.endGroup();
+
+          const label = pull.labels.find(l => l.name === 'type:backport');
+          if (!label) {
+            console.log(GREEN + "Changes are not requested for backport. Exiting.");
+            core.setOutput('backport_needed', 'false');
+            process.exit(0);
+          }
+
+          console.log(MAGENTA + "The changes are requested for backport. Proceeding with backport.\n");
+
+          core.setOutput('pr_number', prNumber);
+          core.setOutput('backport_needed', 'true');
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Checkout a Local ${{ steps.backport_info.outputs.target_branch_name }} Branch (Destination Branch)
+      if: steps.backport_check.outputs.backport_needed == 'true'
+      run: |
+        git config --global user.email "mubot@microsoft.com"
+        git config --global user.name "Project Mu Bot"
+        git checkout -b ${{ steps.backport_info.outputs.target_branch_name }} origin/${{ steps.backport_info.outputs.target_branch_name }}
+
+    - name: Check for Merge Conflicts
+      if: steps.backport_check.outputs.backport_needed == 'true'
+      id: merge_conflicts
+      run: |
+        conflict=false
+
+        for commit in ${{ steps.backport_info.outputs.commit_by_id }}; do
+          echo -e "\nAttempting to cherry-pick commit $commit..."
+
+          set +e
+          cherry_pick_output=$( { git cherry-pick $commit; } 2>&1 )
+          set -e
+
+          if echo "$cherry_pick_output" | grep -q "The previous cherry-pick is now empty"; then
+            echo "Cherry-picking $commit resulted in an empty commit. Skipping it.";
+            git cherry-pick --skip;
+          elif echo "$cherry_pick_output" | grep -q "Merge conflict in"; then
+            echo "Merge conflict detected for commit $commit! Committing it with conflict markers.";
+            original_author=$(git log -1 --pretty=format:'%an <%ae>' $commit)
+            original_date=$(git log -1 --pretty=format:'%ad' --date=iso-strict $commit)
+            original_message=$(git log -1 --pretty=%B $commit)
+            git add -A
+            GIT_COMMITTER_DATE="$original_date" GIT_AUTHOR_DATE="$original_date" git commit --author="$original_author" -m "[CONFLICT] $original_message"
+            conflict=true;
+          else
+            echo "$commit was cherry-picked successfully.";
+          fi
+        done
+
+        echo "merge_conflict=$conflict" >> $GITHUB_ENV
+      continue-on-error: true
+
+    - name: Push to ${{ steps.backport_info.outputs.target_branch_name }} if No Conflicts
+      if: steps.backport_check.outputs.backport_needed == 'true' && env.merge_conflict == 'false'
+      run: |
+        git push origin ${{ steps.backport_info.outputs.target_branch_name }}:${{ steps.backport_info.outputs.target_branch_name }}
+
+    - name: Generate a Unique PR Branch Name (On Merge Conflict)
+      if: steps.backport_check.outputs.backport_needed == 'true' && env.merge_conflict == 'true'
+      id: merge_conflict_branch_info
+      run: |
+        TIMESTAMP=$(date +%Y%m%d%H%M%S)
+        branch_name="merge-conflict/${{ steps.backport_info.outputs.target_branch_name }}/$TIMESTAMP"
+
+        echo -e "\nMerge conflict branch name generated: $branch_name"
+
+        git branch -m $branch_name
+        git push origin refs/heads/$branch_name:refs/heads/$branch_name
+
+        echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
+
+    - name: Create Pull Request (On Merge Conflict)
+      if: steps.backport_check.outputs.backport_needed == 'true' && env.merge_conflict == 'true'
+      run: |
+        PR_BRANCH="${{ steps.merge_conflict_branch_info.outputs.branch_name }}"
+        BASE_BRANCH="${{ steps.backport_info.outputs.target_branch_name }}"
+        PR_TITLE="Manual Merge Conflict Resolution for ${{ steps.backport_info.outputs.commit_count }} Commits into ${{ steps.backport_info.outputs.target_branch_name }}"
+        PR_BODY="This pull request is created to resolve the merge conflict that occurred while backporting the commits
+        from ${{ steps.backport_info.outputs.source_branch_name }} to ${{ steps.backport_info.outputs.target_branch_name }}.
+
+        **Commits in this PR:**
+
+        ${{ steps.backport_info.outputs.commit_messages }}
+
+        **Instructions:**
+
+        1. Checkout this PR branch locally.
+        2. Verify all commits that are being backported are present in the branch.
+        3. Resolve the merge conflict markers in the files.
+        4. Commit the changes.
+        5. Push the changes back to this PR branch.
+
+        **Note:**
+
+        If it is too complicated to use this branch as-is, then simply attempt to merge the same set of commits into
+        the release branch locally, resolve the conflicts, and force push the changes to the PR branch."
+
+        echo "PR Title: $PR_TITLE"
+        echo "PR Body: $PR_BODY"
+        echo "PR Branch: $PR_BRANCH"
+        echo "Base Branch: $BASE_BRANCH"
+
+        curl -s -X POST https://api.github.com/repos/${{ github.repository }}/pulls \
+        -H "Authorization: token $CHERRY_PICK_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "{\"title\":\"$PR_TITLE\",\"body\":\"$PR_BODY\",\"head\":\"$PR_BRANCH\",\"base\":\"$BASE_BRANCH\",\"labels\":[\"type:release-merge-conflict\"]}"
+      env:
+        CHERRY_PICK_TOKEN: ${{ secrets.CHERRY_PICK_TOKEN }}
+

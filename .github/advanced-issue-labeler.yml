@@ -1,4 +1,13 @@
-# Defines the mappings between GitHub issue responses and labels applied to the issue.
+# Defines the mappings between GitHub issue responses and labels applied to the issue
+# for Project Mu repos.
+#
+# IMPORTANT: Only use labels defined in the .github/Labels.yml file in this repo.
+#
+# NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
+#       instead of the file in this repo.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -13,19 +22,12 @@ policy:
     - id: ['urgency']
       block-list: []
       label:
-        - name: 'priority:low'
+        - name: 'urgency:low'
           keys: ['Low']
-        - name: 'priority:medium'
+        - name: 'urgency:medium'
           keys: ['Medium']
-        - name: 'priority:high'
+        - name: 'urgency:high'
           keys: ['High']
-
-    # Issue Template - Code First
-    - id: ['code_first']
-      block-list: []
-      label:
-        - name: 'type:code-first'
-          keys: ['Yes']
 
     # Issue Template - Fix Owner Dropdown
     - id: ['fix_owner', 'request_owner']
@@ -50,66 +52,3 @@ policy:
       label:
         - name: 'state:needs-maintainer-feedback'
           keys: ['Maintainer feedback requested']
-
-    # Issue Template - Packages Impacted
-    - id: ['packages_impacted']
-      block-list: []
-      label:
-        - name: 'package:armpkg'
-          keys: ['ArmPkg']
-        - name: 'package:armplatformpkg'
-          keys: ['ArmPlatformPkg']
-        - name: 'package:armvirtpkg'
-          keys: ['ArmVirtPkg']
-        - name: 'package:basetools'
-          keys: ['BaseTools']
-        - name: 'package:build-or-ci-code'
-          keys: ['Build or CI Code']
-        - name: 'package:cryptopkg'
-          keys: ['CryptoPkg']
-        - name: 'package:dynamictablespkg'
-          keys: ['DynamicTablesPkg']
-        - name: 'package:embeddedpkg'
-          keys: ['EmbeddedPkg']
-        - name: 'package:emulatorpkg'
-          keys: ['EmulatorPkg']
-        - name: 'package:fatpkg'
-          keys: ['FatPkg']
-        - name: 'package:fmpdevicepkg'
-          keys: ['FmpDevicePkg']
-        - name: 'package:intelfsp2pkg'
-          keys: ['IntelFsp2Pkg']
-        - name: 'package:intelfsp2wrapperpkg'
-          keys: ['IntelFsp2WrapperPkg']
-        - name: 'package:mdemodulepkg'
-          keys: ['MdeModulePkg']
-        - name: 'package:mdepkg'
-          keys: ['MdePkg']
-        - name: 'package:networkpkg'
-          keys: ['NetworkPkg']
-        - name: 'package:ovmfpkg'
-          keys: ['OvmfPkg']
-        - name: 'package:pcatchipsetpkg'
-          keys: ['PcAtChipsetPkg']
-        - name: 'package:prmpkg'
-          keys: ['PrmPkg']
-        - name: 'package:redfishpkg'
-          keys: ['RedfishPkg']
-        - name: 'package:securitypkg'
-          keys: ['SecurityPkg']
-        - name: 'package:shellpkg'
-          keys: ['ShellPkg']
-        - name: 'package:signedcapsulepkg'
-          keys: ['SignedCapsulePkg']
-        - name: 'package:sourceleveldebugpkg'
-          keys: ['SourceLevelDebugPkg']
-        - name: 'package:standalonemmpkg'
-          keys: ['StandaloneMmPkg']
-        - name: 'package:ueficpupkg'
-          keys: ['UefiCpuPkg']
-        - name: 'package:uefipayloadpkg'
-          keys: ['UefiPayloadPkg']
-        - name: 'package:unittestframeworkpkg'
-          keys: ['UnitTestFrameworkPkg']
-        - name: 'package:other'
-          keys: ['Other']

@@ -10,27 +10,17 @@ import logging
 import sys
 from edk2toolext.environment import shell_environment
 from edk2toolext.invocables.edk2_ci_build import CiBuildSettingsManager
+from edk2toolext.invocables.edk2_parse import ParseSettingsManager
+from edk2toolext.invocables.edk2_pr_eval import PrEvalSettingsManager
 from edk2toolext.invocables.edk2_setup import SetupSettingsManager, RequiredSubmodule
 from edk2toolext.invocables.edk2_update import UpdateSettingsManager
-from edk2toolext.invocables.edk2_pr_eval import PrEvalSettingsManager
+
 from edk2toollib.utility_functions import GetHostInfo
 from pathlib import Path
 
+from edk2toolext import codeql as codeql_helpers
 
-try:
-    # Temporarily needed until edk2 can update to the latest edk2-pytools
-    # that has the CodeQL helpers.
-    #
-    # May not be present until submodules are populated.
-    #
-    root = Path(__file__).parent.parent.resolve()
-    sys.path.append(str(root/'BaseTools'/'Plugin'/'CodeQL'/'integration'))
-    import stuart_codeql as codeql_helpers
-except ImportError:
-    pass
-
-
-class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManager, PrEvalSettingsManager):
+class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManager, PrEvalSettingsManager, ParseSettingsManager):
 
     def __init__(self):
         self.ActualPackages = []
@@ -51,7 +41,6 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
 
     def RetrieveCommandLineOptions(self, args):
         super().RetrieveCommandLineOptions(args)
-
         try:
             self.codeql = codeql_helpers.is_codeql_enabled_on_command_line(args)
         except NameError:
@@ -65,7 +54,8 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         ''' return iterable of edk2 packages supported by this build.
         These should be edk2 workspace relative paths '''
 
-        return ("CryptoPkg",
+        return ("BaseTools",    # MU_CHANGE
+                "CryptoPkg",
                 "MdePkg",
                 "MdeModulePkg",
                 "NetworkPkg",
@@ -164,6 +154,11 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                         "STUART_CODEQL_AUDIT_ONLY",
                         "TRUE",
                         "Set in CISettings.py")
+                    shell_environment.GetBuildVars().SetValue(
+                        "STUART_CODEQL_FILTER_FILES",
+                        os.path.join(self.GetWorkspaceRoot(),
+                                     "CodeQlFilters.yml"),
+                        "Set in CISettings.py")
             except NameError:
                 pass
 
@@ -195,12 +190,10 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
             "MdePkg/Library/MipiSysTLib/mipisyst", False))
         rs.append(RequiredSubmodule(
             "CryptoPkg/Library/MbedTlsLib/mbedtls", False))
-        rs.append(RequiredSubmodule(
-            "SecurityPkg/DeviceSecurity/SpdmLib/libspdm", False))
         return rs
 
     def GetName(self):
-        return "Edk2"
+        return "Basecore" # MU_CHANGE
 
     def GetDependencies(self):
         return [
