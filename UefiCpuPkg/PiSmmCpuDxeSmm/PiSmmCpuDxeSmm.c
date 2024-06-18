@@ -584,7 +584,7 @@ GetSmBase (
 
   ASSERT (NumberOfProcessors == MaxNumberOfCpus);
   if (NumberOfProcessors != MaxNumberOfCpus) {
-    CpuDeadLoop ();
+    PANIC ("Incorrect number of processors!");  // MU_CHANGE
   }
 
   SmBaseHobs = AllocatePool (sizeof (SMM_BASE_HOB_DATA *) * HobCount);
@@ -1111,7 +1111,7 @@ PiCpuSmmEntry (
   if (TileSize > SIZE_8KB) {
     DEBUG ((DEBUG_ERROR, "The Range of Smbase in SMRAM is not enough -- Required TileSize = 0x%08x, Actual TileSize = 0x%08x\n", TileSize, SIZE_8KB));
     FreePool (gSmmCpuPrivate->ProcessorInfo);
-    CpuDeadLoop ();
+    PANIC ("TileSize larger than 8KB");  // MU_CHANGE
     return RETURN_BUFFER_TOO_SMALL;
   }
 
@@ -1123,7 +1123,7 @@ PiCpuSmmEntry (
   Status                 = GetSmBase (mMaxNumberOfCpus, &mCpuHotPlugData.SmBase);
   ASSERT (!EFI_ERROR (Status));
   if (EFI_ERROR (Status)) {
-    CpuDeadLoop ();
+    PANIC ("mCpuHotPlugData.SmBase is NULL");  // MU_CHANGE
   }
 
   //

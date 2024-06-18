@@ -56,6 +56,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/CpuPageTableLib.h>
 #include <Library/MmSaveStateLib.h>
 #include <Library/SmmCpuSyncLib.h>
+#include <Library/PanicLib.h> // MU_CHANGE
 
 #include <AcpiCpuData.h>
 #include <CpuHotPlugData.h>
