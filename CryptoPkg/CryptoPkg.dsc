@@ -122,7 +122,8 @@
   # [LibraryClasses.ARM, LibraryClasses.AARCH64] and NULL mean link this library
   # into all ARM and AARCH64 images.
   #
-  NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+  #NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+  NULL|MdePkg/Library/CompilerIntrinsicsLib/ArmCompilerIntrinsicsLib.inf
 
   # Add support for stack protector
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
