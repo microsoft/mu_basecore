@@ -1,0 +1,46 @@
+## @file
+# codecov upload configuration file to carryforward coverage results of
+# packages that do not upload coverage results for a given pull request.
+##
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+flags:
+  CryptoPkg:
+    carryforward: true
+  MdeModulePkg:
+    carryforward: true
+  MdePkg:
+    carryforward: true
+  NetworkPkg:
+    carryforward: true
+  PcAtChipsetPkg:
+    carryforward: true
+  PerformancePkg:
+    carryforward: true
+  ShellPkg:
+    carryforward: true
+  StandaloneMmPkg:
+    carryforward: true
+  UefiCpuPkg:
+    carryforward: true
+  UnitTestFrameworkPkg:
+    carryforward: true
+  PolicyServicePkg:
+    carryforward: true
+  ArmPkg:
+    carryforward: true
+  ArmPlatformPkg:
+    carryforward: true
+  DynamicTablesPkg:
+    carryforward: true
+  EmbeddedPkg:
+    carryforward: true
+  FatPkg:
+    carryforward: true
+  FmpDevicePkg:
+    carryforward: true
+  PrmPkg:
+    carryforward: true
+  SecurityPkg:
+    carryforward: true

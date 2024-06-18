@@ -181,6 +181,7 @@
           "modsi",
           "mpcore",
           "mpidr",
+          "mstrict",    # MU_CHANGE: Fix spell check error
           "muldi",
           "mullu",
           "nonshareable",
@@ -234,7 +235,29 @@
           "umodsi",
           "usada",
           "vlpis",
-          "writec"
+          "writec",
+          # MU_CHANGE [BEGIN]
+          "abi's",
+          "cachelevel",
+          "cachelines",
+          "civac",
+          "cntfrq",
+          "cntkctl",
+          "cntpct",
+          "cntvct",
+          "cntvoff",
+          "comms",
+          "cseteq",
+          "ctval",
+          "daifclr",
+          "daifset",
+          "iallu",
+          "igrpen",
+          "nshst",
+          "tpidr",
+          "vmalle",
+          "mschange"
+          # MU_CHANGE [END]
         ],                          # words to extend to the dictionary for this package
         "IgnoreStandardPaths": [    # Standard Plugin defined paths that
             "*.asm", "*.s"          # should be ignore

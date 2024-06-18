@@ -1,0 +1,38 @@
+# Specifies labels to apply to pull requests in Project Mu repositories based on regular expressions.
+#
+# NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
+#       instead of the file in this repo.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+# For more information, see:
+# https://github.com/srvaroa/labeler
+
+# Maintenance: Keep labels organized in ascending alphabetical order - easier to scan, identify duplicates, etc.
+version: 1
+issues: False
+
+labels:
+  - label: impact:breaking-change
+    type: "pull_request"
+    body: '\s*\[\s*(x|X){1}\s*\]\s*Breaking\s*change\?'
+
+  - label: type:documentation
+    type: "pull_request"
+    body: '\s*\[\s*(x|X){1}\s*\]\s*Includes\s*documentation\?'
+
+  - label: impact:non-functional
+    type: "pull_request"
+    body: '\s*\[\s*\]\s*Impacts\s*functionality\?'
+
+  - label: impact:security
+    type: "pull_request"
+    body: '\s*\[\s*(x|X){1}\s*\]\s*Impacts\s*security\?'
+
+  - label: impact:testing
+    type: "pull_request"
+    body: '\[\s*(x|X){1}\s*\]\s*Includes\s*tests\?'

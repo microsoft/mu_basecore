@@ -27,12 +27,17 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         ParserObj = argparse.ArgumentParser()
         ParserObj.add_argument("-t", "--tool_chain_tag", dest="tct", default="VS2026",
                                help="Set the toolchain used to compile the build tools")
+        # MU_CHANGE
+        ParserObj.add_argument("-s", "--skip_path_env", dest="skip_env", default=False, action='store_true',
+                               help="Skip the creation of the path_env descriptor file")
         ParserObj.add_argument("-a", "--target_arch", dest="arch", default=None, choices=[None, 'IA32', 'X64', 'AARCH64'],
                                help="Specify the architecture of the built base tools. Not specifying this will fall back to the default "
                                "behavior, for Windows builds, IA32 target will be built, for Linux builds, target arch will be the same as host arch.")
         args = ParserObj.parse_args()
         self.tool_chain_tag = args.tct
         self.target_arch = args.arch
+        # MU_CHANGE
+        self.skip_path_env = args.skip_env
 
     def GetWorkspaceRoot(self):
         ''' Return the workspace root for initializing the SDE '''
@@ -95,6 +100,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
 ##
 {
   "id": "You-Built-BaseTools",
+  "id_override": "edk-tools-bin", # MU_CHANGE
   "scope": "edk2-build",
   "flags": ["set_shell_var", "set_path"],
   "var_name": "EDK_TOOLS_BIN"
@@ -269,7 +275,18 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             # this script is BUILDING the base tools.
             shell_env.set_shell_var('HOST_ARCH', self.target_arch)
 
-            self.CleanBuildOutputs(shell_env, 'nmake.exe', 'cleanall')
+            self.OutputDir = os.path.join(
+                shell_env.get_shell_var("EDK_TOOLS_PATH"), "Bin", OutputDir)
+
+            # compiled tools need to be added to path because antlr is referenced
+            # MU_CHANGE: Added logic to support cross compilation scenarios
+            HostInfo = GetHostInfo()
+            if TargetInfoArch == HostInfo.arch:
+                # not cross compiling
+                shell_env.insert_path(self.OutputDir)
+            else:
+                # cross compiling
+                shell_env.insert_path(shell_env.get_shell_var("EDK_TOOLS_BIN"))
 
             # Actually build the tools.
             output_stream = edk2_logging.create_output_stream()
@@ -282,7 +299,9 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             if ret != 0:
                 raise Exception("Failed to build.")
 
-            self.WritePathEnvFile(self.OutputDir)
+            # MU_CHANGE
+            if not self.skip_path_env:
+                self.WritePathEnvFile(self.OutputDir)
             return ret
 
         elif self.tool_chain_tag.lower().startswith("gcc") or self.tool_chain_tag.lower().startswith("clang"):
@@ -356,6 +375,9 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
                 shell_environment.GetEnvironment().set_shell_var("CROSS_LIB_UUID_INC", os.path.join(unzip_dir, "libuuid", "src"))
 
             self.CleanBuildOutputs(shell_env, make_command, 'clean')
+            ret = RunCmd(make_command, "clean", workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
+            if ret != 0:
+                raise Exception("Failed to build.")
 
             cpu_count = self.GetCpuThreads()
 
@@ -371,7 +393,9 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             self.OutputDir = os.path.join(
                 shell_env.get_shell_var("EDK_TOOLS_PATH"), "Source", "C", "bin")
 
-            self.WritePathEnvFile(self.OutputDir)
+            # MU_CHANGE
+            if not self.skip_path_env:
+                self.WritePathEnvFile(self.OutputDir)
             return ret
 
         logging.critical("Tool Chain not supported")

@@ -1188,23 +1188,8 @@
         "xgetbv",
         "XIPFLAGS",
         "xmlef",
-        "xpress",
-        "xrstor",
-        "xrstors",
-        "xsave",
-        "xsavec",
-        "xsaveopt",
-        "xsaves",
-        "xsetbv",
-        "xstate",
-        "xtreme",
-        "xucode",
-        "yakov",
-        "yaxis",
         "yesno",
-        "zaxis",
-        "zentrum",
-        "zhongsihang",
-        "zicbom",
+        "MU_CHANGE",        # MU_CHANGE for MU_CHANGE
+        "markdownlint",     # MU_CHANGE for markdownlint
     ]
 }
