@@ -1,4 +1,4 @@
-# Project Mu GitHub Issue Configuration File
+# Specifies labels to apply to issues and pull requests based on file path patterns in Project Mu repositories.
 #
 # NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
 #       instead of the file in this repo.
@@ -9,8 +9,11 @@
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
+# For more information, see:
+# https://github.com/actions/labeler
 
-contact_links:
-  - name: 📃 Project Mu Documentation
-    url: https://microsoft.github.io/mu/
-    about: Goals, principles, repo layout, build instructions, and more.
+# Maintenance: Keep labels organized in ascending alphabetical order - easier to scan, identify duplicates, etc.
+
+'language:python':
+- changed-files:
+  - any-glob-to-any-file: '**/*.py'
