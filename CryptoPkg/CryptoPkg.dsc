@@ -115,8 +115,10 @@
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
-  ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
-  #
+  # MU_CHANGE [BEGIN]: Remove ArmLib (will be updated in future shared crypto changes)
+  # ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
+  # MU_CHANGE [END]: Remove ArmLib (will be updated in future shared crypto changes)
+
   # It is not possible to prevent the ARM compiler for generic intrinsic functions.
   # This library provides the instrinsic functions generate by a given compiler.
   # [LibraryClasses.ARM, LibraryClasses.AARCH64] and NULL mean link this library
@@ -128,8 +130,10 @@
   # Add support for stack protector
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
 
-[LibraryClasses.ARM]
-  ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
+# MU_CHANGE [BEGIN]: Remove ArmSoftFloatLib from LibraryClasses.ARM due to ArmPkg removal
+# [LibraryClasses.ARM]
+#   ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
+# MU_CHANGE [END]: Remove ArmSoftFloatLib from LibraryClasses.ARM due to ArmPkg removal
 
 [LibraryClasses.common.SEC]
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf

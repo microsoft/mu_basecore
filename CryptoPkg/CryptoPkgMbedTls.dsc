@@ -52,13 +52,15 @@
   SynchronizationLib|MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
+  # MU_CHANGE [BEGIN]: Remove ArmPkg lib (will be updated in potential future changes for mbedtls support)
   #
   # It is not possible to prevent the ARM compiler for generic intrinsic functions.
   # This library provides the instrinsic functions generate by a given compiler.
   # [LibraryClasses.ARM, LibraryClasses.AARCH64] and NULL mean link this library
   # into all ARM and AARCH64 images.
   #
-  NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+  # NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+  # MU_CHANGE [END]: Remove ArmPkg lib (will be updated in potential future changes for mbedtls support)
 
   # Add support for stack protector
   NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
@@ -91,8 +93,10 @@
   IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
 
-[LibraryClasses.ARM]
-  ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
+# MU_CHANGE [BEGIN]: Remove ArmSoftFloatLib from LibraryClasses.ARM due to ArmPkg removal
+# [LibraryClasses.ARM]
+#   ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
+# MU_CHANGE [END]: Remove ArmSoftFloatLib from LibraryClasses.ARM due to ArmPkg removal
 
 [LibraryClasses.common.PEIM]
   PcdLib|MdePkg/Library/PeiPcdLib/PeiPcdLib.inf
