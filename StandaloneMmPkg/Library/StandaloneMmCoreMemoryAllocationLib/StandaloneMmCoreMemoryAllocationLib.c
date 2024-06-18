@@ -15,9 +15,10 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
+#include <Library/MmServicesTableLib.h> // MU_CHANGE: Added for gMmst
 #include "StandaloneMmCoreMemoryAllocationServices.h"
 
-EFI_MM_SYSTEM_TABLE  *gMmst = NULL;
+// EFI_MM_SYSTEM_TABLE  *gMmst = NULL; // MU_CHANGE: Removed for gMmst
 
 /**
   Allocates one or more 4KB pages of a certain memory type.
