@@ -15,6 +15,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
+#include <Library/MmServicesTableLib.h> // MU_CHANGE: Added for gMmst
 #include "StandaloneMmCoreMemoryAllocationServices.h"
 
 static EFI_MM_SYSTEM_TABLE  *mMemoryAllocationMmst = NULL;

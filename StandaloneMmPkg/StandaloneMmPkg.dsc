@@ -94,10 +94,16 @@
   HobLib|StandaloneMmPkg/Library/StandaloneMmCoreHobLib/StandaloneMmCoreHobLib.inf
   # MU_CHANGE [BEGIN]: Remove ArmPkg Dependencies
   #ArmFfaLib|ArmPkg/Library/ArmFfaLib/ArmFfaStandaloneMmCoreLib.inf
+  # MU_CHANGE [END]: Remove ArmPkg Dependencies
 
-#[LibraryClasses.AARCH64.MM_CORE_STANDALONE, LibraryClasses.ARM.MM_CORE_STANDALONE]
+  # MU_CHANGE: Added core instance of MmServicesTableLib
+  MmServicesTableLib|StandaloneMmPkg/Library/StandaloneMmServicesTableLib/StandaloneMmServicesTableLibCore.inf
+
+[LibraryClasses.AARCH64.MM_CORE_STANDALONE, LibraryClasses.ARM.MM_CORE_STANDALONE]
+  # MU_CHANGE [BEGIN]: Remove ArmPkg Dependencies
   #ArmFfaLib|ArmPkg/Library/ArmFfaLib/ArmFfaStandaloneMmCoreLib.inf
   # MU_CHANGE [END]: Remove ArmPkg Dependencies
+
 
 [LibraryClasses.common.MM_STANDALONE]
   MemoryAllocationLib|StandaloneMmPkg/Library/StandaloneMmMemoryAllocationLib/StandaloneMmMemoryAllocationLib.inf
@@ -167,8 +173,11 @@
 # MU_CHANGE [BEGIN]
   StandaloneMmPkg/Library/StandaloneMmCoreEntryPointNull/StandaloneMmCoreEntryPointNull.inf
 
+# MU_CHANGE: Added core instance of MmServicesTableLib
+  StandaloneMmPkg/Library/StandaloneMmServicesTableLib/StandaloneMmServicesTableLibCore.inf
+
 [Components.X64]
-  StandaloneMmPkg/Library/StandaloneMmCoreEntryPoint/StandaloneMmCoreEntryPoint.inf
+  MdePkg/Library/StandaloneMmCoreEntryPoint/StandaloneMmCoreEntryPoint.inf
 # MU_CHANGE [END]
 
 [Components.AARCH64, Components.ARM]

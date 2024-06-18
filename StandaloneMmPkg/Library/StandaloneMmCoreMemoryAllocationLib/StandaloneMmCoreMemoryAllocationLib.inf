@@ -39,6 +39,8 @@
   BaseMemoryLib
   DebugLib
   HobLib
+  # MU_CHANGE: Added for gMmst
+  MmServicesTableLib
 
 [Guids]
   gEfiMmPeiMmramMemoryReserveGuid
