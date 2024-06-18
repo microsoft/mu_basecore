@@ -123,7 +123,9 @@
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
-  ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
+  # MU_CHANGE [BEGIN]: Remove ArmLib (will be updated in future shared crypto changes)
+  # ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
+  # MU_CHANGE [END]: Remove ArmLib (will be updated in future shared crypto changes)
 
 [LibraryClasses.common.SEC]
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf
