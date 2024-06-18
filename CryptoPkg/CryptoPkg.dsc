@@ -123,7 +123,9 @@
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
 
 [LibraryClasses.AARCH64]
-  ArmLib|MdePkg/Library/ArmLib/ArmBaseLib.inf
+  ## MU_CHANGE - Start - Keep ArmLib disabled for this CryptoPkg CI profile on AARCH64.
+  # ArmLib|MdePkg/Library/ArmLib/ArmBaseLib.inf
+  ## MU_CHANGE - End - Keep ArmLib disabled for this CryptoPkg CI profile on AARCH64.
 
 [LibraryClasses.common.SEC]
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf
