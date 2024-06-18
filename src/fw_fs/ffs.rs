@@ -23,19 +23,21 @@ use core::{
 use r_efi::efi;
 use uuid::Uuid;
 
-use crate::address_helper::align_up;
-use crate::fw_fs::{
-  ffs::{
-    attributes::raw as FfsRawAttribute,
-    file::{raw::r#type as FfsFileRawType, Header as FfsFileHeader, Type as FfsFileType},
-    section as FfsSection,
-    section::{header as FfsSectionHeader, raw_type as FfsSectionRawType},
+use crate::{
+  address_helper::align_up,
+  fw_fs::{
+    ffs::{
+      attributes::raw as FfsRawAttribute,
+      file::{raw::r#type as FfsFileRawType, Header as FfsFileHeader, Type as FfsFileType},
+      section as FfsSection,
+      section::{header as FfsSectionHeader, raw_type as FfsSectionRawType},
+    },
+    fv::{
+      file::{raw::attribute as FvRawAttribute, EfiFvFileAttributes},
+      FirmwareVolume, Header as FvHeader,
+    },
+    fvb::attributes::raw::fvb2 as Fvb2RawAttributes,
   },
-  fv::{
-    file::{raw::attribute as FvRawAttribute, EfiFvFileAttributes},
-    FirmwareVolume, Header as FvHeader,
-  },
-  fvb::attributes::raw::fvb2 as Fvb2RawAttributes,
 };
 
 #[derive(Copy, Clone)]

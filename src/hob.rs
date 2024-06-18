@@ -1090,7 +1090,10 @@ impl<'a> Iterator for HobIter<'a> {
 
 #[cfg(test)]
 mod tests {
-  use crate::{hob, hob::Hob, hob::HobList, hob::HobTrait};
+  use crate::{
+    hob,
+    hob::{Hob, HobList, HobTrait},
+  };
 
   use core::{
     ffi::c_void,
