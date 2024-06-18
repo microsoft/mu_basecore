@@ -12,9 +12,10 @@
 # https://www.python.org/dev/peps/pep-0440/#version-specifiers
 ##
 
-edk2-pytool-library==0.20.0
-edk2-pytool-extensions==0.26.4
-edk2-basetools==0.1.51
-antlr4-python3-runtime==4.7.1
+edk2-pytool-library~=0.21.6 # MU_CHANGE
+edk2-pytool-extensions~=0.27.5 # MU_CHANGE
+antlr4-python3-runtime==4.13.1
+regex
 lcov-cobertura==2.0.2
-regex==2023.12.25
+pygount==1.8.0 # MU_CHANGE
+toml==0.10.2 # MU_CHANGE

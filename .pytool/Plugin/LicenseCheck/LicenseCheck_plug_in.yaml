@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 {
-  "scope": "cibuild",
+  "scope": "cibuild-disabled", # MU_CHANGE Disable LicenseCheck until Git issues are resolved
   "name": "License Check Test",
   "module": "LicenseCheck"
 }
