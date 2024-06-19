@@ -1,0 +1,13 @@
+## @file FlattenPdbs_plug_in.py
+#
+# Build plugin used to flatten PDB files to a single directory.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+{
+  "scope": "global",
+  "name": "Flatten PDBs UEFI Build Plugin",
+  "module": "FlattenPdbs"
+}
