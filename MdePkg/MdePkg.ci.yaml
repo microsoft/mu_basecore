@@ -112,6 +112,10 @@
         "AcceptableDependencies-HOST_APPLICATION":[
             "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec"
         ],
+        # For UEFI shell based apps
+        "AcceptableDependencies-UEFI_APPLICATION":[
+            "UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec" # TCBZ3519 MU_CHANGE
+        ],
         "IgnoreInf": []
     },
 
@@ -220,7 +224,23 @@
             "toleremce",        # IpmiNetFnStorage.h
             "unownered",        # TcgPhysicalPresence.h
             "voilation",        # PciExpress*.h
-            "sslbi"             # Acpi*.h
+            "sslbi",            # Acpi*.h
+            # MU_CHANGE [BEGIN] - words added during edk2 rebase
+            "chacters",         # StubUefiLib.c (comment typo, backward compat)
+            "noify",            # StubUefiLib.c (comment typo, backward compat)
+            "xrstor",           # Cpuid.h, BaseLib.h (x86 instruction name)
+            "xrstors",          # Cpuid.h, Tdx.h (x86 instruction name)
+            "xsave",            # Cpuid.h, BaseLib.h (x86 instruction name)
+            "xsavec",           # Cpuid.h (x86 instruction name)
+            "xsaveopt",         # Cpuid.h (x86 instruction name)
+            "xsaves",           # Cpuid.h, Tdx.h (x86 instruction name)
+            "xsetbv",           # BaseLib.h, Tdx.h (x86 instruction name)
+            "xstate",           # StmApi.h (x86 XSAVE state)
+            "xucode",           # SkylakeMsr.h (microcode term)
+            "yaxis",            # AbsolutePointer.h (coordinate axis)
+            "zaxis",            # AbsolutePointer.h (coordinate axis)
+            "zicbom"            # RiscVCache.c (RISC-V ISA extension name)
+            # MU_CHANGE [END]
         ],
         "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
         "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)

@@ -121,6 +121,9 @@
             "uintn",
             "mgeneral", # build flag for AArch64 cmocka in the INF
             "mstrict",  # build flag for AArch64 cmocka in the INF
+            "pycobertura",  # tool for code coverage
+            "loongarch",
+            "loongson",
         ],
         "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
         "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)
