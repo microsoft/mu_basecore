@@ -42,3 +42,4 @@
   # Build HOST_APPLICATION Libraries for GoogleTests
   #
   UefiCpuPkg/Test/Mock/Library/GoogleTest/MockLocalApicLib/MockLocalApicLib.inf
+  UefiCpuPkg/Test/Mock/Library/GoogleTest/MockTimerLib/MockTimerLib.inf
