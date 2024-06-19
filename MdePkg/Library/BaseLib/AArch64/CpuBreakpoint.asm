@@ -28,7 +28,7 @@
 ;  );
 ;
 CpuBreakpoint
-    svc   0xdbdb    // Superviser exception. Takes 16bit arg -> Armv7 had 'swi' here.
+    brk   0xf000    ; MS_CHANGE: Change svc to brk for KdDxe support
     ret
 
   END
