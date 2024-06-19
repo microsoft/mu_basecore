@@ -74,9 +74,11 @@ class CompilerPlugin(ICiBuildPlugin):
         self._env.SetValue("ACTIVE_PLATFORM", AP_Path, "Set in Compiler Plugin")
 
         # Parse DSC to check for SUPPORTED_ARCHITECTURES
-        dp = DscParser()
-        dp.SetBaseAbsPath(Edk2pathObj.WorkspacePath)
-        dp.SetPackagePaths(Edk2pathObj.PackagePathList)
+        dp = DscParser().SetEdk2Path(Edk2pathObj)
+        # MU_CHANGE [BEGIN] - Enable CompilerPlugin to pass through BuildVars
+        build_target = self._env.GetValue("TARGET")
+        dp.SetInputVars(self._env.GetAllBuildKeyValues(build_target))
+        # MU_CHANGE [END]
         dp.ParseFile(AP_Path)
         if "SUPPORTED_ARCHITECTURES" in dp.LocalVars:
             SUPPORTED_ARCHITECTURES = dp.LocalVars["SUPPORTED_ARCHITECTURES"].split('|')
@@ -85,7 +87,7 @@ class CompilerPlugin(ICiBuildPlugin):
             # Skip if there is no intersection between SUPPORTED_ARCHITECTURES and TARGET_ARCHITECTURES
             if len(set(SUPPORTED_ARCHITECTURES) & set(TARGET_ARCHITECTURES)) == 0:
                 tc.SetSkipped()
-                tc.LogStdError("No supported architecutres to build")
+                tc.LogStdError("No supported architectures to build")
                 return -1
 
         uefiBuilder = UefiBuilder()
