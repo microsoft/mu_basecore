@@ -29,28 +29,25 @@ jobs:
             output_dir: "BaseTools\\Bin\\Win32"
             target: IA32
 
-          # Todo: Enable ARM builds
-          # - os: windows-2022
-          #   tool_chain: VS2022
-          #   output_dir: "BaseTools\\Bin\\Win32"
-          #   target: ARM
+          - os: windows-2022
+            tool_chain: VS2022
+            output_dir: "BaseTools\\Bin\\Win32"
+            target: ARM
 
-          # Todo: Enable AARCH64 builds
-          # - os: windows-2022
-          #   tool_chain: VS2022
-          #   output_dir: "BaseTools\\Bin\\Win64"
-          #   target: AARCH64
+          - os: windows-2022
+            tool_chain: VS2022
+            output_dir: "BaseTools\\Bin\\Win64"
+            target: AARCH64
 
           - os: ubuntu-20.04
             tool_chain: GCC5
             output_dir: "BaseTools/Source/C/bin"
             target: X64
 
-          # Todo: Enable AARCH64 builds
-          # - os: ubuntu-20.04
-          #   tool_chain: GCC5
-          #   output_dir: "BaseTools/Source/C/bin"
-          #   target: AARCH64
+          - os: ubuntu-20.04
+            tool_chain: GCC5
+            output_dir: "BaseTools/Source/C/bin"
+            target: AARCH64
 
     runs-on: ${{ matrix.os }}
 
