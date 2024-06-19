@@ -111,7 +111,11 @@
             "fexceptions",  # build flag for gtest
             "corthon",      # Contact GitHub account in Readme
             "mdkinney",     # Contact GitHub account in Readme
-            "spbrogan"      # Contact GitHub account in Readme
+            "spbrogan",     # Contact GitHub account in Readme
+            "cobertura",    # tool for code coverage
+            "pycobertura",  # tool for code coverage
+            "loongarch",
+            "loongson"
         ],
         "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
         "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)
