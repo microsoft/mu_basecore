@@ -5,8 +5,9 @@
 ;
 
 
-AREA IoLibMmio, CODE, READONLY
-
+; MU_CHANGE START
+; Moving AREA under EXPORT and indenting needed to compile with Visual Studio
+; Need to check if this breaks RVCT before contributing
 EXPORT MmioRead8Internal
 EXPORT MmioWrite8Internal
 EXPORT MmioRead16Internal
@@ -15,6 +16,9 @@ EXPORT MmioRead32Internal
 EXPORT MmioWrite32Internal
 EXPORT MmioRead64Internal
 EXPORT MmioWrite64Internal
+
+AREA IoLibMmio, CODE, READONLY
+; MU_CHANGE END
 
 ;
 ;  Reads an 8-bit MMIO register.

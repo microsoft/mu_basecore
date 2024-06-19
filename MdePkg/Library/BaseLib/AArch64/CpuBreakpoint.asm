@@ -27,7 +27,9 @@
 ;  );
 ;
 CpuBreakpoint
-    svc   0xdbdb    // supervisor exception. Takes 16bit arg -> Armv7 had 'swi' here.
+  ; MU_CHANGE - Start - Use debugger breakpoint instruction for AARCH64.
+  brk   0xf000
+  ; MU_CHANGE - End - Use debugger breakpoint instruction for AARCH64.
     ret
 
   END

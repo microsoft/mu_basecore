@@ -26,7 +26,10 @@ GCC_ASM_EXPORT(CpuBreakpoint)
 #  VOID
 #  );
 #
+# MS_CHANGE: Change svc to brk for KdDxe support
 ASM_PFX(CpuBreakpoint):
     AARCH64_BTI(c)
-    svc   0xdbdb    // supervisor exception. Takes 16bit arg -> Armv7 had 'swi' here.
+    # MU_CHANGE - Start - Use debugger breakpoint instruction for AARCH64.
+    brk   0xf000
+    # MU_CHANGE - End - Use debugger breakpoint instruction for AARCH64.
     ret
