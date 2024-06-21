@@ -23,7 +23,7 @@ pub use ffs::{
   },
   section::{
     header as FfsSectionHeader, raw_type as FfsSectionRawType, raw_type::encapsulated as FfsEncapsulatedSectionRawType,
-    EfiSectionType, Generic as FfsSectionGeneric, Type as FfsSectionType,
+    EfiSectionType, Type as FfsSectionType,
   },
   File as FfsFile, Section as FfsSection,
 };

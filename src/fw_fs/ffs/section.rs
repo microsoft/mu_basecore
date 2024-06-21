@@ -66,16 +66,24 @@ pub mod header {
   /// EFI_COMMON_SECTION_HEADER
   #[repr(C)]
   #[derive(Debug)]
-  pub struct Common {
+  pub struct CommonSectionHeaderStandard {
     pub size: [u8; 3],
     pub section_type: u8,
+  }
+
+  /// EFI_COMMON_SECTION_HEADER2
+  #[repr(C)]
+  #[derive(Debug)]
+  pub struct CommonSectionHeaderExtended {
+    pub size: [u8; 3],
+    pub section_type: u8,
+    pub extended_size: u32,
   }
 
   /// EFI_COMPRESSION_SECTION
   #[repr(C)]
   #[derive(Debug)]
   pub struct Compression {
-    pub common_header: Common,
     pub uncompressed_length: u32,
     pub compression_type: u8,
   }
@@ -84,123 +92,23 @@ pub mod header {
   #[repr(C)]
   #[derive(Debug)]
   pub struct GuidDefined {
-    pub common_header: Common,
     pub section_definition_guid: Guid,
     pub data_offset: u16,
     pub attributes: u16,
     // Guid-specific header fields.
   }
 
-  /// EFI_DISPOSABLE_SECTION
-  #[repr(C)]
-  #[derive(Debug)]
-  pub struct Disposable {
-    pub common_header: Common,
-  }
-
-  /// EFI_PE32_SECTION
-  #[repr(C)]
-  #[derive(Debug)]
-  pub struct Pe32 {
-    pub common_header: Common,
-  }
-
-  /// EFI_PIC_SECTION
-  #[repr(C)]
-  #[derive(Debug)]
-  pub struct Pic {
-    pub common_header: Common,
-  }
-
-  /// EFI_TE_SECTION
-  #[repr(C)]
-  #[derive(Debug)]
-  pub struct Te {
-    pub common_header: Common,
-  }
-
-  /// EFI_DXE_DEPEX_SECTION
-  #[repr(C)]
-  #[derive(Debug)]
-  pub struct DxeDepex {
-    pub common_header: Common,
-  }
-
   /// EFI_VERSION_SECTION
   #[repr(C)]
   #[derive(Debug)]
   pub struct Version {
-    pub common_header: Common,
     pub build_number: u16,
-  }
-
-  /// EFI_USER_INTERFACE_SECTION
-  #[repr(C)]
-  #[derive(Debug)]
-  pub struct UserInterface {
-    pub common_header: Common,
-  }
-
-  /// EFI_COMPATIBILITY16_SECTION
-  #[repr(C)]
-  #[derive(Debug)]
-  pub struct Compatibility16 {
-    pub common_header: Common,
-  }
-
-  /// EFI_FIRMWARE_VOLUME_IMAGE_SECTION
-  #[repr(C)]
-  #[derive(Debug)]
-  pub struct FirmwareVolumeImage {
-    pub common_header: Common,
   }
 
   /// EFI_FREEFORM_SUBTYPE_GUID_SECTION
   #[repr(C)]
   #[derive(Debug)]
   pub struct FreeformSubtypeGuid {
-    pub common_header: Common,
     pub sub_type_guid: Guid,
   }
-
-  /// EFI_RAW_SECTION
-  #[repr(C)]
-  #[derive(Debug)]
-  pub struct Raw {
-    pub common_header: Common,
-  }
-
-  /// EFI_PEI_DEPEX_SECTION
-  #[repr(C)]
-  #[derive(Debug)]
-  pub struct PeiDepex {
-    pub common_header: Common,
-  }
-
-  /// EFI_MM_DEPEX_SECTION
-  #[repr(C)]
-  #[derive(Debug)]
-  pub struct MmDepex {
-    pub common_header: Common,
-  }
-}
-
-#[derive(Debug, Copy, Clone)]
-pub enum Generic {
-  Compression(*const header::Compression),
-  GuidDefined(*const header::GuidDefined),
-  Disposable(*const header::Disposable),
-  Pe32(*const header::Pe32),
-  Pic(*const header::Pic),
-  Te(*const header::Te),
-  DxeDepex(*const header::DxeDepex),
-  Version(*const header::Version),
-  UserInterface(*const header::UserInterface),
-  Compatibility16(*const header::Compatibility16),
-  FirmwareVolumeImage(*const header::FirmwareVolumeImage),
-  FreeformSubtypeGuid(*const header::FreeformSubtypeGuid),
-  Raw(*const header::Raw),
-  PeiDepex(*const header::PeiDepex),
-  MmDepex(*const header::MmDepex),
-  Unknown(*const header::Common),
 }

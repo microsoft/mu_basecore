@@ -26,6 +26,7 @@
     "dxefv",
     "efiapi",
     "eficall",
+    "GIGANTOR",
     "indoc",
     "rustc",
     "rustfmt",
