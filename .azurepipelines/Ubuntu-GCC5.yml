@@ -54,12 +54,10 @@ extends:
         Pkgs: 'UnitTestFrameworkPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
-      # TEMP_CHANGE [BEGIN]: Disable CryptoPkg build until Shared Crypto changes are in place
-      # TARGET_CRYPTO:
-      #   Pkgs: 'CryptoPkg'
-      #   Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-      #   ArchList: $(arch_list)
-      # TEMP_CHANGE [END]: Disable CryptoPkg build until Shared Crypto changes are in place
+      TARGET_CRYPTO:
+        Pkgs: 'CryptoPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
       TARGET_MDE_CPU_ARM:
         Pkgs: 'MdePkg,UefiCpuPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
@@ -90,10 +88,8 @@ extends:
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
         SelfHostAgent: true
-      # TEMP_CHANGE [BEGIN]: Disable CryptoPkg build until Shared Crypto changes are in place
-      # TARGET_CRYPTO_ARM:
-      #   Pkgs: 'CryptoPkg'
-      #   Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-      #   ArchList: $(arch_list)
-      #   SelfHostAgent: true
-      # TEMP_CHANGE [END]: Disable CryptoPkg build until Shared Crypto changes are in place
+      TARGET_CRYPTO_ARM:
+        Pkgs: 'CryptoPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
+        SelfHostAgent: true
