@@ -267,6 +267,10 @@ TestVerifyRsaCertPkcs1SignVerify (
 
   TestStatus = UNIT_TEST_ERROR_TEST_FAILED;
 
+  if (!PcdGetBool (PcdCryptoServiceRsaGetPrivateKeyFromPem) || !PcdGetBool (PcdCryptoServiceRsaPkcs1Verify) || !PcdGetBool (PcdCryptoServiceRsaGetPublicKeyFromX509)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   //
   // Retrieve RSA private key from encrypted PEM data.
   //
@@ -377,6 +381,10 @@ TestVerifyPkcs7SignVerify (
   UINTN    P7SignedDataSize;
 
   // UINT8    *SignCert;  // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+
+  if (!PcdGetBool (PcdCryptoServicePkcs7Sign)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
 
   P7SignedData = NULL;
   // SignCert     = NULL; // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken

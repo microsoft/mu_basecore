@@ -2,7 +2,7 @@
   This is a unit test for RSA OAEP encrypt/decrypt.
 
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
-  Copyright (c) Microsoft Corporation. All rights reserved.
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
