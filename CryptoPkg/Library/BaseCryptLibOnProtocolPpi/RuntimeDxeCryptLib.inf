@@ -1,5 +1,5 @@
 ## @file
-# Implements the BaseCryptLib and TlsLib using the services of the EDK II Crypto
+# Implements the BaseCryptLib and TlsLib for Runtime DXE using the services of the EDK II Crypto
 # Protocol.
 #
 # Copyright (c) Microsoft Corporation.
@@ -11,14 +11,14 @@
 
 [Defines]
   INF_VERSION                    = 0x0001001B
-  BASE_NAME                      = DxeCryptLib
+  BASE_NAME                      = RuntimeDxeCryptLib
   MODULE_UNI_FILE                = CryptLib.uni
-  FILE_GUID                      = B38CBDA6-8017-4111-8232-9E8328DE82F6
+  FILE_GUID                      = C7B611C1-2E9A-4F71-BC41-B14E461B6F9C
   VERSION_STRING                 = 1.0
-  MODULE_TYPE                    = DXE_DRIVER
-  LIBRARY_CLASS                  = BaseCryptLib | DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION DXE_CORE
-  LIBRARY_CLASS                  = TlsLib       | DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION
-  CONSTRUCTOR                    = DxeCryptLibConstructor
+  MODULE_TYPE                    = DXE_RUNTIME_DRIVER
+  LIBRARY_CLASS                  = BaseCryptLib | DXE_RUNTIME_DRIVER
+  LIBRARY_CLASS                  = TlsLib       | DXE_RUNTIME_DRIVER
+  CONSTRUCTOR                    = RuntimeDxeCryptLibConstructor
 
 #
 # The following information is for reference only and not required by the build tools.
@@ -34,9 +34,13 @@
   BaseLib
   DebugLib
   UefiBootServicesTableLib
+  UefiRuntimeLib
+
+[Guids]
+  gEfiEventVirtualAddressChangeGuid
 
 [Sources]
-  DxeCryptLib.c
+  RuntimeDxeCryptLib.c
   CryptLib.c
 
 [Protocols]

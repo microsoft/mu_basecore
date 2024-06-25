@@ -1,17 +1,17 @@
 ## @file
-# Host-based UnitTest for BaseCryptLib
+# BaseCryptLib UnitTest built for execution in UEFI Shell.
 #
 # Copyright (c) Microsoft Corporation.<BR>
-# Copyright (c) 2022, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
 [Defines]
-  INF_VERSION    = 0x00010005
-  BASE_NAME      = BaseCryptLibUnitTestHost
-  FILE_GUID      = 0cb84598-824b-4833-b705-bdefdcbba1d5
-  MODULE_TYPE    = HOST_APPLICATION
+  INF_VERSION    = 0x00010006
+  BASE_NAME      = BaseCryptLibUnitTestApp
+  FILE_GUID      = ed54ee8c-ef7a-41f2-83d5-0e0d4cd88c21
+  MODULE_TYPE    = UEFI_APPLICATION
   VERSION_STRING = 1.0
+  ENTRY_POINT    = DxeEntryPoint
 
 #
 # The following information is for reference only and not required by the build tools.
@@ -36,7 +36,6 @@
   Pkcs7EkuTests.c
   OaepEncryptTests.c
   RsaPssTests.c
-  ParallelhashTests.c
   HkdfTests.c
   AeadAesGcmTests.c
   BnTests.c
@@ -48,13 +47,13 @@
   CryptoPkg/CryptoPkg.dec
 
 [LibraryClasses]
+  UefiApplicationEntryPoint
   BaseLib
   DebugLib
-  BaseCryptLib
   UnitTestLib
-  MmServicesTableLib
-  SynchronizationLib
-
+  PrintLib
+  BaseCryptLib
+  
 [FixedPcd]
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256New               ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Free              ## CONSUMES
@@ -64,7 +63,7 @@
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs5HashPassword           ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs1v2Encrypt              ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7Sign                   ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceVerifyEKUsInPkcs7Signature  ##CONSUMES
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceVerifyEKUsInPkcs7Signature  ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAuthenticodeVerify          ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceImageTimestampVerify        ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhNew                       ## CONSUMES
