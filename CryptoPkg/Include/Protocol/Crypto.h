@@ -1,106 +1,50 @@
 /** @file
-  Implements the BaseCryptLib and TlsLib using the services of the EDK II Crypto
-  Protocol/PPI.
+  This Protocol provides Crypto services to DXE modules
 
   Copyright (c) Microsoft Corporation.
-  Copyright (c) 2019 - 2020, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
+#ifndef __EDKII_CRYPTO_PROTOCOL_H__
+#define __EDKII_CRYPTO_PROTOCOL_H__
+
 #include <Base.h>
-#include <Library/BaseLib.h>
-#include <Library/DebugLib.h>
 #include <Library/BaseCryptLib.h>
-#include <Library/TlsLib.h>
-#include <Protocol/Crypto.h>
+#include <Library/PcdLib.h>
+
+///
+/// The version of the EDK II Crypto Protocol.
+/// As APIs are added to BaseCryptLib, the EDK II Crypto Protocol is extended
+/// with new APIs at the end of the EDK II Crypto Protocol structure.  Each time
+/// the EDK II Crypto Protocol is extended, this version define must be
+/// increased.
+///
+#define EDKII_CRYPTO_VERSION  18 // MU_CHANGE
+
+///
+/// EDK II Crypto Protocol forward declaration
+///
+typedef struct _EDKII_CRYPTO_PROTOCOL EDKII_CRYPTO_PROTOCOL;
 
 /**
-  A macro used to call a non-void service in an EDK II Crypto Protocol.
-  If the protocol is NULL or the service in the protocol is NULL, then a debug
-  message and assert is generated and an appropriate return value is returned.
+  Returns the version of the EDK II Crypto Protocol.
 
-  @param  Function          Name of the EDK II Crypto Protocol service to call.
-  @param  Args              The argument list to pass to Function.
-  @param  ErrorReturnValue  The value to return if the protocol is NULL or the
-                            service in the protocol is NULL.
+  @return  The version of the EDK II Crypto Protocol.
 
 **/
-#define CALL_CRYPTO_SERVICE(Function, Args, ErrorReturnValue)          \
-  do {                                                                 \
-    EDKII_CRYPTO_PROTOCOL  *CryptoServices;                            \
-                                                                       \
-    CryptoServices = (EDKII_CRYPTO_PROTOCOL *)GetCryptoServices ();    \
-    if (CryptoServices != NULL && CryptoServices->Function != NULL) {  \
-      return (CryptoServices->Function) Args;                          \
-    }                                                                  \
-    CryptoServiceNotAvailable (#Function);                             \
-    return ErrorReturnValue;                                           \
-  } while (FALSE);
-
-/**
-  A macro used to call a void service in an EDK II Crypto Protocol.
-  If the protocol is NULL or the service in the protocol is NULL, then a debug
-  message and assert is generated.
-
-  @param  Function          Name of the EDK II Crypto Protocol service to call.
-  @param  Args              The argument list to pass to Function.
-
-**/
-#define CALL_VOID_CRYPTO_SERVICE(Function, Args)                       \
-  do {                                                                 \
-    EDKII_CRYPTO_PROTOCOL  *CryptoServices;                            \
-                                                                       \
-    CryptoServices = (EDKII_CRYPTO_PROTOCOL *)GetCryptoServices ();    \
-    if (CryptoServices != NULL && CryptoServices->Function != NULL) {  \
-      (CryptoServices->Function) Args;                                 \
-      return;                                                          \
-    }                                                                  \
-    CryptoServiceNotAvailable (#Function);                             \
-    return;                                                            \
-  } while (FALSE);
-
-/**
-  Internal worker function that returns the pointer to an EDK II Crypto
-  Protocol/PPI.  The layout of the PPI, DXE Protocol, and SMM Protocol are
-  identical which allows the implementation of the BaseCryptLib functions that
-  call through a Protocol/PPI to be shared for the PEI, DXE, and SMM
-  implementations.
-**/
-VOID *
-GetCryptoServices (
+typedef
+UINTN
+(EFIAPI *EDKII_CRYPTO_GET_VERSION)(
   VOID
   );
-
-/**
-  Internal worker function that prints a debug message and asserts if a crypto
-  service is not available.  This should never occur because library instances
-  have a dependency expression for the for the EDK II Crypto Protocol/PPI so
-  a module that uses these library instances are not dispatched until the EDK II
-  Crypto Protocol/PPI is available.  The only case that this function handles is
-  if the EDK II Crypto Protocol/PPI installed is NULL or a function pointer in
-  the EDK II Protocol/PPI is NULL.
-
-  @param[in]  FunctionName  Null-terminated ASCII string that is the name of an
-                            EDK II Crypto service.
-
-**/
-static
-VOID
-CryptoServiceNotAvailable (
-  IN CONST CHAR8  *FunctionName
-  )
-{
-  DEBUG ((DEBUG_ERROR, "[%a] Function %a is not available\n", gEfiCallerBaseName, FunctionName));
-  ASSERT_EFI_ERROR (EFI_UNSUPPORTED);
-}
 
 // MU_CHANGE [BEGIN]
 // ****************************************************************************
 // AUTOGENERATED BY CryptoBinPkg\Driver\Packaging\generate_cryptodriver.py
-// AUTOGENED AS temp_CryptLib.c
+// AUTOGENED AS temp_Crypto.h
 // DO NOT MODIFY
-// GENERATED ON: 2024-04-08 11:12:11.608999
+// GENERATED ON: 2024-04-08 11:12:11.528450
 
 // =============================================================================
 //     HMACSHA256 functions
@@ -111,29 +55,23 @@ CryptoServiceNotAvailable (
   @return  Pointer to the HMAC_CTX context that has been initialized.
            If the allocations fails, HmacSha256New() returns NULL.
 **/
-// See BaseCryptLib.h:941
+// FROM BaseCryptLib.h:941
+typedef
 VOID *
-EFIAPI
-HmacSha256New (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA256_NEW)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (HmacSha256New, (), NULL);
-}
+  );
 
 /**
   Release the specified HMAC_CTX context.
   @param[in]  HmacSha256Ctx  Pointer to the HMAC_CTX context to be released.
 **/
-// See BaseCryptLib.h:953
+// FROM BaseCryptLib.h:953
+typedef
 VOID
-EFIAPI
-HmacSha256Free (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA256_FREE)(
   IN  VOID  *HmacSha256Ctx
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (HmacSha256Free, (HmacSha256Ctx));
-}
+  );
 
 /**
   Set user-supplied key for subsequent use. It must be done before any
@@ -147,17 +85,14 @@ HmacSha256Free (
   @retval FALSE  The Key is set unsuccessfully.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:975
+// FROM BaseCryptLib.h:975
+typedef
 BOOLEAN
-EFIAPI
-HmacSha256SetKey (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA256_SET_KEY)(
   OUT  VOID         *HmacSha256Context,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize
-  )
-{
-  CALL_CRYPTO_SERVICE (HmacSha256SetKey, (HmacSha256Context, Key, KeySize), FALSE);
-}
+  );
 
 /**
   Makes a copy of an existing HMAC-SHA256 context.
@@ -170,16 +105,13 @@ HmacSha256SetKey (
   @retval FALSE  HMAC-SHA256 context copy failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:998
+// FROM BaseCryptLib.h:998
+typedef
 BOOLEAN
-EFIAPI
-HmacSha256Duplicate (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA256_DUPLICATE)(
   IN   CONST VOID  *HmacSha256Context,
   OUT  VOID        *NewHmacSha256Context
-  )
-{
-  CALL_CRYPTO_SERVICE (HmacSha256Duplicate, (HmacSha256Context, NewHmacSha256Context), FALSE);
-}
+  );
 
 /**
   Digests the input data and updates HMAC-SHA256 context.
@@ -196,17 +128,14 @@ HmacSha256Duplicate (
   @retval FALSE  HMAC-SHA256 data digest failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1025
+// FROM BaseCryptLib.h:1025
+typedef
 BOOLEAN
-EFIAPI
-HmacSha256Update (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA256_UPDATE)(
   IN OUT  VOID        *HmacSha256Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (HmacSha256Update, (HmacSha256Context, Data, DataSize), FALSE);
-}
+  );
 
 /**
   Completes computation of the HMAC-SHA256 digest value.
@@ -225,16 +154,13 @@ HmacSha256Update (
   @retval FALSE  HMAC-SHA256 digest computation failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1055
+// FROM BaseCryptLib.h:1055
+typedef
 BOOLEAN
-EFIAPI
-HmacSha256Final (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA256_FINAL)(
   IN OUT  VOID   *HmacSha256Context,
   OUT     UINT8  *HmacValue
-  )
-{
-  CALL_CRYPTO_SERVICE (HmacSha256Final, (HmacSha256Context, HmacValue), FALSE);
-}
+  );
 
 /**
   Computes the HMAC-SHA256 digest of a input data buffer.
@@ -251,19 +177,16 @@ HmacSha256Final (
   @retval FALSE  HMAC-SHA256 digest computation failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1082
+// FROM BaseCryptLib.h:1082
+typedef
 BOOLEAN
-EFIAPI
-HmacSha256All (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA256_ALL)(
   IN   CONST VOID   *Data,
   IN   UINTN        DataSize,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   OUT  UINT8        *HmacValue
-  )
-{
-  CALL_CRYPTO_SERVICE (HmacSha256All, (Data, DataSize, Key, KeySize, HmacValue), FALSE);
-}
+  );
 
 // =============================================================================
 //     HMACSHA384 functions
@@ -274,29 +197,23 @@ HmacSha256All (
   @return  Pointer to the HMAC_CTX context that has been initialized.
            If the allocations fails, HmacSha384New() returns NULL.
 **/
-// See BaseCryptLib.h:1099
+// FROM BaseCryptLib.h:1099
+typedef
 VOID *
-EFIAPI
-HmacSha384New (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA384_NEW)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (HmacSha384New, (), NULL);
-}
+  );
 
 /**
   Release the specified HMAC_CTX context.
   @param[in]  HmacSha384Ctx  Pointer to the HMAC_CTX context to be released.
 **/
-// See BaseCryptLib.h:1111
+// FROM BaseCryptLib.h:1111
+typedef
 VOID
-EFIAPI
-HmacSha384Free (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA384_FREE)(
   IN  VOID  *HmacSha384Ctx
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (HmacSha384Free, (HmacSha384Ctx));
-}
+  );
 
 /**
   Set user-supplied key for subsequent use. It must be done before any
@@ -310,17 +227,14 @@ HmacSha384Free (
   @retval FALSE  The Key is set unsuccessfully.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1133
+// FROM BaseCryptLib.h:1133
+typedef
 BOOLEAN
-EFIAPI
-HmacSha384SetKey (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA384_SET_KEY)(
   OUT  VOID         *HmacSha384Context,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize
-  )
-{
-  CALL_CRYPTO_SERVICE (HmacSha384SetKey, (HmacSha384Context, Key, KeySize), FALSE);
-}
+  );
 
 /**
   Makes a copy of an existing HMAC-SHA384 context.
@@ -333,16 +247,13 @@ HmacSha384SetKey (
   @retval FALSE  HMAC-SHA384 context copy failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1156
+// FROM BaseCryptLib.h:1156
+typedef
 BOOLEAN
-EFIAPI
-HmacSha384Duplicate (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA384_DUPLICATE)(
   IN   CONST VOID  *HmacSha384Context,
   OUT  VOID        *NewHmacSha384Context
-  )
-{
-  CALL_CRYPTO_SERVICE (HmacSha384Duplicate, (HmacSha384Context, NewHmacSha384Context), FALSE);
-}
+  );
 
 /**
   Digests the input data and updates HMAC-SHA384 context.
@@ -359,17 +270,14 @@ HmacSha384Duplicate (
   @retval FALSE  HMAC-SHA384 data digest failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1183
+// FROM BaseCryptLib.h:1183
+typedef
 BOOLEAN
-EFIAPI
-HmacSha384Update (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA384_UPDATE)(
   IN OUT  VOID        *HmacSha384Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (HmacSha384Update, (HmacSha384Context, Data, DataSize), FALSE);
-}
+  );
 
 /**
   Completes computation of the HMAC-SHA384 digest value.
@@ -388,16 +296,13 @@ HmacSha384Update (
   @retval FALSE  HMAC-SHA384 digest computation failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1213
+// FROM BaseCryptLib.h:1213
+typedef
 BOOLEAN
-EFIAPI
-HmacSha384Final (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA384_FINAL)(
   IN OUT  VOID   *HmacSha384Context,
   OUT     UINT8  *HmacValue
-  )
-{
-  CALL_CRYPTO_SERVICE (HmacSha384Final, (HmacSha384Context, HmacValue), FALSE);
-}
+  );
 
 /**
   Computes the HMAC-SHA384 digest of a input data buffer.
@@ -414,19 +319,16 @@ HmacSha384Final (
   @retval FALSE  HMAC-SHA384 digest computation failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1240
+// FROM BaseCryptLib.h:1240
+typedef
 BOOLEAN
-EFIAPI
-HmacSha384All (
+(EFIAPI *EDKII_CRYPTO_HMAC_SHA384_ALL)(
   IN   CONST VOID   *Data,
   IN   UINTN        DataSize,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   OUT  UINT8        *HmacValue
-  )
-{
-  CALL_CRYPTO_SERVICE (HmacSha384All, (Data, DataSize, Key, KeySize, HmacValue), FALSE);
-}
+  );
 
 // =============================================================================
 //     PKCS functions
@@ -455,10 +357,10 @@ HmacSha384All (
   @retval  FALSE  The key derivation operation failed.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:2097
+// FROM BaseCryptLib.h:2097
+typedef
 BOOLEAN
-EFIAPI
-Pkcs5HashPassword (
+(EFIAPI *EDKII_CRYPTO_PKCS5_HASH_PASSWORD)(
   IN  UINTN        PasswordLength,
   IN  CONST CHAR8  *Password,
   IN  UINTN        SaltLength,
@@ -467,10 +369,7 @@ Pkcs5HashPassword (
   IN  UINTN        DigestSize,
   IN  UINTN        KeyLength,
   OUT UINT8        *OutKey
-  )
-{
-  CALL_CRYPTO_SERVICE (Pkcs5HashPassword, (PasswordLength, Password, SaltLength, Salt, IterationCount, DigestSize, KeyLength, OutKey), FALSE);
-}
+  );
 
 /**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
@@ -497,10 +396,10 @@ Pkcs5HashPassword (
   @retval     TRUE                Encryption was successful.
   @retval     FALSE               Encryption failed.
 **/
-// See BaseCryptLib.h:2139
+// FROM BaseCryptLib.h:2139
+typedef
 BOOLEAN
-EFIAPI
-Pkcs1v2Encrypt (
+(EFIAPI *EDKII_CRYPTO_PKCS1V2_ENCRYPT)(
   IN   CONST UINT8  *PublicKey,
   IN   UINTN        PublicKeySize,
   IN   UINT8        *InData,
@@ -509,10 +408,7 @@ Pkcs1v2Encrypt (
   IN   UINTN        PrngSeedSize   OPTIONAL,
   OUT  UINT8        **EncryptedData,
   OUT  UINTN        *EncryptedDataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (Pkcs1v2Encrypt, (PublicKey, PublicKeySize, InData, InDataSize, PrngSeed, PrngSeedSize, EncryptedData, EncryptedDataSize), FALSE);
-}
+  );
 
 /**
   Decrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
@@ -531,20 +427,17 @@ Pkcs1v2Encrypt (
   @retval     TRUE                Encryption was successful.
   @retval     FALSE               Encryption failed.
 **/
-// See BaseCryptLib.h:2219
+// FROM BaseCryptLib.h:2219
+typedef
 BOOLEAN
-EFIAPI
-Pkcs1v2Decrypt (
+(EFIAPI *EDKII_CRYPTO_PKCS1V2_DECRYPT)(
   IN   CONST UINT8  *PrivateKey,
   IN   UINTN        PrivateKeySize,
   IN   UINT8        *EncryptedData,
   IN   UINTN        EncryptedDataSize,
   OUT  UINT8        **OutData,
   OUT  UINTN        *OutDataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (Pkcs1v2Decrypt, (PrivateKey, PrivateKeySize, EncryptedData, EncryptedDataSize, OutData, OutDataSize), FALSE);
-}
+  );
 
 /**
   Get the signer's certificates from PKCS#7 signed data as described in "PKCS #7:
@@ -568,35 +461,29 @@ Pkcs1v2Decrypt (
   @retval  FALSE           Error occurs during the operation.
   @retval  FALSE           This interface is not supported.
 **/
-// See BaseCryptLib.h:2324
+// FROM BaseCryptLib.h:2324
+typedef
 BOOLEAN
-EFIAPI
-Pkcs7GetSigners (
+(EFIAPI *EDKII_CRYPTO_PKCS7_GET_SIGNERS)(
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length,
   OUT UINT8        **CertStack,
   OUT UINTN        *StackLength,
   OUT UINT8        **TrustedCert,
   OUT UINTN        *CertLength
-  )
-{
-  CALL_CRYPTO_SERVICE (Pkcs7GetSigners, (P7Data, P7Length, CertStack, StackLength, TrustedCert, CertLength), FALSE);
-}
+  );
 
 /**
   Wrap function to use free() to free allocated memory for certificates.
   If this interface is not supported, then ASSERT().
   @param[in]  Certs        Pointer to the certificates to be freed.
 **/
-// See BaseCryptLib.h:2343
+// FROM BaseCryptLib.h:2343
+typedef
 VOID
-EFIAPI
-Pkcs7FreeSigners (
+(EFIAPI *EDKII_CRYPTO_PKCS7_FREE_SIGNERS)(
   IN  UINT8  *Certs
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (Pkcs7FreeSigners, (Certs));
-}
+  );
 
 /**
   Retrieves all embedded certificates from PKCS#7 signed data as described in "PKCS #7:
@@ -617,20 +504,17 @@ Pkcs7FreeSigners (
   @retval  TRUE         The operation is finished successfully.
   @retval  FALSE        Error occurs during the operation.
 **/
-// See BaseCryptLib.h:2371
+// FROM BaseCryptLib.h:2371
+typedef
 BOOLEAN
-EFIAPI
-Pkcs7GetCertificatesList (
+(EFIAPI *EDKII_CRYPTO_PKCS7_GET_CERTIFICATES_LIST)(
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length,
   OUT UINT8        **SignerChainCerts,
   OUT UINTN        *ChainLength,
   OUT UINT8        **UnchainCerts,
   OUT UINTN        *UnchainLength
-  )
-{
-  CALL_CRYPTO_SERVICE (Pkcs7GetCertificatesList, (P7Data, P7Length, SignerChainCerts, ChainLength, UnchainCerts, UnchainLength), FALSE);
-}
+  );
 
 /**
   Creates a PKCS#7 signedData as described in "PKCS #7: Cryptographic Message
@@ -656,10 +540,10 @@ Pkcs7GetCertificatesList (
   @retval     FALSE            PKCS#7 data signing failed.
   @retval     FALSE            This interface is not supported.
 **/
-// See BaseCryptLib.h:2410
+// FROM BaseCryptLib.h:2410
+typedef
 BOOLEAN
-EFIAPI
-Pkcs7Sign (
+(EFIAPI *EDKII_CRYPTO_PKCS7_SIGN)(
   IN   CONST UINT8  *PrivateKey,
   IN   UINTN        PrivateKeySize,
   IN   CONST UINT8  *KeyPassword,
@@ -670,10 +554,7 @@ Pkcs7Sign (
   IN   UINT8        *OtherCerts      OPTIONAL,
   OUT  UINT8        **SignedData,
   OUT  UINTN        *SignedDataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (Pkcs7Sign, (PrivateKey, PrivateKeySize, KeyPassword, InData, InDataSize, SignCert, SignCertSize, OtherCerts, SignedData, SignedDataSize), FALSE);
-}
+  );
 
 /**
   Verifies the validity of a PKCS#7 signed data as described in "PKCS #7:
@@ -693,20 +574,17 @@ Pkcs7Sign (
   @retval  FALSE Invalid PKCS#7 signed data.
   @retval  FALSE This interface is not supported.
 **/
-// See BaseCryptLib.h:2449
+// FROM BaseCryptLib.h:2449
+typedef
 BOOLEAN
-EFIAPI
-Pkcs7Verify (
+(EFIAPI *EDKII_CRYPTO_PKCS7_VERIFY)(
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length,
   IN  CONST UINT8  *TrustedCert,
   IN  UINTN        CertLength,
   IN  CONST UINT8  *InData,
   IN  UINTN        DataLength
-  )
-{
-  CALL_CRYPTO_SERVICE (Pkcs7Verify, (P7Data, P7Length, TrustedCert, CertLength, InData, DataLength), FALSE);
-}
+  );
 
 /**
   This function receives a PKCS7 formatted signature, and then verifies that
@@ -736,19 +614,16 @@ Pkcs7Verify (
   @retval EFI_INVALID_PARAMETER    A parameter was invalid.
   @retval EFI_NOT_FOUND            One or more EKU's were not found in the signature.
 **/
-// See BaseCryptLib.h:2492
+// FROM BaseCryptLib.h:2492
+typedef
 RETURN_STATUS
-EFIAPI
-VerifyEKUsInPkcs7Signature (
+(EFIAPI *EDKII_CRYPTO_VERIFY_EKUS_IN_PKCS7_SIGNATURE)(
   IN  CONST UINT8   *Pkcs7Signature,
   IN  CONST UINT32  SignatureSize,
   IN  CONST CHAR8   *RequiredEKUs[],
   IN  CONST UINT32  RequiredEKUsSize,
   IN  BOOLEAN       RequireAllPresent
-  )
-{
-  CALL_CRYPTO_SERVICE (VerifyEKUsInPkcs7Signature, (Pkcs7Signature, SignatureSize, RequiredEKUs, RequiredEKUsSize, RequireAllPresent), 0);
-}
+  );
 
 /**
   Extracts the attached content from a PKCS#7 signed data if existed. The input signed
@@ -765,18 +640,15 @@ VerifyEKUsInPkcs7Signature (
   @retval     TRUE          The P7Data was correctly formatted for processing.
   @retval     FALSE         The P7Data was not correctly formatted for processing.
 **/
-// See BaseCryptLib.h:2522
+// FROM BaseCryptLib.h:2522
+typedef
 BOOLEAN
-EFIAPI
-Pkcs7GetAttachedContent (
+(EFIAPI *EDKII_CRYPTO_PKCS7_GET_ATTACHED_CONTENT)(
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length,
   OUT VOID         **Content,
   OUT UINTN        *ContentSize
-  )
-{
-  CALL_CRYPTO_SERVICE (Pkcs7GetAttachedContent, (P7Data, P7Length, Content, ContentSize), FALSE);
-}
+  );
 
 /**
   Verifies the validity of a PE/COFF Authenticode Signature as described in "Windows
@@ -798,20 +670,17 @@ Pkcs7GetAttachedContent (
   @retval  FALSE  Invalid Authenticode Signature.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:2555
+// FROM BaseCryptLib.h:2555
+typedef
 BOOLEAN
-EFIAPI
-AuthenticodeVerify (
+(EFIAPI *EDKII_CRYPTO_AUTHENTICODE_VERIFY)(
   IN  CONST UINT8  *AuthData,
   IN  UINTN        DataSize,
   IN  CONST UINT8  *TrustedCert,
   IN  UINTN        CertSize,
   IN  CONST UINT8  *ImageHash,
   IN  UINTN        HashSize
-  )
-{
-  CALL_CRYPTO_SERVICE (AuthenticodeVerify, (AuthData, DataSize, TrustedCert, CertSize, ImageHash, HashSize), FALSE);
-}
+  );
 
 /**
   Verifies the validity of a RFC3161 Timestamp CounterSignature embedded in PE/COFF Authenticode
@@ -829,19 +698,16 @@ AuthenticodeVerify (
   @retval  TRUE   The specified Authenticode includes a valid RFC3161 Timestamp CounterSignature.
   @retval  FALSE  No valid RFC3161 Timestamp CounterSignature in the specified Authenticode data.
 **/
-// See BaseCryptLib.h:2586
+// FROM BaseCryptLib.h:2586
+typedef
 BOOLEAN
-EFIAPI
-ImageTimestampVerify (
+(EFIAPI *EDKII_CRYPTO_IMAGE_TIMESTAMP_VERIFY)(
   IN  CONST UINT8  *AuthData,
   IN  UINTN        DataSize,
   IN  CONST UINT8  *TsaCert,
   IN  UINTN        CertSize,
   OUT EFI_TIME     *SigningTime
-  )
-{
-  CALL_CRYPTO_SERVICE (ImageTimestampVerify, (AuthData, DataSize, TsaCert, CertSize, SigningTime), FALSE);
-}
+  );
 
 // =============================================================================
 //     DH functions
@@ -853,30 +719,24 @@ ImageTimestampVerify (
            If the allocations fails, DhNew() returns NULL.
            If the interface is not supported, DhNew() returns NULL.
 **/
-// See BaseCryptLib.h:2982
+// FROM BaseCryptLib.h:2982
+typedef
 VOID *
-EFIAPI
-DhNew (
+(EFIAPI *EDKII_CRYPTO_DH_NEW)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (DhNew, (), NULL);
-}
+  );
 
 /**
   Release the specified DH context.
   If the interface is not supported, then ASSERT().
   @param[in]  DhContext  Pointer to the DH context to be released.
 **/
-// See BaseCryptLib.h:2996
+// FROM BaseCryptLib.h:2996
+typedef
 VOID
-EFIAPI
-DhFree (
+(EFIAPI *EDKII_CRYPTO_DH_FREE)(
   IN  VOID  *DhContext
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (DhFree, (DhContext));
-}
+  );
 
 /**
   Generates DH parameter.
@@ -896,18 +756,15 @@ DhFree (
   @retval FALSE  PRNG fails to generate random prime number with PrimeLength.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:3026
+// FROM BaseCryptLib.h:3026
+typedef
 BOOLEAN
-EFIAPI
-DhGenerateParameter (
+(EFIAPI *EDKII_CRYPTO_DH_GENERATE_PARAMETER)(
   IN OUT  VOID   *DhContext,
   IN      UINTN  Generator,
   IN      UINTN  PrimeLength,
   OUT     UINT8  *Prime
-  )
-{
-  CALL_CRYPTO_SERVICE (DhGenerateParameter, (DhContext, Generator, PrimeLength, Prime), FALSE);
-}
+  );
 
 /**
   Sets generator and prime parameters for DH.
@@ -927,18 +784,15 @@ DhGenerateParameter (
   @retval FALSE  Value of Prime is not a safe prime number.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:3058
+// FROM BaseCryptLib.h:3058
+typedef
 BOOLEAN
-EFIAPI
-DhSetParameter (
+(EFIAPI *EDKII_CRYPTO_DH_SET_PARAMETER)(
   IN OUT  VOID         *DhContext,
   IN      UINTN        Generator,
   IN      UINTN        PrimeLength,
   IN      CONST UINT8  *Prime
-  )
-{
-  CALL_CRYPTO_SERVICE (DhSetParameter, (DhContext, Generator, PrimeLength, Prime), FALSE);
-}
+  );
 
 /**
   Generates DH public key.
@@ -959,17 +813,14 @@ DhSetParameter (
   @retval FALSE  PublicKeySize is not large enough.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:3091
+// FROM BaseCryptLib.h:3091
+typedef
 BOOLEAN
-EFIAPI
-DhGenerateKey (
+(EFIAPI *EDKII_CRYPTO_DH_GENERATE_KEY)(
   IN OUT  VOID   *DhContext,
   OUT     UINT8  *PublicKey,
   IN OUT  UINTN  *PublicKeySize
-  )
-{
-  CALL_CRYPTO_SERVICE (DhGenerateKey, (DhContext, PublicKey, PublicKeySize), FALSE);
-}
+  );
 
 /**
   Computes exchanged common key.
@@ -992,19 +843,16 @@ DhGenerateKey (
   @retval FALSE  KeySize is not large enough.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:3125
+// FROM BaseCryptLib.h:3125
+typedef
 BOOLEAN
-EFIAPI
-DhComputeKey (
+(EFIAPI *EDKII_CRYPTO_DH_COMPUTE_KEY)(
   IN OUT  VOID         *DhContext,
   IN      CONST UINT8  *PeerPublicKey,
   IN      UINTN        PeerPublicKeySize,
   OUT     UINT8        *Key,
   IN OUT  UINTN        *KeySize
-  )
-{
-  CALL_CRYPTO_SERVICE (DhComputeKey, (DhContext, PeerPublicKey, PeerPublicKeySize, Key, KeySize), FALSE);
-}
+  );
 
 // =============================================================================
 //     RANDOM functions
@@ -1024,16 +872,13 @@ DhComputeKey (
   @retval FALSE  Pseudorandom number generator does not have enough entropy for random generation.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:3157
+// FROM BaseCryptLib.h:3157
+typedef
 BOOLEAN
-EFIAPI
-RandomSeed (
+(EFIAPI *EDKII_CRYPTO_RANDOM_SEED)(
   IN  CONST  UINT8  *Seed  OPTIONAL,
   IN  UINTN         SeedSize
-  )
-{
-  CALL_CRYPTO_SERVICE (RandomSeed, (Seed, SeedSize), FALSE);
-}
+  );
 
 /**
   Generates a pseudorandom byte stream of the specified size.
@@ -1045,16 +890,13 @@ RandomSeed (
   @retval FALSE  Pseudorandom number generator fails to generate due to lack of entropy.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:3178
+// FROM BaseCryptLib.h:3178
+typedef
 BOOLEAN
-EFIAPI
-RandomBytes (
+(EFIAPI *EDKII_CRYPTO_RANDOM_BYTES)(
   OUT  UINT8  *Output,
   IN   UINTN  Size
-  )
-{
-  CALL_CRYPTO_SERVICE (RandomBytes, (Output, Size), FALSE);
-}
+  );
 
 // =============================================================================
 //     RSA functions
@@ -1065,30 +907,24 @@ RandomBytes (
   @return  Pointer to the RSA context that has been initialized.
            If the allocations fails, RsaNew() returns NULL.
 **/
-// See BaseCryptLib.h:1475
+// FROM BaseCryptLib.h:1475
+typedef
 VOID *
-EFIAPI
-RsaNew (
+(EFIAPI *EDKII_CRYPTO_RSA_NEW)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaNew, (), NULL);
-}
+  );
 
 /**
   Release the specified RSA context.
   If RsaContext is NULL, then return FALSE.
   @param[in]  RsaContext  Pointer to the RSA context to be released.
 **/
-// See BaseCryptLib.h:1489
+// FROM BaseCryptLib.h:1489
+typedef
 VOID
-EFIAPI
-RsaFree (
+(EFIAPI *EDKII_CRYPTO_RSA_FREE)(
   IN  VOID  *RsaContext
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (RsaFree, (RsaContext));
-}
+  );
 
 /**
   Sets the tag-designated key component into the established RSA context.
@@ -1107,18 +943,15 @@ RsaFree (
   @retval  TRUE   RSA key component was set successfully.
   @retval  FALSE  Invalid RSA key component tag.
 **/
-// See BaseCryptLib.h:1517
+// FROM BaseCryptLib.h:1517
+typedef
 BOOLEAN
-EFIAPI
-RsaSetKey (
+(EFIAPI *EDKII_CRYPTO_RSA_SET_KEY)(
   IN OUT  VOID         *RsaContext,
   IN      RSA_KEY_TAG  KeyTag,
   IN      CONST UINT8  *BigNumber,
   IN      UINTN        BnSize
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaSetKey, (RsaContext, KeyTag, BigNumber, BnSize), FALSE);
-}
+  );
 
 /**
   Gets the tag-designated RSA key component from the established RSA context.
@@ -1143,18 +976,15 @@ RsaSetKey (
   @retval  FALSE  BnSize is too small.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1554
+// FROM BaseCryptLib.h:1554
+typedef
 BOOLEAN
-EFIAPI
-RsaGetKey (
+(EFIAPI *EDKII_CRYPTO_RSA_GET_KEY)(
   IN OUT  VOID         *RsaContext,
   IN      RSA_KEY_TAG  KeyTag,
   OUT     UINT8        *BigNumber,
   IN OUT  UINTN        *BnSize
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaGetKey, (RsaContext, KeyTag, BigNumber, BnSize), FALSE);
-}
+  );
 
 /**
   Generates RSA key components.
@@ -1173,18 +1003,15 @@ RsaGetKey (
   @retval  FALSE  Invalid RSA key component tag.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1586
+// FROM BaseCryptLib.h:1586
+typedef
 BOOLEAN
-EFIAPI
-RsaGenerateKey (
+(EFIAPI *EDKII_CRYPTO_RSA_GENERATE_KEY)(
   IN OUT  VOID         *RsaContext,
   IN      UINTN        ModulusLength,
   IN      CONST UINT8  *PublicExponent,
   IN      UINTN        PublicExponentSize
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaGenerateKey, (RsaContext, ModulusLength, PublicExponent, PublicExponentSize), FALSE);
-}
+  );
 
 /**
   Validates key components of RSA context.
@@ -1202,15 +1029,12 @@ RsaGenerateKey (
   @retval  FALSE  RSA key components are not valid.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1616
+// FROM BaseCryptLib.h:1616
+typedef
 BOOLEAN
-EFIAPI
-RsaCheckKey (
+(EFIAPI *EDKII_CRYPTO_RSA_CHECK_KEY)(
   IN  VOID  *RsaContext
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaCheckKey, (RsaContext), FALSE);
-}
+  );
 
 /**
   Carries out the RSA-SSA signature generation with EMSA-PKCS1-v1_5 encoding scheme.
@@ -1234,19 +1058,16 @@ RsaCheckKey (
   @retval  FALSE  SigSize is too small.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1649
+// FROM BaseCryptLib.h:1649
+typedef
 BOOLEAN
-EFIAPI
-RsaPkcs1Sign (
+(EFIAPI *EDKII_CRYPTO_RSA_PKCS1_SIGN)(
   IN      VOID         *RsaContext,
   IN      CONST UINT8  *MessageHash,
   IN      UINTN        HashSize,
   OUT     UINT8        *Signature,
   IN OUT  UINTN        *SigSize
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaPkcs1Sign, (RsaContext, MessageHash, HashSize, Signature, SigSize), FALSE);
-}
+  );
 
 /**
   Verifies the RSA-SSA signature with EMSA-PKCS1-v1_5 encoding scheme defined in
@@ -1263,19 +1084,16 @@ RsaPkcs1Sign (
   @retval  TRUE   Valid signature encoded in PKCS1-v1_5.
   @retval  FALSE  Invalid signature or invalid RSA context.
 **/
-// See BaseCryptLib.h:1678
+// FROM BaseCryptLib.h:1678
+typedef
 BOOLEAN
-EFIAPI
-RsaPkcs1Verify (
+(EFIAPI *EDKII_CRYPTO_RSA_PKCS1_VERIFY)(
   IN  VOID         *RsaContext,
   IN  CONST UINT8  *MessageHash,
   IN  UINTN        HashSize,
   IN  CONST UINT8  *Signature,
   IN  UINTN        SigSize
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaPkcs1Verify, (RsaContext, MessageHash, HashSize, Signature, SigSize), FALSE);
-}
+  );
 
 /**
   Carries out the RSA-SSA signature generation with EMSA-PSS encoding scheme.
@@ -1304,10 +1122,10 @@ RsaPkcs1Verify (
   @retval  FALSE  SigSize is too small.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1720
+// FROM BaseCryptLib.h:1720
+typedef
 BOOLEAN
-EFIAPI
-RsaPssSign (
+(EFIAPI *EDKII_CRYPTO_RSA_PSS_SIGN)(
   IN      VOID         *RsaContext,
   IN      CONST UINT8  *Message,
   IN      UINTN        MsgSize,
@@ -1315,10 +1133,7 @@ RsaPssSign (
   IN      UINT16       SaltLen,
   OUT     UINT8        *Signature,
   IN OUT  UINTN        *SigSize
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaPssSign, (RsaContext, Message, MsgSize, DigestLen, SaltLen, Signature, SigSize), FALSE);
-}
+  );
 
 /**
   Verifies the RSA signature with RSASSA-PSS signature scheme defined in RFC 8017.
@@ -1335,10 +1150,10 @@ RsaPssSign (
   @retval  TRUE   Valid signature encoded in RSASSA-PSS.
   @retval  FALSE  Invalid signature or invalid RSA context.
 **/
-// See BaseCryptLib.h:1750
+// FROM BaseCryptLib.h:1750
+typedef
 BOOLEAN
-EFIAPI
-RsaPssVerify (
+(EFIAPI *EDKII_CRYPTO_RSA_PSS_VERIFY)(
   IN  VOID         *RsaContext,
   IN  CONST UINT8  *Message,
   IN  UINTN        MsgSize,
@@ -1346,10 +1161,7 @@ RsaPssVerify (
   IN  UINTN        SigSize,
   IN  UINT16       DigestLen,
   IN  UINT16       SaltLen
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaPssVerify, (RsaContext, Message, MsgSize, Signature, SigSize, DigestLen, SaltLen), FALSE);
-}
+  );
 
 /**
   Retrieve the RSA Private Key from the password-protected PEM key data.
@@ -1366,18 +1178,15 @@ RsaPssVerify (
   @retval  FALSE  Invalid PEM key data or incorrect password.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1781
+// FROM BaseCryptLib.h:1781
+typedef
 BOOLEAN
-EFIAPI
-RsaGetPrivateKeyFromPem (
+(EFIAPI *EDKII_CRYPTO_RSA_GET_PRIVATE_KEY_FROM_PEM)(
   IN   CONST UINT8  *PemData,
   IN   UINTN        PemSize,
   IN   CONST CHAR8  *Password,
   OUT  VOID         **RsaContext
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaGetPrivateKeyFromPem, (PemData, PemSize, Password, RsaContext), FALSE);
-}
+  );
 
 /**
   Retrieve the RSA Public Key from one DER-encoded X509 certificate.
@@ -1393,17 +1202,14 @@ RsaGetPrivateKeyFromPem (
   @retval  FALSE  Fail to retrieve RSA public key from X509 certificate.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1808
+// FROM BaseCryptLib.h:1808
+typedef
 BOOLEAN
-EFIAPI
-RsaGetPublicKeyFromX509 (
+(EFIAPI *EDKII_CRYPTO_RSA_GET_PUBLIC_KEY_FROM_X509)(
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  VOID         **RsaContext
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaGetPublicKeyFromX509, (Cert, CertSize, RsaContext), FALSE);
-}
+  );
 
 /**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
@@ -1434,10 +1240,10 @@ RsaGetPublicKeyFromX509 (
   @retval     TRUE                Encryption was successful.
   @retval     FALSE               Encryption failed.
 **/
-// See BaseCryptLib.h:2185
+// FROM BaseCryptLib.h:2185
+typedef
 BOOLEAN
-EFIAPI
-RsaOaepEncrypt (
+(EFIAPI *EDKII_CRYPTO_RSA_OAEP_ENCRYPT)(
   IN   VOID         *RsaContext,
   IN   UINT8        *InData,
   IN   UINTN        InDataSize,
@@ -1446,10 +1252,7 @@ RsaOaepEncrypt (
   IN   UINT16       DigestLen   OPTIONAL,
   OUT  UINT8        **EncryptedData,
   OUT  UINTN        *EncryptedDataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaOaepEncrypt, (RsaContext, InData, InDataSize, PrngSeed, PrngSeedSize, DigestLen, EncryptedData, EncryptedDataSize), FALSE);
-}
+  );
 
 /**
   Decrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
@@ -1474,20 +1277,17 @@ RsaOaepEncrypt (
   @retval     TRUE                Encryption was successful.
   @retval     FALSE               Encryption failed.
 **/
-// See BaseCryptLib.h:2257
+// FROM BaseCryptLib.h:2257
+typedef
 BOOLEAN
-EFIAPI
-RsaOaepDecrypt (
+(EFIAPI *EDKII_CRYPTO_RSA_OAEP_DECRYPT)(
   IN   VOID    *RsaContext,
   IN   UINT8   *EncryptedData,
   IN   UINTN   EncryptedDataSize,
   IN   UINT16  DigestLen   OPTIONAL,
   OUT  UINT8   **OutData,
   OUT  UINTN   *OutDataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (RsaOaepDecrypt, (RsaContext, EncryptedData, EncryptedDataSize, DigestLen, OutData, OutDataSize), FALSE);
-}
+  );
 
 // =============================================================================
 //     SHA1 functions
@@ -1499,15 +1299,12 @@ RsaOaepDecrypt (
   @return  The size, in bytes, of the context buffer required for SHA-1 hash operations.
   @retval  0   This interface is not supported.
 **/
-// See BaseCryptLib.h:244
+// FROM BaseCryptLib.h:244
+typedef
 UINTN
-EFIAPI
-Sha1GetContextSize (
+(EFIAPI *EDKII_CRYPTO_SHA1_GET_CONTEXT_SIZE)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha1GetContextSize, (), 0);
-}
+  );
 
 /**
   Initializes user-supplied memory pointed by Sha1Context as SHA-1 hash context for
@@ -1519,15 +1316,12 @@ Sha1GetContextSize (
   @retval FALSE  SHA-1 context initialization failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:264
+// FROM BaseCryptLib.h:264
+typedef
 BOOLEAN
-EFIAPI
-Sha1Init (
+(EFIAPI *EDKII_CRYPTO_SHA1_INIT)(
   OUT  VOID  *Sha1Context
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha1Init, (Sha1Context), FALSE);
-}
+  );
 
 /**
   Makes a copy of an existing SHA-1 context.
@@ -1540,16 +1334,13 @@ Sha1Init (
   @retval FALSE  SHA-1 context copy failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:285
+// FROM BaseCryptLib.h:285
+typedef
 BOOLEAN
-EFIAPI
-Sha1Duplicate (
+(EFIAPI *EDKII_CRYPTO_SHA1_DUPLICATE)(
   IN   CONST VOID  *Sha1Context,
   OUT  VOID        *NewSha1Context
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha1Duplicate, (Sha1Context, NewSha1Context), FALSE);
-}
+  );
 
 /**
   Digests the input data and updates SHA-1 context.
@@ -1566,17 +1357,14 @@ Sha1Duplicate (
   @retval FALSE  SHA-1 data digest failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:312
+// FROM BaseCryptLib.h:312
+typedef
 BOOLEAN
-EFIAPI
-Sha1Update (
+(EFIAPI *EDKII_CRYPTO_SHA1_UPDATE)(
   IN OUT  VOID        *Sha1Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha1Update, (Sha1Context, Data, DataSize), FALSE);
-}
+  );
 
 /**
   Completes computation of the SHA-1 digest value.
@@ -1595,16 +1383,13 @@ Sha1Update (
   @retval FALSE  SHA-1 digest computation failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:342
+// FROM BaseCryptLib.h:342
+typedef
 BOOLEAN
-EFIAPI
-Sha1Final (
+(EFIAPI *EDKII_CRYPTO_SHA1_FINAL)(
   IN OUT  VOID   *Sha1Context,
   OUT     UINT8  *HashValue
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha1Final, (Sha1Context, HashValue), FALSE);
-}
+  );
 
 /**
   Computes the SHA-1 message digest of a input data buffer.
@@ -1619,17 +1404,14 @@ Sha1Final (
   @retval FALSE  SHA-1 digest computation failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:367
+// FROM BaseCryptLib.h:367
+typedef
 BOOLEAN
-EFIAPI
-Sha1HashAll (
+(EFIAPI *EDKII_CRYPTO_SHA1_HASH_ALL)(
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha1HashAll, (Data, DataSize, HashValue), FALSE);
-}
+  );
 
 // =============================================================================
 //     SHA256 functions
@@ -1639,15 +1421,12 @@ Sha1HashAll (
   Retrieves the size, in bytes, of the context buffer required for SHA-256 hash operations.
   @return  The size, in bytes, of the context buffer required for SHA-256 hash operations.
 **/
-// See BaseCryptLib.h:383
+// FROM BaseCryptLib.h:383
+typedef
 UINTN
-EFIAPI
-Sha256GetContextSize (
+(EFIAPI *EDKII_CRYPTO_SHA256_GET_CONTEXT_SIZE)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha256GetContextSize, (), 0);
-}
+  );
 
 /**
   Initializes user-supplied memory pointed by Sha256Context as SHA-256 hash context for
@@ -1657,15 +1436,12 @@ Sha256GetContextSize (
   @retval TRUE   SHA-256 context initialization succeeded.
   @retval FALSE  SHA-256 context initialization failed.
 **/
-// See BaseCryptLib.h:401
+// FROM BaseCryptLib.h:401
+typedef
 BOOLEAN
-EFIAPI
-Sha256Init (
+(EFIAPI *EDKII_CRYPTO_SHA256_INIT)(
   OUT  VOID  *Sha256Context
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha256Init, (Sha256Context), FALSE);
-}
+  );
 
 /**
   Makes a copy of an existing SHA-256 context.
@@ -1678,16 +1454,13 @@ Sha256Init (
   @retval FALSE  SHA-256 context copy failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:422
+// FROM BaseCryptLib.h:422
+typedef
 BOOLEAN
-EFIAPI
-Sha256Duplicate (
+(EFIAPI *EDKII_CRYPTO_SHA256_DUPLICATE)(
   IN   CONST VOID  *Sha256Context,
   OUT  VOID        *NewSha256Context
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha256Duplicate, (Sha256Context, NewSha256Context), FALSE);
-}
+  );
 
 /**
   Digests the input data and updates SHA-256 context.
@@ -1702,17 +1475,14 @@ Sha256Duplicate (
   @retval TRUE   SHA-256 data digest succeeded.
   @retval FALSE  SHA-256 data digest failed.
 **/
-// See BaseCryptLib.h:447
+// FROM BaseCryptLib.h:447
+typedef
 BOOLEAN
-EFIAPI
-Sha256Update (
+(EFIAPI *EDKII_CRYPTO_SHA256_UPDATE)(
   IN OUT  VOID        *Sha256Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha256Update, (Sha256Context, Data, DataSize), FALSE);
-}
+  );
 
 /**
   Completes computation of the SHA-256 digest value.
@@ -1729,16 +1499,13 @@ Sha256Update (
   @retval TRUE   SHA-256 digest computation succeeded.
   @retval FALSE  SHA-256 digest computation failed.
 **/
-// See BaseCryptLib.h:475
+// FROM BaseCryptLib.h:475
+typedef
 BOOLEAN
-EFIAPI
-Sha256Final (
+(EFIAPI *EDKII_CRYPTO_SHA256_FINAL)(
   IN OUT  VOID   *Sha256Context,
   OUT     UINT8  *HashValue
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha256Final, (Sha256Context, HashValue), FALSE);
-}
+  );
 
 /**
   Computes the SHA-256 message digest of a input data buffer.
@@ -1753,17 +1520,14 @@ Sha256Final (
   @retval FALSE  SHA-256 digest computation failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:500
+// FROM BaseCryptLib.h:500
+typedef
 BOOLEAN
-EFIAPI
-Sha256HashAll (
+(EFIAPI *EDKII_CRYPTO_SHA256_HASH_ALL)(
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha256HashAll, (Data, DataSize, HashValue), FALSE);
-}
+  );
 
 // =============================================================================
 //     SHA384 functions
@@ -1773,15 +1537,12 @@ Sha256HashAll (
   Retrieves the size, in bytes, of the context buffer required for SHA-384 hash operations.
   @return  The size, in bytes, of the context buffer required for SHA-384 hash operations.
 **/
-// See BaseCryptLib.h:514
+// FROM BaseCryptLib.h:514
+typedef
 UINTN
-EFIAPI
-Sha384GetContextSize (
+(EFIAPI *EDKII_CRYPTO_SHA384_GET_CONTEXT_SIZE)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha384GetContextSize, (), 0);
-}
+  );
 
 /**
   Initializes user-supplied memory pointed by Sha384Context as SHA-384 hash context for
@@ -1791,15 +1552,12 @@ Sha384GetContextSize (
   @retval TRUE   SHA-384 context initialization succeeded.
   @retval FALSE  SHA-384 context initialization failed.
 **/
-// See BaseCryptLib.h:532
+// FROM BaseCryptLib.h:532
+typedef
 BOOLEAN
-EFIAPI
-Sha384Init (
+(EFIAPI *EDKII_CRYPTO_SHA384_INIT)(
   OUT  VOID  *Sha384Context
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha384Init, (Sha384Context), FALSE);
-}
+  );
 
 /**
   Makes a copy of an existing SHA-384 context.
@@ -1812,16 +1570,13 @@ Sha384Init (
   @retval FALSE  SHA-384 context copy failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:553
+// FROM BaseCryptLib.h:553
+typedef
 BOOLEAN
-EFIAPI
-Sha384Duplicate (
+(EFIAPI *EDKII_CRYPTO_SHA384_DUPLICATE)(
   IN   CONST VOID  *Sha384Context,
   OUT  VOID        *NewSha384Context
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha384Duplicate, (Sha384Context, NewSha384Context), FALSE);
-}
+  );
 
 /**
   Digests the input data and updates SHA-384 context.
@@ -1836,17 +1591,14 @@ Sha384Duplicate (
   @retval TRUE   SHA-384 data digest succeeded.
   @retval FALSE  SHA-384 data digest failed.
 **/
-// See BaseCryptLib.h:578
+// FROM BaseCryptLib.h:578
+typedef
 BOOLEAN
-EFIAPI
-Sha384Update (
+(EFIAPI *EDKII_CRYPTO_SHA384_UPDATE)(
   IN OUT  VOID        *Sha384Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha384Update, (Sha384Context, Data, DataSize), FALSE);
-}
+  );
 
 /**
   Completes computation of the SHA-384 digest value.
@@ -1863,16 +1615,13 @@ Sha384Update (
   @retval TRUE   SHA-384 digest computation succeeded.
   @retval FALSE  SHA-384 digest computation failed.
 **/
-// See BaseCryptLib.h:606
+// FROM BaseCryptLib.h:606
+typedef
 BOOLEAN
-EFIAPI
-Sha384Final (
+(EFIAPI *EDKII_CRYPTO_SHA384_FINAL)(
   IN OUT  VOID   *Sha384Context,
   OUT     UINT8  *HashValue
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha384Final, (Sha384Context, HashValue), FALSE);
-}
+  );
 
 /**
   Computes the SHA-384 message digest of a input data buffer.
@@ -1887,17 +1636,14 @@ Sha384Final (
   @retval FALSE  SHA-384 digest computation failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:631
+// FROM BaseCryptLib.h:631
+typedef
 BOOLEAN
-EFIAPI
-Sha384HashAll (
+(EFIAPI *EDKII_CRYPTO_SHA384_HASH_ALL)(
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha384HashAll, (Data, DataSize, HashValue), FALSE);
-}
+  );
 
 // =============================================================================
 //     SHA512 functions
@@ -1907,15 +1653,12 @@ Sha384HashAll (
   Retrieves the size, in bytes, of the context buffer required for SHA-512 hash operations.
   @return  The size, in bytes, of the context buffer required for SHA-512 hash operations.
 **/
-// See BaseCryptLib.h:645
+// FROM BaseCryptLib.h:645
+typedef
 UINTN
-EFIAPI
-Sha512GetContextSize (
+(EFIAPI *EDKII_CRYPTO_SHA512_GET_CONTEXT_SIZE)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha512GetContextSize, (), 0);
-}
+  );
 
 /**
   Initializes user-supplied memory pointed by Sha512Context as SHA-512 hash context for
@@ -1925,15 +1668,12 @@ Sha512GetContextSize (
   @retval TRUE   SHA-512 context initialization succeeded.
   @retval FALSE  SHA-512 context initialization failed.
 **/
-// See BaseCryptLib.h:663
+// FROM BaseCryptLib.h:663
+typedef
 BOOLEAN
-EFIAPI
-Sha512Init (
+(EFIAPI *EDKII_CRYPTO_SHA512_INIT)(
   OUT  VOID  *Sha512Context
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha512Init, (Sha512Context), FALSE);
-}
+  );
 
 /**
   Makes a copy of an existing SHA-512 context.
@@ -1946,16 +1686,13 @@ Sha512Init (
   @retval FALSE  SHA-512 context copy failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:684
+// FROM BaseCryptLib.h:684
+typedef
 BOOLEAN
-EFIAPI
-Sha512Duplicate (
+(EFIAPI *EDKII_CRYPTO_SHA512_DUPLICATE)(
   IN   CONST VOID  *Sha512Context,
   OUT  VOID        *NewSha512Context
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha512Duplicate, (Sha512Context, NewSha512Context), FALSE);
-}
+  );
 
 /**
   Digests the input data and updates SHA-512 context.
@@ -1970,17 +1707,14 @@ Sha512Duplicate (
   @retval TRUE   SHA-512 data digest succeeded.
   @retval FALSE  SHA-512 data digest failed.
 **/
-// See BaseCryptLib.h:709
+// FROM BaseCryptLib.h:709
+typedef
 BOOLEAN
-EFIAPI
-Sha512Update (
+(EFIAPI *EDKII_CRYPTO_SHA512_UPDATE)(
   IN OUT  VOID        *Sha512Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha512Update, (Sha512Context, Data, DataSize), FALSE);
-}
+  );
 
 /**
   Completes computation of the SHA-512 digest value.
@@ -1997,16 +1731,13 @@ Sha512Update (
   @retval TRUE   SHA-512 digest computation succeeded.
   @retval FALSE  SHA-512 digest computation failed.
 **/
-// See BaseCryptLib.h:737
+// FROM BaseCryptLib.h:737
+typedef
 BOOLEAN
-EFIAPI
-Sha512Final (
+(EFIAPI *EDKII_CRYPTO_SHA512_FINAL)(
   IN OUT  VOID   *Sha512Context,
   OUT     UINT8  *HashValue
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha512Final, (Sha512Context, HashValue), FALSE);
-}
+  );
 
 /**
   Computes the SHA-512 message digest of a input data buffer.
@@ -2021,17 +1752,14 @@ Sha512Final (
   @retval FALSE  SHA-512 digest computation failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:762
+// FROM BaseCryptLib.h:762
+typedef
 BOOLEAN
-EFIAPI
-Sha512HashAll (
+(EFIAPI *EDKII_CRYPTO_SHA512_HASH_ALL)(
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
-  )
-{
-  CALL_CRYPTO_SERVICE (Sha512HashAll, (Data, DataSize, HashValue), FALSE);
-}
+  );
 
 // =============================================================================
 //     PARALLELHASH256 functions
@@ -2051,10 +1779,10 @@ Sha512HashAll (
   @retval FALSE  ParallelHash256 digest computation failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:787
+// FROM BaseCryptLib.h:787
+typedef
 BOOLEAN
-EFIAPI
-ParallelHash256HashAll (
+(EFIAPI *EDKII_CRYPTO_PARALLEL_HASH256_HASH_ALL)(
   IN CONST VOID   *Input,
   IN       UINTN  InputByteLen,
   IN       UINTN  BlockSize,
@@ -2062,10 +1790,7 @@ ParallelHash256HashAll (
   IN       UINTN  OutputByteLen,
   IN CONST VOID   *Customization,
   IN       UINTN  CustomByteLen
-  )
-{
-  CALL_CRYPTO_SERVICE (ParallelHash256HashAll, (Input, InputByteLen, BlockSize, Output, OutputByteLen, Customization, CustomByteLen), FALSE);
-}
+  );
 
 // =============================================================================
 //     AEADAESGCM functions
@@ -2091,10 +1816,10 @@ ParallelHash256HashAll (
   @retval TRUE   AEAD AES-GCM authenticated encryption succeeded.
   @retval FALSE  AEAD AES-GCM authenticated encryption failed.
 **/
-// See BaseCryptLib.h:1405
+// FROM BaseCryptLib.h:1405
+typedef
 BOOLEAN
-EFIAPI
-AeadAesGcmEncrypt (
+(EFIAPI *EDKII_CRYPTO_AEAD_AES_GCM_ENCRYPT)(
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   IN   CONST UINT8  *Iv,
@@ -2107,10 +1832,7 @@ AeadAesGcmEncrypt (
   IN   UINTN        TagSize,
   OUT  UINT8        *DataOut,
   OUT  UINTN        *DataOutSize
-  )
-{
-  CALL_CRYPTO_SERVICE (AeadAesGcmEncrypt, (Key, KeySize, Iv, IvSize, AData, ADataSize, DataIn, DataInSize, TagOut, TagSize, DataOut, DataOutSize), FALSE);
-}
+  );
 
 /**
   Performs AEAD AES-GCM authenticated decryption on a data buffer and additional authenticated data (AAD).
@@ -2133,10 +1855,10 @@ AeadAesGcmEncrypt (
   @retval TRUE   AEAD AES-GCM authenticated decryption succeeded.
   @retval FALSE  AEAD AES-GCM authenticated decryption failed.
 **/
-// See BaseCryptLib.h:1447
+// FROM BaseCryptLib.h:1447
+typedef
 BOOLEAN
-EFIAPI
-AeadAesGcmDecrypt (
+(EFIAPI *EDKII_CRYPTO_AEAD_AES_GCM_DECRYPT)(
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   IN   CONST UINT8  *Iv,
@@ -2149,10 +1871,7 @@ AeadAesGcmDecrypt (
   IN   UINTN        TagSize,
   OUT  UINT8        *DataOut,
   OUT  UINTN        *DataOutSize
-  )
-{
-  CALL_CRYPTO_SERVICE (AeadAesGcmDecrypt, (Key, KeySize, Iv, IvSize, AData, ADataSize, DataIn, DataInSize, Tag, TagSize, DataOut, DataOutSize), FALSE);
-}
+  );
 
 // =============================================================================
 //     X509 functions
@@ -2173,18 +1892,15 @@ AeadAesGcmDecrypt (
                   The SubjectSize will be updated with the required size.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1835
+// FROM BaseCryptLib.h:1835
+typedef
 BOOLEAN
-EFIAPI
-X509GetSubjectName (
+(EFIAPI *EDKII_CRYPTO_X509_GET_SUBJECT_NAME)(
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     UINT8        *CertSubject,
   IN OUT  UINTN        *SubjectSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetSubjectName, (Cert, CertSize, CertSubject, SubjectSize), FALSE);
-}
+  );
 
 /**
   Retrieve the common name (CN) string from one X.509 certificate.
@@ -2209,18 +1925,15 @@ X509GetSubjectName (
                                    CommonNameSize parameter.
   @retval RETURN_UNSUPPORTED       The operation is not supported.
 **/
-// See BaseCryptLib.h:1870
+// FROM BaseCryptLib.h:1870
+typedef
 RETURN_STATUS
-EFIAPI
-X509GetCommonName (
+(EFIAPI *EDKII_CRYPTO_X509_GET_COMMON_NAME)(
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     CHAR8        *CommonName   OPTIONAL,
   IN OUT  UINTN        *CommonNameSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetCommonName, (Cert, CertSize, CommonName, CommonNameSize), 0);
-}
+  );
 
 /**
   Retrieve the organization name (O) string from one X.509 certificate.
@@ -2245,18 +1958,15 @@ X509GetCommonName (
                                    CommonNameSize parameter.
   @retval RETURN_UNSUPPORTED       The operation is not supported.
 **/
-// See BaseCryptLib.h:1905
+// FROM BaseCryptLib.h:1905
+typedef
 RETURN_STATUS
-EFIAPI
-X509GetOrganizationName (
+(EFIAPI *EDKII_CRYPTO_X509_GET_ORGANIZATION_NAME)(
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     CHAR8        *NameBuffer   OPTIONAL,
   IN OUT  UINTN        *NameBufferSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetOrganizationName, (Cert, CertSize, NameBuffer, NameBufferSize), 0);
-}
+  );
 
 /**
   Verify one X509 certificate was issued by the trusted CA.
@@ -2272,18 +1982,15 @@ X509GetOrganizationName (
                   trusted CA.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1932
+// FROM BaseCryptLib.h:1932
+typedef
 BOOLEAN
-EFIAPI
-X509VerifyCert (
+(EFIAPI *EDKII_CRYPTO_X509_VERIFY_CERT)(
   IN  CONST UINT8  *Cert,
   IN  UINTN        CertSize,
   IN  CONST UINT8  *CACert,
   IN  UINTN        CACertSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509VerifyCert, (Cert, CertSize, CACert, CACertSize), FALSE);
-}
+  );
 
 /**
   Construct a X509 object from DER-encoded certificate data.
@@ -2297,17 +2004,14 @@ X509VerifyCert (
   @retval     FALSE           The operation failed.
   @retval     FALSE           This interface is not supported.
 **/
-// See BaseCryptLib.h:1957
+// FROM BaseCryptLib.h:1957
+typedef
 BOOLEAN
-EFIAPI
-X509ConstructCertificate (
+(EFIAPI *EDKII_CRYPTO_X509_CONSTRUCT_CERTIFICATE)(
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  UINT8        **SingleX509Cert
-  )
-{
-  CALL_CRYPTO_SERVICE (X509ConstructCertificate, (Cert, CertSize, SingleX509Cert), FALSE);
-}
+  );
 
 /**
   Construct a X509 stack object from a list of DER-encoded certificate data.
@@ -2324,16 +2028,13 @@ X509ConstructCertificate (
   @retval     FALSE           The construction operation failed.
   @retval     FALSE           This interface is not supported.
 **/
-// See BaseCryptLib.h:1984
+// FROM BaseCryptLib.h:1984
+typedef
 BOOLEAN
-EFIAPI
-X509ConstructCertificateStackV (
+(EFIAPI *EDKII_CRYPTO_X509_CONSTRUCT_CERTIFICATE_STACK_V)(
   IN OUT  UINT8    **X509Stack,
   IN      VA_LIST  Args
-  )
-{
-  CALL_CRYPTO_SERVICE (X509ConstructCertificateStackV, (X509Stack, Args), FALSE);
-}
+  );
 
 /**
   Construct a X509 stack object from a list of DER-encoded certificate data.
@@ -2349,52 +2050,37 @@ X509ConstructCertificateStackV (
   @retval     FALSE           The construction operation failed.
   @retval     FALSE           This interface is not supported.
 **/
-// See BaseCryptLib.h:2009
+// FROM BaseCryptLib.h:2009
+typedef
 BOOLEAN
-EFIAPI
-X509ConstructCertificateStack (
+(EFIAPI *EDKII_CRYPTO_X509_CONSTRUCT_CERTIFICATE_STACK)(
   IN OUT  UINT8  **X509Stack,
   ...
-  )
-{
-  VA_LIST  Args;
-  BOOLEAN  Result;
-
-  VA_START (Args, X509Stack);
-  Result = X509ConstructCertificateStackV (X509Stack, Args);
-  VA_END (Args);
-  return Result;
-}
+  );
 
 /**
   Release the specified X509 object.
   If the interface is not supported, then ASSERT().
   @param[in]  X509Cert  Pointer to the X509 object to be released.
 **/
-// See BaseCryptLib.h:2024
+// FROM BaseCryptLib.h:2024
+typedef
 VOID
-EFIAPI
-X509Free (
+(EFIAPI *EDKII_CRYPTO_X509_FREE)(
   IN  VOID  *X509Cert
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (X509Free, (X509Cert));
-}
+  );
 
 /**
   Release the specified X509 stack object.
   If the interface is not supported, then ASSERT().
   @param[in]  X509Stack  Pointer to the X509 stack object to be released.
 **/
-// See BaseCryptLib.h:2038
+// FROM BaseCryptLib.h:2038
+typedef
 VOID
-EFIAPI
-X509StackFree (
+(EFIAPI *EDKII_CRYPTO_X509_STACK_FREE)(
   IN  VOID  *X509Stack
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (X509StackFree, (X509Stack));
-}
+  );
 
 /**
   Retrieve the TBSCertificate from one given X.509 certificate.
@@ -2409,18 +2095,15 @@ X509StackFree (
   @retval  TRUE   The TBSCertificate was retrieved successfully.
   @retval  FALSE  Invalid X.509 certificate.
 **/
-// See BaseCryptLib.h:2061
+// FROM BaseCryptLib.h:2061
+typedef
 BOOLEAN
-EFIAPI
-X509GetTBSCert (
+(EFIAPI *EDKII_CRYPTO_X509_GET_TBSCERT)(
   IN  CONST UINT8  *Cert,
   IN  UINTN        CertSize,
   OUT UINT8        **TBSCert,
   OUT UINTN        *TBSCertSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetTBSCert, (Cert, CertSize, TBSCert, TBSCertSize), FALSE);
-}
+  );
 
 /**
   Retrieve the version from one X.509 certificate.
@@ -2434,17 +2117,14 @@ X509GetTBSCert (
   @retval FALSE          If  Cert is NULL or CertSize is Zero.
   @retval FALSE          The operation is not supported.
 **/
-// See BaseCryptLib.h:2612
+// FROM BaseCryptLib.h:2612
+typedef
 BOOLEAN
-EFIAPI
-X509GetVersion (
+(EFIAPI *EDKII_CRYPTO_X509_GET_VERSION)(
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     UINTN        *Version
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetVersion, (Cert, CertSize, Version), FALSE);
-}
+  );
 
 /**
   Retrieve the serialNumber from one X.509 certificate.
@@ -2466,18 +2146,15 @@ X509GetVersion (
                                    SerialNumberSize parameter.
   @retval FALSE                    The operation is not supported.
 **/
-// See BaseCryptLib.h:2643
+// FROM BaseCryptLib.h:2643
+typedef
 BOOLEAN
-EFIAPI
-X509GetSerialNumber (
+(EFIAPI *EDKII_CRYPTO_X509_GET_SERIAL_NUMBER)(
   IN      CONST UINT8 *Cert,
   IN      UINTN CertSize,
   OUT     UINT8 *SerialNumber, OPTIONAL
   IN OUT  UINTN         *SerialNumberSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetSerialNumber, (Cert, CertSize, SerialNumber, SerialNumberSize), FALSE);
-}
+  );
 
 /**
   Retrieve the issuer bytes from one X.509 certificate.
@@ -2494,18 +2171,15 @@ X509GetSerialNumber (
                   The CertIssuerSize will be updated with the required size.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:2671
+// FROM BaseCryptLib.h:2671
+typedef
 BOOLEAN
-EFIAPI
-X509GetIssuerName (
+(EFIAPI *EDKII_CRYPTO_X509_GET_ISSUER_NAME)(
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     UINT8        *CertIssuer,
   IN OUT  UINTN        *CertIssuerSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetIssuerName, (Cert, CertSize, CertIssuer, CertIssuerSize), FALSE);
-}
+  );
 
 /**
   Retrieve the Signature Algorithm from one X.509 certificate.
@@ -2523,18 +2197,15 @@ X509GetIssuerName (
                                    is returned in the OidSize.
   @retval FALSE                    The operation is not supported.
 **/
-// See BaseCryptLib.h:2698
+// FROM BaseCryptLib.h:2698
+typedef
 BOOLEAN
-EFIAPI
-X509GetSignatureAlgorithm (
+(EFIAPI *EDKII_CRYPTO_X509_GET_SIGNATURE_ALGORITHM)(
   IN CONST UINT8 *Cert,
   IN       UINTN CertSize,
   OUT   UINT8 *Oid, OPTIONAL
   IN OUT   UINTN       *OidSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetSignatureAlgorithm, (Cert, CertSize, Oid, OidSize), FALSE);
-}
+  );
 
 /**
   Retrieve Extension data from one X.509 certificate.
@@ -2554,20 +2225,17 @@ X509GetSignatureAlgorithm (
                                    is returned in the ExtensionDataSize parameter.
   @retval FALSE                    The operation is not supported.
 **/
-// See BaseCryptLib.h:2727
+// FROM BaseCryptLib.h:2727
+typedef
 BOOLEAN
-EFIAPI
-X509GetExtensionData (
+(EFIAPI *EDKII_CRYPTO_X509_GET_EXTENSION_DATA)(
   IN     CONST UINT8  *Cert,
   IN     UINTN        CertSize,
   IN     CONST UINT8  *Oid,
   IN     UINTN        OidSize,
   OUT UINT8           *ExtensionData,
   IN OUT UINTN        *ExtensionDataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetExtensionData, (Cert, CertSize, Oid, OidSize, ExtensionData, ExtensionDataSize), FALSE);
-}
+  );
 
 /**
   Retrieve the Validity from one X.509 certificate
@@ -2586,20 +2254,17 @@ X509GetExtensionData (
   @retval  FALSE  Invalid certificate, or Validity retrieve failed.
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:2759
+// FROM BaseCryptLib.h:2759
+typedef
 BOOLEAN
-EFIAPI
-X509GetValidity (
+(EFIAPI *EDKII_CRYPTO_X509_GET_VALIDITY)(
   IN     CONST UINT8  *Cert,
   IN     UINTN        CertSize,
   IN     UINT8        *From,
   IN OUT UINTN        *FromSize,
   IN     UINT8        *To,
   IN OUT UINTN        *ToSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetValidity, (Cert, CertSize, From, FromSize, To, ToSize), FALSE);
-}
+  );
 
 /**
   Format a DateTimeStr to DataTime object in DataTime Buffer
@@ -2621,17 +2286,14 @@ X509GetValidity (
                                    DateTimeSize parameter.
   @retval FALSE                    The operation is not supported.
 **/
-// See BaseCryptLib.h:2793
+// FROM BaseCryptLib.h:2793
+typedef
 BOOLEAN
-EFIAPI
-X509FormatDateTime (
+(EFIAPI *EDKII_CRYPTO_X509_FORMAT_DATE_TIME)(
   IN   CONST CHAR8  *DateTimeStr,
   OUT  VOID         *DateTime,
   IN OUT UINTN      *DateTimeSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509FormatDateTime, (DateTimeStr, DateTime, DateTimeSize), FALSE);
-}
+  );
 
 /**
   Retrieve the Key Usage from one X.509 certificate.
@@ -2642,17 +2304,14 @@ X509FormatDateTime (
   @retval  FALSE  Invalid certificate, or Usage is NULL
   @retval  FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:2835
+// FROM BaseCryptLib.h:2835
+typedef
 BOOLEAN
-EFIAPI
-X509GetKeyUsage (
+(EFIAPI *EDKII_CRYPTO_X509_GET_KEY_USAGE)(
   IN    CONST UINT8  *Cert,
   IN    UINTN        CertSize,
   OUT   UINTN        *Usage
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetKeyUsage, (Cert, CertSize, Usage), FALSE);
-}
+  );
 
 /**
   Retrieve the Extended Key Usage from one X.509 certificate.
@@ -2669,18 +2328,15 @@ X509GetKeyUsage (
                                    is returned in the UsageSize parameter.
   @retval FALSE                    The operation is not supported.
 **/
-// See BaseCryptLib.h:2860
+// FROM BaseCryptLib.h:2860
+typedef
 BOOLEAN
-EFIAPI
-X509GetExtendedKeyUsage (
+(EFIAPI *EDKII_CRYPTO_X509_GET_EXTENDED_KEY_USAGE)(
   IN     CONST UINT8  *Cert,
   IN     UINTN        CertSize,
   OUT UINT8           *Usage,
   IN OUT UINTN        *UsageSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetExtendedKeyUsage, (Cert, CertSize, Usage, UsageSize), FALSE);
-}
+  );
 
 /**
   Verify one X509 certificate was issued by the trusted CA.
@@ -2696,18 +2352,15 @@ X509GetExtendedKeyUsage (
   @retval  FALSE  Invalid certificate or the certificate was not issued by the given
                   trusted CA.
 **/
-// See BaseCryptLib.h:2885
+// FROM BaseCryptLib.h:2885
+typedef
 BOOLEAN
-EFIAPI
-X509VerifyCertChain (
+(EFIAPI *EDKII_CRYPTO_X509_VERIFY_CERT_CHAIN)(
   IN CONST UINT8  *RootCert,
   IN UINTN        RootCertLength,
   IN CONST UINT8  *CertChain,
   IN UINTN        CertChainLength
-  )
-{
-  CALL_CRYPTO_SERVICE (X509VerifyCertChain, (RootCert, RootCertLength, CertChain, CertChainLength), FALSE);
-}
+  );
 
 /**
   Get one X509 certificate from CertChain.
@@ -2724,19 +2377,16 @@ X509VerifyCertChain (
   @retval  TRUE   Success.
   @retval  FALSE  Failed to get certificate from certificate chain.
 **/
-// See BaseCryptLib.h:2913
+// FROM BaseCryptLib.h:2913
+typedef
 BOOLEAN
-EFIAPI
-X509GetCertFromCertChain (
+(EFIAPI *EDKII_CRYPTO_X509_GET_CERT_FROM_CERT_CHAIN)(
   IN CONST UINT8   *CertChain,
   IN UINTN         CertChainLength,
   IN CONST INT32   CertIndex,
   OUT CONST UINT8  **Cert,
   OUT UINTN        *CertLength
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetCertFromCertChain, (CertChain, CertChainLength, CertIndex, Cert, CertLength), FALSE);
-}
+  );
 
 /**
   Retrieve the basic constraints from one X.509 certificate.
@@ -2754,18 +2404,15 @@ X509GetCertFromCertChain (
   @retval FALSE                    If no Extension entry match oid.
   @retval FALSE                    The operation is not supported.
  **/
-// See BaseCryptLib.h:2961
+// FROM BaseCryptLib.h:2961
+typedef
 BOOLEAN
-EFIAPI
-X509GetExtendedBasicConstraints (
+(EFIAPI *EDKII_CRYPTO_X509_GET_EXTENDED_BASIC_CONSTRAINTS)(
   CONST UINT8  *Cert,
   UINTN        CertSize,
   UINT8        *BasicConstraints,
   UINTN        *BasicConstraintsSize
-  )
-{
-  CALL_CRYPTO_SERVICE (X509GetExtendedBasicConstraints, (Cert, CertSize, BasicConstraints, BasicConstraintsSize), FALSE);
-}
+  );
 
 // =============================================================================
 //     ASN1 functions
@@ -2780,18 +2427,15 @@ X509GetExtendedBasicConstraints (
   @retval      TRUE   Get tag successful
   @retval      FALSe  Failed to get tag or tag not match
 **/
-// See BaseCryptLib.h:2934
+// FROM BaseCryptLib.h:2934
+typedef
 BOOLEAN
-EFIAPI
-Asn1GetTag (
+(EFIAPI *EDKII_CRYPTO_ASN1_GET_TAG)(
   IN OUT UINT8    **Ptr,
   IN CONST UINT8  *End,
   OUT UINTN       *Length,
   IN     UINT32   Tag
-  )
-{
-  CALL_CRYPTO_SERVICE (Asn1GetTag, (Ptr, End, Length, Tag), FALSE);
-}
+  );
 
 // =============================================================================
 //     BIGNUM functions
@@ -2801,15 +2445,12 @@ Asn1GetTag (
   Allocate new Big Number.
   @retval New BigNum opaque structure or NULL on failure.
 **/
-// See BaseCryptLib.h:3356
+// FROM BaseCryptLib.h:3356
+typedef
 VOID *
-EFIAPI
-BigNumInit (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_INIT)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumInit, (), NULL);
-}
+  );
 
 /**
   Allocate new Big Number and assign the provided value to it.
@@ -2817,16 +2458,13 @@ BigNumInit (
   @param[in]   Len    Buffer length.
   @retval New BigNum opaque structure or NULL on failure.
 **/
-// See BaseCryptLib.h:3370
+// FROM BaseCryptLib.h:3370
+typedef
 VOID *
-EFIAPI
-BigNumFromBin (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_FROM_BIN)(
   IN CONST UINT8  *Buf,
   IN UINTN        Len
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumFromBin, (Buf, Len), NULL);
-}
+  );
 
 /**
   Convert the absolute value of Bn into big-endian form and store it at Buf.
@@ -2835,32 +2473,26 @@ BigNumFromBin (
   @param[out]  Buf    Output buffer.
   @retval The length of the big-endian number placed at Buf or -1 on error.
 **/
-// See BaseCryptLib.h:3386
+// FROM BaseCryptLib.h:3386
+typedef
 INTN
-EFIAPI
-BigNumToBin (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_TO_BIN)(
   IN CONST VOID  *Bn,
   OUT UINT8      *Buf
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumToBin, (Bn, Buf), 0);
-}
+  );
 
 /**
   Free the Big Number.
   @param[in]   Bn      Big number to free.
   @param[in]   Clear   TRUE if the buffer should be cleared.
 **/
-// See BaseCryptLib.h:3399
+// FROM BaseCryptLib.h:3399
+typedef
 VOID
-EFIAPI
-BigNumFree (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_FREE)(
   IN VOID     *Bn,
   IN BOOLEAN  Clear
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (BigNumFree, (Bn, Clear));
-}
+  );
 
 /**
   Calculate the sum of two Big Numbers.
@@ -2872,17 +2504,14 @@ BigNumFree (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3418
+// FROM BaseCryptLib.h:3418
+typedef
 BOOLEAN
-EFIAPI
-BigNumAdd (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_ADD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumAdd, (BnA, BnB, BnRes), FALSE);
-}
+  );
 
 /**
   Subtract two Big Numbers.
@@ -2894,17 +2523,14 @@ BigNumAdd (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3438
+// FROM BaseCryptLib.h:3438
+typedef
 BOOLEAN
-EFIAPI
-BigNumSub (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_SUB)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumSub, (BnA, BnB, BnRes), FALSE);
-}
+  );
 
 /**
   Calculate remainder: BnRes = BnA % BnB.
@@ -2916,17 +2542,14 @@ BigNumSub (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3458
+// FROM BaseCryptLib.h:3458
+typedef
 BOOLEAN
-EFIAPI
-BigNumMod (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_MOD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumMod, (BnA, BnB, BnRes), FALSE);
-}
+  );
 
 /**
   Compute BnA to the BnP-th power modulo BnM.
@@ -2939,18 +2562,15 @@ BigNumMod (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3479
+// FROM BaseCryptLib.h:3479
+typedef
 BOOLEAN
-EFIAPI
-BigNumExpMod (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_EXP_MOD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnP,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumExpMod, (BnA, BnP, BnM, BnRes), FALSE);
-}
+  );
 
 /**
   Compute BnA inverse modulo BnM.
@@ -2962,17 +2582,14 @@ BigNumExpMod (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3500
+// FROM BaseCryptLib.h:3500
+typedef
 BOOLEAN
-EFIAPI
-BigNumInverseMod (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_INVERSE_MOD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumInverseMod, (BnA, BnM, BnRes), FALSE);
-}
+  );
 
 /**
   Divide two Big Numbers.
@@ -2984,17 +2601,14 @@ BigNumInverseMod (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3520
+// FROM BaseCryptLib.h:3520
+typedef
 BOOLEAN
-EFIAPI
-BigNumDiv (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_DIV)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumDiv, (BnA, BnB, BnRes), FALSE);
-}
+  );
 
 /**
   Multiply two Big Numbers modulo BnM.
@@ -3007,18 +2621,15 @@ BigNumDiv (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3541
+// FROM BaseCryptLib.h:3541
+typedef
 BOOLEAN
-EFIAPI
-BigNumMulMod (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_MUL_MOD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumMulMod, (BnA, BnB, BnM, BnRes), FALSE);
-}
+  );
 
 /**
   Compare two Big Numbers.
@@ -3028,46 +2639,37 @@ BigNumMulMod (
   @retval 1          BnA > BnB.
   @retval -1         BnA < BnB.
 **/
-// See BaseCryptLib.h:3560
+// FROM BaseCryptLib.h:3560
+typedef
 INTN
-EFIAPI
-BigNumCmp (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_CMP)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumCmp, (BnA, BnB), 0);
-}
+  );
 
 /**
   Get number of bits in Bn.
   @param[in]   Bn     Big number.
   @retval Number of bits.
 **/
-// See BaseCryptLib.h:3575
+// FROM BaseCryptLib.h:3575
+typedef
 UINTN
-EFIAPI
-BigNumBits (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_BITS)(
   IN CONST VOID  *Bn
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumBits, (Bn), 0);
-}
+  );
 
 /**
   Get number of bytes in Bn.
   @param[in]   Bn     Big number.
   @retval Number of bytes.
 **/
-// See BaseCryptLib.h:3588
+// FROM BaseCryptLib.h:3588
+typedef
 UINTN
-EFIAPI
-BigNumBytes (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_BYTES)(
   IN CONST VOID  *Bn
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumBytes, (Bn), 0);
-}
+  );
 
 /**
   Checks if Big Number equals to the given Num.
@@ -3076,16 +2678,13 @@ BigNumBytes (
   @retval TRUE   iff Bn == Num.
   @retval FALSE  otherwise.
 **/
-// See BaseCryptLib.h:3603
+// FROM BaseCryptLib.h:3603
+typedef
 BOOLEAN
-EFIAPI
-BigNumIsWord (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_IS_WORD)(
   IN CONST VOID  *Bn,
   IN UINTN       Num
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumIsWord, (Bn, Num), FALSE);
-}
+  );
 
 /**
   Checks if Big Number is odd.
@@ -3093,15 +2692,12 @@ BigNumIsWord (
   @retval TRUE   Bn is odd (Bn % 2 == 1).
   @retval FALSE  otherwise.
 **/
-// See BaseCryptLib.h:3618
+// FROM BaseCryptLib.h:3618
+typedef
 BOOLEAN
-EFIAPI
-BigNumIsOdd (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_IS_ODD)(
   IN CONST VOID  *Bn
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumIsOdd, (Bn), FALSE);
-}
+  );
 
 /**
   Copy Big number.
@@ -3110,16 +2706,13 @@ BigNumIsOdd (
   @retval BnDst on success.
   @retval NULL otherwise.
 **/
-// See BaseCryptLib.h:3633
+// FROM BaseCryptLib.h:3633
+typedef
 VOID *
-EFIAPI
-BigNumCopy (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_COPY)(
   OUT VOID       *BnDst,
   IN CONST VOID  *BnSrc
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumCopy, (BnDst, BnSrc), NULL);
-}
+  );
 
 /**
   Shift right Big Number.
@@ -3131,17 +2724,14 @@ BigNumCopy (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3664
+// FROM BaseCryptLib.h:3664
+typedef
 BOOLEAN
-EFIAPI
-BigNumRShift (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_RSHIFT)(
   IN CONST VOID  *Bn,
   IN UINTN       N,
   OUT VOID       *BnRes
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumRShift, (Bn, N, BnRes), FALSE);
-}
+  );
 
 /**
   Mark Big Number for constant time computations.
@@ -3149,15 +2739,12 @@ BigNumRShift (
   performed on the given Big number.
   @param[in]   Bn     Big number.
 **/
-// See BaseCryptLib.h:3679
+// FROM BaseCryptLib.h:3679
+typedef
 VOID
-EFIAPI
-BigNumConstTime (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_CONST_TIME)(
   IN VOID  *Bn
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (BigNumConstTime, (Bn));
-}
+  );
 
 /**
   Calculate square modulo.
@@ -3169,17 +2756,14 @@ BigNumConstTime (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3697
+// FROM BaseCryptLib.h:3697
+typedef
 BOOLEAN
-EFIAPI
-BigNumSqrMod (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_SQR_MOD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumSqrMod, (BnA, BnM, BnRes), FALSE);
-}
+  );
 
 /**
   Create new Big Number computation context. This is an opaque structure
@@ -3187,29 +2771,23 @@ BigNumSqrMod (
   needed to optimize calculations and expensive allocations.
   @retval Big Number context struct or NULL on failure.
 **/
-// See BaseCryptLib.h:3712
+// FROM BaseCryptLib.h:3712
+typedef
 VOID *
-EFIAPI
-BigNumNewContext (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_NEW_CONTEXT)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumNewContext, (), NULL);
-}
+  );
 
 /**
   Free Big Number context that was allocated with BigNumNewContext().
   @param[in]   BnCtx     Big number context to free.
 **/
-// See BaseCryptLib.h:3723
+// FROM BaseCryptLib.h:3723
+typedef
 VOID
-EFIAPI
-BigNumContextFree (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_CONTEXT_FREE)(
   IN VOID  *BnCtx
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (BigNumContextFree, (BnCtx));
-}
+  );
 
 /**
   Set Big Number to a given value.
@@ -3218,16 +2796,13 @@ BigNumContextFree (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3738
+// FROM BaseCryptLib.h:3738
+typedef
 BOOLEAN
-EFIAPI
-BigNumSetUint (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_SET_UINT)(
   IN VOID   *Bn,
   IN UINTN  Val
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumSetUint, (Bn, Val), FALSE);
-}
+  );
 
 /**
   Add two Big Numbers modulo BnM.
@@ -3238,18 +2813,15 @@ BigNumSetUint (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3756
+// FROM BaseCryptLib.h:3756
+typedef
 BOOLEAN
-EFIAPI
-BigNumAddMod (
+(EFIAPI *EDKII_CRYPTO_BIG_NUM_ADD_MOD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  )
-{
-  CALL_CRYPTO_SERVICE (BigNumAddMod, (BnA, BnB, BnM, BnRes), FALSE);
-}
+  );
 
 // =============================================================================
 //     TDES functions
@@ -3264,15 +2836,12 @@ BigNumAddMod (
   @return  The size, in bytes, of the context buffer required for AES operations.
   @retval  0   This interface is not supported.
 **/
-// See BaseCryptLib.h:1263
+// FROM BaseCryptLib.h:1263
+typedef
 UINTN
-EFIAPI
-AesGetContextSize (
+(EFIAPI *EDKII_CRYPTO_AES_GET_CONTEXT_SIZE)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (AesGetContextSize, (), 0);
-}
+  );
 
 /**
   Initializes user-supplied memory as AES context for subsequent use.
@@ -3291,17 +2860,14 @@ AesGetContextSize (
   @retval FALSE  AES context initialization failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1291
+// FROM BaseCryptLib.h:1291
+typedef
 BOOLEAN
-EFIAPI
-AesInit (
+(EFIAPI *EDKII_CRYPTO_AES_INIT)(
   OUT  VOID         *AesContext,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeyLength
-  )
-{
-  CALL_CRYPTO_SERVICE (AesInit, (AesContext, Key, KeyLength), FALSE);
-}
+  );
 
 /**
   Performs AES encryption on a data buffer of the specified size in CBC mode.
@@ -3327,19 +2893,16 @@ AesInit (
   @retval FALSE  AES encryption failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1328
+// FROM BaseCryptLib.h:1328
+typedef
 BOOLEAN
-EFIAPI
-AesCbcEncrypt (
+(EFIAPI *EDKII_CRYPTO_AES_CBC_ENCRYPT)(
   IN   VOID         *AesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
   IN   CONST UINT8  *Ivec,
   OUT  UINT8        *Output
-  )
-{
-  CALL_CRYPTO_SERVICE (AesCbcEncrypt, (AesContext, Input, InputSize, Ivec, Output), FALSE);
-}
+  );
 
 /**
   Performs AES decryption on a data buffer of the specified size in CBC mode.
@@ -3365,19 +2928,16 @@ AesCbcEncrypt (
   @retval FALSE  AES decryption failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:1367
+// FROM BaseCryptLib.h:1367
+typedef
 BOOLEAN
-EFIAPI
-AesCbcDecrypt (
+(EFIAPI *EDKII_CRYPTO_AES_CBC_DECRYPT)(
   IN   VOID         *AesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
   IN   CONST UINT8  *Ivec,
   OUT  UINT8        *Output
-  )
-{
-  CALL_CRYPTO_SERVICE (AesCbcDecrypt, (AesContext, Input, InputSize, Ivec, Output), FALSE);
-}
+  );
 
 // =============================================================================
 //     ARC4 functions
@@ -3390,15 +2950,12 @@ AesCbcDecrypt (
   Retrieves the size, in bytes, of the context buffer required for SM3 hash operations.
   @return  The size, in bytes, of the context buffer required for SM3 hash operations.
 **/
-// See BaseCryptLib.h:805
+// FROM BaseCryptLib.h:805
+typedef
 UINTN
-EFIAPI
-Sm3GetContextSize (
+(EFIAPI *EDKII_CRYPTO_SM3_GET_CONTEXT_SIZE)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (Sm3GetContextSize, (), 0);
-}
+  );
 
 /**
   Initializes user-supplied memory pointed by Sm3Context as SM3 hash context for
@@ -3408,15 +2965,12 @@ Sm3GetContextSize (
   @retval TRUE   SM3 context initialization succeeded.
   @retval FALSE  SM3 context initialization failed.
 **/
-// See BaseCryptLib.h:823
+// FROM BaseCryptLib.h:823
+typedef
 BOOLEAN
-EFIAPI
-Sm3Init (
+(EFIAPI *EDKII_CRYPTO_SM3_INIT)(
   OUT  VOID  *Sm3Context
-  )
-{
-  CALL_CRYPTO_SERVICE (Sm3Init, (Sm3Context), FALSE);
-}
+  );
 
 /**
   Makes a copy of an existing SM3 context.
@@ -3429,16 +2983,13 @@ Sm3Init (
   @retval FALSE  SM3 context copy failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:844
+// FROM BaseCryptLib.h:844
+typedef
 BOOLEAN
-EFIAPI
-Sm3Duplicate (
+(EFIAPI *EDKII_CRYPTO_SM3_DUPLICATE)(
   IN   CONST VOID  *Sm3Context,
   OUT  VOID        *NewSm3Context
-  )
-{
-  CALL_CRYPTO_SERVICE (Sm3Duplicate, (Sm3Context, NewSm3Context), FALSE);
-}
+  );
 
 /**
   Digests the input data and updates SM3 context.
@@ -3453,17 +3004,14 @@ Sm3Duplicate (
   @retval TRUE   SM3 data digest succeeded.
   @retval FALSE  SM3 data digest failed.
 **/
-// See BaseCryptLib.h:869
+// FROM BaseCryptLib.h:869
+typedef
 BOOLEAN
-EFIAPI
-Sm3Update (
+(EFIAPI *EDKII_CRYPTO_SM3_UPDATE)(
   IN OUT  VOID        *Sm3Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (Sm3Update, (Sm3Context, Data, DataSize), FALSE);
-}
+  );
 
 /**
   Completes computation of the SM3 digest value.
@@ -3480,16 +3028,13 @@ Sm3Update (
   @retval TRUE   SM3 digest computation succeeded.
   @retval FALSE  SM3 digest computation failed.
 **/
-// See BaseCryptLib.h:897
+// FROM BaseCryptLib.h:897
+typedef
 BOOLEAN
-EFIAPI
-Sm3Final (
+(EFIAPI *EDKII_CRYPTO_SM3_FINAL)(
   IN OUT  VOID   *Sm3Context,
   OUT     UINT8  *HashValue
-  )
-{
-  CALL_CRYPTO_SERVICE (Sm3Final, (Sm3Context, HashValue), FALSE);
-}
+  );
 
 /**
   Computes the SM3 message digest of a input data buffer.
@@ -3504,17 +3049,14 @@ Sm3Final (
   @retval FALSE  SM3 digest computation failed.
   @retval FALSE  This interface is not supported.
 **/
-// See BaseCryptLib.h:922
+// FROM BaseCryptLib.h:922
+typedef
 BOOLEAN
-EFIAPI
-Sm3HashAll (
+(EFIAPI *EDKII_CRYPTO_SM3_HASH_ALL)(
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
-  )
-{
-  CALL_CRYPTO_SERVICE (Sm3HashAll, (Data, DataSize, HashValue), FALSE);
-}
+  );
 
 // =============================================================================
 //     HKDF functions
@@ -3533,10 +3075,10 @@ Sm3HashAll (
   @retval TRUE   Hkdf generated successfully.
   @retval FALSE  Hkdf generation failed.
 **/
-// See BaseCryptLib.h:3205
+// FROM BaseCryptLib.h:3205
+typedef
 BOOLEAN
-EFIAPI
-HkdfSha256ExtractAndExpand (
+(EFIAPI *EDKII_CRYPTO_HKDF_SHA256_EXTRACT_AND_EXPAND)(
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   IN   CONST UINT8  *Salt,
@@ -3545,10 +3087,7 @@ HkdfSha256ExtractAndExpand (
   IN   UINTN        InfoSize,
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
-  )
-{
-  CALL_CRYPTO_SERVICE (HkdfSha256ExtractAndExpand, (Key, KeySize, Salt, SaltSize, Info, InfoSize, Out, OutSize), FALSE);
-}
+  );
 
 /**
   Derive SHA256 HMAC-based Extract key Derivation Function (HKDF).
@@ -3561,20 +3100,17 @@ HkdfSha256ExtractAndExpand (
   @retval true   Hkdf generated successfully.
   @retval false  Hkdf generation failed.
 **/
-// See BaseCryptLib.h:3232
+// FROM BaseCryptLib.h:3232
+typedef
 BOOLEAN
-EFIAPI
-HkdfSha256Extract (
+(EFIAPI *EDKII_CRYPTO_HKDF_SHA256_EXTRACT)(
   IN CONST UINT8  *Key,
   IN UINTN        KeySize,
   IN CONST UINT8  *Salt,
   IN UINTN        SaltSize,
   OUT UINT8       *PrkOut,
   UINTN           PrkOutSize
-  )
-{
-  CALL_CRYPTO_SERVICE (HkdfSha256Extract, (Key, KeySize, Salt, SaltSize, PrkOut, PrkOutSize), FALSE);
-}
+  );
 
 /**
   Derive SHA256 HMAC-based Expand Key Derivation Function (HKDF).
@@ -3587,20 +3123,17 @@ HkdfSha256Extract (
   @retval TRUE   Hkdf generated successfully.
   @retval FALSE  Hkdf generation failed.
 **/
-// See BaseCryptLib.h:3257
+// FROM BaseCryptLib.h:3257
+typedef
 BOOLEAN
-EFIAPI
-HkdfSha256Expand (
+(EFIAPI *EDKII_CRYPTO_HKDF_SHA256_EXPAND)(
   IN   CONST UINT8  *Prk,
   IN   UINTN        PrkSize,
   IN   CONST UINT8  *Info,
   IN   UINTN        InfoSize,
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
-  )
-{
-  CALL_CRYPTO_SERVICE (HkdfSha256Expand, (Prk, PrkSize, Info, InfoSize, Out, OutSize), FALSE);
-}
+  );
 
 /**
   Derive SHA384 HMAC-based Extract-and-Expand Key Derivation Function (HKDF).
@@ -3615,10 +3148,10 @@ HkdfSha256Expand (
   @retval TRUE   Hkdf generated successfully.
   @retval FALSE  Hkdf generation failed.
 **/
-// See BaseCryptLib.h:3284
+// FROM BaseCryptLib.h:3284
+typedef
 BOOLEAN
-EFIAPI
-HkdfSha384ExtractAndExpand (
+(EFIAPI *EDKII_CRYPTO_HKDF_SHA384_EXTRACT_AND_EXPAND)(
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   IN   CONST UINT8  *Salt,
@@ -3627,10 +3160,7 @@ HkdfSha384ExtractAndExpand (
   IN   UINTN        InfoSize,
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
-  )
-{
-  CALL_CRYPTO_SERVICE (HkdfSha384ExtractAndExpand, (Key, KeySize, Salt, SaltSize, Info, InfoSize, Out, OutSize), FALSE);
-}
+  );
 
 /**
   Derive SHA384 HMAC-based Extract key Derivation Function (HKDF).
@@ -3643,20 +3173,17 @@ HkdfSha384ExtractAndExpand (
   @retval true   Hkdf generated successfully.
   @retval false  Hkdf generation failed.
 **/
-// See BaseCryptLib.h:3311
+// FROM BaseCryptLib.h:3311
+typedef
 BOOLEAN
-EFIAPI
-HkdfSha384Extract (
+(EFIAPI *EDKII_CRYPTO_HKDF_SHA384_EXTRACT)(
   IN CONST UINT8  *Key,
   IN UINTN        KeySize,
   IN CONST UINT8  *Salt,
   IN UINTN        SaltSize,
   OUT UINT8       *PrkOut,
   UINTN           PrkOutSize
-  )
-{
-  CALL_CRYPTO_SERVICE (HkdfSha384Extract, (Key, KeySize, Salt, SaltSize, PrkOut, PrkOutSize), FALSE);
-}
+  );
 
 /**
   Derive SHA384 HMAC-based Expand Key Derivation Function (HKDF).
@@ -3669,20 +3196,17 @@ HkdfSha384Extract (
   @retval TRUE   Hkdf generated successfully.
   @retval FALSE  Hkdf generation failed.
 **/
-// See BaseCryptLib.h:3336
+// FROM BaseCryptLib.h:3336
+typedef
 BOOLEAN
-EFIAPI
-HkdfSha384Expand (
+(EFIAPI *EDKII_CRYPTO_HKDF_SHA384_EXPAND)(
   IN   CONST UINT8  *Prk,
   IN   UINTN        PrkSize,
   IN   CONST UINT8  *Info,
   IN   UINTN        InfoSize,
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
-  )
-{
-  CALL_CRYPTO_SERVICE (HkdfSha384Expand, (Prk, PrkSize, Info, InfoSize, Out, OutSize), FALSE);
-}
+  );
 
 // =============================================================================
 //     TLS functions
@@ -3696,29 +3220,23 @@ HkdfSha384Expand (
   @retval TRUE   The OpenSSL library has been initialized.
   @retval FALSE  Failed to initialize the OpenSSL library.
 **/
-// See TlsLib.h:24
+// FROM TlsLib.h:24
+typedef
 BOOLEAN
-EFIAPI
-TlsInitialize (
+(EFIAPI *EDKII_CRYPTO_TLS_INITIALIZE)(
   VOID
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsInitialize, (), FALSE);
-}
+  );
 
 /**
   Free an allocated SSL_CTX object.
   @param[in]  TlsCtx    Pointer to the SSL_CTX object to be released.
 **/
-// See TlsLib.h:36
+// FROM TlsLib.h:36
+typedef
 VOID
-EFIAPI
-TlsCtxFree (
+(EFIAPI *EDKII_CRYPTO_TLS_CTX_FREE)(
   IN   VOID  *TlsCtx
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (TlsCtxFree, (TlsCtx));
-}
+  );
 
 /**
   Creates a new SSL_CTX object as framework to establish TLS/SSL enabled
@@ -3728,16 +3246,13 @@ TlsCtxFree (
   @return  Pointer to an allocated SSL_CTX object.
            If the creation failed, TlsCtxNew() returns NULL.
 **/
-// See TlsLib.h:53
+// FROM TlsLib.h:53
+typedef
 VOID *
-EFIAPI
-TlsCtxNew (
+(EFIAPI *EDKII_CRYPTO_TLS_CTX_NEW)(
   IN     UINT8  MajorVer,
   IN     UINT8  MinorVer
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsCtxNew, (MajorVer, MinorVer), NULL);
-}
+  );
 
 /**
   Free an allocated TLS object.
@@ -3745,15 +3260,12 @@ TlsCtxNew (
   allocated memory. If Tls is NULL, nothing is done.
   @param[in]  Tls    Pointer to the TLS object to be freed.
 **/
-// See TlsLib.h:69
+// FROM TlsLib.h:69
+typedef
 VOID
-EFIAPI
-TlsFree (
+(EFIAPI *EDKII_CRYPTO_TLS_FREE)(
   IN     VOID  *Tls
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (TlsFree, (Tls));
-}
+  );
 
 /**
   Create a new TLS object for a connection.
@@ -3764,15 +3276,12 @@ TlsFree (
   @return  Pointer to an allocated SSL object.
            If the creation failed, TlsNew() returns NULL.
 **/
-// See TlsLib.h:88
+// FROM TlsLib.h:88
+typedef
 VOID *
-EFIAPI
-TlsNew (
+(EFIAPI *EDKII_CRYPTO_TLS_NEW)(
   IN     VOID  *TlsCtx
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsNew, (TlsCtx), NULL);
-}
+  );
 
 /**
   Checks if the TLS handshake was done.
@@ -3781,15 +3290,12 @@ TlsNew (
   @retval  TRUE     The TLS handshake was done.
   @retval  FALSE    The TLS handshake was not done.
 **/
-// See TlsLib.h:105
+// FROM TlsLib.h:105
+typedef
 BOOLEAN
-EFIAPI
-TlsInHandshake (
+(EFIAPI *EDKII_CRYPTO_TLS_IN_HANDSHAKE)(
   IN     VOID  *Tls
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsInHandshake, (Tls), FALSE);
-}
+  );
 
 /**
   Perform a TLS/SSL handshake.
@@ -3813,19 +3319,16 @@ TlsInHandshake (
   @retval EFI_BUFFER_TOO_SMALL    BufferOutSize is too small to hold the response packet.
   @retval EFI_ABORTED             Something wrong during handshake.
 **/
-// See TlsLib.h:137
+// FROM TlsLib.h:137
+typedef
 EFI_STATUS
-EFIAPI
-TlsDoHandshake (
+(EFIAPI *EDKII_CRYPTO_TLS_DO_HANDSHAKE)(
   IN     VOID   *Tls,
   IN     UINT8  *BufferIn  OPTIONAL,
   IN     UINTN  BufferInSize  OPTIONAL,
   OUT UINT8     *BufferOut  OPTIONAL,
   IN OUT UINTN  *BufferOutSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsDoHandshake, (Tls, BufferIn, BufferInSize, BufferOut, BufferOutSize), 0);
-}
+  );
 
 /**
   Handle Alert message recorded in BufferIn. If BufferIn is NULL and BufferInSize is zero,
@@ -3849,19 +3352,16 @@ TlsDoHandshake (
   @retval EFI_ABORTED             An error occurred.
   @retval EFI_BUFFER_TOO_SMALL    BufferOutSize is too small to hold the response packet.
 **/
-// See TlsLib.h:172
+// FROM TlsLib.h:172
+typedef
 EFI_STATUS
-EFIAPI
-TlsHandleAlert (
+(EFIAPI *EDKII_CRYPTO_TLS_HANDLE_ALERT)(
   IN     VOID   *Tls,
   IN     UINT8  *BufferIn  OPTIONAL,
   IN     UINTN  BufferInSize  OPTIONAL,
   OUT UINT8     *BufferOut  OPTIONAL,
   IN OUT UINTN  *BufferOutSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsHandleAlert, (Tls, BufferIn, BufferInSize, BufferOut, BufferOutSize), 0);
-}
+  );
 
 /**
   Build the CloseNotify packet.
@@ -3878,17 +3378,14 @@ TlsHandleAlert (
                                   Buffer is NULL if *BufferSize is not zero.
   @retval EFI_BUFFER_TOO_SMALL    BufferSize is too small to hold the response packet.
 **/
-// See TlsLib.h:200
+// FROM TlsLib.h:200
+typedef
 EFI_STATUS
-EFIAPI
-TlsCloseNotify (
+(EFIAPI *EDKII_CRYPTO_TLS_CLOSE_NOTIFY)(
   IN     VOID   *Tls,
   IN OUT UINT8  *Buffer,
   IN OUT UINTN  *BufferSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsCloseNotify, (Tls, Buffer, BufferSize), 0);
-}
+  );
 
 /**
   Attempts to read bytes from one TLS object and places the data in Buffer.
@@ -3900,17 +3397,14 @@ TlsCloseNotify (
   @retval  >0    The amount of data successfully read from the TLS object.
   @retval  <=0   No data was successfully read.
 **/
-// See TlsLib.h:222
+// FROM TlsLib.h:222
+typedef
 INTN
-EFIAPI
-TlsCtrlTrafficOut (
+(EFIAPI *EDKII_CRYPTO_TLS_CTRL_TRAFFIC_OUT)(
   IN     VOID   *Tls,
   IN OUT VOID   *Buffer,
   IN     UINTN  BufferSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsCtrlTrafficOut, (Tls, Buffer, BufferSize), 0);
-}
+  );
 
 /**
   Attempts to write data from the buffer to TLS object.
@@ -3922,17 +3416,14 @@ TlsCtrlTrafficOut (
   @retval  >0    The amount of data successfully written to the TLS object.
   @retval <=0    No data was successfully written.
 **/
-// See TlsLib.h:244
+// FROM TlsLib.h:244
+typedef
 INTN
-EFIAPI
-TlsCtrlTrafficIn (
+(EFIAPI *EDKII_CRYPTO_TLS_CTRL_TRAFFIC_IN)(
   IN     VOID   *Tls,
   IN     VOID   *Buffer,
   IN     UINTN  BufferSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsCtrlTrafficIn, (Tls, Buffer, BufferSize), 0);
-}
+  );
 
 /**
   Attempts to read bytes from the specified TLS connection into the buffer.
@@ -3945,17 +3436,14 @@ TlsCtrlTrafficIn (
                  number of bytes actually read from the TLS connection.
   @retval  <=0   The read operation was not successful.
 **/
-// See TlsLib.h:267
+// FROM TlsLib.h:267
+typedef
 INTN
-EFIAPI
-TlsRead (
+(EFIAPI *EDKII_CRYPTO_TLS_READ)(
   IN     VOID   *Tls,
   IN OUT VOID   *Buffer,
   IN     UINTN  BufferSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsRead, (Tls, Buffer, BufferSize), 0);
-}
+  );
 
 /**
   Attempts to write data to a TLS connection.
@@ -3968,17 +3456,14 @@ TlsRead (
                  number of bytes actually written to the TLS connection.
   @retval <=0    The write operation was not successful.
 **/
-// See TlsLib.h:290
+// FROM TlsLib.h:290
+typedef
 INTN
-EFIAPI
-TlsWrite (
+(EFIAPI *EDKII_CRYPTO_TLS_WRITE)(
   IN     VOID   *Tls,
   IN     VOID   *Buffer,
   IN     UINTN  BufferSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsWrite, (Tls, Buffer, BufferSize), 0);
-}
+  );
 
 /**
   Shutdown a TLS connection.
@@ -3990,15 +3475,12 @@ TlsWrite (
   @retval EFI_INVALID_PARAMETER   Tls is NULL.
   @retval EFI_PROTOCOL_ERROR      Some other error occurred.
 **/
-// See TlsLib.h:311
+// FROM TlsLib.h:311
+typedef
 EFI_STATUS
-EFIAPI
-TlsShutdown (
+(EFIAPI *EDKII_CRYPTO_TLS_SHUTDOWN)(
   IN     VOID  *Tls
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsShutdown, (Tls), 0);
-}
+  );
 
 // =============================================================================
 //     TLSSET functions
@@ -4014,17 +3496,14 @@ TlsShutdown (
   @retval  EFI_INVALID_PARAMETER The parameter is invalid.
   @retval  EFI_UNSUPPORTED       Unsupported TLS/SSL method.
 **/
-// See TlsLib.h:331
+// FROM TlsLib.h:331
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetVersion (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_VERSION)(
   IN     VOID   *Tls,
   IN     UINT8  MajorVer,
   IN     UINT8  MinorVer
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetVersion, (Tls, MajorVer, MinorVer), 0);
-}
+  );
 
 /**
   Set TLS object to work in client or server mode.
@@ -4035,16 +3514,13 @@ TlsSetVersion (
   @retval  EFI_INVALID_PARAMETER The parameter is invalid.
   @retval  EFI_UNSUPPORTED       Unsupported TLS/SSL work mode.
 **/
-// See TlsLib.h:352
+// FROM TlsLib.h:352
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetConnectionEnd (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_CONNECTION_END)(
   IN     VOID     *Tls,
   IN     BOOLEAN  IsServer
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetConnectionEnd, (Tls, IsServer), 0);
-}
+  );
 
 /**
   Set the ciphers list to be used by the TLS object.
@@ -4060,17 +3536,14 @@ TlsSetConnectionEnd (
   @retval  EFI_UNSUPPORTED       No supported TLS cipher was found in CipherId.
   @retval  EFI_OUT_OF_RESOURCES  Memory allocation failed.
 **/
-// See TlsLib.h:377
+// FROM TlsLib.h:377
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetCipherList (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_CIPHER_LIST)(
   IN     VOID    *Tls,
   IN     UINT16  *CipherId,
   IN     UINTN   CipherNum
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetCipherList, (Tls, CipherId, CipherNum), 0);
-}
+  );
 
 /**
   Set the compression method for TLS/SSL operations.
@@ -4080,15 +3553,12 @@ TlsSetCipherList (
                               set successfully.
   @retval  EFI_UNSUPPORTED    Unsupported compression method.
 **/
-// See TlsLib.h:397
+// FROM TlsLib.h:397
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetCompressionMethod (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_COMPRESSION_METHOD)(
   IN     UINT8  CompMethod
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetCompressionMethod, (CompMethod), 0);
-}
+  );
 
 /**
   Set peer certificate verification mode for the TLS connection.
@@ -4096,16 +3566,13 @@ TlsSetCompressionMethod (
   @param[in]  Tls           Pointer to the TLS object.
   @param[in]  VerifyMode    A set of logically or'ed verification mode flags.
 **/
-// See TlsLib.h:412
+// FROM TlsLib.h:412
+typedef
 VOID
-EFIAPI
-TlsSetVerify (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_VERIFY)(
   IN     VOID    *Tls,
   IN     UINT32  VerifyMode
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (TlsSetVerify, (Tls, VerifyMode));
-}
+  );
 
 /**
   Set the specified host name to be verified.
@@ -4116,17 +3583,14 @@ TlsSetVerify (
   @retval  EFI_INVALID_PARAMETER The parameter is invalid.
   @retval  EFI_ABORTED           Invalid HostName setting.
 **/
-// See TlsLib.h:431
+// FROM TlsLib.h:431
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetVerifyHost (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_VERIFY_HOST)(
   IN     VOID    *Tls,
   IN     UINT32  Flags,
   IN     CHAR8   *HostName
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetVerifyHost, (Tls, Flags, HostName), 0);
-}
+  );
 
 /**
   Sets a TLS/SSL session ID to be used during TLS/SSL connect.
@@ -4139,17 +3603,14 @@ TlsSetVerifyHost (
   @retval  EFI_INVALID_PARAMETER The parameter is invalid.
   @retval  EFI_UNSUPPORTED       No available session for ID setting.
 **/
-// See TlsLib.h:454
+// FROM TlsLib.h:454
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetSessionId (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_SESSION_ID)(
   IN     VOID    *Tls,
   IN     UINT8   *SessionId,
   IN     UINT16  SessionIdLen
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetSessionId, (Tls, SessionId, SessionIdLen), 0);
-}
+  );
 
 /**
   Adds the CA to the cert store when requesting Server or Client authentication.
@@ -4164,17 +3625,14 @@ TlsSetSessionId (
   @retval  EFI_OUT_OF_RESOURCES    Required resources could not be allocated.
   @retval  EFI_ABORTED             Invalid X.509 certificate.
 **/
-// See TlsLib.h:479
+// FROM TlsLib.h:479
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetCaCertificate (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_CA_CERTIFICATE)(
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetCaCertificate, (Tls, Data, DataSize), 0);
-}
+  );
 
 /**
   Loads the local public certificate into the specified TLS object.
@@ -4189,17 +3647,14 @@ TlsSetCaCertificate (
   @retval  EFI_OUT_OF_RESOURCES    Required resources could not be allocated.
   @retval  EFI_ABORTED             Invalid X.509 certificate.
 **/
-// See TlsLib.h:504
+// FROM TlsLib.h:504
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetHostPublicCert (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_HOST_PUBLIC_CERT)(
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetHostPublicCert, (Tls, Data, DataSize), 0);
-}
+  );
 
 /**
   Adds the local private key to the specified TLS object.
@@ -4215,18 +3670,15 @@ TlsSetHostPublicCert (
   @retval  EFI_UNSUPPORTED This function is not supported.
   @retval  EFI_ABORTED     Invalid private key data.
 **/
-// See TlsLib.h:530
+// FROM TlsLib.h:530
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetHostPrivateKeyEx (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_HOST_PRIVATE_KEY_EX)(
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize,
   IN     VOID   *Password  OPTIONAL
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetHostPrivateKeyEx, (Tls, Data, DataSize, Password), 0);
-}
+  );
 
 /**
   Adds the local private key to the specified TLS object.
@@ -4240,17 +3692,14 @@ TlsSetHostPrivateKeyEx (
   @retval  EFI_UNSUPPORTED This function is not supported.
   @retval  EFI_ABORTED     Invalid private key data.
 **/
-// See TlsLib.h:555
+// FROM TlsLib.h:555
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetHostPrivateKey (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_HOST_PRIVATE_KEY)(
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetHostPrivateKey, (Tls, Data, DataSize), 0);
-}
+  );
 
 /**
   Adds the CA-supplied certificate revocation list for certificate validation.
@@ -4262,16 +3711,13 @@ TlsSetHostPrivateKey (
   @retval  EFI_UNSUPPORTED This function is not supported.
   @retval  EFI_ABORTED     Invalid CRL data.
 **/
-// See TlsLib.h:577
+// FROM TlsLib.h:577
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetCertRevocationList (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_CERT_REVOCATION_LIST)(
   IN     VOID   *Data,
   IN     UINTN  DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetCertRevocationList, (Data, DataSize), 0);
-}
+  );
 
 /**
   Set the signature algorithm list to used by the TLS object.
@@ -4286,17 +3732,14 @@ TlsSetCertRevocationList (
   @retval  EFI_UNSUPPORTED       No supported TLS signature algorithm was found in SignatureAlgoList
   @retval  EFI_OUT_OF_RESOURCES  Memory allocation failed.
 **/
-// See TlsLib.h:601
+// FROM TlsLib.h:601
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetSignatureAlgoList (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_SIGNATURE_ALGO_LIST)(
   IN     VOID   *Tls,
   IN     UINT8  *Data,
   IN     UINTN  DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetSignatureAlgoList, (Tls, Data, DataSize), 0);
-}
+  );
 
 /**
   Set the EC curve to be used for TLS flows
@@ -4308,17 +3751,14 @@ TlsSetSignatureAlgoList (
   @retval  EFI_INVALID_PARAMETER The parameters are invalid.
   @retval  EFI_UNSUPPORTED       The requested TLS EC curve is not supported
 **/
-// See TlsLib.h:623
+// FROM TlsLib.h:623
+typedef
 EFI_STATUS
-EFIAPI
-TlsSetEcCurve (
+(EFIAPI *EDKII_CRYPTO_TLS_SET_EC_CURVE)(
   IN     VOID   *Tls,
   IN     UINT8  *Data,
   IN     UINTN  DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsSetEcCurve, (Tls, Data, DataSize), 0);
-}
+  );
 
 // =============================================================================
 //     TLSGET functions
@@ -4332,15 +3772,12 @@ TlsSetEcCurve (
   @param[in]  Tls    Pointer to the TLS object.
   @return  The protocol version of the specified TLS connection.
 **/
-// See TlsLib.h:644
+// FROM TlsLib.h:644
+typedef
 UINT16
-EFIAPI
-TlsGetVersion (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_VERSION)(
   IN     VOID  *Tls
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsGetVersion, (Tls), 0);
-}
+  );
 
 /**
   Gets the connection end of the specified TLS connection.
@@ -4350,15 +3787,12 @@ TlsGetVersion (
   @param[in]  Tls    Pointer to the TLS object.
   @return  The connection end used by the specified TLS connection.
 **/
-// See TlsLib.h:663
+// FROM TlsLib.h:663
+typedef
 UINT8
-EFIAPI
-TlsGetConnectionEnd (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_CONNECTION_END)(
   IN     VOID  *Tls
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsGetConnectionEnd, (Tls), 0);
-}
+  );
 
 /**
   Gets the cipher suite used by the specified TLS connection.
@@ -4370,16 +3804,13 @@ TlsGetConnectionEnd (
   @retval  EFI_INVALID_PARAMETER The parameter is invalid.
   @retval  EFI_UNSUPPORTED       Unsupported cipher suite.
 **/
-// See TlsLib.h:683
+// FROM TlsLib.h:683
+typedef
 EFI_STATUS
-EFIAPI
-TlsGetCurrentCipher (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_CURRENT_CIPHER)(
   IN     VOID    *Tls,
   IN OUT UINT16  *CipherId
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsGetCurrentCipher, (Tls, CipherId), 0);
-}
+  );
 
 /**
   Gets the compression methods used by the specified TLS connection.
@@ -4393,16 +3824,13 @@ TlsGetCurrentCipher (
   @retval  EFI_ABORTED           Invalid Compression method.
   @retval  EFI_UNSUPPORTED       This function is not supported.
 **/
-// See TlsLib.h:706
+// FROM TlsLib.h:706
+typedef
 EFI_STATUS
-EFIAPI
-TlsGetCurrentCompressionId (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_CURRENT_COMPRESSION_ID)(
   IN     VOID   *Tls,
   IN OUT UINT8  *CompressionId
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsGetCurrentCompressionId, (Tls, CompressionId), 0);
-}
+  );
 
 /**
   Gets the verification mode currently set in the TLS connection.
@@ -4412,15 +3840,12 @@ TlsGetCurrentCompressionId (
   @param[in]  Tls    Pointer to the TLS object.
   @return  The verification mode set in the specified TLS connection.
 **/
-// See TlsLib.h:726
+// FROM TlsLib.h:726
+typedef
 UINT32
-EFIAPI
-TlsGetVerify (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_VERIFY)(
   IN     VOID  *Tls
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsGetVerify, (Tls), 0);
-}
+  );
 
 /**
   Gets the session ID used by the specified TLS connection.
@@ -4433,17 +3858,14 @@ TlsGetVerify (
   @retval  EFI_INVALID_PARAMETER The parameter is invalid.
   @retval  EFI_UNSUPPORTED       Invalid TLS/SSL session.
 **/
-// See TlsLib.h:747
+// FROM TlsLib.h:747
+typedef
 EFI_STATUS
-EFIAPI
-TlsGetSessionId (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_SESSION_ID)(
   IN     VOID    *Tls,
   IN OUT UINT8   *SessionId,
   IN OUT UINT16  *SessionIdLen
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsGetSessionId, (Tls, SessionId, SessionIdLen), 0);
-}
+  );
 
 /**
   Gets the client random data used in the specified TLS connection.
@@ -4453,16 +3875,13 @@ TlsGetSessionId (
   @param[in,out]  ClientRandom    Buffer to contain the returned client
                                   random data (32 bytes).
 **/
-// See TlsLib.h:766
+// FROM TlsLib.h:766
+typedef
 VOID
-EFIAPI
-TlsGetClientRandom (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_CLIENT_RANDOM)(
   IN     VOID   *Tls,
   IN OUT UINT8  *ClientRandom
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (TlsGetClientRandom, (Tls, ClientRandom));
-}
+  );
 
 /**
   Gets the server random data used in the specified TLS connection.
@@ -4472,16 +3891,13 @@ TlsGetClientRandom (
   @param[in,out]  ServerRandom    Buffer to contain the returned server
                                   random data (32 bytes).
 **/
-// See TlsLib.h:784
+// FROM TlsLib.h:784
+typedef
 VOID
-EFIAPI
-TlsGetServerRandom (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_SERVER_RANDOM)(
   IN     VOID   *Tls,
   IN OUT UINT8  *ServerRandom
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (TlsGetServerRandom, (Tls, ServerRandom));
-}
+  );
 
 /**
   Gets the master key data used in the specified TLS connection.
@@ -4493,16 +3909,13 @@ TlsGetServerRandom (
   @retval  EFI_INVALID_PARAMETER The parameter is invalid.
   @retval  EFI_UNSUPPORTED       Invalid TLS/SSL session.
 **/
-// See TlsLib.h:805
+// FROM TlsLib.h:805
+typedef
 EFI_STATUS
-EFIAPI
-TlsGetKeyMaterial (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_KEY_MATERIAL)(
   IN     VOID   *Tls,
   IN OUT UINT8  *KeyMaterial
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsGetKeyMaterial, (Tls, KeyMaterial), 0);
-}
+  );
 
 /**
   Gets the CA Certificate from the cert store.
@@ -4516,17 +3929,14 @@ TlsGetKeyMaterial (
   @retval  EFI_UNSUPPORTED         This function is not supported.
   @retval  EFI_BUFFER_TOO_SMALL    The Data is too small to hold the data.
 **/
-// See TlsLib.h:828
+// FROM TlsLib.h:828
+typedef
 EFI_STATUS
-EFIAPI
-TlsGetCaCertificate (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_CA_CERTIFICATE)(
   IN     VOID   *Tls,
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsGetCaCertificate, (Tls, Data, DataSize), 0);
-}
+  );
 
 /**
   Gets the local public Certificate set in the specified TLS object.
@@ -4541,17 +3951,14 @@ TlsGetCaCertificate (
   @retval  EFI_NOT_FOUND           The certificate is not found.
   @retval  EFI_BUFFER_TOO_SMALL    The Data is too small to hold the data.
 **/
-// See TlsLib.h:853
+// FROM TlsLib.h:853
+typedef
 EFI_STATUS
-EFIAPI
-TlsGetHostPublicCert (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_HOST_PUBLIC_CERT)(
   IN     VOID   *Tls,
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsGetHostPublicCert, (Tls, Data, DataSize), 0);
-}
+  );
 
 /**
   Gets the local private key set in the specified TLS object.
@@ -4565,17 +3972,14 @@ TlsGetHostPublicCert (
   @retval  EFI_UNSUPPORTED         This function is not supported.
   @retval  EFI_BUFFER_TOO_SMALL    The Data is too small to hold the data.
 **/
-// See TlsLib.h:877
+// FROM TlsLib.h:877
+typedef
 EFI_STATUS
-EFIAPI
-TlsGetHostPrivateKey (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_HOST_PRIVATE_KEY)(
   IN     VOID   *Tls,
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsGetHostPrivateKey, (Tls, Data, DataSize), 0);
-}
+  );
 
 /**
   Gets the CA-supplied certificate revocation list data set in the specified
@@ -4588,16 +3992,13 @@ TlsGetHostPrivateKey (
   @retval  EFI_UNSUPPORTED         This function is not supported.
   @retval  EFI_BUFFER_TOO_SMALL    The Data is too small to hold the data.
 **/
-// See TlsLib.h:900
+// FROM TlsLib.h:900
+typedef
 EFI_STATUS
-EFIAPI
-TlsGetCertRevocationList (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_CERT_REVOCATION_LIST)(
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsGetCertRevocationList, (Data, DataSize), 0);
-}
+  );
 
 /**
   Derive keying material from a TLS connection.
@@ -4613,20 +4014,17 @@ TlsGetCertRevocationList (
   @retval  EFI_INVALID_PARAMETER   The TLS object is invalid.
   @retval  EFI_PROTOCOL_ERROR      Some other error occurred.
 **/
-// See TlsLib.h:925
+// FROM TlsLib.h:925
+typedef
 EFI_STATUS
-EFIAPI
-TlsGetExportKey (
+(EFIAPI *EDKII_CRYPTO_TLS_GET_EXPORT_KEY)(
   IN     VOID        *Tls,
   IN     CONST VOID  *Label,
   IN     CONST VOID  *Context,
   IN     UINTN       ContextLen,
   OUT    VOID        *KeyBuffer,
   IN     UINTN       KeyBufferLen
-  )
-{
-  CALL_CRYPTO_SERVICE (TlsGetExportKey, (Tls, Label, Context, ContextLen, KeyBuffer, KeyBufferLen), 0);
-}
+  );
 
 // =============================================================================
 //     EC functions
@@ -4641,15 +4039,12 @@ TlsGetExportKey (
   @retval EcGroup object  On success.
   @retval NULL            On failure.
 **/
-// See BaseCryptLib.h:3780
+// FROM BaseCryptLib.h:3780
+typedef
 VOID *
-EFIAPI
-EcGroupInit (
+(EFIAPI *EDKII_CRYPTO_EC_GROUP_INIT)(
   IN UINTN  CryptoNid
-  )
-{
-  CALL_CRYPTO_SERVICE (EcGroupInit, (CryptoNid), NULL);
-}
+  );
 
 /**
   Get EC curve parameters. While elliptic curve equation is Y^2 mod P = (X^3 + AX + B) Mod P.
@@ -4664,19 +4059,16 @@ EcGroupInit (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3801
+// FROM BaseCryptLib.h:3801
+typedef
 BOOLEAN
-EFIAPI
-EcGroupGetCurve (
+(EFIAPI *EDKII_CRYPTO_EC_GROUP_GET_CURVE)(
   IN CONST VOID  *EcGroup,
   OUT VOID       *BnPrime,
   OUT VOID       *BnA,
   OUT VOID       *BnB,
   IN VOID        *BnCtx
-  )
-{
-  CALL_CRYPTO_SERVICE (EcGroupGetCurve, (EcGroup, BnPrime, BnA, BnB, BnCtx), FALSE);
-}
+  );
 
 /**
   Get EC group order.
@@ -4688,30 +4080,24 @@ EcGroupGetCurve (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3823
+// FROM BaseCryptLib.h:3823
+typedef
 BOOLEAN
-EFIAPI
-EcGroupGetOrder (
+(EFIAPI *EDKII_CRYPTO_EC_GROUP_GET_ORDER)(
   IN VOID   *EcGroup,
   OUT VOID  *BnOrder
-  )
-{
-  CALL_CRYPTO_SERVICE (EcGroupGetOrder, (EcGroup, BnOrder), FALSE);
-}
+  );
 
 /**
   Free previously allocated EC group object using EcGroupInit().
   @param[in]  EcGroup   EC group object to free.
 **/
-// See BaseCryptLib.h:3835
+// FROM BaseCryptLib.h:3835
+typedef
 VOID
-EFIAPI
-EcGroupFree (
+(EFIAPI *EDKII_CRYPTO_EC_GROUP_FREE)(
   IN VOID  *EcGroup
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (EcGroupFree, (EcGroup));
-}
+  );
 
 /**
   Initialize new opaque EC Point object. This object represents an EC point
@@ -4720,31 +4106,25 @@ EcGroupFree (
   @retval EC Point object  On success.
   @retval NULL             On failure.
 **/
-// See BaseCryptLib.h:3850
+// FROM BaseCryptLib.h:3850
+typedef
 VOID *
-EFIAPI
-EcPointInit (
+(EFIAPI *EDKII_CRYPTO_EC_POINT_INIT)(
   IN CONST VOID  *EcGroup
-  )
-{
-  CALL_CRYPTO_SERVICE (EcPointInit, (EcGroup), NULL);
-}
+  );
 
 /**
   Free previously allocated EC Point object using EcPointInit().
   @param[in]  EcPoint   EC Point to free.
   @param[in]  Clear     TRUE iff the memory should be cleared.
 **/
-// See BaseCryptLib.h:3862
+// FROM BaseCryptLib.h:3862
+typedef
 VOID
-EFIAPI
-EcPointDeInit (
+(EFIAPI *EDKII_CRYPTO_EC_POINT_DE_INIT)(
   IN VOID     *EcPoint,
   IN BOOLEAN  Clear
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (EcPointDeInit, (EcPoint, Clear));
-}
+  );
 
 /**
   Get EC point affine (x,y) coordinates.
@@ -4759,19 +4139,16 @@ EcPointDeInit (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3884
+// FROM BaseCryptLib.h:3884
+typedef
 BOOLEAN
-EFIAPI
-EcPointGetAffineCoordinates (
+(EFIAPI *EDKII_CRYPTO_EC_POINT_GET_AFFINE_COORDINATES)(
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPoint,
   OUT VOID       *BnX,
   OUT VOID       *BnY,
   IN VOID        *BnCtx
-  )
-{
-  CALL_CRYPTO_SERVICE (EcPointGetAffineCoordinates, (EcGroup, EcPoint, BnX, BnY, BnCtx), FALSE);
-}
+  );
 
 /**
   Set EC point affine (x,y) coordinates.
@@ -4783,19 +4160,16 @@ EcPointGetAffineCoordinates (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3906
+// FROM BaseCryptLib.h:3906
+typedef
 BOOLEAN
-EFIAPI
-EcPointSetAffineCoordinates (
+(EFIAPI *EDKII_CRYPTO_EC_POINT_SET_AFFINE_COORDINATES)(
   IN CONST VOID  *EcGroup,
   IN VOID        *EcPoint,
   IN CONST VOID  *BnX,
   IN CONST VOID  *BnY,
   IN VOID        *BnCtx
-  )
-{
-  CALL_CRYPTO_SERVICE (EcPointSetAffineCoordinates, (EcGroup, EcPoint, BnX, BnY, BnCtx), FALSE);
-}
+  );
 
 /**
   EC Point addition. EcPointResult = EcPointA + EcPointB.
@@ -4808,19 +4182,16 @@ EcPointSetAffineCoordinates (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3929
+// FROM BaseCryptLib.h:3929
+typedef
 BOOLEAN
-EFIAPI
-EcPointAdd (
+(EFIAPI *EDKII_CRYPTO_EC_POINT_ADD)(
   IN CONST VOID  *EcGroup,
   OUT VOID       *EcPointResult,
   IN CONST VOID  *EcPointA,
   IN CONST VOID  *EcPointB,
   IN VOID        *BnCtx
-  )
-{
-  CALL_CRYPTO_SERVICE (EcPointAdd, (EcGroup, EcPointResult, EcPointA, EcPointB, BnCtx), FALSE);
-}
+  );
 
 /**
   Variable EC point multiplication. EcPointResult = EcPoint * BnPScalar.
@@ -4833,19 +4204,16 @@ EcPointAdd (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3952
+// FROM BaseCryptLib.h:3952
+typedef
 BOOLEAN
-EFIAPI
-EcPointMul (
+(EFIAPI *EDKII_CRYPTO_EC_POINT_MUL)(
   IN CONST VOID  *EcGroup,
   OUT VOID       *EcPointResult,
   IN CONST VOID  *EcPoint,
   IN CONST VOID  *BnPScalar,
   IN VOID        *BnCtx
-  )
-{
-  CALL_CRYPTO_SERVICE (EcPointMul, (EcGroup, EcPointResult, EcPoint, BnPScalar, BnCtx), FALSE);
-}
+  );
 
 /**
   Calculate the inverse of the supplied EC point.
@@ -4855,17 +4223,14 @@ EcPointMul (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3972
+// FROM BaseCryptLib.h:3972
+typedef
 BOOLEAN
-EFIAPI
-EcPointInvert (
+(EFIAPI *EDKII_CRYPTO_EC_POINT_INVERT)(
   IN CONST VOID  *EcGroup,
   IN OUT VOID    *EcPoint,
   IN VOID        *BnCtx
-  )
-{
-  CALL_CRYPTO_SERVICE (EcPointInvert, (EcGroup, EcPoint, BnCtx), FALSE);
-}
+  );
 
 /**
   Check if the supplied point is on EC curve.
@@ -4875,17 +4240,14 @@ EcPointInvert (
   @retval TRUE          On curve.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:3990
+// FROM BaseCryptLib.h:3990
+typedef
 BOOLEAN
-EFIAPI
-EcPointIsOnCurve (
+(EFIAPI *EDKII_CRYPTO_EC_POINT_IS_ON_CURVE)(
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPoint,
   IN VOID        *BnCtx
-  )
-{
-  CALL_CRYPTO_SERVICE (EcPointIsOnCurve, (EcGroup, EcPoint, BnCtx), FALSE);
-}
+  );
 
 /**
   Check if the supplied point is at infinity.
@@ -4894,16 +4256,13 @@ EcPointIsOnCurve (
   @retval TRUE          At infinity.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:4007
+// FROM BaseCryptLib.h:4007
+typedef
 BOOLEAN
-EFIAPI
-EcPointIsAtInfinity (
+(EFIAPI *EDKII_CRYPTO_EC_POINT_IS_AT_INFINITY)(
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPoint
-  )
-{
-  CALL_CRYPTO_SERVICE (EcPointIsAtInfinity, (EcGroup, EcPoint), FALSE);
-}
+  );
 
 /**
   Check if EC points are equal.
@@ -4914,18 +4273,15 @@ EcPointIsAtInfinity (
   @retval TRUE          A == B.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:4025
+// FROM BaseCryptLib.h:4025
+typedef
 BOOLEAN
-EFIAPI
-EcPointEqual (
+(EFIAPI *EDKII_CRYPTO_EC_POINT_EQUAL)(
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPointA,
   IN CONST VOID  *EcPointB,
   IN VOID        *BnCtx
-  )
-{
-  CALL_CRYPTO_SERVICE (EcPointEqual, (EcGroup, EcPointA, EcPointB, BnCtx), FALSE);
-}
+  );
 
 /**
   Set EC point compressed coordinates. Points can be described in terms of
@@ -4942,19 +4298,16 @@ EcPointEqual (
   @retval TRUE          On success.
   @retval FALSE         Otherwise.
 **/
-// See BaseCryptLib.h:4051
+// FROM BaseCryptLib.h:4051
+typedef
 BOOLEAN
-EFIAPI
-EcPointSetCompressedCoordinates (
+(EFIAPI *EDKII_CRYPTO_EC_POINT_SET_COMPRESSED_COORDINATES)(
   IN CONST VOID  *EcGroup,
   IN VOID        *EcPoint,
   IN CONST VOID  *BnX,
   IN UINT8       YBit,
   IN VOID        *BnCtx
-  )
-{
-  CALL_CRYPTO_SERVICE (EcPointSetCompressedCoordinates, (EcGroup, EcPoint, BnX, YBit, BnCtx), FALSE);
-}
+  );
 
 /**
   Allocates and Initializes one Elliptic Curve Context for subsequent use
@@ -4963,29 +4316,23 @@ EcPointSetCompressedCoordinates (
   @return     Pointer to the Elliptic Curve Context that has been initialized.
               If the allocations fails, EcNewByNid() returns NULL.
 **/
-// See BaseCryptLib.h:4073
+// FROM BaseCryptLib.h:4073
+typedef
 VOID *
-EFIAPI
-EcNewByNid (
+(EFIAPI *EDKII_CRYPTO_EC_NEW_BY_NID)(
   IN UINTN  Nid
-  )
-{
-  CALL_CRYPTO_SERVICE (EcNewByNid, (Nid), NULL);
-}
+  );
 
 /**
   Release the specified EC context.
   @param[in]  EcContext  Pointer to the EC context to be released.
 **/
-// See BaseCryptLib.h:4084
+// FROM BaseCryptLib.h:4084
+typedef
 VOID
-EFIAPI
-EcFree (
+(EFIAPI *EDKII_CRYPTO_EC_FREE)(
   IN  VOID  *EcContext
-  )
-{
-  CALL_VOID_CRYPTO_SERVICE (EcFree, (EcContext));
-}
+  );
 
 /**
   Generates EC key and returns EC public key (X, Y), Please note, this function uses
@@ -5013,17 +4360,14 @@ EcFree (
   @retval FALSE  EC public X,Y generation failed.
   @retval FALSE  PublicKeySize is not large enough.
 **/
-// See BaseCryptLib.h:4116
+// FROM BaseCryptLib.h:4116
+typedef
 BOOLEAN
-EFIAPI
-EcGenerateKey (
+(EFIAPI *EDKII_CRYPTO_EC_GENERATE_KEY)(
   IN OUT  VOID   *EcContext,
   OUT     UINT8  *PublicKey,
   IN OUT  UINTN  *PublicKeySize
-  )
-{
-  CALL_CRYPTO_SERVICE (EcGenerateKey, (EcContext, PublicKey, PublicKeySize), FALSE);
-}
+  );
 
 /**
   Gets the public key component from the established EC context.
@@ -5039,17 +4383,14 @@ EcGenerateKey (
   @retval  TRUE   EC key component was retrieved successfully.
   @retval  FALSE  Invalid EC key component.
 **/
-// See BaseCryptLib.h:4138
+// FROM BaseCryptLib.h:4138
+typedef
 BOOLEAN
-EFIAPI
-EcGetPubKey (
+(EFIAPI *EDKII_CRYPTO_EC_GET_PUB_KEY)(
   IN OUT  VOID   *EcContext,
   OUT     UINT8  *PublicKey,
   IN OUT  UINTN  *PublicKeySize
-  )
-{
-  CALL_CRYPTO_SERVICE (EcGetPubKey, (EcContext, PublicKey, PublicKeySize), FALSE);
-}
+  );
 
 /**
   Computes exchanged common key.
@@ -5076,20 +4417,17 @@ EcGetPubKey (
   @retval FALSE  EC exchanged key generation failed.
   @retval FALSE  KeySize is not large enough.
 **/
-// See BaseCryptLib.h:4171
+// FROM BaseCryptLib.h:4171
+typedef
 BOOLEAN
-EFIAPI
-EcDhComputeKey (
+(EFIAPI *EDKII_CRYPTO_EC_DH_COMPUTE_KEY)(
   IN OUT  VOID         *EcContext,
   IN      CONST UINT8  *PeerPublic,
   IN      UINTN        PeerPublicSize,
   IN      CONST INT32  *CompressFlag,
   OUT     UINT8        *Key,
   IN OUT  UINTN        *KeySize
-  )
-{
-  CALL_CRYPTO_SERVICE (EcDhComputeKey, (EcContext, PeerPublic, PeerPublicSize, CompressFlag, Key, KeySize), FALSE);
-}
+  );
 
 /**
   Retrieve the EC Private Key from the password-protected PEM key data.
@@ -5104,18 +4442,15 @@ EcDhComputeKey (
   @retval  TRUE   EC Private Key was retrieved successfully.
   @retval  FALSE  Invalid PEM key data or incorrect password.
 **/
-// See BaseCryptLib.h:4199
+// FROM BaseCryptLib.h:4199
+typedef
 BOOLEAN
-EFIAPI
-EcGetPrivateKeyFromPem (
+(EFIAPI *EDKII_CRYPTO_EC_GET_PRIVATE_KEY_FROM_PEM)(
   IN   CONST UINT8  *PemData,
   IN   UINTN        PemSize,
   IN   CONST CHAR8  *Password,
   OUT  VOID         **EcContext
-  )
-{
-  CALL_CRYPTO_SERVICE (EcGetPrivateKeyFromPem, (PemData, PemSize, Password, EcContext), FALSE);
-}
+  );
 
 /**
   Retrieve the EC Public Key from one DER-encoded X509 certificate.
@@ -5129,17 +4464,14 @@ EcGetPrivateKeyFromPem (
   @retval  TRUE   EC Public Key was retrieved successfully.
   @retval  FALSE  Fail to retrieve EC public key from X509 certificate.
 **/
-// See BaseCryptLib.h:4224
+// FROM BaseCryptLib.h:4224
+typedef
 BOOLEAN
-EFIAPI
-EcGetPublicKeyFromX509 (
+(EFIAPI *EDKII_CRYPTO_EC_GET_PUBLIC_KEY_FROM_X509)(
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  VOID         **EcContext
-  )
-{
-  CALL_CRYPTO_SERVICE (EcGetPublicKeyFromX509, (Cert, CertSize, EcContext), FALSE);
-}
+  );
 
 /**
   Carries out the EC-DSA signature.
@@ -5164,20 +4496,17 @@ EcGetPublicKeyFromX509 (
   @retval  FALSE  Signature generation failed.
   @retval  FALSE  SigSize is too small.
 **/
-// See BaseCryptLib.h:4261
+// FROM BaseCryptLib.h:4261
+typedef
 BOOLEAN
-EFIAPI
-EcDsaSign (
+(EFIAPI *EDKII_CRYPTO_EC_DSA_SIGN)(
   IN      VOID         *EcContext,
   IN      UINTN        HashNid,
   IN      CONST UINT8  *MessageHash,
   IN      UINTN        HashSize,
   OUT     UINT8        *Signature,
   IN OUT  UINTN        *SigSize
-  )
-{
-  CALL_CRYPTO_SERVICE (EcDsaSign, (EcContext, HashNid, MessageHash, HashSize, Signature, SigSize), FALSE);
-}
+  );
 
 /**
   Verifies the EC-DSA signature.
@@ -5197,21 +4526,258 @@ EcDsaSign (
   @retval  TRUE   Valid signature encoded in EC-DSA.
   @retval  FALSE  Invalid signature or invalid EC context.
 **/
-// See BaseCryptLib.h:4295
+// FROM BaseCryptLib.h:4295
+typedef
 BOOLEAN
-EFIAPI
-EcDsaVerify (
+(EFIAPI *EDKII_CRYPTO_EC_DSA_VERIFY)(
   IN  VOID         *EcContext,
   IN  UINTN        HashNid,
   IN  CONST UINT8  *MessageHash,
   IN  UINTN        HashSize,
   IN  CONST UINT8  *Signature,
   IN  UINTN        SigSize
-  )
-{
-  CALL_CRYPTO_SERVICE (EcDsaVerify, (EcContext, HashNid, MessageHash, HashSize, Signature, SigSize), FALSE);
-}
+  );
+
+///
+/// EDK II Crypto Protocol
+///
+struct _EDKII_CRYPTO_PROTOCOL {
+  // VERSION
+  EDKII_CRYPTO_GET_VERSION                            GetVersion;
+  // HMACSHA256
+  EDKII_CRYPTO_HMAC_SHA256_NEW                        HmacSha256New;
+  EDKII_CRYPTO_HMAC_SHA256_FREE                       HmacSha256Free;
+  EDKII_CRYPTO_HMAC_SHA256_SET_KEY                    HmacSha256SetKey;
+  EDKII_CRYPTO_HMAC_SHA256_DUPLICATE                  HmacSha256Duplicate;
+  EDKII_CRYPTO_HMAC_SHA256_UPDATE                     HmacSha256Update;
+  EDKII_CRYPTO_HMAC_SHA256_FINAL                      HmacSha256Final;
+  EDKII_CRYPTO_HMAC_SHA256_ALL                        HmacSha256All;
+  // HMACSHA384
+  EDKII_CRYPTO_HMAC_SHA384_NEW                        HmacSha384New;
+  EDKII_CRYPTO_HMAC_SHA384_FREE                       HmacSha384Free;
+  EDKII_CRYPTO_HMAC_SHA384_SET_KEY                    HmacSha384SetKey;
+  EDKII_CRYPTO_HMAC_SHA384_DUPLICATE                  HmacSha384Duplicate;
+  EDKII_CRYPTO_HMAC_SHA384_UPDATE                     HmacSha384Update;
+  EDKII_CRYPTO_HMAC_SHA384_FINAL                      HmacSha384Final;
+  EDKII_CRYPTO_HMAC_SHA384_ALL                        HmacSha384All;
+  // PKCS
+  EDKII_CRYPTO_PKCS5_HASH_PASSWORD                    Pkcs5HashPassword;
+  EDKII_CRYPTO_PKCS1V2_ENCRYPT                        Pkcs1v2Encrypt;
+  EDKII_CRYPTO_PKCS1V2_DECRYPT                        Pkcs1v2Decrypt;
+  EDKII_CRYPTO_PKCS7_GET_SIGNERS                      Pkcs7GetSigners;
+  EDKII_CRYPTO_PKCS7_FREE_SIGNERS                     Pkcs7FreeSigners;
+  EDKII_CRYPTO_PKCS7_GET_CERTIFICATES_LIST            Pkcs7GetCertificatesList;
+  EDKII_CRYPTO_PKCS7_SIGN                             Pkcs7Sign;
+  EDKII_CRYPTO_PKCS7_VERIFY                           Pkcs7Verify;
+  EDKII_CRYPTO_VERIFY_EKUS_IN_PKCS7_SIGNATURE         VerifyEKUsInPkcs7Signature;
+  EDKII_CRYPTO_PKCS7_GET_ATTACHED_CONTENT             Pkcs7GetAttachedContent;
+  EDKII_CRYPTO_AUTHENTICODE_VERIFY                    AuthenticodeVerify;
+  EDKII_CRYPTO_IMAGE_TIMESTAMP_VERIFY                 ImageTimestampVerify;
+  // DH
+  EDKII_CRYPTO_DH_NEW                                 DhNew;
+  EDKII_CRYPTO_DH_FREE                                DhFree;
+  EDKII_CRYPTO_DH_GENERATE_PARAMETER                  DhGenerateParameter;
+  EDKII_CRYPTO_DH_SET_PARAMETER                       DhSetParameter;
+  EDKII_CRYPTO_DH_GENERATE_KEY                        DhGenerateKey;
+  EDKII_CRYPTO_DH_COMPUTE_KEY                         DhComputeKey;
+  // RANDOM
+  EDKII_CRYPTO_RANDOM_SEED                            RandomSeed;
+  EDKII_CRYPTO_RANDOM_BYTES                           RandomBytes;
+  // RSA
+  EDKII_CRYPTO_RSA_NEW                                RsaNew;
+  EDKII_CRYPTO_RSA_FREE                               RsaFree;
+  EDKII_CRYPTO_RSA_SET_KEY                            RsaSetKey;
+  EDKII_CRYPTO_RSA_GET_KEY                            RsaGetKey;
+  EDKII_CRYPTO_RSA_GENERATE_KEY                       RsaGenerateKey;
+  EDKII_CRYPTO_RSA_CHECK_KEY                          RsaCheckKey;
+  EDKII_CRYPTO_RSA_PKCS1_SIGN                         RsaPkcs1Sign;
+  EDKII_CRYPTO_RSA_PKCS1_VERIFY                       RsaPkcs1Verify;
+  EDKII_CRYPTO_RSA_PSS_SIGN                           RsaPssSign;
+  EDKII_CRYPTO_RSA_PSS_VERIFY                         RsaPssVerify;
+  EDKII_CRYPTO_RSA_GET_PRIVATE_KEY_FROM_PEM           RsaGetPrivateKeyFromPem;
+  EDKII_CRYPTO_RSA_GET_PUBLIC_KEY_FROM_X509           RsaGetPublicKeyFromX509;
+  EDKII_CRYPTO_RSA_OAEP_ENCRYPT                       RsaOaepEncrypt;
+  EDKII_CRYPTO_RSA_OAEP_DECRYPT                       RsaOaepDecrypt;
+  // SHA1
+  EDKII_CRYPTO_SHA1_GET_CONTEXT_SIZE                  Sha1GetContextSize;
+  EDKII_CRYPTO_SHA1_INIT                              Sha1Init;
+  EDKII_CRYPTO_SHA1_DUPLICATE                         Sha1Duplicate;
+  EDKII_CRYPTO_SHA1_UPDATE                            Sha1Update;
+  EDKII_CRYPTO_SHA1_FINAL                             Sha1Final;
+  EDKII_CRYPTO_SHA1_HASH_ALL                          Sha1HashAll;
+  // SHA256
+  EDKII_CRYPTO_SHA256_GET_CONTEXT_SIZE                Sha256GetContextSize;
+  EDKII_CRYPTO_SHA256_INIT                            Sha256Init;
+  EDKII_CRYPTO_SHA256_DUPLICATE                       Sha256Duplicate;
+  EDKII_CRYPTO_SHA256_UPDATE                          Sha256Update;
+  EDKII_CRYPTO_SHA256_FINAL                           Sha256Final;
+  EDKII_CRYPTO_SHA256_HASH_ALL                        Sha256HashAll;
+  // SHA384
+  EDKII_CRYPTO_SHA384_GET_CONTEXT_SIZE                Sha384GetContextSize;
+  EDKII_CRYPTO_SHA384_INIT                            Sha384Init;
+  EDKII_CRYPTO_SHA384_DUPLICATE                       Sha384Duplicate;
+  EDKII_CRYPTO_SHA384_UPDATE                          Sha384Update;
+  EDKII_CRYPTO_SHA384_FINAL                           Sha384Final;
+  EDKII_CRYPTO_SHA384_HASH_ALL                        Sha384HashAll;
+  // SHA512
+  EDKII_CRYPTO_SHA512_GET_CONTEXT_SIZE                Sha512GetContextSize;
+  EDKII_CRYPTO_SHA512_INIT                            Sha512Init;
+  EDKII_CRYPTO_SHA512_DUPLICATE                       Sha512Duplicate;
+  EDKII_CRYPTO_SHA512_UPDATE                          Sha512Update;
+  EDKII_CRYPTO_SHA512_FINAL                           Sha512Final;
+  EDKII_CRYPTO_SHA512_HASH_ALL                        Sha512HashAll;
+  // PARALLELHASH256
+  EDKII_CRYPTO_PARALLEL_HASH256_HASH_ALL              ParallelHash256HashAll;
+  // AEADAESGCM
+  EDKII_CRYPTO_AEAD_AES_GCM_ENCRYPT                   AeadAesGcmEncrypt;
+  EDKII_CRYPTO_AEAD_AES_GCM_DECRYPT                   AeadAesGcmDecrypt;
+  // X509
+  EDKII_CRYPTO_X509_GET_SUBJECT_NAME                  X509GetSubjectName;
+  EDKII_CRYPTO_X509_GET_COMMON_NAME                   X509GetCommonName;
+  EDKII_CRYPTO_X509_GET_ORGANIZATION_NAME             X509GetOrganizationName;
+  EDKII_CRYPTO_X509_VERIFY_CERT                       X509VerifyCert;
+  EDKII_CRYPTO_X509_CONSTRUCT_CERTIFICATE             X509ConstructCertificate;
+  EDKII_CRYPTO_X509_CONSTRUCT_CERTIFICATE_STACK_V     X509ConstructCertificateStackV;
+  EDKII_CRYPTO_X509_CONSTRUCT_CERTIFICATE_STACK       X509ConstructCertificateStack;
+  EDKII_CRYPTO_X509_FREE                              X509Free;
+  EDKII_CRYPTO_X509_STACK_FREE                        X509StackFree;
+  EDKII_CRYPTO_X509_GET_TBSCERT                       X509GetTBSCert;
+  EDKII_CRYPTO_X509_GET_VERSION                       X509GetVersion;
+  EDKII_CRYPTO_X509_GET_SERIAL_NUMBER                 X509GetSerialNumber;
+  EDKII_CRYPTO_X509_GET_ISSUER_NAME                   X509GetIssuerName;
+  EDKII_CRYPTO_X509_GET_SIGNATURE_ALGORITHM           X509GetSignatureAlgorithm;
+  EDKII_CRYPTO_X509_GET_EXTENSION_DATA                X509GetExtensionData;
+  EDKII_CRYPTO_X509_GET_VALIDITY                      X509GetValidity;
+  EDKII_CRYPTO_X509_FORMAT_DATE_TIME                  X509FormatDateTime;
+  EDKII_CRYPTO_X509_GET_KEY_USAGE                     X509GetKeyUsage;
+  EDKII_CRYPTO_X509_GET_EXTENDED_KEY_USAGE            X509GetExtendedKeyUsage;
+  EDKII_CRYPTO_X509_VERIFY_CERT_CHAIN                 X509VerifyCertChain;
+  EDKII_CRYPTO_X509_GET_CERT_FROM_CERT_CHAIN          X509GetCertFromCertChain;
+  EDKII_CRYPTO_X509_GET_EXTENDED_BASIC_CONSTRAINTS    X509GetExtendedBasicConstraints;
+  // ASN1
+  EDKII_CRYPTO_ASN1_GET_TAG                           Asn1GetTag;
+  // BIGNUM
+  EDKII_CRYPTO_BIG_NUM_INIT                           BigNumInit;
+  EDKII_CRYPTO_BIG_NUM_FROM_BIN                       BigNumFromBin;
+  EDKII_CRYPTO_BIG_NUM_TO_BIN                         BigNumToBin;
+  EDKII_CRYPTO_BIG_NUM_FREE                           BigNumFree;
+  EDKII_CRYPTO_BIG_NUM_ADD                            BigNumAdd;
+  EDKII_CRYPTO_BIG_NUM_SUB                            BigNumSub;
+  EDKII_CRYPTO_BIG_NUM_MOD                            BigNumMod;
+  EDKII_CRYPTO_BIG_NUM_EXP_MOD                        BigNumExpMod;
+  EDKII_CRYPTO_BIG_NUM_INVERSE_MOD                    BigNumInverseMod;
+  EDKII_CRYPTO_BIG_NUM_DIV                            BigNumDiv;
+  EDKII_CRYPTO_BIG_NUM_MUL_MOD                        BigNumMulMod;
+  EDKII_CRYPTO_BIG_NUM_CMP                            BigNumCmp;
+  EDKII_CRYPTO_BIG_NUM_BITS                           BigNumBits;
+  EDKII_CRYPTO_BIG_NUM_BYTES                          BigNumBytes;
+  EDKII_CRYPTO_BIG_NUM_IS_WORD                        BigNumIsWord;
+  EDKII_CRYPTO_BIG_NUM_IS_ODD                         BigNumIsOdd;
+  EDKII_CRYPTO_BIG_NUM_COPY                           BigNumCopy;
+  EDKII_CRYPTO_BIG_NUM_RSHIFT                         BigNumRShift;
+  EDKII_CRYPTO_BIG_NUM_CONST_TIME                     BigNumConstTime;
+  EDKII_CRYPTO_BIG_NUM_SQR_MOD                        BigNumSqrMod;
+  EDKII_CRYPTO_BIG_NUM_NEW_CONTEXT                    BigNumNewContext;
+  EDKII_CRYPTO_BIG_NUM_CONTEXT_FREE                   BigNumContextFree;
+  EDKII_CRYPTO_BIG_NUM_SET_UINT                       BigNumSetUint;
+  EDKII_CRYPTO_BIG_NUM_ADD_MOD                        BigNumAddMod;
+  // TDES
+  // AES
+  EDKII_CRYPTO_AES_GET_CONTEXT_SIZE                   AesGetContextSize;
+  EDKII_CRYPTO_AES_INIT                               AesInit;
+  EDKII_CRYPTO_AES_CBC_ENCRYPT                        AesCbcEncrypt;
+  EDKII_CRYPTO_AES_CBC_DECRYPT                        AesCbcDecrypt;
+  // ARC4
+  // SM3
+  EDKII_CRYPTO_SM3_GET_CONTEXT_SIZE                   Sm3GetContextSize;
+  EDKII_CRYPTO_SM3_INIT                               Sm3Init;
+  EDKII_CRYPTO_SM3_DUPLICATE                          Sm3Duplicate;
+  EDKII_CRYPTO_SM3_UPDATE                             Sm3Update;
+  EDKII_CRYPTO_SM3_FINAL                              Sm3Final;
+  EDKII_CRYPTO_SM3_HASH_ALL                           Sm3HashAll;
+  // HKDF
+  EDKII_CRYPTO_HKDF_SHA256_EXTRACT_AND_EXPAND         HkdfSha256ExtractAndExpand;
+  EDKII_CRYPTO_HKDF_SHA256_EXTRACT                    HkdfSha256Extract;
+  EDKII_CRYPTO_HKDF_SHA256_EXPAND                     HkdfSha256Expand;
+  EDKII_CRYPTO_HKDF_SHA384_EXTRACT_AND_EXPAND         HkdfSha384ExtractAndExpand;
+  EDKII_CRYPTO_HKDF_SHA384_EXTRACT                    HkdfSha384Extract;
+  EDKII_CRYPTO_HKDF_SHA384_EXPAND                     HkdfSha384Expand;
+  // TLS
+  EDKII_CRYPTO_TLS_INITIALIZE                         TlsInitialize;
+  EDKII_CRYPTO_TLS_CTX_FREE                           TlsCtxFree;
+  EDKII_CRYPTO_TLS_CTX_NEW                            TlsCtxNew;
+  EDKII_CRYPTO_TLS_FREE                               TlsFree;
+  EDKII_CRYPTO_TLS_NEW                                TlsNew;
+  EDKII_CRYPTO_TLS_IN_HANDSHAKE                       TlsInHandshake;
+  EDKII_CRYPTO_TLS_DO_HANDSHAKE                       TlsDoHandshake;
+  EDKII_CRYPTO_TLS_HANDLE_ALERT                       TlsHandleAlert;
+  EDKII_CRYPTO_TLS_CLOSE_NOTIFY                       TlsCloseNotify;
+  EDKII_CRYPTO_TLS_CTRL_TRAFFIC_OUT                   TlsCtrlTrafficOut;
+  EDKII_CRYPTO_TLS_CTRL_TRAFFIC_IN                    TlsCtrlTrafficIn;
+  EDKII_CRYPTO_TLS_READ                               TlsRead;
+  EDKII_CRYPTO_TLS_WRITE                              TlsWrite;
+  EDKII_CRYPTO_TLS_SHUTDOWN                           TlsShutdown;
+  // TLSSET
+  EDKII_CRYPTO_TLS_SET_VERSION                        TlsSetVersion;
+  EDKII_CRYPTO_TLS_SET_CONNECTION_END                 TlsSetConnectionEnd;
+  EDKII_CRYPTO_TLS_SET_CIPHER_LIST                    TlsSetCipherList;
+  EDKII_CRYPTO_TLS_SET_COMPRESSION_METHOD             TlsSetCompressionMethod;
+  EDKII_CRYPTO_TLS_SET_VERIFY                         TlsSetVerify;
+  EDKII_CRYPTO_TLS_SET_VERIFY_HOST                    TlsSetVerifyHost;
+  EDKII_CRYPTO_TLS_SET_SESSION_ID                     TlsSetSessionId;
+  EDKII_CRYPTO_TLS_SET_CA_CERTIFICATE                 TlsSetCaCertificate;
+  EDKII_CRYPTO_TLS_SET_HOST_PUBLIC_CERT               TlsSetHostPublicCert;
+  EDKII_CRYPTO_TLS_SET_HOST_PRIVATE_KEY_EX            TlsSetHostPrivateKeyEx;
+  EDKII_CRYPTO_TLS_SET_HOST_PRIVATE_KEY               TlsSetHostPrivateKey;
+  EDKII_CRYPTO_TLS_SET_CERT_REVOCATION_LIST           TlsSetCertRevocationList;
+  EDKII_CRYPTO_TLS_SET_SIGNATURE_ALGO_LIST            TlsSetSignatureAlgoList;
+  EDKII_CRYPTO_TLS_SET_EC_CURVE                       TlsSetEcCurve;
+  // TLSGET
+  EDKII_CRYPTO_TLS_GET_VERSION                        TlsGetVersion;
+  EDKII_CRYPTO_TLS_GET_CONNECTION_END                 TlsGetConnectionEnd;
+  EDKII_CRYPTO_TLS_GET_CURRENT_CIPHER                 TlsGetCurrentCipher;
+  EDKII_CRYPTO_TLS_GET_CURRENT_COMPRESSION_ID         TlsGetCurrentCompressionId;
+  EDKII_CRYPTO_TLS_GET_VERIFY                         TlsGetVerify;
+  EDKII_CRYPTO_TLS_GET_SESSION_ID                     TlsGetSessionId;
+  EDKII_CRYPTO_TLS_GET_CLIENT_RANDOM                  TlsGetClientRandom;
+  EDKII_CRYPTO_TLS_GET_SERVER_RANDOM                  TlsGetServerRandom;
+  EDKII_CRYPTO_TLS_GET_KEY_MATERIAL                   TlsGetKeyMaterial;
+  EDKII_CRYPTO_TLS_GET_CA_CERTIFICATE                 TlsGetCaCertificate;
+  EDKII_CRYPTO_TLS_GET_HOST_PUBLIC_CERT               TlsGetHostPublicCert;
+  EDKII_CRYPTO_TLS_GET_HOST_PRIVATE_KEY               TlsGetHostPrivateKey;
+  EDKII_CRYPTO_TLS_GET_CERT_REVOCATION_LIST           TlsGetCertRevocationList;
+  EDKII_CRYPTO_TLS_GET_EXPORT_KEY                     TlsGetExportKey;
+  // EC
+  EDKII_CRYPTO_EC_GROUP_INIT                          EcGroupInit;
+  EDKII_CRYPTO_EC_GROUP_GET_CURVE                     EcGroupGetCurve;
+  EDKII_CRYPTO_EC_GROUP_GET_ORDER                     EcGroupGetOrder;
+  EDKII_CRYPTO_EC_GROUP_FREE                          EcGroupFree;
+  EDKII_CRYPTO_EC_POINT_INIT                          EcPointInit;
+  EDKII_CRYPTO_EC_POINT_DE_INIT                       EcPointDeInit;
+  EDKII_CRYPTO_EC_POINT_GET_AFFINE_COORDINATES        EcPointGetAffineCoordinates;
+  EDKII_CRYPTO_EC_POINT_SET_AFFINE_COORDINATES        EcPointSetAffineCoordinates;
+  EDKII_CRYPTO_EC_POINT_ADD                           EcPointAdd;
+  EDKII_CRYPTO_EC_POINT_MUL                           EcPointMul;
+  EDKII_CRYPTO_EC_POINT_INVERT                        EcPointInvert;
+  EDKII_CRYPTO_EC_POINT_IS_ON_CURVE                   EcPointIsOnCurve;
+  EDKII_CRYPTO_EC_POINT_IS_AT_INFINITY                EcPointIsAtInfinity;
+  EDKII_CRYPTO_EC_POINT_EQUAL                         EcPointEqual;
+  EDKII_CRYPTO_EC_POINT_SET_COMPRESSED_COORDINATES    EcPointSetCompressedCoordinates;
+  EDKII_CRYPTO_EC_NEW_BY_NID                          EcNewByNid;
+  EDKII_CRYPTO_EC_FREE                                EcFree;
+  EDKII_CRYPTO_EC_GENERATE_KEY                        EcGenerateKey;
+  EDKII_CRYPTO_EC_GET_PUB_KEY                         EcGetPubKey;
+  EDKII_CRYPTO_EC_DH_COMPUTE_KEY                      EcDhComputeKey;
+  EDKII_CRYPTO_EC_GET_PRIVATE_KEY_FROM_PEM            EcGetPrivateKeyFromPem;
+  EDKII_CRYPTO_EC_GET_PUBLIC_KEY_FROM_X509            EcGetPublicKeyFromX509;
+  EDKII_CRYPTO_EC_DSA_SIGN                            EcDsaSign;
+  EDKII_CRYPTO_EC_DSA_VERIFY                          EcDsaVerify;
+};
 
 // AUTOGEN ENDS
 // ****************************************************************************
 // MU_CHANGE [END]
+
+extern GUID  gEdkiiCryptoProtocolGuid;
+
+#endif

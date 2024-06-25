@@ -3,7 +3,7 @@
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  Copyright (C) Microsoft Corporation. All Rights Reserved.
+  Copyright (c) Microsoft Corporation.
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
 
 **/
