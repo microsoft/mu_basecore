@@ -89,6 +89,10 @@ TestVerifyEKUsInSignature (
 {
   EFI_STATUS  Status = EFI_SUCCESS;
 
+  if (!PcdGetBool (PcdCryptoServiceVerifyEKUsInPkcs7Signature)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   CONST CHAR8  *RequiredEKUs[] = { FIRMWARE_SIGNER_EKU };
 
   Status = VerifyEKUsInPkcs7Signature (
@@ -125,6 +129,10 @@ TestVerifyEKUsWith3CertsInSignature (
 {
   EFI_STATUS  Status = EFI_SUCCESS;
 
+  if (!PcdGetBool (PcdCryptoServiceVerifyEKUsInPkcs7Signature)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   CONST CHAR8  *RequiredEKUs[] = { FIRMWARE_SIGNER_EKU };
 
   Status = VerifyEKUsInPkcs7Signature (
@@ -160,6 +168,10 @@ TestVerifyEKUsWith2CertsInSignature (
 {
   EFI_STATUS  Status = EFI_SUCCESS;
 
+  if (!PcdGetBool (PcdCryptoServiceVerifyEKUsInPkcs7Signature)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   CONST CHAR8  *RequiredEKUs[] = { FIRMWARE_SIGNER_EKU };
 
   Status = VerifyEKUsInPkcs7Signature (
@@ -194,6 +206,10 @@ TestVerifyEKUsWith1CertInSignature (
   )
 {
   EFI_STATUS  Status = EFI_SUCCESS;
+
+  if (!PcdGetBool (PcdCryptoServiceVerifyEKUsInPkcs7Signature)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
 
   CONST CHAR8  *RequiredEKUs[] = { FIRMWARE_SIGNER_EKU };
 
@@ -233,6 +249,10 @@ TestVerifyEKUsWithMultipleEKUsInCert (
 {
   EFI_STATUS  Status = EFI_SUCCESS;
 
+  if (!PcdGetBool (PcdCryptoServiceVerifyEKUsInPkcs7Signature)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   CONST CHAR8  *RequiredEKUs[] = {
     "1.3.6.1.4.1.311.76.9.21.1",
     "1.3.6.1.4.1.311.76.9.21.1.2"
@@ -270,6 +290,10 @@ TestEkusNotPresentInSignature (
   )
 {
   EFI_STATUS  Status = EFI_SUCCESS;
+
+  if (!PcdGetBool (PcdCryptoServiceVerifyEKUsInPkcs7Signature)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
 
   //
   // This EKU is not in the signature.
@@ -309,6 +333,10 @@ TestProductId10001PresentInSignature (
   )
 {
   EFI_STATUS  Status = EFI_SUCCESS;
+
+  if (!PcdGetBool (PcdCryptoServiceVerifyEKUsInPkcs7Signature)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
 
   //
   // These EKU's are present in the leaf signer certificate.
@@ -357,6 +385,10 @@ TestOnlyOneEkuInListRequired (
 {
   EFI_STATUS  Status = EFI_SUCCESS;
 
+  if (!PcdGetBool (PcdCryptoServiceVerifyEKUsInPkcs7Signature)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   //
   // This will test the flag that specifies it is OK to succeed if
   // any one of the EKU's passed in is found.
@@ -397,6 +429,10 @@ TestNoEKUsInSignature (
 {
   EFI_STATUS  Status = EFI_SUCCESS;
 
+  if (!PcdGetBool (PcdCryptoServiceVerifyEKUsInPkcs7Signature)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   //
   // This EKU is not in the certificate, so it should fail.
   //
@@ -433,6 +469,10 @@ TestInvalidParameters (
   )
 {
   EFI_STATUS  Status = EFI_SUCCESS;
+
+  if (!PcdGetBool (PcdCryptoServiceVerifyEKUsInPkcs7Signature)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
 
   CONST CHAR8  *RequiredEKUs[] = { "1.3.6.1.4.1.311.76.9.21.1" };
 
@@ -483,6 +523,10 @@ TestEKUSubsetSupersetFails (
   )
 {
   EFI_STATUS  Status = EFI_SUCCESS;
+
+  if (!PcdGetBool (PcdCryptoServiceVerifyEKUsInPkcs7Signature)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
 
   //
   // This signature has an EKU of:
