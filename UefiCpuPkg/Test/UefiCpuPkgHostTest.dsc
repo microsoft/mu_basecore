@@ -21,8 +21,9 @@
 [LibraryClasses]
   MtrrLib|UefiCpuPkg/Library/MtrrLib/MtrrLib.inf
   CpuPageTableLib|UefiCpuPkg/Library/CpuPageTableLib/CpuPageTableLib.inf
-  OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
-  BaseCryptLib|CryptoPkg/Library/BaseCryptLib/UnitTestHostBaseCryptLib.inf
+  # MU_CHANGE [BEGIN] - Build changes after Shared Crypto
+  BaseCryptLib|CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
+  # MU_CHANGE [END] - Build changes after Shared Crypto
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
 
 [PcdsPatchableInModule]
