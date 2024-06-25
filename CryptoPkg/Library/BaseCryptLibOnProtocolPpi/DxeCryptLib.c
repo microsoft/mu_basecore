@@ -2,7 +2,7 @@
   Implements the GetCryptoServices() API that retuns a pointer to the EDK II
   Crypto Protocol.
 
-  Copyright (C) Microsoft Corporation. All rights reserved.
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/

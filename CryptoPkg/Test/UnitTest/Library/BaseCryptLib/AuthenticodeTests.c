@@ -950,6 +950,10 @@ TestVerifyAuthenticodeVerify (
 {
   BOOLEAN  Status;
 
+  if (!PcdGetBool (PcdCryptoServiceAuthenticodeVerify)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   //
   // Sample Code: Demonstrate how to check the Hash algorithm in PE/COFF Authenticode.
   //    According to PKCS#7 Definition:

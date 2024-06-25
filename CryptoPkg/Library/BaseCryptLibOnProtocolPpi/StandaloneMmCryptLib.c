@@ -7,10 +7,10 @@
 
 **/
 
-#include <PiSmm.h>
+#include <PiMm.h>
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
-#include <Library/SmmServicesTableLib.h>
+#include <Library/MmServicesTableLib.h>
 #include <Protocol/SmmCrypto.h>
 
 EDKII_SMM_CRYPTO_PROTOCOL  *mSmmCryptoProtocol = NULL;
@@ -39,28 +39,28 @@ GetCryptoServices (
   functions.
 
   @param  ImageHandle   The firmware allocated handle for the EFI image.
-  @param  SystemTable   A pointer to the EFI System Table.
+  @param  MmSystemTable A pointer to the MM System Table.
 
   @retval  EFI_SUCCESS    The EDK II SMM Crypto Protocol was found.
   @retval  EFI_NOT_FOUND  The EDK II SMM Crypto Protocol was not found.
 **/
 EFI_STATUS
 EFIAPI
-SmmCryptLibConstructor (
-  IN EFI_HANDLE        ImageHandle,
-  IN EFI_SYSTEM_TABLE  *SystemTable
+StandaloneMmCryptLibConstructor (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_MM_SYSTEM_TABLE  *MmSystemTable
   )
 {
   EFI_STATUS  Status;
   UINTN       Version;
 
-  Status = gSmst->SmmLocateProtocol (
+  Status = gMmst->MmLocateProtocol (
                     &gEdkiiSmmCryptoProtocolGuid,
                     NULL,
                     (VOID **)&mSmmCryptoProtocol
                     );
   if (EFI_ERROR (Status) || (mSmmCryptoProtocol == NULL)) {
-    DEBUG ((DEBUG_ERROR, "[SmmCryptLib] Failed to locate Crypto SMM Protocol. Status = %r\n", Status));
+    DEBUG ((DEBUG_ERROR, "[StandaloneMmCryptLib] Failed to locate Crypto SMM Protocol. Status = %r\n", Status));
     ASSERT_EFI_ERROR (Status);
     ASSERT (mSmmCryptoProtocol != NULL);
     mSmmCryptoProtocol = NULL;
@@ -69,7 +69,7 @@ SmmCryptLibConstructor (
 
   Version = mSmmCryptoProtocol->GetVersion ();
   if (Version < EDKII_CRYPTO_VERSION) {
-    DEBUG ((DEBUG_ERROR, "[SmmCryptLib] Crypto SMM Protocol unsupported version %d\n", Version));
+    DEBUG ((DEBUG_ERROR, "[StandaloneMmCryptLib] Crypto SMM Protocol unsupported version %d\n", Version));
     ASSERT (Version >= EDKII_CRYPTO_VERSION);
     mSmmCryptoProtocol = NULL;
     return EFI_NOT_FOUND;
