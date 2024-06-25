@@ -1,7 +1,7 @@
 /** @file
   PKCS7 Verify Null implementation.
 
-  Copyright (C) Microsoft Corporation. All Rights Reserved.
+  Copyright (c) Microsoft Corporation.
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent

@@ -10,10 +10,9 @@
         "DscPath": "CryptoPkg.dsc",
     },
     "LicenseCheck": {
-        "IgnoreFiles": [
-            # These directories contain auto-generated OpenSSL content
-            "Library/OpensslLib/OpensslGen"
-        ]
+        # MU_CHANGE [BEGIN] Move to Shared Crypto
+        "IgnoreFiles": []
+        # MU_CHANGE [END] Move to Shared Crypto
     },
     "EccCheck": {
         ## Exception sample looks like below:
@@ -28,34 +27,10 @@
         ],
         ## Both file path and directory path are accepted.
         "IgnoreFiles": [
-            "Library/OpensslLib/openssl",
-            "Library/OpensslLib/OpensslGen",
+            # MU_CHANGE [BEGIN] Move to Shared Crypto
             # The unit testing folder is not to be checked
-            "Test/UnitTest",
-            # This has OpenSSL interfaces that aren't UEFI spec compliant
-            "Library/BaseCryptLib/SysCall",
-            # This has OpenSSL interfaces that aren't UEFI spec compliant
-            "Library/OpensslLib/OpensslStub",
-            # This has OpenSSL interfaces that aren't UEFI spec compliant
-            "Library/Include/CrtLibSupport.h",
-            # This has OpenSSL interfaces that aren't UEFI spec compliant
-            "Library/BaseCryptLib/Hash/CryptParallelHash.h",
-            "Library/Include/fcntl.h",
-            # This has Mbedtls interfaces that aren't UEFI spec compliant
-            "Library/Include/stdint.h",
-            "Library/Include/stubs-32.h",
-            "Library/Include/inttypes.h",
-            # These directories contain auto-generated OpenSSL content
-            "Library/OpensslLib",
-            "Library/IntrinsicLib",
-            "Library/BaseCryptLib/Pk/CryptPkcs7VerifyBase.c",
-            # mbedtls
-            "Library/MbedTlsLib/mbedtls",
-            # This has mbedtls interfaces that aren't UEFI spec compliant
-            "Library/MbedTlsLib/EcSm2Null.c",
-            "Library/MbedTlsLib/CrtWrapper.c",
-            "Library/MbedTlsLib/Include/mbedtls/mbedtls_config.h",
-            "Library/BaseCryptLibMbedTls/SysCall"
+            "Test/UnitTest"
+            # MU_CHANGE [END] Move to Shared Crypto
         ]
     },
     "CompilerPlugin": {
@@ -63,7 +38,7 @@
     },
     ## options defined .pytool/Plugin/HostUnitTestCompilerPlugin
     "HostUnitTestCompilerPlugin": {
-        "DscPath": "Test/CryptoPkgHostUnitTest.dsc"
+        #"DscPath": "Test/CryptoPkgHostUnitTest.dsc"  # MU_CHANGE - Disable temporarily while transitioning crypto
     },
     "CharEncodingCheck": {
         "IgnoreFiles": []
@@ -82,7 +57,11 @@
     },
     "DscCompleteCheck": {
         "DscPath": "CryptoPkg.dsc",
-        "IgnoreInf": []
+        "IgnoreInf": [
+            ## MU_CHANGE [BEGIN] Ignore Shared Crypto FIles
+            "CryptoPkg/Binaries/**"
+            ## MU_CHANGE [END]
+        ]
     },
     "GuidCheck": {
         "IgnoreGuidName": [],
@@ -92,6 +71,12 @@
     "LibraryClassCheck": {
         "IgnoreHeaderFile": []
     },
+    ## MU_CHANGE [BEGIN] Disable AuditOnly
+    "MarkdownLintCheck": {
+        "AuditOnly": False,          # If True, log all errors and then mark as skipped
+        "IgnoreFiles": []            # package root relative file, folder, or glob pattern to ignore
+    },
+    ## MU_CHANGE [END] Disable AuditOnly
 
     ## options defined ci/Plugin/SpellCheck
     "SpellCheck": {
@@ -105,46 +90,9 @@
     # options defined in .pytool/Plugin/UncrustifyCheck
     "UncrustifyCheck": {
         "IgnoreFiles": [
-            "Library/OpensslLib/OpensslGen/include/crypto/bn_conf.h",
-            "Library/OpensslLib/OpensslGen/include/crypto/dso_conf.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/asn1.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/asn1t.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/bio.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/cmp.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/cms.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/conf.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/configuration-ec.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/configuration-noec.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/configuration.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/crmf.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/crypto.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/ct.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/err.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/ess.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/fipskey.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/lhash.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/ocsp.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/opensslv.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/pkcs12.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/pkcs7.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/safestack.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/srp.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/ssl.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/ui.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/x509.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/x509v3.h",
-            "Library/OpensslLib/OpensslGen/include/openssl/x509_vfy.h",
-            "Library/OpensslLib/OpensslGen/providers/common/der/der_digests_gen.c",
-            "Library/OpensslLib/OpensslGen/providers/common/der/der_ecx_gen.c",
-            "Library/OpensslLib/OpensslGen/providers/common/der/der_ec_gen.c",
-            "Library/OpensslLib/OpensslGen/providers/common/der/der_rsa_gen.c",
-            "Library/OpensslLib/OpensslGen/providers/common/der/der_wrap_gen.c",
-            "Library/OpensslLib/OpensslGen/providers/common/include/prov/der_digests.h",
-            "Library/OpensslLib/OpensslGen/providers/common/include/prov/der_ec.h",
-            "Library/OpensslLib/OpensslGen/providers/common/include/prov/der_ecx.h",
-            "Library/OpensslLib/OpensslGen/providers/common/include/prov/der_rsa.h",
-            "Library/OpensslLib/OpensslGen/providers/common/include/prov/der_wrap.h",
-            "Library/OpensslLib/OpensslStub/uefiprov.c"
+            # MU_CHANGE [BEGIN] Move to Shared Crypto
+            "opensslconf.h"
+            # MU_CHANGE [END] Move to Shared Crypto
         ]
     }
 }
