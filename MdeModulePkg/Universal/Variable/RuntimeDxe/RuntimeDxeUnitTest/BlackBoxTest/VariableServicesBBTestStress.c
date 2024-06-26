@@ -3,7 +3,7 @@
   Copyright 2006 - 2012 Unified EFI, Inc.<BR>
   Copyright (c) 2010 - 2012, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
- 
+
 **/
 /*++
 
