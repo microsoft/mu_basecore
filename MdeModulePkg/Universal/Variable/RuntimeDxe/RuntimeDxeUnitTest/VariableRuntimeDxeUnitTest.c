@@ -396,6 +396,8 @@ InitVariableDriver (
   ASSERT_EFI_ERROR (VariableWriteServiceInitialize ());
   RecordSecureBootPolicyVarData ();
 
+  InitSctShim (&MockBoot, &MockRuntime);
+
   // Signal EndOfDxe so that the driver code assumes setup is complete.
   MorLockInitAtEndOfDxe ();
   mEndOfDxe = TRUE;
