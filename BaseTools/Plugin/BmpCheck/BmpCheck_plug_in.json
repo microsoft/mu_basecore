@@ -1,0 +1,5 @@
+{
+  "scope": "global",
+  "name": "Bmp Image Encoding Check",
+  "module": "BmpCheckPlugin"
+}
