@@ -300,6 +300,16 @@ ResetSystem2 (
     RecursionDepthPointer = (UINT8 *)GET_GUID_HOB_DATA (Hob);
   }
 
+  // MU_CHANGE [BEGIN] - CodeQL change
+  if (RecursionDepthPointer == NULL) {
+    // Critical build failure so Panicking
+    PANIC ("Failed to build or get the RecursionDepthPointer Hob");
+    // Reset anyway if we can't get the RecursionDepthPointer
+    goto Done;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
   //
   // Only do REPORT_STATUS_CODE() on first call to ResetSystem()
   //
@@ -338,6 +348,7 @@ ResetSystem2 (
     DEBUG ((DEBUG_ERROR, "PEI ResetSystem2: Maximum reset call depth is met. Use the current reset type: %s!\n", mResetTypeStr[ResetType]));
   }
 
+Done:
   switch (ResetType) {
     case EfiResetWarm:
       ResetWarm ();

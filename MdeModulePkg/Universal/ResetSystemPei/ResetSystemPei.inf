@@ -40,6 +40,7 @@
   PeimEntryPoint
   HwResetSystemLib                ## MU_CHANGE - Use HW reset from reset arch providers.
   ReportStatusCodeLib
+  PanicLib                        ## MU_CHANGE
 
 [Ppis]
   gEfiPeiReset2PpiGuid                           ## PRODUCES
