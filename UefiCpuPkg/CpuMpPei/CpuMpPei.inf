@@ -52,6 +52,7 @@
   BaseMemoryLib
   CpuLib
   MemoryAllocationLib
+  PanicLib                         ## MU_CHANGE
 
 [LibraryClasses.Ia32, LibraryClasses.X64]
   CpuExceptionHandlerLib

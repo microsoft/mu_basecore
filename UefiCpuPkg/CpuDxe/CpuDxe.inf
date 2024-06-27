@@ -39,6 +39,7 @@
   UefiBootServicesTableLib
   UefiDriverEntryPoint
   UefiLib
+  PanicLib                  ## MU_CHANGE
 
 [LibraryClasses.IA32, LibraryClasses.X64]
   LocalApicLib
