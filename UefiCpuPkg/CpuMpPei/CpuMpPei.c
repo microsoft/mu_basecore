@@ -505,6 +505,7 @@ InitializeExceptionStackSwitchHandlers (
   Status = MpInitLibWhoAmI (&Index);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Switch Stack pages.\n", __func__));
+    PANIC ("Failed to get processor number when initializing the stack switch exception handlers.");
     return;
   }
 
