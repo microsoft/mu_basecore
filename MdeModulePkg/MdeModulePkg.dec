@@ -211,6 +211,16 @@
   #
   ExceptionPersistenceLib|Include/Library/ExceptionPersistenceLib.h
 
+  # MU_CHANGE - Add DxeMemoryProtectionHobLib to MdeModulePkg
+  ## @libraryclass Provides a way to toggle DXE memory protection settings
+  #
+  DxeMemoryProtectionHobLib|Include/Library/DxeMemoryProtectionHobLib.h
+
+  # MU_CHANGE - Add MmMemoryProtectionHobLib to MdeModulePkg
+  ## @libraryclass Provides a way to toggle SMM memory protection settings
+  #
+  MmMemoryProtectionHobLib|Include/Library/MmMemoryProtectionHobLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
@@ -474,6 +484,16 @@
   gNVMeEnableStartEventGroupGuid = { 0x4754469d, 0x6528, 0x4dfc, {0x84, 0xaa, 0x8c, 0x8a, 0x03, 0xa2, 0x15, 0x8b}}
   # {da383315-906b-486f-80db-847f268451e4}
   gNVMeEnableCompleteEventGroupGuid = { 0xda383315, 0x906b, 0x486f, {0x80, 0xdb, 0x84, 0x7f, 0x26, 0x84, 0x51, 0xe4}}
+
+  ## DXE Memory Protection Settings Guid. Used to create and fetch the DXE memory protection settings HOB entry.
+  #
+  # Include/Guid/DxeMemoryProtectionSettings
+  gDxeMemoryProtectionSettingsGuid = { 0x9ABFD639, 0xD1D0, 0x4EFF, { 0xBD, 0xB6, 0x7E, 0xC4, 0x19, 0x0D, 0x17, 0xD5 }}
+
+  ## SMM Memory Protection Settings Guid. Used to create and fetch the SMM memory protection settings HOB entry.
+  #
+  # Include/Guid/MmMemoryProtectionSettings
+  gMmMemoryProtectionSettingsGuid = { 0x0CF445DD, 0xA67C, 0x4F8C, { 0x81, 0x9B, 0xB7, 0xB6, 0x86, 0xED, 0x7C, 0x75 }}
 ## MU_CHANGE END
 
   ## Used (similar to Variable Services) to communicate policies to the enforcement engine.

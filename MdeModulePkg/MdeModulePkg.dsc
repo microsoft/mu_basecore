@@ -120,6 +120,19 @@
   PanicLib|MdePkg/Library/BasePanicLibNull/BasePanicLibNull.inf  # MU_CHANGE
 
   NULL|MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf # MU_CHANGE: /GS and -fstack-protector support
+
+# MU_CHANGE START Include MemoryProtectionHobLib
+[LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.DXE_CORE, LibraryClasses.common.UEFI_APPLICATION]
+  DxeMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLib/DxeMemoryProtectionHobLib.inf
+
+[LibraryClasses.common.SMM_CORE, LibraryClasses.common.DXE_SMM_DRIVER]
+  MmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLib/SmmMemoryProtectionHobLib.inf
+
+[LibraryClasses.common.MM_CORE_STANDALONE, LibraryClasses.common.MM_STANDALONE]
+  MmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLib/StandaloneMmMemoryProtectionHobLib.inf
+
+# MU_CHANGE END
+
 [LibraryClasses.EBC.PEIM]
   IoLib|MdePkg/Library/PeiIoLibCpuIo/PeiIoLibCpuIo.inf
 
@@ -241,6 +254,11 @@
   MdeModulePkg/Library/SecurityLockAuditDebugMessageLib/SecurityLockAuditDebugMessageLib.inf     ## MU_CHANGE
   MdeModulePkg/Library/BaseExceptionPersistenceLibNull/BaseExceptionPersistenceLibNull.inf       ## MU_CHANGE
   MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf                     ## MU_CHANGE
+  MdeModulePkg/Library/MemoryProtectionHobLibNull/DxeMemoryProtectionHobLibNull.inf              ## MU_CHANGE
+  MdeModulePkg/Library/MemoryProtectionHobLib/DxeMemoryProtectionHobLib.inf                      ## MU_CHANGE
+  MdeModulePkg/Library/MemoryProtectionHobLib/SmmMemoryProtectionHobLib.inf                      ## MU_CHANGE
+  MdeModulePkg/Library/MemoryProtectionHobLib/StandaloneMmMemoryProtectionHobLib.inf             ## MU_CHANGE
+  MdeModulePkg/Library/MemoryProtectionHobLibNull/MmMemoryProtectionHobLibNull.inf               ## MU_CHANGE
   MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
   MdeModulePkg/Logo/Logo.inf
   MdeModulePkg/Logo/LogoDxe.inf
