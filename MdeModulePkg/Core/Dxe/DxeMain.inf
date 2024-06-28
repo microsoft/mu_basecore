@@ -99,6 +99,7 @@
   ImagePropertiesRecordLib
   OrderedCollectionLib
   DxeMemoryProtectionHobLib ## MU_CHANGE
+  SafeIntLib                ## MU_CHANGE
 
 [Guids]
   gEfiEventMemoryMapChangeGuid                  ## PRODUCES             ## Event
@@ -129,6 +130,7 @@
   gEfiEndOfDxeEventGroupGuid                    ## SOMETIMES_CONSUMES   ## Event
   gEfiHobMemoryAllocStackGuid                   ## SOMETIMES_CONSUMES   ## SystemTable
   gDxeMemoryProtectionSettingsGuid              ## CONSUMES             ## HOB      // MU_CHANGE
+  gCompatibilityModeActivatedEventGuid          ## SOMETIMES_PRODUCES   ## Event    // MU_CHANGE
 
 [Ppis]
   gEfiVectorHandoffInfoPpiGuid                  ## UNDEFINED # HOB
@@ -180,6 +182,7 @@
   gEfiWatchdogTimerArchProtocolGuid             ## CONSUMES
   gEfiCpu2ProtocolGuid                          ## SOMETIMES_CONSUMES        ## MU_CHANGE
   gMemoryProtectionDebugProtocolGuid            ## SOMETIMES_PRODUCES        ## MU_CHANGE
+  gEfiMemoryAttributeProtocolGuid               ## CONSUMES                  ## MS_CHANGE
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdLoadFixAddressBootTimeCodePageNumber    ## SOMETIMES_CONSUMES
