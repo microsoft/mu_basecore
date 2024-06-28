@@ -211,27 +211,30 @@ ToBuildPageTable (
   VOID
   )
 {
-  if (!IsIa32PaeSupport ()) {
-    return FALSE;
-  }
+  // MU_CHANGE START Always build page table
+  return TRUE;
+  // if (!IsIa32PaeSupport ()) {
+  //   return FALSE;
+  // }
 
-  if (IsNullDetectionEnabled ()) {
-    return TRUE;
-  }
+  // if (IsNullDetectionEnabled ()) {
+  //   return TRUE;
+  // }
 
-  if (PcdGet8 (PcdHeapGuardPropertyMask) != 0) {
-    return TRUE;
-  }
+  // if (PcdGet8 (PcdHeapGuardPropertyMask) != 0) {
+  //   return TRUE;
+  // }
 
-  if (PcdGetBool (PcdCpuStackGuard)) {
-    return TRUE;
-  }
+  // if (PcdGetBool (PcdCpuStackGuard)) {
+  //   return TRUE;
+  // }
 
-  if (IsEnableNonExecNeeded ()) {
-    return TRUE;
-  }
+  // if (IsEnableNonExecNeeded ()) {
+  //   return TRUE;
+  // }
 
-  return FALSE;
+  // return FALSE;
+  // MU_CHANGE END
 }
 
 /**
