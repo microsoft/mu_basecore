@@ -10,6 +10,7 @@
 #define _PAGE_TABLE_LIB_H_
 
 #include <IndustryStandard/PeImage.h>
+#include <Protocol/MemoryAttribute.h>             // TCBZ3519 MU_CHANGE
 
 #define PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PSE              BIT0
 #define PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PAE              BIT1
@@ -152,5 +153,17 @@ GetPagingDetails (
   OUT UINTN                               **PageTableBase     OPTIONAL,
   OUT UINT32                              **Attributes        OPTIONAL
   );
+
+// TCBZ3519 MU_CHANGE START
+
+/**
+  Install Memory Attribute Protocol.
+**/
+VOID
+InstallEfiMemoryAttributeProtocol (
+  VOID
+  );
+
+// TCBZ3519 MU_CHANGE END
 
 #endif
