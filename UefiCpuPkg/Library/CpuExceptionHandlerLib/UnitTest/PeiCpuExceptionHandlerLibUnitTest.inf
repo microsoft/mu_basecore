@@ -48,9 +48,12 @@
   PeiServicesLib
   CpuPageTableLib
   PeiServicesTablePointerLib
+  DxeMemoryProtectionHobLib ## MU_CHANGE Use Memory Protection Hob
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard   ## CONSUMES
+  # MU_CHANGE START Use Memory Protection Hob
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard   ## CONSUMES
+  # MU_CHANGE END Use Memory Protection Hob
   gUefiCpuPkgTokenSpaceGuid.PcdCpuApStackSize       ## CONSUMES
 
 [Ppis]

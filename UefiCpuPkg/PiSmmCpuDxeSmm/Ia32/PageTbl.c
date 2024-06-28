@@ -10,6 +10,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "PiSmmCpuCommon.h"
 
+#include <Library/MmMemoryProtectionHobLib.h> // MU_CHANGE Use Memory Protection Hob
+
 /**
   Create PageTable for SMM use.
 
@@ -164,9 +166,13 @@ SmiPFHandler (
     //
     // If NULL pointer was just accessed
     //
-    if (((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0) &&
+    // MU_CHANGE START Use Memory Protection Hob
+    // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0 &&
+    //   (PFAddress < EFI_PAGE_SIZE)) {
+    if (gMmMps.NullPointerDetectionPolicy &&
         (PFAddress < EFI_PAGE_SIZE))
     {
+      // MU_CHANGE END Use Memory Protection Hob
       DumpCpuContext (InterruptType, SystemContext);
       DEBUG ((DEBUG_ERROR, "!!! NULL pointer access !!!\n"));
       DEBUG_CODE (

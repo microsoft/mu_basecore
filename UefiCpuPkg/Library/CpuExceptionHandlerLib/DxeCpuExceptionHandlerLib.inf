@@ -55,7 +55,9 @@
   RiscV/ExceptionHandlerAsm.S | GCC
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard
+  # MU_CHANGE START Use Memory Protection Hob
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard
+  # MU_CHANGE END
   gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList
   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize
 
@@ -75,6 +77,7 @@
   PrintLib
   SerialPortLib
   SynchronizationLib
+  DxeMemoryProtectionHobLib ## MU_CHANGE Use Memory Protection Hob
 
 [LibraryClasses.Ia32, LibraryClasses.X64]
   CcExitLib
