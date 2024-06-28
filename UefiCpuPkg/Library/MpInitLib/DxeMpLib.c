@@ -13,9 +13,9 @@
 #include <Library/DebugAgentLib.h>
 #include <Library/DxeServicesTableLib.h>
 #include <Library/CcExitLib.h>
+#include <Library/DxeMemoryProtectionHobLib.h> // MU_CHANGE
 #include <Register/Amd/Fam17Msr.h>
 #include <Register/Amd/Ghcb.h>
-
 #include <Protocol/Timer.h>
 
 // MU_CHANGE: Add protocol for reporting multi-processor debug info
@@ -573,7 +573,10 @@ InitMpGlobalData (
     return;
   }
 
-  if (PcdGetBool (PcdCpuStackGuard)) {
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if (PcdGetBool (PcdCpuStackGuard)) {
+  if (gDxeMps.CpuStackGuard) {
+    // MU_CHANGE END
     //
     // One extra page at the bottom of the stack is needed for Guard page.
     //
