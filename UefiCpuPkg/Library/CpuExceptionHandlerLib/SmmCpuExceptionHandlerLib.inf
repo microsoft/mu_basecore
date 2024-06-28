@@ -54,7 +54,9 @@
   SynchronizationLib
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard
+  # MU_CHANGE START Use Memory Protection Hob
+  #gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard
+  # MU_CHANGE END Use Memory Protection Hob
   gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList
   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize
 

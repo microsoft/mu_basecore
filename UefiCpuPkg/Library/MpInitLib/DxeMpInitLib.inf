@@ -61,6 +61,7 @@
   PcdLib
   SynchronizationLib
   UefiBootServicesTableLib
+  DxeMemoryProtectionHobLib ## MU_CHANGE Use Memory Protection Hob
 
 [LibraryClasses.IA32, LibraryClasses.X64]
   AmdSvsmLib
@@ -76,6 +77,7 @@
 [Protocols]
   gEfiTimerArchProtocolGuid                     ## SOMETIMES_CONSUMES
   gCpuMpDebugProtocolGuid                       ## PRODUCES ## MU_CHANGE
+  gEfiCpuArchProtocolGuid                       ## CONSUMES ## MU_CHANGE: Enable removal of NX attribute from buffer
 
 [Guids]
   gEfiEventExitBootServicesGuid                 ## CONSUMES  ## Event
@@ -86,8 +88,10 @@
 [Guids.LoongArch64]
   gProcessorResourceHobGuid                     ## SOMETIMES_CONSUMES  ## HOB
 
-[Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                      ## CONSUMES
+[Pcd] 
+  # MU_CHANGE START Use Memory Protection Hob
+  #gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                      ## CONSUMES
+  # MU_CHANGE END Use Memory Protection Hob
   gEfiMdeModulePkgTokenSpaceGuid.PcdGhcbBase                           ## CONSUMES
   gEfiMdePkgTokenSpaceGuid.PcdConfidentialComputingGuestAttr           ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuMaxLogicalProcessorNumber            ## CONSUMES

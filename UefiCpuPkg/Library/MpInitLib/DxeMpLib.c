@@ -14,6 +14,7 @@
 #include <Library/DebugAgentLib.h>
 #include <Library/DxeServicesTableLib.h>
 #include <Library/CcExitLib.h>
+#include <Library/DxeMemoryProtectionHobLib.h> // MU_CHANGE Use Memory Protection Hob
 #include <Register/Amd/SevSnpMsr.h>
 #include <Register/Amd/Ghcb.h>
 
@@ -625,7 +626,10 @@ InitMpGlobalData (
     return;
   }
 
-  if (PcdGetBool (PcdCpuStackGuard)) {
+  // MU_CHANGE START Use Memory Protection Hob
+  // if (PcdGetBool (PcdCpuStackGuard)) {
+  if (gDxeMps.CpuStackGuard) {
+    // MU_CHANGE END Use Memory Protection Hob
     //
     // One extra page at the bottom of the stack is needed for Guard page.
     //
