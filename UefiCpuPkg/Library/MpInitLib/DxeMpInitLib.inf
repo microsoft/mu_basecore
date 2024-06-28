@@ -77,6 +77,7 @@
   gEfiTimerArchProtocolGuid                     ## SOMETIMES_CONSUMES
   gCpuMpDebugProtocolGuid                       ## PRODUCES ## MU_CHANGE
   gEfiCpuArchProtocolGuid                       ## CONSUMES ## MU_CHANGE: Enable removal of NX attribute from buffer
+  gEfiMemoryAttributeProtocolGuid               ## CONSUMES ## MU_CHANGE
 
 [Guids]
   gEfiEventExitBootServicesGuid                 ## CONSUMES  ## Event
