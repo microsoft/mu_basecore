@@ -196,6 +196,13 @@
   MdePkg/Library/MipiSysTLib/MipiSysTLib.inf
   MdePkg/Library/TraceHubDebugSysTLibNull/TraceHubDebugSysTLibNull.inf
 
+# MU_CHANGE [BEGIN]
+!if $(TOOLCHAIN) == VS2017 or $(TOOLCHAIN) == VS2019 or $(TOOLCHAIN) == VS2022
+[Components.IA32]
+  MdePkg/Library/VsIntrinsicLib/VsIntrinsicLib.inf
+!endif
+# MU_CHANGE [END]
+
 [Components.EBC]
   MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
   MdePkg/Library/UefiRuntimeLib/UefiRuntimeLib.inf
