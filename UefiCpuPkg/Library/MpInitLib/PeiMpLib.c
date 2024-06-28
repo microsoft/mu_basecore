@@ -14,6 +14,30 @@
 
 STATIC UINT64  mSevEsPeiWakeupBuffer = BASE_1MB;
 
+// MU_CHANGE START: Enable removal of NX attribute from buffer
+
+/**
+  Remove NX attribute from Buffer and apply RO to Buffer
+
+  @param[in]  Buffer      Buffer whose attributes will be altered
+  @param[in]  Size        Size of the buffer
+
+  @retval EFI_SUCCESS             NX attribute removed, RO attribute applied
+  @retval EFI_INVALID_PARAMETER   Buffer is not page-aligned or Buffer is 0 or Size of buffer
+                                  is not page-aligned
+  @retval Other                   Return value of LocateProtocol, ClearMemoryAttributes, or SetMemoryAttributes
+**/
+EFI_STATUS
+BufferRemoveNoExecuteSetReadOnly (
+  IN EFI_PHYSICAL_ADDRESS  Buffer,
+  IN UINTN                 Size
+  )
+{
+  return EFI_SUCCESS;
+}
+
+// MU_CHANGE End: Enable removal of NX attribute from buffer
+
 /**
   Enable Debug Agent to support source debugging on AP function.
 
