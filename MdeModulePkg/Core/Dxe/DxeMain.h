@@ -2726,7 +2726,10 @@ RemoveImageRecord (
   @param[in]  LoadedImage              The loaded image protocol
   @param[in]  LoadedImageDevicePath    The loaded image device path protocol
 **/
-VOID
+// MU_CHANGE Start
+EFI_STATUS
+EFIAPI
+// MU_CHANGE End
 ProtectUefiImage (
   IN EFI_LOADED_IMAGE_PROTOCOL  *LoadedImage,
   IN EFI_DEVICE_PATH_PROTOCOL   *LoadedImageDevicePath
