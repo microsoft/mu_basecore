@@ -39,6 +39,7 @@
   UefiLib
   PciHostBridgeLib
   TimerLib
+  DxeMemoryProtectionHobLib                       ## MU_CHANGE
 
 [Protocols]
   gEfiCpuIo2ProtocolGuid                          ## CONSUMES
