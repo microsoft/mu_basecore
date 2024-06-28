@@ -55,7 +55,7 @@
   SynchronizationLib
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard    # CONSUMES
+  #gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard    # CONSUMES  # MU_CHANGE
   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize
   gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList
 
