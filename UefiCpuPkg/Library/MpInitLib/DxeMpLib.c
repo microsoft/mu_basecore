@@ -14,10 +14,15 @@
 #include <Library/DebugAgentLib.h>
 #include <Library/DxeServicesTableLib.h>
 #include <Library/CcExitLib.h>
+#include <Library/DxeMemoryProtectionHobLib.h> // MU_CHANGE
 #include <Register/Amd/SevSnpMsr.h>
 #include <Register/Amd/Ghcb.h>
 
 #include <Protocol/Timer.h>
+// MU_CHANGE START: Enable removal of NX attribute from buffer
+#include <Uefi.h>
+#include <Protocol/Cpu.h>
+// MU_CHANGE END
 
 // MU_CHANGE: Add protocol for reporting multi-processor debug info
 #include <Protocol/CpuMpDebug.h>
@@ -39,6 +44,9 @@ EFI_EVENT         mCheckAllApsEvent            = NULL;
 EFI_EVENT         mMpInitExitBootServicesEvent = NULL;
 EFI_EVENT         mLegacyBootEvent             = NULL;
 volatile BOOLEAN  mStopCheckAllApsStatus       = TRUE;
+// MU_CHANGE START: Enable removal of NX attribute from buffer
+extern RELOCATE_AP_LOOP_ENTRY  mReservedApLoop;
+// MU_CHANGE END: Enable removal of NX attribute from buffer
 
 //
 // Begin wakeup buffer allocation below 0x88000
@@ -102,7 +110,56 @@ InstallCpuMpDebugProtocol (
   DEBUG ((DEBUG_INFO, "Installed gCpuMpDebugProtocolGuid - Status: %r\n", Status));
 }
 
-// MU_CHANGE END
+// MU_CHANGE START: Enable removal of NX attribute from buffer
+
+/**
+  Remove NX attribute from Buffer and apply RO to Buffer
+
+  @param[in]  Buffer      Buffer whose attributes will be altered
+  @param[in]  Size        Size of the buffer
+
+  @retval EFI_SUCCESS             NX attribute removed, RO attribute applied
+  @retval EFI_INVALID_PARAMETER   Buffer is not page-aligned or Buffer is 0 or Size of buffer
+                                  is not page-aligned
+  @retval Other                   Return value of LocateProtocol, ClearMemoryAttributes, or SetMemoryAttributes
+**/
+EFI_STATUS
+BufferRemoveNoExecuteSetReadOnly (
+  IN EFI_PHYSICAL_ADDRESS  Buffer,
+  IN UINTN                 Size
+  )
+{
+  EFI_CPU_ARCH_PROTOCOL  *CpuProtocol = NULL;
+  EFI_STATUS             Status;
+
+  if ((Buffer == 0) || (Buffer % EFI_PAGE_SIZE != 0) || (Size % EFI_PAGE_SIZE != 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = gBS->LocateProtocol (&gEfiCpuArchProtocolGuid, NULL, (VOID **)&CpuProtocol);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - Unable to locate gEfiCpuArchProtocolGuid\n", __func__));
+    ASSERT_EFI_ERROR (Status);
+    return Status;
+  }
+
+  Status = CpuProtocol->SetMemoryAttributes (
+                          CpuProtocol,
+                          Buffer,
+                          Size,
+                          EFI_MEMORY_RO
+                          );
+
+  if EFI_ERROR (Status) {
+    DEBUG ((DEBUG_INFO, "%a - Unable to update buffer attributes!\n", __func__));
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  return Status;
+}
+
+// MU_CHANGE END Enable removal of NX attribute from buffer
 
 /**
   Enable Debug Agent to support source debugging on AP function.
@@ -544,6 +601,12 @@ MpInitChangeApLoopCallback (
   CpuMpData->Pm16CodeSegment = GetProtectedMode16CS ();
   CpuMpData->ApLoopMode      = PcdGet8 (PcdCpuApLoopMode);
   mNumberToFinish            = CpuMpData->CpuCount - 1;
+  // MU_CHANGE END Enable removal of NX attribute from buffer
+  BufferRemoveNoExecuteSetReadOnly (
+    (EFI_PHYSICAL_ADDRESS)(UINTN)mReservedApLoop.Data,
+    EFI_PAGES_TO_SIZE (EFI_SIZE_TO_PAGES (CpuMpData->AddressMap.RelocateApLoopFuncSizeAmdSev))
+    );
+  // MU_CHANGE END Enable removal of NX attribute from buffer
   WakeUpAP (CpuMpData, TRUE, 0, RelocateApLoop, NULL, TRUE);
   while (mNumberToFinish > 0) {
     CpuPause ();
@@ -591,7 +654,10 @@ InitMpGlobalData (
     return;
   }
 
-  if (PcdGetBool (PcdCpuStackGuard)) {
+  // MU_CHANGE START Update to use memory protection settings HOB
+  // if (PcdGetBool (PcdCpuStackGuard)) {
+  if (gDxeMps.CpuStackGuard) {
+    // MU_CHANGE END
     //
     // One extra page at the bottom of the stack is needed for Guard page.
     //

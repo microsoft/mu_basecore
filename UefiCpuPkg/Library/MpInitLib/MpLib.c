@@ -2261,6 +2261,10 @@ MpInitLibInitialize (
     );
   DEBUG ((DEBUG_INFO, "AP Vector: non-16-bit = %p/%x\n", CpuMpData->WakeupBufferHigh, ApResetVectorSizeAbove1Mb));
 
+  // MU_CHANGE START: Enable removal of NX attribute from buffer
+  BufferRemoveNoExecuteSetReadOnly (CpuMpData->WakeupBufferHigh, ALIGN_VALUE (ApResetVectorSizeAbove1Mb, EFI_PAGE_SIZE));
+  // MU_CHANGE END: Enable removal of NX attribute from buffer
+
   //
   // Save APIC mode for AP to sync
   //

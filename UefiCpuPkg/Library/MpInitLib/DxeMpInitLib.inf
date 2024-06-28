@@ -60,6 +60,7 @@
   PcdLib
   SynchronizationLib
   UefiBootServicesTableLib
+  DxeMemoryProtectionHobLib ## MU_CHANGE
 
 [LibraryClasses.IA32, LibraryClasses.X64]
   AmdSvsmLib
@@ -75,6 +76,7 @@
 [Protocols]
   gEfiTimerArchProtocolGuid                     ## SOMETIMES_CONSUMES
   gCpuMpDebugProtocolGuid                       ## PRODUCES ## MU_CHANGE
+  gEfiCpuArchProtocolGuid                       ## CONSUMES ## MU_CHANGE: Enable removal of NX attribute from buffer
 
 [Guids]
   gEfiEventExitBootServicesGuid                 ## CONSUMES  ## Event
@@ -86,7 +88,9 @@
   gProcessorResourceHobGuid                     ## SOMETIMES_CONSUMES  ## HOB
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                      ## CONSUMES
+  # MU_CHANGE START Remove memory protection PCD references
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                      ## CONSUMES
+  # MU_CHANGE END
   gEfiMdeModulePkgTokenSpaceGuid.PcdGhcbBase                           ## CONSUMES
   gEfiMdePkgTokenSpaceGuid.PcdConfidentialComputingGuestAttr           ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuMaxLogicalProcessorNumber            ## CONSUMES
@@ -101,4 +105,4 @@
   gUefiCpuPkgTokenSpaceGuid.PcdGhcbHypervisorFeatures                  ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdSevEsWorkAreaBase                       ## SOMETIMES_CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdFirstTimeWakeUpAPsBySipi                ## CONSUMES
-  gUefiCpuPkgTokenSpaceGuid.PcdCpuApWakeupBufferReserved               ## CONSUMES MU_CHANGE
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuApWakeupBufferReserved               ## CONSUMES MU_CHANGE 
