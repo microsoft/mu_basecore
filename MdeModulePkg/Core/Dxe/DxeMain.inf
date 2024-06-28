@@ -95,6 +95,7 @@
   CpuExceptionHandlerLib
   PcdLib
   ImagePropertiesRecordLib
+  DxeMemoryProtectionHobLib ## MU_CHANGE
 
 [Guids]
   gEfiEventMemoryMapChangeGuid                  ## PRODUCES             ## Event
@@ -124,6 +125,7 @@
   gEfiMemoryAttributesTableGuid                 ## SOMETIMES_PRODUCES   ## SystemTable
   gEfiEndOfDxeEventGroupGuid                    ## SOMETIMES_CONSUMES   ## Event
   gEfiHobMemoryAllocStackGuid                   ## SOMETIMES_CONSUMES   ## SystemTable
+  gDxeMemoryProtectionSettingsGuid              ## CONSUMES             ## HOB      // MU_CHANGE
 
 [Ppis]
   gEfiVectorHandoffInfoPpiGuid                  ## UNDEFINED # HOB
