@@ -32,8 +32,9 @@
 
   @retval  The number of bytes associated with the input number of pages.
 **/
-STATIC
 UINT64
+// MU_CHANGE
+EFIAPI
 EfiPagesToSize (
   IN UINT64  Pages
   )
@@ -51,8 +52,9 @@ EfiPagesToSize (
   @retval  The number of pages associated with the input number of bytes.
 
 **/
-STATIC
 UINT64
+// MU_CHANGE
+EFIAPI
 EfiSizeToPages (
   IN UINT64  Size
   )
