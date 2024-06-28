@@ -201,6 +201,13 @@ GetUefiImageProtectionPolicy (
     return FALSE;
   }
 
+  // MU_CHANGE [START]: Update for compatibility mode
+  if (!IsEnhancedMemoryProtectionActive ()) {
+    return DO_NOT_PROTECT;
+  }
+
+  // MU_CHANGE [END]
+
   //
   // Check DevicePath
   //
@@ -761,7 +768,7 @@ GetPermissionAttributeForMemoryType (
 
   // Handle code allocations according to the NX_COMPAT DLL flag. If the flag is
   // set, the image should update the attributes of code type allocates when it's ready to execute them.
-  if (IsCodeType (MemoryType) && !IsSystemNxCompatible ()) {
+  if (!IsEnhancedMemoryProtectionActive ()) {
     return 0;
   } else if (GetDxeMemoryTypeSettingFromBitfield (MemoryType, gDxeMps.NxProtectionPolicy)) {
     return EFI_MEMORY_XP;
@@ -1204,20 +1211,15 @@ MemoryProtectionExitBootServicesCallback (
   }
 }
 
-/**
-  Disable NULL pointer detection after EndOfDxe. This is a workaround resort in
-  order to skip unfixable NULL pointer access issues detected in OptionROM or
-  boot loaders.
+// MU_CHANGE [START]: Move disable NULL detection to separate routine so it can be called
+//                    outside of the event context.
 
-  @param[in]  Event     The Event this notify function registered to.
-  @param[in]  Context   Pointer to the context data registered to the Event.
+/**
+  Disable NULL pointer detection.
 **/
-// MU_CHANGE START Update naming due to addition of ability to disable at readytoboot
 VOID
-EFIAPI
 DisableNullDetection (
-  EFI_EVENT  Event,
-  VOID       *Context
+  VOID
   )
 {
   EFI_STATUS                       Status;
@@ -1229,6 +1231,17 @@ DisableNullDetection (
   //
   Status = CoreGetMemorySpaceDescriptor (0, &Desc);
   ASSERT_EFI_ERROR (Status);
+
+  // Only re-enable the null page if it is system memory. If this page belongs to
+  // another memory type or is unmapped in general, leave it RP
+  if (Desc.GcdMemoryType != EfiGcdMemoryTypeSystemMemory) {
+    DEBUG ((
+      DEBUG_WARN,
+      "%a - Not disabling null detection as page 0 is not marked as system memory\n",
+      __func__
+      ));
+    return;
+  }
 
   if ((Desc.Capabilities & EFI_MEMORY_RP) == 0) {
     Status = CoreSetMemorySpaceCapabilities (
@@ -1246,18 +1259,32 @@ DisableNullDetection (
              );
   ASSERT_EFI_ERROR (Status);
 
-  //
-  // Page 0 might have be allocated to avoid misuses. Free it here anyway.
-  //
-  CoreFreePages (0, 1);
-
-  CoreCloseEvent (Event);
   DEBUG ((DEBUG_INFO, "%a - end\n", __func__));
 
   return;
 }
 
-// MU_CHANGE END
+/**
+  Disable NULL pointer detection after EndOfDxe. This is a workaround resort in
+  order to skip unfixable NULL pointer access issues detected in OptionROM or
+  boot loaders.
+
+  @param[in]  Event     The Event this notify function registered to.
+  @param[in]  Context   Pointer to the context data registered to the Event.
+**/
+VOID
+EFIAPI
+DisableNullDetectionEventFunction (
+  EFI_EVENT  Event,
+  VOID       *Context
+  )
+{
+  DisableNullDetection ();
+  CoreCloseEvent (Event);
+  return;
+}
+
+// MU_CHANGE [END]
 
 // MU_CHANGE START: Add function to enable null detection as it is now done in DXE instead of PEI
 
@@ -1463,7 +1490,7 @@ CoreInitializeMemoryProtection (
         Status = CoreCreateEventEx (
                    EVT_NOTIFY_SIGNAL,
                    TPL_NOTIFY,
-                   DisableNullDetection,
+                   DisableNullDetectionEventFunction,
                    NULL,
                    &gEfiEndOfDxeEventGroupGuid,
                    &DisableNullDetectionEvent
@@ -1472,7 +1499,7 @@ CoreInitializeMemoryProtection (
         Status = CoreCreateEventEx (
                    EVT_NOTIFY_SIGNAL,
                    TPL_NOTIFY,
-                   DisableNullDetection,
+                   DisableNullDetectionEventFunction,
                    NULL,
                    &gEfiEventReadyToBootGuid,
                    &DisableNullDetectionEvent
@@ -1554,7 +1581,10 @@ ApplyMemoryProtectionPolicy (
   IN  UINT64                Length
   )
 {
-  UINT64  OldAttributes;
+  // MU_CHANGE - Start - Enforce that the Core returns memory with expected attributes
+  // UINT64  OldAttributes;
+  // MU_CHANGE - End - Enforce that the Core returns memory with expected attributes
+
   UINT64  NewAttributes;
 
   //
@@ -1613,16 +1643,21 @@ ApplyMemoryProtectionPolicy (
   //
   NewAttributes = GetPermissionAttributeForMemoryType (NewType);
 
-  if (OldType != EfiMaxMemoryType) {
-    OldAttributes = GetPermissionAttributeForMemoryType (OldType);
-    if (OldAttributes == NewAttributes) {
-      // policy is the same between OldType and NewType
-      return EFI_SUCCESS;
-    }
-  } else if (NewAttributes == 0) {
-    // newly added region of a type that does not require protection
-    return EFI_SUCCESS;
-  }
+  // MU_CHANGE - Start - Enforce that the Core returns memory with expected attributes
+  // Ensure that the memory has the expected attributes by skipping the Edk2 checks.
+  // Compat mode, Memory Attributes Protocol, Cpu Arch are all able to
+  // change memory attributes so ensure the memory range attributes match expectations.
+  // if (OldType != EfiMaxMemoryType) {
+  //  OldAttributes = GetPermissionAttributeForMemoryType (OldType);
+  //  if (OldAttributes == NewAttributes) {
+  //    // policy is the same between OldType and NewType
+  //    return EFI_SUCCESS;
+  //  }
+  // } else if (NewAttributes == 0) {
+  //  // newly added region of a type that does not require protection
+  //  return EFI_SUCCESS;
+  // }
+  // MU_CHANGE - End - Enforce that the Core returns memory with expected attribute
 
   return gCpu->SetMemoryAttributes (gCpu, Memory, Length, NewAttributes);
 }
