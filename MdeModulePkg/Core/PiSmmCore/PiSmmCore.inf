@@ -62,6 +62,7 @@
   SmmMemLib
   SafeIntLib
   ImagePropertiesRecordLib
+  MmMemoryProtectionHobLib ## MU_CHANGE
 
 [Protocols]
   gEfiDxeSmmReadyToLockProtocolGuid             ## UNDEFINED # SmiHandlerRegister
@@ -95,9 +96,11 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfilePropertyMask           ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfileDriverPath             ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdSmiHandlerProfilePropertyMask       ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPageType                   ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPoolType                   ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
+  # MU_CHANGE START Remove memory protection PCD references
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPageType                   ## CONSUMES
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPoolType                   ## CONSUMES
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
+  # MU_CHANGE END
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiS3Enable                        ## CONSUMES
 
 [Guids]
