@@ -39,6 +39,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/SimpleFileSystem.h>
+#include <Protocol/MemoryAttribute.h>       // MU_CHANGE
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
@@ -72,6 +73,8 @@ extern NONPROTECTED_IMAGES_PRIVATE_DATA  mNonProtectedImageRangesPrivate;
 // MU_CHANGE End: Use Enhanced Memory Protections
 
 extern LIST_ENTRY  mGcdMemorySpaceMap;
+
+EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttribute = NULL;          // MU_CHANGE
 
 // STATIC LIST_ENTRY  mProtectedImageRecordList; MU_CHANGE
 
@@ -1201,6 +1204,7 @@ CoreInitializeMemoryProtection (
   EFI_EVENT   Event;
   EFI_EVENT   DisableNullDetectionEvent;
   EFI_EVENT   EnableNullDetectionEvent;     // MU_CHANGE
+  EFI_EVENT   MemoryAttributeProtocolEvent; // MU_CHANGE
   VOID        *Registration;
 
   // mImageProtectionPolicy = gDxeMps.ImageProtectionPolicy; // MU_CHANGE
@@ -1242,6 +1246,26 @@ CoreInitializeMemoryProtection (
              );
   ASSERT_EFI_ERROR (Status);
 
+  // MU_CHANGE START: Register an event to populate the memory attribute protocol
+  Status = CoreCreateEvent (
+             EVT_NOTIFY_SIGNAL,
+             TPL_CALLBACK,
+             MemoryAttributeProtocolNotify,
+             NULL,
+             &MemoryAttributeProtocolEvent
+             );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Register for protocol notification
+  //
+  Status = CoreRegisterProtocolNotify (
+             &gEfiMemoryAttributeProtocolGuid,
+             MemoryAttributeProtocolEvent,
+             &Registration
+             );
+  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE END
   //
   // Register a callback to disable NULL pointer detection at EndOfDxe
   //
@@ -1426,16 +1450,32 @@ ApplyMemoryProtectionPolicy (
   //
   NewAttributes = GetPermissionAttributeForMemoryType (NewType);
 
-  if (OldType != EfiMaxMemoryType) {
-    OldAttributes = GetPermissionAttributeForMemoryType (OldType);
-    if (OldAttributes == NewAttributes) {
-      // policy is the same between OldType and NewType
+  // MU_CHANGE START: There is a potential bug where attributes are not properly set
+  //                  for all pages during a call to AllocatePages(). This may be due to a bug somewhere
+  //                  during the free page process.
+  // if (OldType != EfiMaxMemoryType) {
+  //   OldAttributes = GetPermissionAttributeForMemoryType (OldType);
+  //   if (OldAttributes == NewAttributes) {
+  //     // policy is the same between OldType and NewType
+  //     return EFI_SUCCESS;
+  //   }
+  // } else if (NewAttributes == 0) {
+  //   // newly added region of a type that does not require protection
+  //   return EFI_SUCCESS;
+  // }
+
+  // To catch the edge case where the attributes are not consistent across the range, get the
+  // attributes from the page table to see if they are consistent. If they are not consistent,
+  // GetMemoryAttributes() will return an error.
+  if (mMemoryAttributeProtocol != NULL) {
+    if (!EFI_ERROR (mMemoryAttributeProtocol->GetMemoryAttributes (mMemoryAttributeProtocol, Memory, Length, &OldAttributes)) &&
+        (OldAttributes == NewAttributes))
+    {
       return EFI_SUCCESS;
     }
-  } else if (NewAttributes == 0) {
-    // newly added region of a type that does not require protection
-    return EFI_SUCCESS;
   }
+
+  // MU_CHANGE END
 
   return gCpu->SetMemoryAttributes (gCpu, Memory, Length, NewAttributes);
 }
