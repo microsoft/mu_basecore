@@ -25,9 +25,10 @@ MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD  mSpecialMemoryRegionsPrivate
   INITIALIZE_LIST_HEAD_VARIABLE (mSpecialMemoryRegionsPrivate.SpecialRegionList)
 };
 
-BOOLEAN     mIsSystemNxCompatible       = TRUE;
-UINT8       *mBitmapGlobal              = NULL;
-LIST_ENTRY  **mArrayOfListEntryPointers = NULL;
+BOOLEAN                        mIsSystemNxCompatible       = TRUE;
+EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttributeProtocol   = NULL;
+UINT8                          *mBitmapGlobal              = NULL;
+LIST_ENTRY                     **mArrayOfListEntryPointers = NULL;
 
 /**
   Return the section alignment requirement for the PE image section type.
@@ -2268,6 +2269,37 @@ InitializePageAttributesForMemoryProtectionPolicy (
   }
 
   CleanupMemoryMapWithPopulatedAccessAttributes (MemoryMap);
+}
+
+/**
+  A notification for the Memory Attribute Protocol.
+
+  @param[in]  Event                 Event whose notification function is being invoked.
+  @param[in]  Context               Pointer to the notification function's context,
+                                    which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+MemoryAttributeProtocolNotify (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = gBS->LocateProtocol (&gEfiMemoryAttributeProtocolGuid, NULL, (VOID **)&mMemoryAttributeProtocol);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_INFO,
+      "%a - Unable to locate the memory attribute protocol! Status = %r\n",
+      __FUNCTION__,
+      Status
+      ));
+  }
+
+  CoreCloseEvent (Event);
 }
 
 /**
