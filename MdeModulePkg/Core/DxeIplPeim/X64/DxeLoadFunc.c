@@ -81,24 +81,25 @@ HandOffToDxeCore (
   GhcbSize = PcdGet64 (PcdGhcbSize);
 
   PageTables = 0;
-  if (FeaturePcdGet (PcdDxeIplBuildPageTables)) {
-    //
-    // Create page table and save PageMapLevel4 to CR3
-    //
-    PageTables = CreateIdentityMappingPageTables (
-                   (EFI_PHYSICAL_ADDRESS)(UINTN)BaseOfStack,
-                   STACK_SIZE,
-                   (EFI_PHYSICAL_ADDRESS)(UINTN)GhcbBase,
-                   GhcbSize
-                   );
-  } else {
-    //
-    // Set NX for stack feature also require PcdDxeIplBuildPageTables be TRUE
-    // for the DxeIpl and the DxeCore are both X64.
-    //
-    ASSERT (PcdGetBool (PcdSetNxForStack) == FALSE);
-    ASSERT (PcdGetBool (PcdCpuStackGuard) == FALSE);
-  }
+  // MU_CHANGE START Always build page tables
+  // if (FeaturePcdGet (PcdDxeIplBuildPageTables)) {
+  //
+  // Create page table and save PageMapLevel4 to CR3
+  //
+  PageTables = CreateIdentityMappingPageTables (
+                 (EFI_PHYSICAL_ADDRESS)(UINTN)BaseOfStack,
+                 STACK_SIZE,
+                 (EFI_PHYSICAL_ADDRESS)(UINTN)GhcbBase,
+                 GhcbSize
+                 );
+  // } else {
+  //   //
+  //   // Set NX for stack feature also require PcdDxeIplBuildPageTables be TRUE
+  //   // for the DxeIpl and the DxeCore are both X64.
+  //   //
+  //   ASSERT (PcdGetBool (PcdSetNxForStack) == FALSE);
+  //   ASSERT (PcdGetBool (PcdCpuStackGuard) == FALSE);
+  // }
 
   //
   // End of PEI phase signal
@@ -106,10 +107,10 @@ HandOffToDxeCore (
   Status = PeiServicesInstallPpi (&gEndOfPeiSignalPpi);
   ASSERT_EFI_ERROR (Status);
 
-  if (FeaturePcdGet (PcdDxeIplBuildPageTables)) {
-    AsmWriteCr3 (PageTables);
-  }
-
+  // if (FeaturePcdGet (PcdDxeIplBuildPageTables)) {
+  AsmWriteCr3 (PageTables);
+  // }
+  // MU_CHANGE END
   //
   // Update the contents of BSP stack HOB to reflect the real stack info passed to DxeCore.
   //
