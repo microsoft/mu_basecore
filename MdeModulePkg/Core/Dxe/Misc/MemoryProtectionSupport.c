@@ -25,6 +25,7 @@ MEMORY_PROTECTION_SPECIAL_REGION_PRIVATE_LIST_HEAD  mSpecialMemoryRegionsPrivate
   INITIALIZE_LIST_HEAD_VARIABLE (mSpecialMemoryRegionsPrivate.SpecialRegionList)
 };
 
+BOOLEAN     mIsSystemNxCompatible       = TRUE;
 UINT8       *mBitmapGlobal              = NULL;
 LIST_ENTRY  **mArrayOfListEntryPointers = NULL;
 
@@ -2334,4 +2335,33 @@ GetDxeMemoryProtectionSettings (
   }
 
   return NULL;
+}
+
+/**
+  Sets the NX compatibility global to FALSE so future checks to
+  IsSystemNxCompatible() will return FALSE.
+**/
+VOID
+EFIAPI
+TurnOffNxCompatibility (
+  VOID
+  )
+{
+  if (mIsSystemNxCompatible) {
+    DEBUG ((DEBUG_INFO, "%a - Setting Nx on Code types to FALSE\n", __FUNCTION__));
+  }
+
+  mIsSystemNxCompatible = FALSE;
+}
+
+/**
+  Returns TRUE if TurnOffNxCompatibility() has never been called.
+**/
+BOOLEAN
+EFIAPI
+IsSystemNxCompatible (
+  VOID
+  )
+{
+  return mIsSystemNxCompatible;
 }
