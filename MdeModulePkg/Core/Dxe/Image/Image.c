@@ -274,7 +274,12 @@ CoreInitializeImageServices (
 
   InitializeListHead (&mAvailableEmulators);
 
-  ProtectUefiImage (&Image->Info, Image->LoadedImageDevicePath);
+  // MU_CHANGE START Use Image Failure Status Code
+  Status = ProtectUefiImage (&Image->Info, Image->LoadedImageDevicePath);
+
+  // Omit EFI_NOT_READY as it just implies gCPU is not yet installed
+  Status = (Status == EFI_NOT_READY) ? EFI_SUCCESS : Status;
+  // MU_CHANGE END
 
   return Status;
 }
@@ -1463,7 +1468,10 @@ CoreLoadImageCommon (
     }
   }
 
-  ProtectUefiImage (&Image->Info, Image->LoadedImageDevicePath);
+  Status = ProtectUefiImage (&Image->Info, Image->LoadedImageDevicePath);
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
 
   //
   // Success.  Return the image handle
