@@ -223,6 +223,16 @@
   #
   ExceptionPersistenceLib|Include/Library/ExceptionPersistenceLib.h
 
+  # MU_CHANGE - Add DxeMemoryProtectionHobLib to MdeModulePkg
+  ## @libraryclass Provides a way to toggle DXE memory protection settings
+  #
+  DxeMemoryProtectionHobLib|Include/Library/DxeMemoryProtectionHobLib.h
+
+  # MU_CHANGE - Add MmMemoryProtectionHobLib to MdeModulePkg
+  ## @libraryclass Provides a way to toggle SMM memory protection settings
+  #
+  MmMemoryProtectionHobLib|Include/Library/MmMemoryProtectionHobLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
@@ -271,6 +281,11 @@
   ## Hob and Variable guid specify the platform memory type information.
   #  Include/Guid/MemoryTypeInformation.h
   gEfiMemoryTypeInformationGuid  = { 0x4C19049F, 0x4137, 0x4DD3, { 0x9C, 0x10, 0x8B, 0x97, 0xA8, 0x3F, 0xFD, 0xFA }}
+
+  ## MU_CHANGE
+  ## Hob and Variable guid specify the minimum allocations for memory types.
+  #  Include/Guid/MemoryTypeInformation.h
+  gEfiMemoryTypeMinimumAllocationGuid = { 0xE4FFE60B, 0x2499, 0x4848, { 0x88, 0x9A, 0xF4, 0x24, 0xC1, 0xC9, 0xC3, 0x47 }}
 
   ## Capsule update hob and variable guid
   #  Include/Guid/CapsuleVendor.h
@@ -477,8 +492,17 @@
   ## Advanced Logger Variable Guid. This variable guid is used to access the log data via GetVariable.
   #
   gAdvLoggerAccessGuid = { 0xa021bf2b, 0x34ed, 0x4a98, {0x85, 0x9c, 0x42, 0x0e, 0xf9, 0x4f, 0x3e, 0x94 }}
-## MU_CHANGE END
 
+  ## DXE Memory Protection Settings Guid. Used to create and fetch the DXE memory protection settings HOB entry.
+  #
+  # Include/Guid/DxeMemoryProtectionSettings
+  gDxeMemoryProtectionSettingsGuid = { 0x9ABFD639, 0xD1D0, 0x4EFF, { 0xBD, 0xB6, 0x7E, 0xC4, 0x19, 0x0D, 0x17, 0xD5 }}
+
+  ## SMM Memory Protection Settings Guid. Used to create and fetch the SMM memory protection settings HOB entry.
+  #
+  # Include/Guid/MmMemoryProtectionSettings
+  gMmMemoryProtectionSettingsGuid = { 0x0CF445DD, 0xA67C, 0x4F8C, { 0x81, 0x9B, 0xB7, 0xB6, 0x86, 0xED, 0x7C, 0x75 }}
+## MU_CHANGE END
   ## Used (similar to Variable Services) to communicate policies to the enforcement engine.
   # {DA1B0D11-D1A7-46C4-9DC9-F3714875C6EB}
   gVarCheckPolicyLibMmiHandlerGuid = { 0xda1b0d11, 0xd1a7, 0x46c4, { 0x9d, 0xc9, 0xf3, 0x71, 0x48, 0x75, 0xc6, 0xeb }}
