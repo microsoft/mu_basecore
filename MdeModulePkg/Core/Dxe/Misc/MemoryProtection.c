@@ -40,6 +40,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/MemoryAttribute.h>
 #include <Protocol/SimpleFileSystem.h>
+#include <Protocol/MemoryProtectionDebug.h> // MU_CHANGE
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
@@ -77,6 +78,13 @@ extern LIST_ENTRY  mGcdMemorySpaceMap;
 // STATIC LIST_ENTRY  mProtectedImageRecordList; MU_CHANGE
 
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *gMemoryAttributeProtocol;
+// MU_CHANGE - START
+STATIC MEMORY_PROTECTION_DEBUG_PROTOCOL  mMemoryProtectionDebug =
+{
+  IsGuardPage,
+  GetImageList
+};
+// MU_CHANGE - END
 
 /**
   Get the image type.
@@ -750,7 +758,12 @@ GetPermissionAttributeForMemoryType (
   // } else {
   //   return 0;
   // }
-  if (GetDxeMemoryTypeSettingFromBitfield (MemoryType, gDxeMps.NxProtectionPolicy)) {
+
+  // Handle code allocations according to the NX_COMPAT DLL flag. If the flag is
+  // set, the image should update the attributes of code type allocates when it's ready to execute them.
+  if (IsCodeType (MemoryType) && !IsSystemNxCompatible ()) {
+    return 0;
+  } else if (GetDxeMemoryTypeSettingFromBitfield (MemoryType, gDxeMps.NxProtectionPolicy)) {
     return EFI_MEMORY_XP;
   }
 
@@ -1484,11 +1497,11 @@ CoreInitializeMemoryProtection (
     EFI_HANDLE  HgBmHandle = NULL;
     Status = CoreInstallMultipleProtocolInterfaces (
                &HgBmHandle,
-               &gHeapGuardDebugProtocolGuid,
-               &mHeapGuardDebug,
+               &gMemoryProtectionDebugProtocolGuid, // MU_CHANGE
+               &mMemoryProtectionDebug,             // MU_CHANGE
                NULL
                );
-    DEBUG ((DEBUG_INFO, "Installed gHeapGuardDebugProtocolGuid - %r\n", Status));
+    DEBUG ((DEBUG_INFO, "Installed gHeapGuardDebugProtocolGuid - %r\n", Status)); // MU_CHANGE
   }
 
   // MSCHANGE END
