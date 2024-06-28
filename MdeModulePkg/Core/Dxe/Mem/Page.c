@@ -181,7 +181,10 @@ CoreAddRange (
   // used for other purposes.
   //
   if ((Type == EfiConventionalMemory) && (Start == 0) && (End >= EFI_PAGE_SIZE - 1)) {
-    if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT0) == 0) {
+    // MU_CHANGE START Update to use memory protection settings HOB
+    // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT0) == 0) {
+    if (!gDxeMps.NullPointerDetectionPolicy.Fields.UefiNullDetection) {
+      // MU_CHANGE END
       SetMem ((VOID *)(UINTN)Start, EFI_PAGE_SIZE, 0);
     }
   }
