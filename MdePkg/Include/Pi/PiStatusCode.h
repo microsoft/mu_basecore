@@ -1027,7 +1027,8 @@ typedef struct {
 /// Software Class DXE Foundation Subclass Error Code definitions.
 ///
 ///@{
-#define EFI_SW_DXE_CORE_EC_NO_ARCH  (EFI_SUBCLASS_SPECIFIC | 0x00000000)
+#define EFI_SW_DXE_CORE_EC_NO_ARCH             (EFI_SUBCLASS_SPECIFIC | 0x00000000)
+#define EFI_SW_DXE_CORE_EC_IMAGE_LOAD_FAILURE  (EFI_SUBCLASS_SPECIFIC | 0x00000001)    // MU_CHANGE
 ///@}
 
 ///
