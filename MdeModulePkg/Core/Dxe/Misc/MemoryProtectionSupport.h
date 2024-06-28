@@ -169,4 +169,23 @@ InitializePageAttributesForMemoryProtectionPolicy (
   VOID
   );
 
+/**
+  Sets the NX compatibility global to FALSE so future checks to
+  IsSystemNxCompatible() will return FALSE.
+**/
+VOID
+EFIAPI
+TurnOffNxCompatibility (
+  VOID
+  );
+
+/**
+  Returns TRUE if TurnOffNxCompatibility() has never been called.
+**/
+BOOLEAN
+EFIAPI
+IsSystemNxCompatible (
+  VOID
+  );
+
 #endif
