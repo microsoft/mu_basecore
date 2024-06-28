@@ -1334,7 +1334,7 @@ GenSmmPageTable (
   // MU_CHANGE START
   // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0) {
   if (gMmMps.NullPointerDetectionPolicy) {
-  // MU_CHANGE END
+    // MU_CHANGE END
 
     //
     // Mark [0, 4k] as non-present
@@ -1342,6 +1342,8 @@ GenSmmPageTable (
     Status = ConvertMemoryPageAttributes (PageTable, PagingMode, 0, SIZE_4KB, EFI_MEMORY_RP, TRUE, NULL);
     ASSERT (Status == RETURN_SUCCESS);
   }
+
+  // MU_CHANGE END
 
   return (UINTN)PageTable;
 }
@@ -1497,7 +1499,7 @@ IfReadOnlyPageTableNeeded (
   //
   // MU_CHANGE START
   // if (((PcdGet8 (PcdHeapGuardPropertyMask) & (BIT3 | BIT2)) != 0) ||
-      ((gMmMps.HeapGuardPolicy.Fields.MmPageGuard | gMmMps.HeapGuardPolicy.Fields.MmPoolGuard) != 0) || // MU_CHANGE
+  if (((gMmMps.HeapGuardPolicy.Fields.MmPageGuard | gMmMps.HeapGuardPolicy.Fields.MmPoolGuard) != 0) ||  // MU_CHANGE
       // MU_CHANGE END
       mSmmProfileEnabled)
   {
