@@ -103,6 +103,7 @@
   CpuPageTableLib
   MmSaveStateLib
   SmmCpuSyncLib
+  MmMemoryProtectionHobLib                   ## MU_CHANGE Use Memory Protection Hob
 
 [Protocols]
   gEfiSmmConfigurationProtocolGuid         ## PRODUCES
@@ -149,8 +150,10 @@
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmShadowStackSize               ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiS3Enable                   ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPteMemoryEncryptionAddressOrMask    ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask    ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
+  # MU_CHANGE START Use Memory Protection Hob
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask    ## CONSUMES
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
+  # MU_CHANGE END Use Memory Protection Hob
   gEfiMdePkgTokenSpaceGuid.PcdControlFlowEnforcementPropertyMask        ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionRebootInsteadOfHaltDefault   ## CONSUMES ## MS_CHANGE
 

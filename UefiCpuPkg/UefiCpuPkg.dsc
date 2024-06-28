@@ -75,6 +75,11 @@
   PanicLib|MdePkg/Library/BasePanicLibNull/BasePanicLibNull.inf   # MU_CHANGE
   ExceptionPersistenceLib|MdeModulePkg/Library/BaseExceptionPersistenceLibNull/BaseExceptionPersistenceLibNull.inf   # MU_CHANGE
   ResetSystemLib|MdeModulePkg/Library/BaseResetSystemLibNull/BaseResetSystemLibNull.inf   # MU_CHANGE
+  #  MU_CHANGE START Use Memory Protection Hob
+  DxeMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/DxeMemoryProtectionHobLibNull.inf
+  MmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/MmMemoryProtectionHobLibNull.inf
+  #  MU_CHANGE END Use Memory Protection Hob
+
 
 # MU_CHANGE [BEGIN] - Add HwResetSystemLib
 [LibraryClasses.X64, LibraryClasses.IA32]
