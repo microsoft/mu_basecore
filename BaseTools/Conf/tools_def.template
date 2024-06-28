@@ -25,6 +25,7 @@
 # 3.03 - Drop ARM32 Support
 # 4.01 - Optimize GCC for Size
 # 4.02 - Add ARCHCC_FLAGS for GCC AARCH64
+# 4.03 - Clang AARCH64 Keep optional header for NX_COMPAT flag
 #
 #!VERSION=4.02
 
@@ -1731,17 +1732,20 @@ NOOPT_CLANGPDB_IA32_DLINK2_FLAGS     =
 DEBUG_CLANGPDB_X64_CC_FLAGS         = DEF(CLANGPDB_ALL_CC_FLAGS) -m64 "-DEFIAPI=__attribute__((ms_abi))" -mno-red-zone -mcmodel=small -Oz -flto DEF(CLANGPDB_X64_TARGET) -gcodeview  -funwind-tables
 DEBUG_CLANGPDB_X64_DLINK_FLAGS      = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /ALIGN:32 /DRIVER /FILEALIGN:32 /Machine:X64 /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DEBUG:GHASH /MLLVM:-exception-model=wineh /lldmap
 DEBUG_CLANGPDB_X64_DLINK2_FLAGS     =
-DEBUG_CLANGPDB_X64_GENFW_FLAGS      = --keepexceptiontable
+# MU_CHANGE Keep optional header for NX_COMPAT flag
+DEBUG_CLANGPDB_X64_GENFW_FLAGS      = --keepexceptiontable --keepoptionalheader
 
 RELEASE_CLANGPDB_X64_CC_FLAGS       = DEF(CLANGPDB_ALL_CC_FLAGS) -m64 "-DEFIAPI=__attribute__((ms_abi))" -mno-red-zone -mcmodel=small -Oz -flto DEF(CLANGPDB_X64_TARGET) -fno-unwind-tables
 RELEASE_CLANGPDB_X64_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4254 /OPT:REF /OPT:ICF=10 /ALIGN:32 /DRIVER /FILEALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /Machine:X64 /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /MERGE:.rdata=.data /MLLVM:-exception-model=wineh /lldmap
 RELEASE_CLANGPDB_X64_DLINK2_FLAGS   =
-RELEASE_CLANGPDB_X64_GENFW_FLAGS    =
+# MU_CHANGE Keep optional header for NX_COMPAT flag
+RELEASE_CLANGPDB_X64_GENFW_FLAGS    = --keepoptionalheader
 
 NOOPT_CLANGPDB_X64_CC_FLAGS         = DEF(CLANGPDB_ALL_CC_FLAGS) -m64 "-DEFIAPI=__attribute__((ms_abi))" -mno-red-zone -mcmodel=small -O0 DEF(CLANGPDB_X64_TARGET) -gcodeview -funwind-tables
 NOOPT_CLANGPDB_X64_DLINK_FLAGS      = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /ALIGN:32 /DRIVER /FILEALIGN:32 /Machine:X64 /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DEBUG:GHASH /MLLVM:-exception-model=wineh /lldmap
 NOOPT_CLANGPDB_X64_DLINK2_FLAGS     =
-NOOPT_CLANGPDB_X64_GENFW_FLAGS      = --keepexceptiontable
+# MU_CHANGE Keep optional header for NX_COMPAT flag
+NOOPT_CLANGPDB_X64_GENFW_FLAGS      = --keepexceptiontable --keepoptionalheader
 
 ####################################################################################
 #
