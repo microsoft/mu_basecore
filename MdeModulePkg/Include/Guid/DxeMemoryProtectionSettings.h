@@ -72,7 +72,7 @@ typedef union {
 
 typedef UINT8 DXE_MEMORY_PROTECTION_SETTINGS_VERSION;
 
-#define DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  5 // Current iteration of DXE_MEMORY_PROTECTION_SETTINGS
+#define DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION  6 // Current iteration of DXE_MEMORY_PROTECTION_SETTINGS
 
 //
 // Memory Protection Settings struct
@@ -167,9 +167,13 @@ typedef struct {
   // Indicates if stack cookie protection will be enabled
   //
   // A stack cookie check failure will trigger an interrupt. If this boolean is set to FALSE,
-
   // the interrupt should be ignored.
   BOOLEAN                        StackCookies;
+
+  // Indicates if the Memory Attribute Protocol (UEFI Specification 2.10) should be installed
+  //
+  // If TRUE, the protocol will be installed in CpuDxe. If FALSE, it will not be installed.
+  BOOLEAN                        InstallMemoryAttributeProtocol;
 } DXE_MEMORY_PROTECTION_SETTINGS;
 
 // HeapGuardPolicy.Fields.Direction value indicating tail alignment
@@ -263,6 +267,7 @@ typedef struct {
               .Fields.OEMReserved                     = 1,      \
               .Fields.OSReserved                      = 1       \
             },                                                  \
+            TRUE,                                               \
             TRUE                                                \
           }
 
@@ -352,6 +357,7 @@ typedef struct {
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
             },                                                  \
+            TRUE,                                               \
             TRUE                                                \
           }
 
@@ -440,6 +446,7 @@ typedef struct {
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
             },                                                  \
+            TRUE,                                               \
             TRUE                                                \
           }
 
@@ -527,6 +534,7 @@ typedef struct {
               .Fields.OEMReserved                     = 0,      \
               .Fields.OSReserved                      = 0       \
             },                                                  \
+            FALSE,                                              \
             FALSE                                               \
           }
 
