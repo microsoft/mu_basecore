@@ -68,6 +68,9 @@ BdsDxeOnConnectConInCallBack (
 {
   EFI_STATUS  Status;
 
+  // Inform platform of duties to perform before connecting consoles.   // MU_CHANGE
+  PlatformBootManagerOnDemandConInConnect ();                           // MU_CHANGE
+
   //
   // When Osloader call ReadKeyStroke to signal this event
   // no driver dependency is assumed existing. So use a non-dispatch version
@@ -417,6 +420,7 @@ BootBootOptions (
     // If infinite retries is enabled, do not break out of the loop.
     // This allows all boot options to be attempted on each iteration.
     //
+    PlatformBootManagerProcessBootCompletion (&BootOptions[Index]);        // MU_CHANGE 00076 - record boot status
     if (!PcdGetBool (PcdSupportInfiniteBootRetries)) {
       //
       // If the boot via Boot#### returns with a status of EFI_SUCCESS, platform firmware
@@ -713,6 +717,7 @@ BdsEntry (
   PERF_CROSSMODULE_END ("DXE");
   PERF_CROSSMODULE_BEGIN ("BDS");
   DEBUG ((DEBUG_INFO, "[Bds] Entry...\n"));
+  PlatformBootManagerBdsEntry ();             // MU_CHANGE 00076 - Signal start of BDS
 
   //
   // Fill in FirmwareVendor and FirmwareRevision from PCDs
@@ -1070,6 +1075,8 @@ BdsEntry (
 
     EfiBootManagerHotkeyBoot ();
 
+    PlatformBootManagerPriorityBoot (&BootNext);          // MU_CHANGE 00076  Check for hard button boot selection
+
     if (BootNext != NULL) {
       //
       // Delete "BootNext" NV variable before transferring control to it to prevent loops.
@@ -1093,6 +1100,7 @@ BdsEntry (
       Status = EfiBootManagerVariableToLoadOption (BootNextVariableName, &LoadOption);
       if (!EFI_ERROR (Status)) {
         EfiBootManagerBoot (&LoadOption);
+        PlatformBootManagerProcessBootCompletion (&LoadOption);        // MU_CHANGE 00076 - record boot status
         EfiBootManagerFreeLoadOption (&LoadOption);
         if ((LoadOption.Status == EFI_SUCCESS) &&
             (BootManagerMenuStatus != EFI_NOT_FOUND) &&
