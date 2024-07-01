@@ -55,9 +55,9 @@ EFI_HII_DATABASE_PROTOCOL  *mHiiDatabase;
 EFI_HII_FONT_PROTOCOL      *mHiiFont;
 EFI_HII_HANDLE             mHiiHandle;
 VOID                       *mHiiRegistration;
-// MU_CHANGE
-// MU_CHANGE - Maintain seamless screen from PEI logo display
+// MU_CHANGE [BEGIN] - Maintain seamless screen from PEI logo display
 static BOOLEAN  mClearScreen = FALSE;
+// MU_CHANGE [END]
 
 EFI_GUID  mFontPackageListGuid = {
   0xf5f219d3, 0x7006, 0x4648, { 0xac, 0x8d, 0xd6, 0x1d, 0xfb, 0x7b, 0xc6, 0xad }
