@@ -59,6 +59,8 @@
   MdePkg/Library/PciSegmentLibSegmentInfo/DxeRuntimePciSegmentLibSegmentInfo.inf
   MdePkg/Library/BaseS3PciSegmentLib/BaseS3PciSegmentLib.inf
   MdePkg/Library/BaseArmTrngLibNull/BaseArmTrngLibNull.inf
+  MdePkg/Library/BasePanicLibSerialPort/BasePanicLibSerialPort.inf  # MU_CHANGE
+  MdePkg/Library/BasePanicLibNull/BasePanicLibNull.inf  # MU_CHANGE
   MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
   MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
   MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
@@ -144,6 +146,7 @@
   MdePkg/Library/StackCheckLib/StackCheckLibDynamicInit.inf     ## MU_CHANGE
   MdePkg/Library/StackCheckFailureHookLibNull/StackCheckFailureHookLibNull.inf  ## MU_CHANGE
   MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf        ## MU_CHANGE
+  MdePkg/Library/PeiRngLib/PeiRngLib.inf    # MU_CHANGE: Add PeiRngLib
 
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
   #

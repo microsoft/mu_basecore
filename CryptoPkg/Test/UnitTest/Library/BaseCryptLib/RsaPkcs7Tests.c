@@ -246,18 +246,30 @@ TestVerifyRsaCertPkcs1SignVerify (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  BOOLEAN        Status;
-  VOID           *RsaPrivKey;
-  VOID           *RsaPubKey;
-  UINT8          *Signature;
-  UINTN          SigSize;
-  UINT8          *Subject;
-  UINTN          SubjectSize;
-  RETURN_STATUS  ReturnStatus;
-  CHAR8          CommonName[64];
-  UINTN          CommonNameSize;
-  CHAR8          OrgName[64];
-  UINTN          OrgNameSize;
+  BOOLEAN           Status;
+  VOID              *RsaPrivKey;
+  VOID              *RsaPubKey;
+  UINT8             *Signature;
+  UINTN             SigSize;
+  UINT8             *Subject;
+  UINTN             SubjectSize;
+  RETURN_STATUS     ReturnStatus;
+  CHAR8             CommonName[64];
+  UINTN             CommonNameSize;
+  CHAR8             OrgName[64];
+  UINTN             OrgNameSize;
+  UNIT_TEST_STATUS  TestStatus;
+
+  RsaPrivKey = NULL;
+  RsaPubKey  = NULL;
+  Signature  = NULL;
+  Subject    = NULL;
+
+  TestStatus = UNIT_TEST_ERROR_TEST_FAILED;
+
+  if (!PcdGetBool (PcdCryptoServiceRsaGetPrivateKeyFromPem) || !PcdGetBool (PcdCryptoServiceRsaPkcs1Verify) || !PcdGetBool (PcdCryptoServiceRsaGetPublicKeyFromX509)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
 
   //
   // Retrieve RSA private key from encrypted PEM data.
@@ -281,7 +293,12 @@ TestVerifyRsaCertPkcs1SignVerify (
   UT_ASSERT_NOT_EQUAL (SigSize, 0);
 
   Signature = AllocatePool (SigSize);
-  Status    = RsaPkcs1Sign (RsaPrivKey, MsgHash, SHA1_DIGEST_SIZE, Signature, &SigSize);
+  if (Signature == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for Signature.\n");
+    goto Exit;
+  }
+
+  Status = RsaPkcs1Sign (RsaPrivKey, MsgHash, SHA1_DIGEST_SIZE, Signature, &SigSize);
   UT_ASSERT_TRUE (Status);
 
   //
@@ -296,7 +313,12 @@ TestVerifyRsaCertPkcs1SignVerify (
   SubjectSize = 0;
   Status      = X509GetSubjectName (TestCert, sizeof (TestCert), NULL, &SubjectSize);
   Subject     = (UINT8 *)AllocatePool (SubjectSize);
-  Status      = X509GetSubjectName (TestCert, sizeof (TestCert), Subject, &SubjectSize);
+  if (Subject == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for Subject.\n");
+    goto Exit;
+  }
+
+  Status = X509GetSubjectName (TestCert, sizeof (TestCert), Subject, &SubjectSize);
   UT_ASSERT_TRUE (Status);
 
   //
@@ -324,15 +346,28 @@ TestVerifyRsaCertPkcs1SignVerify (
   Status = X509VerifyCert (TestCert, sizeof (TestCert), TestCACert, sizeof (TestCACert));
   UT_ASSERT_TRUE (Status);
 
+  TestStatus = UNIT_TEST_PASSED;
+Exit:
   //
   // Release Resources.
   //
-  RsaFree (RsaPubKey);
-  RsaFree (RsaPrivKey);
-  FreePool (Signature);
-  FreePool (Subject);
+  if (Subject != NULL) {
+    FreePool (Subject);
+  }
 
-  return UNIT_TEST_PASSED;
+  if (Signature != NULL) {
+    FreePool (Signature);
+  }
+
+  if (RsaPubKey != NULL) {
+    RsaFree (RsaPubKey);
+  }
+
+  if (RsaPrivKey != NULL) {
+    RsaFree (RsaPrivKey);
+  }
+
+  return TestStatus;
 }
 
 UNIT_TEST_STATUS
@@ -344,17 +379,24 @@ TestVerifyPkcs7SignVerify (
   BOOLEAN  Status;
   UINT8    *P7SignedData;
   UINTN    P7SignedDataSize;
-  UINT8    *SignCert;
+
+  // UINT8    *SignCert;  // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+
+  if (!PcdGetBool (PcdCryptoServicePkcs7Sign)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
 
   P7SignedData = NULL;
-  SignCert     = NULL;
+  // SignCert     = NULL; // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
 
+  // MU_CHANGE [TCBZ3925] [BEGIN] - Pkcs7Sign is broken
   //
   // Construct Signer Certificate from RAW data.
   //
-  Status = X509ConstructCertificate (TestCert, sizeof (TestCert), (UINT8 **)&SignCert);
-  UT_ASSERT_TRUE (Status);
-  UT_ASSERT_NOT_NULL (SignCert);
+  // Status = X509ConstructCertificate (TestCert, sizeof (TestCert), (UINT8 **)&SignCert);
+  // UT_ASSERT_TRUE (Status);
+  // UT_ASSERT_NOT_NULL (SignCert);
+  // MU_CHANGE [TCBZ3925] [END] - Pkcs7Sign is broken
 
   //
   // Create PKCS#7 signedData on Payload.
@@ -366,7 +408,8 @@ TestVerifyPkcs7SignVerify (
              (CONST UINT8 *)PemPass,
              (UINT8 *)Payload,
              AsciiStrLen (Payload),
-             SignCert,
+             TestCert,                   // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             sizeof (TestCert),          // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
              NULL,
              &P7SignedData,
              &P7SignedDataSize
@@ -388,9 +431,11 @@ TestVerifyPkcs7SignVerify (
     FreePool (P7SignedData);
   }
 
-  if (SignCert != NULL) {
-    X509Free (SignCert);
-  }
+  // MU_CHANGE [TCBZ3925] [BEGIN] - Pkcs7Sign is broken
+  // if (SignCert != NULL) {
+  //   X509Free (SignCert);
+  // }
+  // MU_CHANGE [TCBZ3925] [END] - Pkcs7Sign is broken
 
   return UNIT_TEST_PASSED;
 }

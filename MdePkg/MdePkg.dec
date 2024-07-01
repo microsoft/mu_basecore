@@ -315,6 +315,13 @@
   #
   TraceHubDebugSysTLib|Include/Library/TraceHubDebugSysTLib.h
 
+# MU_CHANGE [START]
+  ##  @libraryclass  Provides panic functionality.
+  #
+  PanicLib|Include/Library/PanicLib.h
+
+# MU_CHANGE [END]
+
 [LibraryClasses.IA32, LibraryClasses.X64, LibraryClasses.AARCH64]
   ##  @libraryclass  Provides services to generate random number.
   #
@@ -1079,6 +1086,17 @@
 
   ## Include/Ppi/DelayedDispatch.h
   gEfiPeiDelayedDispatchPpiGuid  = { 0x869c711d, 0x649c, 0x44fe, { 0x8b, 0x9e, 0x2c, 0xbb, 0x29, 0x11, 0xc3, 0xe6 }}
+
+  # MU_CHANGE [BEGIN] - Add RNG PPI
+
+  #
+  # Code first PPIs
+  #
+
+  ## Include/Ppi/Rng.h
+  gEfiRngPpiGuid =  { 0xeaed0a7e, 0x1a70, 0x4c2b, { 0x85, 0x58, 0x37, 0x17, 0x74, 0x56, 0xd8, 0x06 } }
+
+  # MU_CHANGE [END] - Add RNG PPI
 
 [Protocols]
   ## Include/Protocol/MemoryAccept.h

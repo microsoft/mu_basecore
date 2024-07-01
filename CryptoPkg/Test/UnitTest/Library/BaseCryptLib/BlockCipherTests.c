@@ -235,6 +235,10 @@ TestVerifyBLockCiper (
   BOOLEAN                    Status;
   BLOCK_CIPHER_TEST_CONTEXT  *TestContext;
 
+  if (!PcdGetBool (PcdCryptoServiceAesGetContextSize) || !PcdGetBool (PcdCryptoServiceAesInit) || !PcdGetBool (PcdCryptoServiceAesCbcEncrypt) || !PcdGetBool (PcdCryptoServiceAesCbcDecrypt)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   TestContext = Context;
 
   ZeroMem (Encrypt, sizeof (Encrypt));

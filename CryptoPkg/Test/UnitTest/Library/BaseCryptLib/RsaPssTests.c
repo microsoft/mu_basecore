@@ -144,6 +144,10 @@ TestVerifyRsaPssSignVerify (
   UINTN    SigSize;
   BOOLEAN  Status;
 
+  if (!PcdGetBool (PcdCryptoServiceRsaPssSign) || !PcdGetBool (PcdCryptoServiceRsaPssVerify) || !PcdGetBool (PcdCryptoServiceRsaSetKey)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   Status = RsaSetKey (mRsa, RsaKeyN, RsaPssN, sizeof (RsaPssN));
   UT_ASSERT_TRUE (Status);
 
@@ -159,7 +163,12 @@ TestVerifyRsaPssSignVerify (
   UT_ASSERT_NOT_EQUAL (SigSize, 0);
 
   Signature = AllocatePool (SigSize);
-  Status    = RsaPssSign (mRsa, PssMessage, sizeof (PssMessage), SHA256_DIGEST_SIZE, SHA256_DIGEST_SIZE, Signature, &SigSize);
+  if (Signature == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for Signature");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = RsaPssSign (mRsa, PssMessage, sizeof (PssMessage), SHA256_DIGEST_SIZE, SHA256_DIGEST_SIZE, Signature, &SigSize);
   UT_ASSERT_TRUE (Status);
 
   //

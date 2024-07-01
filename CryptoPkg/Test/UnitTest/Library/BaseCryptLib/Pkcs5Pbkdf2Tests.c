@@ -32,7 +32,15 @@ TestVerifyPkcs5Pbkdf2 (
   BOOLEAN  Status;
   UINT8    *OutKey;
 
+  if (!PcdGetBool (PcdCryptoServicePkcs5HashPassword)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   OutKey = AllocatePool (KeyLen);
+  if (OutKey == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for OutKey.\n");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
 
   //
   // Verify PKCS#5 PBKDF2 Key Derivation Function

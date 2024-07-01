@@ -1,0 +1,5 @@
+{
+  "scope": "global",
+  "name": "Edk2Tool Helper Functions",
+  "module": "Edk2ToolHelper"
+}

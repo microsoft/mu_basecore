@@ -161,11 +161,21 @@ jobs:
         import os
         import requests
         import sys
+        import time
+
+        def get_response_with_retries(url, retries=5, wait_time=10):
+          for attempt in range(retries):
+            response = requests.get(url)
+            if response.status_code == 200:
+              return response
+            print(f"::warning title=GitHub API Access Error!::Attempt {attempt + 1} failed. Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+          return response
 
         GITHUB_REPO = "sagiegurari/cargo-make"
         api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/0.37.9"
 
-        response = requests.get(api_url)
+        response = get_response_with_retries(api_url)
         if response.status_code == 200:
           build_release_id = response.json()["id"]
         else:
@@ -174,7 +184,7 @@ jobs:
 
         api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/{build_release_id}"
 
-        response = requests.get(api_url)
+        response = get_response_with_retries(api_url)
         if response.status_code == 200:
           latest_cargo_make_version = response.json()["tag_name"]
         else:

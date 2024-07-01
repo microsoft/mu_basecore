@@ -119,6 +119,10 @@ TestVerifyRsaSetGetKeyComponents (
   //
   // Set/Get RSA Key N
   //
+  if (!PcdGetBool (PcdCryptoServiceRsaSetKey) || !PcdGetBool (PcdCryptoServiceRsaGetKey)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   Status = RsaSetKey (mRsa, RsaKeyN, RsaN, sizeof (RsaN));
   UT_ASSERT_TRUE (Status);
 
@@ -128,7 +132,12 @@ TestVerifyRsaSetGetKeyComponents (
   UT_ASSERT_EQUAL (KeySize, sizeof (RsaN));
 
   KeyBuffer = AllocatePool (KeySize);
-  Status    = RsaGetKey (mRsa, RsaKeyN, KeyBuffer, &KeySize);
+  if (KeyBuffer == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for KeyBuffer");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = RsaGetKey (mRsa, RsaKeyN, KeyBuffer, &KeySize);
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_EQUAL (KeySize, sizeof (RsaN));
 
@@ -148,7 +157,12 @@ TestVerifyRsaSetGetKeyComponents (
   UT_ASSERT_EQUAL (KeySize, sizeof (RsaE));
 
   KeyBuffer = AllocatePool (KeySize);
-  Status    = RsaGetKey (mRsa, RsaKeyE, KeyBuffer, &KeySize);
+  if (KeyBuffer == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for KeyBuffer");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = RsaGetKey (mRsa, RsaKeyE, KeyBuffer, &KeySize);
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_EQUAL (KeySize, sizeof (RsaE));
 
@@ -198,6 +212,10 @@ TestVerifyRsaGenerateKeyComponents (
   UINT8    TestPublicExponent2[] = { 0x01, 0x01 };
   UINT8    TestPublicExponent3[] = { 0x01, 0x00, 0x01 };
 
+  if (!PcdGetBool (PcdCryptoServiceRsaGenerateKey)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   //
   // Generate RSA Key Components
   //
@@ -214,7 +232,12 @@ TestVerifyRsaGenerateKeyComponents (
 
   KeySize   = RSA_MODULUS_LENGTH / 8;
   KeyBuffer = AllocatePool (KeySize);
-  Status    = RsaGetKey (mRsa, RsaKeyE, KeyBuffer, &KeySize);
+  if (KeyBuffer == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for KeyBuffer");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = RsaGetKey (mRsa, RsaKeyE, KeyBuffer, &KeySize);
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_EQUAL (KeySize, 3);
   UT_ASSERT_MEM_EQUAL (KeyBuffer, DefaultPublicKey, 3);
@@ -265,6 +288,10 @@ TestVerifyRsaPkcs1SignVerify (
   UINTN    SigSize;
   BOOLEAN  Status;
 
+  if (!PcdGetBool (PcdCryptoServiceRsaPkcs1Sign)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   //
   // SHA-1 Digest Message for PKCS#1 Signature
   //
@@ -293,7 +320,12 @@ TestVerifyRsaPkcs1SignVerify (
   UT_ASSERT_NOT_EQUAL (SigSize, 0);
 
   Signature = AllocatePool (SigSize);
-  Status    = RsaPkcs1Sign (mRsa, HashValue, HashSize, Signature, &SigSize);
+  if (Signature == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for Signature");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = RsaPkcs1Sign (mRsa, HashValue, HashSize, Signature, &SigSize);
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_EQUAL (SigSize, sizeof (RsaPkcs1Signature));
 
