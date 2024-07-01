@@ -1328,6 +1328,8 @@ ConSplitterConOutDriverBindingStart (
   //
   mConOut.TextOutMode.Mode = 0xFF;
 
+  TextOut->Mode->CursorVisible = FALSE; // MU_CHANGE - Force the initial state of TextOut device to CursorInvisible.
+
   //
   // If both ConOut and StdErr incorporate the same Text Out device,
   // their MaxMode and QueryData should be the intersection of both.
@@ -1820,7 +1822,9 @@ ConSplitterTextInAddDevice (
   //
   // Extra CheckEvent added to reduce the double CheckEvent().
   //
-  gBS->CheckEvent (TextIn->WaitForKey);
+  // MU_CHANGE - this check-event triggers an on-screen keyboard to auto-activate when it shouldn't
+  // since no one is actually waiting on a key input event.
+  // gBS->CheckEvent (TextIn->WaitForKey);
 
   return EFI_SUCCESS;
 }
@@ -1958,7 +1962,9 @@ ConSplitterTextInExAddDevice (
   //
   // Extra CheckEvent added to reduce the double CheckEvent().
   //
-  gBS->CheckEvent (TextInEx->WaitForKeyEx);
+  // MU_CHANGE - this check-event triggers an on-screen keyboard to auto-activate when it shouldn't
+  // since no one is actually waiting on a key input event.
+  // gBS->CheckEvent (TextInEx->WaitForKeyEx);
 
   return EFI_SUCCESS;
 }
@@ -3450,6 +3456,15 @@ ConSplitterTextInWaitForKey (
 
   Private = (TEXT_IN_SPLITTER_PRIVATE_DATA *)Context;
 
+  // MU_CHANGE [BEGIN] - 162381
+  if (!mConInIsConnect && PcdGetBool (PcdConInConnectOnDemand)) {
+    DEBUG ((DEBUG_INFO, "Connect ConIn in first WaitForKey in Lazy ConIn mode.\n"));
+    gBS->SignalEvent (Private->ConnectConInEvent);
+    mConInIsConnect = TRUE;
+  }
+
+  // MU_CHANGE [END]
+
   if (Private->KeyEventSignalState) {
     //
     // If KeyEventSignalState is flagged before, and not cleared by Reset() or ReadKeyStroke()
@@ -4773,9 +4788,11 @@ ConSplitterTextOutClearScreen (
   // been checked in ConSplitterTextOutSetCursorPosition. And (0, 0) should
   // always be supported.
   //
+  // MU_CHANGE [BEGIN] - Default to cursor not visible
   Private->TextOutMode.CursorColumn  = 0;
   Private->TextOutMode.CursorRow     = 0;
-  Private->TextOutMode.CursorVisible = TRUE;
+  Private->TextOutMode.CursorVisible = FALSE;
+  // MU_CHANGE [END]
 
   return ReturnStatus;
 }
