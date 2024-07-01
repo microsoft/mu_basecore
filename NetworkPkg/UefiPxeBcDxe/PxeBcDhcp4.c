@@ -1749,14 +1749,19 @@ PxeBcDhcp4Dora (
   AsciiPrint ("\n");
 
 ON_EXIT:
-  if (EFI_ERROR (Status)) {
-    Dhcp4->Stop (Dhcp4);
-    Dhcp4->Configure (Dhcp4, NULL);
-  } else {
-    ZeroMem (&Config, sizeof (EFI_DHCP4_CONFIG_DATA));
-    Dhcp4->Configure (Dhcp4, &Config);
-    Private->IsAddressOk = TRUE;
+  // MU_CHANGE [BEGIN] - 162958
+  if (!Private->DeviceDisconnected) {
+    if (EFI_ERROR (Status)) {
+      Dhcp4->Stop (Dhcp4);
+      Dhcp4->Configure (Dhcp4, NULL);
+    } else {
+      ZeroMem (&Config, sizeof (EFI_DHCP4_CONFIG_DATA));
+      Dhcp4->Configure (Dhcp4, &Config);
+      Private->IsAddressOk = TRUE;
+    }
   }
+
+  // MU_CHANGE [END] - 162958
 
   return Status;
 }
