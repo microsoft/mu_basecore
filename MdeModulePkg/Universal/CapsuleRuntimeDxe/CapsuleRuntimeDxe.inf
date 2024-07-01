@@ -7,6 +7,7 @@
 #  Copyright (c) 2006 - 2020, Intel Corporation. All rights reserved.<BR>
 #  Copyright (c) 2020, Hewlett Packard Enterprise Development LP. All rights reserved.<BR>
 #  Copyright (c) 2022, Loongson Technology Corporation Limited. All rights reserved.<BR>
+#  Copyright (c) Microsoft Corporation.<BR>
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -76,6 +77,7 @@
   gEfiCapsuleVendorGuid
   gEfiFmpCapsuleGuid                            ## SOMETIMES_CONSUMES   ## GUID # FMP capsule GUID
   gCapsuleArmedResetGuid                        ## SOMETIMES_CONSUMES   # MU_CHANGE
+  gEfiEventExitBootServicesGuid                 ## SOMETIMES_CONSUMES   # MU_CHANGE - 161994 - add lock support
 
 [Protocols]
   gEfiCapsuleArchProtocolGuid                   ## PRODUCES
