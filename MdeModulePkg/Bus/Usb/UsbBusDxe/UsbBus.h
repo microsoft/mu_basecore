@@ -56,6 +56,14 @@ typedef struct _USB_HUB_API    USB_HUB_API;
 //
 #define USB_ROOTHUB_POLL_INTERVAL  (100 * 10000U)
 #define USB_HUB_POLL_INTERVAL      64
+//
+// defines the minimum number of enumeration attempts
+//
+#define USB_ENUM_POLL_MINIMUM_ATTEMPTS  6 // MU_CHANGE
+//
+// defines the maximum number of enumeration attempts
+//
+#define USB_ENUM_POLL_MAXIMUM_ATTEMPTS  200 // MU_CHANGE
 
 //
 // Wait for port stable to work, refers to specification
@@ -188,6 +196,7 @@ struct _USB_DEVICE {
   USB_INTERFACE                         *ParentIf;
   UINT8                                 ParentPort; // Start at 0
   UINT8                                 Tier;
+  BOOLEAN                               Connected; // MU_CHANGE
   BOOLEAN                               DisconnectFail;
 };
 
@@ -196,7 +205,7 @@ struct _USB_DEVICE {
 //
 struct _USB_INTERFACE {
   UINTN                       Signature;
-  USB_DEVICE                  *Device;
+  USB_DEVICE                  *Device; // MU_CHANGE
   USB_INTERFACE_DESC          *IfDesc;
   USB_INTERFACE_SETTING       *IfSetting;
 
@@ -228,6 +237,12 @@ struct _USB_INTERFACE {
   // connected to EHCI.
   //
   UINT8                       MaxSpeed;
+  // MU_CHANGE [BEGIN] - 168923
+  //
+  // Track the the number of enumeration attempts
+  //
+  volatile UINT8              PollCount;
+  // MU_CHANGE [END] - 168923
 };
 
 //
