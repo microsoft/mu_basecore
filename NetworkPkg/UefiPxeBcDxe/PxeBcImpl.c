@@ -428,8 +428,15 @@ EfiPxeBcDhcp (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status                  = EFI_SUCCESS;
-  Private                 = PXEBC_PRIVATE_DATA_FROM_PXEBC (This);
+  // MU_CHANGE [BEGIN] - 162958
+  Status  = EFI_SUCCESS;
+  Private = PXEBC_PRIVATE_DATA_FROM_PXEBC (This);
+  if (Private->DeviceDisconnected) {
+    return EFI_DEVICE_ERROR;
+  }
+
+  // MU_CHANGE [END] - 162958
+
   Mode                    = Private->PxeBc.Mode;
   Mode->IcmpErrorReceived = FALSE;
   Private->Function       = EFI_PXE_BASE_CODE_FUNCTION_DHCP;
@@ -463,14 +470,19 @@ EfiPxeBcDhcp (
     Status = PxeBcDhcp4Dora (Private, Private->Dhcp4);
   }
 
-  //
-  // Reconfigure the UDP instance with the default configuration.
-  //
-  if (Mode->UsingIpv6) {
-    Private->Udp6Read->Configure (Private->Udp6Read, &Private->Udp6CfgData);
-  } else {
-    Private->Udp4Read->Configure (Private->Udp4Read, &Private->Udp4CfgData);
+  // MU_CHANGE [BEGIN] - 162958
+  if (!Private->DeviceDisconnected) {
+    //
+    // Reconfigure the UDP instance with the default configuration.
+    //
+    if (Mode->UsingIpv6) {
+      Private->Udp6Read->Configure (Private->Udp6Read, &Private->Udp6CfgData);
+    } else {
+      Private->Udp4Read->Configure (Private->Udp4Read, &Private->Udp4CfgData);
+    }
   }
+
+  // MU_CHANGE [END] - 162958
 
   //
   // Dhcp(), Discover(), and Mtftp() set the IP filter, and return with the IP
@@ -1000,18 +1012,25 @@ EfiPxeBcMtftp (
       break;
   }
 
-  if (Status == EFI_ICMP_ERROR) {
-    Mode->IcmpErrorReceived = TRUE;
+  // MU_CHANGE [BEGIN] - 162958
+  if (Private->DeviceDisconnected) {
+    Status = EFI_DEVICE_ERROR;
+  } else {
+    if (Status == EFI_ICMP_ERROR) {
+      Mode->IcmpErrorReceived = TRUE;
+    }
+
+    //
+    // Reconfigure the UDP instance with the default configuration.
+    //
+    if (Mode->UsingIpv6) {
+      Private->Udp6Read->Configure (Private->Udp6Read, &Private->Udp6CfgData);
+    } else {
+      Private->Udp4Read->Configure (Private->Udp4Read, &Private->Udp4CfgData);
+    }
   }
 
-  //
-  // Reconfigure the UDP instance with the default configuration.
-  //
-  if (Mode->UsingIpv6) {
-    Private->Udp6Read->Configure (Private->Udp6Read, &Private->Udp6CfgData);
-  } else {
-    Private->Udp4Read->Configure (Private->Udp4Read, &Private->Udp4CfgData);
-  }
+  // MU_CHANGE [END] - 162958
 
   //
   // Dhcp(), Discover(), and Mtftp() set the IP filter, and return with the IP
