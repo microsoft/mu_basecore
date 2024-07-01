@@ -1364,6 +1364,9 @@ After that, the following commands will set up the build and run the host-based 
 # stuart_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=<GCC5, VS2019, etc.>
 stuart_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2019
 
+# Mu specific step to clone mu repos required for ci check
+# stuart_ci_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=<GCC5, VS2019, etc.>
+stuart_ci_setup -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2019
 # Update all binary dependencies
 # stuart_update -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=<GCC5, VS2019, etc.>
 stuart_update -c ./.pytool/CISettings.py TOOL_CHAIN_TAG=VS2019
@@ -1485,44 +1488,70 @@ This mode is used by the test running plugin to aggregate the results for CI tes
 
 ### Code Coverage
 
-Host based Unit Tests will automatically enable coverage data.
+Code coverage can be enabled for Host based Unit Tests with `CODE_COVERAGE=TRUE`, which generates a cobertura report
+per package tested, and combined cobertura report for all packages tested. The per-package cobertura report will be
+present at `Build/<Pkg>/HostTest/<Target_Toolchain>/<Pkg>_coverage.xml`. The overall cobertura report will be present
+at `Build/coverage.xml`
+
+Code coverage generation has three config knobs. Each can be turned on/off by setting it to TRUE
+or FALSE e.g. `CC_REORGANIZE=TRUE`:
+
+1. `CC_REORGANIZE`: Controls if code coverage results are re-formatted into a "by-inf" folder
+   structure rather than the default "by-test" folder structure. Default: `TRUE`
+1. `CC_FULL`: Generates zero'd out coverage data for untested source files in the package.
+   Default: `FALSE`
+1. `CC_FLATTEN`: Groups all source files together, rather than by INF. Default: `FALSE`
+1. `CC_EXCLUDE`: Comma separated list of fnmatch expressions to exclude from results.
+   Default: \*NULL\*,\*Null\*,\*null\*
+
+** NOTE: `CC_FULL` and `CC_FLATTEN` and `CC_EXCLUDE` values only matter if `CC_REORGANIZE=TRUE`, as they only
+effect how the coverage report is reorganized.
+
+**TIP: `CC_FLATTEN=TRUE/FALSE` will produce different coverage percentage results as `TRUE` de-duplicates source files
+that are consumed by multiple INFs.
 
 For Windows, this is primarily leveraged for pipeline builds, but this can be leveraged locally using the
 OpenCppCoverage windows tool to parse coverage data to cobertura xml format.
 
-- Windows Prerequisite
-  ```bash
-  Download and install https://github.com/OpenCppCoverage/OpenCppCoverage/releases
-  python -m pip install --upgrade -r ./pip-requirements.txt
-  stuart_ci_build -c .pytool/CISettings.py  -t NOOPT TOOL_CHAIN_TAG=VS2019 -p MdeModulePkg
-  Open Build/coverage.xml
-  ```
+#### Prerequisites
 
-  - How to see code coverage data on IDE Visual Studio
-    ```
-    Open Visual Studio VS2019 or above version
-    Click "Tools" -> "OpenCppCoverage Settings"
-    Fill your execute file into "Program to run:"
-    Click "Tools" -> "Run OpenCppCoverage"
-    ```
+In addition to required prerequisites to build and test, there are additional requirements for calculating code
+coverage files as noted below.
 
+* Windows Prerequisite
 
-For Linux, this is primarily leveraged for pipeline builds, but this can be leveraged locally using the
-lcov linux tool, and parsed using the lcov_cobertura python tool to parse it to cobertura xml format.
+  1. OpenCppCoverage: Download and install <https://github.com/OpenCppCoverage/OpenCppCoverage/releases>
 
-- Linux Prerequisite
-  ```bash
-  sudo apt-get install -y lcov
-  python -m pip install --upgrade -r ./pip-requirements.txt
-  stuart_ci_build -c .pytool/CISettings.py  -t NOOPT TOOL_CHAIN_TAG=GCC5 -p MdeModulePkg
-  Open Build/coverage.xml
-  ```
-  - How to see code coverage data on IDE Visual Studio Code
-    ```
-    Download plugin "Coverage Gutters"
-    Press Hot Key "Ctrl + Shift + P" and click option "Coverage Gutters: Display Coverage"
-    ```
+* Linux Prerequisite
 
+  1. lcov: sudo apt-get install -y lcov
+
+#### Examples
+
+```bash
+stuart_ci_build -c .pytool/CISettings.py -t NOOPT TOOL_CHAIN_TAG=VS2019 -p MdeModulePkg CODE_COVERAGE=TRUE
+stuart_ci_build -c .pytool/CISettings.py -t NOOPT TOOL_CHAIN_TAG=VS2019 CODE_COVERAGE=TRUE CC_FLATTEN=TRUE CC_FULL=FALSE
+```
+
+How to see code coverage data on IDE Visual Studio
+
+```text
+Open Visual Studio VS2019 or above version
+Click "Tools" -> "OpenCppCoverage Settings"
+Fill your execute file into "Program to run:"
+Click "Tools" -> "Run OpenCppCoverage"
+```
+
+#### Additional Tools
+
+There are a plethora of open source tools for generating reports from a Cobertura file, which is why it was selected as
+the output file format. Tools such as pycobertura (`pip install pycobertura`) and [reportgenerator](https://www.nuget.org/packages/dotnet-reportgenerator-globaltool)
+can be utilized to generate different report types, such as local html reports. VSCode Extensions such as [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters)
+can highlight coverage results directly in the file, and cloud tools such as [CodeCov](https://about.codecov.io/) can
+consume cobertura files to provide PR checks and general code coverage statistics for the repository.
+
+*** REMINDER: During CI builds, use the ``CODE_COVERAGE=TRUE` flag to generate the code coverage XML files,
+and additionally use the `CC_FLATTEN=TRUE` or `CC_FULL=TRUE` flags to customize coverage results.
 
 ### Important Note
 
