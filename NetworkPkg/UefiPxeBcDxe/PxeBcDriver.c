@@ -1519,7 +1519,8 @@ ON_ERROR:
   }
 
   if (FirstStart && (Private != NULL)) {
-    FreePool (Private);
+    // FreePool (Private);               // MU_CHANGE - 162958
+    Private->DeviceDisconnected = TRUE;  // MU_CHANGE - 162958
   }
 
   return Status;
@@ -1645,7 +1646,8 @@ PxeBcStop (
            &gEfiCallerIdGuid,
            &Private->Id
            );
-    FreePool (Private);
+    // FreePool (Private);                       // MU_CHANGE - 162958
+    Private->DeviceDisconnected = TRUE;          // MU_CHANGE - 162958
   }
 
   return EFI_SUCCESS;

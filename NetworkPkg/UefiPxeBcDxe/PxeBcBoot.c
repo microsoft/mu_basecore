@@ -1067,11 +1067,16 @@ PxeBcUninstallCallback (
 
     PxeBc->SetParameters (PxeBc, NULL, NULL, NULL, NULL, &NewMakeCallback);
 
-    gBS->UninstallProtocolInterface (
-           Private->Mode.UsingIpv6 ? Private->Ip6Nic->Controller : Private->Ip4Nic->Controller,
-           &gEfiPxeBaseCodeCallbackProtocolGuid,
-           &Private->LoadFileCallback
-           );
+    // MU_CHANGE [BEGIN]
+    if (!Private->DeviceDisconnected) {
+      gBS->UninstallProtocolInterface (
+             Private->Mode.UsingIpv6 ? Private->Ip6Nic->Controller : Private->Ip4Nic->Controller,
+             &gEfiPxeBaseCodeCallbackProtocolGuid,
+             &Private->LoadFileCallback
+             );
+    }
+
+    // MU_CHANGE [END]
   }
 }
 
