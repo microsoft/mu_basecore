@@ -235,6 +235,10 @@ UsbCreateDevice (
   Device->Tier       = (UINT8)(ParentIf->Device->Tier + 1);
   Device->EnumScript = 0;
   Device->IsSSDev    = FALSE;
+  // MU_CHANGE [BEGIN]
+  Device->Connected = TRUE;
+  DEBUG ((DEBUG_INFO, "UsbCreateDevice: ParentIf %p port %d Connected\n", ParentIf, ParentPort));
+  // MU_CHANGE [END]
   return Device;
 }
 
@@ -596,6 +600,10 @@ UsbRemoveDevice (
     return ReturnStatus;
   }
 
+  // MU_CHANGE [BEGIN]
+  Device->Connected = FALSE;
+  DEBUG ((DEBUG_INFO, "UsbRemoveDevice: ParentIf %p port %d Disonnected\n", Device->ParentIf, Device->ParentPort));
+  // MU_CHANGE [END]
   Status = UsbRemoveConfig (Device);
 
   if (!EFI_ERROR (Status)) {
@@ -1152,6 +1160,14 @@ UsbRootHubEnumeration (
   USB_DEVICE     *Child;
 
   RootHub = (USB_INTERFACE *)Context;
+
+  // MU_CHANGE [BEGIN]
+  // MU_CHANGE Implement Enumeration delay
+  if (RootHub->PollCount < USB_ENUM_POLL_MAXIMUM_ATTEMPTS) {
+    RootHub->PollCount++;
+  }
+
+  // MU_CHANGE [END]
 
   for (Index = 0; Index < RootHub->NumOfPort; Index++) {
     Child = UsbFindChild (RootHub, Index);
