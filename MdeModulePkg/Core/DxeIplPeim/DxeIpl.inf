@@ -56,8 +56,8 @@
   PcdLib
   MemoryAllocationLib
   BaseMemoryLib
-  ExtractGuidedSectionLib
-  UefiDecompressLib
+#  ExtractGuidedSectionLib ## MU_CHANGE
+#  UefiDecompressLib ## MU_CHANGE
   ReportStatusCodeLib
   PeiServicesLib
   HobLib
@@ -108,6 +108,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdUse5LevelPageTable                  ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdGhcbBase                            ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdGhcbSize                            ## CONSUMES
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy         ## CONSUMES ## MU_CHANGE
 
   # [Pcd.IA32,Pcd.X64,Pcd.ARM,Pcd.AARCH64]
   # gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy ## SOMETIMES_CONSUMES
