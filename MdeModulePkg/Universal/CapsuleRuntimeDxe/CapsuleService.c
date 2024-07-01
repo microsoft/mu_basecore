@@ -20,6 +20,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 EFI_HANDLE  mNewHandle = NULL;
 
+// MU_CHANGE [BEGIN]
+//
+// Support locking capsule interface.
+//
+BOOLEAN  mAfterLocked = FALSE;
+// MU_CHANGE [END]
+
 //
 // The times of calling UpdateCapsule ()
 //
@@ -92,6 +99,14 @@ UpdateCapsule (
   if (CapsuleCount < 1) {
     return EFI_INVALID_PARAMETER;
   }
+
+  // MU_CHANGE [BEGIN]
+  if (mAfterLocked) {
+    DEBUG ((DEBUG_INFO, "Capsule Interface Locked\n."));
+    return EFI_UNSUPPORTED;
+  }
+
+  // MU_CHANGE [END]
 
   NeedReset         = FALSE;
   InitiateReset     = FALSE;
@@ -368,6 +383,31 @@ QueryCapsuleCapabilities (
   return EFI_SUCCESS;
 }
 
+// MU_CHANGE [BEGIN] - 161994
+
+/**
+
+LockCapsuleInterface - Event handler
+- locks the capsule interface so no input is accepted.
+
+@param[in]  Event     Event whose notification function is being invoked
+@param[in]  Context   Pointer to the notification function's context
+
+**/
+VOID
+EFIAPI
+LockCapsuleInterface (
+  IN      EFI_EVENT  Event,
+  IN      VOID       *Context
+  )
+{
+  mAfterLocked = TRUE;
+  SECURITY_LOCK_REPORT_EVENT ("Lock Capsule Interface", SOFTWARE_LOCK);
+  DEBUG ((DEBUG_INFO, "Capsule Interface Locked!!\nMU_CHANGE 161994\n"));
+}
+
+// MU_CHANGE [END] - 161994
+
 /**
 
   This code installs UEFI capsule runtime service.
@@ -386,6 +426,10 @@ CapsuleServiceInitialize (
   )
 {
   EFI_STATUS  Status;
+  // MU_CHANGE [START] - 161994
+  EFI_EVENT  Event;
+
+  // MU_CHANGE [END] - 161994
 
   mMaxSizePopulateCapsule    = PcdGet32 (PcdMaxSizePopulateCapsule);
   mMaxSizeNonPopulateCapsule = PcdGet32 (PcdMaxSizeNonPopulateCapsule);
@@ -416,6 +460,17 @@ CapsuleServiceInitialize (
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
+
+  // MU_CHANGE [START] - 161994 - add lock support
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_NOTIFY,
+                  LockCapsuleInterface,
+                  NULL,
+                  &gEfiEventExitBootServicesGuid,
+                  &Event
+                  );
+    // MU_CHANGE [END] - 161994
 
   return Status;
 }
