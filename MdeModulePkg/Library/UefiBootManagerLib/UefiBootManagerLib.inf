@@ -126,3 +126,4 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerMenuFile                     ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdDriverHealthConfigureForm               ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxRepairCount                          ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerInBootOrder                  ## CONSUMES ## MU_CHANGE
