@@ -53,6 +53,13 @@ VARIABLE_INFO_ENTRY  *gVariableInfo = NULL;
 ///
 BOOLEAN  mEndOfDxe = FALSE;
 
+// MU_CHANGE [BEGIN] - 279849
+///
+/// The flag to indicate if a Reclaim has been done at Runtime.
+///
+BOOLEAN  mReclaimedAtRuntime = FALSE;
+// MU_CHANGE [END]
+
 ///
 /// It indicates the var check request source.
 /// In the implementation, DXE is regarded as untrusted, and SMM is trusted.
@@ -559,6 +566,9 @@ Reclaim (
   CommonVariableTotalSize     = 0;
   CommonUserVariableTotalSize = 0;
   HwErrVariableTotalSize      = 0;
+
+  // MU_CHANGE - This may be specific to the MS implementation.
+  DEBUG ((DEBUG_INFO, "%a Reclaim variables started.\n", __func__));
 
   if (IsVolatile || mVariableModuleGlobal->VariableGlobal.EmuNvMode) {
     //
@@ -1298,11 +1308,16 @@ CheckRemainingSpaceForConsistencyInternal (
     //
     return TRUE;
   } else if (AtRuntime ()) {
-    //
-    // At runtime, no reclaim.
-    // The original variable space of Variables can't be reused.
-    //
-    return FALSE;
+    // MU_CHANGE [BEGIN] - 279849 // MU_CHANGE - Allow Reclaim once at Runtime
+    if (mReclaimedAtRuntime) {
+      //
+      // At runtime, only allow one reclaim.
+      // The original variable space of Variables can't be reused.
+      //
+      return FALSE;
+    }
+
+    // MU_CHANGE [END] - 279849
   }
 
   VA_COPY (Args, Marker);
@@ -2119,16 +2134,23 @@ UpdateVariable (
        || (IsCommonUserVariable && ((VarSize + mVariableModuleGlobal->CommonUserVariableTotalSize) > mVariableModuleGlobal->CommonMaxUserVariableSpace)))
     {
       if (AtRuntime ()) {
-        if (IsCommonUserVariable && ((VarSize + mVariableModuleGlobal->CommonUserVariableTotalSize) > mVariableModuleGlobal->CommonMaxUserVariableSpace)) {
-          RecordVarErrorFlag (VAR_ERROR_FLAG_USER_ERROR, VariableName, VendorGuid, Attributes, VarSize);
-        }
+        // MU_CHANGE [BEGIN] 279849
+        // MU_CHANGE -- Allow reclaim once at Runtime.
+        if (!mReclaimedAtRuntime) {
+          mReclaimedAtRuntime = TRUE;
+        } else {
+          // MU_CHANGE [END] - 279849
+          if (IsCommonUserVariable && ((VarSize + mVariableModuleGlobal->CommonUserVariableTotalSize) > mVariableModuleGlobal->CommonMaxUserVariableSpace)) {
+            RecordVarErrorFlag (VAR_ERROR_FLAG_USER_ERROR, VariableName, VendorGuid, Attributes, VarSize);
+          }
 
-        if (IsCommonVariable && ((VarSize + mVariableModuleGlobal->CommonVariableTotalSize) > mVariableModuleGlobal->CommonRuntimeVariableSpace)) {
-          RecordVarErrorFlag (VAR_ERROR_FLAG_SYSTEM_ERROR, VariableName, VendorGuid, Attributes, VarSize);
-        }
+          if (IsCommonVariable && ((VarSize + mVariableModuleGlobal->CommonVariableTotalSize) > mVariableModuleGlobal->CommonRuntimeVariableSpace)) {
+            RecordVarErrorFlag (VAR_ERROR_FLAG_SYSTEM_ERROR, VariableName, VendorGuid, Attributes, VarSize);
+          }
 
-        Status = EFI_OUT_OF_RESOURCES;
-        goto Done;
+          Status = EFI_OUT_OF_RESOURCES;
+          goto Done;
+        }      // MU_CHANGE - 279849
       }
 
       //
