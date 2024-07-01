@@ -418,6 +418,13 @@
   #  FASLE - Performance collecting will be disabled in processor trace.<BR>
   # @Prompt Enable performance collecting when processor trace is enabled.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuProcTracePerformanceCollecting|FALSE|BOOLEAN|0x60000020
+  
+  # MU_CHANGE START Add PCD to make wakeup buffer reserved
+  ## Specifies that the wake-up buffer for AP startup should be permanently
+  # allocated as reserved.
+  # @Prompt Allocates CPU wake-up buffer as reserved.
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuApWakeupBufferReserved|FALSE|BOOLEAN|0x0000001F
+  # MU_CHANGE END
 
 [PcdsFixedAtBuild.X64, PcdsPatchableInModule.X64, PcdsDynamic.X64, PcdsDynamicEx.X64]
   ## Indicate access to non-SMRAM memory is restricted to reserved, runtime and ACPI NVS type after SmmReadyToLock.
