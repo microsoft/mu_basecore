@@ -2635,7 +2635,12 @@ BmRegisterBootManagerMenu (
     EfiBootManagerFreeLoadOptions (BootOptions, BootOptionCount);
     );
 
-  return EfiBootManagerAddLoadOptionVariable (BootOption, (UINTN)-1);
+  if (!EFI_ERROR (Status) && (PcdGetBool (PcdBootManagerInBootOrder))) {
+    // MU_CHANGE
+    Status = EfiBootManagerAddLoadOptionVariable (BootOption, (UINTN)-1);
+  }                                                                         // MU_CHANGE
+
+  return Status;                                                            // MU_CHANGE
 }
 
 /**
