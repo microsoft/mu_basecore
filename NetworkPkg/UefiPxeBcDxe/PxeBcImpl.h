@@ -219,6 +219,17 @@ struct _PXEBC_PRIVATE_DATA {
   UINT32                     OfferNum;
   UINT32                     OfferCount[PxeOfferTypeMax];
   UINT32                     OfferIndex[PxeOfferTypeMax][PXEBC_OFFER_MAX_NUM];
+
+  // MU_CHANGE [BEGIN] -  162958
+  //
+  // The Network stack fails when a USB nic is removed
+  // after initialization. This change marks it removed
+  // but doesn't clean up memory allocations so that
+  // other code holding onto and using that memory
+  // doesn't cause an exception.
+  //
+  BOOLEAN    DeviceDisconnected;
+  // MU_CHANGE [END] -  162958
 };
 
 extern EFI_PXE_BASE_CODE_PROTOCOL           gPxeBcProtocolTemplate;
