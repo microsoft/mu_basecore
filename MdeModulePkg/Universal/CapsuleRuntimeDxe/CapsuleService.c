@@ -20,6 +20,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 EFI_HANDLE  mNewHandle = NULL;
 
+// MU_CHANGE [BEGIN]
+//
+// Support locking capsule interface.
+//
+BOOLEAN  mAfterLocked = FALSE;
+// MU_CHANGE [END]
+
 //
 // The times of calling UpdateCapsule ()
 //
@@ -92,6 +99,14 @@ UpdateCapsule (
   if (CapsuleCount < 1) {
     return EFI_INVALID_PARAMETER;
   }
+
+  // MU_CHANGE [BEGIN]
+  if (mAfterLocked) {
+    DEBUG ((DEBUG_INFO, "Capsule Interface Locked\n."));
+    return EFI_UNSUPPORTED;
+  }
+
+  // MU_CHANGE [END]
 
   NeedReset         = FALSE;
   InitiateReset     = FALSE;
@@ -386,6 +401,10 @@ CapsuleServiceInitialize (
   )
 {
   EFI_STATUS  Status;
+  // MU_CHANGE [START] - 161994
+  EFI_EVENT  Event;
+
+  // MU_CHANGE [END] - 161994
 
   mMaxSizePopulateCapsule    = PcdGet32 (PcdMaxSizePopulateCapsule);
   mMaxSizeNonPopulateCapsule = PcdGet32 (PcdMaxSizeNonPopulateCapsule);
@@ -416,6 +435,17 @@ CapsuleServiceInitialize (
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
+
+  // MU_CHANGE [START] - 161994 - add lock support
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_NOTIFY,
+                  LockCapsuleInterface,
+                  NULL,
+                  &gEfiEventExitBootServicesGuid,
+                  &Event
+                  );
+    // MU_CHANGE [END] - 161994
 
   return Status;
 }
