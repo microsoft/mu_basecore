@@ -41,6 +41,7 @@ EFI_CORE_PROTOCOL_NOTIFY_ENTRY  mArchProtocols[] = {
 EFI_CORE_PROTOCOL_NOTIFY_ENTRY  mOptionalProtocols[] = {
   { &gEfiSecurity2ArchProtocolGuid, (VOID **)&gSecurity2, NULL, NULL, FALSE },
   { &gEfiSmmBase2ProtocolGuid,      (VOID **)&gSmmBase2,  NULL, NULL, FALSE },
+  { &gEfiCpu2ProtocolGuid,          (VOID **)&gCpu2,      NULL, NULL, FALSE },  // MU_CHANGE: Add Cpu2 Protocol
   { NULL,                           (VOID **)NULL,        NULL, NULL, FALSE }
 };
 
