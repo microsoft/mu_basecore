@@ -252,7 +252,7 @@ extern EFI_SECURITY2_ARCH_PROTOCOL       *gSecurity2;
 extern EFI_BDS_ARCH_PROTOCOL             *gBds;
 extern EFI_SMM_BASE2_PROTOCOL            *gSmmBase2;
 
-extern EFI_TPL  gEfiCurrentTpl;
+extern volatile EFI_TPL  gEfiCurrentTpl;                                // MU_CHANGE
 
 extern EFI_GUID                   *gDxeCoreFileName;
 extern EFI_LOADED_IMAGE_PROTOCOL  *gDxeCoreLoadedImage;
