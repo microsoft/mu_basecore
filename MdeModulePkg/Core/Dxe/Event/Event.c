@@ -326,6 +326,8 @@ CoreCreateEventEx (
   OUT EFI_EVENT        *Event
   )
 {
+  /*
+  // MU_CHANGE Start: Supporting all TPLs
   //
   // If it's a notify type of event, check for invalid NotifyTpl
   //
@@ -337,6 +339,7 @@ CoreCreateEventEx (
       return EFI_INVALID_PARAMETER;
     }
   }
+  MU_CHANGE End: Supporting all TPLs */
 
   return CoreCreateEventInternal (Type, NotifyTpl, NotifyFunction, NotifyContext, EventGroup, Event);
 }
@@ -663,9 +666,11 @@ CoreWaitForEvent (
   //
   // Can only WaitForEvent at TPL_APPLICATION
   //
-  if (gEfiCurrentTpl != TPL_APPLICATION) {
-    return EFI_UNSUPPORTED;
-  }
+  // MU_CHANGE - START
+  // if (gEfiCurrentTpl != TPL_APPLICATION) {
+  //  return EFI_UNSUPPORTED;                    // MU_CHANGE: Supporting all TPLs
+  // }
+  // MU_CHANGE - END
 
   if (NumberOfEvents == 0) {
     return EFI_INVALID_PARAMETER;
