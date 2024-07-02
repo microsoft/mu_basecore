@@ -29,3 +29,18 @@ ASM_PFX(EnableInterrupts):
     sti
     ret
 
+; MU_CHANGE - START
+;------------------------------------------------------------------------------
+; VOID
+; EFIAPI
+; EnableInterruptsAndSleep (
+;   VOID
+;   );
+;------------------------------------------------------------------------------
+global ASM_PFX(EnableInterruptsAndSleep)
+ASM_PFX(EnableInterruptsAndSleep):
+    sti
+    hlt
+    ret
+; MU_CHANGE - END
+
