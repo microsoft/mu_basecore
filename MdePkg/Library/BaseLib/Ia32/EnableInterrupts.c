@@ -20,3 +20,23 @@ EnableInterrupts (
     sti
   }
 }
+
+// MU_CHANGE - START
+
+/**
+  Enables CPU interrupts and then waits for an interrupt to arrive.
+
+**/
+VOID
+EFIAPI
+EnableInterruptsAndSleep (
+  VOID
+  )
+{
+  _asm {
+    sti
+    hlt
+  }
+}
+
+// MU_CHANGE - END
