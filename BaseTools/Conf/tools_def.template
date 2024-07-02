@@ -23,6 +23,9 @@
 # 3.01 - Update toolchain for VS2022
 # 3.02 - Enable stack cookies for IA32, ARM, and AARCH64 builds for GCC and MSVC
 # 3.03 - Remove WHOLEARCHIVE as this breaks the build for VS2017/VS2019 (MU_CHANGE)
+# 3.20 - Move GccLto files to a tools path to be more repository layout agnostic
+# 3.21 - Can't have comment inline as it breaks concatenation see - # MU_CHANGE - Move GccLto to tools dir for better alignment
+# 3.22 - VS2022 toolchain incorrectly defined for ASL
 #
 #!VERSION=3.02
 
@@ -1237,8 +1240,8 @@ RELEASE_GCC49_IA32_CC_FLAGS       = DEF(GCC49_IA32_CC_FLAGS) -Wno-unused-but-set
 *_GCC49_X64_OBJCOPY_FLAGS        =
 *_GCC49_X64_NASM_FLAGS           = -f elf64
 
-  DEBUG_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS)
-RELEASE_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Wno-unused-but-set-variable -Wno-unused-const-variable
+  DEBUG_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Os # MU_CHANGE
+RELEASE_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Os -Wno-unused-but-set-variable -Wno-unused-const-variable # MU_CHANGE
   NOOPT_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -O0
 
 ##################
@@ -1591,9 +1594,9 @@ RELEASE_GCC5_ARM_DLINK_FLAGS     = DEF(GCC5_ARM_DLINK_FLAGS) -flto -Os -L$(WORKS
 *_GCC5_AARCH64_DLINK2_FLAGS      = DEF(GCC5_AARCH64_DLINK2_FLAGS)
 *_GCC5_AARCH64_DTCPP_FLAGS       = DEF(GCC_DTCPP_FLAGS)
 *_GCC5_AARCH64_PLATFORM_FLAGS    =
-*_GCC5_AARCH64_PP_FLAGS          = $(PLATFORM_FLAGS) DEF(GCC_PP_FLAGS)
+*_GCC5_AARCH64_PP_FLAGS          = $(ARCHCC_FLAGS) $(PLATFORM_FLAGS) DEF(GCC_PP_FLAGS) # MU_CHANGE
 *_GCC5_AARCH64_RC_FLAGS          = DEF(GCC_AARCH64_RC_FLAGS) DEF(GCC_AARCH64_RC_BTI_FLAGS)
-*_GCC5_AARCH64_VFRPP_FLAGS       = $(PLATFORM_FLAGS) DEF(GCC_VFRPP_FLAGS)
+*_GCC5_AARCH64_VFRPP_FLAGS       = $(ARCHCC_FLAGS) $(PLATFORM_FLAGS) DEF(GCC_VFRPP_FLAGS) # MU_CHANGE
 *_GCC5_AARCH64_CC_XIPFLAGS       = DEF(GCC5_AARCH64_CC_XIPFLAGS)
 
   DEBUG_GCC5_AARCH64_CC_FLAGS    = DEF(GCC5_AARCH64_CC_FLAGS) -flto -Wno-unused-but-set-variable -Wno-unused-const-variable
