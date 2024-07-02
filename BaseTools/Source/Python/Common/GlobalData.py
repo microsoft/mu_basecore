@@ -123,6 +123,7 @@ gSikpAutoGenCache = set()
 # Common lock for the file access in multiple process AutoGens
 file_lock = None
 # MU_CHANGE [BEGIN]: Add build-time random stack cookie support
+gLogLibraryMismatch = True
 gStackCookieValues32 = []
 gStackCookieValues64 = []
 # MU_CHANGE [END]
