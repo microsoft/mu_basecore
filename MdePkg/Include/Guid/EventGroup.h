@@ -2,6 +2,7 @@
   GUIDs for gBS->CreateEventEx Event Groups. Defined in UEFI spec 2.0 and PI 1.2.1.
 
 Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -49,4 +50,10 @@ extern EFI_GUID  gEfiEventDxeDispatchGuid;
 
 extern EFI_GUID  gEfiEndOfDxeEventGroupGuid;
 
+// MU_CHANGE [BEGIN]
+#define EFI_PRE_READY_TO_BOOT_GUID \
+  { 0x10c41e8f, 0xc52a, 0x4ea4, {0xa2, 0x69, 0x0b, 0x45, 0x09, 0x31, 0xab, 0xf6}}
+
+extern EFI_GUID  gEfiEventPreReadyToBootGuid;
+// MU_CHANGE [END]
 #endif
