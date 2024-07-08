@@ -28,3 +28,9 @@ flags:
     carryforward: true
   PolicyServicePkg:
     carryforward: true
+  ArmPkg:
+    carryforward: true
+  ArmPlatformPkg:
+    carryforward: true
+  DynamicTablesPkg:
+    carryforward: true
