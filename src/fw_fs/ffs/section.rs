@@ -36,6 +36,13 @@ pub mod raw_type {
   pub const RAW: u8 = 0x19;
   pub const PEI_DEPEX: u8 = 0x1B;
   pub const MM_DEPEX: u8 = 0x1C;
+  pub const OEM_MIN: u8 = 0xC0;
+  pub const OEM_MAX: u8 = 0xDF;
+  pub const DEBUG_MIN: u8 = 0xE0;
+  pub const DEBUG_MAX: u8 = 0xEF;
+  pub const FFS_MIN: u8 = 0xF0;
+  pub const FFS_PAD: u8 = 0xF0;
+  pub const FFS_MAX: u8 = 0xFF;
 }
 
 #[repr(u8)]
@@ -60,10 +67,17 @@ pub enum Type {
   MmDepex = raw_type::MM_DEPEX,
 }
 
+/// EFI_COMMON_SECTION_HEADER per PI spec 1.8A 3.2.4.1
+#[repr(C)]
+#[derive(Debug)]
+pub struct Header {
+  pub size: [u8; 3],
+  pub section_type: u8,
+}
+
 pub mod header {
   use r_efi::base::Guid;
 
-  /// EFI_COMMON_SECTION_HEADER
   #[repr(C)]
   #[derive(Debug)]
   pub struct CommonSectionHeaderStandard {
@@ -71,7 +85,7 @@ pub mod header {
     pub section_type: u8,
   }
 
-  /// EFI_COMMON_SECTION_HEADER2
+  /// EFI_COMMON_SECTION_HEADER2 per PI spec 1.8A 3.2.4.1
   #[repr(C)]
   #[derive(Debug)]
   pub struct CommonSectionHeaderExtended {
@@ -80,17 +94,17 @@ pub mod header {
     pub extended_size: u32,
   }
 
-  /// EFI_COMPRESSION_SECTION
-  #[repr(C)]
-  #[derive(Debug)]
+  /// EFI_COMPRESSION_SECTION per PI spec 1.8A 3.2.5.2
+  #[repr(C, packed)]
+  #[derive(Debug, Clone, Copy)]
   pub struct Compression {
     pub uncompressed_length: u32,
     pub compression_type: u8,
   }
 
-  /// EFI_GUID_DEFINED_SECTION
+  /// EFI_GUID_DEFINED_SECTION per PI spec 1.8A 3.2.5.7
   #[repr(C)]
-  #[derive(Debug)]
+  #[derive(Debug, Clone, Copy)]
   pub struct GuidDefined {
     pub section_definition_guid: Guid,
     pub data_offset: u16,
@@ -98,16 +112,16 @@ pub mod header {
     // Guid-specific header fields.
   }
 
-  /// EFI_VERSION_SECTION
+  /// EFI_VERSION_SECTION per PI spec 1.8A 3.2.5.15
   #[repr(C)]
-  #[derive(Debug)]
+  #[derive(Debug, Clone, Copy)]
   pub struct Version {
     pub build_number: u16,
   }
 
-  /// EFI_FREEFORM_SUBTYPE_GUID_SECTION
+  /// EFI_FREEFORM_SUBTYPE_GUID_SECTION per PI spec 1.8A 3.2.5.6
   #[repr(C)]
-  #[derive(Debug)]
+  #[derive(Debug, Clone, Copy)]
   pub struct FreeformSubtypeGuid {
     pub sub_type_guid: Guid,
   }

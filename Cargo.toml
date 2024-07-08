@@ -19,3 +19,5 @@ uuid = { version = "1.8", default_features = false }
 [dev-dependencies]
 serde = { version = "1.0.197", features = ["derive"]}
 serde_yaml = "0.9.34"
+brotli-decompressor = { version= "4.0.0", default_features = false}
+alloc-no-stdlib = { version = "~2.0"}
