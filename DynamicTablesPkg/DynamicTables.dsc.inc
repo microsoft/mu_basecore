@@ -12,7 +12,8 @@
 [Defines]
 
 [BuildOptions]
-  RELEASE_*_*_CC_FLAGS     = -DMDEPKG_NDEBUG
+  # MU_CHANGE: should not enforce all consumers to disable debug prints in release builds
+  # RELEASE_*_*_CC_FLAGS     = -DMDEPKG_NDEBUG
 
 [LibraryClasses.common]
   AcpiHelperLib|DynamicTablesPkg/Library/Common/AcpiHelperLib/AcpiHelperLib.inf
