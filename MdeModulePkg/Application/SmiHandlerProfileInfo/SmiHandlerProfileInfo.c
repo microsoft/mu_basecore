@@ -120,7 +120,9 @@ GetSmiHandlerProfileDatabase (
   CommGetInfo->Header.ReturnStatus = (UINT64)-1;
   CommGetInfo->DataSize            = 0;
 
-  CommSize = sizeof (EFI_GUID) + sizeof (UINTN) + CommHeader->MessageLength;
+  // MU_CHANGE: BZ3398 Make MessageLength the same size in EFI_MM_COMMUNICATE_HEADER for both IA32 and X64.
+  // The CommHeader->MessageLength contains a definitive value, thus UINTN cast is safe here.
+  CommSize = OFFSET_OF (EFI_SMM_COMMUNICATE_HEADER, Data) + (UINTN)CommHeader->MessageLength;
   Status   = SmmCommunication->Communicate (SmmCommunication, CommBuffer, &CommSize);
   if (EFI_ERROR (Status)) {
     Print (L"SmiHandlerProfile: SmmCommunication - %r\n", Status);
@@ -153,7 +155,9 @@ GetSmiHandlerProfileDatabase (
   CommGetData->Header.DataLength   = sizeof (*CommGetData);
   CommGetData->Header.ReturnStatus = (UINT64)-1;
 
-  CommSize = sizeof (EFI_GUID) + sizeof (UINTN) + CommHeader->MessageLength;
+  // MU_CHANGE: BZ3398 Make MessageLength the same size in EFI_MM_COMMUNICATE_HEADER for both IA32 and X64.
+  // The CommHeader->MessageLength contains a definitive value, thus UINTN cast is safe here.
+  CommSize = OFFSET_OF (EFI_SMM_COMMUNICATE_HEADER, Data) + (UINTN)CommHeader->MessageLength;
   Buffer   = (UINT8 *)CommHeader + CommSize;
   Size    -= CommSize;
 
@@ -667,7 +671,9 @@ SmiHandlerProfileInfoEntrypoint (
   //
   // Dump all image
   //
-  Print (L"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+
+  // Print (L"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");  // MU_CHANGE
+  Print (L"<?xml version=\"1.0\" encoding=\"utf-16\"?>\n");    // MU_CHANGE - At least declare the correct encoding. Geez.
   Print (L"<SmiHandlerProfile>\n");
   Print (L"<ImageDatabase>\n");
   Print (L"  <!-- SMM image loaded -->\n");

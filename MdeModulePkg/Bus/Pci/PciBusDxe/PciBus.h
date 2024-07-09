@@ -11,6 +11,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <PiDxe.h>
 
+#include <Guid/EventGroup.h>  // MU_CHANGE
+
 #include <Protocol/LoadedImage.h>
 #include <Protocol/PciHostBridgeResourceAllocation.h>
 #include <Protocol/PciIo.h>
@@ -282,6 +284,8 @@ struct _PCI_IO_DEVICE {
   UINT16                                       BridgeIoAlignment;
   UINT32                                       ResizableBarOffset;
   UINT32                                       ResizableBarNumber;
+  BOOLEAN                                      IgnoreROM;      // MU_CHANGE
+  UINT8                                        MaxPayloadSize; // MU_CHANGE: Add support for initializing PCIe MPS
 };
 
 #define PCI_IO_DEVICE_FROM_PCI_IO_THIS(a) \

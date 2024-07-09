@@ -189,6 +189,11 @@
   #
   DeviceStateLib|Include/Library/DeviceStateLib.h
 
+  # MU_CHANGE - Add PcdDatabaseLoaderLib to MdeModulePkg
+  ## @libraryclass Provides a way to present an alternate PcdDatabase
+  #
+  PcdDatabaseLoaderLib|Include/Library/PcdDatabaseLoaderLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
@@ -411,6 +416,10 @@
   ## Include/Guid/PiSmmCommunicationRegionTable.h
   gEdkiiPiSmmCommunicationRegionTableGuid = { 0x4e28ca50, 0xd582, 0x44ac, {0xa1, 0x1f, 0xe3, 0xd5, 0x65, 0x26, 0xdb, 0x34}}
 
+  ## MU_CHANGE Delayed Dispatch table GUID
+  ##
+  gEfiDelayedDispatchTableGuid = { 0x4b733449, 0x8eff, 0x488c, {0x92, 0x1a, 0x15, 0x4a, 0xda, 0x25, 0x18, 0x07}}
+
   ## Include/Guid/PiSmmMemoryAttributesTable.h
   gEdkiiPiSmmMemoryAttributesTableGuid = { 0x6b9fd3f7, 0x16df, 0x45e8, {0xbd, 0x39, 0xb9, 0x4a, 0x66, 0x54, 0x1a, 0x5d}}
 
@@ -436,14 +445,19 @@
 
   ## Include/Guid/EndofS3Resume.h
   gEdkiiEndOfS3ResumeGuid = { 0x96f5296d, 0x05f7, 0x4f3c, {0x84, 0x67, 0xe4, 0x56, 0x89, 0x0e, 0x0c, 0xb5 } }
-  
+
 ## MU_CHANGE BEGIN
   ## Advanced Logger Variable Guid. This variable guid is used to access the log data via GetVariable.
   #
   gAdvLoggerAccessGuid = { 0xa021bf2b, 0x34ed, 0x4a98, {0x85, 0x9c, 0x42, 0x0e, 0xf9, 0x4f, 0x3e, 0x94 }}
 
+  #
+  # Guids for NVMe Timeout Events
+  # {4754469d-6528-4dfc-84aa-8c8a03a2158b}
+  gNVMeEnableStartEventGroupGuid = { 0x4754469d, 0x6528, 0x4dfc, {0x84, 0xaa, 0x8c, 0x8a, 0x03, 0xa2, 0x15, 0x8b}}
+  # {da383315-906b-486f-80db-847f268451e4}
+  gNVMeEnableCompleteEventGroupGuid = { 0xda383315, 0x906b, 0x486f, {0x80, 0xdb, 0x84, 0x7f, 0x26, 0x84, 0x51, 0xe4}}
 ## MU_CHANGE END
-
 
   ## Used (similar to Variable Services) to communicate policies to the enforcement engine.
   # {DA1B0D11-D1A7-46C4-9DC9-F3714875C6EB}
@@ -537,6 +551,9 @@
 
   ## Include/Ppi/SerialPortPei.h
   gPeiSerialPortPpiGuid         =  { 0x490e9d85, 0x8aef, 0x4193, { 0x8e, 0x56, 0xf7, 0x34, 0xa9, 0xff, 0xac, 0x8b}}
+
+  ## Include/Ppi/DelayedDispatch.h     // MU_CHANGE
+  gEfiDelayedDispatchPpiGuid    =  { 0x869c711d, 0x649c, 0x44fe, { 0x8b, 0x9e, 0x2c, 0xbb, 0x29, 0x11, 0xc3, 0xe6}}
 
   ## Include/Ppi/UfsHostController.h
   gEdkiiPeiUfsHostControllerPpiGuid  =  { 0xdc54b283, 0x1a77, 0x4cd6, { 0x83, 0xbb, 0xfd, 0xda, 0x46, 0x9a, 0x2e, 0xc6 }}
@@ -990,8 +1007,25 @@
   #   FALSE - Does not support process non-reset capsule image at runtime.<BR>
   # @Prompt Enable process non-reset capsule image at runtime.
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportProcessCapsuleAtRuntime|FALSE|BOOLEAN|0x00010079
+  ## MU_CHANGE
+  ## Indicates that the system should not automatically enable BME on P2P bridges until a subordinate
+  #  device has its Bus Master Enable bit set by a call to PciIo->SetAttributes.
+  #  Note: Some UEFI drivers are not compliant and do not correctly call SetAttributes before attempting
+  #  DMA operations. For these drivers, this setting will cause a functionality break.
+  #   TRUE  - Defer BME enablement on P2P bridges.
+  #   FALSE - Initialize P2P bridges with BME enabled.
+  # @Prompt Defer BME enablement
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDeferBME|TRUE|BOOLEAN|0x30002050
 
-[PcdsFeatureFlag.IA32, PcdsFeatureFlag.ARM, PcdsFeatureFlag.AARCH64, PcdsFeatureFlag.LOONGARCH64]
+  ## MU_CHANGE
+  ## Indicates if DMA is allowed before IOMMU protocol install
+  #  If enabled, device wil assert and return EFI_DEVICE_ERROR on any DMA access before IOMMU Protocol Install.<BR><BR>
+  #   TRUE  - IOMMU protocol required for DMA access.<BR>
+  #   FALSE - DMA Access can happen before IOMMU protocol install.<BR>
+  # @Prompt Enable DMA before IOMMU protocol.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRequireIommu|TRUE|BOOLEAN|0x30001090
+
+[PcdsFeatureFlag.IA32, PcdsFeatureFlag.ARM, PcdsFeatureFlag.AARCH64]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|FALSE|BOOLEAN|0x0001003a
 
 [PcdsFeatureFlag.IA32, PcdsFeatureFlag.X64]
@@ -1046,6 +1080,18 @@
   # @Prompt Error Code for SetVariable failure.
   # @ValidList  0x80000006 | 0x03058002
   gEfiMdeModulePkgTokenSpaceGuid.PcdErrorCodeSetVariable|0x03058002|UINT32|0x30001040
+
+  ## Delayed Dispatch Maximum Delay in us  // MU_CHANGE
+  # Maximum delay for any particular delay request - 5 seconds
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxDelayUs|5000000|UINT32|0x3000104A
+
+  ## Delayed Dispatch timeout in us  // MU_CHANGE
+  # Maximum delay when waiting for completion (ie EndOfPei) - 10 seconds
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchCompletionTimeoutUs|10000000|UINT32|0x3000104B
+
+  ## Delayed Dispatch Max Entries    // MU_CHANGE
+  # Maximum number of delayed dispatch entries
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxEntries|8|UINT32|0x3000104C
 
   ## Mask to control the NULL address detection in code for different phases.
   #  If enabled, accessing NULL address in UEFI or SMM code can be caught.<BR><BR>
@@ -1201,9 +1247,9 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayXhciHCReset|2000|UINT16|0x30001060
 
   # MU_CHANGE [BEGIN] - Support indefinite boot retries
-  # # Some platforms require that all EfiLoadOptions are retried until one of the options 
-  # # succeeds. When True, this Pcd will force Bds to retry all the valid EfiLoadOptions 
-  # # indefinitely until one of the options succeeds. 
+  # # Some platforms require that all EfiLoadOptions are retried until one of the options
+  # # succeeds. When True, this Pcd will force Bds to retry all the valid EfiLoadOptions
+  # # indefinitely until one of the options succeeds.
   # #   TRUE  - Efi boot options will be retried indefinitely.
   # #   FALSE - Efi boot options will not be retried.
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportInfiniteBootRetries|FALSE|BOOLEAN|0x40000152
@@ -1214,7 +1260,7 @@
   # Size in pages. Current default is roughly 1.6GB.
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxMemoryTypeInfoPages            |0x60000|UINT32|0x40000150
   # MU_CHANGE TCBZ1086 [END]
-  
+
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Dynamic type PCD can be registered callback function for Pcd setting action.
   #  PcdMaxPeiPcdCallBackNumberPerPcdEntry indicates the maximum number of callback function
@@ -1732,6 +1778,17 @@
   # @Prompt SPI NOR Flash Operation Delay in Microseconds (16 us)
   gEfiMdeModulePkgTokenSpaceGuid.PcdSpiNorFlashOperationDelayMicroseconds|0x00000010|UINT32|0x00000035
 
+  ## MU_CHANGE [BEGIN]
+  ## This PCD holds the background color of progress bar.
+  # Bit fields:
+  #   [31:24] - Reserved
+  #   [23:16] - Red
+  #   [15:8]  - Green
+  #   [7:0]   - Blue
+  # @Prompt Describes background color of progress bar.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdProgressBarBackgroundColor|0x00808080|UINT32|0x0000010B
+  ## MU_CHANGE [END]
+
 [PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## This PCD defines the Console output row. The default value is 25 according to UEFI spec.
   #  This PCD could be set to 0 then console output would be at max column and max row.
@@ -1908,6 +1965,14 @@
   #   FALSE - BDS does not support Platform Recovery.<BR>
   # @Prompt Support Platform Recovery.
   gEfiMdeModulePkgTokenSpaceGuid.PcdPlatformRecoverySupport|TRUE|BOOLEAN|0x00010078
+  ## MU_CHANGE
+  ## Indicates that the system should disable BME on all Pci2Pci bridges on Exit Boot Services
+  #  Note: Some operating systems and drivers may not expect devices to be in this state, and it
+  #  may cause unexpected behaviors.
+  #   TRUE  - Disable BME on P2P at Exit Boot Services.
+  #   FALSE - Do not disable BME on P2P at Exit Boot Services.
+  # @Prompt Disable BME on Exit Boot Services
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDisableBMEonEBS|TRUE|BOOLEAN|0x30002051
 
   ## Specify the foreground color for Subtile text in HII Form Browser. The default value is EFI_BLUE.
   #  Only following values defined in UEFI specification are valid:<BR><BR>
@@ -2074,6 +2139,13 @@
   #   FALSE - Full PCI enumeration is not disabled.<BR>
   # @Prompt Disable full PCI enumeration.
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDisableBusEnumeration|FALSE|BOOLEAN|0x10000048
+
+  # MU_CHANGE: Add support for initializing PCIe MPS
+  ## Indicates if Max Payload Size should be set for PCIe devices
+  #   TRUE  - Initialize MPS for PCI devices.
+  #   FALSE - Leave MPS to the default value.
+  # @Prompt Enable initializing PCIe Max Payload Sizes.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPcieInitializeMps|FALSE|BOOLEAN|0x10000049
 
   ## Disk I/O - Number of Data Buffer block.
   # Define the size in block of the pre-allocated buffer. It provide better
@@ -2339,7 +2411,7 @@
   ## This dynamic PCD holds the device state bitmap as described in Include/Library/DeviceStateLib.h
   # @Prompt Describes device state
   gEfiMdeModulePkgTokenSpaceGuid.PcdDeviceStateBitmask|0x00000000|UINT32|0x00030009
-  
+
 [PcdsDynamicEx]
   ## This dynamic PCD enables the default variable setting.
   #  Its value is the default store ID value. The default value is zero as Standard default.

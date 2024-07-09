@@ -1,6 +1,3 @@
-[submodule "CryptoPkg/Library/OpensslLib/openssl"]
-	path = CryptoPkg/Library/OpensslLib/openssl
-	url = https://github.com/openssl/openssl
 [submodule "UnitTestFrameworkPkg/Library/CmockaLib/cmocka"]
 	path = UnitTestFrameworkPkg/Library/CmockaLib/cmocka
 	url = https://github.com/tianocore/edk2-cmocka.git
@@ -26,6 +23,3 @@
 [submodule "MdePkg/Library/MipiSysTLib/mipisyst"]
 	path = MdePkg/Library/MipiSysTLib/mipisyst
 	url = https://github.com/MIPI-Alliance/public-mipi-sys-t.git
-[submodule "CryptoPkg/Library/MbedTlsLib/mbedtls"]
-	path = CryptoPkg/Library/MbedTlsLib/mbedtls
-	url = https://github.com/ARMmbed/mbedtls

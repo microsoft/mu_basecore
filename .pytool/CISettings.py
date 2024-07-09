@@ -60,6 +60,7 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
                 "MdeModulePkg",
                 "NetworkPkg",
                 "PcAtChipsetPkg",
+                "PolicyServicePkg",
                 "ShellPkg",
                 "StandaloneMmPkg",
                 "UefiCpuPkg",
@@ -174,8 +175,6 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         '''
         rs = []
         rs.append(RequiredSubmodule(
-            "CryptoPkg/Library/OpensslLib/openssl", False))
-        rs.append(RequiredSubmodule(
             "UnitTestFrameworkPkg/Library/CmockaLib/cmocka", False))
         rs.append(RequiredSubmodule(
             "UnitTestFrameworkPkg/Library/GoogleTestLib/googletest", False))
@@ -191,8 +190,6 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
             "MdePkg/Library/BaseFdtLib/libfdt", False))
         rs.append(RequiredSubmodule(
             "MdePkg/Library/MipiSysTLib/mipisyst", False))
-        rs.append(RequiredSubmodule(
-            "CryptoPkg/Library/MbedTlsLib/mbedtls", False))
         return rs
 
     def GetName(self):
