@@ -456,6 +456,13 @@ DxeMain (
   Status = CoreInitializeEventServices ();
   ASSERT_EFI_ERROR (Status);
 
+  // MU_CHANGE [BEGIN]
+  // Give the debug agent a chance to initialize with events.
+
+  InitializeDebugAgent (DEBUG_AGENT_INIT_DXE_CORE_LATE, HobStart, NULL);
+
+  // MU_CHANGE [END]
+
   MemoryProfileInstallProtocol ();
 
   CoreInitializeMemoryAttributesTable ();

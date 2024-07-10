@@ -808,10 +808,15 @@ MatchUsbClass (
   DeviceClass    = DevDesc.DeviceClass;
   DeviceSubClass = DevDesc.DeviceSubClass;
   DeviceProtocol = DevDesc.DeviceProtocol;
-  if (DeviceClass == 0) {
+
+  // MSCHANGE - BEGIN - Add support for IAD-type multi-function devices.
+  if ((DeviceClass == 0) ||
+      ((DeviceClass == 0xEF) && (DeviceSubClass == 0x02) && (DeviceProtocol == 0x01)))
+  {
     //
-    // If Class in Device Descriptor is set to 0, use the Class, SubClass and
-    // Protocol in Interface Descriptor instead.
+    // If Class in Device Descriptor is set to 0 (Device), or
+    // Class/SubClass/Protocol is 0xEF/0x02/0x01 (IAD), use the Class, SubClass
+    // and Protocol in Interface Descriptor instead.
     //
     Status = UsbIo->UsbGetInterfaceDescriptor (UsbIo, &IfDesc);
     if (EFI_ERROR (Status)) {
@@ -822,6 +827,8 @@ MatchUsbClass (
     DeviceSubClass = IfDesc.InterfaceSubClass;
     DeviceProtocol = IfDesc.InterfaceProtocol;
   }
+
+  // MSCHANGE - END
 
   //
   // Check Class, SubClass and Protocol.

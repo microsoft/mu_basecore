@@ -620,6 +620,10 @@
   gEfiPrint2ProtocolGuid          = { 0xf05976ef, 0x83f1, 0x4f3d, { 0x86, 0x19, 0xf7, 0x59, 0x5d, 0x41, 0xe5, 0x38 } }
   gEfiPrint2SProtocolGuid         = { 0xcc252d2, 0xc106, 0x4661, { 0xb5, 0xbd, 0x31, 0x47, 0xa4, 0xf8, 0x1f, 0x92 } }
 
+  ## This protocol defines the Media Clear and Sanitize operations defined by NIST
+  # Include/Protocol/MediaSanitize.h
+  gMediaSanitizeProtocolGuid = { 0x0d799a99, 0x25af, 0x429e, {0x92, 0x72, 0xd0, 0xb2, 0x7d, 0x6d, 0x5f, 0x14 } }
+
   ## This protocol defines the generic memory test interfaces in Dxe phase.
   # Include/Protocol/GenericMemoryTest.h
   gEfiGenericMemTestProtocolGuid = { 0x309DE7F1, 0x7F5E, 0x4ACE, { 0xB4, 0x9C, 0x53, 0x1B, 0xE5, 0xAA, 0x95, 0xEF }}
@@ -2351,6 +2355,11 @@
   ## The value of rate limiter event for timeout check. Default value is 100(unit 1ms).
   # @Prompt The value is use for Usb Network rate limiting supported.
   gEfiMdeModulePkgTokenSpaceGuid.PcdUsbNetworkRateLimitingFactor|100|UINT32|0x10000028
+  
+  ## MU_CHANGE - Configuring timer interval in terminal DXE driver
+  ## This PCD determines the timer interval to be set when using serial console.
+  # @Prompt Sets the serial console timer interval, in the unit of 100ns.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdTerminalKeyboardTimerInterval|0x00000000|UINT32|0x00030025
 
 [PcdsPatchableInModule]
   ## Specify memory size with page number for PEI code when
