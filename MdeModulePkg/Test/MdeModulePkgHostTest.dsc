@@ -59,7 +59,12 @@
       ImagePropertiesRecordLib|MdeModulePkg/Library/ImagePropertiesRecordLib/ImagePropertiesRecordLib.inf
       PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
   }
-
+  # MU_CHANGE Start - Add Media Sanitize
+  MdeModulePkg/Bus/Pci/NvmExpressDxe/UnitTest/MediaSanitizeUnitTestHost.inf {
+    <LibraryClasses>
+      NvmExpressDxe|MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe.inf
+  }
+  # MU_CHANGE End - Add Media Sanitize
   #
   # Build HOST_APPLICATION Libraries
   #
