@@ -90,6 +90,10 @@ TestVerifyHkdfSha256 (
   UINT8    Out[42];
   BOOLEAN  Status;
 
+  if (!PcdGetBool (PcdCryptoServiceHkdfSha256ExtractAndExpand) || !PcdGetBool (PcdCryptoServiceHkdfSha256Extract) || !PcdGetBool (PcdCryptoServiceHkdfSha256Expand)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   /* HKDF-SHA-256 digest Validation*/
 
   ZeroMem (PrkOut, sizeof (PrkOut));
@@ -145,6 +149,10 @@ TestVerifyHkdfSha384 (
   UINT8    PrkOut[48];
   UINT8    Out[64];
   BOOLEAN  Status;
+
+  if (!PcdGetBool (PcdCryptoServiceHkdfSha384ExtractAndExpand) || !PcdGetBool (PcdCryptoServiceHkdfSha384Extract) || !PcdGetBool (PcdCryptoServiceHkdfSha384Expand)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
 
   /* HKDF-SHA-384 digest Validation*/
   ZeroMem (PrkOut, sizeof (PrkOut));

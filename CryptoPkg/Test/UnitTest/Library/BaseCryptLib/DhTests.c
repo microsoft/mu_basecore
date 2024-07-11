@@ -17,6 +17,11 @@ TestVerifyDhPreReq (
   UNIT_TEST_CONTEXT  Context
   )
 {
+  if (!PcdGetBool (PcdCryptoServiceDhNew))
+  {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   mDh1 = DhNew ();
   if (mDh1 == NULL) {
     return UNIT_TEST_ERROR_TEST_FAILED;

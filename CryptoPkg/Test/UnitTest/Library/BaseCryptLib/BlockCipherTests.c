@@ -200,6 +200,10 @@ TestVerifyBLockCiperPreReq (
   BLOCK_CIPHER_TEST_CONTEXT  *TestContext;
   UINTN                      CtxSize;
 
+  if (!PcdGetBool (PcdCryptoServiceAesGetContextSize)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
   TestContext      = Context;
   CtxSize          = TestContext->GetContextSize ();
   TestContext->Ctx = AllocatePool (CtxSize);
