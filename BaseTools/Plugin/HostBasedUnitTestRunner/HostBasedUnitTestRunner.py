@@ -12,7 +12,6 @@ import stat
 import xml.etree.ElementTree
 from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
 from edk2toolext import edk2_logging
-import edk2toollib.windows.locate_tools as locate_tools
 from edk2toolext.environment import shell_environment
 from edk2toollib.utility_functions import RunCmd
 from edk2toollib.utility_functions import GetHostInfo
@@ -113,6 +112,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                 if ret != 0:
                     logging.error("UnitTest Execution Error: " +
                                   os.path.basename(test))
+                    failure_count += 1
                 else:
                     logging.info("UnitTest Completed: " +
                                  os.path.basename(test))
