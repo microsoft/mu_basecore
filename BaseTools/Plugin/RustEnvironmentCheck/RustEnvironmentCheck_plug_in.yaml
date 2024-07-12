@@ -6,11 +6,12 @@
 # This plugin requires the "rust-ci" scope to be set which is used in the plugins to determine
 # when a workspace is building code that includes Rust.
 #
-# Copyright (c) Microsoft Corporation. All rights reserved.
+# Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 {
   "scope": "rust-ci",
+  "id": "rust-env-check",
   "name": "Rust Environment Check Pre-Build Plugin",
   "module": "RustEnvironmentCheck"
 }
