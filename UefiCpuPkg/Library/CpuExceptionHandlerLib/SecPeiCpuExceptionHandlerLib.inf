@@ -57,6 +57,8 @@
   PeCoffGetEntryPointLib
   PrintLib
   SerialPortLib
+  ExceptionPersistenceLib  # MU_CHANGE
+  ResetSystemLib           # MU_CHANGE
 
 [LibraryClasses.Ia32, LibraryClasses.X64]
   CcExitLib
