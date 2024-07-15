@@ -106,6 +106,7 @@
   MmSaveStateLib
   MmMemoryProtectionHobLib                   ## MU_CHANGE
   SmmCpuSyncLib
+  PanicLib                  ## MU_CHANGE
 
 [Protocols]
   gEfiSmmAccess2ProtocolGuid               ## CONSUMES
