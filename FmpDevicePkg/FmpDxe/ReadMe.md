@@ -54,8 +54,9 @@ More information about the overall infrastructure is available in:
 [Tianocore wiki: Fmp Capsule Dependency Introduction](https://github.com/tianocore/tianocore.github.io/wiki/Fmp-Capsule-Dependency-Introduction)
 
 More details regarding the libraries in `FmpDevicePkg` are available in the respective ReadMe files:
-[FmpDevicePkg/Library/FmpDependencyCheckLib][FmpDevicePkg/Library/FmpDependencyCheckLib/ReadMe.md](../Library/FmpDependencyCheckLib/ReadMe.md)
-[FmpDevicePkg/Library/FmpDependencyLib][FmpDevicePkg/Library/FmpDependencyLib/ReadMe.md](../Library/FmpDependencyLib/ReadMe.md)
+
+- [FmpDevicePkg/Library/FmpDependencyCheckLib](../Library/FmpDependencyCheckLib/ReadMe.md)
+- [FmpDevicePkg/Library/FmpDependencyLib](../Library/FmpDependencyLib/ReadMe.md)
 
 ### Update Policy
 
