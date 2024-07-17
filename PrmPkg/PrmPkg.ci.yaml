@@ -103,7 +103,16 @@
           "prmopreg",
           "prmpecofflib",
           "prmpkg",
-          "prmssdtinstall"
+          # MU_CHANGE - Start
+          "prmssdtinstall",
+          "fstack",
+          "dlink",
+          "prmconfig",
+          "prmcontextbufferlib",
+          "prminfo",
+          "prmloader",
+          "prmmodulediscoverylib"
+          # MU_CHANGE - End
         ],
         "IgnoreStandardPaths": [],   # Standard Plugin defined paths that
                                      # should be ignore
