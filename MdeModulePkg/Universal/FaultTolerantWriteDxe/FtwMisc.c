@@ -817,7 +817,7 @@ FtwGetLastWriteHeader (
     //
      // MU_CHANGE [BEGIN] - Prevent buffer overrun
     //if (Offset >= FtwWorkSpaceSize) {
-    if ((Offset + sizeof (EFI_FAULT_TOLERANT_WRITE_HEADER)) >= FtwWorkSpaceSize)
+    if ((Offset + sizeof (EFI_FAULT_TOLERANT_WRITE_HEADER)) >= FtwWorkSpaceSize) {
      // MU_CHANGE [END] - Prevent buffer overrun
       *FtwWriteHeader = FtwHeader;
       return EFI_ABORTED;
