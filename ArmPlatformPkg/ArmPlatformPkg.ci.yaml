@@ -52,7 +52,7 @@
             "MdePkg/MdePkg.dec",
             "SecurityPkg/SecurityPkg.dec",
             "UefiCpuPkg/UefiCpuPkg.dec",
-	    "StandaloneMmPkg/StandaloneMmPkg" # MU_CHANGE
+            "StandaloneMmPkg/StandaloneMmPkg" # MU_CHANGE
         ],
         # For host based unit tests
         "AcceptableDependencies-HOST_APPLICATION":[
