@@ -17,6 +17,6 @@
 #[repr(C)]
 #[derive(Debug)]
 pub struct Entry {
-  pub forward_link: *mut Entry,
-  pub back_link: *mut Entry,
+    pub forward_link: *mut Entry,
+    pub back_link: *mut Entry,
 }

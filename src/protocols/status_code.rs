@@ -14,7 +14,7 @@
 use r_efi::efi;
 
 pub const PROTOCOL_GUID: efi::Guid =
-  efi::Guid::from_fields(0xD2B2B828, 0x0826, 0x48A7, 0xB3, 0xDF, &[0x98, 0x3C, 0x00, 0x60, 0x24, 0xF0]);
+    efi::Guid::from_fields(0xD2B2B828, 0x0826, 0x48A7, 0xB3, 0xDF, &[0x98, 0x3C, 0x00, 0x60, 0x24, 0xF0]);
 
 ///
 /// Definition of code types. All other values masked by
@@ -128,9 +128,9 @@ pub const EFI_SW_BS_PC_CREATE_EVENT_EX: u32 = EFI_SUBCLASS_SPECIFIC | 0x0000002A
 /// UEFI Platform Initialization Specification, Release 1.8, Section III-6.6.2.1
 #[repr(C)]
 pub struct EfiStatusCodeData {
-  pub header_size: u16,
-  pub size: u16,
-  pub r#type: efi::Guid,
+    pub header_size: u16,
+    pub size: u16,
+    pub r#type: efi::Guid,
 }
 
 /// Provides an interface that a software module can call to report a status code.
@@ -138,7 +138,7 @@ pub struct EfiStatusCodeData {
 /// # Documentation
 /// UEFI Platform Initialization Specification, Release 1.8, Section II-14.2.1
 pub type ReportStatusCode =
-  extern "efiapi" fn(u32, u32, u32, *const efi::Guid, *const EfiStatusCodeData) -> efi::Status;
+    extern "efiapi" fn(u32, u32, u32, *const efi::Guid, *const EfiStatusCodeData) -> efi::Status;
 
 /// Provides the service required to report a status code to the platform firmware.
 /// This protocol must be produced by a runtime DXE driver.
@@ -147,5 +147,5 @@ pub type ReportStatusCode =
 /// UEFI Platform Initialization Specification, Release 1.8, Section II-14.2.1
 #[repr(C)]
 pub struct Protocol {
-  pub report_status_code: ReportStatusCode,
+    pub report_status_code: ReportStatusCode,
 }

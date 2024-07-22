@@ -19,7 +19,7 @@ use r_efi::efi::{Guid, Handle, Lba, Status};
 use crate::{fw_fs::EfiFvbAttributes2, hob::EfiPhysicalAddress};
 
 pub const PROTOCOL_GUID: Guid =
-  Guid::from_fields(0x8f644fa9, 0xe850, 0x4db1, 0x9c, 0xe2, &[0xb, 0x44, 0x69, 0x8e, 0x8d, 0xa4]);
+    Guid::from_fields(0x8f644fa9, 0xe850, 0x4db1, 0x9c, 0xe2, &[0xb, 0x44, 0x69, 0x8e, 0x8d, 0xa4]);
 
 pub type GetAttributes = extern "efiapi" fn(*mut Protocol, *mut EfiFvbAttributes2) -> Status;
 
@@ -34,8 +34,8 @@ pub type Read = extern "efiapi" fn(*mut Protocol, Lba, usize, *mut usize, *mut c
 pub type Write = extern "efiapi" fn(*mut Protocol, Lba, usize, *mut usize, *mut c_void) -> Status;
 
 pub type EraseBlocks = extern "efiapi" fn(
-  *mut Protocol,
-  //... //TODO: variadic functions and eficall! do not mix presently.
+    *mut Protocol,
+    //... //TODO: variadic functions and eficall! do not mix presently.
 ) -> Status;
 
 /// The Firmware Volume Block Protocol is the low-level interface to a firmware volume. File-level access to a firmware
@@ -46,12 +46,12 @@ pub type EraseBlocks = extern "efiapi" fn(
 /// UEFI Platform Initialization Specification, Release 1.8, Section III-3.4.2.1
 #[repr(C)]
 pub struct Protocol {
-  pub get_attributes: GetAttributes,
-  pub set_attributes: SetAttributes,
-  pub get_physical_address: GetPhysicalAddress,
-  pub get_block_size: GetBlockSize,
-  pub read: Read,
-  pub write: Write,
-  pub erase_blocks: EraseBlocks,
-  pub parent_handle: Handle,
+    pub get_attributes: GetAttributes,
+    pub set_attributes: SetAttributes,
+    pub get_physical_address: GetPhysicalAddress,
+    pub get_block_size: GetBlockSize,
+    pub read: Read,
+    pub write: Write,
+    pub erase_blocks: EraseBlocks,
+    pub parent_handle: Handle,
 }

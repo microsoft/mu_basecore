@@ -15,7 +15,7 @@
 use r_efi::efi;
 
 pub const PROTOCOL_GUID: efi::Guid =
-  efi::Guid::from_fields(0x26BACCB3, 0x6F42, 0x11D4, 0xBC, 0xE7, &[0x00, 0x80, 0xC7, 0x3C, 0x88, 0x81]);
+    efi::Guid::from_fields(0x26BACCB3, 0x6F42, 0x11D4, 0xBC, 0xE7, &[0x00, 0x80, 0xC7, 0x3C, 0x88, 0x81]);
 
 /// A function of this type is called when a timer interrupt fires.  This
 /// function executes at TPL_HIGH_LEVEL.  The DXE Core will register a function
@@ -53,7 +53,7 @@ pub type EfiTimerNotify = extern "efiapi" fn(time: u64);
 ///                                    previously registered.
 /// * @retval - EFI_DEVICE_ERROR: The timer handler could not be registered.
 pub type EfiTimerRegisterHandler =
-  extern "efiapi" fn(this: *mut Protocol, notify_function: EfiTimerNotify) -> efi::Status;
+    extern "efiapi" fn(this: *mut Protocol, notify_function: EfiTimerNotify) -> efi::Status;
 
 /// This function adjusts the period of timer interrupts to the value specified
 /// by TimerPeriod.  If the timer period is updated, then the selected timer
@@ -110,8 +110,8 @@ pub type EfiTimerGenerateSoftInterrupt = extern "efiapi" fn(this: *mut Protocol)
 /// UEFI Platform Initialization Specification, Release 1.8, Section II-12.10.1
 #[repr(C)]
 pub struct Protocol {
-  pub register_handler: EfiTimerRegisterHandler,
-  pub set_timer_period: EfiTimerSetTimerPeriod,
-  pub get_timer_period: EfiTimerGetTimerPeriod,
-  pub generate_soft_interrupt: EfiTimerGenerateSoftInterrupt,
+    pub register_handler: EfiTimerRegisterHandler,
+    pub set_timer_period: EfiTimerSetTimerPeriod,
+    pub get_timer_period: EfiTimerGetTimerPeriod,
+    pub generate_soft_interrupt: EfiTimerGenerateSoftInterrupt,
 }

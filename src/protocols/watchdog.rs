@@ -21,7 +21,7 @@ use r_efi::efi;
 /// # Documentation
 /// UEFI Platform Initialization Specification, Release 1.8, Section II-12.14.1
 pub const PROTOCOL_GUID: efi::Guid =
-  efi::Guid::from_fields(0x665E3FF5, 0x46CC, 0x11d4, 0x9A, 0x38, &[0x00, 0x90, 0x27, 0x3F, 0xC1, 0x4D]);
+    efi::Guid::from_fields(0x665E3FF5, 0x46CC, 0x11d4, 0x9A, 0x38, &[0x00, 0x90, 0x27, 0x3F, 0xC1, 0x4D]);
 
 /// Function type definition for watchdog timer notify.
 pub type WatchdogTimerNotify = extern "efiapi" fn(u64);
@@ -50,7 +50,7 @@ pub type GetTimerPeriod = extern "efiapi" fn(*const Protocol, *mut u64) -> efi::
 /// UEFI Platform Initialization Specification, Release 1.8, Section II-12.14.1
 #[repr(C)]
 pub struct Protocol {
-  pub register_handler: RegisterHandler,
-  pub set_timer_period: SetTimerPeriod,
-  pub get_timer_period: GetTimerPeriod,
+    pub register_handler: RegisterHandler,
+    pub set_timer_period: SetTimerPeriod,
+    pub get_timer_period: GetTimerPeriod,
 }

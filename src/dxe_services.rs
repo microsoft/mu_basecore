@@ -17,12 +17,12 @@
 use core::{default::Default, ffi::c_void};
 
 use r_efi::{
-  efi::{Guid, Handle, PhysicalAddress, Status},
-  system::TableHeader,
+    efi::{Guid, Handle, PhysicalAddress, Status},
+    system::TableHeader,
 };
 
 pub const DXE_SERVICES_TABLE_GUID: Guid =
-  Guid::from_fields(0x5ad34ba, 0x6f02, 0x4214, 0x95, 0x2e, &[0x4d, 0xa0, 0x39, 0x8e, 0x2b, 0xb9]);
+    Guid::from_fields(0x5ad34ba, 0x6f02, 0x4214, 0x95, 0x2e, &[0x4d, 0xa0, 0x39, 0x8e, 0x2b, 0xb9]);
 
 /// This service adds reserved memory system memory or memory mapped IO resources to the global coherency domain of the processor.
 ///
@@ -36,7 +36,7 @@ pub type AddMemorySpace = extern "efiapi" fn(GcdMemoryType, PhysicalAddress, u64
 /// # Documentation
 /// UEFI Platform Initialization Specification, Release 1.8, Section II-7.2.4.2
 pub type AllocateMemorySpace =
-  extern "efiapi" fn(GcdAllocateType, GcdMemoryType, usize, u64, *mut PhysicalAddress, Handle, Handle) -> Status;
+    extern "efiapi" fn(GcdAllocateType, GcdMemoryType, usize, u64, *mut PhysicalAddress, Handle, Handle) -> Status;
 
 /// This service frees nonexistent memory, reserved memory, system memory,
 /// or memory-mapped I/O resources from the global coherency domain of the processor.
@@ -87,7 +87,7 @@ pub type AddIoSpace = extern "efiapi" fn(GcdIoType, PhysicalAddress, u64) -> Sta
 /// # Documentation
 /// UEFI Platform Initialization Specification, Release 1.8, Section II-7.2.4.10
 pub type AllocateIoSpace =
-  extern "efiapi" fn(GcdAllocateType, GcdIoType, usize, u64, *mut PhysicalAddress, Handle, Handle) -> Status;
+    extern "efiapi" fn(GcdAllocateType, GcdIoType, usize, u64, *mut PhysicalAddress, Handle, Handle) -> Status;
 
 /// This service frees nonexistent I/O, reserved I/O, or I/O resources from the global coherency domain of the processor.
 ///
@@ -143,108 +143,108 @@ pub type ProcessFirmwareVolume = extern "efiapi" fn(*const c_void, usize, *mut H
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 /// `EFI_GCD_MEMORY_TYPE` in specification.
 pub enum GcdMemoryType {
-  /// A memory region that is visible to the boot processor.
-  /// However, there are no system components that are currently decoding this memory region.
-  #[default]
-  NonExistent = 0,
-  /// A memory region that is visible to the boot processor.
-  /// This memory region is being decoded by a system component,
-  /// but the memory region is not considered to be either system memory or memory-mapped I/O.
-  Reserved,
-  /// A memory region that is visible to the boot processor.
-  /// A memory controller is currently decoding this memory region
-  /// and the memory controller is producing a tested system memory region that is available to the memory services.
-  SystemMemory,
-  /// A memory region that is visible to the boot processor. This memory region is currently being decoded by a
-  /// component as memory-mapped I/O that can be used to access I/O devices in the platform.
-  MemoryMappedIo,
-  /// A memory region that is visible to the boot processor. This memory supports byte-addressable non-volatility.
-  Persistent,
-  /// A memory region that provides higher reliability relative to other memory in the system.
-  /// If all memory has the same reliability, then this bit is not used.
-  MoreReliable,
-  /// A memory region that is unaccepted. This region must be accepted before it can be converted to system memory.
-  Unaccepted,
+    /// A memory region that is visible to the boot processor.
+    /// However, there are no system components that are currently decoding this memory region.
+    #[default]
+    NonExistent = 0,
+    /// A memory region that is visible to the boot processor.
+    /// This memory region is being decoded by a system component,
+    /// but the memory region is not considered to be either system memory or memory-mapped I/O.
+    Reserved,
+    /// A memory region that is visible to the boot processor.
+    /// A memory controller is currently decoding this memory region
+    /// and the memory controller is producing a tested system memory region that is available to the memory services.
+    SystemMemory,
+    /// A memory region that is visible to the boot processor. This memory region is currently being decoded by a
+    /// component as memory-mapped I/O that can be used to access I/O devices in the platform.
+    MemoryMappedIo,
+    /// A memory region that is visible to the boot processor. This memory supports byte-addressable non-volatility.
+    Persistent,
+    /// A memory region that provides higher reliability relative to other memory in the system.
+    /// If all memory has the same reliability, then this bit is not used.
+    MoreReliable,
+    /// A memory region that is unaccepted. This region must be accepted before it can be converted to system memory.
+    Unaccepted,
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 /// `EFI_GCD_ALLOCATE_TYPE` in specification.
 pub enum GcdAllocateType {
-  #[default]
-  AnySearchBottomUp,
-  MaxAddressSearchBottomUp,
-  Address,
-  AnySearchTopDown,
-  MaxAddressSearchTopDown,
-  MaxAllocateType,
+    #[default]
+    AnySearchBottomUp,
+    MaxAddressSearchBottomUp,
+    Address,
+    AnySearchTopDown,
+    MaxAddressSearchTopDown,
+    MaxAllocateType,
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// `EFI_GCD_MEMORY_SPACE_DESCRIPTOR` in specification.
 pub struct MemorySpaceDescriptor {
-  /// The physical address of the first byte in the memory region.
-  pub base_address: PhysicalAddress,
-  /// The number of bytes in the memory region.
-  pub length: u64,
-  /// The bit mask of attributes that the memory region is capable of supporting.
-  pub capabilities: u64,
-  /// The bit mask of attributes that the memory region is currently using.
-  pub attributes: u64,
-  /// Type of the memory region.
-  pub memory_type: GcdMemoryType,
-  /// The image handle of the agent that allocated the memory resource described by PhysicalStart and NumberOfBytes.
-  ///
-  /// If this field is NULL, then the memory resource is not currently allocated.
-  pub image_handle: Handle,
-  /// The device handle for which the memory resource has been allocated.
-  ///
-  /// If ImageHandle is NULL, then the memory resource is not currently allocated.
-  ///
-  /// If this field is NULL, then the memory resource is not associated with a device that is described by a device handle.
-  pub device_handle: Handle,
+    /// The physical address of the first byte in the memory region.
+    pub base_address: PhysicalAddress,
+    /// The number of bytes in the memory region.
+    pub length: u64,
+    /// The bit mask of attributes that the memory region is capable of supporting.
+    pub capabilities: u64,
+    /// The bit mask of attributes that the memory region is currently using.
+    pub attributes: u64,
+    /// Type of the memory region.
+    pub memory_type: GcdMemoryType,
+    /// The image handle of the agent that allocated the memory resource described by PhysicalStart and NumberOfBytes.
+    ///
+    /// If this field is NULL, then the memory resource is not currently allocated.
+    pub image_handle: Handle,
+    /// The device handle for which the memory resource has been allocated.
+    ///
+    /// If ImageHandle is NULL, then the memory resource is not currently allocated.
+    ///
+    /// If this field is NULL, then the memory resource is not associated with a device that is described by a device handle.
+    pub device_handle: Handle,
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 /// `EFI_GCD_IO_TYPE` in specification.
 pub enum GcdIoType {
-  /// An I/O region that is visible to the boot processor.
-  /// However, there are no system components that are currently decoding this I/O region.
-  #[default]
-  NonExistent = 0,
-  /// An I/O region that is visible to the boot processor.
-  /// This I/O region is currently being decoded by a system component,
-  ///  but the I/O region cannot be used to access I/O devices.
-  Reserved,
-  /// An I/O region that is visible to the boot processor.
-  /// This I/O region is currently being decoded by a system component
-  /// that is producing I/O ports that can be used to access I/O devices.
-  Io,
-  Maximum,
+    /// An I/O region that is visible to the boot processor.
+    /// However, there are no system components that are currently decoding this I/O region.
+    #[default]
+    NonExistent = 0,
+    /// An I/O region that is visible to the boot processor.
+    /// This I/O region is currently being decoded by a system component,
+    ///  but the I/O region cannot be used to access I/O devices.
+    Reserved,
+    /// An I/O region that is visible to the boot processor.
+    /// This I/O region is currently being decoded by a system component
+    /// that is producing I/O ports that can be used to access I/O devices.
+    Io,
+    Maximum,
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// `EFI_GCD_IO_SPACE_DESCRIPTOR` in specification.
 pub struct IoSpaceDescriptor {
-  /// Physical address of the first byte in the I/O region.
-  pub base_address: PhysicalAddress,
-  /// Number of bytes in the I/O region.
-  pub length: u64,
-  /// Type of the I/O region.
-  pub io_type: GcdIoType,
-  /// The image handle of the agent that allocated the I/O resource described by PhysicalStart and NumberOfBytes.
-  ///
-  /// If this field is NULL, then the I/O resource is not currently allocated.
-  pub image_handle: Handle,
-  /// The device handle for which the I/O resource has been allocated.
-  ///
-  /// If ImageHandle is NULL , then the I/O resource is not currently allocated.
-  ///
-  /// If this field is NULL, then the I/O resource is not associated with a device that is described by a device handle.
-  pub device_handle: Handle,
+    /// Physical address of the first byte in the I/O region.
+    pub base_address: PhysicalAddress,
+    /// Number of bytes in the I/O region.
+    pub length: u64,
+    /// Type of the I/O region.
+    pub io_type: GcdIoType,
+    /// The image handle of the agent that allocated the I/O resource described by PhysicalStart and NumberOfBytes.
+    ///
+    /// If this field is NULL, then the I/O resource is not currently allocated.
+    pub image_handle: Handle,
+    /// The device handle for which the I/O resource has been allocated.
+    ///
+    /// If ImageHandle is NULL , then the I/O resource is not currently allocated.
+    ///
+    /// If this field is NULL, then the I/O resource is not associated with a device that is described by a device handle.
+    pub device_handle: Handle,
 }
 
 #[repr(C)]
@@ -252,66 +252,66 @@ pub struct IoSpaceDescriptor {
 ///
 /// See <https://uefi.org/specs/PI/1.8A/V2_UEFI_System_Table.html#dxe-services-table>.
 pub struct DxeServicesTable {
-  pub header: TableHeader,
+    pub header: TableHeader,
 
-  //
-  // Global Coherency
-  //
-  pub add_memory_space: AddMemorySpace,
-  pub allocate_memory_space: AllocateMemorySpace,
-  pub free_memory_space: FreeMemorySpace,
-  pub remove_memory_space: RemoveMemorySpace,
-  pub get_memory_space_descriptor: GetMemorySpaceDescriptor,
-  pub set_memory_space_attributes: SetMemorySpaceAttributes,
-  pub get_memory_space_map: GetMemorySpaceMap,
-  pub add_io_space: AddIoSpace,
-  pub allocate_io_space: AllocateIoSpace,
-  pub free_io_space: FreeIoSpace,
-  pub remove_io_space: RemoveIoSpace,
-  pub get_io_space_descriptor: GetIoSpaceDescriptor,
-  pub get_io_space_map: GetIoSpaceMap,
+    //
+    // Global Coherency
+    //
+    pub add_memory_space: AddMemorySpace,
+    pub allocate_memory_space: AllocateMemorySpace,
+    pub free_memory_space: FreeMemorySpace,
+    pub remove_memory_space: RemoveMemorySpace,
+    pub get_memory_space_descriptor: GetMemorySpaceDescriptor,
+    pub set_memory_space_attributes: SetMemorySpaceAttributes,
+    pub get_memory_space_map: GetMemorySpaceMap,
+    pub add_io_space: AddIoSpace,
+    pub allocate_io_space: AllocateIoSpace,
+    pub free_io_space: FreeIoSpace,
+    pub remove_io_space: RemoveIoSpace,
+    pub get_io_space_descriptor: GetIoSpaceDescriptor,
+    pub get_io_space_map: GetIoSpaceMap,
 
-  //
-  // Dispatcher Services
-  //
-  pub dispatch: Dispatch,
-  pub schedule: Schedule,
-  pub trust: Trust,
+    //
+    // Dispatcher Services
+    //
+    pub dispatch: Dispatch,
+    pub schedule: Schedule,
+    pub trust: Trust,
 
-  //
-  // Service to process a single firmware volume found in
-  // a capsule
-  //
-  pub process_firmware_volume: ProcessFirmwareVolume,
+    //
+    // Service to process a single firmware volume found in
+    // a capsule
+    //
+    pub process_firmware_volume: ProcessFirmwareVolume,
 
-  //
-  // Extension to Global Coherency Domain Services
-  //
-  pub set_memory_space_capabilities: SetMemorySpaceCapabilities,
+    //
+    // Extension to Global Coherency Domain Services
+    //
+    pub set_memory_space_capabilities: SetMemorySpaceCapabilities,
 }
 
 impl Default for MemorySpaceDescriptor {
-  fn default() -> Self {
-    Self {
-      base_address: Default::default(),
-      length: Default::default(),
-      capabilities: Default::default(),
-      attributes: Default::default(),
-      memory_type: Default::default(),
-      image_handle: 0 as Handle,
-      device_handle: 0 as Handle,
+    fn default() -> Self {
+        Self {
+            base_address: Default::default(),
+            length: Default::default(),
+            capabilities: Default::default(),
+            attributes: Default::default(),
+            memory_type: Default::default(),
+            image_handle: 0 as Handle,
+            device_handle: 0 as Handle,
+        }
     }
-  }
 }
 
 impl Default for IoSpaceDescriptor {
-  fn default() -> Self {
-    Self {
-      base_address: Default::default(),
-      length: Default::default(),
-      io_type: Default::default(),
-      image_handle: 0 as Handle,
-      device_handle: 0 as Handle,
+    fn default() -> Self {
+        Self {
+            base_address: Default::default(),
+            length: Default::default(),
+            io_type: Default::default(),
+            image_handle: 0 as Handle,
+            device_handle: 0 as Handle,
+        }
     }
-  }
 }

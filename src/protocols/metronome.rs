@@ -19,7 +19,7 @@ use r_efi::efi;
 /// # Documentation
 /// UEFI Platform Initialization Specification, Release 1.8, Section II-12.4.1
 pub const PROTOCOL_GUID: efi::Guid =
-  efi::Guid::from_fields(0x26baccb2, 0x6f42, 0x11d4, 0xbc, 0xe7, &[0x00, 0x80, 0xc7, 0x3c, 0x88, 0x81]);
+    efi::Guid::from_fields(0x26baccb2, 0x6f42, 0x11d4, 0xbc, 0xe7, &[0x00, 0x80, 0xc7, 0x3c, 0x88, 0x81]);
 
 /// Waits for a specified number of ticks from a known time source in a platform.
 ///
@@ -37,9 +37,9 @@ pub type WaitForTick = extern "efiapi" fn(*const Protocol, tick_number: u32) -> 
 /// UEFI Platform Initialization Specification, Release 1.8, Section II-12.4.1
 #[repr(C)]
 pub struct Protocol {
-  pub wait_for_tick: WaitForTick,
-  /// The period of platform’s known time source in 100 ns units. This value on any platform must not exceed 200
-  /// microseconds. The value in this field is a constant that must not be modified after the Metronome architectural
-  /// protocol is installed. All consumers must treat this as a read-only field.
-  pub tick_period: u32,
+    pub wait_for_tick: WaitForTick,
+    /// The period of platform’s known time source in 100 ns units. This value on any platform must not exceed 200
+    /// microseconds. The value in this field is a constant that must not be modified after the Metronome architectural
+    /// protocol is installed. All consumers must treat this as a read-only field.
+    pub tick_period: u32,
 }

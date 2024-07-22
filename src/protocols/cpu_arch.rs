@@ -20,13 +20,13 @@ use r_efi::efi;
 /// # Documentation
 /// UEFI Platform Initialization Specification, Release 1.8, Section II-12.3.1
 pub const PROTOCOL_GUID: efi::Guid =
-  efi::Guid::from_fields(0x26baccb1, 0x6f42, 0x11d4, 0xbc, 0xe7, &[0x00, 0x80, 0xc7, 0x3c, 0x88, 0x81]);
+    efi::Guid::from_fields(0x26baccb1, 0x6f42, 0x11d4, 0xbc, 0xe7, &[0x00, 0x80, 0xc7, 0x3c, 0x88, 0x81]);
 
 #[repr(C)]
 pub enum CpuFlushType {
-  EfiCpuFlushTypeWriteBackInvalidate,
-  EfiCpuFlushTypeWriteBack,
-  EFiCpuFlushTypeInvalidate,
+    EfiCpuFlushTypeWriteBackInvalidate,
+    EfiCpuFlushTypeWriteBack,
+    EFiCpuFlushTypeInvalidate,
 }
 
 /// Flushes a range of the processor's data cache.
@@ -55,7 +55,7 @@ pub type GetInterruptState = extern "efiapi" fn(*const Protocol, *mut bool) -> e
 
 #[repr(C)]
 pub enum CpuInitType {
-  EfiCpuInit,
+    EfiCpuInit,
 }
 
 /// Generates an INIT on the processor.
@@ -87,7 +87,7 @@ pub type InterruptHandler = extern "efiapi" fn(EfiExceptionType, EfiSystemContex
 /// # Documentation
 /// UEFI Platform Initialization Specification, Release 1.8, Section II-12.3.7
 pub type RegisterInterruptHandler =
-  extern "efiapi" fn(*const Protocol, EfiExceptionType, InterruptHandler) -> efi::Status;
+    extern "efiapi" fn(*const Protocol, EfiExceptionType, InterruptHandler) -> efi::Status;
 
 /// Returns a timer value from one of the processor's internal timers.
 ///
@@ -107,22 +107,22 @@ pub type SetMemoryAttributes = extern "efiapi" fn(*const Protocol, efi::Physical
 /// UEFI Platform Initialization Specification, Release 1.8, Section II-12.3.1
 #[repr(C)]
 pub struct Protocol {
-  pub flush_data_cache: FlushDataCache,
-  pub enable_interrupt: EnableInterrupt,
-  pub disable_interrupt: DisableInterrupt,
-  pub get_interrupt_state: GetInterruptState,
-  pub init: Init,
-  pub register_interrupt_handler: RegisterInterruptHandler,
-  pub get_timer_value: GetTimerValue,
-  pub set_memory_attributes: SetMemoryAttributes,
-  /// The number of timers that are available in a processor. The value in this field is a constant that must not be
-  /// modified after the CPU Architectural Protocol is installed. All consumers must treat this as a read-only field.
-  pub number_of_timers: u32,
-  /// The size, in bytes, of the alignment required for DMA buffer allocations. This is typically the size of the
-  /// largest data cache line in the platform. This value can be determined by looking at the data cache line sizes of
-  /// all the caches present in the platform, and returning the largest. This is used by the root bridge I/O abstraction
-  /// protocols to guarantee that no two DMA buffers ever share the same cache line. The value in this field is a
-  /// constant that must not be modified after the CPU Architectural Protocol is installed. All consumers must treat
-  /// this as a read-only field.
-  pub dma_buffer_alignment: u32,
+    pub flush_data_cache: FlushDataCache,
+    pub enable_interrupt: EnableInterrupt,
+    pub disable_interrupt: DisableInterrupt,
+    pub get_interrupt_state: GetInterruptState,
+    pub init: Init,
+    pub register_interrupt_handler: RegisterInterruptHandler,
+    pub get_timer_value: GetTimerValue,
+    pub set_memory_attributes: SetMemoryAttributes,
+    /// The number of timers that are available in a processor. The value in this field is a constant that must not be
+    /// modified after the CPU Architectural Protocol is installed. All consumers must treat this as a read-only field.
+    pub number_of_timers: u32,
+    /// The size, in bytes, of the alignment required for DMA buffer allocations. This is typically the size of the
+    /// largest data cache line in the platform. This value can be determined by looking at the data cache line sizes of
+    /// all the caches present in the platform, and returning the largest. This is used by the root bridge I/O abstraction
+    /// protocols to guarantee that no two DMA buffers ever share the same cache line. The value in this field is a
+    /// constant that must not be modified after the CPU Architectural Protocol is installed. All consumers must treat
+    /// this as a read-only field.
+    pub dma_buffer_alignment: u32,
 }
