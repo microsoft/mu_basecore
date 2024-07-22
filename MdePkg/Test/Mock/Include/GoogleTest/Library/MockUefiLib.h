@@ -34,6 +34,16 @@ struct MockUefiLib {
      OUT VOID         **Value,
      OUT UINTN        *Size OPTIONAL)
     );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_EVENT,
+    EfiCreateProtocolNotifyEvent,
+    (IN EFI_GUID          *ProtocolGuid,
+     IN EFI_TPL           NotifyTpl,
+     IN EFI_EVENT_NOTIFY  NotifyFunction,
+     IN VOID              *NotifyContext OPTIONAL,
+     OUT VOID             **Registration)
+    );
 };
 
 #endif
