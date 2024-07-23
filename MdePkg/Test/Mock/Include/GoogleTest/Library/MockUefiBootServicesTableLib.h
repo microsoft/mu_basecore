@@ -161,6 +161,14 @@ struct MockUefiBootServicesTableLib {
      IN VOID                     *OldInterface,
      IN VOID                     *NewInterface)
     );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    gBS_AllocatePool,
+    (IN  EFI_MEMORY_TYPE              PoolType,
+     IN  UINTN                        Size,
+     OUT VOID                         **Buffer)
+    );
 };
 
 #endif // MOCK_UEFI_BOOT_SERVICES_TABLE_LIB_H_

@@ -23,6 +23,7 @@ MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_CloseProtocol, 4, EF
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_FreePool, 1, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_LocateDevicePath, 3, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_ReinstallProtocolInterface, 4, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_AllocatePool, 3, EFIAPI);
 
 extern "C" {
   EFI_STATUS
@@ -103,7 +104,7 @@ static EFI_BOOT_SERVICES  LocalBs = {
   NULL,                                                                                // EFI_ALLOCATE_PAGES
   NULL,                                                                                // EFI_FREE_PAGES
   gBS_GetMemoryMap,                                                                    // EFI_GET_MEMORY_MAP
-  NULL,                                                                                // EFI_ALLOCATE_POOL
+  gBS_AllocatePool,                                                                    // EFI_ALLOCATE_POOL
   gBS_FreePool,                                                                        // EFI_FREE_POOL
   gBS_CreateEvent,                                                                     // EFI_CREATE_EVENT
   NULL,                                                                                // EFI_SET_TIMER
