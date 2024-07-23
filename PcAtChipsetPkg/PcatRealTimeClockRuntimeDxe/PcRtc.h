@@ -16,6 +16,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Guid/Acpi.h>
 
 #include <Protocol/RealTimeClock.h>
+#include <Protocol/VariablePolicy.h>            // MU_CHANGE
 
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
@@ -29,6 +30,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/PcdLib.h>
 #include <Library/ReportStatusCodeLib.h>
+#include <Library/VariablePolicyHelperLib.h>    // MU_CHANGE
 
 typedef struct {
   EFI_LOCK    RtcLock;

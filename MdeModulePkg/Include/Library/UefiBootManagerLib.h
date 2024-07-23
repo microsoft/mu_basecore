@@ -155,7 +155,14 @@ EfiBootManagerVariableToLoadOption (
   );
 
 /**
-  Create the Boot#### or Driver#### variable from the load option.
+  // MU_CHANGE START
+  Create the Boot####, Driver####, SysPrep####, PlatformRecovery#### variable
+  from the load option.
+
+  If the OptionNumber is LoadOptionTypePlatformRecovery and the call to
+  SetVariable was successful, a lock now variable policy will be registered
+  for the PlatformRecovery#### variable.
+  // MU_CHANGE END
 
   @param  LoadOption      Pointer to the load option.
 

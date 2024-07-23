@@ -732,8 +732,9 @@ SmmVariableHandler (
 
       if (!mEndOfDxe) {
         MorLockInitAtEndOfDxe ();
-        Status = LockVariablePolicy ();
-        ASSERT_EFI_ERROR (Status);
+        // MU_CHANGE - Do not lock Policy at EndOfDxe.
+        // Status = LockVariablePolicy ();
+        // ASSERT_EFI_ERROR (Status);
         mEndOfDxe = TRUE;
         VarCheckLibInitializeAtEndOfDxe (NULL);
         //
@@ -771,17 +772,20 @@ SmmVariableHandler (
       break;
 
     case SMM_VARIABLE_FUNCTION_LOCK_VARIABLE:
-      if (mEndOfDxe) {
-        Status = EFI_ACCESS_DENIED;
-      } else {
-        VariableToLock = (SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE *)SmmVariableFunctionHeader->Data;
-        Status         = VariableLockRequestToLock (
-                           NULL,
-                           VariableToLock->Name,
-                           &VariableToLock->Guid
-                           );
-      }
-
+      // MU_CHANGE_90369
+      // MU_CHANGE [BEGIN] - Don't block these requests outright after EndOfDxe.
+      // Give the library a chance to evaluate which requests should be allowed.
+      // if (mEndOfDxe) {
+      // Status = EFI_ACCESS_DENIED;
+      // } else {
+      VariableToLock = (SMM_VARIABLE_COMMUNICATE_LOCK_VARIABLE *)SmmVariableFunctionHeader->Data;
+      Status         = VariableLockRequestToLock (
+                         NULL,
+                         VariableToLock->Name,
+                         &VariableToLock->Guid
+                         );
+      // }
+      // MU_CHANGE [END]
       break;
     case SMM_VARIABLE_FUNCTION_VAR_CHECK_VARIABLE_PROPERTY_SET:
       if (mEndOfDxe) {
@@ -1048,12 +1052,13 @@ SmmEndOfDxeCallback (
   IN EFI_HANDLE      Handle
   )
 {
-  EFI_STATUS  Status;
+  // EFI_STATUS    Status;      // MU_CHANGE - Do not lock Policy at EndOfDxe.
 
   DEBUG ((DEBUG_INFO, "[Variable]SMM_END_OF_DXE is signaled\n"));
   MorLockInitAtEndOfDxe ();
-  Status = LockVariablePolicy ();
-  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE - Do not lock Policy at EndOfDxe.
+  // Status = LockVariablePolicy ();
+  // ASSERT_EFI_ERROR (Status);
   mEndOfDxe = TRUE;
   VarCheckLibInitializeAtEndOfDxe (NULL);
   //

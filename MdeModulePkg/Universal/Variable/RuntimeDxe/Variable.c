@@ -30,6 +30,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "VariableParsing.h"
 #include "VariableRuntimeCache.h"
 
+#include <Library/VariablePolicyLib.h>  // MU_CHANGE - Enable simple delete when VarPol is disabled
+
 VARIABLE_MODULE_GLOBAL  *mVariableModuleGlobal;
 
 ///
@@ -52,6 +54,13 @@ VARIABLE_INFO_ENTRY  *gVariableInfo = NULL;
 /// The flag to indicate whether the platform has left the DXE phase of execution.
 ///
 BOOLEAN  mEndOfDxe = FALSE;
+
+// MU_CHANGE [BEGIN] - 279849
+///
+/// The flag to indicate if a Reclaim has been done at Runtime.
+///
+BOOLEAN  mReclaimedAtRuntime = FALSE;
+// MU_CHANGE [END]
 
 ///
 /// It indicates the var check request source.
@@ -97,6 +106,22 @@ AUTH_VAR_LIB_CONTEXT_IN  mAuthContextIn = {
 };
 
 AUTH_VAR_LIB_CONTEXT_OUT  mAuthContextOut;
+
+// MU_CHANGE [BEGIN] - Enable simple delete when VarPol is disabled
+CONST EFI_VARIABLE_AUTHENTICATION_2  mTimeBasedDeletePayload = {
+  // The end of time.
+  { 0xFFFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00000000, 0x0000, 0x00, 0x00 },
+  {
+    {
+      OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData),
+      0x0200,
+      WIN_CERT_TYPE_EFI_GUID,
+    },
+    EFI_CERT_TYPE_PKCS7_GUID,
+    { 0 }
+  }
+};
+// MU_CHANGE [END] - Enable simple delete when VarPol is disabled
 
 /**
 
@@ -559,6 +584,9 @@ Reclaim (
   CommonVariableTotalSize     = 0;
   CommonUserVariableTotalSize = 0;
   HwErrVariableTotalSize      = 0;
+
+  // MU_CHANGE - This may be specific to the MS implementation.
+  DEBUG ((DEBUG_INFO, "%a Reclaim variables started.\n", __func__));
 
   if (IsVolatile || mVariableModuleGlobal->VariableGlobal.EmuNvMode) {
     //
@@ -1298,11 +1326,16 @@ CheckRemainingSpaceForConsistencyInternal (
     //
     return TRUE;
   } else if (AtRuntime ()) {
-    //
-    // At runtime, no reclaim.
-    // The original variable space of Variables can't be reused.
-    //
-    return FALSE;
+    // MU_CHANGE [BEGIN] - 279849 // MU_CHANGE - Allow Reclaim once at Runtime
+    if (mReclaimedAtRuntime) {
+      //
+      // At runtime, only allow one reclaim.
+      // The original variable space of Variables can't be reused.
+      //
+      return FALSE;
+    }
+
+    // MU_CHANGE [END] - 279849
   }
 
   VA_COPY (Args, Marker);
@@ -2119,16 +2152,23 @@ UpdateVariable (
        || (IsCommonUserVariable && ((VarSize + mVariableModuleGlobal->CommonUserVariableTotalSize) > mVariableModuleGlobal->CommonMaxUserVariableSpace)))
     {
       if (AtRuntime ()) {
-        if (IsCommonUserVariable && ((VarSize + mVariableModuleGlobal->CommonUserVariableTotalSize) > mVariableModuleGlobal->CommonMaxUserVariableSpace)) {
-          RecordVarErrorFlag (VAR_ERROR_FLAG_USER_ERROR, VariableName, VendorGuid, Attributes, VarSize);
-        }
+        // MU_CHANGE [BEGIN] 279849
+        // MU_CHANGE -- Allow reclaim once at Runtime.
+        if (!mReclaimedAtRuntime) {
+          mReclaimedAtRuntime = TRUE;
+        } else {
+          // MU_CHANGE [END] - 279849
+          if (IsCommonUserVariable && ((VarSize + mVariableModuleGlobal->CommonUserVariableTotalSize) > mVariableModuleGlobal->CommonMaxUserVariableSpace)) {
+            RecordVarErrorFlag (VAR_ERROR_FLAG_USER_ERROR, VariableName, VendorGuid, Attributes, VarSize);
+          }
 
-        if (IsCommonVariable && ((VarSize + mVariableModuleGlobal->CommonVariableTotalSize) > mVariableModuleGlobal->CommonRuntimeVariableSpace)) {
-          RecordVarErrorFlag (VAR_ERROR_FLAG_SYSTEM_ERROR, VariableName, VendorGuid, Attributes, VarSize);
-        }
+          if (IsCommonVariable && ((VarSize + mVariableModuleGlobal->CommonVariableTotalSize) > mVariableModuleGlobal->CommonRuntimeVariableSpace)) {
+            RecordVarErrorFlag (VAR_ERROR_FLAG_SYSTEM_ERROR, VariableName, VendorGuid, Attributes, VarSize);
+          }
 
-        Status = EFI_OUT_OF_RESOURCES;
-        goto Done;
+          Status = EFI_OUT_OF_RESOURCES;
+          goto Done;
+        }      // MU_CHANGE - 279849
       }
 
       //
@@ -2681,6 +2721,21 @@ VariableServiceSetVariable (
       return EFI_INVALID_PARAMETER;
     }
   }
+
+  // MU_CHANGE [BEGIN] - Enable simple delete when VarPol is disabled
+  //
+  // If this is a delete operation on a EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS variable
+  // and VariablePolicy is disabled, allow deletion without complete payload.
+  //
+  if ((Attributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) == EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) {
+    if ((Data == NULL) && (DataSize == 0) && !IsVariablePolicyEnabled ()) {
+      // NOTE: Data really should be CONST. Don't know why it isn't.
+      Data     = (VOID *)&mTimeBasedDeletePayload;
+      DataSize = OFFSET_OF (EFI_VARIABLE_AUTHENTICATION_2, AuthInfo) + OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData);
+    }
+  }
+
+  // MU_CHANGE [END] - Enable simple delete when VarPol is disabled
 
   //
   // EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS and EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS attribute

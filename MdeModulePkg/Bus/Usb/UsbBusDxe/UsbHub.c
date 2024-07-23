@@ -998,6 +998,25 @@ UsbRootHubInit (
 
   if (EFI_ERROR (Status)) {
     gBS->CloseEvent (HubIf->HubNotify);
+    // MU_CHANGE [BEGIN]
+  } else {
+    // MU_CHANGE Add USB Hub Enumeration delay
+    EFI_TPL  OldTpl;
+
+    OldTpl = gBS->RaiseTPL (TPL_HIGH_LEVEL);
+    gBS->RestoreTPL (TPL_APPLICATION);
+
+    while (HubIf->PollCount < USB_ENUM_POLL_MINIMUM_ATTEMPTS) {
+      // wait for a minimum of USB_ENUM_POLL_MINIMUM_ATTEMPTS * (USB_ROOTHUB_POLL_INTERVAL 100 ms)
+      // with the asynchronous periodic timer interrupt that checks for hub enumeration
+      // and updates PollCount on each timer trigger
+    }
+
+    if (OldTpl > TPL_APPLICATION) {
+      gBS->RaiseTPL (OldTpl);
+    }
+
+    // MU_CHANGE [END]
   }
 
   return Status;

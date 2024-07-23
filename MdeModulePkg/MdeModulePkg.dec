@@ -30,6 +30,13 @@
   Library/BrotliCustomDecompressLib/brotli/c/include
 
 [LibraryClasses]
+  # MU_CHANGE [BEGIN] - Isolate the VariablePolicy locking event into its own code.
+  ##  @libraryclass  A NULL library instance that can be linked against Variable Services
+  #                   to allow the platform to hook pre- and post- VariablePolicy locking.
+  #                   NOTE: Must be implemented as a DXE_DRIVER lib.
+  NULL|Include/Library/VariablePolicyLockingExLib.h
+  # MU_CHANGE [END] - Isolate the VariablePolicy locking event into its own code.
+
   ##  @libraryclass  Defines a set of methods to reset whole system.
   ResetSystemLib|Include/Library/ResetSystemLib.h
 
@@ -1466,7 +1473,8 @@
   #   TRUE - VariablePolicy can be disabled by request through the interface (until interface is locked)
   #   FALSE - VariablePolicy interface will not accept requests to disable and is ALWAYS ON
   # @Prompt Allow VariablePolicy enforcement to be disabled.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable|FALSE|BOOLEAN|0x30000020
+  ## MU_CHANGE - Allow policy to be disabled by default.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable|TRUE|BOOLEAN|0x30000020
 
   ## FFS filename to find the ACPI tables.
   # @Prompt FFS name of ACPI tables storage.
@@ -2078,6 +2086,13 @@
   #   FALSE - Does not reset system when memory type information changes.<BR>
   # @Prompt Reset on memory type information change.
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|TRUE|BOOLEAN|0x00010056
+
+  ## MU_CHANGE
+  ## Indicates if the Boot Manager should be in the Boot Order list.<BR><BR>            ## MU_CHANGE
+  #   TRUE  - Add Boot Manager to boot order.<BR>                                       ## MU_CHANGE
+  #   FALSE - Does not add Boot Manager to boot order.<BR>                              ## MU_CHANGE
+  # @Prompt Store Boot Manager in BootOrder.                                            ## MU_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerInBootOrder|TRUE|BOOLEAN|0x0001007A      ## MU_CHANGE
 
   ## Indicates if the BDS supports Platform Recovery.<BR><BR>
   #   TRUE  - BDS supports Platform Recovery.<BR>

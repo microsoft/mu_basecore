@@ -15,6 +15,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DebugLib.h>
 #include <Library/PcdLib.h>
 
+#include <Library/SecurityLockAuditLib.h>     // MU_CHANGE - Make sure to report when the VariablePolicy locks.
+
 #include <Protocol/VariablePolicy.h>
 #include <Library/VariablePolicyLib.h>
 
@@ -178,7 +180,8 @@ IsValidVariablePolicyStructure (
     WildcardCount = 0;
     while (*CheckChar != CHAR_NULL) {
       // Make sure there aren't excessive wildcards.
-      if (*CheckChar == '#') {
+      if (*CheckChar == L'#') {
+        // MU_CHANGE
         WildcardCount++;
         if (WildcardCount > MATCH_PRIORITY_MIN) {
           return FALSE;
@@ -263,7 +266,8 @@ EvaluatePolicyMatch (
   // Keep going until the end of both strings.
   while (PolicyName[Index] != CHAR_NULL || VariableName[Index] != CHAR_NULL) {
     // If we don't have a match...
-    if ((PolicyName[Index] != VariableName[Index]) || (PolicyName[Index] == '#')) {
+    if ((PolicyName[Index] != VariableName[Index]) || (PolicyName[Index] == L'#')) {
+      // MU_CHANGE
       // If this is a numerical wildcard, we can consider
       // it a match if we alter the priority.
       if ((PolicyName[Index] == L'#') &&
@@ -1032,6 +1036,8 @@ LockVariablePolicy (
     return EFI_WRITE_PROTECTED;
   }
 
+  // MU_CHANGE - Make sure to report when the VariablePolicy locks.
+  SECURITY_LOCK_REPORT_EVENT ("VariablePolicy Lock", SOFTWARE_LOCK);
   mInterfaceLocked = TRUE;
   return EFI_SUCCESS;
 }

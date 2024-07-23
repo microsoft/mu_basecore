@@ -2635,7 +2635,12 @@ BmRegisterBootManagerMenu (
     EfiBootManagerFreeLoadOptions (BootOptions, BootOptionCount);
     );
 
-  return EfiBootManagerAddLoadOptionVariable (BootOption, (UINTN)-1);
+  if (!EFI_ERROR (Status) && (PcdGetBool (PcdBootManagerInBootOrder))) {
+    // MU_CHANGE
+    Status = EfiBootManagerAddLoadOptionVariable (BootOption, (UINTN)-1);
+  }                                                                         // MU_CHANGE
+
+  return Status;                                                            // MU_CHANGE
 }
 
 /**
@@ -2715,3 +2720,62 @@ EfiBootManagerGetNextLoadOptionDevicePath (
 {
   return BmGetNextLoadOptionDevicePath (FilePath, FullPath);
 }
+
+//
+// MU_CHANGE begin
+//
+
+/**
+  Constructor for UefiBootMangerLib.
+
+  @param[in] ImageHandle  The handle of the loaded image.
+  @param[in] SystemTable  System resources and configuration
+
+  @retval EFI_SUCCESS   The constructor set the variable policy if implemented
+  @retval others        The constructor did not succeed and one or more variable policy are not set
+**/
+EFI_STATUS
+EFIAPI
+UefiBootManagerLibConstructor (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
+  )
+{
+  EFI_STATUS                      Status;
+  EDKII_VARIABLE_POLICY_PROTOCOL  *VariablePolicy = NULL;
+
+  //
+  // VariablePolicy, if implemented on this system, should have been installed already.
+  //
+  Status = gBS->LocateProtocol (&gEdkiiVariablePolicyProtocolGuid, NULL, (VOID **)&VariablePolicy);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: - Unable to locate VariablePolicy - Code=%r\n", __func__, Status));
+  } else {
+    Status = RegisterBasicVariablePolicy (
+               VariablePolicy,
+               &mBmHardDriveBootVariableGuid,
+               L"HDDP",
+               sizeof (EFI_DEVICE_PATH_PROTOCOL),
+               VARIABLE_POLICY_NO_MAX_SIZE,
+               EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+               (UINT32) ~(EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE),
+               VARIABLE_POLICY_TYPE_NO_LOCK
+               );
+
+    // Multiple modules link to UefiBootManagerLib.  There are a couple of cases that need to be ignored.
+    // 1. Write Protected.  Write Protected occurs after Ready to Boot.  Some modules, such as the Shell, run
+    //                      after Ready To Boot.
+    // 2. Already Started.  Only the first module to register a variable policy will successfully register
+    //                      a policy.  The subsequent modules will get EFI_ALREADY_STARTED.
+    if (EFI_ERROR (Status) && (Status != EFI_ALREADY_STARTED) && (Status != EFI_WRITE_PROTECTED)) {
+      DEBUG ((DEBUG_ERROR, "%a: - Error setting policy for HDDP - Code=%r\n", __func__, Status));
+      ASSERT_EFI_ERROR (Status);
+    }
+  }
+
+  return EFI_SUCCESS;
+}
+
+//
+// MU_CHANGE end
+//

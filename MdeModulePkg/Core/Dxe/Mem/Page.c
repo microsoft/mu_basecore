@@ -889,7 +889,7 @@ CoreConvertPagesEx (
     }
 
     if (Link == &gMemoryMap) {
-      DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ConvertPages: failed to find range %lx - %lx\n", Start, End));
+      DEBUG ((DEBUG_PAGE, "ConvertPages: failed to find range %lx - %lx\n", Start, End));  // MU_CHANGE
       return EFI_NOT_FOUND;
     }
 
@@ -900,7 +900,8 @@ CoreConvertPagesEx (
     //
     if (ChangingType && (NewType != EfiConventionalMemory)) {
       if (Entry->End < End) {
-        DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ConvertPages: range %lx - %lx covers multiple entries\n", Start, End));
+        // MU_CHANGE: remove this debug print since within debug print there is another allocate pages call
+        // DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ConvertPages: range %lx - %lx covers multiple entries\n", Start, End));
         return EFI_NOT_FOUND;
       }
     }
@@ -929,11 +930,11 @@ CoreConvertPagesEx (
       // Debug code - verify conversion is allowed
       //
       if (!((NewType == EfiConventionalMemory) ? 1 : 0) ^ ((Entry->Type == EfiConventionalMemory) ? 1 : 0)) {
-        DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ConvertPages: Incompatible memory types, "));
+        DEBUG ((DEBUG_PAGE, "ConvertPages: Incompatible memory types, "));       // MU_CHANGE
         if (Entry->Type == EfiConventionalMemory) {
-          DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "the pages to free have been freed\n"));
+          DEBUG ((DEBUG_PAGE, "the pages to free have been freed\n"));           // MU_CHANGE
         } else {
-          DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "the pages to allocate have been allocated\n"));
+          DEBUG ((DEBUG_PAGE, "the pages to allocate have been allocated\n"));   // MU_CHANGE
         }
 
         return EFI_NOT_FOUND;
@@ -2247,7 +2248,7 @@ CoreAllocatePoolPages (
   // Convert it to boot services data
   //
   if (Start == 0) {
-    DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "AllocatePoolPages: failed to allocate %d pages\n", (UINT32)NumberOfPages));
+    DEBUG ((DEBUG_PAGE, "AllocatePoolPages: failed to allocate %d pages\n", (UINT32)NumberOfPages));      // MU_CHANGE
   } else {
     if (NeedGuard) {
       CoreConvertPagesWithGuard (Start, NumberOfPages, PoolType);
@@ -2313,14 +2314,12 @@ CoreTerminateMemoryMap (
           ASSERT (Entry->Type != EfiACPIReclaimMemory);
           ASSERT (Entry->Type != EfiACPIMemoryNVS);
           if ((Entry->Start & (RUNTIME_PAGE_ALLOCATION_GRANULARITY - 1)) != 0) {
-            DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ExitBootServices: A RUNTIME memory entry is not on a proper alignment.\n"));
-            Status =  EFI_INVALID_PARAMETER;
+            DEBUG ((DEBUG_PAGE, "ExitBootServices: A RUNTIME memory entry is not on a proper alignment.\n"));    // MU_CHANGE
             goto Done;
           }
 
           if (((Entry->End + 1) & (RUNTIME_PAGE_ALLOCATION_GRANULARITY - 1)) != 0) {
-            DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ExitBootServices: A RUNTIME memory entry is not on a proper alignment.\n"));
-            Status =  EFI_INVALID_PARAMETER;
+            DEBUG ((DEBUG_PAGE, "ExitBootServices: A RUNTIME memory entry is not on a proper alignment.\n"));    // MU_CHANGE
             goto Done;
           }
         }
