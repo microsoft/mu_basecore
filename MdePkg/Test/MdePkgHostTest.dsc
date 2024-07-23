@@ -62,4 +62,5 @@
   MdePkg/Test/Mock/Library/Stub/StubHobLib/StubHobLib.inf
   MdePkg/Test/Mock/Library/Stub/StubUefiLib/StubUefiLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockPciExpressLib/MockPciExpressLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockUefiDevicePathLib/MockUefiDevicePathLib.inf
   # MU_CHANGE [END]
