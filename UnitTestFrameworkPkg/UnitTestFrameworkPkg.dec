@@ -21,9 +21,13 @@
   Library/GoogleTestLib/googletest/googletest/include
   Library/GoogleTestLib/googletest/googlemock/include
   Library/SubhookLib/subhook
-
-[Includes.Common.Private]
+# MU_CHANGE - Enable Private Include access
+# DxeMemoryProtectionTestApp and UnitTestResultReportJUnitFormatLib 
+# make use of the private library functions
   PrivateInclude
+  
+[Includes.Common.Private]
+  #PrivateInclude   # MU_CHANGE - See above.
   Library/CmockaLib/cmocka/include/cmockery
   Library/GoogleTestLib/googletest/googletest
   Library/GoogleTestLib/googletest/googlemock
