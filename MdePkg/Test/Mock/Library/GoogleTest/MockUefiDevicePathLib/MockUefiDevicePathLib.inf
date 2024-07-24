@@ -1,7 +1,8 @@
 ## @file MockUefiDevicePathLib.inf
 # Google Test mocks for UefiDevicePathLib
 #
-# Copyright (c) 2022, Intel Corporation. All rights reserved.
+# Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.
+# Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
