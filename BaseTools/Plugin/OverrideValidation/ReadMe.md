@@ -179,12 +179,16 @@ There are two versions of the override format and one version of the deprecation
 ### Override Version 1
 
 ``` cmd
+OVERRIDE_FORMAT_VERSION_1 = (1, 4) # Version 1
+#Override : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss
 #Override : 00000001 | MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | cc255d9de141fccbdfca9ad02e0daa47 | 2018-05-09T17-54-17
 ```
 
 ### Override Version 2
 
 ``` cmd
+OVERRIDE_FORMAT_VERSION_2 = (2, 5) # Version 2
+#Override : VERSION | PATH_TO_MODULE | HASH | YYYY-MM-DDThh-mm-ss | GIT_COMMIT
 #Override : 00000002 | MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf | cc255d9de141fccbdfca9ad02e0daa47 | 2018-05-09T17-54-17 | 575096df6a
 ```
 
@@ -196,6 +200,10 @@ overridden file (the INF or DSC) and the overriding file.
 ### Deprecation Version 1
 
 ``` cmd
+# DEPRECATION_FORMAT_VERSION_1 = (1, 4) # Version 1
+#Deprecated : VERSION | PATH_TO_NEW_MODULE_TO_USE | YYYY-MM-DDThh-mm-ss | DEPRECATION_TIMELINE
+
+example:
 #Deprecated : 00000001 | MdeModulePkg/BaseMemoryLibV2/BaseMemoryLib.inf | 2024-02-16T04-00-28 | 90
 ```
 
