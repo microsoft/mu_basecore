@@ -49,6 +49,10 @@ extends:
         Pkgs: 'PcAtChipsetPkg,ShellPkg,StandaloneMmPkg,BaseTools'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
+      TARGET_TEST:
+        Pkgs: 'UnitTestFrameworkPkg'
+        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+        ArchList: $(arch_list)
       TARGET_CRYPTO:
         Pkgs: 'CryptoPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
