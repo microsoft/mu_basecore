@@ -332,7 +332,7 @@ operation behind the plugin and can be skipped by anyone not interested in those
 6. Determine the CodeQL query specifiers to use for the given package and target
    - First choice, the package CI YAML file value
    - Second choice, the `STUART_CODEQL_QUERY_SPECIFIERS`
-   - Third choice, use `CodeQlQueries.qls` (in the plugin directory)
+   - Third choice, use `MuCodeQlQueries.qls` (in the plugin directory)
 7. Run CodeQL CLI to perform database analysis
 8. Parse the analysis SARIF file to determine the number of CodeQL failures
 9. Return the number of failures (or zero if `AuditOnly` is enabled)
