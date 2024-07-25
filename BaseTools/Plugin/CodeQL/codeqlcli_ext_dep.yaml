@@ -10,7 +10,7 @@
 #
 # ****VERSION UPDATE INSTRUCTIONS****
 #
-# When updating the CodeQL CLI used here, update the corresponding codeql/cpp-queries version in CodeQlQueries.qls.
+# When updating the CodeQL CLI used here, update the corresponding codeql/cpp-queries version in MuCodeQlQueries.qls.
 # Visit the `qlpack.yml` in the release branch for the CodeQL CLI to get the version to use there. For example, the
 # CodeQL CLI 2.18.1 file is https://github.com/github/codeql/blob/codeql-cli-2.18.1/cpp/ql/src/qlpack.yml and the
 # pack version there is 1.1.0.
