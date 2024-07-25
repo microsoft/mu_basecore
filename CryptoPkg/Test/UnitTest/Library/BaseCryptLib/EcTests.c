@@ -160,9 +160,12 @@ TestVerifyEcPreReq (
   UNIT_TEST_CONTEXT  Context
   )
 {
+  // MU_CHANGE [START]
   if (!PcdGetBool (PcdCryptoServiceBigNumInit) || !PcdGetBool (PcdCryptoServiceBigNumFromBin)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
+
+  // MU_CHANGE [END]
 
   Ec1      = NULL;
   Ec2      = NULL;
@@ -208,9 +211,12 @@ TestVerifyEcBasic (
   UINTN    CurveCount;
   BOOLEAN  Status;
 
+  // MU_CHANGE [START]
   if (!PcdGetBool (PcdCryptoServiceEcPointInit) || !PcdGetBool (PcdCryptoServiceEcGroupGetCurve) || !PcdGetBool (PcdCryptoServiceEcGroupGetOrder) || !PcdGetBool (PcdCryptoServiceEcPointSetAffineCoordinates) || !PcdGetBool (PcdCryptoServiceEcPointEqual) || !PcdGetBool (PcdCryptoServiceEcPointIsOnCurve) || !PcdGetBool (PcdCryptoServiceEcPointIsAtInfinity) || !PcdGetBool (PcdCryptoServiceEcPointInvert) || !PcdGetBool (PcdCryptoServiceEcPointAdd) || !PcdGetBool (PcdCryptoServiceEcPointMul)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
+
+  // MU_CHANGE [END]
 
   //
   // Initialize BigNumbers
@@ -319,9 +325,12 @@ TestVerifyEcDh (
   UINTN    CurveCount;
   BOOLEAN  Status;
 
+  // MU_CHANGE [START]
   if (!PcdGetBool (PcdCryptoServiceEcNewByNid) || !PcdGetBool (PcdCryptoServiceEcGenerateKey) || !PcdGetBool (PcdCryptoServiceEcDhComputeKey) || !PcdGetBool (PcdCryptoServiceEcGetPubKey)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
+
+  // MU_CHANGE [END]
 
   for (CurveCount = 0; CurveCount < EC_CURVE_NUM_SUPPORTED; CurveCount++) {
     //
@@ -388,9 +397,12 @@ TestVerifyEcKey (
   UINT8    Signature[66 * 2];
   UINTN    SigSize;
 
+  // MU_CHANGE [START]
   if (!PcdGetBool (PcdCryptoServiceEcGetPrivateKeyFromPem) || !PcdGetBool (PcdCryptoServiceEcGetPublicKeyFromX509) || !PcdGetBool (PcdCryptoServiceEcDsaSign) || !PcdGetBool (PcdCryptoServiceEcDsaVerify) || !PcdGetBool (PcdCryptoServiceEcGroupFree)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
+
+  // MU_CHANGE [END]
 
   //
   // Retrieve EC private key from PEM data.

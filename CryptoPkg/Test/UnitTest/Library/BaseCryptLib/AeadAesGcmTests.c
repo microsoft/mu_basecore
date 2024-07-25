@@ -52,9 +52,12 @@ TestVerifyAeadAesGcm (
   UINT8    OutTag[1024];
   UINTN    OutTagSize;
 
+  // MU_CHANGE [START]
   if (!PcdGetBool (PcdCryptoServiceAeadAesGcmEncrypt) || !PcdGetBool (PcdCryptoServiceAeadAesGcmDecrypt)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
+
+  // MU_CHANGE [END]
 
   OutBufferSize = sizeof (OutBuffer);
   OutTagSize    = sizeof (gcm_tag);

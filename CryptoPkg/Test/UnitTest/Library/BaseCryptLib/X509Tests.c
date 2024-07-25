@@ -512,9 +512,12 @@ TestVerifyX509 (
   UINT8        DateTime1[64];
   UINT8        DateTime2[64];
 
+  // MU_CHANGE [START]
   if (!PcdGetBool (PcdCryptoServiceX509VerifyCert) || !PcdGetBool (PcdCryptoServiceX509VerifyCertChain) || !PcdGetBool (PcdCryptoServiceX509GetCertFromCertChain) || !PcdGetBool (PcdCryptoServiceX509GetVersion) || !PcdGetBool (PcdCryptoServiceX509GetSerialNumber) || !PcdGetBool (PcdCryptoServiceX509GetIssuerName) || !PcdGetBool (PcdCryptoServiceX509GetExtensionData) || !PcdGetBool (PcdCryptoServiceX509GetValidity) || !PcdGetBool (PcdCryptoServiceX509FormatDateTime)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
+
+  // MU_CHANGE [END]
 
   //
   // X509 Certificate Verification.
@@ -627,7 +630,7 @@ TestVerifyX509 (
                     );
   UT_ASSERT_TRUE (Status && (Asn1BufferLen != 0));
 
-  //UT_ASSERT_TRUE (X509CompareDateTime (DateTime1, DateTime2) < 0);
+  // UT_ASSERT_TRUE (X509CompareDateTime (DateTime1, DateTime2) < 0);  MU_CHANGE
 
   return UNIT_TEST_PASSED;
 }

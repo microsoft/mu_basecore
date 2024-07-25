@@ -17,10 +17,12 @@ TestVerifyDhPreReq (
   UNIT_TEST_CONTEXT  Context
   )
 {
-  if (!PcdGetBool (PcdCryptoServiceDhNew))
-  {
+  // MU_CHANGE [START]
+  if (!PcdGetBool (PcdCryptoServiceDhNew)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
+
+  // MU_CHANGE [END]
 
   mDh1 = DhNew ();
   if (mDh1 == NULL) {

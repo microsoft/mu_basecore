@@ -152,9 +152,12 @@ TestVerifyBnPreReq (
 {
   BN_TEST_CONTEXT  *BnContext;
 
+  // MU_CHANGE [START]
   if (!PcdGetBool (PcdCryptoServiceBigNumInit) || !PcdGetBool (PcdCryptoServiceBigNumNewContext)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
+
+  // MU_CHANGE [END]
 
   BnContext        = Context;
   BnContext->BnCTX = BigNumNewContext ();
@@ -199,13 +202,17 @@ TestVerifyBn (
 {
   BN_TEST_CONTEXT  *BnContext;
   UINTN            Num;
-  //CONST VOID       *BnOne;
+
+  // CONST VOID       *BnOne;  // MU_CHANGE
 
   BnContext = Context;
 
+  // MU_CHANGE [START]
   if (!PcdGetBool (PcdCryptoServiceBigNumFromBin) || !PcdGetBool (PcdCryptoServiceBigNumIsWord) || !PcdGetBool (PcdCryptoServiceBigNumIsOdd) || !PcdGetBool (PcdCryptoServiceBigNumConstTime) || !PcdGetBool (PcdCryptoServiceBigNumBytes)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
+
+  // MU_CHANGE [END]
 
   // Calculation tests
   BnContext->BnA = BigNumFromBin (BnOperationA, sizeof (BnOperationA));
@@ -254,12 +261,15 @@ TestVerifyBn (
   UT_ASSERT_EQUAL (Num, BYTES_OF_OPERATION_A);
   Num = BigNumBits (BnContext->BnA);
   UT_ASSERT_EQUAL (Num, BITS_OF_OPERATION_A);
+  // MU_CHANGE [START] - Remove test for unused function
+
   /*BnOne = BigNumValueOne ();
   if (BnOne == NULL) {
     return UNIT_TEST_ERROR_TEST_FAILED;
   }*/
 
-  //UT_ASSERT_TRUE (BigNumIsWord (BnOne, 0x1));
+  // UT_ASSERT_TRUE (BigNumIsWord (BnOne, 0x1));
+  // MU_CHANGE [END]
 
   return UNIT_TEST_PASSED;
 }
