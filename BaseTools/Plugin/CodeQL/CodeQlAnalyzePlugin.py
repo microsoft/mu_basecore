@@ -113,7 +113,7 @@ class CodeQlAnalyzePlugin(IUefiBuildPlugin):
         # Use this plugins query set file as the default fallback if it is
         # not overridden. It is possible the file is not present if modified
         # locally. In that case, skip the plugin.
-        plugin_query_set = Path(Path(__file__).parent, "CodeQlQueries.qls")
+        plugin_query_set = Path(Path(__file__).parent, "MuCodeQlQueries.qls")
 
         if not query_specifiers and plugin_query_set.is_file():
             query_specifiers = str(plugin_query_set.resolve())
