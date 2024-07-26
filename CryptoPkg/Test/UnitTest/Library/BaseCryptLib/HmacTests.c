@@ -159,7 +159,15 @@ TestVerifyHmacPreReq (
 {
   HMAC_TEST_CONTEXT  *HmacTestContext;
 
-  HmacTestContext          = Context;
+  HmacTestContext = Context;
+
+  // MU_CHANGE [START]
+  if ((!PcdGetBool (PcdCryptoServiceHmacSha256New) && (SHA256_DIGEST_SIZE == HmacTestContext->DigestSize)) || (!PcdGetBool (PcdCryptoServiceHmacSha384New) && (SHA384_DIGEST_SIZE == HmacTestContext->DigestSize))) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
+  // MU_CHANGE [END]
+
   HmacTestContext->HmacCtx = HmacTestContext->HmacNew ();
   if (HmacTestContext->HmacCtx == NULL) {
     return UNIT_TEST_ERROR_TEST_FAILED;
@@ -195,13 +203,17 @@ TestVerifyHmac (
   BOOLEAN            Status;
   HMAC_TEST_CONTEXT  *HmacTestContext;
 
-  if (  !PcdGetBool (PcdCryptoServiceHmacSha256SetKey) || !PcdGetBool (PcdCryptoServiceHmacSha256Update)
-     || !PcdGetBool (PcdCryptoServiceHmacSha256Final))
+  // MU_CHANGE [START]
+  HmacTestContext = Context;
+
+  if (((  !PcdGetBool (PcdCryptoServiceHmacSha256SetKey)  || !PcdGetBool (PcdCryptoServiceHmacSha256Update)
+       || !PcdGetBool (PcdCryptoServiceHmacSha256Final)) && (SHA256_DIGEST_SIZE == HmacTestContext->DigestSize)) || ((  !PcdGetBool (PcdCryptoServiceHmacSha384SetKey)  || !PcdGetBool (PcdCryptoServiceHmacSha384Update)
+                                                                                                                     || !PcdGetBool (PcdCryptoServiceHmacSha384Final)) && (SHA384_DIGEST_SIZE == HmacTestContext->DigestSize)))
   {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
 
-  HmacTestContext = Context;
+  // MU_CHANGE [END]
 
   ZeroMem (Digest, MAX_DIGEST_SIZE);
   ZeroMem (DigestCopy, MAX_DIGEST_SIZE);
