@@ -55,44 +55,136 @@
   BaseCryptLib
   
 [FixedPcd]
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256New               ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Free              ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256SetKey            ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Update            ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Final             ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs5HashPassword           ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs1v2Encrypt              ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7Sign                   ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceVerifyEKUsInPkcs7Signature  ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAuthenticodeVerify          ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceImageTimestampVerify        ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhNew                       ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhFree                      ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhGenerateParameter         ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhSetParameter              ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhGenerateKey               ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhComputeKey                ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRandomSeed                  ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRandomBytes                 ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaSetKey                   ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaGetKey                   ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaGenerateKey              ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaPkcs1Sign                ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaPkcs1Verify              ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaPssSign                  ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaPssVerify                ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaGetPrivateKeyFromPem     ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaGetPublicKeyFromX509     ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha1Init                    ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha256Init                  ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha384Init                  ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha512Init                  ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha1HashAll                 ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha256HashAll               ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha384HashAll               ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha512HashAll               ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceParallelHash256HashAll      ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesGetContextSize           ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesInit                     ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesCbcEncrypt               ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesCbcDecrypt               ## CONSUMES
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256New                    ## CONSUMES  # MU_CHANGE 
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Free                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256SetKey                 ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Update                 ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Final                  ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha384New                    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha384Free                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha384SetKey                 ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha384Update                 ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha384Final                  ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs5HashPassword                ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs1v2Encrypt                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs1v2Decrypt                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7Sign                        ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceVerifyEKUsInPkcs7Signature       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAuthenticodeVerify               ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceImageTimestampVerify             ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhNew                            ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhFree                           ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhGenerateParameter              ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhSetParameter                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhGenerateKey                    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhComputeKey                     ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRandomSeed                       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRandomBytes                      ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaNew                           ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaSetKey                        ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaGetKey                        ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaGenerateKey                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaPkcs1Sign                     ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaPkcs1Verify                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaPssSign                       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaPssVerify                     ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaGetPrivateKeyFromPem          ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaGetPublicKeyFromX509          ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaOaepEncrypt                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaOaepDecrypt                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha1Init                         ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha256Init                       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha384Init                       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha512Init                       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha1HashAll                      ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha256HashAll                    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha384HashAll                    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha512HashAll                    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceParallelHash256HashAll           ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesGetContextSize                ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesInit                          ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesCbcEncrypt                    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesCbcDecrypt                    ## CONSUMES  # MU_CHANGE
+
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAeadAesGcmEncrypt                ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAeadAesGcmDecrypt                ## CONSUMES  # MU_CHANGE
+
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumInit                       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumFromBin                    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumToBin                      ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumFree                       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumAdd                        ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumSub                        ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumMod                        ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumExpMod                     ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumInverseMod                 ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumDiv                        ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumMulMod                     ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumCmp                        ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumBits                       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumBytes                      ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumIsWord                     ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumIsOdd                      ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumCopy                       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumRShift                     ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumConstTime                  ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumSqrMod                     ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumNewContext                 ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumContextFree                ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumSetUint                    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceBigNumAddMod                     ## CONSUMES  # MU_CHANGE
+
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcGroupInit                      ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcGroupGetCurve                  ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcGroupGetOrder                  ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcGroupFree                      ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcPointInit                      ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcPointDeInit                    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcPointGetAffineCoordinates      ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcPointSetAffineCoordinates      ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcPointAdd                       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcPointMul                       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcPointInvert                    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcPointIsOnCurve                 ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcPointIsAtInfinity              ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcPointEqual                     ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcPointSetCompressedCoordinates  ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcNewByNid                       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcFree                           ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcGenerateKey                    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcGetPubKey                      ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcDhComputeKey                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcGetPrivateKeyFromPem           ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcGetPublicKeyFromX509           ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcDsaSign                        ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcDsaVerify                      ## CONSUMES  # MU_CHANGE
+
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHkdfSha256ExtractAndExpand       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHkdfSha256Extract                ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHkdfSha256Expand                 ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHkdfSha384ExtractAndExpand       ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHkdfSha384Extract                ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHkdfSha384Expand                 ## CONSUMES  # MU_CHANGE
+
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetSubjectName               ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetCommonName                ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetOrganizationName          ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509VerifyCert                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509ConstructCertificate         ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509ConstructCertificateStackV   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509ConstructCertificateStack    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509Free                         ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509StackFree                    ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetTBSCert                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetVersion                   ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetSerialNumber              ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetIssuerName                ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetSignatureAlgorithm        ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetExtensionData             ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetValidity                  ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509FormatDateTime               ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetKeyUsage                  ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetExtendedKeyUsage          ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509VerifyCertChain              ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetCertFromCertChain         ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetExtendedBasicConstraints  ## CONSUMES  # MU_CHANGE
