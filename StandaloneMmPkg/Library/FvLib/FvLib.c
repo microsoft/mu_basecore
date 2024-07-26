@@ -167,7 +167,8 @@ FfsFindNextFile (
 
   FileOffset = (UINT32)((UINT8 *)FfsFileHeader - (UINT8 *)FwVolHeader);
 
-  while (FileOffset < (FvLength - sizeof (EFI_FFS_FILE_HEADER))) {
+  while ((UINT64)FileOffset < (FvLength - sizeof (EFI_FFS_FILE_HEADER))) {
+    // MU_CHANGE - CodeQL Change - comparison-with-wider-type
     //
     // Get FileState which is the highest bit of the State
     //
