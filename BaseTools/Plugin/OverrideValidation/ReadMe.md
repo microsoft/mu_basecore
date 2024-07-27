@@ -125,6 +125,7 @@ To disable Deprecation warnings for a given module, add it to the deprecation mo
 ``` cmd
 self.env.SetValue("DEPRECATED_MODULES_SKIPLIST", "MdeModulePkg\BaseMemoryLib\BaseMemoryLib.inf; MdeModulePkg\MemoryAllocationLib\MemoryAllocationLib.inf", "Skip list for platforms")
 ```
+
 Override log generated during pre-build process:
 
 ``` cmd
