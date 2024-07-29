@@ -979,6 +979,13 @@ UsbIoPortReset (
 
   DEBUG ((DEBUG_INFO, "UsbIoPortReset: device is now ADDRESSED at %d\n", Dev->Address));
 
+  // MU_CHANGE [BEGIN] 291137
+  //
+  // Endpoint descriptor state needs to be updated following a reset.
+  //
+  UsbUpdateDescriptors (Dev);
+  // MU_CHANGE [END]
+
   //
   // Reset the current active configure, after this device
   // is in CONFIGURED state.
