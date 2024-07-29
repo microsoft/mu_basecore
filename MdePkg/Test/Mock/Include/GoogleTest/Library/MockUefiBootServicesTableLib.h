@@ -169,6 +169,16 @@ struct MockUefiBootServicesTableLib {
      IN  UINTN                        Size,
      OUT VOID                         **Buffer)
     );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    gBS_LocateHandle,
+    (IN     EFI_LOCATE_SEARCH_TYPE   SearchType,
+     IN     EFI_GUID                 *Protocol     OPTIONAL,
+     IN     VOID                     *SearchKey    OPTIONAL,
+     IN OUT UINTN                    *BufferSize,
+     OUT    EFI_HANDLE               *Buffer)
+    );
 };
 
 #endif // MOCK_UEFI_BOOT_SERVICES_TABLE_LIB_H_
