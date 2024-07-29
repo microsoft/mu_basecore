@@ -224,4 +224,17 @@ UsbIoClearFeature (
   IN  UINT16               Index
   );
 
+// MU_CHANGE [BEGIN] 291137
+
+/**
+  Usb UsbIo interface to update descriptor information.
+  @param  UsbDev                The Usb device.
+**/
+VOID
+UsbUpdateDescriptors (
+  IN USB_DEVICE  *UsbDev
+  );
+
+// MU_CHANGE END
+
 #endif
