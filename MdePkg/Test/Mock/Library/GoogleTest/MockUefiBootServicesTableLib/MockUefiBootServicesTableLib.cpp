@@ -24,6 +24,7 @@ MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_FreePool, 1, EFIAPI)
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_LocateDevicePath, 3, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_ReinstallProtocolInterface, 4, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_AllocatePool, 3, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_LocateHandle, 5, EFIAPI);
 
 extern "C" {
   EFI_STATUS
@@ -118,7 +119,7 @@ static EFI_BOOT_SERVICES  LocalBs = {
   gBS_HandleProtocol,                                                                  // EFI_HANDLE_PROTOCOL
   NULL,                                                                                // VOID
   NULL,                                                                                // EFI_REGISTER_PROTOCOL_NOTIFY
-  NULL,                                                                                // EFI_LOCATE_HANDLE
+  gBS_LocateHandle,                                                                    // EFI_LOCATE_HANDLE
   gBS_LocateDevicePath,                                                                // EFI_LOCATE_DEVICE_PATH
   NULL,                                                                                // EFI_INSTALL_CONFIGURATION_TABLE
   NULL,                                                                                // EFI_IMAGE_LOAD
