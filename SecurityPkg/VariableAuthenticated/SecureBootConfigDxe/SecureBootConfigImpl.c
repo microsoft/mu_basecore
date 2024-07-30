@@ -1095,7 +1095,9 @@ IsSignatureFoundInDatabase (
   // Enumerate all signature data in SigDB to check if signature exists for executable.
   //
   CertList = (EFI_SIGNATURE_LIST *)Data;
-  while ((DataSize > 0) && (DataSize >= CertList->SignatureListSize)) {
+  // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
+  while ((DataSize > 0) && (DataSize >= (UINTN)CertList->SignatureListSize)) {
+    // MU_CHANGE End - CodeQL change - comparison-with-wider-type
     CertCount = (CertList->SignatureListSize - sizeof (EFI_SIGNATURE_LIST) - CertList->SignatureHeaderSize) / CertList->SignatureSize;
     Cert      = (EFI_SIGNATURE_DATA *)((UINT8 *)CertList + sizeof (EFI_SIGNATURE_LIST) + CertList->SignatureHeaderSize);
     if ((CertList->SignatureSize == sizeof (EFI_SIGNATURE_DATA) - 1 + SignatureSize) && (CompareGuid (&CertList->SignatureType, &gEfiCertX509Guid))) {
@@ -1173,7 +1175,13 @@ CalculateCertHash (
   //
   CtxSize = mHash[HashAlg].GetContextSize ();
   HashCtx = AllocatePool (CtxSize);
-  ASSERT (HashCtx != NULL);
+  // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
+  if (HashCtx == NULL) {
+    ASSERT (HashCtx != NULL);
+    return FALSE;
+  }
+
+  // MU_CHANGE End - CodeQL change - unguardednullreturndereference
 
   //
   // 2. Initialize a hash context.
@@ -1261,7 +1269,9 @@ IsCertHashFoundInDbx (
   // Check whether the certificate hash exists in the forbidden database.
   //
   DbxList = (EFI_SIGNATURE_LIST *)Data;
-  while ((DataSize > 0) && (DataSize >= DbxList->SignatureListSize)) {
+  // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
+  while ((DataSize > 0) && (DataSize >= (UINTN)DbxList->SignatureListSize)) {
+    // MU_CHANGE End - CodeQL change - comparison-with-wider-type
     //
     // Determine Hash Algorithm of Certificate in the forbidden database.
     //
@@ -1348,7 +1358,9 @@ GetSignaturelistOffset (
 
   SigList     = Database;
   SiglistSize = DatabaseSize;
-  while ((SiglistSize > 0) && (SiglistSize >= SigList->SignatureListSize)) {
+  // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
+  while ((SiglistSize > 0) && (SiglistSize >= (UINTN)SigList->SignatureListSize)) {
+    // MU_CHANGE End - CodeQL change - comparison-with-wider-type
     if (CompareGuid (&SigList->SignatureType, SignatureType)) {
       *Offset = DatabaseSize - SiglistSize;
       return TRUE;
@@ -1887,7 +1899,13 @@ HashPeImage (
   CtxSize = mHash[HashAlg].GetContextSize ();
 
   HashCtx = AllocatePool (CtxSize);
-  ASSERT (HashCtx != NULL);
+  // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
+  if (HashCtx == NULL) {
+    ASSERT (HashCtx != NULL);
+    goto Done;
+  }
+
+  // MU_CHANGE End - CodeQL change - unguardednullreturndereference
 
   // 1.  Load the image header into memory.
 
@@ -2539,7 +2557,7 @@ UpdateDeletePage (
   )
 {
   EFI_STATUS          Status;
-  UINT32              Index;
+  UINTN               Index; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
   UINTN               CertCount;
   UINTN               GuidIndex;
   VOID                *StartOpCodeHandle;
@@ -2723,7 +2741,7 @@ DeleteKeyExchangeKey (
   UINT8               *Data;
   UINT8               *OldData;
   UINT32              Attr;
-  UINT32              Index;
+  UINTN               Index; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
   EFI_SIGNATURE_LIST  *CertList;
   EFI_SIGNATURE_LIST  *NewCertList;
   EFI_SIGNATURE_DATA  *Cert;
@@ -2927,7 +2945,7 @@ DeleteSignature (
   UINT8               *Data;
   UINT8               *OldData;
   UINT32              Attr;
-  UINT32              Index;
+  UINTN               Index; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
   EFI_SIGNATURE_LIST  *CertList;
   EFI_SIGNATURE_LIST  *NewCertList;
   EFI_SIGNATURE_DATA  *Cert;
@@ -3205,7 +3223,9 @@ DeleteSignatureEx (
     //
     //  Traverse to target EFI_SIGNATURE_LIST but others will be skipped.
     //
-    while ((RemainingSize > 0) && (RemainingSize >= ListWalker->SignatureListSize) && ListIndex < PrivateData->ListIndex) {
+    // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
+    while ((RemainingSize > 0) && (RemainingSize >= (UINTN)ListWalker->SignatureListSize) && ListIndex < PrivateData->ListIndex) {
+      // MU_CHANGE End - CodeQL change - comparison-with-wider-type
       CopyMem ((UINT8 *)NewVariableData + Offset, ListWalker, ListWalker->SignatureListSize);
       Offset += ListWalker->SignatureListSize;
 
@@ -3512,9 +3532,21 @@ SecureBootExtractConfig (
     // followed by "&OFFSET=0&WIDTH=WWWWWWWWWWWWWWWW" followed by a Null-terminator
     //
     ConfigRequestHdr = HiiConstructConfigHdr (&gSecureBootConfigFormSetGuid, mSecureBootStorageName, PrivateData->DriverHandle);
-    Size             = (StrLen (ConfigRequestHdr) + 32 + 1) * sizeof (CHAR16);
-    ConfigRequest    = AllocateZeroPool (Size);
-    ASSERT (ConfigRequest != NULL);
+    // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
+    if (ConfigRequestHdr == NULL) {
+      ASSERT (ConfigRequestHdr != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    Size          = (StrLen (ConfigRequestHdr) + 32 + 1) * sizeof (CHAR16);
+    ConfigRequest = AllocateZeroPool (Size);
+    if (ConfigRequest == NULL) {
+      ASSERT (ConfigRequest != NULL);
+      FreePool (ConfigRequestHdr);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE End - CodeQL change - unguardednullreturndereference
     AllocatedRequest = TRUE;
     UnicodeSPrint (ConfigRequest, Size, L"%s&OFFSET=0&WIDTH=%016LX", ConfigRequestHdr, (UINT64)BufferSize);
     FreePool (ConfigRequestHdr);
@@ -3793,7 +3825,9 @@ LoadSignatureList (
 
   RemainingSize = DataSize;
   ListWalker    = (EFI_SIGNATURE_LIST *)VariableData;
-  while ((RemainingSize > 0) && (RemainingSize >= ListWalker->SignatureListSize)) {
+  // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
+  while ((RemainingSize > 0) && (RemainingSize >= (UINTN)ListWalker->SignatureListSize)) {
+    // MU_CHANGE End - CodeQL change - comparison-with-wider-type
     if (CompareGuid (&ListWalker->SignatureType, &gEfiCertRsa2048Guid)) {
       ListType = STRING_TOKEN (STR_LIST_TYPE_RSA2048_SHA256);
     } else if (CompareGuid (&ListWalker->SignatureType, &gEfiCertX509Guid)) {
@@ -4209,7 +4243,7 @@ LoadSignatureData (
   VOID                *EndOpCodeHandle;
   UINTN               DataSize;
   UINTN               RemainingSize;
-  UINT16              Index;
+  UINT64              Index; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
   UINT8               *VariableData;
   CHAR16              VariableName[BUFFER_MAX_SIZE];
   CHAR16              NameBuffer[BUFFER_MAX_SIZE];
@@ -4293,7 +4327,9 @@ LoadSignatureData (
   //
   // Skip signature list.
   //
-  while ((RemainingSize > 0) && (RemainingSize >= ListWalker->SignatureListSize) && ListIndex-- > 0) {
+  // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
+  while ((RemainingSize > 0) && (RemainingSize >= (UINTN)ListWalker->SignatureListSize) && ListIndex-- > 0) {
+    // MU_CHANGE End - CodeQL change - comparison-with-wider-type
     RemainingSize -= ListWalker->SignatureListSize;
     ListWalker     = (EFI_SIGNATURE_LIST *)((UINT8 *)ListWalker + ListWalker->SignatureListSize);
   }

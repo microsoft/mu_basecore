@@ -553,7 +553,9 @@ CheckSignatureListFormat (
   // Walk through the input signature list and check the data format.
   // If any signature is incorrectly formed, the whole check will fail.
   //
-  while ((SigDataSize > 0) && (SigDataSize >= SigList->SignatureListSize)) {
+  // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
+  while ((SigDataSize > 0) && (SigDataSize >= (UINTN)SigList->SignatureListSize)) {
+    // MU_CHANGE End - CodeQL change - comparison-with-wider-type
     for (Index = 0; Index < (sizeof (mSupportSigItem) / sizeof (EFI_SIGNATURE_ITEM)); Index++ ) {
       if (CompareGuid (&SigList->SignatureType, &mSupportSigItem[Index].SigType)) {
         //
@@ -1115,7 +1117,9 @@ FilterSignatureList (
   Tail = TempData;
 
   NewCertList = (EFI_SIGNATURE_LIST *)NewData;
-  while ((*NewDataSize > 0) && (*NewDataSize >= NewCertList->SignatureListSize)) {
+  // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
+  while ((*NewDataSize > 0) && (*NewDataSize >= (UINTN)NewCertList->SignatureListSize)) {
+    // MU_CHANGE End - CodeQL change - comparison-with-wider-type
     NewCert      = (EFI_SIGNATURE_DATA *)((UINT8 *)NewCertList + sizeof (EFI_SIGNATURE_LIST) + NewCertList->SignatureHeaderSize);
     NewCertCount = (NewCertList->SignatureListSize - sizeof (EFI_SIGNATURE_LIST) - NewCertList->SignatureHeaderSize) / NewCertList->SignatureSize;
 
@@ -1125,7 +1129,9 @@ FilterSignatureList (
 
       Size     = DataSize;
       CertList = (EFI_SIGNATURE_LIST *)Data;
-      while ((Size > 0) && (Size >= CertList->SignatureListSize)) {
+      // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
+      while ((Size > 0) && (Size >= (UINTN)CertList->SignatureListSize)) {
+        // MU_CHANGE End - CodeQL change - comparison-with-wider-type
         if (CompareGuid (&CertList->SignatureType, &NewCertList->SignatureType) &&
             (CertList->SignatureSize == NewCertList->SignatureSize))
         {
