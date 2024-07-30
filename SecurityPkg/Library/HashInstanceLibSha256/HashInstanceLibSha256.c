@@ -56,7 +56,13 @@ Sha256HashInit (
 
   CtxSize   = Sha256GetContextSize ();
   Sha256Ctx = AllocatePool (CtxSize);
-  ASSERT (Sha256Ctx != NULL);
+  // MU_CHANGE - CodeQL Change - unguardednullreturndereference
+  if (Sha256Ctx == NULL) {
+    ASSERT (Sha256Ctx != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE - CodeQL Change - unguardednullreturndereference
 
   Sha256Init (Sha256Ctx);
 
