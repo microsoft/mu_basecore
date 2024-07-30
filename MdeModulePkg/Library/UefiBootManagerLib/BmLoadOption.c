@@ -284,19 +284,21 @@ structure.
                  VARIABLE_POLICY_TYPE_LOCK_NOW
                  );
       ASSERT_EFI_ERROR (Status);
+
+      // VariableAttributes = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS;
     }
 
-    VariableAttributes = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS;
+    // Status = gRT->SetVariable (
+    //                 OptionName,
+    //                 &gEfiGlobalVariableGuid,
+    //                 VariableAttributes,
+    //                 VariableSize,
+    //                 Variable
+    //                 );
+    // FreePool (Variable);
   }
 
-  Status = gRT->SetVariable (
-                  OptionName,
-                  &gEfiGlobalVariableGuid,
-                  VariableAttributes,
-                  VariableSize,
-                  Variable
-                  );
-  FreePool (Variable);
+  // MU_CHANGE END
 
   return Status;
 }
