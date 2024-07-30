@@ -59,7 +59,13 @@ SecureBootFetchData (
   *SigListOut   = NULL;
   *SigListsSize = 0;
   CertInfo      = AllocatePool (sizeof (SECURE_BOOT_CERTIFICATE_INFO));
-  NewCertInfo   = CertInfo;
+  // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
+  if (CertInfo == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE End - CodeQL change - unguardednullreturndereference
+  NewCertInfo = CertInfo;
   while (1) {
     if (NewCertInfo == NULL) {
       Status = EFI_OUT_OF_RESOURCES;
@@ -93,6 +99,12 @@ SecureBootFetchData (
                       sizeof (SECURE_BOOT_CERTIFICATE_INFO) * (KeyIndex + 1),
                       CertInfo
                       );
+      // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
+      if (NewCertInfo == NULL) {
+        goto Cleanup;
+      }
+
+      // MU_CHANGE End - CodeQL change - unguardednullreturndereference
     }
 
     if (Status == EFI_NOT_FOUND) {

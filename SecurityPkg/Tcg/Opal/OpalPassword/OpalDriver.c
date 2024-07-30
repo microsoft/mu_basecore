@@ -2224,7 +2224,9 @@ ProcessOpalRequest (
   //
   TempVariable = Variable;
   while ((VariableSize > sizeof (OPAL_REQUEST_VARIABLE)) &&
-         (VariableSize >= TempVariable->Length) &&
+         // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
+         (VariableSize >= (UINTN)TempVariable->Length) &&
+         // MU_CHANGE End - CodeQL change - comparison-with-wider-type
          (TempVariable->Length > sizeof (OPAL_REQUEST_VARIABLE)))
   {
     DevicePathInVariable     = (EFI_DEVICE_PATH_PROTOCOL *)((UINTN)TempVariable + sizeof (OPAL_REQUEST_VARIABLE));

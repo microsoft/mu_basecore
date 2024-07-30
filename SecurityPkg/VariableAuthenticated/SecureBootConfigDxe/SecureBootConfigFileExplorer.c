@@ -98,7 +98,13 @@ ExtractFileNameFromDevicePath (
 
   ASSERT (DevicePath != NULL);
 
-  String      = DevicePathToStr (DevicePath);
+  String = DevicePathToStr (DevicePath);
+  // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
+  if (String == NULL) {
+    return NULL;
+  }
+
+  // MU_CHANGE End - CodeQL change - unguardednullreturndereference
   MatchString = String;
   LastMatch   = String;
   FileName    = NULL;
