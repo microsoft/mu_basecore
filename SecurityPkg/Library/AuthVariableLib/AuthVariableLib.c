@@ -212,6 +212,25 @@ AuthVariableLibInitialize (
   if (!EFI_ERROR (Status)) {
     if (mPlatformMode == USER_MODE) {
       SecureBootEnable = *(UINT8 *)Data;
+      // MU_CHANGE_173316
+      // MU_CHANGE [BEGIN] - In our implementation, we do not allow SecureBootEnable to override mPlatformMode.
+      // If SecureBootEnable is FOUND and mPlatformMode is USER_MODE, ensure that
+      //  SecureBootEnable == SECURE_BOOT_ENABLE.
+      if (SecureBootEnable == SECURE_BOOT_DISABLE) {
+        SecureBootEnable = SECURE_BOOT_ENABLE;
+        Status           = AuthServiceInternalUpdateVariable (
+                             EFI_SECURE_BOOT_ENABLE_NAME,
+                             &gEfiSecureBootEnableDisableGuid,
+                             &SecureBootEnable,
+                             sizeof (UINT8),
+                             EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS
+                             );
+        if (EFI_ERROR (Status)) {
+          return Status;
+        }
+      }
+
+      // MU_CHANGE [END]
     }
   } else if (mPlatformMode == USER_MODE) {
     //
