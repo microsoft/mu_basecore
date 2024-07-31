@@ -7,6 +7,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "HiiDatabase.h"
+#include <Library/SafeIntLib.h> // MU_CHANGE - CodeQL Change
 extern HII_DATABASE_PRIVATE_DATA  mPrivate;
 
 /**
@@ -248,8 +249,13 @@ GenerateSubStr (
   //
   Length = StrLen (String) + BufferLen * 2 + 1 + 1;
   Str    = AllocateZeroPool (Length * sizeof (CHAR16));
-  ASSERT (Str != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Str == NULL) {
+    ASSERT (Str != NULL);
+    return;
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   StrCpyS (Str, Length, String);
 
   StringHeader = Str + StrLen (String);
@@ -625,6 +631,7 @@ CompareBlockElementDefault (
   UINTN       TotalSize;
   BOOLEAN     FoundOffset;
 
+  Status       = EFI_SUCCESS; // MU_CHANGE - CodeQL Change
   AppendString = NULL;
   TempBuffer   = NULL;
   //
@@ -632,12 +639,25 @@ CompareBlockElementDefault (
   //
   AltConfigHdrPtr = StrStr (DefaultAltCfgResp, AltConfigHdr);
   ASSERT (AltConfigHdrPtr != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (AltConfigHdrPtr == NULL) {
+    goto Exit;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   BlockPtr = StrStr (AltConfigHdrPtr, L"&OFFSET=");
   //
   // Make StringPtr point to the AltConfigHdr in ConfigAltResp.
   //
   StringPtr = StrStr (*ConfigAltResp, AltConfigHdr);
-  ASSERT (StringPtr != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (StringPtr == NULL) {
+    ASSERT (StringPtr != NULL);
+    goto Exit;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   while (BlockPtr != NULL) {
     //
@@ -683,6 +703,13 @@ CompareBlockElementDefault (
       //
       if (AppendString == NULL) {
         AppendString = (EFI_STRING)AllocateZeroPool (AppendSize + sizeof (CHAR16));
+        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+        if (AppendString == NULL) {
+          Status = EFI_OUT_OF_RESOURCES;
+          goto Exit;
+        }
+
+        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
         StrnCatS (AppendString, AppendSize / sizeof (CHAR16) + 1, BlockPtrStart, AppendSize / sizeof (CHAR16));
       } else {
         TotalSize    = StrSize (AppendString) + AppendSize + sizeof (CHAR16);
@@ -771,6 +798,7 @@ CompareNameElementDefault (
   UINTN       AppendSize;
   UINTN       TotalSize;
 
+  Status        = EFI_SUCCESS; // MU_CHANGE - CodeQL Change
   AppendString  = NULL;
   NvConfigExist = NULL;
   //
@@ -778,14 +806,37 @@ CompareNameElementDefault (
   //
   NvConfigPtr = StrStr (DefaultAltCfgResp, AltConfigHdr);
   ASSERT (NvConfigPtr != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (NvConfigPtr == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   NvConfigPtr = StrStr (NvConfigPtr + StrLen (AltConfigHdr), L"&");
   //
   // Make StringPtr point to the first <NvConfig> with AltConfigHdr in ConfigAltResp.
   //
   StringPtr = StrStr (*ConfigAltResp, AltConfigHdr);
   ASSERT (StringPtr != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (StringPtr == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   StringPtr = StrStr (StringPtr + StrLen (AltConfigHdr), L"&");
   ASSERT (StringPtr != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (StringPtr == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   while (NvConfigPtr != NULL) {
     //
@@ -794,7 +845,14 @@ CompareNameElementDefault (
     //
     NvConfigStart    = NvConfigPtr;
     NvConfigValuePtr = StrStr (NvConfigPtr + 1, L"=");
-    ASSERT (NvConfigValuePtr != NULL);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (NvConfigValuePtr == NULL) {
+      ASSERT (NvConfigValuePtr != NULL);
+      goto Exit;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
     TempChar          = *NvConfigValuePtr;
     *NvConfigValuePtr = L'\0';
     //
@@ -819,6 +877,13 @@ CompareNameElementDefault (
       //
       if (AppendString == NULL) {
         AppendString = (EFI_STRING)AllocateZeroPool (AppendSize + sizeof (CHAR16));
+        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+        if (AppendString == NULL) {
+          Status = EFI_OUT_OF_RESOURCES;
+          goto Exit;
+        }
+
+        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
         StrnCatS (AppendString, AppendSize / sizeof (CHAR16) + 1, NvConfigStart, AppendSize / sizeof (CHAR16));
       } else {
         TotalSize    = StrSize (AppendString) + AppendSize + sizeof (CHAR16);
@@ -924,6 +989,14 @@ CompareAndMergeDefaultString (
   //
   AltConfigHdrPtr = StrStr (DefaultAltCfgResp, AltConfigHdr);
   ASSERT (AltConfigHdrPtr != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (AltConfigHdrPtr == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   AltConfigHdrPtrNext = StrStr (AltConfigHdrPtr + 1, L"&GUID");
   if (AltConfigHdrPtrNext != NULL) {
     TempChar             = *AltConfigHdrPtrNext;
@@ -935,6 +1008,14 @@ CompareAndMergeDefaultString (
   //
   StringPtr = StrStr (*AltCfgResp, AltConfigHdr);
   ASSERT (StringPtr != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (StringPtr == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   StringPtrNext = StrStr (StringPtr + 1, L"&GUID");
   if (StringPtrNext != NULL) {
     TempCharA      = *StringPtrNext;
@@ -1224,7 +1305,13 @@ InsertDefaultValue (
   // Insert new default value data in tail.
   //
   DefaultValueArray = AllocateZeroPool (sizeof (IFR_DEFAULT_DATA));
-  ASSERT (DefaultValueArray != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (DefaultValueArray == NULL) {
+    ASSERT (DefaultValueArray != NULL);
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   CopyMem (DefaultValueArray, DefaultValueData, sizeof (IFR_DEFAULT_DATA));
   InsertTailList (Link, &DefaultValueArray->Entry);
 }
@@ -1802,10 +1889,14 @@ GetElementsFromRequest (
 
   TmpRequest = StrStr (ConfigRequest, L"PATH=");
   ASSERT (TmpRequest != NULL);
-
-  if ((StrStr (TmpRequest, L"&OFFSET=") != NULL) || (StrStr (TmpRequest, L"&") != NULL)) {
-    return TRUE;
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (TmpRequest != NULL) {
+    if ((StrStr (TmpRequest, L"&OFFSET=") != NULL) || (StrStr (TmpRequest, L"&") != NULL)) {
+      return TRUE;
+    }
   }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return FALSE;
 }
@@ -3244,6 +3335,8 @@ GetBlockElement (
   IFR_BLOCK_DATA  *NextBlockData;
   UINTN           Length;
 
+  UINT16  Sum1, Sum2; // MU_CHANGE Start - CodeQL Change
+
   TmpBuffer = NULL;
 
   //
@@ -3365,14 +3458,23 @@ GetBlockElement (
   while ((Link != &RequestBlockArray->Entry) && (Link->ForwardLink != &RequestBlockArray->Entry)) {
     BlockData     = BASE_CR (Link, IFR_BLOCK_DATA, Entry);
     NextBlockData = BASE_CR (Link->ForwardLink, IFR_BLOCK_DATA, Entry);
-    if ((NextBlockData->Offset >= BlockData->Offset) && (NextBlockData->Offset <= (BlockData->Offset + BlockData->Width))) {
-      if ((NextBlockData->Offset + NextBlockData->Width) > (BlockData->Offset + BlockData->Width)) {
-        BlockData->Width = (UINT16)(NextBlockData->Offset + NextBlockData->Width - BlockData->Offset);
+    // MU_CHANGE Start - CodeQL Change
+    if ((!EFI_ERROR (SafeUint16Add (BlockData->Offset, BlockData->Width, &Sum1))) &&
+        (!EFI_ERROR (SafeUint16Add (NextBlockData->Offset, NextBlockData->Width, &Sum2))) &&
+        (NextBlockData->Offset >= BlockData->Offset) &&
+        (NextBlockData->Offset <= Sum1) &&
+        (Sum2 > Sum1))
+    {
+      Sum1 = BlockData->Width;
+      if (!EFI_ERROR (SafeUint16Sub (Sum2, BlockData->Offset, &BlockData->Width))) {
+        RemoveEntryList (Link->ForwardLink);
+        FreePool (NextBlockData);
+        continue;
+      } else {
+        BlockData->Width = Sum1;
       }
 
-      RemoveEntryList (Link->ForwardLink);
-      FreePool (NextBlockData);
-      continue;
+      // MU_CHANGE End - CodeQL Change
     }
 
     Link = Link->ForwardLink;
@@ -3903,6 +4005,8 @@ UpdateBlockDataArray (
   IFR_BLOCK_DATA  *BlockData;
   IFR_BLOCK_DATA  *NextBlockData;
 
+  UINT16  Sum1, Sum2; // MU_CHANGE - CodeQL Change
+
   //
   // 1. Update default value in BitVar block data.
   // Sine some block datas are used as BitVarStore, then the default value recored in the block
@@ -3924,9 +4028,18 @@ UpdateBlockDataArray (
 
     for (TempLink = Link->ForwardLink; TempLink != BlockLink; TempLink = TempLink->ForwardLink) {
       NextBlockData = BASE_CR (TempLink, IFR_BLOCK_DATA, Entry);
-      if (!NextBlockData->IsBitVar || (NextBlockData->Offset >= BlockData->Offset + BlockData->Width) || (BlockData->Offset >= NextBlockData->Offset + NextBlockData->Width)) {
+      // MU_CHANGE Start - CodeQL Change
+      if (EFI_ERROR (SafeUint16Add (BlockData->Offset, BlockData->Width, &Sum1)) ||
+          EFI_ERROR (SafeUint16Add (NextBlockData->Offset, NextBlockData->Width, &Sum2)))
+      {
         continue;
       }
+
+      if (!NextBlockData->IsBitVar || (NextBlockData->Offset >= Sum1) || (BlockData->Offset >= Sum2)) {
+        continue;
+      }
+
+      // MU_CHANGE End - CodeQL Change
 
       //
       // Find two blocks are used as bit VarStore and have overlap region, so need to merge default value of these two blocks.
@@ -4525,7 +4638,14 @@ GetConfigRespFromEfiVarStore (
   }
 
   VarStore = AllocateZeroPool (BufferSize);
-  ASSERT (VarStore != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (VarStore == NULL) {
+    ASSERT (VarStore != NULL);
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Done;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   Status = gRT->GetVariable (VarStoreName, &EfiVarStoreInfo->Guid, NULL, &BufferSize, VarStore);
   if (EFI_ERROR (Status)) {
     goto Done;
@@ -4604,7 +4724,14 @@ RouteConfigRespForEfiVarStore (
 
   BlockSize = BufferSize;
   VarStore  = AllocateZeroPool (BufferSize);
-  ASSERT (VarStore != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (VarStore == NULL) {
+    ASSERT (VarStore != NULL);
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Done;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   Status = gRT->GetVariable (VarStoreName, &EfiVarStoreInfo->Guid, NULL, &BufferSize, VarStore);
   if (EFI_ERROR (Status)) {
     goto Done;
@@ -5069,8 +5196,16 @@ HiiConfigRoutingExtractConfig (
           // Merge the AltCfgResp in AccessResultsBackup to AccessResults
           //
           if ((AccessResultsBackup != NULL) && (StrStr (AccessResultsBackup, L"&ALTCFG=") != NULL)) {
-            ConigStringSize        = StrSize (AccessResults);
-            ConfigStringPtr        = StrStr (AccessResultsBackup, L"&GUID=");
+            ConigStringSize = StrSize (AccessResults);
+            ConfigStringPtr = StrStr (AccessResultsBackup, L"&GUID=");
+            // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+            if (ConfigStringPtr == NULL) {
+              Status = EFI_NOT_FOUND;
+              goto Done;
+            }
+
+            // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
             ConigStringSizeNewsize = StrSize (ConfigStringPtr) + ConigStringSize + sizeof (CHAR16);
             AccessResults          = (EFI_STRING)ReallocatePool (
                                                    ConigStringSize,
@@ -5469,6 +5604,7 @@ HiiConfigRoutingRouteConfig (
   Database        = NULL;
   AccessProgress  = NULL;
   EfiVarStoreInfo = NULL;
+  DevicePath      = NULL; /// MU_CHANGE - CodeQL Change
   IsEfiVarstore   = FALSE;
 
   //
