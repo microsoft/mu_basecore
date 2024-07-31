@@ -164,35 +164,28 @@ PcdSetNvStoreDefaultIdCallBack (
 
   if (PeiPcdGetSizeEx (&gEfiMdeModulePkgTokenSpaceGuid, PcdToken (PcdNvStoreDefaultValueBuffer)) > sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER)) {
     DataBuffer = (UINT8 *)PeiPcdGetPtrEx (&gEfiMdeModulePkgTokenSpaceGuid, PcdToken (PcdNvStoreDefaultValueBuffer));
-    FullSize   = ((PCD_NV_STORE_DEFAULT_BUFFER_HEADER *)DataBuffer)->Length;
-    DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER));
-    //
-    // The first section data includes NV storage default setting.
-    //
-    NvStoreBuffer   = (VARIABLE_STORE_HEADER *)((UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize);
-    VarStoreHobData = (UINT8 *)BuildGuidHob (&NvStoreBuffer->Signature, NvStoreBuffer->Size);
-    ASSERT (VarStoreHobData != NULL);
-    CopyMem (VarStoreHobData, NvStoreBuffer, NvStoreBuffer->Size);
-    //
-    // Find the matched SkuId and DefaultId in the first section
-    //
-    DefaultInfo = &(DataHeader->DefaultInfo[0]);
-    BufferEnd   = (UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize;
-    while ((UINT8 *)DefaultInfo < BufferEnd) {
-      if ((DefaultInfo->DefaultId == DefaultId) && (DefaultInfo->SkuId == SkuId)) {
-        IsFound = TRUE;
-        break;
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (DataBuffer != NULL) {
+      FullSize   = ((PCD_NV_STORE_DEFAULT_BUFFER_HEADER *)DataBuffer)->Length;
+      DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER));
+      //
+      // The first section data includes NV storage default setting.
+      //
+      NvStoreBuffer   = (VARIABLE_STORE_HEADER *)((UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize);
+      VarStoreHobData = (UINT8 *)BuildGuidHob (&NvStoreBuffer->Signature, NvStoreBuffer->Size);
+      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+      if (VarStoreHobData == NULL) {
+        DEBUG ((DEBUG_ERROR, "[%a] - Failed build NV Store guid hob.\n", __func__));
+        ASSERT (VarStoreHobData != NULL);
+        return;
       }
 
-      DefaultInfo++;
-    }
+      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
-    //
-    // Find the matched SkuId and DefaultId in the remaining section
-    //
-    Index      = sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER) + ((DataHeader->DataSize + 7) & (~7));
-    DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + Index);
-    while (!IsFound && Index < FullSize && DataHeader->DataSize != 0xFFFFFFFF) {
+      CopyMem (VarStoreHobData, NvStoreBuffer, NvStoreBuffer->Size);
+      //
+      // Find the matched SkuId and DefaultId in the first section
+      //
       DefaultInfo = &(DataHeader->DefaultInfo[0]);
       BufferEnd   = (UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize;
       while ((UINT8 *)DefaultInfo < BufferEnd) {
@@ -204,19 +197,39 @@ PcdSetNvStoreDefaultIdCallBack (
         DefaultInfo++;
       }
 
-      if (IsFound) {
-        DeltaData = (PCD_DATA_DELTA *)BufferEnd;
-        BufferEnd = (UINT8 *)DataHeader + DataHeader->DataSize;
-        while ((UINT8 *)DeltaData < BufferEnd) {
-          *(VarStoreHobData + DeltaData->Offset) = (UINT8)DeltaData->Value;
-          DeltaData++;
+      //
+      // Find the matched SkuId and DefaultId in the remaining section
+      //
+      Index      = sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER) + ((DataHeader->DataSize + 7) & (~7));
+      DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + Index);
+      while (!IsFound && Index < FullSize && DataHeader->DataSize != 0xFFFFFFFF) {
+        DefaultInfo = &(DataHeader->DefaultInfo[0]);
+        BufferEnd   = (UINT8 *)DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize;
+        while ((UINT8 *)DefaultInfo < BufferEnd) {
+          if ((DefaultInfo->DefaultId == DefaultId) && (DefaultInfo->SkuId == SkuId)) {
+            IsFound = TRUE;
+            break;
+          }
+
+          DefaultInfo++;
         }
 
-        break;
+        if (IsFound) {
+          DeltaData = (PCD_DATA_DELTA *)BufferEnd;
+          BufferEnd = (UINT8 *)DataHeader + DataHeader->DataSize;
+          while ((UINT8 *)DeltaData < BufferEnd) {
+            *(VarStoreHobData + DeltaData->Offset) = (UINT8)DeltaData->Value;
+            DeltaData++;
+          }
+
+          break;
+        }
+
+        Index      = (Index + DataHeader->DataSize + 7) & (~7);
+        DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + Index);
       }
 
-      Index      = (Index + DataHeader->DataSize + 7) & (~7);
-      DataHeader = (PCD_DEFAULT_DATA *)(DataBuffer + Index);
+      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     }
   }
 
@@ -309,15 +322,24 @@ EndOfPeiSignalPpiNotifyCallback (
   //
   // Find PEI PcdDb and Build second PcdDB GuidHob
   //
-  // MU_CHANGE Begin
-  // Status = PeiServicesFfsFindSectionData (EFI_SECTION_RAW, FileHandle, &PcdDb);
-  // ASSERT_EFI_ERROR (Status);
   PcdDb = (PEI_PCD_DATABASE *)PcdDatabaseLoaderLoad (FileHandle);
   ASSERT (PcdDb != NULL);
-  // MU_CHANGE End
-  Length   = PeiPcdDb->LengthForAllSkus;
-  Database = BuildGuidHob (&gPcdDataBaseHobGuid, Length);
-  CopyMem (Database, PcdDb, Length);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (PcdDb != NULL) {
+    Length   = PeiPcdDb->LengthForAllSkus;
+    Database = BuildGuidHob (&gPcdDataBaseHobGuid, Length);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (Database == NULL) {
+      DEBUG ((DEBUG_ERROR, "[%a] - Failed to build PCD guid hob.\n", __func__));
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
+    CopyMem (Database, PcdDb, Length);
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return EFI_SUCCESS;
 }
@@ -574,7 +596,8 @@ PeiPcdSetSku (
   }
 
   SkuIdTable = (SKU_ID *)((UINT8 *)PeiPcdDb + PeiPcdDb->SkuIdTableOffset);
-  for (Index = 0; Index < SkuIdTable[0]; Index++) {
+  for (Index = 0; (UINT64)Index < SkuIdTable[0]; Index++) {
+    // MU_CHANGE - CodeQL Change - comparison-with-wider-type
     if (SkuId == SkuIdTable[Index + 1]) {
       DEBUG ((DEBUG_INFO, "PcdPei - SkuId is found in SkuId table.\n"));
       break;

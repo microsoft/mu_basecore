@@ -205,40 +205,44 @@ UpdateFrontPageForm (
   //
   StartOpCodeHandle = HiiAllocateOpCodeHandle ();
   ASSERT (StartOpCodeHandle != NULL);
+  // MU_CHANGE Start - CodeQl Change - Handle StartOpCodeHandle and EndOpCodeHandle allocation failures
+  if (StartOpCodeHandle != NULL) {
+    EndOpCodeHandle = HiiAllocateOpCodeHandle ();
+    ASSERT (EndOpCodeHandle != NULL);
+    if (EndOpCodeHandle != NULL) {
+      //
+      // Create Hii Extend Label OpCode as the start opcode
+      //
+      StartGuidLabel               = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (StartOpCodeHandle, &gEfiIfrTianoGuid, NULL, sizeof (EFI_IFR_GUID_LABEL));
+      StartGuidLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+      StartGuidLabel->Number       = LABEL_FRONTPAGE_INFORMATION;
+      //
+      // Create Hii Extend Label OpCode as the end opcode
+      //
+      EndGuidLabel               = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (EndOpCodeHandle, &gEfiIfrTianoGuid, NULL, sizeof (EFI_IFR_GUID_LABEL));
+      EndGuidLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+      EndGuidLabel->Number       = LABEL_END;
 
-  EndOpCodeHandle = HiiAllocateOpCodeHandle ();
-  ASSERT (EndOpCodeHandle != NULL);
-  //
-  // Create Hii Extend Label OpCode as the start opcode
-  //
-  StartGuidLabel               = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (StartOpCodeHandle, &gEfiIfrTianoGuid, NULL, sizeof (EFI_IFR_GUID_LABEL));
-  StartGuidLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
-  StartGuidLabel->Number       = LABEL_FRONTPAGE_INFORMATION;
-  //
-  // Create Hii Extend Label OpCode as the end opcode
-  //
-  EndGuidLabel               = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (EndOpCodeHandle, &gEfiIfrTianoGuid, NULL, sizeof (EFI_IFR_GUID_LABEL));
-  EndGuidLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
-  EndGuidLabel->Number       = LABEL_END;
+      //
+      // Updata Front Page form
+      //
+      UiCustomizeFrontPage (
+        gFrontPagePrivate.HiiHandle,
+        StartOpCodeHandle
+        );
 
-  //
-  // Updata Front Page form
-  //
-  UiCustomizeFrontPage (
-    gFrontPagePrivate.HiiHandle,
-    StartOpCodeHandle
-    );
+      HiiUpdateForm (
+        gFrontPagePrivate.HiiHandle,
+        &mFrontPageGuid,
+        FRONT_PAGE_FORM_ID,
+        StartOpCodeHandle,
+        EndOpCodeHandle
+        );
+      HiiFreeOpCodeHandle (EndOpCodeHandle);
+    }
 
-  HiiUpdateForm (
-    gFrontPagePrivate.HiiHandle,
-    &mFrontPageGuid,
-    FRONT_PAGE_FORM_ID,
-    StartOpCodeHandle,
-    EndOpCodeHandle
-    );
-
-  HiiFreeOpCodeHandle (StartOpCodeHandle);
-  HiiFreeOpCodeHandle (EndOpCodeHandle);
+    HiiFreeOpCodeHandle (StartOpCodeHandle);
+  } // // MU_CHANGE End - CodeQl Change - Handle StartOpCodeHandle and EndOpCodeHandle allocation failures
 }
 
 /**
@@ -976,7 +980,10 @@ InitializeUserInterface (
   UiSetConsoleMode (FALSE);
 
   UninitializeStringSupport ();
-  HiiRemovePackages (HiiHandle);
+  // MU_CHANGE Start - CodeQl Change - Deal with HiiHandle being NULL
+  if (HiiHandle != NULL) {
+    HiiRemovePackages (HiiHandle);
+  }
 
   return EFI_SUCCESS;
 }

@@ -167,7 +167,14 @@ RamDiskPublishNfit (
   ASSERT (Status == EFI_BUFFER_TOO_SMALL);
   do {
     MemoryMap = (EFI_MEMORY_DESCRIPTOR *)AllocatePool (MemoryMapSize);
-    ASSERT (MemoryMap != NULL);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (MemoryMap == NULL) {
+      ASSERT (MemoryMap != NULL);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
     Status = gBS->GetMemoryMap (
                     &MemoryMapSize,
                     MemoryMap,

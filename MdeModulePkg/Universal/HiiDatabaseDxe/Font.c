@@ -412,7 +412,8 @@ GlyphToBlt (
   // The glyph's upper left hand corner pixel is the most significant bit of the
   // first bitmap byte.
   //
-  for (Ypos = 0; Ypos < Cell->Height && (((UINT32)Ypos + YposOffset) < RowHeight); Ypos++) {
+  for (Ypos = 0; Ypos < Cell->Height && ((UINTN)((UINT32)Ypos + YposOffset) < RowHeight); Ypos++) {
+    // MU_CHANGE         - CodeQL Change - comparison-with-wider-type
     OffsetY = BITMAP_LEN_1_BIT (Cell->Width, Ypos);
 
     //
@@ -420,7 +421,8 @@ GlyphToBlt (
     //
     for (Xpos = 0; Xpos < Cell->Width / 8; Xpos++) {
       Data = *(GlyphBuffer + OffsetY + Xpos);
-      for (Index = 0; Index < 8 && (((UINT32)Xpos * 8 + Index + Cell->OffsetX) < RowWidth); Index++) {
+      for (Index = 0; Index < 8 && ((UINTN)((UINT32)Xpos * 8 + Index + Cell->OffsetX) < RowWidth); Index++) {
+        // MU_CHANGE     - CodeQL Change - comparison-with-wider-type
         if ((Data & (1 << (8 - Index - 1))) != 0) {
           BltBuffer[Ypos * ImageWidth + Xpos * 8 + Index] = Foreground;
         } else {
@@ -436,7 +438,8 @@ GlyphToBlt (
       // There are some padding bits in this byte. Ignore them.
       //
       Data = *(GlyphBuffer + OffsetY + Xpos);
-      for (Index = 0; Index < Cell->Width % 8 && (((UINT32)Xpos * 8 + Index + Cell->OffsetX) < RowWidth); Index++) {
+      for (Index = 0; Index < (UINT16)(Cell->Width % 8) && ((UINTN)((UINT32)Xpos * 8 + Index + Cell->OffsetX) < RowWidth); Index++) {
+        // MU_CHANGE     - CodeQL Change - comparison-with-wider-type
         if ((Data & (1 << (8 - Index - 1))) != 0) {
           BltBuffer[Ypos * ImageWidth + Xpos * 8 + Index] = Foreground;
         } else {
@@ -1739,11 +1742,34 @@ HiiStringToImage (
 
   StrLength = StrLen (String);
   GlyphBuf  = (UINT8 **)AllocateZeroPool (StrLength * sizeof (UINT8 *));
-  ASSERT (GlyphBuf != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (GlyphBuf == NULL) {
+    ASSERT (GlyphBuf != NULL);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   Cell = (EFI_HII_GLYPH_INFO *)AllocateZeroPool (StrLength * sizeof (EFI_HII_GLYPH_INFO));
-  ASSERT (Cell != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Cell == NULL) {
+    ASSERT (Cell != NULL);
+    FreePool (GlyphBuf);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   Attributes = (UINT8 *)AllocateZeroPool (StrLength * sizeof (UINT8));
-  ASSERT (Attributes != NULL);
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  if (Attributes == NULL) {
+    ASSERT (Attributes != NULL);
+    FreePool (GlyphBuf);
+    FreePool (Cell);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   FontInfo      = NULL;
   RowInfo       = NULL;
@@ -2137,6 +2163,11 @@ HiiStringToImage (
           Status = EFI_OUT_OF_RESOURCES;
           goto Exit;
         }
+
+        // Fill in the current background
+        // MS_CHANGE_185410
+        SetMem32 (BltBuffer, RowInfo[RowIndex].LineWidth * RowInfo[RowIndex].LineHeight * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), Bkgnd);
+        // END
 
         //
         // Initialize the background color.
