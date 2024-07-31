@@ -957,6 +957,7 @@ UsbBusAddWantedUsbIoDP (
   EFI_STATUS                Status;
   EFI_DEVICE_PATH_PROTOCOL  *DevicePathPtr;
 
+  DevicePathPtr = NULL; // MU_CHANGE Start - CodeQL Change
   //
   // Check whether remaining device path is valid
   //
@@ -1001,9 +1002,15 @@ UsbBusAddWantedUsbIoDP (
   }
 
   ASSERT (DevicePathPtr != NULL);
-  Status = AddUsbDPToList (DevicePathPtr, &Bus->WantedUsbIoDPList);
-  ASSERT (!EFI_ERROR (Status));
-  FreePool (DevicePathPtr);
+  // MU_CHANGE Start - CodeQL Change - Check allocation before use
+  if (DevicePathPtr != NULL) {
+    Status = AddUsbDPToList (DevicePathPtr, &Bus->WantedUsbIoDPList);
+    ASSERT (!EFI_ERROR (Status));
+    FreePool (DevicePathPtr);
+  }
+
+  // MU_CHANGE End - CodeQL Change - Check allocation before use
+
   return EFI_SUCCESS;
 }
 
@@ -1060,7 +1067,12 @@ UsbBusIsWantedUsbIO (
   // Create new Usb device path according to the usb part in UsbIo full device path
   //
   DevicePathPtr = GetUsbDPFromFullDP (UsbIf->DevicePath);
-  ASSERT (DevicePathPtr != NULL);
+  // MU_CHANGE Start - CodeQL Change - Check before use
+  if (DevicePathPtr == NULL) {
+    return FALSE;
+  }
+
+  // MU_CHANGE End - CodeQL Change -  Check before use
 
   DoConvert       = FALSE;
   WantedListIndex = WantedUsbIoDPListPtr->ForwardLink;
