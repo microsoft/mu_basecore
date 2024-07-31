@@ -717,7 +717,10 @@ ProcessOpRomImage (
     EfiOpRomImageNode.EndingOffset   = (UINTN)RomBarOffset + ImageSize - 1 - (UINTN)RomBar;
 
     PciOptionRomImageDevicePath = AppendDevicePathNode (PciDevice->DevicePath, &EfiOpRomImageNode.Header);
-    ASSERT (PciOptionRomImageDevicePath != NULL);
+    if (PciOptionRomImageDevicePath == NULL) {
+      // MU_CHANGE Start - CodeQl Change
+      return EFI_NOT_FOUND;
+    }
 
     //
     // load image and start image

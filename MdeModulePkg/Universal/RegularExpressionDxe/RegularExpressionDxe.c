@@ -81,7 +81,7 @@ OnigurumaMatch (
   INT32           OnigResult;
   OnigErrorInfo   ErrorInfo;
   OnigUChar       ErrorMessage[ONIG_MAX_ERROR_MESSAGE_LEN];
-  UINT32          Index;
+  UINTN           Index; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
   OnigUChar       *Start;
   EFI_STATUS      Status;
 
