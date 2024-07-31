@@ -1841,7 +1841,13 @@ DevPathToTextUri (
   Uri       = DevPath;
   UriLength = DevicePathNodeLength (Uri) - sizeof (URI_DEVICE_PATH);
   UriStr    = AllocatePool (UriLength + 1);
-  ASSERT (UriStr != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!UriStr) {
+    ASSERT (UriStr != NULL);
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   CopyMem (UriStr, Uri->Uri, UriLength);
   UriStr[UriLength] = '\0';

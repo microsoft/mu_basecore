@@ -184,7 +184,13 @@ DxePciSegmentLibPciRootBridgeIoReadWorker (
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo;
 
   PciRootBridgeIo = PciSegmentLibSearchForRootBridge (Address);
-  ASSERT (PciRootBridgeIo != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (PciRootBridgeIo == NULL) {
+    ASSERT (PciRootBridgeIo != NULL);
+    return 0;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   PciRootBridgeIo->Pci.Read (
                          PciRootBridgeIo,
@@ -223,7 +229,13 @@ DxePciSegmentLibPciRootBridgeIoWriteWorker (
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *PciRootBridgeIo;
 
   PciRootBridgeIo = PciSegmentLibSearchForRootBridge (Address);
-  ASSERT (PciRootBridgeIo != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (PciRootBridgeIo == NULL) {
+    ASSERT (PciRootBridgeIo != NULL);
+    return 0;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   PciRootBridgeIo->Pci.Write (
                          PciRootBridgeIo,

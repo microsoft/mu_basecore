@@ -269,14 +269,16 @@ IsHexStr (
   //
   // skip preceeding white space
   //
-  while ((*Str != 0) && *Str == L' ') {
+  while (*Str == L' ') {
+    // MU_CHANGE - CodeQL Change
     Str++;
   }
 
   //
   // skip preceeding zeros
   //
-  while ((*Str != 0) && *Str == L'0') {
+  while (*Str == L'0') {
+    // MU_CHANGE - CodeQL Change
     Str++;
   }
 
@@ -387,8 +389,13 @@ DevPathFromTextGenericPath (
            (UINT8)Strtoi (SubtypeStr),
            (UINT16)(sizeof (EFI_DEVICE_PATH_PROTOCOL) + DataLength)
            );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Node) {
+    StrHexToBytes (DataStr, DataLength * 2, (UINT8 *)(Node + 1), DataLength);
+  }
 
-  StrHexToBytes (DataStr, DataLength * 2, (UINT8 *)(Node + 1), DataLength);
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   return Node;
 }
 
@@ -452,9 +459,13 @@ DevPathFromTextPci (
                                      HW_PCI_DP,
                                      (UINT16)sizeof (PCI_DEVICE_PATH)
                                      );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Pci) {
+    Pci->Function = (UINT8)Strtoi (FunctionStr);
+    Pci->Device   = (UINT8)Strtoi (DeviceStr);
+  }
 
-  Pci->Function = (UINT8)Strtoi (FunctionStr);
-  Pci->Device   = (UINT8)Strtoi (DeviceStr);
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)Pci;
 }
@@ -482,7 +493,12 @@ DevPathFromTextPcCard (
                                               (UINT16)sizeof (PCCARD_DEVICE_PATH)
                                               );
 
-  Pccard->FunctionNumber = (UINT8)Strtoi (FunctionNumberStr);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Pccard) {
+    Pccard->FunctionNumber = (UINT8)Strtoi (FunctionNumberStr);
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)Pccard;
 }
@@ -514,9 +530,14 @@ DevPathFromTextMemoryMapped (
                                                (UINT16)sizeof (MEMMAP_DEVICE_PATH)
                                                );
 
-  MemMap->MemoryType = (UINT32)Strtoi (MemoryTypeStr);
-  Strtoi64 (StartingAddressStr, &MemMap->StartingAddress);
-  Strtoi64 (EndingAddressStr, &MemMap->EndingAddress);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (MemMap) {
+    MemMap->MemoryType = (UINT32)Strtoi (MemoryTypeStr);
+    Strtoi64 (StartingAddressStr, &MemMap->StartingAddress);
+    Strtoi64 (EndingAddressStr, &MemMap->EndingAddress);
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)MemMap;
 }
@@ -558,9 +579,13 @@ ConvertFromTextVendor (
                                    SubType,
                                    (UINT16)(sizeof (VENDOR_DEVICE_PATH) + Length)
                                    );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Vendor) {
+    StrToGuid (GuidStr, &Vendor->Guid);
+    StrHexToBytes (DataStr, Length * 2, (UINT8 *)(Vendor + 1), Length);
+  }
 
-  StrToGuid (GuidStr, &Vendor->Guid);
-  StrHexToBytes (DataStr, Length * 2, (UINT8 *)(Vendor + 1), Length);
+  // MU_CHANGE END - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)Vendor;
 }
@@ -607,7 +632,13 @@ DevPathFromTextCtrl (
                                               HW_CONTROLLER_DP,
                                               (UINT16)sizeof (CONTROLLER_DEVICE_PATH)
                                               );
-  Controller->ControllerNumber = (UINT32)Strtoi (ControllerStr);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+
+  if (Controller) {
+    Controller->ControllerNumber = (UINT32)Strtoi (ControllerStr);
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)Controller;
 }
@@ -636,12 +667,16 @@ DevPathFromTextBmc (
                                           HW_BMC_DP,
                                           (UINT16)sizeof (BMC_DEVICE_PATH)
                                           );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (BmcDp) {
+    BmcDp->InterfaceType = (UINT8)Strtoi (InterfaceTypeStr);
+    WriteUnaligned64 (
+      (UINT64 *)(&BmcDp->BaseAddress),
+      StrHexToUint64 (BaseAddressStr)
+      );
+  }
 
-  BmcDp->InterfaceType = (UINT8)Strtoi (InterfaceTypeStr);
-  WriteUnaligned64 (
-    (UINT64 *)(&BmcDp->BaseAddress),
-    StrHexToUint64 (BaseAddressStr)
-    );
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)BmcDp;
 }
@@ -705,9 +740,13 @@ DevPathFromTextAcpi (
                                      ACPI_DP,
                                      (UINT16)sizeof (ACPI_HID_DEVICE_PATH)
                                      );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Acpi) {
+    Acpi->HID = EisaIdFromText (HIDStr);
+    Acpi->UID = (UINT32)Strtoi (UIDStr);
+  }
 
-  Acpi->HID = EisaIdFromText (HIDStr);
-  Acpi->UID = (UINT32)Strtoi (UIDStr);
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)Acpi;
 }
@@ -737,8 +776,13 @@ ConvertFromTextAcpi (
                                      (UINT16)sizeof (ACPI_HID_DEVICE_PATH)
                                      );
 
-  Acpi->HID = EFI_PNP_ID (PnPId);
-  Acpi->UID = (UINT32)Strtoi (UIDStr);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Acpi) {
+    Acpi->HID = EFI_PNP_ID (PnPId);
+    Acpi->UID = (UINT32)Strtoi (UIDStr);
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)Acpi;
 }
@@ -878,14 +922,19 @@ DevPathFromTextAcpiEx (
                                               Length
                                               );
 
-  AcpiEx->HID = EisaIdFromText (HIDStr);
-  AcpiEx->CID = EisaIdFromText (CIDStr);
-  AcpiEx->UID = (UINT32)Strtoi (UIDStr);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (AcpiEx) {
+    AcpiEx->HID = EisaIdFromText (HIDStr);
+    AcpiEx->CID = EisaIdFromText (CIDStr);
+    AcpiEx->UID = (UINT32)Strtoi (UIDStr);
 
-  AsciiStr = (CHAR8 *)((UINT8 *)AcpiEx + sizeof (ACPI_EXTENDED_HID_DEVICE_PATH));
-  StrToAscii (HIDSTRStr, &AsciiStr);
-  StrToAscii (UIDSTRStr, &AsciiStr);
-  StrToAscii (CIDSTRStr, &AsciiStr);
+    AsciiStr = (CHAR8 *)((UINT8 *)AcpiEx + sizeof (ACPI_EXTENDED_HID_DEVICE_PATH));
+    StrToAscii (HIDSTRStr, &AsciiStr);
+    StrToAscii (UIDSTRStr, &AsciiStr);
+    StrToAscii (CIDSTRStr, &AsciiStr);
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)AcpiEx;
 }
@@ -919,6 +968,12 @@ DevPathFromTextAcpiExp (
                                                  ACPI_EXTENDED_DP,
                                                  Length
                                                  );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!AcpiEx) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)AcpiEx;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   AcpiEx->HID = EisaIdFromText (HIDStr);
   //
@@ -976,6 +1031,12 @@ DevPathFromTextAcpiAdr (
                                       (UINT16)sizeof (ACPI_ADR_DEVICE_PATH)
                                       );
   ASSERT (AcpiAdr != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!AcpiAdr) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)AcpiAdr;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   for (Index = 0; ; Index++) {
     DisplayDeviceStr = GetNextParamStr (&TextDeviceNode);
@@ -991,6 +1052,12 @@ DevPathFromTextAcpiAdr (
                   AcpiAdr
                   );
       ASSERT (AcpiAdr != NULL);
+      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+      if (!AcpiAdr) {
+        return (EFI_DEVICE_PATH_PROTOCOL *)AcpiAdr;
+      }
+
+      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       SetDevicePathNodeLength (AcpiAdr, Length + sizeof (UINT32));
     }
 
@@ -1039,6 +1106,12 @@ DevPathFromTextAta (
                                  MSG_ATAPI_DP,
                                  (UINT16)sizeof (ATAPI_DEVICE_PATH)
                                  );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!Atapi) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)Atapi;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   PrimarySecondaryStr = GetNextParamStr (&TextDeviceNode);
   SlaveMasterStr      = GetNextParamStr (&TextDeviceNode);
@@ -1089,9 +1162,13 @@ DevPathFromTextScsi (
                                  MSG_SCSI_DP,
                                  (UINT16)sizeof (SCSI_DEVICE_PATH)
                                  );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Scsi) {
+    Scsi->Pun = (UINT16)Strtoi (PunStr);
+    Scsi->Lun = (UINT16)Strtoi (LunStr);
+  }
 
-  Scsi->Pun = (UINT16)Strtoi (PunStr);
-  Scsi->Lun = (UINT16)Strtoi (LunStr);
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)Scsi;
 }
@@ -1120,11 +1197,14 @@ DevPathFromTextFibre (
                                          MSG_FIBRECHANNEL_DP,
                                          (UINT16)sizeof (FIBRECHANNEL_DEVICE_PATH)
                                          );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Fibre) {
+    Fibre->Reserved = 0;
+    Strtoi64 (WWNStr, &Fibre->WWN);
+    Strtoi64 (LunStr, &Fibre->Lun);
+  }
 
-  Fibre->Reserved = 0;
-  Strtoi64 (WWNStr, &Fibre->WWN);
-  Strtoi64 (LunStr, &Fibre->Lun);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)Fibre;
 }
 
@@ -1152,14 +1232,17 @@ DevPathFromTextFibreEx (
                                             MSG_FIBRECHANNELEX_DP,
                                             (UINT16)sizeof (FIBRECHANNELEX_DEVICE_PATH)
                                             );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (FibreEx) {
+    FibreEx->Reserved = 0;
+    Strtoi64 (WWNStr, (UINT64 *)(&FibreEx->WWN));
+    Strtoi64 (LunStr, (UINT64 *)(&FibreEx->Lun));
 
-  FibreEx->Reserved = 0;
-  Strtoi64 (WWNStr, (UINT64 *)(&FibreEx->WWN));
-  Strtoi64 (LunStr, (UINT64 *)(&FibreEx->Lun));
+    *(UINT64 *)(&FibreEx->WWN) = SwapBytes64 (*(UINT64 *)(&FibreEx->WWN));
+    *(UINT64 *)(&FibreEx->Lun) = SwapBytes64 (*(UINT64 *)(&FibreEx->Lun));
+  }
 
-  *(UINT64 *)(&FibreEx->WWN) = SwapBytes64 (*(UINT64 *)(&FibreEx->WWN));
-  *(UINT64 *)(&FibreEx->Lun) = SwapBytes64 (*(UINT64 *)(&FibreEx->Lun));
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)FibreEx;
 }
 
@@ -1185,10 +1268,13 @@ DevPathFromText1394 (
                                         MSG_1394_DP,
                                         (UINT16)sizeof (F1394_DEVICE_PATH)
                                         );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (F1394DevPath) {
+    F1394DevPath->Reserved = 0;
+    F1394DevPath->Guid     = StrHexToUint64 (GuidStr);
+  }
 
-  F1394DevPath->Reserved = 0;
-  F1394DevPath->Guid     = StrHexToUint64 (GuidStr);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)F1394DevPath;
 }
 
@@ -1216,10 +1302,13 @@ DevPathFromTextUsb (
                                       MSG_USB_DP,
                                       (UINT16)sizeof (USB_DEVICE_PATH)
                                       );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Usb) {
+    Usb->ParentPortNumber = (UINT8)Strtoi (PortStr);
+    Usb->InterfaceNumber  = (UINT8)Strtoi (InterfaceStr);
+  }
 
-  Usb->ParentPortNumber = (UINT8)Strtoi (PortStr);
-  Usb->InterfaceNumber  = (UINT8)Strtoi (InterfaceStr);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)Usb;
 }
 
@@ -1245,9 +1334,12 @@ DevPathFromTextI2O (
                                     MSG_I2O_DP,
                                     (UINT16)sizeof (I2O_DEVICE_PATH)
                                     );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (I2ODevPath) {
+    I2ODevPath->Tid = (UINT32)Strtoi (TIDStr);
+  }
 
-  I2ODevPath->Tid = (UINT32)Strtoi (TIDStr);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)I2ODevPath;
 }
 
@@ -1281,13 +1373,16 @@ DevPathFromTextInfiniband (
                                            MSG_INFINIBAND_DP,
                                            (UINT16)sizeof (INFINIBAND_DEVICE_PATH)
                                            );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (InfiniBand) {
+    InfiniBand->ResourceFlags = (UINT32)Strtoi (FlagsStr);
+    StrToGuid (GuidStr, (EFI_GUID *)InfiniBand->PortGid);
+    Strtoi64 (SidStr, &InfiniBand->ServiceId);
+    Strtoi64 (TidStr, &InfiniBand->TargetPortId);
+    Strtoi64 (DidStr, &InfiniBand->DeviceId);
+  }
 
-  InfiniBand->ResourceFlags = (UINT32)Strtoi (FlagsStr);
-  StrToGuid (GuidStr, (EFI_GUID *)InfiniBand->PortGid);
-  Strtoi64 (SidStr, &InfiniBand->ServiceId);
-  Strtoi64 (TidStr, &InfiniBand->TargetPortId);
-  Strtoi64 (DidStr, &InfiniBand->DeviceId);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)InfiniBand;
 }
 
@@ -1331,8 +1426,12 @@ DevPathFromTextVenPcAnsi (
                                    MSG_VENDOR_DP,
                                    (UINT16)sizeof (VENDOR_DEVICE_PATH)
                                    );
-  CopyGuid (&Vendor->Guid, &gEfiPcAnsiGuid);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Vendor) {
+    CopyGuid (&Vendor->Guid, &gEfiPcAnsiGuid);
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)Vendor;
 }
 
@@ -1356,7 +1455,12 @@ DevPathFromTextVenVt100 (
                                    MSG_VENDOR_DP,
                                    (UINT16)sizeof (VENDOR_DEVICE_PATH)
                                    );
-  CopyGuid (&Vendor->Guid, &gEfiVT100Guid);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Vendor) {
+    CopyGuid (&Vendor->Guid, &gEfiVT100Guid);
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)Vendor;
 }
@@ -1381,8 +1485,12 @@ DevPathFromTextVenVt100Plus (
                                    MSG_VENDOR_DP,
                                    (UINT16)sizeof (VENDOR_DEVICE_PATH)
                                    );
-  CopyGuid (&Vendor->Guid, &gEfiVT100PlusGuid);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Vendor) {
+    CopyGuid (&Vendor->Guid, &gEfiVT100PlusGuid);
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)Vendor;
 }
 
@@ -1406,7 +1514,12 @@ DevPathFromTextVenUtf8 (
                                    MSG_VENDOR_DP,
                                    (UINT16)sizeof (VENDOR_DEVICE_PATH)
                                    );
-  CopyGuid (&Vendor->Guid, &gEfiVTUTF8Guid);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Vendor) {
+    CopyGuid (&Vendor->Guid, &gEfiVTUTF8Guid);
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)Vendor;
 }
@@ -1433,16 +1546,19 @@ DevPathFromTextUartFlowCtrl (
                                                        MSG_VENDOR_DP,
                                                        (UINT16)sizeof (UART_FLOW_CONTROL_DEVICE_PATH)
                                                        );
-
-  CopyGuid (&UartFlowControl->Guid, &gEfiUartDevicePathGuid);
-  if (StrCmp (ValueStr, L"XonXoff") == 0) {
-    UartFlowControl->FlowControlMap = 2;
-  } else if (StrCmp (ValueStr, L"Hardware") == 0) {
-    UartFlowControl->FlowControlMap = 1;
-  } else {
-    UartFlowControl->FlowControlMap = 0;
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (UartFlowControl) {
+    CopyGuid (&UartFlowControl->Guid, &gEfiUartDevicePathGuid);
+    if (StrCmp (ValueStr, L"XonXoff") == 0) {
+      UartFlowControl->FlowControlMap = 2;
+    } else if (StrCmp (ValueStr, L"Hardware") == 0) {
+      UartFlowControl->FlowControlMap = 1;
+    } else {
+      UartFlowControl->FlowControlMap = 0;
+    }
   }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)UartFlowControl;
 }
 
@@ -1484,7 +1600,12 @@ DevPathFromTextSAS (
                                      MSG_VENDOR_DP,
                                      (UINT16)sizeof (SAS_DEVICE_PATH)
                                      );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!Sas) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)Sas;
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   CopyGuid (&Sas->Guid, &gEfiSasDevicePathGuid);
   Strtoi64 (AddressStr, &Sas->SasAddress);
   Strtoi64 (LunStr, &Sas->Lun);
@@ -1579,7 +1700,12 @@ DevPathFromTextSasEx (
                                        MSG_SASEX_DP,
                                        (UINT16)sizeof (SASEX_DEVICE_PATH)
                                        );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!SasEx) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)SasEx;
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   Strtoi64 (AddressStr, &SasAddress);
   Strtoi64 (LunStr, &Lun);
   WriteUnaligned64 ((UINT64 *)&SasEx->SasAddress, SwapBytes64 (SasAddress));
@@ -1662,15 +1788,18 @@ DevPathFromTextNVMe (
                                                      MSG_NVME_NAMESPACE_DP,
                                                      (UINT16)sizeof (NVME_NAMESPACE_DEVICE_PATH)
                                                      );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Nvme) {
+    Nvme->NamespaceId = (UINT32)Strtoi (NamespaceIdStr);
+    Uuid              = (UINT8 *)&Nvme->NamespaceUuid;
 
-  Nvme->NamespaceId = (UINT32)Strtoi (NamespaceIdStr);
-  Uuid              = (UINT8 *)&Nvme->NamespaceUuid;
-
-  Index = sizeof (Nvme->NamespaceUuid) / sizeof (UINT8);
-  while (Index-- != 0) {
-    Uuid[Index] = (UINT8)StrHexToUintn (SplitStr (&NamespaceUuidStr, L'-'));
+    Index = sizeof (Nvme->NamespaceUuid) / sizeof (UINT8);
+    while (Index-- != 0) {
+      Uuid[Index] = (UINT8)StrHexToUintn (SplitStr (&NamespaceUuidStr, L'-'));
+    }
   }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)Nvme;
 }
 
@@ -1698,10 +1827,13 @@ DevPathFromTextUfs (
                                 MSG_UFS_DP,
                                 (UINT16)sizeof (UFS_DEVICE_PATH)
                                 );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Ufs) {
+    Ufs->Pun = (UINT8)Strtoi (PunStr);
+    Ufs->Lun = (UINT8)Strtoi (LunStr);
+  }
 
-  Ufs->Pun = (UINT8)Strtoi (PunStr);
-  Ufs->Lun = (UINT8)Strtoi (LunStr);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)Ufs;
 }
 
@@ -1727,9 +1859,12 @@ DevPathFromTextSd (
                                       MSG_SD_DP,
                                       (UINT16)sizeof (SD_DEVICE_PATH)
                                       );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Sd) {
+    Sd->SlotNumber = (UINT8)Strtoi (SlotNumberStr);
+  }
 
-  Sd->SlotNumber = (UINT8)Strtoi (SlotNumberStr);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)Sd;
 }
 
@@ -1755,9 +1890,12 @@ DevPathFromTextEmmc (
                                         MSG_EMMC_DP,
                                         (UINT16)sizeof (EMMC_DEVICE_PATH)
                                         );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Emmc) {
+    Emmc->SlotNumber = (UINT8)Strtoi (SlotNumberStr);
+  }
 
-  Emmc->SlotNumber = (UINT8)Strtoi (SlotNumberStr);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)Emmc;
 }
 
@@ -1781,9 +1919,12 @@ DevPathFromTextDebugPort (
                                  MSG_VENDOR_DP,
                                  (UINT16)sizeof (VENDOR_DEVICE_PATH)
                                  );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Vend) {
+    CopyGuid (&Vend->Guid, &gEfiDebugPortProtocolGuid);
+  }
 
-  CopyGuid (&Vend->Guid, &gEfiDebugPortProtocolGuid);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)Vend;
 }
 
@@ -1812,16 +1953,19 @@ DevPathFromTextMAC (
                                          MSG_MAC_ADDR_DP,
                                          (UINT16)sizeof (MAC_ADDR_DEVICE_PATH)
                                          );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (MACDevPath) {
+    MACDevPath->IfType = (UINT8)Strtoi (IfTypeStr);
 
-  MACDevPath->IfType = (UINT8)Strtoi (IfTypeStr);
+    Length = sizeof (EFI_MAC_ADDRESS);
+    if ((MACDevPath->IfType == 0x01) || (MACDevPath->IfType == 0x00)) {
+      Length = 6;
+    }
 
-  Length = sizeof (EFI_MAC_ADDRESS);
-  if ((MACDevPath->IfType == 0x01) || (MACDevPath->IfType == 0x00)) {
-    Length = 6;
+    StrHexToBytes (AddressStr, Length * 2, MACDevPath->MacAddress.Addr, Length);
   }
 
-  StrHexToBytes (AddressStr, Length * 2, MACDevPath->MacAddress.Addr, Length);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)MACDevPath;
 }
 
@@ -1881,7 +2025,12 @@ DevPathFromTextIPv4 (
                                         MSG_IPv4_DP,
                                         (UINT16)sizeof (IPv4_DEVICE_PATH)
                                         );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!IPv4) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)IPv4;
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   StrToIpv4Address (RemoteIPStr, NULL, &IPv4->RemoteIpAddress, NULL);
   IPv4->Protocol = (UINT16)NetworkProtocolFromText (ProtocolStr);
   if (StrCmp (TypeStr, L"Static") == 0) {
@@ -1937,7 +2086,12 @@ DevPathFromTextIPv6 (
                                           MSG_IPv6_DP,
                                           (UINT16)sizeof (IPv6_DEVICE_PATH)
                                           );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!IPv6) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)IPv6;
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   StrToIpv6Address (RemoteIPStr, NULL, &IPv6->RemoteIpAddress, NULL);
   IPv6->Protocol = (UINT16)NetworkProtocolFromText (ProtocolStr);
   if (StrCmp (TypeStr, L"Static") == 0) {
@@ -1991,7 +2145,12 @@ DevPathFromTextUart (
                                       MSG_UART_DP,
                                       (UINT16)sizeof (UART_DEVICE_PATH)
                                       );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!Uart) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)Uart;
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   if (StrCmp (BaudStr, L"DEFAULT") == 0) {
     Uart->BaudRate = 115200;
   } else {
@@ -2071,7 +2230,12 @@ ConvertFromTextUsbClass (
                                         MSG_USB_CLASS_DP,
                                         (UINT16)sizeof (USB_CLASS_DEVICE_PATH)
                                         );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!UsbClass) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)UsbClass;
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   VIDStr = GetNextParamStr (&TextDeviceNode);
   PIDStr = GetNextParamStr (&TextDeviceNode);
   if (UsbClassText->ClassExist) {
@@ -2513,20 +2677,24 @@ DevPathFromTextUsbWwid (
                                       MSG_USB_WWID_DP,
                                       (UINT16)(sizeof (USB_WWID_DEVICE_PATH) + SerialNumberStrLen * sizeof (CHAR16))
                                       );
-  UsbWwid->VendorId        = (UINT16)Strtoi (VIDStr);
-  UsbWwid->ProductId       = (UINT16)Strtoi (PIDStr);
-  UsbWwid->InterfaceNumber = (UINT16)Strtoi (InterfaceNumStr);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (UsbWwid) {
+    UsbWwid->VendorId        = (UINT16)Strtoi (VIDStr);
+    UsbWwid->ProductId       = (UINT16)Strtoi (PIDStr);
+    UsbWwid->InterfaceNumber = (UINT16)Strtoi (InterfaceNumStr);
 
-  //
-  // There is no memory allocated in UsbWwid for the '\0' in SerialNumberStr.
-  // Therefore, the '\0' will not be copied.
-  //
-  CopyMem (
-    (UINT8 *)UsbWwid + sizeof (USB_WWID_DEVICE_PATH),
-    SerialNumberStr,
-    SerialNumberStrLen * sizeof (CHAR16)
-    );
+    //
+    // There is no memory allocated in UsbWwid for the '\0' in SerialNumberStr.
+    // Therefore, the '\0' will not be copied.
+    //
+    CopyMem (
+      (UINT8 *)UsbWwid + sizeof (USB_WWID_DEVICE_PATH),
+      SerialNumberStr,
+      SerialNumberStrLen * sizeof (CHAR16)
+      );
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)UsbWwid;
 }
 
@@ -2552,9 +2720,12 @@ DevPathFromTextUnit (
                                                      MSG_DEVICE_LOGICAL_UNIT_DP,
                                                      (UINT16)sizeof (DEVICE_LOGICAL_UNIT_DEVICE_PATH)
                                                      );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (LogicalUnit) {
+    LogicalUnit->Lun = (UINT8)Strtoi (LunStr);
+  }
 
-  LogicalUnit->Lun = (UINT8)Strtoi (LunStr);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)LogicalUnit;
 }
 
@@ -2595,7 +2766,12 @@ DevPathFromTextiSCSI (
                                                        MSG_ISCSI_DP,
                                                        (UINT16)(sizeof (ISCSI_DEVICE_PATH_WITH_NAME) + StrLen (NameStr))
                                                        );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!ISCSIDevPath) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)ISCSIDevPath;
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   AsciiStr = ISCSIDevPath->TargetName;
   StrToAscii (NameStr, &AsciiStr);
 
@@ -2656,9 +2832,12 @@ DevPathFromTextVlan (
                                   MSG_VLAN_DP,
                                   (UINT16)sizeof (VLAN_DEVICE_PATH)
                                   );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Vlan) {
+    Vlan->VlanId = (UINT16)Strtoi (VlanStr);
+  }
 
-  Vlan->VlanId = (UINT16)Strtoi (VlanStr);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)Vlan;
 }
 
@@ -2684,12 +2863,17 @@ DevPathFromTextBluetooth (
                                             MSG_BLUETOOTH_DP,
                                             (UINT16)sizeof (BLUETOOTH_DEVICE_PATH)
                                             );
-  StrHexToBytes (
-    BluetoothStr,
-    sizeof (BLUETOOTH_ADDRESS) * 2,
-    BluetoothDp->BD_ADDR.Address,
-    sizeof (BLUETOOTH_ADDRESS)
-    );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (BluetoothDp) {
+    StrHexToBytes (
+      BluetoothStr,
+      sizeof (BLUETOOTH_ADDRESS) * 2,
+      BluetoothDp->BD_ADDR.Address,
+      sizeof (BLUETOOTH_ADDRESS)
+      );
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)BluetoothDp;
 }
 
@@ -2718,7 +2902,8 @@ DevPathFromTextWiFi (
                                   (UINT16)sizeof (WIFI_DEVICE_PATH)
                                   );
 
-  if (NULL != SSIdStr) {
+  if ((NULL != SSIdStr) && (NULL != WiFiDp)) {
+    // MU_CHANGE - CodeQL Change
     DataLen = StrLen (SSIdStr);
     if (StrLen (SSIdStr) > 32) {
       SSIdStr[32] = L'\0';
@@ -2756,14 +2941,18 @@ DevPathFromTextBluetoothLE (
                                                          MSG_BLUETOOTH_LE_DP,
                                                          (UINT16)sizeof (BLUETOOTH_LE_DEVICE_PATH)
                                                          );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (BluetoothLeDp) {
+    BluetoothLeDp->Address.Type = (UINT8)Strtoi (BluetoothLeAddrTypeStr);
+    StrHexToBytes (
+      BluetoothLeAddrStr,
+      sizeof (BluetoothLeDp->Address.Address) * 2,
+      BluetoothLeDp->Address.Address,
+      sizeof (BluetoothLeDp->Address.Address)
+      );
+  }
 
-  BluetoothLeDp->Address.Type = (UINT8)Strtoi (BluetoothLeAddrTypeStr);
-  StrHexToBytes (
-    BluetoothLeAddrStr,
-    sizeof (BluetoothLeDp->Address.Address) * 2,
-    BluetoothLeDp->Address.Address,
-    sizeof (BluetoothLeDp->Address.Address)
-    );
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)BluetoothLeDp;
 }
 
@@ -2883,7 +3072,8 @@ DevPathFromTextUri (
                                    (UINT16)(sizeof (URI_DEVICE_PATH) + UriLength)
                                    );
 
-  while (UriLength-- != 0) {
+  while (Uri && UriLength-- != 0) {
+    // MU_CHANGE - CodeQL Change
     Uri->Uri[UriLength] = (CHAR8)UriStr[UriLength];
   }
 
@@ -2937,6 +3127,12 @@ DevPathFromTextHD (
                                             MEDIA_HARDDRIVE_DP,
                                             (UINT16)sizeof (HARDDRIVE_DEVICE_PATH)
                                             );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!Hd) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)Hd;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   Hd->PartitionNumber = (UINT32)Strtoi (PartitionStr);
 
@@ -2990,10 +3186,14 @@ DevPathFromTextCDROM (
                                         MEDIA_CDROM_DP,
                                         (UINT16)sizeof (CDROM_DEVICE_PATH)
                                         );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CDROMDevPath) {
+    CDROMDevPath->BootEntry = (UINT32)Strtoi (EntryStr);
+    Strtoi64 (StartStr, &CDROMDevPath->PartitionStart);
+    Strtoi64 (SizeStr, &CDROMDevPath->PartitionSize);
+  }
 
-  CDROMDevPath->BootEntry = (UINT32)Strtoi (EntryStr);
-  Strtoi64 (StartStr, &CDROMDevPath->PartitionStart);
-  Strtoi64 (SizeStr, &CDROMDevPath->PartitionSize);
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)CDROMDevPath;
 }
@@ -3038,9 +3238,12 @@ DevPathFromTextFilePath (
                                    MEDIA_FILEPATH_DP,
                                    (UINT16)(sizeof (FILEPATH_DEVICE_PATH) + StrLen (TextDeviceNode) * 2)
                                    );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (File) {
+    StrCpyS (File->PathName, StrLen (TextDeviceNode) + 1, TextDeviceNode);
+  }
 
-  StrCpyS (File->PathName, StrLen (TextDeviceNode) + 1, TextDeviceNode);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)File;
 }
 
@@ -3066,8 +3269,12 @@ DevPathFromTextMedia (
                                             MEDIA_PROTOCOL_DP,
                                             (UINT16)sizeof (MEDIA_PROTOCOL_DEVICE_PATH)
                                             );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Media) {
+    StrToGuid (GuidStr, &Media->Protocol);
+  }
 
-  StrToGuid (GuidStr, &Media->Protocol);
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)Media;
 }
@@ -3094,9 +3301,12 @@ DevPathFromTextFv (
                                           MEDIA_PIWG_FW_VOL_DP,
                                           (UINT16)sizeof (MEDIA_FW_VOL_DEVICE_PATH)
                                           );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Fv) {
+    StrToGuid (GuidStr, &Fv->FvName);
+  }
 
-  StrToGuid (GuidStr, &Fv->FvName);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)Fv;
 }
 
@@ -3122,8 +3332,12 @@ DevPathFromTextFvFile (
                                                    MEDIA_PIWG_FW_FILE_DP,
                                                    (UINT16)sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH)
                                                    );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (FvFile) {
+    StrToGuid (GuidStr, &FvFile->FvFileName);
+  }
 
-  StrToGuid (GuidStr, &FvFile->FvFileName);
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return (EFI_DEVICE_PATH_PROTOCOL *)FvFile;
 }
@@ -3152,10 +3366,13 @@ DevPathFromTextRelativeOffsetRange (
                                                                    MEDIA_RELATIVE_OFFSET_RANGE_DP,
                                                                    (UINT16)sizeof (MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH)
                                                                    );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Offset) {
+    Strtoi64 (StartingOffsetStr, &Offset->StartingOffset);
+    Strtoi64 (EndingOffsetStr, &Offset->EndingOffset);
+  }
 
-  Strtoi64 (StartingOffsetStr, &Offset->StartingOffset);
-  Strtoi64 (EndingOffsetStr, &Offset->EndingOffset);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)Offset;
 }
 
@@ -3189,14 +3406,17 @@ DevPathFromTextRamDisk (
                                                     MEDIA_RAM_DISK_DP,
                                                     (UINT16)sizeof (MEDIA_RAM_DISK_DEVICE_PATH)
                                                     );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (RamDisk) {
+    Strtoi64 (StartingAddrStr, &StartingAddr);
+    WriteUnaligned64 ((UINT64 *)&(RamDisk->StartingAddr[0]), StartingAddr);
+    Strtoi64 (EndingAddrStr, &EndingAddr);
+    WriteUnaligned64 ((UINT64 *)&(RamDisk->EndingAddr[0]), EndingAddr);
+    RamDisk->Instance = (UINT16)Strtoi (InstanceStr);
+    StrToGuid (TypeGuidStr, &RamDisk->TypeGuid);
+  }
 
-  Strtoi64 (StartingAddrStr, &StartingAddr);
-  WriteUnaligned64 ((UINT64 *)&(RamDisk->StartingAddr[0]), StartingAddr);
-  Strtoi64 (EndingAddrStr, &EndingAddr);
-  WriteUnaligned64 ((UINT64 *)&(RamDisk->EndingAddr[0]), EndingAddr);
-  RamDisk->Instance = (UINT16)Strtoi (InstanceStr);
-  StrToGuid (TypeGuidStr, &RamDisk->TypeGuid);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)RamDisk;
 }
 
@@ -3229,14 +3449,17 @@ DevPathFromTextVirtualDisk (
                                             MEDIA_RAM_DISK_DP,
                                             (UINT16)sizeof (MEDIA_RAM_DISK_DEVICE_PATH)
                                             );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (RamDisk) {
+    Strtoi64 (StartingAddrStr, &StartingAddr);
+    WriteUnaligned64 ((UINT64 *)&(RamDisk->StartingAddr[0]), StartingAddr);
+    Strtoi64 (EndingAddrStr, &EndingAddr);
+    WriteUnaligned64 ((UINT64 *)&(RamDisk->EndingAddr[0]), EndingAddr);
+    RamDisk->Instance = (UINT16)Strtoi (InstanceStr);
+    CopyGuid (&RamDisk->TypeGuid, &gEfiVirtualDiskGuid);
+  }
 
-  Strtoi64 (StartingAddrStr, &StartingAddr);
-  WriteUnaligned64 ((UINT64 *)&(RamDisk->StartingAddr[0]), StartingAddr);
-  Strtoi64 (EndingAddrStr, &EndingAddr);
-  WriteUnaligned64 ((UINT64 *)&(RamDisk->EndingAddr[0]), EndingAddr);
-  RamDisk->Instance = (UINT16)Strtoi (InstanceStr);
-  CopyGuid (&RamDisk->TypeGuid, &gEfiVirtualDiskGuid);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)RamDisk;
 }
 
@@ -3269,14 +3492,17 @@ DevPathFromTextVirtualCd (
                                             MEDIA_RAM_DISK_DP,
                                             (UINT16)sizeof (MEDIA_RAM_DISK_DEVICE_PATH)
                                             );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (RamDisk) {
+    Strtoi64 (StartingAddrStr, &StartingAddr);
+    WriteUnaligned64 ((UINT64 *)&(RamDisk->StartingAddr[0]), StartingAddr);
+    Strtoi64 (EndingAddrStr, &EndingAddr);
+    WriteUnaligned64 ((UINT64 *)&(RamDisk->EndingAddr[0]), EndingAddr);
+    RamDisk->Instance = (UINT16)Strtoi (InstanceStr);
+    CopyGuid (&RamDisk->TypeGuid, &gEfiVirtualCdGuid);
+  }
 
-  Strtoi64 (StartingAddrStr, &StartingAddr);
-  WriteUnaligned64 ((UINT64 *)&(RamDisk->StartingAddr[0]), StartingAddr);
-  Strtoi64 (EndingAddrStr, &EndingAddr);
-  WriteUnaligned64 ((UINT64 *)&(RamDisk->EndingAddr[0]), EndingAddr);
-  RamDisk->Instance = (UINT16)Strtoi (InstanceStr);
-  CopyGuid (&RamDisk->TypeGuid, &gEfiVirtualCdGuid);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)RamDisk;
 }
 
@@ -3309,14 +3535,17 @@ DevPathFromTextPersistentVirtualDisk (
                                             MEDIA_RAM_DISK_DP,
                                             (UINT16)sizeof (MEDIA_RAM_DISK_DEVICE_PATH)
                                             );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (RamDisk) {
+    Strtoi64 (StartingAddrStr, &StartingAddr);
+    WriteUnaligned64 ((UINT64 *)&(RamDisk->StartingAddr[0]), StartingAddr);
+    Strtoi64 (EndingAddrStr, &EndingAddr);
+    WriteUnaligned64 ((UINT64 *)&(RamDisk->EndingAddr[0]), EndingAddr);
+    RamDisk->Instance = (UINT16)Strtoi (InstanceStr);
+    CopyGuid (&RamDisk->TypeGuid, &gEfiPersistentVirtualDiskGuid);
+  }
 
-  Strtoi64 (StartingAddrStr, &StartingAddr);
-  WriteUnaligned64 ((UINT64 *)&(RamDisk->StartingAddr[0]), StartingAddr);
-  Strtoi64 (EndingAddrStr, &EndingAddr);
-  WriteUnaligned64 ((UINT64 *)&(RamDisk->EndingAddr[0]), EndingAddr);
-  RamDisk->Instance = (UINT16)Strtoi (InstanceStr);
-  CopyGuid (&RamDisk->TypeGuid, &gEfiPersistentVirtualDiskGuid);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)RamDisk;
 }
 
@@ -3349,14 +3578,17 @@ DevPathFromTextPersistentVirtualCd (
                                             MEDIA_RAM_DISK_DP,
                                             (UINT16)sizeof (MEDIA_RAM_DISK_DEVICE_PATH)
                                             );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (RamDisk) {
+    Strtoi64 (StartingAddrStr, &StartingAddr);
+    WriteUnaligned64 ((UINT64 *)&(RamDisk->StartingAddr[0]), StartingAddr);
+    Strtoi64 (EndingAddrStr, &EndingAddr);
+    WriteUnaligned64 ((UINT64 *)&(RamDisk->EndingAddr[0]), EndingAddr);
+    RamDisk->Instance = (UINT16)Strtoi (InstanceStr);
+    CopyGuid (&RamDisk->TypeGuid, &gEfiPersistentVirtualCdGuid);
+  }
 
-  Strtoi64 (StartingAddrStr, &StartingAddr);
-  WriteUnaligned64 ((UINT64 *)&(RamDisk->StartingAddr[0]), StartingAddr);
-  Strtoi64 (EndingAddrStr, &EndingAddr);
-  WriteUnaligned64 ((UINT64 *)&(RamDisk->EndingAddr[0]), EndingAddr);
-  RamDisk->Instance = (UINT16)Strtoi (InstanceStr);
-  CopyGuid (&RamDisk->TypeGuid, &gEfiPersistentVirtualCdGuid);
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (EFI_DEVICE_PATH_PROTOCOL *)RamDisk;
 }
 
@@ -3403,7 +3635,12 @@ DevPathFromTextBBS (
                                       BBS_BBS_DP,
                                       (UINT16)(sizeof (BBS_BBS_DEVICE_PATH) + StrLen (IdStr))
                                       );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!Bbs) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)Bbs;
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   if (StrCmp (TypeStr, L"Floppy") == 0) {
     Bbs->DeviceType = BBS_TYPE_FLOPPY;
   } else if (StrCmp (TypeStr, L"HD") == 0) {
@@ -3455,6 +3692,12 @@ DevPathFromTextSata (
                                MSG_SATA_DP,
                                (UINT16)sizeof (SATA_DEVICE_PATH)
                                );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (!Sata) {
+    return (EFI_DEVICE_PATH_PROTOCOL *)Sata;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   Sata->HBAPortNumber = (UINT16)Strtoi (Param1);
 
   //
@@ -3652,29 +3895,61 @@ UefiDevicePathLibConvertTextToDevicePath (
   }
 
   DevicePath = (EFI_DEVICE_PATH_PROTOCOL *)AllocatePool (END_DEVICE_PATH_LENGTH);
-  ASSERT (DevicePath != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (DevicePath == NULL) {
+    ASSERT (DevicePath != NULL);
+    return NULL;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   SetDevicePathEndNode (DevicePath);
 
   DevicePathStr = UefiDevicePathLibStrDuplicate (TextDevicePath);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (DevicePathStr == NULL) {
+    return NULL;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   Str = DevicePathStr;
   while ((DeviceNodeStr = GetNextDeviceNodeStr (&Str, &IsInstanceEnd)) != NULL) {
     DeviceNode = UefiDevicePathLibConvertTextToDeviceNode (DeviceNodeStr);
 
+    // MU_CHANGE - CodeQL Change - Note: DeviceNode may be NULL. That is an expected input in AppendDevicePathNode().
     NewDevicePath = AppendDevicePathNode (DevicePath, DeviceNode);
-    FreePool (DevicePath);
-    FreePool (DeviceNode);
+    if (DevicePath != NULL) {
+      FreePool (DevicePath);
+    }
+
+    if (DeviceNode != NULL) {
+      FreePool (DeviceNode);
+    }
+
     DevicePath = NewDevicePath;
 
     if (IsInstanceEnd) {
       DeviceNode = (EFI_DEVICE_PATH_PROTOCOL *)AllocatePool (END_DEVICE_PATH_LENGTH);
-      ASSERT (DeviceNode != NULL);
+      // MU_CHANGE Start - CodeQL change
+      if (DeviceNode == NULL) {
+        ASSERT (DeviceNode != NULL);
+        return NULL;
+      }
+
+      // MU_CHANGE End - CodeQL change
       SetDevicePathEndNode (DeviceNode);
       DeviceNode->SubType = END_INSTANCE_DEVICE_PATH_SUBTYPE;
 
       NewDevicePath = AppendDevicePathNode (DevicePath, DeviceNode);
-      FreePool (DevicePath);
-      FreePool (DeviceNode);
+      if (DevicePath != NULL) {
+        FreePool (DevicePath);
+      }
+
+      if (DeviceNode != NULL) {
+        FreePool (DeviceNode);
+      }
+
       DevicePath = NewDevicePath;
     }
   }

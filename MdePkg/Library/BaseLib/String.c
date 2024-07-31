@@ -407,9 +407,13 @@ StrDecimalToUintn (
   )
 {
   UINTN  Result;
+  // MU_CHANGE Start - CodeQL Change
+  RETURN_STATUS  Status;
 
-  if (RETURN_ERROR (StrDecimalToUintnS (String, (CHAR16 **)NULL, &Result))) {
-    return MAX_UINTN;
+  Status = StrDecimalToUintnS (String, (CHAR16 **)NULL, &Result);
+  if (Status == RETURN_INVALID_PARAMETER) {
+    Result = 0;
+    // MU_CHANGE End - CodeQL Change
   }
 
   return Result;
@@ -456,9 +460,13 @@ StrDecimalToUint64 (
   )
 {
   UINT64  Result;
+  // MU_CHANGE Start - CodeQL Change
+  RETURN_STATUS  Status;
 
-  if (RETURN_ERROR (StrDecimalToUint64S (String, (CHAR16 **)NULL, &Result))) {
-    return MAX_UINT64;
+  Status = StrDecimalToUint64S (String, (CHAR16 **)NULL, &Result);
+  if (Status == RETURN_INVALID_PARAMETER) {
+    Result = 0;
+    // MU_CHANGE End - CodeQL Change
   }
 
   return Result;
@@ -506,9 +514,13 @@ StrHexToUintn (
   )
 {
   UINTN  Result;
+  // MU_CHANGE Start - CodeQL Change
+  RETURN_STATUS  Status;
 
-  if (RETURN_ERROR (StrHexToUintnS (String, (CHAR16 **)NULL, &Result))) {
-    return MAX_UINTN;
+  Status = StrHexToUintnS (String, (CHAR16 **)NULL, &Result);
+  if (Status == RETURN_INVALID_PARAMETER) {
+    Result = 0;
+    // MU_CHANGE End - CodeQL Change
   }
 
   return Result;
@@ -556,9 +568,13 @@ StrHexToUint64 (
   )
 {
   UINT64  Result;
+  // MU_CHANGE Start - CodeQL Change
+  RETURN_STATUS  Status;
 
-  if (RETURN_ERROR (StrHexToUint64S (String, (CHAR16 **)NULL, &Result))) {
-    return MAX_UINT64;
+  Status = StrHexToUint64S (String, (CHAR16 **)NULL, &Result);
+  if (Status == RETURN_INVALID_PARAMETER) {
+    Result = 0;
+    // MU_CHANGE End - CodeQL Change
   }
 
   return Result;
@@ -1000,9 +1016,13 @@ AsciiStrDecimalToUintn (
   )
 {
   UINTN  Result;
+  // MU_CHANGE Start - CodeQL Change
+  RETURN_STATUS  Status;
 
-  if (RETURN_ERROR (AsciiStrDecimalToUintnS (String, (CHAR8 **)NULL, &Result))) {
-    return MAX_UINTN;
+  Status = AsciiStrDecimalToUintnS (String, (CHAR8 **)NULL, &Result);
+  if (Status == RETURN_INVALID_PARAMETER) {
+    Result = 0;
+    // MU_CHANGE End - CodeQL Change
   }
 
   return Result;
@@ -1045,9 +1065,13 @@ AsciiStrDecimalToUint64 (
   )
 {
   UINT64  Result;
+  // MU_CHANGE Start - CodeQL Change
+  RETURN_STATUS  Status;
 
-  if (RETURN_ERROR (AsciiStrDecimalToUint64S (String, (CHAR8 **)NULL, &Result))) {
-    return MAX_UINT64;
+  Status = AsciiStrDecimalToUint64S (String, (CHAR8 **)NULL, &Result);
+  if (Status == RETURN_INVALID_PARAMETER) {
+    Result = 0;
+    // MU_CHANGE End - CodeQL Change
   }
 
   return Result;
@@ -1094,9 +1118,13 @@ AsciiStrHexToUintn (
   )
 {
   UINTN  Result;
+  // MU_CHANGE Start - CodeQL Change
+  RETURN_STATUS  Status;
 
-  if (RETURN_ERROR (AsciiStrHexToUintnS (String, (CHAR8 **)NULL, &Result))) {
-    return MAX_UINTN;
+  Status = AsciiStrHexToUintnS (String, (CHAR8 **)NULL, &Result);
+  if (Status == RETURN_INVALID_PARAMETER) {
+    Result = 0;
+    // MU_CHANGE End - CodeQL Change
   }
 
   return Result;
@@ -1143,9 +1171,13 @@ AsciiStrHexToUint64 (
   )
 {
   UINT64  Result;
+  // MU_CHANGE Start - CodeQL Change
+  RETURN_STATUS  Status;
 
-  if (RETURN_ERROR (AsciiStrHexToUint64S (String, (CHAR8 **)NULL, &Result))) {
-    return MAX_UINT64;
+  Status = AsciiStrHexToUint64S (String, (CHAR8 **)NULL, &Result);
+  if (Status == RETURN_INVALID_PARAMETER) {
+    Result = 0;
+    // MU_CHANGE End - CodeQL Change
   }
 
   return Result;
