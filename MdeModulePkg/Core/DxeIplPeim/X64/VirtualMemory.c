@@ -447,7 +447,13 @@ Split2MPageTo4K (
   AddressEncMask = PcdGet64 (PcdPteMemoryEncryptionAddressOrMask) & PAGING_1G_ADDRESS_MASK_64;
 
   PageTableEntry = AllocatePageTableMemory (1);
-  ASSERT (PageTableEntry != NULL);
+  // MU_CHANGE Start - CodeQL Change
+  if (PageTableEntry == NULL) {
+    ASSERT (PageTableEntry != NULL);
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change
 
   //
   // Fill in 2M page entry.
@@ -533,7 +539,13 @@ Split1GPageTo2M (
   AddressEncMask = PcdGet64 (PcdPteMemoryEncryptionAddressOrMask) & PAGING_1G_ADDRESS_MASK_64;
 
   PageDirectoryEntry = AllocatePageTableMemory (1);
-  ASSERT (PageDirectoryEntry != NULL);
+  // MU_CHANGE Start - CodeQL Change
+  if (PageDirectoryEntry == NULL) {
+    ASSERT (PageDirectoryEntry != NULL);
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change
 
   //
   // Fill in 1G page entry.
@@ -659,7 +671,13 @@ SetPageTablePoolReadOnly (
       ASSERT (Level > 1);
 
       NewPageTable = AllocatePageTableMemory (1);
-      ASSERT (NewPageTable != NULL);
+      // MU_CHANGE Start - CodeQL Change
+      if (NewPageTable == NULL) {
+        ASSERT (NewPageTable != NULL);
+        return;
+      }
+
+      // MU_CHANGE End - CodeQL Change
 
       PhysicalAddress = PageAttr & LevelMask[Level];
       for (EntryIndex = 0;
