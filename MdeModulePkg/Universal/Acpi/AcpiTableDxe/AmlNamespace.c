@@ -32,7 +32,7 @@ AmlConstructNodeList (
   @param[in]    Parent               AML parent node list.
   @param[in]    AmlByteEncoding      AML Byte Encoding.
 
-  @return       AML Node.
+  @return       AML Node or NULL if insufficient resources to allocate a buffer // MU_CHANGE - CodeQL Change
 **/
 EFI_AML_NODE_LIST *
 AmlCreateNode (
@@ -44,7 +44,13 @@ AmlCreateNode (
   EFI_AML_NODE_LIST  *AmlNodeList;
 
   AmlNodeList = AllocatePool (sizeof (*AmlNodeList));
-  ASSERT (AmlNodeList != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (AmlNodeList == NULL) {
+    ASSERT (AmlNodeList != NULL);
+    return NULL;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   AmlNodeList->Signature = EFI_AML_NODE_LIST_SIGNATURE;
   CopyMem (AmlNodeList->Name, NameSeg, AML_NAME_SEG_SIZE);
@@ -108,6 +114,12 @@ AmlFindNodeInThis (
   // Create new node with NULL buffer - it means namespace not be returned.
   //
   AmlNodeList = AmlCreateNode (NameSeg, AmlParentNodeList, NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (AmlNodeList == NULL) {
+    return NULL;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   InsertTailList (&AmlParentNodeList->Children, &AmlNodeList->Link);
 
   return AmlNodeList;
@@ -538,6 +550,12 @@ AmlFindPath (
   RootNameSeg[0]  = AML_ROOT_CHAR;
   RootNameSeg[1]  = 0;
   AmlRootNodeList = AmlCreateNode (RootNameSeg, NULL, AmlHandle->AmlByteEncoding);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (AmlRootNodeList == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   Status = AmlConstructNodeList (
              AmlHandle,

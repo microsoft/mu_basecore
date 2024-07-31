@@ -335,6 +335,13 @@ SdtRegisterNotify (
   //
   CurrentNotifyList = AllocatePool (sizeof (EFI_ACPI_NOTIFY_LIST));
   ASSERT (CurrentNotifyList != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CurrentNotifyList == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a Failed to allocate pool\n", __func__));
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   //
   // Initialize the table contents
@@ -484,6 +491,13 @@ SdtOpenSdtTable (
 
   AmlHandle = AllocatePool (sizeof (*AmlHandle));
   ASSERT (AmlHandle != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (AmlHandle == NULL) {
+    return EFI_NOT_FOUND;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   AmlHandle->Signature       = EFI_AML_ROOT_HANDLE_SIGNATURE;
   AmlHandle->Buffer          = (VOID *)((UINTN)Table->Table + sizeof (EFI_ACPI_SDT_HEADER));
   AmlHandle->Size            = Table->Table->Length - sizeof (EFI_ACPI_SDT_HEADER);
@@ -560,6 +574,12 @@ SdtOpenEx (
   //
   AmlHandle = AllocatePool (sizeof (*AmlHandle));
   ASSERT (AmlHandle != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (AmlHandle == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   AmlHandle->Signature       = EFI_AML_HANDLE_SIGNATURE;
   AmlHandle->Buffer          = Buffer;
@@ -928,6 +948,13 @@ SdtDuplicateHandle (
 
   DstAmlHandle = AllocatePool (sizeof (*DstAmlHandle));
   ASSERT (DstAmlHandle != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (DstAmlHandle == NULL) {
+    return NULL;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   CopyMem (DstAmlHandle, (VOID *)AmlHandle, sizeof (*DstAmlHandle));
 
   return DstAmlHandle;
@@ -967,6 +994,13 @@ SdtFindPathFromRoot (
     // Duplicate RootHandle
     //
     *HandleOut = (EFI_ACPI_HANDLE)SdtDuplicateHandle (AmlHandle);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (*HandleOut == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
     return EFI_SUCCESS;
   }
 

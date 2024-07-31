@@ -1220,9 +1220,24 @@ PlatOverMngrExtractConfig (
     // followed by "&OFFSET=0&WIDTH=WWWWWWWWWWWWWWWW" followed by a Null-terminator
     //
     ConfigRequestHdr = HiiConstructConfigHdr (&gPlatformOverridesManagerGuid, mVariableName, Private->DriverHandle);
-    Size             = (StrLen (ConfigRequestHdr) + 32 + 1) * sizeof (CHAR16);
-    ConfigRequest    = AllocateZeroPool (Size);
-    ASSERT (ConfigRequest != NULL);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (ConfigRequestHdr == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
+    Size          = (StrLen (ConfigRequestHdr) + 32 + 1) * sizeof (CHAR16);
+    ConfigRequest = AllocateZeroPool (Size);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (ConfigRequest == NULL) {
+      ASSERT (ConfigRequest != NULL);
+      FreePool (ConfigRequestHdr);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
     AllocatedRequest = TRUE;
     BufferSize       = sizeof (PLAT_OVER_MNGR_DATA);
     UnicodeSPrint (ConfigRequest, Size, L"%s&OFFSET=0&WIDTH=%016LX", ConfigRequestHdr, (UINT64)BufferSize);
@@ -1422,6 +1437,13 @@ PlatOverMngrCallback (
     }
   } else if (Action == EFI_BROWSER_ACTION_CHANGED) {
     if ((KeyValue >= KEY_VALUE_DRIVER_OFFSET) && (KeyValue < KEY_VALUE_DRIVER_OFFSET + mDriverImageHandleCount)) {
+      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+      if (Value == NULL) {
+        return EFI_INVALID_PARAMETER;
+      }
+
+      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
       mDriSelection[KeyValue - KEY_VALUE_DRIVER_OFFSET] = Value->b;
     } else {
       switch (KeyValue) {
