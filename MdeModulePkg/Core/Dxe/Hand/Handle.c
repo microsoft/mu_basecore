@@ -1040,6 +1040,7 @@ CoreOpenProtocol (
     return EFI_INVALID_PARAMETER;
   }
 
+  Prot = NULL;  // MU_CHANGE - CodeQL Change
   //
   // Lock the protocol database
   //
@@ -1218,7 +1219,8 @@ Done:
     // Keep Interface unmodified in case of any Error
     // except EFI_ALREADY_STARTED and EFI_UNSUPPORTED.
     //
-    if (!EFI_ERROR (Status) || (Status == EFI_ALREADY_STARTED)) {
+    if ((!EFI_ERROR (Status) || (Status == EFI_ALREADY_STARTED)) && (Prot != NULL)) {
+      // MU_CHANGE - CodeQL Change
       //
       // According to above logic, if 'Prot' is NULL, then the 'Status' must be
       // EFI_UNSUPPORTED. Here the 'Status' is not EFI_UNSUPPORTED, so 'Prot'
