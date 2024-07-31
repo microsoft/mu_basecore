@@ -388,7 +388,7 @@ TlsConfigCertificate (
   EFI_STATUS          Status;
   UINT8               *CACert;
   UINTN               CACertSize;
-  UINT32              Index;
+  UINTN               Index;          // MU_CHANGE - CodeQL Change - comparison-with-wider-type
   EFI_SIGNATURE_LIST  *CertList;
   EFI_SIGNATURE_DATA  *Cert;
   UINTN               CertArraySizeInBytes;
@@ -1264,6 +1264,7 @@ TlsConnectSession (
   DataOut = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
   if (DataOut == NULL) {
     FreePool (BufferOut);
+    NetbufFree (PacketOut); // MU_CHANGE - CodeQL Change
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -1356,6 +1357,7 @@ TlsConnectSession (
       DataOut = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
       if (DataOut == NULL) {
         FreePool (BufferOut);
+        NetbufFree (PacketOut); // MU_CHANGE - CodeQL change
         return EFI_OUT_OF_RESOURCES;
       }
 
@@ -1519,6 +1521,7 @@ TlsCloseSession (
   DataOut = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
   if (DataOut == NULL) {
     FreePool (BufferOut);
+    NetbufFree (PacketOut); // MU_CHANGE - CodeQL change
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -1813,6 +1816,7 @@ HttpsReceive (
           DataOut = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
           if (DataOut == NULL) {
             FreePool (BufferOut);
+            NetbufFree (PacketOut); // MU_CHANGE - CodeQL change
             return EFI_OUT_OF_RESOURCES;
           }
 
@@ -1911,6 +1915,7 @@ HttpsReceive (
       DataOut = NetbufAllocSpace (PacketOut, (UINT32)BufferOutSize, NET_BUF_TAIL);
       if (DataOut == NULL) {
         FreePool (BufferOut);
+        NetbufFree (PacketOut); // MU_CHANGE - CodeQL change
         return EFI_OUT_OF_RESOURCES;
       }
 
