@@ -86,6 +86,14 @@ NotifyOnS3SmmInitDonePpi (
 
   CpuMpData = GetCpuMpData ();
 
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   //
   // PiSmmCpuDxeSmm driver hardcode change the loop mode to HLT mode.
   // So in this notify function, code need to check the current loop
@@ -315,7 +323,8 @@ GetWakeupBuffer (
           WakeupBufferEnd = BASE_1MB;
         }
 
-        while (WakeupBufferEnd > WakeupBufferSize) {
+        while (WakeupBufferEnd > (UINT64)WakeupBufferSize) {
+          // MU_CHANGE - CodeQL Change - comparison-with-wider-type
           //
           // Wakeup buffer should be aligned on 4KB
           //
@@ -424,6 +433,14 @@ CheckAndUpdateApsStatus (
   CPU_MP_DATA  *CpuMpData;
 
   CpuMpData = GetCpuMpData ();
+
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.  Aborting AP checkup and update.\n", __func__));
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   //
   // check whether pending StartupThisAPs() callings exist.

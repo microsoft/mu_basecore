@@ -506,9 +506,9 @@ InitializeExceptionStackSwitchHandlers (
   UINTN                           Index;
   EFI_STATUS                      Status;  // MU_CHANGE - CodeQL change
 
+  // MU_CHANGE [BEGIN] - CodeQL change
   Status = MpInitLibWhoAmI (&Index);
 
-  // MU_CHANGE [BEGIN] - CodeQL change
   if (EFI_ERROR (Status)) {
     PANIC ("Failed to get processor number when initializing the stack switch exception handlers.");
     return;
@@ -560,7 +560,14 @@ InitializeMpExceptionStackSwitchHandlers (
   }
 
   SwitchStackData = AllocatePages (EFI_SIZE_TO_PAGES (NumberOfProcessors * sizeof (EXCEPTION_STACK_SWITCH_CONTEXT)));
-  ASSERT (SwitchStackData != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (SwitchStackData == NULL) {
+    ASSERT (SwitchStackData != NULL);
+    DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Switch Stack pages.\n", __func__));
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   ZeroMem (SwitchStackData, NumberOfProcessors * sizeof (EXCEPTION_STACK_SWITCH_CONTEXT));
   for (Index = 0; Index < NumberOfProcessors; ++Index) {
     //
@@ -590,7 +597,14 @@ InitializeMpExceptionStackSwitchHandlers (
 
   if (BufferSize != 0) {
     Buffer = AllocatePages (EFI_SIZE_TO_PAGES (BufferSize));
-    ASSERT (Buffer != NULL);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (Buffer == NULL) {
+      ASSERT (Buffer != NULL);
+      DEBUG ((DEBUG_ERROR, "%a - Failed to allocate Buffer pages.\n", __func__));
+      return;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     BufferSize = 0;
     for (Index = 0; Index < NumberOfProcessors; ++Index) {
       if (SwitchStackData[Index].Status == EFI_BUFFER_TOO_SMALL) {

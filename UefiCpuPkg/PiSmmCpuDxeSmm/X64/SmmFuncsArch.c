@@ -118,7 +118,8 @@ GetProtectedModeCS (
   AsmReadGdtr (&GdtrDesc);
   GdtEntryCount = (GdtrDesc.Limit + 1) / sizeof (IA32_SEGMENT_DESCRIPTOR);
   GdtEntry      = (IA32_SEGMENT_DESCRIPTOR *)GdtrDesc.Base;
-  for (Index = 0; Index < GdtEntryCount; Index++) {
+  for (Index = 0; (UINTN)Index < GdtEntryCount; Index++) {
+    // MU_CHANGE - CodeQL Change - comparison-with-wider-type
     if (GdtEntry->Bits.L == 0) {
       if ((GdtEntry->Bits.Type > 8) && (GdtEntry->Bits.DB == 1)) {
         break;
