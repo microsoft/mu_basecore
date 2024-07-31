@@ -1757,7 +1757,13 @@ ConstructConfigHdr (
   if (AsciiName != NULL) {
     NameSize = AsciiStrSize (AsciiName);
     Name     = AllocateZeroPool (NameSize * sizeof (CHAR16));
-    ASSERT (Name != NULL);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (Name == NULL) {
+      ASSERT (Name != NULL);
+      return NULL;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     AsciiStrToUnicodeStrS (AsciiName, Name, NameSize);
   } else {
     Name = NULL;
@@ -1917,7 +1923,13 @@ ConstructRequestElement (
   // Allocate buffer for the entire <ConfigRequest>
   //
   StringPtr = AllocateZeroPool (Length * sizeof (CHAR16));
-  ASSERT (StringPtr != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (StringPtr == NULL) {
+    ASSERT (StringPtr != NULL);
+    return NULL;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   if (Name != NULL) {
     //
@@ -1975,6 +1987,12 @@ GetNameFromId (
 
   GetEfiGlobalVariable2 (L"PlatformLang", (VOID **)&PlatformLanguage, NULL);
   SupportedLanguages = GetSupportedLanguages (DatabaseRecord->Handle);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (SupportedLanguages == NULL) {
+    goto Done;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   //
   // Get the best matching language from SupportedLanguages
@@ -2106,36 +2124,62 @@ ExtractConfigRequest (
 
       Storage = FindStorageFromVarId (FormPackage, Header->VarStoreId);
       ASSERT (Storage != NULL);
+      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+      if (Storage != NULL) {
+        if (((EFI_IFR_OP_HEADER *)Storage)->OpCode == EFI_IFR_VARSTORE_NAME_VALUE_OP) {
+          Name = GetNameFromId (DatabaseRecord, Header->VarStoreInfo.VarName);
+        } else {
+          Offset = Header->VarStoreInfo.VarOffset;
+          Width  = GetWidth (OpCode);
+        }
 
-      if (((EFI_IFR_OP_HEADER *)Storage)->OpCode == EFI_IFR_VARSTORE_NAME_VALUE_OP) {
-        Name = GetNameFromId (DatabaseRecord, Header->VarStoreInfo.VarName);
-      } else {
-        Offset = Header->VarStoreInfo.VarOffset;
-        Width  = GetWidth (OpCode);
-      }
+        RequestElement = ConstructRequestElement (Name, Offset, Width);
+        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+        if (RequestElement == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
 
-      RequestElement = ConstructRequestElement (Name, Offset, Width);
-      ConfigHdr      = ConstructConfigHdr (Storage, DatabaseRecord->DriverHandle);
-      ASSERT (ConfigHdr != NULL);
+        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
-      MaxLen         = StrLen (ConfigHdr) + 1 + StrLen (RequestElement) + 1;
-      *ConfigRequest = AllocatePool (MaxLen * sizeof (CHAR16));
-      if (*ConfigRequest == NULL) {
-        FreePool (ConfigHdr);
+        ConfigHdr = ConstructConfigHdr (Storage, DatabaseRecord->DriverHandle);
+        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+        if (ConfigHdr == NULL) {
+          ASSERT (ConfigHdr != NULL);
+          FreePool (RequestElement);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
+        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+        if (ConfigHdr != NULL) {
+          MaxLen         = StrLen (ConfigHdr) + 1 + StrLen (RequestElement) + 1;
+          *ConfigRequest = AllocatePool (MaxLen * sizeof (CHAR16));
+          if (*ConfigRequest == NULL) {
+            FreePool (ConfigHdr);
+            FreePool (RequestElement);
+            return EFI_OUT_OF_RESOURCES;
+          }
+
+          // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
+          StringPtr = *ConfigRequest;
+
+          StrCpyS (StringPtr, MaxLen, ConfigHdr);
+
+          StrCatS (StringPtr, MaxLen, L"&");
+
+          StrCatS (StringPtr, MaxLen, RequestElement);
+
+          FreePool (ConfigHdr);
+        }
+
+        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
         FreePool (RequestElement);
-        return EFI_OUT_OF_RESOURCES;
       }
 
-      StringPtr = *ConfigRequest;
-
-      StrCpyS (StringPtr, MaxLen, ConfigHdr);
-
-      StrCatS (StringPtr, MaxLen, L"&");
-
-      StrCatS (StringPtr, MaxLen, RequestElement);
-
-      FreePool (ConfigHdr);
-      FreePool (RequestElement);
+      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
       return EFI_SUCCESS;
     }
@@ -2211,45 +2255,60 @@ ExtractConfigResp (
 
       Storage = FindStorageFromVarId (FormPackage, Header->VarStoreId);
       ASSERT (Storage != NULL);
+      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+      if (Storage != NULL) {
+        if (((EFI_IFR_OP_HEADER *)Storage)->OpCode == EFI_IFR_VARSTORE_NAME_VALUE_OP) {
+          Name = GetNameFromId (DatabaseRecord, Header->VarStoreInfo.VarName);
+        } else {
+          Offset = Header->VarStoreInfo.VarOffset;
+          Width  = GetWidth (OpCode);
+        }
 
-      if (((EFI_IFR_OP_HEADER *)Storage)->OpCode == EFI_IFR_VARSTORE_NAME_VALUE_OP) {
-        Name = GetNameFromId (DatabaseRecord, Header->VarStoreInfo.VarName);
-      } else {
-        Offset = Header->VarStoreInfo.VarOffset;
-        Width  = GetWidth (OpCode);
-      }
+        RequestElement = ConstructRequestElement (Name, Offset, Width);
+        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+        if (RequestElement == NULL) {
+          return EFI_OUT_OF_RESOURCES;
+        }
 
-      RequestElement = ConstructRequestElement (Name, Offset, Width);
+        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
-      ConfigHdr = ConstructConfigHdr (Storage, DatabaseRecord->DriverHandle);
-      ASSERT (ConfigHdr != NULL);
+        ConfigHdr = ConstructConfigHdr (Storage, DatabaseRecord->DriverHandle);
+        ASSERT (ConfigHdr != NULL);
+        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+        if (ConfigHdr != NULL) {
+          MaxLen      = StrLen (ConfigHdr) + 1 + StrLen (RequestElement) + 1 + StrLen (L"VALUE=") + StrLen (ValueElement) + 1;
+          *ConfigResp = AllocatePool (MaxLen * sizeof (CHAR16));
+          if (*ConfigResp == NULL) {
+            FreePool (ConfigHdr);
+            FreePool (RequestElement);
+            return EFI_OUT_OF_RESOURCES;
+          }
 
-      MaxLen      = StrLen (ConfigHdr) + 1 + StrLen (RequestElement) + 1 + StrLen (L"VALUE=") + StrLen (ValueElement) + 1;
-      *ConfigResp = AllocatePool (MaxLen * sizeof (CHAR16));
-      if (*ConfigResp == NULL) {
-        FreePool (ConfigHdr);
+          StringPtr = *ConfigResp;
+
+          StrCpyS (StringPtr, MaxLen, ConfigHdr);
+
+          StrCatS (StringPtr, MaxLen, L"&");
+
+          StrCatS (StringPtr, MaxLen, RequestElement);
+
+          StrCatS (StringPtr, MaxLen, L"&");
+
+          StrCatS (StringPtr, MaxLen, L"VALUE=");
+
+          StrCatS (StringPtr, MaxLen, ValueElement);
+
+          FreePool (ConfigHdr);
+        }
+
+        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
         FreePool (RequestElement);
-        return EFI_OUT_OF_RESOURCES;
+
+        return EFI_SUCCESS;
       }
 
-      StringPtr = *ConfigResp;
-
-      StrCpyS (StringPtr, MaxLen, ConfigHdr);
-
-      StrCatS (StringPtr, MaxLen, L"&");
-
-      StrCatS (StringPtr, MaxLen, RequestElement);
-
-      StrCatS (StringPtr, MaxLen, L"&");
-
-      StrCatS (StringPtr, MaxLen, L"VALUE=");
-
-      StrCatS (StringPtr, MaxLen, ValueElement);
-
-      FreePool (ConfigHdr);
-      FreePool (RequestElement);
-
-      return EFI_SUCCESS;
+      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     }
   }
 
@@ -2298,21 +2357,26 @@ ExtractValueFromDriver (
   //
   StringPtr = StrStr (Result, L"&VALUE=");
   ASSERT (StringPtr != NULL);
-  StringEnd = StrStr (StringPtr + 1, L"&");
-  if (StringEnd != NULL) {
-    *StringEnd = L'\0';
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (StringPtr != NULL) {
+    StringEnd = StrStr (StringPtr + 1, L"&");
+    if (StringEnd != NULL) {
+      *StringEnd = L'\0';
+    }
+
+    *ValueElement = AllocateCopyPool (StrSize (StringPtr), StringPtr);
+    if (*ValueElement == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    if (StringEnd != NULL) {
+      *StringEnd = L'&';
+    }
+
+    FreePool (Result);
   }
 
-  *ValueElement = AllocateCopyPool (StrSize (StringPtr), StringPtr);
-  if (*ValueElement == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  if (StringEnd != NULL) {
-    *StringEnd = L'&';
-  }
-
-  FreePool (Result);
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return EFI_SUCCESS;
 }

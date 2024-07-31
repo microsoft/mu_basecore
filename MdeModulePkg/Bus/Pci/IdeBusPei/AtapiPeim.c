@@ -563,7 +563,8 @@ AtapiEnumerateDevices (
   //
   // Using Command and Control Regs Base Address to fill other registers.
   //
-  for (Index1 = 0; Index1 < IdeEnabledNumber; Index1++) {
+  for (Index1 = 0; (UINT32)Index1 < IdeEnabledNumber; Index1++) {
+    // MU_CHANGE - CodeQl Change
     CommandBlockBaseAddr                             = IdeRegsBaseAddr[Index1].CommandBlockBaseAddr;
     AtapiBlkIoDev->IdeIoPortReg[Index1].Data         = CommandBlockBaseAddr;
     AtapiBlkIoDev->IdeIoPortReg[Index1].Reg1.Feature = (UINT16)(CommandBlockBaseAddr + 0x1);
