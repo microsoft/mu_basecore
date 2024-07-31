@@ -996,10 +996,23 @@ AllocateTokenBuffer (
   // Separate the Spin_lock and Proc_token because the alignment requires by Spin_Lock.
   //
   SpinLockBuffer = AllocatePool (SpinLockSize * TokenCountPerChunk);
-  ASSERT (SpinLockBuffer != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (SpinLockBuffer == NULL) {
+    ASSERT (SpinLockBuffer != NULL);
+    return NULL;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   ProcTokens = AllocatePool (sizeof (PROCEDURE_TOKEN) * TokenCountPerChunk);
-  ASSERT (ProcTokens != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (ProcTokens == NULL) {
+    ASSERT (ProcTokens != NULL);
+    FreePool (SpinLockBuffer);
+    return NULL;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   for (Index = 0; Index < TokenCountPerChunk; Index++) {
     SpinLock = (SPIN_LOCK *)(SpinLockBuffer + SpinLockSize * Index);
@@ -1810,7 +1823,13 @@ InitializeSmmCpuSemaphores (
   DEBUG ((DEBUG_INFO, "Total Semaphores Size = 0x%x\n", TotalSize));
   Pages          = EFI_SIZE_TO_PAGES (TotalSize);
   SemaphoreBlock = AllocatePages (Pages);
-  ASSERT (SemaphoreBlock != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (SemaphoreBlock == NULL) {
+    ASSERT (SemaphoreBlock != NULL);
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   ZeroMem (SemaphoreBlock, TotalSize);
 
   SemaphoreAddr                                   = (UINTN)SemaphoreBlock;

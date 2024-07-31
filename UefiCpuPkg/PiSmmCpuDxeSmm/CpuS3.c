@@ -1186,7 +1186,13 @@ GetAcpiCpuData (
   Idtr = (IA32_DESCRIPTOR *)(UINTN)mAcpiCpuData.IdtrProfile;
 
   GdtForAp = AllocatePool ((Gdtr->Limit + 1) + (Idtr->Limit + 1) + mAcpiCpuData.ApMachineCheckHandlerSize);
-  ASSERT (GdtForAp != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (GdtForAp == NULL) {
+    ASSERT (GdtForAp != NULL);
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   IdtForAp                 = (VOID *)((UINTN)GdtForAp + (Gdtr->Limit + 1));
   MachineCheckHandlerForAp = (VOID *)((UINTN)IdtForAp + (Idtr->Limit + 1));
 

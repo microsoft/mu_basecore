@@ -1674,6 +1674,14 @@ ResetProcessorToIdleState (
 
   CpuMpData = GetCpuMpData ();
 
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.  Aborting the AP reset to idle.\n", __func__));
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   CpuMpData->InitFlag = ApInitReconfig;
   WakeUpAP (CpuMpData, FALSE, ProcessorNumber, NULL, NULL, TRUE);
   while (CpuMpData->FinishedCount < 1) {
@@ -1706,6 +1714,14 @@ GetNextWaitingProcessorNumber (
 
   CpuMpData = GetCpuMpData ();
 
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   for (ProcessorNumber = 0; ProcessorNumber < CpuMpData->CpuCount; ProcessorNumber++) {
     if (CpuMpData->CpuData[ProcessorNumber].Waiting) {
       *NextProcessorNumber = ProcessorNumber;
@@ -1736,7 +1752,16 @@ CheckThisAP (
   CPU_AP_DATA  *CpuData;
 
   CpuMpData = GetCpuMpData ();
-  CpuData   = &CpuMpData->CpuData[ProcessorNumber];
+
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
+  CpuData = &CpuMpData->CpuData[ProcessorNumber];
 
   //
   //  Check the CPU state of AP. If it is CpuStateIdle, then the AP has finished its task.
@@ -1797,6 +1822,14 @@ CheckAllAPs (
   CPU_AP_DATA  *CpuData;
 
   CpuMpData = GetCpuMpData ();
+
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   NextProcessorNumber = 0;
 
@@ -2119,6 +2152,13 @@ MpInitLibInitialize (
   BufferSize += (sizeof (CPU_AP_DATA) + sizeof (CPU_INFO_IN_HOB))* MaxLogicalProcessorNumber;
   MpBuffer    = AllocatePages (EFI_SIZE_TO_PAGES (BufferSize));
   ASSERT (MpBuffer != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (MpBuffer == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   ZeroMem (MpBuffer, BufferSize);
   Buffer = ALIGN_VALUE ((UINTN)MpBuffer, ApStackSize);
 
@@ -2451,8 +2491,18 @@ MpInitLibGetProcessorInfo (
   UINTN            CallerNumber;
   CPU_INFO_IN_HOB  *CpuInfoInHob;
   UINTN            OriginalProcessorNumber;
+  EFI_STATUS       Status;  // MU_CHANGE - CodeQL change
 
-  CpuMpData    = GetCpuMpData ();
+  CpuMpData = GetCpuMpData ();
+
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+
   CpuInfoInHob = (CPU_INFO_IN_HOB *)(UINTN)CpuMpData->CpuInfoInHob;
 
   //
@@ -2461,10 +2511,19 @@ MpInitLibGetProcessorInfo (
   OriginalProcessorNumber = ProcessorNumber;
   ProcessorNumber        &= BIT24 - 1;
 
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   //
   // Check whether caller processor is BSP
   //
-  MpInitLibWhoAmI (&CallerNumber);
+  Status = MpInitLibWhoAmI (&CallerNumber);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
+    return Status;
+  }
+
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+
   if (CallerNumber != CpuMpData->BspNumber) {
     return EFI_DEVICE_ERROR;
   }
@@ -2545,6 +2604,7 @@ SwitchBSPWorker (
   MSR_IA32_APIC_BASE_REGISTER  ApicBaseMsr;
   BOOLEAN                      OldInterruptState;
   BOOLEAN                      OldTimerInterruptState;
+  EFI_STATUS                   Status;  // MU_CHANGE - CodeQL change
 
   //
   // Save and Disable Local APIC timer interrupt
@@ -2567,10 +2627,24 @@ SwitchBSPWorker (
 
   CpuMpData = GetCpuMpData ();
 
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    return EFI_LOAD_ERROR;
+  }
+
   //
   // Check whether caller processor is BSP
   //
-  MpInitLibWhoAmI (&CallerNumber);
+  Status = MpInitLibWhoAmI (&CallerNumber);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
+    return Status;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   if (CallerNumber != CpuMpData->BspNumber) {
     return EFI_DEVICE_ERROR;
   }
@@ -2690,13 +2764,27 @@ EnableDisableApWorker (
 {
   CPU_MP_DATA  *CpuMpData;
   UINTN        CallerNumber;
+  EFI_STATUS   Status;  // MU_CHANGE - CodeQL change
 
   CpuMpData = GetCpuMpData ();
+
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    return EFI_LOAD_ERROR;
+  }
 
   //
   // Check whether caller processor is BSP
   //
-  MpInitLibWhoAmI (&CallerNumber);
+  Status = MpInitLibWhoAmI (&CallerNumber);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
+    return Status;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   if (CallerNumber != CpuMpData->BspNumber) {
     return EFI_DEVICE_ERROR;
   }
@@ -2753,6 +2841,14 @@ MpInitLibWhoAmI (
 
   CpuMpData = GetCpuMpData ();
 
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   return GetProcessorNumber (CpuMpData, ProcessorNumber);
 }
 
@@ -2788,17 +2884,35 @@ MpInitLibGetNumberOfProcessors (
   UINTN        ProcessorNumber;
   UINTN        EnabledProcessorNumber;
   UINTN        Index;
+  EFI_STATUS   Status;  // MU_CHANGE - CodeQL change
 
   CpuMpData = GetCpuMpData ();
+
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   if ((NumberOfProcessors == NULL) && (NumberOfEnabledProcessors == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   //
   // Check whether caller processor is BSP
   //
-  MpInitLibWhoAmI (&CallerNumber);
+  Status = MpInitLibWhoAmI (&CallerNumber);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
+    return Status;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   if (CallerNumber != CpuMpData->BspNumber) {
     return EFI_DEVICE_ERROR;
   }
@@ -2880,6 +2994,14 @@ StartupAllCPUsWorker (
     *FailedCpuList = NULL;
   }
 
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    return EFI_LOAD_ERROR;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   if ((CpuMpData->CpuCount == 1) && ExcludeBsp) {
     return EFI_NOT_STARTED;
   }
@@ -2888,10 +3010,18 @@ StartupAllCPUsWorker (
     return EFI_INVALID_PARAMETER;
   }
 
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   //
   // Check whether caller processor is BSP
   //
-  MpInitLibWhoAmI (&CallerNumber);
+  Status = MpInitLibWhoAmI (&CallerNumber);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
+    return Status;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   if (CallerNumber != CpuMpData->BspNumber) {
     return EFI_DEVICE_ERROR;
   }
@@ -3033,10 +3163,23 @@ StartupThisAPWorker (
     *Finished = FALSE;
   }
 
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuMpData == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get CpuMpData.\n", __func__));
+    return EFI_LOAD_ERROR;
+  }
+
   //
   // Check whether caller processor is BSP
   //
-  MpInitLibWhoAmI (&CallerNumber);
+  Status = MpInitLibWhoAmI (&CallerNumber);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Failed to get MpInit Processor info.\n", __func__));
+    return Status;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   if (CallerNumber != CpuMpData->BspNumber) {
     return EFI_DEVICE_ERROR;
   }
