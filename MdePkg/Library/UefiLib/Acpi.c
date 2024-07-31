@@ -220,7 +220,14 @@ LocateAcpiTableInAcpiConfigurationTable (
                                                             NULL,
                                                             NULL
                                                             );
-      Table = LocateAcpiDsdtFromFadt (Fadt);
+      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+      if (Fadt != NULL) {
+        Table = LocateAcpiDsdtFromFadt (Fadt);
+      } else {
+        Table = NULL;
+      }
+
+      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     } else if (Signature == EFI_ACPI_2_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_SIGNATURE) {
       ASSERT (PreviousTable == NULL);
       //
@@ -234,7 +241,14 @@ LocateAcpiTableInAcpiConfigurationTable (
                                                             NULL,
                                                             NULL
                                                             );
-      Table = LocateAcpiFacsFromFadt (Fadt);
+      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+      if (Fadt != NULL) {
+        Table = LocateAcpiFacsFromFadt (Fadt);
+      } else {
+        Table = NULL;
+      }
+
+      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     } else {
       Table = ScanTableInSDT (
                 Xsdt,
@@ -275,7 +289,14 @@ LocateAcpiTableInAcpiConfigurationTable (
                                                           NULL,
                                                           NULL
                                                           );
-    Table = LocateAcpiDsdtFromFadt (Fadt);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (Fadt != NULL) {
+      Table = LocateAcpiDsdtFromFadt (Fadt);
+    } else {
+      Table = NULL;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   } else if (Signature == EFI_ACPI_2_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_SIGNATURE) {
     ASSERT (PreviousTable == NULL);
     //
@@ -289,7 +310,14 @@ LocateAcpiTableInAcpiConfigurationTable (
                                                           NULL,
                                                           NULL
                                                           );
-    Table = LocateAcpiFacsFromFadt (Fadt);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (Fadt != NULL) {
+      Table = LocateAcpiFacsFromFadt (Fadt);
+    } else {
+      Table = NULL;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   } else {
     Table = ScanTableInSDT (
               Rsdt,

@@ -65,7 +65,13 @@ InternalPrint (
   BufferSize = (PcdGet32 (PcdUefiLibMaxPrintBufferSize) + 1) * sizeof (CHAR16);
 
   Buffer = (CHAR16 *)AllocatePool (BufferSize);
-  ASSERT (Buffer != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Buffer == NULL) {
+    ASSERT (Buffer != NULL);
+    return 0;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   Return = UnicodeVSPrint (Buffer, BufferSize, Format, Marker);
 
@@ -199,7 +205,13 @@ AsciiInternalPrint (
   BufferSize = (PcdGet32 (PcdUefiLibMaxPrintBufferSize) + 1) * sizeof (CHAR16);
 
   Buffer = (CHAR16 *)AllocatePool (BufferSize);
-  ASSERT (Buffer != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Buffer == NULL) {
+    ASSERT (Buffer != NULL);
+    return 0;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   Return = UnicodeVSPrintAsciiFormat (Buffer, BufferSize, Format, Marker);
 
@@ -419,7 +431,13 @@ InternalPrintGraphic (
   }
 
   Blt = (EFI_IMAGE_OUTPUT *)AllocateZeroPool (sizeof (EFI_IMAGE_OUTPUT));
-  ASSERT (Blt != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Blt == NULL) {
+    ASSERT (Blt != NULL);
+    goto Error;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   Blt->Width  = (UINT16)(HorizontalResolution);
   Blt->Height = (UINT16)(VerticalResolution);
@@ -625,7 +643,13 @@ PrintXY (
   BufferSize = (PcdGet32 (PcdUefiLibMaxPrintBufferSize) + 1) * sizeof (CHAR16);
 
   Buffer = (CHAR16 *)AllocatePool (BufferSize);
-  ASSERT (Buffer != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Buffer == NULL) {
+    ASSERT (Buffer != NULL);
+    return 0;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   PrintNum = UnicodeVSPrint (Buffer, BufferSize, Format, Marker);
 
@@ -703,7 +727,13 @@ AsciiPrintXY (
   BufferSize = (PcdGet32 (PcdUefiLibMaxPrintBufferSize) + 1) * sizeof (CHAR16);
 
   Buffer = (CHAR16 *)AllocatePool (BufferSize);
-  ASSERT (Buffer != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Buffer == NULL) {
+    ASSERT (Buffer != NULL);
+    return 0;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   PrintNum = UnicodeSPrintAsciiFormat (Buffer, BufferSize, Format, Marker);
 

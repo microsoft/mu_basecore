@@ -68,7 +68,7 @@ PeCoffLoaderGetPeHeader (
   UINTN                     Size;
   UINTN                     ReadSize;
   UINT32                    SectionHeaderOffset;
-  UINT32                    Index;
+  UINTN                     Index; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
   UINT32                    HeaderWithoutDataDir;
   CHAR8                     BufferData;
   UINTN                     NumberOfSections;
@@ -1421,7 +1421,8 @@ PeCoffLoaderLoadImage (
       return RETURN_LOAD_ERROR;
     }
 
-    if (Section->SizeOfRawData > 0) {
+    // MU_CHANGE - CodeQL change - Assume Base is non-NULL if Size is non-zero
+    if ((Section->SizeOfRawData > 0) && (Base != NULL)) {
       Status = ImageContext->ImageRead (
                                ImageContext->Handle,
                                Section->PointerToRawData - TeStrippedOffset,
@@ -1437,8 +1438,8 @@ PeCoffLoaderLoadImage (
     //
     // If raw size is less then virtual size, zero fill the remaining
     //
-
-    if (Size < Section->Misc.VirtualSize) {
+    // MU_CHANGE - CodeQL change - Assume Base is non-NULL if Size is non-zero
+    if ((Size < Section->Misc.VirtualSize) && (Base != NULL)) {
       ZeroMem (Base + Size, Section->Misc.VirtualSize - Size);
     }
 
