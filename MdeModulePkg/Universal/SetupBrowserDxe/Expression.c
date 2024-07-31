@@ -1173,10 +1173,25 @@ IfrToString (
       } else {
         SrcBuf = GetBufferForValue (&Value);
         SrcLen = GetLengthForValue (&Value);
+        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+        if ((SrcBuf == NULL) || (SrcLen == 0)) {
+          ASSERT (SrcBuf != NULL);
+          ASSERT (SrcLen != 0);
+          return EFI_NOT_FOUND;
+        }
+
+        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       }
 
       TmpBuf = AllocateZeroPool (SrcLen + 3);
-      ASSERT (TmpBuf != NULL);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      if (TmpBuf == NULL) {
+        ASSERT (TmpBuf != NULL);
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      // MU_CHANGE [END] - CodeQL change
+
       if (Format == EFI_IFR_STRING_ASCII) {
         CopyMem (TmpBuf, SrcBuf, SrcLen);
         PrintFormat = L"%a";
@@ -1286,7 +1301,8 @@ IfrToUint (
   Evaluate opcode EFI_IFR_CATENATE.
 
   @param  FormSet                Formset which contains this opcode.
-  @param  Result                 Evaluation result for this opcode.
+  @param  Result                 Evaluation result for this opcode.  Result
+                                 will be NULL on a failure. // MU_CHANGE - CodeQL Change
 
   @retval EFI_SUCCESS            Opcode evaluation success.
   @retval Other                  Opcode evaluation failed.
@@ -1350,6 +1366,14 @@ IfrCatenate (
     MaxLen    = (StrSize (String[1]) + Size) / sizeof (CHAR16);
     StringPtr = AllocatePool (MaxLen * sizeof (CHAR16));
     ASSERT (StringPtr != NULL);
+
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (StringPtr == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
     StrCpyS (StringPtr, MaxLen, String[1]);
     StrCatS (StringPtr, MaxLen, String[0]);
 
@@ -1365,10 +1389,25 @@ IfrCatenate (
     ASSERT (Result->Buffer != NULL);
 
     TmpBuf = GetBufferForValue (&Value[0]);
-    ASSERT (TmpBuf != NULL);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (TmpBuf == NULL) {
+      ASSERT (TmpBuf != NULL);
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Done;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
     CopyMem (Result->Buffer, TmpBuf, Length0);
     TmpBuf = GetBufferForValue (&Value[1]);
-    ASSERT (TmpBuf != NULL);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (TmpBuf == NULL) {
+      ASSERT (TmpBuf != NULL);
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Done;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     CopyMem (&Result->Buffer[Length0], TmpBuf, Length1);
   }
 
@@ -1392,6 +1431,13 @@ Done:
   if (StringPtr != NULL) {
     FreePool (StringPtr);
   }
+
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (EFI_ERROR (Status) && (Result != NULL)) {
+    FreePool (Result);
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   return Status;
 }
@@ -1830,6 +1876,12 @@ IfrMid (
   } else {
     BufferLen = GetLengthForValue (&Value[2]);
     Buffer    = GetBufferForValue (&Value[2]);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (Buffer == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
     Result->Type = EFI_IFR_TYPE_BUFFER;
     if ((Length == 0) || (Base >= BufferLen)) {
@@ -2257,6 +2309,12 @@ CompareHiiValue (
     Buf1Len = GetLengthForValue (Value1);
     Buf2    = GetBufferForValue (Value2);
     Buf2Len = GetLengthForValue (Value2);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if ((Buf1 == NULL) || (Buf2 == NULL)) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
     Len     = Buf1Len > Buf2Len ? Buf2Len : Buf1Len;
     *Result = CompareMem (Buf1, Buf2, Len);
@@ -2458,7 +2516,14 @@ GetQuestionValueFromForm (
   // Get the formset data include this question.
   //
   FormSet = AllocateZeroPool (sizeof (FORM_BROWSER_FORMSET));
-  ASSERT (FormSet != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (FormSet == NULL) {
+    ASSERT (FormSet != NULL);
+    GetTheVal = FALSE;
+    goto Done;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   Status = InitializeFormSet (HiiHandle, FormSetGuid, FormSet);
   if (EFI_ERROR (Status)) {
     GetTheVal = FALSE;
@@ -2544,7 +2609,7 @@ EvaluateExpression (
   EXPRESSION_OPCODE         *OpCode;
   FORM_BROWSER_STATEMENT    *Question;
   FORM_BROWSER_STATEMENT    *Question2;
-  UINT16                    Index;
+  UINTN                     Index; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
   EFI_HII_VALUE             Data1;
   EFI_HII_VALUE             Data2;
   EFI_HII_VALUE             Data3;
@@ -2649,7 +2714,8 @@ EvaluateExpression (
         }
 
         Value->Value.b = FALSE;
-        for (Index = 0; Index < OpCode->ListLength; Index++) {
+        for (Index = 0; Index < (UINTN)OpCode->ListLength; Index++) {
+          // MU_CHANGE - CodeQL Change - comparison-with-wider-type
           if (Question->HiiValue.Value.u16 == OpCode->ValueList[Index]) {
             Value->Value.b = TRUE;
             break;
@@ -3012,8 +3078,8 @@ EvaluateExpression (
           //
           Value->Value.string = NewString (gEmptyString, FormSet->HiiHandle);
         } else {
-          Index               = (UINT16)Value->Value.u64;
-          Value->Value.string = Index;
+          Index               = (UINTN)Value->Value.u64; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
+          Value->Value.string = (UINT16)Index;           // MU_CHANGE - CodeQL Change - comparison-with-wider-type
           FreePool (StrPtr);
         }
 
@@ -3169,7 +3235,14 @@ EvaluateExpression (
             case EFI_HII_VARSTORE_NAME_VALUE:
               if (OpCode->ValueType != EFI_IFR_TYPE_STRING) {
                 NameValue = AllocateZeroPool ((OpCode->ValueWidth * 2 + 1) * sizeof (CHAR16));
-                ASSERT (NameValue != NULL);
+                // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+                if (NameValue == NULL) {
+                  ASSERT (NameValue != NULL);
+                  Status = EFI_OUT_OF_RESOURCES;
+                  goto Done;
+                }
+
+                // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
                 //
                 // Convert Buffer to Hex String
                 //

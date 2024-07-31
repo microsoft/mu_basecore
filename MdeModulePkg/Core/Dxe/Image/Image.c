@@ -164,8 +164,13 @@ PeCoffEmuProtocolNotify (
     }
 
     Entry = AllocateZeroPool (sizeof (*Entry));
-    ASSERT (Entry != NULL);
+    // MU_CHANGE Start - CodeQL Change
+    if (Entry == NULL) {
+      ASSERT (Entry != NULL);
+      break;
+    }
 
+    // MU_CHANGE End - CodeQL Change
     Entry->Emulator    = Emulator;
     Entry->MachineType = Entry->Emulator->MachineType;
 
@@ -1313,6 +1318,14 @@ CoreLoadImageCommon (
         // LoadFile () may cause the device path of the Handle be updated.
         //
         OriginalFilePath = AppendDevicePath (DevicePathFromHandle (DeviceHandle), Node);
+        // MU_CHANGE Start - CodeQL Change
+        if (OriginalFilePath == NULL) {
+          Image  = NULL;
+          Status = EFI_OUT_OF_RESOURCES;
+          goto Done;
+        }
+
+        // MU_CHANGE End - CodeQL Change
       }
     }
   }

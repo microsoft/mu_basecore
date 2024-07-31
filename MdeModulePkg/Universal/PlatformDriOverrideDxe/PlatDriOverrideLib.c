@@ -360,9 +360,15 @@ UpdateFvFileDevicePath (
     // Build the shell device path
     //
     NewDevicePath = DevicePathFromHandle (FoundFvHandle);
-    EfiInitializeFwVolDevicepathNode (&FvFileNode, FileGuid);
-    NewDevicePath = AppendDevicePathNode (NewDevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&FvFileNode);
-    *DevicePath   = NewDevicePath;
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (NewDevicePath != NULL) {
+      EfiInitializeFwVolDevicepathNode (&FvFileNode, FileGuid);
+      NewDevicePath = AppendDevicePathNode (NewDevicePath, (EFI_DEVICE_PATH_PROTOCOL *)&FvFileNode);
+      *DevicePath   = NewDevicePath;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
     return EFI_SUCCESS;
   }
 

@@ -381,6 +381,13 @@ DumpResourceMap (
       }
 
       ChildResources = AllocatePool (sizeof (PCI_RESOURCE_NODE *) * ChildResourceCount);
+      // MU_CHANGE Start - CodeQl Change - Check ChildResources before continuing
+      if (ChildResources == NULL) {
+        return;
+      }
+
+      // MU_CHANGE End - CodeQl Change - Check ChildResources before continuing
+
       ASSERT (ChildResources != NULL);
       ChildResourceCount = 0;
       for (Index = 0; Index < ResourceCount; Index++) {
@@ -545,6 +552,12 @@ PciHostBridgeResourceAllocator (
                    PciBarTypeIo16,
                    PciResUsageTypical
                    );
+      // MU_CHANGE Start - CodeQl Change
+      if (IoBridge == NULL) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      // MU_CHANGE Start - CodeQl Change
 
       Mem32Bridge = CreateResourceNode (
                       RootBridgeDev,
@@ -554,6 +567,13 @@ PciHostBridgeResourceAllocator (
                       PciBarTypeMem32,
                       PciResUsageTypical
                       );
+      // MU_CHANGE Start - CodeQl Change
+      if (Mem32Bridge == NULL) {
+        FreePool (IoBridge);
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      // MU_CHANGE Start - CodeQl Change
 
       PMem32Bridge = CreateResourceNode (
                        RootBridgeDev,
@@ -563,6 +583,14 @@ PciHostBridgeResourceAllocator (
                        PciBarTypePMem32,
                        PciResUsageTypical
                        );
+      // MU_CHANGE Start - CodeQl Change
+      if (PMem32Bridge == NULL) {
+        FreePool (IoBridge);
+        FreePool (Mem32Bridge);
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      // MU_CHANGE Start - CodeQl Change
 
       Mem64Bridge = CreateResourceNode (
                       RootBridgeDev,
@@ -572,6 +600,15 @@ PciHostBridgeResourceAllocator (
                       PciBarTypeMem64,
                       PciResUsageTypical
                       );
+      // MU_CHANGE Start - CodeQl Change
+      if (Mem64Bridge == NULL) {
+        FreePool (IoBridge);
+        FreePool (Mem32Bridge);
+        FreePool (PMem32Bridge);
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      // MU_CHANGE Start - CodeQl Change
 
       PMem64Bridge = CreateResourceNode (
                        RootBridgeDev,
@@ -581,6 +618,16 @@ PciHostBridgeResourceAllocator (
                        PciBarTypePMem64,
                        PciResUsageTypical
                        );
+      // MU_CHANGE Start - CodeQl Change
+      if (PMem64Bridge == NULL) {
+        FreePool (IoBridge);
+        FreePool (Mem32Bridge);
+        FreePool (PMem32Bridge);
+        FreePool (Mem64Bridge);
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      // MU_CHANGE Start - CodeQl Change
 
       //
       // Get the max ROM size that the root bridge can process
@@ -1100,7 +1147,7 @@ PciScanBus (
   EFI_HPC_STATE                      State;
   UINT64                             PciAddress;
   EFI_HPC_PADDING_ATTRIBUTES         Attributes;
-  VOID                               *DescriptorsBuffer = NULL; // MU_CHANGE
+  VOID                               *DescriptorsBuffer;
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR  *Descriptors;
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR  *NextDescriptors;
   UINT16                             BusRange;
@@ -1109,16 +1156,17 @@ PciScanBus (
   UINT32                             TempReservedBusNum;
   BOOLEAN                            IsAriEnabled;
 
-  PciRootBridgeIo = Bridge->PciRootBridgeIo;
-  SecondBus       = 0;
-  Register        = 0;
-  State           = 0;
-  Attributes      = (EFI_HPC_PADDING_ATTRIBUTES)0;
-  BusRange        = 0;
-  BusPadding      = FALSE;
-  PciDevice       = NULL;
-  PciAddress      = 0;
-  IsAriEnabled    = FALSE;
+  DescriptorsBuffer = NULL; // MU_CHANGE
+  PciRootBridgeIo   = Bridge->PciRootBridgeIo;
+  SecondBus         = 0;
+  Register          = 0;
+  State             = 0;
+  Attributes        = (EFI_HPC_PADDING_ATTRIBUTES)0;
+  BusRange          = 0;
+  BusPadding        = FALSE;
+  PciDevice         = NULL;
+  PciAddress        = 0;
+  IsAriEnabled      = FALSE;
 
   for (Device = 0; Device <= PCI_MAX_DEVICE; Device++) {
     if (!IsAriEnabled) {
@@ -1258,7 +1306,7 @@ PciScanBus (
                                           PciDevice->DevicePath,
                                           PciAddress,
                                           &State,
-                                          &DescriptorsBuffer,     // MU_CHANGE
+                                          (VOID **)&DescriptorsBuffer, // MU_CHANGE - CodeQL Change
                                           &Attributes
                                           );
 
@@ -1844,7 +1892,8 @@ PciProgramResizableBar (
                                     );
   ASSERT_EFI_ERROR (Status);
 
-  for (Index = 0; Index < ResizableBarNumber; Index++) {
+  for (Index = 0; (UINTN)Index < ResizableBarNumber; Index++) {
+    // MU_CHANGE Start - CodeQl Change - comparison-with-wider-type
     //
     // When the bit of Capabilities Set, indicates that the Function supports
     // operating with the BAR sized to (2^Bit) MB.

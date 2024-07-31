@@ -1054,7 +1054,13 @@ InsertFpdtRecord (
   switch (PerfId) {
     case MODULE_START_ID:
     case MODULE_END_ID:
-      GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      Status = GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "Failed to get Module Info from Handle! Status = %r\n", Status));
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       StringPtr = ModuleName;
       //
       // Cache the offset of start image start record and use to update the start image end record if needed.
@@ -1090,7 +1096,13 @@ InsertFpdtRecord (
 
     case MODULE_LOADIMAGE_START_ID:
     case MODULE_LOADIMAGE_END_ID:
-      GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      Status = GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "Failed to get Module Info from Handle! Status = %r\n", Status));
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       StringPtr = ModuleName;
       if (PerfId == MODULE_LOADIMAGE_START_ID) {
         mLoadImageCount++;
@@ -1133,7 +1145,13 @@ InsertFpdtRecord (
     case MODULE_DB_SUPPORT_END_ID:
     case MODULE_DB_STOP_START_ID:
     case MODULE_DB_STOP_END_ID:
-      GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      Status = GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "Failed to get Module Info from Handle! Status = %r\n", Status));
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       StringPtr = ModuleName;
       if (!PcdGetBool (PcdEdkiiFpdtStringRecordEnableOnly)) {
         FpdtRecordPtr.GuidQwordEvent->Header.Type     = FPDT_GUID_QWORD_EVENT_TYPE;
@@ -1148,7 +1166,13 @@ InsertFpdtRecord (
       break;
 
     case MODULE_DB_END_ID:
-      GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      Status = GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "Failed to get Module Info from Handle! Status = %r\n", Status));
+      }
+
+      // MU_CHANGE [END] - CodeQL change
       StringPtr = ModuleName;
       if (!PcdGetBool (PcdEdkiiFpdtStringRecordEnableOnly)) {
         FpdtRecordPtr.GuidQwordStringEvent->Header.Type     = FPDT_GUID_QWORD_STRING_EVENT_TYPE;
@@ -1198,16 +1222,25 @@ InsertFpdtRecord (
     case PERF_INMODULE_END_ID:
     case PERF_CROSSMODULE_START_ID:
     case PERF_CROSSMODULE_END_ID:
-      GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+      // MU_CHANGE [BEGIN] - CodeQL change
+      Status = GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "Failed to get Module Info from Handle! Status = %r\n", Status));
+      }
+
+      StringPtr = NULL;
+
       if (String != NULL) {
         StringPtr = String;
-      } else {
+      } else if (ModuleName != NULL) {
         StringPtr = ModuleName;
       }
 
-      if (AsciiStrLen (StringPtr) == 0) {
+      if ((StringPtr == NULL) || (AsciiStrLen (StringPtr) == 0)) {
         StringPtr = "unknown name";
       }
+
+      // MU_CHANGE [END] - CodeQL change
 
       if (!PcdGetBool (PcdEdkiiFpdtStringRecordEnableOnly)) {
         FpdtRecordPtr.DynamicStringEvent->Header.Type     = FPDT_DYNAMIC_STRING_EVENT_TYPE;
@@ -1223,16 +1256,25 @@ InsertFpdtRecord (
 
     default:
       if (Attribute != PerfEntry) {
-        GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+        // MU_CHANGE [BEGIN] - CodeQL change
+        Status = GetModuleInfoFromHandle ((EFI_HANDLE)CallerIdentifier, ModuleName, sizeof (ModuleName), &ModuleGuid);
+        if (EFI_ERROR (Status)) {
+          DEBUG ((DEBUG_ERROR, "Failed to get Module Info from Handle! Status = %r\n", Status));
+        }
+
+        StringPtr = NULL;
+
         if (String != NULL) {
           StringPtr = String;
-        } else {
+        } else if (ModuleName != NULL) {
           StringPtr = ModuleName;
         }
 
-        if (AsciiStrLen (StringPtr) == 0) {
+        if ((StringPtr == NULL) || (AsciiStrLen (StringPtr) == 0)) {
           StringPtr = "unknown name";
         }
+
+        // MU_CHANGE [END] - CodeQL change
 
         if (!PcdGetBool (PcdEdkiiFpdtStringRecordEnableOnly)) {
           FpdtRecordPtr.DynamicStringEvent->Header.Type     = FPDT_DYNAMIC_STRING_EVENT_TYPE;

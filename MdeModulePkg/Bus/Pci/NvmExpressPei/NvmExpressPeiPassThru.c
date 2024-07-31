@@ -27,12 +27,12 @@ NvmeCreatePrpList (
   IN     UINTN                             Pages
   )
 {
-  UINTN                 PrpEntryNo;
+  UINT64                PrpEntryNo; // MU_CHANGE - CodeQl Change - comparison mismatch
   UINTN                 PrpListNo;
   UINT64                PrpListBase;
   VOID                  *PrpListHost;
   UINTN                 PrpListIndex;
-  UINTN                 PrpEntryIndex;
+  UINT64                PrpEntryIndex; // MU_CHANGE - CodeQl Change - comparison mismatch
   UINT64                Remainder;
   EFI_PHYSICAL_ADDRESS  PrpListPhyAddr;
   UINTN                 Bytes;
