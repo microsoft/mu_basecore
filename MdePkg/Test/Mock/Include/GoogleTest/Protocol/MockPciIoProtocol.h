@@ -47,6 +47,17 @@ struct MockPciIoProtocol {
      OUT UINTN                       *FunctionNumber
     )
     );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    Attributes,
+    (
+     IN EFI_PCI_IO_PROTOCOL                       *This,
+     IN  EFI_PCI_IO_PROTOCOL_ATTRIBUTE_OPERATION  Operation,
+     IN  UINT64                                   Attributes,
+     OUT UINT64                                   *Result OPTIONAL
+    )
+    );
 };
 
 extern "C" {
