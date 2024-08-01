@@ -1204,6 +1204,11 @@ PeimEntryMA (
       }
 
       if (EFI_ERROR (Status)) {
+        // MU_CHANGE_58957
+        // MU_CHANGE [BEGIN] - Make sure that TPM2_Startup() can report an error.
+        DEBUG ((DEBUG_ERROR, "Tcg2Pei::%a - TPM failed Startup!\n", __func__));
+        ASSERT_EFI_ERROR (Status);
+        // MU_CHANGE [END]
         goto Done;
       }
     }
@@ -1236,6 +1241,10 @@ PeimEntryMA (
       if (PcdGet8 (PcdTpm2SelfTestPolicy) == 1) {
         Status = Tpm2SelfTest (NO);
         if (EFI_ERROR (Status)) {
+          // MU_CHANGE_58957
+          // MU_CHANGE [BEGIN] - Make sure that TPM2_Startup() can report an error.
+          DEBUG ((DEBUG_ERROR, "Tcg2Pei::%a - TPM failed Startup!\n", __func__));
+          // MU_CHANGE [END]
           goto Done;
         }
       }
