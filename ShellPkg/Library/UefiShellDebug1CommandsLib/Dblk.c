@@ -111,6 +111,8 @@ ShellCommandRunDblk (
   UINT64                    BlockCount;
   EFI_DEVICE_PATH_PROTOCOL  *DevPath;
 
+  Lba         = 0; // MU_CHANGE - CodeQL Change - conditionallyuninitializedvariable
+  BlockCount  = 0; // MU_CHANGE - CodeQL Change - conditionallyuninitializedvariable
   ShellStatus = SHELL_SUCCESS;
   Status      = EFI_SUCCESS;
 
@@ -186,7 +188,8 @@ ShellCommandRunDblk (
         //
         // do the work if we have a valid block identifier
         //
-        if (gEfiShellProtocol->GetDevicePathFromMap (BlockName) == NULL) {
+        if ((BlockName == NULL) || (gEfiShellProtocol->GetDevicePathFromMap (BlockName) == NULL)) {
+          // MU_CHANGE - CodeQL Change - unguardednullreturndereference
           ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"dblk", BlockName);
           ShellStatus = SHELL_INVALID_PARAMETER;
         } else {

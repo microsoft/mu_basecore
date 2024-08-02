@@ -299,6 +299,12 @@ LoadedImageProtocolDumpInformation (
 
     SHELL_FREE_NON_NULL (Temp);
     SHELL_FREE_NON_NULL (FileName);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (RetVal == NULL) {
+      return NULL;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   }
 
   Temp = HiiGetString (mHandleParsingHiiHandle, STRING_TOKEN (STR_LI_DUMP_MAIN), NULL);
@@ -309,25 +315,28 @@ LoadedImageProtocolDumpInformation (
   PdbFileName = PeCoffLoaderGetPdbPointer (LoadedImage->ImageBase);
   DataType    = ConvertMemoryType (LoadedImage->ImageDataType);
   CodeType    = ConvertMemoryType (LoadedImage->ImageCodeType);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if ((PdbFileName != NULL) && (DataType != NULL) && (CodeType != NULL) && (FilePath != NULL)) {
+    RetVal = CatSPrint (
+               RetVal,
+               Temp,
+               LoadedImage->Revision,
+               LoadedImage->ParentHandle,
+               LoadedImage->SystemTable,
+               LoadedImage->DeviceHandle,
+               FilePath,
+               PdbFileName,
+               LoadedImage->LoadOptionsSize,
+               LoadedImage->LoadOptions,
+               LoadedImage->ImageBase,
+               LoadedImage->ImageSize,
+               CodeType,
+               DataType,
+               LoadedImage->Unload
+               );
+  }
 
-  RetVal = CatSPrint (
-             RetVal,
-             Temp,
-             LoadedImage->Revision,
-             LoadedImage->ParentHandle,
-             LoadedImage->SystemTable,
-             LoadedImage->DeviceHandle,
-             FilePath,
-             PdbFileName,
-             LoadedImage->LoadOptionsSize,
-             LoadedImage->LoadOptions,
-             LoadedImage->ImageBase,
-             LoadedImage->ImageSize,
-             CodeType,
-             DataType,
-             LoadedImage->Unload
-             );
-
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   SHELL_FREE_NON_NULL (Temp);
   SHELL_FREE_NON_NULL (FilePath);
   SHELL_FREE_NON_NULL (CodeType);
@@ -389,7 +398,13 @@ GraphicsOutputProtocolDumpInformation (
   }
 
   Fmt = ConvertPixelFormat (GraphicsOutput->Mode->Info->PixelFormat);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Fmt == NULL) {
+    SHELL_FREE_NON_NULL (Temp);
+    return NULL;
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   RetVal = CatSPrint (
              NULL,
              Temp,
@@ -409,6 +424,12 @@ GraphicsOutputProtocolDumpInformation (
              );
 
   SHELL_FREE_NON_NULL (Temp);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (RetVal == NULL) {
+    goto EXIT;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   Temp = HiiGetString (mHandleParsingHiiHandle, STRING_TOKEN (STR_GOP_RES_LIST_MAIN), NULL);
   if (Temp == NULL) {
@@ -509,7 +530,12 @@ EdidDiscoveredProtocolDumpInformation (
 
   RetVal = CatSPrint (NULL, Temp, EdidDiscovered->SizeOfEdid);
   SHELL_FREE_NON_NULL (Temp);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (RetVal == NULL) {
+    return NULL;
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   if (EdidDiscovered->SizeOfEdid != 0) {
     Temp = HiiGetString (mHandleParsingHiiHandle, STRING_TOKEN (STR_EDID_DISCOVERED_DATA), NULL);
     if (Temp == NULL) {
@@ -575,6 +601,12 @@ EdidActiveProtocolDumpInformation (
 
   RetVal = CatSPrint (NULL, Temp, EdidActive->SizeOfEdid);
   SHELL_FREE_NON_NULL (Temp);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (RetVal == NULL) {
+    return NULL;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   if (EdidActive->SizeOfEdid != 0) {
     Temp = HiiGetString (mHandleParsingHiiHandle, STRING_TOKEN (STR_EDID_ACTIVE_DATA), NULL);
@@ -790,7 +822,12 @@ TxtOutProtocolDumpInformation (
 
   Size   = (Dev->Mode->MaxMode + 1) * 80;
   RetVal = AllocateZeroPool (Size);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (RetVal == NULL) {
+    return NULL;
+  }
 
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   Temp = HiiGetString (mHandleParsingHiiHandle, STRING_TOKEN (STR_TXT_OUT_DUMP_HEADER), NULL);
   if (Temp != NULL) {
     UnicodeSPrint (RetVal, Size, Temp, Dev, Dev->Mode->Attribute);
@@ -801,6 +838,13 @@ TxtOutProtocolDumpInformation (
   // Dump TextOut Info
   //
   Temp = HiiGetString (mHandleParsingHiiHandle, STRING_TOKEN (STR_TXT_OUT_DUMP_LINE), NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Temp == NULL) {
+    FreePool (RetVal);
+    return NULL;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   for (Index = 0; Index < Dev->Mode->MaxMode; Index++) {
     Status  = Dev->QueryMode (Dev, Index, &Col, &Row);
     NewSize = Size - StrSize (RetVal);
@@ -1056,6 +1100,12 @@ BusSpecificDriverOverrideProtocolDumpInformation (
                        ConvertHandleToHandleIndex (ImageHandle),
                        ConvertDevicePathToText (LoadedImage->FilePath, TRUE, TRUE)
                        );
+        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+        if (TempRetVal == NULL) {
+          break;
+        }
+
+        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
         StrnCatGrow (&RetVal, &Size, TempRetVal, 0);
         SHELL_FREE_NON_NULL (TempRetVal);
       }
@@ -1287,6 +1337,13 @@ PciIoProtocolDumpInformation (
              Pci.Hdr.ClassCode[1],
              Pci.Hdr.ClassCode[2]
              );
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (RetVal == NULL) {
+    FreePool (GetString);
+    return NULL;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   for (Index = 0; Index < sizeof (Pci); Index++) {
     if ((Index % 0x10) == 0) {
       TempRetVal = CatSPrint (RetVal, L"\r\n       %02x", *((UINT8 *)(&Pci) + Index));
@@ -1435,6 +1492,12 @@ AdapterInformationDumpInformation (
     }
 
     RetVal = CatSPrint (NULL, TempStr);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (RetVal == NULL) {
+      goto ERROR_EXIT;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     SHELL_FREE_NON_NULL (TempStr);
 
     for (GuidIndex = 0; GuidIndex < InfoTypesBufferCount; GuidIndex++) {
@@ -1726,6 +1789,12 @@ FirmwareManagementDumpInformation (
     }
 
     RetVal = CatSPrint (NULL, TempStr, ImageInfoSize);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (RetVal == NULL) {
+      goto ERROR_EXIT;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     SHELL_FREE_NON_NULL (TempStr);
 
     //
@@ -1823,37 +1892,67 @@ FirmwareManagementDumpInformation (
       } else {
         AttributeSettingStr = CatSPrint (NULL, L"(");
 
+        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+        if (AttributeSettingStr == NULL) {
+          goto ERROR_EXIT;
+        }
+
         if ((AttributeSetting & IMAGE_ATTRIBUTE_IMAGE_UPDATABLE) != 0x0) {
           TempRetVal = CatSPrint (AttributeSettingStr, L" IMAGE_ATTRIBUTE_IMAGE_UPDATABLE");
+          if (TempRetVal == NULL) {
+            goto ERROR_EXIT;
+          }
+
           SHELL_FREE_NON_NULL (AttributeSettingStr);
           AttributeSettingStr = TempRetVal;
         }
 
         if ((AttributeSetting & IMAGE_ATTRIBUTE_RESET_REQUIRED) != 0x0) {
           TempRetVal = CatSPrint (AttributeSettingStr, L" IMAGE_ATTRIBUTE_RESET_REQUIRED");
+          if (TempRetVal == NULL) {
+            goto ERROR_EXIT;
+          }
+
           SHELL_FREE_NON_NULL (AttributeSettingStr);
           AttributeSettingStr = TempRetVal;
         }
 
         if ((AttributeSetting & IMAGE_ATTRIBUTE_AUTHENTICATION_REQUIRED) != 0x0) {
           TempRetVal = CatSPrint (AttributeSettingStr, L" IMAGE_ATTRIBUTE_AUTHENTICATION_REQUIRED");
+          if (TempRetVal == NULL) {
+            goto ERROR_EXIT;
+          }
+
           SHELL_FREE_NON_NULL (AttributeSettingStr);
           AttributeSettingStr = TempRetVal;
         }
 
         if ((AttributeSetting & IMAGE_ATTRIBUTE_IN_USE) != 0x0) {
           TempRetVal = CatSPrint (AttributeSettingStr, L" IMAGE_ATTRIBUTE_IN_USE");
+          if (TempRetVal == NULL) {
+            goto ERROR_EXIT;
+          }
+
           SHELL_FREE_NON_NULL (AttributeSettingStr);
           AttributeSettingStr = TempRetVal;
         }
 
         if ((AttributeSetting & IMAGE_ATTRIBUTE_UEFI_IMAGE) != 0x0) {
           TempRetVal = CatSPrint (AttributeSettingStr, L" IMAGE_ATTRIBUTE_UEFI_IMAGE");
+          if (TempRetVal == NULL) {
+            goto ERROR_EXIT;
+          }
+
           SHELL_FREE_NON_NULL (AttributeSettingStr);
           AttributeSettingStr = TempRetVal;
         }
 
         TempRetVal = CatSPrint (AttributeSettingStr, L" )");
+        if (TempRetVal == NULL) {
+          goto ERROR_EXIT;
+        }
+
+        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
         SHELL_FREE_NON_NULL (AttributeSettingStr);
         AttributeSettingStr = TempRetVal;
       }
@@ -2848,7 +2947,13 @@ GetStringNameFromHandle (
                   );
   if (!EFI_ERROR (Status)) {
     BestLang = GetBestLanguageForDriver (CompNameStruct->SupportedLanguages, Language, FALSE);
-    Status   = CompNameStruct->GetDriverName (CompNameStruct, BestLang, &RetVal);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (BestLang == NULL) {
+      return (NULL);
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    Status = CompNameStruct->GetDriverName (CompNameStruct, BestLang, &RetVal);
     if (BestLang != NULL) {
       FreePool (BestLang);
       BestLang = NULL;
@@ -2869,7 +2974,13 @@ GetStringNameFromHandle (
                   );
   if (!EFI_ERROR (Status)) {
     BestLang = GetBestLanguageForDriver (CompNameStruct->SupportedLanguages, Language, FALSE);
-    Status   = CompNameStruct->GetDriverName (CompNameStruct, BestLang, &RetVal);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (BestLang == NULL) {
+      return (NULL);
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    Status = CompNameStruct->GetDriverName (CompNameStruct, BestLang, &RetVal);
     if (BestLang != NULL) {
       FreePool (BestLang);
     }

@@ -399,6 +399,16 @@ ShellCommandRunHelp (
         //
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_HELP_SC_HEADER), gShellLevel3HiiHandle);
         HiiString = HiiGetString (gShellLevel3HiiHandle, STRING_TOKEN (STR_HELP_SC_DATA), NULL);
+        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+        if (HiiString == NULL) {
+          HiiString = AllocateCopyPool (StrSize (L"ERROR: Could not find help string for special characters!"), L"ERROR: Could not find help string for special characters!");
+          if (HiiString == NULL) {
+            ASSERT (HiiString != NULL);
+            return (SHELL_OUT_OF_RESOURCES);
+          }
+        }
+
+        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
         ShellPrintEx (-1, -1, L"%s", HiiString);
         FreePool (HiiString);
         Found = TRUE;

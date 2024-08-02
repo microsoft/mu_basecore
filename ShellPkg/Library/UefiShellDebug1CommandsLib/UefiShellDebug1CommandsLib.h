@@ -50,6 +50,7 @@
 #include <Library/DevicePathLib.h>
 #include <Library/PrintLib.h>
 #include <Library/HandleParsingLib.h>
+#include <Library/SafeIntLib.h> // MU_CHANGE - Use SafeInt lib to check File size
 
 extern        EFI_HII_HANDLE  gShellDebug1HiiHandle;
 

@@ -302,6 +302,13 @@ LoadEfiDriversFromRomImage (
                                       );
             if (!EFI_ERROR (Status)) {
               DecompressedImageBuffer = AllocateZeroPool (DestinationSize);
+              // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+              if (DecompressedImageBuffer == NULL) {
+                ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellDebug1HiiHandle, L"loadpcirom");
+                return EFI_OUT_OF_RESOURCES;
+              }
+
+              // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
               if (ImageBuffer != NULL) {
                 Scratch = AllocateZeroPool (ScratchSize);
                 if (Scratch != NULL) {
@@ -333,7 +340,13 @@ LoadEfiDriversFromRomImage (
           //
           UnicodeSPrint (RomFileName, sizeof (RomFileName), L"%s[%d]", FileName, ImageIndex);
           FilePath = FileDevicePath (NULL, RomFileName);
+          // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+          if (FilePath == NULL) {
+            ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_LOADPCIROM_LOAD_FAIL), gShellDebug1HiiHandle, L"loadpcirom", FileName, ImageIndex);
+            return EFI_OUT_OF_RESOURCES;
+          }
 
+          // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
           Status = gBS->LoadImage (
                           TRUE,
                           gImageHandle,

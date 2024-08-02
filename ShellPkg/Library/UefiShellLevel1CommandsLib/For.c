@@ -334,7 +334,13 @@ ShellCommandRunFor (
   }
 
   CurrentScriptFile = ShellCommandGetCurrentScriptFile ();
-  ASSERT (CurrentScriptFile != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CurrentScriptFile == NULL) {
+    ASSERT (CurrentScriptFile != NULL);
+    return (SHELL_DEVICE_ERROR);
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   if ((CurrentScriptFile->CurrentCommand != NULL) && (CurrentScriptFile->CurrentCommand->Data == NULL)) {
     FirstPass = TRUE;
@@ -687,6 +693,12 @@ ShellCommandRunFor (
       }
 
       TempString = AllocateZeroPool (50*sizeof (CHAR16));
+      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+      if (TempString == NULL) {
+        return (SHELL_OUT_OF_RESOURCES);
+      }
+
+      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       UnicodeSPrint (TempString, 50*sizeof (CHAR16), L"%d", Info->Current);
       InternalUpdateAliasOnList (Info->ReplacementName, TempString, &CurrentScriptFile->SubstList);
       FreePool (TempString);

@@ -115,7 +115,12 @@ HMainCommandDisplayHelp (
                               ,
                    NULL
                    );
-    ShellPrintEx (0, CurrentLine+1, L"%E%s%N", InfoString);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (InfoString != NULL) {
+      ShellPrintEx (0, CurrentLine+1, L"%E%s%N", InfoString);
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   }
 
   //
