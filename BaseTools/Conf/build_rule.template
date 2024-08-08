@@ -276,7 +276,7 @@
         $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
 
     <Command>
-        $(CARGO) make $(CARGOMAKE_FLAGS) -e FEATURES=$(CARGO_FEATURES) -e RUSTFLAGS="-C link-arg=/MAP:$(DEBUG_DIR)(+)$(MODULE_NAME).map $(RUST_FLAGS)" build $(MODULE_NAME)
+        $(CARGO) make $(CARGOMAKE_FLAGS) -e FEATURES=$(CARGO_FEATURES) -e RUSTFLAGS="-C link-arg=/MAP:$(DEBUG_DIR)(+)$(MODULE_NAME).map -C link-arg=/base:0x0 -C link-arg=/subsystem:efi_boot_service_driver $(RUST_FLAGS)" build $(MODULE_NAME)
         $(CP) $(DEBUG_DIR)(+)$(TARGET_TRIPLE)(+)$(RUST_TARGET)(+)*.a $(DEBUG_DIR)(+)$(MODULE_NAME)rust.lib
         $(CP) $(DEBUG_DIR)(+)$(TARGET_TRIPLE)(+)$(RUST_TARGET)(+)*.a $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
 
@@ -288,7 +288,7 @@
         $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
 
     <Command>
-        $(CARGO) make $(CARGOMAKE_FLAGS) -e FEATURES=$(CARGO_FEATURES) -e RUSTFLAGS="-C link-arg=/MAP:$(DEBUG_DIR)(+)$(MODULE_NAME).map $(RUST_FLAGS)" build $(MODULE_NAME)
+        $(CARGO) make $(CARGOMAKE_FLAGS) -e FEATURES=$(CARGO_FEATURES) -e RUSTFLAGS="-C link-arg=/MAP:$(DEBUG_DIR)(+)$(MODULE_NAME).map -C link-arg=/base:0x0 -C link-arg=/subsystem:efi_boot_service_driver $(RUST_FLAGS)" build $(MODULE_NAME)
         "$(GENFW)" -e $(MODULE_TYPE) -o $(DEBUG_DIR)(+)$(MODULE_NAME).efi $(DEBUG_DIR)(+)$(TARGET_TRIPLE)(+)$(RUST_TARGET)(+)$(MODULE_NAME).efi $(GENFW_FLAGS)
         $(CP) $(DEBUG_DIR)(+)$(MODULE_NAME).map  $(OUTPUT_DIR)(+)$(MODULE_NAME).map
         $(CP) $(DEBUG_DIR)(+)$(MODULE_NAME).efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
