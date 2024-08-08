@@ -29,6 +29,7 @@ DEFAULT_CONFIG = {
         "AARCH64": "IMAGE_FILE_MACHINE_ARM64",
         "ARM": "IMAGE_FILE_MACHINE_ARM"
     },
+    "IGNORE_LIST": [],
     "IMAGE_FILE_MACHINE_AMD64": {
         "DEFAULT": {
             "IMAGE_BASE": 0,
@@ -37,7 +38,21 @@ DEFAULT_CONFIG = {
                 "COMPARISON": "==",
                 "VALUE": 4096
             }]
-        }
+        },
+        # These are the supported MODULE_TYPEs for the X64 architecture, which use the DEFAULT profile.
+        # If a MODULE_TYPE is not listed here, but is used in the build, this check will fail.
+        "APPLICATION": {},
+        "DXE_CORE": {},
+        "DXE_DRIVER": {},
+        "DXE_RUNTIME_DRIVER": {},
+        "DXE_SMM_DRIVER": {},
+        "MM_CORE_STANDALONE": {},
+        "MM_STANDALONE": {},
+        "PEI_CORE": {},
+        "PEIM": {},
+        "SEC": {},
+        "UEFI_APPLICATION": {},
+        "UEFI_DRIVER": {},
     },
     "IMAGE_FILE_MACHINE_ARM64": {
         "DEFAULT": {
@@ -45,15 +60,37 @@ DEFAULT_CONFIG = {
             "DATA_CODE_SEPARATION": True,
             "ALIGNMENT": [{
                 "COMPARISON": "==",
+                "VALUE": 4096
+            }]
+        },
+        # These are the supported MODULE_TYPEs for the AARCH64 architecture, which use the DEFAULT profile.
+        # If a MODULE_TYPE is not listed here, but is used in the build, this check will fail.
+        "APPLICATION": {},
+        "DXE_CORE": {},
+        "DXE_DRIVER": {},
+        "DXE_RUNTIME_DRIVER": {
+            "ALIGNMENT": [{
+                "COMPARISON": "==",
                 "VALUE": 65536
             }]
-        }
+        },
+        "DXE_SMM_DRIVER": {},
+        "MM_CORE_STANDALONE": {},
+        "MM_STANDALONE": {},
+        "PEI_CORE": {},
+        "PEIM": {},
+        "SEC": {},
+        "UEFI_APPLICATION": {},
+        "UEFI_DRIVER": {},
     },
     # Skip all tests for IA32
     "IMAGE_FILE_MACHINE_I386": {
         "DEFAULT": {
             "DATA_CODE_SEPARATION": False,
-        }
+        },
+        "PEIM": {},
+        "PEI_CORE": {},
+        "SEC": {},
     },
     # Skip all tests for ARM
     "IMAGE_FILE_MACHINE_ARM": {
@@ -103,7 +140,12 @@ class TestImageBase(TestInterface):
             logging.warning("Image Base not found in Optional Header")
             return Result.WARN
         
-        return Result.PASS if image_base == required_base else Result.FAIL
+        if image_base != required_base:
+            logging.error(
+                f'[{Result.FAIL}]: Image Validation Required: {hex(required_base)}, Found: {hex(image_base)}'
+            )
+            return Result.FAIL
+        return Result.PASS
 
 
 class ImageValidation(IUefiBuildPlugin):
@@ -141,9 +183,15 @@ class ImageValidation(IUefiBuildPlugin):
         config_data = DEFAULT_CONFIG
         if config_path:
             with open(config_path) as jsonfile:
-                config_data = {**json.load(jsonfile), **config_data}
+                data = json.load(jsonfile)
+                print(data)
+                print("------------")
+                config_data = {**config_data, **data}
+        else:
+            logging.info("No Configuration file found for PE Validation; Using default.")
+            logging.info("Review ImageValidation/Readme.md for configuration options.")
             
-
+        print(config_data)
         self.test_manager.config_data = config_data
         self.config_data = config_data
         self.ignore_list = config_data["IGNORE_LIST"]
@@ -193,9 +241,10 @@ class ImageValidation(IUefiBuildPlugin):
                             continue
                         if os.path.basename(efi_path) in self.ignore_list:
                             continue
-                        logging.info(
+                        logging.debug(
                             f'Performing Image Verification ... {os.path.basename(efi_path)}')
                         if self._validate_image(efi_path, fv_file["type"]) == Result.FAIL:
+                            logging.error(f'{os.path.basename(efi_path)} Failed Image Validation.')
                             result = Result.FAIL
                         count += 1
         # End Pre-Compiled Image Verification
@@ -233,9 +282,10 @@ class ImageValidation(IUefiBuildPlugin):
                         logging.warning('Using DEFAULT profile')
                         profile = "DEFAULT"
 
-                    logging.info(
+                    logging.debug(
                         f'Performing Image Verification ... {os.path.basename(efi_path)}')
                     if self._validate_image(efi_path, profile) == Result.FAIL:
+                        logging.error(f'{os.path.basename(efi_path)} Failed Image Validation.')
                         result = Result.FAIL
                     count += 1
         # End Built Time Compiled Image Verification
