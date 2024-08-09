@@ -2,6 +2,7 @@
   Google Test mocks for PlatformHookLib
 
   Copyright (c) 2023, Intel Corporation. All rights reserved.
+  Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
