@@ -16,102 +16,12 @@ from edk2toolext.image_validation import (
 )
 from edk2toollib.uefi.edk2.parsers.fdf_parser import FdfParser
 from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
-import json
+import yaml
 from typing import List
 import logging
 from datetime import datetime
 
-
-DEFAULT_CONFIG = {
-    "TARGET_ARCH": {
-        "X64": "IMAGE_FILE_MACHINE_AMD64",
-        "IA32": "IMAGE_FILE_MACHINE_I386",
-        "AARCH64": "IMAGE_FILE_MACHINE_ARM64",
-        "ARM": "IMAGE_FILE_MACHINE_ARM"
-    },
-    "IGNORE_LIST": [],
-    "IMAGE_FILE_MACHINE_AMD64": {
-        "DEFAULT": {
-            "IMAGE_BASE": 0,
-            "DATA_CODE_SEPARATION": True,
-            "ALIGNMENT": [{
-                "COMPARISON": "==",
-                "VALUE": 4096
-            }]
-        },
-        # These are the supported MODULE_TYPEs for the X64 architecture, which use the DEFAULT profile.
-        # If a MODULE_TYPE is not listed here, but is used in the build, this check will fail.
-        "APPLICATION": {},
-        "DXE_CORE": {},
-        "DXE_DRIVER": {},
-        "DXE_RUNTIME_DRIVER": {},
-        "DXE_SMM_DRIVER": {},
-        "MM_CORE_STANDALONE": {},
-        "MM_STANDALONE": {},
-        "PEI_CORE": {
-            "ALIGNMENT": [],
-        },
-        "PEIM": {
-            "ALIGNMENT": [],
-        },
-        "SEC": {
-            "ALIGNMENT": [],
-        },
-        "UEFI_APPLICATION": {},
-        "UEFI_DRIVER": {},
-    },
-    "IMAGE_FILE_MACHINE_ARM64": {
-        "DEFAULT": {
-            "IMAGE_BASE": 0,
-            "DATA_CODE_SEPARATION": True,
-            "ALIGNMENT": [{
-                "COMPARISON": "==",
-                "VALUE": 4096
-            }]
-        },
-        # These are the supported MODULE_TYPEs for the AARCH64 architecture, which use the DEFAULT profile.
-        # If a MODULE_TYPE is not listed here, but is used in the build, this check will fail.
-        "APPLICATION": {},
-        "DXE_CORE": {},
-        "DXE_DRIVER": {},
-        "DXE_RUNTIME_DRIVER": {
-            "ALIGNMENT": [{
-                "COMPARISON": "==",
-                "VALUE": 65536
-            }]
-        },
-        "DXE_SMM_DRIVER": {},
-        "MM_CORE_STANDALONE": {},
-        "MM_STANDALONE": {},
-        "PEI_CORE": {
-            "ALIGNMENT": [],
-        },
-        "PEIM": {
-            "ALIGNMENT": [],
-        },
-        "SEC": {
-            "ALIGNMENT": [],
-        },
-        "UEFI_APPLICATION": {},
-        "UEFI_DRIVER": {},
-    },
-    # Skip all tests for IA32
-    "IMAGE_FILE_MACHINE_I386": {
-        "DEFAULT": {
-            "DATA_CODE_SEPARATION": False,
-        },
-        "PEIM": {},
-        "PEI_CORE": {},
-        "SEC": {},
-    },
-    # Skip all tests for ARM
-    "IMAGE_FILE_MACHINE_ARM": {
-        "DEFAULT": {
-            "DATA_CODE_SEPARATION": False,
-        }
-    },
-}
-
+DEFAULT_CONFIG_FILE_PATH = Path(__file__).parent.resolve() / "image_validation.cfg"
 
 class TestImageBase(TestInterface):
     """Image base verification test.
@@ -192,11 +102,24 @@ class ImageValidation(IUefiBuildPlugin):
 
         # Use the default configuration. If a configuration file is provided, merge the two
         # At the top level entries, with the provided configuration taking precedence.
-        config_data = DEFAULT_CONFIG
-        if config_path:
-            with open(config_path) as jsonfile:
-                data = json.load(jsonfile)
-                config_data = {**config_data, **data}      
+        if not DEFAULT_CONFIG_FILE_PATH.is_file():
+            logging.error("Default configuration file not found.")
+            return 1
+        try:
+            with open(DEFAULT_CONFIG_FILE_PATH) as f:
+                config_data = yaml.safe_load(f)
+        except Exception as e:
+            logging.error(f"Error parsing {DEFAULT_CONFIG_FILE_PATH}: [{e}]")
+
+        try:
+            if config_path:
+                with open(config_path) as f:
+                    config_data = ImageValidation.merge_config(
+                        config_data, yaml.safe_load(f))
+
+        except Exception as e:
+            logging.error(f"Error parsing {config_path}: [{e}]")
+            return 1
 
         self.test_manager.config_data = config_data
         self.config_data = config_data
@@ -415,3 +338,40 @@ class ImageValidation(IUefiBuildPlugin):
                             returnlist.append(os.path.join(Root, File))
 
         return returnlist
+
+    # Merged two configuration dictionaries, with the provided configuration taking precedence
+    # config = { **default, **provided } is shallow and merged only top level entries. We want
+    # to be able to replace individual profiles per architecture.
+    def merge_config(default: dict, provided: dict) -> dict:
+
+        ret_dict = {}
+
+        # Take these top level entries from the provided configuration if available
+        ret_dict["TARGET_ARCH"] = provided.get("TARGET_ARCH", default["TARGET_ARCH"])
+        ret_dict["IGNORE_LIST"] = provided.get("IGNORE_LIST", default["IGNORE_LIST"])
+
+        # Take all configuration profiles for each architecture, from the default but allow
+        # for overrides per profile (DEFAULT, SEC, DEX_DRIVER, etc.)
+        ret_dict["IMAGE_FILE_MACHINE_AMD64"] = default["IMAGE_FILE_MACHINE_AMD64"]
+        ret_dict["IMAGE_FILE_MACHINE_ARM64"] = default["IMAGE_FILE_MACHINE_ARM64"]
+        ret_dict["IMAGE_FILE_MACHINE_I386"] = default["IMAGE_FILE_MACHINE_I386"]
+        ret_dict["IMAGE_FILE_MACHINE_ARM"] = default["IMAGE_FILE_MACHINE_ARM"]
+
+        # Update the default configuration with the provided configuration
+        ret_dict["IMAGE_FILE_MACHINE_AMD64"].update(
+            provided.get("IMAGE_FILE_MACHINE_AMD64", provided.get("X64", {}))
+        )
+
+        ret_dict["IMAGE_FILE_MACHINE_ARM64"].update(
+            provided.get("IMAGE_FILE_MACHINE_ARM64", provided.get("AARCH64", {}))
+        )
+
+        ret_dict["IMAGE_FILE_MACHINE_I386"].update(
+            provided.get("IMAGE_FILE_MACHINE_I386", provided.get("IA32", {}))
+        )
+
+        ret_dict["IMAGE_FILE_MACHINE_ARM"].update(
+            provided.get("IMAGE_FILE_MACHINE_ARM", provided.get("ARM", {}))
+        )
+
+        return ret_dict

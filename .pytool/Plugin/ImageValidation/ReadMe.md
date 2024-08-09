@@ -22,8 +22,40 @@ X64 and AARCH64 binaries. These requirements are:
 2. 4k Section Alignment (X64, AARCH64), 64k Section Alignment (AARCH64-DXE_RUNTIME_DRIVER)
 3. No Section can be both Write and Execute.
 
+Image Base is verified to be 0x0 for EFIs as some PE loaders (including edk2's)
+will attempt to load the image at that address, which is generally not needed in a
+UEFI environment. Section alignment is verified at 4k as it is required for DXE
+memory protections, exclduing AARCH64 DXE_RUNTIME_DRIVER binaries, which are
+required to be 64K per the UEFI specifcation. Sections are verified **not** to be
+both Write and Execute as it is required by DXE memory protections.
+
 These requirements can be expanded to IA32, ARM, etc, or overwritten for X64
-and AARCH64 aas defined in the yaml file provided via PE_VALIDATION_PATH.
+and AARCH64 as defined in the configuration file provided via PE_VALIDATION_PATH.
+Individual profiles for individual architectures can be overwritten in this file.
+
+Configuration supports poth `json` and `yaml` formats. Here is a small example for setting
+an ignore list, and overriding configuration for a specific module type. Read below for all
+customization options.
+
+```json
+{
+    "IGNORE_LIST": ["Driver.efi"],
+    "X64": {
+        "DXE_DRIVER": {
+            ...
+        }
+    } 
+}
+```
+
+```yaml
+IGNORE_LIST:
+    - Driver.efi
+X64:
+    DXE_DRIVER:
+        ...
+
+```
 
 **See Example below for customizing Image Validation**
 
@@ -32,7 +64,7 @@ and AARCH64 aas defined in the yaml file provided via PE_VALIDATION_PATH.
 If your platform deems a particular binary does not, and cannot meet the
 requirements set by the Image Validation plugin, or the platform's custom
 config, it can be ignored by adding a `IGNORE_LIST = [...]` section to the
-yaml file provided via PE_VALIDATION_PATH.
+josn file provided via PE_VALIDATION_PATH.
 
 ## Common Errors
 
@@ -61,7 +93,7 @@ Mask (0x20000000).
 
 - Default Requirement: `DATA_CODE_SEPARATION: True` for X64 and AARCH64
 
-- JSON File Requirements: ```"DATA_CODE_SEPARATION": <True or False>```
+- Config File Requirements: ```"DATA_CODE_SEPARATION": <True or False>```
 
 - Output:
   - @Success: Only one (or neither) of the two masks (Write, Execute) are present
@@ -77,7 +109,7 @@ This value must meet the requirements specified in the config file.
 
 - Default Requirement: 4K for X64 and AARCH64. 64k For AARCH64 DXE_RUNTIME_DRIVER
 
-- JSON File Requirements: An array of dictionaries that contain a Comparison
+- Config File Requirements: An array of dictionaries that contain a Comparison
 and a value for the particular MachineType and FV file type. See the below
 example. Can optionally describe an Alignment logic separator when doing
 multiple comparisons.
@@ -109,12 +141,12 @@ requirements specified in the config file.
 
 ### Target Base Address Validation
 
-- Description: Checks the base address value found in the otpiona header.
+- Description: Checks the base address value found in the optional header.
 This value must meet the requirements specified in the config file.
 
 - Default Requirement: `IMAGE_BASE: 0`
 
-- JSON File Requirements: ```IMAGE_BASE: <integer>```
+- Config File Requirements: ```IMAGE_BASE: <integer>```
 
 ### Writing your own tests
 
@@ -136,7 +168,7 @@ The parser is the parsed pe file that you are testing. Documentation on how to
 use the parser can be found by looking up the documentation for the pefile
 module. The config_data provided to the test will is the filtered data from the
 config file based upon the compilation target and profile. As an example,
-looking at the above json file, if a pe that is being validated is of type
+looking at the configuration file, if a pe that is being validated is of type
 IMAGE_FILE_MACHINE_ARM64 and profile BASE, the config_data provided will be:
 
 ```json
