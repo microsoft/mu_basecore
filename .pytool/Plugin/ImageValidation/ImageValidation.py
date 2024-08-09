@@ -48,9 +48,15 @@ DEFAULT_CONFIG = {
         "DXE_SMM_DRIVER": {},
         "MM_CORE_STANDALONE": {},
         "MM_STANDALONE": {},
-        "PEI_CORE": {},
-        "PEIM": {},
-        "SEC": {},
+        "PEI_CORE": {
+            "ALIGNMENT": [],
+        },
+        "PEIM": {
+            "ALIGNMENT": [],
+        },
+        "SEC": {
+            "ALIGNMENT": [],
+        },
         "UEFI_APPLICATION": {},
         "UEFI_DRIVER": {},
     },
@@ -77,9 +83,15 @@ DEFAULT_CONFIG = {
         "DXE_SMM_DRIVER": {},
         "MM_CORE_STANDALONE": {},
         "MM_STANDALONE": {},
-        "PEI_CORE": {},
-        "PEIM": {},
-        "SEC": {},
+        "PEI_CORE": {
+            "ALIGNMENT": [],
+        },
+        "PEIM": {
+            "ALIGNMENT": [],
+        },
+        "SEC": {
+            "ALIGNMENT": [],
+        },
         "UEFI_APPLICATION": {},
         "UEFI_DRIVER": {},
     },
