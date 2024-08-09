@@ -751,27 +751,10 @@ BdsEntry (
   //
   BdsFormalizeEfiGlobalVariable ();
 
+  // MU_CHANGE
   //
-  // Mark the read-only variables if the Variable Lock protocol exists
+  // Initialize Hardware Error Recording Support.
   //
-  Status = gBS->LocateProtocol (&gEdkiiVariablePolicyProtocolGuid, NULL, (VOID **)&VariablePolicy);
-  DEBUG ((DEBUG_INFO, "[BdsDxe] Locate Variable Policy protocol - %r\n", Status));
-  if (!EFI_ERROR (Status)) {
-    for (Index = 0; Index < ARRAY_SIZE (mReadOnlyVariables); Index++) {
-      Status = RegisterBasicVariablePolicy (
-                 VariablePolicy,
-                 &gEfiGlobalVariableGuid,
-                 mReadOnlyVariables[Index],
-                 VARIABLE_POLICY_NO_MIN_SIZE,
-                 VARIABLE_POLICY_NO_MAX_SIZE,
-                 VARIABLE_POLICY_NO_MUST_ATTR,
-                 VARIABLE_POLICY_NO_CANT_ATTR,
-                 VARIABLE_POLICY_TYPE_LOCK_NOW
-                 );
-      ASSERT_EFI_ERROR (Status);
-    }
-  }
-
   InitializeHwErrRecSupport ();
 
   //
@@ -831,6 +814,40 @@ BdsEntry (
   // Initialize the platform language variables
   //
   InitializeLanguage (TRUE);
+
+  // MU_CHANGE [BEGIN]
+
+  //
+  // READ ONLY Variable (registered in mReadOnlyVariables) MUST BE be set before this point.
+  //
+
+  //
+  // Mark the read-only variables if the Variable Lock protocol exists
+  //
+  Status = gBS->LocateProtocol (&gEdkiiVariablePolicyProtocolGuid, NULL, (VOID **)&VariablePolicy);
+  if (!EFI_ERROR (Status)) {
+    for (Index = 0; Index < ARRAY_SIZE (mReadOnlyVariables); Index++) {
+      Status = RegisterBasicVariablePolicy (
+                 VariablePolicy,
+                 &gEfiGlobalVariableGuid,
+                 mReadOnlyVariables[Index],
+                 VARIABLE_POLICY_NO_MIN_SIZE,
+                 VARIABLE_POLICY_NO_MAX_SIZE,
+                 VARIABLE_POLICY_NO_MUST_ATTR,
+                 VARIABLE_POLICY_NO_CANT_ATTR,
+                 VARIABLE_POLICY_TYPE_LOCK_NOW
+                 );
+
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "[BdsDxe] Failed to register variable policy! - %r\n", Status));
+        ASSERT_EFI_ERROR (Status);
+      }
+    }
+  } else {
+    DEBUG ((DEBUG_INFO, "[BdsDxe] Locate Variable Policy protocol failed! - %r\n", Status));
+  }
+
+  // MU_CHANGE [END]
 
   FilePath = FileDevicePath (NULL, EFI_REMOVABLE_MEDIA_FILE_NAME);
   if (FilePath == NULL) {
