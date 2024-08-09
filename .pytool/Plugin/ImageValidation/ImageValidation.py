@@ -184,14 +184,11 @@ class ImageValidation(IUefiBuildPlugin):
         if config_path:
             with open(config_path) as jsonfile:
                 data = json.load(jsonfile)
-                print(data)
-                print("------------")
                 config_data = {**config_data, **data}
         else:
             logging.info("No Configuration file found for PE Validation; Using default.")
             logging.info("Review ImageValidation/Readme.md for configuration options.")
-            
-        print(config_data)
+
         self.test_manager.config_data = config_data
         self.config_data = config_data
         self.ignore_list = config_data["IGNORE_LIST"]
