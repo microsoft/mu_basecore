@@ -64,7 +64,7 @@ X64:
 If your platform deems a particular binary does not, and cannot meet the
 requirements set by the Image Validation plugin, or the platform's custom
 config, it can be ignored by adding a `IGNORE_LIST = [...]` section to the
-josn file provided via PE_VALIDATION_PATH.
+configuration file provided via PE_VALIDATION_PATH.
 
 ## Common Errors
 
