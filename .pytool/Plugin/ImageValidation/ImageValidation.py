@@ -184,8 +184,8 @@ class ImageValidation(IUefiBuildPlugin):
         config_path = thebuilder.env.GetValue("PE_VALIDATION_PATH", None)
         tool_chain_tag = thebuilder.env.GetValue("TOOL_CHAIN_TAG")
         if config_path is None:
-            logging.info(
-                "PE_VALIDATION_PATH not set, Using default configuration")
+            logging.info("PE_VALIDATION_PATH not set, Using default configuration")
+            logging.info("Review ImageValidation/Readme.md for configuration options.")
         elif not os.path.isfile(config_path):
             logging.error("Invalid PE_VALIDATION_PATH. File not Found")
             return 1 
@@ -196,10 +196,7 @@ class ImageValidation(IUefiBuildPlugin):
         if config_path:
             with open(config_path) as jsonfile:
                 data = json.load(jsonfile)
-                config_data = {**config_data, **data}
-        else:
-            logging.info("No Configuration file found for PE Validation; Using default.")
-            logging.info("Review ImageValidation/Readme.md for configuration options.")
+                config_data = {**config_data, **data}      
 
         self.test_manager.config_data = config_data
         self.config_data = config_data
