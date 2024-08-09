@@ -188,7 +188,7 @@ class ImageValidation(IUefiBuildPlugin):
             logging.info("Review ImageValidation/Readme.md for configuration options.")
         elif not os.path.isfile(config_path):
             logging.error("Invalid PE_VALIDATION_PATH. File not Found")
-            return 1 
+            return 1
 
         # Use the default configuration. If a configuration file is provided, merge the two
         # At the top level entries, with the provided configuration taking precedence.
