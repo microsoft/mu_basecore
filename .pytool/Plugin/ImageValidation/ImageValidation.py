@@ -64,7 +64,7 @@ class TestImageBase(TestInterface):
         
         if image_base != required_base:
             logging.error(
-                f'[{Result.FAIL}]: Image Validation Required: {hex(required_base)}, Found: {hex(image_base)}'
+                f'[{Result.FAIL}]: Image Base address Expected: {hex(required_base)}, Found: {hex(image_base)}'
             )
             return Result.FAIL
         return Result.PASS
