@@ -53,7 +53,7 @@ class TestImageBase(TestInterface):
         target_requirements = config_data["TARGET_REQUIREMENTS"]
 
         required_base = target_requirements.get("IMAGE_BASE")
-        if required_base is None:
+        if required_base is None or required_base == -1:
             return Result.SKIP
 
         try:
@@ -110,6 +110,7 @@ class ImageValidation(IUefiBuildPlugin):
                 config_data = yaml.safe_load(f)
         except Exception as e:
             logging.error(f"Error parsing {DEFAULT_CONFIG_FILE_PATH}: [{e}]")
+            return 1
 
         try:
             if config_path:
