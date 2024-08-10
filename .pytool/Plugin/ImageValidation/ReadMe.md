@@ -27,7 +27,7 @@ will attempt to load the image at that address, which is generally not needed in
 UEFI environment. Section alignment is verified at 4k as it is required for DXE
 memory protections, exclduing AARCH64 DXE_RUNTIME_DRIVER binaries, which are
 required to be 64K per the UEFI specifcation. Sections are verified **not** to be
-both Write and Execute as it is required by DXE memory protections.
+both Write and Execute as it is required by DXE [Enhanced Memory Protections](https://microsoft.github.io/mu/WhatAndWhy/enhancedmemoryprotection/).
 
 These requirements can be expanded to IA32, ARM, etc, or overwritten for X64
 and AARCH64 as defined in the configuration file provided via PE_VALIDATION_PATH.
