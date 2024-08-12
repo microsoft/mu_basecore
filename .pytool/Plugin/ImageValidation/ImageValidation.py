@@ -10,16 +10,64 @@ import re
 from pathlib import Path
 from pefile import PE
 from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
-from edk2toolext.image_validation import *
-from edk2toollib.uefi.edk2.path_utilities import Edk2Path
-from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
+from edk2toolext.image_validation import (
+    Result, TestManager, TestInterface, TestWriteExecuteFlags,
+    TestSectionAlignment, MACHINE_TYPE
+)
 from edk2toollib.uefi.edk2.parsers.fdf_parser import FdfParser
 from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
-from edk2toollib.uefi.edk2.parsers.dsc_parser import *
-import json
+import yaml
 from typing import List
 import logging
 from datetime import datetime
+
+DEFAULT_CONFIG_FILE_PATH = Path(__file__).parent.resolve() / "image_validation.cfg"
+
+class TestImageBase(TestInterface):
+    """Image base verification test.
+    
+    Checks the image base of the binary by accessing the optional
+    header, then the image base. This value must be the same value
+    as specified in the config file.
+
+    Output:
+        @Success: Image base matches the expected value
+        @Skip: Image base requirement not set in the config file
+        @Warn: Image Alignment value is not found in the Optional Header
+        @Fail: Image base does not match the expected value
+    """
+    def name(self) -> str:
+        """Returns the name of the test."""
+        return 'Image Base verification'
+
+    def execute(self, pe: PE, config_data: dict) -> Result:
+        """Executes the test on the pefile.
+        
+        Arguments:
+            pe (PE): a parsed PE/COFF image file
+            config_data (dict): the configuration data for the test
+        
+        Returns:
+            (Result): SKIP, WARN, FAIL, PASS
+        """ 
+        target_requirements = config_data["TARGET_REQUIREMENTS"]
+
+        required_base = target_requirements.get("IMAGE_BASE")
+        if required_base is None or required_base == -1:
+            return Result.SKIP
+
+        try:
+            image_base = pe.OPTIONAL_HEADER.ImageBase
+        except Exception:
+            logging.warning("Image Base not found in Optional Header")
+            return Result.WARN
+        
+        if image_base != required_base:
+            logging.error(
+                f'[{Result.FAIL}]: Image Base address Expected: {hex(required_base)}, Found: {hex(image_base)}'
+            )
+            return Result.FAIL
+        return Result.PASS
 
 
 class ImageValidation(IUefiBuildPlugin):
@@ -29,7 +77,7 @@ class ImageValidation(IUefiBuildPlugin):
         # Default tests provided by edk2toolext.image_validation
         self.test_manager.add_test(TestWriteExecuteFlags())
         self.test_manager.add_test(TestSectionAlignment())
-        self.test_manager.add_test(TestSubsystemValue())
+        self.test_manager.add_test(TestImageBase())
         # Add additional Tests here
 
     def do_post_build(self, thebuilder):
@@ -46,16 +94,33 @@ class ImageValidation(IUefiBuildPlugin):
         config_path = thebuilder.env.GetValue("PE_VALIDATION_PATH", None)
         tool_chain_tag = thebuilder.env.GetValue("TOOL_CHAIN_TAG")
         if config_path is None:
-            logging.info(
-                "PE_VALIDATION_PATH not set, PE Image Validation Skipped")
-            return 0  # Path not set, Plugin skipped
-
-        if not os.path.isfile(config_path):
+            logging.info("PE_VALIDATION_PATH not set, Using default configuration")
+            logging.info("Review ImageValidation/Readme.md for configuration options.")
+        elif not os.path.isfile(config_path):
             logging.error("Invalid PE_VALIDATION_PATH. File not Found")
             return 1
 
-        with open(config_path) as jsonfile:
-            config_data = json.load(jsonfile)
+        # Use the default configuration. If a configuration file is provided, merge the two
+        # At the top level entries, with the provided configuration taking precedence.
+        if not DEFAULT_CONFIG_FILE_PATH.is_file():
+            logging.error("Default configuration file not found.")
+            return 1
+        try:
+            with open(DEFAULT_CONFIG_FILE_PATH) as f:
+                config_data = yaml.safe_load(f)
+        except Exception as e:
+            logging.error(f"Error parsing {DEFAULT_CONFIG_FILE_PATH}: [{e}]")
+            return 1
+
+        try:
+            if config_path:
+                with open(config_path) as f:
+                    config_data = ImageValidation.merge_config(
+                        config_data, yaml.safe_load(f))
+
+        except Exception as e:
+            logging.error(f"Error parsing {config_path}: [{e}]")
+            return 1
 
         self.test_manager.config_data = config_data
         self.config_data = config_data
@@ -100,15 +165,16 @@ class ImageValidation(IUefiBuildPlugin):
                         efi_path = self._resolve_vars(thebuilder, efi_path)
                         efi_path = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
                             efi_path)
-                        if efi_path == None:
+                        if efi_path is None:
                             logging.warning(
                                 "Unable to parse the path to the pre-compiled efi")
                             continue
                         if os.path.basename(efi_path) in self.ignore_list:
                             continue
-                        logging.info(
+                        logging.debug(
                             f'Performing Image Verification ... {os.path.basename(efi_path)}')
                         if self._validate_image(efi_path, fv_file["type"]) == Result.FAIL:
+                            logging.error(f'{os.path.basename(efi_path)} Failed Image Validation.')
                             result = Result.FAIL
                         count += 1
         # End Pre-Compiled Image Verification
@@ -125,30 +191,31 @@ class ImageValidation(IUefiBuildPlugin):
 
                 # Perform Image Verification on any output efi's
                 # Grab profile from makefile
-                if efi_path.__contains__("OUTPUT"):
+                if "OUTPUT" in efi_path:
                     try:
-                        if tool_chain_tag.__contains__("VS"):
+                        if "VS" in tool_chain_tag:
                             profile = self._get_profile_from_makefile(
                                 f'{Path(efi_path).parent.parent}/Makefile')
 
-                        elif tool_chain_tag.__contains__("GCC"):
+                        elif "GCC" in tool_chain_tag:
                             profile = self._get_profile_from_makefile(
                                 f'{Path(efi_path).parent.parent}/GNUmakefile')
 
-                        elif tool_chain_tag.__contains__("CLANG"):
+                        elif "CLANG" in tool_chain_tag:
                             profile = self._get_profile_from_makefile(
                                 f'{Path(efi_path).parent.parent}/GNUmakefile')
                         else:
                             logging.warning("Unexpected TOOL_CHAIN_TAG... Cannot parse makefile. Using DEFAULT profile.")
                             profile = "DEFAULT"
-                    except:
+                    except Exception:
                         logging.warning(f'Failed to parse makefile at [{Path(efi_path).parent.parent}/GNUmakefile]')
-                        logging.warning(f'Using DEFAULT profile')
+                        logging.warning('Using DEFAULT profile')
                         profile = "DEFAULT"
 
-                    logging.info(
+                    logging.debug(
                         f'Performing Image Verification ... {os.path.basename(efi_path)}')
                     if self._validate_image(efi_path, profile) == Result.FAIL:
+                        logging.error(f'{os.path.basename(efi_path)} Failed Image Validation.')
                         result = Result.FAIL
                     count += 1
         # End Built Time Compiled Image Verification
@@ -186,7 +253,7 @@ class ImageValidation(IUefiBuildPlugin):
     def _get_profile_from_makefile(self, makefile):
         with open(makefile) as file:
             for line in file.readlines():
-                if line.__contains__('MODULE_TYPE'):
+                if "MODULE_TYPE" in line:
                     line = line.split('=')
                     module_type = line[1]
                     module_type = module_type.strip()
@@ -198,8 +265,8 @@ class ImageValidation(IUefiBuildPlugin):
     # Fallback architectures can be added here
     def _try_convert_full_arch(self, arch):
         full_arch = self.arch_dict.get(arch)
-        if full_arch == None:
-            if arch.__contains__("ARM"):
+        if full_arch is None:
+            if "ARM" in arch:
                 full_arch = "IMAGE_FILE_MACHINE_ARM"
             # Add other Arches
         return full_arch
@@ -212,8 +279,8 @@ class ImageValidation(IUefiBuildPlugin):
         for match in var_pattern.findall(s):
             var_name = match[2:-1]
             env_var = env.GetValue(var_name) if env.GetValue(
-                var_name) != None else env.GetBuildValue(var_name)
-            if env_var == None:
+                var_name) is not None else env.GetBuildValue(var_name)
+            if env_var is None:
                 pass
             rs = rs.replace(match, env_var)
         return rs
@@ -272,3 +339,40 @@ class ImageValidation(IUefiBuildPlugin):
                             returnlist.append(os.path.join(Root, File))
 
         return returnlist
+
+    # Merged two configuration dictionaries, with the provided configuration taking precedence
+    # config = { **default, **provided } is shallow and merged only top level entries. We want
+    # to be able to replace individual profiles per architecture.
+    def merge_config(default: dict, provided: dict) -> dict:
+
+        ret_dict = {}
+
+        # Take these top level entries from the provided configuration if available
+        ret_dict["TARGET_ARCH"] = provided.get("TARGET_ARCH", default["TARGET_ARCH"])
+        ret_dict["IGNORE_LIST"] = provided.get("IGNORE_LIST", default["IGNORE_LIST"])
+
+        # Take all configuration profiles for each architecture, from the default but allow
+        # for overrides per profile (DEFAULT, SEC, DEX_DRIVER, etc.)
+        ret_dict["IMAGE_FILE_MACHINE_AMD64"] = default["IMAGE_FILE_MACHINE_AMD64"]
+        ret_dict["IMAGE_FILE_MACHINE_ARM64"] = default["IMAGE_FILE_MACHINE_ARM64"]
+        ret_dict["IMAGE_FILE_MACHINE_I386"] = default["IMAGE_FILE_MACHINE_I386"]
+        ret_dict["IMAGE_FILE_MACHINE_ARM"] = default["IMAGE_FILE_MACHINE_ARM"]
+
+        # Update the default configuration with the provided configuration
+        ret_dict["IMAGE_FILE_MACHINE_AMD64"].update(
+            provided.get("IMAGE_FILE_MACHINE_AMD64", provided.get("X64", {}))
+        )
+
+        ret_dict["IMAGE_FILE_MACHINE_ARM64"].update(
+            provided.get("IMAGE_FILE_MACHINE_ARM64", provided.get("AARCH64", {}))
+        )
+
+        ret_dict["IMAGE_FILE_MACHINE_I386"].update(
+            provided.get("IMAGE_FILE_MACHINE_I386", provided.get("IA32", {}))
+        )
+
+        ret_dict["IMAGE_FILE_MACHINE_ARM"].update(
+            provided.get("IMAGE_FILE_MACHINE_ARM", provided.get("ARM", {}))
+        )
+
+        return ret_dict
