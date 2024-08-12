@@ -7,13 +7,64 @@ file path is provided via the command line as `PE_VALIDATION_PATH=<PATH>` or
 can be configured in the the PlatformBuild.py within the `SetPlatformEnv()`
 method using 
 `self.env.SetValue("PE_VALIDATION_PATH", <PATH>, "Platform Hardcoded")`. A 
-profile is equivalent to the file types defined in the platform's fdf. All
-profiles must be defined, forcing the developer to acklowedge each, however
+profile is equivalent to the binary's MODULE_TYPE as defined in it's inf. All
+profiles must be defined, forcing the developer to acknowledge each, however
 requirements for each profile do not need to be specified... If one or more
 requirement does not exist, the "DEFAULT" profile requirements will be used.
 The developer can have default requirements via the "DEFAULT" profile then
 override those requirements in other profiles. An example of a full config
-file can be seen at the bootom of the readme.
+file can be seen at the bottom of the readme.
+
+A default set of requirements are provided by the tool that apply to all
+X64 and AARCH64 binaries. These requirements are:
+
+1. IMAGE_BASE = 0x0
+2. 4k Section Alignment (X64, AARCH64), 64k Section Alignment (AARCH64-DXE_RUNTIME_DRIVER)
+3. No Section can be both Write and Execute.
+
+Image Base is verified to be 0x0 for EFIs as some PE loaders (including edk2's)
+will attempt to load the image at that address, which is generally not needed in a
+UEFI environment. Section alignment is verified at 4k as it is required for DXE
+memory protections, exclduing AARCH64 DXE_RUNTIME_DRIVER binaries, which are
+required to be 64K per the UEFI specifcation. Sections are verified **not** to be
+both Write and Execute as it is required by DXE [Enhanced Memory Protections](https://microsoft.github.io/mu/WhatAndWhy/enhancedmemoryprotection/).
+
+These requirements can be expanded to IA32, ARM, etc, or overwritten for X64
+and AARCH64 as defined in the configuration file provided via PE_VALIDATION_PATH.
+Individual profiles for individual architectures can be overwritten in this file.
+
+Configuration supports poth `json` and `yaml` formats. Here is a small example for setting
+an ignore list, and overriding configuration for a specific module type. Read below for all
+customization options.
+
+```json
+{
+    "IGNORE_LIST": ["Driver.efi"],
+    "X64": {
+        "DXE_DRIVER": {
+            ...
+        }
+    } 
+}
+```
+
+```yaml
+IGNORE_LIST:
+    - Driver.efi
+X64:
+    DXE_DRIVER:
+        ...
+
+```
+
+**See Example below for customizing Image Validation**
+
+## Ignoring Files
+
+If your platform deems a particular binary does not, and cannot meet the
+requirements set by the Image Validation plugin, or the platform's custom
+config, it can be ignored by adding a `IGNORE_LIST = [...]` section to the
+configuration file provided via PE_VALIDATION_PATH.
 
 ## Common Errors
 
@@ -23,7 +74,7 @@ PROFILE_NAME is not specified in the configuration file,
 but is defined in the platform's fdf. The profile needs to be added to the
 configuration file, even if the requirements are the same as the DEFAULT
 requirements. This was a design choice to ensure the platform is not
-accidently passing due to falling back to the DEFAULT profile if a profile
+accidentally passing due to falling back to the DEFAULT profile if a profile
 is missing.
 
 ### Test specific failures
@@ -40,7 +91,9 @@ write-able and execute-able. Sections can only be one or the other
 characteristics label for the Write Mask (0x80000000) and Execute
 Mask (0x20000000).
 
-- JSON File Requirements: ```"DATA_CODE_SEPARATION": <True or False>```
+- Default Requirement: `DATA_CODE_SEPARATION: True` for X64 and AARCH64
+
+- Config File Requirements: ```"DATA_CODE_SEPARATION": <True or False>```
 
 - Output:
   - @Success: Only one (or neither) of the two masks (Write, Execute) are present
@@ -54,7 +107,9 @@ is either Write-able or Read-able, but not both.
 - Description: Checks the section alignment value found in the optional header.
 This value must meet the requirements specified in the config file.
 
-- JSON File Requirements: An array of dictionaries that contain a Comparison
+- Default Requirement: 4K for X64 and AARCH64. 64k For AARCH64 DXE_RUNTIME_DRIVER
+
+- Config File Requirements: An array of dictionaries that contain a Comparison
 and a value for the particular MachineType and FV file type. See the below
 example. Can optionally describe an Alignment logic separator when doing
 multiple comparisons.
@@ -84,55 +139,14 @@ multiple comparisons.
 - Possible Solution: Update the section alignment of the binary to match the
 requirements specified in the config file.
 
-### Target Subsystem Type Verification
+### Target Base Address Validation
 
-- Description: Checks the subsystem value by accessing the optional header,
-then subsystem value. This value must match the subsystem described in the
-config file.
+- Description: Checks the base address value found in the optional header.
+This value must meet the requirements specified in the config file.
 
-- JSON File Requirements: An updated list of allowed subsystems, using the
-offical name. See the below example.
+- Default Requirement: `IMAGE_BASE: 0`
 
-```json
-"ALLOWED_SUBSYSTEMS" : [
-    "IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER",
-    "IMAGE_SUBSYSTEM_EFI_ROM"
-]
-```
-
-- Output:
-  - @Success: Subsystem type found in the optional header matches the
-  subsystem type described in the config file
-  - @Warn   : Subsystem type is not found in the optional header
-  - @Fail   : Subsystem type found in the optional header does not match
-  the subsystem type described in the config file
-
-- Possible Solution: Verify which of the two subsystem type's is incorrect. If
-it is the subsystem type found in the config file, update the config file. If
-it is the subsystem type found in the binary, update the machine type in the
-source code and re-compile.
-
-### Example
-
-```json
-"IMAGE_FILE_MACHINE_ARM64" : {
-    "BASE" : {
-        "ALIGNMENT" : [
-            {
-                "COMPARISON" : ">=",
-                "VALUE"      : 4096   
-            },
-            {
-                "COMPARISON" : "!=",
-                "VALUE"      : 65536
-            }     
-        ]
-    },
-    "SEC" : {
-        "ALIGNMENT" : []
-    },
-}
-```
+- Config File Requirements: ```IMAGE_BASE: <integer>```
 
 ### Writing your own tests
 
@@ -154,7 +168,7 @@ The parser is the parsed pe file that you are testing. Documentation on how to
 use the parser can be found by looking up the documentation for the pefile
 module. The config_data provided to the test will is the filtered data from the
 config file based upon the compilation target and profile. As an example,
-looking at the above json file, if a pe that is being validated is of type
+looking at the configuration file, if a pe that is being validated is of type
 IMAGE_FILE_MACHINE_ARM64 and profile BASE, the config_data provided will be:
 
 ```json
@@ -201,15 +215,8 @@ no profile parameter is provided, "DEFAULT" is used. The current allowed
 settings are as follows:
 
 ### Top Level Settings
- 
-#### TARGET_ARCH
 
-This defines a dictionary between the build name using by stuart and the actual
-Image File Machine Constant name found at <https://docs.microsoft.com/en-us/windows/win32/sysinfo/image-file-machine-constants>.
-
-```json
-TARGET_ARCH : {"<Build Name>" : "<Image File Machine Constant>"}
-```
+**WARNING: The Configuration file must start with brackets, i.e. `{ <CONTENT> }`**
 
 #### IGNORE_LIST
 
@@ -235,8 +242,8 @@ This will be any number of supported Image File Machine Constants that are suppo
 This will be any number of supported profiles for the particular Image File Machine Constant. This will not be a list (using [ ]), rather a comma separated list of all machine constants.
 
 ```json
-"Profile1" : {"<Settings>"},
-"Profile2" : {"<Settings>"}
+"DXE_CORE" : {"<Settings>"},
+"UEFI_APPLICATION" : {"<Settings>"}
 ```
 
 ### Profile Level Settings
@@ -282,16 +289,18 @@ This setting is only used if the alignment requirements specify multiple require
 "ALIGNMENT_LOGIC_SEP" : "<Logical Operator>"
 ```
 
+#### IMAGE_BASE
+
+This setting is used to specify what the base address of an image should be
+
+```json
+"IMAGE_BASE": <integer>
+```
+
 ### Full Configuration File Example
 
 ```json
 {   
-    "TARGET_ARCH" : {
-        "X64"     : "IMAGE_FILE_MACHINE_AMD64",
-        "IA32"    : "IMAGE_FILE_MACHINE_I386",
-        "AARCH64" : "IMAGE_FILE_MACHINE_ARM64",
-        "ARM"     : "IMAGE_FILE_MACHINE_ARM"
-    },
     "IGNORE_LIST" : ["Shell.efi"],
     "IMAGE_FILE_MACHINE_AMD64" : {
         "DEFAULT" : {
