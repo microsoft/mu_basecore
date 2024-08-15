@@ -5,8 +5,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef MOCK_FIRMWARE_VOLUME2_H
-#define MOCK_FIRMWARE_VOLUME2_H
+#ifndef MOCK_FIRMWARE_VOLUME2_H_
+#define MOCK_FIRMWARE_VOLUME2_H_
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
@@ -118,4 +118,4 @@ extern "C" {
   extern EFI_FIRMWARE_VOLUME2_PROTOCOL  *gFirmwareVolume2Protocol;
 }
 
-#endif // FIRMWARE_VOLUME2_H
+#endif // MOCK_FIRMWARE_VOLUME2_H_

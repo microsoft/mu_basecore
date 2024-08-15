@@ -5,8 +5,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef MOCK_ACPI_TABLE_H
-#define MOCK_ACPI_TABLE_H
+#ifndef MOCK_ACPI_TABLE_H_
+#define MOCK_ACPI_TABLE_H_
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
@@ -44,4 +44,4 @@ extern "C" {
   extern EFI_ACPI_TABLE_PROTOCOL  *gAcpiTableProtocol;
 }
 
-#endif // MOCK_ACPI_TABLE_H
+#endif // MOCK_ACPI_TABLE_H_
