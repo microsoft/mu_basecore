@@ -112,4 +112,4 @@ extern "C" {
   extern EFI_ACPI_SDT_PROTOCOL  *gAcpiSdtProtocol;
 }
 
-#endif // ACPI_SYSTEM_DESCRIPTION_TABLE_H
+#endif // MOCK_ACPI_SYSTEM_DESCRIPTION_TABLE_H_
