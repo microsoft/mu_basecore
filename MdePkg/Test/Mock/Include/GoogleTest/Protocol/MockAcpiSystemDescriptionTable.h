@@ -5,8 +5,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef MOCK_ACPI_SYSTEM_DESCRIPTION_TABLE_H
-#define MOCK_ACPI_SYSTEM_DESCRIPTION_TABLE_H
+#ifndef MOCK_ACPI_SYSTEM_DESCRIPTION_TABLE_H_
+#define MOCK_ACPI_SYSTEM_DESCRIPTION_TABLE_H_
 
 #include <Library/GoogleTestLib.h>
 #include <Library/FunctionMockLib.h>
