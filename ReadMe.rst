@@ -31,7 +31,7 @@ Branch Changes - release/202405
 ===============================
 
 202405 is a larger deviation than previous releases. As part of upstreaming changes to EDK2, the commits were reviewed, squashed, and some were dropped.
-Due to these changes, there maybe more work minor work required to bring an existing platforms up to 202405 compatibility. 
+Due to these changes, there may be more work required to bring an existing platform up to 202405 compatibility. 
 
 Breaking Changes-dev
 --------------------
