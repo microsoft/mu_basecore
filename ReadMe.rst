@@ -9,7 +9,7 @@ Windows_VS2022_               |WindowsCiBuild|  |WindowsCiTest| |WindowsCiCovera
 Ubuntu_GCC5_                  |UbuntuCiBuild|   |UbuntuCiTest|  |UbuntuCiCoverage|
 ============================= ================= =============== ===================
 
-This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
+This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu.
 
 For more details about the repository, refer to `RepoDetails.md`_.
 
@@ -58,11 +58,15 @@ Main Changes-dev
 - NetworkPkg: Predictable TCP ISNs
 - NetworkPkg: Use of a Weak PseudoRandom Number Generator
 - UefiCpuPkg: Add new SmmRelocationLib library
+- NetworkPkg: Packet->Length is not updated before being used by Dhcp6AppendIaAddrOption to safely know it can append.
+- NetworkPkg: Out-of-bounds read when processing IA_NA/IA_TA options in a DHCPv6 Advertise message
+- DXE Core system time runs faster than expected when using PcAtChipsetPkg/HpetTimerDxe
+- CalculateCrc16Ansi miscalculates the checksum
+- PciIoMap does not return status from mIoMmuProtocol->SetAttribute
 
 Platform Integration Reference
-----------------
+------------------------------
 Reference platforms which consume release/202405 are available in [mu_tiano_platforms](https://github.com/microsoft/mu_tiano_platforms).
-
 
 Code of Conduct
 ===============
@@ -83,7 +87,7 @@ For documentation:
 Copyright & License
 ===================
 
-| Copyright (C) Microsoft Corporation
+| Copyright (c) Microsoft Corporation
 | SPDX-License-Identifier: BSD-2-Clause-Patent
 
 Upstream License (TianoCore)
