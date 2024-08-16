@@ -29,10 +29,12 @@
   IA32/StackCookieInterrupt.nasm
 
 [Sources.ARM]
-  Arm/StackCookieInterrupt.S |GCC
+  Arm/StackCookieInterrupt.S   |GCC
+  Arm/StackCookieInterrupt.asm |MSFT
 
 [Sources.AARCH64]
-  AArch64/StackCookieInterrupt.S |GCC
+  AArch64/StackCookieInterrupt.S   |GCC
+  AArch64/StackCookieInterrupt.asm |MSFT
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -41,6 +43,7 @@
   RngLib
   StackCheckFailureHookLib
   BaseLib
+  DebugLib
 
 [FixedPcd]
   gEfiMdePkgTokenSpaceGuid.PcdStackCookieExceptionVector

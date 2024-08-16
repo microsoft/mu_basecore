@@ -124,10 +124,15 @@ MmMemoryProtectionHobLibConstructorCommon (
   if (Ptr != NULL) {
     if (*((UINT8 *)GET_GUID_HOB_DATA (Ptr)) != (UINT8)MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION) {
       DEBUG ((
-        DEBUG_INFO,
-        "%a: - Version number of the Memory Protection Settings HOB is invalid.\n",
-        __FUNCTION__
+        DEBUG_ERROR,
+        "\nThe version number of the MM Memory Protection Settings HOB is invalid! Expected: %d, Actual: %d\n",
+        MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,
+        *((UINT8 *)GET_GUID_HOB_DATA (Ptr))
         ));
+      DEBUG ((DEBUG_ERROR, "This usually happens when the Memory Protection Settings version was incremented\n"));
+      DEBUG ((DEBUG_ERROR, "and all modules have not been rebuilt with the new version number. Less likely but\n"));
+      DEBUG ((DEBUG_ERROR, "also possible is the HOB entry was corrupted or the producer of the HOB entry\n"));
+      DEBUG ((DEBUG_ERROR, "did not set the StructVersion field to MM_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION.\n"));
       ASSERT (FALSE);
       ZeroMem (&gMmMps, sizeof (gMmMps));
       return EFI_SUCCESS;

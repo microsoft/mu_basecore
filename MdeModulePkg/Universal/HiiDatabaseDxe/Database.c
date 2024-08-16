@@ -749,49 +749,49 @@ FindQuestionDefaultSetting (
         VariableStorage = NULL;
       }
     }
+  }
 
-    //
-    // The matched variable storage is not found.
-    //
-    if (VariableStorage == NULL) {
-      return EFI_NOT_FOUND;
-    }
+  //
+  // The matched variable storage is not found.
+  //
+  if (VariableStorage == NULL) {
+    return EFI_NOT_FOUND;
+  }
 
-    //
-    // Find the question default value from the variable storage
-    //
-    VariableHeader = FindVariableData (VariableStorage, &EfiVarStore->Guid, EfiVarStore->Attributes, (CHAR16 *)EfiVarStore->Name);
-    if (VariableHeader == NULL) {
-      return EFI_NOT_FOUND;
-    }
+  //
+  // Find the question default value from the variable storage
+  //
+  VariableHeader = FindVariableData (VariableStorage, &EfiVarStore->Guid, EfiVarStore->Attributes, (CHAR16 *)EfiVarStore->Name);
+  if (VariableHeader == NULL) {
+    return EFI_NOT_FOUND;
+  }
 
-    StartBit   = 0;
-    EndBit     = 0;
-    ByteOffset = IfrQuestionHdr->VarStoreInfo.VarOffset;
+  StartBit   = 0;
+  EndBit     = 0;
+  ByteOffset = IfrQuestionHdr->VarStoreInfo.VarOffset;
+  if (BitFieldQuestion) {
+    BitOffset  = IfrQuestionHdr->VarStoreInfo.VarOffset;
+    ByteOffset = BitOffset / 8;
+    BitWidth   = Width;
+    StartBit   = BitOffset % 8;
+    EndBit     = StartBit + BitWidth - 1;
+    Width      = EndBit / 8 + 1;
+  }
+
+  if (VariableHeader->DataSize < ByteOffset + Width) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Copy the question value
+  //
+  if (ValueBuffer != NULL) {
     if (BitFieldQuestion) {
-      BitOffset  = IfrQuestionHdr->VarStoreInfo.VarOffset;
-      ByteOffset = BitOffset / 8;
-      BitWidth   = Width;
-      StartBit   = BitOffset % 8;
-      EndBit     = StartBit + BitWidth - 1;
-      Width      = EndBit / 8 + 1;
-    }
-
-    if (VariableHeader->DataSize < ByteOffset + Width) {
-      return EFI_INVALID_PARAMETER;
-    }
-
-    //
-    // Copy the question value
-    //
-    if (ValueBuffer != NULL) {
-      if (BitFieldQuestion) {
-        CopyMem (&BufferValue, (UINT8 *)VariableHeader + sizeof (VARIABLE_HEADER) + VariableHeader->NameSize + ByteOffset, Width);
-        BitFieldVal = BitFieldRead32 (BufferValue, StartBit, EndBit);
-        CopyMem (ValueBuffer, &BitFieldVal, Width);
-      } else {
-        CopyMem (ValueBuffer, (UINT8 *)VariableHeader + sizeof (VARIABLE_HEADER) + VariableHeader->NameSize + IfrQuestionHdr->VarStoreInfo.VarOffset, Width);
-      }
+      CopyMem (&BufferValue, (UINT8 *)VariableHeader + sizeof (VARIABLE_HEADER) + VariableHeader->NameSize + ByteOffset, Width);
+      BitFieldVal = BitFieldRead32 (BufferValue, StartBit, EndBit);
+      CopyMem (ValueBuffer, &BitFieldVal, Width);
+    } else {
+      CopyMem (ValueBuffer, (UINT8 *)VariableHeader + sizeof (VARIABLE_HEADER) + VariableHeader->NameSize + IfrQuestionHdr->VarStoreInfo.VarOffset, Width);
     }
   }
 

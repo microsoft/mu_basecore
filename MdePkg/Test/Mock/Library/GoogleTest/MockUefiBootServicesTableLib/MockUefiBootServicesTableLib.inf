@@ -1,8 +1,9 @@
 ## @file
-# Google Test mocks for UefiBootServicesTableLib
+#  Mock implementation of the UEFI Boot Services Table Library.
 #
-# Copyright (c) Microsoft Corporation.
-# SPDX-License-Identifier: BSD-2-Clause-Patent
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
 ##
 
 [Defines]
@@ -11,23 +12,21 @@
   FILE_GUID                      = 0BAFDBA6-411A-4094-931B-C29B98483043
   MODULE_TYPE                    = HOST_APPLICATION
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = UefiBootServicesTableLib
+  LIBRARY_CLASS                  = UefiBootServicesTableLib|HOST_APPLICATION
 
 #
-# The following information is for reference only and not required by the build tools.
-#
-#  VALID_ARCHITECTURES           = IA32 X64
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
 #
 
 [Sources]
   MockUefiBootServicesTableLib.cpp
 
+[LibraryClasses]
+  GoogleTestLib
+
 [Packages]
   MdePkg/MdePkg.dec
   UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
-
-[LibraryClasses]
-  GoogleTestLib
 
 [BuildOptions]
   MSFT:*_*_*_CC_FLAGS = /EHsc

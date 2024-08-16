@@ -80,22 +80,6 @@ DxeMemoryProtectionSettingsConsistencyCheck (
   VOID
   )
 {
-  if ((gDxeMps.HeapGuardPolicy.Fields.UefiPoolGuard || gDxeMps.HeapGuardPolicy.Fields.UefiPageGuard) &&
-      gDxeMps.HeapGuardPolicy.Fields.UefiFreedMemoryGuard)
-  {
-    DEBUG ((
-      DEBUG_WARN,
-      "%a: - HeapGuardPolicy.UefiFreedMemoryGuard and \
-UEFI HeapGuardPolicy.UefiPoolGuard/HeapGuardPolicy.UefiPageGuard \
-cannot be active at the same time. Setting all three to ZERO in \
-the memory protection settings global.\n",
-      __FUNCTION__
-      ));
-    gDxeMps.HeapGuardPolicy.Fields.UefiPoolGuard        = 0;
-    gDxeMps.HeapGuardPolicy.Fields.UefiPageGuard        = 0;
-    gDxeMps.HeapGuardPolicy.Fields.UefiFreedMemoryGuard = 0;
-  }
-
   if (!gDxeMps.ImageProtectionPolicy.Data &&
       (gDxeMps.NxProtectionPolicy.Fields.EfiLoaderData       ||
        gDxeMps.NxProtectionPolicy.Fields.EfiBootServicesData ||
@@ -171,6 +155,99 @@ inactive but RaiseErrorIfProtectionFails is active. RaiseErrorIfProtectionFails 
       ));
     gDxeMps.ImageProtectionPolicy.Fields.RaiseErrorIfProtectionFails = 0;
   }
+
+  //
+  // the heap guard system does not support non-EFI_PAGE_SIZE alignments
+  // architectures that require larger RUNTIME_PAGE_ALLOCATION_GRANULARITY
+  // cannot have EfiRuntimeServicesCode, EfiRuntimeServicesData, EfiReservedMemoryType,
+  // and EfiACPIMemoryNVS guarded. OSes do not map guard pages anyway, so this is a
+  // minimal loss. Not guarding prevents alignment mismatches
+  //
+  if (RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE) {
+    if (gDxeMps.HeapGuardPolicy.Fields.UefiPageGuard) {
+      if (gDxeMps.HeapGuardPageType.Fields.EfiACPIMemoryNVS != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Page Guard set on \
+          EfiACPIMemoryNVS. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPageType.Fields.EfiACPIMemoryNVS = 0;
+      }
+
+      if (gDxeMps.HeapGuardPageType.Fields.EfiReservedMemoryType != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Page Guard set on \
+          EfiReservedMemoryType. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPageType.Fields.EfiReservedMemoryType = 0;
+      }
+
+      if (gDxeMps.HeapGuardPageType.Fields.EfiRuntimeServicesCode != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Page Guard set on \
+          EfiRuntimeServicesCode. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPageType.Fields.EfiRuntimeServicesCode = 0;
+      }
+
+      if (gDxeMps.HeapGuardPageType.Fields.EfiRuntimeServicesData != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Page Guard set on \
+          EfiRuntimeServicesData. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPageType.Fields.EfiRuntimeServicesData = 0;
+      }
+    }
+
+    if (gDxeMps.HeapGuardPolicy.Fields.UefiPoolGuard) {
+      if (gDxeMps.HeapGuardPoolType.Fields.EfiACPIMemoryNVS != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Pool Guard set on \
+          EfiACPIMemoryNVS. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPoolType.Fields.EfiACPIMemoryNVS = 0;
+      }
+
+      if (gDxeMps.HeapGuardPoolType.Fields.EfiReservedMemoryType != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Pool Guard set on \
+          EfiReservedMemoryType. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPoolType.Fields.EfiReservedMemoryType = 0;
+      }
+
+      if (gDxeMps.HeapGuardPoolType.Fields.EfiRuntimeServicesCode != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Pool Guard set on \
+          EfiRuntimeServicesCode. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPoolType.Fields.EfiRuntimeServicesCode = 0;
+      }
+
+      if (gDxeMps.HeapGuardPoolType.Fields.EfiRuntimeServicesData != 0) {
+        DEBUG ((
+          DEBUG_WARN,
+          "%a: - RUNTIME_PAGE_ALLOCATION_GRANULARITY != EFI_PAGE_SIZE but Pool Guard set on \
+          EfiRuntimeServicesData. This is not supported by Heap Guard system, disabling.\n",
+          __func__
+          ));
+        gDxeMps.HeapGuardPoolType.Fields.EfiRuntimeServicesData = 0;
+      }
+    }
+  }
 }
 
 /**
@@ -196,10 +273,15 @@ DxeMemoryProtectionHobLibConstructor (
   if (Ptr != NULL) {
     if (*((UINT8 *)GET_GUID_HOB_DATA (Ptr)) != (UINT8)DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION) {
       DEBUG ((
-        DEBUG_INFO,
-        "%a: - Version number of the Memory Protection Settings HOB is invalid.\n",
-        __FUNCTION__
+        DEBUG_ERROR,
+        "\nThe version number of the DXE Memory Protection Settings HOB is invalid! Expected: %d, Actual: %d\n",
+        DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION,
+        *((UINT8 *)GET_GUID_HOB_DATA (Ptr))
         ));
+      DEBUG ((DEBUG_ERROR, "This usually happens when the Memory Protection Settings version was incremented\n"));
+      DEBUG ((DEBUG_ERROR, "and all modules have not been rebuilt with the new version number. Less likely but\n"));
+      DEBUG ((DEBUG_ERROR, "also possible is the HOB entry was corrupted or the producer of the HOB entry\n"));
+      DEBUG ((DEBUG_ERROR, "did not set the StructVersion field to DXE_MEMORY_PROTECTION_SETTINGS_CURRENT_VERSION.\n"));
       ASSERT (FALSE);
       ZeroMem (&gDxeMps, sizeof (gDxeMps));
       return EFI_SUCCESS;

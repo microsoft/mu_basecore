@@ -1075,17 +1075,6 @@ MigrateMemoryPages (
   );
 
 /**
-  Removes any FV HOBs whose base address is not in PEI installed memory.
-
-  @param[in] Private          Pointer to PeiCore's private data structure.
-
-**/
-VOID
-RemoveFvHobsInTemporaryMemory (
-  IN PEI_CORE_INSTANCE  *Private
-  );
-
-/**
   Migrate the base address in firmware volume allocation HOBs
   from temporary memory to PEI installed memory.
 

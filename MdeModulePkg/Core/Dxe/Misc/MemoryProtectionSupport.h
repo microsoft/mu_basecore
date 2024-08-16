@@ -11,6 +11,7 @@
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
+#include <Library/ImagePropertiesRecordLib.h>
 #include <Protocol/MemoryProtectionDebug.h>
 #include <Protocol/MemoryProtectionSpecialRegionProtocol.h>
 
@@ -124,21 +125,6 @@ UnprotectUefiImageMu (
 VOID
 EFIAPI
 MemoryProtectionCpuArchProtocolNotifyMu (
-  IN EFI_EVENT  Event,
-  IN VOID       *Context
-  );
-
-/**
-  A notification for the Memory Attribute Protocol.
-
-  @param[in]  Event                 Event whose notification function is being invoked.
-  @param[in]  Context               Pointer to the notification function's context,
-                                    which is implementation-dependent.
-
-**/
-VOID
-EFIAPI
-MemoryAttributeProtocolNotify (
   IN EFI_EVENT  Event,
   IN VOID       *Context
   );

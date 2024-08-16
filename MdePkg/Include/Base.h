@@ -283,8 +283,13 @@ struct _LIST_ENTRY {
 
 ///
 /// Datum is scoped to the current file or function.
+/// To support GoogleTest compiling static functions, do away with static in that case
 ///
+#ifndef GOOGLETEST_HOST_UNIT_TEST_BUILD
 #define STATIC  static
+#else
+#define STATIC
+#endif
 
 ///
 /// Undeclared type.

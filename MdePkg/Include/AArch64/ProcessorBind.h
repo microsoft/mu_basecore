@@ -159,10 +159,17 @@ typedef INT64 INTN;
 
 ///
 /// Page allocation granularity for AARCH64
+/// MU_CHANGE BEGIN: Enable Deprecated 4k Granularity Mode for Platforms
+/// that do not support 64k runtime allocation
 ///
 #define DEFAULT_PAGE_ALLOCATION_GRANULARITY  (0x1000)
-// MS_CHANGE: Change from 64K to 4K.
+#ifdef __DEPRECATED_AARCH64_4K_RUNTIME_GRANULARITY
 #define RUNTIME_PAGE_ALLOCATION_GRANULARITY  (0x1000)
+#else
+#define RUNTIME_PAGE_ALLOCATION_GRANULARITY  (0x10000)
+#endif
+
+// MU_CHANGE END
 
 //
 // Modifier to ensure that all protocol member functions and EFI intrinsics
@@ -180,9 +187,16 @@ typedef INT64 INTN;
 ///
 #define ASM_GLOBAL  .globl
 
+  #ifndef __clang__ // MU_CHANGE: Clang does not support the .type
 #define GCC_ASM_EXPORT(func__)  \
          .global  _CONCATENATE (__USER_LABEL_PREFIX__, func__)    ;\
          .type ASM_PFX(func__), %function
+// MU_CHANGE Starts: Clang does not support the .type
+  #else
+#define GCC_ASM_EXPORT(func__)  \
+         .global  _CONCATENATE (__USER_LABEL_PREFIX__, func__)
+  #endif
+// MU_CHANGE Ends
 
 #define GCC_ASM_IMPORT(func__)  \
          .extern  _CONCATENATE (__USER_LABEL_PREFIX__, func__)

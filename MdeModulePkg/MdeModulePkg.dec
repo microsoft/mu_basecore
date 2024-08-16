@@ -227,6 +227,11 @@
   #
   MemoryBinOverrideLib|Include/Library/MemoryBinOverrideLib.h
 
+  ##  @libraryclass   Memory Attribute Table support logic for tracking and reporting
+  #                   runtime images
+  #
+  ImagePropertiesRecordLib|Include/Library/ImagePropertiesRecordLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
@@ -505,6 +510,11 @@
   # Include/Guid/MemoryProtectionSpecialRegionGuid.h
   gMemoryProtectionSpecialRegionHobGuid = { 0xBFCC1325, 0x3BFE, 0x469A, { 0x9A, 0xAC, 0x0C, 0x99, 0x0E, 0x4E, 0xC9, 0xF1 } }
 
+  # MU_CHANGE
+  # This GUID is used to trigger the event group when the compatibility mode is activated.
+  # Include/Guid/CompatibilityModeActivatedEvent.h
+  gCompatibilityModeActivatedEventGuid = { 0x209BA820, 0xCE32, 0x49E1, { 0x95, 0xAE, 0x39, 0x43, 0x3D, 0xEF, 0xD5, 0xEE } }
+
 ## MSCHANGE END
 
 
@@ -525,7 +535,8 @@
   gEdkiiCapsuleOnDiskNameGuid = { 0x98c80a4f, 0xe16b, 0x4d11, { 0x93, 0x9a, 0xab, 0xe5, 0x61, 0x26, 0x3, 0x30 } }
 
   ## Include/Guid/MigratedFvInfo.h
-  gEdkiiMigratedFvInfoGuid = { 0xc1ab12f7, 0x74aa, 0x408d, { 0xa2, 0xf4, 0xc6, 0xce, 0xfd, 0x17, 0x98, 0x71 } }
+  gEdkiiMigrationInfoGuid   = { 0xb4b140a5, 0x72f6, 0x4c21, { 0x93, 0xe4, 0xac, 0xc4, 0xec, 0xcb, 0x23, 0x23 } }
+  gEdkiiMigratedFvInfoGuid  = { 0xc1ab12f7, 0x74aa, 0x408d, { 0xa2, 0xf4, 0xc6, 0xce, 0xfd, 0x17, 0x98, 0x71 } }
 
   ## Include/Guid/RngAlgorithm.h
   gEdkiiRngAlgorithmUnSafe = { 0x869f728c, 0x409d, 0x4ab4, {0xac, 0x03, 0x71, 0xd3, 0x09, 0xc1, 0xb3, 0xf4 }}
@@ -828,6 +839,10 @@
   ## Include/Protocol/UsbEthernetProtocol.h
   gEdkIIUsbEthProtocolGuid = { 0x8d8969cc, 0xfeb0, 0x4303, { 0xb2, 0x1a, 0x1f, 0x11, 0x6f, 0x38, 0x56, 0x43 } }
 
+  ## MU_CHANGE START: Add protocol to indicate the GCD sync has completed
+  ## Include/Protocol/Cpu.h
+  gEdkiiGcdSyncCompleteProtocolGuid = { 0x650B7F40, 0x6564, 0x4FA9, { 0x93, 0x75, 0xCD, 0x6B, 0x52, 0x1B, 0x6E, 0x50 }}
+  ## MU_CHANGE END
 [PcdsFeatureFlag]
   ## Indicates if the platform can support update capsule across a system reset.<BR><BR>
   #   TRUE  - Supports update capsule across a system reset.<BR>
@@ -1195,6 +1210,11 @@
   # # free pages for all of them. The page allocation for the type related to
   # # cleared bits keeps the same as ususal.
   # #
+  # # The heap guard system only supports guarding EfiRuntimeServicesCode, EfiRuntimeServicesData,
+  # # EfiReservedMemoryType, and EfiACPIMemoryNVS memory types for systems that have
+  # # RUNTIME_PAGE_ALLOCATION_GRANULARITY == EFI_PAGE_SIZE. This is to preserve alignment requirements
+  # # without extending the page guard size to very large granularities.
+  # #
   # # This PCD is only valid if BIT0 and/or BIT2 are set in PcdHeapGuardPropertyMask.
   # #
   # # Below is bit mask for this PCD: (Order is same as UEFI spec)<BR>
@@ -1226,6 +1246,10 @@
   # # if there's enough free memory for all of them. The pool allocation for the
   # # type related to cleared bits keeps the same as ususal.
   # #
+  # # The heap guard system only supports guarding EfiRuntimeServicesCode, EfiRuntimeServicesData,
+  # # EfiReservedMemoryType, and EfiACPIMemoryNVS memory types for systems that have
+  # # RUNTIME_PAGE_ALLOCATION_GRANULARITY == EFI_PAGE_SIZE. This is to preserve alignment requirements
+  # # without extending the page guard size to very large granularities.
   # # This PCD is only valid if BIT1 and/or BIT3 are set in PcdHeapGuardPropertyMask.
   # #
   # # Below is bit mask for this PCD: (Order is same as UEFI spec)<BR>
@@ -2353,6 +2377,11 @@
   #       EV_EFI_PLATFORM_FIRMWARE_BLOB2 and EV_EFI_HANDOFF_TABLES2.
   # @Prompt TCG Platform Firmware Profile revision.
   gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision|0|UINT32|0x00010077
+
+  ## Specify whether to enable the state of SPDM device authentication and measurement.<BR><BR>
+  #  0: Platform Firmware not supports SPDM device authentication and measurement.
+  #  1: Platform Firmware supports SPDM device authentication and measurement.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEnableSpdmDeviceAuthentication|0|UINT8|0x00010033
 
   ## Indicates if StatusCode is reported via Serial port.<BR><BR>
   #   TRUE  - Reports StatusCode via Serial port.<BR>

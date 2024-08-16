@@ -99,6 +99,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                     """).strip())
                 return 0
 
+            error_messages = []  # MU_CHANGE- Check for invalid tests
             for test in testList:
                 # Configure output name if test uses cmocka.
                 shell_env.set_shell_var(
@@ -112,6 +113,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                 if ret != 0:
                     logging.error("UnitTest Execution Error: " +
                                   os.path.basename(test))
+                    failure_count += 1
                 else:
                     logging.info("UnitTest Completed: " +
                                  os.path.basename(test))
@@ -120,7 +122,20 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                     for xml_result_file in xml_results_list:
                         root = xml.etree.ElementTree.parse(
                             xml_result_file).getroot()
+                        # MU_CHANGE [BEGIN] - Check for invalid tests
+                        if len(root) == 0:
+                            error_messages.append(f'{os.path.basename(test)} did not generate a test suite(s).')
+                            error_messages.append(' Review source code to ensure Test suites are created and tests '
+                                                  ' are registered!')
+                            failure_count += 1
                         for suite in root:
+                            if len(suite) == 0:
+                                error_messages.append(f'TestSuite [{suite.attrib["name"]}] for test {test} did not '
+                                                      'contain a test case(s).')
+                                error_messages.append(' Review source code to ensure test cases are registered to '
+                                                      'the suite!')
+                                failure_count += 1
+                        # MU_CHANGE [END] - Check for invalid tests
                             for case in suite:
                                 for result in case:
                                     if result.tag == 'failure':
@@ -130,7 +145,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                                             "  %s - %s" % (case.attrib['name'], result.text))
                                         failure_count += 1
 
-            if thebuilder.env.GetValue("CODE_COVERAGE") != "FALSE":
+            if thebuilder.env.GetValue("CODE_COVERAGE", "FALSE") == "TRUE": # MU_CHANGE
                 if thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "GCC5":
                     ret = self.gen_code_coverage_gcc(thebuilder)
                     if ret != 0:
@@ -151,6 +166,10 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                         return -1
                 # MU_CHANGE end - reformat coverage data
 
+        # MU_CHANGE [BEGIN] - Check for invalid tests
+        for error in error_messages:
+            logging.error(error)
+        # MU_CHANGE [END] - Check for invalid tests
         return failure_count
 
     def gen_code_coverage_gcc(self, thebuilder):
@@ -158,6 +177,9 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
 
         buildOutputBase = thebuilder.env.GetValue("BUILD_OUTPUT_BASE")
         workspace = thebuilder.env.GetValue("WORKSPACE")
+        # MU_CHANGE begin - regex string for exclude paths
+        regex_exclude = r"^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG"
+        # MU_CHANGE end - regex string for exclude paths
 
         # Generate base code coverage for all source files
         ret = RunCmd("lcov", f"--no-external --capture --initial --directory {buildOutputBase} --output-file {buildOutputBase}/cov-base.info --rc lcov_branch_coverage=1")
@@ -180,7 +202,7 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         # Filter out auto-generated and test code
         # MU_CHANGE begin - reformat coverage data
         file_out = thebuilder.env.GetValue("CI_PACKAGE_NAME", "") + "_coverage.xml"
-        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {buildOutputBase}/{file_out}")
+        ret = RunCmd("lcov_cobertura",f"{buildOutputBase}/total-coverage.info --excludes {regex_exclude} -o {buildOutputBase}/{file_out}")
         # MU_CHANGE end - reformat coverage data
         if ret != 0:
             logging.error("UnitTest Coverage: Failed generate filtered coverage XML.")
@@ -200,7 +222,9 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         # Generate and XML file if requested.for all package
         if os.path.isfile(f"{workspace}/Build/coverage.xml"):
             os.remove(f"{workspace}/Build/coverage.xml")
-        ret = RunCmd("lcov_cobertura",f"{workspace}/Build/all-coverage.info --excludes ^.*UnitTest\|^.*MU\|^.*Mock\|^.*DEBUG -o {workspace}/Build/coverage.xml")
+        # MU_CHANGE begin - regex string for exclude paths
+        ret = RunCmd("lcov_cobertura",f"{workspace}/Build/all-coverage.info --excludes {regex_exclude} -o {workspace}/Build/coverage.xml")
+        # MU_CHANGE end - regex string for exclude paths
         if ret != 0:
             logging.error("UnitTest Coverage: Failed generate all coverage XML.")
             return 1

@@ -126,6 +126,8 @@
   ## SOMETIMES_CONSUMES   ## Variable:L"dbx"
   ## SOMETIMES_CONSUMES   ## Variable:L"dbt"
   gEfiImageSecurityDatabaseGuid
+  ## SOMETIMES_CONSUMES   ## Variable:L"devdb"
+  gEfiDeviceSignatureDatabaseGuid
 
 
 [Pcd]
@@ -143,6 +145,8 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdReclaimVariableSpaceAtEndOfDxe  ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable         ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvStoreReserved      ## SOMETIMES_CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision       ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEnableSpdmDeviceAuthentication   ## PRODUCES AND CONSUMES
 
 
 [FeaturePcd]
