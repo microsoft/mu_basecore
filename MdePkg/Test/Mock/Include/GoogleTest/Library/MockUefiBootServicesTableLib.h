@@ -179,6 +179,23 @@ struct MockUefiBootServicesTableLib {
      IN OUT UINTN                    *BufferSize,
      OUT    EFI_HANDLE               *Buffer)
     );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    gBS_ConnectController,
+    (IN  EFI_HANDLE                    ControllerHandle,
+     IN  EFI_HANDLE                    *DriverImageHandle    OPTIONAL,
+     IN  EFI_DEVICE_PATH_PROTOCOL      *RemainingDevicePath  OPTIONAL,
+     IN  BOOLEAN                       Recursive)
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    gBS_DisconnectController,
+    (IN  EFI_HANDLE                     ControllerHandle,
+     IN  EFI_HANDLE                     DriverImageHandle  OPTIONAL,
+     IN  EFI_HANDLE                     ChildHandle        OPTIONAL)
+    );
 };
 
 #endif // MOCK_UEFI_BOOT_SERVICES_TABLE_LIB_H_
