@@ -49,6 +49,7 @@
 #   StandaloneMmMmuLib
 #   ArmSvcLib
 #   ArmTransferListLib
+#   ArmFfaLib
 # MU_CHANGE [END] - Remove ARM from this lib, since it requires too much from ArmPkg.
 
 [Guids]
@@ -59,6 +60,10 @@
 # MU_CHANGE [BEGIN] - Remove ARM from this lib, since it requires too much from ArmPkg.
 # [Guids.ARM, Guids.AARCH64]
 #   gEfiHobListGuid
+#
+# [Protocols.ARM, Protocols.AARCH64]
+#   gEdkiiPiMmCpuDriverEpProtocolGuid
+#   gEfiMmCommunication2ProtocolGuid
 #
 # [Protocols.ARM, Protocols.AARCH64]
 #   gEdkiiPiMmCpuDriverEpProtocolGuid
