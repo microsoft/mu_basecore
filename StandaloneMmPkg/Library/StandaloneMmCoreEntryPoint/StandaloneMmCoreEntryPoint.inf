@@ -25,7 +25,6 @@
 # [Sources.AARCH64, Sources.ARM]
 #   Arm/StandaloneMmCoreEntryPoint.c
 #   Arm/SetPermissions.c
-#   Arm/CreateHobList.c
 # MU_CHANGE [END] - Remove ARM from this lib, since it requires too much from ArmPkg.
 
 [Sources.X64]
@@ -49,6 +48,7 @@
 # [LibraryClasses.ARM, LibraryClasses.AARCH64]
 #   StandaloneMmMmuLib
 #   ArmSvcLib
+#   ArmTransferListLib
 # MU_CHANGE [END] - Remove ARM from this lib, since it requires too much from ArmPkg.
 
 [Guids]
@@ -57,8 +57,14 @@
   # gEfiStandaloneMmNonSecureBufferGuid # MU_CHANGE
 
 # MU_CHANGE [BEGIN] - Remove ARM from this lib, since it requires too much from ArmPkg.
+# [Guids.ARM, Guids.AARCH64]
+#   gEfiHobListGuid
+#
 # [Protocols.ARM, Protocols.AARCH64]
 #   gEdkiiPiMmCpuDriverEpProtocolGuid
+#
+# [FeaturePcd.ARM, FeaturePcd.AARCH64]
+#   gArmTokenSpaceGuid.PcdFfaEnable
 #
 # [FeaturePcd.ARM, FeaturePcd.AARCH64]
 #   gArmTokenSpaceGuid.PcdFfaEnable

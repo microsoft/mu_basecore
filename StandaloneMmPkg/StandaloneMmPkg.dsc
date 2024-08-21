@@ -73,6 +73,7 @@
   # StandaloneMmMmuLib|ArmPkg/Library/StandaloneMmMmuLib/ArmMmuStandaloneMmLib.inf
   # ArmSvcLib|ArmPkg/Library/ArmSvcLib/ArmSvcLib.inf
   # CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
+  # ArmTransferListLib|ArmPkg/Library/ArmTransferListLib/ArmTransferListLib.inf
   # MU_CHANGE [END]: Remove ArmPkg Dependencies
   PeCoffExtraActionLib|StandaloneMmPkg/Library/StandaloneMmPeCoffExtraActionLib/StandaloneMmPeCoffExtraActionLib.inf
 
