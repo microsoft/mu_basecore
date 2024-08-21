@@ -61,6 +61,9 @@
 # [Guids.ARM, Guids.AARCH64]
 #   gEfiHobListGuid
 #
+# [FixedPcd.ARM, FixedPcd.AARCH64]
+#   gArmTokenSpaceGuid.PcdStMmStackSize
+#
 # [Protocols.ARM, Protocols.AARCH64]
 #   gEdkiiPiMmCpuDriverEpProtocolGuid
 #   gEfiMmCommunication2ProtocolGuid
