@@ -9,67 +9,64 @@ Windows_VS2022_               |WindowsCiBuild|  |WindowsCiTest| |WindowsCiCovera
 Ubuntu_GCC5_                  |UbuntuCiBuild|   |UbuntuCiTest|  |UbuntuCiCoverage|
 ============================= ================= =============== ===================
 
-This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu
+This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu.
 
 For more details about the repository, refer to `RepoDetails.md`_.
 
 .. _`RepoDetails.md`: https://github.com/microsoft/mu_basecore/blob/HEAD/RepoDetails.md
 
-Branch Status - release/202311
+Branch Status - release/202405
 ==============================
 
 :Status:
   In Development
 
 :Entered Development:
-  2023/12/15
+  2023/11/24 (Date Edk2 started accepting changes which were not in a previous release)
 
 :Anticipated Stabilization:
-  Feb 2024
+  Nov 2024
 
-Branch Changes - release/202311
+Branch Changes - release/202405
 ===============================
+
+202405 is a larger deviation than previous releases. As part of upstreaming changes to EDK2, the commits were reviewed, squashed, and some were dropped.
+Due to these changes, there may be more work required to bring an existing platform up to 202405 compatibility. 
 
 Breaking Changes-dev
 --------------------
-
-- Incomplete
+- SourceLevelDebugPkg has been dropped. Please reevaluate usage of this Package.
+- MemoryBinOverrideLib and associated changes have been deprecated and dropped. Platforms should remove this library instance. 
+- MdeModulePkg/Application/MpServicesTest/MpServicesTest.inf has been dropped. Any reliance on this should move to using mu_plus's UefiTestingPkg/FunctionalSystemTests/MpManagement.
+- NetworkPkg/SharedNetworkingPkg and NetworkPkg/SharedNetworkingPkg.fdf.inc have been dropped. Please include specific inf files in projects and directly build.
+- PerformancePkg has been dropped. The functionality will be available under UefiTestingPkg in mu_plus.
+- UefiCpuPkg/Library/CpuExceptionHandlerLib/SecPeiCpuExceptionHandlerLibMu has been dropped. Please use UefiCpuPkg/Library/CpuExceptionHandlerLib/SecPeiCpuExceptionHandlerLib.
+- MdeModulePkg/Library/PeiReportStatusCodeOnlyLib/PeiReportStatusCodeLib.inf has been dropped. Please use standard PeiReportStatusCodeLib.
+- MuPreExitBootServices has been removed in favor of gEfiEventBeforeExitBootServicesGuid. gEfiEventBeforeExitBootServicesGuid can be signaled multiple times, so be sure to close the events that are being signaled when this is changed. 
+- AmdSvsmLib is now a required library for IA32/X64 platforms using UefiCpuPkg/Library/MpInitLib/DxeMpInitLib,UefiCpuPkg/Library/MpInitLib/PeiMpInitLib.
+- MdePkg/Library/CompilerIntrinsics no longer contains strcmp functionality.
+  - The strcmp functionality moved to CryptoPkg/Library/BaseCryptLib/SysCall/CrtWrapper.c where it is available to the third-party crypto code that previously used the code from the library.
+- NetworkPkg requires EFI_RNG_PROTOCOL and EFI_HASH2_PROTOCOL to be available. This is part of CVE-2023-45237.
+- CryptoBinPkg requires the platform to supply EFI_RNG_PPI in the Pei phase, and EFI_RNG_PROTOCOL in the Dxe phase.
+  - RngPei can be used to produce the RNG PPI. See [SecurityPkg/RandomNumberGenerator/RngPei](https://github.com/microsoft/mu_tiano_plus/tree/release/202405/SecurityPkg/RandomNumberGenerator/RngPei) in Mu Tiano Plus.
+- TOOL_CHAIN_TAG=GCC and TOOL_CHAIN_TAG=GCC5 are both supported. GCC will become the normal in a future release.
+- ImageValidation will now run on all systems with a default configuration. This will verify generated images are ready for memory protections. Details available [Here](.pytool\Plugin\ImageValidation\ReadMe.md).
 
 Main Changes-dev
 ----------------
+- Add SPI bus driver stack
+- NetworkPkg: Predictable TCP ISNs
+- NetworkPkg: Use of a Weak PseudoRandom Number Generator
+- UefiCpuPkg: Add new SmmRelocationLib library
+- NetworkPkg: Packet->Length is not updated before being used by Dhcp6AppendIaAddrOption to safely know it can append.
+- NetworkPkg: Out-of-bounds read when processing IA_NA/IA_TA options in a DHCPv6 Advertise message
+- DXE Core system time runs faster than expected when using PcAtChipsetPkg/HpetTimerDxe
+- CalculateCrc16Ansi miscalculates the checksum
+- PciIoMap does not return status from mIoMmuProtocol->SetAttribute
 
-- BPDT is now installed in the config table
-- Added more granular variable policy querying
-- We now wait for all APs before finishing initialization
-- Added MbedTLS to crypto library
-- Removed AP waking vector from ResetVector
-- Removed AP waking vector logic in SecCore
-
-Bug Fixes-dev
--------------
-
-- Applied TCBZ3923 to MbedTLS
-- Corrected the description for th MpHandOff header file
-- Optimized BmExpandPartitionDevicePath
-
-2311_RefBoot Changes
---------------------
-
-- Incomplete
-
-2311_CIBuild Changes
---------------------
-
-- Changed PcdDelayedDispatchMaxEntries token value to get rid of a conflict
-- Added missing PCD to MemoryProtectionUnitTestHost.inf
-- Applied TCBZ3923 to MbedTLS
-- Added MbedTLS to the Markdown Lint exclusion
-
-2311_Rebase Changes
--------------------
-
-| Starting commit: 15df7500b5 ("Removed unused crypto file", 2023-12-15)
-| Destination Commit from upstream edk2: 8736b8fdca ("RedfishPkg: RedfishDiscoverDxe: Optimize the Redfish Discover flow", 2023-11-22)
+Platform Integration Reference
+------------------------------
+Reference platforms which consume release/202405 are available in [mu_tiano_platforms](https://github.com/microsoft/mu_tiano_platforms).
 
 Code of Conduct
 ===============
@@ -90,7 +87,7 @@ For documentation:
 Copyright & License
 ===================
 
-| Copyright (C) Microsoft Corporation
+| Copyright (c) Microsoft Corporation
 | SPDX-License-Identifier: BSD-2-Clause-Patent
 
 Upstream License (TianoCore)
@@ -154,14 +151,14 @@ POSSIBILITY OF SUCH DAMAGE.
 
 .. CoreCI
 
-.. _Windows_VS2019: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=39&&branchName=release%2F202311
-.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202311
+.. _Windows_VS2022: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=39&&branchName=release%2F202405
+.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202405
 .. |WindowsCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/39.svg
 .. |WindowsCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
 
-.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=40&branchName=release%2F202311
-.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20Ubuntu%20GCC5?branchName=release%2F202311
+.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=40&branchName=release%2F202405
+.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20Ubuntu%20GCC5?branchName=release%2F202405
 .. |UbuntuCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/40.svg
 .. |UbuntuCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
 
-.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202311
+.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202405
