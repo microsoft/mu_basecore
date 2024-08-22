@@ -89,6 +89,12 @@ struct MockUefiLib {
      IN CONST EFI_COMPONENT_NAME_PROTOCOL   *ComponentName        OPTIONAL,
      IN CONST EFI_COMPONENT_NAME2_PROTOCOL  *ComponentName2       OPTIONAL)
     );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    EfiEventGroupSignal,
+    (IN CONST EFI_GUID  *EventGroup)
+    );
 };
 
 #endif
