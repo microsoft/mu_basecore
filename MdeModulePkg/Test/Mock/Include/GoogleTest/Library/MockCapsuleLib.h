@@ -2,6 +2,7 @@
   Google Test mocks for CapsuleLib
 
   Copyright (c) 2022, Intel Corporation. All rights reserved.
+  Copyright (C) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
