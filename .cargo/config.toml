@@ -1,0 +1,17 @@
+[target.x86_64-unknown-uefi]
+rustflags = [
+    "-C", "link-arg=/base:0x0",
+    "-C", "link-arg=/subsystem:efi_boot_service_driver",
+]
+
+[target.i686-unknown-uefi]
+rustflags = [
+    "-C", "link-arg=/base:0x0",
+    "-C", "link-arg=/subsystem:efi_boot_service_driver",
+]
+
+[target.aarch64-unknown-uefi]
+rustflags = [
+    "-C", "link-arg=/base:0x0",
+    "-C", "link-arg=/subsystem:efi_boot_service_driver",
+]
