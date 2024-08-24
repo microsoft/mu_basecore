@@ -448,7 +448,9 @@ GetProtectedMode16CS (
   IA32_DESCRIPTOR          GdtrDesc;
   IA32_SEGMENT_DESCRIPTOR  *GdtEntry;
   UINTN                    GdtEntryCount;
-  UINT16                   Index;
+  UINTN                    Index;            // MU_CHANGE - CodeQL Change - comparison-with-wider-type
+  UINT16                   CodeSegmentValue; // MU_CHANGE - CodeQL Change
+  EFI_STATUS               Status;           // MU_CHANGE - CodeQL Change
 
   Index = (UINT16)-1;
   AsmReadGdtr (&GdtrDesc);
@@ -464,8 +466,21 @@ GetProtectedMode16CS (
     GdtEntry++;
   }
 
-  ASSERT (Index != GdtEntryCount);
-  return Index * 8;
+  // MU_CHANGE Start - CodeQL Change
+  Status = SafeUintnToUint16 (Index, &CodeSegmentValue);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return 0;
+  }
+
+  Status = SafeUint16Mult (CodeSegmentValue, 8, &CodeSegmentValue);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return 0;
+  }
+
+  return CodeSegmentValue;
+  // MU_CHANGE End - CodeQL Change
 }
 
 /**
@@ -481,7 +496,9 @@ GetProtectedModeCS (
   IA32_DESCRIPTOR          GdtrDesc;
   IA32_SEGMENT_DESCRIPTOR  *GdtEntry;
   UINTN                    GdtEntryCount;
-  UINT16                   Index;
+  UINTN                    Index;            // MU_CHANGE - CodeQL Change - comparison-with-wider-type
+  UINT16                   CodeSegmentValue; // MU_CHANGE - CodeQL Change
+  EFI_STATUS               Status;           // MU_CHANGE - CodeQL Change
 
   AsmReadGdtr (&GdtrDesc);
   GdtEntryCount = (GdtrDesc.Limit + 1) / sizeof (IA32_SEGMENT_DESCRIPTOR);
@@ -496,8 +513,21 @@ GetProtectedModeCS (
     GdtEntry++;
   }
 
-  ASSERT (Index != GdtEntryCount);
-  return Index * 8;
+  // MU_CHANGE Start - CodeQL Change
+  Status = SafeUintnToUint16 (Index, &CodeSegmentValue);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return 0;
+  }
+
+  Status = SafeUint16Mult (CodeSegmentValue, 8, &CodeSegmentValue);
+  if (EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    return 0;
+  }
+
+  return CodeSegmentValue;
+  // MU_CHANGE End - CodeQL Change
 }
 
 /**
@@ -515,8 +545,17 @@ RelocateApLoop (
   BOOLEAN      MwaitSupport;
   UINTN        ProcessorNumber;
   UINTN        StackStart;
+  EFI_STATUS   Status;           // MU_CHANGE - CodeQL change
 
-  MpInitLibWhoAmI (&ProcessorNumber);
+  // MU_CHANGE Start - CodeQL Change
+  Status = MpInitLibWhoAmI (&ProcessorNumber);
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "[%a] - Failed to get processor number.  Aborting AP sync.\n", __func__));
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change
   CpuMpData    = GetCpuMpData ();
   MwaitSupport = IsMwaitSupport ();
   if (CpuMpData->UseSevEsAPMethod) {

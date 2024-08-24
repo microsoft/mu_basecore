@@ -891,8 +891,8 @@ SerialControllerDriverStart (
   ControllerNumber       = 0;
   ContainsControllerNode = FALSE;
   SerialDevices          = GetChildSerialDevices (Controller, IoProtocolGuid, &SerialDeviceCount);
-
-  if (SerialDeviceCount != 0) {
+  // MU_CHANGE - CodeQL Change - Ensure SerialDevices is not NULL
+  if ((SerialDevices != NULL) && (SerialDeviceCount != 0)) {
     if (RemainingDevicePath == NULL) {
       //
       // If the SerialIo instance is already created, NULL as RemainingDevicePath is treated
@@ -1016,7 +1016,14 @@ SerialControllerDriverStart (
         // Restore the PCI attributes when all children is destroyed (PciDeviceInfo->ChildCount == 0).
         //
         PciDeviceInfo = AllocatePool (sizeof (PCI_DEVICE_INFO));
-        ASSERT (PciDeviceInfo != NULL);
+        // MU_CHANGE Start - CodeQL Change - If AllocatePool fails, return
+        if (PciDeviceInfo == NULL) {
+          ASSERT (PciDeviceInfo != NULL);
+          return EFI_OUT_OF_RESOURCES;
+        }
+
+        // MU_CHANGE End - CodeQL Change - If AllocatePool fails, return
+
         PciDeviceInfo->ChildCount = 0;
         PciDeviceInfo->PciIo      = ParentIo.PciIo;
         Status                    = ParentIo.PciIo->Attributes (

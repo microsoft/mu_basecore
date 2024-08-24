@@ -79,10 +79,19 @@ ShellCommandRunEfiCompress (
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
       TempParam = ShellCommandLineGetRawValue (Package, 1);
-      ASSERT (TempParam != NULL);
+      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+      if (TempParam == NULL) {
+        ASSERT (TempParam != NULL);
+        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"eficompress");
+        ShellStatus = SHELL_INVALID_PARAMETER;
+      }
+
+      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
       InFileName  = ShellFindFilePath (TempParam);
       OutFileName = ShellCommandLineGetRawValue (Package, 2);
-      if (InFileName == NULL) {
+      if ((InFileName == NULL) || (OutFileName == NULL)) {
+        // MU_CHANGE - CodeQL Change - unguardednullreturndereference
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_FILE_FIND_FAIL), gShellDebug1HiiHandle, L"eficompress", TempParam);
         ShellStatus = SHELL_NOT_FOUND;
       } else {

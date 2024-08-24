@@ -3820,7 +3820,12 @@ ShellPromptForResponseHii (
 
   Prompt = HiiGetString (HiiFormatHandle, HiiFormatStringId, NULL);
   Status = ShellPromptForResponse (Type, Prompt, Response);
-  FreePool (Prompt);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Prompt != NULL) {
+    FreePool (Prompt);
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   return (Status);
 }
 

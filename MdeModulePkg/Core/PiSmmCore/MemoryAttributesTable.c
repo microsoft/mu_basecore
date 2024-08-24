@@ -433,6 +433,8 @@ SmmInstallImageRecord (
   UINTN                      Index;
   EFI_SMM_DRIVER_ENTRY       DriverEntry;
 
+  HandleBuffer = NULL; // MU_CHANGE - CodeQL Change
+
   Status = SmmLocateHandleBuffer (
              ByProtocol,
              &gEfiLoadedImageProtocolGuid,
@@ -469,7 +471,12 @@ SmmInstallImageRecord (
     SmmInsertImageRecord (&DriverEntry);
   }
 
-  FreePool (HandleBuffer);
+  // MU_CHANGE Start - CodeQL Change
+  if (HandleBuffer != NULL) {
+    FreePool (HandleBuffer);
+  }
+
+  // MU_CHANGE End - CodeQL Change
 }
 
 /**

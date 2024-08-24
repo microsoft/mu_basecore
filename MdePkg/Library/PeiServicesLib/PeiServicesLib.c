@@ -685,7 +685,14 @@ InternalPeiServicesInstallFvInfoPpi (
   }
 
   FvInfoPpiDescriptor = AllocatePool (sizeof (EFI_PEI_PPI_DESCRIPTOR));
-  ASSERT (FvInfoPpiDescriptor != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (FvInfoPpiDescriptor == NULL) {
+    ASSERT (FvInfoPpiDescriptor != NULL);
+    // Need to return here, FV may not be published, but we are out of resources anyway...
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   FvInfoPpiDescriptor->Guid  = PpiGuid;
   FvInfoPpiDescriptor->Flags = EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST;

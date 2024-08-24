@@ -71,6 +71,13 @@ ShellCommandRunGoto (
       ASSERT ((CompareString == NULL && Size == 0) || (CompareString != NULL));
       CompareString = StrnCatGrow (&CompareString, &Size, L":", 0);
       CompareString = StrnCatGrow (&CompareString, &Size, ShellCommandLineGetRawValue (Package, 1), 0);
+      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+      if (CompareString == NULL) {
+        ShellStatus = SHELL_OUT_OF_RESOURCES;
+        return (ShellStatus);
+      }
+
+      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       //
       // Check forwards and then backwards for a label...
       //

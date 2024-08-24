@@ -95,6 +95,7 @@ CpuInitDataInitialize (
   EFI_STATUS                 Status;
   UINTN                      ProcessorNumber;
   EFI_PROCESSOR_INFORMATION  ProcessorInfoBuffer;
+  CPU_STATUS_INFORMATION     CpuStatusBackupBuffer;  // MU_CHANGE - CodeQL change
   CPU_FEATURES_ENTRY         *CpuFeature;
   CPU_FEATURES_INIT_ORDER    *InitOrder;
   CPU_FEATURES_DATA          *CpuFeaturesData;
@@ -120,7 +121,24 @@ CpuInitDataInitialize (
   Package = 0;
   Thread  = 0;
 
+  // MU_CHANGE Start - CodeQL Change - conditionallyuninitializedvariable
+  CpuFeaturesData       = NULL;
+  CpuStatus             = NULL;
+  FirstCore             = NULL;
+  InitOrder             = NULL;
+  Location              = NULL;
+  ThreadCountPerCore    = NULL;
+  ThreadCountPerPackage = NULL;
+  // MU_CHANGE Start - CodeQL Change - conditionallyuninitializedvariable
+
   CpuFeaturesData = GetCpuFeaturesData ();
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuFeaturesData == NULL) {
+    ASSERT (CpuFeaturesData != NULL);
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   //
   // Initialize CpuFeaturesData->MpService as early as possile, so later function can use it.
@@ -130,7 +148,13 @@ CpuInitDataInitialize (
   GetNumberOfProcessor (&NumberOfCpus, &NumberOfEnabledProcessors);
 
   CpuFeaturesData->InitOrder = AllocatePages (EFI_SIZE_TO_PAGES (sizeof (CPU_FEATURES_INIT_ORDER) * NumberOfCpus));
-  ASSERT (CpuFeaturesData->InitOrder != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuFeaturesData->InitOrder == NULL) {
+    ASSERT (CpuFeaturesData->InitOrder != NULL);
+    return;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   ZeroMem (CpuFeaturesData->InitOrder, sizeof (CPU_FEATURES_INIT_ORDER) * NumberOfCpus);
 
   //
@@ -150,19 +174,38 @@ CpuInitDataInitialize (
   CpuFeaturesData->NumberOfCpus = (UINT32)NumberOfCpus;
 
   AcpiCpuData = GetAcpiCpuData ();
-  ASSERT (AcpiCpuData != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (AcpiCpuData == NULL) {
+    ASSERT (AcpiCpuData != NULL);
+    goto ExitOnError;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   CpuFeaturesData->AcpiCpuData = AcpiCpuData;
 
   CpuStatus = &AcpiCpuData->CpuFeatureInitData.CpuStatus;
-  Location  = AllocatePages (EFI_SIZE_TO_PAGES (sizeof (EFI_CPU_PHYSICAL_LOCATION) * NumberOfCpus));
-  ASSERT (Location != NULL);
+  CopyMem (&CpuStatusBackupBuffer, CpuStatus, sizeof (CpuStatusBackupBuffer)); // MU_CHANGE - CodeQL change
+  Location = AllocatePages (EFI_SIZE_TO_PAGES (sizeof (EFI_CPU_PHYSICAL_LOCATION) * NumberOfCpus));
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (Location == NULL) {
+    ASSERT (Location != NULL);
+    goto ExitOnError;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   ZeroMem (Location, sizeof (EFI_CPU_PHYSICAL_LOCATION) * NumberOfCpus);
   AcpiCpuData->CpuFeatureInitData.ApLocation = (EFI_PHYSICAL_ADDRESS)(UINTN)Location;
 
   for (ProcessorNumber = 0; ProcessorNumber < NumberOfCpus; ProcessorNumber++) {
     InitOrder                        = &CpuFeaturesData->InitOrder[ProcessorNumber];
     InitOrder->FeaturesSupportedMask = AllocateZeroPool (CpuFeaturesData->BitMaskSize);
-    ASSERT (InitOrder->FeaturesSupportedMask != NULL);
+    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+    if (InitOrder->FeaturesSupportedMask == NULL) {
+      ASSERT (InitOrder->FeaturesSupportedMask != NULL);
+      goto ExitOnError;
+    }
+
+    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     InitializeListHead (&InitOrder->OrderList);
     Status = GetProcessorInformation (ProcessorNumber, &ProcessorInfoBuffer);
     ASSERT_EFI_ERROR (Status);
@@ -214,12 +257,26 @@ CpuInitDataInitialize (
   // Collect valid core count in each package because not all cores are valid.
   //
   ThreadCountPerPackage = AllocatePages (EFI_SIZE_TO_PAGES (sizeof (UINT32) * CpuStatus->PackageCount));
-  ASSERT (ThreadCountPerPackage != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (ThreadCountPerPackage == NULL) {
+    ASSERT (ThreadCountPerPackage != NULL);
+    goto ExitOnError;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   ZeroMem (ThreadCountPerPackage, sizeof (UINT32) * CpuStatus->PackageCount);
   CpuStatus->ThreadCountPerPackage = (EFI_PHYSICAL_ADDRESS)(UINTN)ThreadCountPerPackage;
 
   ThreadCountPerCore = AllocatePages (EFI_SIZE_TO_PAGES (sizeof (UINT8) * CpuStatus->PackageCount * CpuStatus->MaxCoreCount));
-  ASSERT (ThreadCountPerCore != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (ThreadCountPerCore == NULL) {
+    ASSERT (ThreadCountPerCore != NULL);
+    goto ExitOnError;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   ZeroMem (ThreadCountPerCore, sizeof (UINT8) * CpuStatus->PackageCount * CpuStatus->MaxCoreCount);
   CpuStatus->ThreadCountPerCore = (EFI_PHYSICAL_ADDRESS)(UINTN)ThreadCountPerCore;
 
@@ -247,9 +304,22 @@ CpuInitDataInitialize (
   }
 
   CpuFeaturesData->CpuFlags.CoreSemaphoreCount = AllocateZeroPool (sizeof (UINT32) * CpuStatus->PackageCount * CpuStatus->MaxCoreCount * CpuStatus->MaxThreadCount);
-  ASSERT (CpuFeaturesData->CpuFlags.CoreSemaphoreCount != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuFeaturesData->CpuFlags.CoreSemaphoreCount == NULL) {
+    ASSERT (CpuFeaturesData->CpuFlags.CoreSemaphoreCount != NULL);
+    goto ExitOnError;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   CpuFeaturesData->CpuFlags.PackageSemaphoreCount = AllocateZeroPool (sizeof (UINT32) * CpuStatus->PackageCount * CpuStatus->MaxCoreCount * CpuStatus->MaxThreadCount);
-  ASSERT (CpuFeaturesData->CpuFlags.PackageSemaphoreCount != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (CpuFeaturesData->CpuFlags.PackageSemaphoreCount == NULL) {
+    ASSERT (CpuFeaturesData->CpuFlags.PackageSemaphoreCount != NULL);
+    goto ExitOnError;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   //
   // Initialize CpuFeaturesData->InitOrder[].CpuInfo.First
@@ -257,7 +327,14 @@ CpuInitDataInitialize (
   //
   Pages     = EFI_SIZE_TO_PAGES (CpuStatus->PackageCount * sizeof (UINT32) + CpuStatus->PackageCount * CpuStatus->MaxCoreCount * sizeof (UINT32));
   FirstCore = AllocatePages (Pages);
-  ASSERT (FirstCore != NULL);
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+  if (FirstCore == NULL) {
+    ASSERT (FirstCore != NULL);
+    goto ExitOnError;
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+
   FirstThread = FirstCore + CpuStatus->PackageCount;
 
   //
@@ -317,6 +394,63 @@ CpuInitDataInitialize (
   }
 
   FreePages (FirstCore, Pages);
+
+  return;
+
+  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
+ExitOnError:
+  if (FirstCore != NULL) {
+    FreePages (FirstCore, Pages);
+  }
+
+  if ((CpuFeaturesData != NULL) && (CpuFeaturesData->CpuFlags.PackageSemaphoreCount != NULL)) {
+    FreePool ((VOID *)CpuFeaturesData->CpuFlags.PackageSemaphoreCount);
+    CpuFeaturesData->CpuFlags.PackageSemaphoreCount = NULL;
+  }
+
+  if ((CpuFeaturesData != NULL) && (CpuFeaturesData->CpuFlags.CoreSemaphoreCount != NULL)) {
+    FreePool ((VOID *)CpuFeaturesData->CpuFlags.CoreSemaphoreCount);
+    CpuFeaturesData->CpuFlags.CoreSemaphoreCount = NULL;
+  }
+
+  if (ThreadCountPerCore != NULL) {
+    FreePages (
+      ThreadCountPerCore,
+      EFI_SIZE_TO_PAGES (sizeof (UINT8) * CpuStatus->PackageCount * CpuStatus->MaxCoreCount)
+      );
+  }
+
+  if (ThreadCountPerPackage != NULL) {
+    FreePages (
+      ThreadCountPerPackage,
+      EFI_SIZE_TO_PAGES (sizeof (UINT32) * CpuStatus->PackageCount)
+      );
+  }
+
+  if (InitOrder != NULL) {
+    for (ProcessorNumber = 0; ProcessorNumber < NumberOfCpus; ProcessorNumber++) {
+      InitOrder = &CpuFeaturesData->InitOrder[ProcessorNumber];
+      if (InitOrder->FeaturesSupportedMask != NULL) {
+        FreePool (InitOrder->FeaturesSupportedMask);
+        InitOrder->FeaturesSupportedMask = NULL;
+      }
+    }
+  }
+
+  if (Location != NULL) {
+    FreePages (Location, EFI_SIZE_TO_PAGES (sizeof (EFI_CPU_PHYSICAL_LOCATION) * NumberOfCpus));
+  }
+
+  if (CpuFeaturesData->InitOrder != NULL) {
+    FreePages (CpuFeaturesData->InitOrder, EFI_SIZE_TO_PAGES (sizeof (CPU_FEATURES_INIT_ORDER) * NumberOfCpus));
+    CpuFeaturesData->InitOrder = NULL;
+  }
+
+  if (CpuStatus != NULL) {
+    CopyMem (CpuStatus, &CpuStatusBackupBuffer, sizeof (*CpuStatus));
+  }
+
+  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 }
 
 /**
