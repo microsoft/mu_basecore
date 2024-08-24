@@ -88,3 +88,9 @@ clear = true
 command = "cargo"
 args = ["tarpaulin", "@@split(INDIVIDUAL_PACKAGE_TARGETS, )", "@@split(COV_FLAGS, )", "--output-dir", "${CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY}/target"]
 dependencies = ["individual-package-targets"]
+
+[tasks.clippy]
+description = "Run cargo clippy."
+clear = true
+command = "cargo"
+args = ["clippy", "--all-targets", "--", "-D", "warnings"]
