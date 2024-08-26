@@ -74,6 +74,14 @@ struct MockUefiBootServicesTableLib {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
+    gBS_RegisterProtocolNotify,
+    (IN  EFI_GUID                 *Protocol,
+     IN  EFI_EVENT                Event,
+     OUT VOID                     **Registration)
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
     gBS_LocateHandleBuffer,
     (
      IN     EFI_LOCATE_SEARCH_TYPE       SearchType,
@@ -178,6 +186,15 @@ struct MockUefiBootServicesTableLib {
      IN     VOID                     *SearchKey    OPTIONAL,
      IN OUT UINTN                    *BufferSize,
      OUT    EFI_HANDLE               *Buffer)
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    gBS_ConnectController,
+    (IN  EFI_HANDLE                    ControllerHandle,
+     IN  EFI_HANDLE                    *DriverImageHandle    OPTIONAL,
+     IN  EFI_DEVICE_PATH_PROTOCOL      *RemainingDevicePath  OPTIONAL,
+     IN  BOOLEAN                       Recursive)
     );
 };
 
