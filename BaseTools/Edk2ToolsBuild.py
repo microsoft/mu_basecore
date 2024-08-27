@@ -190,6 +190,10 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
                 shell_env.insert_path(shell_env.get_shell_var("EDK_TOOLS_BIN"))
 
             # Actually build the tools.
+            # MU_CHANGE [BEGIN] - Run nmake clean for GenStm
+            ret = RunCmd('nmake.exe', 'clean',
+                        workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
+            # MU_CHANGE [END] - Run nmake clean for GenStm
             output_stream = edk2_logging.create_output_stream()
             ret = RunCmd('nmake.exe', None,
                          workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
