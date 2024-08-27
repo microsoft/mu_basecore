@@ -1,4 +1,4 @@
-/** @file DxeServicesTableLib.h
+/** @file MockDxeServicesTableLib.h
   Google Test mocks for DxeServicesTableLib
 
   Copyright (c) Microsoft Corporation.
