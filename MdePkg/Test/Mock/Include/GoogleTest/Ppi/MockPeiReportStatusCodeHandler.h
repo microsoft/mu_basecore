@@ -32,8 +32,17 @@ struct MockPeiReportStatusCodeHandler {
     );
 };
 
+MOCK_INTERFACE_DEFINITION (MockPeiReportStatusCodeHandler);
+MOCK_FUNCTION_DEFINITION (MockPeiReportStatusCodeHandler, Register, 1, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockPeiReportStatusCodeHandler, Unregister, 1, EFIAPI);
+
+EFI_PEI_RSC_HANDLER_PPI  PeiRscHandlerPpi = {
+  Register,
+  Unregister
+};
+
 extern "C" {
-  extern EFI_PEI_RSC_HANDLER_PPI  *PeiRscHandlerPpiServices;
+  EFI_PEI_RSC_HANDLER_PPI  *PeiRscHandlerPpiServices = &PeiRscHandlerPpi;
 }
 
 #endif

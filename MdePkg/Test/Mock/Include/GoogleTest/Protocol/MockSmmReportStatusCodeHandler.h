@@ -34,8 +34,17 @@ struct MockReportStatusCodeHandler {
     );
 };
 
+MOCK_INTERFACE_DEFINITION (MockReportStatusCodeHandler);
+MOCK_FUNCTION_DEFINITION (MockReportStatusCodeHandler, Register, 1, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockReportStatusCodeHandler, Unregister, 1, EFIAPI);
+
+EFI_SMM_RSC_HANDLER_PROTOCOL  SmmRscHandlerProtocol = {
+  Register,
+  Unregister
+};
+
 extern "C" {
-  extern EFI_MM_RSC_HANDLER_PROTOCOL  *SmmRscHandlerProtocolServices;
+  EFI_SMM_RSC_HANDLER_PROTOCOL  *SmmRscHandlerProtocolServices = &SmmRscHandlerProtocol;
 }
 
 #endif
