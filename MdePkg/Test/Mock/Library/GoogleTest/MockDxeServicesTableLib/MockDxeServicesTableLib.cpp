@@ -1,13 +1,13 @@
-/** @file
+/** @file MockDxeServicesTableLib.cpp
   Google Test mocks for DxeServicesTableLib
 
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
-#include <GoogleTest/Library/MockUefiDxeServicesTableLib.h>
+#include <GoogleTest/Library/MockDxeServicesTableLib.h>
 
-MOCK_INTERFACE_DEFINITION (MockUefiDxeServicesTableLib);
-MOCK_FUNCTION_DEFINITION (MockUefiDxeServicesTableLib, gDS_Dispatch, 0, EFIAPI);
+MOCK_INTERFACE_DEFINITION (MockDxeServicesTableLib);
+MOCK_FUNCTION_DEFINITION (MockDxeServicesTableLib, gDS_Dispatch, 0, EFIAPI);
 
 static EFI_DXE_SERVICES  LocalDs = {
   { 0, 0, 0, 0, 0 },                                                                   // EFI_TABLE_HEADER
