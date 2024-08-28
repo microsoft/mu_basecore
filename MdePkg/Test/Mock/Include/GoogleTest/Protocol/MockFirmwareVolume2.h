@@ -114,10 +114,6 @@ struct MockFirmwareVolume2Protocol {
     );
 };
 
-extern "C" {
-  extern EFI_FIRMWARE_VOLUME2_PROTOCOL  *gFirmwareVolume2Protocol;
-}
-
 MOCK_INTERFACE_DEFINITION (MockFirmwareVolume2Protocol);
 MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, GetVolumeAttributes, 2, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, SetVolumeAttributes, 2, EFIAPI);

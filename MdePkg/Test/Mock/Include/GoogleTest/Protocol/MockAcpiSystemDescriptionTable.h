@@ -108,10 +108,6 @@ struct MockAcpiSdtProtocol {
     );
 };
 
-extern "C" {
-  extern EFI_ACPI_SDT_PROTOCOL  *gAcpiSdtProtocol;
-}
-
 MOCK_INTERFACE_DEFINITION (MockAcpiSdtProtocol);
 MOCK_FUNCTION_DEFINITION (MockAcpiSdtProtocol, GetAcpiTable, 4, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockAcpiSdtProtocol, RegisterNotify, 2, EFIAPI);

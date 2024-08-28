@@ -40,10 +40,6 @@ struct MockAcpiTableProtocol {
     );
 };
 
-extern "C" {
-  extern EFI_ACPI_TABLE_PROTOCOL  *gAcpiTableProtocol;
-}
-
 MOCK_INTERFACE_DEFINITION (MockAcpiTableProtocol);
 MOCK_FUNCTION_DEFINITION (MockAcpiTableProtocol, InstallAcpiTable, 4, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockAcpiTableProtocol, UninstallAcpiTable, 2, EFIAPI);
