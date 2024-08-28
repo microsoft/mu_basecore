@@ -120,3 +120,6 @@
   MdeModulePkg/Test/Mock/Library/GoogleTest/MockVariablePolicyHelperLib/MockVariablePolicyHelperLib.inf
   MdeModulePkg/Test/Mock/Library/GoogleTest/MockPlatformHookLib/MockPlatformHookLib.inf
   MdeModulePkg/Test/Mock/Library/GoogleTest/MockHiiLib/MockHiiLib.inf
+  MdeModulePkg/Test/Mock/Library/GoogleTest/MockCapsuleLib/MockCapsuleLib.inf # MU_CHANGE
+  MdeModulePkg/Test/Mock/Library/GoogleTest/MockUefiBootManagerLib/MockUefiBootManagerLib.inf # MU_CHANGE
+  
