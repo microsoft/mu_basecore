@@ -8,7 +8,6 @@
 **/
 
 #include "NvmExpress.h"
-#include <Guid/NVMeEventGroup.h> // MU_CHANGE
 
 #define NVME_SHUTDOWN_PROCESS_TIMEOUT  45
 
@@ -402,8 +401,6 @@ NvmeEnableController (
   UINT32      Index;
   UINT8       Timeout;
 
-  EfiEventGroupSignal (&gNVMeEnableStartEventGroupGuid); // MU_CHANGE Add NVMe Long Delay Time Events
-
   //
   // Enable the controller.
   // CC.AMS, CC.MPS and CC.CSS are all set to 0.
@@ -415,7 +412,7 @@ NvmeEnableController (
 
   Status = WriteNvmeControllerConfiguration (Private, &Cc);
   if (EFI_ERROR (Status)) {
-    goto Cleanup; // MU_CHANGE Add NVMe Long Delay Time Events
+    return Status;
   }
 
   //
@@ -437,7 +434,7 @@ NvmeEnableController (
     Status = ReadNvmeControllerStatus (Private, &Csts);
 
     if (EFI_ERROR (Status)) {
-      goto Cleanup; // MU_CHANGE Add NVMe Long Delay Time Events
+      return Status;
     }
 
     if (Csts.Rdy) {
@@ -454,11 +451,6 @@ NvmeEnableController (
   }
 
   DEBUG ((DEBUG_INFO, "NVMe controller is enabled with status [%r].\n", Status));
-
-  // MU_CHANGE Start: Add NVMe Long Delay Time Events
-Cleanup:
-  EfiEventGroupSignal (&gNVMeEnableCompleteEventGroupGuid);
-  // MU_CHANGE End: Add NVMe Long Delay Time Events
   return Status;
 }
 
