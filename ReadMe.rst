@@ -45,12 +45,20 @@ Breaking Changes-dev
 - MuPreExitBootServices has been removed in favor of gEfiEventBeforeExitBootServicesGuid. gEfiEventBeforeExitBootServicesGuid can be signaled multiple times, so be sure to close the events that are being signaled when this is changed. 
 - AmdSvsmLib is now a required library for IA32/X64 platforms using UefiCpuPkg/Library/MpInitLib/DxeMpInitLib,UefiCpuPkg/Library/MpInitLib/PeiMpInitLib.
 - MdePkg/Library/CompilerIntrinsics no longer contains strcmp functionality.
+
   - The strcmp functionality moved to CryptoPkg/Library/BaseCryptLib/SysCall/CrtWrapper.c where it is available to the third-party crypto code that previously used the code from the library.
 - NetworkPkg requires EFI_RNG_PROTOCOL and EFI_HASH2_PROTOCOL to be available. This is part of CVE-2023-45237.
 - CryptoBinPkg requires the platform to supply EFI_RNG_PPI in the Pei phase, and EFI_RNG_PROTOCOL in the Dxe phase.
-  - RngPei can be used to produce the RNG PPI. See [SecurityPkg/RandomNumberGenerator/RngPei](https://github.com/microsoft/mu_tiano_plus/tree/release/202405/SecurityPkg/RandomNumberGenerator/RngPei) in Mu Tiano Plus.
+
+  - RngPei can be used to produce the RNG PPI. See `SecurityPkg/RandomNumberGenerator/RngPei <https://github.com/microsoft/mu_tiano_plus/tree/release/202405/SecurityPkg/RandomNumberGenerator/RngPei/>`_ in Mu Tiano Plus.
 - TOOL_CHAIN_TAG=GCC and TOOL_CHAIN_TAG=GCC5 are both supported. GCC will become the normal in a future release.
-- ImageValidation will now run on all systems with a default configuration. This will verify generated images are ready for memory protections. Details available [Here](.pytool\Plugin\ImageValidation\ReadMe.md).
+- ImageValidation will now run on all systems with a default configuration. This will verify generated images are ready for memory protections. Details available `Here <https://github.com/microsoft/mu_basecore/tree/release/202405/.pytool/Plugin/ImageValidation/ReadMe.md>`_.
+- MdePkg/Test/Library Cmocka mocks and stubs have been moved and paths need to be updated. 
+
+  - ``MdePkg/Test/Library/MockUefiRuntimeServicesTableLib/MockUefiRuntimeServicesTableLib.inf`` has been moved to ``MdePkg/Test/Mock/Library/Cmocka/MockUefiRuntimeServicesTableLib/MockUefiRuntimeServicesTableLib.inf``.
+  - ``MdePkg/Test/Library/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf`` has been moved to ``MdePkg/Test/Mock/Library/Cmocka/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf``.
+  - ``MdePkg/Test/Library/StubUefiLib/StubUefiLib.inf`` has been moved to ``MdePkg/Test/Mock/Library/Stub/StubUefiLib/StubUefiLib.inf``.
+  - ``MdePkg/Test/Library/StubHobLib/StubHobLib.inf`` has been moved to ``MdePkg/Test/Mock/Library/Stub/StubHobLib/StubHobLib.inf``.
 
 Main Changes-dev
 ----------------
@@ -58,15 +66,15 @@ Main Changes-dev
 - NetworkPkg: Predictable TCP ISNs
 - NetworkPkg: Use of a Weak PseudoRandom Number Generator
 - UefiCpuPkg: Add new SmmRelocationLib library
-- NetworkPkg: Packet->Length is not updated before being used by Dhcp6AppendIaAddrOption to safely know it can append.
+- NetworkPkg: ``Packet->Length`` is not updated before being used by Dhcp6AppendIaAddrOption to safely know it can append.
 - NetworkPkg: Out-of-bounds read when processing IA_NA/IA_TA options in a DHCPv6 Advertise message
 - DXE Core system time runs faster than expected when using PcAtChipsetPkg/HpetTimerDxe
 - CalculateCrc16Ansi miscalculates the checksum
-- PciIoMap does not return status from mIoMmuProtocol->SetAttribute
+- PciIoMap does not return status from ``mIoMmuProtocol->SetAttribute``
 
 Platform Integration Reference
 ------------------------------
-Reference platforms which consume release/202405 are available in [mu_tiano_platforms](https://github.com/microsoft/mu_tiano_platforms).
+Reference platforms which consume release/202405 are available in `mu_tiano_platforms <https://github.com/microsoft/mu_tiano_platforms>`_.
 
 Code of Conduct
 ===============
