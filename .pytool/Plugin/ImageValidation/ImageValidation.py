@@ -16,6 +16,7 @@ from edk2toolext.image_validation import (
 )
 from edk2toollib.uefi.edk2.parsers.fdf_parser import FdfParser
 from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
+from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
 import yaml
 from typing import List
 import logging
@@ -92,7 +93,6 @@ class ImageValidation(IUefiBuildPlugin):
 
         # Load Configuration Data
         config_path = thebuilder.env.GetValue("PE_VALIDATION_PATH", None)
-        tool_chain_tag = thebuilder.env.GetValue("TOOL_CHAIN_TAG")
         if config_path is None:
             logging.info("PE_VALIDATION_PATH not set, Using default configuration")
             logging.info("Review ImageValidation/Readme.md for configuration options.")
@@ -192,25 +192,16 @@ class ImageValidation(IUefiBuildPlugin):
                 # Perform Image Verification on any output efi's
                 # Grab profile from makefile
                 if "OUTPUT" in efi_path:
-                    try:
-                        if "VS" in tool_chain_tag:
-                            profile = self._get_profile_from_makefile(
-                                f'{Path(efi_path).parent.parent}/Makefile')
-
-                        elif "GCC" in tool_chain_tag:
-                            profile = self._get_profile_from_makefile(
-                                f'{Path(efi_path).parent.parent}/GNUmakefile')
-
-                        elif "CLANG" in tool_chain_tag:
-                            profile = self._get_profile_from_makefile(
-                                f'{Path(efi_path).parent.parent}/GNUmakefile')
-                        else:
-                            logging.warning("Unexpected TOOL_CHAIN_TAG... Cannot parse makefile. Using DEFAULT profile.")
-                            profile = "DEFAULT"
-                    except Exception:
-                        logging.warning(f'Failed to parse makefile at [{Path(efi_path).parent.parent}/GNUmakefile]')
-                        logging.warning('Using DEFAULT profile')
-                        profile = "DEFAULT"
+                    efi_inf = Path(efi_path).with_suffix('.inf')
+                    if not efi_inf.is_file():
+                        logging.warning(
+                            f"Cannot find {os.path.basename(efi_inf)} for {os.path.basename(efi_path)}, Skipping...")
+                        continue
+                    infp = InfParser().SetEdk2Path(thebuilder.edk2path)
+                    infp.ParseFile(efi_inf)
+                    profile = infp.Dict.get("MODULE_TYPE", "DEFAULT")
+                    if profile == "DEFAULT":
+                        logging.debug("Failed to parse MODULE_TYPE from INF, using DEFAULT")
 
                     logging.debug(
                         f'Performing Image Verification ... {os.path.basename(efi_path)}')
@@ -240,7 +231,11 @@ class ImageValidation(IUefiBuildPlugin):
 
     # Executes run_tests() on the efi
     def _validate_image(self, efi_path, profile="DEFAULT"):
-        pe = PE(efi_path)
+        try:
+            pe = PE(efi_path, fast_load=True)
+        except Exception:
+            logging.error(f'Failed to parse {os.path.basename(efi_path)}')
+            return Result.FAIL
 
         target_config = self.config_data[MACHINE_TYPE[pe.FILE_HEADER.Machine]].get(
             profile)
@@ -248,28 +243,6 @@ class ImageValidation(IUefiBuildPlugin):
             profile = "DEFAULT"
 
         return self.test_manager.run_tests(pe, profile)
-
-    # Reads the Makefile of an efi, if present, to determine profile
-    def _get_profile_from_makefile(self, makefile):
-        with open(makefile) as file:
-            for line in file.readlines():
-                if "MODULE_TYPE" in line:
-                    line = line.split('=')
-                    module_type = line[1]
-                    module_type = module_type.strip()
-                    return module_type
-        return "DEFAULT"
-
-    # Attempts to convert shorthand arch such as X64 to the
-    # Fully describe architecture. Additional support for
-    # Fallback architectures can be added here
-    def _try_convert_full_arch(self, arch):
-        full_arch = self.arch_dict.get(arch)
-        if full_arch is None:
-            if "ARM" in arch:
-                full_arch = "IMAGE_FILE_MACHINE_ARM"
-            # Add other Arches
-        return full_arch
 
     # Resolves variable names matching the $(...) pattern.
     def _resolve_vars(self, thebuilder, s):

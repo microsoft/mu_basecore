@@ -2,6 +2,7 @@
   Google Test mocks for UefiLib
 
   Copyright (c) 2022, Intel Corporation. All rights reserved.
+  Copyright (C) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -88,6 +89,12 @@ struct MockUefiLib {
      IN EFI_HANDLE                          DriverBindingHandle,
      IN CONST EFI_COMPONENT_NAME_PROTOCOL   *ComponentName        OPTIONAL,
      IN CONST EFI_COMPONENT_NAME2_PROTOCOL  *ComponentName2       OPTIONAL)
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    EfiEventGroupSignal,
+    (IN CONST EFI_GUID  *EventGroup)
     );
 };
 
