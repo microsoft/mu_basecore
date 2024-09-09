@@ -93,7 +93,6 @@ class ImageValidation(IUefiBuildPlugin):
 
         # Load Configuration Data
         config_path = thebuilder.env.GetValue("PE_VALIDATION_PATH", None)
-        tool_chain_tag = thebuilder.env.GetValue("TOOL_CHAIN_TAG")
         if config_path is None:
             logging.info("PE_VALIDATION_PATH not set, Using default configuration")
             logging.info("Review ImageValidation/Readme.md for configuration options.")
@@ -232,7 +231,11 @@ class ImageValidation(IUefiBuildPlugin):
 
     # Executes run_tests() on the efi
     def _validate_image(self, efi_path, profile="DEFAULT"):
-        pe = PE(efi_path)
+        try:
+            pe = PE(efi_path, fast_load=True)
+        except Exception:
+            logging.error(f'Failed to parse {os.path.basename(efi_path)}')
+            return Result.FAIL
 
         target_config = self.config_data[MACHINE_TYPE[pe.FILE_HEADER.Machine]].get(
             profile)

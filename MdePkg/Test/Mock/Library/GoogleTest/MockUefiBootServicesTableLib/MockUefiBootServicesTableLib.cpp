@@ -27,6 +27,7 @@ MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_ReinstallProtocolInt
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_AllocatePool, 3, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_LocateHandle, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_ConnectController, 4, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_DisconnectController, 3, EFIAPI);
 
 extern "C" {
   EFI_STATUS
@@ -133,7 +134,7 @@ static EFI_BOOT_SERVICES  LocalBs = {
   NULL,                                                                                // EFI_STALL
   NULL,                                                                                // EFI_SET_WATCHDOG_TIMER
   gBS_ConnectController,                                                               // EFI_CONNECT_CONTROLLER
-  NULL,                                                                                // EFI_DISCONNECT_CONTROLLER
+  gBS_DisconnectController,                                                            // EFI_DISCONNECT_CONTROLLER
   gBS_OpenProtocol,                                                                    // EFI_OPEN_PROTOCOL
   gBS_CloseProtocol,                                                                   // EFI_CLOSE_PROTOCOL
   NULL,                                                                                // EFI_OPEN_PROTOCOL_INFORMATION
