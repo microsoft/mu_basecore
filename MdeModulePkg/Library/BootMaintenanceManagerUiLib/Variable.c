@@ -198,14 +198,11 @@ Var_UpdateConsoleOption (
                              (EFI_DEVICE_PATH_PROTOCOL *)&Vendor
                              );
       ASSERT (TerminalDevicePath != NULL);
-      // MU_CHANGE - Ensure TerminalDevicePath is valid
-      if (TerminalDevicePath != NULL) {
-        ChangeTerminalDevicePath (TerminalDevicePath, TRUE);
-        ConDevicePath = AppendDevicePathInstance (
-                          ConDevicePath,
-                          TerminalDevicePath
-                          );
-      }
+      ChangeTerminalDevicePath (TerminalDevicePath, TRUE);
+      ConDevicePath = AppendDevicePathInstance (
+                        ConDevicePath,
+                        TerminalDevicePath
+                        );
     }
   }
 
@@ -540,7 +537,7 @@ Var_UpdateBootNext (
   BM_MENU_ENTRY     *NewMenuEntry;
   BM_LOAD_CONTEXT   *NewLoadContext;
   BMM_FAKE_NV_DATA  *CurrentFakeNVMap;
-  UINTN             Index;
+  UINT16            Index;
   EFI_STATUS        Status;
 
   Status           = EFI_SUCCESS;
@@ -595,8 +592,8 @@ Var_UpdateBootOrder (
   )
 {
   EFI_STATUS  Status;
-  UINTN       Index;
-  UINTN       OrderIndex;
+  UINT16      Index;
+  UINT16      OrderIndex;
   UINT16      *BootOrder;
   UINTN       BootOrderSize;
   UINT16      OptionNumber;
@@ -657,7 +654,7 @@ Var_UpdateDriverOrder (
   )
 {
   EFI_STATUS  Status;
-  UINTN       Index;
+  UINT16      Index;
   UINT16      *DriverOrderList;
   UINT16      *NewDriverOrderList;
   UINTN       DriverOrderListSize;

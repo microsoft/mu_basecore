@@ -359,7 +359,7 @@ PartitionInstallMbrChildHandles (
       if (ExtMbrStartingLba == 0) {
         break;
       }
-    } while ((UINT64)ExtMbrStartingLba  < ParentHdDev.PartitionSize); // MU_CHANGE - CodeQL Change - comparison-with-wider-type
+    } while (ExtMbrStartingLba  < ParentHdDev.PartitionSize);
   }
 
 Done:

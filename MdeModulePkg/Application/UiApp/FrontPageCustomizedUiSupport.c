@@ -191,12 +191,6 @@ UiSupportLibCallbackHandler (
 
   if (Action == EFI_BROWSER_ACTION_RETRIEVE) {
     if (QuestionId == FRONT_PAGE_KEY_LANGUAGE) {
-      // MU_CHANGE Start - CodeQl Change
-      if (Value == NULL) {
-        *Status = EFI_INVALID_PARAMETER;
-        return FALSE;
-      }
-
       Value->u8 = gCurrentLanguageIndex;
       *Status   = EFI_SUCCESS;
     } else {
@@ -522,8 +516,6 @@ RequiredDriver (
   UINT8             *Ptr;
   UINTN             TempSize;
   BOOLEAN           RetVal;
-
-  Buffer = NULL; // MU_CHANGE - CodeQl Change
 
   Status = HiiGetFormSetFromHiiHandle (HiiHandle, &Buffer, &BufferSize);
   if (EFI_ERROR (Status)) {

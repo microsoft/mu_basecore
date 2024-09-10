@@ -856,7 +856,7 @@ FtwGetLastWriteRecord (
   OUT EFI_FAULT_TOLERANT_WRITE_RECORD  **FtwWriteRecord
   )
 {
-  UINT64                           Index; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
+  UINTN                            Index;
   EFI_FAULT_TOLERANT_WRITE_RECORD  *FtwRecord;
 
   *FtwWriteRecord = NULL;

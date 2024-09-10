@@ -689,19 +689,7 @@ BmProcessKeyOption (
 
   for (Index = 0; Index < KeyShiftStateCount; Index++) {
     Hotkey = AllocateZeroPool (sizeof (BM_HOTKEY));
-    // MU_CHANGE [BEGIN] - CodeQL change
-    if (Hotkey == NULL) {
-      ASSERT (Hotkey != NULL);
-      if (Handles != NULL) {
-        FreePool (Handles);
-      }
-
-      EfiReleaseLock (&mBmHotkeyLock);
-
-      return EFI_OUT_OF_RESOURCES;
-    }
-
-    // MU_CHANGE [END] - CodeQL change
+    ASSERT (Hotkey != NULL);
 
     Hotkey->Signature  = BM_HOTKEY_SIGNATURE;
     Hotkey->BootOption = KeyOption->BootOption;
@@ -930,13 +918,11 @@ EfiBootManagerStartHotkeyService (
   }
 
   KeyOptions = BmGetKeyOptions (&KeyOptionCount);
-  if (KeyOptions != NULL) {
-    for (Index = 0; Index < KeyOptionCount; Index++) {
-      BmProcessKeyOption (&KeyOptions[Index]);
-    }
-
-    BmFreeKeyOptions (KeyOptions, KeyOptionCount);
+  for (Index = 0; Index < KeyOptionCount; Index++) {
+    BmProcessKeyOption (&KeyOptions[Index]);
   }
+
+  BmFreeKeyOptions (KeyOptions, KeyOptionCount);
 
   if (mBmContinueKeyOption != NULL) {
     BmProcessKeyOption (mBmContinueKeyOption);
@@ -1028,31 +1014,27 @@ EfiBootManagerAddKeyOptionVariable (
     return Status;
   }
 
-  Index           = 0;
-  KeyOptionCount  = 0;
   KeyOptionNumber = LoadOptionNumberUnassigned;
   //
   // Check if the hot key sequence was defined already
   //
   KeyOptions = BmGetKeyOptions (&KeyOptionCount);
-  if (KeyOptions != NULL) {
-    for ( ; Index < KeyOptionCount; Index++) {
-      if ((KeyOptions[Index].KeyData.PackedValue == KeyOption.KeyData.PackedValue) &&
-          (CompareMem (KeyOptions[Index].Keys, KeyOption.Keys, KeyOption.KeyData.Options.InputKeyCount * sizeof (EFI_INPUT_KEY)) == 0))
-      {
-        break;
-      }
-
-      if ((KeyOptionNumber == LoadOptionNumberUnassigned) &&
-          (KeyOptions[Index].OptionNumber > Index)
-          )
-      {
-        KeyOptionNumber = Index;
-      }
+  for (Index = 0; Index < KeyOptionCount; Index++) {
+    if ((KeyOptions[Index].KeyData.PackedValue == KeyOption.KeyData.PackedValue) &&
+        (CompareMem (KeyOptions[Index].Keys, KeyOption.Keys, KeyOption.KeyData.Options.InputKeyCount * sizeof (EFI_INPUT_KEY)) == 0))
+    {
+      break;
     }
 
-    BmFreeKeyOptions (KeyOptions, KeyOptionCount);
+    if ((KeyOptionNumber == LoadOptionNumberUnassigned) &&
+        (KeyOptions[Index].OptionNumber > Index)
+        )
+    {
+      KeyOptionNumber = Index;
+    }
   }
+
+  BmFreeKeyOptions (KeyOptions, KeyOptionCount);
 
   if (Index < KeyOptionCount) {
     return EFI_ALREADY_STARTED;
@@ -1173,37 +1155,35 @@ EfiBootManagerDeleteKeyOptionVariable (
   //
   Status     = EFI_NOT_FOUND;
   KeyOptions = BmGetKeyOptions (&KeyOptionCount);
-  if (KeyOptions != NULL) {
-    for (Index = 0; Index < KeyOptionCount; Index++) {
-      if ((KeyOptions[Index].KeyData.PackedValue == KeyOption.KeyData.PackedValue) &&
-          (CompareMem (
-             KeyOptions[Index].Keys,
-             KeyOption.Keys,
-             KeyOption.KeyData.Options.InputKeyCount * sizeof (EFI_INPUT_KEY)
-             ) == 0)
-          )
-      {
-        UnicodeSPrint (KeyOptionName, sizeof (KeyOptionName), L"Key%04x", KeyOptions[Index].OptionNumber);
-        Status = gRT->SetVariable (
-                        KeyOptionName,
-                        &gEfiGlobalVariableGuid,
-                        EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
-                        0,
-                        NULL
-                        );
-        //
-        // Return the deleted key option in case needed by caller
-        //
-        if (DeletedOption != NULL) {
-          CopyMem (DeletedOption, &KeyOptions[Index], sizeof (EFI_BOOT_MANAGER_KEY_OPTION));
-        }
-
-        break;
+  for (Index = 0; Index < KeyOptionCount; Index++) {
+    if ((KeyOptions[Index].KeyData.PackedValue == KeyOption.KeyData.PackedValue) &&
+        (CompareMem (
+           KeyOptions[Index].Keys,
+           KeyOption.Keys,
+           KeyOption.KeyData.Options.InputKeyCount * sizeof (EFI_INPUT_KEY)
+           ) == 0)
+        )
+    {
+      UnicodeSPrint (KeyOptionName, sizeof (KeyOptionName), L"Key%04x", KeyOptions[Index].OptionNumber);
+      Status = gRT->SetVariable (
+                      KeyOptionName,
+                      &gEfiGlobalVariableGuid,
+                      EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+                      0,
+                      NULL
+                      );
+      //
+      // Return the deleted key option in case needed by caller
+      //
+      if (DeletedOption != NULL) {
+        CopyMem (DeletedOption, &KeyOptions[Index], sizeof (EFI_BOOT_MANAGER_KEY_OPTION));
       }
-    }
 
-    BmFreeKeyOptions (KeyOptions, KeyOptionCount);
+      break;
+    }
   }
+
+  BmFreeKeyOptions (KeyOptions, KeyOptionCount);
 
   EfiReleaseLock (&mBmHotkeyLock);
 

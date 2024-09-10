@@ -1457,11 +1457,6 @@ GetFullSmramRanges (
   EFI_SMM_RESERVED_SMRAM_REGION   *SmramReservedRanges;
   UINTN                           MaxCount;
   BOOLEAN                         Rescan;
-  // MU_CHANGE Start - CodeQL Change
-  BOOLEAN  Failed;
-
-  Failed = FALSE;
-  // MU_CHANGE End - CodeQL Change
 
   //
   // Get SMM Configuration Protocol if it is present.
@@ -1506,14 +1501,7 @@ GetFullSmramRanges (
     *FullSmramRangeCount = SmramRangeCount + AdditionSmramRangeCount;
     Size                 = (*FullSmramRangeCount) * sizeof (EFI_SMRAM_DESCRIPTOR);
     FullSmramRanges      = (EFI_SMRAM_DESCRIPTOR *)AllocateZeroPool (Size);
-    // MU_CHANGE Start - CodeQL Change
-    if (FullSmramRanges == NULL) {
-      ASSERT (FullSmramRanges != NULL);
-      Failed = TRUE;
-      goto Done;
-    }
-
-    // MU_CHANGE End - CodeQL Change
+    ASSERT (FullSmramRanges != NULL);
 
     Status = mSmmAccess->GetCapabilities (mSmmAccess, &Size, FullSmramRanges);
     ASSERT_EFI_ERROR (Status);
@@ -1560,41 +1548,18 @@ GetFullSmramRanges (
 
   Size                = MaxCount * sizeof (EFI_SMM_RESERVED_SMRAM_REGION);
   SmramReservedRanges = (EFI_SMM_RESERVED_SMRAM_REGION *)AllocatePool (Size);
-
-  // MU_CHANGE Start - CodeQL Change
-  if (SmramReservedRanges == NULL) {
-    ASSERT (SmramReservedRanges != NULL);
-    Failed = TRUE;
-    goto Done;
-  }
-
-  // MU_CHANGE End - CodeQL Change
-
+  ASSERT (SmramReservedRanges != NULL);
   for (Index = 0; Index < SmramReservedCount; Index++) {
     CopyMem (&SmramReservedRanges[Index], &SmmConfiguration->SmramReservedRegions[Index], sizeof (EFI_SMM_RESERVED_SMRAM_REGION));
   }
 
   Size            = MaxCount * sizeof (EFI_SMRAM_DESCRIPTOR);
   TempSmramRanges = (EFI_SMRAM_DESCRIPTOR *)AllocatePool (Size);
-  // MU_CHANGE Start - CodeQL Change
-  if (TempSmramRanges == NULL) {
-    ASSERT (TempSmramRanges != NULL);
-    Failed = TRUE;
-    goto Done;
-  }
-
-  // MU_CHANGE End - CodeQL Change
+  ASSERT (TempSmramRanges != NULL);
   TempSmramRangeCount = 0;
 
   SmramRanges = (EFI_SMRAM_DESCRIPTOR *)AllocatePool (Size);
-  // MU_CHANGE Start - CodeQL Change
-  if (SmramRanges == NULL) {
-    ASSERT (SmramRanges != NULL);
-    Failed = TRUE;
-    goto Done;
-  }
-
-  // MU_CHANGE End - CodeQL Change
+  ASSERT (SmramRanges != NULL);
   Status = mSmmAccess->GetCapabilities (mSmmAccess, &Size, SmramRanges);
   ASSERT_EFI_ERROR (Status);
 
@@ -1651,14 +1616,7 @@ GetFullSmramRanges (
   // Sort the entries
   //
   FullSmramRanges = AllocateZeroPool ((TempSmramRangeCount + AdditionSmramRangeCount) * sizeof (EFI_SMRAM_DESCRIPTOR));
-  // MU_CHANGE Start - CodeQL Change
-  if (FullSmramRanges == NULL) {
-    ASSERT (FullSmramRanges != NULL);
-    Failed = TRUE;
-    goto Done;
-  }
-
-  // MU_CHANGE End - CodeQL Change
+  ASSERT (FullSmramRanges != NULL);
   *FullSmramRangeCount = 0;
   do {
     for (Index = 0; Index < TempSmramRangeCount; Index++) {
@@ -1682,25 +1640,9 @@ GetFullSmramRanges (
   ASSERT (*FullSmramRangeCount == TempSmramRangeCount);
   *FullSmramRangeCount += AdditionSmramRangeCount;
 
-  // MU_CHANGE Start - CodeQL Change
-Done:
-  if (SmramRanges != NULL) {
-    FreePool (SmramRanges);
-  }
-
-  if (SmramReservedRanges != NULL) {
-    FreePool (SmramReservedRanges);
-  }
-
-  if (TempSmramRanges != NULL) {
-    FreePool (TempSmramRanges);
-  }
-
-  if (Failed) {
-    return NULL;
-  }
-
-  // MU_CHANGE End - CodeQL Change
+  FreePool (SmramRanges);
+  FreePool (SmramReservedRanges);
+  FreePool (TempSmramRanges);
 
   return FullSmramRanges;
 }

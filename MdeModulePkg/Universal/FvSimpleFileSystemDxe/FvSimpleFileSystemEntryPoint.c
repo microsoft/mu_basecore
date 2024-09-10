@@ -450,13 +450,7 @@ FvSimpleFileSystemDriverStart (
   // Create an instance
   //
   Instance = AllocateZeroPool (sizeof (FV_FILESYSTEM_INSTANCE));
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (Instance == NULL) {
-    ASSERT (Instance != NULL);
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  ASSERT (Instance != NULL);
 
   Instance->Root       = NULL;
   Instance->FvProtocol = FvProtocol;

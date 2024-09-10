@@ -351,15 +351,7 @@ CoreFreeMemoryMapStack (
     //
     Entry = AllocateMemoryMapEntry ();
 
-    // MU_CHANGE Start - CodeQL Change
-    // If entry allocation failed once, it is unlikely to succeed moving forward
-    // However, we can try since we're in the middle of moving list nodes
-    if (Entry == NULL) {
-      ASSERT (Entry != NULL);
-      continue;
-    }
-
-    // MU_CHANGE End - CodeQL Change
+    ASSERT (Entry);
 
     //
     // Update to proper entry

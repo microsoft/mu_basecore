@@ -17,7 +17,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @retval EFI_SUCCESS                  Get the pointer of HOB List
   @retval EFI_NOT_AVAILABLE_YET        the HOB List is not yet published
-  @retval EFI_INVALID_PARAMETER        HobList is NULL // MU_CHANGE - CodeQL Change
+  @retval EFI_INVALID_PARAMETER        HobList is NULL (in debug mode)
 
 **/
 EFI_STATUS
@@ -32,16 +32,13 @@ PeiGetHobList (
   //
   // Only check this parameter in debug mode
   //
-  // MU_CHANGE Start - CodeQL Change
-  // DEBUG_CODE_BEGIN ();
-  // MU_CHANGE End - CodeQL Change
+
+  DEBUG_CODE_BEGIN ();
   if (HobList == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  // MU_CHANGE Start - CodeQL Change
-  // DEBUG_CODE_END ();
-  // MU_CHANGE End - CodeQL Change
+  DEBUG_CODE_END ();
 
   PrivateData = PEI_CORE_INSTANCE_FROM_PS_THIS (PeiServices);
 

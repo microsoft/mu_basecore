@@ -1234,7 +1234,7 @@ SerialRead (
   )
 {
   SERIAL_DEV  *SerialDevice;
-  UINTN       Index; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
+  UINT32      Index;
   UINT8       *CharBuffer;
   UINTN       Elapsed;
   EFI_STATUS  Status;

@@ -67,12 +67,6 @@ Register (
 
   CallbackEntry = (MM_RSC_HANDLER_CALLBACK_ENTRY *)AllocatePool (sizeof (MM_RSC_HANDLER_CALLBACK_ENTRY));
   ASSERT (CallbackEntry != NULL);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (CallbackEntry == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   CallbackEntry->Signature          = MM_RSC_HANDLER_CALLBACK_ENTRY_SIGNATURE;
   CallbackEntry->RscHandlerCallback = Callback;

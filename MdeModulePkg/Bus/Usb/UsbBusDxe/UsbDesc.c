@@ -1028,9 +1028,7 @@ UsbUpdateDescriptors (
   UsbCtrlGetDesc (UsbDev, USB_DESC_TYPE_DEVICE, 0, 0, &DevDesc, sizeof (EFI_USB_DEVICE_DESCRIPTOR));
   for (Index = 0; Index < DevDesc.NumConfigurations; Index++) {
     ConfDesc = UsbGetOneConfig (UsbDev, Index);
-    if (ConfDesc != NULL) {
-      FreePool (ConfDesc);
-    }
+    FreePool (ConfDesc);
   }
 
   return;

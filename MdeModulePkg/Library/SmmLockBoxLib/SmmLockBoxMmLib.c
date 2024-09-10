@@ -366,9 +366,7 @@ InternalGetLockBoxQueue (
 /**
   This function find LockBox by GUID.
 
-  NULL will be returned by this function if the lock box queue is not found.
-
-  @param Guid The guid to identify the LockBox
+  @param Guid The guid to indentify the LockBox
 
   @return LockBoxData
 **/
@@ -382,11 +380,7 @@ InternalFindLockBoxByGuid (
   LIST_ENTRY         *LockBoxQueue;
 
   LockBoxQueue = InternalGetLockBoxQueue ();
-
-  if (LockBoxQueue == NULL) {
-    ASSERT (LockBoxQueue != NULL);
-    return NULL;
-  }
+  ASSERT (LockBoxQueue != NULL);
 
   for (Link = LockBoxQueue->ForwardLink;
        Link != LockBoxQueue;
@@ -506,11 +500,7 @@ SaveLockBox (
     ));
 
   LockBoxQueue = InternalGetLockBoxQueue ();
-  if (LockBoxQueue == NULL) {
-    ASSERT (LockBoxQueue != NULL);
-    return EFI_OUT_OF_RESOURCES;
-  }
-
+  ASSERT (LockBoxQueue != NULL);
   InsertTailList (LockBoxQueue, &LockBox->Link);
 
   //
@@ -844,7 +834,6 @@ RestoreLockBox (
   @retval RETURN_SUCCESS            the information is restored successfully.
   @retval RETURN_NOT_STARTED        it is too early to invoke this interface
   @retval RETURN_UNSUPPORTED        the service is not supported by implementaion.
-  @retval RETURN_OUT_OF_RESOURCES   noT enough resourceS to save the information.
 **/
 RETURN_STATUS
 EFIAPI
@@ -859,10 +848,7 @@ RestoreAllLockBoxInPlace (
   DEBUG ((DEBUG_INFO, "SmmLockBoxSmmLib RestoreAllLockBoxInPlace - Enter\n"));
 
   LockBoxQueue = InternalGetLockBoxQueue ();
-  if (LockBoxQueue == NULL) {
-    ASSERT (LockBoxQueue != NULL);
-    return EFI_OUT_OF_RESOURCES;
-  }
+  ASSERT (LockBoxQueue != NULL);
 
   //
   // Restore all, Buffer and Length MUST be NULL
