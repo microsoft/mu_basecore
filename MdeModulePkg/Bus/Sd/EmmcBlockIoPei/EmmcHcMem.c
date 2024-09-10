@@ -30,7 +30,6 @@ EmmcPeimAllocMemBlock (
 
   TempPtr = NULL;
   Block   = NULL;
-  Mapping = NULL; // MU_CHANGE Start - CodeQL Change
 
   Status = PeiServicesAllocatePool (sizeof (EMMC_PEIM_MEM_BLOCK), &TempPtr);
   if (EFI_ERROR (Status)) {

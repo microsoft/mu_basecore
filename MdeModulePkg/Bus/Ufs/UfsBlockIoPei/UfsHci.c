@@ -317,7 +317,7 @@ UfsInitUtpPrdt (
   IN  UINT32      BufferSize
   )
 {
-  UINTN   PrdtIndex; // MU_CHANGE Start - CodeQL Change - comparison-with-wider-type
+  UINT32  PrdtIndex;
   UINT32  RemainingLen;
   UINT8   *Remaining;
   UINTN   PrdtNumber;

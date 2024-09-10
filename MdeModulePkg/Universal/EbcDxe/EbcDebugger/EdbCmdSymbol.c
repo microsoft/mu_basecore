@@ -568,8 +568,6 @@ DebuggerUnloadSymbol (
   UINTN       Index;
   VOID        *BufferPtr;
 
-  BufferPtr = NULL; // MU_CHANGE - CodeQL Change - conditionallyuninitializedvariable
-
   //
   // Check the argument
   //
@@ -705,8 +703,6 @@ DebuggerLoadCode (
   CHAR16      *FileName;
   CHAR16      *MapFileName;
 
-  Buffer = NULL; // MU_CHANGE - CodeQL Change - conditionallyuninitializedvariable
-
   //
   // Check the argument
   //
@@ -804,7 +800,6 @@ DebuggerUnloadCode (
   EFI_STATUS  Status;
   VOID        *BufferPtr;
 
-  BufferPtr = NULL; // MU_CHANGE - CodeQL Change - conditionallyuninitializedvariable
   //
   // Check the argument
   //

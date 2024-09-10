@@ -538,12 +538,6 @@ AddTableToList (
   //
   CurrentTableList = AllocatePool (sizeof (EFI_ACPI_TABLE_LIST));
   ASSERT (CurrentTableList);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (CurrentTableList == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   //
   // Determine table type and size

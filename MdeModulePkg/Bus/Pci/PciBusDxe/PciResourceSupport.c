@@ -448,18 +448,13 @@ GetResourceFromDevice (
                  (PciDev->PciBar)[Index].BarType,
                  PciResUsageTypical
                  );
-        // MU_CHANGE Start - CodeQl Change
-        if (Node != NULL) {
-          InsertResourceNode (
-            Mem32Node,
-            Node
-            );
 
-          ResourceRequested = TRUE;
-        }
+        InsertResourceNode (
+          Mem32Node,
+          Node
+          );
 
-        // MU_CHANGE End - CodeQl Change
-
+        ResourceRequested = TRUE;
         break;
 
       case PciBarTypeMem64:
@@ -472,18 +467,13 @@ GetResourceFromDevice (
                  PciBarTypeMem64,
                  PciResUsageTypical
                  );
-        // MU_CHANGE Start - CodeQl Change
-        if (Node != NULL) {
-          InsertResourceNode (
-            Mem64Node,
-            Node
-            );
 
-          ResourceRequested = TRUE;
-        }
+        InsertResourceNode (
+          Mem64Node,
+          Node
+          );
 
-        // MU_CHANGE End - CodeQl Change
-
+        ResourceRequested = TRUE;
         break;
 
       case PciBarTypePMem64:
@@ -496,18 +486,13 @@ GetResourceFromDevice (
                  PciBarTypePMem64,
                  PciResUsageTypical
                  );
-        // MU_CHANGE Start - CodeQl Change
-        if (Node != NULL) {
-          InsertResourceNode (
-            PMem64Node,
-            Node
-            );
 
-          ResourceRequested = TRUE;
-        }
+        InsertResourceNode (
+          PMem64Node,
+          Node
+          );
 
-        // MU_CHANGE End - CodeQl Change
-
+        ResourceRequested = TRUE;
         break;
 
       case PciBarTypePMem32:
@@ -520,17 +505,12 @@ GetResourceFromDevice (
                  PciBarTypePMem32,
                  PciResUsageTypical
                  );
-        // MU_CHANGE Start - CodeQl Change
-        if (Node != NULL) {
-          InsertResourceNode (
-            PMem32Node,
-            Node
-            );
-          ResourceRequested = TRUE;
-        }
 
-        // MU_CHANGE End - CodeQl Change
-
+        InsertResourceNode (
+          PMem32Node,
+          Node
+          );
+        ResourceRequested = TRUE;
         break;
 
       case PciBarTypeIo16:
@@ -544,17 +524,12 @@ GetResourceFromDevice (
                  PciBarTypeIo16,
                  PciResUsageTypical
                  );
-        // MU_CHANGE Start - CodeQl Change
-        if (Node != NULL) {
-          InsertResourceNode (
-            IoNode,
-            Node
-            );
-          ResourceRequested = TRUE;
-        }
 
-        // MU_CHANGE End - CodeQl Change
-
+        InsertResourceNode (
+          IoNode,
+          Node
+          );
+        ResourceRequested = TRUE;
         break;
 
       case PciBarTypeUnknown:
@@ -580,15 +555,11 @@ GetResourceFromDevice (
                  PciBarTypeMem32,
                  PciResUsageTypical
                  );
-        // MU_CHANGE Start - CodeQl Change
-        if (Node != NULL) {
-          InsertResourceNode (
-            Mem32Node,
-            Node
-            );
-        }
 
-        // MU_CHANGE End - CodeQl Change
+        InsertResourceNode (
+          Mem32Node,
+          Node
+          );
 
         break;
 
@@ -602,15 +573,11 @@ GetResourceFromDevice (
                  PciBarTypeMem64,
                  PciResUsageTypical
                  );
-        // MU_CHANGE Start - CodeQl Change
-        if (Node != NULL) {
-          InsertResourceNode (
-            Mem64Node,
-            Node
-            );
-        }
 
-        // MU_CHANGE End - CodeQl Change
+        InsertResourceNode (
+          Mem64Node,
+          Node
+          );
 
         break;
 
@@ -624,15 +591,11 @@ GetResourceFromDevice (
                  PciBarTypePMem64,
                  PciResUsageTypical
                  );
-        // MU_CHANGE Start - CodeQl Change
-        if (Node != NULL) {
-          InsertResourceNode (
-            PMem64Node,
-            Node
-            );
-        }
 
-        // MU_CHANGE End - CodeQl Change
+        InsertResourceNode (
+          PMem64Node,
+          Node
+          );
 
         break;
 
@@ -646,16 +609,11 @@ GetResourceFromDevice (
                  PciBarTypePMem32,
                  PciResUsageTypical
                  );
-        // MU_CHANGE Start - CodeQl Change
-        if (Node != NULL) {
-          InsertResourceNode (
-            PMem32Node,
-            Node
-            );
-        }
 
-        // MU_CHANGE End - CodeQl Change
-
+        InsertResourceNode (
+          PMem32Node,
+          Node
+          );
         break;
 
       case PciBarTypeIo16:
@@ -861,35 +819,6 @@ CreateResourceMap (
                        PciBarTypePMem64,
                        PciResUsageTypical
                        );
-
-      // MU_CHANGE Startv- CodeQL change
-      if ((IoBridge == NULL) || (Mem32Bridge == NULL) || (PMem32Bridge == NULL) ||
-          (Mem64Bridge == NULL) || (PMem64Bridge == NULL))
-      {
-        if (IoBridge != NULL) {
-          FreePool (IoBridge);
-        }
-
-        if (Mem32Bridge != NULL) {
-          FreePool (Mem32Bridge);
-        }
-
-        if (PMem32Bridge != NULL) {
-          FreePool (PMem32Bridge);
-        }
-
-        if (Mem64Bridge != NULL) {
-          FreePool (Mem64Bridge);
-        }
-
-        if (PMem64Bridge != NULL) {
-          FreePool (PMem64Bridge);
-        }
-
-        return;
-      }
-
-      // MU_CHANGE End - CodeQL change
 
       //
       // Recursively create resource map on this bridge
@@ -1884,16 +1813,11 @@ ResourcePaddingForCardBusBridge (
            PciBarTypeMem32,
            PciResUsagePadding
            );
-  // MU_CHANGE Start - CodeQl Change - CreateResourceNode returning a NULL
-  ASSERT (Node != NULL);
-  if (Node != NULL) {
-    InsertResourceNode (
-      Mem32Node,
-      Node
-      );
-  }
 
-  // MU_CHANGE End - CodeQl Change - CreateResourceNode returning a NULL
+  InsertResourceNode (
+    Mem32Node,
+    Node
+    );
 
   //
   // Memory Base/Limit Register 1
@@ -1908,16 +1832,10 @@ ResourcePaddingForCardBusBridge (
            PciResUsagePadding
            );
 
-  // MU_CHANGE Start - CodeQl Change - CreateResourceNode returning a NULL
-  ASSERT (Node != NULL);
-  if (Node != NULL) {
-    InsertResourceNode (
-      PMem32Node,
-      Node
-      );
-  }
-
-  // MU_CHANGE End - CodeQl Change - CreateResourceNode returning a NULL
+  InsertResourceNode (
+    PMem32Node,
+    Node
+    );
 
   //
   // Io Base/Limit
@@ -1932,16 +1850,10 @@ ResourcePaddingForCardBusBridge (
            PciResUsagePadding
            );
 
-  // MU_CHANGE Start - CodeQl Change - CreateResourceNode returning a NULL
-  ASSERT (Node != NULL);
-  if (Node != NULL) {
-    InsertResourceNode (
-      IoNode,
-      Node
-      );
-  }
-
-  // MU_CHANGE End - CodeQl Change - CreateResourceNode returning a NULL
+  InsertResourceNode (
+    IoNode,
+    Node
+    );
 
   //
   // Io Base/Limit
@@ -1956,16 +1868,10 @@ ResourcePaddingForCardBusBridge (
            PciResUsagePadding
            );
 
-  // MU_CHANGE Start - CodeQl Change - CreateResourceNode returning a NULL
-  ASSERT (Node != NULL);
-  if (Node != NULL) {
-    InsertResourceNode (
-      IoNode,
-      Node
-      );
-  }
-
-  // MU_CHANGE End - CodeQl Change - CreateResourceNode returning a NULL
+  InsertResourceNode (
+    IoNode,
+    Node
+    );
 }
 
 /**
@@ -2236,16 +2142,10 @@ ApplyResourcePadding (
                  PciBarTypeIo16,
                  PciResUsagePadding
                  );
-
-        // MU_CHANGE Start - CodeQl Change - CreateResourceNode returning a NULL
-        if (Node != NULL) {
-          InsertResourceNode (
-            IoNode,
-            Node
-            );
-        }
-
-        // MU_CHANGE End - CodeQl Change - CreateResourceNode returning a NULL
+        InsertResourceNode (
+          IoNode,
+          Node
+          );
       }
 
       Ptr++;
@@ -2267,15 +2167,10 @@ ApplyResourcePadding (
                      PciBarTypePMem32,
                      PciResUsagePadding
                      );
-            // MU_CHANGE Start - CodeQl Change - CreateResourceNode returning a NULL
-            if (Node != NULL) {
-              InsertResourceNode (
-                PMem32Node,
-                Node
-                );
-            }
-
-            // MU_CHANGE End - CodeQl Change - CreateResourceNode returning a NULL
+            InsertResourceNode (
+              PMem32Node,
+              Node
+              );
           }
 
           Ptr++;
@@ -2295,15 +2190,10 @@ ApplyResourcePadding (
                      PciBarTypeMem32,
                      PciResUsagePadding
                      );
-            // MU_CHANGE Start - CodeQl Change - CreateResourceNode returning a NULL
-            if (Node != NULL) {
-              InsertResourceNode (
-                Mem32Node,
-                Node
-                );
-            }
-
-            // MU_CHANGE End - CodeQl Change - CreateResourceNode returning a NULL
+            InsertResourceNode (
+              Mem32Node,
+              Node
+              );
           }
 
           Ptr++;
@@ -2325,15 +2215,10 @@ ApplyResourcePadding (
                      PciBarTypePMem64,
                      PciResUsagePadding
                      );
-            // MU_CHANGE Start - CodeQl Change - CreateResourceNode returning a NULL
-            if (Node != NULL) {
-              InsertResourceNode (
-                PMem64Node,
-                Node
-                );
-            }
-
-            // MU_CHANGE End - CodeQl Change - CreateResourceNode returning a NULL
+            InsertResourceNode (
+              PMem64Node,
+              Node
+              );
           }
 
           Ptr++;
@@ -2353,15 +2238,10 @@ ApplyResourcePadding (
                      PciBarTypeMem64,
                      PciResUsagePadding
                      );
-            // MU_CHANGE Start - CodeQl Change - CreateResourceNode returning a NULL
-            if (Node != NULL) {
-              InsertResourceNode (
-                Mem64Node,
-                Node
-                );
-            }
-
-            // MU_CHANGE End - CodeQl Change - CreateResourceNode returning a NULL
+            InsertResourceNode (
+              Mem64Node,
+              Node
+              );
           }
 
           Ptr++;
