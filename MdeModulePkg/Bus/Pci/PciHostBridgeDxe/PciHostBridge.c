@@ -681,12 +681,6 @@ ResourceConflict (
                 sizeof (EFI_ACPI_END_TAG_DESCRIPTOR)
                 );
   ASSERT (Resources != NULL);
-  // MU_CHANGE Start - CodeQl Change - Handle Allocation Failing
-  if (Resources == NULL) {
-    return;
-  }
-
-  // MU_CHANGE End - CodeQl Change - Handle Allocation Failing
 
   for (Link = GetFirstNode (&HostBridge->RootBridges), Descriptor = Resources
        ; !IsNull (&HostBridge->RootBridges, Link)

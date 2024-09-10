@@ -826,7 +826,7 @@ UsbIoGetStringDescriptor (
   EFI_USB_STRING_DESCRIPTOR  *StrDesc;
   EFI_TPL                    OldTpl;
   UINT8                      *Buf;
-  UINT16                     Index; // MU_CHANGE Start - CodeQL Change - comparison-with-wider-type`
+  UINT8                      Index;
   EFI_STATUS                 Status;
 
   if ((StringIndex == 0) || (LangID == 0)) {

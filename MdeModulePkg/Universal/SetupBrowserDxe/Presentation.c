@@ -252,13 +252,7 @@ CreateRefreshEventForStatement (
   ASSERT_EFI_ERROR (Status);
 
   EventNode = AllocateZeroPool (sizeof (FORM_BROWSER_REFRESH_EVENT_NODE));
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (EventNode == NULL) {
-    ASSERT (EventNode != NULL);
-    return;
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  ASSERT (EventNode != NULL);
   EventNode->RefreshEvent = RefreshEvent;
   InsertTailList (&mRefreshEventList, &EventNode->Link);
 }
@@ -292,13 +286,7 @@ CreateRefreshEventForForm (
   ASSERT_EFI_ERROR (Status);
 
   EventNode = AllocateZeroPool (sizeof (FORM_BROWSER_REFRESH_EVENT_NODE));
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (EventNode == NULL) {
-    ASSERT (EventNode != NULL);
-    return;
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  ASSERT (EventNode != NULL);
   EventNode->RefreshEvent = RefreshEvent;
   InsertTailList (&mRefreshEventList, &EventNode->Link);
 }
@@ -349,13 +337,7 @@ InitializeDisplayStatement (
     }
 
     DisplayOption = AllocateZeroPool (sizeof (DISPLAY_QUESTION_OPTION));
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (DisplayOption == NULL) {
-      ASSERT (DisplayOption != NULL);
-      continue;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (DisplayOption != NULL);
 
     DisplayOption->ImageId      = Option->ImageId;
     DisplayOption->Signature    = DISPLAY_QUESTION_OPTION_SIGNATURE;
@@ -428,12 +410,7 @@ InitializeDisplayStatement (
   if (Statement->ParentStatement != NULL) {
     ParentStatement = GetDisplayStatement (Statement->ParentStatement->OpCode);
     ASSERT (ParentStatement != NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (ParentStatement != NULL) {
-      InsertTailList (&ParentStatement->NestStatementList, &DisplayStatement->DisplayLink);
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    InsertTailList (&ParentStatement->NestStatementList, &DisplayStatement->DisplayLink);
   } else {
     InsertTailList (&gDisplayFormData.StatementListHead, &DisplayStatement->DisplayLink);
   }
@@ -578,13 +555,7 @@ AddStatementToDisplayForm (
     Link      = GetNextNode (&gCurrentSelection->FormSet->StatementListOSF, Link);
 
     DisplayStatement = AllocateZeroPool (sizeof (FORM_DISPLAY_ENGINE_STATEMENT));
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (DisplayStatement == NULL) {
-      ASSERT (DisplayStatement != NULL);
-      return;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (DisplayStatement != NULL);
     DisplayStatement->Signature = FORM_DISPLAY_ENGINE_STATEMENT_SIGNATURE;
     DisplayStatement->Version   = FORM_DISPLAY_ENGINE_STATEMENT_VERSION_1;
     DisplayStatement->OpCode    = Statement->OpCode;
@@ -599,13 +570,7 @@ AddStatementToDisplayForm (
   // treat formset as statement outside the form,get its opcode.
   //
   DisplayStatement = AllocateZeroPool (sizeof (FORM_DISPLAY_ENGINE_STATEMENT));
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (DisplayStatement == NULL) {
-    ASSERT (DisplayStatement != NULL);
-    return;
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  ASSERT (DisplayStatement != NULL);
 
   DisplayStatement->Signature = FORM_DISPLAY_ENGINE_STATEMENT_SIGNATURE;
   DisplayStatement->Version   = FORM_DISPLAY_ENGINE_STATEMENT_VERSION_1;
@@ -640,13 +605,7 @@ AddStatementToDisplayForm (
     }
 
     DisplayStatement = AllocateZeroPool (sizeof (FORM_DISPLAY_ENGINE_STATEMENT));
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (DisplayStatement == NULL) {
-      ASSERT (DisplayStatement != NULL);
-      continue;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (DisplayStatement != NULL);
 
     //
     // Initialize this statement and add it to the display form.
@@ -682,13 +641,7 @@ AddStatementToDisplayForm (
     ASSERT_EFI_ERROR (Status);
 
     EventNode = AllocateZeroPool (sizeof (FORM_BROWSER_REFRESH_EVENT_NODE));
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (EventNode == NULL) {
-      ASSERT (EventNode != NULL);
-      return;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (EventNode != NULL);
     EventNode->RefreshEvent = RefreshIntervalEvent;
     InsertTailList (&mRefreshEventList, &EventNode->Link);
   }
@@ -1146,12 +1099,7 @@ GetFormsetGuidFromHiiHandle (
     HiiPackageList = AllocatePool (BufferSize);
     ASSERT (HiiPackageList != NULL);
 
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (HiiPackageList != NULL) {
-      Status = mHiiDatabase->ExportPackageLists (mHiiDatabase, HiiHandle, &BufferSize, HiiPackageList);
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    Status = mHiiDatabase->ExportPackageLists (mHiiDatabase, HiiHandle, &BufferSize, HiiPackageList);
   }
 
   if (EFI_ERROR (Status) || (HiiPackageList == NULL)) {
@@ -1307,26 +1255,21 @@ FormSetGuidToHiiHandle (
   HiiHandles = HiiGetHiiHandles (NULL);
   ASSERT (HiiHandles != NULL);
 
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (HiiHandles != NULL) {
-    //
-    // Search for formset of each class type
-    //
-    for (Index = 0; HiiHandles[Index] != NULL; Index++) {
-      if (GetFormsetGuidFromHiiHandle (HiiHandles[Index], ComparingGuid)) {
-        HiiHandle = HiiHandles[Index];
-        break;
-      }
-
-      if (HiiHandle != NULL) {
-        break;
-      }
+  //
+  // Search for formset of each class type
+  //
+  for (Index = 0; HiiHandles[Index] != NULL; Index++) {
+    if (GetFormsetGuidFromHiiHandle (HiiHandles[Index], ComparingGuid)) {
+      HiiHandle = HiiHandles[Index];
+      break;
     }
 
-    FreePool (HiiHandles);
+    if (HiiHandle != NULL) {
+      break;
+    }
   }
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  FreePool (HiiHandles);
 
   return HiiHandle;
 }
@@ -1641,25 +1584,20 @@ ProcessUserInput (
     Statement = GetBrowserStatement (UserInput->SelectedStatement);
     ASSERT (Statement != NULL);
 
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (Statement != NULL) {
-      //
-      // This question is the current user select one,record it and later
-      // show it as the highlight question.
-      //
-      gCurrentSelection->CurrentMenu->QuestionId = Statement->QuestionId;
-      //
-      // For statement like text, actio, it not has question id.
-      // So use FakeQuestionId to save the question.
-      //
-      if (gCurrentSelection->CurrentMenu->QuestionId == 0) {
-        mCurFakeQestId = Statement->FakeQuestionId;
-      } else {
-        mCurFakeQestId = 0;
-      }
+    //
+    // This question is the current user select one,record it and later
+    // show it as the highlight question.
+    //
+    gCurrentSelection->CurrentMenu->QuestionId = Statement->QuestionId;
+    //
+    // For statement like text, actio, it not has question id.
+    // So use FakeQuestionId to save the question.
+    //
+    if (gCurrentSelection->CurrentMenu->QuestionId == 0) {
+      mCurFakeQestId = Statement->FakeQuestionId;
+    } else {
+      mCurFakeQestId = 0;
     }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   }
 
   //
@@ -1777,13 +1715,7 @@ DisplayForm (
                     gCurrentSelection->FormId,
                     gCurrentSelection->QuestionId
                     );
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (CurrentMenu == NULL) {
-      ASSERT (CurrentMenu != NULL);
-      return EFI_OUT_OF_RESOURCES;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (CurrentMenu != NULL);
   }
 
   //
@@ -2153,20 +2085,15 @@ ProcessCallBackFunction (
         NewString = GetToken (Statement->HiiValue.Value.string, FormSet->HiiHandle);
         ASSERT (NewString != NULL);
 
-        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-        if (NewString != NULL) {
-          ASSERT (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth);
-          if (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth) {
-            ZeroMem (Statement->BufferValue, Statement->StorageWidth);
-            CopyMem (Statement->BufferValue, NewString, StrSize (NewString));
-          } else {
-            CopyMem (Statement->BufferValue, NewString, Statement->StorageWidth);
-          }
-
-          FreePool (NewString);
+        ASSERT (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth);
+        if (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth) {
+          ZeroMem (Statement->BufferValue, Statement->StorageWidth);
+          CopyMem (Statement->BufferValue, NewString, StrSize (NewString));
+        } else {
+          CopyMem (Statement->BufferValue, NewString, Statement->StorageWidth);
         }
 
-        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+        FreePool (NewString);
       }
 
       //
@@ -2421,20 +2348,15 @@ ProcessRetrieveForQuestion (
     NewString = GetToken (Statement->HiiValue.Value.string, FormSet->HiiHandle);
     ASSERT (NewString != NULL);
 
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (NewString != NULL) {
-      ASSERT (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth);
-      if (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth) {
-        ZeroMem (Statement->BufferValue, Statement->StorageWidth);
-        CopyMem (Statement->BufferValue, NewString, StrSize (NewString));
-      } else {
-        CopyMem (Statement->BufferValue, NewString, Statement->StorageWidth);
-      }
-
-      FreePool (NewString);
+    ASSERT (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth);
+    if (StrLen (NewString) * sizeof (CHAR16) <= Statement->StorageWidth) {
+      ZeroMem (Statement->BufferValue, Statement->StorageWidth);
+      CopyMem (Statement->BufferValue, NewString, StrSize (NewString));
+    } else {
+      CopyMem (Statement->BufferValue, NewString, Statement->StorageWidth);
     }
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    FreePool (NewString);
   }
 
   return Status;

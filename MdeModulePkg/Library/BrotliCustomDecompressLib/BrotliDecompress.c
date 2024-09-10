@@ -182,12 +182,12 @@ BrGetDecodedSizeOfBuf (
   )
 {
   UINT64  DecodedSize;
-  UINT8   Index;
+  INTN    Index;
 
   /* Parse header */
   DecodedSize = 0;
-  for (Index = EndOffset; Index > StartOffset; Index--) {
-    DecodedSize = LShiftU64 (DecodedSize, 8) + EncodedData[Index - 1];
+  for (Index = EndOffset - 1; Index >= StartOffset; Index--) {
+    DecodedSize = LShiftU64 (DecodedSize, 8) + EncodedData[Index];
   }
 
   return DecodedSize;

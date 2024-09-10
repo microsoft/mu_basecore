@@ -284,7 +284,7 @@ DxePcdSetSku (
   )
 {
   SKU_ID      *SkuIdTable;
-  UINT64      Index; // MU_CHANGE Start - CodeQL Change - comparison-with-wider-type
+  UINTN       Index;
   EFI_STATUS  Status;
 
   DEBUG ((DEBUG_INFO, "PcdDxe - SkuId 0x%lx is to be set.\n", (SKU_ID)SkuId));
@@ -1245,13 +1245,7 @@ GetDistinctTokenSpace (
   BOOLEAN   Match;
 
   DistinctTokenSpace = AllocateZeroPool (*ExMapTableSize * sizeof (EFI_GUID *));
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (DistinctTokenSpace == NULL) {
-    ASSERT (DistinctTokenSpace != NULL);
-    return NULL;
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  ASSERT (DistinctTokenSpace != NULL);
 
   TsIdx                     = 0;
   OldGuidIndex              = ExMapTable[0].ExGuidIndex;
@@ -1335,14 +1329,6 @@ DxePcdGetNextTokenSpace (
                                  (DYNAMICEX_MAPPING *)((UINT8 *)mPcdDatabase.PeiDb + mPcdDatabase.PeiDb->ExMapTableOffset),
                                  (EFI_GUID *)((UINT8 *)mPcdDatabase.PeiDb + mPcdDatabase.PeiDb->GuidTableOffset)
                                  );
-
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-      if (PeiTokenSpaceTable == NULL) {
-        return EFI_NOT_FOUND;
-      }
-
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
-
       CopyMem (TmpTokenSpaceBuffer, PeiTokenSpaceTable, sizeof (EFI_GUID *) * PeiTokenSpaceTableSize);
       TmpTokenSpaceBufferCount = PeiTokenSpaceTableSize;
       FreePool (PeiTokenSpaceTable);
@@ -1355,12 +1341,6 @@ DxePcdGetNextTokenSpace (
                                  (DYNAMICEX_MAPPING *)((UINT8 *)mPcdDatabase.DxeDb + mPcdDatabase.DxeDb->ExMapTableOffset),
                                  (EFI_GUID *)((UINT8 *)mPcdDatabase.DxeDb + mPcdDatabase.DxeDb->GuidTableOffset)
                                  );
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-      if (DxeTokenSpaceTable == NULL) {
-        return EFI_NOT_FOUND;
-      }
-
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
       //
       // Make sure EFI_GUID in DxeTokenSpaceTable does not exist in PeiTokenSpaceTable

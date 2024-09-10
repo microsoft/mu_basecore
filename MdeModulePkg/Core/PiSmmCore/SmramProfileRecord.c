@@ -1686,7 +1686,7 @@ SmramProfileCopyData (
   LIST_ENTRY                       *FreePoolList;
   FREE_POOL_HEADER                 *Pool;
   UINTN                            PoolListIndex;
-  UINTN                            Index; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
+  UINT32                           Index;
   MEMORY_PROFILE_FREE_MEMORY       *FreeMemory;
   MEMORY_PROFILE_MEMORY_RANGE      *MemoryRange;
   MEMORY_PROFILE_DESCRIPTOR        *MemoryProfileDescriptor;
@@ -1805,8 +1805,7 @@ SmramProfileCopyData (
         }
       }
 
-      // MU_CHANGE - CodeQL Change - truncate index due to comparison size mismatch update
-      FreeMemory->FreeMemoryEntryCount = (UINT32)Index;
+      FreeMemory->FreeMemoryEntryCount = Index;
 
       RemainingSize -= sizeof (MEMORY_PROFILE_FREE_MEMORY);
       ProfileBuffer  = (UINT8 *)ProfileBuffer + sizeof (MEMORY_PROFILE_FREE_MEMORY);

@@ -539,7 +539,7 @@ UpdateTerminalContent (
   IN BMM_FAKE_NV_DATA  *BmmData
   )
 {
-  UINTN                Index;
+  UINT16               Index;
   BM_TERMINAL_CONTEXT  *NewTerminalContext;
   BM_MENU_ENTRY        *NewMenuEntry;
 
@@ -581,7 +581,7 @@ UpdateConsoleContent (
   IN BMM_FAKE_NV_DATA  *BmmData
   )
 {
-  UINTN                Index;
+  UINT16               Index;
   BM_CONSOLE_CONTEXT   *NewConsoleContext;
   BM_TERMINAL_CONTEXT  *NewTerminalContext;
   BM_MENU_ENTRY        *NewMenuEntry;
@@ -784,7 +784,7 @@ BootMaintRouteConfig (
   BMM_FAKE_NV_DATA                 *OldBmmData;
   BM_MENU_ENTRY                    *NewMenuEntry;
   BM_LOAD_CONTEXT                  *NewLoadContext;
-  UINTN                            Index;
+  UINT16                           Index;
   BOOLEAN                          TerminalAttChange;
   BMM_CALLBACK_DATA                *Private;
   UINTN                            Offset;
@@ -1353,7 +1353,7 @@ DiscardChangeHandler (
   IN  BMM_FAKE_NV_DATA   *CurrentFakeNVMap
   )
 {
-  UINTN  Index;
+  UINT16  Index;
 
   switch (Private->BmmPreviousPageId) {
     case FORM_BOOT_CHG_ID:
@@ -1411,7 +1411,7 @@ CleanUselessBeforeSubmit (
   IN  BMM_CALLBACK_DATA  *Private
   )
 {
-  UINTN  Index;
+  UINT16  Index;
 
   if (Private->BmmPreviousPageId != FORM_BOOT_DEL_ID) {
     for (Index = 0; Index < BootOptionMenu.MenuNumber; Index++) {
@@ -1452,44 +1452,40 @@ CustomizeMenus (
   //
   StartOpCodeHandle = HiiAllocateOpCodeHandle ();
   ASSERT (StartOpCodeHandle != NULL);
-  // MU_CHANGE - Ensure that StartOpCodeHandle and EndOpCodeHandle are valid before use
-  if (StartOpCodeHandle != NULL) {
-    EndOpCodeHandle = HiiAllocateOpCodeHandle ();
-    ASSERT (EndOpCodeHandle != NULL);
-    if (EndOpCodeHandle != NULL) {
-      //
-      // Create Hii Extend Label OpCode as the start opcode
-      //
-      StartGuidLabel               = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (StartOpCodeHandle, &gEfiIfrTianoGuid, NULL, sizeof (EFI_IFR_GUID_LABEL));
-      StartGuidLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
-      StartGuidLabel->Number       = LABEL_FORM_MAIN_START;
-      //
-      // Create Hii Extend Label OpCode as the end opcode
-      //
-      EndGuidLabel               = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (EndOpCodeHandle, &gEfiIfrTianoGuid, NULL, sizeof (EFI_IFR_GUID_LABEL));
-      EndGuidLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
-      EndGuidLabel->Number       = LABEL_FORM_MAIN_END;
 
-      //
-      // Updata Front Page form
-      //
-      UiCustomizeBMMPage (
-        mBmmCallbackInfo->BmmHiiHandle,
-        StartOpCodeHandle
-        );
+  EndOpCodeHandle = HiiAllocateOpCodeHandle ();
+  ASSERT (EndOpCodeHandle != NULL);
+  //
+  // Create Hii Extend Label OpCode as the start opcode
+  //
+  StartGuidLabel               = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (StartOpCodeHandle, &gEfiIfrTianoGuid, NULL, sizeof (EFI_IFR_GUID_LABEL));
+  StartGuidLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+  StartGuidLabel->Number       = LABEL_FORM_MAIN_START;
+  //
+  // Create Hii Extend Label OpCode as the end opcode
+  //
+  EndGuidLabel               = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (EndOpCodeHandle, &gEfiIfrTianoGuid, NULL, sizeof (EFI_IFR_GUID_LABEL));
+  EndGuidLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+  EndGuidLabel->Number       = LABEL_FORM_MAIN_END;
 
-      HiiUpdateForm (
-        mBmmCallbackInfo->BmmHiiHandle,
-        &mBootMaintGuid,
-        FORM_MAIN_ID,
-        StartOpCodeHandle,
-        EndOpCodeHandle
-        );
-      HiiFreeOpCodeHandle (EndOpCodeHandle);
-    }
+  //
+  // Updata Front Page form
+  //
+  UiCustomizeBMMPage (
+    mBmmCallbackInfo->BmmHiiHandle,
+    StartOpCodeHandle
+    );
 
-    HiiFreeOpCodeHandle (StartOpCodeHandle);
-  }
+  HiiUpdateForm (
+    mBmmCallbackInfo->BmmHiiHandle,
+    &mBootMaintGuid,
+    FORM_MAIN_ID,
+    StartOpCodeHandle,
+    EndOpCodeHandle
+    );
+
+  HiiFreeOpCodeHandle (StartOpCodeHandle);
+  HiiFreeOpCodeHandle (EndOpCodeHandle);
 }
 
 /**
@@ -1506,7 +1502,7 @@ InitializeBmmConfig (
 {
   BM_MENU_ENTRY    *NewMenuEntry;
   BM_LOAD_CONTEXT  *NewLoadContext;
-  UINT32           Index;
+  UINT16           Index;
 
   ASSERT (CallbackData != NULL);
 
@@ -1514,7 +1510,7 @@ InitializeBmmConfig (
   // Initialize data which located in BMM main page
   //
   CallbackData->BmmFakeNvData.BootNext = NONE_BOOTNEXT_VALUE;
-  for (Index = 0; (UINTN)Index < BootOptionMenu.MenuNumber; Index++) {
+  for (Index = 0; Index < BootOptionMenu.MenuNumber; Index++) {
     NewMenuEntry   = BOpt_GetMenuEntry (&BootOptionMenu, Index);
     NewLoadContext = (BM_LOAD_CONTEXT *)NewMenuEntry->VariableContext;
 

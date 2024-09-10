@@ -887,10 +887,7 @@ GetMaxResourceConsumerDevice (
        && (Temp->ResourceUsage != PciResUsagePadding))
     {
       PPBResNode = GetMaxResourceConsumerDevice (Temp);
-      if (PPBResNode != NULL) {
-        // MU_CHANGE - CodeQl Change - Verify PPBResNode is non-null
-        PciResNode = GetLargerConsumerDevice (PciResNode, PPBResNode);
-      }
+      PciResNode = GetLargerConsumerDevice (PciResNode, PPBResNode);
     } else {
       PciResNode = GetLargerConsumerDevice (PciResNode, Temp);
     }
@@ -1442,25 +1439,17 @@ PciBridgeResourceAllocator (
   IN PCI_IO_DEVICE  *Bridge
   )
 {
-  PCI_RESOURCE_NODE  *IoBridge     = NULL;
-  PCI_RESOURCE_NODE  *Mem32Bridge  = NULL;
-  PCI_RESOURCE_NODE  *PMem32Bridge = NULL;
-  PCI_RESOURCE_NODE  *Mem64Bridge  = NULL;
-  PCI_RESOURCE_NODE  *PMem64Bridge = NULL;
+  PCI_RESOURCE_NODE  *IoBridge;
+  PCI_RESOURCE_NODE  *Mem32Bridge;
+  PCI_RESOURCE_NODE  *PMem32Bridge;
+  PCI_RESOURCE_NODE  *Mem64Bridge;
+  PCI_RESOURCE_NODE  *PMem64Bridge;
   UINT64             IoBase;
   UINT64             Mem32Base;
   UINT64             PMem32Base;
   UINT64             Mem64Base;
   UINT64             PMem64Base;
   EFI_STATUS         Status;
-
-  // MU_CHANGE Start - CodeQl Change
-  IoBridge     = NULL;
-  Mem32Bridge  = NULL;
-  PMem32Bridge = NULL;
-  Mem64Bridge  = NULL;
-  PMem64Bridge = NULL;
-  // MU_CHANGE End - CodeQl Change
 
   IoBridge = CreateResourceNode (
                Bridge,
@@ -1470,12 +1459,6 @@ PciBridgeResourceAllocator (
                PciBarTypeIo16,
                PciResUsageTypical
                );
-  // MU_CHANGE Start - CodeQl Change
-  if (IoBridge == NULL) {
-    goto CleanupAndExit;
-  }
-
-  // MU_CHANGE End - CodeQl Change
 
   Mem32Bridge = CreateResourceNode (
                   Bridge,
@@ -1485,10 +1468,6 @@ PciBridgeResourceAllocator (
                   PciBarTypeMem32,
                   PciResUsageTypical
                   );
-  // MU_CHANGE Start - CodeQl Change
-  if (Mem32Bridge == NULL) {
-    goto CleanupAndExit;
-  }
 
   PMem32Bridge = CreateResourceNode (
                    Bridge,
@@ -1498,10 +1477,6 @@ PciBridgeResourceAllocator (
                    PciBarTypePMem32,
                    PciResUsageTypical
                    );
-  // MU_CHANGE Start - CodeQl Change
-  if (PMem32Bridge == NULL) {
-    goto CleanupAndExit;
-  }
 
   Mem64Bridge = CreateResourceNode (
                   Bridge,
@@ -1511,10 +1486,6 @@ PciBridgeResourceAllocator (
                   PciBarTypeMem64,
                   PciResUsageTypical
                   );
-  // MU_CHANGE Start - CodeQl Change
-  if (Mem64Bridge == NULL) {
-    goto CleanupAndExit;
-  }
 
   PMem64Bridge = CreateResourceNode (
                    Bridge,
@@ -1524,10 +1495,6 @@ PciBridgeResourceAllocator (
                    PciBarTypePMem64,
                    PciResUsageTypical
                    );
-  // MU_CHANGE Start - CodeQl Change
-  if (PMem64Bridge == NULL) {
-    goto CleanupAndExit;
-  }
 
   //
   // Create resourcemap by going through all the devices subject to this root bridge
@@ -1551,7 +1518,7 @@ PciBridgeResourceAllocator (
              );
 
   if (EFI_ERROR (Status)) {
-    goto CleanupAndExit;   // MU_CHANGE Start - CodeQl Change - On Error leave
+    return Status;
   }
 
   //
@@ -1594,35 +1561,17 @@ PciBridgeResourceAllocator (
     PMem64Bridge
     );
 
-  // MU_CHANGE Start - CodeQl Change
-CleanupAndExit:
+  DestroyResourceTree (IoBridge);
+  DestroyResourceTree (Mem32Bridge);
+  DestroyResourceTree (PMem32Bridge);
+  DestroyResourceTree (PMem64Bridge);
+  DestroyResourceTree (Mem64Bridge);
 
-  if (IoBridge != NULL) {
-    DestroyResourceTree (IoBridge);
-    gBS->FreePool (IoBridge);
-  }
-
-  if (Mem32Bridge != NULL) {
-    DestroyResourceTree (Mem32Bridge);
-    gBS->FreePool (Mem32Bridge);
-  }
-
-  if (PMem32Bridge != NULL) {
-    DestroyResourceTree (PMem32Bridge);
-    gBS->FreePool (PMem32Bridge);
-  }
-
-  if (PMem64Bridge != NULL) {
-    DestroyResourceTree (PMem64Bridge);
-    gBS->FreePool (PMem64Bridge);
-  }
-
-  if (Mem64Bridge != NULL) {
-    DestroyResourceTree (Mem64Bridge);
-    gBS->FreePool (Mem64Bridge);
-  }
-
-  // MU_CHANGE End - CodeQl Change
+  gBS->FreePool (IoBridge);
+  gBS->FreePool (Mem32Bridge);
+  gBS->FreePool (PMem32Bridge);
+  gBS->FreePool (PMem64Bridge);
+  gBS->FreePool (Mem64Bridge);
 
   return EFI_SUCCESS;
 }
@@ -2072,12 +2021,14 @@ PciHotPlugRequestNotify (
     return EFI_INVALID_PARAMETER;
   }
 
-  // MU_CHANGE Start - CodeQl Change - cpp/uselesstest - ChildHandleBuffer tested in every case
-  if ((Operation == EfiPciHotPlugRequestAdd) && (ChildHandleBuffer == NULL)) {
-    return EFI_INVALID_PARAMETER;
-  } else if ((Operation == EfiPciHotplugRequestRemove) && (*NumberOfChildren != 0) && (ChildHandleBuffer == NULL)) {
-    return EFI_INVALID_PARAMETER;
-    // MU_CHANGE End - CodeQl Change
+  if (Operation == EfiPciHotPlugRequestAdd) {
+    if (ChildHandleBuffer == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
+  } else if ((Operation == EfiPciHotplugRequestRemove) && (*NumberOfChildren != 0)) {
+    if (ChildHandleBuffer == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
   }
 
   Status = gBS->OpenProtocol (
