@@ -1277,7 +1277,7 @@ CreateState (
   UINTN                          Size;
   EFI_PHYSICAL_ADDRESS           NewBuffer;
   UINTN                          CapsuleNumber;
-  UINTN                          Index; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
+  UINT32                         Index;
   EFI_PHYSICAL_ADDRESS           BaseAddress;
   UINT64                         Length;
 

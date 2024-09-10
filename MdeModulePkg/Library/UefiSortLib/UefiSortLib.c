@@ -62,13 +62,7 @@ PerformQuickSort (
   ASSERT (CompareFunction  != NULL);
 
   Buffer = AllocateZeroPool (ElementSize);
-  // MU_CHANGE [BEGIN] - CodeQL change
-  if (Buffer == NULL) {
-    ASSERT (Buffer != NULL);
-    return;
-  }
-
-  // MU_CHANGE [END] - CodeQL change
+  ASSERT (Buffer != NULL);
 
   QuickSort (
     BufferToSort,

@@ -58,13 +58,6 @@ SmmCommunicationBufferEntryPoint (
   //
   PiSmmCommunicationRegionTable = AllocateReservedPool (sizeof (EDKII_PI_SMM_COMMUNICATION_REGION_TABLE) + DescriptorSize);
   ASSERT (PiSmmCommunicationRegionTable != NULL);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (PiSmmCommunicationRegionTable == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
-
   ZeroMem (PiSmmCommunicationRegionTable, sizeof (EDKII_PI_SMM_COMMUNICATION_REGION_TABLE) + DescriptorSize);
 
   PiSmmCommunicationRegionTable->Version         = EDKII_PI_SMM_COMMUNICATION_REGION_TABLE_VERSION;

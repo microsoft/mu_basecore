@@ -160,14 +160,7 @@ USBMouseAbsolutePointerDriverBindingStart (
   }
 
   UsbMouseAbsolutePointerDevice = AllocateZeroPool (sizeof (USB_MOUSE_ABSOLUTE_POINTER_DEV));
-  // MU_CHANGE Start - CodeQL Change - Check allocation before use
-  if (UsbMouseAbsolutePointerDevice == NULL) {
-    ASSERT (UsbMouseAbsolutePointerDevice != NULL);
-    Status = EFI_OUT_OF_RESOURCES;
-    goto ErrorExit;
-  }
-
-  // MU_CHANGE Start - CodeQL Change - Check allocation before use
+  ASSERT (UsbMouseAbsolutePointerDevice != NULL);
 
   UsbMouseAbsolutePointerDevice->UsbIo     = UsbIo;
   UsbMouseAbsolutePointerDevice->Signature = USB_MOUSE_ABSOLUTE_POINTER_DEV_SIGNATURE;
@@ -638,14 +631,7 @@ InitializeUsbMouseDevice (
   }
 
   ReportDesc = AllocateZeroPool (MouseHidDesc->HidClassDesc[0].DescriptorLength);
-  // MU_CHANGE Start - CodeQL Change - Check allocation before use
-  if (ReportDesc == NULL) {
-    ASSERT (ReportDesc != NULL);
-    FreePool (Buf);
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // MU_CHANGE Start - CodeQL Change - Check allocation before use
+  ASSERT (ReportDesc != NULL);
 
   Status = UsbGetReportDescriptor (
              UsbIo,

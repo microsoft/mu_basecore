@@ -943,7 +943,7 @@ AtaPioDataInOut (
   IN     ATA_NONBLOCK_TASK      *Task
   )
 {
-  UINT64      WordCount; // MU_CHANGE - CodeQL Change - comparison mismatch
+  UINTN       WordCount;
   UINTN       Increment;
   UINT16      *Buffer16;
   EFI_STATUS  Status;

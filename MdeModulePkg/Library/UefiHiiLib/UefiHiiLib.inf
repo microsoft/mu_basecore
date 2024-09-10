@@ -41,7 +41,6 @@
   UefiLib
   UefiHiiServicesLib
   PrintLib
-  SafeIntLib # MU_CHANGE
 
 [Protocols]
   gEfiFormBrowser2ProtocolGuid ## SOMETIMES_CONSUMES

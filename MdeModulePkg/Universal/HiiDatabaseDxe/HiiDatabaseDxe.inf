@@ -55,7 +55,6 @@
   UefiRuntimeServicesTableLib
   PrintLib
   PerformanceLib # MU_CHANGE
-  SafeIntLib # MU_CHANGE - CodeQL Change
 
 [Protocols]
   gEfiDevicePathProtocolGuid                                            ## SOMETIMES_CONSUMES

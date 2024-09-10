@@ -32,8 +32,6 @@ UsbHcAllocMemBlock (
   UINTN                 PageNumber;
   EFI_PHYSICAL_ADDRESS  TempPtr;
 
-  Mapping = NULL;  // MU_CHANGE Start - CodeQL Change
-
   PageNumber = EFI_SIZE_TO_PAGES (sizeof (USBHC_MEM_BLOCK));
   Status     = PeiServicesAllocatePages (
                  EfiBootServicesData,

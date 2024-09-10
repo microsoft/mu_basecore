@@ -473,88 +473,82 @@ UpdateMainForm (
   //
   StartOpCodeHandle = HiiAllocateOpCodeHandle ();
   ASSERT (StartOpCodeHandle != NULL);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (StartOpCodeHandle != NULL) {
-    EndOpCodeHandle = HiiAllocateOpCodeHandle ();
-    ASSERT (EndOpCodeHandle != NULL);
 
-    if (EndOpCodeHandle == NULL) {
-      //
-      // Create Hii Extend Label OpCode as the start opcode
-      //
-      StartLabel = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (
-                                           StartOpCodeHandle,
-                                           &gEfiIfrTianoGuid,
-                                           NULL,
-                                           sizeof (EFI_IFR_GUID_LABEL)
-                                           );
-      StartLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
-      StartLabel->Number       = MAIN_LABEL_LIST_START;
+  EndOpCodeHandle = HiiAllocateOpCodeHandle ();
+  ASSERT (EndOpCodeHandle != NULL);
 
-      //
-      // Create Hii Extend Label OpCode as the end opcode
-      //
-      EndLabel = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (
-                                         EndOpCodeHandle,
-                                         &gEfiIfrTianoGuid,
-                                         NULL,
-                                         sizeof (EFI_IFR_GUID_LABEL)
-                                         );
-      EndLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
-      EndLabel->Number       = MAIN_LABEL_LIST_END;
+  //
+  // Create Hii Extend Label OpCode as the start opcode
+  //
+  StartLabel = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (
+                                       StartOpCodeHandle,
+                                       &gEfiIfrTianoGuid,
+                                       NULL,
+                                       sizeof (EFI_IFR_GUID_LABEL)
+                                       );
+  StartLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+  StartLabel->Number       = MAIN_LABEL_LIST_START;
 
-      Index = 0;
-      BASE_LIST_FOR_EACH (Entry, &RegisteredRamDisks) {
-        PrivateData             = RAM_DISK_PRIVATE_FROM_THIS (Entry);
-        PrivateData->CheckBoxId = (EFI_QUESTION_ID)
-                                  (MAIN_CHECKBOX_QUESTION_ID_START + Index);
-        //
-        // CheckBox is unchecked by default.
-        //
-        PrivateData->CheckBoxChecked = FALSE;
-        String                       = RamDiskStr;
+  //
+  // Create Hii Extend Label OpCode as the end opcode
+  //
+  EndLabel = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (
+                                     EndOpCodeHandle,
+                                     &gEfiIfrTianoGuid,
+                                     NULL,
+                                     sizeof (EFI_IFR_GUID_LABEL)
+                                     );
+  EndLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+  EndLabel->Number       = MAIN_LABEL_LIST_END;
 
-        UnicodeSPrint (
-          String,
-          sizeof (RamDiskStr),
-          L"  RAM Disk %d: [0x%lx, 0x%lx]\n",
-          Index,
-          PrivateData->StartingAddr,
-          PrivateData->StartingAddr + PrivateData->Size - 1
-          );
+  Index = 0;
+  BASE_LIST_FOR_EACH (Entry, &RegisteredRamDisks) {
+    PrivateData             = RAM_DISK_PRIVATE_FROM_THIS (Entry);
+    PrivateData->CheckBoxId = (EFI_QUESTION_ID)
+                              (MAIN_CHECKBOX_QUESTION_ID_START + Index);
+    //
+    // CheckBox is unchecked by default.
+    //
+    PrivateData->CheckBoxChecked = FALSE;
+    String                       = RamDiskStr;
 
-        StringId = HiiSetString (ConfigPrivate->HiiHandle, 0, RamDiskStr, NULL);
-        ASSERT (StringId != 0);
+    UnicodeSPrint (
+      String,
+      sizeof (RamDiskStr),
+      L"  RAM Disk %d: [0x%lx, 0x%lx]\n",
+      Index,
+      PrivateData->StartingAddr,
+      PrivateData->StartingAddr + PrivateData->Size - 1
+      );
 
-        HiiCreateCheckBoxOpCode (
-          StartOpCodeHandle,
-          PrivateData->CheckBoxId,
-          0,
-          0,
-          StringId,
-          STRING_TOKEN (STR_RAM_DISK_LIST_HELP),
-          EFI_IFR_FLAG_CALLBACK,
-          0,
-          NULL
-          );
+    StringId = HiiSetString (ConfigPrivate->HiiHandle, 0, RamDiskStr, NULL);
+    ASSERT (StringId != 0);
 
-        Index++;
-      }
+    HiiCreateCheckBoxOpCode (
+      StartOpCodeHandle,
+      PrivateData->CheckBoxId,
+      0,
+      0,
+      StringId,
+      STRING_TOKEN (STR_RAM_DISK_LIST_HELP),
+      EFI_IFR_FLAG_CALLBACK,
+      0,
+      NULL
+      );
 
-      HiiUpdateForm (
-        ConfigPrivate->HiiHandle,
-        &gRamDiskFormSetGuid,
-        MAIN_FORM_ID,
-        StartOpCodeHandle,
-        EndOpCodeHandle
-        );
-      HiiFreeOpCodeHandle (EndOpCodeHandle);
-    }
-
-    HiiFreeOpCodeHandle (StartOpCodeHandle);
+    Index++;
   }
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  HiiUpdateForm (
+    ConfigPrivate->HiiHandle,
+    &gRamDiskFormSetGuid,
+    MAIN_FORM_ID,
+    StartOpCodeHandle,
+    EndOpCodeHandle
+    );
+
+  HiiFreeOpCodeHandle (StartOpCodeHandle);
+  HiiFreeOpCodeHandle (EndOpCodeHandle);
 }
 
 /**
