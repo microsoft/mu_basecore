@@ -74,6 +74,14 @@ struct MockUefiBootServicesTableLib {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
+    gBS_RegisterProtocolNotify,
+    (IN  EFI_GUID                 *Protocol,
+     IN  EFI_EVENT                Event,
+     OUT VOID                     **Registration)
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
     gBS_LocateHandleBuffer,
     (
      IN     EFI_LOCATE_SEARCH_TYPE       SearchType,

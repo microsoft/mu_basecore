@@ -13,6 +13,7 @@ MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_CloseEvent, 1, EFIAP
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_InstallProtocolInterface, 4, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_UninstallProtocolInterface, 3, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_HandleProtocol, 3, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_RegisterProtocolNotify, 3, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_LocateHandleBuffer, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_LocateProtocol, 3, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_CreateEventEx, 6, EFIAPI);
@@ -120,7 +121,7 @@ static EFI_BOOT_SERVICES  LocalBs = {
   gBS_UninstallProtocolInterface,                                                      // EFI_UNINSTALL_PROTOCOL_INTERFACE
   gBS_HandleProtocol,                                                                  // EFI_HANDLE_PROTOCOL
   NULL,                                                                                // VOID
-  NULL,                                                                                // EFI_REGISTER_PROTOCOL_NOTIFY
+  gBS_RegisterProtocolNotify,                                                          // EFI_REGISTER_PROTOCOL_NOTIFY
   gBS_LocateHandle,                                                                    // EFI_LOCATE_HANDLE
   gBS_LocateDevicePath,                                                                // EFI_LOCATE_DEVICE_PATH
   NULL,                                                                                // EFI_INSTALL_CONFIGURATION_TABLE
