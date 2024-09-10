@@ -2535,8 +2535,8 @@ ScsiDiskInquiryDevice (
   EFI_SCSI_SENSE_DATA                    *SenseDataArray;
   UINTN                                  NumberOfSenseKeys;
   EFI_STATUS                             Status;
-  UINT32                                 MaxRetry; // MU_CHANGE Start - CodeQL Change - comparison-with-wider-type
-  UINT32                                 Index;    // MU_CHANGE Start - CodeQL Change - comparison-with-wider-type
+  UINT8                                  MaxRetry;
+  UINT8                                  Index;
   EFI_SCSI_SUPPORTED_VPD_PAGES_VPD_PAGE  *SupportedVpdPages;
   EFI_SCSI_BLOCK_LIMITS_VPD_PAGE         *BlockLimits;
   UINTN                                  PageLength;
@@ -2619,8 +2619,7 @@ ScsiDiskInquiryDevice (
         //
         // Locate the code for the Block Limits VPD page
         //
-        for (Index = 0; (UINTN)Index < PageLength; Index++) {
-          // MU_CHANGE Start - CodeQL Change - comparison-with-wider-type
+        for (Index = 0; Index < PageLength; Index++) {
           //
           // Sanity check
           //

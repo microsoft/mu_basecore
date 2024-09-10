@@ -37,7 +37,6 @@
   PeiServicesLib
   MemoryAllocationLib
   PeimEntryPoint
-  SafeIntLib # MU_CHANGE - CodeQL Change
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdSdMmcPciHostControllerMmioBase   ## CONSUMES

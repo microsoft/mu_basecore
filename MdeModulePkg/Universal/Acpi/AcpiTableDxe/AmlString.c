@@ -379,7 +379,7 @@ AmlUpperCaseCopyMem (
 
   @param[in]    AslPath     ASL name.
 
-  @return AmlName or NULL if insufficient resources to allocate a buffer // MU_CHANGE - CodeQL Change
+  @return AmlName
 **/
 UINT8 *
 AmlNameFromAslName (
@@ -401,13 +401,7 @@ AmlNameFromAslName (
   }
 
   AmlPath = AllocatePool (TotalLength);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (AmlPath == NULL) {
-    ASSERT (AmlPath != NULL);
-    return NULL;
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  ASSERT (AmlPath != NULL);
 
   AmlBuffer = AmlPath;
   Buffer    = AslPath;

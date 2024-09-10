@@ -219,10 +219,10 @@ NvmeCreatePrpList (
   OUT VOID                     **Mapping
   )
 {
-  UINT64                PrpEntryNo; // MU_CHANGE - CodeQl Change - comparison mismatch
+  UINTN                 PrpEntryNo;
   UINT64                PrpListBase;
-  UINT64                PrpListIndex;  // MU_CHANGE - CodeQl Change - comparison mismatch
-  UINT64                PrpEntryIndex; // MU_CHANGE - CodeQl Change - comparison mismatch
+  UINTN                 PrpListIndex;
+  UINTN                 PrpEntryIndex;
   UINT64                Remainder;
   EFI_PHYSICAL_ADDRESS  PrpListPhyAddr;
   UINTN                 Bytes;

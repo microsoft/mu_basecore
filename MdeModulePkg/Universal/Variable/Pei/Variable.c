@@ -1135,8 +1135,7 @@ PeiGetNextVariableName (
   VariableHeader = NULL;
 
   Status = FindVariable (VariableName, VariableGuid, &Variable, &StoreInfo);
-  if ((Status != EFI_SUCCESS) || (Variable.CurrPtr == NULL)) {
-    // MU_CHANGE - CodeQL Change - unguardednullreturndereference
+  if ((Variable.CurrPtr == NULL) || (Status != EFI_SUCCESS)) {
     return Status;
   }
 

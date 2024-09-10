@@ -776,13 +776,7 @@ FvIsBeingProcessed (
   }
 
   KnownHandle = AllocateZeroPool (sizeof (KNOWN_HANDLE));
-  // MU_CHANGE Start - CodeQL Change
-  if (KnownHandle == NULL) {
-    ASSERT (KnownHandle != NULL);
-    return NULL;
-  }
-
-  // MU_CHANGE Start - CodeQL Change
+  ASSERT (KnownHandle != NULL);
 
   KnownHandle->Signature = KNOWN_HANDLE_SIGNATURE;
   KnownHandle->Handle    = FvHandle;
@@ -859,7 +853,6 @@ CoreFvToDevicePath (
   @retval EFI_ALREADY_STARTED   The driver has already been started. Only one
                                 DriverName may be active in the system at any one
                                 time.
-  @retval EFI_OUT_OF_RESOURCES  If memory could not be allocated for the DriverEntry. // MU_CHANGE - CodeQL change
 
 **/
 EFI_STATUS
@@ -877,13 +870,7 @@ CoreAddToDriverList (
   // NULL or FALSE.
   //
   DriverEntry = AllocateZeroPool (sizeof (EFI_CORE_DRIVER_ENTRY));
-  // MU_CHANGE Start - CodeQL Change
-  if (DriverEntry == NULL) {
-    ASSERT (DriverEntry != NULL);
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // MU_CHANGE Start - CodeQL Change
+  ASSERT (DriverEntry != NULL);
   if (Type == EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE) {
     DriverEntry->IsFvImage = TRUE;
   }
@@ -1066,17 +1053,13 @@ CoreProcessFvImageFile (
       //
       if (gSecurity != NULL) {
         FvFileDevicePath = CoreFvToDevicePath (Fv, FvHandle, FileName);
-        // MU_CHANGE Start - CodeQL Change
+        Status           = gSecurity->FileAuthenticationState (
+                                        gSecurity,
+                                        AuthenticationStatus,
+                                        FvFileDevicePath
+                                        );
         if (FvFileDevicePath != NULL) {
-          Status = gSecurity->FileAuthenticationState (
-                                gSecurity,
-                                AuthenticationStatus,
-                                FvFileDevicePath
-                                );
           FreePool (FvFileDevicePath);
-        } else {
-          Status = EFI_OUT_OF_RESOURCES;
-          // MU_CHANGE End - CodeQL Change
         }
 
         if (Status != EFI_SUCCESS) {

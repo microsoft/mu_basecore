@@ -545,7 +545,6 @@ SdMmcPciHcDriverBindingStart (
   EFI_PCI_IO_PROTOCOL       *PciIo;
   UINT64                    Supports;
   UINT64                    PciAttributes;
-  UINT8                     SlotMax; // MU_CHANGE - CodeQL Change
   UINT8                     SlotNum;
   UINT8                     FirstBar;
   UINT8                     Slot;
@@ -648,15 +647,7 @@ SdMmcPciHcDriverBindingStart (
   }
 
   Support64BitDma = TRUE;
-  // MU_CHANGE Start - CodeQL Change - Handle overflow
-  Status = SafeUint8Add (FirstBar, SlotNum, &SlotMax);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "[%a] Overflow when calculating SlotMax!\n", __FUNCTION__));
-    goto Done;
-  }
-
-  for (Slot = FirstBar; Slot < SlotMax; Slot++) {
-    // MU_CHANGE Start - CodeQL Change - Handle overflow
+  for (Slot = FirstBar; Slot < (FirstBar + SlotNum); Slot++) {
     Private->Slot[Slot].Enable = TRUE;
     //
     // Get SD/MMC Pci Host Controller Version

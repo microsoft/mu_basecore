@@ -478,8 +478,6 @@ InternalProtocolGetVariablePolicyInfo (
   UINTN                                  BufferSize;
   UINTN                                  VariableNameSize;
 
-  PolicyHeader = NULL; // MU_CHANGE - CodeQL Change - conditionallyuninitializedvariable
-
   if ((VariableName == NULL) || (VendorGuid == NULL) || (VariablePolicy == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
@@ -612,13 +610,8 @@ InternalProtocolGetVariablePolicyInfo (
 
 Done:
   ReleaseLockOnlyAtBootTime (&mMmCommunicationLock);
-  // MU_CHANGE Start - CodeQL Change
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
 
-  return (PolicyHeader != NULL) ? PolicyHeader->Result : EFI_SUCCESS;
-  // MU_CHANGE End - CodeQL Change
+  return (EFI_ERROR (Status)) ? Status : PolicyHeader->Result;
 }
 
 /**
