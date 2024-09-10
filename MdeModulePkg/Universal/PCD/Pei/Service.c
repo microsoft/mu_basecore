@@ -402,20 +402,15 @@ LocateExPcdBinary (
   // ASSERT_EFI_ERROR (Status);
   PcdDb = (PEI_PCD_DATABASE *)PcdDatabaseLoaderLoad (FileHandle);
   ASSERT (PcdDb != NULL);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (PcdDb != NULL) {
-    // MU_CHANGE end
+  // MU_CHANGE end
 
-    //
-    // Check the first bytes (Header Signature Guid) and build version.
-    //
-    if (!CompareGuid (PcdDb, &gPcdDataBaseSignatureGuid) ||
-        (((PEI_PCD_DATABASE *)PcdDb)->BuildVersion != PCD_SERVICE_PEIM_VERSION))
-    {
-      ASSERT (FALSE);
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  //
+  // Check the first bytes (Header Signature Guid) and build version.
+  //
+  if (!CompareGuid (PcdDb, &gPcdDataBaseSignatureGuid) ||
+      (((PEI_PCD_DATABASE *)PcdDb)->BuildVersion != PCD_SERVICE_PEIM_VERSION))
+  {
+    ASSERT (FALSE);
   }
 
   return PcdDb;
@@ -433,7 +428,6 @@ BuildPcdDatabase (
   IN EFI_PEI_FILE_HANDLE  FileHandle
   )
 {
-  VOID              *Hob;  // MU_CHANGE - CodeQL Change
   PEI_PCD_DATABASE  *Database;
   PEI_PCD_DATABASE  *PeiPcdDbBinary;
   VOID              *CallbackFnTable;
@@ -444,31 +438,9 @@ BuildPcdDatabase (
   //
   PeiPcdDbBinary = LocateExPcdBinary (FileHandle);
 
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (PeiPcdDbBinary == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed To locate the Pcd Db binary.\n", __func__));
-    ASSERT (PeiPcdDbBinary != NULL);
-    return NULL;
-  }
+  ASSERT (PeiPcdDbBinary != NULL);
 
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-
-  // MU_CHANGE Start - CodeQL change
-  // Check to see if the Hob already exists because we can error out of this function when
-  // creating the CallbackFnTable Hob and call into this function again.
-  Hob = GetFirstGuidHob (&gPcdDataBaseHobGuid);
-  if (Hob == NULL) {
-    Database = BuildGuidHob (&gPcdDataBaseHobGuid, PeiPcdDbBinary->Length + PeiPcdDbBinary->UninitDataBaseSize);
-  } else {
-    Database = (PEI_PCD_DATABASE *)GET_GUID_HOB_DATA (Hob);
-  }
-
-  if (Database == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to build the PCD Database guid hob.\n", __func__));
-    return NULL;
-  }
-
-  // MU_CHANGE End - CodeQL change
+  Database = BuildGuidHob (&gPcdDataBaseHobGuid, PeiPcdDbBinary->Length + PeiPcdDbBinary->UninitDataBaseSize);
 
   ZeroMem (Database, PeiPcdDbBinary->Length  + PeiPcdDbBinary->UninitDataBaseSize);
 
@@ -480,14 +452,6 @@ BuildPcdDatabase (
   SizeOfCallbackFnTable = Database->LocalTokenCount * sizeof (PCD_PPI_CALLBACK) * PcdGet32 (PcdMaxPeiPcdCallBackNumberPerPcdEntry);
 
   CallbackFnTable = BuildGuidHob (&gEfiCallerIdGuid, SizeOfCallbackFnTable);
-
-  // MU_CHANGE Start - CodeQL change
-  if (CallbackFnTable == NULL) {
-    DEBUG ((DEBUG_ERROR, "[%a] - Failed to build the CallbackFnTable guid hob.\n", __func__));
-    return NULL;
-  }
-
-  // MU_CHANGE End - CodeQL change
 
   ZeroMem (CallbackFnTable, SizeOfCallbackFnTable);
 

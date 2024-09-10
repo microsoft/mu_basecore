@@ -163,13 +163,7 @@ CoreDumpGcdMemorySpaceMap (
 
   // MU_CHANGE END
   Status = CoreGetMemorySpaceMap (&NumberOfDescriptors, &MemorySpaceMap);
-  // MU_CHANGE Start - CodeQL Change
-  if (!((Status == EFI_SUCCESS) && (MemorySpaceMap != NULL))) {
-    ASSERT ((Status == EFI_SUCCESS) && (MemorySpaceMap != NULL));
-    return;
-  }
-
-  // MU_CHANGE End - CodeQL Change
+  ASSERT (Status == EFI_SUCCESS && MemorySpaceMap != NULL);
 
   if (InitialMap) {
     DEBUG ((DEBUG_GCD, "GCD:Initial GCD Memory Space Map\n"));
@@ -215,13 +209,7 @@ CoreDumpGcdIoSpaceMap (
   UINTN                        Index;
 
   Status = CoreGetIoSpaceMap (&NumberOfDescriptors, &IoSpaceMap);
-  // MU_CHANGE Start - CodeQL Change
-  if (!((Status == EFI_SUCCESS) && (IoSpaceMap != NULL))) {
-    ASSERT ((Status == EFI_SUCCESS) && (IoSpaceMap != NULL));
-    return;
-  }
-
-  // MU_CHANGE End - CodeQL Change
+  ASSERT (Status == EFI_SUCCESS && IoSpaceMap != NULL);
 
   if (InitialMap) {
     DEBUG ((DEBUG_GCD, "GCD:Initial GCD I/O Space Map\n"));
@@ -789,8 +777,7 @@ CoreConvertSpace (
   // Search for the list of descriptors that cover the range BaseAddress to BaseAddress+Length
   //
   Status = CoreSearchGcdMapEntry (BaseAddress, Length, &StartLink, &EndLink, Map);
-  if (EFI_ERROR (Status) || ((StartLink == NULL) || (EndLink == NULL))) {
-    // MU_CHANGE - CodeQL Change
+  if (EFI_ERROR (Status)) {
     Status = EFI_UNSUPPORTED;
 
     goto Done;
@@ -909,8 +896,7 @@ CoreConvertSpace (
   // Allocate work space to perform this operation
   //
   Status = CoreAllocateGcdMapEntry (&TopEntry, &BottomEntry);
-  if (EFI_ERROR (Status) || ((TopEntry == NULL) || (BottomEntry == NULL))) {
-    // MU_CHANGE - CodeQL Change
+  if (EFI_ERROR (Status)) {
     Status = EFI_OUT_OF_RESOURCES;
     goto Done;
   }
@@ -1208,8 +1194,7 @@ CoreAllocateSpace (
     // Search for the list of descriptors that cover the range BaseAddress to BaseAddress+Length
     //
     Status = CoreSearchGcdMapEntry (*BaseAddress, Length, &StartLink, &EndLink, Map);
-    if (EFI_ERROR (Status) || ((StartLink == NULL) || (EndLink == NULL))) {
-      // MU_CHANGE - CodeQL Change
+    if (EFI_ERROR (Status)) {
       Status = EFI_NOT_FOUND;
       goto Done;
     }
@@ -1302,8 +1287,7 @@ CoreAllocateSpace (
       // Search for the list of descriptors that cover the range BaseAddress to BaseAddress+Length
       //
       Status = CoreSearchGcdMapEntry (*BaseAddress, Length, &StartLink, &EndLink, Map);
-      if (EFI_ERROR (Status) || ((StartLink == NULL) || (EndLink == NULL))) {
-        // MU_CHANGE - CodeQL Change
+      if (EFI_ERROR (Status)) {
         Status = EFI_NOT_FOUND;
         goto Done;
       }
@@ -1343,8 +1327,7 @@ CoreAllocateSpace (
   // Allocate work space to perform this operation
   //
   Status = CoreAllocateGcdMapEntry (&TopEntry, &BottomEntry);
-  if (EFI_ERROR (Status) || ((TopEntry == NULL) || (BottomEntry == NULL))) {
-    // MU_CHANGE - CodeQL Change
+  if (EFI_ERROR (Status)) {
     Status = EFI_OUT_OF_RESOURCES;
     goto Done;
   }
@@ -1657,8 +1640,7 @@ CoreGetMemorySpaceDescriptor (
   // Search for the list of descriptors that contain BaseAddress
   //
   Status = CoreSearchGcdMapEntry (BaseAddress, 1, &StartLink, &EndLink, &mGcdMemorySpaceMap);
-  if (EFI_ERROR (Status) || ((StartLink == NULL) || (EndLink == NULL))) {
-    // MU_CHANGE - CodeQL Change
+  if (EFI_ERROR (Status)) {
     Status = EFI_NOT_FOUND;
   } else {
     ASSERT (StartLink != NULL && EndLink != NULL);
@@ -2043,8 +2025,7 @@ CoreGetIoSpaceDescriptor (
   // Search for the list of descriptors that contain BaseAddress
   //
   Status = CoreSearchGcdMapEntry (BaseAddress, 1, &StartLink, &EndLink, &mGcdIoSpaceMap);
-  if (EFI_ERROR (Status) || ((StartLink == NULL) || (EndLink == NULL))) {
-    // MU_CHANGE - CodeQL Change
+  if (EFI_ERROR (Status)) {
     Status = EFI_NOT_FOUND;
   } else {
     ASSERT (StartLink != NULL && EndLink != NULL);
@@ -2637,14 +2618,7 @@ CoreInitializeGcdServices (
   // Get the number of address lines in the I/O and Memory space for the CPU
   //
   CpuHob = GetFirstHob (EFI_HOB_TYPE_CPU);
-  // MU_CHANGE Start - CodeQL Change
-  if (CpuHob == NULL) {
-    ASSERT (CpuHob != NULL);
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // MU_CHANGE End - CodeQL Change
-
+  ASSERT (CpuHob != NULL);
   SizeOfMemorySpace = CpuHob->SizeOfMemorySpace;
   SizeOfIoSpace     = CpuHob->SizeOfIoSpace;
 
@@ -2652,13 +2626,7 @@ CoreInitializeGcdServices (
   // Initialize the GCD Memory Space Map
   //
   Entry = AllocateCopyPool (sizeof (EFI_GCD_MAP_ENTRY), &mGcdMemorySpaceMapEntryTemplate);
-  // MU_CHANGE Start - CodeQL Change
-  if (Entry == NULL) {
-    ASSERT (Entry != NULL);
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // MU_CHANGE End - CodeQL Change
+  ASSERT (Entry != NULL);
 
   Entry->EndAddress = LShiftU64 (1, SizeOfMemorySpace) - 1;
 
@@ -2670,13 +2638,7 @@ CoreInitializeGcdServices (
   // Initialize the GCD I/O Space Map
   //
   Entry = AllocateCopyPool (sizeof (EFI_GCD_MAP_ENTRY), &mGcdIoSpaceMapEntryTemplate);
-  // MU_CHANGE Start - CodeQL Change
-  if (Entry == NULL) {
-    ASSERT (Entry != NULL);
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // MU_CHANGE End - CodeQL Change
+  ASSERT (Entry != NULL);
 
   Entry->EndAddress = LShiftU64 (1, SizeOfIoSpace) - 1;
 
@@ -2906,13 +2868,7 @@ CoreInitializeGcdServices (
                  (UINTN)PhitHob->EfiFreeMemoryBottom - (UINTN)(*HobStart),
                  *HobStart
                  );
-  // MU_CHANGE Start - CodeQL Change
-  if (NewHobList == NULL) {
-    ASSERT (NewHobList != NULL);
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // MU_CHANGE End - CodeQL Change
+  ASSERT (NewHobList != NULL);
 
   *HobStart = NewHobList;
   gHobList  = NewHobList;

@@ -44,13 +44,7 @@ InitializeAcpiTableDxe (
   // Initialize our protocol
   //
   PrivateData = AllocateZeroPool (sizeof (EFI_ACPI_TABLE_INSTANCE));
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (PrivateData == NULL) {
-    ASSERT (PrivateData);
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  ASSERT (PrivateData);
   PrivateData->Signature = EFI_ACPI_TABLE_SIGNATURE;
 
   //

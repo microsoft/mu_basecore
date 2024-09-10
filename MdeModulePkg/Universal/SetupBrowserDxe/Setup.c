@@ -306,13 +306,7 @@ UiCopyMenuList (
     Link     = GetNextNode (CurrentMenuListHead, Link);
 
     NewMenuEntry = AllocateZeroPool (sizeof (FORM_ENTRY_INFO));
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (NewMenuEntry == NULL) {
-      ASSERT (NewMenuEntry != NULL);
-      return;
-    }
-
-    /// MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (NewMenuEntry != NULL);
     NewMenuEntry->Signature = FORM_ENTRY_INFO_SIGNATURE;
     NewMenuEntry->HiiHandle = MenuList->HiiHandle;
     CopyMem (&NewMenuEntry->FormSetGuid, &MenuList->FormSetGuid, sizeof (EFI_GUID));
@@ -346,57 +340,48 @@ LoadAllHiiFormset (
   //
   HiiHandles = HiiGetHiiHandles (NULL);
   ASSERT (HiiHandles != NULL);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (HiiHandles != NULL) {
+
+  //
+  // Search for formset of each class type
+  //
+  for (Index = 0; HiiHandles[Index] != NULL; Index++) {
     //
-    // Search for formset of each class type
+    // Check HiiHandles[Index] does exist in global maintain list.
     //
-    for (Index = 0; HiiHandles[Index] != NULL; Index++) {
-      //
-      // Check HiiHandles[Index] does exist in global maintain list.
-      //
-      if (GetFormSetFromHiiHandle (HiiHandles[Index]) != NULL) {
-        continue;
-      }
-
-      //
-      // Initilize FormSet Setting
-      //
-      LocalFormSet = AllocateZeroPool (sizeof (FORM_BROWSER_FORMSET));
-      ASSERT (LocalFormSet != NULL);
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-      if (LocalFormSet != NULL ) {
-        mSystemLevelFormSet = LocalFormSet;
-
-        ZeroMem (&ZeroGuid, sizeof (ZeroGuid));
-        Status = InitializeFormSet (HiiHandles[Index], &ZeroGuid, LocalFormSet);
-        if (EFI_ERROR (Status) || IsListEmpty (&LocalFormSet->FormListHead)) {
-          DestroyFormSet (LocalFormSet);
-          continue;
-        }
-
-        InitializeCurrentSetting (LocalFormSet);
-
-        //
-        // Initilize Questions' Value
-        //
-        Status = LoadFormSetConfig (NULL, LocalFormSet);
-        if (EFI_ERROR (Status)) {
-          DestroyFormSet (LocalFormSet);
-          continue;
-        }
-      }
-
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    if (GetFormSetFromHiiHandle (HiiHandles[Index]) != NULL) {
+      continue;
     }
 
     //
-    // Free resources, and restore gOldFormSet and gClassOfVfr
+    // Initilize FormSet Setting
     //
-    FreePool (HiiHandles);
+    LocalFormSet = AllocateZeroPool (sizeof (FORM_BROWSER_FORMSET));
+    ASSERT (LocalFormSet != NULL);
+    mSystemLevelFormSet = LocalFormSet;
+
+    ZeroMem (&ZeroGuid, sizeof (ZeroGuid));
+    Status = InitializeFormSet (HiiHandles[Index], &ZeroGuid, LocalFormSet);
+    if (EFI_ERROR (Status) || IsListEmpty (&LocalFormSet->FormListHead)) {
+      DestroyFormSet (LocalFormSet);
+      continue;
+    }
+
+    InitializeCurrentSetting (LocalFormSet);
+
+    //
+    // Initilize Questions' Value
+    //
+    Status = LoadFormSetConfig (NULL, LocalFormSet);
+    if (EFI_ERROR (Status)) {
+      DestroyFormSet (LocalFormSet);
+      continue;
+    }
   }
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  //
+  // Free resources, and restore gOldFormSet and gClassOfVfr
+  //
+  FreePool (HiiHandles);
 
   mSystemLevelFormSet = OldFormset;
 }
@@ -425,13 +410,7 @@ PopupErrorMessage (
 
   if (OpCode != NULL) {
     Statement = AllocateZeroPool (sizeof (FORM_DISPLAY_ENGINE_STATEMENT));
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (Statement == NULL) {
-      ASSERT (Statement != NULL);
-      return BROWSER_ACTION_NONE;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (Statement != NULL);
     Statement->OpCode                     = OpCode;
     gDisplayFormData.HighLightedStatement = Statement;
   }
@@ -526,14 +505,7 @@ SendForm (
 
   for (Index = 0; Index < HandleCount; Index++) {
     Selection = AllocateZeroPool (sizeof (UI_MENU_SELECTION));
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (Selection == NULL) {
-      ASSERT (Selection != NULL);
-      Status = EFI_OUT_OF_RESOURCES;
-      break;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (Selection != NULL);
 
     Selection->Handle = Handles[Index];
     if (FormSetGuid != NULL) {
@@ -545,14 +517,8 @@ SendForm (
 
     do {
       FormSet = AllocateZeroPool (sizeof (FORM_BROWSER_FORMSET));
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-      if (FormSet == NULL) {
-        ASSERT (FormSet != NULL);
-        Status = EFI_OUT_OF_RESOURCES;
-        break;
-      }
+      ASSERT (FormSet != NULL);
 
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       //
       // Validate the HiiHandle
       // if validate failed, find the first validate parent HiiHandle.
@@ -688,24 +654,18 @@ ProcessStorage (
     //
     StrPtr = StrStr (ConfigResp, L"PATH");
     ASSERT (StrPtr != NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (StrPtr != NULL) {
-      StrPtr     = StrStr (StrPtr, L"&");
-      StrPtr    += 1;
-      BufferSize = StrSize (StrPtr);
+    StrPtr     = StrStr (StrPtr, L"&");
+    StrPtr    += 1;
+    BufferSize = StrSize (StrPtr);
 
-      //
-      // Copy the data if the input buffer is bigger enough.
-      //
-      if (*ResultsDataSize >= BufferSize) {
-        StrCpyS (*ResultsData, *ResultsDataSize / sizeof (CHAR16), StrPtr);
-      }
-
-      *ResultsDataSize = BufferSize;
+    //
+    // Copy the data if the input buffer is bigger enough.
+    //
+    if (*ResultsDataSize >= BufferSize) {
+      StrCpyS (*ResultsData, *ResultsDataSize / sizeof (CHAR16), StrPtr);
     }
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
-
+    *ResultsDataSize = BufferSize;
     FreePool (ConfigResp);
   } else {
     //
@@ -717,13 +677,8 @@ ProcessStorage (
     BufferSize = (TmpSize + StrLen (BrowserStorage->ConfigHdr) + 2) * sizeof (CHAR16);
     MaxLen     = BufferSize / sizeof (CHAR16);
     ConfigResp = AllocateZeroPool (BufferSize);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (ConfigResp == NULL) {
-      ASSERT (ConfigResp != NULL);
-      return EFI_OUT_OF_RESOURCES;
-    }
+    ASSERT (ConfigResp != NULL);
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     StrCpyS (ConfigResp, MaxLen, BrowserStorage->ConfigHdr);
     StrCatS (ConfigResp, MaxLen, L"&");
     StrCatS (ConfigResp, MaxLen, *ResultsData);
@@ -1133,13 +1088,8 @@ NewStringCat (
 
   MaxLen    = (StrSize (*Dest) + StrSize (Src) - 1) / sizeof (CHAR16);
   NewString = AllocateZeroPool (MaxLen * sizeof (CHAR16));
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (NewString == NULL) {
-    ASSERT (NewString != NULL);
-    return;
-  }
+  ASSERT (NewString != NULL);
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   StrCpyS (NewString, MaxLen, *Dest);
   StrCatS (NewString, MaxLen, Src);
 
@@ -1873,13 +1823,7 @@ GetQuestionValue (
     // Allocate buffer include '\0'
     MaxLen        = Length + 1;
     ConfigRequest = AllocateZeroPool (MaxLen * sizeof (CHAR16));
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (ConfigRequest == NULL) {
-      ASSERT (ConfigRequest != NULL);
-      return EFI_OUT_OF_RESOURCES;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (ConfigRequest != NULL);
 
     StrCpyS (ConfigRequest, MaxLen, FormsetStorage->ConfigHdr);
     if (IsBufferStorage) {
@@ -2145,13 +2089,7 @@ SetQuestionValue (
         Value     = NULL;
         BufferLen = ((StrLen ((CHAR16 *)Src) * 4) + 1) * sizeof (CHAR16);
         Value     = AllocateZeroPool (BufferLen);
-        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-        if (Value == NULL) {
-          ASSERT (Value != NULL);
-          return EFI_OUT_OF_RESOURCES;
-        }
-
-        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+        ASSERT (Value != NULL);
         //
         // Convert Unicode String to Config String, e.g. "ABCD" => "0041004200430044"
         //
@@ -2170,13 +2108,7 @@ SetQuestionValue (
       } else {
         BufferLen = StorageWidth * 2 + 1;
         Value     = AllocateZeroPool (BufferLen * sizeof (CHAR16));
-        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-        if (Value == NULL) {
-          ASSERT (Value != NULL);
-          return EFI_OUT_OF_RESOURCES;
-        }
-
-        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+        ASSERT (Value != NULL);
         //
         // Convert Buffer to Hex String
         //
@@ -2221,13 +2153,7 @@ SetQuestionValue (
     ASSERT (FormsetStorage != NULL);
     MaxLen     = StrLen (FormsetStorage->ConfigHdr) + Length + 1;
     ConfigResp = AllocateZeroPool (MaxLen * sizeof (CHAR16));
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (ConfigResp == NULL) {
-      ASSERT (ConfigResp != NULL);
-      return EFI_OUT_OF_RESOURCES;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (ConfigResp != NULL);
 
     StrCpyS (ConfigResp, MaxLen, FormsetStorage->ConfigHdr);
     if (IsBufferStorage) {
@@ -2799,19 +2725,15 @@ ValidateHiiHandle (
 
   HiiHandles = HiiGetHiiHandles (NULL);
   ASSERT (HiiHandles != NULL);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (HiiHandles != NULL) {
-    for (Index = 0; HiiHandles[Index] != NULL; Index++) {
-      if (HiiHandles[Index] == HiiHandle) {
-        Find = TRUE;
-        break;
-      }
-    }
 
-    FreePool (HiiHandles);
+  for (Index = 0; HiiHandles[Index] != NULL; Index++) {
+    if (HiiHandles[Index] == HiiHandle) {
+      Find = TRUE;
+      break;
+    }
   }
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  FreePool (HiiHandles);
 
   return Find;
 }
@@ -2987,13 +2909,7 @@ FindQuestionFromProgress (
       // For Name/Value type, Skip the ConfigHdr part.
       //
       EndStr = StrStr (Progress, L"PATH=");
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-      if (EndStr == NULL) {
-        ASSERT (EndStr != NULL);
-        return FALSE;
-      }
-
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+      ASSERT (EndStr != NULL);
       while (*EndStr != '&') {
         EndStr++;
       }
@@ -3004,13 +2920,7 @@ FindQuestionFromProgress (
       // For Buffer type, Skip the ConfigHdr part.
       //
       EndStr = StrStr (Progress, L"&OFFSET=");
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-      if (EndStr == NULL) {
-        ASSERT (EndStr != NULL);
-        return FALSE;
-      }
-
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+      ASSERT (EndStr != NULL);
       *EndStr = '\0';
     }
 
@@ -3027,12 +2937,7 @@ FindQuestionFromProgress (
     //
     EndStr = StrStr (Progress, L"=");
     ASSERT (EndStr != NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (EndStr != NULL) {
-      *EndStr = '\0';
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    *EndStr = '\0';
   } else {
     //
     // For Buffer type, the data is "OFFSET=0x####&WIDTH=0x####&VALUE=0x####",
@@ -3040,12 +2945,7 @@ FindQuestionFromProgress (
     //
     EndStr = StrStr (Progress, L"&VALUE=");
     ASSERT (EndStr != NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (EndStr != NULL) {
-      *EndStr = '\0';
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    *EndStr = '\0';
   }
 
   //
@@ -3160,26 +3060,15 @@ GetSyncRestoreConfigRequest (
     //
     EndStr = StrStr (Progress, L"=");
     ASSERT (EndStr != NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (EndStr != NULL) {
-      *EndStr = L'\0';
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
-
+    *EndStr = L'\0';
     //
     // Find the ConfigHdr in ConfigRequest.
     //
     ConfigHdrEndStr = StrStr (ConfigRequest, L"PATH=");
     ASSERT (ConfigHdrEndStr != NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (ConfigHdrEndStr != NULL) {
-      while (*ConfigHdrEndStr != L'&') {
-        ConfigHdrEndStr++;
-      }
+    while (*ConfigHdrEndStr != L'&') {
+      ConfigHdrEndStr++;
     }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   } else {
     //
     // For Buffer type, the data is "OFFSET=0x####&WIDTH=0x####&VALUE=0x####",
@@ -3187,13 +3076,7 @@ GetSyncRestoreConfigRequest (
     //
     EndStr = StrStr (Progress, L"&VALUE=");
     ASSERT (EndStr != NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (EndStr != NULL) {
-      *EndStr = L'\0';
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
-
+    *EndStr = L'\0';
     //
     // Find the ConfigHdr in ConfigRequest.
     //
@@ -3205,38 +3088,22 @@ GetSyncRestoreConfigRequest (
   //
   ElementStr = StrStr (ConfigRequest, Progress);
   ASSERT (ElementStr != NULL);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (ElementStr != NULL) {
-    //
-    // To get the RestoreConfigRequest.
-    //
-    RestoreEleSize        = StrSize (ElementStr);
-    TotalSize             = (ConfigHdrEndStr - ConfigRequest) * sizeof (CHAR16) + RestoreEleSize + sizeof (CHAR16);
-    *RestoreConfigRequest = AllocateZeroPool (TotalSize);
-    ASSERT (*RestoreConfigRequest != NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (*RestoreConfigRequest != NULL) {
-      StrnCpyS (*RestoreConfigRequest, TotalSize / sizeof (CHAR16), ConfigRequest, ConfigHdrEndStr - ConfigRequest);
-      StrCatS (*RestoreConfigRequest, TotalSize / sizeof (CHAR16), ElementStr);
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
-
-    //
-    // To get the SyncConfigRequest.
-    //
-    SyncSize           = StrSize (ConfigRequest) - RestoreEleSize + sizeof (CHAR16);
-    *SyncConfigRequest = AllocateZeroPool (SyncSize);
-    ASSERT (*SyncConfigRequest != NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (*SyncConfigRequest != NULL) {
-      StrnCpyS (*SyncConfigRequest, SyncSize / sizeof (CHAR16), ConfigRequest, SyncSize / sizeof (CHAR16) - 1);
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  //
+  // To get the RestoreConfigRequest.
+  //
+  RestoreEleSize        = StrSize (ElementStr);
+  TotalSize             = (ConfigHdrEndStr - ConfigRequest) * sizeof (CHAR16) + RestoreEleSize + sizeof (CHAR16);
+  *RestoreConfigRequest = AllocateZeroPool (TotalSize);
+  ASSERT (*RestoreConfigRequest != NULL);
+  StrnCpyS (*RestoreConfigRequest, TotalSize / sizeof (CHAR16), ConfigRequest, ConfigHdrEndStr - ConfigRequest);
+  StrCatS (*RestoreConfigRequest, TotalSize / sizeof (CHAR16), ElementStr);
+  //
+  // To get the SyncConfigRequest.
+  //
+  SyncSize           = StrSize (ConfigRequest) - RestoreEleSize + sizeof (CHAR16);
+  *SyncConfigRequest = AllocateZeroPool (SyncSize);
+  ASSERT (*SyncConfigRequest != NULL);
+  StrnCpyS (*SyncConfigRequest, SyncSize / sizeof (CHAR16), ConfigRequest, SyncSize / sizeof (CHAR16) - 1);
 
   //
   // restore the Progress string to the original format.
@@ -3267,33 +3134,22 @@ ConfirmSaveFail (
   CHAR16  *StringBuffer;
   UINT32  RetVal;
 
-  RetVal = BROWSER_ACTION_UNREGISTER;    // MU_CHANGE - CodeQL Change - conditionallyuninitializedvariable
-
   FormTitle = GetToken (TitleId, HiiHandle);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (FormTitle != NULL) {
-    StringBuffer = AllocateZeroPool (256 * sizeof (CHAR16));
-    ASSERT (StringBuffer != NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (StringBuffer != NULL) {
-      UnicodeSPrint (
-        StringBuffer,
-        24 * sizeof (CHAR16) + StrSize (FormTitle),
-        L"Submit Fail For Form: %s.",
-        FormTitle
-        );
 
-      RetVal = PopupErrorMessage (BROWSER_SUBMIT_FAIL, NULL, NULL, StringBuffer);
+  StringBuffer = AllocateZeroPool (256 * sizeof (CHAR16));
+  ASSERT (StringBuffer != NULL);
 
-      FreePool (StringBuffer);
-    }
+  UnicodeSPrint (
+    StringBuffer,
+    24 * sizeof (CHAR16) + StrSize (FormTitle),
+    L"Submit Fail For Form: %s.",
+    FormTitle
+    );
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  RetVal = PopupErrorMessage (BROWSER_SUBMIT_FAIL, NULL, NULL, StringBuffer);
 
-    FreePool (FormTitle);
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  FreePool (StringBuffer);
+  FreePool (FormTitle);
 
   return RetVal;
 }
@@ -3317,33 +3173,22 @@ ConfirmNoSubmitFail (
   CHAR16  *StringBuffer;
   UINT32  RetVal;
 
-  RetVal = BROWSER_ACTION_UNREGISTER;    // MU_CHANGE Start - CodeQL Change - conditionallyuninitializedvariable
-
   FormTitle = GetToken (TitleId, HiiHandle);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (FormTitle != NULL) {
-    StringBuffer = AllocateZeroPool (256 * sizeof (CHAR16));
-    ASSERT (StringBuffer != NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (StringBuffer != NULL) {
-      UnicodeSPrint (
-        StringBuffer,
-        24 * sizeof (CHAR16) + StrSize (FormTitle),
-        L"NO_SUBMIT_IF error For Form: %s.",
-        FormTitle
-        );
 
-      RetVal = PopupErrorMessage (BROWSER_SUBMIT_FAIL_NO_SUBMIT_IF, NULL, NULL, StringBuffer);
+  StringBuffer = AllocateZeroPool (256 * sizeof (CHAR16));
+  ASSERT (StringBuffer != NULL);
 
-      FreePool (StringBuffer);
-    }
+  UnicodeSPrint (
+    StringBuffer,
+    24 * sizeof (CHAR16) + StrSize (FormTitle),
+    L"NO_SUBMIT_IF error For Form: %s.",
+    FormTitle
+    );
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  RetVal = PopupErrorMessage (BROWSER_SUBMIT_FAIL_NO_SUBMIT_IF, NULL, NULL, StringBuffer);
 
-    FreePool (FormTitle);
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  FreePool (StringBuffer);
+  FreePool (FormTitle);
 
   return RetVal;
 }
@@ -4457,20 +4302,16 @@ ReGetDefault:
       if (HiiValue->Type == EFI_IFR_TYPE_STRING) {
         NewString = GetToken (Question->HiiValue.Value.string, FormSet->HiiHandle);
         ASSERT (NewString != NULL);
-        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-        if (NewString != NULL) {
-          ASSERT (StrLen (NewString) * sizeof (CHAR16) <= Question->StorageWidth);
-          if (StrLen (NewString) * sizeof (CHAR16) <= Question->StorageWidth) {
-            ZeroMem (Question->BufferValue, Question->StorageWidth);
-            CopyMem (Question->BufferValue, NewString, StrSize (NewString));
-          } else {
-            CopyMem (Question->BufferValue, NewString, Question->StorageWidth);
-          }
 
-          FreePool (NewString);
+        ASSERT (StrLen (NewString) * sizeof (CHAR16) <= Question->StorageWidth);
+        if (StrLen (NewString) * sizeof (CHAR16) <= Question->StorageWidth) {
+          ZeroMem (Question->BufferValue, Question->StorageWidth);
+          CopyMem (Question->BufferValue, NewString, StrSize (NewString));
+        } else {
+          CopyMem (Question->BufferValue, NewString, Question->StorageWidth);
         }
 
-        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+        FreePool (NewString);
       }
 
       return Status;
@@ -5444,13 +5285,7 @@ RemoveConfigRequest (
   //
   if (Storage->BrowserStorage->Type == EFI_HII_VARSTORE_NAME_VALUE) {
     RequestElement = StrStr (ConfigRequest, L"PATH");
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (RequestElement == NULL) {
-      ASSERT (RequestElement != NULL);
-      return;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (RequestElement != NULL);
     RequestElement = StrStr (RequestElement, SearchKey);
   } else {
     RequestElement = StrStr (ConfigRequest, SearchKey);
@@ -5658,13 +5493,7 @@ ConfigRequestAdjust (
   //
   if (Storage->Type == EFI_HII_VARSTORE_NAME_VALUE) {
     RequestElement = StrStr (ConfigRequest, L"PATH");
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (RequestElement == NULL) {
-      ASSERT (RequestElement != NULL);
-      return FALSE;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (RequestElement != NULL);
     RequestElement = StrStr (RequestElement, SearchKey);
   } else {
     RequestElement = StrStr (ConfigRequest, SearchKey);
@@ -5686,29 +5515,19 @@ ConfigRequestAdjust (
         ASSERT (NextRequestElement != NULL);
       }
 
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-      if (NextRequestElement != NULL) {
-        //
-        // Replace "&" with '\0'.
-        //
-        *NextRequestElement = L'\0';
-      }
-
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+      //
+      // Replace "&" with '\0'.
+      //
+      *NextRequestElement = L'\0';
     } else {
       if (RespString && (Storage->Type == EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER)) {
         NextElementBakup   = NextRequestElement;
         NextRequestElement = StrStr (RequestElement, ValueKey);
         ASSERT (NextRequestElement != NULL);
-        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-        if (NextRequestElement != NULL) {
-          //
-          // Replace "&" with '\0'.
-          //
-          *NextRequestElement = L'\0';
-        }
-
-        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+        //
+        // Replace "&" with '\0'.
+        //
+        *NextRequestElement = L'\0';
       }
     }
 
@@ -5803,13 +5622,7 @@ LoadStorage (
     //
     StrLen        = StrSize (Storage->ConfigHdr) + 20 * sizeof (CHAR16);
     ConfigRequest = AllocateZeroPool (StrLen);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (ConfigRequest == NULL) {
-      ASSERT (ConfigRequest != NULL);
-      return;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (ConfigRequest != NULL);
     UnicodeSPrint (
       ConfigRequest,
       StrLen,
@@ -6070,13 +5883,7 @@ GetIfrBinaryData (
   Status         = mHiiDatabase->ExportPackageLists (mHiiDatabase, Handle, &BufferSize, HiiPackageList);
   if (Status == EFI_BUFFER_TOO_SMALL) {
     HiiPackageList = AllocatePool (BufferSize);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-    if (HiiPackageList == NULL) {
-      ASSERT (HiiPackageList != NULL);
-      return EFI_OUT_OF_RESOURCES;
-    }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+    ASSERT (HiiPackageList != NULL);
 
     Status = mHiiDatabase->ExportPackageLists (mHiiDatabase, Handle, &BufferSize, HiiPackageList);
   }
@@ -6275,55 +6082,51 @@ SaveBrowserContext (
 
   Context = AllocatePool (sizeof (BROWSER_CONTEXT));
   ASSERT (Context != NULL);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (Context != NULL) {
-    Context->Signature = BROWSER_CONTEXT_SIGNATURE;
 
-    //
-    // Save FormBrowser context
-    //
-    Context->Selection         = gCurrentSelection;
-    Context->ResetRequired     = gResetRequiredFormLevel;
-    Context->FlagReconnect     = gFlagReconnect;
-    Context->CallbackReconnect = gCallbackReconnect;
-    Context->ExitRequired      = gExitRequired;
-    Context->HiiHandle         = mCurrentHiiHandle;
-    Context->FormId            = mCurrentFormId;
-    CopyGuid (&Context->FormSetGuid, &mCurrentFormSetGuid);
-    Context->SystemLevelFormSet    = mSystemLevelFormSet;
-    Context->CurFakeQestId         = mCurFakeQestId;
-    Context->HiiPackageListUpdated = mHiiPackageListUpdated;
-    Context->FinishRetrieveCall    = mFinishRetrieveCall;
+  Context->Signature = BROWSER_CONTEXT_SIGNATURE;
 
-    //
-    // Save the menu history data.
-    //
-    InitializeListHead (&Context->FormHistoryList);
-    while (!IsListEmpty (&mPrivateData.FormBrowserEx2.FormViewHistoryHead)) {
-      MenuList = FORM_ENTRY_INFO_FROM_LINK (mPrivateData.FormBrowserEx2.FormViewHistoryHead.ForwardLink);
-      RemoveEntryList (&MenuList->Link);
+  //
+  // Save FormBrowser context
+  //
+  Context->Selection         = gCurrentSelection;
+  Context->ResetRequired     = gResetRequiredFormLevel;
+  Context->FlagReconnect     = gFlagReconnect;
+  Context->CallbackReconnect = gCallbackReconnect;
+  Context->ExitRequired      = gExitRequired;
+  Context->HiiHandle         = mCurrentHiiHandle;
+  Context->FormId            = mCurrentFormId;
+  CopyGuid (&Context->FormSetGuid, &mCurrentFormSetGuid);
+  Context->SystemLevelFormSet    = mSystemLevelFormSet;
+  Context->CurFakeQestId         = mCurFakeQestId;
+  Context->HiiPackageListUpdated = mHiiPackageListUpdated;
+  Context->FinishRetrieveCall    = mFinishRetrieveCall;
 
-      InsertTailList (&Context->FormHistoryList, &MenuList->Link);
-    }
+  //
+  // Save the menu history data.
+  //
+  InitializeListHead (&Context->FormHistoryList);
+  while (!IsListEmpty (&mPrivateData.FormBrowserEx2.FormViewHistoryHead)) {
+    MenuList = FORM_ENTRY_INFO_FROM_LINK (mPrivateData.FormBrowserEx2.FormViewHistoryHead.ForwardLink);
+    RemoveEntryList (&MenuList->Link);
 
-    //
-    // Save formset list.
-    //
-    InitializeListHead (&Context->FormSetList);
-    while (!IsListEmpty (&gBrowserFormSetList)) {
-      FormSet = FORM_BROWSER_FORMSET_FROM_LINK (gBrowserFormSetList.ForwardLink);
-      RemoveEntryList (&FormSet->Link);
-
-      InsertTailList (&Context->FormSetList, &FormSet->Link);
-    }
-
-    //
-    // Insert to FormBrowser context list
-    //
-    InsertHeadList (&gBrowserContextList, &Context->Link);
+    InsertTailList (&Context->FormHistoryList, &MenuList->Link);
   }
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  //
+  // Save formset list.
+  //
+  InitializeListHead (&Context->FormSetList);
+  while (!IsListEmpty (&gBrowserFormSetList)) {
+    FormSet = FORM_BROWSER_FORMSET_FROM_LINK (gBrowserFormSetList.ForwardLink);
+    RemoveEntryList (&FormSet->Link);
+
+    InsertTailList (&Context->FormSetList, &FormSet->Link);
+  }
+
+  //
+  // Insert to FormBrowser context list
+  //
+  InsertHeadList (&gBrowserContextList, &Context->Link);
 }
 
 /**
@@ -6502,8 +6305,7 @@ PasswordCheck (
   Question     = GetBrowserStatement (Statement);
   ASSERT (Question != NULL);
 
-  if ((Question != NULL) && ((Question->QuestionFlags & EFI_IFR_FLAG_CALLBACK) == EFI_IFR_FLAG_CALLBACK)) {
-    // MU_CHANGE - CodeQL Change - unguardednullreturndereference
+  if ((Question->QuestionFlags & EFI_IFR_FLAG_CALLBACK) == EFI_IFR_FLAG_CALLBACK) {
     if (ConfigAccess == NULL) {
       return EFI_UNSUPPORTED;
     }
@@ -6685,13 +6487,7 @@ RegisterHotKey (
   // Create new Key, and add it into List.
   //
   HotKey = AllocateZeroPool (sizeof (BROWSER_HOT_KEY));
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-  if (HotKey == NULL) {
-    ASSERT (HotKey != NULL);
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
+  ASSERT (HotKey != NULL);
   HotKey->Signature = BROWSER_HOT_KEY_SIGNATURE;
   HotKey->KeyData   = AllocateCopyPool (sizeof (EFI_INPUT_KEY), KeyData);
   InsertTailList (&gBrowserHotKeyList, &HotKey->Link);

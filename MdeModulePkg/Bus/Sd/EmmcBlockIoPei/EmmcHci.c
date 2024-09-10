@@ -934,7 +934,7 @@ BuildAdmaDescTable (
   EFI_PHYSICAL_ADDRESS  Data;
   UINT64                DataLen;
   UINT64                Entries;
-  UINT64                Index; // MU_CHANGE - CodeQL Change - Comparison size mismatch
+  UINT32                Index;
   UINT64                Remaining;
   UINT32                Address;
 

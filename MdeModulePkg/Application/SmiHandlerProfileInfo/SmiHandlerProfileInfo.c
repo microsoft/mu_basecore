@@ -614,13 +614,7 @@ DumpSmiHandler (
 
         Print (L">\n");
         ImageStruct = GetImageFromRef ((UINTN)SmiHandlerStruct->ImageRef);
-        // MU_CHANGE - CodeQl Changes - If ImageStruct returned NULL, initialize NameString to an empty string
-        if (ImageStruct != NULL) {
-          NameString = GetDriverNameString (ImageStruct);
-        } else {
-          NameString = "\0";
-        }
-
+        NameString  = GetDriverNameString (ImageStruct);
         Print (L"      <Module RefId=\"0x%x\" Name=\"%a\">\n", SmiHandlerStruct->ImageRef, NameString);
         if ((ImageStruct != NULL) && (ImageStruct->PdbStringOffset != 0)) {
           Print (L"      <Pdb>%a</Pdb>\n", (UINT8 *)ImageStruct + ImageStruct->PdbStringOffset);

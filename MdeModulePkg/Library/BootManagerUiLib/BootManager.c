@@ -518,114 +518,107 @@ UpdateBootManager (
   //
   StartOpCodeHandle = HiiAllocateOpCodeHandle ();
   ASSERT (StartOpCodeHandle != NULL);
-  // MU_CHANGE - Ensure StartOpCodeHandle and EndOpCodeHandle are both valid
-  if (StartOpCodeHandle != NULL) {
-    EndOpCodeHandle = HiiAllocateOpCodeHandle ();
-    ASSERT (EndOpCodeHandle != NULL);
-    if (EndOpCodeHandle != NULL) {
-      //
-      // Create Hii Extend Label OpCode as the start opcode
-      //
-      StartLabel               = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (StartOpCodeHandle, &gEfiIfrTianoGuid, NULL, sizeof (EFI_IFR_GUID_LABEL));
-      StartLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
-      StartLabel->Number       = LABEL_BOOT_OPTION;
 
-      //
-      // Create Hii Extend Label OpCode as the end opcode
-      //
-      EndLabel               = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (EndOpCodeHandle, &gEfiIfrTianoGuid, NULL, sizeof (EFI_IFR_GUID_LABEL));
-      EndLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
-      EndLabel->Number       = LABEL_BOOT_OPTION_END;
-      mKeyInput              = 0;
-      NeedEndOp              = FALSE;
-      for (Index = 0; Index < BootOptionCount; Index++) {
-        //
-        // At this stage we are creating a menu entry, thus the Keys are reproduceable
-        //
-        mKeyInput++;
+  EndOpCodeHandle = HiiAllocateOpCodeHandle ();
+  ASSERT (EndOpCodeHandle != NULL);
 
-        //
-        // Don't display hidden boot options, but retain inactive ones.
-        //
-        if ((BootOption[Index].Attributes & LOAD_OPTION_HIDDEN) != 0) {
-          continue;
-        }
+  //
+  // Create Hii Extend Label OpCode as the start opcode
+  //
+  StartLabel               = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (StartOpCodeHandle, &gEfiIfrTianoGuid, NULL, sizeof (EFI_IFR_GUID_LABEL));
+  StartLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+  StartLabel->Number       = LABEL_BOOT_OPTION;
 
-        //
-        // Group the legacy boot option in the sub title created dynamically
-        //
-        IsLegacyOption = (BOOLEAN)(
-                                   (DevicePathType (BootOption[Index].FilePath) == BBS_DEVICE_PATH) &&
-                                   (DevicePathSubType (BootOption[Index].FilePath) == BBS_BBS_DP)
-                                   );
+  //
+  // Create Hii Extend Label OpCode as the end opcode
+  //
+  EndLabel               = (EFI_IFR_GUID_LABEL *)HiiCreateGuidOpCode (EndOpCodeHandle, &gEfiIfrTianoGuid, NULL, sizeof (EFI_IFR_GUID_LABEL));
+  EndLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
+  EndLabel->Number       = LABEL_BOOT_OPTION_END;
+  mKeyInput              = 0;
+  NeedEndOp              = FALSE;
+  for (Index = 0; Index < BootOptionCount; Index++) {
+    //
+    // At this stage we are creating a menu entry, thus the Keys are reproduceable
+    //
+    mKeyInput++;
 
-        if (!IsLegacyOption && NeedEndOp) {
-          NeedEndOp = FALSE;
-          HiiCreateEndOpCode (StartOpCodeHandle);
-        }
+    //
+    // Don't display hidden boot options, but retain inactive ones.
+    //
+    if ((BootOption[Index].Attributes & LOAD_OPTION_HIDDEN) != 0) {
+      continue;
+    }
 
-        if (IsLegacyOption && (DeviceType != ((BBS_BBS_DEVICE_PATH *)BootOption[Index].FilePath)->DeviceType)) {
-          if (NeedEndOp) {
-            HiiCreateEndOpCode (StartOpCodeHandle);
-          }
+    //
+    // Group the legacy boot option in the sub title created dynamically
+    //
+    IsLegacyOption = (BOOLEAN)(
+                               (DevicePathType (BootOption[Index].FilePath) == BBS_DEVICE_PATH) &&
+                               (DevicePathSubType (BootOption[Index].FilePath) == BBS_BBS_DP)
+                               );
 
-          DeviceType = ((BBS_BBS_DEVICE_PATH *)BootOption[Index].FilePath)->DeviceType;
-          Token      = HiiSetString (
-                         HiiHandle,
-                         0,
-                         mDeviceTypeStr[
-                                        MIN (DeviceType & 0xF, ARRAY_SIZE (mDeviceTypeStr) - 1)
-                         ],
-                         NULL
-                         );
-          HiiCreateSubTitleOpCode (StartOpCodeHandle, Token, 0, 0, 1);
-          NeedEndOp = TRUE;
-        }
+    if (!IsLegacyOption && NeedEndOp) {
+      NeedEndOp = FALSE;
+      HiiCreateEndOpCode (StartOpCodeHandle);
+    }
 
-        ASSERT (BootOption[Index].Description != NULL);
-
-        Token = HiiSetString (HiiHandle, 0, BootOption[Index].Description, NULL);
-
-        TempStr = BmDevicePathToStr (BootOption[Index].FilePath);
-        if (TempStr != NULL) {
-          TempSize   = StrSize (TempStr);
-          HelpString = AllocateZeroPool (TempSize + StrSize (L"Device Path : "));
-          MaxLen     = (TempSize + StrSize (L"Device Path : "))/sizeof (CHAR16);
-          ASSERT (HelpString != NULL);
-          if (HelpString != NULL) {
-            StrCatS (HelpString, MaxLen, L"Device Path : ");
-            StrCatS (HelpString, MaxLen, TempStr);
-          }
-        }
-
-        HelpToken = HiiSetString (HiiHandle, 0, HelpString, NULL);
-
-        HiiCreateActionOpCode (
-          StartOpCodeHandle,
-          mKeyInput,
-          Token,
-          HelpToken,
-          EFI_IFR_FLAG_CALLBACK,
-          0
-          );
-      }
-
+    if (IsLegacyOption && (DeviceType != ((BBS_BBS_DEVICE_PATH *)BootOption[Index].FilePath)->DeviceType)) {
       if (NeedEndOp) {
         HiiCreateEndOpCode (StartOpCodeHandle);
       }
 
-      HiiUpdateForm (
-        HiiHandle,
-        &mBootManagerGuid,
-        BOOT_MANAGER_FORM_ID,
-        StartOpCodeHandle,
-        EndOpCodeHandle
-        );
-      HiiFreeOpCodeHandle (EndOpCodeHandle);
+      DeviceType = ((BBS_BBS_DEVICE_PATH *)BootOption[Index].FilePath)->DeviceType;
+      Token      = HiiSetString (
+                     HiiHandle,
+                     0,
+                     mDeviceTypeStr[
+                                    MIN (DeviceType & 0xF, ARRAY_SIZE (mDeviceTypeStr) - 1)
+                     ],
+                     NULL
+                     );
+      HiiCreateSubTitleOpCode (StartOpCodeHandle, Token, 0, 0, 1);
+      NeedEndOp = TRUE;
     }
 
-    HiiFreeOpCodeHandle (StartOpCodeHandle);
+    ASSERT (BootOption[Index].Description != NULL);
+
+    Token = HiiSetString (HiiHandle, 0, BootOption[Index].Description, NULL);
+
+    TempStr    = BmDevicePathToStr (BootOption[Index].FilePath);
+    TempSize   = StrSize (TempStr);
+    HelpString = AllocateZeroPool (TempSize + StrSize (L"Device Path : "));
+    MaxLen     = (TempSize + StrSize (L"Device Path : "))/sizeof (CHAR16);
+    ASSERT (HelpString != NULL);
+    StrCatS (HelpString, MaxLen, L"Device Path : ");
+    StrCatS (HelpString, MaxLen, TempStr);
+
+    HelpToken = HiiSetString (HiiHandle, 0, HelpString, NULL);
+
+    HiiCreateActionOpCode (
+      StartOpCodeHandle,
+      mKeyInput,
+      Token,
+      HelpToken,
+      EFI_IFR_FLAG_CALLBACK,
+      0
+      );
   }
+
+  if (NeedEndOp) {
+    HiiCreateEndOpCode (StartOpCodeHandle);
+  }
+
+  HiiUpdateForm (
+    HiiHandle,
+    &mBootManagerGuid,
+    BOOT_MANAGER_FORM_ID,
+    StartOpCodeHandle,
+    EndOpCodeHandle
+    );
+
+  HiiFreeOpCodeHandle (StartOpCodeHandle);
+  HiiFreeOpCodeHandle (EndOpCodeHandle);
 
   EfiBootManagerFreeLoadOptions (BootOption, BootOptionCount);
 }
@@ -846,14 +839,10 @@ BootManagerCallback (
   // parse the selected option
   //
   BmSetConsoleMode (FALSE);
-  // MU_CHANGE - Ensure BootOption is not null before dereference
-  if (BootOption != NULL) {
-    EfiBootManagerBoot (&BootOption[QuestionId - 1]);
-  }
-
+  EfiBootManagerBoot (&BootOption[QuestionId - 1]);
   BmSetConsoleMode (TRUE);
-  // MU_CHANGE - Verify BootOption is not NULL before dereference
-  if ((BootOption != NULL) && EFI_ERROR (BootOption[QuestionId - 1].Status)) {
+
+  if (EFI_ERROR (BootOption[QuestionId - 1].Status)) {
     gST->ConOut->OutputString (
                    gST->ConOut,
                    HiiGetString (gBootManagerPrivate.HiiHandle, STRING_TOKEN (STR_ANY_KEY_CONTINUE), NULL)
