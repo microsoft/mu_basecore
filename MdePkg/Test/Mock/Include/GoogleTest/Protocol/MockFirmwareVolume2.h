@@ -41,7 +41,8 @@ struct MockFirmwareVolume2Protocol {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
-    FV_ReadFile,
+    FvReadFile,
+
     (
      IN CONST  EFI_FIRMWARE_VOLUME2_PROTOCOL *This,
      IN CONST  EFI_GUID                      *NameGuid,
@@ -69,7 +70,8 @@ struct MockFirmwareVolume2Protocol {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
-    FV_WriteFile,
+    FvWriteFile,
+
     (
      IN CONST  EFI_FIRMWARE_VOLUME2_PROTOCOL *This,
      IN        UINT32                        NumberOfFiles,
@@ -127,9 +129,11 @@ MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, SetInfo, 4, EFIAPI);
 EFI_FIRMWARE_VOLUME2_PROTOCOL  FIRMWARE_VOLUME2_PROTOCOL_MOCK = {
   GetVolumeAttributes,    // EFI_FV_GET_ATTRIBUTES    GetVolumeAttributes;
   SetVolumeAttributes,    // EFI_FV_SET_ATTRIBUTES    SetVolumeAttributes;
-  FV_ReadFile,            // EFI_FV_READ_FILE         ReadFile;
+  FvReadFile,            // EFI_FV_READ_FILE         ReadFile;
+
   ReadSection,            // EFI_FV_READ_SECTION      ReadSection;
-  FV_WriteFile,           // EFI_FV_WRITE_FILE        WriteFile;
+  FvWriteFile,           // EFI_FV_WRITE_FILE        WriteFile;
+
   GetNextFile,            // EFI_FV_GET_NEXT_FILE     GetNextFile;
   0,                      // UINT32                   KeySize;
   0,                      // EFI_HANDLE               ParentHandle;
