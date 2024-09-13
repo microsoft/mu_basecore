@@ -127,11 +127,11 @@ MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, GetInfo, 4, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, SetInfo, 4, EFIAPI);
 
 EFI_FIRMWARE_VOLUME2_PROTOCOL  FIRMWARE_VOLUME2_PROTOCOL_MOCK = {
-  GetVolumeAttributes,    // EFI_FV_GET_ATTRIBUTES    GetVolumeAttributes;
-  SetVolumeAttributes,    // EFI_FV_SET_ATTRIBUTES    SetVolumeAttributes;
+  GetVolumeAttributes,   // EFI_FV_GET_ATTRIBUTES    GetVolumeAttributes;
+  SetVolumeAttributes,   // EFI_FV_SET_ATTRIBUTES    SetVolumeAttributes;
   FvReadFile,            // EFI_FV_READ_FILE         ReadFile;
 
-  ReadSection,            // EFI_FV_READ_SECTION      ReadSection;
+  ReadSection,           // EFI_FV_READ_SECTION      ReadSection;
   FvWriteFile,           // EFI_FV_WRITE_FILE        WriteFile;
 
   GetNextFile,            // EFI_FV_GET_NEXT_FILE     GetNextFile;
