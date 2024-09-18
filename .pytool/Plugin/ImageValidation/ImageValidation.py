@@ -17,6 +17,7 @@ from edk2toolext.image_validation import (
 from edk2toollib.uefi.edk2.parsers.fdf_parser import FdfParser
 from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
 from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
+from edk2toollib.gitignore_parser import parse_gitignore_lines
 import yaml
 from typing import List
 import logging
@@ -124,7 +125,9 @@ class ImageValidation(IUefiBuildPlugin):
 
         self.test_manager.config_data = config_data
         self.config_data = config_data
-        self.ignore_list = config_data["IGNORE_LIST"]
+        self.ignore = parse_gitignore_lines(config_data.get("IGNORE_LIST", []), os.path.join(
+            thebuilder.ws, "nofile.txt"), thebuilder.ws)
+
         self.arch_dict = config_data["TARGET_ARCH"]
 
         count = 0
@@ -169,7 +172,7 @@ class ImageValidation(IUefiBuildPlugin):
                             logging.warning(
                                 "Unable to parse the path to the pre-compiled efi")
                             continue
-                        if os.path.basename(efi_path) in self.ignore_list:
+                        if self.ignore(efi_path):
                             continue
                         logging.debug(
                             f'Performing Image Verification ... {os.path.basename(efi_path)}')
@@ -186,7 +189,7 @@ class ImageValidation(IUefiBuildPlugin):
                 ['.efi'], f'{os.path.join(thebuilder.env.GetValue("BUILD_OUTPUT_BASE"), arch)}')
 
             for efi_path in efi_path_list:
-                if os.path.basename(efi_path) in self.ignore_list:
+                if self.ignore(efi_path):
                     continue
 
                 # Perform Image Verification on any output efi's
