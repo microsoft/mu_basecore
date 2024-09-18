@@ -26,7 +26,7 @@ DEFAULT_CONFIG_FILE_PATH = Path(__file__).parent.resolve() / "image_validation.c
 
 class TestImageBase(TestInterface):
     """Image base verification test.
-    
+
     Checks the image base of the binary by accessing the optional
     header, then the image base. This value must be the same value
     as specified in the config file.
@@ -43,14 +43,14 @@ class TestImageBase(TestInterface):
 
     def execute(self, pe: PE, config_data: dict) -> Result:
         """Executes the test on the pefile.
-        
+
         Arguments:
             pe (PE): a parsed PE/COFF image file
             config_data (dict): the configuration data for the test
-        
+
         Returns:
             (Result): SKIP, WARN, FAIL, PASS
-        """ 
+        """
         target_requirements = config_data["TARGET_REQUIREMENTS"]
 
         required_base = target_requirements.get("IMAGE_BASE")
@@ -62,7 +62,7 @@ class TestImageBase(TestInterface):
         except Exception:
             logging.warning("Image Base not found in Optional Header")
             return Result.WARN
-        
+
         if image_base != required_base:
             logging.error(
                 f'[{Result.FAIL}]: Image Base address Expected: {hex(required_base)}, Found: {hex(image_base)}'
@@ -148,7 +148,7 @@ class ImageValidation(IUefiBuildPlugin):
         env_vars = thebuilder.env.GetAllBuildKeyValues()
         dsc_parser.SetEdk2Path(edk2)
         dsc_parser.SetInputVars(env_vars).ParseFile(ActiveDsc)
-        
+
         env_vars.update(dsc_parser.LocalVars)
         fdf_parser.SetEdk2Path(edk2)
         fdf_parser.SetInputVars(env_vars).ParseFile(ActiveFdf)
@@ -183,7 +183,7 @@ class ImageValidation(IUefiBuildPlugin):
         result = Result.PASS
         for arch in thebuilder.env.GetValue("TARGET_ARCH").split():
             efi_path_list = self._walk_directory_for_extension(
-                ['.efi'], f'{thebuilder.env.GetValue("BUILD_OUTPUT_BASE")}/{arch}')
+                ['.efi'], f'{os.path.join(thebuilder.env.GetValue("BUILD_OUTPUT_BASE"), arch)}')
 
             for efi_path in efi_path_list:
                 if os.path.basename(efi_path) in self.ignore_list:
@@ -276,12 +276,12 @@ class ImageValidation(IUefiBuildPlugin):
             raise TypeError("directory is None")
 
         if not os.path.isabs(directory):
-            logging.critical("Directory not abs path")
-            raise ValueError("directory is not an absolute path")
+            logging.critical(f"Directory {directory} not an abs path")
+            raise ValueError(f"directory {directory} is not an absolute path")
 
         if not os.path.isdir(directory):
-            logging.critical("Invalid find directory to walk")
-            raise ValueError("directory is not a valid directory path")
+            logging.critical(f"Directory {directory} is invalid")
+            raise ValueError(f"directory {directory} is not a valid directory path")
 
         if ignorelist is not None:
             if not isinstance(ignorelist, list):
