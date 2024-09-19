@@ -19,6 +19,7 @@ import re
 import sys
 from datetime import datetime, timezone, timedelta
 from io import StringIO
+import pathlib
 
 #
 # for now i want to keep this file as both a command line tool and a plugin for the Uefi Build system.
@@ -457,12 +458,13 @@ try:
             # Error out the unknown version
             if (version == OVERRIDE_FORMAT_VERSION_1[0]):
                 hash_val = ModuleHashCal(fullpath)
-                if (hash_val != hash):
+                hash_val2 = ModuleHash2Cal(fullpath)
+                if (hash_val != hash and hash_val2 != hash):
                     result = self.OverrideResult.OR_FILE_CHANGE
             else:
                 # Should not happen
                 result = self.OverrideResult.OR_VER_UNRECOG
-            return {'result':result, 'hash_val':hash_val}
+            return {'result':result, 'hash_val':hash_val2}
         # END: override_hash_compare(self, thebuilder, version, hash, fullpath)
 
         # Print the log after override validation is complete
@@ -612,6 +614,59 @@ def ModuleHashCal(path):
 
     result = hash_obj.hexdigest()
     return result
+
+def ModuleHash2Cal(path):
+
+    sourcefileList = []
+    binaryfileList = []
+    hash_obj = hashlib.md5()
+
+    # Find the specific line of Sources section
+    folderpath = os.path.dirname(path)
+
+    if os.path.isdir(path):
+        # Collect all files in this folder to the list
+        for subdir, _, files in os.walk(path):
+            for file in files:
+                sourcefileList.append(os.path.join(subdir, file))
+    else:
+        sourcefileList.append(path)
+
+    if path.lower().endswith(".inf") and os.path.isfile(path):
+
+        # Use InfParser to parse sources section
+        ip = InfParser()
+        ip.ParseFile(path)
+
+        # Add all referenced source files in addition to our inf file list
+        for source in ip.Sources:
+            sourcefileList.append(os.path.normpath(os.path.join(folderpath, source)))
+
+        # Add all referenced binary files to our binary file list
+        for binary in ip.Binaries:
+            binaryfileList.append(os.path.normpath(os.path.join(folderpath, binary)))
+
+    # Convert to '/' path separator prior to sorting to avoid ordering mismatches
+    sourcefileList = [pathlib.Path(sfile).as_posix() for sfile in sourcefileList]
+    binaryfileList = [pathlib.Path(sfile).as_posix() for bfile in binaryfileList]
+
+    sourcefileList.sort()
+    binaryfileList.sort()
+
+    for sfile in sourcefileList:
+        # print('Calculated: %s' %(sfile)) #Debug only
+        with open(os.path.normpath(sfile), 'rb') as entry:
+            # replace \r\n with \n to take care of line terminators
+            hash_obj.update(entry.read().replace(b'\r\n', b'\n'))
+
+    for bfile in binaryfileList:
+        # print('Calculated: %s' %(bfile)) #Debug only
+        with open(os.path.normpath(bfile), 'rb') as entry:
+            hash_obj.update(entry.read())
+
+    result = hash_obj.hexdigest()
+    return result
+
 
 def ModuleGitPatch(path, git_hash):
     ''' return a git patch of the given file since the hash '''
@@ -767,15 +822,16 @@ if __name__ == '__main__':
                 abs_path = pathtool.GetAbsolutePathOnThisSystemFromEdk2RelativePath(rel_path)
                 if abs_path is not None:
                     mod_hash = ModuleHashCal(abs_path)
+                    mod_hash2 = ModuleHash2Cal(abs_path)
                     # only update the line if the hash has changed - this ensures the timestamp tracks actual changes rather than last time it was run.
-                    if (mod_hash != match.group(4)):
+                    if (mod_hash != match.group(4) and mod_hash2 != match.group(4)):
                         VERSION_INDEX = Paths.Version - 1
 
                         if VERSION_INDEX == 0:
-                            line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), OVERRIDE_FORMAT_VERSION_1[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT))
+                            line = '#%s : %08d | %s | %s | %s\n' % (match.group(1), OVERRIDE_FORMAT_VERSION_1[0], rel_path, mod_hash2, datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT))
                         elif VERSION_INDEX == 1:
                             git_hash = ModuleGitHash(abs_path)
-                            line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), OVERRIDE_FORMAT_VERSION_2[0], rel_path, mod_hash, datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT), git_hash)
+                            line = '#%s : %08d | %s | %s | %s | %s\n' % (match.group(1), OVERRIDE_FORMAT_VERSION_2[0], rel_path, mod_hash2, datetime.now(timezone.utc).strftime(TIMESTAMP_FORMAT), git_hash)
                         print("Updating:\n" + line)
                 else:
                     print(f"Warning: Could not resolve relative path {rel_path}. Override line not updated.\n")
@@ -825,7 +881,7 @@ if __name__ == '__main__':
                     sys.exit(1)
 
             rel_path = rel_path.replace('\\', '/')
-            mod_hash = ModuleHashCal(Paths.TargetPath)
+            mod_hash = ModuleHash2Cal(Paths.TargetPath)
 
             VERSION_INDEX = Paths.Version - 1
 
