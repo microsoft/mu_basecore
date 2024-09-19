@@ -397,6 +397,8 @@ MmEntryPoint (
       gMmCorePrivate->CommunicationBuffer = 0;
       gMmCorePrivate->ReturnStatus        = (Status == EFI_SUCCESS) ? EFI_SUCCESS : EFI_NOT_FOUND;
     }
+  } else {
+    DEBUG ((DEBUG_INFO, "No valid communication buffer, no Synchronous MMI will be processed\n"));
   }
 
   //
