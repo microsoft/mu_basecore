@@ -18,4 +18,4 @@ antlr4-python3-runtime==4.13.2
 lcov-cobertura==2.0.2
 pygount==1.8.0 # MU_CHANGE
 toml==0.10.2 # MU_CHANGE
-regex==2024.7.24
+regex==2024.9.11
