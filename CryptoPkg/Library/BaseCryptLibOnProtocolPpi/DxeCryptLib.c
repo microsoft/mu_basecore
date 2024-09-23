@@ -66,9 +66,9 @@ DxeCryptLibConstructor (
   }
 
   Version = mCryptoProtocol->GetVersion ();
-  if (Version < EDKII_CRYPTO_VERSION) {
+  if (Version != EDKII_CRYPTO_VERSION) {
     DEBUG ((DEBUG_ERROR, "[DxeCryptLib] Crypto Protocol unsupported version %d\n", Version));
-    ASSERT (Version >= EDKII_CRYPTO_VERSION);
+    ASSERT (Version == EDKII_CRYPTO_VERSION);
     mCryptoProtocol = NULL;
     return EFI_NOT_FOUND;
   }
