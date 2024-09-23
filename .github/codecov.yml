@@ -17,7 +17,7 @@ flags:
   PcAtChipsetPkg:
     carryforward: true
   PerformancePkg:
-    carryforward: truee
+    carryforward: true
   ShellPkg:
     carryforward: true
   StandaloneMmPkg:
