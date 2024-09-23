@@ -68,9 +68,9 @@ SmmCryptLibConstructor (
   }
 
   Version = mSmmCryptoProtocol->GetVersion ();
-  if (Version < EDKII_CRYPTO_VERSION) {
+  if (Version != EDKII_CRYPTO_VERSION) {
     DEBUG ((DEBUG_ERROR, "[SmmCryptLib] Crypto SMM Protocol unsupported version %d\n", Version));
-    ASSERT (Version >= EDKII_CRYPTO_VERSION);
+    ASSERT (Version == EDKII_CRYPTO_VERSION);
     mSmmCryptoProtocol = NULL;
     return EFI_NOT_FOUND;
   }
