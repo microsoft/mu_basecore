@@ -53,7 +53,9 @@ checker when this package is tested. Dictionary files contain one word per line.
 Dictionary paths interpreted from workspace root. All words in custom dictionary
 files are added to the cspell config words field for simplicity. Useful if you
 have a lot of custom words and allows integration with other cspell plugins
-(ex: vscode's Code Spell Checker plugin )
+(ex: vscode's Code Spell Checker plugin). Comments are not supported; if a word
+requires a comment it should be added to the `ExtendWords` config where comments
+can be added.
 
 ### IgnoreStandardPaths
 
