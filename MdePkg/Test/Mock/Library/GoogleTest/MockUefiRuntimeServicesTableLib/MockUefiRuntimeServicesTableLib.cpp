@@ -11,7 +11,6 @@ MOCK_INTERFACE_DEFINITION (MockUefiRuntimeServicesTableLib);
 MOCK_FUNCTION_DEFINITION (MockUefiRuntimeServicesTableLib, gRT_GetVariable, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiRuntimeServicesTableLib, gRT_SetVariable, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiRuntimeServicesTableLib, gRT_GetTime, 2, EFIAPI);
-MOCK_FUNCTION_DEFINITION (MockUefiRuntimeServicesTableLib, gRT_ResetSystem, 4, EFIAPI);
 
 static EFI_RUNTIME_SERVICES  localRt = {
   { 0 },            // EFI_TABLE_HEADER
@@ -29,7 +28,7 @@ static EFI_RUNTIME_SERVICES  localRt = {
   gRT_SetVariable,  // EFI_SET_VARIABLE
 
   NULL,             // EFI_GET_NEXT_HIGH_MONO_COUNT
-  gRT_ResetSystem,  // EFI_RESET_SYSTEM
+  NULL,             // EFI_RESET_SYSTEM
 
   NULL,             // EFI_UPDATE_CAPSULE
   NULL,             // EFI_QUERY_CAPSULE_CAPABILITIES

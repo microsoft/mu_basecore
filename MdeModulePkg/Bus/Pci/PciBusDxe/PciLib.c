@@ -1306,7 +1306,7 @@ PciScanBus (
                                           PciDevice->DevicePath,
                                           PciAddress,
                                           &State,
-                                          (VOID **)&DescriptorsBuffer, // MU_CHANGE - CodeQL Change
+                                          (VOID **)&Descriptors, // MU_CHANGE - CodeQL Change
                                           &Attributes
                                           );
 

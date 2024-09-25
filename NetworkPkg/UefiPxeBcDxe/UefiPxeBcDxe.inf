@@ -62,7 +62,6 @@
   DpcLib
   DevicePathLib
   PcdLib
-  ReportStatusCodeLib
 
 [Protocols]
   ## TO_START
