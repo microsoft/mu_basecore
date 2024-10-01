@@ -117,9 +117,9 @@ struct MockFirmwareVolume2Protocol {
 MOCK_INTERFACE_DEFINITION (MockFirmwareVolume2Protocol);
 MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, GetVolumeAttributes, 2, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, SetVolumeAttributes, 2, EFIAPI);
-MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, FV_ReadFile, 7, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, FvReadFile, 7, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, ReadSection, 7, EFIAPI);
-MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, FV_WriteFile, 4, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, FvWriteFile, 4, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, GetNextFile, 6, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, GetInfo, 4, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockFirmwareVolume2Protocol, SetInfo, 4, EFIAPI);
