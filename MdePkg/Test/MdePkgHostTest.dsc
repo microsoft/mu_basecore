@@ -56,6 +56,7 @@
   MdePkg/Test/Mock/Library/GoogleTest/MockMmServicesTableLib/MockMmServicesTableLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockUefiRuntimeLib/MockUefiRuntimeLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockMemoryAllocationLib/MockMemoryAllocationLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockPostCodeLib/MockPostCodeLib.inf
   # MU_CHANGE [BEGIN]
   MdePkg/Test/Mock/Library/Cmocka/MockUefiRuntimeServicesTableLib/MockUefiRuntimeServicesTableLib.inf
   MdePkg/Test/Mock/Library/Cmocka/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf
