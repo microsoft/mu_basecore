@@ -43,15 +43,13 @@
   NvmExpressMediaSanitize.c # MU_CHANGE - Add Media Sanitize
   NvmExpressMediaSanitize.h # MU_CHANGE - Add Madia Sanitize
 
-## MU_CHANGE Start: Add NVMe Long Delay Time Events
 [Guids]
   gNVMeEnableStartEventGroupGuid
   gNVMeEnableCompleteEventGroupGuid
-## MU_CHANGE End: Add NVMe Long Delay Time Events
 
 [Packages]
   MdePkg/MdePkg.dec
-  MdeModulePkg/MdeModulePkg.dec ## MU_CHANGE Add NVMe Long Delay Time Events
+  MdeModulePkg/MdeModulePkg.dec
 
 [LibraryClasses]
   BaseMemoryLib

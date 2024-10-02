@@ -43,11 +43,7 @@
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/ReportStatusCodeLib.h>
 
-// MU_CHANGE BEGIN -- UEFI_890
-#include <Library/ReportStatusCodeLib.h>
-// MU_CHANGE END -- UEFI_890
-
-#include <Guid/NVMeEventGroup.h> // MU_CHANGE: Add NVMe Long Delay Time Events
+#include <Guid/NVMeEventGroup.h>
 
 typedef struct _NVME_CONTROLLER_PRIVATE_DATA  NVME_CONTROLLER_PRIVATE_DATA;
 typedef struct _NVME_DEVICE_PRIVATE_DATA      NVME_DEVICE_PRIVATE_DATA;

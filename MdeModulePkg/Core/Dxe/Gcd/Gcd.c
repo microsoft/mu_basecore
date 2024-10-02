@@ -1020,6 +1020,20 @@ CoreConvertSpace (
       //
       case GCD_SET_CAPABILITIES_MEMORY_OPERATION:
         Entry->Capabilities = Capabilities;
+
+        // Only SystemMemory and MoreReliable memory is in gMemoryMap
+        // so only attempt to update the attributes there if this is
+        // a relevant GCD type
+        if ((Entry->GcdMemoryType == EfiGcdMemoryTypeSystemMemory) ||
+            (Entry->GcdMemoryType == EfiGcdMemoryTypeMoreReliable))
+        {
+          CoreUpdateMemoryAttributes (
+            BaseAddress,
+            RShiftU64 (Length, EFI_PAGE_SHIFT),
+            Capabilities & (~EFI_MEMORY_RUNTIME)
+            );
+        }
+
         break;
     }
 
@@ -1735,17 +1749,10 @@ CoreSetMemorySpaceCapabilities (
   IN UINT64                Capabilities
   )
 {
-  EFI_STATUS  Status;
-
   DEBUG ((DEBUG_GCD, "GCD:CoreSetMemorySpaceCapabilities(Base=%016lx,Length=%016lx)\n", BaseAddress, Length));
   DEBUG ((DEBUG_GCD, "  Capabilities  = %016lx\n", Capabilities));
 
-  Status = CoreConvertSpace (GCD_SET_CAPABILITIES_MEMORY_OPERATION, (EFI_GCD_MEMORY_TYPE)0, (EFI_GCD_IO_TYPE)0, BaseAddress, Length, Capabilities, 0);
-  if (!EFI_ERROR (Status)) {
-    CoreUpdateMemoryAttributes (BaseAddress, RShiftU64 (Length, EFI_PAGE_SHIFT), Capabilities & (~EFI_MEMORY_RUNTIME));
-  }
-
-  return Status;
+  return CoreConvertSpace (GCD_SET_CAPABILITIES_MEMORY_OPERATION, (EFI_GCD_MEMORY_TYPE)0, (EFI_GCD_IO_TYPE)0, BaseAddress, Length, Capabilities, 0);
 }
 
 /**

@@ -8,7 +8,7 @@
 **/
 
 #include "NvmExpress.h"
-#include <Guid/NVMeEventGroup.h> // MU_CHANGE
+#include <Guid/NVMeEventGroup.h>
 
 #define NVME_SHUTDOWN_PROCESS_TIMEOUT  45
 
@@ -402,7 +402,7 @@ NvmeEnableController (
   UINT32      Index;
   UINT8       Timeout;
 
-  EfiEventGroupSignal (&gNVMeEnableStartEventGroupGuid); // MU_CHANGE Add NVMe Long Delay Time Events
+  EfiEventGroupSignal (&gNVMeEnableStartEventGroupGuid);
 
   //
   // Enable the controller.
@@ -415,7 +415,7 @@ NvmeEnableController (
 
   Status = WriteNvmeControllerConfiguration (Private, &Cc);
   if (EFI_ERROR (Status)) {
-    goto Cleanup; // MU_CHANGE Add NVMe Long Delay Time Events
+    goto Cleanup;
   }
 
   //
@@ -437,7 +437,7 @@ NvmeEnableController (
     Status = ReadNvmeControllerStatus (Private, &Csts);
 
     if (EFI_ERROR (Status)) {
-      goto Cleanup; // MU_CHANGE Add NVMe Long Delay Time Events
+      goto Cleanup;
     }
 
     if (Csts.Rdy) {
@@ -455,10 +455,8 @@ NvmeEnableController (
 
   DEBUG ((DEBUG_INFO, "NVMe controller is enabled with status [%r].\n", Status));
 
-  // MU_CHANGE Start: Add NVMe Long Delay Time Events
 Cleanup:
   EfiEventGroupSignal (&gNVMeEnableCompleteEventGroupGuid);
-  // MU_CHANGE End: Add NVMe Long Delay Time Events
   return Status;
 }
 
@@ -1167,9 +1165,6 @@ NvmeUnregisterShutdownNotification (
   EFI_STATUS                       Status;
   EFI_RESET_NOTIFICATION_PROTOCOL  *ResetNotify;
 
-  // MU_CHANGE - BEGIN
-  ReportStatusCode ((EFI_ERROR_MAJOR | EFI_ERROR_CODE), (EFI_IO_BUS_SCSI | EFI_IOB_EC_INTERFACE_ERROR));
-  // MU_CHANGE - END
   mNvmeControllerNumber--;
   if (mNvmeControllerNumber == 0) {
     Status = gBS->LocateProtocol (&gEfiResetNotificationProtocolGuid, NULL, (VOID **)&ResetNotify);

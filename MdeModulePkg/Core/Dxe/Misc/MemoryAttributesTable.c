@@ -445,7 +445,7 @@ MergeMemoryMap (
 
 /**
   Enforce memory map attributes.
-  This function will set EfiRuntimeServicesData/EfiMemoryMappedIO/EfiMemoryMappedIOPortSpace to be EFI_MEMORY_XP.
+  This function will set EfiRuntimeServicesData to be EFI_MEMORY_XP.
 
   @param  MemoryMap              A pointer to the buffer in which firmware places
                                  the current memory map.
@@ -466,7 +466,6 @@ EnforceMemoryMapAttribute (
   MemoryMapEntry = MemoryMap;
   MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + MemoryMapSize);
   while ((UINTN)MemoryMapEntry < (UINTN)MemoryMapEnd) {
-    // MU_CHANGE [BEGIN]: Set the attributes for EfiRuntimeServicesCode Regions
     if ((MemoryMapEntry->Attribute & EFI_MEMORY_ACCESS_MASK) == 0) {
       switch (MemoryMapEntry->Type) {
         case EfiRuntimeServicesCode:
@@ -484,8 +483,6 @@ EnforceMemoryMapAttribute (
         default:
           break;
       }
-
-      // MU_CHANGE [END]
     }
 
     MemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, DescriptorSize);

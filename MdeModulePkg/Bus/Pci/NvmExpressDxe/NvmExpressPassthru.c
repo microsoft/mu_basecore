@@ -847,9 +847,7 @@ NvmExpressPassThru (
     //
     CopyMem (Packet->NvmeCompletion, (VOID *)Cq, sizeof (EFI_NVM_EXPRESS_COMPLETION));
   } else {
-    // MU_CHANGE BEGIN UEFI_890
     ReportStatusCode ((EFI_ERROR_MAJOR | EFI_ERROR_CODE), (EFI_IO_BUS_SCSI | EFI_IOB_EC_INTERFACE_ERROR));
-    // MU_CHANGE END UEFI_890
 
     //
     // Timeout occurs for an NVMe command. Reset the controller to abort the
