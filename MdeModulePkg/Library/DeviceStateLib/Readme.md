@@ -26,6 +26,20 @@ states or to define any of the unused bits:
 * BIT 26: DEVICE_STATE_PLATFORM_MODE_2
 * BIT 27: DEVICE_STATE_PLATFORM_MODE_3
 
+### Insecure Device State
+
+This library has a function, GetInsecureDeviceState, that retrieves the devices states that
+signify an insecure state.  In this library implementation a bitmask is stored in a
+FixedAtBuild PCD, `gMdeModulePkgTokenSpaceGuid.InsecureDeviceState` to signify what modes are
+insecure.
+This PCD, by default, ORs DEVICE_STATE_SOURCE_DEBUG_ENABLED with DEVICE_STATE_UNIT_TEST_MODE,
+but can be customized to include other states.
+
+Expected use cases include comparing this bitmask against the current device state to check
+for an insecure device state, then measuring into the TPM. A platform can update this PCD with
+any other states it considers to be insecure and can call this API to take action if an
+insecure device state has been entered.
+
 ## Copyright
 
 Copyright (C) Microsoft Corporation.

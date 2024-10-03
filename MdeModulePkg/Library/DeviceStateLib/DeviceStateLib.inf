@@ -1,4 +1,4 @@
-## @file
+## @file DeviceStateLib.inf
 # Library to get and set the device state
 #
 # Copyright (C) Microsoft Corporation.
@@ -31,3 +31,4 @@ DeviceStateLib.c
 
 [Pcd]
 gEfiMdeModulePkgTokenSpaceGuid.PcdDeviceStateBitmask
+gEfiMdeModulePkgTokenSpaceGuid.PcdInsecureDeviceState

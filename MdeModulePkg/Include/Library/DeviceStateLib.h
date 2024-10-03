@@ -1,4 +1,4 @@
-/** @file
+/** @file DeviceStateLib.h
 Functions used to support Getting and Setting Device States.
 
 Copyright (C) Microsoft Corporation.
@@ -32,27 +32,71 @@ MU_CHANGE: new file
 
 #define DEVICE_STATE_MAX  (1 << (31))
 
+#define DEVICE_STATE_PLATFORM_MODE_INDEX_START  20
+#define DEVICE_STATE_PLATFORM_MODE_INDEX_END    27
+
+#define MAX_INSECURE_DEVICE_STATE_STRING_SIZE  512
+
+//
+// DEFINE the device state strings here. These are used for logging and measuring purposes.
+//
+#define DEVICE_STATE_SECUREBOOT_OFF_STRING             "SECURE_BOOT_OFF "
+#define DEVICE_STATE_MANUFACTURING_MODE_STRING         "MANUFACTURING_MODE "
+#define DEVICE_STATE_DEVELOPMENT_BUILD_ENABLED_STRING  "DEVELOPMENT_BUILD_ENABLED "
+#define DEVICE_STATE_SOURCE_DEBUG_ENABLED_STRING       "SOURCE_DEBUG_ENABLED "
+#define DEVICE_STATE_UNDEFINED_STRING                  "UNDEFINED "
+#define DEVICE_STATE_UNIT_TEST_MODE_STRING             "UNIT_TEST_MODE "
+#define DEVICE_STATE_PLATFORM_MODE_STRING              "OEM_DEFINED "
+
 typedef UINT32 DEVICE_STATE;
 
 /**
-Function to Get current device state
-@retval the current DEVICE_STATE
-**/
+ * Get String that represents the device's current insecure states, using the platform defined set of
+ * insecure device states. This can be used to measure insecure device states into the TPM or perform
+ * other required platform actions when the device enters an insecure state.
+ *
+ * @param[out] Buffer - Buffer to store the string
+ * @param[in] MaxSize - Maximum size of the buffer
+ * @retval The The number of characters in the string, including the null character.
+ */
+UINTN
+EFIAPI
+GetInsecureDeviceStateString (
+  IN OUT CHAR8  *Buffer,
+  IN UINTN      MaxSize
+  );
+
+/**
+ * Get the platform defined set of insecure device states. This can be used to measure insecure device
+ * states into the TPM or perform other required platform actions when the device enters an insecure state.
+ *
+ * @retval The bitmask of insecure device states as defined by the platform.
+ */
+DEVICE_STATE
+EFIAPI
+GetInsecureDeviceStateSetting (
+  );
+
+/**
+ * Function to Get current device state
+ *
+ * @retval the current DEVICE_STATE
+ */
 DEVICE_STATE
 EFIAPI
 GetDeviceState (
   );
 
 /**
-Function to Add additional bits to the device state
-
-@param AdditionalState - additional state to set active
-@retval Status of operation.  EFI_SUCCESS on successful update.
-**/
+ * Function to Add additional bits to the device state
+ *
+ * @param[in] AdditionalState - additional state to set active
+ * @retval Status of operation.  EFI_SUCCESS on successful update.
+ */
 RETURN_STATUS
 EFIAPI
 AddDeviceState (
-  DEVICE_STATE  AdditionalState
+  IN DEVICE_STATE  AdditionalState
   );
 
 #endif
