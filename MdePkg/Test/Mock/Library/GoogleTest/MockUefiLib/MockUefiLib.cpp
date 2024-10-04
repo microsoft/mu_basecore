@@ -17,3 +17,4 @@ MOCK_FUNCTION_DEFINITION (MockUefiLib, AddUnicodeString2, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiLib, FreeUnicodeStringTable, 1, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiLib, EfiLibInstallDriverBindingComponentName2, 6, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiLib, EfiCreateEventReadyToBootEx, 4, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockUefiLib, EfiGetSystemConfigurationTable, 2, EFIAPI);

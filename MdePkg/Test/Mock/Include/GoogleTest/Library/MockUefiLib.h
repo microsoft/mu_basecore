@@ -98,6 +98,13 @@ struct MockUefiLib {
      IN  VOID              *NotifyContext   OPTIONAL,
      OUT EFI_EVENT         *ReadyToBootEvent)
     );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    EfiGetSystemConfigurationTable,
+    (IN  EFI_GUID *TableGuid,
+     OUT VOID **Table)
+    );
 };
 
 #endif
