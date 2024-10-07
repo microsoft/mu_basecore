@@ -380,6 +380,7 @@
   AArch64/SetJumpLongJump.S         | GCC
   AArch64/CpuBreakpoint.S           | GCC
   AArch64/SpeculationBarrier.S      | GCC
+  AArch64/ArmReadIdAA64Isar0Reg.S   | GCC
   AArch64/CpuBreakAssert.S          | GCC ## MU_CHANGE
 
   AArch64/MemoryFence.asm           | MSFT
@@ -390,6 +391,7 @@
   AArch64/SetJumpLongJump.asm       | MSFT
   AArch64/CpuBreakpoint.asm         | MSFT
   AArch64/SpeculationBarrier.asm    | MSFT
+  AArch64/ArmReadIdAA64Isar0Reg.asm | MSFT
   AArch64/CpuBreakAssert.c          | MSFT ## MU_CHANGE
 
 [Sources.RISCV64]
