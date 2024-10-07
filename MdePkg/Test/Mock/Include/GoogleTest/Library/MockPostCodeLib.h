@@ -1,6 +1,7 @@
 /** @file MockPostCodeLib.h
   Google Test mocks for PostCodeLib
 
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
