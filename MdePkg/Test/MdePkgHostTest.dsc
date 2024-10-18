@@ -63,5 +63,8 @@
   MdePkg/Test/Mock/Library/Stub/StubUefiLib/StubUefiLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockPciExpressLib/MockPciExpressLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockUefiDevicePathLib/MockUefiDevicePathLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockPerformanceLib/MockPerformanceLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockDxeServicesTableLib/MockDxeServicesTableLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockPciLib/MockPciLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockPcdLib/MockPcdLib.inf
   # MU_CHANGE [END]
