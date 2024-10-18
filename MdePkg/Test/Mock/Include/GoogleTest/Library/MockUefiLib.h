@@ -236,12 +236,6 @@ struct MockUefiLib {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
-    EfiEventGroupSignal,
-    (IN CONST EFI_GUID  *EventGroup)
-    );
-
-  MOCK_FUNCTION_DECLARATION (
-    EFI_STATUS,
     EfiCreateEventReadyToBootEx,
     (IN  EFI_TPL           NotifyTpl,
      IN  EFI_EVENT_NOTIFY  NotifyFunction OPTIONAL,
