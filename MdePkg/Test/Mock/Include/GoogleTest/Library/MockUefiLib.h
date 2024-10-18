@@ -1,7 +1,7 @@
 /** @file MockUefiLib.h
   Google Test mocks for UefiLib
 
-  Copyright (c) Microsoft Corporation.
+  Copyright (C) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -232,6 +232,12 @@ struct MockUefiLib {
     EFI_STATUS,
     EfiCreateEventReadyToBoot,
     (OUT EFI_EVENT  *ReadyToBootEvent)
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    EfiEventGroupSignal,
+    (IN CONST EFI_GUID  *EventGroup)
     );
 
   MOCK_FUNCTION_DECLARATION (
