@@ -2,6 +2,7 @@
   Google Test mocks for UefiLib
 
   Copyright (c) 2022, Intel Corporation. All rights reserved.
+  Copyright (C) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 #include <GoogleTest/Library/MockUefiLib.h>
@@ -16,4 +17,5 @@ MOCK_FUNCTION_DEFINITION (MockUefiLib, LookupUnicodeString2, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiLib, AddUnicodeString2, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiLib, FreeUnicodeStringTable, 1, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiLib, EfiLibInstallDriverBindingComponentName2, 6, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockUefiLib, EfiEventGroupSignal, 1, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiLib, EfiCreateEventReadyToBootEx, 4, EFIAPI);
