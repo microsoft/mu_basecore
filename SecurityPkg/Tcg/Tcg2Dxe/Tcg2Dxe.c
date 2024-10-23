@@ -50,6 +50,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // MU_CHANGE [BEGIN] - Add the OemTpm2InitLib
 #include <Library/OemTpm2InitLib.h>
 // MU_CHANGE [END]
+// MU_CHANGE [BEGIN] - Measure Firmware Debugger Enabled
+#include <Library/DeviceStateLib.h>
+#include <Library/PanicLib.h>
+// MU_CHANGE [END]
 
 // #define PERF_ID_TCG2_DXE  0x3120 // MU_CHANGE
 
@@ -2499,10 +2503,26 @@ MeasureSecureBootPolicy (
   EFI_STATUS  Status;
   VOID        *Protocol;
 
+  DEVICE_STATE  CurrentDeviceState; // MU_CHANGE - Measure Firmware Debugger Enabled
+
   Status = gBS->LocateProtocol (&gEfiVariableWriteArchProtocolGuid, NULL, (VOID **)&Protocol);
   if (EFI_ERROR (Status)) {
     return;
   }
+
+  // MU_CHANGE [BEGIN] - Measure Firmware Debugger Enabled
+  CurrentDeviceState = GetDeviceState ();
+
+  if ((CurrentDeviceState & DEVICE_STATE_SOURCE_DEBUG_ENABLED) != 0) {
+    Status = MeasureLaunchOfFirmwareDebugger ();
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "Failed to measure Firmware Debugger Enabled!\n"));
+      PanicReport (__FILE__, __LINE__, "Failed to measure Firmware Debugger Enabled!\n");
+      return;
+    }
+  }
+
+  // MU_CHANGE [END]
 
   if (PcdGetBool (PcdFirmwareDebuggerInitialized)) {
     Status = MeasureLaunchOfFirmwareDebugger ();

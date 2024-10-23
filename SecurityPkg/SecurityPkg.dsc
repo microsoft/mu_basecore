@@ -91,6 +91,11 @@
   PlatformLibWrapper|SecurityPkg/DeviceSecurity/OsStub/PlatformLibWrapper/PlatformLibWrapper.inf
   MemLibWrapper|SecurityPkg/DeviceSecurity/OsStub/MemLibWrapper/MemLibWrapper.inf
 
+  ## MU_CHANGE [BEGIN] - Measure Firmware Debugger Enabled
+  DeviceStateLib|MdeModulePkg/Library/DeviceStateLib/DeviceStateLib.inf 
+  PanicLib|MdePkg/Library/BasePanicLibNull/BasePanicLibNull.inf 
+  # MU_CHANGE [END]
+
 # MU_CHANGE - Add PreUefiEventLog
 [LibraryClasses.X64, LibraryClasses.IA32]
   Tcg2PreUefiEventLogLib|SecurityPkg/Library/Tcg2PreUefiEventLogLibNull/Tcg2PreUefiEventLogLibNull.inf

@@ -50,6 +50,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // MU_CHANGE [BEGIN] - Move to 256-bit PCRs.
 #include <Library/Tcg2PreUefiEventLogLib.h>
 // MU_CHANGE [END]
+// MU_CHANGE [BEGIN] - Measure DebugEnabled and Insecure Device State into PCR7
+#include <Library/DeviceStateLib.h>
+#include <Library/PanicLib.h>
+// MU_CHANGE [END]
 #define PERF_ID_TCG2_PEI  0x3080
 
 typedef struct {
@@ -644,6 +648,39 @@ MeasureCRTMVersion (
            );
 }
 
+// MU_CHANGE [BEGIN] - Measure Firmware Debugger Enabled
+
+/**
+  Measure and log firmware debugger enabled, and extend the measurement result into a specific PCR.
+
+  @retval EFI_SUCCESS           Operation completed successfully.
+  @retval EFI_OUT_OF_RESOURCES  Out of memory.
+  @retval EFI_DEVICE_ERROR      The operation was unsuccessful.
+**/
+EFI_STATUS
+MeasureFirmwareDebuggerEnabled (
+  VOID
+  )
+{
+  TCG_PCR_EVENT_HDR  TcgEventHdr;
+
+  TcgEventHdr.PCRIndex  = 7;
+  TcgEventHdr.EventType = EV_EFI_ACTION;
+  TcgEventHdr.EventSize = sizeof (FIRMWARE_DEBUGGER_EVENT_STRING) - 1;
+
+  DEBUG ((DEBUG_INFO, "Measuring Device State: Firmware Debugger Enabled\n"));
+  return HashLogExtendEvent (
+           &mEdkiiTcgPpi,
+           0,
+           (UINT8 *)FIRMWARE_DEBUGGER_EVENT_STRING,
+           sizeof (FIRMWARE_DEBUGGER_EVENT_STRING) - 1,
+           &TcgEventHdr,
+           (UINT8 *)FIRMWARE_DEBUGGER_EVENT_STRING
+           );
+}
+
+// MU_CHANGE [END]
+
 /**
   Get the FvName from the FV header.
 
@@ -1062,6 +1099,8 @@ PeimEntryMP (
 {
   EFI_STATUS  Status;
 
+  DEVICE_STATE  CurrentDeviceState; // MU_CHANGE - Measure Firmware Debugger Enabled
+
   //
   // install Tcg Services
   //
@@ -1071,6 +1110,20 @@ PeimEntryMP (
   // MU_CHANGE_103691
   // MU_CHANGE [BEGIN] - Add support for measurements extended before Tcg2 stack is available.
   CreateTcg2PreUefiEventLogEntries ();
+  // MU_CHANGE [END]
+
+  // MU_CHANGE [BEGIN] - Measure Firmware Debugger Enabled
+  CurrentDeviceState = GetDeviceState ();
+
+  if ((CurrentDeviceState & DEVICE_STATE_SOURCE_DEBUG_ENABLED) != 0) {
+    Status = MeasureFirmwareDebuggerEnabled ();
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "Failed to measure Firmware Debugger Enabled!\n"));
+      PanicReport (__FILE__, __LINE__, "Failed to measure Firmware Debugger Enabled!\n");
+      return Status;
+    }
+  }
+
   // MU_CHANGE [END]
 
   if (PcdGet8 (PcdTpm2ScrtmPolicy) == 1) {
