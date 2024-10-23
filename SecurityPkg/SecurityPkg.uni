@@ -101,12 +101,13 @@
 #string STR_gEfiSecurityPkgTokenSpaceGuid_PcdPhysicalPresenceHwEnable_HELP  #language en-US "Indicates whether the platform supports the hardware method of asserting physical presence.<BR><BR>\n"
                                                                                             "TRUE  - Supports the hardware method of asserting physical presence.<BR>\n"
                                                                                             "FALSE - Does not support the hardware method of asserting physical presence.<BR>"
-
-#string STR_gEfiSecurityPkgTokenSpaceGuid_PcdFirmwareDebuggerInitialized_PROMPT  #language en-US "Firmware debugger status."
-
-#string STR_gEfiSecurityPkgTokenSpaceGuid_PcdFirmwareDebuggerInitialized_HELP  #language en-US "This PCD indicates if debugger exists. <BR><BR>\n"
-                                                                                               "TRUE  - Firmware debugger exists.<BR>\n"
-                                                                                               "FALSE - Firmware debugger doesn't exist.<BR>"
+// MU_CHANGE [BEGIN] - Remove PcdFirmwareDebuggerInitialized
+// #string STR_gEfiSecurityPkgTokenSpaceGuid_PcdFirmwareDebuggerInitialized_PROMPT  #language en-US "Firmware debugger status."
+//
+// #string STR_gEfiSecurityPkgTokenSpaceGuid_PcdFirmwareDebuggerInitialized_HELP  #language en-US "This PCD indicates if debugger exists. <BR><BR>\n"
+//                                                                                               "TRUE  - Firmware debugger exists.<BR>\n"
+//                                                                                               "FALSE - Firmware debugger doesn't exist.<BR>"
+// MU_CHANGE [END]
 
 #string STR_gEfiSecurityPkgTokenSpaceGuid_PcdTpm2InitializationPolicy_PROMPT  #language en-US "TPM 2.0 device initialization policy.<BR>"
 
