@@ -129,6 +129,15 @@ struct MockIoLib {
      IN      UINT64  Value
     )
     );
+
+  MOCK_FUNCTION_DECLARATION (
+    UINT16,
+    IoWrite16,
+    (
+     IN      UINTN   Port,
+     IN      UINT16  Value
+    )
+    );
 };
 
 #endif
