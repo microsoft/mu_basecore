@@ -464,12 +464,14 @@
   # @Prompt Enable hardware method of asserting physical presence.
   gEfiSecurityPkgTokenSpaceGuid.PcdPhysicalPresenceHwEnable|TRUE|BOOLEAN|0x00010005
 
-[PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
+  # MU_CHANGE [BEGIN] - Remove PcdFirmwareDebuggerInitialized
+# [PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## This PCD indicates if debugger exists. <BR><BR>
   #   TRUE  - Firmware debugger exists.<BR>
   #   FALSE - Firmware debugger doesn't exist.<BR>
   # @Prompt Firmware debugger status.
-  gEfiSecurityPkgTokenSpaceGuid.PcdFirmwareDebuggerInitialized|FALSE|BOOLEAN|0x00010009
+  # gEfiSecurityPkgTokenSpaceGuid.PcdFirmwareDebuggerInitialized|FALSE|BOOLEAN|0x00010009
+  # MU_CHANGE [END]
 
   ## This PCD indicates the initialization policy for TPM 2.0.<BR><BR>
   #  If 0, no initialization needed - most likely used for chipset SRTM solution, in which TPM is already initialized.<BR>
