@@ -64,6 +64,10 @@
   Tcg2PreUefiEventLogLib
 ## MU_CHANGE [END]
 
+  ## MU_CHANGE [BEGIN] - Measure Firmware Debugger Enabled
+  DeviceStateLib
+  PanicLib
+  ## MU_CHANGE [END]
 [Guids]
   gTcgEventEntryHobGuid                                                ## PRODUCES               ## HOB
   gTpmErrorHobGuid                                                     ## SOMETIMES_PRODUCES     ## HOB

@@ -71,6 +71,10 @@
   OemTpm2InitLib
 ## MU_CHANGE [END]
   PcdLib  # MU_CHANGE
+  ## MU_CHANGE [BEGIN] - Measure Firmware Debugger Enabled
+  DeviceStateLib
+  PanicLib
+  ## MU_CHANGE [END]
 
 [Guids]
   ## SOMETIMES_CONSUMES     ## Variable:L"SecureBoot"
