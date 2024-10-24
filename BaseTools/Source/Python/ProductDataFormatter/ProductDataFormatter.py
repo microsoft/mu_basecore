@@ -12,6 +12,7 @@ import io
 import os
 import struct
 from collections import namedtuple
+from pathlib import Path
 
 
 class ProductDataFormatter:
@@ -24,11 +25,10 @@ class ProductDataFormatter:
             raise NotADirectoryError(
                 f"{directory_path} is an invalid directory!")
 
-        self._directory_path = directory_path
+        self._directory_path = Path(directory_path)
 
     def _get_bins(self):
-        return glob.glob(os.path.join(
-            self._directory_path, '*.productdatabin.i'))
+            return self._directory_path.rglob('*.productdatabin.i')
 
     def _get_signed_item(self, file_path):
         with open(file_path, 'rb') as bin_file:
