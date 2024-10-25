@@ -2119,8 +2119,9 @@ ExtractConfigRequest (
       //
       // Header->VarStoreId == 0 means no storage for this question.
       //
-      ASSERT (Header->VarStoreId != 0);
-      DEBUG ((DEBUG_INFO, "Varstore Id: 0x%x\n", Header->VarStoreId));
+      if (Header->VarStoreId == 0) {
+        continue;
+      }
 
       Storage = FindStorageFromVarId (FormPackage, Header->VarStoreId);
       ASSERT (Storage != NULL);

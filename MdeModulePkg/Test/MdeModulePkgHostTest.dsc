@@ -115,4 +115,6 @@
   # Build HOST_APPLICATION Libraries
   #
   MdeModulePkg/Test/Mock/Library/GoogleTest/MockPciHostBridgeLib/MockPciHostBridgeLib.inf
+  MdeModulePkg/Test/Mock/Library/GoogleTest/MockCapsuleLib/MockCapsuleLib.inf
+  MdeModulePkg/Test/Mock/Library/GoogleTest/MockUefiBootManagerLib/MockUefiBootManagerLib.inf
   MdeModulePkg/Test/Mock/Library/GoogleTest/MockPlatformHookLib/MockPlatformHookLib.inf
