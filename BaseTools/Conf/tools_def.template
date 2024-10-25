@@ -1251,8 +1251,10 @@ RELEASE_GCC49_IA32_CC_FLAGS       = DEF(GCC49_IA32_CC_FLAGS) -Wno-unused-but-set
 *_GCC49_X64_OBJCOPY_FLAGS        =
 *_GCC49_X64_NASM_FLAGS           = -f elf64
 
-  DEBUG_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Os # MU_CHANGE
-RELEASE_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Os -Wno-unused-but-set-variable -Wno-unused-const-variable # MU_CHANGE
+# MU_CHANGE
+  DEBUG_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Os
+# MU_CHANGE
+RELEASE_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Os -Wno-unused-but-set-variable -Wno-unused-const-variable
   NOOPT_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -O0
 
 ##################
@@ -1605,9 +1607,11 @@ RELEASE_GCC5_ARM_DLINK_FLAGS     = DEF(GCC5_ARM_DLINK_FLAGS) -flto -Os -L$(WORKS
 *_GCC5_AARCH64_DLINK2_FLAGS      = DEF(GCC5_AARCH64_DLINK2_FLAGS)
 *_GCC5_AARCH64_DTCPP_FLAGS       = DEF(GCC_DTCPP_FLAGS)
 *_GCC5_AARCH64_PLATFORM_FLAGS    =
-*_GCC5_AARCH64_PP_FLAGS          = $(ARCHCC_FLAGS) $(PLATFORM_FLAGS) DEF(GCC_PP_FLAGS) # MU_CHANGE
+# MU_CHANGE
+*_GCC5_AARCH64_PP_FLAGS          = $(ARCHCC_FLAGS) $(PLATFORM_FLAGS) DEF(GCC_PP_FLAGS)
 *_GCC5_AARCH64_RC_FLAGS          = DEF(GCC_AARCH64_RC_FLAGS) DEF(GCC_AARCH64_RC_BTI_FLAGS)
-*_GCC5_AARCH64_VFRPP_FLAGS       = $(ARCHCC_FLAGS) $(PLATFORM_FLAGS) DEF(GCC_VFRPP_FLAGS) # MU_CHANGE
+# MU_CHANGE
+*_GCC5_AARCH64_VFRPP_FLAGS       = $(ARCHCC_FLAGS) $(PLATFORM_FLAGS) DEF(GCC_VFRPP_FLAGS)
 *_GCC5_AARCH64_CC_XIPFLAGS       = DEF(GCC5_AARCH64_CC_XIPFLAGS)
 
   DEBUG_GCC5_AARCH64_CC_FLAGS    = DEF(GCC5_AARCH64_CC_FLAGS) -flto -Wno-unused-but-set-variable -Wno-unused-const-variable
@@ -1988,17 +1992,20 @@ NOOPT_CLANGPDB_IA32_DLINK2_FLAGS     =
 DEBUG_CLANGPDB_X64_CC_FLAGS         = DEF(CLANGPDB_ALL_CC_FLAGS) -m64 "-DEFIAPI=__attribute__((ms_abi))" -mno-red-zone -mcmodel=small -Oz -flto DEF(CLANGPDB_X64_TARGET) -gcodeview -funwind-tables -Wno-unused-but-set-variable -Wno-deprecated-non-prototype
 DEBUG_CLANGPDB_X64_DLINK_FLAGS      = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /ALIGN:32 /FILEALIGN:32 /Machine:X64 /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DEBUG:GHASH /MLLVM:-exception-model=wineh /lldmap
 DEBUG_CLANGPDB_X64_DLINK2_FLAGS     =
-DEBUG_CLANGPDB_X64_GENFW_FLAGS      = --keepexceptiontable --keepoptionalheader # MU_CHANGE Keep optional header for NX_COMPAT flag
+# MU_CHANGE Keep optional header for NX_COMPAT flag
+DEBUG_CLANGPDB_X64_GENFW_FLAGS      = --keepexceptiontable --keepoptionalheader
 
 RELEASE_CLANGPDB_X64_CC_FLAGS       = DEF(CLANGPDB_ALL_CC_FLAGS) -m64 "-DEFIAPI=__attribute__((ms_abi))" -mno-red-zone -mcmodel=small -Oz -flto DEF(CLANGPDB_X64_TARGET) -fno-unwind-tables -Wno-unused-but-set-variable -Wno-deprecated-non-prototype
 RELEASE_CLANGPDB_X64_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4254 /OPT:REF /OPT:ICF=10 /ALIGN:32 /FILEALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /Machine:X64 /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /MERGE:.rdata=.data /MLLVM:-exception-model=wineh /lldmap
 RELEASE_CLANGPDB_X64_DLINK2_FLAGS   =
-RELEASE_CLANGPDB_X64_GENFW_FLAGS    = --keepoptionalheader # MU_CHANGE Keep optional header for NX_COMPAT flag
+# MU_CHANGE Keep optional header for NX_COMPAT flag
+RELEASE_CLANGPDB_X64_GENFW_FLAGS    = --keepoptionalheader
 
 NOOPT_CLANGPDB_X64_CC_FLAGS         = DEF(CLANGPDB_ALL_CC_FLAGS) -m64 "-DEFIAPI=__attribute__((ms_abi))" -mno-red-zone -mcmodel=small -O0 DEF(CLANGPDB_X64_TARGET) -gcodeview -funwind-tables -Wno-unused-but-set-variable -Wno-deprecated-non-prototype
 NOOPT_CLANGPDB_X64_DLINK_FLAGS      = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /ALIGN:32 /FILEALIGN:32 /Machine:X64 /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DEBUG:GHASH /MLLVM:-exception-model=wineh /lldmap
 NOOPT_CLANGPDB_X64_DLINK2_FLAGS     =
-NOOPT_CLANGPDB_X64_GENFW_FLAGS      = --keepexceptiontable --keepoptionalheader # MU_CHANGE Keep optional header for NX_COMPAT flag
+# MU_CHANGE Keep optional header for NX_COMPAT flag
+NOOPT_CLANGPDB_X64_GENFW_FLAGS      = --keepexceptiontable --keepoptionalheader
 
 ##########################
 # CLANGWIN ARM64 definitions
@@ -2369,7 +2376,8 @@ RELEASE_XCODE5_X64_CC_FLAGS   = -target x86_64-pc-win32-macho -c    -Os       -W
 #################
 # ASM 16 linker definitions
 #################
-*_*_*_ASMLINK_PATH                 = ENV(LINK_16_PREFIX)link16.exe # MU_CHANGE - change to prefix
+# MU_CHANGE - change to prefix
+*_*_*_ASMLINK_PATH                 = ENV(LINK_16_PREFIX)link16.exe
 *_*_*_ASMLINK_FLAGS                = /nologo /tiny
 
 ##################
