@@ -4,6 +4,7 @@
 
 For details on how to complete these options and their meaning refer to [CONTRIBUTING.md](https://github.com/microsoft/mu/blob/HEAD/CONTRIBUTING.md).
 
+- [ ] Backport to release branch?
 - [ ] Impacts functionality?
 - [ ] Impacts security?
 - [ ] Breaking change?
