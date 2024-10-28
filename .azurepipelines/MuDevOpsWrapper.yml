@@ -19,7 +19,7 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: refs/tags/v12.0.2
+      ref: refs/tags/v12.2.0
 
 parameters:
 - name: do_ci_build
@@ -82,7 +82,7 @@ parameters:
 jobs:
 - template: Jobs/PrGate.yml@mu_devops
   parameters:
-    linux_container_image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:d1e4ff1
+    linux_container_image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:4bebc96
     ${{ if eq(parameters.rust_build, true) }}:
       linux_container_options: --security-opt seccomp=unconfined
     do_ci_build: ${{ parameters.do_ci_build }}
@@ -105,7 +105,7 @@ jobs:
 
     container:
 
-      image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:d1e4ff1
+      image: ghcr.io/microsoft/mu_devops/ubuntu-22-build:4bebc96
       options: --user root --name mu_devops_build_container --security-opt seccomp=unconfined
 
     steps:
