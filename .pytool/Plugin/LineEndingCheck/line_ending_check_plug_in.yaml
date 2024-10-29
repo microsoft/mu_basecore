@@ -1,0 +1,11 @@
+## @file
+# CiBuildPlugin used to check line ending format.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+{
+  "scope": "cibuild",
+  "name": "Line Ending Check Test",
+  "module": "LineEndingCheck"
+}
