@@ -1,16 +1,20 @@
 # This workflow moves marked commits from a development branch to a release branch.
 #
 # Each commit in the development branch is cherry-picked to the release branch if the commit originates from a merged
-# PR that is marked for backport. If a merge conflict occurs, the commit is committed to a new branch with merge
-# markers and then a PR is created into the target branch with those markers. The PR is labeled with
-# "type:release-merge-conflict" to indicate that it needs manual resolution.
+# PR that is marked for backport.
+#
+# Merge conflicts should be rare. Should one occur, the changes are committed to a new branch with merge markers and
+# then a PR is created into the target branch with those markers. The PR is labeled with "type:release-merge-conflict"
+# to indicate that it needs manual resolution.
 #
 # The PR is expected to fail compilation and status checks (of course) due to the merge conflict markers. A human
 # should then checkout the PR branch, resolve the conflicts, and push the changes back to the PR branch.
 #
-# This workflow is currently being tested in the Mu Basecore repository. Once it performs well over a reasonable
-# period of time, it will be moved to the Mu DevOps repository for general use and synced to other relevant
-# repositories using a more generalized template to fill in some of the details.
+# NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
+#       instead of the file in this repo.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -226,3 +230,4 @@ jobs:
         -d "{\"title\":\"$PR_TITLE\",\"body\":\"$PR_BODY\",\"head\":\"$PR_BRANCH\",\"base\":\"$BASE_BRANCH\",\"labels\":[\"type:release-merge-conflict\"]}"
       env:
         CHERRY_PICK_TOKEN: ${{ secrets.CHERRY_PICK_TOKEN }}
+
