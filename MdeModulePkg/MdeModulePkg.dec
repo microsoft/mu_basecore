@@ -185,6 +185,10 @@
   #
   SpiHcPlatformLib|Include/Library/SpiHcPlatformLib.h
 
+  ##  @libraryclass   Provides services to prints all HOB information.
+  #
+  HobPrintLib|Include/Library/HobPrintLib.h
+
   ## MU_CHANGE - Add AdvLoggerAccessLib to MdeModulePkg
   ## @libraryclass Provides an interface for AdvLogger through GetVariable
   #
