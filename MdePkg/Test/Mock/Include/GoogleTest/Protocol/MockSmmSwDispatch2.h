@@ -16,9 +16,7 @@ extern "C" {
   #include <Protocol/SmmSwDispatch2.h>
 }
 
-//
-// Declarations to handle usage of the EFI_SMM_SW_DISPATCH2_PROTOCOL 
-//
+// Declarations to handle usage of the EFI_SMM_SW_DISPATCH2_PROTOCOL
 struct MockSmmSwDispatch2Protocol {
   MOCK_INTERFACE_DECLARATION (MockSmmSwDispatch2Protocol);
 
@@ -54,5 +52,5 @@ EFI_SMM_SW_DISPATCH2_PROTOCOL SMM_SW_DISPATCH2_PROTOCOL_MOCK = {
 extern "C" {
   EFI_SMM_SW_DISPATCH2_PROTOCOL  *gSmmSwDispatch2 = &SMM_SW_DISPATCH2_PROTOCOL_MOCK;
 }
-
 #endif // MOCK_SMM_SW_DISPATCH2_H_
+
