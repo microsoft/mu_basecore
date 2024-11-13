@@ -24,6 +24,9 @@
 [Sources.X64]
   X64/StackCheckFunctionsMsvc.nasm | MSFT
 
+[Sources.AARCH64]
+  AARCH64/StackCheckFunctionsMsvc.asm | MSFT
+
 [Packages]
   MdePkg/MdePkg.dec
 
