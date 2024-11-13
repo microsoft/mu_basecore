@@ -2,7 +2,7 @@
   This file declares a mock of Firmware Volume Block Protocol
 
   Copyright (c) Microsoft Corporation.
-  Your use of this software is governed by the terms of the Microsoft agreement under which you obtained the software.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #ifndef MOCK_FIRMWARE_VOLUME_BLOCK_H_
