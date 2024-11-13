@@ -2,7 +2,7 @@
   This file declares a mock of SMM Software Dispatch Protocol
 
   Copyright (c) Microsoft Corporation.
-  Your use of this software is governed by the terms of the Microsoft agreement under which you obtained the software.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #ifndef MOCK_SMM_SW_DISPATCH2_H_
