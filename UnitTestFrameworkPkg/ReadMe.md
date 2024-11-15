@@ -1516,8 +1516,10 @@ or FALSE e.g. `CC_REORGANIZE=TRUE`:
 1. `CC_FULL`: Generates zero'd out coverage data for untested source files in the package.
    Default: `FALSE`
 1. `CC_FLATTEN`: Groups all source files together, rather than by INF. Default: `FALSE`
+1. `CC_EXCLUDE`: Comma separated list of fnmatch expressions to exclude from results.
+   Default: \*NULL\*,\*Null\*,\*null\*
 
-** NOTE: `CC_FULL` and `CC_FLATTEN` values only matter if `CC_REORGANIZE=TRUE`, as they only
+** NOTE: `CC_FULL` and `CC_FLATTEN` and `CC_EXCLUDE` values only matter if `CC_REORGANIZE=TRUE`, as they only
 effect how the coverage report is reorganized.
 
 **TIP: `CC_FLATTEN=TRUE/FALSE` will produce different coverage percentage results as `TRUE` de-duplicates source files

@@ -12,7 +12,6 @@ import stat
 import xml.etree.ElementTree
 from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
 from edk2toolext import edk2_logging
-import edk2toollib.windows.locate_tools as locate_tools
 from edk2toolext.environment import shell_environment
 from edk2toollib.utility_functions import RunCmd
 from edk2toollib.utility_functions import GetHostInfo
@@ -293,13 +292,14 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
         package = thebuilder.env.GetValue("CI_PACKAGE_NAME", "")
         file_out = package + "_coverage.xml"
         cov_file = os.path.join(buildOutputBase, file_out)
+        exclude = thebuilder.env.GetValue("CC_EXCLUDE", "*NULL*,*Null*,*null*")
 
         params = f"--database {db_path} coverage {cov_file} -o {cov_file} --by-package -ws {workspace}"
 
         params += f" -p {package}" * int(package != "")
         params += " --full" * int(thebuilder.env.GetValue("CC_FULL", "FALSE") == "TRUE")
         params += " --flatten" * int(thebuilder.env.GetValue("CC_FLATTEN", "FALSE") == "TRUE")
-
+        params += f" --exclude {exclude}" * int(exclude != "")
         return RunCmd("stuart_report", params)
 
     def parse_workspace(self, thebuilder) -> str:
