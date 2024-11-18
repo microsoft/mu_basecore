@@ -24,18 +24,18 @@ struct MockSmmSwDispatch2Protocol {
     EFI_STATUS,
     MockRegister,
     (
-      IN  CONST EFI_SMM_SW_DISPATCH2_PROTOCOL  *This,
-      IN        EFI_SMM_HANDLER_ENTRY_POINT2   DispatchFunction,
-      IN  OUT   EFI_SMM_SW_REGISTER_CONTEXT    *RegisterContext,
-      OUT       EFI_HANDLE                     *DispatchHandle)
+     IN  CONST EFI_SMM_SW_DISPATCH2_PROTOCOL  *This,
+     IN        EFI_SMM_HANDLER_ENTRY_POINT2   DispatchFunction,
+     IN  OUT   EFI_SMM_SW_REGISTER_CONTEXT    *RegisterContext,
+     OUT       EFI_HANDLE                     *DispatchHandle)
     );
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
     MockUnRegister,
     (
-      IN CONST EFI_SMM_SW_DISPATCH2_PROTOCOL  *This,
-      IN       EFI_HANDLE                     DispatchHandle)
+     IN CONST EFI_SMM_SW_DISPATCH2_PROTOCOL  *This,
+     IN       EFI_HANDLE                     DispatchHandle)
     );
 };
 
@@ -43,7 +43,7 @@ MOCK_INTERFACE_DEFINITION (MockSmmSwDispatch2Protocol);
 MOCK_FUNCTION_DEFINITION (MockSmmSwDispatch2Protocol, MockRegister, 4, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockSmmSwDispatch2Protocol, MockUnRegister, 2, EFIAPI);
 
-EFI_SMM_SW_DISPATCH2_PROTOCOL SMM_SW_DISPATCH2_PROTOCOL_MOCK = {
+EFI_SMM_SW_DISPATCH2_PROTOCOL  SMM_SW_DISPATCH2_PROTOCOL_MOCK = {
   MockRegister,           // EFI_SMM_SW_REGISTER2      Register;
   MockUnRegister          // EFI_SMM_SW_UNREGISTER2    UnRegister;
 };
