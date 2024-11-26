@@ -57,7 +57,6 @@
 #   ArmTransferListLib
 #   ArmFfaLib
 # MU_CHANGE [END] - Remove ARM from this lib, since it requires too much from ArmPkg.
-  ArmTransferListLib
 
 [Guids]
   gMpInformationHobGuid
