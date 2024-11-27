@@ -17,12 +17,11 @@
 # For more information, see:
 # https://github.com/release-drafter/release-drafter
 
-name-template: 'dev-v$RESOLVED_VERSION'
-tag-template: 'dev-v$RESOLVED_VERSION'
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
 
-commitish: refs/heads/dev/202405
+commitish: refs/heads/release/202405
 filter-by-commitish: true
-include-labels: ["type:backport"]
 
 template: |
   # What's Changed
