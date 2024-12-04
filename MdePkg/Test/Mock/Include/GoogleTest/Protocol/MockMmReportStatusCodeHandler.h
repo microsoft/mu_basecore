@@ -17,8 +17,8 @@ extern "C" {
   #include <Protocol/MmReportStatusCodeHandler.h>
 }
 
-struct MockReportStatusCodeHandler {
-  MOCK_INTERFACE_DECLARATION (MockReportStatusCodeHandler);
+struct MockEfiMmRscHandlerProtocol {
+  MOCK_INTERFACE_DECLARATION (MockEfiMmRscHandlerProtocol);
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
@@ -34,17 +34,14 @@ struct MockReportStatusCodeHandler {
     );
 };
 
-MOCK_INTERFACE_DEFINITION (MockReportStatusCodeHandler);
-MOCK_FUNCTION_DEFINITION (MockReportStatusCodeHandler, Register, 1, EFIAPI);
-MOCK_FUNCTION_DEFINITION (MockReportStatusCodeHandler, Unregister, 1, EFIAPI);
+MOCK_INTERFACE_DEFINITION (MockEfiMmRscHandlerProtocol);
+MOCK_FUNCTION_DEFINITION (MockEfiMmRscHandlerProtocol, Register, 1, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockEfiMmRscHandlerProtocol, Unregister, 1, EFIAPI);
 
-EFI_MM_RSC_HANDLER_PROTOCOL  MmRscHandlerProtocol = {
-  Register,
-  Unregister
-};
-
-extern "C" {
-  EFI_MM_RSC_HANDLER_PROTOCOL  *MmRscHandlerProtocolServices = &MmRscHandlerProtocol;
-}
+#define MOCK_EFI_MM_RSC_HANDLER_PROTOCOL_INSTANCE(NAME) \
+  EFI_MM_RSC_HANDLER_PROTOCOL NAME##_INSTANCE = {       \
+    Register,                                           \
+    Unregister };                                       \
+  EFI_MM_RSC_HANDLER_PROTOCOL  *NAME = &NAME##_INSTANCE;
 
 #endif
