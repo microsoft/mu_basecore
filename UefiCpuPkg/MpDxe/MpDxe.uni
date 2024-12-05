@@ -1,0 +1,16 @@
+// /** @file
+// MP driver installs MP Protocol.
+//
+// MP driver installs MP Protocol.
+//
+// Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
+//
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+// **/
+
+
+#string STR_MODULE_ABSTRACT             #language en-US "MP driver installs MP Protocol."
+
+#string STR_MODULE_DESCRIPTION          #language en-US "MP driver installs MP Protocol."
+
