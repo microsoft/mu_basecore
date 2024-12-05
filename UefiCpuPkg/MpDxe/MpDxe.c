@@ -1,16 +1,18 @@
 /** @file
-  CPU DXE Module to produce CPU MP Protocol.
+  MP DXE Module to produce MP Protocol.
 
   Copyright (c) 2008 - 2022, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#include "CpuDxe.h"
-#include "CpuMp.h"
+#include "MpDxe.h"
+#include <Guid/CacheAttributesChangeEvent.h>
+#include <Library/MtrrLib.h>
 
-EFI_HANDLE  mMpServiceHandle    = NULL;
-UINTN       mNumberOfProcessors = 1;
+EFI_HANDLE  mMpServiceHandle            = NULL;
+UINTN       mNumberOfProcessors         = 1;
+EFI_EVENT   mCacheAttributesChangeEvent = NULL;
 
 EFI_MP_SERVICES_PROTOCOL  mMpServicesTemplate = {
   GetNumberOfProcessors,
@@ -21,6 +23,49 @@ EFI_MP_SERVICES_PROTOCOL  mMpServicesTemplate = {
   EnableDisableAP,
   WhoAmI
 };
+
+/**
+  A minimal wrapper function that allows MtrrSetAllMtrrs() to be passed to
+  EFI_MP_SERVICES_PROTOCOL.StartupAllAPs() as Procedure.
+
+  @param[in] Buffer  Pointer to an MTRR_SETTINGS object, to be passed to
+                     MtrrSetAllMtrrs().
+**/
+VOID
+EFIAPI
+SetMtrrsFromBuffer (
+  IN VOID  *Buffer
+  )
+{
+  MtrrSetAllMtrrs (Buffer);
+}
+
+// MU_CHANGE START: Cache Attribute Change Event
+VOID
+EFIAPI
+CacheAttributesChangeCallback (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  MTRR_SETTINGS  MtrrSettings;
+
+  DEBUG ((DEBUG_INFO, "MpDxe updating MTRRs with APs\n"));
+
+  MtrrGetAllMtrrs (&MtrrSettings);
+
+  MpInitLibStartupAllAPs (
+    SetMtrrsFromBuffer,
+    FALSE,
+    NULL,
+    0,
+    &MtrrSettings,
+    NULL
+    );
+  // we purposefully don't close the event here, because we want to be called for every update
+}
+
+// MU_CHANGE END: Cache Attribute Change Event
 
 /**
   This service retrieves the number of logical processor in the platform
@@ -663,12 +708,7 @@ InitializeMpExceptionStackSwitchHandlers (
   UINT8                           *Buffer;
 
   SwitchStackData = AllocateZeroPool (mNumberOfProcessors * sizeof (EXCEPTION_STACK_SWITCH_CONTEXT));
-  if (SwitchStackData == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a Failed to allocate buffer for SwitchStackData\n", __func__));
-    ASSERT (SwitchStackData != NULL);
-    return;
-  }
-
+  ASSERT (SwitchStackData != NULL);
   for (Index = 0; Index < mNumberOfProcessors; ++Index) {
     //
     // Because the procedure may runs multiple times, use the status EFI_NOT_STARTED
@@ -696,24 +736,8 @@ InitializeMpExceptionStackSwitchHandlers (
   }
 
   if (BufferSize != 0) {
-    // we are allocating the buffer that will hold the new GDT and IDT for the APs. These must be allocated below
-    // 4GB as they are used by protected mode code on the APs when they are started up after this point. If they are
-    // above 4GB, the APs will triple fault because the 32 bit code segment is invalid
-    Buffer = (UINT8 *)(UINTN)(BASE_4GB - 1);
-    Status = gBS->AllocatePages (
-                    AllocateMaxAddress,
-                    EfiRuntimeServicesData,
-                    EFI_SIZE_TO_PAGES (BufferSize),
-                    (EFI_PHYSICAL_ADDRESS *)&Buffer
-                    );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "Failed to allocate buffer for InitializeExceptionStackSwitchHandlers Status %r\n", Status));
-      ASSERT_EFI_ERROR (Status);
-      goto Exit;
-    }
-
-    ZeroMem (Buffer, BufferSize);
-
+    Buffer = AllocateRuntimeZeroPool (BufferSize);
+    ASSERT (Buffer != NULL);
     BufferSize = 0;
     for (Index = 0; Index < mNumberOfProcessors; ++Index) {
       if (SwitchStackData[Index].Status == EFI_BUFFER_TOO_SMALL) {
@@ -740,7 +764,6 @@ InitializeMpExceptionStackSwitchHandlers (
     }
   }
 
-Exit:
   FreePool (SwitchStackData);
 }
 
@@ -753,14 +776,14 @@ InitializeMpExceptionHandlers (
   VOID
   )
 {
-  //
-  // Enable non-stop mode for #PF triggered by Heap Guard or NULL Pointer
-  // Detection.
-  //
-  if (HEAP_GUARD_NONSTOP_MODE || NULL_DETECTION_NONSTOP_MODE) {
-    RegisterCpuInterruptHandler (EXCEPT_IA32_DEBUG, DebugExceptionHandler);
-    RegisterCpuInterruptHandler (EXCEPT_IA32_PAGE_FAULT, PageFaultExceptionHandler);
-  }
+  // //
+  // // Enable non-stop mode for #PF triggered by Heap Guard or NULL Pointer
+  // // Detection.
+  // //
+  // if (HEAP_GUARD_NONSTOP_MODE || NULL_DETECTION_NONSTOP_MODE) {
+  //   RegisterCpuInterruptHandler (EXCEPT_IA32_DEBUG, DebugExceptionHandler);
+  //   RegisterCpuInterruptHandler (EXCEPT_IA32_PAGE_FAULT, PageFaultExceptionHandler);
+  // }
 
   //
   // Setup stack switch for Stack Guard feature.
@@ -817,6 +840,23 @@ InitializeMpSupport (
                     );
     ASSERT_EFI_ERROR (Status);
   }
+
+  // MU_CHANGE START: CacheAttributesChange Event
+  // Register for the CacheAttributesChangeEvent
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_CALLBACK,
+                  CacheAttributesChangeCallback,
+                  NULL,
+                  &gCacheAttributesChangeEventGuid,
+                  &mCacheAttributesChangeEvent
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Failed to create CacheAttributesChangeEvent\n"));
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // MU_CHANGE END: CacheAttributesChange Event
 }
 
 // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
