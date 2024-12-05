@@ -1,5 +1,5 @@
 ## @file
-#  CPU driver installs CPU Architecture Protocol and CPU MP protocol.
+#  CPU driver installs CPU Architecture Protocol.
 #
 #  Copyright (c) 2008 - 2019, Intel Corporation. All rights reserved.<BR>
 #  Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
@@ -56,8 +56,6 @@
   CpuDxe.h
   CpuGdt.c
   CpuGdt.h
-  CpuMp.c
-  CpuMp.h
   CpuPageTable.h
   CpuPageTable.c
 
@@ -78,8 +76,7 @@
 
 [Protocols]
   gEfiCpuArchProtocolGuid                       ## PRODUCES
-  gEfiMpServiceProtocolGuid                     ## PRODUCES
-  gEfiMemoryAttributeProtocolGuid               ## TCBZ3519 MU_CHANGE PRODUCES
+  gEfiMpServiceProtocolGuid                     ## CONSUMES
   gEfiSmmBase2ProtocolGuid                      ## SOMETIMES_CONSUMES
   gMemoryProtectionNonstopModeProtocolGuid      ## MU_CHANGE: PRODUCES
   gEdkiiGcdSyncCompleteProtocolGuid             ## MU_CHANGE: PRODUCES

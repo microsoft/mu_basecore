@@ -1,0 +1,97 @@
+## @file
+#  MP driver installs MP protocol.
+#
+#  Copyright (c) 2008 - 2019, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
+#  Copyright (c) 2024, Loongson Technology Corporation Limited. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = MpDxe
+  MODULE_UNI_FILE                = MpDxe.uni
+  FILE_GUID                      = 94598893-936a-481e-998e-1b0880916ae4
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = InitializeMp
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  UefiCpuPkg/UefiCpuPkg.dec
+
+[LibraryClasses.common]
+  BaseLib
+  BaseMemoryLib
+  CpuExceptionHandlerLib
+  CpuLib
+  DebugLib
+  DxeServicesTableLib
+  HobLib
+  MemoryAllocationLib
+  MpInitLib
+  PeCoffGetEntryPointLib
+  ReportStatusCodeLib
+  TimerLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiLib
+  PanicLib                  ## MU_CHANGE
+  DxeMemoryProtectionHobLib ## MU_CHANGE
+  DeviceStateLib            ## MU_CHANGE
+
+[LibraryClasses.IA32, LibraryClasses.X64]
+  LocalApicLib
+  MtrrLib
+
+[LibraryClasses.LoongArch64]
+  CacheMaintenanceLib
+  CpuMmuLib
+
+[Sources.IA32, Sources.X64]
+  MpDxe.c
+  MpDxe.h
+
+[Sources.LoongArch64]
+  LoongArch64/MpDxe.c
+  MpDxe.h
+
+[Protocols]
+  gEfiMpServiceProtocolGuid                     ## PRODUCES
+  # gEfiCpuArchProtocolGuid                       ## CONSUMES
+  # gEfiMemoryAttributeProtocolGuid               ## TCBZ3519 MU_CHANGE PRODUCES
+  # gEfiSmmBase2ProtocolGuid                      ## SOMETIMES_CONSUMES
+  # gMemoryProtectionNonstopModeProtocolGuid      ## MU_CHANGE: PRODUCES
+  # gEdkiiGcdSyncCompleteProtocolGuid             ## MU_CHANGE: PRODUCES
+# gEfiCpuArchProtocolGuid                       ## PRODUCES
+
+# [Guids]
+#   gIdleLoopEventGuid                            ## CONSUMES           ## Event
+#   gEfiVectorHandoffTableGuid                    ## SOMETIMES_CONSUMES ## SystemTable
+
+[Ppis]
+  gEfiSecPlatformInformation2PpiGuid            ## UNDEFINED # HOB
+  gEfiSecPlatformInformationPpiGuid             ## UNDEFINED # HOB
+
+# [Pcd]
+#   gEfiMdeModulePkgTokenSpaceGuid.PcdPteMemoryEncryptionAddressOrMask    ## CONSUMES
+#   # MU_CHANGE START Remove memory protection PCD references
+#   # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                       ## CONSUMES
+#   # gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
+#   # gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask    ## CONSUMES
+#   # MU_CHANGE END
+#   gEfiMdeModulePkgTokenSpaceGuid.PcdTdxSharedBitMask                    ## CONSUMES
+#   gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList              ## CONSUMES
+#   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize                    ## CONSUMES
+
+# [Pcd.LoongArch64]
+#   gUefiCpuPkgTokenSpaceGuid.PcdLoongArchExceptionVectorBaseAddress      ## CONSUMES
+
+[Depex]
+  gEfiCpuArchProtocolGuid
+
+[UserExtensions.TianoCore."ExtraFiles"]
+  MpDxeExtra.uni
