@@ -23,17 +23,14 @@ name: Update Release Draft
 on:
   push:
     branches:
-      - dev/202405
+      - release/202405
 
 jobs:
-  dev_draft:
-    name: Draft Releases
+  draft:
 
     permissions:
       contents: write
       pull-requests: write
 
-    # The "release_drafter_update_for_release_branches" branch is temporarily being used to test release
-    # drafter changes on that branch in Mu Basecore before merging them into the main branch.
-    uses: microsoft/mu_devops/.github/workflows/ReleaseDrafter.yml@release_drafter_update_for_release_branches
+    uses: microsoft/mu_devops/.github/workflows/ReleaseDrafter.yml@v12.2.0
     secrets: inherit
