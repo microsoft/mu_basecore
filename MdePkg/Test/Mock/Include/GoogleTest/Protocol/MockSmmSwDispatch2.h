@@ -18,7 +18,6 @@ extern "C" {
 
 // Declarations to handle usage of the EFI_SMM_SW_DISPATCH2_PROTOCOL
 struct MockEfiSmmSwDispatch2Protocol {
-
   MOCK_INTERFACE_DECLARATION (MockEfiSmmSwDispatch2Protocol);
 
   MOCK_FUNCTION_DECLARATION (
