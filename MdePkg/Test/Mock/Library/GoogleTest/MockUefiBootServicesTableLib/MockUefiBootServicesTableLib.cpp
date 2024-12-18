@@ -28,6 +28,9 @@ MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_AllocatePool, 3, EFI
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_LocateHandle, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_ConnectController, 4, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_DisconnectController, 3, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_RaiseTpl, 1, EFIAPI);
+
+MOCK_FUNCTION_DEFINITION (MockUefiBootServicesTableLib, gBS_RestoreTpl, 1, EFIAPI);
 
 extern "C" {
   EFI_STATUS
@@ -103,8 +106,9 @@ extern "C" {
 
 static EFI_BOOT_SERVICES  LocalBs = {
   { 0, 0, 0, 0, 0 },                                                                   // EFI_TABLE_HEADER
-  NULL,                                                                                // EFI_RAISE_TPL
-  NULL,                                                                                // EFI_RESTORE_TPL
+  gBS_RaiseTpl,                                                                        // EFI_RAISE_TPL
+
+  gBS_RestoreTpl,                                                                      // EFI_RESTORE_TPL
   NULL,                                                                                // EFI_ALLOCATE_PAGES
   NULL,                                                                                // EFI_FREE_PAGES
   gBS_GetMemoryMap,                                                                    // EFI_GET_MEMORY_MAP
