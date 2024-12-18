@@ -71,3 +71,4 @@
   MdePkg/Test/Mock/Library/Stub/StubUefiLib/StubUefiLib.inf
 
   MdePkg/Library/StackCheckLibNull/StackCheckLibNullHostApplication.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockSafeIntLib/MockSafeIntLib.inf
