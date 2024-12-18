@@ -204,6 +204,19 @@ struct MockUefiBootServicesTableLib {
      IN  EFI_HANDLE                     DriverImageHandle  OPTIONAL,
      IN  EFI_HANDLE                     ChildHandle        OPTIONAL)
     );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_TPL,
+    gBS_RaiseTpl,
+
+    (IN EFI_TPL      NewTpl)
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    VOID,
+    gBS_RestoreTpl,
+    (IN EFI_TPL      OldTpl)
+    );
 };
 
 #endif // MOCK_UEFI_BOOT_SERVICES_TABLE_LIB_H_
