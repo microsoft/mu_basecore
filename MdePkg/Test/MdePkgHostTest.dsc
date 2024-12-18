@@ -74,3 +74,4 @@
   MdePkg/Test/Mock/Library/Stub/StubHobLib/StubHobLib.inf
   MdePkg/Test/Mock/Library/Stub/StubUefiLib/StubUefiLib.inf
 
+  MdePkg/Test/Mock/Library/GoogleTest/MockSafeIntLib/MockSafeIntLib.inf
