@@ -23,6 +23,7 @@ SUITE_DESC  mSuiteDesc[] = {
   { "Authenticode verify tests",     "CryptoPkg.BaseCryptLib", NULL, NULL, &mAuthenticodeTestNum,   mAuthenticodeTest   },
   { "ImageTimestamp verify tests",   "CryptoPkg.BaseCryptLib", NULL, NULL, &mImageTimestampTestNum, mImageTimestampTest },
   { "DH verify tests",               "CryptoPkg.BaseCryptLib", NULL, NULL, &mDhTestNum,             mDhTest             },
+  { "TLS verify tests",              "CryptoPkg.BaseCryptLib", NULL, NULL, &mTlsTestNum,            mTlsTest            },
   { "PRNG verify tests",             "CryptoPkg.BaseCryptLib", NULL, NULL, &mPrngTestNum,           mPrngTest           },
   { "OAEP encrypt verify tests",     "CryptoPkg.BaseCryptLib", NULL, NULL, &mOaepTestNum,           mOaepTest           },
   { "Hkdf extract and expand tests", "CryptoPkg.BaseCryptLib", NULL, NULL, &mHkdfTestNum,           mHkdfTest           },

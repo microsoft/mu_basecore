@@ -77,6 +77,9 @@ extern TEST_DESC  mImageTimestampTest[];
 extern UINTN      mDhTestNum;
 extern TEST_DESC  mDhTest[];
 
+extern UINTN      mTlsTestNum;
+extern TEST_DESC  mTlsTest[];
+
 extern UINTN      mPrngTestNum;
 extern TEST_DESC  mPrngTest[];
 

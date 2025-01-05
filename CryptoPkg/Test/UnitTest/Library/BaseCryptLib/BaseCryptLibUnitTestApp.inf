@@ -32,6 +32,7 @@
   AuthenticodeTests.c
   TSTests.c
   DhTests.c
+  TLSTests.c
   RandTests.c
   Pkcs7EkuTests.c
   OaepEncryptTests.c
