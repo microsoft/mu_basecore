@@ -7,6 +7,7 @@
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
+#  MU_CHANGE: WHOLE FILE
 ##
 
 [Defines]
@@ -61,34 +62,13 @@
 
 [Protocols]
   gEfiMpServiceProtocolGuid                     ## PRODUCES
-  # gEfiCpuArchProtocolGuid                       ## CONSUMES
-  # gEfiMemoryAttributeProtocolGuid               ## TCBZ3519 MU_CHANGE PRODUCES
-  # gEfiSmmBase2ProtocolGuid                      ## SOMETIMES_CONSUMES
-  # gMemoryProtectionNonstopModeProtocolGuid      ## MU_CHANGE: PRODUCES
-  # gEdkiiGcdSyncCompleteProtocolGuid             ## MU_CHANGE: PRODUCES
-# gEfiCpuArchProtocolGuid                       ## PRODUCES
 
-# [Guids]
-#   gIdleLoopEventGuid                            ## CONSUMES           ## Event
-#   gEfiVectorHandoffTableGuid                    ## SOMETIMES_CONSUMES ## SystemTable
+[Guids]
+  gCacheAttributesChangeEventGuid               ## CONSUMES
 
 [Ppis]
   gEfiSecPlatformInformation2PpiGuid            ## UNDEFINED # HOB
   gEfiSecPlatformInformationPpiGuid             ## UNDEFINED # HOB
-
-# [Pcd]
-#   gEfiMdeModulePkgTokenSpaceGuid.PcdPteMemoryEncryptionAddressOrMask    ## CONSUMES
-#   # MU_CHANGE START Remove memory protection PCD references
-#   # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                       ## CONSUMES
-#   # gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
-#   # gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask    ## CONSUMES
-#   # MU_CHANGE END
-#   gEfiMdeModulePkgTokenSpaceGuid.PcdTdxSharedBitMask                    ## CONSUMES
-#   gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList              ## CONSUMES
-#   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize                    ## CONSUMES
-
-# [Pcd.LoongArch64]
-#   gUefiCpuPkgTokenSpaceGuid.PcdLoongArchExceptionVectorBaseAddress      ## CONSUMES
 
 [Depex]
   gEfiCpuArchProtocolGuid
