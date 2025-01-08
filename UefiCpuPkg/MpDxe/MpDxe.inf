@@ -68,7 +68,8 @@
   # gEdkiiGcdSyncCompleteProtocolGuid             ## MU_CHANGE: PRODUCES
 # gEfiCpuArchProtocolGuid                       ## PRODUCES
 
-# [Guids]
+[Guids]
+  gCacheAttributesChangeEventGuid                 ## CONSUMES
 #   gIdleLoopEventGuid                            ## CONSUMES           ## Event
 #   gEfiVectorHandoffTableGuid                    ## SOMETIMES_CONSUMES ## SystemTable
 
