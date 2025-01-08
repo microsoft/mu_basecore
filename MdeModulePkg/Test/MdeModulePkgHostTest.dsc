@@ -117,3 +117,4 @@
   MdeModulePkg/Test/Mock/Library/GoogleTest/MockPciHostBridgeLib/MockPciHostBridgeLib.inf
   MdeModulePkg/Test/Mock/Library/GoogleTest/MockVariablePolicyHelperLib/MockVariablePolicyHelperLib.inf
   MdeModulePkg/Test/Mock/Library/GoogleTest/MockPlatformHookLib/MockPlatformHookLib.inf
+  MdeModulePkg/Test/Mock/Library/GoogleTest/MockHiiLib/MockHiiLib.inf
