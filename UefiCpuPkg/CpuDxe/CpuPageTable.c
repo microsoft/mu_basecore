@@ -1244,6 +1244,183 @@ AllocatePageTableMemory (
 }
 
 /**
+  Special handler for #DB exception, which will restore the page attributes
+  (not-present). It should work with #PF handler which will set pages to
+  'present'.
+
+  @param ExceptionType  Exception type.
+  @param SystemContext  Pointer to EFI_SYSTEM_CONTEXT.
+
+**/
+VOID
+EFIAPI
+DebugExceptionHandler (
+  IN EFI_EXCEPTION_TYPE  ExceptionType,
+  IN EFI_SYSTEM_CONTEXT  SystemContext
+  )
+{
+  UINTN       CpuIndex;
+  UINTN       PFEntry;
+  BOOLEAN     IsWpEnabled;
+  EFI_STATUS  Status;  // MU_CHANGE - CodeQL change
+
+  // MU_CHANGE [START] - CodeQL change
+  Status = MpInitLibWhoAmI (&CpuIndex);
+
+  if (EFI_ERROR (Status)) {
+    PANIC ("Failed to get processor number in the DebugExceptionHandler");
+    goto Done;
+  }
+
+  // MU_CHANGE [END] - CodeQL change
+
+  //
+  // Clear last PF entries
+  //
+  IsWpEnabled = IsReadOnlyPageWriteProtected ();
+  if (IsWpEnabled) {
+    DisableReadOnlyPageWriteProtect ();
+  }
+
+  for (PFEntry = 0; PFEntry < mPFEntryCount[CpuIndex]; PFEntry++) {
+    if (mLastPFEntryPointer[CpuIndex][PFEntry] != NULL) {
+      *mLastPFEntryPointer[CpuIndex][PFEntry] &= ~(UINT64)IA32_PG_P;
+    }
+  }
+
+  if (IsWpEnabled) {
+    EnableReadOnlyPageWriteProtect ();
+  }
+
+  //
+  // Reset page fault exception count for next page fault.
+  //
+  mPFEntryCount[CpuIndex] = 0;
+
+Done:
+  //
+  // Flush TLB
+  //
+  CpuFlushTlb ();
+
+  //
+  // Clear TF in EFLAGS
+  //
+  if (mPagingContext.MachineType == IMAGE_FILE_MACHINE_I386) {
+    SystemContext.SystemContextIa32->Eflags &= (UINT32) ~BIT8;
+  } else {
+    SystemContext.SystemContextX64->Rflags &= (UINT64) ~BIT8;
+  }
+}
+
+/**
+  Special handler for #PF exception, which will set the pages which caused
+  #PF to be 'present'. The attribute of those pages should be restored in
+  the subsequent #DB handler.
+
+  @param ExceptionType  Exception type.
+  @param SystemContext  Pointer to EFI_SYSTEM_CONTEXT.
+
+**/
+VOID
+EFIAPI
+PageFaultExceptionHandler (
+  IN EFI_EXCEPTION_TYPE  ExceptionType,
+  IN EFI_SYSTEM_CONTEXT  SystemContext
+  )
+{
+  EFI_STATUS                     Status;
+  UINT64                         PFAddress;
+  PAGE_TABLE_LIB_PAGING_CONTEXT  PagingContext;
+  PAGE_ATTRIBUTE                 PageAttribute;
+  UINT64                         Attributes;
+  UINT64                         *PageEntry;
+  UINTN                          Index;
+  UINTN                          CpuIndex;
+  UINTN                          PageNumber;
+  BOOLEAN                        NonStopMode;
+
+  PFAddress = AsmReadCr2 () & ~EFI_PAGE_MASK;
+  if (PFAddress < BASE_4KB) {
+    NonStopMode = NULL_DETECTION_NONSTOP_MODE ? TRUE : FALSE;
+  } else {
+    NonStopMode = HEAP_GUARD_NONSTOP_MODE ? TRUE : FALSE;
+  }
+
+  if (NonStopMode) {
+    // MU_CHANGE [START] - CodeQL change
+    Status = MpInitLibWhoAmI (&CpuIndex);
+
+    if (EFI_ERROR (Status)) {
+      PANIC ("Failed to get processor number in the PageFaultExceptionHandler");
+      goto Done;
+    }
+
+    // MU_CHANGE [END] - CodeQL change
+    GetCurrentPagingContext (&PagingContext);
+    //
+    // Memory operation cross page boundary, like "rep mov" instruction, will
+    // cause infinite loop between this and Debug Trap handler. We have to make
+    // sure that current page and the page followed are both in PRESENT state.
+    //
+    PageNumber = 2;
+    while (PageNumber > 0) {
+      PageEntry = GetPageTableEntry (&PagingContext, PFAddress, &PageAttribute);
+      ASSERT (PageEntry != NULL);
+
+      if (PageEntry != NULL) {
+        Attributes = GetAttributesFromPageEntry (PageEntry);
+        if ((Attributes & EFI_MEMORY_RP) != 0) {
+          Attributes &= ~EFI_MEMORY_RP;
+          Status      = AssignMemoryPageAttributes (
+                          &PagingContext,
+                          PFAddress,
+                          EFI_PAGE_SIZE,
+                          Attributes,
+                          NULL
+                          );
+          if (!EFI_ERROR (Status)) {
+            Index = mPFEntryCount[CpuIndex];
+            //
+            // Re-retrieve page entry because above calling might update page
+            // table due to table split.
+            //
+            PageEntry                              = GetPageTableEntry (&PagingContext, PFAddress, &PageAttribute);
+            mLastPFEntryPointer[CpuIndex][Index++] = PageEntry;
+            mPFEntryCount[CpuIndex]                = Index;
+          }
+        }
+      }
+
+      PFAddress += EFI_PAGE_SIZE;
+      --PageNumber;
+    }
+  }
+
+Done:
+  //
+  // Initialize the serial port before dumping.
+  //
+  SerialPortInitialize ();
+  //
+  // Display ExceptionType, CPU information and Image information
+  //
+  DumpCpuContext (ExceptionType, SystemContext);
+  if (NonStopMode) {
+    //
+    // Set TF in EFLAGS
+    //
+    if (mPagingContext.MachineType == IMAGE_FILE_MACHINE_I386) {
+      SystemContext.SystemContextIa32->Eflags |= (UINT32)BIT8;
+    } else {
+      SystemContext.SystemContextX64->Rflags |= (UINT64)BIT8;
+    }
+  } else {
+    CpuDeadLoop ();
+  }
+}
+
+/**
   Initialize the Page Table lib.
 **/
 VOID
@@ -1271,11 +1448,11 @@ InitializePageTableLib (
   }
 
   if (HEAP_GUARD_NONSTOP_MODE || NULL_DETECTION_NONSTOP_MODE) {
-    mPFEntryCount = (UINTN *)AllocateZeroPool (sizeof (UINTN));
+    mPFEntryCount = (UINTN *)AllocateZeroPool (sizeof (UINTN) * mNumberOfProcessors);
     ASSERT (mPFEntryCount != NULL);
 
     mLastPFEntryPointer = (UINT64 *(*)[MAX_PF_ENTRY_COUNT])
-                          AllocateZeroPool (sizeof (mLastPFEntryPointer[0]));
+                          AllocateZeroPool (sizeof (mLastPFEntryPointer[0]) * mNumberOfProcessors);
     ASSERT (mLastPFEntryPointer != NULL);
   }
 
@@ -1594,9 +1771,11 @@ ClearPageFault (
   UINT64                         OldAttributes;
   UINT64                         NewAttributes;
   UINT64                         *PageEntry;
+  UINTN                          CpuIndex;
   UINTN                          PageNumber;
 
   PFAddress = AsmReadCr2 () & ~EFI_PAGE_MASK;
+  MpInitLibWhoAmI (&CpuIndex);
   GetCurrentPagingContext (&PagingContext);
   //
   // Memory operation cross page boundary, like "rep mov" instruction, will
