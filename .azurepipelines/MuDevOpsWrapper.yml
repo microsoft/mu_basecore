@@ -19,7 +19,7 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: refs/tags/v12.2.0
+      ref: refs/tags/v12.4.0
 
 parameters:
 - name: do_ci_build
