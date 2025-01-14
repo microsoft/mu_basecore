@@ -19,6 +19,8 @@
 
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgHost.dsc.inc
 
+!include CryptoPkg/CryptoPkgFeatureFlagPcds.dsc.inc
+
 [LibraryClasses]
   BaseCryptLib|CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
   MmServicesTableLib|MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
