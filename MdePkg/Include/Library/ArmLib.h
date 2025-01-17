@@ -683,6 +683,18 @@ ArmGetPhysicalAddressBits (
   VOID
   );
 
+// MU_CHANGE - Start - MSVC ARM64 change -Support virtual machines on MS toolchain
+//
+// Memory Model
+//
+
+UINTN
+EFIAPI
+ArmReadIdMmfr0 (
+  VOID
+  );
+
+// MU_CHANGE - End - MSVC ARM64 change - Support virtual machines on MS toolchain
 ///
 ///  ID Register Helper functions
 ///
