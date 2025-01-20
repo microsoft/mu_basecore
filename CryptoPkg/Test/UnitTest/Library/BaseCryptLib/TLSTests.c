@@ -1,32 +1,34 @@
 /** @file
-  Application for Diffie-Hellman Primitives Validation.
+  This is a unit test for RSA OAEP encrypt/decrypt.
 
-Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
-SPDX-License-Identifier: BSD-2-Clause-Patent
-
+  Copyright (c) Microsoft Corporation. All rights reserved.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "TestBaseCryptLib.h"
 #include <Library/TlsLib.h>
-#include "TlsDriver.h"
-#include "TlsImpl.h"           // For pulling "EfiTlsClient" enum
+// #include <Library/TlsLibNull/InternalTlsLib.h>
 
+
+typedef void *TLS_OBJ;
 
 // List of Ciphers as appears in TLS Cipher Suite Registry of the IANA
 // https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml
 
 // TODO: Verify order of bytes is correct in all cases (or use UINT8)
-CONST UINT16 mCipherId[] = {  0xC030,  // TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-                              0xC02F,  // TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-                              0xC028,  // TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
-                              0xC027   // TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-                            };
+UINT16 mCipherId[] = {  0xC030,  // TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+                        0xC02F,  // TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+                        0xC028,  // TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+                        0xC027   // TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+                     };
 #define CIPHER_COUNT (sizeof(mCipherId) / sizeof(mCipherId[0]))
 
 
 // TODO: Check if we need to test other versions then SSL3.1
 #define TLS_PROTOCOL_VERSION_MAJOR 0x03
 #define TLS_PROTOCOL_VERSION_MINOR 0x01
+
+#define EfiTlsClient 0
 
 
 UNIT_TEST_STATUS
@@ -36,9 +38,11 @@ TestVerifyTlsPreReq (
   )
 {
   // TODO: Flags to be removed with the refactoring of UEFI PCDs
+  /*
   if (!PcdGetBool (PcdCryptoServiceTlsInitialize) || !PcdGetBool (PcdCryptoServiceTlsCtxNew) || !PcdGetBool (PcdCryptoServiceTlsCtxFree)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
+  */
 
   return UNIT_TEST_PASSED;
 }
@@ -55,18 +59,16 @@ TestVerifyTlsCleanUp (
 UNIT_TEST_STATUS
 EFIAPI
 TestTls31CreatCtxObjNewFree (
-  VOID
+  IN UNIT_TEST_CONTEXT  Context
   )
 {
-  TLS_SERVICE  *TlsService;
-
   BOOLEAN Status = TlsInitialize();
   UT_ASSERT_TRUE (Status);
   
-  auto SslCtxObj = TlsCtxNew(TLS_PROTOCOL_VERSION_MAJOR,TLS_PROTOCOL_VERSION_MINOR);
+  TLS_OBJ SslCtxObj = TlsCtxNew(TLS_PROTOCOL_VERSION_MAJOR,TLS_PROTOCOL_VERSION_MINOR);
   UT_ASSERT_NOT_NULL(SslCtxObj);
   
-  auto TlsObj = TlsNew(SslCtxObj);
+  TLS_OBJ TlsObj = TlsNew(SslCtxObj);
   UT_ASSERT_NOT_NULL(TlsObj);
 
   // Cleanup
@@ -78,38 +80,29 @@ TestTls31CreatCtxObjNewFree (
 
 UNIT_TEST_STATUS
 EFIAPI
-TestTls31ServiceCreateConnection (
-  VOID
+TestTls31CreateConnection (
+  IN UNIT_TEST_CONTEXT  Context
   )
 {
-  EFI_HANDLE ImageHandle;
-  TLS_SERVICE  *TlsService;
-  TLS_INSTANCE  *TlsInstance;
   EFI_STATUS Status;
+  BOOLEAN Result;
 
-  Status = TlsCreateService(ImageHandle, &TlsService);
-  UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
+  Result = TlsInitialize();
+  UT_ASSERT_TRUE (Result);
+  
+  TLS_OBJ TlsCtx = TlsCtxNew(TLS_PROTOCOL_VERSION_MAJOR,TLS_PROTOCOL_VERSION_MINOR);
+  UT_ASSERT_NOT_NULL(TlsCtx);
 
-  Status = TlsInitialize();
-  UT_ASSERT_TRUE (Status);
+  TLS_OBJ TlsConn = TlsNew(TlsCtx);
+  UT_ASSERT_NOT_NULL(TlsConn);
   
-  TlsService->TlsCtx = TlsCtxNew(TLS_PROTOCOL_VERSION_MAJOR,TLS_PROTOCOL_VERSION_MINOR);
-  UT_ASSERT_NOT_NULL(TlsService->TlsCtx);
-  
-  Status = TlsCreateInstance (TlsService, &TlsInstance);
-  UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
-
-  TlsInstance->TlsConn = TlsNew(TlsService->TlsCtx);
-  UT_ASSERT_NOT_NULL(TlsInstance->TlsConn);
-  
-  Status = TlsSetConnectionEnd (TlsInstance->TlsConn, EfiTlsClient);
+  Status = TlsSetConnectionEnd (TlsConn, EfiTlsClient);
   UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
 
   // Cleanup 
   // NOTE: this is aligned with other tests, but will not be called if test fails
-  TlsFree(TlsInstance->TlsConn);
-  TlsCtxFree(TlsService->TlsCtx);
-  TlsCleanService(TlsService);
+  TlsFree(TlsConn);
+  TlsCtxFree(TlsCtx);
 
   return UNIT_TEST_PASSED;
 }
@@ -121,37 +114,29 @@ TestTls31ServiceCreateConnection (
 UNIT_TEST_STATUS
 EFIAPI
 TestTls31VerifySetCipherList (
-  VOID
+  IN UNIT_TEST_CONTEXT  Context
   )
 {
   UINT16  CipherId = 0;
-  EFI_HANDLE ImageHandle;
-  TLS_SERVICE  *TlsService;
-  TLS_INSTANCE  *TlsInstance;
   EFI_STATUS Status;
+  BOOLEAN Result;
 
-  Status = TlsCreateService(ImageHandle, &TlsService);
-  UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
-
-  Status = TlsInitialize();
-  UT_ASSERT_TRUE (Status);
+  Result = TlsInitialize();
+  UT_ASSERT_TRUE (Result);
   
-  TlsService->TlsCtx = TlsCtxNew(TLS_PROTOCOL_VERSION_MAJOR,TLS_PROTOCOL_VERSION_MINOR);
-  UT_ASSERT_NOT_NULL(TlsService->TlsCtx);
+  TLS_OBJ TlsCtx = TlsCtxNew(TLS_PROTOCOL_VERSION_MAJOR,TLS_PROTOCOL_VERSION_MINOR);
+  UT_ASSERT_NOT_NULL(TlsCtx);
+
+  TLS_OBJ TlsConn = TlsNew(TlsCtx);
+  UT_ASSERT_NOT_NULL(TlsConn);
   
-  Status = TlsCreateInstance (TlsService, &TlsInstance);
+  Status = TlsSetConnectionEnd (TlsConn, EfiTlsClient);
   UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
 
-  TlsInstance->TlsConn = TlsNew(TlsService->TlsCtx);
-  UT_ASSERT_NOT_NULL(TlsInstance->TlsConn);
-  
-  Status = TlsSetConnectionEnd (TlsInstance->TlsConn, EfiTlsClient);
+  Status = TlsSetCipherList (TlsConn, mCipherId, CIPHER_COUNT);
   UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
 
-  Status = TlsSetCipherList (TlsInstance->TlsConn, mCipherId, CIPHER_COUNT);
-  UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
-
-  TlsGetCurrentCipher(TlsInstance->TlsConn, &CipherId);
+  TlsGetCurrentCipher(TlsConn, &CipherId);
   UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
 
   BOOLEAN Found = FALSE;
@@ -166,9 +151,8 @@ TestTls31VerifySetCipherList (
 
   // Cleanup 
   // NOTE: this is aligned with other tests, but will not be called if test fails
-  TlsFree(TlsInstance->TlsConn);
-  TlsCtxFree(TlsService->TlsCtx);
-  TlsCleanService(TlsService);
+  TlsFree(TlsConn);
+  TlsCtxFree(TlsCtx);
 
   return UNIT_TEST_PASSED;
 }
@@ -176,31 +160,23 @@ TestTls31VerifySetCipherList (
 UNIT_TEST_STATUS
 EFIAPI
 TestTls31GetCurrentCipher (
-  VOID
+  IN UNIT_TEST_CONTEXT  Context
   )
 {
   UINT16  CipherId = 0;
-  EFI_HANDLE ImageHandle;
-  TLS_SERVICE  *TlsService;
-  TLS_INSTANCE  *TlsInstance;
   EFI_STATUS Status;
+  BOOLEAN Result;
 
-  Status = TlsCreateService(ImageHandle, &TlsService);
-  UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
-
-  Status = TlsInitialize();
-  UT_ASSERT_TRUE (Status);
+  Result = TlsInitialize();
+  UT_ASSERT_TRUE (Result);
   
-  TlsService->TlsCtx = TlsCtxNew(TLS_PROTOCOL_VERSION_MAJOR,TLS_PROTOCOL_VERSION_MINOR);
-  UT_ASSERT_NOT_NULL(TlsService->TlsCtx);
+  TLS_OBJ TlsCtx = TlsCtxNew(TLS_PROTOCOL_VERSION_MAJOR,TLS_PROTOCOL_VERSION_MINOR);
+  UT_ASSERT_NOT_NULL(TlsCtx);
   
-  Status = TlsCreateInstance (TlsService, &TlsInstance);
-  UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
+  TLS_OBJ TlsConn = TlsNew(TlsCtx);
+  UT_ASSERT_NOT_NULL(TlsConn);
 
-  TlsInstance->TlsConn = TlsNew(TlsService->TlsCtx);
-  UT_ASSERT_NOT_NULL(TlsInstance->TlsConn);
-
-  TlsGetCurrentCipher(TlsInstance->TlsConn, &CipherId);
+  TlsGetCurrentCipher(TlsConn, &CipherId);
   UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
 
   BOOLEAN Found = FALSE;
@@ -213,14 +189,13 @@ TestTls31GetCurrentCipher (
   }
   UT_ASSERT_TRUE(Found);
 
-  Status = TlsSetConnectionEnd (TlsInstance->TlsConn, EfiTlsClient);
+  Status = TlsSetConnectionEnd (TlsConn, EfiTlsClient);
   UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
 
   // Cleanup 
   // NOTE: this is aligned with other tests, but will not be called if test fails
-  TlsFree(TlsInstance->TlsConn);
-  TlsCtxFree(TlsService->TlsCtx);
-  TlsCleanService(TlsService);
+  TlsFree(TlsConn);
+  TlsCtxFree(TlsCtx);
 
   return UNIT_TEST_PASSED;
 }
@@ -231,9 +206,9 @@ TEST_DESC  mTlsTest[] = {
   // -----Description--------------------------------Class---------------------Function----------------Pre-----------------Post------------Context
   //
   { "TestTls31CreatCtxObjNewFree()", "CryptoPkg.BaseCryptLib.Tls", TestTls31CreatCtxObjNewFree, TestVerifyTlsPreReq, NULL, NULL},
-  { "TestTls31ServiceCreateConnection()", "CryptoPkg.BaseCryptLib.Tls", TestTls31ServiceCreateConnection, TestVerifyTlsPreReq, NULL, NULL},
-  { "TestTls31VerifyConnection()", "CryptoPkg.BaseCryptLib.Tls", TestTls31VerifySetCipherList, TestVerifyTlsPreReq, NULL, NULL},
-  { "TestTls31VerifyCurrentCipher()", "CryptoPkg.BaseCryptLib.Tls", TestTls31GetCurrentCipher, TestVerifyTlsPreReq, NULL, NULL}
+  { "TestTls31CreateConnection()", "CryptoPkg.BaseCryptLib.Tls", TestTls31CreateConnection, TestVerifyTlsPreReq, NULL, NULL},
+  { "TestTls31VerifySetCipherList()", "CryptoPkg.BaseCryptLib.Tls", TestTls31VerifySetCipherList, TestVerifyTlsPreReq, NULL, NULL},
+  { "TestTls31GetCurrentCipher()", "CryptoPkg.BaseCryptLib.Tls", TestTls31GetCurrentCipher, TestVerifyTlsPreReq, NULL, NULL}
 };
 
 UINTN  mTlsTestNum = ARRAY_SIZE (mTlsTest);
