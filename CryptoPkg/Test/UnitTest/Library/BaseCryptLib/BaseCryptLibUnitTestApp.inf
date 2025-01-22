@@ -54,6 +54,7 @@
   UnitTestLib
   PrintLib
   BaseCryptLib
+  TlsLib
   
 [FixedPcd]
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256New                    ## CONSUMES  # MU_CHANGE 

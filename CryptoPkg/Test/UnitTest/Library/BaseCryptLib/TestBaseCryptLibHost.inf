@@ -55,6 +55,7 @@
   UnitTestLib
   MmServicesTableLib
   SynchronizationLib
+  TlsLib
 
 [FixedPcd]
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256New                    ## CONSUMES  # MU_CHANGE 

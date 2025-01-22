@@ -180,7 +180,7 @@ TestTls31GetCurrentCipher (
   UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
 
   BOOLEAN Found = FALSE;
-
+  // Check if default config support ciphers
   for (int i = 0 ; i < CIPHER_COUNT ; i++) {
     if (mCipherId[i] == CipherId) {
       Found = TRUE;
