@@ -26,6 +26,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define EFI_HOB_TYPE_LOAD_PEIM_UNUSED     0x000A
 #define EFI_HOB_TYPE_UEFI_CAPSULE         0x000B
 #define EFI_HOB_TYPE_FV3                  0x000C
+#define EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2 0x000D
 #define EFI_HOB_TYPE_UNUSED               0xFFFE
 #define EFI_HOB_TYPE_END_OF_HOB_LIST      0xFFFF
 
@@ -331,6 +332,22 @@ typedef struct {
   ///
   UINT64                         ResourceLength;
 } EFI_HOB_RESOURCE_DESCRIPTOR;
+
+///
+/// Describes the resource properties of all fixed,
+/// nonrelocatable resource ranges found on the processor
+/// host bus during the HOB producer phase.
+///
+typedef struct {
+  ///
+  /// The HOB generic header. Header.HobType = EFI_HOB_TYPE_RESOURCE_DESCRIPTOR.
+  ///
+  EFI_HOB_RESOURCE_DESCRIPTOR    V1;
+  ///
+  /// The memory attributes (paging and caching) of the resource region.
+  ///
+  UINT64                         Attributes;
+} EFI_HOB_RESOURCE_DESCRIPTOR_V2;
 
 ///
 /// Allows writers of executable content in the HOB producer phase to
