@@ -7,8 +7,6 @@
 
 #include "TestBaseCryptLib.h"
 #include <Library/TlsLib.h>
-// #include <Library/TlsLibNull/InternalTlsLib.h>
-
 
 typedef void *TLS_OBJ;
 
@@ -16,20 +14,19 @@ typedef void *TLS_OBJ;
 // https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml
 
 // TODO: Verify order of bytes is correct in all cases (or use UINT8)
-UINT16 mCipherId[] = {  0xC030,  // TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-                        0xC02F,  // TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-                        0xC028,  // TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
-                        0xC027   // TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-                     };
-#define CIPHER_COUNT (sizeof(mCipherId) / sizeof(mCipherId[0]))
+UINT16  mCipherId[] = {
+  0xC030,                        // TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+  0xC02F,                        // TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+  0xC028,                        // TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+  0xC027                         // TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+};
+#define CIPHER_COUNT  (sizeof(mCipherId) / sizeof(mCipherId[0]))
 
+// Note: Setting TLS 1.2 (Redefined to avoid dependency on MdePkg/Include/IndustryStandard/Tls1.h)
+#define TLS12_PROTOCOL_VERSION_MAJOR  0x03
+#define TLS12_PROTOCOL_VERSION_MINOR  0x03
 
-// TODO: Check if we need to test other versions then SSL3.1
-#define TLS_PROTOCOL_VERSION_MAJOR 0x03
-#define TLS_PROTOCOL_VERSION_MINOR 0x01
-
-#define EfiTlsClient 0
-
+#define EfiTlsClient  0
 
 UNIT_TEST_STATUS
 EFIAPI
@@ -38,6 +35,7 @@ TestVerifyTlsPreReq (
   )
 {
   // TODO: Flags to be removed with the refactoring of UEFI PCDs
+
   /*
   if (!PcdGetBool (PcdCryptoServiceTlsInitialize) || !PcdGetBool (PcdCryptoServiceTlsCtxNew) || !PcdGetBool (PcdCryptoServiceTlsCtxFree)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
@@ -47,173 +45,184 @@ TestVerifyTlsPreReq (
   return UNIT_TEST_PASSED;
 }
 
+// Some broken format
 VOID
 EFIAPI
 TestVerifyTlsCleanUp (
   UNIT_TEST_CONTEXT  Context
   )
-{ 
+{
   // TODO: Fill in in case needed
 }
 
 UNIT_TEST_STATUS
 EFIAPI
-TestTls31CreatCtxObjNewFree (
+TestTsl12CreatCtxObjNewFree (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  BOOLEAN Status = TlsInitialize();
+  BOOLEAN  Status = TlsInitialize ();
+
   UT_ASSERT_TRUE (Status);
-  
-  TLS_OBJ SslCtxObj = TlsCtxNew(TLS_PROTOCOL_VERSION_MAJOR,TLS_PROTOCOL_VERSION_MINOR);
-  UT_ASSERT_NOT_NULL(SslCtxObj);
-  
-  TLS_OBJ TlsObj = TlsNew(SslCtxObj);
-  UT_ASSERT_NOT_NULL(TlsObj);
+
+  TLS_OBJ  SslCtxObj = TlsCtxNew (TLS12_PROTOCOL_VERSION_MAJOR, TLS12_PROTOCOL_VERSION_MINOR);
+
+  UT_ASSERT_NOT_NULL (SslCtxObj);
+
+  TLS_OBJ  TlsObj = TlsNew (SslCtxObj);
+
+  UT_ASSERT_NOT_NULL (TlsObj);
 
   // Cleanup
-  TlsFree(TlsObj);
-  TlsCtxFree(SslCtxObj);
+  TlsFree (TlsObj);
+  TlsCtxFree (SslCtxObj);
 
   return UNIT_TEST_PASSED;
 }
 
 UNIT_TEST_STATUS
 EFIAPI
-TestTls31CreateConnection (
+TestTsl12CreateConnection (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  EFI_STATUS Status;
-  BOOLEAN Result;
+  EFI_STATUS  Status = EFI_SUCCESS;
+  BOOLEAN     Result = FALSE;
 
-  Result = TlsInitialize();
+  Result = TlsInitialize ();
   UT_ASSERT_TRUE (Result);
-  
-  TLS_OBJ TlsCtx = TlsCtxNew(TLS_PROTOCOL_VERSION_MAJOR,TLS_PROTOCOL_VERSION_MINOR);
-  UT_ASSERT_NOT_NULL(TlsCtx);
 
-  TLS_OBJ TlsConn = TlsNew(TlsCtx);
-  UT_ASSERT_NOT_NULL(TlsConn);
-  
+  TLS_OBJ  TlsCtx = TlsCtxNew (TLS12_PROTOCOL_VERSION_MAJOR, TLS12_PROTOCOL_VERSION_MINOR);
+
+  UT_ASSERT_NOT_NULL (TlsCtx);
+
+  TLS_OBJ  TlsConn = TlsNew (TlsCtx);
+
+  UT_ASSERT_NOT_NULL (TlsConn);
+
   Status = TlsSetConnectionEnd (TlsConn, EfiTlsClient);
-  UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
+  UT_ASSERT_EQUAL (EFI_SUCCESS, Status);
 
-  // Cleanup 
+  // Cleanup
   // NOTE: this is aligned with other tests, but will not be called if test fails
-  TlsFree(TlsConn);
-  TlsCtxFree(TlsCtx);
+  TlsFree (TlsConn);
+  TlsCtxFree (TlsCtx);
 
   return UNIT_TEST_PASSED;
 }
-
 
 // TODO: Check if we need to call other stages to establish connection
 //       For example: Handshake, etc.
 
 UNIT_TEST_STATUS
 EFIAPI
-TestTls31VerifySetCipherList (
-  IN UNIT_TEST_CONTEXT  Context
+TestTsl12VerifySetCipherList (
+  IN
+  UNIT_TEST_CONTEXT
+  Context
   )
 {
-  UINT16  CipherId = 0;
-  EFI_STATUS Status;
-  BOOLEAN Result;
+  UINT16      CipherId = 0;
+  EFI_STATUS  Status   = EFI_SUCCESS;
+  BOOLEAN     Result   = FALSE;
 
-  Result = TlsInitialize();
+  Result = TlsInitialize ();
   UT_ASSERT_TRUE (Result);
-  
-  TLS_OBJ TlsCtx = TlsCtxNew(TLS_PROTOCOL_VERSION_MAJOR,TLS_PROTOCOL_VERSION_MINOR);
-  UT_ASSERT_NOT_NULL(TlsCtx);
 
-  TLS_OBJ TlsConn = TlsNew(TlsCtx);
-  UT_ASSERT_NOT_NULL(TlsConn);
-  
+  TLS_OBJ  TlsCtx = TlsCtxNew (TLS12_PROTOCOL_VERSION_MAJOR, TLS12_PROTOCOL_VERSION_MINOR);
+
+  UT_ASSERT_NOT_NULL (TlsCtx);
+
+  TLS_OBJ  TlsConn = TlsNew (TlsCtx);
+
+  UT_ASSERT_NOT_NULL (TlsConn);
+
   Status = TlsSetConnectionEnd (TlsConn, EfiTlsClient);
-  UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
+  UT_ASSERT_EQUAL (EFI_SUCCESS, Status);
 
   Status = TlsSetCipherList (TlsConn, mCipherId, CIPHER_COUNT);
-  UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
+  UT_ASSERT_EQUAL (EFI_SUCCESS, Status);
 
-  TlsGetCurrentCipher(TlsConn, &CipherId);
-  UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
+  TlsGetCurrentCipher (TlsConn, &CipherId);
+  UT_ASSERT_EQUAL (EFI_SUCCESS, Status);
 
-  BOOLEAN Found = FALSE;
+  BOOLEAN  Found = FALSE;
 
-  for (int i = 0 ; i < CIPHER_COUNT ; i++) {
+  for (int i = 0; i < CIPHER_COUNT; i++) {
     if (mCipherId[i] == CipherId) {
       Found = TRUE;
       break;
     }
   }
-  UT_ASSERT_TRUE(Found);
 
-  // Cleanup 
+  UT_ASSERT_TRUE (Found);
+
+  // Cleanup
   // NOTE: this is aligned with other tests, but will not be called if test fails
-  TlsFree(TlsConn);
-  TlsCtxFree(TlsCtx);
+  TlsFree (TlsConn);
+  TlsCtxFree (TlsCtx);
 
   return UNIT_TEST_PASSED;
 }
 
 UNIT_TEST_STATUS
 EFIAPI
-TestTls31GetCurrentCipher (
+TestTsl12GetCurrentCipher (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  UINT16  CipherId = 0;
-  EFI_STATUS Status;
-  BOOLEAN Result;
+  UINT16      CipherId = 0;
+  EFI_STATUS  Status   = EFI_SUCCESS;
+  BOOLEAN     Result   = FALSE;
 
-  Result = TlsInitialize();
+  Result = TlsInitialize ();
   UT_ASSERT_TRUE (Result);
-  
-  TLS_OBJ TlsCtx = TlsCtxNew(TLS_PROTOCOL_VERSION_MAJOR,TLS_PROTOCOL_VERSION_MINOR);
-  UT_ASSERT_NOT_NULL(TlsCtx);
-  
-  TLS_OBJ TlsConn = TlsNew(TlsCtx);
-  UT_ASSERT_NOT_NULL(TlsConn);
 
-  TlsGetCurrentCipher(TlsConn, &CipherId);
-  UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
+  TLS_OBJ  TlsCtx = TlsCtxNew (TLS12_PROTOCOL_VERSION_MAJOR, TLS12_PROTOCOL_VERSION_MINOR);
 
-  BOOLEAN Found = FALSE;
+  UT_ASSERT_NOT_NULL (TlsCtx);
+
+  TLS_OBJ  TlsConn = TlsNew (TlsCtx);
+
+  UT_ASSERT_NOT_NULL (TlsConn);
+
+  TlsGetCurrentCipher (TlsConn, &CipherId);
+  UT_ASSERT_EQUAL (EFI_SUCCESS, Status);
+
+  BOOLEAN  Found = FALSE;
+
   // Check if default config support ciphers
-  for (int i = 0 ; i < CIPHER_COUNT ; i++) {
+  for (int i = 0; i < CIPHER_COUNT; i++) {
     if (mCipherId[i] == CipherId) {
       Found = TRUE;
       break;
     }
   }
-  UT_ASSERT_TRUE(Found);
+
+  UT_ASSERT_TRUE (Found);
 
   Status = TlsSetConnectionEnd (TlsConn, EfiTlsClient);
-  UT_ASSERT_EQUAL(EFI_SUCCESS, Status);
+  UT_ASSERT_EQUAL (EFI_SUCCESS, Status);
 
-  // Cleanup 
+  // Cleanup
   // NOTE: this is aligned with other tests, but will not be called if test fails
-  TlsFree(TlsConn);
-  TlsCtxFree(TlsCtx);
+  TlsFree (TlsConn);
+  TlsCtxFree (TlsCtx);
 
   return UNIT_TEST_PASSED;
 }
-
 
 TEST_DESC  mTlsTest[] = {
   //
   // -----Description--------------------------------Class---------------------Function----------------Pre-----------------Post------------Context
   //
-  { "TestTls31CreatCtxObjNewFree()", "CryptoPkg.BaseCryptLib.Tls", TestTls31CreatCtxObjNewFree, TestVerifyTlsPreReq, NULL, NULL},
-  { "TestTls31CreateConnection()", "CryptoPkg.BaseCryptLib.Tls", TestTls31CreateConnection, TestVerifyTlsPreReq, NULL, NULL},
-  { "TestTls31VerifySetCipherList()", "CryptoPkg.BaseCryptLib.Tls", TestTls31VerifySetCipherList, TestVerifyTlsPreReq, NULL, NULL},
-  { "TestTls31GetCurrentCipher()", "CryptoPkg.BaseCryptLib.Tls", TestTls31GetCurrentCipher, TestVerifyTlsPreReq, NULL, NULL}
+  { "TestTsl12CreatCtxObjNewFree()",  "CryptoPkg.BaseCryptLib.Tls", TestTsl12CreatCtxObjNewFree,  TestVerifyTlsPreReq, NULL, NULL },
+  { "TestTsl12CreateConnection()",    "CryptoPkg.BaseCryptLib.Tls", TestTsl12CreateConnection,    TestVerifyTlsPreReq, NULL, NULL },
+  { "TestTsl12VerifySetCipherList()", "CryptoPkg.BaseCryptLib.Tls", TestTsl12VerifySetCipherList, TestVerifyTlsPreReq, NULL, NULL },
+  { "TestTsl12GetCurrentCipher()",    "CryptoPkg.BaseCryptLib.Tls", TestTsl12GetCurrentCipher,    TestVerifyTlsPreReq, NULL, NULL }
 };
 
 UINTN  mTlsTestNum = ARRAY_SIZE (mTlsTest);
-
-
 
 // ~~~~ TODO: check if any of these tests are needed ~~~~
 
@@ -226,10 +235,10 @@ TestTlsHandleAlert (
 {
   BOOLEAN Status = TlsInitialize();
   UT_ASSERT_TRUE (Status);
-  
+
   auto SslCtxObj = TlsCtxNew(3,1);
   UT_ASSERT_NOT_NULL(SslCtxObj);
-  
+
   auto TlsObj = TlsNew(SslCtxObj);
   UT_ASSERT_NOT_NULL(TlsObj);
 
@@ -251,7 +260,7 @@ TestTlsCloseNotify (
 {
   BOOLEAN Status = TlsInitialize();
   UT_ASSERT_TRUE (Status);
-  
+
   auto SslCtxObj = TlsCtxNew(3,1);
   UT_ASSERT_NOT_NULL(SslCtxObj);
 
@@ -276,10 +285,10 @@ TestTlsCtrlTrafficOut (
 {
   BOOLEAN Status = TlsInitialize();
   UT_ASSERT_TRUE (Status);
-  
+
   auto SslCtxObj = TlsCtxNew(3,1);
   UT_ASSERT_NOT_NULL(SslCtxObj);
-  
+
   auto TlsObj = TlsNew(SslCtxObj);
   UT_ASSERT_NOT_NULL(TlsObj);
 
@@ -301,10 +310,10 @@ TestTlsCtrlTrafficIn (
 {
   BOOLEAN Status = TlsInitialize();
   UT_ASSERT_TRUE (Status);
-  
+
   auto SslCtxObj = TlsCtxNew(3,1);
   UT_ASSERT_NOT_NULL(SslCtxObj);
-    
+
   auto TlsObj = TlsNew(SslCtxObj);
   UT_ASSERT_NOT_NULL(TlsObj);
 
@@ -326,10 +335,10 @@ TestTlsRead (
 {
   BOOLEAN Status = TlsInitialize();
   UT_ASSERT_TRUE (Status);
-  
+
   auto SslCtxObj = TlsCtxNew(3,1);
   UT_ASSERT_NOT_NULL(SslCtxObj);
-  
+
   auto TlsObj = TlsNew(SslCtxObj);
   UT_ASSERT_NOT_NULL(TlsObj);
 
@@ -353,10 +362,10 @@ TestTlsWrite (
 {
   BOOLEAN Status = TlsInitialize();
   UT_ASSERT_TRUE (Status);
-  
+
   auto SslCtxObj = TlsCtxNew(3,1);
   UT_ASSERT_NOT_NULL(SslCtxObj);
-  
+
   auto TlsObj = TlsNew(SslCtxObj);
   UT_ASSERT_NOT_NULL(TlsObj);
 
