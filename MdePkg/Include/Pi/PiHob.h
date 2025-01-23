@@ -333,6 +333,9 @@ typedef struct {
   UINT64                         ResourceLength;
 } EFI_HOB_RESOURCE_DESCRIPTOR;
 
+/// PI Spec Status: Pending.
+/// This change is checked in as a code first approach. The PI spec will be updated
+/// to reflect this change in the future.
 ///
 /// Describes the resource properties of all fixed,
 /// nonrelocatable resource ranges found on the processor
