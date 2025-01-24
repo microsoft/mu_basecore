@@ -204,6 +204,38 @@ BuildResourceDescriptorWithOwnerHob (
   IN EFI_GUID                     *OwnerGUID
   );
 
+// MU_CHANGE Start: Add BuildResourceDescriptorV2 function
+
+/**
+  Builds a HOB that describes a chunk of system memory with memory attributes.
+
+  This function builds a HOB that describes a chunk of system memory.
+  It can only be invoked during PEI phase;
+  for DXE phase, it will ASSERT() since PEI HOB is read-only for DXE phase.
+
+  If there is no additional space for HOB creation, then ASSERT().
+
+  @param  ResourceType          The type of resource described by this HOB.
+  @param  ResourceAttribute     The resource attributes of the memory described by this HOB.
+  @param  PhysicalStart         The 64 bit physical address of memory described by this HOB.
+  @param  NumberOfBytes         The length of the memory described by this HOB in bytes.
+  @param  EfiMemoryAttributes   The memory attribute for the memory described by this HOB.
+  @param  OwnerGUID             GUID for the owner of this resource.
+
+**/
+VOID
+EFIAPI
+BuildResourceDescriptorV2 (
+  IN EFI_RESOURCE_TYPE            ResourceType,
+  IN EFI_RESOURCE_ATTRIBUTE_TYPE  ResourceAttribute,
+  IN EFI_PHYSICAL_ADDRESS         PhysicalStart,
+  IN UINT64                       NumberOfBytes,
+  IN UINT64                       EfiMemoryAttributes,
+  IN EFI_GUID                     *OwnerGUID OPTIONAL
+  );
+
+// MU_CHANGE End
+
 /**
   Builds a HOB that describes a chunk of system memory.
 
