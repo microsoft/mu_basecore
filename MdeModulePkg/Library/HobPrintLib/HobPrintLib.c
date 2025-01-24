@@ -215,6 +215,35 @@ PrintResourceDiscriptorHob (
 }
 
 /**
+  Print the information in Resource Discriptor Hob.
+  @param[in]  HobStart       A pointer to HOB of type EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2.
+  @param[in]  HobLength      The Length in bytes of HOB of type EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2.
+  @retval EFI_SUCCESS        If it completed successfully.
+**/
+EFI_STATUS
+PrintResourceDiscriptor2Hob (
+  IN  VOID    *HobStart,
+  IN  UINT16  HobLength
+  )
+{
+  EFI_PEI_HOB_POINTERS  Hob;
+
+  Hob.Raw = (UINT8 *)HobStart;
+  ASSERT (HobLength >= sizeof (*Hob.ResourceDescriptorV2));
+
+  DEBUG ((DEBUG_INFO, "   ResourceType      = %a\n", mResource_Type_List[Hob.ResourceDescriptorV2->V1.ResourceType]));
+  if (!IsZeroGuid (&Hob.ResourceDescriptorV2->V1.Owner)) {
+    DEBUG ((DEBUG_INFO, "   Owner             = %g\n", &Hob.ResourceDescriptorV2->V1.Owner));
+  }
+
+  DEBUG ((DEBUG_INFO, "   ResourceAttribute = 0x%x\n", Hob.ResourceDescriptorV2->V1.ResourceAttribute));
+  DEBUG ((DEBUG_INFO, "   PhysicalStart     = 0x%lx\n", Hob.ResourceDescriptorV2->V1.PhysicalStart));
+  DEBUG ((DEBUG_INFO, "   ResourceLength    = 0x%lx\n", Hob.ResourceDescriptorV2->V1.ResourceLength));
+  DEBUG ((DEBUG_INFO, "   Attributes         = 0x%x\n", Hob.ResourceDescriptorV2->Attributes));
+  return EFI_SUCCESS;
+}
+
+/**
   Print the Guid Hob using related print handle function.
   @param[in] HobStart        A pointer to the HOB of type EFI_HOB_TYPE_GUID_EXTENSION.
   @param[in] HobLength       The length in bytes of the HOB of type EFI_HOB_TYPE_GUID_EXTENSION.
@@ -386,16 +415,17 @@ PrintFv3Hob (
 // Mapping table from Hob type to Hob print function.
 //
 HOB_PRINT_HANDLER_TABLE  mHobHandles[] = {
-  { EFI_HOB_TYPE_HANDOFF,             "EFI_HOB_TYPE_HANDOFF",             PrintHandOffHob            },
-  { EFI_HOB_TYPE_MEMORY_ALLOCATION,   "EFI_HOB_TYPE_MEMORY_ALLOCATION",   PrintMemoryAllocationHob   },
-  { EFI_HOB_TYPE_RESOURCE_DESCRIPTOR, "EFI_HOB_TYPE_RESOURCE_DESCRIPTOR", PrintResourceDiscriptorHob },
-  { EFI_HOB_TYPE_GUID_EXTENSION,      "EFI_HOB_TYPE_GUID_EXTENSION",      PrintGuidHob               },
-  { EFI_HOB_TYPE_FV,                  "EFI_HOB_TYPE_FV",                  PrintFvHob                 },
-  { EFI_HOB_TYPE_CPU,                 "EFI_HOB_TYPE_CPU",                 PrintCpuHob                },
-  { EFI_HOB_TYPE_MEMORY_POOL,         "EFI_HOB_TYPE_MEMORY_POOL",         PrintMemoryPoolHob         },
-  { EFI_HOB_TYPE_FV2,                 "EFI_HOB_TYPE_FV2",                 PrintFv2Hob                },
-  { EFI_HOB_TYPE_UEFI_CAPSULE,        "EFI_HOB_TYPE_UEFI_CAPSULE",        PrintCapsuleHob            },
-  { EFI_HOB_TYPE_FV3,                 "EFI_HOB_TYPE_FV3",                 PrintFv3Hob                }
+  { EFI_HOB_TYPE_HANDOFF,              "EFI_HOB_TYPE_HANDOFF",              PrintHandOffHob             },
+  { EFI_HOB_TYPE_MEMORY_ALLOCATION,    "EFI_HOB_TYPE_MEMORY_ALLOCATION",    PrintMemoryAllocationHob    },
+  { EFI_HOB_TYPE_RESOURCE_DESCRIPTOR,  "EFI_HOB_TYPE_RESOURCE_DESCRIPTOR",  PrintResourceDiscriptorHob  },
+  { EFI_HOB_TYPE_GUID_EXTENSION,       "EFI_HOB_TYPE_GUID_EXTENSION",       PrintGuidHob                },
+  { EFI_HOB_TYPE_FV,                   "EFI_HOB_TYPE_FV",                   PrintFvHob                  },
+  { EFI_HOB_TYPE_CPU,                  "EFI_HOB_TYPE_CPU",                  PrintCpuHob                 },
+  { EFI_HOB_TYPE_MEMORY_POOL,          "EFI_HOB_TYPE_MEMORY_POOL",          PrintMemoryPoolHob          },
+  { EFI_HOB_TYPE_FV2,                  "EFI_HOB_TYPE_FV2",                  PrintFv2Hob                 },
+  { EFI_HOB_TYPE_UEFI_CAPSULE,         "EFI_HOB_TYPE_UEFI_CAPSULE",         PrintCapsuleHob             },
+  { EFI_HOB_TYPE_FV3,                  "EFI_HOB_TYPE_FV3",                  PrintFv3Hob                 },
+  { EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2, "EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2", PrintResourceDiscriptor2Hob }
 };
 
 /**
