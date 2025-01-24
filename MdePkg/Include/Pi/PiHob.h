@@ -15,19 +15,20 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 // HobType of EFI_HOB_GENERIC_HEADER.
 //
-#define EFI_HOB_TYPE_HANDOFF              0x0001
-#define EFI_HOB_TYPE_MEMORY_ALLOCATION    0x0002
-#define EFI_HOB_TYPE_RESOURCE_DESCRIPTOR  0x0003
-#define EFI_HOB_TYPE_GUID_EXTENSION       0x0004
-#define EFI_HOB_TYPE_FV                   0x0005
-#define EFI_HOB_TYPE_CPU                  0x0006
-#define EFI_HOB_TYPE_MEMORY_POOL          0x0007
-#define EFI_HOB_TYPE_FV2                  0x0009
-#define EFI_HOB_TYPE_LOAD_PEIM_UNUSED     0x000A
-#define EFI_HOB_TYPE_UEFI_CAPSULE         0x000B
-#define EFI_HOB_TYPE_FV3                  0x000C
-#define EFI_HOB_TYPE_UNUSED               0xFFFE
-#define EFI_HOB_TYPE_END_OF_HOB_LIST      0xFFFF
+#define EFI_HOB_TYPE_HANDOFF               0x0001
+#define EFI_HOB_TYPE_MEMORY_ALLOCATION     0x0002
+#define EFI_HOB_TYPE_RESOURCE_DESCRIPTOR   0x0003
+#define EFI_HOB_TYPE_GUID_EXTENSION        0x0004
+#define EFI_HOB_TYPE_FV                    0x0005
+#define EFI_HOB_TYPE_CPU                   0x0006
+#define EFI_HOB_TYPE_MEMORY_POOL           0x0007
+#define EFI_HOB_TYPE_FV2                   0x0009
+#define EFI_HOB_TYPE_LOAD_PEIM_UNUSED      0x000A
+#define EFI_HOB_TYPE_UEFI_CAPSULE          0x000B
+#define EFI_HOB_TYPE_FV3                   0x000C
+#define EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2  0x000D
+#define EFI_HOB_TYPE_UNUSED                0xFFFE
+#define EFI_HOB_TYPE_END_OF_HOB_LIST       0xFFFF
 
 ///
 /// Describes the format and size of the data inside the HOB.
@@ -332,6 +333,25 @@ typedef struct {
   UINT64                         ResourceLength;
 } EFI_HOB_RESOURCE_DESCRIPTOR;
 
+/// PI Spec Status: Pending.
+/// This change is checked in as a code first approach. The PI spec will be updated
+/// to reflect this change in the future.
+///
+/// Describes the resource properties and memory attributes
+/// of all fixed, nonrelocatable resource ranges found on the
+/// processor host bus during the HOB producer phase.
+///
+typedef struct {
+  ///
+  /// The HOB generic header. Header.HobType = EFI_HOB_TYPE_RESOURCE_DESCRIPTOR.
+  ///
+  EFI_HOB_RESOURCE_DESCRIPTOR    V1;
+  ///
+  /// The memory attributes (paging and caching) of the resource region.
+  ///
+  UINT64                         Attributes;
+} EFI_HOB_RESOURCE_DESCRIPTOR_V2;
+
 ///
 /// Allows writers of executable content in the HOB producer phase to
 /// maintain and manage HOBs with specific GUID.
@@ -505,6 +525,7 @@ typedef union {
   EFI_HOB_CPU                            *Cpu;
   EFI_HOB_MEMORY_POOL                    *Pool;
   EFI_HOB_UEFI_CAPSULE                   *Capsule;
+  EFI_HOB_RESOURCE_DESCRIPTOR_V2         *ResourceDescriptorV2;
   UINT8                                  *Raw;
 } EFI_PEI_HOB_POINTERS;
 
