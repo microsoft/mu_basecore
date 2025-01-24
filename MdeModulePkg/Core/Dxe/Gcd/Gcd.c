@@ -1,4 +1,4 @@
-/** @file
+﻿/** @file
   The file contains the GCD related services in the EFI Boot Services Table.
   The GCD services are used to manage the memory and I/O regions that
   are accessible to the CPU that is executing the DXE core.
@@ -2326,7 +2326,8 @@ CoreInitializeMemoryServices (
     //
     // Skip all HOBs except Resource Descriptor HOBs
     //
-    if (GET_HOB_TYPE (Hob) != EFI_HOB_TYPE_RESOURCE_DESCRIPTOR) {
+    if ((GET_HOB_TYPE (Hob) != EFI_HOB_TYPE_RESOURCE_DESCRIPTOR) && (GET_HOB_TYPE (Hob) != EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2)) {
+      // MU_CHANGE Resource Descriptor v2
       continue;
     }
 
@@ -2450,7 +2451,8 @@ CoreInitializeMemoryServices (
       //
       // Skip all HOBs except Resource Descriptor HOBs
       //
-      if (GET_HOB_TYPE (Hob) != EFI_HOB_TYPE_RESOURCE_DESCRIPTOR) {
+      if ((GET_HOB_TYPE (Hob) != EFI_HOB_TYPE_RESOURCE_DESCRIPTOR) && (GET_HOB_TYPE (Hob) != EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2)) {
+        // MU_CHANGE Resource Descriptor v2
         continue;
       }
 
@@ -2653,7 +2655,8 @@ CoreInitializeGcdServices (
     GcdMemoryType = EfiGcdMemoryTypeNonExistent;
     GcdIoType     = EfiGcdIoTypeNonExistent;
 
-    if (GET_HOB_TYPE (Hob) == EFI_HOB_TYPE_RESOURCE_DESCRIPTOR) {
+    if ((GET_HOB_TYPE (Hob) == EFI_HOB_TYPE_RESOURCE_DESCRIPTOR) || (GET_HOB_TYPE (Hob) == EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2)) {
+      // MU_CHANGE Resource Descriptor v2
       ResourceHob = Hob.ResourceDescriptor;
 
       switch (ResourceHob->ResourceType) {
