@@ -30,8 +30,10 @@ UINTN  mNvmeControllerNumber = 0;
 **/
 EFI_STATUS
 ReadNvmeControllerCapabilities (
-  IN NVME_CONTROLLER_PRIVATE_DATA  *Private,
-  IN NVME_CAP                      *Cap
+  // MU_CHANGE [BEGIN] - Correct Cap parameter modifier
+  IN  NVME_CONTROLLER_PRIVATE_DATA  *Private,
+  OUT NVME_CAP                      *Cap
+  // MU_CHANGE [END] - Correct Cap parameter modifier
   )
 {
   EFI_PCI_IO_PROTOCOL  *PciIo;
@@ -564,8 +566,103 @@ NvmeIdentifyNamespace (
   return Status;
 }
 
+// MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+
 /**
-  Create io completion queue.
+  Send the Set Features Command to the controller for the number of queues requested.
+  Note that the number of queues allocated may be different from the number of queues requested.
+  The number of data queue pairs allocated is returned and stored in the controller private data structure
+  using the NumberOfIoQueuePairs field.
+
+  @param  Private          The pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
+  @param  Ndqpr            The number of data queue pairs requested.
+
+  @return EFI_SUCCESS      Successfully set the number of queues.
+  @return EFI_DEVICE_ERROR Fail to set the number of queues.
+
+**/
+EFI_STATUS
+NvmeSetFeaturesNumberOfQueues (
+  IN OUT NVME_CONTROLLER_PRIVATE_DATA  *Private,
+  IN UINT16                            Ndqpr
+  )
+{
+  EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET  CommandPacket;
+  EFI_NVM_EXPRESS_COMMAND                   Command;
+  EFI_NVM_EXPRESS_COMPLETION                Completion;
+  EFI_STATUS                                Status;
+  NVME_ADMIN_SET_FEATURES_CDW10             SetFeatures;
+  NVME_ADMIN_SET_FEATURES_NUM_QUEUES        NumberOfQueuesRequested;
+  NVME_ADMIN_SET_FEATURES_NUM_QUEUES        NumberOfQueuesAllocated;
+
+  Status = EFI_SUCCESS;
+
+  if (Ndqpr == 0) {
+    DEBUG ((DEBUG_ERROR, "Number of Data Queue Pairs Requested cannot be 0\n"));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ZeroMem (&CommandPacket, sizeof (EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET));
+  ZeroMem (&Command, sizeof (EFI_NVM_EXPRESS_COMMAND));
+  ZeroMem (&Completion, sizeof (EFI_NVM_EXPRESS_COMPLETION));
+  ZeroMem (&SetFeatures, sizeof (NVME_ADMIN_SET_FEATURES));
+  ZeroMem (&NumberOfQueuesRequested, sizeof (NVME_ADMIN_SET_FEATURES_NUM_QUEUES));
+  ZeroMem (&NumberOfQueuesAllocated, sizeof (NVME_ADMIN_SET_FEATURES_NUM_QUEUES));
+
+  CommandPacket.NvmeCmd        = &Command;
+  CommandPacket.NvmeCompletion = &Completion;
+  CommandPacket.CommandTimeout = NVME_GENERIC_TIMEOUT;
+  CommandPacket.QueueType      = NVME_ADMIN_QUEUE;
+  Command.Nsid                 = 0; // NSID must be set to 0h or FFFFFFFFh for an admin command
+  Command.Cdw0.Opcode          = NVME_ADMIN_SET_FEATURES_CMD;
+
+  // Populate the Set Features Cdw10 and Cdw11 according to Nvm Express 1.3d Spec
+  // Note we subtract 1 from the requested number of queues to get the 0-based value
+  SetFeatures.Bits.Fid             = NVME_FEATURE_NUMBER_OF_QUEUES;
+  NumberOfQueuesRequested.Bits.Ncq = Ndqpr - 1;
+  NumberOfQueuesRequested.Bits.Nsq = Ndqpr - 1;
+  CommandPacket.NvmeCmd->Cdw10     = SetFeatures.Uint32;
+  CommandPacket.NvmeCmd->Cdw11     = NumberOfQueuesRequested.Uint32;
+
+  CommandPacket.NvmeCmd->Flags = CDW10_VALID | CDW11_VALID;
+
+  DEBUG ((DEBUG_INFO, "Number of Data Queue Pairs Requested: %d\n", Ndqpr));
+
+  // Send the Set Features Command for Number of Queues
+  Status = Private->Passthru.PassThru (
+                               &Private->Passthru,
+                               0,
+                               &CommandPacket,
+                               NULL
+                               );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Set Features Command for Number of Queues failed with Status %r\n", Status));
+    return Status;
+  }
+
+  //
+  // Save the number of queues allocated, adding 1 to account for it being a 0-based value.
+  // E.g. if 1 pair of data queues is allocated Nsq=0, Ncq=0, then NumberOfIoQueuePairs=1.
+  // These numbers do not include the admin queues.
+  //
+  NumberOfQueuesAllocated.Uint32 = CommandPacket.NvmeCompletion->DW0;
+  DEBUG ((DEBUG_INFO, "Number of Data Queue Pairs Allocated By Controller: %d, \n", (NumberOfQueuesAllocated.Bits.Nsq + 1)));
+  if ((NumberOfQueuesAllocated.Bits.Nsq + 1) > Ndqpr) {
+    // This driver at maximum supports 2 pairs of data queues. So we will take the minimum of the requested and allocated values.
+    Private->NumberOfIoQueuePairs = Ndqpr;
+  } else {
+    Private->NumberOfIoQueuePairs = NumberOfQueuesAllocated.Bits.Nsq + 1;
+  }
+
+  DEBUG ((DEBUG_INFO, "Number of Data Queue Pairs Supported By Driver: %d, \n", Private->NumberOfIoQueuePairs));
+  return Status;
+}
+
+// MU_CHANGE [END] - Request Number of Queues from Controller
+
+/**
+  Create io completion queue(s).
 
   @param  Private          The pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
 
@@ -589,7 +686,11 @@ NvmeCreateIoCompletionQueue (
   Status                 = EFI_SUCCESS;
   Private->CreateIoQueue = TRUE;
 
-  for (Index = 1; Index < NVME_MAX_QUEUES; Index++) {
+  // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+  // Start from Index 1 because Index 0 is reserved for admin queue
+  for (Index = 1; Index <= Private->NumberOfIoQueuePairs; Index++) {
+    // MU_CHANGE [END] - Request Number of Queues from Controller
+
     ZeroMem (&CommandPacket, sizeof (EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET));
     ZeroMem (&Command, sizeof (EFI_NVM_EXPRESS_COMMAND));
     ZeroMem (&Completion, sizeof (EFI_NVM_EXPRESS_COMPLETION));
@@ -627,6 +728,9 @@ NvmeCreateIoCompletionQueue (
                                  NULL
                                  );
     if (EFI_ERROR (Status)) {
+      // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+      DEBUG ((DEBUG_ERROR, "%a: Create Completion Queue Command %d failed with Status %r\n", __func__, Index, Status));
+      // MU_CHANGE [END] - Request Number of Queues from Controller
       break;
     }
   }
@@ -661,7 +765,10 @@ NvmeCreateIoSubmissionQueue (
   Status                 = EFI_SUCCESS;
   Private->CreateIoQueue = TRUE;
 
-  for (Index = 1; Index < NVME_MAX_QUEUES; Index++) {
+  // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+  // Start from Index 1 because Index 0 is reserved for admin queue
+  for (Index = 1; Index <= Private->NumberOfIoQueuePairs; Index++) {
+    // MU_CHANGE [END] - Request Number of Queues from Controller
     ZeroMem (&CommandPacket, sizeof (EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET));
     ZeroMem (&Command, sizeof (EFI_NVM_EXPRESS_COMMAND));
     ZeroMem (&Completion, sizeof (EFI_NVM_EXPRESS_COMPLETION));
@@ -701,6 +808,9 @@ NvmeCreateIoSubmissionQueue (
                                  NULL
                                  );
     if (EFI_ERROR (Status)) {
+      // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+      DEBUG ((DEBUG_ERROR, "%a: Create Submission Queue Command %d failed with Status %r\n", __func__, Index, Status));
+      // MU_CHANGE [END] - Request Number of Queues from Controller
       break;
     }
   }
@@ -919,6 +1029,21 @@ NvmeControllerInit (
   DEBUG ((DEBUG_INFO, "    SQES      : 0x%x\n", Private->ControllerData->Sqes));
   DEBUG ((DEBUG_INFO, "    CQES      : 0x%x\n", Private->ControllerData->Cqes));
   DEBUG ((DEBUG_INFO, "    NN        : 0x%x\n", Private->ControllerData->Nn));
+
+  // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+  //
+  // Send Set Features Command to request the maximum number of data queues.
+  // The controller is free to allocate a different number of queues from the number requested.
+  // The number of queues allocated is returned and stored in the controller private data structure
+  // using the NumberOfIoQueuePairs field.
+  //
+  Status = NvmeSetFeaturesNumberOfQueues (Private, NVME_MAX_QUEUES - 1);
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  // MU_CHANGE [END] - Request Number of Queues from Controller
 
   //
   // Create two I/O completion queues.
