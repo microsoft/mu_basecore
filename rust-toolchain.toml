@@ -1,6 +1,6 @@
 [toolchain]
 channel = "1.80.0"
 
-[tool]
+[tools]
 cargo-make = "0.37.9"
 cargo-tarpaulin = "0.31.2"
