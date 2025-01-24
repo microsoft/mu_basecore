@@ -21,12 +21,6 @@
 #  VALID_ARCHITECTURES           = IA32 X64 IPF EBC (EBC is for build only)
 #
 
-# MU_CHANGE [BEGIN] - Remove ARM from this lib, since it requires too much from ArmPkg.
-# [Sources.AARCH64, Sources.ARM]
-#   Arm/StandaloneMmCoreEntryPoint.c
-#   Arm/SetPermissions.c
-# MU_CHANGE [END] - Remove ARM from this lib, since it requires too much from ArmPkg.
-
 [Sources.X64]
   X64/StandaloneMmCoreEntryPoint.c
 
@@ -35,48 +29,10 @@
   MdeModulePkg/MdeModulePkg.dec
   StandaloneMmPkg/StandaloneMmPkg.dec
 
-# MU_CHANGE [BEGIN] - Remove ARM from this lib, since it requires too much from ArmPkg.
-# [Packages.ARM, Packages.AARCH64]
-#   ArmPkg/ArmPkg.dec
-# MU_CHANGE [END] - Remove ARM from this lib, since it requires too much from ArmPkg.
-
 [LibraryClasses]
   BaseLib
   DebugLib
 
-# MU_CHANGE [BEGIN] - Remove ARM from this lib, since it requires too much from ArmPkg.
-# [LibraryClasses.ARM, LibraryClasses.AARCH64]
-#   StandaloneMmMmuLib
-#   ArmSvcLib
-#   ArmTransferListLib
-#   ArmFfaLib
-# MU_CHANGE [END] - Remove ARM from this lib, since it requires too much from ArmPkg.
-
 [Guids]
   gMpInformationHobGuid
   gEfiMmPeiMmramMemoryReserveGuid
-  # gEfiStandaloneMmNonSecureBufferGuid # MU_CHANGE
-
-# MU_CHANGE [BEGIN] - Remove ARM from this lib, since it requires too much from ArmPkg.
-# [Guids.ARM, Guids.AARCH64]
-#   gEfiHobListGuid
-#
-# [FixedPcd.ARM, FixedPcd.AARCH64]
-#   gArmTokenSpaceGuid.PcdStMmStackSize
-#
-# [Protocols.ARM, Protocols.AARCH64]
-#   gEdkiiPiMmCpuDriverEpProtocolGuid
-#   gEfiMmCommunication2ProtocolGuid
-#
-# [Protocols.ARM, Protocols.AARCH64]
-#   gEdkiiPiMmCpuDriverEpProtocolGuid
-#
-# [FeaturePcd.ARM, FeaturePcd.AARCH64]
-#   gArmTokenSpaceGuid.PcdFfaEnable
-#
-# [FeaturePcd.ARM, FeaturePcd.AARCH64]
-#   gArmTokenSpaceGuid.PcdFfaEnable
-#
-# [BuildOptions]
-#   GCC:*_*_AARCH64_CC_FLAGS = -fpie
-# MU_CHANGE [END] - Remove ARM from this lib, since it requires too much from ArmPkg.
