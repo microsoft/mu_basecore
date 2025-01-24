@@ -172,14 +172,20 @@ EnumerateNvmeDevNamespace (
     Device->BlockIo.WriteBlocks = NvmeBlockIoWriteBlocks;
     Device->BlockIo.FlushBlocks = NvmeBlockIoFlushBlocks;
 
-    //
-    // Create BlockIo2 Protocol instance
-    //
-    Device->BlockIo2.Media         = &Device->Media;
-    Device->BlockIo2.Reset         = NvmeBlockIoResetEx;
-    Device->BlockIo2.ReadBlocksEx  = NvmeBlockIoReadBlocksEx;
-    Device->BlockIo2.WriteBlocksEx = NvmeBlockIoWriteBlocksEx;
-    Device->BlockIo2.FlushBlocksEx = NvmeBlockIoFlushBlocksEx;
+    // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+    if (NVME_SUPPORT_BLOCKIO2 (Private)) {
+      // We have multiple data queues, so we can support the BlockIo2 protocol
+
+      // Create BlockIo2 Protocol instance
+      Device->BlockIo2.Media         = &Device->Media;
+      Device->BlockIo2.Reset         = NvmeBlockIoResetEx;
+      Device->BlockIo2.ReadBlocksEx  = NvmeBlockIoReadBlocksEx;
+      Device->BlockIo2.WriteBlocksEx = NvmeBlockIoWriteBlocksEx;
+      Device->BlockIo2.FlushBlocksEx = NvmeBlockIoFlushBlocksEx;
+    }
+
+    // MU_CHANGE [END] - Request Number of Queues from Controller
+
     InitializeListHead (&Device->AsyncQueue);
 
     // MU_CHANGE Start - Add Media Sanitize
@@ -260,8 +266,8 @@ EnumerateNvmeDevNamespace (
                     Device->DevicePath,
                     &gEfiBlockIoProtocolGuid,
                     &Device->BlockIo,
-                    &gEfiBlockIo2ProtocolGuid,
-                    &Device->BlockIo2,
+                    // &gEfiBlockIo2ProtocolGuid, // MU_CHANGE - Request Number of Queues from Controller
+                    // &Device->BlockIo2, // MU_CHANGE - Request Number of Queues from Controller
                     &gEfiDiskInfoProtocolGuid,
                     &Device->DiskInfo,
                     NULL
@@ -270,6 +276,36 @@ EnumerateNvmeDevNamespace (
     if (EFI_ERROR (Status)) {
       goto Exit;
     }
+
+    // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+    if (NVME_SUPPORT_BLOCKIO2 (Private)) {
+      // We have multiple data queues, so we can support the BlockIo2 protocol
+      Status = gBS->InstallMultipleProtocolInterfaces (
+                      &Device->DeviceHandle,
+                      &gEfiBlockIo2ProtocolGuid,
+                      &Device->BlockIo2,
+                      NULL
+                      );
+
+      if (EFI_ERROR (Status)) {
+        gBS->UninstallMultipleProtocolInterfaces (
+               Device->DeviceHandle,
+               &gEfiDevicePathProtocolGuid,
+               Device->DevicePath,
+               &gEfiBlockIoProtocolGuid,
+               &Device->BlockIo,
+               &gEfiDiskInfoProtocolGuid,
+               &Device->DiskInfo,
+               NULL
+               );
+
+        DEBUG ((DEBUG_ERROR, "%a: Failed to install BlockIo2 protocol. Error %r\n", __func__, Status));
+        ASSERT_EFI_ERROR (Status);
+        goto Exit;
+      }
+    }
+
+    // MU_CHANGE [END] - Request Number of Queues from Controller
 
     //
     // Check if the NVMe controller supports the Security Send and Security Receive commands
@@ -288,12 +324,26 @@ EnumerateNvmeDevNamespace (
                Device->DevicePath,
                &gEfiBlockIoProtocolGuid,
                &Device->BlockIo,
-               &gEfiBlockIo2ProtocolGuid,
-               &Device->BlockIo2,
+               // &gEfiBlockIo2ProtocolGuid, // MU_CHANGE - Request Number of Queues from Controller
+               // &Device->BlockIo2, // MU_CHANGE - Request Number of Queues from Controller
                &gEfiDiskInfoProtocolGuid,
                &Device->DiskInfo,
                NULL
                );
+
+        // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+        if (NVME_SUPPORT_BLOCKIO2 (Private)) {
+          // We have multiple data queues, so we need to uninstall the BlockIo2 protocol
+          gBS->UninstallMultipleProtocolInterfaces (
+                 Device->DeviceHandle,
+                 &gEfiBlockIo2ProtocolGuid,
+                 &Device->BlockIo2,
+                 NULL
+                 );
+        }
+
+        // MU_CHANGE [END] - Request Number of Queues from Controller
+
         goto Exit;
       }
     }
@@ -429,6 +479,7 @@ UnregisterNvmeNamespace (
   )
 {
   EFI_STATUS                             Status;
+  EFI_STATUS                             BlockIo2Status; // MU_CHANGE - Request Number of Queues from Controller
   EFI_BLOCK_IO_PROTOCOL                  *BlockIo;
   NVME_DEVICE_PRIVATE_DATA               *Device;
   EFI_STORAGE_SECURITY_COMMAND_PROTOCOL  *StorageSecurity;
@@ -436,7 +487,10 @@ UnregisterNvmeNamespace (
   EFI_TPL                                OldTpl;
   VOID                                   *DummyInterface;
 
-  BlockIo = NULL;
+  // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+  BlockIo        = NULL;
+  BlockIo2Status = EFI_SUCCESS;
+  // MU_CHANGE [END] - Request Number of Queues from Controller
 
   Status = gBS->OpenProtocol (
                   Handle,
@@ -477,6 +531,24 @@ UnregisterNvmeNamespace (
          Handle
          );
 
+  // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+  //
+  // If BlockIo2 is installed, uninstall it.
+  //
+  if (NVME_SUPPORT_BLOCKIO2 (Device->Controller)) {
+    BlockIo2Status = gBS->UninstallMultipleProtocolInterfaces (
+                            Handle,
+                            &gEfiBlockIo2ProtocolGuid,
+                            &Device->BlockIo2,
+                            NULL
+                            );
+
+    if (EFI_ERROR (BlockIo2Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: Failed to uninstall BlockIo2 protocol\n", __func__));
+    }
+  }
+
+  // MU_CHANGE [END] - Request Number of Queues from Controller
   //
   // The Nvm Express driver installs the BlockIo and DiskInfo in the DriverBindingStart().
   // Here should uninstall both of them.
@@ -487,14 +559,15 @@ UnregisterNvmeNamespace (
                   Device->DevicePath,
                   &gEfiBlockIoProtocolGuid,
                   &Device->BlockIo,
-                  &gEfiBlockIo2ProtocolGuid,
-                  &Device->BlockIo2,
+                  // &gEfiBlockIo2ProtocolGuid, // MU_CHANGE - Request Number of Queues from Controller
+                  // &Device->BlockIo2, // MU_CHANGE - Request Number of Queues from Controller
                   &gEfiDiskInfoProtocolGuid,
                   &Device->DiskInfo,
                   NULL
                   );
 
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (Status) || EFI_ERROR (BlockIo2Status)) {
+    // MU_CHANGE - Request Number of Queues from Controller
     gBS->OpenProtocol (
            Controller,
            &gEfiNvmExpressPassThruProtocolGuid,
@@ -1083,28 +1156,36 @@ NvmExpressDriverBindingStart (
       goto Exit;
     }
 
+    // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+
     //
     // Start the asynchronous I/O completion monitor
+    // The ProcessAsyncTaskList event and NVME_HC_ASYNC_TIMER timer are only used for the BlockIo2 protocol,
+    // which is only installed when the number of IO queues is greater than 1
     //
-    Status = gBS->CreateEvent (
-                    EVT_TIMER | EVT_NOTIFY_SIGNAL,
-                    TPL_NOTIFY,
-                    ProcessAsyncTaskList,
-                    Private,
-                    &Private->TimerEvent
-                    );
-    if (EFI_ERROR (Status)) {
-      goto Exit;
+    if (NVME_SUPPORT_BLOCKIO2 (Private)) {
+      Status = gBS->CreateEvent (
+                      EVT_TIMER | EVT_NOTIFY_SIGNAL,
+                      TPL_NOTIFY,
+                      ProcessAsyncTaskList,
+                      Private,
+                      &Private->TimerEvent
+                      );
+      if (EFI_ERROR (Status)) {
+        goto Exit;
+      }
+
+      Status = gBS->SetTimer (
+                      Private->TimerEvent,
+                      TimerPeriodic,
+                      NVME_HC_ASYNC_TIMER
+                      );
+      if (EFI_ERROR (Status)) {
+        goto Exit;
+      }
     }
 
-    Status = gBS->SetTimer (
-                    Private->TimerEvent,
-                    TimerPeriodic,
-                    NVME_HC_ASYNC_TIMER
-                    );
-    if (EFI_ERROR (Status)) {
-      goto Exit;
-    }
+    // MU_CHANGE [END] - Request Number of Queues from Controller
 
     Status = gBS->InstallMultipleProtocolInterfaces (
                     &Controller,
