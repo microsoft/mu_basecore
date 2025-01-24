@@ -233,7 +233,9 @@ GetMemoryTypeInformationResourceHob (
   MemoryTypeInformationResourceHob = NULL;
   Count                            = 0;
   for (Hob.Raw = *HobStart; !END_OF_HOB_LIST (Hob); Hob.Raw = GET_NEXT_HOB (Hob)) {
-    if (GET_HOB_TYPE (Hob) != EFI_HOB_TYPE_RESOURCE_DESCRIPTOR) {
+    // MU_CHANGE START: Add support for EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2
+    if ((GET_HOB_TYPE (Hob) != EFI_HOB_TYPE_RESOURCE_DESCRIPTOR) && (GET_HOB_TYPE (Hob) != EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2)) {
+      // MU_CHANGE END: Add support for EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2
       continue;
     }
 
