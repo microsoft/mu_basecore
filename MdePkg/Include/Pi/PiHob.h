@@ -525,6 +525,7 @@ typedef union {
   EFI_HOB_CPU                            *Cpu;
   EFI_HOB_MEMORY_POOL                    *Pool;
   EFI_HOB_UEFI_CAPSULE                   *Capsule;
+  EFI_HOB_RESOURCE_DESCRIPTOR_V2         *ResourceDescriptorV2;
   UINT8                                  *Raw;
 } EFI_PEI_HOB_POINTERS;
 

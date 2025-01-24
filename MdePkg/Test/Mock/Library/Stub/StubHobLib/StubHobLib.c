@@ -241,6 +241,7 @@ BuildResourceDescriptorWithOwnerHob (
   @param  PhysicalStart         The 64 bit physical address of memory described by this HOB.
   @param  NumberOfBytes         The length of the memory described by this HOB in bytes.
   @param  EfiMemoryAttributes   The memory attribute for the memory described by this HOB.
+  @param  OwnerGUID             GUID for the owner of this resource.
 
 **/
 VOID
