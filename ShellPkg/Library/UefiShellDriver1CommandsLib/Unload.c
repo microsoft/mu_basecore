@@ -25,12 +25,9 @@ DumpLoadedImageProtocolInfo (
   CHAR16  *TheString;
 
   TheString = GetProtocolInformationDump (TheHandle, &gEfiLoadedImageProtocolGuid, TRUE);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   if (TheString == NULL) {
     return (EFI_INVALID_PARAMETER);
   }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   ShellPrintEx (-1, -1, L"%s", TheString);
 

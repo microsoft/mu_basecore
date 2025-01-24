@@ -214,13 +214,12 @@ ShellCommandRunMemMap (
       if (Status == EFI_BUFFER_TOO_SMALL) {
         Size       += SIZE_1KB;
         Descriptors = AllocateZeroPool (Size);
-        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
         if (Descriptors == NULL) {
           ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellDebug1HiiHandle, L"memmap");
-          ShellStatus = SHELL_OUT_OF_RESOURCES;
+          ShellCommandLineFreeVarList (Package);
+          return SHELL_OUT_OF_RESOURCES;
         }
 
-        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
         Status = gBS->GetMemoryMap (&Size, Descriptors, &MapKey, &ItemSize, &Version);
       }
 

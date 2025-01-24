@@ -1142,7 +1142,7 @@ DeleteScriptFileStruct (
   IN SCRIPT_FILE  *Script
   )
 {
-  UINTN  LoopVar; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
+  UINTN  LoopVar;
 
   if (Script == NULL) {
     return;
@@ -1263,12 +1263,10 @@ ShellCommandCreateNewMappingName (
   String = NULL;
 
   String = AllocateZeroPool (PcdGet8 (PcdShellMapNameLength) * sizeof (String[0]));
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   if (String == NULL) {
     return (NULL);
   }
 
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   UnicodeSPrint (
     String,
     PcdGet8 (PcdShellMapNameLength) * sizeof (String[0]),
@@ -1465,7 +1463,6 @@ ShellCommandCreateInitialMappingsAndPaths (
     //
     PerformQuickSort (DevicePathList, Count, sizeof (EFI_DEVICE_PATH_PROTOCOL *), DevicePathCompare);
 
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     Status = ShellCommandConsistMappingInitialize (&ConsistMappingTable);
     if (EFI_ERROR (Status)) {
       SHELL_FREE_NON_NULL (HandleList);
@@ -1499,7 +1496,6 @@ ShellCommandCreateInitialMappingsAndPaths (
         Status = ShellCommandAddMapItemAndUpdatePath (NewConsistName, DevicePathList[Count], 0, FALSE);
         ASSERT_EFI_ERROR (Status);
         FreePool (NewConsistName);
-        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       }
     }
 
@@ -1579,7 +1575,6 @@ ShellCommandCreateInitialMappingsAndPaths (
       // Get default name first
       //
       NewDefaultName = ShellCommandCreateNewMappingName (MappingTypeBlockIo);
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
       if (NewDefaultName == NULL) {
         ASSERT (NewDefaultName != NULL);
         SHELL_FREE_NON_NULL (HandleList);
@@ -1587,7 +1582,6 @@ ShellCommandCreateInitialMappingsAndPaths (
         return EFI_OUT_OF_RESOURCES;
       }
 
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       Status = ShellCommandAddMapItemAndUpdatePath (NewDefaultName, DevicePathList[Count], 0, FALSE);
       ASSERT_EFI_ERROR (Status);
       FreePool (NewDefaultName);
@@ -1657,12 +1651,12 @@ ShellCommandUpdateMapping (
     PerformQuickSort (DevicePathList, Count, sizeof (EFI_DEVICE_PATH_PROTOCOL *), DevicePathCompare);
 
     Status = ShellCommandConsistMappingInitialize (&ConsistMappingTable);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (EFI_ERROR (Status)) {
+      SHELL_FREE_NON_NULL (HandleList);
+      SHELL_FREE_NON_NULL (DevicePathList);
       return Status;
     }
 
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     //
     // Assign new Mappings to remainders
     //

@@ -5759,7 +5759,7 @@ PrintInterpretedExtendedCompatibilityDynamicPowerAllocation (
   )
 {
   CONST PCI_EXPRESS_EXTENDED_CAPABILITIES_DYNAMIC_POWER_ALLOCATION  *Header;
-  UINT32                                                            LinkCount; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
+  UINT32                                                            LinkCount;
 
   Header = (PCI_EXPRESS_EXTENDED_CAPABILITIES_DYNAMIC_POWER_ALLOCATION *)HeaderAddress;
 
@@ -5774,7 +5774,7 @@ PrintInterpretedExtendedCompatibilityDynamicPowerAllocation (
     Header->DpaStatus,
     Header->DpaControl
     );
-  for (LinkCount = 0; LinkCount < PCI_EXPRESS_EXTENDED_CAPABILITY_DYNAMIC_POWER_ALLOCATION_GET_SUBSTATE_MAX (Header) + 1; LinkCount++) {
+  for (LinkCount = 0; LinkCount < PCI_EXPRESS_EXTENDED_CAPABILITY_DYNAMIC_POWER_ALLOCATION_GET_SUBSTATE_MAX (Header) + (UINT32)1; LinkCount++) {
     ShellPrintHiiEx (
       -1,
       -1,

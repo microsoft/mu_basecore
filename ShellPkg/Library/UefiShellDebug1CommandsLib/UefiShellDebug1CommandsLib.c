@@ -269,13 +269,10 @@ EditGetDefaultFileName (
 
   do {
     FileNameTmp = CatSPrint (NULL, L"NewFile%d.%s", Suffix, Extension);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (FileNameTmp == NULL) {
       ASSERT (FileNameTmp != NULL);
       return NULL;
     }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
     //
     // after that filename changed to path

@@ -538,14 +538,12 @@ ShellCommandRunMm (
     }
 
     Temp = ShellCommandLineGetRawValue (Package, 1);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (Temp == NULL) {
       ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellDebug1HiiHandle, L"mm", L"NULL");
       ShellStatus = SHELL_INVALID_PARAMETER;
       goto Done;
     }
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     Status = ShellConvertStringToUint64 (Temp, &Address, TRUE, FALSE);
     if (EFI_ERROR (Status)) {
       ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"mm", Temp);

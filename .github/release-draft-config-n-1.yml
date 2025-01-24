@@ -17,18 +17,19 @@
 # For more information, see:
 # https://github.com/release-drafter/release-drafter
 
-name-template: 'v$RESOLVED_VERSION'
-tag-template: 'v$RESOLVED_VERSION'
+name-template: 'dev-v$RESOLVED_VERSION'
+tag-template: 'dev-v$RESOLVED_VERSION'
 
-commitish: refs/heads/release/202311
+commitish: refs/heads/dev/202311
 filter-by-commitish: true
+include-labels: ["type:backport"]
 
 template: |
   # What's Changed
 
   $CHANGES
 
-  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...dev-v$RESOLVED_VERSION
 
 categories:
   - title: '⚠️ Breaking Changes'

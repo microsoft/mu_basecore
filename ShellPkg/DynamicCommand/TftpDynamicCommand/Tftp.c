@@ -395,13 +395,11 @@ RunTftp (
   }
 
   RemoteFilePath = ShellCommandLineGetRawValue (CheckPackage, 2);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   if (RemoteFilePath == NULL) {
     ASSERT (RemoteFilePath != NULL);
     goto Error;
   }
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   FilePathSize        = StrLen (RemoteFilePath) + 1;
   AsciiRemoteFilePath = AllocatePool (FilePathSize);
   if (AsciiRemoteFilePath == NULL) {

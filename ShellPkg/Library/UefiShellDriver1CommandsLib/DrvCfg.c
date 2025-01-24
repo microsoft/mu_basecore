@@ -236,7 +236,6 @@ ConfigToFile (
   Status = HiiDatabase->ExportPackageLists (HiiDatabase, HiiHandle, &MainBufferSize, MainBuffer);
   if (Status == EFI_BUFFER_TOO_SMALL) {
     MainBuffer = AllocateZeroPool (MainBufferSize);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (MainBuffer == NULL) {
       ShellPrintHiiEx (
         -1,
@@ -250,8 +249,20 @@ ConfigToFile (
       return (SHELL_OUT_OF_RESOURCES);
     }
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     Status = HiiDatabase->ExportPackageLists (HiiDatabase, HiiHandle, &MainBufferSize, MainBuffer);
+    if (EFI_ERROR (Status)) {
+      SHELL_FREE_NON_NULL (MainBuffer);
+      ShellPrintHiiEx (
+        -1,
+        -1,
+        NULL,
+        STRING_TOKEN (STR_GEN_OUT_MEM),
+        gShellDriver1HiiHandle,
+        L"drvcfg"
+        );
+      ShellCloseFile (&FileHandle);
+      return (SHELL_DEVICE_ERROR);
+    }
   }
 
   Status = ShellWriteFile (FileHandle, &MainBufferSize, MainBuffer);
@@ -307,11 +318,13 @@ ConfigFromFile (
   EFI_HII_PACKAGE_HEADER       *PackageHeader;
   EFI_DEVICE_PATH_PROTOCOL     *DevPath;
   UINTN                        HandleIndex;
+  SHELL_STATUS                 ShellStatus;
 
   HiiDatabase    = NULL;
   MainBufferSize = 0;
   MainBuffer     = NULL;
   FileHandle     = NULL;
+  ShellStatus    = SHELL_SUCCESS;
 
   Status = ShellOpenFileByName (FileName, &FileHandle, EFI_FILE_MODE_READ, 0);
   if (EFI_ERROR (Status)) {
@@ -325,7 +338,9 @@ ConfigFromFile (
       FileName,
       Status
       );
-    return (SHELL_DEVICE_ERROR);
+
+    ShellStatus = SHELL_DEVICE_ERROR;
+    goto Done;
   }
 
   //
@@ -348,8 +363,9 @@ ConfigFromFile (
       L"EfiHiiDatabaseProtocol",
       &gEfiHiiDatabaseProtocolGuid
       );
-    ShellCloseFile (&FileHandle);
-    return (SHELL_NOT_FOUND);
+
+    ShellStatus = SHELL_NOT_FOUND;
+    goto Done;
   }
 
   Status         = ShellGetFileSize (FileHandle, &Temp);
@@ -365,12 +381,11 @@ ConfigFromFile (
       FileName
       );
 
-    ShellCloseFile (&FileHandle);
-    return (SHELL_DEVICE_ERROR);
+    ShellStatus = SHELL_DEVICE_ERROR;
+    goto Done;
   }
 
   MainBuffer = AllocateZeroPool ((UINTN)MainBufferSize);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   if (MainBuffer == NULL) {
     ShellPrintHiiEx (
       -1,
@@ -380,11 +395,11 @@ ConfigFromFile (
       gShellDriver1HiiHandle,
       L"drvcfg"
       );
-    ShellCloseFile (&FileHandle);
-    return (SHELL_OUT_OF_RESOURCES);
+
+    ShellStatus = SHELL_OUT_OF_RESOURCES;
+    goto Done;
   }
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   if (EFI_ERROR (Status)) {
     ShellPrintHiiEx (
       -1,
@@ -394,8 +409,9 @@ ConfigFromFile (
       gShellDriver1HiiHandle,
       L"drvcfg"
       );
-    ShellCloseFile (&FileHandle);
-    return (SHELL_DEVICE_ERROR);
+
+    ShellStatus = SHELL_DEVICE_ERROR;
+    goto Done;
   }
 
   Status = ShellReadFile (FileHandle, &MainBufferSize, MainBuffer);
@@ -410,12 +426,12 @@ ConfigFromFile (
       FileName
       );
 
-    ShellCloseFile (&FileHandle);
-    SHELL_FREE_NON_NULL (MainBuffer);
-    return (SHELL_DEVICE_ERROR);
+    ShellStatus = SHELL_DEVICE_ERROR;
+    goto Done;
   }
 
   ShellCloseFile (&FileHandle);
+  FileHandle = NULL;
 
   if (Handle != NULL) {
     //
@@ -434,8 +450,9 @@ ConfigFromFile (
         ConvertHandleToHandleIndex (Handle),
         L"Device"
         );
-      ShellCloseFile (&FileHandle);
-      return (SHELL_DEVICE_ERROR);
+
+      ShellStatus = SHELL_DEVICE_ERROR;
+      goto Done;
     }
 
     Status = HiiDatabase->UpdatePackageList (HiiDatabase, HiiHandle, MainBuffer);
@@ -450,7 +467,9 @@ ConfigFromFile (
         L"HiiDatabase->UpdatePackageList",
         Status
         );
-      return (SHELL_DEVICE_ERROR);
+
+      ShellStatus = SHELL_DEVICE_ERROR;
+      goto Done;
     }
   } else {
     //
@@ -473,7 +492,6 @@ ConfigFromFile (
             // print out an error.
             //
             TempDevPathString = ConvertDevicePathToText ((EFI_DEVICE_PATH_PROTOCOL *)(((CHAR8 *)PackageHeader) + sizeof (EFI_HII_PACKAGE_HEADER)), TRUE, TRUE);
-            // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
             if (TempDevPathString == NULL) {
               ShellPrintHiiEx (
                 -1,
@@ -483,10 +501,11 @@ ConfigFromFile (
                 gShellDriver1HiiHandle,
                 L"drvcfg"
                 );
-              return (SHELL_OUT_OF_RESOURCES);
+
+              ShellStatus = SHELL_OUT_OF_RESOURCES;
+              goto Done;
             }
 
-            // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
             ShellPrintHiiEx (
               -1,
               -1,
@@ -509,7 +528,9 @@ ConfigFromFile (
                 L"HiiDatabase->UpdatePackageList",
                 Status
                 );
-              return (SHELL_DEVICE_ERROR);
+
+              ShellStatus = SHELL_DEVICE_ERROR;
+              goto Done;
             } else {
               DevPath = (EFI_DEVICE_PATH_PROTOCOL *)(((CHAR8 *)PackageHeader) + sizeof (EFI_HII_PACKAGE_HEADER));
               gBS->LocateDevicePath (&gEfiHiiConfigAccessProtocolGuid, &DevPath, &Handle);
@@ -529,16 +550,24 @@ ConfigFromFile (
     }
   }
 
+Done:
   SHELL_FREE_NON_NULL (MainBuffer);
 
-  ShellPrintHiiEx (
-    -1,
-    -1,
-    NULL,
-    STRING_TOKEN (STR_DRVCFG_COMP),
-    gShellDriver1HiiHandle
-    );
-  return (SHELL_SUCCESS);
+  if (FileHandle != NULL) {
+    ShellCloseFile (&FileHandle);
+  }
+
+  if (ShellStatus == SHELL_SUCCESS) {
+    ShellPrintHiiEx (
+      -1,
+      -1,
+      NULL,
+      STRING_TOKEN (STR_DRVCFG_COMP),
+      gShellDriver1HiiHandle
+      );
+  }
+
+  return ShellStatus;
 }
 
 /**
@@ -705,14 +734,12 @@ PreHiiDrvCfg (
     // keep consistent with the above clause
     //
     DriverImageHandleBuffer = AllocatePool (sizeof (EFI_HANDLE));
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (DriverImageHandleBuffer == NULL) {
       ASSERT (DriverImageHandleBuffer);
       ShellStatus = SHELL_OUT_OF_RESOURCES;
       goto Done;
     }
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     DriverImageHandleBuffer[0] = DriverImageHandle;
   }
 
@@ -1315,13 +1342,11 @@ ShellCommandRunDrvCfg (
     Lang = ShellCommandLineGetValue (Package, L"-l");
     if (Lang != NULL) {
       Language = AllocateZeroPool (StrSize (Lang));
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
       if (Language == NULL) {
         ShellStatus = SHELL_OUT_OF_RESOURCES;
         goto Done;
       }
 
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       AsciiSPrint (Language, StrSize (Lang), "%S", Lang);
     } else if (ShellCommandLineGetFlag (Package, L"-l")) {
       ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_NO_VALUE), gShellDriver1HiiHandle, L"drvcfg", L"-l");
@@ -1345,14 +1370,12 @@ ShellCommandRunDrvCfg (
       FileName = NULL;
     }
 
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (FileName == NULL) {
       ASSERT (FileName != NULL);
       ShellStatus = SHELL_INVALID_PARAMETER;
       goto Done;
     }
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     if (InFromFile && EFI_ERROR (ShellFileExists (FileName))) {
       ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_FIND_FAIL), gShellDriver1HiiHandle, L"drvcfg", FileName);
       ShellStatus = SHELL_INVALID_PARAMETER;

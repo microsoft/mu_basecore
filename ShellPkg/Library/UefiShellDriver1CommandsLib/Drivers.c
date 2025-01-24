@@ -327,14 +327,12 @@ ShellCommandRunDrivers (
         Lang = ShellCommandLineGetValue (Package, L"-l");
         if (Lang != NULL) {
           Language = AllocateZeroPool (StrSize (Lang));
-          // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
           if (Language == NULL) {
             ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellDriver1HiiHandle, L"drivers");
             ShellCommandLineFreeVarList (Package);
             return (SHELL_OUT_OF_RESOURCES);
           }
 
-          // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
           AsciiSPrint (Language, StrSize (Lang), "%S", Lang);
         } else {
           ASSERT (Language == NULL);
@@ -372,15 +370,12 @@ ShellCommandRunDrivers (
           );
       }
 
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
       if (FormatString == NULL) {
         // Assume the string is present because it is hard-coded and report out of memory
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellDriver1HiiHandle, L"drivers");
         ShellCommandLineFreeVarList (Package);
         return (SHELL_OUT_OF_RESOURCES);
       }
-
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
       HandleList = GetHandleListByProtocol (&gEfiDriverBindingProtocolGuid);
       for (HandleWalker = HandleList; HandleWalker != NULL && *HandleWalker != NULL; HandleWalker++) {
@@ -400,14 +395,12 @@ ShellCommandRunDrivers (
         TruncatedDriverName = NULL;
         if (!SfoFlag && (FullDriverName != NULL)) {
           TruncatedDriverName = AllocateZeroPool ((MAX_LEN_DRIVER_NAME + 1) * sizeof (CHAR16));
-          // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
           if (TruncatedDriverName == NULL) {
             ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellDriver1HiiHandle, L"drivers");
             ShellCommandLineFreeVarList (Package);
             return (SHELL_OUT_OF_RESOURCES);
           }
 
-          // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
           StrnCpyS (TruncatedDriverName, MAX_LEN_DRIVER_NAME + 1, FullDriverName, MAX_LEN_DRIVER_NAME);
         }
 

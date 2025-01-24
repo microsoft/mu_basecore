@@ -673,7 +673,6 @@ SmbiosPrintStructure (
       UINTN  NumOfDevice;
       NumOfDevice = (Struct->Type10->Hdr.Length - sizeof (SMBIOS_STRUCTURE)) / (2 * sizeof (UINT8));
       for (Index = 0; (UINTN)Index < NumOfDevice; Index++) {
-        // MU_CHANGE - CodeQL Change - comparison-with-wider-type
         ShellPrintEx (-1, -1, (((Struct->Type10->Device[Index].DeviceType) & 0x80) != 0) ? L"Device Enabled\n" : L"Device Disabled\n");
         DisplayOnboardDeviceTypes ((Struct->Type10->Device[Index].DeviceType) & 0x7F, Option);
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_DESC_STRING), gShellDebug1HiiHandle);

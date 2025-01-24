@@ -1815,13 +1815,10 @@ DownloadFile (
                     Context->Uri,
                     StrLen (Context->Uri)
                     );
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (DownloadUrl == NULL) {
       Status = EFI_OUT_OF_RESOURCES;
       goto ON_EXIT;
     }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
     PRINT_HII (STRING_TOKEN (STR_HTTP_DOWNLOADING), DownloadUrl);
 

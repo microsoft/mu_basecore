@@ -99,13 +99,11 @@ IsValidProfile (
   CONST CHAR16  *TempLocation;
 
   ProfilesString = ShellGetEnvironmentVariable (L"profiles");
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   if (ProfilesString == NULL) {
     ASSERT (ProfilesString != NULL);
     return (FALSE);
   }
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   TempLocation = StrStr (ProfilesString, String);
   if ((TempLocation != NULL) && (*(TempLocation-1) == L';') && (*(TempLocation+StrLen (String)) == L';')) {
     return (TRUE);
@@ -901,12 +899,10 @@ ShellCommandRunIf (
   // Make sure that an End exists.
   //
   CurrentScriptFile = ShellCommandGetCurrentScriptFile ();
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   if (CurrentScriptFile == NULL) {
-    return (SHELL_DEVICE_ERROR);
+    return (SHELL_INVALID_PARAMETER);
   }
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   if (!MoveToTag (GetNextNode, L"endif", L"if", NULL, CurrentScriptFile, TRUE, TRUE, FALSE)) {
     ShellPrintHiiEx (
       -1,
@@ -1088,12 +1084,9 @@ ShellCommandRunElse (
   }
 
   CurrentScriptFile = ShellCommandGetCurrentScriptFile ();
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   if (CurrentScriptFile == NULL) {
-    return (SHELL_UNSUPPORTED);
+    return (SHELL_INVALID_PARAMETER);
   }
-
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
   if (!MoveToTag (GetPreviousNode, L"if", L"endif", NULL, CurrentScriptFile, FALSE, TRUE, FALSE)) {
     ShellPrintHiiEx (
@@ -1176,12 +1169,10 @@ ShellCommandRunEndIf (
   }
 
   CurrentScriptFile = ShellCommandGetCurrentScriptFile ();
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   if (CurrentScriptFile == NULL) {
-    return (SHELL_DEVICE_ERROR);
+    return (SHELL_INVALID_PARAMETER);
   }
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   if (!MoveToTag (GetPreviousNode, L"if", L"endif", NULL, CurrentScriptFile, FALSE, TRUE, FALSE)) {
     ShellPrintHiiEx (
       -1,

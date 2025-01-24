@@ -509,7 +509,6 @@ ShellCommandRunConnect (
 
       if (Param1 != NULL) {
         Status = ShellConvertStringToUint64 (Param1, &Intermediate, TRUE, FALSE);
-        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
         if (EFI_ERROR (Status)) {
           ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, L"connect", Param1);
           ShellStatus = SHELL_INVALID_PARAMETER;
@@ -520,7 +519,6 @@ ShellCommandRunConnect (
           return (ShellStatus);
         }
 
-        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
         Handle1 = ConvertHandleIndexToHandle ((UINTN)Intermediate);
         if (EFI_ERROR (Status)) {
           ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, L"connect", Param1);

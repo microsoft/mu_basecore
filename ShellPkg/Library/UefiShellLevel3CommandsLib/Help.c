@@ -308,7 +308,6 @@ ShellCommandRunHelp (
   CONST CHAR16  *CurrentCommand;
   CHAR16        *CommandToGetHelpOn;
   CHAR16        *SectionToGetHelpOn;
-  CHAR16        *HiiString;
   BOOLEAN       Found;
   BOOLEAN       PrintCommandText;
   UINTN         SortedCommandListSize;
@@ -398,19 +397,7 @@ ShellCommandRunHelp (
         // we need info on the special characters
         //
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_HELP_SC_HEADER), gShellLevel3HiiHandle);
-        HiiString = HiiGetString (gShellLevel3HiiHandle, STRING_TOKEN (STR_HELP_SC_DATA), NULL);
-        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-        if (HiiString == NULL) {
-          HiiString = AllocateCopyPool (StrSize (L"ERROR: Could not find help string for special characters!"), L"ERROR: Could not find help string for special characters!");
-          if (HiiString == NULL) {
-            ASSERT (HiiString != NULL);
-            return (SHELL_OUT_OF_RESOURCES);
-          }
-        }
-
-        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
-        ShellPrintEx (-1, -1, L"%s", HiiString);
-        FreePool (HiiString);
+        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_HELP_SC_DATA), gShellLevel3HiiHandle);
         Found = TRUE;
       } else {
         SortedCommandList     = NULL;

@@ -1378,12 +1378,9 @@ MainCommandDisplayHelp (
   //
   for (CurrentLine = 0; 0 != MainMenuHelpInfo[CurrentLine]; CurrentLine++) {
     InfoString = HiiGetString (gShellDebug1HiiHandle, MainMenuHelpInfo[CurrentLine], NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (InfoString != NULL) {
       ShellPrintEx (0, CurrentLine+1, L"%E%s%N", InfoString);
     }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   }
 
   //

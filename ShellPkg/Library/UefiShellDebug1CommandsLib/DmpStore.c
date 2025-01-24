@@ -448,12 +448,10 @@ CascadeProcessVariables (
     StrnCatGrow (&FoundVarName, &NameSize, PrevName, 0);
   } else {
     FoundVarName = AllocateZeroPool (sizeof (CHAR16));
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (FoundVarName == NULL) {
       return (SHELL_OUT_OF_RESOURCES);
     }
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     NameSize = sizeof (CHAR16);
   }
 

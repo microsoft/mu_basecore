@@ -289,14 +289,12 @@ ShellCommandRunSerMode (
       }
 
       Temp = ShellCommandLineGetRawValue (Package, 5);
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
       if (Temp == NULL) {
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"sermode");
         ShellStatus = SHELL_INVALID_PARAMETER;
         goto Done;
       }
 
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       Value = ShellStrToUintn (Temp);
       switch (Value) {
         case 0:

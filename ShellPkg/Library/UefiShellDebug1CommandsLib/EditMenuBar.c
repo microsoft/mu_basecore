@@ -107,12 +107,9 @@ MenuBarRefresh (
   //
   for (Item = MenuItems; Item != NULL && Item->Function != NULL; Item++) {
     NameString = HiiGetString (gShellDebug1HiiHandle, Item->NameToken, NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (NameString == NULL) {
       return EFI_INVALID_PARAMETER;
     }
-
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
     Width = MAX ((StrLen (NameString) + 6), 20);
     if (((Col + Width) > LastCol)) {
@@ -121,13 +118,11 @@ MenuBarRefresh (
     }
 
     FunctionKeyString = HiiGetString (gShellDebug1HiiHandle, Item->FunctionKeyToken, NULL);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (FunctionKeyString == NULL) {
       FreePool (NameString);
       return EFI_INVALID_PARAMETER;
     }
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     ShellPrintEx ((INT32)(Col) - 1, (INT32)(Row) - 1, L"%E%s%N  %H%s%N  ", FunctionKeyString, NameString);
 
     FreePool (NameString);

@@ -108,8 +108,8 @@ DoDiagnostics (
   if (ControllerHandle != NULL) {
     ControllerHandleList = AllocateZeroPool (2*sizeof (EFI_HANDLE));
     if (ControllerHandleList == NULL) {
-      SHELL_FREE_NON_NULL (DriverHandleList);
-      return EFI_OUT_OF_RESOURCES;
+      Status2 = EFI_OUT_OF_RESOURCES;
+      goto Done;
     }
 
     ControllerHandleList[0]   = ControllerHandle;
@@ -121,9 +121,8 @@ DoDiagnostics (
   if (ChildHandle != NULL) {
     ChildHandleList = AllocateZeroPool (2*sizeof (EFI_HANDLE));
     if (ChildHandleList == NULL) {
-      SHELL_FREE_NON_NULL (ControllerHandleList);
-      SHELL_FREE_NON_NULL (DriverHandleList);
-      return EFI_OUT_OF_RESOURCES;
+      Status2 = EFI_OUT_OF_RESOURCES;
+      goto Done;
     }
 
     ChildHandleList[0]   = ChildHandle;
@@ -154,7 +153,7 @@ DoDiagnostics (
       PARSE_HANDLE_DATABASE_DEVICES (DriverHandleList[DriverHandleListLoop], &ControllerHandleListCount, &ControllerHandleList);
     }
 
-    if (ControllerHandleListCount == 0) {
+    if ((ControllerHandleListCount == 0) || (ControllerHandleList == NULL)) {
       if (Mode == TestModeList) {
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_DRVDIAG_DRIVER_NO_HANDLES), gShellDriver1HiiHandle);
       }
@@ -199,12 +198,10 @@ DoDiagnostics (
                               );
               if (!EFI_ERROR (Status) && (DriverDiagnostics2 != NULL)) {
                 Language = GetBestLanguageForDriver (DriverDiagnostics2->SupportedLanguages, Lang, FALSE);
-                // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
                 if (Language == NULL) {
-                  return EFI_NOT_FOUND;
+                  Status2 = EFI_NOT_FOUND;
+                  goto Done;
                 }
-
-                // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
                 Found  = TRUE;
                 Status = DriverDiagnostics2->RunDiagnostics (
@@ -218,6 +215,7 @@ DoDiagnostics (
                                                &OutBuffer
                                                );
                 FreePool (Language);
+                Language = NULL;
               }
             }
 
@@ -232,12 +230,10 @@ DoDiagnostics (
                               );
               if (!EFI_ERROR (Status)) {
                 Language = GetBestLanguageForDriver (DriverDiagnostics->SupportedLanguages, Lang, FALSE);
-                // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
                 if (Language == NULL) {
-                  return EFI_NOT_FOUND;
+                  Status2 = EFI_NOT_FOUND;
+                  goto Done;
                 }
-
-                // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
                 Status = DriverDiagnostics->RunDiagnostics (
                                               DriverDiagnostics,
@@ -250,6 +246,7 @@ DoDiagnostics (
                                               &OutBuffer
                                               );
                 FreePool (Language);
+                Language = NULL;
               }
             }
 
@@ -321,17 +318,13 @@ DoDiagnostics (
     }
   }
 
-  if (DriverHandleList != NULL) {
-    FreePool (DriverHandleList);
-  }
+Done:
 
-  if (ControllerHandleList != NULL) {
-    FreePool (ControllerHandleList);
-  }
-
-  if (ChildHandleList != NULL) {
-    FreePool (ChildHandleList);
-  }
+  SHELL_FREE_NON_NULL (DriverHandleList);
+  SHELL_FREE_NON_NULL (ControllerHandleList);
+  SHELL_FREE_NON_NULL (ChildHandleList);
+  SHELL_FREE_NON_NULL (Language);
+  SHELL_FREE_NON_NULL (OutBuffer);
 
   return (Status2);
 }
@@ -373,10 +366,9 @@ ShellCommandRunDrvDiag (
   EFI_HANDLE          Handle3;
   UINT64              Intermediate;
 
-  Intermediate = 0; // MU_CHANGE - CodeQL Change - conditionallyuninitializedvariable
-  ShellStatus  = SHELL_SUCCESS;
-  Mode         = TestModeMax;
-  Language     = NULL;
+  ShellStatus = SHELL_SUCCESS;
+  Mode        = TestModeMax;
+  Language    = NULL;
 
   //
   // initialize the shell lib (we must be in non-auto-init...)
@@ -446,14 +438,12 @@ ShellCommandRunDrvDiag (
       return (SHELL_INVALID_PARAMETER);
     } else if (Lang != NULL) {
       Language = AllocateZeroPool (StrSize (Lang));
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
       if (Language == NULL) {
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_OUT_MEM), gShellDriver1HiiHandle, L"drvdiag");
         ShellCommandLineFreeVarList (Package);
         return (SHELL_OUT_OF_RESOURCES);
       }
 
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       AsciiSPrint (Language, StrSize (Lang), "%S", Lang);
     }
 

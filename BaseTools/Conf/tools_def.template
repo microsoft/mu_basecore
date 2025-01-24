@@ -21,7 +21,7 @@
 #      - Add GCC and GCCNOLTO
 #      - Deprecate GCC48, GCC49 and GCC5.
 # 3.01 - Update toolchain for VS2022
-# 3.02 - Enable stack cookies for IA32, ARM, and AARCH64 builds for GCC and MSVC
+# 3.02 - Enable stack cookies for IA32, X64, ARM, and AARCH64 builds for GCC and MSVC
 # 3.03 - Remove WHOLEARCHIVE as this breaks the build for VS2017/VS2019 (MU_CHANGE)
 # 3.20 - Move GccLto files to a tools path to be more repository layout agnostic
 # 3.21 - Can't have comment inline as it breaks concatenation see - # MU_CHANGE - Move GccLto to tools dir for better alignment
@@ -706,9 +706,11 @@ NOOPT_VS2019_X64_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:428
 *_VS2019_ARM_ASLPP_PATH           = DEF(VS2019_BIN_ARM)\cl.exe
 *_VS2019_ARM_ASLDLINK_PATH        = DEF(VS2019_BIN_ARM)\link.exe
 
+# MU_CHANGE BEGIN: Temporarily Disable ARM/AARCH64 Stack Cookies
   DEBUG_VS2019_ARM_CC_FLAGS       = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Gw /Oi-
 RELEASE_VS2019_ARM_CC_FLAGS       = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw /Oi-
 NOOPT_VS2019_ARM_CC_FLAGS         = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Od /Oi-
+# MU_CHANGE END: Temporarily Disable ARM/AARCH64 Stack Cookies
 
   DEBUG_VS2019_ARM_ASM_FLAGS      = /nologo /g
 RELEASE_VS2019_ARM_ASM_FLAGS      = /nologo
@@ -732,9 +734,11 @@ NOOPT_VS2019_ARM_DLINK_FLAGS      = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF 
 *_VS2019_AARCH64_ASLPP_PATH        = DEF(VS2019_BIN_AARCH64)\cl.exe
 *_VS2019_AARCH64_ASLDLINK_PATH     = DEF(VS2019_BIN_AARCH64)\link.exe
 
+# MU_CHANGE BEGIN: Temporarily Disable ARM/AARCH64 Stack Cookies
   DEBUG_VS2019_AARCH64_CC_FLAGS    = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Gw /Oi-
 RELEASE_VS2019_AARCH64_CC_FLAGS    = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw /Oi-
 NOOPT_VS2019_AARCH64_CC_FLAGS      = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Od /Oi-
+# MU_CHANGE END: Temporarily Disable ARM/AARCH64 Stack Cookies
 
   DEBUG_VS2019_AARCH64_ASM_FLAGS   = /nologo /g
 RELEASE_VS2019_AARCH64_ASM_FLAGS   = /nologo
@@ -852,9 +856,11 @@ NOOPT_VS2022_X64_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:428
 *_VS2022_ARM_ASLDLINK_PATH        = DEF(VS2022_BIN_ARM)\link.exe
 
       *_VS2022_ARM_MAKE_FLAGS     = /nologo
+# MU_CHANGE BEGIN: Temporarily Disable ARM/AARCH64 Stack Cookies
   DEBUG_VS2022_ARM_CC_FLAGS       = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Gw /Oi-
 RELEASE_VS2022_ARM_CC_FLAGS       = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw /Oi-
 NOOPT_VS2022_ARM_CC_FLAGS         = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Od /Oi-
+# MU_CHANGE END: Temporarily Disable ARM/AARCH64 Stack Cookies
 
   DEBUG_VS2022_ARM_ASM_FLAGS      = /nologo /g
 RELEASE_VS2022_ARM_ASM_FLAGS      = /nologo
@@ -879,9 +885,11 @@ NOOPT_VS2022_ARM_DLINK_FLAGS      = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF 
 *_VS2022_AARCH64_ASLDLINK_PATH     = DEF(VS2022_BIN_AARCH64)\link.exe
 
       *_VS2022_AARCH64_MAKE_FLAGS  = /nologo
+# MU_CHANGE BEGIN: Temporarily Disable ARM/AARCH64 Stack Cookies
   DEBUG_VS2022_AARCH64_CC_FLAGS    = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Gw /Oi-
 RELEASE_VS2022_AARCH64_CC_FLAGS    = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /O1b2 /GL /FIAutoGen.h /EHs-c- /GR- /GF /Gw /Oi-
 NOOPT_VS2022_AARCH64_CC_FLAGS      = /nologo /c /WX /GS- /W4 /Gs32768 /D UNICODE /FIAutoGen.h /EHs-c- /GR- /GF /Gy /Zi /Od /Oi-
+# MU_CHANGE END: Temporarily Disable ARM/AARCH64 Stack Cookies
 
   DEBUG_VS2022_AARCH64_ASM_FLAGS   = /nologo /g
 RELEASE_VS2022_AARCH64_ASM_FLAGS   = /nologo
@@ -909,11 +917,13 @@ NOOPT_*_*_OBJCOPY_ADDDEBUGFLAG     = --add-gnu-debuglink="$(DEBUG_DIR)/$(MODULE_
 *_*_*_DTCPP_PATH                   = DEF(DTCPP_BIN)
 *_*_*_DTC_PATH                     = DEF(DTC_BIN)
 
-DEFINE GCC_ALL_CC_FLAGS            = -g -Os -fshort-wchar -fno-builtin -fno-strict-aliasing -Wall -Werror -Wno-array-bounds -include AutoGen.h -fno-common -fstack-protector -mstack-protector-guard=global
-DEFINE GCC_ARM_CC_FLAGS            = DEF(GCC_ALL_CC_FLAGS) -mlittle-endian -mabi=aapcs -fno-short-enums -funsigned-char -ffunction-sections -fdata-sections -fomit-frame-pointer -Wno-address -mthumb -fno-pic -fno-pie
+# All supported GCC archs except LOONGARCH64 support -mstack-protector-guard=global, so set that on everything except LOONGARCH64
+DEFINE GCC_ALL_CC_FLAGS            = -g -Os -fshort-wchar -fno-builtin -fno-strict-aliasing -Wall -Werror -Wno-array-bounds -include AutoGen.h -fno-common -fstack-protector
+DEFINE GCC_IA32_X64_CC_FLAGS       = -mstack-protector-guard=global
+DEFINE GCC_ARM_CC_FLAGS            = DEF(GCC_ALL_CC_FLAGS) -mlittle-endian -mabi=aapcs -fno-short-enums -funsigned-char -ffunction-sections -fdata-sections -fomit-frame-pointer -Wno-address -mthumb -fno-pic -fno-pie -mstack-protector-guard=global
 DEFINE GCC_LOONGARCH64_CC_FLAGS    = DEF(GCC_ALL_CC_FLAGS) -mabi=lp64d -fno-asynchronous-unwind-tables -fno-plt -Wno-address -fno-short-enums -fsigned-char -ffunction-sections -fdata-sections
 DEFINE GCC_ARM_CC_XIPFLAGS         = -mno-unaligned-access
-DEFINE GCC_AARCH64_CC_FLAGS        = DEF(GCC_ALL_CC_FLAGS) -mlittle-endian -fno-short-enums -fverbose-asm -funsigned-char  -ffunction-sections -fdata-sections -Wno-address -fno-asynchronous-unwind-tables -fno-unwind-tables -fno-pic -fno-pie -ffixed-x18
+DEFINE GCC_AARCH64_CC_FLAGS        = DEF(GCC_ALL_CC_FLAGS) -mlittle-endian -fno-short-enums -fverbose-asm -funsigned-char  -ffunction-sections -fdata-sections -Wno-address -fno-asynchronous-unwind-tables -fno-unwind-tables -fno-pic -fno-pie -ffixed-x18 -mstack-protector-guard=global
 DEFINE GCC_AARCH64_CC_XIPFLAGS     = -mstrict-align -mgeneral-regs-only
 DEFINE GCC_RISCV64_CC_XIPFLAGS     = -mstrict-align -mgeneral-regs-only
 DEFINE GCC_DLINK_FLAGS_COMMON      = -nostdlib --pie
@@ -950,8 +960,8 @@ DEFINE GCC_DEPS_FLAGS              = -MMD -MF $@.deps
 
 DEFINE GCC48_ALL_CC_FLAGS            = DEF(GCC_ALL_CC_FLAGS) -ffunction-sections -fdata-sections -DSTRING_ARRAY_NAME=$(BASE_NAME)Strings
 DEFINE GCC48_IA32_X64_DLINK_COMMON   = -nostdlib -Wl,-n,-q,--gc-sections -z common-page-size=0x20
-DEFINE GCC48_IA32_CC_FLAGS           = DEF(GCC48_ALL_CC_FLAGS) -m32 -march=i586 -malign-double -D EFI32 -fno-asynchronous-unwind-tables -Wno-address -fno-omit-frame-pointer
-DEFINE GCC48_X64_CC_FLAGS            = DEF(GCC48_ALL_CC_FLAGS) -m64 "-DEFIAPI=__attribute__((ms_abi))" -maccumulate-outgoing-args -mno-red-zone -Wno-address -mcmodel=small -fpie -fno-asynchronous-unwind-tables -Wno-address  -fno-omit-frame-pointer
+DEFINE GCC48_IA32_CC_FLAGS           = DEF(GCC48_ALL_CC_FLAGS) DEF(GCC_IA32_X64_CC_FLAGS) -m32 -march=i586 -malign-double -D EFI32 -fno-asynchronous-unwind-tables -Wno-address -fno-omit-frame-pointer
+DEFINE GCC48_X64_CC_FLAGS            = DEF(GCC48_ALL_CC_FLAGS) DEF(GCC_IA32_X64_CC_FLAGS) -m64 "-DEFIAPI=__attribute__((ms_abi))" -maccumulate-outgoing-args -mno-red-zone -Wno-address -mcmodel=small -fpie -fno-asynchronous-unwind-tables -Wno-address  -fno-omit-frame-pointer
 DEFINE GCC48_IA32_X64_ASLDLINK_FLAGS = DEF(GCC48_IA32_X64_DLINK_COMMON) -Wl,--entry,ReferenceAcpiTable -u ReferenceAcpiTable
 DEFINE GCC48_IA32_X64_DLINK_FLAGS    = DEF(GCC48_IA32_X64_DLINK_COMMON) -Wl,--entry,$(IMAGE_ENTRY_POINT) -u $(IMAGE_ENTRY_POINT) -Wl,-Map,$(DEST_DIR_DEBUG)/$(BASE_NAME).map,--whole-archive
 DEFINE GCC48_IA32_DLINK2_FLAGS       = -Wl,--defsym=PECOFF_HEADER_SIZE=0x220 DEF(GCC_DLINK2_FLAGS_COMMON)
@@ -960,7 +970,7 @@ DEFINE GCC48_X64_DLINK2_FLAGS        = -Wl,--defsym=PECOFF_HEADER_SIZE=0x228 DEF
 DEFINE GCC48_ASM_FLAGS               = DEF(GCC_ASM_FLAGS)
 DEFINE GCC48_ARM_ASM_FLAGS           = $(PLATFORM_FLAGS) DEF(GCC_ASM_FLAGS) -mlittle-endian
 DEFINE GCC48_AARCH64_ASM_FLAGS       = $(PLATFORM_FLAGS) DEF(GCC_ASM_FLAGS) -mlittle-endian
-DEFINE GCC48_ARM_CC_FLAGS            = $(PLATFORM_FLAGS) DEF(GCC_ARM_CC_FLAGS) -fstack-protector -mword-relocations
+DEFINE GCC48_ARM_CC_FLAGS            = $(PLATFORM_FLAGS) DEF(GCC_ARM_CC_FLAGS) -mword-relocations
 DEFINE GCC48_ARM_CC_XIPFLAGS         = DEF(GCC_ARM_CC_XIPFLAGS)
 DEFINE GCC48_AARCH64_CC_FLAGS        = $(PLATFORM_FLAGS) -mcmodel=large DEF(GCC_AARCH64_CC_FLAGS)
 DEFINE GCC48_AARCH64_CC_XIPFLAGS     = DEF(GCC_AARCH64_CC_XIPFLAGS)
@@ -1251,8 +1261,10 @@ RELEASE_GCC49_IA32_CC_FLAGS       = DEF(GCC49_IA32_CC_FLAGS) -Wno-unused-but-set
 *_GCC49_X64_OBJCOPY_FLAGS        =
 *_GCC49_X64_NASM_FLAGS           = -f elf64
 
-  DEBUG_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Os # MU_CHANGE
-RELEASE_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Os -Wno-unused-but-set-variable -Wno-unused-const-variable # MU_CHANGE
+# MU_CHANGE
+  DEBUG_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Os
+# MU_CHANGE
+RELEASE_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -Os -Wno-unused-but-set-variable -Wno-unused-const-variable
   NOOPT_GCC49_X64_CC_FLAGS       = DEF(GCC49_X64_CC_FLAGS) -O0
 
 ##################
@@ -1605,9 +1617,11 @@ RELEASE_GCC5_ARM_DLINK_FLAGS     = DEF(GCC5_ARM_DLINK_FLAGS) -flto -Os -L$(WORKS
 *_GCC5_AARCH64_DLINK2_FLAGS      = DEF(GCC5_AARCH64_DLINK2_FLAGS)
 *_GCC5_AARCH64_DTCPP_FLAGS       = DEF(GCC_DTCPP_FLAGS)
 *_GCC5_AARCH64_PLATFORM_FLAGS    =
-*_GCC5_AARCH64_PP_FLAGS          = $(ARCHCC_FLAGS) $(PLATFORM_FLAGS) DEF(GCC_PP_FLAGS) # MU_CHANGE
+# MU_CHANGE
+*_GCC5_AARCH64_PP_FLAGS          = $(ARCHCC_FLAGS) $(PLATFORM_FLAGS) DEF(GCC_PP_FLAGS)
 *_GCC5_AARCH64_RC_FLAGS          = DEF(GCC_AARCH64_RC_FLAGS) DEF(GCC_AARCH64_RC_BTI_FLAGS)
-*_GCC5_AARCH64_VFRPP_FLAGS       = $(ARCHCC_FLAGS) $(PLATFORM_FLAGS) DEF(GCC_VFRPP_FLAGS) # MU_CHANGE
+# MU_CHANGE
+*_GCC5_AARCH64_VFRPP_FLAGS       = $(ARCHCC_FLAGS) $(PLATFORM_FLAGS) DEF(GCC_VFRPP_FLAGS)
 *_GCC5_AARCH64_CC_XIPFLAGS       = DEF(GCC5_AARCH64_CC_XIPFLAGS)
 
   DEBUG_GCC5_AARCH64_CC_FLAGS    = DEF(GCC5_AARCH64_CC_FLAGS) -flto -Wno-unused-but-set-variable -Wno-unused-const-variable
@@ -1988,17 +2002,20 @@ NOOPT_CLANGPDB_IA32_DLINK2_FLAGS     =
 DEBUG_CLANGPDB_X64_CC_FLAGS         = DEF(CLANGPDB_ALL_CC_FLAGS) -m64 "-DEFIAPI=__attribute__((ms_abi))" -mno-red-zone -mcmodel=small -Oz -flto DEF(CLANGPDB_X64_TARGET) -gcodeview -funwind-tables -Wno-unused-but-set-variable -Wno-deprecated-non-prototype
 DEBUG_CLANGPDB_X64_DLINK_FLAGS      = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /ALIGN:32 /FILEALIGN:32 /Machine:X64 /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DEBUG:GHASH /MLLVM:-exception-model=wineh /lldmap
 DEBUG_CLANGPDB_X64_DLINK2_FLAGS     =
-DEBUG_CLANGPDB_X64_GENFW_FLAGS      = --keepexceptiontable --keepoptionalheader # MU_CHANGE Keep optional header for NX_COMPAT flag
+# MU_CHANGE Keep optional header for NX_COMPAT flag
+DEBUG_CLANGPDB_X64_GENFW_FLAGS      = --keepexceptiontable --keepoptionalheader
 
 RELEASE_CLANGPDB_X64_CC_FLAGS       = DEF(CLANGPDB_ALL_CC_FLAGS) -m64 "-DEFIAPI=__attribute__((ms_abi))" -mno-red-zone -mcmodel=small -Oz -flto DEF(CLANGPDB_X64_TARGET) -fno-unwind-tables -Wno-unused-but-set-variable -Wno-deprecated-non-prototype
 RELEASE_CLANGPDB_X64_DLINK_FLAGS    = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /IGNORE:4254 /OPT:REF /OPT:ICF=10 /ALIGN:32 /FILEALIGN:32 /SECTION:.xdata,D /SECTION:.pdata,D /Machine:X64 /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /MERGE:.rdata=.data /MLLVM:-exception-model=wineh /lldmap
 RELEASE_CLANGPDB_X64_DLINK2_FLAGS   =
-RELEASE_CLANGPDB_X64_GENFW_FLAGS    = --keepoptionalheader # MU_CHANGE Keep optional header for NX_COMPAT flag
+# MU_CHANGE Keep optional header for NX_COMPAT flag
+RELEASE_CLANGPDB_X64_GENFW_FLAGS    = --keepoptionalheader
 
 NOOPT_CLANGPDB_X64_CC_FLAGS         = DEF(CLANGPDB_ALL_CC_FLAGS) -m64 "-DEFIAPI=__attribute__((ms_abi))" -mno-red-zone -mcmodel=small -O0 DEF(CLANGPDB_X64_TARGET) -gcodeview -funwind-tables -Wno-unused-but-set-variable -Wno-deprecated-non-prototype
 NOOPT_CLANGPDB_X64_DLINK_FLAGS      = /NOLOGO /NODEFAULTLIB /IGNORE:4001 /OPT:REF /OPT:ICF=10 /ALIGN:32 /FILEALIGN:32 /Machine:X64 /DLL /ENTRY:$(IMAGE_ENTRY_POINT) /SUBSYSTEM:EFI_BOOT_SERVICE_DRIVER /SAFESEH:NO /BASE:0 /DEBUG:GHASH /MLLVM:-exception-model=wineh /lldmap
 NOOPT_CLANGPDB_X64_DLINK2_FLAGS     =
-NOOPT_CLANGPDB_X64_GENFW_FLAGS      = --keepexceptiontable --keepoptionalheader # MU_CHANGE Keep optional header for NX_COMPAT flag
+# MU_CHANGE Keep optional header for NX_COMPAT flag
+NOOPT_CLANGPDB_X64_GENFW_FLAGS      = --keepexceptiontable --keepoptionalheader
 
 ##########################
 # CLANGWIN ARM64 definitions
@@ -2369,7 +2386,8 @@ RELEASE_XCODE5_X64_CC_FLAGS   = -target x86_64-pc-win32-macho -c    -Os       -W
 #################
 # ASM 16 linker definitions
 #################
-*_*_*_ASMLINK_PATH                 = ENV(LINK_16_PREFIX)link16.exe # MU_CHANGE - change to prefix
+# MU_CHANGE - change to prefix
+*_*_*_ASMLINK_PATH                 = ENV(LINK_16_PREFIX)link16.exe
 *_*_*_ASMLINK_FLAGS                = /nologo /tiny
 
 ##################

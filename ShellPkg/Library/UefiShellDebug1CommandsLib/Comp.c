@@ -280,15 +280,13 @@ ShellCommandRunComp (
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
       TempParam = ShellCommandLineGetRawValue (Package, 1);
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
       if (TempParam == NULL) {
         ASSERT (TempParam != NULL);
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"comp", TempParam);
         ShellStatus = SHELL_INVALID_PARAMETER;
-        return (ShellStatus);
+        goto Exit;
       }
 
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       FileName1 = ShellFindFilePath (TempParam);
       if (FileName1 == NULL) {
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_FILE_FIND_FAIL), gShellDebug1HiiHandle, L"comp", TempParam);
@@ -302,15 +300,13 @@ ShellCommandRunComp (
       }
 
       TempParam = ShellCommandLineGetRawValue (Package, 2);
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
       if (TempParam == NULL) {
         ASSERT (TempParam != NULL);
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"comp", TempParam);
         ShellStatus = SHELL_INVALID_PARAMETER;
-        return (ShellStatus);
+        goto Exit;
       }
 
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       FileName2 = ShellFindFilePath (TempParam);
       if (FileName2 == NULL) {
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_FILE_FIND_FAIL), gShellDebug1HiiHandle, L"comp", TempParam);
@@ -384,7 +380,6 @@ ShellCommandRunComp (
 
       if (ShellStatus == SHELL_SUCCESS) {
         while ((UINT64)DiffPointNumber < DifferentCount) {
-          // MU_CHANGE - CodeQL Change - comparison-with-wider-type
           DataSizeFromFile1 = 1;
           DataSizeFromFile2 = 1;
           OneByteFromFile1  = 0;
@@ -516,6 +511,7 @@ ShellCommandRunComp (
     ShellCommandLineFreeVarList (Package);
   }
 
+Exit:
   SHELL_FREE_NON_NULL (FileName1);
   SHELL_FREE_NON_NULL (FileName2);
 

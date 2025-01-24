@@ -185,6 +185,10 @@
   #
   SpiHcPlatformLib|Include/Library/SpiHcPlatformLib.h
 
+  ##  @libraryclass   Provides services to prints all HOB information.
+  #
+  HobPrintLib|Include/Library/HobPrintLib.h
+
   ## MU_CHANGE - Add AdvLoggerAccessLib to MdeModulePkg
   ## @libraryclass Provides an interface for AdvLogger through GetVariable
   #
@@ -227,6 +231,12 @@
   ## @libraryclass Provides a way to toggle SMM memory protection settings
   #
   MmMemoryProtectionHobLib|Include/Library/MmMemoryProtectionHobLib.h
+
+  # MU_CHANGE - Add MemoryBinOverrideLib to MdeModulePkg
+  ## @libraryclass Provides a way to override memory bin locations and sizes
+  #                dynamically.
+  #
+  MemoryBinOverrideLib|Include/Library/MemoryBinOverrideLib.h
 
 [Guids]
   ## MdeModule package token space guid

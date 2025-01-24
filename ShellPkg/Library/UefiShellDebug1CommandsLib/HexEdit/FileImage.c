@@ -371,12 +371,10 @@ HFileImageSave (
   // set status string
   //
   Str = CatSPrint (NULL, L"%d Lines Written", NumLines);
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   if (Str == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   StatusBarSetStatusString (Str);
   FreePool (Str);
 

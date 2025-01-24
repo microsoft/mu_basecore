@@ -42,12 +42,10 @@ PrintSfoVolumeInfoTableEntry (
 
   if (Node->Handle == NULL) {
     DirectoryName = GetFullyQualifiedPath (((EFI_SHELL_FILE_INFO *)GetFirstNode (&TheList->Link))->FullName);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (DirectoryName == NULL) {
       return (EFI_OUT_OF_RESOURCES);
     }
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     //
     // We need to open something up to get system information
     //
@@ -75,12 +73,11 @@ PrintSfoVolumeInfoTableEntry (
 
     if (Status == EFI_BUFFER_TOO_SMALL) {
       SysInfo = AllocateZeroPool (SysInfoSize);
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
       if (SysInfo == NULL) {
+        gEfiShellProtocol->CloseFile (ShellFileHandle);
         return (EFI_OUT_OF_RESOURCES);
       }
 
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       Status = EfiFpHandle->GetInfo (
                               EfiFpHandle,
                               &gEfiFileSystemInfoGuid,
@@ -108,12 +105,10 @@ PrintSfoVolumeInfoTableEntry (
 
     if (Status == EFI_BUFFER_TOO_SMALL) {
       SysInfo = AllocateZeroPool (SysInfoSize);
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
       if (SysInfo == NULL) {
         return (EFI_OUT_OF_RESOURCES);
       }
 
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       Status = EfiFpHandle->GetInfo (
                               EfiFpHandle,
                               &gEfiFileSystemInfoGuid,
@@ -633,12 +628,10 @@ PrintLsOutput (
     }
 
     CorrectedPath = StrnCatGrow (&CorrectedPath, &LongestPath, L"*", 0);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (CorrectedPath == NULL) {
       return SHELL_OUT_OF_RESOURCES;
     }
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     Status = ShellOpenFileMetaArg ((CHAR16 *)CorrectedPath, EFI_FILE_MODE_READ, &ListHead);
 
     if (!EFI_ERROR (Status)) {

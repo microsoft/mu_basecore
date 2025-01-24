@@ -48,6 +48,7 @@ ShellCommandRunEfiCompress (
   InShellFileHandle  = NULL;
   OutShellFileHandle = NULL;
   InBuffer           = NULL;
+  Package            = NULL;
 
   //
   // initialize the shell lib (we must be in non-auto-init...)
@@ -79,19 +80,16 @@ ShellCommandRunEfiCompress (
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
       TempParam = ShellCommandLineGetRawValue (Package, 1);
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
       if (TempParam == NULL) {
         ASSERT (TempParam != NULL);
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"eficompress");
         ShellStatus = SHELL_INVALID_PARAMETER;
+        goto Exit;
       }
-
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
       InFileName  = ShellFindFilePath (TempParam);
       OutFileName = ShellCommandLineGetRawValue (Package, 2);
       if ((InFileName == NULL) || (OutFileName == NULL)) {
-        // MU_CHANGE - CodeQL Change - unguardednullreturndereference
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_FILE_FIND_FAIL), gShellDebug1HiiHandle, L"eficompress", TempParam);
         ShellStatus = SHELL_NOT_FOUND;
       } else {
@@ -156,6 +154,11 @@ ShellCommandRunEfiCompress (
       }
     }
 
+    ShellCommandLineFreeVarList (Package);
+  }
+
+Exit:
+  if ((ShellStatus != SHELL_SUCCESS) && (Package != NULL)) {
     ShellCommandLineFreeVarList (Package);
   }
 

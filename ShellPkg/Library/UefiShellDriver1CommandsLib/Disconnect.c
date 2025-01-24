@@ -98,9 +98,9 @@ ShellCommandRunDisconnect (
   UINT64        Intermediate2;
   UINT64        Intermediate3;
 
-  Intermediate1 = 0; // MU_CHANGE - CodeQL Change - conditionallyuninitializedvariable
-  Intermediate2 = 0; // MU_CHANGE - CodeQL Change - conditionallyuninitializedvariable
-  Intermediate3 = 0; // MU_CHANGE - CodeQL Change - conditionallyuninitializedvariable
+  Intermediate1 = 0;
+  Intermediate2 = 0;
+  Intermediate3 = 0;
   ShellStatus   = SHELL_SUCCESS;
 
   //
@@ -163,23 +163,24 @@ ShellCommandRunDisconnect (
         Param1 = ShellCommandLineGetRawValue (Package, 1);
         Param2 = ShellCommandLineGetRawValue (Package, 2);
         Param3 = ShellCommandLineGetRawValue (Package, 3);
-        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
-        if (Param1 != NULL) {
-          ShellConvertStringToUint64 (Param1, &Intermediate1, TRUE, FALSE);
+
+        if (Param1 && !EFI_ERROR (ShellConvertStringToUint64 (Param1, &Intermediate1, TRUE, FALSE))) {
+          Handle1 = ConvertHandleIndexToHandle ((UINTN)Intermediate1);
+        } else {
+          Handle1 = NULL;
         }
 
-        Handle1 = Param1 != NULL ? ConvertHandleIndexToHandle ((UINTN)Intermediate1) : NULL;
-        if (Param2 != NULL) {
-          ShellConvertStringToUint64 (Param2, &Intermediate2, TRUE, FALSE);
+        if (Param2 && !EFI_ERROR (ShellConvertStringToUint64 (Param2, &Intermediate2, TRUE, FALSE))) {
+          Handle2 = ConvertHandleIndexToHandle ((UINTN)Intermediate2);
+        } else {
+          Handle2 = NULL;
         }
 
-        Handle2 = Param2 != NULL ? ConvertHandleIndexToHandle ((UINTN)Intermediate2) : NULL;
-        if (Param3 != NULL) {
-          ShellConvertStringToUint64 (Param3, &Intermediate3, TRUE, FALSE);
+        if (Param3 && !EFI_ERROR (ShellConvertStringToUint64 (Param3, &Intermediate3, TRUE, FALSE))) {
+          Handle3 = ConvertHandleIndexToHandle ((UINTN)Intermediate3);
+        } else {
+          Handle3 = NULL;
         }
-
-        Handle3 = Param3 != NULL ? ConvertHandleIndexToHandle ((UINTN)Intermediate3) : NULL;
-        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
 
         if ((Param1 != NULL) && (Handle1 == NULL)) {
           ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, L"disconnect", Param1);

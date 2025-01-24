@@ -1404,12 +1404,10 @@ GetHIDevicePath (
   NonHIDevicePathNodeCount = 0;
 
   HIDevicePath = AllocateZeroPool (sizeof (EFI_DEVICE_PATH_PROTOCOL));
-  // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
   if (HIDevicePath == NULL) {
     return NULL;
   }
 
-  // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
   SetDevicePathEndNode (HIDevicePath);
 
   Node.DevPath.Type      = END_DEVICE_PATH_TYPE;

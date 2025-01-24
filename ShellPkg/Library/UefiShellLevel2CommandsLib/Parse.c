@@ -315,14 +315,11 @@ ShellCommandRunParse (
         ShellCommandInstance = ShellStrToUintn (ShellCommandLineGetValue (Package, L"-s"));
       }
 
-      // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
       if ((FileName != NULL) && (TableName != NULL) && (ColumnString != NULL)) {
         ShellStatus = PerformParsing (FileName, TableName, ShellStrToUintn (ColumnString), TableNameInstance, ShellCommandInstance, StreamingUnicode);
       } else {
         ShellStatus = SHELL_INVALID_PARAMETER;
       }
-
-      // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     }
   }
 

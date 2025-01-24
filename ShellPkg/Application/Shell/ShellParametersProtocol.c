@@ -354,12 +354,10 @@ CreatePopulateInstallShellParametersProtocol (
   Status = SHELL_GET_ENVIRONMENT_VARIABLE (L"ShellOpt", &Size, FullCommandLine);
   if (Status == EFI_BUFFER_TOO_SMALL) {
     FullCommandLine = AllocateZeroPool (Size + LoadedImage->LoadOptionsSize);
-    // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
     if (FullCommandLine == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
 
-    // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
     Status = SHELL_GET_ENVIRONMENT_VARIABLE (L"ShellOpt", &Size, FullCommandLine);
   }
 
@@ -744,7 +742,7 @@ UpdateStdInStdOutStdErr (
   OutAppend        = FALSE;
   CommandLineCopy  = NULL;
   FirstLocation    = NULL;
-  TempHandle       = NULL; // MU_CHANGE - CodeQL change - conditionallyuninitializedvariable
+  TempHandle       = NULL;
 
   if ((ShellParameters == NULL) || (SystemTableInfo == NULL) || (OldStdIn == NULL) || (OldStdOut == NULL) || (OldStdErr == NULL)) {
     return (EFI_INVALID_PARAMETER);
@@ -1183,13 +1181,10 @@ UpdateStdInStdOutStdErr (
 
         if (!ErrUnicode && !EFI_ERROR (Status)) {
           TempHandle = CreateFileInterfaceFile (TempHandle, FALSE);
-          // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
           if (TempHandle == NULL) {
             ASSERT (TempHandle != NULL);
             Status = EFI_OUT_OF_RESOURCES;
           }
-
-          // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
         }
 
         if (!EFI_ERROR (Status)) {
@@ -1236,13 +1231,10 @@ UpdateStdInStdOutStdErr (
 
           if (!OutUnicode && !EFI_ERROR (Status)) {
             TempHandle = CreateFileInterfaceFile (TempHandle, FALSE);
-            // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
             if (TempHandle == NULL) {
               ASSERT (TempHandle != NULL);
               Status = EFI_OUT_OF_RESOURCES;
             }
-
-            // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
           }
 
           if (!EFI_ERROR (Status)) {
@@ -1264,7 +1256,6 @@ UpdateStdInStdOutStdErr (
         }
 
         TempHandle = CreateFileInterfaceEnv (StdOutVarName);
-        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
         if (TempHandle == NULL) {
           ASSERT (TempHandle != NULL);
           Status = EFI_OUT_OF_RESOURCES;
@@ -1272,8 +1263,6 @@ UpdateStdInStdOutStdErr (
           ShellParameters->StdOut = TempHandle;
           gST->ConOut             = CreateSimpleTextOutOnFile (TempHandle, &gST->ConsoleOutHandle, gST->ConOut);
         }
-
-        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       }
 
       //
@@ -1288,7 +1277,6 @@ UpdateStdInStdOutStdErr (
         }
 
         TempHandle = CreateFileInterfaceEnv (StdErrVarName);
-        // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
         if (TempHandle == NULL) {
           ASSERT (TempHandle != NULL);
           Status = EFI_OUT_OF_RESOURCES;
@@ -1296,8 +1284,6 @@ UpdateStdInStdOutStdErr (
           ShellParameters->StdErr = TempHandle;
           gST->StdErr             = CreateSimpleTextOutOnFile (TempHandle, &gST->StandardErrorHandle, gST->StdErr);
         }
-
-        // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
       }
 
       //
@@ -1340,14 +1326,12 @@ UpdateStdInStdOutStdErr (
             TempHandle = CreateFileInterfaceFile (TempHandle, FALSE);
           }
 
-          // MU_CHANGE Start - CodeQL Change - unguardednullreturndereference
           if (TempHandle == NULL) {
-            return EFI_OUT_OF_RESOURCES;
+            Status = EFI_OUT_OF_RESOURCES;
+          } else {
+            ShellParameters->StdIn = TempHandle;
+            gST->ConIn             = CreateSimpleTextInOnFile (TempHandle, &gST->ConsoleInHandle);
           }
-
-          // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
-          ShellParameters->StdIn = TempHandle;
-          gST->ConIn             = CreateSimpleTextInOnFile (TempHandle, &gST->ConsoleInHandle);
         }
       }
     }
