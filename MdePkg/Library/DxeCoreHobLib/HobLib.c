@@ -270,6 +270,7 @@ BuildResourceDescriptorWithOwnerHob (
 }
 
 // MU_CHANGE Start: Add BuildResourceDescriptorV2 function
+
 /**
   Builds a HOB that describes a chunk of system memory with memory attributes.
 
@@ -297,6 +298,7 @@ BuildResourceDescriptorV2 (
 {
   ASSERT (FALSE);
 }
+
 // MU_CHANGE End
 
 /**
