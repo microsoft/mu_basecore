@@ -337,9 +337,9 @@ typedef struct {
 /// This change is checked in as a code first approach. The PI spec will be updated
 /// to reflect this change in the future.
 ///
-/// Describes the resource properties of all fixed,
-/// nonrelocatable resource ranges found on the processor
-/// host bus during the HOB producer phase.
+/// Describes the resource properties and memory attributes
+/// of all fixed, nonrelocatable resource ranges found on the
+/// processor host bus during the HOB producer phase.
 ///
 typedef struct {
   ///
