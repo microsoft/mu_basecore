@@ -762,6 +762,27 @@ typedef struct {
   UINT32    Sv    : 1;        /* Save */
 } NVME_ADMIN_SET_FEATURES;
 
+// MU_CHANGE [BEGIN] - Add Set Features Command - Number of Queues
+typedef union {
+  NVME_ADMIN_SET_FEATURES    Bits;
+  UINT32                     Uint32;
+} NVME_ADMIN_SET_FEATURES_CDW10;
+
+//
+// NvmExpress Admin Set Features Command - Number of Queues
+//
+typedef union {
+  struct {
+    //
+    // CDW 11 for Requested, DW0 for Allocated
+    //
+    UINT32    Nsq : 16;      /* Number of Submission Queues */
+    UINT32    Ncq : 16;      /* Number of Completion Queues */
+  } Bits;
+  UINT32    Uint32;
+} NVME_ADMIN_SET_FEATURES_NUM_QUEUES;
+
+// MU_CHANGE [END] - Add Set Features Command - Number of Queues
 //
 // NvmExpress Admin Sanitize Command
 //
@@ -984,6 +1005,30 @@ typedef enum {
   SanitizeOpcode                = NVME_ADMIN_SANITIZE_CMD
 } NVME_ADMIN_COMMAND_OPCODE;
 
+// MU_CHANGE [BEGIN] - Add Nvm Express Admin Feature Identifiers
+//
+// Nvm Express Admin Feature Identifiers
+// Nvm Express Spec v1.3d Figure 129
+//
+#define NVME_FEATURE_ARBITRATION                         0x01
+#define NVME_FEATURE_POWER_MANAGEMENT                    0x02
+#define NVME_FEATURE_LBA_RANGE_TYPE                      0x03
+#define NVME_FEATURE_TEMPERATURE_THRESHOLD               0x04
+#define NVME_FEATURE_ERROR_RECOVERY                      0x05
+#define NVME_FEATURE_VOLATILE_WRITE_CACHE                0x06
+#define NVME_FEATURE_NUMBER_OF_QUEUES                    0x07
+#define NVME_FEATURE_INTERRUPT_COALESCING                0x08
+#define NVME_FEATURE_INTERRUPT_VECTOR_CONF               0x09
+#define NVME_FEATURE_WRITE_ATOMICITY                     0x0A
+#define NVME_FEATURE_ASYNC_EVENT_CONFIG                  0x0B
+#define NVME_FEATURE_AUTONOMOUS_POWER_STATE_TRANSITION   0x0C
+#define NVME_FEATURE_HOST_MEMORY_BUFFER                  0x0D
+#define NVME_FEATURE_TIMESTAMP                           0x0E
+#define NVME_FEATURE_KEEP_ALIVE_TIMER                    0x0F
+#define NVME_FEATURE_HOST_CONTROLLED_THERMAL_MANAGEMENT  0x10
+#define NVME_FEATURE_NON_OPERATIONAL_POWER_STATE_CONFIG  0x11
+
+// MU_CHANGE [END] - Add Nvm Express Admin Feature Identifiers
 //
 // Controller or Namespace Structure (CNS) field
 // (ref. spec. v1.1 figure 82).
