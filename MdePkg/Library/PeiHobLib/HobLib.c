@@ -343,6 +343,7 @@ BuildResourceDescriptorWithOwnerHob (
   CopyGuid (&Hob->Owner, OwnerGUID);
 }
 
+// MU_CHANGE Start: Add BuildResourceDescriptorV2 function
 /**
   Builds a HOB that describes a chunk of system memory with memory attributes.
 
@@ -352,21 +353,22 @@ BuildResourceDescriptorWithOwnerHob (
 
   If there is no additional space for HOB creation, then ASSERT().
 
-  @param  ResourceType        The type of resource described by this HOB.
-  @param  ResourceAttribute   The resource attributes of the memory described by this HOB.
-  @param  PhysicalStart       The 64 bit physical address of memory described by this HOB.
-  @param  NumberOfBytes       The length of the memory described by this HOB in bytes.
-  @param  Attributes          The memory attribute for the memory described by this HOB.
+  @param  ResourceType          The type of resource described by this HOB.
+  @param  ResourceAttribute     The resource attributes of the memory described by this HOB.
+  @param  PhysicalStart         The 64 bit physical address of memory described by this HOB.
+  @param  NumberOfBytes         The length of the memory described by this HOB in bytes.
+  @param  EfiMemoryAttributes   The memory attribute for the memory described by this HOB.
 
 **/
 VOID
 EFIAPI
-BuildResourceDescriptorWithCacheHob (
+BuildResourceDescriptorV2 (
   IN EFI_RESOURCE_TYPE            ResourceType,
   IN EFI_RESOURCE_ATTRIBUTE_TYPE  ResourceAttribute,
   IN EFI_PHYSICAL_ADDRESS         PhysicalStart,
   IN UINT64                       NumberOfBytes,
-  IN UINT64                       Attributes
+  IN UINT64                       EfiMemoryAttributes,
+  IN EFI_GUID                     *OwnerGUID OPTIONAL
   )
 {
   EFI_HOB_RESOURCE_DESCRIPTOR_V2  *Hob;
@@ -380,10 +382,15 @@ BuildResourceDescriptorWithCacheHob (
   Hob->V1.ResourceAttribute = ResourceAttribute;
   Hob->V1.PhysicalStart     = PhysicalStart;
   Hob->V1.ResourceLength    = NumberOfBytes;
-  Hob->Attributes           = Attributes;
+  Hob->Attributes           = EfiMemoryAttributes;
 
-  ZeroMem (&(Hob->V1.Owner), sizeof (EFI_GUID));
+  if (OwnerGUID != NULL) {
+    CopyGuid (&Hob->V1.Owner, OwnerGUID);
+  } else {
+    ZeroMem (&(Hob->V1.Owner), sizeof (EFI_GUID));
+  }
 }
+// MU_CHANGE End
 
 /**
   Builds a HOB that describes a chunk of system memory.
