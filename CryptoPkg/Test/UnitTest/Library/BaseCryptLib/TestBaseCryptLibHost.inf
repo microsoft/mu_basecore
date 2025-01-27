@@ -70,6 +70,9 @@
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs1v2Encrypt                   ## CONSUMES  # MU_CHANGE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs1v2Decrypt                   ## CONSUMES  # MU_CHANGE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7Sign                        ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7Verify                      ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7GetSigners                  ## CONSUMES  # MU_CHANGE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7FreeSigners                 ## CONSUMES  # MU_CHANGE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceVerifyEKUsInPkcs7Signature       ## CONSUMES  # MU_CHANGE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAuthenticodeVerify               ## CONSUMES  # MU_CHANGE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceImageTimestampVerify             ## CONSUMES  # MU_CHANGE
