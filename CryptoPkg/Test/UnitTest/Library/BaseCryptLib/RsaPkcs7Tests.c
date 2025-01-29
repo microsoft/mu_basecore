@@ -515,6 +515,78 @@ TestVerifyPkcs7SignGetSigners (
   return UNIT_TEST_PASSED;
 }
 
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyPkcs7SignGetCertificatesList (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+  UINT8    *P7SignedData;
+  UINTN    P7SignedDataSize;
+  UINT8    *SignedCertsBuffer;
+  UINTN    SignedCertsBufferSize = 0;
+  UINT8    *UnsignedCertsBuffer;
+  UINTN    UnsignedCertsBufferSize = 0;
+  UINT8    CertStackSize;
+  UINT8    *CertPtr;
+  UINTN    CertSize;
+  UINT8    *Cert;
+
+  if (!PcdGetBool (PcdCryptoServicePkcs7Sign) || !PcdGetBool (PcdCryptoServicePkcs7GetCertificatesList) || !PcdGetBool (PcdCryptoServicePkcs7FreeSigners)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
+  P7SignedData = NULL;
+  SignedCertsBuffer = NULL;
+  UnsignedCertsBuffer = NULL;
+
+  //
+  // Create PKCS#7 signedData on Payload.
+  // Note: Caller should release P7SignedData manually.
+  //
+  Status = Pkcs7Sign (
+             TestKeyPem,
+             sizeof (TestKeyPem),
+             (CONST UINT8 *)PemPass,
+             (UINT8 *)Payload,
+             AsciiStrLen (Payload),
+             TestCert,                   // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             sizeof (TestCert),          // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             NULL,
+             &P7SignedData,
+             &P7SignedDataSize
+             );
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_NOT_EQUAL (P7SignedDataSize, 0);
+
+  // Get signed and unsigened certs from PKCS#7 signedData
+  // SignedCertsBuffer should contain 1 cert (i.e TestCert)
+  // UnsignedCertsBuffer should be empty
+  Status = Pkcs7GetCertificatesList (P7SignedData, P7SignedDataSize, &SignedCertsBuffer, &SignedCertsBufferSize, &UnsignedCertsBuffer, &UnsignedCertsBufferSize);
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_EQUAL(UnsignedCertsBufferSize, 0);
+  
+  // Grab cert data from CertBuffer
+  CertStackSize = (UINT8)(*SignedCertsBuffer); // First byte of CertBuffer is the number of certs in the stack
+  CertPtr   = SignedCertsBuffer + 1;
+  CertSize = (UINTN)ReadUnaligned32 ((UINT32 *)CertPtr); // Cert size is the first 4 bytes of the cert
+  Cert     = (UINT8 *)CertPtr + sizeof (UINT32);
+
+  UT_ASSERT_EQUAL(CertStackSize, 1);
+  UT_ASSERT_EQUAL(CertSize, sizeof (TestCert));
+  UT_ASSERT_EQUAL(memcmp(Cert, TestCert, CertSize), 0); // memcmp returns 0 if the two buffers are the same
+
+  if (P7SignedData != NULL) {
+    FreePool (P7SignedData);
+  }
+
+  Pkcs7FreeSigners (SignedCertsBuffer);
+  Pkcs7FreeSigners (UnsignedCertsBuffer);
+
+  return UNIT_TEST_PASSED;
+}
+
 TEST_DESC  mRsaCertTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function-----------------Pre---Post--Context
@@ -530,6 +602,7 @@ TEST_DESC  mPkcs7Test[] = {
   //
   { "TestVerifyPkcs7SignVerify()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerify, NULL, NULL, NULL },
   { "TestVerifyPkcs7SignGetSigners()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignGetSigners, NULL, NULL, NULL },
+  { "TestVerifyPkcs7SignGetCertificatesList()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignGetCertificatesList, NULL, NULL, NULL },
 };
 
 UINTN  mPkcs7TestNum = ARRAY_SIZE (mPkcs7Test);
