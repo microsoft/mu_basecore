@@ -315,6 +315,10 @@
   #
   StackCheckFailureHookLib|Include/Library/StackCheckFailureHookLib.h
 
+  ##  @libraryclass  Provides stack cookie checking functionality
+  #
+  StackCheckLib|Include/Library/StackCheckLib.h
+
 # MU_CHANGE [START]
   ##  @libraryclass  Provides panic functionality.
   #
