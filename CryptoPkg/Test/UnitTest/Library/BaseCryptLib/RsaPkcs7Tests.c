@@ -587,6 +587,58 @@ TestVerifyPkcs7SignGetCertificatesList (
   return UNIT_TEST_PASSED;
 }
 
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyPkcs7SignGetAttachedContent (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+  UINT8    *P7SignedData;
+  UINTN    P7SignedDataSize;
+  UINT8    *AttachedContent;
+  UINTN    AttachedContentSize;
+
+
+  if (!PcdGetBool (PcdCryptoServicePkcs7Sign) || !PcdGetBool (PcdCryptoServicePkcs7GetCertificatesList) || !PcdGetBool (PcdCryptoServicePkcs7FreeSigners)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
+  P7SignedData = NULL;
+  AttachedContent = NULL;
+
+  //
+  // Create PKCS#7 signedData on Payload.
+  // Note: Caller should release P7SignedData manually.
+  //
+  Status = Pkcs7Sign (
+             TestKeyPem,
+             sizeof (TestKeyPem),
+             (CONST UINT8 *)PemPass,
+             (UINT8 *)Payload,
+             AsciiStrLen (Payload),
+             TestCert,                   // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             sizeof (TestCert),          // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             NULL,
+             &P7SignedData,
+             &P7SignedDataSize
+             );
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_NOT_EQUAL (P7SignedDataSize, 0);
+
+  Status = Pkcs7GetAttachedContent (P7SignedData, P7SignedDataSize, (void**)&AttachedContent, &AttachedContentSize);
+  UT_ASSERT_TRUE (Status);
+  // Pkcs7Sign is using PKCS7_DETACHED flag, so the attached content should be NULL
+  UT_ASSERT_EQUAL(AttachedContentSize, 0);
+  UT_ASSERT_EQUAL(AttachedContent, NULL);
+
+  if (P7SignedData != NULL) {
+    FreePool (P7SignedData);
+  }
+
+  return UNIT_TEST_PASSED;
+}
+
 TEST_DESC  mRsaCertTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function-----------------Pre---Post--Context
@@ -603,6 +655,7 @@ TEST_DESC  mPkcs7Test[] = {
   { "TestVerifyPkcs7SignVerify()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerify, NULL, NULL, NULL },
   { "TestVerifyPkcs7SignGetSigners()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignGetSigners, NULL, NULL, NULL },
   { "TestVerifyPkcs7SignGetCertificatesList()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignGetCertificatesList, NULL, NULL, NULL },
+  { "TestVerifyPkcs7SignGetAttachedContent()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignGetAttachedContent, NULL, NULL, NULL },
 };
 
 UINTN  mPkcs7TestNum = ARRAY_SIZE (mPkcs7Test);
