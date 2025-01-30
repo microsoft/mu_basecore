@@ -600,7 +600,7 @@ TestVerifyPkcs7SignGetAttachedContent (
   UINTN    AttachedContentSize;
 
 
-  if (!PcdGetBool (PcdCryptoServicePkcs7Sign) || !PcdGetBool (PcdCryptoServicePkcs7GetCertificatesList) || !PcdGetBool (PcdCryptoServicePkcs7FreeSigners)) {
+  if (!PcdGetBool (PcdCryptoServicePkcs7Sign) || !PcdGetBool (PcdCryptoServicePkcs7GetAttachedContent) || !PcdGetBool (PcdCryptoServicePkcs7FreeSigners)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
 
