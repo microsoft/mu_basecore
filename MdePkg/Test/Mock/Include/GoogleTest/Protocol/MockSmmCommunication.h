@@ -30,8 +30,13 @@ struct MockSmmCommunicationProtocol {
     );
 };
 
-extern "C" {
-  extern EFI_SMM_COMMUNICATION_PROTOCOL  *gSmmCommunicationProtocol;
-}
+MOCK_INTERFACE_DEFINITION (MockSmmCommunicationProtocol);
+MOCK_FUNCTION_DEFINITION (MockSmmCommunicationProtocol, Communicate, 3, EFIAPI);
+
+#define MOCK_SMM_COMMUNICATION_PROTOCOL_INSTANCE(NAME)  \
+  EFI_SMM_COMMUNICATION_PROTOCOL  NAME##_INSTANCE = {   \
+    Communicate                                         \
+  };                                                    \
+  EFI_SMM_COMMUNICATION_PROTOCOL  *NAME = &NAME##_INSTANCE;
 
 #endif
