@@ -1,304 +1,236 @@
-==============
-EDK II Project
-==============
+==============================
+Project Mu Basecore Repository
+==============================
 
-A modern, feature-rich, cross-platform firmware development
-environment for the UEFI and PI specifications from www.uefi.org.
+============================= ================= =============== ===================
+ Host Type & Toolchain        Build Status      Test Status     Code Coverage
+============================= ================= =============== ===================
+Windows_VS2022_               |WindowsCiBuild|  |WindowsCiTest| |WindowsCiCoverage|
+Ubuntu_GCC5_                  |UbuntuCiBuild|   |UbuntuCiTest|  |UbuntuCiCoverage|
+============================= ================= =============== ===================
 
-.. image:: https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftianocore%2Fedk2-pytool-extensions%2Frefs%2Fheads%2Fmaster%2Fpyproject.toml&query=%24.%5B'requires-python'%5D&style=for-the-badge&logo=python&logoColor=ffd343&label=Minimum%20Python%20Version%20for%20CI&color=3776ab&link=https%3A%2F%2Fwww.python.org%2Fdownloads%2F
-   :alt: CI Minimum Python Version
+This repository is part of Project Mu.  Please see Project Mu for details https://microsoft.github.io/mu.
 
-It is recommended to install this Python version to run the full set of scripts that enable CI in the project.
+For more details about the repository, refer to `RepoDetails.md`_.
 
-Other Python requirements for build can be found in the `EDK II Build Instructions <https://www.tianocore.org/tianocore-wiki.github.io/build-tooling/build-workflows/edk_ii_tools_list.html>`__.
+.. _`RepoDetails.md`: https://github.com/microsoft/mu_basecore/blob/HEAD/RepoDetails.md
 
-Core CI Build Status
+Branch Status - release/202608
+==============================
+
+:Status:
+  In Development
+
+:Entered Development:
+  2026/08/21 (Date EDK2 started accepting changes which were not in a previous release)
+
+:Anticipated Stabilization:
+  Feb 2027
+
+Branch Changes - release/202608
+===============================
+
+Breaking Changes-dev
 --------------------
 
-====================================== ================= ================ ===================
- Host Type & Toolchain                 Build Status      Test Status      Code Coverage
-====================================== ================= ================ ===================
-Windows_VS_                            |WindowsCiBuild|  |WindowsCiTest|  |WindowsCiCoverage|
-Ubuntu_GCC_                            |UbuntuCiBuild|   |UbuntuCiTest|   |UbuntuCiCoverage|
-Windows_CLANGPDB_                      |WinClgCiBuild|   |WinClgCiTest|   |WinClgCiCoverage|
-Ubuntu_CLANGPDB_                       |UbuClgCiBuild|   |UbuClgCiTest|   |UbuClgCiCoverage|
-Ubuntu_CLANGDWARF_                     |UbuCdwCiBuild|   |UbuCdwCiTest|   |UbuCdwCiCoverage|
-====================================== ================= ================ ===================
+- Header include guards
 
-`More CI Build information <.pytool/Readme.md>`__
+  - Many headers replaced named ``#ifndef``/``#define`` include guards with ``#pragma once``. Normal inclusion is
+    unchanged, but consumers must not test or define another header's former guard macro to detect or suppress it.
 
-Platform CI Build Status
-------------------------
+- ArmPkg
 
-Microsoft Windows Visual Studio (VS)
-````````````````````````````````````
+  - ``ArmExceptionLib`` and ``DefaultExceptionHandlerLib`` were moved from ``ArmPkg`` and merged into
+    ``UefiCpuPkg/CpuExceptionHandlerLib``. Replace calls to ``DefaultExceptionHandler()`` with ``DumpCpuContext()``,
+    add ``UefiCpuPkg.dec`` as a package dependency, and update platform DSC library mappings.
+  - ``Library/MmuLib/BaseMmuLib.inf`` was removed. Standalone MM consumers should migrate to
+    ``Library/StandaloneMmMmuLib/ArmMmuStandaloneMmLib.inf`` and update their library class usage as needed.
 
-============================= ================= ============= ============= ==============
- Toolchain                    CONFIG            DEBUG         RELEASE       NOOPT
-============================= ================= ============= ============= ==============
-EmulatorPkg_Win_VS_           | X64             |em64d|       |em64r|       |em64n|
-|                             | X64 FULL        |em64fd|      |em64fr|      |em64fn|
-OvmfPkg_Win_VS_               | X64             |op64d|       |op64r|       |op64n|
-============================= ================= ============= ============= ==============
+- BaseTools
 
-Microsoft Windows CLANGPDB
-``````````````````````````
+  - ``GenFv`` supports selective rebasing through the new ``Xip=TRUE/FALSE`` FDF rule keyword. When
+    ``FvForceRebase=TRUE`` and any file in an FV uses ``Xip=TRUE``, only files marked ``Xip=TRUE`` are rebased;
+    platforms adopting selective rebasing must update the relevant FDF rules.
+  - Visual Studio 2015 and 2017 toolchain support was removed. Windows builds and CI must use VS2019, VS2022, or
+    VS2026.
+  - The deprecated ``GCC48``, ``GCC49``, and ``GCC5`` toolchain definitions were removed. Platforms using these
+    toolchain tags must migrate to ``GCC``.
+  - X64 images built with GCC, CLANGDWARF, CLANGPDB, VS2022, or VS2026 now use 4 KiB section alignment by default.
+    SEC, PEI_CORE, and PEIM XIP images retain their previous alignment through module-specific linker flags. Platforms
+    with firmware-size constraints or loaders that assume smaller alignment must review their generated images.
 
-============================= ================= ============= ============= ==============
- Toolchain                    CONFIG            DEBUG         RELEASE       NOOPT
-============================= ================= ============= ============= ==============
-EmulatorPkg_Win_CLANGPDB_     | X64             |emW64cd|     |emW64cr|     |emW64cn|
-|                             | X64 FULL        |emW64cfd|    |emW64cfr|    |emW64cfn|
-============================= ================= ============= ============= ==============
+- CryptoPkg
 
-Ubuntu GCC
-``````````
+  - ``Library/BaseCryptLibOnProtocolPpi/DxeCryptLib.inf``, ``SmmCryptLib.inf``, and
+    ``StandaloneMmCryptLib.inf`` were removed as part of the OneCrypto transition. Replace them with the
+    corresponding instances under ``Library/BaseCryptLibOnOneCrypto`` and add the required OneCrypto binary drivers
+    and loaders to the platform DSC.
+  - ``Library/BaseCryptLibOnProtocolPpi/RuntimeDxeCryptLib.inf`` and
+    ``Library/BaseCryptLibMbedTls/UnitTestHostBaseCryptLib.inf`` were removed with no direct OneCrypto replacement.
+    Runtime and host-test consumers must remove these mappings and select a crypto instance supported by their
+    execution environment.
+  - Projects requiring PEI hashing support through the CryptoLib should use ``Library\BaseCryptLibOnProtocolPpi\PeiCryptLib.inf``
+    and include the 
 
-============================= ================= ============= ============= ==============
- Toolchain                    CONFIG            DEBUG         RELEASE       NOOPT
-============================= ================= ============= ============= ==============
-ArmVirtPkg_Ubuntu_GCC_        | AARCH64         |avAArch64du| |avAArch64ru| |avAArch64nu|
-EmulatorPkg_Ubuntu_GCC_       | X64             |em64du|      |em64ru|      |em64nu|
-|                             | X64 FULL        |em64fdu|     |em64fru|     |em64fnu|
-OvmfPkg_Ubuntu_GCC_           | X64             |op64du|      |op64ru|      |op64nu|
-============================= ================= ============= ============= ==============
+- EmbeddedPkg
 
-|TCBZ_2639|_ - EmulatorPkg Ubuntu GCC Segfaults during execution.
+  - The ``PrePiLib`` APIs changed: ``FfsFindSectionDataWithHook()`` now takes an ``AuthenticationStatus`` output
+    parameter and ``FfsProcessFvFile()`` now takes a ``ParentVolumeHandle`` parameter.
 
-Ubuntu CLANGPDB
-```````````````
+- MdeModulePkg
 
-============================= ================= ============== ============== ==============
- Toolchain                    CONFIG            DEBUG          RELEASE        NOOPT
-============================= ================= ============== ============== ==============
-ArmVirtPkg_Ubuntu_CLANGPDB_   | AARCH64         |avAArch64cpu| |avAArch64rpu| |avAArch64npu|
-OvmfPkg_Ubuntu_CLANGPDB_      | X64             |opU64cpd|     |opU64cpr|     |opU64cpn|
-============================= ================= ============== ============== ==============
+  - ``PartitionDxe``, ``DxeTpm2MeasureBootLib``, and ``DxeTpmMeasureBootLib`` now depend on the new ``GptLib``
+    library class. Platforms that build these modules must map ``GptLib`` to
+    ``MdeModulePkg/Library/GptLib/GptLib.inf`` in their DSC files.
+  - ``Library/RealTimeClockLibNull/RealTimeClockLibNull.inf`` was removed with no direct replacement. Platforms that
+    mapped ``RealTimeClockLib`` to this null instance must use a platform RTC implementation or provide their own
+    null implementation if unsupported RTC behavior is still required.
+  - The ``InternalEventServices`` protocol and ``PcdInternalEventServicesEnabled`` were removed, including
+    ``INTERNAL_EVENT_SERVICES_PROTOCOL_GUID``, ``WAIT_FOR_EVENT_INTERNAL``, ``WaitForEventInternal``, and
+    ``gInternalEventServicesProtocolGuid``. The related private DXE Core interfaces ``CoreWaitForEventInternal()``
+    and ``InternalEventServicesInit()`` were also removed. Consumers must use the standard boot-services
+    ``WaitForEvent()`` interface at ``TPL_APPLICATION`` and refactor waits at higher TPLs into event-driven callbacks.
+  - The ``NonDiscoverableDeviceUniqueId`` protocol was removed, including
+    ``EDKII_NON_DISCOVERABLE_DEVICE_UNIQUE_ID_PROTOCOL_GUID``,
+    ``NON_DISCOVERABLE_DEVICE_UNIQUE_ID_PROTOCOL_REVISION``, ``MAX_NON_DISCOVERABLE_PCI_DEVICE_ID``,
+    ``NON_DISCOVERABLE_DEVICE_UNIQUE_ID_PROTOCOL``, and ``gEdkiiNonDiscoverableDeviceUniqueIdProtocolGuid``. Stop
+    installing the protocol; non-discoverable PCI devices now receive IDs from discovery order. Consumers that
+    require stable device identity must use a platform-owned identification mechanism instead of the ID returned by
+    ``EFI_PCI_IO_PROTOCOL.GetLocation()``.
+  - The private DXE Core ``GetBucketMemoryType()`` interface was removed from ``Core/Dxe/Mem/Imem.h``. Out-of-tree
+    DXE Core changes must use the current memory-map and memory-protection infrastructure instead of calling this
+    removed helper.
+  - ``Universal/Variable/RuntimeDxe/RuntimeDxeUnitTest/VariableRuntimeDxeUnitTest.inf`` was removed. Test DSC files
+    must remove this module. Its private test headers, assertion GUID ``#define`` values, SCT shim macros, and test
+    function declarations were also removed; use the remaining focused variable unit tests or platform-owned
+    conformance tests for equivalent coverage.
 
-Ubuntu CLANGDWARF
-`````````````````
+- MdePkg
 
-============================== ================= ============== ============== ==============
- Toolchain                     CONFIG            DEBUG          RELEASE        NOOPT
-============================== ================= ============== ============== ==============
-ArmVirtPkg_Ubuntu_CLANGDWARF_  | AARCH64         |avAArch64cdu| |avAArch64rdu| |avAArch64ndu|
-EmulatorPkg_Ubuntu_CLANGDWARF_ | X64             |emU64cdd|     |emU64cdr|     |emU64cdn|
-|                              | X64 FULL        |emU64cdfd|    |emU64cdfr|    |emU64cdfn|
-OvmfPkg_Ubuntu_CLANGDWARF_     | X64             |opU64cdd|     |opU64cdr|     |opU64cdn|
-============================== ================= ============== ============== ==============
+  - ``Library/BaseMmuLibNull/BaseMmuLibNull.inf`` and the ``MmuLib`` library class were removed. Platforms must
+    remove null ``MmuLib`` mappings. The header and its ``MmuSetAttributes()``, ``MmuClearAttributes()``, and
+    ``MmuGetAttributes()`` interfaces were also removed; consumers must migrate to the architecture-specific MMU
+    library or the CPU, memory-attribute, or MM memory-attribute protocol appropriate to their execution environment.
+  - The ``Cpu2`` protocol and the BaseLib ``EnableInterruptsAndSleep()`` API were removed, including
+    ``EFI_CPU2_PROTOCOL_GUID``, ``EFI_CPU2_PROTOCOL``, ``EFI_CPU_ENABLE_AND_WAIT_FOR_INTERRUPT``,
+    ``EnableAndForWaitInterrupt``, and ``gEfiCpu2ProtocolGuid``. CPU drivers must stop producing this protocol. For
+    normal DXE idle handling, use ``gIdleLoopEventGuid`` and perform the architecture-specific sleep operation from
+    the CPU driver's idle-loop callback, as in ``UefiCpuPkg/CpuDxe``.
+  - ``EFI_SW_DXE_CORE_EC_IMAGE_LOAD_FAILURE`` was removed from ``Pi/PiStatusCode.h``. Code emitting this MU-specific
+    status code must remove the report or define and use a platform-owned status-code value; there is no direct
+    replacement in ``PiStatusCode.h``.
 
-`More ArmVirtPkg CI Build Information <ArmVirtPkg/PlatformCI/ReadMe.md>`__
+- SecurityPkg
 
-`More EmulatorPkg CI Build Information <EmulatorPkg/PlatformCI/ReadMe.md>`__
+  - TPM2 helper functions were moved from ``Tpm2CommandLib`` to the new ``Tpm2HelpLib`` library class. Platforms
+    that build affected modules must map ``Tpm2HelpLib`` to ``SecurityPkg/Library/Tpm2HelpLib/Tpm2HelpLib.inf`` in
+    their DSC files.
 
-`More OvmfPkg CI Build Information <OvmfPkg/PlatformCI/ReadMe.md>`__
+- StandaloneMmPkg
+
+  - ``Library/FvLib/FvLib.inf`` was removed. Consumers should map the ``FvLib`` library class to
+    ``MdePkg/Library/FvLib/FvLib.inf`` and add ``MdePkg/MdePkg.dec`` as a package dependency if needed.
+  - ``Library/StandaloneMmCoreEntryPointNull/StandaloneMmCoreEntryPointNull.inf`` was removed. Map
+    ``StandaloneMmCoreEntryPoint`` to ``MdePkg/Library/StandaloneMmCoreEntryPoint/StandaloneMmCoreEntryPoint.inf``
+    for X64 or ``ArmPkg/Library/ArmStandaloneMmCoreEntryPoint/ArmStandaloneMmCoreEntryPoint.inf`` for AARCH64.
+
+- ManageabilityPkg
+
+  - ManageabilityPkg now exists in mu_basecore. Platforms are encouraged to switch to this over mu_feature_ipmi.
+
+See `EDK II Breaking Changes <BREAKING-CHANGES.md>`_ for complete descriptions, affected consumers, and migration
+guidance.
 
 
-License Details
----------------
+MU Overrides on EDK2
+--------------------
 
-The majority of the content in the EDK II open source project uses a
-`BSD-2-Clause Plus Patent License <License.txt>`__. The EDK II open
-source project contains the following components that are covered by additional
-licenses:
+- At the start of 202608, mu_basecore contains 267 commits on top of edk2-stable202608. Full MU changes list can be viewed `in the changelog <https://github.com/microsoft/mu_basecore/compare/2970e5699ba6267f3384ffab20f96647578aebc8...release/202608>`_.
 
--  `BaseTools/Plugin/CodeQL/analyze <https://www.apache.org/licenses/LICENSE-2.0>`__
--  `BaseTools/Source/C/LzmaCompress <BaseTools/Source/C/LzmaCompress/LZMA-SDK-README.txt>`__
--  `BaseTools/Source/C/VfrCompile/Pccts <BaseTools/Source/C/VfrCompile/Pccts/RIGHTS>`__
--  `CryptoPkg/Library/BaseCryptLib/SysCall/inet_pton.c <CryptoPkg/Library/BaseCryptLib/SysCall/inet_pton.c>`__
--  `CryptoPkg/Library/Include/crypto/dso_conf.h <https://github.com/openssl/openssl/blob/e2e09d9fba1187f8d6aafaa34d4172f56f1ffb72/LICENSE>`__
--  `CryptoPkg/Library/Include/openssl/opensslconf.h <https://github.com/openssl/openssl/blob/e2e09d9fba1187f8d6aafaa34d4172f56f1ffb72/LICENSE>`__
--  `MdeModulePkg/Library/LzmaCustomDecompressLib <MdeModulePkg/Library/LzmaCustomDecompressLib/LZMA-SDK-README.txt>`__
--  `OvmfPkg <OvmfPkg/License.txt>`__
+Platform Integration Reference
+------------------------------
+Reference platforms which consume release/202608 are available in `mu_tiano_platforms <https://github.com/microsoft/mu_tiano_platforms>`_.
 
-The EDK II open source project uses content from upstream projects as git submodules
-that are covered by additional licenses.
+Please note that this version of EDK2 has specific requirements when it comes to TF-A support. 
+Platforms that consume this version of EDK2 must ensure their TF-A `contains this set of patches <https://review.trustedfirmware.org/q/topic:%22hob_creation_in_tf_a%22>`_.
+Failure to contain the appropriate patches will result in a failure to boot.
 
--  `BaseTools/Source/C/BrotliCompress/brotli <https://github.com/google/brotli/blob/666c3280cc11dc433c303d79a83d4ffbdd12cc8d/LICENSE>`__
--  `CryptoPkg/Library/OpensslLib/openssl <https://github.com/openssl/openssl/blob/e2e09d9fba1187f8d6aafaa34d4172f56f1ffb72/LICENSE>`__
--  `CryptoPkg/Library/MbedTlsLib/mbedtls <https://github.com/Mbed-TLS/mbedtls/blob/8c89224991adff88d53cd380f42a2baa36f91454/LICENSE>`__
--  `MdeModulePkg/Library/BrotliCustomDecompressLib/brotli <https://github.com/google/brotli/blob/666c3280cc11dc433c303d79a83d4ffbdd12cc8d/LICENSE>`__
--  `MdeModulePkg/Universal/RegularExpressionDxe/oniguruma <https://github.com/kkos/oniguruma/blob/abfc8ff81df4067f309032467785e06975678f0d/COPYING>`__
--  `UnitTestFrameworkPkg/Library/CmockaLib/cmocka <https://github.com/tianocore/edk2-cmocka/blob/f5e2cd77c88d9f792562888d2b70c5a396bfbf7a/COPYING>`__
--  `UnitTestFrameworkPkg/Library/GoogleTestLib/googletest <https://github.com/google/googletest/blob/86add13493e5c881d7e4ba77fb91c1f57752b3a4/LICENSE>`__
--  `UnitTestFrameworkPkg/Library/SubhookLib/subhook <https://github.com/tianocore/edk2-subhook/blob/83d4e1ebef3588fae48b69a7352cc21801cb70bc/LICENSE.txt>`__
--  `RedfishPkg/Library/JsonLib/jansson <https://github.com/akheron/jansson/blob/2882ead5bb90cf12a01b07b2c2361e24960fae02/LICENSE>`__
--  `MdePkg/Library/BaseFdtLib/libfdt <https://github.com/devicetree-org/pylibfdt/blob/f39368a217496d32c4091a2dba4045b60649e3a5/BSD-2-Clause>`__
--  `MdePkg/Library/MipiSysTLib/mipisyst <https://github.com/MIPI-Alliance/public-mipi-sys-t/blob/aae857d0d05ac65152ed24992a4acd834a0a107c/LICENSE>`__
--  `SecurityPkg/DeviceSecurity/SpdmLib/libspdm <https://github.com/DMTF/libspdm/blob/main/LICENSE.md>`__
--  `TcgTpmPkg/Library/TpmLib/TPM <https://github.com/TrustedComputingGroup/TPM/blob/main/LICENSE>`__
+Code of Conduct
+===============
 
-The EDK II Project is composed of packages. The maintainers for each package
-are listed in `Maintainers.txt <Maintainers.txt>`__.
+This project has adopted the Microsoft Open Source Code of Conduct https://opensource.microsoft.com/codeofconduct/
 
-Resources
----------
+For more information see the Code of Conduct FAQ https://opensource.microsoft.com/codeofconduct/faq/
+or contact `opencode@microsoft.com <mailto:opencode@microsoft.com>`_ with any additional questions or comments.
 
--  `TianoCore <http://www.tianocore.org>`__
--  `EDK
-   II <https://www.tianocore.org/tianocore-wiki.github.io>`__
--  `Getting Started with EDK
-   II <https://www.tianocore.org/tianocore-wiki.github.io/development/tutorials-howto/getting_started_with_edk_ii.html>`__
--  `Mailing
-   Lists <https://www.tianocore.org/tianocore-wiki.github.io/community/communications/mailing_lists.html>`__
--  `How To
-   Contribute <https://www.tianocore.org/tianocore-wiki.github.io/development/contribution-guides/how_to_contribute.html>`__
--  `Release
-   Planning <https://www.tianocore.org/tianocore-wiki.github.io/releases-history/planning-roadmaps/edk_ii_release_planning.html>`__
+Contributions
+=============
 
-Code Contributions
-------------------
-
-To make a contribution to a TianoCore project, follow these steps.
-
-#. Create a change description in the format specified below to
-    use in the source control commit log.
-#. Your commit message must include your ``Signed-off-by`` signature
-#. Submit your code to the TianoCore project using the process
-    that the project documents on its web page. If the process is
-    not documented, then submit the code on development email list
-    for the project.
-#. It is preferred that contributions are submitted using the same
-    copyright license as the base project. When that is not possible,
-    then contributions using the following licenses can be accepted:
-
--  Apache License, Version 2.0: https://opensource.org/license/apache-2-0/
--  BSD (2-clause): https://opensource.org/license/BSD-2-Clause
--  BSD (3-clause): https://opensource.org/license/BSD-3-Clause
--  MIT: https://opensource.org/license/MIT
--  Python-2.0: https://opensource.org/license/Python-2.0
--  Zlib: https://opensource.org/license/Zlib
+Contributions are always welcome and encouraged!
+Please open any issues in the Project Mu GitHub tracker and read https://microsoft.github.io/mu/How/contributing/
 
 For documentation:
 
--  FreeBSD Documentation License
-    https://www.freebsd.org/copyright/freebsd-doc-license.html
+Copyright & License
+===================
 
-Contributions of code put into the public domain can also be accepted.
+| Copyright (c) Microsoft Corporation
+| SPDX-License-Identifier: BSD-2-Clause-Patent
 
-Contributions using other licenses might be accepted, but further
-review will be required.
+Upstream License (TianoCore)
+============================
 
-Developer Certificate of Origin
--------------------------------
+Copyright (c) 2019, TianoCore and contributors.  All rights reserved.
 
-Your change description should use the standard format for a
-commit message, and must include your ``Signed-off-by`` signature.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
-In order to keep track of who did what, all patches contributed must
-include a statement that to the best of the contributor's knowledge
-they have the right to contribute it under the specified license.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
-The test for this is as specified in the `Developer's Certificate of
-Origin (DCO) 1.1 <https://developercertificate.org/>`__. The contributor
-certifies compliance by adding a line saying
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
 
-Signed-off-by: Developer Name developer@example.org
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
 
-where ``Developer Name`` is the contributor's real name, and the email
-address is one the developer is reachable through at the time of
-contributing.
+Subject to the terms and conditions of this license, each copyright holder
+and contributor hereby grants to those receiving rights under this license
+a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+(except for failure to satisfy the conditions of this license) patent
+license to make, have made, use, offer to sell, sell, import, and otherwise
+transfer this software, where such license applies only to those patent
+claims, already acquired or hereafter acquired, licensable by such copyright
+holder or contributor that are necessarily infringed by:
 
-::
+(a) their Contribution(s) (the licensed copyrights of copyright holders and
+    non-copyrightable additions of contributors, in source or binary form)
+    alone; or
 
-    Developer's Certificate of Origin 1.1
+(b) combination of their Contribution(s) with the work of authorship to
+    which such Contribution(s) was added by such copyright holder or
+    contributor, if, at the time the Contribution is added, such addition
+    causes such combination to be necessarily infringed. The patent license
+    shall not apply to any other combinations which include the
+    Contribution.
 
-    By making a contribution to this project, I certify that:
+Except as expressly stated above, no rights or licenses from any copyright
+holder or contributor is granted under this license, whether expressly, by
+implication, estoppel or otherwise.
 
-    (a) The contribution was created in whole or in part by me and I
-        have the right to submit it under the open source license
-        indicated in the file; or
+DISCLAIMER
 
-    (b) The contribution is based upon previous work that, to the best
-        of my knowledge, is covered under an appropriate open source
-        license and I have the right under that license to submit that
-        work with modifications, whether created in whole or in part
-        by me, under the same open source license (unless I am
-        permitted to submit under a different license), as indicated
-        in the file; or
-
-    (c) The contribution was provided directly to me by some other
-        person who certified (a), (b) or (c) and I have not modified
-        it.
-
-    (d) I understand and agree that this project and the contribution
-        are public and that a record of the contribution (including all
-        personal information I submit with it, including my sign-off) is
-        maintained indefinitely and may be redistributed consistent with
-        this project or the open source license(s) involved.
-
-Sample Change Description / Commit Message
-------------------------------------------
-
-::
-
-    From: Contributor Name <contributor@example.com>
-    Subject: [Repository/Branch PATCH] Pkg-Module: Brief-single-line-summary
-
-    Full-commit-message
-
-    Signed-off-by: Contributor Name <contributor@example.com>
-
-Notes for sample patch email
-````````````````````````````
-
--  The first line of commit message is taken from the email's subject
-   line following ``[Repository/Branch PATCH]``. The remaining portion
-   of the commit message is the email's content.
--  ``git format-patch`` is one way to create this format
-
-Definitions for sample patch email
-``````````````````````````````````
-
--  ``Repository`` is the identifier of the repository the patch applies.
-    This identifier should only be provided for repositories other than
-    ``edk2``. For example ``edk2-BuildSpecification`` or ``staging``.
--  ``Branch`` is the identifier of the branch the patch applies. This
-    identifier should only be provided for branches other than
-   ``edk2/master``.
-    For example ``edk2/UDK2015``,
-   ``edk2-BuildSpecification/release/1.27``, or
-    ``staging/edk2-test``.
--  ``Module`` is a short identifier for the affected code or
-   documentation. For example ``MdePkg``, ``MdeModulePkg/UsbBusDxe``, ``Introduction``, or
-    ``EDK II INF File Format``.
--  ``Brief-single-line-summary`` is a short summary of the change.
--  The entire first line should be less than ~70 characters.
--  ``Full-commit-message`` a verbose multiple line comment describing
-    the change. Each line should be less than ~70 characters.
--  ``Signed-off-by`` is the contributor's signature identifying them
-    by their real/legal name and their email address.
-
-Submodules
-----------
-
-The current submodules used in EDK II are in `.gitmodules <.gitmodules>`__.
-
-To get a full, buildable EDK II repository, use following steps of git
-command
-
-.. code-block:: bash
-
-  git clone https://github.com/tianocore/edk2.git
-  cd edk2
-  git submodule update --init
-  cd ..
-
-If there are updates for submodules, use the following git commands to get
-the latest submodules code.
-
-.. code-block:: bash
-
-  cd edk2
-  git pull
-  git submodule update
-
-Note: When cloning submodule repos, '--recursive' option is not
-recommended. EDK II itself will not use any code or features from
-submodules within the submodules listed above. So using '--recursive' adds a
-dependency on being able to reach servers we do not actually want
-any code from, as well as needlessly downloading code we will not
-use.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
 
 .. ===================================================================
 .. This is a bunch of directives to make the README file more readable
@@ -306,105 +238,14 @@ use.
 
 .. CoreCI
 
-.. _Windows_VS: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=74&branchName=master
-.. |WindowsCiBuild| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FWindows%20VS%20-%20CI?branchName=master
-.. |WindowsCiTest| image:: https://img.shields.io/azure-devops/tests/tianocore/edk2-ci/74.svg
+.. _Windows_VS2022: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=39&branchName=release%2F202608
+.. |WindowsCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202608
+.. |WindowsCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/39.svg
 .. |WindowsCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
 
-.. _Ubuntu_GCC: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=76&branchName=master
-.. |UbuntuCiBuild| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FUbuntu%20GCC%20-%20CI?branchName=master
-.. |UbuntuCiTest| image:: https://img.shields.io/azure-devops/tests/tianocore/edk2-ci/76.svg
+.. _Ubuntu_GCC5: https://dev.azure.com/projectmu/mu/_build/latest?definitionId=40&branchName=release%2F202608
+.. |UbuntuCiBuild| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20Ubuntu%20GCC5?branchName=release%2F202608
+.. |UbuntuCiTest| image:: https://img.shields.io/azure-devops/tests/projectmu/mu/40.svg
 .. |UbuntuCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
 
-.. _Windows_CLANGPDB: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=89&branchName=master
-.. |WinClgCiBuild| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FWindows%20-%20CLANGPDB?branchName=master
-.. |WinClgCiTest| image:: https://img.shields.io/azure-devops/tests/tianocore/edk2-ci/89.svg
-.. |WinClgCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
-
-.. _Ubuntu_CLANGPDB: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=83&branchName=master
-.. |UbuClgCiBuild| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FUbuntu%20-%20CLANGPDB?branchName=master
-.. |UbuClgCiTest| image:: https://img.shields.io/azure-devops/tests/tianocore/edk2-ci/83.svg
-.. |UbuClgCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
-
-.. _Ubuntu_CLANGDWARF: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=82&branchName=master
-.. |UbuCdwCiBuild| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FUbuntu%20-%20CLANGDWARF?branchName=master
-.. |UbuCdwCiTest| image:: https://img.shields.io/azure-devops/tests/tianocore/edk2-ci/82.svg
-.. |UbuCdwCiCoverage| image:: https://img.shields.io/badge/coverage-coming_soon-blue
-
-.. ArmVirtPkg
-
-.. _ArmVirtPkg_Ubuntu_GCC: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=79&branchName=master
-.. |avAArch64du| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FArmVirtPkg%20-%20Ubuntu%20GCC%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20QEMU_AARCH64_DEBUG
-.. |avAArch64ru| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FArmVirtPkg%20-%20Ubuntu%20GCC%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20QEMU_AARCH64_RELEASE
-.. |avAArch64nu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FArmVirtPkg%20-%20Ubuntu%20GCC%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20QEMU_AARCH64_NOOPT
-
-.. _ArmVirtPkg_Ubuntu_CLANGPDB: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=88&branchName=master
-.. |avAArch64cpu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FArmVirtPkg%20-%20Ubuntu%20-%20CLANGPDB?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20QEMU_AARCH64_DEBUG
-.. |avAArch64rpu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FArmVirtPkg%20-%20Ubuntu%20-%20CLANGPDB?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20QEMU_AARCH64_RELEASE
-.. |avAArch64npu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FArmVirtPkg%20-%20Ubuntu%20-%20CLANGPDB?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20QEMU_AARCH64_NOOPT
-
-.. _ArmVirtPkg_Ubuntu_CLANGDWARF: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=84&branchName=master
-.. |avAArch64cdu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FArmVirtPkg%20-%20Ubuntu%20-%20CLANGDWARF?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20QEMU_AARCH64_DEBUG
-.. |avAArch64rdu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FArmVirtPkg%20-%20Ubuntu%20-%20CLANGDWARF?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20QEMU_AARCH64_RELEASE
-.. |avAArch64ndu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FArmVirtPkg%20-%20Ubuntu%20-%20CLANGDWARF?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20QEMU_AARCH64_NOOPT
-
-.. EmulatorPkg
-
-.. |TCBZ_2639| image:: https://img.shields.io/github/issues/tianocore/edk2?baseUrl=https%3A%2F%2Fgithub.com
-.. _TCBZ_2639: https://github.com/tianocore/edk2/issues/9905
-
-.. _EmulatorPkg_Win_VS: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=73&branchName=master
-.. _EmulatorPkg_Ubuntu_GCC: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=78&branchName=master
-.. _EmulatorPkg_Win_CLANGPDB: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=90&branchName=master
-.. _EmulatorPkg_Ubuntu_CLANGDWARF: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=85&branchName=master
-
-.. |em64d| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Windows%20VS%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_DEBUG
-.. |em64r| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Windows%20VS%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_RELEASE
-.. |em64n| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Windows%20VS%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_NOOPT
-.. |em64fd| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Windows%20VS%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_DEBUG
-.. |em64fr| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Windows%20VS%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_RELEASE
-.. |em64fn| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Windows%20VS%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_NOOPT
-
-.. |em64du| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Ubuntu%20GCC%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_DEBUG
-.. |em64ru| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Ubuntu%20GCC%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_RELEASE
-.. |em64nu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Ubuntu%20GCC%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_NOOPT
-.. |em64fdu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Ubuntu%20GCC%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_DEBUG
-.. |em64fru| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Ubuntu%20GCC%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_RELEASE
-.. |em64fnu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Ubuntu%20GCC%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_NOOPT
-
-.. |emW64cd| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Windows%20-%20CLANGPDB?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_DEBUG
-.. |emW64cr| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Windows%20-%20CLANGPDB?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_RELEASE
-.. |emW64cn| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Windows%20-%20CLANGPDB?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_NOOPT
-.. |emW64cfd| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Windows%20-%20CLANGPDB?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_DEBUG
-.. |emW64cfr| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Windows%20-%20CLANGPDB?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_RELEASE
-.. |emW64cfn| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Windows%20-%20CLANGPDB?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_NOOPT
-
-.. |emU64cdd| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Ubuntu%20-%20CLANGDWARF?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_DEBUG
-.. |emU64cdr| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Ubuntu%20-%20CLANGDWARF?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_RELEASE
-.. |emU64cdn| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Ubuntu%20-%20CLANGDWARF?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_NOOPT
-.. |emU64cdfd| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Ubuntu%20-%20CLANGDWARF?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_DEBUG
-.. |emU64cdfr| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Ubuntu%20-%20CLANGDWARF?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_RELEASE
-.. |emU64cdfn| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FEmulatorPkg%20-%20Ubuntu%20-%20CLANGDWARF?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20EmulatorPkg_X64_FULL_NOOPT
-
-.. OvmfPkg
-
-.. _OvmfPkg_Win_VS: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=72&branchName=master
-.. _OvmfPkg_Ubuntu_GCC: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=77&branchName=master
-.. _OvmfPkg_Ubuntu_CLANGPDB: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=87&branchName=master
-.. _OvmfPkg_Ubuntu_CLANGDWARF: https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=86&branchName=master
-
-.. |op64d| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FOvmfPkg%20-%20Windows%20VS%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20OVMF_X64_DEBUG
-.. |op64r| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FOvmfPkg%20-%20Windows%20VS%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20OVMF_X64_RELEASE
-.. |op64n| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FOvmfPkg%20-%20Windows%20VS%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20OVMF_X64_NOOPT
-
-.. |op64du| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FOvmfPkg%20-%20Ubuntu%20GCC%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20OVMF_X64_DEBUG
-.. |op64ru| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FOvmfPkg%20-%20Ubuntu%20GCC%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20OVMF_X64_RELEASE
-.. |op64nu| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FOvmfPkg%20-%20Ubuntu%20GCC%20-%20CI?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20OVMF_X64_NOOPT
-
-.. |opU64cpd| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FOvmfPkg%20-%20Ubuntu%20-%20CLANGPDB?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20OVMF_X64_DEBUG
-.. |opU64cpr| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FOvmfPkg%20-%20Ubuntu%20-%20CLANGPDB?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20OVMF_X64_RELEASE
-.. |opU64cpn| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FOvmfPkg%20-%20Ubuntu%20-%20CLANGPDB?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20OVMF_X64_NOOPT
-
-.. |opU64cdd| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FOvmfPkg%20-%20Ubuntu%20-%20CLANGDWARF?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20OVMF_X64_DEBUG
-.. |opU64cdr| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FOvmfPkg%20-%20Ubuntu%20-%20CLANGDWARF?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20OVMF_X64_RELEASE
-.. |opU64cdn| image:: https://dev.azure.com/tianocore/edk2-ci/_apis/build/status%2FCI%2FOvmfPkg%20-%20Ubuntu%20-%20CLANGDWARF?branchName=master&jobName=Platform_CI&configuration=Platform_CI%20OVMF_X64_NOOPT
+.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu/_apis/build/status/CI/Mu%20Basecore%20CI%20VS2019?branchName=release%2F202608
