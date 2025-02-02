@@ -153,6 +153,8 @@ VOID  *BnX;
 VOID  *BnY;
 VOID  *BnP;
 VOID  *BnOrder;
+VOID  *TempBnX;
+VOID  *TempBnY;
 
 UNIT_TEST_STATUS
 EFIAPI
@@ -177,7 +179,9 @@ TestVerifyEcPreReq (
   BnY      = NULL;
   BnP      = BigNumInit ();
   BnOrder  = BigNumInit ();
-  if ((BnP == NULL) || (BnOrder == NULL)) {
+  TempBnX  = BigNumInit ();
+  TempBnY  = BigNumInit ();
+  if ((BnP == NULL) || (BnOrder == NULL) || (TempBnX == NULL) || (TempBnY == NULL)) {
     return UNIT_TEST_ERROR_TEST_FAILED;
   }
 
@@ -194,6 +198,8 @@ TestVerifyEcCleanUp (
   BigNumFree (BnY, TRUE);
   BigNumFree (BnP, TRUE);
   BigNumFree (BnOrder, TRUE);
+  BigNumFree (TempBnX, TRUE);
+  BigNumFree (TempBnY, TRUE);
   EcGroupFree (Group);
   EcPointDeInit (Point1, TRUE);
   EcPointDeInit (Point2, TRUE);
@@ -212,7 +218,7 @@ TestVerifyEcBasic (
   BOOLEAN  Status;
 
   // MU_CHANGE [START]
-  if (!PcdGetBool (PcdCryptoServiceEcPointInit) || !PcdGetBool (PcdCryptoServiceEcGroupGetCurve) || !PcdGetBool (PcdCryptoServiceEcGroupGetOrder) || !PcdGetBool (PcdCryptoServiceEcPointSetAffineCoordinates) || !PcdGetBool (PcdCryptoServiceEcPointEqual) || !PcdGetBool (PcdCryptoServiceEcPointIsOnCurve) || !PcdGetBool (PcdCryptoServiceEcPointIsAtInfinity) || !PcdGetBool (PcdCryptoServiceEcPointInvert) || !PcdGetBool (PcdCryptoServiceEcPointAdd) || !PcdGetBool (PcdCryptoServiceEcPointMul)) {
+  if (!PcdGetBool (PcdCryptoServiceEcPointInit) || !PcdGetBool (PcdCryptoServiceEcGroupGetCurve) || !PcdGetBool (PcdCryptoServiceEcGroupGetOrder) || !PcdGetBool (PcdCryptoServiceEcPointSetAffineCoordinates) || !PcdGetBool (PcdCryptoServiceEcPointEqual) || !PcdGetBool (PcdCryptoServiceEcPointIsOnCurve) || !PcdGetBool (PcdCryptoServiceEcPointIsAtInfinity) || !PcdGetBool (PcdCryptoServiceEcPointInvert) || !PcdGetBool (PcdCryptoServiceEcPointAdd) || !PcdGetBool (PcdCryptoServiceEcPointMul) || !PcdGetBool (PcdCryptoServiceEcPointGetAffineCoordinates)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
 
@@ -250,6 +256,9 @@ TestVerifyEcBasic (
     UT_ASSERT_TRUE (Status);
 
     Status = EcPointSetAffineCoordinates (Group, Point2, BnX, BnY, NULL);
+    UT_ASSERT_TRUE (Status);
+
+    Status = EcPointGetAffineCoordinates (Group, Point1, TempBnX, TempBnY, NULL);
     UT_ASSERT_TRUE (Status);
 
     Status = EcPointEqual (Group, Point1, Point2, NULL);
@@ -305,6 +314,7 @@ TestVerifyEcBasic (
     UT_ASSERT_TRUE (Status);
   }
 
+  UT_LOG_ERROR ("\nTestVerifyEcBasic - PASSED\n");
   return UNIT_TEST_PASSED;
 }
 
