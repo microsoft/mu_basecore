@@ -9,7 +9,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "TestBaseCryptLib.h"
 
 GLOBAL_REMOVE_IF_UNREFERENCED CONST UINT8  mOidSubjectAltName[] = { 0x55, 0x1D, 0x11 };
-GLOBAL_REMOVE_IF_UNREFERENCED UINT8 mRsaSha256Oid[] = {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0B}; // 1.2.840.113549.1.1.11 - RSA_SHA256 OID
+GLOBAL_REMOVE_IF_UNREFERENCED UINT8        mRsaSha256Oid[]      = { 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0B }; // 1.2.840.113549.1.1.11 - RSA_SHA256 OID
 
 //
 // use openssl tool to create the test certificates.
@@ -642,9 +642,9 @@ TestConstructX509 (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  BOOLEAN      Status;
-  UINT8        *SingleCert;
-  UINT8        *X509Stack;
+  BOOLEAN  Status;
+  UINT8    *SingleCert;
+  UINT8    *X509Stack;
 
   if (!PcdGetBool (PcdCryptoServiceX509ConstructCertificate) || !PcdGetBool (PcdCryptoServiceX509ConstructCertificateStack) || !PcdGetBool (PcdCryptoServiceX509Free) || !PcdGetBool (PcdCryptoServiceX509StackFree)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
@@ -652,7 +652,7 @@ TestConstructX509 (
 
   SingleCert = NULL;
   X509Stack  = NULL;
-  
+
   Status = X509ConstructCertificate (mTestCert, sizeof (mTestCert), &SingleCert);
   UT_ASSERT_TRUE (Status);
 
@@ -671,70 +671,69 @@ TestX509Get (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
+  BOOLEAN  Status;
+  UINT8    *TBSCert;
+  UINTN    TBSCertSize;
+  UINT8    *Oid;
+  UINTN    OidSize;
+  UINTN    KeyUsage;
+  UINT8    *ExtKeyUsage;
+  UINTN    ExtKeyUsageSize;
+  UINT8    *BasicConstraints;
+  UINTN    BasicConstraintsSize;
 
-  BOOLEAN      Status;
-  UINT8        *TBSCert;
-  UINTN        TBSCertSize;
-  UINT8        *Oid;
-  UINTN        OidSize;
-  UINTN        KeyUsage;
-  UINT8        *ExtKeyUsage;
-  UINTN        ExtKeyUsageSize;
-  UINT8        *BasicConstraints;
-  UINTN        BasicConstraintsSize;
-
-  if (!PcdGetBool (PcdCryptoServiceX509GetTBSCert) || !PcdGetBool (PcdCryptoServiceX509GetSignatureAlgorithm) || !PcdGetBool (PcdCryptoServiceX509GetKeyUsage) || !PcdGetBool (PcdCryptoServiceX509GetExtendedKeyUsage ) || !PcdGetBool (PcdCryptoServiceX509GetExtendedBasicConstraints )) {
+  if (!PcdGetBool (PcdCryptoServiceX509GetTBSCert) || !PcdGetBool (PcdCryptoServiceX509GetSignatureAlgorithm) || !PcdGetBool (PcdCryptoServiceX509GetKeyUsage) || !PcdGetBool (PcdCryptoServiceX509GetExtendedKeyUsage) || !PcdGetBool (PcdCryptoServiceX509GetExtendedBasicConstraints)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
 
-  TBSCert = NULL;
-  Oid     = NULL;
-  OidSize = 0;
-  KeyUsage = 0;
-  ExtKeyUsage = NULL;
-  ExtKeyUsageSize = 0;
-  BasicConstraints = NULL;
+  TBSCert              = NULL;
+  Oid                  = NULL;
+  OidSize              = 0;
+  KeyUsage             = 0;
+  ExtKeyUsage          = NULL;
+  ExtKeyUsageSize      = 0;
+  BasicConstraints     = NULL;
   BasicConstraintsSize = 0;
 
   Status = X509GetTBSCert (mTestCert, sizeof (mTestCert), &TBSCert, &TBSCertSize);
   UT_ASSERT_TRUE (Status);
-  UT_ASSERT_NOT_EQUAL(TBSCertSize, 0);
-  UT_ASSERT_NOT_NULL(TBSCert);
+  UT_ASSERT_NOT_EQUAL (TBSCertSize, 0);
+  UT_ASSERT_NOT_NULL (TBSCert);
 
   // Grab required Oid buffer size
   Status = X509GetSignatureAlgorithm (mTestCert, sizeof (mTestCert), NULL, &OidSize);
   UT_ASSERT_TRUE (!Status);
-  UT_ASSERT_NOT_EQUAL(OidSize, 0);
+  UT_ASSERT_NOT_EQUAL (OidSize, 0);
 
-  Oid = AllocatePool (OidSize);
+  Oid    = AllocatePool (OidSize);
   Status = X509GetSignatureAlgorithm (mTestCert, sizeof (mTestCert), Oid, &OidSize);
   UT_ASSERT_TRUE (Status);
-  UT_ASSERT_EQUAL(OidSize, sizeof(mRsaSha256Oid));
-  UT_ASSERT_NOT_NULL(Oid);
-  UT_ASSERT_MEM_EQUAL(Oid, mRsaSha256Oid, OidSize);
-  
+  UT_ASSERT_EQUAL (OidSize, sizeof (mRsaSha256Oid));
+  UT_ASSERT_NOT_NULL (Oid);
+  UT_ASSERT_MEM_EQUAL (Oid, mRsaSha256Oid, OidSize);
+
   Status = X509GetKeyUsage (mTestCert, sizeof (mTestCert), &KeyUsage);
   UT_ASSERT_TRUE (Status);
 
   Status = X509GetExtendedKeyUsage (mTestCert, sizeof (mTestCert), ExtKeyUsage, &ExtKeyUsageSize);
   UT_ASSERT_TRUE (!Status);
-  UT_ASSERT_NOT_EQUAL(ExtKeyUsageSize, 0);
+  UT_ASSERT_NOT_EQUAL (ExtKeyUsageSize, 0);
 
   ExtKeyUsage = AllocatePool (ExtKeyUsageSize);
-  Status = X509GetExtendedKeyUsage (mTestCert, sizeof (mTestCert), ExtKeyUsage, &ExtKeyUsageSize);
+  Status      = X509GetExtendedKeyUsage (mTestCert, sizeof (mTestCert), ExtKeyUsage, &ExtKeyUsageSize);
   UT_ASSERT_TRUE (Status);
-  UT_ASSERT_NOT_EQUAL(ExtKeyUsageSize, 0);
-  UT_ASSERT_NOT_NULL(ExtKeyUsage);
+  UT_ASSERT_NOT_EQUAL (ExtKeyUsageSize, 0);
+  UT_ASSERT_NOT_NULL (ExtKeyUsage);
 
-  Status = X509GetExtendedBasicConstraints(mTestCert, sizeof (mTestCert), BasicConstraints, &BasicConstraintsSize);
+  Status = X509GetExtendedBasicConstraints (mTestCert, sizeof (mTestCert), BasicConstraints, &BasicConstraintsSize);
   UT_ASSERT_TRUE (!Status);
-  UT_ASSERT_NOT_EQUAL(BasicConstraintsSize, 0);
+  UT_ASSERT_NOT_EQUAL (BasicConstraintsSize, 0);
 
   BasicConstraints = AllocatePool (BasicConstraintsSize);
-  Status = X509GetExtendedBasicConstraints(mTestCert, sizeof (mTestCert), BasicConstraints, &BasicConstraintsSize);
+  Status           = X509GetExtendedBasicConstraints (mTestCert, sizeof (mTestCert), BasicConstraints, &BasicConstraintsSize);
   UT_ASSERT_TRUE (Status);
-  UT_ASSERT_NOT_EQUAL(BasicConstraintsSize, 0);
-  UT_ASSERT_NOT_NULL(BasicConstraints);
+  UT_ASSERT_NOT_EQUAL (BasicConstraintsSize, 0);
+  UT_ASSERT_NOT_NULL (BasicConstraints);
 
   FreePool (Oid);
   FreePool (ExtKeyUsage);
@@ -747,9 +746,9 @@ TEST_DESC  mX509Test[] = {
   //
   // -----Description--------------------------------------Class----------------------Function---------------------------------Pre---------------------Post---------Context
   //
-  { "TestVerifyX509()", "CryptoPkg.BaseCryptLib.X509", TestVerifyX509, NULL, NULL, NULL },
+  { "TestVerifyX509()",    "CryptoPkg.BaseCryptLib.X509", TestVerifyX509,    NULL, NULL, NULL },
   { "TestConstructX509()", "CryptoPkg.BaseCryptLib.X509", TestConstructX509, NULL, NULL, NULL },
-  { "TestX509Get()", "CryptoPkg.BaseCryptLib.X509", TestX509Get, NULL, NULL, NULL },
+  { "TestX509Get()",       "CryptoPkg.BaseCryptLib.X509", TestX509Get,       NULL, NULL, NULL },
 };
 
 UINTN  mX509TestNum = ARRAY_SIZE (mX509Test);
