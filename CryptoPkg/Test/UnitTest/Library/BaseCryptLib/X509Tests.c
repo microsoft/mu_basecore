@@ -635,11 +635,41 @@ TestVerifyX509 (
   return UNIT_TEST_PASSED;
 }
 
+UNIT_TEST_STATUS
+EFIAPI
+TestConstructX509 (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN      Status;
+  UINT8        *SingleCert;
+  UINT8        *X509Stack;
+
+  if (!PcdGetBool (PcdCryptoServiceX509ConstructCertificate) || !PcdGetBool (PcdCryptoServiceX509ConstructCertificateStack) || !PcdGetBool (PcdCryptoServiceX509Free) || !PcdGetBool (PcdCryptoServiceX509StackFree)) {
+    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
+  }
+
+  SingleCert = NULL;
+  X509Stack  = NULL;
+  
+  Status = X509ConstructCertificate (mTestCert, sizeof (mTestCert), &SingleCert);
+  UT_ASSERT_TRUE (Status);
+
+  Status = X509ConstructCertificateStack (&X509Stack, mTestCert, sizeof (mTestCert), mTestCaCert, sizeof (mTestCaCert), NULL);
+  UT_ASSERT_TRUE (Status);
+
+  X509Free (SingleCert);
+  X509StackFree (X509Stack);
+
+  return UNIT_TEST_PASSED;
+}
+
 TEST_DESC  mX509Test[] = {
   //
   // -----Description--------------------------------------Class----------------------Function---------------------------------Pre---------------------Post---------Context
   //
-  { "TestVerifyX509()", "CryptoPkg.BaseCryptLib.Hkdf", TestVerifyX509, NULL, NULL, NULL },
+  { "TestVerifyX509()", "CryptoPkg.BaseCryptLib.X509", TestVerifyX509, NULL, NULL, NULL },
+  { "TestConstructX509()", "CryptoPkg.BaseCryptLib.X509", TestConstructX509, NULL, NULL, NULL },
 };
 
 UINTN  mX509TestNum = ARRAY_SIZE (mX509Test);
