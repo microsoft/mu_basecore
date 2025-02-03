@@ -31,9 +31,9 @@ MU_CHANGE [WHOLE FILE] - Standalone MM Perf Support
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiLib.h>
 #include <Protocol/SmmBase2.h>
+#include <Protocol/SmmExitBootServices.h>
 
 PERFORMANCE_PROPERTY  mPerformanceProperty;
-extern BOOLEAN        mPerformanceMeasurementEnabled;
 
 /**
   A library internal MM-instance specific implementation to check if a buffer outside MM is valid.
@@ -48,7 +48,7 @@ extern BOOLEAN        mPerformanceMeasurementEnabled;
   @retval FALSE This buffer is not valid per processor architecture.
 **/
 BOOLEAN
-IsBufferOutsideMmValidInternal (
+MmCorePerformanceIsNonPrimaryBufferValid (
   IN EFI_PHYSICAL_ADDRESS  Buffer,
   IN UINT64                Length
   )
@@ -69,7 +69,7 @@ IsBufferOutsideMmValidInternal (
   @retval FALSE This communicate buffer is not valid per processor architecture.
 **/
 BOOLEAN
-IsCommBufferValidInternal (
+MmCorePerformanceIsPrimaryBufferValid (
   IN EFI_PHYSICAL_ADDRESS  Buffer,
   IN UINT64                Length
   )
@@ -135,7 +135,7 @@ GetLoadedImageProtocol (
 }
 
 /**
-  Get the module name from the PDB file name in the image header.
+  Get the module name from the user interface section.
 
   @param[in]  ModuleGuid    The GUID of the module.
   @param[out] NameString    The buffer to store the name string.
@@ -195,7 +195,7 @@ InitializeSmmCorePerformanceLib (
   EFI_STATUS            Status;
   PERFORMANCE_PROPERTY  *PerformanceProperty;
 
-  Status = InitializeMmCorePerformanceLibCommon ();
+  Status = InitializeMmCorePerformanceLibCommon (&gEdkiiSmmExitBootServicesProtocolGuid);
   ASSERT_EFI_ERROR (Status);
 
   Status = EfiGetSystemConfigurationTable (&gPerformanceProtocolGuid, (VOID **)&PerformanceProperty);

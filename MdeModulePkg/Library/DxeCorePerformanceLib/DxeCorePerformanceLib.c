@@ -235,11 +235,11 @@ InternalGetSmmPerfData (
   EDKII_PI_SMM_COMMUNICATION_REGION_TABLE  *SmmCommRegionTable;
   EFI_MEMORY_DESCRIPTOR                    *SmmCommMemRegion;
   UINTN                                    Index;
-  VOID                                     *CurrentBootRecordData;    // MU_CHANGE - Standalone MM Perf Support
+  VOID                                     *CurrentBootRecordData;
   VOID                                     *SmmBootRecordData;
   UINTN                                    SmmBootRecordDataSize;
   UINTN                                    ReservedMemSize;
-  UINTN                                    BootRecordDataPayloadSize; // MU_CHANGE - Standalone MM Perf Support
+  UINTN                                    BootRecordDataPayloadSize;
   UINTN                                    SmmBootRecordDataRetrieved;
 
   //
@@ -294,7 +294,6 @@ InternalGetSmmPerfData (
         SmmCommData->Function       = SMM_FPDT_FUNCTION_GET_BOOT_RECORD_SIZE;
         SmmCommData->BootRecordData = NULL;
         Status                      = Communication->Communicate (Communication, SmmBootRecordCommBuffer, &CommSize);
-        // MU_CHANGE [BEGIN] - Standalone MM Perf Support
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_WARN, "Perf handler MMI not found or communicate failed. Status = %r.\n", Status));
         } else if (EFI_ERROR (SmmCommData->ReturnStatus)) {
@@ -317,14 +316,13 @@ InternalGetSmmPerfData (
           SmmBootRecordData             = AllocateZeroPool (SmmBootRecordDataSize);
           SmmBootRecordDataRetrieved    = 0;
           ASSERT (SmmBootRecordData  != NULL);
-          // MU_CHANGE [BEGIN] - Standalone MM Perf Support
           if (SmmBootRecordData != NULL) {
             CurrentBootRecordData = (VOID *)((UINTN)SmmCommMemRegion->PhysicalStart + SMM_BOOT_RECORD_COMM_SIZE);
             while (SmmBootRecordDataRetrieved < SmmBootRecordDataSize) {
               // Note: Maximum comm buffer data payload size is ReservedMemSize - SMM_BOOT_RECORD_COMM_SIZE
               BootRecordDataPayloadSize = MIN (
                                             ReservedMemSize - SMM_BOOT_RECORD_COMM_SIZE,
-                                            SmmBootRecordDataSize - SmmBootRecordDataRetrieved
+                                            SmmBootRecordDataSize - SmmBootRecordDataRetrieved - SMM_BOOT_RECORD_COMM_SIZE
                                             );
 
               MmCommBufferHeader->MessageLength = sizeof (SMM_BOOT_RECORD_COMMUNICATE) + BootRecordDataPayloadSize;
@@ -351,8 +349,6 @@ InternalGetSmmPerfData (
             *SmmPerfData     = SmmBootRecordData;
             *SmmPerfDataSize = SmmBootRecordDataSize;
           }
-
-          // MU_CHANGE [END] - Standalone MM Perf Support
         }
       }
     }

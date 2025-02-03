@@ -12,15 +12,12 @@
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  MU_CHANGE [WHOLE FILE] - Standalone MM Perf Support
-
 **/
 
 #include "SmmCorePerformanceLibInternal.h"
 
+#include <Guid/EventGroup.h>
 #include <Library/StandaloneMmMemLib.h>
-
-extern BOOLEAN  mPerformanceMeasurementEnabled;
 
 /**
   A library internal MM-instance specific implementation to check if a buffer outside MM is valid.
@@ -35,7 +32,7 @@ extern BOOLEAN  mPerformanceMeasurementEnabled;
   @retval FALSE This buffer is not valid per processor architecture.
 **/
 BOOLEAN
-IsBufferOutsideMmValidInternal (
+MmCorePerformanceIsNonPrimaryBufferValid (
   IN EFI_PHYSICAL_ADDRESS  Buffer,
   IN UINT64                Length
   )
@@ -56,12 +53,12 @@ IsBufferOutsideMmValidInternal (
   @retval FALSE This communicate buffer is not valid per processor architecture.
 **/
 BOOLEAN
-IsCommBufferValidInternal (
+MmCorePerformanceIsPrimaryBufferValid (
   IN EFI_PHYSICAL_ADDRESS  Buffer,
   IN UINT64                Length
   )
 {
-  return MmCommBufferValid (Buffer, Length);
+  return MmCommBufferValid (Buffer, Length);  // MU_CHANGE - Use Mu Standalone MM Comm Buffer Validation
 }
 
 /**
@@ -92,7 +89,7 @@ GetLoadedImageProtocol (
 }
 
 /**
-  Get the module name from the PDB file name in the image header.
+  Get the module name from the user interface section.
 
   @param[in]  ModuleGuid    The GUID of the module.
   @param[out] NameString    The buffer to store the name string.
@@ -143,7 +140,7 @@ StandaloneMmCorePerformanceLibConstructor (
     return EFI_SUCCESS;
   }
 
-  Status = InitializeMmCorePerformanceLibCommon ();
+  Status = InitializeMmCorePerformanceLibCommon (&gEfiEventExitBootServicesGuid);
   ASSERT_EFI_ERROR (Status);
 
   return EFI_SUCCESS;
