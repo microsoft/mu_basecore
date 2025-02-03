@@ -208,7 +208,7 @@ TestVerifyBn (
   BnContext = Context;
 
   // MU_CHANGE [START]
-  if (!PcdGetBool (PcdCryptoServiceBigNumFromBin) || !PcdGetBool (PcdCryptoServiceBigNumIsWord) || !PcdGetBool (PcdCryptoServiceBigNumIsOdd) || !PcdGetBool (PcdCryptoServiceBigNumConstTime) || !PcdGetBool (PcdCryptoServiceBigNumBytes)) {
+  if (!PcdGetBool (PcdCryptoServiceBigNumFromBin) || !PcdGetBool (PcdCryptoServiceBigNumIsWord) || !PcdGetBool (PcdCryptoServiceBigNumIsOdd) || !PcdGetBool (PcdCryptoServiceBigNumConstTime) || !PcdGetBool (PcdCryptoServiceBigNumBytes) || !PcdGetBool (PcdCryptoServiceBigNumCopy)) {
     return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
   }
 
@@ -247,7 +247,7 @@ TestVerifyBn (
   BigNumExpMod (BnContext->BnA, BnContext->BnB, BnContext->BnD, BnContext->BnC);
   UT_ASSERT_TRUE (EqualBn2Bin (BnContext->BnC, BnResultExpMod, sizeof (BnResultExpMod)));
   // C=(A^2)%D && B=(A*A)%D => C==B
-  BigNumSqrMod  (BnContext->BnA, BnContext->BnD, BnContext->BnC);
+  BigNumSqrMod (BnContext->BnA, BnContext->BnD, BnContext->BnC);
   BigNumMulMod (BnContext->BnA, BnContext->BnA, BnContext->BnD, BnContext->BnB);
   UT_ASSERT_TRUE (EqualBn2Bn (BnContext->BnC, BnContext->BnB));
   // C=A>>128
