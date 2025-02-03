@@ -9,20 +9,20 @@
 #  SMM Performance and PerformanceEx Protocol are installed at the very beginning of SMM phase.
 #
 #  Copyright (c) 2011 - 2023, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) Microsoft Corporation.                                     MU_CHANGE - Standalone MM Perf Support
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
 [Defines]
-  INF_VERSION                    = 0x00010005
+  INF_VERSION                    = 0x0001001B                             # MU_CHANGE - Standalone MM Perf Support
   BASE_NAME                      = SmmCorePerformanceLib
   MODULE_UNI_FILE                = SmmCorePerformanceLib.uni
   FILE_GUID                      = 36290D10-0F47-42c1-BBCE-E191C7928DCF
   MODULE_TYPE                    = SMM_CORE
   VERSION_STRING                 = 1.0
-  PI_SPECIFICATION_VERSION       = 0x0001000A
+  PI_SPECIFICATION_VERSION       = 0x00010032                             # MU_CHANGE - Standalone MM Perf Support
   LIBRARY_CLASS                  = PerformanceLib|SMM_CORE
-
   CONSTRUCTOR                    = SmmCorePerformanceLibConstructor
 
 #
@@ -32,33 +32,35 @@
 #
 
 [Sources]
-  SmmCorePerformanceLib.c
+  MmCorePerformanceLib.c                # MU_CHANGE - Standalone MM Perf Support
+  SmmCorePerformanceLibInternal.h
   SmmCorePerformanceLibInternal.h
 
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
 
-
+# MU_CHANGE [BEGIN] - Standalone MM Perf Support
 [LibraryClasses]
-  MemoryAllocationLib
-  UefiBootServicesTableLib
-  PcdLib
-  TimerLib
-  BaseMemoryLib
   BaseLib
+  BaseMemoryLib
   DebugLib
-  SynchronizationLib
-  SmmServicesTableLib
-  SmmMemLib
-  UefiLib
-  ReportStatusCodeLib
-  PeCoffGetEntryPointLib
   DxeServicesLib
+  MemoryAllocationLib
+  MmServicesTableLib
+  PcdLib
+  PeCoffGetEntryPointLib
+  SmmMemLib
+  SynchronizationLib
+  TimerLib
+  UefiBootServicesTableLib
+  UefiLib
+# MU_CHANGE [END] - Standalone MM Perf Support
 
 [Protocols]
   gEfiSmmBase2ProtocolGuid                  ## CONSUMES
-  gEdkiiSmmExitBootServicesProtocolGuid     ## CONSUMES
+  gEdkiiSmmExitBootServicesProtocolGuid     ## CONSUMES ## NOTIFY         # MU_CHANGE - Standalone MM Perf Support
+  gEfiLoadedImageProtocolGuid               ## CONSUMES                   # MU_CHANGE - Standalone MM Perf Support
 
 [Guids]
   ## PRODUCES ## SystemTable
