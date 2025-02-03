@@ -4,11 +4,36 @@
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  MU_CHANGE [WHOLE FILE] - Standalone MM Perf Support
 **/
 
 #ifndef SMM_CORE_PERFORMANCE_LIB_INTERNAL_H_
 #define SMM_CORE_PERFORMANCE_LIB_INTERNAL_H_
+
+/**
+  Registers a callback to perform library actions needed at exit boot services.
+
+  @param[in] ExitBootServicesProtocolGuid  The protocol GUID to register the callback for.
+
+  @retval EFI_SUCCESS The callback was registered successfully.
+  @retval Others      An error occurred registering the callback.
+ **/
+EFI_STATUS
+RegisterExitBootServicesCallback (
+  IN  CONST EFI_GUID  *ExitBootServicesProtocolGuid
+  );
+
+/**
+  Unregisters a callback to perform library actions needed at exit boot services.
+
+  @param[in] ExitBootServicesProtocolGuid  The protocol GUID to unregister the callback for.
+
+  @retval EFI_SUCCESS The callback was unregistered successfully.
+  @retval Others      An error occurred unregistering the callback.
+ **/
+EFI_STATUS
+UnregisterExitBootServicesCallback (
+  IN  CONST EFI_GUID  *ExitBootServicesProtocolGuid
+  );
 
 /**
   This is the Event call back function is triggered in MM to notify the Library
