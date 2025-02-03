@@ -220,6 +220,9 @@ TestVerifyBn (
   // C=A+B
   BigNumAdd (BnContext->BnA, BnContext->BnB, BnContext->BnC);
   UT_ASSERT_TRUE (EqualBn2Bin (BnContext->BnC, BnResultSum, sizeof (BnResultSum)));
+  // D=C
+  BigNumCopy (BnContext->BnD, BnContext->BnC);
+  UT_ASSERT_TRUE (EqualBn2Bin (BnContext->BnD, BnResultSum, sizeof (BnResultSum)));
   // D=C-A=B
   BigNumSub (BnContext->BnC, BnContext->BnA, BnContext->BnD);
   UT_ASSERT_TRUE (EqualBn2Bn (BnContext->BnB, BnContext->BnD));
@@ -243,6 +246,10 @@ TestVerifyBn (
   BnContext->BnB = BigNumFromBin (BnOperationExp, sizeof (BnOperationExp));
   BigNumExpMod (BnContext->BnA, BnContext->BnB, BnContext->BnD, BnContext->BnC);
   UT_ASSERT_TRUE (EqualBn2Bin (BnContext->BnC, BnResultExpMod, sizeof (BnResultExpMod)));
+  // C=(A^2)%D && B=(A*A)%D => C==B
+  BigNumSqrMod  (BnContext->BnA, BnContext->BnD, BnContext->BnC);
+  BigNumMulMod (BnContext->BnA, BnContext->BnA, BnContext->BnD, BnContext->BnB);
+  UT_ASSERT_TRUE (EqualBn2Bn (BnContext->BnC, BnContext->BnB));
   // C=A>>128
   BigNumRShift (BnContext->BnA, 128, BnContext->BnC);
   UT_ASSERT_TRUE (EqualBn2Bin (BnContext->BnC, BnResultRShift, sizeof (BnResultRShift)));

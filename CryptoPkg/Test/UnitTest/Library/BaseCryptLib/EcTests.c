@@ -314,7 +314,6 @@ TestVerifyEcBasic (
     UT_ASSERT_TRUE (Status);
   }
 
-  UT_LOG_ERROR ("\nTestVerifyEcBasic - PASSED\n");
   return UNIT_TEST_PASSED;
 }
 
