@@ -10,20 +10,11 @@
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  MU_CHANGE [WHOLE FILE] - Standalone MM Perf Support
 **/
 
-#include <Guid/PerformanceMeasurement.h>
-
-#include <Library/DebugLib.h>
-#include <Library/MmServicesTableLib.h>
-#include <Library/PcdLib.h>
-#include <Library/PerformanceLib.h>
-
+#include <PiMm.h>
+#include <Guid/EventGroup.h>
 #include "SmmPerformanceLibInternal.h"
-
-extern BOOLEAN  mPerformanceMeasurementEnabled;
-extern VOID     *mPerformanceLibExitBootServicesRegistration;
 
 /**
   The constructor function initializes the Performance Measurement Enable flag.
@@ -41,18 +32,7 @@ StandaloneMmPerformanceLibConstructor (
   IN EFI_MM_SYSTEM_TABLE  *MmSystemTable
   )
 {
-  EFI_STATUS  Status;
-
-  mPerformanceMeasurementEnabled =  (BOOLEAN)((PcdGet8 (PcdPerformanceLibraryPropertyMask) & PERFORMANCE_LIBRARY_PROPERTY_MEASUREMENT_ENABLED) != 0);
-
-  Status = gMmst->MmRegisterProtocolNotify (
-                    &gEdkiiSmmExitBootServicesProtocolGuid,
-                    SmmPerformanceLibExitBootServicesCallback,
-                    &mPerformanceLibExitBootServicesRegistration
-                    );
-  ASSERT_EFI_ERROR (Status);
-
-  return Status;
+  return RegisterExitBootServicesCallback (&gEfiEventExitBootServicesGuid);
 }
 
 /**
@@ -71,17 +51,5 @@ StandaloneMmPerformanceLibDestructor (
   IN EFI_MM_SYSTEM_TABLE  *MmSystemTable
   )
 {
-  EFI_STATUS  Status;
-
-  //
-  // Unregister SmmExitBootServices notification.
-  //
-  Status = gMmst->MmRegisterProtocolNotify (
-                    &gEdkiiSmmExitBootServicesProtocolGuid,
-                    NULL,
-                    &mPerformanceLibExitBootServicesRegistration
-                    );
-  ASSERT_EFI_ERROR (Status);
-
-  return Status;
+  return UnregisterExitBootServicesCallback (&gEfiEventExitBootServicesGuid);
 }
