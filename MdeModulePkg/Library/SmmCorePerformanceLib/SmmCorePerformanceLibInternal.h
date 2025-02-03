@@ -5,7 +5,7 @@
   library instance at its constructor.
 
 Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
-Copyright (c) Microsoft Corporation.                                        MU_CHANGE - Standalone MM Perf Support
+Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -13,7 +13,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #ifndef _SMM_CORE_PERFORMANCE_LIB_INTERNAL_H_
 #define _SMM_CORE_PERFORMANCE_LIB_INTERNAL_H_
 
-// MU_CHANGE [BEGIN] - Standalone MM Perf Support
 #include <Guid/EventGroup.h>
 #include <Guid/ExtendedFirmwarePerformance.h>
 #include <Guid/FirmwarePerformance.h>
@@ -39,6 +38,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define STRING_SIZE              (FPDT_STRING_EVENT_RECORD_NAME_LENGTH * sizeof (CHAR8))
 #define FIRMWARE_RECORD_BUFFER   0x1000
 #define CACHE_HANDLE_GUID_COUNT  0x100
+
+extern BOOLEAN  mPerformanceMeasurementEnabled;
 
 //
 // Library internal function declarations
@@ -76,7 +77,7 @@ GetModuleNameFromPdbString (
   );
 
 /**
-  Get the module name from the PDB file name in the image header.
+  Get the module name from the user interface section.
 
   @param[in]  ModuleGuid    The GUID of the module.
   @param[out] NameString    The buffer to store the name string.
@@ -96,13 +97,14 @@ GetNameFromUiSection (
 /**
   Common initialization code for the MM Core Performance Library.
 
+  @param[in] ExitBootServicesProtocolGuid  The GUID of the ExitBootServices protocol.
+
   @retval     EFI_SUCCESS           The MM Core Performance Library was initialized successfully.
-  @retval     EFI_OUT_OF_RESOURCES  There are not enough resources to initialize the MM Core Performance Library.
   @retval     Others                The MM Core Performance Library was not initialized successfully.
  **/
 EFI_STATUS
 InitializeMmCorePerformanceLibCommon (
-  VOID
+  IN CONST EFI_GUID  *ExitBootServicesProtocolGuid
   );
 
 /**
@@ -118,7 +120,7 @@ InitializeMmCorePerformanceLibCommon (
   @retval FALSE This buffer is not valid per processor architecture.
 **/
 BOOLEAN
-IsBufferOutsideMmValidInternal (
+MmCorePerformanceIsNonPrimaryBufferValid (
   IN EFI_PHYSICAL_ADDRESS  Buffer,
   IN UINT64                Length
   );
@@ -136,12 +138,10 @@ IsBufferOutsideMmValidInternal (
   @retval FALSE This communicate buffer is not valid per processor architecture.
 **/
 BOOLEAN
-IsCommBufferValidInternal (
+MmCorePerformanceIsPrimaryBufferValid (
   IN EFI_PHYSICAL_ADDRESS  Buffer,
   IN UINT64                Length
   );
-
-// MU_CHANGE [END] - Standalone MM Perf Support
 
 //
 // Interface declarations for SMM PerformanceMeasurement Protocol.

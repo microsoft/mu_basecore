@@ -14,8 +14,6 @@
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  MU_CHANGE [WHOLE FILE] - Standalone MM Perf Support
-
 **/
 
 #include "SmmCorePerformanceLibInternal.h"
@@ -178,6 +176,10 @@ GetModuleNameFromPdbString (
   }
 
   PdbFileName = PeCoffLoaderGetPdbPointer (ImageBase);
+
+  if (PdbFileName == NULL) {
+    return EFI_NOT_FOUND;
+  }
 
   for (StartIndex = 0, Index = 0; PdbFileName[Index] != 0; Index++) {
     if ((PdbFileName[Index] == '\\') || (PdbFileName[Index] == '/')) {
@@ -827,7 +829,7 @@ FpdtSmiHandler (
     return EFI_SUCCESS;
   }
 
-  if (!IsCommBufferValidInternal ((UINTN)CommBuffer, TempCommBufferSize)) {
+  if (!MmCorePerformanceIsPrimaryBufferValid ((UINTN)CommBuffer, TempCommBufferSize)) {
     ASSERT (FALSE);
     return EFI_SUCCESS;
   }
@@ -864,7 +866,7 @@ FpdtSmiHandler (
 
       if (BootRecordData == NULL) {
         BootRecordData = (UINT8 *)SmmCommData + sizeof (SMM_BOOT_RECORD_COMMUNICATE);
-      } else if (!IsBufferOutsideMmValidInternal ((UINTN)BootRecordData, BootRecordSize)) {
+      } else if (!MmCorePerformanceIsNonPrimaryBufferValid ((UINTN)BootRecordData, BootRecordSize)) {
         Status = EFI_ACCESS_DENIED;
         break;
       }
@@ -933,12 +935,14 @@ SmmCorePerformanceLibExitBootServicesCallback (
 /**
   Common initialization code for the MM Core Performance Library.
 
+  @param[in] ExitBootServicesProtocolGuid  The GUID of the ExitBootServices protocol.
+
   @retval     EFI_SUCCESS           The MM Core Performance Library was initialized successfully.
   @retval     Others                The MM Core Performance Library was not initialized successfully.
  **/
 EFI_STATUS
 InitializeMmCorePerformanceLibCommon (
-  VOID
+  IN CONST EFI_GUID  *ExitBootServicesProtocolGuid
   )
 {
   EFI_STATUS  Status;
@@ -976,7 +980,7 @@ InitializeMmCorePerformanceLibCommon (
   // Register callback function for ExitBootServices event.
   //
   Status = gMmst->MmRegisterProtocolNotify (
-                    &gEdkiiSmmExitBootServicesProtocolGuid,
+                    ExitBootServicesProtocolGuid,
                     SmmCorePerformanceLibExitBootServicesCallback,
                     &Registration
                     );
