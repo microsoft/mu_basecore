@@ -10,7 +10,6 @@
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  MU_CHANGE [WHOLE FILE] - Standalone MM Perf Support
 **/
 
 #include <Guid/PerformanceMeasurement.h>
@@ -28,6 +27,61 @@
 EDKII_PERFORMANCE_MEASUREMENT_PROTOCOL  *mPerformanceMeasurement = NULL;
 BOOLEAN                                 mPerformanceMeasurementEnabled;
 VOID                                    *mPerformanceLibExitBootServicesRegistration;
+
+/**
+  Registers a callback to perform library actions needed at exit boot services.
+
+  @param[in] ExitBootServicesProtocolGuid  The protocol GUID to register the callback for.
+
+  @retval EFI_SUCCESS The callback was registered successfully.
+  @retval Others      An error occurred registering the callback.
+ **/
+EFI_STATUS
+RegisterExitBootServicesCallback (
+  IN  CONST EFI_GUID  *ExitBootServicesProtocolGuid
+  )
+{
+  EFI_STATUS  Status;
+
+  mPerformanceMeasurementEnabled =  (BOOLEAN)((PcdGet8 (PcdPerformanceLibraryPropertyMask) & PERFORMANCE_LIBRARY_PROPERTY_MEASUREMENT_ENABLED) != 0);
+
+  Status = gMmst->MmRegisterProtocolNotify (
+                    ExitBootServicesProtocolGuid,
+                    SmmPerformanceLibExitBootServicesCallback,
+                    &mPerformanceLibExitBootServicesRegistration
+                    );
+  ASSERT_EFI_ERROR (Status);
+
+  return Status;
+}
+
+/**
+  Unregisters a callback to perform library actions needed at exit boot services.
+
+  @param[in] ExitBootServicesProtocolGuid  The protocol GUID to unregister the callback for.
+
+  @retval EFI_SUCCESS The callback was unregistered successfully.
+  @retval Others      An error occurred unregistering the callback.
+ **/
+EFI_STATUS
+UnregisterExitBootServicesCallback (
+  IN  CONST EFI_GUID  *ExitBootServicesProtocolGuid
+  )
+{
+  EFI_STATUS  Status;
+
+  //
+  // Unregister SmmExitBootServices notification.
+  //
+  Status = gMmst->MmRegisterProtocolNotify (
+                    ExitBootServicesProtocolGuid,
+                    NULL,
+                    &mPerformanceLibExitBootServicesRegistration
+                    );
+  ASSERT_EFI_ERROR (Status);
+
+  return Status;
+}
 
 /**
   This is the Event call back function is triggered in MM to notify the Library

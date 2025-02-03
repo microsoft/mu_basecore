@@ -7,10 +7,9 @@
 #  performance information.
 #
 #  Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
-#  Copyright Microsoft Corporation. All rights reserved.
+#  Copyright Microsoft Corporation.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
-#  MU_CHANGE [WHOLE FILE] - Standalone MM Perf Support
 ##
 
 [Defines]
@@ -43,9 +42,7 @@
 
 [Guids]
   gEdkiiSmmPerformanceMeasurementProtocolGuid                   ## SOMETIMES_CONSUMES   ## UNDEFINED # Locate protocol
-
-[Protocols]
-  gEdkiiSmmExitBootServicesProtocolGuid                         ## CONSUMES
+  gEfiEventExitBootServicesGuid                                 ## CONSUMES
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdPerformanceLibraryPropertyMask    ## CONSUMES

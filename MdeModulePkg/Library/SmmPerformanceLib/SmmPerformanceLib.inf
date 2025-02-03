@@ -34,8 +34,8 @@
 #
 
 [Sources]
-  SmmPerformanceLibInternal.h   # MU_CHANGE - Standalone MM Perf Support
-  SmmPerformanceLibInternal.c   # MU_CHANGE - Standalone MM Perf Support
+  SmmPerformanceLibInternal.h
+  SmmPerformanceLibInternal.c
   SmmPerformanceLib.c
 
 
@@ -46,7 +46,7 @@
 
 [LibraryClasses]
   PcdLib
-  MmServicesTableLib            # MU_CHANGE - Standalone MM Perf Support
+  MmServicesTableLib
   DebugLib
   BaseMemoryLib
 
