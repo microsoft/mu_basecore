@@ -1,12 +1,12 @@
 ## @file
-# Performance library instance used by a Standalone MM Core or very early Standlaone MM module.
+# Performance library instance used by a Standalone MM Core or an early Standlaone MM module that
+# should install performance measurement services.
 #
 # Installs the MM performance measurement protocol and returns MM performance data via MM communicate.
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
-# MU_CHANGE [WHOLE FILE] - Standalone MM Perf Support
 ##
 
 [Defines]

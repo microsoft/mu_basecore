@@ -9,19 +9,19 @@
 #  SMM Performance and PerformanceEx Protocol are installed at the very beginning of SMM phase.
 #
 #  Copyright (c) 2011 - 2023, Intel Corporation. All rights reserved.<BR>
-#  Copyright (c) Microsoft Corporation.                                     MU_CHANGE - Standalone MM Perf Support
+#  Copyright (c) Microsoft Corporation.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
 [Defines]
-  INF_VERSION                    = 0x0001001B                             # MU_CHANGE - Standalone MM Perf Support
+  INF_VERSION                    = 0x0001001B
   BASE_NAME                      = SmmCorePerformanceLib
   MODULE_UNI_FILE                = SmmCorePerformanceLib.uni
   FILE_GUID                      = 36290D10-0F47-42c1-BBCE-E191C7928DCF
   MODULE_TYPE                    = SMM_CORE
   VERSION_STRING                 = 1.0
-  PI_SPECIFICATION_VERSION       = 0x00010032                             # MU_CHANGE - Standalone MM Perf Support
+  PI_SPECIFICATION_VERSION       = 0x00010032
   LIBRARY_CLASS                  = PerformanceLib|SMM_CORE
   CONSTRUCTOR                    = SmmCorePerformanceLibConstructor
 
@@ -32,7 +32,7 @@
 #
 
 [Sources]
-  MmCorePerformanceLib.c                # MU_CHANGE - Standalone MM Perf Support
+  MmCorePerformanceLib.c
   SmmCorePerformanceLibInternal.h
   SmmCorePerformanceLib.c
 
@@ -40,7 +40,6 @@
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
 
-# MU_CHANGE [BEGIN] - Standalone MM Perf Support
 [LibraryClasses]
   BaseLib
   BaseMemoryLib
@@ -55,12 +54,11 @@
   TimerLib
   UefiBootServicesTableLib
   UefiLib
-# MU_CHANGE [END] - Standalone MM Perf Support
 
 [Protocols]
   gEfiSmmBase2ProtocolGuid                  ## CONSUMES
-  gEdkiiSmmExitBootServicesProtocolGuid     ## CONSUMES ## NOTIFY         # MU_CHANGE - Standalone MM Perf Support
-  gEfiLoadedImageProtocolGuid               ## CONSUMES                   # MU_CHANGE - Standalone MM Perf Support
+  gEdkiiSmmExitBootServicesProtocolGuid     ## CONSUMES ## NOTIFY
+  gEfiLoadedImageProtocolGuid               ## CONSUMES
 
 [Guids]
   ## PRODUCES ## SystemTable
