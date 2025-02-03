@@ -73,8 +73,8 @@ EDKII_VAR_CHECK_PROTOCOL        mVarCheck;
 EFI_STATUS
 EFIAPI
 VariablePolicySmmDxeMain (
-  IN    EFI_HANDLE        ImageHandle,
-  IN    EFI_SYSTEM_TABLE  *SystemTable
+  IN    EFI_HANDLE  ImageHandle             // MU_CHANGE - Initialize var policy after SMM Variable is ready
+  // IN    EFI_SYSTEM_TABLE  *SystemTable   // MU_CHANGE - Initialize var policy after SMM Variable is ready
   );
 
 /**
@@ -1692,6 +1692,7 @@ SmmVariableReady (
   )
 {
   EFI_STATUS  Status;
+  EFI_HANDLE  VariablePolicyHandle;   // MU_CHANGE - Initialize var policy after SMM Variable is ready
 
   Status = gBS->LocateProtocol (&gEfiSmmVariableProtocolGuid, NULL, (VOID **)&mSmmVariable);
   if (EFI_ERROR (Status)) {
@@ -1757,6 +1758,16 @@ SmmVariableReady (
   gRT->GetNextVariableName = RuntimeServiceGetNextVariableName;
   gRT->SetVariable         = RuntimeServiceSetVariable;
   gRT->QueryVariableInfo   = RuntimeServiceQueryVariableInfo;
+
+  // MU_CHANGE [BEGIN] - Initialize var policy after SMM Variable is ready
+  VariablePolicyHandle = (Context != NULL) ? Context : mHandle;
+  if (Context == NULL) {
+    DEBUG ((DEBUG_ERROR, "Variable policy was installed on a handle other than the variable image handle.\n"));
+  }
+
+  // Initialize the VariablePolicy protocol and engine.
+  VariablePolicySmmDxeMain (VariablePolicyHandle);
+  // MU_CHANGE [END] - Initialize var policy after SMM Variable is ready
 
   //
   // Install the Variable Architectural Protocol on a new handle.
@@ -1868,7 +1879,7 @@ VariableSmmRuntimeInitialize (
     &gEfiSmmVariableProtocolGuid,
     TPL_CALLBACK,
     SmmVariableReady,
-    NULL,
+    ImageHandle,                    // MU_CHANGE - Initialize var policy after SMM Variable is ready
     &SmmVariableRegistration
     );
 
@@ -1930,8 +1941,10 @@ VariableSmmRuntimeInitialize (
          &mVirtualAddressChangeEvent
          );
 
-  // Initialize the VariablePolicy protocol and engine.
-  VariablePolicySmmDxeMain (ImageHandle, SystemTable);
+  // MU_CHANGE [BEGIN] - Initialize var policy after SMM Variable is ready
+  // // Initialize the VariablePolicy protocol and engine.
+  // VariablePolicySmmDxeMain (ImageHandle, SystemTable);
+  // MU_CHANGE [END] - Initialize var policy after SMM Variable is ready
 
   return EFI_SUCCESS;
 }
