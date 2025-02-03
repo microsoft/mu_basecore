@@ -574,6 +574,7 @@
   MdeModulePkg/Library/PiSmmCoreMemoryAllocationLib/PiSmmCoreMemoryAllocationProfileLib.inf
   MdeModulePkg/Library/PiSmmCoreMemoryAllocationLib/PiSmmCoreMemoryAllocationLib.inf
   MdeModulePkg/Library/SmmCorePerformanceLib/SmmCorePerformanceLib.inf
+  MdeModulePkg/Library/SmmCorePerformanceLib/StandaloneMmCorePerformanceLib.inf # MU_CHANGE - Standalone MM Perf Support
   MdeModulePkg/Library/SmmPerformanceLib/SmmPerformanceLib.inf
   MdeModulePkg/Library/SmmLockBoxLib/SmmLockBoxPeiLib.inf
   MdeModulePkg/Library/SmmLockBoxLib/SmmLockBoxDxeLib.inf
