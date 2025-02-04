@@ -494,7 +494,7 @@ TestVerifyPkcs7SignGetSigners (
   Status = Pkcs7GetSigners (P7SignedData, P7SignedDataSize, &CertBuffer, &CertBufferSize, &trustedCert, &trustedCertSize);
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_EQUAL (trustedCertSize, sizeof (TestCert));
-  UT_ASSERT_EQUAL (memcmp (trustedCert, TestCert, sizeof (TestCert)), 0); // memcmp returns 0 if the two buffers are the same
+  UT_ASSERT_MEM_EQUAL (trustedCert, TestCert, trustedCertSize);
 
   // Grab cert data from CertBuffer
   CertStackSize = (UINT8)(*CertBuffer); // First byte of CertBuffer is the number of certs in the stack
@@ -504,7 +504,7 @@ TestVerifyPkcs7SignGetSigners (
 
   UT_ASSERT_EQUAL (CertStackSize, 1);
   UT_ASSERT_EQUAL (CertSize, sizeof (TestCert));
-  UT_ASSERT_EQUAL (memcmp (Cert, TestCert, CertSize), 0); // memcmp returns 0 if the two buffers are the same
+  UT_ASSERT_MEM_EQUAL (Cert, TestCert, CertSize);
 
   if (P7SignedData != NULL) {
     FreePool (P7SignedData);
@@ -567,6 +567,7 @@ TestVerifyPkcs7SignGetCertificatesList (
   Status = Pkcs7GetCertificatesList (P7SignedData, P7SignedDataSize, &SignedCertsBuffer, &SignedCertsBufferSize, &UnsignedCertsBuffer, &UnsignedCertsBufferSize);
   UT_ASSERT_TRUE (Status);
   UT_ASSERT_EQUAL (UnsignedCertsBufferSize, 0);
+  UT_ASSERT_NOT_EQUAL (SignedCertsBufferSize, 0);
 
   // Grab cert data from CertBuffer
   CertStackSize = (UINT8)(*SignedCertsBuffer); // First byte of CertBuffer is the number of certs in the stack
@@ -576,7 +577,7 @@ TestVerifyPkcs7SignGetCertificatesList (
 
   UT_ASSERT_EQUAL (CertStackSize, 1);
   UT_ASSERT_EQUAL (CertSize, sizeof (TestCert));
-  UT_ASSERT_EQUAL (memcmp (Cert, TestCert, CertSize), 0); // memcmp returns 0 if the two buffers are the same
+  UT_ASSERT_MEM_EQUAL (Cert, TestCert, CertSize);
 
   if (P7SignedData != NULL) {
     FreePool (P7SignedData);
