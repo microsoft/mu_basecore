@@ -1919,6 +1919,20 @@ EfiBootManagerBoot (
     return;
   }
 
+  // MU_CHANGE [BEGIN]
+  //
+  // 0. Determine if the file path exists. (I.E we can't load it if it doesnt)
+  //
+  FilePath = BootOption->FilePath;
+  Status   = gBS->LocateDevicePath (&gEfiFirmwareVolume2ProtocolGuid, &FilePath, &ImageHandle);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: LocateDevicePath Failed (%r)\n", __func__, Status));
+    BootOption->Status = Status;
+    return;
+  }
+
+  // MU_CHANGE [END]
+
   //
   // 1. Create Boot#### for a temporary boot if there is no match Boot#### (i.e. a boot by selected a EFI Shell using "Boot From File")
   //
@@ -1962,7 +1976,16 @@ EfiBootManagerBoot (
   if (BmIsBootManagerMenuFilePath (BootOption->FilePath)) {
     DEBUG ((DEBUG_INFO, "[Bds] Booting Boot Manager Menu.\n"));
     BmStopHotkeyService (NULL, NULL);
-  } else {
+  }
+  // MU_CHANGE [BEGIN]
+  else if (BmIsFvFilePath (BootOption->FilePath)) {
+    //
+    // Do nothing. This file originates from a measured FV and is an extension of the BDS environment
+    // We should not signal ready to boot.
+    // We will still need to load / start it.
+  }
+  // MU_CHANGE [END]
+  else {
     PERF_EVENT_SIGNAL_BEGIN (&gEfiEventPreReadyToBootGuid); // MU_CHANGE
     EfiEventGroupSignal (&gEfiEventPreReadyToBootGuid);     // MU_CHANGE
     PERF_EVENT_SIGNAL_END (&gEfiEventPreReadyToBootGuid);   // MU_CHANGE
@@ -2043,6 +2066,10 @@ EfiBootManagerBoot (
                       &ImageHandle
                       );
     }
+
+    // MU_CHANGE [BEGIN]
+    DEBUG ((DEBUG_ERROR, "%a: LoadImage returned %r\n", __func__, Status));
+    // MU CHANGE [END]
 
     if (FileBuffer != NULL) {
       FreePool (FileBuffer);
