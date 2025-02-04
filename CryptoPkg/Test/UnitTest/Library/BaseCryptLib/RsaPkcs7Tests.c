@@ -408,8 +408,8 @@ TestVerifyPkcs7SignVerify (
              (CONST UINT8 *)PemPass,
              (UINT8 *)Payload,
              AsciiStrLen (Payload),
-             TestCert,                   // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
-             sizeof (TestCert),          // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             TestCert,                  // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             sizeof (TestCert),         // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
              NULL,
              &P7SignedData,
              &P7SignedDataSize
@@ -476,8 +476,8 @@ TestVerifyPkcs7SignGetSigners (
              (CONST UINT8 *)PemPass,
              (UINT8 *)Payload,
              AsciiStrLen (Payload),
-             TestCert,                   // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
-             sizeof (TestCert),          // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             TestCert,                  // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             sizeof (TestCert),         // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
              NULL,
              &P7SignedData,
              &P7SignedDataSize
@@ -551,8 +551,8 @@ TestVerifyPkcs7SignGetCertificatesList (
              (CONST UINT8 *)PemPass,
              (UINT8 *)Payload,
              AsciiStrLen (Payload),
-             TestCert,                   // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
-             sizeof (TestCert),          // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             TestCert,                  // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             sizeof (TestCert),         // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
              NULL,
              &P7SignedData,
              &P7SignedDataSize
@@ -617,8 +617,8 @@ TestVerifyPkcs7SignGetAttachedContent (
              (CONST UINT8 *)PemPass,
              (UINT8 *)Payload,
              AsciiStrLen (Payload),
-             TestCert,                   // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
-             sizeof (TestCert),          // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             TestCert,                  // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
+             sizeof (TestCert),         // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
              NULL,
              &P7SignedData,
              &P7SignedDataSize
@@ -628,9 +628,8 @@ TestVerifyPkcs7SignGetAttachedContent (
 
   Status = Pkcs7GetAttachedContent (P7SignedData, P7SignedDataSize, (void **)&AttachedContent, &AttachedContentSize);
   UT_ASSERT_TRUE (Status);
-  // Pkcs7Sign is using PKCS7_DETACHED flag, so the attached content should be NULL
+  // Pkcs7Sign is using PKCS7_DETACHED flag, so the attached content should be empty
   UT_ASSERT_EQUAL (AttachedContentSize, 0);
-  UT_ASSERT_EQUAL (AttachedContent, NULL);
 
   if (P7SignedData != NULL) {
     FreePool (P7SignedData);

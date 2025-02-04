@@ -738,6 +738,7 @@ TestX509Get (
   FreePool (Oid);
   FreePool (ExtKeyUsage);
   FreePool (BasicConstraints);
+  FreePool (TBSCert);
 
   return UNIT_TEST_PASSED;
 }
