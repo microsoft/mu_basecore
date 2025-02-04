@@ -2,5 +2,5 @@
 channel = "1.80.0"
 
 [tools]
-cargo-make = "0.37.9"
-cargo-tarpaulin = "0.31.2"
+cargo-make = "0.37.24"
+cargo-tarpaulin = "0.31.5"
