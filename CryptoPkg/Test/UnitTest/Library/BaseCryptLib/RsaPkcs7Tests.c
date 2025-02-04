@@ -8,7 +8,6 @@
 **/
 
 #include "TestBaseCryptLib.h"
-#include <string.h>
 
 //
 // Password-protected PEM Key data for RSA Private Key Retrieving (encryption key is "client").
