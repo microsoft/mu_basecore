@@ -150,6 +150,7 @@
 
 [Components.IA32, Components.X64]
   UefiCpuPkg/CpuDxe/CpuDxe.inf
+  UefiCpuPkg/MpDxe/MpDxe.inf
   UefiCpuPkg/CpuFeatures/CpuFeaturesPei.inf {
     <LibraryClasses>
       NULL|UefiCpuPkg/Library/CpuCommonFeaturesLib/CpuCommonFeaturesLib.inf
