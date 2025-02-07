@@ -2819,19 +2819,17 @@ EfiBootManagerGetNextLoadOptionDevicePath (
 //
 
 /**
-  Constructor for UefiBootMangerLib.
+  Variable policy protocol installation notification.
 
-  @param[in] ImageHandle  The handle of the loaded image.
-  @param[in] SystemTable  System resources and configuration
+  @param[in]    Event           The notification event.
+  @param[in]    Context         Pointer to the context registered when the event is created. Not used.
 
-  @retval EFI_SUCCESS   The constructor set the variable policy if implemented
-  @retval others        The constructor did not succeed and one or more variable policy are not set
 **/
-EFI_STATUS
+VOID
 EFIAPI
-UefiBootManagerLibConstructor (
-  IN EFI_HANDLE        ImageHandle,
-  IN EFI_SYSTEM_TABLE  *SystemTable
+OnVariablePolicyNotification (
+  IN  EFI_EVENT  Event,
+  IN  VOID       *Context
   )
 {
   EFI_STATUS                      Status;
@@ -2841,9 +2839,7 @@ UefiBootManagerLibConstructor (
   // VariablePolicy, if implemented on this system, should have been installed already.
   //
   Status = gBS->LocateProtocol (&gEdkiiVariablePolicyProtocolGuid, NULL, (VOID **)&VariablePolicy);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: - Unable to locate VariablePolicy - Code=%r\n", __func__, Status));
-  } else {
+  if (!EFI_ERROR (Status)) {
     Status = RegisterBasicVariablePolicy (
                VariablePolicy,
                &mBmHardDriveBootVariableGuid,
@@ -2861,10 +2857,43 @@ UefiBootManagerLibConstructor (
     // 2. Already Started.  Only the first module to register a variable policy will successfully register
     //                      a policy.  The subsequent modules will get EFI_ALREADY_STARTED.
     if (EFI_ERROR (Status) && (Status != EFI_ALREADY_STARTED) && (Status != EFI_WRITE_PROTECTED)) {
-      DEBUG ((DEBUG_ERROR, "%a: - Error setting policy for HDDP - Code=%r\n", __func__, Status));
+      DEBUG ((DEBUG_ERROR, "%a: - Error setting policy for HDDP - Status=%r\n", __func__, Status));
       ASSERT_EFI_ERROR (Status);
     }
+
+    if (Event != NULL) {
+      gBS->CloseEvent (Event);
+    }
+  } else {
+    DEBUG ((DEBUG_ERROR, "%a: - Unable to locate variable policy protocol - Status=%r\n", __func__, Status));
   }
+}
+
+/**
+  Constructor for UefiBootMangerLib.
+
+  @param[in] ImageHandle  The handle of the loaded image.
+  @param[in] SystemTable  System resources and configuration
+
+  @retval EFI_SUCCESS   The constructor set the variable policy if implemented
+  @retval others        The constructor did not succeed and one or more variable policy are not set
+**/
+EFI_STATUS
+EFIAPI
+UefiBootManagerLibConstructor (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
+  )
+{
+  VOID  *Registration;
+
+  EfiCreateProtocolNotifyEvent (
+    &gEdkiiVariablePolicyProtocolGuid,
+    TPL_CALLBACK,
+    OnVariablePolicyNotification,
+    NULL,
+    &Registration
+    );
 
   return EFI_SUCCESS;
 }
