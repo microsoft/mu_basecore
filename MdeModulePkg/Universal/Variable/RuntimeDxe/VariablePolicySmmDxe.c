@@ -813,7 +813,7 @@ VariablePolicyVirtualAddressCallback (
   The driver's entry point.
 
   @param[in] ImageHandle  The firmware allocated handle for the EFI image.
-  @param[in] SystemTable  A pointer to the EFI System Table.
+  // @param[in] SystemTable  A pointer to the EFI System Table. // MU_CHANGE - Initialize var policy after SMM Variable is ready
 
   @retval EFI_SUCCESS     The entry point executed successfully.
   @retval other           Some error occured when executing this entry point.
@@ -822,8 +822,8 @@ VariablePolicyVirtualAddressCallback (
 EFI_STATUS
 EFIAPI
 VariablePolicySmmDxeMain (
-  IN    EFI_HANDLE        ImageHandle,
-  IN    EFI_SYSTEM_TABLE  *SystemTable
+  IN    EFI_HANDLE  ImageHandle             // MU_CHANGE - Initialize var policy after SMM Variable is ready
+  // IN    EFI_SYSTEM_TABLE  *SystemTable   // MU_CHANGE - Initialize var policy after SMM Variable is ready
   )
 {
   EFI_STATUS  Status;
