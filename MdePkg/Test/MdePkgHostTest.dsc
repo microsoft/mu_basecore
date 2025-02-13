@@ -75,3 +75,4 @@
   MdePkg/Test/Mock/Library/Stub/StubUefiLib/StubUefiLib.inf
 
   MdePkg/Test/Mock/Library/GoogleTest/MockSafeIntLib/MockSafeIntLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockSmmMemLib/MockSmmMemLib.inf
