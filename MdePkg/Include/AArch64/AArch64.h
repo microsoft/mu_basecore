@@ -134,6 +134,7 @@
 // so we need to define it here
 #define RNDR  S3_3_C2_C4_0
 
+#if !defined (_MSC_VER)   // MU_CHANGE - ARM64 VS change
 #define VECTOR_BASE(tbl)          \
   .section .text.##tbl##,"ax";    \
   .align 11;                      \
@@ -147,7 +148,24 @@
 #define VECTOR_END(tbl)           \
   .org 0x800;                     \
   .previous
+// MU_CHANGE [BEGIN] - ARM64 VS change
+#else
 
+#define VECTOR_BASE(tbl)          \
+    AREA    |.text|,ALIGN=11,CODE,READONLY  __CR__\
+    EXPORT  tbl                             __CR__\
+## tbl PROC                                 __CR__
+
+#define VECTOR_ENTRY(tbl, off)    \
+    ALIGN   128             __CR__\
+
+#define VECTOR_END(tbl)                     \
+tbl ENDP                                    __CR__\
+    ALIGN   0x800                           __CR__\
+    AREA    |.text|,ALIGN=3,CODE,READONLY   __CR__
+
+#endif
+// MU_CHANGE [END] - ARM64 VS change
 VOID
 EFIAPI
 ArmEnableSWPInstruction (
