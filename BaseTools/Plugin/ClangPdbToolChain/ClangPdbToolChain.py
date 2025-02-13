@@ -23,19 +23,19 @@ class ClangPdbToolChain(IUefiBuildPlugin):
 
     def do_pre_build(self, thebuilder):
         self.Logger = logging.getLogger("ClangPdbToolChain")
-        
+
         ##
         # CLANGPBD
         # - Need to find the clang path.
         # - Report path and version for logging
-        # 
+        #
         # if CLANG_BIN already set the plugin will confirm it exists and get the version of clang
         # If not set it will look for clang on the path.  If found it will configure for that.
-        # if still not found it will try the default install directory.  
+        # if still not found it will try the default install directory.
         # finally an error will be reported if not found
         ##
         if thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "CLANGPDB":
-            
+
             HostInfo = GetHostInfo()
             ClangBin_Default = "UNDEFINED"
             clang_exe = "clang"
@@ -67,10 +67,15 @@ class ClangPdbToolChain(IUefiBuildPlugin):
 
             version_aggregator.GetVersionAggregator().ReportVersion(
                     "CLANG BIN", ClangBin, version_aggregator.VersionTypes.INFO)
-            
+
             # now confirm it exists
             if not os.path.exists(shell_environment.GetEnvironment().get_shell_var("CLANG_BIN")):
-                self.Logger.error(f"Path for CLANGPDB toolchain is invalid.  {ClangBin}")
+                self.Logger.error("Clang was not found!")
+                if ClangBin == ClangBin_Default:
+                    self.Logger.error(f"The default clang bin path does not exist: {ClangBin.rstrip(os.sep)}.")
+                    self.Logger.error("Set the CLANG_BIN variable in your shell to the installation bin directory.")
+                else:
+                    self.Logger.error(f"The path provided in CLANG_BIN does not exist: {ClangBin}.")
                 return -2
 
             version_aggregator.GetVersionAggregator().ReportVersion(
