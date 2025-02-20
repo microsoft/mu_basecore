@@ -1,5 +1,5 @@
 /** @file
-  Definitions to install Multiple Processor PPI.
+  Definitions to install Multiple Processor 2 PPI.
 
   Copyright (c) 2015 - 2023, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2025, Loongson Technology Corporation Limited. All rights reserved.<BR>
@@ -7,35 +7,13 @@
 
 **/
 
-#ifndef _CPU_MP_PEI_H_
-#define _CPU_MP_PEI_H_
+#ifndef _CPU_MP2_PEI_H_
+#define _CPU_MP2_PEI_H_
 
-#include <PiPei.h>
+#include "CpuMpPei.h"
+#include <Ppi/MpServices2.h>
 
-#include <Ppi/MpServices.h>
-#include <Ppi/SecPlatformInformation.h>
-#include <Ppi/SecPlatformInformation2.h>
-#include <Ppi/EndOfPeiPhase.h>
-
-#include <Library/BaseLib.h>
-#include <Library/DebugLib.h>
-#include <Library/HobLib.h>
-#include <Library/LocalApicLib.h>
-#include <Library/PeimEntryPoint.h>
-#include <Library/PeiServicesLib.h>
-#include <Library/ReportStatusCodeLib.h>
-#include <Library/CpuExceptionHandlerLib.h>
-#include <Library/MpInitLib.h>
-#include <Library/BaseMemoryLib.h>
-#include <Library/MemoryAllocationLib.h>
-#include <Library/CpuPageTableLib.h>
-#include <Library/PanicLib.h>  // MU_CHANGE
-
-#include <Guid/MpInformation2.h>
-
-#include <Register/Cpuid.h>
-
-extern EFI_PEI_MP_SERVICES_PPI  mMpServicesPpi;
+extern EFI_PEI_MP_SERVICES2_PPI  mMpServices2Ppi;
 
 /**
   This service retrieves the number of logical processor in the platform
@@ -73,11 +51,10 @@ extern EFI_PEI_MP_SERVICES_PPI  mMpServicesPpi;
 **/
 EFI_STATUS
 EFIAPI
-PeiGetNumberOfProcessors (
-  IN  CONST EFI_PEI_SERVICES   **PeiServices,
-  IN  EFI_PEI_MP_SERVICES_PPI  *This,
-  OUT UINTN                    *NumberOfProcessors,
-  OUT UINTN                    *NumberOfEnabledProcessors
+PeiGetNumberOfProcessors2 (
+  IN  EFI_PEI_MP_SERVICES2_PPI  *This,
+  OUT UINTN                     *NumberOfProcessors,
+  OUT UINTN                     *NumberOfEnabledProcessors
   );
 
 /**
@@ -108,9 +85,8 @@ PeiGetNumberOfProcessors (
 **/
 EFI_STATUS
 EFIAPI
-PeiGetProcessorInfo (
-  IN  CONST EFI_PEI_SERVICES     **PeiServices,
-  IN  EFI_PEI_MP_SERVICES_PPI    *This,
+PeiGetProcessorInfo2 (
+  IN  EFI_PEI_MP_SERVICES2_PPI   *This,
   IN  UINTN                      ProcessorNumber,
   OUT EFI_PROCESSOR_INFORMATION  *ProcessorInfoBuffer
   );
@@ -180,13 +156,12 @@ PeiGetProcessorInfo (
 **/
 EFI_STATUS
 EFIAPI
-PeiStartupAllAPs (
-  IN  CONST EFI_PEI_SERVICES   **PeiServices,
-  IN  EFI_PEI_MP_SERVICES_PPI  *This,
-  IN  EFI_AP_PROCEDURE         Procedure,
-  IN  BOOLEAN                  SingleThread,
-  IN  UINTN                    TimeoutInMicroSeconds,
-  IN  VOID                     *ProcedureArgument      OPTIONAL
+PeiStartupAllAPs2 (
+  IN  EFI_PEI_MP_SERVICES2_PPI  *This,
+  IN  EFI_AP_PROCEDURE          Procedure,
+  IN  BOOLEAN                   SingleThread,
+  IN  UINTN                     TimeoutInMicroSeconds,
+  IN  VOID                      *ProcedureArgument      OPTIONAL
   );
 
 /**
@@ -237,61 +212,13 @@ PeiStartupAllAPs (
 **/
 EFI_STATUS
 EFIAPI
-PeiStartupThisAP (
-  IN  CONST EFI_PEI_SERVICES   **PeiServices,
-  IN  EFI_PEI_MP_SERVICES_PPI  *This,
-  IN  EFI_AP_PROCEDURE         Procedure,
-  IN  UINTN                    ProcessorNumber,
-  IN  UINTN                    TimeoutInMicroseconds,
-  IN  VOID                     *ProcedureArgument      OPTIONAL
+PeiStartupThisAP2 (
+  IN  EFI_PEI_MP_SERVICES2_PPI  *This,
+  IN  EFI_AP_PROCEDURE          Procedure,
+  IN  UINTN                     ProcessorNumber,
+  IN  UINTN                     TimeoutInMicroseconds,
+  IN  VOID                      *ProcedureArgument      OPTIONAL
   );
-
-// MU_CHANGE - Add basic support for non-blocking AP dispatch in PEI.
-
-/**
-  This service lets the caller get one enabled AP to execute a caller-provided
-  function. This service may only be called from the BSP.
-
-  This function is used to dispatch one enabled AP to the function specified by
-  Procedure passing in the argument specified by ProcedureArgument.
-  The execution is in non-blocking mode. The BSP continues executing immediately
-  after starting the AP.
-
-  Caller is responsible for ensuring that the scheduled AP task is complete (via
-  caller-specific logic) before dispatching further tasks on the AP using this
-  or other routines in the API.
-
-
-  @param[in] PeiServices          An indirect pointer to the PEI Services Table
-                                  published by the PEI Foundation.
-  @param[in] This                 A pointer to the EFI_PEI_MP_SERVICES_PPI instance.
-  @param[in] Procedure            A pointer to the function to be run on enabled APs of
-                                  the system.
-  @param[in] ProcessorNumber      The handle number of the AP. The range is from 0 to the
-                                  total number of logical processors minus 1. The total
-                                  number of logical processors can be retrieved by
-                                  EFI_PEI_MP_SERVICES_PPI.GetNumberOfProcessors().
-  @param[in] ProcedureArgument    The parameter passed into Procedure for all APs.
-
-  @retval EFI_SUCCESS             Indicates that the procedure was successfully
-                                  started on the AP
-  @retval EFI_DEVICE_ERROR        The calling processor is an AP.
-  @retval EFI_NOT_FOUND           The processor with the handle specified by
-                                  ProcessorNumber does not exist.
-  @retval EFI_INVALID_PARAMETER   ProcessorNumber specifies the BSP or disabled AP.
-  @retval EFI_INVALID_PARAMETER   Procedure is NULL.
-**/
-EFI_STATUS
-EFIAPI
-PeiStartupThisAPNonBlocking (
-  IN  CONST EFI_PEI_SERVICES   **PeiServices,
-  IN  EFI_PEI_MP_SERVICES_PPI  *This,
-  IN  EFI_AP_PROCEDURE         Procedure,
-  IN  UINTN                    ProcessorNumber,
-  IN  VOID                     *ProcedureArgument      OPTIONAL
-  );
-
-// MU_CHANGE - End Add basic support for non-blocking AP dispatch in PEI.
 
 /**
   This service switches the requested AP to be the BSP from that point onward.
@@ -329,11 +256,10 @@ PeiStartupThisAPNonBlocking (
 **/
 EFI_STATUS
 EFIAPI
-PeiSwitchBSP (
-  IN  CONST EFI_PEI_SERVICES   **PeiServices,
-  IN  EFI_PEI_MP_SERVICES_PPI  *This,
-  IN  UINTN                    ProcessorNumber,
-  IN  BOOLEAN                  EnableOldBSP
+PeiSwitchBSP2 (
+  IN  EFI_PEI_MP_SERVICES2_PPI  *This,
+  IN  UINTN                     ProcessorNumber,
+  IN  BOOLEAN                   EnableOldBSP
   );
 
 /**
@@ -377,12 +303,11 @@ PeiSwitchBSP (
 **/
 EFI_STATUS
 EFIAPI
-PeiEnableDisableAP (
-  IN  CONST EFI_PEI_SERVICES   **PeiServices,
-  IN  EFI_PEI_MP_SERVICES_PPI  *This,
-  IN  UINTN                    ProcessorNumber,
-  IN  BOOLEAN                  EnableAP,
-  IN  UINT32                   *HealthFlag OPTIONAL
+PeiEnableDisableAP2 (
+  IN  EFI_PEI_MP_SERVICES2_PPI  *This,
+  IN  UINTN                     ProcessorNumber,
+  IN  BOOLEAN                   EnableAP,
+  IN  UINT32                    *HealthFlag      OPTIONAL
   );
 
 /**
@@ -411,93 +336,41 @@ PeiEnableDisableAP (
 **/
 EFI_STATUS
 EFIAPI
-PeiWhoAmI (
-  IN  CONST EFI_PEI_SERVICES   **PeiServices,
-  IN  EFI_PEI_MP_SERVICES_PPI  *This,
-  OUT UINTN                    *ProcessorNumber
+PeiWhoAmI2 (
+  IN  EFI_PEI_MP_SERVICES2_PPI  *This,
+  OUT UINTN                     *ProcessorNumber
   );
 
 /**
-  Collects BIST data from PPI.
+  This service executes a caller provided function on all enabled CPUs. CPUs can
+  run either simultaneously or one at a time in sequence. This service may only
+  be called from the BSP.
 
-  This function collects BIST data from Sec Platform Information2 PPI
-  or SEC Platform Information PPI.
+  @param[in] This                 A pointer to the EFI_PEI_MP_SERVICES2_PPI instance.
+  @param[in] Procedure            A pointer to the function to be run on enabled APs of
+                                  the system.
+  @param[in] TimeoutInMicroSeconds
+                                  Indicates the time limit in microseconds for APs to
+                                  return from Procedure, for blocking mode only. Zero
+                                  means infinity.  If the timeout expires in blocking
+                                  mode, BSP returns EFI_TIMEOUT.
+  @param[in] ProcedureArgument    The parameter passed into Procedure for all CPUs.
 
-  @param PeiServices         Pointer to PEI Services Table
-
-**/
-VOID
-CollectBistDataFromPpi (
-  IN CONST EFI_PEI_SERVICES  **PeiServices
-  );
-
-/**
-  Implementation of the PlatformInformation2 service in EFI_SEC_PLATFORM_INFORMATION2_PPI.
-
-  @param  PeiServices                The pointer to the PEI Services Table.
-  @param  StructureSize              The pointer to the variable describing size of the input buffer.
-  @param  PlatformInformationRecord2 The pointer to the EFI_SEC_PLATFORM_INFORMATION_RECORD2.
-
-  @retval EFI_SUCCESS                The data was successfully returned.
-  @retval EFI_BUFFER_TOO_SMALL       The buffer was too small. The current buffer size needed to
-                                     hold the record is returned in StructureSize.
-
+  @retval EFI_SUCCESS             In blocking mode, all APs have finished before the
+                                  timeout expired.
+  @retval EFI_DEVICE_ERROR        Caller processor is AP.
+  @retval EFI_NOT_READY           Any enabled APs are busy.
+  @retval EFI_TIMEOUT             In blocking mode, the timeout expired before all
+                                  enabled APs have finished.
+  @retval EFI_INVALID_PARAMETER   Procedure is NULL.
 **/
 EFI_STATUS
 EFIAPI
-SecPlatformInformation2 (
-  IN CONST EFI_PEI_SERVICES                 **PeiServices,
-  IN OUT UINT64                             *StructureSize,
-  OUT EFI_SEC_PLATFORM_INFORMATION_RECORD2  *PlatformInformationRecord2
+PeiStartupAllCPUs2 (
+  IN  EFI_PEI_MP_SERVICES2_PPI  *This,
+  IN  EFI_AP_PROCEDURE          Procedure,
+  IN  UINTN                     TimeoutInMicroSeconds,
+  IN  VOID                      *ProcedureArgument      OPTIONAL
   );
-
-/**
-  Migrates the Global Descriptor Table (GDT) to permanent memory.
-
-  @retval   EFI_SUCCESS           The GDT was migrated successfully.
-  @retval   EFI_OUT_OF_RESOURCES  The GDT could not be migrated due to lack of available memory.
-
-**/
-EFI_STATUS
-MigrateGdt (
-  VOID
-  );
-
-/**
-  Initializes MP and exceptions handlers.
-
-  @param  PeiServices                The pointer to the PEI Services Table.
-
-  @retval EFI_SUCCESS     MP was successfully initialized.
-  @retval others          Error occurred in MP initialization.
-
-**/
-EFI_STATUS
-InitializeCpuMpWorker (
-  IN CONST EFI_PEI_SERVICES  **PeiServices
-  );
-
-/**
-  Enable/setup stack guard for each processor. // MU_CHANGE
-
-  Doing this in the memory-discovered callback is to make sure the Stack Guard
-  feature to cover as most PEI code as possible.
-
-  @param[in] PeiServices          General purpose services available to every PEIM.
-  @param[in] NotifyDescriptor     The notification structure this PEIM registered on install.
-  @param[in] Ppi                  The memory discovered PPI.  Not used.
-
-  @retval EFI_SUCCESS             The function completed successfully.
-  @retval others                  There's error in MP initialization.
-**/
-EFI_STATUS
-EFIAPI
-MemoryDiscoveredPpiNotifyCallback (
-  IN EFI_PEI_SERVICES           **PeiServices,
-  IN EFI_PEI_NOTIFY_DESCRIPTOR  *NotifyDescriptor,
-  IN VOID                       *Ppi
-  );
-
-extern EFI_PEI_NOTIFY_DESCRIPTOR  mPostMemNotifyList[];
 
 #endif
