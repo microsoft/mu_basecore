@@ -12,8 +12,6 @@
 //
 EFI_SHELL_PARAMETERS_PROTOCOL  *gEfiShellParametersProtocol;
 EFI_SHELL_PROTOCOL             *gEfiShellProtocol;
-SHELL_PARAM_ITEM               EmptyParamList[];
-SHELL_PARAM_ITEM               SfoParamList[];
 
 MOCK_INTERFACE_DEFINITION (MockShellLib);
 
