@@ -1,6 +1,7 @@
 [toolchain]
-channel = "1.76.0"
+channel = "1.80.0"
 
-[tool]
-cargo-make = "0.37.9"
-cargo-tarpaulin = "0.27.3"
+[tools]
+cargo-make = "0.37.24"
+cargo-tarpaulin = "0.31.5"
+cargo-release = "0.25.12"
