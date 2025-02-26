@@ -4,3 +4,4 @@ channel = "1.80.0"
 [tools]
 cargo-make = "0.37.24"
 cargo-tarpaulin = "0.31.5"
+cargo-release = "0.25.12"
