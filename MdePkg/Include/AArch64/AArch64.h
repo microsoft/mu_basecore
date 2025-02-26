@@ -145,9 +145,19 @@
 #define VECTOR_ENTRY(tbl, off)    \
   .org off
 
+  #ifndef __clang__ // MU_CHANGE
 #define VECTOR_END(tbl)           \
   .org 0x800;                     \
   .previous
+// MU_CHANGE Starts: CLANGPDB support
+  #else
+#define VECTOR_END(tbl)           \
+  .org 0x800;                     \
+  .section .text.##tbl##,"ax";    \
+  .align 3
+  #endif
+// MU_CHANGE Ends
+
 // MU_CHANGE [BEGIN] - ARM64 VS change
 #else
 
