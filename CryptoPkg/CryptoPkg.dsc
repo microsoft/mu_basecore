@@ -138,6 +138,21 @@
   ## MU_CHANGE [END]
 ## MU_CHANGE [END]
 
+  # Having a duplicate test app to link against crypto driver
+  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/BaseCryptLibIntegrationTestApp.inf {
+    ## MU_CHANGE [START] add library classes to allow crypto tests to run in uefi shell correctly
+    <LibraryClasses>
+      DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf # MU_CHANGE add debug lib
+      DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf # MU_CHANGE add debug lib
+      UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
+      ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
+      MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
+    <PcdsFixedAtBuild>
+      gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
+      !include CryptoPkg/Test/Crypto.pcd.ALL.inc.dsc
+    ## MU_CHANGE [END]
+  }
+
 [BuildOptions]
   RELEASE_*_*_CC_FLAGS = -DMDEPKG_NDEBUG
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
