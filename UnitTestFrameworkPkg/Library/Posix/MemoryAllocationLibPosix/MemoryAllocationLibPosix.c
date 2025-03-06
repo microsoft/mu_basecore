@@ -274,7 +274,8 @@ FreeAlignedPages (
 {
   PAGE_HEAD  *PageHeadPtr;
   VOID       *AllocatedBuffer;
-  //UINTN      Length;  MU_CHANGE
+
+  // UINTN      Length;  MU_CHANGE
 
   ASSERT (Buffer != NULL);
 
@@ -288,6 +289,7 @@ FreeAlignedPages (
   AllocatedBuffer = PageHeadPtr->AllocatedBuffer;
 
   // MU_CHANGE [START]: Remove variable that isn't used in project MU
+
   /* Length          = EFI_PAGES_TO_SIZE (PageHeadPtr->TotalPages);
 
   DEBUG_CLEAR_MEMORY (AllocatedBuffer, Length); */
