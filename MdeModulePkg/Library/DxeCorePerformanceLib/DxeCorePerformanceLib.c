@@ -22,12 +22,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 // Data for FPDT performance records.
 //
-// MU_CHANGE [BEGIN] - Standalone MM Perf Support
 #define SMM_BOOT_RECORD_COMM_SIZE  (OFFSET_OF (EFI_MM_COMMUNICATE_HEADER, Data) + sizeof(SMM_BOOT_RECORD_COMMUNICATE))
-// MU_CHANGE [END] - Standalone MM Perf Support
-#define STRING_SIZE              (FPDT_STRING_EVENT_RECORD_NAME_LENGTH * sizeof (CHAR8))
-#define FIRMWARE_RECORD_BUFFER   0x10000
-#define CACHE_HANDLE_GUID_COUNT  0x800
+#define STRING_SIZE                (FPDT_STRING_EVENT_RECORD_NAME_LENGTH * sizeof (CHAR8))
+#define FIRMWARE_RECORD_BUFFER     0x10000
+#define CACHE_HANDLE_GUID_COUNT    0x800
 
 BOOT_PERFORMANCE_TABLE  *mAcpiBootPerformanceTable    = NULL;
 BOOT_PERFORMANCE_TABLE  mBootPerformanceTableTemplate = {
@@ -230,7 +228,7 @@ InternalGetSmmPerfData (
 {
   EFI_STATUS                               Status;
   UINT8                                    *SmmBootRecordCommBuffer;
-  EFI_MM_COMMUNICATE_HEADER                *MmCommBufferHeader;      // MU_CHANGE - Standalone MM Perf Support
+  EFI_MM_COMMUNICATE_HEADER                *MmCommBufferHeader;
   SMM_BOOT_RECORD_COMMUNICATE              *SmmCommData;
   UINTN                                    CommSize;
   EFI_SMM_COMMUNICATION_PROTOCOL           *Communication;
@@ -282,12 +280,12 @@ InternalGetSmmPerfData (
       //
       if (ReservedMemSize > SMM_BOOT_RECORD_COMM_SIZE) {
         SmmBootRecordCommBuffer = (VOID *)(UINTN)SmmCommMemRegion->PhysicalStart;
-        MmCommBufferHeader      = (EFI_MM_COMMUNICATE_HEADER *)SmmBootRecordCommBuffer;     // MU_CHANGE - Standalone MM Perf Support
-        SmmCommData             = (SMM_BOOT_RECORD_COMMUNICATE *)MmCommBufferHeader->Data;  // MU_CHANGE - Standalone MM Perf Support
+        MmCommBufferHeader      = (EFI_MM_COMMUNICATE_HEADER *)SmmBootRecordCommBuffer;
+        SmmCommData             = (SMM_BOOT_RECORD_COMMUNICATE *)MmCommBufferHeader->Data;
         ZeroMem ((UINT8 *)SmmCommData, sizeof (SMM_BOOT_RECORD_COMMUNICATE));
 
-        CopyGuid (&MmCommBufferHeader->HeaderGuid, &gEfiFirmwarePerformanceGuid);           // MU_CHANGE - Standalone MM Perf Support
-        MmCommBufferHeader->MessageLength = sizeof (SMM_BOOT_RECORD_COMMUNICATE);           // MU_CHANGE - Standalone MM Perf Support
+        CopyGuid (&MmCommBufferHeader->HeaderGuid, &gEfiFirmwarePerformanceGuid);
+        MmCommBufferHeader->MessageLength = sizeof (SMM_BOOT_RECORD_COMMUNICATE);
         CommSize                          = SMM_BOOT_RECORD_COMM_SIZE;
 
         //
