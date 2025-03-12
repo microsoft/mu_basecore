@@ -877,7 +877,7 @@ FpdtSmiHandler (
       }
 
       // Note: Comm size passed to this handler already has OFFSET_OF (EFI_MM_COMMUNICATE_HEADER, Data) removed.
-      if ((SmmCommData->BootRecordData == NULL) && (BootRecordSize - BootRecordOffset > TempCommBufferSize - sizeof (SMM_BOOT_RECORD_COMMUNICATE))) {
+      if ((SmmCommData->BootRecordData == NULL) && (BootRecordSize > TempCommBufferSize - sizeof (SMM_BOOT_RECORD_COMMUNICATE))) {
         Status = EFI_BUFFER_TOO_SMALL;
         break;
       }
