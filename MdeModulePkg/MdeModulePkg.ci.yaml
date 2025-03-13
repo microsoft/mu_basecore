@@ -79,7 +79,7 @@
     },
     ## options defined .pytool/Plugin/HostUnitTestDscCompleteCheck
     "HostUnitTestDscCompleteCheck": {
-        "IgnoreInf": [""],
+        "IgnoreInf": ["MdeModulePkg/Universal/Variable/RuntimeDxe/RuntimeDxeUnitTest/VariableRuntimeDxeUnitTest.inf"],
         "DscPath": "Test/MdeModulePkgHostTest.dsc"
     },
 
