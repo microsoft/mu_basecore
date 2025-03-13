@@ -16,6 +16,7 @@
 
 [Includes]
   Include
+  Test/Mock/Include
 
 [LibraryClasses]
 
