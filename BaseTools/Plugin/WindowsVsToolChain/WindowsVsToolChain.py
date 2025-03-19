@@ -94,7 +94,7 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 shell_env = shell_environment.GetEnvironment()
                 # Use the tools lib to determine the correct values for the vars that interest us.
                 vs_vars = locate_tools.QueryVcVariables(
-                    interesting_keys, VC_HOST_ARCH_TRANSLATOR[HostType], vs_version="vs2017")
+                    interesting_keys, VC_HOST_ARCH_TRANSLATOR[HostType], vs_version="vs2017", vc_version=vc_ver)
                 for (k, v) in vs_vars.items():
                     shell_env.set_shell_var(k, v)
 
@@ -167,7 +167,7 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 shell_env = shell_environment.GetEnvironment()
                 # Use the tools lib to determine the correct values for the vars that interest us.
                 vs_vars = locate_tools.QueryVcVariables(
-                    interesting_keys, VC_HOST_ARCH_TRANSLATOR[HostType], vs_version="vs2019")
+                    interesting_keys, VC_HOST_ARCH_TRANSLATOR[HostType], vs_version="vs2019", vc_version=vc_ver)
                 for (k, v) in vs_vars.items():
                     shell_env.set_shell_var(k, v)
 
@@ -247,7 +247,7 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 shell_env = shell_environment.GetEnvironment()
                 # Use the tools lib to determine the correct values for the vars that interest us.
                 vs_vars = locate_tools.QueryVcVariables(
-                    interesting_keys, VC_HOST_ARCH_TRANSLATOR[HostType], vs_version="VS2022")
+                    interesting_keys, VC_HOST_ARCH_TRANSLATOR[HostType], vs_version="VS2022", vc_version=vc_ver)
                 for (k, v) in vs_vars.items():
                     shell_env.set_shell_var(k, v)
 
@@ -373,6 +373,10 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 self.Logger.critical(
                     "Failed to find VC tools.  Might need to check for VS install")
                 return vc_ver
-            vc_ver = os.listdir(p2)[-1].strip()  # get last in list
+            
+            dirs = os.listdir(p2)
+            if len(dirs) > 1:
+                logging.warning(f"Multiple VC versions found: [{', '.join(dirs)}]. Using {dirs[-1]}")
+            vc_ver = dirs[-1].strip()  # get last in list
             self.Logger.debug("Found VC Tool version is %s" % vc_ver)
         return vc_ver
