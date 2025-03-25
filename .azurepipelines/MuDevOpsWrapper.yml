@@ -4,7 +4,7 @@
 # To upload coverage results, set `coverage_upload_target` to `ado` or `codecov`.
 #
 # NOTE: This file is automatically synchronized from Mu DevOps. Update the original file there
-#       instead of the file in this repo..
+#       instead of the file in this repo...
 #
 # - Mu DevOps Repo: https://github.com/microsoft/mu_devops
 # - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
