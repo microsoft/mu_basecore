@@ -979,6 +979,94 @@ Done:
   return Status;
 }
 
+// MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+
+/**
+  Unmap the queues from PciIo and free the buffers allocated.
+
+  @param[in]  Private  The pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
+
+  @retval EFI_SUCCESS           The queues are successfully cleaned up.
+  @return Others                Some error occurs when cleaning up the queues.
+
+**/
+EFI_STATUS
+EFIAPI
+NvmExpressDriverCleanUpQueues (
+  IN NVME_CONTROLLER_PRIVATE_DATA  *Private
+  )
+{
+  EFI_STATUS  Status;
+  EFI_STATUS  ReturnStatus;
+  UINTN       QueuePairPageCount;
+
+  ReturnStatus = EFI_SUCCESS;
+
+  if (Private == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Admin Queue Clean-up
+  //
+  if (Private->Mapping != NULL) {
+    Status = Private->PciIo->Unmap (Private->PciIo, Private->Mapping);
+    if (EFI_ERROR (Status)) {
+      ReturnStatus = Status;
+      DEBUG ((DEBUG_ERROR, "%a: Unmap Admin Queue Mapping failed %r\n", __func__, Status));
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    Private->Mapping = NULL;
+  }
+
+  if (Private->Buffer != NULL) {
+    QueuePairPageCount = NVME_SQ_SIZE_IN_PAGES (Private, 0) + NVME_CQ_SIZE_IN_PAGES (Private, 0);
+    Status             = Private->PciIo->FreeBuffer (Private->PciIo, QueuePairPageCount, Private->Buffer);
+
+    if (EFI_ERROR (Status)) {
+      ReturnStatus = Status;
+      DEBUG ((DEBUG_ERROR, "%a: FreeBuffer Buffer failed %r\n", __func__, Status));
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    Private->Buffer = NULL;
+  }
+
+  //
+  // I/O Queue Clean-up
+  //
+  if (Private->IoQueueMapping != NULL) {
+    Status = Private->PciIo->Unmap (Private->PciIo, Private->IoQueueMapping);
+
+    if (EFI_ERROR (Status)) {
+      ReturnStatus = Status;
+      DEBUG ((DEBUG_ERROR, "%a: Unmap IoQueueMapping failed %r\n", __func__, Status));
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    Private->IoQueueMapping = NULL;
+  }
+
+  if (Private->IoQueueBuffer != NULL) {
+    // Using the first data queue size for the number of pages required for the data queues
+    QueuePairPageCount = NVME_SQ_SIZE_IN_PAGES (Private, 1) + NVME_CQ_SIZE_IN_PAGES (Private, 1);
+    Status             = Private->PciIo->FreeBuffer (Private->PciIo, QueuePairPageCount*Private->NumberOfIoQueuePairs, Private->IoQueueBuffer);
+
+    if (EFI_ERROR (Status)) {
+      ReturnStatus = Status;
+      DEBUG ((DEBUG_ERROR, "%a: FreeBuffer IoQueueBuffer failed %r\n", __func__, Status));
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    Private->IoQueueBuffer = NULL;
+  }
+
+  return ReturnStatus;
+}
+
+// MU_CHANGE [END] - Allocate IO Queue Buffer
+
 /**
   Starts a device controller or a bus controller.
 
@@ -1022,13 +1110,16 @@ NvmExpressDriverBindingStart (
   IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath
   )
 {
-  EFI_STATUS                          Status;
-  EFI_PCI_IO_PROTOCOL                 *PciIo;
-  NVME_CONTROLLER_PRIVATE_DATA        *Private;
-  EFI_DEVICE_PATH_PROTOCOL            *ParentDevicePath;
-  UINT32                              NamespaceId;
-  EFI_PHYSICAL_ADDRESS                MappedAddr;
-  UINTN                               Bytes;
+  EFI_STATUS                    Status;
+  EFI_PCI_IO_PROTOCOL           *PciIo;
+  NVME_CONTROLLER_PRIVATE_DATA  *Private;
+  EFI_DEVICE_PATH_PROTOCOL      *ParentDevicePath;
+  UINT32                        NamespaceId;
+  // MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+  // EFI_PHYSICAL_ADDRESS                MappedAddr;
+  // UINTN                               Bytes;
+  // MU_CHANGE [END] - Allocate IO Queue Buffer
+
   EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL  *Passthru;
 
   DEBUG ((DEBUG_INFO, "NvmExpressDriverBindingStart: start\n"));
@@ -1101,44 +1192,46 @@ NvmExpressDriverBindingStart (
       DEBUG ((DEBUG_WARN, "NvmExpressDriverBindingStart: failed to enable 64-bit DMA (%r)\n", Status));
     }
 
-    //
-    // 6 x 4kB aligned buffers will be carved out of this buffer.
-    // 1st 4kB boundary is the start of the admin submission queue.
-    // 2nd 4kB boundary is the start of the admin completion queue.
-    // 3rd 4kB boundary is the start of I/O submission queue #1.
-    // 4th 4kB boundary is the start of I/O completion queue #1.
-    // 5th 4kB boundary is the start of I/O submission queue #2.
-    // 6th 4kB boundary is the start of I/O completion queue #2.
-    //
-    // Allocate 6 pages of memory, then map it for bus master read and write.
-    //
-    Status = PciIo->AllocateBuffer (
-                      PciIo,
-                      AllocateAnyPages,
-                      EfiBootServicesData,
-                      6,
-                      (VOID **)&Private->Buffer,
-                      0
-                      );
-    if (EFI_ERROR (Status)) {
-      goto Exit;
-    }
+    // MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+    // //
+    // // 6 x 4kB aligned buffers will be carved out of this buffer.
+    // // 1st 4kB boundary is the start of the admin submission queue.
+    // // 2nd 4kB boundary is the start of the admin completion queue.
+    // // 3rd 4kB boundary is the start of I/O submission queue #1.
+    // // 4th 4kB boundary is the start of I/O completion queue #1.
+    // // 5th 4kB boundary is the start of I/O submission queue #2.
+    // // 6th 4kB boundary is the start of I/O completion queue #2.
+    // //
+    // // Allocate 6 pages of memory, then map it for bus master read and write.
+    // //
+    // Status = PciIo->AllocateBuffer (
+    //                   PciIo,
+    //                   AllocateAnyPages,
+    //                   EfiBootServicesData,
+    //                   6,
+    //                   (VOID **)&Private->Buffer,
+    //                   0
+    //                   );
+    // if (EFI_ERROR (Status)) {
+    //   goto Exit;
+    // }
 
-    Bytes  = EFI_PAGES_TO_SIZE (6);
-    Status = PciIo->Map (
-                      PciIo,
-                      EfiPciIoOperationBusMasterCommonBuffer,
-                      Private->Buffer,
-                      &Bytes,
-                      &MappedAddr,
-                      &Private->Mapping
-                      );
+    // Bytes  = EFI_PAGES_TO_SIZE (6);
+    // Status = PciIo->Map (
+    //                   PciIo,
+    //                   EfiPciIoOperationBusMasterCommonBuffer,
+    //                   Private->Buffer,
+    //                   &Bytes,
+    //                   &MappedAddr,
+    //                   &Private->Mapping
+    //                   );
 
-    if (EFI_ERROR (Status) || (Bytes != EFI_PAGES_TO_SIZE (6))) {
-      goto Exit;
-    }
+    // if (EFI_ERROR (Status) || (Bytes != EFI_PAGES_TO_SIZE (6))) {
+    //   goto Exit;
+    // }
 
-    Private->BufferPciAddr = (UINT8 *)(UINTN)MappedAddr;
+    // Private->BufferPciAddr             = (UINT8 *)(UINTN)MappedAddr;
+    // MU_CHANGE [END] - Allocate IO Queue Buffer
 
     Private->Signature                 = NVME_CONTROLLER_PRIVATE_DATA_SIGNATURE;
     Private->ControllerHandle          = Controller;
@@ -1247,13 +1340,21 @@ NvmExpressDriverBindingStart (
   return EFI_SUCCESS;
 
 Exit:
-  if ((Private != NULL) && (Private->Mapping != NULL)) {
-    PciIo->Unmap (PciIo, Private->Mapping);
+  // MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+  // if ((Private != NULL) && (Private->Mapping != NULL)) {
+  //   PciIo->Unmap (PciIo, Private->Mapping);
+  // }
+  //
+  // if ((Private != NULL) && (Private->Buffer != NULL)) {
+  //   PciIo->FreeBuffer (PciIo, 6, Private->Buffer);
+  // }
+
+  Status = NvmExpressDriverCleanUpQueues (Private);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: NvmExpressDriverCleanUpQueues failed %r\n", __func__, Status));
   }
 
-  if ((Private != NULL) && (Private->Buffer != NULL)) {
-    PciIo->FreeBuffer (PciIo, 6, Private->Buffer);
-  }
+  // MU_CHANGE [END] - Allocate IO Queue Buffer
 
   if ((Private != NULL) && (Private->ControllerData != NULL)) {
     FreePool (Private->ControllerData);
@@ -1369,13 +1470,21 @@ NvmExpressDriverBindingStop (
         gBS->CloseEvent (Private->TimerEvent);
       }
 
-      if (Private->Mapping != NULL) {
-        Private->PciIo->Unmap (Private->PciIo, Private->Mapping);
+      // MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+      // if (Private->Mapping != NULL) {
+      //   Private->PciIo->Unmap (Private->PciIo, Private->Mapping);
+      // }
+      //
+      // if (Private->Buffer != NULL) {
+      //   Private->PciIo->FreeBuffer (Private->PciIo, 6, Private->Buffer);
+      // }
+
+      Status = NvmExpressDriverCleanUpQueues (Private);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: NvmExpressDriverCleanUpQueues failed %r\n", __func__, Status));
       }
 
-      if (Private->Buffer != NULL) {
-        Private->PciIo->FreeBuffer (Private->PciIo, 6, Private->Buffer);
-      }
+      // MU_CHANGE [END] - Allocate IO Queue Buffer
 
       FreePool (Private->ControllerData);
       FreePool (Private);

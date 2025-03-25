@@ -992,7 +992,7 @@ NvmeBlockIoReset (
 
   Private = Device->Controller;
 
-  Status = NvmeControllerInit (Private);
+  Status = NvmeControllerReset (Private); // MU_CHANGE - Allocate IO Queue Buffer
 
   if (EFI_ERROR (Status)) {
     Status = EFI_DEVICE_ERROR;
@@ -1260,7 +1260,7 @@ NvmeBlockIoResetEx (
 
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 
-  Status = NvmeControllerInit (Private);
+  Status = NvmeControllerReset (Private); // MU_CHANGE - Allocate IO Queue Buffer
 
   if (EFI_ERROR (Status)) {
     Status = EFI_DEVICE_ERROR;
