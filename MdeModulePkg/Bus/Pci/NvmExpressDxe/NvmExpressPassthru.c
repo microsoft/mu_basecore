@@ -843,7 +843,7 @@ NvmExpressPassThru (
     //
     // Reset the NVMe controller.
     //
-    Status = NvmeControllerInit (Private);
+    Status = NvmeControllerReset (Private); // MU_CHANGE - Allocate IO Queue Buffer
     if (!EFI_ERROR (Status)) {
       Status = AbortAsyncPassThruTasks (Private);
       if (!EFI_ERROR (Status)) {
