@@ -19,7 +19,7 @@ resources:
       type: github
       endpoint: microsoft
       name: microsoft/mu_devops
-      ref: refs/tags/v13.0.0
+      ref: refs/heads/personal/joeyvagedes/codecov-upload
 
 parameters:
 - name: do_ci_build
@@ -41,7 +41,7 @@ parameters:
 - name: do_pr_eval
   displayName: Perform Stuart PR Evaluation
   type: boolean
-  default: true
+  default: false
 - name: container_build
   displayName: Flag for whether this repo should do stuart_setup
   type: boolean
