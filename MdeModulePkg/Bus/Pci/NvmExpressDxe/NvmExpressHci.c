@@ -180,6 +180,52 @@ ReadNvmeControllerStatus (
   return EFI_SUCCESS;
 }
 
+// MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+
+/**
+  Read Nvm Express admin queue attributes register.
+
+  @param  Private          The pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
+  @param  Aqa              The buffer used to store the content to be read from admin queue attributes register.
+
+  @return EFI_SUCCESS      Successfully read data from the admin queue attributes register.
+  @return EFI_DEVICE_ERROR Fail to read data from the admin queue attributes register.
+
+**/
+EFI_STATUS
+ReadNvmeAdminQueueAttributes (
+  IN  NVME_CONTROLLER_PRIVATE_DATA  *Private,
+  OUT NVME_AQA                      *Aqa
+  )
+{
+  EFI_PCI_IO_PROTOCOL  *PciIo;
+  EFI_STATUS           Status;
+  UINT32               Data;
+
+  PciIo  = Private->PciIo;
+  Status = PciIo->Mem.Read (
+                        PciIo,
+                        EfiPciIoWidthUint32,
+                        NVME_BAR,
+                        NVME_AQA_OFFSET,
+                        1,
+                        &Data
+                        );
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  WriteUnaligned32 ((UINT32 *)Aqa, Data);
+
+  DEBUG ((DEBUG_INFO, "%a: Admin Submission Queue Size (Number of Entries): %d\n", __func__, Aqa->Asqs));
+  DEBUG ((DEBUG_INFO, "%a: Admin Completion Queue Size (Number of Entries): %d\n", __func__, Aqa->Acqs));
+
+  return EFI_SUCCESS;
+}
+
+// MU_CHANGE [END] - Allocate IO Queue Buffer
+
 /**
   Write Nvm Express admin queue attributes register.
 
