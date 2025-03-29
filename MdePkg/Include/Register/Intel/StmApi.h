@@ -19,6 +19,8 @@
 #pragma pack (1)
 
 #define STM_SMM_REV_ID  0x80010100
+// MU_CHANGE - Added signature for CPU_INFORMATION_HEADER
+#define STM_CPU_INFORMATION_HEADER_SIGNATURE  SIGNATURE_32('C', 'p', 'u', 'I')
 
 /**
   STM Header Structures
@@ -32,6 +34,11 @@ typedef struct {
 
 #define STM_SPEC_VERSION_MAJOR  1
 #define STM_SPEC_VERSION_MINOR  0
+
+// MU_CHANGE - [START]: Add new CPU information header for STM
+
+#define CPU_INFORMATION_HEADER_PADDING_SIZE  (SIZE_1KB - 2 * sizeof (UINT32))
+#define SOFTWARE_STM_HEADER_PADDING_SIZE     (SIZE_1KB - 5 * sizeof (UINT32) - 2 * sizeof (UINT8) - sizeof (UINT16) - sizeof (STM_FEAT))
 
 typedef struct {
   UINT8       StmSpecVerMajor;
@@ -49,12 +56,30 @@ typedef struct {
   ///
   /// The total STM_HEADER should be 4K.
   ///
+
+  // Pad to take up 1KB of space
+  UINT8       Reserved2[SOFTWARE_STM_HEADER_PADDING_SIZE];
 } SOFTWARE_STM_HEADER;
 
 typedef struct {
-  MSEG_HEADER            HwStmHdr;
-  SOFTWARE_STM_HEADER    SwStmHdr;
+  UINT32    Signature;
+  UINT32    NumberOfCpus;
+  /// Pad to take up 1KB of space
+  UINT8     Reserved[CPU_INFORMATION_HEADER_PADDING_SIZE];
+} CPU_INFORMATION_HEADER;
+
+typedef struct {
+  MSEG_HEADER               HwStmHdr;
+  SOFTWARE_STM_HEADER       SwStmHdr;
+  CPU_INFORMATION_HEADER    CpuInfoHdr;
 } STM_HEADER;
+
+STATIC_ASSERT (SIZE_1KB == sizeof (SOFTWARE_STM_HEADER), "SOFTWARE_STM_HEADER size isn't 1KB!");
+STATIC_ASSERT (SIZE_1KB == sizeof (CPU_INFORMATION_HEADER), "CPU_INFORMATION_HEADER size isn't 1KB!");
+STATIC_ASSERT ((SIZE_1KB - OFFSET_OF (CPU_INFORMATION_HEADER, Reserved)) == CPU_INFORMATION_HEADER_PADDING_SIZE, "CPU_INFORMATION_HEADER_PADDING_SIZE mismatch!");
+STATIC_ASSERT ((SIZE_1KB - OFFSET_OF (SOFTWARE_STM_HEADER, Reserved2)) == SOFTWARE_STM_HEADER_PADDING_SIZE, "SOFTWARE_STM_HEADER_PADDING_SIZE mismatch!");
+
+// MU_CHANGE - [END]
 
 /**
   VMCALL API Numbers
