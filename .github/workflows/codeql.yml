@@ -216,7 +216,7 @@ jobs:
 
     - name: Download cargo-make
       if: steps.cargo_make_cache.outputs.cache-hit != 'true'
-      uses: robinraju/release-downloader@v1.12
+      uses: robinraju/release-downloader@v1.11
       with:
         repository: 'sagiegurari/cargo-make'
         tag: '${{ steps.get_cargo_tool_details.outputs.cargo_make_version }}'
