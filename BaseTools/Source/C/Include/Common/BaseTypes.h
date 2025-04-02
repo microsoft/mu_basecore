@@ -24,6 +24,16 @@
 #define STATIC    static
 #define VOID      void
 
+// MU_CHANGE [START] - abstract static_asserts for use in Basetools
+#if defined (_MSC_EXTENSIONS) || defined (__cplusplus)
+#define __STATIC_ASSERT  static_assert
+#else
+#define __STATIC_ASSERT  _Static_assert
+#endif
+
+#define STATIC_ASSERT    __STATIC_ASSERT
+// MU_CHANGE [END]
+
 //
 // Modifiers for Data Types used to self document code.
 // This concept is borrowed for UEFI specification.
