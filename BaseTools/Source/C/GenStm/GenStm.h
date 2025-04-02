@@ -33,12 +33,6 @@
 //
 #include <IndustryStandard/PeImage.h>
 
-#if defined (_MSC_EXTENSIONS) || defined (__cplusplus)
-#define STATIC_ASSERT  static_assert
-#else
-#define STATIC_ASSERT  _Static_assert
-#endif
-
 #define  SIZE_2KB    0x00000800
 #define  SIZE_1KB    0x00000400
 
