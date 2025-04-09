@@ -1,0 +1,11 @@
+## @file
+# Build Plugin used to updated UEFI variables in a ROM image
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+{
+  "scope": "uefivarpatcher",
+  "name": "UEFI Variable ROM Patcher",
+  "module": "UefiVarPatcher"
+}
