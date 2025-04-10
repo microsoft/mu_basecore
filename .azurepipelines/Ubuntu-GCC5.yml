@@ -58,41 +58,41 @@ extends:
         Pkgs: 'CryptoPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
-      TARGET_MDE_CPU_ARM:
-        Pkgs: 'MdePkg,UefiCpuPkg'
-        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-        ArchList: $(arch_list)
-        SelfHostAgent: true
-      TARGET_MDEMODULE_DEBUG_ARM:
-        Pkgs: 'MdeModulePkg'
-        Targets: 'DEBUG,NOOPT'
-        ArchList: $(arch_list)
-        SelfHostAgent: true
-      TARGET_MDEMODULE_RELEASE_ARM:
-        Pkgs: 'MdeModulePkg'
-        Targets: 'RELEASE,NO-TARGET'
-        ArchList: $(arch_list)
-        SelfHostAgent: true
-      TARGET_NETWORK_ARM:
-        Pkgs: 'NetworkPkg'
-        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-        ArchList: $(arch_list)
-        SelfHostAgent: true
-      TARGET_OTHER_ARM:
-        Pkgs: 'PcAtChipsetPkg,ShellPkg,StandaloneMmPkg,BaseTools'
-        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-        ArchList: $(arch_list)
-        SelfHostAgent: true
-      TARGET_TEST_POLICY_ARM:
-        Pkgs: 'UnitTestFrameworkPkg,PolicyServicePkg'
-        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-        ArchList: $(arch_list)
-        SelfHostAgent: true
-      TARGET_CRYPTO_ARM:
-        Pkgs: 'CryptoPkg'
-        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-        ArchList: $(arch_list)
-        SelfHostAgent: true
+      #TARGET_MDE_CPU_ARM:
+      #  Pkgs: 'MdePkg,UefiCpuPkg'
+      #  Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+      #  ArchList: $(arch_list)
+      #  SelfHostAgent: true
+      #TARGET_MDEMODULE_DEBUG_ARM:
+      #  Pkgs: 'MdeModulePkg'
+      #  Targets: 'DEBUG,NOOPT'
+      #  ArchList: $(arch_list)
+      #  SelfHostAgent: true
+      #TARGET_MDEMODULE_RELEASE_ARM:
+      #  Pkgs: 'MdeModulePkg'
+      #  Targets: 'RELEASE,NO-TARGET'
+      #  ArchList: $(arch_list)
+      #  SelfHostAgent: true
+      #TARGET_NETWORK_ARM:
+      #  Pkgs: 'NetworkPkg'
+      #  Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+      #  ArchList: $(arch_list)
+      #  SelfHostAgent: true
+      #TARGET_OTHER_ARM:
+      #  Pkgs: 'PcAtChipsetPkg,ShellPkg,StandaloneMmPkg,BaseTools'
+      #  Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+      #  ArchList: $(arch_list)
+      #  SelfHostAgent: true
+      #TARGET_TEST_POLICY_ARM:
+      #  Pkgs: 'UnitTestFrameworkPkg,PolicyServicePkg'
+      #  Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+      #  ArchList: $(arch_list)
+      #  SelfHostAgent: true
+      #TARGET_CRYPTO_ARM:
+      #  Pkgs: 'CryptoPkg'
+      #  Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+      #  ArchList: $(arch_list)
+      #  SelfHostAgent: true
       TARGET_ARMPKG:
         Pkgs: 'ArmPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
@@ -101,16 +101,16 @@ extends:
         Pkgs: 'ArmPlatformPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
-      TARGET_ARMPKG_ARM:
-        Pkgs: 'ArmPkg'
-        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-        ArchList: $(arch_list)
-        SelfHostAgent: true
-      TARGET_ARMPLATFORMPKG_ARM:
-        Pkgs: 'ArmPlatformPkg'
-        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-        ArchList: $(arch_list)
-        SelfHostAgent: true
+      #TARGET_ARMPKG_ARM:
+      #  Pkgs: 'ArmPkg'
+      #  Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+      #  ArchList: $(arch_list)
+      #  SelfHostAgent: true
+      #TARGET_ARMPLATFORMPKG_ARM:
+      #  Pkgs: 'ArmPlatformPkg'
+      #  Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+      #  ArchList: $(arch_list)
+      #  SelfHostAgent: true
       TARGET_EMBEDDED_PRM:
         Pkgs: 'EmbeddedPkg,PrmPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
@@ -123,21 +123,21 @@ extends:
         Pkgs: 'SecurityPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
-      TARGET_EMBEDDED_PRM_ARM:
-        Pkgs: 'EmbeddedPkg,PrmPkg'
-        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-        ArchList: $(arch_list)
-        SelfHostAgent: true
-      TARGET_FMP_FAT_ARM:
-        Pkgs: 'FmpDevicePkg,FatPkg'
-        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-        ArchList: $(arch_list)
-        SelfHostAgent: true
-      TARGET_SECURITY_ARM:
-        Pkgs: 'SecurityPkg'
-        Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
-        ArchList: $(arch_list)
-        SelfHostAgent: true
+      #TARGET_EMBEDDED_PRM_ARM:
+      #  Pkgs: 'EmbeddedPkg,PrmPkg'
+      #  Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+      #  ArchList: $(arch_list)
+      #  SelfHostAgent: true
+      #TARGET_FMP_FAT_ARM:
+      #  Pkgs: 'FmpDevicePkg,FatPkg'
+      #  Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+      #  ArchList: $(arch_list)
+      #  SelfHostAgent: true
+      #TARGET_SECURITY_ARM:
+      #  Pkgs: 'SecurityPkg'
+      #  Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
+      #  ArchList: $(arch_list)
+      #  SelfHostAgent: true
       TARGET_INTEL_FSP2:
         Pkgs: 'IntelFsp2Pkg,IntelFsp2WrapperPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET'
