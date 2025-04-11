@@ -12,7 +12,6 @@
 // Physical pointer to private structure shared between SMM IPL and the SMM Core
 //
 SMM_CORE_PRIVATE_DATA  *gSmmCorePrivate;
-SMM_CORE_PRIVATE_DATA  *gSmmCoreMailbox; // MU_CHANGE: Decouple Core private and IPL mailbox
 
 //
 // SMM Core global variable for SMM System Table.  Only accessed as a physical structure in SMRAM.
@@ -710,17 +709,7 @@ SmmEntryPoint (
     //
     // Mark the InSmm flag as TRUE, it will be used by SmmBase2 protocol
     //
-    // MU_CHANGE Starts: Decouple Core private and IPL mailbox
-    // gSmmCorePrivate->InSmm = TRUE;
-    gSmmCoreMailbox->InSmm = TRUE;
-
-    if (gSmmCorePrivate == NULL) {
-      DEBUG ((DEBUG_ERROR, "%a Internal Core private data is not allocated. No communication allowed!!!\n", __FUNCTION__));
-      ASSERT (FALSE);
-      goto NoMoreCommunicate;
-    }
-
-    CopyMem (gSmmCorePrivate, gSmmCoreMailbox, sizeof (*gSmmCoreMailbox));
+    gSmmCorePrivate->InSmm = TRUE;
 
     //
     // Check to see if this is a Synchronous SMI sent through the SMM Communication
@@ -735,8 +724,8 @@ SmmEntryPoint (
       IsOverlapped = InternalIsBufferOverlapped (
                        (UINT8 *)CommunicationBuffer,
                        BufferSize,
-                       (UINT8 *)gSmmCoreMailbox, // MU_CHANGE Starts: Decouple Core private and IPL mailbox
-                       sizeof (*gSmmCoreMailbox)
+                       (UINT8 *)gSmmCorePrivate,
+                       sizeof (*gSmmCorePrivate)
                        );
       //
       // Check for over or underflows
@@ -774,7 +763,6 @@ SmmEntryPoint (
     }
   }
 
-NoMoreCommunicate: // MU_CHANGE: Decouple Core private and IPL mailbox
   //
   // Process Asynchronous SMI sources
   //
@@ -791,17 +779,10 @@ NoMoreCommunicate: // MU_CHANGE: Decouple Core private and IPL mailbox
   // If a legacy boot has occurred, then make sure gSmmCorePrivate is not accessed
   //
   if (!InLegacyBoot) {
-    // MU_CHANGE Starts: Decouple Core private and IPL mailbox
-    if (gSmmCorePrivate != NULL) {
-      CopyMem (gSmmCoreMailbox, gSmmCorePrivate, sizeof (*gSmmCoreMailbox));
-    }
-
     //
     // Clear the InSmm flag as we are going to leave SMM
     //
-    // gSmmCorePrivate->InSmm = FALSE;
-    gSmmCoreMailbox->InSmm = FALSE;
-    // MU_CHANGE Ends
+    gSmmCorePrivate->InSmm = FALSE;
   }
 
   PERF_FUNCTION_END ();
@@ -917,12 +898,7 @@ SmmMain (
   //
   // Get SMM Core Private context passed in from SMM IPL in ImageHandle.
   //
-  // MU_CHANGE Starts: Decouple Core private and IPL mailbox
-  // gSmmCorePrivate = (SMM_CORE_PRIVATE_DATA *)ImageHandle;
-  gSmmCoreMailbox = (SMM_CORE_PRIVATE_DATA *)ImageHandle;
-  gSmmCorePrivate = AllocateCopyPool (sizeof (*gSmmCoreMailbox), gSmmCoreMailbox);
-  ASSERT (gSmmCorePrivate != NULL);
-  // MU_CHANGE Ends
+  gSmmCorePrivate = (SMM_CORE_PRIVATE_DATA *)ImageHandle;
 
   //
   // Fill in SMRAM physical address for the SMM Services Table and the SMM Entry Point.
@@ -981,9 +957,6 @@ SmmMain (
   SmmCoreInitializeMemoryAttributesTable ();
 
   SmmCoreInitializeSmiHandlerProfile ();
-
-  // MU_CHANGE: Decouple Core private and IPL mailbox
-  CopyMem (gSmmCoreMailbox, gSmmCorePrivate, sizeof (*gSmmCoreMailbox));
 
   return EFI_SUCCESS;
 }
