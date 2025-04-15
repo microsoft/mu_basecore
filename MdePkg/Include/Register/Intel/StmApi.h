@@ -38,7 +38,7 @@ typedef struct {
 
 // MU_CHANGE - [START]: Add new CPU information header for STM
 
-#define CPU_INFORMATION_HEADER_PADDING_SIZE  (SIZE_1KB - 2 * sizeof (UINT32))
+#define CPU_INFORMATION_HEADER_PADDING_SIZE  (SIZE_1KB - 3 * sizeof (UINT32))
 #define SOFTWARE_STM_HEADER_PADDING_SIZE     (SIZE_1KB - 5 * sizeof (UINT32) - 2 * sizeof (UINT8) - sizeof (UINT16) - sizeof (STM_FEAT))
 
 typedef struct {
@@ -65,6 +65,7 @@ typedef struct {
 typedef struct {
   UINT32    Signature;
   UINT32    NumberOfCpus;
+  UINT32    MsegSize;
   /// Pad to take up 1KB of space
   UINT8     Reserved[CPU_INFORMATION_HEADER_PADDING_SIZE];
 } CPU_INFORMATION_HEADER;
