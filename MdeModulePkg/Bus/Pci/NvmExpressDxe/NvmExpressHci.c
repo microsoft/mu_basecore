@@ -751,15 +751,14 @@ NvmeCreateIoCompletionQueue (
     CommandPacket.CommandTimeout = NVME_GENERIC_TIMEOUT;
     CommandPacket.QueueType      = NVME_ADMIN_QUEUE;
 
+    // MU_CHANGE [BEGIN] - Use the Mqes value from the Cap register
     if (Index == 1) {
-      QueueSize = NVME_CCQ_SIZE;
+      QueueSize = MIN (NVME_CCQ_SIZE, Private->Cap.Mqes);
     } else {
-      if (Private->Cap.Mqes > NVME_ASYNC_CCQ_SIZE) {
-        QueueSize = NVME_ASYNC_CCQ_SIZE;
-      } else {
-        QueueSize = Private->Cap.Mqes;
-      }
+      QueueSize = MIN (NVME_ASYNC_CCQ_SIZE, Private->Cap.Mqes);
     }
+
+    // MU_CHANGE [END] - Use the Mqes value from the Cap register
 
     CrIoCq.Qid   = Index;
     CrIoCq.Qsize = QueueSize;
@@ -829,15 +828,14 @@ NvmeCreateIoSubmissionQueue (
     CommandPacket.CommandTimeout = NVME_GENERIC_TIMEOUT;
     CommandPacket.QueueType      = NVME_ADMIN_QUEUE;
 
+    // MU_CHANGE [BEGIN] - Use the Mqes value from the Cap register
     if (Index == 1) {
-      QueueSize = NVME_CSQ_SIZE;
+      QueueSize = MIN (NVME_CSQ_SIZE, Private->Cap.Mqes);
     } else {
-      if (Private->Cap.Mqes > NVME_ASYNC_CSQ_SIZE) {
-        QueueSize = NVME_ASYNC_CSQ_SIZE;
-      } else {
-        QueueSize = Private->Cap.Mqes;
-      }
+      QueueSize = MIN (NVME_ASYNC_CSQ_SIZE, Private->Cap.Mqes);
     }
+
+    // MU_CHANGE [END] - Use the Mqes value from the Cap register
 
     CrIoSq.Qid   = Index;
     CrIoSq.Qsize = QueueSize;
