@@ -156,6 +156,13 @@ CoreDumpGcdMemorySpaceMap (
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemorySpaceMap;
   UINTN                            Index;
 
+  // The compiler is not smart enough to compile out the whole function if DEBUG_GCD is not enabled, so we end up
+  // looping through the GCD every time it gets updated, which wastes a lot of needless cycles if we aren't going to
+  // print it. So shortcircuit and jump out if we don't need to print it.
+  if (!DebugPrintLevelEnabled (DEBUG_GCD)) {
+    return;
+  }
+
   Status = CoreGetMemorySpaceMap (&NumberOfDescriptors, &MemorySpaceMap);
   // MU_CHANGE Start - CodeQL Change
   if (!((Status == EFI_SUCCESS) && (MemorySpaceMap != NULL))) {
@@ -207,6 +214,13 @@ CoreDumpGcdIoSpaceMap (
   UINTN                        NumberOfDescriptors;
   EFI_GCD_IO_SPACE_DESCRIPTOR  *IoSpaceMap;
   UINTN                        Index;
+
+  // The compiler is not smart enough to compile out the whole function if DEBUG_GCD is not enabled, so we end up
+  // looping through the GCD every time it gets updated, which wastes a lot of needless cycles if we aren't going to
+  // print it. So shortcircuit and jump out if we don't need to print it.
+  if (!DebugPrintLevelEnabled (DEBUG_GCD)) {
+    return;
+  }
 
   Status = CoreGetIoSpaceMap (&NumberOfDescriptors, &IoSpaceMap);
   // MU_CHANGE Start - CodeQL Change
