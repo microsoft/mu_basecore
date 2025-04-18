@@ -762,6 +762,7 @@ GicV3DxeInitialize (
   UINT64      CpuTarget;
   UINT64      RegValue;
   UINT64      TotalIntIds;
+  UINT32      ControlSystemRegValue; // MU_CHANGE - Add ControlSystemRegValue
 
   // Make sure the Interrupt Controller Protocol is not already installed in
   // the system.
@@ -786,9 +787,11 @@ GicV3DxeInitialize (
 
   mGicRedistributorBase = GicGetCpuRedistributorBase (PcdGet64 (PcdGicRedistributorsBase));
 
-  RegValue = ArmGicV3GetControlSystemRegisterEnable ();
-  if ((RegValue & ICC_SRE_EL2_SRE) == 0) {
-    ArmGicV3SetControlSystemRegisterEnable (RegValue | ICC_SRE_EL2_SRE);
+  // MU_CHANGE [BEGIN] - Add ControlSystemRegValue
+  ControlSystemRegValue = ArmGicV3GetControlSystemRegisterEnable ();
+  if ((ControlSystemRegValue & ICC_SRE_EL2_SRE) == 0) {
+    ArmGicV3SetControlSystemRegisterEnable (ControlSystemRegValue | ICC_SRE_EL2_SRE);
+    // MU_CHANGE [END] - Add ControlSystemRegValue
     ASSERT ((ArmGicV3GetControlSystemRegisterEnable () & ICC_SRE_EL2_SRE) != 0);
   }
 
