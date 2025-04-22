@@ -280,10 +280,13 @@ struct _EFI_PEI_MP_SERVICES2_PPI {
 
 extern EFI_GUID  gEfiPeiMpServices2PpiGuid;
 
+//
+// The EDK II PEI MP Services 2 PPI has been replaced by the PEI MP Services 2
+// PPI in the MdePkg. The following definitions are only present for backwards
+// compatibility and will be removed in the future.
+//
 #define EDKII_PEI_MP_SERVICES2_PPI_GUID  EFI_PEI_MP_SERVICES2_PPI_GUID
 
 typedef EFI_PEI_MP_SERVICES2_PPI EDKII_PEI_MP_SERVICES2_PPI;
-
-#define gEdkiiPeiMpServices2PpiGuid  gEfiPeiMpServices2PpiGuid
 
 #endif
