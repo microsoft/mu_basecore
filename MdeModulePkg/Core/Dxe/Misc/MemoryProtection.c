@@ -574,7 +574,7 @@ Finish:
   switch (ProtectionPolicy) {
     case DO_NOT_PROTECT:
       ClearAccessAttributesFromMemoryRange (
-        (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase,
+        (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase & ~EFI_PAGE_MASK,
         ALIGN_VALUE ((UINTN)LoadedImage->ImageSize, EFI_PAGE_SIZE)
         );
       CreateNonProtectedImagePropertiesRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize);
@@ -632,7 +632,7 @@ Finish:
 
   if ((ProtectionPolicy == PROTECT_IF_ALIGNED_ELSE_ALLOW)) {
     ClearAccessAttributesFromMemoryRange (
-      (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase,
+      (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase & ~EFI_PAGE_MASK,
       ALIGN_VALUE ((UINTN)LoadedImage->ImageSize, EFI_PAGE_SIZE)
       );
     CreateNonProtectedImagePropertiesRecord ((EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase, LoadedImage->ImageSize);
