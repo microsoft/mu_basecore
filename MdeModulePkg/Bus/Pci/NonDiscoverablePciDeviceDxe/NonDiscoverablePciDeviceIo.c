@@ -15,11 +15,20 @@
 
 #include <Protocol/PciRootBridgeIo.h>
 
+// MU_CHANGE [BEGIN]
+#include <Protocol/IoMmu.h>
+
+EDKII_IOMMU_PROTOCOL  *mIoMmuProtocol;
+EFI_EVENT             mIoMmuEvent;
+VOID                  *mIoMmuRegistration;
+// MU_CHANGE [END]
+
 typedef struct {
   EFI_PHYSICAL_ADDRESS             AllocAddress;
   VOID                             *HostAddress;
   EFI_PCI_IO_PROTOCOL_OPERATION    Operation;
   UINTN                            NumberOfBytes;
+  VOID                             *IoMmuContext; // MU_CHANGE
 } NON_DISCOVERABLE_PCI_DEVICE_MAP_INFO;
 
 /**
@@ -1248,8 +1257,22 @@ NonCoherentPciIoMap (
   VOID                                  *AllocAddress;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR       GcdDescriptor;
   BOOLEAN                               Bounce;
+  // MU_CHANGE [BEGIN]
+  VOID                   *IoMmuHostAddress;
+  EDKII_IOMMU_OPERATION  IoMmuOperation;
+
+  // MU_CHANGE [END]
 
   AllocAddress = NULL; // MS_CHANGE for vs2017
+
+  // MU_CHANGE [BEGIN]
+  if (FeaturePcdGet (PcdRequireIommu) && (mIoMmuProtocol == NULL)) {
+    DEBUG ((DEBUG_ERROR, "%a - mIoMmuProtocol is NULL!\n", __func__));
+    ASSERT (mIoMmuProtocol != NULL);
+    return EFI_DEVICE_ERROR;
+  }
+
+  // MU_CHANGE [END]
 
   if ((HostAddress   == NULL) ||
       (NumberOfBytes == NULL) ||
@@ -1274,6 +1297,7 @@ NonCoherentPciIoMap (
   MapInfo->HostAddress   = HostAddress;
   MapInfo->Operation     = Operation;
   MapInfo->NumberOfBytes = *NumberOfBytes;
+  MapInfo->IoMmuContext  = NULL; // MU_CHANGE
 
   Dev = NON_DISCOVERABLE_PCI_DEVICE_FROM_PCI_IO (This);
 
@@ -1343,10 +1367,12 @@ NonCoherentPciIoMap (
       gBS->CopyMem (AllocAddress, HostAddress, *NumberOfBytes);
     }
 
-    *DeviceAddress = MapInfo->AllocAddress;
+    *DeviceAddress   = MapInfo->AllocAddress;
+    IoMmuHostAddress = (VOID *)(UINTN)MapInfo->AllocAddress; // MU_CHANGE
   } else {
     MapInfo->AllocAddress = 0;
     *DeviceAddress        = (EFI_PHYSICAL_ADDRESS)(UINTN)HostAddress;
+    IoMmuHostAddress      = HostAddress; // MU_CHANGE
 
     //
     // We are not using a bounce buffer: the mapping is sufficiently
@@ -1367,6 +1393,45 @@ NonCoherentPciIoMap (
   }
 
   *Mapping = MapInfo;
+
+  // MU_CHANGE [BEGIN]
+  if (mIoMmuProtocol != NULL) {
+    switch (Operation) {
+      case EfiPciIoOperationBusMasterRead:
+        IoMmuOperation = EdkiiIoMmuOperationBusMasterRead;
+        break;
+
+      case EfiPciIoOperationBusMasterWrite:
+        IoMmuOperation = EdkiiIoMmuOperationBusMasterWrite;
+        break;
+
+      case EfiPciIoOperationBusMasterCommonBuffer:
+        IoMmuOperation = EdkiiIoMmuOperationBusMasterCommonBuffer;
+        break;
+
+      default:
+        DEBUG ((DEBUG_ERROR, "%a - Invalid operation %d\n", __func__, Operation));
+        ASSERT (FALSE);
+        return EFI_INVALID_PARAMETER;
+    }
+
+    Status = mIoMmuProtocol->Map (
+                               mIoMmuProtocol,
+                               IoMmuOperation,
+                               IoMmuHostAddress,
+                               NumberOfBytes,
+                               DeviceAddress,
+                               &MapInfo->IoMmuContext
+                               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmu Map failed.\n", __func__));
+    }
+
+    return Status;
+  }
+
+  // MU_CHANGE [END]
+
   return EFI_SUCCESS;
 
 FreeMapInfo:
@@ -1382,6 +1447,7 @@ FreeMapInfo:
   @param  Mapping               The mapping value returned from Map().
 
   @retval EFI_SUCCESS           The range was unmapped.
+  @retval EFI_DEVICE_ERROR      The system hardware could not unmap the requested address.
 
 **/
 STATIC
@@ -1393,12 +1459,31 @@ NonCoherentPciIoUnmap (
   )
 {
   NON_DISCOVERABLE_PCI_DEVICE_MAP_INFO  *MapInfo;
+  EFI_STATUS                            Status; // MU_CHANGE
 
   if (Mapping == NULL) {
     return EFI_DEVICE_ERROR;
   }
 
   MapInfo = Mapping;
+
+  // MU_CHANGE [BEGIN]
+  if (FeaturePcdGet (PcdRequireIommu) && (mIoMmuProtocol == NULL)) {
+    DEBUG ((DEBUG_ERROR, "%a - mIoMmuProtocol is NULL!\n", __func__));
+    ASSERT (mIoMmuProtocol != NULL);
+    return EFI_DEVICE_ERROR;
+  }
+
+  if (mIoMmuProtocol != NULL) {
+    Status = mIoMmuProtocol->Unmap (mIoMmuProtocol, MapInfo->IoMmuContext);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmu Unmap failed.\n", __func__));
+      return Status;
+    }
+  }
+
+  // MU_CHANGE [END]
+
   if (MapInfo->AllocAddress != 0) {
     //
     // We are using a bounce buffer: copy back the data if necessary,
@@ -1735,6 +1820,32 @@ STATIC CONST EFI_PCI_IO_PROTOCOL  PciIoTemplate =
   0
 };
 
+// MU_CHANGE [BEGIN]
+
+/**
+  Event notification that is fired when IOMMU protocol is installed.
+
+  @param  Event                 The Event that is being processed.
+  @param  Context               Event Context.
+
+**/
+VOID
+EFIAPI
+IoMmuProtocolCallback (
+  IN  EFI_EVENT  Event,
+  IN  VOID       *Context
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = gBS->LocateProtocol (&gEdkiiIoMmuProtocolGuid, NULL, (VOID **)&mIoMmuProtocol);
+  if (!EFI_ERROR (Status)) {
+    gBS->CloseEvent (mIoMmuEvent);
+  }
+}
+
+// MU_CHANGE [END]
+
 /**
   Initialize PciIo Protocol.
 
@@ -1748,6 +1859,23 @@ InitializePciIoProtocol (
 {
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR  *Desc;
   INTN                               Idx;
+  // MU_CHANGE [BEGIN]
+  EFI_STATUS  Status;
+
+  if (FeaturePcdGet (PcdRequireIommu)) {
+    Status = gBS->LocateProtocol (&gEdkiiIoMmuProtocolGuid, NULL, (VOID **)&mIoMmuProtocol);
+    if (EFI_ERROR (Status)) {
+      mIoMmuEvent = EfiCreateProtocolNotifyEvent (
+                      &gEdkiiIoMmuProtocolGuid,
+                      TPL_CALLBACK,
+                      IoMmuProtocolCallback,
+                      NULL,
+                      &mIoMmuRegistration
+                      );
+    }
+  }
+
+  // MU_CHANGE [END]
 
   InitializeListHead (&Dev->UncachedAllocationList);
 

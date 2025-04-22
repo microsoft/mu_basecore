@@ -34,10 +34,14 @@
   UefiDriverEntryPoint
   UefiLib
 
+[FeaturePcd]                                      ## MU_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRequireIommu  ## MU_CHANGE
+
 [Protocols]
   gEfiPciIoProtocolGuid                         ## BY_START
   gEdkiiNonDiscoverableDeviceProtocolGuid       ## TO_START
   gEfiCpuArchProtocolGuid                       ## CONSUMES
+  gEdkiiIoMmuProtocolGuid                       ## SOMETIMES_CONSUMES ## MU_CHANGE
 
 [Guids]
   gEdkiiNonDiscoverableAhciDeviceGuid       ## CONSUMES ## GUID
