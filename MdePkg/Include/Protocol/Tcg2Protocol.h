@@ -23,10 +23,6 @@ typedef struct tdEFI_TCG2_VERSION {
   UINT8    Minor;
 } EFI_TCG2_VERSION;
 
-typedef UINT32 EFI_TCG2_EVENT_LOG_BITMAP;
-typedef UINT32 EFI_TCG2_EVENT_LOG_FORMAT;
-typedef UINT32 EFI_TCG2_EVENT_ALGORITHM_BITMAP;
-
 #define EFI_TCG2_EVENT_LOG_FORMAT_TCG_1_2  0x00000001
 #define EFI_TCG2_EVENT_LOG_FORMAT_TCG_2    0x00000002
 
@@ -86,12 +82,6 @@ typedef struct tdEFI_TCG2_BOOT_SERVICE_CAPABILITY {
   //
   EFI_TCG2_EVENT_ALGORITHM_BITMAP    ActivePcrBanks;
 } EFI_TCG2_BOOT_SERVICE_CAPABILITY;
-
-#define EFI_TCG2_BOOT_HASH_ALG_SHA1     0x00000001
-#define EFI_TCG2_BOOT_HASH_ALG_SHA256   0x00000002
-#define EFI_TCG2_BOOT_HASH_ALG_SHA384   0x00000004
-#define EFI_TCG2_BOOT_HASH_ALG_SHA512   0x00000008
-#define EFI_TCG2_BOOT_HASH_ALG_SM3_256  0x00000010
 
 //
 // This bit is shall be set when an event shall be extended but not logged.
@@ -221,6 +211,27 @@ EFI_STATUS
   );
 
 /**
+  Provides callers with an interface for only logging events without hashing 
+  data nor extending anything to the TPM.
+
+  @param[in]  This               Indicates the calling context
+  @param[in]  DigestList         Pointer to a list of digest values.
+  @param[in]  EfiTcgEvent        Pointer to data buffer containing information about the event.
+
+  @retval EFI_SUCCESS            Operation completed successfully.
+  @retval EFI_DEVICE_ERROR       The command was unsuccessful.
+  @retval EFI_INVALID_PARAMETER  One or more of the parameters are incorrect.
+  @retval EFI_OUT_OF_RESOURCES   No enough memory to log the new event.
+**/
+typedef
+EFI_STATUS
+(EFIAPI *EFI_TCG2_LOG_EVENT)(
+  IN EFI_TCG2_PROTOCOL    *This,
+  IN TPML_DIGEST_VALUES   *DigestList,
+  IN EFI_TCG2_EVENT       *Event
+  );
+
+/**
   This service enables the sending of commands to the TPM.
 
   @param[in]  This                     Indicates the calling context
@@ -298,6 +309,7 @@ struct tdEFI_TCG2_PROTOCOL {
   EFI_TCG2_GET_CAPABILITY                        GetCapability;
   EFI_TCG2_GET_EVENT_LOG                         GetEventLog;
   EFI_TCG2_HASH_LOG_EXTEND_EVENT                 HashLogExtendEvent;
+  EFI_TCG2_LOG_EVENT                             LogEvent;
   EFI_TCG2_SUBMIT_COMMAND                        SubmitCommand;
   EFI_TCG2_GET_ACTIVE_PCR_BANKS                  GetActivePcrBanks;
   EFI_TCG2_SET_ACTIVE_PCR_BANKS                  SetActivePcrBanks;
