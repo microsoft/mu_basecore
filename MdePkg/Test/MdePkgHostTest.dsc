@@ -73,4 +73,5 @@
   MdePkg/Test/Mock/Library/GoogleTest/MockPostCodeLib/MockPostCodeLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockSafeIntLib/MockSafeIntLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockSmmMemLib/MockSmmMemLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockSynchronizationLib/MockSynchronizationLib.inf
   # MU_CHANGE [END]
