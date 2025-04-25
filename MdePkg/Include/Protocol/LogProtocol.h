@@ -20,7 +20,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 typedef struct tdLOG_PROTOCOL LOG_PROTOCOL;
 
 /**
-  Provides callers with an interface for only logging events without hashing 
+  Provides callers with an interface for only logging events without hashing
   data nor extending anything to the TPM.
 
   @param[in]  This               Indicates the calling context
@@ -41,8 +41,8 @@ EFI_STATUS
   );
 
 struct tdLOG_PROTOCOL {
-  UINT32      Version;
-  LOG_EVENT   LogEvent;
+  UINT32       Version;
+  LOG_EVENT    LogEvent;
 };
 
 extern EFI_GUID  gLogProtocolGuid;
