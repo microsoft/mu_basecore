@@ -166,9 +166,6 @@
 
 # MU_CHANGE [BEGIN]
   StandaloneMmPkg/Library/StandaloneMmCoreEntryPointNull/StandaloneMmCoreEntryPointNull.inf
-
-[Components.X64]
-  StandaloneMmPkg/Library/StandaloneMmCoreEntryPoint/StandaloneMmCoreEntryPoint.inf
 # MU_CHANGE [END]
 
 [Components.AARCH64, Components.ARM]
