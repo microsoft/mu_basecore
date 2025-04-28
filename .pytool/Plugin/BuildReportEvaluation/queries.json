@@ -1,0 +1,27 @@
+[
+    {
+        "query": "SELECT br_component.path FROM br_component JOIN br_pcd ON br_component.guid = br_pcd.guid WHERE br_pcd.token_space = 'gEfiMdeModulePkgTokenSpaceGuid' AND br_pcd.token = 'PcdConOutUgaSupport' AND br_pcd.value = '1';",
+        "warning_message": "Component uses PCD 'PcdConOutUgaSupport' with value '1'",
+        "helpful_description": "Check for Modules (BrComponent) which use the PCD 'PcdConOutUgaSupport' where the value was set to '1'. It indicates that the module supports UGA console output, which deprecated in Uefi 2.0 specification."
+    },
+    {
+        "query": "SELECT br_component.path FROM br_component JOIN br_pcd ON br_component.guid = br_pcd.guid WHERE br_pcd.token_space = 'gEfiMdeModulePkgTokenSpaceGuid' AND br_pcd.token = 'PcdTurnOffUsbLegacySupport' AND br_pcd.value = '0';",
+        "warning_message": "Component uses PCD 'PcdTurnOffUsbLegacySupport' with value '0'",
+        "helpful_description": "Checks for modules (BrComponent) which use the PCD 'PcdTurnOffUsbLegacySupport' where the value was set to '0'. It indicates that the module supports legacy USB (CSM), but this is not needed in a Class 3 UEFI system."
+    },
+    {
+        "query": "SELECT br_component.path FROM br_component WHERE fv_name IS NULL AND path NOT LIKE '%.lib' AND type != 'APPLICATION';",
+        "warning_message": "Component compiled, but not contained in an Fv",
+        "helpful_description": "Building components that are not used increases the build time, and may indicate that the compoent can be removed from the dsc file. There are cases where this is intended behavior, but its up to the platform owner to decide what is needed."
+    },
+    {
+        "query": "SELECT br_component.path FROM br_component WHERE fv_name IS NOT NULL AND path LIKE '%EbcDxe/EbcDxe.inf';",
+        "warning_message": "EBC driver is contained in the project.",
+        "helpful_description": "EBC (Efi Byte Code) is an emulator for EBC option roms. EBC oproms are not secure boot compatiable."
+    },
+    {
+        "query": "SELECT br_component.path FROM br_component WHERE fv_name IS NOT NULL AND type != 'FREE_FORM' AND br_component.guid NOT IN (SELECT br_library.guid FROM br_library WHERE br_library.cls = 'StackCheckLib');",
+        "warning_message": "Module included in Fv that does not use a StackCheck Library Instance",
+        "helpful_description": "StackCheckLib is used to protect execution against stack corruption during runtime. If a module does not contain a StackCheckLib instance, it may be vulnerable to stack corruption attacks."
+    }
+]
