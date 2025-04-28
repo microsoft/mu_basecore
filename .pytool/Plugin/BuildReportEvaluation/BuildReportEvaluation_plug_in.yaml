@@ -1,0 +1,13 @@
+## @file BuildReportEvaluation_plug_in.yaml
+#
+# Plugin to evaluate a platform's build report file and verify common settings
+#
+#  Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+{
+  "scope": "platform-checks",
+  "name": "Build Report Evaluation Plugin",
+  "module": "BuildReportEvaluationPlugin",
+}
