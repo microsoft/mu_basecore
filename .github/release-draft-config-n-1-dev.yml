@@ -20,7 +20,7 @@
 name-template: 'dev-v$RESOLVED_VERSION'
 tag-template: 'dev-v$RESOLVED_VERSION'
 
-commitish: refs/heads/dev/202311
+commitish: refs/heads/dev/202405
 filter-by-commitish: true
 
 template: |
