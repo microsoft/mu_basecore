@@ -7,8 +7,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef __LOG_PROTOCOL_H__
-#define __LOG_PROTOCOL_H__
+#ifndef LOG_PROTOCOL_H_
+#define LOG_PROTOCOL_H_
 
 #include <Protocol/Tcg2Protocol.h>
 
