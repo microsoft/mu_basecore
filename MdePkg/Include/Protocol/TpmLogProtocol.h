@@ -1,5 +1,5 @@
 /** @file
-  Log protocol designed to allow logging events without extending
+  TPM Log protocol designed to allow logging events without extending
   to the TPM.
 
 Copyright (c) Microsoft Corporation.
@@ -7,17 +7,17 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef LOG_PROTOCOL_H_
-#define LOG_PROTOCOL_H_
+#ifndef TPM_LOG_PROTOCOL_H_
+#define TPM_LOG_PROTOCOL_H_
 
 #include <Protocol/Tcg2Protocol.h>
 
-#define LOG_PROTOCOL_GUID \
+#define TPM_LOG_PROTOCOL_GUID \
   { 0xA158DDD1, 0xF3EA, 0x49C6, { 0x9A, 0xBA, 0x33, 0x5A, 0x75, 0x1E, 0x8D, 0x94 }}
 
-#define LOG_PROTOCOL_VERSION  1
+#define TPM_LOG_PROTOCOL_VERSION  1
 
-typedef struct tdLOG_PROTOCOL LOG_PROTOCOL;
+typedef struct tdTPM_LOG_PROTOCOL TPM_LOG_PROTOCOL;
 
 /**
   Provides callers with an interface for only logging events without hashing
@@ -34,17 +34,17 @@ typedef struct tdLOG_PROTOCOL LOG_PROTOCOL;
 **/
 typedef
 EFI_STATUS
-(EFIAPI *LOG_EVENT)(
-  IN LOG_PROTOCOL         *This,
+(EFIAPI *TPM_LOG_EVENT)(
+  IN TPM_LOG_PROTOCOL     *This,
   IN TPML_DIGEST_VALUES   *DigestList,
   IN EFI_TCG2_EVENT       *Event
   );
 
-struct tdLOG_PROTOCOL {
-  UINT32       Version;
-  LOG_EVENT    LogEvent;
+struct tdTPM_LOG_PROTOCOL {
+  UINT32           Version;
+  TPM_LOG_EVENT    TpmLogEvent;
 };
 
-extern EFI_GUID  gLogProtocolGuid;
+extern EFI_GUID  gTpmLogProtocolGuid;
 
 #endif
