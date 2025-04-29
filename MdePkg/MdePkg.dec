@@ -1474,6 +1474,17 @@
   ## Include/Protocol/MmCommunication2.h
   gEfiMmCommunication2ProtocolGuid  = { 0x378daedc, 0xf06b, 0x4446, { 0x83, 0x14, 0x40, 0xab, 0x93, 0x3c, 0x87, 0xa3 }}
 
+  # MU_CHANGE - [BEGIN]
+
+  #
+  # Protocols defined in TBD
+  #
+
+  ## Include/Protocol/TpmLogProtocol.h
+  gTpmLogProtocolGuid  = { 0xA158DDD1, 0xF3EA, 0x49C6, { 0x9A, 0xBA, 0x33, 0x5A, 0x75, 0x1E, 0x8D, 0x94 }}
+
+  # MU_CHANGE - [END]
+
   #
   # Protocols defined in UEFI2.1/UEFI2.0/EFI1.1
   #
