@@ -23,7 +23,7 @@ name: Update Release Draft
 on:
   workflow_run:
     workflows: ["Backport Commits to Release Branch"]
-    branches: [dev/202411]
+    branches: [dev/202502]
     types:
       - completed
 
@@ -35,5 +35,5 @@ jobs:
       contents: write
       pull-requests: write
 
-    uses: microsoft/mu_devops/.github/workflows/ReleaseDrafter.yml@v13.0.3
+    uses: microsoft/mu_devops/.github/workflows/ReleaseDrafter.yml@v14.0.1
     secrets: inherit

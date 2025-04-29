@@ -1,5 +1,12 @@
 # This workflow moves marked commits from a development branch to a release branch.
 #
+# This workflow requires a GitHub App with the following permissions:
+# - Read and write access to repository contents
+# - Read and write access to pull requests
+#
+# The GitHub App ID and private key should be stored in the repository as a variable named `MU_ACCESS_APP_ID` and a
+# secret named `MU_ACCESS_APP_PRIVATE_KEY` respectively.
+#
 # Each commit in the development branch is cherry-picked to the release branch if the commit originates from a merged
 # PR that is marked for backport.
 #
@@ -25,6 +32,7 @@ name: Backport Commits to Release Branch
 on:
   push:
     branches:
+      - dev/202502
       - dev/202405
 
 jobs:
@@ -33,11 +41,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Generate Token
+      id: app-token
+      uses: actions/create-github-app-token@v2
+      with:
+        app-id: ${{ vars.MU_ACCESS_APP_ID }}
+        private-key: ${{ secrets.MU_ACCESS_APP_PRIVATE_KEY }}
+
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        token: ${{ secrets.CHERRY_PICK_TOKEN }}
+        token: ${{ steps.app-token.outputs.token }}
 
     - name: Determine Contribution Info
       id: backport_info
@@ -229,5 +244,5 @@ jobs:
         -H "Content-Type: application/json" \
         -d "{\"title\":\"$PR_TITLE\",\"body\":\"$PR_BODY\",\"head\":\"$PR_BRANCH\",\"base\":\"$BASE_BRANCH\",\"labels\":[\"type:release-merge-conflict\"]}"
       env:
-        CHERRY_PICK_TOKEN: ${{ secrets.CHERRY_PICK_TOKEN }}
+        CHERRY_PICK_TOKEN: ${{ steps.app-token.outputs.token }}
 
