@@ -34,7 +34,6 @@
 #include <IndustryStandard/PeImage.h>
 
 #define  SIZE_2KB    0x00000800
-#define  SIZE_1KB    0x00000400
 
 #include <Register/Intel/StmApi.h>
 
