@@ -45,6 +45,7 @@ Breaking Changes-dev
 - VsIntrinsics lib has been dropped. Platforms should remove any instances of VsIntrinsicsLib.
 - AsmMacroLibV8 (From ArmPkg) has been moved into MdePkg, renamed to AsmMacroLib.h under MdePkg/Include/Aarch64.
 - AsmMacroIoLib has been split and moved from MdePkg/Include to MdePkg/Include/Arm and MdePkg/Include/Aarch64.
+- UnitTests now use address sanitization. This requires the Visual Studio "C++ AddressSanitizer" component to be installed. (NOOPT builds)
 
 Main Changes-dev
 ----------------
