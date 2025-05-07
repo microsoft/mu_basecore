@@ -808,12 +808,14 @@ NvmeControllerInit (
   //
   // Address of admin submission queue.
   //
-  Asq = (UINT64)(UINTN)(Private->BufferPciAddr) & ~0xFFF;
+  // MU_CHANGE - Remove the page mask since the buffer is allocated using AllocatePages
+  Asq = (UINT64)(UINTN)(Private->BufferPciAddr);
 
   //
   // Address of admin completion queue.
   //
-  Acq = (UINT64)(UINTN)(Private->BufferPciAddr + EFI_PAGE_SIZE) & ~0xFFF;
+  // MU_CHANGE - Remove the page mask since the buffer is allocated using AllocatePages
+  Acq = (UINT64)(UINTN)(Private->BufferPciAddr + EFI_PAGE_SIZE);
 
   //
   // Address of I/O submission & completion queue.
