@@ -168,6 +168,7 @@
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetSignatureAlgorithm|FALSE|BOOLEAN|0x5b
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetExtensionData|FALSE|BOOLEAN|0x5c
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetValidity|FALSE|BOOLEAN|0x5d
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509CompareDateTime|FALSE|BOOLEAN|0xcf
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509FormatDateTime|FALSE|BOOLEAN|0x5e
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetKeyUsage|FALSE|BOOLEAN|0x5f
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetExtendedKeyUsage|FALSE|BOOLEAN|0x60
