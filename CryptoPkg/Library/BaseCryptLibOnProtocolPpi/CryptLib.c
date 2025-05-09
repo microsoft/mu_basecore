@@ -2634,30 +2634,6 @@ X509FormatDateTime (
 }
 
 /**
-  Compare DateTime1 object and DateTime2 object.
-  If DateTime1 is NULL, then return -2.
-  If DateTime2 is NULL, then return -2.
-  If DateTime1 == DateTime2, then return 0
-  If DateTime1 > DateTime2, then return 1
-  If DateTime1 < DateTime2, then return -1
-  @param[in]      DateTime1         Pointer to a DateTime Ojbect
-  @param[in]      DateTime2         Pointer to a DateTime Object
-  @retval  0      If DateTime1 == DateTime2
-  @retval  1      If DateTime1 > DateTime2
-  @retval  -1     If DateTime1 < DateTime2
-**/
-// See BaseCryptLib.h:2817
-INT32
-EFIAPI
-X509CompareDateTime (
-  IN  CONST  VOID  *DateTime1,
-  IN  CONST  VOID  *DateTime2
-  )
-{
-  CALL_CRYPTO_SERVICE (X509CompareDateTime, (DateTime1, DateTime2), 0);
-}
-
-/**
   Retrieve the Key Usage from one X.509 certificate.
   @param[in]      Cert             Pointer to the DER-encoded X509 certificate.
   @param[in]      CertSize         Size of the X509 certificate in bytes.
@@ -5234,6 +5210,30 @@ EcDsaVerify (
   )
 {
   CALL_CRYPTO_SERVICE (EcDsaVerify, (EcContext, HashNid, MessageHash, HashSize, Signature, SigSize), FALSE);
+}
+
+/**
+  Compare DateTime1 object and DateTime2 object.
+  If DateTime1 is NULL, then return -2.
+  If DateTime2 is NULL, then return -2.
+  If DateTime1 == DateTime2, then return 0
+  If DateTime1 > DateTime2, then return 1
+  If DateTime1 < DateTime2, then return -1
+  @param[in]      DateTime1         Pointer to a DateTime Ojbect
+  @param[in]      DateTime2         Pointer to a DateTime Object
+  @retval  0      If DateTime1 == DateTime2
+  @retval  1      If DateTime1 > DateTime2
+  @retval  -1     If DateTime1 < DateTime2
+**/
+// See BaseCryptLib.h:2817
+INT32
+EFIAPI
+X509CompareDateTime (
+  IN  CONST  VOID  *DateTime1,
+  IN  CONST  VOID  *DateTime2
+  )
+{
+  CALL_CRYPTO_SERVICE (X509CompareDateTime, (DateTime1, DateTime2), 0);
 }
 
 // AUTOGEN ENDS

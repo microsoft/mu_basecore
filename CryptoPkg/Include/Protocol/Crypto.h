@@ -20,7 +20,7 @@
 /// the EDK II Crypto Protocol is extended, this version define must be
 /// increased.
 ///
-#define EDKII_CRYPTO_VERSION  18 // MU_CHANGE
+#define EDKII_CRYPTO_VERSION  19 // MU_CHANGE
 
 ///
 /// EDK II Crypto Protocol forward declaration
@@ -2235,35 +2235,6 @@ BOOLEAN
   IN     UINTN        OidSize,
   OUT UINT8           *ExtensionData,
   IN OUT UINTN        *ExtensionDataSize
-  );
-
-/**
-  Retrieve the Validity from one X.509 certificate
-  If Cert is NULL, then return FALSE.
-  If CertIssuerSize is NULL, then return FALSE.
-  If this interface is not supported, then return FALSE.
-  @param[in]      Cert         Pointer to the DER-encoded X509 certificate.
-  @param[in]      CertSize     Size of the X509 certificate in bytes.
-  @param[in]      From         notBefore Pointer to DateTime object.
-  @param[in,out]  FromSize     notBefore DateTime object size.
-  @param[in]      To           notAfter Pointer to DateTime object.
-  @param[in,out]  ToSize       notAfter DateTime object size.
-  Note: X509CompareDateTime to compare DateTime oject
-        x509SetDateTime to get a DateTime object from a DateTimeStr
-  @retval  TRUE   The certificate Validity retrieved successfully.
-  @retval  FALSE  Invalid certificate, or Validity retrieve failed.
-  @retval  FALSE  This interface is not supported.
-**/
-// FROM BaseCryptLib.h:2759
-typedef
-BOOLEAN
-(EFIAPI *EDKII_CRYPTO_X509_GET_VALIDITY)(
-  IN     CONST UINT8  *Cert,
-  IN     UINTN        CertSize,
-  IN     UINT8        *From,
-  IN OUT UINTN        *FromSize,
-  IN     UINT8        *To,
-  IN OUT UINTN        *ToSize
   );
 
 /**
@@ -4559,6 +4530,35 @@ BOOLEAN
   IN  UINTN        SigSize
   );
 
+/**
+  Retrieve the Validity from one X.509 certificate
+  If Cert is NULL, then return FALSE.
+  If CertIssuerSize is NULL, then return FALSE.
+  If this interface is not supported, then return FALSE.
+  @param[in]      Cert         Pointer to the DER-encoded X509 certificate.
+  @param[in]      CertSize     Size of the X509 certificate in bytes.
+  @param[in]      From         notBefore Pointer to DateTime object.
+  @param[in,out]  FromSize     notBefore DateTime object size.
+  @param[in]      To           notAfter Pointer to DateTime object.
+  @param[in,out]  ToSize       notAfter DateTime object size.
+  Note: X509CompareDateTime to compare DateTime oject
+        x509SetDateTime to get a DateTime object from a DateTimeStr
+  @retval  TRUE   The certificate Validity retrieved successfully.
+  @retval  FALSE  Invalid certificate, or Validity retrieve failed.
+  @retval  FALSE  This interface is not supported.
+**/
+// FROM BaseCryptLib.h:2759
+typedef
+BOOLEAN
+(EFIAPI *EDKII_CRYPTO_X509_GET_VALIDITY)(
+  IN     CONST UINT8  *Cert,
+  IN     UINTN        CertSize,
+  IN     UINT8        *From,
+  IN OUT UINTN        *FromSize,
+  IN     UINT8        *To,
+  IN OUT UINTN        *ToSize
+  );
+
 ///
 /// EDK II Crypto Protocol
 ///
@@ -4670,7 +4670,6 @@ struct _EDKII_CRYPTO_PROTOCOL {
   EDKII_CRYPTO_X509_GET_EXTENSION_DATA                X509GetExtensionData;
   EDKII_CRYPTO_X509_GET_VALIDITY                      X509GetValidity;
   EDKII_CRYPTO_X509_FORMAT_DATE_TIME                  X509FormatDateTime;
-  EDKII_CRYPTO_X509_COMPARE_DATE_TIME                 X509CompareDateTime;
   EDKII_CRYPTO_X509_GET_KEY_USAGE                     X509GetKeyUsage;
   EDKII_CRYPTO_X509_GET_EXTENDED_KEY_USAGE            X509GetExtendedKeyUsage;
   EDKII_CRYPTO_X509_VERIFY_CERT_CHAIN                 X509VerifyCertChain;
@@ -4794,6 +4793,7 @@ struct _EDKII_CRYPTO_PROTOCOL {
   EDKII_CRYPTO_EC_GET_PUBLIC_KEY_FROM_X509            EcGetPublicKeyFromX509;
   EDKII_CRYPTO_EC_DSA_SIGN                            EcDsaSign;
   EDKII_CRYPTO_EC_DSA_VERIFY                          EcDsaVerify;
+  EDKII_CRYPTO_X509_COMPARE_DATE_TIME                 X509CompareDateTime;
 };
 
 // AUTOGEN ENDS
