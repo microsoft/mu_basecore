@@ -156,12 +156,6 @@ CoreDumpGcdMemorySpaceMap (
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  *MemorySpaceMap;
   UINTN                            Index;
 
-  // MU_CHANGE START: Skip this code if DEBUG_GCD is disabled for performance improvement
-  if (!DebugPrintLevelEnabled (DEBUG_GCD)) {
-    return;
-  }
-
-  // MU_CHANGE END
   Status = CoreGetMemorySpaceMap (&NumberOfDescriptors, &MemorySpaceMap);
   // MU_CHANGE Start - CodeQL Change
   if (!((Status == EFI_SUCCESS) && (MemorySpaceMap != NULL))) {
