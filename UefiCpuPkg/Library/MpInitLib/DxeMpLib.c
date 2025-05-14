@@ -110,57 +110,6 @@ InstallCpuMpDebugProtocol (
   DEBUG ((DEBUG_INFO, "Installed gCpuMpDebugProtocolGuid - Status: %r\n", Status));
 }
 
-// MU_CHANGE START: Enable removal of NX attribute from buffer
-
-/**
-  Remove NX attribute from Buffer and apply RO to Buffer
-
-  @param[in]  Buffer      Buffer whose attributes will be altered
-  @param[in]  Size        Size of the buffer
-
-  @retval EFI_SUCCESS             NX attribute removed, RO attribute applied
-  @retval EFI_INVALID_PARAMETER   Buffer is not page-aligned or Buffer is 0 or Size of buffer
-                                  is not page-aligned
-  @retval Other                   Return value of LocateProtocol, ClearMemoryAttributes, or SetMemoryAttributes
-**/
-EFI_STATUS
-BufferRemoveNoExecuteSetReadOnly (
-  IN EFI_PHYSICAL_ADDRESS  Buffer,
-  IN UINTN                 Size
-  )
-{
-  EFI_CPU_ARCH_PROTOCOL  *CpuProtocol = NULL;
-  EFI_STATUS             Status;
-
-  if ((Buffer == 0) || (Buffer % EFI_PAGE_SIZE != 0) || (Size % EFI_PAGE_SIZE != 0)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  Status = gBS->LocateProtocol (&gEfiCpuArchProtocolGuid, NULL, (VOID **)&CpuProtocol);
-
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - Unable to locate gEfiCpuArchProtocolGuid\n", __func__));
-    ASSERT_EFI_ERROR (Status);
-    return Status;
-  }
-
-  Status = CpuProtocol->SetMemoryAttributes (
-                          CpuProtocol,
-                          Buffer,
-                          Size,
-                          EFI_MEMORY_RO
-                          );
-
-  if EFI_ERROR (Status) {
-    DEBUG ((DEBUG_INFO, "%a - Unable to update buffer attributes!\n", __func__));
-    ASSERT_EFI_ERROR (Status);
-  }
-
-  return Status;
-}
-
-// MU_CHANGE END Enable removal of NX attribute from buffer
-
 /**
   Enable Debug Agent to support source debugging on AP function.
 
@@ -293,7 +242,7 @@ GetWakeupBuffer (
   @retval 0       Cannot find free memory below 4GB.
 **/
 UINTN
-AllocateCodeBuffer (
+AllocateCodePage (
   IN UINTN  BufferSize
   )
 {
@@ -550,14 +499,11 @@ AllocateApLoopCodeBuffer (
 /**
   Remove Nx protection for the range specific by BaseAddress and Length.
 
-  The PEI implementation uses CpuPageTableLib to change the attribute.
-  The DXE implementation uses gDS to change the attribute.
-
   @param[in] BaseAddress  BaseAddress of the range.
   @param[in] Length       Length of the range.
 **/
 VOID
-RemoveNxprotection (
+RemoveNxProtection (
   IN EFI_PHYSICAL_ADDRESS  BaseAddress,
   IN UINTN                 Length
   )
@@ -565,17 +511,58 @@ RemoveNxprotection (
   EFI_STATUS                       Status;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  MemDesc;
 
-  //
-  // TODO: Check EFI_MEMORY_XP bit set or not once it's available in DXE GCD
-  //       service.
-  //
   Status = gDS->GetMemorySpaceDescriptor (BaseAddress, &MemDesc);
   if (!EFI_ERROR (Status)) {
-    gDS->SetMemorySpaceAttributes (
-           BaseAddress,
-           Length,
-           MemDesc.Attributes & (~EFI_MEMORY_XP)
-           );
+    if (((MemDesc.Capabilities & EFI_MEMORY_XP) == EFI_MEMORY_XP) && ((MemDesc.Attributes & EFI_MEMORY_XP) == EFI_MEMORY_XP)) {
+      Status = gDS->SetMemorySpaceAttributes (
+                      BaseAddress,
+                      Length,
+                      MemDesc.Attributes & (~EFI_MEMORY_XP)
+                      );
+
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a - Setting Nx on 0x%p returned %r\n", __func__, BaseAddress, Status));
+        ASSERT_EFI_ERROR (Status);
+      }
+    }
+  } else {
+    DEBUG ((DEBUG_ERROR, "%a - Memory Address was not found in Memory map! %lp %r\n", __func__, BaseAddress, Status));
+    ASSERT_EFI_ERROR (Status);
+  }
+}
+
+/**
+  Add ReadOnly protection to the range specified by BaseAddress and Length.
+
+  @param[in] BaseAddress  BaseAddress of the range.
+  @param[in] Length       Length of the range.
+**/
+VOID
+ApplyRoProtection (
+  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN UINTN                 Length
+  )
+{
+  EFI_STATUS                       Status;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  MemDesc;
+
+  Status = gDS->GetMemorySpaceDescriptor (BaseAddress, &MemDesc);
+  if (!EFI_ERROR (Status)) {
+    if (((MemDesc.Capabilities & EFI_MEMORY_RO) == EFI_MEMORY_RO) && ((MemDesc.Attributes & EFI_MEMORY_RO) != EFI_MEMORY_RO)) {
+      Status = gDS->SetMemorySpaceAttributes (
+                      BaseAddress,
+                      Length,
+                      MemDesc.Attributes | EFI_MEMORY_RO
+                      );
+
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a - Setting Ro on 0x%p returned %r\n", __func__, BaseAddress, Status));
+        ASSERT_EFI_ERROR (Status);
+      }
+    }
+  } else {
+    DEBUG ((DEBUG_ERROR, "%a - Memory Address was not found in Memory map! %lp %r\n", __func__, BaseAddress, Status));
+    ASSERT_EFI_ERROR (Status);
   }
 }
 
@@ -601,12 +588,7 @@ MpInitChangeApLoopCallback (
   CpuMpData->Pm16CodeSegment = GetProtectedMode16CS ();
   CpuMpData->ApLoopMode      = PcdGet8 (PcdCpuApLoopMode);
   mNumberToFinish            = CpuMpData->CpuCount - 1;
-  // MU_CHANGE END Enable removal of NX attribute from buffer
-  BufferRemoveNoExecuteSetReadOnly (
-    (EFI_PHYSICAL_ADDRESS)(UINTN)mReservedApLoop.Data,
-    EFI_PAGES_TO_SIZE (EFI_SIZE_TO_PAGES (CpuMpData->AddressMap.RelocateApLoopFuncSizeAmdSev))
-    );
-  // MU_CHANGE END Enable removal of NX attribute from buffer
+
   WakeUpAP (CpuMpData, TRUE, 0, RelocateApLoop, NULL, TRUE);
   while (mNumberToFinish > 0) {
     CpuPause ();

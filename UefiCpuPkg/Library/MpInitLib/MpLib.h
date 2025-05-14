@@ -527,7 +527,7 @@ GetNextMpHandOffHob (
   @retval 0       Cannot find free memory below 4GB.
 **/
 UINTN
-AllocateCodeBuffer (
+AllocateCodePage (
   IN UINTN  BufferSize
   );
 
@@ -985,36 +985,25 @@ AllocateApLoopCodeBuffer (
 /**
   Remove Nx protection for the range specific by BaseAddress and Length.
 
-  The PEI implementation uses CpuPageTableLib to change the attribute.
-  The DXE implementation uses gDS to change the attribute.
-
   @param[in] BaseAddress  BaseAddress of the range.
   @param[in] Length       Length of the range.
 **/
 VOID
-RemoveNxprotection (
+RemoveNxProtection (
   IN EFI_PHYSICAL_ADDRESS  BaseAddress,
   IN UINTN                 Length
   );
 
-// MU_CHANGE START: Enable removal of NX attribute from buffer
-
 /**
-  Remove NX attribute from Buffer and apply RO to Buffer
+Add ReadOnly protection to the range specified by BaseAddress and Length.
 
-  @param[in]  Buffer      Buffer whose attributes will be altered
-  @param[in]  Size        Size of the buffer
-
-  @retval EFI_SUCCESS             NX attribute removed, RO attribute applied
-  @retval EFI_INVALID_PARAMETER   Buffer is not page-aligned or Buffer is 0 or Size of buffer
-                                  is not page-aligned
-  @retval Other                   Return value of LocateProtocol, ClearMemoryAttributes, or SetMemoryAttributes
+@param[in] BaseAddress  BaseAddress of the range.
+@param[in] Length       Length of the range.
 **/
-EFI_STATUS
-BufferRemoveNoExecuteSetReadOnly (
-  IN EFI_PHYSICAL_ADDRESS  Buffer,
-  IN UINTN                 Size
+VOID
+ApplyRoProtection (
+  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN UINTN                 Length
   );
 
-// MU_CHANGE END: Enable removal of NX attribute from buffer
 #endif
