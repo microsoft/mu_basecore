@@ -1,0 +1,31 @@
+## @file
+# SMM Core MM Services Table Library.
+#
+# Copyright (c) Microsoft Corporation.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = PiSmmCoreMmServicesTableLib
+  MODULE_UNI_FILE                = PiSmmCoreMmServicesTableLib.uni
+  FILE_GUID                      = 4D178697-8B31-4EA0-92D8-040CB941ECA7
+  MODULE_TYPE                    = SMM_CORE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = MmServicesTableLib|SMM_CORE
+  PI_SPECIFICATION_VERSION       = 0x0001000A
+  CONSTRUCTOR                    = SmmCoreMmServicesTableLibConstructor
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources]
+  PiSmmCoreMmServicesTableLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+

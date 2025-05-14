@@ -263,6 +263,7 @@
   MdeModulePkg/Library/DeviceManagerUiLib/DeviceManagerUiLib.inf
   MdeModulePkg/Library/LockBoxNullLib/LockBoxNullLib.inf
   MdeModulePkg/Library/PciHostBridgeLibNull/PciHostBridgeLibNull.inf
+  MdeModulePkg/Library/PiSmmCoreMmServicesTableLib/PiSmmCoreMmServicesTableLib.inf
   MdeModulePkg/Library/PiSmmCoreSmmServicesTableLib/PiSmmCoreSmmServicesTableLib.inf
   MdeModulePkg/Library/UefiHiiServicesLib/UefiHiiServicesLib.inf
   MdeModulePkg/Library/BaseHobLibNull/BaseHobLibNull.inf
