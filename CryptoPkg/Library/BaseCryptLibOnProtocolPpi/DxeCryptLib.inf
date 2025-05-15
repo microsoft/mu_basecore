@@ -141,6 +141,7 @@
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetExtensionData # CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetValidity # CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509FormatDateTime # CONSUMES
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509CompareDateTime # CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetKeyUsage # CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509GetExtendedKeyUsage # CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509VerifyCertChain # CONSUMES
