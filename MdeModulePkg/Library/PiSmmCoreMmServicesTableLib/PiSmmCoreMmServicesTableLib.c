@@ -10,7 +10,8 @@
 #include <Library/SmmServicesTableLib.h>
 #include <Library/DebugLib.h>
 
-EFI_MM_SYSTEM_TABLE  *gMmst = NULL;
+EFI_MM_SYSTEM_TABLE           *gMmst = NULL;
+extern EFI_SMM_SYSTEM_TABLE2  gSmmCoreSmst;
 
 /**
   The constructor function caches the pointer of SMM Services Table.
@@ -28,25 +29,6 @@ SmmCoreMmServicesTableLibConstructor (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
+  gMmst = (EFI_MM_SYSTEM_TABLE *)&gSmmCoreSmst;
   return EFI_SUCCESS;
-}
-
-/**
-  This function allows the caller to determine if the driver is executing in
-  System Management Mode(SMM).
-
-  This function returns TRUE if the driver is executing in SMM and FALSE if the
-  driver is not executing in SMM.
-
-  @retval  TRUE  The driver is executing in System Management Mode (SMM).
-  @retval  FALSE The driver is not executing in System Management Mode (SMM).
-
-**/
-BOOLEAN
-EFIAPI
-InSmm (
-  VOID
-  )
-{
-  return TRUE;
 }
