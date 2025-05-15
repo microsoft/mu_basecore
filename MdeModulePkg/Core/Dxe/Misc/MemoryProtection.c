@@ -696,6 +696,15 @@ UnprotectUefiImage (
 
     if (ImageRecord->ImageBase == (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase) {
       mImagePropertiesPrivate.ImageRecordCount--;
+      // this image was protected, so we need to unprotect it
+      if (gCpu != NULL) {
+        SetUefiImageMemoryAttributes (
+          ImageRecord->ImageBase,
+          ImageRecord->ImageSize,
+          0
+          );
+      }
+
       goto Free;
     }
   }
@@ -713,6 +722,8 @@ UnprotectUefiImage (
 
     if (ImageRecord->ImageBase == (EFI_PHYSICAL_ADDRESS)(UINTN)LoadedImage->ImageBase) {
       mNonProtectedImageRangesPrivate.NonProtectedImageCount--;
+      // this image was unprotected, so we don't unprotect it. Trying to do so can cause an assert because the
+      // image may not be page aligned
       goto Free;
     }
   }
@@ -720,14 +731,6 @@ UnprotectUefiImage (
   return;
 
 Free:
-  if (gCpu != NULL) {
-    SetUefiImageMemoryAttributes (
-      ImageRecord->ImageBase,
-      ImageRecord->ImageSize,
-      0
-      );
-  }
-
   // DeleteImagePropertiesRecord() will remove the record from the global list
   DeleteImagePropertiesRecord (ImageRecord);
   return;
