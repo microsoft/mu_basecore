@@ -1694,7 +1694,9 @@ SetAccessAttributesInMemoryMap (
 
   while (MemoryMapEntry < MemoryMapEnd) {
     if (!IS_BITMAP_INDEX_SET (Bitmap, Index)) {
-      MemoryMapEntry->Attribute = GetPermissionAttributeForMemoryType (MemoryMapEntry->Type);
+      // We don't apply RP in the GCD because we can't easily unset it when allocating due to recursive call issues,
+      // so we only set it in the page table.
+      MemoryMapEntry->Attribute = GetPermissionAttributeForMemoryType (MemoryMapEntry->Type) & (~EFI_MEMORY_RP);
       SET_BITMAP_INDEX (Bitmap, Index);
     }
 
@@ -2419,7 +2421,9 @@ InitializePageAttributesForMemoryProtectionPolicy (
   MemoryMapEntry = MemoryMap;
   MemoryMapEnd   = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemoryMap + MemoryMapSize);
   while ((UINTN)MemoryMapEntry < (UINTN)MemoryMapEnd) {
-    if (MemoryMapEntry->Attribute != 0) {
+    // Only set the attributes for page aligned memory regions. Unaligned regions could be unaligned images
+    // so we cannot set the attributes for them.
+    if ((MemoryMapEntry->Attribute != 0) && ((MemoryMapEntry->PhysicalStart & EFI_PAGE_MASK) == 0)) {
       SetUefiImageMemoryAttributes (
         MemoryMapEntry->PhysicalStart,
         LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT),
