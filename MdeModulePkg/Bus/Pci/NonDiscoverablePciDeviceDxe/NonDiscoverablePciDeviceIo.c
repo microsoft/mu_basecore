@@ -15,11 +15,14 @@
 
 #include <Protocol/PciRootBridgeIo.h>
 
+#include <Library/IoMmuLib.h> // MU_CHANGE
+
 typedef struct {
   EFI_PHYSICAL_ADDRESS             AllocAddress;
   VOID                             *HostAddress;
   EFI_PCI_IO_PROTOCOL_OPERATION    Operation;
   UINTN                            NumberOfBytes;
+  VOID                             *IoMmuContext; // MU_CHANGE
 } NON_DISCOVERABLE_PCI_DEVICE_MAP_INFO;
 
 /**
@@ -727,6 +730,12 @@ CoherentPciIoMap (
   EFI_STATUS                            Status;
   NON_DISCOVERABLE_PCI_DEVICE_MAP_INFO  *MapInfo;
 
+  // MU_CHANGE [BEGIN]
+  VOID                   *IoMmuHostAddress;
+  EDKII_IOMMU_OPERATION  IoMmuOperation;
+  UINT64                 IoMmuAttribute;
+
+  // MU_CHANGE [END]
   if ((Operation != EfiPciIoOperationBusMasterRead) &&
       (Operation != EfiPciIoOperationBusMasterWrite) &&
       (Operation != EfiPciIoOperationBusMasterCommonBuffer))
@@ -742,6 +751,18 @@ CoherentPciIoMap (
     return EFI_INVALID_PARAMETER;
   }
 
+  // MU_CHANGE [BEGIN]
+  MapInfo = AllocatePool (sizeof *MapInfo);
+  if (MapInfo == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  MapInfo->AllocAddress  = MAX_UINT32;
+  MapInfo->HostAddress   = HostAddress;
+  MapInfo->Operation     = Operation;
+  MapInfo->NumberOfBytes = *NumberOfBytes;
+  MapInfo->IoMmuContext  = NULL;
+  // MU_CHANGE [END]
   //
   // If HostAddress exceeds 4 GB, and this device does not support 64-bit DMA
   // addressing, we need to allocate a bounce buffer and copy over the data.
@@ -779,8 +800,8 @@ CoherentPciIoMap (
       // 4 GB to begin with. There is not much we can do about that other than
       // fail the map request.
       //
-      FreePool (MapInfo);
-      return EFI_DEVICE_ERROR;
+      Status = EFI_DEVICE_ERROR; // MU_CHANGE
+      goto FreeMapInfo;          // MU_CHANGE
     }
 
     if (Operation == EfiPciIoOperationBusMasterRead) {
@@ -791,14 +812,76 @@ CoherentPciIoMap (
              );
     }
 
-    *DeviceAddress = MapInfo->AllocAddress;
-    *Mapping       = MapInfo;
+    *DeviceAddress   = MapInfo->AllocAddress;
+    IoMmuHostAddress = (VOID *)(UINTN)MapInfo->AllocAddress; // MU_CHANGE
   } else {
-    *DeviceAddress = (EFI_PHYSICAL_ADDRESS)(UINTN)HostAddress;
-    *Mapping       = NULL;
+    *DeviceAddress   = (EFI_PHYSICAL_ADDRESS)(UINTN)HostAddress;
+    IoMmuHostAddress = HostAddress;      // MU_CHANGE
+  }
+
+  // MU_CHANGE [BEGIN]
+  *Mapping = MapInfo;
+
+  switch (Operation) {
+    case EfiPciIoOperationBusMasterRead:
+      IoMmuOperation = EdkiiIoMmuOperationBusMasterRead;
+      IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
+      break;
+
+    case EfiPciIoOperationBusMasterWrite:
+      IoMmuOperation = EdkiiIoMmuOperationBusMasterWrite;
+      IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
+      break;
+
+    case EfiPciIoOperationBusMasterCommonBuffer:
+      IoMmuOperation = EdkiiIoMmuOperationBusMasterCommonBuffer;
+      IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
+      break;
+
+    default:
+      DEBUG ((DEBUG_ERROR, "%a - Invalid operation %d\n", __func__, Operation));
+      ASSERT (FALSE);
+      return EFI_INVALID_PARAMETER;
+  }
+
+  Status = IoMmuMap (
+             IoMmuOperation,
+             IoMmuHostAddress,
+             NumberOfBytes,
+             DeviceAddress,
+             &MapInfo->IoMmuContext
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuMap failed.\n", __func__));
+    ASSERT (FALSE);
+    goto FreeMapInfo;
+  }
+
+  Status = IoMmuSetAttribute (
+             NULL,
+             MapInfo->IoMmuContext,
+             IoMmuAttribute
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+    ASSERT (FALSE);
+    goto Unmap;
   }
 
   return EFI_SUCCESS;
+
+Unmap:
+  Status = IoMmuUnmap (MapInfo->IoMmuContext);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+    ASSERT (FALSE);
+  }
+
+FreeMapInfo:
+  FreePool (MapInfo);
+  return Status;
+
+  // MU_CHANGE [END]
 }
 
 /**
@@ -819,23 +902,43 @@ CoherentPciIoUnmap (
   )
 {
   NON_DISCOVERABLE_PCI_DEVICE_MAP_INFO  *MapInfo;
+  // MU_CHANGE [BEGIN]
+  EFI_STATUS  Status;
+
+  if (Mapping == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   MapInfo = Mapping;
-  if (MapInfo != NULL) {
-    if (MapInfo->Operation == EfiPciIoOperationBusMasterWrite) {
-      gBS->CopyMem (
-             MapInfo->HostAddress,
-             (VOID *)(UINTN)MapInfo->AllocAddress,
-             MapInfo->NumberOfBytes
-             );
-    }
 
-    gBS->FreePages (
-           MapInfo->AllocAddress,
-           EFI_SIZE_TO_PAGES (MapInfo->NumberOfBytes)
-           );
-    FreePool (MapInfo);
+  Status = IoMmuSetAttribute (NULL, MapInfo->IoMmuContext, 0);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+    ASSERT (FALSE);
+    return Status;
   }
+
+  Status = IoMmuUnmap (MapInfo->IoMmuContext);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+    ASSERT (FALSE);
+    return Status;
+  }
+
+  if (MapInfo->Operation == EfiPciIoOperationBusMasterWrite) {
+    gBS->CopyMem (
+           MapInfo->HostAddress,
+           (VOID *)(UINTN)MapInfo->AllocAddress,
+           MapInfo->NumberOfBytes
+           );
+  }
+
+  gBS->FreePages (
+         MapInfo->AllocAddress,
+         EFI_SIZE_TO_PAGES (MapInfo->NumberOfBytes)
+         );
+  FreePool (MapInfo);
+  // MU_CHANGE [END]
 
   return EFI_SUCCESS;
 }
@@ -1273,6 +1376,13 @@ NonCoherentPciIoMap (
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR       GcdDescriptor;
   BOOLEAN                               Bounce;
 
+  // MU_CHANGE [BEGIN]
+  VOID                   *IoMmuHostAddress;
+  EDKII_IOMMU_OPERATION  IoMmuOperation;
+  UINT64                 IoMmuAttribute;
+
+  // MU_CHANGE [END]
+
   if ((HostAddress   == NULL) ||
       (NumberOfBytes == NULL) ||
       (DeviceAddress == NULL) ||
@@ -1296,6 +1406,7 @@ NonCoherentPciIoMap (
   MapInfo->HostAddress   = HostAddress;
   MapInfo->Operation     = Operation;
   MapInfo->NumberOfBytes = *NumberOfBytes;
+  MapInfo->IoMmuContext  = NULL; // MU_CHANGE
 
   Dev = NON_DISCOVERABLE_PCI_DEVICE_FROM_PCI_IO (This);
 
@@ -1365,10 +1476,12 @@ NonCoherentPciIoMap (
       gBS->CopyMem (AllocAddress, HostAddress, *NumberOfBytes);
     }
 
-    *DeviceAddress = MapInfo->AllocAddress;
+    *DeviceAddress   = MapInfo->AllocAddress;
+    IoMmuHostAddress = (VOID *)(UINTN)MapInfo->AllocAddress; // MU_CHANGE
   } else {
     MapInfo->AllocAddress = 0;
     *DeviceAddress        = (EFI_PHYSICAL_ADDRESS)(UINTN)HostAddress;
+    IoMmuHostAddress      = HostAddress; // MU_CHANGE
 
     //
     // We are not using a bounce buffer: the mapping is sufficiently
@@ -1389,7 +1502,64 @@ NonCoherentPciIoMap (
   }
 
   *Mapping = MapInfo;
+
+  // MU_CHANGE [BEGIN]
+  switch (Operation) {
+    case EfiPciIoOperationBusMasterRead:
+      IoMmuOperation = EdkiiIoMmuOperationBusMasterRead;
+      IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
+      break;
+
+    case EfiPciIoOperationBusMasterWrite:
+      IoMmuOperation = EdkiiIoMmuOperationBusMasterWrite;
+      IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
+      break;
+
+    case EfiPciIoOperationBusMasterCommonBuffer:
+      IoMmuOperation = EdkiiIoMmuOperationBusMasterCommonBuffer;
+      IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
+      break;
+
+    default:
+      DEBUG ((DEBUG_ERROR, "%a - Invalid operation %d\n", __func__, Operation));
+      ASSERT (FALSE);
+      return EFI_INVALID_PARAMETER;
+  }
+
+  Status = IoMmuMap (
+             IoMmuOperation,
+             IoMmuHostAddress,
+             NumberOfBytes,
+             DeviceAddress,
+             &MapInfo->IoMmuContext
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuMap failed.\n", __func__));
+    ASSERT (FALSE);
+    goto FreeMapInfo;
+  }
+
+  Status = IoMmuSetAttribute (
+             NULL,
+             MapInfo->IoMmuContext,
+             IoMmuAttribute
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+    ASSERT (FALSE);
+    goto Unmap;
+  }
+
   return EFI_SUCCESS;
+
+Unmap:
+  Status = IoMmuUnmap (MapInfo->IoMmuContext);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+    ASSERT (FALSE);
+  }
+
+  // MU_CHANGE [END]
 
 FreeMapInfo:
   FreePool (MapInfo);
@@ -1415,12 +1585,31 @@ NonCoherentPciIoUnmap (
   )
 {
   NON_DISCOVERABLE_PCI_DEVICE_MAP_INFO  *MapInfo;
+  EFI_STATUS                            Status; // MU_CHANGE
 
   if (Mapping == NULL) {
     return EFI_DEVICE_ERROR;
   }
 
   MapInfo = Mapping;
+
+  // MU_CHANGE [BEGIN]
+  Status = IoMmuSetAttribute (NULL, MapInfo->IoMmuContext, 0);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+    ASSERT (FALSE);
+    return Status;
+  }
+
+  Status = IoMmuUnmap (MapInfo->IoMmuContext);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+    ASSERT (FALSE);
+    return Status;
+  }
+
+  // MU_CHANGE [END]
+
   if (MapInfo->AllocAddress != 0) {
     //
     // We are using a bounce buffer: copy back the data if necessary,
