@@ -78,6 +78,7 @@
   PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
   CustomizedDisplayLib|MdeModulePkg/Library/CustomizedDisplayLib/CustomizedDisplayLib.inf
   FrameBufferBltLib|MdeModulePkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
+  IoMmuLib|MdeModulePkg/Library/IoMmuLibNull/IoMmuLibNull.inf                                         ## MU_CHANGE
   #
   # Misc
   #
@@ -393,6 +394,8 @@
   MdeModulePkg/Library/BaseRngLibTimerLib/BaseRngLibTimerLib.inf
   MdeModulePkg/Library/HobPrintLib/HobPrintLib.inf
   MdeModulePkg/Library/AdvLoggerAccessLibNull/AdvLoggerAccessLib.inf              # MU_CHANGE
+  MdeModulePkg/Library/IoMmuLib/IoMmuLib.inf                                      # MU_CHANGE
+  MdeModulePkg/Library/IoMmuLibNull/IoMmuLibNull.inf                              # MU_CHANGE
 
   MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
   MdeModulePkg/Application/BootManagerMenuApp/BootManagerMenuApp.inf
