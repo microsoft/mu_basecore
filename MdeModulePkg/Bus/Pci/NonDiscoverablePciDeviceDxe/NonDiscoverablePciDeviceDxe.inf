@@ -33,6 +33,7 @@
   UefiBootServicesTableLib
   UefiDriverEntryPoint
   UefiLib
+  IoMmuLib                                      ## MU_CHANGE
 
 [Protocols]
   gEfiPciIoProtocolGuid                         ## BY_START
