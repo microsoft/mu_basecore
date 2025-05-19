@@ -42,6 +42,11 @@
   ##  @libraryclass  Provides GPT partition table parsing and validation routines.
   GptLib|Include/Library/GptLib.h
 
+  # MU_CHANGE [BEGIN] - Add IoMmuLib to wrap gEdkiiIoMmuProtocolGuid
+  ## @libraryclass IoMmu library that can be used for IoMmu Protocol functions.
+  IoMmuLib|Include/Library/IoMmuLib.h
+  # MU_CHANGE [END] - Add IoMmuLib to wrap gEdkiiIoMmuProtocolGuid
+
   ##  @libraryclass  Defines a set of methods to reset whole system.
   ResetSystemLib|Include/Library/ResetSystemLib.h
 
