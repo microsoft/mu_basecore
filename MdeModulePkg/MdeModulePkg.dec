@@ -37,6 +37,11 @@
   NULL|Include/Library/VariablePolicyLockingExLib.h
   # MU_CHANGE [END] - Isolate the VariablePolicy locking event into its own code.
 
+  # MU_CHANGE [BEGIN] - Add IoMmuLib to wrap gEdkiiIoMmuProtocolGuid
+  ## @libraryclass IoMmu library that can be used for IoMmu Protocol functions.
+  IoMmuLib|Include/Library/IoMmuLib.h
+  # MU_CHANGE [END] - Add IoMmuLib to wrap gEdkiiIoMmuProtocolGuid
+
   ##  @libraryclass  Defines a set of methods to reset whole system.
   ResetSystemLib|Include/Library/ResetSystemLib.h
 
