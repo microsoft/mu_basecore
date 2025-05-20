@@ -292,7 +292,6 @@
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcGetPublicKeyFromX509|FALSE|BOOLEAN|0xcc
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcDsaSign|FALSE|BOOLEAN|0xcd
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceEcDsaVerify|FALSE|BOOLEAN|0xce
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceX509CompareDateTime|FALSE|BOOLEAN|0xcf
 # AUTOGEN ENDS
 # ****************************************************************************
 # MU_CHANGE [END]
