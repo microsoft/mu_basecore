@@ -18,6 +18,24 @@
 //
 #define NVME_ASQ_BUF_OFFSET  EFI_PAGE_SIZE
 
+// MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+
+/**
+  Reset the Nvm Express controller.
+
+  @param[in] Private                 The pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
+
+  @retval EFI_SUCCESS                The NVM Express Controller is reset successfully.
+  @retval Others                     A device error occurred while resetting the controller.
+
+**/
+EFI_STATUS
+NvmeControllerReset (
+  IN NVME_CONTROLLER_PRIVATE_DATA  *Private
+  );
+
+// MU_CHANGE [END] - Allocate IO Queue Buffer
+
 /**
   Initialize the Nvm Express controller.
 
@@ -65,5 +83,25 @@ NvmeIdentifyNamespace (
   IN UINT32                        NamespaceId,
   IN VOID                          *Buffer
   );
+
+// MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+
+/**
+  Read Nvm Express admin queue attributes register.
+
+  @param  Private          The pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
+  @param  Aqa              The buffer used to store the content to be read from admin queue attributes register.
+
+  @return EFI_SUCCESS      Successfully read data from the admin queue attributes register.
+  @return EFI_DEVICE_ERROR Fail to read data from the admin queue attributes register.
+
+**/
+EFI_STATUS
+ReadNvmeAdminQueueAttributes (
+  IN  NVME_CONTROLLER_PRIVATE_DATA  *Private,
+  OUT NVME_AQA                      *Aqa
+  );
+
+// MU_CHANGE [END] - Allocate IO Queue Buffer
 
 #endif

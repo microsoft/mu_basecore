@@ -47,6 +47,7 @@
 
 typedef struct _NVME_CONTROLLER_PRIVATE_DATA  NVME_CONTROLLER_PRIVATE_DATA;
 typedef struct _NVME_DEVICE_PRIVATE_DATA      NVME_DEVICE_PRIVATE_DATA;
+typedef struct _NVME_QUEUE_SIZE_DATA          NVME_QUEUE_SIZE_DATA; // MU_CHANGE - Allocate IO Queue Buffer
 
 #include "NvmExpressBlockIo.h"
 #include "NvmExpressDiskInfo.h"
@@ -67,6 +68,14 @@ extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gNvmExpressDriverSupportedEfiV
 #define NVME_CSQ_SIZE  1                                // Number of I/O submission queue entries, which is 0-based
 #define NVME_CCQ_SIZE  1                                // Number of I/O completion queue entries, which is 0-based
 
+// MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+// NVM Express 2.0e specification, section 5.17.1 Identify Controller Data Structure (CNS 01h)
+// The specification defines these numbers as the minimum and standard values. They are what this driver supports.
+// The values are in bytes and are reported as a power of 2.
+#define NVME_IOSQES_MIN  6                              // I/O submission queue entry size
+#define NVME_IOCQES_MIN  4                              // I/O completion queue entry size
+// MU_CHANGE [END] - Allocate IO Queue Buffer
+
 //
 // Number of asynchronous I/O submission queue entries, which is 0-based.
 // The asynchronous I/O submission queue size is 4kB in total.
@@ -78,7 +87,30 @@ extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gNvmExpressDriverSupportedEfiV
 //
 #define NVME_ASYNC_CCQ_SIZE  255
 
-#define NVME_MAX_QUEUES  3                              // Number of queues supported by the driver
+// MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+// Maximum number of queue pairs supported by the driver, including the admin queues.
+// Queue 0 - Admin
+// Queue 1 - Blocking I/O (BlockIo Protocol)
+// Queue 2 - Asynchronous I/O (BlockIo2 Protocol)
+#define NVME_MAX_QUEUES  3
+
+// Returns if the controller supports the BlockIo2 protocol.
+// The BlockIo2 protocol is only supported if the controller has more than 1 queue pair allocated
+#define NVME_SUPPORT_BLOCKIO2(ContollerPointer)  (((ContollerPointer)->NumberOfIoQueuePairs) > 1)
+// MU_CHANGE [END] - Request Number of Queues from Controller
+
+// MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+//
+// Returns the number of pages required for a submission/completion queue
+// The Indices are the same as above, 0 for admin, 1 for blocking I/O, 2 for async I/O.
+//
+#define NVME_SQ_SIZE_IN_PAGES(ControllerPointer, Index) \
+  ((ControllerPointer)->SqData[(Index)].NumberOfEntries * (UINTN)LShiftU64 (2, (ControllerPointer)->SqData[(Index)].EntrySize))
+
+#define NVME_CQ_SIZE_IN_PAGES(ControllerPointer, Index) \
+  ((ControllerPointer)->CqData[(Index)].NumberOfEntries * (UINTN)LShiftU64 (2, (ControllerPointer)->CqData[(Index)].EntrySize))
+
+// MU_CHANGE [END] - Allocate IO Queue Buffer
 
 //
 // FormatNVM Admin Command LBA Format (LBAF) Mask
@@ -114,10 +146,9 @@ extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gNvmExpressDriverSupportedEfiV
 // Each submission queue buffer is allocated as 64B * 256 = 4 * 4kB = 4 pages.
 // Each completion queue buffer is allocated as 16B * 256 = 4kB = 1 page.
 //
-#define NVME_ALTERNATIVE_MAX_QUEUE_SIZE               255
-#define NVME_ALTERNATIVE_TOTAL_QUEUE_BUFFER_IN_PAGES  NVME_MAX_QUEUES * 5
+#define NVME_ALTERNATIVE_MAX_QUEUE_SIZE  255
 
-// MU_CHANGE [END]
+// MU_CHANGE [END] - Support alternative hardware queue sizes in NVME driver
 
 #define NVME_CONTROLLER_ID  0
 
@@ -135,6 +166,18 @@ extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gNvmExpressDriverSupportedEfiV
 // Unique signature for private data structure.
 //
 #define NVME_CONTROLLER_PRIVATE_DATA_SIGNATURE  SIGNATURE_32 ('N','V','M','E')
+// MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+#define NVME_INVALID_VID_DID  0xFFFF
+
+//
+// Nvme queue data
+//
+struct _NVME_QUEUE_SIZE_DATA {
+  UINT32    NumberOfEntries; // in number of entries
+  UINT8     EntrySize;       // in bytes, as a power of 2
+};
+
+// MU_CHANGE [END] - Allocate IO Queue Buffer
 
 //
 // Nvme private data structure.
@@ -159,6 +202,24 @@ struct _NVME_CONTROLLER_PRIVATE_DATA {
   //
   NVME_ADMIN_CONTROLLER_DATA            *ControllerData;
 
+  // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+  //
+  // Number of Queues Allocated by the controller
+  // UEFI always uses a 1:1 submission:completion queue allocation so we
+  // use NumberOfIoQueuePairs to represent the number of data queue pairs allocated.
+  // NumberOfIoQueuePairs = Nsqa = Ncqa
+  //
+  UINT32                  NumberOfIoQueuePairs;
+  // MU_CHANGE [END] - Request Number of Queues from Controller
+
+  // MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+  //
+  // Queue Size Data
+  //
+  NVME_QUEUE_SIZE_DATA    SqData[NVME_MAX_QUEUES];
+  NVME_QUEUE_SIZE_DATA    CqData[NVME_MAX_QUEUES];
+  // MU_CHANGE [END] - Allocate IO Queue Buffer
+
   //
   // 6 x 4kB aligned buffers will be carved out of this buffer.
   // 1st 4kB boundary is the start of the admin submission queue.
@@ -170,6 +231,11 @@ struct _NVME_CONTROLLER_PRIVATE_DATA {
   //
   UINT8          *Buffer;
   UINT8          *BufferPciAddr;
+
+  // MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+  UINT8          *IoQueueBuffer;
+  UINT8          *IoQueueBufferPciAddr;
+  // MU_CHANGE [END] - Allocate IO Queue Buffer
 
   //
   // Pointers to 4kB aligned submission & completion queues.
@@ -200,6 +266,7 @@ struct _NVME_CONTROLLER_PRIVATE_DATA {
   NVME_CAP       Cap;
 
   VOID           *Mapping;
+  VOID           *IoQueueMapping; // MU_CHANGE - Allocate IO Queue Buffer
 
   //
   // For Non-blocking operations.

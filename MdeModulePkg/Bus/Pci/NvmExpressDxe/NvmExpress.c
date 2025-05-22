@@ -172,14 +172,20 @@ EnumerateNvmeDevNamespace (
     Device->BlockIo.WriteBlocks = NvmeBlockIoWriteBlocks;
     Device->BlockIo.FlushBlocks = NvmeBlockIoFlushBlocks;
 
-    //
-    // Create BlockIo2 Protocol instance
-    //
-    Device->BlockIo2.Media         = &Device->Media;
-    Device->BlockIo2.Reset         = NvmeBlockIoResetEx;
-    Device->BlockIo2.ReadBlocksEx  = NvmeBlockIoReadBlocksEx;
-    Device->BlockIo2.WriteBlocksEx = NvmeBlockIoWriteBlocksEx;
-    Device->BlockIo2.FlushBlocksEx = NvmeBlockIoFlushBlocksEx;
+    // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+    if (NVME_SUPPORT_BLOCKIO2 (Private)) {
+      // We have multiple data queues, so we can support the BlockIo2 protocol
+
+      // Create BlockIo2 Protocol instance
+      Device->BlockIo2.Media         = &Device->Media;
+      Device->BlockIo2.Reset         = NvmeBlockIoResetEx;
+      Device->BlockIo2.ReadBlocksEx  = NvmeBlockIoReadBlocksEx;
+      Device->BlockIo2.WriteBlocksEx = NvmeBlockIoWriteBlocksEx;
+      Device->BlockIo2.FlushBlocksEx = NvmeBlockIoFlushBlocksEx;
+    }
+
+    // MU_CHANGE [END] - Request Number of Queues from Controller
+
     InitializeListHead (&Device->AsyncQueue);
 
     //
@@ -258,8 +264,8 @@ EnumerateNvmeDevNamespace (
                     Device->DevicePath,
                     &gEfiBlockIoProtocolGuid,
                     &Device->BlockIo,
-                    &gEfiBlockIo2ProtocolGuid,
-                    &Device->BlockIo2,
+                    // &gEfiBlockIo2ProtocolGuid, // MU_CHANGE - Request Number of Queues from Controller
+                    // &Device->BlockIo2, // MU_CHANGE - Request Number of Queues from Controller
                     &gEfiDiskInfoProtocolGuid,
                     &Device->DiskInfo,
                     &gMediaSanitizeProtocolGuid,
@@ -270,6 +276,36 @@ EnumerateNvmeDevNamespace (
     if (EFI_ERROR (Status)) {
       goto Exit;
     }
+
+    // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+    if (NVME_SUPPORT_BLOCKIO2 (Private)) {
+      // We have multiple data queues, so we can support the BlockIo2 protocol
+      Status = gBS->InstallMultipleProtocolInterfaces (
+                      &Device->DeviceHandle,
+                      &gEfiBlockIo2ProtocolGuid,
+                      &Device->BlockIo2,
+                      NULL
+                      );
+
+      if (EFI_ERROR (Status)) {
+        gBS->UninstallMultipleProtocolInterfaces (
+               Device->DeviceHandle,
+               &gEfiDevicePathProtocolGuid,
+               Device->DevicePath,
+               &gEfiBlockIoProtocolGuid,
+               &Device->BlockIo,
+               &gEfiDiskInfoProtocolGuid,
+               &Device->DiskInfo,
+               NULL
+               );
+
+        DEBUG ((DEBUG_ERROR, "%a: Failed to install BlockIo2 protocol. Error %r\n", __func__, Status));
+        ASSERT_EFI_ERROR (Status);
+        goto Exit;
+      }
+    }
+
+    // MU_CHANGE [END] - Request Number of Queues from Controller
 
     //
     // Check if the NVMe controller supports the Security Send and Security Receive commands
@@ -288,14 +324,28 @@ EnumerateNvmeDevNamespace (
                Device->DevicePath,
                &gEfiBlockIoProtocolGuid,
                &Device->BlockIo,
-               &gEfiBlockIo2ProtocolGuid,
-               &Device->BlockIo2,
+               // &gEfiBlockIo2ProtocolGuid, // MU_CHANGE - Request Number of Queues from Controller
+               // &Device->BlockIo2, // MU_CHANGE - Request Number of Queues from Controller
                &gEfiDiskInfoProtocolGuid,
                &Device->DiskInfo,
                &gMediaSanitizeProtocolGuid,
                &Device->MediaSanitize,
                NULL
                );
+
+        // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+        if (NVME_SUPPORT_BLOCKIO2 (Private)) {
+          // We have multiple data queues, so we need to uninstall the BlockIo2 protocol
+          gBS->UninstallMultipleProtocolInterfaces (
+                 Device->DeviceHandle,
+                 &gEfiBlockIo2ProtocolGuid,
+                 &Device->BlockIo2,
+                 NULL
+                 );
+        }
+
+        // MU_CHANGE [END] - Request Number of Queues from Controller
+
         goto Exit;
       }
     }
@@ -431,6 +481,7 @@ UnregisterNvmeNamespace (
   )
 {
   EFI_STATUS                             Status;
+  EFI_STATUS                             BlockIo2Status; // MU_CHANGE - Request Number of Queues from Controller
   EFI_BLOCK_IO_PROTOCOL                  *BlockIo;
   NVME_DEVICE_PRIVATE_DATA               *Device;
   EFI_STORAGE_SECURITY_COMMAND_PROTOCOL  *StorageSecurity;
@@ -438,7 +489,10 @@ UnregisterNvmeNamespace (
   EFI_TPL                                OldTpl;
   VOID                                   *DummyInterface;
 
-  BlockIo = NULL;
+  // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+  BlockIo        = NULL;
+  BlockIo2Status = EFI_SUCCESS;
+  // MU_CHANGE [END] - Request Number of Queues from Controller
 
   Status = gBS->OpenProtocol (
                   Handle,
@@ -479,6 +533,24 @@ UnregisterNvmeNamespace (
          Handle
          );
 
+  // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+  //
+  // If BlockIo2 is installed, uninstall it.
+  //
+  if (NVME_SUPPORT_BLOCKIO2 (Device->Controller)) {
+    BlockIo2Status = gBS->UninstallMultipleProtocolInterfaces (
+                            Handle,
+                            &gEfiBlockIo2ProtocolGuid,
+                            &Device->BlockIo2,
+                            NULL
+                            );
+
+    if (EFI_ERROR (BlockIo2Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: Failed to uninstall BlockIo2 protocol\n", __func__));
+    }
+  }
+
+  // MU_CHANGE [END] - Request Number of Queues from Controller
   //
   // The Nvm Express driver installs the BlockIo and DiskInfo in the DriverBindingStart().
   // Here should uninstall both of them.
@@ -489,8 +561,8 @@ UnregisterNvmeNamespace (
                   Device->DevicePath,
                   &gEfiBlockIoProtocolGuid,
                   &Device->BlockIo,
-                  &gEfiBlockIo2ProtocolGuid,
-                  &Device->BlockIo2,
+                  // &gEfiBlockIo2ProtocolGuid, // MU_CHANGE - Request Number of Queues from Controller
+                  // &Device->BlockIo2, // MU_CHANGE - Request Number of Queues from Controller
                   &gEfiDiskInfoProtocolGuid,
                   &Device->DiskInfo,
                   &gMediaSanitizeProtocolGuid,
@@ -498,7 +570,8 @@ UnregisterNvmeNamespace (
                   NULL
                   );
 
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (Status) || EFI_ERROR (BlockIo2Status)) {
+    // MU_CHANGE - Request Number of Queues from Controller
     gBS->OpenProtocol (
            Controller,
            &gEfiNvmExpressPassThruProtocolGuid,
@@ -910,6 +983,94 @@ Done:
   return Status;
 }
 
+// MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+
+/**
+  Unmap the queues from PciIo and free the buffers allocated.
+
+  @param[in]  Private  The pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
+
+  @retval EFI_SUCCESS           The queues are successfully cleaned up.
+  @return Others                Some error occurs when cleaning up the queues.
+
+**/
+EFI_STATUS
+EFIAPI
+NvmExpressDriverCleanUpQueues (
+  IN NVME_CONTROLLER_PRIVATE_DATA  *Private
+  )
+{
+  EFI_STATUS  Status;
+  EFI_STATUS  ReturnStatus;
+  UINTN       QueuePairPageCount;
+
+  ReturnStatus = EFI_SUCCESS;
+
+  if (Private == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Admin Queue Clean-up
+  //
+  if (Private->Mapping != NULL) {
+    Status = Private->PciIo->Unmap (Private->PciIo, Private->Mapping);
+    if (EFI_ERROR (Status)) {
+      ReturnStatus = Status;
+      DEBUG ((DEBUG_ERROR, "%a: Unmap Admin Queue Mapping failed %r\n", __func__, Status));
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    Private->Mapping = NULL;
+  }
+
+  if (Private->Buffer != NULL) {
+    QueuePairPageCount = NVME_SQ_SIZE_IN_PAGES (Private, 0) + NVME_CQ_SIZE_IN_PAGES (Private, 0);
+    Status             = Private->PciIo->FreeBuffer (Private->PciIo, QueuePairPageCount, Private->Buffer);
+
+    if (EFI_ERROR (Status)) {
+      ReturnStatus = Status;
+      DEBUG ((DEBUG_ERROR, "%a: FreeBuffer Buffer failed %r\n", __func__, Status));
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    Private->Buffer = NULL;
+  }
+
+  //
+  // I/O Queue Clean-up
+  //
+  if (Private->IoQueueMapping != NULL) {
+    Status = Private->PciIo->Unmap (Private->PciIo, Private->IoQueueMapping);
+
+    if (EFI_ERROR (Status)) {
+      ReturnStatus = Status;
+      DEBUG ((DEBUG_ERROR, "%a: Unmap IoQueueMapping failed %r\n", __func__, Status));
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    Private->IoQueueMapping = NULL;
+  }
+
+  if (Private->IoQueueBuffer != NULL) {
+    // Using the first data queue size for the number of pages required for the data queues
+    QueuePairPageCount = NVME_SQ_SIZE_IN_PAGES (Private, 1) + NVME_CQ_SIZE_IN_PAGES (Private, 1);
+    Status             = Private->PciIo->FreeBuffer (Private->PciIo, QueuePairPageCount*Private->NumberOfIoQueuePairs, Private->IoQueueBuffer);
+
+    if (EFI_ERROR (Status)) {
+      ReturnStatus = Status;
+      DEBUG ((DEBUG_ERROR, "%a: FreeBuffer IoQueueBuffer failed %r\n", __func__, Status));
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    Private->IoQueueBuffer = NULL;
+  }
+
+  return ReturnStatus;
+}
+
+// MU_CHANGE [END] - Allocate IO Queue Buffer
+
 /**
   Starts a device controller or a bus controller.
 
@@ -953,17 +1114,17 @@ NvmExpressDriverBindingStart (
   IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath
   )
 {
-  EFI_STATUS                          Status;
-  EFI_PCI_IO_PROTOCOL                 *PciIo;
-  NVME_CONTROLLER_PRIVATE_DATA        *Private;
-  EFI_DEVICE_PATH_PROTOCOL            *ParentDevicePath;
-  UINT32                              NamespaceId;
-  EFI_PHYSICAL_ADDRESS                MappedAddr;
-  UINTN                               Bytes;
+  EFI_STATUS                    Status;
+  EFI_PCI_IO_PROTOCOL           *PciIo;
+  NVME_CONTROLLER_PRIVATE_DATA  *Private;
+  EFI_DEVICE_PATH_PROTOCOL      *ParentDevicePath;
+  UINT32                        NamespaceId;
+  // MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+  // EFI_PHYSICAL_ADDRESS                MappedAddr;
+  // UINTN                               Bytes;
+  // MU_CHANGE [END] - Allocate IO Queue Buffer
+
   EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL  *Passthru;
-  // MU_CHANGE - Support alternative hardware queue sizes in NVME driver
-  UINTN  QueuePageCount = PcdGetBool (PcdSupportAlternativeQueueSize) ?
-                          NVME_ALTERNATIVE_TOTAL_QUEUE_BUFFER_IN_PAGES : 6;
 
   DEBUG ((DEBUG_INFO, "NvmExpressDriverBindingStart: start\n"));
 
@@ -1035,63 +1196,46 @@ NvmExpressDriverBindingStart (
       DEBUG ((DEBUG_WARN, "NvmExpressDriverBindingStart: failed to enable 64-bit DMA (%r)\n", Status));
     }
 
-    // MU_CHANGE - Support alternative hardware queue sizes in NVME driver
+    // MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+    // //
+    // // 6 x 4kB aligned buffers will be carved out of this buffer.
+    // // 1st 4kB boundary is the start of the admin submission queue.
+    // // 2nd 4kB boundary is the start of the admin completion queue.
+    // // 3rd 4kB boundary is the start of I/O submission queue #1.
+    // // 4th 4kB boundary is the start of I/O completion queue #1.
+    // // 5th 4kB boundary is the start of I/O submission queue #2.
+    // // 6th 4kB boundary is the start of I/O completion queue #2.
+    // //
+    // // Allocate 6 pages of memory, then map it for bus master read and write.
+    // //
+    // Status = PciIo->AllocateBuffer (
+    //                   PciIo,
+    //                   AllocateAnyPages,
+    //                   EfiBootServicesData,
+    //                   6,
+    //                   (VOID **)&Private->Buffer,
+    //                   0
+    //                   );
+    // if (EFI_ERROR (Status)) {
+    //   goto Exit;
+    // }
 
-    //
-    // Depending on PCD disablement, either support the default or alternative
-    // queue sizes.
-    //
-    // Default:
-    // 6 x 4kB aligned buffers will be carved out of this buffer.
-    // 1st 4kB boundary is the start of the admin submission queue.
-    // 2nd 4kB boundary is the start of the admin completion queue.
-    // 3rd 4kB boundary is the start of I/O submission queue #1.
-    // 4th 4kB boundary is the start of I/O completion queue #1.
-    // 5th 4kB boundary is the start of I/O submission queue #2.
-    // 6th 4kB boundary is the start of I/O completion queue #2.
-    //
-    // Allocate 6 pages of memory, then map it for bus master read and write.
-    //
-    // Alternative:
-    // 15 x 4kB aligned buffers will be carved out of this buffer.
-    // 1st 4kB boundary is the start of the admin submission queue.
-    // 5th 4kB boundary is the start of the admin completion queue.
-    // 6th 4kB boundary is the start of I/O submission queue #1.
-    // 10th 4kB boundary is the start of I/O completion queue #1.
-    // 11th 4kB boundary is the start of I/O submission queue #2.
-    // 15th 4kB boundary is the start of I/O completion queue #2.
-    //
-    // Allocate 15 pages of memory, then map it for bus master read and write.
-    //
-    Status = PciIo->AllocateBuffer (
-                      PciIo,
-                      AllocateAnyPages,
-                      EfiBootServicesData,
-                      QueuePageCount,
-                      (VOID **)&Private->Buffer,
-                      0
-                      );
-    if (EFI_ERROR (Status)) {
-      goto Exit;
-    }
+    // Bytes  = EFI_PAGES_TO_SIZE (6);
+    // Status = PciIo->Map (
+    //                   PciIo,
+    //                   EfiPciIoOperationBusMasterCommonBuffer,
+    //                   Private->Buffer,
+    //                   &Bytes,
+    //                   &MappedAddr,
+    //                   &Private->Mapping
+    //                   );
 
-    // MU_CHANGE - Support alternative hardware queue sizes in NVME driver
-    Bytes  = EFI_PAGES_TO_SIZE (QueuePageCount);
-    Status = PciIo->Map (
-                      PciIo,
-                      EfiPciIoOperationBusMasterCommonBuffer,
-                      Private->Buffer,
-                      &Bytes,
-                      &MappedAddr,
-                      &Private->Mapping
-                      );
+    // if (EFI_ERROR (Status) || (Bytes != EFI_PAGES_TO_SIZE (6))) {
+    //   goto Exit;
+    // }
 
-    // MU_CHANGE - Support alternative hardware queue sizes in NVME driver
-    if (EFI_ERROR (Status) || (Bytes != EFI_PAGES_TO_SIZE (QueuePageCount))) {
-      goto Exit;
-    }
-
-    Private->BufferPciAddr = (UINT8 *)(UINTN)MappedAddr;
+    // Private->BufferPciAddr             = (UINT8 *)(UINTN)MappedAddr;
+    // MU_CHANGE [END] - Allocate IO Queue Buffer
 
     Private->Signature                 = NVME_CONTROLLER_PRIVATE_DATA_SIGNATURE;
     Private->ControllerHandle          = Controller;
@@ -1113,28 +1257,36 @@ NvmExpressDriverBindingStart (
       goto Exit;
     }
 
+    // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
+
     //
     // Start the asynchronous I/O completion monitor
+    // The ProcessAsyncTaskList event and NVME_HC_ASYNC_TIMER timer are only used for the BlockIo2 protocol,
+    // which is only installed when the number of IO queues is greater than 1
     //
-    Status = gBS->CreateEvent (
-                    EVT_TIMER | EVT_NOTIFY_SIGNAL,
-                    TPL_NOTIFY,
-                    ProcessAsyncTaskList,
-                    Private,
-                    &Private->TimerEvent
-                    );
-    if (EFI_ERROR (Status)) {
-      goto Exit;
+    if (NVME_SUPPORT_BLOCKIO2 (Private)) {
+      Status = gBS->CreateEvent (
+                      EVT_TIMER | EVT_NOTIFY_SIGNAL,
+                      TPL_NOTIFY,
+                      ProcessAsyncTaskList,
+                      Private,
+                      &Private->TimerEvent
+                      );
+      if (EFI_ERROR (Status)) {
+        goto Exit;
+      }
+
+      Status = gBS->SetTimer (
+                      Private->TimerEvent,
+                      TimerPeriodic,
+                      NVME_HC_ASYNC_TIMER
+                      );
+      if (EFI_ERROR (Status)) {
+        goto Exit;
+      }
     }
 
-    Status = gBS->SetTimer (
-                    Private->TimerEvent,
-                    TimerPeriodic,
-                    NVME_HC_ASYNC_TIMER
-                    );
-    if (EFI_ERROR (Status)) {
-      goto Exit;
-    }
+    // MU_CHANGE [END] - Request Number of Queues from Controller
 
     Status = gBS->InstallMultipleProtocolInterfaces (
                     &Controller,
@@ -1192,14 +1344,21 @@ NvmExpressDriverBindingStart (
   return EFI_SUCCESS;
 
 Exit:
-  if ((Private != NULL) && (Private->Mapping != NULL)) {
-    PciIo->Unmap (PciIo, Private->Mapping);
+  // MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+  // if ((Private != NULL) && (Private->Mapping != NULL)) {
+  //   PciIo->Unmap (PciIo, Private->Mapping);
+  // }
+  //
+  // if ((Private != NULL) && (Private->Buffer != NULL)) {
+  //   PciIo->FreeBuffer (PciIo, 6, Private->Buffer);
+  // }
+
+  Status = NvmExpressDriverCleanUpQueues (Private);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: NvmExpressDriverCleanUpQueues failed %r\n", __func__, Status));
   }
 
-  if ((Private != NULL) && (Private->Buffer != NULL)) {
-    // MU_CHANGE - Support alternative hardware queue sizes in NVME driver
-    PciIo->FreeBuffer (PciIo, QueuePageCount, Private->Buffer);
-  }
+  // MU_CHANGE [END] - Allocate IO Queue Buffer
 
   if ((Private != NULL) && (Private->ControllerData != NULL)) {
     FreePool (Private->ControllerData);
@@ -1274,9 +1433,6 @@ NvmExpressDriverBindingStop (
   EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL  *PassThru;
   BOOLEAN                             IsEmpty;
   EFI_TPL                             OldTpl;
-  // MU_CHANGE - Support alternative hardware queue sizes in NVME driver
-  UINT16  QueuePageCount = PcdGetBool (PcdSupportAlternativeQueueSize) ?
-                           NVME_ALTERNATIVE_TOTAL_QUEUE_BUFFER_IN_PAGES : 6;
 
   if (NumberOfChildren == 0) {
     Status = gBS->OpenProtocol (
@@ -1318,14 +1474,21 @@ NvmExpressDriverBindingStop (
         gBS->CloseEvent (Private->TimerEvent);
       }
 
-      if (Private->Mapping != NULL) {
-        Private->PciIo->Unmap (Private->PciIo, Private->Mapping);
+      // MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
+      // if (Private->Mapping != NULL) {
+      //   Private->PciIo->Unmap (Private->PciIo, Private->Mapping);
+      // }
+      //
+      // if (Private->Buffer != NULL) {
+      //   Private->PciIo->FreeBuffer (Private->PciIo, 6, Private->Buffer);
+      // }
+
+      Status = NvmExpressDriverCleanUpQueues (Private);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: NvmExpressDriverCleanUpQueues failed %r\n", __func__, Status));
       }
 
-      if (Private->Buffer != NULL) {
-        // MU_CHANGE - Support alternative hardware queue sizes in NVME driver
-        Private->PciIo->FreeBuffer (Private->PciIo, QueuePageCount, Private->Buffer);
-      }
+      // MU_CHANGE [END] - Allocate IO Queue Buffer
 
       FreePool (Private->ControllerData);
       FreePool (Private);
