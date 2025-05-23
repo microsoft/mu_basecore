@@ -478,6 +478,7 @@ FileBufferPrintLine (
 {
   CHAR16  *Buffer;
   UINTN   Limit;
+  UINTN   PadLength;  // MU_CHANGE: Fix VS22 17.14 memcpy substitution
   CHAR16  *PrintLine;
   CHAR16  *PrintLine2;
   UINTN   BufLen;
@@ -496,9 +497,13 @@ FileBufferPrintLine (
   PrintLine = AllocatePool (BufLen);
   if (PrintLine != NULL) {
     StrnCpyS (PrintLine, BufLen/sizeof (CHAR16), Buffer, MIN (Limit, MainEditor.ScreenSize.Column));
-    for (Limit = StrLen (PrintLine); Limit < MainEditor.ScreenSize.Column; Limit++) {
-      PrintLine[Limit] = L' ';
+    // MU_CHANGE [BEGIN]: Fix VS22 17.14 memcpy substitution
+    if (StrLen (PrintLine) < MainEditor.ScreenSize.Column) {
+      PadLength = MainEditor.ScreenSize.Column - StrLen (PrintLine);
+      SetMem16 (&PrintLine[StrLen (PrintLine)], PadLength * sizeof (CHAR16), L' ');
     }
+
+    // MU_CHANGE [END]: Fix VS22 17.14 memcpy substitution
 
     PrintLine[MainEditor.ScreenSize.Column] = CHAR_NULL;
 
@@ -3104,17 +3109,23 @@ FileBufferReplace (
     // set replace into it
     //
     Buffer = FileBuffer.CurrentLine->Buffer + FileBuffer.FilePosition.Column - 1;
-    for (Index = 0; Index < ReplaceLen; Index++) {
-      Buffer[Index] = Replace[Index];
-    }
+    // MU_CHANGE [BEGIN]: Fix VS22 17.14 memcpy substitution
+    // for (Index = 0; Index < ReplaceLen; Index++) {
+    //   Buffer[Index] = Replace[Index];
+    // }
+    CopyMem (Buffer, Replace, ReplaceLen * sizeof (CHAR16));
+    // MU_CHANGE [END]: Fix VS22 17.14 memcpy substitution
   }
 
   if (ReplaceLen < SearchLen) {
     Buffer = FileBuffer.CurrentLine->Buffer + FileBuffer.FilePosition.Column - 1;
 
-    for (Index = 0; Index < ReplaceLen; Index++) {
-      Buffer[Index] = Replace[Index];
-    }
+    // MU_CHANGE [BEGIN]: Fix VS22 17.14 memcpy substitution
+    // for (Index = 0; Index < ReplaceLen; Index++) {
+    //   Buffer[Index] = Replace[Index];
+    // }
+    CopyMem (Buffer, Replace, ReplaceLen * sizeof (CHAR16));
+    // MU_CHANGE [END]: Fix VS22 17.14 memcpy substitution
 
     Buffer += ReplaceLen;
     Gap     = SearchLen - ReplaceLen;
@@ -3130,9 +3141,12 @@ FileBufferReplace (
 
   if (ReplaceLen == SearchLen) {
     Buffer = FileBuffer.CurrentLine->Buffer + FileBuffer.FilePosition.Column - 1;
-    for (Index = 0; Index < ReplaceLen; Index++) {
-      Buffer[Index] = Replace[Index];
-    }
+    // MU_CHANGE [BEGIN]: Fix VS22 17.14 memcpy substitution
+    // for (Index = 0; Index < ReplaceLen; Index++) {
+    //   Buffer[Index] = Replace[Index];
+    // }
+    CopyMem (Buffer, Replace, ReplaceLen * sizeof (CHAR16));
+    // MU_CHANGE [END]: Fix VS22 17.14 memcpy substitution
   }
 
   FileBuffer.CurrentLine->Size += (ReplaceLen - SearchLen);
@@ -3322,9 +3336,12 @@ FileBufferReplaceAll (
       // set replace into it
       //
       Buffer = Line->Buffer + Position;
-      for (Index = 0; Index < ReplaceLen; Index++) {
-        Buffer[Index] = ReplaceStr[Index];
-      }
+      // MU_CHANGE [BEGIN]: Fix VS22 17.14 memcpy substitution
+      // for (Index = 0; Index < ReplaceLen; Index++) {
+      //   Buffer[Index] = ReplaceStr[Index];
+      // }
+      CopyMem (Buffer, ReplaceStr, ReplaceLen * sizeof (CHAR16));
+      // MU_CHANGE [END]]: Fix VS22 17.14 memcpy substitution
 
       Line->Size += (ReplaceLen - SearchLen);
       Column     += ReplaceLen;
