@@ -142,9 +142,13 @@ HBufferImageBackup (
   VOID
   )
 {
-  HBufferImageBackupVar.MousePosition = HBufferImage.MousePosition;
+  // MU_CHANGE [BEGIN]: Fix VS22 17.14 memcpy substitution
+  // HBufferImageBackupVar.MousePosition = HBufferImage.MousePosition;
 
-  HBufferImageBackupVar.BufferPosition = HBufferImage.BufferPosition;
+  // HBufferImageBackupVar.BufferPosition = HBufferImage.BufferPosition;
+  CopyMem (&HBufferImageBackupVar.MousePosition, &HBufferImage.MousePosition, sizeof (HBufferImage.MousePosition));
+  CopyMem (&HBufferImageBackupVar.BufferPosition, &HBufferImage.BufferPosition, sizeof (HBufferImage.BufferPosition));
+  // MU_CHANGE [END]: Fix VS22 17.14 memcpy substitution
 
   HBufferImageBackupVar.Modified = HBufferImage.Modified;
 
@@ -569,7 +573,10 @@ HBufferImageRestoreMousePosition (
       //
       // backup the old screen attributes
       //
-      Orig                  = HMainEditor.ColorAttributes;
+      // MU_CHANGE [BEGIN]: Fix VS22 17.14 memcpy substitution
+      // Orig                  = HMainEditor.ColorAttributes;
+      CopyMem (&Orig, &HMainEditor.ColorAttributes, sizeof (Orig));
+      // MU_CHANGE [END]: Fix VS22 17.14 memcpy substitution
       New.Data              = 0;
       New.Colors.Foreground = Orig.Colors.Background & 0xF;
       New.Colors.Background = Orig.Colors.Foreground & 0x7;
@@ -1955,17 +1962,23 @@ HBufferImageDeleteCharacterFromBuffer (
   // pass deleted buffer out
   //
   if (DeleteBuffer != NULL) {
-    for (Index = 0; Index < Count; Index++) {
-      DeleteBuffer[Index] = BufferPtr[Pos + Index];
-    }
+    // MU_CHANGE [BEGIN]: Fix VS22 17.14 memcpy substitution
+    // for (Index = 0; Index < Count; Index++) {
+    //   DeleteBuffer[Index] = BufferPtr[Pos + Index];
+    // }
+    CopyMem (&DeleteBuffer[0], &BufferPtr[Pos], Count);
+    // MU_CHANGE [END]: Fix VS22 17.14 memcpy substitution
   }
 
   //
   // delete the part from Pos
   //
-  for (Index = Pos; Index < Size - Count; Index++) {
-    BufferPtr[Index] = BufferPtr[Index + Count];
-  }
+  // MU_CHANGE [BEGIN]: Fix VS22 17.14 memcpy substitution
+  // for (Index = Pos; Index < Size - Count; Index++) {
+  //   BufferPtr[Index] = BufferPtr[Index + Count];
+  // }
+  CopyMem (&BufferPtr[Pos], &BufferPtr[Pos + Count], Size - Count - Pos);
+  // MU_CHANGE [END]: Fix VS22 17.14 memcpy substitution
 
   Size -= Count;
 
@@ -2069,16 +2082,22 @@ HBufferImageAddCharacterToBuffer (
   //
   // get a place to add
   //
-  for (Index = (INTN)(Size + Count - 1); Index >= (INTN)Pos; Index--) {
-    BufferPtr[Index] = BufferPtr[Index - Count];
-  }
+  // MU_CHANGE [BEGIN]: Fix VS22 17.14 memcpy substitution
+  // for (Index = (INTN)(Size + Count - 1); Index >= (INTN)Pos; Index--) {
+  //   BufferPtr[Index] = BufferPtr[Index - Count];
+  // }
+  CopyMem (&BufferPtr[Pos + Count], &BufferPtr[Pos], Size - Pos);
+  // MU_CHANGE [END]: Fix VS22 17.14 memcpy substitution
 
   //
   // add the buffer
   //
-  for (Index = (INTN)0; Index < (INTN)Count; Index++) {
-    BufferPtr[Index + Pos] = AddBuffer[Index];
-  }
+  // MU_CHANGE [BEGIN]: Fix VS22 17.14 memcpy substitution
+  // for (Index = (INTN)0; Index < (INTN)Count; Index++) {
+  //   BufferPtr[Index + Pos] = AddBuffer[Index];
+  // }
+  CopyMem (&BufferPtr[Pos], AddBuffer, Count);
+  // MU_CHANGE [END]: Fix VS22 17.14 memcpy substitution
 
   Size += Count;
 
