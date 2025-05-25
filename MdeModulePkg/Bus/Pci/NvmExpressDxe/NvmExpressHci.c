@@ -1173,8 +1173,10 @@ NvmeControllerInit (
   // Set admin queue entry size to default
   // Note we are using the spec-defined minimum SQES and CQES here.
   //
-  Private->SqData[0].EntrySize = NVME_IOSQES_MIN;
-  Private->CqData[0].EntrySize = NVME_IOCQES_MIN;
+  Private->SqData[0].EntrySize       = NVME_IOSQES_MIN;
+  Private->SqData[0].NumberOfEntries = Aqa.Asqs;
+  Private->CqData[0].EntrySize       = NVME_IOCQES_MIN;
+  Private->CqData[0].NumberOfEntries = Aqa.Acqs;
 
   // Calculate the number of pages required for the admin queues
   AdminQueuePairPageCount = NVME_SQ_SIZE_IN_PAGES (Private, 0) + NVME_CQ_SIZE_IN_PAGES (Private, 0);
