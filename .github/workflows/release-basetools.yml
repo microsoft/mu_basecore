@@ -179,12 +179,12 @@ jobs:
       - name: Update BaseTools External Dependency File
         shell: bash
         run: |
-          PATH="${{ env.BASETOOLS_PATH }}"
+          BASETOOLS_PATH="${{ env.BASETOOLS_PATH }}"
           SOURCE="${{ steps.branch.outputs.source_url }}"
           VERSION="${{ steps.branch.outputs.version }}"
           SHA256=$(curl -sSL "${SOURCE}" | sha256sum | awk '{print $1}')
           
-          jq '.source = "${SOURCE}" | .version = "${VERSION}" | .sha256 = "${SHA256}"' ${PATH} | sponge ${PATH}
+          jq '.source = "${SOURCE}" | .version = "${VERSION}" | .sha256 = "${SHA256}"' ${BASETOOLS_PATH} | sponge ${BASETOOLS_PATH}
       
       - name: Commit Change and push
         shell: bash
