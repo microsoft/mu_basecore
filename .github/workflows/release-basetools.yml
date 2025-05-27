@@ -97,12 +97,57 @@ jobs:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
 
+    env:
+      ARTIFACT_BASE_URL: https://github.com/microsoft/mu_basecore/releases/download
+      BASETOOLS_PATH: BaseTools/Bin/basetoolsbin_ext_dep.yaml
+
     permissions:
       contents: write
 
     steps:
+      - name: Determine Branch
+        shell: bash
+        id: branch
+        run: |
+          # Example: dev-v2025020000.0.2
+          RELEASE_NAME="${{ github.event.release.tag_name }}"
+          URL_PREFIX="${{ env.ARTIFACT_BASE_URL }}"
+          
+          echo "Release tag name: ${RELEASE_NAME}"
+
+          # release builds do not have "release" in their tag name
+          if [[ ${RELEASE_NAME} == release* ]]; then
+            echo "Detected release branch."
+            IS_RELEASE=true
+          else
+            IS_RELEASE=false
+          fi
+
+          DATE=$(echo "$RELEASE_NAME" | sed -E 's/.*-v([0-9]{6}).*/\1/')
+
+          if [[ ${IS_RELEASE} == true ]]; then
+            BRANCH_NAME="release/${DATE}"
+          else
+            BRANCH_NAME="dev/${DATE}"
+          fi
+
+          echo "Branch name: ${BRANCH_NAME}"
+          echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+
+          SOURCE_URL=${URL_PREFIX}/${RELEASE_NAME}/basetools-${RELEASE_NAME}.tar.gz
+          echo "Release URL: ${SOURCE_URL}"
+          echo "source_url=${SOURCE_URL}" >> $GITHUB_OUTPUT
+
+          VERSION=${RELEASE_NAME}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.branch.outputs.branch_name }}
+
+      - name: Download Dependencies
+        shell: bash
+        run: sudo apt install jq moreutils -y
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
@@ -130,11 +175,22 @@ jobs:
         run: |
           gh release upload ${{ github.event.release.tag_name }} ${{ runner.temp }}/basetools-*.zip
           gh release upload ${{ github.event.release.tag_name }} ${{ runner.temp }}/basetools-*.tar.gz
-      
 
-      - name: Update External Dependency
-        uses: ./.github/workflows/update-basetools.yml
-        with:
-          tag_name: ${{ github.event.release.tag_name }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-        
+      - name: Update BaseTools External Dependency File
+        shell: bash
+        run: |
+          PATH="${{ env.BASETOOLS_PATH }}"
+          SOURCE="${{ steps.branch.outputs.source_url }}"
+          VERSION="${{ steps.branch.outputs.version }}"
+          SHA256=$(curl -sSL "${SOURCE}" | sha256sum | awk '{print $1}')
+          
+          jq '.source = "${SOURCE}" | .version = "${VERSION}" | .sha256 = "${SHA256}"' ${PATH} | sponge ${PATH}
+      
+      - name: Commit Change and push
+        shell: bash
+        run: |
+          git config user.name "uefibot"
+          git config user.email "uefibot@microsoft.com"
+          git add .
+          git commit -m "Update BaseTools ext dep to ${{ steps.branch.outputs.version }}" -m "" -m "Signed-off-by: Project Mu UEFI Bot <uefibot@microsoft.com>"
+          git push origin HEAD:refs/heads/sync-basetools/${{ github.event.release.tag_name }}
