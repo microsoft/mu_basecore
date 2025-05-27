@@ -130,3 +130,11 @@ jobs:
         run: |
           gh release upload ${{ github.event.release.tag_name }} ${{ runner.temp }}/basetools-*.zip
           gh release upload ${{ github.event.release.tag_name }} ${{ runner.temp }}/basetools-*.tar.gz
+      
+
+      - name: Update External Dependency
+        uses: ./.github/workflows/update-basetools.yml
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        
