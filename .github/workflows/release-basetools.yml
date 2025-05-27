@@ -203,3 +203,31 @@ jobs:
           git add .
           git commit -m "Update BaseTools ext dep to ${{ steps.branch.outputs.version }}" -m "" -m "Signed-off-by: Project Mu UEFI Bot <uefibot@microsoft.com>"
           git push origin HEAD:refs/heads/sync-basetools/${{ github.event.release.tag_name }}
+      
+      - name: Create Pull Request
+        id: pr
+        run: |
+          gh pr create \
+            --base ${{ steps.branch.outputs.branch_name }} \
+            --head sync-basetools/${{ github.event.release.tag_name }} \
+            --title "Update BaseTools ext dep to ${{ steps.branch.outputs.version }}" \
+            --body "This PR updates the BaseTools external dependency to version ${{ steps.branch.outputs.version }}.\n\nSigned-off-by: Project Mu UEFI Bot <uefibot@microsoft.com>"
+      
+          PR_NUMBER=$(gh pr view sync-basetools/${{ github.event.release.tag_name }} --json number -q '.number')
+          echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+
+      # Close any existing pull request for the same base branch, 
+      - name: Close Existing Pull Request
+        run: |
+          TARGET_BRANCH="sync-basetools/${{ github.event.release.tag_name }}"
+          KEEP_PR=${{ steps.pr.outputs.pr_number }}
+
+          OPEN_PRS=$(gh pr list --state open --head "${TARGET_BRANCH}" --json number -q '.[].number')
+          
+          for PR in ${OPEN_PRS}; do
+            if [[ "${PR}" != "${KEEP_PR}" ]]; then
+              echo "Closing PR #${PR} on branch ${TARGET_BRANCH}"
+              gh pr comment "${PR}" --body "Closing in favor of !${KEEP_PR}."
+              gh pr close "${PR}" --delete-branch
+            fi
+          done
