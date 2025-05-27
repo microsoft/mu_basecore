@@ -46,10 +46,11 @@
   DebugLib
   DxeServicesLib
   MemoryAllocationLib
-  MmServicesTableLib
+  # MmServicesTableLib  # MU_CHANGE - Split SMM Services Table libs
   PcdLib
   PeCoffGetEntryPointLib
   SmmMemLib
+  SmmServicesTableLib  # MU_CHANGE - Split SMM Services Table libs
   SynchronizationLib
   TimerLib
   UefiBootServicesTableLib

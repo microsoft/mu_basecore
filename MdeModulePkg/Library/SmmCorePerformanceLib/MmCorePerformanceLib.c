@@ -42,12 +42,14 @@ UINT32     mCachedLength   = 0;
 UINT32     mBootRecordSize = 0;
 BOOLEAN    mPerformanceMeasurementEnabled;
 
-//
-// Interfaces for SMM PerformanceMeasurement Protocol.
-//
-EDKII_PERFORMANCE_MEASUREMENT_PROTOCOL  mPerformanceMeasurementInterface = {
-  CreatePerformanceMeasurement,
-};
+// MU_CHANGE [BEGIN] - Split MM Services Table dependencies
+// //
+// // Interfaces for SMM PerformanceMeasurement Protocol.
+// //
+// EDKII_PERFORMANCE_MEASUREMENT_PROTOCOL  mPerformanceMeasurementInterface = {
+//   CreatePerformanceMeasurement,
+// };
+// MU_CHANGE [END] - Split MM Services Table dependencies
 
 /**
   Return the module name and optionally module GUID for a given handle.
@@ -932,61 +934,63 @@ SmmCorePerformanceLibExitBootServicesCallback (
   return EFI_SUCCESS;
 }
 
-/**
-  Common initialization code for the MM Core Performance Library.
+// MU_CHANGE [BEGIN] - Split MM Services Table dependencies
+// /**
+//   Common initialization code for the MM Core Performance Library.
 
-  @param[in] ExitBootServicesProtocolGuid  The GUID of the ExitBootServices protocol.
+//   @param[in] ExitBootServicesProtocolGuid  The GUID of the ExitBootServices protocol.
 
-  @retval     EFI_SUCCESS           The MM Core Performance Library was initialized successfully.
-  @retval     Others                The MM Core Performance Library was not initialized successfully.
- **/
-EFI_STATUS
-InitializeMmCorePerformanceLibCommon (
-  IN CONST EFI_GUID  *ExitBootServicesProtocolGuid
-  )
-{
-  EFI_STATUS  Status;
-  EFI_HANDLE  Handle;
-  EFI_HANDLE  MmiHandle;
-  VOID        *Registration;
+//   @retval     EFI_SUCCESS           The MM Core Performance Library was initialized successfully.
+//   @retval     Others                The MM Core Performance Library was not initialized successfully.
+//  **/
+// EFI_STATUS
+// InitializeMmCorePerformanceLibCommon (
+//   IN CONST EFI_GUID  *ExitBootServicesProtocolGuid
+//   )
+// {
+//   EFI_STATUS  Status;
+//   EFI_HANDLE  Handle;
+//   EFI_HANDLE  MmiHandle;
+//   VOID        *Registration;
 
-  //
-  // Initialize spin lock
-  //
-  InitializeSpinLock (&mSmmFpdtLock);
+//   //
+//   // Initialize spin lock
+//   //
+//   InitializeSpinLock (&mSmmFpdtLock);
 
-  //
-  // Install the protocol interfaces for MM performance library instance.
-  //
-  Handle = NULL;
-  Status = gMmst->MmInstallProtocolInterface (
-                    &Handle,
-                    &gEdkiiSmmPerformanceMeasurementProtocolGuid,
-                    EFI_NATIVE_INTERFACE,
-                    &mPerformanceMeasurementInterface
-                    );
-  ASSERT_EFI_ERROR (Status);
+//   //
+//   // Install the protocol interfaces for MM performance library instance.
+//   //
+//   Handle = NULL;
+//   Status = gMmst->MmInstallProtocolInterface (
+//                     &Handle,
+//                     &gEdkiiSmmPerformanceMeasurementProtocolGuid,
+//                     EFI_NATIVE_INTERFACE,
+//                     &mPerformanceMeasurementInterface
+//                     );
+//   ASSERT_EFI_ERROR (Status);
 
-  //
-  // Register MMI handler.
-  //
-  MmiHandle = NULL;
-  Status    = gMmst->MmiHandlerRegister (FpdtSmiHandler, &gEfiFirmwarePerformanceGuid, &MmiHandle);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
+//   //
+//   // Register MMI handler.
+//   //
+//   MmiHandle = NULL;
+//   Status    = gMmst->MmiHandlerRegister (FpdtSmiHandler, &gEfiFirmwarePerformanceGuid, &MmiHandle);
+//   if (EFI_ERROR (Status)) {
+//     return Status;
+//   }
 
-  //
-  // Register callback function for ExitBootServices event.
-  //
-  Status = gMmst->MmRegisterProtocolNotify (
-                    ExitBootServicesProtocolGuid,
-                    SmmCorePerformanceLibExitBootServicesCallback,
-                    &Registration
-                    );
+//   //
+//   // Register callback function for ExitBootServices event.
+//   //
+//   Status = gMmst->MmRegisterProtocolNotify (
+//                     ExitBootServicesProtocolGuid,
+//                     SmmCorePerformanceLibExitBootServicesCallback,
+//                     &Registration
+//                     );
 
-  return Status;
-}
+//   return Status;
+// }
+// MU_CHANGE [END] - Split MM Services Table dependencies
 
 /**
   Create performance record with event description and a timestamp.
