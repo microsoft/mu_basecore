@@ -206,6 +206,8 @@ jobs:
       
       - name: Create Pull Request
         id: pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr create \
             --base ${{ steps.branch.outputs.branch_name }} \
@@ -218,6 +220,8 @@ jobs:
 
       # Close any existing pull request for the same base branch, 
       - name: Close Existing Pull Request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TARGET_BRANCH="sync-basetools/${{ github.event.release.tag_name }}"
           KEEP_PR=${{ steps.pr.outputs.pr_number }}
