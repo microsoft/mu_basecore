@@ -1300,9 +1300,13 @@ InitFtwProtocol (
   // Refresh the working space data from working block
   //
   Status = WorkSpaceRefresh (FtwDevice);
+  // MU_CHANGE [BEGIN]: Add validation for FtwWorkSpaceHeader within WorkSpaceRefresh()
+  // ASSERT_EFI_ERROR (Status);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "Ftw: Init.. WorkSpaceRefresh failed: Status = %r\n", Status));
   }
+
+  // MU_CHANGE [END]: Add validation for FtwWorkSpaceHeader within WorkSpaceRefresh()
 
   //
   // If the working block workspace is not valid, try the spare block

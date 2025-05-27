@@ -286,9 +286,12 @@ WorkSpaceRefresh (
     return EFI_ABORTED;
   }
 
+  // MU_CHANGE [BEGIN]: Add validation for FtwWorkSpaceHeader within WorkSpaceRefresh()
   if (!IsValidWorkSpace (FtwDevice->FtwWorkSpaceHeader)) {
     return EFI_ABORTED;
   }
+
+  // MU_CHANGE [END]: Add validation for FtwWorkSpaceHeader within WorkSpaceRefresh()
 
   //
   // Refresh the FtwLastWriteHeader
