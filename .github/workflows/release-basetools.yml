@@ -176,16 +176,25 @@ jobs:
           gh release upload ${{ github.event.release.tag_name }} ${{ runner.temp }}/basetools-*.zip
           gh release upload ${{ github.event.release.tag_name }} ${{ runner.temp }}/basetools-*.tar.gz
 
-      - name: Update BaseTools External Dependency File
+      - name: Calculate Ext Dep SHA256
+        id: sha256
         shell: bash
         run: |
-          BASETOOLS_PATH="${{ env.BASETOOLS_PATH }}"
           SOURCE="${{ steps.branch.outputs.source_url }}"
-          VERSION="${{ steps.branch.outputs.version }}"
           SHA256=$(curl -sSL "${SOURCE}" | sha256sum | awk '{print $1}')
-          
-          jq '.source = "${SOURCE}" | .version = "${VERSION}" | .sha256 = "${SHA256}"' ${BASETOOLS_PATH} | sponge ${BASETOOLS_PATH}
-      
+          echo "sha256=${SHA256}" >> $GITHUB_OUTPUT
+
+      - name: Update BaseTools External Dependency File
+        env:
+          BASETOOLS_PATH: ${{ env.BASETOOLS_PATH }}
+          SOURCE: ${{ steps.branch.outputs.source_url }}
+          VERSION: ${{ steps.branch.outputs.version }}
+          SHA256: ${{ steps.sha256.outputs.sha256 }}
+        
+        uses: mikefarah/yq@v4
+        with:
+          cmd: yq -i '.source = "${SOURCE}" | .version = "${VERSION}" | .sha256 = "${SHA256}"' ${BASETOOLS_PATH}
+
       - name: Commit Change and push
         shell: bash
         run: |
