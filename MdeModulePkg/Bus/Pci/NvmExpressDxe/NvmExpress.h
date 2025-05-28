@@ -105,10 +105,10 @@ extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gNvmExpressDriverSupportedEfiV
 // The Indices are the same as above, 0 for admin, 1 for blocking I/O, 2 for async I/O.
 //
 #define NVME_SQ_SIZE_IN_PAGES(ControllerPointer, Index) \
-  ((ControllerPointer)->SqData[(Index)].NumberOfEntries * (UINTN)LShiftU64 (2, (ControllerPointer)->SqData[(Index)].EntrySize))
+  EFI_SIZE_TO_PAGES(((ControllerPointer)->SqData[(Index)].NumberOfEntries * (UINTN)LShiftU64 (2, (ControllerPointer)->SqData[(Index)].EntrySize)))
 
 #define NVME_CQ_SIZE_IN_PAGES(ControllerPointer, Index) \
-  ((ControllerPointer)->CqData[(Index)].NumberOfEntries * (UINTN)LShiftU64 (2, (ControllerPointer)->CqData[(Index)].EntrySize))
+  EFI_SIZE_TO_PAGES(((ControllerPointer)->CqData[(Index)].NumberOfEntries * (UINTN)LShiftU64 (2, (ControllerPointer)->CqData[(Index)].EntrySize)))
 
 // MU_CHANGE [END] - Allocate IO Queue Buffer
 
