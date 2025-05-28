@@ -13,7 +13,7 @@
   "type": "web",
   "name": "Mu-Basetools",
   "source": "https://github.com/microsoft/mu_basecore/releases/download/v2025020000.0.2/basetools-v2025020000.0.2.tar.gz",
-  "version": "v2025020000.0.2",
+  "version": "v2025020000.0.3",
   "sha256": "32b9632c1dede06a1f29a946ddb9e5dce6a7f33ac9b0c3148933648fa77c36ba",
   "internal_path": "/basetools/",
   "compression_type": "tar",
