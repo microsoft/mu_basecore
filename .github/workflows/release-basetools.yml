@@ -194,7 +194,7 @@ jobs:
         
         uses: mikefarah/yq@v4
         with:
-          cmd: yq -i '.source = "${SOURCE}" | .version = "${VERSION}" | .sha256 = "${SHA256}"' ${BASETOOLS_PATH}
+          cmd: yq -i -P '.source = strenv(SOURCE) | .version = strenv(VERSION) | .sha256 = strenv(SHA256)' ${BASETOOLS_PATH}
 
       - name: Commit Change and push
         shell: bash
