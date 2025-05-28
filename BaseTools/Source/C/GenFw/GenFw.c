@@ -1141,7 +1141,7 @@ Returns:
   UINT32                           OutputFileLength;
   UINT8                            *InputFileBuffer;
   UINT32                           InputFileLength;
-  PD_RUNTIME_FUNCTION              *RuntimeFunction;  // MU_CHANGE: Resolve definition conflict for ARM
+  RUNTIME_FUNCTION                 *RuntimeFunction;
   UNWIND_INFO                      *UnwindInfo;
   STATUS                           Status;
   BOOLEAN                          ReplaceFlag;
@@ -2555,10 +2555,8 @@ Returns:
               //
               memset (SectionHeader->Name, 0, sizeof (SectionHeader->Name));
 
-              // MU_CHANGE Starts: Resolve definition conflict for ARM
-              RuntimeFunction = (PD_RUNTIME_FUNCTION *)(FileBuffer + SectionHeader->PointerToRawData);
-              for (Index1 = 0; Index1 < Optional64->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size / sizeof (PD_RUNTIME_FUNCTION); Index1++, RuntimeFunction++) {
-              // MU_CHANGE Ends
+              RuntimeFunction = (RUNTIME_FUNCTION *)(FileBuffer + SectionHeader->PointerToRawData);
+              for (Index1 = 0; Index1 < Optional64->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size / sizeof (RUNTIME_FUNCTION); Index1++, RuntimeFunction++) {
                 SectionHeader = (EFI_IMAGE_SECTION_HEADER *) ((UINT8 *) &(PeHdr->Pe32.OptionalHeader) + PeHdr->Pe32.FileHeader.SizeOfOptionalHeader);
                 for (Index2 = 0; Index2 < PeHdr->Pe32.FileHeader.NumberOfSections; Index2++, SectionHeader++) {
                   if (RuntimeFunction->UnwindInfoAddress >= SectionHeader->VirtualAddress && RuntimeFunction->UnwindInfoAddress < (SectionHeader->VirtualAddress + SectionHeader->SizeOfRawData)) {
@@ -2570,7 +2568,7 @@ Returns:
                     break;
                   }
                 }
-                memset (RuntimeFunction, 0, sizeof (PD_RUNTIME_FUNCTION)); // MU_CHANGE: Resolve definition conflict for ARM
+                memset (RuntimeFunction, 0, sizeof (RUNTIME_FUNCTION));
               }
               //
               // Zero Exception Table
