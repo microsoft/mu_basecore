@@ -194,7 +194,7 @@ jobs:
         
         uses: mikefarah/yq@v4
         with:
-          cmd: yq -i -P '.source = strenv(SOURCE) | .version = strenv(VERSION) | .sha256 = strenv(SHA256)' ${BASETOOLS_PATH}
+          cmd: yq -i -P -o=j '.source = strenv(SOURCE) | .version = strenv(VERSION) | .sha256 = strenv(SHA256)' ${BASETOOLS_PATH}
 
       - name: Commit Change and push
         shell: bash
@@ -214,7 +214,7 @@ jobs:
             --base ${{ steps.branch.outputs.branch_name }} \
             --head sync-basetools/${{ github.event.release.tag_name }} \
             --title "Update BaseTools ext dep to ${{ steps.branch.outputs.version }}" \
-            --body "This PR updates the BaseTools external dependency to version ${{ steps.branch.outputs.version }}.\n\nSigned-off-by: Project Mu UEFI Bot <uefibot@microsoft.com>"
+            --body $"This PR updates the BaseTools external dependency to version ${{ steps.branch.outputs.version }}.\n\nSigned-off-by: Project Mu UEFI Bot <uefibot@microsoft.com>"
       
           PR_NUMBER=$(gh pr view sync-basetools/${{ github.event.release.tag_name }} --json number -q '.number')
           echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
@@ -224,10 +224,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TARGET_BRANCH="sync-basetools/${{ github.event.release.tag_name }}"
+          # Grab the prefix to filter branches on for closing PRs  
+          FULL_BRANCH="sync-basetools/${{ github.event.release.tag_name }}"
+          TARGET_VERSION=$(echo "$FULL_BRANCH" | sed -E 's|.*(v[0-9]{6}).*|\1|')
+          if [[ "$FULL_BRANCH" == *"/dev-"* ]]; then
+            TARGET_PREFIX="sync-basetools/dev-${TARGET_VERSION}"
+          else
+            TARGET_PREFIX="sync-basetools/${TARGET_VERSION}"
+          fi
           KEEP_PR=${{ steps.pr.outputs.pr_number }}
 
-          OPEN_PRS=$(gh pr list --state open --head "${TARGET_BRANCH}" --json number -q '.[].number')
+          OPEN_PRS=$(gh pr list --state open --json number,headRefName \
+            -q ".[] | select(.headRefName | startswith(\"${TARGET_PREFIX}\")) | .number")
           
           for PR in ${OPEN_PRS}; do
             if [[ "${PR}" != "${KEEP_PR}" ]]; then
