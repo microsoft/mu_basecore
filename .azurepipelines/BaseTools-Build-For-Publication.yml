@@ -40,7 +40,11 @@ jobs:
 
     displayName: Linux Build
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-22.04
+
+    container: linux-gcc
+      image: ghcr.io/microsoft/mu_devops/ubuntu-22-test:latest
+      options: --name mu_devops_build_container
 
     workspace:
       clean: all
