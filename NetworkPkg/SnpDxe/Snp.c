@@ -361,23 +361,30 @@ SimpleNetworkDriverStart (
   // OK, we like this UNDI, and we know snp is not already there on this handle
   // Allocate and initialize a new simple network protocol structure.
   //
-  Status = PciIo->AllocateBuffer (
-                    PciIo,
-                    AllocateAnyPages,
-                    EfiBootServicesData,
-                    SNP_MEM_PAGES (sizeof (SNP_DRIVER)),
-                    &Address,
-                    0
-                    );
-
-  if (Status != EFI_SUCCESS) {
+  Snp = AllocatePages (SNP_MEM_PAGES (sizeof (SNP_DRIVER)));
+  if (Snp == NULL) {
     DEBUG ((DEBUG_NET, "\nCould not allocate SNP_DRIVER structure.\n"));
     goto NiiError;
   }
 
-  Snp = (SNP_DRIVER *)(UINTN)Address;
+  Status = PciIo->AllocateBuffer (
+    PciIo,
+    AllocateAnyPages,
+    EfiBootServicesData,
+    SNP_MEM_PAGES (sizeof (PXE_CDB)),
+    &Address,
+    0
+    );
+
+  if (Status != EFI_SUCCESS) {
+    DEBUG ((DEBUG_NET, "\nCould not allocate CDB structures.\n"));
+    goto Error_DeleteSNP;
+  }
 
   ZeroMem (Snp, sizeof (SNP_DRIVER));
+
+  Snp->Cdb = (PXE_CDB *)(UINTN)Address;
+  ZeroMem (Snp->Cdb, sizeof (PXE_CDB));
 
   Snp->PciIo     = PciIo;
   Snp->Signature = SNP_DRIVER_SIGNATURE;
@@ -511,32 +518,32 @@ SimpleNetworkDriverStart (
     goto Error_DeleteSNP;
   }
 
-  Snp->Cdb.OpCode  = PXE_OPCODE_GET_INIT_INFO;
-  Snp->Cdb.OpFlags = PXE_OPFLAGS_NOT_USED;
+  Snp->Cdb->OpCode  = PXE_OPCODE_GET_INIT_INFO;
+  Snp->Cdb->OpFlags = PXE_OPFLAGS_NOT_USED;
 
-  Snp->Cdb.CPBsize = PXE_CPBSIZE_NOT_USED;
-  Snp->Cdb.CPBaddr = PXE_DBADDR_NOT_USED;
+  Snp->Cdb->CPBsize = PXE_CPBSIZE_NOT_USED;
+  Snp->Cdb->CPBaddr = PXE_DBADDR_NOT_USED;
 
-  Snp->Cdb.DBsize = (UINT16)sizeof (Snp->InitInfo);
-  Snp->Cdb.DBaddr = (UINT64)(UINTN)(&Snp->InitInfo);
+  Snp->Cdb->DBsize = (UINT16)sizeof (Snp->InitInfo);
+  Snp->Cdb->DBaddr = (UINT64)(UINTN)(&Snp->InitInfo);
 
-  Snp->Cdb.StatCode  = PXE_STATCODE_INITIALIZE;
-  Snp->Cdb.StatFlags = PXE_STATFLAGS_INITIALIZE;
+  Snp->Cdb->StatCode  = PXE_STATCODE_INITIALIZE;
+  Snp->Cdb->StatFlags = PXE_STATFLAGS_INITIALIZE;
 
-  Snp->Cdb.IFnum   = Snp->IfNum;
-  Snp->Cdb.Control = PXE_CONTROL_LAST_CDB_IN_LIST;
+  Snp->Cdb->IFnum   = Snp->IfNum;
+  Snp->Cdb->Control = PXE_CONTROL_LAST_CDB_IN_LIST;
 
   DEBUG ((DEBUG_NET, "\nSnp->undi.get_init_info()  "));
 
-  (*Snp->IssueUndi32Command)((UINT64)(UINTN)&Snp->Cdb);
+  (*Snp->IssueUndi32Command)((UINT64)(UINTN)Snp->Cdb);
 
   //
   // Save the INIT Stat Code...
   //
-  InitStatFlags = Snp->Cdb.StatFlags;
+  InitStatFlags = Snp->Cdb->StatFlags;
 
-  if (Snp->Cdb.StatCode != PXE_STATCODE_SUCCESS) {
-    DEBUG ((DEBUG_NET, "\nSnp->undi.init_info()  %xh:%xh\n", Snp->Cdb.StatFlags, Snp->Cdb.StatCode));
+  if (Snp->Cdb->StatCode != PXE_STATCODE_SUCCESS) {
+    DEBUG ((DEBUG_NET, "\nSnp->undi.init_info()  %xh:%xh\n", Snp->Cdb->StatFlags, Snp->Cdb->StatCode));
     PxeStop (Snp);
     goto Error_DeleteSNP;
   }
@@ -686,6 +693,11 @@ SimpleNetworkDriverStart (
            SNP_MEM_PAGES (4096),
            Snp->Cpb
            );
+  PciIo->FreeBuffer (
+          PciIo,
+          SNP_MEM_PAGES (sizeof (PXE_CDB)),
+          Snp->Cdb
+          );
 
 Error_DeleteSNP:
 
@@ -693,11 +705,7 @@ Error_DeleteSNP:
     FreePool (Snp->RecycledTxBuf);
   }
 
-  PciIo->FreeBuffer (
-           PciIo,
-           SNP_MEM_PAGES (sizeof (SNP_DRIVER)),
-           Snp
-           );
+  FreePages (Snp, SNP_MEM_PAGES (sizeof (SNP_DRIVER)));
 NiiError:
   gBS->CloseProtocol (
          Controller,
@@ -811,16 +819,16 @@ SimpleNetworkDriverStop (
 
   PciIo = Snp->PciIo;
   PciIo->FreeBuffer (
-           PciIo,
-           SNP_MEM_PAGES (4096),
-           Snp->Cpb
-           );
-
+    PciIo,
+    SNP_MEM_PAGES (4096),
+    Snp->Cpb
+    );
   PciIo->FreeBuffer (
-           PciIo,
-           SNP_MEM_PAGES (sizeof (SNP_DRIVER)),
-           Snp
-           );
+    PciIo,
+    SNP_MEM_PAGES (sizeof (PXE_CDB)),
+    Snp->Cdb
+    );
+  FreePages (Snp, SNP_MEM_PAGES (sizeof (SNP_DRIVER)));
 
   return Status;
 }
