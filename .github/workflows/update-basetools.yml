@@ -85,7 +85,6 @@ jobs:
 
     permissions:
       contents: write
-      pull-requests: write
     
     env:
       ARTIFACT_BASE_URL: https://github.com/${{ github.repository }}/releases/download
@@ -103,19 +102,19 @@ jobs:
       # If testing on a local fork with less strict permissions, you can remove this step, and update token usage to
       # use ${{ secrets.GITHUB_TOKEN }} instead of the app token. You must also add the permission `pull-requests: write`
       # to this job.
-      # - name: Generate Token
-      #   id: app-token
-      #   uses: actions/create-github-app-token@v2
-      #   with:
-      #     app-id: ${{ vars.MU_ACCESS_APP_ID }}
-      #     private-key: ${{ secrets.MU_ACCESS_APP_PRIVATE_KEY }}
-      #     owner: ${{ github.repository_owner }}
+      - name: Generate Token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.MU_ACCESS_APP_ID }}
+          private-key: ${{ secrets.MU_ACCESS_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
 
       - name: Check if PR already exists
         id: pr-check
         shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_BRANCH_NAME: ${{ env.PR_BRANCH_NAME }}
           REPO: ${{ env.REPO }}
         run: |
@@ -180,8 +179,7 @@ jobs:
         if: steps.pr-check.outputs.exists != 'true'
         id: pr
         env:
-          # GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ env.REPO }}
           HEAD: ${{ env.PR_BRANCH_NAME}}
           BASE: ${{ env.BRANCH_NAME }}
@@ -200,8 +198,7 @@ jobs:
       - name: Close Existing Pull Request
         if: steps.pr-check.outputs.exists != 'true'
         env:
-          # GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_BRANCH_PREFIX: ${{ env.PR_BRANCH_PREFIX}}
           KEEP_PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
         run: |
