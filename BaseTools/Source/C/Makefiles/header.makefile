@@ -54,13 +54,11 @@ AS ?= $(CLANG_BIN)clang
 AR ?= $(CLANG_BIN)llvm-ar
 LD ?= $(CLANG_BIN)llvm-ld
 else ifeq ($(origin CC),default)
-# MU_CHANGE STARTs: Support GCC prefix
-CC ?= $(GCC_PREFIX)gcc
-CXX ?= $(GCC_PREFIX)g++
-AS ?= $(GCC_PREFIX)gcc
-AR ?= $(GCC_PREFIX)ar
-LD ?= $(GCC_PREFIX)ld
-# MU_CHANGE ENDs
+CC = $(GCC_PREFIX)gcc
+CXX = $(GCC_PREFIX)g++
+AS = $(GCC_PREFIX)gcc
+AR = $(GCC_PREFIX)ar
+LD = $(GCC_PREFIX)ld
 endif
 LINKER ?= $(CC)
 ifeq ($(HOST_ARCH), IA32)
