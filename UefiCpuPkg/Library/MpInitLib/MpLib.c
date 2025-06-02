@@ -2261,10 +2261,7 @@ MpInitLibInitialize (
     );
   DEBUG ((DEBUG_INFO, "AP Vector: non-16-bit = %p/%x\n", CpuMpData->WakeupBufferHigh, ApResetVectorSizeAbove1Mb));
 
-  // MU_CHANGE START: Enable removal of NX attribute from buffer
-  BufferRemoveNoExecuteSetReadOnly (CpuMpData->WakeupBufferHigh, ALIGN_VALUE (ApResetVectorSizeAbove1Mb, EFI_PAGE_SIZE));
-  // MU_CHANGE END: Enable removal of NX attribute from buffer
-
+  ApplyReadOnlyMemoryProtection ((EFI_PHYSICAL_ADDRESS)(UINTN)CpuMpData->WakeupBufferHigh, ALIGN_VALUE (ApResetVectorSizeAbove1Mb, EFI_PAGE_SIZE));
   //
   // Save APIC mode for AP to sync
   //
@@ -3492,7 +3489,7 @@ PrepareApLoopCode (
     // Make sure that the buffer memory is executable if NX protection is enabled
     // for EfiReservedMemoryType.
     //
-    RemoveNxprotection (Address, EFI_PAGES_TO_SIZE (FuncPages));
+    RemoveNxProtection (Address, EFI_PAGES_TO_SIZE (FuncPages));
   }
 
   mReservedTopOfApStack = (UINTN)Address + EFI_PAGES_TO_SIZE (StackPages+FuncPages);
@@ -3500,6 +3497,7 @@ PrepareApLoopCode (
   mReservedApLoop.Data = (VOID *)(UINTN)Address;
   ASSERT (mReservedApLoop.Data != NULL);
   CopyMem (mReservedApLoop.Data, ApLoopFunc, ApLoopFuncSize);
+  ApplyReadOnlyMemoryProtection (Address, EFI_PAGES_TO_SIZE (FuncPages));
   if (!CpuMpData->UseSevEsAPMethod) {
     //
     // processors without SEV-ES and paging is enabled
