@@ -28,12 +28,21 @@ MU_CHANGE [WHOLE FILE] - Standalone MM Perf Support
 
 #include <Library/DxeServicesLib.h>
 #include <Library/SmmMemLib.h>
+#include <Library/SmmServicesTableLib.h>        // MU_CHANGE - Split MM Services Table dependencies
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiLib.h>
 #include <Protocol/SmmBase2.h>
 #include <Protocol/SmmExitBootServices.h>
 
 PERFORMANCE_PROPERTY  mPerformanceProperty;
+
+// MU_CHANGE [BEGIN] - Split MM Services Table dependencies
+extern SPIN_LOCK  mSmmFpdtLock;
+
+EDKII_PERFORMANCE_MEASUREMENT_PROTOCOL  mPerformanceMeasurementInterface = {
+  CreatePerformanceMeasurement,
+};
+// MU_CHANGE [END] - Split MM Services Table dependencies
 
 /**
   A library internal MM-instance specific implementation to check if a buffer outside MM is valid.
@@ -194,9 +203,44 @@ InitializeSmmCorePerformanceLib (
 {
   EFI_STATUS            Status;
   PERFORMANCE_PROPERTY  *PerformanceProperty;
+  // MU_CHANGE [BEGIN] - Split MM Services Table dependencies
+  EFI_HANDLE  Handle;
+  EFI_HANDLE  MmiHandle;
+  VOID        *Registration;
 
-  Status = InitializeMmCorePerformanceLibCommon (&gEdkiiSmmExitBootServicesProtocolGuid);
+  //
+  // Initialize spin lock
+  //
+  InitializeSpinLock (&mSmmFpdtLock);
+
+  //
+  // Install the protocol interfaces for MM performance library instance.
+  //
+  Handle = NULL;
+  Status = gSmst->SmmInstallProtocolInterface (
+                    &Handle,
+                    &gEdkiiSmmPerformanceMeasurementProtocolGuid,
+                    EFI_NATIVE_INTERFACE,
+                    &mPerformanceMeasurementInterface
+                    );
   ASSERT_EFI_ERROR (Status);
+
+  //
+  // Register MMI handler.
+  //
+  MmiHandle = NULL;
+  Status    = gSmst->SmiHandlerRegister (FpdtSmiHandler, &gEfiFirmwarePerformanceGuid, &MmiHandle);
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Register callback function for ExitBootServices event.
+  //
+  Status = gSmst->SmmRegisterProtocolNotify (
+                    &gEdkiiSmmExitBootServicesProtocolGuid,
+                    SmmCorePerformanceLibExitBootServicesCallback,
+                    &Registration
+                    );
+  // MU_CHANGE [END] - Split MM Services Table dependencies
 
   Status = EfiGetSystemConfigurationTable (&gPerformanceProtocolGuid, (VOID **)&PerformanceProperty);
   if (EFI_ERROR (Status)) {

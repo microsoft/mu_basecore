@@ -7,16 +7,17 @@
 # Copyright (c) 2019, Microsoft Corporation
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
-{
-  "scope": "global",
-  "id": "edk-tools-bin",
-  "type": "web",
-  "name": "Mu-Basetools",
-  "source": "https://github.com/microsoft/mu_basecore/releases/download/v2025020000.0.2/basetools-v2025020000.0.2.tar.gz",
-  "version": "v2025020000.0.2",
-  "sha256": "32b9632c1dede06a1f29a946ddb9e5dce6a7f33ac9b0c3148933648fa77c36ba",
-  "internal_path": "/basetools/",
-  "compression_type": "tar",
-  "flags": ["set_shell_var", "set_path", "host_specific"],
-  "var_name": "EDK_TOOLS_BIN"
-}
+scope: global
+id: edk-tools-bin
+type: web
+name: Mu-Basetools
+source: https://github.com/microsoft/mu_basecore/releases/download/dev-v2025020000.0.3/basetools-dev-v2025020000.0.3.tar.gz
+version: dev-v2025020000.0.3
+sha256: 6aaad076391053e2074d2ca2f81caab78f32ae267acf912b35373a2c19b57a04
+internal_path: /basetools/
+compression_type: tar
+flags:
+  - set_shell_var
+  - set_path
+  - host_specific
+var_name: EDK_TOOLS_BIN
