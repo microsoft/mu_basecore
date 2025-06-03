@@ -985,25 +985,36 @@ AllocateApLoopCodeBuffer (
 /**
   Remove Nx protection for the range specific by BaseAddress and Length.
 
+  The PEI implementation uses CpuPageTableLib to change the attribute.
+  The DXE implementation uses gDS to change the attribute.
+
   @param[in] BaseAddress  BaseAddress of the range.
   @param[in] Length       Length of the range.
 **/
 VOID
-RemoveNxProtection (
+RemoveNxprotection (
   IN EFI_PHYSICAL_ADDRESS  BaseAddress,
   IN UINTN                 Length
   );
+
+// MU_CHANGE START: Enable removal of NX attribute from buffer
 
 /**
-Add ReadOnly protection to the range specified by BaseAddress and Length.
+  Remove NX attribute from Buffer and apply RO to Buffer
 
-@param[in] BaseAddress  BaseAddress of the range.
-@param[in] Length       Length of the range.
+  @param[in]  Buffer      Buffer whose attributes will be altered
+  @param[in]  Size        Size of the buffer
+
+  @retval EFI_SUCCESS             NX attribute removed, RO attribute applied
+  @retval EFI_INVALID_PARAMETER   Buffer is not page-aligned or Buffer is 0 or Size of buffer
+                                  is not page-aligned
+  @retval Other                   Return value of LocateProtocol, ClearMemoryAttributes, or SetMemoryAttributes
 **/
-VOID
-ApplyReadOnlyMemoryProtection (
-  IN EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN UINTN                 Length
+EFI_STATUS
+BufferRemoveNoExecuteSetReadOnly (
+  IN EFI_PHYSICAL_ADDRESS  Buffer,
+  IN UINTN                 Size
   );
 
+// MU_CHANGE END: Enable removal of NX attribute from buffer
 #endif
