@@ -393,6 +393,7 @@
   AArch64/GetInterruptsState.asm    | MSFT
   AArch64/SetJumpLongJump.asm       | MSFT
   AArch64/CpuBreakpoint.asm         | MSFT
+  AArch64/CpuBreakAssert.c          | MSFT ## MU_CHANGE
   AArch64/SpeculationBarrier.asm    | MSFT
   AArch64/ArmReadIdAA64Isar0Reg.asm     | MSFT
   IntelTdxNull.c
