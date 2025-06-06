@@ -162,6 +162,9 @@
   ArmPkg/Universal/Smbios/OemMiscLibNull/OemMiscLibNull.inf
 
   ArmPkg/Drivers/MmCommunicationPei/MmCommunicationPei.inf
+  # MU_CHANGE [BEGIN]
+  ArmPkg/Drivers/SmmuDxe/SmmuDxe.inf
+  # MU_CHANGE [END]
 
   ArmPkg/Library/ArmStandaloneMmCoreEntryPoint/ArmStandaloneMmCoreEntryPoint.inf
 
