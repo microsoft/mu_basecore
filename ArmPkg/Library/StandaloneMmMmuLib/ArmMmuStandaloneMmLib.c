@@ -253,19 +253,30 @@ ArmSetMemoryRegionNoAccess (
 {
   EFI_STATUS  Status;
   UINT32      MemoryAttributes;
-  UINT32      CodePermission;
+  UINT32      PermissionRequest;
   BOOLEAN     UseFfaAbis;
 
   UseFfaAbis = IsFfaMemoryAbiSupported ();
 
   Status = GetMemoryPermissions (UseFfaAbis, BaseAddress, &MemoryAttributes);
   if (!EFI_ERROR (Status)) {
-    CodePermission = ARM_FFA_SET_MEM_ATTR_DATA_PERM_NO_ACCESS << ARM_FFA_SET_MEM_ATTR_CODE_PERM_SHIFT;
+    if (UseFfaAbis) {
+      PermissionRequest = ARM_FFA_SET_MEM_ATTR_MAKE_PERM_REQUEST (
+                            MemoryAttributes,
+                            ARM_FFA_SET_MEM_ATTR_DATA_PERM_NO_ACCESS
+                            );
+    } else {
+      PermissionRequest = ARM_SPM_MM_SET_MEM_ATTR_MAKE_PERM_REQUEST (
+                            MemoryAttributes,
+                            ARM_SPM_MM_SET_MEM_ATTR_DATA_PERM_NO_ACCESS
+                            );
+    }
+
     return RequestMemoryPermissionChange (
              UseFfaAbis,
              BaseAddress,
              Length,
-             MemoryAttributes | CodePermission
+             PermissionRequest
              );
   }
 
@@ -281,19 +292,30 @@ ArmClearMemoryRegionNoAccess (
 {
   EFI_STATUS  Status;
   UINT32      MemoryAttributes;
-  UINT32      CodePermission;
+  UINT32      PermissionRequest;
   BOOLEAN     UseFfaAbis;
 
   UseFfaAbis = IsFfaMemoryAbiSupported ();
 
   Status = GetMemoryPermissions (UseFfaAbis, BaseAddress, &MemoryAttributes);
   if (!EFI_ERROR (Status)) {
-    CodePermission = ARM_FFA_SET_MEM_ATTR_DATA_PERM_NO_ACCESS << ARM_FFA_SET_MEM_ATTR_CODE_PERM_SHIFT;
+    if (UseFfaAbis) {
+      PermissionRequest = ARM_FFA_SET_MEM_ATTR_MAKE_PERM_REQUEST (
+                            MemoryAttributes,
+                            ARM_FFA_SET_MEM_ATTR_DATA_PERM_RW
+                            );
+    } else {
+      PermissionRequest = ARM_SPM_MM_SET_MEM_ATTR_MAKE_PERM_REQUEST (
+                            MemoryAttributes,
+                            ARM_SPM_MM_SET_MEM_ATTR_DATA_PERM_RW
+                            );
+    }
+
     return RequestMemoryPermissionChange (
              UseFfaAbis,
              BaseAddress,
              Length,
-             MemoryAttributes & ~CodePermission
+             PermissionRequest
              );
   }
 

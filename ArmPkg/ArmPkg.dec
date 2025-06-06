@@ -97,6 +97,12 @@
 
   gArmTransferListHobGuid = { 0xebe7bae8, 0xfe18, 0x43c5, { 0xbf, 0x3f, 0xf2, 0xb1, 0xaf, 0xb2, 0xdf, 0xb8 } }
 
+  # MU_CHANGE [BEGIN]
+  ## SMMU config data
+  # Include/Guid/SmmuConfig.h
+  gSmmuConfigHobGuid = { 0xcd56ec8f, 0x75f1, 0x440a, { 0xaa, 0x48, 0x09, 0x58, 0xb1, 0x1c, 0x9a, 0xa7 } }
+  # MU_CHANGE [END]
+  
 [Protocols.common]
   ## Arm System Control and Management Interface(SCMI) Base protocol
   ## ArmPkg/Include/Protocol/ArmScmiBaseProtocol.h
