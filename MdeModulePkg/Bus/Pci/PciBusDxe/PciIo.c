@@ -8,7 +8,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "PciBus.h"
 
-extern EDKII_IOMMU_PROTOCOL  *mIoMmuProtocol;
+// extern EDKII_IOMMU_PROTOCOL  *mIoMmuProtocol; // MU_CHANGE
 
 //
 // Pci Io Protocol Interface
@@ -1007,30 +1007,62 @@ PciIoMap (
       );
   }
 
-  if (mIoMmuProtocol != NULL) {
-    if (!EFI_ERROR (Status)) {
-      switch (Operation) {
-        case EfiPciIoOperationBusMasterRead:
-          IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
-          break;
-        case EfiPciIoOperationBusMasterWrite:
-          IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
-          break;
-        case EfiPciIoOperationBusMasterCommonBuffer:
-          IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
-          break;
-        default:
-          ASSERT (FALSE);
-          return EFI_INVALID_PARAMETER;
-      }
+  // MU_CHANGE [BEGIN]
+  // if (mIoMmuProtocol != NULL) {
+  //   if (!EFI_ERROR (Status)) {
+  //     switch (Operation) {
+  //       case EfiPciIoOperationBusMasterRead:
+  //         IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
+  //         break;
+  //       case EfiPciIoOperationBusMasterWrite:
+  //         IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
+  //         break;
+  //       case EfiPciIoOperationBusMasterCommonBuffer:
+  //         IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
+  //         break;
+  //       default:
+  //         ASSERT (FALSE);
+  //         return EFI_INVALID_PARAMETER;
+  //     }
+  // MU_CHANGE [END]
 
-      Status = mIoMmuProtocol->SetAttribute (
-                                 mIoMmuProtocol,
-                                 PciIoDevice->Handle,
-                                 *Mapping,
-                                 IoMmuAttribute
-                                 );
+  if (!EFI_ERROR (Status)) {
+    switch (Operation) {
+      case EfiPciIoOperationBusMasterRead:
+        IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
+        break;
+      case EfiPciIoOperationBusMasterWrite:
+        IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
+        break;
+      case EfiPciIoOperationBusMasterCommonBuffer:
+        IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
+        break;
+      default:
+        ASSERT (FALSE);
+        return EFI_INVALID_PARAMETER;
     }
+
+    // MU_CHANGE [BEGIN]
+    // Status = mIoMmuProtocol->SetAttribute (
+    //                            mIoMmuProtocol,
+    //                            PciIoDevice->Handle,
+    //                            *Mapping,
+    //                            IoMmuAttribute
+    //                            );
+    // MU_CHANGE [END]
+
+    // MU_CHANGE [BEGIN] - Use IoMmuLib
+    Status = IoMmuSetAttribute (
+               PciIoDevice->Handle,
+               *Mapping,
+               IoMmuAttribute
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+      ASSERT (FALSE);
+    }
+
+    // MU_CHANGE [END]
   }
 
   return Status;
@@ -1057,15 +1089,29 @@ PciIoUnmap (
   PCI_IO_DEVICE  *PciIoDevice;
 
   PciIoDevice = PCI_IO_DEVICE_FROM_PCI_IO_THIS (This);
+  // MU_CHANGE [BEGIN]
+  // if (mIoMmuProtocol != NULL) {
+  //   mIoMmuProtocol->SetAttribute (
+  //                     mIoMmuProtocol,
+  //                     PciIoDevice->Handle,
+  //                     Mapping,
+  //                     0
+  //                     );
+  // MU_CHANGE [END]
 
-  if (mIoMmuProtocol != NULL) {
-    mIoMmuProtocol->SetAttribute (
-                      mIoMmuProtocol,
-                      PciIoDevice->Handle,
-                      Mapping,
-                      0
-                      );
+  // MU_CHANGE [BEGIN] - Use IoMmuLib
+  Status = IoMmuSetAttribute (
+             PciIoDevice->Handle,
+             Mapping,
+             0
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+    ASSERT (FALSE);
+    return Status;
   }
+
+  // MU_CHANGE [END]
 
   Status = PciIoDevice->PciRootBridgeIo->Unmap (
                                            PciIoDevice->PciRootBridgeIo,

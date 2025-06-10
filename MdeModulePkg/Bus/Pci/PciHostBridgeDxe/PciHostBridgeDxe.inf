@@ -40,13 +40,14 @@
   PciHostBridgeLib
   TimerLib
   DxeMemoryProtectionHobLib                       ## MU_CHANGE
+  IoMmuLib                                        ## MU_CHANGE
 
 [Protocols]
   gEfiCpuIo2ProtocolGuid                          ## CONSUMES
   gEfiDevicePathProtocolGuid                      ## BY_START
   gEfiPciRootBridgeIoProtocolGuid                 ## BY_START
   gEfiPciHostBridgeResourceAllocationProtocolGuid ## BY_START
-  gEdkiiIoMmuProtocolGuid                         ## SOMETIMES_CONSUMES
+  # gEdkiiIoMmuProtocolGuid                         ## SOMETIMES_CONSUMES  ## MU_CHANGE
 
 [Depex]
   gEfiCpuIo2ProtocolGuid AND

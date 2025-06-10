@@ -34,9 +34,9 @@ BOOLEAN                                       gFullEnumeration               = T
 UINT64                                        gAllOne                        = 0xFFFFFFFFFFFFFFFFULL;
 UINT64                                        gAllZero                       = 0;
 
-EFI_PCI_PLATFORM_PROTOCOL       *gPciPlatformProtocol;
-EFI_PCI_OVERRIDE_PROTOCOL       *gPciOverrideProtocol;
-EDKII_IOMMU_PROTOCOL            *mIoMmuProtocol;
+EFI_PCI_PLATFORM_PROTOCOL  *gPciPlatformProtocol;
+EFI_PCI_OVERRIDE_PROTOCOL  *gPciOverrideProtocol;
+// EDKII_IOMMU_PROTOCOL            *mIoMmuProtocol; // MU_CHANGE
 EDKII_DEVICE_SECURITY_PROTOCOL  *mDeviceSecurityProtocol;
 
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_PCI_HOTPLUG_REQUEST_PROTOCOL  mPciHotPlugRequest = {
@@ -286,13 +286,15 @@ PciBusDriverBindingStart (
            );
   }
 
-  if (mIoMmuProtocol == NULL) {
-    gBS->LocateProtocol (
-           &gEdkiiIoMmuProtocolGuid,
-           NULL,
-           (VOID **)&mIoMmuProtocol
-           );
-  }
+  // MU_CHANGE [BEGIN]
+  // if (mIoMmuProtocol == NULL) {
+  //   gBS->LocateProtocol (
+  //          &gEdkiiIoMmuProtocolGuid,
+  //          NULL,
+  //          (VOID **)&mIoMmuProtocol
+  //          );
+  // }
+  // MU_CHANGE [END]
 
   if (mDeviceSecurityProtocol == NULL) {
     gBS->LocateProtocol (
