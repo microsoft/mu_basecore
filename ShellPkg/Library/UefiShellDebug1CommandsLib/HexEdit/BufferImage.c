@@ -143,9 +143,9 @@ HBufferImageBackup (
   )
 {
   // MU_CHANGE [BEGIN]: Fix VS22 17.14 memcpy substitution
-  // HBufferImageBackupVar.MousePosition = HBufferImage.MousePosition;
+  HBufferImageBackupVar.MousePosition = HBufferImage.MousePosition;
 
-  // HBufferImageBackupVar.BufferPosition = HBufferImage.BufferPosition;
+  HBufferImageBackupVar.BufferPosition = HBufferImage.BufferPosition;
   CopyMem (&HBufferImageBackupVar.MousePosition, &HBufferImage.MousePosition, sizeof (HBufferImage.MousePosition));
   CopyMem (&HBufferImageBackupVar.BufferPosition, &HBufferImage.BufferPosition, sizeof (HBufferImage.BufferPosition));
   // MU_CHANGE [END]: Fix VS22 17.14 memcpy substitution
