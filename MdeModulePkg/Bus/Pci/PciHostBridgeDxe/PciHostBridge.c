@@ -21,9 +21,11 @@ GLOBAL_REMOVE_IF_UNREFERENCED CHAR16  *mPciResourceTypeStr[] = {
   L"I/O", L"Mem", L"PMem", L"Mem64", L"PMem64", L"Bus"
 };
 
-EDKII_IOMMU_PROTOCOL  *mIoMmu;
-EFI_EVENT             mIoMmuEvent;
-VOID                  *mIoMmuRegistration;
+// MU_CHANGE [BEGIN]
+// EDKII_IOMMU_PROTOCOL  *mIoMmu;
+// EFI_EVENT             mIoMmuEvent;
+// VOID                  *mIoMmuRegistration;
+// MU_CHANGE [END]
 
 /**
   This routine gets translation offset from a root bridge instance by resource type.
@@ -400,27 +402,29 @@ FreeMemorySpaceMap:
   return Status;
 }
 
-/**
-  Event notification that is fired when IOMMU protocol is installed.
-
-  @param  Event                 The Event that is being processed.
-  @param  Context               Event Context.
-
-**/
-VOID
-EFIAPI
-IoMmuProtocolCallback (
-  IN  EFI_EVENT  Event,
-  IN  VOID       *Context
-  )
-{
-  EFI_STATUS  Status;
-
-  Status = gBS->LocateProtocol (&gEdkiiIoMmuProtocolGuid, NULL, (VOID **)&mIoMmu);
-  if (!EFI_ERROR (Status)) {
-    gBS->CloseEvent (mIoMmuEvent);
-  }
-}
+// MU_CHANGE [BEGIN]
+// /**
+//   Event notification that is fired when IOMMU protocol is installed.
+//
+//   @param  Event                 The Event that is being processed.
+//   @param  Context               Event Context.
+//
+// **/
+// VOID
+// EFIAPI
+// IoMmuProtocolCallback (
+//   IN  EFI_EVENT  Event,
+//   IN  VOID       *Context
+//   )
+// {
+//   EFI_STATUS  Status;
+//
+//   Status = gBS->LocateProtocol (&gEdkiiIoMmuProtocolGuid, NULL, (VOID **)&mIoMmu);
+//   if (!EFI_ERROR (Status)) {
+//     gBS->CloseEvent (mIoMmuEvent);
+//   }
+// }
+// MU_CHANGE [END]
 
 /**
 
@@ -635,15 +639,17 @@ InitializePciHostBridge (
 
   PciHostBridgeFreeRootBridges (RootBridges, RootBridgeCount);
 
-  if (!EFI_ERROR (Status)) {
-    mIoMmuEvent = EfiCreateProtocolNotifyEvent (
-                    &gEdkiiIoMmuProtocolGuid,
-                    TPL_CALLBACK,
-                    IoMmuProtocolCallback,
-                    NULL,
-                    &mIoMmuRegistration
-                    );
-  }
+  // MU_CHANGE [BEGIN]
+  // if (!EFI_ERROR (Status)) {
+  //   mIoMmuEvent = EfiCreateProtocolNotifyEvent (
+  //                   &gEdkiiIoMmuProtocolGuid,
+  //                   TPL_CALLBACK,
+  //                   IoMmuProtocolCallback,
+  //                   NULL,
+  //                   &mIoMmuRegistration
+  //                   );
+  // }
+  // MU_CHANGE [END]
 
   return Status;
 }
