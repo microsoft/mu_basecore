@@ -288,20 +288,11 @@ EnumerateNvmeDevNamespace (
                       );
 
       if (EFI_ERROR (Status)) {
-        gBS->UninstallMultipleProtocolInterfaces (
-               Device->DeviceHandle,
-               &gEfiDevicePathProtocolGuid,
-               Device->DevicePath,
-               &gEfiBlockIoProtocolGuid,
-               &Device->BlockIo,
-               &gEfiDiskInfoProtocolGuid,
-               &Device->DiskInfo,
-               NULL
-               );
-
-        DEBUG ((DEBUG_ERROR, "%a: Failed to install BlockIo2 protocol. Error %r\n", __func__, Status));
-        ASSERT_EFI_ERROR (Status);
-        goto Exit;
+        DEBUG ((DEBUG_WARN, "%a: Failed to install BlockIo2 protocol. Error %r. Continuing with BlockIo only.\n", __func__, Status));
+        Device->BlockIo2Installed = FALSE;
+        Status = EFI_SUCCESS;  // Reset status to continue with remaining protocols
+      } else {
+        Device->BlockIo2Installed = TRUE;
       }
     }
 
@@ -334,8 +325,8 @@ EnumerateNvmeDevNamespace (
                );
 
         // MU_CHANGE [BEGIN] - Request Number of Queues from Controller
-        if (NVME_SUPPORT_BLOCKIO2 (Private)) {
-          // We have multiple data queues, so we need to uninstall the BlockIo2 protocol
+        if (NVME_SUPPORT_BLOCKIO2 (Private) && Device->BlockIo2Installed) {
+          // We have multiple data queues and BlockIo2 was successfully installed, so we need to uninstall it
           gBS->UninstallMultipleProtocolInterfaces (
                  Device->DeviceHandle,
                  &gEfiBlockIo2ProtocolGuid,
@@ -537,7 +528,7 @@ UnregisterNvmeNamespace (
   //
   // If BlockIo2 is installed, uninstall it.
   //
-  if (NVME_SUPPORT_BLOCKIO2 (Device->Controller)) {
+  if (NVME_SUPPORT_BLOCKIO2 (Device->Controller) && Device->BlockIo2Installed) {
     BlockIo2Status = gBS->UninstallMultipleProtocolInterfaces (
                             Handle,
                             &gEfiBlockIo2ProtocolGuid,

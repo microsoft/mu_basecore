@@ -316,6 +316,7 @@ struct _NVME_DEVICE_PRIVATE_DATA {
   LIST_ENTRY                               AsyncQueue;
 
   EFI_LBA                                  NumBlocks;
+  BOOLEAN                                  BlockIo2Installed;
 
   CHAR16                                   ModelName[80];
   NVME_ADMIN_NAMESPACE_DATA                NamespaceData;
