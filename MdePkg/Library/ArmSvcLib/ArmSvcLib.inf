@@ -15,9 +15,11 @@
 
 [Sources.ARM]
   Arm/ArmSvc.S      | GCC
+  Arm/ArmSvc.masm   | MSFT
 
 [Sources.AARCH64]
-  AArch64/ArmSvc.S
+  AArch64/ArmSvc.S    | GCC
+  AArch64/ArmSvc.masm | MSFT
 
 [Packages]
   MdePkg/MdePkg.dec
