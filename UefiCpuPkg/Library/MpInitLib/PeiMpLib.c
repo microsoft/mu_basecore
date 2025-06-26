@@ -187,9 +187,12 @@ GetWakeupBuffer (
   IN UINTN  WakeupBufferSize
   )
 {
-  EFI_PEI_HOB_POINTERS  Hob;
-  UINT64                WakeupBufferStart;
-  UINT64                WakeupBufferEnd;
+  EFI_PEI_HOB_POINTERS         Hob;
+  UINT64                       WakeupBufferStart;
+  UINT64                       WakeupBufferEnd;
+  EFI_HOB_RESOURCE_DESCRIPTOR  *ResDesc;
+
+  ResDesc = NULL;
 
   WakeupBufferSize = (WakeupBufferSize + SIZE_4KB - 1) & ~(SIZE_4KB - 1);
 
@@ -202,75 +205,81 @@ GetWakeupBuffer (
   // Collect memory ranges
   //
   while (!END_OF_HOB_LIST (Hob)) {
-    if (Hob.Header->HobType == EFI_HOB_TYPE_RESOURCE_DESCRIPTOR) {
-      if ((Hob.ResourceDescriptor->PhysicalStart < BASE_1MB) &&
-          (Hob.ResourceDescriptor->ResourceType == EFI_RESOURCE_SYSTEM_MEMORY) &&
-          ((Hob.ResourceDescriptor->ResourceAttribute &
-            (EFI_RESOURCE_ATTRIBUTE_READ_PROTECTED |
-             EFI_RESOURCE_ATTRIBUTE_WRITE_PROTECTED |
-             EFI_RESOURCE_ATTRIBUTE_EXECUTION_PROTECTED
-            )) == 0)
-          )
+    if (Hob.Header->HobType == EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2) {
+      ResDesc = &Hob.ResourceDescriptorV2->V1;
+    } else if (Hob.Header->HobType == EFI_HOB_TYPE_RESOURCE_DESCRIPTOR) {
+      ResDesc = Hob.ResourceDescriptor;
+    }
+
+    if ((ResDesc != NULL) &&
+        (ResDesc->PhysicalStart < BASE_1MB) &&
+        (ResDesc->ResourceType == EFI_RESOURCE_SYSTEM_MEMORY) &&
+        ((ResDesc->ResourceAttribute &
+          (EFI_RESOURCE_ATTRIBUTE_READ_PROTECTED |
+           EFI_RESOURCE_ATTRIBUTE_WRITE_PROTECTED |
+           EFI_RESOURCE_ATTRIBUTE_EXECUTION_PROTECTED
+          )) == 0)
+        )
+    {
+      //
+      // Need memory under 1MB to be collected here
+      //
+      WakeupBufferEnd = ResDesc->PhysicalStart + ResDesc->ResourceLength;
+      if (ConfidentialComputingGuestHas (CCAttrAmdSevEs) &&
+          (WakeupBufferEnd > mSevEsPeiWakeupBuffer))
       {
         //
-        // Need memory under 1MB to be collected here
+        // SEV-ES Wakeup buffer should be under 1MB and under any previous one
         //
-        WakeupBufferEnd = Hob.ResourceDescriptor->PhysicalStart + Hob.ResourceDescriptor->ResourceLength;
-        if (ConfidentialComputingGuestHas (CCAttrAmdSevEs) &&
-            (WakeupBufferEnd > mSevEsPeiWakeupBuffer))
-        {
-          //
-          // SEV-ES Wakeup buffer should be under 1MB and under any previous one
-          //
-          WakeupBufferEnd = mSevEsPeiWakeupBuffer;
-        } else if (WakeupBufferEnd > BASE_1MB) {
-          //
-          // Wakeup buffer should be under 1MB
-          //
-          WakeupBufferEnd = BASE_1MB;
+        WakeupBufferEnd = mSevEsPeiWakeupBuffer;
+      } else if (WakeupBufferEnd > BASE_1MB) {
+        //
+        // Wakeup buffer should be under 1MB
+        //
+        WakeupBufferEnd = BASE_1MB;
+      }
+
+      while (WakeupBufferEnd > (UINT64)WakeupBufferSize) {
+        //
+        // Wakeup buffer should be aligned on 4KB
+        //
+        WakeupBufferStart = (WakeupBufferEnd - WakeupBufferSize) & ~(SIZE_4KB - 1);
+        if (WakeupBufferStart < ResDesc->PhysicalStart) {
+          break;
         }
 
-        while (WakeupBufferEnd > (UINT64)WakeupBufferSize) {
+        if (CheckOverlapWithAllocatedBuffer (WakeupBufferStart, WakeupBufferEnd)) {
           //
-          // Wakeup buffer should be aligned on 4KB
+          // If this range is overlapped with existing allocated buffer, skip it
+          // and find the next range
           //
-          WakeupBufferStart = (WakeupBufferEnd - WakeupBufferSize) & ~(SIZE_4KB - 1);
-          if (WakeupBufferStart < Hob.ResourceDescriptor->PhysicalStart) {
-            break;
-          }
-
-          if (CheckOverlapWithAllocatedBuffer (WakeupBufferStart, WakeupBufferEnd)) {
-            //
-            // If this range is overlapped with existing allocated buffer, skip it
-            // and find the next range
-            //
-            WakeupBufferEnd -= WakeupBufferSize;
-            continue;
-          }
-
-          DEBUG ((
-            DEBUG_INFO,
-            "WakeupBufferStart = %x, WakeupBufferSize = %x\n",
-            WakeupBufferStart,
-            WakeupBufferSize
-            ));
-
-          if (ConfidentialComputingGuestHas (CCAttrAmdSevEs)) {
-            //
-            // Next SEV-ES wakeup buffer allocation must be below this
-            // allocation
-            //
-            mSevEsPeiWakeupBuffer = WakeupBufferStart;
-          }
-
-          return (UINTN)WakeupBufferStart;
+          WakeupBufferEnd -= WakeupBufferSize;
+          continue;
         }
+
+        DEBUG ((
+          DEBUG_INFO,
+          "WakeupBufferStart = %x, WakeupBufferSize = %x\n",
+          WakeupBufferStart,
+          WakeupBufferSize
+          ));
+
+        if (ConfidentialComputingGuestHas (CCAttrAmdSevEs)) {
+          //
+          // Next SEV-ES wakeup buffer allocation must be below this
+          // allocation
+          //
+          mSevEsPeiWakeupBuffer = WakeupBufferStart;
+        }
+
+        return (UINTN)WakeupBufferStart;
       }
     }
 
     //
     // Find the next HOB
     //
+    ResDesc = NULL;
     Hob.Raw = GET_NEXT_HOB (Hob);
   }
 
