@@ -18,6 +18,7 @@
 
 [Sources.AARCH64]
   AArch64/ArmSmc.S
+  AArch64/ArmSmc.masm | MSFT     # MU_CHANGE - ARM64 VS change
 
 [Sources]
   ArmSmc.c
