@@ -8,7 +8,7 @@
 import os
 import re
 from pathlib import Path
-from pefile import PE
+from pefile import PE, SUBSYSTEM_TYPE
 from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
 from edk2toolext.image_validation import (
     Result, TestManager, TestInterface, TestWriteExecuteFlags,
@@ -19,7 +19,7 @@ from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
 from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
 from edk2toollib.gitignore_parser import parse_gitignore_lines
 import yaml
-from typing import List
+from typing import List, Optional
 import logging
 from datetime import datetime
 
@@ -176,7 +176,14 @@ class ImageValidation(IUefiBuildPlugin):
                             continue
                         logging.debug(
                             f'Performing Image Verification ... {os.path.basename(efi_path)}')
-                        if self._validate_image(efi_path, fv_file["type"]) == Result.FAIL:
+                        
+                        # fv_file["type"] can be multiple values. One value is "DRIVER", which is vague and technically
+                        # means it could be a DXE_DRIVER or DXE_RUNTIME_DRIVER. If we see this value, we will instead
+                        # determine the profile by parsing the subsystem type from the binary (done in _validate_image).
+                        profile = fv_file["type"]
+                        if profile == "DRIVER":
+                            profile = None
+                        if self._validate_image(efi_path, profile) == Result.FAIL:
                             logging.error(f'{os.path.basename(efi_path)} Failed Image Validation.')
                             result = Result.FAIL
                         count += 1
@@ -232,20 +239,54 @@ class ImageValidation(IUefiBuildPlugin):
         else:
             return 0
 
-    # Executes run_tests() on the efi
-    def _validate_image(self, efi_path, profile="DEFAULT"):
+    # Executes run_tests() on the efi. If the profile is None, attempts to select the profile via the subsystem type
+    # in the binary. Otherwise uses the default profile.
+    def _validate_image(self, efi_path, profile=None):
         try:
             pe = PE(efi_path, fast_load=True)
         except Exception:
             logging.error(f'Failed to parse {os.path.basename(efi_path)}')
             return Result.FAIL
+        
+        if profile is None:
+            profile = self._try_get_supported_subsystem(pe)
+        
+        if profile is None:
+            logging.debug(f'Could not determine profile for {os.path.basename(efi_path)}. Using DEFAULT profile.')
+            profile = "DEFAULT"
 
         target_config = self.config_data[MACHINE_TYPE[pe.FILE_HEADER.Machine]].get(
             profile)
         if target_config == {}:  # The target_config is present, but empty, therefore, override to default
+            logging.debug(f'No custom configuration for profile {profile} in {MACHINE_TYPE[pe.FILE_HEADER.Machine]}. '
+                          'Switching to DEFAULT profile.')
             profile = "DEFAULT"
 
         return self.test_manager.run_tests(pe, profile)
+    
+    # Returns the subsystem type if it is supported, otherwise returns None.
+    def _try_get_supported_subsystem(self, pe: PE) -> Optional[str]:
+        try:
+            subsystem = pe.OPTIONAL_HEADER.Subsystem
+        except Exception:
+            return None
+        
+        SUPPORTED_SUBSYSTEMS = {
+            "IMAGE_SUBSYSTEM_EFI_APPLICATION",
+            "IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER",
+            "IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER",
+        }
+
+        SUBSYSTEM_MAP = {
+            "IMAGE_SUBSYSTEM_EFI_APPLICATION": "UEFI_APPLICATION",
+            "IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER": "DXE_DRIVER",
+            "IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER": "DXE_RUNTIME_DRIVER",
+        }
+    
+        if SUBSYSTEM_TYPE[subsystem] in SUPPORTED_SUBSYSTEMS:
+            return SUBSYSTEM_MAP[SUBSYSTEM_TYPE[subsystem]]
+        
+        return None
 
     # Resolves variable names matching the $(...) pattern.
     def _resolve_vars(self, thebuilder, s):
