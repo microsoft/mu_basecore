@@ -31,9 +31,5 @@ jobs:
   draft:
     name: Draft Releases
 
-    permissions:
-      contents: write
-      pull-requests: write
-
-    uses: microsoft/mu_devops/.github/workflows/ReleaseDrafter.yml@v15.0.2
+    uses: microsoft/mu_devops/.github/workflows/ReleaseDrafter.yml@use_gh_app_for_writing
     secrets: inherit
