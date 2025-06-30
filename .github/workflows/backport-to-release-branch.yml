@@ -148,7 +148,7 @@ jobs:
           core.setOutput('pr_number', prNumber);
           core.setOutput('backport_needed', 'true');
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
     - name: Checkout a Local ${{ steps.backport_info.outputs.target_branch_name }} Branch (Destination Branch)
       if: steps.backport_check.outputs.backport_needed == 'true'
