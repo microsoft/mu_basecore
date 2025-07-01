@@ -13,7 +13,7 @@
 name: Validate Pull Request Formatting
 
 on:
-  pull_request:
+  pull_request_target:
     types:
       - edited
       - opened
