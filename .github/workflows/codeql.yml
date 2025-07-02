@@ -160,6 +160,8 @@ jobs:
             print(f'ci_setup_supported={str(ci_setup_supported).lower()}', file=fh)
             print(f'setup_supported={str(setup_supported).lower()}', file=fh)
 
+
+
     - name: Generate Token
       id: app-token
       uses: actions/create-github-app-token@v2
@@ -217,6 +219,7 @@ jobs:
           print(f'cargo_bin_path={os.path.join(os.environ["USERPROFILE"], ".cargo", "bin")}', file=fh)
           print(f'cargo_make_cache_key={cache_key}', file=fh)
           print(f'cargo_make_version={latest_cargo_make_version}', file=fh)
+
 
     # Temporarily disable caching cargo-make as it stopped working in some repos recently
     # and need to be investigated
