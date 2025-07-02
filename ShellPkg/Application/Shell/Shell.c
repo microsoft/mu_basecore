@@ -1242,8 +1242,10 @@ LocateStartupScript (
   CHAR16        *TempSpot;
   CONST CHAR16  *MapName;
   UINTN         Size;
+  CHAR16        *ConvertedPath;
 
   StartupScriptPath = NULL;
+  ConvertedPath     = NULL;
   Size              = 0;
 
   //
@@ -1266,7 +1268,17 @@ LocateStartupScript (
 
     InternalEfiShellSetEnv (L"homefilesystem", StartupScriptPath, TRUE);
 
-    StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, ((FILEPATH_DEVICE_PATH *)FileDevicePath)->PathName, 0);
+    ConvertedPath = ConvertDevicePathToText (
+      FileDevicePath,
+      FALSE,
+      TRUE
+      );
+    if (ConvertedPath == NULL) {
+      SHELL_FREE_NON_NULL (StartupScriptPath);
+      return NULL;
+    }
+
+    StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, ConvertedPath, 0);
     PathRemoveLastItem (StartupScriptPath);
     StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, mStartupScript, 0);
   }
@@ -1279,6 +1291,7 @@ LocateStartupScript (
     StartupScriptPath = ShellFindFilePath (mStartupScript);
   }
 
+  SHELL_FREE_NON_NULL (ConvertedPath);
   return StartupScriptPath;
 }
 
