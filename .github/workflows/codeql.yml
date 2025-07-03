@@ -30,7 +30,7 @@ on:
       - main
       - release/*
       - dev/*
-  pull_request_target:
+  pull_request:
     branches:
       - main
       - release/*
@@ -43,6 +43,8 @@ jobs:
   gather_packages:
     name: Gather Repo Packages
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       packages: ${{ steps.generate_matrix.outputs.packages }}
 
@@ -160,19 +162,13 @@ jobs:
             print(f'ci_setup_supported={str(ci_setup_supported).lower()}', file=fh)
             print(f'setup_supported={str(setup_supported).lower()}', file=fh)
 
-    - name: Generate Token
-      id: app-token
-      uses: actions/create-github-app-token@v2
-      with:
-        app-id: ${{ vars.MU_ACCESS_APP_ID }}
-        private-key: ${{ secrets.MU_ACCESS_APP_PRIVATE_KEY }}
-        owner: ${{ github.repository_owner }}
+
 
     - name: Get Cargo Tool Details
       id: get_cargo_tool_details
       shell: python
       env:
-        AUTH_TOKEN: ${{ steps.app-token.outputs.token }}
+        AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         import os
         import requests
@@ -217,6 +213,7 @@ jobs:
           print(f'cargo_bin_path={os.path.join(os.environ["USERPROFILE"], ".cargo", "bin")}', file=fh)
           print(f'cargo_make_cache_key={cache_key}', file=fh)
           print(f'cargo_make_version={latest_cargo_make_version}', file=fh)
+
 
     # Temporarily disable caching cargo-make as it stopped working in some repos recently
     # and need to be investigated
