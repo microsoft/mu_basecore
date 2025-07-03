@@ -43,8 +43,6 @@ jobs:
   gather_packages:
     name: Gather Repo Packages
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     outputs:
       packages: ${{ steps.generate_matrix.outputs.packages }}
 
@@ -167,44 +165,38 @@ jobs:
     - name: Get Cargo Tool Details
       id: get_cargo_tool_details
       shell: python
-      env:
-        AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         import os
         import requests
         import sys
         import time
 
-        def get_response_with_retries(url, headers, retries=5, wait_time=10):
+        def get_response_with_retries(url, retries=5, wait_time=10):
           for attempt in range(retries):
-            response = requests.get(url, headers=headers)
+            response = requests.get(url)
             if response.status_code == 200:
               return response
-            print(f"::warning title=GitHub API Access Error!::Attempt {attempt + 1} failed ({response.status_code}). Retrying in {wait_time} seconds...")
+            print(f"::warning title=GitHub API Access Error!::Attempt {attempt + 1} failed. Retrying in {wait_time} seconds...")
             time.sleep(wait_time)
           return response
 
         GITHUB_REPO = "sagiegurari/cargo-make"
         api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/0.37.24"
-        headers = {
-          "Authorization": f"Bearer {os.environ['AUTH_TOKEN']}",
-          "Accept": "application/vnd.github.v3+json"
-        }
 
-        response = get_response_with_retries(api_url, headers)
+        response = get_response_with_retries(api_url)
         if response.status_code == 200:
           build_release_id = response.json()["id"]
         else:
-          print(f"::error title=GitHub Release Error!::Failed to get cargo-make release ID! ({response.status_code})")
+          print("::error title=GitHub Release Error!::Failed to get cargo-make release ID!")
           sys.exit(1)
 
         api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/{build_release_id}"
 
-        response = get_response_with_retries(api_url, headers)
+        response = get_response_with_retries(api_url)
         if response.status_code == 200:
           latest_cargo_make_version = response.json()["tag_name"]
         else:
-          print(f"::error title=GitHub Release Error!::Failed to get cargo-make! ({response.status_code})")
+          print("::error title=GitHub Release Error!::Failed to get cargo-make!")
           sys.exit(1)
 
         cache_key = f'cargo-make-{latest_cargo_make_version}'
@@ -215,18 +207,12 @@ jobs:
           print(f'cargo_make_version={latest_cargo_make_version}', file=fh)
 
 
-    # Temporarily disable caching cargo-make as it stopped working in some repos recently
-    # and need to be investigated
-    # - name: Attempt to Load cargo-make From Cache
-    #   id: cargo_make_cache
-    #   uses: actions/cache@v4
-    #   with:
-    #     path: ${{ steps.get_cargo_tool_details.outputs.cargo_bin_path }}
-    #     key: ${{ steps.get_cargo_tool_details.outputs.cargo_make_cache_key }}
-
-    - name: Force cargo-make cache miss
+    - name: Attempt to Load cargo-make From Cache
       id: cargo_make_cache
-      run: echo "cache-hit=false" >> $GITHUB_OUTPUT
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.get_cargo_tool_details.outputs.cargo_bin_path }}
+        key: ${{ steps.get_cargo_tool_details.outputs.cargo_make_cache_key }}
 
     - name: Download cargo-make
       if: steps.cargo_make_cache.outputs.cache-hit != 'true'
