@@ -1707,6 +1707,12 @@ SetAccessAttributesInMemoryMap (
   return EFI_SUCCESS;
 }
 
+EFI_MEMORY_TYPE
+GetBucketMemoryType (
+  IN EFI_PHYSICAL_ADDRESS  PhysicalStart,
+  IN EFI_PHYSICAL_ADDRESS  PhysicalEnd
+  );
+
 /**
   Merge contiguous memory map entries with the same attributes.
 
@@ -1745,6 +1751,8 @@ MergeMemoryMapByAttribute (
       MemoryBlockLength = (UINT64)(EfiPagesToSize (NewMemoryMapEntry->NumberOfPages));
       if (((UINTN)NextMemoryMapEntry < (UINTN)MemoryMapEnd) &&
           (NewMemoryMapEntry->Attribute == NextMemoryMapEntry->Attribute) &&
+          (GetBucketMemoryType (NewMemoryMapEntry->PhysicalStart, NewMemoryMapEntry->PhysicalStart + EFI_PAGES_TO_SIZE (NewMemoryMapEntry->NumberOfPages) - 1) ==
+           GetBucketMemoryType (NextMemoryMapEntry->PhysicalStart, NextMemoryMapEntry->PhysicalStart + EFI_PAGES_TO_SIZE (NextMemoryMapEntry->NumberOfPages) - 1)) &&
           ((NewMemoryMapEntry->PhysicalStart + MemoryBlockLength) == NextMemoryMapEntry->PhysicalStart))
       {
         NewMemoryMapEntry->NumberOfPages += NextMemoryMapEntry->NumberOfPages;

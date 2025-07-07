@@ -141,6 +141,40 @@ RemoveMemoryMapEntry (
   }
 }
 
+EFI_MEMORY_TYPE
+GetBucketMemoryType (
+  IN EFI_PHYSICAL_ADDRESS  PhysicalStart,
+  IN EFI_PHYSICAL_ADDRESS  PhysicalEnd
+  )
+{
+  EFI_MEMORY_TYPE  BucketType;
+
+  // Find the bucket type for the incoming memory region.
+  for (BucketType = 0; BucketType < EfiMaxMemoryType; BucketType++) {
+    //
+    // If the number of pages for this memory type is not zero, the input region
+    // better be within the same bucket.
+    //
+    if (mMemoryTypeStatistics[BucketType].Special && (mMemoryTypeStatistics[BucketType].NumberOfPages != 0)) {
+      if ((PhysicalStart >= mMemoryTypeStatistics[BucketType].BaseAddress) &&
+          (PhysicalEnd <= mMemoryTypeStatistics[BucketType].MaximumAddress)) {
+        break;
+      }
+    }
+  }
+
+  // If we can find the bucket type, use it to guide the merging logic below.
+  // Otherwise, we will not care about the bucket type.
+  if (BucketType >= EfiMaxMemoryType) {
+    DEBUG ((DEBUG_PAGE, "%a: defaulting to max for %lx -%lx\n",
+            __func__,
+            PhysicalStart,
+            PhysicalEnd));
+  }
+
+  return BucketType;
+}
+
 /**
   Internal function.  Adds a ranges to the memory map.
   The range must not already exist in the map.
@@ -163,11 +197,48 @@ CoreAddRange (
 {
   LIST_ENTRY  *Link;
   MEMORY_MAP  *Entry;
+  EFI_MEMORY_TYPE  BucketType;
 
   ASSERT ((Start & EFI_PAGE_MASK) == 0);
   ASSERT (End > Start);
 
   ASSERT_LOCKED (&gMemoryLock);
+
+  // Find the bucket type for the incoming memory region.
+  for (BucketType = 0; BucketType < EfiMaxMemoryType; BucketType++) {
+    //
+    // If the number of pages for this memory type is not zero, the input region
+    // better be within the same bucket.
+    //
+    if (mMemoryTypeStatistics[BucketType].Special && (mMemoryTypeStatistics[BucketType].NumberOfPages != 0)) {
+      if ((Start >= mMemoryTypeStatistics[BucketType].BaseAddress && Start <= mMemoryTypeStatistics[BucketType].MaximumAddress) &&
+          (End > mMemoryTypeStatistics[BucketType].MaximumAddress)) {
+        // The start overlaps the bucket, so we let self-recursion handle the tail, and we
+        // handle the head.
+        CoreAddRange (
+          Type,
+          mMemoryTypeStatistics[BucketType].MaximumAddress + 1,
+          End,
+          Attribute
+          );
+        End = mMemoryTypeStatistics[BucketType].MaximumAddress;
+        break;
+      } else if ((Start < mMemoryTypeStatistics[BucketType].BaseAddress) &&
+               (End >= mMemoryTypeStatistics[BucketType].BaseAddress) &&
+               (End <= mMemoryTypeStatistics[BucketType].MaximumAddress)) {
+        // The end overlaps the bucket, so we let self-recursion handle the head, and we
+        // handle the tail.
+        CoreAddRange (
+          Type,
+          Start,
+          mMemoryTypeStatistics[BucketType].BaseAddress - 1,
+          Attribute
+          );
+        Start = mMemoryTypeStatistics[BucketType].BaseAddress;
+        break;
+      }
+    }
+  }
 
   DEBUG ((DEBUG_PAGE, "AddRange: %lx-%lx to %d\n", Start, End, Type));
 
@@ -213,6 +284,7 @@ CoreAddRange (
   // and the same Attribute
   //
 
+  EFI_MEMORY_TYPE MergeType = EfiMaxMemoryType + 1;
   Link = gMemoryMap.ForwardLink;
   while (Link != &gMemoryMap) {
     Entry = CR (Link, MEMORY_MAP, Link, MEMORY_MAP_SIGNATURE);
@@ -226,12 +298,28 @@ CoreAddRange (
       continue;
     }
 
+    if (MergeType != EfiMaxMemoryType + 1) {
+      // We are in the midst of merging memory descriptors, so we can only merge
+      // with the same type as the merge type.
+      if (MergeType != GetBucketMemoryType (Entry->Start, Entry->End)) {
+        continue;
+      }
+    }
+
     if (Entry->End + 1 == Start) {
       Start = Entry->Start;
       RemoveMemoryMapEntry (Entry);
+      if (MergeType == EfiMaxMemoryType + 1) {
+        // If this is the first entry we are looking at, then set the merge type
+        MergeType = GetBucketMemoryType (Entry->Start, Entry->End);
+      }
     } else if (Entry->Start == End + 1) {
       End = Entry->End;
       RemoveMemoryMapEntry (Entry);
+      if (MergeType == EfiMaxMemoryType + 1) {
+        // If this is the first entry we are looking at, then set the merge type
+        MergeType = GetBucketMemoryType (Entry->Start, Entry->End);
+      }
     }
   }
 
