@@ -167,7 +167,8 @@ GetBucketMemoryType (
     //
     if (mMemoryTypeStatistics[BucketType].Special && (mMemoryTypeStatistics[BucketType].NumberOfPages != 0)) {
       if ((PhysicalStart >= mMemoryTypeStatistics[BucketType].BaseAddress) &&
-          (PhysicalEnd <= mMemoryTypeStatistics[BucketType].MaximumAddress)) {
+          (PhysicalEnd <= mMemoryTypeStatistics[BucketType].MaximumAddress))
+      {
         break;
       }
     }
@@ -176,10 +177,13 @@ GetBucketMemoryType (
   // If we can find the bucket type, use it to guide the merging logic below.
   // Otherwise, we will not care about the bucket type.
   if (BucketType >= EfiMaxMemoryType) {
-    DEBUG ((DEBUG_PAGE, "%a: defaulting to max for %lx -%lx\n",
-            __func__,
-            PhysicalStart,
-            PhysicalEnd));
+    DEBUG ((
+      DEBUG_PAGE,
+      "%a: defaulting to max for %lx -%lx\n",
+      __func__,
+      PhysicalStart,
+      PhysicalEnd
+      ));
   }
 
   return BucketType;
@@ -222,8 +226,9 @@ CoreAddRange (
     // better be within the same bucket.
     //
     if (mMemoryTypeStatistics[BucketType].Special && (mMemoryTypeStatistics[BucketType].NumberOfPages != 0)) {
-      if ((Start >= mMemoryTypeStatistics[BucketType].BaseAddress && Start <= mMemoryTypeStatistics[BucketType].MaximumAddress) &&
-          (End > mMemoryTypeStatistics[BucketType].MaximumAddress)) {
+      if (((Start >= mMemoryTypeStatistics[BucketType].BaseAddress) && (Start <= mMemoryTypeStatistics[BucketType].MaximumAddress)) &&
+          (End > mMemoryTypeStatistics[BucketType].MaximumAddress))
+      {
         // The start overlaps the bucket, so we let self-recursion handle the tail, and we
         // handle the head.
         CoreAddRange (
@@ -236,8 +241,9 @@ CoreAddRange (
         End = mMemoryTypeStatistics[BucketType].MaximumAddress;
         break;
       } else if ((Start < mMemoryTypeStatistics[BucketType].BaseAddress) &&
-               (End >= mMemoryTypeStatistics[BucketType].BaseAddress) &&
-               (End <= mMemoryTypeStatistics[BucketType].MaximumAddress)) {
+                 (End >= mMemoryTypeStatistics[BucketType].BaseAddress) &&
+                 (End <= mMemoryTypeStatistics[BucketType].MaximumAddress))
+      {
         // The end overlaps the bucket, so we let self-recursion handle the head, and we
         // handle the tail.
         CoreAddRange (
@@ -298,7 +304,7 @@ CoreAddRange (
   //
 
   MergeType = GetBucketMemoryType (Start, End);
-  Link = gMemoryMap.ForwardLink;
+  Link      = gMemoryMap.ForwardLink;
   while (Link != &gMemoryMap) {
     Entry = CR (Link, MEMORY_MAP, Link, MEMORY_MAP_SIGNATURE);
     Link  = Link->ForwardLink;
@@ -2132,11 +2138,18 @@ CoreGetMemoryMap (
         } else if (mMemoryTypeStatistics[Type].Special &&
                    (mMemoryTypeStatistics[Type].NumberOfPages > 0) &&
                    (((Entry->Start >= mMemoryTypeStatistics[Type].BaseAddress) && (Entry->Start <= mMemoryTypeStatistics[Type].MaximumAddress)) ||
-                    ((Entry->End >= mMemoryTypeStatistics[Type].BaseAddress) && (Entry->End <= mMemoryTypeStatistics[Type].MaximumAddress)))) {
+                    ((Entry->End >= mMemoryTypeStatistics[Type].BaseAddress) && (Entry->End <= mMemoryTypeStatistics[Type].MaximumAddress))))
+        {
           // There is partial overlap with a special memory type bin.
           // This is not allowed, so we will not change the type.
-          DEBUG ((DEBUG_ERROR, "%a: Memory Map entry partially overlaps with a special memory type bin. Type %d, Start 0x%lx, End 0x%lx\n",
-                 __func__, Type, Entry->Start, Entry->End));
+          DEBUG ((
+            DEBUG_ERROR,
+            "%a: Memory Map entry partially overlaps with a special memory type bin. Type %d, Start 0x%lx, End 0x%lx\n",
+            __func__,
+            Type,
+            Entry->Start,
+            Entry->End
+            ));
           ASSERT (FALSE);
         }
       }
