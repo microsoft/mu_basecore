@@ -255,6 +255,28 @@ CoreAddRange (
         CoreFreeMemoryMapStack ();
         Start = mMemoryTypeStatistics[BucketType].BaseAddress;
         break;
+      } else if ((Start < mMemoryTypeStatistics[BucketType].BaseAddress) &&
+                 (End > mMemoryTypeStatistics[BucketType].MaximumAddress))
+      {
+        // This memory region completely covers the bucket, so we let self-recursion handle both
+        // the head and tail, and we handle the middle.
+        CoreAddRange (
+          Type,
+          Start,
+          mMemoryTypeStatistics[BucketType].BaseAddress - 1,
+          Attribute
+          );
+        CoreFreeMemoryMapStack ();
+        CoreAddRange (
+          Type,
+          mMemoryTypeStatistics[BucketType].MaximumAddress + 1,
+          End,
+          Attribute
+          );
+        CoreFreeMemoryMapStack ();
+        Start = mMemoryTypeStatistics[BucketType].BaseAddress;
+        End   = mMemoryTypeStatistics[BucketType].MaximumAddress;
+        break;
       }
     }
   }
@@ -346,6 +368,7 @@ CoreAddRange (
   mMapStack[mMapDepth].VirtualStart = 0;
   mMapStack[mMapDepth].Attribute    = Attribute;
   InsertTailList (&gMemoryMap, &mMapStack[mMapDepth].Link);
+  DEBUG ((DEBUG_ERROR, "%a: %lx-%lx to %d\n", __func__, Start, End, Type));
 
   mMapDepth += 1;
   ASSERT (mMapDepth < MAX_MAP_DEPTH);
@@ -486,6 +509,7 @@ CoreFreeMemoryMapStack (
       }
 
       InsertTailList (Link2, &Entry->Link);
+      DEBUG ((DEBUG_ERROR, "%a: %lx-%lx to %d\n", __func__, Entry->Start, Entry->End, Entry->Type));
     } else {
       //
       // This item of mMapStack[mMapDepth] has already been dequeued from gMemoryMap list,
@@ -1110,6 +1134,7 @@ CoreConvertPagesEx (
 
       Entry = &mMapStack[mMapDepth];
       InsertTailList (&gMemoryMap, &Entry->Link);
+      DEBUG ((DEBUG_ERROR, "%a: %lx-%lx to %d\n", __func__, Entry->Start, Entry->End, Entry->Type));
 
       mMapDepth += 1;
       ASSERT (mMapDepth < MAX_MAP_DEPTH);
@@ -2144,12 +2169,27 @@ CoreGetMemoryMap (
           // This is not allowed, so we will not change the type.
           DEBUG ((
             DEBUG_ERROR,
-            "%a: Memory Map entry partially overlaps with a special memory type bin. Type %d, Start 0x%lx, End 0x%lx\n",
+            "%a: Memory Map entry partially overlaps with a special memory type bin. Bucket Type %d, Type %d, Start 0x%lx, End 0x%lx\n",
             __func__,
             Type,
+            Entry->Type,
             Entry->Start,
             Entry->End
             ));
+          DEBUG ((DEBUG_ERROR, "%a: Current bucket information is:\n", __func__));
+          for (Type = (EFI_MEMORY_TYPE)0; Type < EfiMaxMemoryType; Type++) {
+            if (mMemoryTypeStatistics[Type].Special && (mMemoryTypeStatistics[Type].NumberOfPages > 0)) {
+              DEBUG ((
+                DEBUG_ERROR,
+                "%a: Type %d, BaseAddress 0x%lx, MaximumAddress 0x%lx, NumberOfPages %lu\n",
+                __func__,
+                Type,
+                mMemoryTypeStatistics[Type].BaseAddress,
+                mMemoryTypeStatistics[Type].MaximumAddress,
+                mMemoryTypeStatistics[Type].NumberOfPages
+                ));
+            }
+          }
           ASSERT (FALSE);
         }
       }
