@@ -96,6 +96,16 @@ EFI_MEMORY_TYPE_INFORMATION  gMemoryTypeInformation[EfiMaxMemoryType + 1] = {
 GLOBAL_REMOVE_IF_UNREFERENCED   BOOLEAN  gLoadFixedAddressCodeMemoryReady = FALSE;
 
 /**
+  Internal function.  Moves any memory descriptors that are on the
+  temporary descriptor stack to heap.
+
+**/
+VOID
+CoreFreeMemoryMapStack (
+  VOID
+  );
+
+/**
   Enter critical section by gaining lock on gMemoryLock.
 
 **/
@@ -195,9 +205,10 @@ CoreAddRange (
   IN UINT64                Attribute
   )
 {
-  LIST_ENTRY  *Link;
-  MEMORY_MAP  *Entry;
+  LIST_ENTRY       *Link;
+  MEMORY_MAP       *Entry;
   EFI_MEMORY_TYPE  BucketType;
+  EFI_MEMORY_TYPE  MergeType;
 
   ASSERT ((Start & EFI_PAGE_MASK) == 0);
   ASSERT (End > Start);
@@ -221,6 +232,7 @@ CoreAddRange (
           End,
           Attribute
           );
+        CoreFreeMemoryMapStack ();
         End = mMemoryTypeStatistics[BucketType].MaximumAddress;
         break;
       } else if ((Start < mMemoryTypeStatistics[BucketType].BaseAddress) &&
@@ -234,6 +246,7 @@ CoreAddRange (
           mMemoryTypeStatistics[BucketType].BaseAddress - 1,
           Attribute
           );
+        CoreFreeMemoryMapStack ();
         Start = mMemoryTypeStatistics[BucketType].BaseAddress;
         break;
       }
@@ -284,7 +297,7 @@ CoreAddRange (
   // and the same Attribute
   //
 
-  EFI_MEMORY_TYPE MergeType = EfiMaxMemoryType + 1;
+  MergeType = GetBucketMemoryType (Start, End);
   Link = gMemoryMap.ForwardLink;
   while (Link != &gMemoryMap) {
     Entry = CR (Link, MEMORY_MAP, Link, MEMORY_MAP_SIGNATURE);
@@ -298,7 +311,7 @@ CoreAddRange (
       continue;
     }
 
-    if (MergeType != EfiMaxMemoryType + 1) {
+    if (MergeType != EfiMaxMemoryType) {
       // We are in the midst of merging memory descriptors, so we can only merge
       // with the same type as the merge type.
       if (MergeType != GetBucketMemoryType (Entry->Start, Entry->End)) {
@@ -309,17 +322,9 @@ CoreAddRange (
     if (Entry->End + 1 == Start) {
       Start = Entry->Start;
       RemoveMemoryMapEntry (Entry);
-      if (MergeType == EfiMaxMemoryType + 1) {
-        // If this is the first entry we are looking at, then set the merge type
-        MergeType = GetBucketMemoryType (Entry->Start, Entry->End);
-      }
     } else if (Entry->Start == End + 1) {
       End = Entry->End;
       RemoveMemoryMapEntry (Entry);
-      if (MergeType == EfiMaxMemoryType + 1) {
-        // If this is the first entry we are looking at, then set the merge type
-        MergeType = GetBucketMemoryType (Entry->Start, Entry->End);
-      }
     }
   }
 
