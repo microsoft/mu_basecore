@@ -169,7 +169,7 @@ GetBucketMemoryType (
   EFI_MEMORY_TYPE  BucketType;
 
   // Find the bucket type for the incoming memory region.
-  for (BucketType = 0; BucketType < EfiMaxMemoryType; BucketType++) {
+  for (BucketType = (EFI_MEMORY_TYPE)0; BucketType < EfiMaxMemoryType; BucketType++) {
     //
     // If the number of pages for this memory type is not zero, the input region
     // better be within the same bucket. We only care about the special memory type
