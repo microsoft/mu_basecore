@@ -2176,20 +2176,7 @@ CoreGetMemoryMap (
             Entry->Start,
             Entry->End
             ));
-          DEBUG ((DEBUG_ERROR, "%a: Current bucket information is:\n", __func__));
-          for (Type = (EFI_MEMORY_TYPE)0; Type < EfiMaxMemoryType; Type++) {
-            if (mMemoryTypeStatistics[Type].Special && (mMemoryTypeStatistics[Type].NumberOfPages > 0)) {
-              DEBUG ((
-                DEBUG_ERROR,
-                "%a: Type %d, BaseAddress 0x%lx, MaximumAddress 0x%lx, NumberOfPages %lu\n",
-                __func__,
-                Type,
-                mMemoryTypeStatistics[Type].BaseAddress,
-                mMemoryTypeStatistics[Type].MaximumAddress,
-                mMemoryTypeStatistics[Type].NumberOfPages
-                ));
-            }
-          }
+
           ASSERT (FALSE);
         }
       }
