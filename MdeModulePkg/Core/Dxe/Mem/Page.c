@@ -189,7 +189,7 @@ GetBucketMemoryType (
         // The start and end overlap the bucket, but not fully inclusive. We should not allow this.
         DEBUG ((
           DEBUG_ERROR,
-          "%a: %lx-%lx intersects bucket %d (%lx-%lx)\n",
+          "%a: %lx-%lx intersects bucket type %d (%lx-%lx)\n",
           __func__,
           PhysicalStart,
           PhysicalEnd,
