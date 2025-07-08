@@ -368,7 +368,6 @@ CoreAddRange (
   mMapStack[mMapDepth].VirtualStart = 0;
   mMapStack[mMapDepth].Attribute    = Attribute;
   InsertTailList (&gMemoryMap, &mMapStack[mMapDepth].Link);
-  DEBUG ((DEBUG_ERROR, "%a: %lx-%lx to %d\n", __func__, Start, End, Type));
 
   mMapDepth += 1;
   ASSERT (mMapDepth < MAX_MAP_DEPTH);
@@ -509,7 +508,6 @@ CoreFreeMemoryMapStack (
       }
 
       InsertTailList (Link2, &Entry->Link);
-      DEBUG ((DEBUG_ERROR, "%a: %lx-%lx to %d\n", __func__, Entry->Start, Entry->End, Entry->Type));
     } else {
       //
       // This item of mMapStack[mMapDepth] has already been dequeued from gMemoryMap list,
@@ -1134,7 +1132,6 @@ CoreConvertPagesEx (
 
       Entry = &mMapStack[mMapDepth];
       InsertTailList (&gMemoryMap, &Entry->Link);
-      DEBUG ((DEBUG_ERROR, "%a: %lx-%lx to %d\n", __func__, Entry->Start, Entry->End, Entry->Type));
 
       mMapDepth += 1;
       ASSERT (mMapDepth < MAX_MAP_DEPTH);
