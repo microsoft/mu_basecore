@@ -146,6 +146,21 @@ CoreInternalAllocatePages (
   IN BOOLEAN                   NeedGuard
   );
 
+/**
+  Get the memory type for a given bucket.
+
+  @param  PhysicalStart  The starting address of the memory region.
+  @param  PhysicalEnd    The ending address of the memory region.
+
+  @return The memory type for the bucket that contains the given physical address range.
+          If the address range does not match any special bucket, it returns EfiMaxMemoryType.
+**/
+EFI_MEMORY_TYPE
+GetBucketMemoryType (
+  IN EFI_PHYSICAL_ADDRESS  PhysicalStart,
+  IN EFI_PHYSICAL_ADDRESS  PhysicalEnd
+  );
+
 //
 // Internal Global data
 //

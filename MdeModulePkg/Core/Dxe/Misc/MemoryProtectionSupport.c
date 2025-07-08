@@ -1707,12 +1707,6 @@ SetAccessAttributesInMemoryMap (
   return EFI_SUCCESS;
 }
 
-EFI_MEMORY_TYPE
-GetBucketMemoryType (
-  IN EFI_PHYSICAL_ADDRESS  PhysicalStart,
-  IN EFI_PHYSICAL_ADDRESS  PhysicalEnd
-  );
-
 /**
   Merge contiguous memory map entries with the same attributes.
 

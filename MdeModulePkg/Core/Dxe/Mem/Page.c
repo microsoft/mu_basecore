@@ -151,6 +151,15 @@ RemoveMemoryMapEntry (
   }
 }
 
+/**
+  Get the memory type for a given bucket.
+
+  @param  PhysicalStart  The starting address of the memory region.
+  @param  PhysicalEnd    The ending address of the memory region.
+
+  @return The memory type for the bucket that contains the given physical address range.
+          If the address range does not match any special bucket, it returns EfiMaxMemoryType.
+**/
 EFI_MEMORY_TYPE
 GetBucketMemoryType (
   IN EFI_PHYSICAL_ADDRESS  PhysicalStart,
@@ -170,6 +179,24 @@ GetBucketMemoryType (
           (PhysicalEnd <= mMemoryTypeStatistics[BucketType].MaximumAddress))
       {
         break;
+      } else if (((PhysicalStart >= mMemoryTypeStatistics[BucketType].BaseAddress) &&
+                 (PhysicalStart <= mMemoryTypeStatistics[BucketType].MaximumAddress)) ||
+                 ((PhysicalEnd >= mMemoryTypeStatistics[BucketType].BaseAddress) &&
+                 (PhysicalEnd <= mMemoryTypeStatistics[BucketType].MaximumAddress)))
+      {
+        // The start and end overlap the bucket, but not fully inclusive. We should not allow this.
+        DEBUG ((
+          DEBUG_ERROR,
+          "%a: %lx-%lx intersects bucket %d (%lx-%lx)\n",
+          __func__,
+          PhysicalStart,
+          PhysicalEnd,
+          BucketType,
+          mMemoryTypeStatistics[BucketType].BaseAddress,
+          mMemoryTypeStatistics[BucketType].MaximumAddress
+          ));
+
+        ASSERT (FALSE);
       }
     }
   }
