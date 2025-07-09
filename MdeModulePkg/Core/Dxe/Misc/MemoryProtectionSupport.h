@@ -11,6 +11,7 @@
 
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
+#include "Mem/Imem.h" // MU_CHANGE: Include Imem.h for bucket memory type functions
 #include <Library/ImagePropertiesRecordLib.h>
 #include <Protocol/MemoryProtectionDebug.h>
 #include <Protocol/MemoryProtectionSpecialRegionProtocol.h>
