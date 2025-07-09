@@ -95,6 +95,7 @@ EFI_MEMORY_TYPE_INFORMATION  gMemoryTypeInformation[EfiMaxMemoryType + 1] = {
 //
 GLOBAL_REMOVE_IF_UNREFERENCED   BOOLEAN  gLoadFixedAddressCodeMemoryReady = FALSE;
 
+// MU_CHANGE START: Add function prototype to be used in CoreAddRange
 /**
   Internal function.  Moves any memory descriptors that are on the
   temporary descriptor stack to heap.
@@ -104,6 +105,7 @@ VOID
 CoreFreeMemoryMapStack (
   VOID
   );
+// MU_CHANGE END
 
 /**
   Enter critical section by gaining lock on gMemoryLock.
@@ -151,6 +153,7 @@ RemoveMemoryMapEntry (
   }
 }
 
+// MU_CHANGE START: Add function to get the bucket memory type for a given memory region
 /**
   Get the memory type for a given bucket.
 
@@ -217,6 +220,7 @@ GetBucketMemoryType (
 
   return BucketType;
 }
+// MU_CHANGE ENDS
 
 /**
   Internal function.  Adds a ranges to the memory map.
@@ -238,17 +242,21 @@ CoreAddRange (
   IN UINT64                Attribute
   )
 {
-  LIST_ENTRY       *Link;
-  MEMORY_MAP       *Entry;
+  LIST_ENTRY  *Link;
+  MEMORY_MAP  *Entry;
+
+  // MU_CHANGE STARTS: Add check to merge memory regions of the bucket type
   EFI_MEMORY_TYPE  BucketType;
   EFI_MEMORY_TYPE  MergeType;
   BOOLEAN          Break;
+  // MU_CHANGE ENDs
 
   ASSERT ((Start & EFI_PAGE_MASK) == 0);
   ASSERT (End > Start);
 
   ASSERT_LOCKED (&gMemoryLock);
 
+  // MU_CHANGE STARTS: Add check to merge memory regions of the bucket type
   // Find the bucket type for the incoming memory region.
   Break = FALSE;
   for (BucketType = (EFI_MEMORY_TYPE)0; BucketType < EfiMaxMemoryType; BucketType++) {
@@ -306,6 +314,7 @@ CoreAddRange (
       }
     }
   }
+  // MU_CHANGE ENDS
 
   DEBUG ((DEBUG_PAGE, "AddRange: %lx-%lx to %d\n", Start, End, Type));
 
@@ -351,7 +360,7 @@ CoreAddRange (
   // and the same Attribute
   //
 
-  MergeType = GetBucketMemoryType (Start, End);
+  MergeType = GetBucketMemoryType (Start, End); // MU_CHANGE: Add check to merge memory regions of the bucket type
   Link      = gMemoryMap.ForwardLink;
   while (Link != &gMemoryMap) {
     Entry = CR (Link, MEMORY_MAP, Link, MEMORY_MAP_SIGNATURE);
@@ -365,6 +374,7 @@ CoreAddRange (
       continue;
     }
 
+    // MU_CHANGE STARTS: Add check to merge memory regions of the bucket type
     if (MergeType != EfiMaxMemoryType) {
       // We are in the midst of merging memory descriptors, so we can only merge
       // with the same type as the merge type.
@@ -372,6 +382,7 @@ CoreAddRange (
         continue;
       }
     }
+    // MU_CHANGE ENDS
 
     if (Entry->End + 1 == Start) {
       Start = Entry->Start;
@@ -2188,6 +2199,7 @@ CoreGetMemoryMap (
             (Entry->End   <= mMemoryTypeStatistics[Type].MaximumAddress))
         {
           MemoryMap->Type = Type;
+        // MU_CHANGE STARTS: Add check to merge memory regions of the bucket type
         } else if (mMemoryTypeStatistics[Type].Special &&
                    (mMemoryTypeStatistics[Type].NumberOfPages > 0) &&
                    (((Entry->Start >= mMemoryTypeStatistics[Type].BaseAddress) && (Entry->Start <= mMemoryTypeStatistics[Type].MaximumAddress)) ||
@@ -2206,6 +2218,7 @@ CoreGetMemoryMap (
             ));
 
           ASSERT (FALSE);
+        // MU_CHANGE ENDS
         }
       }
     }

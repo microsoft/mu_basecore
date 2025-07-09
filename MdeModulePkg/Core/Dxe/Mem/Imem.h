@@ -146,6 +146,7 @@ CoreInternalAllocatePages (
   IN BOOLEAN                   NeedGuard
   );
 
+// MU_CHANGE START: Add function to get the bucket memory type for a given memory region
 /**
   Get the memory type for a given bucket.
 
@@ -160,6 +161,7 @@ GetBucketMemoryType (
   IN EFI_PHYSICAL_ADDRESS  PhysicalStart,
   IN EFI_PHYSICAL_ADDRESS  PhysicalEnd
   );
+// MU_CHANGE ENDS
 
 //
 // Internal Global data
