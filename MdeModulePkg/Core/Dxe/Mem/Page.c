@@ -176,7 +176,7 @@ MemoryRegionsIntersect (
   IN EFI_PHYSICAL_ADDRESS  End2
   )
 {
-  return (((Start1 < End2) && (Start2 < Start1)) || 
+  return (((Start1 < End2) && (Start2 < Start1)) ||
           ((Start2 < End1) && (Start1 < Start2)));
 }
 
@@ -211,10 +211,11 @@ GetBucketMemoryType (
       {
         break;
       } else if (MemoryRegionsIntersect (
-                  PhysicalStart,
-                  PhysicalEnd,
-                  mMemoryTypeStatistics[BucketType].BaseAddress,
-                  mMemoryTypeStatistics[BucketType].MaximumAddress))
+                   PhysicalStart,
+                   PhysicalEnd,
+                   mMemoryTypeStatistics[BucketType].BaseAddress,
+                   mMemoryTypeStatistics[BucketType].MaximumAddress
+                   ))
       {
         // The start and end overlap the bucket, but not fully inclusive. We should not allow this.
         DEBUG ((
@@ -2234,11 +2235,11 @@ CoreGetMemoryMap (
         } else if (mMemoryTypeStatistics[Type].Special &&
                    (mMemoryTypeStatistics[Type].NumberOfPages > 0) &&
                    MemoryRegionsIntersect (
-                      Entry->Start,
-                      Entry->End,
-                      mMemoryTypeStatistics[Type].BaseAddress,
-                      mMemoryTypeStatistics[Type].MaximumAddress
-                      ))
+                     Entry->Start,
+                     Entry->End,
+                     mMemoryTypeStatistics[Type].BaseAddress,
+                     mMemoryTypeStatistics[Type].MaximumAddress
+                     ))
         {
           // There is partial overlap with a special memory type bin.
           // This is not allowed, so we will not change the type.
