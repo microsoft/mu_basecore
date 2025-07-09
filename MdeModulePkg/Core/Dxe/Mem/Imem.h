@@ -146,6 +146,25 @@ CoreInternalAllocatePages (
   IN BOOLEAN                   NeedGuard
   );
 
+// MU_CHANGE START: Add function to get the bucket memory type for a given memory region
+
+/**
+  Get the memory type for a given bucket.
+
+  @param  PhysicalStart  The starting address of the memory region.
+  @param  PhysicalEnd    The ending address of the memory region.
+
+  @return The memory type for the bucket that contains the given physical address range.
+          If the address range does not match any special bucket, it returns EfiMaxMemoryType.
+**/
+EFI_MEMORY_TYPE
+GetBucketMemoryType (
+  IN EFI_PHYSICAL_ADDRESS  PhysicalStart,
+  IN EFI_PHYSICAL_ADDRESS  PhysicalEnd
+  );
+
+// MU_CHANGE ENDS
+
 //
 // Internal Global data
 //
