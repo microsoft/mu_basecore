@@ -160,10 +160,10 @@ RemoveMemoryMapEntry (
 /**
   Helper function to evaluate if memory regions intersect.
 
-  @param  Start1     The starting address of the first memory region.
-  @param  End1       The ending address of the first memory region.
-  @param  Start2     The starting address of the second memory region.
-  @param  End2       The ending address of the second memory region.
+  @param  Start1     The address of the first byte in the first memory region.
+  @param  End1       The address of the last byte in the first memory region.
+  @param  Start2     The address of the first byte in the second memory region.
+  @param  End2       The address of the last byte in the second memory region.
 
   @return TRUE if the memory regions intersect, FALSE otherwise.
 **/
@@ -176,8 +176,8 @@ MemoryRegionsIntersect (
   IN EFI_PHYSICAL_ADDRESS  End2
   )
 {
-  return (((Start1 < End2) && (Start2 < Start1)) ||
-          ((Start2 < End1) && (Start1 < Start2)));
+  return (((Start1 <= End2) && (Start2 <= Start1)) ||
+          ((Start2 <= End1) && (Start1 <= Start2)));
 }
 
 /**
