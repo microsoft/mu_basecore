@@ -169,7 +169,7 @@ GetBucketMemoryType (
   EFI_MEMORY_TYPE  BucketType;
 
   // Find the bucket type for the incoming memory region.
-  for (BucketType = 0; BucketType < EfiMaxMemoryType; BucketType++) {
+  for (BucketType = (EFI_MEMORY_TYPE)0; BucketType < EfiMaxMemoryType; BucketType++) {
     //
     // If the number of pages for this memory type is not zero, the input region
     // better be within the same bucket. We only care about the special memory type
@@ -189,7 +189,7 @@ GetBucketMemoryType (
         // The start and end overlap the bucket, but not fully inclusive. We should not allow this.
         DEBUG ((
           DEBUG_ERROR,
-          "%a: %lx-%lx intersects bucket %d (%lx-%lx)\n",
+          "%a: %lx-%lx intersects bucket type %d (%lx-%lx)\n",
           __func__,
           PhysicalStart,
           PhysicalEnd,
@@ -251,7 +251,7 @@ CoreAddRange (
 
   // Find the bucket type for the incoming memory region.
   Break = FALSE;
-  for (BucketType = 0; BucketType < EfiMaxMemoryType; BucketType++) {
+  for (BucketType = (EFI_MEMORY_TYPE)0; BucketType < EfiMaxMemoryType; BucketType++) {
     //
     // If the number of pages for this memory type is not zero, the input region better
     // be within the same bucket. Otherwise, we will handle the ones we care about,
@@ -1651,6 +1651,11 @@ CoreInternalAllocatePages (
   // return EFI_NOT_FOUND.
   //
   if (Type == AllocateAddress) {
+    // Page 0 is not allowed to be allocated as it is reserved for null pointer detection
+    if (Start == 0) {
+      return EFI_NOT_FOUND;
+    }
+
     if ((NumberOfPages == 0) ||
         (NumberOfPages > RShiftU64 (MaxAddress, EFI_PAGE_SHIFT)))
     {
