@@ -96,6 +96,7 @@ EFI_MEMORY_TYPE_INFORMATION  gMemoryTypeInformation[EfiMaxMemoryType + 1] = {
 GLOBAL_REMOVE_IF_UNREFERENCED   BOOLEAN  gLoadFixedAddressCodeMemoryReady = FALSE;
 
 // MU_CHANGE START: Add function prototype to be used in CoreAddRange
+
 /**
   Internal function.  Moves any memory descriptors that are on the
   temporary descriptor stack to heap.
@@ -105,6 +106,7 @@ VOID
 CoreFreeMemoryMapStack (
   VOID
   );
+
 // MU_CHANGE END
 
 /**
@@ -154,6 +156,30 @@ RemoveMemoryMapEntry (
 }
 
 // MU_CHANGE START: Add function to get the bucket memory type for a given memory region
+
+/**
+  Helper function to evaluate if memory regions intersect.
+
+  @param  Start1     The starting address of the first memory region.
+  @param  End1       The ending address of the first memory region.
+  @param  Start2     The starting address of the second memory region.
+  @param  End2       The ending address of the second memory region.
+
+  @return TRUE if the memory regions intersect, FALSE otherwise.
+**/
+STATIC
+BOOLEAN
+MemoryRegionsIntersect (
+  IN EFI_PHYSICAL_ADDRESS  Start1,
+  IN EFI_PHYSICAL_ADDRESS  End1,
+  IN EFI_PHYSICAL_ADDRESS  Start2,
+  IN EFI_PHYSICAL_ADDRESS  End2
+  )
+{
+  return (((Start1 < End2) && (Start2 < Start1)) || 
+          ((Start2 < End1) && (Start1 < Start2)));
+}
+
 /**
   Get the memory type for a given bucket.
 
@@ -184,10 +210,11 @@ GetBucketMemoryType (
           (PhysicalEnd <= mMemoryTypeStatistics[BucketType].MaximumAddress))
       {
         break;
-      } else if (((PhysicalStart >= mMemoryTypeStatistics[BucketType].BaseAddress) &&
-                 (PhysicalStart <= mMemoryTypeStatistics[BucketType].MaximumAddress)) ||
-                 ((PhysicalEnd >= mMemoryTypeStatistics[BucketType].BaseAddress) &&
-                 (PhysicalEnd <= mMemoryTypeStatistics[BucketType].MaximumAddress)))
+      } else if (MemoryRegionsIntersect (
+                  PhysicalStart,
+                  PhysicalEnd,
+                  mMemoryTypeStatistics[BucketType].BaseAddress,
+                  mMemoryTypeStatistics[BucketType].MaximumAddress))
       {
         // The start and end overlap the bucket, but not fully inclusive. We should not allow this.
         DEBUG ((
@@ -220,6 +247,7 @@ GetBucketMemoryType (
 
   return BucketType;
 }
+
 // MU_CHANGE ENDS
 
 /**
@@ -249,6 +277,7 @@ CoreAddRange (
   EFI_MEMORY_TYPE  BucketType;
   EFI_MEMORY_TYPE  MergeType;
   BOOLEAN          Break;
+
   // MU_CHANGE ENDs
 
   ASSERT ((Start & EFI_PAGE_MASK) == 0);
@@ -284,7 +313,7 @@ CoreAddRange (
           Attribute
           );
         CoreFreeMemoryMapStack ();
-        End = mMemoryTypeStatistics[BucketType].MaximumAddress;
+        End   = mMemoryTypeStatistics[BucketType].MaximumAddress;
         Break = TRUE;
       }
 
@@ -314,6 +343,7 @@ CoreAddRange (
       }
     }
   }
+
   // MU_CHANGE ENDS
 
   DEBUG ((DEBUG_PAGE, "AddRange: %lx-%lx to %d\n", Start, End, Type));
@@ -382,6 +412,7 @@ CoreAddRange (
         continue;
       }
     }
+
     // MU_CHANGE ENDS
 
     if (Entry->End + 1 == Start) {
@@ -2199,11 +2230,15 @@ CoreGetMemoryMap (
             (Entry->End   <= mMemoryTypeStatistics[Type].MaximumAddress))
         {
           MemoryMap->Type = Type;
-        // MU_CHANGE STARTS: Add check to merge memory regions of the bucket type
+          // MU_CHANGE STARTS: Add check to merge memory regions of the bucket type
         } else if (mMemoryTypeStatistics[Type].Special &&
                    (mMemoryTypeStatistics[Type].NumberOfPages > 0) &&
-                   (((Entry->Start >= mMemoryTypeStatistics[Type].BaseAddress) && (Entry->Start <= mMemoryTypeStatistics[Type].MaximumAddress)) ||
-                    ((Entry->End >= mMemoryTypeStatistics[Type].BaseAddress) && (Entry->End <= mMemoryTypeStatistics[Type].MaximumAddress))))
+                   MemoryRegionsIntersect (
+                      Entry->Start,
+                      Entry->End,
+                      mMemoryTypeStatistics[Type].BaseAddress,
+                      mMemoryTypeStatistics[Type].MaximumAddress
+                      ))
         {
           // There is partial overlap with a special memory type bin.
           // This is not allowed, so we will not change the type.
@@ -2218,7 +2253,7 @@ CoreGetMemoryMap (
             ));
 
           ASSERT (FALSE);
-        // MU_CHANGE ENDS
+          // MU_CHANGE ENDS
         }
       }
     }
