@@ -1139,6 +1139,10 @@ MergeMemoryMapByAttribute (
       MemoryBlockLength = (UINT64)(EfiPagesToSize (NewMemoryMapEntry->NumberOfPages));
       if (((UINTN)NextMemoryMapEntry < (UINTN)MemoryMapEnd) &&
           (NewMemoryMapEntry->Attribute == NextMemoryMapEntry->Attribute) &&
+          // MU_CHANGE STARTS: Add check to merge memory regions of the bucket type
+          (GetBucketMemoryType (NewMemoryMapEntry->PhysicalStart, NewMemoryMapEntry->PhysicalStart + EFI_PAGES_TO_SIZE (NewMemoryMapEntry->NumberOfPages) - 1) ==
+           GetBucketMemoryType (NextMemoryMapEntry->PhysicalStart, NextMemoryMapEntry->PhysicalStart + EFI_PAGES_TO_SIZE (NextMemoryMapEntry->NumberOfPages) - 1)) &&
+          // MU_CHANGE ENDS
           ((NewMemoryMapEntry->PhysicalStart + MemoryBlockLength) == NextMemoryMapEntry->PhysicalStart))
       {
         NewMemoryMapEntry->NumberOfPages += NextMemoryMapEntry->NumberOfPages;
