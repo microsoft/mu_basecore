@@ -242,6 +242,7 @@ CoreAddRange (
   MEMORY_MAP       *Entry;
   EFI_MEMORY_TYPE  BucketType;
   EFI_MEMORY_TYPE  MergeType;
+  BOOLEAN          Break;
 
   ASSERT ((Start & EFI_PAGE_MASK) == 0);
   ASSERT (End > Start);
@@ -249,14 +250,15 @@ CoreAddRange (
   ASSERT_LOCKED (&gMemoryLock);
 
   // Find the bucket type for the incoming memory region.
+  Break = FALSE;
   for (BucketType = 0; BucketType < EfiMaxMemoryType; BucketType++) {
     //
-    // If the number of pages for this memory type is not zero, the input region
-    // better be within the same bucket. Otherwise, we will handle the ones we care,
+    // If the number of pages for this memory type is not zero, the input region better
+    // be within the same bucket. Otherwise, we will handle the ones we care about,
     // the special memory types, in chunks.
     //
     if (mMemoryTypeStatistics[BucketType].Special && (mMemoryTypeStatistics[BucketType].NumberOfPages != 0)) {
-      if (((Start >= mMemoryTypeStatistics[BucketType].BaseAddress) && (Start <= mMemoryTypeStatistics[BucketType].MaximumAddress)) &&
+      if ((Start <= mMemoryTypeStatistics[BucketType].MaximumAddress) &&
           (End > mMemoryTypeStatistics[BucketType].MaximumAddress))
       {
         //
@@ -264,8 +266,8 @@ CoreAddRange (
         // handle the head.
         //
         // |----------|---Special Memory Bucket---|----------|
-        // |----------------------^-------------------^------|
-        // |--------------------Start----------------End-----|
+        // |--------------^---------------------------^------|
+        // |------------Start------------------------End-----|
         //
         CoreAddRange (
           Type,
@@ -275,10 +277,11 @@ CoreAddRange (
           );
         CoreFreeMemoryMapStack ();
         End = mMemoryTypeStatistics[BucketType].MaximumAddress;
-        break;
-      } else if ((Start < mMemoryTypeStatistics[BucketType].BaseAddress) &&
-                 (End >= mMemoryTypeStatistics[BucketType].BaseAddress) &&
-                 (End <= mMemoryTypeStatistics[BucketType].MaximumAddress))
+        Break = TRUE;
+      }
+
+      if ((Start < mMemoryTypeStatistics[BucketType].BaseAddress) &&
+          (End >= mMemoryTypeStatistics[BucketType].BaseAddress))
       {
         // The end overlaps the bucket, so we let self-recursion handle the head, and we
         // handle the tail.
@@ -295,37 +298,11 @@ CoreAddRange (
           );
         CoreFreeMemoryMapStack ();
         Start = mMemoryTypeStatistics[BucketType].BaseAddress;
+        Break = TRUE;
+      }
+
+      if (Break) {
         break;
-      } else if ((Start < mMemoryTypeStatistics[BucketType].BaseAddress) &&
-                 (End > mMemoryTypeStatistics[BucketType].MaximumAddress))
-      {
-        // This memory region completely covers the bucket, so we let self-recursion handle both
-        // the head and tail, and we handle the middle.
-        //
-        // |----------|---Special Memory Bucket---|----------|
-        // |------^------------------------------------^-----|
-        // |----Start---------------------------------End----|
-        //
-        CoreAddRange (
-          Type,
-          Start,
-          mMemoryTypeStatistics[BucketType].BaseAddress - 1,
-          Attribute
-          );
-        CoreFreeMemoryMapStack ();
-        CoreAddRange (
-          Type,
-          mMemoryTypeStatistics[BucketType].MaximumAddress + 1,
-          End,
-          Attribute
-          );
-        CoreFreeMemoryMapStack ();
-        Start = mMemoryTypeStatistics[BucketType].BaseAddress;
-        End   = mMemoryTypeStatistics[BucketType].MaximumAddress;
-        break;
-      } else {
-        // Do nothing special when the entry is fully outside the bucket,
-        // or the entry is fully inside the bucket.
       }
     }
   }
