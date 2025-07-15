@@ -993,7 +993,7 @@ CoreAddMemoryDescriptor (
       gMemoryTypeInformation[Index].NumberOfPages = 0;
       CoreFreePages (
         mMemoryTypeStatistics[Type].BaseAddress,
-        mMemoryTypeStatistics[Type].NumberOfPages
+        (UINTN)mMemoryTypeStatistics[Type].NumberOfPages
         );
       // mMemoryTypeStatistics[Type].NumberOfPages   = gMemoryTypeInformation[Index].NumberOfPages;
       // gMemoryTypeInformation[Index].NumberOfPages = 0;
