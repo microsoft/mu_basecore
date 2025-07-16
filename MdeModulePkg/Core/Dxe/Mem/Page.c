@@ -406,12 +406,9 @@ CoreAddRange (
     }
 
     // MU_CHANGE STARTS: Add check to merge memory regions of the bucket type
-    if (MergeType != EfiMaxMemoryType) {
-      // We are in the midst of merging memory descriptors, so we can only merge
-      // with the same type as the merge type.
-      if (MergeType != GetBucketMemoryType (Entry->Start, Entry->End)) {
-        continue;
-      }
+    // We need to make sure we can only merge with the same type as the merge type
+    if (MergeType != GetBucketMemoryType (Entry->Start, Entry->End)) {
+      continue;
     }
 
     // MU_CHANGE ENDS
@@ -989,12 +986,18 @@ CoreAddMemoryDescriptor (
     }
 
     if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
-      CoreFreePages (
-        mMemoryTypeStatistics[Type].BaseAddress,
-        gMemoryTypeInformation[Index].NumberOfPages
-        );
+      // MU_CHANGE Starts
+      // Activate the statistics so that the free page operation can be performed
+      // with valid bucket information.
       mMemoryTypeStatistics[Type].NumberOfPages   = gMemoryTypeInformation[Index].NumberOfPages;
       gMemoryTypeInformation[Index].NumberOfPages = 0;
+      CoreFreePages (
+        mMemoryTypeStatistics[Type].BaseAddress,
+        (UINTN)mMemoryTypeStatistics[Type].NumberOfPages
+        );
+      // mMemoryTypeStatistics[Type].NumberOfPages   = gMemoryTypeInformation[Index].NumberOfPages;
+      // gMemoryTypeInformation[Index].NumberOfPages = 0;
+      // MU_CHANGE Ends
     }
   }
 
