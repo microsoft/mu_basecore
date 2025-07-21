@@ -28,6 +28,14 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define CRYPTO_NID_SECP521R1        0x0206
 #define CRYPTO_NID_BRAINPOOLP512R1  0x03A5
 
+// Symmetric ciphers usable with Pkcs7Encrypt.
+#define CRYPTO_NID_AES128CBC  0x01A3 // NID_aes_128_cbc
+#define CRYPTO_NID_AES192CBC  0x01A7 // NID_aes_192_cbc
+#define CRYPTO_NID_AES256CBC  0x01AB // NID_aes_256_cbc
+
+// Flags usable with Pkcs7Encrypt.
+#define CRYPTO_PKCS7_DEFAULT  0x0 // Treat the input as binary data.
+
 ///
 /// MD5 digest size in bytes
 ///
