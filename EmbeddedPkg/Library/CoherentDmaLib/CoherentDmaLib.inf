@@ -20,11 +20,13 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec     ## MU_CHANGE
   EmbeddedPkg/EmbeddedPkg.dec
 
 [LibraryClasses]
   DebugLib
   MemoryAllocationLib
+  IoMmuLib                          ## MU_CHANGE
 
 [Pcd]
   gEmbeddedTokenSpaceGuid.PcdDmaDeviceOffset

@@ -24,6 +24,7 @@
 [Packages]
   EmbeddedPkg/EmbeddedPkg.dec
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec     ## MU_CHANGE
 
 [LibraryClasses]
   BaseMemoryLib
@@ -32,6 +33,7 @@
   IoLib
   MemoryAllocationLib
   UefiBootServicesTableLib
+  IoMmuLib                          ## MU_CHANGE
 
 [Protocols]
   gEfiCpuArchProtocolGuid
