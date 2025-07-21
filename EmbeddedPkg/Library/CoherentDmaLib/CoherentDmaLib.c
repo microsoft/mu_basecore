@@ -11,6 +11,9 @@
 #include <Library/DebugLib.h>
 #include <Library/DmaLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/IoMmuLib.h> // MU_CHANGE
+
+#include <Protocol/IoMmu.h>   // MU_CHANGE
 
 STATIC
 PHYSICAL_ADDRESS
@@ -51,6 +54,14 @@ DmaMap (
   OUT    VOID               **Mapping
   )
 {
+  // MU_CHANGE [BEGIN]
+  EFI_STATUS             Status;
+  VOID                   *IoMmuHostAddress;
+  EDKII_IOMMU_OPERATION  IoMmuOperation;
+  UINT64                 IoMmuAttribute;
+
+  // MU_CHANGE [END]
+
   if ((HostAddress == NULL) ||
       (NumberOfBytes == NULL) ||
       (DeviceAddress == NULL) ||
@@ -59,9 +70,72 @@ DmaMap (
     return EFI_INVALID_PARAMETER;
   }
 
-  *DeviceAddress = HostToDeviceAddress (HostAddress);
-  *Mapping       = NULL;
+  *DeviceAddress   = HostToDeviceAddress (HostAddress);
+  IoMmuHostAddress = HostAddress; // MU_CHANGE
+  *Mapping         = NULL;
+
+  // MU_CHANGE [BEGIN]
+
+  switch (Operation) {
+    case MapOperationBusMasterRead:
+      IoMmuOperation = EdkiiIoMmuOperationBusMasterRead;
+      IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
+      break;
+
+    case MapOperationBusMasterWrite:
+      IoMmuOperation = EdkiiIoMmuOperationBusMasterWrite;
+      IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
+      break;
+
+    case MapOperationBusMasterCommonBuffer:
+      IoMmuOperation = EdkiiIoMmuOperationBusMasterCommonBuffer;
+      IoMmuAttribute = (EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE);
+      break;
+
+    default:
+      DEBUG ((DEBUG_ERROR, "%a - Invalid operation %d\n", __func__, Operation));
+      ASSERT (FALSE);
+      return EFI_INVALID_PARAMETER;
+  }
+
+  Status = IoMmuMap (
+             IoMmuOperation,
+             IoMmuHostAddress,
+             NumberOfBytes,
+             DeviceAddress,
+             Mapping
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuMap failed.\n", __func__));
+    ASSERT (FALSE);
+    return Status;
+  }
+
+  Status = IoMmuSetAttribute (
+             NULL,
+             *Mapping,
+             IoMmuAttribute
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+    ASSERT (FALSE);
+    goto Unmap;
+  }
+
+  // MU_CHANGE [END]
   return EFI_SUCCESS;
+
+  // MU_CHANGE [BEGIN]
+Unmap:
+  Status = IoMmuUnmap (*Mapping);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+    ASSERT (FALSE);
+  }
+
+  // MU_CHANGE [END]
+
+  return Status;
 }
 
 /**
@@ -80,6 +154,24 @@ DmaUnmap (
   IN  VOID  *Mapping
   )
 {
+  // MU_CHANGE [BEGIN]
+  EFI_STATUS  Status;
+
+  Status = IoMmuSetAttribute (NULL, Mapping, 0);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+    ASSERT (FALSE);
+    return Status;
+  }
+
+  Status = IoMmuUnmap (Mapping);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+    ASSERT (FALSE);
+    return Status;
+  }
+
+  // MU_CHANGE [END]
   return EFI_SUCCESS;
 }
 

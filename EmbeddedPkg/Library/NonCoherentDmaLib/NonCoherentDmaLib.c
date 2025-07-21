@@ -18,7 +18,9 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/IoLib.h>
 #include <Library/BaseMemoryLib.h>
+#include <Library/IoMmuLib.h> // MU_CHANGE
 
+#include <Protocol/IoMmu.h>   // MU_CHANGE
 #include <Protocol/Cpu.h>
 
 typedef struct {
@@ -27,6 +29,7 @@ typedef struct {
   UINTN                   NumberOfBytes;
   DMA_MAP_OPERATION       Operation;
   BOOLEAN                 DoubleBuffer;
+  VOID                    *IoMmuContext; // MU_CHANGE
 } MAP_INFO_INSTANCE;
 
 typedef struct {
@@ -202,6 +205,13 @@ DmaMap (
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  GcdDescriptor;
   UINTN                            AllocSize;
 
+  // MU_CHANGE [BEGIN]
+  VOID                   *IoMmuHostAddress;
+  EDKII_IOMMU_OPERATION  IoMmuOperation;
+  UINT64                 IoMmuAttribute;
+
+  // MU_CHANGE [END]
+
   if ((HostAddress == NULL) ||
       (NumberOfBytes == NULL) ||
       (DeviceAddress == NULL) ||
@@ -214,7 +224,8 @@ DmaMap (
     return EFI_INVALID_PARAMETER;
   }
 
-  *DeviceAddress = HostToDeviceAddress (HostAddress);
+  *DeviceAddress   = HostToDeviceAddress (HostAddress);
+  IoMmuHostAddress = HostAddress;  // MU_CHANGE
 
   // Remember range so we can flush on the other side
   Map = AllocatePool (sizeof (MAP_INFO_INSTANCE));
@@ -249,7 +260,8 @@ DmaMap (
             EfiCpuFlushTypeWriteBack
             );
 
-    *DeviceAddress = HostToDeviceAddress (Map->BufferAddress);
+    *DeviceAddress   = HostToDeviceAddress (Map->BufferAddress);
+    IoMmuHostAddress = Map->BufferAddress;  // MU_CHANGE
   } else if ((Operation != MapOperationBusMasterRead) &&
              ((((UINTN)HostAddress & (mCpu->DmaBufferAlignment - 1)) != 0) ||
               ((*NumberOfBytes & (mCpu->DmaBufferAlignment - 1)) != 0)))
@@ -286,8 +298,9 @@ DmaMap (
         goto FreeMapInfo;
       }
 
-      Buffer         = ALIGN_POINTER (Map->BufferAddress, mCpu->DmaBufferAlignment);
-      *DeviceAddress = HostToDeviceAddress (Buffer);
+      Buffer           = ALIGN_POINTER (Map->BufferAddress, mCpu->DmaBufferAlignment);
+      *DeviceAddress   = HostToDeviceAddress (Buffer);
+      IoMmuHostAddress = Buffer;  // MU_CHANGE
 
       //
       // Get rid of any dirty cachelines covering the double buffer. This
@@ -338,10 +351,71 @@ DmaMap (
   Map->HostAddress   = (UINTN)HostAddress;
   Map->NumberOfBytes = *NumberOfBytes;
   Map->Operation     = Operation;
+  Map->IoMmuContext  = NULL; // MU_CHANGE
 
   *Mapping = Map;
 
+  // MU_CHANGE [BEGIN]
+
+  switch (Operation) {
+    case MapOperationBusMasterRead:
+      IoMmuOperation = EdkiiIoMmuOperationBusMasterRead;
+      IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
+      break;
+
+    case MapOperationBusMasterWrite:
+      IoMmuOperation = EdkiiIoMmuOperationBusMasterWrite;
+      IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
+      break;
+
+    case MapOperationBusMasterCommonBuffer:
+      IoMmuOperation = EdkiiIoMmuOperationBusMasterCommonBuffer;
+      IoMmuAttribute = (EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE);
+      break;
+
+    default:
+      DEBUG ((DEBUG_ERROR, "%a - Invalid operation %d\n", __func__, Operation));
+      ASSERT (FALSE);
+      return EFI_INVALID_PARAMETER;
+  }
+
+  Status = IoMmuMap (
+             IoMmuOperation,
+             IoMmuHostAddress,
+             NumberOfBytes,
+             DeviceAddress,
+             &Map->IoMmuContext
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuMap failed.\n", __func__));
+    ASSERT (FALSE);
+    goto FreeMapInfo;
+  }
+
+  Status = IoMmuSetAttribute (
+             NULL,
+             Map->IoMmuContext,
+             IoMmuAttribute
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+    ASSERT (FALSE);
+    goto Unmap;
+  }
+
+  // MU_CHANGE [END]
+
   return EFI_SUCCESS;
+
+  // MU_CHANGE [BEGIN]
+Unmap:
+  Status = IoMmuUnmap (Map->IoMmuContext);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+    ASSERT (FALSE);
+  }
+
+  // MU_CHANGE [END]
 
 CommonBufferError:
   DEBUG ((
@@ -389,6 +463,24 @@ DmaUnmap (
   }
 
   Map = (MAP_INFO_INSTANCE *)Mapping;
+
+  // MU_CHANGE [BEGIN]
+
+  Status = IoMmuSetAttribute (NULL, Map->IoMmuContext, 0);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+    ASSERT (FALSE);
+    return Status;
+  }
+
+  Status = IoMmuUnmap (Map->IoMmuContext);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+    ASSERT (FALSE);
+    return Status;
+  }
+
+  // MU_CHANGE [END]
 
   Status = EFI_SUCCESS;
   if (((UINTN)Map->HostAddress + Map->NumberOfBytes) > mDmaHostAddressLimit) {
