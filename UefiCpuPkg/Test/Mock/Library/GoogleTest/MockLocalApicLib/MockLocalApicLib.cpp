@@ -9,3 +9,4 @@
 
 MOCK_INTERFACE_DEFINITION (MockLocalApicLib);
 MOCK_FUNCTION_DEFINITION (MockLocalApicLib, GetProcessorLocationByApicId, 4, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockLocalApicLib, GetInitialApicId, 0, EFIAPI);

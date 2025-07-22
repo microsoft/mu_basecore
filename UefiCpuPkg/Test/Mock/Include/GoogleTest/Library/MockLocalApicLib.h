@@ -27,6 +27,12 @@ struct MockLocalApicLib {
      OUT UINT32  *Thread  OPTIONAL
     )
     );
+  MOCK_FUNCTION_DECLARATION (
+    UINT32,
+    GetInitialApicId,
+    (
+    )
+    );
 };
 
 #endif //MOCK_LOCAL_APIC_LIB_H_
