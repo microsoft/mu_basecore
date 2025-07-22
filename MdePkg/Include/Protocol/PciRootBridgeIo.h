@@ -225,6 +225,9 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
   @retval EFI_OUT_OF_RESOURCES  The request could not be completed due to a lack of resources.
   @retval EFI_DEVICE_ERROR      The system hardware could not map the requested address.
+  @retval EFI_NOT_READY         The mapping operation cannot be performed at this time, and the caller
+                                should try again later. This is typically because Memory Mangement Unit (MMU)
+                                operations are not yet initialized on a platform where they are required.
 
 **/
 typedef
@@ -247,6 +250,9 @@ EFI_STATUS
   @retval EFI_SUCCESS           The range was unmapped.
   @retval EFI_INVALID_PARAMETER Mapping is not a value that was returned by Map().
   @retval EFI_DEVICE_ERROR      The data was not committed to the target system memory.
+  @retval EFI_NOT_READY         The mapping operation cannot be performed at this time, and the caller
+                                should try again later. This is typically because Memory Mangement Unit (MMU)
+                                operations are not yet initialized on a platform where they are required.
 
 **/
 typedef
@@ -274,6 +280,9 @@ EFI_STATUS
                                 MEMORY_WRITE_COMBINE and MEMORY_CACHED.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
   @retval EFI_OUT_OF_RESOURCES  The memory pages could not be allocated.
+  @retval EFI_NOT_READY         The mapping operation cannot be performed at this time, and the caller
+                                should try again later. This is typically because Memory Mangement Unit (MMU)
+                                operations are not yet initialized on a platform where they are required.
 
 **/
 typedef
@@ -297,6 +306,9 @@ EFI_STATUS
   @retval EFI_SUCCESS           The requested memory pages were freed.
   @retval EFI_INVALID_PARAMETER The memory range specified by HostAddress and Pages
                                 was not allocated with AllocateBuffer().
+  @retval EFI_NOT_READY         The mapping operation cannot be performed at this time, and the caller
+                                should try again later. This is typically because Memory Mangement Unit (MMU)
+                                operations are not yet initialized on a platform where they are required.
 
 **/
 typedef

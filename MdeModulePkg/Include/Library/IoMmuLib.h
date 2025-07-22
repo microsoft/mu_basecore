@@ -1,9 +1,46 @@
 /** @file IoMmuLib.h
 
-    This file is the IoMmuLib header file for the IoMmu lib:
+  The IoMmuLib library class is made available for drivers that depend upon IOMMU services and need to suspend
+  dispatch until those services are available. This simplifies the process of ensuring that IOMMU services are ready
+  in the driver.
 
-    Copyright (c) Microsoft Corporation.
-    SPDX-License-Identifier: BSD-2-Clause-Patent
+  Some background on overall IOMMU usage is provided below for reference.
+
+  A silicon or platform-specific driver typically produces gEdkiiIoMmuProtocolGuid. This driver may have dependencies
+  to do so. For example, IntelVtdDxe produces gEdkiiIoMmuProtocolGuid after parsing the DMAR ACPI table which it
+  acquires via a protocol notification on gEfiAcpi10TableGuid and gEfiAcpi20TableGuid. The driver may also need PCI
+  root bridge I/O to determine how to map its IOMMU engines to present PCI devices. It does so with the
+  gEfiPciRootBridgeIoProtocolGuid protocol, produced by PciHostBridgeDxe. gEfiPciRootBridgeIoProtocolGuid also
+  provides four functions that make use of the IOMMU protocol:
+
+    - RootBridgeIoMap()
+    - RootBridgeIoUnmap()
+    - RootBridgeIoAllocateBuffer()
+    - RootBridgeIoFreeBuffer()
+
+  To avoid a circular dispatch dependency, PciHostBridgeDxe does not have gEdkiiIoMmuProtocolGuid in its DEPEX.
+  However, a window of time exists where the gEfiPciRootBridgeIoProtocolGuid is produced, but the
+  gEdkiiIoMmuProtocolGuid is not yet produced. This is referred to as the "IOMMU blackout window". During this time,
+  the PciHostBridgeDxe driver needs to understand how to react when operations on gEfiPciRootBridgeIoProtocolGuid
+  are called that may require an IOMMU. It understands how to do this for a given platform via the
+  PcdRequireIommu feature PCD. If this PCD is TRUE, the driver will not perform any IOMMU operations until the
+  gEdkiiIoMmuProtocolGuid is produced and return EFI_NOT_READY during the IOMMU blackout window. If the PCD is FALSE
+  (default), the driver will not use the IOMMU protocol and will not return EFI_NOT_READY.
+
+  The same IOMMU blackout window exists for the gEfiPciIoProtocolGuid, which is produced by PciBusDxe.
+
+  Example of the blackout window on an Intel IOMMU enabled platforrm:
+
+  PciHostBridgeDxe -> PciBusDxe -> IntelVtdDxe --> Anyone else can use IOMMU
+  [ IOMMU BLACKOUT WINDOW                    ]     (IoMmuLib)
+
+  Most drivers that need to perform IOMMU operations should use the non-NULL IoMmuLib instance. This library
+  provides a set of functions that abstract underlying IOMMU dependency details and allow drivers to perform
+  IOMMU operations when services are available. A NULL instance is provided for IoMmuLib that ignores IOMMU
+  operations when that is desired.
+
+  Copyright (c) Microsoft Corporation.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -12,17 +49,6 @@
 
 #include <Uefi.h>
 #include <Protocol/IoMmu.h>
-
-/**
-  Returns True if the IoMmu protocol is available, otherwise returns False.
-
-  @retval BOOLEAN    TRUE if the IoMmu protocol is available, FALSE otherwise.
-**/
-BOOLEAN
-EFIAPI
-IoMmuIsPresent (
-  VOID
-  );
 
 /**
   Map a host address to a device address using the Page Table.

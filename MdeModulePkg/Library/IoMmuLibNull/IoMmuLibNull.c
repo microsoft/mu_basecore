@@ -1,6 +1,6 @@
 /** @file IoMmuLib.c
 
-    This file contains all the NULL implementation of the IoMmu protocol library functions.
+    The null IoMmuLib instance.
 
     Copyright (c) Microsoft Corporation.
     SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -8,21 +8,6 @@
 **/
 #include <Library/BaseLib.h>
 #include <Library/IoMmuLib.h>
-
-/**
-  Returns True if the IoMmu protocol is available, otherwise returns False.
-  This is a NULL implementation, so it always returns FALSE.
-
-  @retval BOOLEAN    False, as this is a NULL implementation.
-**/
-BOOLEAN
-EFIAPI
-IoMmuIsPresent (
-  VOID
-  )
-{
-  return FALSE;
-}
 
 /**
   NULL implementation of IoMmuMap.

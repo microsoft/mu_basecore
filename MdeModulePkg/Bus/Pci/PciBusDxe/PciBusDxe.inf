@@ -73,7 +73,6 @@
   BaseLib
   UefiDriverEntryPoint
   DebugLib
-  IoMmuLib                                        ## MU_CHANGE
 
 [Protocols]
   gEfiPciHotPlugRequestProtocolGuid               ## SOMETIMES_PRODUCES
@@ -103,7 +102,8 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciBridgeIoAlignmentProbe       ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdUnalignedPciIoEnable            ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom  ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDeferBME                        ## MU_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDeferBME                        ## CONSUMES  ## MU_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRequireIommu                    ## CONSUMES  ## MU_CHANGE
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdSrIovSystemPageSize         ## SOMETIMES_CONSUMES

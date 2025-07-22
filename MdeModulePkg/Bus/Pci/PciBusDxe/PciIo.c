@@ -8,7 +8,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "PciBus.h"
 
-// extern EDKII_IOMMU_PROTOCOL  *mIoMmuProtocol; // MU_CHANGE
+extern EDKII_IOMMU_PROTOCOL  *mIoMmuProtocol;
 
 //
 // Pci Io Protocol Interface
@@ -41,6 +41,36 @@ EFI_PCI_IO_PROTOCOL  mPciIoInterface = {
   0,
   NULL
 };
+
+/**
+  Returns whether IOMMU is required to map and unmap resources.
+
+  @retval TRUE   IOMMU is required.
+  @retval FALSE  IOMMU is not required.
+
+**/
+BOOLEAN
+IsIommuNeeded (
+  VOID
+  )
+{
+  return FeaturePcdGet (PcdRequireIommu);
+}
+
+/**
+  Returns whether IOMMU services are ready to be used.
+
+  @retval TRUE   IOMMU services are ready.
+  @retval FALSE  IOMMU services are not ready.
+
+**/
+BOOLEAN
+IsIommuReady (
+  VOID
+  )
+{
+  return mIoMmuProtocol != NULL;
+}
 
 /**
   Initializes a PCI I/O Instance.
@@ -957,6 +987,9 @@ PciIoCopyMem (
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
   @retval EFI_OUT_OF_RESOURCES  The request could not be completed due to a lack of resources.
   @retval EFI_DEVICE_ERROR      The system hardware could not map the requested address.
+  @retval EFI_NOT_READY         The mapping operation cannot be performed at this time, and the caller
+                                should try again later. This is typically because Memory Mangement Unit (MMU)
+                                operations are not yet initialized on a platform where they are required.
 
 **/
 EFI_STATUS
@@ -974,6 +1007,11 @@ PciIoMap (
   PCI_IO_DEVICE                              *PciIoDevice;
   UINT64                                     IoMmuAttribute;
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION  RootBridgeIoOperation;
+
+  if (IsIommuNeeded () && !IsIommuReady ()) {
+    DEBUG ((DEBUG_ERROR, "IOMMU is not ready. Call %a() after the IOMMU Protocol is produced.\n", __func__));
+    return EFI_NOT_READY;
+  }
 
   PciIoDevice = PCI_IO_DEVICE_FROM_PCI_IO_THIS (This);
 
@@ -1007,62 +1045,30 @@ PciIoMap (
       );
   }
 
-  // MU_CHANGE [BEGIN]
-  // if (mIoMmuProtocol != NULL) {
-  //   if (!EFI_ERROR (Status)) {
-  //     switch (Operation) {
-  //       case EfiPciIoOperationBusMasterRead:
-  //         IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
-  //         break;
-  //       case EfiPciIoOperationBusMasterWrite:
-  //         IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
-  //         break;
-  //       case EfiPciIoOperationBusMasterCommonBuffer:
-  //         IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
-  //         break;
-  //       default:
-  //         ASSERT (FALSE);
-  //         return EFI_INVALID_PARAMETER;
-  //     }
-  // MU_CHANGE [END]
+  if (IsIommuReady ()) {
+    if (!EFI_ERROR (Status)) {
+      switch (Operation) {
+        case EfiPciIoOperationBusMasterRead:
+          IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
+          break;
+        case EfiPciIoOperationBusMasterWrite:
+          IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
+          break;
+        case EfiPciIoOperationBusMasterCommonBuffer:
+          IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
+          break;
+        default:
+          ASSERT (FALSE);
+          return EFI_INVALID_PARAMETER;
+      }
 
-  if (!EFI_ERROR (Status)) {
-    switch (Operation) {
-      case EfiPciIoOperationBusMasterRead:
-        IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
-        break;
-      case EfiPciIoOperationBusMasterWrite:
-        IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
-        break;
-      case EfiPciIoOperationBusMasterCommonBuffer:
-        IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
-        break;
-      default:
-        ASSERT (FALSE);
-        return EFI_INVALID_PARAMETER;
+      Status = mIoMmuProtocol->SetAttribute (
+                                 mIoMmuProtocol,
+                                 PciIoDevice->Handle,
+                                 *Mapping,
+                                 IoMmuAttribute
+                                 );
     }
-
-    // MU_CHANGE [BEGIN]
-    // Status = mIoMmuProtocol->SetAttribute (
-    //                            mIoMmuProtocol,
-    //                            PciIoDevice->Handle,
-    //                            *Mapping,
-    //                            IoMmuAttribute
-    //                            );
-    // MU_CHANGE [END]
-
-    // MU_CHANGE [BEGIN] - Use IoMmuLib
-    Status = IoMmuSetAttribute (
-               PciIoDevice->Handle,
-               *Mapping,
-               IoMmuAttribute
-               );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
-      ASSERT (FALSE);
-    }
-
-    // MU_CHANGE [END]
   }
 
   return Status;
@@ -1076,6 +1082,9 @@ PciIoMap (
 
   @retval EFI_SUCCESS           The range was unmapped.
   @retval EFI_DEVICE_ERROR      The data was not committed to the target system memory.
+  @retval EFI_NOT_READY         The mapping operation cannot be performed at this time, and the caller
+                                should try again later. This is typically because Memory Mangement Unit (MMU)
+                                operations are not yet initialized on a platform where they are required.
 
 **/
 EFI_STATUS
@@ -1088,30 +1097,21 @@ PciIoUnmap (
   EFI_STATUS     Status;
   PCI_IO_DEVICE  *PciIoDevice;
 
-  PciIoDevice = PCI_IO_DEVICE_FROM_PCI_IO_THIS (This);
-  // MU_CHANGE [BEGIN]
-  // if (mIoMmuProtocol != NULL) {
-  //   mIoMmuProtocol->SetAttribute (
-  //                     mIoMmuProtocol,
-  //                     PciIoDevice->Handle,
-  //                     Mapping,
-  //                     0
-  //                     );
-  // MU_CHANGE [END]
-
-  // MU_CHANGE [BEGIN] - Use IoMmuLib
-  Status = IoMmuSetAttribute (
-             PciIoDevice->Handle,
-             Mapping,
-             0
-             );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
-    ASSERT (FALSE);
-    return Status;
+  if (IsIommuNeeded () && !IsIommuReady ()) {
+    DEBUG ((DEBUG_ERROR, "IOMMU is not ready. Call %a() after the IOMMU Protocol is produced.\n", __func__));
+    return EFI_NOT_READY;
   }
 
-  // MU_CHANGE [END]
+  PciIoDevice = PCI_IO_DEVICE_FROM_PCI_IO_THIS (This);
+
+  if (IsIommuReady ()) {
+    mIoMmuProtocol->SetAttribute (
+                      mIoMmuProtocol,
+                      PciIoDevice->Handle,
+                      Mapping,
+                      0
+                      );
+  }
 
   Status = PciIoDevice->PciRootBridgeIo->Unmap (
                                            PciIoDevice->PciRootBridgeIo,

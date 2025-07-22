@@ -1,3 +1,14 @@
+## @file
+# The primary IoMmuLib library instance.
+#
+# A platform should use this library when a module performs IOMMU operations and should not be
+# dispatched until the underlying services are available to perform those operations.
+#
+# Copyright (c) Microsoft Corporation.
+#
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = IoMmuLib
@@ -23,5 +34,5 @@
 [Protocols]
   gEdkiiIoMmuProtocolGuid             ## CONSUMES
 
-[Depex.AARCH64]
-  gEdkiiIoMmuProtocolGuid             ## CONSUMES
+[Depex]
+  gEdkiiIoMmuProtocolGuid

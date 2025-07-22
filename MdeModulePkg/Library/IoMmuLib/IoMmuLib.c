@@ -1,7 +1,9 @@
 /** @file IoMmuLib.c
 
-    This file contains all the IoMmu library functions.
-    Wraps the IoMmu protocol functions to provide a generic interface for mapping host memory to device memory.
+    The primary IoMmuLib library instance.
+
+    A platform should use this library when a module performs IOMMU operations and should not be
+    dispatched until the underlying services are available to perform those operations.
 
     Copyright (c) Microsoft Corporation.
     SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -17,20 +19,6 @@
 EFI_EVENT             mIoMmuEvent;
 VOID                  *mIoMmuRegistration;
 EDKII_IOMMU_PROTOCOL  *mIoMmuProtocol = NULL;
-
-/**
-  Returns True if the IoMmu protocol is available, otherwise returns False.
-
-  @retval BOOLEAN    TRUE if the IoMmu protocol is available, FALSE otherwise.
-**/
-BOOLEAN
-EFIAPI
-IoMmuIsPresent (
-  VOID
-  )
-{
-  return (mIoMmuProtocol != NULL);
-}
 
 /**
   Map a host address to a device address using the Page Table.

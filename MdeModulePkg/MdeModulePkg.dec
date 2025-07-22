@@ -203,7 +203,7 @@
   ## @libraryclass  This library is used to report memory type information change
   ##                across a reboot.
   MemoryTypeInformationChangeLib|Include/Library/MemoryTypeInformationChangeLib.h
-  
+
   ## MU_CHANGE
   ##  @libraryclass  A public library interface for persisting Capsules across reset.
   #     This provides platform-defined support for persistence on architectures
@@ -484,7 +484,7 @@
 
   ## Include/Guid/EndofS3Resume.h
   gEdkiiEndOfS3ResumeGuid = { 0x96f5296d, 0x05f7, 0x4f3c, {0x84, 0x67, 0xe4, 0x56, 0x89, 0x0e, 0x0c, 0xb5 } }
-  
+
 
   #
   # Guids for NVMe Timeout Events
@@ -718,7 +718,7 @@
   # MU_CHANGE
   # This protocol provides access to Internal Event services that do not need TPL_APPLICATION
   gInternalEventServicesProtocolGuid = {0x7ecd162a, 0xc664, 0x11ec, { 0x9d, 0x64, 0x02, 0x42, 0xac, 0x12, 0x00, 0x02 } }
-  
+
   ## This protocol defines the generic memory test interfaces in Dxe phase.
   # Include/Protocol/GenericMemoryTest.h
   gEfiGenericMemTestProtocolGuid = { 0x309DE7F1, 0x7F5E, 0x4ACE, { 0xB4, 0x9C, 0x53, 0x1B, 0xE5, 0xAA, 0x95, 0xEF }}
@@ -1127,6 +1127,14 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdDeferBME|TRUE|BOOLEAN|0x30002050
 
   ## MU_CHANGE
+  ## Indicates if DMA is allowed before IOMMU protocol install
+  #  If enabled, device wil assert and return EFI_DEVICE_ERROR on any DMA access before IOMMU Protocol Install.<BR><BR>
+  #   TRUE  - IOMMU protocol required for DMA access.<BR>
+  #   FALSE - DMA Access can happen before IOMMU protocol install.<BR>
+  # @Prompt Enable DMA before IOMMU protocol.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRequireIommu|FALSE|BOOLEAN|0x30001090
+
+  ## MU_CHANGE
   ## Indicates if the InternalEventServices protocol is published to gBS. This protocol provides access to the
   #  internal event functions that do not require TPL_APPLICATION.
   #    TRUE  - Publish the InternalEventServices protocol
@@ -1385,7 +1393,7 @@
   # Default is 2000, it represent delay is 2 ms.
   # @Prompt Delay access XHCI register after it issues HCRST (us)
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayXhciHCReset|2000|UINT16|0x30001060
-  
+
   # MU_CHANGE [BEGIN] - Support alternative hardware queue sizes in NVME driver
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportAlternativeQueueSize|FALSE|BOOLEAN|0x40000151
   # MU_CHANGE [END]
@@ -1395,9 +1403,9 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMmCommBufferPages|128|UINT32|0x30001061
 
   # MU_CHANGE [BEGIN] - Support indefinite boot retries
-  # # Some platforms require that all EfiLoadOptions are retried until one of the options 
-  # # succeeds. When True, this Pcd will force Bds to retry all the valid EfiLoadOptions 
-  # # indefinitely until one of the options succeeds. 
+  # # Some platforms require that all EfiLoadOptions are retried until one of the options
+  # # succeeds. When True, this Pcd will force Bds to retry all the valid EfiLoadOptions
+  # # indefinitely until one of the options succeeds.
   # #   TRUE  - Efi boot options will be retried indefinitely.
   # #   FALSE - Efi boot options will not be retried.
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportInfiniteBootRetries|FALSE|BOOLEAN|0x40000152
@@ -2512,7 +2520,7 @@
   ## The value of rate limiter event for timeout check. Default value is 100(unit 1ms).
   # @Prompt The value is use for Usb Network rate limiting supported.
   gEfiMdeModulePkgTokenSpaceGuid.PcdUsbNetworkRateLimitingFactor|100|UINT32|0x10000028
-  
+
   ## MU_CHANGE - Configuring timer interval in terminal DXE driver
   ## This PCD determines the timer interval to be set when using serial console.
   # @Prompt Sets the serial console timer interval, in the unit of 100ns.

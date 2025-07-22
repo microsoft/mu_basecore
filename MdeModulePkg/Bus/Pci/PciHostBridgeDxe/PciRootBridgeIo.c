@@ -10,11 +10,12 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "PciHostBridge.h"
 #include "PciRootBridge.h"
 #include "PciHostResource.h"
-#include <Library/IoMmuLib.h> // MU_CHANGE
 
 #define NO_MAPPING  (VOID *) (UINTN) -1
 
 #define RESOURCE_VALID(Resource)  ((Resource)->Base <= (Resource)->Limit)
+
+extern EDKII_IOMMU_PROTOCOL  *mIoMmu;
 
 //
 // Lookup table for increment values based on transfer widths
@@ -51,6 +52,36 @@ UINT8  mOutStride[] = {
   0, // EfiPciWidthFillUint32
   0  // EfiPciWidthFillUint64
 };
+
+/**
+  Returns whether IOMMU is required to map and unmap resources.
+
+  @retval TRUE   IOMMU is required.
+  @retval FALSE  IOMMU is not required.
+
+**/
+BOOLEAN
+IsIommuNeeded (
+  VOID
+  )
+{
+  return FeaturePcdGet (PcdRequireIommu);
+}
+
+/**
+  Returns whether IOMMU services are ready to be used.
+
+  @retval TRUE   IOMMU services are ready.
+  @retval FALSE  IOMMU services are not ready.
+
+**/
+BOOLEAN
+IsIommuReady (
+  VOID
+  )
+{
+  return mIoMmu != NULL;
+}
 
 /**
   Construct the Pci Root Bridge instance.
@@ -1343,12 +1374,16 @@ RootBridgeIoMap (
   PCI_ROOT_BRIDGE_INSTANCE  *RootBridge;
   EFI_PHYSICAL_ADDRESS      PhysicalAddress;
   MAP_INFO                  *MapInfo;
-  EDKII_IOMMU_OPERATION     IoMmuOperation; // MU_CHANGE
 
   if ((HostAddress == NULL) || (NumberOfBytes == NULL) || (DeviceAddress == NULL) ||
       (Mapping == NULL))
   {
     return EFI_INVALID_PARAMETER;
+  }
+
+  if (IsIommuNeeded () && !IsIommuReady ()) {
+    DEBUG ((DEBUG_ERROR, "IOMMU is not ready. Call %a() after the IOMMU Protocol is produced.\n", __func__));
+    return EFI_NOT_READY;
   }
 
   //
@@ -1360,51 +1395,26 @@ RootBridgeIoMap (
 
   RootBridge = ROOT_BRIDGE_FROM_THIS (This);
 
-  // MU_CHANGE [BEGIN] - Use IoMmuLib
-  // if (mIoMmu != NULL) {
-  //   if (!RootBridge->DmaAbove4G) {
-  //     //
-  //     // Clear 64bit support
-  //     //
-  //     if (Operation > EfiPciOperationBusMasterCommonBuffer) {
-  //       Operation = (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION)(Operation - EfiPciOperationBusMasterRead64);
-  //     }
-  IoMmuOperation = (EDKII_IOMMU_OPERATION)Operation;
-
-  if (!RootBridge->DmaAbove4G) {
-    //
-    // Clear 64bit support
-    //
-    if (Operation > EfiPciOperationBusMasterCommonBuffer) {
-      IoMmuOperation = (EDKII_IOMMU_OPERATION)(EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION)(Operation - EfiPciOperationBusMasterRead64);
-    }
-  }
-
-  if (IoMmuIsPresent ()) {
-    Status = IoMmuMap (
-               (EDKII_IOMMU_OPERATION)IoMmuOperation,
-               HostAddress,
-               NumberOfBytes,
-               DeviceAddress,
-               Mapping
-               );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a - IoMmuMap failed.\n", __func__));
-      ASSERT (FALSE);
+  if (IsIommuReady ()) {
+    if (!RootBridge->DmaAbove4G) {
+      //
+      // Clear 64bit support
+      //
+      if (Operation > EfiPciOperationBusMasterCommonBuffer) {
+        Operation = (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION)(Operation - EfiPciOperationBusMasterRead64);
+      }
     }
 
-    // Status = mIoMmu->Map (
-    //                    mIoMmu,
-    //                    (EDKII_IOMMU_OPERATION)Operation,
-    //                    HostAddress,
-    //                    NumberOfBytes,
-    //                    DeviceAddress,
-    //                    Mapping
-    //                    );
+    Status = mIoMmu->Map (
+                       mIoMmu,
+                       (EDKII_IOMMU_OPERATION)Operation,
+                       HostAddress,
+                       NumberOfBytes,
+                       DeviceAddress,
+                       Mapping
+                       );
     return Status;
   }
-
-  // MU_CHANGE [END]
 
   PhysicalAddress = (EFI_PHYSICAL_ADDRESS)(UINTN)HostAddress;
   if ((!RootBridge->DmaAbove4G ||
@@ -1532,23 +1542,18 @@ RootBridgeIoUnmap (
   PCI_ROOT_BRIDGE_INSTANCE  *RootBridge;
   EFI_STATUS                Status;
 
-  // MU_CHANGE [BEGIN] - Use IoMmuLib
-  // if (mIoMmu != NULL) {
-  //   Status = mIoMmu->Unmap (
-  //                      mIoMmu,
-  //                      Mapping
-  //                      );
-  if (IoMmuIsPresent ()) {
-    Status = IoMmuUnmap (Mapping);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
-      ASSERT (FALSE);
-    }
-
-    return Status;
+  if (IsIommuNeeded () && !IsIommuReady ()) {
+    DEBUG ((DEBUG_ERROR, "IOMMU is not ready. Call %a() after the IOMMU Protocol is produced.\n", __func__));
+    return EFI_NOT_READY;
   }
 
-  // MU_CHANGE [END]
+  if (IsIommuReady ()) {
+    Status = mIoMmu->Unmap (
+                       mIoMmu,
+                       Mapping
+                       );
+    return Status;
+  }
 
   RootBridge = ROOT_BRIDGE_FROM_THIS (This);
 
@@ -1646,7 +1651,6 @@ RootBridgeIoAllocateBuffer (
   EFI_PHYSICAL_ADDRESS      PhysicalAddress;
   PCI_ROOT_BRIDGE_INSTANCE  *RootBridge;
   EFI_ALLOCATE_TYPE         AllocateType;
-  UINT64                    IoMmuAttributes; // MU_CHANGE
 
   //
   // Validate Attributes
@@ -1672,50 +1676,31 @@ RootBridgeIoAllocateBuffer (
     return EFI_INVALID_PARAMETER;
   }
 
+  if (IsIommuNeeded () && !IsIommuReady ()) {
+    DEBUG ((DEBUG_ERROR, "IOMMU is not ready. Call %a() after the IOMMU Protocol is produced.\n", __func__));
+    return EFI_NOT_READY;
+  }
+
   RootBridge = ROOT_BRIDGE_FROM_THIS (This);
 
-  // MU_CHANGE [BEGIN] - Use IoMmuLib
-  // if (mIoMmu != NULL) {
-  //   if (!RootBridge->DmaAbove4G) {
-  //     //
-  //     // Clear DUAL_ADDRESS_CYCLE
-  //     //
-  //     Attributes &= ~((UINT64)EFI_PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE);
-
-  IoMmuAttributes = Attributes;
-
-  if (!RootBridge->DmaAbove4G) {
-    //
-    // Clear DUAL_ADDRESS_CYCLE
-    //
-    IoMmuAttributes &= ~((UINT64)EFI_PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE);
-  }
-
-  if (IoMmuIsPresent ()) {
-    Status = IoMmuAllocateBuffer (
-               Type,
-               MemoryType,
-               Pages,
-               HostAddress,
-               IoMmuAttributes
-               );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a - IoMmuAllocateBuffer failed.\n", __func__));
-      ASSERT (FALSE);
+  if (IsIommuReady ()) {
+    if (!RootBridge->DmaAbove4G) {
+      //
+      // Clear DUAL_ADDRESS_CYCLE
+      //
+      Attributes &= ~((UINT64)EFI_PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE);
     }
 
-    // Status = mIoMmu->AllocateBuffer (
-    //                    mIoMmu,
-    //                    Type,
-    //                    MemoryType,
-    //                    Pages,
-    //                    HostAddress,
-    //                    Attributes
-    //                    );
+    Status = mIoMmu->AllocateBuffer (
+                       mIoMmu,
+                       Type,
+                       MemoryType,
+                       Pages,
+                       HostAddress,
+                       Attributes
+                       );
     return Status;
   }
-
-  // MU_CHANGE [END]
 
   AllocateType = AllocateAnyPages;
   if (!RootBridge->DmaAbove4G ||
@@ -1765,24 +1750,19 @@ RootBridgeIoFreeBuffer (
 {
   EFI_STATUS  Status;
 
-  // MU_CHANGE [BEGIN] - Use IoMmuLib
-  // if (mIoMmu != NULL) {
-  //   Status = mIoMmu->FreeBuffer (
-  //                      mIoMmu,
-  //                      Pages,
-  //                      HostAddress
-  //                      );
-  if (IoMmuIsPresent ()) {
-    Status = IoMmuFreeBuffer (Pages, HostAddress);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a - IoMmuFreeBuffer failed.\n", __func__));
-      ASSERT (FALSE);
-    }
-
-    return Status;
+  if (IsIommuNeeded () && !IsIommuReady ()) {
+    DEBUG ((DEBUG_ERROR, "IOMMU is not ready. Call %a() after the IOMMU Protocol is produced.\n", __func__));
+    return EFI_NOT_READY;
   }
 
-  // MU_CHANGE [END]
+  if (IsIommuReady ()) {
+    Status = mIoMmu->FreeBuffer (
+                       mIoMmu,
+                       Pages,
+                       HostAddress
+                       );
+    return Status;
+  }
 
   return gBS->FreePages ((EFI_PHYSICAL_ADDRESS)(UINTN)HostAddress, Pages);
 }

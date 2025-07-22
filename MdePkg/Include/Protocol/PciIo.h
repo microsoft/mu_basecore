@@ -293,6 +293,9 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
   @retval EFI_OUT_OF_RESOURCES  The request could not be completed due to a lack of resources.
   @retval EFI_DEVICE_ERROR      The system hardware could not map the requested address.
+  @retval EFI_NOT_READY         The mapping operation cannot be performed at this time, and the caller
+                                should try again later. This is typically because Memory Mangement Unit (MMU)
+                                operations are not yet initialized on a platform where they are required.
 
 **/
 typedef
@@ -314,6 +317,9 @@ EFI_STATUS
 
   @retval EFI_SUCCESS           The range was unmapped.
   @retval EFI_DEVICE_ERROR      The data was not committed to the target system memory.
+  @retval EFI_NOT_READY         The mapping operation cannot be performed at this time, and the caller
+                                should try again later. This is typically because Memory Mangement Unit (MMU)
+                                operations are not yet initialized on a platform where they are required.
 
 **/
 typedef
