@@ -608,7 +608,7 @@ CoreLoadPeImage (
   UINTN       Size;
   UINTN       Index;
   UINTN       StartIndex;
-  CHAR8       EfiFileName[256];
+  CHAR8       EfiFileName[512];
 
   ZeroMem (&Image->ImageContext, sizeof (Image->ImageContext));
 
