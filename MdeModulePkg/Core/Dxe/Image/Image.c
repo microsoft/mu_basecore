@@ -870,27 +870,18 @@ CoreLoadPeImage (
   // Print the load address and the PDB file name if it is available
   //
 
-  // MU_CHANGE [BEGIN] - 304324
-  // DEBUG_CODE_BEGIN ();
-  // MU_CHANGE [END] - 304324
+  DEBUG_CODE_BEGIN ();
 
   UINTN  Index;
   UINTN  StartIndex;
   CHAR8  EfiFileName[256];
 
-  // MU_CHANGE [BEGIN] 304324
-  if (DebugCodeEnabled ()) {
-    DEBUG ((
-      DEBUG_INFO | DEBUG_LOAD,
-      "Loading driver at 0x%11p EntryPoint=0x%11p ",
-      (VOID *)(UINTN)Image->ImageContext.ImageAddress,
-      FUNCTION_ENTRY_POINT (Image->ImageContext.EntryPoint)
-      ));
-  } else {
-    DEBUG ((DEBUG_LOAD, "Loading driver "));
-  }
-
-  // MU_CHANGE [END] - 304324
+  DEBUG ((
+    DEBUG_INFO | DEBUG_LOAD,
+    "Loading driver at 0x%11p EntryPoint=0x%11p ",
+    (VOID *)(UINTN)Image->ImageContext.ImageAddress,
+    FUNCTION_ENTRY_POINT (Image->ImageContext.EntryPoint)
+    ));
 
   //
   // Print Module Name by Pdb file path.
@@ -928,14 +919,12 @@ CoreLoadPeImage (
       EfiFileName[Index] = 0;
     }
 
-    DEBUG ((DEBUG_ERROR | DEBUG_LOAD, "%a", EfiFileName));  // &Image->ImageContext.PdbPointer[StartIndex])); // MU_CHANGE
+    DEBUG ((DEBUG_INFO | DEBUG_LOAD, "%a", EfiFileName));   // &Image->ImageContext.PdbPointer[StartIndex]));
   }
 
-  DEBUG ((DEBUG_ERROR | DEBUG_LOAD, "\n"));       // MU_CHANGE - 304324
+  DEBUG ((DEBUG_INFO | DEBUG_LOAD, "\n"));
 
-  // MU_CHANGE [BEGIN] - 304324
-  // DEBUG_CODE_END ();
-  // MU_CHANGE [END] - 304324
+  DEBUG_CODE_END ();
 
   return EFI_SUCCESS;
 
