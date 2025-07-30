@@ -169,6 +169,7 @@
             "gEfiPeiMmAccessPpiGuid=gPeiSmmAccessPpiGuid",
             "gPeiSmmControlPpiGuid=gEfiPeiMmControlPpiGuid",
             "gEfiPeiMmCommunicationPpiGuid=gEfiPeiSmmCommunicationPpiGuid",
+            "gEdkiiPeiMpServices2PpiGuid=gEfiPeiMpServices2PpiGuid",
             ]
     },
 

@@ -29,7 +29,6 @@
 
   Copyright (c) 2014, Hewlett-Packard Development Company, L.P.
   Copyright (c) 2009 - 2023, Intel Corporation. All rights reserved.<BR>
-  Copyright (c) Microsoft Corporation<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -326,6 +325,9 @@ SmmLoadImage (
   EFI_DEVICE_PATH_PROTOCOL       *HandleFilePath;
   EFI_FIRMWARE_VOLUME2_PROTOCOL  *Fv;
   PE_COFF_LOADER_IMAGE_CONTEXT   ImageContext;
+  UINTN                          Index;
+  UINTN                          StartIndex;
+  CHAR8                          EfiFileName[512];
 
   PERF_LOAD_IMAGE_BEGIN (DriverEntry->ImageHandle);
 
@@ -665,27 +667,12 @@ SmmLoadImage (
   // Print the load address and the PDB file name if it is available
   //
 
-  // MU_CHANGE [BEGIN] - 304324
-  // DEBUG_CODE_BEGIN ();
-  // MU_CHANGE [END] - 304324
-
-  UINTN  Index;
-  UINTN  StartIndex;
-  CHAR8  EfiFileName[256];
-
-  // MU_CHANGE [BEGIN]
-  if (DebugCodeEnabled ()) {
-    DEBUG ((
-      DEBUG_INFO | DEBUG_LOAD,
-      "Loading SMM driver at 0x%11p EntryPoint=0x%11p ",
-      (VOID *)(UINTN)ImageContext.ImageAddress,
-      FUNCTION_ENTRY_POINT (ImageContext.EntryPoint)
-      ));
-  } else {
-    DEBUG ((DEBUG_ERROR | DEBUG_LOAD, "Loading SMM driver "));
-  }
-
-  // MU_CHANGE [END]
+  DEBUG ((
+    DEBUG_INFO | DEBUG_LOAD,
+    "Loading SMM driver at 0x%11p EntryPoint=0x%11p ",
+    (VOID *)(UINTN)ImageContext.ImageAddress,
+    FUNCTION_ENTRY_POINT (ImageContext.EntryPoint)
+    ));
 
   //
   // Print Module Name by Pdb file path.
@@ -723,14 +710,10 @@ SmmLoadImage (
       EfiFileName[Index] = 0;
     }
 
-    DEBUG ((DEBUG_ERROR | DEBUG_LOAD, "%a", EfiFileName));  // &Image->ImageContext.PdbPointer[StartIndex]));  // MU_CHANGE
+    DEBUG ((DEBUG_INFO | DEBUG_LOAD, "%a", EfiFileName));   // &Image->ImageContext.PdbPointer[StartIndex]));
   }
 
-  DEBUG ((DEBUG_ERROR | DEBUG_LOAD, "\n"));                                                                    // MU_CHANGE
-
-  // MU_CHANGE [BEGIN]
-  // DEBUG_CODE_END ();
-  // MU_CHANGE [END]
+  DEBUG ((DEBUG_INFO | DEBUG_LOAD, "\n"));
 
   //
   // Free buffer allocated by Fv->ReadSection.

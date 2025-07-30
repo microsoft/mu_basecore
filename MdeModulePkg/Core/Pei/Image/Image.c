@@ -623,13 +623,10 @@ PeiLoadImageLoadImage (
   UINT16                Machine;
   EFI_SECTION_TYPE      SearchType1;
   EFI_SECTION_TYPE      SearchType2;
-  // MU_CHANGE [BEGIN]
-  CHAR8  *AsciiString;
-  CHAR8  EfiFileName[512];
-  INT32  Index;
-  INT32  StartIndex;
-
-  // MU_CHANGE [END]
+  CHAR8                 *AsciiString;
+  CHAR8                 EfiFileName[512];
+  UINTN                 Index;
+  UINTN                 StartIndex;
 
   *EntryPoint          = 0;
   ImageSize            = 0;
@@ -713,20 +710,17 @@ PeiLoadImageLoadImage (
     *ImageSizeArg = ImageSize;
   }
 
-  // MU_CHANGE [BEGIN]
-  // DEBUG_CODE_BEGIN ();
-  // MU_CHANGE [END]
   //
-  // For IPF Image, the real entry point should be print.
+  // Print debug message: Loading PEIM at 0x12345678 EntryPoint=0x12345688 Driver.efi
   //
-  // MU_CHANGE [BEGIN]
-  if (DebugCodeEnabled ()) {
+  if (Machine != EFI_IMAGE_MACHINE_IA64) {
     DEBUG ((DEBUG_INFO | DEBUG_LOAD, "Loading PEIM at 0x%11p EntryPoint=0x%11p ", (VOID *)(UINTN)ImageAddress, (VOID *)(UINTN)*EntryPoint));
   } else {
-    DEBUG ((DEBUG_INFO | DEBUG_LOAD, "Loading PEIM "));
+    //
+    // For IPF Image, the real entry point should be print.
+    //
+    DEBUG ((DEBUG_INFO | DEBUG_LOAD, "Loading PEIM at 0x%11p EntryPoint=0x%11p ", (VOID *)(UINTN)ImageAddress, (VOID *)(UINTN)(*(UINT64 *)(UINTN)*EntryPoint)));
   }
-
-  // MU_CHANGE [END]
 
   //
   // Print Module Name by PeImage PDB file name.
@@ -765,14 +759,10 @@ PeiLoadImageLoadImage (
       EfiFileName[Index] = 0;
     }
 
-    DEBUG ((DEBUG_ERROR | DEBUG_LOAD, "%a", EfiFileName));         // MU_CHANGE
+    DEBUG ((DEBUG_INFO | DEBUG_LOAD, "%a", EfiFileName));
   }
 
-  // MU_CHANGE [BEGIN]
-  // DEBUG_CODE_END ();
-  // MU_CHANGE [END]
-
-  DEBUG ((DEBUG_ERROR | DEBUG_LOAD, "\n"));
+  DEBUG ((DEBUG_INFO | DEBUG_LOAD, "\n"));
 
   return EFI_SUCCESS;
 }
