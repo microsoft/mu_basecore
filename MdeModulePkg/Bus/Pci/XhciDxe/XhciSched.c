@@ -107,6 +107,12 @@ XhcCmdTransfer (
     Status = EFI_SUCCESS;
   }
 
+  // MU_CHANGE [BEGIN] - Fix USB reset issue (use after free)
+  //
+  // Do not free URB data, since `XhcCreateCmdTrb` does not allocate any data
+  // and the `Data` field is not used in command transfers.
+  //
+  // MU_CHANGE [END] - Fix USB reset issue (use after free)
   XhcFreeUrb (Xhc, Urb);
 
 ON_EXIT:
@@ -184,6 +190,12 @@ XhcCreateUrb (
 
 /**
   Free an allocated URB.
+  // MU_CHANGE [BEGIN] - Fix USB reset issue (use after free)
+  The `Data` field of the URB is not owned by the URB and is not freed here.
+  The caller is which allocates `Data` is responsible for freeing it.
+  Freeing `Data` must be done AFTER calling `XhcFreeUrb`, since this function may unmap the `DataMap` field.
+  // MU_CHANGE [END] - Fix USB reset issue (use after free)
+
 
   @param  Xhc                   The XHCI device.
   @param  Urb                   The URB to free.
@@ -1385,9 +1397,11 @@ XhciDelAsyncIntTransfer (
   IN  UINT8              EpNum
   )
 {
-  LIST_ENTRY              *Entry;
-  LIST_ENTRY              *Next;
-  URB                     *Urb;
+  LIST_ENTRY  *Entry;
+  LIST_ENTRY  *Next;
+  URB         *Urb;
+  VOID        *UrbData;               // MU_CHANGE - Fix USB reset issue (use after free)
+
   EFI_USB_DATA_DIRECTION  Direction;
   EFI_STATUS              Status;
 
@@ -1412,8 +1426,19 @@ XhciDelAsyncIntTransfer (
       }
 
       RemoveEntryList (&Urb->UrbList);
-      FreePool (Urb->Data);
+      // MU_CHANGE [BEGIN] - Fix USB reset issue (use after free)
+      //
+      // For `XhciDelAsyncIntTransfer`, the URB is created through `XhciInsertAsyncIntTransfer`
+      // and allocates and manages its own data buffer, so free it here.
+      //
+      UrbData = Urb->Data;
       XhcFreeUrb (Xhc, Urb);
+      if (UrbData != NULL) {
+        FreePool (UrbData);
+      }
+
+      // MU_CHANGE [END] - Fix USB reset issue (use after free)
+
       return EFI_SUCCESS;
     }
   }
@@ -1435,6 +1460,8 @@ XhciDelAllAsyncIntTransfers (
   LIST_ENTRY  *Entry;
   LIST_ENTRY  *Next;
   URB         *Urb;
+  VOID        *UrbData;   // MU_CHANGE - Fix USB reset issue (use after free)
+
   EFI_STATUS  Status;
 
   BASE_LIST_FOR_EACH_SAFE (Entry, Next, &Xhc->AsyncIntTransfers) {
@@ -1450,8 +1477,18 @@ XhciDelAllAsyncIntTransfers (
     }
 
     RemoveEntryList (&Urb->UrbList);
-    FreePool (Urb->Data);
+    // MU_CHANGE [BEGIN] - Fix USB reset issue (use after free)
+    //
+    // For `XhciDelAllAsyncIntTransfers`, the URB is created through `XhciInsertAsyncIntTransfer`
+    // and allocates and manages its own data buffer, so free it here.
+    //
+    UrbData = Urb->Data;
     XhcFreeUrb (Xhc, Urb);
+    if (UrbData != NULL) {
+      FreePool (UrbData);
+    }
+
+    // MU_CHANGE [END] - Fix USB reset issue (use after free)
   }
 }
 

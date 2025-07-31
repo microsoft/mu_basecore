@@ -837,6 +837,12 @@ XhcTransfer (
   }
 
   Xhc->PciIo->Flush (Xhc->PciIo);
+  // MU_CHANGE [BEGIN] - Fix USB reset issue
+  //
+  // Do not free URB data, since it is passed in as an external argument
+  // and allocated and managed by the caller.
+  //
+  // MU_CHANGE [END] - Fix USB reset issue
   XhcFreeUrb (Xhc, Urb);
   return Status;
 }
@@ -1226,9 +1232,12 @@ ON_EXIT:
   @param  MaximumPacketLength   Maximum packet size the endpoint is capable of
                                 sending or receiving.
   @param  DataBuffersNumber     Number of data buffers prepared for the transfer.
+  // MU_CHANGE [BEGIN] - Fix USB reset issue
   @param  Data                  Array of pointers to the buffers of data to transmit
-                                from or receive into.
-  @param  DataLength            The lenght of the data buffer.
+                                from or receive into. The caller is responsible for freeing
+                                the buffers after the transfers are completed.
+  @param  DataLength            The length of the data buffer.
+  // MU_CHANGE [END] - Fix USB reset issue
   @param  DataToggle            On input, the initial data toggle for the transfer;
                                 On output, it is updated to to next data toggle to
                                 use of the subsequent bulk transfer.
