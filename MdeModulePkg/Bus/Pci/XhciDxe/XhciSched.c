@@ -106,6 +106,10 @@ XhcCmdTransfer (
     Status = EFI_SUCCESS;
   }
 
+  //
+  // Do not free URB data, since `XhcCreateCmdTrb` does not allocate any data
+  // and the `Data` field is not used in command transfers.
+  //
   XhcFreeUrb (Xhc, Urb);
 
 ON_EXIT:
@@ -183,6 +187,9 @@ XhcCreateUrb (
 
 /**
   Free an allocated URB.
+  The `Data` field of the URB is not owned by the URB and is not freed here.
+  The caller is which allocates `Data` is responsible for freeing it.
+  Freeing `Data` must be done AFTER calling `XhcFreeUrb`, since this function may unmap the `DataMap` field.
 
   @param  Xhc                   The XHCI device.
   @param  Urb                   The URB to free.
@@ -1419,6 +1426,7 @@ XhciDelAsyncIntTransfer (
   LIST_ENTRY              *Entry;
   LIST_ENTRY              *Next;
   URB                     *Urb;
+  VOID                    *UrbData;
   EFI_USB_DATA_DIRECTION  Direction;
   EFI_STATUS              Status;
 
@@ -1443,8 +1451,16 @@ XhciDelAsyncIntTransfer (
       }
 
       RemoveEntryList (&Urb->UrbList);
-      FreePool (Urb->Data);
+      //
+      // For `XhciDelAsyncIntTransfer`, the URB is created through `XhciInsertAsyncIntTransfer`
+      // and allocates and manages its own data buffer, so free it here.
+      //
+      UrbData = Urb->Data;
       XhcFreeUrb (Xhc, Urb);
+      if (UrbData != NULL) {
+        FreePool (UrbData);
+      }
+
       return EFI_SUCCESS;
     }
   }
@@ -1466,6 +1482,7 @@ XhciDelAllAsyncIntTransfers (
   LIST_ENTRY  *Entry;
   LIST_ENTRY  *Next;
   URB         *Urb;
+  VOID        *UrbData;
   EFI_STATUS  Status;
 
   BASE_LIST_FOR_EACH_SAFE (Entry, Next, &Xhc->AsyncIntTransfers) {
@@ -1481,8 +1498,15 @@ XhciDelAllAsyncIntTransfers (
     }
 
     RemoveEntryList (&Urb->UrbList);
-    FreePool (Urb->Data);
+    //
+    // For `XhciDelAllAsyncIntTransfers`, the URB is created through `XhciInsertAsyncIntTransfer`
+    // and allocates and manages its own data buffer, so free it here.
+    //
+    UrbData = Urb->Data;
     XhcFreeUrb (Xhc, Urb);
+    if (UrbData != NULL) {
+      FreePool (UrbData);
+    }
   }
 }
 
