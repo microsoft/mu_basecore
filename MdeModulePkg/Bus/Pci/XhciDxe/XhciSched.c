@@ -107,12 +107,10 @@ XhcCmdTransfer (
     Status = EFI_SUCCESS;
   }
 
-  // MU_CHANGE [BEGIN] - Fix USB reset issue (use after free)
   //
   // Do not free URB data, since `XhcCreateCmdTrb` does not allocate any data
   // and the `Data` field is not used in command transfers.
   //
-  // MU_CHANGE [END] - Fix USB reset issue (use after free)
   XhcFreeUrb (Xhc, Urb);
 
 ON_EXIT:
@@ -190,12 +188,9 @@ XhcCreateUrb (
 
 /**
   Free an allocated URB.
-  // MU_CHANGE [BEGIN] - Fix USB reset issue (use after free)
   The `Data` field of the URB is not owned by the URB and is not freed here.
   The caller is which allocates `Data` is responsible for freeing it.
   Freeing `Data` must be done AFTER calling `XhcFreeUrb`, since this function may unmap the `DataMap` field.
-  // MU_CHANGE [END] - Fix USB reset issue (use after free)
-
 
   @param  Xhc                   The XHCI device.
   @param  Urb                   The URB to free.
@@ -1400,7 +1395,7 @@ XhciDelAsyncIntTransfer (
   LIST_ENTRY  *Entry;
   LIST_ENTRY  *Next;
   URB         *Urb;
-  VOID        *UrbData;               // MU_CHANGE - Fix USB reset issue (use after free)
+  VOID        *UrbData;
 
   EFI_USB_DATA_DIRECTION  Direction;
   EFI_STATUS              Status;
@@ -1426,7 +1421,6 @@ XhciDelAsyncIntTransfer (
       }
 
       RemoveEntryList (&Urb->UrbList);
-      // MU_CHANGE [BEGIN] - Fix USB reset issue (use after free)
       //
       // For `XhciDelAsyncIntTransfer`, the URB is created through `XhciInsertAsyncIntTransfer`
       // and allocates and manages its own data buffer, so free it here.
@@ -1436,8 +1430,6 @@ XhciDelAsyncIntTransfer (
       if (UrbData != NULL) {
         FreePool (UrbData);
       }
-
-      // MU_CHANGE [END] - Fix USB reset issue (use after free)
 
       return EFI_SUCCESS;
     }
@@ -1460,7 +1452,7 @@ XhciDelAllAsyncIntTransfers (
   LIST_ENTRY  *Entry;
   LIST_ENTRY  *Next;
   URB         *Urb;
-  VOID        *UrbData;   // MU_CHANGE - Fix USB reset issue (use after free)
+  VOID        *UrbData;
 
   EFI_STATUS  Status;
 
@@ -1477,7 +1469,6 @@ XhciDelAllAsyncIntTransfers (
     }
 
     RemoveEntryList (&Urb->UrbList);
-    // MU_CHANGE [BEGIN] - Fix USB reset issue (use after free)
     //
     // For `XhciDelAllAsyncIntTransfers`, the URB is created through `XhciInsertAsyncIntTransfer`
     // and allocates and manages its own data buffer, so free it here.
@@ -1487,8 +1478,6 @@ XhciDelAllAsyncIntTransfers (
     if (UrbData != NULL) {
       FreePool (UrbData);
     }
-
-    // MU_CHANGE [END] - Fix USB reset issue (use after free)
   }
 }
 
@@ -1663,6 +1652,17 @@ XhcMonitorAsyncRequests (
   EFI_STATUS         Status;
   EFI_TPL            OldTpl;
 
+  //
+  // Save values passed into the callback.
+  // `XhcUpdateAsyncRequest` must be called before the callback
+  // since the callback may free the URB, leading to a fault.
+  // However, the callback depends on values of the URB *before*
+  // `XhcUpdateAsyncRequest` is called, so we must save a copy.
+  //
+  UINTN   cbCompleted;
+  UINT32  cbResult;
+  VOID    *cbContext;
+
   OldTpl = gBS->RaiseTPL (XHC_TPL);
 
   Xhc = (USB_XHCI_INSTANCE *)Context;
@@ -1720,6 +1720,19 @@ XhcMonitorAsyncRequests (
     }
 
     //
+    // Store values of URB before `XhcUpdateAsyncRequest`, since the callback depends on these values.
+    //
+    cbCompleted = Urb->Completed;
+    cbResult    = Urb->Result;
+    cbContext   = Urb->Context;
+
+    //
+    // The update call must occur before the callback since the callback
+    // may remove and free the URB, leading to a fault.
+    //
+    XhcUpdateAsyncRequest (Xhc, Urb);
+
+    //
     // Leave error recovery to its related device driver. A
     // common case of the error recovery is to re-submit the
     // interrupt transfer which is linked to the head of the
@@ -1731,19 +1744,17 @@ XhcMonitorAsyncRequests (
     //
     if (Urb->Callback != NULL) {
       //
-      // Restore the old TPL, USB bus maybe connect device in
-      // his callback. Some drivers may has a lower TPL restriction.
+      // Restore the previous TPL. The USB bus may connect a device in its callback,
+      // and some drivers require a lower TPL to run correctly.
       //
       gBS->RestoreTPL (OldTpl);
-      (Urb->Callback)(ProcBuf, Urb->Completed, Urb->Context, Urb->Result);
+      (Urb->Callback)(ProcBuf, cbCompleted, cbContext, cbResult);
       OldTpl = gBS->RaiseTPL (XHC_TPL);
     }
 
     if (ProcBuf != NULL) {
       gBS->FreePool (ProcBuf);
     }
-
-    XhcUpdateAsyncRequest (Xhc, Urb);
   }
   gBS->RestoreTPL (OldTpl);
 }
