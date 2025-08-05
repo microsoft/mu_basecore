@@ -245,6 +245,11 @@
   #
   MmMemoryProtectionHobLib|Include/Library/MmMemoryProtectionHobLib.h
 
+  # MU_CHANGE
+  ##  @libraryclass  Provides time and date related EFI runtime services
+  #
+  RealTimeClockLib|Include/Library/RealTimeClockLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
