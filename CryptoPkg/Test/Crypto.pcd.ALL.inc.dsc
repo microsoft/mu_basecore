@@ -15,6 +15,7 @@
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7GetCertificatesList|TRUE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7Sign|TRUE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7Verify|TRUE
+  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7Encrypt|TRUE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceVerifyEKUsInPkcs7Signature|TRUE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7GetAttachedContent|TRUE
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAuthenticodeVerify|TRUE
