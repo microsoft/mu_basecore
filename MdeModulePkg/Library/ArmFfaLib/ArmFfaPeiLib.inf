@@ -43,3 +43,6 @@
 
 [Guids]
   gArmFfaRxTxBufferInfoGuid
+
+[Ppis]
+  gEfiPeiMemoryDiscoveredPpiGuid

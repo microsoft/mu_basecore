@@ -1,7 +1,7 @@
 /** @file
   Arm Ffa library common code.
 
-  Copyright (c) 2024, Arm Limited. All rights reserved.<BR>
+  Copyright (c) 2025, Arm Limited. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
    @par Glossary:
@@ -31,6 +31,9 @@
 #include "ArmFfaCommon.h"
 #include "ArmFfaRxTxMap.h"
 
+STATIC VOID  *mTxBuffer;
+STATIC VOID  *mRxBuffer;
+
 /**
   Get mapped Rx/Tx buffers.
 
@@ -52,18 +55,12 @@ ArmFfaLibGetRxTxBuffers (
   OUT UINT64  *RxBufferSize OPTIONAL
   )
 {
-  UINTN  TxBufferAddr;
-  UINTN  RxBufferAddr;
-
-  TxBufferAddr = (UINTN)PcdGet64 (PcdFfaTxBuffer);
-  RxBufferAddr = (UINTN)PcdGet64 (PcdFfaRxBuffer);
-
-  if ((TxBufferAddr == 0x00) || (RxBufferAddr == 0x00)) {
+  if ((mTxBuffer == NULL) || (mRxBuffer == NULL)) {
     return EFI_NOT_READY;
   }
 
   if (TxBuffer != NULL) {
-    *TxBuffer = (VOID *)TxBufferAddr;
+    *TxBuffer = mTxBuffer;
   }
 
   if (TxBufferSize != NULL) {
@@ -71,7 +68,7 @@ ArmFfaLibGetRxTxBuffers (
   }
 
   if (RxBuffer != NULL) {
-    *RxBuffer = (VOID *)RxBufferAddr;
+    *RxBuffer = mRxBuffer;
   }
 
   if (RxBufferSize != NULL) {
@@ -101,27 +98,79 @@ ArmFfaLibRxTxMap (
 {
   EFI_STATUS    Status;
   ARM_FFA_ARGS  FfaArgs;
+  UINTN         Property1;
+  UINTN         Property2;
   UINTN         MinSizeAndAlign;
+  UINTN         MaxSize;
   VOID          *Buffers;
   VOID          *TxBuffer;
   VOID          *RxBuffer;
-  UINT64        BufferSize;
-
-  TxBuffer   = (VOID *)(UINTN)PcdGet64 (PcdFfaTxBuffer);
-  RxBuffer   = (VOID *)(UINTN)PcdGet64 (PcdFfaRxBuffer);
-  BufferSize = PcdGet64 (PcdFfaTxRxPageCount) * EFI_PAGE_SIZE;
 
   /*
    * If someone already mapped Rx/Tx Buffers, return EFI_ALREADY_STARTED.
    * return EFI_ALREADY_STARTED.
    */
-  if ((TxBuffer != NULL) && (RxBuffer != NULL)) {
+  if ((mTxBuffer != NULL) && (mRxBuffer != NULL)) {
     return EFI_ALREADY_STARTED;
   }
 
-  Status = GetRxTxBufferMinSizeAndAlign (&MinSizeAndAlign);
+  Status = ArmFfaLibGetFeatures (
+             ARM_FID_FFA_RXTX_MAP,
+             FFA_RXTX_MAP_INPUT_PROPERTY_DEFAULT,
+             &Property1,
+             &Property2
+             );
   if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: Failed to get RX/TX buffer property... Status: %r\n",
+      __func__,
+      Status
+      ));
     return Status;
+  }
+
+  ZeroMem (&FfaArgs, sizeof (ARM_FFA_ARGS));
+
+  MinSizeAndAlign =
+    ((Property1 >>
+      ARM_FFA_BUFFER_MINSIZE_AND_ALIGN_SHIFT) &
+     ARM_FFA_BUFFER_MINSIZE_AND_ALIGN_MASK);
+
+  switch (MinSizeAndAlign) {
+    case ARM_FFA_BUFFER_MINSIZE_AND_ALIGN_4K:
+      MinSizeAndAlign = SIZE_4KB;
+      break;
+    case ARM_FFA_BUFFER_MINSIZE_AND_ALIGN_16K:
+      MinSizeAndAlign = SIZE_16KB;
+      break;
+    case ARM_FFA_BUFFER_MINSIZE_AND_ALIGN_64K:
+      MinSizeAndAlign = SIZE_64KB;
+      break;
+    default:
+      DEBUG ((DEBUG_ERROR, "%a: Invalid MinSizeAndAlign: 0x%x\n", __func__, MinSizeAndAlign));
+      return EFI_UNSUPPORTED;
+  }
+
+  MaxSize =
+    (((Property1 >>
+       ARM_FFA_BUFFER_MAXSIZE_PAGE_COUNT_SHIFT) &
+      ARM_FFA_BUFFER_MAXSIZE_PAGE_COUNT_MASK));
+
+  MaxSize = ((MaxSize == 0) ? MAX_UINTN : (MaxSize * MinSizeAndAlign));
+
+  if ((MinSizeAndAlign > (PcdGet64 (PcdFfaTxRxPageCount) * EFI_PAGE_SIZE)) ||
+      (MaxSize < (PcdGet64 (PcdFfaTxRxPageCount) * EFI_PAGE_SIZE)))
+  {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: Buffer is too small! MinSize: 0x%x, MaxSize: 0x%x, PageCount: %d\n",
+      __func__,
+      MinSizeAndAlign,
+      MaxSize,
+      PcdGet64 (PcdFfaTxRxPageCount)
+      ));
+    return EFI_INVALID_PARAMETER;
   }
 
   Buffers = AllocateAlignedPages ((PcdGet64 (PcdFfaTxRxPageCount) * 2), MinSizeAndAlign);
@@ -130,9 +179,8 @@ ArmFfaLibRxTxMap (
   }
 
   TxBuffer = Buffers;
-  RxBuffer = Buffers + BufferSize;
+  RxBuffer = Buffers + (PcdGet64 (PcdFfaTxRxPageCount) * EFI_PAGE_SIZE);
 
-  ZeroMem (&FfaArgs, sizeof (ARM_FFA_ARGS));
   FfaArgs.Arg0 = ARM_FID_FFA_RXTX_MAP;
   FfaArgs.Arg1 = (UINTN)TxBuffer;
   FfaArgs.Arg2 = (UINTN)RxBuffer;
@@ -157,15 +205,13 @@ ArmFfaLibRxTxMap (
     goto ErrorHandler;
   }
 
-  PcdSet64S (PcdFfaTxBuffer, (UINTN)TxBuffer);
-  PcdSet64S (PcdFfaRxBuffer, (UINTN)RxBuffer);
+  mTxBuffer = TxBuffer;
+  mRxBuffer = RxBuffer;
 
   return EFI_SUCCESS;
 
 ErrorHandler:
-  FreeAlignedPages (Buffers, (PcdGet64 (PcdFfaTxRxPageCount) * 2));
-  TxBuffer = NULL;
-  RxBuffer = NULL;
+  FreePages (Buffers, (PcdGet64 (PcdFfaTxRxPageCount) * 2));
 
   return Status;
 }
@@ -207,13 +253,13 @@ ArmFfaLibRxTxUnmap (
    * and start address of these pages is set on PcdFfaTxBuffer.
    * See ArmFfaLibRxTxMap().
    */
-  Buffers = (VOID *)(UINTN)PcdGet64 (PcdFfaTxBuffer);
+  Buffers = mTxBuffer;
   if (Buffers != NULL) {
-    FreeAlignedPages (Buffers, (PcdGet64 (PcdFfaTxRxPageCount) * 2));
+    FreePages (Buffers, (PcdGet64 (PcdFfaTxRxPageCount) * 2));
   }
 
-  PcdSet64S (PcdFfaTxBuffer, 0x00);
-  PcdSet64S (PcdFfaRxBuffer, 0x00);
+  mTxBuffer = NULL;
+  mRxBuffer = NULL;
 
   return EFI_SUCCESS;
 }
@@ -230,16 +276,16 @@ UpdateRxTxBufferInfo (
   OUT ARM_FFA_RX_TX_BUFFER_INFO  *BufferInfo
   )
 {
-  BufferInfo->TxBufferAddr = PcdGet64 (PcdFfaTxBuffer);
+  BufferInfo->TxBufferAddr = (UINTN)mTxBuffer;
   BufferInfo->TxBufferSize = PcdGet64 (PcdFfaTxRxPageCount) * EFI_PAGE_SIZE;
-  BufferInfo->RxBufferAddr = PcdGet64 (PcdFfaRxBuffer);
+  BufferInfo->RxBufferAddr = (UINTN)mRxBuffer;
   BufferInfo->RxBufferSize = PcdGet64 (PcdFfaTxRxPageCount) * EFI_PAGE_SIZE;
 }
 
 /**
   Find Rx/TX buffer memory allocation hob.
 
-  @param  UseGuid             Find MemoryAllocationHob using gArmFfaRxTxBufferInfoGuid.
+  @param  UseGuid             Find MemoryAllocationHob using Guid.
 
   @retval MemoryAllocationHob
   @retval NULL                No memory allocation hob related to Rx/Tx buffer
@@ -254,7 +300,7 @@ FindRxTxBufferAllocationHob (
   EFI_PHYSICAL_ADDRESS  BufferBase;
   UINT64                BufferSize;
 
-  BufferBase = (EFI_PHYSICAL_ADDRESS)PcdGet64 (PcdFfaTxBuffer);
+  BufferBase = (EFI_PHYSICAL_ADDRESS)((UINTN)mTxBuffer);
   BufferSize = PcdGet64 (PcdFfaTxRxPageCount) * EFI_PAGE_SIZE * 2;
 
   return GetRxTxBufferAllocationHob (BufferBase, BufferSize, UseGuid);
@@ -276,68 +322,8 @@ RemapFfaRxTxBuffer (
   OUT ARM_FFA_RX_TX_BUFFER_INFO  *BufferInfo
   )
 {
-  EFI_STATUS                 Status;
-  ARM_FFA_ARGS               FfaArgs;
-  UINTN                      NewBufferBase;
-  UINTN                      NewTxBuffer;
-  UINTN                      NewRxBuffer;
-  UINTN                      MinSizeAndAlign;
-  EFI_HOB_MEMORY_ALLOCATION  *RxTxBufferAllocationHob;
-
-  RxTxBufferAllocationHob = FindRxTxBufferAllocationHob (TRUE);
-  if (RxTxBufferAllocationHob == NULL) {
-    return EFI_NOT_FOUND;
-  }
-
-  Status = GetRxTxBufferMinSizeAndAlign (&MinSizeAndAlign);
-
-  ZeroMem (&FfaArgs, sizeof (ARM_FFA_ARGS));
-  FfaArgs.Arg0 = ARM_FID_FFA_RXTX_UNMAP;
-  FfaArgs.Arg1 = (gPartId << ARM_FFA_SOURCE_EP_SHIFT);
-
-  ArmCallFfa (&FfaArgs);
-  Status = FfaArgsToEfiStatus (&FfaArgs);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to unmap Rx/Tx buffer. Status: %r\n", __func__, Status));
-    return Status;
-  }
-
-  PcdSet64S (PcdFfaTxBuffer, 0x00);
-  PcdSet64S (PcdFfaRxBuffer, 0x00);
-
-  NewBufferBase = (UINTN)RxTxBufferAllocationHob->AllocDescriptor.MemoryBaseAddress + BufferInfo->RemapOffset;
-  NewTxBuffer   = NewBufferBase;
-  NewRxBuffer   = NewTxBuffer + (PcdGet64 (PcdFfaTxRxPageCount) * EFI_PAGE_SIZE);
-
-  ZeroMem (&FfaArgs, sizeof (ARM_FFA_ARGS));
-  FfaArgs.Arg0 = ARM_FID_FFA_RXTX_MAP;
-  FfaArgs.Arg1 = NewTxBuffer;
-  FfaArgs.Arg2 = NewRxBuffer;
-
   /*
-   * PcdFfaTxRxPageCount sets with count of EFI_PAGE_SIZE granularity
-   * But, PageCounts for Tx/Rx buffer should set with
-   * count of Tx/Rx Buffer's MinSizeAndAlign. granularity.
+   * SEC binary shouldn't remap the Rx/Tx Buffer.
    */
-  FfaArgs.Arg3 = PcdGet64 (PcdFfaTxRxPageCount) / EFI_SIZE_TO_PAGES (MinSizeAndAlign);
-
-  ArmCallFfa (&FfaArgs);
-  Status = FfaArgsToEfiStatus (&FfaArgs);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to map with new Rx/Tx buffer. Status: %r\n", __func__, Status));
-    return Status;
-  }
-
-  PcdSet64S (PcdFfaTxBuffer, NewTxBuffer);
-  PcdSet64S (PcdFfaRxBuffer, NewRxBuffer);
-
-  UpdateRxTxBufferInfo (BufferInfo);
-
-  /*
-   * Remap is done. clear to AllocDesciptor.Name
-   * so that unnecessary remap happen again.
-   */
-  ZeroMem (&RxTxBufferAllocationHob->AllocDescriptor.Name, sizeof (EFI_GUID));
-
-  return EFI_SUCCESS;
+  return EFI_UNSUPPORTED;
 }
