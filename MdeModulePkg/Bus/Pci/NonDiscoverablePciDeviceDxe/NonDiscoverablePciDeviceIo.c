@@ -899,7 +899,8 @@ CoherentPciIoUnmap (
 {
   NON_DISCOVERABLE_PCI_DEVICE_MAP_INFO  *MapInfo;
   // MU_CHANGE [BEGIN]
-  EFI_STATUS  Status;
+  NON_DISCOVERABLE_PCI_DEVICE  *Dev;
+  EFI_STATUS                   Status;
 
   if (Mapping == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -921,18 +922,25 @@ CoherentPciIoUnmap (
     return Status;
   }
 
-  if (MapInfo->Operation == EfiPciIoOperationBusMasterWrite) {
-    gBS->CopyMem (
-           MapInfo->HostAddress,
-           (VOID *)(UINTN)MapInfo->AllocAddress,
-           MapInfo->NumberOfBytes
+  // Only copy the data back and free for the bounce buffer case.
+  Dev = NON_DISCOVERABLE_PCI_DEVICE_FROM_PCI_IO (This);
+  if (((Dev->Attributes & EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE) == 0) &&
+      ((EFI_PHYSICAL_ADDRESS)(UINTN)MapInfo->HostAddress + MapInfo->NumberOfBytes > SIZE_4GB))
+  {
+    if (MapInfo->Operation == EfiPciIoOperationBusMasterWrite) {
+      gBS->CopyMem (
+             MapInfo->HostAddress,
+             (VOID *)(UINTN)MapInfo->AllocAddress,
+             MapInfo->NumberOfBytes
+             );
+    }
+
+    gBS->FreePages (
+           MapInfo->AllocAddress,
+           EFI_SIZE_TO_PAGES (MapInfo->NumberOfBytes)
            );
   }
 
-  gBS->FreePages (
-         MapInfo->AllocAddress,
-         EFI_SIZE_TO_PAGES (MapInfo->NumberOfBytes)
-         );
   FreePool (MapInfo);
   // MU_CHANGE [END]
 
