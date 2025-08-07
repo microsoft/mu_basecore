@@ -5,6 +5,11 @@
 Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
+  // MU_CHANGE: Add CRB v2 from Spec v1.06
+  @par Reference(s)
+    - TCG PC Client Platform TPM Profile (PTP) Specification
+      (https://trustedcomputinggroup.org/resource/pc-client-platform-tpm-profile-ptp-specification/)
+
 **/
 
 #ifndef _TPM_PTP_H_
@@ -356,6 +361,8 @@ typedef union {
 ///
 #define PTP_INTERFACE_IDENTIFIER_INTERFACE_VERSION_FIFO  0x0
 #define PTP_INTERFACE_IDENTIFIER_INTERFACE_VERSION_CRB   0x1
+// MU_CHANGE: Add CRB v2 from Spec v1.06
+#define PTP_INTERFACE_IDENTIFIER_INTERFACE_VERSION_CRB_V2  0x2
 
 ///
 /// InterfaceSelector
