@@ -7,6 +7,7 @@
 **/
 
 #include <PiPei.h>
+#include <Uefi.h>
 
 #include <Library/ArmMmuLib.h>
 #include <Library/ArmPlatformLib.h>
@@ -100,10 +101,10 @@ MemoryPeim (
   //
   Found       = FALSE;
   NextHob.Raw = GetHobList ();
-  while ((NextHob.Raw = GetNextHob (EFI_HOB_TYPE_RESOURCE_DESCRIPTOR, NextHob.Raw)) != NULL) {
-    if ((NextHob.ResourceDescriptor->ResourceType == EFI_RESOURCE_SYSTEM_MEMORY) &&
-        (SystemMemoryBase >= NextHob.ResourceDescriptor->PhysicalStart) &&
-        (NextHob.ResourceDescriptor->PhysicalStart + NextHob.ResourceDescriptor->ResourceLength <= SystemMemoryTop))
+  while ((NextHob.Raw = GetNextHob (EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2, NextHob.Raw)) != NULL) {
+    if ((NextHob.ResourceDescriptorV2->V1.ResourceType == EFI_RESOURCE_SYSTEM_MEMORY) &&
+        (SystemMemoryBase >= NextHob.ResourceDescriptorV2->V1.PhysicalStart) &&
+        (NextHob.ResourceDescriptorV2->V1.PhysicalStart + NextHob.ResourceDescriptorV2->V1.ResourceLength > SystemMemoryBase))
     {
       Found = TRUE;
       break;
@@ -114,11 +115,13 @@ MemoryPeim (
 
   if (!Found) {
     // Reserved the memory space occupied by the firmware volume
-    BuildResourceDescriptorHob (
+    BuildResourceDescriptorV2 (
       EFI_RESOURCE_SYSTEM_MEMORY,
       ResourceAttributes,
       SystemMemoryBase,
-      PcdGet64 (PcdSystemMemorySize)
+      PcdGet64 (PcdSystemMemorySize),
+      EFI_MEMORY_WB,
+      NULL
       );
   }
 
@@ -136,49 +139,55 @@ MemoryPeim (
 
     // Search for System Memory Hob that contains the firmware
     NextHob.Raw = GetHobList ();
-    while ((NextHob.Raw = GetNextHob (EFI_HOB_TYPE_RESOURCE_DESCRIPTOR, NextHob.Raw)) != NULL) {
-      if ((NextHob.ResourceDescriptor->ResourceType == EFI_RESOURCE_SYSTEM_MEMORY) &&
-          (PcdGet64 (PcdFdBaseAddress) >= NextHob.ResourceDescriptor->PhysicalStart) &&
-          (FdTop <= NextHob.ResourceDescriptor->PhysicalStart + NextHob.ResourceDescriptor->ResourceLength))
+    while ((NextHob.Raw = GetNextHob (EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2, NextHob.Raw)) != NULL) {
+      if ((NextHob.ResourceDescriptorV2->V1.ResourceType == EFI_RESOURCE_SYSTEM_MEMORY) &&
+          (PcdGet64 (PcdFdBaseAddress) >= NextHob.ResourceDescriptorV2->V1.PhysicalStart) &&
+          (FdTop <= NextHob.ResourceDescriptorV2->V1.PhysicalStart + NextHob.ResourceDescriptorV2->V1.ResourceLength))
       {
-        ResourceAttributes = NextHob.ResourceDescriptor->ResourceAttribute;
-        ResourceLength     = NextHob.ResourceDescriptor->ResourceLength;
-        ResourceTop        = NextHob.ResourceDescriptor->PhysicalStart + ResourceLength;
+        ResourceAttributes = NextHob.ResourceDescriptorV2->V1.ResourceAttribute;
+        ResourceLength     = NextHob.ResourceDescriptorV2->V1.ResourceLength;
+        ResourceTop        = NextHob.ResourceDescriptorV2->V1.PhysicalStart + ResourceLength;
 
-        if (PcdGet64 (PcdFdBaseAddress) == NextHob.ResourceDescriptor->PhysicalStart) {
+        if (PcdGet64 (PcdFdBaseAddress) == NextHob.ResourceDescriptorV2->V1.PhysicalStart) {
           if (SystemMemoryTop != FdTop) {
             // Create the System Memory HOB for the firmware
-            BuildResourceDescriptorHob (
+            BuildResourceDescriptorV2 (
               EFI_RESOURCE_SYSTEM_MEMORY,
               ResourceAttributes,
               PcdGet64 (PcdFdBaseAddress),
-              PcdGet32 (PcdFdSize)
+              PcdGet32 (PcdFdSize),
+              EFI_MEMORY_WB,
+              NULL
               );
 
             // Top of the FD is system memory available for UEFI
-            NextHob.ResourceDescriptor->PhysicalStart  += PcdGet32 (PcdFdSize);
-            NextHob.ResourceDescriptor->ResourceLength -= PcdGet32 (PcdFdSize);
+            NextHob.ResourceDescriptorV2->V1.PhysicalStart  += PcdGet32 (PcdFdSize);
+            NextHob.ResourceDescriptorV2->V1.ResourceLength -= PcdGet32 (PcdFdSize);
           }
         } else {
           // Create the System Memory HOB for the firmware
-          BuildResourceDescriptorHob (
+          BuildResourceDescriptorV2 (
             EFI_RESOURCE_SYSTEM_MEMORY,
             ResourceAttributes,
             PcdGet64 (PcdFdBaseAddress),
-            PcdGet32 (PcdFdSize)
+            PcdGet32 (PcdFdSize),
+            EFI_MEMORY_WB,
+            NULL
             );
 
           // Update the HOB
-          NextHob.ResourceDescriptor->ResourceLength = PcdGet64 (PcdFdBaseAddress) - NextHob.ResourceDescriptor->PhysicalStart;
+          NextHob.ResourceDescriptorV2->V1.ResourceLength = PcdGet64 (PcdFdBaseAddress) - NextHob.ResourceDescriptorV2->V1.PhysicalStart;
 
           // If there is some memory available on the top of the FD then create a HOB
-          if (FdTop < NextHob.ResourceDescriptor->PhysicalStart + ResourceLength) {
+          if (FdTop < NextHob.ResourceDescriptorV2->V1.PhysicalStart + ResourceLength) {
             // Create the System Memory HOB for the remaining region (top of the FD)
-            BuildResourceDescriptorHob (
+            BuildResourceDescriptorV2 (
               EFI_RESOURCE_SYSTEM_MEMORY,
               ResourceAttributes,
               FdTop,
-              ResourceTop - FdTop
+              ResourceTop - FdTop,
+              NextHob.ResourceDescriptorV2->Attributes,
+              NULL
               );
           }
         }
