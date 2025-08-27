@@ -21,6 +21,7 @@
 #include <Library/HobLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PrintLib.h>
+#include <Library/Tpm2HelpLib.h>  // MU_CHANGE: Add Tpm2HelpLib
 
 #include <Ppi/FirmwareVolume.h>
 
