@@ -1619,7 +1619,10 @@ GetFullSmramRanges (
   // MU_CHANGE Start - CodeQL Change
   BOOLEAN  Failed;
 
-  Failed = FALSE;
+  TempSmramRanges     = NULL;
+  SmramRanges         = NULL;
+  SmramReservedRanges = NULL;
+  Failed              = FALSE;
   // MU_CHANGE End - CodeQL Change
 
   //
