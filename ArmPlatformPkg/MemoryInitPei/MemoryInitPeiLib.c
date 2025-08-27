@@ -7,6 +7,7 @@
 **/
 
 #include <PiPei.h>
+#include <Uefi.h>
 
 #include <Library/ArmMmuLib.h>
 #include <Library/ArmPlatformLib.h>
@@ -107,11 +108,13 @@ MemoryPeim (
 
   if (!Found) {
     // Reserved the memory space occupied by the firmware volume
-    BuildResourceDescriptorHob (
+    BuildResourceDescriptorV2 (
       EFI_RESOURCE_SYSTEM_MEMORY,
       ResourceAttributes,
       PcdGet64 (PcdSystemMemoryBase),
-      PcdGet64 (PcdSystemMemorySize)
+      PcdGet64 (PcdSystemMemorySize),
+      EFI_MEMORY_WB,
+      NULL
       );
   }
 
@@ -142,11 +145,13 @@ MemoryPeim (
         if (PcdGet64 (PcdFdBaseAddress) == NextHob.ResourceDescriptor->PhysicalStart) {
           if (SystemMemoryTop != FdTop) {
             // Create the System Memory HOB for the firmware
-            BuildResourceDescriptorHob (
+            BuildResourceDescriptorV2 (
               EFI_RESOURCE_SYSTEM_MEMORY,
               ResourceAttributes,
               PcdGet64 (PcdFdBaseAddress),
-              PcdGet32 (PcdFdSize)
+              PcdGet32 (PcdFdSize),
+              EFI_MEMORY_WB,
+              NULL
               );
 
             // Top of the FD is system memory available for UEFI
@@ -155,11 +160,13 @@ MemoryPeim (
           }
         } else {
           // Create the System Memory HOB for the firmware
-          BuildResourceDescriptorHob (
+          BuildResourceDescriptorV2 (
             EFI_RESOURCE_SYSTEM_MEMORY,
             ResourceAttributes,
             PcdGet64 (PcdFdBaseAddress),
-            PcdGet32 (PcdFdSize)
+            PcdGet32 (PcdFdSize),
+            EFI_MEMORY_WB,
+            NULL
             );
 
           // Update the HOB
@@ -168,11 +175,13 @@ MemoryPeim (
           // If there is some memory available on the top of the FD then create a HOB
           if (FdTop < NextHob.ResourceDescriptor->PhysicalStart + ResourceLength) {
             // Create the System Memory HOB for the remaining region (top of the FD)
-            BuildResourceDescriptorHob (
+            BuildResourceDescriptorV2 (
               EFI_RESOURCE_SYSTEM_MEMORY,
               ResourceAttributes,
               FdTop,
-              ResourceTop - FdTop
+              ResourceTop - FdTop,
+              EFI_MEMORY_WB,
+              NULL
               );
           }
         }
