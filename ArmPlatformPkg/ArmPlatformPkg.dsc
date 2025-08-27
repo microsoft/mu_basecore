@@ -73,6 +73,9 @@
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
   ArmTransferListLib|ArmPkg/Library/ArmTransferListLib/ArmTransferListLib.inf
+  # MU_CHANGE: Add Tpm2HelpLib
+  Tpm2HelpLib|SecurityPkg/Library/Tpm2HelpLib/Tpm2HelpLib.inf
+  # MU_CHANGE: Add Tpm2HelpLib
 
 # MU_CHANGE [BEGIN]: Use the PEI ARM Mmu Lib for PEIMs and PEI_CORE
 [LibraryClasses.common.PEIM, LibraryClasses.common.PEI_CORE]

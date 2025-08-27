@@ -75,6 +75,7 @@
   DeviceStateLib
   PanicLib
   ## MU_CHANGE [END]
+  Tpm2HelpLib # MU_CHANGE
 
 [Guids]
   ## SOMETIMES_CONSUMES     ## Variable:L"SecureBoot"
