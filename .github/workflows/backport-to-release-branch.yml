@@ -56,7 +56,7 @@ jobs:
 
     - name: Determine Contribution Info
       id: backport_info
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           const BOLD = "\u001b[1m";
@@ -96,7 +96,7 @@ jobs:
 
     - name: Check if Backport is Requested
       id: backport_check
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         script: |
           if (${{ steps.backport_info.outputs.backport_needed }} === 'false') {
