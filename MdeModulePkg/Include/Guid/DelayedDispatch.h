@@ -18,7 +18,7 @@
 //
 // Maximal number of Delayed Dispatch entries supported
 //
-#define DELAYED_DISPATCH_MAX_ENTRIES  8
+#define DELAYED_DISPATCH_MAX_ENTRIES  32  // MU_CHANGE: Set max delayed dispatch entries to 32
 
 //
 // Internal structure for delayed dispatch entries.
