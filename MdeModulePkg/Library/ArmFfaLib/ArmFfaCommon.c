@@ -147,7 +147,7 @@ FfaArgsToEfiStatus (
     FfaStatus = ARM_FFA_RET_NOT_SUPPORTED;
   } else if (FfaArgs->Arg0 == ARM_FID_FFA_INTERRUPT) {
     FfaStatus = ARM_FFA_RET_INTERRUPTED;
-  // MU_CHANGE start: Handle FFA_YIELD with timeout
+    // MU_CHANGE starts: Handle FFA_YIELD with timeout
   } else if (FfaArgs->Arg0 == ARM_FID_FFA_YIELD) {
     /*
     * If the FF-A ABI indicates that the call was yielded, we need to pull the
@@ -162,7 +162,7 @@ FfaArgsToEfiStatus (
     }
 
     FfaStatus = ARM_FFA_RET_INTERRUPTED;
-  // MU_CHANGE end: Handle FFA_YIELD with timeout
+    // MU_CHANGE ends: Handle FFA_YIELD with timeout
   } else {
     FfaStatus = ARM_FFA_RET_SUCCESS;
   }
