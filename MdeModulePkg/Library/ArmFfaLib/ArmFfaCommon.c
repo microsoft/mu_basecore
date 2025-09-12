@@ -23,6 +23,7 @@
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
 #include <Library/PcdLib.h>
+#include <Library/TimerLib.h>  // MU_CHANGE: Handle FFA_YIELD with timeout
 
 #include <IndustryStandard/ArmFfaSvc.h>
 #include <IndustryStandard/ArmFfaPartInfo.h>
@@ -126,6 +127,7 @@ FfaArgsToEfiStatus (
   )
 {
   UINT32  FfaStatus;
+  UINT64  Timeout;  // MU_CHANGE: Handle FFA_YIELD with timeout
 
   if (FfaArgs == NULL) {
     FfaStatus = ARM_FFA_RET_INVALID_PARAMETERS;
@@ -145,6 +147,22 @@ FfaArgsToEfiStatus (
     FfaStatus = ARM_FFA_RET_NOT_SUPPORTED;
   } else if ((FfaArgs->Arg0 == ARM_FID_FFA_INTERRUPT) || (FfaArgs->Arg0 == ARM_FID_FFA_YIELD)) {
     FfaStatus = ARM_FFA_RET_INTERRUPTED;
+    // MU_CHANGE starts: Handle FFA_YIELD with timeout
+  } else if (FfaArgs->Arg0 == ARM_FID_FFA_YIELD) {
+    /*
+    * If the FF-A ABI indicates that the call was yielded, we need to pull the
+    * timeout period from Arg2 and Arg3.
+    */
+    Timeout = LShiftU64 (FfaArgs->Arg3, 32) | FfaArgs->Arg2;
+    if (Timeout != 0) {
+      /*
+      * If the timeout is non-zero, we handle the delay here.
+      */
+      NanoSecondDelay (Timeout);
+    }
+
+    FfaStatus = ARM_FFA_RET_INTERRUPTED;
+    // MU_CHANGE ends: Handle FFA_YIELD with timeout
   } else {
     FfaStatus = ARM_FFA_RET_SUCCESS;
   }
