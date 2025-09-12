@@ -33,6 +33,7 @@
   BaseMemoryLib
   DebugLib
   HobLib
+  TimerLib  # MU_CHANGE
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdFfaLibConduitSmc
