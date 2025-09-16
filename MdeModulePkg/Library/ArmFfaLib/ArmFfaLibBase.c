@@ -1,4 +1,5 @@
 /** @file
+  MU_CHANGE - The whole file.
   Arm Ffa library code for StandaloneMmCore.
 
   Copyright (c) 2024, Arm Limited. All rights reserved.<BR>
