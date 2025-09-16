@@ -33,6 +33,7 @@
   BaseMemoryLib
   DebugLib
   HobLib
+  PcdLib
   TimerLib
 
 [Pcd]
