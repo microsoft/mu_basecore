@@ -16,6 +16,8 @@
 **/
 
 #include <Uefi.h>
+#include <Pi/PiBootMode.h>
+#include <Pi/PiHob.h>
 
 #include <Library/DebugLib.h>
 

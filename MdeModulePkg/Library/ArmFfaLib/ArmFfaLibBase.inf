@@ -35,6 +35,7 @@
   DebugLib
   HobLib
   PcdLib
+  MemoryAllocationLib
   TimerLib
 
 [Pcd]
