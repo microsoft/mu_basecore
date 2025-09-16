@@ -27,9 +27,6 @@
 /**
   ArmFfaLib Constructor.
 
-  @param  [in]  ImageHandle     The firmware allocated handle for the EFI image
-  @param  [in]  MmSystemTable   A pointer to the Management mode System Table
-
   @retval EFI_SUCCESS            Success
   @retval Others                 Error
 
