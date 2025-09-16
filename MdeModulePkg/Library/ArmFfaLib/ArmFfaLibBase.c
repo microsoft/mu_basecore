@@ -1,6 +1,6 @@
 /** @file
   MU_CHANGE - The whole file.
-  Arm Ffa library code for StandaloneMmCore.
+  Provides FF-A ABI Library used in all environments.
 
   Copyright (c) 2024, Arm Limited. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -13,13 +13,8 @@
 
 **/
 
-#include <PiMm.h>
+#include <Uefi.h>
 
-#include <Library/ArmLib.h>
-#include <Library/ArmSmcLib.h>
-#include <Library/ArmFfaLib.h>
-#include <Library/BaseLib.h>
-#include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 
 #include "ArmFfaCommon.h"
