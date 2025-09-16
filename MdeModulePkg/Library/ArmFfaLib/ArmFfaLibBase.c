@@ -1,5 +1,7 @@
 /** @file
-  MU_CHANGE - The whole file.
+  MU_CHANGE - This file is originally sourced from ArmFfaStandaloneMmLib, with
+  Rx/Tx-related APIs removed to focus exclusively on FFA primitives.
+
   Provides FF-A ABI Library used in all environments.
 
   Copyright (c) 2024, Arm Limited. All rights reserved.<BR>
