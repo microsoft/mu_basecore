@@ -33,7 +33,6 @@
   BaseMemoryLib
   DebugLib
   HobLib
-  MemoryAllocationLib
   TimerLib  # MU_CHANGE
 
 [Pcd]
