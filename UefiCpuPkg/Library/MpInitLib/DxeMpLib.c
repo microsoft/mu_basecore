@@ -14,15 +14,10 @@
 #include <Library/DebugAgentLib.h>
 #include <Library/DxeServicesTableLib.h>
 #include <Library/CcExitLib.h>
-#include <Library/DxeMemoryProtectionHobLib.h> // MU_CHANGE
 #include <Register/Amd/SevSnpMsr.h>
 #include <Register/Amd/Ghcb.h>
 
 #include <Protocol/Timer.h>
-// MU_CHANGE START: Enable removal of NX attribute from buffer
-#include <Uefi.h>
-#include <Protocol/Cpu.h>
-// MU_CHANGE END
 
 // MU_CHANGE: Add protocol for reporting multi-processor debug info
 #include <Protocol/CpuMpDebug.h>
@@ -44,9 +39,6 @@ EFI_EVENT         mCheckAllApsEvent            = NULL;
 EFI_EVENT         mMpInitExitBootServicesEvent = NULL;
 EFI_EVENT         mLegacyBootEvent             = NULL;
 volatile BOOLEAN  mStopCheckAllApsStatus       = TRUE;
-// MU_CHANGE START: Enable removal of NX attribute from buffer
-extern RELOCATE_AP_LOOP_ENTRY  mReservedApLoop;
-// MU_CHANGE END: Enable removal of NX attribute from buffer
 
 //
 // Begin wakeup buffer allocation below 0x88000
@@ -109,6 +101,8 @@ InstallCpuMpDebugProtocol (
                   );
   DEBUG ((DEBUG_INFO, "Installed gCpuMpDebugProtocolGuid - Status: %r\n", Status));
 }
+
+// MU_CHANGE END
 
 /**
   Enable Debug Agent to support source debugging on AP function.
@@ -636,10 +630,7 @@ InitMpGlobalData (
     return;
   }
 
-  // MU_CHANGE START Update to use memory protection settings HOB
-  // if (PcdGetBool (PcdCpuStackGuard)) {
-  if (gDxeMps.CpuStackGuard) {
-    // MU_CHANGE END
+  if (PcdGetBool (PcdCpuStackGuard)) {
     //
     // One extra page at the bottom of the stack is needed for Guard page.
     //

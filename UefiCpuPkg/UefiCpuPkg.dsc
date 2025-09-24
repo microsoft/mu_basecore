@@ -77,10 +77,6 @@
   ExceptionPersistenceLib|MdeModulePkg/Library/BaseExceptionPersistenceLibNull/BaseExceptionPersistenceLibNull.inf   # MU_CHANGE
   ResetSystemLib|MdeModulePkg/Library/BaseResetSystemLibNull/BaseResetSystemLibNull.inf   # MU_CHANGE
   DeviceStateLib|MdeModulePkg/Library/DeviceStateLib/DeviceStateLib.inf # MU_CHANGE - Add Mem Prot NonStop Protocol
-# MU_CHANGE [BEGIN] - Add Memory Protection Hob Lib
-  DxeMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/DxeMemoryProtectionHobLibNull.inf
-  MmMemoryProtectionHobLib|MdeModulePkg/Library/MemoryProtectionHobLibNull/MmMemoryProtectionHobLibNull.inf
-# MU_CHANGE [END] - Add Memory Protection Hob Lib
 
 # MU_CHANGE [BEGIN] - Add HwResetSystemLib
 [LibraryClasses.X64, LibraryClasses.IA32]
