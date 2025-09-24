@@ -76,9 +76,7 @@
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPteMemoryEncryptionAddressOrMask    ## CONSUMES
-  # MU_CHANGE START Remove memory protection PCD references
-  # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                       ## CONSUMES
-  # MU_CHANGE END
+  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                       ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList              ## SOMETIMES_CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize                    ## SOMETIMES_CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuApStackSize                           ## SOMETIMES_CONSUMES

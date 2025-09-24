@@ -103,7 +103,6 @@
   CpuPageTableLib
   MmSaveStateLib
   SmmCpuSyncLib
-  MmMemoryProtectionHobLib                   ## MU_CHANGE
   PanicLib                                   ## MU_CHANGE
 
 [Protocols]
@@ -151,10 +150,8 @@
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmShadowStackSize               ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiS3Enable                   ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPteMemoryEncryptionAddressOrMask    ## CONSUMES
-  # MU_CHANGE START Remove memory protection PCD references
-  # gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask    ## CONSUMES
-  # gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
-  # MU_CHANGE END
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask    ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
   gEfiMdePkgTokenSpaceGuid.PcdControlFlowEnforcementPropertyMask        ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdSmmExceptionRebootInsteadOfHaltDefault   ## CONSUMES ## MS_CHANGE
 

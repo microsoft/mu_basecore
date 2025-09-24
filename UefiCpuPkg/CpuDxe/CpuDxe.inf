@@ -40,7 +40,6 @@
   UefiDriverEntryPoint
   UefiLib
   PanicLib                  ## MU_CHANGE
-  DxeMemoryProtectionHobLib ## MU_CHANGE
   DeviceStateLib            ## MU_CHANGE
 
 [LibraryClasses.IA32, LibraryClasses.X64]
@@ -94,11 +93,9 @@
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPteMemoryEncryptionAddressOrMask    ## CONSUMES
-  # MU_CHANGE START Remove memory protection PCD references
-  # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                       ## CONSUMES
-  # gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
-  # gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask    ## CONSUMES
-  # MU_CHANGE END
+  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                       ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask    ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdTdxSharedBitMask                    ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList              ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize                    ## CONSUMES

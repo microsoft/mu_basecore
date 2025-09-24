@@ -13,8 +13,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "PiSmmCpuCommon.h"
 
-#include <Library/MmMemoryProtectionHobLib.h> // MU_CHANGE
-
 #define PAGE_TABLE_PAGES  8
 #define ACC_MAX_BIT       BIT3
 
@@ -821,13 +819,9 @@ SmiPFHandler (
     //
     // If NULL pointer was just accessed
     //
-    // MU_CHANGE START Update to use memory protection settings HOB
-    // if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0 &&
-    //     (PFAddress < EFI_PAGE_SIZE)) {
-    if (gMmMps.NullPointerDetectionPolicy &&
+    if (((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0) &&
         (PFAddress < EFI_PAGE_SIZE))
     {
-      // MU_CHANGE END
       DumpCpuContext (InterruptType, SystemContext);
       DEBUG ((DEBUG_ERROR, "!!! NULL pointer access !!!\n"));
       DEBUG_CODE (

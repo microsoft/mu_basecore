@@ -43,13 +43,12 @@
   HobLib
   UefiBootServicesTableLib
   CpuPageTableLib
-  DxeMemoryProtectionHobLib ## MU_CHANGE
 
 [Guids]
   gEfiHobMemoryAllocStackGuid
 
 [Pcd]
-  #gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard       ## CONSUMES  # MU_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard       ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuApStackSize           ## CONSUMES
 
 [Protocols]
