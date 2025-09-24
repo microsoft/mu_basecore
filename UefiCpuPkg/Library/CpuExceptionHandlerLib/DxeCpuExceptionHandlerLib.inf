@@ -47,7 +47,9 @@
   LoongArch/LoongArch64/ExceptionHandlerAsm.S | GCC
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard
+  # MU_CHANGE START Remove memory protection PCD references
+  # gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard
+  # MU_CHANGE END
   gUefiCpuPkgTokenSpaceGuid.PcdCpuStackSwitchExceptionList
   gUefiCpuPkgTokenSpaceGuid.PcdCpuKnownGoodStackSize
 
@@ -67,6 +69,7 @@
   PrintLib
   SerialPortLib
   SynchronizationLib
+  DxeMemoryProtectionHobLib ## MU_CHANGE
 
 [LibraryClasses.Ia32, LibraryClasses.X64]
   CcExitLib
