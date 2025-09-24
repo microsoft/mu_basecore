@@ -7,6 +7,7 @@
 **/
 
 #include "CpuExceptionHandlerTest.h"
+#include <Library/DxeMemoryProtectionHobLib.h> // MU_CHANGE
 
 //
 // Length of the assembly falut instruction.
@@ -743,9 +744,15 @@ TestCpuStackGuardInBspAndAp (
   VOID                            *NewIdtr;
   UINTN                           *CpuStackBaseBuffer;
 
-  if (!PcdGetBool (PcdCpuStackGuard)) {
+  // MU_CHANGE Start
+  // if (!PcdGetBool (PcdCpuStackGuard)) {
+  //   return UNIT_TEST_PASSED;
+  // }
+  if (!gDxeMps.CpuStackGuard) {
     return UNIT_TEST_PASSED;
   }
+
+  // MU_CHANGE End
 
   //
   // Get MP Service Protocol
