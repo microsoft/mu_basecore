@@ -87,11 +87,11 @@ InitializeMpExceptionStackSwitchHandlers (
   EFI_STATUS                      Status;
   UINT8                           *Buffer;
 
-  // MU_CHANGE START
+  // MU_CHANGE START: Prevent AP Deadlock
   // if (!PcdGetBool (PcdCpuStackGuard)) {
-  //  return;
+  //   return;
   // }
-  // MU_CHANGE END
+  // MU_CHANGE END: Prevent AP Deadlock
 
   Status = MpInitLibGetNumberOfProcessors (&NumberOfProcessors, NULL);
   ASSERT_EFI_ERROR (Status);

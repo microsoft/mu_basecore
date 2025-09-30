@@ -40,8 +40,8 @@
   UefiDriverEntryPoint
   UefiLib
   PanicLib                  ## MU_CHANGE
-  DxeMemoryProtectionHobLib ## MU_CHANGE
   DeviceStateLib            ## MU_CHANGE
+  DxeMemoryProtectionHobLib ## MU_CHANGE
 
 [LibraryClasses.IA32, LibraryClasses.X64]
   LocalApicLib
