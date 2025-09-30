@@ -9,3 +9,4 @@
 
 MOCK_INTERFACE_DEFINITION (MockPolicyLibCommon);
 MOCK_FUNCTION_DEFINITION (MockPolicyLibCommon, GetPolicy, 4, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockPolicyLibCommon, SetPolicy, 4, EFIAPI);
