@@ -41,7 +41,9 @@
   PeiServicesLib
   SafeIntLib
   VariableFlashInfoLib
-  MmUnblockMemoryLib
+  # MU_CHANGE [BEGIN] - Comment out unused library when moving allocation to DXE
+  # MmUnblockMemoryLib
+  # MU_CHANGE [END]
   MemoryAllocationLib
 
 [Guids]

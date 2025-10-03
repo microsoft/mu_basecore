@@ -37,6 +37,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/UefiLib.h>
 #include <Library/BaseLib.h>
 #include <Library/HobLib.h>
+// MU_CHANGE [BEGIN] - Add include for memory unblock when moving allocation to DXE
+#include <Library/MmUnblockMemoryLib.h>
+// MU_CHANGE [END]
 
 #include <Guid/EventGroup.h>
 #include <Guid/SmmVariableCommon.h>
@@ -1644,6 +1647,12 @@ InitVariableCache (
   UINTN                        AllocatedNvCacheSize;
   UINTN                        AllocatedVolatileCacheSize;
   VARIABLE_RUNTIME_CACHE_INFO  *VariableRuntimeCacheInfo;
+  // MU_CHANGE [BEGIN] - Add variables for runtime buffer relocation from DXE
+  VOID                  *RuntimeBuffer;
+  EFI_PHYSICAL_ADDRESS  RuntimeBufferPhysicalAddress;
+  UINTN                 Pages;
+
+  // MU_CHANGE [END]
 
   //
   // Get needed runtime cache buffer size and check if auth variables are to be used from SMM
@@ -1667,9 +1676,123 @@ InitVariableCache (
       );
 
     CopyMem (&mVariableRtCacheInfo, VariableRuntimeCacheInfo, sizeof (VARIABLE_RUNTIME_CACHE_INFO));
-    InitVariableStoreHeader ((VOID *)(UINTN)mVariableRtCacheInfo.RuntimeHobCacheBuffer, AllocatedHobCacheSize);
-    InitVariableStoreHeader ((VOID *)(UINTN)mVariableRtCacheInfo.RuntimeNvCacheBuffer, AllocatedNvCacheSize);
-    InitVariableStoreHeader ((VOID *)(UINTN)mVariableRtCacheInfo.RuntimeVolatileCacheBuffer, AllocatedVolatileCacheSize);
+    //
+    // MU_CHANGE - Commented out old header initialization (moved to individual buffer relocations)
+    // InitVariableStoreHeader ((VOID *)(UINTN)mVariableRtCacheInfo.RuntimeHobCacheBuffer, AllocatedHobCacheSize);
+    // InitVariableStoreHeader ((VOID *)(UINTN)mVariableRtCacheInfo.RuntimeNvCacheBuffer, AllocatedNvCacheSize);
+    // InitVariableStoreHeader ((VOID *)(UINTN)mVariableRtCacheInfo.RuntimeVolatileCacheBuffer, AllocatedVolatileCacheSize);
+    //
+
+    //
+    // MU_CHANGE [BEGIN] - Relocate runtime cache buffers from boot services to runtime services
+    // This prevents runtime memory fragmentation by consolidating allocations in DXE
+    //
+    // Relocate CacheInfoFlag buffer from boot services to runtime services
+    //
+    if (mVariableRtCacheInfo.CacheInfoFlagBuffer != 0) {
+      Pages  = EFI_SIZE_TO_PAGES (sizeof (CACHE_INFO_FLAG));
+      Status = gBS->AllocatePages (
+                      AllocateAnyPages,
+                      EfiRuntimeServicesData,
+                      Pages,
+                      &RuntimeBufferPhysicalAddress
+                      );
+      if (!EFI_ERROR (Status)) {
+        RuntimeBuffer = (VOID *)(UINTN)RuntimeBufferPhysicalAddress;
+        CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.CacheInfoFlagBuffer, sizeof (CACHE_INFO_FLAG));
+        mVariableRtCacheInfo.CacheInfoFlagBuffer = (UINTN)RuntimeBuffer;
+
+        Status = MmUnblockMemoryRequest (RuntimeBufferPhysicalAddress, Pages);
+        if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
+          return Status;
+        }
+      } else {
+        return Status;
+      }
+    }
+
+    //
+    // Relocate RuntimeHobCache buffer from boot services to runtime services
+    //
+    if ((mVariableRtCacheInfo.RuntimeHobCacheBuffer != 0) && (AllocatedHobCacheSize > 0)) {
+      Pages  = EFI_SIZE_TO_PAGES (AllocatedHobCacheSize);
+      Status = gBS->AllocatePages (
+                      AllocateAnyPages,
+                      EfiRuntimeServicesData,
+                      Pages,
+                      &RuntimeBufferPhysicalAddress
+                      );
+      if (!EFI_ERROR (Status)) {
+        RuntimeBuffer = (VOID *)(UINTN)RuntimeBufferPhysicalAddress;
+        CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.RuntimeHobCacheBuffer, AllocatedHobCacheSize);
+        mVariableRtCacheInfo.RuntimeHobCacheBuffer = (UINTN)RuntimeBuffer;
+
+        Status = MmUnblockMemoryRequest (RuntimeBufferPhysicalAddress, Pages);
+        if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
+          return Status;
+        }
+
+        InitVariableStoreHeader (RuntimeBuffer, AllocatedHobCacheSize);
+      } else {
+        return Status;
+      }
+    }
+
+    //
+    // Relocate RuntimeNvCache buffer from boot services to runtime services
+    //
+    if ((mVariableRtCacheInfo.RuntimeNvCacheBuffer != 0) && (AllocatedNvCacheSize > 0)) {
+      Pages  = EFI_SIZE_TO_PAGES (AllocatedNvCacheSize);
+      Status = gBS->AllocatePages (
+                      AllocateAnyPages,
+                      EfiRuntimeServicesData,
+                      Pages,
+                      &RuntimeBufferPhysicalAddress
+                      );
+      if (!EFI_ERROR (Status)) {
+        RuntimeBuffer = (VOID *)(UINTN)RuntimeBufferPhysicalAddress;
+        CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.RuntimeNvCacheBuffer, AllocatedNvCacheSize);
+        mVariableRtCacheInfo.RuntimeNvCacheBuffer = (UINTN)RuntimeBuffer;
+
+        Status = MmUnblockMemoryRequest (RuntimeBufferPhysicalAddress, Pages);
+        if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
+          return Status;
+        }
+
+        InitVariableStoreHeader (RuntimeBuffer, AllocatedNvCacheSize);
+      } else {
+        return Status;
+      }
+    }
+
+    //
+    // Relocate RuntimeVolatileCache buffer from boot services to runtime services
+    //
+    if ((mVariableRtCacheInfo.RuntimeVolatileCacheBuffer != 0) && (AllocatedVolatileCacheSize > 0)) {
+      Pages  = EFI_SIZE_TO_PAGES (AllocatedVolatileCacheSize);
+      Status = gBS->AllocatePages (
+                      AllocateAnyPages,
+                      EfiRuntimeServicesData,
+                      Pages,
+                      &RuntimeBufferPhysicalAddress
+                      );
+      if (!EFI_ERROR (Status)) {
+        RuntimeBuffer = (VOID *)(UINTN)RuntimeBufferPhysicalAddress;
+        CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.RuntimeVolatileCacheBuffer, AllocatedVolatileCacheSize);
+        mVariableRtCacheInfo.RuntimeVolatileCacheBuffer = (UINTN)RuntimeBuffer;
+
+        Status = MmUnblockMemoryRequest (RuntimeBufferPhysicalAddress, Pages);
+        if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
+          return Status;
+        }
+
+        InitVariableStoreHeader (RuntimeBuffer, AllocatedVolatileCacheSize);
+      } else {
+        return Status;
+      }
+    }
+
+    // MU_CHANGE [END] - Relocate runtime cache buffers from boot services to runtime services
   }
 
   return Status;
