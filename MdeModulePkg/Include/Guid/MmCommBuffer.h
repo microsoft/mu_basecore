@@ -47,8 +47,16 @@ typedef struct {
   ///
   BOOLEAN    IsCommBufferValid;
 
+  /// MU_CHANGE Starts
   /// For padding purpose
-  UINT8      Reserved[7];
+  //UINT8      Reserved[7];
+  UINT8      Reserved[6];
+
+  ///
+  /// The channel used to communicate with MM.
+  ///
+  BOOLEAN    TalkToSupervisor;
+  /// MU_CHANGE Ends
 
   ///
   /// The return status when returning from MM to non-MM.
