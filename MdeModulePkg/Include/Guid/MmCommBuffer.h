@@ -47,6 +47,13 @@ typedef struct {
   ///
   BOOLEAN    IsCommBufferValid;
 
+  /// MU_CHANGE Starts
+  ///
+  /// The channel used to communicate with MM.
+  ///
+  BOOLEAN    TalkToSupervisor;
+  /// MU_CHANGE Ends
+
   ///
   /// The return status when returning from MM to non-MM.
   ///
