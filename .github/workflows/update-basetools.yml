@@ -13,8 +13,8 @@ jobs:
   # This job pulls all releases made in the last 7 days (This job runs weekly), and finds the newest unique tag, which
   # is then used to generate a matrix for the next job, responsible for updating the BaseTools binaries for each branch.
   #
-  # By "unique tag", it is meant that the semver versioning scheme is ignored, and only the `dev` and date prefix is used.
-  # e.g. for `dev-v2025020000.0.2`, it is finding the newest unique `dev-v202502`.
+  # By "unique tag", it is meant that the semver versioning scheme is ignored, and only the date prefix is used.
+  # e.g. for `v2025020000.0.2`, it is finding the newest unique `202502`.
   check:
     name: Find New Releases
 
@@ -34,45 +34,34 @@ jobs:
           CUTOFF_DATE=$(date -u --date='7 days ago' +%Y-%m-%dT%H:%M:%SZ)
           echo "Checking for releases since $CUTOFF_DATE..."
  
-          RELEASE_JSON=$(gh release list --repo "$REPO" --limit 100 --json tagName,publishedAt | \
+          # This monster of a command grabs the latest 100 releases, removes any releases older than the cutoff date,
+          # calculates the unique key (The release date prefix), groups entries by that key, selects only the newest
+          # entry in each group, and then re-maps it to a single list of tag/branch pairs.
+          MAPPED_RELEASES=$(gh release list --repo "$REPO" --limit 100 --json tagName,publishedAt | \
             jq -c --arg cutoff "$CUTOFF_DATE" '
               [ .[] 
-                | select(.publishedAt >= $cutoff)
-                | {
-                    tag: .tagName,
-                    publishedAt: .publishedAt,
-                    key: (
+              | select(.publishedAt >= $cutoff)
+              | {
+                  tag: .tagName,
+                  publishedAt: .publishedAt,
+                  key: (
                       .tagName
-                      | sub("^dev-"; "")                # strip "dev-" prefix if present
-                      | capture("^v(?<yymmdd>\\d{6})")  # extract 6-digit date prefix
-                      | .yymmdd
-                    ),
-                    isDev: (.tagName | startswith("dev-"))
+                      | capture("^v(?<release>\\d{6})")  # extract first 6 digits after 'v'
+                      | .release
+                  ),
                   }
               ] 
-              | group_by(.key + "-" + (.isDev | tostring)) 
+              | group_by(.key) 
               | map(max_by(.publishedAt))
-              | map(.tag)
-            ')
-
-            echo "Latest releases found since $CUTOFF_DATE: $RELEASE_JSON"
-
-            # Map the list of tags to a list of json objects with a tag name and branch name
-            MAPPED_RELEASES=$(echo "$RELEASE_JSON" | jq -c '
-              map({
-                tagName: .,
-                branchName: (
-                  if startswith("dev-") then
-                    "dev/" + (. | sub("^dev-v"; "") | capture("^(?<yyyymm>\\d{6})").yyyymm)
-                  else
-                    "release/" + (. | sub("^v"; "") | capture("^(?<yyyymm>\\d{6})").yyyymm)
-                  end
-                )
+              | map({
+                  tagName: .tag,
+                  branchName: ("release/" + .key)
               })
             ')
 
-            echo "Mapped releases: $MAPPED_RELEASES"
-            echo "releases=$MAPPED_RELEASES" >> $GITHUB_OUTPUT
+          echo "Latest releases found since $CUTOFF_DATE:"
+          echo "$MAPPED_RELEASES"
+          echo "releases=$MAPPED_RELEASES" >> $GITHUB_OUTPUT
   
   update:
     name: "[${{ matrix.release.branchName }}] Update BaseTools Binary to ${{ matrix.release.tagName }}"
