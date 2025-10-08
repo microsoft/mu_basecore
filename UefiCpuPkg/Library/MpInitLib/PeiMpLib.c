@@ -851,9 +851,22 @@ AllocateApLoopCodeBuffer (
   IN OUT EFI_PHYSICAL_ADDRESS  *Address
   )
 {
-  EFI_STATUS  Status;
+  // MU_CHANGE [BEGIN] - Only allocate RT visible type on S3 resume
+  EFI_STATUS     Status;
+  EFI_BOOT_MODE  BootMode;
 
-  Status = PeiServicesAllocatePages (EfiACPIMemoryNVS, Pages, Address);
+  Status = PeiServicesGetBootMode (&BootMode);
+  ASSERT_EFI_ERROR (Status);
+
+  if (!EFI_ERROR (Status) && (BootMode == BOOT_ON_S3_RESUME)) {
+    // Only allocate RT visible type on S3 resume
+    Status = PeiServicesAllocatePages (EfiACPIMemoryNVS, Pages, Address);
+  } else {
+    Status = PeiServicesAllocatePages (EfiBootServicesData, Pages, Address);
+  }
+
+  // MU_CHANGE [END] - Only allocate RT visible type on S3 resume
+
   if (EFI_ERROR (Status)) {
     *Address = 0;
   }
