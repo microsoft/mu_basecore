@@ -2543,27 +2543,15 @@
   # @Prompt Conduit to use in ArmFfaLib.
   gEfiMdeModulePkgTokenSpaceGuid.PcdFfaLibConduitSmc|TRUE|BOOLEAN|0x10000029
 
-  ## MU_CHANGE
-  ## Indicates that the system should disable BME on all Pci2Pci bridges on Exit Boot Services
-  #  Note: Some operating systems and drivers may not expect devices to be in this state, and it
-  #  may cause unexpected behaviors.
-  #   TRUE  - Disable BME on P2P at Exit Boot Services.
-  #   FALSE - Do not disable BME on P2P at Exit Boot Services.
-  # @Prompt Disable BME on Exit Boot Services
-  gEfiMdeModulePkgTokenSpaceGuid.PcdDisableBMEonEBS|TRUE|BOOLEAN|0x30002051
-  
-  # MU_CHANGE Start - MEM64 to PMEM64 conversion
-  ## Indicates if Mem64 resource requests can be allocated using the PMem64
-  #  pool during PCI enumeration in case Mem64 resources are not available.
-  #  This is supported as per PCI Base spec 6.3+. which recommends that software
-  #  should not use the prefetchable/non-prefetchable bits for determining BAR
-  #  allocations. The default is to support PI Base spec 6.3+ recommendation and
-  #  allow Mem64 to use PMem64 when needed.
-  #    TRUE  - Degrade Mem64 resources to use PMem64 when needed
-  #    FALSE - Mem64 will be degraded to Mem32 and never to PMem64
-  # @Prompt Support degrading Mem64 to PMem64 during PCI enumeration
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeMem64toPMem64|FALSE|BOOLEAN|0x1000002C
-  # MU_CHANGE End - MEM64 to PMEM64 conversion
+  ## Defines platform limit for BAR size that can be accepted in Resizable BAR Capability.
+  #  BAR Capability bits specify size in MB, thus this PCD value shall be extended with +20 bits.
+  # 0           2^(0+20) = 1 MB
+  # 1           2^(1+20) = 2 MB
+  # ...
+  # 42          2^(42+20) = 4 EB
+  # 43          2^(43+20) = 8 EB
+  # @Prompt Max size to accept in PCIe Resizable BAR Capability register.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPcieResizableBarMaxSize|43|UINT8|0x10000030
 
 [PcdsPatchableInModule]
   ## Specify memory size with page number for PEI code when
