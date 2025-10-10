@@ -2564,6 +2564,15 @@
   # @Prompt Support degrading Mem64 to PMem64 during PCI enumeration
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeMem64toPMem64|FALSE|BOOLEAN|0x1000002C
   # MU_CHANGE End - MEM64 to PMEM64 conversion
+  ## Defines platform limit for BAR size that can be accepted in Resizable BAR Capability.
+  #  BAR Capability bits specify size in MB, thus this PCD value shall be extended with +20 bits.
+  # 0           2^(0+20) = 1 MB
+  # 1           2^(1+20) = 2 MB
+  # ...
+  # 42          2^(42+20) = 4 EB
+  # 43          2^(43+20) = 8 EB
+  # @Prompt Max size to accept in PCIe Resizable BAR Capability register.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPcieResizableBarMaxSize|43|UINT8|0x10000030
 
 [PcdsPatchableInModule]
   ## Specify memory size with page number for PEI code when
