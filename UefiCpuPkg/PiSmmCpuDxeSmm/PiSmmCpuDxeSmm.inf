@@ -103,8 +103,8 @@
   CpuPageTableLib
   MmSaveStateLib
   SmmCpuSyncLib
-  MmMemoryProtectionHobLib                   ## MU_CHANGE
   PanicLib                                   ## MU_CHANGE
+  MmMemoryProtectionHobLib                   ## MU_CHANGE
 
 [Protocols]
   gEfiSmmConfigurationProtocolGuid         ## PRODUCES
