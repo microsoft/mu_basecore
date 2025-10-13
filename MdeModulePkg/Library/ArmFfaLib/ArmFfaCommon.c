@@ -562,8 +562,8 @@ ErrorHandler:
 EFI_STATUS
 EFIAPI
 ArmFfaLibRun (
-  IN  UINT16  PartId,
-  IN  UINT16  CpuNumber,
+  IN  UINT16        PartId,
+  IN  UINT16        CpuNumber,
   OUT ARM_FFA_ARGS  *CtxFfaArgs OPTIONAL
   )
 {
