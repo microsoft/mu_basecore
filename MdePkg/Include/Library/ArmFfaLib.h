@@ -297,11 +297,10 @@ ArmFfaLibSpmIdGet (
   );
 
 /**
-  Restore the context which was interrupted with FFA_INTERRUPT (EFI_INTERRUPT_PENDING).
+  Restore context which interrupted with FFA_INTERRUPT (EFI_INTERRUPT_PENDING).
 
   @param [in]   PartId       Partition id
   @param [in]   CpuNumber    Cpu number in partition
-  @param [out]  CtxFfaArgs   Optional context of FFA_ARGS
 
   @retval EFI_SUCCESS
   @retval Other              Error
@@ -310,9 +309,8 @@ ArmFfaLibSpmIdGet (
 EFI_STATUS
 EFIAPI
 ArmFfaLibRun (
-  IN  UINT16        PartId,
-  IN  UINT16        CpuNumber,
-  OUT ARM_FFA_ARGS  *CtxFfaArgs OPTIONAL
+  IN  UINT16  PartId,
+  IN  UINT16  CpuNumber
   );
 
 /**
