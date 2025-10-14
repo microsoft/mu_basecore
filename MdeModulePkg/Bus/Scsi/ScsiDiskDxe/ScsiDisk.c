@@ -199,14 +199,13 @@ ScsiDiskDriverBindingSupported (
 // MU_CHANGE Begin: Add function to check whether the disk is write protected
 
 /**
-y * Check whether the SCSI disk is write protected.
- *
- * @param ScsiDiskDevice      The SCSI disk device.
- * @param WriteProtectionEnabled  A pointer to a boolean that will be set to TRUE if the disk is write protected, FALSE otherwise.
- *
- * @return EFI_SUCCESS           The operation completed successfully.
- * @return EFI_INVALID_PARAMETER One of the input parameters was invalid.
- * @return other                 An error occurred while executing the SCSI command.
+ Check whether the SCSI disk is write protected.
+ @param[in]  ScsiDiskDevice         The SCSI disk device.
+ @param[out] WriteProtectionEnabled A pointer to a Boolean that will be set to TRUE if the disk is write protected,
+                                    FALSE otherwise.
+ @retval EFI_SUCCESS                The operation completed successfully.
+ @retval EFI_INVALID_PARAMETER      One of the input parameters was invalid.
+ @retval other                      An error occurred while executing the SCSI command.
  */
 STATIC
 EFI_STATUS
@@ -234,7 +233,7 @@ IsWriteProtected (
   *WriteProtectionEnabled = FALSE;
 
   Cdb[0] = ATA_CMD_MODE_SENSE6;
-  Cdb[1] = 0b1000;                         // Setting the bit for Disable Block Descriptor
+  Cdb[1] = BIT3;                         // Setting the bit for Disable Block Descriptor
   Cdb[2] = ATA_PAGE_CODE_RETURN_ALL_PAGES;
   Cdb[4] = sizeof (DataBuffer);
 
@@ -252,7 +251,7 @@ IsWriteProtected (
 
   // Mode Sense 6 Byte Command returns the Write Protection status in the 3rd byte
   // Bit 7 of the 3rd byte indicates the Write Protection status
-  *WriteProtectionEnabled = (DataBuffer[2] & 0x80) != 0;
+  *WriteProtectionEnabled = (DataBuffer[2] & BIT7) != 0;
   return EFI_SUCCESS;
 }
 
