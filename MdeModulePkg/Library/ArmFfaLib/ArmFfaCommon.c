@@ -553,6 +553,7 @@ ErrorHandler:
 
   @param [in]   PartId       Partition id
   @param [in]   CpuNumber    Cpu number in partition
+  @param [out]  CtxFfaArgs   Optional context of FFA_ARGS
 
   @retval EFI_SUCCESS
   @retval Other              Error
@@ -561,11 +562,13 @@ ErrorHandler:
 EFI_STATUS
 EFIAPI
 ArmFfaLibRun (
-  IN  UINT16  PartId,
-  IN  UINT16  CpuNumber
+  IN  UINT16        PartId,
+  IN  UINT16        CpuNumber,
+  OUT ARM_FFA_ARGS  *CtxFfaArgs OPTIONAL
   )
 {
   ARM_FFA_ARGS  FfaArgs;
+  EFI_STATUS    Status;
 
   ZeroMem (&FfaArgs, sizeof (ARM_FFA_ARGS));
 
@@ -574,7 +577,16 @@ ArmFfaLibRun (
 
   ArmCallFfa (&FfaArgs);
 
-  return FfaArgsToEfiStatus (&FfaArgs);
+  Status = FfaArgsToEfiStatus (&FfaArgs);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if (CtxFfaArgs != NULL) {
+    CopyMem (CtxFfaArgs, &FfaArgs, sizeof (ARM_FFA_ARGS));
+  }
+
+  return Status;
 }
 
 /**
