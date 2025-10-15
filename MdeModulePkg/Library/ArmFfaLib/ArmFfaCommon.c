@@ -574,8 +574,8 @@ ArmFfaLibYield (
   TimeoutNs = TimeoutUs * 1000;
 
   FfaArgs.Arg0 = ARM_FID_FFA_YIELD;
-  FfaArgs.Arg2 = (UINT32)(TimeoutNs >> 32);
-  FfaArgs.Arg3 = (UINT32)TimeoutNs;
+  FfaArgs.Arg2 = (UINT32)TimeoutNs;
+  FfaArgs.Arg3 = (UINT32)(TimeoutNs >> 32);
 
   ArmCallFfa (&FfaArgs);
 
