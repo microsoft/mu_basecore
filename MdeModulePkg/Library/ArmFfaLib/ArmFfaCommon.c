@@ -554,7 +554,7 @@ ErrorHandler:
  * being caught up in the secure world. Endpoint will need to be
  * invoked with FFA_RUN after the specified timeout.
  *
- * @param [in]   TimeoutUs    The timeout indicating the time in which 
+ * @param [in]   TimeoutUs    The timeout indicating the time in which
  *                            the endpoint is required to be run in
  *                            microseconds.
  *
