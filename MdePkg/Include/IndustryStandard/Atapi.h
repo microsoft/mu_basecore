@@ -503,8 +503,6 @@ typedef union {
 #define ATA_CMD_PREVENT_ALLOW_MEDIA_REMOVAL  0x1E              ///< defined in ATAPI Removable Rewritable Media Devices
 #define ATA_CMD_MODE_SELECT                  0x55              ///< defined in ATAPI Removable Rewritable Media Devices
 
-// MU_CHANGE: Add some definitions for MODE SENSE (6-Byte) command
-#define ATA_CMD_MODE_SENSE6                         0x1A       ///< defined in ATAPI Removable Rewritable Media Devices
 #define ATA_CMD_MODE_SENSE                          0x5A       ///< defined in ATAPI Removable Rewritable Media Devices
 #define ATA_PAGE_CODE_READ_WRITE_ERROR              0x01       ///< defined in ATAPI Removable Rewritable Media Devices
 #define ATA_PAGE_CODE_CACHING_PAGE                  0x08       ///< defined in ATAPI Removable Rewritable Media Devices
