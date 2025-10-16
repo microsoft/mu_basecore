@@ -23,7 +23,8 @@
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
 #include <Library/PcdLib.h>
-#include <Library/TimerLib.h>  // MU_CHANGE: Handle FFA_YIELD with timeout
+#include <Library/TimerLib.h>   // MU_CHANGE: Handle FFA_YIELD with timeout
+#include <Library/SafeIntLib.h> // MU_CHANGE: Yield conversion from us to ns
 
 #include <IndustryStandard/ArmFfaSvc.h>
 #include <IndustryStandard/ArmFfaPartInfo.h>
@@ -548,6 +549,8 @@ ErrorHandler:
   return Status;
 }
 
+// MU_CHANGE - [BEGIN]
+
 /**
  * Invoked by an endpoint to yield control back to the component
  * that called it. This prevents long running transactions from
@@ -567,11 +570,16 @@ ArmFfaLibYield (
   IN  UINT64  TimeoutUs
   )
 {
-  ARM_FFA_ARGS  FfaArgs;
-  UINT64        TimeoutNs;
+  ARM_FFA_ARGS   FfaArgs;
+  UINT64         TimeoutNs;
+  RETURN_STATUS  ReturnStatus;
 
   ZeroMem (&FfaArgs, sizeof (ARM_FFA_ARGS));
-  TimeoutNs = TimeoutUs * 1000;
+
+  ReturnStatus = SafeUint64Mult (TimeoutUs, 1000, &TimeoutNs);
+  if (ReturnStatus != RETURN_SUCCESS) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   FfaArgs.Arg0 = ARM_FID_FFA_YIELD;
   FfaArgs.Arg2 = (UINT32)TimeoutNs;
@@ -581,6 +589,8 @@ ArmFfaLibYield (
 
   return FfaArgsToEfiStatus (&FfaArgs);
 }
+
+// MU_CHANGE - [END]
 
 /**
   Restore the context which was interrupted with FFA_INTERRUPT (EFI_INTERRUPT_PENDING).

@@ -296,6 +296,8 @@ ArmFfaLibSpmIdGet (
   OUT UINT16  *SpmPartId
   );
 
+// MU_CHANGE - [BEGIN]
+
 /**
  * Invoked by an endpoint to yield control back to the component
  * that called it. This prevents long running transactions from
@@ -314,6 +316,8 @@ EFIAPI
 ArmFfaLibYield (
   IN  UINT64  TimeoutUs
   );
+
+// MU_CHANGE - [END]
 
 /**
   Restore context which interrupted with FFA_INTERRUPT (EFI_INTERRUPT_PENDING).
