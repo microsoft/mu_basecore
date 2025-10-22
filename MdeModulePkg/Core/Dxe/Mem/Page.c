@@ -529,7 +529,12 @@ CoreFreeMemoryMapStack (
     //
     Entry = AllocateMemoryMapEntry ();
 
-    ASSERT (Entry);
+    // If entry allocation failed once, it is unlikely to succeed moving forward
+    // However, we can try since we're in the middle of moving list nodes
+    if (Entry == NULL) {
+      ASSERT (Entry != NULL);
+      continue;
+    }
 
     //
     // Update to proper entry
@@ -1072,7 +1077,7 @@ CoreConvertPagesEx (
       }
     }
 
-    if (Link == &gMemoryMap) {
+    if ((Link == &gMemoryMap) || (Entry == NULL)) {
       DEBUG ((DEBUG_ERROR | DEBUG_PAGE, "ConvertPages: failed to find range %lx - %lx\n", Start, End));
       return EFI_NOT_FOUND;
     }
@@ -1094,8 +1099,11 @@ CoreConvertPagesEx (
     // if that's all we've got
     //
     RangeEnd = End;
+    if (Entry == NULL) {
+      ASSERT (Entry != NULL);
+      return EFI_NOT_FOUND;
+    }
 
-    ASSERT (Entry != NULL);
     if (Entry->End < End) {
       RangeEnd = Entry->End;
     }
