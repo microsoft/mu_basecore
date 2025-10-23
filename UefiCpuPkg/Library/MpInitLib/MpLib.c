@@ -2431,25 +2431,6 @@ MpInitLibInitialize (
     }
   }
 
-  // MU_CHANGE: START Prevent AP Deadlock
-  // After we have executed the APs for the first time, we need to set their TR back to 0 so they do not attempt
-  // to set it on the next wakeup. At this point, the APs are still sharing the GDT/TSS with the BSP. There is a
-  // race condition here where the APs might try to set the TR in quick succession, where the first one sets it
-  // causing the busy bit in the TSS to get set after the next AP has cleared the busy bit. When the second AP
-  // attempts to set the TR, it will GP fault because the busy bit is set. After MpInitLibInitialize() completes,
-  // the next AP wakeup will cause the AP to load its own GDT/TSS, so this contention cannot occur. However, in the
-  // wakeup to switch contexts, we must ensure the APs do not attempt to set the TR as it can fault before they are
-  // able to execute the function to switch GDT/TSS.
-  for (Index = 0; Index < CpuMpData->CpuCount; Index++) {
-    if (Index == CpuMpData->BspNumber) {
-      continue;
-    }
-
-    CpuMpData->CpuData[Index].VolatileRegisters.Tr = 0;
-  }
-
-  // MU_CHANGE: END Prevent AP Deadlock
-
   //
   // Dump the microcode revision for each core.
   //
