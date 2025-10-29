@@ -2448,10 +2448,10 @@ CoreInitializeMemoryServices (
     Attributes  = PhitResourceHob->ResourceAttribute;
     BaseAddress = PageAlignAddress (PhitHob->EfiMemoryTop);
     // MU_CHANGE START - Check for potential underflow before subtraction
-    if (PhitHob->EfiMemoryTop > (ResourceHob->PhysicalStart + ResourceHob->ResourceLength)) {
+    if (BaseAddress > (ResourceHob->PhysicalStart + ResourceHob->ResourceLength)) {
       Length = 0;
     } else {
-      Length      = PageAlignLength (ResourceHob->PhysicalStart + ResourceHob->ResourceLength - BaseAddress);
+      Length = PageAlignLength (ResourceHob->PhysicalStart + ResourceHob->ResourceLength - BaseAddress);
       FindLargestFreeRegion (&BaseAddress, &Length, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
     }
     // MU_CHANGE END - Check for potential underflow before subtraction
