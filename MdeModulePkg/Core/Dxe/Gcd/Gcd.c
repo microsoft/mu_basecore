@@ -2302,7 +2302,7 @@ CoreInitializeMemoryServices (
   EFI_HOB_GUID_TYPE            *GuidHob;
   UINT32                       ReservedCodePageNumber;
   UINT64                       MinimalMemorySizeNeeded;
-  EFI_STATUS                   Status;
+  EFI_STATUS                   Status;  // MU_CHANGE
 
   //
   // Point at the first HOB.  This must be the PHIT HOB.
