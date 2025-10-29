@@ -592,6 +592,7 @@
   MdeModulePkg/Library/ArmFfaLib/ArmFfaDxeLib.inf
   MdeModulePkg/Library/ArmFfaLib/ArmFfaStandaloneMmCoreLib.inf
   MdeModulePkg/Library/ArmFfaLib/ArmFfaStandaloneMmLib.inf
+  MdeModulePkg/Library/ArmFfaConsoleDebugLib/ArmFfaConsoleDebugStandaloneMmLib.inf
   MdeModulePkg/Universal/Apei/HestDxe/HestDxe.inf # MU_CHANGE
 
 [BuildOptions]
