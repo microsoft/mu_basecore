@@ -2302,6 +2302,7 @@ CoreInitializeMemoryServices (
   EFI_HOB_GUID_TYPE            *GuidHob;
   UINT32                       ReservedCodePageNumber;
   UINT64                       MinimalMemorySizeNeeded;
+  EFI_STATUS                   Status;
 
   //
   // Point at the first HOB.  This must be the PHIT HOB.
@@ -2448,10 +2449,17 @@ CoreInitializeMemoryServices (
     Attributes  = PhitResourceHob->ResourceAttribute;
     BaseAddress = PageAlignAddress (PhitHob->EfiMemoryTop);
     // MU_CHANGE START - Check for potential underflow before subtraction
-    if (BaseAddress > (ResourceHob->PhysicalStart + ResourceHob->ResourceLength)) {
+    Status = SafeUint64Add (ResourceHob->PhysicalStart, ResourceHob->ResourceLength, &HighAddress);
+    if (EFI_ERROR (Status)) {
+      // This hob can't be right...
+      ASSERT_EFI_ERROR (Status);
+      HighAddress = MAX_UINT64;
+    }
+
+    if (BaseAddress > HighAddress) {
       Length = 0;
     } else {
-      Length = PageAlignLength (ResourceHob->PhysicalStart + ResourceHob->ResourceLength - BaseAddress);
+      Length = PageAlignLength (HighAddress - BaseAddress);
       FindLargestFreeRegion (&BaseAddress, &Length, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
     }
     // MU_CHANGE END - Check for potential underflow before subtraction
