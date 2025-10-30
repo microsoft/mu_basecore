@@ -2431,9 +2431,11 @@ CoreInitializeMemoryServices (
     } else {
       ResourceHobMemoryTop = ResourceHob->PhysicalStart + ResourceHob->ResourceLength;
     }
+
     // MU_CHANGE END - Check for potential overflow before addition
 
-    if (PhitHob->EfiFreeMemoryTop > ResourceHobMemoryTop) { // MU_CHANGE
+    if (PhitHob->EfiFreeMemoryTop > ResourceHobMemoryTop) {
+      // MU_CHANGE
       continue;
     }
 
@@ -2457,10 +2459,11 @@ CoreInitializeMemoryServices (
     //
     Attributes  = PhitResourceHob->ResourceAttribute;
     BaseAddress = PageAlignAddress (PhitHob->EfiMemoryTop);
-    if (BaseAddress > ResourceHobMemoryTop) { // MU_CHANGE
+    if (BaseAddress > ResourceHobMemoryTop) {
+      // MU_CHANGE
       Length = 0;
     } else {
-      Length = PageAlignLength (HighAddress - BaseAddress);
+      Length = PageAlignLength (ResourceHobMemoryTop - BaseAddress);
       FindLargestFreeRegion (&BaseAddress, &Length, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
     }
 
@@ -2541,7 +2544,8 @@ CoreInitializeMemoryServices (
         continue;
       }
 
-      if (ResourceHobMemoryTop > (EFI_PHYSICAL_ADDRESS)MAX_ALLOC_ADDRESS) { // MU_CHANGE
+      if (ResourceHobMemoryTop > (EFI_PHYSICAL_ADDRESS)MAX_ALLOC_ADDRESS) {
+        // MU_CHANGE
         continue;
       }
 
