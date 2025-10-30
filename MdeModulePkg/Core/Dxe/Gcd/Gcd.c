@@ -2458,7 +2458,7 @@ CoreInitializeMemoryServices (
     Attributes  = PhitResourceHob->ResourceAttribute;
     BaseAddress = PageAlignAddress (PhitHob->EfiMemoryTop);
 
-    // MU_CHANGE END - Check for potential underflow before subtraction
+    // MU_CHANGE START - Check for potential underflow before subtraction
     if (BaseAddress > ResourceHobMemoryTop) {
       Length = 0;
     } else {
@@ -2543,8 +2543,16 @@ CoreInitializeMemoryServices (
         continue;
       }
 
-      // MU_CHANGE
+      // MU_CHANGE START - Check for potential overflow before addition
+      if (ResourceHob->PhysicalStart > MAX_UINT64 - ResourceHob->ResourceLength) {
+        ASSERT (FALSE);
+        ResourceHobMemoryTop = MAX_UINT64;
+      } else {
+        ResourceHobMemoryTop = ResourceHob->PhysicalStart + ResourceHob->ResourceLength;
+      }
+
       if (ResourceHobMemoryTop > (EFI_PHYSICAL_ADDRESS)MAX_ALLOC_ADDRESS) {
+        // MU_CHANGE END - Check for potential overflow before addition
         continue;
       }
 
