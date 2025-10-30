@@ -2274,6 +2274,7 @@ CoreInitializeMemoryServices (
   EFI_HOB_GUID_TYPE            *GuidHob;
   UINT32                       ReservedCodePageNumber;
   UINT64                       MinimalMemorySizeNeeded;
+  EFI_PHYSICAL_ADDRESS         ResourceHobMemoryTop;  // MU_CHANGE
 
   //
   // Point at the first HOB.  This must be the PHIT HOB.
@@ -2395,7 +2396,16 @@ CoreInitializeMemoryServices (
       continue;
     }
 
-    if (PhitHob->EfiFreeMemoryTop > (ResourceHob->PhysicalStart + ResourceHob->ResourceLength)) {
+    // MU_CHANGE START - Check for potential overflow before addition
+    if (ResourceHob->PhysicalStart > MAX_UINT64 - ResourceHob->ResourceLength) {
+      ASSERT (FALSE);
+      ResourceHobMemoryTop = MAX_UINT64;
+    } else {
+      ResourceHobMemoryTop = ResourceHob->PhysicalStart + ResourceHob->ResourceLength;
+    }
+
+    if (PhitHob->EfiFreeMemoryTop > ResourceHobMemoryTop) {
+      // MU_CHANGE END - Check for potential overflow before addition
       continue;
     }
 
@@ -2419,8 +2429,17 @@ CoreInitializeMemoryServices (
     //
     Attributes  = PhitResourceHob->ResourceAttribute;
     BaseAddress = PageAlignAddress (PhitHob->EfiMemoryTop);
-    Length      = PageAlignLength (ResourceHob->PhysicalStart + ResourceHob->ResourceLength - BaseAddress);
-    FindLargestFreeRegion (&BaseAddress, &Length, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
+
+    // MU_CHANGE START - Check for potential underflow before subtraction
+    if (BaseAddress > ResourceHobMemoryTop) {
+      Length = 0;
+    } else {
+      Length = PageAlignLength (ResourceHobMemoryTop - BaseAddress);
+      FindLargestFreeRegion (&BaseAddress, &Length, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
+    }
+
+    // MU_CHANGE END - Check for potential underflow before subtraction
+
     if (Length < MinimalMemorySizeNeeded) {
       //
       // If that range is not large enough to intialize the DXE Core, then
@@ -2496,7 +2515,16 @@ CoreInitializeMemoryServices (
         continue;
       }
 
-      if ((ResourceHob->PhysicalStart + ResourceHob->ResourceLength) > (EFI_PHYSICAL_ADDRESS)MAX_ALLOC_ADDRESS) {
+      // MU_CHANGE START - Check for potential overflow before addition
+      if (ResourceHob->PhysicalStart > MAX_UINT64 - ResourceHob->ResourceLength) {
+        ASSERT (FALSE);
+        ResourceHobMemoryTop = MAX_UINT64;
+      } else {
+        ResourceHobMemoryTop = ResourceHob->PhysicalStart + ResourceHob->ResourceLength;
+      }
+
+      if (ResourceHobMemoryTop > (EFI_PHYSICAL_ADDRESS)MAX_ALLOC_ADDRESS) {
+        // MU_CHANGE END - Check for potential overflow before addition
         continue;
       }
 
@@ -2511,7 +2539,7 @@ CoreInitializeMemoryServices (
       // Skip Resource Descriptor HOBs that are not large enough to initilize the DXE Core
       //
       TestedMemoryBaseAddress = PageAlignAddress (ResourceHob->PhysicalStart);
-      TestedMemoryLength      = PageAlignLength (ResourceHob->PhysicalStart + ResourceHob->ResourceLength - TestedMemoryBaseAddress);
+      TestedMemoryLength      = PageAlignLength (ResourceHobMemoryTop - TestedMemoryBaseAddress); // MU_CHANGE
       FindLargestFreeRegion (&TestedMemoryBaseAddress, &TestedMemoryLength, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
       if (TestedMemoryLength < MinimalMemorySizeNeeded) {
         continue;
