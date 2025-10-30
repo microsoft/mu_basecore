@@ -2462,6 +2462,7 @@ CoreInitializeMemoryServices (
       Length = PageAlignLength (HighAddress - BaseAddress);
       FindLargestFreeRegion (&BaseAddress, &Length, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
     }
+
     // MU_CHANGE END - Check for potential underflow before subtraction
 
     if (Length < MinimalMemorySizeNeeded) {
