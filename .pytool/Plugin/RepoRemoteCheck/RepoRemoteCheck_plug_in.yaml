@@ -1,0 +1,11 @@
+## @file
+# Checks that a git repository meets certain remote URL criteria.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+{
+    "scope": "remote_repo_check",
+    "name": "Repository Remote Check Plugin",
+    "module": "RepoRemoteCheck"
+}
