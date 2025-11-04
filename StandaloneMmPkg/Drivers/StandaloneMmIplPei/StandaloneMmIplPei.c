@@ -675,6 +675,7 @@ ExecuteMmCoreFromMmram (
   )
 {
   EFI_STATUS                      Status;
+  EFI_STATUS                      AccessStatus;       // MU_CHANGE: Separate variable to avoid overwriting Status
   UINTN                           PageCount;
   VOID                            *MmHobList;
   UINTN                           MmHobSize;
@@ -823,12 +824,14 @@ Done:
     // Close all MMRAM ranges, if MmAccess is available.
     //
     for (Index = 0; Index < MmramRangeCount; Index++) {
-      Status = MmAccess->Close ((EFI_PEI_SERVICES **)GetPeiServicesTablePointer (), MmAccess, Index);
-      if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "MM IPL failed to close MMRAM windows index %d - %r\n", Index, Status));
+      // MU_CHANGE START: Will not return if error occurs
+      AccessStatus = MmAccess->Close ((EFI_PEI_SERVICES **)GetPeiServicesTablePointer (), MmAccess, Index);
+      if (EFI_ERROR (AccessStatus)) {
+        DEBUG ((DEBUG_ERROR, "MM IPL failed to close MMRAM windows index %d - %r\n", Index, AccessStatus));
         ASSERT (FALSE);
-        return Status;
       }
+
+      // MU_CHANGE END: Will not return if error occurs
 
       //
       // Print debug message that the MMRAM window is now closed.
@@ -838,16 +841,17 @@ Done:
       //
       // Lock the MMRAM (Note: Locking MMRAM may not be supported on all platforms)
       //
-      Status = MmAccess->Lock ((EFI_PEI_SERVICES **)GetPeiServicesTablePointer (), MmAccess, Index);
-      if (EFI_ERROR (Status)) {
+      // MU_CHANGE START: Will not return if error occurs and allow UNSUPPORTED
+      AccessStatus = MmAccess->Lock ((EFI_PEI_SERVICES **)GetPeiServicesTablePointer (), MmAccess, Index);
+      if (EFI_ERROR (AccessStatus) && (AccessStatus != EFI_UNSUPPORTED)) {
         //
         // Print error message that the MMRAM failed to lock...
         //
-        DEBUG ((DEBUG_ERROR, "MM IPL could not lock MMRAM (Index %d) after executing MM Core %r\n", Index, Status));
+        DEBUG ((DEBUG_ERROR, "MM IPL could not lock MMRAM (Index %d) after executing MM Core %r\n", Index, AccessStatus));
         ASSERT (FALSE);
-        return Status;
       }
 
+      // MU_CHANGE END: Will not return if error occurs and allow UNSUPPORTED
       //
       // Print debug message that the MMRAM window is now closed.
       //
