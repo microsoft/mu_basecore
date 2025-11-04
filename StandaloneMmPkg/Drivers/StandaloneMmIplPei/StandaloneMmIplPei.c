@@ -468,6 +468,9 @@ CreateMmHobList (
                         MmProfileDataHob,
                         Block
                         );
+  if (PlatformHobSize != 0) {
+    FreePages (PlatformHobList, EFI_SIZE_TO_PAGES (PlatformHobSize));
+  }
 
   ASSERT (Status == RETURN_BUFFER_TOO_SMALL);
   ASSERT (FoundationHobSize != 0);
@@ -493,10 +496,8 @@ CreateMmHobList (
   //
   // Copy platform HOBs
   //
-  if (PlatformHobSize != 0) {
-    CopyMem ((VOID *)((UINT8 *)HobList + PhitHobSize), PlatformHobList, PlatformHobSize);
-    FreePages (PlatformHobList, EFI_SIZE_TO_PAGES (PlatformHobSize));
-  }
+  Status = CreateMmPlatformHob ((UINT8 *)HobList + PhitHobSize, &PlatformHobSize);
+  ASSERT_EFI_ERROR (Status);
 
   //
   // Get foundation HOBs
@@ -504,7 +505,7 @@ CreateMmHobList (
   Status = CreateMmFoundationHobList (
              (UINT8 *)HobList + PhitHobSize + PlatformHobSize,
              &FoundationHobSize,
-             (UINT8 *)HobList + PhitHobSize,
+             HobList,
              PlatformHobSize,
              MmFvBase,
              MmFvSize,
