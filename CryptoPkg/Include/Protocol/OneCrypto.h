@@ -1,35 +1,30 @@
-/**
-  @file OneCryptoLibrary.h
-  @brief This file contains the declarations for the OneCryptoPkg protocol.
-  @defgroup OneCryptoPkg OneCryptoPkg Protocol
-  @brief Provides functions for cryptographic operations.
+/** @file
+  Implements the BaseCryptLib and TlsLib using the services of the EDK II Crypto
+  Protocol/PPI.
 
-  Register functions for cryptographic operations here. This file will be used to
-  generate the OneCryptoPkg protocol. All functions must include the `EFIAPI`
-  calling convention, have a `@since` tag to indicate the version in which the
-  function was introduced, and be grouped according to their functionality
-  using `@ingroup`.
+  Copyright (C) Microsoft Corporation. All rights reserved.
+  Copyright (c) 2019 - 2020, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  @{
+  UPDATED: 2025-Nov-11
+  VERSION: 1.0
 **/
 
-#ifndef ONE_CRYPTO_LIBRARY_H_
-#define ONE_CRYPTO_LIBRARY_H_
+#ifndef ONE_CRYPTO_PROTOCOL_
+#define ONE_CRYPTO_PROTOCOL_
 
 #include <Uefi.h>
-#include <Library/BaseCryptDefs.h>
+#include <Library/BaseCryptLib.h>
 
+// =============================================================================
+// Protocol version: 1.0
+// =============================================================================
 #define VERSION_MAJOR     1ULL
 #define VERSION_MINOR     0ULL
 
-
-/**
-  @defgroup HMAC hash-based message authentication
-  @brief Provides functions for generating and verifying HMACs.
-
-  @{
- */
-
+// ============================================================================
+// Typedef Declarations
+// =============================================================================
 /**
   Creates a new HMAC context.
 
@@ -38,9 +33,7 @@
   @since 1.0
   @ingroup HMAC
 **/
-VOID *
-EFIAPI
-HmacSha256New (
+typedef VOID * (EFIAPI *SHARED_HMAC_SHA256_NEW)(
   VOID
   );
 
@@ -52,9 +45,7 @@ HmacSha256New (
   @since 1.0
   @ingroup HMAC
 **/
-VOID
-EFIAPI
-HmacSha256Free (
+typedef VOID (EFIAPI *SHARED_HMAC_SHA256_FREE)(
   VOID  *HmacCtx
   );
 
@@ -71,9 +62,7 @@ HmacSha256Free (
   @since 1.0
   @ingroup HMAC
 **/
-BOOLEAN
-EFIAPI
-HmacSha256SetKey (
+typedef BOOLEAN (EFIAPI *SHARED_HMAC_SHA256_SET_KEY)(
   VOID         *HmacContext,
   CONST UINT8  *Key,
   UINTN        KeySize
@@ -91,9 +80,7 @@ HmacSha256SetKey (
   @since 1.0
   @ingroup HMAC
 **/
-BOOLEAN
-EFIAPI
-HmacSha256Duplicate (
+typedef BOOLEAN (EFIAPI *SHARED_HMAC_SHA256_DUPLICATE)(
   CONST VOID  *HmacContext,
   VOID        *NewHmacContext
   );
@@ -111,9 +98,7 @@ HmacSha256Duplicate (
   @since 1.0
   @ingroup HMAC
 **/
-BOOLEAN
-EFIAPI
-HmacSha256Update (
+typedef BOOLEAN (EFIAPI *SHARED_HMAC_SHA256_UPDATE)(
   VOID        *HmacContext,
   CONST VOID  *Data,
   UINTN       DataSize
@@ -131,9 +116,7 @@ HmacSha256Update (
   @since 1.0
   @ingroup HMAC
 **/
-BOOLEAN
-EFIAPI
-HmacSha256Final (
+typedef BOOLEAN (EFIAPI *SHARED_HMAC_SHA256_FINAL)(
   VOID   *HmacContext,
   UINT8  *HmacValue
   );
@@ -153,9 +136,7 @@ HmacSha256Final (
   @since 1.0
   @ingroup HMAC
 **/
-BOOLEAN
-EFIAPI
-HmacSha256All (
+typedef BOOLEAN (EFIAPI *SHARED_HMAC_SHA256_ALL)(
   CONST VOID   *Data,
   UINTN        DataSize,
   CONST UINT8  *Key,
@@ -171,9 +152,7 @@ HmacSha256All (
   @since 1.0
   @ingroup HMAC
 **/
-VOID *
-EFIAPI
-HmacSha384New (
+typedef VOID * (EFIAPI *SHARED_HMAC_SHA384_NEW)(
   VOID
   );
 
@@ -185,9 +164,7 @@ HmacSha384New (
   @since 1.0
   @ingroup HMAC
 **/
-VOID
-EFIAPI
-HmacSha384Free (
+typedef VOID (EFIAPI *SHARED_HMAC_SHA384_FREE)(
   VOID  *HmacCtx
   );
 
@@ -204,9 +181,7 @@ HmacSha384Free (
   @since 1.0
   @ingroup HMAC
 **/
-BOOLEAN
-EFIAPI
-HmacSha384SetKey (
+typedef BOOLEAN (EFIAPI *SHARED_HMAC_SHA384_SET_KEY)(
   VOID         *HmacContext,
   CONST UINT8  *Key,
   UINTN        KeySize
@@ -224,9 +199,7 @@ HmacSha384SetKey (
   @since 1.0
   @ingroup HMAC
 **/
-BOOLEAN
-EFIAPI
-HmacSha384Duplicate (
+typedef BOOLEAN (EFIAPI *SHARED_HMAC_SHA384_DUPLICATE)(
   CONST VOID  *HmacContext,
   VOID        *NewHmacContext
   );
@@ -244,9 +217,7 @@ HmacSha384Duplicate (
   @since 1.0
   @ingroup HMAC
 **/
-BOOLEAN
-EFIAPI
-HmacSha384Update (
+typedef BOOLEAN (EFIAPI *SHARED_HMAC_SHA384_UPDATE)(
   VOID        *HmacContext,
   CONST VOID  *Data,
   UINTN       DataSize
@@ -264,9 +235,7 @@ HmacSha384Update (
   @since 1.0
   @ingroup HMAC
 **/
-BOOLEAN
-EFIAPI
-HmacSha384Final (
+typedef BOOLEAN (EFIAPI *SHARED_HMAC_SHA384_FINAL)(
   VOID   *HmacContext,
   UINT8  *HmacValue
   );
@@ -286,24 +255,13 @@ HmacSha384Final (
   @since 1.0
   @ingroup HMAC
 **/
-BOOLEAN
-EFIAPI
-HmacSha384All (
+typedef BOOLEAN (EFIAPI *SHARED_HMAC_SHA384_ALL)(
   CONST VOID   *Data,
   UINTN        DataSize,
   CONST UINT8  *Key,
   UINTN        KeySize,
   UINT8        *HmacValue
   );
-
-/** @} */ // end of HMAC group
-
-/**
-  @defgroup Hash Hashing Functions
-  @brief Functions for performing various hashing operations.
-
-  @{
-**/
 
 /**
   Retrieves the size, in bytes, of the context buffer required for MD5 hash operations.
@@ -316,9 +274,7 @@ HmacSha384All (
   @since 1.0
   @ingroup Hash
 **/
-UINTN
-EFIAPI
-Md5GetContextSize (
+typedef UINTN (EFIAPI *SHARED_MD5_GET_CONTEXT_SIZE)(
   VOID
   );
 
@@ -338,9 +294,7 @@ Md5GetContextSize (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Md5Init (
+typedef BOOLEAN (EFIAPI *SHARED_MD5_INIT)(
   OUT VOID  *HashContext
   );
 
@@ -366,9 +320,7 @@ Md5Init (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Md5Update (
+typedef BOOLEAN (EFIAPI *SHARED_MD5_UPDATE)(
   IN OUT VOID    *HashContext,
   IN CONST VOID  *Data,
   IN UINTN       DataSize
@@ -398,9 +350,7 @@ Md5Update (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Md5Final (
+typedef BOOLEAN (EFIAPI *SHARED_MD5_FINAL)(
   IN OUT  VOID   *HashContext,
   OUT     UINT8  *HashDigest
   );
@@ -425,9 +375,7 @@ Md5Final (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Md5HashAll (
+typedef BOOLEAN (EFIAPI *SHARED_MD5_HASH_ALL)(
   IN CONST VOID  *Data,
   IN UINTN       DataSize,
   OUT UINT8      *HashDigest
@@ -450,9 +398,7 @@ Md5HashAll (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Md5Duplicate (
+typedef BOOLEAN (EFIAPI *SHARED_MD5_DUPLICATE)(
   IN CONST VOID  *HashContext,
   OUT VOID       *NewHashContext
   );
@@ -468,9 +414,7 @@ Md5Duplicate (
   @since 1.0
   @ingroup Hash
 **/
-UINTN
-EFIAPI
-Sha1GetContextSize (
+typedef UINTN (EFIAPI *SHARED_SHA1_GET_CONTEXT_SIZE)(
   VOID
   );
 
@@ -490,9 +434,7 @@ Sha1GetContextSize (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha1Init (
+typedef BOOLEAN (EFIAPI *SHARED_SHA1_INIT)(
   OUT VOID  *HashContext
   );
 
@@ -518,9 +460,7 @@ Sha1Init (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha1Update (
+typedef BOOLEAN (EFIAPI *SHARED_SHA1_UPDATE)(
   IN OUT VOID    *HashContext,
   IN CONST VOID  *Data,
   IN UINTN       DataSize
@@ -550,9 +490,7 @@ Sha1Update (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha1Final (
+typedef BOOLEAN (EFIAPI *SHARED_SHA1_FINAL)(
   IN OUT  VOID   *HashContext,
   OUT     UINT8  *HashDigest
   );
@@ -577,9 +515,7 @@ Sha1Final (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha1HashAll (
+typedef BOOLEAN (EFIAPI *SHARED_SHA1_HASH_ALL)(
   IN CONST VOID  *Data,
   IN UINTN       DataSize,
   OUT UINT8      *HashDigest
@@ -602,9 +538,7 @@ Sha1HashAll (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha1Duplicate (
+typedef BOOLEAN (EFIAPI *SHARED_SHA1_DUPLICATE)(
   IN CONST VOID  *HashContext,
   OUT VOID       *NewHashContext
   );
@@ -617,9 +551,7 @@ Sha1Duplicate (
   @since 1.0
   @ingroup Hash
 **/
-UINTN
-EFIAPI
-Sha256GetContextSize (
+typedef UINTN (EFIAPI *SHARED_SHA256_GET_CONTEXT_SIZE)(
   VOID
   );
 
@@ -637,9 +569,7 @@ Sha256GetContextSize (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha256Init (
+typedef BOOLEAN (EFIAPI *SHARED_SHA256_INIT)(
   OUT VOID  *HashContext
   );
 
@@ -663,9 +593,7 @@ Sha256Init (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha256Update (
+typedef BOOLEAN (EFIAPI *SHARED_SHA256_UPDATE)(
   IN OUT VOID    *HashContext,
   IN CONST VOID  *Data,
   IN UINTN       DataSize
@@ -693,9 +621,7 @@ Sha256Update (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha256Final (
+typedef BOOLEAN (EFIAPI *SHARED_SHA256_FINAL)(
   IN OUT  VOID   *HashContext,
   OUT     UINT8  *HashDigest
   );
@@ -720,9 +646,7 @@ Sha256Final (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha256HashAll (
+typedef BOOLEAN (EFIAPI *SHARED_SHA256_HASH_ALL)(
   IN CONST VOID  *Data,
   IN UINTN       DataSize,
   OUT UINT8      *HashDigest
@@ -745,9 +669,7 @@ Sha256HashAll (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha256Duplicate (
+typedef BOOLEAN (EFIAPI *SHARED_SHA256_DUPLICATE)(
   IN CONST VOID  *HashContext,
   OUT VOID       *NewHashContext
   );
@@ -760,12 +682,10 @@ Sha256Duplicate (
   @since 1.0
   @ingroup Hash
 **/
-UINTN
-EFIAPI
-Sha384GetContextSize (
+typedef UINTN (EFIAPI *SHARED_SHA384_GET_CONTEXT_SIZE)(
   VOID
   );
-  
+
 /**
   Initializes user-supplied memory pointed by Sha384Context as SHA-384 hash context for
   subsequent use.
@@ -780,9 +700,7 @@ Sha384GetContextSize (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha384Init (
+typedef BOOLEAN (EFIAPI *SHARED_SHA384_INIT)(
   OUT  VOID  *Sha384Context
   );
 
@@ -803,9 +721,7 @@ Sha384Init (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha384Duplicate (
+typedef BOOLEAN (EFIAPI *SHARED_SHA384_DUPLICATE)(
   IN   CONST VOID  *Sha384Context,
   OUT  VOID        *NewSha384Context
   );
@@ -830,15 +746,13 @@ Sha384Duplicate (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha384Update (
+typedef BOOLEAN (EFIAPI *SHARED_SHA384_UPDATE)(
   IN OUT  VOID        *Sha384Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
   );
 
-  /**
+/**
   Completes computation of the SHA-384 digest value.
 
   This function completes SHA-384 hash computation and retrieves the digest value into
@@ -860,14 +774,12 @@ Sha384Update (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha384Final (
+typedef BOOLEAN (EFIAPI *SHARED_SHA384_FINAL)(
   IN OUT  VOID   *Sha384Context,
   OUT     UINT8  *HashValue
   );
 
-  /**
+/**
   Computes the SHA-384 message digest of a input data buffer.
 
   This function performs the SHA-384 message digest of a given data buffer, and places
@@ -887,9 +799,7 @@ Sha384Final (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha384HashAll (
+typedef BOOLEAN (EFIAPI *SHARED_SHA384_HASH_ALL)(
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
@@ -903,9 +813,7 @@ Sha384HashAll (
   @since 1.0
   @ingroup Hash
 **/
-UINTN
-EFIAPI
-Sha512GetContextSize (
+typedef UINTN (EFIAPI *SHARED_SHA512_GET_CONTEXT_SIZE)(
   VOID
   );
 
@@ -923,9 +831,7 @@ Sha512GetContextSize (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha512Init (
+typedef BOOLEAN (EFIAPI *SHARED_SHA512_INIT)(
   OUT  VOID  *Sha512Context
   );
 
@@ -946,9 +852,7 @@ Sha512Init (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha512Duplicate (
+typedef BOOLEAN (EFIAPI *SHARED_SHA512_DUPLICATE)(
   IN   CONST VOID  *Sha512Context,
   OUT  VOID        *NewSha512Context
   );
@@ -973,9 +877,7 @@ Sha512Duplicate (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha512Update (
+typedef BOOLEAN (EFIAPI *SHARED_SHA512_UPDATE)(
   IN OUT  VOID        *Sha512Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
@@ -1003,9 +905,7 @@ Sha512Update (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha512Final (
+typedef BOOLEAN (EFIAPI *SHARED_SHA512_FINAL)(
   IN OUT  VOID   *Sha512Context,
   OUT     UINT8  *HashValue
   );
@@ -1030,9 +930,7 @@ Sha512Final (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sha512HashAll (
+typedef BOOLEAN (EFIAPI *SHARED_SHA512_HASH_ALL)(
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
@@ -1046,9 +944,7 @@ Sha512HashAll (
   @since 1.0
   @ingroup Hash
 **/
-UINTN
-EFIAPI
-Sm3GetContextSize (
+typedef UINTN (EFIAPI *SHARED_SM3_GET_CONTEXT_SIZE)(
   VOID
   );
 
@@ -1066,9 +962,7 @@ Sm3GetContextSize (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sm3Init (
+typedef BOOLEAN (EFIAPI *SHARED_SM3_INIT)(
   OUT  VOID  *Sm3Context
   );
 
@@ -1089,9 +983,7 @@ Sm3Init (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sm3Duplicate (
+typedef BOOLEAN (EFIAPI *SHARED_SM3_DUPLICATE)(
   IN   CONST VOID  *Sm3Context,
   OUT  VOID        *NewSm3Context
   );
@@ -1116,9 +1008,7 @@ Sm3Duplicate (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sm3Update (
+typedef BOOLEAN (EFIAPI *SHARED_SM3_UPDATE)(
   IN OUT  VOID        *Sm3Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
@@ -1146,9 +1036,7 @@ Sm3Update (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sm3Final (
+typedef BOOLEAN (EFIAPI *SHARED_SM3_FINAL)(
   IN OUT  VOID   *Sm3Context,
   OUT     UINT8  *HashValue
   );
@@ -1173,22 +1061,11 @@ Sm3Final (
   @since 1.0
   @ingroup Hash
 **/
-BOOLEAN
-EFIAPI
-Sm3HashAll (
+typedef BOOLEAN (EFIAPI *SHARED_SM3_HASH_ALL)(
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
   );
-
-/** @} */ // end of Hash group
-
-/**
-  @defgroup AES Advanced Encryption Standard
-  @brief Functions for performing symmetric encryption.
-
-  @{
-**/
 
 /**
   Retrieves the size, in bytes, of the context buffer required for AES operations.
@@ -1201,9 +1078,7 @@ Sm3HashAll (
   @since 1.0
   @ingroup AES
 **/
-UINTN
-EFIAPI
-AesGetContextSize (
+typedef UINTN (EFIAPI *SHARED_AES_GET_CONTEXT_SIZE)(
   VOID
   );
 
@@ -1231,9 +1106,7 @@ AesGetContextSize (
   @since 1.0
   @ingroup AES
 **/
-BOOLEAN
-EFIAPI
-AesInit (
+typedef BOOLEAN (EFIAPI *SHARED_AES_INIT)(
   OUT  VOID         *AesContext,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeyLength
@@ -1270,9 +1143,7 @@ AesInit (
   @since 1.0
   @ingroup AES
 **/
-BOOLEAN
-EFIAPI
-AesCbcEncrypt (
+typedef BOOLEAN (EFIAPI *SHARED_AES_CBC_ENCRYPT)(
   IN   VOID         *AesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
@@ -1311,9 +1182,7 @@ AesCbcEncrypt (
   @since 1.0
   @ingroup AES
 **/
-BOOLEAN
-EFIAPI
-AesCbcDecrypt (
+typedef BOOLEAN (EFIAPI *SHARED_AES_CBC_DECRYPT)(
   IN   VOID         *AesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
@@ -1347,9 +1216,7 @@ AesCbcDecrypt (
   @since 1.0
   @ingroup AES
 **/
-BOOLEAN
-EFIAPI
-AeadAesGcmEncrypt (
+typedef BOOLEAN (EFIAPI *SHARED_AEAD_AES_GCM_ENCRYPT)(
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   IN   CONST UINT8  *Iv,
@@ -1391,9 +1258,7 @@ AeadAesGcmEncrypt (
   @since 1.0
   @ingroup AES
 **/
-BOOLEAN
-EFIAPI
-AeadAesGcmDecrypt (
+typedef BOOLEAN (EFIAPI *SHARED_AEAD_AES_GCM_DECRYPT)(
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   IN   CONST UINT8  *Iv,
@@ -1408,15 +1273,6 @@ AeadAesGcmDecrypt (
   OUT  UINTN        *DataOutSize
   );
 
-/** @} */ // end of Aes group
-
-/**
-  @defgroup BN Big Number
-  @brief Functions for operating on big numbers.
-
-  @{
-**/
-
 /**
   Allocate new Big Number.
 
@@ -1425,9 +1281,7 @@ AeadAesGcmDecrypt (
   @since 1.0
   @ingroup BN
 **/
-VOID *
-EFIAPI
-BigNumInit (
+typedef VOID * (EFIAPI *SHARED_BIG_NUM_INIT)(
   VOID
   );
 
@@ -1442,9 +1296,7 @@ BigNumInit (
   @since 1.0
   @ingroup BN
 **/
-VOID *
-EFIAPI
-BigNumFromBin (
+typedef VOID * (EFIAPI *SHARED_BIG_NUM_FROM_BIN)(
   IN CONST UINT8  *Buf,
   IN UINTN        Len
   );
@@ -1461,9 +1313,7 @@ BigNumFromBin (
   @since 1.0
   @ingroup BN
 **/
-INTN
-EFIAPI
-BigNumToBin (
+typedef INTN (EFIAPI *SHARED_BIG_NUM_TO_BIN)(
   IN CONST VOID  *Bn,
   OUT UINT8      *Buf
   );
@@ -1477,9 +1327,7 @@ BigNumToBin (
   @since 1.0
   @ingroup BN
 **/
-VOID
-EFIAPI
-BigNumFree (
+typedef VOID (EFIAPI *SHARED_BIG_NUM_FREE)(
   IN VOID     *Bn,
   IN BOOLEAN  Clear
   );
@@ -1499,9 +1347,7 @@ BigNumFree (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumAdd (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_ADD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
@@ -1522,9 +1368,7 @@ BigNumAdd (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumSub (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_SUB)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
@@ -1545,9 +1389,7 @@ BigNumSub (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumMod (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_MOD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
@@ -1569,9 +1411,7 @@ BigNumMod (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumExpMod (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_EXP_MOD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnP,
   IN CONST VOID  *BnM,
@@ -1593,9 +1433,7 @@ BigNumExpMod (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumInverseMod (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_INVERSE_MOD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
@@ -1616,9 +1454,7 @@ BigNumInverseMod (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumDiv (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_DIV)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
@@ -1640,9 +1476,7 @@ BigNumDiv (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumMulMod (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_MUL_MOD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   IN CONST VOID  *BnM,
@@ -1662,9 +1496,7 @@ BigNumMulMod (
   @since 1.0
   @ingroup BN
 **/
-INTN
-EFIAPI
-BigNumCmp (
+typedef INTN (EFIAPI *SHARED_BIG_NUM_CMP)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB
   );
@@ -1679,9 +1511,7 @@ BigNumCmp (
   @since 1.0
   @ingroup BN
 **/
-UINTN
-EFIAPI
-BigNumBits (
+typedef UINTN (EFIAPI *SHARED_BIG_NUM_BITS)(
   IN CONST VOID  *Bn
   );
 
@@ -1695,9 +1525,7 @@ BigNumBits (
   @since 1.0
   @ingroup BN
 **/
-UINTN
-EFIAPI
-BigNumBytes (
+typedef UINTN (EFIAPI *SHARED_BIG_NUM_BYTES)(
   IN CONST VOID  *Bn
   );
 
@@ -1713,9 +1541,7 @@ BigNumBytes (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumIsWord (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_IS_WORD)(
   IN CONST VOID  *Bn,
   IN UINTN       Num
   );
@@ -1731,9 +1557,7 @@ BigNumIsWord (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumIsOdd (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_IS_ODD)(
   IN CONST VOID  *Bn
   );
 
@@ -1749,9 +1573,7 @@ BigNumIsOdd (
   @since 1.0
   @ingroup BN
 **/
-VOID *
-EFIAPI
-BigNumCopy (
+typedef VOID * (EFIAPI *SHARED_BIG_NUM_COPY)(
   OUT VOID       *BnDst,
   IN CONST VOID  *BnSrc
   );
@@ -1765,9 +1587,7 @@ BigNumCopy (
   @since 1.0
   @ingroup BN
 **/
-CONST VOID *
-EFIAPI
-BigNumValueOne (
+typedef CONST VOID * (EFIAPI *SHARED_BIG_NUM_VALUE_ONE)(
   VOID
   );
 
@@ -1786,9 +1606,7 @@ BigNumValueOne (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumRShift (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_R_SHIFT)(
   IN CONST VOID  *Bn,
   IN UINTN       N,
   OUT VOID       *BnRes
@@ -1804,9 +1622,7 @@ BigNumRShift (
   @since 1.0
   @ingroup BN
 **/
-VOID
-EFIAPI
-BigNumConstTime (
+typedef VOID (EFIAPI *SHARED_BIG_NUM_CONST_TIME)(
   IN VOID  *Bn
   );
 
@@ -1825,9 +1641,7 @@ BigNumConstTime (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumSqrMod (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_SQR_MOD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
@@ -1843,9 +1657,7 @@ BigNumSqrMod (
   @since 1.0
   @ingroup BN
 **/
-VOID *
-EFIAPI
-BigNumNewContext (
+typedef VOID * (EFIAPI *SHARED_BIG_NUM_NEW_CONTEXT)(
   VOID
   );
 
@@ -1857,9 +1669,7 @@ BigNumNewContext (
   @since 1.0
   @ingroup BN
 **/
-VOID
-EFIAPI
-BigNumContextFree (
+typedef VOID (EFIAPI *SHARED_BIG_NUM_CONTEXT_FREE)(
   IN VOID  *BnCtx
   );
 
@@ -1875,9 +1685,7 @@ BigNumContextFree (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumSetUint (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_SET_UINT)(
   IN VOID   *Bn,
   IN UINTN  Val
   );
@@ -1896,24 +1704,13 @@ BigNumSetUint (
   @since 1.0
   @ingroup BN
 **/
-BOOLEAN
-EFIAPI
-BigNumAddMod (
+typedef BOOLEAN (EFIAPI *SHARED_BIG_NUM_ADD_MOD)(
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
   );
 
-/** @} */ // end of BN group
-
-/**
-  @defgroup HKDF HMAC-based Extract-and-Expand Key Derivation Function
-  @brief Functions for operating on big numbers.
-
-  @{
-**/
-
 /**
   Derive key data using HMAC-SHA* based KDF.
 
@@ -1932,9 +1729,7 @@ BigNumAddMod (
   @since 1.0
   @ingroup HKDF
 **/
-BOOLEAN
-EFIAPI
-HkdfSha256ExtractAndExpand (
+typedef BOOLEAN (EFIAPI *SHARED_HKDF_SHA256_EXTRACT_AND_EXPAND)(
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   IN   CONST UINT8  *Salt,
@@ -1961,9 +1756,7 @@ HkdfSha256ExtractAndExpand (
   @since 1.0
   @ingroup HKDF
 **/
-BOOLEAN
-EFIAPI
-HkdfSha256Extract (
+typedef BOOLEAN (EFIAPI *SHARED_HKDF_SHA256_EXTRACT)(
   IN CONST UINT8  *Key,
   IN UINTN        KeySize,
   IN CONST UINT8  *Salt,
@@ -1988,9 +1781,7 @@ HkdfSha256Extract (
   @since 1.0
   @ingroup HKDF
 **/
-BOOLEAN
-EFIAPI
-HkdfSha256Expand (
+typedef BOOLEAN (EFIAPI *SHARED_HKDF_SHA256_EXPAND)(
   IN   CONST UINT8  *Prk,
   IN   UINTN        PrkSize,
   IN   CONST UINT8  *Info,
@@ -2017,9 +1808,7 @@ HkdfSha256Expand (
   @since 1.0
   @ingroup HKDF
 **/
-BOOLEAN
-EFIAPI
-HkdfSha384ExtractAndExpand (
+typedef BOOLEAN (EFIAPI *SHARED_HKDF_SHA384_EXTRACT_AND_EXPAND)(
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   IN   CONST UINT8  *Salt,
@@ -2046,9 +1835,7 @@ HkdfSha384ExtractAndExpand (
   @since 1.0
   @ingroup HKDF
 **/
-BOOLEAN
-EFIAPI
-HkdfSha384Extract (
+typedef BOOLEAN (EFIAPI *SHARED_HKDF_SHA384_EXTRACT)(
   IN CONST UINT8  *Key,
   IN UINTN        KeySize,
   IN CONST UINT8  *Salt,
@@ -2073,9 +1860,7 @@ HkdfSha384Extract (
   @since 1.0
   @ingroup HKDF
 **/
-BOOLEAN
-EFIAPI
-HkdfSha384Expand (
+typedef BOOLEAN (EFIAPI *SHARED_HKDF_SHA384_EXPAND)(
   IN   CONST UINT8  *Prk,
   IN   UINTN        PrkSize,
   IN   CONST UINT8  *Info,
@@ -2083,15 +1868,6 @@ HkdfSha384Expand (
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
   );
-
-/** @} */ // end of HKDF group
-
-/**
-  @defgroup PKCS Public Key Cryptography Standards
-  @brief Functions for Public Key Cryptography Standards.
-
-  @{
-**/
 
 /**
   Verifies the validity of an Authenticode Signature.
@@ -2113,9 +1889,7 @@ HkdfSha384Expand (
   @since 1.0
   @ingroup PKCS
 **/
-BOOLEAN
-EFIAPI
-AuthenticodeVerify (
+typedef BOOLEAN (EFIAPI *SHARED_AUTHENTICODE_VERIFY)(
   IN  CONST UINT8  *AuthData,
   IN  UINTN        DataSize,
   IN  CONST UINT8  *TrustedCert,
@@ -2147,9 +1921,7 @@ AuthenticodeVerify (
   @since 1.0
   @ingroup PKCS
 **/
-BOOLEAN
-EFIAPI
-Pkcs1v2Encrypt (
+typedef BOOLEAN (EFIAPI *SHARED_PKCS1V2_ENCRYPT)(
   IN   CONST UINT8  *PublicKey,
   IN   UINTN        PublicKeySize,
   IN   UINT8        *InData,
@@ -2178,9 +1950,7 @@ Pkcs1v2Encrypt (
   @since 1.0
   @ingroup PKCS
 **/
-BOOLEAN
-EFIAPI
-Pkcs1v2Decrypt (
+typedef BOOLEAN (EFIAPI *SHARED_PKCS1V2_DECRYPT)(
   IN   CONST UINT8  *PrivateKey,
   IN   UINTN        PrivateKeySize,
   IN   UINT8        *EncryptedData,
@@ -2217,9 +1987,7 @@ Pkcs1v2Decrypt (
   @since 1.0
   @ingroup PKCS
 **/
-BOOLEAN
-EFIAPI
-RsaOaepEncrypt (
+typedef BOOLEAN (EFIAPI *SHARED_RSA_OAEP_ENCRYPT)(
   IN   VOID         *RsaContext,
   IN   UINT8        *InData,
   IN   UINTN        InDataSize,
@@ -2254,9 +2022,7 @@ RsaOaepEncrypt (
   @since 1.0
   @ingroup PKCS
 **/
-BOOLEAN
-EFIAPI
-RsaOaepDecrypt (
+typedef BOOLEAN (EFIAPI *SHARED_RSA_OAEP_DECRYPT)(
   IN   VOID    *RsaContext,
   IN   UINT8   *EncryptedData,
   IN   UINTN   EncryptedDataSize,
@@ -2291,9 +2057,7 @@ RsaOaepDecrypt (
   @since 1.0
   @ingroup PKCS
 **/
-BOOLEAN
-EFIAPI
-Pkcs5HashPassword (
+typedef BOOLEAN (EFIAPI *SHARED_PKCS5_HASH_PASSWORD)(
   IN  UINTN        PasswordLength,
   IN  CONST CHAR8  *Password,
   IN  UINTN        SaltLength,
@@ -2329,9 +2093,7 @@ Pkcs5HashPassword (
   @since 1.0
   @ingroup PKCS
 **/
-BOOLEAN
-EFIAPI
-Pkcs7GetSigners (
+typedef BOOLEAN (EFIAPI *SHARED_PKCS7_GET_SIGNERS)(
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length,
   OUT UINT8        **CertStack,
@@ -2348,9 +2110,7 @@ If this interface is not supported, then ASSERT().
   @since 1.0
   @ingroup PKCS
 **/
-VOID
-EFIAPI
-Pkcs7FreeSigners (
+typedef VOID (EFIAPI *SHARED_PKCS7_FREE_SIGNERS)(
   IN  UINT8  *Certs
   );
 
@@ -2376,9 +2136,7 @@ Pkcs7FreeSigners (
   @since 1.0
   @ingroup PKCS
 **/
-BOOLEAN
-EFIAPI
-Pkcs7GetCertificatesList (
+typedef BOOLEAN (EFIAPI *SHARED_PKCS7_GET_CERTIFICATES_LIST)(
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length,
   OUT UINT8        **SignerChainCerts,
@@ -2414,9 +2172,7 @@ Pkcs7GetCertificatesList (
   @since 1.0
   @ingroup PKCS
 **/
-BOOLEAN
-EFIAPI
-Pkcs7Sign (
+typedef BOOLEAN (EFIAPI *SHARED_PKCS7_SIGN)(
   IN   CONST UINT8  *PrivateKey,
   IN   UINTN        PrivateKeySize,
   IN   CONST UINT8  *KeyPassword,
@@ -2456,9 +2212,7 @@ Pkcs7Sign (
   @since 1.0
   @ingroup PKCS
 **/
-BOOLEAN
-EFIAPI
-Pkcs7Verify (
+typedef BOOLEAN (EFIAPI *SHARED_PKCS7_VERIFY)(
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length,
   IN  CONST UINT8  *TrustedCert,
@@ -2467,7 +2221,7 @@ Pkcs7Verify (
   IN  UINTN        DataLength
   );
 
-  /**
+/**
   Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
   that wraps content encrypted for secure transmission to one or more recipients.
 
@@ -2499,9 +2253,7 @@ Pkcs7Verify (
   @since 1.0
   @ingroup PKCS
 **/
-BOOLEAN
-EFIAPI
-Pkcs7Encrypt (
+typedef BOOLEAN (EFIAPI *SHARED_PKCS7_ENCRYPT)(
   IN   UINT8   *X509Stack,
   IN   UINT8   *InData,
   IN   UINTN   InDataSize,
@@ -2509,390 +2261,6 @@ Pkcs7Encrypt (
   IN   UINT32  Flags,
   OUT  UINT8   **ContentInfo,
   OUT  UINTN   *ContentInfoSize
-  );
-
-/**
-  This function receives a PKCS7 formatted signature, and then verifies that
-  the specified Enhanced or Extended Key Usages (EKU's) are present in the end-entity
-  leaf signing certificate.
-  Note that this function does not validate the certificate chain.
-  Applications for custom EKU's are quite flexible. For example, a policy EKU
-  may be present in an Issuing Certificate Authority (CA), and any sub-ordinate
-  certificate issued might also contain this EKU, thus constraining the
-  sub-ordinate certificate.  Other applications might allow a certificate
-  embedded in a device to specify that other Object Identifiers (
-/**
-  Verifies the validity of an Authenticode Signature.
-
-  @param[in]  AuthData     Pointer to the Authenticode Signature retrieved from signed
-                           PE/COFF image to be verified.
-  @param[in]  DataSize     Size of the Authenticode Signature in bytes.
-  @param[in]  TrustedCert  Pointer to a trusted/root certificate encoded in DER, which
-                           is used for certificate chain verification.
-  @param[in]  CertSize     Size of the trusted certificate in bytes.
-  @param[in]  ImageHash    Pointer to the original image file hash value. The procedure
-                           for calculating the image hash value is described in Authenticode
-                           specification.
-  @param[in]  HashSize     Size of Image hash value in bytes.
-
-  @retval  TRUE   The specified Authenticode Signature is valid.
-  @retval  FALSE  Invalid Authenticode Signature.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-AuthenticodeVerify (
-  IN  CONST UINT8  *AuthData,
-  IN  UINTN        DataSize,
-  IN  CONST UINT8  *TrustedCert,
-  IN  UINTN        CertSize,
-  IN  CONST UINT8  *ImageHash,
-  IN  UINTN        HashSize
-  );
-
-/**
-  Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
-  encrypted message in a newly allocated buffer.
-
-  @param[in]  PublicKey           A pointer to the DER-encoded X509 certificate that
-                                  will be used to encrypt the data.
-  @param[in]  PublicKeySize       Size of the X509 cert buffer.
-  @param[in]  InData              Data to be encrypted.
-  @param[in]  InDataSize          Size of the data buffer.
-  @param[in]  PrngSeed            [Optional] If provided, a pointer to a random seed buffer
-                                  to be used when initializing the PRNG. NULL otherwise.
-  @param[in]  PrngSeedSize        [Optional] If provided, size of the random seed buffer.
-                                  0 otherwise.
-  @param[out] EncryptedData       Pointer to an allocated buffer containing the encrypted
-                                  message.
-  @param[out] EncryptedDataSize   Size of the encrypted message buffer.
-
-  @retval     TRUE                Encryption was successful.
-  @retval     FALSE               Encryption failed.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs1v2Encrypt (
-  IN   CONST UINT8  *PublicKey,
-  IN   UINTN        PublicKeySize,
-  IN   UINT8        *InData,
-  IN   UINTN        InDataSize,
-  IN   CONST UINT8  *PrngSeed   OPTIONAL,
-  IN   UINTN        PrngSeedSize   OPTIONAL,
-  OUT  UINT8        **EncryptedData,
-  OUT  UINTN        *EncryptedDataSize
-  );
-
-/**
-  Decrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
-  decrypted message in a newly allocated buffer.
-
-  @param[in]  PrivateKey          A pointer to the DER-encoded private key.
-  @param[in]  PrivateKeySize      Size of the private key buffer.
-  @param[in]  EncryptedData       Data to be decrypted.
-  @param[in]  EncryptedDataSize   Size of the encrypted buffer.
-  @param[out] OutData             Pointer to an allocated buffer containing the encrypted
-                                  message.
-  @param[out] OutDataSize         Size of the encrypted message buffer.
-
-  @retval     TRUE                Encryption was successful.
-  @retval     FALSE               Encryption failed.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs1v2Decrypt (
-  IN   CONST UINT8  *PrivateKey,
-  IN   UINTN        PrivateKeySize,
-  IN   UINT8        *EncryptedData,
-  IN   UINTN        EncryptedDataSize,
-  OUT  UINT8        **OutData,
-  OUT  UINTN        *OutDataSize
-  );
-
-/**
-  Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
-  encrypted message in a newly allocated buffer.
-
-  @param[in]  RsaContext          A pointer to an RSA context created by RsaNew() and
-                                  provisioned with a public key using RsaSetKey().
-  @param[in]  InData              Data to be encrypted.
-  @param[in]  InDataSize          Size of the data buffer.
-  @param[in]  PrngSeed            [Optional] If provided, a pointer to a random seed buffer
-                                  to be used when initializing the PRNG. NULL otherwise.
-  @param[in]  PrngSeedSize        [Optional] If provided, size of the random seed buffer.
-                                  0 otherwise.
-  @param[in]  DigestLen           [Optional] If provided, size of the hash used:
-                                  SHA1_DIGEST_SIZE
-                                  SHA256_DIGEST_SIZE
-                                  SHA384_DIGEST_SIZE
-                                  SHA512_DIGEST_SIZE
-                                  0 to use default (SHA1)
-  @param[out] EncryptedData       Pointer to an allocated buffer containing the encrypted
-                                  message.
-  @param[out] EncryptedDataSize   Size of the encrypted message buffer.
-
-  @retval     TRUE                Encryption was successful.
-  @retval     FALSE               Encryption failed.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-RsaOaepEncrypt (
-  IN   VOID         *RsaContext,
-  IN   UINT8        *InData,
-  IN   UINTN        InDataSize,
-  IN   CONST UINT8  *PrngSeed   OPTIONAL,
-  IN   UINTN        PrngSeedSize   OPTIONAL,
-  IN   UINT16       DigestLen OPTIONAL,
-  OUT  UINT8        **EncryptedData,
-  OUT  UINTN        *EncryptedDataSize
-  );
-
-/**
-  Decrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
-  decrypted message in a newly allocated buffer.
-
-  @param[in]  RsaContext          A pointer to an RSA context created by RsaNew() and
-                                  provisioned with a private key using RsaSetKey().
-  @param[in]  EncryptedData       Data to be decrypted.
-  @param[in]  EncryptedDataSize   Size of the encrypted buffer.
-  @param[in]  DigestLen           [Optional] If provided, size of the hash used:
-                                  SHA1_DIGEST_SIZE
-                                  SHA256_DIGEST_SIZE
-                                  SHA384_DIGEST_SIZE
-                                  SHA512_DIGEST_SIZE
-                                  0 to use default (SHA1)
-  @param[out] OutData             Pointer to an allocated buffer containing the encrypted
-                                  message.
-  @param[out] OutDataSize         Size of the encrypted message buffer.
-
-  @retval     TRUE                Encryption was successful.
-  @retval     FALSE               Encryption failed.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-RsaOaepDecrypt (
-  IN   VOID    *RsaContext,
-  IN   UINT8   *EncryptedData,
-  IN   UINTN   EncryptedDataSize,
-  IN   UINT16  DigestLen OPTIONAL,
-  OUT  UINT8   **OutData,
-  OUT  UINTN   *OutDataSize
-  );
-
-/**
-  Derives a key from a password using a salt and iteration count, based on PKCS#5 v2.0
-  password based encryption key derivation function PBKDF2, as specified in RFC 2898.
-  If Password or Salt or OutKey is NULL, then return FALSE.
-  If the hash algorithm could not be determined, then return FALSE.
-  If this interface is not supported, then return FALSE.
-  @param[in]  PasswordLength  Length of input password in bytes.
-  @param[in]  Password        Pointer to the array for the password.
-  @param[in]  SaltLength      Size of the Salt in bytes.
-  @param[in]  Salt            Pointer to the Salt.
-  @param[in]  IterationCount  Number of iterations to perform. Its value should be
-                              greater than or equal to 1.
-  @param[in]  DigestSize      Size of the message digest to be used (eg. SHA256_DIGEST_SIZE).
-                              NOTE: DigestSize will be used to determine the hash algorithm.
-                                    Only SHA1_DIGEST_SIZE or SHA256_DIGEST_SIZE is supported.
-  @param[in]  KeyLength       Size of the derived key buffer in bytes.
-  @param[out] OutKey          Pointer to the output derived key buffer.
-  @retval  TRUE   A key was derived successfully.
-  @retval  FALSE  One of the pointers was NULL or one of the sizes was too large.
-  @retval  FALSE  The hash algorithm could not be determined from the digest size.
-  @retval  FALSE  The key derivation operation failed.
-  @retval  FALSE  This interface is not supported.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs5HashPassword (
-  IN  UINTN        PasswordLength,
-  IN  CONST CHAR8  *Password,
-  IN  UINTN        SaltLength,
-  IN  CONST UINT8  *Salt,
-  IN  UINTN        IterationCount,
-  IN  UINTN        DigestSize,
-  IN  UINTN        KeyLength,
-  OUT UINT8        *OutKey
-  );
-
-/**
-  Get the signer's certificates from PKCS#7 signed data as described in "PKCS #7:
-  Cryptographic Message Syntax Standard". The input signed data could be wrapped
-  in a ContentInfo structure.
-  If P7Data, CertStack, StackLength, TrustedCert or CertLength is NULL, then
-  return FALSE. If P7Length overflow, then return FALSE.
-  If this interface is not supported, then return FALSE.
-  @param[in]  P7Data       Pointer to the PKCS#7 message to verify.
-  @param[in]  P7Length     Length of the PKCS#7 message in bytes.
-  @param[out] CertStack    Pointer to Signer's certificates retrieved from P7Data.
-                           It's caller's responsibility to free the buffer with
-                           Pkcs7FreeSigners().
-                           This data structure is EFI_CERT_STACK type.
-  @param[out] StackLength  Length of signer's certificates in bytes.
-  @param[out] TrustedCert  Pointer to a trusted certificate from Signer's certificates.
-                           It's caller's responsibility to free the buffer with
-                           Pkcs7FreeSigners().
-  @param[out] CertLength   Length of the trusted certificate in bytes.
-  @retval  TRUE            The operation is finished successfully.
-  @retval  FALSE           Error occurs during the operation.
-  @retval  FALSE           This interface is not supported.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs7GetSigners (
-  IN  CONST UINT8  *P7Data,
-  IN  UINTN        P7Length,
-  OUT UINT8        **CertStack,
-  OUT UINTN        *StackLength,
-  OUT UINT8        **TrustedCert,
-  OUT UINTN        *CertLength
-  );
-
-/**
-Wrap function to use free() to free allocated memory for certificates.
-If this interface is not supported, then ASSERT().
-@param[in]  Certs        Pointer to the certificates to be freed.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-VOID
-EFIAPI
-Pkcs7FreeSigners (
-  IN  UINT8  *Certs
-  );
-
-/**
-  Retrieves all embedded certificates from PKCS#7 signed data as described in "PKCS #7:
-  Cryptographic Message Syntax Standard", and outputs two certificate lists chained and
-  unchained to the signer's certificates.
-  The input signed data could be wrapped in a ContentInfo structure.
-  @param[in]  P7Data            Pointer to the PKCS#7 message.
-  @param[in]  P7Length          Length of the PKCS#7 message in bytes.
-  @param[out] SignerChainCerts  Pointer to the certificates list chained to signer's
-                                certificate. It's caller's responsibility to free the buffer
-                                with Pkcs7FreeSigners().
-                                This data structure is EFI_CERT_STACK type.
-  @param[out] ChainLength       Length of the chained certificates list buffer in bytes.
-  @param[out] UnchainCerts      Pointer to the unchained certificates lists. It's caller's
-                                responsibility to free the buffer with Pkcs7FreeSigners().
-                                This data structure is EFI_CERT_STACK type.
-  @param[out] UnchainLength     Length of the unchained certificates list buffer in bytes.
-  @retval  TRUE         The operation is finished successfully.
-  @retval  FALSE        Error occurs during the operation.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs7GetCertificatesList (
-  IN  CONST UINT8  *P7Data,
-  IN  UINTN        P7Length,
-  OUT UINT8        **SignerChainCerts,
-  OUT UINTN        *ChainLength,
-  OUT UINT8        **UnchainCerts,
-  OUT UINTN        *UnchainLength
-  );
-
-/**
-  Creates a PKCS#7 signedData as described in "PKCS #7: Cryptographic Message
-  Syntax Standard, version 1.5". This interface is only intended to be used for
-  application to perform PKCS#7 functionality validation.
-  If this interface is not supported, then return FALSE.
-  @param[in]  PrivateKey       Pointer to the PEM-formatted private key data for
-                               data signing.
-  @param[in]  PrivateKeySize   Size of the PEM private key data in bytes.
-  @param[in]  KeyPassword      NULL-terminated passphrase used for encrypted PEM
-                               key data.
-  @param[in]  InData           Pointer to the content to be signed.
-  @param[in]  InDataSize       Size of InData in bytes.
-  @param[in]  SignCert         Pointer to signer's DER-encoded certificate to sign with.
-  @param[in]  SignCertSize     Size of signer's DER-encoded certificate to sign with.  // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
-  @param[in]  OtherCerts       Pointer to an optional additional set of certificates to
-                               include in the PKCS#7 signedData (e.g. any intermediate
-                               CAs in the chain).
-  @param[out] SignedData       Pointer to output PKCS#7 signedData. It's caller's
-                               responsibility to free the buffer with FreePool().
-  @param[out] SignedDataSize   Size of SignedData in bytes.
-  @retval     TRUE             PKCS#7 data signing succeeded.
-  @retval     FALSE            PKCS#7 data signing failed.
-  @retval     FALSE            This interface is not supported.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs7Sign (
-  IN   CONST UINT8  *PrivateKey,
-  IN   UINTN        PrivateKeySize,
-  IN   CONST UINT8  *KeyPassword,
-  IN   UINT8        *InData,
-  IN   UINTN        InDataSize,
-  IN   CONST UINT8  *SignCert,
-  IN   UINTN        SignCertSize,
-  IN   UINT8        *OtherCerts      OPTIONAL,
-  OUT  UINT8        **SignedData,
-  OUT  UINTN        *SignedDataSize
-  );
-
-/**
-  Verifies the validity of a PKCS#7 signed data as described in "PKCS #7:
-  Cryptographic Message Syntax Standard". The input signed data could be wrapped
-  in a ContentInfo structure.
-
-  If P7Data, TrustedCert or InData is NULL, then return FALSE.
-  If P7Length, CertLength or DataLength overflow, then return FALSE.
-
-  Caution: This function may receive untrusted input.
-  UEFI Authenticated Variable is external input, so this function will do basic
-  check for PKCS#7 data structure.
-
-  @param[in]  P7Data       Pointer to the PKCS#7 message to verify.
-  @param[in]  P7Length     Length of the PKCS#7 message in bytes.
-  @param[in]  TrustedCert  Pointer to a trusted/root certificate encoded in DER, which
-                           is used for certificate chain verification.
-  @param[in]  CertLength   Length of the trusted certificate in bytes.
-  @param[in]  InData       Pointer to the content to be verified.
-  @param[in]  DataLength   Length of InData in bytes.
-
-  @retval  TRUE  The specified PKCS#7 signed data is valid.
-  @retval  FALSE Invalid PKCS#7 signed data.
-
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs7Verify (
-  IN  CONST UINT8  *P7Data,
-  IN  UINTN        P7Length,
-  IN  CONST UINT8  *TrustedCert,
-  IN  UINTN        CertLength,
-  IN  CONST UINT8  *InData,
-  IN  UINTN        DataLength
   );
 
 /**
@@ -2926,9 +2294,7 @@ Pkcs7Verify (
   @since 1.0
   @ingroup PKCS
 **/
-RETURN_STATUS
-EFIAPI
-VerifyEKUsInPkcs7Signature (
+typedef RETURN_STATUS (EFIAPI *SHARED_VERIFY_EK_US_IN_PKCS7_SIGNATURE)(
   IN  CONST UINT8   *Pkcs7Signature,
   IN  CONST UINT32  SignatureSize,
   IN  CONST CHAR8   *RequiredEKUs[],
@@ -2954,23 +2320,12 @@ VerifyEKUsInPkcs7Signature (
   @since 1.0
   @ingroup PKCS
 **/
-BOOLEAN
-EFIAPI
-Pkcs7GetAttachedContent (
+typedef BOOLEAN (EFIAPI *SHARED_PKCS7_GET_ATTACHED_CONTENT)(
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length,
   OUT VOID         **Content,
   OUT UINTN        *ContentSize
   );
-
-/** @} */ // end of PKCS group
-
-/**
-  @defgroup DH Diffie-Hellman
-  @brief Functions for Diffie-Hellman key exchange.
-
-  @{
-**/
 
 /**
   Allocates and Initializes one Diffie-Hellman Context for subsequent use.
@@ -2981,9 +2336,7 @@ Pkcs7GetAttachedContent (
   @since 1.0
   @ingroup DH
 **/
-VOID *
-EFIAPI
-DhNew (
+typedef VOID * (EFIAPI *SHARED_DH_NEW)(
   VOID
   );
 
@@ -2995,9 +2348,7 @@ DhNew (
   @since 1.0
   @ingroup DH
 **/
-VOID
-EFIAPI
-DhFree (
+typedef VOID (EFIAPI *SHARED_DH_FREE)(
   IN  VOID  *DhContext
   );
 
@@ -3022,9 +2373,7 @@ DhFree (
   @since 1.0
   @ingroup DH
 **/
-BOOLEAN
-EFIAPI
-DhGenerateParameter (
+typedef BOOLEAN (EFIAPI *SHARED_DH_GENERATE_PARAMETER)(
   IN OUT  VOID   *DhContext,
   IN      UINTN  Generator,
   IN      UINTN  PrimeLength,
@@ -3052,9 +2401,7 @@ DhGenerateParameter (
   @since 1.0
   @ingroup DH
 **/
-BOOLEAN
-EFIAPI
-DhSetParameter (
+typedef BOOLEAN (EFIAPI *SHARED_DH_SET_PARAMETER)(
   IN OUT  VOID         *DhContext,
   IN      UINTN        Generator,
   IN      UINTN        PrimeLength,
@@ -3088,9 +2435,7 @@ If this interface is not supported, then return FALSE.
   @since 1.0
   @ingroup DH
 **/
-BOOLEAN
-EFIAPI
-DhGenerateKey (
+typedef BOOLEAN (EFIAPI *SHARED_DH_GENERATE_KEY)(
   IN OUT  VOID   *DhContext,
   OUT     UINT8  *PublicKey,
   IN OUT  UINTN  *PublicKeySize
@@ -3125,28 +2470,13 @@ DhGenerateKey (
   @since 1.0
   @ingroup DH
 **/
-BOOLEAN
-EFIAPI
-DhComputeKey (
+typedef BOOLEAN (EFIAPI *SHARED_DH_COMPUTE_KEY)(
   IN OUT  VOID         *DhContext,
   IN      CONST UINT8  *PeerPublicKey,
   IN      UINTN        PeerPublicKeySize,
   OUT     UINT8        *Key,
   IN OUT  UINTN        *KeySize
   );
-
-/** @} */ // end of DH group
-
-/**
-  @defgroup EC Elliptic Curve
-  @brief Functions for Elliptic Curve Cryptography.
-
-  @{
-**/
-
-// =====================================================================================
-//    Basic Elliptic Curve Primitives
-// =====================================================================================
 
 /**
   Initialize new opaque EcGroup object. This object represents an EC curve and
@@ -3162,9 +2492,7 @@ DhComputeKey (
   @since 1.0
   @ingroup EC
 **/
-VOID *
-EFIAPI
-EcGroupInit (
+typedef VOID * (EFIAPI *SHARED_EC_GROUP_INIT)(
   IN UINTN  CryptoNid
   );
 
@@ -3186,9 +2514,7 @@ EcGroupInit (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcGroupGetCurve (
+typedef BOOLEAN (EFIAPI *SHARED_EC_GROUP_GET_CURVE)(
   IN CONST VOID  *EcGroup,
   OUT VOID       *BnPrime,
   OUT VOID       *BnA,
@@ -3211,9 +2537,7 @@ EcGroupGetCurve (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcGroupGetOrder (
+typedef BOOLEAN (EFIAPI *SHARED_EC_GROUP_GET_ORDER)(
   IN VOID   *EcGroup,
   OUT VOID  *BnOrder
   );
@@ -3226,9 +2550,7 @@ EcGroupGetOrder (
   @since 1.0
   @ingroup EC
 **/
-VOID
-EFIAPI
-EcGroupFree (
+typedef VOID (EFIAPI *SHARED_EC_GROUP_FREE)(
   IN VOID  *EcGroup
   );
 
@@ -3244,9 +2566,7 @@ EcGroupFree (
   @since 1.0
   @ingroup EC
 **/
-VOID *
-EFIAPI
-EcPointInit (
+typedef VOID * (EFIAPI *SHARED_EC_POINT_INIT)(
   IN CONST VOID  *EcGroup
   );
 
@@ -3259,9 +2579,7 @@ EcPointInit (
   @since 1.0
   @ingroup EC
 **/
-VOID
-EFIAPI
-EcPointDeInit (
+typedef VOID (EFIAPI *SHARED_EC_POINT_DE_INIT)(
   IN VOID     *EcPoint,
   IN BOOLEAN  Clear
   );
@@ -3284,9 +2602,7 @@ EcPointDeInit (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcPointGetAffineCoordinates (
+typedef BOOLEAN (EFIAPI *SHARED_EC_POINT_GET_AFFINE_COORDINATES)(
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPoint,
   OUT VOID       *BnX,
@@ -3309,9 +2625,7 @@ EcPointGetAffineCoordinates (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcPointSetAffineCoordinates (
+typedef BOOLEAN (EFIAPI *SHARED_EC_POINT_SET_AFFINE_COORDINATES)(
   IN CONST VOID  *EcGroup,
   IN VOID        *EcPoint,
   IN CONST VOID  *BnX,
@@ -3335,9 +2649,7 @@ EcPointSetAffineCoordinates (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcPointAdd (
+typedef BOOLEAN (EFIAPI *SHARED_EC_POINT_ADD)(
   IN CONST VOID  *EcGroup,
   OUT VOID       *EcPointResult,
   IN CONST VOID  *EcPointA,
@@ -3361,9 +2673,7 @@ EcPointAdd (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcPointMul (
+typedef BOOLEAN (EFIAPI *SHARED_EC_POINT_MUL)(
   IN CONST VOID  *EcGroup,
   OUT VOID       *EcPointResult,
   IN CONST VOID  *EcPoint,
@@ -3384,9 +2694,7 @@ EcPointMul (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcPointInvert (
+typedef BOOLEAN (EFIAPI *SHARED_EC_POINT_INVERT)(
   IN CONST VOID  *EcGroup,
   IN OUT VOID    *EcPoint,
   IN VOID        *BnCtx
@@ -3405,9 +2713,7 @@ EcPointInvert (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcPointIsOnCurve (
+typedef BOOLEAN (EFIAPI *SHARED_EC_POINT_IS_ON_CURVE)(
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPoint,
   IN VOID        *BnCtx
@@ -3425,9 +2731,7 @@ EcPointIsOnCurve (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcPointIsAtInfinity (
+typedef BOOLEAN (EFIAPI *SHARED_EC_POINT_IS_AT_INFINITY)(
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPoint
   );
@@ -3446,9 +2750,7 @@ EcPointIsAtInfinity (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcPointEqual (
+typedef BOOLEAN (EFIAPI *SHARED_EC_POINT_EQUAL)(
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPointA,
   IN CONST VOID  *EcPointB,
@@ -3475,19 +2777,13 @@ EcPointEqual (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcPointSetCompressedCoordinates (
+typedef BOOLEAN (EFIAPI *SHARED_EC_POINT_SET_COMPRESSED_COORDINATES)(
   IN CONST VOID  *EcGroup,
   IN VOID        *EcPoint,
   IN CONST VOID  *BnX,
   IN UINT8       YBit,
   IN VOID        *BnCtx
   );
-
-// =====================================================================================
-//    Elliptic Curve Diffie Hellman Primitives
-// =====================================================================================
 
 /**
   Allocates and Initializes one Elliptic Curve Context for subsequent use
@@ -3500,9 +2796,7 @@ EcPointSetCompressedCoordinates (
   @since 1.0
   @ingroup EC
 **/
-VOID *
-EFIAPI
-EcNewByNid (
+typedef VOID * (EFIAPI *SHARED_EC_NEW_BY_NID)(
   IN UINTN  Nid
   );
 
@@ -3514,9 +2808,7 @@ EcNewByNid (
   @since 1.0
   @ingroup EC
 **/
-VOID
-EFIAPI
-EcFree (
+typedef VOID (EFIAPI *SHARED_EC_FREE)(
   IN  VOID  *EcContext
   );
 
@@ -3549,9 +2841,7 @@ EcFree (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcGenerateKey (
+typedef BOOLEAN (EFIAPI *SHARED_EC_GENERATE_KEY)(
   IN OUT  VOID   *EcContext,
   OUT     UINT8  *PublicKey,
   IN OUT  UINTN  *PublicKeySize
@@ -3574,9 +2864,7 @@ EcGenerateKey (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcGetPubKey (
+typedef BOOLEAN (EFIAPI *SHARED_EC_GET_PUB_KEY)(
   IN OUT  VOID   *EcContext,
   OUT     UINT8  *PublicKey,
   IN OUT  UINTN  *PublicKeySize
@@ -3610,9 +2898,7 @@ EcGetPubKey (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcDhComputeKey (
+typedef BOOLEAN (EFIAPI *SHARED_EC_DH_COMPUTE_KEY)(
   IN OUT  VOID         *EcContext,
   IN      CONST UINT8  *PeerPublic,
   IN      UINTN        PeerPublicSize,
@@ -3640,9 +2926,7 @@ EcDhComputeKey (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcGetPrivateKeyFromPem (
+typedef BOOLEAN (EFIAPI *SHARED_EC_GET_PRIVATE_KEY_FROM_PEM)(
   IN   CONST UINT8  *PemData,
   IN   UINTN        PemSize,
   IN   CONST CHAR8  *Password,
@@ -3667,9 +2951,7 @@ EcGetPrivateKeyFromPem (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcGetPublicKeyFromX509 (
+typedef BOOLEAN (EFIAPI *SHARED_EC_GET_PUBLIC_KEY_FROM_X509)(
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  VOID         **EcContext
@@ -3706,9 +2988,7 @@ EcGetPublicKeyFromX509 (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcDsaSign (
+typedef BOOLEAN (EFIAPI *SHARED_EC_DSA_SIGN)(
   IN      VOID         *EcContext,
   IN      UINTN        HashNid,
   IN      CONST UINT8  *MessageHash,
@@ -3742,9 +3022,7 @@ EcDsaSign (
   @since 1.0
   @ingroup EC
 **/
-BOOLEAN
-EFIAPI
-EcDsaVerify (
+typedef BOOLEAN (EFIAPI *SHARED_EC_DSA_VERIFY)(
   IN  VOID         *EcContext,
   IN  UINTN        HashNid,
   IN  CONST UINT8  *MessageHash,
@@ -3752,19 +3030,6 @@ EcDsaVerify (
   IN  CONST UINT8  *Signature,
   IN  UINTN        SigSize
   );
-
-/** @} */ // end of EC group
-
-/**
-  @defgroup RSA Public Key Cryptography
-  @brief Functions for RSA public key cryptography.
-
-  @{
-**/
-
-// =====================================================================================
-//    Asymmetric Cryptography Primitive
-// =====================================================================================
 
 /**
   Allocates and initializes one RSA context for subsequent use.
@@ -3775,9 +3040,7 @@ EcDsaVerify (
   @since 1.0
   @ingroup RSA
 **/
-VOID *
-EFIAPI
-RsaNew (
+typedef VOID * (EFIAPI *SHARED_RSA_NEW)(
   VOID
   );
 
@@ -3791,9 +3054,7 @@ RsaNew (
   @since 1.0
   @ingroup RSA
 **/
-VOID
-EFIAPI
-RsaFree (
+typedef VOID (EFIAPI *SHARED_RSA_FREE)(
   IN  VOID  *RsaContext
   );
 
@@ -3821,9 +3082,7 @@ RsaFree (
   @since 1.0
   @ingroup RSA
 **/
-BOOLEAN
-EFIAPI
-RsaSetKey (
+typedef BOOLEAN (EFIAPI *SHARED_RSA_SET_KEY)(
   IN OUT  VOID         *RsaContext,
   IN      RSA_KEY_TAG  KeyTag,
   IN      CONST UINT8  *BigNumber,
@@ -3860,9 +3119,7 @@ RsaSetKey (
   @since 1.0
   @ingroup RSA
 **/
-BOOLEAN
-EFIAPI
-RsaGetKey (
+typedef BOOLEAN (EFIAPI *SHARED_RSA_GET_KEY)(
   IN OUT  VOID         *RsaContext,
   IN      RSA_KEY_TAG  KeyTag,
   OUT     UINT8        *BigNumber,
@@ -3894,9 +3151,7 @@ RsaGetKey (
   @since 1.0
   @ingroup RSA
 **/
-BOOLEAN
-EFIAPI
-RsaGenerateKey (
+typedef BOOLEAN (EFIAPI *SHARED_RSA_GENERATE_KEY)(
   IN OUT  VOID         *RsaContext,
   IN      UINTN        ModulusLength,
   IN      CONST UINT8  *PublicExponent,
@@ -3926,9 +3181,7 @@ RsaGenerateKey (
   @since 1.0
   @ingroup RSA
 **/
-BOOLEAN
-EFIAPI
-RsaCheckKey (
+typedef BOOLEAN (EFIAPI *SHARED_RSA_CHECK_KEY)(
   IN  VOID  *RsaContext
   );
 
@@ -3961,9 +3214,7 @@ RsaCheckKey (
   @since 1.0
   @ingroup RSA
 **/
-BOOLEAN
-EFIAPI
-RsaPkcs1Sign (
+typedef BOOLEAN (EFIAPI *SHARED_RSA_PKCS1_SIGN)(
   IN      VOID         *RsaContext,
   IN      CONST UINT8  *MessageHash,
   IN      UINTN        HashSize,
@@ -3992,9 +3243,7 @@ RsaPkcs1Sign (
   @since 1.0
   @ingroup RSA
 **/
-BOOLEAN
-EFIAPI
-RsaPkcs1Verify (
+typedef BOOLEAN (EFIAPI *SHARED_RSA_PKCS1_VERIFY)(
   IN  VOID         *RsaContext,
   IN  CONST UINT8  *MessageHash,
   IN  UINTN        HashSize,
@@ -4036,9 +3285,7 @@ RsaPkcs1Verify (
   @since 1.0
   @ingroup RSA
 **/
-BOOLEAN
-EFIAPI
-RsaPssSign (
+typedef BOOLEAN (EFIAPI *SHARED_RSA_PSS_SIGN)(
   IN      VOID         *RsaContext,
   IN      CONST UINT8  *Message,
   IN      UINTN        MsgSize,
@@ -4068,9 +3315,7 @@ RsaPssSign (
   @since 1.0
   @ingroup RSA
 **/
-BOOLEAN
-EFIAPI
-RsaPssVerify (
+typedef BOOLEAN (EFIAPI *SHARED_RSA_PSS_VERIFY)(
   IN  VOID         *RsaContext,
   IN  CONST UINT8  *Message,
   IN  UINTN        MsgSize,
@@ -4101,9 +3346,7 @@ RsaPssVerify (
   @since 1.0
   @ingroup RSA
 **/
-BOOLEAN
-EFIAPI
-RsaGetPrivateKeyFromPem (
+typedef BOOLEAN (EFIAPI *SHARED_RSA_GET_PRIVATE_KEY_FROM_PEM)(
   IN   CONST UINT8  *PemData,
   IN   UINTN        PemSize,
   IN   CONST CHAR8  *Password,
@@ -4130,22 +3373,11 @@ RsaGetPrivateKeyFromPem (
   @since 1.0
   @ingroup RSA
 **/
-BOOLEAN
-EFIAPI
-RsaGetPublicKeyFromX509 (
+typedef BOOLEAN (EFIAPI *SHARED_RSA_GET_PUBLIC_KEY_FROM_X509)(
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  VOID         **RsaContext
   );
-
-/** @} */ // end of RSA group
-
-/**
-  @defgroup X509 X.509 Certificate
-  @brief Functions for X.509 certificate manipulation.
-
-  @{
-**/
 
 /**
   Retrieve the subject bytes from one X.509 certificate.
@@ -4168,9 +3400,7 @@ RsaGetPublicKeyFromX509 (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509GetSubjectName (
+typedef BOOLEAN (EFIAPI *SHARED_X509_GET_SUBJECT_NAME)(
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     UINT8        *CertSubject,
@@ -4205,9 +3435,7 @@ X509GetSubjectName (
   @since 1.0
   @ingroup X509
 **/
-RETURN_STATUS
-EFIAPI
-X509GetCommonName (
+typedef RETURN_STATUS (EFIAPI *SHARED_X509_GET_COMMON_NAME)(
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     CHAR8        *CommonName   OPTIONAL,
@@ -4242,9 +3470,7 @@ X509GetCommonName (
   @since 1.0
   @ingroup X509
 **/
-RETURN_STATUS
-EFIAPI
-X509GetOrganizationName (
+typedef RETURN_STATUS (EFIAPI *SHARED_X509_GET_ORGANIZATION_NAME)(
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     CHAR8        *NameBuffer   OPTIONAL,
@@ -4271,9 +3497,7 @@ X509GetOrganizationName (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509VerifyCert (
+typedef BOOLEAN (EFIAPI *SHARED_X509_VERIFY_CERT)(
   IN  CONST UINT8  *Cert,
   IN  UINTN        CertSize,
   IN  CONST UINT8  *CACert,
@@ -4298,9 +3522,7 @@ X509VerifyCert (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509ConstructCertificate (
+typedef BOOLEAN (EFIAPI *SHARED_X509_CONSTRUCT_CERTIFICATE)(
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  UINT8        **SingleX509Cert
@@ -4327,9 +3549,7 @@ X509ConstructCertificate (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509ConstructCertificateStackV (
+typedef BOOLEAN (EFIAPI *SHARED_X509_CONSTRUCT_CERTIFICATE_STACK_V)(
   IN OUT  UINT8    **X509Stack,
   IN      VA_LIST  Args
   );
@@ -4354,9 +3574,7 @@ X509ConstructCertificateStackV (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509ConstructCertificateStack (
+typedef BOOLEAN (EFIAPI *SHARED_X509_CONSTRUCT_CERTIFICATE_STACK)(
   IN OUT  UINT8  **X509Stack,
   ...
   );
@@ -4371,9 +3589,7 @@ X509ConstructCertificateStack (
   @since 1.0
   @ingroup X509
 **/
-VOID
-EFIAPI
-X509Free (
+typedef VOID (EFIAPI *SHARED_X509_FREE)(
   IN  VOID  *X509Cert
   );
 
@@ -4387,9 +3603,7 @@ X509Free (
   @since 1.0
   @ingroup X509
 **/
-VOID
-EFIAPI
-X509StackFree (
+typedef VOID (EFIAPI *SHARED_X509_STACK_FREE)(
   IN  VOID  *X509Stack
   );
 
@@ -4412,9 +3626,7 @@ X509StackFree (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509GetTBSCert (
+typedef BOOLEAN (EFIAPI *SHARED_X509_GET_TBS_CERT)(
   IN  CONST UINT8  *Cert,
   IN  UINTN        CertSize,
   OUT UINT8        **TBSCert,
@@ -4439,9 +3651,7 @@ X509GetTBSCert (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509GetVersion (
+typedef BOOLEAN (EFIAPI *SHARED_X509_GET_VERSION)(
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     UINTN        *Version
@@ -4473,9 +3683,7 @@ X509GetVersion (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509GetSerialNumber (
+typedef BOOLEAN (EFIAPI *SHARED_X509_GET_SERIAL_NUMBER)(
   IN      CONST UINT8 *Cert,
   IN      UINTN CertSize,
   OUT     UINT8 *SerialNumber, OPTIONAL
@@ -4503,9 +3711,7 @@ X509GetSerialNumber (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509GetIssuerName (
+typedef BOOLEAN (EFIAPI *SHARED_X509_GET_ISSUER_NAME)(
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     UINT8        *CertIssuer,
@@ -4533,9 +3739,7 @@ X509GetIssuerName (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509GetSignatureAlgorithm (
+typedef BOOLEAN (EFIAPI *SHARED_X509_GET_SIGNATURE_ALGORITHM)(
   IN CONST UINT8 *Cert,
   IN       UINTN CertSize,
   OUT      UINT8 *Oid, OPTIONAL
@@ -4562,9 +3766,7 @@ X509GetSignatureAlgorithm (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509GetExtendedKeyUsage (
+typedef BOOLEAN (EFIAPI *SHARED_X509_GET_EXTENDED_KEY_USAGE)(
   IN     CONST UINT8  *Cert,
   IN     UINTN        CertSize,
   OUT UINT8           *Usage,
@@ -4594,9 +3796,7 @@ X509GetExtendedKeyUsage (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509GetExtensionData (
+typedef BOOLEAN (EFIAPI *SHARED_X509_GET_EXTENSION_DATA)(
   IN     CONST UINT8  *Cert,
   IN     UINTN        CertSize,
   IN     CONST UINT8  *Oid,
@@ -4629,9 +3829,7 @@ X509GetExtensionData (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509GetValidity (
+typedef BOOLEAN (EFIAPI *SHARED_X509_GET_VALIDITY)(
   IN     CONST UINT8  *Cert,
   IN     UINTN        CertSize,
   IN     UINT8        *From,
@@ -4666,9 +3864,7 @@ X509GetValidity (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509FormatDateTime (
+typedef BOOLEAN (EFIAPI *SHARED_X509_FORMAT_DATE_TIME)(
   IN  CONST  CHAR8  *DateTimeStr,
   OUT VOID          *DateTime,
   IN OUT UINTN      *DateTimeSize
@@ -4688,9 +3884,7 @@ X509FormatDateTime (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509GetKeyUsage (
+typedef BOOLEAN (EFIAPI *SHARED_X509_GET_KEY_USAGE)(
   IN    CONST UINT8  *Cert,
   IN    UINTN        CertSize,
   OUT   UINTN        *Usage
@@ -4715,9 +3909,7 @@ X509GetKeyUsage (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509VerifyCertChain (
+typedef BOOLEAN (EFIAPI *SHARED_X509_VERIFY_CERT_CHAIN)(
   IN CONST UINT8  *RootCert,
   IN UINTN        RootCertLength,
   IN CONST UINT8  *CertChain,
@@ -4745,9 +3937,7 @@ X509VerifyCertChain (
   @since 1.0
   @ingroup X509
 **/
-BOOLEAN
-EFIAPI
-X509GetCertFromCertChain (
+typedef BOOLEAN (EFIAPI *SHARED_X509_GET_CERT_FROM_CERT_CHAIN)(
   IN CONST UINT8   *CertChain,
   IN UINTN         CertChainLength,
   IN CONST INT32   CertIndex,
@@ -4776,27 +3966,12 @@ X509GetCertFromCertChain (
   @since 1.0
   @ingroup X509
  **/
-BOOLEAN
-EFIAPI
-X509GetExtendedBasicConstraints (
+typedef BOOLEAN (EFIAPI *SHARED_X509_GET_EXTENDED_BASIC_CONSTRAINTS)(
   CONST UINT8  *Cert,
   UINTN        CertSize,
   UINT8        *BasicConstraints,
   UINTN        *BasicConstraintsSize
   );
-
-/** @} */ // end of X509 group
-
-/**
-  @defgroup Random Pseudo-Random Generation Primitives
-  @brief Functions for Pseudo-Random number generation.
-
-  @{
-**/
-
-// =====================================================================================
-//    Pseudo-Random Generation Primitive
-// =====================================================================================
 
 /**
   Sets up the seed value for the pseudorandom number generator.
@@ -4818,9 +3993,7 @@ X509GetExtendedBasicConstraints (
   @since 1.0
   @ingroup Random
 **/
-BOOLEAN
-EFIAPI
-RandomSeed (
+typedef BOOLEAN (EFIAPI *SHARED_RANDOM_SEED)(
   IN  CONST  UINT8  *Seed  OPTIONAL,
   IN  UINTN         SeedSize
   );
@@ -4841,21 +4014,10 @@ RandomSeed (
   @since 1.0
   @ingroup Random
 **/
-BOOLEAN
-EFIAPI
-RandomBytes (
+typedef BOOLEAN (EFIAPI *SHARED_RANDOM_BYTES)(
   OUT  UINT8  *Output,
   IN   UINTN  Size
   );
-
-/** @} */ // end of Random group
-
-/**
-  @defgroup Tls Transport Layer Security
-  @brief Functions for TSL based network communication.
-
-  @{
-**/
 
 /**
   Initializes the OpenSSL library.
@@ -4870,9 +4032,7 @@ RandomBytes (
   @since 1.0
   @ingroup Tls
 **/
-BOOLEAN
-EFIAPI
-TlsInitialize (
+typedef BOOLEAN (EFIAPI *SHARED_TLS_INITIALIZE)(
   VOID
   );
 
@@ -4884,9 +4044,7 @@ TlsInitialize (
   @since 1.0
   @ingroup Tls
 **/
-VOID
-EFIAPI
-TlsCtxFree (
+typedef VOID (EFIAPI *SHARED_TLS_CTX_FREE)(
   IN   VOID  *TlsCtx
   );
 
@@ -4903,9 +4061,7 @@ TlsCtxFree (
   @since 1.0
   @ingroup Tls
 **/
-VOID *
-EFIAPI
-TlsCtxNew (
+typedef VOID * (EFIAPI *SHARED_TLS_CTX_NEW)(
   IN     UINT8  MajorVer,
   IN     UINT8  MinorVer
   );
@@ -4921,9 +4077,7 @@ TlsCtxNew (
   @since 1.0
   @ingroup Tls
 **/
-VOID
-EFIAPI
-TlsFree (
+typedef VOID (EFIAPI *SHARED_TLS_FREE)(
   IN     VOID  *Tls
   );
 
@@ -4942,9 +4096,7 @@ TlsFree (
   @since 1.0
   @ingroup Tls
 **/
-VOID *
-EFIAPI
-TlsNew (
+typedef VOID * (EFIAPI *SHARED_TLS_NEW)(
   IN     VOID  *TlsCtx
   );
 
@@ -4961,9 +4113,7 @@ TlsNew (
   @since 1.0
   @ingroup Tls
 **/
-BOOLEAN
-EFIAPI
-TlsInHandshake (
+typedef BOOLEAN (EFIAPI *SHARED_TLS_IN_HANDSHAKE)(
   IN     VOID  *Tls
   );
 
@@ -4995,9 +4145,7 @@ TlsInHandshake (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsDoHandshake (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_DO_HANDSHAKE)(
   IN     VOID   *Tls,
   IN     UINT8  *BufferIn  OPTIONAL,
   IN     UINTN  BufferInSize  OPTIONAL,
@@ -5032,9 +4180,7 @@ TlsDoHandshake (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsHandleAlert (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_HANDLE_ALERT)(
   IN     VOID   *Tls,
   IN     UINT8  *BufferIn  OPTIONAL,
   IN     UINTN  BufferInSize  OPTIONAL,
@@ -5062,9 +4208,7 @@ TlsHandleAlert (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsCloseNotify (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_CLOSE_NOTIFY)(
   IN     VOID   *Tls,
   IN OUT UINT8  *Buffer,
   IN OUT UINTN  *BufferSize
@@ -5086,9 +4230,7 @@ TlsCloseNotify (
   @since 1.0
   @ingroup Tls
 **/
-INTN
-EFIAPI
-TlsCtrlTrafficOut (
+typedef INTN (EFIAPI *SHARED_TLS_CTRL_TRAFFIC_OUT)(
   IN     VOID   *Tls,
   IN OUT VOID   *Buffer,
   IN     UINTN  BufferSize
@@ -5110,9 +4252,7 @@ TlsCtrlTrafficOut (
   @since 1.0
   @ingroup Tls
 **/
-INTN
-EFIAPI
-TlsCtrlTrafficIn (
+typedef INTN (EFIAPI *SHARED_TLS_CTRL_TRAFFIC_IN)(
   IN     VOID   *Tls,
   IN     VOID   *Buffer,
   IN     UINTN  BufferSize
@@ -5135,9 +4275,7 @@ TlsCtrlTrafficIn (
   @since 1.0
   @ingroup Tls
 **/
-INTN
-EFIAPI
-TlsRead (
+typedef INTN (EFIAPI *SHARED_TLS_READ)(
   IN     VOID   *Tls,
   IN OUT VOID   *Buffer,
   IN     UINTN  BufferSize
@@ -5160,9 +4298,7 @@ TlsRead (
   @since 1.0
   @ingroup Tls
 **/
-INTN
-EFIAPI
-TlsWrite (
+typedef INTN (EFIAPI *SHARED_TLS_WRITE)(
   IN     VOID   *Tls,
   IN     VOID   *Buffer,
   IN     UINTN  BufferSize
@@ -5184,9 +4320,7 @@ TlsWrite (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsShutdown (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SHUTDOWN)(
   IN     VOID  *Tls
   );
 
@@ -5206,9 +4340,7 @@ TlsShutdown (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetVersion (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_VERSION)(
   IN     VOID   *Tls,
   IN     UINT8  MajorVer,
   IN     UINT8  MinorVer
@@ -5229,9 +4361,7 @@ TlsSetVersion (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetConnectionEnd (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_CONNECTION_END)(
   IN     VOID     *Tls,
   IN     BOOLEAN  IsServer
   );
@@ -5256,9 +4386,7 @@ TlsSetConnectionEnd (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetCipherList (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_CIPHER_LIST)(
   IN     VOID    *Tls,
   IN     UINT16  *CipherId,
   IN     UINTN   CipherNum
@@ -5279,9 +4407,7 @@ TlsSetCipherList (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetCompressionMethod (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_COMPRESSION_METHOD)(
   IN     UINT8  CompMethod
   );
 
@@ -5296,9 +4422,7 @@ TlsSetCompressionMethod (
   @since 1.0
   @ingroup Tls
 **/
-VOID
-EFIAPI
-TlsSetVerify (
+typedef VOID (EFIAPI *SHARED_TLS_SET_VERIFY)(
   IN     VOID    *Tls,
   IN     UINT32  VerifyMode
   );
@@ -5317,9 +4441,7 @@ TlsSetVerify (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetVerifyHost (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_VERIFY_HOST)(
   IN     VOID    *Tls,
   IN     UINT32  Flags,
   IN     CHAR8   *HostName
@@ -5342,9 +4464,7 @@ TlsSetVerifyHost (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetSessionId (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_SESSION_ID)(
   IN     VOID    *Tls,
   IN     UINT8   *SessionId,
   IN     UINT16  SessionIdLen
@@ -5369,9 +4489,7 @@ TlsSetSessionId (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetCaCertificate (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_CA_CERTIFICATE)(
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize
@@ -5396,9 +4514,7 @@ TlsSetCaCertificate (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetHostPublicCert (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_HOST_PUBLIC_CERT)(
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize
@@ -5424,9 +4540,7 @@ TlsSetHostPublicCert (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetHostPrivateKeyEx (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_HOST_PRIVATE_KEY_EX)(
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize,
@@ -5451,9 +4565,7 @@ TlsSetHostPrivateKeyEx (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetHostPrivateKey (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_HOST_PRIVATE_KEY)(
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize
@@ -5475,9 +4587,7 @@ TlsSetHostPrivateKey (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetCertRevocationList (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_CERT_REVOCATION_LIST)(
   IN     VOID   *Data,
   IN     UINTN  DataSize
   );
@@ -5501,9 +4611,7 @@ TlsSetCertRevocationList (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetSignatureAlgoList (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_SIGNATURE_ALGO_LIST)(
   IN     VOID   *Tls,
   IN     UINT8  *Data,
   IN     UINTN  DataSize
@@ -5525,9 +4633,7 @@ TlsSetSignatureAlgoList (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsSetEcCurve (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_SET_EC_CURVE)(
   IN     VOID   *Tls,
   IN     UINT8  *Data,
   IN     UINTN  DataSize
@@ -5548,9 +4654,7 @@ TlsSetEcCurve (
   @since 1.0
   @ingroup Tls
 **/
-UINT16
-EFIAPI
-TlsGetVersion (
+typedef UINT16 (EFIAPI *SHARED_TLS_GET_VERSION)(
   IN     VOID  *Tls
   );
 
@@ -5569,9 +4673,7 @@ TlsGetVersion (
   @since 1.0
   @ingroup Tls
 **/
-UINT8
-EFIAPI
-TlsGetConnectionEnd (
+typedef UINT8 (EFIAPI *SHARED_TLS_GET_CONNECTION_END)(
   IN     VOID  *Tls
   );
 
@@ -5591,9 +4693,7 @@ TlsGetConnectionEnd (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsGetCurrentCipher (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_GET_CURRENT_CIPHER)(
   IN     VOID    *Tls,
   IN OUT UINT16  *CipherId
   );
@@ -5616,9 +4716,7 @@ TlsGetCurrentCipher (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsGetCurrentCompressionId (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_GET_CURRENT_COMPRESSION_ID)(
   IN     VOID   *Tls,
   IN OUT UINT8  *CompressionId
   );
@@ -5638,9 +4736,7 @@ TlsGetCurrentCompressionId (
   @since 1.0
   @ingroup Tls
 **/
-UINT32
-EFIAPI
-TlsGetVerify (
+typedef UINT32 (EFIAPI *SHARED_TLS_GET_VERIFY)(
   IN     VOID  *Tls
   );
 
@@ -5661,9 +4757,7 @@ TlsGetVerify (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsGetSessionId (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_GET_SESSION_ID)(
   IN     VOID    *Tls,
   IN OUT UINT8   *SessionId,
   IN OUT UINT16  *SessionIdLen
@@ -5682,9 +4776,7 @@ TlsGetSessionId (
   @since 1.0
   @ingroup Tls
 **/
-VOID
-EFIAPI
-TlsGetClientRandom (
+typedef VOID (EFIAPI *SHARED_TLS_GET_CLIENT_RANDOM)(
   IN     VOID   *Tls,
   IN OUT UINT8  *ClientRandom
   );
@@ -5702,9 +4794,7 @@ TlsGetClientRandom (
   @since 1.0
   @ingroup Tls
 **/
-VOID
-EFIAPI
-TlsGetServerRandom (
+typedef VOID (EFIAPI *SHARED_TLS_GET_SERVER_RANDOM)(
   IN     VOID   *Tls,
   IN OUT UINT8  *ServerRandom
   );
@@ -5725,9 +4815,7 @@ TlsGetServerRandom (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsGetKeyMaterial (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_GET_KEY_MATERIAL)(
   IN     VOID   *Tls,
   IN OUT UINT8  *KeyMaterial
   );
@@ -5750,9 +4838,7 @@ TlsGetKeyMaterial (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsGetCaCertificate (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_GET_CA_CERTIFICATE)(
   IN     VOID   *Tls,
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
@@ -5777,9 +4863,7 @@ TlsGetCaCertificate (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsGetHostPublicCert (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_GET_HOST_PUBLIC_CERT)(
   IN     VOID   *Tls,
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
@@ -5803,9 +4887,7 @@ TlsGetHostPublicCert (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsGetHostPrivateKey (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_GET_HOST_PRIVATE_KEY)(
   IN     VOID   *Tls,
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
@@ -5828,9 +4910,7 @@ TlsGetHostPrivateKey (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsGetCertRevocationList (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_GET_CERT_REVOCATION_LIST)(
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
   );
@@ -5855,9 +4935,7 @@ TlsGetCertRevocationList (
   @since 1.0
   @ingroup Tls
 **/
-EFI_STATUS
-EFIAPI
-TlsGetExportKey (
+typedef EFI_STATUS (EFIAPI *SHARED_TLS_GET_EXPORT_KEY)(
   IN     VOID        *Tls,
   IN     CONST VOID  *Label,
   IN     CONST VOID  *Context,
@@ -5865,15 +4943,6 @@ TlsGetExportKey (
   OUT    VOID        *KeyBuffer,
   IN     UINTN       KeyBufferLen
   );
-
-/** @} */ // end of Tls group
-
-/**
-  @defgroup TS Timestamp Verification
-  @brief Functions for timestamp verification.
-
-  @{
-**/
 
 /**
   Verifies the validity of a RFC3161 Timestamp CounterSignature embedded in PE/COFF Authenticode
@@ -5896,9 +4965,7 @@ TlsGetExportKey (
   @since 1.0
   @ingroup Timestamp
 **/
-BOOLEAN
-EFIAPI
-ImageTimestampVerify (
+typedef BOOLEAN (EFIAPI *SHARED_IMAGE_TIMESTAMP_VERIFY)(
   IN  CONST UINT8  *AuthData,
   IN  UINTN        DataSize,
   IN  CONST UINT8  *TsaCert,
@@ -5906,6 +4973,260 @@ ImageTimestampVerify (
   OUT EFI_TIME     *SigningTime
   );
 
-/** @} */ // end of Timestamp group
-/** @} */ // end of OneCryptoPkg group
-#endif // ONE_CRYPTO_LIBRARY_H_
+// =============================================================================
+// Protocol
+// =============================================================================
+
+/**
+  @struct _ONE_CRYPTO_PROTOCOL
+  @brief This structure defines the protocol for shared cryptographic operations.
+
+  The _ONE_CRYPTO_PROTOCOL structure provides a standardized interface for
+  cryptographic functions, enabling interoperability and consistent usage across
+  different cryptographic implementations.
+
+  Supports functions from versions:
+   - 1.0.0
+
+  @since 1.0
+  @ingroup OneCryptoProtocol
+**/
+typedef struct _ONE_CRYPTO_PROTOCOL
+{
+  // ---------------------------------------------------------------------------
+  // Versioning
+  // Major.Minor.Revision
+  // Major - Breaking change to this structure
+  // Minor - Functions added to the end of this structure
+  //
+  // ---------------------------------------------------------------------------
+  UINT16 Major;
+  UINT16 Minor;
+
+  /// v1.0.0 HMAC --------------------------------------------------------------
+  SHARED_HMAC_SHA256_NEW HmacSha256New;
+  SHARED_HMAC_SHA256_FREE HmacSha256Free;
+  SHARED_HMAC_SHA256_SET_KEY HmacSha256SetKey;
+  SHARED_HMAC_SHA256_DUPLICATE HmacSha256Duplicate;
+  SHARED_HMAC_SHA256_UPDATE HmacSha256Update;
+  SHARED_HMAC_SHA256_FINAL HmacSha256Final;
+  SHARED_HMAC_SHA256_ALL HmacSha256All;
+  SHARED_HMAC_SHA384_NEW HmacSha384New;
+  SHARED_HMAC_SHA384_FREE HmacSha384Free;
+  SHARED_HMAC_SHA384_SET_KEY HmacSha384SetKey;
+  SHARED_HMAC_SHA384_DUPLICATE HmacSha384Duplicate;
+  SHARED_HMAC_SHA384_UPDATE HmacSha384Update;
+  SHARED_HMAC_SHA384_FINAL HmacSha384Final;
+  SHARED_HMAC_SHA384_ALL HmacSha384All;
+  /// v1.0.0 Hash --------------------------------------------------------------
+  SHARED_MD5_GET_CONTEXT_SIZE Md5GetContextSize;
+  SHARED_MD5_INIT Md5Init;
+  SHARED_MD5_UPDATE Md5Update;
+  SHARED_MD5_FINAL Md5Final;
+  SHARED_MD5_HASH_ALL Md5HashAll;
+  SHARED_MD5_DUPLICATE Md5Duplicate;
+  SHARED_SHA1_GET_CONTEXT_SIZE Sha1GetContextSize;
+  SHARED_SHA1_INIT Sha1Init;
+  SHARED_SHA1_UPDATE Sha1Update;
+  SHARED_SHA1_FINAL Sha1Final;
+  SHARED_SHA1_HASH_ALL Sha1HashAll;
+  SHARED_SHA1_DUPLICATE Sha1Duplicate;
+  SHARED_SHA256_GET_CONTEXT_SIZE Sha256GetContextSize;
+  SHARED_SHA256_INIT Sha256Init;
+  SHARED_SHA256_UPDATE Sha256Update;
+  SHARED_SHA256_FINAL Sha256Final;
+  SHARED_SHA256_HASH_ALL Sha256HashAll;
+  SHARED_SHA256_DUPLICATE Sha256Duplicate;
+  SHARED_SHA384_GET_CONTEXT_SIZE Sha384GetContextSize;
+  SHARED_SHA384_INIT Sha384Init;
+  SHARED_SHA384_DUPLICATE Sha384Duplicate;
+  SHARED_SHA384_UPDATE Sha384Update;
+  SHARED_SHA384_FINAL Sha384Final;
+  SHARED_SHA384_HASH_ALL Sha384HashAll;
+  SHARED_SHA512_GET_CONTEXT_SIZE Sha512GetContextSize;
+  SHARED_SHA512_INIT Sha512Init;
+  SHARED_SHA512_DUPLICATE Sha512Duplicate;
+  SHARED_SHA512_UPDATE Sha512Update;
+  SHARED_SHA512_FINAL Sha512Final;
+  SHARED_SHA512_HASH_ALL Sha512HashAll;
+  SHARED_SM3_GET_CONTEXT_SIZE Sm3GetContextSize;
+  SHARED_SM3_INIT Sm3Init;
+  SHARED_SM3_DUPLICATE Sm3Duplicate;
+  SHARED_SM3_UPDATE Sm3Update;
+  SHARED_SM3_FINAL Sm3Final;
+  SHARED_SM3_HASH_ALL Sm3HashAll;
+  /// v1.0.0 AES ---------------------------------------------------------------
+  SHARED_AES_GET_CONTEXT_SIZE AesGetContextSize;
+  SHARED_AES_INIT AesInit;
+  SHARED_AES_CBC_ENCRYPT AesCbcEncrypt;
+  SHARED_AES_CBC_DECRYPT AesCbcDecrypt;
+  SHARED_AEAD_AES_GCM_ENCRYPT AeadAesGcmEncrypt;
+  SHARED_AEAD_AES_GCM_DECRYPT AeadAesGcmDecrypt;
+  /// v1.0.0 BN ----------------------------------------------------------------
+  SHARED_BIG_NUM_INIT BigNumInit;
+  SHARED_BIG_NUM_FROM_BIN BigNumFromBin;
+  SHARED_BIG_NUM_TO_BIN BigNumToBin;
+  SHARED_BIG_NUM_FREE BigNumFree;
+  SHARED_BIG_NUM_ADD BigNumAdd;
+  SHARED_BIG_NUM_SUB BigNumSub;
+  SHARED_BIG_NUM_MOD BigNumMod;
+  SHARED_BIG_NUM_EXP_MOD BigNumExpMod;
+  SHARED_BIG_NUM_INVERSE_MOD BigNumInverseMod;
+  SHARED_BIG_NUM_DIV BigNumDiv;
+  SHARED_BIG_NUM_MUL_MOD BigNumMulMod;
+  SHARED_BIG_NUM_CMP BigNumCmp;
+  SHARED_BIG_NUM_BITS BigNumBits;
+  SHARED_BIG_NUM_BYTES BigNumBytes;
+  SHARED_BIG_NUM_IS_WORD BigNumIsWord;
+  SHARED_BIG_NUM_IS_ODD BigNumIsOdd;
+  SHARED_BIG_NUM_COPY BigNumCopy;
+  SHARED_BIG_NUM_VALUE_ONE BigNumValueOne;
+  SHARED_BIG_NUM_R_SHIFT BigNumRShift;
+  SHARED_BIG_NUM_CONST_TIME BigNumConstTime;
+  SHARED_BIG_NUM_SQR_MOD BigNumSqrMod;
+  SHARED_BIG_NUM_NEW_CONTEXT BigNumNewContext;
+  SHARED_BIG_NUM_CONTEXT_FREE BigNumContextFree;
+  SHARED_BIG_NUM_SET_UINT BigNumSetUint;
+  SHARED_BIG_NUM_ADD_MOD BigNumAddMod;
+  /// v1.0.0 HKDF --------------------------------------------------------------
+  SHARED_HKDF_SHA256_EXTRACT_AND_EXPAND HkdfSha256ExtractAndExpand;
+  SHARED_HKDF_SHA256_EXTRACT HkdfSha256Extract;
+  SHARED_HKDF_SHA256_EXPAND HkdfSha256Expand;
+  SHARED_HKDF_SHA384_EXTRACT_AND_EXPAND HkdfSha384ExtractAndExpand;
+  SHARED_HKDF_SHA384_EXTRACT HkdfSha384Extract;
+  SHARED_HKDF_SHA384_EXPAND HkdfSha384Expand;
+  /// v1.0.0 PKCS --------------------------------------------------------------
+  SHARED_AUTHENTICODE_VERIFY AuthenticodeVerify;
+  SHARED_PKCS1V2_ENCRYPT Pkcs1v2Encrypt;
+  SHARED_PKCS1V2_DECRYPT Pkcs1v2Decrypt;
+  SHARED_RSA_OAEP_ENCRYPT RsaOaepEncrypt;
+  SHARED_RSA_OAEP_DECRYPT RsaOaepDecrypt;
+  SHARED_PKCS5_HASH_PASSWORD Pkcs5HashPassword;
+  SHARED_PKCS7_GET_SIGNERS Pkcs7GetSigners;
+  SHARED_PKCS7_FREE_SIGNERS Pkcs7FreeSigners;
+  SHARED_PKCS7_GET_CERTIFICATES_LIST Pkcs7GetCertificatesList;
+  SHARED_PKCS7_SIGN Pkcs7Sign;
+  SHARED_PKCS7_VERIFY Pkcs7Verify;
+  SHARED_PKCS7_ENCRYPT Pkcs7Encrypt;
+  SHARED_VERIFY_EK_US_IN_PKCS7_SIGNATURE VerifyEKUsInPkcs7Signature;
+  SHARED_PKCS7_GET_ATTACHED_CONTENT Pkcs7GetAttachedContent;
+  /// v1.0.0 DH ----------------------------------------------------------------
+  SHARED_DH_NEW DhNew;
+  SHARED_DH_FREE DhFree;
+  SHARED_DH_GENERATE_PARAMETER DhGenerateParameter;
+  SHARED_DH_SET_PARAMETER DhSetParameter;
+  SHARED_DH_GENERATE_KEY DhGenerateKey;
+  SHARED_DH_COMPUTE_KEY DhComputeKey;
+  /// v1.0.0 EC ----------------------------------------------------------------
+  SHARED_EC_GROUP_INIT EcGroupInit;
+  SHARED_EC_GROUP_GET_CURVE EcGroupGetCurve;
+  SHARED_EC_GROUP_GET_ORDER EcGroupGetOrder;
+  SHARED_EC_GROUP_FREE EcGroupFree;
+  SHARED_EC_POINT_INIT EcPointInit;
+  SHARED_EC_POINT_DE_INIT EcPointDeInit;
+  SHARED_EC_POINT_GET_AFFINE_COORDINATES EcPointGetAffineCoordinates;
+  SHARED_EC_POINT_SET_AFFINE_COORDINATES EcPointSetAffineCoordinates;
+  SHARED_EC_POINT_ADD EcPointAdd;
+  SHARED_EC_POINT_MUL EcPointMul;
+  SHARED_EC_POINT_INVERT EcPointInvert;
+  SHARED_EC_POINT_IS_ON_CURVE EcPointIsOnCurve;
+  SHARED_EC_POINT_IS_AT_INFINITY EcPointIsAtInfinity;
+  SHARED_EC_POINT_EQUAL EcPointEqual;
+  SHARED_EC_POINT_SET_COMPRESSED_COORDINATES EcPointSetCompressedCoordinates;
+  SHARED_EC_NEW_BY_NID EcNewByNid;
+  SHARED_EC_FREE EcFree;
+  SHARED_EC_GENERATE_KEY EcGenerateKey;
+  SHARED_EC_GET_PUB_KEY EcGetPubKey;
+  SHARED_EC_DH_COMPUTE_KEY EcDhComputeKey;
+  SHARED_EC_GET_PRIVATE_KEY_FROM_PEM EcGetPrivateKeyFromPem;
+  SHARED_EC_GET_PUBLIC_KEY_FROM_X509 EcGetPublicKeyFromX509;
+  SHARED_EC_DSA_SIGN EcDsaSign;
+  SHARED_EC_DSA_VERIFY EcDsaVerify;
+  /// v1.0.0 RSA ---------------------------------------------------------------
+  SHARED_RSA_NEW RsaNew;
+  SHARED_RSA_FREE RsaFree;
+  SHARED_RSA_SET_KEY RsaSetKey;
+  SHARED_RSA_GET_KEY RsaGetKey;
+  SHARED_RSA_GENERATE_KEY RsaGenerateKey;
+  SHARED_RSA_CHECK_KEY RsaCheckKey;
+  SHARED_RSA_PKCS1_SIGN RsaPkcs1Sign;
+  SHARED_RSA_PKCS1_VERIFY RsaPkcs1Verify;
+  SHARED_RSA_PSS_SIGN RsaPssSign;
+  SHARED_RSA_PSS_VERIFY RsaPssVerify;
+  SHARED_RSA_GET_PRIVATE_KEY_FROM_PEM RsaGetPrivateKeyFromPem;
+  SHARED_RSA_GET_PUBLIC_KEY_FROM_X509 RsaGetPublicKeyFromX509;
+  /// v1.0.0 X509 --------------------------------------------------------------
+  SHARED_X509_GET_SUBJECT_NAME X509GetSubjectName;
+  SHARED_X509_GET_COMMON_NAME X509GetCommonName;
+  SHARED_X509_GET_ORGANIZATION_NAME X509GetOrganizationName;
+  SHARED_X509_VERIFY_CERT X509VerifyCert;
+  SHARED_X509_CONSTRUCT_CERTIFICATE X509ConstructCertificate;
+  SHARED_X509_CONSTRUCT_CERTIFICATE_STACK_V X509ConstructCertificateStackV;
+  SHARED_X509_CONSTRUCT_CERTIFICATE_STACK X509ConstructCertificateStack;
+  SHARED_X509_FREE X509Free;
+  SHARED_X509_STACK_FREE X509StackFree;
+  SHARED_X509_GET_TBS_CERT X509GetTBSCert;
+  SHARED_X509_GET_VERSION X509GetVersion;
+  SHARED_X509_GET_SERIAL_NUMBER X509GetSerialNumber;
+  SHARED_X509_GET_ISSUER_NAME X509GetIssuerName;
+  SHARED_X509_GET_SIGNATURE_ALGORITHM X509GetSignatureAlgorithm;
+  SHARED_X509_GET_EXTENDED_KEY_USAGE X509GetExtendedKeyUsage;
+  SHARED_X509_GET_EXTENSION_DATA X509GetExtensionData;
+  SHARED_X509_GET_VALIDITY X509GetValidity;
+  SHARED_X509_FORMAT_DATE_TIME X509FormatDateTime;
+  SHARED_X509_GET_KEY_USAGE X509GetKeyUsage;
+  SHARED_X509_VERIFY_CERT_CHAIN X509VerifyCertChain;
+  SHARED_X509_GET_CERT_FROM_CERT_CHAIN X509GetCertFromCertChain;
+  SHARED_X509_GET_EXTENDED_BASIC_CONSTRAINTS X509GetExtendedBasicConstraints;
+  /// v1.0.0 Random ------------------------------------------------------------
+  SHARED_RANDOM_SEED RandomSeed;
+  SHARED_RANDOM_BYTES RandomBytes;
+  /// v1.0.0 Tls ---------------------------------------------------------------
+  SHARED_TLS_INITIALIZE TlsInitialize;
+  SHARED_TLS_CTX_FREE TlsCtxFree;
+  SHARED_TLS_CTX_NEW TlsCtxNew;
+  SHARED_TLS_FREE TlsFree;
+  SHARED_TLS_NEW TlsNew;
+  SHARED_TLS_IN_HANDSHAKE TlsInHandshake;
+  SHARED_TLS_DO_HANDSHAKE TlsDoHandshake;
+  SHARED_TLS_HANDLE_ALERT TlsHandleAlert;
+  SHARED_TLS_CLOSE_NOTIFY TlsCloseNotify;
+  SHARED_TLS_CTRL_TRAFFIC_OUT TlsCtrlTrafficOut;
+  SHARED_TLS_CTRL_TRAFFIC_IN TlsCtrlTrafficIn;
+  SHARED_TLS_READ TlsRead;
+  SHARED_TLS_WRITE TlsWrite;
+  SHARED_TLS_SHUTDOWN TlsShutdown;
+  SHARED_TLS_SET_VERSION TlsSetVersion;
+  SHARED_TLS_SET_CONNECTION_END TlsSetConnectionEnd;
+  SHARED_TLS_SET_CIPHER_LIST TlsSetCipherList;
+  SHARED_TLS_SET_COMPRESSION_METHOD TlsSetCompressionMethod;
+  SHARED_TLS_SET_VERIFY TlsSetVerify;
+  SHARED_TLS_SET_VERIFY_HOST TlsSetVerifyHost;
+  SHARED_TLS_SET_SESSION_ID TlsSetSessionId;
+  SHARED_TLS_SET_CA_CERTIFICATE TlsSetCaCertificate;
+  SHARED_TLS_SET_HOST_PUBLIC_CERT TlsSetHostPublicCert;
+  SHARED_TLS_SET_HOST_PRIVATE_KEY_EX TlsSetHostPrivateKeyEx;
+  SHARED_TLS_SET_HOST_PRIVATE_KEY TlsSetHostPrivateKey;
+  SHARED_TLS_SET_CERT_REVOCATION_LIST TlsSetCertRevocationList;
+  SHARED_TLS_SET_SIGNATURE_ALGO_LIST TlsSetSignatureAlgoList;
+  SHARED_TLS_SET_EC_CURVE TlsSetEcCurve;
+  SHARED_TLS_GET_VERSION TlsGetVersion;
+  SHARED_TLS_GET_CONNECTION_END TlsGetConnectionEnd;
+  SHARED_TLS_GET_CURRENT_CIPHER TlsGetCurrentCipher;
+  SHARED_TLS_GET_CURRENT_COMPRESSION_ID TlsGetCurrentCompressionId;
+  SHARED_TLS_GET_VERIFY TlsGetVerify;
+  SHARED_TLS_GET_SESSION_ID TlsGetSessionId;
+  SHARED_TLS_GET_CLIENT_RANDOM TlsGetClientRandom;
+  SHARED_TLS_GET_SERVER_RANDOM TlsGetServerRandom;
+  SHARED_TLS_GET_KEY_MATERIAL TlsGetKeyMaterial;
+  SHARED_TLS_GET_CA_CERTIFICATE TlsGetCaCertificate;
+  SHARED_TLS_GET_HOST_PUBLIC_CERT TlsGetHostPublicCert;
+  SHARED_TLS_GET_HOST_PRIVATE_KEY TlsGetHostPrivateKey;
+  SHARED_TLS_GET_CERT_REVOCATION_LIST TlsGetCertRevocationList;
+  SHARED_TLS_GET_EXPORT_KEY TlsGetExportKey;
+  /// v1.0.0 Timestamp ---------------------------------------------------------
+  SHARED_IMAGE_TIMESTAMP_VERIFY ImageTimestampVerify;
+} ONE_CRYPTO_PROTOCOL;
+
+#endif // ONE_CRYPTO_PROTOCOL_
+

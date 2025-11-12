@@ -1,34 +1,135 @@
-/**
-  @file OneCryptoLibrary.h
-  @brief This file contains the declarations for the OneCryptoPkg protocol.
-  @defgroup OneCryptoPkg OneCryptoPkg Protocol
-  @brief Provides functions for cryptographic operations.
+/** @file
+  Implements the BaseCryptLib and TlsLib using the services of the EDK II Crypto
+  Protocol/PPI.
 
-  Register functions for cryptographic operations here. This file will be used to
-  generate the OneCryptoPkg protocol. All functions must include the `EFIAPI`
-  calling convention, have a `@since` tag to indicate the version in which the
-  function was introduced, and be grouped according to their functionality
-  using `@ingroup`.
+  Copyright (C) Microsoft Corporation. All rights reserved.
+  Copyright (c) 2019 - 2020, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  @{
 **/
 
-#ifndef ONE_CRYPTO_LIBRARY_H_
-#define ONE_CRYPTO_LIBRARY_H_
-
-#include <Uefi.h>
-#include <Library/BaseCryptDefs.h>
-
-#define VERSION_MAJOR     1ULL
-#define VERSION_MINOR     0ULL
-
+#include <Base.h>
+#include <Library/BaseLib.h>
+#include <Library/DebugLib.h>
+#include <Library/BaseCryptLib.h>
+#include <Library/TlsLib.h>
+#include <Protocol/OneCrypto.h>
 
 /**
-  @defgroup HMAC hash-based message authentication
-  @brief Provides functions for generating and verifying HMACs.
+  A macro used to call a non-void service in an EDK II Crypto Protocol.
+  If the protocol is NULL or the service in the protocol is NULL, then a debug
+  message and assert is generated and an appropriate return value is returned.
 
-  @{
- */
+  @param  Function          Name of the EDK II Crypto Protocol service to call.
+  @param  Args              The argument list to pass to Function.
+  @param  ErrorReturnValue  The value to return if the protocol is NULL or the
+                            service in the protocol is NULL.
+
+**/
+#define CALL_CRYPTO_SERVICE(Function, Args, ErrorReturnValue)          \
+  do {                                                                 \
+    ONE_CRYPTO_PROTOCOL  *CryptoServices;                            \
+                                                                       \
+    DEBUG ((DEBUG_INFO, "[%a] Calling crypto service: %a\n", gEfiCallerBaseName, #Function));    \
+    CryptoServices = (ONE_CRYPTO_PROTOCOL *)GetCryptoServices ();    \
+    if (CryptoServices != NULL) {                                      \
+  /* Validate protocol version compatibility */                    \
+      if (CryptoServices->Major != VERSION_MAJOR) { \
+        DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol major version mismatch: expected %d.%d.%d, got %d.%d.%d.\n", \
+                gEfiCallerBaseName, VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION, \
+                CryptoServices->Major, CryptoServices->Minor, CryptoServices->Revision)); \
+        ASSERT (FALSE);                                                \
+        return ErrorReturnValue;                                       \
+      }                                                                \
+      if (CryptoServices->Minor < VERSION_MINOR) { \
+        DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol minor version mismatch: expected %d.%d.%d, got %d.%d.%d.\n", \
+                gEfiCallerBaseName, VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION, \
+                CryptoServices->Major, CryptoServices->Minor, CryptoServices->Revision)); \
+        ASSERT (FALSE);                                                \
+        return ErrorReturnValue;                                       \
+      }                                                                \
+      if (CryptoServices->Function != NULL) {                          \
+        return (CryptoServices->Function) Args;                        \
+      }                                                                \
+    }                                                                  \
+    CryptoServiceNotAvailable (#Function);                             \
+    return ErrorReturnValue;                                           \
+  } while (FALSE);
+
+/**
+  A macro used to call a void service in an EDK II Crypto Protocol.
+  If the protocol is NULL or the service in the protocol is NULL, then a debug
+  message and assert is generated.
+
+  @param  Function          Name of the EDK II Crypto Protocol service to call.
+  @param  Args              The argument list to pass to Function.
+
+**/
+#define CALL_VOID_CRYPTO_SERVICE(Function, Args)                       \
+  do {                                                                 \
+    ONE_CRYPTO_PROTOCOL  *CryptoServices;                            \
+                                                                       \
+    DEBUG ((DEBUG_INFO, "[%a] Calling crypto service: %a\n", gEfiCallerBaseName, #Function));    \
+    CryptoServices = (ONE_CRYPTO_PROTOCOL *)GetCryptoServices ();    \
+    if (CryptoServices != NULL) {                                      \
+  /* Validate protocol version compatibility */                    \
+      if (CryptoServices->Major != VERSION_MAJOR) { \
+        DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol major version mismatch: expected %d.%d.%d, got %d.%d.%d.\n", \
+                gEfiCallerBaseName, VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION, \
+                CryptoServices->Major, CryptoServices->Minor, CryptoServices->Revision)); \
+        ASSERT (FALSE);                                                \
+        return;                                       \
+      }                                                                \
+      if (CryptoServices->Minor < VERSION_MINOR) { \
+        DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol minor version mismatch: expected %d.%d.%d, got %d.%d.%d.\n", \
+                gEfiCallerBaseName, VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION, \
+                CryptoServices->Major, CryptoServices->Minor, CryptoServices->Revision)); \
+        ASSERT (FALSE);                                                \
+        return;                                                        \
+      }                                                                \
+      if (CryptoServices->Function != NULL) {                          \
+        (CryptoServices->Function) Args;                               \
+        return;                                                        \
+      }                                                                \
+    }                                                                  \
+    CryptoServiceNotAvailable (#Function);                             \
+    return;                                                            \
+  } while (FALSE);
+
+/**
+  Internal worker function that returns the pointer to an EDK II Crypto
+  Protocol/PPI.  The layout of the PPI, DXE Protocol, and SMM Protocol are
+  identical which allows the implementation of the BaseCryptLib functions that
+  call through a Protocol/PPI to be shared for the PEI, DXE, and SMM
+  implementations.
+**/
+VOID *
+GetCryptoServices (
+  VOID
+  );
+
+/**
+  Internal worker function that prints a debug message and asserts if a crypto
+  service is not available.  This should never occur because library instances
+  have a dependency expression for the for the EDK II Crypto Protocol/PPI so
+  a module that uses these library instances are not dispatched until the EDK II
+  Crypto Protocol/PPI is available.  The only case that this function handles is
+  if the EDK II Crypto Protocol/PPI installed is NULL or a function pointer in
+  the EDK II Protocol/PPI is NULL.
+
+  @param[in]  FunctionName  Null-terminated ASCII string that is the name of an
+                            EDK II Crypto service.
+
+**/
+static
+VOID
+CryptoServiceNotAvailable (
+  IN CONST CHAR8  *FunctionName
+  )
+{
+  DEBUG ((DEBUG_ERROR, "[%a] Function %a is not available\n", gEfiCallerBaseName, FunctionName));
+  ASSERT_EFI_ERROR (EFI_UNSUPPORTED);
+}
 
 /**
   Creates a new HMAC context.
@@ -42,7 +143,11 @@ VOID *
 EFIAPI
 HmacSha256New (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha256New, (), NULL);
+}
+
 
 /**
   Frees an HMAC context.
@@ -56,7 +161,11 @@ VOID
 EFIAPI
 HmacSha256Free (
   VOID  *HmacCtx
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (HmacSha256Free, (HmacCtx));
+}
+
 
 /**
   Sets the key for an HMAC context.
@@ -77,7 +186,11 @@ HmacSha256SetKey (
   VOID         *HmacContext,
   CONST UINT8  *Key,
   UINTN        KeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha256SetKey, (HmacContext, Key, KeySize), FALSE);
+}
+
 
 /**
   Duplicates an HMAC context.
@@ -96,7 +209,11 @@ EFIAPI
 HmacSha256Duplicate (
   CONST VOID  *HmacContext,
   VOID        *NewHmacContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha256Duplicate, (HmacContext, NewHmacContext), FALSE);
+}
+
 
 /**
   Updates the HMAC with data.
@@ -117,7 +234,11 @@ HmacSha256Update (
   VOID        *HmacContext,
   CONST VOID  *Data,
   UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha256Update, (HmacContext, Data, DataSize), FALSE);
+}
+
 
 /**
   Finalizes the HMAC and produces the HMAC value.
@@ -136,7 +257,11 @@ EFIAPI
 HmacSha256Final (
   VOID   *HmacContext,
   UINT8  *HmacValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha256Final, (HmacContext, HmacValue), FALSE);
+}
+
 
 /**
   Performs the entire HMAC operation in one step.
@@ -161,7 +286,11 @@ HmacSha256All (
   CONST UINT8  *Key,
   UINTN        KeySize,
   UINT8        *HmacValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha256All, (Data, DataSize, Key, KeySize, HmacValue), FALSE);
+}
+
 
 /**
   Creates a new HMAC context.
@@ -175,7 +304,11 @@ VOID *
 EFIAPI
 HmacSha384New (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha384New, (), NULL);
+}
+
 
 /**
   Frees an HMAC context.
@@ -189,7 +322,11 @@ VOID
 EFIAPI
 HmacSha384Free (
   VOID  *HmacCtx
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (HmacSha384Free, (HmacCtx));
+}
+
 
 /**
   Sets the key for an HMAC context.
@@ -210,7 +347,11 @@ HmacSha384SetKey (
   VOID         *HmacContext,
   CONST UINT8  *Key,
   UINTN        KeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha384SetKey, (HmacContext, Key, KeySize), FALSE);
+}
+
 
 /**
   Duplicates an HMAC context.
@@ -229,7 +370,11 @@ EFIAPI
 HmacSha384Duplicate (
   CONST VOID  *HmacContext,
   VOID        *NewHmacContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha384Duplicate, (HmacContext, NewHmacContext), FALSE);
+}
+
 
 /**
   Updates the HMAC with data.
@@ -250,7 +395,11 @@ HmacSha384Update (
   VOID        *HmacContext,
   CONST VOID  *Data,
   UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha384Update, (HmacContext, Data, DataSize), FALSE);
+}
+
 
 /**
   Finalizes the HMAC and produces the HMAC value.
@@ -269,7 +418,11 @@ EFIAPI
 HmacSha384Final (
   VOID   *HmacContext,
   UINT8  *HmacValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha384Final, (HmacContext, HmacValue), FALSE);
+}
+
 
 /**
   Performs the entire HMAC operation in one step.
@@ -294,16 +447,11 @@ HmacSha384All (
   CONST UINT8  *Key,
   UINTN        KeySize,
   UINT8        *HmacValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha384All, (Data, DataSize, Key, KeySize, HmacValue), FALSE);
+}
 
-/** @} */ // end of HMAC group
-
-/**
-  @defgroup Hash Hashing Functions
-  @brief Functions for performing various hashing operations.
-
-  @{
-**/
 
 /**
   Retrieves the size, in bytes, of the context buffer required for MD5 hash operations.
@@ -320,7 +468,11 @@ UINTN
 EFIAPI
 Md5GetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Md5GetContextSize, (), 0);
+}
+
 
 /**
   Initializes user-supplied memory pointed by Md5Context as MD5 hash context for
@@ -342,7 +494,11 @@ BOOLEAN
 EFIAPI
 Md5Init (
   OUT VOID  *HashContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Md5Init, (HashContext), FALSE);
+}
+
 
 /**
   Digests the input data and updates MD5 context.
@@ -372,7 +528,11 @@ Md5Update (
   IN OUT VOID    *HashContext,
   IN CONST VOID  *Data,
   IN UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Md5Update, (HashContext, Data, DataSize), FALSE);
+}
+
 
 /**
   Completes computation of the MD5 digest value.
@@ -403,7 +563,11 @@ EFIAPI
 Md5Final (
   IN OUT  VOID   *HashContext,
   OUT     UINT8  *HashDigest
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Md5Final, (HashContext, HashDigest), FALSE);
+}
+
 
 /**
   Computes the MD5 message digest of a input data buffer.
@@ -431,7 +595,11 @@ Md5HashAll (
   IN CONST VOID  *Data,
   IN UINTN       DataSize,
   OUT UINT8      *HashDigest
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Md5HashAll, (Data, DataSize, HashDigest), FALSE);
+}
+
 
 /**
   Makes a copy of an existing MD5 context.
@@ -455,7 +623,11 @@ EFIAPI
 Md5Duplicate (
   IN CONST VOID  *HashContext,
   OUT VOID       *NewHashContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Md5Duplicate, (HashContext, NewHashContext), FALSE);
+}
+
 
 /**
   Retrieves the size, in bytes, of the context buffer required for SHA-1 hash operations.
@@ -472,7 +644,11 @@ UINTN
 EFIAPI
 Sha1GetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha1GetContextSize, (), 0);
+}
+
 
 /**
   Initializes user-supplied memory pointed by Sha1Context as SHA-1 hash context for
@@ -494,7 +670,11 @@ BOOLEAN
 EFIAPI
 Sha1Init (
   OUT VOID  *HashContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha1Init, (HashContext), FALSE);
+}
+
 
 /**
   Digests the input data and updates SHA-1 context.
@@ -524,7 +704,11 @@ Sha1Update (
   IN OUT VOID    *HashContext,
   IN CONST VOID  *Data,
   IN UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha1Update, (HashContext, Data, DataSize), FALSE);
+}
+
 
 /**
   Completes computation of the SHA-1 digest value.
@@ -555,7 +739,11 @@ EFIAPI
 Sha1Final (
   IN OUT  VOID   *HashContext,
   OUT     UINT8  *HashDigest
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha1Final, (HashContext, HashDigest), FALSE);
+}
+
 
 /**
   Computes the SHA-1 message digest of a input data buffer.
@@ -583,7 +771,11 @@ Sha1HashAll (
   IN CONST VOID  *Data,
   IN UINTN       DataSize,
   OUT UINT8      *HashDigest
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha1HashAll, (Data, DataSize, HashDigest), FALSE);
+}
+
 
 /**
   Makes a copy of an existing SHA-1 context.
@@ -607,7 +799,11 @@ EFIAPI
 Sha1Duplicate (
   IN CONST VOID  *HashContext,
   OUT VOID       *NewHashContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha1Duplicate, (HashContext, NewHashContext), FALSE);
+}
+
 
 /**
   Retrieves the size, in bytes, of the context buffer required for SHA-256 hash operations.
@@ -621,7 +817,11 @@ UINTN
 EFIAPI
 Sha256GetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha256GetContextSize, (), 0);
+}
+
 
 /**
   Initializes user-supplied memory pointed by Sha256Context as SHA-256 hash context for
@@ -641,7 +841,11 @@ BOOLEAN
 EFIAPI
 Sha256Init (
   OUT VOID  *HashContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha256Init, (HashContext), FALSE);
+}
+
 
 /**
   Digests the input data and updates SHA-256 context.
@@ -669,7 +873,11 @@ Sha256Update (
   IN OUT VOID    *HashContext,
   IN CONST VOID  *Data,
   IN UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha256Update, (HashContext, Data, DataSize), FALSE);
+}
+
 
 /**
   Completes computation of the SHA-256 digest value.
@@ -698,7 +906,11 @@ EFIAPI
 Sha256Final (
   IN OUT  VOID   *HashContext,
   OUT     UINT8  *HashDigest
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha256Final, (HashContext, HashDigest), FALSE);
+}
+
 
 /**
   Computes the SHA-256 message digest of a input data buffer.
@@ -726,7 +938,11 @@ Sha256HashAll (
   IN CONST VOID  *Data,
   IN UINTN       DataSize,
   OUT UINT8      *HashDigest
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha256HashAll, (Data, DataSize, HashDigest), FALSE);
+}
+
 
 /**
   Makes a copy of an existing SHA-256 context.
@@ -750,7 +966,11 @@ EFIAPI
 Sha256Duplicate (
   IN CONST VOID  *HashContext,
   OUT VOID       *NewHashContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha256Duplicate, (HashContext, NewHashContext), FALSE);
+}
+
 
 /**
   Retrieves the size, in bytes, of the context buffer required for SHA-384 hash operations.
@@ -764,8 +984,12 @@ UINTN
 EFIAPI
 Sha384GetContextSize (
   VOID
-  );
-  
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha384GetContextSize, (), 0);
+}
+
+
 /**
   Initializes user-supplied memory pointed by Sha384Context as SHA-384 hash context for
   subsequent use.
@@ -784,7 +1008,11 @@ BOOLEAN
 EFIAPI
 Sha384Init (
   OUT  VOID  *Sha384Context
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha384Init, (Sha384Context), FALSE);
+}
+
 
 /**
   Makes a copy of an existing SHA-384 context.
@@ -808,7 +1036,11 @@ EFIAPI
 Sha384Duplicate (
   IN   CONST VOID  *Sha384Context,
   OUT  VOID        *NewSha384Context
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha384Duplicate, (Sha384Context, NewSha384Context), FALSE);
+}
+
 
 /**
   Digests the input data and updates SHA-384 context.
@@ -836,9 +1068,13 @@ Sha384Update (
   IN OUT  VOID        *Sha384Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha384Update, (Sha384Context, Data, DataSize), FALSE);
+}
 
-  /**
+
+/**
   Completes computation of the SHA-384 digest value.
 
   This function completes SHA-384 hash computation and retrieves the digest value into
@@ -865,9 +1101,13 @@ EFIAPI
 Sha384Final (
   IN OUT  VOID   *Sha384Context,
   OUT     UINT8  *HashValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha384Final, (Sha384Context, HashValue), FALSE);
+}
 
-  /**
+
+/**
   Computes the SHA-384 message digest of a input data buffer.
 
   This function performs the SHA-384 message digest of a given data buffer, and places
@@ -893,7 +1133,11 @@ Sha384HashAll (
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha384HashAll, (Data, DataSize, HashValue), FALSE);
+}
+
 
 /**
   Retrieves the size, in bytes, of the context buffer required for SHA-512 hash operations.
@@ -907,7 +1151,11 @@ UINTN
 EFIAPI
 Sha512GetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha512GetContextSize, (), 0);
+}
+
 
 /**
   Initializes user-supplied memory pointed by Sha512Context as SHA-512 hash context for
@@ -927,7 +1175,11 @@ BOOLEAN
 EFIAPI
 Sha512Init (
   OUT  VOID  *Sha512Context
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha512Init, (Sha512Context), FALSE);
+}
+
 
 /**
   Makes a copy of an existing SHA-512 context.
@@ -951,7 +1203,11 @@ EFIAPI
 Sha512Duplicate (
   IN   CONST VOID  *Sha512Context,
   OUT  VOID        *NewSha512Context
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha512Duplicate, (Sha512Context, NewSha512Context), FALSE);
+}
+
 
 /**
   Digests the input data and updates SHA-512 context.
@@ -979,7 +1235,11 @@ Sha512Update (
   IN OUT  VOID        *Sha512Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha512Update, (Sha512Context, Data, DataSize), FALSE);
+}
+
 
 /**
   Completes computation of the SHA-512 digest value.
@@ -1008,7 +1268,11 @@ EFIAPI
 Sha512Final (
   IN OUT  VOID   *Sha512Context,
   OUT     UINT8  *HashValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha512Final, (Sha512Context, HashValue), FALSE);
+}
+
 
 /**
   Computes the SHA-512 message digest of a input data buffer.
@@ -1036,7 +1300,11 @@ Sha512HashAll (
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha512HashAll, (Data, DataSize, HashValue), FALSE);
+}
+
 
 /**
   Retrieves the size, in bytes, of the context buffer required for SM3 hash operations.
@@ -1050,7 +1318,11 @@ UINTN
 EFIAPI
 Sm3GetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sm3GetContextSize, (), 0);
+}
+
 
 /**
   Initializes user-supplied memory pointed by Sm3Context as SM3 hash context for
@@ -1070,7 +1342,11 @@ BOOLEAN
 EFIAPI
 Sm3Init (
   OUT  VOID  *Sm3Context
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sm3Init, (Sm3Context), FALSE);
+}
+
 
 /**
   Makes a copy of an existing SM3 context.
@@ -1094,7 +1370,11 @@ EFIAPI
 Sm3Duplicate (
   IN   CONST VOID  *Sm3Context,
   OUT  VOID        *NewSm3Context
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sm3Duplicate, (Sm3Context, NewSm3Context), FALSE);
+}
+
 
 /**
   Digests the input data and updates SM3 context.
@@ -1122,7 +1402,11 @@ Sm3Update (
   IN OUT  VOID        *Sm3Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sm3Update, (Sm3Context, Data, DataSize), FALSE);
+}
+
 
 /**
   Completes computation of the SM3 digest value.
@@ -1151,7 +1435,11 @@ EFIAPI
 Sm3Final (
   IN OUT  VOID   *Sm3Context,
   OUT     UINT8  *HashValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sm3Final, (Sm3Context, HashValue), FALSE);
+}
+
 
 /**
   Computes the SM3 message digest of a input data buffer.
@@ -1179,16 +1467,11 @@ Sm3HashAll (
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sm3HashAll, (Data, DataSize, HashValue), FALSE);
+}
 
-/** @} */ // end of Hash group
-
-/**
-  @defgroup AES Advanced Encryption Standard
-  @brief Functions for performing symmetric encryption.
-
-  @{
-**/
 
 /**
   Retrieves the size, in bytes, of the context buffer required for AES operations.
@@ -1205,7 +1488,11 @@ UINTN
 EFIAPI
 AesGetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AesGetContextSize, (), 0);
+}
+
 
 /**
   Initializes user-supplied memory as AES context for subsequent use.
@@ -1237,7 +1524,11 @@ AesInit (
   OUT  VOID         *AesContext,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeyLength
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AesInit, (AesContext, Key, KeyLength), FALSE);
+}
+
 
 /**
   Performs AES encryption on a data buffer of the specified size in CBC mode.
@@ -1278,7 +1569,11 @@ AesCbcEncrypt (
   IN   UINTN        InputSize,
   IN   CONST UINT8  *Ivec,
   OUT  UINT8        *Output
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AesCbcEncrypt, (AesContext, Input, InputSize, Ivec, Output), FALSE);
+}
+
 
 /**
   Performs AES decryption on a data buffer of the specified size in CBC mode.
@@ -1319,7 +1614,11 @@ AesCbcDecrypt (
   IN   UINTN        InputSize,
   IN   CONST UINT8  *Ivec,
   OUT  UINT8        *Output
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AesCbcDecrypt, (AesContext, Input, InputSize, Ivec, Output), FALSE);
+}
+
 
 /**
   Performs AEAD AES-GCM authenticated encryption on a data buffer and additional authenticated data (AAD).
@@ -1362,7 +1661,11 @@ AeadAesGcmEncrypt (
   IN   UINTN        TagSize,
   OUT  UINT8        *DataOut,
   OUT  UINTN        *DataOutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AeadAesGcmEncrypt, (Key, KeySize, Iv, IvSize, AData, ADataSize, DataIn, DataInSize, TagOut, TagSize, DataOut, DataOutSize), FALSE);
+}
+
 
 /**
   Performs AEAD AES-GCM authenticated decryption on a data buffer and additional authenticated data (AAD).
@@ -1406,16 +1709,11 @@ AeadAesGcmDecrypt (
   IN   UINTN        TagSize,
   OUT  UINT8        *DataOut,
   OUT  UINTN        *DataOutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AeadAesGcmDecrypt, (Key, KeySize, Iv, IvSize, AData, ADataSize, DataIn, DataInSize, Tag, TagSize, DataOut, DataOutSize), FALSE);
+}
 
-/** @} */ // end of Aes group
-
-/**
-  @defgroup BN Big Number
-  @brief Functions for operating on big numbers.
-
-  @{
-**/
 
 /**
   Allocate new Big Number.
@@ -1429,7 +1727,11 @@ VOID *
 EFIAPI
 BigNumInit (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumInit, (), NULL);
+}
+
 
 /**
   Allocate new Big Number and assign the provided value to it.
@@ -1447,7 +1749,11 @@ EFIAPI
 BigNumFromBin (
   IN CONST UINT8  *Buf,
   IN UINTN        Len
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumFromBin, (Buf, Len), NULL);
+}
+
 
 /**
   Convert the absolute value of Bn into big-endian form and store it at Buf.
@@ -1466,7 +1772,11 @@ EFIAPI
 BigNumToBin (
   IN CONST VOID  *Bn,
   OUT UINT8      *Buf
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumToBin, (Bn, Buf), 0);
+}
+
 
 /**
   Free the Big Number.
@@ -1482,7 +1792,11 @@ EFIAPI
 BigNumFree (
   IN VOID     *Bn,
   IN BOOLEAN  Clear
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (BigNumFree, (Bn, Clear));
+}
+
 
 /**
   Calculate the sum of two Big Numbers.
@@ -1505,7 +1819,11 @@ BigNumAdd (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumAdd, (BnA, BnB, BnRes), FALSE);
+}
+
 
 /**
   Subtract two Big Numbers.
@@ -1528,7 +1846,11 @@ BigNumSub (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumSub, (BnA, BnB, BnRes), FALSE);
+}
+
 
 /**
   Calculate remainder: BnRes = BnA % BnB.
@@ -1551,7 +1873,11 @@ BigNumMod (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumMod, (BnA, BnB, BnRes), FALSE);
+}
+
 
 /**
   Compute BnA to the BnP-th power modulo BnM.
@@ -1576,7 +1902,11 @@ BigNumExpMod (
   IN CONST VOID  *BnP,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumExpMod, (BnA, BnP, BnM, BnRes), FALSE);
+}
+
 
 /**
   Compute BnA inverse modulo BnM.
@@ -1599,7 +1929,11 @@ BigNumInverseMod (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumInverseMod, (BnA, BnM, BnRes), FALSE);
+}
+
 
 /**
   Divide two Big Numbers.
@@ -1622,7 +1956,11 @@ BigNumDiv (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumDiv, (BnA, BnB, BnRes), FALSE);
+}
+
 
 /**
   Multiply two Big Numbers modulo BnM.
@@ -1647,7 +1985,11 @@ BigNumMulMod (
   IN CONST VOID  *BnB,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumMulMod, (BnA, BnB, BnM, BnRes), FALSE);
+}
+
 
 /**
   Compare two Big Numbers.
@@ -1667,7 +2009,11 @@ EFIAPI
 BigNumCmp (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumCmp, (BnA, BnB), 0);
+}
+
 
 /**
   Get number of bits in Bn.
@@ -1683,7 +2029,11 @@ UINTN
 EFIAPI
 BigNumBits (
   IN CONST VOID  *Bn
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumBits, (Bn), 0);
+}
+
 
 /**
   Get number of bytes in Bn.
@@ -1699,7 +2049,11 @@ UINTN
 EFIAPI
 BigNumBytes (
   IN CONST VOID  *Bn
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumBytes, (Bn), 0);
+}
+
 
 /**
   Checks if Big Number equals to the given Num.
@@ -1718,7 +2072,11 @@ EFIAPI
 BigNumIsWord (
   IN CONST VOID  *Bn,
   IN UINTN       Num
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumIsWord, (Bn, Num), FALSE);
+}
+
 
 /**
   Checks if Big Number is odd.
@@ -1735,7 +2093,11 @@ BOOLEAN
 EFIAPI
 BigNumIsOdd (
   IN CONST VOID  *Bn
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumIsOdd, (Bn), FALSE);
+}
+
 
 /**
   Copy Big number.
@@ -1754,7 +2116,11 @@ EFIAPI
 BigNumCopy (
   OUT VOID       *BnDst,
   IN CONST VOID  *BnSrc
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumCopy, (BnDst, BnSrc), NULL);
+}
+
 
 /**
   Get constant Big number with value of "1".
@@ -1769,7 +2135,11 @@ CONST VOID *
 EFIAPI
 BigNumValueOne (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumValueOne, (), NULL);
+}
+
 
 /**
   Shift right Big Number.
@@ -1792,7 +2162,11 @@ BigNumRShift (
   IN CONST VOID  *Bn,
   IN UINTN       N,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumRShift, (Bn, N, BnRes), FALSE);
+}
+
 
 /**
   Mark Big Number for constant time computations.
@@ -1808,7 +2182,11 @@ VOID
 EFIAPI
 BigNumConstTime (
   IN VOID  *Bn
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (BigNumConstTime, (Bn));
+}
+
 
 /**
   Calculate square modulo.
@@ -1831,7 +2209,11 @@ BigNumSqrMod (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumSqrMod, (BnA, BnM, BnRes), FALSE);
+}
+
 
 /**
   Create new Big Number computation context. This is an opaque structure
@@ -1847,7 +2229,11 @@ VOID *
 EFIAPI
 BigNumNewContext (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumNewContext, (), NULL);
+}
+
 
 /**
   Free Big Number context that was allocated with BigNumNewContext().
@@ -1861,7 +2247,11 @@ VOID
 EFIAPI
 BigNumContextFree (
   IN VOID  *BnCtx
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (BigNumContextFree, (BnCtx));
+}
+
 
 /**
   Set Big Number to a given value.
@@ -1880,7 +2270,11 @@ EFIAPI
 BigNumSetUint (
   IN VOID   *Bn,
   IN UINTN  Val
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumSetUint, (Bn, Val), FALSE);
+}
+
 
 /**
   Add two Big Numbers modulo BnM.
@@ -1903,16 +2297,11 @@ BigNumAddMod (
   IN CONST VOID  *BnB,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumAddMod, (BnA, BnB, BnM, BnRes), FALSE);
+}
 
-/** @} */ // end of BN group
-
-/**
-  @defgroup HKDF HMAC-based Extract-and-Expand Key Derivation Function
-  @brief Functions for operating on big numbers.
-
-  @{
-**/
 
 /**
   Derive key data using HMAC-SHA* based KDF.
@@ -1943,7 +2332,11 @@ HkdfSha256ExtractAndExpand (
   IN   UINTN        InfoSize,
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HkdfSha256ExtractAndExpand, (Key, KeySize, Salt, SaltSize, Info, InfoSize, Out, OutSize), FALSE);
+}
+
 
 /**
   Derive HMAC-SHA*-based Extract key Derivation Function (HKDF).
@@ -1970,7 +2363,11 @@ HkdfSha256Extract (
   IN UINTN        SaltSize,
   OUT UINT8       *PrkOut,
   UINTN           PrkOutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HkdfSha256Extract, (Key, KeySize, Salt, SaltSize, PrkOut, PrkOutSize), FALSE);
+}
+
 
 /**
   Derive HMAC-SHA*-based Expand Key Derivation Function (HKDF).
@@ -1997,7 +2394,11 @@ HkdfSha256Expand (
   IN   UINTN        InfoSize,
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HkdfSha256Expand, (Prk, PrkSize, Info, InfoSize, Out, OutSize), FALSE);
+}
+
 
 /**
   Derive key data using HMAC-SHA* based KDF.
@@ -2028,7 +2429,11 @@ HkdfSha384ExtractAndExpand (
   IN   UINTN        InfoSize,
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HkdfSha384ExtractAndExpand, (Key, KeySize, Salt, SaltSize, Info, InfoSize, Out, OutSize), FALSE);
+}
+
 
 /**
   Derive HMAC-SHA*-based Extract key Derivation Function (HKDF).
@@ -2055,7 +2460,11 @@ HkdfSha384Extract (
   IN UINTN        SaltSize,
   OUT UINT8       *PrkOut,
   UINTN           PrkOutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HkdfSha384Extract, (Key, KeySize, Salt, SaltSize, PrkOut, PrkOutSize), FALSE);
+}
+
 
 /**
   Derive HMAC-SHA*-based Expand Key Derivation Function (HKDF).
@@ -2082,16 +2491,11 @@ HkdfSha384Expand (
   IN   UINTN        InfoSize,
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HkdfSha384Expand, (Prk, PrkSize, Info, InfoSize, Out, OutSize), FALSE);
+}
 
-/** @} */ // end of HKDF group
-
-/**
-  @defgroup PKCS Public Key Cryptography Standards
-  @brief Functions for Public Key Cryptography Standards.
-
-  @{
-**/
 
 /**
   Verifies the validity of an Authenticode Signature.
@@ -2122,7 +2526,11 @@ AuthenticodeVerify (
   IN  UINTN        CertSize,
   IN  CONST UINT8  *ImageHash,
   IN  UINTN        HashSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AuthenticodeVerify, (AuthData, DataSize, TrustedCert, CertSize, ImageHash, HashSize), FALSE);
+}
+
 
 /**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
@@ -2158,7 +2566,11 @@ Pkcs1v2Encrypt (
   IN   UINTN        PrngSeedSize   OPTIONAL,
   OUT  UINT8        **EncryptedData,
   OUT  UINTN        *EncryptedDataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs1v2Encrypt, (PublicKey, PublicKeySize, InData, InDataSize, PrngSeed, PrngSeedSize, EncryptedData, EncryptedDataSize), FALSE);
+}
+
 
 /**
   Decrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
@@ -2187,7 +2599,11 @@ Pkcs1v2Decrypt (
   IN   UINTN        EncryptedDataSize,
   OUT  UINT8        **OutData,
   OUT  UINTN        *OutDataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs1v2Decrypt, (PrivateKey, PrivateKeySize, EncryptedData, EncryptedDataSize, OutData, OutDataSize), FALSE);
+}
+
 
 /**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
@@ -2228,7 +2644,11 @@ RsaOaepEncrypt (
   IN   UINT16       DigestLen OPTIONAL,
   OUT  UINT8        **EncryptedData,
   OUT  UINTN        *EncryptedDataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaOaepEncrypt, (RsaContext, InData, InDataSize, PrngSeed, PrngSeedSize, DigestLen, EncryptedData, EncryptedDataSize), FALSE);
+}
+
 
 /**
   Decrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
@@ -2263,7 +2683,11 @@ RsaOaepDecrypt (
   IN   UINT16  DigestLen OPTIONAL,
   OUT  UINT8   **OutData,
   OUT  UINTN   *OutDataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaOaepDecrypt, (RsaContext, EncryptedData, EncryptedDataSize, DigestLen, OutData, OutDataSize), FALSE);
+}
+
 
 /**
   Derives a key from a password using a salt and iteration count, based on PKCS#5 v2.0
@@ -2302,7 +2726,11 @@ Pkcs5HashPassword (
   IN  UINTN        DigestSize,
   IN  UINTN        KeyLength,
   OUT UINT8        *OutKey
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs5HashPassword, (PasswordLength, Password, SaltLength, Salt, IterationCount, DigestSize, KeyLength, OutKey), FALSE);
+}
+
 
 /**
   Get the signer's certificates from PKCS#7 signed data as described in "PKCS #7:
@@ -2338,7 +2766,11 @@ Pkcs7GetSigners (
   OUT UINTN        *StackLength,
   OUT UINT8        **TrustedCert,
   OUT UINTN        *CertLength
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs7GetSigners, (P7Data, P7Length, CertStack, StackLength, TrustedCert, CertLength), FALSE);
+}
+
 
 /**
 Wrap function to use free() to free allocated memory for certificates.
@@ -2352,7 +2784,11 @@ VOID
 EFIAPI
 Pkcs7FreeSigners (
   IN  UINT8  *Certs
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (Pkcs7FreeSigners, (Certs));
+}
+
 
 /**
   Retrieves all embedded certificates from PKCS#7 signed data as described in "PKCS #7:
@@ -2385,7 +2821,11 @@ Pkcs7GetCertificatesList (
   OUT UINTN        *ChainLength,
   OUT UINT8        **UnchainCerts,
   OUT UINTN        *UnchainLength
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs7GetCertificatesList, (P7Data, P7Length, SignerChainCerts, ChainLength, UnchainCerts, UnchainLength), FALSE);
+}
+
 
 /**
   Creates a PKCS#7 signedData as described in "PKCS #7: Cryptographic Message
@@ -2427,7 +2867,11 @@ Pkcs7Sign (
   IN   UINT8        *OtherCerts      OPTIONAL,
   OUT  UINT8        **SignedData,
   OUT  UINTN        *SignedDataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs7Sign, (PrivateKey, PrivateKeySize, KeyPassword, InData, InDataSize, SignCert, SignCertSize, OtherCerts, SignedData, SignedDataSize), FALSE);
+}
+
 
 /**
   Verifies the validity of a PKCS#7 signed data as described in "PKCS #7:
@@ -2465,9 +2909,13 @@ Pkcs7Verify (
   IN  UINTN        CertLength,
   IN  CONST UINT8  *InData,
   IN  UINTN        DataLength
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs7Verify, (P7Data, P7Length, TrustedCert, CertLength, InData, DataLength), FALSE);
+}
 
-  /**
+
+/**
   Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
   that wraps content encrypted for secure transmission to one or more recipients.
 
@@ -2509,391 +2957,11 @@ Pkcs7Encrypt (
   IN   UINT32  Flags,
   OUT  UINT8   **ContentInfo,
   OUT  UINTN   *ContentInfoSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs7Encrypt, (X509Stack, InData, InDataSize, CipherNid, Flags, ContentInfo, ContentInfoSize), FALSE);
+}
 
-/**
-  This function receives a PKCS7 formatted signature, and then verifies that
-  the specified Enhanced or Extended Key Usages (EKU's) are present in the end-entity
-  leaf signing certificate.
-  Note that this function does not validate the certificate chain.
-  Applications for custom EKU's are quite flexible. For example, a policy EKU
-  may be present in an Issuing Certificate Authority (CA), and any sub-ordinate
-  certificate issued might also contain this EKU, thus constraining the
-  sub-ordinate certificate.  Other applications might allow a certificate
-  embedded in a device to specify that other Object Identifiers (
-/**
-  Verifies the validity of an Authenticode Signature.
-
-  @param[in]  AuthData     Pointer to the Authenticode Signature retrieved from signed
-                           PE/COFF image to be verified.
-  @param[in]  DataSize     Size of the Authenticode Signature in bytes.
-  @param[in]  TrustedCert  Pointer to a trusted/root certificate encoded in DER, which
-                           is used for certificate chain verification.
-  @param[in]  CertSize     Size of the trusted certificate in bytes.
-  @param[in]  ImageHash    Pointer to the original image file hash value. The procedure
-                           for calculating the image hash value is described in Authenticode
-                           specification.
-  @param[in]  HashSize     Size of Image hash value in bytes.
-
-  @retval  TRUE   The specified Authenticode Signature is valid.
-  @retval  FALSE  Invalid Authenticode Signature.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-AuthenticodeVerify (
-  IN  CONST UINT8  *AuthData,
-  IN  UINTN        DataSize,
-  IN  CONST UINT8  *TrustedCert,
-  IN  UINTN        CertSize,
-  IN  CONST UINT8  *ImageHash,
-  IN  UINTN        HashSize
-  );
-
-/**
-  Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
-  encrypted message in a newly allocated buffer.
-
-  @param[in]  PublicKey           A pointer to the DER-encoded X509 certificate that
-                                  will be used to encrypt the data.
-  @param[in]  PublicKeySize       Size of the X509 cert buffer.
-  @param[in]  InData              Data to be encrypted.
-  @param[in]  InDataSize          Size of the data buffer.
-  @param[in]  PrngSeed            [Optional] If provided, a pointer to a random seed buffer
-                                  to be used when initializing the PRNG. NULL otherwise.
-  @param[in]  PrngSeedSize        [Optional] If provided, size of the random seed buffer.
-                                  0 otherwise.
-  @param[out] EncryptedData       Pointer to an allocated buffer containing the encrypted
-                                  message.
-  @param[out] EncryptedDataSize   Size of the encrypted message buffer.
-
-  @retval     TRUE                Encryption was successful.
-  @retval     FALSE               Encryption failed.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs1v2Encrypt (
-  IN   CONST UINT8  *PublicKey,
-  IN   UINTN        PublicKeySize,
-  IN   UINT8        *InData,
-  IN   UINTN        InDataSize,
-  IN   CONST UINT8  *PrngSeed   OPTIONAL,
-  IN   UINTN        PrngSeedSize   OPTIONAL,
-  OUT  UINT8        **EncryptedData,
-  OUT  UINTN        *EncryptedDataSize
-  );
-
-/**
-  Decrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
-  decrypted message in a newly allocated buffer.
-
-  @param[in]  PrivateKey          A pointer to the DER-encoded private key.
-  @param[in]  PrivateKeySize      Size of the private key buffer.
-  @param[in]  EncryptedData       Data to be decrypted.
-  @param[in]  EncryptedDataSize   Size of the encrypted buffer.
-  @param[out] OutData             Pointer to an allocated buffer containing the encrypted
-                                  message.
-  @param[out] OutDataSize         Size of the encrypted message buffer.
-
-  @retval     TRUE                Encryption was successful.
-  @retval     FALSE               Encryption failed.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs1v2Decrypt (
-  IN   CONST UINT8  *PrivateKey,
-  IN   UINTN        PrivateKeySize,
-  IN   UINT8        *EncryptedData,
-  IN   UINTN        EncryptedDataSize,
-  OUT  UINT8        **OutData,
-  OUT  UINTN        *OutDataSize
-  );
-
-/**
-  Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
-  encrypted message in a newly allocated buffer.
-
-  @param[in]  RsaContext          A pointer to an RSA context created by RsaNew() and
-                                  provisioned with a public key using RsaSetKey().
-  @param[in]  InData              Data to be encrypted.
-  @param[in]  InDataSize          Size of the data buffer.
-  @param[in]  PrngSeed            [Optional] If provided, a pointer to a random seed buffer
-                                  to be used when initializing the PRNG. NULL otherwise.
-  @param[in]  PrngSeedSize        [Optional] If provided, size of the random seed buffer.
-                                  0 otherwise.
-  @param[in]  DigestLen           [Optional] If provided, size of the hash used:
-                                  SHA1_DIGEST_SIZE
-                                  SHA256_DIGEST_SIZE
-                                  SHA384_DIGEST_SIZE
-                                  SHA512_DIGEST_SIZE
-                                  0 to use default (SHA1)
-  @param[out] EncryptedData       Pointer to an allocated buffer containing the encrypted
-                                  message.
-  @param[out] EncryptedDataSize   Size of the encrypted message buffer.
-
-  @retval     TRUE                Encryption was successful.
-  @retval     FALSE               Encryption failed.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-RsaOaepEncrypt (
-  IN   VOID         *RsaContext,
-  IN   UINT8        *InData,
-  IN   UINTN        InDataSize,
-  IN   CONST UINT8  *PrngSeed   OPTIONAL,
-  IN   UINTN        PrngSeedSize   OPTIONAL,
-  IN   UINT16       DigestLen OPTIONAL,
-  OUT  UINT8        **EncryptedData,
-  OUT  UINTN        *EncryptedDataSize
-  );
-
-/**
-  Decrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
-  decrypted message in a newly allocated buffer.
-
-  @param[in]  RsaContext          A pointer to an RSA context created by RsaNew() and
-                                  provisioned with a private key using RsaSetKey().
-  @param[in]  EncryptedData       Data to be decrypted.
-  @param[in]  EncryptedDataSize   Size of the encrypted buffer.
-  @param[in]  DigestLen           [Optional] If provided, size of the hash used:
-                                  SHA1_DIGEST_SIZE
-                                  SHA256_DIGEST_SIZE
-                                  SHA384_DIGEST_SIZE
-                                  SHA512_DIGEST_SIZE
-                                  0 to use default (SHA1)
-  @param[out] OutData             Pointer to an allocated buffer containing the encrypted
-                                  message.
-  @param[out] OutDataSize         Size of the encrypted message buffer.
-
-  @retval     TRUE                Encryption was successful.
-  @retval     FALSE               Encryption failed.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-RsaOaepDecrypt (
-  IN   VOID    *RsaContext,
-  IN   UINT8   *EncryptedData,
-  IN   UINTN   EncryptedDataSize,
-  IN   UINT16  DigestLen OPTIONAL,
-  OUT  UINT8   **OutData,
-  OUT  UINTN   *OutDataSize
-  );
-
-/**
-  Derives a key from a password using a salt and iteration count, based on PKCS#5 v2.0
-  password based encryption key derivation function PBKDF2, as specified in RFC 2898.
-  If Password or Salt or OutKey is NULL, then return FALSE.
-  If the hash algorithm could not be determined, then return FALSE.
-  If this interface is not supported, then return FALSE.
-  @param[in]  PasswordLength  Length of input password in bytes.
-  @param[in]  Password        Pointer to the array for the password.
-  @param[in]  SaltLength      Size of the Salt in bytes.
-  @param[in]  Salt            Pointer to the Salt.
-  @param[in]  IterationCount  Number of iterations to perform. Its value should be
-                              greater than or equal to 1.
-  @param[in]  DigestSize      Size of the message digest to be used (eg. SHA256_DIGEST_SIZE).
-                              NOTE: DigestSize will be used to determine the hash algorithm.
-                                    Only SHA1_DIGEST_SIZE or SHA256_DIGEST_SIZE is supported.
-  @param[in]  KeyLength       Size of the derived key buffer in bytes.
-  @param[out] OutKey          Pointer to the output derived key buffer.
-  @retval  TRUE   A key was derived successfully.
-  @retval  FALSE  One of the pointers was NULL or one of the sizes was too large.
-  @retval  FALSE  The hash algorithm could not be determined from the digest size.
-  @retval  FALSE  The key derivation operation failed.
-  @retval  FALSE  This interface is not supported.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs5HashPassword (
-  IN  UINTN        PasswordLength,
-  IN  CONST CHAR8  *Password,
-  IN  UINTN        SaltLength,
-  IN  CONST UINT8  *Salt,
-  IN  UINTN        IterationCount,
-  IN  UINTN        DigestSize,
-  IN  UINTN        KeyLength,
-  OUT UINT8        *OutKey
-  );
-
-/**
-  Get the signer's certificates from PKCS#7 signed data as described in "PKCS #7:
-  Cryptographic Message Syntax Standard". The input signed data could be wrapped
-  in a ContentInfo structure.
-  If P7Data, CertStack, StackLength, TrustedCert or CertLength is NULL, then
-  return FALSE. If P7Length overflow, then return FALSE.
-  If this interface is not supported, then return FALSE.
-  @param[in]  P7Data       Pointer to the PKCS#7 message to verify.
-  @param[in]  P7Length     Length of the PKCS#7 message in bytes.
-  @param[out] CertStack    Pointer to Signer's certificates retrieved from P7Data.
-                           It's caller's responsibility to free the buffer with
-                           Pkcs7FreeSigners().
-                           This data structure is EFI_CERT_STACK type.
-  @param[out] StackLength  Length of signer's certificates in bytes.
-  @param[out] TrustedCert  Pointer to a trusted certificate from Signer's certificates.
-                           It's caller's responsibility to free the buffer with
-                           Pkcs7FreeSigners().
-  @param[out] CertLength   Length of the trusted certificate in bytes.
-  @retval  TRUE            The operation is finished successfully.
-  @retval  FALSE           Error occurs during the operation.
-  @retval  FALSE           This interface is not supported.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs7GetSigners (
-  IN  CONST UINT8  *P7Data,
-  IN  UINTN        P7Length,
-  OUT UINT8        **CertStack,
-  OUT UINTN        *StackLength,
-  OUT UINT8        **TrustedCert,
-  OUT UINTN        *CertLength
-  );
-
-/**
-Wrap function to use free() to free allocated memory for certificates.
-If this interface is not supported, then ASSERT().
-@param[in]  Certs        Pointer to the certificates to be freed.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-VOID
-EFIAPI
-Pkcs7FreeSigners (
-  IN  UINT8  *Certs
-  );
-
-/**
-  Retrieves all embedded certificates from PKCS#7 signed data as described in "PKCS #7:
-  Cryptographic Message Syntax Standard", and outputs two certificate lists chained and
-  unchained to the signer's certificates.
-  The input signed data could be wrapped in a ContentInfo structure.
-  @param[in]  P7Data            Pointer to the PKCS#7 message.
-  @param[in]  P7Length          Length of the PKCS#7 message in bytes.
-  @param[out] SignerChainCerts  Pointer to the certificates list chained to signer's
-                                certificate. It's caller's responsibility to free the buffer
-                                with Pkcs7FreeSigners().
-                                This data structure is EFI_CERT_STACK type.
-  @param[out] ChainLength       Length of the chained certificates list buffer in bytes.
-  @param[out] UnchainCerts      Pointer to the unchained certificates lists. It's caller's
-                                responsibility to free the buffer with Pkcs7FreeSigners().
-                                This data structure is EFI_CERT_STACK type.
-  @param[out] UnchainLength     Length of the unchained certificates list buffer in bytes.
-  @retval  TRUE         The operation is finished successfully.
-  @retval  FALSE        Error occurs during the operation.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs7GetCertificatesList (
-  IN  CONST UINT8  *P7Data,
-  IN  UINTN        P7Length,
-  OUT UINT8        **SignerChainCerts,
-  OUT UINTN        *ChainLength,
-  OUT UINT8        **UnchainCerts,
-  OUT UINTN        *UnchainLength
-  );
-
-/**
-  Creates a PKCS#7 signedData as described in "PKCS #7: Cryptographic Message
-  Syntax Standard, version 1.5". This interface is only intended to be used for
-  application to perform PKCS#7 functionality validation.
-  If this interface is not supported, then return FALSE.
-  @param[in]  PrivateKey       Pointer to the PEM-formatted private key data for
-                               data signing.
-  @param[in]  PrivateKeySize   Size of the PEM private key data in bytes.
-  @param[in]  KeyPassword      NULL-terminated passphrase used for encrypted PEM
-                               key data.
-  @param[in]  InData           Pointer to the content to be signed.
-  @param[in]  InDataSize       Size of InData in bytes.
-  @param[in]  SignCert         Pointer to signer's DER-encoded certificate to sign with.
-  @param[in]  SignCertSize     Size of signer's DER-encoded certificate to sign with.  // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
-  @param[in]  OtherCerts       Pointer to an optional additional set of certificates to
-                               include in the PKCS#7 signedData (e.g. any intermediate
-                               CAs in the chain).
-  @param[out] SignedData       Pointer to output PKCS#7 signedData. It's caller's
-                               responsibility to free the buffer with FreePool().
-  @param[out] SignedDataSize   Size of SignedData in bytes.
-  @retval     TRUE             PKCS#7 data signing succeeded.
-  @retval     FALSE            PKCS#7 data signing failed.
-  @retval     FALSE            This interface is not supported.
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs7Sign (
-  IN   CONST UINT8  *PrivateKey,
-  IN   UINTN        PrivateKeySize,
-  IN   CONST UINT8  *KeyPassword,
-  IN   UINT8        *InData,
-  IN   UINTN        InDataSize,
-  IN   CONST UINT8  *SignCert,
-  IN   UINTN        SignCertSize,
-  IN   UINT8        *OtherCerts      OPTIONAL,
-  OUT  UINT8        **SignedData,
-  OUT  UINTN        *SignedDataSize
-  );
-
-/**
-  Verifies the validity of a PKCS#7 signed data as described in "PKCS #7:
-  Cryptographic Message Syntax Standard". The input signed data could be wrapped
-  in a ContentInfo structure.
-
-  If P7Data, TrustedCert or InData is NULL, then return FALSE.
-  If P7Length, CertLength or DataLength overflow, then return FALSE.
-
-  Caution: This function may receive untrusted input.
-  UEFI Authenticated Variable is external input, so this function will do basic
-  check for PKCS#7 data structure.
-
-  @param[in]  P7Data       Pointer to the PKCS#7 message to verify.
-  @param[in]  P7Length     Length of the PKCS#7 message in bytes.
-  @param[in]  TrustedCert  Pointer to a trusted/root certificate encoded in DER, which
-                           is used for certificate chain verification.
-  @param[in]  CertLength   Length of the trusted certificate in bytes.
-  @param[in]  InData       Pointer to the content to be verified.
-  @param[in]  DataLength   Length of InData in bytes.
-
-  @retval  TRUE  The specified PKCS#7 signed data is valid.
-  @retval  FALSE Invalid PKCS#7 signed data.
-
-
-  @since 1.0
-  @ingroup PKCS
-**/
-BOOLEAN
-EFIAPI
-Pkcs7Verify (
-  IN  CONST UINT8  *P7Data,
-  IN  UINTN        P7Length,
-  IN  CONST UINT8  *TrustedCert,
-  IN  UINTN        CertLength,
-  IN  CONST UINT8  *InData,
-  IN  UINTN        DataLength
-  );
 
 /**
   This function receives a PKCS7 formatted signature, and then verifies that
@@ -2934,7 +3002,11 @@ VerifyEKUsInPkcs7Signature (
   IN  CONST CHAR8   *RequiredEKUs[],
   IN  CONST UINT32  RequiredEKUsSize,
   IN  BOOLEAN       RequireAllPresent
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (VerifyEKUsInPkcs7Signature, (Pkcs7Signature, SignatureSize, RequiredEKUs, RequiredEKUsSize, RequireAllPresent), 0);
+}
+
 
 /**
   Extracts the attached content from a PKCS#7 signed data if existed. The input signed
@@ -2961,16 +3033,11 @@ Pkcs7GetAttachedContent (
   IN  UINTN        P7Length,
   OUT VOID         **Content,
   OUT UINTN        *ContentSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs7GetAttachedContent, (P7Data, P7Length, Content, ContentSize), FALSE);
+}
 
-/** @} */ // end of PKCS group
-
-/**
-  @defgroup DH Diffie-Hellman
-  @brief Functions for Diffie-Hellman key exchange.
-
-  @{
-**/
 
 /**
   Allocates and Initializes one Diffie-Hellman Context for subsequent use.
@@ -2985,7 +3052,11 @@ VOID *
 EFIAPI
 DhNew (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (DhNew, (), NULL);
+}
+
 
 /**
   Release the specified DH context.
@@ -2999,7 +3070,11 @@ VOID
 EFIAPI
 DhFree (
   IN  VOID  *DhContext
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (DhFree, (DhContext));
+}
+
 
 /**
   Generates DH parameter.
@@ -3029,7 +3104,11 @@ DhGenerateParameter (
   IN      UINTN  Generator,
   IN      UINTN  PrimeLength,
   OUT     UINT8  *Prime
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (DhGenerateParameter, (DhContext, Generator, PrimeLength, Prime), FALSE);
+}
+
 
 /**
   Sets generator and prime parameters for DH.
@@ -3059,7 +3138,11 @@ DhSetParameter (
   IN      UINTN        Generator,
   IN      UINTN        PrimeLength,
   IN      CONST UINT8  *Prime
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (DhSetParameter, (DhContext, Generator, PrimeLength, Prime), FALSE);
+}
+
 
 /**
 Generates DH public key.
@@ -3094,7 +3177,11 @@ DhGenerateKey (
   IN OUT  VOID   *DhContext,
   OUT     UINT8  *PublicKey,
   IN OUT  UINTN  *PublicKeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (DhGenerateKey, (DhContext, PublicKey, PublicKeySize), FALSE);
+}
+
 
 /**
   Computes exchanged common key.
@@ -3133,20 +3220,11 @@ DhComputeKey (
   IN      UINTN        PeerPublicKeySize,
   OUT     UINT8        *Key,
   IN OUT  UINTN        *KeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (DhComputeKey, (DhContext, PeerPublicKey, PeerPublicKeySize, Key, KeySize), FALSE);
+}
 
-/** @} */ // end of DH group
-
-/**
-  @defgroup EC Elliptic Curve
-  @brief Functions for Elliptic Curve Cryptography.
-
-  @{
-**/
-
-// =====================================================================================
-//    Basic Elliptic Curve Primitives
-// =====================================================================================
 
 /**
   Initialize new opaque EcGroup object. This object represents an EC curve and
@@ -3166,7 +3244,11 @@ VOID *
 EFIAPI
 EcGroupInit (
   IN UINTN  CryptoNid
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGroupInit, (CryptoNid), NULL);
+}
+
 
 /**
   Get EC curve parameters. While elliptic curve equation is Y^2 mod P = (X^3 + AX + B) Mod P.
@@ -3194,7 +3276,11 @@ EcGroupGetCurve (
   OUT VOID       *BnA,
   OUT VOID       *BnB,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGroupGetCurve, (EcGroup, BnPrime, BnA, BnB, BnCtx), FALSE);
+}
+
 
 /**
   Get EC group order.
@@ -3216,7 +3302,11 @@ EFIAPI
 EcGroupGetOrder (
   IN VOID   *EcGroup,
   OUT VOID  *BnOrder
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGroupGetOrder, (EcGroup, BnOrder), FALSE);
+}
+
 
 /**
   Free previously allocated EC group object using EcGroupInit().
@@ -3230,7 +3320,11 @@ VOID
 EFIAPI
 EcGroupFree (
   IN VOID  *EcGroup
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (EcGroupFree, (EcGroup));
+}
+
 
 /**
   Initialize new opaque EC Point object. This object represents an EC point
@@ -3248,7 +3342,11 @@ VOID *
 EFIAPI
 EcPointInit (
   IN CONST VOID  *EcGroup
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointInit, (EcGroup), NULL);
+}
+
 
 /**
   Free previously allocated EC Point object using EcPointInit().
@@ -3264,7 +3362,11 @@ EFIAPI
 EcPointDeInit (
   IN VOID     *EcPoint,
   IN BOOLEAN  Clear
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (EcPointDeInit, (EcPoint, Clear));
+}
+
 
 /**
   Get EC point affine (x,y) coordinates.
@@ -3292,7 +3394,11 @@ EcPointGetAffineCoordinates (
   OUT VOID       *BnX,
   OUT VOID       *BnY,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointGetAffineCoordinates, (EcGroup, EcPoint, BnX, BnY, BnCtx), FALSE);
+}
+
 
 /**
   Set EC point affine (x,y) coordinates.
@@ -3317,7 +3423,11 @@ EcPointSetAffineCoordinates (
   IN CONST VOID  *BnX,
   IN CONST VOID  *BnY,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointSetAffineCoordinates, (EcGroup, EcPoint, BnX, BnY, BnCtx), FALSE);
+}
+
 
 /**
   EC Point addition. EcPointResult = EcPointA + EcPointB.
@@ -3343,7 +3453,11 @@ EcPointAdd (
   IN CONST VOID  *EcPointA,
   IN CONST VOID  *EcPointB,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointAdd, (EcGroup, EcPointResult, EcPointA, EcPointB, BnCtx), FALSE);
+}
+
 
 /**
   Variable EC point multiplication. EcPointResult = EcPoint * BnPScalar.
@@ -3369,7 +3483,11 @@ EcPointMul (
   IN CONST VOID  *EcPoint,
   IN CONST VOID  *BnPScalar,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointMul, (EcGroup, EcPointResult, EcPoint, BnPScalar, BnCtx), FALSE);
+}
+
 
 /**
   Calculate the inverse of the supplied EC point.
@@ -3390,7 +3508,11 @@ EcPointInvert (
   IN CONST VOID  *EcGroup,
   IN OUT VOID    *EcPoint,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointInvert, (EcGroup, EcPoint, BnCtx), FALSE);
+}
+
 
 /**
   Check if the supplied point is on EC curve.
@@ -3411,7 +3533,11 @@ EcPointIsOnCurve (
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPoint,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointIsOnCurve, (EcGroup, EcPoint, BnCtx), FALSE);
+}
+
 
 /**
   Check if the supplied point is at infinity.
@@ -3430,7 +3556,11 @@ EFIAPI
 EcPointIsAtInfinity (
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPoint
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointIsAtInfinity, (EcGroup, EcPoint), FALSE);
+}
+
 
 /**
   Check if EC points are equal.
@@ -3453,7 +3583,11 @@ EcPointEqual (
   IN CONST VOID  *EcPointA,
   IN CONST VOID  *EcPointB,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointEqual, (EcGroup, EcPointA, EcPointB, BnCtx), FALSE);
+}
+
 
 /**
   Set EC point compressed coordinates. Points can be described in terms of
@@ -3483,11 +3617,11 @@ EcPointSetCompressedCoordinates (
   IN CONST VOID  *BnX,
   IN UINT8       YBit,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointSetCompressedCoordinates, (EcGroup, EcPoint, BnX, YBit, BnCtx), FALSE);
+}
 
-// =====================================================================================
-//    Elliptic Curve Diffie Hellman Primitives
-// =====================================================================================
 
 /**
   Allocates and Initializes one Elliptic Curve Context for subsequent use
@@ -3504,7 +3638,11 @@ VOID *
 EFIAPI
 EcNewByNid (
   IN UINTN  Nid
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcNewByNid, (Nid), NULL);
+}
+
 
 /**
   Release the specified EC context.
@@ -3518,7 +3656,11 @@ VOID
 EFIAPI
 EcFree (
   IN  VOID  *EcContext
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (EcFree, (EcContext));
+}
+
 
 /**
   Generates EC key and returns EC public key (X, Y), Please note, this function uses
@@ -3555,7 +3697,11 @@ EcGenerateKey (
   IN OUT  VOID   *EcContext,
   OUT     UINT8  *PublicKey,
   IN OUT  UINTN  *PublicKeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGenerateKey, (EcContext, PublicKey, PublicKeySize), FALSE);
+}
+
 
 /**
   Gets the public key component from the established EC context.
@@ -3580,7 +3726,11 @@ EcGetPubKey (
   IN OUT  VOID   *EcContext,
   OUT     UINT8  *PublicKey,
   IN OUT  UINTN  *PublicKeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGetPubKey, (EcContext, PublicKey, PublicKeySize), FALSE);
+}
+
 
 /**
   Computes exchanged common key.
@@ -3619,7 +3769,11 @@ EcDhComputeKey (
   IN      CONST INT32  *CompressFlag,
   OUT     UINT8        *Key,
   IN OUT  UINTN        *KeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcDhComputeKey, (EcContext, PeerPublic, PeerPublicSize, CompressFlag, Key, KeySize), FALSE);
+}
+
 
 /**
   Retrieve the EC Private Key from the password-protected PEM key data.
@@ -3647,7 +3801,11 @@ EcGetPrivateKeyFromPem (
   IN   UINTN        PemSize,
   IN   CONST CHAR8  *Password,
   OUT  VOID         **EcContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGetPrivateKeyFromPem, (PemData, PemSize, Password, EcContext), FALSE);
+}
+
 
 /**
   Retrieve the EC Public Key from one DER-encoded X509 certificate.
@@ -3673,7 +3831,11 @@ EcGetPublicKeyFromX509 (
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  VOID         **EcContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGetPublicKeyFromX509, (Cert, CertSize, EcContext), FALSE);
+}
+
 
 /**
   Carries out the EC-DSA signature.
@@ -3715,7 +3877,11 @@ EcDsaSign (
   IN      UINTN        HashSize,
   OUT     UINT8        *Signature,
   IN OUT  UINTN        *SigSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcDsaSign, (EcContext, HashNid, MessageHash, HashSize, Signature, SigSize), FALSE);
+}
+
 
 /**
   Verifies the EC-DSA signature.
@@ -3751,20 +3917,11 @@ EcDsaVerify (
   IN  UINTN        HashSize,
   IN  CONST UINT8  *Signature,
   IN  UINTN        SigSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcDsaVerify, (EcContext, HashNid, MessageHash, HashSize, Signature, SigSize), FALSE);
+}
 
-/** @} */ // end of EC group
-
-/**
-  @defgroup RSA Public Key Cryptography
-  @brief Functions for RSA public key cryptography.
-
-  @{
-**/
-
-// =====================================================================================
-//    Asymmetric Cryptography Primitive
-// =====================================================================================
 
 /**
   Allocates and initializes one RSA context for subsequent use.
@@ -3779,7 +3936,11 @@ VOID *
 EFIAPI
 RsaNew (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaNew, (), NULL);
+}
+
 
 /**
   Release the specified RSA context.
@@ -3795,7 +3956,11 @@ VOID
 EFIAPI
 RsaFree (
   IN  VOID  *RsaContext
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (RsaFree, (RsaContext));
+}
+
 
 /**
   Sets the tag-designated key component into the established RSA context.
@@ -3828,7 +3993,11 @@ RsaSetKey (
   IN      RSA_KEY_TAG  KeyTag,
   IN      CONST UINT8  *BigNumber,
   IN      UINTN        BnSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaSetKey, (RsaContext, KeyTag, BigNumber, BnSize), FALSE);
+}
+
 
 /**
   Gets the tag-designated RSA key component from the established RSA context.
@@ -3867,7 +4036,11 @@ RsaGetKey (
   IN      RSA_KEY_TAG  KeyTag,
   OUT     UINT8        *BigNumber,
   IN OUT  UINTN        *BnSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaGetKey, (RsaContext, KeyTag, BigNumber, BnSize), FALSE);
+}
+
 
 /**
   Generates RSA key components.
@@ -3901,7 +4074,11 @@ RsaGenerateKey (
   IN      UINTN        ModulusLength,
   IN      CONST UINT8  *PublicExponent,
   IN      UINTN        PublicExponentSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaGenerateKey, (RsaContext, ModulusLength, PublicExponent, PublicExponentSize), FALSE);
+}
+
 
 /**
   Validates key components of RSA context.
@@ -3930,7 +4107,11 @@ BOOLEAN
 EFIAPI
 RsaCheckKey (
   IN  VOID  *RsaContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaCheckKey, (RsaContext), FALSE);
+}
+
 
 /**
   Carries out the RSA-SSA signature generation with EMSA-PKCS1-v1_5 encoding scheme.
@@ -3969,7 +4150,11 @@ RsaPkcs1Sign (
   IN      UINTN        HashSize,
   OUT     UINT8        *Signature,
   IN OUT  UINTN        *SigSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaPkcs1Sign, (RsaContext, MessageHash, HashSize, Signature, SigSize), FALSE);
+}
+
 
 /**
   Verifies the RSA-SSA signature with EMSA-PKCS1-v1_5 encoding scheme defined in
@@ -4000,7 +4185,11 @@ RsaPkcs1Verify (
   IN  UINTN        HashSize,
   IN  CONST UINT8  *Signature,
   IN  UINTN        SigSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaPkcs1Verify, (RsaContext, MessageHash, HashSize, Signature, SigSize), FALSE);
+}
+
 
 /**
   Carries out the RSA-SSA signature generation with EMSA-PSS encoding scheme.
@@ -4046,7 +4235,11 @@ RsaPssSign (
   IN      UINT16       SaltLen,
   OUT     UINT8        *Signature,
   IN OUT  UINTN        *SigSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaPssSign, (RsaContext, Message, MsgSize, DigestLen, SaltLen, Signature, SigSize), FALSE);
+}
+
 
 /**
   Verifies the RSA signature with RSASSA-PSS signature scheme defined in RFC 8017.
@@ -4078,7 +4271,11 @@ RsaPssVerify (
   IN  UINTN        SigSize,
   IN  UINT16       DigestLen,
   IN  UINT16       SaltLen
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaPssVerify, (RsaContext, Message, MsgSize, Signature, SigSize, DigestLen, SaltLen), FALSE);
+}
+
 
 /**
   Retrieve the RSA Private Key from the password-protected PEM key data.
@@ -4108,7 +4305,11 @@ RsaGetPrivateKeyFromPem (
   IN   UINTN        PemSize,
   IN   CONST CHAR8  *Password,
   OUT  VOID         **RsaContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaGetPrivateKeyFromPem, (PemData, PemSize, Password, RsaContext), FALSE);
+}
+
 
 /**
   Retrieve the RSA Public Key from one DER-encoded X509 certificate.
@@ -4136,16 +4337,11 @@ RsaGetPublicKeyFromX509 (
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  VOID         **RsaContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaGetPublicKeyFromX509, (Cert, CertSize, RsaContext), FALSE);
+}
 
-/** @} */ // end of RSA group
-
-/**
-  @defgroup X509 X.509 Certificate
-  @brief Functions for X.509 certificate manipulation.
-
-  @{
-**/
 
 /**
   Retrieve the subject bytes from one X.509 certificate.
@@ -4175,7 +4371,11 @@ X509GetSubjectName (
   IN      UINTN        CertSize,
   OUT     UINT8        *CertSubject,
   IN OUT  UINTN        *SubjectSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetSubjectName, (Cert, CertSize, CertSubject, SubjectSize), FALSE);
+}
+
 
 /**
   Retrieve the common name (CN) string from one X.509 certificate.
@@ -4212,7 +4412,11 @@ X509GetCommonName (
   IN      UINTN        CertSize,
   OUT     CHAR8        *CommonName   OPTIONAL,
   IN OUT  UINTN        *CommonNameSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetCommonName, (Cert, CertSize, CommonName, CommonNameSize), 0);
+}
+
 
 /**
   Retrieve the organization name (O) string from one X.509 certificate.
@@ -4249,7 +4453,11 @@ X509GetOrganizationName (
   IN      UINTN        CertSize,
   OUT     CHAR8        *NameBuffer   OPTIONAL,
   IN OUT  UINTN        *NameBufferSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetOrganizationName, (Cert, CertSize, NameBuffer, NameBufferSize), 0);
+}
+
 
 /**
   Verify one X509 certificate was issued by the trusted CA.
@@ -4278,7 +4486,11 @@ X509VerifyCert (
   IN  UINTN        CertSize,
   IN  CONST UINT8  *CACert,
   IN  UINTN        CACertSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509VerifyCert, (Cert, CertSize, CACert, CACertSize), FALSE);
+}
+
 
 /**
   Construct a X509 object from DER-encoded certificate data.
@@ -4304,7 +4516,11 @@ X509ConstructCertificate (
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  UINT8        **SingleX509Cert
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509ConstructCertificate, (Cert, CertSize, SingleX509Cert), FALSE);
+}
+
 
 /**
   Construct a X509 stack object from a list of DER-encoded certificate data.
@@ -4332,7 +4548,11 @@ EFIAPI
 X509ConstructCertificateStackV (
   IN OUT  UINT8    **X509Stack,
   IN      VA_LIST  Args
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509ConstructCertificateStackV, (X509Stack, Args), FALSE);
+}
+
 
 /**
   Construct a X509 stack object from a list of DER-encoded certificate data.
@@ -4359,7 +4579,14 @@ EFIAPI
 X509ConstructCertificateStack (
   IN OUT  UINT8  **X509Stack,
   ...
-  );
+  )
+{
+  VA_LIST  Args;
+  VA_START (Args, X509Stack);
+  CALL_CRYPTO_SERVICE (X509ConstructCertificateStack, (X509Stack, Args), FALSE);
+  VA_END (Args);
+}
+
 
 /**
   Release the specified X509 object.
@@ -4375,7 +4602,11 @@ VOID
 EFIAPI
 X509Free (
   IN  VOID  *X509Cert
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (X509Free, (X509Cert));
+}
+
 
 /**
   Release the specified X509 stack object.
@@ -4391,7 +4622,11 @@ VOID
 EFIAPI
 X509StackFree (
   IN  VOID  *X509Stack
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (X509StackFree, (X509Stack));
+}
+
 
 /**
   Retrieve the TBSCertificate from one given X.509 certificate.
@@ -4419,7 +4654,11 @@ X509GetTBSCert (
   IN  UINTN        CertSize,
   OUT UINT8        **TBSCert,
   OUT UINTN        *TBSCertSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetTBSCert, (Cert, CertSize, TBSCert, TBSCertSize), FALSE);
+}
+
 
 /**
   Retrieve the version from one X.509 certificate.
@@ -4445,7 +4684,11 @@ X509GetVersion (
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     UINTN        *Version
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetVersion, (Cert, CertSize, Version), FALSE);
+}
+
 
 /**
   Retrieve the serialNumber from one X.509 certificate.
@@ -4480,7 +4723,11 @@ X509GetSerialNumber (
   IN      UINTN CertSize,
   OUT     UINT8 *SerialNumber, OPTIONAL
   IN OUT  UINTN         *SerialNumberSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetSerialNumber, (Cert, CertSize, SerialNumber, SerialNumberSize), FALSE);
+}
+
 
 /**
   Retrieve the issuer bytes from one X.509 certificate.
@@ -4510,7 +4757,11 @@ X509GetIssuerName (
   IN      UINTN        CertSize,
   OUT     UINT8        *CertIssuer,
   IN OUT  UINTN        *CertIssuerSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetIssuerName, (Cert, CertSize, CertIssuer, CertIssuerSize), FALSE);
+}
+
 
 /**
   Retrieve the Signature Algorithm from one X.509 certificate.
@@ -4540,7 +4791,11 @@ X509GetSignatureAlgorithm (
   IN       UINTN CertSize,
   OUT      UINT8 *Oid, OPTIONAL
   IN OUT   UINTN       *OidSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetSignatureAlgorithm, (Cert, CertSize, Oid, OidSize), FALSE);
+}
+
 
 /**
   Retrieve the Extended Key Usage from one X.509 certificate.
@@ -4569,7 +4824,11 @@ X509GetExtendedKeyUsage (
   IN     UINTN        CertSize,
   OUT UINT8           *Usage,
   IN OUT UINTN        *UsageSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetExtendedKeyUsage, (Cert, CertSize, Usage, UsageSize), FALSE);
+}
+
 
 /**
   Retrieve Extension data from one X.509 certificate.
@@ -4603,7 +4862,11 @@ X509GetExtensionData (
   IN     UINTN        OidSize,
   OUT UINT8           *ExtensionData,
   IN OUT UINTN        *ExtensionDataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetExtensionData, (Cert, CertSize, Oid, OidSize, ExtensionData, ExtensionDataSize), FALSE);
+}
+
 
 /**
   Retrieve the Validity from one X.509 certificate
@@ -4638,7 +4901,11 @@ X509GetValidity (
   IN OUT UINTN        *FromSize,
   IN     UINT8        *To,
   IN OUT UINTN        *ToSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetValidity, (Cert, CertSize, From, FromSize, To, ToSize), FALSE);
+}
+
 
 /**
   Format a DateTimeStr to DataTime object in DataTime Buffer
@@ -4672,7 +4939,11 @@ X509FormatDateTime (
   IN  CONST  CHAR8  *DateTimeStr,
   OUT VOID          *DateTime,
   IN OUT UINTN      *DateTimeSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509FormatDateTime, (DateTimeStr, DateTime, DateTimeSize), FALSE);
+}
+
 
 /**
   Retrieve the Key Usage from one X.509 certificate.
@@ -4694,7 +4965,11 @@ X509GetKeyUsage (
   IN    CONST UINT8  *Cert,
   IN    UINTN        CertSize,
   OUT   UINTN        *Usage
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetKeyUsage, (Cert, CertSize, Usage), FALSE);
+}
+
 
 /**
   Verify one X509 certificate was issued by the trusted CA.
@@ -4722,7 +4997,11 @@ X509VerifyCertChain (
   IN UINTN        RootCertLength,
   IN CONST UINT8  *CertChain,
   IN UINTN        CertChainLength
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509VerifyCertChain, (RootCert, RootCertLength, CertChain, CertChainLength), FALSE);
+}
+
 
 /**
   Get one X509 certificate from CertChain.
@@ -4753,7 +5032,11 @@ X509GetCertFromCertChain (
   IN CONST INT32   CertIndex,
   OUT CONST UINT8  **Cert,
   OUT UINTN        *CertLength
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetCertFromCertChain, (CertChain, CertChainLength, CertIndex, Cert, CertLength), FALSE);
+}
+
 
 /**
   Retrieve the basic constraints from one X.509 certificate.
@@ -4783,20 +5066,11 @@ X509GetExtendedBasicConstraints (
   UINTN        CertSize,
   UINT8        *BasicConstraints,
   UINTN        *BasicConstraintsSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetExtendedBasicConstraints, (Cert, CertSize, BasicConstraints, BasicConstraintsSize), FALSE);
+}
 
-/** @} */ // end of X509 group
-
-/**
-  @defgroup Random Pseudo-Random Generation Primitives
-  @brief Functions for Pseudo-Random number generation.
-
-  @{
-**/
-
-// =====================================================================================
-//    Pseudo-Random Generation Primitive
-// =====================================================================================
 
 /**
   Sets up the seed value for the pseudorandom number generator.
@@ -4823,7 +5097,11 @@ EFIAPI
 RandomSeed (
   IN  CONST  UINT8  *Seed  OPTIONAL,
   IN  UINTN         SeedSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RandomSeed, (Seed, SeedSize), FALSE);
+}
+
 
 /**
   Generates a pseudorandom byte stream of the specified size.
@@ -4846,16 +5124,11 @@ EFIAPI
 RandomBytes (
   OUT  UINT8  *Output,
   IN   UINTN  Size
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RandomBytes, (Output, Size), FALSE);
+}
 
-/** @} */ // end of Random group
-
-/**
-  @defgroup Tls Transport Layer Security
-  @brief Functions for TSL based network communication.
-
-  @{
-**/
 
 /**
   Initializes the OpenSSL library.
@@ -4874,7 +5147,11 @@ BOOLEAN
 EFIAPI
 TlsInitialize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsInitialize, (), FALSE);
+}
+
 
 /**
   Free an allocated SSL_CTX object.
@@ -4888,7 +5165,11 @@ VOID
 EFIAPI
 TlsCtxFree (
   IN   VOID  *TlsCtx
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (TlsCtxFree, (TlsCtx));
+}
+
 
 /**
   Creates a new SSL_CTX object as framework to establish TLS/SSL enabled
@@ -4908,7 +5189,11 @@ EFIAPI
 TlsCtxNew (
   IN     UINT8  MajorVer,
   IN     UINT8  MinorVer
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsCtxNew, (MajorVer, MinorVer), NULL);
+}
+
 
 /**
   Free an allocated TLS object.
@@ -4925,7 +5210,11 @@ VOID
 EFIAPI
 TlsFree (
   IN     VOID  *Tls
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (TlsFree, (Tls));
+}
+
 
 /**
   Create a new TLS object for a connection.
@@ -4946,7 +5235,11 @@ VOID *
 EFIAPI
 TlsNew (
   IN     VOID  *TlsCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsNew, (TlsCtx), NULL);
+}
+
 
 /**
   Checks if the TLS handshake was done.
@@ -4965,7 +5258,11 @@ BOOLEAN
 EFIAPI
 TlsInHandshake (
   IN     VOID  *Tls
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsInHandshake, (Tls), FALSE);
+}
+
 
 /**
   Perform a TLS/SSL handshake.
@@ -5003,7 +5300,11 @@ TlsDoHandshake (
   IN     UINTN  BufferInSize  OPTIONAL,
   OUT UINT8     *BufferOut  OPTIONAL,
   IN OUT UINTN  *BufferOutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsDoHandshake, (Tls, BufferIn, BufferInSize, BufferOut, BufferOutSize), 0);
+}
+
 
 /**
   Handle Alert message recorded in BufferIn. If BufferIn is NULL and BufferInSize is zero,
@@ -5040,7 +5341,11 @@ TlsHandleAlert (
   IN     UINTN  BufferInSize  OPTIONAL,
   OUT UINT8     *BufferOut  OPTIONAL,
   IN OUT UINTN  *BufferOutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsHandleAlert, (Tls, BufferIn, BufferInSize, BufferOut, BufferOutSize), 0);
+}
+
 
 /**
   Build the CloseNotify packet.
@@ -5068,7 +5373,11 @@ TlsCloseNotify (
   IN     VOID   *Tls,
   IN OUT UINT8  *Buffer,
   IN OUT UINTN  *BufferSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsCloseNotify, (Tls, Buffer, BufferSize), 0);
+}
+
 
 /**
   Attempts to read bytes from one TLS object and places the data in Buffer.
@@ -5092,7 +5401,11 @@ TlsCtrlTrafficOut (
   IN     VOID   *Tls,
   IN OUT VOID   *Buffer,
   IN     UINTN  BufferSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsCtrlTrafficOut, (Tls, Buffer, BufferSize), 0);
+}
+
 
 /**
   Attempts to write data from the buffer to TLS object.
@@ -5116,7 +5429,11 @@ TlsCtrlTrafficIn (
   IN     VOID   *Tls,
   IN     VOID   *Buffer,
   IN     UINTN  BufferSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsCtrlTrafficIn, (Tls, Buffer, BufferSize), 0);
+}
+
 
 /**
   Attempts to read bytes from the specified TLS connection into the buffer.
@@ -5141,7 +5458,11 @@ TlsRead (
   IN     VOID   *Tls,
   IN OUT VOID   *Buffer,
   IN     UINTN  BufferSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsRead, (Tls, Buffer, BufferSize), 0);
+}
+
 
 /**
   Attempts to write data to a TLS connection.
@@ -5166,7 +5487,11 @@ TlsWrite (
   IN     VOID   *Tls,
   IN     VOID   *Buffer,
   IN     UINTN  BufferSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsWrite, (Tls, Buffer, BufferSize), 0);
+}
+
 
 /**
   Shutdown a TLS connection.
@@ -5188,7 +5513,11 @@ EFI_STATUS
 EFIAPI
 TlsShutdown (
   IN     VOID  *Tls
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsShutdown, (Tls), 0);
+}
+
 
 /**
   Set a new TLS/SSL method for a particular TLS object.
@@ -5212,7 +5541,11 @@ TlsSetVersion (
   IN     VOID   *Tls,
   IN     UINT8  MajorVer,
   IN     UINT8  MinorVer
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetVersion, (Tls, MajorVer, MinorVer), 0);
+}
+
 
 /**
   Set TLS object to work in client or server mode.
@@ -5234,7 +5567,11 @@ EFIAPI
 TlsSetConnectionEnd (
   IN     VOID     *Tls,
   IN     BOOLEAN  IsServer
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetConnectionEnd, (Tls, IsServer), 0);
+}
+
 
 /**
   Set the ciphers list to be used by the TLS object.
@@ -5262,7 +5599,11 @@ TlsSetCipherList (
   IN     VOID    *Tls,
   IN     UINT16  *CipherId,
   IN     UINTN   CipherNum
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetCipherList, (Tls, CipherId, CipherNum), 0);
+}
+
 
 /**
   Set the compression method for TLS/SSL operations.
@@ -5283,7 +5624,11 @@ EFI_STATUS
 EFIAPI
 TlsSetCompressionMethod (
   IN     UINT8  CompMethod
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetCompressionMethod, (CompMethod), 0);
+}
+
 
 /**
   Set peer certificate verification mode for the TLS connection.
@@ -5301,7 +5646,11 @@ EFIAPI
 TlsSetVerify (
   IN     VOID    *Tls,
   IN     UINT32  VerifyMode
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (TlsSetVerify, (Tls, VerifyMode));
+}
+
 
 /**
   Set the specified host name to be verified.
@@ -5323,7 +5672,11 @@ TlsSetVerifyHost (
   IN     VOID    *Tls,
   IN     UINT32  Flags,
   IN     CHAR8   *HostName
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetVerifyHost, (Tls, Flags, HostName), 0);
+}
+
 
 /**
   Sets a TLS/SSL session ID to be used during TLS/SSL connect.
@@ -5348,7 +5701,11 @@ TlsSetSessionId (
   IN     VOID    *Tls,
   IN     UINT8   *SessionId,
   IN     UINT16  SessionIdLen
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetSessionId, (Tls, SessionId, SessionIdLen), 0);
+}
+
 
 /**
   Adds the CA to the cert store when requesting Server or Client authentication.
@@ -5375,7 +5732,11 @@ TlsSetCaCertificate (
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetCaCertificate, (Tls, Data, DataSize), 0);
+}
+
 
 /**
   Loads the local public certificate into the specified TLS object.
@@ -5402,7 +5763,11 @@ TlsSetHostPublicCert (
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetHostPublicCert, (Tls, Data, DataSize), 0);
+}
+
 
 /**
   Adds the local private key to the specified TLS object.
@@ -5431,7 +5796,11 @@ TlsSetHostPrivateKeyEx (
   IN     VOID   *Data,
   IN     UINTN  DataSize,
   IN     VOID   *Password  OPTIONAL
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetHostPrivateKeyEx, (Tls, Data, DataSize, Password), 0);
+}
+
 
 /**
   Adds the local private key to the specified TLS object.
@@ -5457,7 +5826,11 @@ TlsSetHostPrivateKey (
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetHostPrivateKey, (Tls, Data, DataSize), 0);
+}
+
 
 /**
   Adds the CA-supplied certificate revocation list for certificate validation.
@@ -5480,7 +5853,11 @@ EFIAPI
 TlsSetCertRevocationList (
   IN     VOID   *Data,
   IN     UINTN  DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetCertRevocationList, (Data, DataSize), 0);
+}
+
 
 /**
   Set the signature algorithm list to used by the TLS object.
@@ -5507,7 +5884,11 @@ TlsSetSignatureAlgoList (
   IN     VOID   *Tls,
   IN     UINT8  *Data,
   IN     UINTN  DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetSignatureAlgoList, (Tls, Data, DataSize), 0);
+}
+
 
 /**
   Set the EC curve to be used for TLS flows
@@ -5531,7 +5912,11 @@ TlsSetEcCurve (
   IN     VOID   *Tls,
   IN     UINT8  *Data,
   IN     UINTN  DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetEcCurve, (Tls, Data, DataSize), 0);
+}
+
 
 /**
   Gets the protocol version used by the specified TLS connection.
@@ -5552,7 +5937,11 @@ UINT16
 EFIAPI
 TlsGetVersion (
   IN     VOID  *Tls
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetVersion, (Tls), 0);
+}
+
 
 /**
   Gets the connection end of the specified TLS connection.
@@ -5573,7 +5962,11 @@ UINT8
 EFIAPI
 TlsGetConnectionEnd (
   IN     VOID  *Tls
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetConnectionEnd, (Tls), 0);
+}
+
 
 /**
   Gets the cipher suite used by the specified TLS connection.
@@ -5596,7 +5989,11 @@ EFIAPI
 TlsGetCurrentCipher (
   IN     VOID    *Tls,
   IN OUT UINT16  *CipherId
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetCurrentCipher, (Tls, CipherId), 0);
+}
+
 
 /**
   Gets the compression methods used by the specified TLS connection.
@@ -5621,7 +6018,11 @@ EFIAPI
 TlsGetCurrentCompressionId (
   IN     VOID   *Tls,
   IN OUT UINT8  *CompressionId
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetCurrentCompressionId, (Tls, CompressionId), 0);
+}
+
 
 /**
   Gets the verification mode currently set in the TLS connection.
@@ -5642,7 +6043,11 @@ UINT32
 EFIAPI
 TlsGetVerify (
   IN     VOID  *Tls
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetVerify, (Tls), 0);
+}
+
 
 /**
   Gets the session ID used by the specified TLS connection.
@@ -5667,7 +6072,11 @@ TlsGetSessionId (
   IN     VOID    *Tls,
   IN OUT UINT8   *SessionId,
   IN OUT UINT16  *SessionIdLen
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetSessionId, (Tls, SessionId, SessionIdLen), 0);
+}
+
 
 /**
   Gets the client random data used in the specified TLS connection.
@@ -5687,7 +6096,11 @@ EFIAPI
 TlsGetClientRandom (
   IN     VOID   *Tls,
   IN OUT UINT8  *ClientRandom
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (TlsGetClientRandom, (Tls, ClientRandom));
+}
+
 
 /**
   Gets the server random data used in the specified TLS connection.
@@ -5707,7 +6120,11 @@ EFIAPI
 TlsGetServerRandom (
   IN     VOID   *Tls,
   IN OUT UINT8  *ServerRandom
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (TlsGetServerRandom, (Tls, ServerRandom));
+}
+
 
 /**
   Gets the master key data used in the specified TLS connection.
@@ -5730,7 +6147,11 @@ EFIAPI
 TlsGetKeyMaterial (
   IN     VOID   *Tls,
   IN OUT UINT8  *KeyMaterial
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetKeyMaterial, (Tls, KeyMaterial), 0);
+}
+
 
 /**
   Gets the CA Certificate from the cert store.
@@ -5756,7 +6177,11 @@ TlsGetCaCertificate (
   IN     VOID   *Tls,
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetCaCertificate, (Tls, Data, DataSize), 0);
+}
+
 
 /**
   Gets the local public Certificate set in the specified TLS object.
@@ -5783,7 +6208,11 @@ TlsGetHostPublicCert (
   IN     VOID   *Tls,
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetHostPublicCert, (Tls, Data, DataSize), 0);
+}
+
 
 /**
   Gets the local private key set in the specified TLS object.
@@ -5809,7 +6238,11 @@ TlsGetHostPrivateKey (
   IN     VOID   *Tls,
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetHostPrivateKey, (Tls, Data, DataSize), 0);
+}
+
 
 /**
   Gets the CA-supplied certificate revocation list data set in the specified
@@ -5833,7 +6266,11 @@ EFIAPI
 TlsGetCertRevocationList (
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetCertRevocationList, (Data, DataSize), 0);
+}
+
 
 /**
   Derive keying material from a TLS connection.
@@ -5864,16 +6301,11 @@ TlsGetExportKey (
   IN     UINTN       ContextLen,
   OUT    VOID        *KeyBuffer,
   IN     UINTN       KeyBufferLen
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetExportKey, (Tls, Label, Context, ContextLen, KeyBuffer, KeyBufferLen), 0);
+}
 
-/** @} */ // end of Tls group
-
-/**
-  @defgroup TS Timestamp Verification
-  @brief Functions for timestamp verification.
-
-  @{
-**/
 
 /**
   Verifies the validity of a RFC3161 Timestamp CounterSignature embedded in PE/COFF Authenticode
@@ -5904,8 +6336,7 @@ ImageTimestampVerify (
   IN  CONST UINT8  *TsaCert,
   IN  UINTN        CertSize,
   OUT EFI_TIME     *SigningTime
-  );
-
-/** @} */ // end of Timestamp group
-/** @} */ // end of OneCryptoPkg group
-#endif // ONE_CRYPTO_LIBRARY_H_
+  )
+{
+  CALL_CRYPTO_SERVICE (ImageTimestampVerify, (AuthData, DataSize, TsaCert, CertSize, SigningTime), FALSE);
+}

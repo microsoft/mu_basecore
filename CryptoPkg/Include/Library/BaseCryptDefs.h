@@ -1,5 +1,5 @@
 /** @file
-  OneCryptoDefinitions.h
+  BaseCryptDefs.h
 
   This file contains the definitions and constants used in the shared cryptographic library that
   are shared across different headers.
@@ -8,8 +8,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef ONE_CRYPTO_DEFINITIONS_H_
-#define ONE_CRYPTO_DEFINITIONS_H_
+#ifndef BASE_CRYPT_DEFS_H_
+#define BASE_CRYPT_DEFS_H_
 
 #include <Uefi.h>
 
@@ -117,4 +117,4 @@ typedef struct {
 
 #pragma pack()
 
-#endif // ONE_CRYPTO_DEFINITIONS_H_
+#endif // BASE_CRYPT_DEFS_H_
