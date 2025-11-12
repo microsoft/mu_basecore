@@ -35,16 +35,16 @@
     if (CryptoServices != NULL) {                                      \
   /* Validate protocol version compatibility */                    \
       if (CryptoServices->Major != VERSION_MAJOR) { \
-        DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol major version mismatch: expected %d.%d.%d, got %d.%d.%d.\n", \
-                gEfiCallerBaseName, VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION, \
-                CryptoServices->Major, CryptoServices->Minor, CryptoServices->Revision)); \
+        DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol major version mismatch: expected %d.%d, got %d.%d.\n", \
+                gEfiCallerBaseName, VERSION_MAJOR, VERSION_MINOR, \
+                CryptoServices->Major, CryptoServices->Minor)); \
         ASSERT (FALSE);                                                \
         return ErrorReturnValue;                                       \
       }                                                                \
       if (CryptoServices->Minor < VERSION_MINOR) { \
-        DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol minor version mismatch: expected %d.%d.%d, got %d.%d.%d.\n", \
-                gEfiCallerBaseName, VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION, \
-                CryptoServices->Major, CryptoServices->Minor, CryptoServices->Revision)); \
+        DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol minor version mismatch: expected %d.%d, got %d.%d.\n", \
+                gEfiCallerBaseName, VERSION_MAJOR, VERSION_MINOR, \
+                CryptoServices->Major, CryptoServices->Minor)); \
         ASSERT (FALSE);                                                \
         return ErrorReturnValue;                                       \
       }                                                                \
@@ -74,16 +74,16 @@
     if (CryptoServices != NULL) {                                      \
   /* Validate protocol version compatibility */                    \
       if (CryptoServices->Major != VERSION_MAJOR) { \
-        DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol major version mismatch: expected %d.%d.%d, got %d.%d.%d.\n", \
-                gEfiCallerBaseName, VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION, \
-                CryptoServices->Major, CryptoServices->Minor, CryptoServices->Revision)); \
+        DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol major version mismatch: expected %d.%d, got %d.%d.\n", \
+                gEfiCallerBaseName, VERSION_MAJOR, VERSION_MINOR, \
+                CryptoServices->Major, CryptoServices->Minor)); \
         ASSERT (FALSE);                                                \
         return;                                       \
       }                                                                \
       if (CryptoServices->Minor < VERSION_MINOR) { \
-        DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol minor version mismatch: expected %d.%d.%d, got %d.%d.%d.\n", \
-                gEfiCallerBaseName, VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION, \
-                CryptoServices->Major, CryptoServices->Minor, CryptoServices->Revision)); \
+        DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol minor version mismatch: expected %d.%d, got %d.%d.\n", \
+                gEfiCallerBaseName, VERSION_MAJOR, VERSION_MINOR, \
+                CryptoServices->Major, CryptoServices->Minor)); \
         ASSERT (FALSE);                                                \
         return;                                                        \
       }                                                                \
