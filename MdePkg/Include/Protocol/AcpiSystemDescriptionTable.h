@@ -258,6 +258,26 @@ typedef struct _EFI_ACPI_SDT_PROTOCOL {
   EFI_ACPI_FIND_PATH          FindPath;
 } EFI_ACPI_SDT_PROTOCOL;
 
+// SHERRY: produced by Rust.
+typedef struct _EFI_ACPI_GET_PROTOCOL {
+  EFI_ACPI_GET_ACPI_TABLE2    GetAcpiTable;
+  EFI_ACPI_REGISTER_NOTIFY    RegisterNotify;
+} EFI_ACPI_GET_PROTOCOL;
+
+// SHERRY: uses Rust `get`, implemented in C.
+typedef struct _EFI_AML_PROTOCOL {
+  EFI_ACPI_OPEN          Open;
+  EFI_ACPI_OPEN_SDT      OpenSdt;
+  EFI_ACPI_CLOSE         Close;
+  EFI_ACPI_GET_CHILD     GetChild;
+  EFI_ACPI_GET_OPTION    GetOption;
+  EFI_ACPI_SET_OPTION    SetOption;
+  EFI_ACPI_FIND_PATH     FindPath;
+} EFI_AML_PROTOCOL;
+
 extern EFI_GUID  gEfiAcpiSdtProtocolGuid;
+
+extern EFI_GUID  gEfiAcpiGetProtocolGuid;
+extern EFI_GUID  gEfiAmlProtocolGuid;
 
 #endif // __ACPI_SYSTEM_DESCRIPTION_TABLE_H___

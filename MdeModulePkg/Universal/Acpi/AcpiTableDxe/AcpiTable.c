@@ -64,17 +64,28 @@ InitializeAcpiTableDxe (
 
   //
   // Install ACPI Table protocol
+  // SHERRY: this installs ACPI protocols.
   //
   if (FeaturePcdGet (PcdInstallAcpiSdtProtocol)) {
     mPrivateData = PrivateData;
-    Status       = gBS->InstallMultipleProtocolInterfaces (
-                          &mHandle,
-                          &gEfiAcpiTableProtocolGuid,
-                          &PrivateData->AcpiTableProtocol,
-                          &gEfiAcpiSdtProtocolGuid,
-                          &mPrivateData->AcpiSdtProtocol,
-                          NULL
-                          );
+    // Status       = gBS->InstallMultipleProtocolInterfaces (
+    //                       &mHandle,
+    //                       &gEfiAcpiTableProtocolGuid,
+    //                       &PrivateData->AcpiTableProtocol,
+    //                       &gEfiAcpiSdtProtocolGuid,
+    //                       &mPrivateData->AcpiSdtProtocol,
+    //                       NULL
+    //                       );
+    gBS->InstallMultipleProtocolInterfaces (
+           &mHandle,
+           &gEfiAcpiTableProtocolGuid,
+           &PrivateData->AcpiTableProtocol,
+           &gEfiAcpiGetProtocolGuid,
+           &mPrivateData->AcpiGetProtocol,
+           &gEfiAmlProtocolGuid,
+           &mPrivateData->AmlProtocol,
+           NULL
+           );
   } else {
     Status = gBS->InstallMultipleProtocolInterfaces (
                     &mHandle,

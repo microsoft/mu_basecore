@@ -25,6 +25,21 @@ EFI_ACPI_SDT_PROTOCOL  mAcpiSdtProtocolTemplate = {
   FindPath
 };
 
+EFI_ACPI_GET_PROTOCOL  mAcpiGetProtocolTemplate = {
+  GetAcpiTable2,
+  RegisterNotify,
+};
+
+EFI_AML_PROTOCOL  mAmlProtocolTemplate = {
+  Open,
+  OpenSdt,
+  Close,
+  GetChild,
+  GetOption,
+  SetOption,
+  FindPath
+};
+
 /**
   This function returns ACPI Table instance.
 
@@ -471,23 +486,46 @@ SdtOpenSdtTable (
   EFI_STATUS               Status;
   EFI_ACPI_TABLE_LIST      *Table;
   EFI_AML_HANDLE           *AmlHandle;
+  EFI_ACPI_TABLE_VERSION   Version;
+  UINTN                    temp;
 
   //
   // Get the instance of the ACPI Table
   //
-  AcpiTableInstance = SdtGetAcpiTableInstance ();
+  // AcpiTableInstance = SdtGetAcpiTableInstance ();
+  // SHERRY: will this work? the protocol has to be installed BEFORE this is called.
+  // I think it should work because the this is installed (theoretically) by the ACPI component entry point.
+  EFI_ACPI_GET_PROTOCOL  *AcpiGetProtocolP;
+
+  Status = gBS->LocateProtocol (
+                  &gEfiAcpiGetProtocolGuid,
+                  NULL,
+                  (VOID **)&AcpiGetProtocolP
+                  );
+
+  Status = AcpiGetProtocolP->GetAcpiTable (
+                               TableKey,
+                               &Table, // SHERRY: Now `Table` is filled out by the Get protocol instead of manual search through global ACPI list.
+                               &Version,
+                               &temp
+                               );
+
+  // IN    UINTN                   Index,
+  // OUT   EFI_ACPI_SDT_HEADER     **Table,
+  // OUT   EFI_ACPI_TABLE_VERSION  *Version,
+  // OUT   UINTN                   *TableKey
 
   //
   // Find the table
   //
-  Status = FindTableByHandle (
-             TableKey,
-             &AcpiTableInstance->TableList,
-             &Table
-             );
-  if (EFI_ERROR (Status)) {
-    return EFI_NOT_FOUND;
-  }
+  // Status = FindTableByHandle (
+  //            TableKey,
+  //            &AcpiTableInstance->TableList,
+  //            &Table
+  //            );
+  // if (EFI_ERROR (Status)) {
+  //   return EFI_NOT_FOUND;
+  // }
 
   AmlHandle = AllocatePool (sizeof (*AmlHandle));
   ASSERT (AmlHandle != NULL);
@@ -1126,8 +1164,11 @@ SdtAcpiTableAcpiSdtConstructor (
   IN EFI_ACPI_TABLE_INSTANCE  *AcpiTableInstance
   )
 {
+  // SHERRY: this sets mPrivateData's SDT protocol.
   InitializeListHead (&AcpiTableInstance->NotifyList);
-  CopyMem (&AcpiTableInstance->AcpiSdtProtocol, &mAcpiSdtProtocolTemplate, sizeof (mAcpiSdtProtocolTemplate));
+  // CopyMem (&AcpiTableInstance->AcpiSdtProtocol, &mAcpiSdtProtocolTemplate, sizeof (mAcpiSdtProtocolTemplate));
+  CopyMem (&AcpiTableInstance->AcpiGetProtocol, &mAcpiGetProtocolTemplate, sizeof (mAcpiGetProtocolTemplate));
+  CopyMem (&AcpiTableInstance->AmlProtocol, &mAmlProtocolTemplate, sizeof (mAmlProtocolTemplate));
   AcpiTableInstance->AcpiSdtProtocol.AcpiVersion = (EFI_ACPI_TABLE_VERSION)PcdGet32 (PcdAcpiExposedTableVersions);
 
   return;

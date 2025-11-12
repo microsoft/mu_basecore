@@ -111,8 +111,10 @@ typedef struct {
   UINTN                                           NumberOfTableEntries1; // Number of ACPI 1.0 tables
   UINTN                                           NumberOfTableEntries3; // Number of ACPI 3.0 tables
   UINTN                                           CurrentHandle;
-  EFI_ACPI_TABLE_PROTOCOL                         AcpiTableProtocol;
-  EFI_ACPI_SDT_PROTOCOL                           AcpiSdtProtocol;
+  EFI_ACPI_TABLE_PROTOCOL                         AcpiTableProtocol; // SHERRY: produced by Rust.
+  EFI_ACPI_SDT_PROTOCOL                           AcpiSdtProtocol;   // SHERRY: now irrelevant, all consumers should use AcpiGetProtocol or AmlProtocol.
+  EFI_AML_PROTOCOL                                AmlProtocol;       // SHERRY: uses Rust `get`, implemented in C.
+  EFI_ACPI_GET_PROTOCOL                           AcpiGetProtocol;   // SHERRY: produced by Rust.
   LIST_ENTRY                                      NotifyList;
 } EFI_ACPI_TABLE_INSTANCE;
 
