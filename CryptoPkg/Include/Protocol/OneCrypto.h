@@ -4974,36 +4974,38 @@ typedef BOOLEAN (EFIAPI *SHARED_IMAGE_TIMESTAMP_VERIFY)(
   );
 
 /**
-  Gets the OpenSSL version information.
+  Gets the cryptographic provider version information.
   
-  This function returns the OpenSSL version string that was used to compile
+  This function returns the version string of the cryptographic provider
+  (e.g., OpenSSL, MbedTLS, SymCrypt) that was used to compile
   the cryptographic library.
   
-  @retval Pointer to OpenSSL version string.
+  @retval Pointer to cryptographic provider version string.
 
   @since 1.0
   @ingroup Info
 **/
 typedef
 CONST CHAR8 *
-(EFIAPI *SHARED_GET_OPENSSL_VERSION_TEXT)(
+(EFIAPI *SHARED_GET_CRYPTO_PROVIDER_VERSION_TEXT)(
   VOID
   );
 
 /**
-  Gets the OpenSSL version number.
+  Gets the cryptographic provider version number.
   
-  This function returns the OpenSSL version number that was used to compile
+  This function returns the version number of the cryptographic provider
+  (e.g., OpenSSL, MbedTLS, SymCrypt) that was used to compile
   the cryptographic library.
 
-  @retval  OpenSSL version number.
+  @retval  Cryptographic provider version number.
 
   @since 1.0
   @ingroup Info
 **/
 typedef
 UINTN
-(EFIAPI *SHARED_GET_OPENSSL_VERSION_NUMBER)(
+(EFIAPI *SHARED_GET_CRYPTO_PROVIDER_VERSION_NUMBER)(
   VOID
   );
 
@@ -5261,8 +5263,8 @@ typedef struct _ONE_CRYPTO_PROTOCOL
   /// v1.0.0 Timestamp ---------------------------------------------------------
   SHARED_IMAGE_TIMESTAMP_VERIFY ImageTimestampVerify;
   /// v1.0.0 Info --------------------------------------------------------------
-  SHARED_GET_OPENSSL_VERSION_TEXT GetOpenSslVersionText;
-  SHARED_GET_OPENSSL_VERSION_NUMBER GetOpenSslVersionNumber;
+  SHARED_GET_CRYPTO_PROVIDER_VERSION_TEXT GetCryptoProviderVersionText;
+  SHARED_GET_CRYPTO_PROVIDER_VERSION_NUMBER GetCryptoProviderVersionNumber;
 } ONE_CRYPTO_PROTOCOL;
 
 #endif // ONE_CRYPTO_PROTOCOL_

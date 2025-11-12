@@ -5915,36 +5915,36 @@ ImageTimestampVerify (
 **/
 
 /**
-  Gets the OpenSSL version information.
+  Gets the cryptographic provider version information.
   
-  This function returns the OpenSSL version string that was used to compile
-  the cryptographic library.
+  This function returns the version string of the cryptographic provider
+  (e.g., OpenSSL, MbedTLS, SymCrypt) that was used to compile the library.
   
-  @retval  Pointer to OpenSSL version string.
+  @retval  Pointer to cryptographic provider version string.
 
   @since 1.0
   @ingroup Info
 **/
 CONST CHAR8 *
 EFIAPI
-GetOpenSslVersionText (
+GetCryptoProviderVersionText (
   VOID
   );
 
 /**
-  Gets the OpenSSL version number.
+  Gets the cryptographic provider version number.
   
-  This function returns the OpenSSL version number that was used to compile
-  the cryptographic library.
+  This function returns the version number of the cryptographic provider
+  (e.g., OpenSSL, MbedTLS, SymCrypt) that was used to compile the library.
   
-  @retval  OpenSSL version number.
+  @retval  Cryptographic provider version number.
 
   @since 1.0
   @ingroup Info
 **/
 UINTN
 EFIAPI
-GetOpenSslVersionNumber (
+GetCryptoProviderVersionNumber (
   VOID
   );
 
