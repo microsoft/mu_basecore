@@ -4973,6 +4973,40 @@ typedef BOOLEAN (EFIAPI *SHARED_IMAGE_TIMESTAMP_VERIFY)(
   OUT EFI_TIME     *SigningTime
   );
 
+/**
+  Gets the OpenSSL version information.
+  
+  This function returns the OpenSSL version string that was used to compile
+  the cryptographic library.
+  
+  @retval Pointer to OpenSSL version string.
+
+  @since 1.0
+  @ingroup Info
+**/
+typedef
+CONST CHAR8 *
+(EFIAPI *SHARED_GET_OPENSSL_VERSION_TEXT)(
+  VOID
+  );
+
+/**
+  Gets the OpenSSL version number.
+  
+  This function returns the OpenSSL version number that was used to compile
+  the cryptographic library.
+
+  @retval  OpenSSL version number.
+
+  @since 1.0
+  @ingroup Info
+**/
+typedef
+UINTN
+(EFIAPI *SHARED_GET_OPENSSL_VERSION_NUMBER)(
+  VOID
+  );
+
 // =============================================================================
 // Protocol
 // =============================================================================
@@ -5226,6 +5260,9 @@ typedef struct _ONE_CRYPTO_PROTOCOL
   SHARED_TLS_GET_EXPORT_KEY TlsGetExportKey;
   /// v1.0.0 Timestamp ---------------------------------------------------------
   SHARED_IMAGE_TIMESTAMP_VERIFY ImageTimestampVerify;
+  /// v1.0.0 Info --------------------------------------------------------------
+  SHARED_GET_OPENSSL_VERSION_TEXT GetOpenSslVersionText;
+  SHARED_GET_OPENSSL_VERSION_NUMBER GetOpenSslVersionNumber;
 } ONE_CRYPTO_PROTOCOL;
 
 #endif // ONE_CRYPTO_PROTOCOL_

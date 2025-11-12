@@ -5906,5 +5906,48 @@ ImageTimestampVerify (
   );
 
 /** @} */ // end of Timestamp group
+
+/**
+  @defgroup Info Library Information
+  @brief Functions for retrieving cryptographic library information.
+
+  @{
+**/
+
+/**
+  Gets the OpenSSL version information.
+  
+  This function returns the OpenSSL version string that was used to compile
+  the cryptographic library.
+  
+  @retval  Pointer to OpenSSL version string.
+
+  @since 1.0
+  @ingroup Info
+**/
+CONST CHAR8 *
+EFIAPI
+GetOpenSslVersionText (
+  VOID
+  );
+
+/**
+  Gets the OpenSSL version number.
+  
+  This function returns the OpenSSL version number that was used to compile
+  the cryptographic library.
+  
+  @retval  OpenSSL version number.
+
+  @since 1.0
+  @ingroup Info
+**/
+UINTN
+EFIAPI
+GetOpenSslVersionNumber (
+  VOID
+  );
+
+/** @} */ // end of Info group
 /** @} */ // end of BaseCryptLib group
 #endif // BASE_CRYPT_LIB_H_

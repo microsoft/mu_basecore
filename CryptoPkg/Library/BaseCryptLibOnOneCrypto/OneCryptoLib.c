@@ -6340,3 +6340,46 @@ ImageTimestampVerify (
 {
   CALL_CRYPTO_SERVICE (ImageTimestampVerify, (AuthData, DataSize, TsaCert, CertSize, SigningTime), FALSE);
 }
+// =====================================================================================
+//    Library Information
+// =====================================================================================
+
+/**
+  Gets the OpenSSL version information.
+  
+  This function returns the OpenSSL version string that was used to compile
+  the cryptographic library.
+  
+  @return  Pointer to OpenSSL version string.
+
+  @since 1.0
+  @ingroup Info
+**/
+CONST CHAR8 *
+EFIAPI
+GetOpenSslVersionText (
+  VOID
+  )
+{
+  CALL_CRYPTO_SERVICE (GetOpenSslVersionText, (), NULL);
+}
+
+/**
+  Gets the OpenSSL version number.
+  
+  This function returns the OpenSSL version number that was used to compile
+  the cryptographic library.
+  
+  @return  OpenSSL version number.
+
+  @since 1.0
+  @ingroup Info
+**/
+UINTN
+EFIAPI
+GetOpenSslVersionNumber (
+  VOID
+  )
+{
+  CALL_CRYPTO_SERVICE (GetOpenSslVersionNumber, (), 0);
+}
