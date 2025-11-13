@@ -5022,7 +5022,7 @@ UINTN
   different cryptographic implementations.
 
   Supports functions from versions:
-   - 1.0.0
+   - 1.0
 
   @since 1.0
   @ingroup OneCryptoProtocol
@@ -5039,7 +5039,7 @@ typedef struct _ONE_CRYPTO_PROTOCOL
   UINT16 Major;
   UINT16 Minor;
 
-  /// v1.0.0 HMAC --------------------------------------------------------------
+  /// v1.0 HMAC --------------------------------------------------------------
   SHARED_HMAC_SHA256_NEW HmacSha256New;
   SHARED_HMAC_SHA256_FREE HmacSha256Free;
   SHARED_HMAC_SHA256_SET_KEY HmacSha256SetKey;
@@ -5054,7 +5054,7 @@ typedef struct _ONE_CRYPTO_PROTOCOL
   SHARED_HMAC_SHA384_UPDATE HmacSha384Update;
   SHARED_HMAC_SHA384_FINAL HmacSha384Final;
   SHARED_HMAC_SHA384_ALL HmacSha384All;
-  /// v1.0.0 Hash --------------------------------------------------------------
+  /// v1.0 Hash --------------------------------------------------------------
   SHARED_MD5_GET_CONTEXT_SIZE Md5GetContextSize;
   SHARED_MD5_INIT Md5Init;
   SHARED_MD5_UPDATE Md5Update;
@@ -5091,14 +5091,14 @@ typedef struct _ONE_CRYPTO_PROTOCOL
   SHARED_SM3_UPDATE Sm3Update;
   SHARED_SM3_FINAL Sm3Final;
   SHARED_SM3_HASH_ALL Sm3HashAll;
-  /// v1.0.0 AES ---------------------------------------------------------------
+  /// v1.0 AES ---------------------------------------------------------------
   SHARED_AES_GET_CONTEXT_SIZE AesGetContextSize;
   SHARED_AES_INIT AesInit;
   SHARED_AES_CBC_ENCRYPT AesCbcEncrypt;
   SHARED_AES_CBC_DECRYPT AesCbcDecrypt;
   SHARED_AEAD_AES_GCM_ENCRYPT AeadAesGcmEncrypt;
   SHARED_AEAD_AES_GCM_DECRYPT AeadAesGcmDecrypt;
-  /// v1.0.0 BN ----------------------------------------------------------------
+  /// v1.0 BN ----------------------------------------------------------------
   SHARED_BIG_NUM_INIT BigNumInit;
   SHARED_BIG_NUM_FROM_BIN BigNumFromBin;
   SHARED_BIG_NUM_TO_BIN BigNumToBin;
@@ -5124,14 +5124,14 @@ typedef struct _ONE_CRYPTO_PROTOCOL
   SHARED_BIG_NUM_CONTEXT_FREE BigNumContextFree;
   SHARED_BIG_NUM_SET_UINT BigNumSetUint;
   SHARED_BIG_NUM_ADD_MOD BigNumAddMod;
-  /// v1.0.0 HKDF --------------------------------------------------------------
+  /// v1.0 HKDF --------------------------------------------------------------
   SHARED_HKDF_SHA256_EXTRACT_AND_EXPAND HkdfSha256ExtractAndExpand;
   SHARED_HKDF_SHA256_EXTRACT HkdfSha256Extract;
   SHARED_HKDF_SHA256_EXPAND HkdfSha256Expand;
   SHARED_HKDF_SHA384_EXTRACT_AND_EXPAND HkdfSha384ExtractAndExpand;
   SHARED_HKDF_SHA384_EXTRACT HkdfSha384Extract;
   SHARED_HKDF_SHA384_EXPAND HkdfSha384Expand;
-  /// v1.0.0 PKCS --------------------------------------------------------------
+  /// v1.0 PKCS --------------------------------------------------------------
   SHARED_AUTHENTICODE_VERIFY AuthenticodeVerify;
   SHARED_PKCS1V2_ENCRYPT Pkcs1v2Encrypt;
   SHARED_PKCS1V2_DECRYPT Pkcs1v2Decrypt;
@@ -5146,14 +5146,14 @@ typedef struct _ONE_CRYPTO_PROTOCOL
   SHARED_PKCS7_ENCRYPT Pkcs7Encrypt;
   SHARED_VERIFY_EK_US_IN_PKCS7_SIGNATURE VerifyEKUsInPkcs7Signature;
   SHARED_PKCS7_GET_ATTACHED_CONTENT Pkcs7GetAttachedContent;
-  /// v1.0.0 DH ----------------------------------------------------------------
+  /// v1.0 DH ----------------------------------------------------------------
   SHARED_DH_NEW DhNew;
   SHARED_DH_FREE DhFree;
   SHARED_DH_GENERATE_PARAMETER DhGenerateParameter;
   SHARED_DH_SET_PARAMETER DhSetParameter;
   SHARED_DH_GENERATE_KEY DhGenerateKey;
   SHARED_DH_COMPUTE_KEY DhComputeKey;
-  /// v1.0.0 EC ----------------------------------------------------------------
+  /// v1.0 EC ----------------------------------------------------------------
   SHARED_EC_GROUP_INIT EcGroupInit;
   SHARED_EC_GROUP_GET_CURVE EcGroupGetCurve;
   SHARED_EC_GROUP_GET_ORDER EcGroupGetOrder;
@@ -5178,7 +5178,7 @@ typedef struct _ONE_CRYPTO_PROTOCOL
   SHARED_EC_GET_PUBLIC_KEY_FROM_X509 EcGetPublicKeyFromX509;
   SHARED_EC_DSA_SIGN EcDsaSign;
   SHARED_EC_DSA_VERIFY EcDsaVerify;
-  /// v1.0.0 RSA ---------------------------------------------------------------
+  /// v1.0 RSA ---------------------------------------------------------------
   SHARED_RSA_NEW RsaNew;
   SHARED_RSA_FREE RsaFree;
   SHARED_RSA_SET_KEY RsaSetKey;
@@ -5191,7 +5191,7 @@ typedef struct _ONE_CRYPTO_PROTOCOL
   SHARED_RSA_PSS_VERIFY RsaPssVerify;
   SHARED_RSA_GET_PRIVATE_KEY_FROM_PEM RsaGetPrivateKeyFromPem;
   SHARED_RSA_GET_PUBLIC_KEY_FROM_X509 RsaGetPublicKeyFromX509;
-  /// v1.0.0 X509 --------------------------------------------------------------
+  /// v1.0 X509 --------------------------------------------------------------
   SHARED_X509_GET_SUBJECT_NAME X509GetSubjectName;
   SHARED_X509_GET_COMMON_NAME X509GetCommonName;
   SHARED_X509_GET_ORGANIZATION_NAME X509GetOrganizationName;
@@ -5214,10 +5214,10 @@ typedef struct _ONE_CRYPTO_PROTOCOL
   SHARED_X509_VERIFY_CERT_CHAIN X509VerifyCertChain;
   SHARED_X509_GET_CERT_FROM_CERT_CHAIN X509GetCertFromCertChain;
   SHARED_X509_GET_EXTENDED_BASIC_CONSTRAINTS X509GetExtendedBasicConstraints;
-  /// v1.0.0 Random ------------------------------------------------------------
+  /// v1.0 Random ------------------------------------------------------------
   SHARED_RANDOM_SEED RandomSeed;
   SHARED_RANDOM_BYTES RandomBytes;
-  /// v1.0.0 Tls ---------------------------------------------------------------
+  /// v1.0 Tls ---------------------------------------------------------------
   SHARED_TLS_INITIALIZE TlsInitialize;
   SHARED_TLS_CTX_FREE TlsCtxFree;
   SHARED_TLS_CTX_NEW TlsCtxNew;
@@ -5260,9 +5260,9 @@ typedef struct _ONE_CRYPTO_PROTOCOL
   SHARED_TLS_GET_HOST_PRIVATE_KEY TlsGetHostPrivateKey;
   SHARED_TLS_GET_CERT_REVOCATION_LIST TlsGetCertRevocationList;
   SHARED_TLS_GET_EXPORT_KEY TlsGetExportKey;
-  /// v1.0.0 Timestamp ---------------------------------------------------------
+  /// v1.0 Timestamp ---------------------------------------------------------
   SHARED_IMAGE_TIMESTAMP_VERIFY ImageTimestampVerify;
-  /// v1.0.0 Info --------------------------------------------------------------
+  /// v1.0 Info --------------------------------------------------------------
   SHARED_GET_CRYPTO_PROVIDER_VERSION_TEXT GetCryptoProviderVersionText;
   SHARED_GET_CRYPTO_PROVIDER_VERSION_NUMBER GetCryptoProviderVersionNumber;
 } ONE_CRYPTO_PROTOCOL;

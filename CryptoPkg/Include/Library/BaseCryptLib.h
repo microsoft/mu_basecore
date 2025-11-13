@@ -5948,6 +5948,29 @@ GetCryptoProviderVersionNumber (
   VOID
   );
 
+/**
+  Retrieves the last error code from a crypto service call.
+
+  This function allows callers to determine if the previous crypto service call
+  failed due to version mismatch, unavailable protocol, or missing function.
+  This is particularly useful when using older crypto binaries with newer
+  libraries, enabling graceful degradation.
+
+  @retval 0  Success - no error occurred.
+  @retval 1  Protocol is NULL.
+  @retval 2  Version mismatch - protocol version too old.
+  @retval 3  Function pointer is NULL.
+  @retval 4  Operation not supported.
+
+  @since 1.0
+  @ingroup Info
+**/
+UINTN
+EFIAPI
+GetLastCryptoError (
+  VOID
+  );
+
 /** @} */ // end of Info group
 /** @} */ // end of BaseCryptLib group
 #endif // BASE_CRYPT_LIB_H_
