@@ -44,7 +44,7 @@ STATIC CRYPTO_ERROR_CODE  mLastCryptoError = CRYPTO_ERROR_SUCCESS;
   @param  MinMinor          Minimum required minor version for this function.
 
 **/
-#define CALL_CRYPTO_SERVICE_EX(Function, Args, ErrorReturnValue, MinMajor, MinMinor)  \
+#define CALL_CRYPTO_SERVICE(Function, Args, ErrorReturnValue, MinMajor, MinMinor)  \
   do {                                                                 \
     ONE_CRYPTO_PROTOCOL  *CryptoServices;                            \
                                                                        \
@@ -76,20 +76,6 @@ STATIC CRYPTO_ERROR_CODE  mLastCryptoError = CRYPTO_ERROR_SUCCESS;
   } while (FALSE);
 
 /**
-  Primary macro for calling crypto services with explicit version requirements.
-
-  @param  Function          Name of the EDK II Crypto Protocol service to call.
-  @param  Args              The argument list to pass to Function.
-  @param  ErrorReturnValue  The value to return if the protocol is NULL or the
-                            service in the protocol is NULL.
-  @param  MinMajor          Minimum required major version for this function.
-  @param  MinMinor          Minimum required minor version for this function.
-
-**/
-#define CALL_CRYPTO_SERVICE(Function, Args, ErrorReturnValue, MinMajor, MinMinor)  \
-  CALL_CRYPTO_SERVICE_EX(Function, Args, ErrorReturnValue, MinMajor, MinMinor)
-
-/**
   A macro used to call a void service in an EDK II Crypto Protocol.
   If the protocol is NULL or the service in the protocol is NULL, then a debug
   message and assert is generated.
@@ -103,7 +89,7 @@ STATIC CRYPTO_ERROR_CODE  mLastCryptoError = CRYPTO_ERROR_SUCCESS;
   @param  MinMinor  Minimum required minor version for this function.
 
 **/
-#define CALL_VOID_CRYPTO_SERVICE_EX(Function, Args, MinMajor, MinMinor) \
+#define CALL_VOID_CRYPTO_SERVICE(Function, Args, MinMajor, MinMinor) \
   do {                                                                 \
     ONE_CRYPTO_PROTOCOL  *CryptoServices;                            \
                                                                        \
@@ -134,18 +120,6 @@ STATIC CRYPTO_ERROR_CODE  mLastCryptoError = CRYPTO_ERROR_SUCCESS;
     (CryptoServices->Function) Args;                                   \
     return;                                                            \
   } while (FALSE);
-
-/**
-  Primary macro for calling void crypto services with explicit version requirements.
-
-  @param  Function  Name of the EDK II Crypto Protocol service to call.
-  @param  Args      The argument list to pass to Function.
-  @param  MinMajor  Minimum required major version for this function.
-  @param  MinMinor  Minimum required minor version for this function.
-
-**/
-#define CALL_VOID_CRYPTO_SERVICE(Function, Args, MinMajor, MinMinor)   \
-  CALL_VOID_CRYPTO_SERVICE_EX(Function, Args, MinMajor, MinMinor)
 
 /**
   Internal worker function that returns the pointer to an EDK II Crypto
