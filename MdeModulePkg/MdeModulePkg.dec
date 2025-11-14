@@ -593,10 +593,6 @@
   ## Include/Guid/ArmFfaRxTxBufferInfo.h
   gArmFfaRxTxBufferInfoGuid = { 0x96fd3d26, 0x6fb1, 0x11ef, { 0x8c, 0x11, 0xf3, 0xc9, 0xc5, 0x02, 0x31, 0xab } }
 
-  # MU_CHANGE START
-  gCacheAttributesChangeEventGuid = { 0XB8E477C7, 0X26A9, 0X4B9A, { 0XA7, 0XC9, 0X5F, 0X8F, 0X1F, 0X3D, 0X9C, 0X7B } }
-  # MU_CHANGE END
-
 [Ppis]
   ## Include/Ppi/FirmwareVolumeShadowPpi.h
   gEdkiiPeiFirmwareVolumeShadowPpiGuid = { 0x7dfe756c, 0xed8d, 0x4d77, {0x9e, 0xc4, 0x39, 0x9a, 0x8a, 0x81, 0x51, 0x16 } }
