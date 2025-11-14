@@ -4,11 +4,10 @@
   Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  MU_CHANGE: WHOLE FILE
 **/
 
-#ifndef MP_DXE_H_
-#define MP_DXE_H_
+#ifndef _MP_DXE_H_
+#define _MP_DXE_H_
 
 #include <PiDxe.h>
 
@@ -490,4 +489,4 @@ WhoAmI (
   OUT UINTN                    *ProcessorNumber
   );
 
-#endif // MP_DXE_H_
+#endif // _MP_DXE_H_

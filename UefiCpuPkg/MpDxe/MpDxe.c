@@ -4,16 +4,12 @@
   Copyright (c) 2008 - 2022, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  MU_CHANGE: WHOLE FILE
 **/
 
 #include "MpDxe.h"
-#include <Guid/CacheAttributesChangeEvent.h>
-#include <Library/MtrrLib.h>
 
-EFI_HANDLE  mMpServiceHandle            = NULL;
-UINTN       mNumberOfProcessors         = 1;
-EFI_EVENT   mCacheAttributesChangeEvent = NULL;
+EFI_HANDLE  mMpServiceHandle    = NULL;
+UINTN       mNumberOfProcessors = 1;
 
 EFI_MP_SERVICES_PROTOCOL  mMpServicesTemplate = {
   GetNumberOfProcessors,
@@ -24,49 +20,6 @@ EFI_MP_SERVICES_PROTOCOL  mMpServicesTemplate = {
   EnableDisableAP,
   WhoAmI
 };
-
-/**
-  A minimal wrapper function that allows MtrrSetAllMtrrs() to be passed to
-  EFI_MP_SERVICES_PROTOCOL.StartupAllAPs() as Procedure.
-
-  @param[in] Buffer  Pointer to an MTRR_SETTINGS object, to be passed to
-                     MtrrSetAllMtrrs().
-**/
-VOID
-EFIAPI
-SetMtrrsFromBuffer (
-  IN VOID  *Buffer
-  )
-{
-  MtrrSetAllMtrrs (Buffer);
-}
-
-// MU_CHANGE START: Cache Attribute Change Event
-VOID
-EFIAPI
-CacheAttributesChangeCallback (
-  IN EFI_EVENT  Event,
-  IN VOID       *Context
-  )
-{
-  MTRR_SETTINGS  MtrrSettings;
-
-  DEBUG ((DEBUG_INFO, "MpDxe updating MTRRs with APs\n"));
-
-  MtrrGetAllMtrrs (&MtrrSettings);
-
-  MpInitLibStartupAllAPs (
-    SetMtrrsFromBuffer,
-    FALSE,
-    NULL,
-    0,
-    &MtrrSettings,
-    NULL
-    );
-  // we purposefully don't close the event here, because we want to be called for every update
-}
-
-// MU_CHANGE END: Cache Attribute Change Event
 
 /**
   This service retrieves the number of logical processor in the platform
@@ -799,18 +752,14 @@ InitializeMpExceptionHandlers (
   VOID
   )
 {
-  // MU_CHANGE START - These modes are only for testing - Commenting to untangle
-  // the dependency on DebugExceptionHandler/PageFaultExceptionHandler
-  //
-  // Enable non-stop mode for #PF triggered by Heap Guard or NULL Pointer
-  // Detection.
-  //
+  // //
+  // // Enable non-stop mode for #PF triggered by Heap Guard or NULL Pointer
+  // // Detection.
+  // //
   // if (HEAP_GUARD_NONSTOP_MODE || NULL_DETECTION_NONSTOP_MODE) {
   //   RegisterCpuInterruptHandler (EXCEPT_IA32_DEBUG, DebugExceptionHandler);
-  //   RegisterCpuInterruptHandler (EXCEPT_IA32_PAGE_FAULT,
-  //   PageFaultExceptionHandler);
+  //   RegisterCpuInterruptHandler (EXCEPT_IA32_PAGE_FAULT, PageFaultExceptionHandler);
   // }
-  // MU_CHANGE END
 
   //
   // Setup stack switch for Stack Guard feature.
@@ -867,23 +816,6 @@ InitializeMpSupport (
                     );
     ASSERT_EFI_ERROR (Status);
   }
-
-  // MU_CHANGE START: CacheAttributesChange Event
-  // Register for the CacheAttributesChangeEvent
-  Status = gBS->CreateEventEx (
-                  EVT_NOTIFY_SIGNAL,
-                  TPL_CALLBACK,
-                  CacheAttributesChangeCallback,
-                  NULL,
-                  &gCacheAttributesChangeEventGuid,
-                  &mCacheAttributesChangeEvent
-                  );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Failed to create CacheAttributesChangeEvent\n"));
-    ASSERT_EFI_ERROR (Status);
-  }
-
-  // MU_CHANGE END: CacheAttributesChange Event
 }
 
 // MU_CHANGE End - CodeQL Change - unguardednullreturndereference
