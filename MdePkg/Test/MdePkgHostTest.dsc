@@ -79,4 +79,5 @@
   MdePkg/Test/Mock/Library/GoogleTest/MockSmmMemLib/MockSmmMemLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockPerformanceLib/MockPerformanceLib.inf # MU_CHANGE
   MdePkg/Test/Mock/Library/GoogleTest/MockSynchronizationLib/MockSynchronizationLib.inf # MU_CHANGE
+  MdePkg/Test/Mock/Library/GoogleTest/MockPciCf8Lib/MockPciCf8Lib.inf
  
