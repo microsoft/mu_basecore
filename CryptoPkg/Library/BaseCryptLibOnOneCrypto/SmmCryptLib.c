@@ -36,7 +36,7 @@ SmmCryptLibConstructor (
   EFI_STATUS  Status;
 
   Status = gSmst->SmmLocateProtocol (
-                    &gOneCryptoSmmProtocolGuid,
+                    &gOneCryptoProtocolGuid,
                     NULL,
                     (VOID **)&gCryptoProtocol
                     );

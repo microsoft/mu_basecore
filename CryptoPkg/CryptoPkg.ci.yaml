@@ -67,7 +67,10 @@
     "GuidCheck": {
         "IgnoreGuidName": [],
         "IgnoreGuidValue": [],
-        "IgnoreFoldersAndFiles": []
+        "IgnoreFoldersAndFiles": [],
+        "IgnoreDuplicates": [
+            "OneCryptoBinStandaloneMm=OneCryptoBinSupvMm"  # Intentional: Same GUID for loader identification
+        ]
     },
     "LibraryClassCheck": {
         "IgnoreHeaderFile": []
