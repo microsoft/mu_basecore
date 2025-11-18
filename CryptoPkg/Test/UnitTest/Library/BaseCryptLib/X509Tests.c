@@ -512,13 +512,6 @@ TestVerifyX509 (
   UINT8        DateTime1[64];
   UINT8        DateTime2[64];
 
-  // MU_CHANGE [START]
-  if (!PcdGetBool (PcdCryptoServiceX509VerifyCert) || !PcdGetBool (PcdCryptoServiceX509VerifyCertChain) || !PcdGetBool (PcdCryptoServiceX509GetCertFromCertChain) || !PcdGetBool (PcdCryptoServiceX509GetVersion) || !PcdGetBool (PcdCryptoServiceX509GetSerialNumber) || !PcdGetBool (PcdCryptoServiceX509GetIssuerName) || !PcdGetBool (PcdCryptoServiceX509GetExtensionData) || !PcdGetBool (PcdCryptoServiceX509GetValidity) || !PcdGetBool (PcdCryptoServiceX509FormatDateTime)) {
-    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
-  }
-
-  // MU_CHANGE [END]
-
   //
   // X509 Certificate Verification.
   //
