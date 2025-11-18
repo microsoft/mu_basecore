@@ -234,7 +234,7 @@ TestVerifyBLockCiper (
   UINT8                      Decrypt[256];
   BOOLEAN                    Status;
   BLOCK_CIPHER_TEST_CONTEXT  *TestContext;
-  
+
   TestContext = Context;
 
   ZeroMem (Encrypt, sizeof (Encrypt));

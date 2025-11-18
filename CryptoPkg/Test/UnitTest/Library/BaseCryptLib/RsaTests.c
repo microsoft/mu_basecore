@@ -207,6 +207,7 @@ TestVerifyRsaGenerateKeyComponents (
   UINT8    TestPublicExponent1[] = { 0x03 };
   UINT8    TestPublicExponent2[] = { 0x01, 0x01 };
   UINT8    TestPublicExponent3[] = { 0x01, 0x00, 0x01 };
+
   //
   // Generate RSA Key Components
   //
@@ -278,6 +279,7 @@ TestVerifyRsaPkcs1SignVerify (
   UINT8    *Signature;
   UINTN    SigSize;
   BOOLEAN  Status;
+
   //
   // SHA-1 Digest Message for PKCS#1 Signature
   //

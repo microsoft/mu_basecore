@@ -80,7 +80,7 @@ TestVerifyParallelHash256HashAll (
 {
   BOOLEAN  Status;
   UINT8    Output[64];
-  
+
   //
   // Test #1 using sample1.
   //

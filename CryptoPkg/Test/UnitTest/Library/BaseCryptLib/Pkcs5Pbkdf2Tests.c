@@ -31,7 +31,7 @@ TestVerifyPkcs5Pbkdf2 (
 {
   BOOLEAN  Status;
   UINT8    *OutKey;
-  
+
   OutKey = AllocatePool (KeyLen);
   if (OutKey == NULL) {
     UT_LOG_ERROR ("Failed to allocate memory for OutKey.\n");
