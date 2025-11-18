@@ -80,11 +80,7 @@ TestVerifyParallelHash256HashAll (
 {
   BOOLEAN  Status;
   UINT8    Output[64];
-
-  if (!PcdGetBool (PcdCryptoServiceParallelHash256HashAll)) {
-    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
-  }
-
+  
   //
   // Test #1 using sample1.
   //
