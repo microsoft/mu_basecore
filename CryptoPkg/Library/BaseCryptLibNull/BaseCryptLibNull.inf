@@ -58,6 +58,7 @@
   Pk/CryptRsaPssNull.c
   Pk/CryptRsaPssSignNull.c
   Bn/CryptBnNull.c
+  Info/CryptoInfo.c
 
 [Packages]
   MdePkg/MdePkg.dec
