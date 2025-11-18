@@ -1,44 +1,190 @@
 /** @file
   Implements the BaseCryptLib and TlsLib using the services of the OneCrypto
-  Protocol/PPI.
+  Protocol.
 
   Copyright (C) Microsoft Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  UPDATED: 2025-Nov-11
-  VERSION: 1.0
 **/
 
-#ifndef ONE_CRYPTO_PROTOCOL_
-#define ONE_CRYPTO_PROTOCOL_
-
+#include <Base.h>
+#include <Library/BaseLib.h>
+#include <Library/DebugLib.h>
 #include <Library/BaseCryptLib.h>
+#include <Library/TlsLib.h>
+#include <Protocol/OneCrypto.h>
 
-extern EFI_GUID  gOneCryptoProtocolGuid;
+//
+// Global pointer to the OneCrypto Protocol.
+// Set by phase-specific library constructor.
+//
+ONE_CRYPTO_PROTOCOL  *gCryptoProtocol = NULL;
 
 /**
-  @defgroup BaseCryptLib Base Cryptographic Library
-  @brief Provides comprehensive cryptographic services for UEFI applications.
+  Internal worker function that validates the crypto protocol version meets
+  minimum requirements for a specific function.
 
-  @{
+  The validation logic allows functions to work with any binary version that is
+  greater than or equal to the minimum required version. This enables:
+  - Backward compatibility: Old binaries (e.g., 1.0) can be used by consumers
+    that only need functions available in that version
+  - Forward compatibility: New binaries (e.g., 1.5) can service requests for
+    functions from older versions (e.g., 1.2)
+
+  @param[in]  CryptoServices  Pointer to the crypto protocol.
+  @param[in]  MinMajor        Minimum required major version.
+  @param[in]  MinMinor        Minimum required minor version.
+
+  @retval TRUE   Protocol version meets or exceeds requirements.
+  @retval FALSE  Protocol version is too old for this function.
 **/
+static
+BOOLEAN
+ValidateCryptoVersion (
+  IN ONE_CRYPTO_PROTOCOL  *CryptoServices,
+  IN UINT16               MinMajor,
+  IN UINT16               MinMinor
+  )
+{
+  //
+  // Check if binary version is less than required minimum version
+  // Binary version must be >= (MinMajor.MinMinor)
+  //
+  if ((CryptoServices->Major < MinMajor) ||
+      ((CryptoServices->Major == MinMajor) && (CryptoServices->Minor < MinMinor)))
+  {
+    DEBUG ((
+      DEBUG_ERROR,
+      "[%a] Crypto binary version too old: requires >= %d.%d, got %d.%d\n",
+      gEfiCallerBaseName,
+      (UINT32)MinMajor,
+      (UINT32)MinMinor,
+      CryptoServices->Major,
+      CryptoServices->Minor
+      ));
+    ASSERT (FALSE);
+    return FALSE;
+  }
 
-// =============================================================================
-// Protocol version: 1.0
-// =============================================================================
-#define VERSION_MAJOR  1ULL
-#define VERSION_MINOR  0ULL
-
-// ============================================================================
-// Typedef Declarations
-// =============================================================================
+  //
+  // Binary version is >= minimum required version
+  // Function should be available (will be checked by NULL pointer check)
+  //
+  return TRUE;
+}
 
 /**
-  @defgroup HMAC hash-based message authentication
-  @brief Provides functions for generating and verifying HMACs.
+  Internal worker function to get and validate the crypto protocol.
 
-  @{
- */
+  This function retrieves the crypto protocol, validates it's not NULL,
+  and checks the version meets minimum requirements.
+
+  @param[in]  FunctionName  Name of the function being called (for debug output).
+  @param[in]  MinMajor      Minimum required major version.
+  @param[in]  MinMinor      Minimum required minor version.
+
+  @retval  Pointer to validated ONE_CRYPTO_PROTOCOL, or NULL if validation failed.
+**/
+static
+ONE_CRYPTO_PROTOCOL *
+GetAndValidateCryptoProtocol (
+  IN CONST CHAR8  *FunctionName,
+  IN UINT16       MinMajor,
+  IN UINT16       MinMinor
+  )
+{
+  DEBUG ((DEBUG_VERBOSE, "[%a] Calling crypto service: %a\n", gEfiCallerBaseName, FunctionName));
+
+  if (gCryptoProtocol == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] Crypto Protocol is NULL\n", gEfiCallerBaseName));
+    ASSERT (FALSE);
+    return NULL;
+  }
+
+  if (!ValidateCryptoVersion (gCryptoProtocol, MinMajor, MinMinor)) {
+    return NULL;
+  }
+
+  return gCryptoProtocol;
+}
+
+/**
+  Internal worker function that prints a debug message and asserts if a crypto
+  service is not available.  This should never occur because library instances
+  have a dependency expression for the for the One Crypto Protocol so
+  a module that uses these library instances are not dispatched until the One
+  Crypto Protocol is available.  The only case that this function handles is
+  if the One Crypto Protocol installed is NULL or a function pointer in
+  the One Protocol is NULL.
+
+  @param[in]  FunctionName  Null-terminated ASCII string that is the name of an
+                            One Crypto service.
+
+**/
+static
+VOID
+CryptoServiceNotAvailable (
+  IN CONST CHAR8  *FunctionName
+  )
+{
+  DEBUG ((DEBUG_ERROR, "[%a] Function %a is not available\n", gEfiCallerBaseName, FunctionName));
+  ASSERT_EFI_ERROR (EFI_UNSUPPORTED);
+}
+
+/**
+  A macro used to call a non-void service in an One Crypto Protocol.
+  If the protocol is NULL or the service in the protocol is NULL, then a debug
+  message and assert is generated and an appropriate return value is returned.
+
+  This macro allows specifying minimum version requirements per function call,
+  enabling backward compatibility with older crypto binaries.
+
+  @param  Function          Name of the One Crypto Protocol service to call.
+  @param  Args              The argument list to pass to Function.
+  @param  ErrorReturnValue  The value to return if the protocol is NULL or the
+                            service in the protocol is NULL.
+  @param  MinMajor          Minimum required major version for this function.
+  @param  MinMinor          Minimum required minor version for this function.
+
+**/
+#define CALL_CRYPTO_SERVICE(Function, Args, ErrorReturnValue, MinMajor, MinMinor)      \
+  do {                                                                                 \
+    ONE_CRYPTO_PROTOCOL  *CryptoServices;                                              \
+                                                                                       \
+    CryptoServices = GetAndValidateCryptoProtocol (#Function, (MinMajor), (MinMinor)); \
+    if ((CryptoServices == NULL) && (CryptoServices->Function == NULL)) {              \
+      CryptoServiceNotAvailable (#Function);                                           \
+      return ErrorReturnValue;                                                         \
+    }                                                                                  \
+    return (CryptoServices->Function) Args;                                            \
+  } while (FALSE);
+
+/**
+  A macro used to call a void service in an One Crypto Protocol.
+  If the protocol is NULL or the service in the protocol is NULL, then a debug
+  message and assert is generated.
+
+  This macro allows specifying minimum version requirements per function call,
+  enabling backward compatibility with older crypto binaries.
+
+  @param  Function  Name of the One Crypto Protocol service to call.
+  @param  Args      The argument list to pass to Function.
+  @param  MinMajor  Minimum required major version for this function.
+  @param  MinMinor  Minimum required minor version for this function.
+
+**/
+#define CALL_VOID_CRYPTO_SERVICE(Function, Args, MinMajor, MinMinor)                   \
+  do {                                                                                 \
+    ONE_CRYPTO_PROTOCOL  *CryptoServices;                                              \
+                                                                                       \
+    CryptoServices = GetAndValidateCryptoProtocol (#Function, (MinMajor), (MinMinor)); \
+    if ((CryptoServices == NULL) && (CryptoServices->Function == NULL)) {              \
+      CryptoServiceNotAvailable (#Function);                                           \
+      return;                                                                          \
+    }                                                                                  \
+    (CryptoServices->Function) Args;                                                   \
+    return;                                                                            \
+  } while (FALSE);
 
 /**
   Creates a new HMAC context.
@@ -48,9 +194,14 @@ extern EFI_GUID  gOneCryptoProtocolGuid;
   @since 1.0
   @ingroup HMAC
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_HMAC_SHA256_NEW)(
+VOID *
+EFIAPI
+HmacSha256New (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha256New, (), NULL, 1, 0);
+}
 
 /**
   Frees an HMAC context.
@@ -60,9 +211,14 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_HMAC_SHA256_NEW)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_HMAC_SHA256_FREE)(
+VOID
+EFIAPI
+HmacSha256Free (
   VOID  *HmacCtx
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (HmacSha256Free, (HmacCtx), 1, 0);
+}
 
 /**
   Sets the key for an HMAC context.
@@ -77,11 +233,16 @@ typedef VOID (EFIAPI *ONE_CRYPTO_HMAC_SHA256_FREE)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA256_SET_KEY)(
+BOOLEAN
+EFIAPI
+HmacSha256SetKey (
   VOID         *HmacContext,
   CONST UINT8  *Key,
   UINTN        KeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha256SetKey, (HmacContext, Key, KeySize), FALSE, 1, 0);
+}
 
 /**
   Duplicates an HMAC context.
@@ -95,10 +256,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA256_SET_KEY)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA256_DUPLICATE)(
+BOOLEAN
+EFIAPI
+HmacSha256Duplicate (
   CONST VOID  *HmacContext,
   VOID        *NewHmacContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha256Duplicate, (HmacContext, NewHmacContext), FALSE, 1, 0);
+}
 
 /**
   Updates the HMAC with data.
@@ -113,11 +279,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA256_DUPLICATE)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA256_UPDATE)(
+BOOLEAN
+EFIAPI
+HmacSha256Update (
   VOID        *HmacContext,
   CONST VOID  *Data,
   UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha256Update, (HmacContext, Data, DataSize), FALSE, 1, 0);
+}
 
 /**
   Finalizes the HMAC and produces the HMAC value.
@@ -131,10 +302,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA256_UPDATE)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA256_FINAL)(
+BOOLEAN
+EFIAPI
+HmacSha256Final (
   VOID   *HmacContext,
   UINT8  *HmacValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha256Final, (HmacContext, HmacValue), FALSE, 1, 0);
+}
 
 /**
   Performs the entire HMAC operation in one step.
@@ -151,13 +327,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA256_FINAL)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA256_ALL)(
+BOOLEAN
+EFIAPI
+HmacSha256All (
   CONST VOID   *Data,
   UINTN        DataSize,
   CONST UINT8  *Key,
   UINTN        KeySize,
   UINT8        *HmacValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha256All, (Data, DataSize, Key, KeySize, HmacValue), FALSE, 1, 0);
+}
 
 /**
   Creates a new HMAC context.
@@ -167,9 +348,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA256_ALL)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_HMAC_SHA384_NEW)(
+VOID *
+EFIAPI
+HmacSha384New (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha384New, (), NULL, 1, 0);
+}
 
 /**
   Frees an HMAC context.
@@ -179,9 +365,14 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_HMAC_SHA384_NEW)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_HMAC_SHA384_FREE)(
+VOID
+EFIAPI
+HmacSha384Free (
   VOID  *HmacCtx
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (HmacSha384Free, (HmacCtx), 1, 0);
+}
 
 /**
   Sets the key for an HMAC context.
@@ -196,11 +387,16 @@ typedef VOID (EFIAPI *ONE_CRYPTO_HMAC_SHA384_FREE)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA384_SET_KEY)(
+BOOLEAN
+EFIAPI
+HmacSha384SetKey (
   VOID         *HmacContext,
   CONST UINT8  *Key,
   UINTN        KeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha384SetKey, (HmacContext, Key, KeySize), FALSE, 1, 0);
+}
 
 /**
   Duplicates an HMAC context.
@@ -214,10 +410,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA384_SET_KEY)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA384_DUPLICATE)(
+BOOLEAN
+EFIAPI
+HmacSha384Duplicate (
   CONST VOID  *HmacContext,
   VOID        *NewHmacContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha384Duplicate, (HmacContext, NewHmacContext), FALSE, 1, 0);
+}
 
 /**
   Updates the HMAC with data.
@@ -232,11 +433,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA384_DUPLICATE)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA384_UPDATE)(
+BOOLEAN
+EFIAPI
+HmacSha384Update (
   VOID        *HmacContext,
   CONST VOID  *Data,
   UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha384Update, (HmacContext, Data, DataSize), FALSE, 1, 0);
+}
 
 /**
   Finalizes the HMAC and produces the HMAC value.
@@ -250,10 +456,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA384_UPDATE)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA384_FINAL)(
+BOOLEAN
+EFIAPI
+HmacSha384Final (
   VOID   *HmacContext,
   UINT8  *HmacValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha384Final, (HmacContext, HmacValue), FALSE, 1, 0);
+}
 
 /**
   Performs the entire HMAC operation in one step.
@@ -270,22 +481,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA384_FINAL)(
   @since 1.0
   @ingroup HMAC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA384_ALL)(
+BOOLEAN
+EFIAPI
+HmacSha384All (
   CONST VOID   *Data,
   UINTN        DataSize,
   CONST UINT8  *Key,
   UINTN        KeySize,
   UINT8        *HmacValue
-  );
-
-/** @} */
-
-/**
-  @defgroup Hash Hashing Functions
-  @brief Functions for performing various hashing operations.
-
-  @{
-**/
+  )
+{
+  CALL_CRYPTO_SERVICE (HmacSha384All, (Data, DataSize, Key, KeySize, HmacValue), FALSE, 1, 0);
+}
 
 /**
   Retrieves the size, in bytes, of the context buffer required for MD5 hash operations.
@@ -298,9 +505,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HMAC_SHA384_ALL)(
   @since 1.0
   @ingroup Hash
 **/
-typedef UINTN (EFIAPI *ONE_CRYPTO_MD5_GET_CONTEXT_SIZE)(
+UINTN
+EFIAPI
+Md5GetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Md5GetContextSize, (), 0, 1, 0);
+}
 
 /**
   Initializes user-supplied memory pointed by Md5Context as MD5 hash context for
@@ -318,9 +530,14 @@ typedef UINTN (EFIAPI *ONE_CRYPTO_MD5_GET_CONTEXT_SIZE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_MD5_INIT)(
+BOOLEAN
+EFIAPI
+Md5Init (
   OUT VOID  *HashContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Md5Init, (HashContext), FALSE, 1, 0);
+}
 
 /**
   Digests the input data and updates MD5 context.
@@ -344,11 +561,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_MD5_INIT)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_MD5_UPDATE)(
+BOOLEAN
+EFIAPI
+Md5Update (
   IN OUT VOID    *HashContext,
   IN CONST VOID  *Data,
   IN UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Md5Update, (HashContext, Data, DataSize), FALSE, 1, 0);
+}
 
 /**
   Completes computation of the MD5 digest value.
@@ -374,10 +596,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_MD5_UPDATE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_MD5_FINAL)(
+BOOLEAN
+EFIAPI
+Md5Final (
   IN OUT  VOID   *HashContext,
   OUT     UINT8  *HashDigest
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Md5Final, (HashContext, HashDigest), FALSE, 1, 0);
+}
 
 /**
   Computes the MD5 message digest of a input data buffer.
@@ -399,11 +626,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_MD5_FINAL)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_MD5_HASH_ALL)(
+BOOLEAN
+EFIAPI
+Md5HashAll (
   IN CONST VOID  *Data,
   IN UINTN       DataSize,
   OUT UINT8      *HashDigest
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Md5HashAll, (Data, DataSize, HashDigest), FALSE, 1, 0);
+}
 
 /**
   Makes a copy of an existing MD5 context.
@@ -422,10 +654,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_MD5_HASH_ALL)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_MD5_DUPLICATE)(
+BOOLEAN
+EFIAPI
+Md5Duplicate (
   IN CONST VOID  *HashContext,
   OUT VOID       *NewHashContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Md5Duplicate, (HashContext, NewHashContext), FALSE, 1, 0);
+}
 
 /**
   Retrieves the size, in bytes, of the context buffer required for SHA-1 hash operations.
@@ -438,9 +675,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_MD5_DUPLICATE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef UINTN (EFIAPI *ONE_CRYPTO_SHA1_GET_CONTEXT_SIZE)(
+UINTN
+EFIAPI
+Sha1GetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha1GetContextSize, (), 0, 1, 0);
+}
 
 /**
   Initializes user-supplied memory pointed by Sha1Context as SHA-1 hash context for
@@ -458,9 +700,14 @@ typedef UINTN (EFIAPI *ONE_CRYPTO_SHA1_GET_CONTEXT_SIZE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA1_INIT)(
+BOOLEAN
+EFIAPI
+Sha1Init (
   OUT VOID  *HashContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha1Init, (HashContext), FALSE, 1, 0);
+}
 
 /**
   Digests the input data and updates SHA-1 context.
@@ -484,11 +731,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA1_INIT)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA1_UPDATE)(
+BOOLEAN
+EFIAPI
+Sha1Update (
   IN OUT VOID    *HashContext,
   IN CONST VOID  *Data,
   IN UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha1Update, (HashContext, Data, DataSize), FALSE, 1, 0);
+}
 
 /**
   Completes computation of the SHA-1 digest value.
@@ -514,10 +766,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA1_UPDATE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA1_FINAL)(
+BOOLEAN
+EFIAPI
+Sha1Final (
   IN OUT  VOID   *HashContext,
   OUT     UINT8  *HashDigest
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha1Final, (HashContext, HashDigest), FALSE, 1, 0);
+}
 
 /**
   Computes the SHA-1 message digest of a input data buffer.
@@ -539,11 +796,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA1_FINAL)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA1_HASH_ALL)(
+BOOLEAN
+EFIAPI
+Sha1HashAll (
   IN CONST VOID  *Data,
   IN UINTN       DataSize,
   OUT UINT8      *HashDigest
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha1HashAll, (Data, DataSize, HashDigest), FALSE, 1, 0);
+}
 
 /**
   Makes a copy of an existing SHA-1 context.
@@ -562,10 +824,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA1_HASH_ALL)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA1_DUPLICATE)(
+BOOLEAN
+EFIAPI
+Sha1Duplicate (
   IN CONST VOID  *HashContext,
   OUT VOID       *NewHashContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha1Duplicate, (HashContext, NewHashContext), FALSE, 1, 0);
+}
 
 /**
   Retrieves the size, in bytes, of the context buffer required for SHA-256 hash operations.
@@ -575,9 +842,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA1_DUPLICATE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef UINTN (EFIAPI *ONE_CRYPTO_SHA256_GET_CONTEXT_SIZE)(
+UINTN
+EFIAPI
+Sha256GetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha256GetContextSize, (), 0, 1, 0);
+}
 
 /**
   Initializes user-supplied memory pointed by Sha256Context as SHA-256 hash context for
@@ -593,9 +865,14 @@ typedef UINTN (EFIAPI *ONE_CRYPTO_SHA256_GET_CONTEXT_SIZE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA256_INIT)(
+BOOLEAN
+EFIAPI
+Sha256Init (
   OUT VOID  *HashContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha256Init, (HashContext), FALSE, 1, 0);
+}
 
 /**
   Digests the input data and updates SHA-256 context.
@@ -617,11 +894,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA256_INIT)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA256_UPDATE)(
+BOOLEAN
+EFIAPI
+Sha256Update (
   IN OUT VOID    *HashContext,
   IN CONST VOID  *Data,
   IN UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha256Update, (HashContext, Data, DataSize), FALSE, 1, 0);
+}
 
 /**
   Completes computation of the SHA-256 digest value.
@@ -645,10 +927,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA256_UPDATE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA256_FINAL)(
+BOOLEAN
+EFIAPI
+Sha256Final (
   IN OUT  VOID   *HashContext,
   OUT     UINT8  *HashDigest
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha256Final, (HashContext, HashDigest), FALSE, 1, 0);
+}
 
 /**
   Computes the SHA-256 message digest of a input data buffer.
@@ -670,11 +957,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA256_FINAL)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA256_HASH_ALL)(
+BOOLEAN
+EFIAPI
+Sha256HashAll (
   IN CONST VOID  *Data,
   IN UINTN       DataSize,
   OUT UINT8      *HashDigest
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha256HashAll, (Data, DataSize, HashDigest), FALSE, 1, 0);
+}
 
 /**
   Makes a copy of an existing SHA-256 context.
@@ -693,10 +985,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA256_HASH_ALL)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA256_DUPLICATE)(
+BOOLEAN
+EFIAPI
+Sha256Duplicate (
   IN CONST VOID  *HashContext,
   OUT VOID       *NewHashContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha256Duplicate, (HashContext, NewHashContext), FALSE, 1, 0);
+}
 
 /**
   Retrieves the size, in bytes, of the context buffer required for SHA-384 hash operations.
@@ -706,9 +1003,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA256_DUPLICATE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef UINTN (EFIAPI *ONE_CRYPTO_SHA384_GET_CONTEXT_SIZE)(
+UINTN
+EFIAPI
+Sha384GetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha384GetContextSize, (), 0, 1, 0);
+}
 
 /**
   Initializes user-supplied memory pointed by Sha384Context as SHA-384 hash context for
@@ -724,9 +1026,14 @@ typedef UINTN (EFIAPI *ONE_CRYPTO_SHA384_GET_CONTEXT_SIZE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA384_INIT)(
+BOOLEAN
+EFIAPI
+Sha384Init (
   OUT  VOID  *Sha384Context
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha384Init, (Sha384Context), FALSE, 1, 0);
+}
 
 /**
   Makes a copy of an existing SHA-384 context.
@@ -745,10 +1052,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA384_INIT)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA384_DUPLICATE)(
+BOOLEAN
+EFIAPI
+Sha384Duplicate (
   IN   CONST VOID  *Sha384Context,
   OUT  VOID        *NewSha384Context
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha384Duplicate, (Sha384Context, NewSha384Context), FALSE, 1, 0);
+}
 
 /**
   Digests the input data and updates SHA-384 context.
@@ -770,11 +1082,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA384_DUPLICATE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA384_UPDATE)(
+BOOLEAN
+EFIAPI
+Sha384Update (
   IN OUT  VOID        *Sha384Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha384Update, (Sha384Context, Data, DataSize), FALSE, 1, 0);
+}
 
 /**
   Completes computation of the SHA-384 digest value.
@@ -798,10 +1115,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA384_UPDATE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA384_FINAL)(
+BOOLEAN
+EFIAPI
+Sha384Final (
   IN OUT  VOID   *Sha384Context,
   OUT     UINT8  *HashValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha384Final, (Sha384Context, HashValue), FALSE, 1, 0);
+}
 
 /**
   Computes the SHA-384 message digest of a input data buffer.
@@ -823,11 +1145,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA384_FINAL)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA384_HASH_ALL)(
+BOOLEAN
+EFIAPI
+Sha384HashAll (
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha384HashAll, (Data, DataSize, HashValue), FALSE, 1, 0);
+}
 
 /**
   Retrieves the size, in bytes, of the context buffer required for SHA-512 hash operations.
@@ -837,9 +1164,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA384_HASH_ALL)(
   @since 1.0
   @ingroup Hash
 **/
-typedef UINTN (EFIAPI *ONE_CRYPTO_SHA512_GET_CONTEXT_SIZE)(
+UINTN
+EFIAPI
+Sha512GetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha512GetContextSize, (), 0, 1, 0);
+}
 
 /**
   Initializes user-supplied memory pointed by Sha512Context as SHA-512 hash context for
@@ -855,9 +1187,14 @@ typedef UINTN (EFIAPI *ONE_CRYPTO_SHA512_GET_CONTEXT_SIZE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA512_INIT)(
+BOOLEAN
+EFIAPI
+Sha512Init (
   OUT  VOID  *Sha512Context
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha512Init, (Sha512Context), FALSE, 1, 0);
+}
 
 /**
   Makes a copy of an existing SHA-512 context.
@@ -876,10 +1213,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA512_INIT)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA512_DUPLICATE)(
+BOOLEAN
+EFIAPI
+Sha512Duplicate (
   IN   CONST VOID  *Sha512Context,
   OUT  VOID        *NewSha512Context
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha512Duplicate, (Sha512Context, NewSha512Context), FALSE, 1, 0);
+}
 
 /**
   Digests the input data and updates SHA-512 context.
@@ -901,11 +1243,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA512_DUPLICATE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA512_UPDATE)(
+BOOLEAN
+EFIAPI
+Sha512Update (
   IN OUT  VOID        *Sha512Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha512Update, (Sha512Context, Data, DataSize), FALSE, 1, 0);
+}
 
 /**
   Completes computation of the SHA-512 digest value.
@@ -929,10 +1276,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA512_UPDATE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA512_FINAL)(
+BOOLEAN
+EFIAPI
+Sha512Final (
   IN OUT  VOID   *Sha512Context,
   OUT     UINT8  *HashValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha512Final, (Sha512Context, HashValue), FALSE, 1, 0);
+}
 
 /**
   Computes the SHA-512 message digest of a input data buffer.
@@ -954,11 +1306,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA512_FINAL)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA512_HASH_ALL)(
+BOOLEAN
+EFIAPI
+Sha512HashAll (
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sha512HashAll, (Data, DataSize, HashValue), FALSE, 1, 0);
+}
 
 /**
   Retrieves the size, in bytes, of the context buffer required for SM3 hash operations.
@@ -968,9 +1325,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SHA512_HASH_ALL)(
   @since 1.0
   @ingroup Hash
 **/
-typedef UINTN (EFIAPI *ONE_CRYPTO_SM3_GET_CONTEXT_SIZE)(
+UINTN
+EFIAPI
+Sm3GetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sm3GetContextSize, (), 0, 1, 0);
+}
 
 /**
   Initializes user-supplied memory pointed by Sm3Context as SM3 hash context for
@@ -986,9 +1348,14 @@ typedef UINTN (EFIAPI *ONE_CRYPTO_SM3_GET_CONTEXT_SIZE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SM3_INIT)(
+BOOLEAN
+EFIAPI
+Sm3Init (
   OUT  VOID  *Sm3Context
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sm3Init, (Sm3Context), FALSE, 1, 0);
+}
 
 /**
   Makes a copy of an existing SM3 context.
@@ -1007,10 +1374,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SM3_INIT)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SM3_DUPLICATE)(
+BOOLEAN
+EFIAPI
+Sm3Duplicate (
   IN   CONST VOID  *Sm3Context,
   OUT  VOID        *NewSm3Context
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sm3Duplicate, (Sm3Context, NewSm3Context), FALSE, 1, 0);
+}
 
 /**
   Digests the input data and updates SM3 context.
@@ -1032,11 +1404,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SM3_DUPLICATE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SM3_UPDATE)(
+BOOLEAN
+EFIAPI
+Sm3Update (
   IN OUT  VOID        *Sm3Context,
   IN      CONST VOID  *Data,
   IN      UINTN       DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sm3Update, (Sm3Context, Data, DataSize), FALSE, 1, 0);
+}
 
 /**
   Completes computation of the SM3 digest value.
@@ -1060,10 +1437,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SM3_UPDATE)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SM3_FINAL)(
+BOOLEAN
+EFIAPI
+Sm3Final (
   IN OUT  VOID   *Sm3Context,
   OUT     UINT8  *HashValue
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Sm3Final, (Sm3Context, HashValue), FALSE, 1, 0);
+}
 
 /**
   Computes the SM3 message digest of a input data buffer.
@@ -1085,20 +1467,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SM3_FINAL)(
   @since 1.0
   @ingroup Hash
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SM3_HASH_ALL)(
+BOOLEAN
+EFIAPI
+Sm3HashAll (
   IN   CONST VOID  *Data,
   IN   UINTN       DataSize,
   OUT  UINT8       *HashValue
-  );
-
-/** @} */
-
-/**
-  @defgroup AES Advanced Encryption Standard
-  @brief Functions for performing symmetric encryption.
-
-  @{
-**/
+  )
+{
+  CALL_CRYPTO_SERVICE (Sm3HashAll, (Data, DataSize, HashValue), FALSE, 1, 0);
+}
 
 /**
   Retrieves the size, in bytes, of the context buffer required for AES operations.
@@ -1111,9 +1489,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_SM3_HASH_ALL)(
   @since 1.0
   @ingroup AES
 **/
-typedef UINTN (EFIAPI *ONE_CRYPTO_AES_GET_CONTEXT_SIZE)(
+UINTN
+EFIAPI
+AesGetContextSize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AesGetContextSize, (), 0, 1, 0);
+}
 
 /**
   Initializes user-supplied memory as AES context for subsequent use.
@@ -1139,11 +1522,16 @@ typedef UINTN (EFIAPI *ONE_CRYPTO_AES_GET_CONTEXT_SIZE)(
   @since 1.0
   @ingroup AES
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AES_INIT)(
+BOOLEAN
+EFIAPI
+AesInit (
   OUT  VOID         *AesContext,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeyLength
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AesInit, (AesContext, Key, KeyLength), FALSE, 1, 0);
+}
 
 /**
   Performs AES encryption on a data buffer of the specified size in CBC mode.
@@ -1176,13 +1564,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AES_INIT)(
   @since 1.0
   @ingroup AES
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AES_CBC_ENCRYPT)(
+BOOLEAN
+EFIAPI
+AesCbcEncrypt (
   IN   VOID         *AesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
   IN   CONST UINT8  *Ivec,
   OUT  UINT8        *Output
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AesCbcEncrypt, (AesContext, Input, InputSize, Ivec, Output), FALSE, 1, 0);
+}
 
 /**
   Performs AES decryption on a data buffer of the specified size in CBC mode.
@@ -1215,13 +1608,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AES_CBC_ENCRYPT)(
   @since 1.0
   @ingroup AES
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AES_CBC_DECRYPT)(
+BOOLEAN
+EFIAPI
+AesCbcDecrypt (
   IN   VOID         *AesContext,
   IN   CONST UINT8  *Input,
   IN   UINTN        InputSize,
   IN   CONST UINT8  *Ivec,
   OUT  UINT8        *Output
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AesCbcDecrypt, (AesContext, Input, InputSize, Ivec, Output), FALSE, 1, 0);
+}
 
 /**
   Performs AEAD AES-GCM authenticated encryption on a data buffer and additional authenticated data (AAD).
@@ -1249,7 +1647,9 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AES_CBC_DECRYPT)(
   @since 1.0
   @ingroup AES
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AEAD_AES_GCM_ENCRYPT)(
+BOOLEAN
+EFIAPI
+AeadAesGcmEncrypt (
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   IN   CONST UINT8  *Iv,
@@ -1262,7 +1662,10 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AEAD_AES_GCM_ENCRYPT)(
   IN   UINTN        TagSize,
   OUT  UINT8        *DataOut,
   OUT  UINTN        *DataOutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AeadAesGcmEncrypt, (Key, KeySize, Iv, IvSize, AData, ADataSize, DataIn, DataInSize, TagOut, TagSize, DataOut, DataOutSize), FALSE, 1, 0);
+}
 
 /**
   Performs AEAD AES-GCM authenticated decryption on a data buffer and additional authenticated data (AAD).
@@ -1291,7 +1694,9 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AEAD_AES_GCM_ENCRYPT)(
   @since 1.0
   @ingroup AES
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AEAD_AES_GCM_DECRYPT)(
+BOOLEAN
+EFIAPI
+AeadAesGcmDecrypt (
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   IN   CONST UINT8  *Iv,
@@ -1304,16 +1709,10 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AEAD_AES_GCM_DECRYPT)(
   IN   UINTN        TagSize,
   OUT  UINT8        *DataOut,
   OUT  UINTN        *DataOutSize
-  );
-
-/** @} */
-
-/**
-  @defgroup BN Big Number
-  @brief Functions for operating on big numbers.
-
-  @{
-**/
+  )
+{
+  CALL_CRYPTO_SERVICE (AeadAesGcmDecrypt, (Key, KeySize, Iv, IvSize, AData, ADataSize, DataIn, DataInSize, Tag, TagSize, DataOut, DataOutSize), FALSE, 1, 0);
+}
 
 /**
   Allocate new Big Number.
@@ -1323,9 +1722,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AEAD_AES_GCM_DECRYPT)(
   @since 1.0
   @ingroup BN
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_BIG_NUM_INIT)(
+VOID *
+EFIAPI
+BigNumInit (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumInit, (), NULL, 1, 0);
+}
 
 /**
   Allocate new Big Number and assign the provided value to it.
@@ -1338,10 +1742,15 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_BIG_NUM_INIT)(
   @since 1.0
   @ingroup BN
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_BIG_NUM_FROM_BIN)(
+VOID *
+EFIAPI
+BigNumFromBin (
   IN CONST UINT8  *Buf,
   IN UINTN        Len
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumFromBin, (Buf, Len), NULL, 1, 0);
+}
 
 /**
   Convert the absolute value of Bn into big-endian form and store it at Buf.
@@ -1355,10 +1764,15 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_BIG_NUM_FROM_BIN)(
   @since 1.0
   @ingroup BN
 **/
-typedef INTN (EFIAPI *ONE_CRYPTO_BIG_NUM_TO_BIN)(
+INTN
+EFIAPI
+BigNumToBin (
   IN CONST VOID  *Bn,
   OUT UINT8      *Buf
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumToBin, (Bn, Buf), 0, 1, 0);
+}
 
 /**
   Free the Big Number.
@@ -1369,10 +1783,15 @@ typedef INTN (EFIAPI *ONE_CRYPTO_BIG_NUM_TO_BIN)(
   @since 1.0
   @ingroup BN
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_BIG_NUM_FREE)(
+VOID
+EFIAPI
+BigNumFree (
   IN VOID     *Bn,
   IN BOOLEAN  Clear
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (BigNumFree, (Bn, Clear), 1, 0);
+}
 
 /**
   Calculate the sum of two Big Numbers.
@@ -1389,11 +1808,16 @@ typedef VOID (EFIAPI *ONE_CRYPTO_BIG_NUM_FREE)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_ADD)(
+BOOLEAN
+EFIAPI
+BigNumAdd (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumAdd, (BnA, BnB, BnRes), FALSE, 1, 0);
+}
 
 /**
   Subtract two Big Numbers.
@@ -1410,11 +1834,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_ADD)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_SUB)(
+BOOLEAN
+EFIAPI
+BigNumSub (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumSub, (BnA, BnB, BnRes), FALSE, 1, 0);
+}
 
 /**
   Calculate remainder: BnRes = BnA % BnB.
@@ -1431,11 +1860,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_SUB)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_MOD)(
+BOOLEAN
+EFIAPI
+BigNumMod (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumMod, (BnA, BnB, BnRes), FALSE, 1, 0);
+}
 
 /**
   Compute BnA to the BnP-th power modulo BnM.
@@ -1453,12 +1887,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_MOD)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_EXP_MOD)(
+BOOLEAN
+EFIAPI
+BigNumExpMod (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnP,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumExpMod, (BnA, BnP, BnM, BnRes), FALSE, 1, 0);
+}
 
 /**
   Compute BnA inverse modulo BnM.
@@ -1475,11 +1914,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_EXP_MOD)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_INVERSE_MOD)(
+BOOLEAN
+EFIAPI
+BigNumInverseMod (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumInverseMod, (BnA, BnM, BnRes), FALSE, 1, 0);
+}
 
 /**
   Divide two Big Numbers.
@@ -1496,11 +1940,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_INVERSE_MOD)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_DIV)(
+BOOLEAN
+EFIAPI
+BigNumDiv (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumDiv, (BnA, BnB, BnRes), FALSE, 1, 0);
+}
 
 /**
   Multiply two Big Numbers modulo BnM.
@@ -1518,12 +1967,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_DIV)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_MUL_MOD)(
+BOOLEAN
+EFIAPI
+BigNumMulMod (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumMulMod, (BnA, BnB, BnM, BnRes), FALSE, 1, 0);
+}
 
 /**
   Compare two Big Numbers.
@@ -1538,10 +1992,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_MUL_MOD)(
   @since 1.0
   @ingroup BN
 **/
-typedef INTN (EFIAPI *ONE_CRYPTO_BIG_NUM_CMP)(
+INTN
+EFIAPI
+BigNumCmp (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumCmp, (BnA, BnB), 0, 1, 0);
+}
 
 /**
   Get number of bits in Bn.
@@ -1553,9 +2012,14 @@ typedef INTN (EFIAPI *ONE_CRYPTO_BIG_NUM_CMP)(
   @since 1.0
   @ingroup BN
 **/
-typedef UINTN (EFIAPI *ONE_CRYPTO_BIG_NUM_BITS)(
+UINTN
+EFIAPI
+BigNumBits (
   IN CONST VOID  *Bn
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumBits, (Bn), 0, 1, 0);
+}
 
 /**
   Get number of bytes in Bn.
@@ -1567,9 +2031,14 @@ typedef UINTN (EFIAPI *ONE_CRYPTO_BIG_NUM_BITS)(
   @since 1.0
   @ingroup BN
 **/
-typedef UINTN (EFIAPI *ONE_CRYPTO_BIG_NUM_BYTES)(
+UINTN
+EFIAPI
+BigNumBytes (
   IN CONST VOID  *Bn
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumBytes, (Bn), 0, 1, 0);
+}
 
 /**
   Checks if Big Number equals to the given Num.
@@ -1583,10 +2052,15 @@ typedef UINTN (EFIAPI *ONE_CRYPTO_BIG_NUM_BYTES)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_IS_WORD)(
+BOOLEAN
+EFIAPI
+BigNumIsWord (
   IN CONST VOID  *Bn,
   IN UINTN       Num
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumIsWord, (Bn, Num), FALSE, 1, 0);
+}
 
 /**
   Checks if Big Number is odd.
@@ -1599,9 +2073,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_IS_WORD)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_IS_ODD)(
+BOOLEAN
+EFIAPI
+BigNumIsOdd (
   IN CONST VOID  *Bn
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumIsOdd, (Bn), FALSE, 1, 0);
+}
 
 /**
   Copy Big number.
@@ -1615,10 +2094,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_IS_ODD)(
   @since 1.0
   @ingroup BN
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_BIG_NUM_COPY)(
+VOID *
+EFIAPI
+BigNumCopy (
   OUT VOID       *BnDst,
   IN CONST VOID  *BnSrc
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumCopy, (BnDst, BnSrc), NULL, 1, 0);
+}
 
 /**
   Get constant Big number with value of "1".
@@ -1629,9 +2113,14 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_BIG_NUM_COPY)(
   @since 1.0
   @ingroup BN
 **/
-typedef CONST VOID *(EFIAPI *ONE_CRYPTO_BIG_NUM_VALUE_ONE)(
+CONST VOID *
+EFIAPI
+BigNumValueOne (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumValueOne, (), NULL, 1, 0);
+}
 
 /**
   Shift right Big Number.
@@ -1648,11 +2137,16 @@ typedef CONST VOID *(EFIAPI *ONE_CRYPTO_BIG_NUM_VALUE_ONE)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_R_SHIFT)(
+BOOLEAN
+EFIAPI
+BigNumRShift (
   IN CONST VOID  *Bn,
   IN UINTN       N,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumRShift, (Bn, N, BnRes), FALSE, 1, 0);
+}
 
 /**
   Mark Big Number for constant time computations.
@@ -1664,9 +2158,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_R_SHIFT)(
   @since 1.0
   @ingroup BN
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_BIG_NUM_CONST_TIME)(
+VOID
+EFIAPI
+BigNumConstTime (
   IN VOID  *Bn
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (BigNumConstTime, (Bn), 1, 0);
+}
 
 /**
   Calculate square modulo.
@@ -1683,11 +2182,16 @@ typedef VOID (EFIAPI *ONE_CRYPTO_BIG_NUM_CONST_TIME)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_SQR_MOD)(
+BOOLEAN
+EFIAPI
+BigNumSqrMod (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumSqrMod, (BnA, BnM, BnRes), FALSE, 1, 0);
+}
 
 /**
   Create new Big Number computation context. This is an opaque structure
@@ -1699,9 +2203,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_SQR_MOD)(
   @since 1.0
   @ingroup BN
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_BIG_NUM_NEW_CONTEXT)(
+VOID *
+EFIAPI
+BigNumNewContext (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumNewContext, (), NULL, 1, 0);
+}
 
 /**
   Free Big Number context that was allocated with BigNumNewContext().
@@ -1711,9 +2220,14 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_BIG_NUM_NEW_CONTEXT)(
   @since 1.0
   @ingroup BN
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_BIG_NUM_CONTEXT_FREE)(
+VOID
+EFIAPI
+BigNumContextFree (
   IN VOID  *BnCtx
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (BigNumContextFree, (BnCtx), 1, 0);
+}
 
 /**
   Set Big Number to a given value.
@@ -1727,10 +2241,15 @@ typedef VOID (EFIAPI *ONE_CRYPTO_BIG_NUM_CONTEXT_FREE)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_SET_UINT)(
+BOOLEAN
+EFIAPI
+BigNumSetUint (
   IN VOID   *Bn,
   IN UINTN  Val
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumSetUint, (Bn, Val), FALSE, 1, 0);
+}
 
 /**
   Add two Big Numbers modulo BnM.
@@ -1746,21 +2265,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_SET_UINT)(
   @since 1.0
   @ingroup BN
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_ADD_MOD)(
+BOOLEAN
+EFIAPI
+BigNumAddMod (
   IN CONST VOID  *BnA,
   IN CONST VOID  *BnB,
   IN CONST VOID  *BnM,
   OUT VOID       *BnRes
-  );
-
-/** @} */
-
-/**
-  @defgroup HKDF HMAC-based Extract-and-Expand Key Derivation Function
-  @brief Functions for operating on big numbers.
-
-  @{
-**/
+  )
+{
+  CALL_CRYPTO_SERVICE (BigNumAddMod, (BnA, BnB, BnM, BnRes), FALSE, 1, 0);
+}
 
 /**
   Derive key data using HMAC-SHA* based KDF.
@@ -1780,7 +2295,9 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_BIG_NUM_ADD_MOD)(
   @since 1.0
   @ingroup HKDF
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA256_EXTRACT_AND_EXPAND)(
+BOOLEAN
+EFIAPI
+HkdfSha256ExtractAndExpand (
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   IN   CONST UINT8  *Salt,
@@ -1789,7 +2306,10 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA256_EXTRACT_AND_EXPAND)(
   IN   UINTN        InfoSize,
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HkdfSha256ExtractAndExpand, (Key, KeySize, Salt, SaltSize, Info, InfoSize, Out, OutSize), FALSE, 1, 0);
+}
 
 /**
   Derive HMAC-SHA*-based Extract key Derivation Function (HKDF).
@@ -1807,14 +2327,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA256_EXTRACT_AND_EXPAND)(
   @since 1.0
   @ingroup HKDF
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA256_EXTRACT)(
+BOOLEAN
+EFIAPI
+HkdfSha256Extract (
   IN CONST UINT8  *Key,
   IN UINTN        KeySize,
   IN CONST UINT8  *Salt,
   IN UINTN        SaltSize,
   OUT UINT8       *PrkOut,
   UINTN           PrkOutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HkdfSha256Extract, (Key, KeySize, Salt, SaltSize, PrkOut, PrkOutSize), FALSE, 1, 0);
+}
 
 /**
   Derive HMAC-SHA*-based Expand Key Derivation Function (HKDF).
@@ -1832,14 +2357,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA256_EXTRACT)(
   @since 1.0
   @ingroup HKDF
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA256_EXPAND)(
+BOOLEAN
+EFIAPI
+HkdfSha256Expand (
   IN   CONST UINT8  *Prk,
   IN   UINTN        PrkSize,
   IN   CONST UINT8  *Info,
   IN   UINTN        InfoSize,
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HkdfSha256Expand, (Prk, PrkSize, Info, InfoSize, Out, OutSize), FALSE, 1, 0);
+}
 
 /**
   Derive key data using HMAC-SHA* based KDF.
@@ -1859,7 +2389,9 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA256_EXPAND)(
   @since 1.0
   @ingroup HKDF
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA384_EXTRACT_AND_EXPAND)(
+BOOLEAN
+EFIAPI
+HkdfSha384ExtractAndExpand (
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize,
   IN   CONST UINT8  *Salt,
@@ -1868,7 +2400,10 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA384_EXTRACT_AND_EXPAND)(
   IN   UINTN        InfoSize,
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HkdfSha384ExtractAndExpand, (Key, KeySize, Salt, SaltSize, Info, InfoSize, Out, OutSize), FALSE, 1, 0);
+}
 
 /**
   Derive HMAC-SHA*-based Extract key Derivation Function (HKDF).
@@ -1886,14 +2421,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA384_EXTRACT_AND_EXPAND)(
   @since 1.0
   @ingroup HKDF
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA384_EXTRACT)(
+BOOLEAN
+EFIAPI
+HkdfSha384Extract (
   IN CONST UINT8  *Key,
   IN UINTN        KeySize,
   IN CONST UINT8  *Salt,
   IN UINTN        SaltSize,
   OUT UINT8       *PrkOut,
   UINTN           PrkOutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (HkdfSha384Extract, (Key, KeySize, Salt, SaltSize, PrkOut, PrkOutSize), FALSE, 1, 0);
+}
 
 /**
   Derive HMAC-SHA*-based Expand Key Derivation Function (HKDF).
@@ -1911,23 +2451,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA384_EXTRACT)(
   @since 1.0
   @ingroup HKDF
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA384_EXPAND)(
+BOOLEAN
+EFIAPI
+HkdfSha384Expand (
   IN   CONST UINT8  *Prk,
   IN   UINTN        PrkSize,
   IN   CONST UINT8  *Info,
   IN   UINTN        InfoSize,
   OUT  UINT8        *Out,
   IN   UINTN        OutSize
-  );
-
-/** @} */
-
-/**
-  @defgroup PKCS Public Key Cryptography Standards
-  @brief Functions for Public Key Cryptography Standards.
-
-  @{
-**/
+  )
+{
+  CALL_CRYPTO_SERVICE (HkdfSha384Expand, (Prk, PrkSize, Info, InfoSize, Out, OutSize), FALSE, 1, 0);
+}
 
 /**
   Verifies the validity of an Authenticode Signature.
@@ -1949,14 +2485,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_HKDF_SHA384_EXPAND)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AUTHENTICODE_VERIFY)(
+BOOLEAN
+EFIAPI
+AuthenticodeVerify (
   IN  CONST UINT8  *AuthData,
   IN  UINTN        DataSize,
   IN  CONST UINT8  *TrustedCert,
   IN  UINTN        CertSize,
   IN  CONST UINT8  *ImageHash,
   IN  UINTN        HashSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (AuthenticodeVerify, (AuthData, DataSize, TrustedCert, CertSize, ImageHash, HashSize), FALSE, 1, 0);
+}
 
 /**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
@@ -1981,7 +2522,9 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AUTHENTICODE_VERIFY)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS1V2_ENCRYPT)(
+BOOLEAN
+EFIAPI
+Pkcs1v2Encrypt (
   IN   CONST UINT8  *PublicKey,
   IN   UINTN        PublicKeySize,
   IN   UINT8        *InData,
@@ -1990,7 +2533,10 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS1V2_ENCRYPT)(
   IN   UINTN        PrngSeedSize   OPTIONAL,
   OUT  UINT8        **EncryptedData,
   OUT  UINTN        *EncryptedDataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs1v2Encrypt, (PublicKey, PublicKeySize, InData, InDataSize, PrngSeed, PrngSeedSize, EncryptedData, EncryptedDataSize), FALSE, 1, 0);
+}
 
 /**
   Decrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
@@ -2010,14 +2556,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS1V2_ENCRYPT)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS1V2_DECRYPT)(
+BOOLEAN
+EFIAPI
+Pkcs1v2Decrypt (
   IN   CONST UINT8  *PrivateKey,
   IN   UINTN        PrivateKeySize,
   IN   UINT8        *EncryptedData,
   IN   UINTN        EncryptedDataSize,
   OUT  UINT8        **OutData,
   OUT  UINTN        *OutDataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs1v2Decrypt, (PrivateKey, PrivateKeySize, EncryptedData, EncryptedDataSize, OutData, OutDataSize), FALSE, 1, 0);
+}
 
 /**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
@@ -2047,7 +2598,9 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS1V2_DECRYPT)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_OAEP_ENCRYPT)(
+BOOLEAN
+EFIAPI
+RsaOaepEncrypt (
   IN   VOID         *RsaContext,
   IN   UINT8        *InData,
   IN   UINTN        InDataSize,
@@ -2056,7 +2609,10 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_OAEP_ENCRYPT)(
   IN   UINT16       DigestLen OPTIONAL,
   OUT  UINT8        **EncryptedData,
   OUT  UINTN        *EncryptedDataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaOaepEncrypt, (RsaContext, InData, InDataSize, PrngSeed, PrngSeedSize, DigestLen, EncryptedData, EncryptedDataSize), FALSE, 1, 0);
+}
 
 /**
   Decrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
@@ -2082,14 +2638,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_OAEP_ENCRYPT)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_OAEP_DECRYPT)(
+BOOLEAN
+EFIAPI
+RsaOaepDecrypt (
   IN   VOID    *RsaContext,
   IN   UINT8   *EncryptedData,
   IN   UINTN   EncryptedDataSize,
   IN   UINT16  DigestLen OPTIONAL,
   OUT  UINT8   **OutData,
   OUT  UINTN   *OutDataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaOaepDecrypt, (RsaContext, EncryptedData, EncryptedDataSize, DigestLen, OutData, OutDataSize), FALSE, 1, 0);
+}
 
 /**
   Derives a key from a password using a salt and iteration count, based on PKCS#5 v2.0
@@ -2117,7 +2678,9 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_OAEP_DECRYPT)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS5_HASH_PASSWORD)(
+BOOLEAN
+EFIAPI
+Pkcs5HashPassword (
   IN  UINTN        PasswordLength,
   IN  CONST CHAR8  *Password,
   IN  UINTN        SaltLength,
@@ -2126,7 +2689,10 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS5_HASH_PASSWORD)(
   IN  UINTN        DigestSize,
   IN  UINTN        KeyLength,
   OUT UINT8        *OutKey
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs5HashPassword, (PasswordLength, Password, SaltLength, Salt, IterationCount, DigestSize, KeyLength, OutKey), FALSE, 1, 0);
+}
 
 /**
   Get the signer's certificates from PKCS#7 signed data as described in "PKCS #7:
@@ -2153,14 +2719,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS5_HASH_PASSWORD)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_GET_SIGNERS)(
+BOOLEAN
+EFIAPI
+Pkcs7GetSigners (
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length,
   OUT UINT8        **CertStack,
   OUT UINTN        *StackLength,
   OUT UINT8        **TrustedCert,
   OUT UINTN        *CertLength
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs7GetSigners, (P7Data, P7Length, CertStack, StackLength, TrustedCert, CertLength), FALSE, 1, 0);
+}
 
 /**
 Wrap function to use free() to free allocated memory for certificates.
@@ -2170,9 +2741,14 @@ If this interface is not supported, then ASSERT().
   @since 1.0
   @ingroup PKCS
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_PKCS7_FREE_SIGNERS)(
+VOID
+EFIAPI
+Pkcs7FreeSigners (
   IN  UINT8  *Certs
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (Pkcs7FreeSigners, (Certs), 1, 0);
+}
 
 /**
   Retrieves all embedded certificates from PKCS#7 signed data as described in "PKCS #7:
@@ -2196,14 +2772,19 @@ typedef VOID (EFIAPI *ONE_CRYPTO_PKCS7_FREE_SIGNERS)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_GET_CERTIFICATES_LIST)(
+BOOLEAN
+EFIAPI
+Pkcs7GetCertificatesList (
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length,
   OUT UINT8        **SignerChainCerts,
   OUT UINTN        *ChainLength,
   OUT UINT8        **UnchainCerts,
   OUT UINTN        *UnchainLength
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs7GetCertificatesList, (P7Data, P7Length, SignerChainCerts, ChainLength, UnchainCerts, UnchainLength), FALSE, 1, 0);
+}
 
 /**
   Creates a PKCS#7 signedData as described in "PKCS #7: Cryptographic Message
@@ -2232,7 +2813,9 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_GET_CERTIFICATES_LIST)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_SIGN)(
+BOOLEAN
+EFIAPI
+Pkcs7Sign (
   IN   CONST UINT8  *PrivateKey,
   IN   UINTN        PrivateKeySize,
   IN   CONST UINT8  *KeyPassword,
@@ -2243,7 +2826,10 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_SIGN)(
   IN   UINT8        *OtherCerts      OPTIONAL,
   OUT  UINT8        **SignedData,
   OUT  UINTN        *SignedDataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs7Sign, (PrivateKey, PrivateKeySize, KeyPassword, InData, InDataSize, SignCert, SignCertSize, OtherCerts, SignedData, SignedDataSize), FALSE, 1, 0);
+}
 
 /**
   Verifies the validity of a PKCS#7 signed data as described in "PKCS #7:
@@ -2272,14 +2858,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_SIGN)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_VERIFY)(
+BOOLEAN
+EFIAPI
+Pkcs7Verify (
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length,
   IN  CONST UINT8  *TrustedCert,
   IN  UINTN        CertLength,
   IN  CONST UINT8  *InData,
   IN  UINTN        DataLength
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs7Verify, (P7Data, P7Length, TrustedCert, CertLength, InData, DataLength), FALSE, 1, 0);
+}
 
 /**
   Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
@@ -2313,7 +2904,9 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_VERIFY)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_ENCRYPT)(
+BOOLEAN
+EFIAPI
+Pkcs7Encrypt (
   IN   UINT8   *X509Stack,
   IN   UINT8   *InData,
   IN   UINTN   InDataSize,
@@ -2321,7 +2914,10 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_ENCRYPT)(
   IN   UINT32  Flags,
   OUT  UINT8   **ContentInfo,
   OUT  UINTN   *ContentInfoSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs7Encrypt, (X509Stack, InData, InDataSize, CipherNid, Flags, ContentInfo, ContentInfoSize), FALSE, 1, 0);
+}
 
 /**
   This function receives a PKCS7 formatted signature, and then verifies that
@@ -2354,13 +2950,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_ENCRYPT)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef RETURN_STATUS (EFIAPI *ONE_CRYPTO_VERIFY_EK_US_IN_PKCS7_SIGNATURE)(
+RETURN_STATUS
+EFIAPI
+VerifyEKUsInPkcs7Signature (
   IN  CONST UINT8   *Pkcs7Signature,
   IN  CONST UINT32  SignatureSize,
   IN  CONST CHAR8   *RequiredEKUs[],
   IN  CONST UINT32  RequiredEKUsSize,
   IN  BOOLEAN       RequireAllPresent
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (VerifyEKUsInPkcs7Signature, (Pkcs7Signature, SignatureSize, RequiredEKUs, RequiredEKUsSize, RequireAllPresent), 0, 1, 0);
+}
 
 /**
   Extracts the attached content from a PKCS#7 signed data if existed. The input signed
@@ -2380,21 +2981,17 @@ typedef RETURN_STATUS (EFIAPI *ONE_CRYPTO_VERIFY_EK_US_IN_PKCS7_SIGNATURE)(
   @since 1.0
   @ingroup PKCS
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_GET_ATTACHED_CONTENT)(
+BOOLEAN
+EFIAPI
+Pkcs7GetAttachedContent (
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length,
   OUT VOID         **Content,
   OUT UINTN        *ContentSize
-  );
-
-/** @} */
-
-/**
-  @defgroup DH Diffie-Hellman
-  @brief Functions for Diffie-Hellman key exchange.
-
-  @{
-**/
+  )
+{
+  CALL_CRYPTO_SERVICE (Pkcs7GetAttachedContent, (P7Data, P7Length, Content, ContentSize), FALSE, 1, 0);
+}
 
 /**
   Allocates and Initializes one Diffie-Hellman Context for subsequent use.
@@ -2405,9 +3002,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_GET_ATTACHED_CONTENT)(
   @since 1.0
   @ingroup DH
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_DH_NEW)(
+VOID *
+EFIAPI
+DhNew (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (DhNew, (), NULL, 1, 0);
+}
 
 /**
   Release the specified DH context.
@@ -2417,9 +3019,14 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_DH_NEW)(
   @since 1.0
   @ingroup DH
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_DH_FREE)(
+VOID
+EFIAPI
+DhFree (
   IN  VOID  *DhContext
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (DhFree, (DhContext), 1, 0);
+}
 
 /**
   Generates DH parameter.
@@ -2442,12 +3049,17 @@ typedef VOID (EFIAPI *ONE_CRYPTO_DH_FREE)(
   @since 1.0
   @ingroup DH
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_DH_GENERATE_PARAMETER)(
+BOOLEAN
+EFIAPI
+DhGenerateParameter (
   IN OUT  VOID   *DhContext,
   IN      UINTN  Generator,
   IN      UINTN  PrimeLength,
   OUT     UINT8  *Prime
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (DhGenerateParameter, (DhContext, Generator, PrimeLength, Prime), FALSE, 1, 0);
+}
 
 /**
   Sets generator and prime parameters for DH.
@@ -2470,12 +3082,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_DH_GENERATE_PARAMETER)(
   @since 1.0
   @ingroup DH
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_DH_SET_PARAMETER)(
+BOOLEAN
+EFIAPI
+DhSetParameter (
   IN OUT  VOID         *DhContext,
   IN      UINTN        Generator,
   IN      UINTN        PrimeLength,
   IN      CONST UINT8  *Prime
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (DhSetParameter, (DhContext, Generator, PrimeLength, Prime), FALSE, 1, 0);
+}
 
 /**
 Generates DH public key.
@@ -2504,11 +3121,16 @@ If this interface is not supported, then return FALSE.
   @since 1.0
   @ingroup DH
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_DH_GENERATE_KEY)(
+BOOLEAN
+EFIAPI
+DhGenerateKey (
   IN OUT  VOID   *DhContext,
   OUT     UINT8  *PublicKey,
   IN OUT  UINTN  *PublicKeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (DhGenerateKey, (DhContext, PublicKey, PublicKeySize), FALSE, 1, 0);
+}
 
 /**
   Computes exchanged common key.
@@ -2539,22 +3161,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_DH_GENERATE_KEY)(
   @since 1.0
   @ingroup DH
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_DH_COMPUTE_KEY)(
+BOOLEAN
+EFIAPI
+DhComputeKey (
   IN OUT  VOID         *DhContext,
   IN      CONST UINT8  *PeerPublicKey,
   IN      UINTN        PeerPublicKeySize,
   OUT     UINT8        *Key,
   IN OUT  UINTN        *KeySize
-  );
-
-/** @} */
-
-/**
-  @defgroup EC Elliptic Curve
-  @brief Functions for Elliptic Curve Cryptography.
-
-  @{
-**/
+  )
+{
+  CALL_CRYPTO_SERVICE (DhComputeKey, (DhContext, PeerPublicKey, PeerPublicKeySize, Key, KeySize), FALSE, 1, 0);
+}
 
 /**
   Initialize new opaque EcGroup object. This object represents an EC curve and
@@ -2570,9 +3188,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_DH_COMPUTE_KEY)(
   @since 1.0
   @ingroup EC
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_EC_GROUP_INIT)(
+VOID *
+EFIAPI
+EcGroupInit (
   IN UINTN  CryptoNid
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGroupInit, (CryptoNid), NULL, 1, 0);
+}
 
 /**
   Get EC curve parameters. While elliptic curve equation is Y^2 mod P = (X^3 + AX + B) Mod P.
@@ -2592,13 +3215,18 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_EC_GROUP_INIT)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_GROUP_GET_CURVE)(
+BOOLEAN
+EFIAPI
+EcGroupGetCurve (
   IN CONST VOID  *EcGroup,
   OUT VOID       *BnPrime,
   OUT VOID       *BnA,
   OUT VOID       *BnB,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGroupGetCurve, (EcGroup, BnPrime, BnA, BnB, BnCtx), FALSE, 1, 0);
+}
 
 /**
   Get EC group order.
@@ -2615,10 +3243,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_GROUP_GET_CURVE)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_GROUP_GET_ORDER)(
+BOOLEAN
+EFIAPI
+EcGroupGetOrder (
   IN VOID   *EcGroup,
   OUT VOID  *BnOrder
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGroupGetOrder, (EcGroup, BnOrder), FALSE, 1, 0);
+}
 
 /**
   Free previously allocated EC group object using EcGroupInit().
@@ -2628,9 +3261,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_GROUP_GET_ORDER)(
   @since 1.0
   @ingroup EC
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_EC_GROUP_FREE)(
+VOID
+EFIAPI
+EcGroupFree (
   IN VOID  *EcGroup
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (EcGroupFree, (EcGroup), 1, 0);
+}
 
 /**
   Initialize new opaque EC Point object. This object represents an EC point
@@ -2644,9 +3282,14 @@ typedef VOID (EFIAPI *ONE_CRYPTO_EC_GROUP_FREE)(
   @since 1.0
   @ingroup EC
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_EC_POINT_INIT)(
+VOID *
+EFIAPI
+EcPointInit (
   IN CONST VOID  *EcGroup
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointInit, (EcGroup), NULL, 1, 0);
+}
 
 /**
   Free previously allocated EC Point object using EcPointInit().
@@ -2657,10 +3300,15 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_EC_POINT_INIT)(
   @since 1.0
   @ingroup EC
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_EC_POINT_DE_INIT)(
+VOID
+EFIAPI
+EcPointDeInit (
   IN VOID     *EcPoint,
   IN BOOLEAN  Clear
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (EcPointDeInit, (EcPoint, Clear), 1, 0);
+}
 
 /**
   Get EC point affine (x,y) coordinates.
@@ -2680,13 +3328,18 @@ typedef VOID (EFIAPI *ONE_CRYPTO_EC_POINT_DE_INIT)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_GET_AFFINE_COORDINATES)(
+BOOLEAN
+EFIAPI
+EcPointGetAffineCoordinates (
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPoint,
   OUT VOID       *BnX,
   OUT VOID       *BnY,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointGetAffineCoordinates, (EcGroup, EcPoint, BnX, BnY, BnCtx), FALSE, 1, 0);
+}
 
 /**
   Set EC point affine (x,y) coordinates.
@@ -2703,13 +3356,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_GET_AFFINE_COORDINATES)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_SET_AFFINE_COORDINATES)(
+BOOLEAN
+EFIAPI
+EcPointSetAffineCoordinates (
   IN CONST VOID  *EcGroup,
   IN VOID        *EcPoint,
   IN CONST VOID  *BnX,
   IN CONST VOID  *BnY,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointSetAffineCoordinates, (EcGroup, EcPoint, BnX, BnY, BnCtx), FALSE, 1, 0);
+}
 
 /**
   EC Point addition. EcPointResult = EcPointA + EcPointB.
@@ -2727,13 +3385,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_SET_AFFINE_COORDINATES)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_ADD)(
+BOOLEAN
+EFIAPI
+EcPointAdd (
   IN CONST VOID  *EcGroup,
   OUT VOID       *EcPointResult,
   IN CONST VOID  *EcPointA,
   IN CONST VOID  *EcPointB,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointAdd, (EcGroup, EcPointResult, EcPointA, EcPointB, BnCtx), FALSE, 1, 0);
+}
 
 /**
   Variable EC point multiplication. EcPointResult = EcPoint * BnPScalar.
@@ -2751,13 +3414,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_ADD)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_MUL)(
+BOOLEAN
+EFIAPI
+EcPointMul (
   IN CONST VOID  *EcGroup,
   OUT VOID       *EcPointResult,
   IN CONST VOID  *EcPoint,
   IN CONST VOID  *BnPScalar,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointMul, (EcGroup, EcPointResult, EcPoint, BnPScalar, BnCtx), FALSE, 1, 0);
+}
 
 /**
   Calculate the inverse of the supplied EC point.
@@ -2772,11 +3440,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_MUL)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_INVERT)(
+BOOLEAN
+EFIAPI
+EcPointInvert (
   IN CONST VOID  *EcGroup,
   IN OUT VOID    *EcPoint,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointInvert, (EcGroup, EcPoint, BnCtx), FALSE, 1, 0);
+}
 
 /**
   Check if the supplied point is on EC curve.
@@ -2791,11 +3464,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_INVERT)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_IS_ON_CURVE)(
+BOOLEAN
+EFIAPI
+EcPointIsOnCurve (
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPoint,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointIsOnCurve, (EcGroup, EcPoint, BnCtx), FALSE, 1, 0);
+}
 
 /**
   Check if the supplied point is at infinity.
@@ -2809,10 +3487,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_IS_ON_CURVE)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_IS_AT_INFINITY)(
+BOOLEAN
+EFIAPI
+EcPointIsAtInfinity (
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPoint
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointIsAtInfinity, (EcGroup, EcPoint), FALSE, 1, 0);
+}
 
 /**
   Check if EC points are equal.
@@ -2828,12 +3511,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_IS_AT_INFINITY)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_EQUAL)(
+BOOLEAN
+EFIAPI
+EcPointEqual (
   IN CONST VOID  *EcGroup,
   IN CONST VOID  *EcPointA,
   IN CONST VOID  *EcPointB,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointEqual, (EcGroup, EcPointA, EcPointB, BnCtx), FALSE, 1, 0);
+}
 
 /**
   Set EC point compressed coordinates. Points can be described in terms of
@@ -2855,13 +3543,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_EQUAL)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_SET_COMPRESSED_COORDINATES)(
+BOOLEAN
+EFIAPI
+EcPointSetCompressedCoordinates (
   IN CONST VOID  *EcGroup,
   IN VOID        *EcPoint,
   IN CONST VOID  *BnX,
   IN UINT8       YBit,
   IN VOID        *BnCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcPointSetCompressedCoordinates, (EcGroup, EcPoint, BnX, YBit, BnCtx), FALSE, 1, 0);
+}
 
 /**
   Allocates and Initializes one Elliptic Curve Context for subsequent use
@@ -2874,9 +3567,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_POINT_SET_COMPRESSED_COORDINATES)(
   @since 1.0
   @ingroup EC
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_EC_NEW_BY_NID)(
+VOID *
+EFIAPI
+EcNewByNid (
   IN UINTN  Nid
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcNewByNid, (Nid), NULL, 1, 0);
+}
 
 /**
   Release the specified EC context.
@@ -2886,9 +3584,14 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_EC_NEW_BY_NID)(
   @since 1.0
   @ingroup EC
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_EC_FREE)(
+VOID
+EFIAPI
+EcFree (
   IN  VOID  *EcContext
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (EcFree, (EcContext), 1, 0);
+}
 
 /**
   Generates EC key and returns EC public key (X, Y), Please note, this function uses
@@ -2919,11 +3622,16 @@ typedef VOID (EFIAPI *ONE_CRYPTO_EC_FREE)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_GENERATE_KEY)(
+BOOLEAN
+EFIAPI
+EcGenerateKey (
   IN OUT  VOID   *EcContext,
   OUT     UINT8  *PublicKey,
   IN OUT  UINTN  *PublicKeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGenerateKey, (EcContext, PublicKey, PublicKeySize), FALSE, 1, 0);
+}
 
 /**
   Gets the public key component from the established EC context.
@@ -2942,11 +3650,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_GENERATE_KEY)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_GET_PUB_KEY)(
+BOOLEAN
+EFIAPI
+EcGetPubKey (
   IN OUT  VOID   *EcContext,
   OUT     UINT8  *PublicKey,
   IN OUT  UINTN  *PublicKeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGetPubKey, (EcContext, PublicKey, PublicKeySize), FALSE, 1, 0);
+}
 
 /**
   Computes exchanged common key.
@@ -2976,14 +3689,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_GET_PUB_KEY)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_DH_COMPUTE_KEY)(
+BOOLEAN
+EFIAPI
+EcDhComputeKey (
   IN OUT  VOID         *EcContext,
   IN      CONST UINT8  *PeerPublic,
   IN      UINTN        PeerPublicSize,
   IN      CONST INT32  *CompressFlag,
   OUT     UINT8        *Key,
   IN OUT  UINTN        *KeySize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcDhComputeKey, (EcContext, PeerPublic, PeerPublicSize, CompressFlag, Key, KeySize), FALSE, 1, 0);
+}
 
 /**
   Retrieve the EC Private Key from the password-protected PEM key data.
@@ -3004,12 +3722,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_DH_COMPUTE_KEY)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_GET_PRIVATE_KEY_FROM_PEM)(
+BOOLEAN
+EFIAPI
+EcGetPrivateKeyFromPem (
   IN   CONST UINT8  *PemData,
   IN   UINTN        PemSize,
   IN   CONST CHAR8  *Password,
   OUT  VOID         **EcContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGetPrivateKeyFromPem, (PemData, PemSize, Password, EcContext), FALSE, 1, 0);
+}
 
 /**
   Retrieve the EC Public Key from one DER-encoded X509 certificate.
@@ -3029,11 +3752,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_GET_PRIVATE_KEY_FROM_PEM)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_GET_PUBLIC_KEY_FROM_X509)(
+BOOLEAN
+EFIAPI
+EcGetPublicKeyFromX509 (
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  VOID         **EcContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcGetPublicKeyFromX509, (Cert, CertSize, EcContext), FALSE, 1, 0);
+}
 
 /**
   Carries out the EC-DSA signature.
@@ -3066,14 +3794,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_GET_PUBLIC_KEY_FROM_X509)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_DSA_SIGN)(
+BOOLEAN
+EFIAPI
+EcDsaSign (
   IN      VOID         *EcContext,
   IN      UINTN        HashNid,
   IN      CONST UINT8  *MessageHash,
   IN      UINTN        HashSize,
   OUT     UINT8        *Signature,
   IN OUT  UINTN        *SigSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (EcDsaSign, (EcContext, HashNid, MessageHash, HashSize, Signature, SigSize), FALSE, 1, 0);
+}
 
 /**
   Verifies the EC-DSA signature.
@@ -3100,23 +3833,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_DSA_SIGN)(
   @since 1.0
   @ingroup EC
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_DSA_VERIFY)(
+BOOLEAN
+EFIAPI
+EcDsaVerify (
   IN  VOID         *EcContext,
   IN  UINTN        HashNid,
   IN  CONST UINT8  *MessageHash,
   IN  UINTN        HashSize,
   IN  CONST UINT8  *Signature,
   IN  UINTN        SigSize
-  );
-
-/** @} */
-
-/**
-  @defgroup RSA Public Key Cryptography
-  @brief Functions for RSA public key cryptography.
-
-  @{
-**/
+  )
+{
+  CALL_CRYPTO_SERVICE (EcDsaVerify, (EcContext, HashNid, MessageHash, HashSize, Signature, SigSize), FALSE, 1, 0);
+}
 
 /**
   Allocates and initializes one RSA context for subsequent use.
@@ -3127,9 +3856,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_EC_DSA_VERIFY)(
   @since 1.0
   @ingroup RSA
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_RSA_NEW)(
+VOID *
+EFIAPI
+RsaNew (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaNew, (), NULL, 1, 0);
+}
 
 /**
   Release the specified RSA context.
@@ -3141,9 +3875,14 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_RSA_NEW)(
   @since 1.0
   @ingroup RSA
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_RSA_FREE)(
+VOID
+EFIAPI
+RsaFree (
   IN  VOID  *RsaContext
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (RsaFree, (RsaContext), 1, 0);
+}
 
 /**
   Sets the tag-designated key component into the established RSA context.
@@ -3169,12 +3908,17 @@ typedef VOID (EFIAPI *ONE_CRYPTO_RSA_FREE)(
   @since 1.0
   @ingroup RSA
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_SET_KEY)(
+BOOLEAN
+EFIAPI
+RsaSetKey (
   IN OUT  VOID         *RsaContext,
   IN      RSA_KEY_TAG  KeyTag,
   IN      CONST UINT8  *BigNumber,
   IN      UINTN        BnSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaSetKey, (RsaContext, KeyTag, BigNumber, BnSize), FALSE, 1, 0);
+}
 
 /**
   Gets the tag-designated RSA key component from the established RSA context.
@@ -3206,12 +3950,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_SET_KEY)(
   @since 1.0
   @ingroup RSA
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_GET_KEY)(
+BOOLEAN
+EFIAPI
+RsaGetKey (
   IN OUT  VOID         *RsaContext,
   IN      RSA_KEY_TAG  KeyTag,
   OUT     UINT8        *BigNumber,
   IN OUT  UINTN        *BnSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaGetKey, (RsaContext, KeyTag, BigNumber, BnSize), FALSE, 1, 0);
+}
 
 /**
   Generates RSA key components.
@@ -3238,12 +3987,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_GET_KEY)(
   @since 1.0
   @ingroup RSA
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_GENERATE_KEY)(
+BOOLEAN
+EFIAPI
+RsaGenerateKey (
   IN OUT  VOID         *RsaContext,
   IN      UINTN        ModulusLength,
   IN      CONST UINT8  *PublicExponent,
   IN      UINTN        PublicExponentSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaGenerateKey, (RsaContext, ModulusLength, PublicExponent, PublicExponentSize), FALSE, 1, 0);
+}
 
 /**
   Validates key components of RSA context.
@@ -3268,9 +4022,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_GENERATE_KEY)(
   @since 1.0
   @ingroup RSA
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_CHECK_KEY)(
+BOOLEAN
+EFIAPI
+RsaCheckKey (
   IN  VOID  *RsaContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaCheckKey, (RsaContext), FALSE, 1, 0);
+}
 
 /**
   Carries out the RSA-SSA signature generation with EMSA-PKCS1-v1_5 encoding scheme.
@@ -3301,13 +4060,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_CHECK_KEY)(
   @since 1.0
   @ingroup RSA
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_PKCS1_SIGN)(
+BOOLEAN
+EFIAPI
+RsaPkcs1Sign (
   IN      VOID         *RsaContext,
   IN      CONST UINT8  *MessageHash,
   IN      UINTN        HashSize,
   OUT     UINT8        *Signature,
   IN OUT  UINTN        *SigSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaPkcs1Sign, (RsaContext, MessageHash, HashSize, Signature, SigSize), FALSE, 1, 0);
+}
 
 /**
   Verifies the RSA-SSA signature with EMSA-PKCS1-v1_5 encoding scheme defined in
@@ -3330,13 +4094,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_PKCS1_SIGN)(
   @since 1.0
   @ingroup RSA
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_PKCS1_VERIFY)(
+BOOLEAN
+EFIAPI
+RsaPkcs1Verify (
   IN  VOID         *RsaContext,
   IN  CONST UINT8  *MessageHash,
   IN  UINTN        HashSize,
   IN  CONST UINT8  *Signature,
   IN  UINTN        SigSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaPkcs1Verify, (RsaContext, MessageHash, HashSize, Signature, SigSize), FALSE, 1, 0);
+}
 
 /**
   Carries out the RSA-SSA signature generation with EMSA-PSS encoding scheme.
@@ -3372,7 +4141,9 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_PKCS1_VERIFY)(
   @since 1.0
   @ingroup RSA
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_PSS_SIGN)(
+BOOLEAN
+EFIAPI
+RsaPssSign (
   IN      VOID         *RsaContext,
   IN      CONST UINT8  *Message,
   IN      UINTN        MsgSize,
@@ -3380,7 +4151,10 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_PSS_SIGN)(
   IN      UINT16       SaltLen,
   OUT     UINT8        *Signature,
   IN OUT  UINTN        *SigSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaPssSign, (RsaContext, Message, MsgSize, DigestLen, SaltLen, Signature, SigSize), FALSE, 1, 0);
+}
 
 /**
   Verifies the RSA signature with RSASSA-PSS signature scheme defined in RFC 8017.
@@ -3402,7 +4176,9 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_PSS_SIGN)(
   @since 1.0
   @ingroup RSA
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_PSS_VERIFY)(
+BOOLEAN
+EFIAPI
+RsaPssVerify (
   IN  VOID         *RsaContext,
   IN  CONST UINT8  *Message,
   IN  UINTN        MsgSize,
@@ -3410,7 +4186,10 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_PSS_VERIFY)(
   IN  UINTN        SigSize,
   IN  UINT16       DigestLen,
   IN  UINT16       SaltLen
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaPssVerify, (RsaContext, Message, MsgSize, Signature, SigSize, DigestLen, SaltLen), FALSE, 1, 0);
+}
 
 /**
   Retrieve the RSA Private Key from the password-protected PEM key data.
@@ -3433,12 +4212,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_PSS_VERIFY)(
   @since 1.0
   @ingroup RSA
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_GET_PRIVATE_KEY_FROM_PEM)(
+BOOLEAN
+EFIAPI
+RsaGetPrivateKeyFromPem (
   IN   CONST UINT8  *PemData,
   IN   UINTN        PemSize,
   IN   CONST CHAR8  *Password,
   OUT  VOID         **RsaContext
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaGetPrivateKeyFromPem, (PemData, PemSize, Password, RsaContext), FALSE, 1, 0);
+}
 
 /**
   Retrieve the RSA Public Key from one DER-encoded X509 certificate.
@@ -3460,20 +4244,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_GET_PRIVATE_KEY_FROM_PEM)(
   @since 1.0
   @ingroup RSA
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_GET_PUBLIC_KEY_FROM_X509)(
+BOOLEAN
+EFIAPI
+RsaGetPublicKeyFromX509 (
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  VOID         **RsaContext
-  );
-
-/** @} */
-
-/**
-  @defgroup X509 X.509 Certificate
-  @brief Functions for X.509 certificate manipulation.
-
-  @{
-**/
+  )
+{
+  CALL_CRYPTO_SERVICE (RsaGetPublicKeyFromX509, (Cert, CertSize, RsaContext), FALSE, 1, 0);
+}
 
 /**
   Retrieve the subject bytes from one X.509 certificate.
@@ -3496,12 +4276,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RSA_GET_PUBLIC_KEY_FROM_X509)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_SUBJECT_NAME)(
+BOOLEAN
+EFIAPI
+X509GetSubjectName (
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     UINT8        *CertSubject,
   IN OUT  UINTN        *SubjectSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetSubjectName, (Cert, CertSize, CertSubject, SubjectSize), FALSE, 1, 0);
+}
 
 /**
   Retrieve the common name (CN) string from one X.509 certificate.
@@ -3531,12 +4316,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_SUBJECT_NAME)(
   @since 1.0
   @ingroup X509
 **/
-typedef RETURN_STATUS (EFIAPI *ONE_CRYPTO_X509_GET_COMMON_NAME)(
+RETURN_STATUS
+EFIAPI
+X509GetCommonName (
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     CHAR8        *CommonName   OPTIONAL,
   IN OUT  UINTN        *CommonNameSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetCommonName, (Cert, CertSize, CommonName, CommonNameSize), 0, 1, 0);
+}
 
 /**
   Retrieve the organization name (O) string from one X.509 certificate.
@@ -3566,12 +4356,17 @@ typedef RETURN_STATUS (EFIAPI *ONE_CRYPTO_X509_GET_COMMON_NAME)(
   @since 1.0
   @ingroup X509
 **/
-typedef RETURN_STATUS (EFIAPI *ONE_CRYPTO_X509_GET_ORGANIZATION_NAME)(
+RETURN_STATUS
+EFIAPI
+X509GetOrganizationName (
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     CHAR8        *NameBuffer   OPTIONAL,
   IN OUT  UINTN        *NameBufferSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetOrganizationName, (Cert, CertSize, NameBuffer, NameBufferSize), 0, 1, 0);
+}
 
 /**
   Verify one X509 certificate was issued by the trusted CA.
@@ -3593,12 +4388,17 @@ typedef RETURN_STATUS (EFIAPI *ONE_CRYPTO_X509_GET_ORGANIZATION_NAME)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_VERIFY_CERT)(
+BOOLEAN
+EFIAPI
+X509VerifyCert (
   IN  CONST UINT8  *Cert,
   IN  UINTN        CertSize,
   IN  CONST UINT8  *CACert,
   IN  UINTN        CACertSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509VerifyCert, (Cert, CertSize, CACert, CACertSize), FALSE, 1, 0);
+}
 
 /**
   Construct a X509 object from DER-encoded certificate data.
@@ -3618,11 +4418,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_VERIFY_CERT)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_CONSTRUCT_CERTIFICATE)(
+BOOLEAN
+EFIAPI
+X509ConstructCertificate (
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  UINT8        **SingleX509Cert
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509ConstructCertificate, (Cert, CertSize, SingleX509Cert), FALSE, 1, 0);
+}
 
 /**
   Construct a X509 stack object from a list of DER-encoded certificate data.
@@ -3645,10 +4450,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_CONSTRUCT_CERTIFICATE)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_CONSTRUCT_CERTIFICATE_STACK_V)(
+BOOLEAN
+EFIAPI
+X509ConstructCertificateStackV (
   IN OUT  UINT8    **X509Stack,
   IN      VA_LIST  Args
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509ConstructCertificateStackV, (X509Stack, Args), FALSE, 1, 0);
+}
 
 /**
   Construct a X509 stack object from a list of DER-encoded certificate data.
@@ -3670,10 +4480,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_CONSTRUCT_CERTIFICATE_STACK_V)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_CONSTRUCT_CERTIFICATE_STACK)(
+BOOLEAN
+EFIAPI
+X509ConstructCertificateStack (
   IN OUT  UINT8  **X509Stack,
   ...
-  );
+  )
+{
+  VA_LIST  Args;
+
+  VA_START (Args, X509Stack);
+  CALL_CRYPTO_SERVICE (X509ConstructCertificateStack, (X509Stack, Args), FALSE, 1, 0);
+  VA_END (Args);
+}
 
 /**
   Release the specified X509 object.
@@ -3685,9 +4504,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_CONSTRUCT_CERTIFICATE_STACK)(
   @since 1.0
   @ingroup X509
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_X509_FREE)(
+VOID
+EFIAPI
+X509Free (
   IN  VOID  *X509Cert
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (X509Free, (X509Cert), 1, 0);
+}
 
 /**
   Release the specified X509 stack object.
@@ -3699,9 +4523,14 @@ typedef VOID (EFIAPI *ONE_CRYPTO_X509_FREE)(
   @since 1.0
   @ingroup X509
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_X509_STACK_FREE)(
+VOID
+EFIAPI
+X509StackFree (
   IN  VOID  *X509Stack
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (X509StackFree, (X509Stack), 1, 0);
+}
 
 /**
   Retrieve the TBSCertificate from one given X.509 certificate.
@@ -3722,12 +4551,17 @@ typedef VOID (EFIAPI *ONE_CRYPTO_X509_STACK_FREE)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_TBS_CERT)(
+BOOLEAN
+EFIAPI
+X509GetTBSCert (
   IN  CONST UINT8  *Cert,
   IN  UINTN        CertSize,
   OUT UINT8        **TBSCert,
   OUT UINTN        *TBSCertSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetTBSCert, (Cert, CertSize, TBSCert, TBSCertSize), FALSE, 1, 0);
+}
 
 /**
   Retrieve the version from one X.509 certificate.
@@ -3747,11 +4581,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_TBS_CERT)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_VERSION)(
+BOOLEAN
+EFIAPI
+X509GetVersion (
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     UINTN        *Version
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetVersion, (Cert, CertSize, Version), FALSE, 1, 0);
+}
 
 /**
   Retrieve the serialNumber from one X.509 certificate.
@@ -3779,12 +4618,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_VERSION)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_SERIAL_NUMBER)(
+BOOLEAN
+EFIAPI
+X509GetSerialNumber (
   IN      CONST UINT8 *Cert,
   IN      UINTN CertSize,
   OUT     UINT8 *SerialNumber, OPTIONAL
   IN OUT  UINTN         *SerialNumberSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetSerialNumber, (Cert, CertSize, SerialNumber, SerialNumberSize), FALSE, 1, 0);
+}
 
 /**
   Retrieve the issuer bytes from one X.509 certificate.
@@ -3807,12 +4651,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_SERIAL_NUMBER)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_ISSUER_NAME)(
+BOOLEAN
+EFIAPI
+X509GetIssuerName (
   IN      CONST UINT8  *Cert,
   IN      UINTN        CertSize,
   OUT     UINT8        *CertIssuer,
   IN OUT  UINTN        *CertIssuerSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetIssuerName, (Cert, CertSize, CertIssuer, CertIssuerSize), FALSE, 1, 0);
+}
 
 /**
   Retrieve the Signature Algorithm from one X.509 certificate.
@@ -3835,12 +4684,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_ISSUER_NAME)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_SIGNATURE_ALGORITHM)(
+BOOLEAN
+EFIAPI
+X509GetSignatureAlgorithm (
   IN CONST UINT8 *Cert,
   IN       UINTN CertSize,
   OUT      UINT8 *Oid, OPTIONAL
   IN OUT   UINTN       *OidSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetSignatureAlgorithm, (Cert, CertSize, Oid, OidSize), FALSE, 1, 0);
+}
 
 /**
   Retrieve the Extended Key Usage from one X.509 certificate.
@@ -3862,12 +4716,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_SIGNATURE_ALGORITHM)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_EXTENDED_KEY_USAGE)(
+BOOLEAN
+EFIAPI
+X509GetExtendedKeyUsage (
   IN     CONST UINT8  *Cert,
   IN     UINTN        CertSize,
   OUT UINT8           *Usage,
   IN OUT UINTN        *UsageSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetExtendedKeyUsage, (Cert, CertSize, Usage, UsageSize), FALSE, 1, 0);
+}
 
 /**
   Retrieve Extension data from one X.509 certificate.
@@ -3892,14 +4751,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_EXTENDED_KEY_USAGE)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_EXTENSION_DATA)(
+BOOLEAN
+EFIAPI
+X509GetExtensionData (
   IN     CONST UINT8  *Cert,
   IN     UINTN        CertSize,
   IN     CONST UINT8  *Oid,
   IN     UINTN        OidSize,
   OUT UINT8           *ExtensionData,
   IN OUT UINTN        *ExtensionDataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetExtensionData, (Cert, CertSize, Oid, OidSize, ExtensionData, ExtensionDataSize), FALSE, 1, 0);
+}
 
 /**
   Retrieve the Validity from one X.509 certificate
@@ -3925,14 +4789,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_EXTENSION_DATA)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_VALIDITY)(
+BOOLEAN
+EFIAPI
+X509GetValidity (
   IN     CONST UINT8  *Cert,
   IN     UINTN        CertSize,
   IN     UINT8        *From,
   IN OUT UINTN        *FromSize,
   IN     UINT8        *To,
   IN OUT UINTN        *ToSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetValidity, (Cert, CertSize, From, FromSize, To, ToSize), FALSE, 1, 0);
+}
 
 /**
   Format a DateTimeStr to DataTime object in DataTime Buffer
@@ -3960,11 +4829,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_VALIDITY)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_FORMAT_DATE_TIME)(
+BOOLEAN
+EFIAPI
+X509FormatDateTime (
   IN  CONST  CHAR8  *DateTimeStr,
   OUT VOID          *DateTime,
   IN OUT UINTN      *DateTimeSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509FormatDateTime, (DateTimeStr, DateTime, DateTimeSize), FALSE, 1, 0);
+}
 
 /**
   Retrieve the Key Usage from one X.509 certificate.
@@ -3980,11 +4854,16 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_FORMAT_DATE_TIME)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_KEY_USAGE)(
+BOOLEAN
+EFIAPI
+X509GetKeyUsage (
   IN    CONST UINT8  *Cert,
   IN    UINTN        CertSize,
   OUT   UINTN        *Usage
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetKeyUsage, (Cert, CertSize, Usage), FALSE, 1, 0);
+}
 
 /**
   Verify one X509 certificate was issued by the trusted CA.
@@ -4005,12 +4884,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_KEY_USAGE)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_VERIFY_CERT_CHAIN)(
+BOOLEAN
+EFIAPI
+X509VerifyCertChain (
   IN CONST UINT8  *RootCert,
   IN UINTN        RootCertLength,
   IN CONST UINT8  *CertChain,
   IN UINTN        CertChainLength
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509VerifyCertChain, (RootCert, RootCertLength, CertChain, CertChainLength), FALSE, 1, 0);
+}
 
 /**
   Get one X509 certificate from CertChain.
@@ -4033,13 +4917,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_VERIFY_CERT_CHAIN)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_CERT_FROM_CERT_CHAIN)(
+BOOLEAN
+EFIAPI
+X509GetCertFromCertChain (
   IN CONST UINT8   *CertChain,
   IN UINTN         CertChainLength,
   IN CONST INT32   CertIndex,
   OUT CONST UINT8  **Cert,
   OUT UINTN        *CertLength
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetCertFromCertChain, (CertChain, CertChainLength, CertIndex, Cert, CertLength), FALSE, 1, 0);
+}
 
 /**
   Retrieve the basic constraints from one X.509 certificate.
@@ -4062,12 +4951,17 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_CERT_FROM_CERT_CHAIN)(
   @since 1.0
   @ingroup X509
  **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_EXTENDED_BASIC_CONSTRAINTS)(
+BOOLEAN
+EFIAPI
+X509GetExtendedBasicConstraints (
   CONST UINT8  *Cert,
   UINTN        CertSize,
   UINT8        *BasicConstraints,
   UINTN        *BasicConstraintsSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetExtendedBasicConstraints, (Cert, CertSize, BasicConstraints, BasicConstraintsSize), FALSE, 1, 0);
+}
 
 /**
   Compare DateTime1 object and DateTime2 object.
@@ -4086,13 +4980,19 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_EXTENDED_BASIC_CONSTRAINTS)(
   @retval  -1  If DateTime1 < DateTime2
   @retval  -2  If DateTime1 or DateTime2 is NULL.
 
+
   @since 1.0
   @ingroup X509
 **/
-typedef INT32 (EFIAPI *ONE_CRYPTO_X509_COMPARE_DATE_TIME)(
+INT32
+EFIAPI
+X509CompareDateTime (
   IN  CONST  VOID  *DateTime1,
   IN  CONST  VOID  *DateTime2
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (X509CompareDateTime, (DateTime1, DateTime2), -2, 1, 0);
+}
 
 /**
   Retrieve the tag and length of the tag.
@@ -4109,21 +5009,17 @@ typedef INT32 (EFIAPI *ONE_CRYPTO_X509_COMPARE_DATE_TIME)(
   @since 1.0
   @ingroup X509
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_ASN1_GET_TAG)(
+BOOLEAN
+EFIAPI
+Asn1GetTag (
   IN OUT UINT8    **Ptr,
   IN CONST UINT8  *End,
   OUT UINTN       *Length,
   IN     UINT32   Tag
-  );
-
-/** @} */
-
-/**
-  @defgroup Random Pseudo-Random Generation Primitives
-  @brief Functions for pseudo-random number generation.
-
-  @{
-**/
+  )
+{
+  CALL_CRYPTO_SERVICE (Asn1GetTag, (Ptr, End, Length, Tag), FALSE, 1, 0);
+}
 
 /**
   Sets up the seed value for the pseudorandom number generator.
@@ -4145,10 +5041,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_ASN1_GET_TAG)(
   @since 1.0
   @ingroup Random
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RANDOM_SEED)(
+BOOLEAN
+EFIAPI
+RandomSeed (
   IN  CONST  UINT8  *Seed  OPTIONAL,
   IN  UINTN         SeedSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (RandomSeed, (Seed, SeedSize), FALSE, 1, 0);
+}
 
 /**
   Generates a pseudorandom byte stream of the specified size.
@@ -4166,19 +5067,15 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RANDOM_SEED)(
   @since 1.0
   @ingroup Random
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RANDOM_BYTES)(
+BOOLEAN
+EFIAPI
+RandomBytes (
   OUT  UINT8  *Output,
   IN   UINTN  Size
-  );
-
-/** @} */
-
-/**
-  @defgroup Tls Transport Layer Security
-  @brief Functions for TSL based network communication.
-
-  @{
-**/
+  )
+{
+  CALL_CRYPTO_SERVICE (RandomBytes, (Output, Size), FALSE, 1, 0);
+}
 
 /**
   Initializes the OpenSSL library.
@@ -4193,9 +5090,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_RANDOM_BYTES)(
   @since 1.0
   @ingroup Tls
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_TLS_INITIALIZE)(
+BOOLEAN
+EFIAPI
+TlsInitialize (
   VOID
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsInitialize, (), FALSE, 1, 0);
+}
 
 /**
   Free an allocated SSL_CTX object.
@@ -4205,9 +5107,14 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_TLS_INITIALIZE)(
   @since 1.0
   @ingroup Tls
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_TLS_CTX_FREE)(
+VOID
+EFIAPI
+TlsCtxFree (
   IN   VOID  *TlsCtx
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (TlsCtxFree, (TlsCtx), 1, 0);
+}
 
 /**
   Creates a new SSL_CTX object as framework to establish TLS/SSL enabled
@@ -4222,10 +5129,15 @@ typedef VOID (EFIAPI *ONE_CRYPTO_TLS_CTX_FREE)(
   @since 1.0
   @ingroup Tls
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_TLS_CTX_NEW)(
+VOID *
+EFIAPI
+TlsCtxNew (
   IN     UINT8  MajorVer,
   IN     UINT8  MinorVer
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsCtxNew, (MajorVer, MinorVer), NULL, 1, 0);
+}
 
 /**
   Free an allocated TLS object.
@@ -4238,9 +5150,14 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_TLS_CTX_NEW)(
   @since 1.0
   @ingroup Tls
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_TLS_FREE)(
+VOID
+EFIAPI
+TlsFree (
   IN     VOID  *Tls
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (TlsFree, (Tls), 1, 0);
+}
 
 /**
   Create a new TLS object for a connection.
@@ -4257,9 +5174,14 @@ typedef VOID (EFIAPI *ONE_CRYPTO_TLS_FREE)(
   @since 1.0
   @ingroup Tls
 **/
-typedef VOID *(EFIAPI *ONE_CRYPTO_TLS_NEW)(
+VOID *
+EFIAPI
+TlsNew (
   IN     VOID  *TlsCtx
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsNew, (TlsCtx), NULL, 1, 0);
+}
 
 /**
   Checks if the TLS handshake was done.
@@ -4274,9 +5196,14 @@ typedef VOID *(EFIAPI *ONE_CRYPTO_TLS_NEW)(
   @since 1.0
   @ingroup Tls
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_TLS_IN_HANDSHAKE)(
+BOOLEAN
+EFIAPI
+TlsInHandshake (
   IN     VOID  *Tls
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsInHandshake, (Tls), FALSE, 1, 0);
+}
 
 /**
   Perform a TLS/SSL handshake.
@@ -4306,13 +5233,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_TLS_IN_HANDSHAKE)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_DO_HANDSHAKE)(
+EFI_STATUS
+EFIAPI
+TlsDoHandshake (
   IN     VOID   *Tls,
   IN     UINT8  *BufferIn  OPTIONAL,
   IN     UINTN  BufferInSize  OPTIONAL,
   OUT UINT8     *BufferOut  OPTIONAL,
   IN OUT UINTN  *BufferOutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsDoHandshake, (Tls, BufferIn, BufferInSize, BufferOut, BufferOutSize), 0, 1, 0);
+}
 
 /**
   Handle Alert message recorded in BufferIn. If BufferIn is NULL and BufferInSize is zero,
@@ -4341,13 +5273,18 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_DO_HANDSHAKE)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_HANDLE_ALERT)(
+EFI_STATUS
+EFIAPI
+TlsHandleAlert (
   IN     VOID   *Tls,
   IN     UINT8  *BufferIn  OPTIONAL,
   IN     UINTN  BufferInSize  OPTIONAL,
   OUT UINT8     *BufferOut  OPTIONAL,
   IN OUT UINTN  *BufferOutSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsHandleAlert, (Tls, BufferIn, BufferInSize, BufferOut, BufferOutSize), 0, 1, 0);
+}
 
 /**
   Build the CloseNotify packet.
@@ -4369,11 +5306,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_HANDLE_ALERT)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_CLOSE_NOTIFY)(
+EFI_STATUS
+EFIAPI
+TlsCloseNotify (
   IN     VOID   *Tls,
   IN OUT UINT8  *Buffer,
   IN OUT UINTN  *BufferSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsCloseNotify, (Tls, Buffer, BufferSize), 0, 1, 0);
+}
 
 /**
   Attempts to read bytes from one TLS object and places the data in Buffer.
@@ -4391,11 +5333,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_CLOSE_NOTIFY)(
   @since 1.0
   @ingroup Tls
 **/
-typedef INTN (EFIAPI *ONE_CRYPTO_TLS_CTRL_TRAFFIC_OUT)(
+INTN
+EFIAPI
+TlsCtrlTrafficOut (
   IN     VOID   *Tls,
   IN OUT VOID   *Buffer,
   IN     UINTN  BufferSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsCtrlTrafficOut, (Tls, Buffer, BufferSize), 0, 1, 0);
+}
 
 /**
   Attempts to write data from the buffer to TLS object.
@@ -4413,11 +5360,16 @@ typedef INTN (EFIAPI *ONE_CRYPTO_TLS_CTRL_TRAFFIC_OUT)(
   @since 1.0
   @ingroup Tls
 **/
-typedef INTN (EFIAPI *ONE_CRYPTO_TLS_CTRL_TRAFFIC_IN)(
+INTN
+EFIAPI
+TlsCtrlTrafficIn (
   IN     VOID   *Tls,
   IN     VOID   *Buffer,
   IN     UINTN  BufferSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsCtrlTrafficIn, (Tls, Buffer, BufferSize), 0, 1, 0);
+}
 
 /**
   Attempts to read bytes from the specified TLS connection into the buffer.
@@ -4436,11 +5388,16 @@ typedef INTN (EFIAPI *ONE_CRYPTO_TLS_CTRL_TRAFFIC_IN)(
   @since 1.0
   @ingroup Tls
 **/
-typedef INTN (EFIAPI *ONE_CRYPTO_TLS_READ)(
+INTN
+EFIAPI
+TlsRead (
   IN     VOID   *Tls,
   IN OUT VOID   *Buffer,
   IN     UINTN  BufferSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsRead, (Tls, Buffer, BufferSize), 0, 1, 0);
+}
 
 /**
   Attempts to write data to a TLS connection.
@@ -4459,11 +5416,16 @@ typedef INTN (EFIAPI *ONE_CRYPTO_TLS_READ)(
   @since 1.0
   @ingroup Tls
 **/
-typedef INTN (EFIAPI *ONE_CRYPTO_TLS_WRITE)(
+INTN
+EFIAPI
+TlsWrite (
   IN     VOID   *Tls,
   IN     VOID   *Buffer,
   IN     UINTN  BufferSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsWrite, (Tls, Buffer, BufferSize), 0, 1, 0);
+}
 
 /**
   Shutdown a TLS connection.
@@ -4481,9 +5443,14 @@ typedef INTN (EFIAPI *ONE_CRYPTO_TLS_WRITE)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SHUTDOWN)(
+EFI_STATUS
+EFIAPI
+TlsShutdown (
   IN     VOID  *Tls
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsShutdown, (Tls), 0, 1, 0);
+}
 
 /**
   Set a new TLS/SSL method for a particular TLS object.
@@ -4501,11 +5468,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SHUTDOWN)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_VERSION)(
+EFI_STATUS
+EFIAPI
+TlsSetVersion (
   IN     VOID   *Tls,
   IN     UINT8  MajorVer,
   IN     UINT8  MinorVer
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetVersion, (Tls, MajorVer, MinorVer), 0, 1, 0);
+}
 
 /**
   Set TLS object to work in client or server mode.
@@ -4522,10 +5494,15 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_VERSION)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_CONNECTION_END)(
+EFI_STATUS
+EFIAPI
+TlsSetConnectionEnd (
   IN     VOID     *Tls,
   IN     BOOLEAN  IsServer
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetConnectionEnd, (Tls, IsServer), 0, 1, 0);
+}
 
 /**
   Set the ciphers list to be used by the TLS object.
@@ -4547,11 +5524,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_CONNECTION_END)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_CIPHER_LIST)(
+EFI_STATUS
+EFIAPI
+TlsSetCipherList (
   IN     VOID    *Tls,
   IN     UINT16  *CipherId,
   IN     UINTN   CipherNum
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetCipherList, (Tls, CipherId, CipherNum), 0, 1, 0);
+}
 
 /**
   Set the compression method for TLS/SSL operations.
@@ -4568,9 +5550,14 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_CIPHER_LIST)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_COMPRESSION_METHOD)(
+EFI_STATUS
+EFIAPI
+TlsSetCompressionMethod (
   IN     UINT8  CompMethod
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetCompressionMethod, (CompMethod), 0, 1, 0);
+}
 
 /**
   Set peer certificate verification mode for the TLS connection.
@@ -4583,10 +5570,15 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_COMPRESSION_METHOD)(
   @since 1.0
   @ingroup Tls
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_TLS_SET_VERIFY)(
+VOID
+EFIAPI
+TlsSetVerify (
   IN     VOID    *Tls,
   IN     UINT32  VerifyMode
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (TlsSetVerify, (Tls, VerifyMode), 1, 0);
+}
 
 /**
   Set the specified host name to be verified.
@@ -4602,11 +5594,16 @@ typedef VOID (EFIAPI *ONE_CRYPTO_TLS_SET_VERIFY)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_VERIFY_HOST)(
+EFI_STATUS
+EFIAPI
+TlsSetVerifyHost (
   IN     VOID    *Tls,
   IN     UINT32  Flags,
   IN     CHAR8   *HostName
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetVerifyHost, (Tls, Flags, HostName), 0, 1, 0);
+}
 
 /**
   Sets a TLS/SSL session ID to be used during TLS/SSL connect.
@@ -4625,11 +5622,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_VERIFY_HOST)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_SESSION_ID)(
+EFI_STATUS
+EFIAPI
+TlsSetSessionId (
   IN     VOID    *Tls,
   IN     UINT8   *SessionId,
   IN     UINT16  SessionIdLen
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetSessionId, (Tls, SessionId, SessionIdLen), 0, 1, 0);
+}
 
 /**
   Adds the CA to the cert store when requesting Server or Client authentication.
@@ -4650,11 +5652,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_SESSION_ID)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_CA_CERTIFICATE)(
+EFI_STATUS
+EFIAPI
+TlsSetCaCertificate (
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetCaCertificate, (Tls, Data, DataSize), 0, 1, 0);
+}
 
 /**
   Loads the local public certificate into the specified TLS object.
@@ -4675,11 +5682,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_CA_CERTIFICATE)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_HOST_PUBLIC_CERT)(
+EFI_STATUS
+EFIAPI
+TlsSetHostPublicCert (
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetHostPublicCert, (Tls, Data, DataSize), 0, 1, 0);
+}
 
 /**
   Adds the local private key to the specified TLS object.
@@ -4701,12 +5713,17 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_HOST_PUBLIC_CERT)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_HOST_PRIVATE_KEY_EX)(
+EFI_STATUS
+EFIAPI
+TlsSetHostPrivateKeyEx (
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize,
   IN     VOID   *Password  OPTIONAL
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetHostPrivateKeyEx, (Tls, Data, DataSize, Password), 0, 1, 0);
+}
 
 /**
   Adds the local private key to the specified TLS object.
@@ -4726,11 +5743,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_HOST_PRIVATE_KEY_EX)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_HOST_PRIVATE_KEY)(
+EFI_STATUS
+EFIAPI
+TlsSetHostPrivateKey (
   IN     VOID   *Tls,
   IN     VOID   *Data,
   IN     UINTN  DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetHostPrivateKey, (Tls, Data, DataSize), 0, 1, 0);
+}
 
 /**
   Adds the CA-supplied certificate revocation list for certificate validation.
@@ -4748,10 +5770,15 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_HOST_PRIVATE_KEY)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_CERT_REVOCATION_LIST)(
+EFI_STATUS
+EFIAPI
+TlsSetCertRevocationList (
   IN     VOID   *Data,
   IN     UINTN  DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetCertRevocationList, (Data, DataSize), 0, 1, 0);
+}
 
 /**
   Set the signature algorithm list to used by the TLS object.
@@ -4772,11 +5799,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_CERT_REVOCATION_LIST)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_SIGNATURE_ALGO_LIST)(
+EFI_STATUS
+EFIAPI
+TlsSetSignatureAlgoList (
   IN     VOID   *Tls,
   IN     UINT8  *Data,
   IN     UINTN  DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetSignatureAlgoList, (Tls, Data, DataSize), 0, 1, 0);
+}
 
 /**
   Set the EC curve to be used for TLS flows
@@ -4794,11 +5826,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_SIGNATURE_ALGO_LIST)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_EC_CURVE)(
+EFI_STATUS
+EFIAPI
+TlsSetEcCurve (
   IN     VOID   *Tls,
   IN     UINT8  *Data,
   IN     UINTN  DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsSetEcCurve, (Tls, Data, DataSize), 0, 1, 0);
+}
 
 /**
   Gets the protocol version used by the specified TLS connection.
@@ -4815,9 +5852,14 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_SET_EC_CURVE)(
   @since 1.0
   @ingroup Tls
 **/
-typedef UINT16 (EFIAPI *ONE_CRYPTO_TLS_GET_VERSION)(
+UINT16
+EFIAPI
+TlsGetVersion (
   IN     VOID  *Tls
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetVersion, (Tls), 0, 1, 0);
+}
 
 /**
   Gets the connection end of the specified TLS connection.
@@ -4834,9 +5876,14 @@ typedef UINT16 (EFIAPI *ONE_CRYPTO_TLS_GET_VERSION)(
   @since 1.0
   @ingroup Tls
 **/
-typedef UINT8 (EFIAPI *ONE_CRYPTO_TLS_GET_CONNECTION_END)(
+UINT8
+EFIAPI
+TlsGetConnectionEnd (
   IN     VOID  *Tls
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetConnectionEnd, (Tls), 0, 1, 0);
+}
 
 /**
   Gets the cipher suite used by the specified TLS connection.
@@ -4854,10 +5901,15 @@ typedef UINT8 (EFIAPI *ONE_CRYPTO_TLS_GET_CONNECTION_END)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_CURRENT_CIPHER)(
+EFI_STATUS
+EFIAPI
+TlsGetCurrentCipher (
   IN     VOID    *Tls,
   IN OUT UINT16  *CipherId
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetCurrentCipher, (Tls, CipherId), 0, 1, 0);
+}
 
 /**
   Gets the compression methods used by the specified TLS connection.
@@ -4877,10 +5929,15 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_CURRENT_CIPHER)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_CURRENT_COMPRESSION_ID)(
+EFI_STATUS
+EFIAPI
+TlsGetCurrentCompressionId (
   IN     VOID   *Tls,
   IN OUT UINT8  *CompressionId
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetCurrentCompressionId, (Tls, CompressionId), 0, 1, 0);
+}
 
 /**
   Gets the verification mode currently set in the TLS connection.
@@ -4897,9 +5954,14 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_CURRENT_COMPRESSION_ID)(
   @since 1.0
   @ingroup Tls
 **/
-typedef UINT32 (EFIAPI *ONE_CRYPTO_TLS_GET_VERIFY)(
+UINT32
+EFIAPI
+TlsGetVerify (
   IN     VOID  *Tls
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetVerify, (Tls), 0, 1, 0);
+}
 
 /**
   Gets the session ID used by the specified TLS connection.
@@ -4918,11 +5980,16 @@ typedef UINT32 (EFIAPI *ONE_CRYPTO_TLS_GET_VERIFY)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_SESSION_ID)(
+EFI_STATUS
+EFIAPI
+TlsGetSessionId (
   IN     VOID    *Tls,
   IN OUT UINT8   *SessionId,
   IN OUT UINT16  *SessionIdLen
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetSessionId, (Tls, SessionId, SessionIdLen), 0, 1, 0);
+}
 
 /**
   Gets the client random data used in the specified TLS connection.
@@ -4937,10 +6004,15 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_SESSION_ID)(
   @since 1.0
   @ingroup Tls
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_TLS_GET_CLIENT_RANDOM)(
+VOID
+EFIAPI
+TlsGetClientRandom (
   IN     VOID   *Tls,
   IN OUT UINT8  *ClientRandom
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (TlsGetClientRandom, (Tls, ClientRandom), 1, 0);
+}
 
 /**
   Gets the server random data used in the specified TLS connection.
@@ -4955,10 +6027,15 @@ typedef VOID (EFIAPI *ONE_CRYPTO_TLS_GET_CLIENT_RANDOM)(
   @since 1.0
   @ingroup Tls
 **/
-typedef VOID (EFIAPI *ONE_CRYPTO_TLS_GET_SERVER_RANDOM)(
+VOID
+EFIAPI
+TlsGetServerRandom (
   IN     VOID   *Tls,
   IN OUT UINT8  *ServerRandom
-  );
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (TlsGetServerRandom, (Tls, ServerRandom), 1, 0);
+}
 
 /**
   Gets the master key data used in the specified TLS connection.
@@ -4976,10 +6053,15 @@ typedef VOID (EFIAPI *ONE_CRYPTO_TLS_GET_SERVER_RANDOM)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_KEY_MATERIAL)(
+EFI_STATUS
+EFIAPI
+TlsGetKeyMaterial (
   IN     VOID   *Tls,
   IN OUT UINT8  *KeyMaterial
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetKeyMaterial, (Tls, KeyMaterial), 0, 1, 0);
+}
 
 /**
   Gets the CA Certificate from the cert store.
@@ -4999,11 +6081,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_KEY_MATERIAL)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_CA_CERTIFICATE)(
+EFI_STATUS
+EFIAPI
+TlsGetCaCertificate (
   IN     VOID   *Tls,
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetCaCertificate, (Tls, Data, DataSize), 0, 1, 0);
+}
 
 /**
   Gets the local public Certificate set in the specified TLS object.
@@ -5024,11 +6111,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_CA_CERTIFICATE)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_HOST_PUBLIC_CERT)(
+EFI_STATUS
+EFIAPI
+TlsGetHostPublicCert (
   IN     VOID   *Tls,
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetHostPublicCert, (Tls, Data, DataSize), 0, 1, 0);
+}
 
 /**
   Gets the local private key set in the specified TLS object.
@@ -5048,11 +6140,16 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_HOST_PUBLIC_CERT)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_HOST_PRIVATE_KEY)(
+EFI_STATUS
+EFIAPI
+TlsGetHostPrivateKey (
   IN     VOID   *Tls,
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetHostPrivateKey, (Tls, Data, DataSize), 0, 1, 0);
+}
 
 /**
   Gets the CA-supplied certificate revocation list data set in the specified
@@ -5071,10 +6168,15 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_HOST_PRIVATE_KEY)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_CERT_REVOCATION_LIST)(
+EFI_STATUS
+EFIAPI
+TlsGetCertRevocationList (
   OUT    VOID   *Data,
   IN OUT UINTN  *DataSize
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetCertRevocationList, (Data, DataSize), 0, 1, 0);
+}
 
 /**
   Derive keying material from a TLS connection.
@@ -5096,23 +6198,19 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_CERT_REVOCATION_LIST)(
   @since 1.0
   @ingroup Tls
 **/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_EXPORT_KEY)(
+EFI_STATUS
+EFIAPI
+TlsGetExportKey (
   IN     VOID        *Tls,
   IN     CONST VOID  *Label,
   IN     CONST VOID  *Context,
   IN     UINTN       ContextLen,
   OUT    VOID        *KeyBuffer,
   IN     UINTN       KeyBufferLen
-  );
-
-/** @} */
-
-/**
-  @defgroup Timestamp RFC3161 Timestamp Verification
-  @brief Functions for timestamp verification.
-
-  @{
-**/
+  )
+{
+  CALL_CRYPTO_SERVICE (TlsGetExportKey, (Tls, Label, Context, ContextLen, KeyBuffer, KeyBufferLen), 0, 1, 0);
+}
 
 /**
   Verifies the validity of a RFC3161 Timestamp CounterSignature embedded in PE/COFF Authenticode
@@ -5135,33 +6233,31 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_TLS_GET_EXPORT_KEY)(
   @since 1.0
   @ingroup Timestamp
 **/
-typedef BOOLEAN (EFIAPI *ONE_CRYPTO_IMAGE_TIMESTAMP_VERIFY)(
+BOOLEAN
+EFIAPI
+ImageTimestampVerify (
   IN  CONST UINT8  *AuthData,
   IN  UINTN        DataSize,
   IN  CONST UINT8  *TsaCert,
   IN  UINTN        CertSize,
   OUT EFI_TIME     *SigningTime
-  );
+  )
+{
+  CALL_CRYPTO_SERVICE (ImageTimestampVerify, (AuthData, DataSize, TsaCert, CertSize, SigningTime), FALSE, 1, 0);
+}
 
-/** @} */
-
-/**
-  @defgroup Info Library Information
-  @brief Functions for retrieving cryptographic library information.
-
-  @{
-**/
+// =====================================================================================
+//    Library Information
+// =====================================================================================
 
 /**
   Gets the cryptographic provider version information.
 
   This function returns the version string of the cryptographic provider
-  (e.g., OpenSSL, MbedTLS, SymCrypt) that was used to compile
-  the cryptographic library.
+  (e.g., OpenSSL, MbedTLS, SymCrypt) that was used to compile the library.
 
-  The returned string is space-delimited and follows the format: "<provider> <version> [additional info]"
-  where <provider> is the cryptographic library name (e.g., "OpenSSL", "MbedTLS", "SymCrypt"),
-  <version> is the version number, and [additional info] is optional provider-specific details.
+  The expected format of the version string is space-delimited with "<provider> <version>"
+  with optional additional information after the version.
 
   @param[out]     Buffer       Pointer to the buffer to receive the version string.
                                If NULL, the required buffer size is returned in BufferSize.
@@ -5172,277 +6268,53 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_IMAGE_TIMESTAMP_VERIFY)(
   @retval  EFI_SUCCESS            The version string was successfully copied to the buffer.
   @retval  EFI_BUFFER_TOO_SMALL   The buffer is too small. BufferSize contains the required size.
   @retval  EFI_INVALID_PARAMETER  BufferSize is NULL.
+  @retval  EFI_UNSUPPORTED        The function is not provided by the Crypto provider.
 
   @since 1.0
   @ingroup Info
 **/
-typedef
 EFI_STATUS
-(EFIAPI *ONE_CRYPTO_GET_CRYPTO_PROVIDER_VERSION_STRING)(
-  OUT    CHAR8   *Buffer,
-  IN OUT UINTN   *BufferSize
-  );
-
-/** @} */
-
-// =============================================================================
-// Protocol
-// =============================================================================
+EFIAPI
+GetCryptoProviderVersionString (
+  OUT    CHAR8  *Buffer,
+  IN OUT UINTN  *BufferSize
+  )
+{
+  CALL_CRYPTO_SERVICE (GetCryptoProviderVersionString, (Buffer, BufferSize), EFI_UNSUPPORTED, 1, 0);
+}
 
 /**
-  @struct _ONE_CRYPTO_PROTOCOL
-  @brief This structure defines the protocol for shared cryptographic operations.
+  Parallel hash function ParallelHash256, as defined in NIST SP 800-185,
+  using SHA256 as the underlying hash function.
 
-  The _ONE_CRYPTO_PROTOCOL structure provides a standardized interface for
-  cryptographic functions, enabling interoperability and consistent usage across
-  different cryptographic implementations.
+  @param[in]   Input          Pointer to the input message (X).
+  @param[in]   InputByteLen   The number of input bytes provided for the input data.
+  @param[in]   BlockSize      The size of each block (B).
+  @param[out]  Output         Pointer to the output buffer.
+  @param[in]   OutputByteLen  The desired number of output bytes (L).
+  @param[in]   Customization  Pointer to the customization string (S).
+  @param[in]   CustomByteLen  The length of the customization string in bytes.
 
-  Supports functions from versions:
-   - 1.0
+  @retval  TRUE   ParallelHash256 digest computation succeeded.
+  @retval  FALSE  ParallelHash256 digest computation failed.
+  @retval  FALSE  This interface is not supported.
 
-  @since 1.0
-  @ingroup OneCryptoProtocol
+
+  @since 0.0
+  @ingroup UNSUPPORTED
 **/
-typedef struct _ONE_CRYPTO_PROTOCOL {
-  // ---------------------------------------------------------------------------
-  // Versioning
-  // Major.Minor.Revision
-  // Major - Breaking change to this structure
-  // Minor - Functions added to the end of this structure
-  //
-  // ---------------------------------------------------------------------------
-  UINT16                                            Major;
-  UINT16                                            Minor;
-
-  /// v1.0 HMAC --------------------------------------------------------------
-  ONE_CRYPTO_HMAC_SHA256_NEW                        HmacSha256New;
-  ONE_CRYPTO_HMAC_SHA256_FREE                       HmacSha256Free;
-  ONE_CRYPTO_HMAC_SHA256_SET_KEY                    HmacSha256SetKey;
-  ONE_CRYPTO_HMAC_SHA256_DUPLICATE                  HmacSha256Duplicate;
-  ONE_CRYPTO_HMAC_SHA256_UPDATE                     HmacSha256Update;
-  ONE_CRYPTO_HMAC_SHA256_FINAL                      HmacSha256Final;
-  ONE_CRYPTO_HMAC_SHA256_ALL                        HmacSha256All;
-  ONE_CRYPTO_HMAC_SHA384_NEW                        HmacSha384New;
-  ONE_CRYPTO_HMAC_SHA384_FREE                       HmacSha384Free;
-  ONE_CRYPTO_HMAC_SHA384_SET_KEY                    HmacSha384SetKey;
-  ONE_CRYPTO_HMAC_SHA384_DUPLICATE                  HmacSha384Duplicate;
-  ONE_CRYPTO_HMAC_SHA384_UPDATE                     HmacSha384Update;
-  ONE_CRYPTO_HMAC_SHA384_FINAL                      HmacSha384Final;
-  ONE_CRYPTO_HMAC_SHA384_ALL                        HmacSha384All;
-  /// v1.0 Hash --------------------------------------------------------------
-  ONE_CRYPTO_MD5_GET_CONTEXT_SIZE                   Md5GetContextSize;
-  ONE_CRYPTO_MD5_INIT                               Md5Init;
-  ONE_CRYPTO_MD5_UPDATE                             Md5Update;
-  ONE_CRYPTO_MD5_FINAL                              Md5Final;
-  ONE_CRYPTO_MD5_HASH_ALL                           Md5HashAll;
-  ONE_CRYPTO_MD5_DUPLICATE                          Md5Duplicate;
-  ONE_CRYPTO_SHA1_GET_CONTEXT_SIZE                  Sha1GetContextSize;
-  ONE_CRYPTO_SHA1_INIT                              Sha1Init;
-  ONE_CRYPTO_SHA1_UPDATE                            Sha1Update;
-  ONE_CRYPTO_SHA1_FINAL                             Sha1Final;
-  ONE_CRYPTO_SHA1_HASH_ALL                          Sha1HashAll;
-  ONE_CRYPTO_SHA1_DUPLICATE                         Sha1Duplicate;
-  ONE_CRYPTO_SHA256_GET_CONTEXT_SIZE                Sha256GetContextSize;
-  ONE_CRYPTO_SHA256_INIT                            Sha256Init;
-  ONE_CRYPTO_SHA256_UPDATE                          Sha256Update;
-  ONE_CRYPTO_SHA256_FINAL                           Sha256Final;
-  ONE_CRYPTO_SHA256_HASH_ALL                        Sha256HashAll;
-  ONE_CRYPTO_SHA256_DUPLICATE                       Sha256Duplicate;
-  ONE_CRYPTO_SHA384_GET_CONTEXT_SIZE                Sha384GetContextSize;
-  ONE_CRYPTO_SHA384_INIT                            Sha384Init;
-  ONE_CRYPTO_SHA384_DUPLICATE                       Sha384Duplicate;
-  ONE_CRYPTO_SHA384_UPDATE                          Sha384Update;
-  ONE_CRYPTO_SHA384_FINAL                           Sha384Final;
-  ONE_CRYPTO_SHA384_HASH_ALL                        Sha384HashAll;
-  ONE_CRYPTO_SHA512_GET_CONTEXT_SIZE                Sha512GetContextSize;
-  ONE_CRYPTO_SHA512_INIT                            Sha512Init;
-  ONE_CRYPTO_SHA512_DUPLICATE                       Sha512Duplicate;
-  ONE_CRYPTO_SHA512_UPDATE                          Sha512Update;
-  ONE_CRYPTO_SHA512_FINAL                           Sha512Final;
-  ONE_CRYPTO_SHA512_HASH_ALL                        Sha512HashAll;
-  ONE_CRYPTO_SM3_GET_CONTEXT_SIZE                   Sm3GetContextSize;
-  ONE_CRYPTO_SM3_INIT                               Sm3Init;
-  ONE_CRYPTO_SM3_DUPLICATE                          Sm3Duplicate;
-  ONE_CRYPTO_SM3_UPDATE                             Sm3Update;
-  ONE_CRYPTO_SM3_FINAL                              Sm3Final;
-  ONE_CRYPTO_SM3_HASH_ALL                           Sm3HashAll;
-  /// v1.0 AES ---------------------------------------------------------------
-  ONE_CRYPTO_AES_GET_CONTEXT_SIZE                   AesGetContextSize;
-  ONE_CRYPTO_AES_INIT                               AesInit;
-  ONE_CRYPTO_AES_CBC_ENCRYPT                        AesCbcEncrypt;
-  ONE_CRYPTO_AES_CBC_DECRYPT                        AesCbcDecrypt;
-  ONE_CRYPTO_AEAD_AES_GCM_ENCRYPT                   AeadAesGcmEncrypt;
-  ONE_CRYPTO_AEAD_AES_GCM_DECRYPT                   AeadAesGcmDecrypt;
-  /// v1.0 BN ----------------------------------------------------------------
-  ONE_CRYPTO_BIG_NUM_INIT                           BigNumInit;
-  ONE_CRYPTO_BIG_NUM_FROM_BIN                       BigNumFromBin;
-  ONE_CRYPTO_BIG_NUM_TO_BIN                         BigNumToBin;
-  ONE_CRYPTO_BIG_NUM_FREE                           BigNumFree;
-  ONE_CRYPTO_BIG_NUM_ADD                            BigNumAdd;
-  ONE_CRYPTO_BIG_NUM_SUB                            BigNumSub;
-  ONE_CRYPTO_BIG_NUM_MOD                            BigNumMod;
-  ONE_CRYPTO_BIG_NUM_EXP_MOD                        BigNumExpMod;
-  ONE_CRYPTO_BIG_NUM_INVERSE_MOD                    BigNumInverseMod;
-  ONE_CRYPTO_BIG_NUM_DIV                            BigNumDiv;
-  ONE_CRYPTO_BIG_NUM_MUL_MOD                        BigNumMulMod;
-  ONE_CRYPTO_BIG_NUM_CMP                            BigNumCmp;
-  ONE_CRYPTO_BIG_NUM_BITS                           BigNumBits;
-  ONE_CRYPTO_BIG_NUM_BYTES                          BigNumBytes;
-  ONE_CRYPTO_BIG_NUM_IS_WORD                        BigNumIsWord;
-  ONE_CRYPTO_BIG_NUM_IS_ODD                         BigNumIsOdd;
-  ONE_CRYPTO_BIG_NUM_COPY                           BigNumCopy;
-  ONE_CRYPTO_BIG_NUM_VALUE_ONE                      BigNumValueOne;
-  ONE_CRYPTO_BIG_NUM_R_SHIFT                        BigNumRShift;
-  ONE_CRYPTO_BIG_NUM_CONST_TIME                     BigNumConstTime;
-  ONE_CRYPTO_BIG_NUM_SQR_MOD                        BigNumSqrMod;
-  ONE_CRYPTO_BIG_NUM_NEW_CONTEXT                    BigNumNewContext;
-  ONE_CRYPTO_BIG_NUM_CONTEXT_FREE                   BigNumContextFree;
-  ONE_CRYPTO_BIG_NUM_SET_UINT                       BigNumSetUint;
-  ONE_CRYPTO_BIG_NUM_ADD_MOD                        BigNumAddMod;
-  /// v1.0 HKDF --------------------------------------------------------------
-  ONE_CRYPTO_HKDF_SHA256_EXTRACT_AND_EXPAND         HkdfSha256ExtractAndExpand;
-  ONE_CRYPTO_HKDF_SHA256_EXTRACT                    HkdfSha256Extract;
-  ONE_CRYPTO_HKDF_SHA256_EXPAND                     HkdfSha256Expand;
-  ONE_CRYPTO_HKDF_SHA384_EXTRACT_AND_EXPAND         HkdfSha384ExtractAndExpand;
-  ONE_CRYPTO_HKDF_SHA384_EXTRACT                    HkdfSha384Extract;
-  ONE_CRYPTO_HKDF_SHA384_EXPAND                     HkdfSha384Expand;
-  /// v1.0 PKCS --------------------------------------------------------------
-  ONE_CRYPTO_AUTHENTICODE_VERIFY                    AuthenticodeVerify;
-  ONE_CRYPTO_PKCS1V2_ENCRYPT                        Pkcs1v2Encrypt;
-  ONE_CRYPTO_PKCS1V2_DECRYPT                        Pkcs1v2Decrypt;
-  ONE_CRYPTO_RSA_OAEP_ENCRYPT                       RsaOaepEncrypt;
-  ONE_CRYPTO_RSA_OAEP_DECRYPT                       RsaOaepDecrypt;
-  ONE_CRYPTO_PKCS5_HASH_PASSWORD                    Pkcs5HashPassword;
-  ONE_CRYPTO_PKCS7_GET_SIGNERS                      Pkcs7GetSigners;
-  ONE_CRYPTO_PKCS7_FREE_SIGNERS                     Pkcs7FreeSigners;
-  ONE_CRYPTO_PKCS7_GET_CERTIFICATES_LIST            Pkcs7GetCertificatesList;
-  ONE_CRYPTO_PKCS7_SIGN                             Pkcs7Sign;
-  ONE_CRYPTO_PKCS7_VERIFY                           Pkcs7Verify;
-  ONE_CRYPTO_PKCS7_ENCRYPT                          Pkcs7Encrypt;
-  ONE_CRYPTO_VERIFY_EK_US_IN_PKCS7_SIGNATURE        VerifyEKUsInPkcs7Signature;
-  ONE_CRYPTO_PKCS7_GET_ATTACHED_CONTENT             Pkcs7GetAttachedContent;
-  /// v1.0 DH ----------------------------------------------------------------
-  ONE_CRYPTO_DH_NEW                                 DhNew;
-  ONE_CRYPTO_DH_FREE                                DhFree;
-  ONE_CRYPTO_DH_GENERATE_PARAMETER                  DhGenerateParameter;
-  ONE_CRYPTO_DH_SET_PARAMETER                       DhSetParameter;
-  ONE_CRYPTO_DH_GENERATE_KEY                        DhGenerateKey;
-  ONE_CRYPTO_DH_COMPUTE_KEY                         DhComputeKey;
-  /// v1.0 EC ----------------------------------------------------------------
-  ONE_CRYPTO_EC_GROUP_INIT                          EcGroupInit;
-  ONE_CRYPTO_EC_GROUP_GET_CURVE                     EcGroupGetCurve;
-  ONE_CRYPTO_EC_GROUP_GET_ORDER                     EcGroupGetOrder;
-  ONE_CRYPTO_EC_GROUP_FREE                          EcGroupFree;
-  ONE_CRYPTO_EC_POINT_INIT                          EcPointInit;
-  ONE_CRYPTO_EC_POINT_DE_INIT                       EcPointDeInit;
-  ONE_CRYPTO_EC_POINT_GET_AFFINE_COORDINATES        EcPointGetAffineCoordinates;
-  ONE_CRYPTO_EC_POINT_SET_AFFINE_COORDINATES        EcPointSetAffineCoordinates;
-  ONE_CRYPTO_EC_POINT_ADD                           EcPointAdd;
-  ONE_CRYPTO_EC_POINT_MUL                           EcPointMul;
-  ONE_CRYPTO_EC_POINT_INVERT                        EcPointInvert;
-  ONE_CRYPTO_EC_POINT_IS_ON_CURVE                   EcPointIsOnCurve;
-  ONE_CRYPTO_EC_POINT_IS_AT_INFINITY                EcPointIsAtInfinity;
-  ONE_CRYPTO_EC_POINT_EQUAL                         EcPointEqual;
-  ONE_CRYPTO_EC_POINT_SET_COMPRESSED_COORDINATES    EcPointSetCompressedCoordinates;
-  ONE_CRYPTO_EC_NEW_BY_NID                          EcNewByNid;
-  ONE_CRYPTO_EC_FREE                                EcFree;
-  ONE_CRYPTO_EC_GENERATE_KEY                        EcGenerateKey;
-  ONE_CRYPTO_EC_GET_PUB_KEY                         EcGetPubKey;
-  ONE_CRYPTO_EC_DH_COMPUTE_KEY                      EcDhComputeKey;
-  ONE_CRYPTO_EC_GET_PRIVATE_KEY_FROM_PEM            EcGetPrivateKeyFromPem;
-  ONE_CRYPTO_EC_GET_PUBLIC_KEY_FROM_X509            EcGetPublicKeyFromX509;
-  ONE_CRYPTO_EC_DSA_SIGN                            EcDsaSign;
-  ONE_CRYPTO_EC_DSA_VERIFY                          EcDsaVerify;
-  /// v1.0 RSA ---------------------------------------------------------------
-  ONE_CRYPTO_RSA_NEW                                RsaNew;
-  ONE_CRYPTO_RSA_FREE                               RsaFree;
-  ONE_CRYPTO_RSA_SET_KEY                            RsaSetKey;
-  ONE_CRYPTO_RSA_GET_KEY                            RsaGetKey;
-  ONE_CRYPTO_RSA_GENERATE_KEY                       RsaGenerateKey;
-  ONE_CRYPTO_RSA_CHECK_KEY                          RsaCheckKey;
-  ONE_CRYPTO_RSA_PKCS1_SIGN                         RsaPkcs1Sign;
-  ONE_CRYPTO_RSA_PKCS1_VERIFY                       RsaPkcs1Verify;
-  ONE_CRYPTO_RSA_PSS_SIGN                           RsaPssSign;
-  ONE_CRYPTO_RSA_PSS_VERIFY                         RsaPssVerify;
-  ONE_CRYPTO_RSA_GET_PRIVATE_KEY_FROM_PEM           RsaGetPrivateKeyFromPem;
-  ONE_CRYPTO_RSA_GET_PUBLIC_KEY_FROM_X509           RsaGetPublicKeyFromX509;
-  /// v1.0 X509 --------------------------------------------------------------
-  ONE_CRYPTO_X509_GET_SUBJECT_NAME                  X509GetSubjectName;
-  ONE_CRYPTO_X509_GET_COMMON_NAME                   X509GetCommonName;
-  ONE_CRYPTO_X509_GET_ORGANIZATION_NAME             X509GetOrganizationName;
-  ONE_CRYPTO_X509_VERIFY_CERT                       X509VerifyCert;
-  ONE_CRYPTO_X509_CONSTRUCT_CERTIFICATE             X509ConstructCertificate;
-  ONE_CRYPTO_X509_CONSTRUCT_CERTIFICATE_STACK_V     X509ConstructCertificateStackV;
-  ONE_CRYPTO_X509_CONSTRUCT_CERTIFICATE_STACK       X509ConstructCertificateStack;
-  ONE_CRYPTO_X509_FREE                              X509Free;
-  ONE_CRYPTO_X509_STACK_FREE                        X509StackFree;
-  ONE_CRYPTO_X509_GET_TBS_CERT                      X509GetTBSCert;
-  ONE_CRYPTO_X509_GET_VERSION                       X509GetVersion;
-  ONE_CRYPTO_X509_GET_SERIAL_NUMBER                 X509GetSerialNumber;
-  ONE_CRYPTO_X509_GET_ISSUER_NAME                   X509GetIssuerName;
-  ONE_CRYPTO_X509_GET_SIGNATURE_ALGORITHM           X509GetSignatureAlgorithm;
-  ONE_CRYPTO_X509_GET_EXTENDED_KEY_USAGE            X509GetExtendedKeyUsage;
-  ONE_CRYPTO_X509_GET_EXTENSION_DATA                X509GetExtensionData;
-  ONE_CRYPTO_X509_GET_VALIDITY                      X509GetValidity;
-  ONE_CRYPTO_X509_FORMAT_DATE_TIME                  X509FormatDateTime;
-  ONE_CRYPTO_X509_GET_KEY_USAGE                     X509GetKeyUsage;
-  ONE_CRYPTO_X509_VERIFY_CERT_CHAIN                 X509VerifyCertChain;
-  ONE_CRYPTO_X509_GET_CERT_FROM_CERT_CHAIN          X509GetCertFromCertChain;
-  ONE_CRYPTO_X509_GET_EXTENDED_BASIC_CONSTRAINTS    X509GetExtendedBasicConstraints;
-  ONE_CRYPTO_ASN1_GET_TAG                           Asn1GetTag;
-  ONE_CRYPTO_X509_COMPARE_DATE_TIME                 X509CompareDateTime;
-  /// v1.0 Random ------------------------------------------------------------
-  ONE_CRYPTO_RANDOM_SEED                            RandomSeed;
-  ONE_CRYPTO_RANDOM_BYTES                           RandomBytes;
-  /// v1.0 Tls ---------------------------------------------------------------
-  ONE_CRYPTO_TLS_INITIALIZE                         TlsInitialize;
-  ONE_CRYPTO_TLS_CTX_FREE                           TlsCtxFree;
-  ONE_CRYPTO_TLS_CTX_NEW                            TlsCtxNew;
-  ONE_CRYPTO_TLS_FREE                               TlsFree;
-  ONE_CRYPTO_TLS_NEW                                TlsNew;
-  ONE_CRYPTO_TLS_IN_HANDSHAKE                       TlsInHandshake;
-  ONE_CRYPTO_TLS_DO_HANDSHAKE                       TlsDoHandshake;
-  ONE_CRYPTO_TLS_HANDLE_ALERT                       TlsHandleAlert;
-  ONE_CRYPTO_TLS_CLOSE_NOTIFY                       TlsCloseNotify;
-  ONE_CRYPTO_TLS_CTRL_TRAFFIC_OUT                   TlsCtrlTrafficOut;
-  ONE_CRYPTO_TLS_CTRL_TRAFFIC_IN                    TlsCtrlTrafficIn;
-  ONE_CRYPTO_TLS_READ                               TlsRead;
-  ONE_CRYPTO_TLS_WRITE                              TlsWrite;
-  ONE_CRYPTO_TLS_SHUTDOWN                           TlsShutdown;
-  ONE_CRYPTO_TLS_SET_VERSION                        TlsSetVersion;
-  ONE_CRYPTO_TLS_SET_CONNECTION_END                 TlsSetConnectionEnd;
-  ONE_CRYPTO_TLS_SET_CIPHER_LIST                    TlsSetCipherList;
-  ONE_CRYPTO_TLS_SET_COMPRESSION_METHOD             TlsSetCompressionMethod;
-  ONE_CRYPTO_TLS_SET_VERIFY                         TlsSetVerify;
-  ONE_CRYPTO_TLS_SET_VERIFY_HOST                    TlsSetVerifyHost;
-  ONE_CRYPTO_TLS_SET_SESSION_ID                     TlsSetSessionId;
-  ONE_CRYPTO_TLS_SET_CA_CERTIFICATE                 TlsSetCaCertificate;
-  ONE_CRYPTO_TLS_SET_HOST_PUBLIC_CERT               TlsSetHostPublicCert;
-  ONE_CRYPTO_TLS_SET_HOST_PRIVATE_KEY_EX            TlsSetHostPrivateKeyEx;
-  ONE_CRYPTO_TLS_SET_HOST_PRIVATE_KEY               TlsSetHostPrivateKey;
-  ONE_CRYPTO_TLS_SET_CERT_REVOCATION_LIST           TlsSetCertRevocationList;
-  ONE_CRYPTO_TLS_SET_SIGNATURE_ALGO_LIST            TlsSetSignatureAlgoList;
-  ONE_CRYPTO_TLS_SET_EC_CURVE                       TlsSetEcCurve;
-  ONE_CRYPTO_TLS_GET_VERSION                        TlsGetVersion;
-  ONE_CRYPTO_TLS_GET_CONNECTION_END                 TlsGetConnectionEnd;
-  ONE_CRYPTO_TLS_GET_CURRENT_CIPHER                 TlsGetCurrentCipher;
-  ONE_CRYPTO_TLS_GET_CURRENT_COMPRESSION_ID         TlsGetCurrentCompressionId;
-  ONE_CRYPTO_TLS_GET_VERIFY                         TlsGetVerify;
-  ONE_CRYPTO_TLS_GET_SESSION_ID                     TlsGetSessionId;
-  ONE_CRYPTO_TLS_GET_CLIENT_RANDOM                  TlsGetClientRandom;
-  ONE_CRYPTO_TLS_GET_SERVER_RANDOM                  TlsGetServerRandom;
-  ONE_CRYPTO_TLS_GET_KEY_MATERIAL                   TlsGetKeyMaterial;
-  ONE_CRYPTO_TLS_GET_CA_CERTIFICATE                 TlsGetCaCertificate;
-  ONE_CRYPTO_TLS_GET_HOST_PUBLIC_CERT               TlsGetHostPublicCert;
-  ONE_CRYPTO_TLS_GET_HOST_PRIVATE_KEY               TlsGetHostPrivateKey;
-  ONE_CRYPTO_TLS_GET_CERT_REVOCATION_LIST           TlsGetCertRevocationList;
-  ONE_CRYPTO_TLS_GET_EXPORT_KEY                     TlsGetExportKey;
-  /// v1.0 Timestamp ---------------------------------------------------------
-  ONE_CRYPTO_IMAGE_TIMESTAMP_VERIFY                 ImageTimestampVerify;
-  /// v1.0 Info --------------------------------------------------------------
-  ONE_CRYPTO_GET_CRYPTO_PROVIDER_VERSION_STRING     GetCryptoProviderVersionString;
-} ONE_CRYPTO_PROTOCOL;
-
-/** @} */
-
-#endif // ONE_CRYPTO_PROTOCOL_
+BOOLEAN
+EFIAPI
+ParallelHash256HashAll (
+  IN CONST VOID   *Input,
+  IN       UINTN  InputByteLen,
+  IN       UINTN  BlockSize,
+  OUT      VOID   *Output,
+  IN       UINTN  OutputByteLen,
+  IN CONST VOID   *Customization,
+  IN       UINTN  CustomByteLen
+  )
+{
+  CryptoServiceNotAvailable ("ParallelHash256HashAll");
+  return FALSE;
+}
