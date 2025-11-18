@@ -32,7 +32,7 @@ DxeCryptLibConstructor (
   EFI_STATUS  Status;
 
   Status = gBS->LocateProtocol (
-                  &gOneCryptoDxeProtocolGuid,
+                  &gOneCryptoProtocolGuid,
                   NULL,
                   (VOID **)&gCryptoProtocol
                   );

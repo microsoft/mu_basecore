@@ -37,7 +37,7 @@
   OneCryptoLib.c
 
 [Protocols]
-  gOneCryptoSmmProtocolGuid  ## CONSUMES
+  gOneCryptoProtocolGuid  ## CONSUMES
 
 [Depex]
-  gOneCryptoSmmProtocolGuid
+  gOneCryptoProtocolGuid
