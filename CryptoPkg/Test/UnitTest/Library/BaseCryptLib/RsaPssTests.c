@@ -143,6 +143,7 @@ TestVerifyRsaPssSignVerify (
   UINT8    *Signature;
   UINTN    SigSize;
   BOOLEAN  Status;
+
   Status = RsaSetKey (mRsa, RsaKeyN, RsaPssN, sizeof (RsaPssN));
   UT_ASSERT_TRUE (Status);
 

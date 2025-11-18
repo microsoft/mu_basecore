@@ -24,7 +24,7 @@ TestVerifyPrngGeneration (
 {
   UINTN    Index;
   BOOLEAN  Status;
-  
+
   Status = RandomSeed (SeedString, sizeof (SeedString));
   UT_ASSERT_TRUE (Status);
 

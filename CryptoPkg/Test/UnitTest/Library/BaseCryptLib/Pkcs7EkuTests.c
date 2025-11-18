@@ -87,7 +87,7 @@ TestVerifyEKUsInSignature (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  EFI_STATUS  Status = EFI_SUCCESS;
+  EFI_STATUS   Status          = EFI_SUCCESS;
   CONST CHAR8  *RequiredEKUs[] = { FIRMWARE_SIGNER_EKU };
 
   Status = VerifyEKUsInPkcs7Signature (
@@ -122,7 +122,7 @@ TestVerifyEKUsWith3CertsInSignature (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  EFI_STATUS  Status = EFI_SUCCESS;
+  EFI_STATUS   Status          = EFI_SUCCESS;
   CONST CHAR8  *RequiredEKUs[] = { FIRMWARE_SIGNER_EKU };
 
   Status = VerifyEKUsInPkcs7Signature (

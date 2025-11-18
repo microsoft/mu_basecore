@@ -114,10 +114,13 @@
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/DxeCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/RuntimeDxeCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/StandaloneMmCryptLib.inf  # MU_CHANGE: Add StandaloneMmCryptLib
+  CryptoPkg/Library/BaseCryptLibOnOneCrypto/DxeCryptLib.inf             # MU_CHANGE: Add OneCrypto
 # MU_CHANGE START
 [Components.X64, Components.IA32]
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/SmmCryptLib.inf
   CryptoPkg/Library/BaseCryptLibOnProtocolPpi/StandaloneMmCryptLib.inf
+  CryptoPkg/Library/BaseCryptLibOnOneCrypto/SmmCryptLib.inf # MU_CHANGE: Add OneCrypto
+  CryptoPkg/Library/BaseCryptLibOnOneCrypto/StandaloneMmCryptLib.inf # MU_CHANGE: Add OneCrypto
 
 
 ## MU_CHANGE TCBZ_3799 - can't compile for ARM as it depends on ArmSoftFloatLib

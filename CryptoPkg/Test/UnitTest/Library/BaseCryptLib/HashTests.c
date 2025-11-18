@@ -181,7 +181,7 @@ TestVerifyHash (
   VOID               *HashCopyContext;
 
   HashTestContext = Context;
-  DataSize = AsciiStrLen (HashData);
+  DataSize        = AsciiStrLen (HashData);
 
   ZeroMem (Digest, MAX_DIGEST_SIZE);
   ZeroMem (DigestCopy, MAX_DIGEST_SIZE);
@@ -224,7 +224,7 @@ TestVerifyHashAll (
   HASH_TEST_CONTEXT  *HashTestContext;
 
   HashTestContext = Context;
-  
+
   DataSize = AsciiStrLen (HashData);
 
   ZeroMem (Digest, MAX_DIGEST_SIZE);
