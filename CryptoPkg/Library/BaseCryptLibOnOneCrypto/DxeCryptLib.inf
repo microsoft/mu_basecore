@@ -11,7 +11,7 @@
   INF_VERSION                    = 0x0001001B
   BASE_NAME                      = DxeCryptLib
   MODULE_UNI_FILE                = CryptLib.uni
-  FILE_GUID                      = B38CBDA6-8017-4111-8232-9E8328DE82F6
+  FILE_GUID                      = BE7B6901-E9FA-4211-A049-B9024A44FAB4
   VERSION_STRING                 = 1.0
   MODULE_TYPE                    = DXE_DRIVER
   LIBRARY_CLASS                  = BaseCryptLib | DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION DXE_CORE
@@ -32,7 +32,7 @@
   OneCryptoLib.c
 
 [Protocols]
-  gOneCryptoDxeProtocolGuid  ## CONSUMES
+  gOneCryptoProtocolGuid  ## CONSUMES
 
 [Depex]
-  gOneCryptoDxeProtocolGuid
+  gOneCryptoProtocolGuid

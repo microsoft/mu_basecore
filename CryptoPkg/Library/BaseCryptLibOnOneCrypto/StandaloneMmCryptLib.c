@@ -36,7 +36,7 @@ StandaloneMmCryptLibConstructor (
   EFI_STATUS  Status;
 
   Status = gMmst->MmLocateProtocol (
-                    &gOneCryptoMmProtocolGuid,
+                    &gOneCryptoProtocolGuid,
                     NULL,
                     (VOID **)&gCryptoProtocol
                     );

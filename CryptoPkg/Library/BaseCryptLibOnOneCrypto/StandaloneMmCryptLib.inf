@@ -11,7 +11,7 @@
   INF_VERSION                    = 0x0001001B
   BASE_NAME                      = StandaloneMmCryptLib
   MODULE_UNI_FILE                = CryptLib.uni
-  FILE_GUID                      = FA7EB4FD-7B3B-4FE4-BA95-1CE47CD0BE3E
+  FILE_GUID                      = 436D963C-7BC8-43B3-99CF-37D7A762F77B
   VERSION_STRING                 = 1.0
   PI_SPECIFICATION_VERSION       = 0x00010032
   MODULE_TYPE                    = MM_STANDALONE
@@ -39,7 +39,7 @@
   OneCryptoLib.c
 
 [Protocols]
-  gOneCryptoMmProtocolGuid  ## CONSUMES
+  gOneCryptoProtocolGuid  ## CONSUMES
 
 [Depex]
-  gOneCryptoMmProtocolGuid
+  gOneCryptoProtocolGuid
