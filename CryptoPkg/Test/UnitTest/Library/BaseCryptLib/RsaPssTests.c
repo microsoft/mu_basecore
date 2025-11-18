@@ -143,11 +143,6 @@ TestVerifyRsaPssSignVerify (
   UINT8    *Signature;
   UINTN    SigSize;
   BOOLEAN  Status;
-
-  if (!PcdGetBool (PcdCryptoServiceRsaPssSign) || !PcdGetBool (PcdCryptoServiceRsaPssVerify) || !PcdGetBool (PcdCryptoServiceRsaSetKey)) {
-    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
-  }
-
   Status = RsaSetKey (mRsa, RsaKeyN, RsaPssN, sizeof (RsaPssN));
   UT_ASSERT_TRUE (Status);
 

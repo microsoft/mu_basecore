@@ -21,7 +21,6 @@
 
 [Sources]
   UnitTestMain.c
-  UnitTestMainHost.c
   BaseCryptLibUnitTests.c
   TestBaseCryptLib.h
   HashTests.c
@@ -55,13 +54,6 @@
   UnitTestLib
   MmServicesTableLib
   SynchronizationLib
-
-[FixedPcd]
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256New               ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Free              ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256SetKey            ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Update            ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Final             ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs5HashPassword           ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs1v2Encrypt              ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7Sign                   ## CONSUMES

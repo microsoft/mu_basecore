@@ -195,13 +195,9 @@ TestVerifyHmac (
   BOOLEAN            Status;
   HMAC_TEST_CONTEXT  *HmacTestContext;
 
-  if (  !PcdGetBool (PcdCryptoServiceHmacSha256SetKey) || !PcdGetBool (PcdCryptoServiceHmacSha256Update)
-     || !PcdGetBool (PcdCryptoServiceHmacSha256Final))
-  {
-    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
-  }
-
+  // MU_CHANGE [START]
   HmacTestContext = Context;
+  // MU_CHANGE [END]
 
   ZeroMem (Digest, MAX_DIGEST_SIZE);
   ZeroMem (DigestCopy, MAX_DIGEST_SIZE);
