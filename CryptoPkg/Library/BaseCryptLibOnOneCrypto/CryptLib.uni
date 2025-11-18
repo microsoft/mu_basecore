@@ -1,0 +1,11 @@
+// /** @file
+// BaseCryptLib and TlsLib using the services of the OneCrypto Protocol.
+//
+// Copyright (c) Microsoft Corporation.
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+// **/
+
+#string STR_MODULE_ABSTRACT             #language en-US "BaseCryptLib and TlsLib using the services of the OneCrypto Protocol"
+
+#string STR_MODULE_DESCRIPTION          #language en-US "This library implements BaseCryptLib and TlsLib by forwarding calls to the OneCrypto Protocol. It provides version-aware function dispatching with graceful degradation support for backward compatibility with older crypto binaries."
