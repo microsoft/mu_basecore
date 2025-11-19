@@ -1552,6 +1552,7 @@ UfsDeviceDetection (
   // Start UFS device detection.
   // Try up to 3 times for establishing data link with device.
   //
+  // MU_CHANGE [BEGIN] - Fix UFS device detection retry logic
   for (Retry = 0; Retry < 3; Retry++) {
     Status = UfsExecUicCommands (Private, UfsUicDmeLinkStartup, 0, 0, 0);
     if (EFI_ERROR (Status)) {
@@ -1576,6 +1577,7 @@ UfsDeviceDetection (
       return EFI_SUCCESS;
     }
   }
+  // MU_CHANGE [END] - Fix UFS device detection retry logic
 
   return EFI_NOT_FOUND;
 }
