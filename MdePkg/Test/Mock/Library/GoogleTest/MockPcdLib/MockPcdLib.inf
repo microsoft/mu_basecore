@@ -1,26 +1,27 @@
-## @file MockSafeIntLib.inf
-# Mock implementation of the SafeInt library
+## @file MockPcdLib.inf
+# Google Test mocks for PcdLib
 #
+# Copyright (c) 2024, Intel Corporation. All rights reserved.
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
-#
 ##
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = MockSafeIntLib
-  FILE_GUID                      = 318369D7-D942-47FC-A4BC-F881DEE5085E
+  BASE_NAME                      = MockPcdLib
+  FILE_GUID                      = a0d612cd-0b33-5691-b282-02d7f46b93d9
   MODULE_TYPE                    = HOST_APPLICATION
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = SafeIntLib
-  PI_SPECIFICATION_VERSION       = 0x0001000A
+  LIBRARY_CLASS                  = PcdLib
 
+#
+# The following information is for reference only and not required by the build tools.
 #
 #  VALID_ARCHITECTURES           = IA32 X64
 #
 
 [Sources]
-  MockSafeIntLib.cpp
+  MockPcdLib.cpp
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -30,4 +31,4 @@
   GoogleTestLib
 
 [BuildOptions]
-  MSFT:*_*_*_CC_FLAGS = /EHsc
+  MSFT:*_*_*_CC_FLAGS = /EHs /bigobj

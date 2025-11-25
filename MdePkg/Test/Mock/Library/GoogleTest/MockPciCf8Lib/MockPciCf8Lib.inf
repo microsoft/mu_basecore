@@ -1,18 +1,17 @@
-## @file MockSafeIntLib.inf
-# Mock implementation of the SafeInt library
+## @file MockPciCf8Lib.inf
+# Google Test mocks for PciCf8Lib
 #
-# Copyright (c) Microsoft Corporation.
+# Copyright (c) Microsoft Corporation. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
-#
 ##
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = MockSafeIntLib
-  FILE_GUID                      = 318369D7-D942-47FC-A4BC-F881DEE5085E
+  BASE_NAME                      = MockPciCf8Lib
+  FILE_GUID                      = 406A4DDD-568A-42AC-9C16-B35DF6805621
   MODULE_TYPE                    = HOST_APPLICATION
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = SafeIntLib
+  LIBRARY_CLASS                  = PciCf8Lib
   PI_SPECIFICATION_VERSION       = 0x0001000A
 
 #
@@ -20,7 +19,7 @@
 #
 
 [Sources]
-  MockSafeIntLib.cpp
+  MockPciCf8Lib.cpp
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -31,3 +30,4 @@
 
 [BuildOptions]
   MSFT:*_*_*_CC_FLAGS = /EHsc
+
