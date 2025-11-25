@@ -1,4 +1,4 @@
-/** @file
+﻿/** @file MockSafeIntLib.h
   Google Test mocks for the SafeInt Library
 
   Copyright (c) Microsoft Corporation.

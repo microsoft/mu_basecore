@@ -75,3 +75,11 @@
   MdePkg/Test/Mock/Library/GoogleTest/MockUefiRuntimeLib/MockUefiRuntimeLib.inf
 
   MdePkg/Library/StackCheckLibNull/StackCheckLibNullHostApplication.inf
+
+  # MU_CHANGE [BEGIN] - Add missing INFs to satisfy DscCompleteCheck
+  MdePkg/Test/Library/SynchronizationLibHostUnitTest/SynchronizationLibHostUnitTest.inf
+  MdePkg/Test/Mock/Library/Cmocka/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf
+  MdePkg/Test/Mock/Library/Cmocka/MockUefiRuntimeServicesTableLib/MockUefiRuntimeServicesTableLib.inf
+  MdePkg/Test/Mock/Library/Stub/StubHobLib/StubHobLib.inf
+  MdePkg/Test/Mock/Library/Stub/StubUefiLib/StubUefiLib.inf
+  # MU_CHANGE [END]
