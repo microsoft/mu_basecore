@@ -57,5 +57,27 @@
   MdePkg/Test/Mock/Library/GoogleTest/MockReportStatusCodeLib/MockReportStatusCodeLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockSafeIntLib/MockSafeIntLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockDevicePathLib/MockDevicePathLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockDxeServicesLib/MockDxeServicesLib.inf
 
   MdePkg/Library/StackCheckLibNull/StackCheckLibNullHostApplication.inf
+
+  MdePkg/Test/Mock/Library/GoogleTest/MockIoLib/MockIoLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockMmServicesTableLib/MockMmServicesTableLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockUefiRuntimeLib/MockUefiRuntimeLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockMemoryAllocationLib/MockMemoryAllocationLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockPciExpressLib/MockPciExpressLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockUefiDevicePathLib/MockUefiDevicePathLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockPciLib/MockPciLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockDxeServicesTableLib/MockDxeServicesTableLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockPcdLib/MockPcdLib.inf
+  MdePkg/Test/Mock/Library/Cmocka/MockUefiRuntimeServicesTableLib/MockUefiRuntimeServicesTableLib.inf
+  MdePkg/Test/Mock/Library/Cmocka/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf
+  MdePkg/Test/Mock/Library/Stub/StubHobLib/StubHobLib.inf
+  MdePkg/Test/Mock/Library/Stub/StubUefiLib/StubUefiLib.inf
+
+  MdePkg/Test/Mock/Library/GoogleTest/MockSafeIntLib/MockSafeIntLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockSmmMemLib/MockSmmMemLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockPerformanceLib/MockPerformanceLib.inf # MU_CHANGE
+  MdePkg/Test/Mock/Library/GoogleTest/MockSynchronizationLib/MockSynchronizationLib.inf # MU_CHANGE
+  MdePkg/Test/Mock/Library/GoogleTest/MockPciCf8Lib/MockPciCf8Lib.inf
+ 
