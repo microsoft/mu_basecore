@@ -28,6 +28,17 @@ struct MockPolicyLibCommon {
      IN OUT UINT16      *PolicySize
     )
     );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    SetPolicy,
+    (
+     IN CONST EFI_GUID  *PolicyGuid,
+     IN UINT64          Attributes,
+     IN VOID            *Policy,
+     IN UINT16          PolicySize
+    )
+    );
 };
 
 #endif
