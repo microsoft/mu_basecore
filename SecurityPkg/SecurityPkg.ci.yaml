@@ -71,7 +71,7 @@
     },
     ## options defined .pytool/Plugin/HostUnitTestDscCompleteCheck
     "HostUnitTestDscCompleteCheck": {
-        "IgnoreInf": [""],
+        "IgnoreInf": ["SecurityPkg/Library/DxeImageVerificationLib/GoogleTest/DxeImageVerificationLibGoogleTest.inf"],
         "DscPath": "Test/SecurityPkgHostTest.dsc"
     },
     "GuidCheck": {
