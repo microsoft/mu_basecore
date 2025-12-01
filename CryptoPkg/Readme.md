@@ -158,6 +158,99 @@ per firmware module type, or for individual modules.
 +===================+    +===================+     +===================+
 ```
 
+## OneCrypto: Phase-Agnostic Cryptographic Services
+
+OneCrypto provides an alternative approach to cryptographic services using phase-agnostic
+binary drivers. Unlike the traditional dynamic linking approach where separate crypto drivers
+are needed for each phase (CryptoPei, CryptoDxe, CryptoSmm), OneCrypto uses a single binary
+driver that can be loaded and executed across multiple firmware phases.
+
+Platform code uses the **BaseCryptLibOnOneCrypto** library instance, which provides the same
+BaseCryptLib and TlsLib APIs but calls the OneCrypto Protocol instead of statically linking
+OpenSSL or using phase-specific protocols.
+
+**IMPORTANT: Platform code must NEVER call the OneCrypto Protocol directly.** Always use
+BaseCryptLibOnOneCrypto to ensure version safety, type safety, and robust error handling.
+
+### Key Features
+
+* **Phase-Agnostic Binary**: Single crypto driver shared across DXE and Standalone MM phases
+* **Version Safety**: Runtime version validation prevents mismatched protocol versions
+* **Reduced Duplication**: Eliminates need for multiple phase-specific crypto drivers
+* **Consistent API**: Platform code continues using standard BaseCryptLib/TlsLib APIs
+* **Mandatory Updates**: When a function is added to BaseCryptLib.h, updating OneCrypto is
+  **mandatory** to maintain the versioned protocol contract. See
+  `CryptoPkg/Library/BaseCryptLibOnOneCrypto/Readme.md` for detailed instructions on adding
+  new cryptographic functions to OneCrypto.
+
+### OneCrypto Architecture
+
+```text
++===================+    +===================+     +=======================+
+|    EDK II DXE     |    |  EDK II UEFI      |     |   Standalone MM       |
+|   Module/Library  |    |   Module/Library  |     |   Module/Library      |
++===================+    +===================+     +=======================+
+  ^   ^        ^           ^   ^        ^            ^   ^           ^
+  |   |        |           |   |        |            |   |           |
+  |   |        v           |   |        v            |   |           v
+  |   |  +==========+      |   |  +==========+       |   |     +==========+
+  |   |  |HashApiLib|      |   |  |HashApiLib|       |   |     |HashApiLib|
+  |   |  +==========+      |   |  +==========+       |   |     +==========+
+  |   |        ^           |   |        ^            |   |           ^
+  |   |        |           |   |        |            |   |           |
+  v   v        v           v   v        v            v   v           v
++===================+    +===================+     +========================+
+|TlsLib|BaseCryptLib|    |TlsLib|BaseCryptLib|     |TlsLib|BaseCryptLib     |
++-------------------+    +-------------------+     +------------------------+
+|BaseCryptLibOn     |    |BaseCryptLibOn     |     |BaseCryptLibOn          |
+|OneCrypto/         |    |OneCrypto/         |     |OneCrypto/              |
+|DxeCryptLib.inf    |    |DxeCryptLib.inf    |     |StandaloneMmCryptLib.inf|
++===================+    +===================+     +========================+
+           ^                      ^                         ^
+          ||| (Dynamic)          ||| (Dynamic)             ||| (Dynamic)
+           v                      v                         v
++===================+    +===================+    +========================+
+|  OneCrypto        |    |  OneCrypto        |    |  OneCrypto             |
+|  Protocol         |    |  Protocol         |    |  Protocol              |
++-------------------|    |-------------------|    |------------------------|
+|OneCryptoLoaderDxe |    |OneCryptoLoaderDxe |    |OneCryptoLoaderSupvMm   |
++===================+    +===================+    +========================+
+           ^                      ^                         ^
+           |                      |                         |
+           +----------------------+-------------------------+
+                                  |
+                                  v
+                    +=============================+
+                    |  OneCryptoBinSupvMm.efi     |
+                    |  (Phase-Agnostic Binary)    |
+                    +=============================+
+                    |  Crypto Implementation      |
+                    |  (OpenSSL/MbedTLS based)    |
+                    +=============================+
+```
+
+### OneCrypto Components
+
+* **OneCryptoLoader** - Loads the phase-agnostic binary and publishes the OneCrypto Protocol
+  * `OneCryptoLoaderDxe.inf` - DXE phase loader
+  * `OneCryptoLoaderSupvMm.inf` - Standalone MM phase loader
+* **OneCryptoBin** - Phase-agnostic binary driver containing cryptographic implementations
+  * `OneCryptoBinSupvMm.inf` - Single binary used by both DXE and Standalone MM
+* **BaseCryptLibOnOneCrypto** - Library instance that wraps the OneCrypto Protocol
+  * `DxeCryptLib.inf` - DXE/UEFI driver/application support
+  * `StandaloneMmCryptLib.inf` - Standalone MM driver support
+  * Provides version validation and type-safe API translation
+  * **Required wrapper** - Direct protocol access is unsafe and unsupported
+
+### Adding New Cryptographic Functions
+
+When adding new cryptographic functions to BaseCryptLib.h, updating OneCrypto is **mandatory**
+to maintain protocol compatibility. The OneCrypto Protocol is versioned and validated at runtime,
+so all implementations must stay synchronized.
+
+For detailed step-by-step instructions on adding new functions, see
+[BaseCryptlibOnOneCrypto](./Library/BaseCryptLibOnOneCrypto/README.md).
+
 ## Supported Cryptographic Families and Services
 
 The table below provides a summary of the supported cryptographic services. It
@@ -237,9 +330,25 @@ Configuring the cryptographic services requires library mappings and PCD
 settings in a platform DSC file. This must be done for each of the firmware
 phases (SEC, PEI, DXE, UEFI, SMM, UEFI RT).
 
+Platform developers can choose from three approaches for providing cryptographic services:
+
+1. **Static Linking** - Cryptographic implementations (OpenSSL/MbedTLS) are directly compiled
+   into each module that needs crypto. Larger per-module size but no runtime dependencies.
+
+2. **Dynamic Linking (Protocol/PPI)** - Cryptographic services are provided by phase-specific
+   drivers (CryptoPei, CryptoDxe, CryptoSmm) through protocols. Modules use
+   BaseCryptLibOnProtocolPpi to call these services. Reduces per-module size but requires
+   separate crypto driver for each phase.
+
+3. **OneCrypto (Phase-Agnostic Binary)** - Cryptographic services are provided by a single
+   phase-agnostic binary driver loaded by OneCryptoLoader. Modules use BaseCryptLibOnOneCrypto
+   to call the OneCrypto Protocol. Reduces firmware image duplication and provides version
+   safety. See "OneCrypto: Phase-Agnostic Cryptographic Services" section above for details.
+
 The following table can be used to help select the best OpensslLib instance for
-each phase. The Size column only shows the estimated size increase for a
-compressed IA32/X64 module that uses the cryptographic services with
+each phase when using static or dynamic (Protocol/PPI) linking. This table does not apply
+to OneCrypto, which uses pre-built binary drivers. The Size column only shows the estimated
+size increase for a compressed IA32/X64 module that uses the cryptographic services with
 `OpensslLib.inf` as the baseline size. The actual size increase depends on the
 specific set of enabled cryptographic services. If ECC services are not
 required, then the size can be reduced by using OpensslLib.inf instead of
@@ -339,6 +448,20 @@ settings.
   }
 ```
 
+If OneCrypto is used, then all DXE Drivers use the BaseCryptLibOnOneCrypto library
+instance. The OneCrypto binary driver and loader must be included in the platform.
+
+```text
+[LibraryClasses.common.DXE_DRIVER, LibraryClasses.common.UEFI_DRIVER, LibraryClasses.common.UEFI_APPLICATION]
+  HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
+  BaseCryptLib|CryptoPkg/Library/BaseCryptLibOnOneCrypto/DxeCryptLib.inf
+  TlsLib|CryptoPkg/Library/BaseCryptLibOnOneCrypto/DxeCryptLib.inf
+
+[Components]
+  $(ONE_CRYPTO_PATH)/OneCryptoLoaders/OneCryptoLoaderDxe.inf
+  $(ONE_CRYPTO_PATH)/OneCryptoBin/OneCryptoBinSupvMm.inf
+```
+
 ### SMM Phase Library Mappings
 
 The SMM Phase supports either static or dynamic linking of cryptographic
@@ -373,6 +496,26 @@ settings.
       IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
   }
 ```
+
+### Standalone MM Phase Library Mappings
+
+Standalone MM Phase supports either static or dynamic linking of cryptographic
+services. For OneCrypto, Standalone MM modules can use the BaseCryptLibOnOneCrypto
+library instance with the same shared binary driver used by DXE.
+
+```text
+[LibraryClasses.common.MM_STANDALONE]
+  HashApiLib|CryptoPkg/Library/BaseHashApiLib/BaseHashApiLib.inf
+  BaseCryptLib|CryptoPkg/Library/BaseCryptLibOnOneCrypto/StandaloneMmCryptLib.inf
+  TlsLib|CryptoPkg/Library/BaseCryptLibOnOneCrypto/StandaloneMmCryptLib.inf
+
+[Components]
+  $(ONE_CRYPTO_PATH)/OneCryptoLoaders/OneCryptoLoaderSupvMm.inf
+  $(ONE_CRYPTO_PATH)/OneCryptoBin/OneCryptoBinSupvMm.inf
+```
+
+Note: The same OneCryptoBinSupvMm.inf binary is used by both DXE (via OneCryptoLoaderDxe)
+and Standalone MM (via OneCryptoLoaderSupvMm), reducing firmware image duplication.
 
 ### UEFI Runtime Driver Library Mappings
 
