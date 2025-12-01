@@ -7,6 +7,34 @@
 
   UPDATED: 2025-Nov-11
   VERSION: 1.0
+
+  ============================================================================
+  IMPORTANT: PLATFORM CODE SHOULD NOT USE THIS PROTOCOL DIRECTLY
+  ============================================================================
+
+  This protocol is an internal interface designed for communication between
+  the OneCrypto binary driver and the BaseCryptLibOnOneCrypto library. The
+  Protocol structure and its functions may change without notice.
+
+  Platform code SHOULD NOT:
+  - Locate this protocol directly using LocateProtocol/HandleProtocol
+  - Call protocol functions directly
+  - Modify or override this protocol without understanding the rules
+
+  Instead, platform code SHOULD:
+  - Use BaseCryptLibOnOneCrypto library, which provides:
+    * Version checking and compatibility validation
+    * Type safety and proper error handling
+    * A stable API that abstracts protocol implementation details
+
+  The BaseCryptLibOnOneCrypto library is the only supported way to access
+  cryptographic services and will ensure safe usage of the underlying protocol.
+  Most of these benefits will be lost without going through the library.
+
+  For more information such as updating this protocol, see Docs/ in
+  BaseCryptLibOnOneCrypto.
+
+  ============================================================================
 **/
 
 #ifndef ONE_CRYPTO_PROTOCOL_
@@ -26,8 +54,8 @@ extern EFI_GUID  gOneCryptoProtocolGuid;
 // =============================================================================
 // Protocol version: 1.0
 // =============================================================================
-#define VERSION_MAJOR  1ULL
-#define VERSION_MINOR  0ULL
+#define ONE_CRYPTO_VERSION_MAJOR  1ULL
+#define ONE_CRYPTO_VERSION_MINOR  0ULL
 
 // ============================================================================
 // Typedef Declarations
@@ -5196,6 +5224,8 @@ EFI_STATUS
   The _ONE_CRYPTO_PROTOCOL structure provides a standardized interface for
   cryptographic functions, enabling interoperability and consistent usage across
   different cryptographic implementations.
+
+  DO NOT MODIFY THIS STRUCTURE WITHOUT READING THE FILE DESCRIPTION ABOVE.
 
   Supports functions from versions:
    - 1.0
