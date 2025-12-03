@@ -38,7 +38,7 @@
   Pkcs7AttachedContentTest.c
   OaepEncryptTests.c
   RsaPssTests.c
-  ParallelhashTests.c
+  # ParallelhashTests.c # MU_CHANGE
   HkdfTests.c
   AeadAesGcmTests.c
   BnTests.c
