@@ -185,6 +185,7 @@ typedef struct _SMMU_INFO {
   UINT8         TranslationStartingLevel;
   BOOLEAN       PageTableRootConcatenated;
   BOOLEAN       RangeInvalidationSupported;
+  BOOLEAN       EBSBehaviorAbort;
   BOOLEAN       Enabled;
 } SMMU_INFO;
 
