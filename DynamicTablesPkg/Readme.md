@@ -44,6 +44,7 @@ the framework is extensible, and support for other architectures can
 be added easily.
 
 The framework currently supports the following table generators for ARM:
+
 * DBG2 - Debug Port Table 2
 * DSDT - Differentiated system description table. This is essentially
          a RAW table generator.
@@ -74,11 +75,13 @@ framework that provides a solution for dynamic generation of ACPI Definition
 block tables.
 
 Dynamic AML introduces the following techniques:
+
 * AML Fixup
 * AML Codegen
 * AML Fixup + Codegen
 
 ### AML Fixup
+
 AML fixup is a technique that involves compiling an ASL template file to
 generate AML bytecode. This template AML bytecode can be parsed at run-time
 and a fixup code can update the required fields in the AML template.
@@ -87,6 +90,7 @@ To simplify AML Fixup, the Dynamic Tables Framework provides an *AmlLib*
 library with a rich set of APIs that can be used to fixup the AML code.
 
 ### AML Codegen
+
 AML Codegen employs generating small segments of AML code. The *AmlLib*
 library provides AML Codegen APIs that generate the AML code segments.
 
@@ -121,12 +125,14 @@ library provides AML Codegen APIs that generate the AML code segments.
     |                                |  } // DefinitionBlock          |
 
 ### AML Fixup + Codegen
+
 A combination of AML Fixup and AML Codegen could be used for generating
 Definition Blocks. For example the AML Fixup could be used to fixup certain
 parts of the AML template while the AML Codegen APIs could be used to inserted
 small fragments of AML code in the AML template.
 
 ### AmlLib Library
+
 Since, AML bytecode represents complex AML grammar, an **AmlLib** library is
 introduced to assist parsing and traversing of the AML bytecode at run-time.
 
@@ -165,8 +171,8 @@ standard generators, see Feature Summary Section for a list of such tables.
 The supported platforms already contain several tables.
 If a table is not present for the platform, two alternative processes can be followed:
 
-- define the table in using ASL,
-- define the table in packed C structures (also known as RAW).
+* define the table in using ASL,
+* define the table in packed C structures (also known as RAW).
 
 The two approaches are detailed below.
 
@@ -209,6 +215,7 @@ DefinitionBlock ("", "SSDT", 2, "XXXXXX", "XXXXXXXX", 1) {
 Platform/ARM/VExpressPkg/ConfigurationManager/ConfigurationManagerDxe/ConfigurationManager.h
 
 Add an array to hold the AML code:
+
 ```
    extern CHAR8 newtablesource_aml_code[];
 ```
@@ -219,11 +226,11 @@ Note: the array name is composed of the ASL source file name all in lower case, 
 
 5. Add a new CM_STD_OBJ_ACPI_TABLE_INFO structure entry and initialise.
 
- - the entry contains:
-    - the table signature,
-    - the table revision (unused in this case),
-    - the ID of the standard generator to be used (the SSDT generator in this case).
-    - a pointer to the AML code,
+* the entry contains:
+  * the table signature,
+  * the table revision (unused in this case),
+  * the ID of the standard generator to be used (the SSDT generator in this case).
+  * a pointer to the AML code,
 
 ```
      // Table defined in the NewTableSource.asl file
@@ -262,11 +269,11 @@ The steps to create a table in raw format are detailed below:
 
 3. Add a new CM_STD_OBJ_ACPI_TABLE_INFO structure entry and initialise.
 
- - the entry contains:
-    - the table signature,
-    - the table revision,
-    - the RAW generator ID.
-    - a pointer to the C packed struct that defines the table,
+* the entry contains:
+  * the table signature,
+  * the table revision,
+  * the RAW generator ID.
+  * a pointer to the C packed struct that defines the table,
 
 ```
     {
@@ -328,15 +335,13 @@ Ensure that the latest ACPICA iASL compiler is used for building *Dynamic Tables
 [Version 20200717](https://www.intel.com/content/www/us/en/download/774849/774863/acpi-component-architecture-downloads-previous-releases-2020.html),
 dated 17 July, 2020.
 
-
-#Running CI builds locally
+# Running CI builds locally
 
 The TianoCore EDKII project has introduced Core CI infrastructure using TianoCore EDKII Tools PIP modules:
 
-   -  *[edk2-pytool-library](https://pypi.org/project/edk2-pytool-library)*
+* *[edk2-pytool-library](https://pypi.org/project/edk2-pytool-library)*
 
-   - *[edk2-pytool-extensions](https://pypi.org/project/edk2-pytool-extensions)*
-
+* *[edk2-pytool-extensions](https://pypi.org/project/edk2-pytool-extensions)*
 
 The instructions to setup the CI environment are in *'edk2\\.pytool\\Readme.md'*
 
@@ -358,6 +363,7 @@ The instructions to setup the CI environment are in *'edk2\\.pytool\\Readme.md'*
         e.g. On a windows host PC run:
              edk2-ci\Scripts\activate.bat
     ```
+
 3. Install Pytools - generally once per virtual env or whenever pip-requirements.txt changes
 
     ```
@@ -394,8 +400,7 @@ The instructions to setup the CI environment are in *'edk2\\.pytool\\Readme.md'*
         e.g. stuart_ci_build -c .pytool/CISettings.py TOOL_CHAIN_TAG=GCC5 -p DynamicTablesPkg -a AARCH64 --verbose
     ```
 
-    - use `stuart_build -c .pytool/CISettings.py -h` option to see help on additional options.
-
+    * use `stuart_build -c .pytool/CISettings.py -h` option to see help on additional options.
 
 # Documentation
 
@@ -413,6 +418,7 @@ The CM_OBJECT_ID type is used to identify the Configuration Manager
 | 31     -     28 | 27 - 8 | 7    -    0 |
 | :-------------: | :----: | :---------: |
 | `Name Space ID` |    0   | `Object ID` |
+
 ------------------------------------------
 
 ### Name Space ID: Bits [31:28]
@@ -426,11 +432,11 @@ The CM_OBJECT_ID type is used to identify the Configuration Manager
 | 1111b | Custom/OEM                        | |
 | `*`   | All other values are reserved.    | |
 
-### Bits: [27:8] - Reserved, must be zero.
+### Bits: [27:8] - Reserved, must be zero
 
 ### Bits: [7:0] - Object ID
 
-#### Object ID's in the Standard Namespace:
+#### Object ID's in the Standard Namespace
 
 |  ID   |  Description                      | Comments |
 | ---:  | :--------------------------       | :---     |
@@ -438,7 +444,7 @@ The CM_OBJECT_ID type is used to identify the Configuration Manager
 |   1   | ACPI Table List                   | |
 |   2   | SMBIOS Table List                 | |
 
-#### Object ID's in the ARM Namespace:
+#### Object ID's in the ARM Namespace
 
 |  ID   |  Description                              | Comments |
 | ---:  | :--------------------------               | :---     |
@@ -468,7 +474,7 @@ The CM_OBJECT_ID type is used to identify the Configuration Manager
 |  23   | Embedded Trace Extension/Module Info      | |
 |  `*`  | All other values are reserved.            | |
 
-#### Object ID's in the Arch Common Namespace:
+#### Object ID's in the Arch Common Namespace
 
 |  ID   |  Description                              | Comments |
 | ---:  | :--------------------------               | :---     |
@@ -509,7 +515,7 @@ The CM_OBJECT_ID type is used to identify the Configuration Manager
 |  34   | _STA Device Status Info                   | |
 |  `*`  | All other values are reserved.            | |
 
-#### Object ID's in the X64 Namespace:
+#### Object ID's in the X64 Namespace
 
 |  ID   |  Description                              | Comments |
 | ---:  | :--------------------------               | :---     |
