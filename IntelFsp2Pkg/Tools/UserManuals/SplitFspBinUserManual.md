@@ -1,4 +1,4 @@
-# SplitFspBin.py is a python script to support some operations on Intel FSP 1.x/2.x image.
+# SplitFspBin.py is a python script to support some operations on Intel FSP 1.x/2.x image
 
 It supports:
 
