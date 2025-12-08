@@ -981,7 +981,8 @@ SmmuV3GetNodeInfo (
       SmmuNode                                     = (EFI_ACPI_6_0_IO_REMAPPING_SMMU3_NODE *)Node;
       SmmuInfoArray[SmmuIndex].SmmuBase            = SmmuNode->Base;
       SmmuInfoArray[SmmuIndex].Flags               = SmmuNode->Flags;
-      SmmuInfoArray[SmmuIndex].StreamTableEntryMax = 0;  // Initialize max stream ID to 0
+      SmmuInfoArray[SmmuIndex].StreamTableEntryMax = 0;    // Initialize max stream ID to 0
+      SmmuInfoArray[SmmuIndex].EBSBehaviorAbort    = TRUE; // Initialize EBS behavior to Abort by default
       SmmuNodePtrs[SmmuIndex]                      = (VOID *)SmmuNode;
       SmmuIndex++;
     }
@@ -1292,6 +1293,7 @@ SmmuV3AddRMRMapping (
       for (NumMemRangeDesc = 0; NumMemRangeDesc < Item->RmrNode->NumMemRangeDesc; NumMemRangeDesc++) {
         IortMemRangeDesc = (EFI_ACPI_6_0_IO_REMAPPING_MEM_RANGE_DESC *)((UINT8 *)Item->RmrNode + Item->RmrNode->MemRangeDescRef);
         if ((IortMemRangeDesc[NumMemRangeDesc].Base > 0) && (IortMemRangeDesc[NumMemRangeDesc].Length > 0)) {
+          SmmuInfo->EBSBehaviorAbort = FALSE; // At least one RMR mapping exists, set EBS behavior to bypass
           DEBUG ((
             DEBUG_INFO,
             "%a: Adding RMR mapping for SMMU[0x%llx]: Base=0x%llx, Length=0x%llx\n",
