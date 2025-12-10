@@ -4338,6 +4338,10 @@ EcDsaVerify (
   This function returns the version string of the cryptographic provider
   (e.g., OpenSSL, MbedTLS, SymCrypt) that was used to compile the library.
 
+  The returned string is space-delimited and follows the format: "<provider> <version> [additional info]"
+  where <provider> is the cryptographic library name (e.g., "OpenSSL", "MbedTLS", "SymCrypt"),
+  <version> is the version number, and [additional info] is optional provider-specific details.
+
   @param[out]     Buffer       Pointer to the buffer to receive the version string.
                                If NULL, the required buffer size is returned in BufferSize.
   @param[in,out]  BufferSize   On input, the size of the buffer in bytes.
@@ -4352,8 +4356,8 @@ EcDsaVerify (
 EFI_STATUS
 EFIAPI
 GetCryptoProviderVersionString (
-  OUT    CHAR8   *Buffer,
-  IN OUT UINTN   *BufferSize
+  OUT    CHAR8  *Buffer,
+  IN OUT UINTN  *BufferSize
   );
 
 #endif // __BASE_CRYPT_LIB_H__
