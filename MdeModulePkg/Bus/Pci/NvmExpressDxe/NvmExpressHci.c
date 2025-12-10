@@ -435,6 +435,44 @@ NvmeDisableController (
   return Status;
 }
 
+EFI_STATUS
+NvmeGetNumQueues (
+  IN NVME_CONTROLLER_PRIVATE_DATA  *Private,
+  IN UINT32                        *Buffer,
+  IN UINT8                         Id
+  )
+{
+  EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET  CommandPacket;
+  EFI_NVM_EXPRESS_COMMAND                   Command;
+  EFI_NVM_EXPRESS_COMPLETION                Completion;
+  EFI_STATUS                                Status;
+
+  ZeroMem (&CommandPacket, sizeof (EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET));
+  ZeroMem (&Command, sizeof (EFI_NVM_EXPRESS_COMMAND));
+  ZeroMem (&Completion, sizeof (EFI_NVM_EXPRESS_COMPLETION));
+
+  Command.Cdw0.Opcode = NVME_ADMIN_GET_FEATURES_CMD;
+  Command.Nsid        = 0;
+
+  CommandPacket.NvmeCmd        = &Command;
+  CommandPacket.NvmeCompletion = &Completion;
+  CommandPacket.CommandTimeout = NVME_GENERIC_TIMEOUT;
+  CommandPacket.QueueType      = NVME_ADMIN_QUEUE;
+
+  Command.Cdw10 = (Id << 8) | 7;
+  Command.Flags = CDW10_VALID;
+
+  Status = Private->Passthru.PassThru (
+                               &Private->Passthru,
+                               NVME_CONTROLLER_ID,
+                               &CommandPacket,
+                               NULL
+                               );
+
+  *Buffer = Completion.DW0;
+  return Status;
+}
+
 // MU_CHANGE [BEGIN] - Allocate IO Queue Buffer
 
 /**
@@ -520,6 +558,54 @@ NvmeEnableController (
 
 Cleanup:
   EfiEventGroupSignal (&gNVMeEnableCompleteEventGroupGuid);
+  return Status;
+}
+
+EFI_STATUS
+NvmeSetDefaultQueues (
+  IN NVME_CONTROLLER_PRIVATE_DATA  *Private
+  )
+{
+  EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET  CommandPacket;
+  EFI_NVM_EXPRESS_COMMAND                   Command;
+  EFI_NVM_EXPRESS_COMPLETION                Completion;
+  EFI_STATUS                                Status;
+  UINT32                                    DefaultNumQueues;
+
+  /* Get Default configuration ID = 1, Default config */
+  Status = NvmeGetNumQueues (
+             Private,
+             &DefaultNumQueues,
+             1
+             );
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  ZeroMem (&CommandPacket, sizeof (EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET));
+  ZeroMem (&Command, sizeof (EFI_NVM_EXPRESS_COMMAND));
+  ZeroMem (&Completion, sizeof (EFI_NVM_EXPRESS_COMPLETION));
+
+  Command.Cdw0.Opcode = NVME_ADMIN_SET_FEATURES_CMD;
+  Command.Nsid        = 0;
+
+  CommandPacket.NvmeCmd        = &Command;
+  CommandPacket.NvmeCompletion = &Completion;
+  CommandPacket.CommandTimeout = NVME_GENERIC_TIMEOUT;
+  CommandPacket.QueueType      = NVME_ADMIN_QUEUE;
+
+  /* 07= Feature ID : Number of Queues , ID = 0, Current config*/
+  Command.Cdw10 = 7;
+  Command.Cdw11 = DefaultNumQueues;
+  Command.Flags = CDW10_VALID | CDW11_VALID;
+
+  Status = Private->Passthru.PassThru (
+                               &Private->Passthru,
+                               NVME_CONTROLLER_ID,
+                               &CommandPacket,
+                               NULL
+                               );
   return Status;
 }
 
@@ -1055,6 +1141,7 @@ NvmeControllerInit (
   NVME_AQA              Aqa;
   UINTN                 AdminQueuePairPageCount;
   UINTN                 IoQueuePairPageCount;
+  UINT32                CurrentNumQs;
 
   // MU_CHANGE [END] - Allocate IO Queue Buffer
 
@@ -1307,6 +1394,26 @@ NvmeControllerInit (
 
     if (Private->ControllerData == NULL) {
       return EFI_OUT_OF_RESOURCES;
+    }
+  }
+
+  Status = NvmeGetNumQueues (Private, &CurrentNumQs, 0);
+  if (!EFI_ERROR (Status)) {
+    if (CurrentNumQs == 0) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a Nvme Current Max Q is set to 0\n",
+        __FUNCTION__
+        ));
+      Status = NvmeSetDefaultQueues (Private);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "%a NvmeSetDefaultQueues failed %r\n",
+          __FUNCTION__,
+          Status
+          ));
+      }
     }
   }
 
