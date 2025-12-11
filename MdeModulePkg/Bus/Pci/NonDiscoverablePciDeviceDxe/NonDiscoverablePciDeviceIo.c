@@ -844,6 +844,10 @@ CoherentPciIoMap (
       return EFI_INVALID_PARAMETER;
   }
 
+  if ((Dev->Attributes & EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE) != 0) {
+    IoMmuOperation += EdkiiIoMmuOperationBusMasterRead64;
+  }
+
   Status = IoMmuMap (
              IoMmuOperation,
              IoMmuHostAddress,
@@ -1532,6 +1536,10 @@ NonCoherentPciIoMap (
       DEBUG ((DEBUG_ERROR, "%a - Invalid operation %d\n", __func__, Operation));
       ASSERT (FALSE);
       return EFI_INVALID_PARAMETER;
+  }
+
+  if ((Dev->Attributes & EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE) != 0) {
+    IoMmuOperation += EdkiiIoMmuOperationBusMasterRead64;
   }
 
   Status = IoMmuMap (
