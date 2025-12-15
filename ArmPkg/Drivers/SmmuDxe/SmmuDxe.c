@@ -1012,17 +1012,17 @@ SmmuV3ExitBootServices (
           ASSERT_EFI_ERROR (Status);
         }
       } else {
-        Status = SmmuV3DisableTranslation (mIoMmu->SmmuInfo[SmmuIndex].SmmuBase);
-        if (EFI_ERROR (Status)) {
-          DEBUG ((DEBUG_ERROR, "%a: Failed to disable smmu 0x%llx translation.\n", __func__, mIoMmu->SmmuInfo[SmmuIndex].SmmuBase));
-          ASSERT_EFI_ERROR (Status);
-        }
-
         Status = SmmuV3SetGlobalBypass (mIoMmu->SmmuInfo[SmmuIndex].SmmuBase);
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_ERROR, "%a: Failed to set smmu 0x%llx global bypass.\n", __func__, mIoMmu->SmmuInfo[SmmuIndex].SmmuBase));
           ASSERT_EFI_ERROR (Status);
         }
+      }
+
+      Status = SmmuV3DisableTranslation (mIoMmu->SmmuInfo[SmmuIndex].SmmuBase);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: Failed to disable smmu 0x%llx translation.\n", __func__, mIoMmu->SmmuInfo[SmmuIndex].SmmuBase));
+        ASSERT_EFI_ERROR (Status);
       }
     }
   }
