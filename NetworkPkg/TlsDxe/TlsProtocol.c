@@ -191,7 +191,9 @@ TlsSetSessionData (
         goto ON_EXIT;
       }
 
-      Status = TlsSetServerName (Instance->TlsConn, Instance->Service->TlsCtx, TlsVerifyHost->HostName);
+      // MU_CHANGE START - TlsSetServerName is not yet supported by CryptoBin
+      // Status = TlsSetServerName (Instance->TlsConn, Instance->Service->TlsCtx, TlsVerifyHost->HostName);
+      // MU_CHANGE END
       break;
     case EfiTlsSessionID:
       if (DataSize != sizeof (EFI_TLS_SESSION_ID)) {
