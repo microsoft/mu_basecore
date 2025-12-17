@@ -147,8 +147,8 @@
 
 #define VECTOR_END(tbl)           \
   .org 0x800;                     \
-  .previous
-// MU_CHANGE [BEGIN] - ARM64 VS change
+  .section .text
+
 #else
 
 #define VECTOR_BASE(tbl)          \
