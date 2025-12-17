@@ -351,6 +351,15 @@
   MdeModulePkg/Library/OemHookStatusCodeLibNull/OemHookStatusCodeLibNull.inf
   MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
   MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
+  # MU_CHANGE [BEGIN] - Add constructor to cache protocol or register for protocol notification
+  MdeModulePkg/Library/DxeReportStatusCodeLib/TestDxeReportStatusCodeLibTestApp.inf {
+    <LibraryClasses>
+        UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLib.inf
+        UnitTestPersistenceLib|UnitTestFrameworkPkg/Library/UnitTestPersistenceLibNull/UnitTestPersistenceLibNull.inf
+        UnitTestResultReportLib|UnitTestFrameworkPkg/Library/UnitTestResultReportLib/UnitTestResultReportLibDebugLib.inf
+        UnitTestBootLib|UnitTestFrameworkPkg/Library/UnitTestBootLibNull/UnitTestBootLibNull.inf
+  }
+  # MU_CHANGE [END] - Add constructor to cache protocol or register for protocol notification
   MdeModulePkg/Library/RuntimeDxeReportStatusCodeLib/RuntimeDxeReportStatusCodeLib.inf
   MdeModulePkg/Library/RuntimeResetSystemLib/RuntimeResetSystemLib.inf
   MdeModulePkg/Library/BaseSerialPortLib16550/BaseSerialPortLib16550.inf
