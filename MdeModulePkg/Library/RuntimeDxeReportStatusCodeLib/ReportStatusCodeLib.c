@@ -22,6 +22,7 @@
 #include <Guid/EventGroup.h>
 
 EFI_STATUS_CODE_PROTOCOL  *mReportStatusCodeLibStatusCodeProtocol = NULL;
+EFI_EVENT                 mOnStatusCodeProtocolInstallEvent; // MU_CHANGE - cache protocol or register for protocol notification
 EFI_EVENT                 mReportStatusCodeLibVirtualAddressChangeEvent;
 EFI_EVENT                 mReportStatusCodeLibExitBootServicesEvent;
 BOOLEAN                   mHaveExitedBootServices = FALSE;
@@ -101,6 +102,32 @@ ReportStatusCodeLibExitBootServices (
   mHaveExitedBootServices = TRUE;
 }
 
+// MU_CHANGE [BEGIN] - cache protocol or register for protocol notification
+
+/**
+  Notification function called when the Status Code Runtime protocol is installed. Locates and caches the protocol.
+
+    @param    Event           Not Used.
+    @param    Context         Not Used.
+
+   @retval   none
+ **/
+VOID
+EFIAPI
+OnStatusCodeRuntimeProtocolInstalledNotification (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  InternalGetReportStatusCode ();
+
+  if (mReportStatusCodeLibStatusCodeProtocol != NULL) {
+    gBS->CloseEvent (mOnStatusCodeProtocolInstallEvent);
+  }
+}
+
+// MU_CHANGE [END] - cache protocol or register for protocol notification
+
 /**
   The constructor function of Runtime DXE Report Status Code Lib.
 
@@ -121,11 +148,43 @@ ReportStatusCodeLibConstructor (
   )
 {
   EFI_STATUS  Status;
+  VOID        *Registration;  // MU_CHANGE - cache protocol or register for protocol notification
 
   //
   // Cache the report status code service
   //
   InternalGetReportStatusCode ();
+
+  // MU_CHANGE [BEGIN] - cache protocol or register for protocol notification
+
+  //
+  // Register for protocol installation notification if the protocol is not found
+  //
+  if (mReportStatusCodeLibStatusCodeProtocol == NULL) {
+    //
+    // Create the event
+    //
+    Status = gBS->CreateEvent (
+                    EVT_NOTIFY_SIGNAL,
+                    TPL_CALLBACK,
+                    OnStatusCodeRuntimeProtocolInstalledNotification,
+                    NULL,
+                    &mOnStatusCodeProtocolInstallEvent
+                    );
+    ASSERT_EFI_ERROR (Status);
+
+    //
+    // Register for protocol notifications on this event
+    //
+    Status = gBS->RegisterProtocolNotify (
+                    &gEfiStatusCodeRuntimeProtocolGuid,
+                    mOnStatusCodeProtocolInstallEvent,
+                    &Registration
+                    );
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // MU_CHANGE [END] - cache protocol or register for protocol notification
 
   //
   // Register notify function for EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE
@@ -178,6 +237,15 @@ ReportStatusCodeLibDestructor (
   EFI_STATUS  Status;
 
   ASSERT (gBS != NULL);
+
+  // MU_CHANGE [BEGIN] - cache protocol or register for protocol notificatio
+  if (mReportStatusCodeLibStatusCodeProtocol == NULL) {
+    Status = gBS->CloseEvent (mOnStatusCodeProtocolInstallEvent);
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // MU_CHANGE [END] - cache protocol or register for protocol notificatio
+
   Status = gBS->CloseEvent (mReportStatusCodeLibVirtualAddressChangeEvent);
   ASSERT_EFI_ERROR (Status);
 
@@ -224,9 +292,8 @@ InternalReportStatusCode (
       (ReportDebugCodeEnabled () && (((Type) & EFI_STATUS_CODE_TYPE_MASK) == EFI_DEBUG_CODE)))
   {
     //
-    // If mReportStatusCodeLibStatusCodeProtocol is NULL, then check if Report Status Code Protocol is available in system.
+    // If mReportStatusCodeLibStatusCodeProtocol is NULL, the protocol has not yet been registered. Return immediately.
     //
-    InternalGetReportStatusCode ();
     if (mReportStatusCodeLibStatusCodeProtocol == NULL) {
       return EFI_UNSUPPORTED;
     }
