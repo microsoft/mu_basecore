@@ -14,8 +14,15 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/LoadedImage.h>
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
-#include <Library/MmServicesTableLib.h>
+// #include <Library/MmServicesTableLib.h> // MU_CHANGE
 #include <Library/StandaloneMmDriverEntryPoint.h>
+
+// MU_CHANGE [BEGIN]
+//
+// Cached pointer to the MM System Table that is set during driver initialization.
+//
+EFI_MM_SYSTEM_TABLE  *mCachedMmSystemTable = NULL;
+// MU_CHANGE [END]
 
 /**
   Unloads an image from memory.
@@ -46,9 +53,12 @@ _DriverUnloadHandler (
   // library destructors.  If the unload handler returned an error, then the driver can not be
   // unloaded, and the library destructors should not be called
   //
+  // MU_CHANGE [BEGIN]
   if (!EFI_ERROR (Status)) {
-    ProcessLibraryDestructorList (ImageHandle, gMmst);
+    ProcessLibraryDestructorList (ImageHandle, mCachedMmSystemTable);
   }
+
+  // MU_CHANGE [END]
 
   //
   // Return the status from the driver specific unload handler
@@ -88,12 +98,19 @@ _ModuleEntryPoint (
   EFI_STATUS                 Status;
   EFI_LOADED_IMAGE_PROTOCOL  *LoadedImage;
 
+  // MU_CHANGE [BEGIN]
+
+  //
+  // Cache the System Table
+  //
+  mCachedMmSystemTable = MmSystemTable;
+
   if (_gMmRevision != 0) {
     //
     // Make sure that the MM spec revision of the platform
     // is >= MM spec revision of the driver
     //
-    if (MmSystemTable->Hdr.Revision < _gMmRevision) {
+    if (mCachedMmSystemTable->Hdr.Revision < _gMmRevision) {
       return EFI_INCOMPATIBLE_VERSION;
     }
   }
@@ -101,17 +118,17 @@ _ModuleEntryPoint (
   //
   // Call constructor for all libraries
   //
-  ProcessLibraryConstructorList (ImageHandle, MmSystemTable);
+  ProcessLibraryConstructorList (ImageHandle, mCachedMmSystemTable);
 
   //
   //  Install unload handler...
   //
   if (_gDriverUnloadImageCount != 0) {
-    Status = gMmst->MmHandleProtocol (
-                      ImageHandle,
-                      &gEfiLoadedImageProtocolGuid,
-                      (VOID **)&LoadedImage
-                      );
+    Status = mCachedMmSystemTable->MmHandleProtocol (
+                                     ImageHandle,
+                                     &gEfiLoadedImageProtocolGuid,
+                                     (VOID **)&LoadedImage
+                                     );
     ASSERT_EFI_ERROR (Status);
     LoadedImage->Unload = _DriverUnloadHandler;
   }
@@ -119,14 +136,16 @@ _ModuleEntryPoint (
   //
   // Call the driver entry point
   //
-  Status = ProcessModuleEntryPointList (ImageHandle, MmSystemTable);
+  Status = ProcessModuleEntryPointList (ImageHandle, mCachedMmSystemTable);
 
   //
   // If all of the drivers returned errors, then invoke all of the library destructors
   //
   if (EFI_ERROR (Status)) {
-    ProcessLibraryDestructorList (ImageHandle, MmSystemTable);
+    ProcessLibraryDestructorList (ImageHandle, mCachedMmSystemTable);
   }
+
+  // MU_CHANGE [END]
 
   //
   // Return the cumulative return status code from all of the driver entry points
