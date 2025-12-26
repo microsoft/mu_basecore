@@ -152,13 +152,6 @@ TestVerifyBnPreReq (
 {
   BN_TEST_CONTEXT  *BnContext;
 
-  // MU_CHANGE [START]
-  if (!PcdGetBool (PcdCryptoServiceBigNumInit) || !PcdGetBool (PcdCryptoServiceBigNumNewContext)) {
-    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
-  }
-
-  // MU_CHANGE [END]
-
   BnContext        = Context;
   BnContext->BnCTX = BigNumNewContext ();
   BnContext->BnA   = BigNumInit ();
@@ -206,13 +199,6 @@ TestVerifyBn (
   // CONST VOID       *BnOne;  // MU_CHANGE
 
   BnContext = Context;
-
-  // MU_CHANGE [START]
-  if (!PcdGetBool (PcdCryptoServiceBigNumFromBin) || !PcdGetBool (PcdCryptoServiceBigNumIsWord) || !PcdGetBool (PcdCryptoServiceBigNumIsOdd) || !PcdGetBool (PcdCryptoServiceBigNumConstTime) || !PcdGetBool (PcdCryptoServiceBigNumBytes)) {
-    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
-  }
-
-  // MU_CHANGE [END]
 
   // Calculation tests
   BnContext->BnA = BigNumFromBin (BnOperationA, sizeof (BnOperationA));

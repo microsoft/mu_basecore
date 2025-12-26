@@ -25,10 +25,6 @@ TestVerifyPrngGeneration (
   UINTN    Index;
   BOOLEAN  Status;
 
-  if (!PcdGetBool (PcdCryptoServiceRandomSeed) || !PcdGetBool (PcdCryptoServiceRandomBytes)) {
-    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
-  }
-
   Status = RandomSeed (SeedString, sizeof (SeedString));
   UT_ASSERT_TRUE (Status);
 

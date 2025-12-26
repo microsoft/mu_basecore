@@ -1,0 +1,38 @@
+## @file
+# Implements the BaseCryptLib and TlsLib using the services of the OneCrypto
+# DXE Protocol.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001001B
+  BASE_NAME                      = DxeCryptLib
+  MODULE_UNI_FILE                = CryptLib.uni
+  FILE_GUID                      = BE7B6901-E9FA-4211-A049-B9024A44FAB4
+  VERSION_STRING                 = 1.0
+  MODULE_TYPE                    = DXE_DRIVER
+  LIBRARY_CLASS                  = BaseCryptLib | DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION DXE_CORE
+  LIBRARY_CLASS                  = TlsLib       | DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION
+  CONSTRUCTOR                    = DxeCryptLibConstructor
+
+[Packages]
+  MdePkg/MdePkg.dec
+  CryptoPkg/CryptoPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UefiBootServicesTableLib
+
+[Sources]
+  DxeCryptLib.c
+  OneCryptoLib.c
+
+[Protocols]
+  gOneCryptoProtocolGuid  ## CONSUMES
+
+[Depex]
+  gOneCryptoProtocolGuid

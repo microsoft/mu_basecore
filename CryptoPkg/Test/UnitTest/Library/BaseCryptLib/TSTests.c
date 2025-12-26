@@ -302,11 +302,6 @@ TestVerifyImageTimestampVerify (
   EFI_TIME  SigningTime;
 
   Status = FALSE;
-
-  if (!PcdGetBool (PcdCryptoServiceImageTimestampVerify)) {
-    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
-  }
-
   //
   // Verify RFC3161 Timestamp CounterSignature.
   //

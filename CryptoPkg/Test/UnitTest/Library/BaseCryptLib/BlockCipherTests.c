@@ -200,13 +200,6 @@ TestVerifyBLockCiperPreReq (
   BLOCK_CIPHER_TEST_CONTEXT  *TestContext;
   UINTN                      CtxSize;
 
-  // MU_CHANGE [START]
-  if (!PcdGetBool (PcdCryptoServiceAesGetContextSize)) {
-    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
-  }
-
-  // MU_CHANGE [END]
-
   TestContext      = Context;
   CtxSize          = TestContext->GetContextSize ();
   TestContext->Ctx = AllocatePool (CtxSize);
@@ -241,10 +234,6 @@ TestVerifyBLockCiper (
   UINT8                      Decrypt[256];
   BOOLEAN                    Status;
   BLOCK_CIPHER_TEST_CONTEXT  *TestContext;
-
-  if (!PcdGetBool (PcdCryptoServiceAesGetContextSize) || !PcdGetBool (PcdCryptoServiceAesInit) || !PcdGetBool (PcdCryptoServiceAesCbcEncrypt) || !PcdGetBool (PcdCryptoServiceAesCbcDecrypt)) {
-    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
-  }
 
   TestContext = Context;
 

@@ -35,7 +35,6 @@
   Hash/CryptSha256Null.c
   Hash/CryptSha512Null.c
   Hash/CryptSm3Null.c
-  Hash/CryptParallelHashNull.c
   Hmac/CryptHmacNull.c
   Kdf/CryptHkdfNull.c
   Cipher/CryptAesNull.c
@@ -58,6 +57,7 @@
   Pk/CryptRsaPssNull.c
   Pk/CryptRsaPssSignNull.c
   Bn/CryptBnNull.c
+  Info/CryptoInfo.c
 
 [Packages]
   MdePkg/MdePkg.dec
