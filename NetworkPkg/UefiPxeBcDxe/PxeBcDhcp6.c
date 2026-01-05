@@ -2472,7 +2472,14 @@ PxeBcDhcp6Sarr (
     return Status;
   }
 
-  ASSERT ((Mode.Ia != NULL) && (Mode.Ia->State == Dhcp6Bound));
+  // MU_CHANGE [BEGIN] - Explicitly check IA state
+  if ((Mode.Ia == NULL) || (Mode.Ia->State != Dhcp6Bound)) {
+    Dhcp6->Stop (Dhcp6);
+    return EFI_DEVICE_ERROR;
+  }
+
+  // MU_CHANGE [END] - Explicitly check IA state
+
   //
   // DHCP6 doesn't have an option to specify the router address on the subnet, the only way to get the
   // router address in IP6 is the router discovery mechanism (the RS and RA, which only be handled when
