@@ -101,10 +101,10 @@ MemoryPeim (
   //
   Found       = FALSE;
   NextHob.Raw = GetHobList ();
-  while ((NextHob.Raw = GetNextHob (EFI_HOB_TYPE_RESOURCE_DESCRIPTOR, NextHob.Raw)) != NULL) {
-    if ((NextHob.ResourceDescriptor->ResourceType == EFI_RESOURCE_SYSTEM_MEMORY) &&
-        (SystemMemoryBase >= NextHob.ResourceDescriptor->PhysicalStart) &&
-        (NextHob.ResourceDescriptor->PhysicalStart + NextHob.ResourceDescriptor->ResourceLength <= SystemMemoryTop))
+  while ((NextHob.Raw = GetNextHob (EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2, NextHob.Raw)) != NULL) {
+    if ((NextHob.ResourceDescriptorV2->V1.ResourceType == EFI_RESOURCE_SYSTEM_MEMORY) &&
+        (SystemMemoryBase >= NextHob.ResourceDescriptorV2->V1.PhysicalStart) &&
+        (NextHob.ResourceDescriptorV2->V1.PhysicalStart + NextHob.ResourceDescriptorV2->V1.ResourceLength <= SystemMemoryTop))
     {
       Found = TRUE;
       break;
