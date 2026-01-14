@@ -114,7 +114,7 @@ ERROR: C40000002:V03040002 I0 12345678-ABCD-1234-5678-123456789ABC 00000001
 ```bash
 PROGRESS CODE: V03041001 I0
                ├───────┤ ├┤
-               Value    Instance
+                 Value  Instance
 ```
 
 **Fields Explained:**
@@ -527,7 +527,7 @@ python StatusCodeprocessor.py \
 ```text
 31           24 23           16 15            8 7             0
 ┌──────────────┬──────────────┬──────────────┬──────────────┐
-│    Class     │   Subclass   │        Operation/Error       │
+│    Class     │   Subclass   │        Operation/Error      │
 └──────────────┴──────────────┴──────────────┴──────────────┘
 ```
 
