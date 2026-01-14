@@ -310,10 +310,7 @@ def parse_single_header_file(header_file_path, existing_definitions=None):
 
 
 def parse_platform_status_codes(header_paths):
-    """Parse platform-specific status code definitions from header files.
-    
-    *** BUG FIX: Now maintains macro definitions across all header files ***
-    """
+    """Parse platform-specific status code definitions from header files."""
     all_status_codes = {}
     global_definitions = {}
     
@@ -708,7 +705,7 @@ def process_error_code(error_str, search_path=None, explicit_headers=None, auto_
 
 def main():
     parser = argparse.ArgumentParser(
-        description='UEFI Status Code Processor - Parse progress codes and error codes (FIXED VERSION)',
+        description='UEFI Status Code Processor - Parse progress codes and error codes',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
