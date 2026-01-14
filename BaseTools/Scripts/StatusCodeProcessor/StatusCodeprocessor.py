@@ -1,17 +1,18 @@
-#!/usr/bin/env python3
 """
-UEFI Status Code Processor - FIXED VERSION
-Parses UEFI/EDK2 progress codes and error codes based on PiStatusCode.h definitions
+Copyright (c) 2026 Microsoft Corporation. All rights reserved.
 
-BUG FIX: Maintains macro definitions across multiple header files during parsing
+StatusCodeprocessor.py
+
+A tool for parsing and decoding UEFI/EDK2 status codes from debug logs.
+Supports both standard PI specification codes and platform-specific custom codes,
+with automatic header discovery, macro resolution, and GUID-to-module name lookup.
+
 """
 
 import argparse
 import re
 import os
-import sys
 import logging
-from pathlib import Path
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -208,7 +209,7 @@ def discover_status_code_headers(search_path):
         return []
     
     discovered_headers = []
-    logger.info(f"\n=== Discovering Platform Status Code Headers ===")
+    logger.info("\n=== Discovering Platform Status Code Headers ===")
     logger.info(f"Searching in: {search_path}")
     
     # Patterns to match status code headers
@@ -233,10 +234,7 @@ def discover_status_code_headers(search_path):
 
 
 def parse_single_header_file(header_file_path, existing_definitions=None):
-    """Parse a single status code header file.
-    
-    *** BUG FIX: Now accepts and maintains definitions from previous headers ***
-    """
+    """Parse a single status code header file."""
     status_codes = {}
     definitions = existing_definitions.copy() if existing_definitions else {}
     file_name = os.path.basename(header_file_path)
@@ -277,7 +275,6 @@ def parse_single_header_file(header_file_path, existing_definitions=None):
                 
                 try:
                     eval_expr = expression
-                    unresolved_macros = []
                     
                     for def_name, def_value in definitions.items():
                         if def_name in eval_expr:
@@ -286,7 +283,6 @@ def parse_single_header_file(header_file_path, existing_definitions=None):
                     remaining_macros = re.findall(r'[A-Z_][A-Z0-9_]+', eval_expr)
                     if remaining_macros:
                         logger.debug(f"  [DEBUG] WARNING: Unresolved macros: {remaining_macros}")
-                        unresolved_macros = remaining_macros
                     
                     eval_expr = eval_expr.replace(' ', '')
                     value = eval(eval_expr)
@@ -324,7 +320,7 @@ def parse_platform_status_codes(header_paths):
     if not header_paths:
         return all_status_codes
     
-    logger.info(f"=== Parsing Platform Status Codes ===")
+    logger.info("=== Parsing Platform Status Codes ===")
     
     for header_path in header_paths:
         file_name = os.path.basename(header_path)
@@ -341,9 +337,9 @@ def parse_platform_status_codes(header_paths):
                 logger.debug(f"    {name} = 0x{value:08X}")
             all_status_codes.update(status_codes)
         else:
-            logger.debug(f"  No status codes found")
+            logger.debug("  No status codes found")
     
-    logger.info(f"\n=== Summary ===")
+    logger.info("\n=== Summary ===")
     logger.info(f"Total platform status codes loaded: {len(all_status_codes)}\n")
     
     return all_status_codes
@@ -392,7 +388,7 @@ def parse_status_code_value(value, platform_codes=None):
         result['note'] = f"Platform-specific status code: {macro_name} (from {source_file})"
         
     class_val = value & EFI_STATUS_CODE_CLASS_MASK
-    class_name = CLASSES.get(class_val, f"UNKNOWN_CLASS")
+    class_name = CLASSES.get(class_val, "UNKNOWN_CLASS")
     result['class'] = (class_val, class_name)
     
     subclass_val = value & EFI_STATUS_CODE_SUBCLASS_MASK
@@ -571,7 +567,7 @@ def process_progress_code(code_str, search_path=None, explicit_headers=None, aut
     
     if explicit_headers:
         if not auto_discover:
-            logger.info(f"\n=== Parsing Explicit Platform Headers ===")
+            logger.info("\n=== Parsing Explicit Platform Headers ===")
         explicit_codes = parse_platform_status_codes(explicit_headers)
         platform_codes.update(explicit_codes)
     
@@ -589,7 +585,7 @@ def process_progress_code(code_str, search_path=None, explicit_headers=None, aut
     
     parsed = parse_status_code_value(value, platform_codes)
     
-    print(f"\n=== Progress Code Analysis ===\n")
+    print("\n=== Progress Code Analysis ===\n")
     print(f"Status Code Value: 0x{value:08X}")
     
     if 'platform_code' in parsed:
@@ -604,7 +600,7 @@ def process_progress_code(code_str, search_path=None, explicit_headers=None, aut
         print(f"\nNOTE: {parsed['note']}")
     
     if 'raw_interpretation' in parsed:
-        print(f"Raw byte breakdown:")
+        print("Raw byte breakdown:")
         print(f"  Byte 3 (MSB): 0x{parsed['raw_interpretation']['byte3']:02X}")
         print(f"  Byte 2:       0x{parsed['raw_interpretation']['byte2']:02X}")
         print(f"  Byte 1:       0x{parsed['raw_interpretation']['byte1']:02X}")
@@ -622,7 +618,7 @@ def process_error_code(error_str, search_path=None, explicit_headers=None, auto_
     
     if explicit_headers:
         if not auto_discover:
-            logger.info(f"\n=== Parsing Explicit Platform Headers ===")
+            logger.info("\n=== Parsing Explicit Platform Headers ===")
         explicit_codes = parse_platform_status_codes(explicit_headers)
         platform_codes.update(explicit_codes)
     
@@ -666,7 +662,7 @@ def process_error_code(error_str, search_path=None, explicit_headers=None, auto_
     value_parsed = parse_status_code_value(value, platform_codes)
     
     # === DEFAULT OUTPUT - ALWAYS SHOWN ===
-    print(f"\n=== Error Code Analysis ===")
+    print("\n=== Error Code Analysis ===")
     print(f"\nCodeType: 0x{code_type:08X}")
     print(f"  Severity:  0x{type_parsed['severity'][0]:08X} ({type_parsed['severity'][1]})")
     print(f"  Reserved:  0x{type_parsed['reserved']:08X} {'(none)' if type_parsed['reserved'] == 0 else ''}")
@@ -686,7 +682,7 @@ def process_error_code(error_str, search_path=None, explicit_headers=None, auto_
         print(f"\n  NOTE: {value_parsed['note']}")
     
     if 'raw_interpretation' in value_parsed:
-        print(f"  Raw byte breakdown:")
+        print("  Raw byte breakdown:")
         print(f"    Byte 3 (MSB): 0x{value_parsed['raw_interpretation']['byte3']:02X}")
         print(f"    Byte 2:       0x{value_parsed['raw_interpretation']['byte2']:02X}")
         print(f"    Byte 1:       0x{value_parsed['raw_interpretation']['byte1']:02X}")
@@ -704,7 +700,7 @@ def process_error_code(error_str, search_path=None, explicit_headers=None, auto_
         else:
             print(f"GUID:     {guid}")
             if search_path:
-                logger.debug(f"  (Module name not found in search path)")
+                logger.debug("  (Module name not found in search path)")
     
     if ext_data is not None:
         print(f"Extended Data: 0x{ext_data:08X}")
