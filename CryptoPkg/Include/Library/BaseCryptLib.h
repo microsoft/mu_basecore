@@ -4362,4 +4362,25 @@ GetCryptoProviderVersionString (
   IN OUT UINTN  *BufferSize
   );
 
+// =====================================================================================
+//    Initialization Functions
+// =====================================================================================
+
+/**
+  Manually initialize the cryptographic library.
+
+  Normally, the UEFI build system will take care of this through the libraries constructor.
+  However there are some use cases where its necessary to initialize the library
+  manually. What it means to "initialize" the library is provider-specific, but it
+  typically involves setting up accelerated instructions.
+
+  @retval EFI_SUCCESS  The library was initialized successfully.
+
+**/
+EFI_STATUS
+EFIAPI
+BaseCryptInit (
+  VOID
+  );
+
 #endif // __BASE_CRYPT_LIB_H__
