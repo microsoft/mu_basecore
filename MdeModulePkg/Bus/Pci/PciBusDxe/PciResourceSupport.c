@@ -1089,15 +1089,40 @@ DegradeResource (
       TRUE
       );
   } else {
+    // MU_CHANGE Start - MEM64 to PMEM64 conversion
     //
-    // if the bridge does not support MEM64, degrade MEM64 to MEM32
+    // If the upstream bridge does not support MEM64, check if we can
+    // degrade to PMEM64 first, instead of degrading to MEM32 directly.
+    //
+    // This is allowed per PCIe Base Spec 6.3+ which removes the terms
+    // prefetchable/non-prefetchable from the specification.
+    // The distinction originally only described P2P bridge read-ahead
+    // behavior, not resource allocation policy.
+    //
+    // We will still fall back and degrade to MEM32 if the upstream
+    // bridge lacks PMEM64 support.
+    //
+    // Refer to PCI-SIG ECN "Removing Prefetchable Terminology"
+    // (2024-04-05) for more details.
     //
     if (!BridgeSupportResourceDecode (Bridge, EFI_BRIDGE_MEM64_DECODE_SUPPORTED)) {
-      MergeResourceTree (
-        Mem32Node,
-        Mem64Node,
-        TRUE
-        );
+      if (PcdGetBool (PcdPciDegradeMem64toPMem64) &&
+          BridgeSupportResourceDecode (Bridge, EFI_BRIDGE_PMEM64_DECODE_SUPPORTED))
+      {
+        MergeResourceTree (
+          PMem64Node,
+          Mem64Node,
+          TRUE
+          );
+      } else {
+        MergeResourceTree (
+          Mem32Node,
+          Mem64Node,
+          TRUE
+          );
+      }
+
+      // MU_CHANGE End - MEM64 to PMEM64 conversion
     }
 
     //
