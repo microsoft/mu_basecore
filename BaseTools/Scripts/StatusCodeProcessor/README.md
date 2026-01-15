@@ -12,8 +12,9 @@ This tool analyzes UEFI status codes to help you understand:
 - Platform-specific status code meanings
 - The severity and classification of the event
 
-**By default, the tool only uses standard UEFI PI specification definitions from `PiStatusCode.h`.
-To include platform-specific status codes, you must use `--auto-discover` or explicitly specify headers with `-c`.**
+**By default, the tool automatically discovers and loads platform-specific status code headers when a search path is
+provided with `-s`. You can disable auto-discovery with `--no-auto-discover` if you only want standard PI
+specification codes.**
 
 ## Features
 
@@ -32,20 +33,19 @@ To include platform-specific status codes, you must use `--auto-discover` or exp
 ### Basic Usage (Standard PI Codes Only)
 
 ```bash
-# Parse an error code - uses only PiStatusCode.h definitions
+# Parse an error code - uses only PiStatusCode.h definitions (no search path)
 python StatusCodeprocessor.py -e "ERROR: C40000002:V03040002 I0 12345678-ABCD-1234-5678-123456789ABC 00000001"
 
-# Parse a progress code - uses only PiStatusCode.h definitions
+# Parse a progress code - uses only PiStatusCode.h definitions (no search path)
 python StatusCodeprocessor.py -p "PROGRESS CODE: V03041001 I0"
 ```
 
-### With Auto-Discovery (Recommended for Platform Codes)
+### With Platform-Specific Codes (Auto-Discovery Enabled by Default)
 
 ```bash
-# Include platform-specific status codes from discovered headers
+# Auto-discovers platform-specific status codes when search path is provided
 python StatusCodeprocessor.py -e "ERROR: C40000002:VDEADBEEF I0 12345678-ABCD-1234-5678-123456789ABC 00ABCDEF" \
-  -s /path/to/workspace \
-  --auto-discover
+  -s /path/to/workspace
 ```
 
 ### With Debug Output
@@ -54,8 +54,16 @@ python StatusCodeprocessor.py -e "ERROR: C40000002:VDEADBEEF I0 12345678-ABCD-12
 # Enable verbose logging to see header discovery and parsing details
 python StatusCodeprocessor.py -e "ERROR: C40000002:VDEADBEEF I0 12345678-ABCD-1234-5678-123456789ABC 00ABCDEF" \
   -s /path/to/workspace \
-  --auto-discover \
   --debug
+```
+
+### Disable Auto-Discovery (Standard PI Codes Only)
+
+```bash
+# Disable auto-discovery to use only standard PI specification codes
+python StatusCodeprocessor.py -e "ERROR: C40000002:V03040002 I0 12345678-ABCD-1234-5678-123456789ABC 00000001" \
+  -s /path/to/workspace \
+  --no-auto-discover
 ```
 
 ---
@@ -73,9 +81,9 @@ python StatusCodeprocessor.py -e "ERROR: C40000002:VDEADBEEF I0 12345678-ABCD-12
 
 | Argument | Description |
 | ---------- | ------------- |
-| `-s PATH`, `--search PATH` | Path to search for module GUID definitions (.inf/.dec/.fdf files) and auto-discover status code headers |
-| `-c HEADER [HEADER ...]`, `--platform-codes HEADER [HEADER ...]` | Explicitly specify platform-specific status code header file(s). Use for files that don't match auto-discovery pattern. **Without this or `--auto-discover`, only standard PI codes are used.** |
-| `--auto-discover` | Automatically discover and load all `*StatusCode*.h` headers in the search path. **Required to parse platform-specific codes.** |
+| `-s PATH`, `--search PATH` | Path to search for module GUID definitions (.inf/.dec/.fdf files). When provided, automatically discovers and loads platform-specific status code headers (unless `--no-auto-discover` is used). |
+| `-c HEADER [HEADER ...]`, `--platform-codes HEADER [HEADER ...]` | Explicitly specify additional platform-specific status code header file(s). Works together with auto-discovery. Use for files that don't match the auto-discovery pattern or to add extra headers. |
+| `--no-auto-discover` | Disable automatic discovery of `*StatusCode*.h` headers. Use this flag to parse only standard PI specification codes even when a search path is provided. |
 | `--debug` | Enable verbose debug output (DEBUG level logging). By default, logging is set to CRITICAL to minimize output. |
 | `-h`, `--help` | Show help message and exit |
 
@@ -159,15 +167,14 @@ Operation: PC_HANDOFF_TO_NEXT (0x1001)
 
 ---
 
-### Example 2: Error Code with Auto-Discovery (Platform-Specific)
+### Example 2: Error Code with Platform-Specific Codes (Auto-Discovery)
 
 **Command:**
 
 ```bash
 python StatusCodeprocessor.py \
   -e "ERROR: C40000002:VDEADBEEF I0 12345678-ABCD-1234-5678-123456789ABC 00ABCDEF" \
-  -s /path/to/workspace \
-  --auto-discover
+  -s /path/to/workspace
 ```
 
 **Output:**
@@ -208,7 +215,7 @@ Extended Data: 0x00ABCDEF
 
 ---
 
-### Example 3: With Explicit Platform Headers
+### Example 3: With Additional Explicit Platform Headers
 
 **Command:**
 
@@ -221,10 +228,10 @@ python StatusCodeprocessor.py \
 
 **Use Case:**
 
-- Auto-discovery might miss files not named with "StatusCode" pattern
-- Explicitly include custom header files
-- Headers still share the macro definition pool
-- **This is the alternative to `--auto-discover` for loading platform codes**
+- Auto-discovery finds most headers, but you need additional ones
+- Explicitly add custom header files that don't match the `*StatusCode*.h` pattern
+- All headers (auto-discovered + explicit) share the same macro definition pool
+- **The `-c` option works together with auto-discovery to combine all headers**
 
 ---
 
@@ -236,7 +243,6 @@ python StatusCodeprocessor.py \
 python StatusCodeprocessor.py \
   -e "ERROR: C40000002:VDEADBEEF I0 12345678-ABCD-1234-5678-123456789ABC 00ABCDEF" \
   -s /path/to/workspace \
-  --auto-discover \
   --debug
 ```
 
@@ -352,17 +358,10 @@ Byte 0 (LSB): 0xEF  ← Specific error number
 
 ## Platform-Specific Status Codes
 
-### Default Behavior (Standard PI Codes Only)
+### Default Behavior (Auto-Discovery Enabled)
 
-**Without any platform options**, the tool uses only the built-in UEFI PI specification definitions:
-
-- Standard classes: COMPUTING_UNIT, PERIPHERAL, IO_BUS, SOFTWARE
-- Standard subclasses and operations from PiStatusCode.h
-- **No platform-specific or custom codes**
-
-### Auto-Discovery
-
-Use `--auto-discover` to automatically find platform-specific header files matching these patterns:
+**When a search path is provided with `-s`**, the tool automatically discovers and loads platform-specific headers
+matching these patterns:
 
 - `*StatusCode*.h`
 - `*StatusCodes*.h`
@@ -377,9 +376,25 @@ Use `--auto-discover` to automatically find platform-specific header files match
 
 - Standard UEFI headers like `Pi/PiStatusCode.h`
 
-### Manual Specification
+**Without a search path**, the tool uses only the built-in UEFI PI specification definitions:
 
-Use `-c` for headers that don't match the auto-discovery pattern:
+- Standard classes: COMPUTING_UNIT, PERIPHERAL, IO_BUS, SOFTWARE
+- Standard subclasses and operations from PiStatusCode.h
+- **No platform-specific or custom codes**
+
+### Disable Auto-Discovery
+
+Use `--no-auto-discover` to use only standard PI codes even when a search path is provided:
+
+```bash
+python StatusCodeprocessor.py -e "ERROR: ..." \
+  -s /path/to/workspace \
+  --no-auto-discover
+```
+
+### Additional Headers with `-c`
+
+Use `-c` to add headers that don't match the auto-discovery pattern (works together with auto-discovery):
 
 ```bash
 python StatusCodeprocessor.py -e "ERROR: ..." \
@@ -425,14 +440,14 @@ The tool uses Python's logging module with different verbosity levels:
 **Example - Default Output (Clean):**
 
 ```bash
-python StatusCodeprocessor.py -e "ERROR: ..." -s /path --auto-discover
+python StatusCodeprocessor.py -e "ERROR: ..." -s /path
 # Output: Only the final "=== Error Code Analysis ===" section
 ```
 
 **Example - Debug Output (Verbose):**
 
 ```bash
-python StatusCodeprocessor.py -e "ERROR: ..." -s /path --auto-discover --debug
+python StatusCodeprocessor.py -e "ERROR: ..." -s /path --debug
 # Output: Discovery messages, parsing details, macro resolution, GUID search, then analysis
 ```
 
@@ -456,14 +471,16 @@ python StatusCodeprocessor.py -e "ERROR: ..." -s /path --auto-discover --debug
 
 **Possible Causes:**
 
-1. **Not using `--auto-discover` or `-c`** - Platform codes won't be loaded by default
-2. Header doesn't have `#define` statements in expected format
-3. Macro dependencies are not resolved
-4. Header uses complex expressions that can't be evaluated
+1. **No search path provided with `-s`** - Auto-discovery requires a search path
+2. **Auto-discovery disabled with `--no-auto-discover`** - Platform codes won't be loaded
+3. Header doesn't have `#define` statements in expected format
+4. Macro dependencies are not resolved
+5. Header uses complex expressions that can't be evaluated
 
 **Solution:**
 
-- **Add `--auto-discover` or specify headers with `-c`**
+- **Provide a search path with `-s` to enable auto-discovery**
+- **Remove `--no-auto-discover` if present**
 - Use `--debug` to see what's happening during parsing
 - Check if the header uses standard C preprocessor syntax
 - Ensure base macros are defined in earlier headers
@@ -492,7 +509,7 @@ python StatusCodeprocessor.py -e "ERROR: ..." -s /path --auto-discover --debug
 ```bash
 # Extract error codes and parse them
 grep "ERROR: C" build.log | while read line; do
-    python StatusCodeprocessor.py -e "$line" -s /path/to/workspace --auto-discover
+    python StatusCodeprocessor.py -e "$line" -s /path/to/workspace
     echo "---"
 done
 ```
@@ -503,8 +520,7 @@ done
 # Parse and save to file
 python StatusCodeprocessor.py \
   -e "ERROR: C40000002:VDEADBEEF I0 12345678-ABCD-1234-5678-123456789ABC 00ABCDEF" \
-  -s /path/to/workspace \
-  --auto-discover > error_analysis.txt
+  -s /path/to/workspace > error_analysis.txt
 ```
 
 ---
@@ -556,7 +572,7 @@ For issues or questions:
 2. Use `--debug` to see detailed parsing information
 3. Review the UEFI PI Specification for standard status code definitions
 4. Check platform-specific documentation for custom codes
-5. Remember: **Platform codes require `--auto-discover` or `-c` to be loaded**
+5. Remember: **Platform codes are auto-discovered when using `-s` (disable with `--no-auto-discover` if needed)**
 
 ---
 

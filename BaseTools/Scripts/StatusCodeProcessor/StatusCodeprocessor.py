@@ -310,12 +310,17 @@ def parse_single_header_file(header_file_path, existing_definitions=None):
 
 
 def parse_platform_status_codes(header_paths):
-    """Parse platform-specific status code definitions from header files."""
+    """Parse platform-specific status code definitions from header files.
+    
+    Returns a tuple of (status_codes_dict, definitions_dict):
+    - status_codes_dict: Maps complete status code values to (name, source_file)
+    - definitions_dict: Maps all parsed macro names to their values (for component lookup)
+    """
     all_status_codes = {}
     global_definitions = {}
     
     if not header_paths:
-        return all_status_codes
+        return all_status_codes, {}
     
     logger.info("=== Parsing Platform Status Codes ===")
     
@@ -339,7 +344,7 @@ def parse_platform_status_codes(header_paths):
     logger.info("\n=== Summary ===")
     logger.info(f"Total platform status codes loaded: {len(all_status_codes)}\n")
     
-    return all_status_codes
+    return all_status_codes, global_definitions
 
 
 def parse_status_code_type(code_type):
@@ -374,8 +379,14 @@ def parse_status_code_type(code_type):
     return result
 
 
-def parse_status_code_value(value, platform_codes=None):
-    """Parse the status code value field"""
+def parse_status_code_value(value, platform_codes=None, platform_definitions=None):
+    """Parse the status code value field
+    
+    Args:
+        value: The status code value to parse
+        platform_codes: Dict mapping complete status codes to (name, source_file)
+        platform_definitions: Dict mapping all macro names to their values (for component lookup)
+    """
     result = {}
     
     if platform_codes and value in platform_codes:
@@ -383,17 +394,73 @@ def parse_status_code_value(value, platform_codes=None):
         result['platform_code'] = macro_name
         result['platform_source'] = source_file
         result['note'] = f"Platform-specific status code: {macro_name} (from {source_file})"
+    
+    # Create reverse lookup for platform definitions (value -> name)
+    # Filter to appropriate ranges for cleaner lookups
+    reverse_definitions = {}
+    if platform_definitions:
+        for name, val in platform_definitions.items():
+            if val not in reverse_definitions:
+                reverse_definitions[val] = []
+            reverse_definitions[val].append(name)
         
     class_val = value & EFI_STATUS_CODE_CLASS_MASK
     class_name = CLASSES.get(class_val, "UNKNOWN_CLASS")
+    
+    # For custom/OEM classes, try to find the name from platform definitions
+    if class_name == "UNKNOWN_CLASS" and reverse_definitions:
+        if class_val in reverse_definitions:
+            # Prefer names with "CLASS" or "PARENT" in them for clarity
+            candidates = reverse_definitions[class_val]
+            platform_class_name = next((n for n in candidates if 'CLASS' in n.upper() or 'PARENT' in n.upper()), candidates[0])
+            class_name = f"{platform_class_name} (0x{class_val:08X})"
+        else:
+            class_name = f"UNKNOWN_CLASS (0x{class_val:08X})"
+    
     result['class'] = (class_val, class_name)
     
     subclass_val = value & EFI_STATUS_CODE_SUBCLASS_MASK
     is_standard_class = class_val in CLASSES
     
     if not is_standard_class:
-        result['subclass'] = (subclass_val, f"OEM/CUSTOM (0x{subclass_val:08X})")
-        result['operation'] = (value & EFI_STATUS_CODE_OPERATION_MASK, f"OEM/CUSTOM (0x{(value & EFI_STATUS_CODE_OPERATION_MASK):04X})")
+        # For custom/OEM classes, try to find more specific names from platform codes
+        subclass_name = f"OEM/CUSTOM (0x{subclass_val:08X})"
+        operation_val = value & EFI_STATUS_CODE_OPERATION_MASK
+        operation_name = f"OEM/CUSTOM (0x{operation_val:04X})"
+        
+        # Check if we have platform-specific definitions for subclass or operation
+        if platform_codes or reverse_definitions:
+            # Try to find a definition for class + subclass combination (highest priority)
+            # But only look in reverse_definitions for component definitions, excluding full status codes
+            class_subclass_val = class_val | subclass_val
+            if class_subclass_val in reverse_definitions and class_subclass_val not in platform_codes:
+                # Use reverse lookup for component definitions (not full status codes)
+                # Prefer names that contain "SUBCLASS" for clarity
+                candidates = reverse_definitions[class_subclass_val]
+                macro_name = next((n for n in candidates if 'SUBCLASS' in n.upper()), candidates[0])
+                subclass_name = f"{macro_name} (0x{subclass_val:08X})"
+            # Only check standalone subclass value if class+subclass not found
+            # and subclass is non-zero and in valid range (0x00XX0000)
+            elif subclass_val != 0 and (subclass_val & 0xFF00FFFF) == 0 and subclass_val in reverse_definitions:
+                # Filter to prefer SUBCLASS-related names
+                candidates = reverse_definitions[subclass_val]
+                macro_name = next((n for n in candidates if 'SUBCLASS' in n.upper()), candidates[0])
+                subclass_name = f"{macro_name} (0x{subclass_val:08X})"
+            
+            # Try to find a definition for the operation value
+            # Priority: class+operation > standalone operation
+            # Only look in reverse_definitions for component values, excluding full status codes
+            class_operation_val = class_val | operation_val
+            if class_operation_val in reverse_definitions and class_operation_val not in platform_codes:
+                op_macro_name = reverse_definitions[class_operation_val][0]
+                operation_name = f"{op_macro_name} (0x{operation_val:04X})"
+            elif operation_val != 0 and operation_val < 0x10000 and operation_val in reverse_definitions:
+                # Use reverse lookup for component definitions (operations are 16-bit)
+                op_macro_name = reverse_definitions[operation_val][0]
+                operation_name = f"{op_macro_name} (0x{operation_val:04X})"
+        
+        result['subclass'] = (subclass_val, subclass_name)
+        result['operation'] = (operation_val, operation_name)
         
         if 'note' not in result:
             result['note'] = "This appears to be a vendor-specific or OEM-defined status code that does not follow standard UEFI PI specification format"
@@ -556,17 +623,19 @@ def find_guid_in_files(guid, search_path):
 def process_progress_code(code_str, search_path=None, explicit_headers=None, auto_discover=False):
     """Process a progress code string"""
     platform_codes = {}
+    platform_definitions = {}
     
     if auto_discover and search_path:
         discovered_headers = discover_status_code_headers(search_path)
         if discovered_headers:
-            platform_codes = parse_platform_status_codes(discovered_headers)
+            platform_codes, platform_definitions = parse_platform_status_codes(discovered_headers)
     
     if explicit_headers:
         if not auto_discover:
             logger.info("\n=== Parsing Explicit Platform Headers ===")
-        explicit_codes = parse_platform_status_codes(explicit_headers)
+        explicit_codes, explicit_definitions = parse_platform_status_codes(explicit_headers)
         platform_codes.update(explicit_codes)
+        platform_definitions.update(explicit_definitions)
     
     match = re.search(r'V([0-9A-Fa-f]+)', code_str)
     if not match:
@@ -580,7 +649,7 @@ def process_progress_code(code_str, search_path=None, explicit_headers=None, aut
         print(f"Error: Invalid hex value '{value_str}'")
         return
     
-    parsed = parse_status_code_value(value, platform_codes)
+    parsed = parse_status_code_value(value, platform_codes, platform_definitions)
     
     print("\n=== Progress Code Analysis ===\n")
     print(f"Status Code Value: 0x{value:08X}")
@@ -607,17 +676,19 @@ def process_progress_code(code_str, search_path=None, explicit_headers=None, aut
 def process_error_code(error_str, search_path=None, explicit_headers=None, auto_discover=False):
     """Process an error code string"""
     platform_codes = {}
+    platform_definitions = {}
     
     if auto_discover and search_path:
         discovered_headers = discover_status_code_headers(search_path)
         if discovered_headers:
-            platform_codes = parse_platform_status_codes(discovered_headers)
+            platform_codes, platform_definitions = parse_platform_status_codes(discovered_headers)
     
     if explicit_headers:
         if not auto_discover:
             logger.info("\n=== Parsing Explicit Platform Headers ===")
-        explicit_codes = parse_platform_status_codes(explicit_headers)
+        explicit_codes, explicit_definitions = parse_platform_status_codes(explicit_headers)
         platform_codes.update(explicit_codes)
+        platform_definitions.update(explicit_definitions)
     
     code_type_match = re.search(r'C([0-9A-Fa-f]+):', error_str)
     if not code_type_match:
@@ -656,7 +727,7 @@ def process_error_code(error_str, search_path=None, explicit_headers=None, auto_
         ext_data = None
     
     type_parsed = parse_status_code_type(code_type)
-    value_parsed = parse_status_code_value(value, platform_codes)
+    value_parsed = parse_status_code_value(value, platform_codes, platform_definitions)
     
     # === DEFAULT OUTPUT - ALWAYS SHOWN ===
     print("\n=== Error Code Analysis ===")
@@ -712,14 +783,17 @@ Examples:
   # Basic usage
   %(prog)s -p "PROGRESS CODE: V03041001 I0"
   
-  # With GUID search
+  # With GUID search (auto-discovery is enabled by default)
   %(prog)s -e "ERROR: C40000002:VA40A0003 I0 C4F5CB5C-C210-4C70-A682-7EBCC803CC06 6F5DFC10" -s /path/to/workspace
   
-  # Auto-discover platform headers
-  %(prog)s -e "ERROR: C40000002:VA40A0003 I0 C4F5CB5C-C210-4C70-A682-7EBCC803CC06 6F5DFC10" -s /path/to/workspace --auto-discover
+  # Add additional platform-specific header files (combines with auto-discovery)
+  %(prog)s -e "ERROR: C40000002:VA40A0003 I0 C4F5CB5C-C210-4C70-A682-7EBCC803CC06 6F5DFC10" -s /path/to/workspace -c /path/to/CustomStatusCodes.h
+  
+  # Disable auto-discovery if needed
+  %(prog)s -e "ERROR: C40000002:VA40A0003 I0 C4F5CB5C-C210-4C70-A682-7EBCC803CC06 6F5DFC10" -s /path/to/workspace --no-auto-discover
   
   # Enable debug mode to see detailed parsing information
-  %(prog)s -e "ERROR: C40000002:VA40A0003 I0 C4F5CB5C-C210-4C70-A682-7EBCC803CC06 6F5DFC10" -s /path/to/workspace --auto-discover --debug
+  %(prog)s -e "ERROR: C40000002:VA40A0003 I0 C4F5CB5C-C210-4C70-A682-7EBCC803CC06 6F5DFC10" -s /path/to/workspace --debug
         """
     )
     
@@ -733,10 +807,10 @@ Examples:
                       help='Path to search for module GUID definitions and auto-discover status code headers')
     
     parser.add_argument('-c', '--platform-codes', metavar='HEADER', nargs='*',
-                      help='Path(s) to platform-specific status code header file(s)')
+                      help='Path(s) to additional platform-specific status code header file(s) (works together with auto-discovery)')
     
-    parser.add_argument('--auto-discover', action='store_true',
-                      help='Automatically discover and load all *StatusCode*.h headers in search path')
+    parser.add_argument('--no-auto-discover', action='store_true',
+                      help='Disable automatic discovery of *StatusCode*.h headers (auto-discovery is enabled by default)')
     
     parser.add_argument('--debug', action='store_true',
                       help='Enable debug output to see detailed parsing information')
@@ -755,10 +829,13 @@ Examples:
             format='%(message)s'
         )
     
+    # Auto-discover is enabled by default unless --no-auto-discover is specified
+    auto_discover = not args.no_auto_discover
+    
     if args.progress:
-        process_progress_code(args.progress, args.search, args.platform_codes, args.auto_discover)
+        process_progress_code(args.progress, args.search, args.platform_codes, auto_discover)
     elif args.error:
-        process_error_code(args.error, args.search, args.platform_codes, args.auto_discover)
+        process_error_code(args.error, args.search, args.platform_codes, auto_discover)
 
 
 if __name__ == '__main__':
