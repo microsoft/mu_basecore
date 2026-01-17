@@ -55,7 +55,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DeviceStateLib.h>
 #include <Library/PanicLib.h>
 // MU_CHANGE [END]
-#define PERF_ID_TCG2_PEI  0x3080
 
 typedef struct {
   EFI_GUID                     *EventGuid;
@@ -975,7 +974,7 @@ MeasureMainBios (
   EFI_FV_INFO                  VolumeInfo;
   EFI_PEI_FIRMWARE_VOLUME_PPI  *FvPpi;
 
-  PERF_START_EX (mFileHandle, "EventRec", "Tcg2Pei", 0, PERF_ID_TCG2_PEI);
+  PERF_FUNCTION_BEGIN ();
 
   //
   // Only measure BFV at the very beginning. Other parts of Static Core Root of
@@ -1006,7 +1005,7 @@ MeasureMainBios (
 
   Status = MeasureFvImage ((EFI_PHYSICAL_ADDRESS)(UINTN)VolumeInfo.FvStart, VolumeInfo.FvSize);
 
-  PERF_END_EX (mFileHandle, "EventRec", "Tcg2Pei", 0, PERF_ID_TCG2_PEI + 1);
+  PERF_FUNCTION_END ();
 
   return Status;
 }
