@@ -215,6 +215,7 @@
   AArch64/SetJumpLongJump.asm       | MSFT
   AArch64/CpuBreakpoint.asm         | MSFT
   AArch64/SpeculationBarrier.asm    | MSFT
+  AArch64UnitTestHost.c
 
 [Sources.RISCV64]
   Math64.c
