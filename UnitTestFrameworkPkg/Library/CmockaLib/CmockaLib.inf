@@ -33,3 +33,5 @@
   GCC:NOOPT_*_*_CC_FLAGS =  -O0
   GCC:*_*_IA32_CC_FLAGS  =  -m32
   GCC:*_*_X64_CC_FLAGS   =  -m64
+  # Need to use floats in this library. Got rid of -mgeneral-regs-only to do so.
+  GCC:*_*_AARCH64_CC_XIPFLAGS == -mstrict-align
