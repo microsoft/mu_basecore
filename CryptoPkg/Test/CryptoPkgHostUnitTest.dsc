@@ -13,7 +13,7 @@
   PLATFORM_VERSION        = 0.1
   DSC_SPECIFICATION       = 0x00010005
   OUTPUT_DIRECTORY        = Build/CryptoPkg/HostTest
-  SUPPORTED_ARCHITECTURES = IA32|X64
+  SUPPORTED_ARCHITECTURES = IA32|X64|AARCH64
   BUILD_TARGETS           = NOOPT
   SKUID_IDENTIFIER        = DEFAULT
 
@@ -33,7 +33,7 @@
   # Build HOST_APPLICATION that tests the SampleUnitTest
   #
   CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibHost.inf
-[Components.IA32, Components.X64]
+[Components.IA32, Components.X64, Components.AARCH64]
   #
   # Build HOST_APPLICATION that tests the SampleUnitTest
   #
