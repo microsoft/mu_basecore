@@ -1398,6 +1398,14 @@
   # @Prompt FFA TX/RX Buffer Page Count
   gEfiMdeModulePkgTokenSpaceGuid.PcdFfaTxRxPageCount|1|UINT64|0x30001062
 
+  ## Some platforms require that all EfiLoadOptions are retried until one of the options
+  # boots. When True, this Pcd will force Bds to retry all the valid EfiLoadOptions
+  # indefinitely until one of the options boots.
+  #   TRUE  - Efi boot options will be retried indefinitely.
+  #   FALSE - Efi boot options will not be retried.
+  # @Prompt Enable infinite retries during BDS.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportInfiniteBootRetries|FALSE|BOOLEAN|0x40000152
+
   # MU_CHANGE TCBZ1086 [BEGIN] - Mitigate potential system brick due to uefi MemoryTypeInformation var changes
   ## Maximum total pages that can be reserved by MemoryTypeInfo buckets.
   # Size in pages. Current default is roughly 1.6GB.
