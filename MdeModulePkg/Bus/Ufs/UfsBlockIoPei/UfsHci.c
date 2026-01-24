@@ -1577,6 +1577,7 @@ UfsDeviceDetection (
       return EFI_SUCCESS;
     }
   }
+
   // MU_CHANGE [END] - Fix UFS device detection retry logic
 
   return EFI_NOT_FOUND;
