@@ -68,6 +68,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable         ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdVariableStoreSize               ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdEnableVariableRuntimeCache      ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMigrateVariableRuntimeCacheBufferAllocation  ## CONSUMES  # MU_CHANGE
 
 [Depex]
   gEdkiiFaultTolerantWriteGuid

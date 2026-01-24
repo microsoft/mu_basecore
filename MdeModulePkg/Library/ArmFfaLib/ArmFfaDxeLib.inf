@@ -34,6 +34,7 @@
   DebugLib
   HobLib
   MemoryAllocationLib
+  SafeIntLib # MU_CHANGE
   TimerLib  # MU_CHANGE
 
 [Pcd]

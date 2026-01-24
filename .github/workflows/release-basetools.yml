@@ -48,7 +48,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -77,7 +77,7 @@ jobs:
 
       - name: Upload Build Logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: logs-${{ matrix.tool_chain }}-${{ matrix.target }}
           path: |
@@ -86,7 +86,7 @@ jobs:
             BaseTools/BaseToolsBuild/BASETOOLS_BUILD.txt
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: basetools-${{ matrix.tool_chain }}-${{ matrix.target }}
           path: ${{ matrix.output_dir }}
@@ -102,7 +102,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download Artifacts
         uses: actions/download-artifact@v6

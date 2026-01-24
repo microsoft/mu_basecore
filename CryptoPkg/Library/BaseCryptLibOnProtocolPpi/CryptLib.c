@@ -2078,40 +2078,6 @@ Sha512HashAll (
 }
 
 // =============================================================================
-//     PARALLELHASH256 functions
-// =============================================================================
-
-/**
-  Parallel hash function ParallelHash256, as defined in NIST's Special Publication 800-185,
-  published December 2016.
-  @param[in]   Input            Pointer to the input message (X).
-  @param[in]   InputByteLen     The number(>0) of input bytes provided for the input data.
-  @param[in]   BlockSize        The size of each block (B).
-  @param[out]  Output           Pointer to the output buffer.
-  @param[in]   OutputByteLen    The desired number of output bytes (L).
-  @param[in]   Customization    Pointer to the customization string (S).
-  @param[in]   CustomByteLen    The length of the customization string in bytes.
-  @retval TRUE   ParallelHash256 digest computation succeeded.
-  @retval FALSE  ParallelHash256 digest computation failed.
-  @retval FALSE  This interface is not supported.
-**/
-// See BaseCryptLib.h:796
-BOOLEAN
-EFIAPI
-ParallelHash256HashAll (
-  IN CONST VOID   *Input,
-  IN       UINTN  InputByteLen,
-  IN       UINTN  BlockSize,
-  OUT      VOID   *Output,
-  IN       UINTN  OutputByteLen,
-  IN CONST VOID   *Customization,
-  IN       UINTN  CustomByteLen
-  )
-{
-  CALL_CRYPTO_SERVICE (ParallelHash256HashAll, (Input, InputByteLen, BlockSize, Output, OutputByteLen, Customization, CustomByteLen), FALSE);
-}
-
-// =============================================================================
 //     AEADAESGCM functions
 // =============================================================================
 
@@ -5253,3 +5219,30 @@ EcDsaVerify (
 // AUTOGEN ENDS
 // ****************************************************************************
 // MU_CHANGE [END]
+
+/**
+  Gets the cryptographic provider version information.
+
+  This function returns the version string of the cryptographic provider
+  (e.g., OpenSSL, MbedTLS, SymCrypt) that was used to compile the library.
+
+  @param[out]     Buffer       Pointer to the buffer to receive the version string.
+                               If NULL, the required buffer size is returned in BufferSize.
+  @param[in,out]  BufferSize   On input, the size of the buffer in bytes.
+                               On output, the size of the data copied to the buffer (including null terminator).
+                               If Buffer is NULL, returns the required buffer size.
+
+  @retval  EFI_SUCCESS            The version string was successfully copied to the buffer.
+  @retval  EFI_BUFFER_TOO_SMALL   The buffer is too small. BufferSize contains the required size.
+  @retval  EFI_INVALID_PARAMETER  BufferSize is NULL.
+  @retval  EFI_UNSUPPORTED        The function is not provided by the Crypto provider.
+**/
+EFI_STATUS
+EFIAPI
+GetCryptoProviderVersionString (
+  OUT    CHAR8  *Buffer,
+  IN OUT UINTN  *BufferSize
+  )
+{
+  return EFI_UNSUPPORTED;
+}

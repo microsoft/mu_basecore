@@ -237,6 +237,10 @@
   #
   MmMemoryProtectionHobLib|Include/Library/MmMemoryProtectionHobLib.h
 
+  ##  @libraryclass  Provides time and date related EFI runtime services
+  #
+  RealTimeClockLib|Include/Library/RealTimeClockLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
@@ -915,6 +919,20 @@
   #   FALSE - The UEFI variable runtime cache is disabled.<BR>
   # @Prompt Enable the UEFI variable runtime cache.
   gEfiMdeModulePkgTokenSpaceGuid.PcdEnableVariableRuntimeCache|TRUE|BOOLEAN|0x00010039
+
+  # MU_CHANGE [BEGIN] - Allocate RT cache buffer in DXE instead of PEI to prevent fragmentation
+  ## Indicates whether to allocate variable runtime cache buffers in PEI or DXE phase.<BR><BR>
+  #  When TRUE, buffers are allocated as EfiBootServicesData in PEI and migrated to
+  #  EfiRuntimeServicesData in DXE to prevent runtime memory fragmentation.<BR>
+  #  When FALSE, buffers are allocated directly as EfiRuntimeServicesData in PEI
+  #  (original behavior).<BR><BR>
+  #  This should only be set to TRUE on platforms that can unblock MM memory in DXE such as those
+  #  with the Project Mu MM Supervisor.<BR><BR>
+  #   TRUE  - Allocate in PEI as boot services data and migrate to runtime in DXE.<BR>
+  #   FALSE - Allocate in PEI directly as runtime services data (default).<BR>
+  # @Prompt Migrate variable runtime cache buffer allocation from PEI to DXE.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMigrateVariableRuntimeCacheBufferAllocation|FALSE|BOOLEAN|0x0001009d
+  # MU_CHANGE [END] - Allocate RT cache buffer in DXE instead of PEI to prevent fragmentation
 
   ## Indicates if the statistics about variable usage will be collected. This information is
   #  stored as a vendor configuration table into the EFI system table.

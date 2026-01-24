@@ -181,16 +181,7 @@ TestVerifyHash (
   VOID               *HashCopyContext;
 
   HashTestContext = Context;
-
-  if (((HashTestContext->DigestSize == SHA1_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha1Init)) ||
-      ((HashTestContext->DigestSize == SHA256_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha256Init)) ||
-      ((HashTestContext->DigestSize == SHA384_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha384Init)) ||
-      ((HashTestContext->DigestSize == SHA512_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha512Init)))
-  {
-    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
-  }
-
-  DataSize = AsciiStrLen (HashData);
+  DataSize        = AsciiStrLen (HashData);
 
   ZeroMem (Digest, MAX_DIGEST_SIZE);
   ZeroMem (DigestCopy, MAX_DIGEST_SIZE);
@@ -233,14 +224,6 @@ TestVerifyHashAll (
   HASH_TEST_CONTEXT  *HashTestContext;
 
   HashTestContext = Context;
-
-  if (((HashTestContext->DigestSize == SHA1_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha1HashAll)) ||
-      ((HashTestContext->DigestSize == SHA256_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha256HashAll)) ||
-      ((HashTestContext->DigestSize == SHA384_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha384HashAll)) ||
-      ((HashTestContext->DigestSize == SHA512_DIGEST_SIZE) && !PcdGetBool (PcdCryptoServiceSha512HashAll)))
-  {
-    return UNIT_TEST_ERROR_PREREQUISITE_NOT_MET;
-  }
 
   DataSize = AsciiStrLen (HashData);
 
