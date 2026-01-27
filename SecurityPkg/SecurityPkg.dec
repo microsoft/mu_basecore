@@ -51,6 +51,11 @@
   #
   Tpm2HelpLib|Include/Library/Tpm2HelpLib.h
 
+  ## MU_CHANGE
+  ##  @libraryclass This library provides TPM initialization and setup functionality.
+  ##
+  Tpm2StartupLib|Include/Library/Tpm2StartupLib.h
+
   ##  @libraryclass  Provides interfaces on how to access TPM 2.0 hardware device.
   #
   Tpm2DeviceLib|Include/Library/Tpm2DeviceLib.h

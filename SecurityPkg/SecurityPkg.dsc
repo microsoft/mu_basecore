@@ -56,6 +56,7 @@
   Tpm12CommandLib|SecurityPkg/Library/Tpm12CommandLib/Tpm12CommandLib.inf
   Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
   Tpm2HelpLib|SecurityPkg/Library/Tpm2HelpLib/Tpm2HelpLib.inf             ## MU_CHANGE
+  Tpm2StartupLib|SecurityPkg/Library/Tpm2StartupLibNull/Tpm2StartupLibNull.inf  ## MU_CHANGE
   Tcg2PhysicalPresenceLib|SecurityPkg/Library/DxeTcg2PhysicalPresenceLib/DxeTcg2PhysicalPresenceLib.inf
   TcgPpVendorLib|SecurityPkg/Library/TcgPpVendorLibNull/TcgPpVendorLibNull.inf
   Tcg2PpVendorLib|SecurityPkg/Library/Tcg2PpVendorLibNull/Tcg2PpVendorLibNull.inf
@@ -224,6 +225,8 @@
 
   SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
   SecurityPkg/Library/Tpm2HelpLib/Tpm2HelpLib.inf   ## MU_CHANGE
+  SecurityPkg/Library/Tpm2StartupLib/Tpm2StartupLib.inf  ## MU_CHANGE
+  SecurityPkg/Library/Tpm2StartupLibNull/Tpm2StartupLibNull.inf  ## MU_CHANGE
   SecurityPkg/Library/Tpm2DeviceLibTcg2/Tpm2DeviceLibTcg2.inf
   SecurityPkg/Library/Tpm2DeviceLibDTpm/Tpm2DeviceLibDTpm.inf
   SecurityPkg/Library/Tpm2DeviceLibDTpm/Tpm2InstanceLibDTpm.inf
