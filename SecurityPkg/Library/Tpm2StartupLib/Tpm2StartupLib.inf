@@ -1,0 +1,52 @@
+## @file
+#  Handles TPM 2.0 Startup/Initialization.
+#
+#  Includes setup of initial TPM state as well as any pre-DXE
+#  measurements. Also handles any pre-DXE logging by generating
+#  HOBs.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = Tpm2StartupLib
+  FILE_GUID                      = 2066F14F-6CBB-44D2-A619-4100AADDD2E4
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = Tpm2StartupLib
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 AARCH64
+#
+
+[Sources]
+  Tpm2StartupLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  SecurityPkg/SecurityPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  HobLib
+  ReportStatusCodeLib
+  Tpm2CommandLib
+  Tpm2DeviceLib
+
+[Pcd]
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid              ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy     ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice  ## SOMETIMES_CONSUMES
+
+[Guids]
+  gTpmErrorHobGuid                ## SOMETIMES_PRODUCES     ## HOB
+  gEfiTpmDeviceInstanceNoneGuid   ## SOMETIMES_PRODUCES     ## GUID       # TPM device identifier
+  gEfiTpmDeviceInstanceTpm12Guid  ## SOMETIMES_PRODUCES     ## GUID       # TPM device identifier
