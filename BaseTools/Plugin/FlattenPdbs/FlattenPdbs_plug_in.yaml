@@ -8,6 +8,7 @@
 
 {
   "scope": "global",
+  "id": "flatten-pdbs",
   "name": "Flatten PDBs UEFI Build Plugin",
   "module": "FlattenPdbs"
 }
