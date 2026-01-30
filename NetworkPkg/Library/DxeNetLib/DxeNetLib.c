@@ -2696,6 +2696,7 @@ NetLibDetectMediaWaitTimeout (
   EFI_STATUS                        TimerStatus;
   EFI_EVENT                         Timer;
   UINT64                            TimeRemained;
+  EFI_TPL                           OldTpl; // MU_CHANGE: Improve PXE boot stability
 
   if (MediaState == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -2720,7 +2721,9 @@ NetLibDetectMediaWaitTimeout (
                   );
   if (EFI_ERROR (Status)) {
     MediaPresent = TRUE;
+    OldTpl       = gBS->RaiseTPL (TPL_CALLBACK); // MU_CHANGE: Improve PXE boot stability
     Status       = NetLibDetectMedia (ServiceHandle, &MediaPresent);
+    gBS->RestoreTPL (OldTpl); // MU_CHANGE: Improve PXE boot stability
     if (!EFI_ERROR (Status)) {
       if (MediaPresent) {
         *MediaState = EFI_SUCCESS;
@@ -2757,7 +2760,9 @@ NetLibDetectMediaWaitTimeout (
       // If gEfiAdapterInfoMediaStateGuid is not supported, call NetLibDetectMedia to get media state!
       //
       MediaPresent = TRUE;
+      OldTpl       = gBS->RaiseTPL (TPL_CALLBACK); // MU_CHANGE: Improve PXE boot stability
       Status       = NetLibDetectMedia (ServiceHandle, &MediaPresent);
+      gBS->RestoreTPL (OldTpl); // MU_CHANGE: Improve PXE boot stability
       if (!EFI_ERROR (Status)) {
         if (MediaPresent) {
           *MediaState = EFI_SUCCESS;
