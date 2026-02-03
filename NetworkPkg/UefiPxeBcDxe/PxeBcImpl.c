@@ -193,14 +193,16 @@ EfiPxeBcStart (
     //
     // Create event and set status for token to capture ICMP error message.
     //
-    Private->Icmp6Token.Status = EFI_NOT_READY;
-    Status                     = gBS->CreateEvent (
-                                        EVT_NOTIFY_SIGNAL,
-                                        TPL_NOTIFY,
-                                        PxeBcIcmpErrorUpdate,
-                                        Private,
-                                        &Private->IcmpToken.Event
-                                        );
+    // MU_CHANGE [BEGIN] - Use EFI_IP4_COMPLETION_TOKEN in IPV4 conditional branch
+    Private->IcmpToken.Status = EFI_NOT_READY;
+    Status                    = gBS->CreateEvent (
+                                       EVT_NOTIFY_SIGNAL,
+                                       TPL_NOTIFY,
+                                       PxeBcIcmpErrorUpdate,
+                                       Private,
+                                       &Private->IcmpToken.Event
+                                       );
+    // MU_CHANGE [END] - Use EFI_IP4_COMPLETION_TOKEN in IPV4 conditional branch
     if (EFI_ERROR (Status)) {
       goto ON_ERROR;
     }
