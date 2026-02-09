@@ -39,6 +39,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "EfiUtilityMsgs.h"
 
 #include "GenFw.h"
+#include "ElfConvert.h"
 
 //
 // Version of this utility
@@ -90,6 +91,12 @@ BOOLEAN mIsConvertXip = FALSE;
 BOOLEAN mExportFlag = FALSE;
 BOOLEAN mNoNxCompat = FALSE;
 BOOLEAN mBuildIdFlag = FALSE;
+
+//
+// Explicit export symbol support
+//
+UINT32 mExplicitExportSymbolCount = 0;
+CHAR8  *mExplicitExportSymbols[PRM_MODULE_EXPORT_SYMBOL_NUM];
 
 STATIC
 EFI_STATUS
@@ -283,6 +290,10 @@ Returns:
                         input action option will override the previous one.\n");
   fprintf (stdout, "  --prm                 Scan symbol section from ELF image and \n\
                         write export table into PE-COFF.\n\
+                        This option can be used together with -e.\n\
+                        It doesn't work for other options.\n");
+  fprintf (stdout, "  --export-symbol=NAME  Export the specified symbol to PE-COFF export table.\n\
+                        Can be specified multiple times for multiple symbols.\n\
                         This option can be used together with -e.\n\
                         It doesn't work for other options.\n");
   fprintf (stdout, "  --nonxcompat          Do not set the IMAGE_DLLCHARACTERISTICS_NX_COMPAT bit \n\
@@ -1511,6 +1522,23 @@ Returns:
       if (!mExportFlag) {
         mExportFlag = TRUE;
       }
+      argc --;
+      argv ++;
+      continue;
+    }
+
+    if (strnicmp (argv[0], "--export-symbol=", 16) == 0) {
+      if (mExplicitExportSymbolCount >= PRM_MODULE_EXPORT_SYMBOL_NUM) {
+        Error (NULL, 0, 1003, "Invalid option", "Too many --export-symbol options (max %d)", PRM_MODULE_EXPORT_SYMBOL_NUM);
+        goto Finish;
+      }
+      mExplicitExportSymbols[mExplicitExportSymbolCount] = argv[0] + 16;
+      if (strlen(mExplicitExportSymbols[mExplicitExportSymbolCount]) == 0) {
+        Error (NULL, 0, 1003, "Invalid option value", "--export-symbol requires a symbol name");
+        goto Finish;
+      }
+      mExplicitExportSymbolCount++;
+      mExportFlag = TRUE;
       argc --;
       argv ++;
       continue;

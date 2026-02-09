@@ -26,6 +26,8 @@ extern UINT32 mOutImageType;
 extern UINT32 mFileBufferSize;
 extern BOOLEAN mExportFlag;
 extern BOOLEAN mBuildIdFlag;
+extern UINT32 mExplicitExportSymbolCount;
+extern CHAR8  *mExplicitExportSymbols[];
 
 //
 // Common EFI specific data.
