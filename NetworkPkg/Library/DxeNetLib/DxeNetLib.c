@@ -32,7 +32,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DevicePathLib.h>
 #include <Library/PrintLib.h>
 #include <Library/UefiLib.h>
-#include <Library/PcdLib.h>  // MU_CHANGE - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
 #include <Protocol/Rng.h>
 
 #define NIC_ITEM_CONFIG_SIZE  (sizeof (NIC_IP4_CONFIG_INFO) + sizeof (EFI_IP4_ROUTE_TABLE) * MAX_IP4_CONFIG_IN_VARIABLE)
@@ -2494,10 +2493,16 @@ NetLibNormalizeMediaReturnStatus (
   OUT EFI_STATUS  *MediaState OPTIONAL
   )
 {
-  if ((Status == EFI_UNSUPPORTED) && PcdGetBool (PcdTreatSnpMediaUnsupportedAsSuccess)) {
+  if (Status == EFI_UNSUPPORTED) {
     if (MediaState != NULL) {
       *MediaState = EFI_SUCCESS;
     }
+
+    DEBUG ((DEBUG_ERROR, "NetLib: SNP MEDIA DETECTION FAILED!\n"));
+    DEBUG ((DEBUG_ERROR, "        Media detection was not available through AIP or UNDI.\n"));
+    DEBUG ((DEBUG_ERROR, "        A workaround to treat unsupported media detection as success is activated.\n"));
+    DEBUG ((DEBUG_ERROR, "        Check with your NIC OPROM vendor to determine how proper detection"));
+    DEBUG ((DEBUG_ERROR, "        can be supported on your platform.\n"));
 
     return EFI_SUCCESS;
   }
@@ -2823,9 +2828,6 @@ Exit:
   @retval EFI_DEVICE_ERROR      SNP is in unknown state.
   @retval EFI_TIMEOUT           The timeout expired before media became present.
 
-  @note If PcdTreatSnpMediaUnsupportedAsSuccess is TRUE, EFI_UNSUPPORTED is
-        converted to EFI_SUCCESS for this API.
-
 **/
 EFI_STATUS
 EFIAPI
@@ -3020,9 +3022,6 @@ NetLibAipWaitForMediaState (
                                 MediaState pointer is NULL.
   @retval EFI_DEVICE_ERROR      A device error occurred.
   @retval EFI_TIMEOUT           Network is connecting but timeout.
-
-  @note If PcdTreatSnpMediaUnsupportedAsSuccess is TRUE, EFI_UNSUPPORTED from
-        the SNP media detection path is converted to EFI_SUCCESS.
 
 **/
 EFI_STATUS

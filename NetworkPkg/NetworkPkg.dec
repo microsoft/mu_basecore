@@ -100,18 +100,6 @@
   gEdkiiWiFiProfileSyncProtocolGuid = {0x399a2b8a, 0xc267, 0x44aa, {0x9a, 0xb4, 0x30, 0x58, 0x8c, 0xd2, 0x2d, 0xcc}}
 
 [PcdsFixedAtBuild]
-
-  # MU_CHANGE [BEGIN] - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
-
-  ## Controls whether SNP media detection reports EFI_UNSUPPORTED as success.
-  # This is used for platforms that have network controllers that do not support media detection.
-  # TRUE  - Treat EFI_UNSUPPORTED from SNP media detection as EFI_SUCCESS.
-  # FALSE - Preserve EFI_UNSUPPORTED (default).
-  # @Prompt Treat SNP media unsupported as success.
-  gEfiNetworkPkgTokenSpaceGuid.PcdTreatSnpMediaUnsupportedAsSuccess|FALSE|BOOLEAN|0x00000014
-
-  # MU_CHANGE [END] - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
-
   ## The max attempt number will be created by iSCSI driver.
   # @Prompt Max attempt number.
   gEfiNetworkPkgTokenSpaceGuid.PcdMaxIScsiAttemptNumber|0x08|UINT8|0x0000000D
