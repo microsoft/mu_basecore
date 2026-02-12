@@ -1262,6 +1262,8 @@ NetLibGetMacString (
   OUT CHAR16      **MacString
   );
 
+// MU_CHANGE [BEGIN] - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
+
 /**
   Detect media status for specified network device.
 
@@ -1290,6 +1292,9 @@ NetLibGetMacString (
   @retval EFI_INVALID_PARAMETER ServiceHandle is not a valid network device handle.
   @retval EFI_UNSUPPORTED       The network device does not support media detection.
   @retval EFI_DEVICE_ERROR      SNP is in an unknown state.
+
+  @note If PcdTreatSnpMediaUnsupportedAsSuccess is TRUE, EFI_UNSUPPORTED is
+        converted to EFI_SUCCESS for this API.
 
 **/
 EFI_STATUS
@@ -1322,6 +1327,9 @@ NetLibDetectMedia (
   @retval EFI_DEVICE_ERROR      A device error occurred.
   @retval EFI_TIMEOUT           Network is connecting but timeout.
 
+  @note If PcdTreatSnpMediaUnsupportedAsSuccess is TRUE, EFI_UNSUPPORTED from
+        the SNP media detection path is converted to EFI_SUCCESS.
+
 **/
 EFI_STATUS
 EFIAPI
@@ -1330,6 +1338,8 @@ NetLibDetectMediaWaitTimeout (
   IN  UINT64      Timeout,
   OUT EFI_STATUS  *MediaState
   );
+
+// MU_CHANGE [END] - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
 
 /**
   Create an IPv4 device path node.

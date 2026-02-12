@@ -32,6 +32,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DevicePathLib.h>
 #include <Library/PrintLib.h>
 #include <Library/UefiLib.h>
+#include <Library/PcdLib.h>  // MU_CHANGE - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
 #include <Protocol/Rng.h>
 
 #define NIC_ITEM_CONFIG_SIZE  (sizeof (NIC_IP4_CONFIG_INFO) + sizeof (EFI_IP4_ROUTE_TABLE) * MAX_IP4_CONFIG_IN_VARIABLE)
@@ -2473,6 +2474,38 @@ NetLibSnpGetMediaStatus (
 }
 
 /**
+  Normalize media-detection status from SNP.
+
+  This is used to apply any transformations needed to media detection status
+  based on platform configuration.
+
+  @param[in]  Status      The status value to normalize.
+  @param[out] MediaState  Optional pointer to update based on policy applied
+                          to media state.
+
+  @retval EFI_SUCCESS      Media detection is considered successful.
+  @retval Others           An error status indicating media detection failure.
+
+**/
+STATIC
+EFI_STATUS
+NetLibNormalizeMediaReturnStatus (
+  IN  EFI_STATUS  Status,
+  OUT EFI_STATUS  *MediaState OPTIONAL
+  )
+{
+  if ((Status == EFI_UNSUPPORTED) && PcdGetBool (PcdTreatSnpMediaUnsupportedAsSuccess)) {
+    if (MediaState != NULL) {
+      *MediaState = EFI_SUCCESS;
+    }
+
+    return EFI_SUCCESS;
+  }
+
+  return Status;
+}
+
+/**
   Wait for media to become present using Simple Network Protocol (SNP).
 
   This helper polls SNP media state using GetStatus(). It returns immediately
@@ -2790,6 +2823,9 @@ Exit:
   @retval EFI_DEVICE_ERROR      SNP is in unknown state.
   @retval EFI_TIMEOUT           The timeout expired before media became present.
 
+  @note If PcdTreatSnpMediaUnsupportedAsSuccess is TRUE, EFI_UNSUPPORTED is
+        converted to EFI_SUCCESS for this API.
+
 **/
 EFI_STATUS
 EFIAPI
@@ -2798,7 +2834,10 @@ NetLibDetectMedia (
   OUT BOOLEAN     *MediaPresent
   )
 {
-  return NetLibDetectSnpMediaWithTimeoutInternal (ServiceHandle, 0, MediaPresent);
+  return NetLibNormalizeMediaReturnStatus (
+           NetLibDetectSnpMediaWithTimeoutInternal (ServiceHandle, 0, MediaPresent),
+           NULL
+           );
 }
 
 /**
@@ -2982,6 +3021,9 @@ NetLibAipWaitForMediaState (
   @retval EFI_DEVICE_ERROR      A device error occurred.
   @retval EFI_TIMEOUT           Network is connecting but timeout.
 
+  @note If PcdTreatSnpMediaUnsupportedAsSuccess is TRUE, EFI_UNSUPPORTED from
+        the SNP media detection path is converted to EFI_SUCCESS.
+
 **/
 EFI_STATUS
 EFIAPI
@@ -3020,7 +3062,10 @@ NetLibDetectMediaWaitTimeout (
                   (VOID *)&Aip
                   );
   if (EFI_ERROR (Status)) {
-    return NetLibDetectSnpMediaWithRetry (ServiceHandle, Timeout, DETECT_NET_MEDIA_RETRY_ATTEMPTS, MediaState);
+    return NetLibNormalizeMediaReturnStatus (
+             NetLibDetectSnpMediaWithRetry (ServiceHandle, Timeout, DETECT_NET_MEDIA_RETRY_ATTEMPTS, MediaState),
+             MediaState
+             );
   }
 
   Status = Aip->GetInformation (
@@ -3040,7 +3085,10 @@ NetLibDetectMediaWaitTimeout (
       FreePool (MediaInfo);
     }
 
-    return NetLibDetectSnpMediaWithRetry (ServiceHandle, Timeout, DETECT_NET_MEDIA_RETRY_ATTEMPTS, MediaState);
+    return NetLibNormalizeMediaReturnStatus (
+             NetLibDetectSnpMediaWithRetry (ServiceHandle, Timeout, DETECT_NET_MEDIA_RETRY_ATTEMPTS, MediaState),
+             MediaState
+             );
   }
 
   return NetLibAipWaitForMediaState (Aip, Timeout, MediaState);

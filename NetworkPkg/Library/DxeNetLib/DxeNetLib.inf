@@ -44,6 +44,7 @@
   MemoryAllocationLib
   DevicePathLib
   PrintLib
+  PcdLib # MU_CHANGE - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
 
 
 [Guids]
@@ -67,7 +68,10 @@
   gEfiRngProtocolGuid                           ## CONSUMES
 
 [FixedPcd]
-  gEfiMdePkgTokenSpaceGuid.PcdEnforceSecureRngAlgorithms ## CONSUMES
+  ## MU_CHANGE [BEGIN] - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
+  gEfiMdePkgTokenSpaceGuid.PcdEnforceSecureRngAlgorithms            ## CONSUMES
+  gEfiNetworkPkgTokenSpaceGuid.PcdTreatSnpMediaUnsupportedAsSuccess ## CONSUMES
+  ## MU_CHANGE [END] - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
 
 [Depex]
   gEfiRngProtocolGuid
