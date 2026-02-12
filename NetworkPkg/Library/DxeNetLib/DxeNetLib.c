@@ -2449,8 +2449,9 @@ NetLibGetMacString (
   @param[in]  Snp           The Simple Network Protocol instance.
   @param[out] MediaPresent  The pointer to receive the media present status.
 
-  @retval EFI_SUCCESS       MediaPresent is returned successfully.
-  @retval Others            Error returned by Snp->GetStatus().
+  @retval EFI_SUCCESS           MediaPresent is returned successfully.
+  @retval EFI_INVALID_PARAMETER Snp is NULL or MediaPresent is NULL.
+  @retval Others                Error returned by Snp->GetStatus().
 
 **/
 STATIC
@@ -2462,6 +2463,10 @@ NetLibSnpGetMediaStatus (
 {
   EFI_STATUS  Status;
   UINT32      InterruptStatus;
+
+  if ((Snp == NULL) || (MediaPresent == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   Status = Snp->GetStatus (Snp, &InterruptStatus, NULL);
   if (EFI_ERROR (Status)) {
