@@ -1262,8 +1262,6 @@ NetLibGetMacString (
   OUT CHAR16      **MacString
   );
 
-// MU_CHANGE [BEGIN] - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
-
 /**
   Detect media status for specified network device.
 
@@ -1273,8 +1271,9 @@ NetLibGetMacString (
   GET_STATUS command (PXE_STATFLAGS_GET_STATUS_NO_MEDIA_SUPPORTED). This routine
   will try to invoke Snp->GetStatus() to get the media status. If media is already
   present, it returns directly. If media is not present, it will stop SNP and then
-  restart SNP to get the latest media status. After SNP is initialized, it will
-  poll Snp->GetStatus() for up to Timeout before returning.
+  restart SNP to get the latest media status. This provides an opportunity to get
+  the correct media status for old UNDI driver, which doesn't support reporting
+  media status from GET_STATUS command.
   Note: there are two limitations for the current algorithm:
   1) For UNDI with this capability, when the cable is not attached, there will
      be an redundant Stop/Start() process.
@@ -1285,27 +1284,20 @@ NetLibGetMacString (
 
   @param[in]   ServiceHandle    The handle where network service binding protocols are
                                 installed.
-  @param[in]   Timeout          The maximum number of 100ns units to wait for media
-                                after SNP is initialized. Zero value means detect
-                                once and return immediately.
   @param[out]  MediaPresent     The pointer to store the media status.
 
   @retval EFI_SUCCESS           Media detection success.
   @retval EFI_INVALID_PARAMETER ServiceHandle is not a valid network device handle.
   @retval EFI_UNSUPPORTED       The network device does not support media detection.
   @retval EFI_DEVICE_ERROR      SNP is in an unknown state.
-  @retval EFI_TIMEOUT           The timeout expired before media became present.
 
 **/
 EFI_STATUS
 EFIAPI
 NetLibDetectMedia (
   IN  EFI_HANDLE  ServiceHandle,
-  IN  UINT64      Timeout,
   OUT BOOLEAN     *MediaPresent
   );
-
-// MU_CHANGE [END] - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
 
 /**
   Detect media state for a network device. This routine will wait for a period of time at

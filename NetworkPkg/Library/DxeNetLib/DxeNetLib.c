@@ -2558,7 +2558,7 @@ NetLibWaitForMediaPresent (
 }
 
 /**
-  Detect media status for specified network device.
+  Detect media status for specified network device with timeout support.
 
   If MediaPresent is NULL, then ASSERT().
 
@@ -2593,9 +2593,9 @@ NetLibWaitForMediaPresent (
   @retval EFI_TIMEOUT           The timeout expired before media became present.
 
 **/
+STATIC
 EFI_STATUS
-EFIAPI
-NetLibDetectMedia (
+NetLibDetectMediaWithTimeoutInternal (
   IN  EFI_HANDLE  ServiceHandle,
   IN  UINT64      Timeout,
   OUT BOOLEAN     *MediaPresent
@@ -2776,10 +2776,36 @@ Exit:
 }
 
 /**
+  Detect media status for specified network device.
+
+  If MediaPresent is NULL, then ASSERT().
+
+  @param[in]   ServiceHandle    The handle where network service binding protocols are
+                                installed on.
+  @param[out]  MediaPresent     The pointer to store the media status.
+
+  @retval EFI_SUCCESS           Media detection success.
+  @retval EFI_INVALID_PARAMETER ServiceHandle is not valid network device handle.
+  @retval EFI_UNSUPPORTED       Network device does not support media detection.
+  @retval EFI_DEVICE_ERROR      SNP is in unknown state.
+  @retval EFI_TIMEOUT           The timeout expired before media became present.
+
+**/
+EFI_STATUS
+EFIAPI
+NetLibDetectMedia (
+  IN  EFI_HANDLE  ServiceHandle,
+  OUT BOOLEAN     *MediaPresent
+  )
+{
+  return NetLibDetectMediaWithTimeoutInternal (ServiceHandle, 0, MediaPresent);
+}
+
+/**
   Detect media state for a network device with timeout support.
 
-  This helper calls NetLibDetectMedia() with the provided timeout and
-  retries the operation up to RetryCount times.
+  This helper calls NetLibDetectMediaWithTimeoutInternal() with the provided
+  timeout and retries the operation up to RetryCount times.
 
   On success, the detected media state is reported via MediaState as
   EFI_SUCCESS when media is present or EFI_NO_MEDIA when it is not.
@@ -2788,16 +2814,17 @@ Exit:
                              installed on.
   @param[in]  Timeout        The maximum number of 100ns units to wait. A value of
                              zero means detect once and return immediately.
-  @param[in]  RetryCount     The number of attempts to call NetLibDetectMedia().
+  @param[in]  RetryCount     The number of attempts to call
+                             NetLibDetectMediaWithTimeoutInternal().
   @param[out] MediaState     The pointer to receive the detected media state.
 
   @retval EFI_SUCCESS           Media detection succeeded or completed within timeout.
   @retval EFI_INVALID_PARAMETER ServiceHandle is not valid network device handle
-                                (as determined by NetLibDetectMedia()) or the
+                                (as determined by NetLibDetectMediaWithTimeoutInternal()) or the
                                 MediaState pointer is NULL.
   @retval EFI_TIMEOUT           The timeout expired before media state could be
                                 determined.
-  @retval Others                An error returned by NetLibDetectMedia().
+  @retval Others                An error returned by NetLibDetectMediaWithTimeoutInternal().
 
 **/
 STATIC
@@ -2825,7 +2852,7 @@ NetLibDetectMediaWithTimeout (
 
   for (Attempt = 0; Attempt < AttemptCount; Attempt++) {
     OldTpl = gBS->RaiseTPL (TPL_CALLBACK);       // MU_CHANGE: Improve PXE boot stability
-    Status = NetLibDetectMedia (ServiceHandle, Timeout, &MediaPresent);
+    Status = NetLibDetectMediaWithTimeoutInternal (ServiceHandle, Timeout, &MediaPresent);
     gBS->RestoreTPL (OldTpl); // MU_CHANGE: Improve PXE boot stability
     if (!EFI_ERROR (Status)) {
       *MediaState = MediaPresent ? EFI_SUCCESS : EFI_NO_MEDIA;
