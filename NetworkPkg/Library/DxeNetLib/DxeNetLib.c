@@ -2455,7 +2455,7 @@ NetLibGetMacString (
 **/
 STATIC
 EFI_STATUS
-NetLibGetMediaStatus (
+NetLibSnpGetMediaStatus (
   IN  EFI_SIMPLE_NETWORK_PROTOCOL  *Snp,
   OUT BOOLEAN                      *MediaPresent
   )
@@ -2473,12 +2473,12 @@ NetLibGetMediaStatus (
 }
 
 /**
-  Wait for media to become present on a network device within a given timeout.
+  Wait for media to become present using Simple Network Protocol (SNP).
 
-  This helper periodically queries the Simple Network Protocol instance for
-  media state. It returns immediately if media is already present or if the
-  timeout is zero. Otherwise, it waits in MEDIA_STATE_DETECT_TIME_INTERVAL
-  increments until media becomes present or the timeout expires.
+  This helper polls SNP media state using GetStatus(). It returns immediately
+  if media is already present or if the timeout is zero. Otherwise, it waits in
+  MEDIA_STATE_DETECT_TIME_INTERVAL increments until media becomes present or the
+  timeout expires.
 
   @param[in]  Snp           The Simple Network Protocol instance to query.
   @param[in]  Timeout       The maximum number of 100ns units to wait. Zero
@@ -2490,12 +2490,12 @@ NetLibGetMediaStatus (
   @retval EFI_SUCCESS       Media is present or detected within the timeout.
   @retval EFI_DEVICE_ERROR  Failed to create or use the timer event.
   @retval EFI_TIMEOUT       The timeout expired before media became present.
-  @retval Others            Error returned by NetLibGetMediaStatus().
+  @retval Others            Error returned by NetLibSnpGetMediaStatus().
 
 **/
 STATIC
 EFI_STATUS
-NetLibWaitForMediaPresent (
+NetLibSnpWaitForMediaPresent (
   IN  EFI_SIMPLE_NETWORK_PROTOCOL  *Snp,
   IN  UINT64                       Timeout,
   OUT BOOLEAN                      *MediaPresent
@@ -2506,7 +2506,7 @@ NetLibWaitForMediaPresent (
   EFI_EVENT   Timer;
   INT64       TimeRemaining;
 
-  Status = NetLibGetMediaStatus (Snp, MediaPresent);
+  Status = NetLibSnpGetMediaStatus (Snp, MediaPresent);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -2537,7 +2537,7 @@ NetLibWaitForMediaPresent (
       TimerStatus = gBS->CheckEvent (Timer);
       if (!EFI_ERROR (TimerStatus)) {
         TimeRemaining -= MEDIA_STATE_DETECT_TIME_INTERVAL;
-        Status         = NetLibGetMediaStatus (Snp, MediaPresent);
+        Status         = NetLibSnpGetMediaStatus (Snp, MediaPresent);
         if (EFI_ERROR (Status)) {
           gBS->CloseEvent (Timer);
           return Status;
@@ -2558,7 +2558,7 @@ NetLibWaitForMediaPresent (
 }
 
 /**
-  Detect media status for specified network device with timeout support.
+  Detect media status for a network device using SNP with timeout support.
 
   If MediaPresent is NULL, then ASSERT().
 
@@ -2595,7 +2595,7 @@ NetLibWaitForMediaPresent (
 **/
 STATIC
 EFI_STATUS
-NetLibDetectMediaWithTimeoutInternal (
+NetLibDetectSnpMediaWithTimeoutInternal (
   IN  EFI_HANDLE  ServiceHandle,
   IN  UINT64      Timeout,
   OUT BOOLEAN     *MediaPresent
@@ -2630,7 +2630,7 @@ NetLibDetectMediaWithTimeoutInternal (
     return EFI_UNSUPPORTED;
   }
 
-  Status = NetLibGetMediaStatus (Snp, MediaPresent);
+  Status = NetLibSnpGetMediaStatus (Snp, MediaPresent);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -2705,7 +2705,7 @@ NetLibDetectMediaWithTimeoutInternal (
       goto Exit;
     }
 
-    WaitStatus = NetLibWaitForMediaPresent (Snp, Timeout, MediaPresent);
+    WaitStatus = NetLibSnpWaitForMediaPresent (Snp, Timeout, MediaPresent);
 
     //
     // Restore SNP receive filter settings
@@ -2751,7 +2751,7 @@ NetLibDetectMediaWithTimeoutInternal (
     goto Exit;
   }
 
-  WaitStatus = NetLibWaitForMediaPresent (Snp, Timeout, MediaPresent);
+  WaitStatus = NetLibSnpWaitForMediaPresent (Snp, Timeout, MediaPresent);
 
   //
   // Shut down the simple network
@@ -2798,13 +2798,13 @@ NetLibDetectMedia (
   OUT BOOLEAN     *MediaPresent
   )
 {
-  return NetLibDetectMediaWithTimeoutInternal (ServiceHandle, 0, MediaPresent);
+  return NetLibDetectSnpMediaWithTimeoutInternal (ServiceHandle, 0, MediaPresent);
 }
 
 /**
   Detect media state for a network device with timeout support.
 
-  This helper calls NetLibDetectMediaWithTimeoutInternal() with the provided
+  This helper calls NetLibDetectSnpMediaWithTimeoutInternal() with the provided
   timeout and retries the operation up to RetryCount times.
 
   On success, the detected media state is reported via MediaState as
@@ -2815,21 +2815,21 @@ NetLibDetectMedia (
   @param[in]  Timeout        The maximum number of 100ns units to wait. A value of
                              zero means detect once and return immediately.
   @param[in]  RetryCount     The number of attempts to call
-                             NetLibDetectMediaWithTimeoutInternal().
+                             NetLibDetectSnpMediaWithTimeoutInternal().
   @param[out] MediaState     The pointer to receive the detected media state.
 
   @retval EFI_SUCCESS           Media detection succeeded or completed within timeout.
   @retval EFI_INVALID_PARAMETER ServiceHandle is not valid network device handle
-                                (as determined by NetLibDetectMediaWithTimeoutInternal()) or the
+                                (as determined by NetLibDetectSnpMediaWithTimeoutInternal()) or the
                                 MediaState pointer is NULL.
   @retval EFI_TIMEOUT           The timeout expired before media state could be
                                 determined.
-  @retval Others                An error returned by NetLibDetectMediaWithTimeoutInternal().
+  @retval Others                An error returned by NetLibDetectSnpMediaWithTimeoutInternal().
 
 **/
 STATIC
 EFI_STATUS
-NetLibDetectMediaWithTimeout (
+NetLibDetectSnpMediaWithRetry (
   IN  EFI_HANDLE  ServiceHandle,
   IN  UINT64      Timeout,
   IN  UINTN       RetryCount,
@@ -2852,7 +2852,7 @@ NetLibDetectMediaWithTimeout (
 
   for (Attempt = 0; Attempt < AttemptCount; Attempt++) {
     OldTpl = gBS->RaiseTPL (TPL_CALLBACK);       // MU_CHANGE: Improve PXE boot stability
-    Status = NetLibDetectMediaWithTimeoutInternal (ServiceHandle, Timeout, &MediaPresent);
+    Status = NetLibDetectSnpMediaWithTimeoutInternal (ServiceHandle, Timeout, &MediaPresent);
     gBS->RestoreTPL (OldTpl); // MU_CHANGE: Improve PXE boot stability
     if (!EFI_ERROR (Status)) {
       *MediaState = MediaPresent ? EFI_SUCCESS : EFI_NO_MEDIA;
@@ -2888,7 +2888,7 @@ NetLibDetectMediaWithTimeout (
 **/
 STATIC
 EFI_STATUS
-NetLibDetectAipMediaWithTimeout (
+NetLibAipWaitForMediaState (
   IN  EFI_ADAPTER_INFORMATION_PROTOCOL  *Aip,
   IN  UINT64                            Timeout,
   OUT EFI_STATUS                        *MediaState
@@ -3020,7 +3020,7 @@ NetLibDetectMediaWaitTimeout (
                   (VOID *)&Aip
                   );
   if (EFI_ERROR (Status)) {
-    return NetLibDetectMediaWithTimeout (ServiceHandle, Timeout, DETECT_NET_MEDIA_RETRY_ATTEMPTS, MediaState);
+    return NetLibDetectSnpMediaWithRetry (ServiceHandle, Timeout, DETECT_NET_MEDIA_RETRY_ATTEMPTS, MediaState);
   }
 
   Status = Aip->GetInformation (
@@ -3040,10 +3040,10 @@ NetLibDetectMediaWaitTimeout (
       FreePool (MediaInfo);
     }
 
-    return NetLibDetectMediaWithTimeout (ServiceHandle, Timeout, DETECT_NET_MEDIA_RETRY_ATTEMPTS, MediaState);
+    return NetLibDetectSnpMediaWithRetry (ServiceHandle, Timeout, DETECT_NET_MEDIA_RETRY_ATTEMPTS, MediaState);
   }
 
-  return NetLibDetectAipMediaWithTimeout (Aip, Timeout, MediaState);
+  return NetLibAipWaitForMediaState (Aip, Timeout, MediaState);
 }
 
 // MU_CHANGE [END]: Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
