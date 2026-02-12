@@ -94,6 +94,15 @@ typedef UINT16  TCP_PORTNO;
 //
 #define MEDIA_STATE_DETECT_TIME_INTERVAL  1000000U
 
+// MU_CHANGE [BEGIN] - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
+
+//
+// Number of times to attempt to detect network media through SNP
+//
+#define DETECT_NET_MEDIA_RETRY_ATTEMPTS  2
+
+// MU_CHANGE [END] - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
+
 #pragma pack(1)
 
 //
