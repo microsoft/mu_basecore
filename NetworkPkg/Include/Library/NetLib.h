@@ -12,6 +12,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #define _NET_LIB_H_
 
 #include <Protocol/Ip6.h>
+#include <Pi/PiStatusCode.h> // MU_CHANGE - Report status code on SNP media detection workaround
 
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -93,6 +94,15 @@ typedef UINT16  TCP_PORTNO;
 // Number of 100ns units time Interval for network media state detect
 //
 #define MEDIA_STATE_DETECT_TIME_INTERVAL  1000000U
+
+// MU_CHANGE [BEGIN] - Report status code on SNP media detection workaround
+
+//
+// Status code value indicating the SNP media-detection workaround was applied.
+//
+#define NETLIB_STATUS_CODE_SNP_MEDIA_DETECT_WORKAROUND  (EFI_IO_BUS_IP_NETWORK | EFI_IOB_EC_NOT_SUPPORTED)
+
+// MU_CHANGE [END] - Report status code on SNP media detection workaround
 
 // MU_CHANGE [BEGIN] - Consider timeout for NetLibDetectMedia() calls in NetLibDetectMediaWaitTimeout()
 
