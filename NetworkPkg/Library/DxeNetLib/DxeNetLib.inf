@@ -44,6 +44,7 @@
   MemoryAllocationLib
   DevicePathLib
   PrintLib
+  ReportStatusCodeLib   # MU_CHANGE - Report status code on SNP media detection workaround
 
 
 [Guids]

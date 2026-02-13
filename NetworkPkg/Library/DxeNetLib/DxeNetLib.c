@@ -32,6 +32,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/DevicePathLib.h>
 #include <Library/PrintLib.h>
 #include <Library/UefiLib.h>
+#include <Library/ReportStatusCodeLib.h>  // MU_CHANGE - Report status code on SNP media detection workaround
 #include <Protocol/Rng.h>
 
 #define NIC_ITEM_CONFIG_SIZE  (sizeof (NIC_IP4_CONFIG_INFO) + sizeof (EFI_IP4_ROUTE_TABLE) * MAX_IP4_CONFIG_IN_VARIABLE)
@@ -2508,6 +2509,13 @@ NetLibNormalizeMediaReturnStatus (
     DEBUG ((DEBUG_ERROR, "        A workaround to treat unsupported media detection as success is activated.\n"));
     DEBUG ((DEBUG_ERROR, "        Check with your NIC OPROM vendor to determine how proper detection"));
     DEBUG ((DEBUG_ERROR, "        can be supported on your platform.\n"));
+
+    // MU_CHANGE [BEGIN] - Report status code on SNP media detection workaround
+    REPORT_STATUS_CODE (
+      EFI_ERROR_CODE | EFI_ERROR_MINOR,
+      NETLIB_STATUS_CODE_SNP_MEDIA_DETECT_WORKAROUND
+      );
+    // MU_CHANGE [END] - Report status code on SNP media detection workaround
 
     return EFI_SUCCESS;
   }
