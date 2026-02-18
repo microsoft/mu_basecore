@@ -67,9 +67,10 @@ jobs:
 
         packages = [d for d in os.listdir() if d.strip().lower().endswith('pkg')]
 
-        # Ensure the package can actually be built
-        for package in packages:
-            if not any(file.endswith('.dsc') for file in os.listdir(package)):
+        # Ensure the package can actually be built for IA32 or X64
+        for package in list(packages):
+            dsc = [os.path.join(package, f) for f in os.listdir(package) if f.endswith('.dsc')]
+            if not any('IA32' in l or 'X64' in l for d in dsc for l in open(d) if 'SUPPORTED_ARCHITECTURES' in l):
                 packages.remove(package)
 
         packages.sort()
