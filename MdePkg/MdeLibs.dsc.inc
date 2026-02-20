@@ -28,7 +28,9 @@
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
   SynchronizationLib|MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
   MmUnblockMemoryLib|MdePkg/Library/MmUnblockMemoryLib/MmUnblockMemoryLibNull.inf
-  StackCheckFailureHookLib|MdePkg/Library/StackCheckFailureHookLibNull/StackCheckFailureHookLibNull.inf
+  # MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed StackCheckFailureHookLib
+  # StackCheckFailureHookLib|MdePkg/Library/StackCheckFailureHookLibNull/StackCheckFailureHookLibNull.inf
+  # MU_CHANGE END: CLANGPDB Stack Cookies
   FvLib|MdePkg/Library/FvLib/FvLib.inf
 
 !if $(CUSTOM_STACK_CHECK_LIB) == STATIC

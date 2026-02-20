@@ -37,8 +37,10 @@
 [Packages]
   MdePkg/MdePkg.dec
 
-[LibraryClasses]
-  StackCheckFailureHookLib
+# MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed LibraryClasses section
+# [LibraryClasses]
+#   StackCheckFailureHookLib
+# MU_CHANGE END: CLANGPDB Stack Cookies
 
 # MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed FixedPcd section
 # [FixedPcd]

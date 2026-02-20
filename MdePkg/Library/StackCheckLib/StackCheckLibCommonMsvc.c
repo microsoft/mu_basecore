@@ -8,11 +8,17 @@
 
 #include <Base.h>
 
-#include <Library/DebugLib.h>
-#include <Library/BaseLib.h>
+// MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed DebugLib dependency
+// #include <Library/DebugLib.h>
+// MU_CHANGE END: CLANGPDB Stack Cookies
+// MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed BaseLib dependency
+// #include <Library/BaseLib.h>
+// MU_CHANGE END: CLANGPDB Stack Cookies
 #include <Uefi/UefiBaseType.h>  // MU_CHANGE: CLANGPDB Stack Cookies
 #include <Library/StackCheckLib.h>
-#include <Library/StackCheckFailureHookLib.h>
+// MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed StackCheckFailureHookLib dependency
+// #include <Library/StackCheckFailureHookLib.h>
+// MU_CHANGE END: CLANGPDB Stack Cookies
 
 // MU_CHANGE BEGIN: CLANGPDB Stack Cookies
 /**
@@ -39,7 +45,11 @@ StackCheckFailure (
   VOID  *ActualCookieValue
   )
 {
-  DEBUG ((DEBUG_ERROR, "Stack cookie check failed at address 0x%llx!\n", RETURN_ADDRESS (0)));
-  StackCheckFailureHook (RETURN_ADDRESS (0));
+  // MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed DebugLib dependency
+  // DEBUG ((DEBUG_ERROR, "Stack cookie check failed at address 0x%llx!\n", RETURN_ADDRESS (0)));
+  // MU_CHANGE END: CLANGPDB Stack Cookies
+  // MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed StackCheckFailureHookLib dependency
+  // StackCheckFailureHook (RETURN_ADDRESS (0));
+  // MU_CHANGE END: CLANGPDB Stack Cookies
   TriggerStackCookieInterrupt ((EFI_PHYSICAL_ADDRESS)(UINTN)RETURN_ADDRESS (0));  // MU_CHANGE: CLANGPDB Stack Cookies
 }

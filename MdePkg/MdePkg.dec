@@ -308,9 +308,11 @@
   #
   TraceHubDebugSysTLib|Include/Library/TraceHubDebugSysTLib.h
 
-  ##  @libraryclass  Provides a hook called when a stack cookie check fails.
-  #
-  StackCheckFailureHookLib|Include/Library/StackCheckFailureHookLib.h
+  # MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed StackCheckFailureHookLib
+  # ##  @libraryclass  Provides a hook called when a stack cookie check fails.
+  # #
+  # StackCheckFailureHookLib|Include/Library/StackCheckFailureHookLib.h
+  # MU_CHANGE END: CLANGPDB Stack Cookies
 
   ##  @libraryclass  Provides stack cookie checking functionality
   #

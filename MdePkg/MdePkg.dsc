@@ -138,7 +138,9 @@
   MdePkg/Library/BaseFdtLib/BaseFdtLib.inf
   MdePkg/Library/PeiRngLib/PeiRngLib.inf
 
-  MdePkg/Library/StackCheckFailureHookLibNull/StackCheckFailureHookLibNull.inf
+  # MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed StackCheckFailureHookLib
+  # MdePkg/Library/StackCheckFailureHookLibNull/StackCheckFailureHookLibNull.inf
+  # MU_CHANGE END: CLANGPDB Stack Cookies
   MdePkg/Library/StackCheckLibNull/StackCheckLibNull.inf
   MdePkg/Library/StackCheckLib/StackCheckLib.inf
   MdePkg/Library/DynamicStackCookieEntryPointLib/DxeCoreEntryPoint.inf
