@@ -1,32 +1,29 @@
+; MU_CHANGE BEGIN: CLANGPDB Stack Cookies - new file
 ;------------------------------------------------------------------------------
-; IA32/StackCookieInterrupt.nasm
+; X64/StackCookieInterrupt.nasm
 ;
 ; Copyright (c) Microsoft Corporation.
 ; SPDX-License-Identifier: BSD-2-Clause-Patent
 ;------------------------------------------------------------------------------
 
-#include <Library/StackCheckLib.h>  ; MU_CHANGE: CLANGPDB Stack Cookies
+#include <Library/StackCheckLib.h>
 
     DEFAULT REL
     SECTION .text
 
 ;------------------------------------------------------------------------------
-; MU_CHANGE BEGIN: CLANGPDB Stack Cookies
 ; Checks the stack cookie value against __security_cookie and calls the
 ; stack cookie failure handler if there is a mismatch, passing along the
-; exception address in ecx.
+; exception address in rcx.
 ;
 ; VOID
 ; EFIAPI
 ; TriggerStackCookieInterrupt (
 ;   EFI_PHYSICAL_ADDRESS ExceptionAddress
 ;   );
-; MU_CHANGE END: CLANGPDB Stack Cookies
 ;------------------------------------------------------------------------------
 global ASM_PFX(TriggerStackCookieInterrupt)
 ASM_PFX(TriggerStackCookieInterrupt):
-; MU_CHANGE BEGIN: CLANGPDB Stack Cookies
-    mov     ecx, [esp + 4]                              ; first parameter, skipping return address
     int     STACK_CHECK_ERROR_HANDLER_VECTOR
-; MU_CHANGE END: CLANGPDB Stack Cookies
     ret
+; MU_CHANGE END: CLANGPDB Stack Cookies

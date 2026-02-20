@@ -12,6 +12,12 @@
 
 #include <Base.h>
 
+// MU_CHANGE BEGIN: CLANGPDB Stack Cookies
+// The stack cookie error handler vector, in the user defined range for IA32, X64, and AARCH64. This is the
+// exception/interrupt number that is signalled on a stack cookie corruption.
+#define STACK_CHECK_ERROR_HANDLER_VECTOR  0x42
+// MU_CHANGE END: CLANGPDB Stack Cookies
+
 #if defined (__GNUC__) || defined (__clang__)
 
 // The __stack_chk_guard is a random value placed on the stack between the stack variables
