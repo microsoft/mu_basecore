@@ -244,84 +244,6 @@ RequestMemoryPermissionChange (
   return SendMemoryPermissionRequest (UseFfaAbis, &SvcArgs, &Ret);
 }
 
-// MU_CHANGE: Add ArmSetMemoryRegionNoAccess function
-EFI_STATUS
-ArmSetMemoryRegionNoAccess (
-  IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN  UINT64                Length
-  )
-{
-  EFI_STATUS  Status;
-  UINT32      MemoryAttributes;
-  UINT32      PermissionRequest;
-  BOOLEAN     UseFfaAbis;
-
-  UseFfaAbis = IsFfaMemoryAbiSupported ();
-
-  Status = GetMemoryPermissions (UseFfaAbis, BaseAddress, &MemoryAttributes);
-  if (!EFI_ERROR (Status)) {
-    if (UseFfaAbis) {
-      PermissionRequest = ARM_FFA_SET_MEM_ATTR_MAKE_PERM_REQUEST (
-                            MemoryAttributes,
-                            ARM_FFA_SET_MEM_ATTR_DATA_PERM_NO_ACCESS
-                            );
-    } else {
-      PermissionRequest = ARM_SPM_MM_SET_MEM_ATTR_MAKE_PERM_REQUEST (
-                            MemoryAttributes,
-                            ARM_SPM_MM_SET_MEM_ATTR_DATA_PERM_NO_ACCESS
-                            );
-    }
-
-    return RequestMemoryPermissionChange (
-             UseFfaAbis,
-             BaseAddress,
-             Length,
-             PermissionRequest
-             );
-  }
-
-  return Status;
-}
-
-// MU_CHANGE: Add ArmClearMemoryRegionNoAccess function
-EFI_STATUS
-ArmClearMemoryRegionNoAccess (
-  IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
-  IN  UINT64                Length
-  )
-{
-  EFI_STATUS  Status;
-  UINT32      MemoryAttributes;
-  UINT32      PermissionRequest;
-  BOOLEAN     UseFfaAbis;
-
-  UseFfaAbis = IsFfaMemoryAbiSupported ();
-
-  Status = GetMemoryPermissions (UseFfaAbis, BaseAddress, &MemoryAttributes);
-  if (!EFI_ERROR (Status)) {
-    if (UseFfaAbis) {
-      PermissionRequest = ARM_FFA_SET_MEM_ATTR_MAKE_PERM_REQUEST (
-                            MemoryAttributes,
-                            ARM_FFA_SET_MEM_ATTR_DATA_PERM_RW
-                            );
-    } else {
-      PermissionRequest = ARM_SPM_MM_SET_MEM_ATTR_MAKE_PERM_REQUEST (
-                            MemoryAttributes,
-                            ARM_SPM_MM_SET_MEM_ATTR_DATA_PERM_RW
-                            );
-    }
-
-    return RequestMemoryPermissionChange (
-             UseFfaAbis,
-             BaseAddress,
-             Length,
-             PermissionRequest
-             );
-  }
-
-  return Status;
-}
-
 EFI_STATUS
 ArmSetMemoryRegionNoExec (
   IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
@@ -576,6 +498,10 @@ ArmSetMemoryAttributes (
   // MU_CHANGE [START] - Add ArmSetMemoryAttributes functionality
   EFI_STATUS  Status;
   UINT64      NeededAttributes;
+  BOOLEAN     UseFfaAbis;
+  UINT32      MemoryAttributes;
+  UINT32      PermissionRequest;
+  UINTN       Size;
 
   DEBUG ((
     DEBUG_INFO,
@@ -592,51 +518,81 @@ ArmSetMemoryAttributes (
   if ((Length == 0) ||
       ((NeededAttributes & ~(EFI_MEMORY_RO | EFI_MEMORY_RP | EFI_MEMORY_XP)) != 0))
   {
+    DEBUG ((DEBUG_ERROR, "%a: Length is 0 or unsupported attributes are set in Attributes.\n", __func__));
     Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
 
-  if (AttributeMask & EFI_MEMORY_RP) {
+  if ((BaseAddress % EFI_PAGE_SIZE != 0) || (Length % EFI_PAGE_SIZE != 0)) {
+    // Address and length must be aligned to page size.
+    DEBUG ((DEBUG_ERROR, "%a: Address or length is not aligned to page size.\n", __func__));
+    Status = EFI_INVALID_PARAMETER;
+    goto Done;
+  }
+
+  UseFfaAbis = IsFfaMemoryAbiSupported ();
+
+  PermissionRequest = 0;
+
+  if (UseFfaAbis) {
     if ((NeededAttributes & EFI_MEMORY_RP) != 0) {
-      Status = ArmSetMemoryRegionNoAccess (BaseAddress, Length);
-      if (EFI_ERROR (Status)) {
-        goto Done;
-      }
+      PermissionRequest |= ARM_FFA_SET_MEM_ATTR_DATA_PERM_NO_ACCESS << ARM_FFA_SET_MEM_ATTR_DATA_PERM_SHIFT;
+    } else if ((NeededAttributes & EFI_MEMORY_RO) != 0) {
+      PermissionRequest |= ARM_FFA_SET_MEM_ATTR_DATA_PERM_RO << ARM_FFA_SET_MEM_ATTR_DATA_PERM_SHIFT;
     } else {
-      Status = ArmClearMemoryRegionNoAccess (BaseAddress, Length);
-      if (EFI_ERROR (Status)) {
-        goto Done;
-      }
+      PermissionRequest |= ARM_FFA_SET_MEM_ATTR_DATA_PERM_RW << ARM_FFA_SET_MEM_ATTR_DATA_PERM_SHIFT;
     }
-  }
 
-  if (AttributeMask & EFI_MEMORY_RO) {
-    if ((NeededAttributes & EFI_MEMORY_RO) != 0) {
-      Status = ArmSetMemoryRegionReadOnly (BaseAddress, Length);
-      if (EFI_ERROR (Status)) {
-        goto Done;
-      }
-    } else {
-      Status = ArmClearMemoryRegionReadOnly (BaseAddress, Length);
-      if (EFI_ERROR (Status)) {
-        goto Done;
-      }
-    }
-  }
-
-  if (AttributeMask & EFI_MEMORY_XP) {
     if ((NeededAttributes & EFI_MEMORY_XP) != 0) {
-      Status = ArmSetMemoryRegionNoExec (BaseAddress, Length);
-      if (EFI_ERROR (Status)) {
-        goto Done;
-      }
+      PermissionRequest |= ARM_FFA_SET_MEM_ATTR_CODE_PERM_XN << ARM_FFA_SET_MEM_ATTR_CODE_PERM_SHIFT;
     } else {
-      Status = ArmClearMemoryRegionNoExec (BaseAddress, Length);
+      PermissionRequest |= ARM_FFA_SET_MEM_ATTR_CODE_PERM_X << ARM_FFA_SET_MEM_ATTR_CODE_PERM_SHIFT;
+    }
+  } else {
+    if ((NeededAttributes & EFI_MEMORY_RP) != 0) {
+      PermissionRequest |= ARM_SPM_MM_SET_MEM_ATTR_DATA_PERM_NO_ACCESS << ARM_SPM_MM_SET_MEM_ATTR_DATA_PERM_SHIFT;
+    } else if ((NeededAttributes & EFI_MEMORY_RO) != 0) {
+      PermissionRequest |= ARM_SPM_MM_SET_MEM_ATTR_DATA_PERM_RO << ARM_SPM_MM_SET_MEM_ATTR_DATA_PERM_SHIFT;
+    } else {
+      PermissionRequest |= ARM_SPM_MM_SET_MEM_ATTR_DATA_PERM_RW << ARM_SPM_MM_SET_MEM_ATTR_DATA_PERM_SHIFT;
+    }
+
+    if ((NeededAttributes & EFI_MEMORY_XP) != 0) {
+      PermissionRequest |= ARM_SPM_MM_SET_MEM_ATTR_CODE_PERM_XN << ARM_SPM_MM_SET_MEM_ATTR_CODE_PERM_SHIFT;
+    } else {
+      PermissionRequest |= ARM_SPM_MM_SET_MEM_ATTR_CODE_PERM_X << ARM_SPM_MM_SET_MEM_ATTR_CODE_PERM_SHIFT;
+    }
+  }
+
+  Size = EFI_PAGE_SIZE;
+
+  while (Length > 0) {
+    Status = GetMemoryPermissions (UseFfaAbis, BaseAddress, &MemoryAttributes);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: GetMemoryPermissions failed with Status == %r\n", __func__, Status));
+      goto Done;
+    }
+
+    if (Length < Size) {
+      Length = Size;
+    }
+
+    if (MemoryAttributes != PermissionRequest) {
+      Status = RequestMemoryPermissionChange (
+                 UseFfaAbis,
+                 BaseAddress,
+                 Size,
+                 PermissionRequest
+                 );
       if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: RequestMemoryPermissionChange failed with Status == %r\n", __func__, Status));
         goto Done;
       }
     }
-  }
+
+    Length      -= Size;
+    BaseAddress += Size;
+  }   // while
 
 Done:
   return Status;
