@@ -71,6 +71,10 @@ GetExceptionNameStr (
 {
   if ((UINTN)ExceptionType < EXCEPTION_KNOWN_NAME_NUM) {
     return mExceptionNameStr[ExceptionType];
+  // MU_CHANGE BEGIN: CLANGPDB Stack Cookies
+  } else if ((UINTN)ExceptionType == STACK_CHECK_ERROR_HANDLER_VECTOR) {
+    return "Stack Check Error Interrupt";
+  // MU_CHANGE END: CLANGPDB Stack Cookies
   } else {
     return mExceptionReservedStr;
   }

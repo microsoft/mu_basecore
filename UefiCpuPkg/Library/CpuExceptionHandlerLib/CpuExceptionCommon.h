@@ -17,6 +17,7 @@
 #include <Library/LocalApicLib.h>
 #include <Library/PeCoffGetEntryPointLib.h>
 #include <Library/BaseMemoryLib.h>
+#include <Library/StackCheckLib.h>  // MU_CHANGE: CLANGPDB Stack Cookies
 #include <Library/SynchronizationLib.h>
 #include <Library/CpuExceptionHandlerLib.h>
 

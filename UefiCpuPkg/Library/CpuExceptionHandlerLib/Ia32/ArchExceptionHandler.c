@@ -328,6 +328,15 @@ DumpCpuContext (
     InternalPrintMessage ("\n");
   }
 
+  // MU_CHANGE BEGIN: CLANGPDB Stack Cookies
+  if (ExceptionType == STACK_CHECK_ERROR_HANDLER_VECTOR) {
+    InternalPrintMessage (
+      "\nStack Check Exception occurred at address 0x%08x\n\n",
+      SystemContext.SystemContextIa32->Ecx
+      );
+  }
+  // MU_CHANGE END: CLANGPDB Stack Cookies
+
   InternalPrintMessage (
     "EIP  - %08x, CS  - %08x, EFLAGS - %08x\n",
     SystemContext.SystemContextIa32->Eip,
