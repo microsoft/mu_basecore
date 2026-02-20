@@ -5,7 +5,9 @@
 ; SPDX-License-Identifier: BSD-2-Clause-Patent
 ;------------------------------------------------------------------------------
 
-    DEFAULT REL
+; MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed DEFAULT REL
+;   DEFAULT REL
+; MU_CHANGE END: CLANGPDB Stack Cookies
     SECTION .text
 
 global ASM_PFX(__report_rangecheckfailure)

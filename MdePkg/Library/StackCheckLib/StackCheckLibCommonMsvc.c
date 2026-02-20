@@ -41,6 +41,7 @@ VOID  *__security_cookie = (VOID *)(UINTN)STACK_COOKIE_VALUE;
 
 **/
 VOID
+EFIAPI  // MU_CHANGE: CLANGPDB Stack Cookies
 StackCheckFailure (
   VOID  *ActualCookieValue
   )

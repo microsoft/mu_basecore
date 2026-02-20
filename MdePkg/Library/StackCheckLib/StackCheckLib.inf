@@ -14,15 +14,15 @@
   LIBRARY_CLASS                  = StackCheckLib
 
 [Sources]
-  StackCheckLibCommonMsvc.c | MSFT
-  StackCheckLibCommonGcc.c  | GCC
+  StackCheckLibCommonMsvc.c ||||gEfiMdePkgTokenSpaceGuid.PcdEnableMsvcStyleStackChecking  # MU_CHANGE: CLANGPDB Stack Cookies
+  StackCheckLibCommonGcc.c  ||||!gEfiMdePkgTokenSpaceGuid.PcdEnableMsvcStyleStackChecking  # MU_CHANGE: CLANGPDB Stack Cookies
 
 [Sources.IA32]
-  IA32/CheckCookieMsvc.nasm | MSFT
+  IA32/CheckCookieMsvc.nasm ||||gEfiMdePkgTokenSpaceGuid.PcdEnableMsvcStyleStackChecking  # MU_CHANGE: CLANGPDB Stack Cookies
   IA32/StackCookieInterrupt.nasm  # MU_CHANGE: CLANGPDB Stack Cookies
 
 [Sources.X64]
-  X64/CheckCookieMsvc.nasm | MSFT
+  X64/CheckCookieMsvc.nasm ||||gEfiMdePkgTokenSpaceGuid.PcdEnableMsvcStyleStackChecking  # MU_CHANGE: CLANGPDB Stack Cookies
   X64/StackCookieInterrupt.nasm  # MU_CHANGE: CLANGPDB Stack Cookies
 
 # MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed shared [Sources.IA32, Sources.X64] section
@@ -31,8 +31,17 @@
 # MU_CHANGE END: CLANGPDB Stack Cookies
 
 [Sources.AARCH64]
-  AArch64/StackCookieInterrupt.S   |GCC
-  AArch64/StackCookieInterrupt.asm |MSFT
+  AArch64/StackCookieInterrupt.S  # MU_CHANGE: CLANGPDB Stack Cookies
+  AArch64/CheckCookieMsvc.S        ||||gEfiMdePkgTokenSpaceGuid.PcdEnableMsvcStyleStackChecking  # MU_CHANGE: CLANGPDB Stack Cookies
+  # MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed MSVC AArch64 file
+  # AArch64/StackCookieInterrupt.asm |MSFT
+  # MU_CHANGE END: CLANGPDB Stack Cookies
+
+# MU_CHANGE BEGIN: CLANGPDB Stack Cookies
+[LibraryClasses]
+  # StackCheckLib must not have any dependencies due to the unique nature of when compilers may
+  # insert stack cookies and link this library. See the README for more details.
+# MU_CHANGE END: CLANGPDB Stack Cookies
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -47,14 +56,21 @@
 #   gEfiMdePkgTokenSpaceGuid.PcdStackCookieExceptionVector
 # MU_CHANGE END: CLANGPDB Stack Cookies
 
-[BuildOptions]
-  # We cannot build the MSVC version with /GL (whole program optimization) because we run into linker error
-  # LNK1237, which is a failure to link against a symbol from a library compiled with /GL. The whole program
-  # optimization tries to do away with references to this symbol. The solution is to not compile the stack
-  # check libs with /GL
-  MSFT:*_*_*_CC_FLAGS = /GL-
+# MU_CHANGE BEGIN: CLANGPDB Stack Cookies - removed BuildOptions section
+# [BuildOptions]
+#   # We cannot build the MSVC version with /GL (whole program optimization) because we run into linker error
+#   # LNK1237, which is a failure to link against a symbol from a library compiled with /GL. The whole program
+#   # optimization tries to do away with references to this symbol. The solution is to not compile the stack
+#   # check libs with /GL
+#   MSFT:*_*_*_CC_FLAGS = /GL-
+#
+#   # We cannot build the GCC version with LTO (link time optimization) because we run into linker errors where
+#   # the stack cookie variable has been optimized away, as it looks to GCC like the variable is not used, because
+#   # the compiler inserts the usage.
+#   GCC:*_*_*_CC_FLAGS = -fno-lto
+# MU_CHANGE END: CLANGPDB Stack Cookies
 
-  # We cannot build the GCC version with LTO (link time optimization) because we run into linker errors where
-  # the stack cookie variable has been optimized away, as it looks to GCC like the variable is not used, because
-  # the compiler inserts the usage.
-  GCC:*_*_*_CC_FLAGS = -fno-lto
+# MU_CHANGE BEGIN: CLANGPDB Stack Cookies
+[FeaturePcd]
+  gEfiMdePkgTokenSpaceGuid.PcdEnableMsvcStyleStackChecking
+# MU_CHANGE END: CLANGPDB Stack Cookies

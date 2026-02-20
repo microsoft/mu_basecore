@@ -82,3 +82,25 @@
   # definitions for the intrinsic functions.
   #
   NULL|MdePkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+
+# MU_CHANGE BEGIN: CLANGPDB Stack Cookies
+[PcdsFeatureFlag]
+  !if "$(FAMILY)" == "MSFT" || "$(TOOL_CHAIN_TAG)" == "CLANGPDB"
+    # By default, GCC style stack checking is used. MSFT FAMILY and CLANGPDB need to set this to MSVC style stack
+    # checking.
+    gEfiMdePkgTokenSpaceGuid.PcdEnableMsvcStyleStackChecking|TRUE
+  !endif
+
+[BuildOptions]
+  #
+  # Linker flags to ensure that stack cookie symbols are not optimized out when StackCheckLib is included.
+  #
+  MSFT:*_*_IA32_DLINK_FLAGS = /INCLUDE:___security_cookie
+  MSFT:*_*_X64_DLINK_FLAGS  = /INCLUDE:__security_cookie
+
+  GCC:*_CLANGPDB_IA32_DLINK_FLAGS     = /INCLUDE:___security_cookie /INCLUDE:_StackCheckFailure
+  GCC:*_CLANGPDB_X64_DLINK_FLAGS      = /INCLUDE:__security_cookie /INCLUDE:StackCheckFailure
+  GCC:*_CLANGPDB_AARCH64_DLINK_FLAGS  = /INCLUDE:__security_cookie /INCLUDE:StackCheckFailure
+
+  GCC:*_GCC_*_DLINK_FLAGS    = -Wl,--undefined=__stack_chk_fail,--undefined=__stack_chk_guard
+# MU_CHANGE END: CLANGPDB Stack Cookies

@@ -25,9 +25,11 @@
 [Sources.X64]
   StandaloneMmCore/X64/StandaloneMmCoreEntryPoint.c
 
+# MU_CHANGE BEGIN: CLANGPDB Stack Cookies
 [Sources.X64]
-  X64/DynamicCookieGcc.nasm   | GCC
-  X64/DynamicCookieMsvc.nasm  | MSFT
+  X64/DynamicCookieGcc.nasm   ||||!gEfiMdePkgTokenSpaceGuid.PcdEnableMsvcStyleStackChecking
+  X64/DynamicCookieMsvc.nasm  ||||gEfiMdePkgTokenSpaceGuid.PcdEnableMsvcStyleStackChecking
+# MU_CHANGE END: CLANGPDB Stack Cookies
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -36,3 +38,8 @@
   BaseLib
   DebugLib
   StackCheckLib
+
+# MU_CHANGE BEGIN: CLANGPDB Stack Cookies
+[FeaturePcd]
+  gEfiMdePkgTokenSpaceGuid.PcdEnableMsvcStyleStackChecking
+# MU_CHANGE END: CLANGPDB Stack Cookies
