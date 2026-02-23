@@ -47,6 +47,35 @@ GetPlatformPpi (
   return EFI_NOT_FOUND;
 }
 
+// MU_CHANGE [BEGIN] - Remove DXE Core FV placement assumption
+
+/**
+  Decompress all discovered firmware volumes.
+
+**/
+STATIC
+VOID
+DecompressFvs (
+  VOID
+  )
+{
+  UINTN                Instance;
+  EFI_PEI_FV_HANDLE    VolumeHandle;
+  EFI_PEI_FILE_HANDLE  FileHandle;
+
+  //
+  // Decompress all firmware volume images found across all FVs.
+  //
+  for (Instance = 0; !EFI_ERROR (FfsFindNextVolume (Instance, &VolumeHandle)); Instance++) {
+    FileHandle = NULL;
+    while (!EFI_ERROR (FfsFindNextFile (EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE, VolumeHandle, &FileHandle))) {
+      FfsProcessFvFile (FileHandle, VolumeHandle);
+    }
+  }
+}
+
+// MU_CHANGE [END] - Remove DXE Core FV placement assumption
+
 /**
   SEC main routine.
 
@@ -176,16 +205,20 @@ SecMain (
   // SEC phase needs to run library constructors by hand.
   ProcessLibraryConstructorList ();
 
-  // Assume the FV that contains the SEC (our code) also contains a compressed FV.
-  Status = DecompressFirstFv ();
-  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE [BEGIN] - Remove DXE Core FV placement assumption
+
+  // Decompress firmware volumes and load the DXE Core
+  DecompressFvs ();
 
   Status = MeasurePeilessSec ();
   ASSERT_EFI_ERROR (Status);
 
   // Load the DXE Core and transfer control to it
   Status = LoadDxeCoreFromFv (NULL, 0);
+  DEBUG ((DEBUG_ERROR, "Failed to load DXE Core from any FV\n"));
   ASSERT_EFI_ERROR (Status);
+
+  // MU_CHANGE [END] - Remove DXE Core FV placement assumption
 }
 
 /**
