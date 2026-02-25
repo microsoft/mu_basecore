@@ -10,24 +10,29 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 # For more information, see:
-# https://github.com/github/issue-labeler
+# https://github.com/srvaroa/labeler
 
 # Maintenance: Keep labels organized in ascending alphabetical order - easier to scan, identify duplicates, etc.
+version: 1
+issues: False
 
-type:backport:
-  - '\s*-\s*\[\s*[x|X]\s*\] Backport to release branch\?'
+labels:
+  - label: impact:breaking-change
+    type: "pull_request"
+    body: '\s*\[\s*(x|X){1}\s*\]\s*Breaking\s*change\?'
 
-impact:breaking-change:
-  - '\s*-\s*\[\s*[x|X]\s*\] Breaking change\?'
+  - label: type:documentation
+    type: "pull_request"
+    body: '\s*\[\s*(x|X){1}\s*\]\s*Includes\s*documentation\?'
 
-type:documentation:
-  - '\s*-\s*\[\s*[x|X]\s*\] Includes documentation\?'
+  - label: impact:non-functional
+    type: "pull_request"
+    body: '\s*\[\s*\]\s*Impacts\s*functionality\?'
 
-impact:non-functional:
-  - '\s*-\s*\[\s*(?![x|X])\s*\] Impacts functionality\?'
+  - label: impact:security
+    type: "pull_request"
+    body: '\s*\[\s*(x|X){1}\s*\]\s*Impacts\s*security\?'
 
-impact:security:
-  - '\s*-\s*\[\s*[x|X]\s*\] Impacts security\?'
-
-impact:testing:
-  - '\s*-\s*\[\s*[x|X]\s*\] Includes tests\?'
+  - label: impact:testing
+    type: "pull_request"
+    body: '\[\s*(x|X){1}\s*\]\s*Includes\s*tests\?'
