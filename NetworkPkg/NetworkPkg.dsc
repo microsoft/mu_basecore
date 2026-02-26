@@ -57,9 +57,16 @@
   FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
   SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
 
+# MU_CHANGE [BEGIN] - Report status code on SNP media detection workaround
+
+[LibraryClasses.common.UEFI_DRIVER, LibraryClasses.common.UEFI_APPLICATION, LibraryClasses.common.DXE_DRIVER]
+  ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
+
+# MU_CHANGE [END] - Report status code on SNP media detection workaround
+
 [LibraryClasses.common.UEFI_DRIVER]
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
-  ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
+  # ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf # MU_CHANGE - Report status code on SNP media detection workaround
   DebugLib|MdePkg/Library/UefiDebugLibConOut/UefiDebugLibConOut.inf
 
 [LibraryClasses.common.UEFI_APPLICATION]

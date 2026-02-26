@@ -23,11 +23,11 @@ name: Update Release Draft
 on:
   push:
     branches:
-      - release/202502
+      - release/202511
 
 jobs:
   draft:
     name: Draft Releases
 
-    uses: microsoft/mu_devops/.github/workflows/ReleaseDrafter.yml@v18.0.2
+    uses: microsoft/mu_devops/.github/workflows/ReleaseDrafter.yml@v18.0.3
     secrets: inherit
