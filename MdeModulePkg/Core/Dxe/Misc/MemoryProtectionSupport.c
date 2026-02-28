@@ -25,7 +25,6 @@ BOOLEAN                        mEnhancedMemoryProtectionActive = TRUE;
 EFI_MEMORY_ATTRIBUTE_PROTOCOL  *mMemoryAttributeProtocol       = NULL;
 UINT8                          *mBitmapGlobal                  = NULL;
 LIST_ENTRY                     **mArrayOfListEntryPointers     = NULL;
-extern BOOLEAN                 mGcdSyncComplete;
 #define LEGACY_BIOS_WB_LENGTH  0xA0000
 
 /**
@@ -124,41 +123,12 @@ SetUefiImageMemoryAttributes (
   );
 
 /**
-  Enable NULL pointer detection by changing the attributes of page 0. The assumption is that PEI
-  has set page zero to allocated so this operation can be done safely.
-
-  @retval EFI_SUCCESS       Page zero successfully marked as read protected
-  @retval Other             Page zero could not be marked as read protected
-
-**/
-VOID
-EFIAPI
-EnableNullDetection (
-  VOID
-  );
-
-/**
   Disable NULL pointer detection.
 **/
 VOID
 EFIAPI
 DisableNullDetection (
   VOID
-  );
-
-/**
-  Disable NULL pointer detection after EndOfDxe. This is a workaround resort in
-  order to skip unfixable NULL pointer access issues detected in OptionROM or
-  boot loaders.
-
-  @param[in]  Event     The Event this notify function registered to.
-  @param[in]  Context   Pointer to the context data registered to the Event.
-**/
-VOID
-EFIAPI
-DisableNullDetectionEventFunction (
-  EFI_EVENT  Event,
-  VOID       *Context
   );
 
 extern LIST_ENTRY  mGcdMemorySpaceMap;
@@ -1088,9 +1058,7 @@ SetAccessAttributesInMemoryMap (
 
   while (MemoryMapEntry < MemoryMapEnd) {
     if (!IS_BITMAP_INDEX_SET (Bitmap, Index)) {
-      // We don't apply RP in the GCD because we can't easily unset it when allocating due to recursive call issues,
-      // so we only set it in the page table.
-      MemoryMapEntry->Attribute = GetPermissionAttributeForMemoryType (MemoryMapEntry->Type) & (~EFI_MEMORY_RP);
+      MemoryMapEntry->Attribute = GetPermissionAttributeForMemoryType (MemoryMapEntry->Type);
       SET_BITMAP_INDEX (Bitmap, Index);
     }
 
@@ -2094,67 +2062,4 @@ IsEnhancedMemoryProtectionActive (
   )
 {
   return mEnhancedMemoryProtectionActive;
-}
-
-/**
-  Event function called when gEdkiiGcdSyncCompleteProtocolGuid is
-  installed to initialize access attributes on tested and untested memory.
-
-  @param[in]  Event   The event that fired to call this function
-  @param[in]  Context The event context provided by the registration
-**/
-VOID
-EFIAPI
-InitializePageAttributesCallback (
-  IN EFI_EVENT  Event,
-  IN VOID       *Context
-  )
-{
-  EFI_STATUS  Status;
-  EFI_EVENT   DisableNullDetectionEvent;
-
-  // Indicates that the GCD sync process has been completed. This BOOLEAN
-  // must set this to TRUE so calls to ApplyMemoryProtectionPolicy() are not
-  // blocked. This BOOLEAN also allows guard pages to be set.
-  mGcdSyncComplete = TRUE;
-
-  // Initialize paging attributes
-  InitializePageAttributesForMemoryProtectionPolicy ();
-
-  // Set all the guard pages
-  HeapGuardCpuArchProtocolNotify ();
-
-  if (gDxeMps.NullPointerDetectionPolicy.Fields.UefiNullDetection) {
-    // Enable NULL pointer detection
-    EnableNullDetection ();
-
-    // Register for NULL pointer detection disabling if policy dictates
-    if (gDxeMps.NullPointerDetectionPolicy.Fields.DisableEndOfDxe) {
-      Status = CoreCreateEventEx (
-                 EVT_NOTIFY_SIGNAL,
-                 TPL_NOTIFY,
-                 DisableNullDetectionEventFunction,
-                 NULL,
-                 &gEfiEndOfDxeEventGroupGuid,
-                 &DisableNullDetectionEvent
-                 );
-    } else if (gDxeMps.NullPointerDetectionPolicy.Fields.DisableReadyToBoot) {
-      Status = CoreCreateEventEx (
-                 EVT_NOTIFY_SIGNAL,
-                 TPL_NOTIFY,
-                 DisableNullDetectionEventFunction,
-                 NULL,
-                 &gEfiEventReadyToBootGuid,
-                 &DisableNullDetectionEvent
-                 );
-    }
-
-    ASSERT_EFI_ERROR (Status);
-  } else {
-    // The NULL page may be EFI_MEMORY_RP in the page tables inherited
-    // from PEI so clear the attribute now
-    DisableNullDetection ();
-  }
-
-  CoreCloseEvent (Event);
 }
