@@ -164,8 +164,6 @@
   gEdkiiPeCoffImageEmulatorProtocolGuid         ## SOMETIMES_CONSUMES
   gEfiMemoryAttributeProtocolGuid               ## CONSUMES
   gInternalEventServicesProtocolGuid            ## CONSUMES            ## MU_CHANGE
-  gEdkiiGcdSyncCompleteProtocolGuid             ## CONSUMES          ## MU_CHANGE
-
 
   # Arch Protocols
   gEfiBdsArchProtocolGuid                       ## CONSUMES
