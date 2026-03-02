@@ -878,6 +878,11 @@
   gHestTableProtocolGuid = { 0x705bdcd9, 0x8c47, 0x457e, { 0xad, 0x0d, 0xf7, 0x86, 0xf3, 0x4a, 0x0d, 0x63 } }
   ## MU_CHANGE END
 
+  ## MU_CHANGE START - Boot library device control protocol for relinquishing PCI/ACPI devices
+  ## Include/Protocol/DeviceControlProtocol.h
+  gDeviceControlProtocolGuid = { 0xf4c616df, 0xeb33, 0x4f34, { 0x8b, 0xd4, 0x5c, 0xb9, 0x9c, 0x80, 0x17, 0x89 } }
+  ## MU_CHANGE END
+
 [PcdsFeatureFlag]
   ## Indicates if the platform can support update capsule across a system reset.<BR><BR>
   #   TRUE  - Supports update capsule across a system reset.<BR>
