@@ -56,7 +56,6 @@
   gEfiCpuArchProtocolGuid
   gEfiMemoryAttributeProtocolGuid
   gHardwareInterruptProtocolGuid
-  gEdkiiGcdSyncCompleteProtocolGuid         ## MU_CHANGE: PRODUCES
 
 [Guids]
   gEfiDebugImageInfoTableGuid
