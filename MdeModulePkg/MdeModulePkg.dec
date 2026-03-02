@@ -881,6 +881,12 @@
   ## Include/Protocol/Cpu.h
   gEdkiiGcdSyncCompleteProtocolGuid = { 0x650B7F40, 0x6564, 0x4FA9, { 0x93, 0x75, 0xCD, 0x6B, 0x52, 0x1B, 0x6E, 0x50 }}
   ## MU_CHANGE END
+
+  ## MU_CHANGE START - Boot library device control protocol for relinquishing PCI/ACPI devices
+  ## Include/Protocol/DeviceControlProtocol.h
+  gDeviceControlProtocolGuid = { 0xf4c616df, 0xeb33, 0x4f34, { 0x8b, 0xd4, 0x5c, 0xb9, 0x9c, 0x80, 0x17, 0x89 } }
+  ## MU_CHANGE END
+
 [PcdsFeatureFlag]
   ## Indicates if the platform can support update capsule across a system reset.<BR><BR>
   #   TRUE  - Supports update capsule across a system reset.<BR>
