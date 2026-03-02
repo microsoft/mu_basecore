@@ -466,15 +466,6 @@ CpuDxeInitialize (
   SyncCacheConfig (&mCpu);
   mIsFlushingGCD = FALSE;
 
-  // MU_CHANGE START: Install blank protocol to signal the end of the GCD sync
-  gBS->InstallMultipleProtocolInterfaces (
-         &ImageHandle,
-         &gEdkiiGcdSyncCompleteProtocolGuid,
-         NULL,
-         NULL
-         );
-  // MU_CHANGE END
-
   //
   // Setup a callback for idle events
   //
