@@ -252,6 +252,14 @@ FindGuardedMemoryMap (
                  );
       ASSERT_EFI_ERROR (Status);
       ASSERT (MapMemory != 0);
+      // MU_CHANGE START: Apply Protection policy to the allocated memory
+      ApplyMemoryProtectionPolicy (
+        EfiConventionalMemory,
+        EfiBootServicesData,
+        MapMemory,
+        ALIGN_VALUE (Size, EFI_PAGE_SIZE)
+        );
+      // MU_CHANGE END
 
       SetMem ((VOID *)(UINTN)MapMemory, Size, 0);
 
@@ -283,6 +291,14 @@ FindGuardedMemoryMap (
                  );
       ASSERT_EFI_ERROR (Status);
       ASSERT (MapMemory != 0);
+      // MU_CHANGE START: Apply Protection policy to the allocated memory
+      ApplyMemoryProtectionPolicy (
+        EfiConventionalMemory,
+        EfiBootServicesData,
+        MapMemory,
+        ALIGN_VALUE (Size, EFI_PAGE_SIZE)
+        );
+      // MU_CHANGE END
 
       SetMem ((VOID *)(UINTN)MapMemory, Size, 0);
       *GuardMap = MapMemory;
@@ -692,8 +708,7 @@ IsHeapGuardEnabled (
 {
   // MU_CHANGE START Update to work with memory protection settings HOB
   if ((GuardType & GUARD_HEAP_TYPE_PAGE && gDxeMps.HeapGuardPolicy.Fields.UefiPageGuard) ||
-      (GuardType & GUARD_HEAP_TYPE_POOL && gDxeMps.HeapGuardPolicy.Fields.UefiPoolGuard) ||
-      (GuardType & GUARD_HEAP_TYPE_FREED && gDxeMps.HeapGuardPolicy.Fields.UefiFreedMemoryGuard))
+      (GuardType & GUARD_HEAP_TYPE_POOL && gDxeMps.HeapGuardPolicy.Fields.UefiPoolGuard))
   {
     return TRUE;
   }
