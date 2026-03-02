@@ -78,7 +78,7 @@ jobs:
 
       - name: Upload Build Logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: logs-${{ matrix.tool_chain }}-${{ matrix.target }}
           path: |
@@ -87,7 +87,7 @@ jobs:
             BaseTools/BaseToolsBuild/BASETOOLS_BUILD.txt
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: basetools-${{ matrix.tool_chain }}-${{ matrix.target }}
           path: ${{ matrix.output_dir }}
@@ -137,7 +137,7 @@ jobs:
 
       - name: Upload Workflow Artifact
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: basetools-package
           path: |
