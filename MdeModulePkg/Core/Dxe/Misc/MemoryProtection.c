@@ -888,6 +888,8 @@ MergeMemoryMapForProtectionPolicy (
   Remove exec permissions from all regions whose type is identified by
   the Dxe NX Protection Policy. // MU_CHANGE
 **/
+/*
+MU_CHANGE Start: Use Enhanced Memory Protections
 STATIC
 VOID
 InitializeDxeNxMemoryProtectionPolicy (
@@ -1086,6 +1088,8 @@ InitializeDxeNxMemoryProtectionPolicy (
     CoreReleaseGcdMemoryLock ();
   }
 }
+  MU_CHANGE End: Use Enhanced Memory Protections
+*/
 
 /**
   A notification for CPU_ARCH protocol.
@@ -1135,8 +1139,10 @@ MemoryProtectionCpuArchProtocolNotify (
   //
   HeapGuardCpuArchProtocolNotify ();
 
-  /*
-  if (mImageProtectionPolicy == 0) {
+  // MU_CHANGE - Start - Consume Memory Protection Hob
+  // if (mImageProtectionPolicy == 0) {
+  if (gDxeMps.ImageProtectionPolicy.Data == 0) {
+    // MU_CHANGE - End - Consume Memory Protection Hob
     goto Done;
   }
 
@@ -1174,7 +1180,6 @@ MemoryProtectionCpuArchProtocolNotify (
   }
 
   FreePool (HandleBuffer);
-  MU_CHANGE End: Use Enhanced Memory Protections */
 
 Done:
   CoreCloseEvent (Event);
