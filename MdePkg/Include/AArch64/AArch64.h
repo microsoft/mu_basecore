@@ -134,7 +134,7 @@
 // so we need to define it here
 #define RNDR  S3_3_C2_C4_0
 
-#if !defined (_MSC_VER)   // MU_CHANGE - ARM64 VS change
+#if !defined (_MSC_VER) || defined (__clang__)  // MU_CHANGE - ARM64 VS change
 // This macro defines a vector table
 // It is intended to be used as follows:
 //

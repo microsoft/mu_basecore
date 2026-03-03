@@ -27,7 +27,7 @@
 // This only selects between EL1 and EL2, else we die.
 // Provide the Macro with a safe temp xreg to use.
 // MU_CHANGE - Start - MSVC ARM64 change
-#if !defined (_MSC_VER)
+#if !defined (_MSC_VER) || defined (__clang__)
 // MU_CHANGE - End - MSVC ARM64 change
 #define EL1_OR_EL2(SAFE_XREG)        \
         mrs    SAFE_XREG, CurrentEL ;\
@@ -54,7 +54,7 @@ bgt    %b6                  __CR__ \
 // CurrentEL : 0xC = EL3; 8 = EL2; 4 = EL1
 // This only selects between EL1 and EL2 and EL3, else we die.
 // Provide the Macro with a safe temp xreg to use.
-#if !defined (_MSC_VER)    // MU_CHANGE - ARM64 VS change
+#if !defined (_MSC_VER) || defined (__clang__)   // MU_CHANGE - ARM64 VS change
 #define EL1_OR_EL2_OR_EL3(SAFE_XREG) \
         mrs    SAFE_XREG, CurrentEL ;\
         cmp    SAFE_XREG, #0x8      ;\
@@ -76,7 +76,7 @@ bgt    %b6                  __CR__ \
 
 // MU_CHANGE - Start - MSVC ARM64 change - Add Back Defines
 
-#if defined (_MSC_VER)
+#if defined (_MSC_VER) && !defined (__clang__)
 
 #define LoadConstantToReg(Data, Reg) \
   ldr Reg, =Data
@@ -112,7 +112,7 @@ bgt    %b6                  __CR__ \
 #endif // _MSC_VER
 
 // MU_CHANGE - Start - MSVC ARM64 change
-#if !defined (_MSC_VER)
+#if !defined (_MSC_VER) || defined (__clang__)
 // MU_CHANGE - End - MSVC ARM64 change
 #define _ASM_FUNC(Name, Section)    \
   .global   Name                  ; \
