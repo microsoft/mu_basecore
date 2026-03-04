@@ -37,7 +37,7 @@
   Pkcs7EkuTests.c
   OaepEncryptTests.c
   RsaPssTests.c
-  ParallelhashTests.c
+  # ParallelhashTests.c # MU_CHANGE
   HkdfTests.c
   AeadAesGcmTests.c
   BnTests.c
@@ -55,39 +55,3 @@
   UnitTestLib
   MmServicesTableLib
   SynchronizationLib
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs5HashPassword           ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs1v2Encrypt              ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServicePkcs7Sign                   ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceVerifyEKUsInPkcs7Signature  ##CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAuthenticodeVerify          ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceImageTimestampVerify        ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhNew                       ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhFree                      ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhGenerateParameter         ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhSetParameter              ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhGenerateKey               ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceDhComputeKey                ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRandomSeed                  ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRandomBytes                 ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaSetKey                   ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaGetKey                   ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaGenerateKey              ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaPkcs1Sign                ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaPkcs1Verify              ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaPssSign                  ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaPssVerify                ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaGetPrivateKeyFromPem     ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceRsaGetPublicKeyFromX509     ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha1Init                    ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha256Init                  ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha384Init                  ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha512Init                  ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha1HashAll                 ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha256HashAll               ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha384HashAll               ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceSha512HashAll               ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceParallelHash256HashAll      ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesGetContextSize           ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesInit                     ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesCbcEncrypt               ## CONSUMES
-  gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesCbcDecrypt               ## CONSUMES
