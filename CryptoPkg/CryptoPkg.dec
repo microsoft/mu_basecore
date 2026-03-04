@@ -291,7 +291,7 @@
   #  assembly source files. The default setting is to not use the NASM assembly
   #  source files.
   # @Prompt Use NASM assembly source files for optimized version of OpensslLib for IA32/X64
-  gEfiCryptoPkgTokenSpaceGuid.PcdOpensslLibAssemblySourceStyleNasm|FALSE|BOOLEAN|0x00000003
+  gEfiCryptoPkgTokenSpaceGuid.PcdOpensslLibAssemblySourceStyleNasm|FALSE|BOOLEAN|0x00001000 # MU_CHANGE
 
 [PcdsFixedAtBuild]
   ## Enable/Disable the families and individual services produced by the
