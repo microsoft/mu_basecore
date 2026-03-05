@@ -27,7 +27,7 @@
 // This only selects between EL1 and EL2, else we die.
 // Provide the Macro with a safe temp xreg to use.
 // MU_CHANGE - Start - MSVC ARM64 change
-#if !defined (_MSC_VER)
+#if !defined (_MSC_VER) || defined (__clang__)
 // MU_CHANGE - End - MSVC ARM64 change
 #define EL1_OR_EL2(SAFE_XREG)        \
         mrs    SAFE_XREG, CurrentEL ;\
@@ -54,7 +54,7 @@ bgt    %b6                  __CR__ \
 // CurrentEL : 0xC = EL3; 8 = EL2; 4 = EL1
 // This only selects between EL1 and EL2 and EL3, else we die.
 // Provide the Macro with a safe temp xreg to use.
-#if !defined (_MSC_VER)    // MU_CHANGE - ARM64 VS change
+#if !defined (_MSC_VER) || defined (__clang__)   // MU_CHANGE - ARM64 VS change
 #define EL1_OR_EL2_OR_EL3(SAFE_XREG) \
         mrs    SAFE_XREG, CurrentEL ;\
         cmp    SAFE_XREG, #0x8      ;\
@@ -76,7 +76,7 @@ bgt    %b6                  __CR__ \
 
 // MU_CHANGE - Start - MSVC ARM64 change - Add Back Defines
 
-#if defined (_MSC_VER)
+#if defined (_MSC_VER) && !defined (__clang__)
 
 #define LoadConstantToReg(Data, Reg) \
   ldr Reg, =Data
@@ -112,45 +112,22 @@ bgt    %b6                  __CR__ \
 #endif // _MSC_VER
 
 // MU_CHANGE - Start - MSVC ARM64 change
-#if !defined (_MSC_VER)
+#if !defined (_MSC_VER) || defined (__clang__)
 // MU_CHANGE - End - MSVC ARM64 change
-// MU_CHANGE - Start - Clang Support
-  #ifndef __clang__
-// MU_CHANGE - End - Clang Support
 #define _ASM_FUNC(Name, Section)    \
   .global   Name                  ; \
   .section  #Section, "ax"        ; \
-  .type     Name, %function       ; \
+  _ASM_TYPE(Name)                 ; \
   Name:                           ; \
   AARCH64_BTI(c)
-// MU_CHANGE - Start - Clang Support
-  #else
-#define _ASM_FUNC(Name, Section)    \
-  .global   Name                  ; \
-  .section  #Section, "ax"        ; \
-  Name:                           ; \
-  AARCH64_BTI(c)
-  #endif
 
-  #ifndef __clang__ // MU_CHANGE
-// MU_CHANGE - End - Clang Support
 #define _ASM_FUNC_ALIGN(Name, Section, Align)       \
   .global   Name                                  ; \
   .section  #Section, "ax"                        ; \
-  .type     Name, %function                       ; \
+  _ASM_TYPE(Name)                                 ; \
   .balign   Align                                 ; \
   Name:                                           ; \
   AARCH64_BTI(c)
-// MU_CHANGE - Start - Clang Support
-  #else
-#define _ASM_FUNC_ALIGN(Name, Section, Align)       \
-  .global   Name                                  ; \
-  .section  #Section, "ax"                        ; \
-  .balign   Align                                 ; \
-  Name:                                           ; \
-  AARCH64_BTI(c)
-  #endif
-// MU_CHANGE - End - Clang Support
 
 #define ASM_FUNC(Name)  _ASM_FUNC(ASM_PFX(Name), .text. ## Name)
 
@@ -169,5 +146,24 @@ bgt    %b6                  __CR__ \
 
 // MU_CHANGE - Start - MSVC ARM64 change
 #endif
-// MU_CHANGE - End - MSVC ARM64 change
-#endif // ASM_MACRO_LIB_H_
+
+// CLANGPDB does not support the fixup_aarch64_ldr_pcrel_imm19
+// relocation used for LDR literal loads, so we need to expand
+// LDR literal loads into ADRP + LDR instructions for PE targets.
+#ifdef __ELF__
+#define LDR_LIT(dst, sym)                          \
+    ldr     dst, sym
+
+#define LDR_LIT_TMP(dst, sym, tmp)                 \
+    ldr     dst, sym
+#else
+#define LDR_LIT(dst, sym)                          \
+    adrp    dst, sym                            ;\
+    ldr     dst, [dst, :lo12:sym]
+
+#define LDR_LIT_TMP(dst, sym, tmp)                 \
+    adrp    tmp, sym                            ;\
+    ldr     dst, [tmp, :lo12:sym]
+#endif
+
+#endif // ASM_MACRO_IO_LIBV8_H_

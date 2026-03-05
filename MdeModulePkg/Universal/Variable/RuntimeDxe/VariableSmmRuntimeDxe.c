@@ -1711,6 +1711,15 @@ InitVariableCache (
       }
 
       if (AllRtBufferAllocationsSucceeded) {
+        //
+        // Reset Status since MmUnblockMemoryRequest() may have returned
+        // EFI_UNSUPPORTED (which is tolerated but leaves Status set to
+        // an error value that would propagate to the caller).
+        //
+        if (Status == EFI_UNSUPPORTED) {
+          Status = EFI_SUCCESS;
+        }
+
         if (TempCacheInfoBuffer != 0) {
           RuntimeBuffer = (VOID *)(UINTN)TempCacheInfoBuffer;
           CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.CacheInfoFlagBuffer, sizeof (CACHE_INFO_FLAG));

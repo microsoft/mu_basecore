@@ -33,18 +33,10 @@ __memset (
 // implementation of memset(), which may conflict with this one if this
 // object was pulled into the link due to the definitions below. So make
 // our memset() 'weak' to let the other implementation take precedence.
+// PE targets (i.e. building with CLANGPDB) have different name mangling
+// and as such don't recognize __memset here, so we provide a weak alias
+// that simply calls the internal __memset implementation.
 //
-#ifndef __clang__ // MU_CHANGE: Add Clang support
-__attribute__ ((__weak__, __alias__ ("__memset")))
-void *
-memset (
-  void    *dest,
-  int     c,
-  size_t  n
-  );
-
-// MU_CHANGE Starts: Add Clang support
-#else
 __attribute__ ((__weak__))
 void *
 memset (
@@ -55,9 +47,6 @@ memset (
 {
   return __memset (dest, c, n);
 }
-
-#endif
-// MU_CHANGE Ends
 
 #ifdef __arm__
 

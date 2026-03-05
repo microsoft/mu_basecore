@@ -32,16 +32,24 @@
         .macro          fn_start, name:req
         .section        .text.\name
         .globl          \name
-# MU_CHANGE: Clang does not support the .type
-#ifndef __clang__
+
+        /*
+         * PE targets (e.g. building with CLANGPDB) do not support ELF style
+         * .type directives
+         */
+#ifdef __ELF__
         .type           \name, %function
 #endif
 \name\():
         .endm
 
         .macro          fn_end, name:req
-# MU_CHANGE: Clang does not support the .size
-#ifndef __clang__
+
+        /*
+         * PE targets (e.g. building with CLANGPDB) do not support ELF style
+         * .size directives
+         */
+#ifdef __ELF__
         .size           \name, . - \name
 #endif
         .endm

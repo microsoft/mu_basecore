@@ -187,16 +187,16 @@ typedef INT64 INTN;
 ///
 #define ASM_GLOBAL  .globl
 
-  #ifndef __clang__ // MU_CHANGE: Clang does not support the .type
-#define GCC_ASM_EXPORT(func__)  \
-         .global  _CONCATENATE (__USER_LABEL_PREFIX__, func__)    ;\
-         .type ASM_PFX(func__), %function
-// MU_CHANGE Starts: Clang does not support the .type
+// PE targets (i.e. building with CLANGPDB) do not support the ELF style .type directive
+  #ifdef __ELF__
+#define _ASM_TYPE(Name)  .type Name, %function
   #else
+#define _ASM_TYPE(Name)
+  #endif // __ELF__
+
 #define GCC_ASM_EXPORT(func__)  \
-         .global  _CONCATENATE (__USER_LABEL_PREFIX__, func__)
-  #endif
-// MU_CHANGE Ends
+         .global  ASM_PFX(func__)    ;\
+         _ASM_TYPE(ASM_PFX(func__))
 
 #define GCC_ASM_IMPORT(func__)  \
          .extern  _CONCATENATE (__USER_LABEL_PREFIX__, func__)
