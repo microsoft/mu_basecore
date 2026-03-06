@@ -120,7 +120,7 @@ jobs:
 
       - name: Checkout Code
         if: steps.pr-check.outputs.exists != 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ env.BRANCH_NAME }}
 
