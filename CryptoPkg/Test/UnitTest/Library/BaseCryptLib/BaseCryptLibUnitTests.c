@@ -30,6 +30,7 @@ SUITE_DESC  mSuiteDesc[] = {
   { "Bn verify tests",               "CryptoPkg.BaseCryptLib", NULL, NULL, &mBnTestNum,             mBnTest             },
   { "EC verify tests",               "CryptoPkg.BaseCryptLib", NULL, NULL, &mEcTestNum,             mEcTest             },
   { "X509 Verify tests",             "CryptoPkg.BaseCryptLib", NULL, NULL, &mX509TestNum,           mX509Test           },
+  { "PKCS7 Encrypt tests",           "CryptoPkg.BaseCryptLib", NULL, NULL, &mPkcs7EncryptTestNum,   mPkcs7EncryptTest   }, // MU_CHANGE - Add Pkcs7Encrypt unit test suite
 };
 
 EFI_STATUS

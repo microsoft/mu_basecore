@@ -43,6 +43,7 @@
   BnTests.c
   EcTests.c
   X509Tests.c
+  Pkcs7EncryptTests.c  # MU_CHANGE - Add Pkcs7Encrypt unit tests
 
 [Packages]
   MdePkg/MdePkg.dec
