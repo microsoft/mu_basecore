@@ -16,7 +16,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 GLOBAL_REMOVE_IF_UNREFERENCED BOOLEAN  mOnGuarding = FALSE;
 
-extern BOOLEAN  mGcdSyncComplete; // MU_CHANGE
 //
 // Pointer to table tracking the Guarded memory with bitmap, in which  '1'
 // is used to indicate memory guarded. '0' might be free memory or Guard
@@ -251,14 +250,8 @@ FindGuardedMemoryMap (
                  &MapMemory,
                  FALSE
                  );
-      // MU_CHANGE START: Check if memory was successfully allocated
-      if (EFI_ERROR (Status) || (MapMemory == 0)) {
-        ASSERT_EFI_ERROR (Status);
-        ASSERT (MapMemory != 0);
-        return 0;
-      }
-
-      // MU_CHANGE END
+      ASSERT_EFI_ERROR (Status);
+      ASSERT (MapMemory != 0);
       // MU_CHANGE START: Apply Protection policy to the allocated memory
       ApplyMemoryProtectionPolicy (
         EfiConventionalMemory,
@@ -296,13 +289,15 @@ FindGuardedMemoryMap (
                  &MapMemory,
                  FALSE
                  );
-      // MU_CHANGE START: Check if memory was successfully allocated
-      if (EFI_ERROR (Status) || (MapMemory == 0)) {
-        ASSERT_EFI_ERROR (Status);
-        ASSERT (MapMemory != 0);
-        return 0;
-      }
-
+      ASSERT_EFI_ERROR (Status);
+      ASSERT (MapMemory != 0);
+      // MU_CHANGE START: Apply Protection policy to the allocated memory
+      ApplyMemoryProtectionPolicy (
+        EfiConventionalMemory,
+        EfiBootServicesData,
+        MapMemory,
+        ALIGN_VALUE (Size, EFI_PAGE_SIZE)
+        );
       // MU_CHANGE END
 
       SetMem ((VOID *)(UINTN)MapMemory, Size, 0);
@@ -528,11 +523,7 @@ SetGuardPage (
 {
   EFI_STATUS  Status;
 
-  // MU_CHANGE: Because the memory protection initialization routine
-  //            is no longer triggered by the CPU arch protocol, check
-  //            if the initialization routine has run before allowing
-  //            this function to execute.
-  if ((gCpu == NULL) || !mGcdSyncComplete) {
+  if (gCpu == NULL) {
     return;
   }
 
@@ -568,11 +559,7 @@ UnsetGuardPage (
   UINT64      Attributes;
   EFI_STATUS  Status;
 
-  // MU_CHANGE: Because the memory protection initialization routine
-  //            is no longer triggered by the CPU arch protocol, check
-  //            if the initialization routine has run before allowing
-  //            this function to execute.
-  if ((gCpu == NULL) || !mGcdSyncComplete) {
+  if (gCpu == NULL) {
     return;
   }
 
@@ -719,8 +706,7 @@ IsHeapGuardEnabled (
   UINT8  GuardType
   )
 {
-  // MU_CHANGE START: Update to work with memory protection settings HOB,
-  //                  remove freed memory guard.
+  // MU_CHANGE START Update to work with memory protection settings HOB
   if ((GuardType & GUARD_HEAP_TYPE_PAGE && gDxeMps.HeapGuardPolicy.Fields.UefiPageGuard) ||
       (GuardType & GUARD_HEAP_TYPE_POOL && gDxeMps.HeapGuardPolicy.Fields.UefiPoolGuard))
   {
