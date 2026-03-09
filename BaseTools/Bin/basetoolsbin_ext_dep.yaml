@@ -11,9 +11,9 @@ scope: global
 id: edk-tools-bin
 type: web
 name: Mu-Basetools
-source: https://github.com/microsoft/mu_basecore/releases/download/v2025020003.0.4/basetools-v2025020003.0.4.tar.gz
-version: v2025020003.0.4
-sha256: 0001941ec8004dcb994ae63f4d7a175127aeec1f849224e21c6e8d550dc1aa6e
+source: https://github.com/microsoft/mu_basecore/releases/download/v2025020003.0.5/basetools-v2025020003.0.5.tar.gz
+version: v2025020003.0.5
+sha256: 2664dff3e867236ccbe4b51f98cd1a629970f5e6aef7750fe4f6b9f4564da49c
 internal_path: /basetools/
 compression_type: tar
 flags:
