@@ -519,7 +519,14 @@ Mtftp4Start (
   // instance for synchronous operation.
   //
   while (Token->Status == EFI_NOT_READY) {
+    // MU_CHANGE [BEGIN]: Call MTFTP4 Poll at TPL_CALLBACK
+    // If disconnect occurs outside the execution of This->Poll(),
+    // then Token->Poll() will execute and get a non-EFI_NOT_READY
+    // status that breaks the loop.
+    OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
     This->Poll (This);
+    gBS->RestoreTPL (OldTpl);
+    // MU_CHANGE [END]: Call MTFTP4 Poll at TPL_CALLBACK
   }
 
   return Token->Status;

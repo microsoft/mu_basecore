@@ -134,31 +134,29 @@
 // so we need to define it here
 #define RNDR  S3_3_C2_C4_0
 
-#if !defined (_MSC_VER)   // MU_CHANGE - ARM64 VS change
-#define VECTOR_BASE(tbl)          \
+#if !defined (_MSC_VER) || defined (__clang__)  // MU_CHANGE - ARM64 VS change
+// This macro defines a vector table
+// It is intended to be used as follows:
+//
+// #define MY_VECTOR
+//  VECTOR_ENTRY(MY_VECTOR, <some_offset>)
+//  <custom instructions for this entry>
+//  <more VECTOR_ENTRY(...) as needed>
+//
+// VECTOR_TABLE (MY_VECTOR_TABLE_NAME, MY_VECTOR)
+#define VECTOR_TABLE(tbl, entries) \
   .section .text.##tbl##,"ax";    \
   .align 11;                      \
   .org 0x0;                       \
   GCC_ASM_EXPORT(tbl);            \
   ASM_PFX(tbl):                   \
+  entries                         \
+  .org 0x800;                     \
+  .section .text
 
 #define VECTOR_ENTRY(tbl, off)    \
-  .org off
+  .org off;
 
-  #ifndef __clang__ // MU_CHANGE
-#define VECTOR_END(tbl)           \
-  .org 0x800;                     \
-  .previous
-// MU_CHANGE Starts: CLANGPDB support
-  #else
-#define VECTOR_END(tbl)           \
-  .org 0x800;                     \
-  .section .text.##tbl##,"ax";    \
-  .align 3
-  #endif
-// MU_CHANGE Ends
-
-// MU_CHANGE [BEGIN] - ARM64 VS change
 #else
 
 #define VECTOR_BASE(tbl)          \
@@ -176,6 +174,7 @@ tbl ENDP                                    __CR__\
 
 #endif
 // MU_CHANGE [END] - ARM64 VS change
+
 VOID
 EFIAPI
 ArmEnableSWPInstruction (
