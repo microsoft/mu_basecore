@@ -221,7 +221,7 @@ struct _PXEBC_PRIVATE_DATA {
   UINT32                     OfferCount[PxeOfferTypeMax];
   UINT32                     OfferIndex[PxeOfferTypeMax][PXEBC_OFFER_MAX_NUM];
 
-  // MU_CHANGE [BEGIN] -  162958
+  // MU_CHANGE [BEGIN] - Track UDP completion tokens
   //
   // The Network stack fails when a USB nic is removed
   // after initialization. This change marks it removed
@@ -229,8 +229,10 @@ struct _PXEBC_PRIVATE_DATA {
   // other code holding onto and using that memory
   // doesn't cause an exception.
   //
-  BOOLEAN    DeviceDisconnected;
-  // MU_CHANGE [END] -  162958
+  BOOLEAN                      DeviceDisconnected;
+  EFI_UDP4_COMPLETION_TOKEN    Udp4Token;
+  EFI_UDP6_COMPLETION_TOKEN    Udp6Token;
+  // MU_CHANGE [END] -  Track UDP completion tokens
 };
 
 extern EFI_PXE_BASE_CODE_PROTOCOL           gPxeBcProtocolTemplate;
