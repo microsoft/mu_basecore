@@ -1554,6 +1554,7 @@ AddSmmuV3Nodes (
     {
       SmmuV3Node->Node.Revision   = 2;
       SmmuV3Node->Node.Identifier = EFI_ACPI_RESERVED_DWORD;
+    // MU_CHANGE Starts: Supporting SMMUv3 Node with IORT revision 5 for backward compatibility with platforms
     } else if (AcpiTableInfo->AcpiTableRevision == EFI_ACPI_IO_REMAPPING_TABLE_REVISION_05) {
       SmmuV3Node->Node.Revision   = 4;
       SmmuV3Node->Node.Identifier = NodeList->Identifier;
@@ -1561,6 +1562,7 @@ AddSmmuV3Nodes (
       SmmuV3Node->Node.Revision   = 5;
       SmmuV3Node->Node.Identifier = NodeList->Identifier;
     }
+    // MU_CHANGE Ends
 
     // SMMUv3 specific data
     SmmuV3Node->Base         = NodeList->BaseAddress;
@@ -2822,7 +2824,7 @@ ACPI_IORT_GENERATOR  IortGenerator = {
     // ACPI Table Signature
     EFI_ACPI_6_4_IO_REMAPPING_TABLE_SIGNATURE,
     // ACPI Table Revision supported by this Generator
-    EFI_ACPI_IO_REMAPPING_TABLE_REVISION_06,
+    EFI_ACPI_IO_REMAPPING_TABLE_REVISION_06, // MU_CHANGE: Update the supported revision to 6.
     // Minimum supported ACPI Table Revision
     EFI_ACPI_IO_REMAPPING_TABLE_REVISION_00,
     // Creator ID
