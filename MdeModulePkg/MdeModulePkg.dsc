@@ -347,6 +347,7 @@
   MdeModulePkg/Library/UefiHiiLib/UefiHiiLib.inf
   MdeModulePkg/Library/ResetUtilityLib/ResetUtilityLib.inf
   MdeModulePkg/Library/BaseResetSystemLibNull/BaseResetSystemLibNull.inf
+  MdeModulePkg/Library/RealTimeClockLibNull/RealTimeClockLibNull.inf # MU_CHANGE
   MdeModulePkg/Library/DxeSecurityManagementLib/DxeSecurityManagementLib.inf
   MdeModulePkg/Library/OemHookStatusCodeLibNull/OemHookStatusCodeLibNull.inf
   MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
