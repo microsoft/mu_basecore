@@ -825,11 +825,13 @@ CoreAddMemoryDescriptor (
   //
   // mMemoryTypeInformationInitialized = TRUE;
   // Check if we need to allocate the memory bins. This function will immediately return if we have already done so.
+  // Pass FALSE to indicate we don't need to publish the HOB.
   AllocateMemoryTypeInformationBins (
     &mMemoryTypeInformationInitialized,
     gMemoryTypeInformation,
     mMemoryTypeStatistics,
-    &mDefaultMaximumAddress
+    &mDefaultMaximumAddress,
+    FALSE
     );
   // MU_CHANGE END: PEI Bins
 }
