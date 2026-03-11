@@ -209,7 +209,17 @@ SecMain (
   // MU_CHANGE [BEGIN] - Add Tpm2StartupInit call
   // Initialize the TPM before loading the DXE core
   Status = Tpm2StartupInit ();
-  ASSERT_EFI_ERROR (Status);
+
+  /* NOTE: EFI_UNSUPPORTED is treated as a success due to the possibility of there
+   *       not being a TPM on the system and if so, the NULL instance of the startup
+   *       lib should be linked in which returns UNSUPPORTED. Also, even if TPM is
+   *       enabled, Tpm2StartupInit could return UNSUPPORTED depending on the TPM
+   *       instance. */
+  if ((Status != EFI_SUCCESS) && (Status != EFI_UNSUPPORTED)) {
+    DEBUG ((DEBUG_ERROR, "Failed to initialize the TPM\n"));
+    ASSERT_EFI_ERROR (Status);
+  }
+
   // MU_CHANGE [END]
 
   // MU_CHANGE [BEGIN] - Remove DXE Core FV placement assumption
