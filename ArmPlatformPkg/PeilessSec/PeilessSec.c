@@ -7,6 +7,7 @@
 **/
 
 #include "PeilessSec.h"
+#include <Library/Tpm2StartupLib.h> // MU_CHANGE
 
 #define IS_XIP()  (((UINT64)FixedPcdGet64 (PcdFdBaseAddress) > mSystemMemoryEnd) ||\
                   ((FixedPcdGet64 (PcdFdBaseAddress) + FixedPcdGet32 (PcdFdSize)) <= FixedPcdGet64 (PcdSystemMemoryBase)))
@@ -204,6 +205,22 @@ SecMain (
 
   // SEC phase needs to run library constructors by hand.
   ProcessLibraryConstructorList ();
+
+  // MU_CHANGE [BEGIN] - Add Tpm2StartupInit call
+  // Initialize the TPM before loading the DXE core
+  Status = Tpm2StartupInit ();
+
+  /* NOTE: EFI_UNSUPPORTED is treated as a success due to the possibility of there
+   *       not being a TPM on the system and if so, the NULL instance of the startup
+   *       lib should be linked in which returns UNSUPPORTED. Also, even if TPM is
+   *       enabled, Tpm2StartupInit could return UNSUPPORTED depending on the TPM
+   *       instance. */
+  if ((Status != EFI_SUCCESS) && (Status != EFI_UNSUPPORTED)) {
+    DEBUG ((DEBUG_ERROR, "Failed to initialize the TPM\n"));
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  // MU_CHANGE [END]
 
   // MU_CHANGE [BEGIN] - Remove DXE Core FV placement assumption
 
