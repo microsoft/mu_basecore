@@ -2031,7 +2031,7 @@ SmmVariableReady (
     mVariableBufferSize = SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE + mVariableBufferPayloadSize;
   }
 
-  mVariableBuffer     = AllocateRuntimePool (mVariableBufferSize);
+  mVariableBuffer = AllocateRuntimePool (mVariableBufferSize);
   ASSERT (mVariableBuffer != NULL);
 
   //
