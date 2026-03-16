@@ -107,6 +107,11 @@
   ## SOMETIMES_PRODUCES   ## Variable:L"Lang"
   gEfiGlobalVariableGuid
 
+  ## SOMETIMES_CONSUMES   ## Variable:L"db"
+  ## SOMETIMES_CONSUMES   ## Variable:L"dbx"
+  ## SOMETIMES_CONSUMES   ## Variable:L"dbt"
+  gEfiImageSecurityDatabaseGuid
+
   gEfiMemoryOverwriteControlDataGuid            ## SOMETIMES_CONSUMES   ## Variable:L"MemoryOverwriteRequestControl"
   gEfiMemoryOverwriteRequestControlLockGuid     ## SOMETIMES_PRODUCES   ## Variable:L"MemoryOverwriteRequestControlLock"
 
