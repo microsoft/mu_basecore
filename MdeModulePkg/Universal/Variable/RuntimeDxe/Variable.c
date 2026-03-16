@@ -2695,6 +2695,55 @@ VariableServiceGetNextVariableName (
 }
 
 /**
+  Check if the variable is a Secure Boot policy variable.
+
+  @param[in] VariableName       Name of the variable.
+  @param[in] VendorGuid         GUID of the variable.
+
+  @retval TRUE                  The variable is a Secure Boot policy variable.
+  @retval FALSE                 The variable is not a Secure Boot policy variable.
+
+**/
+BOOLEAN
+EFIAPI
+IsSecureBootPolicyVariables (
+  IN CHAR16    *VariableName,
+  IN EFI_GUID  *VendorGuid
+  )
+{
+  if ((VariableName == NULL) || (VendorGuid == NULL)) {
+    return FALSE;
+  }
+
+  //
+  // Check for PK and KEK
+  // These are under EFI_GLOBAL_VARIABLE_GUID
+  //
+  if (CompareGuid (VendorGuid, &gEfiGlobalVariableGuid)) {
+    if ((StrCmp (VariableName, EFI_PLATFORM_KEY_NAME) == 0) ||
+        (StrCmp (VariableName, EFI_KEY_EXCHANGE_KEY_NAME) == 0))
+    {
+      return TRUE;
+    }
+  }
+
+  //
+  // Check for db, dbx, dbt
+  // These are under EFI_IMAGE_SECURITY_DATABASE_GUID
+  //
+  if (CompareGuid (VendorGuid, &gEfiImageSecurityDatabaseGuid)) {
+    if ((StrCmp (VariableName, EFI_IMAGE_SECURITY_DATABASE) == 0) ||
+        (StrCmp (VariableName, EFI_IMAGE_SECURITY_DATABASE1) == 0) ||
+        (StrCmp (VariableName, EFI_IMAGE_SECURITY_DATABASE2) == 0))
+    {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
 
   This code sets variable in storage blocks (Volatile or Non-Volatile).
 
@@ -2765,6 +2814,16 @@ VariableServiceSetVariable (
   //
   if ((Attributes & (~(EFI_VARIABLE_ATTRIBUTES_MASK | EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS))) != 0) {
     return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // The use of the EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS attribute for variables other than Secure Boot Policy Variables
+  // is deprecated and should no longer be used.
+  //
+  if (!IsSecureBootPolicyVariables (VariableName, VendorGuid)) {
+    if ((Attributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0) {
+      return EFI_UNSUPPORTED;
+    }
   }
 
   //
