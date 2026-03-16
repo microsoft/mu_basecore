@@ -118,6 +118,9 @@
   ## SOMETIMES_CONSUMES   ## Variable:L"Lang"
   ## SOMETIMES_PRODUCES   ## Variable:L"Lang"
   gEfiGlobalVariableGuid
+  # MU_CHANGE [BEGIN] - Identify Secure Boot policy variable namespaces.
+  gEfiImageSecurityDatabaseGuid                 ## CONSUMES
+  # MU_CHANGE [END] - Identify Secure Boot policy variable namespaces.
 
   gEfiMemoryOverwriteControlDataGuid            ## SOMETIMES_CONSUMES   ## Variable:L"MemoryOverwriteRequestControl"
   gEfiMemoryOverwriteRequestControlLockGuid     ## SOMETIMES_PRODUCES   ## Variable:L"MemoryOverwriteRequestControlLock"
