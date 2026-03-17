@@ -65,6 +65,11 @@ parameters:
   type: stepList
   default:
     - script: echo No extra steps provided
+- name: extra_steps
+  displayName: Extra Steps to Run Before Build Steps
+  type: stepList
+  default:
+    - script: echo No extra steps provided
 - name: extra_jobs
   displayName: Extra Jobs to be run after build
   type: jobList
@@ -94,6 +99,7 @@ jobs:
     os_type: ${{ parameters.os_type }}
     pool_name: ${{ parameters.pool_name }}
     extra_install_step: ${{ parameters.extra_install_step }}
+    extra_steps: ${{ parameters.extra_steps }}
     tool_chain_tag: $(tool_chain_tag)
     vm_image: $(vm_image)
     container_build: ${{ parameters.container_build }}
