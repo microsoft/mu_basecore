@@ -126,7 +126,6 @@ SetUefiImageMemoryAttributes (
   Disable NULL pointer detection.
 **/
 VOID
-EFIAPI
 DisableNullDetection (
   VOID
   );
