@@ -17,6 +17,8 @@
 
 #define REGION_LENGTH(l)  LShiftU64 (1, (l) * 9 + 3)
 
+#define MAX_PAE_PDPTE_NUM  4
+
 /**
   Return TRUE when the page table entry is a leaf entry that points to the physical address memory.
   Return FALSE when the page table entry is a non-leaf entry that points to the page table entries.
