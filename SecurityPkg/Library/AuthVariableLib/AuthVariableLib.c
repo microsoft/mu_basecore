@@ -437,6 +437,9 @@ AuthVariableLibProcessVariable (
     Status = ProcessVarWithPk (VariableName, VendorGuid, Data, DataSize, Attributes, TRUE);
   } else if (CompareGuid (VendorGuid, &gEfiGlobalVariableGuid) && (StrCmp (VariableName, EFI_KEY_EXCHANGE_KEY_NAME) == 0)) {
     Status = ProcessVarWithPk (VariableName, VendorGuid, Data, DataSize, Attributes, FALSE);
+    if (EFI_ERROR (Status) && ((Attributes & EFI_VARIABLE_APPEND_WRITE) != 0)) {
+      Status = ProcessVarWithKek (VariableName, VendorGuid, Data, DataSize, Attributes);
+    }
   } else if (CompareGuid (VendorGuid, &gEfiImageSecurityDatabaseGuid) &&
              ((StrCmp (VariableName, EFI_IMAGE_SECURITY_DATABASE)  == 0) ||
               (StrCmp (VariableName, EFI_IMAGE_SECURITY_DATABASE1) == 0) ||
