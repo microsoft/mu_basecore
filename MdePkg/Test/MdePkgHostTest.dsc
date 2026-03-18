@@ -24,6 +24,11 @@
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLibBase.inf
 
+[PcdsFeatureFlag]
+  !if "$(FAMILY)" == "MSFT" || "$(TOOL_CHAIN_TAG)" == "CLANGPDB"
+    gEfiMdePkgTokenSpaceGuid.PcdEnableMsvcStyleStackChecking|TRUE
+  !endif
+
 [Components]
   #
   # Build HOST_APPLICATION that tests the SafeIntLib
@@ -42,6 +47,26 @@
   # MU_CHANGE [BEGIN]
   MdePkg/Test/Library/SynchronizationLibHostUnitTest/SynchronizationLibHostUnitTest.inf
   # MU_CHANGE [END]
+
+  #
+  # StackCheckLib unit test. This is only run on GCC because the Windows C runtime provides
+  # its own stack cookie mechanism that cannot be overridden and GCC is the only toolchain
+  # that produces ELF binaries that also has stack cookies enabled.
+  #
+  !if "$(TOOL_CHAIN_TAG)" == "GCC"
+  MdePkg/Test/GoogleTest/Library/StackCheckLib/GoogleTestStackCheckLib.inf {
+    <LibraryClasses>
+      StackCheckLib|MdePkg/Library/StackCheckLib/StackCheckLib.inf
+    <BuildOptions>
+      #
+      # Disable ASAN so only the stack cookie check is tested.
+      # ASAN catches stack buffer overflows before the stack cookie and would mask the test.
+      # Enable stack cookie checking for all functions to guarantee we should expect the stack cookie
+      # to be corrupted.
+      #
+      GCC:*_GCC_*_CC_FLAGS  = -fno-sanitize=address -fstack-protector-all
+  }
+  !endif
 
   #
   # Build HOST_APPLICATION Libraries
