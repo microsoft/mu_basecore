@@ -3580,8 +3580,8 @@ GetBlockElement (
   while ((Link != &RequestBlockArray->Entry) && (Link->ForwardLink != &RequestBlockArray->Entry)) {
     BlockData     = BASE_CR (Link, IFR_BLOCK_DATA, Entry);
     NextBlockData = BASE_CR (Link->ForwardLink, IFR_BLOCK_DATA, Entry);
-    if ((NextBlockData->Offset >= BlockData->Offset) && (NextBlockData->Offset <= (BlockData->Offset + BlockData->Width))) {
-      if ((NextBlockData->Offset + NextBlockData->Width) > (BlockData->Offset + BlockData->Width)) {
+    if ((NextBlockData->Offset >= BlockData->Offset) && (NextBlockData->Offset <= ((UINT32)BlockData->Offset + BlockData->Width))) { // MU_CHANGE: CodeQL
+      if (((UINT32)NextBlockData->Offset + NextBlockData->Width) > ((UINT32)BlockData->Offset + BlockData->Width)) { // MU_CHANGE: CodeQL
         BlockData->Width = (UINT16)(NextBlockData->Offset + NextBlockData->Width - BlockData->Offset);
       }
 
@@ -4145,7 +4145,8 @@ UpdateBlockDataArray (
 
     for (TempLink = Link->ForwardLink; TempLink != BlockLink; TempLink = TempLink->ForwardLink) {
       NextBlockData = BASE_CR (TempLink, IFR_BLOCK_DATA, Entry);
-      if (!NextBlockData->IsBitVar || (NextBlockData->Offset >= BlockData->Offset + BlockData->Width) || (BlockData->Offset >= NextBlockData->Offset + NextBlockData->Width)) {
+      // MU_CHANGE: CodeQL
+      if (!NextBlockData->IsBitVar || (NextBlockData->Offset >= (UINT32)BlockData->Offset + BlockData->Width) || (BlockData->Offset >= (UINT32)NextBlockData->Offset + NextBlockData->Width)) {
         continue;
       }
 

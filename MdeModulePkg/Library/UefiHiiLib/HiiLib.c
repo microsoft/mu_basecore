@@ -2120,8 +2120,8 @@ GetBlockDataInfo (
   while ((Link != &BlockArray->Entry) && (Link->ForwardLink != &BlockArray->Entry)) {
     BlockData    = BASE_CR (Link, IFR_BLOCK_DATA, Entry);
     NewBlockData = BASE_CR (Link->ForwardLink, IFR_BLOCK_DATA, Entry);
-    if ((NewBlockData->Offset >= BlockData->Offset) && (NewBlockData->Offset <= (BlockData->Offset + BlockData->Width))) {
-      if ((NewBlockData->Offset + NewBlockData->Width) > (BlockData->Offset + BlockData->Width)) {
+    if ((NewBlockData->Offset >= BlockData->Offset) && (NewBlockData->Offset <= ((UINT32)BlockData->Offset + BlockData->Width))) { // MU_CHANGE: CodeQL
+      if (((UINT32)NewBlockData->Offset + NewBlockData->Width) > ((UINT32)BlockData->Offset + BlockData->Width)) { // MU_CHANGE: CodeQL
         BlockData->Width = (UINT16)(NewBlockData->Offset + NewBlockData->Width - BlockData->Offset);
       }
 
