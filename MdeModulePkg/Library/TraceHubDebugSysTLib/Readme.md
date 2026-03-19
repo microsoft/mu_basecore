@@ -4,7 +4,7 @@ TraceHubDebugSysTLib library is a top level library for dumping Trace Hub messag
 It provides Trace Hub related APIs to dump Trace Hub message via MIPI SYS-T submodule.
 User need to properly configure following Trace Hub related PCDs and HOB.
   (See MdeModulePkg.dec to get detailed definition for PCDs below)
-  
+
 - PcdTraceHubDebugLevel
 - PcdEnableTraceHubDebugMsg
 - PcdTraceHubDebugMmioAddress

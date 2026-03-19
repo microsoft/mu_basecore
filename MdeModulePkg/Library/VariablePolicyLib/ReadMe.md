@@ -286,8 +286,6 @@ directory).
 
 ### Host-Based Unit Test
 
-MU_CHANGE
-
 This test:
 
 `MdeModulePkg\Library\VariablePolicyLib\VariablePolicyUnitTest\VariablePolicyUnitTest.inf`
@@ -333,19 +331,19 @@ For example, "AllowPXEBoot" variable locked by "ReadyToBoot" variable.
 (NOTE: In the below example, the emphasized fields ('Namespace', 'Value', and 'Name')
 are members of the `VARIABLE_LOCK_ON_VAR_STATE_POLICY` structure.)
 
-Size                  | ...
-----                  | ---
-OffsetToName          | ...
-NameSpace             | ...
-MinSize               | ...
-MaxSize               | ...
-AttributesMustHave    | ...
-AttributesCantHave    | ...
-LockPolicyType        | `VARIABLE_POLICY_TYPE_LOCK_ON_VAR_STATE`
-_Namespace_           | ...
-_Value_               | 1
-_Name_                | "ReadyToBoot"
-//Name                | "AllowPXEBoot"
+| Size               | ...                                      |
+| ------------------ | ---------------------------------------- |
+| OffsetToName       | ...                                      |
+| NameSpace          | ...                                      |
+| MinSize            | ...                                      |
+| MaxSize            | ...                                      |
+| AttributesMustHave | ...                                      |
+| AttributesCantHave | ...                                      |
+| LockPolicyType     | `VARIABLE_POLICY_TYPE_LOCK_ON_VAR_STATE` |
+| _Namespace_        | ...                                      |
+| _Value_            | 1                                        |
+| _Name_             | "ReadyToBoot"                            |
+| //Name             | "AllowPXEBoot"                           |
 
 ### Manufacturing VPD (Example 2)
 
@@ -360,16 +358,16 @@ scenarios.
 
 Example: "DisplayPanelCalibration" variable...
 
-Size                  | ...
-----                  | ---
-OffsetToName          | ...
-NameSpace             | ...
-MinSize               | ...
-MaxSize               | ...
-AttributesMustHave    | ...
-AttributesCantHave    | ...
-LockPolicyType        | `VARIABLE_POLICY_TYPE_LOCK_NOW`
-// Name               | "DisplayPanelCalibration"
+| Size               | ...                             |
+| ------------------ | ------------------------------- |
+| OffsetToName       | ...                             |
+| NameSpace          | ...                             |
+| MinSize            | ...                             |
+| MaxSize            | ...                             |
+| AttributesMustHave | ...                             |
+| AttributesCantHave | ...                             |
+| LockPolicyType     | `VARIABLE_POLICY_TYPE_LOCK_NOW` |
+| // Name            | "DisplayPanelCalibration"       |
 
 ### 3rd Party Calibration Data (Example 3)
 
@@ -378,16 +376,16 @@ get created by an OS application when Variable Policy is in effect.
 
 Example: "KeyboardBTPairing" variable
 
-Size                  | ...
-----                  | ---
-OffsetToName          | ...
-NameSpace             | ...
-MinSize               | ...
-MaxSize               | ...
-AttributesMustHave    | ...
-AttributesCantHave    | ...
-LockPolicyType        | `VARIABLE_POLICY_TYPE_LOCK_ON_CREATE`
-// Name               | "KeyboardBTPairing"
+| Size               | ...                                   |
+| ------------------ | ------------------------------------- |
+| OffsetToName       | ...                                   |
+| NameSpace          | ...                                   |
+| MinSize            | ...                                   |
+| MaxSize            | ...                                   |
+| AttributesMustHave | ...                                   |
+| AttributesCantHave | ...                                   |
+| LockPolicyType     | `VARIABLE_POLICY_TYPE_LOCK_ON_CREATE` |
+| // Name            | "KeyboardBTPairing"                   |
 
 ### Software-based Variable Policy (Example 4)
 
@@ -395,16 +393,16 @@ Example: "Boot####" variables (a name string with wildcards that
 will match variables "Boot0000" to "BootFFFF") locked by "LockBootOrder"
 variable.
 
-Size                  | ...
-----                  | ---
-OffsetToName          | ...
-NameSpace             | ...
-MinSize               | ...
-MaxSize               | ...
-AttributesMustHave    | ...
-AttributesCantHave    | ...
-LockPolicyType        | `VARIABLE_POLICY_TYPE_LOCK_ON_VAR_STATE`
-_Namespace_           | ...
-_Value_               | 1
-_Name_                | "LockBootOrder"
-//Name                | "Boot####"
+| Size               | ...                                      |
+| ------------------ | ---------------------------------------- |
+| OffsetToName       | ...                                      |
+| NameSpace          | ...                                      |
+| MinSize            | ...                                      |
+| MaxSize            | ...                                      |
+| AttributesMustHave | ...                                      |
+| AttributesCantHave | ...                                      |
+| LockPolicyType     | `VARIABLE_POLICY_TYPE_LOCK_ON_VAR_STATE` |
+| _Namespace_        | ...                                      |
+| _Value_            | 1                                        |
+| _Name_             | "LockBootOrder"                          |
+| //Name             | "Boot####"                               |

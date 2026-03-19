@@ -131,7 +131,7 @@ NOTE: User MUST set a UNIQUE "Common Name" on the different certificate
         openssl x509 -inform DER -in TestCert.cer -outform PEM -out TestCert.pub.pem
         ```
 
-    * Convert Key and Certificate for signing  
+    * Convert Key and Certificate for signing
         Password is removed with -nodes flag for convenience in this sample.
 
         ```cmd
