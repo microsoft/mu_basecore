@@ -975,7 +975,7 @@ MeasureMainBios (
   EFI_FV_INFO                  VolumeInfo;
   EFI_PEI_FIRMWARE_VOLUME_PPI  *FvPpi;
 
-  PERF_FUNCTION_BEGIN (); // MU_CHANGE
+  PERF_START_EX (mFileHandle, "EventRec", "Tcg2Pei", 0, PERF_ID_TCG2_PEI);
 
   //
   // Only measure BFV at the very beginning. Other parts of Static Core Root of
@@ -1006,7 +1006,7 @@ MeasureMainBios (
 
   Status = MeasureFvImage ((EFI_PHYSICAL_ADDRESS)(UINTN)VolumeInfo.FvStart, VolumeInfo.FvSize);
 
-  PERF_FUNCTION_END (); // MU_CHANGE
+  PERF_END_EX (mFileHandle, "EventRec", "Tcg2Pei", 0, PERF_ID_TCG2_PEI + 1);
 
   return Status;
 }
