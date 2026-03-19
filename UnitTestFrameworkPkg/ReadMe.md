@@ -140,7 +140,7 @@ you should be good to go.
 
 See this example in `SampleUnitTestUefiShell.inf`...
 
-```inf
+```
 [Packages]
   MdePkg/MdePkg.dec
 
@@ -155,7 +155,7 @@ See this example in `SampleUnitTestUefiShell.inf`...
 Also, if you want your test to automatically be picked up by the Test Runner plugin, you will need
 to make sure that the module `BASE_NAME` contains the word `Test`...
 
-```inf
+```
 [Defines]
   BASE_NAME      = SampleUnitTestUefiShell
 ```
@@ -167,7 +167,7 @@ section so that the unit tests will be built.
 
 See this example in `UnitTestFrameworkPkg.dsc`...
 
-```inf
+```
 [Components]
   UnitTestFrameworkPkg/Test/UnitTest/Sample/SampleUnitTest/SampleUnitTestUefiShell.inf
 ```
@@ -176,7 +176,7 @@ Also, based on the type of tests that are being created, the associated DSC incl
 UnitTestFrameworkPkg for Host or Target based tests should also be included at the top of the DSC
 file.
 
-```inf
+```
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgTarget.dsc.inc
 ```
 
@@ -186,7 +186,7 @@ they should be added in the \<LibraryClasses\> sub-section for the INF file in t
 
 See this example in `SecurityPkgHostTest.dsc`...
 
-```inf
+```
 [Components]
   SecurityPkg/Library/SecureBootVariableLib/UnitTest/SecureBootVariableLibUnitTest.inf {
     <LibraryClasses>
@@ -342,7 +342,7 @@ Beyond that, if you're writing host-based tests and want to take a dependency on
 leverage the `cmocka.h` interface and write tests with all the features of the Cmocka framework.
 
 Documentation for Cmocka can be found here:
-<https://api.cmocka.org/>
+https://api.cmocka.org/
 
 ## GoogleTest Libraries
 
@@ -370,7 +370,7 @@ the following tables.
 | Matcher Name | Similar gMock Generic Matcher | Usage |
 |:--- |:--- |:--- |
 | `BufferEq()` | `Pointee(Eq())` | Used to compare two buffer pointer types (such as UINT8*, VOID*, a structure pointer, etc.). Can be used in an `EXPECT_CALL()`, `EXPECT_THAT()`, or anywhere else a matcher to compare two buffers is needed. |
-| `Char16StrEq()` | `Pointee(Eq())` | Used to compare two CHAR16 string pointers. Can be used in an `EXPECT_CALL()`, `EXPECT_THAT()`, or anywhere else a matcher to compare two CHAR16* strings is needed. |
+| `Char16StrEq()` | `Pointee(Eq())` | Used to compare two CHAR16* strings. Can be used in an `EXPECT_CALL()`, `EXPECT_THAT()`, or anywhere else a matcher to compare two CHAR16* strings is needed. |
 
 ### FunctionMockLib
 
@@ -386,7 +386,6 @@ the mock functions, and the other two macros are related to creating an interfac
 to contain the mock functions and connect them into the gMock framework.
 
 The macros used to create the interface are...
-
 1. `MOCK_INTERFACE_DECLARATION(MOCK)`
 2. `MOCK_INTERFACE_DEFINITION(MOCK)`
 
@@ -409,7 +408,6 @@ MOCK_INTERFACE_DEFINITION(MockUefiLib);
 ```
 
 The macros used to create the mock functions are...
-
 1. `MOCK_FUNCTION_DECLARATION(RET_TYPE, FUNC, ARGS)`
 2. `MOCK_FUNCTION_DEFINITION(MOCK, FUNC, NUM_ARGS, CALL_TYPE)`
 3. `MOCK_FUNCTION_INTERNAL_DECLARATION(RET_TYPE, FUNC, ARGS)`
@@ -857,7 +855,7 @@ the `GoogleTestLib`, and the `[BuildOptions]` will need to append the `/EHsc`
 compilation flag to all MSFT builds to enable proper use of the C++ exception
 handler. Below is the complete `MockUefiLib.inf` as an example.
 
-```text
+```
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = MockUefiLib
@@ -892,7 +890,7 @@ if no test uses it yet, this created INF file needs to be added into the
 which this INF file resides. For example, the above `MockUefiLib.inf` would
 need to be added to the `MdePkg/Test/MdePkgHostTest.dsc` file as shown below.
 
-```text
+```
 [Components]
   MdePkg/Test/Mock/Library/GoogleTest/MockUefiLib/MockUefiLib.inf
 ```
@@ -910,7 +908,7 @@ locate the mock function header file. For example, if `MockUefiLib.inf` were
 the first mock added to the `MdePkg`, then the below snippet would need to be
 added to the `MdePkg.dec` file.
 
-```text
+```
 [Includes]
   Test/Mock/Include
 ```
@@ -930,7 +928,7 @@ mock function definitions file be added to the `[Sources]` section, the
 Below is a minimal contrived example for a `MyModuleGoogleTest.inf` that uses a
 `MockMyModuleInternalFunctions.cpp` source file for its internal mock functions.
 
-```text
+```
 [Defines]
   INF_VERSION         = 0x00010017
   BASE_NAME           = MyModuleGoogleTest
@@ -992,7 +990,7 @@ you should be good to go.
 
 See this example in `SampleGoogleTestHost.inf`...
 
-```text
+```
 [Packages]
   MdePkg/MdePkg.dec
   UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
@@ -1006,7 +1004,7 @@ See this example in `SampleGoogleTestHost.inf`...
 Also, if you want your test to automatically be picked up by the Test Runner plugin, you will need
 to make sure that the module `BASE_NAME` contains the word `Test`...
 
-```text
+```
 [Defines]
   BASE_NAME      = SampleGoogleTestHost
 ```
@@ -1018,7 +1016,7 @@ section so that the unit tests will be built.
 
 See this example in `UnitTestFrameworkPkgHostTest.dsc`...
 
-```text
+```
 [Components]
   UnitTestFrameworkPkg/Test/GoogleTest/Sample/SampleGoogleTest/SampleGoogleTestHost.inf
 ```
@@ -1027,7 +1025,7 @@ Also, based on the type of tests that are being created, the associated DSC incl
 UnitTestFrameworkPkg for Host or Target based tests should also be included at the top of the DSC
 file. This provides the default defines and library class mappings requires for unit testing.
 
-```text
+```
 !include UnitTestFrameworkPkg/UnitTestFrameworkPkgHost.dsc.inc
 ```
 
@@ -1045,7 +1043,7 @@ See this example in `SecurityPkgHostTest.dsc` where the `SecureBootVariableLib` 
 being tested using mock versions of `UefiRuntimeServicesTableLib`, `PlatformPKProtectionLib`,
 and `UefiLib`...
 
-```text
+```
 [Components]
   SecurityPkg/Library/SecureBootVariableLib/GoogleTest/SecureBootVariableLibGoogleTest.inf {
     <LibraryClasses>
@@ -1524,7 +1522,7 @@ Unit test applications using Framework are built using Cmocka that requires the
 following environment variables to be set to generate structured XML output
 rather than text:
 
-```inf
+```
 CMOCKA_MESSAGE_OUTPUT=xml
 CMOCKA_XML_FILE=<absolute or relative path to output file>
 ```
@@ -1532,7 +1530,7 @@ CMOCKA_XML_FILE=<absolute or relative path to output file>
 Unit test applications using GoogleTest require the following environment
 variable to be set to generate structured XML output rather than text:
 
-```inf
+```
 GTEST_OUTPUT=xml:<absolute or relative path to output file>
 ```
 
@@ -1711,15 +1709,14 @@ Non-Host-Based (PEI/DXE/SMM/Shell) Tests for a Functionality or Feature   | Simi
 
 ### Future Locations in Consideration
 
-We don't know if these types will exist or be applicable yet, but if you write a support library or module that matches
-the following, please make sure they live in the correct place.
+We don't know if these types will exist or be applicable yet, but if you write a support library or module that matches the following, please make sure they live in the correct place.
 
 Code/Test                                   | Location
 ---------                                   | --------
 Host-Based Library Implementations                 | Host-Based Implementations of common libraries (eg. MemoryAllocationLibHost) should live in the same package that declares the library interface in its .DEC file in the `*Pkg/Test/Library` directory. Should have 'Host' in the name.
 Host-Based Mocks and Stubs  | Mock and Stub libraries that require test infrastructure should live in the `UefiTestFrameworkPkg/Library` with either 'Mock' or 'Stub' in the library name.
 
-### If still in doubt
+### If still in doubt...
 
 Hop on GitHub and ask @corthon, @mdkinney, or @spbrogan. ;)
 
