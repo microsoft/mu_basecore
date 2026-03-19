@@ -418,26 +418,11 @@ BootBootOptions (
     EfiBootManagerBoot (&BootOptions[Index]);
 
     PlatformBootManagerProcessBootCompletion (&BootOptions[Index]);        // MU_CHANGE 00076 - record boot status
-
-    // MU_CHANGE [BEGIN] - Support infinite boot retries
-    //  Changes for PcdSupportInfiniteBootRetries are meant to minimize upkeep in mu repos.
-    //   If/when upstreaming this change, refactoring calling loop in BdsEntry() would be
-    //   better location.
+    //
+    // If infinite retries is enabled, do not break out of the loop.
+    // This allows all boot options to be attempted on each iteration.
+    //
     if (!PcdGetBool (PcdSupportInfiniteBootRetries)) {
-      // MU_CHANGE [END] - Support infinite boot retries
-
-      //
-      // If the boot via Boot#### returns with a status of EFI_SUCCESS, platform firmware
-      // supports boot manager menu, and if firmware is configured to boot in an
-      // interactive mode, the boot manager will stop processing the BootOrder variable and
-      // present a boot manager menu to the user.
-      //
-      if ((BootManagerMenu != NULL) && (BootOptions[Index].Status == EFI_SUCCESS)) {
-        EfiBootManagerBoot (BootManagerMenu);
-        break;
-      }
-
-      //
       // If the boot via Boot#### returns with a status of EFI_SUCCESS, platform firmware
       // supports boot manager menu, and if firmware is configured to boot in an
       // interactive mode, the boot manager will stop processing the BootOrder variable and
@@ -448,8 +433,6 @@ BootBootOptions (
         break;
       }
     }
-
-    // MU_CHANGE [END]- Support infinite boot retries
   }
 
   return (BOOLEAN)(Index < BootOptionCount);
@@ -1151,14 +1134,15 @@ BdsEntry (
 
     do {
       //
-      // Retry to boot if any of the boot succeeds
+      // Retry to boot if any of the boot succeeds.
+      // If infinite retries is enabled, always retry. This allows a continuous loop over all boot options.
       //
       LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionTypeBoot);
       if (LoadOptions != NULL) {
         BootSuccess = BootBootOptions (LoadOptions, LoadOptionCount, (BootManagerMenuStatus != EFI_NOT_FOUND) ? &BootManagerMenu : NULL);
         EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
       }
-    } while (BootSuccess || PcdGetBool (PcdSupportInfiniteBootRetries)); // MU_CHANGE add PcdSupportInfiniteBootRetries support
+    } while (BootSuccess || PcdGetBool (PcdSupportInfiniteBootRetries));
   }
 
   if (BootManagerMenuStatus != EFI_NOT_FOUND) {
