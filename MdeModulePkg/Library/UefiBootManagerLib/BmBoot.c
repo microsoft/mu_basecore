@@ -1906,8 +1906,8 @@ EfiBootManagerBoot (
   VOID                       *FileBuffer;
   UINTN                      FileSize;
   EFI_BOOT_LOGO_PROTOCOL     *BootLogo;
-  EFI_EVENT                  LegacyBootEvent;
-  UINTN                      ReportStatusCodeData[2];  // MU_CHANGE
+  // EFI_EVENT                  LegacyBootEvent;       // MU_CHANGE
+  UINTN  ReportStatusCodeData[2];                      // MU_CHANGE
 
   if (BootOption == NULL) {
     return;
@@ -1975,7 +1975,8 @@ EfiBootManagerBoot (
     BmRepairAllControllers (0);
   }
 
-  PERF_START_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32)OptionNumber);
+  // PERF_START_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber); // MU_CHANGE
+  PERF_INMODULE_BEGIN ("BdsAttempt"); // MU_CHANGE
 
   //
   // 5. Adjust the different type memory page number just before booting
@@ -2093,19 +2094,20 @@ EfiBootManagerBoot (
     if (mBmLegacyBoot != NULL) {
       //
       // Write boot to OS performance data for legacy boot.
-      //
-      PERF_CODE (
-        //
-        // Create an event to be signalled when Legacy Boot occurs to write performance data.
-        //
-        Status = EfiCreateEventLegacyBootEx (
-                   TPL_NOTIFY,
-                   BmEndOfBdsPerfCode,
-                   NULL,
-                   &LegacyBootEvent
-                   );
-        ASSERT_EFI_ERROR (Status);
-        );
+      // MU_CHANGE commented this out
+      // PERF_CODE (
+      //   //
+      //   // Create an event to be signalled when Legacy Boot occurs to write performance data.
+      //   //
+      //   Status = EfiCreateEventLegacyBootEx(
+      //              TPL_NOTIFY,
+      //              BmEndOfBdsPerfCode,
+      //              NULL,
+      //              &LegacyBootEvent
+      //              );
+      //   ASSERT_EFI_ERROR (Status);
+      // );
+
       mBmLegacyBoot (BootOption);
     } else {
       BootOption->Status = EFI_UNSUPPORTED;
@@ -2141,9 +2143,12 @@ EfiBootManagerBoot (
   //
   // Write boot to OS performance data for UEFI boot
   //
-  PERF_CODE (
-    BmEndOfBdsPerfCode (NULL, NULL);
-    );
+  // MU_CHANGE begin
+  // PERF_CODE (
+  //   BmEndOfBdsPerfCode (NULL, NULL);
+  // );
+  PERF_INMODULE_END ("BdsAttempt"); // MU_CHANGE
+  // MU_CHANGE end
   PERF_CROSSMODULE_END ("BDS");     // BEGIN is in MdeModulePkg\Universal\BdsDxe\BdsEntry.c
   PERF_CROSSMODULE_BEGIN ("BDS");   // Keep logging BDS in case of reentry
 
@@ -2170,7 +2175,7 @@ EfiBootManagerBoot (
     REPORT_STATUS_CODE (EFI_PROGRESS_CODE, (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_PC_BOOT_OPTION_COMPLETE)); // MU_CHANGE
   }
 
-  PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32)OptionNumber);
+  // PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber); // MU_CHANGE
 
   //
   // Clear the Watchdog Timer after the image returns
