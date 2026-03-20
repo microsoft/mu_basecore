@@ -4,7 +4,6 @@
 Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 Copyright (c) 2011 - 2021, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015-2021 Hewlett Packard Enterprise Development LP<BR>
-Copyright (c) Microsoft Corporation<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -2115,6 +2114,8 @@ EfiBootManagerBoot (
     }
 
     PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32)OptionNumber);
+    PERF_CROSSMODULE_END ("BDS");   // BEGIN is in MdeModulePkg\Universal\BdsDxe\BdsEntry.c
+    PERF_CROSSMODULE_BEGIN ("BDS"); // Keep logging BDS in case of reentry
     return;
   }
 
@@ -2147,9 +2148,9 @@ EfiBootManagerBoot (
   //   BmEndOfBdsPerfCode (NULL, NULL);
   // );
   PERF_INMODULE_END ("BdsAttempt"); // MU_CHANGE
-  PERF_CROSSMODULE_END ("BDS");     // MU_CHANGE: begin is in MdeModulePkg\Universal\BdsDxe\BdsEntry.c
-  PERF_CROSSMODULE_BEGIN ("BDS");   // MU_CHANGE: keep logging BDS in case we'll re-enter this function late
   // MU_CHANGE end
+  PERF_CROSSMODULE_END ("BDS");     // BEGIN is in MdeModulePkg\Universal\BdsDxe\BdsEntry.c
+  PERF_CROSSMODULE_BEGIN ("BDS");   // Keep logging BDS in case of reentry
 
   REPORT_STATUS_CODE (EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderStart));
 
