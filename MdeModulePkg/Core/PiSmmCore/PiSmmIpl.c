@@ -2,7 +2,7 @@
   SMM IPL that produces SMM related runtime protocols and load the SMM Core into SMRAM
 
   Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
-  Copyright (c) Microsoft Corporation<BR>
+  Copyright (c) Microsoft Corporation.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/

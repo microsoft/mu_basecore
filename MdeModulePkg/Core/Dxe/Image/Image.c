@@ -2,7 +2,6 @@
   Core image handling services to load and unload PeImage.
 
 Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
-Copyright (c) Microsoft Corporation<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -1827,8 +1826,6 @@ CoreStartImage (
   // Save the Status because Image will get destroyed if it is unloaded.
   //
   Status = Image->Status;
-
-  // PERF_ENTRYPOINT_END (Handle); // MU_CHANGE
 
   //
   // If the image returned an error, or if the image is an application
