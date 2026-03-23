@@ -330,6 +330,77 @@ TestVerifyRsaPkcs1SignVerify (
   return UNIT_TEST_PASSED;
 }
 
+// MU_CHANGE [BEGIN]
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyRsaPkcs1CrossKeyReject (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  VOID     *Rsa1;
+  VOID     *Rsa2;
+  UINT8    HashValue[SHA256_DIGEST_SIZE];
+  UINT8    *Signature;
+  UINTN    SigSize;
+  BOOLEAN  Status;
+
+  Rsa1 = RsaNew ();
+  if (Rsa1 == NULL) {
+    UT_LOG_ERROR ("Failed to allocate Rsa1");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Rsa2 = RsaNew ();
+  if (Rsa2 == NULL) {
+    RsaFree (Rsa1);
+    UT_LOG_ERROR ("Failed to allocate Rsa2");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = RsaGenerateKey (Rsa1, 2048, NULL, 0);
+  UT_ASSERT_TRUE (Status);
+
+  Status = RsaGenerateKey (Rsa2, 2048, NULL, 0);
+  UT_ASSERT_TRUE (Status);
+
+  ZeroMem (HashValue, sizeof (HashValue));
+
+  SigSize = 0;
+  Status  = RsaPkcs1Sign (Rsa1, HashValue, SHA256_DIGEST_SIZE, NULL, &SigSize);
+  UT_ASSERT_FALSE (Status);
+  UT_ASSERT_NOT_EQUAL (SigSize, 0);
+
+  Signature = AllocatePool (SigSize);
+  if (Signature == NULL) {
+    RsaFree (Rsa1);
+    RsaFree (Rsa2);
+    UT_LOG_ERROR ("Failed to allocate memory for Signature");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = RsaPkcs1Sign (Rsa1, HashValue, SHA256_DIGEST_SIZE, Signature, &SigSize);
+  UT_ASSERT_TRUE (Status);
+
+  //
+  // Cross-key rejection: verify with Rsa2 (wrong key) must fail.
+  //
+  Status = RsaPkcs1Verify (Rsa2, HashValue, SHA256_DIGEST_SIZE, Signature, SigSize);
+  UT_ASSERT_FALSE (Status);
+
+  //
+  // Coherence check: verify with Rsa1 (correct key) must succeed.
+  //
+  Status = RsaPkcs1Verify (Rsa1, HashValue, SHA256_DIGEST_SIZE, Signature, SigSize);
+  UT_ASSERT_TRUE (Status);
+
+  FreePool (Signature);
+  RsaFree (Rsa1);
+  RsaFree (Rsa2);
+  return UNIT_TEST_PASSED;
+}
+
+// MU_CHANGE [END]
+
 TEST_DESC  mRsaTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function---------------------------------Pre---------------------Post---------Context
@@ -337,6 +408,7 @@ TEST_DESC  mRsaTest[] = {
   { "TestVerifyRsaSetGetKeyComponents()",   "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaSetGetKeyComponents,   TestVerifyRsaPreReq, TestVerifyRsaCleanUp, NULL },
   { "TestVerifyRsaGenerateKeyComponents()", "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaGenerateKeyComponents, TestVerifyRsaPreReq, TestVerifyRsaCleanUp, NULL },
   { "TestVerifyRsaPkcs1SignVerify()",       "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaPkcs1SignVerify,       TestVerifyRsaPreReq, TestVerifyRsaCleanUp, NULL },
+  { "TestVerifyRsaPkcs1CrossKeyReject()",   "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaPkcs1CrossKeyReject,   NULL,                NULL,                 NULL }, // MU_CHANGE
 };
 
 UINTN  mRsaTestNum = ARRAY_SIZE (mRsaTest);

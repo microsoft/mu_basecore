@@ -626,11 +626,98 @@ TestVerifyX509 (
   return UNIT_TEST_PASSED;
 }
 
+// MU_CHANGE [BEGIN]
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyX509Fields (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN        Status;
+  RETURN_STATUS  RetStatus;
+  UINT8          *SubjectBuf;
+  UINTN          SubjectSize;
+  CHAR8          CommonName[128];
+  UINTN          CommonNameSize;
+  CHAR8          OrgName[128];
+  UINTN          OrgNameSize;
+  UINT8          OidBuf[64];
+  UINTN          OidSize;
+  UINT8          *TbsCert;
+  UINTN          TbsCertSize;
+
+  //
+  // X509GetSubjectName: size-query (NULL buffer) returns FALSE and sets SubjectSize.
+  //
+  SubjectSize = 0;
+  Status      = X509GetSubjectName (mTestCert, sizeof (mTestCert), NULL, &SubjectSize);
+  UT_ASSERT_FALSE (Status);
+  UT_ASSERT_NOT_EQUAL (SubjectSize, 0);
+
+  SubjectBuf = AllocatePool (SubjectSize);
+  if (SubjectBuf == NULL) {
+    ASSERT (SubjectBuf != NULL);
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = X509GetSubjectName (mTestCert, sizeof (mTestCert), SubjectBuf, &SubjectSize);
+  UT_ASSERT_TRUE (Status);
+  FreePool (SubjectBuf);
+
+  //
+  // X509GetCommonName: size-query returns RETURN_BUFFER_TOO_SMALL, then full retrieval.
+  //
+  CommonNameSize = 0;
+  RetStatus      = X509GetCommonName (mTestCert, sizeof (mTestCert), NULL, &CommonNameSize);
+  UT_ASSERT_EQUAL (RetStatus, RETURN_BUFFER_TOO_SMALL);
+  UT_ASSERT_NOT_EQUAL (CommonNameSize, 0);
+
+  CommonNameSize = sizeof (CommonName);
+  RetStatus      = X509GetCommonName (mTestCert, sizeof (mTestCert), CommonName, &CommonNameSize);
+  UT_ASSERT_EQUAL (RetStatus, RETURN_SUCCESS);
+  UT_ASSERT_EQUAL (AsciiStrCmp (CommonName, "intel test RSA intermediate cert"), 0);
+
+  //
+  // X509GetOrganizationName: certs have CN only, no O= field — expect RETURN_NOT_FOUND.
+  //
+  OrgNameSize = sizeof (OrgName);
+  RetStatus   = X509GetOrganizationName (mTestCert, sizeof (mTestCert), OrgName, &OrgNameSize);
+  UT_ASSERT_EQUAL (RetStatus, RETURN_NOT_FOUND);
+
+  //
+  // X509GetSignatureAlgorithm: size-query (NULL buffer) returns FALSE and sets OidSize,
+  // then full retrieval returns TRUE.
+  //
+  OidSize = 0;
+  Status  = X509GetSignatureAlgorithm (mTestCert, sizeof (mTestCert), NULL, &OidSize);
+  UT_ASSERT_FALSE (Status);
+  UT_ASSERT_NOT_EQUAL (OidSize, 0);
+
+  OidSize = sizeof (OidBuf);
+  Status  = X509GetSignatureAlgorithm (mTestCert, sizeof (mTestCert), OidBuf, &OidSize);
+  UT_ASSERT_TRUE (Status);
+
+  //
+  // X509GetTBSCert: returns a pointer into the cert buffer — no allocation needed.
+  //
+  TbsCert     = NULL;
+  TbsCertSize = 0;
+  Status      = X509GetTBSCert (mTestCert, sizeof (mTestCert), &TbsCert, &TbsCertSize);
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_NOT_EQUAL (TbsCertSize, 0);
+  UT_ASSERT_TRUE (TbsCert != NULL);
+
+  return UNIT_TEST_PASSED;
+}
+
+// MU_CHANGE [END]
+
 TEST_DESC  mX509Test[] = {
   //
   // -----Description--------------------------------------Class----------------------Function---------------------------------Pre---------------------Post---------Context
   //
-  { "TestVerifyX509()", "CryptoPkg.BaseCryptLib.Hkdf", TestVerifyX509, NULL, NULL, NULL },
+  { "TestVerifyX509()",              "CryptoPkg.BaseCryptLib.X509", TestVerifyX509,              NULL, NULL, NULL },
+  { "TestVerifyX509Fields()",        "CryptoPkg.BaseCryptLib.X509", TestVerifyX509Fields,        NULL, NULL, NULL },        // MU_CHANGE
 };
 
 UINTN  mX509TestNum = ARRAY_SIZE (mX509Test);

@@ -371,10 +371,13 @@ TestVerifyEcKey (
   BOOLEAN  Status;
   VOID     *EcPrivKey;
   VOID     *EcPubKey;
+  VOID     *EcAltKey; // MU_CHANGE
   UINT8    HashValue[SHA256_DIGEST_SIZE];
   UINTN    HashSize;
   UINT8    Signature[66 * 2];
   UINTN    SigSize;
+  UINT8    AltPublic[64]; // MU_CHANGE
+  UINTN    AltPublicLen; // MU_CHANGE
 
   //
   // Retrieve EC private key from PEM data.
@@ -427,6 +430,53 @@ TestVerifyEcKey (
              SigSize
              );
   UT_ASSERT_TRUE (Status);
+
+  // MU_CHANGE [BEGIN]
+  //
+  // Tampered message test: flip a byte in the hash and verify that the signature
+  // is rejected, then restore the original hash value.
+  //
+  HashValue[0] ^= 0xFF;
+  Status        = EcDsaVerify (
+                    EcPubKey,
+                    CRYPTO_NID_SHA256,
+                    HashValue,
+                    HashSize,
+                    Signature,
+                    SigSize
+                    );
+  UT_ASSERT_FALSE (Status);
+  HashValue[0] ^= 0xFF;
+  // MU_CHANGE [END]
+
+  // MU_CHANGE [BEGIN]
+  //
+  // Cross-key rejection: generate a fresh key pair and confirm it cannot verify
+  // a signature produced by a different private key.
+  //
+  EcAltKey = EcNewByNid (CRYPTO_NID_SECP256R1);
+  if (EcAltKey == NULL) {
+    EcFree (EcPrivKey);
+    EcFree (EcPubKey);
+    UT_LOG_ERROR ("Failed to allocate EcAltKey");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  AltPublicLen = sizeof (AltPublic);
+  Status       = EcGenerateKey (EcAltKey, AltPublic, &AltPublicLen);
+  UT_ASSERT_TRUE (Status);
+
+  Status = EcDsaVerify (
+             EcAltKey,
+             CRYPTO_NID_SHA256,
+             HashValue,
+             HashSize,
+             Signature,
+             SigSize
+             );
+  UT_ASSERT_FALSE (Status);
+  EcFree (EcAltKey);
+  // MU_CHANGE [END]
 
   EcFree (EcPrivKey);
   EcFree (EcPubKey);

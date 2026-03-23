@@ -183,11 +183,162 @@ TestVerifyRsaPssSignVerify (
   return UNIT_TEST_PASSED;
 }
 
+// MU_CHANGE [BEGIN]
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyRsaPssSignVerifySha384 (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  UINT8    *Signature;
+  UINTN    SigSize;
+  BOOLEAN  Status;
+
+  Status = RsaSetKey (mRsa, RsaKeyN, RsaPssN, sizeof (RsaPssN));
+  UT_ASSERT_TRUE (Status);
+
+  Status = RsaSetKey (mRsa, RsaKeyE, RsaPssE, sizeof (RsaPssE));
+  UT_ASSERT_TRUE (Status);
+
+  Status = RsaSetKey (mRsa, RsaKeyD, RsaPssD, sizeof (RsaPssD));
+  UT_ASSERT_TRUE (Status);
+
+  SigSize = 0;
+  Status  = RsaPssSign (mRsa, PssMessage, sizeof (PssMessage), SHA384_DIGEST_SIZE, SHA384_DIGEST_SIZE, NULL, &SigSize);
+  UT_ASSERT_FALSE (Status);
+  UT_ASSERT_NOT_EQUAL (SigSize, 0);
+
+  Signature = AllocatePool (SigSize);
+  if (Signature == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for Signature");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = RsaPssSign (mRsa, PssMessage, sizeof (PssMessage), SHA384_DIGEST_SIZE, SHA384_DIGEST_SIZE, Signature, &SigSize);
+  UT_ASSERT_TRUE (Status);
+
+  Status = RsaPssVerify (mRsa, PssMessage, sizeof (PssMessage), Signature, SigSize, SHA384_DIGEST_SIZE, SHA384_DIGEST_SIZE);
+  UT_ASSERT_TRUE (Status);
+
+  //
+  // Corrupt the signature and verify rejection.
+  //
+  Signature[0] ^= 0xFF;
+  Status        = RsaPssVerify (mRsa, PssMessage, sizeof (PssMessage), Signature, SigSize, SHA384_DIGEST_SIZE, SHA384_DIGEST_SIZE);
+  UT_ASSERT_FALSE (Status);
+
+  FreePool (Signature);
+  return UNIT_TEST_PASSED;
+}
+
+// MU_CHANGE [END]
+
+// MU_CHANGE [BEGIN]
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyRsaPssSignVerifySha512 (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  UINT8    *Signature;
+  UINTN    SigSize;
+  BOOLEAN  Status;
+
+  Status = RsaSetKey (mRsa, RsaKeyN, RsaPssN, sizeof (RsaPssN));
+  UT_ASSERT_TRUE (Status);
+
+  Status = RsaSetKey (mRsa, RsaKeyE, RsaPssE, sizeof (RsaPssE));
+  UT_ASSERT_TRUE (Status);
+
+  Status = RsaSetKey (mRsa, RsaKeyD, RsaPssD, sizeof (RsaPssD));
+  UT_ASSERT_TRUE (Status);
+
+  SigSize = 0;
+  Status  = RsaPssSign (mRsa, PssMessage, sizeof (PssMessage), SHA512_DIGEST_SIZE, SHA512_DIGEST_SIZE, NULL, &SigSize);
+  UT_ASSERT_FALSE (Status);
+  UT_ASSERT_NOT_EQUAL (SigSize, 0);
+
+  Signature = AllocatePool (SigSize);
+  if (Signature == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for Signature");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = RsaPssSign (mRsa, PssMessage, sizeof (PssMessage), SHA512_DIGEST_SIZE, SHA512_DIGEST_SIZE, Signature, &SigSize);
+  UT_ASSERT_TRUE (Status);
+
+  Status = RsaPssVerify (mRsa, PssMessage, sizeof (PssMessage), Signature, SigSize, SHA512_DIGEST_SIZE, SHA512_DIGEST_SIZE);
+  UT_ASSERT_TRUE (Status);
+
+  //
+  // Corrupt the signature and verify rejection.
+  //
+  Signature[0] ^= 0xFF;
+  Status        = RsaPssVerify (mRsa, PssMessage, sizeof (PssMessage), Signature, SigSize, SHA512_DIGEST_SIZE, SHA512_DIGEST_SIZE);
+  UT_ASSERT_FALSE (Status);
+
+  FreePool (Signature);
+  return UNIT_TEST_PASSED;
+}
+
+// MU_CHANGE [END]
+
+// MU_CHANGE [BEGIN]
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyRsaPssTamperedMessage (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  UINT8    *Signature;
+  UINTN    SigSize;
+  BOOLEAN  Status;
+
+  Status = RsaSetKey (mRsa, RsaKeyN, RsaPssN, sizeof (RsaPssN));
+  UT_ASSERT_TRUE (Status);
+
+  Status = RsaSetKey (mRsa, RsaKeyE, RsaPssE, sizeof (RsaPssE));
+  UT_ASSERT_TRUE (Status);
+
+  Status = RsaSetKey (mRsa, RsaKeyD, RsaPssD, sizeof (RsaPssD));
+  UT_ASSERT_TRUE (Status);
+
+  SigSize = 0;
+  Status  = RsaPssSign (mRsa, PssMessage, sizeof (PssMessage), SHA256_DIGEST_SIZE, SHA256_DIGEST_SIZE, NULL, &SigSize);
+  UT_ASSERT_FALSE (Status);
+  UT_ASSERT_NOT_EQUAL (SigSize, 0);
+
+  Signature = AllocatePool (SigSize);
+  if (Signature == NULL) {
+    UT_LOG_ERROR ("Failed to allocate memory for Signature");
+    return UNIT_TEST_ERROR_TEST_FAILED;
+  }
+
+  Status = RsaPssSign (mRsa, PssMessage, sizeof (PssMessage), SHA256_DIGEST_SIZE, SHA256_DIGEST_SIZE, Signature, &SigSize);
+  UT_ASSERT_TRUE (Status);
+
+  //
+  // Tamper with the message and verify that the signature is rejected.
+  //
+  PssMessage[0] ^= 0xFF;
+  Status         = RsaPssVerify (mRsa, PssMessage, sizeof (PssMessage), Signature, SigSize, SHA256_DIGEST_SIZE, SHA256_DIGEST_SIZE);
+  UT_ASSERT_FALSE (Status);
+  PssMessage[0] ^= 0xFF;
+
+  FreePool (Signature);
+  return UNIT_TEST_PASSED;
+}
+
+// MU_CHANGE [END]
+
 TEST_DESC  mRsaPssTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function---------------------------------Pre---------------------Post---------Context
   //
-  { "TestVerifyRsaPssSignVerify()", "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaPssSignVerify, TestVerifyRsaPssPreReq, TestVerifyRsaPssCleanUp, NULL },
+  { "TestVerifyRsaPssSignVerify()",       "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaPssSignVerify,       TestVerifyRsaPssPreReq, TestVerifyRsaPssCleanUp, NULL },
+  { "TestVerifyRsaPssSignVerifySha384()", "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaPssSignVerifySha384, TestVerifyRsaPssPreReq, TestVerifyRsaPssCleanUp, NULL }, // MU_CHANGE
+  { "TestVerifyRsaPssSignVerifySha512()", "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaPssSignVerifySha512, TestVerifyRsaPssPreReq, TestVerifyRsaPssCleanUp, NULL }, // MU_CHANGE
+  { "TestVerifyRsaPssTamperedMessage()",  "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaPssTamperedMessage,  TestVerifyRsaPssPreReq, TestVerifyRsaPssCleanUp, NULL }, // MU_CHANGE
 };
 
 UINTN  mRsaPssTestNum = ARRAY_SIZE (mRsaPssTest);
