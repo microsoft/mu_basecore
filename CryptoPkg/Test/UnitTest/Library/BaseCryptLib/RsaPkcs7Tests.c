@@ -663,6 +663,93 @@ TestVerifyPkcs7SignVerifyNonSelfIssued (
   return UNIT_TEST_PASSED;
 }
 
+// MU_CHANGE [BEGIN]
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyPkcs7GetSigners (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+  UINT8    *P7SignedData;
+  UINTN    P7SignedDataSize;
+  UINT8    *CertStack;
+  UINTN    StackLength;
+  UINT8    *TrustedCert;
+  UINTN    CertLength;
+
+  P7SignedData = NULL;
+  CertStack    = NULL;
+  TrustedCert  = NULL;
+
+  //
+  // Build a PKCS#7 signed blob to operate on.
+  //
+  Status = Pkcs7Sign (
+             TestKeyPem,
+             sizeof (TestKeyPem),
+             (CONST UINT8 *)PemPass,
+             (UINT8 *)Payload,
+             AsciiStrLen (Payload),
+             TestCert,
+             sizeof (TestCert),
+             NULL,
+             &P7SignedData,
+             &P7SignedDataSize
+             );
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_NOT_NULL (P7SignedData);
+
+  //
+  // Extract signers — CertStack and TrustedCert must be freed with Pkcs7FreeSigners().
+  //
+  Status = Pkcs7GetSigners (
+             P7SignedData,
+             P7SignedDataSize,
+             &CertStack,
+             &StackLength,
+             &TrustedCert,
+             &CertLength
+             );
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_NOT_NULL (CertStack);
+  UT_ASSERT_NOT_EQUAL (StackLength, 0);
+  UT_ASSERT_NOT_NULL (TrustedCert);
+  UT_ASSERT_NOT_EQUAL (CertLength, 0);
+
+  Pkcs7FreeSigners (CertStack);
+  Pkcs7FreeSigners (TrustedCert);
+  CertStack   = NULL;
+  TrustedCert = NULL;
+
+  //
+  // GetCertificatesList — outputs chained and unchained cert lists.
+  //
+  Status = Pkcs7GetCertificatesList (
+             P7SignedData,
+             P7SignedDataSize,
+             &CertStack,
+             &StackLength,
+             &TrustedCert,
+             &CertLength
+             );
+  UT_ASSERT_TRUE (Status);
+
+  if (CertStack != NULL) {
+    Pkcs7FreeSigners (CertStack);
+  }
+
+  if (TrustedCert != NULL) {
+    Pkcs7FreeSigners (TrustedCert);
+  }
+
+  FreePool (P7SignedData);
+
+  return UNIT_TEST_PASSED;
+}
+
+// MU_CHANGE [END]
+
 TEST_DESC  mRsaCertTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function-----------------Pre---Post--Context
@@ -678,6 +765,7 @@ TEST_DESC  mPkcs7Test[] = {
   //
   { "TestVerifyPkcs7SignVerify()",              "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerify,              NULL, NULL, NULL },
   { "TestVerifyPkcs7SignVerifyNonSelfIssued()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerifyNonSelfIssued, NULL, NULL, NULL },
+  { "TestVerifyPkcs7GetSigners()",              "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7GetSigners,              NULL, NULL, NULL }, // MU_CHANGE
 };
 
 UINTN  mPkcs7TestNum = ARRAY_SIZE (mPkcs7Test);
