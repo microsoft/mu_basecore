@@ -1,15 +1,17 @@
+; MU_CHANGE - START
 ;------------------------------------------------------------------------------
 ;
 ; Copyright (c) 2006, Intel Corporation. All rights reserved.<BR>
+; Copyright (c) Microsoft Corporation.
 ; SPDX-License-Identifier: BSD-2-Clause-Patent
 ;
 ; Module Name:
 ;
-;   EnableInterrupts.Asm
+;   EnableInterruptsAndSleep.nasm
 ;
 ; Abstract:
 ;
-;   EnableInterrupts function
+;   EnableInterruptsAndSleep function
 ;
 ; Notes:
 ;
@@ -21,11 +23,13 @@
 ;------------------------------------------------------------------------------
 ; VOID
 ; EFIAPI
-; EnableInterrupts (
+; EnableInterruptsAndSleep (
 ;   VOID
 ;   );
 ;------------------------------------------------------------------------------
-global ASM_PFX(EnableInterrupts)
-ASM_PFX(EnableInterrupts):
+global ASM_PFX(EnableInterruptsAndSleep)
+ASM_PFX(EnableInterruptsAndSleep):
     sti
+    hlt
     ret
+; MU_CHANGE - END
