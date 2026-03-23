@@ -750,6 +750,125 @@ TestVerifyPkcs7GetSigners (
 
 // MU_CHANGE [END]
 
+// MU_CHANGE [BEGIN]
+/**
+  Test Pkcs7Encrypt: encrypt a payload for a recipient identified by TestCert
+  (RSA public key cert).  Verifies the function produces non-empty output and
+  tests invalid-argument rejection.
+
+  Test Pkcs7GetAttachedContent: the blob produced by Pkcs7Sign uses
+  PKCS7_DETACHED so this call returns FALSE / empty — but the API must
+  not crash and must behave correctly.
+**/
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyPkcs7Encrypt (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+  UINT8    *X509Stack;
+  UINT8    *ContentInfo;
+  UINTN    ContentInfoSize;
+  UINT8    *P7SignedData;
+  UINTN    P7SignedDataSize;
+  VOID     *AttachedContent;
+  UINTN    AttachedContentSize;
+
+  X509Stack           = NULL;
+  ContentInfo         = NULL;
+  P7SignedData        = NULL;
+  AttachedContent     = NULL;
+  AttachedContentSize = 0;
+
+  //
+  // Build an X509 stack containing the test certificate as the recipient.
+  //
+  Status = X509ConstructCertificateStack (
+             &X509Stack,
+             TestCert,
+             sizeof (TestCert),
+             NULL
+             );
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_NOT_NULL (X509Stack);
+
+  //
+  // Encrypt the payload for the recipient.
+  //
+  ContentInfoSize = 0;
+  Status          = Pkcs7Encrypt (
+                      X509Stack,
+                      (UINT8 *)Payload,
+                      AsciiStrLen (Payload),
+                      CRYPTO_NID_AES256CBC,
+                      CRYPTO_PKCS7_DEFAULT,
+                      &ContentInfo,
+                      &ContentInfoSize
+                      );
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_NOT_NULL (ContentInfo);
+  UT_ASSERT_NOT_EQUAL (ContentInfoSize, 0);
+
+  FreePool (ContentInfo);
+  ContentInfo = NULL;
+
+  //
+  // Invalid-argument rejection: NULL X509Stack must return FALSE.
+  //
+  ContentInfoSize = 0;
+  Status          = Pkcs7Encrypt (
+                      NULL,
+                      (UINT8 *)Payload,
+                      AsciiStrLen (Payload),
+                      CRYPTO_NID_AES256CBC,
+                      CRYPTO_PKCS7_DEFAULT,
+                      &ContentInfo,
+                      &ContentInfoSize
+                      );
+  UT_ASSERT_FALSE (Status);
+
+  X509StackFree (X509Stack);
+
+  //
+  // Pkcs7GetAttachedContent: Pkcs7Sign produces detached content, so the
+  // result is FALSE with Content=NULL / ContentSize=0.
+  //
+  Status = Pkcs7Sign (
+             TestKeyPem,
+             sizeof (TestKeyPem),
+             (CONST UINT8 *)PemPass,
+             (UINT8 *)Payload,
+             AsciiStrLen (Payload),
+             TestCert,
+             sizeof (TestCert),
+             NULL,
+             &P7SignedData,
+             &P7SignedDataSize
+             );
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_NOT_NULL (P7SignedData);
+
+  Status = Pkcs7GetAttachedContent (
+             P7SignedData,
+             P7SignedDataSize,
+             &AttachedContent,
+             &AttachedContentSize
+             );
+  //
+  // Detached signature: no content embedded — TRUE but Content=NULL / ContentSize=0.
+  //
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_EQUAL (AttachedContentSize, 0);
+  UT_ASSERT_TRUE (AttachedContent == NULL);
+
+  FreePool (P7SignedData);
+
+  return UNIT_TEST_PASSED;
+}
+
+// MU_CHANGE [END]
+
 TEST_DESC  mRsaCertTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function-----------------Pre---Post--Context
@@ -766,6 +885,7 @@ TEST_DESC  mPkcs7Test[] = {
   { "TestVerifyPkcs7SignVerify()",              "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerify,              NULL, NULL, NULL },
   { "TestVerifyPkcs7SignVerifyNonSelfIssued()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerifyNonSelfIssued, NULL, NULL, NULL },
   { "TestVerifyPkcs7GetSigners()",              "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7GetSigners,              NULL, NULL, NULL }, // MU_CHANGE
+  { "TestVerifyPkcs7Encrypt()",                 "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7Encrypt,                 NULL, NULL, NULL }, // MU_CHANGE
 };
 
 UINTN  mPkcs7TestNum = ARRAY_SIZE (mPkcs7Test);
