@@ -3021,13 +3021,14 @@ NetLibAipWaitForMediaState (
   connected state, connecting state and no media state respectively. When function detects
   the current state is EFI_NOT_READY, it will loop to wait for next time's check until state
   turns to be EFI_SUCCESS or EFI_NO_MEDIA. If Aip protocol is not supported, function will
-  call NetLibDetectMedia() and return state directly.
+  call NetLibDetectSnpMediaWithRetry() and wait for media to be present with a retry mechanism
+  and a minimal timeout.
 
   @param[in]   ServiceHandle    The handle where network service binding protocols are
                                 installed on.
   @param[in]   Timeout          The maximum number of 100ns units to wait when network
-                                is connecting. Zero value means detect once and return
-                                immediately.
+                                is connecting using AIP. Zero value means detect once and
+                                return immediately.
   @param[out]  MediaState       The pointer to the detected media state.
 
   @retval EFI_SUCCESS           Media detection success.
@@ -3075,7 +3076,7 @@ NetLibDetectMediaWaitTimeout (
                   );
   if (EFI_ERROR (Status)) {
     return NetLibNormalizeMediaReturnStatus (
-             NetLibDetectSnpMediaWithRetry (ServiceHandle, Timeout, DETECT_NET_MEDIA_RETRY_ATTEMPTS, MediaState),
+             NetLibDetectSnpMediaWithRetry (ServiceHandle, SNP_MEDIA_DETECT_WAITING_TIME, SNP_MEDIA_DETECT_RETRY_ATTEMPTS, MediaState),
              MediaState
              );
   }
@@ -3098,7 +3099,7 @@ NetLibDetectMediaWaitTimeout (
     }
 
     return NetLibNormalizeMediaReturnStatus (
-             NetLibDetectSnpMediaWithRetry (ServiceHandle, Timeout, DETECT_NET_MEDIA_RETRY_ATTEMPTS, MediaState),
+             NetLibDetectSnpMediaWithRetry (ServiceHandle, SNP_MEDIA_DETECT_WAITING_TIME, SNP_MEDIA_DETECT_RETRY_ATTEMPTS, MediaState),
              MediaState
              );
   }
