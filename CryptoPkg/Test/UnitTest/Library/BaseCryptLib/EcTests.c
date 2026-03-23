@@ -203,6 +203,8 @@ TestVerifyEcBasic (
 {
   UINTN    CurveCount;
   BOOLEAN  Status;
+  VOID     *BnXOut; // MU_CHANGE
+  VOID     *BnYOut; // MU_CHANGE
 
   //
   // Initialize BigNumbers
@@ -243,6 +245,24 @@ TestVerifyEcBasic (
 
     Status = EcPointIsOnCurve (Group, Point1, NULL);
     UT_ASSERT_TRUE (Status);
+
+    // MU_CHANGE [BEGIN]
+    // Round-trip: get coordinates back and verify they match
+    BnXOut = BigNumInit ();
+    BnYOut = BigNumInit ();
+    if ((BnXOut == NULL) || (BnYOut == NULL)) {
+      return UNIT_TEST_ERROR_TEST_FAILED;
+    }
+
+    Status = EcPointGetAffineCoordinates (Group, Point1, BnXOut, BnYOut, NULL);
+    UT_ASSERT_TRUE (Status);
+    UT_ASSERT_TRUE (BigNumCmp (BnXOut, BnX) == 0);
+    UT_ASSERT_TRUE (BigNumCmp (BnYOut, BnY) == 0);
+    BigNumFree (BnXOut, TRUE);
+    BigNumFree (BnYOut, TRUE);
+    BnXOut = NULL;
+    BnYOut = NULL;
+    // MU_CHANGE [END]
 
     Status = EcPointIsAtInfinity (Group, Point1);
     UT_ASSERT_FALSE (Status);

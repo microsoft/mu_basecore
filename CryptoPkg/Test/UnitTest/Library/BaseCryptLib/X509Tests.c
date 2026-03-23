@@ -837,6 +837,48 @@ TestVerifyX509KeyUsage (
 
 // MU_CHANGE [END]
 
+// MU_CHANGE [BEGIN]
+/**
+  Test Asn1GetTag against a hand-crafted minimal DER buffer.
+  Verifies correct tag matching, Length/Ptr advancement, and Ptr restoration
+  on tag mismatch — all important regression signals for provider changes.
+**/
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyMiscCryptoAPIs (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  // DER INTEGER 42: tag=0x02, length=0x01, value=0x2A
+  UINT8    DerInteger[] = { 0x02, 0x01, 0x2A };
+  UINT8    *Ptr;
+  UINTN    Length;
+  BOOLEAN  Status;
+
+  //
+  // Matching tag (0x02 = UNIVERSAL INTEGER): must succeed, advance Ptr to value,
+  // and return the correct content length.
+  //
+  Ptr    = DerInteger;
+  Length = 0;
+  Status = Asn1GetTag (&Ptr, DerInteger + sizeof (DerInteger), &Length, 0x02);
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_EQUAL (Length, 1);
+  UT_ASSERT_EQUAL (*Ptr, 0x2A);
+
+  //
+  // Wrong tag (0x04 = OCTET STRING): must fail and restore Ptr to original.
+  //
+  Ptr    = DerInteger;
+  Status = Asn1GetTag (&Ptr, DerInteger + sizeof (DerInteger), &Length, 0x04);
+  UT_ASSERT_FALSE (Status);
+  UT_ASSERT_TRUE (Ptr == DerInteger);
+
+  return UNIT_TEST_PASSED;
+}
+
+// MU_CHANGE [END]
+
 TEST_DESC  mX509Test[] = {
   //
   // -----Description--------------------------------------Class----------------------Function---------------------------------Pre---------------------Post---------Context
@@ -845,6 +887,7 @@ TEST_DESC  mX509Test[] = {
   { "TestVerifyX509Fields()",        "CryptoPkg.BaseCryptLib.X509", TestVerifyX509Fields,        NULL, NULL, NULL },        // MU_CHANGE
   { "TestVerifyX509ConstructFree()", "CryptoPkg.BaseCryptLib.X509", TestVerifyX509ConstructFree, NULL, NULL, NULL },        // MU_CHANGE
   { "TestVerifyX509KeyUsage()",      "CryptoPkg.BaseCryptLib.X509", TestVerifyX509KeyUsage,      NULL, NULL, NULL },        // MU_CHANGE
+  { "TestVerifyMiscCryptoAPIs()",    "CryptoPkg.BaseCryptLib.Misc", TestVerifyMiscCryptoAPIs,    NULL, NULL, NULL },        // MU_CHANGE
 };
 
 UINTN  mX509TestNum = ARRAY_SIZE (mX509Test);
