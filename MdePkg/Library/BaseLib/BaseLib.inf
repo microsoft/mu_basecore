@@ -233,6 +233,7 @@
   X64/CpuPause.nasm| MSFT
   X64/DisableInterrupts.nasm| MSFT
   X64/EnableInterrupts.nasm| MSFT
+  X64/EnableInterruptsAndSleep.nasm # MU_CHANGE
   X64/FlushCacheLine.nasm| MSFT
   X64/Invd.nasm| MSFT
   X64/Wbinvd.nasm| MSFT
