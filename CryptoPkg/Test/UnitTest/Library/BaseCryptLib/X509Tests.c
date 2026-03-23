@@ -712,12 +712,139 @@ TestVerifyX509Fields (
 
 // MU_CHANGE [END]
 
+// MU_CHANGE [BEGIN]
+/**
+  Test X509ConstructCertificate, X509ConstructCertificateStack,
+  X509ConstructCertificateStackV, X509Free, X509StackFree.
+
+  Note: X509ConstructCertificateStack calls X509ConstructCertificateStackV
+  internally, so both are exercised by the stack test below.
+**/
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyX509ConstructFree (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+  UINT8    *SingleCert;
+  UINT8    *X509Stack;
+
+  SingleCert = NULL;
+  X509Stack  = NULL;
+
+  //
+  // X509ConstructCertificate: wrap DER bytes into an opaque X509 object.
+  //
+  Status = X509ConstructCertificate (mTestCert, sizeof (mTestCert), &SingleCert);
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_NOT_NULL (SingleCert);
+
+  //
+  // X509ConstructCertificateStack: build a stack from one or more certs; NULL
+  // sentinel terminates the variadic argument list.
+  //
+  Status = X509ConstructCertificateStack (
+             &X509Stack,
+             mTestCert,
+             sizeof (mTestCert),
+             mTestCaCert,
+             sizeof (mTestCaCert),
+             NULL
+             );
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_NOT_NULL (X509Stack);
+
+  X509Free (SingleCert);
+  X509StackFree (X509Stack);
+
+  return UNIT_TEST_PASSED;
+}
+
+// MU_CHANGE [END]
+
+// MU_CHANGE [BEGIN]
+/**
+  Test X509GetKeyUsage, X509GetExtendedKeyUsage, and X509GetExtendedBasicConstraints
+  against mTestEndCert (created with v3_end extensions).
+
+  mTestEndCert has:
+    Key Usage:          Digital Signature, Non Repudiation, Key Encipherment
+    Extended Key Usage: TLS Web Server Auth, TLS Web Client Auth, OCSP Signing
+    Basic Constraints:  CA:FALSE (critical)
+**/
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyX509KeyUsage (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+  UINTN    KeyUsage;
+  UINT8    *ExtUsageBuf;
+  UINTN    ExtUsageSize;
+  UINT8    *BasicBuf;
+  UINTN    BasicSize;
+
+  ExtUsageBuf = NULL;
+  BasicBuf    = NULL;
+
+  //
+  // X509GetKeyUsage: returns OpenSSL KU bitmask.
+  // End cert has Digital Signature (0x0080) | Non Repudiation (0x0040) | Key Encipherment (0x0020).
+  //
+  KeyUsage = 0;
+  Status   = X509GetKeyUsage (mTestEndCert, sizeof (mTestEndCert), &KeyUsage);
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_NOT_EQUAL (KeyUsage & 0x0080, 0);  // Digital Signature
+  UT_ASSERT_NOT_EQUAL (KeyUsage & 0x0040, 0);  // Non Repudiation
+  UT_ASSERT_NOT_EQUAL (KeyUsage & 0x0020, 0);  // Key Encipherment
+
+  //
+  // X509GetExtendedKeyUsage: size-query then retrieval.
+  //
+  ExtUsageSize = 0;
+  Status       = X509GetExtendedKeyUsage (mTestEndCert, sizeof (mTestEndCert), NULL, &ExtUsageSize);
+  UT_ASSERT_FALSE (Status);
+  UT_ASSERT_NOT_EQUAL (ExtUsageSize, 0);
+
+  ExtUsageBuf = AllocatePool (ExtUsageSize);
+  UT_ASSERT_NOT_NULL (ExtUsageBuf);
+
+  Status = X509GetExtendedKeyUsage (mTestEndCert, sizeof (mTestEndCert), ExtUsageBuf, &ExtUsageSize);
+  UT_ASSERT_TRUE (Status);
+
+  FreePool (ExtUsageBuf);
+
+  //
+  // X509GetExtendedBasicConstraints: end cert has CA:FALSE.
+  //
+  BasicSize = 0;
+  Status    = X509GetExtendedBasicConstraints (mTestEndCert, sizeof (mTestEndCert), NULL, &BasicSize);
+  UT_ASSERT_FALSE (Status);
+  UT_ASSERT_NOT_EQUAL (BasicSize, 0);
+
+  BasicBuf = AllocatePool (BasicSize);
+  UT_ASSERT_NOT_NULL (BasicBuf);
+
+  Status = X509GetExtendedBasicConstraints (mTestEndCert, sizeof (mTestEndCert), BasicBuf, &BasicSize);
+  UT_ASSERT_TRUE (Status);
+
+  FreePool (BasicBuf);
+
+  return UNIT_TEST_PASSED;
+}
+
+// MU_CHANGE [END]
+
 TEST_DESC  mX509Test[] = {
   //
   // -----Description--------------------------------------Class----------------------Function---------------------------------Pre---------------------Post---------Context
   //
   { "TestVerifyX509()",              "CryptoPkg.BaseCryptLib.X509", TestVerifyX509,              NULL, NULL, NULL },
   { "TestVerifyX509Fields()",        "CryptoPkg.BaseCryptLib.X509", TestVerifyX509Fields,        NULL, NULL, NULL },        // MU_CHANGE
+  { "TestVerifyX509ConstructFree()", "CryptoPkg.BaseCryptLib.X509", TestVerifyX509ConstructFree, NULL, NULL, NULL },        // MU_CHANGE
+  { "TestVerifyX509KeyUsage()",      "CryptoPkg.BaseCryptLib.X509", TestVerifyX509KeyUsage,      NULL, NULL, NULL },        // MU_CHANGE
 };
 
 UINTN  mX509TestNum = ARRAY_SIZE (mX509Test);
