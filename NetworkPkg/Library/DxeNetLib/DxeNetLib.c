@@ -2567,7 +2567,7 @@ NetLibSnpWaitForMediaPresent (
   }
 
   Timer         = NULL;
-  TimeRemaining = Timeout;
+  TimeRemaining = MIN (Timeout, MAX_INT64);
   Status        = gBS->CreateEvent (EVT_TIMER, TPL_CALLBACK, NULL, NULL, &Timer);
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
@@ -2951,7 +2951,7 @@ NetLibAipWaitForMediaState (
   EFI_STATUS                    Status;
   EFI_STATUS                    TimerStatus;
   EFI_EVENT                     Timer;
-  UINT64                        TimeRemaining;
+  INT64                         TimeRemaining;
   UINTN                         DataSize;
   EFI_ADAPTER_INFO_MEDIA_STATE  *MediaInfo;
 
@@ -2962,7 +2962,7 @@ NetLibAipWaitForMediaState (
   MediaInfo = NULL;
 
   Timer         = NULL;
-  TimeRemaining = Timeout;
+  TimeRemaining = MIN (Timeout, MAX_INT64);
   Status        = gBS->CreateEvent (EVT_TIMER, TPL_CALLBACK, NULL, NULL, &Timer);
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
