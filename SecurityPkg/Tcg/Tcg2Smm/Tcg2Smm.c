@@ -144,6 +144,11 @@ PhysicalPresenceCallback (
   UINT32  OperationRequest;
   UINT32  RequestParameter;
 
+  if (mTcgNvs == NULL) {
+    DEBUG ((DEBUG_ERROR, "[%a] - mTcgNvs is not ready!\n", __func__));
+    return EFI_SUCCESS;
+  }
+
   if (mTcgNvs->PhysicalPresence.Parameter == TCG_ACPI_FUNCTION_RETURN_REQUEST_RESPONSE_TO_OS) {
     mTcgNvs->PhysicalPresence.ReturnCode = Tcg2PhysicalPresenceLibReturnOperationResponseToOsFunction (
                                              &MostRecentRequest,
