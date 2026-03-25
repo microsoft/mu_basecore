@@ -146,6 +146,7 @@ PhysicalPresenceCallback (
 
   if (mTcgNvs == NULL) {
     DEBUG ((DEBUG_ERROR, "[%a] - mTcgNvs is not ready!\n", __func__));
+    ASSERT (mTcgNvs != NULL);
     return EFI_SUCCESS;
   }
 
