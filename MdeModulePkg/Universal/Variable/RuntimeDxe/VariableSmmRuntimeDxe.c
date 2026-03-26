@@ -2025,13 +2025,8 @@ SmmVariableReady (
   //
   Status = GetVariablePayloadSize (&mVariableBufferPayloadSize);
   ASSERT_EFI_ERROR (Status);
-  if (mMmCommunication3 != NULL) {
-    mVariableBufferSize = SMM_COMMUNICATE_HEADER_SIZE_V3 + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE + mVariableBufferPayloadSize;
-  } else {
-    mVariableBufferSize = SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE + mVariableBufferPayloadSize;
-  }
-
-  mVariableBuffer = AllocateRuntimePool (mVariableBufferSize);
+  mVariableBufferSize = SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE + mVariableBufferPayloadSize;
+  mVariableBuffer     = AllocateRuntimePool (mVariableBufferSize);
   ASSERT (mVariableBuffer != NULL);
 
   //
