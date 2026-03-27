@@ -174,20 +174,26 @@ EfiDhcp6Stop (
   IN EFI_DHCP6_PROTOCOL  *This
   )
 {
-  EFI_TPL            OldTpl;
-  EFI_STATUS         Status;
-  EFI_UDP6_PROTOCOL  *Udp6;
-  DHCP6_INSTANCE     *Instance;
-  DHCP6_SERVICE      *Service;
+  // MU_CHANGE [BEGIN] - Prevent potential infinite loop in Dhcp6Stop()
+  EFI_TPL         OldTpl;
+  EFI_STATUS      Status;
+  DHCP6_INSTANCE  *Instance;
+
+  // EFI_UDP6_PROTOCOL  *Udp6;
+  // DHCP6_SERVICE   *Service;
+
+  // MU_CHANGE [END] - Prevent potential infinite loop in Dhcp6Stop()
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
   Instance = DHCP6_INSTANCE_FROM_THIS (This);
-  Service  = Instance->Service;
-  Udp6     = Service->UdpIo->Protocol.Udp6;
-  Status   = EFI_SUCCESS;
+  // MU_CHANGE [BEGIN] - Prevent potential infinite loop in Dhcp6Stop()
+  // Service  = Instance->Service;
+  // Udp6     = Service->UdpIo->Protocol.Udp6;
+  // MU_CHANGE [END] - Prevent potential infinite loop in Dhcp6Stop()
+  Status = EFI_SUCCESS;
 
   //
   // The instance hasn't been configured.
@@ -209,29 +215,48 @@ EfiDhcp6Stop (
     goto ON_EXIT;
   }
 
+  // MU_CHANGE [BEGIN] - Prevent potential infinite loop in Dhcp6Stop()
+
   //
-  // Release the current ready Ia.
+  // Send a Release message as a best-effort notification to the server.
+  //
+  // There is no polling for a reply.
+  //
+  // 1. The server will act on the release message regardless of acknowledgment.
+  // 2. A server reply would allow TxCb to be removed from TxList, however,
+  //    Dhcp6CleanupSession() will free every stateful TxCb in TxList anyway
+  //    (in Dhcp6CleanupRetry()).
+  //
+  // The simplifies cases such as USB NIC removal where this function will be
+  // invoked at TPL_CALLBACK during disconnect and Dhcp6OnTimerTick() is not
+  // able to run (due to TPL).
+  //
+  // For more details, see: RFC 8415 Dynamic Host Configuration Protocol for IPv6 (DHCPv6):
+  //   Section 18.2.7 Creation and Transmission of Release Messages
   //
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 
-  Instance->UdpSts = EFI_ALREADY_STARTED;
-  Status           = Dhcp6SendReleaseMsg (Instance, Instance->IaCb.Ia);
+  // Instance->UdpSts = EFI_ALREADY_STARTED;
+  Status = Dhcp6SendReleaseMsg (Instance, Instance->IaCb.Ia);
   gBS->RestoreTPL (OldTpl);
   if (EFI_ERROR (Status)) {
-    goto ON_EXIT;
+    DEBUG ((DEBUG_ERROR, "%a: Dhcp6SendReleaseMsg() failed: %r\n", __func__, Status));
+    // goto ON_EXIT;
   }
 
-  //
-  // Poll udp out of the net tpl if synchronous call.
-  //
-  if (Instance->Config->IaInfoEvent == NULL) {
-    ASSERT (Udp6 != NULL);
-    while (Instance->UdpSts == EFI_ALREADY_STARTED) {
-      Udp6->Poll (Udp6);
-    }
+  // //
+  // // Poll udp out of the net tpl if synchronous call.
+  // //
+  // if (Instance->Config->IaInfoEvent == NULL) {
+  //   ASSERT (Udp6 != NULL);
+  //   while (Instance->UdpSts == EFI_ALREADY_STARTED) {
+  //     Udp6->Poll (Udp6);
+  //   }
 
-    Status = Instance->UdpSts;
-  }
+  //   Status = Instance->UdpSts;
+  // }
+
+  // MU_CHANGE [END] - Prevent potential infinite loop in Dhcp6Stop()
 
 ON_EXIT:
   //
