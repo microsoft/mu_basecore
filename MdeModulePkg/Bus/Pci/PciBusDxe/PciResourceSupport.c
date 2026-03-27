@@ -1000,19 +1000,6 @@ ResourcePaddingPolicy (
   PMEM64 -> PMEM32 -> MEM32
   IO32   -> IO16.
 
-  Additionally, if the upstream bridge supports PMEM64 but not MEM64,
-  MEM64 resources are degraded to PMEM64 to enable 64-bit allocation
-  through the bridge's prefetchable window. So the below degradation
-  path is also now supported:
-
-  MEM64  -> PMEM64
-
-  This is safe per PCI-SIG's ECN title "Removing Prefetchable Terminology"
-  (2024-04-05).
-
-  The terms prefetchable and non-prefetchable have also been removed from
-  the PCIe base specification starting with version 6.3.
-
   @param Bridge     Pci device instance.
   @param Mem32Node  Resource info node for 32-bit memory.
   @param PMem32Node Resource info node for 32-bit Prefetchable Memory.
@@ -1102,6 +1089,7 @@ DegradeResource (
       TRUE
       );
   } else {
+    // MU_CHANGE Start - MEM64 to PMEM64 conversion
     //
     // If the upstream bridge does not support MEM64, check if we can
     // degrade to PMEM64 first, instead of degrading to MEM32 directly.
@@ -1118,7 +1106,9 @@ DegradeResource (
     // (2024-04-05) for more details.
     //
     if (!BridgeSupportResourceDecode (Bridge, EFI_BRIDGE_MEM64_DECODE_SUPPORTED)) {
-      if (BridgeSupportResourceDecode (Bridge, EFI_BRIDGE_PMEM64_DECODE_SUPPORTED)) {
+      if (PcdGetBool (PcdPciDegradeMem64toPMem64) &&
+          BridgeSupportResourceDecode (Bridge, EFI_BRIDGE_PMEM64_DECODE_SUPPORTED))
+      {
         MergeResourceTree (
           PMem64Node,
           Mem64Node,
@@ -1131,6 +1121,8 @@ DegradeResource (
           TRUE
           );
       }
+
+      // MU_CHANGE End - MEM64 to PMEM64 conversion
     }
 
     //

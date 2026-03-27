@@ -104,6 +104,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdPcieResizableBarSupport     ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdDisableBMEonEBS             ## MU_CHANGE
   gEfiMdeModulePkgTokenSpaceGuid.PcdPcieInitializeMps           ## MU_CHANGE: Add support for initializing PCIe MPS
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeMem64toPMem64     ## CONSUMES # MU_CHANGE - MEM64 to PMEM64 conversion
 
 [UserExtensions.TianoCore."ExtraFiles"]
   PciBusDxeExtra.uni
