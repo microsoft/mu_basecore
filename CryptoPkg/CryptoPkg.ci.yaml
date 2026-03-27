@@ -67,7 +67,9 @@
     "GuidCheck": {
         "IgnoreGuidName": [],
         "IgnoreGuidValue": [],
-        "IgnoreFoldersAndFiles": [],
+        "IgnoreFoldersAndFiles": [
+            "CryptoPkg/Binaries/onecrypto-bin_extdep/"
+        ],
         "IgnoreDuplicates": [
             "OneCryptoBinStandaloneMm=OneCryptoBinSupvMm"  # Intentional: Same GUID for loader identification
         ]
