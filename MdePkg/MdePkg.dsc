@@ -154,6 +154,7 @@
   # Add UEFI Target Based Unit Tests
   #
   MdePkg/Test/UnitTest/Library/BaseLib/BaseLibUnitTestApp.inf
+  MdePkg/Test/UnitTest/BootManagerPolicyProtocol/BootManagerPolicyProtocolTest.inf
 
   #
   # Build PEIM, DXE_DRIVER, SMM_DRIVER, UEFI Shell components that test SafeIntLib

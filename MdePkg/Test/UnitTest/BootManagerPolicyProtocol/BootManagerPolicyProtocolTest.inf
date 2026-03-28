@@ -1,0 +1,39 @@
+## @file
+# UEFI Shell application that tests EFI_BOOT_MANAGER_POLICY_PROTOCOL.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION     = 0x00010006
+  BASE_NAME       = BootManagerPolicyProtocolTestApp
+  FILE_GUID       = 7A3E2B5C-94D1-4F68-B827-1E5A3C6D9F02
+  MODULE_TYPE     = UEFI_APPLICATION
+  VERSION_STRING  = 1.0
+  ENTRY_POINT     = BootManagerPolicyProtocolTestEntry
+
+[Sources]
+  BootManagerPolicyProtocolTest.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  UefiApplicationEntryPoint
+  UefiBootServicesTableLib
+  UnitTestLib
+  UnitTestPersistenceLib
+
+[Protocols]
+  gEfiBootManagerPolicyProtocolGuid    ## CONSUMES
+
+[Guids]
+  gEfiBootManagerPolicyConsoleGuid
+  gEfiBootManagerPolicyNetworkGuid
+  gEfiBootManagerPolicyConnectAllGuid
+  gEfiBootManagerPolicyStorageGuid
