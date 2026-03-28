@@ -53,7 +53,8 @@
   UnitTestLib
   PrintLib
   BaseCryptLib
-  
+  TimerLib
+
 [FixedPcd]
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256New               ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Free              ## CONSUMES

@@ -140,6 +140,18 @@
     ## MU_CHANGE [END]
   }
   ## MU_CHANGE [END]
+  ## MU_CHANGE [START] add performance test application
+  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/Performance/CryptoPerfTestApp.inf {
+    <LibraryClasses>
+      DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf
+      DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
+      UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
+      ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
+      MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
+    <PcdsFixedAtBuild>
+      gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
+  }
+  ## MU_CHANGE [END]
 ## MU_CHANGE [END]
   #
 [Components.IA32, Components.X64]

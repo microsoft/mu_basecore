@@ -35,6 +35,12 @@
   # Build HOST_APPLICATION that tests the SampleUnitTest
   #
   CryptoPkg/Test/UnitTest/Library/BaseCryptLib/TestBaseCryptLibHost.inf
+  # MU_CHANGE [START]
+  #
+  # Build HOST_APPLICATION for performance tests
+  #
+  CryptoPkg/Test/UnitTest/Library/BaseCryptLib/Performance/CryptoPerfTestHost.inf
+  # MU_CHANGE [END]
 [Components.IA32, Components.X64]
   #
   # Build HOST_APPLICATION that tests the SampleUnitTest

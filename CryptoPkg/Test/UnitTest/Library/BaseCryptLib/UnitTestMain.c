@@ -35,7 +35,24 @@ UefiTestMain (
   //
   // Execute the tests.
   //
-  Status = RunAllTestSuites (Framework);
+  UINT64  StartTick;
+  UINT64  EndTick;
+  UINT64  ElapsedNs;
+
+  StartTick = GetPerformanceCounter ();
+  Status    = RunAllTestSuites (Framework);
+  EndTick   = GetPerformanceCounter ();
+
+  //
+  // The performance counter may count up or down, so take the absolute delta.
+  //
+  if (EndTick >= StartTick) {
+    ElapsedNs = GetTimeInNanoSecond (EndTick - StartTick);
+  } else {
+    ElapsedNs = GetTimeInNanoSecond (StartTick - EndTick);
+  }
+
+  DEBUG ((DEBUG_INFO, "All test suites completed in %lu ms\n", ElapsedNs / 1000000));
 
 Done:
   if (Framework) {

@@ -1,0 +1,46 @@
+## @file
+# Host-based BaseCryptLib Performance Test.
+#
+# Note: When using BaseTimerLibNullTemplate, all timing results will be 0.
+# Use a real TimerLib implementation for meaningful measurements.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = BaseCryptLibPerfTestHost
+  FILE_GUID      = 8C1D3F52-9A47-4E2B-B6C8-7D4F1E2A5B39
+  MODULE_TYPE    = HOST_APPLICATION
+  VERSION_STRING = 1.0
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources]
+  CryptoPerfMain.c
+  CryptoPerfMainHost.c
+  CryptoPerfTests.c
+  CryptoPerfLib.h
+  HashPerfTests.c
+  AesPerfTests.c
+  HmacPerfTests.c
+  RsaPerfTests.c
+  EcPerfTests.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  CryptoPkg/CryptoPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  BaseCryptLib
+  UnitTestLib
+  MmServicesTableLib
+  SynchronizationLib
+  TimerLib
