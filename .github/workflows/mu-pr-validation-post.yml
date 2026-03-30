@@ -1,0 +1,30 @@
+# Posts final results after the Mu QEMU PR Validation
+# workflow completes. Downloads metadata and updates
+# the PR comment and commit status with the final
+# outcome.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+name: Mu QEMU PR Validation Post
+
+on:
+  workflow_run:
+    workflows: ["Mu QEMU PR Validation"]
+    types: ["completed"]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  post-results:
+    name: Post Validation Results
+    uses: microsoft/mu_devops/.github/workflows/MuPrValidationPost.yml@add_mu_pr_val_workflow_e2e_val
+    with:
+      app-id: ${{ vars.MU_ACCESS_APP_ID }}
+      conclusion: ${{ github.event.workflow_run.conclusion }}
+      head-sha: ${{ github.event.workflow_run.head_sha }}
+      triggering-run-id: ${{ github.event.workflow_run.id }}
+    secrets:
+      private-key: ${{ secrets.MU_ACCESS_APP_PRIVATE_KEY }}
