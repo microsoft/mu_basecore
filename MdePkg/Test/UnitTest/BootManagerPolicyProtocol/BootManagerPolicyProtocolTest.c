@@ -486,18 +486,21 @@ UnitTestingEntry (
     );
   AddTestCase (
     KnownGuidSuite,
-    "ConnectDeviceClass with ConnectAll GUID",
-    "BootManagerPolicy.ConnectDeviceClass.ConnectAll",
-    TestConnectDeviceClassConnectAll,
+    "ConnectDeviceClass with Storage GUID",
+    "BootManagerPolicy.ConnectDeviceClass.Storage",
+    TestConnectDeviceClassStorage,
     LocateProtocolPreReq,
     NULL,
     &mTestContext
     );
+
+    //Put this test last in teh suite since ConnectAll may have side effects of connecting multiple
+    // devices and impacting other test cases if they are not properly isolated.
   AddTestCase (
     KnownGuidSuite,
-    "ConnectDeviceClass with Storage GUID",
-    "BootManagerPolicy.ConnectDeviceClass.Storage",
-    TestConnectDeviceClassStorage,
+    "ConnectDeviceClass with ConnectAll GUID",
+    "BootManagerPolicy.ConnectDeviceClass.ConnectAll",
+    TestConnectDeviceClassConnectAll,
     LocateProtocolPreReq,
     NULL,
     &mTestContext
