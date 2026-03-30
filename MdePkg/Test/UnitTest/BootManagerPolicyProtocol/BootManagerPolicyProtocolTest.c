@@ -169,16 +169,16 @@ TestConnectDeviceClassConsole (
   EFI_STATUS              Status;
   BM_POLICY_TEST_CONTEXT  *Ctx;
 
-  Ctx    = (BM_POLICY_TEST_CONTEXT *)Context;
+  Ctx = (BM_POLICY_TEST_CONTEXT *)Context;
 
-  //logging statement so if system uefi log needs to be evaluated it is clear which operation was requested  
+  // logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
   DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(Console) - Start\n", UNIT_TEST_APP_NAME));
 
   Status = Ctx->Protocol->ConnectDeviceClass (
                             Ctx->Protocol,
                             &gEfiBootManagerPolicyConsoleGuid
                             );
-  DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(Console) - End\n", UNIT_TEST_APP_NAME)); //log completed operation for clarity in logs
+  DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(Console) - End\n", UNIT_TEST_APP_NAME)); // log completed operation for clarity in logs
 
   UT_ASSERT_TRUE (IsValidConnectDeviceClassStatus (Status));
   UT_LOG_INFO ("ConnectDeviceClass(Console) returned %r\n", Status);
@@ -199,16 +199,16 @@ TestConnectDeviceClassNetwork (
   EFI_STATUS              Status;
   BM_POLICY_TEST_CONTEXT  *Ctx;
 
-  Ctx    = (BM_POLICY_TEST_CONTEXT *)Context;
+  Ctx = (BM_POLICY_TEST_CONTEXT *)Context;
 
-  //Logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
+  // Logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
   DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(Network) - Start\n", UNIT_TEST_APP_NAME));
 
   Status = Ctx->Protocol->ConnectDeviceClass (
                             Ctx->Protocol,
                             &gEfiBootManagerPolicyNetworkGuid
                             );
-  DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(Network) - End\n", UNIT_TEST_APP_NAME)); //log completed operation for clarity in logs
+  DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(Network) - End\n", UNIT_TEST_APP_NAME)); // log completed operation for clarity in logs
 
   UT_ASSERT_TRUE (IsValidConnectDeviceClassStatus (Status));
   UT_LOG_INFO ("ConnectDeviceClass(Network) returned %r\n", Status);
@@ -229,16 +229,16 @@ TestConnectDeviceClassConnectAll (
   EFI_STATUS              Status;
   BM_POLICY_TEST_CONTEXT  *Ctx;
 
-  Ctx    = (BM_POLICY_TEST_CONTEXT *)Context;
+  Ctx = (BM_POLICY_TEST_CONTEXT *)Context;
 
-  //Logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
+  // Logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
   DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(ConnectAll) - Start\n", UNIT_TEST_APP_NAME));
 
   Status = Ctx->Protocol->ConnectDeviceClass (
                             Ctx->Protocol,
                             &gEfiBootManagerPolicyConnectAllGuid
                             );
-  DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(ConnectAll) - End\n", UNIT_TEST_APP_NAME)); //log completed operation for clarity in logs
+  DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(ConnectAll) - End\n", UNIT_TEST_APP_NAME)); // log completed operation for clarity in logs
 
   UT_ASSERT_TRUE (IsValidConnectDeviceClassStatus (Status));
   UT_LOG_INFO ("ConnectDeviceClass(ConnectAll) returned %r\n", Status);
@@ -259,16 +259,16 @@ TestConnectDeviceClassStorage (
   EFI_STATUS              Status;
   BM_POLICY_TEST_CONTEXT  *Ctx;
 
-  Ctx    = (BM_POLICY_TEST_CONTEXT *)Context;
+  Ctx = (BM_POLICY_TEST_CONTEXT *)Context;
 
-  //Logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
+  // Logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
   DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(Storage) - Start\n", UNIT_TEST_APP_NAME));
-    
+
   Status = Ctx->Protocol->ConnectDeviceClass (
                             Ctx->Protocol,
                             &gEfiBootManagerPolicyStorageGuid
                             );
-  DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(Storage) - End\n", UNIT_TEST_APP_NAME)); //log completed operation for clarity in logs
+  DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(Storage) - End\n", UNIT_TEST_APP_NAME)); // log completed operation for clarity in logs
 
   UT_ASSERT_TRUE (IsValidConnectDeviceClassStatus (Status));
   UT_LOG_INFO ("ConnectDeviceClass(Storage) returned %r\n", Status);
@@ -294,16 +294,16 @@ TestConnectDeviceClassUnknownGuid (
   EFI_STATUS              Status;
   BM_POLICY_TEST_CONTEXT  *Ctx;
 
-  Ctx    = (BM_POLICY_TEST_CONTEXT *)Context;
+  Ctx = (BM_POLICY_TEST_CONTEXT *)Context;
 
-  //Logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
+  // Logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
   DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(Unknown GUID) - Start\n", UNIT_TEST_APP_NAME));
-    
+
   Status = Ctx->Protocol->ConnectDeviceClass (
                             Ctx->Protocol,
                             &mUnknownClassGuid
                             );
-  DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(Unknown GUID) - End\n", UNIT_TEST_APP_NAME)); //log completed operation for clarity in logs
+  DEBUG ((DEBUG_INFO, "[%a] - Connect DeviceClass(Unknown GUID) - End\n", UNIT_TEST_APP_NAME)); // log completed operation for clarity in logs
 
   UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
 
@@ -328,9 +328,9 @@ TestConnectDevicePathNull (
   EFI_STATUS              Status;
   BM_POLICY_TEST_CONTEXT  *Ctx;
 
-  Ctx    = (BM_POLICY_TEST_CONTEXT *)Context;
+  Ctx = (BM_POLICY_TEST_CONTEXT *)Context;
 
-  //Logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
+  // Logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
   DEBUG ((DEBUG_INFO, "[%a] - Connect DevicePath(NULL, FALSE) - Start\n", UNIT_TEST_APP_NAME));
 
   Status = Ctx->Protocol->ConnectDevicePath (
@@ -338,7 +338,7 @@ TestConnectDevicePathNull (
                             NULL,
                             FALSE
                             );
-  DEBUG ((DEBUG_INFO, "[%a] - Connect DevicePath(NULL, FALSE) - End\n", UNIT_TEST_APP_NAME)); //log completed operation for clarity in logs
+  DEBUG ((DEBUG_INFO, "[%a] - Connect DevicePath(NULL, FALSE) - End\n", UNIT_TEST_APP_NAME)); // log completed operation for clarity in logs
 
   UT_ASSERT_TRUE (IsValidConnectDevicePathStatus (Status));
   UT_LOG_INFO ("ConnectDevicePath(NULL, FALSE) returned %r\n", Status);
@@ -360,9 +360,9 @@ TestConnectDevicePathNullRecursive (
   EFI_STATUS              Status;
   BM_POLICY_TEST_CONTEXT  *Ctx;
 
-  Ctx    = (BM_POLICY_TEST_CONTEXT *)Context;
-  
-  //Logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
+  Ctx = (BM_POLICY_TEST_CONTEXT *)Context;
+
+  // Logging statement so if system uefi log needs to be evaluated it is clear which operation was requested
   DEBUG ((DEBUG_INFO, "[%a] - Connect DevicePath(NULL, TRUE) - Start\n", UNIT_TEST_APP_NAME));
 
   Status = Ctx->Protocol->ConnectDevicePath (
@@ -371,7 +371,7 @@ TestConnectDevicePathNullRecursive (
                             TRUE
                             );
 
-  DEBUG ((DEBUG_INFO, "[%a] - Connect DevicePath(NULL, TRUE) - End\n", UNIT_TEST_APP_NAME)); //log completed operation for clarity in logs
+  DEBUG ((DEBUG_INFO, "[%a] - Connect DevicePath(NULL, TRUE) - End\n", UNIT_TEST_APP_NAME)); // log completed operation for clarity in logs
 
   UT_ASSERT_TRUE (IsValidConnectDevicePathStatus (Status));
   UT_LOG_INFO ("ConnectDevicePath(NULL, TRUE) returned %r\n", Status);
@@ -494,8 +494,8 @@ UnitTestingEntry (
     &mTestContext
     );
 
-    //Put this test last in teh suite since ConnectAll may have side effects of connecting multiple
-    // devices and impacting other test cases if they are not properly isolated.
+  // Put this test last in teh suite since ConnectAll may have side effects of connecting multiple
+  // devices and impacting other test cases if they are not properly isolated.
   AddTestCase (
     KnownGuidSuite,
     "ConnectDeviceClass with ConnectAll GUID",
