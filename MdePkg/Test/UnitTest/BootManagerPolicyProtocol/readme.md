@@ -6,7 +6,9 @@ A UEFI Shell application that exercises the `EFI_BOOT_MANAGER_POLICY_PROTOCOL`
 as defined in the UEFI Specification. The test locates a live protocol instance
 via `gBS->LocateProtocol` and calls both `ConnectDevicePath` and
 `ConnectDeviceClass` with every standard class GUID, plus a fabricated unknown
-GUID to verify the expected error path.
+GUID to verify the expected error path.  Unfortunately, to test more of the actual connect
+functionality the test would require much tigher control of the pre-conditions and configuration
+of the system.  This would make the test more fragile and problematic to maintain.
 
 ## Prerequisites
 
@@ -32,12 +34,12 @@ return status is one of the spec-valid values: `EFI_SUCCESS`, `EFI_DEVICE_ERROR`
 `EFI_NOT_FOUND`, or `EFI_UNSUPPORTED`. The actual result depends on the platform
 and available devices.
 
-| Test | Class GUID |
-|------|------------|
-| `TestConnectDeviceClassConsole` | `EFI_BOOT_MANAGER_POLICY_CONSOLE_GUID` |
+| Test | Class GUID | Comment |
+|------|------------| --------|
+| `TestConnectDeviceClassConsole` |`EFI_BOOT_MANAGER_POLICY_CONSOLE_GUID` | 
 | `TestConnectDeviceClassNetwork` | `EFI_BOOT_MANAGER_POLICY_NETWORK_GUID` |
-| `TestConnectDeviceClassConnectAll` | `EFI_BOOT_MANAGER_POLICY_CONNECT_ALL_GUID` |
 | `TestConnectDeviceClassStorage` | `EFI_BOOT_MANAGER_POLICY_STORAGE_GUID` |
+| `TestConnectDeviceClassConnectAll` | `EFI_BOOT_MANAGER_POLICY_CONNECT_ALL_GUID` | This test should always be last as it will connect all device types |
 
 ### Suite 3 — ConnectDeviceClass with Unknown GUID
 
