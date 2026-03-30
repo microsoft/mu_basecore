@@ -17,7 +17,6 @@ of the system.  This would make the test more fragile and problematic to maintai
   test time.
 - The test must run at `TPL_APPLICATION` (the default for UEFI Shell apps).
 
-
 ## Test Suites and Cases
 
 ### Suite 1 — Protocol Discovery
@@ -36,7 +35,7 @@ and available devices.
 
 | Test | Class GUID | Comment |
 |------|------------| --------|
-| `TestConnectDeviceClassConsole` |`EFI_BOOT_MANAGER_POLICY_CONSOLE_GUID` | 
+| `TestConnectDeviceClassConsole` |`EFI_BOOT_MANAGER_POLICY_CONSOLE_GUID` |
 | `TestConnectDeviceClassNetwork` | `EFI_BOOT_MANAGER_POLICY_NETWORK_GUID` |
 | `TestConnectDeviceClassStorage` | `EFI_BOOT_MANAGER_POLICY_STORAGE_GUID` |
 | `TestConnectDeviceClassConnectAll` | `EFI_BOOT_MANAGER_POLICY_CONNECT_ALL_GUID` | This test should always be last as it will connect all device types |
