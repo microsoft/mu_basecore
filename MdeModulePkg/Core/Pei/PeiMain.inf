@@ -34,6 +34,7 @@
   Reset/Reset.c
   Ppi/Ppi.c
   PeiMain/PeiMain.c
+  Memory/MemoryBin.c
   Memory/MemoryServices.c
   Image/Image.c
   Hob/Hob.c
@@ -82,6 +83,7 @@
   gEdkiiMigratedFvInfoGuid                      ## SOMETIMES_PRODUCES     ## HOB
   gEdkiiMigrationInfoGuid                       ## SOMETIMES_CONSUMES     ## HOB
   gEfiDelayedDispatchTableGuid                  ## SOMETIMES_PRODUCES     ## HOB
+  gEfiMemoryTypeInformationGuid                 ## SOMETIMES_CONSUMES     ## HOB
   gEfiFirmwarePerformanceGuid                   # MU_CHANGE_161871 - needed to build SEC perf HOB
 
 [Ppis]
@@ -124,6 +126,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxDelayUs               ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchCompletionTimeoutUs      ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxEntries               ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBinsEnable                     ## CONSUMES
 
 # [BootMode]
 # S3_RESUME             ## SOMETIMES_CONSUMES
