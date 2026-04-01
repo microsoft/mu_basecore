@@ -38,6 +38,45 @@ GetHashMaskFromAlgo (
   IN TPMI_ALG_HASH  HashAlgo
   );
 
+// MU_CHANGE - [BEGIN]
+/**
+  Get hash algorithm from mask.
+
+  @param[in] HashMask   Hash mask
+
+  @return Hash algorithm
+**/
+TPMI_ALG_HASH
+EFIAPI
+GetHashAlgoFromMask (
+  IN UINT32  HashMask
+  );
+
+/**
+  Get internal hash info size.
+
+  @return Hash info size
+**/
+UINTN
+EFIAPI
+GetHashInfoSize (
+  VOID
+  );
+
+/**
+  Get hash mask at specified index.
+
+  @param[in] Index   Index requested
+
+  @return Hash mask at the specified index
+**/
+UINT32
+EFIAPI
+GetHashMaskAtIndex (
+  IN UINT32 Index
+  );
+// MU_CHANGE - [END]
+
 /**
   Copy AuthSessionIn to TPM2 command buffer.
 
