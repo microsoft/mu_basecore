@@ -277,11 +277,14 @@ UpdateRegionMappingRecursive (
   VOID        *TranslationTable;
   EFI_STATUS  Status;
   BOOLEAN     NextTableIsLive;
+  VOID        *TableToFree; // MU_CHANGE: Fix Split During Alloc
 
   ASSERT (((RegionStart | RegionEnd) & EFI_PAGE_MASK) == 0);
 
   BlockShift = (Level + 1) * BITS_PER_LEVEL + MIN_T0SZ;
   BlockMask  = MAX_UINT64 >> BlockShift;
+
+  TableToFree = NULL; // MU_CHANGE: Fix Split During Alloc
 
   DEBUG ((
     DEBUG_VERBOSE,
@@ -337,44 +340,61 @@ UpdateRegionMappingRecursive (
           return EFI_OUT_OF_RESOURCES;
         }
 
-        if (!ArmMmuEnabled ()) {
+        // MU_CHANGE BEGIN: Fix Split During Alloc
+        // Allocating a page may have split this block if a guard page
+        // was allocated in this block. Check if this is already split
+        // and if so skip the splitting logic
+        //
+        if (IsTableEntry (*Entry, Level)) {
           //
-          // Make sure we are not inadvertently hitting in the caches
-          // when populating the page tables.
+          // Don't free the page table here, we may end up recreating the
+          // large page
           //
-          InvalidateDataCacheRange (TranslationTable, EFI_PAGE_SIZE);
-        }
-
-        ZeroMem (TranslationTable, EFI_PAGE_SIZE);
-
-        if (IsBlockEntry (*Entry, Level)) {
-          //
-          // We are splitting an existing block entry, so we have to populate
-          // the new table with the attributes of the block entry it replaces.
-          //
-          Status = UpdateRegionMappingRecursive (
-                     RegionStart & ~BlockMask,
-                     (RegionStart | BlockMask) + 1,
-                     *Entry & TT_ATTRIBUTES_MASK,
-                     0,
-                     TranslationTable,
-                     Level + 1,
-                     FALSE,
-                     FALSE,
-                     Lpa2Enabled
-                     );
-          if (EFI_ERROR (Status)) {
+          TableToFree      = TranslationTable;
+          TranslationTable = (VOID *)GetOutputAddress (*Entry, Lpa2Enabled);
+          NextTableIsLive  = TableIsLive;
+        } else {
+          if (!ArmMmuEnabled ()) {
             //
-            // The range we passed to UpdateRegionMappingRecursive () is block
-            // aligned, so it is guaranteed that no further pages were allocated
-            // by it, and so we only have to free the page we allocated here.
+            // Make sure we are not inadvertently hitting in the caches
+            // when populating the page tables.
             //
-            FreePages (TranslationTable, 1);
-            return Status;
+            InvalidateDataCacheRange (TranslationTable, EFI_PAGE_SIZE);
           }
+
+          ZeroMem (TranslationTable, EFI_PAGE_SIZE);
+
+          if (IsBlockEntry (*Entry, Level)) {
+            //
+            // We are splitting an existing block entry, so we have to populate
+            // the new table with the attributes of the block entry it replaces.
+            //
+            Status = UpdateRegionMappingRecursive (
+                       RegionStart & ~BlockMask,
+                       (RegionStart | BlockMask) + 1,
+                       *Entry & TT_ATTRIBUTES_MASK,
+                       0,
+                       TranslationTable,
+                       Level + 1,
+                       FALSE,
+                       FALSE,
+                       Lpa2Enabled
+                       );
+            if (EFI_ERROR (Status)) {
+              //
+              // The range we passed to UpdateRegionMappingRecursive () is block
+              // aligned, so it is guaranteed that no further pages were allocated
+              // by it, and so we only have to free the page we allocated here.
+              //
+              FreePages (TranslationTable, 1);
+              return Status;
+            }
+          }
+
+          NextTableIsLive = FALSE;
         }
 
-        NextTableIsLive = FALSE;
+        // MU_CHANGE END: Fix Split During Alloc
       } else {
         TranslationTable = (VOID *)GetOutputAddress (*Entry, Lpa2Enabled);
         NextTableIsLive  = TableIsLive;
@@ -431,6 +451,17 @@ UpdateRegionMappingRecursive (
       ReplaceTableEntry (Entry, EntryValue, RegionStart, BlockMask, FALSE);
     }
   }
+
+  // MU_CHANGE BEGIN: Fix Split During Alloc
+  // We may have left an orphaned page table page if we discovered a
+  // recursive call already split a block.
+  //
+  if (TableToFree != NULL) {
+    FreePages (TableToFree, 1);
+    TableToFree = NULL;
+  }
+
+  // MU_CHANGE END: Fix Split During Alloc
 
   return EFI_SUCCESS;
 }
