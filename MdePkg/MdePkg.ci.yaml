@@ -120,9 +120,7 @@
 
     ## options defined ci/Plugin/DscCompleteCheck
     "DscCompleteCheck": {
-        "IgnoreInf": [
-            "MdePkg/Library/FltUsedLib/FltUsedLib.inf" # MU_CHANGE this isn't compilable since it has no code
-        ],
+        "IgnoreInf": [""],
         "DscPath": "MdePkg.dsc"
     },
 
