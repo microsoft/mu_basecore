@@ -28,7 +28,7 @@ on:
 jobs:
   package-matrix:
     name: Gather Repository Packages
-    uses: microsoft/mu_devops/.github/workflows/PackageMatrix.yml@v18.0.4
+    uses: microsoft/mu_devops/.github/workflows/PackageMatrix.yml@personal/joeyvagedes/package-matrix-bugfix
     with:
       ci-config: '.pytool/CISettings.py'
       python-version: "3.12"
@@ -52,7 +52,7 @@ jobs:
 
     needs: package-matrix
 
-    uses: microsoft/mu_devops/.github/workflows/PackageCi.yml@v18.0.4
+    uses: microsoft/mu_devops/.github/workflows/PackageCi.yml@personal/joeyvagedes/package-matrix-bugfix
 
     with:
       runner: windows-latest
