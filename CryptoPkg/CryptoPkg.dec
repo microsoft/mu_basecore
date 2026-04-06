@@ -300,7 +300,7 @@
   #  GCC and CLANGDWARF must use the ELF target assembly source files.
   #  The default setting is to not use the PE target assembly source files.
   # @Prompt Use PE target assembly source files for optimized version of OpensslLib for AARCH64
-  gEfiCryptoPkgTokenSpaceGuid.PcdOpensslLibAssemblySourceStylePe|FALSE|BOOLEAN|0x00000004
+  gEfiCryptoPkgTokenSpaceGuid.PcdOpensslLibAssemblySourceStylePe|FALSE|BOOLEAN|0x00001001 # MU_CHANGE
 
 [PcdsFixedAtBuild]
   ## Enable/Disable the families and individual services produced by the
