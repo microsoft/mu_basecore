@@ -1,0 +1,79 @@
+# A workflow to build EDKII packages using the CLANGPDB toolchain in windows and ubuntu environments.
+#
+# NOTE: This file is automatically synchronized from Mu DevOps to keep the version of the
+#       workflow up to date. Update the original file there instead of the file in this repo.
+#
+# - Mu DevOps Repo: https://github.com/microsoft/mu_devops
+# - File Sync Settings: https://github.com/microsoft/mu_devops/blob/main/.sync/Files.yml
+#
+# Copyright (c) Microsoft Corporation.
+#
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+# NOTE: Because this pipeline YAML file is a Nunjucks template, the pipeline syntax of `{{}}` will conflict with
+#       Nunjucks style. Surround pipeline YAML code that uses `{{}}` within `raw` and `endraw` tags
+#       to allow it to pass through Nunjucks processing.
+
+name: CLANGPDB Package CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - release/202511
+  pull_request:
+    branches:
+      - release/202511
+
+jobs:
+  package-matrix:
+    name: Gather Repository Packages
+    uses: microsoft/mu_devops/.github/workflows/PackageMatrix.yml@v18.0.5
+    with:
+      ci-config: '.pytool/CISettings.py'
+      python-version: "3.12"
+      # Default config applied to any undeclared packages in the repo
+      default-config: |
+        targets: ["DEBUG,RELEASE"]
+        toolchain: ["CLANGPDB"]
+      package-config: |
+        - packages: MdeModulePkg
+          targets: RELEASE
+          toolchain: CLANGPDB
+        - packages: MdeModulePkg
+          targets: DEBUG
+          toolchain: CLANGPDB
+        
+
+  windows-ci:
+    name: Windows CLANGPDB CI
+
+    if: ${{ needs.package-matrix.outputs.matrix != '' }}
+
+    needs: package-matrix
+
+    uses: microsoft/mu_devops/.github/workflows/PackageCi.yml@v18.0.5
+
+    with:
+      runner: windows-latest
+      setup-cmd: setup
+      python-version: "3.12"
+      package-config: ${{ needs.package-matrix.outputs.matrix }}
+
+
+  ubuntu-ci:
+    name: Ubuntu CLANGPDB CI
+
+    if: ${{ needs.package-matrix.outputs.matrix != '' }}
+
+    needs: package-matrix
+
+    uses: microsoft/mu_devops/.github/workflows/PackageCi.yml@v18.0.5
+
+    with:
+      runner: ubuntu-latest
+      setup-cmd: setup
+      container: ghcr.io/microsoft/mu_devops/ubuntu-24-build:737aacc
+      python-version: "3.12"
+      package-config: ${{ needs.package-matrix.outputs.matrix }}
+

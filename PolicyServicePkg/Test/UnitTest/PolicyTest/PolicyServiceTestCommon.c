@@ -158,12 +158,12 @@ MultiplePolicyTest (
   )
 
 {
-  EFI_STATUS      Status;
-  UINT64          Policies[10];
-  UINT64          GetPolicy;
-  UINT32          PolicyIndex;
-  UINT16          PolicySize;
-  CONST EFI_GUID  PolicyGuids[10] = {
+  EFI_STATUS             Status;
+  UINT64                 Policies[10];
+  UINT64                 GetPolicy;
+  UINT32                 PolicyIndex;
+  UINT16                 PolicySize;
+  STATIC CONST EFI_GUID  PolicyGuids[10] = {
     { 0xaff48896, 0x6725, 0x40a8, { 0xa1, 0x8e, 0x69, 0xb8, 0x36, 0x88, 0xfa, 0x71 }
     },
     { 0xd3f329d8, 0x5ab5, 0x471c, { 0xaf, 0x32, 0x1f, 0x94, 0xde, 0xba, 0x71, 0x02 }
