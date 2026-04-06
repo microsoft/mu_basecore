@@ -34,7 +34,7 @@
   DebugLib
   HobLib
   MemoryAllocationLib
-  TimerLib  # MU_CHANGE
+  SafeIntLib
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdFfaLibConduitSmc

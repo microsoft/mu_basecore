@@ -36,7 +36,7 @@
   HobLib
   MemoryAllocationLib
   MmServicesTableLib
-  TimerLib  # MU_CHANGE
+  SafeIntLib
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdFfaLibConduitSmc
