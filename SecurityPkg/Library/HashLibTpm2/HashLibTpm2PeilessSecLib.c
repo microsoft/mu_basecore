@@ -94,6 +94,7 @@ GetTransferList (
 }
 
 // MU_CHANGE - [BEGIN]
+
 /**
   Get supported hash bitmap
 
@@ -109,7 +110,7 @@ STATIC
 EFI_STATUS
 EFIAPI
 GetSupportedHashBitmap (
-  OUT UINT32 *SupportedHashBitmap
+  OUT UINT32  *SupportedHashBitmap
   )
 {
   EFI_STATUS                       Status;
@@ -143,8 +144,11 @@ GetSupportedHashBitmap (
     return Status;
   }
 
+  // NOTE: TpmHashBitmap is what the TPM supports, PcrHashBitmap is what is currently active
+  DEBUG ((DEBUG_INFO, "TpmHashBitmap: %x, PcrHashBitmap: %x\n", TpmHashBitmap, PcrHashBitmap));
+
   UseTlHashBitmap = FALSE;
-  Status = GetTransferList (&TransferList);
+  Status          = GetTransferList (&TransferList);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: Unable to acquire Transfer list...\n", __func__));
     goto Exit;
@@ -175,6 +179,12 @@ GetSupportedHashBitmap (
     *SupportedHashBitmap |= GetHashMaskFromAlgo (DigestSize[Idx].algorithmId);
   }
 
+  // The active PCR banks should match what is reported in the TCG event log
+  if (PcrHashBitmap != *SupportedHashBitmap) {
+    DEBUG ((DEBUG_ERROR, "Active PCRs & Transfer List mismatch!\n"));
+    UseTlHashBitmap = FALSE;
+  }
+
 Exit:
   if (!UseTlHashBitmap) {
     // Use the information from the TPM to update the supported hash bitmap
@@ -193,6 +203,7 @@ Exit:
 }
 
 #if 0
+
 /**
   The function get algorithm from hash mask info.
 
@@ -297,6 +308,7 @@ ClearSequenceHandles (
     mTpm2HashMask[Idx].SequenceHandle = BAD_SEQ_HANDLE;
   }
 }
+
 #endif
 // MU_CHANGE - [END]
 
@@ -315,16 +327,16 @@ HashStart (
   OUT HASH_HANDLE  *HashHandle
   )
 {
-  EFI_STATUS   Status;
-  TPM_ALG_ID   AlgoId;
-  UINT32       Idx;
+  EFI_STATUS  Status;
+  TPM_ALG_ID  AlgoId;
+  UINT32      Idx;
   // MU_CHANGE - [BEGIN]
   UINT32       SupportedHashBitmap;
   HASH_HANDLE  *HashCtx;
   UINTN        HashInfoSize;
 
   SupportedHashBitmap = 0;
-  Status = GetSupportedHashBitmap(&SupportedHashBitmap);
+  Status              = GetSupportedHashBitmap (&SupportedHashBitmap);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -333,23 +345,23 @@ HashStart (
     return EFI_DEVICE_ERROR;
   }
 
-  HashInfoSize = GetHashInfoSize();
-  HashCtx = AllocatePool (HashInfoSize * sizeof (HASH_HANDLE));
+  HashInfoSize = GetHashInfoSize ();
+  HashCtx      = AllocatePool (HashInfoSize * sizeof (HASH_HANDLE));
   if (HashCtx == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
   for (Idx = 0; Idx < HashInfoSize; Idx++) {
-    if ((GetHashMaskAtIndex(Idx) & SupportedHashBitmap) == 0) {
+    if ((GetHashMaskAtIndex (Idx) & SupportedHashBitmap) == 0) {
       continue;
     }
 
-    AlgoId = GetHashAlgoFromMask (GetHashMaskAtIndex(Idx));
+    AlgoId = GetHashAlgoFromMask (GetHashMaskAtIndex (Idx));
     if (AlgoId == TPM_ALG_ERROR) {
       return EFI_UNSUPPORTED;
     }
 
-    Status = Tpm2HashSequenceStart (AlgoId, (TPMI_DH_OBJECT*)&HashCtx[Idx]);
+    Status = Tpm2HashSequenceStart (AlgoId, (TPMI_DH_OBJECT *)&HashCtx[Idx]);
     if (EFI_ERROR (Status)) {
       return Status;
     }
@@ -379,19 +391,19 @@ HashUpdate (
   IN UINTN        DataToHashLen
   )
 {
-  EFI_STATUS        Status;
-  UINT32            Idx;
-  //UINT32            HashMask; // MU_CHANGE
+  EFI_STATUS  Status;
+  UINT32      Idx;
+  // UINT32            HashMask; // MU_CHANGE
   UINT8             *Buffer;
   UINT64            HashLen;
   TPM2B_MAX_BUFFER  HashBuffer;
   // MU_CHANGE - [BEGIN]
-  UINT32            SupportedHashBitmap;
-  HASH_HANDLE       *HashCtx;
-  UINTN             HashInfoSize;
+  UINT32       SupportedHashBitmap;
+  HASH_HANDLE  *HashCtx;
+  UINTN        HashInfoSize;
 
   SupportedHashBitmap = 0;
-  Status = GetSupportedHashBitmap(&SupportedHashBitmap);
+  Status              = GetSupportedHashBitmap (&SupportedHashBitmap);
   // MU_CHANGE - [END]
   if (EFI_ERROR (Status)) {
     return Status;
@@ -402,11 +414,11 @@ HashUpdate (
     return EFI_DEVICE_ERROR;
   }
 
-  HashCtx = (HASH_HANDLE*)HashHandle;
+  HashCtx = (HASH_HANDLE *)HashHandle;
 
-  HashInfoSize = GetHashInfoSize();
+  HashInfoSize = GetHashInfoSize ();
   for (Idx = 0; Idx < HashInfoSize; Idx++) {
-    if ((GetHashMaskAtIndex(Idx) & SupportedHashBitmap) == 0) {
+    if ((GetHashMaskAtIndex (Idx) & SupportedHashBitmap) == 0) {
       // MU_CHANGE - [END]
       continue;
     }
@@ -457,39 +469,42 @@ HashCompleteAndExtend (
   OUT TPML_DIGEST_VALUES  *DigestList
   )
 {
-  EFI_STATUS        Status;
-  UINT32            Idx;
-  UINT32            DigestIdx;
-  //UINT32            HashMask; // MU_CHANGE
+  EFI_STATUS  Status;
+  UINT32      Idx;
+  UINT32      DigestIdx;
+  // UINT32            HashMask; // MU_CHANGE
   UINT8             *Buffer;
   UINT64            HashLen;
   TPM2B_MAX_BUFFER  HashBuffer;
   TPM_ALG_ID        AlgoId;
   TPM2B_DIGEST      Result;
   // MU_CHANGE - [BEGIN]
-  UINT32            SupportedHashBitmap;
-  HASH_HANDLE       *HashCtx;
-  UINTN             HashInfoSize;
+  UINT32       SupportedHashBitmap;
+  HASH_HANDLE  *HashCtx;
+  UINTN        HashInfoSize;
 
   SupportedHashBitmap = 0;
-  Status = GetSupportedHashBitmap(&SupportedHashBitmap);
+  Status              = GetSupportedHashBitmap (&SupportedHashBitmap);
   if (EFI_ERROR (Status)) {
-    goto Error;
+    return Status;
   }
 
   if (SupportedHashBitmap == 0) {
     return EFI_DEVICE_ERROR;
   }
+
   // MU_CHANGE - [END]
 
   ZeroMem (DigestList, sizeof (*DigestList));
   DigestList->count = HASH_COUNT;
   DigestIdx         = 0;
-  HashCtx           = (HASH_HANDLE*)HashHandle; // MU_CHANGE
+  HashCtx           = (HASH_HANDLE *)HashHandle; // MU_CHANGE
 
-  HashInfoSize = GetHashInfoSize();
-  for (Idx = 0; Idx < HashInfoSize; Idx++) { // MU_CHANGE
-    if ((GetHashMaskAtIndex(Idx) & SupportedHashBitmap) == 0) { // MU_CHANGE
+  HashInfoSize = GetHashInfoSize ();
+  for (Idx = 0; Idx < HashInfoSize; Idx++) {
+    // MU_CHANGE
+    if ((GetHashMaskAtIndex (Idx) & SupportedHashBitmap) == 0) {
+      // MU_CHANGE
       continue;
     }
 
@@ -515,11 +530,12 @@ HashCompleteAndExtend (
     }
 
     // MU_CHANGE - [BEGIN]
-    AlgoId = GetHashAlgoFromMask (GetHashMaskAtIndex(Idx));
+    AlgoId = GetHashAlgoFromMask (GetHashMaskAtIndex (Idx));
     if (AlgoId == TPM_ALG_ERROR) {
       Status = EFI_UNSUPPORTED;
       goto Error;
     }
+
     // MU_CHANGE - [END]
 
     // Copy the result of hash.
@@ -570,13 +586,13 @@ HashAndExtend (
   UINT32            Idx;
   UINT32            DigestIdx;
   UINT32            SupportedHashBitmap; // MU_CHANGE
-  UINT32            HashInfoSize; // MU_CHANGE
+  UINT32            HashInfoSize;        // MU_CHANGE
 
   DEBUG ((DEBUG_VERBOSE, "\n HashAndExtend Entry \n"));
 
   // MU_CHANGE - [BEGIN]
   SupportedHashBitmap = 0;
-  Status = GetSupportedHashBitmap (&SupportedHashBitmap);
+  Status              = GetSupportedHashBitmap (&SupportedHashBitmap);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -584,24 +600,28 @@ HashAndExtend (
   if (SupportedHashBitmap == 0x00) {
     return EFI_DEVICE_ERROR;
   }
+
   // MU_CHANGE - [END]
 
   ZeroMem (DigestList, sizeof (*DigestList));
   DigestList->count = HASH_COUNT;
   DigestIdx         = 0;
 
-  HashInfoSize = GetHashInfoSize(); // MU_CHANGE
-  for (Idx = 0; Idx < HashInfoSize; Idx++) { // MU_CHANGE
-    if ((GetHashMaskAtIndex(Idx) & SupportedHashBitmap) == 0) { // MU_CHANGE
+  HashInfoSize = GetHashInfoSize (); // MU_CHANGE
+  for (Idx = 0; Idx < HashInfoSize; Idx++) {
+    // MU_CHANGE
+    if ((GetHashMaskAtIndex (Idx) & SupportedHashBitmap) == 0) {
+      // MU_CHANGE
       continue;
     }
 
     // MU_CHANGE - [BEGIN]
-    DEBUG ((DEBUG_INFO, "Hashing with Mask: %x\n", GetHashMaskAtIndex(Idx)));
-    AlgoId = GetHashAlgoFromMask (GetHashMaskAtIndex(Idx));
+    DEBUG ((DEBUG_INFO, "Hashing with Mask: %x\n", GetHashMaskAtIndex (Idx)));
+    AlgoId = GetHashAlgoFromMask (GetHashMaskAtIndex (Idx));
     if (AlgoId == TPM_ALG_ERROR) {
       return EFI_UNSUPPORTED;
     }
+
     // MU_CHANGE - [END]
 
     Status = Tpm2HashSequenceStart (AlgoId, &SequenceHandle);
@@ -644,7 +664,7 @@ HashAndExtend (
   DigestList->count = DigestIdx;
 
   DEBUG ((DEBUG_INFO, "Extending to PCR%d\n", PcrIndex)); // MU_CHANGE
-  Status = Tpm2PcrExtend (PcrIndex,DigestList); // MU_CHANGE
+  Status = Tpm2PcrExtend (PcrIndex, DigestList);          // MU_CHANGE
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
@@ -675,6 +695,7 @@ RegisterHashInterfaceLib (
 
 // MU_CHANGE - [BEGIN]
 #if 0
+
 /**
   Constructor of HashLibTpm2PeilessSecLibConstructor.
 
@@ -751,5 +772,6 @@ HasLibTpm2PeilessSecLibConstructor (
 DisableHandler:
   return EFI_SUCCESS;
 }
+
 #endif
 // MU_CHANGE - [END]

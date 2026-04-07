@@ -39,6 +39,7 @@ GetHashMaskFromAlgo (
   );
 
 // MU_CHANGE - [BEGIN]
+
 /**
   Get hash algorithm from mask.
 
@@ -73,8 +74,9 @@ GetHashInfoSize (
 UINT32
 EFIAPI
 GetHashMaskAtIndex (
-  IN UINT32 Index
+  IN UINT32  Index
   );
+
 // MU_CHANGE - [END]
 
 /**
