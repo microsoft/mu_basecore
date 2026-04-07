@@ -1479,13 +1479,14 @@ BuildVariableRuntimeCacheInfoHob (
     //
     Buffer = AllocateRuntimePages (Pages);
     ASSERT (Buffer != NULL);
-    Status = MmUnblockMemoryRequest (
-               (EFI_PHYSICAL_ADDRESS)(UINTN)Buffer,
-               Pages
-               );
-    if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
-      return Status;
-    }
+  }
+
+  Status = MmUnblockMemoryRequest (
+              (EFI_PHYSICAL_ADDRESS)(UINTN)Buffer,
+              Pages
+              );
+  if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
+    return Status;
   }
 
   // MU_CHANGE [END]
@@ -1514,13 +1515,14 @@ BuildVariableRuntimeCacheInfoHob (
       //
       Buffer = AllocateRuntimePages (Pages);
       ASSERT (Buffer != NULL);
-      Status = MmUnblockMemoryRequest (
-                 (EFI_PHYSICAL_ADDRESS)(UINTN)Buffer,
-                 Pages
-                 );
-      if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
-        return Status;
-      }
+    }
+
+    Status = MmUnblockMemoryRequest (
+                (EFI_PHYSICAL_ADDRESS)(UINTN)Buffer,
+                Pages
+                );
+    if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
+      return Status;
     }
 
     TempHobBuffer.RuntimeVolatileCacheBuffer = (UINTN)Buffer;
@@ -1552,13 +1554,14 @@ BuildVariableRuntimeCacheInfoHob (
       //
       Buffer = AllocateRuntimePages (Pages);
       ASSERT (Buffer != NULL);
-      Status = MmUnblockMemoryRequest (
-                 (EFI_PHYSICAL_ADDRESS)(UINTN)Buffer,
-                 Pages
-                 );
-      if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
-        return Status;
-      }
+    }
+
+    Status = MmUnblockMemoryRequest (
+                (EFI_PHYSICAL_ADDRESS)(UINTN)Buffer,
+                Pages
+                );
+    if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
+      return Status;
     }
 
     TempHobBuffer.RuntimeNvCacheBuffer = (UINTN)Buffer;
@@ -1590,13 +1593,14 @@ BuildVariableRuntimeCacheInfoHob (
       //
       Buffer = AllocateRuntimePages (Pages);
       ASSERT (Buffer != NULL);
-      Status = MmUnblockMemoryRequest (
-                 (EFI_PHYSICAL_ADDRESS)(UINTN)Buffer,
-                 Pages
-                 );
-      if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
-        return Status;
-      }
+    }
+
+    Status = MmUnblockMemoryRequest (
+                (EFI_PHYSICAL_ADDRESS)(UINTN)Buffer,
+                Pages
+                );
+    if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
+      return Status;
     }
 
     TempHobBuffer.RuntimeHobCacheBuffer = (UINTN)Buffer;
