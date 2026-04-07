@@ -922,8 +922,7 @@
 
   # MU_CHANGE [BEGIN] - Allocate RT cache buffer in DXE instead of PEI to prevent fragmentation
   ## Indicates whether to allocate variable runtime cache buffers in PEI or DXE phase.<BR><BR>
-  #  When TRUE, buffers are allocated as EfiBootServicesData in PEI and migrated to
-  #  EfiRuntimeServicesData in DXE to prevent runtime memory fragmentation.<BR>
+  #  When TRUE,the Variable RT cache HOB is not produced and PEI and the cache is allocated in DXE.<BR>
   #  When FALSE, buffers are allocated directly as EfiRuntimeServicesData in PEI
   #  (original behavior).<BR><BR>
   #  This should only be set to TRUE on platforms that can unblock MM memory in DXE such as those
