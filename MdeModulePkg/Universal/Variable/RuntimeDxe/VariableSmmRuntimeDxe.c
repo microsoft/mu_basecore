@@ -1813,12 +1813,14 @@ InitVariableCache (
         if (TempCacheInfoBuffer != 0) {
           RuntimeBuffer = (VOID *)(UINTN)TempCacheInfoBuffer;
           CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.CacheInfoFlagBuffer, sizeof (CACHE_INFO_FLAG));
+          MmReblockMemoryRequest (mVariableRtCacheInfo.CacheInfoFlagBuffer, EFI_SIZE_TO_PAGES (sizeof (CACHE_INFO_FLAG)));
           mVariableRtCacheInfo.CacheInfoFlagBuffer = TempCacheInfoBuffer;
         }
 
         if (TempHobCacheBuffer != 0) {
           RuntimeBuffer = (VOID *)(UINTN)TempHobCacheBuffer;
           CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.RuntimeHobCacheBuffer, AllocatedHobCacheSize);
+          MmReblockMemoryRequest (mVariableRtCacheInfo.RuntimeHobCacheBuffer, EFI_SIZE_TO_PAGES (AllocatedHobCacheSize));
           mVariableRtCacheInfo.RuntimeHobCacheBuffer = TempHobCacheBuffer;
           InitVariableStoreHeader (RuntimeBuffer, AllocatedHobCacheSize);
         }
@@ -1826,6 +1828,7 @@ InitVariableCache (
         if (TempNvCacheBuffer != 0) {
           RuntimeBuffer = (VOID *)(UINTN)TempNvCacheBuffer;
           CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.RuntimeNvCacheBuffer, AllocatedNvCacheSize);
+          MmReblockMemoryRequest (mVariableRtCacheInfo.RuntimeNvCacheBuffer, EFI_SIZE_TO_PAGES (AllocatedNvCacheSize));
           mVariableRtCacheInfo.RuntimeNvCacheBuffer = TempNvCacheBuffer;
           InitVariableStoreHeader (RuntimeBuffer, AllocatedNvCacheSize);
         }
@@ -1833,6 +1836,7 @@ InitVariableCache (
         if (TempVolatileCacheBuffer != 0) {
           RuntimeBuffer = (VOID *)(UINTN)TempVolatileCacheBuffer;
           CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.RuntimeVolatileCacheBuffer, AllocatedVolatileCacheSize);
+          MmReblockMemoryRequest (mVariableRtCacheInfo.RuntimeVolatileCacheBuffer, EFI_SIZE_TO_PAGES (AllocatedVolatileCacheSize));
           mVariableRtCacheInfo.RuntimeVolatileCacheBuffer = TempVolatileCacheBuffer;
           InitVariableStoreHeader (RuntimeBuffer, AllocatedVolatileCacheSize);
         }
