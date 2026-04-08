@@ -86,6 +86,7 @@ jobs:
             }
 
       - name: Set Pending Commit Status
+        if: false  # TODO: Requires commit status write permission to be accepted at the org level first
         uses: actions/github-script@v8
         with:
           github-token: ${{ steps.app-token.outputs.token }}
