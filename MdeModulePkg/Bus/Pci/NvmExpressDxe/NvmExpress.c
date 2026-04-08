@@ -418,16 +418,25 @@ Exit:
   Discover all Nvm Express device namespaces, and create child handles for them with BlockIo
   and DiskInfo protocol instances.
 
-  @param[in] Private         The pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
+  When PcdNvmeNamespaceFilter is set to TRUE, it limits NVMe namespace enumeration.
+  When TRUE, only the first namespace (NSID 1) is discovered and
+  enumerated. When FALSE (default), all namespaces are enumerated
+  as before.
 
-  @retval EFI_SUCCESS        All the namespaces in the device are successfully enumerated.
-  @return Others             Some error occurs when enumerating the namespaces.
+  // MU_CHANGE [BEGIN] - NVMe namespace filtering
+  @param[in] Private          The pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
+  @param[in] FilteringEnabled If TRUE, only discover the first namespace. If FALSE, discover all namespaces.
+
+  @retval EFI_SUCCESS         All the namespaces in the device are successfully enumerated.
+  @return Others              Some error occurs when enumerating the namespaces.
 
 **/
 EFI_STATUS
 DiscoverAllNamespaces (
-  IN NVME_CONTROLLER_PRIVATE_DATA  *Private
+  IN NVME_CONTROLLER_PRIVATE_DATA  *Private,
+  IN BOOLEAN                       FilteringEnabled
   )
+// MU_CHANGE [END] - NVMe namespace filtering
 {
   EFI_STATUS                          Status;
   UINT32                              NamespaceId;
@@ -436,7 +445,8 @@ DiscoverAllNamespaces (
   NamespaceId = 0xFFFFFFFF;
   Passthru    = &Private->Passthru;
 
-  while (TRUE) {
+  // MU_CHANGE [BEGIN] - NVMe namespace filtering
+  do {
     Status = Passthru->GetNextNamespace (
                          Passthru,
                          (UINT32 *)&NamespaceId
@@ -454,7 +464,9 @@ DiscoverAllNamespaces (
     if (EFI_ERROR (Status)) {
       continue;
     }
-  }
+  } while (!FilteringEnabled);
+
+  // MU_CHANGE [END] - NVMe namespace filtering
 
   return EFI_SUCCESS;
 }
@@ -1125,6 +1137,7 @@ NvmExpressDriverBindingStart (
   // MU_CHANGE [END] - Allocate IO Queue Buffer
 
   EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL  *Passthru;
+  BOOLEAN                             FilteringEnabled; // MU_CHANGE - NVMe namespace filtering
 
   DEBUG ((DEBUG_INFO, "NvmExpressDriverBindingStart: start\n"));
 
@@ -1315,13 +1328,20 @@ NvmExpressDriverBindingStart (
     Private = NVME_CONTROLLER_PRIVATE_DATA_FROM_PASS_THRU (Passthru);
   }
 
+  // MU_CHANGE [BEGIN] - NVMe namespace filtering
+  FilteringEnabled = PcdGetBool (PcdNvmeNamespaceFilter);
+  // MU_CHANGE [END] - NVMe namespace filtering
+
   if (RemainingDevicePath == NULL) {
     //
     // Enumerate all NVME namespaces in the controller
     //
+    // MU_CHANGE [BEGIN] - NVMe namespace filtering
     Status = DiscoverAllNamespaces (
-               Private
+               Private,
+               FilteringEnabled
                );
+    // MU_CHANGE [END] - NVMe namespace filtering
   } else if (!IsDevicePathEnd (RemainingDevicePath)) {
     //
     // Enumerate the specified NVME namespace
@@ -1333,10 +1353,21 @@ NvmExpressDriverBindingStart (
                                  );
 
     if (!EFI_ERROR (Status)) {
-      Status = EnumerateNvmeDevNamespace (
-                 Private,
-                 NamespaceId
-                 );
+      // MU_CHANGE [BEGIN] - NVMe namespace filtering
+      // When PcdNvmeNamespaceFilter is set to TRUE, it limits NVMe namespace enumeration.
+      // When TRUE, only the first namespace (NSID 1) is discovered and
+      // enumerated. When FALSE (default), all namespaces are enumerated
+      // as before.
+      if (!FilteringEnabled ||
+          (NamespaceId == NVME_FIRST_NSID))
+      {
+        Status = EnumerateNvmeDevNamespace (
+                   Private,
+                   NamespaceId
+                   );
+      }
+
+      // MU_CHANGE [END] - NVMe namespace filtering
     }
   }
 
