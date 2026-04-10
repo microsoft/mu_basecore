@@ -277,14 +277,15 @@ UpdateRegionMappingRecursive (
   VOID        *TranslationTable;
   EFI_STATUS  Status;
   BOOLEAN     NextTableIsLive;
-  VOID        *TableToFree; // MU_CHANGE: Fix Split During Alloc
+  VOID        *TablesToFree[2];
 
   ASSERT (((RegionStart | RegionEnd) & EFI_PAGE_MASK) == 0);
 
   BlockShift = (Level + 1) * BITS_PER_LEVEL + MIN_T0SZ;
   BlockMask  = MAX_UINT64 >> BlockShift;
 
-  TableToFree = NULL; // MU_CHANGE: Fix Split During Alloc
+  TablesToFree[0] = NULL;
+  TablesToFree[1] = NULL;
 
   DEBUG ((
     DEBUG_VERBOSE,
@@ -340,7 +341,7 @@ UpdateRegionMappingRecursive (
           return EFI_OUT_OF_RESOURCES;
         }
 
-        // MU_CHANGE BEGIN: Fix Split During Alloc
+        //
         // Allocating a page may have split this block if a guard page
         // was allocated in this block. Check if this is already split
         // and if so skip the splitting logic
@@ -348,9 +349,15 @@ UpdateRegionMappingRecursive (
         if (IsTableEntry (*Entry, Level)) {
           //
           // Don't free the page table here, we may end up recreating the
-          // large page
+          // large page. This mapping may extend across the block boundary,
+          // so its possible we could have two pages to free in the worst case.
           //
-          TableToFree      = TranslationTable;
+          if (TablesToFree[0] == NULL) {
+            TablesToFree[0] = TranslationTable;
+          } else {
+            TablesToFree[1] = TranslationTable;
+          }
+
           TranslationTable = (VOID *)GetOutputAddress (*Entry, Lpa2Enabled);
           NextTableIsLive  = TableIsLive;
         } else {
@@ -393,8 +400,6 @@ UpdateRegionMappingRecursive (
 
           NextTableIsLive = FALSE;
         }
-
-        // MU_CHANGE END: Fix Split During Alloc
       } else {
         TranslationTable = (VOID *)GetOutputAddress (*Entry, Lpa2Enabled);
         NextTableIsLive  = TableIsLive;
@@ -452,16 +457,19 @@ UpdateRegionMappingRecursive (
     }
   }
 
-  // MU_CHANGE BEGIN: Fix Split During Alloc
-  // We may have left an orphaned page table page if we discovered a
-  // recursive call already split a block.
   //
-  if (TableToFree != NULL) {
-    FreePages (TableToFree, 1);
-    TableToFree = NULL;
+  // We may have left up to two orphaned page table pages if we discovered a
+  // recursive call already split a block on either side of a misaligned region.
+  //
+  if (TablesToFree[0] != NULL) {
+    FreePages (TablesToFree[0], 1);
+    TablesToFree[0] = NULL;
   }
 
-  // MU_CHANGE END: Fix Split During Alloc
+  if (TablesToFree[1] != NULL) {
+    FreePages (TablesToFree[1], 1);
+    TablesToFree[1] = NULL;
+  }
 
   return EFI_SUCCESS;
 }
