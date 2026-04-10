@@ -239,6 +239,9 @@
   SecurityPkg/Library/PeiDxeTpmPlatformHierarchyLib/PeiDxeTpmPlatformHierarchyLib.inf
   SecurityPkg/Library/PeiDxeTpmPlatformHierarchyLibNull/PeiDxeTpmPlatformHierarchyLib.inf
 
+  # MU_CHANGE
+  SecurityPkg/Applications/TpmTestApp/TpmTestApp.inf
+
   #
   # TCG Storage.
   #
