@@ -1,4 +1,5 @@
 /** @file
+  MU_CHANGE
   Definitions for TPM2 helper functions
 
 Copyright (c), Microsoft Corporation.
@@ -38,8 +39,6 @@ GetHashMaskFromAlgo (
   IN TPMI_ALG_HASH  HashAlgo
   );
 
-// MU_CHANGE - [BEGIN]
-
 /**
   Get hash algorithm from mask.
 
@@ -49,7 +48,7 @@ GetHashMaskFromAlgo (
 **/
 TPMI_ALG_HASH
 EFIAPI
-GetHashAlgoFromMask (
+Tpm2GetHashAlgoFromMask (
   IN UINT32  HashMask
   );
 
@@ -60,7 +59,7 @@ GetHashAlgoFromMask (
 **/
 UINTN
 EFIAPI
-GetHashInfoSize (
+Tpm2GetHashInfoSize (
   VOID
   );
 
@@ -73,11 +72,9 @@ GetHashInfoSize (
 **/
 UINT32
 EFIAPI
-GetHashMaskAtIndex (
+Tpm2GetHashMaskAtIndex (
   IN UINT32  Index
   );
-
-// MU_CHANGE - [END]
 
 /**
   Copy AuthSessionIn to TPM2 command buffer.

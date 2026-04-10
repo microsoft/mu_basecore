@@ -1,4 +1,5 @@
 /** @file
+  MU_CHANGE
   Implement TPM2 help.
 
 Copyright (c), Microsoft Corporation.
@@ -104,8 +105,6 @@ GetHashMaskFromAlgo (
   return 0;
 }
 
-// MU_CHANGE - [BEGIN]
-
 /**
   Get hash algorithm from mask.
 
@@ -115,7 +114,7 @@ GetHashMaskFromAlgo (
 **/
 TPMI_ALG_HASH
 EFIAPI
-GetHashAlgoFromMask (
+Tpm2GetHashAlgoFromMask (
   IN UINT32  HashMask
   )
 {
@@ -127,7 +126,7 @@ GetHashAlgoFromMask (
     }
   }
 
-  return 0;
+  return TPM_ALG_ERROR;
 }
 
 /**
@@ -137,7 +136,7 @@ GetHashAlgoFromMask (
 **/
 UINTN
 EFIAPI
-GetHashInfoSize (
+Tpm2GetHashInfoSize (
   VOID
   )
 {
@@ -153,14 +152,12 @@ GetHashInfoSize (
 **/
 UINT32
 EFIAPI
-GetHashMaskAtIndex (
+Tpm2GetHashMaskAtIndex (
   IN UINT32  Index
   )
 {
   return mHashInfo[Index].HashMask;
 }
-
-// MU_CHANGE - [END]
 
 /**
   Copy AuthSessionIn to TPM2 command buffer.

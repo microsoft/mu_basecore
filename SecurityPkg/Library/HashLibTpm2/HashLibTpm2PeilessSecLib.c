@@ -1,7 +1,7 @@
 /** @file
   // MU_CHANGE
   This library is the PeilessSec version of the HashLib. It will
-  initate a hash on each supported hash algorithm via the TPM or
+  initiate a hash on each supported hash algorithm via the TPM or
   TransferList.
 
   Copyright (c) 2025, Arm Limited. All rights reserved.<BR>
@@ -126,8 +126,6 @@ GetSupportedHashBitmap (
   UINT32                           PcrHashBitmap;
   BOOLEAN                          UseTlHashBitmap;
 
-  DEBUG ((DEBUG_INFO, "%a - Entry\n", __func__));
-
   if (SupportedHashBitmap == NULL) {
     return EFI_INVALID_PARAMETER;
   }
@@ -196,8 +194,6 @@ Exit:
   if (*SupportedHashBitmap == 0x00) {
     DEBUG ((DEBUG_ERROR, "%a: No supported Hash algorithm with event log Spec...!\n", __func__));
   }
-
-  DEBUG ((DEBUG_INFO, "%a - Exit\n", __func__));
 
   return EFI_SUCCESS;
 }
@@ -345,18 +341,18 @@ HashStart (
     return EFI_DEVICE_ERROR;
   }
 
-  HashInfoSize = GetHashInfoSize ();
+  HashInfoSize = Tpm2GetHashInfoSize ();
   HashCtx      = AllocatePool (HashInfoSize * sizeof (HASH_HANDLE));
   if (HashCtx == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
   for (Idx = 0; Idx < HashInfoSize; Idx++) {
-    if ((GetHashMaskAtIndex (Idx) & SupportedHashBitmap) == 0) {
+    if ((Tpm2GetHashMaskAtIndex (Idx) & SupportedHashBitmap) == 0) {
       continue;
     }
 
-    AlgoId = GetHashAlgoFromMask (GetHashMaskAtIndex (Idx));
+    AlgoId = Tpm2GetHashAlgoFromMask (Tpm2GetHashMaskAtIndex (Idx));
     if (AlgoId == TPM_ALG_ERROR) {
       return EFI_UNSUPPORTED;
     }
@@ -416,9 +412,9 @@ HashUpdate (
 
   HashCtx = (HASH_HANDLE *)HashHandle;
 
-  HashInfoSize = GetHashInfoSize ();
+  HashInfoSize = Tpm2GetHashInfoSize ();
   for (Idx = 0; Idx < HashInfoSize; Idx++) {
-    if ((GetHashMaskAtIndex (Idx) & SupportedHashBitmap) == 0) {
+    if ((Tpm2GetHashMaskAtIndex (Idx) & SupportedHashBitmap) == 0) {
       // MU_CHANGE - [END]
       continue;
     }
@@ -500,10 +496,10 @@ HashCompleteAndExtend (
   DigestIdx         = 0;
   HashCtx           = (HASH_HANDLE *)HashHandle; // MU_CHANGE
 
-  HashInfoSize = GetHashInfoSize ();
+  HashInfoSize = Tpm2GetHashInfoSize ();
   for (Idx = 0; Idx < HashInfoSize; Idx++) {
     // MU_CHANGE
-    if ((GetHashMaskAtIndex (Idx) & SupportedHashBitmap) == 0) {
+    if ((Tpm2GetHashMaskAtIndex (Idx) & SupportedHashBitmap) == 0) {
       // MU_CHANGE
       continue;
     }
@@ -530,7 +526,7 @@ HashCompleteAndExtend (
     }
 
     // MU_CHANGE - [BEGIN]
-    AlgoId = GetHashAlgoFromMask (GetHashMaskAtIndex (Idx));
+    AlgoId = Tpm2GetHashAlgoFromMask (Tpm2GetHashMaskAtIndex (Idx));
     if (AlgoId == TPM_ALG_ERROR) {
       Status = EFI_UNSUPPORTED;
       goto Error;
@@ -607,17 +603,17 @@ HashAndExtend (
   DigestList->count = HASH_COUNT;
   DigestIdx         = 0;
 
-  HashInfoSize = GetHashInfoSize (); // MU_CHANGE
+  HashInfoSize = Tpm2GetHashInfoSize (); // MU_CHANGE
   for (Idx = 0; Idx < HashInfoSize; Idx++) {
     // MU_CHANGE
-    if ((GetHashMaskAtIndex (Idx) & SupportedHashBitmap) == 0) {
+    if ((Tpm2GetHashMaskAtIndex (Idx) & SupportedHashBitmap) == 0) {
       // MU_CHANGE
       continue;
     }
 
     // MU_CHANGE - [BEGIN]
-    DEBUG ((DEBUG_INFO, "Hashing with Mask: %x\n", GetHashMaskAtIndex (Idx)));
-    AlgoId = GetHashAlgoFromMask (GetHashMaskAtIndex (Idx));
+    DEBUG ((DEBUG_INFO, "Hashing with Mask: %x\n", Tpm2GetHashMaskAtIndex (Idx)));
+    AlgoId = Tpm2GetHashAlgoFromMask (Tpm2GetHashMaskAtIndex (Idx));
     if (AlgoId == TPM_ALG_ERROR) {
       return EFI_UNSUPPORTED;
     }
