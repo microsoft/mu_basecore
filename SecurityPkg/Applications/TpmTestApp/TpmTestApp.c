@@ -18,8 +18,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/UefiBootServicesTableLib.h>
 
 typedef struct {
-  UINT32       HashMask;
-  CONST CHAR8  *Name;
+  UINT32         HashMask;
+  CONST CHAR8    *Name;
 } HASH_ALG_INFO;
 
 STATIC CONST HASH_ALG_INFO  mHashAlgTable[] = {
@@ -45,7 +45,7 @@ PrintAlgorithms (
 
   for (Index = 0; Index < ARRAY_SIZE (mHashAlgTable); Index++) {
     if ((AlgBitmap & mHashAlgTable[Index].HashMask) != 0) {
-        DEBUG ((DEBUG_INFO, " * %a\n", mHashAlgTable[Index].Name));
+      DEBUG ((DEBUG_INFO, " * %a\n", mHashAlgTable[Index].Name));
     }
   }
 }
@@ -67,11 +67,11 @@ ShowPcrBanks (
   IN EFI_TCG2_PROTOCOL  *Tcg2Protocol
   )
 {
-  EFI_STATUS                          Status;
-  EFI_TCG2_BOOT_SERVICE_CAPABILITY    Capability;
+  EFI_STATUS                        Status;
+  EFI_TCG2_BOOT_SERVICE_CAPABILITY  Capability;
 
   Capability.Size = sizeof (Capability);
-  Status = Tcg2Protocol->GetCapability (Tcg2Protocol, &Capability);
+  Status          = Tcg2Protocol->GetCapability (Tcg2Protocol, &Capability);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a GetCapability failed - %r\n", __func__, Status));
     return Status;
@@ -143,7 +143,7 @@ RequestLogAllDigests (
   EFI_TCG2_BOOT_SERVICE_CAPABILITY  Capability;
 
   Capability.Size = sizeof (Capability);
-  Status = Tcg2Protocol->GetCapability (Tcg2Protocol, &Capability);
+  Status          = Tcg2Protocol->GetCapability (Tcg2Protocol, &Capability);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a GetCapability failed - %r\n", __func__, Status));
     return Status;
