@@ -219,11 +219,6 @@ TpmTestAppEntry (
   UINT32             OperationPresent;
   UINT32             Response;
 
-  // Empty check list - this app uses positional arguments only.
-  STATIC CONST SHELL_PARAM_ITEM  EmptyParamList[] = {
-    { NULL, TypeMax }
-  };
-
   // Initialize the Shell library.
   Status = ShellInitialize ();
   if (EFI_ERROR (Status)) {
