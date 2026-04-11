@@ -28,7 +28,7 @@ results through `DEBUG` macros at `DEBUG_INFO` and `DEBUG_ERROR` levels.
 
 ## Commands
 
-```
+```text
 TpmTestApp help             Show usage information
 TpmTestApp info             Show supported and active PCR banks
 TpmTestApp setpcr <mask>    Request a PCR bank configuration change
@@ -52,7 +52,7 @@ Both are filtered by the firmware's registered hash algorithms (see
 
 Example output:
 
-```
+```text
 [TPM 2.0 Information]
 
 Supported PCR banks: 2
@@ -68,7 +68,7 @@ Calls `Tcg2Protocol->SetActivePcrBanks()` with the provided hex bitmask. The mas
 combination of `EFI_TCG2_BOOT_HASH_ALG_*` values:
 
 | Value | Algorithm |
-|-------|-----------|
+| ----- | --------- |
 | `0x01` | SHA1 |
 | `0x02` | SHA256 |
 | `0x04` | SHA384 |
@@ -79,7 +79,7 @@ Values can be combined: `0x06` = SHA256 + SHA384.
 
 The mask parameter accepts hex with or without a `0x` prefix.
 
-```
+```text
 TpmTestApp setpcr 0x2       Enable SHA256 only
 TpmTestApp setpcr 0x6       Enable SHA256 + SHA384
 TpmTestApp setpcr 2         Also valid (no prefix)
@@ -110,7 +110,7 @@ library for the result of the most recent `SetActivePcrBanks` operation. Display
 The app is defined in `SecurityPkg/Applications/TpmTestApp/TpmTestApp.inf`:
 
 | Property | Value |
-|----------|-------|
+| -------- | ----- |
 | `MODULE_TYPE` | `UEFI_APPLICATION` |
 | `ENTRY_POINT` | `TpmTestAppEntry` |
 | `FILE_GUID` | `A3B2D4F1-7E6C-4A89-B5D0-3C1F8E2A9D07` |
@@ -118,7 +118,7 @@ The app is defined in `SecurityPkg/Applications/TpmTestApp/TpmTestApp.inf`:
 Dependencies:
 
 | Section | Items |
-|---------|-------|
+| ------- | ----- |
 | Packages | `MdePkg`, `MdeModulePkg`, `ShellPkg` |
 | LibraryClasses | `BaseLib`, `DebugLib`, `ShellLib`, `UefiApplicationEntryPoint`, `UefiBootServicesTableLib` |
 | Protocols | `gEfiTcg2ProtocolGuid` |
@@ -162,13 +162,13 @@ stuart_build -c Platforms/QemuSbsaPkg/PlatformBuild.py --FlashRom \
 
 At the UEFI shell, run:
 
-```
+```text
 Shell> TpmTestApp.efi info
 ```
 
 Or navigate to the correct FS mapping first:
 
-```
+```text
 Shell> map -r
 Shell> FS0:
 FS0:\> TpmTestApp.efi info
@@ -190,7 +190,7 @@ stuart_build -c Platforms/QemuQ35Pkg/PlatformBuild.py --FlashRom \
 At the UEFI shell, find the virtual drive's FS mapping (typically backed by a PCI device,
 not `Fv(...)`) and run:
 
-```
+```text
 Shell> map -r
 Shell> FS0:
 FS0:\> TpmTestApp.efi info
@@ -198,7 +198,7 @@ FS0:\> TpmTestApp.efi info
 
 If the app is not found, verify the virtual drive was created with the binary:
 
-```
+```text
 Shell> FS0:
 FS0:\> dir
 ```
@@ -211,7 +211,7 @@ installed by `Tcg2Dxe.efi`, which only loads when `TPM_ENABLE=TRUE` (Q35) or
 
 If the protocol is not found, the app prints:
 
-```
+```text
 TCG2 Protocol not found - Not Found
   TPM 2.0 may not be enabled on this platform.
 ```
@@ -219,7 +219,7 @@ TCG2 Protocol not found - Not Found
 ### Protocol Functions Used
 
 | Function | Command | Purpose |
-|----------|---------|---------|
+| -------- | ------- | ------- |
 | `GetCapability` | `info`, `logall` | Query supported/active PCR banks |
 | `SetActivePcrBanks` | `setpcr`, `logall` | Submit PP request for bank change |
 | `GetResultOfSetActivePcrBanks` | `lastresponse` | Query result of last bank change request |
@@ -249,7 +249,7 @@ When the requested banks match the currently active banks, `Tcg2Dxe` sends
 `TCG2_PHYSICAL_PRESENCE_NO_ACTION` to the PP library. MinimumLib processes `NO_ACTION`
 successfully, returning `EFI_SUCCESS`.
 
-```
+```text
 Shell> TpmTestApp setpcr 0x2    (SHA256 already active)
 Submitting SetActivePcrBanks with parameter 2
 Status: Success
@@ -262,7 +262,7 @@ When the requested banks differ from active banks, `Tcg2Dxe` sends
 `TCG2_PHYSICAL_PRESENCE_SET_PCR_BANKS` to the PP library. MinimumLib rejects this
 operation as it only supports Clear operations.
 
-```
+```text
 Shell> TpmTestApp setpcr 0x4    (SHA384, not currently active)
 Submitting SetActivePcrBanks with parameter 4
 Status: Unsupported
@@ -272,20 +272,20 @@ SetActivePcrBanks failed.
 This is **expected and correct behavior** — MinimumLib is designed to block PCR bank
 changes.
 
-### `logall`
+### `logall` Expected Behavior
 
 If the platform only has SHA256 registered (default), `logall` requests the same bank
 that's already active, resulting in a `NO_ACTION` → `EFI_SUCCESS`. If additional
 algorithms were registered, it would request banks different from the active set,
 triggering a `SET_PCR_BANKS` rejection.
 
-### `lastresponse`
+### `lastresponse` Expected Behavior
 
 Reports the result stored in the `Tcg2PhysicalPresence` NV variable by
 `ProcessRequest`. If no prior `SetActivePcrBanks` was processed through a reboot cycle,
 the response will show no operation present.
 
-```
+```text
 Shell> TpmTestApp lastresponse
   Operation present: NO
   Response code:     0
