@@ -160,6 +160,7 @@
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
   Tpm12DeviceLib|SecurityPkg/Library/Tpm12DeviceLibTcg/Tpm12DeviceLibTcg.inf
   Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibTcg2/Tpm2DeviceLibTcg2.inf
+  ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf # MU_CHANGE
 
 [LibraryClasses.common.DXE_SMM_DRIVER]
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
