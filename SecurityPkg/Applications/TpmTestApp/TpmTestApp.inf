@@ -37,6 +37,7 @@
   ShellLib
   UefiApplicationEntryPoint
   UefiBootServicesTableLib
+  UefiLib
 
 [Protocols]
   gEfiTcg2ProtocolGuid                 ## CONSUMES

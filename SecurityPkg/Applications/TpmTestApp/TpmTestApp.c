@@ -16,6 +16,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/ShellLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <Library/UefiLib.h>
 
 typedef struct {
   UINT32         HashMask;
@@ -45,7 +46,7 @@ PrintAlgorithms (
 
   for (Index = 0; Index < ARRAY_SIZE (mHashAlgTable); Index++) {
     if ((AlgBitmap & mHashAlgTable[Index].HashMask) != 0) {
-      DEBUG ((DEBUG_INFO, " * %a\n", mHashAlgTable[Index].Name));
+      Print (L" * %a\n", mHashAlgTable[Index].Name);
     }
   }
 }
@@ -73,15 +74,15 @@ ShowPcrBanks (
   Capability.Size = sizeof (Capability);
   Status          = Tcg2Protocol->GetCapability (Tcg2Protocol, &Capability);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a GetCapability failed - %r\n", __func__, Status));
+    Print (L"GetCapability failed - %r\n", Status);
     return Status;
   }
 
-  DEBUG ((DEBUG_INFO, "Supported PCR banks: %x\n", Capability.HashAlgorithmBitmap));
+  Print (L"Supported PCR banks bitmap: %x\n", Capability.HashAlgorithmBitmap);
   PrintAlgorithms (Capability.HashAlgorithmBitmap);
-  DEBUG ((DEBUG_INFO, "\n"));
+  Print (L"\n");
 
-  DEBUG ((DEBUG_INFO, "Active PCR banks: %x\n", Capability.ActivePcrBanks));
+  Print (L"Active PCR banks: %x\n", Capability.ActivePcrBanks);
   PrintAlgorithms (Capability.ActivePcrBanks);
 
   return EFI_SUCCESS;
@@ -110,18 +111,18 @@ RequestSetPcrBanks (
 {
   EFI_STATUS  Status;
 
-  DEBUG ((DEBUG_INFO, "Submitting SetActivePcrBanks with parameter %x\n", DesiredBanks));
+  Print (L"Submitting SetActivePcrBanks with parameter %x\n", DesiredBanks);
 
   Status = Tcg2Protocol->SetActivePcrBanks (Tcg2Protocol, DesiredBanks);
 
-  DEBUG ((DEBUG_INFO, "Status: %r\n", Status));
+  Print (L"Status: %r\n", Status);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "SetActivePcrBanks failed.\n"));
+    Print (L"SetActivePcrBanks failed.\n");
     return Status;
   }
 
-  DEBUG ((DEBUG_INFO, "Request submitted. Changes will take effect after reboot.\n"));
+  Print (L"Request submitted. Changes will take effect after reboot.\n");
   return EFI_SUCCESS;
 }
 
@@ -145,22 +146,22 @@ RequestLogAllDigests (
   Capability.Size = sizeof (Capability);
   Status          = Tcg2Protocol->GetCapability (Tcg2Protocol, &Capability);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a GetCapability failed - %r\n", __func__, Status));
+    Print (L"GetCapability failed - %r\n", Status);
     return Status;
   }
 
-  DEBUG ((DEBUG_INFO, "Requesting all supported PCR banks: %x\n", Capability.HashAlgorithmBitmap));
+  Print (L"Requesting all supported PCR banks: %x\n", Capability.HashAlgorithmBitmap);
 
   Status = Tcg2Protocol->SetActivePcrBanks (Tcg2Protocol, Capability.HashAlgorithmBitmap);
 
-  DEBUG ((DEBUG_INFO, "Status: %r\n", Status));
+  Print (L"Status: %r\n", Status);
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "SetActivePcrBanks failed.\n"));
+    Print (L"SetActivePcrBanks failed.\n");
     return Status;
   }
 
-  DEBUG ((DEBUG_INFO, "Request submitted. All supported PCR banks will be enabled after reboot.\n"));
+  Print (L"Request submitted. All supported PCR banks will be enabled after reboot.\n");
   return EFI_SUCCESS;
 }
 
@@ -173,24 +174,24 @@ PrintUsage (
   VOID
   )
 {
-  DEBUG ((DEBUG_INFO, "TpmTestApp - TPM 2.0 Physical Presence Test Utility\n"));
-  DEBUG ((DEBUG_INFO, "\n"));
-  DEBUG ((DEBUG_INFO, "Usage:\n"));
-  DEBUG ((DEBUG_INFO, "  TpmTestApp help             - Show usage\n"));
-  DEBUG ((DEBUG_INFO, "  TpmTestApp info             - Show PCR banks\n"));
-  DEBUG ((DEBUG_INFO, "  TpmTestApp setpcr <mask>    - Request PCR bank change (hex bitmask)\n"));
-  DEBUG ((DEBUG_INFO, "  TpmTestApp logall           - Enable all supported PCR banks\n"));
-  DEBUG ((DEBUG_INFO, "  TpmTestApp lastresponse     - Show last SetActivePcrBanks result\n"));
-  DEBUG ((DEBUG_INFO, "\n"));
-  DEBUG ((DEBUG_INFO, "PCR bank bitmask values:\n"));
-  DEBUG ((DEBUG_INFO, "  0x00000001 = SHA1\n"));
-  DEBUG ((DEBUG_INFO, "  0x00000002 = SHA256\n"));
-  DEBUG ((DEBUG_INFO, "  0x00000004 = SHA384\n"));
-  DEBUG ((DEBUG_INFO, "  0x00000008 = SHA512\n"));
-  DEBUG ((DEBUG_INFO, "  0x00000010 = SM3_256\n"));
-  DEBUG ((DEBUG_INFO, "\n"));
-  DEBUG ((DEBUG_INFO, "Example: TpmTestApp setpcr 0x2   (enable SHA256 only)\n"));
-  DEBUG ((DEBUG_INFO, "Example: TpmTestApp setpcr 0x6   (enable SHA256 + SHA384)\n"));
+  Print (L"TpmTestApp - TPM 2.0 Physical Presence Test Utility\n");
+  Print (L"\n");
+  Print (L"Usage:\n");
+  Print (L"  TpmTestApp help             - Show usage\n");
+  Print (L"  TpmTestApp info             - Show PCR banks\n");
+  Print (L"  TpmTestApp setpcr <mask>    - Request PCR bank change (hex bitmask)\n");
+  Print (L"  TpmTestApp logall           - Enable all supported PCR banks\n");
+  Print (L"  TpmTestApp lastresponse     - Show last SetActivePcrBanks result\n");
+  Print (L"\n");
+  Print (L"PCR bank bitmask values:\n");
+  Print (L"  0x00000001 = SHA1\n");
+  Print (L"  0x00000002 = SHA256\n");
+  Print (L"  0x00000004 = SHA384\n");
+  Print (L"  0x00000008 = SHA512\n");
+  Print (L"  0x00000010 = SM3_256\n");
+  Print (L"\n");
+  Print (L"Example: TpmTestApp setpcr 0x2   (enable SHA256 only)\n");
+  Print (L"Example: TpmTestApp setpcr 0x6   (enable SHA256 + SHA384)\n");
 }
 
 /**
@@ -222,7 +223,7 @@ TpmTestAppEntry (
   // Initialize the Shell library.
   Status = ShellInitialize ();
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a ShellInitialize failed - %r\n", __func__, Status));
+    Print (L"ShellInitialize failed - %r\n", Status);
     return Status;
   }
 
@@ -235,8 +236,8 @@ TpmTestAppEntry (
   // Validate number of input parameters.
   Argc = ShellCommandLineGetCount (ParamPackage);
   if (Argc < 2) {
-    DEBUG ((DEBUG_ERROR, "\n[Invalid Usage]\n"));
-    DEBUG ((DEBUG_INFO, "  Use 'TpmTestApp help' for usage.\n"));
+    Print (L"\n[Invalid Usage]\n");
+    Print (L"  Use 'TpmTestApp help' for usage.\n");
     Status = EFI_INVALID_PARAMETER;
     goto Exit;
   }
@@ -247,24 +248,24 @@ TpmTestAppEntry (
   // Locate TCG2 Protocol it is required for this test app to function
   Status = gBS->LocateProtocol (&gEfiTcg2ProtocolGuid, NULL, (VOID **)&Tcg2Protocol);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "TCG2 Protocol not found - %r\n", Status));
-    DEBUG ((DEBUG_ERROR, "  TPM 2.0 may not be enabled on this platform.\n"));
+    Print (L"TCG2 Protocol not found - %r\n", Status);
+    Print (L"  TPM 2.0 may not be enabled on this platform.\n");
     goto Exit;
   }
 
   // Dispatch based on command.
   if (StrCmp (Command, L"help") == 0) {
-    DEBUG ((DEBUG_INFO, "\n[TPM 2.0 Help]\n\n"));
+    Print (L"\n[TPM 2.0 Help]\n\n");
     PrintUsage ();
     goto Exit;
   } else if (StrCmp (Command, L"info") == 0) {
-    DEBUG ((DEBUG_INFO, "\n[TPM 2.0 Information]\n\n"));
+    Print (L"\n[TPM 2.0 Information]\n\n");
     ShowPcrBanks (Tcg2Protocol);
   } else if (StrCmp (Command, L"setpcr") == 0) {
-    DEBUG ((DEBUG_INFO, "\n[Set PCR Banks]\n\n"));
+    Print (L"\n[Set PCR Banks]\n\n");
     if (Argc < 3) {
-      DEBUG ((DEBUG_ERROR, "setpcr requires a hex bitmask parameter.\n"));
-      DEBUG ((DEBUG_ERROR, "  Example: TpmTestApp setpcr 0x2\n"));
+      Print (L"setpcr requires a hex bitmask parameter.\n");
+      Print (L"  Example: TpmTestApp setpcr 0x2\n");
       Status = EFI_INVALID_PARAMETER;
       goto Exit;
     }
@@ -277,33 +278,33 @@ TpmTestAppEntry (
                    FALSE // No prefix required
                    );
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "Invalid hex value.\n"));
+      Print (L"Invalid hex value.\n");
       goto Exit;
     }
 
     Status = RequestSetPcrBanks (Tcg2Protocol, (UINT32)PcrMaskVal);
   } else if (StrCmp (Command, L"logall") == 0) {
-    DEBUG ((DEBUG_INFO, "\n[Enable All PCR Banks]\n\n"));
+    Print (L"\n[Enable All PCR Banks]\n\n");
     Status = RequestLogAllDigests (Tcg2Protocol);
   } else if (StrCmp (Command, L"lastresponse") == 0) {
-    DEBUG ((DEBUG_INFO, "\n[Last SetActivePcrBanks Result]\n\n"));
+    Print (L"\n[Last SetActivePcrBanks Result]\n\n");
     Status = Tcg2Protocol->GetResultOfSetActivePcrBanks (Tcg2Protocol, &OperationPresent, &Response);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "  GetResultOfSetActivePcrBanks failed - %r\n", Status));
+      Print (L"  GetResultOfSetActivePcrBanks failed - %r\n", Status);
       goto Exit;
     }
 
-    DEBUG ((DEBUG_INFO, "  Operation present: %a\n", OperationPresent ? "YES" : "NO"));
-    DEBUG ((DEBUG_INFO, "  Response code:     %u\n", Response));
+    Print (L"  Operation present: %a\n", OperationPresent ? "YES" : "NO");
+    Print (L"  Response code:     %u\n", Response);
   } else {
-    DEBUG ((DEBUG_INFO, "\n[Invalid Input Command]\n\n"));
-    DEBUG ((DEBUG_ERROR, "  Unknown command '%s'\n", Command));
-    DEBUG ((DEBUG_INFO, "  Use 'TpmTestApp help' for usage.\n"));
+    Print (L"\n[Invalid Input Command]\n\n");
+    Print (L"  Unknown command '%s'\n", Command);
+    Print (L"  Use 'TpmTestApp help' for usage.\n");
     Status = EFI_INVALID_PARAMETER;
   }
 
 Exit:
-  DEBUG ((DEBUG_INFO, "\n"));
+  Print (L"\n");
   ShellCommandLineFreeVarList (ParamPackage);
   return Status;
 }
