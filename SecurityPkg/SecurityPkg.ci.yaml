@@ -63,7 +63,7 @@
         "AcceptableDependencies-HOST_APPLICATION":[],
         # For UEFI shell based apps
         "AcceptableDependencies-UEFI_APPLICATION":[
-            "ShellPkg/ShellPkg.dec"
+            "ShellPkg/ShellPkg.dec" # MU_CHANGE
         ],
         "IgnoreInf": []
     },
