@@ -1394,11 +1394,6 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportAlternativeQueueSize|FALSE|BOOLEAN|0x40000151
   # MU_CHANGE [END]
 
-  # MU_CHANGE [BEGIN] - NVMe namespace filtering
-  # When TRUE, only the first NVMe namespace is enumerated. When FALSE, all namespaces are discovered.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdNvmeNamespaceFilter|FALSE|BOOLEAN|0x40000153
-  # MU_CHANGE [END] - NVMe namespace filtering
-
   ## Specifies the page count allocated for the MM communication buffer.
   # @Prompt Defines the page allocation for the MM communication buffer; default is 128 pages (512KB).
   gEfiMdeModulePkgTokenSpaceGuid.PcdMmCommBufferPages|128|UINT32|0x30001061
@@ -2600,6 +2595,12 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdLoadFixAddressSmmCodePageNumber|0|UINT32|0x0000002c
 
 [PcdsDynamic, PcdsDynamicEx]
+  # MU_CHANGE [BEGIN] - NVMe namespace filtering
+  ## When TRUE, only the first NVMe namespace is enumerated. When FALSE, all namespaces are discovered.
+  # @Prompt Enable NVMe namespace filtering to only use NSID 1.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNvmeNamespaceFilter|FALSE|BOOLEAN|0x40000153
+  # MU_CHANGE [END] - NVMe namespace filtering
+
   ## This dynamic PCD hold an address to point to private data structure used in DxeS3BootScriptLib library
   #  instance which records the S3 boot script table start address, length, etc. To introduce this PCD is
   #  only for DxeS3BootScriptLib instance implementation purpose. The platform developer should make sure the
