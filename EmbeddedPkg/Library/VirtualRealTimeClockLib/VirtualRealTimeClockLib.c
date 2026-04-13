@@ -242,6 +242,7 @@ LibSetTime (
   UINT64      Counter;
   UINT64      Remainder;
   UINTN       EpochSeconds;
+  INT64       AdjustedEpochSeconds;
 
   if (!IsTimeValid (Time)) {
     return EFI_INVALID_PARAMETER;
@@ -250,10 +251,14 @@ LibSetTime (
   EpochSeconds = EfiTimeToEpoch (Time);
 
   // Adjust for the correct time zone, i.e. convert to UTC time zone
-  if (  (Time->TimeZone != EFI_UNSPECIFIED_TIMEZONE)
-     && (EpochSeconds > Time->TimeZone * SEC_PER_MIN))
-  {
-    EpochSeconds -= Time->TimeZone * SEC_PER_MIN;
+  if (Time->TimeZone != EFI_UNSPECIFIED_TIMEZONE) {
+    AdjustedEpochSeconds  = (INT64)EpochSeconds;
+    AdjustedEpochSeconds -= (INT64)Time->TimeZone * SEC_PER_MIN;
+    if (AdjustedEpochSeconds < 0) {
+      AdjustedEpochSeconds = 0;
+    }
+
+    EpochSeconds = (UINTN)AdjustedEpochSeconds;
   }
 
   // Adjust for the correct period
