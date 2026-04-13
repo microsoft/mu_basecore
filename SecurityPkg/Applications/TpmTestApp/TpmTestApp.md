@@ -15,6 +15,7 @@ presence libraries, or TPM hardware.
 - [Protocol Dependency](#protocol-dependency)
 - [Expected Behavior with MinimumLib](#expected-behavior-with-minimumlib)
 - [Output and Debugging](#output-and-debugging)
+- [Findings](#findings)
 
 ## Overview
 
@@ -24,7 +25,8 @@ correctly handles PCR bank change requests, including verifying that unsupported
 are gracefully rejected.
 
 The app uses positional command-line arguments (no flags or switches) and outputs all
-results through `DEBUG` macros at `DEBUG_INFO` and `DEBUG_ERROR` levels.
+results through `Print()` (from `UefiLib`), which writes directly to the UEFI shell
+console.
 
 ## Commands
 
@@ -48,7 +50,7 @@ Calls `Tcg2Protocol->GetCapability()` and displays:
 - **Active PCR banks** — algorithms currently enabled (`ActivePcrBanks`).
 
 Both are filtered by the firmware's registered hash algorithms (see
-[Hash Library Architecture](#hash-algorithm-filtering) below).
+[Hash Algorithm Filtering](#hash-algorithm-filtering) below).
 
 Example output:
 
@@ -293,13 +295,39 @@ Shell> TpmTestApp lastresponse
 
 ## Output and Debugging
 
-All output uses `DEBUG` macros, not `Print`. This means output appears in the serial
-console / debug log, not directly on the shell's console output by default.
+All output uses `Print()` from `UefiLib`, so it appears directly on the UEFI shell
+console — no serial log or `AdvancedLogger` configuration is required to see results.
 
-To see output when running in QEMU:
+## Findings
 
-- **SBSA**: Output appears in the serial port log.
-- **Q35**: Output appears in the serial port log.
+**April 2026:**
 
-Both platforms can be configured to route `DEBUG_INFO` to the serial console via
-`AdvancedLogger` or `SerialStatusCodeHandler`.
+Manually updating Tpm2HashMask in the platform .dsc is dangerous. On Q35, PEI will
+pick up the change and auto enable/disable any PCR banks that differ from the current
+active banks in the TPM. (See Tcg2Pei - SyncPcrAllocationsAndPcrMask) If the platform
+also disables (i.e. removes) any of the supported hashing algorithms from the platform
+.dsc there are no safeguards to prevent the TPM from enabling/disabling any active banks
+based on platform support. Because of this there can be active banks that will show up
+as active when querying the TPM but will not show up as active in the Tcg2Protocol call.
+
+Example:
+
+- Tpm2HashMask is updated to 0x06 (i.e. SHA256 + SHA384 supported).
+- SHA384 support is removed from Tcg2Pei and Tcg2Dxe.
+- Build/Run the Q35 platform.
+- TPM reports SHA256 as the only active PCR bank.
+- Tcg2Pei recognizes there is a mismatch between platform support (i.e. Tpm2HashMask)
+  and TPM active banks. Activates SHA384 into a ResetCold.
+- TPM reports SHA256 + SHA384 as active PCR banks.
+- HashLibCryptoRouterPei and HashLibCryptoRouterDxe set PcdTcg2HashAlgorithmBitmap based on
+  successfully registered hash algorithms.
+- Tcg2Pei registers SHA256 but is unable to register SHA384.
+- Tcg2Dxe registers SHA256 but is unable to register SHA384.
+- Tcg2Dxe sets local variables based on what the TPM reports and PcdTcg2HashAlgorithmBitmap.
+
+  ```C
+  mTcgDxeData.BsCap.HashAlgorithmBitmap = TpmHashAlgorithmBitmap & PcdGet32 (PcdTcg2HashAlgorithmBitmap);
+  mTcgDxeData.BsCap.ActivePcrBanks      = ActivePCRBanks & PcdGet32 (PcdTcg2HashAlgorithmBitmap);
+  ```
+
+- Tcg2Protocol is installed with only SHA256 support reported even though SHA384 is active.
