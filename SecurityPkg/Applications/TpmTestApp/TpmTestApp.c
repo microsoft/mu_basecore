@@ -1,10 +1,10 @@
 /** @file
 
-[MU_CHANGE]
+MU_CHANGE
 A UEFI shell application for testing TPM 2.0 Physical Presence Interface
 operations, including querying and configuring PCR banks.
 
-Copyright (C) Microsoft Corporation. All rights reserved.
+Copyright (C) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -13,7 +13,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Protocol/Tcg2Protocol.h>
 #include <Library/BaseLib.h>
-#include <Library/DebugLib.h>
 #include <Library/ShellLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -275,8 +274,8 @@ TpmTestAppEntry (
     Status     = ShellConvertStringToUint64 (
                    PcrMaskStr,
                    &PcrMaskVal,
-                   TRUE, // Hex
-                   FALSE // No prefix required
+                   TRUE,
+                   FALSE
                    );
     if (EFI_ERROR (Status)) {
       Print (L"Invalid hex value.\n");

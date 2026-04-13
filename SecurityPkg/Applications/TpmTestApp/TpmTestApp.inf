@@ -1,11 +1,11 @@
 ## @file
-# [MU_CHANGE]
+# MU_CHANGE
 # TpmTestApp.inf
 #
 # UEFI shell application for testing TPM 2.0 Physical Presence Interface
 # operations, including querying and configuring PCR banks.
 #
-# Copyright (C) Microsoft Corporation. All rights reserved.
+# Copyright (C) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -34,7 +34,6 @@
 
 [LibraryClasses]
   BaseLib
-  DebugLib
   ShellLib
   UefiApplicationEntryPoint
   UefiBootServicesTableLib
