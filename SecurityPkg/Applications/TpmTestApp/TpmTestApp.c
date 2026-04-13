@@ -1,5 +1,6 @@
 /** @file
 
+[MU_CHANGE]
 A UEFI shell application for testing TPM 2.0 Physical Presence Interface
 operations, including querying and configuring PCR banks.
 
