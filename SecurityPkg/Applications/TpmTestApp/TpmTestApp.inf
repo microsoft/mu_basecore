@@ -37,6 +37,7 @@
   BaseLib
   BaseCryptLib
   BaseMemoryLib
+  IntrinsicLib
   ShellLib
   UefiApplicationEntryPoint
   UefiBootServicesTableLib
