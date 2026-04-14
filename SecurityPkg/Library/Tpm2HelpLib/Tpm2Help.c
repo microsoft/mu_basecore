@@ -1,4 +1,5 @@
 /** @file
+  MU_CHANGE
   Implement TPM2 help.
 
 Copyright (c), Microsoft Corporation.
@@ -102,6 +103,60 @@ GetHashMaskFromAlgo (
   }
 
   return 0;
+}
+
+/**
+  Get hash algorithm from mask.
+
+  @param[in] HashMask   Hash mask
+
+  @return Hash algorithm
+**/
+TPMI_ALG_HASH
+EFIAPI
+Tpm2GetHashAlgoFromMask (
+  IN UINT32  HashMask
+  )
+{
+  UINTN  Index;
+
+  for (Index = 0; Index < sizeof (mHashInfo)/sizeof (mHashInfo[0]); Index++) {
+    if (mHashInfo[Index].HashMask == HashMask) {
+      return mHashInfo[Index].HashAlgo;
+    }
+  }
+
+  return TPM_ALG_ERROR;
+}
+
+/**
+  Get internal hash info size.
+
+  @return Hash info size
+**/
+UINTN
+EFIAPI
+Tpm2GetHashInfoSize (
+  VOID
+  )
+{
+  return ARRAY_SIZE (mHashInfo);
+}
+
+/**
+  Get hash mask at specified index.
+
+  @param[in] Index   Index requested
+
+  @return Hash mask at the specified index
+**/
+UINT32
+EFIAPI
+Tpm2GetHashMaskAtIndex (
+  IN UINT32  Index
+  )
+{
+  return mHashInfo[Index].HashMask;
 }
 
 /**

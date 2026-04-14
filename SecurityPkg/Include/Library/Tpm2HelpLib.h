@@ -1,4 +1,5 @@
 /** @file
+  MU_CHANGE
   Definitions for TPM2 helper functions
 
 Copyright (c), Microsoft Corporation.
@@ -36,6 +37,43 @@ UINT32
 EFIAPI
 GetHashMaskFromAlgo (
   IN TPMI_ALG_HASH  HashAlgo
+  );
+
+/**
+  Get hash algorithm from mask.
+
+  @param[in] HashMask   Hash mask
+
+  @return Hash algorithm
+**/
+TPMI_ALG_HASH
+EFIAPI
+Tpm2GetHashAlgoFromMask (
+  IN UINT32  HashMask
+  );
+
+/**
+  Get internal hash info size.
+
+  @return Hash info size
+**/
+UINTN
+EFIAPI
+Tpm2GetHashInfoSize (
+  VOID
+  );
+
+/**
+  Get hash mask at specified index.
+
+  @param[in] Index   Index requested
+
+  @return Hash mask at the specified index
+**/
+UINT32
+EFIAPI
+Tpm2GetHashMaskAtIndex (
+  IN UINT32  Index
   );
 
 /**
