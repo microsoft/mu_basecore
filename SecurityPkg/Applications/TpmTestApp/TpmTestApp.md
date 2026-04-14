@@ -31,6 +31,8 @@ TpmTestApp help             Show usage information
 TpmTestApp info             Show supported and active PCR banks
 TpmTestApp setpcr <mask>    Request a PCR bank configuration change
 TpmTestApp logall           Request enabling all supported PCR banks
+TpmTestApp eventlog         Dump the TCG2 event log
+TpmTestApp replay           Replay event log and verify PCRs
 TpmTestApp lastresponse     Show the result of the last SetActivePcrBanks call
 ```
 
@@ -93,6 +95,39 @@ Calls `GetCapability()` to discover all supported hash algorithms, then calls
 `SetActivePcrBanks()` with the full `HashAlgorithmBitmap`. This is equivalent to
 requesting that all supported PCR banks be enabled.
 
+### `eventlog`
+
+Calls `Tcg2Protocol->GetEventLog()` with `EFI_TCG2_EVENT_LOG_FORMAT_TCG_2` (crypto-agile
+format) to retrieve the firmware's TCG2 event log. Parses the Spec ID Event header to
+discover the hash algorithms and digest sizes, then walks each `TCG_PCR_EVENT2` entry
+displaying:
+
+- **PCR index** — which PCR was extended.
+- **Event type** — the TCG event type (e.g., `EV_EFI_VARIABLE_DRIVER_CONFIG`,
+  `EV_SEPARATOR`).
+- **Digest(s)** — the full hex digest for each algorithm in the event.
+- **Event data size** — the number of bytes in the event payload.
+
+Prints a total event count at the end.
+
+### `replay`
+
+Replays the TCG2 event log to compute expected PCR values, then reads the
+actual PCR values from the TPM via `SubmitCommand` (TPM2_PCR_Read) and
+compares them.
+
+For each PCR that was extended in the log, the command displays:
+
+- **Replayed digest** — the PCR value computed locally by replaying all
+  extend operations.
+- **Actual digest** — the current PCR value read from the TPM.
+- **Result** — `PASS` if they match, `FAIL` if they differ.
+
+Prints a summary with total verified, passed, and failed counts.
+
+Supports SHA1, SHA256, SHA384, and SHA512 for replay hashing. Algorithms
+not supported by `BaseCryptLib` (e.g., SM3_256) are skipped.
+
 ### `lastresponse`
 
 Calls `Tcg2Protocol->GetResultOfSetActivePcrBanks()` which queries the Physical Presence
@@ -117,8 +152,8 @@ Dependencies:
 
 | Section | Items |
 | ------- | ----- |
-| Packages | `MdePkg`, `MdeModulePkg`, `ShellPkg` |
-| LibraryClasses | `BaseLib`, `ShellLib`, `UefiApplicationEntryPoint`, `UefiBootServicesTableLib`, `UefiLib` |
+| Packages | `MdePkg`, `MdeModulePkg`, `CryptoPkg`, `ShellPkg` |
+| LibraryClasses | `BaseLib`, `BaseCryptLib`, `BaseMemoryLib`, `ShellLib`, `UefiApplicationEntryPoint`, `UefiBootServicesTableLib`, `UefiLib` |
 | Protocols | `gEfiTcg2ProtocolGuid` |
 
 The app intentionally has **no dependency** on `SecurityPkg`, TPM command libraries,
@@ -164,6 +199,8 @@ TCG2 Protocol not found - Not Found
 | -------- | ------- | ------- |
 | `GetCapability` | `info`, `logall` | Query supported/active PCR banks |
 | `SetActivePcrBanks` | `setpcr`, `logall` | Submit PP request for bank change |
+| `GetEventLog` | `eventlog`, `replay` | Retrieve the crypto-agile event log |
+| `SubmitCommand` | `replay` | Send TPM2_PCR_Read to read actual PCR values |
 | `GetResultOfSetActivePcrBanks` | `lastresponse` | Query result of last bank change request |
 
 ### Hash Algorithm Filtering
