@@ -297,12 +297,12 @@ PrintHexDump (
 STATIC
 EFI_STATUS
 GetParsedEventLog (
-  IN  EFI_TCG2_PROTOCOL            *Tcg2Protocol,
-  OUT UINT8                         **FirstEvent,
-  OUT UINT8                         **LastEvent,
+  IN  EFI_TCG2_PROTOCOL                *Tcg2Protocol,
+  OUT UINT8                            **FirstEvent,
+  OUT UINT8                            **LastEvent,
   OUT TCG_EfiSpecIdEventAlgorithmSize  *AlgList,
-  OUT UINT32                        *NumberOfAlgorithms,
-  OUT BOOLEAN                       *WasTruncated
+  OUT UINT32                           *NumberOfAlgorithms,
+  OUT BOOLEAN                          *WasTruncated
   )
 {
   EFI_STATUS                       Status;
@@ -315,12 +315,12 @@ GetParsedEventLog (
   TCG_EfiSpecIdEventAlgorithmSize  *AlgEntry;
 
   Status = Tcg2Protocol->GetEventLog (
-             Tcg2Protocol,
-             EFI_TCG2_EVENT_LOG_FORMAT_TCG_2,
-             &LogLocation,
-             &LogLastEntry,
-             WasTruncated
-             );
+                           Tcg2Protocol,
+                           EFI_TCG2_EVENT_LOG_FORMAT_TCG_2,
+                           &LogLocation,
+                           &LogLastEntry,
+                           WasTruncated
+                           );
   if (EFI_ERROR (Status)) {
     Print (L"GetEventLog failed - %r\n", Status);
     return Status;
@@ -437,7 +437,7 @@ DumpEventLog (
   }
 
   Print (L"\n");
-  EventNum     = 0;
+  EventNum = 0;
 
   while (CurrentEvent <= LastEvent) {
     EventNum++;
@@ -602,37 +602,37 @@ ReadPcrValue (
   Ptr = CmdBuffer;
 
   *(UINT16 *)Ptr = SwapBytes16 (TPM_ST_NO_SESSIONS);
-  Ptr += sizeof (UINT16);
+  Ptr           += sizeof (UINT16);
 
   *(UINT32 *)Ptr = SwapBytes32 ((UINT32)TPM2_PCR_READ_CMD_SIZE);
-  Ptr += sizeof (UINT32);
+  Ptr           += sizeof (UINT32);
 
   *(UINT32 *)Ptr = SwapBytes32 (TPM_CC_PCR_Read);
-  Ptr += sizeof (UINT32);
+  Ptr           += sizeof (UINT32);
 
   *(UINT32 *)Ptr = SwapBytes32 (1);
-  Ptr += sizeof (UINT32);
+  Ptr           += sizeof (UINT32);
 
   *(UINT16 *)Ptr = SwapBytes16 (AlgId);
-  Ptr += sizeof (UINT16);
+  Ptr           += sizeof (UINT16);
 
   *Ptr = 3;
   Ptr++;
 
-  Ptr[0] = 0;
-  Ptr[1] = 0;
-  Ptr[2] = 0;
+  Ptr[0]            = 0;
+  Ptr[1]            = 0;
+  Ptr[2]            = 0;
   Ptr[PcrIndex / 8] = (UINT8)(1 << (PcrIndex % 8));
 
   // Send command and read response.
   RspSize = sizeof (RspBuffer);
   Status  = Tcg2Protocol->SubmitCommand (
-              Tcg2Protocol,
-              TPM2_PCR_READ_CMD_SIZE,
-              CmdBuffer,
-              RspSize,
-              RspBuffer
-              );
+                            Tcg2Protocol,
+                            TPM2_PCR_READ_CMD_SIZE,
+                            CmdBuffer,
+                            RspSize,
+                            RspBuffer
+                            );
   if (EFI_ERROR (Status)) {
     return Status;
   }
