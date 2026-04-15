@@ -40,7 +40,7 @@ jobs:
           owner: ${{ github.repository_owner }}
 
       - name: Update PR Comment to Pending
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
@@ -87,7 +87,7 @@ jobs:
 
       - name: Set Pending Commit Status
         if: false  # TODO: Requires commit status write permission to be accepted at the org level first
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
