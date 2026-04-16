@@ -26,12 +26,10 @@ class FlattenPdbs(IUefiBuildPlugin):
         except Exception:
             logging.critical("Error making PDB directory")
 
-        logging.critical("Copying PDBs to flat directory")
-        for file in Path(build_path).rglob("*.pdb"):
-            # PDB exists in DEBUG and OUTPUT directory. Same file.
+        suffixes = ["pdb", "debug"]
+        logging.critical("Copying Symbols to flat directory")
+        for file in [path for suffix in suffixes for path in Path(build_path).rglob("*."+suffix)]:
             pdb_out = Path(pdb_path / file.name)
-            if file.parent.name != "OUTPUT":
-                continue
 
             # If it exists and has the same file identifier, skip it.
             if pdb_out.exists() and file.stat().st_ino == pdb_out.stat().st_ino:
