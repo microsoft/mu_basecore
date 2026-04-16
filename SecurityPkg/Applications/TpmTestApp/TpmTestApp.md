@@ -170,7 +170,7 @@ SecurityPkg/Applications/TpmTestApp/TpmTestApp.inf
 
 The platform DSC must also map `IntrinsicLib` for the `UEFI_APPLICATION` module type.
 `IntrinsicLib` provides compiler-generated `memcpy`/`memset` intrinsics that the VS2022
-toolchain emits for large memory operations:
+toolchain emits for large memory operations such as CopyMem and ZeroMem:
 
 ```ini
 [LibraryClasses.common.UEFI_APPLICATION]
