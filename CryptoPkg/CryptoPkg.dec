@@ -18,6 +18,7 @@
 
 [Includes]
   Include
+  Test/Mock/Include
 
 [LibraryClasses]
   ##  @libraryclass  Provides basic library functions for cryptographic primitives.
