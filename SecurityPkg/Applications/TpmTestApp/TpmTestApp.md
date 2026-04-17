@@ -153,7 +153,7 @@ Dependencies:
 | Section | Items |
 | ------- | ----- |
 | Packages | `MdePkg`, `MdeModulePkg`, `CryptoPkg`, `ShellPkg` |
-| LibraryClasses | `BaseLib`, `BaseCryptLib`, `BaseMemoryLib`, `ShellLib`, `UefiApplicationEntryPoint`, `UefiBootServicesTableLib`, `UefiLib` |
+| LibraryClasses | `BaseLib`, `BaseCryptLib`, `BaseMemoryLib`, `IntrinsicLib`, `ShellLib`, `UefiApplicationEntryPoint`, `UefiBootServicesTableLib`, `UefiLib` |
 | Protocols | `gEfiTcg2ProtocolGuid` |
 
 The app intentionally has **no dependency** on `SecurityPkg`, TPM command libraries,
@@ -166,6 +166,15 @@ Add the INF to the platform DSC components section:
 
 ```ini
 SecurityPkg/Applications/TpmTestApp/TpmTestApp.inf
+```
+
+The platform DSC must also map `IntrinsicLib` for the `UEFI_APPLICATION` module type.
+`IntrinsicLib` provides compiler-generated `memcpy`/`memset` intrinsics that the VS2022
+toolchain emits for large memory operations such as CopyMem and ZeroMem:
+
+```ini
+[LibraryClasses.common.UEFI_APPLICATION]
+  IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
 ```
 
 The app is typically included unconditionally (outside any TPM enable guard) so it can be
