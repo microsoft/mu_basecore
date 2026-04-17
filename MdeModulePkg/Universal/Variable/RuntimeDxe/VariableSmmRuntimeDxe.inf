@@ -87,6 +87,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable     ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision                 ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdEnableSpdmDeviceAuthentication             ## PRODUCES AND CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEnableVariableRuntimeCache                   ## CONSUMES  # MU_CHANGE
   gEfiMdeModulePkgTokenSpaceGuid.PcdMigrateVariableRuntimeCacheBufferAllocation  ## CONSUMES  # MU_CHANGE
 
 [Guids]

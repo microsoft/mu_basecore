@@ -1578,8 +1578,7 @@ InitVariableCache (
   UINTN                        AllocatedNvCacheSize;
   UINTN                        AllocatedVolatileCacheSize;
   VARIABLE_RUNTIME_CACHE_INFO  *VariableRuntimeCacheInfo;
-  // MU_CHANGE [BEGIN] - Add variables for runtime buffer relocation from DXE
-  VOID   *RuntimeBuffer;
+  // MU_CHANGE [BEGIN] - Allocate RT cache buffer in DXE instead of PEI to prevent fragmentation
   UINTN  Pages;
 
   // Storage for temporary allocations - only commit to mVariableRtCacheInfo if ALL succeed
@@ -1589,7 +1588,7 @@ InitVariableCache (
   EFI_PHYSICAL_ADDRESS  TempVolatileCacheBuffer         = 0;
   BOOLEAN               AllRtBufferAllocationsSucceeded = TRUE;
 
-  // MU_CHANGE [END]
+  // MU_CHANGE [END] - Allocate RT cache buffer in DXE instead of PEI to prevent fragmentation
 
   //
   // Get needed runtime cache buffer size and check if auth variables are to be used from SMM
@@ -1601,20 +1600,35 @@ InitVariableCache (
               &mVariableAuthFormat
               );
   if (!EFI_ERROR (Status)) {
-    VariableRuntimeCacheInfo   = GET_GUID_HOB_DATA (RuntimeCacheInfoGuidHob);
-    AllocatedHobCacheSize      = EFI_PAGES_TO_SIZE ((UINTN)VariableRuntimeCacheInfo->RuntimeHobCachePages);
-    AllocatedNvCacheSize       = EFI_PAGES_TO_SIZE ((UINTN)VariableRuntimeCacheInfo->RuntimeNvCachePages);
-    AllocatedVolatileCacheSize = EFI_PAGES_TO_SIZE ((UINTN)VariableRuntimeCacheInfo->RuntimeVolatileCachePages);
-
-    ASSERT (
-      (AllocatedHobCacheSize >= ExpectedHobCacheSize) &&
-      (AllocatedNvCacheSize >= ExpectedNvCacheSize) &&
-      (AllocatedVolatileCacheSize >= ExpectedVolatileCacheSize)
-      );
-
-    CopyMem (&mVariableRtCacheInfo, VariableRuntimeCacheInfo, sizeof (VARIABLE_RUNTIME_CACHE_INFO));
-
     // MU_CHANGE [BEGIN] - Allocate RT cache buffer in DXE instead of PEI to prevent fragmentation
+    if (PcdGetBool (PcdMigrateVariableRuntimeCacheBufferAllocation)) {
+      ZeroMem (&mVariableRtCacheInfo, sizeof (mVariableRtCacheInfo));
+      AllocatedHobCacheSize      = ExpectedHobCacheSize;
+      AllocatedNvCacheSize       = ExpectedNvCacheSize;
+      AllocatedVolatileCacheSize = ExpectedVolatileCacheSize;
+
+      mVariableRtCacheInfo.RuntimeHobCachePages      = EFI_SIZE_TO_PAGES (ExpectedHobCacheSize);
+      mVariableRtCacheInfo.RuntimeNvCachePages       = EFI_SIZE_TO_PAGES (ExpectedNvCacheSize);
+      mVariableRtCacheInfo.RuntimeVolatileCachePages = EFI_SIZE_TO_PAGES (ExpectedVolatileCacheSize);
+    } else {
+      if (RuntimeCacheInfoGuidHob == NULL) {
+        return EFI_INVALID_PARAMETER;
+      }
+
+      VariableRuntimeCacheInfo   = GET_GUID_HOB_DATA (RuntimeCacheInfoGuidHob);
+      AllocatedHobCacheSize      = EFI_PAGES_TO_SIZE ((UINTN)VariableRuntimeCacheInfo->RuntimeHobCachePages);
+      AllocatedNvCacheSize       = EFI_PAGES_TO_SIZE ((UINTN)VariableRuntimeCacheInfo->RuntimeNvCachePages);
+      AllocatedVolatileCacheSize = EFI_PAGES_TO_SIZE ((UINTN)VariableRuntimeCacheInfo->RuntimeVolatileCachePages);
+
+      ASSERT (
+        (AllocatedHobCacheSize >= ExpectedHobCacheSize) &&
+        (AllocatedNvCacheSize >= ExpectedNvCacheSize) &&
+        (AllocatedVolatileCacheSize >= ExpectedVolatileCacheSize)
+        );
+
+      CopyMem (&mVariableRtCacheInfo, VariableRuntimeCacheInfo, sizeof (VARIABLE_RUNTIME_CACHE_INFO));
+    }
+
     if (PcdGetBool (PcdMigrateVariableRuntimeCacheBufferAllocation)) {
       //
       // Relocate runtime cache buffers from boot services to runtime services
@@ -1622,30 +1636,28 @@ InitVariableCache (
       //
       // Relocate CacheInfoFlag buffer from boot services to runtime services
       //
-      if (mVariableRtCacheInfo.CacheInfoFlagBuffer != 0) {
-        Pages  = EFI_SIZE_TO_PAGES (sizeof (CACHE_INFO_FLAG));
-        Status = gBS->AllocatePages (
-                        AllocateAnyPages,
-                        EfiRuntimeServicesData,
-                        Pages,
-                        &TempCacheInfoBuffer
-                        );
-        if (EFI_ERROR (Status)) {
-          DEBUG ((DEBUG_WARN, "Failed to allocate runtime CacheInfoFlag buffer: %r\n", Status));
+      Pages  = EFI_SIZE_TO_PAGES (sizeof (CACHE_INFO_FLAG));
+      Status = gBS->AllocatePages (
+                      AllocateAnyPages,
+                      EfiRuntimeServicesData,
+                      Pages,
+                      &TempCacheInfoBuffer
+                      );
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_WARN, "Failed to allocate runtime CacheInfoFlag buffer: %r\n", Status));
+        AllRtBufferAllocationsSucceeded = FALSE;
+      } else {
+        Status = MmUnblockMemoryRequest (TempCacheInfoBuffer, Pages);
+        if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
+          DEBUG ((DEBUG_WARN, "Failed to unblock CacheInfoFlag buffer: %r\n", Status));
+          gBS->FreePages (TempCacheInfoBuffer, Pages);
+          TempCacheInfoBuffer             = 0;
           AllRtBufferAllocationsSucceeded = FALSE;
-        } else {
-          Status = MmUnblockMemoryRequest (TempCacheInfoBuffer, Pages);
-          if ((Status != EFI_UNSUPPORTED) && EFI_ERROR (Status)) {
-            DEBUG ((DEBUG_WARN, "Failed to unblock CacheInfoFlag buffer: %r\n", Status));
-            gBS->FreePages (TempCacheInfoBuffer, Pages);
-            TempCacheInfoBuffer             = 0;
-            AllRtBufferAllocationsSucceeded = FALSE;
-          }
         }
       }
 
-      if (AllRtBufferAllocationsSucceeded && (mVariableRtCacheInfo.RuntimeHobCacheBuffer != 0) && (AllocatedHobCacheSize > 0)) {
-        Pages  = EFI_SIZE_TO_PAGES (AllocatedHobCacheSize);
+      if (AllRtBufferAllocationsSucceeded && (mVariableRtCacheInfo.RuntimeHobCachePages > 0)) {
+        Pages  = (UINTN)mVariableRtCacheInfo.RuntimeHobCachePages;
         Status = gBS->AllocatePages (
                         AllocateAnyPages,
                         EfiRuntimeServicesData,
@@ -1666,8 +1678,8 @@ InitVariableCache (
         }
       }
 
-      if (AllRtBufferAllocationsSucceeded && (mVariableRtCacheInfo.RuntimeNvCacheBuffer != 0) && (AllocatedNvCacheSize > 0)) {
-        Pages  = EFI_SIZE_TO_PAGES (AllocatedNvCacheSize);
+      if (AllRtBufferAllocationsSucceeded && (mVariableRtCacheInfo.RuntimeNvCachePages > 0)) {
+        Pages  = (UINTN)mVariableRtCacheInfo.RuntimeNvCachePages;
         Status = gBS->AllocatePages (
                         AllocateAnyPages,
                         EfiRuntimeServicesData,
@@ -1688,8 +1700,8 @@ InitVariableCache (
         }
       }
 
-      if (AllRtBufferAllocationsSucceeded && (mVariableRtCacheInfo.RuntimeVolatileCacheBuffer != 0) && (AllocatedVolatileCacheSize > 0)) {
-        Pages  = EFI_SIZE_TO_PAGES (AllocatedVolatileCacheSize);
+      if (AllRtBufferAllocationsSucceeded && (mVariableRtCacheInfo.RuntimeVolatileCachePages > 0)) {
+        Pages  = (UINTN)mVariableRtCacheInfo.RuntimeVolatileCachePages;
         Status = gBS->AllocatePages (
                         AllocateAnyPages,
                         EfiRuntimeServicesData,
@@ -1721,33 +1733,25 @@ InitVariableCache (
         }
 
         if (TempCacheInfoBuffer != 0) {
-          RuntimeBuffer = (VOID *)(UINTN)TempCacheInfoBuffer;
-          CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.CacheInfoFlagBuffer, sizeof (CACHE_INFO_FLAG));
           mVariableRtCacheInfo.CacheInfoFlagBuffer = TempCacheInfoBuffer;
         }
 
         if (TempHobCacheBuffer != 0) {
-          RuntimeBuffer = (VOID *)(UINTN)TempHobCacheBuffer;
-          CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.RuntimeHobCacheBuffer, AllocatedHobCacheSize);
           mVariableRtCacheInfo.RuntimeHobCacheBuffer = TempHobCacheBuffer;
-          InitVariableStoreHeader (RuntimeBuffer, AllocatedHobCacheSize);
+          InitVariableStoreHeader ((VOID *)(UINTN)TempHobCacheBuffer, AllocatedHobCacheSize);
         }
 
         if (TempNvCacheBuffer != 0) {
-          RuntimeBuffer = (VOID *)(UINTN)TempNvCacheBuffer;
-          CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.RuntimeNvCacheBuffer, AllocatedNvCacheSize);
           mVariableRtCacheInfo.RuntimeNvCacheBuffer = TempNvCacheBuffer;
-          InitVariableStoreHeader (RuntimeBuffer, AllocatedNvCacheSize);
+          InitVariableStoreHeader ((VOID *)(UINTN)TempNvCacheBuffer, AllocatedNvCacheSize);
         }
 
         if (TempVolatileCacheBuffer != 0) {
-          RuntimeBuffer = (VOID *)(UINTN)TempVolatileCacheBuffer;
-          CopyMem (RuntimeBuffer, (VOID *)(UINTN)mVariableRtCacheInfo.RuntimeVolatileCacheBuffer, AllocatedVolatileCacheSize);
           mVariableRtCacheInfo.RuntimeVolatileCacheBuffer = TempVolatileCacheBuffer;
-          InitVariableStoreHeader (RuntimeBuffer, AllocatedVolatileCacheSize);
+          InitVariableStoreHeader ((VOID *)(UINTN)TempVolatileCacheBuffer, AllocatedVolatileCacheSize);
         }
 
-        DEBUG ((DEBUG_INFO, "Runtime variable cache buffers successfully relocated\n"));
+        DEBUG ((DEBUG_INFO, "Runtime variable cache buffers successfully allocated in DXE.\n"));
       } else {
         //
         // One or more allocations failed - clean up any successful allocations
@@ -1906,7 +1910,9 @@ SmmVariableReady (
   mVariableBufferPhysical = mVariableBuffer;
 
   GuidHob = GetFirstGuidHob (&gEdkiiVariableRuntimeCacheInfoHobGuid);
-  if (GuidHob != NULL) {
+  // MU_CHANGE [BEGIN] - Allocate RT cache buffer in DXE instead of PEI to prevent fragmentation
+  if ((GuidHob != NULL) || FeaturePcdGet (PcdEnableVariableRuntimeCache)) {
+    // MU_CHANGE [END] - Allocate RT cache buffer in DXE instead of PEI to prevent fragmentation
     mIsRuntimeCacheEnabled = TRUE;
     DEBUG ((DEBUG_INFO, "Variable driver runtime cache is enabled.\n"));
 
