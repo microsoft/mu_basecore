@@ -55,6 +55,7 @@ LibGetTime (
   UINT64      Remainder;
   UINTN       EpochSeconds;
   UINTN       Size;
+  INT64       AdjustedEpochSeconds;
 
   if (Time == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -150,7 +151,13 @@ LibGetTime (
 
     // Adjust for the correct time zone
     if (Time->TimeZone != EFI_UNSPECIFIED_TIMEZONE) {
-      EpochSeconds += Time->TimeZone * SEC_PER_MIN;
+      AdjustedEpochSeconds  = (INT64)EpochSeconds;
+      AdjustedEpochSeconds += (INT64)Time->TimeZone * (INT64)SEC_PER_MIN;
+      if (AdjustedEpochSeconds < 0) {
+        AdjustedEpochSeconds = 0;
+      }
+
+      EpochSeconds = (UINTN)AdjustedEpochSeconds;
     }
   }
 
@@ -253,7 +260,7 @@ LibSetTime (
   // Adjust for the correct time zone, i.e. convert to UTC time zone
   if (Time->TimeZone != EFI_UNSPECIFIED_TIMEZONE) {
     AdjustedEpochSeconds  = (INT64)EpochSeconds;
-    AdjustedEpochSeconds -= (INT64)Time->TimeZone * SEC_PER_MIN;
+    AdjustedEpochSeconds -= (INT64)Time->TimeZone * (INT64)SEC_PER_MIN;
     if (AdjustedEpochSeconds < 0) {
       AdjustedEpochSeconds = 0;
     }
