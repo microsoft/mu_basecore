@@ -1586,7 +1586,10 @@ ApplyMemoryProtectionPolicy (
   IN  UINT64                Length
   )
 {
-  UINT64  OldAttributes;
+  // MU_CHANGE - Start - Enforce that the Core returns memory with expected attributes
+  // UINT64  OldAttributes;
+  // MU_CHANGE - End - Enforce that the Core returns memory with expected attributes
+
   UINT64  NewAttributes;
 
   //
@@ -1645,16 +1648,21 @@ ApplyMemoryProtectionPolicy (
   //
   NewAttributes = GetPermissionAttributeForMemoryType (NewType);
 
-  if (OldType != EfiMaxMemoryType) {
-    OldAttributes = GetPermissionAttributeForMemoryType (OldType);
-    if (OldAttributes == NewAttributes) {
-      // policy is the same between OldType and NewType
-      return EFI_SUCCESS;
-    }
-  } else if (NewAttributes == 0) {
-    // newly added region of a type that does not require protection
-    return EFI_SUCCESS;
-  }
+  // MU_CHANGE - Start - Enforce that the Core returns memory with expected attributes
+  // Ensure that the memory has the expected attributes by skipping the Edk2 checks.
+  // Compat mode, Memory Attributes Protocol, Cpu Arch are all able to
+  // change memory attributes so ensure the memory range attributes match expectations.
+  // if (OldType != EfiMaxMemoryType) {
+  //  OldAttributes = GetPermissionAttributeForMemoryType (OldType);
+  //  if (OldAttributes == NewAttributes) {
+  //    // policy is the same between OldType and NewType
+  //    return EFI_SUCCESS;
+  //  }
+  // } else if (NewAttributes == 0) {
+  //  // newly added region of a type that does not require protection
+  //  return EFI_SUCCESS;
+  // }
+  // MU_CHANGE - End - Enforce that the Core returns memory with expected attribute
 
   return gCpu->SetMemoryAttributes (gCpu, Memory, Length, NewAttributes);
 }
