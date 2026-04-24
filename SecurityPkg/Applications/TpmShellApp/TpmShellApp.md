@@ -1,4 +1,4 @@
-# TpmTestApp
+# TpmShellApp
 
 A UEFI shell application for testing TPM 2.0 Physical Presence Interface operations,
 including querying and configuring PCR banks. The app communicates exclusively through the
@@ -15,7 +15,7 @@ presence libraries, or TPM hardware.
 
 ## Overview
 
-TpmTestApp is a `UEFI_APPLICATION` that validates TPM 2.0 PCR bank operations via the
+TpmShellApp is a `UEFI_APPLICATION` that validates TPM 2.0 PCR bank operations via the
 TCG2 Protocol. It is designed to test that a platform's Physical Presence Interface
 correctly handles PCR bank change requests, including verifying that unsupported operations
 are gracefully rejected.
@@ -27,13 +27,13 @@ console.
 ## Commands
 
 ```text
-TpmTestApp help             Show usage information
-TpmTestApp info             Show supported and active PCR banks
-TpmTestApp setpcr <mask>    Request a PCR bank configuration change
-TpmTestApp logall           Request enabling all supported PCR banks
-TpmTestApp eventlog         Dump the TCG2 event log
-TpmTestApp replay           Replay event log and verify PCRs
-TpmTestApp lastresponse     Show the result of the last SetActivePcrBanks call
+TpmShellApp help             Show usage information
+TpmShellApp info             Show supported and active PCR banks
+TpmShellApp setpcr <mask>    Request a PCR bank configuration change
+TpmShellApp logall           Request enabling all supported PCR banks
+TpmShellApp eventlog         Dump the TCG2 event log
+TpmShellApp replay           Replay event log and verify PCRs
+TpmShellApp lastresponse     Show the result of the last SetActivePcrBanks call
 ```
 
 ### `help`
@@ -80,9 +80,9 @@ Values can be combined: `0x06` = SHA256 + SHA384.
 The mask parameter accepts hex with or without a `0x` prefix.
 
 ```text
-TpmTestApp setpcr 0x2       Enable SHA256 only
-TpmTestApp setpcr 0x6       Enable SHA256 + SHA384
-TpmTestApp setpcr 2         Also valid (no prefix)
+TpmShellApp setpcr 0x2       Enable SHA256 only
+TpmShellApp setpcr 0x6       Enable SHA256 + SHA384
+TpmShellApp setpcr 2         Also valid (no prefix)
 ```
 
 > **Note**: `SetActivePcrBanks` submits a Physical Presence request. The actual bank
@@ -140,12 +140,12 @@ library for the result of the most recent `SetActivePcrBanks` operation. Display
 
 ### INF
 
-The app is defined in `SecurityPkg/Applications/TpmTestApp/TpmTestApp.inf`:
+The app is defined in `SecurityPkg/Applications/TpmShellApp/TpmShellApp.inf`:
 
 | Property | Value |
 | -------- | ----- |
 | `MODULE_TYPE` | `UEFI_APPLICATION` |
-| `ENTRY_POINT` | `TpmTestAppEntry` |
+| `ENTRY_POINT` | `TpmShellAppEntry` |
 | `FILE_GUID` | `A3B2D4F1-7E6C-4A89-B5D0-3C1F8E2A9D07` |
 
 Dependencies:
@@ -165,7 +165,7 @@ TCG2 Protocol.
 Add the INF to the platform DSC components section:
 
 ```ini
-SecurityPkg/Applications/TpmTestApp/TpmTestApp.inf
+SecurityPkg/Applications/TpmShellApp/TpmShellApp.inf
 ```
 
 The platform DSC must also map `IntrinsicLib` for the `UEFI_APPLICATION` module type.
@@ -186,12 +186,12 @@ not available.
 Add the INF to the appropriate firmware volume in the platform FDF:
 
 ```ini
-INF SecurityPkg/Applications/TpmTestApp/TpmTestApp.inf
+INF SecurityPkg/Applications/TpmShellApp/TpmShellApp.inf
 ```
 
 ## Protocol Dependency
 
-TpmTestApp uses only `EFI_TCG2_PROTOCOL` (`gEfiTcg2ProtocolGuid`). This protocol is
+TpmShellApp uses only `EFI_TCG2_PROTOCOL` (`gEfiTcg2ProtocolGuid`). This protocol is
 installed by `Tcg2Dxe.efi`, which requires TPM to be enabled in the platform
 configuration.
 
