@@ -7,16 +7,6 @@ connected over PCI. It follows the UEFI Driver Model and the NVM Express specifi
 discover, initialize, and provide block-level access to NVMe storage devices during the UEFI
 boot phase.
 
-## Module Details
-
-| Field | Value |
-|---|---|
-| **Module Type** | UEFI_DRIVER |
-| **INF GUID** | `5BE3BDF4-53CF-46a3-A6A9-73C34A6E5EE3` |
-| **Entry Point** | `NvmExpressDriverEntry` |
-| **Unload** | `NvmExpressUnload` |
-| **Architectures** | IA32, X64 |
-
 ## What This Module Does
 
 ### Driver Binding
@@ -84,26 +74,6 @@ allocated DMA buffers.
 
 The driver registers with `EFI_RESET_NOTIFICATION_PROTOCOL` to issue NVMe shutdown notifications
 (CC.SHN) to all managed controllers before a platform reset, ensuring data integrity.
-
-## Source Files
-
-| File | Description |
-|---|---|
-| `NvmExpress.c` | Driver entry point, driver binding, namespace enumeration, queue cleanup. |
-| `NvmExpress.h` | Main header: data structures, constants, macros, function declarations. |
-| `NvmExpressHci.c` | HCI register access, controller init/reset, admin and I/O queue creation. |
-| `NvmExpressHci.h` | HCI function declarations. |
-| `NvmExpressPassthru.c` | NVM Express PassThru protocol implementation (blocking and async). |
-| `NvmExpressBlockIo.c` | BlockIo and BlockIo2 protocol implementations. |
-| `NvmExpressBlockIo.h` | BlockIo/BlockIo2 function declarations. |
-| `NvmExpressDiskInfo.c` | DiskInfo protocol implementation. |
-| `NvmExpressDiskInfo.h` | DiskInfo function declarations. |
-| `NvmExpressMediaSanitize.c` | Media Sanitize protocol: Clear, Purge, Format via NVMe commands. |
-| `NvmExpressMediaSanitize.h` | Media Sanitize function declarations and types. |
-| `ComponentName.c` | Component Name and Component Name2 protocol implementations. |
-| `UnitTest/MediaSanitizeUnitTest.c` | Host-based unit tests for the Media Sanitize functionality. |
-
----
 
 ## MU_CHANGE Summary
 
@@ -224,21 +194,21 @@ original behavior.
 
 **What changed:**
 
-- A PCD `PcdNvmeNamespaceFilter` (Boolean) is consumed. When `TRUE`, namespace discovery is
-  limited to only the first namespace (NSID 1).
-- A constant `NVME_FIRST_NSID` (0x00000001) is defined.
-- `DiscoverAllNamespaces()` takes a new `FilteringEnabled` parameter. When set, the loop breaks
-  after enumerating the first namespace instead of iterating through all namespaces.
-- In the `RemainingDevicePath` path, if filtering is enabled and the requested `NamespaceId` is
-  not `NVME_FIRST_NSID`, the namespace is skipped.
+- A PCD `PcdNvmeNamespaceFilterId` (UINT32) is consumed. When `0` (default), all namespaces are
+  enumerated as in the upstream behavior. When non-zero, namespace discovery is restricted to the
+  single namespace whose NSID matches the PCD value.
+- `DiscoverAllNamespaces()` takes a new `FilterNsId` parameter. When non-zero, `GetNextNamespace`
+  is iterated and only the matching NSID is enumerated; the loop then exits.
+- In the `RemainingDevicePath` path, if filtering is enabled and the requested `NamespaceId` does
+  not match `FilterNsId`, the namespace is skipped.
 
 **Why it's needed:**
 
 In some platform or test configurations, it is desirable to restrict which NVMe namespaces are
 exposed to the UEFI environment. For example, a system with a multi-namespace NVMe device may
-only want the boot namespace (typically NSID 1) available during boot to reduce enumeration time,
-limit attack surface, or avoid exposing non-boot partitions. This PCD-controlled filter provides
-that capability without modifying the driver at build time.
+only want a specific boot namespace available during boot to reduce enumeration time, limit
+attack surface, or avoid exposing non-boot partitions. This PCD-controlled filter provides that
+capability without modifying the driver at build time.
 
 ---
 

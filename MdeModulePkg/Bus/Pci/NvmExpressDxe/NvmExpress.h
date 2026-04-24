@@ -152,10 +152,6 @@ extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gNvmExpressDriverSupportedEfiV
 
 #define NVME_CONTROLLER_ID  0
 
-// MU_CHANGE [BEGIN] - NVMe namespace filtering
-#define NVME_FIRST_NSID  0x00000001
-// MU_CHANGE [END] - NVMe namespace filtering
-
 //
 // Time out value for Nvme transaction execution
 //

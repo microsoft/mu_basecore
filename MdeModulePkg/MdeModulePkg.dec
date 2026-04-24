@@ -2596,9 +2596,10 @@
 
 [PcdsDynamic, PcdsDynamicEx]
   # MU_CHANGE [BEGIN] - NVMe namespace filtering
-  ## When TRUE, only the first NVMe namespace is enumerated. When FALSE, all namespaces are discovered.
-  # @Prompt Enable NVMe namespace filtering to only use NSID 1.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdNvmeNamespaceFilter|FALSE|BOOLEAN|0x40000153
+  ## When 0, all NVMe namespaces are enumerated. When non-zero, only the namespace
+  ## with the specified NSID is discovered and enumerated. Valid range: 0 to 0xFFFFFFFE.
+  # @Prompt NVMe namespace ID filter (0 = disabled, non-zero = target NSID).
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNvmeNamespaceFilterId|0x0|UINT32|0x40000153
   # MU_CHANGE [END] - NVMe namespace filtering
 
   ## This dynamic PCD hold an address to point to private data structure used in DxeS3BootScriptLib library

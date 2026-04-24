@@ -82,7 +82,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportAlternativeQueueSize ## CONSUMES
   ## MU_CHANGE [END] - Support alternative hardware queue sizes in NVME driver
   ## MU_CHANGE [BEGIN] - NVMe namespace filtering
-  gEfiMdeModulePkgTokenSpaceGuid.PcdNvmeNamespaceFilter         ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNvmeNamespaceFilterId         ## CONSUMES
   ## MU_CHANGE [END] - NVMe namespace filtering
 
 # [Event]
