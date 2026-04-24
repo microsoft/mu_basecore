@@ -858,16 +858,16 @@ PrintUsage (
   VOID
   )
 {
-  Print (L"TpmTestApp - TPM 2.0 Physical Presence Test Utility\n");
+  Print (L"TpmShellApp - TPM 2.0 Physical Presence Test Utility\n");
   Print (L"\n");
   Print (L"Usage:\n");
-  Print (L"  TpmTestApp help             - Show usage\n");
-  Print (L"  TpmTestApp info             - Show PCR banks\n");
-  Print (L"  TpmTestApp setpcr <mask>    - Request PCR bank change (hex bitmask)\n");
-  Print (L"  TpmTestApp logall           - Enable all supported PCR banks\n");
-  Print (L"  TpmTestApp eventlog         - Dump the TCG2 event log\n");
-  Print (L"  TpmTestApp replay           - Replay event log and verify PCRs\n");
-  Print (L"  TpmTestApp lastresponse     - Show last SetActivePcrBanks result\n");
+  Print (L"  TpmShellApp help             - Show usage\n");
+  Print (L"  TpmShellApp info             - Show PCR banks\n");
+  Print (L"  TpmShellApp setpcr <mask>    - Request PCR bank change (hex bitmask)\n");
+  Print (L"  TpmShellApp logall           - Enable all supported PCR banks\n");
+  Print (L"  TpmShellApp eventlog         - Dump the TCG2 event log\n");
+  Print (L"  TpmShellApp replay           - Replay event log and verify PCRs\n");
+  Print (L"  TpmShellApp lastresponse     - Show last SetActivePcrBanks result\n");
   Print (L"\n");
   Print (L"PCR bank bitmask values:\n");
   Print (L"  0x00000001 = SHA1\n");
@@ -876,8 +876,8 @@ PrintUsage (
   Print (L"  0x00000008 = SHA512\n");
   Print (L"  0x00000010 = SM3_256\n");
   Print (L"\n");
-  Print (L"Example: TpmTestApp setpcr 0x2   (enable SHA256 only)\n");
-  Print (L"Example: TpmTestApp setpcr 0x6   (enable SHA256 + SHA384)\n");
+  Print (L"Example: TpmShellApp setpcr 0x2   (enable SHA256 only)\n");
+  Print (L"Example: TpmShellApp setpcr 0x6   (enable SHA256 + SHA384)\n");
 }
 
 /**
@@ -891,7 +891,7 @@ PrintUsage (
 **/
 EFI_STATUS
 EFIAPI
-TpmTestAppEntry (
+TpmShellAppEntry (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
@@ -923,7 +923,7 @@ TpmTestAppEntry (
   Argc = ShellCommandLineGetCount (ParamPackage);
   if (Argc < 2) {
     Print (L"\n[Invalid Usage]\n");
-    Print (L"  Use 'TpmTestApp help' for usage.\n");
+    Print (L"  Use 'TpmShellApp help' for usage.\n");
     Status = EFI_INVALID_PARAMETER;
     goto Exit;
   }
@@ -951,7 +951,7 @@ TpmTestAppEntry (
     Print (L"\n[Set PCR Banks]\n\n");
     if (Argc < 3) {
       Print (L"setpcr requires a hex bitmask parameter.\n");
-      Print (L"  Example: TpmTestApp setpcr 0x2\n");
+      Print (L"  Example: TpmShellApp setpcr 0x2\n");
       Status = EFI_INVALID_PARAMETER;
       goto Exit;
     }
@@ -991,7 +991,7 @@ TpmTestAppEntry (
   } else {
     Print (L"\n[Invalid Input Command]\n\n");
     Print (L"  Unknown command '%s'\n", Command);
-    Print (L"  Use 'TpmTestApp help' for usage.\n");
+    Print (L"  Use 'TpmShellApp help' for usage.\n");
     Status = EFI_INVALID_PARAMETER;
   }
 
