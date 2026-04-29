@@ -41,7 +41,9 @@
   PeiServicesLib
   SafeIntLib
   VariableFlashInfoLib
-  MmUnblockMemoryLib
+  # MU_CHANGE [BEGIN] - Comment out unused library when moving allocation to DXE
+  # MmUnblockMemoryLib
+  # MU_CHANGE [END]
   MemoryAllocationLib
 
 [Guids]
@@ -68,7 +70,6 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable         ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdVariableStoreSize               ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdEnableVariableRuntimeCache      ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdMigrateVariableRuntimeCacheBufferAllocation  ## CONSUMES  # MU_CHANGE
 
 [Depex]
   gEdkiiFaultTolerantWriteGuid

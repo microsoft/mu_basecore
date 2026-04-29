@@ -22,7 +22,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PeiServicesLib.h>
 #include <Library/SafeIntLib.h>
 #include <Library/VariableFlashInfoLib.h>
-#include <Library/MmUnblockMemoryLib.h>
+// MU_CHANGE [BEGIN] - Comment out unused include when moving allocation to DXE
+// #include <Library/MmUnblockMemoryLib.h>
+// MU_CHANGE [END]
 #include <Library/MemoryAllocationLib.h>
 
 #include <Guid/VariableFormat.h>
