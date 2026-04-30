@@ -1,0 +1,49 @@
+## @file
+#  TLS Library Unit Test built for execution in UEFI Shell.
+#
+#  Validates TLS Library functionality by exercising TlsLib APIs directly.
+#  Enumerates supported cipher suites, TLS versions, and EC curves.
+#
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION    = 0x00010006
+  BASE_NAME      = TlsLibUnitTestApp
+  FILE_GUID      = 8B3A5E2D-1F4C-4D7A-B6E9-3C0F5A2D8E71
+  MODULE_TYPE    = UEFI_APPLICATION
+  VERSION_STRING = 1.0
+  ENTRY_POINT    = DxeEntryPoint
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources]
+  UnitTestMain.c
+  TlsLibUnitTests.c
+  TestTlsLib.h
+  TlsFunctionPointerTests.c
+  TlsContextTests.c
+  TlsCipherTests.c
+  TlsConfigTests.c
+  TlsCertificateTests.c
+  TlsGetterTests.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  CryptoPkg/CryptoPkg.dec
+
+[LibraryClasses]
+  UefiApplicationEntryPoint
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  UnitTestLib
+  BaseCryptLib
+  TlsLib
