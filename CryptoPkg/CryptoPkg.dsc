@@ -139,6 +139,17 @@
       gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
     ## MU_CHANGE [END]
   }
+  CryptoPkg/Test/UnitTest/Library/TlsLib/TestTlsLibApp.inf {  ## MU_CHANGE: Add TlsLib unit test application
+    <LibraryClasses>
+      TlsLib|CryptoPkg/Library/TlsLibNull/TlsLibNull.inf
+      DebugLib|MdePkg/Library/UefiDebugLibDebugPortProtocol/UefiDebugLibDebugPortProtocol.inf
+      DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
+      UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
+      ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
+      MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
+    <PcdsFixedAtBuild>
+      gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
+  }
   ## MU_CHANGE [END]
 ## MU_CHANGE [END]
   #
