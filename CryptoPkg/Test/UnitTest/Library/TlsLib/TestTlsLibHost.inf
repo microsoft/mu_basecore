@@ -1,0 +1,41 @@
+## @file
+#  Host-based Unit Test for TLS Library
+#
+#  Validates TLS Library functionality by exercising TlsLib APIs directly.
+#  Enumerates supported cipher suites, TLS versions, and EC curves.
+#
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = TlsLibUnitTestHost
+  FILE_GUID      = 7A2E4E6F-3B8D-4C1A-9F5E-2D6B8C0A1E3F
+  MODULE_TYPE    = HOST_APPLICATION
+  VERSION_STRING = 1.0
+
+[Sources]
+  UnitTestMainHost.c
+  TlsLibUnitTests.c
+  TestTlsLib.h
+  TlsFunctionPointerTests.c
+  TlsContextTests.c
+  TlsCipherTests.c
+  TlsConfigTests.c
+  TlsCertificateTests.c
+  TlsGetterTests.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  CryptoPkg/CryptoPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  BaseCryptLib
+  TlsLib
+  UnitTestLib
+  MemoryAllocationLib
