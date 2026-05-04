@@ -8,43 +8,41 @@
 
 #include "CpuDxe.h"
 
-// MU_CHANGE START: Don't check for GCD system memory when using EFI Attributes Protocol
-// /**
-//   Check whether the provided memory range is covered by a single entry of type
-//   EfiGcdSystemMemory in the GCD memory map.
+/**
+  Check whether the provided memory range is covered by a single entry of type
+  EfiGcdSystemMemory in the GCD memory map.
 
-//   @param  BaseAddress       The physical address that is the start address of
-//                             a memory region.
-//   @param  Length            The size in bytes of the memory region.
+  @param  BaseAddress       The physical address that is the start address of
+                            a memory region.
+  @param  Length            The size in bytes of the memory region.
 
-//   @return Whether the region is system memory or not.
-// **/
-// STATIC
-// BOOLEAN
-// RegionIsSystemMemory (
-//   IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
-//   IN  UINT64                Length
-//   )
-// {
-//   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  GcdDescriptor;
-//   EFI_PHYSICAL_ADDRESS             GcdEndAddress;
-//   EFI_STATUS                       Status;
+  @return Whether the region is system memory or not.
+**/
+STATIC
+BOOLEAN
+RegionIsSystemMemory (
+  IN  EFI_PHYSICAL_ADDRESS  BaseAddress,
+  IN  UINT64                Length
+  )
+{
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR  GcdDescriptor;
+  EFI_PHYSICAL_ADDRESS             GcdEndAddress;
+  EFI_STATUS                       Status;
 
-//   Status = gDS->GetMemorySpaceDescriptor (BaseAddress, &GcdDescriptor);
-//   if (EFI_ERROR (Status) ||
-//       (GcdDescriptor.GcdMemoryType != EfiGcdMemoryTypeSystemMemory))
-//   {
-//     return FALSE;
-//   }
+  Status = gDS->GetMemorySpaceDescriptor (BaseAddress, &GcdDescriptor);
+  if (EFI_ERROR (Status) ||
+      (GcdDescriptor.GcdMemoryType != EfiGcdMemoryTypeSystemMemory))
+  {
+    return FALSE;
+  }
 
-//   GcdEndAddress = GcdDescriptor.BaseAddress + GcdDescriptor.Length;
+  GcdEndAddress = GcdDescriptor.BaseAddress + GcdDescriptor.Length;
 
-//   //
-//   // Return TRUE if the GCD descriptor covers the range entirely
-//   //
-//   return GcdEndAddress >= (BaseAddress + Length);
-// }
-// MU_CHANGE END
+  //
+  // Return TRUE if the GCD descriptor covers the range entirely
+  //
+  return GcdEndAddress >= (BaseAddress + Length);
+}
 
 /**
   This function retrieves the attributes of the memory region specified by
@@ -94,11 +92,9 @@ GetMemoryAttributes (
     return EFI_INVALID_PARAMETER;
   }
 
-  // MU_CHANGE START: Don't check for GCD system memory when using EFI Attributes Protocol
-  // if (!RegionIsSystemMemory (BaseAddress, Length)) {
-  //   return EFI_UNSUPPORTED;
-  // }
-  // MU_CHANGE END
+  if (!RegionIsSystemMemory (BaseAddress, Length)) {
+    return EFI_UNSUPPORTED;
+  }
 
   DEBUG ((
     DEBUG_VERBOSE,
@@ -216,11 +212,9 @@ SetMemoryAttributes (
     return EFI_INVALID_PARAMETER;
   }
 
-  // MU_CHANGE START: Don't check for GCD system memory when using EFI Attributes Protocol
-  // if (!RegionIsSystemMemory (BaseAddress, Length)) {
-  //   return EFI_UNSUPPORTED;
-  // }
-  // MU_CHANGE END
+  if (!RegionIsSystemMemory (BaseAddress, Length)) {
+    return EFI_UNSUPPORTED;
+  }
 
   return ArmSetMemoryAttributes (BaseAddress, Length, Attributes, Attributes);
 }
@@ -286,11 +280,9 @@ ClearMemoryAttributes (
     return EFI_INVALID_PARAMETER;
   }
 
-  // MU_CHANGE START: Don't check for GCD system memory when using EFI Attributes Protocol
-  // if (!RegionIsSystemMemory (BaseAddress, Length)) {
-  //   return EFI_UNSUPPORTED;
-  // }
-  // MU_CHANGE END
+  if (!RegionIsSystemMemory (BaseAddress, Length)) {
+    return EFI_UNSUPPORTED;
+  }
 
   return ArmSetMemoryAttributes (BaseAddress, Length, 0, Attributes);
 }
