@@ -33,7 +33,7 @@ concurrency:
 jobs:
   package-matrix:
     name: Gather Repository Packages
-    uses: microsoft/mu_devops/.github/workflows/PackageMatrix.yml@v18.0.5
+    uses: microsoft/mu_devops/.github/workflows/PackageMatrix.yml@v18.0.6
     with:
       ci-config: '.pytool/CISettings.py'
       python-version: "3.12"
@@ -57,7 +57,7 @@ jobs:
 
     needs: package-matrix
 
-    uses: microsoft/mu_devops/.github/workflows/PackageCi.yml@v18.0.5
+    uses: microsoft/mu_devops/.github/workflows/PackageCi.yml@v18.0.6
 
     with:
       runner: windows-latest
@@ -73,7 +73,7 @@ jobs:
 
     needs: package-matrix
 
-    uses: microsoft/mu_devops/.github/workflows/PackageCi.yml@v18.0.5
+    uses: microsoft/mu_devops/.github/workflows/PackageCi.yml@v18.0.6
 
     with:
       runner: ubuntu-latest

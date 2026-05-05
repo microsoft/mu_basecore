@@ -68,10 +68,11 @@ jobs:
 
         packages = [d for d in os.listdir() if d.strip().lower().endswith('pkg')]
 
-        # Ensure the package can actually be built for IA32 or X64
+        # Ensure the package can actually be built for the target architectures
+        archs = [a.strip() for a in 'IA32,X64'.split(',')]
         for package in list(packages):
             dsc = [os.path.join(package, f) for f in os.listdir(package) if f.endswith('.dsc')]
-            if not any('IA32' in l or 'X64' in l for d in dsc for l in open(d) if 'SUPPORTED_ARCHITECTURES' in l):
+            if not any(arch in l for d in dsc for l in open(d) if 'SUPPORTED_ARCHITECTURES' in l for arch in archs):
                 packages.remove(package)
 
         packages.sort()
