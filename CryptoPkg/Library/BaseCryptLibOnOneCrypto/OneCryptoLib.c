@@ -152,7 +152,7 @@ CryptoServiceNotAvailable (
     ONE_CRYPTO_PROTOCOL  *CryptoServices;                                              \
                                                                                        \
     CryptoServices = GetAndValidateCryptoProtocol (#Function, (MinMajor), (MinMinor)); \
-    if ((CryptoServices == NULL) && (CryptoServices->Function == NULL)) {              \
+    if ((CryptoServices == NULL) || (CryptoServices->Function == NULL)) {              \
       CryptoServiceNotAvailable (#Function);                                           \
       return ErrorReturnValue;                                                         \
     }                                                                                  \
@@ -178,7 +178,7 @@ CryptoServiceNotAvailable (
     ONE_CRYPTO_PROTOCOL  *CryptoServices;                                              \
                                                                                        \
     CryptoServices = GetAndValidateCryptoProtocol (#Function, (MinMajor), (MinMinor)); \
-    if ((CryptoServices == NULL) && (CryptoServices->Function == NULL)) {              \
+    if ((CryptoServices == NULL) || (CryptoServices->Function == NULL)) {              \
       CryptoServiceNotAvailable (#Function);                                           \
       return;                                                                          \
     }                                                                                  \
