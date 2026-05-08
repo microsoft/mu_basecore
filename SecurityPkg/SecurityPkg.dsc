@@ -248,6 +248,8 @@
   SecurityPkg/Library/PeiDxeTpmPlatformHierarchyLibNull/PeiDxeTpmPlatformHierarchyLib.inf
 
   SecurityPkg/Applications/TpmShellApp/TpmShellApp.inf  ## MU_CHANGE
+  SecurityPkg/Tcg/TcgLogTest/TcgLogTestDxe.inf  ## MU_CHANGE
+  SecurityPkg/Tcg/TcgLogTest/TcgLogTestApp.inf  ## MU_CHANGE
 
   #
   # TCG Storage.
