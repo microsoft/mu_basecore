@@ -127,15 +127,15 @@ CheckTruncationEvent (
   IN UINTN                 Laml
   )
 {
-  UINT8       *CurrentEvent;
-  UINT8       *EndOfLog;
-  UINT32      PcrIndex;
-  UINT32      EventType;
-  UINT32      EventSize;
-  UINT8       *EventData;
-  UINT32      EventDataLen;
-  UINT32      SpecIdEventSize;
-  CONST CHAR8 *TruncEventStr = TCG_LOG_TRUNCATION_EVENT_STRING;
+  UINT8        *CurrentEvent;
+  UINT8        *EndOfLog;
+  UINT32       PcrIndex;
+  UINT32       EventType;
+  UINT32       EventSize;
+  UINT8        *EventData;
+  UINT32       EventDataLen;
+  UINT32       SpecIdEventSize;
+  CONST CHAR8  *TruncEventStr = TCG_LOG_TRUNCATION_EVENT_STRING;
 
   // Verify the input parameters.
   if ((Lasa == 0) || (Laml == 0) || (TruncEventStr == NULL)) {

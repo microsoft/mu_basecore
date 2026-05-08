@@ -81,12 +81,12 @@ TcgLogTestLogEvent (
   )
 {
   return Tcg2Protocol->HashLogExtendEvent (
-                 Tcg2Protocol,
-                 0,
-                 (EFI_PHYSICAL_ADDRESS)(UINTN)mCommonEventPayload,
-                 AsciiStrSize (mCommonEventPayload),
-                 Event
-                 );
+                         Tcg2Protocol,
+                         0,
+                         (EFI_PHYSICAL_ADDRESS)(UINTN)mCommonEventPayload,
+                         AsciiStrSize (mCommonEventPayload),
+                         Event
+                         );
 }
 
 /**
@@ -286,12 +286,12 @@ TcgLogTestLogEventsUntilScaled (
 
   // Get the event log before scaling.
   Status = Tcg2Protocol->GetEventLog (
-                   Tcg2Protocol,
-                   EFI_TCG2_EVENT_LOG_FORMAT_TCG_2,
-                   &LocationBefore,
-                   &LastEntry,
-                   &Truncated
-                   );
+                           Tcg2Protocol,
+                           EFI_TCG2_EVENT_LOG_FORMAT_TCG_2,
+                           &LocationBefore,
+                           &LastEntry,
+                           &Truncated
+                           );
 
   if (EFI_ERROR (Status)) {
     FreePool (Event);
@@ -308,12 +308,12 @@ TcgLogTestLogEventsUntilScaled (
     }
 
     Status = Tcg2Protocol->GetEventLog (
-                     Tcg2Protocol,
-                     EFI_TCG2_EVENT_LOG_FORMAT_TCG_2,
-                     &LocationAfter,
-                     &LastEntry,
-                     &Truncated
-                     );
+                             Tcg2Protocol,
+                             EFI_TCG2_EVENT_LOG_FORMAT_TCG_2,
+                             &LocationAfter,
+                             &LastEntry,
+                             &Truncated
+                             );
 
     if (EFI_ERROR (Status)) {
       FreePool (Event);
@@ -364,12 +364,12 @@ TcgLogTestDumpEventLog (
   }
 
   Status = Tcg2Protocol->GetEventLog (
-                   Tcg2Protocol,
-                   EFI_TCG2_EVENT_LOG_FORMAT_TCG_2,
-                   &LogBase,
-                   &LastEntry,
-                   &LogTruncated
-                   );
+                           Tcg2Protocol,
+                           EFI_TCG2_EVENT_LOG_FORMAT_TCG_2,
+                           &LogBase,
+                           &LastEntry,
+                           &LogTruncated
+                           );
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: GetEventLog failed - %r\n", __func__, Status));

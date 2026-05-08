@@ -1038,12 +1038,12 @@ TcgDxeLogEvent (
 
   if (mReadyToBoot && !EventLogAreaStruct->EventLogTruncated) {
     Status = TcgCommLogEvent (
-              EventLogAreaStruct,
-              NewEventHdr,
-              NewEventHdrSize,
-              NewEventData,
-              NewEventSize
-              );
+               EventLogAreaStruct,
+               NewEventHdr,
+               NewEventHdrSize,
+               NewEventData,
+               NewEventSize
+               );
 
     if (Status == EFI_OUT_OF_RESOURCES) {
       EventLogAreaStruct->EventLogTruncated = TRUE;
@@ -1217,12 +1217,12 @@ TcgScaleEventLog (
 
   // Double the length of the TCG log.
   NewLaml = EventLogAreaStruct->Laml * 2;
-  Status = gBS->AllocatePages (
-                  AllocateAnyPages,
-                  EfiBootServicesData,
-                  EFI_SIZE_TO_PAGES (NewLaml),
-                  &NewLasa
-                  );
+  Status  = gBS->AllocatePages (
+                   AllocateAnyPages,
+                   EfiBootServicesData,
+                   EFI_SIZE_TO_PAGES (NewLaml),
+                   &NewLasa
+                   );
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "Failed to allocate new TCG event log\n"));
@@ -1230,7 +1230,7 @@ TcgScaleEventLog (
   }
 
   // Copy the data from the old event log to the new event log.
-  CopyMem ((VOID*)(UINTN)NewLasa, (VOID*)(UINTN)EventLogAreaStruct->Lasa, EventLogAreaStruct->EventLogSize);
+  CopyMem ((VOID *)(UINTN)NewLasa, (VOID *)(UINTN)EventLogAreaStruct->Lasa, EventLogAreaStruct->EventLogSize);
 
   // Store the old Lasa and Laml before updating.
   OldLasa = EventLogAreaStruct->Lasa;
@@ -1293,10 +1293,10 @@ TcgLogDynamicScalingNeeded (
   if (!mAcpiEventLog.EventLogTruncated) {
     InitNoActionEvent (&NoActionEvent, sizeof (TCG_LOG_TRUNCATION_EVENT_STRING));
     EventHdrSize = (UINT32)(sizeof (NoActionEvent.PCRIndex) +
-                   sizeof (NoActionEvent.EventType) +
-                   GetDigestListBinSize ((UINT8 *)&NoActionEvent.Digests) +
-                   sizeof (NoActionEvent.EventSize));
-    EventSize    = EventHdrSize + sizeof (TCG_LOG_TRUNCATION_EVENT_STRING);
+                            sizeof (NoActionEvent.EventType) +
+                            GetDigestListBinSize ((UINT8 *)&NoActionEvent.Digests) +
+                            sizeof (NoActionEvent.EventSize));
+    EventSize = EventHdrSize + sizeof (TCG_LOG_TRUNCATION_EVENT_STRING);
 
     // Validate the NO_ACTION_EVENT doesn't cause an overflow.
     if (EventSize > MAX_ADDRESS - NewLogSize) {
@@ -1350,16 +1350,16 @@ TcgDxeLogHashEvent (
 {
   // MU_CHANGE - [BEGIN]
 
-  EFI_STATUS                 Status;
-  EFI_TPL                    OldTpl;
-  UINTN                      Index;
-  EFI_STATUS                 RetStatus;
-  TCG_PCR_EVENT2             TcgPcrEvent2;
-  UINT8                      *DigestBuffer;
-  UINT32                     *EventSizePtr;
-  BOOLEAN                    DynamicScalingNeeded;
-  TCG_PCR_EVENT2_HDR         NoActionEvent;
-  UINT32                     EventHdrSize;
+  EFI_STATUS          Status;
+  EFI_TPL             OldTpl;
+  UINTN               Index;
+  EFI_STATUS          RetStatus;
+  TCG_PCR_EVENT2      TcgPcrEvent2;
+  UINT8               *DigestBuffer;
+  UINT32              *EventSizePtr;
+  BOOLEAN             DynamicScalingNeeded;
+  TCG_PCR_EVENT2_HDR  NoActionEvent;
+  UINT32              EventHdrSize;
 
   // MU_CHANGE - [END]
 
@@ -1404,10 +1404,10 @@ TcgDxeLogHashEvent (
 
           // Need to dynamically scale the TCG log before we enter a critical region.
           DynamicScalingNeeded = TcgLogDynamicScalingNeeded (
-                                  &mTcgDxeData.EventLogAreaStruct[Index],
-                                  sizeof (TcgPcrEvent2.PCRIndex) + sizeof (TcgPcrEvent2.EventType) + GetDigestListBinSize (DigestBuffer) + sizeof (TcgPcrEvent2.EventSize),
-                                  NewEventHdr->EventSize
-                                  );
+                                   &mTcgDxeData.EventLogAreaStruct[Index],
+                                   sizeof (TcgPcrEvent2.PCRIndex) + sizeof (TcgPcrEvent2.EventType) + GetDigestListBinSize (DigestBuffer) + sizeof (TcgPcrEvent2.EventSize),
+                                   NewEventHdr->EventSize
+                                   );
 
           // If scaling is needed and the ACPI event log as been created. Log a
           // NO_ACTION_EVENT with the truncation string to the end of it to mark that
@@ -1415,18 +1415,18 @@ TcgDxeLogHashEvent (
           if (DynamicScalingNeeded && mReadyToBoot && !mAcpiEventLog.EventLogTruncated) {
             InitNoActionEvent (&NoActionEvent, sizeof (TCG_LOG_TRUNCATION_EVENT_STRING));
             EventHdrSize = (UINT32)(sizeof (NoActionEvent.PCRIndex) +
-                            sizeof (NoActionEvent.EventType) +
-                            GetDigestListBinSize ((UINT8 *)&NoActionEvent.Digests) +
-                            sizeof (NoActionEvent.EventSize));
+                                    sizeof (NoActionEvent.EventType) +
+                                    GetDigestListBinSize ((UINT8 *)&NoActionEvent.Digests) +
+                                    sizeof (NoActionEvent.EventSize));
 
             OldTpl = gBS->RaiseTPL (TPL_HIGH_LEVEL);
             Status = TcgCommLogEvent (
-                        &mAcpiEventLog,
-                        &NoActionEvent,
-                        EventHdrSize,
-                        (UINT8 *)TCG_LOG_TRUNCATION_EVENT_STRING,
-                        sizeof (TCG_LOG_TRUNCATION_EVENT_STRING)
-                        );
+                       &mAcpiEventLog,
+                       &NoActionEvent,
+                       EventHdrSize,
+                       (UINT8 *)TCG_LOG_TRUNCATION_EVENT_STRING,
+                       sizeof (TCG_LOG_TRUNCATION_EVENT_STRING)
+                       );
             gBS->RestoreTPL (OldTpl);
 
             if (EFI_ERROR (Status)) {
@@ -1439,7 +1439,7 @@ TcgDxeLogHashEvent (
 
           // Only scale when needed.
           if (DynamicScalingNeeded) {
-            Status = TcgScaleEventLog(&mTcgDxeData.EventLogAreaStruct[Index]);
+            Status = TcgScaleEventLog (&mTcgDxeData.EventLogAreaStruct[Index]);
             if (EFI_ERROR (Status)) {
               DEBUG ((DEBUG_ERROR, "Unable to scale the TCG event log!\n"));
               return Status;
@@ -2966,7 +2966,7 @@ GenerateAcpiLog (
   mAcpiEventLog.Next800155EventOffset = EventLogAreaStruct->Next800155EventOffset;
 
   // Copy the data to the ACPI log.
-  CopyMem ((VOID*)(UINTN)AcpiLasa, (VOID*)(UINTN)EventLogAreaStruct->Lasa, mAcpiEventLog.Laml);
+  CopyMem ((VOID *)(UINTN)AcpiLasa, (VOID *)(UINTN)EventLogAreaStruct->Lasa, mAcpiEventLog.Laml);
 
   // Update the PCDs.
   PcdSet32S (PcdTpm2AcpiTableLaml, (UINT32)mAcpiEventLog.Laml);
@@ -3015,6 +3015,7 @@ OnReadyToBoot (
           if ((PcdGet8 (PcdTpm2AcpiTableRev) >= 4) && !mReadyToBoot) {
             GenerateAcpiLog (&mTcgDxeData.EventLogAreaStruct[Index]);
           }
+
           break;
       }
     }

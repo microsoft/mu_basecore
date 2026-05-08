@@ -58,8 +58,8 @@ EFI_STATUS
   );
 
 struct _TCG_LOG_TEST_PROTOCOL {
-  TCG_LOG_TEST_GET_LOG       GetLog;
-  TCG_LOG_TEST_ENABLE        Enable;
+  TCG_LOG_TEST_GET_LOG    GetLog;
+  TCG_LOG_TEST_ENABLE     Enable;
 };
 
 extern EFI_GUID  gTcgLogTestProtocolGuid;
