@@ -11,10 +11,12 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <IndustryStandard/Acpi.h>
 #include <IndustryStandard/PeImage.h>
 #include <IndustryStandard/TcpaAcpi.h>
+#include <IndustryStandard/Tpm2Acpi.h> // MU_CHANGE
 
 #include <Guid/GlobalVariable.h>
 #include <Guid/HobList.h>
 #include <Guid/TcgEventHob.h>
+#include <Guid/Tcg2EventLogScaled.h> // MU_CHANGE
 #include <Guid/EventGroup.h>
 #include <Guid/EventExitBootServiceFailed.h>
 #include <Guid/ImageAuthentication.h>
@@ -76,6 +78,17 @@ TCG2_EVENT_INFO_STRUCT  mTcg2EventInfo[] = {
 
 #define TCG_EVENT_LOG_AREA_COUNT_MAX  2
 
+// MU_CHANGE - [BEGIN]
+
+// Maximum number of times the TCG event log can be dynamically scaled
+// before the log is considered truncated.
+#define TCG_EVENT_LOG_MAX_SCALE_COUNT  4
+
+// Payload written as the last event of the FinalEventLog when it becomes truncated.
+#define TCG_LOG_TRUNCATION_EVENT_STRING  "TCG Event Log Truncated"
+
+// MU_CHANGE - [END]
+
 typedef struct {
   EFI_TCG2_EVENT_LOG_FORMAT    EventLogFormat;
   EFI_PHYSICAL_ADDRESS         Lasa;
@@ -85,6 +98,7 @@ typedef struct {
   BOOLEAN                      EventLogStarted;
   BOOLEAN                      EventLogTruncated;
   UINTN                        Next800155EventOffset;
+  UINTN                        ScaleCount; // MU_CHANGE
 } TCG_EVENT_LOG_AREA_STRUCT;
 
 // Mapping of TPM return status to BIOS/OS TPM support and related flags (TPMPresentFlag, TpmUpdateFlag)
@@ -132,7 +146,12 @@ VARIABLE_TYPE  mVariableType[] = {
   { EFI_IMAGE_SECURITY_DATABASE1, &gEfiImageSecurityDatabaseGuid },
 };
 
+// MU_CHANGE - [BEGIN]
+
 EFI_HANDLE  mImageHandle;
+BOOLEAN     mReadyToBoot = FALSE;
+
+// MU_CHANGE - [END]
 
 /**
   Measure PE image into TPM log based on the authenticode image hashing in
@@ -941,6 +960,130 @@ TcgCommLogEvent (
   return EFI_SUCCESS;
 }
 
+// MU_CHANGE - [BEGIN]
+
+/**
+  Get TPML_DIGEST_VALUES compact binary buffer size.
+
+  @param[in]     DigestListBin    TPML_DIGEST_VALUES compact binary buffer.
+
+  @return TPML_DIGEST_VALUES compact binary buffer size.
+**/
+UINT32
+GetDigestListBinSize (
+  IN VOID  *DigestListBin
+  )
+{
+  UINTN          Index;
+  UINT16         DigestSize;
+  UINT32         TotalSize;
+  UINT32         Count;
+  TPMI_ALG_HASH  HashAlg;
+
+  Count         = ReadUnaligned32 (DigestListBin);
+  TotalSize     = sizeof (Count);
+  DigestListBin = (UINT8 *)DigestListBin + sizeof (Count);
+  for (Index = 0; Index < Count; Index++) {
+    HashAlg       = ReadUnaligned16 (DigestListBin);
+    TotalSize    += sizeof (HashAlg);
+    DigestListBin = (UINT8 *)DigestListBin + sizeof (HashAlg);
+
+    DigestSize    = GetHashSizeFromAlgo (HashAlg);
+    TotalSize    += DigestSize;
+    DigestListBin = (UINT8 *)DigestListBin + DigestSize;
+  }
+
+  return TotalSize;
+}
+
+/**
+  Build the EV_NO_ACTION truncation marker event.
+
+  @param[out]  EventHdr      TCG_PCR_EVENT2 header initialized for the
+                             truncation marker.
+  @param[out]  EventHdrSize  Size in bytes of the serialized header
+                             (excluding the payload string).
+**/
+STATIC
+VOID
+BuildTruncationEvent (
+  OUT TCG_PCR_EVENT2_HDR  *EventHdr,
+  OUT UINT32              *EventHdrSize
+  )
+{
+  InitNoActionEvent (EventHdr, sizeof (TCG_LOG_TRUNCATION_EVENT_STRING));
+  *EventHdrSize = (UINT32)(sizeof (EventHdr->PCRIndex) +
+                           sizeof (EventHdr->EventType) +
+                           GetDigestListBinSize (&EventHdr->Digests) +
+                           sizeof (EventHdr->EventSize));
+}
+
+/**
+  Compute the total size in bytes of the EV_NO_ACTION truncation marker event
+  (header for the active PCR banks + truncation payload).
+
+  Used to reserve headroom in the Final Events log so the marker is always
+  guaranteed to fit when truncation occurs.
+
+  @return  Size in bytes of the truncation marker event.
+**/
+STATIC
+UINTN
+GetTruncationEventSize (
+  VOID
+  )
+{
+  TCG_PCR_EVENT2_HDR  NoActionEvent;
+  UINT32              EventHdrSize;
+
+  BuildTruncationEvent (&NoActionEvent, &EventHdrSize);
+
+  return EventHdrSize + sizeof (TCG_LOG_TRUNCATION_EVENT_STRING);
+}
+
+/**
+  Append an EV_NO_ACTION truncation marker as the final entry of the Final
+  Events log. The marker is written into the headroom reserved at log
+  initialization (see Final log Laml setup in SetupEventLog) so it is always
+  guaranteed to fit even when the log is otherwise full.
+
+  @param[in,out] EventLogAreaStruct  Final Events log area.
+
+  @retval EFI_SUCCESS  The truncation marker was logged.
+  @retval Other        TcgCommLogEvent failed; nothing was logged.
+**/
+STATIC
+EFI_STATUS
+AppendTruncationMarker (
+  IN OUT TCG_EVENT_LOG_AREA_STRUCT  *EventLogAreaStruct
+  )
+{
+  EFI_STATUS          Status;
+  TCG_PCR_EVENT2_HDR  TruncationHdr;
+  UINT32              TruncationHdrSize;
+
+  BuildTruncationEvent (&TruncationHdr, &TruncationHdrSize);
+
+  // Restore the reserved space so TcgCommLogEvent accepts the marker.
+  EventLogAreaStruct->Laml += TruncationHdrSize + sizeof (TCG_LOG_TRUNCATION_EVENT_STRING);
+
+  Status = TcgCommLogEvent (
+             EventLogAreaStruct,
+             &TruncationHdr,
+             TruncationHdrSize,
+             (UINT8 *)TCG_LOG_TRUNCATION_EVENT_STRING,
+             sizeof (TCG_LOG_TRUNCATION_EVENT_STRING)
+             );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: Failed to log truncation marker - %r\n", __func__, Status));
+  }
+
+  return Status;
+}
+
+// MU_CHANGE - [END]
+
 /**
   Add a new entry to the Event Log.
 
@@ -1026,6 +1169,15 @@ TcgDxeLogEvent (
                NewEventSize
                );
     if (Status == EFI_OUT_OF_RESOURCES) {
+      // MU_CHANGE - [BEGIN]
+
+      Status = AppendTruncationMarker (EventLogAreaStruct);
+      if (!EFI_ERROR (Status)) {
+        (mTcgDxeData.FinalEventsTable[Index])->NumberOfEvents++;
+      }
+
+      // MU_CHANGE - [END]
+
       EventLogAreaStruct->EventLogTruncated = TRUE;
       return EFI_VOLUME_FULL;
     } else if (Status == EFI_SUCCESS) {
@@ -1041,6 +1193,10 @@ TcgDxeLogEvent (
 
   return Status;
 }
+
+// MU_CHANGE - [BEGIN]
+
+#if 0
 
 /**
   Get TPML_DIGEST_VALUES compact binary buffer size.
@@ -1075,6 +1231,10 @@ GetDigestListBinSize (
 
   return TotalSize;
 }
+
+#endif
+
+// MU_CHANGE - [END]
 
 /**
   Copy TPML_DIGEST_VALUES compact binary into a buffer
@@ -1132,6 +1292,159 @@ CopyDigestListBinToBuffer (
   return Buffer;
 }
 
+// MU_CHANGE - [BEGIN]
+
+/**
+  Dynamically scale the TCG event log, this should only occur when the
+  log is filled/truncated.
+
+  @param[in, out] EventLogAreaStruct  The event log area data structure.
+
+  @retval EFI_SUCCESS           Log was successfully scaled.
+  @retval EFI_OUT_OF_RESOURCES  Allocation failed.
+  @retval EFI_VOLUME_FULL       EventLog truncated.
+
+**/
+STATIC
+EFI_STATUS
+TcgScaleEventLog (
+  IN OUT  TCG_EVENT_LOG_AREA_STRUCT  *EventLogAreaStruct
+  )
+{
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  NewLasa;
+  UINT64                NewLaml;
+  EFI_PHYSICAL_ADDRESS  OldLasa;
+  UINT64                OldLaml;
+  EFI_TPL               OldTpl;
+
+  // Make sure EventLogAreaStruct is valid.
+  if (EventLogAreaStruct == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // If the log was scaled the maximum number of times, mark it as truncated.
+  if (EventLogAreaStruct->ScaleCount >= TCG_EVENT_LOG_MAX_SCALE_COUNT) {
+    DEBUG ((DEBUG_ERROR, "%a: Scale limit reached (%u), truncating log\n", __func__, TCG_EVENT_LOG_MAX_SCALE_COUNT));
+    EventLogAreaStruct->EventLogTruncated = TRUE;
+    return EFI_VOLUME_FULL;
+  }
+
+  NewLaml = EventLogAreaStruct->Laml * 2;
+  if (NewLaml <= EventLogAreaStruct->Laml) {
+    DEBUG ((DEBUG_ERROR, "%a: Laml overflow (0x%lx * 2)\n", __func__, EventLogAreaStruct->Laml));
+    EventLogAreaStruct->EventLogTruncated = TRUE;
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Status = gBS->AllocatePages (
+                  AllocateAnyPages,
+                  EfiBootServicesData,
+                  EFI_SIZE_TO_PAGES ((UINTN)NewLaml),
+                  &NewLasa
+                  );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Failed to allocate new TCG event log\n"));
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // Enter a critical section, we do not want to be interrupted while copying.
+  OldTpl = gBS->RaiseTPL (TPL_HIGH_LEVEL);
+
+  // Copy the data from the old event log to the new event log.
+  CopyMem ((VOID *)(UINTN)NewLasa, (VOID *)(UINTN)EventLogAreaStruct->Lasa, EventLogAreaStruct->EventLogSize);
+
+  // Store the old Lasa and Laml before updating.
+  OldLasa = EventLogAreaStruct->Lasa;
+  OldLaml = EventLogAreaStruct->Laml;
+
+  DEBUG ((DEBUG_INFO, "OldLasa: 0x%lx, OldLaml: 0x%lx\n", OldLasa, OldLaml));
+  DEBUG ((DEBUG_INFO, "NewLasa: 0x%lx, NewLaml: 0x%lx\n", NewLasa, NewLaml));
+
+  // Update the EventLogAreaStruct.
+  EventLogAreaStruct->Lasa = NewLasa;
+  EventLogAreaStruct->Laml = NewLaml;
+
+  // Update the LastEvent pointer. LastEvent = Lasa + Offset. To calculate
+  // the offset we can do: Offset = LastEvent - Lasa.
+  EventLogAreaStruct->LastEvent = (UINT8 *)(UINTN)NewLasa + ((UINTN)EventLogAreaStruct->LastEvent - (UINTN)OldLasa);
+
+  // Track the number of times we've scaled.
+  EventLogAreaStruct->ScaleCount++;
+
+  // Exit the critical section once we finish copying/updated the struct.
+  gBS->RestoreTPL (OldTpl);
+
+  // Free the old log region.
+  gBS->FreePages (OldLasa, EFI_SIZE_TO_PAGES ((UINTN)OldLaml));
+
+  // Notify that the event log was scaled.
+  EfiEventGroupSignal (&gTcg2EventLogScaledGuid);
+
+  return Status;
+}
+
+/**
+  Check if the TCG log needs to be dynamically scaled.
+
+  @param[in] EventLogAreaStruct  Pointer to the event log area structure.
+  @param[in] NewEventHdrSize     New event header size.
+  @param[in] NewEventSize        New event data size.
+
+  @retval TRUE   Dynamic scaling needed.
+  @retval FALSE  Dynamic scaling not needed.
+
+**/
+STATIC
+BOOLEAN
+TcgLogDynamicScalingNeeded (
+  IN      TCG_EVENT_LOG_AREA_STRUCT  *EventLogAreaStruct,
+  IN      UINT32                     NewEventHdrSize,
+  IN      UINT32                     NewEventSize
+  )
+{
+  UINTN  NewLogSize;
+
+  // Make sure EventLogAreaStruct is valid.
+  if (EventLogAreaStruct == NULL) {
+    return FALSE;
+  }
+
+  // Validate NewEventSize + NewEventHdrSize doesn't cause an overflow.
+  if (NewEventSize > MAX_ADDRESS - NewEventHdrSize) {
+    ASSERT (FALSE);
+    return FALSE;
+  }
+
+  NewLogSize = NewEventHdrSize + NewEventSize;
+
+  // Validate EventLogSize + NewLogSize doesn't cause an overflow.
+  if (NewLogSize > MAX_ADDRESS - EventLogAreaStruct->EventLogSize) {
+    ASSERT (FALSE);
+    return FALSE;
+  }
+
+  // Determine if dynamic scaling is needed.
+  if (NewLogSize + EventLogAreaStruct->EventLogSize > EventLogAreaStruct->Laml) {
+    DEBUG ((DEBUG_INFO, "  Laml       - 0x%lx\n", EventLogAreaStruct->Laml));
+    DEBUG ((DEBUG_INFO, "  NewLogSize - 0x%lx\n", NewLogSize));
+    DEBUG ((DEBUG_INFO, "  LogSize    - 0x%lx\n", EventLogAreaStruct->EventLogSize));
+    DEBUG ((DEBUG_ERROR, "Dynamic scaling required! Recommended to update your TCG log size!\n"));
+
+    // Log an error if we attempt to scale post ReadyToBoot.
+    if (mReadyToBoot) {
+      DEBUG ((DEBUG_ERROR, "Unexpected dynamic scaling occurring post ReadyToBoot!\n"));
+    }
+
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+// MU_CHANGE - [END]
+
 /**
   Add a new entry to the Event Log.
 
@@ -1149,6 +1462,8 @@ TcgDxeLogHashEvent (
   IN      UINT8              *NewEventData
   )
 {
+  // MU_CHANGE - [BEGIN]
+
   EFI_STATUS      Status;
   EFI_TPL         OldTpl;
   UINTN           Index;
@@ -1156,6 +1471,9 @@ TcgDxeLogHashEvent (
   TCG_PCR_EVENT2  TcgPcrEvent2;
   UINT8           *DigestBuffer;
   UINT32          *EventSizePtr;
+  BOOLEAN         DynamicScalingNeeded;
+
+  // MU_CHANGE - [END]
 
   RetStatus = EFI_SUCCESS;
   for (Index = 0; Index < sizeof (mTcg2EventInfo)/sizeof (mTcg2EventInfo[0]); Index++) {
@@ -1193,6 +1511,30 @@ TcgDxeLogHashEvent (
           DigestBuffer           = (UINT8 *)&TcgPcrEvent2.Digest;
           EventSizePtr           = CopyDigestListToBuffer (DigestBuffer, DigestList, mTcgDxeData.BsCap.ActivePcrBanks);
           CopyMem (EventSizePtr, &NewEventHdr->EventSize, sizeof (NewEventHdr->EventSize));
+
+          // MU_CHANGE - [BEGIN]
+
+          // Continually scale until we have enough space to log. We need to dynamically
+          // scale the TCG log before we enter a critical region.
+          while (TRUE) {
+            DynamicScalingNeeded = TcgLogDynamicScalingNeeded (
+                                     &mTcgDxeData.EventLogAreaStruct[Index],
+                                     sizeof (TcgPcrEvent2.PCRIndex) + sizeof (TcgPcrEvent2.EventType) + GetDigestListBinSize (DigestBuffer) + sizeof (TcgPcrEvent2.EventSize),
+                                     NewEventHdr->EventSize
+                                     );
+
+            if (!DynamicScalingNeeded) {
+              break;
+            }
+
+            Status = TcgScaleEventLog (&mTcgDxeData.EventLogAreaStruct[Index]);
+            if (EFI_ERROR (Status)) {
+              DEBUG ((DEBUG_ERROR, "Unable to scale the TCG event log!\n"));
+              return Status;
+            }
+          }
+
+          // MU_CHANGE - [END]
 
           //
           // Enter critical region
@@ -1701,21 +2043,18 @@ SetupEventLog (
   for (Index = 0; Index < sizeof (mTcg2EventInfo)/sizeof (mTcg2EventInfo[0]); Index++) {
     if ((mTcgDxeData.BsCap.SupportedEventLogs & mTcg2EventInfo[Index].LogFormat) != 0) {
       mTcgDxeData.EventLogAreaStruct[Index].EventLogFormat = mTcg2EventInfo[Index].LogFormat;
-      if (PcdGet8 (PcdTpm2AcpiTableRev) >= 4) {
-        Status = gBS->AllocatePages (
-                        AllocateAnyPages,
-                        EfiACPIMemoryNVS,
-                        EFI_SIZE_TO_PAGES (PcdGet32 (PcdTcgLogAreaMinLen)),
-                        &Lasa
-                        );
-      } else {
-        Status = gBS->AllocatePages (
-                        AllocateAnyPages,
-                        EfiBootServicesData,
-                        EFI_SIZE_TO_PAGES (PcdGet32 (PcdTcgLogAreaMinLen)),
-                        &Lasa
-                        );
-      }
+
+      // MU_CHANGE - [BEGIN]
+
+      // Always allocate BootServicesData
+      Status = gBS->AllocatePages (
+                      AllocateAnyPages,
+                      EfiBootServicesData,
+                      EFI_SIZE_TO_PAGES (PcdGet32 (PcdTcgLogAreaMinLen)),
+                      &Lasa
+                      );
+
+      // MU_CHANGE - [END]
 
       if (EFI_ERROR (Status)) {
         return Status;
@@ -1724,7 +2063,9 @@ SetupEventLog (
       mTcgDxeData.EventLogAreaStruct[Index].Lasa                  = Lasa;
       mTcgDxeData.EventLogAreaStruct[Index].Laml                  = PcdGet32 (PcdTcgLogAreaMinLen);
       mTcgDxeData.EventLogAreaStruct[Index].Next800155EventOffset = 0;
+      mTcgDxeData.EventLogAreaStruct[Index].ScaleCount            = 0; // MU_CHANGE
 
+      /* MU_CHANGE
       if ((PcdGet8 (PcdTpm2AcpiTableRev) >= 4) ||
           (mTcg2EventInfo[Index].LogFormat == EFI_TCG2_EVENT_LOG_FORMAT_TCG_2))
       {
@@ -1735,6 +2076,7 @@ SetupEventLog (
         PcdSet32S (PcdTpm2AcpiTableLaml, (UINT32)mTcgDxeData.EventLogAreaStruct[Index].Laml);
         PcdSet64S (PcdTpm2AcpiTableLasa, mTcgDxeData.EventLogAreaStruct[Index].Lasa);
       }
+      */
 
       //
       // To initialize them as 0xFF is recommended
@@ -1885,6 +2227,16 @@ SetupEventLog (
   for (Index = 0; Index < sizeof (mTcg2EventInfo)/sizeof (mTcg2EventInfo[0]); Index++) {
     if ((mTcgDxeData.BsCap.SupportedEventLogs & mTcg2EventInfo[Index].LogFormat) != 0) {
       if (mTcg2EventInfo[Index].LogFormat == EFI_TCG2_EVENT_LOG_FORMAT_TCG_2) {
+        // MU_CHANGE - [BEGIN]
+        // PcdTcg2FinalLogAreaLen is platform-configurable; ensure it has room for both the
+        // EFI_TCG2_FINAL_EVENTS_TABLE header and the EV_NO_ACTION truncation marker event.
+        if (PcdGet32 (PcdTcg2FinalLogAreaLen) < sizeof (EFI_TCG2_FINAL_EVENTS_TABLE) + GetTruncationEventSize ()) {
+          DEBUG ((DEBUG_ERROR, "Insufficient FinalEventLogArea length\n"));
+          return EFI_INVALID_PARAMETER;
+        }
+
+        // MU_CHANGE - [END]
+
         Status = gBS->AllocatePages (
                         AllocateAnyPages,
                         EfiACPIMemoryNVS,
@@ -1904,9 +2256,11 @@ SetupEventLog (
         (mTcgDxeData.FinalEventsTable[Index])->Version        = EFI_TCG2_FINAL_EVENTS_TABLE_VERSION;
         (mTcgDxeData.FinalEventsTable[Index])->NumberOfEvents = 0;
 
-        mTcgDxeData.FinalEventLogAreaStruct[Index].EventLogFormat        = mTcg2EventInfo[Index].LogFormat;
-        mTcgDxeData.FinalEventLogAreaStruct[Index].Lasa                  = Lasa + sizeof (EFI_TCG2_FINAL_EVENTS_TABLE);
-        mTcgDxeData.FinalEventLogAreaStruct[Index].Laml                  = PcdGet32 (PcdTcg2FinalLogAreaLen) - sizeof (EFI_TCG2_FINAL_EVENTS_TABLE);
+        mTcgDxeData.FinalEventLogAreaStruct[Index].EventLogFormat = mTcg2EventInfo[Index].LogFormat;
+        mTcgDxeData.FinalEventLogAreaStruct[Index].Lasa           = Lasa + sizeof (EFI_TCG2_FINAL_EVENTS_TABLE);
+        // MU_CHANGE
+        // Reserve space in the FinalEventLog for the EV_NO_ACTION truncation marker event.
+        mTcgDxeData.FinalEventLogAreaStruct[Index].Laml                  = PcdGet32 (PcdTcg2FinalLogAreaLen) - sizeof (EFI_TCG2_FINAL_EVENTS_TABLE) - GetTruncationEventSize ();
         mTcgDxeData.FinalEventLogAreaStruct[Index].EventLogSize          = 0;
         mTcgDxeData.FinalEventLogAreaStruct[Index].LastEvent             = (VOID *)(UINTN)mTcgDxeData.FinalEventLogAreaStruct[Index].Lasa;
         mTcgDxeData.FinalEventLogAreaStruct[Index].EventLogStarted       = FALSE;
@@ -2594,6 +2948,8 @@ OnReadyToBoot (
   TPM_PCRINDEX  PcrIndex;
 
   PERF_FUNCTION_BEGIN ();
+
+  mReadyToBoot = TRUE; // MU_CHANGE
 
   // MU_CHANGE_23086
   // MU_CHANGE [BEGIN] - Call OEM init hook.

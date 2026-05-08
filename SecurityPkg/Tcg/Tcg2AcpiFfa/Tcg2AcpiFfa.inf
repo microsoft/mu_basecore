@@ -66,6 +66,10 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLaml                ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableLasa                ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmServiceFfaPartitionId         ## CONSUMES
+  ## MU_CHANGE
+  # Allow a platform to drop TCG ACPI measurements until we have a chance to make them more
+  # consistent and functional.
+  gEfiSecurityPkgTokenSpaceGuid.PcdSkipTcgSmmAcpiMeasurements       ## CONSUMES
 
 [FixedPcd]
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmBaseAddress                   ## CONSUMES
