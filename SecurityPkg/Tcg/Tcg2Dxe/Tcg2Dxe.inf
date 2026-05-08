@@ -107,6 +107,8 @@
   gEfiMpServiceProtocolGuid                          ## SOMETIMES_CONSUMES
   gEfiVariableWriteArchProtocolGuid                  ## NOTIFY
   gEfiResetNotificationProtocolGuid                  ## CONSUMES
+  gEfiAcpiTableProtocolGuid                          ## SOMETIMES_CONSUMES  # MU_CHANGE
+  gEfiAcpiSdtProtocolGuid                            ## SOMETIMES_CONSUMES  # MU_CHANGE
 
 [Pcd]
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmPlatformClass                         ## SOMETIMES_CONSUMES

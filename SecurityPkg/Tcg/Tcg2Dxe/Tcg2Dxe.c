@@ -28,6 +28,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/MuTcg2Protocol.h> // MU_CHANGE - Add a new protocol to support Log-only events.
 #include <Protocol/TrEEProtocol.h>
 #include <Protocol/ResetNotification.h>
+#include <Protocol/AcpiTable.h>                  // MU_CHANGE
+#include <Protocol/AcpiSystemDescriptionTable.h> // MU_CHANGE
 
 #include <Library/DebugLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -133,6 +135,31 @@ VARIABLE_TYPE  mVariableType[] = {
 };
 
 EFI_HANDLE  mImageHandle;
+
+// MU_CHANGE - [BEGIN]
+
+BOOLEAN                    mReadyToBoot = FALSE;
+TCG_EVENT_LOG_AREA_STRUCT  mAcpiEventLog;
+
+// String logged as a NO_ACTION event to mark the ACPI-visible TCG
+// log as truncated when dynamic scaling occurs post ReadyToBoot.
+#define TCG_LOG_TRUNCATION_EVENT_STRING  "TCG Event Log Truncated"
+
+#pragma pack(1)
+
+typedef struct {
+  EFI_ACPI_DESCRIPTION_HEADER    Header;
+  UINT32                         Flags;
+  UINT64                         AddressOfControlArea;
+  UINT32                         StartMethod;
+  UINT8                          PlatformSpecificParameters[12];
+  UINT32                         Laml;
+  UINT64                         Lasa;
+} EFI_TPM2_ACPI_TABLE_V4;
+
+#pragma pack()
+
+// MU_CHANGE - [END]
 
 /**
   Measure PE image into TPM log based on the authenticode image hashing in
@@ -1002,6 +1029,32 @@ TcgDxeLogEvent (
     EventLogAreaStruct->EventLogStarted = TRUE;
   }
 
+  // MU_CHANGE - [BEGIN]
+
+  //
+  // Record to the ACPI event log
+  //
+  EventLogAreaStruct = &mAcpiEventLog;
+
+  if (mReadyToBoot && !EventLogAreaStruct->EventLogTruncated) {
+    Status = TcgCommLogEvent (
+              EventLogAreaStruct,
+              NewEventHdr,
+              NewEventHdrSize,
+              NewEventData,
+              NewEventSize
+              );
+
+    if (Status == EFI_OUT_OF_RESOURCES) {
+      EventLogAreaStruct->EventLogTruncated = TRUE;
+      return EFI_VOLUME_FULL;
+    } else if (Status == EFI_SUCCESS) {
+      EventLogAreaStruct->EventLogStarted = TRUE;
+    }
+  }
+
+  // MU_CHANGE - [END]
+
   //
   // If GetEventLog is called, record to FinalEventsTable, too.
   //
@@ -1133,6 +1186,151 @@ CopyDigestListBinToBuffer (
   return Buffer;
 }
 
+// MU_CHANGE - [BEGIN]
+
+/**
+  Dynamically scale the TCG event log, this should only occur when the
+  log is filled/truncated.
+
+  @param[in, out] EventLogAreaStruct  The event log area data structure.
+
+  @retval EFI_SUCCESS           Log was successfully scaled.
+  @retval EFI_OUT_OF_RESOURCES  Allocation failed.
+
+**/
+STATIC
+EFI_STATUS
+TcgScaleEventLog (
+  IN OUT  TCG_EVENT_LOG_AREA_STRUCT  *EventLogAreaStruct
+  )
+{
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  NewLasa;
+  UINT64                NewLaml;
+  EFI_PHYSICAL_ADDRESS  OldLasa;
+  UINT64                OldLaml;
+
+  // Make sure EventLogAreaStruct is valid.
+  if (EventLogAreaStruct == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // Double the length of the TCG log.
+  NewLaml = EventLogAreaStruct->Laml * 2;
+  Status = gBS->AllocatePages (
+                  AllocateAnyPages,
+                  EfiBootServicesData,
+                  EFI_SIZE_TO_PAGES (NewLaml),
+                  &NewLasa
+                  );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Failed to allocate new TCG event log\n"));
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // Copy the data from the old event log to the new event log.
+  CopyMem ((VOID*)(UINTN)NewLasa, (VOID*)(UINTN)EventLogAreaStruct->Lasa, EventLogAreaStruct->EventLogSize);
+
+  // Store the old Lasa and Laml before updating.
+  OldLasa = EventLogAreaStruct->Lasa;
+  OldLaml = EventLogAreaStruct->Laml;
+
+  DEBUG ((DEBUG_INFO, "OldLasa: 0x%lx, OldLaml: 0x%x\n", OldLasa, OldLaml));
+  DEBUG ((DEBUG_INFO, "NewLasa: 0x%lx, NewLaml: 0x%x\n", NewLasa, NewLaml));
+
+  // Update the EventLogAreaStruct.
+  EventLogAreaStruct->Lasa = NewLasa;
+  EventLogAreaStruct->Laml = NewLaml;
+
+  // Once we reach ReadyToBoot, we do not want to free the old log regions, this is
+  // due to the ACPI table containing the old log pointer, we do not want to
+  // invalidate this memory.
+  gBS->FreePages (OldLasa, EFI_SIZE_TO_PAGES (OldLaml));
+
+  return Status;
+}
+
+/**
+  Check if the TCG log needs to be dynamically scaled.
+
+  @param[in] EventLogAreaStruct  Pointer to the event log area structure.
+  @param[in] NewEventHdrSize     New event header size.
+  @param[in] NewEventSize        New event data size.
+
+  @retval TRUE   Dynamic scaling needed.
+  @retval FALSE  Dynamic scaling not needed.
+
+**/
+STATIC
+BOOLEAN
+TcgLogDynamicScalingNeeded (
+  IN      TCG_EVENT_LOG_AREA_STRUCT  *EventLogAreaStruct,
+  IN      UINT32                     NewEventHdrSize,
+  IN      UINT32                     NewEventSize
+  )
+{
+  UINTN               NewLogSize;
+  TCG_PCR_EVENT2_HDR  NoActionEvent;
+  UINT32              EventHdrSize;
+  UINTN               EventSize;
+
+  // Make sure EventLogAreaStruct is valid.
+  if (EventLogAreaStruct == NULL) {
+    return FALSE;
+  }
+
+  // Validate NewEventSize + NewEventHdrSize doesn't cause an overflow.
+  if (NewEventSize > MAX_ADDRESS - NewEventHdrSize) {
+    return FALSE;
+  }
+
+  NewLogSize = NewEventHdrSize + NewEventSize;
+
+  // Reserve space for the truncation NO_ACTION_EVENT so that the log can never
+  // fill past the point where the truncation marker would not fit. We only need
+  // to continue to reserve space as long as the ACPI event log is not truncated.
+  if (!mAcpiEventLog.EventLogTruncated) {
+    InitNoActionEvent (&NoActionEvent, sizeof (TCG_LOG_TRUNCATION_EVENT_STRING));
+    EventHdrSize = (UINT32)(sizeof (NoActionEvent.PCRIndex) +
+                   sizeof (NoActionEvent.EventType) +
+                   GetDigestListBinSize ((UINT8 *)&NoActionEvent.Digests) +
+                   sizeof (NoActionEvent.EventSize));
+    EventSize    = EventHdrSize + sizeof (TCG_LOG_TRUNCATION_EVENT_STRING);
+
+    // Validate the NO_ACTION_EVENT doesn't cause an overflow.
+    if (EventSize > MAX_ADDRESS - NewLogSize) {
+      return FALSE;
+    }
+
+    NewLogSize += EventSize;
+  }
+
+  // Validate EventLogSize + NewLogSize doesn't cause an overflow.
+  if (NewLogSize > MAX_ADDRESS - EventLogAreaStruct->EventLogSize) {
+    return FALSE;
+  }
+
+  // Determine if dynamic scaling is needed.
+  if (NewLogSize + EventLogAreaStruct->EventLogSize > EventLogAreaStruct->Laml) {
+    DEBUG ((DEBUG_INFO, "  Laml       - 0x%lx\n", EventLogAreaStruct->Laml));
+    DEBUG ((DEBUG_INFO, "  NewLogSize - 0x%lx\n", NewLogSize));
+    DEBUG ((DEBUG_INFO, "  LogSize    - 0x%lx\n", EventLogAreaStruct->EventLogSize));
+    DEBUG ((DEBUG_ERROR, "Dynamic scaling required! Recommended to update your TCG log size!\n"));
+
+    // Log an error if we attempt to scale post ReadyToBoot.
+    if (mReadyToBoot) {
+      DEBUG ((DEBUG_ERROR, "Scaling post ReadyToBoot is invalid!\n"));
+    }
+
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+// MU_CHANGE - [END]
+
 /**
   Add a new entry to the Event Log.
 
@@ -1150,13 +1348,20 @@ TcgDxeLogHashEvent (
   IN      UINT8              *NewEventData
   )
 {
-  EFI_STATUS      Status;
-  EFI_TPL         OldTpl;
-  UINTN           Index;
-  EFI_STATUS      RetStatus;
-  TCG_PCR_EVENT2  TcgPcrEvent2;
-  UINT8           *DigestBuffer;
-  UINT32          *EventSizePtr;
+  // MU_CHANGE - [BEGIN]
+
+  EFI_STATUS                 Status;
+  EFI_TPL                    OldTpl;
+  UINTN                      Index;
+  EFI_STATUS                 RetStatus;
+  TCG_PCR_EVENT2             TcgPcrEvent2;
+  UINT8                      *DigestBuffer;
+  UINT32                     *EventSizePtr;
+  BOOLEAN                    DynamicScalingNeeded;
+  TCG_PCR_EVENT2_HDR         NoActionEvent;
+  UINT32                     EventHdrSize;
+
+  // MU_CHANGE - [END]
 
   RetStatus = EFI_SUCCESS;
   for (Index = 0; Index < sizeof (mTcg2EventInfo)/sizeof (mTcg2EventInfo[0]); Index++) {
@@ -1194,6 +1399,54 @@ TcgDxeLogHashEvent (
           DigestBuffer           = (UINT8 *)&TcgPcrEvent2.Digest;
           EventSizePtr           = CopyDigestListToBuffer (DigestBuffer, DigestList, mTcgDxeData.BsCap.ActivePcrBanks);
           CopyMem (EventSizePtr, &NewEventHdr->EventSize, sizeof (NewEventHdr->EventSize));
+
+          // MU_CHANGE - [BEGIN]
+
+          // Need to dynamically scale the TCG log before we enter a critical region.
+          DynamicScalingNeeded = TcgLogDynamicScalingNeeded (
+                                  &mTcgDxeData.EventLogAreaStruct[Index],
+                                  sizeof (TcgPcrEvent2.PCRIndex) + sizeof (TcgPcrEvent2.EventType) + GetDigestListBinSize (DigestBuffer) + sizeof (TcgPcrEvent2.EventSize),
+                                  NewEventHdr->EventSize
+                                  );
+
+          // If scaling is needed and the ACPI event log as been created. Log a
+          // NO_ACTION_EVENT with the truncation string to the end of it to mark that
+          // it is now truncated.
+          if (DynamicScalingNeeded && mReadyToBoot && !mAcpiEventLog.EventLogTruncated) {
+            InitNoActionEvent (&NoActionEvent, sizeof (TCG_LOG_TRUNCATION_EVENT_STRING));
+            EventHdrSize = (UINT32)(sizeof (NoActionEvent.PCRIndex) +
+                            sizeof (NoActionEvent.EventType) +
+                            GetDigestListBinSize ((UINT8 *)&NoActionEvent.Digests) +
+                            sizeof (NoActionEvent.EventSize));
+
+            OldTpl = gBS->RaiseTPL (TPL_HIGH_LEVEL);
+            Status = TcgCommLogEvent (
+                        &mAcpiEventLog,
+                        &NoActionEvent,
+                        EventHdrSize,
+                        (UINT8 *)TCG_LOG_TRUNCATION_EVENT_STRING,
+                        sizeof (TCG_LOG_TRUNCATION_EVENT_STRING)
+                        );
+            gBS->RestoreTPL (OldTpl);
+
+            if (EFI_ERROR (Status)) {
+              DEBUG ((DEBUG_ERROR, "Failed to log truncation NO_ACTION_EVENT!\n"));
+              return Status;
+            }
+
+            mAcpiEventLog.EventLogTruncated = TRUE;
+          }
+
+          // Only scale when needed.
+          if (DynamicScalingNeeded) {
+            Status = TcgScaleEventLog(&mTcgDxeData.EventLogAreaStruct[Index]);
+            if (EFI_ERROR (Status)) {
+              DEBUG ((DEBUG_ERROR, "Unable to scale the TCG event log!\n"));
+              return Status;
+            }
+          }
+
+          // MU_CHANGE - [END]
 
           //
           // Enter critical region
@@ -1702,21 +1955,18 @@ SetupEventLog (
   for (Index = 0; Index < sizeof (mTcg2EventInfo)/sizeof (mTcg2EventInfo[0]); Index++) {
     if ((mTcgDxeData.BsCap.SupportedEventLogs & mTcg2EventInfo[Index].LogFormat) != 0) {
       mTcgDxeData.EventLogAreaStruct[Index].EventLogFormat = mTcg2EventInfo[Index].LogFormat;
-      if (PcdGet8 (PcdTpm2AcpiTableRev) >= 4) {
-        Status = gBS->AllocatePages (
-                        AllocateAnyPages,
-                        EfiACPIMemoryNVS,
-                        EFI_SIZE_TO_PAGES (PcdGet32 (PcdTcgLogAreaMinLen)),
-                        &Lasa
-                        );
-      } else {
-        Status = gBS->AllocatePages (
-                        AllocateAnyPages,
-                        EfiBootServicesData,
-                        EFI_SIZE_TO_PAGES (PcdGet32 (PcdTcgLogAreaMinLen)),
-                        &Lasa
-                        );
-      }
+
+      // MU_CHANGE - [BEGIN]
+
+      // Always allocate BootServicesData
+      Status = gBS->AllocatePages (
+                      AllocateAnyPages,
+                      EfiBootServicesData,
+                      EFI_SIZE_TO_PAGES (PcdGet32 (PcdTcgLogAreaMinLen)),
+                      &Lasa
+                      );
+
+      // MU_CHANGE - [END]
 
       if (EFI_ERROR (Status)) {
         return Status;
@@ -2575,6 +2825,161 @@ MeasureSecureBootPolicy (
   return;
 }
 
+// MU_CHANGE - [BEGIN]
+
+/**
+  Find the installed TPM2 ACPI table, uninstall it, update LAML/LASA,
+  and reinstall the table.
+
+  @retval EFI_SUCCESS      Table updated successfully.
+  @retval EFI_NOT_FOUND    TPM2 table not found or protocols unavailable.
+  @retval Other            Uninstall or reinstall failed.
+**/
+STATIC
+EFI_STATUS
+UpdateTpm2AcpiTable (
+  VOID
+  )
+{
+  EFI_STATUS               Status;
+  EFI_ACPI_SDT_PROTOCOL    *AcpiSdt;
+  EFI_ACPI_TABLE_PROTOCOL  *AcpiTable;
+  UINTN                    Index;
+  EFI_ACPI_SDT_HEADER      *SdtHeader;
+  EFI_ACPI_TABLE_VERSION   Version;
+  UINTN                    TableKey;
+  EFI_TPM2_ACPI_TABLE_V4   *Tpm2Table;
+  EFI_TPM2_ACPI_TABLE_V4   *TableCopy;
+
+  Status = gBS->LocateProtocol (&gEfiAcpiSdtProtocolGuid, NULL, (VOID **)&AcpiSdt);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_WARN, "%a: AcpiSdt protocol not found - %r\n", __func__, Status));
+    return EFI_NOT_FOUND;
+  }
+
+  Status = gBS->LocateProtocol (&gEfiAcpiTableProtocolGuid, NULL, (VOID **)&AcpiTable);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_WARN, "%a: AcpiTable protocol not found - %r\n", __func__, Status));
+    return EFI_NOT_FOUND;
+  }
+
+  // Walk installed ACPI tables looking for the TPM2 signature.
+  Index = 0;
+  while (TRUE) {
+    Status = AcpiSdt->GetAcpiTable (Index, &SdtHeader, &Version, &TableKey);
+    if (EFI_ERROR (Status)) {
+      // Reached the end of the table list without finding TPM2.
+      DEBUG ((DEBUG_WARN, "%a: TPM2 table not found\n", __func__));
+      return EFI_NOT_FOUND;
+    }
+
+    if (SdtHeader->Signature == EFI_ACPI_5_0_TRUSTED_COMPUTING_PLATFORM_2_TABLE_SIGNATURE) {
+      break;
+    }
+
+    Index++;
+  }
+
+  // Verify the table is large enough to contain LAML/LASA.
+  if (SdtHeader->Length < sizeof (EFI_TPM2_ACPI_TABLE_V4)) {
+    DEBUG ((DEBUG_WARN, "%a: TPM2 table too small for LAML/LASA\n", __func__));
+    return EFI_NOT_FOUND;
+  }
+
+  Tpm2Table = (EFI_TPM2_ACPI_TABLE_V4 *)SdtHeader;
+
+  // Make a copy of the table.
+  TableCopy = AllocateCopyPool (Tpm2Table->Header.Length, Tpm2Table);
+  if (TableCopy == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  // Patch LAML/LASA in the copy.
+  TableCopy->Laml = PcdGet32 (PcdTpm2AcpiTableLaml);
+  TableCopy->Lasa = PcdGet64 (PcdTpm2AcpiTableLasa);
+
+  // Uninstall the old table.
+  Status = AcpiTable->UninstallAcpiTable (AcpiTable, TableKey);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: UninstallAcpiTable failed - %r\n", __func__, Status));
+    FreePool (TableCopy);
+    return Status;
+  }
+
+  // Reinstall with updated values.
+  Status = AcpiTable->InstallAcpiTable (
+                        AcpiTable,
+                        TableCopy,
+                        TableCopy->Header.Length,
+                        &TableKey
+                        );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: InstallAcpiTable failed - %r\n", __func__, Status));
+  } else {
+    DEBUG ((DEBUG_INFO, "%a: TPM2 table updated (LAML=0x%x, LASA=0x%lx)\n", __func__, TableCopy->Laml, TableCopy->Lasa));
+  }
+
+  FreePool (TableCopy);
+  return Status;
+}
+
+/**
+  Generate the ACPI TCG event log.
+
+  @param[in, out] EventLogAreaStruct  The event log area data structure.
+
+  @retval EFI_SUCCESS           Log was successfully allocated.
+  @retval EFI_OUT_OF_RESOURCES  Allocation failed.
+
+**/
+STATIC
+EFI_STATUS
+GenerateAcpiLog (
+  IN OUT  TCG_EVENT_LOG_AREA_STRUCT  *EventLogAreaStruct
+  )
+{
+  EFI_STATUS            Status;
+  EFI_PHYSICAL_ADDRESS  AcpiLasa;
+
+  // Allocate the NVS region for the ACPI log.
+  Status = gBS->AllocatePages (
+                  AllocateAnyPages,
+                  EfiACPIMemoryNVS,
+                  EFI_SIZE_TO_PAGES (EventLogAreaStruct->Laml),
+                  &AcpiLasa
+                  );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Failed to allocate NVS ACPI log region\n"));
+    return Status;
+  }
+
+  // Copy the event log information.
+  mAcpiEventLog.EventLogFormat        = EventLogAreaStruct->EventLogFormat;
+  mAcpiEventLog.Lasa                  = AcpiLasa;
+  mAcpiEventLog.Laml                  = EventLogAreaStruct->Laml;
+  mAcpiEventLog.EventLogSize          = EventLogAreaStruct->EventLogSize;
+  mAcpiEventLog.LastEvent             = (UINT8 *)(UINTN)AcpiLasa + EventLogAreaStruct->EventLogSize;
+  mAcpiEventLog.EventLogStarted       = EventLogAreaStruct->EventLogStarted;
+  mAcpiEventLog.EventLogTruncated     = FALSE;
+  mAcpiEventLog.Next800155EventOffset = EventLogAreaStruct->Next800155EventOffset;
+
+  // Copy the data to the ACPI log.
+  CopyMem ((VOID*)(UINTN)AcpiLasa, (VOID*)(UINTN)EventLogAreaStruct->Lasa, mAcpiEventLog.Laml);
+
+  // Update the PCDs.
+  PcdSet32S (PcdTpm2AcpiTableLaml, (UINT32)mAcpiEventLog.Laml);
+  PcdSet64S (PcdTpm2AcpiTableLasa, AcpiLasa);
+
+  // Uninstall and reinstall the ACPI table with the updated LAML/LASA.
+  UpdateTpm2AcpiTable ();
+
+  return Status;
+}
+
+// MU_CHANGE - [END]
+
 /**
   Ready to Boot Event notification handler.
 
@@ -2593,8 +2998,31 @@ OnReadyToBoot (
 {
   EFI_STATUS    Status;
   TPM_PCRINDEX  PcrIndex;
+  UINTN         Index; // MU_CHANGE
 
   PERF_FUNCTION_BEGIN ();
+
+  // MU_CHANGE - [BEGIN]
+
+  for (Index = 0; Index < ARRAY_SIZE (mTcg2EventInfo); Index++) {
+    if ((mTcgDxeData.BsCap.SupportedEventLogs & mTcg2EventInfo[Index].LogFormat) != 0) {
+      switch (mTcg2EventInfo[Index].LogFormat) {
+        case EFI_TCG2_EVENT_LOG_FORMAT_TCG_1_2:
+          // Do nothing for TCG1.2.
+          break;
+        case EFI_TCG2_EVENT_LOG_FORMAT_TCG_2:
+          // Only generate the ACPI log once.
+          if ((PcdGet8 (PcdTpm2AcpiTableRev) >= 4) && !mReadyToBoot) {
+            GenerateAcpiLog (&mTcgDxeData.EventLogAreaStruct[Index]);
+          }
+          break;
+      }
+    }
+  }
+
+  mReadyToBoot = TRUE;
+
+  // MU_CHANGE - [END]
 
   // MU_CHANGE_23086
   // MU_CHANGE [BEGIN] - Call OEM init hook.
