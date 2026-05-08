@@ -248,8 +248,16 @@
   SecurityPkg/Library/PeiDxeTpmPlatformHierarchyLibNull/PeiDxeTpmPlatformHierarchyLib.inf
 
   SecurityPkg/Applications/TpmShellApp/TpmShellApp.inf  ## MU_CHANGE
-  SecurityPkg/Tcg/TcgLogTest/TcgLogTestDxe.inf  ## MU_CHANGE
-  SecurityPkg/Tcg/TcgLogTest/TcgLogTestApp.inf  ## MU_CHANGE
+
+  ## MU_CHANGE - [BEGIN]
+  SecurityPkg/Tcg/TcgLogTest/TcgLogTestDxe.inf
+  SecurityPkg/Tcg/TcgLogTest/TcgLogTestApp.inf {
+    <LibraryClasses>
+      UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLib.inf
+      UnitTestPersistenceLib|UnitTestFrameworkPkg/Library/UnitTestPersistenceLibNull/UnitTestPersistenceLibNull.inf
+      UnitTestResultReportLib|UnitTestFrameworkPkg/Library/UnitTestResultReportLib/UnitTestResultReportLibDebugLib.inf
+  }
+  ## MU_CHANGE - [END]
 
   #
   # TCG Storage.
