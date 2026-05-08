@@ -1220,7 +1220,7 @@ TcgScaleEventLog (
   Status  = gBS->AllocatePages (
                    AllocateAnyPages,
                    EfiBootServicesData,
-                   EFI_SIZE_TO_PAGES (NewLaml),
+                   EFI_SIZE_TO_PAGES ((UINTN)NewLaml),
                    &NewLasa
                    );
 
@@ -1246,7 +1246,7 @@ TcgScaleEventLog (
   // Once we reach ReadyToBoot, we do not want to free the old log regions, this is
   // due to the ACPI table containing the old log pointer, we do not want to
   // invalidate this memory.
-  gBS->FreePages (OldLasa, EFI_SIZE_TO_PAGES (OldLaml));
+  gBS->FreePages (OldLasa, EFI_SIZE_TO_PAGES ((UINTN)OldLaml));
 
   return Status;
 }
@@ -2946,7 +2946,7 @@ GenerateAcpiLog (
   Status = gBS->AllocatePages (
                   AllocateAnyPages,
                   EfiACPIMemoryNVS,
-                  EFI_SIZE_TO_PAGES (EventLogAreaStruct->Laml),
+                  EFI_SIZE_TO_PAGES ((UINTN)EventLogAreaStruct->Laml),
                   &AcpiLasa
                   );
 
@@ -2966,7 +2966,7 @@ GenerateAcpiLog (
   mAcpiEventLog.Next800155EventOffset = EventLogAreaStruct->Next800155EventOffset;
 
   // Copy the data to the ACPI log.
-  CopyMem ((VOID *)(UINTN)AcpiLasa, (VOID *)(UINTN)EventLogAreaStruct->Lasa, mAcpiEventLog.Laml);
+  CopyMem ((VOID *)(UINTN)AcpiLasa, (VOID *)(UINTN)EventLogAreaStruct->Lasa, (UINTN)mAcpiEventLog.Laml);
 
   // Update the PCDs.
   PcdSet32S (PcdTpm2AcpiTableLaml, (UINT32)mAcpiEventLog.Laml);
