@@ -1,6 +1,7 @@
 {
   "scope": "global",
   "type": "web",
+  "id": "onecrypto-bin",
   "name": "onecrypto-bin",
   "source": "https://github.com/microsoft/mu_crypto_release/releases/download/v1.0.0-OneCrypto/OneCrypto-Accelerated.zip",
   "version": "1.0.0",
