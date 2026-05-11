@@ -25,6 +25,91 @@
 STATIC CHAR8  mCommonEventPayload[] = TCG_LOG_TEST_EVENT_PAYLOAD;
 
 /**
+  Converts EventType to ASCII string.
+
+  @param[in] EventType  TCG_EVENTTYPE value.
+
+  @retval  ASCII string describing the event type.
+**/
+STATIC
+CHAR8 *
+TcgEventTypeToString (
+  IN UINT32  EventType
+  )
+{
+  switch (EventType) {
+    case EV_PREBOOT_CERT:
+      return "EV_PREBOOT_CERT";
+    case EV_POST_CODE:
+      return "EV_POST_CODE";
+    case EV_NO_ACTION:
+      return "EV_NO_ACTION";
+    case EV_SEPARATOR:
+      return "EV_SEPARATOR";
+    case EV_ACTION:
+      return "EV_ACTION";
+    case EV_EVENT_TAG:
+      return "EV_EVENT_TAG";
+    case EV_S_CRTM_CONTENTS:
+      return "EV_S_CRTM_CONTENTS";
+    case EV_S_CRTM_VERSION:
+      return "EV_S_CRTM_VERSION";
+    case EV_CPU_MICROCODE:
+      return "EV_CPU_MICROCODE";
+    case EV_PLATFORM_CONFIG_FLAGS:
+      return "EV_PLATFORM_CONFIG_FLAGS";
+    case EV_TABLE_OF_DEVICES:
+      return "EV_TABLE_OF_DEVICES";
+    case EV_COMPACT_HASH:
+      return "EV_COMPACT_HASH";
+    case EV_NONHOST_CODE:
+      return "EV_NONHOST_CODE";
+    case EV_NONHOST_CONFIG:
+      return "EV_NONHOST_CONFIG";
+    case EV_NONHOST_INFO:
+      return "EV_NONHOST_INFO";
+    case EV_OMIT_BOOT_DEVICE_EVENTS:
+      return "EV_OMIT_BOOT_DEVICE_EVENTS";
+    case EV_EFI_VARIABLE_DRIVER_CONFIG:
+      return "EV_EFI_VARIABLE_DRIVER_CONFIG";
+    case EV_EFI_VARIABLE_BOOT:
+      return "EV_EFI_VARIABLE_BOOT";
+    case EV_EFI_BOOT_SERVICES_APPLICATION:
+      return "EV_EFI_BOOT_SERVICES_APPLICATION";
+    case EV_EFI_BOOT_SERVICES_DRIVER:
+      return "EV_EFI_BOOT_SERVICES_DRIVER";
+    case EV_EFI_RUNTIME_SERVICES_DRIVER:
+      return "EV_EFI_RUNTIME_SERVICES_DRIVER";
+    case EV_EFI_GPT_EVENT:
+      return "EV_EFI_GPT_EVENT";
+    case EV_EFI_ACTION:
+      return "EV_EFI_ACTION";
+    case EV_EFI_PLATFORM_FIRMWARE_BLOB:
+      return "EV_EFI_PLATFORM_FIRMWARE_BLOB";
+    case EV_EFI_HANDOFF_TABLES:
+      return "EV_EFI_HANDOFF_TABLES";
+    case EV_EFI_PLATFORM_FIRMWARE_BLOB2:
+      return "EV_EFI_PLATFORM_FIRMWARE_BLOB2";
+    case EV_EFI_HANDOFF_TABLES2:
+      return "EV_EFI_HANDOFF_TABLES2";
+    case EV_EFI_HCRTM_EVENT:
+      return "EV_EFI_HCRTM_EVENT";
+    case EV_EFI_VARIABLE_AUTHORITY:
+      return "EV_EFI_VARIABLE_AUTHORITY";
+    case EV_EFI_SPDM_FIRMWARE_BLOB:
+      return "EV_EFI_SPDM_FIRMWARE_BLOB";
+    case EV_EFI_SPDM_FIRMWARE_CONFIG:
+      return "EV_EFI_SPDM_FIRMWARE_CONFIG";
+    case EV_EFI_SPDM_DEVICE_POLICY:
+      return "EV_EFI_SPDM_DEVICE_POLICY";
+    case EV_EFI_SPDM_DEVICE_AUTHORITY:
+      return "EV_EFI_SPDM_DEVICE_AUTHORITY";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+/**
   Allocate and initialize an EFI_TCG2_EVENT structure with a fixed payload.
 
   @param[out] Event  On success, pointer to the allocated event. Caller must
@@ -400,12 +485,12 @@ TcgLogTestDumpEventLog (
 
   // Dump the contents of the EventLog.
   DEBUG ((DEBUG_INFO, "%a: Event log dump (base=0x%lx, truncated=%d):\n", __func__, LogBase, LogTruncated));
-  DEBUG ((DEBUG_INFO, "  %-6a %-10a %-12a %a\n", "Index", "PCRIndex", "EventType", "EventSize"));
-  DEBUG ((DEBUG_INFO, "  %-6a %-10a %-12a %a\n", "-----", "--------", "---------", "---------"));
+  DEBUG ((DEBUG_INFO, "  %-6a %-10a %-34a %a\n", "Index", "PCRIndex", "EventType", "EventSize"));
+  DEBUG ((DEBUG_INFO, "  %-6a %-10a %-34a %a\n", "-----", "--------", "---------", "---------"));
 
   Index = 0;
   while (TcgLogTestAdvanceEvent (&CurrentEvent, EndOfLog, &PcrIndex, &EventType, &EventSize, NULL)) {
-    DEBUG ((DEBUG_INFO, "  %-6u %-10u 0x%08x    %u\n", Index, PcrIndex, EventType, EventSize));
+    DEBUG ((DEBUG_INFO, "  %-6u %-10u %-34a %u\n", Index, PcrIndex, TcgEventTypeToString (EventType), EventSize));
     Index++;
   }
 

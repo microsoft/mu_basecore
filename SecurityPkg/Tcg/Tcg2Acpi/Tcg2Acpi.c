@@ -74,7 +74,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 #define MAX_PRS_INT_BUF_SIZE  (15*4)
 
-#pragma pack(1)
+// MU_CHANGE - [BEGIN]
+
+#if 0
+
+  #pragma pack(1)
 
 typedef struct {
   EFI_ACPI_DESCRIPTION_HEADER    Header;
@@ -89,7 +93,11 @@ typedef struct {
   UINT64                         Lasa;                           // Optional
 } EFI_TPM2_ACPI_TABLE_V4;
 
-#pragma pack()
+  #pragma pack()
+
+#endif
+
+// MU_CHANGE - [END]
 
 EFI_TPM2_ACPI_TABLE_V4  mTpm2AcpiTemplate = {
   {

@@ -80,6 +80,36 @@ typedef struct {
   UINT8     Reserved[8];
 } EFI_TPM2_ACPI_START_METHOD_SPECIFIC_PARAMETERS_ARM_FFA;
 
+// MU_CHANGE - [BEGIN]
+
+typedef struct {
+  EFI_ACPI_DESCRIPTION_HEADER    Header;
+  // Flags field is replaced in version 4 and above
+  //    BIT0~15:  PlatformClass      This field is only valid for version 4 and above
+  //    BIT16~31: Reserved
+  UINT32                         Flags;
+  UINT64                         AddressOfControlArea;
+  UINT32                         StartMethod;
+  UINT8                          PlatformSpecificParameters[12]; // size up to 12
+  UINT32                         Laml;                           // Optional
+  UINT64                         Lasa;                           // Optional
+} EFI_TPM2_ACPI_TABLE_V4;
+
+typedef struct {
+  EFI_ACPI_DESCRIPTION_HEADER                               Header;
+  // Flags field is replaced in version 4 and above
+  //    BIT0~15:  PlatformClass      This field is only valid for version 4 and above
+  //    BIT16~31: Reserved
+  UINT32                                                    Flags;
+  UINT64                                                    AddressOfControlArea;
+  UINT32                                                    StartMethod;
+  EFI_TPM2_ACPI_START_METHOD_SPECIFIC_PARAMETERS_ARM_FFA    FfaParameters;
+  UINT32                                                    Laml; // Optional
+  UINT64                                                    Lasa; // Optional
+} EFI_TPM2_ACPI_TABLE_V5;
+
+// MU_CHANGE - [END]
+
 #define EFI_TPM2_ACPI_TABLE_ARM_FFA_PARAMETER_FLAG_NOTIFICATION_SUPPORT  BIT0
 
 #define EFI_TPM2_ACPI_TABLE_ARM_FFA_PARAMETER_ATTR_MEM_TYPE_MASK           0x3

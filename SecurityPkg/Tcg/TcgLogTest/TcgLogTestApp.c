@@ -23,27 +23,13 @@
 #include <Protocol/Tcg2Protocol.h>
 #include <Protocol/AcpiSystemDescriptionTable.h>
 #include <IndustryStandard/Acpi.h>
+#include <IndustryStandard/Tpm2Acpi.h>
 
 #include "TcgLogTest.h"
 #include "TcgLogTestCommon.h"
 
-#pragma pack(1)
-
-typedef struct {
-  EFI_ACPI_DESCRIPTION_HEADER    Header;
-  UINT32                         Flags;
-  UINT64                         AddressOfControlArea;
-  UINT32                         StartMethod;
-  UINT8                          PlatformSpecificParameters[12];
-  UINT32                         Laml;
-  UINT64                         Lasa;
-} TCG_LOG_TEST_TPM2_ACPI_TABLE_V4;
-
-#pragma pack()
-
-#define TCG_LOG_TRUNCATION_EVENT_STRING  "TCG Event Log Truncated"
-#define UNIT_TEST_NAME                   "TCG Log Scaling Test"
-#define UNIT_TEST_VERSION                "1.0"
+#define UNIT_TEST_NAME     "TCG Log Scaling Test"
+#define UNIT_TEST_VERSION  "1.0"
 
 STATIC EFI_TCG2_PROTOCOL      *mTcg2Protocol       = NULL;
 STATIC TCG_LOG_TEST_PROTOCOL  *mTcgLogTestProtocol = NULL;
@@ -65,13 +51,13 @@ GetTpm2AcpiTableLogData (
   OUT EFI_PHYSICAL_ADDRESS  *Lasa
   )
 {
-  EFI_STATUS                       Status;
-  EFI_ACPI_SDT_PROTOCOL            *AcpiSdt;
-  EFI_ACPI_SDT_HEADER              *SdtHeader;
-  EFI_ACPI_TABLE_VERSION           Version;
-  UINTN                            TableKey;
-  UINTN                            Index;
-  TCG_LOG_TEST_TPM2_ACPI_TABLE_V4  *Tpm2Table;
+  EFI_STATUS              Status;
+  EFI_ACPI_SDT_PROTOCOL   *AcpiSdt;
+  EFI_ACPI_SDT_HEADER     *SdtHeader;
+  EFI_ACPI_TABLE_VERSION  Version;
+  UINTN                   TableKey;
+  UINTN                   Index;
+  EFI_TPM2_ACPI_TABLE_V4  *Tpm2Table;
 
   Status = gBS->LocateProtocol (&gEfiAcpiSdtProtocolGuid, NULL, (VOID **)&AcpiSdt);
   if (EFI_ERROR (Status)) {
@@ -95,11 +81,11 @@ GetTpm2AcpiTableLogData (
     Index++;
   }
 
-  if (SdtHeader->Length < sizeof (TCG_LOG_TEST_TPM2_ACPI_TABLE_V4)) {
+  if (SdtHeader->Length < sizeof (EFI_TPM2_ACPI_TABLE_V4)) {
     return EFI_NOT_FOUND;
   }
 
-  Tpm2Table = (TCG_LOG_TEST_TPM2_ACPI_TABLE_V4 *)SdtHeader;
+  Tpm2Table = (EFI_TPM2_ACPI_TABLE_V4 *)SdtHeader;
   *Laml     = Tpm2Table->Laml;
   *Lasa     = (EFI_PHYSICAL_ADDRESS)Tpm2Table->Lasa;
 

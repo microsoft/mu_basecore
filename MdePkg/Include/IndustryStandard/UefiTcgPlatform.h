@@ -101,6 +101,11 @@
 #define FIRMWARE_DEBUGGER_EVENT_STRING      "UEFI Debug Mode"
 #define FIRMWARE_DEBUGGER_EVENT_STRING_LEN  (sizeof(FIRMWARE_DEBUGGER_EVENT_STRING) - 1)
 
+// MU_CHANGE
+// String logged as a NO_ACTION event to mark the ACPI-visible TCG
+// log as truncated when dynamic scaling occurs post ReadyToBoot.
+#define TCG_LOG_TRUNCATION_EVENT_STRING  "TCG Event Log Truncated"
+
 //
 // Set structure alignment to 1-byte
 //

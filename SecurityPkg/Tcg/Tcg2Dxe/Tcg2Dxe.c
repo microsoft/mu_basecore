@@ -11,6 +11,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <IndustryStandard/Acpi.h>
 #include <IndustryStandard/PeImage.h>
 #include <IndustryStandard/TcpaAcpi.h>
+#include <IndustryStandard/Tpm2Acpi.h> // MU_CHANGE
 
 #include <Guid/GlobalVariable.h>
 #include <Guid/HobList.h>
@@ -134,30 +135,11 @@ VARIABLE_TYPE  mVariableType[] = {
   { EFI_IMAGE_SECURITY_DATABASE1, &gEfiImageSecurityDatabaseGuid },
 };
 
-EFI_HANDLE  mImageHandle;
-
 // MU_CHANGE - [BEGIN]
 
+EFI_HANDLE                 mImageHandle;
 BOOLEAN                    mReadyToBoot = FALSE;
 TCG_EVENT_LOG_AREA_STRUCT  mAcpiEventLog;
-
-// String logged as a NO_ACTION event to mark the ACPI-visible TCG
-// log as truncated when dynamic scaling occurs post ReadyToBoot.
-#define TCG_LOG_TRUNCATION_EVENT_STRING  "TCG Event Log Truncated"
-
-#pragma pack(1)
-
-typedef struct {
-  EFI_ACPI_DESCRIPTION_HEADER    Header;
-  UINT32                         Flags;
-  UINT64                         AddressOfControlArea;
-  UINT32                         StartMethod;
-  UINT8                          PlatformSpecificParameters[12];
-  UINT32                         Laml;
-  UINT64                         Lasa;
-} EFI_TPM2_ACPI_TABLE_V4;
-
-#pragma pack()
 
 // MU_CHANGE - [END]
 
@@ -1047,7 +1029,6 @@ TcgDxeLogEvent (
 
     if (Status == EFI_OUT_OF_RESOURCES) {
       EventLogAreaStruct->EventLogTruncated = TRUE;
-      return EFI_VOLUME_FULL;
     } else if (Status == EFI_SUCCESS) {
       EventLogAreaStruct->EventLogStarted = TRUE;
     }
@@ -1243,9 +1224,7 @@ TcgScaleEventLog (
   EventLogAreaStruct->Lasa = NewLasa;
   EventLogAreaStruct->Laml = NewLaml;
 
-  // Once we reach ReadyToBoot, we do not want to free the old log regions, this is
-  // due to the ACPI table containing the old log pointer, we do not want to
-  // invalidate this memory.
+  // Free the old log region.
   gBS->FreePages (OldLasa, EFI_SIZE_TO_PAGES ((UINTN)OldLaml));
 
   return Status;
@@ -1270,10 +1249,7 @@ TcgLogDynamicScalingNeeded (
   IN      UINT32                     NewEventSize
   )
 {
-  UINTN               NewLogSize;
-  TCG_PCR_EVENT2_HDR  NoActionEvent;
-  UINT32              EventHdrSize;
-  UINTN               EventSize;
+  UINTN  NewLogSize;
 
   // Make sure EventLogAreaStruct is valid.
   if (EventLogAreaStruct == NULL) {
@@ -1282,32 +1258,15 @@ TcgLogDynamicScalingNeeded (
 
   // Validate NewEventSize + NewEventHdrSize doesn't cause an overflow.
   if (NewEventSize > MAX_ADDRESS - NewEventHdrSize) {
+    ASSERT (FALSE);
     return FALSE;
   }
 
   NewLogSize = NewEventHdrSize + NewEventSize;
 
-  // Reserve space for the truncation NO_ACTION_EVENT so that the log can never
-  // fill past the point where the truncation marker would not fit. We only need
-  // to continue to reserve space as long as the ACPI event log is not truncated.
-  if (!mAcpiEventLog.EventLogTruncated) {
-    InitNoActionEvent (&NoActionEvent, sizeof (TCG_LOG_TRUNCATION_EVENT_STRING));
-    EventHdrSize = (UINT32)(sizeof (NoActionEvent.PCRIndex) +
-                            sizeof (NoActionEvent.EventType) +
-                            GetDigestListBinSize ((UINT8 *)&NoActionEvent.Digests) +
-                            sizeof (NoActionEvent.EventSize));
-    EventSize = EventHdrSize + sizeof (TCG_LOG_TRUNCATION_EVENT_STRING);
-
-    // Validate the NO_ACTION_EVENT doesn't cause an overflow.
-    if (EventSize > MAX_ADDRESS - NewLogSize) {
-      return FALSE;
-    }
-
-    NewLogSize += EventSize;
-  }
-
   // Validate EventLogSize + NewLogSize doesn't cause an overflow.
   if (NewLogSize > MAX_ADDRESS - EventLogAreaStruct->EventLogSize) {
+    ASSERT (FALSE);
     return FALSE;
   }
 
@@ -2925,6 +2884,29 @@ UpdateTpm2AcpiTable (
 }
 
 /**
+  Compute the full size of the truncation NO_ACTION event (header + payload).
+
+  @retval  Size in bytes of the truncation event.
+**/
+STATIC
+UINTN
+GetTruncationEventSize (
+  VOID
+  )
+{
+  TCG_PCR_EVENT2_HDR  NoActionEvent;
+  UINT32              EventHdrSize;
+
+  InitNoActionEvent (&NoActionEvent, sizeof (TCG_LOG_TRUNCATION_EVENT_STRING));
+  EventHdrSize = (UINT32)(sizeof (NoActionEvent.PCRIndex) +
+                          sizeof (NoActionEvent.EventType) +
+                          GetDigestListBinSize ((UINT8 *)&NoActionEvent.Digests) +
+                          sizeof (NoActionEvent.EventSize));
+
+  return (UINTN)EventHdrSize + sizeof (TCG_LOG_TRUNCATION_EVENT_STRING);
+}
+
+/**
   Generate the ACPI TCG event log.
 
   @param[in, out] EventLogAreaStruct  The event log area data structure.
@@ -2941,12 +2923,19 @@ GenerateAcpiLog (
 {
   EFI_STATUS            Status;
   EFI_PHYSICAL_ADDRESS  AcpiLasa;
+  UINTN                 TruncationEventSize;
+  UINT64                AcpiLaml;
 
-  // Allocate the NVS region for the ACPI log.
+  // Compute the truncation event size so we can reserve space for it in the
+  // ACPI log.
+  TruncationEventSize = GetTruncationEventSize ();
+  AcpiLaml            = EventLogAreaStruct->Laml + TruncationEventSize;
+
+  // Allocate the NVS region for the ACPI log (with truncation event headroom).
   Status = gBS->AllocatePages (
                   AllocateAnyPages,
                   EfiACPIMemoryNVS,
-                  EFI_SIZE_TO_PAGES ((UINTN)EventLogAreaStruct->Laml),
+                  EFI_SIZE_TO_PAGES ((UINTN)AcpiLaml),
                   &AcpiLasa
                   );
 
@@ -2958,7 +2947,7 @@ GenerateAcpiLog (
   // Copy the event log information.
   mAcpiEventLog.EventLogFormat        = EventLogAreaStruct->EventLogFormat;
   mAcpiEventLog.Lasa                  = AcpiLasa;
-  mAcpiEventLog.Laml                  = EventLogAreaStruct->Laml;
+  mAcpiEventLog.Laml                  = AcpiLaml;
   mAcpiEventLog.EventLogSize          = EventLogAreaStruct->EventLogSize;
   mAcpiEventLog.LastEvent             = (UINT8 *)(UINTN)AcpiLasa + EventLogAreaStruct->EventLogSize;
   mAcpiEventLog.EventLogStarted       = EventLogAreaStruct->EventLogStarted;
@@ -2966,10 +2955,10 @@ GenerateAcpiLog (
   mAcpiEventLog.Next800155EventOffset = EventLogAreaStruct->Next800155EventOffset;
 
   // Copy the data to the ACPI log.
-  CopyMem ((VOID *)(UINTN)AcpiLasa, (VOID *)(UINTN)EventLogAreaStruct->Lasa, (UINTN)mAcpiEventLog.Laml);
+  CopyMem ((VOID *)(UINTN)AcpiLasa, (VOID *)(UINTN)EventLogAreaStruct->Lasa, (UINTN)mAcpiEventLog.EventLogSize);
 
   // Update the PCDs.
-  PcdSet32S (PcdTpm2AcpiTableLaml, (UINT32)mAcpiEventLog.Laml);
+  PcdSet32S (PcdTpm2AcpiTableLaml, (UINT32)AcpiLaml);
   PcdSet64S (PcdTpm2AcpiTableLasa, AcpiLasa);
 
   // Uninstall and reinstall the ACPI table with the updated LAML/LASA.

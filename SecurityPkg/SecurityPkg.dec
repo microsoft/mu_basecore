@@ -303,7 +303,7 @@
   ## MU_CHANGE - END - Add a new protocol to support Log-only events.
 
   ## MU_CHANGE - [BEGIN]
-  ## TCG Log Test protocol produced by TcgLogTestDxe.
+  ## Protocol used to test dynamic TCG log scaling functionality.
   # Tcg/TcgLogTest/TcgLogTest.h
   gTcgLogTestProtocolGuid            = {0xa3c12f80, 0x7d9e, 0x4b5a, { 0x91, 0xe4, 0x6c, 0xf8, 0x2d, 0xa1, 0xb7, 0x03 }}
   ## MU_CHANGE - [END]
