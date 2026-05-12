@@ -18,24 +18,28 @@ file can be seen at the bottom of the readme.
 A default set of requirements are provided by the tool that apply to all
 X64 and AARCH64 binaries. These requirements are:
 
-1. IMAGE_BASE = 0x0
-2. 4k Section Alignment (X64, AARCH64), 64k Section Alignment (AARCH64-DXE_RUNTIME_DRIVER)
-3. No Section can be both Write and Execute.
+1. 4k Section Alignment (X64, AARCH64), 64k Section Alignment (AARCH64-DXE_RUNTIME_DRIVER)
+2. No Section can be both Write and Execute.
 
-Image Base is verified to be 0x0 for EFIs as some PE loaders (including edk2's)
-will attempt to load the image at that address, which is generally not needed in a
-UEFI environment. Section alignment is verified at 4k as it is required for DXE
-memory protections, exclduing AARCH64 DXE_RUNTIME_DRIVER binaries, which are
-required to be 64K per the UEFI specifcation. Sections are verified **not** to be
-both Write and Execute as it is required by DXE [Enhanced Memory Protections](https://microsoft.github.io/mu/WhatAndWhy/enhancedmemoryprotection/).
+Section alignment is verified at 4k as it is required for DXE memory
+protections, excluding AARCH64 DXE_RUNTIME_DRIVER binaries, which are required
+to be 64K per the UEFI specification. Sections are verified **not** to be both
+Write and Execute as it is required by DXE [Enhanced Memory
+Protections](https://microsoft.github.io/mu/WhatAndWhy/enhancedmemoryprotection/).
+
+> Previously, the Image Base was required to be 0x0 for EFIs as some PE loaders
+(including edk2's) will attempt to load the image at that address, which is
+generally not needed in a UEFI environment. This check is now relaxed to
+facilitate a better debugging experience with WinDbg, which does not support
+loading PE files with a zero image base address.
 
 These requirements can be expanded to IA32, ARM, etc, or overwritten for X64
 and AARCH64 as defined in the configuration file provided via PE_VALIDATION_PATH.
 Individual profiles for individual architectures can be overwritten in this file.
 
-Configuration supports poth `json` and `yaml` formats. Here is a small example for setting
-an ignore list, and overriding configuration for a specific module type. Read below for all
-customization options.
+Configuration supports both `json` and `yaml` formats. Here is a small example
+for setting an ignore list, and overriding configuration for a specific module
+type. Read below for all customization options.
 
 ```json
 {
@@ -57,7 +61,7 @@ X64:
 
 ```
 
-**See Example below for customizing Image Validation**
+## See Example below for customizing Image Validation
 
 ## Ignoring Files
 
@@ -145,8 +149,6 @@ requirements specified in the config file.
 - Description: Checks the base address value found in the optional header.
 This value must meet the requirements specified in the config file.
 
-- Default Requirement: `IMAGE_BASE: 0`
-
 - Config File Requirements: ```IMAGE_BASE: <integer>```
 
 ### Writing your own tests
@@ -166,7 +168,7 @@ class TestInterface:
 ```
 
 The parser is the parsed pe file that you are testing. Documentation on how to
-use the parser can be found by looking up the documentation for the pefile
+use the parser can be found by looking up the documentation for the PE file
 module. The config_data provided to the test will is the filtered data from the
 config file based upon the compilation target and profile. As an example,
 looking at the configuration file, if a pe that is being validated is of type
@@ -229,7 +231,9 @@ This defines a list of all pe file names that this tool should not execute on.
 
 #### IMAGE_FILE_MACHINE_XXXX
 
-This will be any number of supported Image File Machine Constants that are supported by the build system. This will not be a list (using [ ]), rather a comma separated list of all machine constants.
+This will be any number of supported Image File Machine Constants that are
+supported by the build system. This will not be a list (using [ ]), rather a
+comma separated list of all machine constants.
 
 ``` json
 "IMAGE_FILE_MACHINE_XXX1" : {"<Profiles>"},
@@ -240,7 +244,9 @@ This will be any number of supported Image File Machine Constants that are suppo
 
 #### Profiles
 
-This will be any number of supported profiles for the particular Image File Machine Constant. This will not be a list (using [ ]), rather a comma separated list of all machine constants.
+This will be any number of supported profiles for the particular Image File
+Machine Constant. This will not be a list (using [ ]), rather a comma separated
+list of all machine constants.
 
 ```json
 "DXE_CORE" : {"<Settings>"},
@@ -251,7 +257,8 @@ This will be any number of supported profiles for the particular Image File Mach
 
 #### DATA_CODE_SEPARATION
 
-This setting controls if data code separation (cannot be both write and execute) are required for this profile.
+This setting controls if data code separation (cannot be both write and execute)
+are required for this profile.
 
 ``` json
 "DATA_CODE_SEPARATION" : <bool>
@@ -259,7 +266,9 @@ This setting controls if data code separation (cannot be both write and execute)
 
 #### ALLOWED_SUBSYSTEMS
 
-This setting allows the developer to specify the type of subsystem the efi should be for a particular profile. Subystems are defined at <https://docs.microsoft.com/en-us/cpp/build/reference/subsystem-specify-subsystem?view=msvc-170>.
+This setting allows the developer to specify the type of subsystem the efi
+should be for a particular profile. Sub-systems are defined at
+<https://docs.microsoft.com/en-us/cpp/build/reference/subsystem-specify-subsystem?view=msvc-170>.
 
 ``` json
 "ALLOWED_SUBSYSTEMS": ["subsystem1", "subsystem2", "etc"]
@@ -267,7 +276,8 @@ This setting allows the developer to specify the type of subsystem the efi shoul
 
 #### ALIGNMENT
 
-This setting allows the developer to specify memory alignment requirements for a particular profile as a list of requirements.
+This setting allows the developer to specify memory alignment requirements for a
+particular profile as a list of requirements.
 
 ``` json
 "ALIGNMENT" : [
@@ -284,7 +294,8 @@ This setting allows the developer to specify memory alignment requirements for a
 
 #### ALIGNMENT_LOGIC_SEP
 
-This setting is only used if the alignment requirements specify multiple requirements. It is used to specify how the multiple requirements interact.
+This setting is only used if the alignment requirements specify multiple
+requirements. It is used to specify how the multiple requirements interact.
 
 ```json
 "ALIGNMENT_LOGIC_SEP" : "<Logical Operator>"
