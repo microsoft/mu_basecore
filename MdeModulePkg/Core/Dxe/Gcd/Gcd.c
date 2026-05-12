@@ -2748,7 +2748,11 @@ CoreInitializeMemoryServices (
     //
     CoreSetMemoryTypeInformationRange (
       MemoryTypeInformationResourceHob->PhysicalStart,
-      MemoryTypeInformationResourceHob->ResourceLength
+      MemoryTypeInformationResourceHob->ResourceLength,
+      gMemoryTypeInformation,
+      &mMemoryTypeInformationInitialized,
+      mMemoryTypeStatistics,
+      &mDefaultMaximumAddress
       );
   }
 
