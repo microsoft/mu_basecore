@@ -1224,6 +1224,10 @@ TcgScaleEventLog (
   EventLogAreaStruct->Lasa = NewLasa;
   EventLogAreaStruct->Laml = NewLaml;
 
+  // Update the LastEvent pointer. LastEvent = Lasa + Offset. To calculate
+  // the offset we can do: Offset = LastEvent - Lasa.
+  EventLogAreaStruct->LastEvent = (UINT8 *)(UINTN)NewLasa + ((UINTN)EventLogAreaStruct->LastEvent - (UINTN)OldLasa);
+
   // Free the old log region.
   gBS->FreePages (OldLasa, EFI_SIZE_TO_PAGES ((UINTN)OldLaml));
 
