@@ -15,9 +15,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Ppi/EndOfPeiPhase.h>
 #include <Ppi/MemoryDiscovered.h>
 #include <Ppi/ReadOnlyVariable2.h>
-#include <Ppi/Decompress.h>
+// MU_CHANGE [BEGIN] - Move Decompress to MsCorePkg/Core/GuidedSectionExtractPeim
+// #include <Ppi/Decompress.h>
+// MU_CHANGE [END] - Move Decompress to MsCorePkg/Core/GuidedSectionExtractPeim
 #include <Ppi/FirmwareVolumeInfo.h>
-#include <Ppi/GuidedSectionExtraction.h>
+// MU_CHANGE [BEGIN] - Move Decompress to MsCorePkg/Core/GuidedSectionExtractPeim
+// #include <Ppi/GuidedSectionExtraction.h>
+// MU_CHANGE [END] - Move Decompress to MsCorePkg/Core/GuidedSectionExtractPeim
 #include <Ppi/LoadFile.h>
 #include <Ppi/S3Resume2.h>
 #include <Ppi/RecoveryModule.h>
@@ -34,8 +38,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/HobLib.h>
 #include <Library/PeiServicesLib.h>
 #include <Library/ReportStatusCodeLib.h>
-#include <Library/UefiDecompressLib.h>
-#include <Library/ExtractGuidedSectionLib.h>
+// MU_CHANGE [BEGIN] - Move Decompress to MsCorePkg/Core/GuidedSectionExtractPeim
+// #include <Library/UefiDecompressLib.h>
+// #include <Library/ExtractGuidedSectionLib.h>
+// MU_CHANGE [END] - Move Decompress to MsCorePkg/Core/GuidedSectionExtractPeim
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PcdLib.h>
@@ -135,6 +141,9 @@ UpdateStackHob (
   IN UINT64                Length
   );
 
+// MU_CHANGE [BEGIN] - Move Decompress to MsCorePkg/Core/GuidedSectionExtractPeim
+#if 0
+
 /**
   The ExtractSection() function processes the input section and
   returns a pointer to the section contents. If the section being
@@ -227,5 +236,8 @@ Decompress (
   OUT       VOID                     **OutputBuffer,
   OUT       UINTN                    *OutputSize
   );
+
+#endif
+// MU_CHANGE [END] - Move Decompress to MsCorePkg/Core/GuidedSectionExtractPeim
 
 #endif
