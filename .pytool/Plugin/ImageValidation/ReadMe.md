@@ -5,8 +5,8 @@ associated requirements as defined below. A configuration file is used to
 describe different profiles, and their associated requirements. A configuration
 file path is provided via the command line as `PE_VALIDATION_PATH=<PATH>` or
 can be configured in the the PlatformBuild.py within the `SetPlatformEnv()`
-method using 
-`self.env.SetValue("PE_VALIDATION_PATH", <PATH>, "Platform Hardcoded")`. A 
+method using
+`self.env.SetValue("PE_VALIDATION_PATH", <PATH>, "Platform Hardcoded")`. A
 profile is equivalent to the binary's MODULE_TYPE as defined in it's inf. All
 profiles must be defined, forcing the developer to acknowledge each, however
 requirements for each profile do not need to be specified... If one or more
@@ -44,7 +44,7 @@ customization options.
         "DXE_DRIVER": {
             ...
         }
-    } 
+    }
 }
 ```
 
@@ -176,12 +176,12 @@ IMAGE_FILE_MACHINE_ARM64 and profile BASE, the config_data provided will be:
 "ALIGNMENT" : [
     {
         "COMPARISON" : ">=",
-        "VALUE"      : 4096   
+        "VALUE"      : 4096
     },
     {
         "COMPARISON" : "!=",
         "VALUE"      : 65536
-    }     
+    }
 ]
 ```
 
@@ -193,12 +193,12 @@ seen in the below example:
 "ALIGNMENT" : [
     {
         "COMPARISON" : ">=",
-        "VALUE"      : 4096   
+        "VALUE"      : 4096
     },
     {
         "COMPARISON" : "!=",
         "VALUE"      : 65536
-    }     
+    }
 ],
 "OTHER_REQUIREMENT"  : 5,
 "OTHER_REQUIREMENT2" : {"Req1" : 1, "Req2" : 2}
@@ -212,7 +212,7 @@ For the test to be executed, provide the test to the test manager using
 The config file is used to describe all requirements for the scanned pe file.
 The configuration data provided to each test is provided to the test by first
 locating the Compilation Target, then by the optional profile parameter. If
-no profile parameter is provided, "DEFAULT" is used. The current allowed 
+no profile parameter is provided, "DEFAULT" is used. The current allowed
 settings are as follows:
 
 ### Top Level Settings
@@ -301,7 +301,7 @@ This setting is used to specify what the base address of an image should be
 ### Full Configuration File Example
 
 ```json
-{   
+{
     "IGNORE_LIST" : ["Shell.efi"],
     "IMAGE_FILE_MACHINE_AMD64" : {
         "DEFAULT" : {
@@ -356,6 +356,6 @@ This setting is used to specify what the base address of an image should be
         "APPLICATION" : {
             "ALLOWED_SUBSYSTEMS" : ["EFI_APPLICATION"]
         }
-    }  
+    }
 }
 ```
