@@ -18,5 +18,5 @@ antlr4-python3-runtime==4.13.2
 lcov-cobertura==2.1.1
 pygount==3.2.0
 toml==0.10.2
-regex==2026.4.4
+regex==2026.5.9
 pygount==3.2.0
