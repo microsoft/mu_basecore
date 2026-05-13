@@ -749,3 +749,34 @@ X509GetExtendedBasicConstraints             (
   ASSERT (FALSE);
   return FALSE;
 }
+
+/**
+  Compute the digest of a DER-encoded X.509 certificate using the
+  hash algorithm identified by HashType.
+
+  Return EFI_UNSUPPORTED to indicate this interface is not supported.
+
+  @param[in]   Cert        Pointer to the DER-encoded X.509 certificate.
+  @param[in]   CertSize    Size of Cert in bytes.
+  @param[in]   HashType    Signature-type GUID identifying the hash
+                           algorithm to use.
+  @param[out]  Digest      Caller-provided buffer that receives the
+                           computed digest.
+  @param[out]  DigestSize  On success, receives the digest length in
+                           bytes.
+
+  @retval EFI_UNSUPPORTED  This interface is not supported.
+**/
+EFI_STATUS
+EFIAPI
+GetX509Hash (
+  IN  VOID            *Cert,
+  IN  UINTN           CertSize,
+  IN  CONST EFI_GUID  *HashType,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  )
+{
+  ASSERT (FALSE);
+  return EFI_UNSUPPORTED;
+}

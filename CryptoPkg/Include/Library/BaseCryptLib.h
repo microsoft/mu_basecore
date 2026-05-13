@@ -2049,6 +2049,48 @@ X509GetTBSCert (
   );
 
 /**
+  Compute the digest of a DER-encoded X.509 certificate using the
+  hash algorithm identified by HashType.
+
+  The caller selects the digest algorithm by HashType (e.g.
+  gEfiCertX509Sha256Guid, gEfiCertX509Sha384Guid, gEfiCertX509Sha512Guid).
+
+  If the Digest buffer is too small to hold the contents of the digest,
+  the error EFI_BUFFER_TOO_SMALL is returned and DigestSize is set to
+  the required buffer size to obtain the data.
+
+  @param[in]   Cert        Pointer to the DER-encoded X.509 certificate.
+  @param[in]   CertSize    Size of Cert in bytes.
+  @param[in]   HashType    Signature-type GUID identifying the hash
+                           algorithm to use.
+  @param[out]  Digest      Caller-provided buffer that receives the
+                           computed digest. Must be at least
+                           SHA512_DIGEST_SIZE bytes.
+  @param[out]  DigestSize  On success, receives the digest length in
+                           bytes.
+
+  @retval EFI_SUCCESS            Digest was computed successfully.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL or CertSize
+                                 is zero.
+  @retval EFI_BUFFER_TOO_SMALL   DigestSize is too small for the
+                                 requested hash algorithm.
+  @retval EFI_UNSUPPORTED        HashType is not a recognized X.509
+                                 certificate hash algorithm, or this
+                                 interface is not supported by the
+                                 underlying library instance.
+  @retval EFI_SECURITY_VIOLATION The hash computation failed.
+**/
+EFI_STATUS
+EFIAPI
+GetX509Hash (
+  IN  VOID            *Cert,
+  IN  UINTN           CertSize,
+  IN  CONST EFI_GUID  *HashType,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  );
+
+/**
   Derives a key from a password using a salt and iteration count, based on PKCS#5 v2.0
   password based encryption key derivation function PBKDF2, as specified in RFC 2898.
 
@@ -2586,6 +2628,200 @@ AuthenticodeVerify (
   IN  UINTN        CertSize,
   IN  CONST UINT8  *ImageHash,
   IN  UINTN        HashSize
+  );
+
+/**
+  Compute the PE/COFF Authenticode-style image hash of an image as described
+  in "Windows Authenticode Portable Executable Signature Format".
+
+  The caller selects the digest algorithm by HashType (e.g.
+  gEfiCertSha256Guid, gEfiCertSha384Guid).
+
+  If the Data buffer is too small to hold the contents of the digest,
+  the error EFI_BUFFER_TOO_SMALL is returned and DigestSize is set to
+  the required buffer size to obtain the data.
+
+  @param[in]   FileBuffer  Pointer to the in-memory PE/COFF image.
+  @param[in]   FileSize    Size of FileBuffer in bytes.
+  @param[in]   HashType    Signature-type GUID identifying the hash
+                           algorithm to use.
+  @param[out]  Digest      Caller-provided buffer that receives the
+                           computed digest. Must be at least
+                           SHA512_DIGEST_SIZE bytes.
+  @param[out]  DigestSize  On success, receives the digest length in
+                           bytes.
+
+  @retval EFI_SUCCESS            Digest was computed successfully.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
+  @retval EFI_BUFFER_TOO_SMALL   DigestSize is too small for the
+                                 requested hash algorithm.
+  @retval EFI_UNSUPPORTED        HashType is not a recognized image
+                                 hash algorithm, or this interface is
+                                 not supported by the underlying
+                                 library instance.
+**/
+EFI_STATUS
+EFIAPI
+GetAuthenticodeHash (
+  IN  VOID            *FileBuffer,
+  IN  UINTN           FileSize,
+  IN  CONST EFI_GUID  *HashType,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  );
+
+/**
+  Determine the image-hash algorithm declared by a PE/COFF Authenticode
+  signature.
+
+  The signature's PKCS#7 SignedData header carries the digest algorithm
+  used to hash the image. This function parses that header and returns
+  the matching signature-type GUID (for example gEfiCertSha256Guid).
+  The returned GUID can be passed directly to GetAuthenticodeHash to
+  compute the corresponding image hash.
+
+  @param[in]   AuthData      Pointer to the Authenticode signature retrieved
+                             from a signed PE/COFF image.
+  @param[in]   AuthDataSize  Size of AuthData in bytes.
+  @param[out]  HashType      On success, receives the signature-type GUID
+                             identifying the digest algorithm declared by
+                             the signature.
+
+  @retval EFI_SUCCESS            HashType has been populated.
+  @retval EFI_INVALID_PARAMETER  AuthData or HashType is NULL, or
+                                 AuthDataSize is zero.
+  @retval EFI_BAD_BUFFER_SIZE    AuthData is too small or not encoded in a
+                                 supported ASN.1 form.
+  @retval EFI_UNSUPPORTED        The signature's digest algorithm is not a
+                                 recognized image hash algorithm, or this
+                                 interface is not supported by the
+                                 underlying library instance.
+**/
+EFI_STATUS
+EFIAPI
+GetAuthenticodeHashAlgorithm (
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT EFI_GUID     *HashType
+  );
+
+/**
+  Compute the digest of the TBSCertificate of an X.509 certificate.
+
+  Extracts the TBSCertificate (the to-be-signed portion) of the given
+  DER-encoded certificate and hashes it with the algorithm selected by
+  HashType. The TBSCertificate is the exact byte range a certificate
+  authority signs, so its digest uniquely identifies the certificate
+  independent of the issuer signature.
+
+  The caller selects the digest algorithm by HashType (e.g.
+  gEfiCertSha256Guid, gEfiCertSha384Guid). The digest is written to
+  Digest, which must be large enough to hold the largest supported
+  digest (at least SHA512_DIGEST_SIZE bytes).
+
+  @param[in]   Cert        Pointer to the DER-encoded X.509 certificate.
+  @param[in]   CertSize    Size of Cert in bytes.
+  @param[in]   HashType    Signature-type GUID identifying the hash
+                           algorithm to use.
+  @param[out]  Digest      Caller-provided buffer that receives the
+                           computed TBSCertificate digest. Must be at
+                           least SHA512_DIGEST_SIZE bytes.
+  @param[out]  DigestSize  On success, receives the digest length in
+                           bytes.
+
+  @retval EFI_SUCCESS            Digest was computed successfully.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL, CertSize is
+                                 0, or Cert is not a well-formed X.509
+                                 certificate.
+  @retval EFI_UNSUPPORTED        HashType is not a recognized image
+                                 hash algorithm, or this interface is
+                                 not supported by the underlying
+                                 library instance.
+**/
+EFI_STATUS
+EFIAPI
+X509GetTbsCertHash (
+  IN  VOID            *Cert,
+  IN  UINTN           CertSize,
+  IN  CONST EFI_GUID  *HashType,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  );
+
+/**
+  Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
+  TBSCertificate digest matches a caller-supplied hash, and return that
+  certificate as a newly allocated DER-encoded buffer.
+
+  The hash algorithm is selected by TbsCertHashSize:
+    20 -> SHA-1, 32 -> SHA-256, 48 -> SHA-384, 64 -> SHA-512.
+
+  An optional cache may be passed via CacheHandle. CacheHandle is a
+  pointer to a caller-owned VOID *:
+    - If CacheHandle is NULL, no caching is performed.
+    - If *CacheHandle is NULL, this function allocates a new cache and
+      writes its handle to *CacheHandle. The caller releases it with
+      FreeTrustAnchorX509Cache().
+    - Otherwise, *CacheHandle is reused. The cache may be reused across
+      different AuthData inputs; entries are de-duplicated by the cert
+      DER bytes.
+
+  Caution: AuthData is untrusted. The PKCS#7 ASN.1 DER is parsed with
+  bounds-checked length decoding to avoid out-of-bounds reads.
+
+  @param[in,out] CacheHandle        Optional cache handle pointer.
+  @param[in]     TbsCertHash        Pointer to the target TBSCertificate
+                                    digest bytes to match.
+  @param[in]     TbsCertHashSize    Length of TbsCertHash in bytes; this
+                                    selects the hash algorithm.
+  @param[in]     AuthData           Pointer to the PKCS#7 SignedData
+                                    blob (DER-encoded).
+  @param[in]     AuthDataSize       Size of AuthData in bytes.
+  @param[out]    TrustAnchorX509    On success, *TrustAnchorX509 points
+                                    to a newly allocated buffer
+                                    containing the matching X.509
+                                    certificate in DER form. The caller
+                                    must release it with FreePool().
+  @param[out]    TrustAnchorX509Size  On success, receives the length
+                                      of the certificate in bytes.
+
+  @retval EFI_SUCCESS            A matching certificate was found and
+                                 returned.
+  @retval EFI_NOT_FOUND          No certificate in AuthData has a
+                                 TBSCertificate digest equal to the
+                                 supplied TbsCertHash.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL, a size
+                                 parameter is 0, the hash size is not a
+                                 supported value, or AuthData is not a
+                                 valid PKCS#7 SignedData blob.
+  @retval EFI_OUT_OF_RESOURCES   Memory allocation failed.
+  @retval EFI_UNSUPPORTED        This interface is not supported by the
+                                 current library instance.
+**/
+EFI_STATUS
+EFIAPI
+GetTrustAnchorX509FromAuthData (
+  IN OUT VOID      **CacheHandle  OPTIONAL,
+  IN  CONST UINT8  *TbsCertHash,
+  IN  UINTN        TbsCertHashSize,
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT UINT8        **TrustAnchorX509,
+  OUT UINTN        *TrustAnchorX509Size
+  );
+
+/**
+  Release a trust-anchor cache previously allocated by
+  GetTrustAnchorX509FromAuthData().
+
+  @param[in]  CacheHandle  Cache handle returned by a previous call to
+                           GetTrustAnchorX509FromAuthData(). May be
+                           NULL, in which case the function is a no-op.
+**/
+VOID
+EFIAPI
+FreeTrustAnchorX509Cache (
+  IN  VOID  *CacheHandle  OPTIONAL
   );
 
 /**

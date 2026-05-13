@@ -869,9 +869,7 @@ struct MockBaseCryptLib {
      IN   CONST UINT8  *KeyPassword,
      IN   UINT8        *InData,
      IN   UINTN        InDataSize,
-     // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
      IN   CONST UINT8  *SignCert,
-     // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
      IN   UINTN        SignCertSize,
      IN   UINT8        *OtherCerts      OPTIONAL,
      OUT  UINT8        **SignedData,
@@ -939,6 +937,74 @@ struct MockBaseCryptLib {
      IN  UINTN        CertSize,
      IN  CONST UINT8  *ImageHash,
      IN  UINTN        HashSize
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    GetAuthenticodeHash,
+    (
+     IN  VOID            *FileBuffer,
+     IN  UINTN           FileSize,
+     IN  CONST EFI_GUID  *HashType,
+     OUT UINT8           *Digest,
+     OUT UINTN           *DigestSize
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    GetAuthenticodeHashAlgorithm,
+    (
+     IN  CONST UINT8  *AuthData,
+     IN  UINTN        AuthDataSize,
+     OUT EFI_GUID     *HashType
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    X509GetTbsCertHash,
+    (
+     IN  VOID            *Cert,
+     IN  UINTN           CertSize,
+     IN  CONST EFI_GUID  *HashType,
+     OUT UINT8           *Digest,
+     OUT UINTN           *DigestSize
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    GetTrustAnchorX509FromAuthData,
+    (
+     IN OUT VOID         **CacheHandle  OPTIONAL,
+     IN  CONST UINT8     *TbsCertHash,
+     IN  UINTN           TbsCertHashSize,
+     IN  CONST UINT8     *AuthData,
+     IN  UINTN           AuthDataSize,
+     OUT UINT8           **TrustAnchorX509,
+     OUT UINTN           *TrustAnchorX509Size
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    VOID,
+    FreeTrustAnchorX509Cache,
+    (
+     IN  VOID  *CacheHandle  OPTIONAL
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    GetX509Hash,
+    (
+     IN  VOID            *Cert,
+     IN  UINTN           CertSize,
+     IN  CONST EFI_GUID  *HashType,
+     OUT UINT8           *Digest,
+     OUT UINTN           *DigestSize
     )
     );
 
