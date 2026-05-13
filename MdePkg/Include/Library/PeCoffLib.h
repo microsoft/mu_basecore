@@ -69,6 +69,30 @@ RETURN_STATUS
   OUT    VOID   *Buffer
   );
 
+/**
+  Optional abstraction to read each entry of the DataDirectory[] array in the PE/COFF optional header.
+
+  Returning a non-RETURN_SUCCESS status from the callback aborts
+
+  @param  Index          EFI_IMAGE_DIRECTORY_ENTRY_* slot of the
+                         entry being delivered.
+  @param  DataDirectory  Pointer to the DataDirectory entry. Lives
+                         inside the caller's image buffer; do not
+                         retain past callback return.
+  @param  Context        Caller-owned opaque pointer.
+
+  @retval RETURN_SUCCESS    Continue iterating remaining entries.
+  @retval Other             Abort iteration; status is propagated to
+                            the caller of PeCoffLoaderGetImageInfo().
+**/
+typedef
+RETURN_STATUS
+(EFIAPI *PE_COFF_LOADER_READ_DATA_DIRECTORY)(
+  IN UINT32                          Index,
+  IN CONST EFI_IMAGE_DATA_DIRECTORY  *DataDirectory,
+  IN VOID                            *Context  OPTIONAL
+  );
+
 ///
 /// The context structure used while PE/COFF image is being loaded and relocated.
 ///
@@ -76,134 +100,143 @@ typedef struct {
   ///
   /// Set by PeCoffLoaderGetImageInfo() to the ImageBase in the PE/COFF header.
   ///
-  PHYSICAL_ADDRESS            ImageAddress;
+  PHYSICAL_ADDRESS                      ImageAddress;
   ///
   /// Set by PeCoffLoaderGetImageInfo() to the SizeOfImage in the PE/COFF header.
   /// Image size includes the size of Debug Entry if it is present.
   ///
-  UINT64                      ImageSize;
+  UINT64                                ImageSize;
   ///
   /// Is set to zero by PeCoffLoaderGetImageInfo(). If DestinationAddress is non-zero,
   /// PeCoffLoaderRelocateImage() will relocate the image using this base address.
   /// If the DestinationAddress is zero, the ImageAddress will be used as the base
   /// address of relocation.
   ///
-  PHYSICAL_ADDRESS            DestinationAddress;
+  PHYSICAL_ADDRESS                      DestinationAddress;
   ///
   /// PeCoffLoaderLoadImage() sets EntryPoint to to the entry point of the PE/COFF image.
   ///
-  PHYSICAL_ADDRESS            EntryPoint;
+  PHYSICAL_ADDRESS                      EntryPoint;
   ///
   /// Passed in by the caller to PeCoffLoaderGetImageInfo() and PeCoffLoaderLoadImage()
   /// to abstract accessing the image from the library.
   ///
-  PE_COFF_LOADER_READ_FILE    ImageRead;
+  PE_COFF_LOADER_READ_FILE              ImageRead;
   ///
   /// Used as the FileHandle passed into the ImageRead function when it's called.
   ///
-  VOID                        *Handle;
+  VOID                                  *Handle;
   ///
   /// Caller allocated buffer of size FixupDataSize that can be optionally allocated
   /// prior to calling PeCoffLoaderRelocateImage().
   /// This buffer is filled with the information used to fix up the image.
   /// The fixups have been applied to the image and this entry is just for information.
   ///
-  VOID                        *FixupData;
+  VOID                                  *FixupData;
   ///
   /// Set by PeCoffLoaderGetImageInfo() to the Section Alignment in the PE/COFF header.
   /// If the image is a TE image, then this field is set to 0.
   ///
-  UINT32                      SectionAlignment;
+  UINT32                                SectionAlignment;
   ///
   /// Set by PeCoffLoaderGetImageInfo() to offset to the PE/COFF header.
   /// If the PE/COFF image does not start with a DOS header, this value is zero.
   /// Otherwise, it's the offset to the PE/COFF header.
   ///
-  UINT32                      PeCoffHeaderOffset;
+  UINT32                                PeCoffHeaderOffset;
   ///
   /// Set by PeCoffLoaderGetImageInfo() to the Relative Virtual Address of the debug directory,
   /// if it exists in the image
   ///
-  UINT32                      DebugDirectoryEntryRva;
+  UINT32                                DebugDirectoryEntryRva;
   ///
   /// Set by PeCoffLoaderLoadImage() to CodeView area of the PE/COFF Debug directory.
   ///
-  VOID                        *CodeView;
+  VOID                                  *CodeView;
   ///
   /// Set by PeCoffLoaderLoadImage() to point to the PDB entry contained in the CodeView area.
   /// The PdbPointer points to the filename of the PDB file used for source-level debug of
   /// the image by a debugger.
   ///
-  CHAR8                       *PdbPointer;
+  CHAR8                                 *PdbPointer;
   ///
   /// Is set by PeCoffLoaderGetImageInfo() to the Section Alignment in the PE/COFF header.
   ///
-  UINTN                       SizeOfHeaders;
+  UINTN                                 SizeOfHeaders;
   ///
   /// Not used by this library class. Other library classes that layer on  top of this library
   /// class fill in this value as part of their GetImageInfo call.
   /// This allows the caller of the library to know what type of memory needs to be allocated
   /// to load and relocate the image.
   ///
-  UINT32                      ImageCodeMemoryType;
+  UINT32                                ImageCodeMemoryType;
   ///
   /// Not used by this library class. Other library classes that layer on top of this library
   /// class fill in this value as part of their GetImageInfo call.
   /// This allows the caller of the library to know what type of memory needs to be allocated
   /// to load and relocate the image.
   ///
-  UINT32                      ImageDataMemoryType;
+  UINT32                                ImageDataMemoryType;
   ///
   /// Set by any of the library functions if they encounter an error.
   ///
-  UINT32                      ImageError;
+  UINT32                                ImageError;
   ///
   /// Set by PeCoffLoaderLoadImage() to indicate the size of FixupData that the caller must
   /// allocate before calling PeCoffLoaderRelocateImage().
   ///
-  UINTN                       FixupDataSize;
+  UINTN                                 FixupDataSize;
   ///
   /// Set by PeCoffLoaderGetImageInfo() to the machine type stored in the PE/COFF header.
   ///
-  UINT16                      Machine;
+  UINT16                                Machine;
   ///
   /// Set by PeCoffLoaderGetImageInfo() to the subsystem type stored in the PE/COFF header.
   ///
-  UINT16                      ImageType;
+  UINT16                                ImageType;
   ///
   /// Set by PeCoffLoaderGetImageInfo() to the DLL flags stored in the PE/COFF header and
   /// in the DllCharacteristicsEx debug table.
   ///
-  UINT16                      DllCharacteristics;
-  UINT32                      DllCharacteristicsEx;
+  UINT16                                DllCharacteristics;
+  UINT32                                DllCharacteristicsEx;
   ///
   /// Set by PeCoffLoaderGetImageInfo() to TRUE if the PE/COFF image does not contain
   /// relocation information.
   ///
-  BOOLEAN                     RelocationsStripped;
+  BOOLEAN                               RelocationsStripped;
   ///
   /// Set by PeCoffLoaderGetImageInfo() to TRUE if the image is a TE image.
   /// For a definition of the TE Image format, see the Platform Initialization Pre-EFI
   /// Initialization Core Interface Specification.
   ///
-  BOOLEAN                     IsTeImage;
+  BOOLEAN                               IsTeImage;
   // MU_CHANGE START
   ///
   /// Set by PeCoffLoaderGetImageInfo() to TRUE if the image has the IMAGE_DLLCHARACTERISTICS_NX_COMPAT
   /// flag set.
   ///
-  BOOLEAN                     SupportsNx;
+  BOOLEAN                               SupportsNx;
   // MU_CHANGE END
   ///
   /// Set by PeCoffLoaderLoadImage() to the HII resource offset
   /// if the image contains a custom PE/COFF resource with the type 'HII'.
   /// Otherwise, the entry remains to be 0.
   ///
-  PHYSICAL_ADDRESS            HiiResourceData;
+  PHYSICAL_ADDRESS                      HiiResourceData;
   ///
   /// Private storage for implementation specific data.
   ///
-  UINT64                      Context;
+  UINT64                                Context;
+  ///
+  /// Passed in by the caller to PeCoffLoaderGetImageInfo() and PeCoffLoaderLoadImage()
+  /// to abstract reading data directories from the library.
+  ///
+  PE_COFF_LOADER_READ_DATA_DIRECTORY    DataDirectoryRead;
+  ///
+  /// Caller-owned opaque pointer provided to DataDirectoryRead.
+  ///
+  VOID                                  *DataDirectoryReadContext;
 } PE_COFF_LOADER_IMAGE_CONTEXT;
 
 /**

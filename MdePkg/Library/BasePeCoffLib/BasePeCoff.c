@@ -307,6 +307,25 @@ PeCoffLoaderGetPeHeader (
       }
 
       //
+      // Execute the data directory callback for each data directory, if the callback is provided.
+      //
+      if (ImageContext->DataDirectoryRead != NULL) {
+        UINT32  DirIndex;
+
+        for (DirIndex = 0; DirIndex < Hdr.Pe32->OptionalHeader.NumberOfRvaAndSizes; DirIndex++) {
+          Status = ImageContext->DataDirectoryRead (
+                                   DirIndex,
+                                   &Hdr.Pe32->OptionalHeader.DataDirectory[DirIndex],
+                                   ImageContext->DataDirectoryReadContext
+                                   );
+          if (RETURN_ERROR (Status)) {
+            ImageContext->ImageError = Status;
+            return RETURN_UNSUPPORTED;
+          }
+        }
+      }
+
+      //
       // Use PE32 offset
       //
       ImageContext->ImageType          = Hdr.Pe32->OptionalHeader.Subsystem;
@@ -424,6 +443,25 @@ PeCoffLoaderGetPeHeader (
             }
 
             return Status;
+          }
+        }
+      }
+
+      //
+      // Execute the data directory callback for each data directory, if the callback is provided.
+      //
+      if (ImageContext->DataDirectoryRead != NULL) {
+        UINT32  DirIndex;
+
+        for (DirIndex = 0; DirIndex < Hdr.Pe32Plus->OptionalHeader.NumberOfRvaAndSizes; DirIndex++) {
+          Status = ImageContext->DataDirectoryRead (
+                                   DirIndex,
+                                   &Hdr.Pe32Plus->OptionalHeader.DataDirectory[DirIndex],
+                                   ImageContext->DataDirectoryReadContext
+                                   );
+          if (RETURN_ERROR (Status)) {
+            ImageContext->ImageError = Status;
+            return RETURN_UNSUPPORTED;
           }
         }
       }
