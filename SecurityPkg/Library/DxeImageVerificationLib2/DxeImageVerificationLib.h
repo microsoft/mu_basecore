@@ -18,7 +18,9 @@
 #include <IndustryStandard/PeImage.h>
 #include <Library/SecureBootVariableLib.h>
 #include <Library/BaseLib.h>
+#include <Library/BaseCryptLib.h>
 #include <Library/BaseMemoryLib.h>
+#include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/DebugLib.h>
 #include <Library/SecurityManagementLib.h>

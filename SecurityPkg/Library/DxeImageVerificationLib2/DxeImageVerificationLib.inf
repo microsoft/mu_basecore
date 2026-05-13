@@ -30,6 +30,8 @@
 #
 
 [Sources]
+  Database.c
+  Database.h
   DxeImageVerificationLib.c
   DxeImageVerificationLib.h
   Policy.c

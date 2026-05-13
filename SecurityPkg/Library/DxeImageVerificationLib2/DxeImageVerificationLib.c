@@ -20,6 +20,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "DxeImageVerificationLib.h"
+#include "Database.h"
 #include "Support.h"
 #include "Policy.h"
 
@@ -185,7 +186,116 @@ ValidateUnsignedImage (
   IN  UINTN  FileSize
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS          Status;
+  HASH_ALGORITHM_SET  HashAlgorithms;
+  UINTN               Index;
+  CONST EFI_GUID      *HashType;
+  UINTN               DigestSize;
+  UINT8               ImageDigest[SHA512_DIGEST_SIZE];
+  BOOLEAN             IsFound;
+  BOOLEAN             IsFoundInDb;
+  VOID                *Db;
+  UINTN               DbSize;
+  VOID                *Dbx;
+  UINTN               DbxSize;
+
+  Db  = NULL;
+  Dbx = NULL;
+
+  //
+  // Load the authorized (db) and forbidden (dbx) signature databases.
+  //
+  Status = LoadSignatureDatabase (EFI_IMAGE_SECURITY_DATABASE, &Db, &DbSize);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: failed to load db - %r\n", Status));
+    Status = EFI_ACCESS_DENIED;
+    goto Exit;
+  }
+
+  Status = LoadSignatureDatabase (EFI_IMAGE_SECURITY_DATABASE1, &Dbx, &DbxSize);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: failed to load dbx - %r\n", Status));
+    Status = EFI_ACCESS_DENIED;
+    goto Exit;
+  }
+
+  //
+  // Determine which algorithms are currently in use across db and dbx.
+  // If neither database enrolls any recognized hash type, there is no algorithm
+  // with which to authorize an unsigned image, so refuse to dispatch it.
+  //
+  Status = GetDatabaseHashAlgorithms (Db, DbSize, Dbx, DbxSize, &HashAlgorithms);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: GetDatabaseHashAlgorithms failed - %r\n", Status));
+    Status = EFI_ACCESS_DENIED;
+    goto Exit;
+  }
+
+  if (HashAlgorithms.Count == 0) {
+    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: no hash algorithms enrolled in db/dbx; rejecting unsigned image.\n"));
+    Status = EFI_ACCESS_DENIED;
+    goto Exit;
+  }
+
+  //
+  // For each algorithm in use, compute the image's Authenticode digest and query the dbx / db.
+  // A hit in the dbx immediately denies the image. If no dbx hit occurs across all algorithms,
+  // the image is authorized or denied based on whether at least one db hit was recorded.
+  //
+  IsFoundInDb = FALSE;
+  for (Index = 0; Index < HashAlgorithms.Count; Index++) {
+    HashType = &HashAlgorithms.Guids[Index];
+
+    Status = GetAuthenticodeHash (FileBuffer, FileSize, HashType, ImageDigest, &DigestSize);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: GetAuthenticodeHash failed - %r\n", Status));
+      Status = EFI_ACCESS_DENIED;
+      goto Exit;
+    }
+
+    Status = IsSignatureFoundInDatabase (
+               Dbx,
+               DbxSize,
+               ImageDigest,
+               HashType,
+               DigestSize,
+               &IsFound
+               );
+    if (EFI_ERROR (Status) || IsFound) {
+      DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: Image is not signed and image is forbidden by DBX.\n"));
+      Status = EFI_ACCESS_DENIED;
+      goto Exit;
+    }
+
+    if (IsFoundInDb) {
+      continue;
+    }
+
+    Status = IsSignatureFoundInDatabase (
+               Db,
+               DbSize,
+               ImageDigest,
+               HashType,
+               DigestSize,
+               &IsFound
+               );
+    if (!EFI_ERROR (Status) && IsFound) {
+      IsFoundInDb = TRUE;
+    }
+  }
+
+  Status = IsFoundInDb ? EFI_SUCCESS : EFI_ACCESS_DENIED;
+
+Exit:
+  if (Db != NULL) {
+    FreePool (Db);
+  }
+
+  if (Dbx != NULL) {
+    FreePool (Dbx);
+  }
+
+  return Status;
 }
 
 /**
