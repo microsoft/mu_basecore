@@ -1283,7 +1283,7 @@ TcgLogDynamicScalingNeeded (
 
     // Log an error if we attempt to scale post ReadyToBoot.
     if (mReadyToBoot) {
-      DEBUG ((DEBUG_ERROR, "Scaling post ReadyToBoot is invalid!\n"));
+      DEBUG ((DEBUG_ERROR, "Unexpected dynamic scaling occurring post ReadyToBoot!\n"));
     }
 
     return TRUE;
