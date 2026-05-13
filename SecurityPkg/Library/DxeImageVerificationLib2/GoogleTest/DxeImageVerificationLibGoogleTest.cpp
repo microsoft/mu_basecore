@@ -17,10 +17,6 @@ extern "C" {
   #include <Library/DebugLib.h>
 }
 
-TEST (ExampleTests, ExampleTest) {
-  ASSERT_EQ (TRUE, TRUE);
-}
-
 int
 main (
   int   argc,

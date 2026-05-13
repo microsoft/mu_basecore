@@ -20,6 +20,8 @@
 
 [Sources]
   DxeImageVerificationLibGoogleTest.cpp
+  PolicyGoogleTest.cpp
+  SupportGoogleTest.cpp
 
 [Packages]
   MdePkg/MdePkg.dec
