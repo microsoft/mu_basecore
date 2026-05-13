@@ -204,6 +204,16 @@ typedef struct {
   /// Private storage for implementation specific data.
   ///
   UINT64                      Context;
+  ///
+  /// Set by PeCoffLoaderGetImageInfo() to a copy of the image's
+  /// EFI_IMAGE_DIRECTORY_ENTRY_SECURITY data directory entry. The entry is
+  /// populated only after PeCoffLoaderGetImageInfo() has validated that the
+  /// security data directory is non-empty and lies within the image bounds.
+  /// If the image declares no security directory, this field is zeroed. This
+  /// field is always written by PeCoffLoaderGetImageInfo(), so callers do not
+  /// need to zero-initialize the image context to consume it.
+  ///
+  EFI_IMAGE_DATA_DIRECTORY    SecurityDataDirectory;
 } PE_COFF_LOADER_IMAGE_CONTEXT;
 
 /**
