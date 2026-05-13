@@ -152,7 +152,7 @@ CryptoServiceNotAvailable (
     ONE_CRYPTO_PROTOCOL  *CryptoServices;                                              \
                                                                                        \
     CryptoServices = GetAndValidateCryptoProtocol (#Function, (MinMajor), (MinMinor)); \
-    if ((CryptoServices == NULL) && (CryptoServices->Function == NULL)) {              \
+    if ((CryptoServices == NULL) || (CryptoServices->Function == NULL)) {              \
       CryptoServiceNotAvailable (#Function);                                           \
       return ErrorReturnValue;                                                         \
     }                                                                                  \
@@ -178,7 +178,7 @@ CryptoServiceNotAvailable (
     ONE_CRYPTO_PROTOCOL  *CryptoServices;                                              \
                                                                                        \
     CryptoServices = GetAndValidateCryptoProtocol (#Function, (MinMajor), (MinMinor)); \
-    if ((CryptoServices == NULL) && (CryptoServices->Function == NULL)) {              \
+    if ((CryptoServices == NULL) || (CryptoServices->Function == NULL)) {              \
       CryptoServiceNotAvailable (#Function);                                           \
       return;                                                                          \
     }                                                                                  \
@@ -4457,7 +4457,39 @@ X509ConstructCertificateStackV (
   IN      VA_LIST  Args
   )
 {
-  CALL_CRYPTO_SERVICE (X509ConstructCertificateStackV, (X509Stack, Args), FALSE, 1, 0);
+  ONE_CRYPTO_PROTOCOL  *CryptoServices;
+  UINT8                *Cert;
+  UINTN                CertSize;
+  BOOLEAN              Status;
+
+  if (X509Stack == NULL) {
+    return FALSE;
+  }
+
+  CryptoServices = GetAndValidateCryptoProtocol ("X509ConstructCertificateStack", 1, 0);
+  if ((CryptoServices == NULL) || (CryptoServices->X509ConstructCertificateStack == NULL)) {
+    CryptoServiceNotAvailable ("X509ConstructCertificateStack");
+    return FALSE;
+  }
+
+  Status = TRUE;
+  Cert   = VA_ARG (Args, UINT8 *);
+  while (Cert != NULL) {
+    CertSize = VA_ARG (Args, UINTN);
+    if (CertSize == 0) {
+      Status = FALSE;
+      break;
+    }
+
+    Status = CryptoServices->X509ConstructCertificateStack (X509Stack, Cert, CertSize, NULL);
+    if (!Status) {
+      break;
+    }
+
+    Cert = VA_ARG (Args, UINT8 *);
+  }
+
+  return Status;
 }
 
 /**
@@ -4488,10 +4520,12 @@ X509ConstructCertificateStack (
   )
 {
   VA_LIST  Args;
+  BOOLEAN  Result;
 
   VA_START (Args, X509Stack);
-  CALL_CRYPTO_SERVICE (X509ConstructCertificateStack, (X509Stack, Args), FALSE, 1, 0);
+  Result = X509ConstructCertificateStackV (X509Stack, Args);
   VA_END (Args);
+  return Result;
 }
 
 /**
