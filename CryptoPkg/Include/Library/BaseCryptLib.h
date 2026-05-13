@@ -2589,6 +2589,46 @@ AuthenticodeVerify (
   );
 
 /**
+  Compute the PE/COFF Authenticode-style image hash of an image as described
+  in "Windows Authenticode Portable Executable Signature Format".
+
+  The caller selects the digest algorithm by HashType (e.g.
+  gEfiCertSha256Guid, gEfiCertSha384Guid).
+
+  If the Data buffer is too small to hold the contents of the digest,
+  the error EFI_BUFFER_TOO_SMALL is returned and DigestSize is set to
+  the required buffer size to obtain the data.
+
+  @param[in]   FileBuffer  Pointer to the in-memory PE/COFF image.
+  @param[in]   FileSize    Size of FileBuffer in bytes.
+  @param[in]   HashType    Signature-type GUID identifying the hash
+                           algorithm to use.
+  @param[out]  Digest      Caller-provided buffer that receives the
+                           computed digest. Must be at least
+                           SHA512_DIGEST_SIZE bytes.
+  @param[out]  DigestSize  On success, receives the digest length in
+                           bytes.
+
+  @retval EFI_SUCCESS            Digest was computed successfully.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
+  @retval EFI_BUFFER_TOO_SMALL   DigestSize is too small for the
+                                 requested hash algorithm.
+  @retval EFI_UNSUPPORTED        HashType is not a recognized image
+                                 hash algorithm, or this interface is
+                                 not supported by the underlying
+                                 library instance.
+**/
+EFI_STATUS
+EFIAPI
+GetAuthenticodeHash (
+  IN  VOID            *FileBuffer,
+  IN  UINTN           FileSize,
+  IN  CONST EFI_GUID  *HashType,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  );
+
+/**
   Verifies the validity of a RFC3161 Timestamp CounterSignature embedded in PE/COFF Authenticode
   signature.
 
