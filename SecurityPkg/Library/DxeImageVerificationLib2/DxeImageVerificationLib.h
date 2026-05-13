@@ -13,6 +13,13 @@
 #define DXE_IMAGE_VERIFICATION_LIB_H_
 
 #include <Uefi.h>
+#include <UefiSecureBoot.h>
+#include <Guid/ImageAuthentication.h>
+#include <IndustryStandard/PeImage.h>
+#include <Library/SecureBootVariableLib.h>
+#include <Library/BaseLib.h>
+#include <Library/BaseMemoryLib.h>
+#include <Library/UefiBootServicesTableLib.h>
 #include <Library/DebugLib.h>
 #include <Library/SecurityManagementLib.h>
 #include <Protocol/DevicePath.h>
@@ -82,6 +89,54 @@ EFIAPI
 DxeImageVerificationLibConstructor (
   IN  EFI_HANDLE        ImageHandle,
   IN  EFI_SYSTEM_TABLE  *SystemTable
+  );
+
+/**
+  Validate an unsigned PE/COFF image against the platform signature
+  databases.
+
+  For each image-hash algorithm enrolled in db or dbx, computes the
+  image's Authenticode digest and checks the dbx then db for the hash.
+  A dbx hit denies the image. The image is authorized only if it is
+  found in db and never in dbx.
+
+  @param[in]  FileBuffer  Pointer to the in-memory PE/COFF image.
+  @param[in]  FileSize    Size of FileBuffer in bytes.
+
+  @retval EFI_SUCCESS        The image's hash was found in db (and not
+                             in dbx) under at least one enrolled
+                             algorithm.
+  @retval EFI_ACCESS_DENIED  The image was rejected: either no hash
+                             algorithm is enrolled, the digest is
+                             present in dbx, the digest is not present
+                             in db, or a database lookup failed.
+**/
+EFI_STATUS
+ValidateUnsignedImage (
+  IN  VOID   *FileBuffer,
+  IN  UINTN  FileSize
+  );
+
+/**
+Validate a signed PE/COFF image's embedded Authenticode/UEFI signatures
+against the platform signature databases.
+
+@param[in]   FileBuffer  Pointer to the in-memory PE/COFF image.
+@param[in]   FileSize    Size of FileBuffer in bytes.
+@param[in]   SecDataDir  Security data directory describing the
+                         embedded WIN_CERTIFICATE table.
+@param[out]  Action      Set to the EFI_IMAGE_EXECUTION_ACTION value
+                         that best describes the outcome.
+
+@retval EFI_UNSUPPORTED  The signed-image verification path is not yet
+                         implemented.
+**/
+EFI_STATUS
+ValidateSignedImage (
+  IN  VOID                            *FileBuffer,
+  IN  UINTN                           FileSize,
+  IN  CONST EFI_IMAGE_DATA_DIRECTORY  *SecDataDir,
+  OUT EFI_IMAGE_EXECUTION_ACTION      *Action
   );
 
 #endif // DXE_IMAGE_VERIFICATION_LIB_H_

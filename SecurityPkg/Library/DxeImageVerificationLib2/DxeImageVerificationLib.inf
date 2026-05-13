@@ -32,6 +32,10 @@
 [Sources]
   DxeImageVerificationLib.c
   DxeImageVerificationLib.h
+  Policy.c
+  Policy.h
+  Support.c
+  Support.h
 
 [Packages]
   MdePkg/MdePkg.dec

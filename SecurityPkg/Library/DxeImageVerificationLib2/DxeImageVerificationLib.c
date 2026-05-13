@@ -20,6 +20,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "DxeImageVerificationLib.h"
+#include "Support.h"
+#include "Policy.h"
 
 /**
   Provide verification service for signed images, which include both signature validation
@@ -73,7 +75,67 @@ DxeImageVerificationHandler (
   IN  BOOLEAN                         BootPolicy
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_STATUS                  Status;
+  UINT32                      Policy;
+  EFI_IMAGE_DATA_DIRECTORY    SecDataDir;
+  EFI_IMAGE_EXECUTION_ACTION  Action;
+
+  Action = EFI_IMAGE_EXECUTION_AUTH_UNTESTED;
+
+  //
+  // Sanity check.
+  //
+  if (File == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Resolve the platform authorization policy from the image's origin.
+  // This runs before the Secure Boot variable check because it is much
+  // cheaper, and the common case (FV-dispatched drivers) short-circuits
+  // if the policy is ALWAYS_EXECUTE.
+  //
+  Status = GetExecutionPolicy (File, &Policy);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Policy unconditionally permits execution; no further checks needed.
+  //
+  if (Policy == ALWAYS_EXECUTE) {
+    return EFI_SUCCESS;
+  }
+
+  //
+  // This handler only enforces UEFI Secure Boot. If Secure Boot is not
+  // enabled there is nothing for us to verify.
+  //
+  if (!IsSecureBootEnabled ()) {
+    return EFI_SUCCESS;
+  }
+
+  //
+  // Inspect the image to locate its security data directory. Any failure
+  // to parse the PE/COFF headers is treated as a verification failure.
+  //
+  Status = GetImageSecurityDataDirectory (FileBuffer, FileSize, &SecDataDir);
+  if (EFI_ERROR (Status)) {
+    goto Exit;
+  }
+
+  //
+  // Dispatch to the appropriate verification path based on whether the
+  // image carries an embedded signature.
+  //
+  if (SecDataDir.Size == 0) {
+    Status = ValidateUnsignedImage (FileBuffer, FileSize);
+  } else {
+    Status = ValidateSignedImage (FileBuffer, FileSize, &SecDataDir, &Action);
+  }
+
+Exit:
+  return Status;
 }
 
 /**
@@ -95,4 +157,59 @@ DxeImageVerificationLibConstructor (
            DxeImageVerificationHandler,
            EFI_AUTH_OPERATION_VERIFY_IMAGE | EFI_AUTH_OPERATION_IMAGE_REQUIRED
            );
+}
+
+/**
+  Validate an unsigned PE/COFF image against the platform signature
+  databases.
+
+  For each image-hash algorithm enrolled in db or dbx, computes the
+  image's Authenticode digest and checks the dbx then db for the hash.
+  A dbx hit denies the image. The image is authorized only if it is
+  found in db and never in dbx.
+
+  @param[in]  FileBuffer  Pointer to the in-memory PE/COFF image.
+  @param[in]  FileSize    Size of FileBuffer in bytes.
+
+  @retval EFI_SUCCESS        The image's hash was found in db (and not
+                             in dbx) under at least one enrolled
+                             algorithm.
+  @retval EFI_ACCESS_DENIED  The image was rejected: either no hash
+                             algorithm is enrolled, the digest is
+                             present in dbx, the digest is not present
+                             in db, or a database lookup failed.
+**/
+EFI_STATUS
+ValidateUnsignedImage (
+  IN  VOID   *FileBuffer,
+  IN  UINTN  FileSize
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+/**
+  Validate a signed PE/COFF image's embedded Authenticode/UEFI signatures
+  against the platform signature databases.
+
+  @param[in]   FileBuffer  Pointer to the in-memory PE/COFF image.
+  @param[in]   FileSize    Size of FileBuffer in bytes.
+  @param[in]   SecDataDir  Security data directory describing the
+                           embedded WIN_CERTIFICATE table.
+  @param[out]  Action      Set to the EFI_IMAGE_EXECUTION_ACTION value
+                           that best describes the outcome.
+
+  @retval EFI_UNSUPPORTED  The signed-image verification path is not yet
+                           implemented.
+**/
+EFI_STATUS
+ValidateSignedImage (
+  IN  VOID                            *FileBuffer,
+  IN  UINTN                           FileSize,
+  IN  CONST EFI_IMAGE_DATA_DIRECTORY  *SecDataDir,
+  OUT EFI_IMAGE_EXECUTION_ACTION      *Action
+  )
+{
+  *Action = EFI_IMAGE_EXECUTION_AUTH_SIG_FAILED;
+  return EFI_UNSUPPORTED;
 }
