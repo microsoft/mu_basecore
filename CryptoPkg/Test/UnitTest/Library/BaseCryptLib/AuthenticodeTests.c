@@ -961,21 +961,8 @@ TestVerifyAuthenticodeVerify (
   //    The DigestAlgorithmIdentifiers can be used to determine the hash algorithm in PE/COFF hashing
   //    This field has the fixed offset (+32) in final Authenticode ASN.1 data.
   //
-  if (CompareMem (AuthenticodeWithSha1 + 32, &HashOidValue[8], 5) == 0) {
-    //
-    // Verify Authenticode signature.
-    // The PeHash value should be calculated following MSFT's Authenticode Specification.
-    //
-    Status = AuthenticodeVerify (
-               AuthenticodeWithSha1,
-               sizeof (AuthenticodeWithSha1),
-               TestRootCert1,
-               sizeof (TestRootCert1),
-               PeSha1Hash,
-               SHA1_DIGEST_SIZE
-               );
-    UT_ASSERT_TRUE (Status);
-  }
+  // NOTE: SHA-1 Authenticode test removed - SHA-1 is deprecated and no longer supported.
+  //
 
   if (CompareMem (AuthenticodeWithSha256 + 32, &HashOidValue[22], 9) == 0) {
     Status = AuthenticodeVerify (
