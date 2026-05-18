@@ -186,7 +186,7 @@ MemoryPeim (
               ResourceAttributes,
               FdTop,
               ResourceTop - FdTop,
-              NextHob.ResourceDescriptorV2->V1.ResourceAttribute,
+              NextHob.ResourceDescriptorV2->Attributes,
               NULL
               );
           }
