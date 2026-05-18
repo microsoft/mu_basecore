@@ -574,7 +574,7 @@ CoreSetMemoryTypeInformationRange (
   // Return if size of the Memory Type Information bins is greater than Length
   //
   Top  = Start + Length;
-  Size = CalculateTotalMemoryBinSizeNeeded (&Top);
+  Size = CalculateTotalMemoryBinSizeNeeded (&Top, gMemoryTypeInformation);
 
   if (Size > Length) {
     return;
@@ -703,7 +703,7 @@ CoreAddMemoryDescriptor (
   }
 
   BaseAddress  = 0;
-  RequiredSize = CalculateTotalMemoryBinSizeNeeded (NULL);
+  RequiredSize = CalculateTotalMemoryBinSizeNeeded (NULL, gMemoryTypeInformation);
   if (RequiredSize == 0) {
     mMemoryTypeInformationInitialized = TRUE;
     return;
