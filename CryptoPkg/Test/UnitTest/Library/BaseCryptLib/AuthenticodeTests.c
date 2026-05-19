@@ -2,11 +2,13 @@
   Sample Implementation for Microsoft Authenticode Verification.
 
 Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) Microsoft Corporation. All rights reserved.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "TestBaseCryptLib.h"
+#include "PqcAuthenticodeTestData.h"
 
 //
 // Sample PE/COFF Image Hash Value (Digested by SHA-1).
@@ -979,11 +981,175 @@ TestVerifyAuthenticodeVerify (
   return UNIT_TEST_PASSED;
 }
 
+//
+// Post-Quantum Authenticode tests (ML-DSA-44/65/87).  Each ML-DSA
+// SignedData blob in PqcAuthenticodeTestData.h was produced over a
+// synthetic SpcIndirectDataContent SEQUENCE whose embedded DigestInfo
+// holds the deterministic image hash mPqcAuthenticodeImageHash.
+//
+
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyAuthenticodeMlDsa44 (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+
+  Status = AuthenticodeVerify (
+             mMlDsa44AuthenticodeBlob,
+             sizeof (mMlDsa44AuthenticodeBlob),
+             mMlDsa44AuthenticodeCert,
+             sizeof (mMlDsa44AuthenticodeCert),
+             mPqcAuthenticodeImageHash,
+             sizeof (mPqcAuthenticodeImageHash)
+             );
+  UT_ASSERT_TRUE (Status);
+
+  return UNIT_TEST_PASSED;
+}
+
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyAuthenticodeMlDsa65 (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+
+  Status = AuthenticodeVerify (
+             mMlDsa65AuthenticodeBlob,
+             sizeof (mMlDsa65AuthenticodeBlob),
+             mMlDsa65AuthenticodeCert,
+             sizeof (mMlDsa65AuthenticodeCert),
+             mPqcAuthenticodeImageHash,
+             sizeof (mPqcAuthenticodeImageHash)
+             );
+  UT_ASSERT_TRUE (Status);
+
+  return UNIT_TEST_PASSED;
+}
+
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyAuthenticodeMlDsa87 (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+
+  Status = AuthenticodeVerify (
+             mMlDsa87AuthenticodeBlob,
+             sizeof (mMlDsa87AuthenticodeBlob),
+             mMlDsa87AuthenticodeCert,
+             sizeof (mMlDsa87AuthenticodeCert),
+             mPqcAuthenticodeImageHash,
+             sizeof (mPqcAuthenticodeImageHash)
+             );
+  UT_ASSERT_TRUE (Status);
+
+  return UNIT_TEST_PASSED;
+}
+
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyAuthenticodeMlDsa65WrongImageHash (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+  UINT8    WrongHash[SHA256_DIGEST_SIZE];
+
+  //
+  // Supply an image hash that differs from the value embedded in the
+  // SpcIndirectDataContent DigestInfo.  AuthenticodeVerify() must reject
+  // the mismatch before invoking PKCS#7 signature verification.
+  //
+  SetMem (WrongHash, sizeof (WrongHash), 0xFF);
+  Status = AuthenticodeVerify (
+             mMlDsa65AuthenticodeBlob,
+             sizeof (mMlDsa65AuthenticodeBlob),
+             mMlDsa65AuthenticodeCert,
+             sizeof (mMlDsa65AuthenticodeCert),
+             WrongHash,
+             sizeof (WrongHash)
+             );
+  UT_ASSERT_FALSE (Status);
+
+  return UNIT_TEST_PASSED;
+}
+
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyAuthenticodeMlDsa65WrongTrustedCert (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+
+  //
+  // Verify an ML-DSA-65 signed blob against the ML-DSA-44 certificate as
+  // the trust anchor.  Pkcs7Verify() must reject the signature because the
+  // signing certificate does not chain to the supplied trust root.
+  //
+  Status = AuthenticodeVerify (
+             mMlDsa65AuthenticodeBlob,
+             sizeof (mMlDsa65AuthenticodeBlob),
+             mMlDsa44AuthenticodeCert,
+             sizeof (mMlDsa44AuthenticodeCert),
+             mPqcAuthenticodeImageHash,
+             sizeof (mPqcAuthenticodeImageHash)
+             );
+  UT_ASSERT_FALSE (Status);
+
+  return UNIT_TEST_PASSED;
+}
+
+UNIT_TEST_STATUS
+EFIAPI
+TestVerifyAuthenticodeMlDsa65TamperedSignature (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+  UINT8    *Tampered;
+  UINTN    Size;
+
+  //
+  // Copy the Authenticode blob and corrupt the final byte of the ML-DSA
+  // signature OCTET STRING.  Pkcs7Verify() must reject the mutated
+  // signature.
+  //
+  Size     = sizeof (mMlDsa65AuthenticodeBlob);
+  Tampered = AllocateCopyPool (Size, mMlDsa65AuthenticodeBlob);
+  UT_ASSERT_NOT_NULL (Tampered);
+
+  Tampered[Size - 1] ^= 0xFF;
+  Status              = AuthenticodeVerify (
+                          Tampered,
+                          Size,
+                          mMlDsa65AuthenticodeCert,
+                          sizeof (mMlDsa65AuthenticodeCert),
+                          mPqcAuthenticodeImageHash,
+                          sizeof (mPqcAuthenticodeImageHash)
+                          );
+  FreePool (Tampered);
+  UT_ASSERT_FALSE (Status);
+
+  return UNIT_TEST_PASSED;
+}
+
 TEST_DESC  mAuthenticodeTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function-----------------Pre---Post--Context
   //
-  { "TestVerifyAuthenticodeVerify()", "CryptoPkg.BaseCryptLib.Authenticode", TestVerifyAuthenticodeVerify, NULL, NULL, NULL },
+  { "TestVerifyAuthenticodeVerify()",                    "CryptoPkg.BaseCryptLib.Authenticode", TestVerifyAuthenticodeVerify,                    NULL, NULL, NULL },
+  { "TestVerifyAuthenticodeMlDsa44()",                   "CryptoPkg.BaseCryptLib.Authenticode", TestVerifyAuthenticodeMlDsa44,                   NULL, NULL, NULL },
+  { "TestVerifyAuthenticodeMlDsa65()",                   "CryptoPkg.BaseCryptLib.Authenticode", TestVerifyAuthenticodeMlDsa65,                   NULL, NULL, NULL },
+  { "TestVerifyAuthenticodeMlDsa87()",                   "CryptoPkg.BaseCryptLib.Authenticode", TestVerifyAuthenticodeMlDsa87,                   NULL, NULL, NULL },
+  { "TestVerifyAuthenticodeMlDsa65WrongImageHash()",     "CryptoPkg.BaseCryptLib.Authenticode", TestVerifyAuthenticodeMlDsa65WrongImageHash,     NULL, NULL, NULL },
+  { "TestVerifyAuthenticodeMlDsa65WrongTrustedCert()",   "CryptoPkg.BaseCryptLib.Authenticode", TestVerifyAuthenticodeMlDsa65WrongTrustedCert,   NULL, NULL, NULL },
+  { "TestVerifyAuthenticodeMlDsa65TamperedSignature()",  "CryptoPkg.BaseCryptLib.Authenticode", TestVerifyAuthenticodeMlDsa65TamperedSignature,  NULL, NULL, NULL },
 };
 
 UINTN  mAuthenticodeTestNum = ARRAY_SIZE (mAuthenticodeTest);
