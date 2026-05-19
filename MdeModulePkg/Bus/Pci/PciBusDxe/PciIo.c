@@ -1026,7 +1026,7 @@ PciIoMap (
   //     }
   // MU_CHANGE [END]
 
-  if (!EFI_ERROR (Status)) {
+  if (!EFI_ERROR (Status) && IoMmuIsPresent ()) {
     switch (Operation) {
       case EfiPciIoOperationBusMasterRead:
         IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
@@ -1100,15 +1100,17 @@ PciIoUnmap (
   // MU_CHANGE [END]
 
   // MU_CHANGE [BEGIN] - Use IoMmuLib
-  Status = IoMmuSetAttribute (
-             PciIoDevice->Handle,
-             Mapping,
-             0
-             );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
-    ASSERT (FALSE);
-    return Status;
+  if (IoMmuIsPresent ()) {
+    Status = IoMmuSetAttribute (
+               PciIoDevice->Handle,
+               Mapping,
+               0
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+      ASSERT (FALSE);
+      return Status;
+    }
   }
 
   // MU_CHANGE [END]

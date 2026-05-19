@@ -822,63 +822,67 @@ CoherentPciIoMap (
   // MU_CHANGE [BEGIN]
   *Mapping = MapInfo;
 
-  switch (Operation) {
-    case EfiPciIoOperationBusMasterRead:
-      IoMmuOperation = EdkiiIoMmuOperationBusMasterRead;
-      IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
-      break;
+  if (IoMmuIsPresent ()) {
+    switch (Operation) {
+      case EfiPciIoOperationBusMasterRead:
+        IoMmuOperation = EdkiiIoMmuOperationBusMasterRead;
+        IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
+        break;
 
-    case EfiPciIoOperationBusMasterWrite:
-      IoMmuOperation = EdkiiIoMmuOperationBusMasterWrite;
-      IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
-      break;
+      case EfiPciIoOperationBusMasterWrite:
+        IoMmuOperation = EdkiiIoMmuOperationBusMasterWrite;
+        IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
+        break;
 
-    case EfiPciIoOperationBusMasterCommonBuffer:
-      IoMmuOperation = EdkiiIoMmuOperationBusMasterCommonBuffer;
-      IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
-      break;
+      case EfiPciIoOperationBusMasterCommonBuffer:
+        IoMmuOperation = EdkiiIoMmuOperationBusMasterCommonBuffer;
+        IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
+        break;
 
-    default:
-      DEBUG ((DEBUG_ERROR, "%a - Invalid operation %d\n", __func__, Operation));
+      default:
+        DEBUG ((DEBUG_ERROR, "%a - Invalid operation %d\n", __func__, Operation));
+        ASSERT (FALSE);
+        return EFI_INVALID_PARAMETER;
+    }
+
+    if ((Dev->Attributes & EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE) != 0) {
+      IoMmuOperation += EdkiiIoMmuOperationBusMasterRead64;
+    }
+
+    Status = IoMmuMap (
+               IoMmuOperation,
+               IoMmuHostAddress,
+               NumberOfBytes,
+               DeviceAddress,
+               &MapInfo->IoMmuContext
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuMap failed.\n", __func__));
       ASSERT (FALSE);
-      return EFI_INVALID_PARAMETER;
-  }
+      goto FreeMapInfo;
+    }
 
-  if ((Dev->Attributes & EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE) != 0) {
-    IoMmuOperation += EdkiiIoMmuOperationBusMasterRead64;
-  }
-
-  Status = IoMmuMap (
-             IoMmuOperation,
-             IoMmuHostAddress,
-             NumberOfBytes,
-             DeviceAddress,
-             &MapInfo->IoMmuContext
-             );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuMap failed.\n", __func__));
-    ASSERT (FALSE);
-    goto FreeMapInfo;
-  }
-
-  Status = IoMmuSetAttribute (
-             NULL,
-             MapInfo->IoMmuContext,
-             IoMmuAttribute
-             );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
-    ASSERT (FALSE);
-    goto Unmap;
+    Status = IoMmuSetAttribute (
+               NULL,
+               MapInfo->IoMmuContext,
+               IoMmuAttribute
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+      ASSERT (FALSE);
+      goto Unmap;
+    }
   }
 
   return EFI_SUCCESS;
 
 Unmap:
-  Status = IoMmuUnmap (MapInfo->IoMmuContext);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
-    ASSERT (FALSE);
+  if (IoMmuIsPresent ()) {
+    Status = IoMmuUnmap (MapInfo->IoMmuContext);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+      ASSERT (FALSE);
+    }
   }
 
 FreeMapInfo:
@@ -916,18 +920,20 @@ CoherentPciIoUnmap (
 
   MapInfo = Mapping;
 
-  Status = IoMmuSetAttribute (NULL, MapInfo->IoMmuContext, 0);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
-    ASSERT (FALSE);
-    return Status;
-  }
+  if (IoMmuIsPresent ()) {
+    Status = IoMmuSetAttribute (NULL, MapInfo->IoMmuContext, 0);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+      ASSERT (FALSE);
+      return Status;
+    }
 
-  Status = IoMmuUnmap (MapInfo->IoMmuContext);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
-    ASSERT (FALSE);
-    return Status;
+    Status = IoMmuUnmap (MapInfo->IoMmuContext);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+      ASSERT (FALSE);
+      return Status;
+    }
   }
 
   // Only copy the data back and free for the bounce buffer case.
@@ -1516,63 +1522,67 @@ NonCoherentPciIoMap (
   *Mapping = MapInfo;
 
   // MU_CHANGE [BEGIN]
-  switch (Operation) {
-    case EfiPciIoOperationBusMasterRead:
-      IoMmuOperation = EdkiiIoMmuOperationBusMasterRead;
-      IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
-      break;
+  if (IoMmuIsPresent ()) {
+    switch (Operation) {
+      case EfiPciIoOperationBusMasterRead:
+        IoMmuOperation = EdkiiIoMmuOperationBusMasterRead;
+        IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
+        break;
 
-    case EfiPciIoOperationBusMasterWrite:
-      IoMmuOperation = EdkiiIoMmuOperationBusMasterWrite;
-      IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
-      break;
+      case EfiPciIoOperationBusMasterWrite:
+        IoMmuOperation = EdkiiIoMmuOperationBusMasterWrite;
+        IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
+        break;
 
-    case EfiPciIoOperationBusMasterCommonBuffer:
-      IoMmuOperation = EdkiiIoMmuOperationBusMasterCommonBuffer;
-      IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
-      break;
+      case EfiPciIoOperationBusMasterCommonBuffer:
+        IoMmuOperation = EdkiiIoMmuOperationBusMasterCommonBuffer;
+        IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
+        break;
 
-    default:
-      DEBUG ((DEBUG_ERROR, "%a - Invalid operation %d\n", __func__, Operation));
+      default:
+        DEBUG ((DEBUG_ERROR, "%a - Invalid operation %d\n", __func__, Operation));
+        ASSERT (FALSE);
+        return EFI_INVALID_PARAMETER;
+    }
+
+    if ((Dev->Attributes & EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE) != 0) {
+      IoMmuOperation += EdkiiIoMmuOperationBusMasterRead64;
+    }
+
+    Status = IoMmuMap (
+               IoMmuOperation,
+               IoMmuHostAddress,
+               NumberOfBytes,
+               DeviceAddress,
+               &MapInfo->IoMmuContext
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuMap failed.\n", __func__));
       ASSERT (FALSE);
-      return EFI_INVALID_PARAMETER;
-  }
+      goto FreeMapInfo;
+    }
 
-  if ((Dev->Attributes & EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE) != 0) {
-    IoMmuOperation += EdkiiIoMmuOperationBusMasterRead64;
-  }
-
-  Status = IoMmuMap (
-             IoMmuOperation,
-             IoMmuHostAddress,
-             NumberOfBytes,
-             DeviceAddress,
-             &MapInfo->IoMmuContext
-             );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuMap failed.\n", __func__));
-    ASSERT (FALSE);
-    goto FreeMapInfo;
-  }
-
-  Status = IoMmuSetAttribute (
-             NULL,
-             MapInfo->IoMmuContext,
-             IoMmuAttribute
-             );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
-    ASSERT (FALSE);
-    goto Unmap;
+    Status = IoMmuSetAttribute (
+               NULL,
+               MapInfo->IoMmuContext,
+               IoMmuAttribute
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+      ASSERT (FALSE);
+      goto Unmap;
+    }
   }
 
   return EFI_SUCCESS;
 
 Unmap:
-  Status = IoMmuUnmap (MapInfo->IoMmuContext);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
-    ASSERT (FALSE);
+  if (IoMmuIsPresent ()) {
+    Status = IoMmuUnmap (MapInfo->IoMmuContext);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+      ASSERT (FALSE);
+    }
   }
 
   // MU_CHANGE [END]
@@ -1610,18 +1620,20 @@ NonCoherentPciIoUnmap (
   MapInfo = Mapping;
 
   // MU_CHANGE [BEGIN]
-  Status = IoMmuSetAttribute (NULL, MapInfo->IoMmuContext, 0);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
-    ASSERT (FALSE);
-    return Status;
-  }
+  if (IoMmuIsPresent ()) {
+    Status = IoMmuSetAttribute (NULL, MapInfo->IoMmuContext, 0);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+      ASSERT (FALSE);
+      return Status;
+    }
 
-  Status = IoMmuUnmap (MapInfo->IoMmuContext);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
-    ASSERT (FALSE);
-    return Status;
+    Status = IoMmuUnmap (MapInfo->IoMmuContext);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+      ASSERT (FALSE);
+      return Status;
+    }
   }
 
   // MU_CHANGE [END]
