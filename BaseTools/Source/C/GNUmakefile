@@ -21,7 +21,6 @@ export HOST_ARCH
 all: makerootdir subdirs
 	@echo Finished building BaseTools C Tools with HOST_ARCH=$(HOST_ARCH)
 
-# MU_CHANGE [BEGIN] - Add the GenStm application
 LIBRARIES = Common
 VFRAUTOGEN = VfrCompile/VfrLexer.h
 APPLICATIONS = \
@@ -36,9 +35,7 @@ APPLICATIONS = \
   LzmaCompress \
   TianoCompress \
   VolInfo \
-  DevicePath \
-  GenStm
-# MU_CHANGE [END] - Add the GenStm application
+  DevicePath
 
 SUBDIRS := $(LIBRARIES) $(APPLICATIONS)
 

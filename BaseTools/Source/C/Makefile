@@ -10,7 +10,6 @@ HOST_ARCH = IA32
 
 !INCLUDE Makefiles\ms.common
 
-# MU_CHANGE [BEGIN] - Add the GenStm application
 LIBRARIES = Common
 APPLICATIONS = \
   VfrCompile \
@@ -25,12 +24,6 @@ APPLICATIONS = \
   TianoCompress \
   VolInfo \
   DevicePath
-
-!IF "$(HOST_ARCH)" == "IA32" || "$(HOST_ARCH)" == "X64"
-APPLICATIONS = $(APPLICATIONS) \
-	GenStm
-!ENDIF
-# MU_CHANGE [END] - Add the GenStm application
 
 all: libs apps install
 
