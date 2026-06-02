@@ -29,6 +29,7 @@
 
 [Includes.Common.Private]
   Library/BrotliCustomDecompressLib/brotli/c/include
+  Core/PrivateInclude                                  # MU_CHANGE: PEI Bins
 
 [LibraryClasses]
   # MU_CHANGE [BEGIN] - Isolate the VariablePolicy locking event into its own code.
@@ -1133,6 +1134,20 @@
   #    FALSE - Do not publish the InternalEventServices protocol
   # @Prompt Install Internal Event Services Protocol
   gEfiMdeModulePkgTokenSpaceGuid.PcdInternalEventServicesEnabled|FALSE|BOOLEAN|0x30003003
+
+  # MU_CHANGE BEGIN: PEI Bins
+  ## Indicates if the PEI memory bins feature is allowed to be enabled.
+  #  TRUE  - The PEI memory bins feature is allowed to be enabled. The platform must also produce the
+  #          gEfiMemoryTypeInformationGuid HOB prior to permanent memory installation in order to enroll in the
+  #          feature.
+  #  FALSE - The PEI memory bins feature is not allowed to be enabled. If the gEfiMemoryTypeInformationGuid HOB
+  #          is produced by the platform in PEI, DXE will set up the memory bins. If not, no memory bins will be
+  #          used.
+  #
+  # This PCD defaults to FALSE to follow the same behavior prior to the PEI memory bins feature being introduced.
+  # See MdeModulePkg/Core/MemoryBins.md for more details.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBinsEnable|FALSE|BOOLEAN|0x00010080
+  # MU_CHANGE END: PEI Bins
 
 [PcdsFeatureFlag.IA32, PcdsFeatureFlag.ARM, PcdsFeatureFlag.AARCH64]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|FALSE|BOOLEAN|0x0001003a

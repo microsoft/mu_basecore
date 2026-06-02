@@ -10,19 +10,21 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "Imem.h"
 #include "HeapGuard.h"
 #include <Pi/PiDxeCis.h>
-
-//
-// Entry for tracking the memory regions for each memory type to coalesce similar memory types
-//
-typedef struct {
-  EFI_PHYSICAL_ADDRESS    BaseAddress;
-  EFI_PHYSICAL_ADDRESS    MaximumAddress;
-  UINT64                  CurrentNumberOfPages;
-  UINT64                  NumberOfPages;
-  UINTN                   InformationIndex;
-  BOOLEAN                 Special;
-  BOOLEAN                 Runtime;
-} EFI_MEMORY_TYPE_STATISTICS;
+// MU_CHANGE BEGIN: PEI Bins - Replaced EFI_MEMORY_TYPE_STATISTICS struct with shared header
+// //
+// // Entry for tracking the memory regions for each memory type to coalesce similar memory types
+// //
+// typedef struct {
+//   EFI_PHYSICAL_ADDRESS    BaseAddress;
+//   EFI_PHYSICAL_ADDRESS    MaximumAddress;
+//   UINT64                  CurrentNumberOfPages;
+//   UINT64                  NumberOfPages;
+//   UINTN                   InformationIndex;
+//   BOOLEAN                 Special;
+//   BOOLEAN                 Runtime;
+// } EFI_MEMORY_TYPE_STATISTICS;
+#include <MemoryBin.h>
+// MU_CHANGE END: PEI Bins
 
 //
 // MemoryMap - The current memory map
@@ -46,25 +48,27 @@ UINTN       mFreeMapStack = 0;
 LIST_ENTRY  mFreeMemoryMapEntryList           = INITIALIZE_LIST_HEAD_VARIABLE (mFreeMemoryMapEntryList);
 BOOLEAN     mMemoryTypeInformationInitialized = FALSE;
 
+// MU_CHANGE BEGIN: PEI Bins - Added DefaultBin field to struct initializers
 EFI_MEMORY_TYPE_STATISTICS  mMemoryTypeStatistics[EfiMaxMemoryType + 1] = {
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE },  // EfiReservedMemoryType
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiLoaderCode
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiLoaderData
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiBootServicesCode
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiBootServicesData
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  TRUE  },  // EfiRuntimeServicesCode
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  TRUE  },  // EfiRuntimeServicesData
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiConventionalMemory
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiUnusableMemory
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE },  // EfiACPIReclaimMemory
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE },  // EfiACPIMemoryNVS
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiMemoryMappedIO
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiMemoryMappedIOPortSpace
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  TRUE  },  // EfiPalCode
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiPersistentMemory
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE },  // EfiUnacceptedMemoryType
-  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE }   // EfiMaxMemoryType
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE, FALSE },  // EfiReservedMemoryType
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE, FALSE },  // EfiLoaderCode
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE, FALSE },  // EfiLoaderData
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE, FALSE },  // EfiBootServicesCode
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE, FALSE },  // EfiBootServicesData
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  TRUE,  FALSE },  // EfiRuntimeServicesCode
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  TRUE,  FALSE },  // EfiRuntimeServicesData
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE, FALSE },  // EfiConventionalMemory
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE, FALSE },  // EfiUnusableMemory
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE, FALSE },  // EfiACPIReclaimMemory
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE, FALSE },  // EfiACPIMemoryNVS
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE, FALSE },  // EfiMemoryMappedIO
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE, FALSE },  // EfiMemoryMappedIOPortSpace
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  TRUE,  FALSE },  // EfiPalCode
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE, FALSE },  // EfiPersistentMemory
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE, FALSE },  // EfiUnacceptedMemoryType
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE, FALSE }   // EfiMaxMemoryType
 };
+// MU_CHANGE END: PEI Bins
 
 EFI_PHYSICAL_ADDRESS  mDefaultMaximumAddress = MAX_ALLOC_ADDRESS;
 EFI_PHYSICAL_ADDRESS  mDefaultBaseAddress    = MAX_ALLOC_ADDRESS;
@@ -94,20 +98,6 @@ EFI_MEMORY_TYPE_INFORMATION  gMemoryTypeInformation[EfiMaxMemoryType + 1] = {
 //  address assigned by DXE core.
 //
 GLOBAL_REMOVE_IF_UNREFERENCED   BOOLEAN  gLoadFixedAddressCodeMemoryReady = FALSE;
-
-// MU_CHANGE START: Add function prototype to be used in CoreAddRange
-
-/**
-  Internal function.  Moves any memory descriptors that are on the
-  temporary descriptor stack to heap.
-
-**/
-VOID
-CoreFreeMemoryMapStack (
-  VOID
-  );
-
-// MU_CHANGE END
 
 /**
   Enter critical section by gaining lock on gMemoryLock.
@@ -155,102 +145,6 @@ RemoveMemoryMapEntry (
   }
 }
 
-// MU_CHANGE START: Add function to get the bucket memory type for a given memory region
-
-/**
-  Helper function to evaluate if memory regions intersect.
-
-  @param  Start1     The address of the first byte in the first memory region.
-  @param  End1       The address of the last byte in the first memory region.
-  @param  Start2     The address of the first byte in the second memory region.
-  @param  End2       The address of the last byte in the second memory region.
-
-  @return TRUE if the memory regions intersect, FALSE otherwise.
-**/
-STATIC
-BOOLEAN
-MemoryRegionsIntersect (
-  IN EFI_PHYSICAL_ADDRESS  Start1,
-  IN EFI_PHYSICAL_ADDRESS  End1,
-  IN EFI_PHYSICAL_ADDRESS  Start2,
-  IN EFI_PHYSICAL_ADDRESS  End2
-  )
-{
-  return (((Start1 <= End2) && (Start2 <= Start1)) ||
-          ((Start2 <= End1) && (Start1 <= Start2)));
-}
-
-/**
-  Get the memory type for a given bucket.
-
-  @param  PhysicalStart  The starting address of the memory region.
-  @param  PhysicalEnd    The ending address of the memory region.
-
-  @return The memory type for the bucket that contains the given physical address range.
-          If the address range does not match any special bucket, it returns EfiMaxMemoryType.
-**/
-EFI_MEMORY_TYPE
-GetBucketMemoryType (
-  IN EFI_PHYSICAL_ADDRESS  PhysicalStart,
-  IN EFI_PHYSICAL_ADDRESS  PhysicalEnd
-  )
-{
-  EFI_MEMORY_TYPE  BucketType;
-
-  // Find the bucket type for the incoming memory region.
-  for (BucketType = (EFI_MEMORY_TYPE)0; BucketType < EfiMaxMemoryType; BucketType++) {
-    //
-    // If the number of pages for this memory type is not zero, the input region
-    // better be within the same bucket. We only care about the special memory type
-    // here because we need these buckets to remain consistent so that the OS resume
-    // logic can work properly. The same applies to the memory allocation logic.
-    //
-    if (mMemoryTypeStatistics[BucketType].Special && (mMemoryTypeStatistics[BucketType].NumberOfPages != 0)) {
-      if ((PhysicalStart >= mMemoryTypeStatistics[BucketType].BaseAddress) &&
-          (PhysicalEnd <= mMemoryTypeStatistics[BucketType].MaximumAddress))
-      {
-        break;
-      } else if (MemoryRegionsIntersect (
-                   PhysicalStart,
-                   PhysicalEnd,
-                   mMemoryTypeStatistics[BucketType].BaseAddress,
-                   mMemoryTypeStatistics[BucketType].MaximumAddress
-                   ))
-      {
-        // The start and end overlap the bucket, but not fully inclusive. We should not allow this.
-        DEBUG ((
-          DEBUG_ERROR,
-          "%a: %lx-%lx intersects bucket type %d (%lx-%lx)\n",
-          __func__,
-          PhysicalStart,
-          PhysicalEnd,
-          BucketType,
-          mMemoryTypeStatistics[BucketType].BaseAddress,
-          mMemoryTypeStatistics[BucketType].MaximumAddress
-          ));
-
-        ASSERT (FALSE);
-      }
-    }
-  }
-
-  // If we can find the bucket type, use it to guide the merging logic below.
-  // Otherwise, we will not care about the bucket type.
-  if (BucketType >= EfiMaxMemoryType) {
-    DEBUG ((
-      DEBUG_PAGE,
-      "%a: defaulting to max for %lx -%lx\n",
-      __func__,
-      PhysicalStart,
-      PhysicalEnd
-      ));
-  }
-
-  return BucketType;
-}
-
-// MU_CHANGE ENDS
-
 /**
   Internal function.  Adds a ranges to the memory map.
   The range must not already exist in the map.
@@ -274,78 +168,10 @@ CoreAddRange (
   LIST_ENTRY  *Link;
   MEMORY_MAP  *Entry;
 
-  // MU_CHANGE STARTS: Add check to merge memory regions of the bucket type
-  EFI_MEMORY_TYPE  BucketType;
-  EFI_MEMORY_TYPE  MergeType;
-  BOOLEAN          Break;
-
-  // MU_CHANGE ENDs
-
   ASSERT ((Start & EFI_PAGE_MASK) == 0);
   ASSERT (End > Start);
 
   ASSERT_LOCKED (&gMemoryLock);
-
-  // MU_CHANGE STARTS: Add check to merge memory regions of the bucket type
-  // Find the bucket type for the incoming memory region.
-  Break = FALSE;
-  for (BucketType = (EFI_MEMORY_TYPE)0; BucketType < EfiMaxMemoryType; BucketType++) {
-    //
-    // If the number of pages for this memory type is not zero, the input region better
-    // be within the same bucket. Otherwise, we will handle the ones we care about,
-    // the special memory types, in chunks.
-    //
-    if (mMemoryTypeStatistics[BucketType].Special && (mMemoryTypeStatistics[BucketType].NumberOfPages != 0)) {
-      if ((Start <= mMemoryTypeStatistics[BucketType].MaximumAddress) &&
-          (End > mMemoryTypeStatistics[BucketType].MaximumAddress))
-      {
-        //
-        // The start overlaps the bucket, so we let self-recursion handle the tail, and we
-        // handle the head.
-        //
-        // |----------|---Special Memory Bucket---|----------|
-        // |--------------^---------------------------^------|
-        // |------------Start------------------------End-----|
-        //
-        CoreAddRange (
-          Type,
-          mMemoryTypeStatistics[BucketType].MaximumAddress + 1,
-          End,
-          Attribute
-          );
-        CoreFreeMemoryMapStack ();
-        End   = mMemoryTypeStatistics[BucketType].MaximumAddress;
-        Break = TRUE;
-      }
-
-      if ((Start < mMemoryTypeStatistics[BucketType].BaseAddress) &&
-          (End >= mMemoryTypeStatistics[BucketType].BaseAddress))
-      {
-        // The end overlaps the bucket, so we let self-recursion handle the head, and we
-        // handle the tail.
-        //
-        // |----------|---Special Memory Bucket---|----------|
-        // |------^-------------------^----------------------|
-        // |----Start----------------End---------------------|
-        //
-        CoreAddRange (
-          Type,
-          Start,
-          mMemoryTypeStatistics[BucketType].BaseAddress - 1,
-          Attribute
-          );
-        CoreFreeMemoryMapStack ();
-        Start = mMemoryTypeStatistics[BucketType].BaseAddress;
-        Break = TRUE;
-      }
-
-      if (Break) {
-        break;
-      }
-    }
-  }
-
-  // MU_CHANGE ENDS
 
   DEBUG ((DEBUG_PAGE, "AddRange: %lx-%lx to %d\n", Start, End, Type));
 
@@ -391,8 +217,7 @@ CoreAddRange (
   // and the same Attribute
   //
 
-  MergeType = GetBucketMemoryType (Start, End); // MU_CHANGE: Add check to merge memory regions of the bucket type
-  Link      = gMemoryMap.ForwardLink;
+  Link = gMemoryMap.ForwardLink;
   while (Link != &gMemoryMap) {
     Entry = CR (Link, MEMORY_MAP, Link, MEMORY_MAP_SIGNATURE);
     Link  = Link->ForwardLink;
@@ -404,14 +229,6 @@ CoreAddRange (
     if (Entry->Attribute != Attribute) {
       continue;
     }
-
-    // MU_CHANGE STARTS: Add check to merge memory regions of the bucket type
-    // We need to make sure we can only merge with the same type as the merge type
-    if (MergeType != GetBucketMemoryType (Entry->Start, Entry->End)) {
-      continue;
-    }
-
-    // MU_CHANGE ENDS
 
     if (Entry->End + 1 == Start) {
       Start = Entry->Start;
@@ -727,107 +544,109 @@ CoreLoadingFixedAddressHook (
   return;
 }
 
-/**
-  Sets the preferred memory range to use for the Memory Type Information bins.
-  This service must be called before fist call to CoreAddMemoryDescriptor().
-
-  If the location of the Memory Type Information bins has already been
-  established or the size of the range provides is smaller than all the
-  Memory Type Information bins, then the range provides is not used.
-
-  @param  Start   The start address of the Memory Type Information range.
-  @param  Length  The size, in bytes, of the Memory Type Information range.
-**/
-VOID
-CoreSetMemoryTypeInformationRange (
-  IN EFI_PHYSICAL_ADDRESS  Start,
-  IN UINT64                Length
-  )
-{
-  EFI_PHYSICAL_ADDRESS  Top;
-  EFI_MEMORY_TYPE       Type;
-  UINTN                 Index;
-  UINTN                 Size;
-
-  //
-  // Return if Memory Type Information bin locations have already been set
-  //
-  if (mMemoryTypeInformationInitialized) {
-    DEBUG ((DEBUG_ERROR, "%a: Ignored. Bins already set.\n", __func__));
-    return;
-  }
-
-  //
-  // Return if size of the Memory Type Information bins is greater than Length
-  //
-  Size = 0;
-  for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
-    //
-    // Make sure the memory type in the gMemoryTypeInformation[] array is valid
-    //
-    Type = (EFI_MEMORY_TYPE)(gMemoryTypeInformation[Index].Type);
-    if ((UINT32)Type > EfiMaxMemoryType) {
-      continue;
-    }
-
-    Size += EFI_PAGES_TO_SIZE (gMemoryTypeInformation[Index].NumberOfPages);
-  }
-
-  if (Size > Length) {
-    return;
-  }
-
-  //
-  // Loop through each memory type in the order specified by the
-  // gMemoryTypeInformation[] array
-  //
-  Top = Start + Length;
-  for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
-    //
-    // Make sure the memory type in the gMemoryTypeInformation[] array is valid
-    //
-    Type = (EFI_MEMORY_TYPE)(gMemoryTypeInformation[Index].Type);
-    if ((UINT32)Type > EfiMaxMemoryType) {
-      continue;
-    }
-
-    if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
-      mMemoryTypeStatistics[Type].MaximumAddress = Top - 1;
-      Top                                       -= EFI_PAGES_TO_SIZE (gMemoryTypeInformation[Index].NumberOfPages);
-      mMemoryTypeStatistics[Type].BaseAddress    = Top;
-
-      //
-      // If the current base address is the lowest address so far, then update
-      // the default maximum address
-      //
-      if (mMemoryTypeStatistics[Type].BaseAddress < mDefaultMaximumAddress) {
-        mDefaultMaximumAddress = mMemoryTypeStatistics[Type].BaseAddress - 1;
-      }
-
-      mMemoryTypeStatistics[Type].NumberOfPages   = gMemoryTypeInformation[Index].NumberOfPages;
-      gMemoryTypeInformation[Index].NumberOfPages = 0;
-    }
-  }
-
-  //
-  // If the number of pages reserved for a memory type is 0, then all
-  // allocations for that type should be in the default range.
-  //
-  for (Type = (EFI_MEMORY_TYPE)0; Type < EfiMaxMemoryType; Type++) {
-    for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
-      if (Type == (EFI_MEMORY_TYPE)gMemoryTypeInformation[Index].Type) {
-        mMemoryTypeStatistics[Type].InformationIndex = Index;
-      }
-    }
-
-    mMemoryTypeStatistics[Type].CurrentNumberOfPages = 0;
-    if (mMemoryTypeStatistics[Type].MaximumAddress == MAX_ALLOC_ADDRESS) {
-      mMemoryTypeStatistics[Type].MaximumAddress = mDefaultMaximumAddress;
-    }
-  }
-
-  mMemoryTypeInformationInitialized = TRUE;
-}
+// MU_CHANGE BEGIN: PEI Bins - Moved CoreSetMemoryTypeInformationRange to MemoryBin.c
+// /**
+//   Sets the preferred memory range to use for the Memory Type Information bins.
+//   This service must be called before fist call to CoreAddMemoryDescriptor().
+//
+//   If the location of the Memory Type Information bins has already been
+//   established or the size of the range provides is smaller than all the
+//   Memory Type Information bins, then the range provides is not used.
+//
+//   @param  Start   The start address of the Memory Type Information range.
+//   @param  Length  The size, in bytes, of the Memory Type Information range.
+// **/
+// VOID
+// CoreSetMemoryTypeInformationRange (
+//   IN EFI_PHYSICAL_ADDRESS  Start,
+//   IN UINT64                Length
+//   )
+// {
+//   EFI_PHYSICAL_ADDRESS  Top;
+//   EFI_MEMORY_TYPE       Type;
+//   UINTN                 Index;
+//   UINTN                 Size;
+//
+//   //
+//   // Return if Memory Type Information bin locations have already been set
+//   //
+//   if (mMemoryTypeInformationInitialized) {
+//     DEBUG ((DEBUG_ERROR, "%a: Ignored. Bins already set.\n", __func__));
+//     return;
+//   }
+//
+//   //
+//   // Return if size of the Memory Type Information bins is greater than Length
+//   //
+//   Size = 0;
+//   for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
+//     //
+//     // Make sure the memory type in the gMemoryTypeInformation[] array is valid
+//     //
+//     Type = (EFI_MEMORY_TYPE)(gMemoryTypeInformation[Index].Type);
+//     if ((UINT32)Type > EfiMaxMemoryType) {
+//       continue;
+//     }
+//
+//     Size += EFI_PAGES_TO_SIZE (gMemoryTypeInformation[Index].NumberOfPages);
+//   }
+//
+//   if (Size > Length) {
+//     return;
+//   }
+//
+//   //
+//   // Loop through each memory type in the order specified by the
+//   // gMemoryTypeInformation[] array
+//   //
+//   Top = Start + Length;
+//   for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
+//     //
+//     // Make sure the memory type in the gMemoryTypeInformation[] array is valid
+//     //
+//     Type = (EFI_MEMORY_TYPE)(gMemoryTypeInformation[Index].Type);
+//     if ((UINT32)Type > EfiMaxMemoryType) {
+//       continue;
+//     }
+//
+//     if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
+//       mMemoryTypeStatistics[Type].MaximumAddress = Top - 1;
+//       Top                                       -= EFI_PAGES_TO_SIZE (gMemoryTypeInformation[Index].NumberOfPages);
+//       mMemoryTypeStatistics[Type].BaseAddress    = Top;
+//
+//       //
+//       // If the current base address is the lowest address so far, then update
+//       // the default maximum address
+//       //
+//       if (mMemoryTypeStatistics[Type].BaseAddress < mDefaultMaximumAddress) {
+//         mDefaultMaximumAddress = mMemoryTypeStatistics[Type].BaseAddress - 1;
+//       }
+//
+//       mMemoryTypeStatistics[Type].NumberOfPages   = gMemoryTypeInformation[Index].NumberOfPages;
+//       gMemoryTypeInformation[Index].NumberOfPages = 0;
+//     }
+//   }
+//
+//   //
+//   // If the number of pages reserved for a memory type is 0, then all
+//   // allocations for that type should be in the default range.
+//   //
+//   for (Type = (EFI_MEMORY_TYPE)0; Type < EfiMaxMemoryType; Type++) {
+//     for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
+//       if (Type == (EFI_MEMORY_TYPE)gMemoryTypeInformation[Index].Type) {
+//         mMemoryTypeStatistics[Type].InformationIndex = Index;
+//       }
+//     }
+//
+//     mMemoryTypeStatistics[Type].CurrentNumberOfPages = 0;
+//     if (mMemoryTypeStatistics[Type].MaximumAddress == MAX_ALLOC_ADDRESS) {
+//       mMemoryTypeStatistics[Type].MaximumAddress = mDefaultMaximumAddress;
+//     }
+//   }
+//
+//   mMemoryTypeInformationInitialized = TRUE;
+// }
+// MU_CHANGE END: PEI Bins
 
 /**
   Called to initialize the memory map and add descriptors to
@@ -853,9 +672,12 @@ CoreAddMemoryDescriptor (
   )
 {
   EFI_PHYSICAL_ADDRESS  End;
-  EFI_STATUS            Status;
-  UINTN                 Index;
-  UINTN                 FreeIndex;
+
+  // MU_CHANGE BEGIN: PEI Bins
+  // EFI_STATUS            Status;
+  // UINTN                 Index;
+  // UINTN                 FreeIndex;
+  // MU_CHANGE END: PEI Bins
 
   if ((Start & EFI_PAGE_MASK) != 0) {
     return;
@@ -885,128 +707,133 @@ CoreAddMemoryDescriptor (
     CoreLoadingFixedAddressHook ();
   }
 
+  // MU_CHANGE BEGIN: PEI Bins - Replaced inline bin allocation with shared function
+  // //
+  // // Check to see if the statistics for the different memory types have already been established
+  // //
+  // if (mMemoryTypeInformationInitialized) {
+  //   return;
+  // }
   //
-  // Check to see if the statistics for the different memory types have already been established
+  // //
+  // // Loop through each memory type in the order specified by the gMemoryTypeInformation[] array
+  // //
+  // for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
+  //   //
+  //   // Make sure the memory type in the gMemoryTypeInformation[] array is valid
+  //   //
+  //   Type = (EFI_MEMORY_TYPE)(gMemoryTypeInformation[Index].Type);
+  //   if ((UINT32)Type > EfiMaxMemoryType) {
+  //     continue;
+  //   }
   //
-  if (mMemoryTypeInformationInitialized) {
-    return;
-  }
-
+  //   if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
+  //     //
+  //     // Allocate pages for the current memory type from the top of available memory
+  //     //
+  //     Status = CoreAllocatePages (
+  //                AllocateAnyPages,
+  //                Type,
+  //                gMemoryTypeInformation[Index].NumberOfPages,
+  //                &mMemoryTypeStatistics[Type].BaseAddress
+  //                );
+  //     if (EFI_ERROR (Status)) {
+  //       //
+  //       // If an error occurs allocating the pages for the current memory type, then
+  //       // free all the pages allocates for the previous memory types and return.  This
+  //       // operation with be retied when/if more memory is added to the system
+  //       //
+  //       for (FreeIndex = 0; FreeIndex < Index; FreeIndex++) {
+  //         //
+  //         // Make sure the memory type in the gMemoryTypeInformation[] array is valid
+  //         //
+  //         Type = (EFI_MEMORY_TYPE)(gMemoryTypeInformation[FreeIndex].Type);
+  //         if ((UINT32)Type > EfiMaxMemoryType) {
+  //           continue;
+  //         }
   //
-  // Loop through each memory type in the order specified by the gMemoryTypeInformation[] array
+  //         if (gMemoryTypeInformation[FreeIndex].NumberOfPages != 0) {
+  //           CoreFreePages (
+  //             mMemoryTypeStatistics[Type].BaseAddress,
+  //             gMemoryTypeInformation[FreeIndex].NumberOfPages
+  //             );
+  //           mMemoryTypeStatistics[Type].BaseAddress    = 0;
+  //           mMemoryTypeStatistics[Type].MaximumAddress = MAX_ALLOC_ADDRESS;
+  //         }
+  //       }
   //
-  for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
-    //
-    // Make sure the memory type in the gMemoryTypeInformation[] array is valid
-    //
-    Type = (EFI_MEMORY_TYPE)(gMemoryTypeInformation[Index].Type);
-    if ((UINT32)Type > EfiMaxMemoryType) {
-      continue;
-    }
-
-    if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
-      //
-      // Allocate pages for the current memory type from the top of available memory
-      //
-      Status = CoreAllocatePages (
-                 AllocateAnyPages,
-                 Type,
-                 gMemoryTypeInformation[Index].NumberOfPages,
-                 &mMemoryTypeStatistics[Type].BaseAddress
-                 );
-      if (EFI_ERROR (Status)) {
-        //
-        // If an error occurs allocating the pages for the current memory type, then
-        // free all the pages allocates for the previous memory types and return.  This
-        // operation with be retied when/if more memory is added to the system
-        //
-        for (FreeIndex = 0; FreeIndex < Index; FreeIndex++) {
-          //
-          // Make sure the memory type in the gMemoryTypeInformation[] array is valid
-          //
-          Type = (EFI_MEMORY_TYPE)(gMemoryTypeInformation[FreeIndex].Type);
-          if ((UINT32)Type > EfiMaxMemoryType) {
-            continue;
-          }
-
-          if (gMemoryTypeInformation[FreeIndex].NumberOfPages != 0) {
-            CoreFreePages (
-              mMemoryTypeStatistics[Type].BaseAddress,
-              gMemoryTypeInformation[FreeIndex].NumberOfPages
-              );
-            mMemoryTypeStatistics[Type].BaseAddress    = 0;
-            mMemoryTypeStatistics[Type].MaximumAddress = MAX_ALLOC_ADDRESS;
-          }
-        }
-
-        return;
-      }
-
-      //
-      // Compute the address at the top of the current statistics
-      //
-      mMemoryTypeStatistics[Type].MaximumAddress =
-        mMemoryTypeStatistics[Type].BaseAddress +
-        LShiftU64 (gMemoryTypeInformation[Index].NumberOfPages, EFI_PAGE_SHIFT) - 1;
-
-      //
-      // If the current base address is the lowest address so far, then update the default
-      // maximum address
-      //
-      if (mMemoryTypeStatistics[Type].BaseAddress < mDefaultMaximumAddress) {
-        mDefaultMaximumAddress = mMemoryTypeStatistics[Type].BaseAddress - 1;
-      }
-    }
-  }
-
+  //       return;
+  //     }
   //
-  // There was enough system memory for all the the memory types were allocated.  So,
-  // those memory areas can be freed for future allocations, and all future memory
-  // allocations can occur within their respective bins
+  //     //
+  //     // Compute the address at the top of the current statistics
+  //     //
+  //     mMemoryTypeStatistics[Type].MaximumAddress =
+  //       mMemoryTypeStatistics[Type].BaseAddress +
+  //       LShiftU64 (gMemoryTypeInformation[Index].NumberOfPages, EFI_PAGE_SHIFT) - 1;
   //
-  for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
-    //
-    // Make sure the memory type in the gMemoryTypeInformation[] array is valid
-    //
-    Type = (EFI_MEMORY_TYPE)(gMemoryTypeInformation[Index].Type);
-    if ((UINT32)Type > EfiMaxMemoryType) {
-      continue;
-    }
-
-    if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
-      // MU_CHANGE Starts
-      // Activate the statistics so that the free page operation can be performed
-      // with valid bucket information.
-      mMemoryTypeStatistics[Type].NumberOfPages   = gMemoryTypeInformation[Index].NumberOfPages;
-      gMemoryTypeInformation[Index].NumberOfPages = 0;
-      CoreFreePages (
-        mMemoryTypeStatistics[Type].BaseAddress,
-        (UINTN)mMemoryTypeStatistics[Type].NumberOfPages
-        );
-      // mMemoryTypeStatistics[Type].NumberOfPages   = gMemoryTypeInformation[Index].NumberOfPages;
-      // gMemoryTypeInformation[Index].NumberOfPages = 0;
-      // MU_CHANGE Ends
-    }
-  }
-
+  //     //
+  //     // If the current base address is the lowest address so far, then update the default
+  //     // maximum address
+  //     //
+  //     if (mMemoryTypeStatistics[Type].BaseAddress < mDefaultMaximumAddress) {
+  //       mDefaultMaximumAddress = mMemoryTypeStatistics[Type].BaseAddress - 1;
+  //     }
+  //   }
+  // }
   //
-  // If the number of pages reserved for a memory type is 0, then all allocations for that type
-  // should be in the default range.
+  // //
+  // // There was enough system memory for all the the memory types were allocated.  So,
+  // // those memory areas can be freed for future allocations, and all future memory
+  // // allocations can occur within their respective bins
+  // //
+  // for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
+  //   //
+  //   // Make sure the memory type in the gMemoryTypeInformation[] array is valid
+  //   //
+  //   Type = (EFI_MEMORY_TYPE)(gMemoryTypeInformation[Index].Type);
+  //   if ((UINT32)Type > EfiMaxMemoryType) {
+  //     continue;
+  //   }
   //
-  for (Type = (EFI_MEMORY_TYPE)0; Type < EfiMaxMemoryType; Type++) {
-    for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
-      if (Type == (EFI_MEMORY_TYPE)gMemoryTypeInformation[Index].Type) {
-        mMemoryTypeStatistics[Type].InformationIndex = Index;
-      }
-    }
-
-    mMemoryTypeStatistics[Type].CurrentNumberOfPages = 0;
-    if (mMemoryTypeStatistics[Type].MaximumAddress == MAX_ALLOC_ADDRESS) {
-      mMemoryTypeStatistics[Type].MaximumAddress = mDefaultMaximumAddress;
-    }
-  }
-
-  mMemoryTypeInformationInitialized = TRUE;
+  //   if (gMemoryTypeInformation[Index].NumberOfPages != 0) {
+  //     CoreFreePages (
+  //       mMemoryTypeStatistics[Type].BaseAddress,
+  //       gMemoryTypeInformation[Index].NumberOfPages
+  //       );
+  //     mMemoryTypeStatistics[Type].NumberOfPages   = gMemoryTypeInformation[Index].NumberOfPages;
+  //     gMemoryTypeInformation[Index].NumberOfPages = 0;
+  //   }
+  // }
+  //
+  // //
+  // // If the number of pages reserved for a memory type is 0, then all allocations for that type
+  // // should be in the default range.
+  // //
+  // for (Type = (EFI_MEMORY_TYPE)0; Type < EfiMaxMemoryType; Type++) {
+  //   for (Index = 0; gMemoryTypeInformation[Index].Type != EfiMaxMemoryType; Index++) {
+  //     if (Type == (EFI_MEMORY_TYPE)gMemoryTypeInformation[Index].Type) {
+  //       mMemoryTypeStatistics[Type].InformationIndex = Index;
+  //     }
+  //   }
+  //
+  //   mMemoryTypeStatistics[Type].CurrentNumberOfPages = 0;
+  //   if (mMemoryTypeStatistics[Type].MaximumAddress == MAX_ALLOC_ADDRESS) {
+  //     mMemoryTypeStatistics[Type].MaximumAddress = mDefaultMaximumAddress;
+  //   }
+  // }
+  //
+  // mMemoryTypeInformationInitialized = TRUE;
+  // Check if we need to allocate the memory bins. This function will immediately return if we have already done so.
+  // Pass FALSE to indicate we don't need to publish the HOB.
+  AllocateMemoryTypeInformationBins (
+    &mMemoryTypeInformationInitialized,
+    gMemoryTypeInformation,
+    mMemoryTypeStatistics,
+    &mDefaultMaximumAddress,
+    FALSE
+    );
+  // MU_CHANGE END: PEI Bins
 }
 
 /**
@@ -1131,31 +958,44 @@ CoreConvertPagesEx (
         return EFI_NOT_FOUND;
       }
 
+      // MU_CHANGE BEGIN: PEI Bins - Replaced inline memory statistics update with shared function
+      // //
+      // // Update counters for the number of pages allocated to each memory type
+      // //
+      // if ((UINT32)Entry->Type < EfiMaxMemoryType) {
+      //   if (((Start >= mMemoryTypeStatistics[Entry->Type].BaseAddress) && (Start <= mMemoryTypeStatistics[Entry->Type].MaximumAddress)) ||
+      //       ((Start >= mDefaultBaseAddress) && (Start <= mDefaultMaximumAddress)))
+      //   {
+      //     if (NumberOfPages > mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages) {
+      //       mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages = 0;
+      //     } else {
+      //       mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages -= NumberOfPages;
+      //     }
+      //   }
+      // }
       //
-      // Update counters for the number of pages allocated to each memory type
-      //
-      if ((UINT32)Entry->Type < EfiMaxMemoryType) {
-        if (((Start >= mMemoryTypeStatistics[Entry->Type].BaseAddress) && (Start <= mMemoryTypeStatistics[Entry->Type].MaximumAddress)) ||
-            ((Start >= mDefaultBaseAddress) && (Start <= mDefaultMaximumAddress)))
-        {
-          if (NumberOfPages > mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages) {
-            mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages = 0;
-          } else {
-            mMemoryTypeStatistics[Entry->Type].CurrentNumberOfPages -= NumberOfPages;
-          }
-        }
-      }
-
-      if ((UINT32)NewType < EfiMaxMemoryType) {
-        if (((Start >= mMemoryTypeStatistics[NewType].BaseAddress) && (Start <= mMemoryTypeStatistics[NewType].MaximumAddress)) ||
-            ((Start >= mDefaultBaseAddress) && (Start <= mDefaultMaximumAddress)))
-        {
-          mMemoryTypeStatistics[NewType].CurrentNumberOfPages += NumberOfPages;
-          if (mMemoryTypeStatistics[NewType].CurrentNumberOfPages > gMemoryTypeInformation[mMemoryTypeStatistics[NewType].InformationIndex].NumberOfPages) {
-            gMemoryTypeInformation[mMemoryTypeStatistics[NewType].InformationIndex].NumberOfPages = (UINT32)mMemoryTypeStatistics[NewType].CurrentNumberOfPages;
-          }
-        }
-      }
+      // if ((UINT32)NewType < EfiMaxMemoryType) {
+      //   if (((Start >= mMemoryTypeStatistics[NewType].BaseAddress) && (Start <= mMemoryTypeStatistics[NewType].MaximumAddress)) ||
+      //       ((Start >= mDefaultBaseAddress) && (Start <= mDefaultMaximumAddress)))
+      //   {
+      //     mMemoryTypeStatistics[NewType].CurrentNumberOfPages += NumberOfPages;
+      //     if (mMemoryTypeStatistics[NewType].CurrentNumberOfPages > gMemoryTypeInformation[mMemoryTypeStatistics[NewType].InformationIndex].NumberOfPages) {
+      //       gMemoryTypeInformation[mMemoryTypeStatistics[NewType].InformationIndex].NumberOfPages = (UINT32)mMemoryTypeStatistics[NewType].CurrentNumberOfPages;
+      //     }
+      //   }
+      // }
+      UpdateMemoryStatistics (
+        Entry->Type,
+        NewType,
+        Start,
+        (UINTN)NumberOfPages,
+        &mMemoryTypeInformationInitialized,
+        mMemoryTypeStatistics,
+        gMemoryTypeInformation,
+        mDefaultBaseAddress,
+        mDefaultMaximumAddress
+        );
+      // MU_CHANGE END: PEI Bins
     }
 
     //
@@ -2240,30 +2080,6 @@ CoreGetMemoryMap (
             (Entry->End   <= mMemoryTypeStatistics[Type].MaximumAddress))
         {
           MemoryMap->Type = Type;
-          // MU_CHANGE STARTS: Add check to merge memory regions of the bucket type
-        } else if (mMemoryTypeStatistics[Type].Special &&
-                   (mMemoryTypeStatistics[Type].NumberOfPages > 0) &&
-                   MemoryRegionsIntersect (
-                     Entry->Start,
-                     Entry->End,
-                     mMemoryTypeStatistics[Type].BaseAddress,
-                     mMemoryTypeStatistics[Type].MaximumAddress
-                     ))
-        {
-          // There is partial overlap with a special memory type bin.
-          // This is not allowed, so we will not change the type.
-          DEBUG ((
-            DEBUG_ERROR,
-            "%a: Memory Map entry partially overlaps with a special memory type bin. Bucket Type %d, Type %d, Start 0x%lx, End 0x%lx\n",
-            __func__,
-            Type,
-            Entry->Type,
-            Entry->Start,
-            Entry->End
-            ));
-
-          ASSERT (FALSE);
-          // MU_CHANGE ENDS
         }
       }
     }

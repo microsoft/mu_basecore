@@ -263,6 +263,12 @@ extern EFI_GUID                   *gDxeCoreFileName;
 extern EFI_LOADED_IMAGE_PROTOCOL  *gDxeCoreLoadedImage;
 
 extern EFI_MEMORY_TYPE_INFORMATION  gMemoryTypeInformation[EfiMaxMemoryType + 1];
+// MU_CHANGE BEGIN: PEI Bins
+extern BOOLEAN                     mMemoryTypeInformationInitialized;
+extern EFI_MEMORY_TYPE_STATISTICS  mMemoryTypeStatistics[EfiMaxMemoryType + 1];
+extern EFI_PHYSICAL_ADDRESS        mDefaultMaximumAddress;
+extern EFI_PHYSICAL_ADDRESS        mDefaultBaseAddress;
+// MU_CHANGE END: PEI Bins
 
 extern BOOLEAN                    gDispatcherRunning;
 extern EFI_RUNTIME_ARCH_PROTOCOL  gRuntimeTemplate;
@@ -284,11 +290,13 @@ CoreInitializePool (
   VOID
   );
 
-VOID
-CoreSetMemoryTypeInformationRange (
-  IN EFI_PHYSICAL_ADDRESS  Start,
-  IN UINT64                Length
-  );
+// MU_CHANGE BEGIN: PEI Bins
+// VOID
+// CoreSetMemoryTypeInformationRange (
+//   IN EFI_PHYSICAL_ADDRESS  Start,
+//   IN UINT64                Length
+//   );
+// MU_CHANGE END: PEI Bins
 
 /**
   Called to initialize the memory map and add descriptors to
