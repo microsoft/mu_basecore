@@ -64,9 +64,6 @@
   PcdLib
   HobLib
   DeviceStateLib # MU_CHANGE - Check device state before locking variable policy
-  # MU_CHANGE [BEGIN] - Add library for memory unblock when moving allocation to DXE
-  MmUnblockMemoryLib
-  # MU_CHANGE [END]
 
 [Protocols]
   gEfiVariableWriteArchProtocolGuid             ## PRODUCES
@@ -88,7 +85,6 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdAllowVariablePolicyEnforcementDisable     ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision                 ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdEnableSpdmDeviceAuthentication             ## PRODUCES AND CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdMigrateVariableRuntimeCacheBufferAllocation  ## CONSUMES  # MU_CHANGE
 
 [Guids]
   ## PRODUCES             ## GUID # Signature of Variable store header
