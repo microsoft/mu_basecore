@@ -27,7 +27,7 @@
 #include <IndustryStandard/ArmFfaSvc.h>
 #include <IndustryStandard/MmCommunicate.h>
 
-#define COMM_BUFFER_ATTRS (EFI_MEMORY_WB | EFI_MEMORY_XP | EFI_MEMORY_RUNTIME)
+#define COMM_BUFFER_ATTRS  (EFI_MEMORY_WB | EFI_MEMORY_XP | EFI_MEMORY_RUNTIME)
 
 //
 // Partition ID if FF-A support is enabled
@@ -700,8 +700,8 @@ MmCommunication2Initialize (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS  Status;
-  UINTN       Index;
+  EFI_STATUS                       Status;
+  UINTN                            Index;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR  GcdDescriptor;
 
   // Initialize to make mm communication
@@ -732,7 +732,7 @@ MmCommunication2Initialize (
                     mNsCommBuffMemRegion.Length,
                     COMM_BUFFER_ATTRS
                     );
-     if (EFI_ERROR (Status)) {
+    if (EFI_ERROR (Status)) {
       DEBUG ((
         DEBUG_ERROR,
         "%a: "
@@ -742,9 +742,9 @@ MmCommunication2Initialize (
         ));
       goto ReturnErrorStatus;
     }
-  } else if (!(GcdDescriptor.BaseAddress <= mNsCommBuffMemRegion.PhysicalBase &&
-               (GcdDescriptor.BaseAddress + GcdDescriptor.Length) >=
-               (mNsCommBuffMemRegion.PhysicalBase + mNsCommBuffMemRegion.Length)))
+  } else if (!((GcdDescriptor.BaseAddress <= mNsCommBuffMemRegion.PhysicalBase) &&
+               ((GcdDescriptor.BaseAddress + GcdDescriptor.Length) >=
+                (mNsCommBuffMemRegion.PhysicalBase + mNsCommBuffMemRegion.Length))))
   {
     DEBUG ((
       DEBUG_ERROR,
@@ -752,6 +752,7 @@ MmCommunication2Initialize (
       __func__
       ));
     ASSERT (FALSE);
+    Status = EFI_ABORTED;
     goto ReturnErrorStatus;
   } else if (GcdDescriptor.GcdMemoryType != EfiGcdMemoryTypeReserved) {
     DEBUG ((
@@ -759,20 +760,29 @@ MmCommunication2Initialize (
       "%a: Existing GCD memory space is not EfiGcdMemoryTypeReserved for the MM-NS Buffer Memory Space\n",
       __func__
       ));
-    ASSERT_EFI_ERROR (Status);
+    ASSERT (FALSE);
+    Status = EFI_ABORTED;
     goto ReturnErrorStatus;
-  }
-  else if ((GcdDescriptor.Capabilities & (COMM_BUFFER_ATTRS)) !=
+  } else if ((GcdDescriptor.Capabilities & (COMM_BUFFER_ATTRS)) !=
              (COMM_BUFFER_ATTRS))
   {
-    // set the capabilities if we need to. If we fail, still try setting the attributes
-    // the worst case is it will error there.
     Status = gDS->SetMemorySpaceCapabilities (
                     mNsCommBuffMemRegion.PhysicalBase,
                     mNsCommBuffMemRegion.Length,
                     COMM_BUFFER_ATTRS
                     );
-    ASSERT_EFI_ERROR (Status);
+
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: "
+        "Failed to set MM-NS Buffer Memory capabilities with Status %r\n",
+        __func__,
+        Status
+        ));
+      ASSERT_EFI_ERROR (Status);
+      goto ReturnErrorStatus;
+    }
   }
 
   Status = gDS->SetMemorySpaceAttributes (
@@ -784,9 +794,11 @@ MmCommunication2Initialize (
     DEBUG ((
       DEBUG_ERROR,
       "%a: "
-      "Failed to set MM-NS Buffer Memory attributes\n",
-      __func__
+      "Failed to set MM-NS Buffer Memory attributes with Status %r\n",
+      __func__,
+      Status
       ));
+    ASSERT_EFI_ERROR (Status);
     goto ReturnErrorStatus;
   }
 
