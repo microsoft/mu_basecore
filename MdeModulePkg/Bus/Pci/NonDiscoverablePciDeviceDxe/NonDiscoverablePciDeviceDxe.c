@@ -10,9 +10,13 @@
 
 #include <Protocol/DriverBinding.h>
 
-#define MAX_NON_DISCOVERABLE_PCI_DEVICE_ID  (32 * 256)
+// MU_CHANGE [BEGIN]: Counter-based UniqueId allocation replaced by
+// platform-supplied UniqueId on NON_DISCOVERABLE_DEVICE.
+// #define MAX_NON_DISCOVERABLE_PCI_DEVICE_ID  (32 * 256)
+//
+// STATIC UINTN           mUniqueIdCounter = 0;
+// MU_CHANGE [END]
 
-STATIC UINTN           mUniqueIdCounter = 0;
 EFI_CPU_ARCH_PROTOCOL  *mCpu;
 
 //
@@ -147,11 +151,21 @@ NonDiscoverablePciDeviceStart (
 {
   NON_DISCOVERABLE_PCI_DEVICE  *Dev;
   EFI_STATUS                   Status;
+  // MU_CHANGE [BEGIN]: Locals for duplicate UniqueId detection.
+  UINTN                    HandleCount;
+  EFI_HANDLE               *HandleBuffer;
+  UINTN                    Index;
+  NON_DISCOVERABLE_DEVICE  *OtherDevice;
 
-  ASSERT (mUniqueIdCounter < MAX_NON_DISCOVERABLE_PCI_DEVICE_ID);
-  if (mUniqueIdCounter >= MAX_NON_DISCOVERABLE_PCI_DEVICE_ID) {
-    return EFI_OUT_OF_RESOURCES;
-  }
+  // MU_CHANGE [END]
+
+  // MU_CHANGE [BEGIN]: mUniqueIdCounter limit check no longer needed; the
+  // platform supplies UniqueId via NON_DISCOVERABLE_DEVICE.
+  // ASSERT (mUniqueIdCounter < MAX_NON_DISCOVERABLE_PCI_DEVICE_ID);
+  // if (mUniqueIdCounter >= MAX_NON_DISCOVERABLE_PCI_DEVICE_ID) {
+  //   return EFI_OUT_OF_RESOURCES;
+  // }
+  // MU_CHANGE [END]
 
   Dev = AllocateZeroPool (sizeof *Dev);
   if (Dev == NULL) {
@@ -170,6 +184,54 @@ NonDiscoverablePciDeviceStart (
     goto FreeDev;
   }
 
+  // MU_CHANGE [BEGIN]: Reject duplicate UniqueId across NonDiscoverableDevice
+  // handles. Every registered device is exposed via
+  // gEdkiiNonDiscoverableDeviceProtocolGuid, so we enumerate the currently
+  // installed handles and compare their UniqueId against the one the platform
+  // assigned to us. If any other handle already advertises the same UniqueId,
+  // refuse to start so the platform is forced to assign a distinct ID. Runs
+  // before InstallProtocolInterface so the failure path is a plain
+  // goto CloseProtocol.
+  HandleCount  = 0;
+  HandleBuffer = NULL;
+  Status       = gBS->LocateHandleBuffer (
+                        ByProtocol,
+                        &gEdkiiNonDiscoverableDeviceProtocolGuid,
+                        NULL,
+                        &HandleCount,
+                        &HandleBuffer
+                        );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: LocateHandleBuffer failed: %r\n", __func__, Status));
+    goto CloseProtocol;
+  }
+
+  for (Index = 0; Index < HandleCount; Index++) {
+    // Skip our own handle
+    if (HandleBuffer[Index] == DeviceHandle) {
+      continue;
+    }
+
+    Status = gBS->HandleProtocol (
+                    HandleBuffer[Index],
+                    &gEdkiiNonDiscoverableDeviceProtocolGuid,
+                    (VOID **)&OtherDevice
+                    );
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
+
+    if (OtherDevice->UniqueId == Dev->Device->UniqueId) {
+      DEBUG ((DEBUG_ERROR, "%a: duplicate NonDiscoverableDevice UniqueId 0x%llx\n", __func__, Dev->Device->UniqueId));
+      Status = EFI_DEVICE_ERROR;
+      FreePool (HandleBuffer);
+      goto CloseProtocol;
+    }
+  }
+
+  FreePool (HandleBuffer);
+  // MU_CHANGE [END]
+
   InitializePciIoProtocol (Dev);
 
   //
@@ -187,7 +249,14 @@ NonDiscoverablePciDeviceStart (
     goto CloseProtocol;
   }
 
-  Dev->UniqueId = mUniqueIdCounter++;
+  // MU_CHANGE [BEGIN]: Use platform-supplied UniqueId from NON_DISCOVERABLE_DEVICE.
+  Dev->UniqueId = Dev->Device->UniqueId;
+  // MU_CHANGE [END]
+
+  // MU_CHANGE [BEGIN]: UniqueId is now copied from NON_DISCOVERABLE_DEVICE
+  // above instead of being assigned from a counter here.
+  // Dev->UniqueId = mUniqueIdCounter++;
+  // MU_CHANGE [END]
 
   return EFI_SUCCESS;
 
