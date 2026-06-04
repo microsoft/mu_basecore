@@ -30,6 +30,8 @@ typedef struct {
   DMA_MAP_OPERATION       Operation;
   BOOLEAN                 DoubleBuffer;
   VOID                    *IoMmuContext; // MU_CHANGE
+  UINT64                  IommuBase;     // MU_CHANGE
+  UINT32                  DmaId;         // MU_CHANGE
 } MAP_INFO_INSTANCE;
 
 typedef struct {
@@ -195,6 +197,8 @@ DmaMap (
   IN     DMA_MAP_OPERATION  Operation,
   IN     VOID               *HostAddress,
   IN OUT UINTN              *NumberOfBytes,
+  IN     UINT64             IommuBase,    // MU_CHANGE
+  IN     UINT32             DmaId,        // MU_CHANGE
   OUT    PHYSICAL_ADDRESS   *DeviceAddress,
   OUT    VOID               **Mapping
   )
@@ -351,11 +355,18 @@ DmaMap (
   Map->HostAddress   = (UINTN)HostAddress;
   Map->NumberOfBytes = *NumberOfBytes;
   Map->Operation     = Operation;
-  Map->IoMmuContext  = NULL; // MU_CHANGE
+  Map->IoMmuContext  = NULL;      // MU_CHANGE
+  Map->IommuBase     = IommuBase; // MU_CHANGE
+  Map->DmaId         = DmaId;     // MU_CHANGE
 
   *Mapping = Map;
 
   // MU_CHANGE [BEGIN]
+
+  if (IommuBase == 0) {
+    // No IoMmu
+    return EFI_SUCCESS;
+  }
 
   switch (Operation) {
     case MapOperationBusMasterRead:
@@ -392,13 +403,14 @@ DmaMap (
     goto FreeMapInfo;
   }
 
-  Status = IoMmuSetAttribute (
-             NULL,
+  Status = IoMmuSetAttributeById (
+             IommuBase,
+             DmaId,
              Map->IoMmuContext,
              IoMmuAttribute
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttributeById failed.\n", __func__));
     ASSERT (FALSE);
     goto Unmap;
   }
@@ -409,8 +421,7 @@ DmaMap (
 
   // MU_CHANGE [BEGIN]
 Unmap:
-  Status = IoMmuUnmap (Map->IoMmuContext);
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (IoMmuUnmap (Map->IoMmuContext))) {
     DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
     ASSERT (FALSE);
   }
@@ -466,18 +477,20 @@ DmaUnmap (
 
   // MU_CHANGE [BEGIN]
 
-  Status = IoMmuSetAttribute (NULL, Map->IoMmuContext, 0);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
-    ASSERT (FALSE);
-    return Status;
-  }
+  if (Map->IommuBase != 0) {
+    Status = IoMmuSetAttributeById (Map->IommuBase, Map->DmaId, Map->IoMmuContext, 0);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttributeById failed.\n", __func__));
+      ASSERT (FALSE);
+      return Status;
+    }
 
-  Status = IoMmuUnmap (Map->IoMmuContext);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
-    ASSERT (FALSE);
-    return Status;
+    Status = IoMmuUnmap (Map->IoMmuContext);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
+      ASSERT (FALSE);
+      return Status;
+    }
   }
 
   // MU_CHANGE [END]
