@@ -101,6 +101,14 @@ typedef struct {
   // may change when disconnecting/reconnecting the driver.
   //
   UINTN                      UniqueId;
+  // MU_CHANGE [BEGIN]
+  //
+  // The controller handle this driver is bound to. Same handle the
+  // EFI_PCI_IO_PROTOCOL is installed on; passed to IoMmuSetAttribute so
+  // an IOMMU producer can resolve the DMA identifier from the handle.
+  //
+  EFI_HANDLE                 Handle;
+  // MU_CHANGE [END]
 } NON_DISCOVERABLE_PCI_DEVICE;
 
 /**
