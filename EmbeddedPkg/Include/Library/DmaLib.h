@@ -60,6 +60,12 @@ typedef enum {
   @param  HostAddress           The system memory address to map to the DMA controller.
   @param  NumberOfBytes         On input the number of bytes to map. On output the number of bytes
                                 that were mapped.
+  // MU_CHANGE [BEGIN]: Add IommuBase / DmaId parameters for IoMmuSetAttributeById.
+  @param  IommuBase             Base MMIO address of the IOMMU that owns the DMA agent's DmaId.
+                                Pass 0 if the caller does not require IOMMU programming.
+  @param  DmaId                 DMA identifier emitted by the DMA agent on the IOMMU identified
+                                by IommuBase (e.g. StreamID on Arm SMMU, RequesterID on VT-d).
+  // MU_CHANGE [END]
   @param  DeviceAddress         The resulting map address for the bus master controller to use to
                                 access the hosts HostAddress.
   @param  Mapping               A resulting value to pass to DmaUnmap().
@@ -77,6 +83,8 @@ DmaMap (
   IN     DMA_MAP_OPERATION  Operation,
   IN     VOID               *HostAddress,
   IN OUT UINTN              *NumberOfBytes,
+  IN     UINT64             IommuBase,    // MU_CHANGE
+  IN     UINT32             DmaId,        // MU_CHANGE
   OUT    PHYSICAL_ADDRESS   *DeviceAddress,
   OUT    VOID               **Mapping
   );
