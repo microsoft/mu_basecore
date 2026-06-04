@@ -24,6 +24,9 @@
 #define PAGE_TABLE_S2_MEMATTR_NORMAL_WB   (0xF << 2)
 #define PAGE_TABLE_S2_SH_INNER_SHAREABLE  (0x3 << 8)
 
+// Forward declaration; full definition lives in SmmuV3.h.
+typedef struct _SMMU_INFO SMMU_INFO;
+
 typedef UINT64 PAGE_TABLE_ENTRY;
 
 #define PAGE_TABLE_SIZE  (EFI_PAGE_SIZE / sizeof(PAGE_TABLE_ENTRY))  // Number of entries in a page table
@@ -36,7 +39,9 @@ typedef struct _PAGE_TABLE {
 /**
   Update the page table mapping with the given physical address and flags.
 
+  @param [in]  SmmuInfo                   SMMU instance.
   @param [in]  Root                       Pointer to the root page table.
+  @param [in]  Vmid                       VMID for associated page table root.
   @param [in]  PhysicalAddress            Physical address to map.
   @param [in]  Bytes                      Number of bytes to map.
   @param [in]  Flags                      Flags to set for the mapping. 12 bits or less.
@@ -48,7 +53,9 @@ typedef struct _PAGE_TABLE {
 **/
 EFI_STATUS
 UpdatePageTable (
+  IN SMMU_INFO   *SmmuInfo,
   IN PAGE_TABLE  *Root,
+  IN UINT16      Vmid,
   IN UINT64      PhysicalAddress,
   IN UINT64      Bytes,
   IN UINT16      Flags,
