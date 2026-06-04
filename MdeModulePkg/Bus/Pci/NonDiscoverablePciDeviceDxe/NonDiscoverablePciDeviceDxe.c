@@ -258,6 +258,11 @@ NonDiscoverablePciDeviceStart (
   // Dev->UniqueId = mUniqueIdCounter++;
   // MU_CHANGE [END]
 
+  // MU_CHANGE [BEGIN]: Remember the controller handle so PciIoMap/SetAttribute
+  // can pass it to IoMmuSetAttribute for DMA identifier resolution.
+  Dev->Handle = DeviceHandle;
+  // MU_CHANGE [END]
+
   return EFI_SUCCESS;
 
 CloseProtocol:
