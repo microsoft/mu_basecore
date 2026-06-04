@@ -127,4 +127,32 @@ IoMmuSetAttribute (
   IN UINT64      IoMmuAccess
   );
 
+/**
+  Set the R/W access attributes for Mapping in the Page Table for a caller
+  that explicitly specifies (IommuBase, DmaId) instead of an EFI_HANDLE.
+
+  Intended for firmware-internal DMA agents that have no UEFI device
+  handle (and therefore cannot be resolved via the IORT). The caller is
+  responsible for providing the correct IommuBase and DmaId.
+
+  @param [in]  IommuBase     Base MMIO address of the IOMMU that owns DmaId.
+  @param [in]  DmaId         DMA identifier emitted by the calling DMA agent (e.g. StreamID on Arm SMMU, RequesterID on VT-d).
+  @param [in]  Mapping       The mapping returned from IoMmuMap.
+  @param [in]  IoMmuAccess   The IOMMU access attributes.
+
+  @retval EFI_SUCCESS            Success.
+  @retval EFI_NOT_READY          The IoMmu protocol is not ready.
+  @retval EFI_UNSUPPORTED        The IoMmu protocol does not implement
+                                 SetAttributeById.
+  @retval Other                  Other errors as defined by the IoMmu protocol.
+**/
+EFI_STATUS
+EFIAPI
+IoMmuSetAttributeById (
+  IN UINT64  IommuBase,
+  IN UINT32  DmaId,
+  IN VOID    *Mapping,
+  IN UINT64  IoMmuAccess
+  );
+
 #endif // IOMMU_LIB_H_
