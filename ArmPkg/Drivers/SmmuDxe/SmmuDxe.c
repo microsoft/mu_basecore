@@ -31,6 +31,12 @@
 // Global IOMMU/SMMU instance
 IOMMU_CONFIG  *mIoMmu;
 
+// GIC interrupt protocol used to register the SMMU EVTQ / GERR ISRs.
+EFI_HARDWARE_INTERRUPT2_PROTOCOL  *mGicInterrupt = NULL;
+
+// Global IORT data pointer - saved for lookups during runtime
+VOID  *mIortData = NULL;
+
 /**
   Calculate and update the checksum of an ACPI table.
 
@@ -118,9 +124,8 @@ AddIortTable (
 
   @retval A pointer to the initialized page table, or NULL on failure.
 **/
-STATIC
 PAGE_TABLE *
-PageTableInit (
+SmmuV3AllocatePageTableRoot (
   VOID
   )
 {
@@ -151,9 +156,8 @@ PageTableInit (
   @param [in]  Level      The level of the page table to deinitialize.
   @param [in]  PageTable  The page table to deinitialize.
 **/
-STATIC
 VOID
-PageTableDeInit (
+SmmuV3FreePageTableTree (
   IN UINT8       Level,
   IN PAGE_TABLE  *PageTable
   )
@@ -171,7 +175,7 @@ PageTableDeInit (
     PageTableAddress = (PAGE_TABLE *)((UINTN)Entry & ~PAGE_TABLE_BLOCK_OFFSET);
 
     if (Entry != 0) {
-      PageTableDeInit (Level + 1, PageTableAddress);
+      SmmuV3FreePageTableTree (Level + 1, PageTableAddress);
     }
   }
 
@@ -275,6 +279,8 @@ SmmuV3AllocateCommandQueue (
   Free a previously allocated queue.
 
   @param [in]  QueuePtr    Pointer to the queue to free.
+  @param [in]  Log2Size    Log2 of the queue entry count, used to recover the
+                           original allocation size.
 **/
 STATIC
 VOID
@@ -294,18 +300,51 @@ SmmuV3FreeQueue (
 }
 
 /**
-  Build the default stream table entry for SMMUv3.
+  Build an invalid stream-table entry used at init for every STE
+  slot before any device has been mapped.
 
-  @param [in]  SmmuInfo       Pointer to the SMMU_INFO structure.
-  @param [out] StreamEntry    Pointer to the stream table entry.
+  Implemented by reusing SmmuV3BuildTranslateStreamTableEntry with
+  PageTableRoot == NULL VMID=0 and VALID = 0.
+
+  @param [in]  SmmuInfo     SMMU instance (needed for IDR-derived fields).
+  @param [out] StreamEntry  STE buffer to populate.
+
+  @retval EFI_SUCCESS            Success.
+  @retval EFI_INVALID_PARAMETER  Invalid parameters.
+  @retval Other                  Failure from SmmuV3BuildTranslateStreamTableEntry.
+**/
+EFI_STATUS
+SmmuV3BuildInvalidStreamTableEntry (
+  IN  SMMU_INFO                  *SmmuInfo,
+  OUT SMMUV3_STREAM_TABLE_ENTRY  *StreamEntry
+  )
+{
+  if ((SmmuInfo == NULL) || (StreamEntry == NULL)) {
+    DEBUG ((DEBUG_ERROR, "%a: Invalid Parameters\n", __func__));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // PageTableRoot==NULL VMID==0 and VALID==0.
+  return SmmuV3BuildTranslateStreamTableEntry (SmmuInfo, NULL, 0, StreamEntry);
+}
+
+/**
+  Build a Valid STAGE_2_TRANSLATE stream-table entry using the
+  given page-table root.
+
+  @param [in]  SmmuInfo        Pointer to the SMMU_INFO structure.
+  @param [in]  PageTableRoot   Page-table root the STE should point at.
+  @param [in]  Vmid            VMID tag to install in the STE's S2VMID field.
+  @param [out] StreamEntry     STE buffer to populate.
 
   @retval EFI_SUCCESS         Success.
   @retval EFI_INVALID_PARAMETER  Invalid parameter.
 **/
-STATIC
 EFI_STATUS
-SmmuV3BuildStreamTableEntry (
-  IN SMMU_INFO                   *SmmuInfo,
+SmmuV3BuildTranslateStreamTableEntry (
+  IN  SMMU_INFO                  *SmmuInfo,
+  IN  PAGE_TABLE                 *PageTableRoot,
+  IN  UINT16                     Vmid,
   OUT SMMUV3_STREAM_TABLE_ENTRY  *StreamEntry
   )
 {
@@ -338,12 +377,13 @@ SmmuV3BuildStreamTableEntry (
 
   StreamEntry->Config = SMMUV3_STREAM_TABLE_ENTRY_CONFIG_STAGE_2_TRANSLATE_STAGE_1_BYPASS;
   StreamEntry->Eats   = SMMUV3_STREAM_TABLE_ENTRY_EATS_NOT_SUPPORTED;
-  StreamEntry->S2Vmid = SMMUV3_STREAM_TABLE_ENTRY_S2VMID;             // Choose a non-zero value
+  StreamEntry->S2Vmid = Vmid;                                                                             // Per-stream VMID (allocated by SmmuV3StreamGetOrCreate).
   StreamEntry->S2Tg   = SMMUV3_STREAM_TABLE_ENTRY_S2TG_4KB;
   StreamEntry->S2Aa64 = 1;                                                                                // AArch64 S2 translation tables
-  StreamEntry->S2Ttb  = (UINT64)(UINTN)SmmuInfo->PageTableRoot >> SMMUV3_STREAM_TABLE_ENTRY_S2TTB_OFFSET; // Page table root address
-  if ((Idr0.S1p == 1) && (Idr0.S2p == 1)) {
-    StreamEntry->S2Ptw = SMMUV3_STREAM_TABLE_ENTRY_S2PTW;
+  if (PageTableRoot != NULL) {
+    StreamEntry->S2Ttb = (UINT64)(UINTN)PageTableRoot >> SMMUV3_STREAM_TABLE_ENTRY_S2TTB_OFFSET;  // Page table root address
+  } else {
+    StreamEntry->S2Ttb = 0;  // For abort STEs, S2Ttb is set to 0 so any access will fault since it is not a valid page-table root.
   }
 
   //
@@ -426,9 +466,358 @@ SmmuV3BuildStreamTableEntry (
     StreamEntry->ShCfg   = SMMUV3_STREAM_TABLE_ENTRY_SHCFG_INNER_SHAREABLE;                 // Inner shareable
   }
 
-  StreamEntry->Valid = SMMUV3_STREAM_TABLE_ENTRY_VALID;
+  if (PageTableRoot != NULL) {
+    StreamEntry->Valid = SMMUV3_STREAM_TABLE_ENTRY_VALID;
+  } else {
+    StreamEntry->Valid = 0;
+  }
 
   return Status;
+}
+
+/**
+  2-level stream tables only: if the L1 descriptor covering StreamId still
+  points at the shared-ABORT L2 page (SmmuInfo->SharedAbortL2), allocate a
+  fresh L2 page for this L1 index, seed it with copies of the shared ABORT
+  STE, and rewrite the L1 descriptor to point at the new page.
+
+  Each L1 index that sees at least one promotion gets its own private L2.
+  Other L1 indices keep aliasing the shared page until they too see
+  a promotion.
+
+  Must be issued with break-before-make for every STE in the L1's coverage
+  because the L1 descriptor change invalidates the SMMU's cached STE
+  pointers for that whole range.
+
+  @param [in]  SmmuInfo  Pointer to the SMMU_INFO structure.
+  @param [in]  StreamId  StreamID whose L1 slot may need splitting.
+
+  @retval EFI_SUCCESS            No split needed, or split succeeded.
+  @retval EFI_INVALID_PARAMETER  Invalid parameters.
+  @retval EFI_OUT_OF_RESOURCES   Allocation failed.
+  @retval Other                  Command-queue failure.
+**/
+STATIC
+EFI_STATUS
+SmmuV3SplitL1IfShared (
+  IN SMMU_INFO  *SmmuInfo,
+  IN UINT32     StreamId
+  )
+{
+  EFI_STATUS                         Status;
+  SMMUV3_L1_STREAM_TABLE_DESCRIPTOR  *L1Table;
+  SMMUV3_L1_STREAM_TABLE_DESCRIPTOR  *L1Desc;
+  SMMUV3_STREAM_TABLE_ENTRY          *NewL2;
+  UINT64                             SharedAbortL2Encoded;
+  UINT32                             L1Index;
+  UINT32                             L2EntriesPerTable;
+  UINT32                             BaseStreamId;
+  SMMUV3_CMD_GENERIC                 Command;
+  EFI_TPL                            OldTpl;
+
+  if ((SmmuInfo == NULL) || (SmmuInfo->StreamTable == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // Linear stream-table mode: no L1 indirection to split.
+  if (SmmuInfo->SharedAbortL2 == NULL) {
+    return EFI_SUCCESS;
+  }
+
+  OldTpl = gBS->RaiseTPL (TPL_HIGH_LEVEL);
+
+  L2EntriesPerTable = 1u << SMMUV3_STR_TAB_BASE_CFG_SPLIT;
+  L1Index           = StreamId >> SMMUV3_STR_TAB_BASE_CFG_SPLIT;
+  BaseStreamId      = L1Index << SMMUV3_STR_TAB_BASE_CFG_SPLIT;
+
+  L1Table = (SMMUV3_L1_STREAM_TABLE_DESCRIPTOR *)SmmuInfo->StreamTable;
+  L1Desc  = &L1Table[L1Index];
+
+  // If this L1 descriptor has already been split onto a private L2 page
+  // (i.e. it no longer points at the shared-ABORT L2), there is nothing
+  // more to do: the caller can safely write its STE in place because
+  // sibling slots in this L2 either still hold the abort STE or are
+  // already-promoted translating STEs that belong to this same caller's
+  // sequence.
+  SharedAbortL2Encoded = ((UINT64)(UINTN)SmmuInfo->SharedAbortL2) >> SMMUV3_STR_TAB_BASE_L2_PTR_OFFSET;
+  if (L1Desc->L2Ptr != SharedAbortL2Encoded) {
+    gBS->RestoreTPL (OldTpl);
+    return EFI_SUCCESS;
+  }
+
+  gBS->RestoreTPL (OldTpl);
+
+  NewL2 = (SMMUV3_STREAM_TABLE_ENTRY *)AllocatePages (1);
+  if (NewL2 == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  OldTpl = gBS->RaiseTPL (TPL_HIGH_LEVEL);
+
+  ZeroMem (NewL2, EFI_PAGE_SIZE);
+
+  // Seed the new L2 from the shared-ABORT L2 so every unpromoted slot in
+  // this L1 range starts out faulting.
+  CopyMem (NewL2, SmmuInfo->SharedAbortL2, EFI_PAGE_SIZE);
+
+  // Ensure all STE writes in the new L2 page are visible to the SMMU
+  ArmDataSynchronizationBarrier ();
+
+  // Atomically swing the L1 descriptor onto the private L2
+  // so the SMMU cannot observe a torn L1STD.
+  SMMUV3_L1_STREAM_TABLE_DESCRIPTOR  NewDesc;
+
+  NewDesc.AsUINT64 = 0;
+  NewDesc.L2Ptr    = (UINT64)(UINTN)NewL2 >> SMMUV3_STR_TAB_BASE_L2_PTR_OFFSET;
+  NewDesc.Span     = SMMUV3_STR_TAB_BASE_CFG_SPLIT + 1;
+
+  L1Desc->AsUINT64 = NewDesc.AsUINT64;
+  ArmDataSynchronizationBarrier ();
+
+  //
+  // The old L1STD was the shared-ABORT entry with full Span = SPLIT+1, so
+  // its L2 page and STEs could already be cached. Invalidate the full
+  // L1 range (2^SPLIT STEs anchored at BaseStreamId) using CFGI_STE_RANGE.
+  // CFGI_STE_RANGE invalidates 2^(Range+1) STEs, so Range = SPLIT - 1.
+  SMMUV3_BUILD_CMD_CFGI_STE_RANGE (&Command, BaseStreamId, SMMUV3_STR_TAB_BASE_CFG_SPLIT - 1);
+  Status = SmmuV3SendCommand (SmmuInfo, &Command);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: CFGI_STE_RANGE failed: %r\n", __func__, Status));
+    gBS->RestoreTPL (OldTpl);
+    return Status;
+  }
+
+  SMMUV3_BUILD_CMD_SYNC_NO_INTERRUPT (&Command);
+  Status = SmmuV3SendCommand (SmmuInfo, &Command);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: CMD_SYNC failed: %r\n", __func__, Status));
+    gBS->RestoreTPL (OldTpl);
+    return Status;
+  }
+
+  gBS->RestoreTPL (OldTpl);
+
+  DEBUG ((
+    DEBUG_INFO,
+    "%a: Split L1[0x%x] on SmmuBase=0x%llx for StreamId=0x%x (range base 0x%x, %u entries) onto private L2 0x%p\n",
+    __func__,
+    L1Index,
+    SmmuInfo->SmmuBase,
+    StreamId,
+    BaseStreamId,
+    L2EntriesPerTable,
+    NewL2
+    ));
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Locate the STE slot in the SMMU's stream table for a given StreamID.
+
+  Supports both linear and 2-level stream tables. For 2-level tables, walks
+  the L1 descriptor array by (StreamId >> SPLIT), follows the L2Ptr, then
+  indexes the L2 table by (StreamId & ((1 << SPLIT) - 1)). The L2 table is
+  shared across all L1 entries (allocated once in SmmuV3Configure) so any
+  StreamID within range resolves to a real slot.
+
+  @param [in]  SmmuInfo  Pointer to the SMMU_INFO structure.
+  @param [in]  StreamId  The StreamID.
+
+  @retval Pointer to the STE slot, or NULL on out-of-range.
+**/
+SMMUV3_STREAM_TABLE_ENTRY *
+SmmuV3GetSteSlot (
+  IN SMMU_INFO  *SmmuInfo,
+  IN UINT32     StreamId
+  )
+{
+  BOOLEAN                            TwoLevel;
+  SMMUV3_L1_STREAM_TABLE_DESCRIPTOR  *L1Table;
+  SMMUV3_L1_STREAM_TABLE_DESCRIPTOR  *L1Desc;
+  SMMUV3_STREAM_TABLE_ENTRY          *L2Table;
+  UINT32                             L1Index;
+  UINT32                             L2Index;
+  UINT32                             L2EntriesPerTable;
+
+  if ((SmmuInfo == NULL) || (SmmuInfo->StreamTable == NULL)) {
+    return NULL;
+  }
+
+  if (StreamId > SmmuInfo->StreamTableEntryMax) {
+    DEBUG ((DEBUG_ERROR, "%a: StreamId 0x%x out of range (max 0x%x)\n", __func__, StreamId, SmmuInfo->StreamTableEntryMax));
+    return NULL;
+  }
+
+  TwoLevel = (SmmuInfo->StreamTableEntryMax >= (EFI_PAGE_SIZE / sizeof (SMMUV3_STREAM_TABLE_ENTRY)));
+  if (!SmmuInfo->TwoLevelStreamTableSupported) {
+    TwoLevel = FALSE;
+    DEBUG ((DEBUG_VERBOSE, "%a: SMMU does not support 2-level stream tables. Falling back to linear stream table.\n", __func__));
+  }
+
+  if (!TwoLevel) {
+    return &((SMMUV3_STREAM_TABLE_ENTRY *)SmmuInfo->StreamTable)[StreamId];
+  }
+
+  // 2-level: L1 index = top bits above SPLIT, L2 index = low SPLIT bits.
+  L2EntriesPerTable = 1u << SMMUV3_STR_TAB_BASE_CFG_SPLIT;
+  L1Index           = StreamId >> SMMUV3_STR_TAB_BASE_CFG_SPLIT;
+  L2Index           = StreamId & (L2EntriesPerTable - 1);
+
+  L1Table = (SMMUV3_L1_STREAM_TABLE_DESCRIPTOR *)SmmuInfo->StreamTable;
+  L1Desc  = &L1Table[L1Index];
+  if (L1Desc->L2Ptr == 0) {
+    DEBUG ((DEBUG_ERROR, "%a: L1[%u] has no L2 table for StreamId 0x%x\n", __func__, L1Index, StreamId));
+    return NULL;
+  }
+
+  L2Table = (SMMUV3_STREAM_TABLE_ENTRY *)(UINTN)((UINT64)L1Desc->L2Ptr << SMMUV3_STR_TAB_BASE_L2_PTR_OFFSET);
+  return &L2Table[L2Index];
+}
+
+/**
+  Promote the STE for StreamId from ABORT to STAGE_2_TRANSLATE with the given
+  page-table root, using the SMMU break-before-make sequence required by the
+  SMMUv3 spec for STE Config changes:
+
+    1. Write the STE with V=0.
+    2. DSB + CFGI_STE(StreamId) + CMD_SYNC.
+    3. Write the full new STE contents (S2Ttb etc., Config=S2_TRANSLATE, V=1).
+    4. DSB + CFGI_STE(StreamId) + CMD_SYNC.
+
+  @param [in]  SmmuInfo        Pointer to the SMMU_INFO structure.
+  @param [in]  StreamId        The StreamID whose STE is being promoted.
+  @param [in]  Vmid            VMID tag to install in the STE's S2VMID field.
+  @param [in]  PageTableRoot   Page-table root to install in the STE.
+
+  @retval EFI_SUCCESS            Success.
+  @retval EFI_INVALID_PARAMETER  Invalid parameters.
+  @retval Other                  Command-queue / sync failure.
+**/
+EFI_STATUS
+SmmuV3PromoteSteToTranslate (
+  IN SMMU_INFO   *SmmuInfo,
+  IN UINT32      StreamId,
+  IN UINT16      Vmid,
+  IN PAGE_TABLE  *PageTableRoot
+  )
+{
+  EFI_STATUS                 Status;
+  SMMUV3_STREAM_TABLE_ENTRY  *SteSlot;
+  SMMUV3_STREAM_TABLE_ENTRY  NewEntry;
+  SMMUV3_CMD_GENERIC         Command;
+  UINTN                      Index;
+  EFI_TPL                    OldTpl;
+
+  if ((SmmuInfo == NULL) || (PageTableRoot == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // 2-level only: if this L1 index still points at the shared-ABORT L2,
+  // copy-on-write it onto a private L2 page before mutating any STE. This
+  // is what prevents StreamID collisions across L1 indices that originally
+  // shared one L2. For linear stream tables this is a no-op (SharedAbortL2
+  // is NULL).
+  if (SmmuInfo->SharedAbortL2 != NULL) {
+    Status = SmmuV3SplitL1IfShared (SmmuInfo, StreamId);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: SplitL1IfShared failed for StreamId 0x%x: %r\n", __func__, StreamId, Status));
+      return Status;
+    }
+  }
+
+  OldTpl = gBS->RaiseTPL (TPL_HIGH_LEVEL);
+
+  SteSlot = SmmuV3GetSteSlot (SmmuInfo, StreamId);
+  if (SteSlot == NULL) {
+    gBS->RestoreTPL (OldTpl);
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // Build the full STAGE_2_TRANSLATE STE (V=1, Config=S2_TRANSLATE,
+  // S2Ttb, attrs, etc.) into a local. We then publish it into the live
+  // slot following the invalid -> valid sequence from the SMMU spec.
+  //
+  // The init-time STE template installed by SmmuV3Configure has Valid=0,
+  // so every promotion is an invalid -> valid transition.
+  Status = SmmuV3BuildTranslateStreamTableEntry (SmmuInfo, PageTableRoot, Vmid, &NewEntry);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: Build translate STE failed for StreamId 0x%x: %r\n", __func__, StreamId, Status));
+    gBS->RestoreTPL (OldTpl);
+    return Status;
+  }
+
+  //
+  // 1. Write all STE UINT64's except Index 0 (which holds Valid + Config).
+  //
+  for (Index = 1; Index < (sizeof (SMMUV3_STREAM_TABLE_ENTRY) / sizeof (UINT64)); Index++) {
+    SteSlot->AsUINT64[Index] = NewEntry.AsUINT64[Index];
+  }
+
+  //
+  // 2. DSB so the SteSlot[1..7] writes are observable, then CFGI_STE + SYNC
+  //    so the SMMU drops any cached STE state derived from the old
+  //    contents before we publish Valid=1.
+  //
+  ArmDataSynchronizationBarrier ();
+
+  SMMUV3_BUILD_CMD_CFGI_STE (&Command, StreamId, 1);     // Leaf = 1
+  Status = SmmuV3SendCommand (SmmuInfo, &Command);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: CFGI_STE (pre-valid) failed for StreamId 0x%x: %r\n", __func__, StreamId, Status));
+    gBS->RestoreTPL (OldTpl);
+    return Status;
+  }
+
+  SMMUV3_BUILD_CMD_SYNC_NO_INTERRUPT (&Command);
+  Status = SmmuV3SendCommand (SmmuInfo, &Command);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: CMD_SYNC (pre-valid) failed for StreamId 0x%x: %r\n", __func__, StreamId, Status));
+    gBS->RestoreTPL (OldTpl);
+    return Status;
+  }
+
+  //
+  // 3. Publish SteSlot[0] (Valid + Config) last with a single
+  //    atomic 64-bit write.
+  //
+  SteSlot->AsUINT64[0] = NewEntry.AsUINT64[0];
+
+  //
+  // 4. Final DSB + CFGI_STE + SYNC so the SMMU re-fetches the now-valid
+  //    STE and picks up Config=S2_TRANSLATE for this StreamID.
+  //
+  ArmDataSynchronizationBarrier ();
+
+  SMMUV3_BUILD_CMD_CFGI_STE (&Command, StreamId, 1);     // Leaf = 1
+  Status = SmmuV3SendCommand (SmmuInfo, &Command);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: CFGI_STE (post-valid) failed for StreamId 0x%x: %r\n", __func__, StreamId, Status));
+    gBS->RestoreTPL (OldTpl);
+    return Status;
+  }
+
+  SMMUV3_BUILD_CMD_SYNC_NO_INTERRUPT (&Command);
+  Status = SmmuV3SendCommand (SmmuInfo, &Command);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: CMD_SYNC (post-valid) failed for StreamId 0x%x: %r\n", __func__, StreamId, Status));
+    gBS->RestoreTPL (OldTpl);
+    return Status;
+  }
+
+  gBS->RestoreTPL (OldTpl);
+
+  DEBUG ((
+    DEBUG_INFO,
+    "%a: Promoted STE StreamId=0x%x VMID=0x%x on SmmuBase=0x%llx to STAGE_2_TRANSLATE, root=0x%p\n",
+    __func__,
+    StreamId,
+    Vmid,
+    SmmuInfo->SmmuBase,
+    PageTableRoot
+    ));
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -517,6 +906,7 @@ SmmuV3FreeStreamTable (
   }
 
   Pages = EFI_SIZE_TO_PAGES (Size);
+
   FreeAlignedPages ((VOID *)StreamTablePtr, Pages);
 }
 
@@ -528,8 +918,11 @@ SmmuV3FreeStreamTable (
   <https://developer.arm.com/documentation/109242/0100/Programming-the-SMMU/Minimum-configuration>
   <https://developer.arm.com/documentation/ihi0070/latest/>
 
+  At init time every STE is built in "abort-equivalent" mode (S2 translate
+  with S2Ttb=0), so no global page-table root is needed; per-StreamID roots
+  are allocated lazily on the first IoMmu map.
+
   @param [in] SmmuInfo        Pointer to the SMMU_INFO structure.
-  @param [in] PageTableRoot   Pointer to the page table root.
 
   @retval EFI_SUCCESS            Success.
   @retval EFI_INVALID_PARAMETER  Invalid parameter.
@@ -541,8 +934,7 @@ SmmuV3FreeStreamTable (
 STATIC
 EFI_STATUS
 SmmuV3Configure (
-  IN SMMU_INFO   *SmmuInfo,
-  IN PAGE_TABLE  *PageTableRoot
+  IN SMMU_INFO  *SmmuInfo
   )
 {
   EFI_STATUS                         Status;
@@ -572,10 +964,38 @@ SmmuV3Configure (
   VOID                               *EventQueue;
   BOOLEAN                            TwoLevelStreamTable;
 
-  if ((SmmuInfo == NULL) || (PageTableRoot == NULL)) {
+  if (SmmuInfo == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: Invalid Parameters\n", __func__));
     return EFI_INVALID_PARAMETER;
   }
+
+  Idr0.AsUINT32 = SmmuV3ReadRegister32 (SmmuInfo->SmmuBase, SMMU_IDR0);
+  // Check for Idr0.Cohacc is set, otherwise return not supported
+  if (Idr0.Cohacc == 0) {
+    DEBUG ((DEBUG_ERROR, "%a: Non-coherent access to translation tables not supported.\n", __func__));
+    return EFI_UNSUPPORTED;
+  }
+
+  // Check for Stage 2 translation support
+  if (Idr0.S2p == 0) {
+    DEBUG ((DEBUG_ERROR, "%a: SMMU does not support stage 2 translation.\n", __func__));
+    return EFI_UNSUPPORTED;
+  }
+
+  // Check for 2-level stream table support.
+  SmmuInfo->TwoLevelStreamTableSupported = (Idr0.StLevel != 0);
+
+  // Cache VMID width and seed the per-stream VMID allocator. VMID 0 is
+  // reserved as "unassigned" so the allocator starts at 1.
+  SmmuInfo->Vmid16Supported = (Idr0.Vmid16 != 0);
+  SmmuInfo->NextVmid        = 1;
+  DEBUG ((
+    DEBUG_VERBOSE,
+    "%a: SMMU 0x%llx VMID width = %u bits\n",
+    __func__,
+    SmmuInfo->SmmuBase,
+    SmmuInfo->Vmid16Supported ? 16u : 8u
+    ));
 
   // Set ReadWriteAllocationHint based on the COHAC_OVERRIDE flag.
   // These hints are applied to the allocated Stream Table, Command Queue, and Event Queue.
@@ -599,7 +1019,12 @@ SmmuV3Configure (
   }
 
   TwoLevelStreamTable = (SmmuInfo->StreamTableEntryMax >= (EFI_PAGE_SIZE / sizeof (SMMUV3_STREAM_TABLE_ENTRY)));
-  StreamTablePtr      = SmmuV3AllocateStreamTable (SmmuInfo, TwoLevelStreamTable, &StreamTableLog2Size, &StreamTableSize);
+  if (!SmmuInfo->TwoLevelStreamTableSupported) {
+    TwoLevelStreamTable = FALSE;
+    DEBUG ((DEBUG_INFO, "%a: SMMU does not support 2-level stream tables. Falling back to linear stream table.\n", __func__));
+  }
+
+  StreamTablePtr = SmmuV3AllocateStreamTable (SmmuInfo, TwoLevelStreamTable, &StreamTableLog2Size, &StreamTableSize);
   if (StreamTablePtr == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: Error allocating stream table\n", __func__));
     Status = EFI_OUT_OF_RESOURCES;
@@ -610,23 +1035,14 @@ SmmuV3Configure (
   SmmuInfo->StreamTableSize     = StreamTableSize;
   SmmuInfo->StreamTableLog2Size = StreamTableLog2Size;
 
-  SmmuInfo->PageTableRoot = PageTableRoot;
-  if (SmmuInfo->PageTableRoot == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: Error initializing Page Table\n", __func__));
-    Status = EFI_OUT_OF_RESOURCES;
-    goto End;
-  }
-
-  Status = SmmuV3AddRMRMapping (SmmuInfo);
+  // Build the init-time STE template. This is a STAGE_2_TRANSLATE STE with
+  // S2Ttb = 0 (no page-table root yet) and Valid = 0, so any DMA from a non-promoted
+  // StreamID will trigger a SMMU fault and be recorded in
+  // the event queue. The first IoMmu Map/SetAttribute for a StreamID
+  // publishes a real S2Ttb in-place via SmmuV3PromoteSteToTranslate().
+  Status = SmmuV3BuildInvalidStreamTableEntry (SmmuInfo, &TemplateEntry);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Error adding RMR mapping\n", __func__));
-    goto End;
-  }
-
-  // Load default STE values
-  Status = SmmuV3BuildStreamTableEntry (SmmuInfo, &TemplateEntry);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Error building stream table entry\n", __func__));
+    DEBUG ((DEBUG_ERROR, "%a: Error building init STE template\n", __func__));
     goto End;
   }
 
@@ -643,6 +1059,13 @@ SmmuV3Configure (
     for (Index = 0; Index < (EFI_PAGE_SIZE / sizeof (SMMUV3_STREAM_TABLE_ENTRY)); Index++) {
       CopyMem (&L2StreamTablePtr[Index], &TemplateEntry, sizeof (SMMUV3_STREAM_TABLE_ENTRY));
     }
+
+    // Remember this shared-ABORT L2. Every L1 descriptor initially points
+    // here. The first IoMmu promotion that targets an L1 index whose L2Ptr
+    // still equals SharedAbortL2 will copy-on-write a private L2 page so
+    // distinct StreamIDs that happen to share L1 bits (same StreamId >>
+    // SPLIT) don't alias to the same STE slot.
+    SmmuInfo->SharedAbortL2 = L2StreamTablePtr;
 
     L1Table = (SMMUV3_L1_STREAM_TABLE_DESCRIPTOR *)StreamTablePtr;
     for (Index = 0; Index < (SMMUV3_L1_STREAM_TABLE_SIZE_FROM_LOG2 (StreamTableLog2Size - SMMUV3_STR_TAB_BASE_CFG_SPLIT) / sizeof (UINT64)); Index++) {
@@ -713,6 +1136,19 @@ SmmuV3Configure (
   SmmuV3WriteRegister32 (SmmuInfo->SmmuBase + SMMUV3_PAGE_1_OFFSET, SMMU_EVENTQ_PROD, 0);
   SmmuV3WriteRegister32 (SmmuInfo->SmmuBase + SMMUV3_PAGE_1_OFFSET, SMMU_EVENTQ_CONS, 0);
 
+  // Register EVTQ + GERR ISRs with the GIC so SMMU faults are surfaced.
+  if (mGicInterrupt != NULL) {
+    Status = SmmuV3RegisterGicIsr (mGicInterrupt, SmmuInfo);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: Error registering SMMU GIC ISR\n", __func__));
+      goto End;
+    }
+
+    DEBUG ((DEBUG_INFO, "%a: Registered SMMU GIC ISR for SmmuBase=0x%llx\n", __func__, SmmuInfo->SmmuBase));
+  } else {
+    DEBUG ((DEBUG_ERROR, "%a: SMMU GIC ISR for SmmuBase=0x%llx not registered.\n", __func__, SmmuInfo->SmmuBase));
+  }
+
   // Check if Range-based invalidation and level hint are supported.
   Idr3.AsUINT32                        = SmmuV3ReadRegister32 (SmmuInfo->SmmuBase, SMMU_IDR3);
   SmmuInfo->RangeInvalidationSupported = (Idr3.Ril != 0);
@@ -731,6 +1167,10 @@ SmmuV3Configure (
     Cr1.QueueIc = ARM64_RGNCACHEATTR_WRITEBACK_WRITEALLOCATE; // WBC
     Cr1.QueueOc = ARM64_RGNCACHEATTR_WRITEBACK_WRITEALLOCATE; // WBC
     Cr1.QueueSh = ARM64_SHATTR_INNER_SHAREABLE;               // Inner-shareable
+
+    Cr1.TableIc = ARM64_RGNCACHEATTR_WRITEBACK_WRITEALLOCATE; // WBC
+    Cr1.TableOc = ARM64_RGNCACHEATTR_WRITEBACK_WRITEALLOCATE; // WBC
+    Cr1.TableSh = ARM64_SHATTR_INNER_SHAREABLE;               // Inner-shareable
   }
 
   SmmuV3WriteRegister32 (SmmuInfo->SmmuBase, SMMU_CR1, Cr1.AsUINT32);
@@ -946,12 +1386,100 @@ IoMmuDeInit (
       DEBUG ((DEBUG_ERROR, "%a: Failed to global abort SMMUv3 0x%llx\n", __func__, IoMmu->SmmuInfo[SmmuIndex].SmmuBase));
     }
 
-    if (IoMmu->SmmuInfo[SmmuIndex].PageTableRoot != NULL) {
-      PageTableDeInit (0, IoMmu->SmmuInfo[SmmuIndex].PageTableRoot);
-      IoMmu->SmmuInfo->PageTableRoot = NULL;
+    // Free any per-StreamID page-table roots installed by lazy STE
+    // promotion. The STEs are the source of truth, so walk them directly.
+    // Multiple StreamIDs can alias one root (a device's secondary StreamIDs
+    // share its primary's S2Ttb / VMID), so dedupe before freeing to avoid
+    // a double free.
+    if (IoMmu->SmmuInfo[SmmuIndex].StreamTable != NULL) {
+      PAGE_TABLE                 **FreedRoots;
+      UINTN                      MaxRoots;
+      UINTN                      FreedCount;
+      UINTN                      MaxStreamId;
+      UINTN                      StreamId;
+      UINTN                      DupIdx;
+      SMMUV3_STREAM_TABLE_ENTRY  *Ste;
+      PAGE_TABLE                 *Root;
+      BOOLEAN                    IsDup;
+
+      // Upper bound on unique roots = VMIDs handed out by the allocator
+      // (each call hands out one VMID before allocating a fresh root). If
+      // NextVmid wrapped to 0, every VMID in the configured width is in
+      // use.
+      MaxRoots = (IoMmu->SmmuInfo[SmmuIndex].NextVmid == SMMU_VMID_RESERVED)
+                 ? (IoMmu->SmmuInfo[SmmuIndex].Vmid16Supported ? MAX_UINT16 : MAX_UINT8)
+                 : (IoMmu->SmmuInfo[SmmuIndex].NextVmid - 1);
+      FreedRoots = NULL;
+      FreedCount = 0;
+      if (MaxRoots > 0) {
+        FreedRoots = (PAGE_TABLE **)AllocateZeroPool (MaxRoots * sizeof (PAGE_TABLE *));
+      }
+
+      // Walk every STE slot. SmmuV3GetSteSlot transparently handles both
+      // linear and 2-level (including the shared-ABORT L2). If we cannot
+      // allocate the dedupe buffer, leak rather than risk double-free.
+      if ((MaxRoots == 0) || (FreedRoots != NULL)) {
+        MaxStreamId = IoMmu->SmmuInfo[SmmuIndex].StreamTableEntryMax;
+        for (StreamId = 0; StreamId <= MaxStreamId; StreamId++) {
+          Ste = SmmuV3GetSteSlot (&IoMmu->SmmuInfo[SmmuIndex], (UINT32)StreamId);
+          if ((Ste == NULL) || (Ste->Valid == 0) || (Ste->S2Ttb == 0)) {
+            continue;
+          }
+
+          Root  = (PAGE_TABLE *)(UINTN)((UINT64)Ste->S2Ttb << SMMUV3_STREAM_TABLE_ENTRY_S2TTB_OFFSET);
+          IsDup = FALSE;
+          for (DupIdx = 0; DupIdx < FreedCount; DupIdx++) {
+            if (FreedRoots[DupIdx] == Root) {
+              IsDup = TRUE;
+              break;
+            }
+          }
+
+          if (IsDup) {
+            continue;
+          }
+
+          if ((FreedRoots != NULL) && (FreedCount < MaxRoots)) {
+            FreedRoots[FreedCount++] = Root;
+          }
+
+          SmmuV3FreePageTableTree (0, Root);
+        }
+      } else {
+        DEBUG ((DEBUG_ERROR, "%a: Failed to allocate dedupe buffer; leaking per-stream roots on SMMU 0x%llx\n", __func__, IoMmu->SmmuInfo[SmmuIndex].SmmuBase));
+      }
+
+      if (FreedRoots != NULL) {
+        FreePool (FreedRoots);
+      }
     }
 
     if (IoMmu->SmmuInfo[SmmuIndex].StreamTable != NULL) {
+      // Free any private L2 stream-table pages allocated by split-on-write.
+      // The shared-ABORT L2 page is freed separately below.
+      if (IoMmu->SmmuInfo[SmmuIndex].SharedAbortL2 != NULL) {
+        SMMUV3_L1_STREAM_TABLE_DESCRIPTOR  *L1Tbl;
+        UINTN                              L1Count;
+        UINTN                              L1Idx;
+        UINT64                             SharedEnc;
+
+        L1Tbl     = (SMMUV3_L1_STREAM_TABLE_DESCRIPTOR *)IoMmu->SmmuInfo[SmmuIndex].StreamTable;
+        L1Count   = IoMmu->SmmuInfo[SmmuIndex].StreamTableSize / sizeof (SMMUV3_L1_STREAM_TABLE_DESCRIPTOR);
+        SharedEnc = (UINT64)(UINTN)IoMmu->SmmuInfo[SmmuIndex].SharedAbortL2 >> SMMUV3_STR_TAB_BASE_L2_PTR_OFFSET;
+        for (L1Idx = 0; L1Idx < L1Count; L1Idx++) {
+          if ((L1Tbl[L1Idx].L2Ptr != 0) && ((UINT64)L1Tbl[L1Idx].L2Ptr != SharedEnc)) {
+            FreePages (
+              (VOID *)(UINTN)((UINT64)L1Tbl[L1Idx].L2Ptr << SMMUV3_STR_TAB_BASE_L2_PTR_OFFSET),
+              1
+              );
+            L1Tbl[L1Idx].L2Ptr = 0;
+          }
+        }
+
+        FreePages (IoMmu->SmmuInfo[SmmuIndex].SharedAbortL2, 1);
+        IoMmu->SmmuInfo[SmmuIndex].SharedAbortL2 = NULL;
+      }
+
       SmmuV3FreeStreamTable (IoMmu->SmmuInfo[SmmuIndex].StreamTable, IoMmu->SmmuInfo[SmmuIndex].StreamTableSize);
       IoMmu->SmmuInfo[SmmuIndex].StreamTable = NULL;
     }
@@ -1064,7 +1592,6 @@ InitializeSmmuDxe (
   UINT64                   *SmmuDisabledList;
   EFI_ACPI_TABLE_PROTOCOL  *AcpiTable;
   SMMU_CONFIG              *SmmuConfig;
-  PAGE_TABLE               *PageTableRoot;
   VOID                     *IortData;
 
   // Get SMMU configuration data from HOB
@@ -1090,6 +1617,19 @@ InitializeSmmuDxe (
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: Failed to locate ACPI Table Protocol\n", __func__));
     return Status;
+  }
+
+  // Retrieve GIC interrupt registration interface so we can hook SMMU
+  // EVTQ / GERR interrupts later in SmmuV3Configure. Treat absence as
+  // non-fatal so SMMU configuration still proceeds without ISRs.
+  Status = gBS->LocateProtocol (
+                  &gHardwareInterrupt2ProtocolGuid,
+                  NULL,
+                  (VOID **)&mGicInterrupt
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_WARN, "%a: HardwareInterrupt2 protocol not found (%r); SMMU IRQs will not be hooked\n", __func__, Status));
+    mGicInterrupt = NULL;
   }
 
   // Create an event callback to disable SMMUv3 translation and set global abort during ExitBootServices
@@ -1122,18 +1662,28 @@ InitializeSmmuDxe (
 
   DEBUG ((DEBUG_VERBOSE, "%a: Found %u SMMUs\n", __func__, mIoMmu->SmmuCount));
 
+  // Save IORT data pointer for StreamID lookups after PCI enumeration.
+  mIortData = IortData;
+
+  // Pick up the platform's NonDiscoverable {UniqueId -> Named Component Obj Name}
+  // lookup table, if provided. SmmuDxe uses this in IoMmuSetAttribute to
+  // resolve NC DeviceHandles reliably.
+  if ((SmmuConfig->NcDeviceListSize >= sizeof (SMMU_NC_DEVICE_ENTRY)) &&
+      (SmmuConfig->NcDeviceListOffset != 0))
+  {
+    mIoMmu->NcDeviceList  = (SMMU_NC_DEVICE_ENTRY *)((UINTN)SmmuConfig + (UINTN)SmmuConfig->NcDeviceListOffset);
+    mIoMmu->NcDeviceCount = SmmuConfig->NcDeviceListSize / sizeof (SMMU_NC_DEVICE_ENTRY);
+    DEBUG ((DEBUG_VERBOSE, "%a: NonDiscoverable lookup table: %u entries\n", __func__, mIoMmu->NcDeviceCount));
+  } else {
+    mIoMmu->NcDeviceList  = NULL;
+    mIoMmu->NcDeviceCount = 0;
+    DEBUG ((DEBUG_WARN, "%a: No NonDiscoverable lookup table - NC StreamID resolution will fail\n", __func__));
+  }
+
   // Add IORT Table
   Status = AddIortTable (AcpiTable, IortData, SmmuConfig->IortSize);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: Failed to add IORT table\n", __func__));
-    goto Error;
-  }
-
-  // Global Page Table until TODO: IoMmu Protocol V2 is implemented
-  PageTableRoot = PageTableInit ();
-  if (PageTableRoot == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to initialize Page Table\n", __func__));
-    Status = EFI_OUT_OF_RESOURCES;
     goto Error;
   }
 
@@ -1153,13 +1703,20 @@ InitializeSmmuDxe (
   // Configure SMMUv3 hardware
   for (SmmuIndex = 0; SmmuIndex < mIoMmu->SmmuCount; SmmuIndex++) {
     if (mIoMmu->SmmuInfo[SmmuIndex].Enabled) {
-      Status = SmmuV3Configure (&mIoMmu->SmmuInfo[SmmuIndex], PageTableRoot);
+      Status = SmmuV3Configure (&mIoMmu->SmmuInfo[SmmuIndex]);
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "%a: Failed to configure SMMUv3 hardware\n", __func__));
         goto Error;
       }
 
       DEBUG ((DEBUG_INFO, "%a: SMMUv3 0x%llx is configured for Stage2 Translation\n", __func__, mIoMmu->SmmuInfo[SmmuIndex].SmmuBase));
+
+      // Pre-map any IORT RMR ranges into the per-StreamID page tables that the RMR's IdMappings cover.
+      Status = SmmuV3AddRMRMapping (&mIoMmu->SmmuInfo[SmmuIndex]);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: Failed to add RMR mappings for SMMU 0x%llx: %r\n", __func__, mIoMmu->SmmuInfo[SmmuIndex].SmmuBase, Status));
+        goto Error;
+      }
     }
   }
 

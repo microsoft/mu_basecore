@@ -16,6 +16,8 @@
 #include <Uefi/UefiBaseType.h>
 #include <IndustryStandard/IoRemappingTable.h>
 #include <Protocol/IoMmu.h>
+#include <Protocol/HardwareInterrupt2.h>
+#include <Guid/SmmuConfig.h>
 #include "IoMmu.h"
 
 // Number of levels in the page table
@@ -127,6 +129,12 @@
 #define SMMUV3_STREAM_TABLE_ENTRY_VALID                                    1     // Entry is valid
 
 //
+// VMID 0 is not a valid VMID so whenever we wrap past the max VMID, we set it to 0 to mark exhaustion.
+// (Applies to both 8/16-bit VMID width).
+//
+#define SMMU_VMID_RESERVED  0
+
+//
 // SMMUV3 Configuration bit definitions
 //
 #define SMMUV3_STR_TAB_BASE_CFG_FMT_LINEAR  0                // Linear Stream Table format
@@ -163,9 +171,16 @@ typedef struct _RMR_NODE_INFO {
   LIST_ENTRY                            Link;     // Link to the RMR node in the list
 } RMR_NODE_INFO;
 
+// Single node in a StreamID list returned by DeviceHandleToStreamId.
+// Allocated from pool; freed by SmmuStreamIdListFree.
+typedef struct {
+  LIST_ENTRY    Link;
+  UINT32        StreamId;
+} SMMU_STREAM_ID_ENTRY;
+
 // General SMMU Information for a SMMU instance
 typedef struct _SMMU_INFO {
-  PAGE_TABLE    *PageTableRoot;
+  VOID          *SharedAbortL2;          // 2-level only: shared L2 page of all-ABORT STEs. L1 entries point here until split-on-write.
   VOID          *StreamTable;
   VOID          *CommandQueue;
   VOID          *EventQueue;
@@ -187,16 +202,26 @@ typedef struct _SMMU_INFO {
   BOOLEAN       RangeInvalidationSupported;
   BOOLEAN       EBSBehaviorAbort;
   BOOLEAN       Enabled;
+  BOOLEAN       TwoLevelStreamTableSupported; // Whether the SMMU supports 2-level stream tables, which allows more entries than can fit in a single page.
+  BOOLEAN       Vmid16Supported;              // IDR0.VMID16. FALSE = 8-bit VMIDs only.
+  UINT16        NextVmid;                     // Next per-stream VMID to hand out. Starts at 1.
+  UINTN         EvtqIrqNum;
+  UINTN         GerrIrqNum;
 } SMMU_INFO;
 
 // IoMmu configuration structure
 typedef struct _IOMMU_CONFIG {
-  UINT32       SmmuCount;
-  SMMU_INFO    *SmmuInfo;
+  UINT32                  SmmuCount;
+  SMMU_INFO               *SmmuInfo;
+  // Platform-provided UniqueId -> Named Component ObjectName mapping for NonDiscoverable devices.
+  SMMU_NC_DEVICE_ENTRY    *NcDeviceList;
+  UINT32                  NcDeviceCount;
 } IOMMU_CONFIG;
 
 // IOMMU/SMMU instance
-extern IOMMU_CONFIG  *mIoMmu;
+extern IOMMU_CONFIG                      *mIoMmu;
+extern EFI_HARDWARE_INTERRUPT2_PROTOCOL  *mGicInterrupt;
+extern VOID                              *mIortData;     // Global IORT data pointer
 
 /**
   Decode the address width from the given address size type.
@@ -444,6 +469,21 @@ SmmuV3LogErrors (
   );
 
 /**
+  Register GIC interrupt sources for SmmuV3 EVTQ and GERR interrupts.
+
+  @param[in] GicInterrupt  Pointer to the GIC interrupt protocol.
+  @param[in] SmmuInfo      Pointer to the SMMU_INFO structure.
+
+  @retval EFI_SUCCESS           The interrupt sources were registered successfully.
+  @retval EFI_INVALID_PARAMETER The GicInterrupt or SmmuInfo is NULL.
+**/
+EFI_STATUS
+SmmuV3RegisterGicIsr (
+  IN EFI_HARDWARE_INTERRUPT2_PROTOCOL  *GicInterrupt,
+  IN SMMU_INFO                         *SmmuInfo
+  );
+
+/**
   Send a SMMUV3_CMD_GENERIC command to the SMMUv3.
 
   @param [in]  SmmuInfo  Pointer to the SMMU_INFO structure.
@@ -461,8 +501,10 @@ SmmuV3SendCommand (
 
 /**
   Invalidate all TLB entries in the SMMUv3.
+  Uses CMD_TLBI_S12_VMALL to invalidate all Stage 2 TLB entries for the specified VMID.
 
   @param [in]  SmmuInfo  Pointer to the SMMU_INFO structure.
+  @param [in]  Vmid      The VMID to invalidate.
 
   @retval EFI_SUCCESS            Success.
   @retval EFI_TIMEOUT            Timeout.
@@ -470,13 +512,15 @@ SmmuV3SendCommand (
 **/
 EFI_STATUS
 SmmuV3TLBInvalidateAll (
-  IN SMMU_INFO  *SmmuInfo
+  IN SMMU_INFO  *SmmuInfo,
+  IN UINT16     Vmid
   );
 
 /**
   Invalidate TLB entries for specified InputAddress for Stage 2 of SmmuV3.
 
   @param [in]  SmmuInfo      Pointer to the SMMU_INFO structure.
+  @param [in]  Vmid          The VMID to invalidate.
   @param [in]  InputAddress  The input address to invalidate.
 
   @retval EFI_SUCCESS            Success.
@@ -486,6 +530,7 @@ SmmuV3TLBInvalidateAll (
 EFI_STATUS
 SmmuV3TLBInvalidateAddress (
   IN SMMU_INFO  *SmmuInfo,
+  IN UINT16     Vmid,
   IN UINT64     InputAddress
   );
 
@@ -523,6 +568,181 @@ SmmuV3ParseIort (
   IN  VOID       *IortTable,
   OUT SMMU_INFO  **SmmuInfo,
   OUT UINT32     *SmmuCount
+  );
+
+/**
+  Allocate a stage-2 page table root suitable for use as an STE's S2TTB.
+  Allocates the maximum concatenated-root size so it can be used regardless
+  of the SMMU's configured starting level / OAS.
+
+  @retval Pointer to the zeroed root, or NULL on failure.
+**/
+PAGE_TABLE *
+SmmuV3AllocatePageTableRoot (
+  VOID
+  );
+
+/**
+  Recursively free a stage-2 page table tree previously returned by
+  SmmuV3AllocatePageTableRoot().
+
+  @param [in]  Level      Current level (caller must pass 0 for the root).
+  @param [in]  PageTable  The page-table tree to free. May be NULL.
+**/
+VOID
+SmmuV3FreePageTableTree (
+  IN UINT8       Level,
+  IN PAGE_TABLE  *PageTable
+  );
+
+/**
+  Ensure a stage-2 page-table root exists for the given StreamID. If this is
+  the first call for the StreamID on this SMMU, allocate a fresh root + VMID
+  and promote the corresponding STE from ABORT to STAGE_2_TRANSLATE using a
+  break-before-make sequence (CFGI_STE + CMD_SYNC twice). Subsequent calls
+  return the (Root, Vmid) already encoded in the live STE.
+
+  @param [in]   SmmuInfo  Pointer to the SMMU_INFO structure.
+  @param [in]   StreamId  The StreamID.
+  @param [out]  OutRoot   Receives the stage-2 page-table root.
+  @param [out]  OutVmid   Receives the VMID tag installed in the STE.
+
+  @retval EFI_SUCCESS            Success.
+  @retval EFI_INVALID_PARAMETER  Invalid parameters.
+  @retval EFI_OUT_OF_RESOURCES   Allocation failed / VMID space exhausted.
+  @retval Other                  STE promotion failure.
+**/
+EFI_STATUS
+SmmuV3StreamGetOrCreate (
+  IN  SMMU_INFO   *SmmuInfo,
+  IN  UINT32      StreamId,
+  OUT PAGE_TABLE  **OutRoot,
+  OUT UINT16      *OutVmid
+  );
+
+/**
+  Free every SMMU_STREAM_ID_ENTRY hanging off the given list head and
+  re-initialize the head as empty. Safe to call on an already-empty list.
+
+  @param[in,out] StreamIdList  List head previously populated by
+                               DeviceHandleToStreamId.
+**/
+VOID
+SmmuStreamIdListFree (
+  IN OUT LIST_ENTRY  *StreamIdList
+  );
+
+/**
+  Resolve a DeviceHandle to its IORT-derived StreamID(s).
+
+  For real PCIe devices (Segment != 0xFF):
+    PciIo->GetLocation() -> RID -> IORT RC node ID mapping -> single StreamID.
+    The matched mapping's OutputReference identifies the owning SMMUv3 node,
+    whose base address is returned in *SmmuBase.
+
+  For NonDiscoverable devices (Segment == 0xFF):
+    UniqueId -> platform NC table entry -> IORT Named Component node ->
+    full StreamID list (every mapping expanded, including ranges).
+
+  @param[in]      IortTable     Pointer to the IORT ACPI table.
+  @param[in]      DeviceHandle  The device handle to resolve.
+  @param[in,out]  StreamIdList  Caller-supplied, initialized-empty list head.
+                                On success contains one SMMU_STREAM_ID_ENTRY
+                                per resolved StreamID, in IORT order (first
+                                entry is the primary; rest are aliases that
+                                share the primary's stage-2 page table and
+                                VMID). Caller must release via
+                                SmmuStreamIdListFree.
+  @param[out]     SmmuBase      Optional. If non-NULL, receives the base
+                                address of the SMMUv3 node that owns these
+                                StreamIDs (0 if unknown).
+
+  @retval EFI_SUCCESS           StreamIDs resolved.
+  @retval EFI_INVALID_PARAMETER One or more required parameters are NULL.
+  @retval EFI_UNSUPPORTED       DeviceHandle has no PciIo protocol.
+  @retval EFI_NOT_FOUND         No IORT mapping found.
+  @retval EFI_OUT_OF_RESOURCES  Allocation failure while building the list.
+**/
+EFI_STATUS
+DeviceHandleToStreamId (
+  IN     VOID        *IortTable,
+  IN     EFI_HANDLE  DeviceHandle,
+  IN OUT LIST_ENTRY  *StreamIdList,
+  OUT    UINT64      *SmmuBase
+  );
+
+/**
+  Build a default "abort-equivalent" stream-table entry. Equivalent to a
+  STAGE_2_TRANSLATE STE with S2Ttb = 0 — stage 2 is enabled but no
+  translations are installed, so DMA misses fault and are recorded. Used at
+  init to populate every STE slot before any device has been mapped.
+
+  @param [in]   SmmuInfo     SMMU instance (needed for IDR-derived fields).
+  @param [out]  StreamEntry  STE buffer to populate.
+
+  @retval EFI_SUCCESS            Success.
+  @retval EFI_INVALID_PARAMETER  Invalid parameters.
+  @retval Other                  Failure from the underlying translate STE builder.
+**/
+EFI_STATUS
+SmmuV3BuildInvalidStreamTableEntry (
+  IN  SMMU_INFO                  *SmmuInfo,
+  OUT SMMUV3_STREAM_TABLE_ENTRY  *StreamEntry
+  );
+
+/**
+  Build a STAGE_2_TRANSLATE stream-table entry using the given page-table root.
+
+  @param [in]   SmmuInfo        Pointer to the SMMU_INFO structure.
+  @param [in]   PageTableRoot   Page-table root the STE should point at.
+  @param [in]   Vmid            VMID tag to install in the STE's S2VMID field.
+  @param [out]  StreamEntry     STE buffer to populate.
+
+  @retval EFI_SUCCESS            Success.
+  @retval EFI_INVALID_PARAMETER  Invalid parameters.
+**/
+EFI_STATUS
+SmmuV3BuildTranslateStreamTableEntry (
+  IN  SMMU_INFO                  *SmmuInfo,
+  IN  PAGE_TABLE                 *PageTableRoot,
+  IN  UINT16                     Vmid,
+  OUT SMMUV3_STREAM_TABLE_ENTRY  *StreamEntry
+  );
+
+/**
+  Locate the STE slot in the SMMU's stream table for a given StreamID.
+  Supports both linear and 2-level stream tables.
+
+  @param [in]  SmmuInfo  Pointer to the SMMU_INFO structure.
+  @param [in]  StreamId  The StreamID.
+
+  @retval Pointer to the STE slot, or NULL if out-of-range.
+**/
+SMMUV3_STREAM_TABLE_ENTRY *
+SmmuV3GetSteSlot (
+  IN SMMU_INFO  *SmmuInfo,
+  IN UINT32     StreamId
+  );
+
+/**
+  Promote the STE for StreamId from ABORT to STAGE_2_TRANSLATE with the given
+  page-table root, using the SMMU break-before-make sequence.
+
+  @param [in]  SmmuInfo        Pointer to the SMMU_INFO structure.
+  @param [in]  StreamId        The StreamID whose STE is being promoted.
+  @param [in]  Vmid            VMID tag to install in the STE's S2VMID field.
+  @param [in]  PageTableRoot   Page-table root to install in the STE.
+
+  @retval EFI_SUCCESS            Success.
+  @retval EFI_INVALID_PARAMETER  Invalid parameters.
+  @retval Other                  Command-queue / sync failure.
+**/
+EFI_STATUS
+SmmuV3PromoteSteToTranslate (
+  IN SMMU_INFO   *SmmuInfo,
+  IN UINT32      StreamId,
+  IN UINT16      Vmid,
+  IN PAGE_TABLE  *PageTableRoot
   );
 
 #endif
