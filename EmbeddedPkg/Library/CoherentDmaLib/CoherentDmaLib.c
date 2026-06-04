@@ -15,6 +15,15 @@
 
 #include <Protocol/IoMmu.h>   // MU_CHANGE
 
+// MU_CHANGE [BEGIN]
+typedef struct {
+  VOID      *IoMmuContext;
+  UINT64    IommuBase;
+  UINT32    DmaId;
+} COHERENT_MAP_INFO;
+
+// MU_CHANGE [END]
+
 STATIC
 PHYSICAL_ADDRESS
 HostToDeviceAddress (
@@ -50,6 +59,8 @@ DmaMap (
   IN     DMA_MAP_OPERATION  Operation,
   IN     VOID               *HostAddress,
   IN OUT UINTN              *NumberOfBytes,
+  IN     UINT64             IommuBase,    // MU_CHANGE
+  IN     UINT32             DmaId,        // MU_CHANGE
   OUT    PHYSICAL_ADDRESS   *DeviceAddress,
   OUT    VOID               **Mapping
   )
@@ -59,6 +70,7 @@ DmaMap (
   VOID                   *IoMmuHostAddress;
   EDKII_IOMMU_OPERATION  IoMmuOperation;
   UINT64                 IoMmuAttribute;
+  COHERENT_MAP_INFO      *Map;
 
   // MU_CHANGE [END]
 
@@ -75,6 +87,18 @@ DmaMap (
   *Mapping         = NULL;
 
   // MU_CHANGE [BEGIN]
+  if (IommuBase == 0) {
+    // No IoMmu
+    return EFI_SUCCESS;
+  }
+
+  Map = AllocateZeroPool (sizeof (COHERENT_MAP_INFO));
+  if (Map == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Map->IommuBase = IommuBase;
+  Map->DmaId     = DmaId;
 
   switch (Operation) {
     case MapOperationBusMasterRead:
@@ -95,6 +119,7 @@ DmaMap (
     default:
       DEBUG ((DEBUG_ERROR, "%a - Invalid operation %d\n", __func__, Operation));
       ASSERT (FALSE);
+      FreePool (Map);
       return EFI_INVALID_PARAMETER;
   }
 
@@ -103,36 +128,39 @@ DmaMap (
              IoMmuHostAddress,
              NumberOfBytes,
              DeviceAddress,
-             Mapping
+             &Map->IoMmuContext
              );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a - IoMmuMap failed.\n", __func__));
     ASSERT (FALSE);
+    FreePool (Map);
     return Status;
   }
 
-  Status = IoMmuSetAttribute (
-             NULL,
-             *Mapping,
+  Status = IoMmuSetAttributeById (
+             IommuBase,
+             DmaId,
+             Map->IoMmuContext,
              IoMmuAttribute
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttributeById failed.\n", __func__));
     ASSERT (FALSE);
     goto Unmap;
   }
 
+  *Mapping = Map;
   // MU_CHANGE [END]
   return EFI_SUCCESS;
 
   // MU_CHANGE [BEGIN]
 Unmap:
-  Status = IoMmuUnmap (*Mapping);
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (IoMmuUnmap (Map->IoMmuContext))) {
     DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
     ASSERT (FALSE);
   }
 
+  FreePool (Map);
   // MU_CHANGE [END]
 
   return Status;
@@ -155,22 +183,30 @@ DmaUnmap (
   )
 {
   // MU_CHANGE [BEGIN]
-  EFI_STATUS  Status;
+  EFI_STATUS         Status;
+  COHERENT_MAP_INFO  *Map;
 
-  Status = IoMmuSetAttribute (NULL, Mapping, 0);
+  if (Mapping == NULL) {
+    return EFI_SUCCESS;
+  }
+
+  Map = (COHERENT_MAP_INFO *)Mapping;
+
+  Status = IoMmuSetAttributeById (Map->IommuBase, Map->DmaId, Map->IoMmuContext, 0);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
+    DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttributeById failed.\n", __func__));
     ASSERT (FALSE);
     return Status;
   }
 
-  Status = IoMmuUnmap (Mapping);
+  Status = IoMmuUnmap (Map->IoMmuContext);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a - IoMmuUnmap failed.\n", __func__));
     ASSERT (FALSE);
     return Status;
   }
 
+  FreePool (Map);
   // MU_CHANGE [END]
   return EFI_SUCCESS;
 }
