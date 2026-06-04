@@ -9,11 +9,8 @@
 #include "NonDiscoverablePciDeviceIo.h"
 
 #include <Protocol/DriverBinding.h>
-// MU_CHANGE [BEGIN]
-#include <Protocol/NonDiscoverableDeviceUniqueId.h>
 
-// #define MAX_NON_DISCOVERABLE_PCI_DEVICE_ID  (32 * 256)
-// MU_CHANGE [END]
+#define MAX_NON_DISCOVERABLE_PCI_DEVICE_ID  (32 * 256)
 
 STATIC UINTN           mUniqueIdCounter = 0;
 EFI_CPU_ARCH_PROTOCOL  *mCpu;
@@ -150,14 +147,9 @@ NonDiscoverablePciDeviceStart (
 {
   NON_DISCOVERABLE_PCI_DEVICE  *Dev;
   EFI_STATUS                   Status;
-  // MU_CHANGE [BEGIN]
-  NON_DISCOVERABLE_DEVICE_UNIQUE_ID_PROTOCOL  *UniqueIdProtocol;
 
-  // ASSERT (mUniqueIdCounter < MAX_NON_DISCOVERABLE_PCI_DEVICE_ID);
-  // if (mUniqueIdCounter >= MAX_NON_DISCOVERABLE_PCI_DEVICE_ID) {
-  ASSERT (mUniqueIdCounter < (MAX_NON_DISCOVERABLE_PCI_DEVICE_ID / 2));
-  if (mUniqueIdCounter >= (MAX_NON_DISCOVERABLE_PCI_DEVICE_ID / 2)) {
-    // MU_CHANGE [END]
+  ASSERT (mUniqueIdCounter < MAX_NON_DISCOVERABLE_PCI_DEVICE_ID);
+  if (mUniqueIdCounter >= MAX_NON_DISCOVERABLE_PCI_DEVICE_ID) {
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -195,44 +187,7 @@ NonDiscoverablePciDeviceStart (
     goto CloseProtocol;
   }
 
-  // MU_CHANGE [BEGIN]
-  Status = gBS->HandleProtocol (DeviceHandle, &gEdkiiNonDiscoverableDeviceUniqueIdProtocolGuid, (VOID **)&UniqueIdProtocol);
-  if (Status == EFI_SUCCESS) {
-    if (UniqueIdProtocol->Revision != NON_DISCOVERABLE_DEVICE_UNIQUE_ID_PROTOCOL_REVISION) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%a: UniqueId protocol revision mismatch. Expected %d, got %d\n",
-        __func__,
-        NON_DISCOVERABLE_DEVICE_UNIQUE_ID_PROTOCOL_REVISION,
-        UniqueIdProtocol->Revision
-        ));
-      Status = EFI_INCOMPATIBLE_VERSION;
-      goto CloseProtocol;
-    }
-
-    if ((UniqueIdProtocol->UniqueId < (MAX_NON_DISCOVERABLE_PCI_DEVICE_ID / 2)) || (UniqueIdProtocol->UniqueId >= MAX_NON_DISCOVERABLE_PCI_DEVICE_ID)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "%a: UniqueId Protocol failed. UniqueId=0x%llx must be greater than or equal to 0x%llx and less than 0x%llx.\n",
-        __func__,
-        UniqueIdProtocol->UniqueId,
-        (MAX_NON_DISCOVERABLE_PCI_DEVICE_ID / 2),
-        MAX_NON_DISCOVERABLE_PCI_DEVICE_ID
-        ));
-      Status = EFI_INCOMPATIBLE_VERSION;
-      goto CloseProtocol;
-    }
-
-    // Assign UniqueId from protocol if available.
-    Dev->UniqueId = UniqueIdProtocol->UniqueId;
-    DEBUG ((DEBUG_VERBOSE, "%a: UniqueId=0x%llx\n", __func__, Dev->UniqueId));
-  } else {
-    // Otherwise, backup and assign from counter.
-    Dev->UniqueId = mUniqueIdCounter++;
-    DEBUG ((DEBUG_VERBOSE, "%a: UniqueId Protocol failed. Backup to mUniqueIdCounter=0x%llx\n", __func__, Dev->UniqueId));
-  }
-
-  // MU_CHANGE [END]
+  Dev->UniqueId = mUniqueIdCounter++;
 
   return EFI_SUCCESS;
 
