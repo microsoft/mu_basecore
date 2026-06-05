@@ -1416,6 +1416,12 @@
   # Size in pages. Current default is roughly 1.6GB.
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxMemoryTypeInfoPages            |0x60000|UINT32|0x40000150
   # MU_CHANGE TCBZ1086 [END]
+
+  # MU_CHANGE [BEGIN] - Configurable NVMe generic command timeout
+  ## Timeout, in seconds, used for generic NVMe transactions issued by NvmExpressDxe.
+  # @Prompt NVMe generic command timeout (seconds).
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNvmeGenericTimeout|5|UINT32|0x40000154
+  # MU_CHANGE [END] - Configurable NVMe generic command timeout
   
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Dynamic type PCD can be registered callback function for Pcd setting action.
