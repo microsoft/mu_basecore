@@ -85,6 +85,11 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdNvmeNamespaceFilterId         ## CONSUMES
   ## MU_CHANGE [END] - NVMe namespace filtering
 
+## MU_CHANGE [BEGIN] - Configurable NVMe generic command timeout
+[FixedPcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNvmeGenericTimeout            ## CONSUMES
+## MU_CHANGE [END] - Configurable NVMe generic command timeout
+
 # [Event]
 # EVENT_TYPE_RELATIVE_TIMER ## SOMETIMES_CONSUMES
 #

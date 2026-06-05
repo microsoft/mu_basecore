@@ -35,3 +35,9 @@
   UnitTestLib
   PrintLib
   MemoryAllocationLib
+  PcdLib  # MU_CHANGE - Configurable NVMe generic command timeout
+
+## MU_CHANGE [BEGIN] - Configurable NVMe generic command timeout
+[FixedPcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNvmeGenericTimeout            ## CONSUMES
+## MU_CHANGE [END] - Configurable NVMe generic command timeout
