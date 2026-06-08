@@ -109,6 +109,45 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
         with open(os.path.join(OutputDir, "basetoolsbin_path_env.yaml"), "w") as f:
             f.write(content)
 
+    def CleanBuildOutputs(self, shell_env, make_cmd, make_clean_target):
+        '''Clean all build outputs.'''
+        base_tools_path = shell_env.get_shell_var("EDK_TOOLS_PATH")
+
+        # Remove the BaseToolsBuild log/temp folder.
+        # Close all file-based log handlers first so the log file is not locked.
+        build_folder = os.path.join(base_tools_path, self.GetLoggingFolderRelativeToRoot())
+        if os.path.isdir(build_folder):
+            logging.info("Removing directory: %s", build_folder)
+            root_logger = logging.getLogger()
+            for handler in list(root_logger.handlers):
+                if isinstance(handler, logging.FileHandler):
+                    handler.close()
+                    root_logger.removeHandler(handler)
+            shutil.rmtree(build_folder)
+
+        # Re-create the log folder and file handler so subsequent build output is logged.
+        os.makedirs(build_folder, exist_ok=True)
+        log_file = os.path.join(build_folder, self.GetLoggingFileName("txt") + ".txt")
+        file_handler = logging.FileHandler(log_file, mode='w')
+        file_handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(file_handler)
+        logging.info("Running Python version: " + str(sys.version_info))
+
+        # Do the actual clean
+        ret = RunCmd(make_cmd, make_clean_target, workingdir=base_tools_path)
+        if ret != 0:
+            logging.warning("%s %s returned %d", make_cmd, make_clean_target, ret)
+
+        # Remove output bin directories to delete stale YAML files.
+        for bin_dir in [os.path.join(base_tools_path, "Bin", "Win32"),
+                        os.path.join(base_tools_path, "Bin", "Win64"),
+                        os.path.join(base_tools_path, "Source", "C", "bin")]:
+            if os.path.isdir(bin_dir):
+                logging.info("Removing directory: %s", bin_dir)
+                shutil.rmtree(bin_dir)
+
+        logging.info("Clean complete.")
+
     def Go(self):
         logging.info("Running Python version: " + str(sys.version_info))
 
@@ -180,12 +219,10 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
             else:
                 # cross compiling
                 shell_env.insert_path(shell_env.get_shell_var("EDK_TOOLS_BIN"))
+            
+            self.CleanBuildOutputs(shell_env, 'nmake.exe', 'cleanall')
 
             # Actually build the tools.
-            # MU_CHANGE [BEGIN] - Run nmake clean for GenStm
-            ret = RunCmd('nmake.exe', 'clean',
-                        workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
-            # MU_CHANGE [END] - Run nmake clean for GenStm
             output_stream = edk2_logging.create_output_stream()
             ret = RunCmd('nmake.exe', None,
                          workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
@@ -201,7 +238,7 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
                 self.WritePathEnvFile(self.OutputDir)
             return ret
 
-        elif self.tool_chain_tag.lower().startswith("gcc"):
+        elif self.tool_chain_tag.lower().startswith("gcc") or self.tool_chain_tag.lower().startswith("clang"):
             # MU_CHANGE STARTs: Specify target architecture
             # Note: This HOST_ARCH is in respect to the BUILT base tools, not the host arch where
             # this script is BUILDING the base tools.
@@ -229,6 +266,12 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
                 self.target_arch = HostInfo.arch
                 TargetInfoArch = HostInfo.arch
             # Otherwise, the built binary arch will be consistent with the host system
+
+            make_command = 'make'
+            clang_bin = shell_env.get_shell_var("CLANG_BIN")
+            if clang_bin is not None:
+                if os.path.exists(os.path.join(clang_bin, "mingw32-make.exe")):
+                    make_command = 'mingw32-make'
 
             # Added logic to support cross compilation scenarios
             if TargetInfoArch != HostInfo.arch:
@@ -259,21 +302,19 @@ class Edk2ToolsBuild(BaseAbstractInvocable):
                 if ret != 0:
                     raise Exception(f"Failed to configure the util-linux to build with our gcc {ret}")
 
-                ret = RunCmd("make", "", workingdir=unzip_dir)
+                ret = RunCmd(make_command, "", workingdir=unzip_dir)
                 if ret != 0:
                     raise Exception(f"Failed to build the libuuid with our gcc {ret}")
 
                 shell_environment.GetEnvironment().set_shell_var("CROSS_LIB_UUID", unzip_dir)
                 shell_environment.GetEnvironment().set_shell_var("CROSS_LIB_UUID_INC", os.path.join(unzip_dir, "libuuid", "src"))
 
-            ret = RunCmd("make", "clean", workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
-            if ret != 0:
-                raise Exception("Failed to build.")
+            self.CleanBuildOutputs(shell_env, make_command, 'clean')
 
             cpu_count = self.GetCpuThreads()
 
             output_stream = edk2_logging.create_output_stream()
-            ret = RunCmd("make", f"-C .  -j {cpu_count}", workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
+            ret = RunCmd(make_command, f"-C .  -j {cpu_count}", workingdir=shell_env.get_shell_var("EDK_TOOLS_PATH"))
             edk2_logging.remove_output_stream(output_stream)
             problems = edk2_logging.scan_compiler_output(output_stream)
             for level, problem in problems:
