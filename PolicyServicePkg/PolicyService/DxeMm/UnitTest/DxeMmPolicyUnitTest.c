@@ -41,6 +41,13 @@ NOTIFICATION_TRACKER  Notifications[100]      = { 0 };
 UINT32                NotificationsCount      =  0;
 UINT32                NotifyCountUpdateRemove =  0;
 
+UINT8    GetPolicyExpectedData[32]  = { 0 };
+UINT16   GetPolicyExpectedSize      = 0;
+UINT64   GetPolicyExpectedAttrs     = 0;
+BOOLEAN  GetPolicyNotifyDataValid   = FALSE;
+UINT32   GetPolicyNotifyCount       = 0;
+BOOLEAN  UnitTestPolicyLockHeld     = FALSE;
+
 //
 // Boiler plate functions required by PolicyCommon
 //
@@ -51,7 +58,22 @@ PolicyLockAcquire (
   VOID
   )
 {
-  return;
+  ASSERT (!UnitTestPolicyLockHeld);
+  UnitTestPolicyLockHeld = TRUE;
+}
+
+BOOLEAN
+EFIAPI
+PolicyLockTryAcquire (
+  VOID
+  )
+{
+  if (UnitTestPolicyLockHeld) {
+    return FALSE;
+  }
+
+  UnitTestPolicyLockHeld = TRUE;
+  return TRUE;
 }
 
 VOID
@@ -60,7 +82,8 @@ PolicyLockRelease (
   VOID
   )
 {
-  return;
+  ASSERT (UnitTestPolicyLockHeld);
+  UnitTestPolicyLockHeld = FALSE;
 }
 
 EFI_STATUS
@@ -105,6 +128,13 @@ PolicyServiceCleanup (
   ZeroMem (&Notifications[0], sizeof (Notifications));
   NotificationsCount      = 0;
   NotifyCountUpdateRemove = 0;
+
+  ZeroMem (&GetPolicyExpectedData[0], sizeof (GetPolicyExpectedData));
+  GetPolicyExpectedSize    = 0;
+  GetPolicyExpectedAttrs   = 0;
+  GetPolicyNotifyDataValid = FALSE;
+  GetPolicyNotifyCount     = 0;
+  UnitTestPolicyLockHeld   = FALSE;
 }
 
 /**
@@ -147,6 +177,44 @@ GenericNotify (
     ASSERT (Policy != NULL);
     Status = CommonSetPolicy (PolicyGuid, POLICY_ATTRIBUTE_FINALIZED, Policy, 10);
     ASSERT (!EFI_ERROR (Status));
+  }
+}
+
+/**
+  Callback that validates CommonGetPolicy can safely read updated policy data
+  during a set-policy notification.
+
+  @param[in]  PolicyGuid        The GUID of the policy being notified.
+  @param[in]  EventTypes        The events that occurred for the notification.
+  @param[in]  CallbackHandle    The handle for the callback being invoked.
+**/
+VOID
+EFIAPI
+GetPolicyInNotify (
+  IN CONST EFI_GUID  *PolicyGuid,
+  IN UINT32          EventTypes,
+  IN VOID            *CallbackHandle
+  )
+{
+  EFI_STATUS  Status;
+  UINT64      Attributes;
+  UINT16      PolicySize;
+  UINT8       Policy[32];
+
+  GetPolicyNotifyCount++;
+
+  if ((EventTypes & POLICY_NOTIFY_SET) == 0) {
+    return;
+  }
+
+  PolicySize = sizeof (Policy);
+  Status     = CommonGetPolicy (PolicyGuid, &Attributes, Policy, &PolicySize);
+  if (!EFI_ERROR (Status) &&
+      (PolicySize == GetPolicyExpectedSize) &&
+      (Attributes == GetPolicyExpectedAttrs) &&
+      (CompareMem (Policy, GetPolicyExpectedData, PolicySize) == 0))
+  {
+    GetPolicyNotifyDataValid = TRUE;
   }
 }
 
@@ -404,6 +472,50 @@ EditingNotifyTest (
 }
 
 /**
+  Tests that policy consumers can call get-policy within a set-policy
+  notification and observe the updated policy payload.
+
+  @param[in]  Context                     Unused.
+
+  @retval   UNIT_TEST_PASSED              Test passed.
+  @retval   UNIT_TEST_ERROR_TEST_FAILED   Test failed.
+**/
+UNIT_TEST_STATUS
+EFIAPI
+GetPolicyInNotifyTest (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  EFI_STATUS  Status;
+  VOID        *Handle;
+  UINT8       PolicyData[] = { 0xAA, 0x11, 0xBB, 0x22, 0xCC, 0x33, 0xDD, 0x44 };
+  EFI_GUID    TestGuid     = {
+    0x1fd1e345, 0x2f5f, 0x4695, { 0x8c, 0x89, 0x71, 0x4a, 0xa4, 0x37, 0xcb, 0xe1 }
+  };
+
+  Status = CommonRegisterNotify (
+             &TestGuid,
+             POLICY_NOTIFY_ALL,
+             POLICY_NOTIFY_DEFAULT_PRIORITY,
+             GetPolicyInNotify,
+             &Handle
+             );
+  UT_ASSERT_NOT_EFI_ERROR (Status);
+
+  GetPolicyExpectedSize  = sizeof (PolicyData);
+  GetPolicyExpectedAttrs = POLICY_ATTRIBUTE_FINALIZED;
+  CopyMem (GetPolicyExpectedData, PolicyData, sizeof (PolicyData));
+
+  Status = CommonSetPolicy (&TestGuid, GetPolicyExpectedAttrs, PolicyData, sizeof (PolicyData));
+  UT_ASSERT_NOT_EFI_ERROR (Status);
+
+  UT_ASSERT_EQUAL (GetPolicyNotifyCount, 1);
+  UT_ASSERT_TRUE (GetPolicyNotifyDataValid);
+
+  return UNIT_TEST_PASSED;
+}
+
+/**
   Initialize the unit test framework, suite, and unit tests for the
   sample unit tests and run the unit tests.
 
@@ -447,6 +559,7 @@ UefiTestMain (
   AddTestCase (PolicyNotifyTests, "Test of basic policy notifications", "SimpleNotifyTest", SimpleNotifyTest, NULL, PolicyServiceCleanup, NULL);
   AddTestCase (PolicyNotifyTests, "Test of policy priority", "NotifyPriorityTest", NotifyPriorityTest, NULL, PolicyServiceCleanup, NULL);
   AddTestCase (PolicyNotifyTests, "Tests more complex use cases of notifications", "EditingNotifyTest", EditingNotifyTest, NULL, PolicyServiceCleanup, NULL);
+  AddTestCase (PolicyNotifyTests, "Tests get-policy during set-policy notification", "GetPolicyInNotifyTest", GetPolicyInNotifyTest, NULL, PolicyServiceCleanup, NULL);
 
   //
   // Execute the tests.

@@ -35,6 +35,22 @@ PolicyLockAcquire (
 }
 
 /**
+  Attempts to acquire the environment specific lock for the policy list.
+
+  @retval   TRUE   The lock was acquired by this call.
+  @retval   FALSE  The lock was already held.
+
+**/
+BOOLEAN
+EFIAPI
+PolicyLockTryAcquire (
+  VOID
+  )
+{
+  return TRUE;
+}
+
+/**
 Release the environment specific lock for the policy list.
 
 **/

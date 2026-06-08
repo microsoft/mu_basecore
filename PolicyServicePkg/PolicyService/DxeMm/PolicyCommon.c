@@ -99,6 +99,7 @@ CommonGetPolicy (
 {
   EFI_STATUS    Status;
   POLICY_ENTRY  *Entry;
+  BOOLEAN       LockAcquired;
 
   if ((PolicyGuid == NULL) ||
       (PolicySize == NULL) ||
@@ -107,7 +108,13 @@ CommonGetPolicy (
     return EFI_INVALID_PARAMETER;
   }
 
-  PolicyLockAcquire ();
+  // Allow get operations from notification callbacks that already hold the lock.
+  LockAcquired = PolicyLockTryAcquire ();
+  if (!LockAcquired && !mNotifyInProgress) {
+    PolicyLockAcquire ();
+    LockAcquired = TRUE;
+  }
+
   Status = GetPolicyEntry (PolicyGuid, &Entry);
   if (EFI_ERROR (Status)) {
     goto Exit;
@@ -127,7 +134,10 @@ CommonGetPolicy (
   *PolicySize = Entry->PolicySize;
 
 Exit:
-  PolicyLockRelease ();
+  if (LockAcquired) {
+    PolicyLockRelease ();
+  }
+
   return Status;
 }
 
