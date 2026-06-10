@@ -101,6 +101,11 @@ extern TEST_DESC  mEcTest[];
 extern UINTN      mX509TestNum;
 extern TEST_DESC  mX509Test[];
 
+// MU_CHANGE [BEGIN] - Trust anchor lookup unit tests
+extern UINTN      mTrustAnchorTestNum;
+extern TEST_DESC  mTrustAnchorTest[];
+// MU_CHANGE [END]
+
 /** Creates a framework you can use */
 EFI_STATUS
 EFIAPI

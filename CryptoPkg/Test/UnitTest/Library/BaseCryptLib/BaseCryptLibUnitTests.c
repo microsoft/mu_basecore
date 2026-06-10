@@ -30,6 +30,9 @@ SUITE_DESC  mSuiteDesc[] = {
   { "Bn verify tests",               "CryptoPkg.BaseCryptLib", NULL, NULL, &mBnTestNum,             mBnTest             },
   { "EC verify tests",               "CryptoPkg.BaseCryptLib", NULL, NULL, &mEcTestNum,             mEcTest             },
   { "X509 Verify tests",             "CryptoPkg.BaseCryptLib", NULL, NULL, &mX509TestNum,           mX509Test           },
+  // MU_CHANGE [BEGIN] - Trust anchor lookup unit tests
+  { "TrustAnchor verify tests",      "CryptoPkg.BaseCryptLib", NULL, NULL, &mTrustAnchorTestNum,    mTrustAnchorTest    },
+  // MU_CHANGE [END]
 };
 
 EFI_STATUS
