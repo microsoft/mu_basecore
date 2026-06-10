@@ -2026,6 +2026,64 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_GET_AUTHENTICODE_HASH)(
   );
 
 /**
+  Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
+  TBSCertificate digest matches a caller-supplied hash, and return that
+  certificate as a newly allocated DER-encoded buffer.
+
+  The hash algorithm is selected by TbsCertHashSize:
+    20 -> SHA-1, 32 -> SHA-256, 48 -> SHA-384, 64 -> SHA-512.
+
+  CacheHandle is an optional caller-managed cache pointer:
+    - If CacheHandle is NULL, no caching is performed.
+    - If *CacheHandle is NULL, a new cache is allocated; the caller
+      releases it with ONE_CRYPTO_FREE_TRUST_ANCHOR_X509_CACHE.
+
+  @param[in,out] CacheHandle        Optional cache handle pointer.
+  @param[in]     TbsCertHash        Pointer to the target TBSCertificate
+                                    digest bytes.
+  @param[in]     TbsCertHashSize    Length of TbsCertHash in bytes.
+  @param[in]     AuthData           Pointer to the PKCS#7 SignedData
+                                    blob (DER-encoded).
+  @param[in]     AuthDataSize       Size of AuthData in bytes.
+  @param[out]    TrustAnchorX509    Receives a newly allocated buffer
+                                    holding the matching X.509 cert in
+                                    DER form. Caller frees with
+                                    FreePool().
+  @param[out]    TrustAnchorX509Size Receives the certificate length.
+
+  @retval EFI_SUCCESS            A matching certificate was found.
+  @retval EFI_NOT_FOUND          No certificate matched.
+  @retval EFI_INVALID_PARAMETER  Bad parameter or malformed AuthData.
+  @retval EFI_OUT_OF_RESOURCES   Memory allocation failed.
+  @retval EFI_UNSUPPORTED        Interface not supported.
+
+  @since 1.1
+  @ingroup PKCS
+**/
+typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_GET_TRUST_ANCHOR_X509_FROM_AUTH_DATA)(
+  IN OUT VOID         **CacheHandle  OPTIONAL,
+  IN  CONST UINT8     *TbsCertHash,
+  IN  UINTN           TbsCertHashSize,
+  IN  CONST UINT8     *AuthData,
+  IN  UINTN           AuthDataSize,
+  OUT UINT8           **TrustAnchorX509,
+  OUT UINTN           *TrustAnchorX509Size
+  );
+
+/**
+  Release a trust-anchor cache previously allocated by
+  ONE_CRYPTO_GET_TRUST_ANCHOR_X509_FROM_AUTH_DATA.
+
+  @param[in]  CacheHandle  Cache handle, or NULL.
+
+  @since 1.1
+  @ingroup PKCS
+**/
+typedef VOID (EFIAPI *ONE_CRYPTO_FREE_TRUST_ANCHOR_X509_CACHE)(
+  IN  VOID  *CacheHandle  OPTIONAL
+  );
+
+/**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
   encrypted message in a newly allocated buffer.
 
@@ -5512,6 +5570,8 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_GET_CRYPTO_PROVIDER_VERSION_STRING     GetCryptoProviderVersionString;
   /// v1.1 PKCS --------------------------------------------------------------
   ONE_CRYPTO_GET_AUTHENTICODE_HASH                  GetAuthenticodeHash;
+  ONE_CRYPTO_GET_TRUST_ANCHOR_X509_FROM_AUTH_DATA   GetTrustAnchorX509FromAuthData;
+  ONE_CRYPTO_FREE_TRUST_ANCHOR_X509_CACHE           FreeTrustAnchorX509Cache;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */
