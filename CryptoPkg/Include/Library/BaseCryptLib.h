@@ -2631,6 +2631,82 @@ GetAuthenticodeHash (
   );
 
 /**
+  Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
+  TBSCertificate digest matches a caller-supplied hash, and return that
+  certificate as a newly allocated DER-encoded buffer.
+
+  The hash algorithm is selected by TbsCertHashSize:
+    20 -> SHA-1, 32 -> SHA-256, 48 -> SHA-384, 64 -> SHA-512.
+
+  An optional cache may be passed via CacheHandle. CacheHandle is a
+  pointer to a caller-owned VOID *:
+    - If CacheHandle is NULL, no caching is performed.
+    - If *CacheHandle is NULL, this function allocates a new cache and
+      writes its handle to *CacheHandle. The caller releases it with
+      FreeTrustAnchorX509Cache().
+    - Otherwise, *CacheHandle is reused. The cache may be reused across
+      different AuthData inputs; entries are de-duplicated by the cert
+      DER bytes.
+
+  Caution: AuthData is untrusted. The PKCS#7 ASN.1 DER is parsed with
+  bounds-checked length decoding to avoid out-of-bounds reads.
+
+  @param[in,out] CacheHandle        Optional cache handle pointer.
+  @param[in]     TbsCertHash        Pointer to the target TBSCertificate
+                                    digest bytes to match.
+  @param[in]     TbsCertHashSize    Length of TbsCertHash in bytes; this
+                                    selects the hash algorithm.
+  @param[in]     AuthData           Pointer to the PKCS#7 SignedData
+                                    blob (DER-encoded).
+  @param[in]     AuthDataSize       Size of AuthData in bytes.
+  @param[out]    TrustAnchorX509    On success, *TrustAnchorX509 points
+                                    to a newly allocated buffer
+                                    containing the matching X.509
+                                    certificate in DER form. The caller
+                                    must release it with FreePool().
+  @param[out]    TrustAnchorX509Size  On success, receives the length
+                                      of the certificate in bytes.
+
+  @retval EFI_SUCCESS            A matching certificate was found and
+                                 returned.
+  @retval EFI_NOT_FOUND          No certificate in AuthData has a
+                                 TBSCertificate digest equal to the
+                                 supplied TbsCertHash.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL, a size
+                                 parameter is 0, the hash size is not a
+                                 supported value, or AuthData is not a
+                                 valid PKCS#7 SignedData blob.
+  @retval EFI_OUT_OF_RESOURCES   Memory allocation failed.
+  @retval EFI_UNSUPPORTED        This interface is not supported by the
+                                 current library instance.
+**/
+EFI_STATUS
+EFIAPI
+GetTrustAnchorX509FromAuthData (
+  IN OUT VOID      **CacheHandle  OPTIONAL,
+  IN  CONST UINT8  *TbsCertHash,
+  IN  UINTN        TbsCertHashSize,
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT UINT8        **TrustAnchorX509,
+  OUT UINTN        *TrustAnchorX509Size
+  );
+
+/**
+  Release a trust-anchor cache previously allocated by
+  GetTrustAnchorX509FromAuthData().
+
+  @param[in]  CacheHandle  Cache handle returned by a previous call to
+                           GetTrustAnchorX509FromAuthData(). May be
+                           NULL, in which case the function is a no-op.
+**/
+VOID
+EFIAPI
+FreeTrustAnchorX509Cache (
+  IN  VOID  *CacheHandle  OPTIONAL
+  );
+
+/**
   Verifies the validity of a RFC3161 Timestamp CounterSignature embedded in PE/COFF Authenticode
   signature.
 
