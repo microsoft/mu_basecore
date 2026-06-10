@@ -74,3 +74,41 @@ GetAuthenticodeHash (
   ASSERT (FALSE);
   return EFI_UNSUPPORTED;
 }
+
+/**
+  Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
+  TBSCertificate digest matches a caller-supplied hash.
+
+  Return EFI_UNSUPPORTED to indicate this interface is not supported.
+
+  @retval EFI_UNSUPPORTED  This interface is not supported.
+
+**/
+EFI_STATUS
+EFIAPI
+GetTrustAnchorX509FromAuthData (
+  IN OUT VOID      **CacheHandle  OPTIONAL,
+  IN  CONST UINT8  *TbsCertHash,
+  IN  UINTN        TbsCertHashSize,
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT UINT8        **TrustAnchorX509,
+  OUT UINTN        *TrustAnchorX509Size
+  )
+{
+  ASSERT (FALSE);
+  return EFI_UNSUPPORTED;
+}
+
+/**
+  Release a trust-anchor cache. No-op for the Null instance.
+
+**/
+VOID
+EFIAPI
+FreeTrustAnchorX509Cache (
+  IN  VOID  *CacheHandle  OPTIONAL
+  )
+{
+  ASSERT (FALSE);
+}
