@@ -52,10 +52,10 @@ extern EFI_GUID  gOneCryptoProtocolGuid;
 **/
 
 // =============================================================================
-// Protocol version: 1.0
+// Protocol version: 1.1
 // =============================================================================
 #define ONE_CRYPTO_VERSION_MAJOR  1ULL
-#define ONE_CRYPTO_VERSION_MINOR  0ULL
+#define ONE_CRYPTO_VERSION_MINOR  1ULL
 
 // ============================================================================
 // Typedef Declarations
@@ -1984,6 +1984,45 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AUTHENTICODE_VERIFY)(
   IN  UINTN        CertSize,
   IN  CONST UINT8  *ImageHash,
   IN  UINTN        HashSize
+  );
+
+/**
+  Compute the PE/COFF Authenticode-style image hash of a loaded image,
+  as described in the "Windows Authenticode Portable Executable
+  Signature Format" specification.
+
+  The caller selects the digest algorithm by HashType (e.g.
+  gEfiCertSha256Guid, gEfiCertSha384Guid). The digest is written to
+  Digest, which must be large enough to hold the largest supported
+  digest (at least SHA512_DIGEST_SIZE bytes).
+
+  @param[in]   FileBuffer  Pointer to the in-memory PE/COFF image.
+  @param[in]   FileSize    Size of FileBuffer in bytes.
+  @param[in]   HashType    Signature-type GUID identifying the hash
+                           algorithm to use.
+  @param[out]  Digest      Caller-provided buffer that receives the
+                           computed digest. Must be at least
+                           SHA512_DIGEST_SIZE bytes.
+  @param[out]  DigestSize  On success, receives the digest length in
+                           bytes.
+
+  @retval EFI_SUCCESS            Digest was computed successfully.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL or
+                                 FileSize is 0.
+  @retval EFI_UNSUPPORTED        HashType is not a recognized image
+                                 hash algorithm, or this interface is
+                                 not supported by the underlying
+                                 library instance.
+
+  @since 1.1
+  @ingroup PKCS
+**/
+typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_GET_AUTHENTICODE_HASH)(
+  IN  VOID            *FileBuffer,
+  IN  UINTN           FileSize,
+  IN  CONST EFI_GUID  *HashType,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
   );
 
 /**
@@ -5471,6 +5510,8 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_IMAGE_TIMESTAMP_VERIFY                 ImageTimestampVerify;
   /// v1.0 Info --------------------------------------------------------------
   ONE_CRYPTO_GET_CRYPTO_PROVIDER_VERSION_STRING     GetCryptoProviderVersionString;
+  /// v1.1 PKCS --------------------------------------------------------------
+  ONE_CRYPTO_GET_AUTHENTICODE_HASH                  GetAuthenticodeHash;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */
