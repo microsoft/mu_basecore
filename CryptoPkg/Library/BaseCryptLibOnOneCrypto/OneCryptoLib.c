@@ -2544,6 +2544,65 @@ GetAuthenticodeHash (
 }
 
 /**
+  Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
+  TBSCertificate digest matches a caller-supplied hash.
+
+  @param[in,out] CacheHandle        Optional cache handle pointer.
+  @param[in]     TbsCertHash        Pointer to the target TBSCertificate
+                                    digest bytes.
+  @param[in]     TbsCertHashSize    Length of TbsCertHash in bytes
+                                    (selects the algorithm).
+  @param[in]     AuthData           Pointer to the PKCS#7 SignedData
+                                    blob.
+  @param[in]     AuthDataSize       Size of AuthData in bytes.
+  @param[out]    TrustAnchorX509    Receives a newly allocated buffer
+                                    holding the matching X.509 cert in
+                                    DER form.
+  @param[out]    TrustAnchorX509Size Receives the certificate length.
+
+  @retval EFI_SUCCESS            Match found.
+  @retval EFI_NOT_FOUND          No certificate matched.
+  @retval EFI_INVALID_PARAMETER  Bad parameter or malformed AuthData.
+  @retval EFI_OUT_OF_RESOURCES   Memory allocation failed.
+  @retval EFI_UNSUPPORTED        Interface not supported.
+
+  @since 1.1
+  @ingroup PKCS
+**/
+EFI_STATUS
+EFIAPI
+GetTrustAnchorX509FromAuthData (
+  IN OUT VOID      **CacheHandle  OPTIONAL,
+  IN  CONST UINT8  *TbsCertHash,
+  IN  UINTN        TbsCertHashSize,
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT UINT8        **TrustAnchorX509,
+  OUT UINTN        *TrustAnchorX509Size
+  )
+{
+  CALL_CRYPTO_SERVICE (GetTrustAnchorX509FromAuthData, (CacheHandle, TbsCertHash, TbsCertHashSize, AuthData, AuthDataSize, TrustAnchorX509, TrustAnchorX509Size), EFI_UNSUPPORTED, 1, 1);
+}
+
+/**
+  Release a trust-anchor cache previously allocated by
+  GetTrustAnchorX509FromAuthData().
+
+  @param[in]  CacheHandle  Cache handle, or NULL.
+
+  @since 1.1
+  @ingroup PKCS
+**/
+VOID
+EFIAPI
+FreeTrustAnchorX509Cache (
+  IN  VOID  *CacheHandle  OPTIONAL
+  )
+{
+  CALL_VOID_CRYPTO_SERVICE (FreeTrustAnchorX509Cache, (CacheHandle), 1, 1);
+}
+
+/**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
   encrypted message in a newly allocated buffer.
 
