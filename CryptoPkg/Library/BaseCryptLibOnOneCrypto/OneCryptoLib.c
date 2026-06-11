@@ -2571,6 +2571,39 @@ GetAuthenticodeHashAlgorithm (
 }
 
 /**
+  Compute the digest of the TBSCertificate of an X.509 certificate.
+
+  @param[in]   Cert        Pointer to the DER-encoded X.509 certificate.
+  @param[in]   CertSize    Size of Cert in bytes.
+  @param[in]   HashType    Signature-type GUID identifying the hash
+                           algorithm to use.
+  @param[out]  Digest      Caller-provided buffer that receives the
+                           computed TBSCertificate digest.
+  @param[out]  DigestSize  On success, receives the digest length in
+                           bytes.
+
+  @retval EFI_SUCCESS            Digest was computed successfully.
+  @retval EFI_INVALID_PARAMETER  Bad parameter or malformed certificate.
+  @retval EFI_UNSUPPORTED        Unrecognized hash algorithm, or
+                                 interface not supported.
+
+  @since 1.1
+  @ingroup PKCS
+**/
+EFI_STATUS
+EFIAPI
+X509GetTbsCertHash (
+  IN  VOID            *Cert,
+  IN  UINTN           CertSize,
+  IN  CONST EFI_GUID  *HashType,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  )
+{
+  CALL_CRYPTO_SERVICE (X509GetTbsCertHash, (Cert, CertSize, HashType, Digest, DigestSize), EFI_UNSUPPORTED, 1, 1);
+}
+
+/**
   Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
   TBSCertificate digest matches a caller-supplied hash.
 

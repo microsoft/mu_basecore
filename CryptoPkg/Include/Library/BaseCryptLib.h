@@ -2678,6 +2678,49 @@ GetAuthenticodeHashAlgorithm (
   );
 
 /**
+  Compute the digest of the TBSCertificate of an X.509 certificate.
+
+  Extracts the TBSCertificate (the to-be-signed portion) of the given
+  DER-encoded certificate and hashes it with the algorithm selected by
+  HashType. The TBSCertificate is the exact byte range a certificate
+  authority signs, so its digest uniquely identifies the certificate
+  independent of the issuer signature.
+
+  The caller selects the digest algorithm by HashType (e.g.
+  gEfiCertSha256Guid, gEfiCertSha384Guid). The digest is written to
+  Digest, which must be large enough to hold the largest supported
+  digest (at least SHA512_DIGEST_SIZE bytes).
+
+  @param[in]   Cert        Pointer to the DER-encoded X.509 certificate.
+  @param[in]   CertSize    Size of Cert in bytes.
+  @param[in]   HashType    Signature-type GUID identifying the hash
+                           algorithm to use.
+  @param[out]  Digest      Caller-provided buffer that receives the
+                           computed TBSCertificate digest. Must be at
+                           least SHA512_DIGEST_SIZE bytes.
+  @param[out]  DigestSize  On success, receives the digest length in
+                           bytes.
+
+  @retval EFI_SUCCESS            Digest was computed successfully.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL, CertSize is
+                                 0, or Cert is not a well-formed X.509
+                                 certificate.
+  @retval EFI_UNSUPPORTED        HashType is not a recognized image
+                                 hash algorithm, or this interface is
+                                 not supported by the underlying
+                                 library instance.
+**/
+EFI_STATUS
+EFIAPI
+X509GetTbsCertHash (
+  IN  VOID            *Cert,
+  IN  UINTN           CertSize,
+  IN  CONST EFI_GUID  *HashType,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  );
+
+/**
   Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
   TBSCertificate digest matches a caller-supplied hash, and return that
   certificate as a newly allocated DER-encoded buffer.
