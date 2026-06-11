@@ -508,6 +508,12 @@ SmmVariableHandler (
   SmmVariableFunctionHeader = (SMM_VARIABLE_COMMUNICATE_HEADER *)CommBuffer;
   switch (SmmVariableFunctionHeader->Function) {
     case SMM_VARIABLE_FUNCTION_GET_VARIABLE:
+      if (mNvVariableCache == NULL) {
+        DEBUG ((DEBUG_ERROR, "GetVariable: NV variable cache not initialized!\n"));
+        Status = EFI_NOT_READY;
+        goto EXIT;
+      }
+
       if (CommBufferPayloadSize < OFFSET_OF (SMM_VARIABLE_COMMUNICATE_ACCESS_VARIABLE, Name)) {
         DEBUG ((DEBUG_ERROR, "GetVariable: SMM communication buffer size invalid!\n"));
         return EFI_SUCCESS;
@@ -583,6 +589,12 @@ SmmVariableHandler (
       break;
 
     case SMM_VARIABLE_FUNCTION_GET_NEXT_VARIABLE_NAME:
+      if (mNvVariableCache == NULL) {
+        DEBUG ((DEBUG_ERROR, "GetNextVariableName: NV variable cache not initialized!\n"));
+        Status = EFI_NOT_READY;
+        goto EXIT;
+      }
+
       if (CommBufferPayloadSize < OFFSET_OF (SMM_VARIABLE_COMMUNICATE_GET_NEXT_VARIABLE_NAME, Name)) {
         DEBUG ((DEBUG_ERROR, "GetNextVariableName: SMM communication buffer size invalid!\n"));
         return EFI_SUCCESS;
@@ -630,6 +642,12 @@ SmmVariableHandler (
       break;
 
     case SMM_VARIABLE_FUNCTION_SET_VARIABLE:
+      if (mNvVariableCache == NULL) {
+        DEBUG ((DEBUG_ERROR, "SetVariable: NV variable cache not initialized!\n"));
+        Status = EFI_NOT_READY;
+        goto EXIT;
+      }
+
       if (CommBufferPayloadSize < OFFSET_OF (SMM_VARIABLE_COMMUNICATE_ACCESS_VARIABLE, Name)) {
         DEBUG ((DEBUG_ERROR, "SetVariable: SMM communication buffer size invalid!\n"));
         return EFI_SUCCESS;
@@ -698,6 +716,12 @@ SmmVariableHandler (
       break;
 
     case SMM_VARIABLE_FUNCTION_QUERY_VARIABLE_INFO:
+      if (mNvVariableCache == NULL) {
+        DEBUG ((DEBUG_ERROR, "QueryVariableInfo: NV variable cache not initialized!\n"));
+        Status = EFI_NOT_READY;
+        goto EXIT;
+      }
+
       if (CommBufferPayloadSize < sizeof (SMM_VARIABLE_COMMUNICATE_QUERY_VARIABLE_INFO)) {
         DEBUG ((DEBUG_ERROR, "QueryVariableInfo: SMM communication buffer size invalid!\n"));
         return EFI_SUCCESS;
@@ -728,6 +752,12 @@ SmmVariableHandler (
       if (AtRuntime ()) {
         Status = EFI_UNSUPPORTED;
         break;
+      }
+
+      if (mNvVariableCache == NULL) {
+        DEBUG ((DEBUG_ERROR, "ReadyToBoot: NV variable cache not initialized!\n"));
+        Status = EFI_NOT_READY;
+        goto EXIT;
       }
 
       if (!mEndOfDxe) {
@@ -852,6 +882,12 @@ SmmVariableHandler (
       CopyMem (SmmVariableFunctionHeader->Data, mVariableBufferPayload, CommBufferPayloadSize);
       break;
     case SMM_VARIABLE_FUNCTION_INIT_RUNTIME_VARIABLE_CACHE_CONTEXT:
+      if (mNvVariableCache == NULL) {
+        DEBUG ((DEBUG_ERROR, "InitRuntimeVariableCacheContext: NV variable cache not initialized!\n"));
+        Status = EFI_NOT_READY;
+        goto EXIT;
+      }
+
       if (CommBufferPayloadSize < sizeof (SMM_VARIABLE_COMMUNICATE_RUNTIME_VARIABLE_CACHE_CONTEXT)) {
         DEBUG ((DEBUG_ERROR, "InitRuntimeVariableCacheContext: SMM communication buffer size invalid!\n"));
         Status = EFI_ACCESS_DENIED;
@@ -997,9 +1033,21 @@ SmmVariableHandler (
       Status = EFI_SUCCESS;
       break;
     case SMM_VARIABLE_FUNCTION_SYNC_RUNTIME_CACHE:
+      if (mNvVariableCache == NULL) {
+        DEBUG ((DEBUG_ERROR, "SyncRuntimeCache: NV variable cache not initialized!\n"));
+        Status = EFI_NOT_READY;
+        goto EXIT;
+      }
+
       Status = FlushPendingRuntimeVariableCacheUpdates ();
       break;
     case SMM_VARIABLE_FUNCTION_GET_RUNTIME_CACHE_INFO:
+      if (mNvVariableCache == NULL) {
+        DEBUG ((DEBUG_ERROR, "GetRuntimeCacheInfo: NV variable cache not initialized!\n"));
+        Status = EFI_NOT_READY;
+        goto EXIT;
+      }
+
       if (CommBufferPayloadSize < sizeof (SMM_VARIABLE_COMMUNICATE_GET_RUNTIME_CACHE_INFO)) {
         DEBUG ((DEBUG_ERROR, "GetRuntimeCacheInfo: SMM communication buffer size invalid!\n"));
         return EFI_SUCCESS;
