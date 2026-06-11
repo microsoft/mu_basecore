@@ -76,6 +76,26 @@ GetAuthenticodeHash (
 }
 
 /**
+  Determine the image-hash algorithm used by an Authenticode signature.
+
+  Return EFI_UNSUPPORTED to indicate this interface is not supported.
+
+  @retval EFI_UNSUPPORTED  This interface is not supported.
+
+**/
+EFI_STATUS
+EFIAPI
+GetAuthenticodeHashAlgorithm (
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT EFI_GUID     *HashType
+  )
+{
+  ASSERT (FALSE);
+  return EFI_UNSUPPORTED;
+}
+
+/**
   Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
   TBSCertificate digest matches a caller-supplied hash.
 

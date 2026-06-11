@@ -2544,6 +2544,33 @@ GetAuthenticodeHash (
 }
 
 /**
+  Determine the image-hash algorithm used by an Authenticode signature.
+
+  @param[in]   AuthData      Pointer to the PKCS#7 SignedData blob.
+  @param[in]   AuthDataSize  Size of AuthData in bytes.
+  @param[out]  HashType      On success, receives the signature-type
+                             GUID identifying the digest algorithm.
+
+  @retval EFI_SUCCESS            The hash algorithm was identified.
+  @retval EFI_INVALID_PARAMETER  Bad parameter or malformed AuthData.
+  @retval EFI_UNSUPPORTED        Unrecognized digest algorithm, or
+                                 interface not supported.
+
+  @since 1.1
+  @ingroup PKCS
+**/
+EFI_STATUS
+EFIAPI
+GetAuthenticodeHashAlgorithm (
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT EFI_GUID     *HashType
+  )
+{
+  CALL_CRYPTO_SERVICE (GetAuthenticodeHashAlgorithm, (AuthData, AuthDataSize, HashType), EFI_UNSUPPORTED, 1, 1);
+}
+
+/**
   Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
   TBSCertificate digest matches a caller-supplied hash.
 

@@ -2084,6 +2084,37 @@ typedef VOID (EFIAPI *ONE_CRYPTO_FREE_TRUST_ANCHOR_X509_CACHE)(
   );
 
 /**
+  Determine the image-hash algorithm used by an Authenticode signature.
+
+  Parses the PKCS#7 SignedData blob's SpcIndirectDataContent
+  (OID 1.3.6.1.4.1.311.2.1.4) and reads the digestAlgorithm of its
+  embedded messageDigest DigestInfo, mapping it to the corresponding
+  signature-type GUID. The recovered GUID can be passed directly to
+  GetAuthenticodeHash() as its HashType.
+
+  Caution: AuthData is untrusted. The ASN.1 DER is parsed with
+  bounds-checked length decoding to avoid out-of-bounds reads.
+
+  @param[in]   AuthData      Pointer to the PKCS#7 SignedData blob.
+  @param[in]   AuthDataSize  Size of AuthData in bytes.
+  @param[out]  HashType      On success, receives the signature-type
+                             GUID identifying the digest algorithm.
+
+  @retval EFI_SUCCESS            The hash algorithm was identified.
+  @retval EFI_INVALID_PARAMETER  Bad parameter or malformed AuthData.
+  @retval EFI_UNSUPPORTED        Unrecognized digest algorithm, or
+                                 interface not supported.
+
+  @since 1.1
+  @ingroup PKCS
+**/
+typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_GET_AUTHENTICODE_HASH_ALGORITHM)(
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT EFI_GUID     *HashType
+  );
+
+/**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
   encrypted message in a newly allocated buffer.
 
@@ -5572,6 +5603,7 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_GET_AUTHENTICODE_HASH                  GetAuthenticodeHash;
   ONE_CRYPTO_GET_TRUST_ANCHOR_X509_FROM_AUTH_DATA   GetTrustAnchorX509FromAuthData;
   ONE_CRYPTO_FREE_TRUST_ANCHOR_X509_CACHE           FreeTrustAnchorX509Cache;
+  ONE_CRYPTO_GET_AUTHENTICODE_HASH_ALGORITHM        GetAuthenticodeHashAlgorithm;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */
