@@ -106,6 +106,11 @@ extern UINTN      mTrustAnchorTestNum;
 extern TEST_DESC  mTrustAnchorTest[];
 // MU_CHANGE [END]
 
+// MU_CHANGE [BEGIN] - Authenticode hash algorithm unit tests
+extern UINTN      mAuthenticodeHashAlgorithmTestNum;
+extern TEST_DESC  mAuthenticodeHashAlgorithmTest[];
+// MU_CHANGE [END]
+
 /** Creates a framework you can use */
 EFI_STATUS
 EFIAPI
