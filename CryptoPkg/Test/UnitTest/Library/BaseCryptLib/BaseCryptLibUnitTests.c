@@ -36,6 +36,9 @@ SUITE_DESC  mSuiteDesc[] = {
   // MU_CHANGE [BEGIN] - Authenticode hash algorithm unit tests
   { "AuthenticodeHashAlgorithm tests", "CryptoPkg.BaseCryptLib", NULL, NULL, &mAuthenticodeHashAlgorithmTestNum, mAuthenticodeHashAlgorithmTest },
   // MU_CHANGE [END]
+  // MU_CHANGE [BEGIN] - X509 TBSCertificate hash unit tests
+  { "X509GetTbsCertHash tests",      "CryptoPkg.BaseCryptLib", NULL, NULL, &mX509GetTbsCertHashTestNum, mX509GetTbsCertHashTest },
+  // MU_CHANGE [END]
 };
 
 EFI_STATUS

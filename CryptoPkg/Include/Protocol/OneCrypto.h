@@ -2115,6 +2115,41 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_GET_AUTHENTICODE_HASH_ALGORITHM)(
   );
 
 /**
+  Compute the digest of the TBSCertificate of an X.509 certificate.
+
+  Extracts the TBSCertificate (the to-be-signed portion) of the given
+  DER-encoded certificate and hashes it with the algorithm selected by
+  HashType. The recovered digest uniquely identifies the certificate
+  independent of the issuer signature and can be matched against the
+  TbsCertHash argument of GetTrustAnchorX509FromAuthData().
+
+  @param[in]   Cert        Pointer to the DER-encoded X.509 certificate.
+  @param[in]   CertSize    Size of Cert in bytes.
+  @param[in]   HashType    Signature-type GUID identifying the hash
+                           algorithm to use.
+  @param[out]  Digest      Caller-provided buffer that receives the
+                           computed TBSCertificate digest. Must be at
+                           least SHA512_DIGEST_SIZE bytes.
+  @param[out]  DigestSize  On success, receives the digest length in
+                           bytes.
+
+  @retval EFI_SUCCESS            Digest was computed successfully.
+  @retval EFI_INVALID_PARAMETER  Bad parameter or malformed certificate.
+  @retval EFI_UNSUPPORTED        Unrecognized hash algorithm, or
+                                 interface not supported.
+
+  @since 1.1
+  @ingroup PKCS
+**/
+typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_X509_GET_TBS_CERT_HASH)(
+  IN  VOID            *Cert,
+  IN  UINTN           CertSize,
+  IN  CONST EFI_GUID  *HashType,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  );
+
+/**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
   encrypted message in a newly allocated buffer.
 
@@ -5604,6 +5639,7 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_GET_TRUST_ANCHOR_X509_FROM_AUTH_DATA   GetTrustAnchorX509FromAuthData;
   ONE_CRYPTO_FREE_TRUST_ANCHOR_X509_CACHE           FreeTrustAnchorX509Cache;
   ONE_CRYPTO_GET_AUTHENTICODE_HASH_ALGORITHM        GetAuthenticodeHashAlgorithm;
+  ONE_CRYPTO_X509_GET_TBS_CERT_HASH                 X509GetTbsCertHash;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */
