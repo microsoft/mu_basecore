@@ -2631,6 +2631,53 @@ GetAuthenticodeHash (
   );
 
 /**
+  Determine the image-hash algorithm used by an Authenticode signature.
+
+  Parses the PKCS#7 SignedData blob's SpcIndirectDataContent
+  (OID 1.3.6.1.4.1.311.2.1.4) and reads the digestAlgorithm of its
+  embedded messageDigest DigestInfo, mapping it to the corresponding
+  signature-type GUID:
+
+    SpcIndirectDataContent ::= SEQUENCE {
+        data           SpcAttributeTypeAndOptionalValue,
+        messageDigest  DigestInfo }
+    DigestInfo ::= SEQUENCE {
+        digestAlgorithm  AlgorithmIdentifier,
+        digest           OCTET STRING }
+
+  The recovered GUID can be passed directly to GetAuthenticodeHash() as
+  its HashType so the image is hashed with the same algorithm the
+  signer used.
+
+  Caution: AuthData is untrusted. The ASN.1 DER is parsed with
+  bounds-checked length decoding to avoid out-of-bounds reads.
+
+  @param[in]   AuthData      Pointer to the PKCS#7 SignedData blob
+                             (DER-encoded Authenticode signature).
+  @param[in]   AuthDataSize  Size of AuthData in bytes.
+  @param[out]  HashType      On success, receives the signature-type
+                             GUID identifying the digest algorithm
+                             (e.g. gEfiCertSha256Guid).
+
+  @retval EFI_SUCCESS            The hash algorithm was identified.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL,
+                                 AuthDataSize is 0, or AuthData is not a
+                                 well-formed Authenticode SignedData
+                                 blob.
+  @retval EFI_UNSUPPORTED        The digest algorithm is not a
+                                 recognized image hash algorithm, or
+                                 this interface is not supported by the
+                                 current library instance.
+**/
+EFI_STATUS
+EFIAPI
+GetAuthenticodeHashAlgorithm (
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT EFI_GUID     *HashType
+  );
+
+/**
   Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
   TBSCertificate digest matches a caller-supplied hash, and return that
   certificate as a newly allocated DER-encoded buffer.
