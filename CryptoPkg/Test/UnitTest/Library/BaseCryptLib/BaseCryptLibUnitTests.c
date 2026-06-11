@@ -33,6 +33,9 @@ SUITE_DESC  mSuiteDesc[] = {
   // MU_CHANGE [BEGIN] - Trust anchor lookup unit tests
   { "TrustAnchor verify tests",      "CryptoPkg.BaseCryptLib", NULL, NULL, &mTrustAnchorTestNum,    mTrustAnchorTest    },
   // MU_CHANGE [END]
+  // MU_CHANGE [BEGIN] - Authenticode hash algorithm unit tests
+  { "AuthenticodeHashAlgorithm tests", "CryptoPkg.BaseCryptLib", NULL, NULL, &mAuthenticodeHashAlgorithmTestNum, mAuthenticodeHashAlgorithmTest },
+  // MU_CHANGE [END]
 };
 
 EFI_STATUS
