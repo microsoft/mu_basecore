@@ -42,6 +42,7 @@
   EcTests.c
   X509Tests.c
   TrustAnchorTests.c # MU_CHANGE
+  AuthenticodeHashAlgorithmTests.c # MU_CHANGE
 
 [Packages]
   MdePkg/MdePkg.dec
