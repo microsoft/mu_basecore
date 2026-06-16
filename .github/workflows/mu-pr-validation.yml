@@ -119,7 +119,7 @@ jobs:
     name: Run Mu QEMU Validation
     needs: [prepare]
     if: needs.prepare.result == 'success' && needs.prepare.outputs.skip != 'true'
-    uses: microsoft/mu_devops/.github/workflows/MuPrValidation.yml@add_mu_pr_val_workflow_e2e_val
+    uses: microsoft/mu_devops/.github/workflows/MuPrValidation.yml@main
     with:
       app-id: ${{ vars.MU_ACCESS_APP_ID }}
       caller-ref: ${{ github.event.workflow_run.head_sha }}
