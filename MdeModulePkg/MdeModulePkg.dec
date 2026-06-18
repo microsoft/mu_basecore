@@ -29,6 +29,7 @@
 
 [Includes.Common.Private]
   Library/BrotliCustomDecompressLib/brotli/c/include
+  Core/PrivateInclude
 
 [LibraryClasses]
   # MU_CHANGE [BEGIN] - Isolate the VariablePolicy locking event into its own code.
