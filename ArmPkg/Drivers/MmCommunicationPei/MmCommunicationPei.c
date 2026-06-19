@@ -235,7 +235,8 @@ SendFfaMmCommunicate (
 
   while (Status == EFI_INTERRUPT_PENDING) {
     // We are assuming vCPU0 of the StMM SP since it is UP.
-    Status = ArmFfaLibRun (mStMmPartId, 0x00, NULL);
+    // MU_CHANGE: Use the source partition ID of the FFA header for the ffa_run call.
+    Status = ArmFfaLibRun (GET_SOURCE_PARTITION_ID (CommunicateArgs.Header.x1), 0x00, &CommunicateArgs);
   }
 
   return Status;
