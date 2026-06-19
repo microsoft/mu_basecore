@@ -154,7 +154,8 @@ Tpm2GetInterfaceVersion (
   Status = ArmFfaLibMsgSendDirectReq2 (FfaTpm2PartitionId, &gTpm2ServiceFfaGuid, &FfaDirectReq2Args);
   while (Status == EFI_INTERRUPT_PENDING) {
     // We are assuming vCPU0 of the TPM SP since it is UP.
-    Status = ArmFfaLibRun (FfaTpm2PartitionId, 0x00, &FfaDirectReq2Args);
+    // MU_CHANGE: Use the source partition ID of the FFA header for the ffa_run call.
+    Status = ArmFfaLibRun (GET_SOURCE_PARTITION_ID (FfaDirectReq2Args.Header.x1), 0x00, &FfaDirectReq2Args);
   }
 
   if (EFI_ERROR (Status)) {
@@ -203,7 +204,8 @@ Tpm2GetFeatureInfo (
   Status = ArmFfaLibMsgSendDirectReq2 (FfaTpm2PartitionId, &gTpm2ServiceFfaGuid, &FfaDirectReq2Args);
   while (Status == EFI_INTERRUPT_PENDING) {
     // We are assuming vCPU0 of the TPM SP since it is UP.
-    Status = ArmFfaLibRun (FfaTpm2PartitionId, 0x00, &FfaDirectReq2Args);
+    // MU_CHANGE: Use the source partition ID of the FFA header for the ffa_run call.
+    Status = ArmFfaLibRun (GET_SOURCE_PARTITION_ID (FfaDirectReq2Args.Header.x1), 0x00, &FfaDirectReq2Args);
   }
 
   if (EFI_ERROR (Status)) {
@@ -243,7 +245,8 @@ Tpm2ServiceStart (
   Status = ArmFfaLibMsgSendDirectReq2 (FfaTpm2PartitionId, &gTpm2ServiceFfaGuid, &FfaDirectReq2Args);
   while (Status == EFI_INTERRUPT_PENDING) {
     // We are assuming vCPU0 of the TPM SP since it is UP.
-    Status = ArmFfaLibRun (FfaTpm2PartitionId, 0x00, &FfaDirectReq2Args);
+    // MU_CHANGE: Use the source partition ID of the FFA header for the ffa_run call.
+    Status = ArmFfaLibRun (GET_SOURCE_PARTITION_ID (FfaDirectReq2Args.Header.x1), 0x00, &FfaDirectReq2Args);
   }
 
   if (EFI_ERROR (Status)) {
@@ -284,7 +287,8 @@ Tpm2RegisterNotification (
   Status = ArmFfaLibMsgSendDirectReq2 (FfaTpm2PartitionId, &gTpm2ServiceFfaGuid, &FfaDirectReq2Args);
   while (Status == EFI_INTERRUPT_PENDING) {
     // We are assuming vCPU0 of the TPM SP since it is UP.
-    Status = ArmFfaLibRun (FfaTpm2PartitionId, 0x00, &FfaDirectReq2Args);
+    // MU_CHANGE: Use the source partition ID of the FFA header for the ffa_run call.
+    Status = ArmFfaLibRun (GET_SOURCE_PARTITION_ID (FfaDirectReq2Args.Header.x1), 0x00, &FfaDirectReq2Args);
   }
 
   if (EFI_ERROR (Status)) {
@@ -317,7 +321,8 @@ Tpm2UnregisterNotification (
   Status = ArmFfaLibMsgSendDirectReq2 (FfaTpm2PartitionId, &gTpm2ServiceFfaGuid, &FfaDirectReq2Args);
   while (Status == EFI_INTERRUPT_PENDING) {
     // We are assuming vCPU0 of the TPM SP since it is UP.
-    Status = ArmFfaLibRun (FfaTpm2PartitionId, 0x00, &FfaDirectReq2Args);
+    // MU_CHANGE: Use the source partition ID of the FFA header for the ffa_run call.
+    Status = ArmFfaLibRun (GET_SOURCE_PARTITION_ID (FfaDirectReq2Args.Header.x1), 0x00, &FfaDirectReq2Args);
   }
 
   if (EFI_ERROR (Status)) {
@@ -350,7 +355,8 @@ Tpm2FinishNotified (
   Status = ArmFfaLibMsgSendDirectReq2 (FfaTpm2PartitionId, &gTpm2ServiceFfaGuid, &FfaDirectReq2Args);
   while (Status == EFI_INTERRUPT_PENDING) {
     // We are assuming vCPU0 of the TPM SP since it is UP.
-    Status = ArmFfaLibRun (FfaTpm2PartitionId, 0x00, &FfaDirectReq2Args);
+    // MU_CHANGE: Use the source partition ID of the FFA header for the ffa_run call.
+    Status = ArmFfaLibRun (GET_SOURCE_PARTITION_ID (FfaDirectReq2Args.Header.x1), 0x00, &FfaDirectReq2Args);
   }
 
   if (EFI_ERROR (Status)) {
