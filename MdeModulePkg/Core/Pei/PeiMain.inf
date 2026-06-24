@@ -34,7 +34,6 @@
   Reset/Reset.c
   Ppi/Ppi.c
   PeiMain/PeiMain.c
-  Memory/MemoryBin.c                                   # MU_CHANGE: PEI Bins
   Memory/MemoryServices.c
   Image/Image.c
   Hob/Hob.c
@@ -84,7 +83,6 @@
   gEdkiiMigrationInfoGuid                       ## SOMETIMES_CONSUMES     ## HOB
   gEfiDelayedDispatchTableGuid                  ## SOMETIMES_PRODUCES     ## HOB
   gEfiFirmwarePerformanceGuid                   # MU_CHANGE_161871 - needed to build SEC perf HOB
-  gEfiMemoryTypeInformationGuid                 ## SOMETIMES_CONSUMES     ## HOB  # MU_CHANGE: PEI Bins
 
 [Ppis]
   gEfiPeiStatusCodePpiGuid                      ## SOMETIMES_CONSUMES # PeiReportStatusService is not ready if this PPI doesn't exist
@@ -126,7 +124,6 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxDelayUs               ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchCompletionTimeoutUs      ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdDelayedDispatchMaxEntries               ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiMemoryBinsEnable                     ## CONSUMES  # MU_CHANGE: PEI Bins
 
 # [BootMode]
 # S3_RESUME             ## SOMETIMES_CONSUMES
