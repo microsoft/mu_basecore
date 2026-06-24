@@ -120,13 +120,6 @@
       UefiBootServicesTableLib|MdePkg/Test/Mock/Library/GoogleTest/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf
   }
 
-  # MU_CHANGE BEGIN: PEI Bins
-  MdeModulePkg/Core/Dxe/Mem/GoogleTest/MemoryBinGoogleTestHost.inf {
-    <LibraryClasses>
-      HobLib|MdePkg/Test/Mock/Library/GoogleTest/MockHobLib/MockHobLib.inf
-  }
-  # MU_CHANGE END: PEI Bins
-
   #
   # Build HOST_APPLICATION Libraries
   #
