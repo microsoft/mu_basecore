@@ -107,9 +107,6 @@ CoreSetMemoryTypeInformationRange (
                                             information if the provided range is used.
   @param  DefaultMaximumAddress             A pointer to the default maximum address to be updated if the
                                             provided range is used.
-  @param  CreateHob                         TRUE to create Memory Type Information Resource HOB after successful
-                                            allocation. This is used for PEI Core to report the bins to DXE Core.
-                                            FALSE if HOB creation is not needed.
 **/
 VOID
 EFIAPI
@@ -117,8 +114,7 @@ AllocateMemoryTypeInformationBins (
   IN BOOLEAN                      *MemoryTypeInformationInitialized,
   IN EFI_MEMORY_TYPE_INFORMATION  *MemoryTypeInformation,
   IN EFI_MEMORY_TYPE_STATISTICS   *MemoryTypeStatistics,
-  IN EFI_PHYSICAL_ADDRESS         *DefaultMaximumAddress,
-  IN BOOLEAN                      CreateHob
+  IN EFI_PHYSICAL_ADDRESS         *DefaultMaximumAddress
   );
 
 /**
