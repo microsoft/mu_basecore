@@ -21,6 +21,8 @@
 #define PAGE_TABLE_ACCESS_FLAG      (0x1 << 10)
 #define PAGE_TABLE_DESCRIPTOR       (0x1 << 1)
 #define PAGE_TABLE_READ_WRITE_FROM_IOMMU_ACCESS(IoMmuAccess)  (IoMmuAccess << 6)
+#define PAGE_TABLE_S2_MEMATTR_NORMAL_WB   (0xF << 2)
+#define PAGE_TABLE_S2_SH_INNER_SHAREABLE  (0x3 << 8)
 
 typedef UINT64 PAGE_TABLE_ENTRY;
 
