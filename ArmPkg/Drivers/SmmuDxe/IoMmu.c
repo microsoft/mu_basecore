@@ -391,7 +391,7 @@ UpdateMapping (
     if (Valid) {
       Entry = (PhysicalAddress & ~PAGE_TABLE_BLOCK_OFFSET); // Assign PA
       // validate entry and set leaf level flags
-      Entry |= Flags | PAGE_TABLE_ACCESS_FLAG | PAGE_TABLE_DESCRIPTOR | PAGE_TABLE_ENTRY_VALID_BIT;
+      Entry |= Flags | PAGE_TABLE_S2_MEMATTR_NORMAL_WB | PAGE_TABLE_S2_SH_INNER_SHAREABLE | PAGE_TABLE_ACCESS_FLAG | PAGE_TABLE_DESCRIPTOR | PAGE_TABLE_ENTRY_VALID_BIT;
 
       // Break-before-make does not apply here because we are only switching between invalid/valid, no other Entry bits are changing.
       // If the entry is already valid, it must have the same PA and flags to be considered a match; otherwise it's an error because we don't expect multiple mappings for the same VA.
