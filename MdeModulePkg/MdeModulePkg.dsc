@@ -47,6 +47,7 @@
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
   PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
   SortLib|MdeModulePkg/Library/BaseSortLib/BaseSortLib.inf
+  GptLib|MdeModulePkg/Library/GptLib/GptLib.inf
   #
   # UEFI & PI
   #
@@ -259,6 +260,7 @@
   MdeModulePkg/Logo/Logo.inf
   MdeModulePkg/Logo/LogoDxe.inf
   MdeModulePkg/Library/BaseSortLib/BaseSortLib.inf
+  MdeModulePkg/Library/GptLib/GptLib.inf
   MdeModulePkg/Library/BootDiscoveryPolicyUiLib/BootDiscoveryPolicyUiLib.inf
   MdeModulePkg/Library/BootMaintenanceManagerUiLib/BootMaintenanceManagerUiLib.inf
   MdeModulePkg/Library/BootManagerUiLib/BootManagerUiLib.inf
