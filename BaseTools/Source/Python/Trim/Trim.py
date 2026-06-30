@@ -54,6 +54,10 @@ gLongNumberPattern = re.compile(r"(?<=[^a-zA-Z0-9_])(0[xX][0-9a-fA-F]+|[0-9]+)U?
 gAslIncludePattern = re.compile(r"^(\s*)[iI]nclude\s*\(\"?([^\"\(\)]+)\"\)", re.MULTILINE)
 ## Regular expression for matching C style #include "XXX.asl" in asl file
 gAslCIncludePattern = re.compile(r'^(\s*)#include\s*[<"]\s*([-\\/\w.]+)\s*([>"])', re.MULTILINE)
+# MU_CHANGE [BEGIN] - Handle pragma once in ASL
+## Regular expression for matching "#pragma once"
+gPragmaOncePattern = re.compile(r"^\s*#\s*pragma\s+once\b", re.IGNORECASE)
+# MU_CHANGE [END] - Handle pragma once in ASL
 ## Patterns used to convert EDK conventions to EDK2 ECP conventions
 
 ## Regular expression for finding header file inclusions
@@ -322,6 +326,10 @@ def DoInclude(Source, Indent='', IncludePathList=[], LocalSearchPath=None, Inclu
             if len(Result) == 0:
                 Result = gAslCIncludePattern.findall(Line)
                 if len(Result) == 0 or os.path.splitext(Result[0][1])[1].lower() not in [".asl", ".asi"]:
+                    # MU_CHANGE [BEGIN] - Handle pragma once in ASL
+                    if gPragmaOncePattern.match(Line):
+                        continue
+                    # MU_CHANGE [END] - Handle pragma once in ASL
                     NewFileContent.append("%s%s" % (Indent, Line))
                     continue
                 #
