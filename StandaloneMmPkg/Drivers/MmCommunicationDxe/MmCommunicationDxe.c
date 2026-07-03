@@ -108,6 +108,12 @@ ProcessCommunicationBuffer (
 
     BufferSize = ((EFI_MM_COMMUNICATE_HEADER_V3 *)CommBuffer)->BufferSize;
   } else {
+    //
+    // Validate MessageLength to prevent integer overflow in BufferSize computation
+    //
+    if (CommunicateHeader->MessageLength > (MAX_UINTN - OFFSET_OF (EFI_MM_COMMUNICATE_HEADER, Data))) {
+      return EFI_INVALID_PARAMETER;
+    }
     BufferSize = OFFSET_OF (EFI_MM_COMMUNICATE_HEADER, Data) + CommunicateHeader->MessageLength;
   }
 
