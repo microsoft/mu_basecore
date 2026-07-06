@@ -114,6 +114,7 @@ ProcessCommunicationBuffer (
     if (CommunicateHeader->MessageLength > (MAX_UINTN - OFFSET_OF (EFI_MM_COMMUNICATE_HEADER, Data))) {
       return EFI_INVALID_PARAMETER;
     }
+
     BufferSize = OFFSET_OF (EFI_MM_COMMUNICATE_HEADER, Data) + CommunicateHeader->MessageLength;
   }
 
