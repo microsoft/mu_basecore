@@ -48,6 +48,7 @@
 #include <Library/StandaloneMmMemLib.h>
 #include <Library/HobLib.h>
 #include <Library/PerformanceLib.h>
+#include <Library/SafeIntLib.h> // MU_CHANGE: Add SafeIntLib for safe integer operations
 
 #include "StandaloneMmCorePrivateData.h"
 
