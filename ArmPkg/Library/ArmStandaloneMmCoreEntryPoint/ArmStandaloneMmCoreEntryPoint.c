@@ -504,6 +504,11 @@ ValidateMmCommBufferAddr (
         &gEfiMmCommunicateHeaderV3Guid
         ))
   {
+    // MU_CHANGE: Now this is supposed to be a V3 header, so we need to check the size of the buffer in the header as well
+    if (CommBufferRange < sizeof (EFI_MM_COMMUNICATE_HEADER_V3)) {
+      return EFI_ACCESS_DENIED;
+    }
+
     CommBufferHeaderV3 = (EFI_MM_COMMUNICATE_HEADER_V3 *)CommBufferAddr;
     Status             = SafeUint64Add (
                            CommBufferHeaderV3->MessageSize,
@@ -513,9 +518,24 @@ ValidateMmCommBufferAddr (
     if (EFI_ERROR (Status)) {
       return EFI_ACCESS_DENIED;
     }
+
+    // MU_CHANGE Starts: Make sure the buffer size in the header is also sane
+    if (BufferSize > CommBufferHeaderV3->BufferSize) {
+      return EFI_ACCESS_DENIED;
+    }
+
+    BufferSize = CommBufferHeaderV3->BufferSize;
+    // MU_CHANGE Ends
   } else {
-    BufferSize = ((EFI_MM_COMMUNICATE_HEADER *)CommBufferAddr)->MessageLength +
-                 OFFSET_OF (EFI_MM_COMMUNICATE_HEADER, Data);
+    // MU_CHANGE: Use SafeIntLib for safe arithmetic operations
+    Status = SafeUint64Add (
+               ((EFI_MM_COMMUNICATE_HEADER *)CommBufferAddr)->MessageLength,
+               OFFSET_OF (EFI_MM_COMMUNICATE_HEADER, Data),
+               &BufferSize
+               );
+    if (EFI_ERROR (Status)) {
+      return EFI_ACCESS_DENIED;
+    }
   }
 
   Status = SafeUint64Add (
