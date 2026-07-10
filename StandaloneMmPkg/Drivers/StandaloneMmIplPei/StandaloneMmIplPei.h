@@ -28,6 +28,7 @@
 #include <Ppi/MmCoreFvLocationPpi.h>
 #include <Protocol/MmCommunication.h>
 #include <Library/MmPlatformHobProducerLib.h>
+#include <Library/SafeIntLib.h> // MU_CHANGE: Add SafeIntLib for safe integer operations
 
 /**
   Communicates with a registered handler.
