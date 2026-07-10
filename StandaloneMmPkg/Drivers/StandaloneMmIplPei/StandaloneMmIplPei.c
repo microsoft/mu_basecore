@@ -60,6 +60,7 @@ Communicate (
   EFI_HOB_GUID_TYPE       *GuidHob;
   MM_COMM_BUFFER          *MmCommBuffer;
   MM_COMM_BUFFER_STATUS   *MmCommBufferStatus;
+  UINTN                   MaxBufferSize; // MU_CHANGE: Use SafeIntLib for safe arithmetic operations
 
   DEBUG ((DEBUG_INFO, "StandaloneMmIpl Communicate Enter\n"));
 
@@ -91,10 +92,23 @@ Communicate (
     }
   }
 
-  if (TempCommSize > EFI_PAGES_TO_SIZE (MmCommBuffer->NumberOfPages)) {
-    DEBUG ((DEBUG_ERROR, "Communicate buffer size (%d) is over MAX (%d) size!", TempCommSize, EFI_PAGES_TO_SIZE (MmCommBuffer->NumberOfPages)));
+  // MU_CHANGE: Use SafeIntLib for safe arithmetic operations
+  // if (TempCommSize > EFI_PAGES_TO_SIZE (MmCommBuffer->NumberOfPages)) {
+  //   DEBUG ((DEBUG_ERROR, "Communicate buffer size (%d) is over MAX (%d) size!", TempCommSize, EFI_PAGES_TO_SIZE (MmCommBuffer->NumberOfPages)));
+  //   return EFI_INVALID_PARAMETER;
+  // }
+  Status = SafeUintnMult (MmCommBuffer->NumberOfPages, EFI_PAGE_SIZE, &MaxBufferSize);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Overflow occurred while calculating MaxBufferSize!\n"));
     return EFI_INVALID_PARAMETER;
   }
+
+  if (TempCommSize > MaxBufferSize) {
+    DEBUG ((DEBUG_ERROR, "Communicate buffer size (%d) is over MAX (%d) size!", TempCommSize, MaxBufferSize));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // MU_CHANGE Ends
 
   CopyMem ((VOID *)(UINTN)MmCommBuffer->PhysicalStart, CommBuffer, TempCommSize);
   MmCommBufferStatus->IsCommBufferValid = TRUE;
@@ -118,7 +132,19 @@ Communicate (
   //
   // Return status from software SMI
   //
-  *CommSize = (UINTN)MmCommBufferStatus->ReturnBufferSize;
+  // MU_CHANGE: Ensure the buffer size does not exceed the caller supplied buffer size
+  Status = SafeUint64ToUintn (MmCommBufferStatus->ReturnBufferSize, CommSize);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Overflow occurred while converting ReturnBufferSize to CommSize!\n"));
+    return EFI_BAD_BUFFER_SIZE;
+  }
+
+  // MU_CHANGE: Ensure the buffer size does not exceed the caller supplied buffer size
+  if (*CommSize > TempCommSize) {
+    DEBUG ((DEBUG_ERROR, "Returned buffer size is larger than the Communication Buffer, TempCommSize: 0x%llx, ReturnBufferSize: 0x%llx\n", TempCommSize, *CommSize));
+    ASSERT (*CommSize <= TempCommSize);
+    return EFI_BAD_BUFFER_SIZE;
+  }
 
   //
   // Copy the returned data to the non-mmram buffer (CommBuffer)
@@ -156,12 +182,13 @@ Communicate3 (
   EFI_STATUS                    Status;
   EFI_PEI_MM_CONTROL_PPI        *MmControl;
   UINT8                         SmiCommand;
-  UINTN                         Size;
-  UINTN                         TempCommSize;
+  UINT64                        Size;
+  UINT64                        TempCommSize;
   EFI_HOB_GUID_TYPE             *GuidHob;
   MM_COMM_BUFFER                *MmCommBuffer;
   MM_COMM_BUFFER_STATUS         *MmCommBufferStatus;
   EFI_MM_COMMUNICATE_HEADER_V3  *CommunicateHeader;
+  UINT64                        MaxBufferSize; // MU_CHANGE: Use SafeIntLib for safe arithmetic operations
 
   DEBUG ((DEBUG_INFO, "StandaloneMmIpl Communicate Enter\n"));
 
@@ -203,10 +230,23 @@ Communicate3 (
     }
   }
 
-  if (TempCommSize > EFI_PAGES_TO_SIZE (MmCommBuffer->NumberOfPages)) {
-    DEBUG ((DEBUG_ERROR, "Communicate buffer size (%d) is over MAX (%d) size!", TempCommSize, EFI_PAGES_TO_SIZE (MmCommBuffer->NumberOfPages)));
+  // MU_CHANGE Starts: Use SafeIntLib for safe arithmetic operations
+  // if (TempCommSize > EFI_PAGES_TO_SIZE (MmCommBuffer->NumberOfPages)) {
+  //   DEBUG ((DEBUG_ERROR, "Communicate buffer size (%d) is over MAX (%d) size!", TempCommSize, EFI_PAGES_TO_SIZE (MmCommBuffer->NumberOfPages)));
+  //     return EFI_INVALID_PARAMETER;
+  // }
+  Status = SafeUint64Mult (MmCommBuffer->NumberOfPages, EFI_PAGE_SIZE, &MaxBufferSize);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Overflow occurred while calculating MaxBufferSize!\n"));
     return EFI_INVALID_PARAMETER;
   }
+
+  if (TempCommSize > MaxBufferSize) {
+    DEBUG ((DEBUG_ERROR, "Communicate buffer size (%d) is over MAX (%d) size!", TempCommSize, MaxBufferSize));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  // MU_CHANGE Ends
 
   CopyMem ((VOID *)(UINTN)MmCommBuffer->PhysicalStart, CommBuffer, TempCommSize);
   MmCommBufferStatus->IsCommBufferValid = TRUE;
@@ -230,7 +270,14 @@ Communicate3 (
   //
   // Return status from software SMI
   //
-  TempCommSize = (UINTN)MmCommBufferStatus->ReturnBufferSize;
+  // MU_CHANGE: Ensure the buffer size does not exceed the caller supplied buffer size
+  if (MmCommBufferStatus->ReturnBufferSize > TempCommSize) {
+    DEBUG ((DEBUG_ERROR, "Returned buffer size is larger than the Communication Buffer, TempCommSize: 0x%llx, ReturnBufferSize: 0x%llx\n", TempCommSize, MmCommBufferStatus->ReturnBufferSize));
+    ASSERT (MmCommBufferStatus->ReturnBufferSize <= TempCommSize);
+    return EFI_BAD_BUFFER_SIZE;
+  }
+
+  TempCommSize = MmCommBufferStatus->ReturnBufferSize;
 
   //
   // Copy the returned data to the non-mmram buffer (CommBuffer)
