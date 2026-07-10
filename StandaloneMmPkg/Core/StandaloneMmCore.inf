@@ -54,6 +54,7 @@
   HobPrintLib
   ImagePropertiesRecordLib
   PerformanceLib
+  SafeIntLib # MU_CHANGE: Add SafeIntLib for safe integer operations
 
 [Protocols]
   gEfiDxeMmReadyToLockProtocolGuid             ## UNDEFINED # SmiHandlerRegister
