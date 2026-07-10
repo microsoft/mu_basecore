@@ -29,6 +29,7 @@
   PeimEntryPoint
   PeiServicesLib
   HobLib
+  SafeIntLib  # MU_CHANGE
 
 [Pcd]
   gArmTokenSpaceGuid.PcdMmBufferBase
