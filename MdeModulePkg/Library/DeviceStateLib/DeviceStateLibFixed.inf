@@ -1,0 +1,36 @@
+## @file
+# Read-only DeviceStateLib variant for platforms that resolve
+# PcdDeviceStateBitmask as FixedAtBuild.
+#
+# Peiless SEC platforms (e.g. QemuArmVirtPkg) have no dynamic PCD store,
+# so the PCD must be Fixed. PcdSet32S is not legal on a Fixed PCD, so this
+# variant omits the write path from AddDeviceState. The read path is
+# preserved so consumers such as Tpm2StartupLib continue to see the
+# platform's build-time device state and emit the appropriate PCR
+# measurements.
+#
+# Copyright (C) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+INF_VERSION    = 0x00010017
+BASE_NAME      = DeviceStateLibFixed
+FILE_GUID      = 6c7b1d1a-9c8e-4c2f-8b3a-1e5f2a7d4c60
+VERSION_STRING = 1.0
+MODULE_TYPE    = BASE
+LIBRARY_CLASS  = DeviceStateLib
+
+[LibraryClasses]
+DebugLib
+PcdLib
+
+[Packages]
+MdePkg/MdePkg.dec
+MdeModulePkg/MdeModulePkg.dec
+
+[Sources]
+DeviceStateLibFixed.c
+
+[FixedPcd]
+gEfiMdeModulePkgTokenSpaceGuid.PcdDeviceStateBitmask

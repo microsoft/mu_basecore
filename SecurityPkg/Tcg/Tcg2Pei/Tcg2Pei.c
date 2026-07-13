@@ -20,10 +20,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Ppi/Tcg.h>
 
 #include <Guid/TcgEventHob.h>
-#include <Guid/MeasuredFvHob.h>
+// #include <Guid/MeasuredFvHob.h>  // MU_CHANGE
 #include <Guid/ExcludedFvHob.h> // MU_CHANGE
+#include <Guid/PrehashedFvHob.h> // MU_CHANGE
 #include <Guid/TpmInstance.h>
-#include <Guid/MigratedFvInfo.h>
+// #include <Guid/MigratedFvInfo.h>  // MU_CHANGE
 
 #include <Library/DebugLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -31,30 +32,23 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PeimEntryPoint.h>
 #include <Library/Tpm2CommandLib.h>
 #include <Library/Tpm2HelpLib.h>  // MU_CHANGE
-#include <Library/Tpm2DeviceLib.h>
+// #include <Library/Tpm2DeviceLib.h>  // MU_CHANGE
 #include <Library/HashLib.h>
 #include <Library/HobLib.h>
 #include <Library/PcdLib.h>
-#include <Library/PeiServicesTablePointerLib.h>
+// #include <Library/PeiServicesTablePointerLib.h>  // MU_CHANGE
 #include <Protocol/Tcg2Protocol.h>
 #include <Library/PerformanceLib.h>
-#include <Library/MemoryAllocationLib.h>
+// #include <Library/MemoryAllocationLib.h>  // MU_CHANGE
 #include <Library/ReportStatusCodeLib.h>
-#include <Library/ResetSystemLib.h>
-#include <Library/PrintLib.h>
+// #include <Library/ResetSystemLib.h>  // MU_CHANGE
+// #include <Library/PrintLib.h>  // MU_CHANGE
 
-// MU_CHANGE_23086
-// MU_CHANGE [BEGIN] - Add the OemTpm2InitLib
-#include <Library/OemTpm2InitLib.h>
-// MU_CHANGE [END]
-// MU_CHANGE_131467
-// MU_CHANGE [BEGIN] - Move to 256-bit PCRs.
-#include <Library/Tcg2PreUefiEventLogLib.h>
-// MU_CHANGE [END]
-// MU_CHANGE [BEGIN] - Measure DebugEnabled and Insecure Device State into PCR7
-#include <Library/DeviceStateLib.h>
-#include <Library/PanicLib.h>
-// MU_CHANGE [END]
+// #include <Library/OemTpm2InitLib.h>  // MU_CHANGE
+// #include <Library/Tcg2PreUefiEventLogLib.h>  // MU_CHANGE
+#include <Library/Tpm2StartupLib.h> // MU_CHANGE
+// #include <Library/DeviceStateLib.h>  // MU_CHANGE
+// #include <Library/PanicLib.h>  // MU_CHANGE
 
 typedef struct {
   EFI_GUID                     *EventGuid;
@@ -123,6 +117,7 @@ EFI_PEI_PPI_DESCRIPTOR  mTcgPpiList = {
   &mEdkiiTcgPpi
 };
 
+#if 0 // MU_CHANGE - [BEGIN]
 //
 // Number of firmware blobs to grow by each time we run out of room
 //
@@ -147,6 +142,7 @@ typedef struct {
 } FV_HANDOFF_TABLE_POINTERS2;
 
 #pragma pack ()
+#endif // MU_CHANGE - [END]
 
 /**
   Measure and record the Firmware Volume Information once FvInfoPPI install.
@@ -227,6 +223,7 @@ EndofPeiSignalNotifyCallBack (
   IN VOID                       *Ppi
   )
 {
+#if 0 // MU_CHANGE - [BEGIN]
   MEASURED_HOB_DATA                                      *MeasuredHobData;
   EXCLUDED_HOB_DATA                                      *ExcludedHobData;          // MU_CHANGE
   EFI_PEI_FIRMWARE_VOLUME_INFO_MEASUREMENT_EXCLUDED_PPI  *MeasurementExcludedFvPpi; // MU_CHANGE
@@ -238,9 +235,12 @@ EndofPeiSignalNotifyCallBack (
   MeasuredHobData          = NULL;
   ExcludedHobData          = NULL; // MU_CHANGE
   MeasurementExcludedFvPpi = NULL; // MU_CHANGE
+#endif // MU_CHANGE - [END]
 
   PERF_CALLBACK_BEGIN (&gEfiEndOfPeiSignalPpiGuid);
 
+// MU_CHANGE - [BEGIN]
+#if 0
   //
   // Create a Guid hob to save all measured Fv
   //
@@ -265,7 +265,11 @@ EndofPeiSignalNotifyCallBack (
     //
     CopyMem (&MeasuredHobData->MeasuredFvBuf[mMeasuredBaseFvIndex], mMeasuredChildFvInfo, sizeof (EFI_PLATFORM_FIRMWARE_BLOB) * (mMeasuredChildFvIndex));
   }
+#endif
 
+  Tpm2StartupPublishMeasuredFvHob ();
+
+#if 0
   //
   // Create a guid hob to save all excluded FVs for DXE - MU_CHANGE - START
   //
@@ -336,11 +340,13 @@ EndofPeiSignalNotifyCallBack (
   }  // Done with Excluded Fv Hob
 
   // MU_CHANGE - END
+#endif // MU_CHANGE - [END]
   PERF_CALLBACK_END (&gEfiEndOfPeiSignalPpiGuid);
 
   return EFI_SUCCESS;
 }
 
+#if 0 // MU_CHANGE - [BEGIN]
 /**
   Make sure that the current PCR allocations, the TPM supported PCRs,
   and the PcdTpm2HashMask are all in agreement.
@@ -459,6 +465,7 @@ SyncPcrAllocationsAndPcrMask (
     ResetCold ();
   }
 }
+#endif // MU_CHANGE - [END]
 
 /**
   Add a new entry to the Event Log.
@@ -469,6 +476,7 @@ SyncPcrAllocationsAndPcrMask (
 
   @retval EFI_SUCCESS           The new event log entry was added.
   @retval EFI_OUT_OF_RESOURCES  No enough memory to log the new event.
+  @retval EFI_DEVICE_ERROR      TPM communication failed. // MU_CHANGE
 **/
 EFI_STATUS
 LogHashEvent (
@@ -484,6 +492,17 @@ LogHashEvent (
   UINT32          SupportedEventLogs;
   TCG_PCR_EVENT2  *TcgPcrEvent2;
   UINT8           *DigestBuffer;
+  // MU_CHANGE - [BEGIN]
+  UINT32          TpmHashAlgorithmBitmap;
+  UINT32          ActivePcrBanks;
+
+  Status = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &ActivePcrBanks);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - Failed to get active PCR banks: %r\n", __func__, Status));
+    return EFI_DEVICE_ERROR;
+  }
+
+  // MU_CHANGE - [END]
 
   SupportedEventLogs = EFI_TCG2_EVENT_LOG_FORMAT_TCG_1_2 | EFI_TCG2_EVENT_LOG_FORMAT_TCG_2;
 
@@ -528,7 +547,7 @@ LogHashEvent (
           TcgPcrEvent2->PCRIndex  = NewEventHdr->PCRIndex;
           TcgPcrEvent2->EventType = NewEventHdr->EventType;
           DigestBuffer            = (UINT8 *)&TcgPcrEvent2->Digest;
-          DigestBuffer            = CopyDigestListToBuffer (DigestBuffer, DigestList, PcdGet32 (PcdTpm2HashMask));
+          DigestBuffer            = CopyDigestListToBuffer (DigestBuffer, DigestList, ActivePcrBanks); // MU_CHANGE
           CopyMem (DigestBuffer, &NewEventHdr->EventSize, sizeof (TcgPcrEvent2->EventSize));
           DigestBuffer = DigestBuffer + sizeof (TcgPcrEvent2->EventSize);
           CopyMem (DigestBuffer, NewEventData, NewEventHdr->EventSize);
@@ -614,6 +633,7 @@ HashLogExtendEvent (
   return Status;
 }
 
+#if 0 // MU_CHANGE - [BEGIN]
 /**
   Measure CRTM version.
 
@@ -1009,6 +1029,7 @@ MeasureMainBios (
 
   return Status;
 }
+#endif // MU_CHANGE - [END]
 
 /**
   Measure and record the Firmware Volume Information once FvInfoPPI install.
@@ -1032,7 +1053,7 @@ FirmwareVolumeInfoPpiNotifyCallback (
   EFI_PEI_FIRMWARE_VOLUME_INFO_PPI  *Fv;
   EFI_STATUS                        Status;
   EFI_PEI_FIRMWARE_VOLUME_PPI       *FvPpi;
-  UINTN                             Index;
+  // UINTN                             Index; // MU_CHANGE
 
   Fv = (EFI_PEI_FIRMWARE_VOLUME_INFO_PPI *)Ppi;
 
@@ -1049,6 +1070,8 @@ FirmwareVolumeInfoPpiNotifyCallback (
     return EFI_SUCCESS;
   }
 
+// MU_CHANGE - [BEGIN]
+#if 0
   //
   // This is an FV from an FFS file, and the parent FV must have already been measured,
   // No need to measure twice, so just record the FV and return
@@ -1080,7 +1103,201 @@ FirmwareVolumeInfoPpiNotifyCallback (
   }
 
   return MeasureFvImage ((EFI_PHYSICAL_ADDRESS)(UINTN)Fv->FvInfo, Fv->FvInfoSize);
+#endif
+
+  if ((Fv->ParentFvName != NULL) || (Fv->ParentFileName != NULL)) {
+    Tpm2StartupRecordChildFv ((EFI_PHYSICAL_ADDRESS)(UINTN)Fv->FvInfo, Fv->FvInfoSize);
+    return EFI_SUCCESS;
+  }
+
+  return Tpm2StartupMeasureFvImage ((EFI_PHYSICAL_ADDRESS)(UINTN)Fv->FvInfo, Fv->FvInfoSize);
+  // MU_CHANGE [END]
 }
+
+// MU_CHANGE - [BEGIN]
+/**
+  Walk every installed EFI_PEI_FIRMWARE_VOLUME_INFO_MEASUREMENT_EXCLUDED_PPI
+  instance and publish a single gExcludedFvHobGuid HOB containing the union
+  of their entries. Idempotent: does nothing if the HOB already exists.
+**/
+STATIC
+VOID
+BuildExcludedFvHobFromPpi (
+  VOID
+  )
+{
+  EFI_STATUS                                             Status;
+  UINT32                                                 Instance;
+  UINT32                                                 Count;
+  UINT32                                                 HobIndex;
+  EXCLUDED_HOB_DATA                                      *ExcludedHobData;
+  EFI_PEI_FIRMWARE_VOLUME_INFO_MEASUREMENT_EXCLUDED_PPI  *MeasurementExcludedFvPpi;
+
+  if (GetFirstGuidHob (&gExcludedFvHobGuid) != NULL) {
+    return;
+  }
+
+  MeasurementExcludedFvPpi = NULL;
+  Instance                 = 0;
+  Count                    = 0;
+  do {
+    Status = PeiServicesLocatePpi (
+               &gEfiPeiFirmwareVolumeInfoMeasurementExcludedPpiGuid,
+               Instance,
+               NULL,
+               (VOID **)&MeasurementExcludedFvPpi
+               );
+    if (!EFI_ERROR (Status)) {
+      Count += MeasurementExcludedFvPpi->Count;
+      Instance++;
+    }
+  } while (!EFI_ERROR (Status));
+
+  if (Count == 0) {
+    return;
+  }
+
+  DEBUG ((DEBUG_INFO, "Found %d FVs excluded.  Publishing hob\n", Count));
+  ExcludedHobData = BuildGuidHob (
+                      &gExcludedFvHobGuid,
+                      sizeof (EXCLUDED_HOB_DATA) + (sizeof (EFI_PEI_FIRMWARE_VOLUME_INFO_MEASUREMENT_EXCLUDED_FV) * Count)
+                      );
+  if (ExcludedHobData == NULL) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "Failed to allocate 0x%x byte of memory for ExcludedFvHob",
+      sizeof (EXCLUDED_HOB_DATA) + (sizeof (EFI_PEI_FIRMWARE_VOLUME_INFO_MEASUREMENT_EXCLUDED_FV) * Count)
+      ));
+    return;
+  }
+
+  ExcludedHobData->Num = Count;
+
+  Instance = 0;
+  HobIndex = 0;
+  do {
+    Status = PeiServicesLocatePpi (
+               &gEfiPeiFirmwareVolumeInfoMeasurementExcludedPpiGuid,
+               Instance,
+               NULL,
+               (VOID **)&MeasurementExcludedFvPpi
+               );
+    if (!EFI_ERROR (Status)) {
+      if (MeasurementExcludedFvPpi->Count <= 0) {
+        DEBUG ((DEBUG_ERROR, "ExcludedFvPpi has invalid count %d", MeasurementExcludedFvPpi->Count));
+        ASSERT (MeasurementExcludedFvPpi->Count > 0);
+      } else if (HobIndex + MeasurementExcludedFvPpi->Count > Count) {
+        DEBUG ((DEBUG_ERROR, "Found more ExcludedFvPpi fvs than when calculated buffer size.  BufferSizeCount (0x%x)  NewCount (0x%x)", Count, (HobIndex + MeasurementExcludedFvPpi->Count)));
+        ASSERT (HobIndex + MeasurementExcludedFvPpi->Count <= Count);
+      } else {
+        CopyMem (
+          &ExcludedHobData->ExcludedFvs[HobIndex],
+          &MeasurementExcludedFvPpi->Fv[0],
+          sizeof (EFI_PEI_FIRMWARE_VOLUME_INFO_MEASUREMENT_EXCLUDED_FV) * MeasurementExcludedFvPpi->Count
+          );
+        HobIndex += MeasurementExcludedFvPpi->Count;
+      }
+
+      Instance++;
+    }
+  } while (!EFI_ERROR (Status));
+}
+
+/**
+  Walk every installed gEdkiiPeiFirmwareVolumeInfoPrehashedFvPpiGuid
+  instance and publish one gPrehashedFvHobGuid HOB per FV. The trailing
+  HASH_INFO records + digest bytes from the PPI are copied verbatim into
+  the HOB payload (the two layouts are identical past the header).
+  Idempotent per FV: skips PPIs whose FvBase/FvLength already have a HOB.
+**/
+STATIC
+VOID
+BuildPrehashedFvHobFromPpi (
+  VOID
+  )
+{
+  EFI_STATUS                                       Status;
+  UINT32                                           Instance;
+  EDKII_PEI_FIRMWARE_VOLUME_INFO_PREHASHED_FV_PPI  *PrehashedFvPpi;
+  HASH_INFO                                        *PpiHashInfo;
+  UINT32                                           HashIndex;
+  UINTN                                            TrailingSize;
+  PREHASHED_FV_HOB                                 *HobHdr;
+  EFI_HOB_GUID_TYPE                                *ExistingHob;
+  PREHASHED_FV_HOB                                 *ExistingHdr;
+  BOOLEAN                                          AlreadyPresent;
+
+  Instance = 0;
+  do {
+    Status = PeiServicesLocatePpi (
+               &gEdkiiPeiFirmwareVolumeInfoPrehashedFvPpiGuid,
+               Instance,
+               NULL,
+               (VOID **)&PrehashedFvPpi
+               );
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+
+    Instance++;
+
+    AlreadyPresent = FALSE;
+    ExistingHob    = GetFirstGuidHob (&gPrehashedFvHobGuid);
+    while (ExistingHob != NULL) {
+      ExistingHdr = GET_GUID_HOB_DATA (ExistingHob);
+      if ((ExistingHdr->FvBase == (EFI_PHYSICAL_ADDRESS)PrehashedFvPpi->FvBase) &&
+          (ExistingHdr->FvLength == (UINT64)PrehashedFvPpi->FvLength)) {
+        AlreadyPresent = TRUE;
+        break;
+      }
+
+      ExistingHob = GetNextGuidHob (&gPrehashedFvHobGuid, GET_NEXT_HOB (ExistingHob));
+    }
+
+    if (AlreadyPresent) {
+      continue;
+    }
+
+    if (PrehashedFvPpi->Count == 0) {
+      DEBUG ((DEBUG_WARN, "PrehashedFvPpi[%u] has Count=0; skipping\n", Instance - 1));
+      continue;
+    }
+
+    //
+    // Sum trailing HASH_INFO + digest bytes to size the HOB.
+    //
+    TrailingSize = 0;
+    PpiHashInfo  = (HASH_INFO *)(PrehashedFvPpi + 1);
+    for (HashIndex = 0; HashIndex < PrehashedFvPpi->Count; HashIndex++) {
+      TrailingSize += sizeof (HASH_INFO) + PpiHashInfo->HashSize;
+      PpiHashInfo   = (HASH_INFO *)((UINT8 *)(PpiHashInfo + 1) + PpiHashInfo->HashSize);
+    }
+
+    HobHdr = BuildGuidHob (
+               &gPrehashedFvHobGuid,
+               sizeof (PREHASHED_FV_HOB) + TrailingSize
+               );
+    if (HobHdr == NULL) {
+      DEBUG ((DEBUG_ERROR, "Failed to allocate PrehashedFvHob (trailing=0x%x)\n", (UINT32)TrailingSize));
+      return;
+    }
+
+    HobHdr->FvBase   = (EFI_PHYSICAL_ADDRESS)PrehashedFvPpi->FvBase;
+    HobHdr->FvLength = (UINT64)PrehashedFvPpi->FvLength;
+    HobHdr->Count    = PrehashedFvPpi->Count;
+    CopyMem (HobHdr + 1, PrehashedFvPpi + 1, TrailingSize);
+
+    DEBUG ((
+      DEBUG_INFO,
+      "Published PrehashedFvHob: base=0x%lx len=0x%lx count=%u\n",
+      HobHdr->FvBase,
+      HobHdr->FvLength,
+      HobHdr->Count
+      ));
+  } while (TRUE);
+}
+
+// MU_CHANGE [END]
 
 /**
   Do measurement after memory is ready.
@@ -1097,9 +1314,11 @@ PeimEntryMP (
   IN      EFI_PEI_SERVICES  **PeiServices
   )
 {
-  EFI_STATUS  Status;
+  EFI_STATUS         Status;
+  EFI_PEI_FV_HANDLE  VolumeHandle; // MU_CHANGE
+  EFI_FV_INFO        VolumeInfo; // MU_CHANGE
 
-  DEVICE_STATE  CurrentDeviceState; // MU_CHANGE - Measure Firmware Debugger Enabled
+  // DEVICE_STATE  CurrentDeviceState; // MU_CHANGE
 
   //
   // install Tcg Services
@@ -1107,6 +1326,7 @@ PeimEntryMP (
   Status = PeiServicesInstallPpi (&mTcgPpiList);
   ASSERT_EFI_ERROR (Status);
 
+#if 0 // MU_CHANGE - [BEGIN]
   // MU_CHANGE_103691
   // MU_CHANGE [BEGIN] - Add support for measurements extended before Tcg2 stack is available.
   CreateTcg2PreUefiEventLogEntries ();
@@ -1134,6 +1354,24 @@ PeimEntryMP (
   if (EFI_ERROR (Status)) {
     return Status;
   }
+#endif // MU_CHANGE - [END]
+
+  // MU_CHANGE - [BEGIN]
+  Status = PeiServicesFfsFindNextVolume (0, &VolumeHandle);
+  ASSERT_EFI_ERROR (Status);
+  Status = PeiServicesFfsGetVolumeInfo (VolumeHandle, &VolumeInfo);
+  ASSERT_EFI_ERROR (Status);
+  Status = PeiServicesLocatePpi (&VolumeInfo.FvFormat, 0, NULL, NULL);
+  ASSERT_EFI_ERROR (Status);
+
+  Status = Tpm2StartupMeasureFvImage (
+              (EFI_PHYSICAL_ADDRESS)(UINTN)VolumeInfo.FvStart,
+              VolumeInfo.FvSize
+              );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  // MU_CHANGE - [END]
 
   //
   // Post callbacks:
@@ -1146,6 +1384,7 @@ PeimEntryMP (
   return Status;
 }
 
+#if 0 // MU_CHANGE - [BEGIN]
 /**
   Measure and log Separator event with error, and extend the measurement result into a specific PCR.
 
@@ -1172,6 +1411,7 @@ MeasureSeparatorEventWithError (
   TcgEvent.EventSize = (UINT32)sizeof (EventData);
   return HashLogExtendEvent (&mEdkiiTcgPpi, 0, (UINT8 *)&EventData, TcgEvent.EventSize, &TcgEvent, (UINT8 *)&EventData);
 }
+#endif // MU_CHANGE - [END]
 
 /**
   Entry point of this module.
@@ -1192,8 +1432,8 @@ PeimEntryMA (
   EFI_STATUS     Status;
   EFI_STATUS     Status2;
   EFI_BOOT_MODE  BootMode;
-  TPM_PCRINDEX   PcrIndex;
-  BOOLEAN        S3ErrorReport;
+  // TPM_PCRINDEX   PcrIndex; // MU_CHANGE
+  // BOOLEAN        S3ErrorReport; // MU_CHANGE
 
   if (CompareGuid (PcdGetPtr (PcdTpmInstanceGuid), &gEfiTpmDeviceInstanceNoneGuid) ||
       CompareGuid (PcdGetPtr (PcdTpmInstanceGuid), &gEfiTpmDeviceInstanceTpm12Guid))
@@ -1224,6 +1464,7 @@ PeimEntryMA (
   }
 
   if (!mImageInMemory) {
+#if 0 // MU_CHANGE - [BEGIN]
     //
     // Initialize TPM device
     //
@@ -1324,9 +1565,29 @@ PeimEntryMA (
     //
     Status = PeiServicesInstallPpi (&mTpmInitializedPpiList);
     ASSERT_EFI_ERROR (Status);
+#endif // MU_CHANGE - [END]
+
+    // MU_CHANGE - [BEGIN]
+    BuildExcludedFvHobFromPpi ();
+    BuildPrehashedFvHobFromPpi ();
+
+    Status = Tpm2StartupInitializeTpm (BootMode == BOOT_ON_S3_RESUME);
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+
+    Status = Tpm2StartupMeasureCoreEvents ();
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+
+    Status = PeiServicesInstallPpi (&mTpmInitializedPpiList);
+    ASSERT_EFI_ERROR (Status);
+    // MU_CHANGE - [END]
   }
 
   if (mImageInMemory) {
+#if 0 // MU_CHANGE - [BEGIN]
     // MU_CHANGE_23086
     // MU_CHANGE [BEGIN] - Call OEM init hook.
     Status = OemTpm2InitPeiPreMeasurements ();
@@ -1336,6 +1597,7 @@ PeimEntryMA (
     }
 
     // MU_CHANGE [END]
+#endif // MU_CHANGE - [END]
 
     Status = PeimEntryMP ((EFI_PEI_SERVICES **)PeiServices);
     return Status;

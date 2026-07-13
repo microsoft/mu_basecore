@@ -1,9 +1,9 @@
 ## @file
-#  Handles TPM 2.0 Startup/Initialization.
+#  Handles TPM 2.0 startup and initialization.
 #
-#  Includes setup of initial TPM state as well as any pre-DXE
-#  measurements. Also handles any pre-DXE logging by generating
-#  HOBs.
+#  A single library instance consolidates the TPM startup and pre-DXE
+#  measurement work that previously lived in PEI so it can be driven
+#  from either PEI or from SEC on PEI-less platforms.
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -18,8 +18,6 @@
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = Tpm2StartupLib
 
-#
-# The following information is for reference only and not required by the build tools.
 #
 #  VALID_ARCHITECTURES           = IA32 X64 AARCH64
 #
@@ -36,17 +34,34 @@
   BaseLib
   BaseMemoryLib
   DebugLib
+  DeviceStateLib
+  HashLib
   HobLib
+  OemTpm2InitLib
+  PcdLib
+  PrintLib
   ReportStatusCodeLib
+  Tcg2PreUefiEventLogLib
   Tpm2CommandLib
   Tpm2DeviceLib
+  Tpm2HelpLib
 
 [Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString       ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision   ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid              ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy     ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2SelfTestPolicy           ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2ScrtmPolicy              ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice  ## SOMETIMES_CONSUMES
 
 [Guids]
-  gTpmErrorHobGuid                ## SOMETIMES_PRODUCES     ## HOB
-  gEfiTpmDeviceInstanceNoneGuid   ## SOMETIMES_PRODUCES     ## GUID       # TPM device identifier
-  gEfiTpmDeviceInstanceTpm12Guid  ## SOMETIMES_PRODUCES     ## GUID       # TPM device identifier
+  gTpmErrorHobGuid                ## SOMETIMES_PRODUCES  ## HOB
+  gEfiTpmDeviceInstanceNoneGuid   ## SOMETIMES_PRODUCES  ## GUID
+  gEfiTpmDeviceInstanceTpm12Guid  ## SOMETIMES_CONSUMES  ## GUID
+  gTcgEventEntryHobGuid           ## SOMETIMES_PRODUCES  ## HOB
+  gTcgEvent2EntryHobGuid          ## SOMETIMES_PRODUCES  ## HOB
+  gEdkiiMigratedFvInfoGuid        ## SOMETIMES_CONSUMES  ## HOB
+  gExcludedFvHobGuid              ## SOMETIMES_CONSUMES  ## HOB
+  gPrehashedFvHobGuid             ## SOMETIMES_CONSUMES  ## HOB
+  gMeasuredFvHobGuid              ## SOMETIMES_PRODUCES  ## HOB

@@ -104,6 +104,7 @@ SecMain (
   FIRMWARE_SEC_PERFORMANCE    Performance;
   VOID                        *TransferListBase;
   UINTN                       *TransferListHobData;
+  EFI_PEI_HOB_POINTERS        FvHob; // MU_CHANGE
 
   // If ensure the FD is either part of the System Memory or totally outside of the System Memory (XIP)
   ASSERT (
@@ -210,8 +211,35 @@ SecMain (
   // Decompress firmware volumes and load the DXE Core
   DecompressFvs ();
 
-  Status = MeasurePeilessSec ();
-  ASSERT_EFI_ERROR (Status);
+  // MU_CHANGE - [BEGIN]
+
+  Status = Tpm2StartupInitializeTpm (FALSE);
+  if (!EFI_ERROR (Status)) {
+    Status = Tpm2StartupMeasureCoreEvents ();
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: Tpm2StartupMeasureCoreEvents failed: %r\n", __func__, Status));
+    }
+
+    // Walk every FV HOB and measure each FV into PCR 0. Excluded FVs and
+    // pre-hashed FVs are handled inside Tpm2StartupMeasureFvImage via
+    // gExcludedFvHobGuid / gPrehashedFvHobGuid HOB lookups.
+    FvHob.Raw = GetNextHob (EFI_HOB_TYPE_FV, GetHobList ());
+    while (FvHob.Raw != NULL) {
+      (VOID)Tpm2StartupMeasureFvImage (
+              FvHob.FirmwareVolume->BaseAddress,
+              FvHob.FirmwareVolume->Length
+              );
+      FvHob.Raw = GET_NEXT_HOB (FvHob);
+      FvHob.Raw = GetNextHob (EFI_HOB_TYPE_FV, FvHob.Raw);
+    }
+
+    Tpm2StartupPublishMeasuredFvHob ();
+  } else if (Status != EFI_UNSUPPORTED) {
+    DEBUG ((DEBUG_ERROR, "%a: Tpm2StartupInitializeTpm failed: %r\n", __func__, Status));
+    ASSERT_EFI_ERROR (FALSE);
+  }
+
+  // MU_CHANGE - [END]
 
   // Load the DXE Core and transfer control to it
   Status = LoadDxeCoreFromFv (NULL, 0);

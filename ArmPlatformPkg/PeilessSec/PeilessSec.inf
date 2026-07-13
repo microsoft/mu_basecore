@@ -51,6 +51,7 @@
   TimerLib
   StackCheckLib
   ArmTransferListLib
+  Tpm2StartupLib # MU_CHANGE
 
 [Ppis]
   gArmMpCoreInfoPpiGuid

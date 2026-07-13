@@ -26,6 +26,7 @@
 #include <Library/SerialPortLib.h>
 #include <Library/TimerLib.h>
 #include <Library/ArmTransferListLib.h>
+#include <Library/Tpm2StartupLib.h> // MU_CHANGE
 #include <Guid/TransferListHob.h>
 
 #include <Ppi/ArmMpCoreInfo.h>

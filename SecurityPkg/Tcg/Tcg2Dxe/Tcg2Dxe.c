@@ -42,6 +42,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PrintLib.h>
 #include <Library/Tpm2CommandLib.h>
 #include <Library/Tpm2HelpLib.h>  // MU_CHANGE
+#include <Library/Tpm2StartupLib.h> // MU_CHANGE
+#include <Library/ResetSystemLib.h> // MU_CHANGE
 #include <Library/PcdLib.h>
 #include <Library/UefiLib.h>
 #include <Library/Tpm2DeviceLib.h>
@@ -3224,6 +3226,81 @@ InstallTcg2 (
   return Status;
 }
 
+// MU_CHANGE - [BEGIN]
+
+/**
+  Sync PCR-bank state between platform PCDs and the TPM's active banks.
+  Checks the platform's HashMask and AlgorithmBitmap against the active
+  PCR banks and either updates the HashMask based on supported hash
+  algorithms or issues a command to the TPM to update the active PCR
+  banks to match the platform. If the active PCR banks are updated a
+  reboot is issued. Must be called from a phase in which dynamic PCD
+  writes are legal (PEI/DXE). On failure, produces an ERROR HOB so later
+  phases exit early.
+
+  @retval EFI_SUCCESS       Sync completed.
+  @retval EFI_DEVICE_ERROR  A TPM command failed.
+**/
+STATIC
+EFI_STATUS
+SyncPcrAllocationsAndPcrMask (
+  VOID
+  )
+{
+  EFI_STATUS                       Status;
+  EFI_TCG2_EVENT_ALGORITHM_BITMAP  TpmHashAlgorithmBitmap;
+  UINT32                           TpmActivePcrBanks;
+  UINT32                           Tpm2PcrMask;
+  UINT32                           NewTpm2PcrMask;
+
+  DEBUG ((DEBUG_INFO, "%a - Entry\n", __func__));
+
+  Status = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &TpmActivePcrBanks);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - Failed to determine TPM capabilities!\n", __func__));
+    ASSERT_EFI_ERROR (Status);
+    return Status;
+  }
+
+  DEBUG ((DEBUG_INFO, "TpmHashAlgorithmBitmap: 0x%x, TpmActivePcrBanks: 0x%x\n", TpmHashAlgorithmBitmap, TpmActivePcrBanks));
+
+  Tpm2PcrMask = PcdGet32 (PcdTpm2HashMask);
+  if (Tpm2PcrMask == 0) {
+    PcdSet32S (PcdTpm2HashMask, TpmActivePcrBanks);
+    Tpm2PcrMask = TpmActivePcrBanks;
+  }
+
+  if ((Tpm2PcrMask & TpmHashAlgorithmBitmap) != Tpm2PcrMask) {
+    NewTpm2PcrMask = Tpm2PcrMask & TpmHashAlgorithmBitmap;
+    DEBUG ((DEBUG_INFO, "%a - Updating PcdTpm2HashMask from 0x%X to 0x%X.\n", __func__, Tpm2PcrMask, NewTpm2PcrMask));
+    if (NewTpm2PcrMask == 0) {
+      DEBUG ((DEBUG_ERROR, "%a - No viable PCRs supported! PcdTpm2HashMask too restrictive.\n", __func__));
+      ASSERT (FALSE);
+    }
+
+    Status = PcdSet32S (PcdTpm2HashMask, NewTpm2PcrMask);
+    ASSERT_EFI_ERROR (Status);
+    Tpm2PcrMask = NewTpm2PcrMask;
+  }
+
+  if ((Tpm2PcrMask != TpmActivePcrBanks) && FixedPcdGetBool (PcdForceReallocatePcrBanks)) {
+    DEBUG ((DEBUG_INFO, "%a - Reallocating PCR banks from 0x%X to 0x%X.\n", __func__, TpmActivePcrBanks, Tpm2PcrMask));
+    Status = Tpm2PcrAllocateBanks (NULL, (UINT32)TpmHashAlgorithmBitmap, Tpm2PcrMask);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - Failed to reallocate PCRs!\n", __func__));
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    ResetCold ();
+  }
+
+  DEBUG ((DEBUG_INFO, "%a - Exit\n", __func__));
+
+  return Status;
+}
+
+// MU_CHANGE - [END]
+
 /**
   The driver's entry point. It publishes EFI Tcg2 Protocol.
 
@@ -3269,6 +3346,14 @@ DriverEntry (
     DEBUG ((DEBUG_ERROR, "TPM2 not detected!\n"));
     return Status;
   }
+
+  // MU_CHANGE - [BEGIN]
+  Status = SyncPcrAllocationsAndPcrMask ();
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "SyncPcrAllocationsAndPcrMask Failed - %r\n", Status));
+    return Status;
+  }
+  // MU_CHANGE - [END]
 
   //
   // Fill information

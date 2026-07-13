@@ -11,23 +11,21 @@
 
 **/
 
-#include <PiPei.h>
-
-#include <Guid/TcgEventHob.h>
-#include <Guid/TpmInstance.h>
-#include <Guid/TransferListHob.h>
-
-#include <IndustryStandard/UefiTcgPlatform.h>
-
-#include <Library/ArmTransferListLib.h>
+#include <Uefi/UefiBaseType.h> // MU_CHANGE
+// #include <PiPei.h> // MU_CHANGE
+// #include <Guid/TcgEventHob.h> // MU_CHANGE
+// #include <Guid/TpmInstance.h> // MU_CHANGE
+// #include <Guid/TransferListHob.h> // MU_CHANGE
+// #include <IndustryStandard/UefiTcgPlatform.h> // MU_CHANGE
+// #include <Library/ArmTransferListLib.h> // MU_CHANGE
 #include <Library/DebugLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/Tpm2CommandLib.h>
 #include <Library/Tpm2DeviceLib.h>
 #include <Library/HashLib.h>
-#include <Library/HobLib.h>
+// #include <Library/HobLib.h> // MU_CHANGE
 #include <Library/MemoryAllocationLib.h>
-#include <Library/PrintLib.h>
+// #include <Library/PrintLib.h> // MU_CHANGE
 // MU_CHANGE - [BEGIN]
 #include <Library/Tpm2HelpLib.h>
 
@@ -51,8 +49,6 @@ STATIC TPM2_HASH_MASK  mTpm2HashMask[] = {
 
 STATIC UINT32   mSupportedHashBitmap;
 STATIC BOOLEAN  mHashLibDisabled;
-#endif
-// MU_CHANGE - [END]
 
 /**
   Get transfer list header.
@@ -92,18 +88,18 @@ GetTransferList (
 
   return EFI_SUCCESS;
 }
-
-// MU_CHANGE - [BEGIN]
+#endif
 
 /**
-  Get supported hash bitmap
+  Get the hash algorithm bitmap to drive per-operation. The set matches the
+  TPM's currently active PCR banks, obtained directly from the device.
 
-  @param[out] SupportedHashBitmap
+  @param[out] SupportedHashBitmap  Bitmap of currently active PCR banks.
 
-  @retval EFI_SUCCESS            Bitmap populated
-  @retval EFI_INVALID_PARAMETER  Invalid pointer
-  @retval EFI_NOT_FOUND          Error accessing data
-  @retval EFI_DEVICE_ERROR       TPM device error
+  @retval EFI_SUCCESS            Bitmap populated.
+  @retval EFI_INVALID_PARAMETER  SupportedHashBitmap is NULL.
+  @retval EFI_DEVICE_ERROR       TPM not available or capability query
+                                 failed.
 
 **/
 STATIC
@@ -113,18 +109,9 @@ GetSupportedHashBitmap (
   OUT UINT32  *SupportedHashBitmap
   )
 {
-  EFI_STATUS                       Status;
-  TRANSFER_LIST_HEADER             *TransferList;
-  VOID                             *EventLog;
-  UINTN                            EventLogSize;
-  TCG_PCR_EVENT                    *TcgPcrEvent;
-  TCG_EfiSpecIDEventStruct         *TcgEfiSpecIdEventStruct;
-  TCG_EfiSpecIdEventAlgorithmSize  *DigestSize;
-  UINTN                            Idx;
-  UINT32                           NumberOfAlgorithms;
-  UINT32                           TpmHashBitmap;
-  UINT32                           PcrHashBitmap;
-  BOOLEAN                          UseTlHashBitmap;
+  EFI_STATUS  Status;
+  UINT32      TpmHashAlgorithmBitmap;
+  UINT32      ActivePCRBanks;
 
   if (SupportedHashBitmap == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -132,67 +119,21 @@ GetSupportedHashBitmap (
 
   Status = Tpm2RequestUseTpm ();
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: TPM2 not detected!\n", __func__));
+    DEBUG ((DEBUG_ERROR, "%a: TPM2 not detected: %r\n", __func__, Status));
     return Status;
   }
 
-  Status = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashBitmap, &PcrHashBitmap);
+  Status = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &ActivePCRBanks);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to get Tpm capability... Status: %r\n", __func__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: Failed to get Tpm capability: %r\n", __func__, Status));
     return Status;
   }
 
-  // NOTE: TpmHashBitmap is what the TPM supports, PcrHashBitmap is what is currently active
-  DEBUG ((DEBUG_INFO, "TpmHashBitmap: %x, PcrHashBitmap: %x\n", TpmHashBitmap, PcrHashBitmap));
+  DEBUG ((DEBUG_INFO, "%a: TpmHashAlgorithmBitmap=0x%x, ActivePCRBanks=0x%x\n", __func__, TpmHashAlgorithmBitmap, ActivePCRBanks));
 
-  UseTlHashBitmap = FALSE;
-  Status          = GetTransferList (&TransferList);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Unable to acquire Transfer list...\n", __func__));
-    goto Exit;
-  }
-
-  if (TransferListCheckHeader (TransferList) == TRANSFER_LIST_OPS_INVALID) {
-    DEBUG ((DEBUG_ERROR, "%a: Invalid Transfer list...\n", __func__));
-    goto Exit;
-  }
-
-  Status = TransferListGetEventLog (TransferList, &EventLog, &EventLogSize, NULL);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: No data for TPM event log...\n", __func__));
-    goto Exit;
-  }
-
-  UseTlHashBitmap         = TRUE;
-  TcgPcrEvent             = (TCG_PCR_EVENT *)EventLog;
-  TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)
-                            (EventLog + OFFSET_OF (TCG_PCR_EVENT, Event));
-
-  CopyMem (&NumberOfAlgorithms, TcgEfiSpecIdEventStruct + 1, sizeof (NumberOfAlgorithms));
-  DigestSize = (TCG_EfiSpecIdEventAlgorithmSize *)((UINT8 *)TcgEfiSpecIdEventStruct + sizeof (*TcgEfiSpecIdEventStruct) + sizeof (NumberOfAlgorithms));
-  DEBUG ((DEBUG_INFO, "%a: Transfer list TPM event log available\n", __func__));
-
-  // Update the supported hash bitmap based on the info from the TCG event log
-  for (Idx = 0; Idx < NumberOfAlgorithms; Idx++) {
-    *SupportedHashBitmap |= GetHashMaskFromAlgo (DigestSize[Idx].algorithmId);
-  }
-
-  // The active PCR banks should match what is reported in the TCG event log
-  if (PcrHashBitmap != *SupportedHashBitmap) {
-    DEBUG ((DEBUG_ERROR, "Active PCRs & Transfer List mismatch!\n"));
-    UseTlHashBitmap = FALSE;
-  }
-
-Exit:
-  if (!UseTlHashBitmap) {
-    // Use the information from the TPM to update the supported hash bitmap
-    *SupportedHashBitmap = TpmHashBitmap;
-    DEBUG ((DEBUG_INFO, "%a: No Transfer List or TPM event log available\n", __func__));
-  }
-
-  *SupportedHashBitmap &= PcrHashBitmap;
+  *SupportedHashBitmap = ActivePCRBanks;
   if (*SupportedHashBitmap == 0x00) {
-    DEBUG ((DEBUG_ERROR, "%a: No supported Hash algorithm with event log Spec...!\n", __func__));
+    DEBUG ((DEBUG_ERROR, "%a: No active PCR banks reported by the TPM.\n", __func__));
   }
 
   return EFI_SUCCESS;

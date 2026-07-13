@@ -214,6 +214,13 @@
   #  Include/Guid/ExcludedFvHob.h
   gExcludedFvHobGuid                 = { 0xdd55d497, 0x5ed5, 0x403c, { 0x92, 0xb5, 0x70, 0x3a, 0x72, 0x59, 0xae, 0x2a }}
 
+  ## MU_CHANGE
+  ## HOB GUID used to declare pre-hashed FVs to Tpm2StartupLib in either
+  ## PEI or DXE. Phase-agnostic equivalent of the PEI-only
+  ## gEdkiiPeiFirmwareVolumeInfoPrehashedFvPpiGuid.
+  #  Include/Guid/PrehashedFvHob.h
+  gPrehashedFvHobGuid                = { 0x9d3b7f8a, 0x4c1e, 0x4a2b, { 0x8b, 0x5d, 0x2e, 0x6f, 0x9a, 0x3c, 0x71, 0x0e }}
+
   ## GUID used to "PhysicalPresence" variable and "PhysicalPresenceFlags" variable for TPM request and response.
   #  Include/Guid/PhysicalPresenceData.h
   gEfiPhysicalPresenceGuid           = { 0xf6499b1, 0xe9ad, 0x493d, { 0xb9, 0xc2, 0x2f, 0x90, 0x81, 0x5c, 0x6c, 0xbc }}

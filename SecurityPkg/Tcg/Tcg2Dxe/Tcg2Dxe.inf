@@ -76,6 +76,7 @@
   PanicLib
   ## MU_CHANGE [END]
   Tpm2HelpLib # MU_CHANGE
+  ResetSystemLib # MU_CHANGE
 
 [Guids]
   ## SOMETIMES_CONSUMES     ## Variable:L"SecureBoot"
@@ -113,6 +114,8 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmPlatformClass                         ## SOMETIMES_CONSUMES
   # gEfiSecurityPkgTokenSpaceGuid.PcdFirmwareDebuggerInitialized            ## SOMETIMES_CONSUMES # MU_CHANGE - Remove PCD
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid                          ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask                             ## CONSUMES # MU_CHANGE
+  gEfiSecurityPkgTokenSpaceGuid.PcdForceReallocatePcrBanks                  ## CONSUMES # MU_CHANGE
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice              ## SOMETIMES_CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashAlgorithmBitmap                  ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2NumberOfPCRBanks                     ## CONSUMES

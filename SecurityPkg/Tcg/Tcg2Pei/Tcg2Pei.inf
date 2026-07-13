@@ -47,36 +47,29 @@
   BaseMemoryLib
   DebugLib
   Tpm2CommandLib
-  PeiServicesTablePointerLib
-  Tpm2DeviceLib
+#  PeiServicesTablePointerLib  # MU_CHANGE
+#  Tpm2DeviceLib  # MU_CHANGE
   HashLib
   PerformanceLib
-  MemoryAllocationLib
+#  MemoryAllocationLib  # MU_CHANGE
   ReportStatusCodeLib
-  ResetSystemLib
-  PrintLib
-## MU_CHANGE_23086
-## MU_CHANGE [BEGIN] - Add the OemTpm2InitLib
-  OemTpm2InitLib
-## MU_CHANGE [END]
-## MU_CHANGE_103691
-## MU_CHANGE [BEGIN] - Add the Tcg2PreUefiEventLogLib
-  Tcg2PreUefiEventLogLib
-## MU_CHANGE [END]
-
-  ## MU_CHANGE [BEGIN] - Measure Firmware Debugger Enabled
-  DeviceStateLib
-  PanicLib
-  ## MU_CHANGE [END]
+#  ResetSystemLib  # MU_CHANGE
+#  PrintLib  # MU_CHANGE
+#  OemTpm2InitLib  # MU_CHANGE
+#  Tcg2PreUefiEventLogLib  # MU_CHANGE
+  Tpm2StartupLib # MU_CHANGE
+#  DeviceStateLib  # MU_CHANGE
+#  PanicLib  # MU_CHANGE
 [Guids]
   gTcgEventEntryHobGuid                                                ## PRODUCES               ## HOB
   gTpmErrorHobGuid                                                     ## SOMETIMES_PRODUCES     ## HOB
-  gMeasuredFvHobGuid                                                   ## PRODUCES               ## HOB
+#  gMeasuredFvHobGuid                                                   ## PRODUCES               ## HOB  # MU_CHANGE
   gExcludedFvHobGuid                                                   ## SOMETIMES_PRODUCES     ## HOB  # MU_CHANGE
+  gPrehashedFvHobGuid                                                  ## SOMETIMES_PRODUCES     ## HOB  # MU_CHANGE
   gTcgEvent2EntryHobGuid                                               ## PRODUCES               ## HOB
   gEfiTpmDeviceInstanceNoneGuid                                        ## SOMETIMES_PRODUCES     ## GUID       # TPM device identifier
   gEfiTpmDeviceInstanceTpm12Guid                                       ## SOMETIMES_PRODUCES     ## GUID       # TPM device identifier
-  gEdkiiMigratedFvInfoGuid                                             ## SOMETIMES_CONSUMES     ## HOB
+#  gEdkiiMigratedFvInfoGuid                                             ## SOMETIMES_CONSUMES     ## HOB  # MU_CHANGE
 
 [Ppis]
   gEfiPeiFirmwareVolumeInfoPpiGuid                                     ## SOMETIMES_CONSUMES     ## NOTIFY
@@ -89,19 +82,18 @@
   gEdkiiTcgPpiGuid                                                     ## PRODUCES
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString              ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision          ## CONSUMES
+#  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString              ## SOMETIMES_CONSUMES  # MU_CHANGE
+#  gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision          ## CONSUMES  # MU_CHANGE
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid                     ## CONSUMES
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy            ## CONSUMES
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2SelfTestPolicy                  ## SOMETIMES_CONSUMES
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2ScrtmPolicy                     ## CONSUMES
+#  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy            ## CONSUMES  # MU_CHANGE
+#  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2SelfTestPolicy                  ## SOMETIMES_CONSUMES  # MU_CHANGE
+#  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2ScrtmPolicy                     ## CONSUMES  # MU_CHANGE
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice         ## SOMETIMES_CONSUMES
   ## SOMETIMES_CONSUMES
   ## SOMETIMES_PRODUCES
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask
-  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashAlgorithmBitmap                  ## CONSUMES
-  ## MU_CHANGE - Update PCR order, add PCD, enable deallocate *and* allocate.
-  gEfiSecurityPkgTokenSpaceGuid.PcdForceReallocatePcrBanks             ## CONSUMES
+#  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask                        # MU_CHANGE
+#  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashAlgorithmBitmap             ## CONSUMES  # MU_CHANGE
+#  gEfiSecurityPkgTokenSpaceGuid.PcdForceReallocatePcrBanks             ## CONSUMES  # MU_CHANGE
 
 [Depex]
   gEfiPeiMasterBootModePpiGuid
