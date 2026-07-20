@@ -17,10 +17,10 @@
 # convention.
 #
 !if "$(FAMILY)" == "MSFT" || "$(TOOL_CHAIN_TAG)" == "CLANGPDB"
-gEfiCryptoPkgTokenSpaceGuid.PcdOpensslLibAssemblySourceStyleNasm|TRUE
+#gEfiCryptoPkgTokenSpaceGuid.PcdOpensslLibAssemblySourceStyleNasm|TRUE
 !endif
 !if $(HOST_BASED_UNIT_TESTING_ENABLED) AND $(WIN_HOST_BUILD)
-gEfiCryptoPkgTokenSpaceGuid.PcdOpensslLibAssemblySourceStyleNasm|TRUE
+#gEfiCryptoPkgTokenSpaceGuid.PcdOpensslLibAssemblySourceStyleNasm|TRUE
 !endif
 
 [PcdsFeatureFlag.AARCH64]
@@ -30,5 +30,5 @@ gEfiCryptoPkgTokenSpaceGuid.PcdOpensslLibAssemblySourceStyleNasm|TRUE
 # GCC and CLANGDWARF use the default PCD value of ELF target assembly source files.
 #
 !if "$(TOOL_CHAIN_TAG)" == "CLANGPDB"
-gEfiCryptoPkgTokenSpaceGuid.PcdOpensslLibAssemblySourceStylePe|TRUE
+#gEfiCryptoPkgTokenSpaceGuid.PcdOpensslLibAssemblySourceStylePe|TRUE
 !endif

@@ -37,6 +37,16 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // SLH-DSA
 #define CRYPTO_NID_SLH_DSA_SHAKE_256S  0x05CD
 
+// MU_CHANGE - Start - Enable Pkcs7Encrypt
+// Symmetric ciphers usable with Pkcs7Encrypt.
+#define CRYPTO_NID_AES128CBC  0x01A3 // NID_aes_128_cbc
+#define CRYPTO_NID_AES192CBC  0x01A7 // NID_aes_192_cbc
+#define CRYPTO_NID_AES256CBC  0x01AB // NID_aes_256_cbc
+
+// Flags usable with Pkcs7Encrypt.
+#define CRYPTO_PKCS7_DEFAULT  0x0 // Treat the input as binary data.
+// MU_CHANGE - End - Enable Pkcs7Encrypt
+
 ///
 /// MD5 digest size in bytes
 ///
@@ -2662,6 +2672,52 @@ Pkcs7Verify (
   IN  CONST UINT8  *InData,
   IN  UINTN        DataLength
   );
+
+// MU_CHANGE - Start - Add Pkcs7Encrypt and Pkcs7Decrypt- #12519
+
+/**
+  Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
+  that wraps content encrypted for secure transmission to one or more recipients.
+
+  If this interface is not supported, return FALSE.
+
+  @param[in]  X509Stack        Pointer to a stack of X.509 certificates for the
+                               intended recipients of this message, created using
+                               X509ConstructCertificateStack or similar. Each
+                               certificate must provide an RSA public key. Any of the
+                               corresponding private keys will be able to decrypt the
+                               content of the returned ContentInfo.
+  @param[in]  InData           Pointer to the content to be encrypted.
+  @param[in]  InDataSize       Size of the content to be encrypted in bytes.
+  @param[in]  CipherNid        NID of the symmetric cipher to use for encryption.
+                               Supported values are CRYPTO_NID_AES128CBC,
+                               CRYPTO_NID_AES192CBC, and CRYPTO_NID_AES256CBC.
+  @param[in]  Flags            Flags for the encryption operation. Currently only
+                               CRYPTO_PKCS7_DEFAULT is supported, which indicates that
+                               the input data is treated as binary data.
+  @param[out] ContentInfo      Receives a pointer to the output, which is a PKCS#7
+                               DER-encoded ContentInfo that wraps an envelopedData. The
+                               caller must free the returned buffer with FreePool().
+  @param[out] ContentInfoSize  Receives the size of the output in bytes.
+
+  @retval     TRUE             PKCS#7 data encryption succeeded.
+  @retval     FALSE            PKCS#7 data encryption failed.
+  @retval     FALSE            This interface is not supported.
+
+**/
+BOOLEAN
+EFIAPI
+Pkcs7Encrypt (
+  IN   UINT8   *X509Stack,
+  IN   UINT8   *InData,
+  IN   UINTN   InDataSize,
+  IN   UINT32  CipherNid,
+  IN   UINT32  Flags,
+  OUT  UINT8   **ContentInfo,
+  OUT  UINTN   *ContentInfoSize
+  );
+
+// MU_CHANGE - End - Add Pkcs7Encrypt and Pkcs7Decrypt- #12519
 
 /**
   This function receives a PKCS7 formatted signature, and then verifies that
@@ -5608,4 +5664,49 @@ SlhDsaGetPublicKeyFromX509 (
   IN   CONST UINT8  *Cert,
   IN   UINTN        CertSize,
   OUT  VOID         **SlhDsaContext
+  );
+
+/**
+Manually initialize the cryptographic library.
+
+Normally, the UEFI build system will take care of this through the libraries constructor.
+However there are some use cases where its necessary to initialize the library
+manually. What it means to "initialize" the library is provider-specific, but it
+typically involves setting up accelerated instructions.
+
+@retval EFI_SUCCESS  The library was initialized successfully.
+
+**/
+EFI_STATUS
+EFIAPI
+BaseCryptInit (
+  VOID
+  );
+
+/**
+Gets the cryptographic provider version information.
+
+This function returns the version string of the cryptographic provider
+(e.g., OpenSSL, MbedTLS, SymCrypt) that was used to compile the library.
+
+The returned string is space-delimited and follows the format: "<provider> <version> [additional info]"
+where <provider> is the cryptographic library name (e.g., "OpenSSL", "MbedTLS", "SymCrypt"),
+<version> is the version number, and [additional info] is optional provider-specific details.
+
+@param[out]     Buffer       Pointer to the buffer to receive the version string.
+                             If NULL, the required buffer size is returned in BufferSize.
+@param[in,out]  BufferSize   On input, the size of the buffer in bytes.
+                             On output, the size of the data copied to the buffer (including null terminator).
+                             If Buffer is NULL, returns the required buffer size.
+
+@retval  EFI_SUCCESS            The version string was successfully copied to the buffer.
+@retval  EFI_BUFFER_TOO_SMALL   The buffer is too small. BufferSize contains the required size.
+@retval  EFI_INVALID_PARAMETER  BufferSize is NULL.
+@retval  EFI_UNSUPPORTED        The function is not provided by the Crypto provider.
+**/
+EFI_STATUS
+EFIAPI
+GetCryptoProviderVersionString (
+  OUT    CHAR8  *Buffer,
+  IN OUT UINTN  *BufferSize
   );

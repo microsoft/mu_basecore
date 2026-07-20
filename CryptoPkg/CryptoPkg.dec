@@ -20,20 +20,22 @@
   Include
   Test/Mock/Include
 
-[Includes.Common.Private]
-  Private
-  Library/Include
-  Library/OpensslLib/openssl
-  Library/OpensslLib/openssl/include
-  Library/OpensslLib/openssl/providers/common/include
-  Library/OpensslLib/openssl/providers/fips/include
-  Library/OpensslLib/openssl/providers/implementations/include
-  Library/OpensslLib/OpensslGen/include
-  Library/OpensslLib/OpensslGen/providers/common/include
-  Library/MbedTlsLib/Include
-  Library/MbedTlsLib/mbedtls/include
-  Library/MbedTlsLib/mbedtls/include/mbedtls
-  Library/MbedTlsLib/mbedtls/library
+# MU_CHANGE - Start - Move to OneCrypto
+#[Includes.Common.Private]
+#  Private
+#  Library/Include
+#  Library/OpensslLib/openssl
+#  Library/OpensslLib/openssl/include
+#  Library/OpensslLib/openssl/providers/common/include
+#  Library/OpensslLib/openssl/providers/fips/include
+#  Library/OpensslLib/openssl/providers/implementations/include
+#  Library/OpensslLib/OpensslGen/include
+#  Library/OpensslLib/OpensslGen/providers/common/include
+#  Library/MbedTlsLib/Include
+#  Library/MbedTlsLib/mbedtls/include
+#  Library/MbedTlsLib/mbedtls/include/mbedtls
+#  Library/MbedTlsLib/mbedtls/library
+# MU_CHANGE - End - Move to OneCrypto
 
 [LibraryClasses]
   ##  @libraryclass  Provides basic library functions for cryptographic primitives.
@@ -49,15 +51,20 @@
   HashApiLib|Include/Library/HashApiLib.h
 
 [LibraryClasses.common.Private]
-  ##  @libraryclass  Provides library functions from the openssl project.
-  #
-  OpensslLib|Private/Library/OpensslLib.h
-  MbedTlsLib|Private/Library/MbedTlsLib.h
+# MU_CHANGE - Start - Move to OneCrypto
+#  ##  @libraryclass  Provides library functions from the openssl project.
+#  #
+#  OpensslLib|Private/Library/OpensslLib.h
+#  MbedTlsLib|Private/Library/MbedTlsLib.h
+#
+#  ##  @libraryclass  Provides compiler intrinsic functions required to link openssl project.
+#  #
+#  InstrinsicLib|Private/Library/IntrinsicLib.h
 
-  ##  @libraryclass  Provides compiler intrinsic functions required to link openssl project.
+  ##  @libraryclass  Provides HmacSha1 functionality
   #
-  InstrinsicLib|Private/Library/IntrinsicLib.h
-
+  HmacSha1Lib|Include/Library/HmacSha1Lib.h
+  # MU_CHANGE - End - Move to OneCrypto
 [Protocols]
   ## EDK II Crypto DXE protocol
   # 2C2275C9-3A7B-426F-BE54-2D22BD9D1092
@@ -66,6 +73,13 @@
   ## EDK II Crypto SMM protocol
   # F46B2EB2-E0D7-4C96-A3B1-CB7C572EB300
   gEdkiiSmmCryptoProtocolGuid =  { 0xF46B2EB2, 0xE0D7, 0x4C96, { 0xA3, 0xB1, 0xc, 0x61, 0xbb, 0x24, 0x5c, 0x42 }}
+
+# MU_CHANGE - Start - Move to OneCrypto
+  ## OneCrypto Phase Agnostic Protocol
+  #
+  # The actual OneCryptoProtocol that provides the cryptographic interfaces
+  gOneCryptoProtocolGuid =  { 0xC1012170, 0xE2D0, 0x460C, { 0x95, 0xD8, 0x76, 0x38, 0x5A, 0x39, 0x57, 0xE7 }}
+# MU_CHANGE - End - Move to OneCrypto
 
 [Ppis]
   ## EDK II Crypto PPI
