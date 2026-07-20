@@ -102,20 +102,23 @@ ProcessCommunicationBuffer (
   CommunicateHeader = (EFI_MM_COMMUNICATE_HEADER *)CommBuffer;
   if (CompareGuid (&CommunicateHeader->HeaderGuid, &gEfiMmCommunicateHeaderV3Guid)) {
     CommunicateHeaderV3 = (EFI_MM_COMMUNICATE_HEADER_V3 *)CommBuffer;
-    if (CommunicateHeaderV3->BufferSize < sizeof (EFI_MM_COMMUNICATE_HEADER_V3) + CommunicateHeaderV3->MessageSize) {
+    // MU_CHANGE [BEGIN]: CWE-190 overflow check for V3 header size computation
+    Status = SafeUintnAdd (sizeof (EFI_MM_COMMUNICATE_HEADER_V3), CommunicateHeaderV3->MessageSize, &BufferSize);
+    if (EFI_ERROR (Status) || (CommunicateHeaderV3->BufferSize < BufferSize)) {
       return EFI_INVALID_PARAMETER;
     }
+
+    // MU_CHANGE [END]: CWE-190 overflow check for V3 header
 
     BufferSize = ((EFI_MM_COMMUNICATE_HEADER_V3 *)CommBuffer)->BufferSize;
   } else {
-    //
-    // Validate MessageLength to prevent integer overflow in BufferSize computation
-    //
-    if (CommunicateHeader->MessageLength > (MAX_UINTN - OFFSET_OF (EFI_MM_COMMUNICATE_HEADER, Data))) {
+    // MU_CHANGE [BEGIN]: CWE-190 overflow check before computing BufferSize
+    Status = SafeUintnAdd (OFFSET_OF (EFI_MM_COMMUNICATE_HEADER, Data), (UINTN)CommunicateHeader->MessageLength, &BufferSize);
+    if (EFI_ERROR (Status)) {
       return EFI_INVALID_PARAMETER;
     }
 
-    BufferSize = OFFSET_OF (EFI_MM_COMMUNICATE_HEADER, Data) + CommunicateHeader->MessageLength;
+    // MU_CHANGE [END]: CWE-190 overflow check
   }
 
   // MU_CHANGE [BEGIN]: CommSize validation

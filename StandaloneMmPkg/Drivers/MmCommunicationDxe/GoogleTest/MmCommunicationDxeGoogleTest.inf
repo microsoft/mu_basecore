@@ -34,7 +34,7 @@
   UefiBootServicesTableLib
   UefiLib
   UefiRuntimeLib
-
+  SafeIntLib
 [Protocols]
   gEfiMmCommunication3ProtocolGuid
   gEfiMmCommunication2ProtocolGuid

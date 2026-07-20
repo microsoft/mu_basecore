@@ -20,6 +20,7 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiRuntimeLib.h>
 #include <Library/ReportStatusCodeLib.h>
+#include <Library/SafeIntLib.h>
 
 #include <Protocol/SmmControl2.h>
 #include <Protocol/MmCommunication3.h>
