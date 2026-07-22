@@ -25,7 +25,6 @@ extern UINT32 mTableOffset;
 extern UINT32 mOutImageType;
 extern UINT32 mFileBufferSize;
 extern BOOLEAN mExportFlag;
-extern BOOLEAN mBuildIdFlag;
 
 //
 // Common EFI specific data.
@@ -34,7 +33,6 @@ extern BOOLEAN mBuildIdFlag;
 #define ELF_STRTAB_SECTION_NAME ".strtab"
 #define MAX_COFF_ALIGNMENT 0x10000
 #define ELF_SYMBOL_SECTION_NAME ".symtab"
-#define ELF_BUILD_ID_SECTION_NAME ".build-id"
 
 //
 // Platform Runtime Mechanism (PRM) specific data.
@@ -80,8 +78,7 @@ typedef enum {
   SECTION_TEXT,
   SECTION_HII,
   SECTION_DATA,
-  SECTION_SYMBOL,
-  SECTION_BUILD_ID
+  SECTION_SYMBOL
 
 } SECTION_FILTER_TYPES;
 
