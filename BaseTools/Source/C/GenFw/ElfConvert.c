@@ -210,11 +210,6 @@ ConvertElf (
   if (!ElfFunctions.WriteSections (SECTION_HII)) {
     return FALSE;
   }
-  if (mBuildIdFlag) {
-    if (!ElfFunctions.WriteSections (SECTION_BUILD_ID)) {
-      return FALSE;
-    }
-  }
 
   //
   // Translate and write relocations.
