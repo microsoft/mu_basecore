@@ -136,13 +136,13 @@ typedef struct FfaMsgInfo {
  */
 typedef struct {
   /// Service guid
-  EFI_GUID           HeaderGuid;
+  EFI_GUID        HeaderGuid;
 
   /// Length of Message. In case of misc service, sizeof (EventSvcArgs)
-  UINTN              MessageLength;
+  UINTN           MessageLength;
 
   /// Delivered register values.
-  DIRECT_MSG_ARGS    DirectMsgArgs;
+  ARM_FFA_ARGS    FfaArgs;
 } MISC_MM_COMMUNICATE_BUFFER;
 
 typedef struct {
