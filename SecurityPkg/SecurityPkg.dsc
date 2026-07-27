@@ -199,6 +199,7 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmScrtmPolicy|1
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask|3
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashAlgorithmBitmap|3
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDeviceStateBitmask|0x00000000  ## MU_CHANGE
 
 [PcdsDynamicHii.common.DEFAULT]
   gEfiSecurityPkgTokenSpaceGuid.PcdTcgPhysicalPresenceInterfaceVer|L"TCG2_VERSION"|gTcg2ConfigFormSetGuid|0x0|"1.3"|NV,BS

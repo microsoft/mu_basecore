@@ -232,6 +232,7 @@
 
 [PcdsDynamicExDefault]
   gEfiMdeModulePkgTokenSpaceGuid.PcdRecoveryFileName|L"FVMAIN.FV"
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDeviceStateBitmask|0x00000000  ## MU_CHANGE
 
 [Components]
   MdeModulePkg/Application/HelloWorld/HelloWorld.inf
