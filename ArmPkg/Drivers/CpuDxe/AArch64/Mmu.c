@@ -167,7 +167,7 @@ GetFirstPageAttribute (
 
 /**
   This function recursively traverses the translation table heirarchy to
-  synchronize the GCD with the translation table.  # MU_CHANGE: Fix typo
+  synchronise the GCD with the translation table.
 
   @param[in]        TableAddress        The address of the table being processed.
   @param[in]        EntryCount          The number of entries in the current level of the table.
