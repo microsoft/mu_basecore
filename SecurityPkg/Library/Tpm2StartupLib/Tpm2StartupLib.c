@@ -118,7 +118,8 @@ Tpm2StartupCheckPrereqs (
   EFI_STATUS  Status;
 
   if (CompareGuid (PcdGetPtr (PcdTpmInstanceGuid), &gEfiTpmDeviceInstanceNoneGuid) ||
-      CompareGuid (PcdGetPtr (PcdTpmInstanceGuid), &gEfiTpmDeviceInstanceTpm12Guid)) {
+      CompareGuid (PcdGetPtr (PcdTpmInstanceGuid), &gEfiTpmDeviceInstanceTpm12Guid))
+  {
     DEBUG ((DEBUG_INFO, "%a - No TPM2 instance required.\n", __func__));
     return EFI_UNSUPPORTED;
   }
@@ -163,7 +164,8 @@ IsFvMeasurementExcluded (
     ExcludedHobData = GET_GUID_HOB_DATA (GuidHob);
     for (Index = 0; Index < ExcludedHobData->Num; Index++) {
       if ((ExcludedHobData->ExcludedFvs[Index].FvBase == FvBase) &&
-          (ExcludedHobData->ExcludedFvs[Index].FvLength == FvLength)) {
+          (ExcludedHobData->ExcludedFvs[Index].FvLength == FvLength))
+      {
         return TRUE;
       }
     }
@@ -492,7 +494,8 @@ GetFvName (
 
   if ((FvBase >= MAX_ADDRESS) ||
       (FvLength >= MAX_ADDRESS - FvBase) ||
-      (FvLength < sizeof (EFI_FIRMWARE_VOLUME_HEADER))) {
+      (FvLength < sizeof (EFI_FIRMWARE_VOLUME_HEADER)))
+  {
     return NULL;
   }
 

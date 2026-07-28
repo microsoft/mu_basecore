@@ -41,7 +41,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PrintLib.h>
 #include <Library/Tpm2CommandLib.h>
-#include <Library/Tpm2HelpLib.h>  // MU_CHANGE
+#include <Library/Tpm2HelpLib.h>    // MU_CHANGE
 #include <Library/Tpm2StartupLib.h> // MU_CHANGE
 #include <Library/ResetSystemLib.h> // MU_CHANGE
 #include <Library/PcdLib.h>
@@ -3353,6 +3353,7 @@ DriverEntry (
     DEBUG ((DEBUG_ERROR, "SyncPcrAllocationsAndPcrMask Failed - %r\n", Status));
     return Status;
   }
+
   // MU_CHANGE - [END]
 
   //
