@@ -74,7 +74,14 @@
 
     ## options defined .pytool/Plugin/DscCompleteCheck
     "DscCompleteCheck": {
-        "IgnoreInf": [],
+        "IgnoreInf": [
+            # MU_CHANGE
+            # DeviceStateLibFixed.inf uses FixedPcd(PcdDeviceStateBitmask) and can
+            # only be built in a DSC that sets it as FixedAtBuild. MdeModulePkg.dsc
+            # declares it as DynamicEx to support the writeable DeviceStateLib.inf, so
+            # the Fixed variant cannot be built here.
+            "MdeModulePkg/Library/DeviceStateLib/DeviceStateLibFixed.inf"
+        ],
         "DscPath": "MdeModulePkg.dsc"
     },
     ## options defined .pytool/Plugin/HostUnitTestDscCompleteCheck
