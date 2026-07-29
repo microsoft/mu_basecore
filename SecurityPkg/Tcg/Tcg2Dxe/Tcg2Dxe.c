@@ -3289,6 +3289,7 @@ SyncPcrAllocationsAndPcrMask (
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a - Failed to reallocate PCRs!\n", __func__));
       ASSERT_EFI_ERROR (Status);
+      return Status;
     }
 
     ResetCold ();

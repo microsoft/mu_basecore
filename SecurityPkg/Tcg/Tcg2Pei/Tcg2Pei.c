@@ -1172,7 +1172,7 @@ BuildExcludedFvHobFromPpi (
   if (ExcludedHobData == NULL) {
     DEBUG ((
       DEBUG_ERROR,
-      "Failed to allocate 0x%x byte of memory for ExcludedFvHob",
+      "Failed to allocate 0x%x byte of memory for ExcludedFvHob\n",
       sizeof (EXCLUDED_HOB_DATA) + (sizeof (EFI_PEI_FIRMWARE_VOLUME_INFO_MEASUREMENT_EXCLUDED_FV) * Count)
       ));
     return;
@@ -1190,11 +1190,11 @@ BuildExcludedFvHobFromPpi (
                (VOID **)&MeasurementExcludedFvPpi
                );
     if (!EFI_ERROR (Status)) {
-      if (MeasurementExcludedFvPpi->Count <= 0) {
-        DEBUG ((DEBUG_ERROR, "ExcludedFvPpi has invalid count %d", MeasurementExcludedFvPpi->Count));
+      if (MeasurementExcludedFvPpi->Count == 0) {
+        DEBUG ((DEBUG_ERROR, "ExcludedFvPpi has invalid count %d\n", MeasurementExcludedFvPpi->Count));
         ASSERT (MeasurementExcludedFvPpi->Count > 0);
       } else if (HobIndex + MeasurementExcludedFvPpi->Count > Count) {
-        DEBUG ((DEBUG_ERROR, "Found more ExcludedFvPpi fvs than when calculated buffer size.  BufferSizeCount (0x%x)  NewCount (0x%x)", Count, (HobIndex + MeasurementExcludedFvPpi->Count)));
+        DEBUG ((DEBUG_ERROR, "Found more ExcludedFvPpi fvs than when calculated buffer size.  BufferSizeCount (0x%x)  NewCount (0x%x)\n", Count, (HobIndex + MeasurementExcludedFvPpi->Count)));
         ASSERT (HobIndex + MeasurementExcludedFvPpi->Count <= Count);
       } else {
         CopyMem (

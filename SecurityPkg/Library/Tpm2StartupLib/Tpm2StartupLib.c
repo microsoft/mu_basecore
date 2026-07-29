@@ -199,31 +199,69 @@ GetPrehashedFvDigests (
   )
 {
   EFI_HOB_GUID_TYPE  *GuidHob;
-  PREHASHED_FV_HOB   *Hdr;
+  PREHASHED_FV_HOB   *FvHob;
   HASH_INFO          *PreHashInfo;
+  UINT8              *HashInfoBuffer;
+  UINTN              HashInfoBufferSize;
+  UINTN              HobDataSize;
   UINT32             HashAlgoMask;
+  UINT32             RemainingMask;
   UINT32             Index;
   UINT32             DigestCount;
+  UINT16             HashAlgoId;
+  UINT16             HashSize;
 
   GuidHob = GetFirstGuidHob (&gPrehashedFvHobGuid);
   while (GuidHob != NULL) {
-    Hdr = GET_GUID_HOB_DATA (GuidHob);
-    if ((Hdr->FvBase == FvBase) && (Hdr->FvLength == FvLength)) {
-      PreHashInfo = (HASH_INFO *)(Hdr + 1);
-      DigestCount = 0;
-      for (Index = 0; Index < Hdr->Count; Index++) {
-        HashAlgoMask = GetHashMaskFromAlgo (PreHashInfo->HashAlgoId);
-        if ((*RemainingTpm2HashMask & HashAlgoMask) != 0) {
-          WriteUnaligned16 (&(DigestList->digests[DigestCount].hashAlg), PreHashInfo->HashAlgoId);
-          CopyMem (&DigestList->digests[DigestCount].digest, PreHashInfo + 1, PreHashInfo->HashSize);
-          DigestCount++;
-          *RemainingTpm2HashMask &= ~HashAlgoMask;
+    FvHob = GET_GUID_HOB_DATA (GuidHob);
+    // Only continue if the current FV matches the FV being requested.
+    if ((FvHob->FvBase == FvBase) && (FvHob->FvLength == FvLength)) {
+      // Verify the HobDataSize matches what is expected.
+      HobDataSize = GET_GUID_HOB_DATA_SIZE (GuidHob);
+      if (HobDataSize < sizeof (PREHASHED_FV_HOB)) {
+        return EFI_NOT_FOUND;
+      }
+
+      HashInfoBuffer     = (UINT8 *)(FvHob + 1);
+      HashInfoBufferSize = HobDataSize - sizeof (PREHASHED_FV_HOB);
+      RemainingMask      = *RemainingTpm2HashMask;
+      DigestCount        = 0;
+      for (Index = 0; Index < FvHob->Count; Index++) {
+        // Verify that HashInfoBufferSize contains at least HASH_INFO.
+        if (HashInfoBufferSize < sizeof (HASH_INFO)) {
+          return EFI_NOT_FOUND;
         }
 
-        PreHashInfo = (HASH_INFO *)((UINT8 *)(PreHashInfo + 1) + PreHashInfo->HashSize);
+        PreHashInfo = (HASH_INFO *)HashInfoBuffer;
+        HashAlgoId  = ReadUnaligned16 (&PreHashInfo->HashAlgoId);
+        HashSize    = ReadUnaligned16 (&PreHashInfo->HashSize);
+        // Validate HashSize fits within the digest and that HashInfoBufferSize
+        // is sufficiently large enough to contain HashSize.
+        if ((HashSize > sizeof (DigestList->digests[0].digest)) ||
+            (HashInfoBufferSize - sizeof (HASH_INFO) < HashSize))
+        {
+          return EFI_NOT_FOUND;
+        }
+
+        // Only copy data from hash algorithms requested via RemainingTpm2HashMask.
+        HashAlgoMask = GetHashMaskFromAlgo (HashAlgoId);
+        if ((RemainingMask & HashAlgoMask) != 0) {
+          if (DigestCount >= HASH_COUNT) {
+            return EFI_NOT_FOUND;
+          }
+
+          WriteUnaligned16 (&(DigestList->digests[DigestCount].hashAlg), HashAlgoId);
+          CopyMem (&DigestList->digests[DigestCount].digest, PreHashInfo + 1, HashSize);
+          DigestCount++;
+          RemainingMask &= ~HashAlgoMask;
+        }
+
+        HashInfoBuffer     += sizeof (HASH_INFO) + HashSize;
+        HashInfoBufferSize -= sizeof (HASH_INFO) + HashSize;
       }
 
       WriteUnaligned32 (&DigestList->count, DigestCount);
+      *RemainingTpm2HashMask = RemainingMask;
       return EFI_SUCCESS;
     }
 
