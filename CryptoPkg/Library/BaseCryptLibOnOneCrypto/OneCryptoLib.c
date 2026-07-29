@@ -2663,6 +2663,26 @@ FreeTrustAnchorX509Cache (
 }
 
 /**
+  Verify a PE/COFF Authenticode signature and optionally return the
+  verified signer chain. See BaseCryptLib.h AuthenticodeVerifyEx().
+**/
+EFI_STATUS
+EFIAPI
+AuthenticodeVerifyEx (
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        DataSize,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertSize,
+  IN  CONST UINT8  *ImageHash,
+  IN  UINTN        HashSize,
+  OUT UINT8        **CertChain      OPTIONAL,
+  OUT UINTN        *CertChainSize   OPTIONAL
+  )
+{
+  CALL_CRYPTO_SERVICE (AuthenticodeVerifyEx, (AuthData, DataSize, TrustedCert, CertSize, ImageHash, HashSize, CertChain, CertChainSize), EFI_UNSUPPORTED, 1, 1);
+}
+
+/**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
   encrypted message in a newly allocated buffer.
 
