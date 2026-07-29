@@ -2150,6 +2150,25 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_X509_GET_TBS_CERT_HASH)(
   );
 
 /**
+  AuthenticodeVerifyEx protocol prototype - verify a PE/COFF Authenticode
+  signature and optionally return the verified signer chain. See
+  BaseCryptLib.h AuthenticodeVerifyEx() for the full contract.
+
+  @since 1.2
+  @ingroup PKCS
+**/
+typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_AUTHENTICODE_VERIFY_EX)(
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        DataSize,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertSize,
+  IN  CONST UINT8  *ImageHash,
+  IN  UINTN        HashSize,
+  OUT UINT8        **CertChain      OPTIONAL,
+  OUT UINTN        *CertChainSize   OPTIONAL
+  );
+
+/**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
   encrypted message in a newly allocated buffer.
 
@@ -5640,6 +5659,7 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_FREE_TRUST_ANCHOR_X509_CACHE           FreeTrustAnchorX509Cache;
   ONE_CRYPTO_GET_AUTHENTICODE_HASH_ALGORITHM        GetAuthenticodeHashAlgorithm;
   ONE_CRYPTO_X509_GET_TBS_CERT_HASH                 X509GetTbsCertHash;
+  ONE_CRYPTO_AUTHENTICODE_VERIFY_EX                 AuthenticodeVerifyEx;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */
