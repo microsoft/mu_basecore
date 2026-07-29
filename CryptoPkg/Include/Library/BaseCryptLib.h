@@ -2589,6 +2589,48 @@ AuthenticodeVerify (
   );
 
 /**
+  Verifies a PE/COFF Authenticode Signature and, on success, additionally
+  returns the cryptographically-verified signer certificate chain (as the
+  underlying verifier built and used it) in EFI_CERT_STACK form, ordered
+  signer(0)..trust anchor(N-1). This lets a caller obtain the chain for
+  per-certificate revocation (dbx) checks without a separate, redundant
+  certificate-chain pass over the same signature.
+
+  If AuthData, TrustedCert or ImageHash is NULL, returns
+  EFI_INVALID_PARAMETER.
+
+  @param[in]   AuthData       Authenticode signature from the signed image.
+  @param[in]   DataSize       Size of AuthData in bytes.
+  @param[in]   TrustedCert    DER trust anchor used for chain verification.
+  @param[in]   CertSize       Size of TrustedCert in bytes.
+  @param[in]   ImageHash      Precomputed Authenticode image hash.
+  @param[in]   HashSize       Size of ImageHash in bytes.
+  @param[out]  CertChain      Optional. On EFI_SUCCESS, receives a newly
+                              allocated EFI_CERT_STACK ordered
+                              signer..anchor; caller frees with FreePool().
+                              NULL to skip chain extraction.
+  @param[out]  CertChainSize  Optional. Receives the CertChain length.
+
+  @retval EFI_SUCCESS            The signature is valid (chain returned if
+                                 requested).
+  @retval EFI_SECURITY_VIOLATION The signature is invalid.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
+  @retval EFI_UNSUPPORTED        This interface is not supported.
+**/
+EFI_STATUS
+EFIAPI
+AuthenticodeVerifyEx (
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        DataSize,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertSize,
+  IN  CONST UINT8  *ImageHash,
+  IN  UINTN        HashSize,
+  OUT UINT8        **CertChain      OPTIONAL,
+  OUT UINTN        *CertChainSize   OPTIONAL
+  );
+
+/**
   Compute the PE/COFF Authenticode-style image hash of a loaded image,
   as described in the "Windows Authenticode Portable Executable
   Signature Format" specification.
