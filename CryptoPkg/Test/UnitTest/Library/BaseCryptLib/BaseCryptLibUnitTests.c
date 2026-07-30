@@ -11,34 +11,39 @@ SUITE_DESC  mSuiteDesc[] = {
   //
   // Title--------------------------Package-------------------Sup--Tdn----TestNum------------TestDesc
   //
-  { "EKU verify tests",              "CryptoPkg.BaseCryptLib", NULL, NULL, &mPkcs7EkuTestNum,       mPkcs7EkuTest       },
-  { "HASH verify tests",             "CryptoPkg.BaseCryptLib", NULL, NULL, &mHashTestNum,           mHashTest           },
-  { "HMAC verify tests",             "CryptoPkg.BaseCryptLib", NULL, NULL, &mHmacTestNum,           mHmacTest           },
-  { "BlockCipher verify tests",      "CryptoPkg.BaseCryptLib", NULL, NULL, &mBlockCipherTestNum,    mBlockCipherTest    },
-  { "RSA verify tests",              "CryptoPkg.BaseCryptLib", NULL, NULL, &mRsaTestNum,            mRsaTest            },
-  { "RSA PSS verify tests",          "CryptoPkg.BaseCryptLib", NULL, NULL, &mRsaPssTestNum,         mRsaPssTest         },
-  { "RSACert verify tests",          "CryptoPkg.BaseCryptLib", NULL, NULL, &mRsaCertTestNum,        mRsaCertTest        },
-  { "PKCS7 verify tests",            "CryptoPkg.BaseCryptLib", NULL, NULL, &mPkcs7TestNum,          mPkcs7Test          },
-  { "PKCS5 verify tests",            "CryptoPkg.BaseCryptLib", NULL, NULL, &mPkcs5TestNum,          mPkcs5Test          },
-  { "Authenticode verify tests",     "CryptoPkg.BaseCryptLib", NULL, NULL, &mAuthenticodeTestNum,   mAuthenticodeTest   },
-  { "ImageTimestamp verify tests",   "CryptoPkg.BaseCryptLib", NULL, NULL, &mImageTimestampTestNum, mImageTimestampTest },
-  { "DH verify tests",               "CryptoPkg.BaseCryptLib", NULL, NULL, &mDhTestNum,             mDhTest             },
-  { "PRNG verify tests",             "CryptoPkg.BaseCryptLib", NULL, NULL, &mPrngTestNum,           mPrngTest           },
-  { "OAEP encrypt verify tests",     "CryptoPkg.BaseCryptLib", NULL, NULL, &mOaepTestNum,           mOaepTest           },
-  { "Hkdf extract and expand tests", "CryptoPkg.BaseCryptLib", NULL, NULL, &mHkdfTestNum,           mHkdfTest           },
-  { "Aead AES Gcm tests",            "CryptoPkg.BaseCryptLib", NULL, NULL, &mAeadAesGcmTestNum,     mAeadAesGcmTest     },
-  { "Bn verify tests",               "CryptoPkg.BaseCryptLib", NULL, NULL, &mBnTestNum,             mBnTest             },
-  { "EC verify tests",               "CryptoPkg.BaseCryptLib", NULL, NULL, &mEcTestNum,             mEcTest             },
-  { "X509 Verify tests",             "CryptoPkg.BaseCryptLib", NULL, NULL, &mX509TestNum,           mX509Test           },
+  { "EKU verify tests",                    "CryptoPkg.BaseCryptLib",      NULL, NULL, &mPkcs7EkuTestNum,                  mPkcs7EkuTest                  },
+  { "HASH verify tests",                   "CryptoPkg.BaseCryptLib",      NULL, NULL, &mHashTestNum,                      mHashTest                      },
+  { "HMAC verify tests",                   "CryptoPkg.BaseCryptLib",      NULL, NULL, &mHmacTestNum,                      mHmacTest                      },
+  { "BlockCipher verify tests",            "CryptoPkg.BaseCryptLib",      NULL, NULL, &mBlockCipherTestNum,               mBlockCipherTest               },
+  { "RSA verify tests",                    "CryptoPkg.BaseCryptLib",      NULL, NULL, &mRsaTestNum,                       mRsaTest                       },
+  { "RSA PSS verify tests",                "CryptoPkg.BaseCryptLib",      NULL, NULL, &mRsaPssTestNum,                    mRsaPssTest                    },
+  { "RSACert verify tests",                "CryptoPkg.BaseCryptLib",      NULL, NULL, &mRsaCertTestNum,                   mRsaCertTest                   },
+  { "PKCS7 verify tests",                  "CryptoPkg.BaseCryptLib",      NULL, NULL, &mPkcs7TestNum,                     mPkcs7Test                     },
+  { "PKCS5 verify tests",                  "CryptoPkg.BaseCryptLib",      NULL, NULL, &mPkcs5TestNum,                     mPkcs5Test                     },
+  { "Authenticode verify tests",           "CryptoPkg.BaseCryptLib",      NULL, NULL, &mAuthenticodeTestNum,              mAuthenticodeTest              },
+  { "ImageTimestamp verify tests",         "CryptoPkg.BaseCryptLib",      NULL, NULL, &mImageTimestampTestNum,            mImageTimestampTest            },
+  { "DH verify tests",                     "CryptoPkg.BaseCryptLib",      NULL, NULL, &mDhTestNum,                        mDhTest                        },
+  { "PRNG verify tests",                   "CryptoPkg.BaseCryptLib",      NULL, NULL, &mPrngTestNum,                      mPrngTest                      },
+  { "OAEP encrypt verify tests",           "CryptoPkg.BaseCryptLib",      NULL, NULL, &mOaepTestNum,                      mOaepTest                      },
+  { "Hkdf extract and expand tests",       "CryptoPkg.BaseCryptLib",      NULL, NULL, &mHkdfTestNum,                      mHkdfTest                      },
+  { "Aead AES Gcm tests",                  "CryptoPkg.BaseCryptLib",      NULL, NULL, &mAeadAesGcmTestNum,                mAeadAesGcmTest                },
+  { "Bn verify tests",                     "CryptoPkg.BaseCryptLib",      NULL, NULL, &mBnTestNum,                        mBnTest                        },
+  { "EC verify tests",                     "CryptoPkg.BaseCryptLib",      NULL, NULL, &mEcTestNum,                        mEcTest                        },
+  { "X509 Verify tests",                   "CryptoPkg.BaseCryptLib",      NULL, NULL, &mX509TestNum,                      mX509Test                      },
   // MU_CHANGE [BEGIN] - Trust anchor lookup unit tests
-  { "TrustAnchor verify tests",      "CryptoPkg.BaseCryptLib", NULL, NULL, &mTrustAnchorTestNum,    mTrustAnchorTest    },
+  { "TrustAnchor verify tests",            "CryptoPkg.BaseCryptLib",      NULL, NULL, &mTrustAnchorTestNum,               mTrustAnchorTest               },
   // MU_CHANGE [END]
   // MU_CHANGE [BEGIN] - Authenticode hash algorithm unit tests
-  { "AuthenticodeHashAlgorithm tests", "CryptoPkg.BaseCryptLib", NULL, NULL, &mAuthenticodeHashAlgorithmTestNum, mAuthenticodeHashAlgorithmTest },
+  { "AuthenticodeHashAlgorithm tests",     "CryptoPkg.BaseCryptLib",      NULL, NULL, &mAuthenticodeHashAlgorithmTestNum, mAuthenticodeHashAlgorithmTest },
   // MU_CHANGE [END]
   // MU_CHANGE [BEGIN] - X509 TBSCertificate hash unit tests
-  { "X509GetTbsCertHash tests",      "CryptoPkg.BaseCryptLib", NULL, NULL, &mX509GetTbsCertHashTestNum, mX509GetTbsCertHashTest },
+  { "X509GetTbsCertHash tests",            "CryptoPkg.BaseCryptLib",      NULL, NULL, &mX509GetTbsCertHashTestNum,        mX509GetTbsCertHashTest        },
   // MU_CHANGE [END]
+ #ifdef ENABLE_PERF_BENCHMARKS
+  // MU_CHANGE [BEGIN] - Authenticode performance benchmarks (opt-in via ENABLE_PERF_BENCHMARKS)
+  { "Authenticode performance benchmarks", "CryptoPkg.BaseCryptLib.Perf", NULL, NULL, &mPerfBenchmarkTestNum,             mPerfBenchmarkTest             },
+  // MU_CHANGE [END]
+ #endif
 };
 
 EFI_STATUS

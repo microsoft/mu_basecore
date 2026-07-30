@@ -44,6 +44,7 @@
   TrustAnchorTests.c # MU_CHANGE
   AuthenticodeHashAlgorithmTests.c # MU_CHANGE
   X509GetTbsCertHashTests.c # MU_CHANGE
+  PerformanceBenchmarkTests.c # MU_CHANGE - performance benchmarks
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -56,7 +57,12 @@
   UnitTestLib
   PrintLib
   BaseCryptLib
+  TimerLib # MU_CHANGE - performance benchmarks
   
+[BuildOptions]
+  # MU_CHANGE - build and register the Authenticode performance benchmark suite
+  *_*_*_CC_FLAGS = -DENABLE_PERF_BENCHMARKS
+
 [FixedPcd]
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256New               ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceHmacSha256Free              ## CONSUMES
