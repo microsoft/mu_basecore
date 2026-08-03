@@ -793,7 +793,7 @@ typedef struct {
 
 //
 // SRAT structure types.
-// All other values between 0x06 an 0xFF are reserved and
+// All other values between 0x07 and 0xFF are reserved and
 // will be ignored by OSPM.
 //
 #define EFI_ACPI_6_5_PROCESSOR_LOCAL_APIC_SAPIC_AFFINITY  0x00
@@ -802,6 +802,7 @@ typedef struct {
 #define EFI_ACPI_6_5_GICC_AFFINITY                        0x03
 #define EFI_ACPI_6_5_GIC_ITS_AFFINITY                     0x04
 #define EFI_ACPI_6_5_GENERIC_INITIATOR_AFFINITY           0x05
+#define EFI_ACPI_6_5_GENERIC_PORT_AFFINITY                0x06
 
 ///
 /// Processor Local APIC/SAPIC Affinity Structure Definition
@@ -942,6 +943,18 @@ typedef struct {
 ///
 #define EFI_ACPI_6_5_GENERIC_INITIATOR_AFFINITY_STRUCTURE_ENABLED                     BIT0
 #define EFI_ACPI_6_5_GENERIC_INITIATOR_AFFINITY_STRUCTURE_ARCHITECTURAL_TRANSACTIONS  BIT1
+
+///
+/// Generic Port Affinity Structure
+///
+typedef EFI_ACPI_6_5_GENERIC_INITIATOR_AFFINITY_STRUCTURE EFI_ACPI_6_5_GENERIC_PORT_AFFINITY_STRUCTURE;
+
+///
+/// Generic Port Affinity Structure Flags. All other bits are reserved
+/// and must be 0.
+///
+#define EFI_ACPI_6_5_GENERIC_PORT_AFFINITY_STRUCTURE_ENABLED                     BIT0
+#define EFI_ACPI_6_5_GENERIC_PORT_AFFINITY_STRUCTURE_ARCHITECTURAL_TRANSACTIONS  BIT1
 
 ///
 /// System Locality Distance Information Table (SLIT).
@@ -2275,6 +2288,40 @@ typedef struct {
 #define EFI_ACPI_6_5_HMAT_TYPE_MEMORY_PROXIMITY_DOMAIN_ATTRIBUTES          0x00
 #define EFI_ACPI_6_5_HMAT_TYPE_SYSTEM_LOCALITY_LATENCY_AND_BANDWIDTH_INFO  0x01
 #define EFI_ACPI_6_5_HMAT_TYPE_MEMORY_SIDE_CACHE_INFO                      0x02
+
+///
+/// HMAT Memory Proximity Domain Attributes Flags
+///
+#define EFI_ACPI_6_5_HMAT_PROXIMITY_DOMAIN_INITIATOR_VALID  1
+
+///
+/// HMAT System Locality Latency and Bandwidth Info Flags
+///
+#define EFI_ACPI_6_5_HMAT_MEMORY_HIERARCHY_MEMORY    0
+#define EFI_ACPI_6_5_HMAT_MEMORY_HIERARCHY_L1_CACHE  1
+#define EFI_ACPI_6_5_HMAT_MEMORY_HIERARCHY_L2_CACHE  2
+#define EFI_ACPI_6_5_HMAT_MEMORY_HIERARCHY_L3_CACHE  3
+
+#define EFI_ACPI_6_5_HMAT_ACCESS_ATTRIBUTES_MIN_TRANSFER_SIZE  0x10
+#define EFI_ACPI_6_5_HMAT_ACCESS_ATTRIBUTES_NON_SEQUENTIAL     0x20
+
+///
+/// HMAT System Locality Latency and Bandwidth Info Data Type
+///
+/// For Memory Hierarchy == 0
+#define EFI_ACPI_6_5_HMAT_SSLBI_DATA_TYPE_ACCESS_LATENCY    0
+#define EFI_ACPI_6_5_HMAT_SSLBI_DATA_TYPE_READ_LATENCY      1
+#define EFI_ACPI_6_5_HMAT_SSLBI_DATA_TYPE_WRITE_LATENCY     2
+#define EFI_ACPI_6_5_HMAT_SSLBI_DATA_TYPE_ACCESS_BANDWIDTH  3
+#define EFI_ACPI_6_5_HMAT_SSLBI_DATA_TYPE_READ_BANDWIDTH    4
+#define EFI_ACPI_6_5_HMAT_SSLBI_DATA_TYPE_WRITE_BANDWIDTH   5
+/// For Memory Hierarchy == 1, 2, or 3
+#define EFI_ACPI_6_5_HMAT_SSLBI_DATA_TYPE_HIT_ACCESS_LATENCY    0
+#define EFI_ACPI_6_5_HMAT_SSLBI_DATA_TYPE_HIT_READ_LATENCY      1
+#define EFI_ACPI_6_5_HMAT_SSLBI_DATA_TYPE_HIT_WRITE_LATENCY     2
+#define EFI_ACPI_6_5_HMAT_SSLBI_DATA_TYPE_HIT_ACCESS_BANDWIDTH  3
+#define EFI_ACPI_6_5_HMAT_SSLBI_DATA_TYPE_HIT_READ_BANDWIDTH    4
+#define EFI_ACPI_6_5_HMAT_SSLBI_DATA_TYPE_HIT_WRITE_BANDWIDTH   5
 
 ///
 /// HMAT Structure Header

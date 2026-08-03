@@ -927,9 +927,10 @@ typedef struct {
 //
 // Memory Flags.  All other bits are reserved and must be 0.
 //
-#define EFI_ACPI_6_6_MEMORY_ENABLED        (1 << 0)
-#define EFI_ACPI_6_6_MEMORY_HOT_PLUGGABLE  (1 << 1)
-#define EFI_ACPI_6_6_MEMORY_NONVOLATILE    (1 << 2)
+#define EFI_ACPI_6_6_MEMORY_ENABLED           (1 << 0)
+#define EFI_ACPI_6_6_MEMORY_HOT_PLUGGABLE     (1 << 1)
+#define EFI_ACPI_6_6_MEMORY_NONVOLATILE       (1 << 2)
+#define EFI_ACPI_6_6_MEMORY_SPECIFIC_PURPOSE  (1 << 3)
 
 ///
 /// Processor Local x2APIC Affinity Structure Definition
@@ -1040,6 +1041,18 @@ typedef struct {
 ///
 #define EFI_ACPI_6_6_GENERIC_INITIATOR_AFFINITY_STRUCTURE_ENABLED                     BIT0
 #define EFI_ACPI_6_6_GENERIC_INITIATOR_AFFINITY_STRUCTURE_ARCHITECTURAL_TRANSACTIONS  BIT1
+
+///
+/// Generic Port Affinity Structure
+///
+typedef EFI_ACPI_6_6_GENERIC_INITIATOR_AFFINITY_STRUCTURE EFI_ACPI_6_6_GENERIC_PORT_AFFINITY_STRUCTURE;
+
+///
+/// Generic Port Affinity Structure Flags. All other bits are reserved
+/// and must be 0.
+///
+#define EFI_ACPI_6_6_GENERIC_PORT_AFFINITY_STRUCTURE_ENABLED                     BIT0
+#define EFI_ACPI_6_6_GENERIC_PORT_AFFINITY_STRUCTURE_ARCHITECTURAL_TRANSACTIONS  BIT1
 
 ///
 /// System Locality Distance Information Table (SLIT).
@@ -2365,6 +2378,40 @@ typedef struct {
 #define EFI_ACPI_6_6_HMAT_TYPE_MEMORY_SIDE_CACHE_INFO                      0x02
 
 ///
+/// HMAT Memory Proximity Domain Attributes Flags
+///
+#define EFI_ACPI_6_6_HMAT_PROXIMITY_DOMAIN_INITIATOR_VALID  1
+
+///
+/// HMAT System Locality Latency and Bandwidth Info Flags
+///
+#define EFI_ACPI_6_6_HMAT_MEMORY_HIERARCHY_MEMORY    0
+#define EFI_ACPI_6_6_HMAT_MEMORY_HIERARCHY_L1_CACHE  1
+#define EFI_ACPI_6_6_HMAT_MEMORY_HIERARCHY_L2_CACHE  2
+#define EFI_ACPI_6_6_HMAT_MEMORY_HIERARCHY_L3_CACHE  3
+
+#define EFI_ACPI_6_6_HMAT_ACCESS_ATTRIBUTES_MIN_TRANSFER_SIZE  0x10
+#define EFI_ACPI_6_6_HMAT_ACCESS_ATTRIBUTES_NON_SEQUENTIAL     0x20
+
+///
+/// HMAT System Locality Latency and Bandwidth Info Data Type
+///
+/// For Memory Hierarchy == 0
+#define EFI_ACPI_6_6_HMAT_SSLBI_DATA_TYPE_ACCESS_LATENCY    0
+#define EFI_ACPI_6_6_HMAT_SSLBI_DATA_TYPE_READ_LATENCY      1
+#define EFI_ACPI_6_6_HMAT_SSLBI_DATA_TYPE_WRITE_LATENCY     2
+#define EFI_ACPI_6_6_HMAT_SSLBI_DATA_TYPE_ACCESS_BANDWIDTH  3
+#define EFI_ACPI_6_6_HMAT_SSLBI_DATA_TYPE_READ_BANDWIDTH    4
+#define EFI_ACPI_6_6_HMAT_SSLBI_DATA_TYPE_WRITE_BANDWIDTH   5
+/// For Memory Hierarchy == 1, 2, or 3
+#define EFI_ACPI_6_6_HMAT_SSLBI_DATA_TYPE_HIT_ACCESS_LATENCY    0
+#define EFI_ACPI_6_6_HMAT_SSLBI_DATA_TYPE_HIT_READ_LATENCY      1
+#define EFI_ACPI_6_6_HMAT_SSLBI_DATA_TYPE_HIT_WRITE_LATENCY     2
+#define EFI_ACPI_6_6_HMAT_SSLBI_DATA_TYPE_HIT_ACCESS_BANDWIDTH  3
+#define EFI_ACPI_6_6_HMAT_SSLBI_DATA_TYPE_HIT_READ_BANDWIDTH    4
+#define EFI_ACPI_6_6_HMAT_SSLBI_DATA_TYPE_HIT_WRITE_BANDWIDTH   5
+
+///
 /// HMAT Structure Header
 ///
 typedef struct {
@@ -2443,9 +2490,15 @@ typedef struct {
   UINT8                                                                  Reserved1[4];
   UINT64                                                                 MemorySideCacheSize;
   EFI_ACPI_6_6_HMAT_STRUCTURE_MEMORY_SIDE_CACHE_INFO_CACHE_ATTRIBUTES    CacheAttributes;
-  UINT8                                                                  Reserved2[2];
+  UINT16                                                                 AddressMode;
   UINT16                                                                 NumberOfSmbiosHandles;
 } EFI_ACPI_6_6_HMAT_STRUCTURE_MEMORY_SIDE_CACHE_INFO;
+
+///
+/// Memory Side Cache Information Structure flags
+///
+#define EFI_ACPI_6_6_HMAT_RESERVED_ADDRESS_MODE         0
+#define EFI_ACPI_6_6_HMAT_EXTENDED_LINEAR_ADDRESS_MODE  1
 
 ///
 /// ERST - Error Record Serialization Table

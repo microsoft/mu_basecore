@@ -6,8 +6,6 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 import logging
-import json
-import yaml
 from io import StringIO
 import os
 from typing import List
@@ -65,8 +63,6 @@ class MarkdownLintCheck(ICiBuildPlugin):
     #   - output_stream the StringIO output stream from this plugin via logging
 
     def RunBuildPlugin(self, packagename, Edk2pathObj, pkgconfig, environment, PLM, PLMHelper, tc, output_stream=None):
-        Errors = []
-
         abs_pkg_path = Edk2pathObj.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
             packagename)
 
@@ -78,7 +74,7 @@ class MarkdownLintCheck(ICiBuildPlugin):
         # check for node
         return_buffer = StringIO()
         ret = RunCmd("node", "--version", outstream=return_buffer)
-        if (ret != 0):
+        if ret != 0:
             tc.SetSkipped()
             tc.LogStdError("NodeJs not installed. Test can't run")
             logging.warning("NodeJs not installed. Test can't run")
@@ -89,7 +85,7 @@ class MarkdownLintCheck(ICiBuildPlugin):
         # Check for markdownlint-cli
         return_buffer = StringIO()
         ret = RunCmd("markdownlint", "--version", outstream=return_buffer)
-        if (ret != 0):
+        if ret != 0:
             tc.SetSkipped()
             tc.LogStdError("markdownlint not installed.  Test can't run")
             logging.warning("markdownlint not installed.  Test can't run")
@@ -109,7 +105,7 @@ class MarkdownLintCheck(ICiBuildPlugin):
         # check for any package specific ignore patterns defined by package config
         #
         Ignores = []
-        if("IgnoreFiles" in pkgconfig):
+        if "IgnoreFiles" in pkgconfig:
             for i in pkgconfig["IgnoreFiles"]:
                 Ignores.append(f"{relpath}/{i}")
 
@@ -142,7 +138,6 @@ class MarkdownLintCheck(ICiBuildPlugin):
             logging.warning(f"{MarkdownLintCheck.CONFIG_FILE_NAME} not found.  Skipping test")
             return -1
 
-
         # Run the linter
         results = self._check_markdown(path_to_check, config_file_path, Ignores)
         for r in results:
@@ -162,15 +157,23 @@ class MarkdownLintCheck(ICiBuildPlugin):
             tc.SetSuccess()
         return overall_status
 
-    def _check_markdown(self, rel_file_to_check: os.PathLike, abs_config_file_to_use: os.PathLike, Ignores: List) -> []:
+    def _check_markdown(self, rel_file_to_check: os.PathLike, abs_config_file_to_use: os.PathLike, Ignores: List[str]) -> List[str]:
+        """ Run markdownlint against the given path and return any errors found.
+
+            Args:
+              rel_file_to_check: package root relative glob pattern of markdown files to check
+              abs_config_file_to_use: absolute path to the .markdownlint.yaml config file to use
+              Ignores: list of package root relative file, folder, or glob patterns to ignore
+            Returns:
+                a list of error strings reported by markdownlint.  Empty if no errors found.
+        """
         output = StringIO()
         param = f"--config {abs_config_file_to_use}"
         for a in Ignores:
             param += f' --ignore "{a}"'
         param += f' "{rel_file_to_check}"'
 
-        ret = RunCmd(
-            "markdownlint",  param, outstream=output)
+        ret = RunCmd("markdownlint", param, outstream=output)
         if ret == 0:
             return []
         else:
