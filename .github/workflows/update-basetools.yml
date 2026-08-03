@@ -93,7 +93,7 @@ jobs:
       # to this job.
       - name: Generate Token
         id: app-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ vars.MU_ACCESS_APP_ID }}
           private-key: ${{ secrets.MU_ACCESS_APP_PRIVATE_KEY }}
@@ -120,7 +120,7 @@ jobs:
 
       - name: Checkout Code
         if: steps.pr-check.outputs.exists != 'true'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.BRANCH_NAME }}
 
@@ -146,7 +146,7 @@ jobs:
           SOURCE_URL: ${{ env.ARTIFACT_BASE_URL }}/${{ env.TAG_NAME }}/basetools-${{ env.TAG_NAME }}.tar.gz
           VERSION: ${{ env.TAG_NAME }}
           SHA256: ${{ steps.sha256.outputs.sha256 }}
-        uses: mikefarah/yq@v4
+        uses: mikefarah/yq@1b9b4ac5187171d2e5e3129be0cfa827c7f9d53d # v4.53.3
         with:
           cmd: yq -i -P '.source = strenv(SOURCE_URL) | .version = strenv(VERSION) | .sha256 = strenv(SHA256)' ${BASETOOLS_PATH}
         
