@@ -107,27 +107,27 @@ class UefiVarPatcher(IUefiBuildPlugin):
                 + int(builder.env.GetValue("FLASH_REGION_NVSTORAGE_OFFSET"), 16)
             )
 
-        # Load the variable store from the file.
-        var_store = VarStore.VariableStore(
-            out_rom,
-            store_base=var_store_rom_offset,
-            store_size=int(builder.env.GetValue("FLASH_REGION_NVSTORAGE_SIZE"), 16),
-        )
+            # Load the variable store from the file.
+            var_store = VarStore.VariableStore(
+                out_rom,
+                store_base=var_store_rom_offset,
+                store_size=int(builder.env.GetValue("FLASH_REGION_NVSTORAGE_SIZE"), 16),
+            )
 
-        # Print information about the current variables.
-        for var in var_store.variables:
-            if var.State == VF.VAR_ADDED:
-                print(f"Var Found: '{var.VendorGuid}:{var.Name}'")
+            # Print information about the current variables.
+            for var in var_store.variables:
+                if var.State == VF.VAR_ADDED:
+                    print(f"Var Found: '{var.VendorGuid}:{var.Name}'")
 
-        # Attempt to load the set script file.
-        set_vars = load_variable_xml(built_in_vars_xml_path)
+            # Attempt to load the set script file.
+            set_vars = load_variable_xml(built_in_vars_xml_path)
 
-        # Attempt to patch existing variables in the var store.
-        create_vars = patch_variables(set_vars, var_store)
+            # Attempt to patch existing variables in the var store.
+            create_vars = patch_variables(set_vars, var_store)
 
-        # If we had variables we were unable to update, let's create them now.
-        create_variables(create_vars, var_store)
+            # If we had variables we were unable to update, let's create them now.
+            create_variables(create_vars, var_store)
 
-        var_store.flush_to_file()
+            var_store.flush_to_file()
 
         return 0
