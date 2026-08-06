@@ -1,0 +1,40 @@
+## @file
+#  Build and iterate the Image Secure Boot Verification Result Table (IVRT).
+#
+#  Provides a streaming builder for producing the
+#  EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE and a two-level forward-only
+#  iterator for walking it. The table is an in-memory, dynamically sized
+#  configuration table describing the outcome of DXE Secure Boot image
+#  verification.
+#
+# Copyright (C) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = ImageSecureBootVerificationResultTableLib
+  FILE_GUID                      = 4B9F2E7A-8C3D-4E1F-9A6B-2D5C7E8F1A03
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = ImageSecureBootVerificationResultTableLib
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 AARCH64
+#
+
+[Sources]
+  ImageSecureBootVerificationResultTableLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SecurityPkg/SecurityPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib

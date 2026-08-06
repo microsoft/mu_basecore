@@ -1,0 +1,36 @@
+## @file
+# Unit test suite for ImageSecureBootVerificationResultTableLib using Google Test.
+#
+# Copyright (C) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = ImageSecureBootVerificationResultTableLibGoogleTest
+  FILE_GUID                      = 7C2D9E4F-1A6B-4C8E-B3D5-9F2A6C7E1B04
+  MODULE_TYPE                    = HOST_APPLICATION
+  VERSION_STRING                 = 1.0
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources]
+  BuilderGoogleTest.cpp
+  IteratorGoogleTest.cpp
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SecurityPkg/SecurityPkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  GoogleTestLib
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  ImageSecureBootVerificationResultTableLib
