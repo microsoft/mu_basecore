@@ -50,7 +50,7 @@
 #define SBRT_TABLE_HEADER_SIZE  (sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE))
 #define SBRT_IMAGE_HEADER_SIZE  (sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT))
 #define SBRT_SIG_HEADER_SIZE    (sizeof (EFI_SIGNATURE_VERIFICATION_RESULT))
-#define SBRT_RECORD_ALIGNMENT  8U
+#define SBRT_RECORD_ALIGNMENT   8U
 
 /**
   Round an unpadded record size up to the table's 8-byte record alignment.
