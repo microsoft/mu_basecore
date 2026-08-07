@@ -992,6 +992,28 @@ struct MockBaseCryptLib {
     );
 
   MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    GetTrustAnchorX509FromAuthData,
+    (
+     IN OUT  VOID         **CacheHandle  OPTIONAL,
+     IN      CONST UINT8  *TbsCertHash,
+     IN      UINTN        TbsCertHashSize,
+     IN      CONST UINT8  *AuthData,
+     IN      UINTN        AuthDataSize,
+     OUT     UINT8        **TrustAnchorX509,
+     OUT     UINTN        *TrustAnchorX509Size
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    VOID,
+    FreeTrustAnchorX509Cache,
+    (
+     IN  VOID  *CacheHandle  OPTIONAL
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
     BOOLEAN,
     ImageTimestampVerify,
     (
