@@ -65,6 +65,11 @@
 # MU_CHANGE - Problems with Consuming OpensslLibFull and UnitTestHostBaseCryptLib from CryptoPkg
 
 
+  SecurityPkg/Library/ImageSecureBootVerificationResultTableLib/GoogleTest/ImageSecureBootVerificationResultTableLibGoogleTest.inf {
+    <LibraryClasses>
+      ImageSecureBootVerificationResultTableLib|SecurityPkg/Library/ImageSecureBootVerificationResultTableLib/ImageSecureBootVerificationResultTableLib.inf
+  }
+
 [PcdsPatchableInModule]
   gEfiSecurityPkgTokenSpaceGuid.PcdOptionRomImageVerificationPolicy|0x04
   gEfiSecurityPkgTokenSpaceGuid.PcdRemovableMediaImageVerificationPolicy|0x04
