@@ -212,12 +212,12 @@ ImageVerificationResultCreateImage (
 EFI_STATUS
 EFIAPI
 ImageVerificationResultAppendSignature (
-  IN OUT VOID           **Image,
-  IN     UINT32         SignatureIndex,
-  IN     UINT32         Status,
+  IN OUT VOID            **Image,
+  IN     UINT32          SignatureIndex,
+  IN     UINT32          Status,
   IN     CONST EFI_GUID  *ThumbprintAlgorithm OPTIONAL,
   IN     CONST VOID      *Thumbprint OPTIONAL,
-  IN     UINTN          ThumbprintSize
+  IN     UINTN           ThumbprintSize
   )
 {
   EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  *Record;
@@ -569,8 +569,8 @@ ImageVerificationResultIteratorInit (
       break;
     }
 
-    Cursor    += RecordLength;
-    Remaining -= RecordLength;
+    Cursor     += RecordLength;
+    Remaining  -= RecordLength;
     ImageCount += 1;
   }
 
@@ -621,7 +621,7 @@ ImageVerificationResultIteratorNextImage (
   Iterator->NextSignatureRecord = Record + IVRT_IMAGE_HEADER_SIZE + NameLength + DevicePathLength;
   Iterator->SignaturesRemaining = NumberOfSignatures;
 
-  Iterator->NextImageRecord = Record + RecordLength;
+  Iterator->NextImageRecord  = Record + RecordLength;
   Iterator->ImagesRemaining -= 1;
 
   return (CONST EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *)Record;
@@ -651,7 +651,7 @@ ImageVerificationResultIteratorNextSignature (
   Record       = Iterator->NextSignatureRecord;
   RecordLength = ReadUnaligned32 ((CONST UINT32 *)(Record + OFFSET_OF (EFI_SIGNATURE_VERIFICATION_RESULT, Length)));
 
-  Iterator->NextSignatureRecord = Record + RecordLength;
+  Iterator->NextSignatureRecord  = Record + RecordLength;
   Iterator->SignaturesRemaining -= 1;
 
   return (CONST EFI_SIGNATURE_VERIFICATION_RESULT *)Record;

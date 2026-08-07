@@ -92,12 +92,12 @@ ImageVerificationResultCreateImage (
 EFI_STATUS
 EFIAPI
 ImageVerificationResultAppendSignature (
-  IN OUT VOID           **Image,
-  IN     UINT32         SignatureIndex,
-  IN     UINT32         Status,
+  IN OUT VOID            **Image,
+  IN     UINT32          SignatureIndex,
+  IN     UINT32          Status,
   IN     CONST EFI_GUID  *ThumbprintAlgorithm OPTIONAL,
   IN     CONST VOID      *Thumbprint OPTIONAL,
-  IN     UINTN          ThumbprintSize
+  IN     UINTN           ThumbprintSize
   );
 
 /**

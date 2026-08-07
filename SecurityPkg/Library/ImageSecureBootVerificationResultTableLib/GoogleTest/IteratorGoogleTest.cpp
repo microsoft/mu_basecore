@@ -36,11 +36,11 @@ static const size_t  kTableHeaderSize = sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATI
 // signatures one at a time, so the helpers below iterate this array and call
 // AppendSignature.
 typedef struct {
-  UINT32          SignatureIndex;
-  UINT32          Status;
-  const EFI_GUID  *ThumbprintAlgorithm;
-  const void      *Thumbprint;
-  UINTN           ThumbprintSize;
+  UINT32            SignatureIndex;
+  UINT32            Status;
+  const EFI_GUID    *ThumbprintAlgorithm;
+  const void        *Thumbprint;
+  UINTN             ThumbprintSize;
 } TEST_SIGNATURE_INFO;
 
 static void
@@ -193,9 +193,9 @@ TEST (IteratorInitTest, EmptyTable_IsClean) {
 }
 
 TEST (IteratorTest, SingleImageNoSignatures) {
-  IMAGE_VERIFICATION_RESULT_ITERATOR              Iter;
-  std::vector<UINT8>                              Table = BuildSingleImageTable (0);
-  const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *Image;
+  IMAGE_VERIFICATION_RESULT_ITERATOR               Iter;
+  std::vector<UINT8>                               Table = BuildSingleImageTable (0);
+  const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  *Image;
 
   EXPECT_TRUE (ImageVerificationResultIteratorInit (&Iter, Table.data ()));
 
@@ -208,10 +208,10 @@ TEST (IteratorTest, SingleImageNoSignatures) {
 }
 
 TEST (IteratorTest, SingleImageWalksAllSignatures) {
-  IMAGE_VERIFICATION_RESULT_ITERATOR              Iter;
-  std::vector<UINT8>                              Table = BuildSingleImageTable (3);
-  const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *Image;
-  const EFI_SIGNATURE_VERIFICATION_RESULT         *Sig;
+  IMAGE_VERIFICATION_RESULT_ITERATOR               Iter;
+  std::vector<UINT8>                               Table = BuildSingleImageTable (3);
+  const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  *Image;
+  const EFI_SIGNATURE_VERIFICATION_RESULT          *Sig;
 
   EXPECT_TRUE (ImageVerificationResultIteratorInit (&Iter, Table.data ()));
 
@@ -238,11 +238,11 @@ TEST (IteratorTest, NextSignatureBeforeNextImage_ReturnsNull) {
 }
 
 TEST (IteratorTest, NextImageResetsInnerCursor) {
-  IMAGE_VERIFICATION_RESULT_ITERATOR              Iter;
-  const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *Image;
-  const EFI_SIGNATURE_VERIFICATION_RESULT         *Sig;
-  TEST_SIGNATURE_INFO                             Sigs0[2];
-  TEST_SIGNATURE_INFO                             Sigs1[2];
+  IMAGE_VERIFICATION_RESULT_ITERATOR               Iter;
+  const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  *Image;
+  const EFI_SIGNATURE_VERIFICATION_RESULT          *Sig;
+  TEST_SIGNATURE_INFO                              Sigs0[2];
+  TEST_SIGNATURE_INFO                              Sigs1[2];
 
   ZeroMem (Sigs0, sizeof (Sigs0));
   Sigs0[0].SignatureIndex = 0;
@@ -258,6 +258,7 @@ TEST (IteratorTest, NextImageResetsInnerCursor) {
 
   // Image 0 with two signatures, then image 1 with two distinct-status signatures.
   std::vector<UINT8>  Table = AppendImageToTable (std::vector<UINT8> (), EFI_IMAGE_VERIFICATION_STATUS_AUTHORIZED_BY_AUTHORITY, Sigs0, 2);
+
   Table = AppendImageToTable (Table, EFI_IMAGE_VERIFICATION_STATUS_REJECTED_NO_AUTHORITY, Sigs1, 2);
 
   EXPECT_TRUE (ImageVerificationResultIteratorInit (&Iter, Table.data ()));
@@ -286,13 +287,14 @@ TEST (IteratorTest, NextImageResetsInnerCursor) {
 // ---------------------------------------------------------------------------
 
 TEST (IteratorTruncationTest, TrailingPartialImage_IteratesValidPrefix) {
-  IMAGE_VERIFICATION_RESULT_ITERATOR              Iter;
-  const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *Image;
+  IMAGE_VERIFICATION_RESULT_ITERATOR               Iter;
+  const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  *Image;
 
   // Two well-formed images (no signatures).
   std::vector<UINT8>  Table = AppendImageToTable (std::vector<UINT8> (), EFI_IMAGE_VERIFICATION_STATUS_AUTHORIZED_BY_AUTHORITY, NULL, 0);
+
   Table = AppendImageToTable (Table, EFI_IMAGE_VERIFICATION_STATUS_AUTHORIZED_BY_AUTHORITY, NULL, 0);
-  size_t              ValidSize = Table.size ();
+  size_t  ValidSize = Table.size ();
 
   // Append 4 junk bytes and claim them as a third (partial) image record.
   Table.resize (ValidSize + 4, 0);
@@ -325,7 +327,7 @@ TEST (IteratorTruncationTest, ImageCountMismatch_ReturnsFalse) {
 
 TEST (IteratorTruncationTest, SignatureCountMismatch_DropsImage) {
   IMAGE_VERIFICATION_RESULT_ITERATOR  Iter;
-  std::vector<UINT8>                  Table = BuildSingleImageTable (1);
+  std::vector<UINT8>                  Table       = BuildSingleImageTable (1);
   size_t                              ImageOffset = kTableHeaderSize;
 
   // The image physically carries one signature; claim two.
@@ -342,7 +344,7 @@ TEST (IteratorTruncationTest, SignatureCountMismatch_DropsImage) {
 
 TEST (IteratorTruncationTest, ShortSignatureLength_DropsImage) {
   IMAGE_VERIFICATION_RESULT_ITERATOR  Iter;
-  std::vector<UINT8>                  Table = BuildSingleImageTable (1);
+  std::vector<UINT8>                  Table       = BuildSingleImageTable (1);
   size_t                              ImageOffset = kTableHeaderSize;
   size_t                              SigOffset;
 

@@ -230,6 +230,7 @@ TEST (AppendImageTest, NullOldTable_ProducesSingleImageTable) {
   const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  *Rec =
     (const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *)((const UINT8 *)Table +
                                                         sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE));
+
   EXPECT_EQ (Rec->ImageStatus, (UINT32)EFI_IMAGE_VERIFICATION_STATUS_AUTHORIZED_BY_DIGEST);
   EXPECT_EQ (Rec->NameLength, (UINT32)StrSize (kName));
   EXPECT_EQ (0, memcmp (&Rec->ImageDigestAlgorithm, &kSha256, sizeof (EFI_GUID)));
@@ -307,9 +308,9 @@ TEST (WriteRoundTripTest, TwoImagesWithSignatures) {
   EXPECT_EQ (Table->NumberOfImages, 2u);
 
   // Walk it back and confirm the structure round-trips cleanly.
-  IMAGE_VERIFICATION_RESULT_ITERATOR                       Iter;
-  const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT         *Rec;
-  const EFI_SIGNATURE_VERIFICATION_RESULT                 *Sig;
+  IMAGE_VERIFICATION_RESULT_ITERATOR               Iter;
+  const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  *Rec;
+  const EFI_SIGNATURE_VERIFICATION_RESULT          *Sig;
 
   EXPECT_TRUE (ImageVerificationResultIteratorInit (&Iter, Table));
 
