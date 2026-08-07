@@ -1,5 +1,5 @@
 /** @file
-  Image Secure Boot Verification Result Table (IVRT) layout and structure definitions.
+  Image Secure Boot Verification Result Table (SBRT) layout and structure definitions.
 
   This configuration table records the outcome of DXE Secure Boot image
   verification for every image that runs the full verification path, both
@@ -53,7 +53,7 @@
 #include <Uefi.h>
 
 ///
-/// GUID that identifies the Image Secure Boot Verification Result Table (IVRT)
+/// GUID that identifies the Image Secure Boot Verification Result Table (SBRT)
 /// when it is installed as a UEFI configuration table (gST->ConfigurationTable).
 ///
 #define EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_GUID \
@@ -62,9 +62,9 @@
 extern EFI_GUID  gEfiImageSecureBootVerificationResultTableGuid;
 
 ///
-/// Table signature ('IVRT') and current layout version.
+/// Table signature ('SBRT') and current layout version.
 ///
-#define EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_SIGNATURE  SIGNATURE_32 ('I', 'V', 'R', 'T')
+#define EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_SIGNATURE  SIGNATURE_32 ('S', 'B', 'R', 'T')
 #define EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_VERSION    0x00010000
 
 // ***************************************************************************
@@ -126,11 +126,14 @@ extern EFI_GUID  gEfiImageSecureBootVerificationResultTableGuid;
 ///   - MALFORMED: none; algorithm is the zero GUID.
 ///
 typedef struct {
-  UINT32      Length;                // Total size of this record, including the trailing thumbprint.
+  UINT32      Length;                // Total size of this record in bytes, including the trailing
+                                     // thumbprint and any padding; always a multiple of 8.
   UINT32      SignatureIndex;        // 0-based ordinal of this WIN_CERTIFICATE within the image.
   UINT32      Status;                // EFI_SIGNATURE_VERIFICATION_* outcome for this WIN_CERTIFICATE.
+  UINT32      ThumbprintSize;        // Size of the trailing thumbprint in bytes (0 if none).
   EFI_GUID    ThumbprintAlgorithm;   // Digest algorithm of the trailing thumbprint (zero GUID if none).
-  // UINT8    Thumbprint[];          // TBS-cert hash of the decisive certificate (see notes above).
+  // UINT8    Thumbprint[];          // ThumbprintSize bytes: TBS-cert hash of the decisive certificate.
+  // UINT8    Padding[];             // Zero padding to the next 8-byte boundary.
 } EFI_SIGNATURE_VERIFICATION_RESULT;
 
 ///
@@ -151,18 +154,21 @@ typedef struct {
 ///   3. Signatures[]  - NumberOfSignatures self-sized EFI_SIGNATURE_VERIFICATION_RESULT
 ///                      records, one per evaluated WIN_CERTIFICATE.
 ///
-/// The Signatures[] array begins at
+/// The Signatures[] array begins at the next 8-byte boundary at or after
 /// (UINT8 *)Record + sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT) + NameLength + DevicePathLength.
 ///
 typedef struct {
-  UINT32      Length;                // Total size of this record, including Name, DevicePath, Signatures[].
+  UINT32      Length;                // Total size of this record in bytes, including Name, DevicePath,
+                                     // padding, and Signatures[].
   UINT32      ImageStatus;           // EFI_IMAGE_VERIFICATION_STATUS_*.
   UINT32      NumberOfSignatures;    // Count of trailing EFI_SIGNATURE_VERIFICATION_RESULT records.
   UINT32      NameLength;            // Size of the trailing Name in bytes (including NUL), or 0 if absent.
   UINT32      DevicePathLength;      // Size of the trailing DevicePath in bytes (including end-of-path node).
+  UINT32      Reserved;              // Reserved; must be 0.
   EFI_GUID    ImageDigestAlgorithm;  // Matching algorithm for *_IMAGE_DIGEST outcomes; zero GUID otherwise.
   // CHAR16                             Name[];        // NameLength bytes.
   // EFI_DEVICE_PATH_PROTOCOL           DevicePath;    // DevicePathLength bytes.
+  // UINT8                              Padding[];     // Zero padding so Signatures[] starts 8-aligned.
   // EFI_SIGNATURE_VERIFICATION_RESULT  Signatures[];  // NumberOfSignatures self-sized records.
 } EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT;
 
@@ -170,10 +176,10 @@ typedef struct {
 /// The configuration table.
 ///
 /// A fixed header followed by a variable number of EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT
-/// records (one per evaluated image).
+/// records (one per evaluated image). Each image record is padded to an 8-byte oundary.
 ///
 typedef struct {
-  UINT32    Signature;               // EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_SIGNATURE ('IVRT').
+  UINT32    Signature;               // EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_SIGNATURE ('SBRT').
   UINT32    Version;                 // EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_VERSION.
   UINT32    Length;                  // Total table size in bytes, including all image records.
   UINT32    NumberOfImages;          // Count of EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT records that follow.

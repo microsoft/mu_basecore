@@ -108,7 +108,7 @@ TEST (CreateImageTest, PopulatesHeader) {
   EXPECT_EQ (AsImage (Image)->ImageStatus, 0u);
   EXPECT_EQ (
     AsImage (Image)->Length,
-    (UINT32)(sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT) + StrSize (kName) + sizeof (kDevicePath))
+    (UINT32)ALIGN_VALUE (sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT) + StrSize (kName) + sizeof (kDevicePath), 8)
     );
 
   FreePool (Image);
@@ -165,12 +165,40 @@ TEST (AppendSignatureTest, ExtendsImage) {
     EFI_SUCCESS
     );
 
-  // The image grew by exactly one signature record and counts it.
+  // The image grew by exactly one (8-byte aligned) signature record and counts it.
   EXPECT_EQ (
     AsImage (Image)->Length,
-    (UINT32)(LengthBefore + sizeof (EFI_SIGNATURE_VERIFICATION_RESULT) + sizeof (kThumbprint))
+    (UINT32)(LengthBefore + ALIGN_VALUE (sizeof (EFI_SIGNATURE_VERIFICATION_RESULT) + sizeof (kThumbprint), 8))
     );
   EXPECT_EQ (AsImage (Image)->NumberOfSignatures, 1u);
+
+  FreePool (Image);
+}
+
+TEST (AppendSignatureTest, PadsUnalignedThumbprint) {
+  VOID                *Image             = NULL;
+  static const UINT8  kOddThumbprint[20] = {
+    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+    0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+    0x20, 0x21, 0x22, 0x23
+  };
+
+  ASSERT_EQ (ImageVerificationResultCreateImage (NULL, kDevicePath, sizeof (kDevicePath), &Image), EFI_SUCCESS);
+
+  UINT32  LengthBefore = AsImage (Image)->Length;
+
+  ASSERT_EQ (
+    ImageVerificationResultAppendSignature (&Image, 0, EFI_SIGNATURE_VERIFICATION_CERTIFICATE_AUTHORITY, &kSha256, kOddThumbprint, sizeof (kOddThumbprint)),
+    EFI_SUCCESS
+    );
+
+  const EFI_SIGNATURE_VERIFICATION_RESULT  *Sig =
+    (const EFI_SIGNATURE_VERIFICATION_RESULT *)((const UINT8 *)Image + LengthBefore);
+
+  EXPECT_EQ (Sig->Length, (UINT32)ALIGN_VALUE (sizeof (EFI_SIGNATURE_VERIFICATION_RESULT) + sizeof (kOddThumbprint), 8));
+  EXPECT_EQ ((Sig->Length & 7u), 0u);
+  EXPECT_EQ (Sig->ThumbprintSize, (UINT32)sizeof (kOddThumbprint));
+  EXPECT_EQ (0, memcmp ((const UINT8 *)Sig + sizeof (EFI_SIGNATURE_VERIFICATION_RESULT), kOddThumbprint, sizeof (kOddThumbprint)));
 
   FreePool (Image);
 }
@@ -328,12 +356,14 @@ TEST (WriteRoundTripTest, TwoImagesWithSignatures) {
   EXPECT_EQ (Sig->SignatureIndex, 0u);
   EXPECT_EQ (Sig->Status, (UINT32)EFI_SIGNATURE_VERIFICATION_REJECTED_NO_AUTHORITY);
   EXPECT_EQ (Sig->Length, (UINT32)sizeof (EFI_SIGNATURE_VERIFICATION_RESULT));
+  EXPECT_EQ (Sig->ThumbprintSize, 0u);
 
   Sig = ImageVerificationResultIteratorNextSignature (&Iter);
   ASSERT_NE (Sig, (const EFI_SIGNATURE_VERIFICATION_RESULT *)NULL);
   EXPECT_EQ (Sig->SignatureIndex, 1u);
   EXPECT_EQ (Sig->Status, (UINT32)EFI_SIGNATURE_VERIFICATION_TBS_HASH_AUTHORITY);
-  EXPECT_EQ (Sig->Length, (UINT32)(sizeof (EFI_SIGNATURE_VERIFICATION_RESULT) + sizeof (kThumbprint)));
+  EXPECT_EQ (Sig->Length, (UINT32)ALIGN_VALUE (sizeof (EFI_SIGNATURE_VERIFICATION_RESULT) + sizeof (kThumbprint), 8));
+  EXPECT_EQ (Sig->ThumbprintSize, (UINT32)sizeof (kThumbprint));
   EXPECT_EQ (0, memcmp ((const UINT8 *)Sig + sizeof (EFI_SIGNATURE_VERIFICATION_RESULT), kThumbprint, sizeof (kThumbprint)));
 
   EXPECT_EQ (ImageVerificationResultIteratorNextSignature (&Iter), (const EFI_SIGNATURE_VERIFICATION_RESULT *)NULL);
