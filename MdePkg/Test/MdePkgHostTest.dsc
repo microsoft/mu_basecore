@@ -75,6 +75,7 @@
   MdePkg/Test/Mock/Library/GoogleTest/MockPciLib/MockPciLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockDxeServicesTableLib/MockDxeServicesTableLib.inf
   MdePkg/Test/Mock/Library/GoogleTest/MockPcdLib/MockPcdLib.inf
+  MdePkg/Test/Mock/Library/GoogleTest/MockPeCoffLib/MockPeCoffLib.inf
   MdePkg/Test/Mock/Library/Cmocka/MockUefiRuntimeServicesTableLib/MockUefiRuntimeServicesTableLib.inf
   MdePkg/Test/Mock/Library/Cmocka/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf
   MdePkg/Test/Mock/Library/Stub/StubHobLib/StubHobLib.inf
