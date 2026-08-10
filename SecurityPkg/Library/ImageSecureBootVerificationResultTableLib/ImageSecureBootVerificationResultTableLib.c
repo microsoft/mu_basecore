@@ -1,5 +1,5 @@
 /** @file
-  Build and iterate the Image Secure Boot Verification Result Table (IVRT).
+  Build and iterate the Image Secure Boot Verification Result Table (SBRT).
 
   This library provides functionality for building an Image Secure Boot Verification
   Result Table (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE) and iterating over
@@ -44,80 +44,52 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/SafeIntLib.h>
 #include <Library/ImageSecureBootVerificationResultTableLib.h>
 
-//
-// Cached record header sizes. Every record is walked by its self-describing
-// Length, so these fixed prefixes bound where the variable payloads begin.
-//
-#define IVRT_TABLE_HEADER_SIZE  (sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE))
-#define IVRT_IMAGE_HEADER_SIZE  (sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT))
-#define IVRT_SIG_HEADER_SIZE    (sizeof (EFI_SIGNATURE_VERIFICATION_RESULT))
-
-// ***************************************************************************
-// Shared helpers
-// ***************************************************************************
+#define SBRT_TABLE_HEADER_SIZE  (sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE))
+#define SBRT_IMAGE_HEADER_SIZE  (sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT))
+#define SBRT_SIG_HEADER_SIZE    (sizeof (EFI_SIGNATURE_VERIFICATION_RESULT))
+#define SBRT_RECORD_ALIGNMENT   8U
 
 /**
-  Add two UINTN values, reporting UINT32 overflow.
+  Round an unpadded record size up to the table's 8-byte record alignment.
 
-  The table and every record size field is a UINT32, so growth arithmetic is
-  validated against MAX_UINT32 using the addition form to avoid wraparound.
+  Every record starts on an 8-byte boundary so consumers can read record fields
+  directly, so each record's stored Length is padded up to SBRT_RECORD_ALIGNMENT.
 
-  @param[in]   Augend  First value.
-  @param[in]   Addend  Second value.
-  @param[out]  Sum     On success, Augend + Addend.
+  @param[in]   Unpadded  The record's header + payload size in bytes.
+  @param[out]  Aligned   On success, Unpadded rounded up to SBRT_RECORD_ALIGNMENT.
 
-  @retval TRUE   The sum fits in a UINT32 and was written to Sum.
-  @retval FALSE  The sum would exceed MAX_UINT32; Sum is untouched.
+  @retval TRUE   The aligned size fits in a UINT32 and was written to Aligned.
+  @retval FALSE  The aligned size would exceed MAX_UINT32; Aligned is untouched.
 **/
 STATIC
 BOOLEAN
-SafeAddU32 (
-  IN  UINTN   Augend,
-  IN  UINTN   Addend,
-  OUT UINT32  *Sum
+AlignRecordSize (
+  IN  UINTN   Unpadded,
+  OUT UINT32  *Aligned
   )
 {
-  if ((Augend > MAX_UINT32) || (Addend > MAX_UINT32 - Augend)) {
+  UINTN  Pad;
+  UINTN  Padded;
+
+  Pad = (SBRT_RECORD_ALIGNMENT - (Unpadded & (SBRT_RECORD_ALIGNMENT - 1))) & (SBRT_RECORD_ALIGNMENT - 1);
+
+  if (EFI_ERROR (SafeUintnAdd (Unpadded, Pad, &Padded)) ||
+      EFI_ERROR (SafeUintnToUint32 (Padded, Aligned)))
+  {
     return FALSE;
   }
 
-  *Sum = (UINT32)(Augend + Addend);
   return TRUE;
 }
 
 /**
-  Store an EFI_GUID into a (possibly unaligned) record field, defaulting to the
-  zero GUID when no source GUID was supplied.
-
-  @param[out]  Destination  Field to populate.
-  @param[in]   Source       Optional GUID to copy; NULL stores the zero GUID.
-**/
-STATIC
-VOID
-SetOptionalGuid (
-  OUT VOID            *Destination,
-  IN  CONST EFI_GUID  *Source OPTIONAL
-  )
-{
-  if (Source != NULL) {
-    CopyMem (Destination, Source, sizeof (EFI_GUID));
-  } else {
-    ZeroMem (Destination, sizeof (EFI_GUID));
-  }
-}
-
-// ***************************************************************************
-// Builder (write side)
-// ***************************************************************************
-
-/**
   Allocate an image record from its identity (name and device path).
 
-  Returns a self-describing EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT allocation
-  with zero signatures; the overall status is supplied later, to
-  ImageVerificationResultAppendImage().
+  Returns a EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT allocation
+  with zero signatures; the overall status is set by the caller.
 
   Caller is responsible for freeing Image with FreePool().
 
@@ -142,6 +114,7 @@ ImageVerificationResultCreateImage (
 {
   EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  *Record;
   UINTN                                      NameSize;
+  UINTN                                      RecordSizeN;
   UINT32                                     RecordSize;
   UINT8                                      *Cursor;
 
@@ -152,32 +125,29 @@ ImageVerificationResultCreateImage (
   NameSize = (Name != NULL) ? StrSize (Name) : 0;
 
   //
-  // RecordSize = header + Name + DevicePath, guarded to fit the UINT32 Length.
+  // RecordSize = ALIGN8 (header + Name + DevicePath), guarded to fit the UINT32
+  // Length.
   //
-  if (!SafeAddU32 (IVRT_IMAGE_HEADER_SIZE, NameSize, &RecordSize) ||
-      !SafeAddU32 (RecordSize, DevicePathSize, &RecordSize))
+  if (EFI_ERROR (SafeUintnAdd (SBRT_IMAGE_HEADER_SIZE, NameSize, &RecordSizeN)) ||
+      EFI_ERROR (SafeUintnAdd (RecordSizeN, DevicePathSize, &RecordSizeN)) ||
+      !AlignRecordSize (RecordSizeN, &RecordSize))
   {
     return EFI_BAD_BUFFER_SIZE;
   }
 
-  Record = AllocatePool (RecordSize);
+  //
+  // Zero-fill so the reserved field and every padding byte are deterministic.
+  //
+  Record = AllocateZeroPool (RecordSize);
   if (Record == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  //
-  // The record is allocated exactly (Length == allocation size). It is 8-aligned,
-  // so the fixed header is written through the struct directly; ImageStatus and
-  // ImageDigestAlgorithm stay zero until AppendImage stamps them.
-  //
-  Record->Length             = RecordSize;
-  Record->ImageStatus        = 0;
-  Record->NumberOfSignatures = 0;
-  Record->NameLength         = (UINT32)NameSize;
-  Record->DevicePathLength   = (UINT32)DevicePathSize;
-  ZeroMem (&Record->ImageDigestAlgorithm, sizeof (EFI_GUID));
+  Record->Length           = RecordSize;
+  Record->NameLength       = (UINT32)NameSize;
+  Record->DevicePathLength = (UINT32)DevicePathSize;
 
-  Cursor = (UINT8 *)Record + IVRT_IMAGE_HEADER_SIZE;
+  Cursor = (UINT8 *)Record + SBRT_IMAGE_HEADER_SIZE;
   if (NameSize != 0) {
     CopyMem (Cursor, Name, NameSize);
     Cursor += NameSize;
@@ -197,7 +167,7 @@ ImageVerificationResultCreateImage (
   evaluation order.
 
   @param[in,out]  Image                The image record to extend (from CreateImage). Updated in place.
-  @param[in]      SignatureIndex       0-based ordinal of the WIN_CERTIFICATE within the image.
+  @param[in]      SignatureIndex       Index of the WIN_CERTIFICATE within the image.
   @param[in]      Status               EFI_SIGNATURE_VERIFICATION_* outcome for the signature.
   @param[in]      ThumbprintAlgorithm  Optional digest algorithm of Thumbprint; NULL => zero GUID.
   @param[in]      Thumbprint           Optional decisive-cert TBS-cert hash; NULL => none.
@@ -221,42 +191,37 @@ ImageVerificationResultAppendSignature (
   )
 {
   EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  *Record;
+  EFI_SIGNATURE_VERIFICATION_RESULT          *Signature;
+  UINTN                                      SigRecordSizeN;
   UINT32                                     OldLength;
   UINT32                                     SigRecordSize;
   UINT32                                     NewLength;
   UINT8                                      *NewRecord;
-  UINT8                                      *Signature;
 
   if ((Image == NULL) || (*Image == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
   //
-  // Thumbprint and its size must agree: a present blob has a non-zero size, an
-  // absent blob has a zero size.
+  // If Thumbprint is null, ThumbprintSize must be 0; if Thumbprint is non-null,
+  // ThumbprintSize must be non-zero.
   //
   if ((Thumbprint == NULL) != (ThumbprintSize == 0)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  //
-  // The record is allocated exactly, so its Length is also its current size.
-  // SigRecordSize = signature header + thumbprint; the grown Length must fit its
-  // UINT32 field.
-  //
   Record    = (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *)*Image;
   OldLength = Record->Length;
 
-  if (!SafeAddU32 (IVRT_SIG_HEADER_SIZE, ThumbprintSize, &SigRecordSize) ||
-      !SafeAddU32 (OldLength, SigRecordSize, &NewLength))
+  //
+  // SigRecordSize = ALIGN8 (header + Thumbprint).
+  if (EFI_ERROR (SafeUintnAdd (SBRT_SIG_HEADER_SIZE, ThumbprintSize, &SigRecordSizeN)) ||
+      !AlignRecordSize (SigRecordSizeN, &SigRecordSize) ||
+      EFI_ERROR (SafeUint32Add (OldLength, SigRecordSize, &NewLength)))
   {
     return EFI_BAD_BUFFER_SIZE;
   }
 
-  //
-  // Reallocate exactly one signature larger. On failure ReallocatePool leaves the
-  // old allocation intact, so *Image stays valid.
-  //
   NewRecord = ReallocatePool (OldLength, NewLength, *Image);
   if (NewRecord == NULL) {
     return EFI_OUT_OF_RESOURCES;
@@ -266,18 +231,20 @@ ImageVerificationResultAppendSignature (
   Record = (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *)NewRecord;
 
   //
-  // The signature lands at the (unaligned) tail, so its scalar fields go through
-  // the unaligned writers.
-  //
-  Signature = NewRecord + OldLength;
+  // ReallocatePool leaves the grown tail uninitialized; zero the new record.
+  Signature = (EFI_SIGNATURE_VERIFICATION_RESULT *)(NewRecord + OldLength);
+  ZeroMem (Signature, SigRecordSize);
 
-  WriteUnaligned32 ((UINT32 *)(Signature + OFFSET_OF (EFI_SIGNATURE_VERIFICATION_RESULT, Length)), SigRecordSize);
-  WriteUnaligned32 ((UINT32 *)(Signature + OFFSET_OF (EFI_SIGNATURE_VERIFICATION_RESULT, SignatureIndex)), SignatureIndex);
-  WriteUnaligned32 ((UINT32 *)(Signature + OFFSET_OF (EFI_SIGNATURE_VERIFICATION_RESULT, Status)), Status);
-  SetOptionalGuid (Signature + OFFSET_OF (EFI_SIGNATURE_VERIFICATION_RESULT, ThumbprintAlgorithm), ThumbprintAlgorithm);
+  Signature->Length         = SigRecordSize;
+  Signature->SignatureIndex = SignatureIndex;
+  Signature->Status         = Status;
+  Signature->ThumbprintSize = (UINT32)ThumbprintSize;
+  if (ThumbprintAlgorithm != NULL) {
+    CopyGuid (&Signature->ThumbprintAlgorithm, ThumbprintAlgorithm);
+  }
 
   if (ThumbprintSize != 0) {
-    CopyMem (Signature + IVRT_SIG_HEADER_SIZE, Thumbprint, ThumbprintSize);
+    CopyMem ((UINT8 *)Signature + SBRT_SIG_HEADER_SIZE, Thumbprint, ThumbprintSize);
   }
 
   Record->Length              = NewLength;
@@ -315,31 +282,28 @@ ImageVerificationResultAppendImage (
 {
   CONST EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE  *Old;
   EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE        *Result;
+  EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT              *NewImage;
   UINT32                                                 ImageLength;
   UINT32                                                 OldLength;
   UINT32                                                 OldImages;
   UINT32                                                 NewLength;
   UINT32                                                 NewImages;
-  UINT8                                                  *ImageRecord;
 
   if ((Image == NULL) || (NewTable == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
   //
-  // Establish the base table: an empty header when there is no old table, or the
-  // validated old table otherwise. The old table is trusted (previously produced
-  // by this library), so its self-describing Length bounds the copy.
-  //
+  // Reuse the old table's header if present, otherwise start a new table.
   if (OldTable == NULL) {
     Old       = NULL;
-    OldLength = (UINT32)IVRT_TABLE_HEADER_SIZE;
+    OldLength = (UINT32)SBRT_TABLE_HEADER_SIZE;
     OldImages = 0;
   } else {
     Old = (CONST EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE *)OldTable;
     if ((Old->Signature != EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_SIGNATURE) ||
         (Old->Version != EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_VERSION) ||
-        (Old->Length < IVRT_TABLE_HEADER_SIZE))
+        (Old->Length < SBRT_TABLE_HEADER_SIZE))
     {
       return EFI_INVALID_PARAMETER;
     }
@@ -350,8 +314,8 @@ ImageVerificationResultAppendImage (
 
   ImageLength = ((CONST EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *)Image)->Length;
 
-  if (!SafeAddU32 (OldLength, ImageLength, &NewLength) ||
-      !SafeAddU32 (OldImages, 1, &NewImages))
+  if (EFI_ERROR (SafeUint32Add (OldLength, ImageLength, &NewLength)) ||
+      EFI_ERROR (SafeUint32Add (OldImages, 1, &NewImages)))
   {
     return EFI_BAD_BUFFER_SIZE;
   }
@@ -361,10 +325,6 @@ ImageVerificationResultAppendImage (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  //
-  // Copy the base (old images, or a fresh header), append the image record, then
-  // stamp the now-known status and digest algorithm at its (unaligned) offset.
-  //
   if (Old != NULL) {
     CopyMem (Result, Old, OldLength);
   } else {
@@ -372,10 +332,12 @@ ImageVerificationResultAppendImage (
     Result->Version   = EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_VERSION;
   }
 
-  ImageRecord = (UINT8 *)Result + OldLength;
-  CopyMem (ImageRecord, Image, ImageLength);
-  WriteUnaligned32 ((UINT32 *)(ImageRecord + OFFSET_OF (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT, ImageStatus)), ImageStatus);
-  SetOptionalGuid (ImageRecord + OFFSET_OF (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT, ImageDigestAlgorithm), ImageDigestAlgorithm);
+  NewImage = (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *)((UINT8 *)Result + OldLength);
+  CopyMem (NewImage, Image, ImageLength);
+  NewImage->ImageStatus = ImageStatus;
+  if (ImageDigestAlgorithm != NULL) {
+    CopyGuid (&NewImage->ImageDigestAlgorithm, ImageDigestAlgorithm);
+  }
 
   Result->Length         = NewLength;
   Result->NumberOfImages = NewImages;
@@ -385,16 +347,8 @@ ImageVerificationResultAppendImage (
   return EFI_SUCCESS;
 }
 
-// ***************************************************************************
-// Iterator (read side)
-// ***************************************************************************
-
 /**
   Validate the signature records that trail one image record.
-
-  Confirms the region [RegionSize] holds exactly ExpectedCount self-sized
-  EFI_SIGNATURE_VERIFICATION_RESULT records that tile the region with no leftover
-  bytes.
 
   @param[in]  Region       Start of the signature region.
   @param[in]  RegionSize   Size of the signature region in bytes.
@@ -411,20 +365,27 @@ ValidateSignatureRegion (
   IN UINT32       ExpectedCount
   )
 {
-  UINTN   Remaining;
-  UINT32  Count;
-  UINT32  RecordLength;
+  CONST EFI_SIGNATURE_VERIFICATION_RESULT  *Signature;
+  UINTN                                    Remaining;
+  UINT32                                   Count;
+  UINT32                                   RecordLength;
 
   Remaining = RegionSize;
   Count     = 0;
 
   while (Remaining > 0) {
-    if (Remaining < IVRT_SIG_HEADER_SIZE) {
+    if (Remaining < SBRT_SIG_HEADER_SIZE) {
       return FALSE;
     }
 
-    RecordLength = ReadUnaligned32 ((CONST UINT32 *)(Region + OFFSET_OF (EFI_SIGNATURE_VERIFICATION_RESULT, Length)));
-    if ((RecordLength < IVRT_SIG_HEADER_SIZE) || (RecordLength > Remaining)) {
+    Signature    = (CONST EFI_SIGNATURE_VERIFICATION_RESULT *)Region;
+    RecordLength = Signature->Length;
+
+    if ((RecordLength < SBRT_SIG_HEADER_SIZE) ||
+        (RecordLength > Remaining) ||
+        ((RecordLength & (SBRT_RECORD_ALIGNMENT - 1)) != 0) ||
+        (Signature->ThumbprintSize > RecordLength - SBRT_SIG_HEADER_SIZE))
+    {
       return FALSE;
     }
 
@@ -443,10 +404,6 @@ ValidateSignatureRegion (
 /**
   Validate a single image record and report its total size.
 
-  Checks that the fixed header fits, that Name + DevicePath + signatures fit
-  within the record's declared Length, and that the trailing signature records
-  are well-formed and match the declared NumberOfSignatures.
-
   @param[in]   Record        Start of the candidate image record.
   @param[in]   Remaining     Bytes available from Record to the end of the images region.
   @param[out]  RecordLength  On success, the record's total size in bytes.
@@ -462,35 +419,39 @@ ValidateImageRecord (
   OUT UINT32       *RecordLength
   )
 {
-  UINT32  Length;
-  UINT32  NumberOfSignatures;
-  UINT32  NameLength;
-  UINT32  DevicePathLength;
-  UINTN   PayloadOffset;
+  CONST EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  *Image;
+  UINT32                                           Length;
+  UINT32                                           NameLength;
+  UINT32                                           DevicePathLength;
+  UINTN                                            PayloadOffset;
 
-  if (Remaining < IVRT_IMAGE_HEADER_SIZE) {
+  if (Remaining < SBRT_IMAGE_HEADER_SIZE) {
     return FALSE;
   }
 
-  Length             = ReadUnaligned32 ((CONST UINT32 *)(Record + OFFSET_OF (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT, Length)));
-  NumberOfSignatures = ReadUnaligned32 ((CONST UINT32 *)(Record + OFFSET_OF (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT, NumberOfSignatures)));
-  NameLength         = ReadUnaligned32 ((CONST UINT32 *)(Record + OFFSET_OF (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT, NameLength)));
-  DevicePathLength   = ReadUnaligned32 ((CONST UINT32 *)(Record + OFFSET_OF (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT, DevicePathLength)));
+  Image            = (CONST EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *)Record;
+  Length           = Image->Length;
+  NameLength       = Image->NameLength;
+  DevicePathLength = Image->DevicePathLength;
 
-  if ((Length < IVRT_IMAGE_HEADER_SIZE) || (Length > Remaining)) {
+  if ((Length < SBRT_IMAGE_HEADER_SIZE) ||
+      (Length > Remaining) ||
+      ((Length & (SBRT_RECORD_ALIGNMENT - 1)) != 0) ||
+      (NameLength > Length - SBRT_IMAGE_HEADER_SIZE) ||
+      (DevicePathLength > Length - SBRT_IMAGE_HEADER_SIZE - NameLength))
+  {
     return FALSE;
   }
 
   //
-  // header + Name + DevicePath must fit within Length (computed in UINTN, which
-  // cannot overflow here because each addend is a UINT32).
+  // Signatures[] begins at the next 8-byte boundary after the name/device path.
   //
-  PayloadOffset = IVRT_IMAGE_HEADER_SIZE + (UINTN)NameLength + (UINTN)DevicePathLength;
+  PayloadOffset = ALIGN_VALUE (SBRT_IMAGE_HEADER_SIZE + (UINTN)NameLength + (UINTN)DevicePathLength, SBRT_RECORD_ALIGNMENT);
   if (PayloadOffset > Length) {
     return FALSE;
   }
 
-  if (!ValidateSignatureRegion (Record + PayloadOffset, Length - PayloadOffset, NumberOfSignatures)) {
+  if (!ValidateSignatureRegion (Record + PayloadOffset, Length - PayloadOffset, Image->NumberOfSignatures)) {
     return FALSE;
   }
 
@@ -499,7 +460,7 @@ ValidateImageRecord (
 }
 
 /**
-  Initialize an iterator over an IVRT and validate its structure.
+  Initialize an iterator over an SBRT and validate its structure.
 
   The table is validated here, so that the different iteration routines can be
   infallible over the valid prefix. During initialization, the structure is
@@ -543,21 +504,15 @@ ImageVerificationResultIteratorInit (
 
   Header = (CONST EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE *)Table;
 
-  //
-  // The table is self-describing: Header->Length bounds the walk (as any
-  // configuration-table consumer must trust, since the table carries no external
-  // size). Reject a foreign or mis-versioned buffer, or a Length too small to
-  // hold the header.
-  //
   if ((Header->Signature != EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_SIGNATURE) ||
       (Header->Version != EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE_VERSION) ||
-      (Header->Length < IVRT_TABLE_HEADER_SIZE))
+      (Header->Length < SBRT_TABLE_HEADER_SIZE))
   {
     return FALSE;
   }
 
-  Cursor     = (CONST UINT8 *)Table + IVRT_TABLE_HEADER_SIZE;
-  Remaining  = Header->Length - IVRT_TABLE_HEADER_SIZE;
+  Cursor     = (CONST UINT8 *)Table + SBRT_TABLE_HEADER_SIZE;
+  Remaining  = Header->Length - SBRT_TABLE_HEADER_SIZE;
   ImageCount = 0;
 
   //
@@ -574,13 +529,9 @@ ImageVerificationResultIteratorInit (
     ImageCount += 1;
   }
 
-  Iterator->NextImageRecord = (CONST UINT8 *)Table + IVRT_TABLE_HEADER_SIZE;
+  Iterator->NextImageRecord = (CONST UINT8 *)Table + SBRT_TABLE_HEADER_SIZE;
   Iterator->ImagesRemaining = ImageCount;
 
-  //
-  // Clean only when the whole images region tiled AND the tiled count matches
-  // the declared image count.
-  //
   return (BOOLEAN)((Remaining == 0) && (ImageCount == Header->NumberOfImages));
 }
 
@@ -598,33 +549,24 @@ ImageVerificationResultIteratorNextImage (
   IN OUT IMAGE_VERIFICATION_RESULT_ITERATOR  *Iterator
   )
 {
-  CONST UINT8  *Record;
-  UINT32       RecordLength;
-  UINT32       NameLength;
-  UINT32       DevicePathLength;
-  UINT32       NumberOfSignatures;
+  CONST EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  *Image;
+  CONST UINT8                                      *Record;
 
   if ((Iterator == NULL) || (Iterator->ImagesRemaining == 0)) {
     return NULL;
   }
 
-  Record             = Iterator->NextImageRecord;
-  RecordLength       = ReadUnaligned32 ((CONST UINT32 *)(Record + OFFSET_OF (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT, Length)));
-  NumberOfSignatures = ReadUnaligned32 ((CONST UINT32 *)(Record + OFFSET_OF (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT, NumberOfSignatures)));
-  NameLength         = ReadUnaligned32 ((CONST UINT32 *)(Record + OFFSET_OF (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT, NameLength)));
-  DevicePathLength   = ReadUnaligned32 ((CONST UINT32 *)(Record + OFFSET_OF (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT, DevicePathLength)));
+  Record = Iterator->NextImageRecord;
+  Image  = (CONST EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *)Record;
 
-  //
-  // Reset the inner cursor to this image's signature region. Init already proved
-  // the offsets and record count are in-bounds, so this arithmetic is safe.
-  //
-  Iterator->NextSignatureRecord = Record + IVRT_IMAGE_HEADER_SIZE + NameLength + DevicePathLength;
-  Iterator->SignaturesRemaining = NumberOfSignatures;
+  // Reset the inner cursor to this image's signature region, which begins at the next 8-byte boundary after the name and device path.
+  Iterator->NextSignatureRecord = Record + ALIGN_VALUE (SBRT_IMAGE_HEADER_SIZE + (UINTN)Image->NameLength + (UINTN)Image->DevicePathLength, SBRT_RECORD_ALIGNMENT);
+  Iterator->SignaturesRemaining = Image->NumberOfSignatures;
 
-  Iterator->NextImageRecord  = Record + RecordLength;
+  Iterator->NextImageRecord  = Record + Image->Length;
   Iterator->ImagesRemaining -= 1;
 
-  return (CONST EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT *)Record;
+  return Image;
 }
 
 /**
@@ -641,18 +583,16 @@ ImageVerificationResultIteratorNextSignature (
   IN OUT IMAGE_VERIFICATION_RESULT_ITERATOR  *Iterator
   )
 {
-  CONST UINT8  *Record;
-  UINT32       RecordLength;
+  CONST EFI_SIGNATURE_VERIFICATION_RESULT  *Signature;
 
   if ((Iterator == NULL) || (Iterator->SignaturesRemaining == 0)) {
     return NULL;
   }
 
-  Record       = Iterator->NextSignatureRecord;
-  RecordLength = ReadUnaligned32 ((CONST UINT32 *)(Record + OFFSET_OF (EFI_SIGNATURE_VERIFICATION_RESULT, Length)));
+  Signature = (CONST EFI_SIGNATURE_VERIFICATION_RESULT *)Iterator->NextSignatureRecord;
 
-  Iterator->NextSignatureRecord  = Record + RecordLength;
+  Iterator->NextSignatureRecord  = (CONST UINT8 *)Signature + Signature->Length;
   Iterator->SignaturesRemaining -= 1;
 
-  return (CONST EFI_SIGNATURE_VERIFICATION_RESULT *)Record;
+  return Signature;
 }

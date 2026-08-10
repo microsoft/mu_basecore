@@ -149,7 +149,7 @@
   #
   PeilessSecMeasureLib|Include/Library/PeilessSecMeasureLib.h
 
-  ##  @libraryclass  Builds and iterates the Image Secure Boot Verification Result Table (IVRT).
+  ##  @libraryclass  Builds and iterates the Image Secure Boot Verification Result Table (SBRT).
   #
   ImageSecureBootVerificationResultTableLib|Include/Library/ImageSecureBootVerificationResultTableLib.h
 
@@ -182,7 +182,7 @@
   #  Include/Guid/AuthenticatedVariableFormat.h
   gEfiCertDbGuid                     = { 0xd9bee56e, 0x75dc, 0x49d9, { 0xb4, 0xd7, 0xb5, 0x34, 0x21, 0xf, 0x63, 0x7a } }
 
-  ## GUID that identifies the Image Secure Boot Verification Result Table (IVRT) configuration table.
+  ## GUID that identifies the Image Secure Boot Verification Result Table (SBRT) configuration table.
   #  Include/Guid/ImageSecureBootVerificationResultTable.h
   gEfiImageSecureBootVerificationResultTableGuid = { 0x5ee66bd4, 0x895d, 0x421d, { 0x80, 0x05, 0x3a, 0x0c, 0x6b, 0x55, 0x18, 0xa1 } }
 

@@ -1,6 +1,6 @@
 # ImageSecureBootVerificationResultTableLib
 
-Image Secure Boot Verification Result Table (IVRT) table defintion to fully describe images
+Image Secure Boot Verification Result Table (SBRT) table defintion to fully describe images
 evaluated by the secure boot image verification process. This table contains an entry for every
 image evaluated by secure boot. This library contains the full definition of this table and
 provides methods to both generate and parse this dynamically sized table.
@@ -15,17 +15,24 @@ for that given entry. See the table layout below.
 
 ```text
 EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE
-  Signature ('IVRT') | Version | Length | NumberOfImages
+  Signature ('SBRT') | Version | Length | NumberOfImages
   +-- EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT
   |     Length | ImageStatus | NumberOfSignatures | NameLength |
-  |     DevicePathLength | ImageDigestAlgorithm
+  |     DevicePathLength | Reserved | ImageDigestAlgorithm
   |     Name[]        (NameLength bytes, optional)
   |     DevicePath    (DevicePathLength bytes)
+  |     Padding       (to the next 8-byte boundary)
   |     +-- EFI_SIGNATURE_VERIFICATION_RESULT
-  |     |     Length | SignatureIndex | Status | ThumbprintAlgorithm | Thumbprint[]
+  |     |     Length | SignatureIndex | Status | ThumbprintSize | ThumbprintAlgorithm
+  |     |     Thumbprint[]  (ThumbprintSize bytes)
+  |     |     Padding       (to the next 8-byte boundary)
   |     +-- ...
   +-- ...
 ```
+
+Every record (the table header, each image record, and each signature record) starts on an 8-byte
+boundary, and each record's `Length` is padded up to a multiple of 8. Consumers can therefore cast a
+record pointer directly to the structures above and read their fields with no unaligned accesses.
 
 ## Table Builder
 
@@ -64,7 +71,7 @@ const EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT  *Image;
 const EFI_SIGNATURE_VERIFICATION_RESULT          *Sig;
 
 if (!ImageVerificationResultIteratorInit (&Iter, Table)) {
-  DEBUG ((DEBUG_WARN, "IVRT truncated; iterating the valid prefix only\n"));
+  DEBUG ((DEBUG_WARN, "SBRT truncated; iterating the valid prefix only\n"));
 }
 
 while ((Image = ImageVerificationResultIteratorNextImage (&Iter)) != NULL) {
