@@ -442,6 +442,14 @@
   #
   SecurityPkg/FvReportPei/FvReportPei.inf
 
+[Components.AARCH64, Components.X64]
+    SecurityPkg/Test/ShellTest/ImageValidationTestApp/ImageValidationTestApp.inf {
+    <LibraryClasses>
+      UnitTestLib|UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLib.inf
+      UnitTestPersistenceLib|UnitTestFrameworkPkg/Library/UnitTestPersistenceLibNull/UnitTestPersistenceLibNull.inf
+      UnitTestResultReportLib|UnitTestFrameworkPkg/Library/UnitTestResultReportLib/UnitTestResultReportLibConOut.inf
+  }
+
 [Components.AARCH64]
   SecurityPkg/Tcg/Tcg2StandaloneMmArm/Tcg2StandaloneMmArm.inf
   SecurityPkg/Tcg/Tcg2AcpiFfa/Tcg2AcpiFfa.inf
