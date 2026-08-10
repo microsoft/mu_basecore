@@ -4625,4 +4625,32 @@ BaseCryptInit (
   VOID
   );
 
+// MU_CHANGE [BEGIN] - ECIT capability reporting.
+
+/**
+  Returns the supported algorithm OIDs for a crypto operation.
+
+  The capability is returned as a NUL-terminated ASCII CSV. The OIDs are an
+  unordered set. An empty string indicates that no algorithms are supported.
+
+  @param[in]      OpIdGuid    GUID identifying the crypto operation.
+  @param[out]     Buffer      NULL to probe required size, else receives payload.
+  @param[in,out]  BufferSize  In: size of Buffer. Out: bytes written or required
+                              (always includes the trailing NUL).
+
+  @retval EFI_SUCCESS           Buffer populated (or size returned if Buffer NULL).
+  @retval EFI_BUFFER_TOO_SMALL  Buffer too small; *BufferSize set to required.
+  @retval EFI_NOT_FOUND         OpIdGuid is unknown to this binary.
+  @retval EFI_INVALID_PARAMETER OpIdGuid or BufferSize is NULL.
+**/
+EFI_STATUS
+EFIAPI
+GetCryptoOpCapability (
+  IN     CONST EFI_GUID  *OpIdGuid,
+  OUT    VOID            *Buffer       OPTIONAL,
+  IN OUT UINTN           *BufferSize
+  );
+
+// MU_CHANGE [END]
+
 #endif // __BASE_CRYPT_LIB_H__

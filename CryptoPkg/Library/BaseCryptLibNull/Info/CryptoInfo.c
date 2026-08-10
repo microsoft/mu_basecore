@@ -34,3 +34,31 @@ GetCryptoProviderVersionString (
 {
   return EFI_UNSUPPORTED;
 }
+
+/**
+  Return the capability descriptor for a given crypto operation.
+
+  The null BaseCryptLib instance does not provide any crypto operations.
+
+  @param[in]      OpIdGuid    GUID identifying the crypto operation.
+  @param[out]     Buffer      NULL to probe required size, else receives payload.
+  @param[in,out]  BufferSize  In: size of Buffer. Out: bytes written or required.
+
+  @retval EFI_NOT_FOUND         The null instance provides no crypto operations.
+  @retval EFI_INVALID_PARAMETER OpIdGuid or BufferSize is NULL.
+**/
+EFI_STATUS
+EFIAPI
+GetCryptoOpCapability (
+  IN     CONST EFI_GUID  *OpIdGuid,
+  OUT    VOID            *Buffer       OPTIONAL,
+  IN OUT UINTN           *BufferSize
+  )
+{
+  if ((OpIdGuid == NULL) || (BufferSize == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  (VOID)Buffer;
+  return EFI_NOT_FOUND;
+}
