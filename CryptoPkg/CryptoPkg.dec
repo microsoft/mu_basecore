@@ -62,6 +62,13 @@
   ## Crypto package token space guid.
   gEfiCryptoPkgTokenSpaceGuid      = { 0x6bd7de60, 0x9ef7, 0x4899, { 0x97, 0xd0, 0xab, 0xff, 0xfd, 0xe9, 0x70, 0xf2 } }
 
+  ## ECIT capability reporting - crypto operation identifier GUIDs.  # MU_CHANGE
+  #  Passed to GetCryptoOpCapability() (Library/BaseCryptLib.h); the reply is a
+  #  CSV-encoded NUL-terminated ASCII string of algorithm OIDs (unordered set).
+  #  Declared extern in <Guid/CryptoOpId.h>.
+  gCryptoOpCmsVerifyGuid          = { 0x6cc2d4b1, 0x7a93, 0x4d51, { 0x9c, 0x4a, 0x12, 0x8e, 0xb4, 0x05, 0x7f, 0x21 } }  # MU_CHANGE
+  gCryptoOpAuthenticodeVerifyGuid   = { 0x9f3e1bd6, 0x2c0a, 0x4b8e, { 0xab, 0x1f, 0x74, 0x29, 0xd0, 0x83, 0xe1, 0x66 } }  # MU_CHANGE
+
 # MU_CHANGE [BEGIN]
 #
 # Used by BaseCryptLibOnProtocolPpi - However this is being deprecated
