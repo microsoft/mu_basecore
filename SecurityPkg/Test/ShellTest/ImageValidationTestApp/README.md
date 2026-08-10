@@ -172,6 +172,7 @@ To skip straight to a flat index of every test with its expected result, jump to
 | [`6`](#6-image-certificate-parsing-errors) | Image Certificate Parsing Errors | Tests that image `WIN_CERTIFICATE` parsing aborts at a malformed entry, while an image digest in `db` still authorizes independently. |
 | [`7`](#7-tampered-image-rejection) | Tampered Image Rejection | Tests that an image whose body was modified after signing is always denied, regardless of `db` / `dbx` contents. |
 | [`8`](#8-sha-1-rejection) | SHA-1 Rejection | Tests that SHA-1 is not a supported hash algorithm: a SHA-1 image digest in `db` cannot authorize an image, and one in `dbx` cannot revoke it. |
+| [`9`](#9-v2-signature-type-guids) | V2 Signature-Type GUIDs | Tests that the handler accepts the V2 signature types (`EFI_CERT_V2_*`, `EFI_SIGNATURE_V2_DATA` layout) for image digests, X.509 certificates, and TBS-cert hashes, in both `db` and `dbx`. |
 
 ### 1. Unsigned Image Validation
 
@@ -876,11 +877,65 @@ entries around it.
 | `8.3.1` | SHA-1 + SHA-256 image digests | Empty | `EFI_SUCCESS` | leading SHA-1 in `db` is skipped; the SHA-256 digest still approves |
 | `8.3.2` | SHA-256 image digest | SHA-1 + SHA-256 image digests | `EFI_ACCESS_DENIED` | leading SHA-1 in `dbx` is skipped; the SHA-256 digest still revokes |
 
+### 9. V2 Signature-Type GUIDs
+
+**Image type:** `IMAGE_TYPE_UNSIGNED` and `IMAGE_TYPE_SIGNED`.
+
+The V2 signature types (`EFI_CERT_V2_*`) carry the same payloads as their V1 counterparts but use
+the `EFI_SIGNATURE_V2_DATA` layout, which drops the 16-byte `SignatureOwner` from every entry.
+These scenarios are declared with `TEST_SCENARIO_V2`, which makes the database builder emit each
+entry with its V2 GUID and no owner prefix; the image, flags, and expected results otherwise mirror
+their V1 baselines. The group is intentionally focused - one case for each of the three ways a V2
+GUID is used (image digest, full X.509 certificate, X.509 TBS-cert hash), in both the authorizing
+(`db`) and revoking (`dbx`) roles - rather than an exhaustive matrix. The image-digest cases run all
+three hash sizes (SHA-256/384/512), because that path maps each V2 image-hash GUID to its base GUID
+before hashing.
+
+| ID | Group | Description |
+| -- | ----- | ----------- |
+| [`9.1`](#91-v2-database-approval) | V2 Database Approval | A V2 `db` entry authorizes the image (empty `dbx`). |
+| [`9.2`](#92-v2-database-revocation) | V2 Database Revocation | A V2 `dbx` entry revokes an image that a V2 `db` entry would otherwise authorize. |
+
+#### 9.1 V2 Database Approval
+
+- **Purpose:** Each form of V2 `db` entry authorizes the image, exactly as its V1 counterpart does.
+- **dbx:** Empty (`DB_STATE_EMPTY`).
+- **Expected result:** `EFI_SUCCESS` for every run.
+- **Rationale:** Proves the handler parses the ownerless V2 layout and honors the V2 GUIDs for the
+  image-digest, full-certificate, and TBS-cert-hash authorities; mirrors 1.3.1a-c / 2.3.2a / 2.3.3a.
+
+| Run | Image type | `db` authority (V2) |
+| --- | ---------- | ------------------- |
+| `9.1.1a` | Unsigned (`IMAGE_TYPE_UNSIGNED`) | Image SHA-256 digest (`DB_STATE_IMAGE_DIGEST_SHA256`) |
+| `9.1.1b` | Unsigned (`IMAGE_TYPE_UNSIGNED`) | Image SHA-384 digest (`DB_STATE_IMAGE_DIGEST_SHA384`) |
+| `9.1.1c` | Unsigned (`IMAGE_TYPE_UNSIGNED`) | Image SHA-512 digest (`DB_STATE_IMAGE_DIGEST_SHA512`) |
+| `9.1.2` | Signed (`IMAGE_TYPE_SIGNED`) | Signer 1 leaf certificate (`DB_STATE_SIGNER1_LEAF_CERT`) |
+| `9.1.3` | Signed (`IMAGE_TYPE_SIGNED`) | Signer 1 leaf TBS hash, SHA-256 (`DB_STATE_SIGNER1_LEAF_TBS_HASH_SHA256`) |
+
+#### 9.2 V2 Database Revocation
+
+- **Purpose:** Each form of V2 `dbx` entry revokes an image that a V2 `db` entry would otherwise
+  authorize.
+- **Image type:** Signed (`IMAGE_TYPE_SIGNED`).
+- **db:** Signer 1 leaf certificate (`DB_STATE_SIGNER1_LEAF_CERT`), which alone would authorize.
+- **Expected result:** `EFI_ACCESS_DENIED` for every run.
+- **Rationale:** Proves the handler honors the V2 GUIDs for revocation in each form - image-digest
+  revocation, exact-certificate chain revocation, and TBS-cert-hash chain revocation; mirrors
+  2.2.2a / 2.4.16a / 2.4.16b.
+
+| Run | `dbx` revoking entry (V2) |
+| --- | ------------------------- |
+| `9.2.1a` | Image SHA-256 digest (`DB_STATE_IMAGE_DIGEST_SHA256`) |
+| `9.2.1b` | Image SHA-384 digest (`DB_STATE_IMAGE_DIGEST_SHA384`) |
+| `9.2.1c` | Image SHA-512 digest (`DB_STATE_IMAGE_DIGEST_SHA512`) |
+| `9.2.2` | Signer 1 leaf certificate (`DB_STATE_SIGNER1_LEAF_CERT`) |
+| `9.2.3` | Signer 1 leaf TBS hash, SHA-256 (`DB_STATE_SIGNER1_LEAF_TBS_HASH_SHA256`) |
+
 ### Adding or Documenting a Test
 
 To add or document a test, keep the code and this catalog in sync:
 
-1. **Pick the ID.** Choose the group (`1`/`2`/`3`/`4`/`5`/`6`/`7`/`8`), the behavior, and the variant — for
+1. **Pick the ID.** Choose the group (`1`/`2`/`3`/`4`/`5`/`6`/`7`/`8`/`9`), the behavior, and the variant — for
    example `2.4.1`. When a test runs several cases, append a run letter to each case
    (`2.4.1a`, `2.4.1b`, ...); a single-case test uses no letter.
 2. **Define the scenario in `Scenarios.c`.** Use `TEST_SCENARIO` and pass the full ID as the
@@ -926,8 +981,9 @@ To add or document a test, keep the code and this catalog in sync:
   points back to the script.
 - Certificate TBSCertificate hashes are precomputed into `TestData.c` rather than hashed at
   runtime, so the application links no cryptography library and is platform/binary independent.
-- Scenario data structures, `DB_STATE_*` definitions, and the `TEST_SCENARIO` macro are in
-  `ImageValidationTestApp.h`.
+- Scenario data structures, `DB_STATE_*` definitions, and the `TEST_SCENARIO` / `TEST_SCENARIO_V2`
+  macros are in `ImageValidationTestApp.h`. `TEST_SCENARIO_V2` emits the same entries using the V2
+  signature-type GUIDs and the ownerless `EFI_SIGNATURE_V2_DATA` layout.
 - Runtime test behavior, database synthesis, and test-ID composition are in
   `ImageValidationTestApp.c`.
 
@@ -1002,3 +1058,9 @@ To add or document a test, keep the code and this catalog in sync:
 | [`8.2.2`](#82-sha-1-digest-cannot-revoke) | `EFI_SUCCESS` | Signed image (authorized by a `db` certificate) not revoked by a SHA-1 image digest in `dbx` (SHA-1 unsupported) |
 | [`8.3.1`](#83-sha-1-digest-ignored-alongside-a-supported-digest) | `EFI_SUCCESS` | Unsigned image approved by a SHA-256 `db` digest that follows a skipped SHA-1 `db` digest |
 | [`8.3.2`](#83-sha-1-digest-ignored-alongside-a-supported-digest) | `EFI_ACCESS_DENIED` | Unsigned image revoked by a SHA-256 `dbx` digest that follows a skipped SHA-1 `dbx` digest |
+| [`9.1.1`](#91-v2-database-approval) | `EFI_SUCCESS` | Unsigned image approved by a V2 image digest in `db` |
+| [`9.1.2`](#91-v2-database-approval) | `EFI_SUCCESS` | Signed image approved by a V2 signer 1 leaf certificate in `db` |
+| [`9.1.3`](#91-v2-database-approval) | `EFI_SUCCESS` | Signed image approved by a V2 signer 1 leaf TBS hash (SHA-256) in `db` |
+| [`9.2.1`](#92-v2-database-revocation) | `EFI_ACCESS_DENIED` | Signed image revoked by a V2 image digest in `dbx` over an authorizing V2 `db` certificate |
+| [`9.2.2`](#92-v2-database-revocation) | `EFI_ACCESS_DENIED` | Signed image revoked by a V2 signer 1 leaf certificate in `dbx` over an authorizing V2 `db` certificate |
+| [`9.2.3`](#92-v2-database-revocation) | `EFI_ACCESS_DENIED` | Signed image revoked by a V2 signer 1 leaf TBS hash (SHA-256) in `dbx` over an authorizing V2 `db` certificate |

@@ -461,6 +461,7 @@ ImageTypeToString (
   @param[in]  DbState        The DB_STATE_* flags for the `db` database.
   @param[in]  DbxState       The DB_STATE_* flags for the `dbx` database.
   @param[in]  ExpectedStatus The expected EFI_STATUS from LoadImage().
+  @param[in]  UseV2Guids     TRUE when the scenario emits V2 GUIDs; appends a marker to the result.
   @param[out] Buffer         A caller-allocated string buffer to receive the result.
   @param[in]  BufSize        The size, in bytes, of Buffer.
 
@@ -474,6 +475,7 @@ GenerateScenarioDescription (
   IN  UINT64      DbState,
   IN  UINT64      DbxState,
   IN  EFI_STATUS  ExpectedStatus,
+  IN  BOOLEAN     UseV2Guids,
   OUT CHAR8       *Buffer,
   IN  UINTN       BufSize
   )
@@ -506,11 +508,12 @@ GenerateScenarioDescription (
   Status = AsciiSPrint (
              Buffer,
              BufSize,
-             "Image: %a, DB: [%a], DBX: [%a], Expected: %a",
+             "Image: %a, DB: [%a], DBX: [%a], Expected: %a%a",
              ImageTypeToString (ImageType),
              DbString,
              DbxString,
-             StatusString
+             StatusString,
+             UseV2Guids ? " (V2 GUIDs)" : ""
              );
 
   return Status;
@@ -711,6 +714,47 @@ GetImageForType (
   return EFI_SUCCESS;
 }
 
+//
+// Maps each V1 signature-type GUID this app emits to its V2 (EFI_SIGNATURE_V2_DATA) counterpart,
+// used when a scenario requests V2 GUIDs. Types without a V2 form (e.g. SHA-1) are left unchanged.
+//
+STATIC CONST struct {
+  CONST EFI_GUID    *V1;
+  CONST EFI_GUID    *V2;
+} mV1ToV2SignatureType[] = {
+  { &gEfiCertSha256Guid,     &gEfiCertV2Sha256Guid     },
+  { &gEfiCertSha384Guid,     &gEfiCertV2Sha384Guid     },
+  { &gEfiCertSha512Guid,     &gEfiCertV2Sha512Guid     },
+  { &gEfiCertX509Guid,       &gEfiCertV2X509Guid       },
+  { &gEfiCertX509Sha256Guid, &gEfiCertV2X509Sha256Guid },
+  { &gEfiCertX509Sha384Guid, &gEfiCertV2X509Sha384Guid },
+  { &gEfiCertX509Sha512Guid, &gEfiCertV2X509Sha512Guid }
+};
+
+/**
+  Map a V1 signature-type GUID to its V2 (EFI_SIGNATURE_V2_DATA) counterpart.
+
+  @param[in]  V1Type  The V1 signature-type GUID.
+
+  @return The matching V2 GUID, or V1Type unchanged if the type has no V2 form.
+**/
+STATIC
+CONST EFI_GUID *
+GetV2SignatureType (
+  IN CONST EFI_GUID  *V1Type
+  )
+{
+  UINTN  Index;
+
+  for (Index = 0; Index < ARRAY_SIZE (mV1ToV2SignatureType); Index++) {
+    if (CompareGuid (V1Type, mV1ToV2SignatureType[Index].V1)) {
+      return mV1ToV2SignatureType[Index].V2;
+    }
+  }
+
+  return V1Type;
+}
+
 ///
 /// One signature list to emit while building a signature database.
 ///
@@ -731,6 +775,9 @@ typedef struct {
   @param[in]   StateFlags     Bitwise-OR of DB_STATE_* values.
   @param[in]   ImageType      The image whose digest to use for
                               DB_STATE_IMAGE_DIGEST.
+  @param[in]   UseV2Guids     When TRUE, emit each entry with its V2 (EFI_CERT_V2_*) signature-type
+                              GUID and the EFI_SIGNATURE_V2_DATA (ownerless) layout; when FALSE, use
+                              the V1 GUIDs and the EFI_SIGNATURE_DATA (owner-prefixed) layout.
   @param[out]  Database       Receives the allocated database buffer, or NULL when
                               StateFlags is DB_STATE_EMPTY.
   @param[out]  DatabaseSize   Receives the size, in bytes, of the database.
@@ -744,6 +791,7 @@ EFI_STATUS
 BuildSignatureDatabase (
   IN  UINT64      StateFlags,
   IN  IMAGE_TYPE  ImageType,
+  IN  BOOLEAN     UseV2Guids,
   OUT UINT8       **Database,
   OUT UINTN       *DatabaseSize
   )
@@ -819,8 +867,9 @@ BuildSignatureDatabase (
   UINTN               RealListSize;
   UINT8               *Buffer;
   UINT8               *Cursor;
+  UINT8               *Payload;
   EFI_SIGNATURE_LIST  *List;
-  EFI_SIGNATURE_DATA  *SigData;
+  UINTN               OwnerSize;
 
   *Database     = NULL;
   *DatabaseSize = 0;
@@ -916,9 +965,15 @@ BuildSignatureDatabase (
     Count++;
   }
 
+  //
+  // V1 (EFI_SIGNATURE_DATA) entries prefix the payload with a 16-byte SignatureOwner; V2
+  // (EFI_SIGNATURE_V2_DATA) entries omit it.
+  //
+  OwnerSize = UseV2Guids ? 0 : sizeof (EFI_GUID);
+
   TotalSize = 0;
   for (Index = 0; Index < Count; Index++) {
-    TotalSize += sizeof (EFI_SIGNATURE_LIST) + sizeof (EFI_GUID) + Specs[Index].DataSize;
+    TotalSize += sizeof (EFI_SIGNATURE_LIST) + OwnerSize + Specs[Index].DataSize;
   }
 
   Buffer = AllocateZeroPool (TotalSize);
@@ -928,17 +983,24 @@ BuildSignatureDatabase (
 
   Cursor = Buffer;
   for (Index = 0; Index < Count; Index++) {
-    RealListSize = sizeof (EFI_SIGNATURE_LIST) + sizeof (EFI_GUID) + Specs[Index].DataSize;
+    RealListSize = sizeof (EFI_SIGNATURE_LIST) + OwnerSize + Specs[Index].DataSize;
 
     List = (EFI_SIGNATURE_LIST *)Cursor;
-    CopyGuid (&List->SignatureType, Specs[Index].Type);
+    CopyGuid (&List->SignatureType, UseV2Guids ? GetV2SignatureType (Specs[Index].Type) : Specs[Index].Type);
     List->SignatureHeaderSize = 0;
-    List->SignatureSize       = (UINT32)(sizeof (EFI_GUID) + Specs[Index].DataSize);
+    List->SignatureSize       = (UINT32)(OwnerSize + Specs[Index].DataSize);
     List->SignatureListSize   = (UINT32)RealListSize;
 
-    SigData = (EFI_SIGNATURE_DATA *)(List + 1);
-    CopyGuid (&SigData->SignatureOwner, &mTestSignatureOwner);
-    CopyMem (SigData->SignatureData, Specs[Index].Data, Specs[Index].DataSize);
+    //
+    // The payload follows the optional SignatureOwner: write the owner GUID first for a V1 entry;
+    // a V2 entry's payload starts at the entry.
+    //
+    Payload = (UINT8 *)(List + 1);
+    if (!UseV2Guids) {
+      CopyGuid ((EFI_GUID *)Payload, &mTestSignatureOwner);
+    }
+
+    CopyMem (Payload + OwnerSize, Specs[Index].Data, Specs[Index].DataSize);
 
     if (Specs[Index].Malformed) {
       //
@@ -1011,8 +1073,8 @@ RunImageValidationScenario (
   // Resolve the image to load and build the db / dbx databases this scenario describes.
   //
   UT_ASSERT_NOT_EFI_ERROR (GetImageForType (Scenario->ImageType, &Image, &ImageSize));
-  UT_ASSERT_NOT_EFI_ERROR (BuildSignatureDatabase (Scenario->DbState, Scenario->ImageType, &Db, &DbSize));
-  UT_ASSERT_NOT_EFI_ERROR (BuildSignatureDatabase (Scenario->DbxState, Scenario->ImageType, &Dbx, &DbxSize));
+  UT_ASSERT_NOT_EFI_ERROR (BuildSignatureDatabase (Scenario->DbState, Scenario->ImageType, Scenario->UseV2Guids, &Db, &DbSize));
+  UT_ASSERT_NOT_EFI_ERROR (BuildSignatureDatabase (Scenario->DbxState, Scenario->ImageType, Scenario->UseV2Guids, &Dbx, &DbxSize));
 
   //
   // Point the GetVariable() hook at the databases just built so the platform's Validation
@@ -1126,6 +1188,7 @@ UefiTestMain (
                        mScenarios[ScenarioIndex].DbState,
                        mScenarios[ScenarioIndex].DbxState,
                        mScenarios[ScenarioIndex].ExpectedStatus,
+                       mScenarios[ScenarioIndex].UseV2Guids,
                        ScenarioDescription,
                        sizeof (ScenarioDescription)
                        );

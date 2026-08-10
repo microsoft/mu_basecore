@@ -64,3 +64,10 @@
   gEfiCertX509Sha256Guid           ## CONSUMES
   gEfiCertX509Sha384Guid           ## CONSUMES
   gEfiCertX509Sha512Guid           ## CONSUMES
+  gEfiCertV2Sha256Guid             ## CONSUMES
+  gEfiCertV2Sha384Guid             ## CONSUMES
+  gEfiCertV2Sha512Guid             ## CONSUMES
+  gEfiCertV2X509Guid               ## CONSUMES
+  gEfiCertV2X509Sha256Guid         ## CONSUMES
+  gEfiCertV2X509Sha384Guid         ## CONSUMES
+  gEfiCertV2X509Sha512Guid         ## CONSUMES

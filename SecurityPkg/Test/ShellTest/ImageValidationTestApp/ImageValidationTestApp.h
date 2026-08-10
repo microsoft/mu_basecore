@@ -122,10 +122,17 @@ typedef struct {
   /// EFI_STATUS gBS->LoadImage() is expected to return for this scenario.
   ///
   EFI_STATUS     ExpectedStatus;
+  ///
+  /// When TRUE, the `db` / `dbx` entries are emitted using the V2 signature-type GUIDs
+  /// (EFI_CERT_V2_*) and the EFI_SIGNATURE_V2_DATA layout (no SignatureOwner). When FALSE, the V1
+  /// GUIDs and the EFI_SIGNATURE_DATA layout are used.
+  ///
+  BOOLEAN        UseV2Guids;
 } SECURE_BOOT_IMAGE_TEST_SCENARIO;
 
 /**
-  Convenience initializer for a SECURE_BOOT_IMAGE_TEST_SCENARIO.
+  Convenience initializer for a SECURE_BOOT_IMAGE_TEST_SCENARIO using the V1 signature-type GUIDs
+  and the EFI_SIGNATURE_DATA (owner-prefixed) entry layout.
 **/
 #define TEST_SCENARIO(Id, ImageType, DbState, DbxState, ExpectedStatus)  \
   {                                                                          \
@@ -133,7 +140,23 @@ typedef struct {
     (ImageType),                                                             \
     (DbState),                                                               \
     (DbxState),                                                              \
-    (ExpectedStatus)                                                         \
+    (ExpectedStatus),                                                        \
+    FALSE                                                                    \
+  }
+
+/**
+  Convenience initializer for a SECURE_BOOT_IMAGE_TEST_SCENARIO using the V2 signature-type GUIDs
+  (EFI_CERT_V2_*) and the EFI_SIGNATURE_V2_DATA (ownerless) entry layout. The same DB_STATE_* flags
+  and scenario runner apply; only the emitted GUIDs and entry layout change.
+**/
+#define TEST_SCENARIO_V2(Id, ImageType, DbState, DbxState, ExpectedStatus)  \
+  {                                                                            \
+    (Id),                                                                      \
+    (ImageType),                                                               \
+    (DbState),                                                                 \
+    (DbxState),                                                                \
+    (ExpectedStatus),                                                          \
+    TRUE                                                                       \
   }
 
 //
