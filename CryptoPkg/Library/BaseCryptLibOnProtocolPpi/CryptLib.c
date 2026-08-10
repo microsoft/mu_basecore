@@ -709,6 +709,45 @@ Pkcs7Verify (
   CALL_CRYPTO_SERVICE (Pkcs7Verify, (P7Data, P7Length, TrustedCert, CertLength, InData, DataLength), FALSE);
 }
 
+// MU_CHANGE [BEGIN] - CmsVerify: shim over the Pkcs7Verify crypto service.
+// The EDKII_CRYPTO_PROTOCOL dispatch does not (yet) expose a native CmsVerify
+// entry, so the verified signer-chain output is unavailable through this path;
+// a request for it returns FALSE. With no chain requested this is equivalent to
+// Pkcs7Verify(). Regenerate via generate_cryptodriver.py if/when EDKII_CRYPTO
+// gains a native CmsVerify service.
+/**
+  CmsVerify() over the EDKII_CRYPTO_PROTOCOL dispatch. See <Library/BaseCryptLib.h>.
+**/
+BOOLEAN
+EFIAPI
+CmsVerify (
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertLength,
+  IN  CONST UINT8  *InData,
+  IN  UINTN        DataLength,
+  OUT UINT8        **SignerChain      OPTIONAL,
+  OUT UINTN        *SignerChainSize   OPTIONAL
+  )
+{
+  if (SignerChain != NULL) {
+    *SignerChain = NULL;
+  }
+
+  if (SignerChainSize != NULL) {
+    *SignerChainSize = 0;
+  }
+
+  if ((SignerChain != NULL) || (SignerChainSize != NULL)) {
+    return FALSE;
+  }
+
+  return Pkcs7Verify (P7Data, P7Length, TrustedCert, CertLength, InData, DataLength);
+}
+
+// MU_CHANGE [END]
+
 /**
   This function receives a PKCS7 formatted signature, and then verifies that
   the specified Enhanced or Extended Key Usages (EKU's) are present in the end-entity
