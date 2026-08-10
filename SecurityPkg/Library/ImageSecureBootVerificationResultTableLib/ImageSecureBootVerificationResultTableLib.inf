@@ -1,5 +1,5 @@
 ## @file
-#  Build and iterate the Image Secure Boot Verification Result Table (IVRT).
+#  Build and iterate the Image Secure Boot Verification Result Table (SBRT).
 #
 #  Provides a streaming builder for producing the
 #  EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE and a two-level forward-only
@@ -38,3 +38,4 @@
   BaseMemoryLib
   DebugLib
   MemoryAllocationLib
+  SafeIntLib

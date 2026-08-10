@@ -1,5 +1,5 @@
 /** @file
-  Build and iterate the Image Secure Boot Verification Result Table (IVRT).
+  Build and iterate the Image Secure Boot Verification Result Table (SBRT).
 
   This library provides functionality for building an Image Secure Boot Verification
   Result Table (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT_TABLE) and iterating over
@@ -44,9 +44,8 @@
 /**
   Allocate an image record from its identity (name and device path).
 
-  Returns a self-describing EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT allocation
-  with zero signatures; the overall status is supplied later, to
-  ImageVerificationResultAppendImage().
+  Returns a EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT allocation
+  with zero signatures; the overall status is set by the caller.
 
   Caller is responsible for freeing Image with FreePool().
 
@@ -77,7 +76,7 @@ ImageVerificationResultCreateImage (
   evaluation order.
 
   @param[in,out]  Image                The image record to extend (from CreateImage). Updated in place.
-  @param[in]      SignatureIndex       0-based ordinal of the WIN_CERTIFICATE within the image.
+  @param[in]      SignatureIndex       Index of the WIN_CERTIFICATE within the image.
   @param[in]      Status               EFI_SIGNATURE_VERIFICATION_* outcome for the signature.
   @param[in]      ThumbprintAlgorithm  Optional digest algorithm of Thumbprint; NULL => zero GUID.
   @param[in]      Thumbprint           Optional decisive-cert TBS-cert hash; NULL => none.
@@ -128,7 +127,7 @@ ImageVerificationResultAppendImage (
   );
 
 ///
-/// Two-level forward-only iterator over an IVRT.
+/// Two-level forward-only iterator over an SBRT.
 ///
 /// Fields are owned by the library implementation; callers should treat them as
 /// opaque and only manipulate them through the iterator routines below.
@@ -141,7 +140,7 @@ typedef struct {
 } IMAGE_VERIFICATION_RESULT_ITERATOR;
 
 /**
-  Initialize an iterator over an IVRT and validate its structure.
+  Initialize an iterator over an SBRT and validate its structure.
 
   The table is validated here, so that the different iteration routines can be
   infallible over the valid prefix. During initialization, the structure is

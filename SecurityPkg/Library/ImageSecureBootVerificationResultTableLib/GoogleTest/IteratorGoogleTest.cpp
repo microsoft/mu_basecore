@@ -348,8 +348,9 @@ TEST (IteratorTruncationTest, ShortSignatureLength_DropsImage) {
   size_t                              ImageOffset = kTableHeaderSize;
   size_t                              SigOffset;
 
-  // Signatures begin after the image header + (0-byte) name + device path.
-  SigOffset = ImageOffset + sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT) + sizeof (kDevicePath);
+  // Signatures begin at the next 8-byte boundary after the header + (0-byte)
+  // name + device path.
+  SigOffset = ImageOffset + ALIGN_VALUE (sizeof (EFI_IMAGE_SECURE_BOOT_VERIFICATION_RESULT) + sizeof (kDevicePath), 8);
   SetU32 (Table, SigOffset + OFFSET_OF (EFI_SIGNATURE_VERIFICATION_RESULT, Length), 4);
 
   EXPECT_FALSE (ImageVerificationResultIteratorInit (&Iter, Table.data ()));
