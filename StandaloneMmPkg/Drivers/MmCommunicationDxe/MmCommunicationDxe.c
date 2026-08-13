@@ -157,6 +157,11 @@ ProcessCommunicationBuffer (
     return EFI_UNSUPPORTED;
   }
 
+  // MU_CHANGE: Make sure the returned buffer size does not exceed the caller supplied buffer size
+  if (CommonBufferStatus->ReturnBufferSize > BufferSize) {
+    return EFI_BAD_BUFFER_SIZE;
+  }
+
   //
   // Copy the returned data to the non-mmram buffer (CommBuffer)
   //
