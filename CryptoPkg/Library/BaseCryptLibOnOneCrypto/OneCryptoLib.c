@@ -3009,7 +3009,7 @@ CmsGetSignerInfoNum (
 
 /**
   CmsVerify() forwarded to the OneCrypto provider. Requires a provider
-  reporting ONE_CRYPTO version >= 1.2; older providers gracefully return
+  reporting ONE_CRYPTO version >= 2.0; older providers gracefully return
   FALSE. See <Library/BaseCryptLib.h> for the full contract.
 **/
 BOOLEAN
@@ -3025,7 +3025,23 @@ CmsVerify (
   OUT UINTN        *SignerChainSize   OPTIONAL
   )
 {
-  CALL_CRYPTO_SERVICE (CmsVerify, (P7Data, P7Length, TrustedCert, CertLength, InData, DataLength, SignerChain, SignerChainSize), FALSE, 1, 2);
+  CALL_CRYPTO_SERVICE (CmsVerify, (P7Data, P7Length, TrustedCert, CertLength, InData, DataLength, SignerChain, SignerChainSize), FALSE, 2, 0);
+}
+
+/**
+  GetCryptoOpCapability() forwarded to the OneCrypto provider. Requires a
+  provider reporting ONE_CRYPTO version >= 2.0; older providers gracefully
+  return EFI_UNSUPPORTED. See <Library/BaseCryptLib.h> for the full contract.
+**/
+EFI_STATUS
+EFIAPI
+GetCryptoOpCapability (
+  IN     CONST EFI_GUID  *OpIdGuid,
+  OUT    VOID            *Buffer       OPTIONAL,
+  IN OUT UINTN           *BufferSize
+  )
+{
+  CALL_CRYPTO_SERVICE (GetCryptoOpCapability, (OpIdGuid, Buffer, BufferSize), EFI_UNSUPPORTED, 2, 0);
 }
 
 /**
