@@ -3027,6 +3027,20 @@ CmsVerify (
 }
 
 /**
+  See BaseCryptLib.h GetCryptoOpCapability().
+**/
+EFI_STATUS
+EFIAPI
+GetCryptoOpCapability (
+  IN     CONST EFI_GUID  *OpIdGuid,
+  OUT    VOID            *Buffer       OPTIONAL,
+  IN OUT UINTN           *BufferSize
+  )
+{
+  CALL_CRYPTO_SERVICE (GetCryptoOpCapability, (OpIdGuid, Buffer, BufferSize), EFI_UNSUPPORTED, 2, 0);
+}
+
+/**
   Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
   that wraps content encrypted for secure transmission to one or more recipients.
 

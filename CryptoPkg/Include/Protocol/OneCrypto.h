@@ -2472,6 +2472,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_CMS_VERIFY)(
   );
 
 /**
+  Query algorithms supported by an ECIT crypto operation.
+
+  @since 2.0
+  @ingroup Info
+**/
+typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_GET_CRYPTO_OP_CAPABILITY)(
+  IN     CONST EFI_GUID  *OpIdGuid,
+  OUT    VOID            *Buffer       OPTIONAL,
+  IN OUT UINTN           *BufferSize
+  );
+
+/**
   Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
   that wraps content encrypted for secure transmission to one or more recipients.
 
@@ -5647,6 +5659,8 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   /// v2.0 CMS ---------------------------------------------------------------
   ONE_CRYPTO_CMS_GET_SIGNER_INFO_NUM                 CmsGetSignerInfoNum;
   ONE_CRYPTO_CMS_VERIFY                              CmsVerify;
+  /// v2.0 Info ----------------------------------------------------------------
+  ONE_CRYPTO_GET_CRYPTO_OP_CAPABILITY                 GetCryptoOpCapability;
   /// v2.0 X509 --------------------------------------------------------------
   ONE_CRYPTO_X509_IS_PUBLIC_KEY_SUPPORTED            X509IsPublicKeySupported;
 } ONE_CRYPTO_PROTOCOL;
