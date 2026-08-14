@@ -136,6 +136,7 @@
   ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
   CryptoIndicatorRegistrationLib|SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibDxe.inf
+  EcitReportLib|SecurityPkg/Library/EcitReportLibNull/EcitReportLibNull.inf
   HashLib|SecurityPkg/Library/HashLibBaseCryptoRouter/HashLibBaseCryptoRouterDxe.inf
   Tpm12DeviceLib|SecurityPkg/Library/Tpm12DeviceLibTcg/Tpm12DeviceLibTcg.inf
   Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibTcg2/Tpm2DeviceLibTcg2.inf
@@ -218,6 +219,8 @@
   #
   SecurityPkg/CryptoIndicatorTable/CryptoIndicatorTableDxe.inf
   SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibDxe.inf
+  SecurityPkg/Library/EcitReportLib/EcitReportLib.inf
+  SecurityPkg/Library/EcitReportLibNull/EcitReportLibNull.inf
 
   #
   # TPM

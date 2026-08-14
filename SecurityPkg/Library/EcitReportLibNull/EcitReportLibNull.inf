@@ -1,0 +1,21 @@
+## @file
+#  Null instance of EcitReportLib (no-op).
+#
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = EcitReportLibNull
+  FILE_GUID                      = 4E1D8A57-2B6C-4F09-8D3A-1C7B0E52A9D4
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = EcitReportLib
+
+[Sources]
+  EcitReportLibNull.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SecurityPkg/SecurityPkg.dec
