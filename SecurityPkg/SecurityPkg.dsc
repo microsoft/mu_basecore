@@ -221,6 +221,7 @@
   SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibDxe.inf
   SecurityPkg/Library/EcitReportLib/EcitReportLib.inf
   SecurityPkg/Library/EcitReportLibNull/EcitReportLibNull.inf
+  SecurityPkg/Application/DumpCryptoIndicatorTable/DumpCryptoIndicatorTable.inf
 
   #
   # TPM
