@@ -1,0 +1,34 @@
+## @file
+#  DXE instance of CryptoIndicatorRegistrationLib.
+#
+#  Submits ECIT feature records to the collector, deferring via a protocol
+#  notify when the collector is not yet available.
+#
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = CryptoIndicatorRegistrationLibDxe
+  FILE_GUID                      = 9C4D2A18-6F31-4E7B-A50D-2B8871649F22
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = CryptoIndicatorRegistrationLib|DXE_DRIVER UEFI_DRIVER
+
+[Sources]
+  CryptoIndicatorRegistrationLibDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SecurityPkg/SecurityPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  DebugLib
+  UefiBootServicesTableLib
+
+[Protocols]
+  gEfiCryptoIndicatorRegistrationProtocolGuid   ## CONSUMES
