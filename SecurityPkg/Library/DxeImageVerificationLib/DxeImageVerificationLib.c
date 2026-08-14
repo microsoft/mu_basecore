@@ -21,6 +21,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "DxeImageVerificationLib.h"
 
 //
+// ECIT (EFI Crypto Indicator Table) capability reporting.
+//
+#include <Library/EcitReportLib.h>
+#include <Guid/CryptoIndicatorTable.h>
+#include <Guid/CryptoOpId.h>
+
+//
 // Caution: This is used by a function which may receive untrusted input.
 // These global variables hold PE/COFF image data, and they should be validated before use.
 //
@@ -2147,6 +2154,16 @@ DxeImageVerificationLibConstructor (
     OnReadyToBoot,
     NULL,
     &Event
+    );
+
+  //
+  // Report this feature's accepted image-verification (Authenticode) signature
+  // algorithms to the ECIT collector. This is a no-op unless the platform
+  // resolves EcitReportLib to a functional instance.
+  //
+  EcitReportCryptoOpCapability (
+    &gEfiEcitFeatureImageVerificationGuid,
+    &gCryptoOpAuthenticodeVerifyGuid
     );
 
   return RegisterSecurity2Handler (

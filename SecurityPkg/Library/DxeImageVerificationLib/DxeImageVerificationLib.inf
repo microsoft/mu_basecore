@@ -53,6 +53,7 @@
   SecurityManagementLib
   PeCoffLib
   TpmMeasurementLib
+  EcitReportLib
 
 [Protocols]
   gEfiFirmwareVolume2ProtocolGuid       ## SOMETIMES_CONSUMES
@@ -66,6 +67,12 @@
   ## PRODUCES             ## SystemTable
   ## CONSUMES             ## SystemTable
   gEfiImageSecurityDatabaseGuid
+
+  ## CONSUMES   ## GUID    # ECIT feature identifier reported by this library.
+  gEfiEcitFeatureImageVerificationGuid
+
+  ## CONSUMES   ## GUID    # ECIT crypto-operation queried for this feature.
+  gCryptoOpAuthenticodeVerifyGuid
 
   ## SOMETIMES_CONSUMES   ## GUID       # Unique ID for the type of the signature.
   ## SOMETIMES_PRODUCES   ## GUID       # Unique ID for the type of the signature.
