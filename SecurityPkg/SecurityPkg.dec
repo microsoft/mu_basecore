@@ -42,6 +42,11 @@
   #
   CryptoIndicatorRegistrationLib|Include/Library/CryptoIndicatorRegistrationLib.h
 
+  ##  @libraryclass  Query a crypto operation's capability and report it to the
+  #   ECIT collector under a feature identifier. A Null instance is a no-op.
+  #
+  EcitReportLib|Include/Library/EcitReportLib.h
+
   ##  @libraryclass  Provides interfaces to handle TPM 1.2 request.
   #
   TcgPhysicalPresenceLib|Include/Library/TcgPhysicalPresenceLib.h
