@@ -1,10 +1,6 @@
 ## @file
 #  Functional instance of EcitReportLib.
 #
-#  Reports a feature's cryptographic capabilities to the ECIT collector, by
-#  querying the crypto provider (GetCryptoOpCapability) or by registering a
-#  caller-supplied payload.
-#
 #  Copyright (c) Microsoft Corporation.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
