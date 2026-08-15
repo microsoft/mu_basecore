@@ -28,5 +28,6 @@
 //
 extern EFI_GUID  gCryptoOpCmsVerifyGuid;
 extern EFI_GUID  gCryptoOpAuthenticodeVerifyGuid;
+extern EFI_GUID  gCryptoOpAuthenticodeHashGuid;
 
 #endif // CRYPTO_OP_ID_H_
