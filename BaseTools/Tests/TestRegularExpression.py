@@ -17,6 +17,21 @@ class TestValueExpressionEx(unittest.TestCase):
 
         self.assertEqual(ValueExpression(value)(True), ValueExpressionEx(value, TAB_VOID)(True))
 
+    def test_nested_simple_byte_array_uses_legacy_parser(self):
+        value = '{ 0X01, 0x02 }'
+
+        self.assertEqual(ValueExpression(value)(True, 1), ValueExpressionEx(value, TAB_VOID)(True, 1))
+
+    def test_multiline_byte_array_uses_legacy_parser(self):
+        value = '{0x01,\n0x02}'
+
+        self.assertEqual('{0x01, 0x02}', ValueExpressionEx(value, TAB_VOID)(True))
+
+    def test_non_dsc_whitespace_uses_legacy_parser(self):
+        value = '{0x01,\v0x02}'
+
+        self.assertEqual('{0x01, 0x02}', ValueExpressionEx(value, TAB_VOID)(True))
+
     def test_structured_array_uses_legacy_parser(self):
         value = '{UINT16(0x1234), 0x56}'
 

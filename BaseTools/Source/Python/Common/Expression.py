@@ -55,7 +55,7 @@ def _NormalizeSimpleByteArray(Value):
         return None
 
     for Item in Items:
-        Item = Item.strip()
+        Item = Item.strip(' \t')
         if len(Item) < 3 or len(Item) > 4 or Item[:2].lower() != '0x' or \
            not all(Char in string.hexdigits for Char in Item[2:]):
             return None
@@ -838,7 +838,7 @@ class ValueExpressionEx(ValueExpression):
 
     def __call__(self, RealValue=False, Depth=0):
         PcdValue = self.PcdValue
-        if RealValue and self.PcdType == TAB_VOID and "{CODE(" not in PcdValue:
+        if RealValue and Depth == 0 and self.PcdType == TAB_VOID and "{CODE(" not in PcdValue:
             SimpleByteArray = _NormalizeSimpleByteArray(PcdValue)
             if SimpleByteArray is not None:
                 return SimpleByteArray
