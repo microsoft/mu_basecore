@@ -20,7 +20,7 @@
   { 0x1768b8b1, 0x1605, 0x401a, { 0xbc, 0x49, 0xd6, 0x12, 0xd2, 0xb9, 0x8c, 0x4e } }
 
 //
-// ACPI-style signature ("ECIT") and the current table/entry version.
+// ACPI-style signature ("ECIT") and table version.
 //
 #define EFI_CRYPTO_INDICATOR_TABLE_SIGNATURE  SIGNATURE_32 ('E', 'C', 'I', 'T')
 #define EFI_CRYPTO_INDICATOR_TABLE_VERSION    1
@@ -28,9 +28,7 @@
 #pragma pack(1)
 
 ///
-/// ECIT header. The leading fields mirror the common ACPI SDT header so the
-/// exact same memory can be published as both an EFI_CONFIGURATION_TABLE and an
-/// ACPI table.
+/// ECIT header. The leading fields use the common ACPI SDT header layout.
 ///
 typedef struct {
   UINT8     Signature[4];      ///< "ECIT".
@@ -64,15 +62,12 @@ typedef struct {
 #pragma pack()
 
 //
-// ============================================================================
-// Well-known feature identifiers (Code First draft) and their EntryData types.
-// Vendors should use their own GUIDs for custom features.
-// ============================================================================
+// Well-known feature identifiers and their EntryData types.
 //
 
 ///
-/// Secure Boot Image Verification (Authenticode). EntryData is a CHAR8 CSV OID
-/// string of the signature algorithms accepted when verifying signed images.
+/// Secure Boot Image Verification. EntryData is a CHAR8 CSV OID string of the
+/// signature and digest algorithms accepted when verifying images.
 /// {08324cfc-efe6-4211-a858-d4cac8915aef}
 ///
 #define EFI_ECIT_FEATURE_SB_IMAGE_VERIFICATION_GUID \

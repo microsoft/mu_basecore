@@ -1,24 +1,5 @@
 /** @file
-  Report a feature's cryptographic capabilities to the EFI Crypto Indicator
-  Table (ECIT).
-
-  A feature-owning library or driver reports the capabilities it implements to
-  the ECIT collector, so the assembled table describes what the firmware
-  actually supports per UEFI feature. Two entry points cover the two capability
-  sources:
-
-    - EcitReportCryptoOpCapability(): the capability comes from the linked crypto
-      provider (queried via GetCryptoOpCapability); the caller supplies the
-      feature it owns and the crypto operation that feature relies on, and the
-      helper fetches and registers the accepted-algorithm payload.
-
-    - EcitReportCapability(): the capability is known to the caller itself (for
-      example, the set of EFI_SIGNATURE_LIST types a feature can evaluate); the
-      caller supplies the feature and a ready-made payload.
-
-  A Null instance of this class is a no-op, so feature owners can call these
-  unconditionally and platforms opt in to ECIT reporting by resolving the class
-  to the functional instance.
+  Library for reporting EFI Crypto Indicator Table capabilities.
 
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -43,7 +24,7 @@
   @retval EFI_UNSUPPORTED        The provider does not implement capability
                                  reporting.
   @retval EFI_OUT_OF_RESOURCES   A buffer allocation failed.
-  @retval other                  A registration error from the collector.
+  @retval Others                A registration error from the collector.
 **/
 EFI_STATUS
 EFIAPI
@@ -71,7 +52,7 @@ EcitReportCryptoOpCapability (
                                  Null instance did nothing).
   @retval EFI_INVALID_PARAMETER  FeatureId is NULL, or Payload is NULL with a
                                  non-zero PayloadSize.
-  @retval other                  A registration error from the collector.
+  @retval Others                A registration error from the collector.
 **/
 EFI_STATUS
 EFIAPI
@@ -79,6 +60,30 @@ EcitReportCapability (
   IN CONST EFI_GUID  *FeatureId,
   IN CONST VOID      *Payload        OPTIONAL,
   IN UINTN           PayloadSize
+  );
+
+/**
+  Register the combined capabilities of several crypto operations.
+
+  Non-empty OID lists are joined into one comma-separated payload. Operations
+  that cannot report a capability are skipped.
+
+  @param[in] FeatureId  ECIT feature GUID this capability describes.
+  @param[in] Ops        Array of OpCount crypto-operation GUID pointers.
+  @param[in] OpCount    Number of entries in Ops. Must be non-zero.
+
+  @retval EFI_SUCCESS            The capability was registered or queued (or the
+                                 Null instance did nothing).
+  @retval EFI_INVALID_PARAMETER  FeatureId or Ops is NULL, or OpCount is 0.
+  @retval EFI_OUT_OF_RESOURCES   A buffer allocation failed.
+  @retval Others                A registration error from the collector.
+**/
+EFI_STATUS
+EFIAPI
+EcitReportCryptoOpCapabilities (
+  IN CONST EFI_GUID  *FeatureId,
+  IN CONST EFI_GUID  **Ops,
+  IN UINTN           OpCount
   );
 
 #endif // ECIT_REPORT_LIB_H_
