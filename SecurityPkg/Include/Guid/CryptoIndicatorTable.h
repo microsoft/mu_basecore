@@ -10,9 +10,10 @@
 
   Each entry describes one feature (by GUID) with an opaque, feature-typed data
   block. Verification / authenticated-variable / firmware-update features use a
-  CHAR8 comma-separated OID string (the same payload produced by
-  BaseCryptLib GetCryptoOpCapability()); Secure Boot authorization / revocation
-  features use arrays of EFI_SIGNATURE_LIST type GUIDs.
+  single comma-separated CHAR8 OID string of the algorithms the platform
+  supports (produced by BaseCryptLib GetCryptoOpCapability()); Secure Boot
+  authorization / revocation features use arrays of EFI_SIGNATURE_LIST type
+  GUIDs.
 
   NOTE: This reflects the in-discussion UEFI spec Code First item
   tianocore/edk2#12408 and is subject to change until ratified. GUID values and

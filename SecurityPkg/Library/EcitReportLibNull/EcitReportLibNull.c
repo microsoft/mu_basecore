@@ -30,6 +30,20 @@ EcitReportCryptoOpCapability (
 **/
 EFI_STATUS
 EFIAPI
+EcitReportCryptoOpCapabilities (
+  IN CONST EFI_GUID  *FeatureId,
+  IN CONST EFI_GUID  **Ops,
+  IN UINTN           OpCount
+  )
+{
+  return EFI_SUCCESS;
+}
+
+/**
+  No-op. See <Library/EcitReportLib.h>.
+**/
+EFI_STATUS
+EFIAPI
 EcitReportCapability (
   IN CONST EFI_GUID  *FeatureId,
   IN CONST VOID      *Payload        OPTIONAL,

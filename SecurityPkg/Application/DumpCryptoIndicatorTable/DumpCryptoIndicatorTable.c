@@ -5,8 +5,9 @@
   an EFI_CONFIGURATION_TABLE), validates its ACPI-style header and 8-bit
   checksum, and pretty-prints the header plus every entry: the feature (by
   friendly name and GUID) and its payload. Verification / firmware-update
-  features carry a CSV OID string, printed one algorithm per line and annotated
-  with the algorithm name where known; anything else is hex-dumped.
+  features carry algorithm groups (signature, hash, ...); each group's OIDs are
+  printed one per line and annotated with the algorithm name where known; anything
+  else is hex-dumped.
 
   Output is written both to the console (for interactive use) and to the debug
   log (so the dump is captured in automated/headless runs where the UEFI console
@@ -86,6 +87,14 @@ STATIC CONST ECIT_OID_NAME  mOidNames[] = {
   { "2.16.840.1.101.3.4.3.17", "id-ml-dsa-44"            },
   { "2.16.840.1.101.3.4.3.18", "id-ml-dsa-65"            },
   { "2.16.840.1.101.3.4.3.19", "id-ml-dsa-87"            },
+  //
+  // Image-hash (Authenticode digest) algorithms.
+  //
+  { "1.3.14.3.2.26",           "sha1"                    },
+  { "2.16.840.1.101.3.4.2.1",  "sha256"                  },
+  { "2.16.840.1.101.3.4.2.2",  "sha384"                  },
+  { "2.16.840.1.101.3.4.2.3",  "sha512"                  },
+  { "2.16.840.1.101.3.4.2.4",  "sha224"                  },
 };
 
 /**
@@ -341,10 +350,8 @@ DumpCryptoIndicatorTableEntryPoint (
     ECIT_DUMP (" [%u] %a\n", (UINT32)Index, (Name != NULL) ? Name : "Unknown feature");
     ECIT_DUMP ("     Feature : %g\n", &Entry->FeatureIdentifier);
 
-    if (IsCsvOidFeature (&Entry->FeatureIdentifier) && (PayloadSize > 0) &&
-        (Payload[PayloadSize - 1] == '\0'))
-    {
-      ECIT_DUMP ("     Payload : %u bytes, algorithm OIDs:\n", (UINT32)PayloadSize);
+    if (IsCsvOidFeature (&Entry->FeatureIdentifier) && (PayloadSize > 0)) {
+      ECIT_DUMP ("     Payload : %u bytes, OIDs:\n", (UINT32)PayloadSize);
       DumpCsvOids (Payload, PayloadSize);
     } else {
       ECIT_DUMP ("     Payload : %u bytes (raw):\n", (UINT32)PayloadSize);

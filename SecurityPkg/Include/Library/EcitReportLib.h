@@ -81,4 +81,35 @@ EcitReportCapability (
   IN UINTN           PayloadSize
   );
 
+/**
+  Query the linked crypto provider for the algorithms it accepts for each of
+  OpCount operations and register them with the ECIT collector under FeatureId
+  as a single entry: one flat, comma-separated OID list combining every
+  operation's algorithms.
+
+  Use this when one ECIT feature is backed by more than one crypto operation
+  (for example, image verification accepts both signature algorithms and
+  image-hash digest algorithms). Each operation's OID list is concatenated into
+  a single CSV so the feature contributes exactly one table entry; the collector
+  allows only one entry per feature GUID. Operations the provider does not
+  support are skipped.
+
+  @param[in] FeatureId  ECIT feature GUID this capability describes.
+  @param[in] Ops        Array of OpCount crypto-operation GUID pointers.
+  @param[in] OpCount    Number of entries in Ops. Must be non-zero.
+
+  @retval EFI_SUCCESS            The capability was registered or queued (or the
+                                 Null instance did nothing).
+  @retval EFI_INVALID_PARAMETER  FeatureId or Ops is NULL, or OpCount is 0.
+  @retval EFI_OUT_OF_RESOURCES   A buffer allocation failed.
+  @retval other                  A registration error from the collector.
+**/
+EFI_STATUS
+EFIAPI
+EcitReportCryptoOpCapabilities (
+  IN CONST EFI_GUID  *FeatureId,
+  IN CONST EFI_GUID  **Ops,
+  IN UINTN           OpCount
+  );
+
 #endif // ECIT_REPORT_LIB_H_

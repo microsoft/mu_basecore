@@ -78,6 +78,16 @@ HASH_TABLE  mHash[] = {
 
 EFI_STRING  mHashTypeStr;
 
+//
+// Crypto operations backing ECIT image-verification capability reporting: the
+// Authenticode signature algorithms verified via AuthenticodeVerify and the
+// image-hash digest algorithms computed via GetAuthenticodeHash.
+//
+STATIC CONST EFI_GUID  *mImageVerificationOps[] = {
+  &gCryptoOpAuthenticodeVerifyGuid,
+  &gCryptoOpAuthenticodeHashGuid
+};
+
 /**
   SecureBoot Hook for processing image verification.
 
@@ -2157,13 +2167,14 @@ DxeImageVerificationLibConstructor (
     );
 
   //
-  // Report this feature's accepted image-verification (Authenticode) signature
-  // algorithms to the ECIT collector. This is a no-op unless the platform
-  // resolves EcitReportLib to a functional instance.
+  // Report the accepted image-verification algorithms to the ECIT collector
+  // (a no-op unless the platform resolves EcitReportLib to a functional
+  // instance).
   //
-  EcitReportCryptoOpCapability (
+  EcitReportCryptoOpCapabilities (
     &gEfiEcitFeatureImageVerificationGuid,
-    &gCryptoOpAuthenticodeVerifyGuid
+    mImageVerificationOps,
+    ARRAY_SIZE (mImageVerificationOps)
     );
 
   return RegisterSecurity2Handler (
