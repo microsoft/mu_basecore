@@ -99,6 +99,7 @@ SecurityPkg/Library/DxeImageVerificationLib2/GoogleTest/DxeImageVerificationLibG
       BaseCryptLib|CryptoPkg/Test/Mock/Library/GoogleTest/MockBaseCryptLib/MockBaseCryptLib.inf
       PlatformSecureLib|SecurityPkg/Library/PlatformSecureLibNull/PlatformSecureLibNull.inf
       VariablePolicyLib|MdeModulePkg/Library/VariablePolicyLib/VariablePolicyLib.inf
+      EcitReportLib|SecurityPkg/Library/EcitReportLibNull/EcitReportLibNull.inf
         SecurityLockAuditLib|MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf
   }
 
