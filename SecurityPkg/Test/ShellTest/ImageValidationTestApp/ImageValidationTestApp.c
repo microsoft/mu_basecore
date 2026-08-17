@@ -762,6 +762,7 @@ typedef struct {
   CONST EFI_GUID    *Type;      ///< Signature type GUID (image digest or X.509 / TBS hash).
   CONST UINT8       *Data;      ///< Signature payload (digest bytes or certificate).
   UINTN             DataSize;   ///< Size, in bytes, of Data.
+  UINTN             ExtraSize;  ///< Trailing bytes counted in SignatureSize but not copied (V1 TBS-hash EFI_TIME); left zeroed.
   BOOLEAN           Malformed;  ///< When TRUE, emit a deliberately corrupt EFI_SIGNATURE_LIST.
 } SIG_LIST_SPEC;
 
@@ -948,6 +949,11 @@ BuildSignatureDatabase (
       Specs[Count].Type     = TbsFlags[Index].Type;
       Specs[Count].Data     = TbsFlags[Index].Hash;
       Specs[Count].DataSize = TbsFlags[Index].HashSize;
+      //
+      // A V1 EFI_CERT_X509_SHA* entry appends an EFI_TIME (TimeOfRevocation) after the hash; the V2
+      // (EFI_CERT_V2_X509_SHA*) layout omits it.
+      //
+      Specs[Count].ExtraSize = UseV2Guids ? 0 : sizeof (EFI_TIME);
       Count++;
     }
   }
@@ -973,7 +979,7 @@ BuildSignatureDatabase (
 
   TotalSize = 0;
   for (Index = 0; Index < Count; Index++) {
-    TotalSize += sizeof (EFI_SIGNATURE_LIST) + OwnerSize + Specs[Index].DataSize;
+    TotalSize += sizeof (EFI_SIGNATURE_LIST) + OwnerSize + Specs[Index].DataSize + Specs[Index].ExtraSize;
   }
 
   Buffer = AllocateZeroPool (TotalSize);
@@ -983,12 +989,12 @@ BuildSignatureDatabase (
 
   Cursor = Buffer;
   for (Index = 0; Index < Count; Index++) {
-    RealListSize = sizeof (EFI_SIGNATURE_LIST) + OwnerSize + Specs[Index].DataSize;
+    RealListSize = sizeof (EFI_SIGNATURE_LIST) + OwnerSize + Specs[Index].DataSize + Specs[Index].ExtraSize;
 
     List = (EFI_SIGNATURE_LIST *)Cursor;
     CopyGuid (&List->SignatureType, UseV2Guids ? GetV2SignatureType (Specs[Index].Type) : Specs[Index].Type);
     List->SignatureHeaderSize = 0;
-    List->SignatureSize       = (UINT32)(OwnerSize + Specs[Index].DataSize);
+    List->SignatureSize       = (UINT32)(OwnerSize + Specs[Index].DataSize + Specs[Index].ExtraSize);
     List->SignatureListSize   = (UINT32)RealListSize;
 
     //
