@@ -45,6 +45,16 @@ _ReLabel = re.compile(r'LABEL\((\w+)\)')
 _ReOffset = re.compile(r'OFFSET_OF\((\w+)\)')
 PcdPattern = re.compile(r'^[_a-zA-Z][0-9A-Za-z_]*\.[_a-zA-Z][0-9A-Za-z_]*$')
 
+## Fast path for the simple byte array
+#
+#  Simple byte array refers to PCD data in the form of {0x01, 0x02, 0x03}
+#  - Enclosed in {}.
+#  - One or more comma-separated elements.
+#  - Each element is 0x followed by one or two hexadecimal digits.
+#  - Only spaces or tabs surround elements.
+#  - Used only for top-level VOID* real-value evaluation.
+#
+#  Return the stripped original value when valid. Otherwise None.
 def _NormalizeSimpleByteArray(Value):
     Value = Value.strip()
     if not Value.startswith('{') or not Value.endswith('}'):
