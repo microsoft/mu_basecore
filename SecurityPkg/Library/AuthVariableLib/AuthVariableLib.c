@@ -18,6 +18,13 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "AuthServiceInternal.h"
 
+//
+// ECIT (EFI Crypto Indicator Table) capability reporting.
+//
+#include <Library/EcitReportLib.h>
+#include <Guid/CryptoIndicatorTable.h>
+#include <Guid/CryptoOpId.h>
+
 ///
 /// Global database array for scratch
 ///
@@ -34,6 +41,16 @@ EFI_GUID  mSignatureSupport[] = { EFI_CERT_SHA1_GUID, EFI_CERT_SHA256_GUID, EFI_
 VOID  *mHashSha256Ctx = NULL;
 VOID  *mHashSha384Ctx = NULL;
 VOID  *mHashSha512Ctx = NULL;
+
+//
+// Crypto operation backing ECIT authenticated-variable capability reporting:
+// the PKCS#7/CMS signer signature algorithms Pkcs7Verify accepts when
+// authorizing a time-based authenticated variable update. Reported as a
+// single flat OID list.
+//
+STATIC CONST EFI_GUID  *mAuthVarOps[] = {
+  &gCryptoOpCmsVerifyGuid
+};
 
 VARIABLE_ENTRY_PROPERTY  mAuthVarEntry[] = {
   {
@@ -312,6 +329,17 @@ AuthVariableLibInitialize (
   mAuthVarAddressPointer[10]                = (VOID **)&(mAuthVarLibContextIn->AtRuntime),
   AuthVarLibContextOut->AddressPointer      = mAuthVarAddressPointer;
   AuthVarLibContextOut->AddressPointerCount = ARRAY_SIZE (mAuthVarAddressPointer);
+
+  //
+  // Report the accepted authenticated-variable update signature algorithms to
+  // the ECIT collector (a no-op unless the platform resolves EcitReportLib to a
+  // functional instance).
+  //
+  EcitReportCryptoOpCapabilities (
+    &gEfiEcitFeatureAuthenticatedVariableGuid,
+    mAuthVarOps,
+    ARRAY_SIZE (mAuthVarOps)
+    );
 
   return Status;
 }
