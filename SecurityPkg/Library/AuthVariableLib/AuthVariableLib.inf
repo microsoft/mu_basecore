@@ -43,6 +43,7 @@
   BaseCryptLib
   PlatformSecureLib
   VariablePolicyLib
+  EcitReportLib
 
 # MU_CHANGE [BEGIN] - TCBZ2506
 [FeaturePcd]
@@ -85,6 +86,12 @@
   gEfiCertTypeRsa2048Sha256Guid  ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the type of the certificate.
   gEfiCertPkcs7Guid              ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the type of the certificate.
   gEfiCertX509Guid               ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the type of the signature.
+
+  ## CONSUMES   ## GUID    # ECIT feature identifier reported by this library.
+  gEfiEcitFeatureSbDatabaseUpdateVerificationGuid
+
+  ## CONSUMES   ## GUID    # ECIT crypto-operation queried for this feature.
+  gCryptoOpCmsVerifyGuid
 
 [FeaturePcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdRequireSelfSignedPk
