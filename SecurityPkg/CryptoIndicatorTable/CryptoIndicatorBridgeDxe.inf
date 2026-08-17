@@ -1,0 +1,40 @@
+## @file
+#  ECIT MM->DXE bridge (DXE): drains the MM collector into the DXE collector.
+#
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = CryptoIndicatorBridgeDxe
+  FILE_GUID                      = 1E4C7F90-6A2D-4B85-9C31-7D0E58A6B412
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = CryptoIndicatorBridgeDxeEntryPoint
+
+[Sources]
+  CryptoIndicatorBridgeDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SecurityPkg/SecurityPkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  UefiLib
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  DebugLib
+  CryptoIndicatorRegistrationLib
+
+[Protocols]
+  gEfiMmCommunication2ProtocolGuid              ## CONSUMES
+
+[Guids]
+  gEcitMmBridgeHandlerGuid                       ## CONSUMES
+
+[Depex]
+  gEfiMmCommunication2ProtocolGuid

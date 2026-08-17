@@ -1,0 +1,37 @@
+## @file
+#  Standalone MM instance of CryptoIndicatorRegistrationLib.
+#
+#  Accumulates the linking MM module's ECIT records and serves them to the DXE
+#  bridge through a single MMI handler; no MM registration protocol or separate
+#  collector driver is required. Exactly one MM module per firmware volume may
+#  link this instance (see the source file for details).
+#
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = CryptoIndicatorRegistrationLibStandaloneMm
+  FILE_GUID                      = 5D3B7A0C-2E14-4C9F-8B6A-1F0D93A47E58
+  MODULE_TYPE                    = MM_STANDALONE
+  PI_SPECIFICATION_VERSION       = 0x00010032
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = CryptoIndicatorRegistrationLib|MM_STANDALONE
+
+[Sources]
+  CryptoIndicatorRegistrationLibStandaloneMm.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SecurityPkg/SecurityPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  DebugLib
+  MmServicesTableLib
+
+[Guids]
+  gEcitMmBridgeHandlerGuid                       ## PRODUCES

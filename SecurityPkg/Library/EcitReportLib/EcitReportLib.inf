@@ -15,7 +15,7 @@
   FILE_GUID                      = 7C2A9E64-3F81-4D2B-9A17-6E0C5B48D3F2
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = EcitReportLib|DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION
+  LIBRARY_CLASS                  = EcitReportLib|DXE_DRIVER UEFI_DRIVER UEFI_APPLICATION MM_STANDALONE DXE_SMM_DRIVER
 
 [Sources]
   EcitReportLib.c
