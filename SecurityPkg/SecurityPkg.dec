@@ -38,12 +38,11 @@
   #
   PlatformSecureLib|Include/Library/PlatformSecureLib.h
 
-  ##  @libraryclass  Submit crypto-capability records to the ECIT collector.
+  ##  @libraryclass  Submits capability records to the ECIT collector.
   #
   CryptoIndicatorRegistrationLib|Include/Library/CryptoIndicatorRegistrationLib.h
 
-  ##  @libraryclass  Query a crypto operation's capability and report it to the
-  #   ECIT collector under a feature identifier. A Null instance is a no-op.
+  ##  @libraryclass  Reports cryptographic capabilities to the ECIT collector.
   #
   EcitReportLib|Include/Library/EcitReportLib.h
 
@@ -318,6 +317,9 @@
   #  Include/Guid/Tpm2ServiceFfa.h
   gTpm2ServiceFfaGuid = { 0x17b862a4, 0x1806, 0x4faf, { 0x86, 0xb3, 0x08, 0x9a, 0x58, 0x35, 0x38, 0x61 } }
 
+  ## ECIT MM-to-DXE bridge MMI handler GUID.
+  #  Include/Guid/CryptoIndicatorMmBridge.h
+  gEcitMmBridgeHandlerGuid                            = { 0x7b1e2c9a, 0x4f83, 0x4a16, { 0x9d, 0x5c, 0x3e, 0x77, 0x21, 0x0b, 0x64, 0xa8 } }
 [Protocols]
   ## MU_CHANGE - START - Add a new protocol to support Log-only events.
   # Include/Protocol/MuTcg2Protocol.h

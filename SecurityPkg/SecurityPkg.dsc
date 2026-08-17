@@ -217,8 +217,10 @@
   #
   # ECIT (EFI Crypto Indicator Table)
   #
+  SecurityPkg/CryptoIndicatorTable/CryptoIndicatorBridgeDxe.inf
   SecurityPkg/CryptoIndicatorTable/CryptoIndicatorTableDxe.inf
   SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibDxe.inf
+  SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibStandaloneMm.inf
   SecurityPkg/Library/EcitReportLib/EcitReportLib.inf
   SecurityPkg/Library/EcitReportLibNull/EcitReportLibNull.inf
 
