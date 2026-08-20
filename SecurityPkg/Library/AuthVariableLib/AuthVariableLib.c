@@ -18,9 +18,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "AuthServiceInternal.h"
 
-//
-// ECIT (EFI Crypto Indicator Table) capability reporting.
-//
 #include <Library/EcitReportLib.h>
 #include <Guid/CryptoIndicatorTable.h>
 #include <Guid/CryptoOpId.h>
@@ -47,6 +44,13 @@ VOID  *mHashSha512Ctx = NULL;
 //
 STATIC CONST EFI_GUID  *mSecureBootDatabaseUpdateVerificationOps[] = {
   &gCryptoOpCmsVerifyGuid
+};
+
+//
+// Signature types accepted when authorizing Secure Boot database updates.
+//
+STATIC CONST EFI_GUID  mSecureBootDatabaseUpdateAuthorizationTypes[] = {
+  EFI_CERT_X509_GUID
 };
 
 VARIABLE_ENTRY_PROPERTY  mAuthVarEntry[] = {
@@ -93,6 +97,9 @@ AUTH_VAR_LIB_CONTEXT_IN  *mAuthVarLibContextIn = NULL;
   Initialization for authenticated variable services.
   If this initialization returns error status, other APIs will not work
   and expect to be not called then.
+
+  This function also reports the Secure Boot database update verification and
+  authorization capabilities to the ECIT collector.
 
   @param[in]  AuthVarLibContextIn   Pointer to input auth variable lib context.
   @param[out] AuthVarLibContextOut  Pointer to output auth variable lib context.
@@ -328,14 +335,18 @@ AuthVariableLibInitialize (
   AuthVarLibContextOut->AddressPointerCount = ARRAY_SIZE (mAuthVarAddressPointer);
 
   //
-  // Report the accepted authenticated-variable update signature algorithms to
-  // the ECIT collector (a no-op unless the platform resolves EcitReportLib to a
-  // functional instance).
+  // Report authenticated-variable update capabilities.
   //
   EcitReportCryptoOpCapabilities (
     &gEfiEcitFeatureSbDatabaseUpdateVerificationGuid,
     mSecureBootDatabaseUpdateVerificationOps,
     ARRAY_SIZE (mSecureBootDatabaseUpdateVerificationOps)
+    );
+
+  EcitReportCapability (
+    &gEfiEcitFeatureSbDatabaseUpdateAuthorizationGuid,
+    mSecureBootDatabaseUpdateAuthorizationTypes,
+    sizeof (mSecureBootDatabaseUpdateAuthorizationTypes)
     );
 
   return Status;
