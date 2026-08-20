@@ -42,9 +42,44 @@
   do {                                                             \
     CHAR8  EcitLine[160];                                          \
     AsciiSPrint (EcitLine, sizeof (EcitLine), Fmt, ##__VA_ARGS__); \
-    AsciiPrint ("%a", EcitLine);                                   \
-    DEBUG ((DEBUG_INFO, "DumpEcit: %a", EcitLine));                \
+    EcitEmit (EcitLine);                                       \
   } while (FALSE)
+
+/**
+  Emit one preformatted line to both the console and the debug log.
+
+  The UEFI console (Simple Text Output) treats a bare line feed as "move to the
+  next row" without returning to column 0 -- only a carriage return returns to
+  the start of the line -- so a short line leaves the following line indented.
+  Emit CR+LF to the console. The debug log records its own line breaks, so it
+  keeps the original LF-only string.
+
+  @param[in]  Line  The NUL-terminated, LF-terminated line to emit.
+**/
+STATIC
+VOID
+EcitEmit (
+  IN CONST CHAR8  *Line
+  )
+{
+  CHAR8  Console[320];
+  UINTN  Src;
+  UINTN  Dst;
+
+  Dst = 0;
+  for (Src = 0; (Line[Src] != '\0') && (Dst < (sizeof (Console) - 2)); Src++) {
+    if (Line[Src] == '\n') {
+      Console[Dst++] = '\r';
+    }
+
+    Console[Dst++] = Line[Src];
+  }
+
+  Console[Dst] = '\0';
+
+  AsciiPrint ("%a", Console);
+  DEBUG ((DEBUG_INFO, "DumpEcit: %a", Line));
+}
 
 //
 // Friendly names for the well-known feature identifiers.
@@ -55,7 +90,7 @@ typedef struct {
 } ECIT_FEATURE_NAME;
 
 STATIC CONST ECIT_FEATURE_NAME  mFeatureNames[] = {
-  { &gEfiEcitFeatureImageVerificationGuid,                "Secure Boot Image Verification"      },
+  { &gEfiEcitFeatureImageVerificationGuid,                "Secure Boot Image Verification (Authenticode)"      },
   { &gEfiEcitFeatureSecureBootAuthorizationGuid,          "Secure Boot Authorization"           },
   { &gEfiEcitFeatureSecureBootServicingAuthorizationGuid, "Secure Boot Servicing Authorization" },
   { &gEfiEcitFeatureImageRevocationGuid,                  "Secure Boot Image Revocation"        },
@@ -136,6 +171,39 @@ OidName (
   }
 
   return NULL;
+}
+
+//
+// Digest (hash) algorithm OIDs. A DigestAlgorithm identifies a plain hash, as
+// opposed to a DigestEncryptionAlgorithm (a signature); a hash cannot be used
+// to encrypt, so the two are reported under separate headings.
+//
+STATIC CONST CHAR8  *mDigestOids[] = {
+  "1.3.14.3.2.26",           // sha1
+  "2.16.840.1.101.3.4.2.1",  // sha256
+  "2.16.840.1.101.3.4.2.2",  // sha384
+  "2.16.840.1.101.3.4.2.3",  // sha512
+  "2.16.840.1.101.3.4.2.4",  // sha224
+};
+
+/**
+  Return TRUE if an OID string identifies a plain digest (hash) algorithm.
+**/
+STATIC
+BOOLEAN
+IsDigestOid (
+  IN CONST CHAR8  *Oid
+  )
+{
+  UINTN  Index;
+
+  for (Index = 0; Index < ARRAY_SIZE (mDigestOids); Index++) {
+    if (AsciiStrCmp (Oid, mDigestOids[Index]) == 0) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
 }
 
 /**
@@ -259,25 +327,32 @@ SumBytes (
 }
 
 /**
-  Print a single CSV OID payload, one algorithm per line, annotated with the
-  algorithm name where known.
+  Print the CSV OID payload entries whose digest/non-digest classification
+  matches WantDigest, one per line under the supplied heading. The heading is
+  emitted lazily (only when at least one matching entry exists), and entries
+  are numbered within the group, starting at 1.
 
-  @param[in]  Payload      The NUL-terminated CSV OID string.
-  @param[in]  PayloadSize  Size of Payload in bytes (including the trailing NUL).
+  @param[in]  Payload     The NUL-terminated CSV OID string.
+  @param[in]  WantDigest  TRUE to print digest (hash) OIDs; FALSE to print
+                          signature (digest-encryption) OIDs.
+  @param[in]  Header      The heading line to emit before the first match.
 **/
 STATIC
 VOID
-DumpCsvOids (
+DumpCsvOidClass (
   IN CONST UINT8  *Payload,
-  IN UINTN        PayloadSize
+  IN BOOLEAN      WantDigest,
+  IN CONST CHAR8  *Header
   )
 {
   CONST CHAR8  *TokenStart;
   CONST CHAR8  *Ptr;
-  UINTN        OidCount;
+  UINTN        Position;
+  BOOLEAN      HeaderPrinted;
 
-  TokenStart = (CONST CHAR8 *)Payload;
-  OidCount   = 0;
+  TokenStart    = (CONST CHAR8 *)Payload;
+  Position      = 0;
+  HeaderPrinted = FALSE;
   for (Ptr = TokenStart; ; Ptr++) {
     if ((*Ptr == ',') || (*Ptr == '\0')) {
       CHAR8        Oid[48];
@@ -293,12 +368,15 @@ DumpCsvOids (
         CopyMem (Oid, TokenStart, Length);
         Oid[Length] = '\0';
 
-        OidCount++;
         Name = OidName (Oid);
-        if (Name != NULL) {
-          ECIT_DUMP ("     %2u. %-24a %a\n", (UINT32)OidCount, Oid, Name);
-        } else {
-          ECIT_DUMP ("     %2u. %a\n", (UINT32)OidCount, Oid);
+        if ((Name != NULL) && ((IsDigestOid (Oid) ? TRUE : FALSE) == WantDigest)) {
+          if (!HeaderPrinted) {
+            ECIT_DUMP ("%a", Header);
+            HeaderPrinted = TRUE;
+          }
+
+          Position++;
+          ECIT_DUMP ("          %2u. %-24a %a\n", (UINT32)Position, Oid, Name);
         }
       }
 
@@ -309,10 +387,86 @@ DumpCsvOids (
       TokenStart = Ptr + 1;
     }
   }
+}
 
-  if (OidCount == 0) {
-    ECIT_DUMP ("     (none)\n");
+/**
+  Print unrecognized OIDs from a CSV payload separately so they are not
+  classified as signature or digest algorithms by the dump application.
+
+  @param[in]  Payload  The NUL-terminated CSV OID string.
+**/
+STATIC
+VOID
+DumpUnknownCsvOids (
+  IN CONST UINT8  *Payload
+  )
+{
+  CONST CHAR8  *TokenStart;
+  CONST CHAR8  *Ptr;
+  UINTN        Position;
+  BOOLEAN      HeaderPrinted;
+
+  TokenStart    = (CONST CHAR8 *)Payload;
+  Position      = 0;
+  HeaderPrinted = FALSE;
+  for (Ptr = TokenStart; ; Ptr++) {
+    if ((*Ptr == ',') || (*Ptr == '\0')) {
+      CHAR8  Oid[48];
+      UINTN  Length;
+
+      Length = (UINTN)(Ptr - TokenStart);
+      if (Length >= sizeof (Oid)) {
+        Length = sizeof (Oid) - 1;
+      }
+
+      if (Length > 0) {
+        CopyMem (Oid, TokenStart, Length);
+        Oid[Length] = '\0';
+        if (OidName (Oid) == NULL) {
+          if (!HeaderPrinted) {
+            ECIT_DUMP ("     UnknownOids:\n");
+            HeaderPrinted = TRUE;
+          }
+
+          Position++;
+          ECIT_DUMP ("          %2u. %a\n", (UINT32)Position, Oid);
+        }
+      }
+
+      if (*Ptr == '\0') {
+        break;
+      }
+
+      TokenStart = Ptr + 1;
+    }
   }
+}
+
+/**
+  Print a single CSV OID payload grouped by purpose. Signature (digest-
+  encryption) algorithms and plain digest (hash) algorithms are reported under
+  separate headings, since a hash cannot be used to encrypt. Each algorithm is
+  printed one per line, annotated with its name where known, and numbered by
+  its position in the original list.
+
+  @param[in]  Payload      The NUL-terminated CSV OID string.
+  @param[in]  PayloadSize  Size of Payload in bytes (including the trailing NUL).
+**/
+STATIC
+VOID
+DumpCsvOids (
+  IN CONST UINT8  *Payload,
+  IN UINTN        PayloadSize
+  )
+{
+  if ((PayloadSize == 0) || (Payload[0] == '\0')) {
+    ECIT_DUMP ("     (none)\n");
+    return;
+  }
+
+  DumpCsvOidClass (Payload, FALSE, "     DigestEncryptionAlgorithms:\n");
+  DumpCsvOidClass (Payload, TRUE, "     DigestAlgorithms:\n");
+  DumpUnknownCsvOids (Payload);
 }
 
 /**
