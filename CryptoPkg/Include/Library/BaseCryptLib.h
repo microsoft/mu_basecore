@@ -2763,6 +2763,44 @@ X509GetTbsCertHash (
   );
 
 /**
+  Compute the digest of a buffer using the algorithm selected by
+  HashType.
+
+  The caller selects the digest algorithm with a generic hash-algorithm
+  GUID (as defined in Protocol/Hash.h, e.g. gEfiHashAlgorithmSha256Guid).
+  The entire buffer is hashed in a single operation and the digest is
+  written to Digest, which must be large enough to hold the largest
+  supported digest (at least SHA512_DIGEST_SIZE bytes).
+
+  @param[in]   HashType    Hash-algorithm GUID identifying the digest
+                           algorithm to use.
+  @param[in]   Buffer      Pointer to the data to be hashed.
+  @param[in]   BufferSize  Size of Buffer in bytes.
+  @param[out]  Digest      Caller-provided buffer that receives the
+                           computed digest. Must be at least
+                           SHA512_DIGEST_SIZE bytes.
+  @param[out]  DigestSize  On success, receives the digest length in
+                           bytes.
+
+  @retval EFI_SUCCESS            Digest was computed successfully.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
+  @retval EFI_UNSUPPORTED        HashType is not a recognized hash
+                                 algorithm, or this interface is not
+                                 supported by the underlying library
+                                 instance.
+  @retval EFI_DEVICE_ERROR       The hash primitive failed.
+**/
+EFI_STATUS
+EFIAPI
+HashAllByGuid (
+  IN  CONST EFI_GUID  *HashType,
+  IN  CONST VOID      *Buffer,
+  IN  UINTN           BufferSize,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  );
+
+/**
   Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
   TBSCertificate digest matches a caller-supplied hash, and return that
   certificate as a newly allocated DER-encoded buffer.

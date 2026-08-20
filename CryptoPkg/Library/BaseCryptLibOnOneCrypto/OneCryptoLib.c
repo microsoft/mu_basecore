@@ -2683,6 +2683,23 @@ AuthenticodeVerifyEx (
 }
 
 /**
+  Compute the digest of a buffer using a generic hash-algorithm GUID.
+  See BaseCryptLib.h HashAllByGuid().
+**/
+EFI_STATUS
+EFIAPI
+HashAllByGuid (
+  IN  CONST EFI_GUID  *HashType,
+  IN  CONST VOID      *Buffer,
+  IN  UINTN           BufferSize,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  )
+{
+  CALL_CRYPTO_SERVICE (HashAllByGuid, (HashType, Buffer, BufferSize, Digest, DigestSize), EFI_UNSUPPORTED, 1, 1);
+}
+
+/**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
   encrypted message in a newly allocated buffer.
 
