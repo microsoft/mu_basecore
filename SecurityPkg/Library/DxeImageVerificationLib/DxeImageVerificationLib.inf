@@ -68,8 +68,10 @@
   ## CONSUMES             ## SystemTable
   gEfiImageSecurityDatabaseGuid
 
-  ## CONSUMES   ## GUID    # ECIT feature identifier reported by this library.
+  ## CONSUMES   ## GUID    # ECIT feature identifiers reported by this library.
   gEfiEcitFeatureImageVerificationGuid
+  gEfiEcitFeatureSecureBootAuthorizationGuid
+  gEfiEcitFeatureImageRevocationGuid
 
   ## CONSUMES   ## GUID    # ECIT crypto-operations queried for this feature.
   gCryptoOpAuthenticodeVerifyGuid

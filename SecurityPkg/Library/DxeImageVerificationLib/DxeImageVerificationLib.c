@@ -88,6 +88,41 @@ STATIC CONST EFI_GUID  *mImageVerificationOps[] = {
   &gCryptoOpAuthenticodeHashGuid
 };
 
+//
+// EFI_SIGNATURE_LIST types accepted in the authorized signature database (db)
+// when authorizing an image: an X.509 code-signing authority plus the raw
+// image-hash types that align with the UEFI hash-based image authentication
+// mechanism. Reported for the ECIT Secure Boot Authorization feature.
+//
+STATIC CONST EFI_GUID  mSecureBootAuthorizationTypes[] = {
+  EFI_CERT_X509_GUID,
+ #ifndef DISABLE_SHA1_DEPRECATED_INTERFACES
+  EFI_CERT_SHA1_GUID,
+ #endif
+  EFI_CERT_SHA256_GUID,
+  EFI_CERT_SHA384_GUID,
+  EFI_CERT_SHA512_GUID
+};
+
+//
+// EFI_SIGNATURE_LIST types evaluated in the forbidden signature database (dbx)
+// for revocation: whole X.509 signing-authority revocation, X.509
+// certificate-hash revocation, and raw image-hash revocation. Reported for the
+// ECIT Secure Boot Image Revocation feature.
+//
+STATIC CONST EFI_GUID  mImageRevocationTypes[] = {
+  EFI_CERT_X509_GUID,
+  EFI_CERT_X509_SHA256_GUID,
+  EFI_CERT_X509_SHA384_GUID,
+  EFI_CERT_X509_SHA512_GUID,
+ #ifndef DISABLE_SHA1_DEPRECATED_INTERFACES
+  EFI_CERT_SHA1_GUID,
+ #endif
+  EFI_CERT_SHA256_GUID,
+  EFI_CERT_SHA384_GUID,
+  EFI_CERT_SHA512_GUID
+};
+
 /**
   SecureBoot Hook for processing image verification.
 
@@ -2175,6 +2210,24 @@ DxeImageVerificationLibConstructor (
     &gEfiEcitFeatureImageVerificationGuid,
     mImageVerificationOps,
     ARRAY_SIZE (mImageVerificationOps)
+    );
+
+  //
+  // Report the EFI_SIGNATURE_LIST types accepted in db (authorization) and
+  // dbx (revocation). These payloads are arrays of EFI_SIGNATURE_LIST type
+  // GUIDs, so they are reported as raw capability payloads rather than
+  // crypto-operation OID lists.
+  //
+  EcitReportCapability (
+    &gEfiEcitFeatureSecureBootAuthorizationGuid,
+    mSecureBootAuthorizationTypes,
+    sizeof (mSecureBootAuthorizationTypes)
+    );
+
+  EcitReportCapability (
+    &gEfiEcitFeatureImageRevocationGuid,
+    mImageRevocationTypes,
+    sizeof (mImageRevocationTypes)
     );
 
   return RegisterSecurity2Handler (
