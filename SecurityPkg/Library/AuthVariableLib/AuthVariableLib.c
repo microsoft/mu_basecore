@@ -52,6 +52,16 @@ STATIC CONST EFI_GUID  *mAuthVarOps[] = {
   &gCryptoOpCmsVerifyGuid
 };
 
+//
+// EFI_SIGNATURE_LIST types accepted in the platform key (PK) and key exchange
+// key (KEK) databases when authorizing a signed update to db/dbx: X.509
+// certificate authorities. Reported for the ECIT Secure Boot Servicing
+// Authorization feature.
+//
+STATIC CONST EFI_GUID  mSecureBootServicingTypes[] = {
+  EFI_CERT_X509_GUID
+};
+
 VARIABLE_ENTRY_PROPERTY  mAuthVarEntry[] = {
   {
     &gEfiSecureBootEnableDisableGuid,
@@ -339,6 +349,17 @@ AuthVariableLibInitialize (
     &gEfiEcitFeatureAuthenticatedVariableGuid,
     mAuthVarOps,
     ARRAY_SIZE (mAuthVarOps)
+    );
+
+  //
+  // Report the EFI_SIGNATURE_LIST types accepted in PK/KEK when authorizing a
+  // signed db/dbx update. This payload is an array of EFI_SIGNATURE_LIST type
+  // GUIDs, so it is reported as a raw capability payload.
+  //
+  EcitReportCapability (
+    &gEfiEcitFeatureSecureBootServicingAuthorizationGuid,
+    mSecureBootServicingTypes,
+    sizeof (mSecureBootServicingTypes)
     );
 
   return Status;

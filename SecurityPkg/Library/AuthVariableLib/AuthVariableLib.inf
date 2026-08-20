@@ -87,8 +87,9 @@
   gEfiCertPkcs7Guid              ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the type of the certificate.
   gEfiCertX509Guid               ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the type of the signature.
 
-  ## CONSUMES   ## GUID    # ECIT feature identifier reported by this library.
+  ## CONSUMES   ## GUID    # ECIT feature identifiers reported by this library.
   gEfiEcitFeatureAuthenticatedVariableGuid
+  gEfiEcitFeatureSecureBootServicingAuthorizationGuid
 
   ## CONSUMES   ## GUID    # ECIT crypto-operation queried for this feature.
   gCryptoOpCmsVerifyGuid
