@@ -26,6 +26,7 @@
 #include <Library/DebugLib.h>
 #include <Library/PrintLib.h>
 #include <Guid/CryptoIndicatorTable.h>
+#include <Guid/ImageAuthentication.h>
 
 #define ECIT_RULE  "=============================================================="
 #define ECIT_THIN  "--------------------------------------------------------------"
@@ -152,6 +153,88 @@ IsCsvOidFeature (
                    CompareGuid (Feature, &gEfiEcitFeatureAuthenticatedVariableGuid) ||
                    CompareGuid (Feature, &gEfiEcitFeatureSystemFirmwareUpdateGuid)
                    );
+}
+
+/**
+  Return TRUE if a feature's payload is an array of EFI_SIGNATURE_LIST type
+  GUIDs (as opposed to a CSV OID string or an opaque blob).
+**/
+STATIC
+BOOLEAN
+IsSignatureListFeature (
+  IN CONST EFI_GUID  *Feature
+  )
+{
+  return (BOOLEAN)(
+                   CompareGuid (Feature, &gEfiEcitFeatureSecureBootAuthorizationGuid) ||
+                   CompareGuid (Feature, &gEfiEcitFeatureSecureBootServicingAuthorizationGuid) ||
+                   CompareGuid (Feature, &gEfiEcitFeatureImageRevocationGuid)
+                   );
+}
+
+//
+// Friendly names for the well-known EFI_SIGNATURE_LIST type GUIDs a Secure
+// Boot feature may report. Unlisted types are printed without an annotation.
+//
+typedef struct {
+  EFI_GUID       Guid;
+  CONST CHAR8    *Name;
+} ECIT_SIGLIST_TYPE_NAME;
+
+STATIC CONST ECIT_SIGLIST_TYPE_NAME  mSigListTypeNames[] = {
+  { EFI_CERT_X509_GUID,        "X.509 certificate"          },
+  { EFI_CERT_SHA1_GUID,        "SHA-1 image hash"           },
+  { EFI_CERT_SHA256_GUID,      "SHA-256 image hash"         },
+  { EFI_CERT_SHA384_GUID,      "SHA-384 image hash"         },
+  { EFI_CERT_SHA512_GUID,      "SHA-512 image hash"         },
+  { EFI_CERT_X509_SHA256_GUID, "X.509 certificate SHA-256"  },
+  { EFI_CERT_X509_SHA384_GUID, "X.509 certificate SHA-384"  },
+  { EFI_CERT_X509_SHA512_GUID, "X.509 certificate SHA-512"  },
+};
+
+/**
+  Print an EFI_SIGNATURE_LIST-type payload, one GUID per line, annotated with
+  the type name where known.
+
+  @param[in]  Payload      Array of EFI_GUID signature-list types.
+  @param[in]  PayloadSize  Size of Payload in bytes.
+**/
+STATIC
+VOID
+DumpSignatureListTypes (
+  IN CONST UINT8  *Payload,
+  IN UINTN        PayloadSize
+  )
+{
+  UINTN           Count;
+  UINTN           Index;
+  CONST EFI_GUID  *Guid;
+
+  Count = PayloadSize / sizeof (EFI_GUID);
+  if (Count == 0) {
+    ECIT_DUMP ("     (none)\n");
+    return;
+  }
+
+  for (Index = 0; Index < Count; Index++) {
+    UINTN        NameIndex;
+    CONST CHAR8  *Name;
+
+    Guid = (CONST EFI_GUID *)(Payload + (Index * sizeof (EFI_GUID)));
+    Name = NULL;
+    for (NameIndex = 0; NameIndex < ARRAY_SIZE (mSigListTypeNames); NameIndex++) {
+      if (CompareGuid (Guid, &mSigListTypeNames[NameIndex].Guid)) {
+        Name = mSigListTypeNames[NameIndex].Name;
+        break;
+      }
+    }
+
+    if (Name != NULL) {
+      ECIT_DUMP ("     %2u. %g  %a\n", (UINT32)(Index + 1), Guid, Name);
+    } else {
+      ECIT_DUMP ("     %2u. %g\n", (UINT32)(Index + 1), Guid);
+    }
+  }
 }
 
 /**
@@ -353,6 +436,9 @@ DumpCryptoIndicatorTableEntryPoint (
     if (IsCsvOidFeature (&Entry->FeatureIdentifier) && (PayloadSize > 0)) {
       ECIT_DUMP ("     Payload : %u bytes, OIDs:\n", (UINT32)PayloadSize);
       DumpCsvOids (Payload, PayloadSize);
+    } else if (IsSignatureListFeature (&Entry->FeatureIdentifier) && (PayloadSize > 0)) {
+      ECIT_DUMP ("     Payload : %u bytes, EFI_SIGNATURE_LIST types:\n", (UINT32)PayloadSize);
+      DumpSignatureListTypes (Payload, PayloadSize);
     } else {
       ECIT_DUMP ("     Payload : %u bytes (raw):\n", (UINT32)PayloadSize);
       DumpHex (Payload, PayloadSize);
