@@ -104,6 +104,7 @@ MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, AuthenticodeVerifyEx, 8, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, GetAuthenticodeHash, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, GetAuthenticodeHashAlgorithm, 3, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, X509GetTbsCertHash, 5, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, HashAllByGuid, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, GetTrustAnchorX509FromAuthData, 7, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, FreeTrustAnchorX509Cache, 1, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, ImageTimestampVerify, 5, EFIAPI);
