@@ -230,7 +230,7 @@ InitializeElf64 (
   }
 
   if (mBuildIdFlag) {
-    mCoffNbrSections ++;
+    mCoffNbrSections++;
   }
 
   return TRUE;
@@ -305,8 +305,8 @@ IsBuildIdShdr (
   Elf_Shdr *Namedr = GetShdrByIndex(mEhdr->e_shstrndx);
 
   if (Namedr->sh_offset + Shdr->sh_name >= mFileBufferSize) {
-    assert(FALSE);
-    return FALSE;
+    Error (NULL, 0, 3000, "Invalid", "IsBuildIdShdr: Name offset %lu is larger then file size %lu", mEhdr->e_shstrndx, mFileBufferSize);
+    exit(EXIT_FAILURE);
   }
 
   return (BOOLEAN) (strcmp((CHAR8*)mEhdr + Namedr->sh_offset + Shdr->sh_name, ELF_BUILD_ID_SECTION_NAME) == 0);

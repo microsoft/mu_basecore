@@ -3,11 +3,13 @@
   "type": "web",
   "id": "onecrypto-bin",
   "name": "onecrypto-bin",
-  "source": "https://github.com/microsoft/mu_crypto_release/releases/download/v1.0.1-OneCrypto/OneCrypto-Accelerated.zip",
-  "version": "1.0.1",
-  "sha256": "4f7ff3f6483c35f9168c67b28a462353f138115a3cd024551d80525550cd54b1",
+  "source": "https://github.com/microsoft/mu_crypto_release/releases/download/v1.0.2-OneCrypto/OneCrypto-Accelerated.zip",
+  "version": "1.0.2",
+  "sha256": "76e71a85e313417bca3644e69cb12577c51150da7be6535dca38ce698199ab52",
   "compression_type": "zip",
   "internal_path": "/",
-  "flags": ["set_build_var"],
+  "flags": [
+    "set_build_var"
+  ],
   "var_name": "BLD_*_ONE_CRYPTO_PATH"
 }

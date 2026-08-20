@@ -1583,8 +1583,8 @@ Returns:
 
     if (stricmp (argv[0], "--build-id") == 0) {
       mBuildIdFlag = TRUE;
-      argc --;
-      argv ++;
+      argc--;
+      argv++;
       continue;
     }
 
