@@ -993,6 +993,18 @@ struct MockBaseCryptLib {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
+    HashAllByGuid,
+    (
+     IN  CONST EFI_GUID  *HashType,
+     IN  CONST VOID      *Buffer,
+     IN  UINTN           BufferSize,
+     OUT UINT8           *Digest,
+     OUT UINTN           *DigestSize
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
     GetTrustAnchorX509FromAuthData,
     (
      IN OUT  VOID         **CacheHandle  OPTIONAL,

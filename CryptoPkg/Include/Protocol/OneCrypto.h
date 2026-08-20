@@ -2169,6 +2169,22 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_AUTHENTICODE_VERIFY_EX)(
   );
 
 /**
+  Compute the digest of a buffer using a generic hash-algorithm GUID.
+
+  See BaseCryptLib.h HashAllByGuid() for the full contract.
+
+  @since 1.2
+  @ingroup Hash
+**/
+typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_HASH_ALL_BY_GUID)(
+  IN  CONST EFI_GUID  *HashType,
+  IN  CONST VOID      *Buffer,
+  IN  UINTN           BufferSize,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  );
+
+/**
   Encrypts a blob using PKCS1v2 (RSAES-OAEP) schema. On success, will return the
   encrypted message in a newly allocated buffer.
 
@@ -5660,6 +5676,7 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_GET_AUTHENTICODE_HASH_ALGORITHM         GetAuthenticodeHashAlgorithm;
   ONE_CRYPTO_X509_GET_TBS_CERT_HASH                  X509GetTbsCertHash;
   ONE_CRYPTO_AUTHENTICODE_VERIFY_EX                  AuthenticodeVerifyEx;
+  ONE_CRYPTO_HASH_ALL_BY_GUID                        HashAllByGuid;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */
