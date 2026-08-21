@@ -50,6 +50,7 @@
   ArmFfaLib
   StackCheckLib
   HobLib
+  SafeIntLib  # MU_CHANGE
 
 [Guids]
   gMpInformationHobGuid
