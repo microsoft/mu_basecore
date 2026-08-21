@@ -116,8 +116,6 @@ extern TEST_DESC  mAuthenticodeHashAlgorithmTest[];
 // MU_CHANGE [END]
 
 // MU_CHANGE [BEGIN] - X509 TBSCertificate hash unit tests
-extern UINTN      mX509GetTbsCertHashTestNum;
-extern TEST_DESC  mX509GetTbsCertHashTest[];
 // MU_CHANGE [END]
 
 /** Creates a framework you can use */

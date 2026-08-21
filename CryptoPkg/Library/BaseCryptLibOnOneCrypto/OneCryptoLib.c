@@ -2600,7 +2600,13 @@ X509GetTbsCertHash (
   OUT UINTN           *DigestSize
   )
 {
-  CALL_CRYPTO_SERVICE (X509GetTbsCertHash, (Cert, CertSize, HashType, Digest, DigestSize), EFI_UNSUPPORTED, 1, 1);
+  //
+  // Deprecated: X509GetTbsCertHash is being removed. Return EFI_UNSUPPORTED
+  // until the interface is dropped completely from the OneCrypto protocol.
+  // Callers should extract the TBSCertificate (X509GetTBSCert) and hash it
+  // with HashAllByGuid instead.
+  //
+  return EFI_UNSUPPORTED;
 }
 
 /**
