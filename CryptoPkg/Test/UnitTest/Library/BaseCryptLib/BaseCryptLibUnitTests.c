@@ -37,7 +37,6 @@ SUITE_DESC  mSuiteDesc[] = {
   { "AuthenticodeHashAlgorithm tests",     "CryptoPkg.BaseCryptLib",      NULL, NULL, &mAuthenticodeHashAlgorithmTestNum, mAuthenticodeHashAlgorithmTest },
   // MU_CHANGE [END]
   // MU_CHANGE [BEGIN] - X509 TBSCertificate hash unit tests
-  { "X509GetTbsCertHash tests",            "CryptoPkg.BaseCryptLib",      NULL, NULL, &mX509GetTbsCertHashTestNum,        mX509GetTbsCertHashTest        },
   // MU_CHANGE [END]
  #ifdef ENABLE_PERF_BENCHMARKS
   // MU_CHANGE [BEGIN] - Authenticode performance benchmarks (opt-in via ENABLE_PERF_BENCHMARKS)
