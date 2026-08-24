@@ -27,6 +27,7 @@
 // Operation-ID GUIDs. Stable once committed.
 //
 extern EFI_GUID  gCryptoOpCmsVerifyGuid;
+extern EFI_GUID  gCryptoOpCmsContentDigestGuid;
 extern EFI_GUID  gCryptoOpAuthenticodeVerifyGuid;
 extern EFI_GUID  gCryptoOpAuthenticodeHashGuid;
 
