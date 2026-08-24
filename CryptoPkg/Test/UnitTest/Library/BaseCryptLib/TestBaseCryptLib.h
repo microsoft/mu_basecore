@@ -113,6 +113,9 @@ extern TEST_DESC  mTrustAnchorTest[];
 // MU_CHANGE [BEGIN] - Authenticode hash algorithm unit tests
 extern UINTN      mAuthenticodeHashAlgorithmTestNum;
 extern TEST_DESC  mAuthenticodeHashAlgorithmTest[];
+
+extern UINTN      mCryptoOpCapabilityTestNum;
+extern TEST_DESC  mCryptoOpCapabilityTest[];
 // MU_CHANGE [END]
 
 // MU_CHANGE [BEGIN] - X509 TBSCertificate hash unit tests

@@ -36,6 +36,9 @@ SUITE_DESC  mSuiteDesc[] = {
   // MU_CHANGE [BEGIN] - Authenticode hash algorithm unit tests
   { "AuthenticodeHashAlgorithm tests",     "CryptoPkg.BaseCryptLib",      NULL, NULL, &mAuthenticodeHashAlgorithmTestNum, mAuthenticodeHashAlgorithmTest },
   // MU_CHANGE [END]
+  // MU_CHANGE [BEGIN] - ECIT crypto-op capability unit tests
+  { "CryptoOp capability tests",           "CryptoPkg.BaseCryptLib",      NULL, NULL, &mCryptoOpCapabilityTestNum,        mCryptoOpCapabilityTest        },
+  // MU_CHANGE [END]
   // MU_CHANGE [BEGIN] - X509 TBSCertificate hash unit tests
   // MU_CHANGE [END]
  #ifdef ENABLE_PERF_BENCHMARKS
