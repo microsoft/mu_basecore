@@ -101,7 +101,7 @@ RmemAddReservedRange (
   }
 
   EffectiveLabel = (Label == NULL) ? "" : Label;
-  LabelLength     = AsciiStrnLenS (EffectiveLabel, RMEM_LABEL_MAX_LEN);
+  LabelLength    = AsciiStrnLenS (EffectiveLabel, RMEM_LABEL_MAX_LEN);
   if (LabelLength >= RMEM_LABEL_MAX_LEN) {
     mRegistrationFailed = TRUE;
     return EFI_BAD_BUFFER_SIZE;
@@ -310,12 +310,12 @@ RmemAcpiDxeEntryPoint (
   }
 
   ProtocolHandle = NULL;
-  Status = gBS->InstallProtocolInterface (
-                  &ProtocolHandle,
-                  &gEdkiiRmemRegistrationProtocolGuid,
-                  EFI_NATIVE_INTERFACE,
-                  &mRmemProtocol
-                  );
+  Status         = gBS->InstallProtocolInterface (
+                          &ProtocolHandle,
+                          &gEdkiiRmemRegistrationProtocolGuid,
+                          EFI_NATIVE_INTERFACE,
+                          &mRmemProtocol
+                          );
   if (EFI_ERROR (Status)) {
     return Status;
   }
