@@ -1,0 +1,46 @@
+## @file
+#  Host-based unit tests for the RMEM ACPI publisher.
+#
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = RmemAcpiDxeUnitTestHost
+  FILE_GUID                      = 307A485B-9F30-4B3E-B634-C13E97FE96A0
+  MODULE_TYPE                    = HOST_APPLICATION
+  VERSION_STRING                 = 1.0
+
+[Sources]
+  RmemAcpiDxeUnitTest.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  HobLib
+  MemoryAllocationLib
+  PcdLib
+  UefiBootServicesTableLib
+  UnitTestLib
+
+[Guids]
+  gEdkiiRmemRecordHobGuid
+  gEfiEventReadyToBootGuid
+
+[Protocols]
+  gEdkiiRmemRegistrationProtocolGuid
+  gEfiAcpiTableProtocolGuid
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemRevision
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorRevision
