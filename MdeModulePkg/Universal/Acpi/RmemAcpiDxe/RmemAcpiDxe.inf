@@ -1,0 +1,49 @@
+## @file
+#  Publishes the Reserved-Memory Reporting (RMEM) ACPI table.
+#
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = RmemAcpiDxe
+  FILE_GUID                      = 4D89C8F5-C0A8-4289-8F8B-5C69586A85AB
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = RmemAcpiDxeEntryPoint
+
+[Sources]
+  RmemAcpiDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  HobLib
+  MemoryAllocationLib
+  PcdLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+
+[Guids]
+  gEdkiiRmemRecordHobGuid                 ## CONSUMES  ## HOB
+  gEfiEventReadyToBootGuid               ## CONSUMES  ## Event
+
+[Protocols]
+  gEdkiiRmemRegistrationProtocolGuid      ## PRODUCES
+  gEfiAcpiTableProtocolGuid               ## CONSUMES
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId            ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId       ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemRevision      ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId        ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorRevision  ## CONSUMES
+
+[Depex]
+  gEfiAcpiTableProtocolGuid
