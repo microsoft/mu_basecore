@@ -16,7 +16,7 @@
 #define UNIT_TEST_APP_NAME     "RMEM ACPI DXE Unit Tests"
 #define UNIT_TEST_APP_VERSION  "1.0"
 
-STATIC EFI_BOOT_SERVICES        mMockBootServices;
+EFI_BOOT_SERVICES               MockBoot;
 STATIC EFI_ACPI_TABLE_PROTOCOL  mMockAcpiTableProtocol;
 STATIC EFI_STATUS               mLocateProtocolStatus;
 STATIC EFI_STATUS               mInstallAcpiTableStatus;
@@ -140,13 +140,12 @@ ResetRmemState (
   mRegistrationFailed = FALSE;
   mPublicationEvent   = NULL;
 
-  ZeroMem (&mMockBootServices, sizeof (mMockBootServices));
-  mMockBootServices.LocateProtocol             = MockLocateProtocol;
-  mMockBootServices.InstallProtocolInterface   = MockInstallProtocolInterface;
-  mMockBootServices.UninstallProtocolInterface = MockUninstallProtocolInterface;
-  mMockBootServices.CreateEventEx              = MockCreateEventEx;
-  mMockBootServices.CloseEvent                 = MockCloseEvent;
-  gBS                                          = &mMockBootServices;
+  ZeroMem (&MockBoot, sizeof (MockBoot));
+  MockBoot.LocateProtocol             = MockLocateProtocol;
+  MockBoot.InstallProtocolInterface   = MockInstallProtocolInterface;
+  MockBoot.UninstallProtocolInterface = MockUninstallProtocolInterface;
+  MockBoot.CreateEventEx              = MockCreateEventEx;
+  MockBoot.CloseEvent                 = MockCloseEvent;
 
   mMockAcpiTableProtocol.InstallAcpiTable = MockInstallAcpiTable;
   mLocateProtocolStatus                  = EFI_SUCCESS;
