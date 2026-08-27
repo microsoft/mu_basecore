@@ -5,7 +5,7 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#include <Uefi.h>
+#include <PiDxe.h>
 
 #include <Pi/PiHob.h>
 
