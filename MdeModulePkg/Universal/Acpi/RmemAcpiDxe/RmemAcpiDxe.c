@@ -7,6 +7,8 @@
 
 #include <Uefi.h>
 
+#include <Pi/PiHob.h>
+
 #include <Guid/EventGroup.h>
 #include <Guid/ReservedMemoryReportingHob.h>
 #include <IndustryStandard/ReservedMemoryReportingTable.h>
