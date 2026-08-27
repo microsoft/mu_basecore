@@ -148,13 +148,13 @@ ResetRmemState (
   MockBoot.CloseEvent                 = MockCloseEvent;
 
   mMockAcpiTableProtocol.InstallAcpiTable = MockInstallAcpiTable;
-  mLocateProtocolStatus                  = EFI_SUCCESS;
-  mInstallAcpiTableStatus                = EFI_SUCCESS;
-  mInstallProtocolStatus                 = EFI_SUCCESS;
-  mCreateEventStatus                     = EFI_SUCCESS;
-  mCloseEventCalls                       = 0;
-  mUninstallProtocolCalls                = 0;
-  mInstalledTableSize                    = 0;
+  mLocateProtocolStatus                   = EFI_SUCCESS;
+  mInstallAcpiTableStatus                 = EFI_SUCCESS;
+  mInstallProtocolStatus                  = EFI_SUCCESS;
+  mCreateEventStatus                      = EFI_SUCCESS;
+  mCloseEventCalls                        = 0;
+  mUninstallProtocolCalls                 = 0;
+  mInstalledTableSize                     = 0;
   ZeroMem (mInstalledTable, sizeof (mInstalledTable));
   return UNIT_TEST_PASSED;
 }
@@ -325,23 +325,23 @@ InvalidRangesAndCategoriesAreRejected (
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
 
   mRegistrationFailed = FALSE;
-  Status = RmemAddReservedRange (
-             &mRmemProtocol,
-             0x1000,
-             0x1000,
-             RmemCategoryUnknown,
-             NULL
-             );
+  Status              = RmemAddReservedRange (
+                          &mRmemProtocol,
+                          0x1000,
+                          0x1000,
+                          RmemCategoryUnknown,
+                          NULL
+                          );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
 
   mRegistrationFailed = FALSE;
-  Status = RmemAddReservedRange (
-             &mRmemProtocol,
-             0x1000,
-             0x1000,
-             RmemCategoryMax,
-             NULL
-             );
+  Status              = RmemAddReservedRange (
+                          &mRmemProtocol,
+                          0x1000,
+                          0x1000,
+                          RmemCategoryMax,
+                          NULL
+                          );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
   UT_ASSERT_TRUE (mRegistrationFailed);
 
@@ -360,13 +360,13 @@ OversizedLabelsAreRejected (
 
   SetMem (Label, RMEM_LABEL_MAX_LEN, 'A');
   Label[RMEM_LABEL_MAX_LEN] = '\0';
-  Status = RmemAddReservedRange (
-             &mRmemProtocol,
-             0x1000,
-             0x1000,
-             RmemCategoryOther,
-             Label
-             );
+  Status                    = RmemAddReservedRange (
+                                &mRmemProtocol,
+                                0x1000,
+                                0x1000,
+                                RmemCategoryOther,
+                                Label
+                                );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_BAD_BUFFER_SIZE);
   UT_ASSERT_EQUAL (mEntryCount, 0);
   UT_ASSERT_TRUE (mRegistrationFailed);
