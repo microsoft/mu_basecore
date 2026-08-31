@@ -36,12 +36,12 @@ jobs:
             target: AARCH64
 
           - os: ubuntu-22.04
-            tool_chain: GCC5
+            tool_chain: GCC
             output_dir: "BaseTools/Source/C/bin"
             target: X64
 
           - os: ubuntu-22.04
-            tool_chain: GCC5
+            tool_chain: GCC
             output_dir: "BaseTools/Source/C/bin"
             target: AARCH64
 
@@ -61,8 +61,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi g++-aarch64-linux-gnu g++-arm-linux-gnueabi
-          echo "GCC5_AARCH64_PREFIX=/usr/bin/aarch64-linux-gnu-" >> "$GITHUB_ENV"
-          echo "GCC5_ARM_PREFIX=/usr/bin/arm-linux-gnueabi-" >> "$GITHUB_ENV"
+          echo "GCC_AARCH64_PREFIX=/usr/bin/aarch64-linux-gnu-" >> "$GITHUB_ENV"
+          echo "GCC_ARM_PREFIX=/usr/bin/arm-linux-gnueabi-" >> "$GITHUB_ENV"
 
       - name: Install Pip Modules
         run: pip install -r pip-requirements.txt --upgrade
@@ -112,9 +112,9 @@ jobs:
 
       - name: Stage Files
         run: mkdir ${{ runner.temp }}/basetools ;
-          mv ${{ runner.temp }}/artifacts/basetools-GCC5-X64       ${{ runner.temp }}/basetools/Linux-x86 ;
+          mv ${{ runner.temp }}/artifacts/basetools-GCC-X64       ${{ runner.temp }}/basetools/Linux-x86 ;
           chmod a+x ${{ runner.temp }}/basetools/Linux-x86/* ;
-          mv ${{ runner.temp }}/artifacts/basetools-GCC5-AARCH64   ${{ runner.temp }}/basetools/Linux-ARM-64 ;
+          mv ${{ runner.temp }}/artifacts/basetools-GCC-AARCH64   ${{ runner.temp }}/basetools/Linux-ARM-64 ;
           chmod a+x ${{ runner.temp }}/basetools/Linux-ARM-64/* ;
           mv ${{ runner.temp }}/artifacts/basetools-VS2022-IA32    ${{ runner.temp }}/basetools/Windows-x86 ;
           mv ${{ runner.temp }}/artifacts/basetools-VS2022-AARCH64 ${{ runner.temp }}/basetools/Windows-ARM-64 ;
