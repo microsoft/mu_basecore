@@ -84,6 +84,13 @@ SecurityPkg/Library/DxeImageVerificationLib2/GoogleTest/DxeImageVerificationLibG
       ImageSecureBootVerificationResultTableLib|SecurityPkg/Library/ImageSecureBootVerificationResultTableLib/ImageSecureBootVerificationResultTableLib.inf
   }
 
+  SecurityPkg/Library/AuthenticodeLib/GoogleTest/AuthenticodeLibGoogleTest.inf {
+    <LibraryClasses>
+      AuthenticodeLib|SecurityPkg/Library/AuthenticodeLib/AuthenticodeLib.inf
+      PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
+      PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
+  }
+
 [PcdsPatchableInModule]
   gEfiSecurityPkgTokenSpaceGuid.PcdOptionRomImageVerificationPolicy|0x04
   gEfiSecurityPkgTokenSpaceGuid.PcdRemovableMediaImageVerificationPolicy|0x04
