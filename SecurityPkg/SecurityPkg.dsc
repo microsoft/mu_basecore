@@ -34,6 +34,7 @@
   PerformanceLib|MdePkg/Library/BasePerformanceLibNull/BasePerformanceLibNull.inf
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
   PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
+  AuthenticodeLib|SecurityPkg/Library/AuthenticodeLib/AuthenticodeLib.inf
 
   DxeServicesLib|MdePkg/Library/DxeServicesLib/DxeServicesLib.inf
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
@@ -205,6 +206,7 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableRev|L"TCG2_VERSION"|gTcg2ConfigFormSetGuid|0x8|3|NV,BS
 
 [Components]
+  SecurityPkg/Library/AuthenticodeLib/AuthenticodeLib.inf
   SecurityPkg/Library/DxeImageVerificationLib/DxeImageVerificationLib.inf
   SecurityPkg/Library/DxeImageVerificationLib2/DxeImageVerificationLib.inf
   SecurityPkg/Library/DxeImageAuthenticationStatusLib/DxeImageAuthenticationStatusLib.inf
