@@ -78,7 +78,7 @@ jobs:
     with:
       runner: ubuntu-latest
       setup-cmd: setup
-      container: ghcr.io/microsoft/mu_devops/ubuntu-24-build:0e384ee
+      container: ghcr.io/microsoft/mu_devops/ubuntu-24-build:76935a3
       python-version: "3.12"
       package-config: ${{ needs.package-matrix.outputs.matrix }}
 
