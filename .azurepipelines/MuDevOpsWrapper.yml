@@ -87,7 +87,7 @@ parameters:
 jobs:
 - template: Jobs/PrGate.yml@mu_devops
   parameters:
-    linux_container_image: ghcr.io/microsoft/mu_devops/ubuntu-24-build:0e384ee
+    linux_container_image: ghcr.io/microsoft/mu_devops/ubuntu-24-build:76935a3
     ${{ if eq(parameters.rust_build, true) }}:
       linux_container_options: --security-opt seccomp=unconfined
     do_ci_build: ${{ parameters.do_ci_build }}
@@ -111,7 +111,7 @@ jobs:
 
     container:
 
-      image: ghcr.io/microsoft/mu_devops/ubuntu-24-build:0e384ee
+      image: ghcr.io/microsoft/mu_devops/ubuntu-24-build:76935a3
       options: --user root --name mu_devops_build_container --security-opt seccomp=unconfined
 
     steps:

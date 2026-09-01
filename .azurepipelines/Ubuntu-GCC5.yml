@@ -114,8 +114,8 @@ extends:
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
         SelfHostAgent: true
-      TARGET_EMBEDDED_PRM_MANAGABILITY:
-        Pkgs: 'EmbeddedPkg,PrmPkg,ManagabilityPkg'
+      TARGET_EMBEDDED_PRM_MANAGEABILITY:
+        Pkgs: 'EmbeddedPkg,PrmPkg,ManageabilityPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
       TARGET_FMP_FAT:
@@ -126,8 +126,8 @@ extends:
         Pkgs: 'SecurityPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
-      TARGET_EMBEDDED_PRM_MANAGABILITY_ARM:
-        Pkgs: 'EmbeddedPkg,PrmPkg,ManagabilityPkg'
+      TARGET_EMBEDDED_PRM_MANAEGABILITY_ARM:
+        Pkgs: 'EmbeddedPkg,PrmPkg,ManageabilityPkg'
         Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
         ArchList: $(arch_list)
         SelfHostAgent: true
