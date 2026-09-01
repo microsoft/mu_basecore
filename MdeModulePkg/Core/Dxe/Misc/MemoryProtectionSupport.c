@@ -386,7 +386,7 @@ DumpMemoryMap (
       DEBUG_INFO,
       "Memory Range: 0x%llx - 0x%llx. Type:%d, Attributes: 0x%llx\n",
       MemoryMapEntry->PhysicalStart,
-      MemoryMapEntry->PhysicalStart + EfiPagesToSize (MemoryMapEntry->NumberOfPages),
+      MemoryMapEntry->PhysicalStart + LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT),
       MemoryMapEntry->Type,
       MemoryMapEntry->Attribute
       ));
@@ -675,7 +675,7 @@ FillInMemoryMap (
 
   while (MemoryMapCurrent < MemoryMapEnd) {
     if (NEXT_MEMORY_DESCRIPTOR (MemoryMapCurrent, *DescriptorSize) < MemoryMapEnd) {
-      LastEntryEnd   = MemoryMapCurrent->PhysicalStart + EfiPagesToSize (MemoryMapCurrent->NumberOfPages);
+      LastEntryEnd   = MemoryMapCurrent->PhysicalStart + LShiftU64 (MemoryMapCurrent->NumberOfPages, EFI_PAGE_SHIFT);
       NextEntryStart = NEXT_MEMORY_DESCRIPTOR (MemoryMapCurrent, *DescriptorSize)->PhysicalStart;
       // Check for a gap in the memory map
       if (NextEntryStart > LastEntryEnd) {
@@ -712,7 +712,7 @@ FillInMemoryMap (
   }
 
   LastEntryEnd = PREVIOUS_MEMORY_DESCRIPTOR (MemoryMapCurrent, *DescriptorSize)->PhysicalStart +
-                 EfiPagesToSize (PREVIOUS_MEMORY_DESCRIPTOR (MemoryMapCurrent, *DescriptorSize)->NumberOfPages);
+                 LShiftU64 (PREVIOUS_MEMORY_DESCRIPTOR (MemoryMapCurrent, *DescriptorSize)->NumberOfPages, EFI_PAGE_SHIFT);
 
   // Check if we need to insert a new entry at the end of the memory map
   if (EndOfAddressSpace > LastEntryEnd) {
@@ -1103,7 +1103,7 @@ MergeMemoryMapByAttribute (
     NextMemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, *DescriptorSize);
 
     do {
-      MemoryBlockLength = (UINT64)(EfiPagesToSize (NewMemoryMapEntry->NumberOfPages));
+      MemoryBlockLength = LShiftU64 (NewMemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT);
       if (((UINTN)NextMemoryMapEntry < (UINTN)MemoryMapEnd) &&
           (NewMemoryMapEntry->Attribute == NextMemoryMapEntry->Attribute) &&
           ((NewMemoryMapEntry->PhysicalStart + MemoryBlockLength) == NextMemoryMapEntry->PhysicalStart))
@@ -1185,7 +1185,7 @@ RemoveAttributesOfNonProtectedImageRanges (
 
     while ((MemoryMapEntry < MemoryMapEnd) && (NonProtectedStart < NonProtectedEnd)) {
       MapEntryStart = (UINTN)MemoryMapEntry->PhysicalStart;
-      MapEntryEnd   = (UINTN)MemoryMapEntry->PhysicalStart +  (UINTN)EFI_PAGES_TO_SIZE (MemoryMapEntry->NumberOfPages);
+      MapEntryEnd   = (UINTN)MemoryMapEntry->PhysicalStart + (UINTN)LShiftU64 (MemoryMapEntry->NumberOfPages, EFI_PAGE_SHIFT);
 
       if ((NonProtectedStart == MapEntryStart)) {
         MemoryMapEntry->Attribute = 0;
@@ -1532,7 +1532,7 @@ GetMemoryMapWithPopulatedAccessAttributes (
 
     // Set the extra bits
     if ((NumMemoryMapDescriptors % 8) != 0) {
-      mBitmapGlobal[NumMemoryMapDescriptors / 8] |= ~((1 << (NumMemoryMapDescriptors % 8)) - 1);
+      mBitmapGlobal[NumMemoryMapDescriptors / 8] |= ~((LShiftU64 (1, NumMemoryMapDescriptors % 8)) - 1);
     }
   }
 
