@@ -1473,19 +1473,22 @@ BuildAdmaDescTable (
   IN UINT16         ControllerVer
   )
 {
-  EFI_PHYSICAL_ADDRESS  Data;
-  UINT64                DataLen;
-  UINT64                Entries;
-  UINT64                Index;
-  UINT64                Remaining;
-  UINT64                Address;
-  UINTN                 TableSize;
-  EFI_PCI_IO_PROTOCOL   *PciIo;
-  EFI_STATUS            Status;
-  UINTN                 Bytes;
-  UINT32                AdmaMaxDataPerLine;
-  UINT32                DescSize;
-  VOID                  *AdmaDesc;
+  EFI_PHYSICAL_ADDRESS            Data;
+  UINT64                          DataLen;
+  UINT64                          Entries;
+  UINT64                          Index;
+  UINT64                          Remaining;
+  UINT64                          Address;
+  UINTN                           TableSize;
+  EFI_PCI_IO_PROTOCOL             *PciIo;
+  EFI_STATUS                      Status;
+  UINTN                           Bytes;
+  UINT32                          AdmaMaxDataPerLine;
+  UINT32                          DescSize;
+  VOID                            *AdmaDesc;
+  SD_MMC_HC_ADMA_32_DESC_LINE     *Adma32Desc;
+  SD_MMC_HC_ADMA_64_V3_DESC_LINE  *Adma64V3Desc;
+  SD_MMC_HC_ADMA_64_V4_DESC_LINE  *Adma64V4Desc;
 
   AdmaMaxDataPerLine = ADMA_MAX_DATA_PER_LINE_16B;
   DescSize           = sizeof (SD_MMC_HC_ADMA_32_DESC_LINE);
@@ -1609,71 +1612,74 @@ BuildAdmaDescTable (
 
   for (Index = 0; Index < Entries; Index++) {
     if (Trb->Mode == SdMmcAdma32bMode) {
+      Adma32Desc = (SD_MMC_HC_ADMA_32_DESC_LINE *)((UINT8 *)Trb->Adma32Desc + MultU64x32 (Index, sizeof (*Adma32Desc)));
       if (Remaining <= AdmaMaxDataPerLine) {
-        Trb->Adma32Desc[Index].Valid = 1;
-        Trb->Adma32Desc[Index].Act   = 2;
+        Adma32Desc->Valid = 1;
+        Adma32Desc->Act   = 2;
         if (Trb->AdmaLengthMode == SdMmcAdmaLen26b) {
-          Trb->Adma32Desc[Index].UpperLength = (UINT16)RShiftU64 (Remaining, 16);
+          Adma32Desc->UpperLength = (UINT16)RShiftU64 (Remaining, 16);
         }
 
-        Trb->Adma32Desc[Index].LowerLength = (UINT16)(Remaining & MAX_UINT16);
-        Trb->Adma32Desc[Index].Address     = (UINT32)Address;
+        Adma32Desc->LowerLength = (UINT16)(Remaining & MAX_UINT16);
+        Adma32Desc->Address     = (UINT32)Address;
         break;
       } else {
-        Trb->Adma32Desc[Index].Valid = 1;
-        Trb->Adma32Desc[Index].Act   = 2;
+        Adma32Desc->Valid = 1;
+        Adma32Desc->Act   = 2;
         if (Trb->AdmaLengthMode == SdMmcAdmaLen26b) {
-          Trb->Adma32Desc[Index].UpperLength = 0;
+          Adma32Desc->UpperLength = 0;
         }
 
-        Trb->Adma32Desc[Index].LowerLength = 0;
-        Trb->Adma32Desc[Index].Address     = (UINT32)Address;
+        Adma32Desc->LowerLength = 0;
+        Adma32Desc->Address     = (UINT32)Address;
       }
     } else if (Trb->Mode == SdMmcAdma64bV3Mode) {
+      Adma64V3Desc = (SD_MMC_HC_ADMA_64_V3_DESC_LINE *)((UINT8 *)Trb->Adma64V3Desc + MultU64x32 (Index, sizeof (*Adma64V3Desc)));
       if (Remaining <= AdmaMaxDataPerLine) {
-        Trb->Adma64V3Desc[Index].Valid = 1;
-        Trb->Adma64V3Desc[Index].Act   = 2;
+        Adma64V3Desc->Valid = 1;
+        Adma64V3Desc->Act   = 2;
         if (Trb->AdmaLengthMode == SdMmcAdmaLen26b) {
-          Trb->Adma64V3Desc[Index].UpperLength = (UINT16)RShiftU64 (Remaining, 16);
+          Adma64V3Desc->UpperLength = (UINT16)RShiftU64 (Remaining, 16);
         }
 
-        Trb->Adma64V3Desc[Index].LowerLength  = (UINT16)(Remaining & MAX_UINT16);
-        Trb->Adma64V3Desc[Index].LowerAddress = (UINT32)Address;
-        Trb->Adma64V3Desc[Index].UpperAddress = (UINT32)RShiftU64 (Address, 32);
+        Adma64V3Desc->LowerLength  = (UINT16)(Remaining & MAX_UINT16);
+        Adma64V3Desc->LowerAddress = (UINT32)Address;
+        Adma64V3Desc->UpperAddress = (UINT32)RShiftU64 (Address, 32);
         break;
       } else {
-        Trb->Adma64V3Desc[Index].Valid = 1;
-        Trb->Adma64V3Desc[Index].Act   = 2;
+        Adma64V3Desc->Valid = 1;
+        Adma64V3Desc->Act   = 2;
         if (Trb->AdmaLengthMode == SdMmcAdmaLen26b) {
-          Trb->Adma64V3Desc[Index].UpperLength = 0;
+          Adma64V3Desc->UpperLength = 0;
         }
 
-        Trb->Adma64V3Desc[Index].LowerLength  = 0;
-        Trb->Adma64V3Desc[Index].LowerAddress = (UINT32)Address;
-        Trb->Adma64V3Desc[Index].UpperAddress = (UINT32)RShiftU64 (Address, 32);
+        Adma64V3Desc->LowerLength  = 0;
+        Adma64V3Desc->LowerAddress = (UINT32)Address;
+        Adma64V3Desc->UpperAddress = (UINT32)RShiftU64 (Address, 32);
       }
     } else {
+      Adma64V4Desc = (SD_MMC_HC_ADMA_64_V4_DESC_LINE *)((UINT8 *)Trb->Adma64V4Desc + MultU64x32 (Index, sizeof (*Adma64V4Desc)));
       if (Remaining <= AdmaMaxDataPerLine) {
-        Trb->Adma64V4Desc[Index].Valid = 1;
-        Trb->Adma64V4Desc[Index].Act   = 2;
+        Adma64V4Desc->Valid = 1;
+        Adma64V4Desc->Act   = 2;
         if (Trb->AdmaLengthMode == SdMmcAdmaLen26b) {
-          Trb->Adma64V4Desc[Index].UpperLength = (UINT16)RShiftU64 (Remaining, 16);
+          Adma64V4Desc->UpperLength = (UINT16)RShiftU64 (Remaining, 16);
         }
 
-        Trb->Adma64V4Desc[Index].LowerLength  = (UINT16)(Remaining & MAX_UINT16);
-        Trb->Adma64V4Desc[Index].LowerAddress = (UINT32)Address;
-        Trb->Adma64V4Desc[Index].UpperAddress = (UINT32)RShiftU64 (Address, 32);
+        Adma64V4Desc->LowerLength  = (UINT16)(Remaining & MAX_UINT16);
+        Adma64V4Desc->LowerAddress = (UINT32)Address;
+        Adma64V4Desc->UpperAddress = (UINT32)RShiftU64 (Address, 32);
         break;
       } else {
-        Trb->Adma64V4Desc[Index].Valid = 1;
-        Trb->Adma64V4Desc[Index].Act   = 2;
+        Adma64V4Desc->Valid = 1;
+        Adma64V4Desc->Act   = 2;
         if (Trb->AdmaLengthMode == SdMmcAdmaLen26b) {
-          Trb->Adma64V4Desc[Index].UpperLength = 0;
+          Adma64V4Desc->UpperLength = 0;
         }
 
-        Trb->Adma64V4Desc[Index].LowerLength  = 0;
-        Trb->Adma64V4Desc[Index].LowerAddress = (UINT32)Address;
-        Trb->Adma64V4Desc[Index].UpperAddress = (UINT32)RShiftU64 (Address, 32);
+        Adma64V4Desc->LowerLength  = 0;
+        Adma64V4Desc->LowerAddress = (UINT32)Address;
+        Adma64V4Desc->UpperAddress = (UINT32)RShiftU64 (Address, 32);
       }
     }
 
@@ -1685,11 +1691,14 @@ BuildAdmaDescTable (
   // Set the last descriptor line as end of descriptor table
   //
   if (Trb->Mode == SdMmcAdma32bMode) {
-    Trb->Adma32Desc[Index].End = 1;
+    Adma32Desc      = (SD_MMC_HC_ADMA_32_DESC_LINE *)((UINT8 *)Trb->Adma32Desc + MultU64x32 (Index, sizeof (*Adma32Desc)));
+    Adma32Desc->End = 1;
   } else if (Trb->Mode == SdMmcAdma64bV3Mode) {
-    Trb->Adma64V3Desc[Index].End = 1;
+    Adma64V3Desc      = (SD_MMC_HC_ADMA_64_V3_DESC_LINE *)((UINT8 *)Trb->Adma64V3Desc + MultU64x32 (Index, sizeof (*Adma64V3Desc)));
+    Adma64V3Desc->End = 1;
   } else {
-    Trb->Adma64V4Desc[Index].End = 1;
+    Adma64V4Desc      = (SD_MMC_HC_ADMA_64_V4_DESC_LINE *)((UINT8 *)Trb->Adma64V4Desc + MultU64x32 (Index, sizeof (*Adma64V4Desc)));
+    Adma64V4Desc->End = 1;
   }
 
   return EFI_SUCCESS;
