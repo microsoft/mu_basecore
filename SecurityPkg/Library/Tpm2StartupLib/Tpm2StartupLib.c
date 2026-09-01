@@ -296,7 +296,6 @@ LogHashEvent (
   EFI_STATUS      Status;
   UINTN           Index;
   EFI_STATUS      RetStatus;
-  UINT32          SupportedEventLogs;
   TCG_PCR_EVENT2  *TcgPcrEvent2;
   UINT8           *DigestBuffer;
   UINT32          HashAlgorithmBitmap;
@@ -307,14 +306,9 @@ LogHashEvent (
     return EFI_DEVICE_ERROR;
   }
 
-  SupportedEventLogs = EFI_TCG2_EVENT_LOG_FORMAT_TCG_1_2 | EFI_TCG2_EVENT_LOG_FORMAT_TCG_2;
-  RetStatus          = EFI_SUCCESS;
+  RetStatus = EFI_SUCCESS;
 
-  for (Index = 0; Index < sizeof (mTcg2EventInfo) / sizeof (mTcg2EventInfo[0]); Index++) {
-    if ((SupportedEventLogs & mTcg2EventInfo[Index].LogFormat) == 0) {
-      continue;
-    }
-
+  for (Index = 0; Index < ARRAY_SIZE (mTcg2EventInfo); Index++) {
     switch (mTcg2EventInfo[Index].LogFormat) {
       case EFI_TCG2_EVENT_LOG_FORMAT_TCG_1_2:
         Status = GetDigestFromDigestList (TPM_ALG_SHA1, DigestList, &NewEventHdr->Digest);
@@ -960,7 +954,7 @@ Tpm2StartupPublishMeasuredFvHob (
 
   MeasuredHobData = BuildGuidHob (
                       &gMeasuredFvHobGuid,
-                      sizeof (UINTN) + sizeof (EFI_PLATFORM_FIRMWARE_BLOB) * Count
+                      OFFSET_OF (MEASURED_HOB_DATA, MeasuredFvBuf) + sizeof (EFI_PLATFORM_FIRMWARE_BLOB) * Count
                       );
   if (MeasuredHobData == NULL) {
     DEBUG ((DEBUG_ERROR, "%a - Failed to allocate MeasuredFvHob\n", __func__));

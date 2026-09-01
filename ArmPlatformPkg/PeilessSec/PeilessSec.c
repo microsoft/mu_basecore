@@ -212,6 +212,8 @@ SecMain (
   DecompressFvs ();
 
   // MU_CHANGE - [BEGIN]
+  // Status = MeasurePeilessSec ();
+  // ASSERT_EFI_ERROR (Status);
 
   Status = Tpm2StartupInitializeTpm (FALSE);
   if (!EFI_ERROR (Status)) {
@@ -236,7 +238,7 @@ SecMain (
     Tpm2StartupPublishMeasuredFvHob ();
   } else if (Status != EFI_UNSUPPORTED) {
     DEBUG ((DEBUG_ERROR, "%a: Tpm2StartupInitializeTpm failed: %r\n", __func__, Status));
-    ASSERT_EFI_ERROR (FALSE);
+    ASSERT_EFI_ERROR (Status);
   }
 
   // MU_CHANGE - [END]

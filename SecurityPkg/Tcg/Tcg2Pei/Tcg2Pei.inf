@@ -74,11 +74,11 @@
 [Ppis]
   gEfiPeiFirmwareVolumeInfoPpiGuid                                     ## SOMETIMES_CONSUMES     ## NOTIFY
   gEfiPeiFirmwareVolumeInfo2PpiGuid                                    ## SOMETIMES_CONSUMES     ## NOTIFY
-  gEfiPeiFirmwareVolumeInfoMeasurementExcludedPpiGuid                  ## SOMETIMES_CONSUMES
+  gEfiPeiFirmwareVolumeInfoMeasurementExcludedPpiGuid                  ## SOMETIMES_CONSUMES     ## NOTIFY  # MU_CHANGE
   gPeiTpmInitializedPpiGuid                                            ## SOMETIMES_PRODUCES
   gPeiTpmInitializationDonePpiGuid                                     ## PRODUCES
   gEfiEndOfPeiSignalPpiGuid                                            ## SOMETIMES_CONSUMES     ## NOTIFY
-  gEdkiiPeiFirmwareVolumeInfoPrehashedFvPpiGuid                        ## SOMETIMES_CONSUMES
+  gEdkiiPeiFirmwareVolumeInfoPrehashedFvPpiGuid                        ## SOMETIMES_CONSUMES     ## NOTIFY  # MU_CHANGE
   gEdkiiTcgPpiGuid                                                     ## PRODUCES
 
 [Pcd]
