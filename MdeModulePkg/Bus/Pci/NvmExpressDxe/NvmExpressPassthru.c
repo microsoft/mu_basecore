@@ -224,6 +224,7 @@ NvmeCreatePrpList (
   UINT64                PrpListIndex;
   UINT64                PrpEntryIndex;
   UINT64                Remainder;
+  UINT64                *PrpEntry;
   EFI_PHYSICAL_ADDRESS  PrpListPhyAddr;
   UINTN                 Bytes;
   EFI_STATUS            Status;
@@ -280,20 +281,21 @@ NvmeCreatePrpList (
   //
   ZeroMem (*PrpListHost, Bytes);
   for (PrpListIndex = 0; PrpListIndex < *PrpListNo - 1; ++PrpListIndex) {
-    PrpListBase = *(UINT64 *)PrpListHost + PrpListIndex * EFI_PAGE_SIZE;
+    PrpListBase = *(UINT64 *)PrpListHost + MultU64x32 (PrpListIndex, EFI_PAGE_SIZE);
 
     for (PrpEntryIndex = 0; PrpEntryIndex < PrpEntryNo; ++PrpEntryIndex) {
+      PrpEntry = (UINT64 *)(UINTN)(PrpListBase + MultU64x32 (PrpEntryIndex, sizeof (UINT64)));
       if (PrpEntryIndex != PrpEntryNo - 1) {
         //
         // Fill all PRP entries except of last one.
         //
-        *((UINT64 *)(UINTN)PrpListBase + PrpEntryIndex) = PhysicalAddr;
-        PhysicalAddr                                   += EFI_PAGE_SIZE;
+        *PrpEntry     = PhysicalAddr;
+        PhysicalAddr += EFI_PAGE_SIZE;
       } else {
         //
         // Fill last PRP entries with next PRP List pointer.
         //
-        *((UINT64 *)(UINTN)PrpListBase + PrpEntryIndex) = PrpListPhyAddr + (PrpListIndex + 1) * EFI_PAGE_SIZE;
+        *PrpEntry = PrpListPhyAddr + MultU64x32 (PrpListIndex + 1, EFI_PAGE_SIZE);
       }
     }
   }
@@ -301,10 +303,11 @@ NvmeCreatePrpList (
   //
   // Fill last PRP list.
   //
-  PrpListBase = *(UINT64 *)PrpListHost + PrpListIndex * EFI_PAGE_SIZE;
+  PrpListBase = *(UINT64 *)PrpListHost + MultU64x32 (PrpListIndex, EFI_PAGE_SIZE);
   for (PrpEntryIndex = 0; PrpEntryIndex < Remainder; ++PrpEntryIndex) {
-    *((UINT64 *)(UINTN)PrpListBase + PrpEntryIndex) = PhysicalAddr;
-    PhysicalAddr                                   += EFI_PAGE_SIZE;
+    PrpEntry      = (UINT64 *)(UINTN)(PrpListBase + MultU64x32 (PrpEntryIndex, sizeof (UINT64)));
+    *PrpEntry     = PhysicalAddr;
+    PhysicalAddr += EFI_PAGE_SIZE;
   }
 
   return (VOID *)(UINTN)PrpListPhyAddr;
