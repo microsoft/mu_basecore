@@ -1299,7 +1299,7 @@ TcgScaleEventLog (
     return EFI_VOLUME_FULL;
   }
 
-  NewLaml = EventLogAreaStruct->Laml * 2;
+  NewLaml = LShiftU64 (EventLogAreaStruct->Laml, 1);
   if (NewLaml <= EventLogAreaStruct->Laml) {
     DEBUG ((DEBUG_ERROR, "%a: Laml overflow (0x%lx * 2)\n", __func__, EventLogAreaStruct->Laml));
     return EFI_OUT_OF_RESOURCES;
@@ -3319,7 +3319,7 @@ DriverEntry (
   //
   NumberOfPCRBanks = 0;
   for (Index = 0; Index < 32; Index++) {
-    if ((mTcgDxeData.BsCap.HashAlgorithmBitmap & (1u << Index)) != 0) {
+    if ((mTcgDxeData.BsCap.HashAlgorithmBitmap & LShiftU64 (1, Index)) != 0) {
       NumberOfPCRBanks++;
     }
   }
