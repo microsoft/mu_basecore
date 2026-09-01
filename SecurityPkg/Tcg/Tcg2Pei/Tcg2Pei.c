@@ -1055,7 +1055,7 @@ ExcludedFvPpiNotifyCallback (
 {
   EFI_PEI_FIRMWARE_VOLUME_INFO_MEASUREMENT_EXCLUDED_PPI  *ExcludedPpi;
   EXCLUDED_HOB_DATA                                      *HobData;
-  UINTN                                                   HobSize;
+  UINTN                                                  HobSize;
 
   ExcludedPpi = (EFI_PEI_FIRMWARE_VOLUME_INFO_MEASUREMENT_EXCLUDED_PPI *)Ppi;
   if (ExcludedPpi->Count == 0) {
