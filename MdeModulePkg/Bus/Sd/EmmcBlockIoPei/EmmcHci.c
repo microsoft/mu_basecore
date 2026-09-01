@@ -931,12 +931,13 @@ BuildAdmaDescTable (
   IN EMMC_TRB  *Trb
   )
 {
-  EFI_PHYSICAL_ADDRESS  Data;
-  UINT64                DataLen;
-  UINT64                Entries;
-  UINT64                Index;
-  UINT64                Remaining;
-  UINT32                Address;
+  EFI_PHYSICAL_ADDRESS    Data;
+  UINT64                  DataLen;
+  UINT64                  Entries;
+  UINT64                  Index;
+  UINT64                  Remaining;
+  UINT32                  Address;
+  EMMC_HC_ADMA_DESC_LINE  *AdmaDesc;
 
   Data    = Trb->DataPhy;
   DataLen = Trb->DataLen;
@@ -966,17 +967,18 @@ BuildAdmaDescTable (
   Remaining = DataLen;
   Address   = (UINT32)Data;
   for (Index = 0; Index < Entries; Index++) {
+    AdmaDesc = (EMMC_HC_ADMA_DESC_LINE *)((UINT8 *)Trb->AdmaDesc + MultU64x32 (Index, sizeof (*AdmaDesc)));
     if (Remaining <= ADMA_MAX_DATA_PER_LINE) {
-      Trb->AdmaDesc[Index].Valid   = 1;
-      Trb->AdmaDesc[Index].Act     = 2;
-      Trb->AdmaDesc[Index].Length  = (UINT16)Remaining;
-      Trb->AdmaDesc[Index].Address = Address;
+      AdmaDesc->Valid   = 1;
+      AdmaDesc->Act     = 2;
+      AdmaDesc->Length  = (UINT16)Remaining;
+      AdmaDesc->Address = Address;
       break;
     } else {
-      Trb->AdmaDesc[Index].Valid   = 1;
-      Trb->AdmaDesc[Index].Act     = 2;
-      Trb->AdmaDesc[Index].Length  = 0;
-      Trb->AdmaDesc[Index].Address = Address;
+      AdmaDesc->Valid   = 1;
+      AdmaDesc->Act     = 2;
+      AdmaDesc->Length  = 0;
+      AdmaDesc->Address = Address;
     }
 
     Remaining -= ADMA_MAX_DATA_PER_LINE;
@@ -986,7 +988,8 @@ BuildAdmaDescTable (
   //
   // Set the last descriptor line as end of descriptor table
   //
-  Trb->AdmaDesc[Index].End = 1;
+  AdmaDesc      = (EMMC_HC_ADMA_DESC_LINE *)((UINT8 *)Trb->AdmaDesc + MultU64x32 (Index, sizeof (*AdmaDesc)));
+  AdmaDesc->End = 1;
   return EFI_SUCCESS;
 }
 
