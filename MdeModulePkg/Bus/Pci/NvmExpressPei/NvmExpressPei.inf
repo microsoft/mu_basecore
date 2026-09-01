@@ -47,6 +47,7 @@
   DevicePathLib
   PeiServicesLib
   MemoryAllocationLib
+  BaseLib
   BaseMemoryLib
   IoLib
   TimerLib
