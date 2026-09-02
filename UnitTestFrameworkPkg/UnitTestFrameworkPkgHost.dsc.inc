@@ -146,6 +146,13 @@
   GCC:*_*_*_ASLCC_FLAGS   = -fpie
 
   #
+  # Unit test assertion and mocking macros intentionally convert between
+  # pointers and 64-bit integer values. Do not promote the resulting size
+  # mismatch warnings to errors for IA32 host tests.
+  #
+  GCC:*_*_IA32_CC_FLAGS = -Wno-error=pointer-to-int-cast -Wno-error=int-to-pointer-cast
+
+  #
   # Disable stack protector for unit tests because ASAN provides better coverage
   #
   GCC:*_*_*_CC_FLAGS             = -fno-stack-protector
