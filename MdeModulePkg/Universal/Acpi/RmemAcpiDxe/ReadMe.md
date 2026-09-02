@@ -198,6 +198,73 @@ RMEM is diagnostic metadata. It does not grant access to a reported range and
 must not be used as the sole source for access-control or memory-ownership
 decisions.
 
+## Local Windows Validation
+
+Run the host unit tests from a native x64 Windows system with Python 3.12 and
+Visual Studio 2022 Build Tools. Install the Desktop development with C++
+workload, including MSVC v143, a Windows SDK, and C++ AddressSanitizer support.
+
+Open Developer PowerShell for VS 2022 in the repository root. If the Stuart
+commands are not on `PATH`, add the Python user scripts directory for the
+current session:
+
+```powershell
+py -3.12 -m pip install --user edk2-pytool-extensions
+$pythonScripts = py -3.12 -c "import sysconfig; print(sysconfig.get_path('scripts', 'nt_user'))"
+$env:Path = "$pythonScripts;$env:Path"
+```
+
+Prepare the dependencies used by the MdeModulePkg host build. These commands
+are normally needed once per clean checkout or after dependency changes:
+
+```powershell
+stuart_setup `
+  -c .pytool/CISettings.py `
+  -p MdeModulePkg `
+  -t NOOPT `
+  -a X64 `
+  TOOL_CHAIN_TAG=VS2022
+
+stuart_update `
+  -c .pytool/CISettings.py `
+  -p MdeModulePkg `
+  -t NOOPT `
+  -a X64 `
+  TOOL_CHAIN_TAG=VS2022
+```
+
+Compile and run only the MdeModulePkg host unit tests:
+
+```powershell
+stuart_ci_build `
+  -c .pytool/CISettings.py `
+  -p MdeModulePkg `
+  -t NOOPT `
+  -a X64 `
+  TOOL_CHAIN_TAG=VS2022 `
+  --disable-all `
+  HostUnitTestCompilerPlugin=run
+```
+
+To reproduce the broader Azure MdeModulePkg DEBUG job, run:
+
+```powershell
+stuart_ci_build `
+  -c .pytool/CISettings.py `
+  -p MdeModulePkg `
+  -t DEBUG,NOOPT `
+  -a IA32,X64 `
+  TOOL_CHAIN_TAG=VS2022 `
+  CODE_COVERAGE=TRUE `
+  CC_FLATTEN=TRUE `
+  CC_FULL=TRUE
+```
+
+The host-test plugin currently treats Windows ARM64 as an AARCH64 host and
+skips an X64 request. Run these commands on native x64 Windows or use CI for
+authoritative X64 test execution. A skipped plugin is not a successful test
+execution.
+
 ## Platform Integration
 
 To evaluate RMEM on a platform:
