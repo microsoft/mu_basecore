@@ -198,72 +198,176 @@ RMEM is diagnostic metadata. It does not grant access to a reported range and
 must not be used as the sole source for access-control or memory-ownership
 decisions.
 
-## Local Windows Validation
+## Windows PowerShell Retrieval
 
-Run the host unit tests from a native x64 Windows system with Python 3.12 and
-Visual Studio 2022 Build Tools. Install the Desktop development with C++
-workload, including MSVC v143, a Windows SDK, and C++ AddressSanitizer support.
-
-Open Developer PowerShell for VS 2022 in the repository root. If the Stuart
-commands are not on `PATH`, add the Python user scripts directory for the
-current session:
+Windows exposes ACPI tables to user mode through `GetSystemFirmwareTable`. The
+following PowerShell example retrieves the experimental `RMEM` table, validates
+its Revision 1 header and checksum, and prints each decoded entry. It reads only
+the table metadata and does not access the reported physical ranges.
 
 ```powershell
-py -3.12 -m pip install --user edk2-pytool-extensions
-$pythonScripts = py -3.12 -c "import sysconfig; print(sysconfig.get_path('scripts', 'nt_user'))"
-$env:Path = "$pythonScripts;$env:Path"
+$ErrorActionPreference = "Stop"
+
+if (-not ("RmemReader.NativeMethods" -as [type])) {
+  Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+
+namespace RmemReader
+{
+  public static class NativeMethods
+  {
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern uint GetSystemFirmwareTable(
+      uint providerSignature,
+      uint tableId,
+      IntPtr buffer,
+      uint bufferSize);
+  }
+}
+"@
+}
+
+function ConvertTo-ProviderSignature {
+  param([Parameter(Mandatory)] [string]$Text)
+
+  $bytes = [Text.Encoding]::ASCII.GetBytes($Text)
+  ([uint32]$bytes[0] -shl 24) -bor
+    ([uint32]$bytes[1] -shl 16) -bor
+    ([uint32]$bytes[2] -shl 8) -bor
+    [uint32]$bytes[3]
+}
+
+function ConvertTo-TableId {
+  param([Parameter(Mandatory)] [string]$Text)
+
+  [BitConverter]::ToUInt32([Text.Encoding]::ASCII.GetBytes($Text), 0)
+}
+
+function Resolve-RmemCategory {
+  param([Parameter(Mandatory)] [uint32]$Value)
+
+  switch ($Value) {
+    1 { "Security" }
+    2 { "SharedComms" }
+    3 { "DisplayFramebuffer" }
+    4 { "GpuReserved" }
+    5 { "NpuReserved" }
+    6 { "FirmwareRuntime" }
+    7 { "Other" }
+    default { "Unknown ($Value)" }
+  }
+}
+
+$provider = ConvertTo-ProviderSignature "ACPI"
+$tableId = ConvertTo-TableId "RMEM"
+$size = [RmemReader.NativeMethods]::GetSystemFirmwareTable(
+  $provider, $tableId, [IntPtr]::Zero, 0)
+
+if ($size -eq 0) {
+  throw "The currently booted firmware does not expose an RMEM ACPI table."
+}
+
+$buffer = [Runtime.InteropServices.Marshal]::AllocHGlobal([int]$size)
+try {
+  $written = [RmemReader.NativeMethods]::GetSystemFirmwareTable(
+    $provider, $tableId, $buffer, $size)
+  if ($written -ne $size) {
+    throw "GetSystemFirmwareTable returned $written bytes; expected $size."
+  }
+
+  $table = [byte[]]::new($written)
+  [Runtime.InteropServices.Marshal]::Copy($buffer, $table, 0, [int]$written)
+}
+finally {
+  [Runtime.InteropServices.Marshal]::FreeHGlobal($buffer)
+}
+
+$headerSize = 40
+$entrySize = 52
+if ($table.Length -lt $headerSize) {
+  throw "RMEM table is shorter than its $headerSize-byte header."
+}
+
+$signature = [Text.Encoding]::ASCII.GetString($table, 0, 4)
+$tableLength = [BitConverter]::ToUInt32($table, 4)
+$revision = $table[8]
+$entryCount = [BitConverter]::ToUInt32($table, 36)
+$expectedLength = [uint64]$headerSize + ([uint64]$entryCount * $entrySize)
+
+if ($signature -ne "RMEM") {
+  throw "Unexpected ACPI signature '$signature'."
+}
+
+if (($revision -ne 1) -or ($tableLength -ne $expectedLength) -or
+    ($tableLength -ne $table.Length)) {
+  throw "Invalid RMEM header: revision=$revision length=$tableLength entries=$entryCount."
+}
+
+$checksum = 0
+foreach ($value in $table) {
+  $checksum = ($checksum + $value) -band 0xFF
+}
+
+if ($checksum -ne 0) {
+  throw "RMEM checksum is invalid."
+}
+
+$entries = for ($index = 0; $index -lt $entryCount; $index++) {
+  $offset = $headerSize + ($index * $entrySize)
+  [uint64]$base = [BitConverter]::ToUInt64($table, $offset)
+  [uint64]$rangeSize = [BitConverter]::ToUInt64($table, $offset + 8)
+  [uint32]$category = [BitConverter]::ToUInt32($table, $offset + 16)
+
+  if (($rangeSize -eq 0) -or
+      ($base -gt ([uint64]::MaxValue - ($rangeSize - 1)))) {
+    throw "RMEM entry $index contains an invalid physical range."
+  }
+
+  $labelBytes = $table[($offset + 20)..($offset + 51)]
+  $terminator = [Array]::IndexOf($labelBytes, [byte]0)
+  if ($terminator -lt 0) {
+    throw "RMEM entry $index has no null-terminated label."
+  }
+
+  [pscustomobject]@{
+    Index = $index
+    Base = "0x{0:X16}" -f $base
+    SizeBytes = $rangeSize
+    SizeMiB = [Math]::Round($rangeSize / 1MB, 3)
+    Category = Resolve-RmemCategory $category
+    Label = [Text.Encoding]::ASCII.GetString($labelBytes, 0, $terminator)
+  }
+}
+
+$entries | Format-Table -AutoSize
 ```
 
-Prepare the dependencies used by the MdeModulePkg host build. These commands
-are normally needed once per clean checkout or after dependency changes:
+### Expected PowerShell Output
 
-```powershell
-stuart_setup `
-  -c .pytool/CISettings.py `
-  -p MdeModulePkg `
-  -t NOOPT `
-  -a X64 `
-  TOOL_CHAIN_TAG=VS2022
+The values below are illustrative. Actual addresses, sizes, categories, and
+labels depend on the platform firmware and boot configuration.
 
-stuart_update `
-  -c .pytool/CISettings.py `
-  -p MdeModulePkg `
-  -t NOOPT `
-  -a X64 `
-  TOOL_CHAIN_TAG=VS2022
+```text
+Index Base               SizeBytes SizeMiB Category        Label
+----- ----               --------- ------- --------        -----
+  0 0x0000000010000000 536870912 512.000 GpuReserved     iGPU Shared VRAM
+  1 0x0000000030000000 267386880 255.000 Security        Security Processor
+  2 0x000000003FF00000   1048576   1.000 SharedComms     MM Communication Buffer
+  3 0x0000000040000000  16777216  16.000 FirmwareRuntime Offline Crash Dump
 ```
 
-Compile and run only the MdeModulePkg host unit tests:
+If the currently booted firmware does not publish RMEM, the script terminates
+with an error similar to:
 
-```powershell
-stuart_ci_build `
-  -c .pytool/CISettings.py `
-  -p MdeModulePkg `
-  -t NOOPT `
-  -a X64 `
-  TOOL_CHAIN_TAG=VS2022 `
-  --disable-all `
-  HostUnitTestCompilerPlugin=run
+```text
+The currently booted firmware does not expose an RMEM ACPI table.
 ```
 
-To reproduce the broader Azure MdeModulePkg DEBUG job, run:
-
-```powershell
-stuart_ci_build `
-  -c .pytool/CISettings.py `
-  -p MdeModulePkg `
-  -t DEBUG,NOOPT `
-  -a IA32,X64 `
-  TOOL_CHAIN_TAG=VS2022 `
-  CODE_COVERAGE=TRUE `
-  CC_FLATTEN=TRUE `
-  CC_FULL=TRUE
-```
-
-The host-test plugin currently treats Windows ARM64 as an AARCH64 host and
-skips an X64 request. Run these commands on native x64 Windows or use CI for
-authoritative X64 test execution. A skipped plugin is not a successful test
-execution.
+Run the script from an ordinary PowerShell session after booting firmware that
+publishes RMEM. If the table is absent, the script reports that the current
+firmware does not expose it. Addresses, sizes, categories, and labels are
+platform-specific diagnostic output.
 
 ## Platform Integration
 
