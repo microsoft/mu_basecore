@@ -6,11 +6,10 @@
   This external input must be validated carefully to avoid security issue like
   buffer overflow, integer overflow.
 
-  DxeImageVerificationLibImageRead() function will make sure the PE/COFF image content
-  read is within the image buffer.
-
-  DxeImageVerificationHandler(), HashPeImageByType(), HashPeImage() function will accept
-  untrusted PE/COFF image and validate its data structure within this image buffer before use.
+  DxeImageVerificationHandler() passes the untrusted PE/COFF image to
+  AuthenticodeLib for bounds-checked parsing. AuthenticodeLib returns the
+  prepared Authenticode byte stream and the image's WIN_CERTIFICATE table;
+  the handler passes both directly to ValidateImage().
 
 Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
@@ -25,22 +24,25 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "Support.h"
 
 /**
-  Validate a PE/COFF image against the platform signature databases.
+  Validate a prepared Authenticode image and WIN_CERTIFICATE table against
+  the platform signature databases.
 
     1. Reject immediately if the image's Authenticode hash is enrolled in the `dbx`.
-    2. Walk each WIN_CERTIFICATE in the image's security data directory to determine if the
-       Auth Data from it is not revoked by the `dbx` and is authorized by the `db`. Only one
-       WIN_CERTIFICATE needs to authorize the image for it to be validated.
+    2. Walk each WIN_CERTIFICATE to determine if the Auth Data from it is not revoked by the `dbx`
+       and is authorized by the `db`. Only one WIN_CERTIFICATE needs to authorize the image for it
+       to be validated.
     3. Authorize the image if the image's Authenticode hash is enrolled in the `db`.
 
-  @param[in]   File         Device path of the image being verified.
-  @param[in]   FileBuffer   Pointer to the in-memory PE/COFF image.
-  @param[in]   FileSize     Size of FileBuffer in bytes.
-  @param[in]   SecDataDir   Security data directory describing the embedded WIN_CERTIFICATE table.
-                            A Size of 0 indicates an unsigned image.
-  @param[in,out] Measured   Authority measurement state used to record the `db` certificate that
-                            authorized the image into PCR 7 (de-duplicated across images). Only
-                            certificate authorities are measured; image-hash authorizations are not.
+  @param[in]   AuthenticodeImage      The assembled Authenticode image (the exact bytes the
+                                      image-hash checks hash).
+  @param[in]   AuthenticodeImageSize  Size of AuthenticodeImage in bytes.
+  @param[in]   WinCertificates        The image's embedded WIN_CERTIFICATE table, or NULL when the
+                                      image is unsigned.
+  @param[in]   WinCertificatesLength  Length of WinCertificates in bytes; 0 when unsigned.
+  @param[in,out] Measured             Authority measurement state used to record the `db`
+                                      certificate that authorized the image into PCR 7
+                                      (de-duplicated across images). Only certificate authorities
+                                      are measured; image-hash authorizations are not.
 
   @retval EFI_SUCCESS        The image is authorized.
   @retval EFI_ACCESS_DENIED  The image is revoked, not authorized, or the
@@ -48,11 +50,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 EFI_STATUS
 ValidateImage (
-  IN     CONST EFI_DEVICE_PATH_PROTOCOL  *File,
-  IN     VOID                            *FileBuffer,
-  IN     UINTN                           FileSize,
-  IN     CONST EFI_IMAGE_DATA_DIRECTORY  *SecDataDir,
-  IN OUT MEASURED_AUTHORITIES            *Measured
+  IN     CONST VOID             *AuthenticodeImage,
+  IN     UINTN                  AuthenticodeImageSize,
+  IN     CONST WIN_CERTIFICATE  *WinCertificates,
+  IN     UINTN                  WinCertificatesLength,
+  IN OUT MEASURED_AUTHORITIES   *Measured
   )
 {
   EFI_STATUS             Status;
@@ -67,9 +69,6 @@ ValidateImage (
   // across the image-hash revocation check, per-cert authorization, and the image-hash fallback.
   //
   ZeroMem (&Cache, sizeof (Cache));
-  Cache.Type       = DigestCacheTypeImage;
-  Cache.Buffer     = FileBuffer;
-  Cache.BufferSize = FileSize;
 
   //
   // Zeroed up front so every Exit path can safely release CertEval.Authority, even if the
@@ -84,23 +83,30 @@ ValidateImage (
   }
 
   //
-  // Step 1: Reject the image if its Authenticode hash is found in the `dbx`. A `dbx` that cannot
-  // be fully parsed fails closed (IsInDbx returns TRUE), rejecting the image.
+  // Bind the digest cache to the caller-supplied Authenticode image (the exact bytes the image-hash
+  // checks hash).
   //
-  if (IsInDbx (&Cache, Databases.Dbx, Databases.DbxSize)) {
+  Cache.Buffer     = AuthenticodeImage;
+  Cache.BufferSize = AuthenticodeImageSize;
+
+  //
+  // Step 1: Reject the image if its Authenticode hash is found in the `dbx`. A `dbx` that cannot
+  // be fully parsed fails closed (IsImageHashInDbx returns TRUE), rejecting the image.
+  //
+  if (IsImageHashInDbx (&Cache, Databases.Dbx, Databases.DbxSize)) {
     DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: Image hash is forbidden by DBX.\n"));
     goto Reject;
   }
 
   //
-  // Step 2: For each WIN_CERTIFICATE in the image's security data directory, extract the auth data
-  // and check if it authorizes the image per the `db` and `dbx`. Exit on the first authorization.
+  // Step 2: For each WIN_CERTIFICATE, extract the auth data and check if it authorizes the image
+  // per the `db` and `dbx`. Exit on the first authorization.
   //
   // Note: If the image is unsigned, the iterator is empty and this step is a no-op. A malformed
   // certificate table only truncates the walk to its valid prefix (best-effort); the certificates
   // that parse cleanly are still evaluated, and the image can still be authorized by Step 3.
   //
-  if (!WinCertIterInit (&CertIter, FileBuffer, FileSize, SecDataDir)) {
+  if (!WinCertIterInit (&CertIter, WinCertificates, WinCertificatesLength)) {
     DEBUG ((DEBUG_WARN, "DxeImageVerificationLib: certificate table truncated at a malformed entry; evaluating the valid prefix.\n"));
   }
 
@@ -125,7 +131,7 @@ ValidateImage (
   // Step 3: Authorize the image if the image authenticode hash is in the `db`. Image-hash
   // authorization is intentionally not measured into PCR 7 - only certificate authorities are.
   //
-  if (IsInDb (&Cache, Databases.Db, Databases.DbSize)) {
+  if (IsImageHashInDb (&Cache, Databases.Db, Databases.DbSize)) {
     Status = EFI_SUCCESS;
     goto Exit;
   }
@@ -137,6 +143,8 @@ Reject:
 
 Exit:
   FreeImageAuthority (&CertEval.Authority);
+
+  FreeDigestCache (&Cache);
 
   if (Databases.Db != NULL) {
     FreePool (Databases.Db);
@@ -201,9 +209,12 @@ DxeImageVerificationHandler (
   IN  BOOLEAN                         BootPolicy
   )
 {
-  EFI_STATUS                Status;
-  UINT32                    Policy;
-  EFI_IMAGE_DATA_DIRECTORY  SecDataDir;
+  EFI_STATUS             Status;
+  UINT32                 Policy;
+  UINT8                  *AuthImage;
+  UINTN                  AuthImageSize;
+  CONST WIN_CERTIFICATE  *WinCertificates;
+  UINTN                  WinCertificatesLength;
 
   //
   // Sanity check.
@@ -239,20 +250,30 @@ DxeImageVerificationHandler (
   }
 
   //
-  // Inspect the image to locate its security data directory. Any failure
-  // to parse the PE/COFF headers is treated as a verification failure.
+  // Assemble the Authenticode image and locate the embedded WIN_CERTIFICATE table. Any failure to
+  // parse the image is treated as a verification failure.
   //
-  Status = GetImageSecurityDataDirectory (FileBuffer, FileSize, &SecDataDir);
+  Status = BuildAuthenticodeImage (FileBuffer, FileSize, &AuthImage, &AuthImageSize);
   if (EFI_ERROR (Status)) {
-    return Status;
+    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: Failed to assemble the Authenticode image (%r).\n", Status));
+    return EFI_ACCESS_DENIED;
+  }
+
+  Status = GetWinCertificates (FileBuffer, FileSize, &WinCertificates, &WinCertificatesLength);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: Failed to locate the certificate table (%r).\n", Status));
+    FreePool (AuthImage);
+    return EFI_ACCESS_DENIED;
   }
 
   //
-  // Run image verification. The unified path handles both signed and
-  // unsigned images; SecDataDir->Size == 0 simply produces an empty
-  // WIN_CERTIFICATE iteration inside ValidateImage.
+  // Run image verification. The unified path handles both signed and unsigned images; an unsigned
+  // image simply produces an empty WIN_CERTIFICATE iteration inside ValidateImage.
   //
-  return ValidateImage (File, FileBuffer, FileSize, &SecDataDir, GetMeasuredAuthorities ());
+  Status = ValidateImage (AuthImage, AuthImageSize, WinCertificates, WinCertificatesLength, GetMeasuredAuthorities ());
+
+  FreePool (AuthImage);
+  return Status;
 }
 
 /**
