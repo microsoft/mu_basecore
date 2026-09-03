@@ -355,15 +355,6 @@ TEST (SigListIterNextTest, RespectsSignatureHeaderSize) {
 // ---------------------------------------------------------------------------
 
 //
-// Build a synthetic PE/COFF "file" whose security directory immediately
-// follows a header area. The returned dir VA/Size point into FileBuffer.
-//
-struct SyntheticImage {
-  std::vector<UINT8>          FileBuffer;
-  EFI_IMAGE_DATA_DIRECTORY    Dir;
-};
-
-//
 // Append a single WIN_CERTIFICATE entry of total length dwLength
 // (including the header) to Dir. dwLength is written as-is, so callers
 // may inject malformed values for negative tests.
@@ -389,70 +380,24 @@ AppendWinCert (
   Cert->wCertificateType = wCertificateType;
 }
 
-static SyntheticImage
-BuildImageWithDir (
-  const std::vector<UINT8>  &DirContents
-  )
-{
-  SyntheticImage  Img;
-
-  // 64 bytes of leading "header" so the dir VA is non-zero.
-  Img.FileBuffer.assign (64, 0);
-  Img.Dir.VirtualAddress = (UINT32)Img.FileBuffer.size ();
-  Img.Dir.Size           = (UINT32)DirContents.size ();
-  Img.FileBuffer.insert (
-                   Img.FileBuffer.end (),
-                   DirContents.begin (),
-                   DirContents.end ()
-                   );
-
-  return Img;
-}
-
 // ---------------------------------------------------------------------------
 // WinCertIterInit
 // ---------------------------------------------------------------------------
 
-TEST (WinCertIterInitTest, NullParams_ReturnTruncated) {
-  WIN_CERT_ITER             Iter;
-  std::vector<UINT8>        File (64, 0);
-  EFI_IMAGE_DATA_DIRECTORY  Dir = { 0, 0 };
+TEST (WinCertIterInitTest, NullArgs_ReturnTruncated) {
+  WIN_CERT_ITER       Iter;
+  std::vector<UINT8>  Certs (64, 0);
 
-  EXPECT_FALSE (WinCertIterInit (NULL, File.data (), File.size (), &Dir));
-  EXPECT_FALSE (WinCertIterInit (&Iter, NULL, File.size (), &Dir));
-  EXPECT_FALSE (WinCertIterInit (&Iter, File.data (), File.size (), NULL));
+  // NULL iterator.
+  EXPECT_FALSE (WinCertIterInit (NULL, (CONST WIN_CERTIFICATE *)Certs.data (), Certs.size ()));
+  // NULL table with a non-zero length is inconsistent.
+  EXPECT_FALSE (WinCertIterInit (&Iter, NULL, 8));
 }
 
-TEST (WinCertIterInitTest, EmptyDirectory_NotTruncated) {
-  WIN_CERT_ITER             Iter;
-  std::vector<UINT8>        File (64, 0);
-  EFI_IMAGE_DATA_DIRECTORY  Dir = { 0, 0 };
+TEST (WinCertIterInitTest, EmptyTable_NotTruncated) {
+  WIN_CERT_ITER  Iter;
 
-  EXPECT_TRUE (WinCertIterInit (&Iter, File.data (), File.size (), &Dir));
-  EXPECT_EQ (WinCertIterNext (&Iter), nullptr);
-}
-
-TEST (WinCertIterInitTest, DirVirtualAddressPastEnd_TruncatesToEmpty) {
-  WIN_CERT_ITER             Iter;
-  std::vector<UINT8>        File (64, 0);
-  EFI_IMAGE_DATA_DIRECTORY  Dir;
-
-  Dir.VirtualAddress = (UINT32)(File.size () + 1);
-  Dir.Size           = 0;
-
-  EXPECT_FALSE (WinCertIterInit (&Iter, File.data (), File.size (), &Dir));
-  EXPECT_EQ (WinCertIterNext (&Iter), nullptr);
-}
-
-TEST (WinCertIterInitTest, DirSizeOverrunsFile_TruncatesToEmpty) {
-  WIN_CERT_ITER             Iter;
-  std::vector<UINT8>        File (128, 0);
-  EFI_IMAGE_DATA_DIRECTORY  Dir;
-
-  Dir.VirtualAddress = 64;
-  Dir.Size           = (UINT32)(File.size () - 64 + 1);
-
-  EXPECT_FALSE (WinCertIterInit (&Iter, File.data (), File.size (), &Dir));
+  EXPECT_TRUE (WinCertIterInit (&Iter, NULL, 0));
   EXPECT_EQ (WinCertIterNext (&Iter), nullptr);
 }
 
@@ -463,10 +408,9 @@ TEST (WinCertIterInitTest, EntryDwLengthBelowHeader_TruncatesToEmpty) {
   // Corrupt dwLength after the fact.
   ((WIN_CERTIFICATE *)Dir.data ())->dwLength = sizeof (WIN_CERTIFICATE) - 1;
 
-  SyntheticImage  Img = BuildImageWithDir (Dir);
-  WIN_CERT_ITER   Iter;
+  WIN_CERT_ITER  Iter;
 
-  EXPECT_FALSE (WinCertIterInit (&Iter, Img.FileBuffer.data (), Img.FileBuffer.size (), &Img.Dir));
+  EXPECT_FALSE (WinCertIterInit (&Iter, (CONST WIN_CERTIFICATE *)Dir.data (), Dir.size ()));
   EXPECT_EQ (WinCertIterNext (&Iter), nullptr);
 }
 
@@ -476,10 +420,9 @@ TEST (WinCertIterInitTest, EntryDwLengthOverrunsRemaining_TruncatesToEmpty) {
   AppendWinCert (Dir, sizeof (WIN_CERTIFICATE) + 8, 0x0200, WIN_CERT_TYPE_PKCS_SIGNED_DATA);
   ((WIN_CERTIFICATE *)Dir.data ())->dwLength = (UINT32)Dir.size () + 1;
 
-  SyntheticImage  Img = BuildImageWithDir (Dir);
-  WIN_CERT_ITER   Iter;
+  WIN_CERT_ITER  Iter;
 
-  EXPECT_FALSE (WinCertIterInit (&Iter, Img.FileBuffer.data (), Img.FileBuffer.size (), &Img.Dir));
+  EXPECT_FALSE (WinCertIterInit (&Iter, (CONST WIN_CERTIFICATE *)Dir.data (), Dir.size ()));
   EXPECT_EQ (WinCertIterNext (&Iter), nullptr);
 }
 
@@ -489,10 +432,9 @@ TEST (WinCertIterInitTest, WellFormedEntries_NotTruncated) {
   AppendWinCert (Dir, sizeof (WIN_CERTIFICATE) + 16, 0x0200, WIN_CERT_TYPE_PKCS_SIGNED_DATA);
   AppendWinCert (Dir, sizeof (WIN_CERTIFICATE) + 32, 0x0200, WIN_CERT_TYPE_EFI_GUID);
 
-  SyntheticImage  Img = BuildImageWithDir (Dir);
-  WIN_CERT_ITER   Iter;
+  WIN_CERT_ITER  Iter;
 
-  EXPECT_TRUE (WinCertIterInit (&Iter, Img.FileBuffer.data (), Img.FileBuffer.size (), &Img.Dir));
+  EXPECT_TRUE (WinCertIterInit (&Iter, (CONST WIN_CERTIFICATE *)Dir.data (), Dir.size ()));
 }
 
 // A well-formed entry followed by one with a malformed dwLength: the range is
@@ -507,28 +449,24 @@ TEST (WinCertIterInitTest, MalformedSecondEntry_TruncatesToValidPrefix) {
   // Corrupt the second entry's dwLength so it cannot be parsed.
   ((WIN_CERTIFICATE *)(Dir.data () + SecondOffset))->dwLength = sizeof (WIN_CERTIFICATE) - 1;
 
-  SyntheticImage  Img   = BuildImageWithDir (Dir);
-  CONST UINT8     *Base = Img.FileBuffer.data () + Img.Dir.VirtualAddress;
-  WIN_CERT_ITER   Iter;
+  WIN_CERT_ITER  Iter;
 
-  EXPECT_FALSE (WinCertIterInit (&Iter, Img.FileBuffer.data (), Img.FileBuffer.size (), &Img.Dir));
+  EXPECT_FALSE (WinCertIterInit (&Iter, (CONST WIN_CERTIFICATE *)Dir.data (), Dir.size ()));
   // The first, well-formed entry is still iterable; the second is dropped.
-  EXPECT_EQ ((CONST UINT8 *)WinCertIterNext (&Iter), Base);
+  EXPECT_EQ ((CONST UINT8 *)WinCertIterNext (&Iter), Dir.data ());
   EXPECT_EQ (WinCertIterNext (&Iter), nullptr);
 }
 
 //
-// A directory smaller than a WIN_CERTIFICATE header: the walk sees a
-// non-zero Remaining that cannot hold another header, so the range is
-// clamped to empty.
+// A table smaller than a WIN_CERTIFICATE header: the walk sees a non-zero
+// Remaining that cannot hold another header, so the range is clamped to empty.
 //
 TEST (WinCertIterInitTest, TrailingBytesBelowHeader_TruncatesToEmpty) {
   std::vector<UINT8>  Dir (sizeof (WIN_CERTIFICATE) - 1, 0);
 
-  SyntheticImage  Img = BuildImageWithDir (Dir);
-  WIN_CERT_ITER   Iter;
+  WIN_CERT_ITER  Iter;
 
-  EXPECT_FALSE (WinCertIterInit (&Iter, Img.FileBuffer.data (), Img.FileBuffer.size (), &Img.Dir));
+  EXPECT_FALSE (WinCertIterInit (&Iter, (CONST WIN_CERTIFICATE *)Dir.data (), Dir.size ()));
   EXPECT_EQ (WinCertIterNext (&Iter), nullptr);
 }
 
@@ -553,14 +491,13 @@ TEST (WinCertIterNextTest, IteratesAllEntriesWithAlignment) {
   AppendWinCert (Dir, Len2, 0x0200, WIN_CERT_TYPE_PKCS_SIGNED_DATA);
   AppendWinCert (Dir, Len3, 0x0200, WIN_CERT_TYPE_EFI_GUID);
 
-  SyntheticImage  Img = BuildImageWithDir (Dir);
-  WIN_CERT_ITER   Iter;
+  WIN_CERT_ITER  Iter;
 
   ASSERT_TRUE (
-    WinCertIterInit (&Iter, Img.FileBuffer.data (), Img.FileBuffer.size (), &Img.Dir)
+    WinCertIterInit (&Iter, (CONST WIN_CERTIFICATE *)Dir.data (), Dir.size ())
     );
 
-  CONST UINT8            *Base = Img.FileBuffer.data () + Img.Dir.VirtualAddress;
+  CONST UINT8            *Base = Dir.data ();
   CONST WIN_CERTIFICATE  *C1   = WinCertIterNext (&Iter);
   CONST WIN_CERTIFICATE  *C2   = WinCertIterNext (&Iter);
   CONST WIN_CERTIFICATE  *C3   = WinCertIterNext (&Iter);
@@ -596,11 +533,10 @@ TEST (WinCertIterNextTest, LastEntryUnpaddedClampsToRemaining) {
   Cert->wRevision        = 0x0200;
   Cert->wCertificateType = WIN_CERT_TYPE_PKCS_SIGNED_DATA;
 
-  SyntheticImage  Img = BuildImageWithDir (Dir);
-  WIN_CERT_ITER   Iter;
+  WIN_CERT_ITER  Iter;
 
   ASSERT_TRUE (
-    WinCertIterInit (&Iter, Img.FileBuffer.data (), Img.FileBuffer.size (), &Img.Dir)
+    WinCertIterInit (&Iter, (CONST WIN_CERTIFICATE *)Dir.data (), Dir.size ())
     );
 
   CONST WIN_CERTIFICATE  *C = WinCertIterNext (&Iter);
