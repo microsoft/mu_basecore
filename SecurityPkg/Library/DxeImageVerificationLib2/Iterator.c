@@ -222,26 +222,24 @@ SigListIterNext (
 }
 
 /**
-  Initialize an iterator over the WIN_CERTIFICATE records contained in a PE/COFF image's security
-  data directory.
+  Initialize an iterator over a packed table of WIN_CERTIFICATE records (a PE/COFF image's
+  attribute-certificate data).
 
-  The initialization validates the list and will truncate the iteration range to the
-  last valid entry if the list if malformed.
+  The initialization validates the table and will truncate the iteration range to the last valid
+  entry if the table is malformed.
 
-  @param[out]  Iter        Iterator state to initialize.
-  @param[in]   FileBuffer  Pointer to the in-memory PE/COFF image.
-  @param[in]   FileSize    Size of FileBuffer in bytes.
-  @param[in]   SecDataDir  Security data directory describing the embedded WIN_CERTIFICATE table.
+  @param[out]  Iter             Iterator state to initialize.
+  @param[in]   WinCertificates  The WIN_CERTIFICATE table, or NULL when there are none.
+  @param[in]   Length           Length of the table in bytes; 0 when WinCertificates is NULL.
 
-  @retval TRUE   The iterator covers every entry in the list.
+  @retval TRUE   The iterator covers every entry in the table.
   @retval FALSE  The iterator was truncated due to invalid arguments or a malformed table.
 **/
 BOOLEAN
 WinCertIterInit (
-  OUT WIN_CERT_ITER                   *Iter,
-  IN  CONST VOID                      *FileBuffer,
-  IN  UINTN                           FileSize,
-  IN  CONST EFI_IMAGE_DATA_DIRECTORY  *SecDataDir
+  OUT WIN_CERT_ITER          *Iter,
+  IN  CONST WIN_CERTIFICATE  *WinCertificates,
+  IN  UINTN                  Length
   )
 {
   CONST UINT8            *Cursor;
@@ -257,25 +255,19 @@ WinCertIterInit (
   Iter->Remaining = 0;
 
   //
-  // Without a file buffer or directory, or with a directory that does not lie within the file, the
-  // certificate table cannot be located. Expose an empty iterator.
+  // A NULL table with a non-zero length is inconsistent input; expose an empty iterator and report
+  // truncation. An empty table (NULL / 0) is simply an image with no certificates.
   //
-  if ((FileBuffer == NULL) || (SecDataDir == NULL)) {
-    return FALSE;
-  }
-
-  if ((SecDataDir->VirtualAddress > FileSize) ||
-      (SecDataDir->Size > FileSize - SecDataDir->VirtualAddress))
-  {
-    return FALSE;
+  if (WinCertificates == NULL) {
+    return (BOOLEAN)(Length == 0);
   }
 
   //
   // Walk the certificate table. The first entry with a malformed dwLength, or a trailing fragment
   // too small to hold a header, marks the end of the valid iteration range.
   //
-  Cursor    = (CONST UINT8 *)FileBuffer + SecDataDir->VirtualAddress;
-  Remaining = SecDataDir->Size;
+  Cursor    = (CONST UINT8 *)WinCertificates;
+  Remaining = Length;
 
   while (Remaining > 0) {
     if (Remaining < sizeof (WIN_CERTIFICATE)) {
@@ -308,8 +300,8 @@ WinCertIterInit (
   // Remaining is the size of the tail that could not be parsed; the valid prefix is everything
   // that came before it.
   //
-  Iter->Cursor    = (CONST UINT8 *)FileBuffer + SecDataDir->VirtualAddress;
-  Iter->Remaining = SecDataDir->Size - Remaining;
+  Iter->Cursor    = (CONST UINT8 *)WinCertificates;
+  Iter->Remaining = Length - Remaining;
   return (BOOLEAN)(Remaining == 0);
 }
 
@@ -344,4 +336,81 @@ WinCertIterNext (
   Iter->Cursor    += EntrySize;
   Iter->Remaining -= EntrySize;
   return Cert;
+}
+
+/**
+  Walk each entry of every EFI_SIGNATURE_LIST in a signature database, invoking Visit for each, and
+  report whether Visit stopped the walk.
+
+  This is the single iteration primitive shared by the membership searches and the certificate
+  evaluator. It owns the database and list iterators and accounts structural truncation, but does
+  not interpret entries: it hands each entry's SignatureType, bytes, and size to Visit, which
+  classifies and locates the payload itself. Visit may skip the rest of a list (WalkSkipList) or end
+  the walk (WalkStop).
+
+  @param[in]      Database      Raw database contents, or NULL for an empty database.
+  @param[in]      DatabaseSize  Size of Database in bytes; 0 when Database is NULL.
+  @param[in]      Visit         Per-entry callback. Required.
+  @param[in,out]  Context       State threaded to Visit.
+  @param[out]     Truncated     Optional. Set TRUE if the walk could not be proven complete (a
+                                malformed database or list clamped the range).
+
+  @retval TRUE   Visit returned WalkStop for some entry.
+  @retval FALSE  The walk completed without Visit stopping it.
+**/
+BOOLEAN
+WalkDatabase (
+  IN     CONST VOID         *Database,
+  IN     UINTN              DatabaseSize,
+  IN     SIG_ENTRY_VISITOR  Visit,
+  IN OUT VOID               *Context,
+  OUT    BOOLEAN            *Truncated   OPTIONAL
+  )
+{
+  SIG_DATABASE_ITER         DbIter;
+  SIG_LIST_ITER             ListIter;
+  CONST EFI_SIGNATURE_LIST  *List;
+  CONST EFI_SIGNATURE_DATA  *Entry;
+  WALK_ACTION               Action;
+
+  if (Truncated != NULL) {
+    *Truncated = FALSE;
+  }
+
+  //
+  // An absent database matches nothing and is not a truncation.
+  //
+  if ((Database == NULL) || (DatabaseSize == 0)) {
+    return FALSE;
+  }
+
+  //
+  // DatabaseIterInit clamps the walk to the valid prefix; a FALSE return means trailing lists
+  // were dropped.
+  //
+  if (!DatabaseIterInit (&DbIter, Database, DatabaseSize) && (Truncated != NULL)) {
+    *Truncated = TRUE;
+  }
+
+  while ((List = DatabaseIterNext (&DbIter)) != NULL) {
+    if (!SigListIterInit (&ListIter, List) && (Truncated != NULL)) {
+      *Truncated = TRUE;
+    }
+
+    while ((Entry = SigListIterNext (&ListIter)) != NULL) {
+      Action = Visit (&List->SignatureType, Entry, List->SignatureSize, Context);
+      if (Action == WalkStop) {
+        return TRUE;
+      }
+
+      //
+      // A visitor that recognizes the list's type as irrelevant skips its remaining entries.
+      //
+      if (Action == WalkSkipList) {
+        break;
+      }
+    }
+  }
+
+  return FALSE;
 }

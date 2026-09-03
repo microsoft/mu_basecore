@@ -116,186 +116,361 @@ Error:
   return Status;
 }
 
+//
+// Context for MatchHashEntry visitor callback for the WalkDatabase function.
+//
+typedef struct {
+  DIGEST_CACHE                *Cache;
+  CONST SIGNATURE_TYPE_MAP    *Map;
+  UINTN                       MapCount;
+  BOOLEAN                     Truncated;
+} MATCH_HASH_CONTEXT;
+
+//
+// Context for MatchCertEntry visitor callback for the WalkDatabase function.
+//
+typedef struct {
+  CONST UINT8    *Cert;
+  UINTN          CertSize;
+} MATCH_CERT_CONTEXT;
+
 /**
-  Search a signature database for the subject bound to Cache, reporting whether a match was found.
+  WalkDatabase visitor: match the cache's digest against a hash-list entry.
 
-  Depending on the Cache->Type (DigestCacheTypeImage, DigestCacheTypeX509), the following signature list types in the
-  database are supported:
-    * SignatureKindX509Cert    - Any gEfiCert<V2>X509Guid list for an exact match of the bytes in Cache->Buffer
-    * SignatureKindImageHash   - Any gEfiCert<V2><HASH>Guid list for a match of the image's appropriate Authenticode hash digest
-    * SignatureKindX509TbsHash - Any gEfiCert<V2>X509<HASH>Guid for a match of the certificate's appropriate hash digest
+  Uses the SignatureType to look up the hash algorithm to retrieve (or compute) the digest from
+  the cache, then compare the digest against the entry.
 
-  @param[in,out]  Cache         Digest cache bound to the subject. Must be non-NULL and bound.
-  @param[in]      Database      Raw database contents, or NULL for an empty database.
-  @param[in]      DatabaseSize  Size of Database in bytes; 0 when Database is NULL.
-  @param[out]     Truncated     Optional. Set TRUE if the walk could not be proven complete.
+  @param[in]      SignatureType  The list's SignatureType GUID.
+  @param[in]      Entry          The current entry (raw bytes).
+  @param[in]      EntrySize      The entry size (the list's SignatureSize).
+  @param[in,out]  Context        A MATCH_HASH_CONTEXT.
 
-  @retval TRUE   A matching entry was found in the valid prefix.
-  @retval FALSE  No matching entry was found in the valid prefix.
+  @retval WalkStop      The cache's digest matches this entry.
+  @retval WalkSkipList  This list is not in the map, or its digest is uncomputable.
+  @retval WalkContinue  This entry did not match; try the next.
 **/
 STATIC
-BOOLEAN
-FindInDatabase (
-  IN OUT DIGEST_CACHE  *Cache,
-  IN     CONST VOID    *Database,
-  IN     UINTN         DatabaseSize,
-  OUT    BOOLEAN       *Truncated   OPTIONAL
+WALK_ACTION
+EFIAPI
+MatchHashEntry (
+  IN     CONST EFI_GUID  *SignatureType,
+  IN     CONST VOID      *Entry,
+  IN     UINTN           EntrySize,
+  IN OUT VOID            *Context
   )
 {
-  EFI_STATUS                Status;
-  SIG_DATABASE_ITER         DbIter;
-  SIG_LIST_ITER             ListIter;
-  CONST EFI_SIGNATURE_LIST  *List;
-  CONST EFI_SIGNATURE_DATA  *Entry;
+  MATCH_HASH_CONTEXT        *Ctx;
+  CONST SIGNATURE_TYPE_MAP  *Match;
   CONST UINT8               *Target;
   UINTN                     TargetSize;
   UINTN                     PayloadSize;
-  UINTN                     OwnerSize;
-  SIGNATURE_KIND            Kind;
+  UINTN                     RevocationTimeSize;
+  UINTN                     Index;
+  EFI_STATUS                Status;
 
-  if (Truncated != NULL) {
-    *Truncated = FALSE;
-  }
-
-  if ((Cache == NULL) || (Cache->Buffer == NULL) || (Cache->BufferSize == 0)) {
-    if (Truncated != NULL) {
-      *Truncated = TRUE;
-    }
-
-    return FALSE;
-  }
+  Ctx   = (MATCH_HASH_CONTEXT *)Context;
+  Match = NULL;
 
   //
-  // An absent database matches nothing and is not a truncation.
+  // Find the appropriate hash algorithm for this list's SignatureType or skip the list if it is
+  // not in the map.
   //
-  if ((Database == NULL) || (DatabaseSize == 0)) {
-    return FALSE;
-  }
-
-  //
-  // DatabaseIterInit clamps the walk to the valid prefix; a FALSE return means trailing lists
-  // were dropped.
-  //
-  if (!DatabaseIterInit (&DbIter, Database, DatabaseSize) && (Truncated != NULL)) {
-    *Truncated = TRUE;
-  }
-
-  while ((List = DatabaseIterNext (&DbIter)) != NULL) {
-    //
-    // Unsupported types are skipped.
-    //
-    if (EFI_ERROR (GetSignatureTypeInfo (&List->SignatureType, &Kind, &OwnerSize))) {
-      continue;
-    }
-
-    if (List->SignatureSize <= OwnerSize) {
-      continue;
-    }
-
-    PayloadSize = List->SignatureSize - OwnerSize;
-
-    if (Kind == SignatureKindX509Cert) {
-      if ((Cache->Type != DigestCacheTypeX509) || (PayloadSize != Cache->BufferSize)) {
-        continue;
-      }
-
-      Target     = (CONST UINT8 *)Cache->Buffer;
-      TargetSize = Cache->BufferSize;
-    } else {
-      Status = GetHash (&List->SignatureType, Cache, &Target, &TargetSize);
-
-      // GetHash returns EFI_UNSUPPORTED for a unknown signature type GUID
-      if (Status == EFI_UNSUPPORTED) {
-        continue;
-      }
-
-      if (EFI_ERROR (Status) || (PayloadSize < TargetSize)) {
-        if (Truncated != NULL) {
-          *Truncated = TRUE;
-        }
-
-        continue;
-      }
-    }
-
-    //
-    // Compare the selected bytes against every entry in the list.
-    //
-    if (!SigListIterInit (&ListIter, List) && (Truncated != NULL)) {
-      *Truncated = TRUE;
-    }
-
-    while ((Entry = SigListIterNext (&ListIter)) != NULL) {
-      if (CompareMem ((CONST UINT8 *)Entry + OwnerSize, Target, TargetSize) == 0) {
-        goto Found;
-      }
+  for (Index = 0; Index < Ctx->MapCount; Index++) {
+    if (CompareGuid (SignatureType, Ctx->Map[Index].SignatureType)) {
+      Match = &Ctx->Map[Index];
+      break;
     }
   }
 
-  return FALSE;
+  if ((Match == NULL) || (EntrySize <= Match->OwnerSize)) {
+    return WalkSkipList;
+  }
 
-Found:
-  return TRUE;
+  PayloadSize = EntrySize - Match->OwnerSize;
+
+  Status = GetHash (Match->HashAlgorithm, Ctx->Cache, &Target, &TargetSize);
+  if (EFI_ERROR (Status)) {
+    Ctx->Truncated = TRUE;
+    return WalkSkipList;
+  }
+
+  // Ensure the payload size matches the expected digest size. Must account for an appended
+  // EFI_TIME for TBS-cert-hash V1 entries.
+  RevocationTimeSize = 0;
+  if ((Ctx->Map == mTbsHashSignatures) && (Match->OwnerSize == sizeof (EFI_GUID))) {
+    RevocationTimeSize = sizeof (EFI_TIME);
+  }
+
+  if (PayloadSize != TargetSize + RevocationTimeSize) {
+    return WalkSkipList;
+  }
+
+  if (CompareMem ((CONST UINT8 *)Entry + Match->OwnerSize, Target, TargetSize) == 0) {
+    return WalkStop;
+  }
+
+  return WalkContinue;
 }
 
 /**
-  Determine whether the subject bound to Cache is present in a `db`-style allow-list.
+  WalkDatabase visitor: match a raw DER certificate against a full-certificate list entry.
 
-  Best-effort: a malformed `db` truncates the walk to its valid prefix, and the entries before the
-  corruption are still honored (a dropped entry can only remove a potential authorizer, never add
-  one).
+  Considers only EFI_CERT_X509 (full-certificate) lists whose payload size equals the certificate,
+  comparing the bytes exactly. All other lists are skipped.
 
-  @param[in,out]  Cache      Digest cache bound to the subject (image or certificate).
-  @param[in]      Db         Raw `db` contents, or NULL for an empty database.
-  @param[in]      DbSize     Size of Db in bytes; 0 when Db is NULL.
+  @param[in]      SignatureType  The list's SignatureType GUID.
+  @param[in]      Entry          The current entry (raw bytes).
+  @param[in]      EntrySize      The entry size (the list's SignatureSize).
+  @param[in,out]  Context        A MATCH_CERT_CONTEXT.
 
-  @retval TRUE   The subject matches an entry in the valid prefix of Db.
-  @retval FALSE  The subject is absent, or Cache is unusable.
+  @retval WalkStop      The certificate matches this entry.
+  @retval WalkSkipList  This list is not a matching full-certificate list.
+  @retval WalkContinue  This entry did not match; try the next.
+**/
+STATIC
+WALK_ACTION
+EFIAPI
+MatchCertEntry (
+  IN     CONST EFI_GUID  *SignatureType,
+  IN     CONST VOID      *Entry,
+  IN     UINTN           EntrySize,
+  IN OUT VOID            *Context
+  )
+{
+  MATCH_CERT_CONTEXT        *Ctx;
+  CONST SIGNATURE_TYPE_MAP  *Match;
+  UINTN                     Index;
+
+  Ctx   = (MATCH_CERT_CONTEXT *)Context;
+  Match = NULL;
+
+  //
+  // Ensure the signature type is one that represents a full DER certificate or skip the list.
+  //
+  for (Index = 0; Index < ARRAY_SIZE (mX509CertSignatures); Index++) {
+    if (CompareGuid (SignatureType, mX509CertSignatures[Index].SignatureType)) {
+      Match = &mX509CertSignatures[Index];
+      break;
+    }
+  }
+
+  if ((Match == NULL) ||
+      (EntrySize <= Match->OwnerSize) ||
+      ((EntrySize - Match->OwnerSize) != Ctx->CertSize))
+  {
+    return WalkSkipList;
+  }
+
+  if (CompareMem ((CONST UINT8 *)Entry + Match->OwnerSize, Ctx->Cert, Ctx->CertSize) == 0) {
+    return WalkStop;
+  }
+
+  return WalkContinue;
+}
+
+/**
+  Determine whether the image digest bound to Cache is present in a `db`-style allow-list.
+
+  @param[in,out]  Cache   Digest cache bound to the Authenticode image bytes.
+  @param[in]      Db      Raw `db` contents, or NULL for an empty database.
+  @param[in]      DbSize  Size of Db in bytes; 0 when Db is NULL.
+
+  @retval TRUE   The image digest matches an image-hash entry in the valid prefix of Db.
+  @retval FALSE  It is absent, or Cache is unusable.
 **/
 BOOLEAN
-IsInDb (
+IsImageHashInDb (
   IN OUT DIGEST_CACHE  *Cache,
   IN     CONST VOID    *Db,
   IN     UINTN         DbSize
   )
 {
+  MATCH_HASH_CONTEXT  Ctx;
+
   //
-  // Allow-list: ignore truncation and honor the valid prefix. FindInDatabase treats an unusable
-  // cache or a malformed db as simply "not found".
+  // An allow-list reports absent when the cache cannot be searched.
   //
-  return FindInDatabase (Cache, Db, DbSize, NULL);
+  if ((Cache == NULL) || (Cache->Buffer == NULL) || (Cache->BufferSize == 0)) {
+    return FALSE;
+  }
+
+  Ctx.Cache     = Cache;
+  Ctx.Map       = mImageHashSignatures;
+  Ctx.MapCount  = ARRAY_SIZE (mImageHashSignatures);
+  Ctx.Truncated = FALSE;
+
+  //
+  // Honor the valid prefix and ignore truncation: a trailing malformed entry can only drop a
+  // potential authorizer, never add one.
+  //
+  return WalkDatabase (Db, DbSize, MatchHashEntry, &Ctx, NULL);
 }
 
 /**
-  Determine whether the subject bound to Cache is present in a `dbx`-style deny-list.
+  Determine whether the image digest bound to Cache is present in a `dbx`-style deny-list.
 
-  Fails closed: if the `dbx` cannot be fully parsed (a malformed entry truncates the walk, a
-  required hash cannot be computed, or Cache is unusable), the subject is reported present, because
-  a dropped entry might have matched it.
+  Fails closed: a malformed `dbx` or an uncomputable digest reports the image present.
 
-  @param[in,out]  Cache      Digest cache bound to the subject (image or certificate).
-  @param[in]      Dbx        Raw `dbx` contents, or NULL for an empty database.
-  @param[in]      DbxSize    Size of Dbx in bytes; 0 when Dbx is NULL.
+  @param[in,out]  Cache    Digest cache bound to the Authenticode image bytes.
+  @param[in]      Dbx      Raw `dbx` contents, or NULL for an empty database.
+  @param[in]      DbxSize  Size of Dbx in bytes; 0 when Dbx is NULL.
 
-  @retval TRUE   The subject matches an entry, or the database could not be fully parsed.
-  @retval FALSE  The subject is definitively absent (including an absent/empty Dbx).
+  @retval TRUE   The image digest matches an image-hash entry, or the `dbx` could not be fully parsed.
+  @retval FALSE  It is definitively absent (including an absent/empty Dbx).
 **/
 BOOLEAN
-IsInDbx (
+IsImageHashInDbx (
   IN OUT DIGEST_CACHE  *Cache,
   IN     CONST VOID    *Dbx,
   IN     UINTN         DbxSize
   )
 {
-  BOOLEAN  Found;
-  BOOLEAN  Truncated;
+  MATCH_HASH_CONTEXT  Ctx;
+  BOOLEAN             Found;
+  BOOLEAN             Truncated;
 
   //
-  // Deny-list: fail closed. Any inability to complete the search - an unusable cache, a malformed
-  // dbx, or an uncomputable hash - is surfaced through Truncated by FindInDatabase and treated
-  // here as "present".
+  // A deny-list fails closed: an unsearchable cache reports the image present.
   //
-  Found = FindInDatabase (Cache, Dbx, DbxSize, &Truncated);
+  if ((Cache == NULL) || (Cache->Buffer == NULL) || (Cache->BufferSize == 0)) {
+    return TRUE;
+  }
+
+  Ctx.Cache     = Cache;
+  Ctx.Map       = mImageHashSignatures;
+  Ctx.MapCount  = ARRAY_SIZE (mImageHashSignatures);
+  Ctx.Truncated = FALSE;
+
+  Found = WalkDatabase (Dbx, DbxSize, MatchHashEntry, &Ctx, &Truncated);
+
+  //
+  // Fail closed on any truncation: a structural break, or a supported list whose digest could not
+  // be computed, might have hidden a match.
+  //
+  return (BOOLEAN)(Found || Truncated || Ctx.Truncated);
+}
+
+/**
+  Determine whether the TBSCertificate digest bound to Cache is present in a `db`-style allow-list.
+
+  @param[in,out]  Cache   Digest cache bound to a certificate's TBSCertificate bytes.
+  @param[in]      Db      Raw `db` contents, or NULL for an empty database.
+  @param[in]      DbSize  Size of Db in bytes; 0 when Db is NULL.
+
+  @retval TRUE   The TBS digest matches a cert-hash entry in the valid prefix of Db.
+  @retval FALSE  It is absent, or Cache is unusable.
+**/
+BOOLEAN
+IsTbsHashInDb (
+  IN OUT DIGEST_CACHE  *Cache,
+  IN     CONST VOID    *Db,
+  IN     UINTN         DbSize
+  )
+{
+  MATCH_HASH_CONTEXT  Ctx;
+
+  //
+  // An allow-list reports absent when the cache cannot be searched.
+  //
+  if ((Cache == NULL) || (Cache->Buffer == NULL) || (Cache->BufferSize == 0)) {
+    return FALSE;
+  }
+
+  Ctx.Cache     = Cache;
+  Ctx.Map       = mTbsHashSignatures;
+  Ctx.MapCount  = ARRAY_SIZE (mTbsHashSignatures);
+  Ctx.Truncated = FALSE;
+
+  //
+  // Honor the valid prefix and ignore truncation: a trailing malformed entry can only drop a
+  // potential authorizer, never add one.
+  //
+  return WalkDatabase (Db, DbSize, MatchHashEntry, &Ctx, NULL);
+}
+
+/**
+  Determine whether the TBSCertificate digest bound to Cache is present in a `dbx`-style deny-list.
+
+  Fails closed: a malformed `dbx` or an uncomputable digest reports the certificate present.
+
+  @param[in,out]  Cache    Digest cache bound to a certificate's TBSCertificate bytes.
+  @param[in]      Dbx      Raw `dbx` contents, or NULL for an empty database.
+  @param[in]      DbxSize  Size of Dbx in bytes; 0 when Dbx is NULL.
+
+  @retval TRUE   The TBS digest matches a cert-hash entry, or the `dbx` could not be fully parsed.
+  @retval FALSE  It is definitively absent (including an absent/empty Dbx).
+**/
+BOOLEAN
+IsTbsHashInDbx (
+  IN OUT DIGEST_CACHE  *Cache,
+  IN     CONST VOID    *Dbx,
+  IN     UINTN         DbxSize
+  )
+{
+  MATCH_HASH_CONTEXT  Ctx;
+  BOOLEAN             Found;
+  BOOLEAN             Truncated;
+
+  //
+  // A deny-list fails closed: an unsearchable cache reports the certificate present.
+  //
+  if ((Cache == NULL) || (Cache->Buffer == NULL) || (Cache->BufferSize == 0)) {
+    return TRUE;
+  }
+
+  Ctx.Cache     = Cache;
+  Ctx.Map       = mTbsHashSignatures;
+  Ctx.MapCount  = ARRAY_SIZE (mTbsHashSignatures);
+  Ctx.Truncated = FALSE;
+
+  Found = WalkDatabase (Dbx, DbxSize, MatchHashEntry, &Ctx, &Truncated);
+
+  //
+  // Fail closed on any truncation: a structural break, or a supported list whose digest could not
+  // be computed, might have hidden a match.
+  //
+  return (BOOLEAN)(Found || Truncated || Ctx.Truncated);
+}
+
+/**
+  Determine whether a raw DER certificate is present in a `dbx`-style deny-list by exact match.
+
+  Compares the certificate byte-for-byte against the EFI_CERT_X509 (full-certificate) lists. This
+  covers identity revocation only; TBS-cert-hash revocation is a hash match handled by IsTbsHashInDbx.
+  Fails closed: an unusable certificate or an un-parseable `dbx` reports the certificate present.
+
+  @param[in]  Cert       DER-encoded certificate to search for.
+  @param[in]  CertSize   Size of Cert in bytes.
+  @param[in]  Dbx        Raw `dbx` contents, or NULL for an empty database.
+  @param[in]  DbxSize    Size of Dbx in bytes; 0 when Dbx is NULL.
+
+  @retval TRUE   The certificate matches an EFI_CERT_X509 entry, or the database could not be fully
+                 parsed.
+  @retval FALSE  The certificate is definitively absent (including an absent/empty Dbx).
+**/
+BOOLEAN
+IsCertInDbx (
+  IN  CONST UINT8  *Cert,
+  IN  UINTN        CertSize,
+  IN  CONST VOID   *Dbx,
+  IN  UINTN        DbxSize
+  )
+{
+  MATCH_CERT_CONTEXT  Ctx;
+  BOOLEAN             Found;
+  BOOLEAN             Truncated;
+
+  //
+  // Deny-list: fail closed. An unusable certificate cannot be searched.
+  //
+  if ((Cert == NULL) || (CertSize == 0)) {
+    return TRUE;
+  }
+
+  Ctx.Cert     = Cert;
+  Ctx.CertSize = CertSize;
+
+  Found = WalkDatabase (Dbx, DbxSize, MatchCertEntry, &Ctx, &Truncated);
 
   return (BOOLEAN)(Found || Truncated);
 }
@@ -369,7 +544,7 @@ ExtractAuthData (
   `dbx`.
 
   Reports the chain revoked if any certificate in it - signer, intermediates, or the anchor - is
-  enrolled in the `dbx` (by exact DER match or by TBS-cert hash; see IsInDbx).
+  enrolled in the `dbx` (by exact DER via IsCertInDbx or by TBS-cert hash via IsTbsHashInDbx).
 
   @param[in]  CertChain          EFI_CERT_STACK ordered signer..anchor.
   @param[in]  CertChainSize      Size of CertChain in bytes.
@@ -395,6 +570,8 @@ IsChainRevoked (
   UINT32        CertLen;
   BOOLEAN       Revoked;
   DIGEST_CACHE  CertCache;
+  UINT8         *Tbs;
+  UINTN         TbsSize;
 
   //
   // With no dbx there is nothing to revoke against.
@@ -432,17 +609,32 @@ IsChainRevoked (
     }
 
     //
-    // Bind a certificate cache to this chain certificate and test it against the `dbx`. A fresh
-    // cache per certificate keeps their memoized TBS hashes independent.
+    // The cert-hash `dbx` entries hash the certificate's TBSCertificate, so pre-extract it and bind
+    // the cache to those bytes. A fresh cache per certificate keeps memoized digests independent; a
+    // certificate whose TBS cannot be extracted is fail-closed as revoked.
     //
-    ZeroMem (&CertCache, sizeof (CertCache));
-    CertCache.Type       = DigestCacheTypeX509;
-    CertCache.Buffer     = Walker;
-    CertCache.BufferSize = CertLen;
-
-    if (IsInDbx (&CertCache, Dbx, DbxSize)) {
-      DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: chain certificate revoked by dbx.\n"));
+    if (!X509GetTBSCert (Walker, CertLen, &Tbs, &TbsSize)) {
+      DEBUG ((DEBUG_WARN, "DxeImageVerificationLib: could not extract chain certificate TBS; treating as revoked.\n"));
       Revoked = TRUE;
+      break;
+    }
+
+    ZeroMem (&CertCache, sizeof (CertCache));
+    CertCache.Buffer     = Tbs;
+    CertCache.BufferSize = TbsSize;
+
+    //
+    // A certificate is revoked either by identity (exact DER in an EFI_CERT_X509 list, matched
+    // against the raw certificate) or by its TBSCertificate digest (a cert-hash list, matched via
+    // the cache). Both are fail-closed. The per-certificate cache is released before the next cert.
+    //
+    Revoked = (BOOLEAN)(IsCertInDbx (Walker, CertLen, Dbx, DbxSize) ||
+                        IsTbsHashInDbx (&CertCache, Dbx, DbxSize));
+
+    FreeDigestCache (&CertCache);
+
+    if (Revoked) {
+      DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: chain certificate revoked by dbx.\n"));
       break;
     }
 
@@ -450,6 +642,179 @@ IsChainRevoked (
   }
 
   return Revoked;
+}
+
+//
+// Context for EvaluateAnchorEntry: the image's signature and hash, the databases (for `dbx`
+// revocation), the lazily-allocated trust-anchor recovery cache handle (freed by the caller), and
+// the evaluation record updated in place.
+//
+typedef struct {
+  CONST UINT8                  *AuthData;
+  UINTN                        AuthDataSize;
+  CONST UINT8                  *ImageHash;
+  UINTN                        ImageHashSize;
+  CONST SIGNATURE_DATABASES    *Databases;
+  VOID                         *CacheHandle;
+  IMAGE_CERT_EVALUATION        *Evaluation;
+} EVALUATE_ANCHOR_CONTEXT;
+
+/**
+  WalkDatabase visitor: walk the `db` for a non-revoked trust anchor that authorizes the image.
+
+  For each certificate entry in the `db` (a full certificate, or a TBS-cert-hash entry whose anchor
+  is recovered from the signature), attempt to verify the image. If it verifies, check if any certificate
+  in the available chain (from signer to trust anchor) is revoked by the `dbx`. If none are revoked,
+  record the authorizing certificate in the evaluation record and stop the walk. Otherwise continue
+  the walk.
+
+  @param[in]      SignatureType  The list's SignatureType GUID.
+  @param[in]      Entry          The current entry (raw bytes).
+  @param[in]      EntrySize      The entry size (the list's SignatureSize).
+  @param[in,out]  Context        An EVALUATE_ANCHOR_CONTEXT.
+
+  @retval WalkStop      The image was authorized (ImageCertApproved).
+  @retval WalkSkipList  This list cannot authorize the image (unsupported, or an image-hash list).
+  @retval WalkContinue  This entry did not authorize the image; try the next.
+**/
+STATIC
+WALK_ACTION
+EFIAPI
+EvaluateAnchorEntry (
+  IN     CONST EFI_GUID  *SignatureType,
+  IN     CONST VOID      *Entry,
+  IN     UINTN           EntrySize,
+  IN OUT VOID            *Context
+  )
+{
+  EVALUATE_ANCHOR_CONTEXT   *Ctx;
+  EFI_STATUS                Status;
+  UINT8                     *Anchor;
+  UINTN                     AnchorSize;
+  UINTN                     TbsHashSize;
+  UINT8                     *CertChain;
+  UINTN                     CertChainSize;
+  UINTN                     OwnerSize;
+  UINTN                     PayloadSize;
+  UINTN                     Index;
+  CONST SIGNATURE_TYPE_MAP  *Match;
+
+  Ctx        = (EVALUATE_ANCHOR_CONTEXT *)Context;
+  Anchor     = NULL;
+  AnchorSize = 0;
+
+  //
+  // A trust anchor is either a full X.509 certificate or a TBS-cert-hash list (whose anchor is
+  // recovered from the signature). Any other list is skipped.
+  //
+  Match = NULL;
+  for (Index = 0; Index < ARRAY_SIZE (mX509CertSignatures); Index++) {
+    if (CompareGuid (SignatureType, mX509CertSignatures[Index].SignatureType)) {
+      Match = &mX509CertSignatures[Index];
+      break;
+    }
+  }
+
+  if (Match == NULL) {
+    for (Index = 0; Index < ARRAY_SIZE (mTbsHashSignatures); Index++) {
+      if (CompareGuid (SignatureType, mTbsHashSignatures[Index].SignatureType)) {
+        Match = &mTbsHashSignatures[Index];
+        break;
+      }
+    }
+  }
+
+  if ((Match == NULL) || (EntrySize <= Match->OwnerSize)) {
+    return WalkSkipList;
+  }
+
+  OwnerSize   = Match->OwnerSize;
+  PayloadSize = EntrySize - OwnerSize;
+
+  if (Match->HashAlgorithm == NULL) {
+    //
+    // A NULL hash algorithm marks a full X.509 certificate list
+    //
+    Anchor     = (UINT8 *)Entry + OwnerSize;
+    AnchorSize = PayloadSize;
+  } else {
+    //
+    // Recover the trust anchor from the TBS-cert-hash entry.
+    //
+    TbsHashSize = PayloadSize;
+    if (OwnerSize == sizeof (EFI_GUID)) {
+      if (TbsHashSize <= sizeof (EFI_TIME)) {
+        return WalkSkipList;
+      }
+
+      TbsHashSize -= sizeof (EFI_TIME);
+    }
+
+    Status = GetTrustAnchorX509FromAuthData (
+               &Ctx->CacheHandle,
+               (CONST UINT8 *)Entry + OwnerSize,
+               TbsHashSize,
+               Ctx->AuthData,
+               Ctx->AuthDataSize,
+               &Anchor,
+               &AnchorSize
+               );
+    if (EFI_ERROR (Status)) {
+      return WalkContinue;
+    }
+  }
+
+  //
+  // The candidate anchor authorizes the image only if it verifies the signature and none of the
+  // certificates in its verified chain are revoked by the `dbx`.
+  //
+  CertChain     = NULL;
+  CertChainSize = 0;
+  Status        = AuthenticodeVerifyEx (
+                    Ctx->AuthData,
+                    Ctx->AuthDataSize,
+                    Anchor,
+                    AnchorSize,
+                    Ctx->ImageHash,
+                    Ctx->ImageHashSize,
+                    &CertChain,
+                    &CertChainSize
+                    );
+  if (!EFI_ERROR (Status)) {
+    if (IsChainRevoked (CertChain, CertChainSize, Ctx->Databases->Dbx, Ctx->Databases->DbxSize)) {
+      //
+      // Verified but revoked: record only the verdict. A later anchor may still authorize the image
+      // cleanly and replace this verdict.
+      //
+      Ctx->Evaluation->Verdict = ImageCertRevokedByDbx;
+    } else {
+      //
+      // Authorized: record the authorizing certificate. BuildImageAuthority copies Anchor before it
+      // is released below; the owner GUID comes from a V1 entry or is zeroed for a V2 entry.
+      //
+      Ctx->Evaluation->Verdict = ImageCertApproved;
+      BuildImageAuthority (
+        (OwnerSize == sizeof (EFI_GUID)) ? (CONST EFI_GUID *)Entry : NULL,
+        Anchor,
+        AnchorSize,
+        &Ctx->Evaluation->Authority
+        );
+      CopyGuid (&Ctx->Evaluation->Authority.SignatureType, SignatureType);
+    }
+  }
+
+  if (CertChain != NULL) {
+    FreePool (CertChain);
+  }
+
+  //
+  // Only the TBS-cert-hash path (a non-NULL hash algorithm) allocated the anchor; release it.
+  //
+  if (Match->HashAlgorithm != NULL) {
+    FreePool (Anchor);
+  }
+
+  return (Ctx->Evaluation->Verdict == ImageCertApproved) ? WalkStop : WalkContinue;
 }
 
 /**
@@ -490,24 +855,13 @@ EvaluateImageCertificate (
   OUT    IMAGE_CERT_EVALUATION      *Evaluation
   )
 {
-  EFI_STATUS                Status;
-  CONST UINT8               *AuthData;
-  UINTN                     AuthDataSize;
-  EFI_GUID                  HashType;
-  CONST UINT8               *ImageHash;
-  UINTN                     ImageHashSize;
-  SIG_DATABASE_ITER         DbIter;
-  SIG_LIST_ITER             ListIter;
-  CONST EFI_SIGNATURE_LIST  *List;
-  CONST EFI_SIGNATURE_DATA  *Entry;
-  VOID                      *CacheHandle;
-  UINT8                     *Anchor;
-  UINTN                     AnchorSize;
-  UINTN                     TbsHashSize;
-  UINT8                     *CertChain;
-  UINTN                     CertChainSize;
-  UINTN                     OwnerSize;
-  SIGNATURE_KIND            Kind;
+  EFI_STATUS               Status;
+  CONST UINT8              *AuthData;
+  UINTN                    AuthDataSize;
+  EFI_GUID                 HashAlgorithm;
+  CONST UINT8              *ImageHash;
+  UINTN                    ImageHashSize;
+  EVALUATE_ANCHOR_CONTEXT  AnchorCtx;
 
   if ((Cert == NULL) || (Cache == NULL) || (Databases == NULL) || (Evaluation == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -521,27 +875,25 @@ EvaluateImageCertificate (
   Evaluation->Authority.Size = 0;
   ZeroMem (&Evaluation->Authority.SignatureType, sizeof (EFI_GUID));
 
-  CacheHandle = NULL;
-
   Status = ExtractAuthData (Cert, &AuthData, &AuthDataSize);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_WARN, "DxeImageVerificationLib: WIN_CERTIFICATE not usable (type=0x%04x, %r).\n", Cert->wCertificateType, Status));
     return EFI_SUCCESS;
   }
 
-  Status = GetAuthenticodeHashAlgorithm (AuthData, AuthDataSize, &HashType);
+  Status = GetAuthenticodeHashAlgorithm (AuthData, AuthDataSize, &HashAlgorithm);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_WARN, "DxeImageVerificationLib: unrecognized Authenticode hash algorithm (%r).\n", Status));
     return EFI_SUCCESS;
   }
 
   //
-  // Compute (or reuse) the image's Authenticode hash under the declared algorithm. A failure here
-  // is an actual error: the image hash is not attributable to this certificate's content.
+  // Compute (or reuse) the image's Authenticode hash. The EFI_HASH_ALGORITHM_* GUID from
+  // GetAuthenticodeHashAlgorithm is passed straight to GetHash.
   //
-  Status = GetHash (&HashType, Cache, &ImageHash, &ImageHashSize);
+  Status = GetHash (&HashAlgorithm, Cache, &ImageHash, &ImageHashSize);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: failed to compute image hash (type=%g, %r).\n", &HashType, Status));
+    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: failed to compute image hash (type=%g, %r).\n", &HashAlgorithm, Status));
     return Status;
   }
 
@@ -551,138 +903,21 @@ EvaluateImageCertificate (
   Evaluation->Verdict = ImageCertNotInDb;
 
   //
-  // Walk the valid prefix of trust anchors in the `db`. A malformed list only truncates the range
-  // (best-effort authorization); anchors before the corruption are still honored. Hash entries are
-  // resolved to certificates as needed.
+  // Walk the `db` specifically for trust anchors (full cert or TBS-cert-hash entries). For each anchor, see if it verifies
+  // the image. If verified, check the chain from signer to anchor against the `dbx` for revocation.
   //
-  DatabaseIterInit (&DbIter, Databases->Db, Databases->DbSize);
+  ZeroMem (&AnchorCtx, sizeof (AnchorCtx));
+  AnchorCtx.AuthData      = AuthData;
+  AnchorCtx.AuthDataSize  = AuthDataSize;
+  AnchorCtx.ImageHash     = ImageHash;
+  AnchorCtx.ImageHashSize = ImageHashSize;
+  AnchorCtx.Databases     = Databases;
+  AnchorCtx.Evaluation    = Evaluation;
 
-  while ((List = DatabaseIterNext (&DbIter)) != NULL) {
-    //
-    // Unsupported signature types (including Image Hashes in this case) are skipped.
-    //
-    if (EFI_ERROR (GetSignatureTypeInfo (&List->SignatureType, &Kind, &OwnerSize)) ||
-        (Kind == SignatureKindImageHash))
-    {
-      continue;
-    }
+  WalkDatabase (Databases->Db, Databases->DbSize, EvaluateAnchorEntry, &AnchorCtx, NULL);
 
-    if (List->SignatureSize <= OwnerSize) {
-      continue;
-    }
-
-    //
-    // A malformed list is clamped to its valid entries; iterate whatever prefix is available.
-    //
-    SigListIterInit (&ListIter, List);
-
-    while ((Entry = SigListIterNext (&ListIter)) != NULL) {
-      Anchor     = NULL;
-      AnchorSize = 0;
-
-      if (Kind == SignatureKindX509Cert) {
-        //
-        // The entry is the DER certificate itself, borrowed from the `db` buffer.
-        //
-        Anchor     = (UINT8 *)Entry + OwnerSize;
-        AnchorSize = List->SignatureSize - OwnerSize;
-      } else {
-        //
-        // Recover the trust anchor from the TBS-cert-hash entry. V1 entries have a trailing EFI_TIME
-        // structure after the hash where as V2 entries do not. Adjust the hash size accordingly.
-        //
-        TbsHashSize = List->SignatureSize - OwnerSize;
-        if (OwnerSize == sizeof (EFI_GUID)) {
-          if (TbsHashSize <= sizeof (EFI_TIME)) {
-            continue;
-          }
-
-          TbsHashSize -= sizeof (EFI_TIME);
-        }
-
-        Status = GetTrustAnchorX509FromAuthData (
-                   &CacheHandle,
-                   (CONST UINT8 *)Entry + OwnerSize,
-                   TbsHashSize,
-                   AuthData,
-                   AuthDataSize,
-                   &Anchor,
-                   &AnchorSize
-                   );
-        if (EFI_ERROR (Status)) {
-          continue;
-        }
-      }
-
-      //
-      // The candidate anchor authorizes the image only if it verifies the signature and none of
-      // the certificates in its verified chain are revoked by the `dbx`.
-      //
-      CertChain     = NULL;
-      CertChainSize = 0;
-      Status        = AuthenticodeVerifyEx (
-                        AuthData,
-                        AuthDataSize,
-                        Anchor,
-                        AnchorSize,
-                        ImageHash,
-                        ImageHashSize,
-                        &CertChain,
-                        &CertChainSize
-                        );
-      if (!EFI_ERROR (Status)) {
-        if (IsChainRevoked (
-              CertChain,
-              CertChainSize,
-              Databases->Dbx,
-              Databases->DbxSize
-              ))
-        {
-          //
-          // Verified but revoked: record only the verdict. The revoking authority is intentionally
-          // not captured - an image may carry several signers, each revoked by a different `dbx`
-          // entry, so no single entry meaningfully attributes the denial. A subsequent anchor may
-          // still authorize the image cleanly and replace this verdict.
-          //
-          Evaluation->Verdict = ImageCertRevokedByDbx;
-        } else {
-          //
-          // Authorized: record the authorizing certificate. Anchor is the certificate bytes
-          // (borrowed from the `db` for a full-cert entry, reconstructed for a TBS-cert-hash entry);
-          // BuildImageAuthority copies it before it is released below. The owner GUID comes from a
-          // V1 entry or is zeroed for a V2 entry.
-          //
-          Evaluation->Verdict = ImageCertApproved;
-          BuildImageAuthority (
-            (OwnerSize == sizeof (EFI_GUID)) ? (CONST EFI_GUID *)Entry : NULL,
-            Anchor,
-            AnchorSize,
-            &Evaluation->Authority
-            );
-          CopyGuid (&Evaluation->Authority.SignatureType, &List->SignatureType);
-        }
-      }
-
-      if (CertChain != NULL) {
-        FreePool (CertChain);
-      }
-
-      //
-      // Only the TBS-cert-hash path allocated the anchor; release it.
-      //
-      if (Kind != SignatureKindX509Cert) {
-        FreePool (Anchor);
-      }
-
-      if (Evaluation->Verdict == ImageCertApproved) {
-        goto Done;
-      }
-    }
-  }
-
-Done:
-  if (CacheHandle != NULL) {
-    FreeTrustAnchorX509Cache (CacheHandle);
+  if (AnchorCtx.CacheHandle != NULL) {
+    FreeTrustAnchorX509Cache (AnchorCtx.CacheHandle);
   }
 
   return EFI_SUCCESS;

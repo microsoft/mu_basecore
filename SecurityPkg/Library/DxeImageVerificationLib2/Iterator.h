@@ -139,26 +139,24 @@ SigListIterNext (
   );
 
 /**
-  Initialize an iterator over the WIN_CERTIFICATE records contained in a PE/COFF image's security
-  data directory.
+  Initialize an iterator over a packed table of WIN_CERTIFICATE records (a PE/COFF image's
+  attribute-certificate data).
 
-  The initialization validates the list and will truncate the iteration range to the
-  last valid entry if the list if malformed.
+  The initialization validates the table and will truncate the iteration range to the last valid
+  entry if the table is malformed.
 
-  @param[out]  Iter        Iterator state to initialize.
-  @param[in]   FileBuffer  Pointer to the in-memory PE/COFF image.
-  @param[in]   FileSize    Size of FileBuffer in bytes.
-  @param[in]   SecDataDir  Security data directory describing the embedded WIN_CERTIFICATE table.
+  @param[out]  Iter             Iterator state to initialize.
+  @param[in]   WinCertificates  The WIN_CERTIFICATE table, or NULL when there are none.
+  @param[in]   Length           Length of the table in bytes; 0 when WinCertificates is NULL.
 
-  @retval TRUE   The iterator covers every entry in the list.
+  @retval TRUE   The iterator covers every entry in the table.
   @retval FALSE  The iterator was truncated due to invalid arguments or a malformed table.
 **/
 BOOLEAN
 WinCertIterInit (
-  OUT WIN_CERT_ITER                   *Iter,
-  IN  CONST VOID                      *FileBuffer,
-  IN  UINTN                           FileSize,
-  IN  CONST EFI_IMAGE_DATA_DIRECTORY  *SecDataDir
+  OUT WIN_CERT_ITER          *Iter,
+  IN  CONST WIN_CERTIFICATE  *WinCertificates,
+  IN  UINTN                  Length
   );
 
 /**
@@ -174,4 +172,70 @@ WinCertIterInit (
 CONST WIN_CERTIFICATE *
 WinCertIterNext (
   IN OUT WIN_CERT_ITER  *Iter
+  );
+
+//
+// Control returned by a per-entry visitor to WalkDatabase.
+//
+typedef enum {
+  WalkContinue,   // Continue to the next entry in the current list.
+  WalkSkipList,   // Skip the remaining entries of the current list; continue with the next list.
+  WalkStop        // Stop the walk; WalkDatabase returns TRUE.
+} WALK_ACTION;
+
+/**
+  Per-entry callback invoked by WalkDatabase for each entry of every EFI_SIGNATURE_LIST in a
+  database's valid prefix.
+
+  The entry layout depends on SignatureType (a V1 EFI_SIGNATURE_DATA carries a 16-byte
+  SignatureOwner prefix; a V2 EFI_SIGNATURE_V2_DATA does not), so Entry is passed untyped and the
+  visitor interprets it. Returning WalkContinue advances to the next entry, WalkSkipList abandons
+  the rest of the current list (e.g. once its type is known to be irrelevant), and WalkStop ends the
+  walk.
+
+  @param[in]      SignatureType  The list's EFI_SIGNATURE_LIST SignatureType GUID.
+  @param[in]      Entry          The current entry (raw bytes; V1 or V2 layout per SignatureType).
+  @param[in]      EntrySize      The entry size in bytes (the list's SignatureSize).
+  @param[in,out]  Context        Caller state threaded through the walk.
+
+  @retval WalkContinue  Continue to the next entry in the current list.
+  @retval WalkSkipList  Skip the rest of the current list and continue with the next list.
+  @retval WalkStop      Stop the walk.
+**/
+typedef
+WALK_ACTION
+(EFIAPI *SIG_ENTRY_VISITOR)(
+  IN     CONST EFI_GUID  *SignatureType,
+  IN     CONST VOID      *Entry,
+  IN     UINTN           EntrySize,
+  IN OUT VOID            *Context
+  );
+
+/**
+  Walk each entry of every EFI_SIGNATURE_LIST in a signature database, invoking Visit for each, and
+  report whether Visit stopped the walk.
+
+  This is the single iteration primitive shared by the membership searches and the certificate
+  evaluator. It owns the database and list iterators and accounts structural truncation, but does
+  not interpret entries: it hands each entry's SignatureType, bytes, and size to Visit, which
+  classifies and locates the payload itself. Visit may skip the rest of a list (WalkSkipList) or end
+  the walk (WalkStop).
+
+  @param[in]      Database      Raw database contents, or NULL for an empty database.
+  @param[in]      DatabaseSize  Size of Database in bytes; 0 when Database is NULL.
+  @param[in]      Visit         Per-entry callback. Required.
+  @param[in,out]  Context       State threaded to Visit.
+  @param[out]     Truncated     Optional. Set TRUE if the walk could not be proven complete (a
+                                malformed database or list clamped the range).
+
+  @retval TRUE   Visit returned WalkStop for some entry.
+  @retval FALSE  The walk completed without Visit stopping it.
+**/
+BOOLEAN
+WalkDatabase (
+  IN     CONST VOID         *Database,
+  IN     UINTN              DatabaseSize,
+  IN     SIG_ENTRY_VISITOR  Visit,
+  IN OUT VOID               *Context,
+  OUT    BOOLEAN            *Truncated   OPTIONAL
   );

@@ -23,10 +23,12 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/DebugLib.h>
 #include <Library/SecurityManagementLib.h>
+#include <Library/AuthenticodeLib.h>
 #include <Pi/PiFirmwareFile.h>
 #include <Pi/PiFirmwareVolume.h>
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/DevicePath.h>
+#include <Protocol/Hash.h>
 
 //
 // Authorization policy bit definition
@@ -43,30 +45,51 @@
 #define MAX_DIGEST_SIZE  SHA512_DIGEST_SIZE
 
 //
-// Type definition for all information necessary to describe hash algorithm usage in this library.
-//
-// Each algorithm lists its signature-type GUIDs for both roles (raw image hash, X.509 TBS-cert
-// hash) in both layouts: the V1 GUID whose list entries use EFI_SIGNATURE_DATA (a 16-byte
-// SignatureOwner precedes the payload) and the V2 GUID whose entries use EFI_SIGNATURE_V2_DATA (no
-// SignatureOwner). ImageHashGuid (V1) is the canonical GUID handed to the BaseCryptLib hashing
-// primitives, which only recognize the V1 image-hash GUIDs.
+// One supported signature-list type for the database visitors: its EFI_SIGNATURE_LIST SignatureType,
+// the algorithm its entries are hashed under (NULL for a full-certificate type, which carries a DER
+// certificate rather than a digest), and the per-entry SignatureOwner size (sizeof (EFI_GUID) for a
+// V1 EFI_SIGNATURE_DATA type, 0 for a V2 EFI_SIGNATURE_V2_DATA type).
 //
 typedef struct {
-  CONST CHAR8       *Name;
-  CONST EFI_GUID    *ImageHashGuid;        // EFI_CERT_SHA*_GUID          (V1)
-  CONST EFI_GUID    *ImageHashGuidV2;      // EFI_CERT_V2_SHA*_GUID       (V2)
-  CONST EFI_GUID    *X509CertHashGuid;     // EFI_CERT_X509_SHA*_GUID     (V1)
-  CONST EFI_GUID    *X509CertHashGuidV2;   // EFI_CERT_V2_X509_SHA*_GUID  (V2)
-} HASH_ALGORITHM;
+  CONST EFI_GUID    *SignatureType;
+  CONST EFI_GUID    *HashAlgorithm;
+  UINTN             OwnerSize;
+} SIGNATURE_TYPE_MAP;
 
 //
-// All supported hash algorithms for secureboot validation. Adding a new algorithm to this list
-// will add support for that algorithm across the entire library.
+// The image-hash signature types (EFI_CERT_SHA* / EFI_CERT_V2_SHA*) a hash-membership search may
+// match, each mapped to its hash algorithm and owner size.
 //
-STATIC CONST HASH_ALGORITHM  mHashAlgorithms[] = {
-  { "SHA256", &gEfiCertSha256Guid, &gEfiCertV2Sha256Guid, &gEfiCertX509Sha256Guid, &gEfiCertV2X509Sha256Guid },
-  { "SHA384", &gEfiCertSha384Guid, &gEfiCertV2Sha384Guid, &gEfiCertX509Sha384Guid, &gEfiCertV2X509Sha384Guid },
-  { "SHA512", &gEfiCertSha512Guid, &gEfiCertV2Sha512Guid, &gEfiCertX509Sha512Guid, &gEfiCertV2X509Sha512Guid },
+GLOBAL_REMOVE_IF_UNREFERENCED STATIC CONST SIGNATURE_TYPE_MAP  mImageHashSignatures[] = {
+  { &gEfiCertSha256Guid,   &gEfiHashAlgorithmSha256Guid, sizeof (EFI_GUID) },
+  { &gEfiCertV2Sha256Guid, &gEfiHashAlgorithmSha256Guid, 0                 },
+  { &gEfiCertSha384Guid,   &gEfiHashAlgorithmSha384Guid, sizeof (EFI_GUID) },
+  { &gEfiCertV2Sha384Guid, &gEfiHashAlgorithmSha384Guid, 0                 },
+  { &gEfiCertSha512Guid,   &gEfiHashAlgorithmSha512Guid, sizeof (EFI_GUID) },
+  { &gEfiCertV2Sha512Guid, &gEfiHashAlgorithmSha512Guid, 0                 },
+};
+
+//
+// The X.509 TBS-cert-hash signature types (EFI_CERT_X509_SHA* / EFI_CERT_V2_X509_SHA*) a
+// hash-membership search may match.
+//
+GLOBAL_REMOVE_IF_UNREFERENCED STATIC CONST SIGNATURE_TYPE_MAP  mTbsHashSignatures[] = {
+  { &gEfiCertX509Sha256Guid,   &gEfiHashAlgorithmSha256Guid, sizeof (EFI_GUID) },
+  { &gEfiCertV2X509Sha256Guid, &gEfiHashAlgorithmSha256Guid, 0                 },
+  { &gEfiCertX509Sha384Guid,   &gEfiHashAlgorithmSha384Guid, sizeof (EFI_GUID) },
+  { &gEfiCertV2X509Sha384Guid, &gEfiHashAlgorithmSha384Guid, 0                 },
+  { &gEfiCertX509Sha512Guid,   &gEfiHashAlgorithmSha512Guid, sizeof (EFI_GUID) },
+  { &gEfiCertV2X509Sha512Guid, &gEfiHashAlgorithmSha512Guid, 0                 },
+};
+
+//
+// The full X.509 certificate signature types (EFI_CERT_X509 / EFI_CERT_V2_X509) and their per-entry
+// SignatureOwner size, reusing SIGNATURE_TYPE_MAP with a NULL hash-algorithm column: these carry a
+// DER certificate rather than a digest, so they are never hashed.
+//
+GLOBAL_REMOVE_IF_UNREFERENCED STATIC CONST SIGNATURE_TYPE_MAP  mX509CertSignatures[] = {
+  { &gEfiCertX509Guid,   NULL, sizeof (EFI_GUID) },
+  { &gEfiCertV2X509Guid, NULL, 0                 },
 };
 
 //

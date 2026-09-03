@@ -7,12 +7,8 @@ It focuses on the following phases:
 1. **Policy validation** (entry-point gating)
 2. **`ValidateImage`** (the single, unified validator for both signed
    and unsigned images)
-3. `IsInDbx` / `IsInDb` (deny-list / allow-list membership search)
-4. `EvaluateImageCertificate` (per-certificate evaluation)
-
-`ValidateImage` builds a single `DIGEST_CACHE` bound to the image to prevent
-calculating the image digest more then once per supported algorithm. This
-cache is used throughout applicable functions in this flow.
+3. Image allow / deny list search
+4. Per-certificate allow / deny list search
 
 ## About this library
 
@@ -61,13 +57,14 @@ flowchart TD
     D -- yes --> D1[return EFI_SUCCESS]
     D -- no  --> E{{IsSecureBootEnabled?}}
     E -- no  --> E1[return EFI_SUCCESS]
-    E -- yes --> F[GetImageSecurityDataDirectory]
-    F --> I[ValidateImage]
+    E -- yes --> F[BuildAuthenticodeImage]
+    F --> G[GetWinCertificates]
+    G --> I[ValidateImage]
 
     classDef drill fill:#d9ecff,stroke:#2f6fb2,color:#000;
     class I drill;
     classDef libclass fill:#ffe6a7,stroke:#d9822b,color:#000;
-    class E libclass;
+    class E,F,G libclass;
 ```
 
 Notes:
@@ -79,11 +76,20 @@ Notes:
   majority of invocations.
 - If Secure Boot is disabled the handler returns `EFI_SUCCESS` without
   inspecting the image.
-- A PE/COFF parse failure in `GetImageSecurityDataDirectory` is treated
-  as a verification failure (its status is returned).
+- The handler assembles the Authenticode image (`BuildAuthenticodeImage`)
+  and locates the embedded `WIN_CERTIFICATE` table (`GetWinCertificates`)
+  via `AuthenticodeLib`. Both operations consume the original `FileBuffer` /
+  `FileSize`; the handler then passes the resulting `AuthImage` /
+  `AuthImageSize` and `WinCertificates` / `WinCertificatesLength` directly to
+  `ValidateImage`. A failure to parse the image in either operation is treated
+  as a verification failure.
+- `AuthImage` is a pool allocation owned and freed by the handler.
+  `WinCertificates` is a borrowed pointer into the original `FileBuffer` and
+  must not be freed. `ValidateImage` neither owns these buffers nor reparses the
+  original PE/COFF image.
 - There is **one** authorizer. `ValidateImage` handles both signed and
-  unsigned images; a `SecDataDir.Size == 0` simply yields an empty
-  `WIN_CERTIFICATE` iterator.
+  unsigned images; an unsigned image simply has an empty `WIN_CERTIFICATE`
+  table, so the iterator is empty.
 
 ## 2. `ValidateImage`
 
@@ -91,13 +97,13 @@ Notes:
 `DIGEST_CACHE`:
 
 1. **Image-hash revocation.** Look up the image's Authenticode digest
-   in `dbx` via `IsInDbx`. A hit - or a `dbx` that cannot be fully
+   in `dbx` via `IsImageHashInDbx`. A hit - or a `dbx` that cannot be fully
    parsed (fail-closed) - rejects the image.
 2. **Per-`WIN_CERTIFICATE` walk.** For each embedded `WIN_CERTIFICATE`,
    ask `EvaluateImageCertificate` for a verdict; the first certificate
    whose verdict is `ImageCertApproved` authorizes the image.
 3. **Image-hash fallback.** If no embedded signature authorizes the
-   image, look up the image's digest in `db` via `IsInDb`. A hit
+   image, look up the image's digest in `db` via `IsImageHashInDb`. A hit
    authorizes on the image-hash path.
 
 When the image is authorized by a certificate, the authorizing certificate
@@ -108,7 +114,7 @@ rejected, the function simply returns `EFI_ACCESS_DENIED`.
 ```mermaid
 flowchart TD
     A[ValidateImage] --> B[LoadSignatureDatabases]
-    B --> S1[IsInDbx]
+    B --> S1[IsImageHashInDbx]
     S1 --> S1Q{{Found or unparsable?}}
     S1Q -- yes --> R[Reject]
     S1Q -- no  --> D1[WinCertIterNext: next WIN_CERTIFICATE]
@@ -117,9 +123,9 @@ flowchart TD
     IA --> IA1{{Approved?}}
     IA1 -- yes --> G[SecureBootHook]
     IA1 -- no --> D1
-    D2 -- no  --> H[IsInDb]
+    D2 -- no  --> H[IsImageHashInDb]
     H --> H1{{Found?}}
-    H1 -- yes --> G
+    H1 -- yes --> S
     H1 -- no  --> R
     G --> S[return EFI_SUCCESS]
     R --> X[return EFI_ACCESS_DENIED]
@@ -134,63 +140,61 @@ Notes:
   hash fallback. A revoked image hash is denied regardless of any
   certificates.
 - The first `WIN_CERTIFICATE` that authorizes wins; the walk is empty
-  for an unsigned image (`SecDataDir.Size == 0`), so such an image can
-  only be authorized by the `db` image-hash fallback.
+  when `WinCertificates == NULL` and `WinCertificatesLength == 0`, so an
+  unsigned image can only be authorized by the `db` image-hash fallback.
+- Only certificate authorization flows through `SecureBootHook`; an image-hash
+  authorization returns success without measuring an authority into PCR 7.
 
-## 3. `IsInDb` / `IsInDbx`
+## 3. Hash- and certificate-membership searches
 
-Cache-driven membership search over a signature database. The subject is
-described by a `DIGEST_CACHE`, being either an authenticode image digest, or
-a X509 digest.
+A family of `WalkDatabase`-driven searches decide whether a subject is present
+in a `db` (allow-list) or `dbx` (deny-list). Each search matches only one
+family of `EFI_SIGNATURE_LIST` signature types, so the caller picks the wrapper
+that fits the subject:
 
-If the cache type is an authenticode image digest, then these functions support
-the following `EFI_SIGNATURE_LIST` signature types:
+| Wrapper | Subject | Signature types matched |
+| --- | --- | --- |
+| `IsImageHashInDb` / `IsImageHashInDbx` | Authenticode image digest (cache) | `gEfiCert<V2><HASH>Guid` |
+| `IsTbsHashInDb` / `IsTbsHashInDbx` | X.509 TBSCertificate digest (cache) | `gEfiCert<V2>X509<HASH>Guid` |
+| `IsCertInDbx` | Raw DER certificate (bytes) | `gEfiCert<V2>X509Guid` |
 
-* **gEfiCert<V2><HASH>Guid**: The authenticode image digest is hashed using the
-matching hash algorithm and the bytes are compared for a match.
+The hash searches take a `DIGEST_CACHE` bound to the subject's bytes and compute
+the digest on demand via `GetHash` (memoized per algorithm). `IsCertInDbx` takes
+the raw certificate and compares it byte-for-byte, so it needs no cache.
 
-If the cache type is a X509 digest, then these functions support the following
-`EFI_SIGNATURE_LIST` signature types:
+A static map (`mImageHashSignatures`, `mTbsHashSignatures`, `mX509CertSignatures`)
+pairs each supported signature type with the algorithm to hash the subject under
+and the per-entry `SignatureOwner` size (`sizeof (EFI_GUID)` for a V1
+`EFI_SIGNATURE_DATA`, 0 for a V2 `EFI_SIGNATURE_V2_DATA`). A visitor
+(`MatchHashEntry` or `MatchCertEntry`) consults the map for the current list's
+type and skips any list whose type it does not carry.
 
-* **gEfiCert<V2>X509Guid**: The X509 digest is compared directly to the
-contents for a match.
+`db` and `dbx` differ only in how they treat an incomplete walk:
 
-* **gEfiCert<V2>X509<HASH>Guid**: The X509 digest is hashed using the matching
-hash algorithm and the bytes are compared for a match.
-
-
-These functions are wrappers around `FindInDatabase` which differ only in how
-they treat an incomplete walk:
-
-- **`IsInDb` (allow-list, best-effort).** Ignores truncation and honors
-  the valid prefix: dropped entries can only remove a potential
-  authorizer, never add one. Returns TRUE if the subject is present,
-  otherwise FALSE.
-- **`IsInDbx` (deny-list, fail-closed).** Returns TRUE if a matching
-  entry is found **or** the walk could not be completed, because a dropped
-  entry might have matched the subject.
+- **`db` (allow-list, best-effort).** Ignores truncation and honors the valid
+  prefix: dropped entries can only remove a potential authorizer, never add one.
+  Returns TRUE if the subject is present, otherwise FALSE.
+- **`dbx` (deny-list, fail-closed).** Returns TRUE if a matching entry is found
+  **or** the walk could not be completed (a structural break, or a supported
+  list whose digest could not be computed), because a dropped entry might have
+  matched the subject.
 
 ```mermaid
 flowchart TD
-    A[FindInDatabase Cache, Database] --> E[DatabaseIterNext: next EFI_SIGNATURE_LIST]
-    E --> E1{{Entry?}}
-    E1 -- no --> RF[found = FALSE]
-    E1 -- yes --> TY{{Signature type category}}
-    TY -- full X.509 cert V1/V2 --> STC[Target = subject cert DER]
-    TY -- image-hash or TBS-hash V1/V2 --> GH[GetHash: image or TBS digest]
-    GH --> STH[Target = digest]
-    STC --> EN[SigListIterNext: next entry]
-    STH --> EN
-    EN --> EN1{{Entry?}}
-    EN1 -- no --> E
-    EN1 -- yes --> CM{{CompareMem Target == entry?}}
-    CM -- no --> EN
-    CM -- yes --> FD[found = TRUE]
-    FD --> RET{{Exit}}
-    RF --> RET
-    RET -- IsInDb allow-list --> RB[return found]
-    RET -- IsInDbx deny-list --> RX[return found OR Truncated]
+    A[MatchHashEntry / MatchCertEntry per entry] --> M{{List type in this search's map?}}
+    M -- no --> SK[skip list]
+    M -- yes, hash list --> GH[GetHash: subject digest under mapped algorithm]
+    GH --> CM{{CompareMem digest == entry payload?}}
+    M -- yes, full X.509 --> CC{{CompareMem cert == entry payload?}}
+    CM -- yes --> FD[match: stop]
+    CC -- yes --> FD
+    CM -- no --> NX[next entry]
+    CC -- no --> NX
 ```
+
+Callers: `ValidateImage` uses `IsImageHashInDbx` (revocation) and
+`IsImageHashInDb` (allow-list fallback); `IsChainRevoked` uses `IsCertInDbx` and
+`IsTbsHashInDbx` per chain certificate.
 
 ## 4. `EvaluateImageCertificate`
 
@@ -203,8 +207,9 @@ then walks the `db`. This `db` walk supports both X509 and X509 hash signature
 list signature types. When the signature list signature type is an X509 hash,
 the underlying X509 is derived; then in both scenarios, the X509 bytes are
 searched for in the signature list. On a match, the chain from signer to the
-matched X509 is extracted. Each X509 is searched for in the `dbx` using
-`IsInDbx`.
+matched X509 is extracted. Each X509 in the chain is searched for in the `dbx`
+by exact DER via `IsCertInDbx` and, after extracting its TBSCertificate, by its
+TBS-cert hash via `IsTbsHashInDbx`.
 
 Ultimetly, if a certificate is found in the `db` and nothing in the chain
 between signer and the certificate is found in the `dbx`, then the signature
@@ -259,7 +264,10 @@ flowchart TD
 Decides whether the certificate chain that authorizes the image is revoked
 by `dbx`. It consumes the `EFI_CERT_STACK` returned by the successful
 `AuthenticodeVerifyEx` call and reports the chain as revoked if **any**
-certificate in it is enrolled in the `dbx` (checked via `IsInDbx`, 3). Using
+certificate in it is enrolled in the `dbx` - matched either by exact DER via
+`IsCertInDbx` or by its TBSCertificate digest via `IsTbsHashInDbx` (3). The
+TBSCertificate is extracted once per certificate (via `X509GetTBSCert`) and
+bound to a fresh `DIGEST_CACHE` before the hash search. Using
 the verifier-produced chain ensures the revocation decision applies to the
 exact chain that authorized the image.
 
@@ -271,7 +279,8 @@ flowchart TD
   A[IsChainRevoked verified chain, dbx] --> W[walk EFI_CERT_STACK certs]
     W --> W1{{Next cert?}}
     W1 -- no --> RF[return FALSE]
-    W1 -- yes --> ID[IsInDbx]
+    W1 -- yes --> TB[X509GetTBSCert: bind cache to TBSCertificate]
+    TB --> ID[IsCertInDbx OR IsTbsHashInDbx]
     ID --> ID1{{In dbx?}}
     ID1 -- yes --> RT[return TRUE]
     ID1 -- no --> W

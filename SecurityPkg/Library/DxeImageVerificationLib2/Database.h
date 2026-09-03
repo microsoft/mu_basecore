@@ -84,52 +84,99 @@ LoadSignatureDatabases (
   );
 
 /**
-  Determine whether the subject bound to Cache is present in a `db`-style allow-list.
+  Determine whether the image digest bound to Cache is present in a `db`-style allow-list.
 
-  The subject is described by Cache->Type: an image (DigestCacheTypeImage) is matched by its digest
-  under each list's hash algorithm; a certificate (DigestCacheTypeX509) is matched either by exact
-  DER bytes against an EFI_CERT_X509_GUID list or by its TBSCertificate digest against a cert-hash
-  list.
+  @param[in,out]  Cache   Digest cache bound to the Authenticode image bytes.
+  @param[in]      Db      Raw `db` contents, or NULL for an empty database.
+  @param[in]      DbSize  Size of Db in bytes; 0 when Db is NULL.
 
-  As an allow-list search this is best-effort: if the database is malformed partway through, the
-  valid prefix is still honored (a trailing malformed entry can only remove a potential authorizer,
-  never add one).
-
-  @param[in,out]  Cache      Digest cache bound to the subject (image or certificate).
-  @param[in]      Db         Raw `db` contents, or NULL for an empty database.
-  @param[in]      DbSize     Size of Db in bytes; 0 when Db is NULL.
-
-  @retval TRUE   The subject matches an entry in the valid prefix of Db.
-  @retval FALSE  The subject is not present, or Cache is unusable.
+  @retval TRUE   The image digest matches an image-hash entry in the valid prefix of Db.
+  @retval FALSE  It is absent, or Cache is unusable.
 **/
 BOOLEAN
-IsInDb (
+IsImageHashInDb (
   IN OUT DIGEST_CACHE  *Cache,
   IN     CONST VOID    *Db,
   IN     UINTN         DbSize
   );
 
 /**
-  Determine whether the subject bound to Cache is present in a `dbx`-style deny-list.
+  Determine whether the image digest bound to Cache is present in a `dbx`-style deny-list.
 
-  The subject is described by Cache exactly as for IsInDb.
+  Fails closed: a malformed `dbx` or an uncomputable digest reports the image present.
 
-  As a deny-list search this fails closed: if the database cannot be fully parsed (a malformed
-  entry truncates the walk, a required hash cannot be computed, or Cache is unusable), the subject
-  is treated as present, because a dropped entry might have matched it.
+  @param[in,out]  Cache    Digest cache bound to the Authenticode image bytes.
+  @param[in]      Dbx      Raw `dbx` contents, or NULL for an empty database.
+  @param[in]      DbxSize  Size of Dbx in bytes; 0 when Dbx is NULL.
 
-  @param[in,out]  Cache      Digest cache bound to the subject (image or certificate).
-  @param[in]      Dbx        Raw `dbx` contents, or NULL for an empty database.
-  @param[in]      DbxSize    Size of Dbx in bytes; 0 when Dbx is NULL.
-
-  @retval TRUE   The subject matches an entry in Dbx, or the database could not be fully parsed.
-  @retval FALSE  The subject is definitively absent from Dbx (including an absent/empty Dbx).
+  @retval TRUE   The image digest matches an image-hash entry, or the `dbx` could not be fully parsed.
+  @retval FALSE  It is definitively absent (including an absent/empty Dbx).
 **/
 BOOLEAN
-IsInDbx (
+IsImageHashInDbx (
   IN OUT DIGEST_CACHE  *Cache,
   IN     CONST VOID    *Dbx,
   IN     UINTN         DbxSize
+  );
+
+/**
+  Determine whether the TBSCertificate digest bound to Cache is present in a `db`-style allow-list.
+
+  @param[in,out]  Cache   Digest cache bound to a certificate's TBSCertificate bytes.
+  @param[in]      Db      Raw `db` contents, or NULL for an empty database.
+  @param[in]      DbSize  Size of Db in bytes; 0 when Db is NULL.
+
+  @retval TRUE   The TBS digest matches a cert-hash entry in the valid prefix of Db.
+  @retval FALSE  It is absent, or Cache is unusable.
+**/
+BOOLEAN
+IsTbsHashInDb (
+  IN OUT DIGEST_CACHE  *Cache,
+  IN     CONST VOID    *Db,
+  IN     UINTN         DbSize
+  );
+
+/**
+  Determine whether the TBSCertificate digest bound to Cache is present in a `dbx`-style deny-list.
+
+  Fails closed: a malformed `dbx` or an uncomputable digest reports the certificate present.
+
+  @param[in,out]  Cache    Digest cache bound to a certificate's TBSCertificate bytes.
+  @param[in]      Dbx      Raw `dbx` contents, or NULL for an empty database.
+  @param[in]      DbxSize  Size of Dbx in bytes; 0 when Dbx is NULL.
+
+  @retval TRUE   The TBS digest matches a cert-hash entry, or the `dbx` could not be fully parsed.
+  @retval FALSE  It is definitively absent (including an absent/empty Dbx).
+**/
+BOOLEAN
+IsTbsHashInDbx (
+  IN OUT DIGEST_CACHE  *Cache,
+  IN     CONST VOID    *Dbx,
+  IN     UINTN         DbxSize
+  );
+
+/**
+  Determine whether a raw DER certificate is present in a `dbx`-style deny-list by exact match.
+
+  Compares the certificate byte-for-byte against the EFI_CERT_X509 (full-certificate) lists. This
+  covers identity revocation only; TBS-cert-hash revocation is a hash match handled by IsTbsHashInDbx.
+  Fails closed: an unusable certificate or an un-parseable `dbx` reports the certificate present.
+
+  @param[in]  Cert       DER-encoded certificate to search for.
+  @param[in]  CertSize   Size of Cert in bytes.
+  @param[in]  Dbx        Raw `dbx` contents, or NULL for an empty database.
+  @param[in]  DbxSize    Size of Dbx in bytes; 0 when Dbx is NULL.
+
+  @retval TRUE   The certificate matches an EFI_CERT_X509 entry, or the database could not be fully
+                 parsed.
+  @retval FALSE  The certificate is definitively absent (including an absent/empty Dbx).
+**/
+BOOLEAN
+IsCertInDbx (
+  IN  CONST UINT8  *Cert,
+  IN  UINTN        CertSize,
+  IN  CONST VOID   *Dbx,
+  IN  UINTN        DbxSize
   );
 
 /**
