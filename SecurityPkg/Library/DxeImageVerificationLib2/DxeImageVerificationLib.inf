@@ -24,6 +24,7 @@
   CONSTRUCTOR                    = DxeImageVerificationLibConstructor
 
 [Sources]
+  Cache.c
   Database.c
   Database.h
   DxeImageVerificationLib.c
@@ -42,6 +43,7 @@
   SecurityPkg/SecurityPkg.dec
 
 [LibraryClasses]
+  AuthenticodeLib
   MemoryAllocationLib
   BaseLib
   UefiLib
@@ -51,7 +53,6 @@
   BaseMemoryLib
   DebugLib
   DevicePathLib
-  PeCoffLib
   SecureBootVariableLib
   SecurityManagementLib
   TpmMeasurementLib
@@ -93,3 +94,6 @@
   gEfiCertV2X509Sha384Guid              ## SOMETIMES_CONSUMES    ## GUID     # Unique ID for the type of the signature.
   gEfiCertV2X509Sha512Guid              ## SOMETIMES_CONSUMES    ## GUID     # Unique ID for the type of the signature.
   gEfiCertPkcs7Guid                     ## SOMETIMES_CONSUMES    ## GUID     # Unique ID for the type of the certificate.
+  gEfiHashAlgorithmSha256Guid           ## SOMETIMES_CONSUMES    ## GUID     # Hash algorithm used to compute a subject digest.
+  gEfiHashAlgorithmSha384Guid           ## SOMETIMES_CONSUMES    ## GUID     # Hash algorithm used to compute a subject digest.
+  gEfiHashAlgorithmSha512Guid           ## SOMETIMES_CONSUMES    ## GUID     # Hash algorithm used to compute a subject digest.
