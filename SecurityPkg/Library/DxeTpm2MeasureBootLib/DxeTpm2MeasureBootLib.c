@@ -757,12 +757,10 @@ DxeTpm2MeasureBootHandler (
       return EFI_SUCCESS;
     }
 
+    // MU_CHANGE [BEGIN]
     //
     // The PE image from unmeasured Firmware volume need be measured
-    // The PE image from measured Firmware volume will be measured according to policy below.
-    //   If it is driver, do not measure
-    //   If it is application, still measure.
-    //
+    // MU_CHANGE [END]
     ApplicationRequired = TRUE;
 
     if ((mTcg2CacheMeasuredHandle != Handle) && (mTcg2MeasuredHobData != NULL)) {
@@ -857,8 +855,10 @@ DxeTpm2MeasureBootHandler (
   // Measure only application if Application flag is set
   // Measure drivers and applications if Application flag is not set
   //
-  if ((!ApplicationRequired) ||
-      (ApplicationRequired && (ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION)))
+  // MU_CHANGE
+  //if ((!ApplicationRequired) ||
+  //    (ApplicationRequired && (ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION)))
+  if (!ApplicationRequired)
   {
     //
     // Print the image path to be measured.
@@ -888,6 +888,28 @@ DxeTpm2MeasureBootHandler (
                DevicePathNode
                );
   }
+
+  // MU_CHANGE [END]
+  DEBUG_CODE_BEGIN ();
+  //
+  // Due to "TCG_SPEC_CHANGE: PCR4_SKIP_FV_APP" applications launched from measured firmware will be skipped
+  //
+
+  if (ApplicationRequired && (ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION)) {
+      CHAR16  *ToText;
+      ToText = ConvertDevicePathToText (
+                DevicePathNode,
+                FALSE,
+                TRUE
+                );
+      if (ToText != NULL) {
+        DEBUG ((DEBUG_INFO, "TCG_SPEC_CHANGE: PCR4_SKIP_FV_APP -- Skipping: %s.\n", ToText));
+        FreePool (ToText);
+    }
+  }
+
+  DEBUG_CODE_END ();
+  // MU_CHANGE [END]
 
   //
   // Done, free the allocated resource.
