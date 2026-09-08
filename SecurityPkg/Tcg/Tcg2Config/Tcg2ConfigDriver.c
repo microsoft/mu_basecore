@@ -103,13 +103,7 @@ InitializeTcg2VersionInfo (
                        TCG2_VERSION_NAME,
                        PrivateData->DriverHandle
                        );
-  // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
-  if (ConfigRequestHdr == NULL) {
-    ASSERT (ConfigRequestHdr != NULL);
-    return;
-  }
-
-  // MU_CHANGE End - CodeQL change - unguardednullreturndereference
+  ASSERT (ConfigRequestHdr != NULL);
   DataSize = sizeof (Tcg2Version);
   Status   = gRT->GetVariable (
                     TCG2_VERSION_NAME,

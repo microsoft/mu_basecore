@@ -231,8 +231,6 @@ AesEncrypt (
   UINTN    NbIndex;
   UINTN    Round;
 
-  EFI_STATUS  Status; // MU_CHANGE - CodeQL Change
-
   if ((Key == NULL) || (InData == NULL) || (OutData == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
@@ -240,13 +238,7 @@ AesEncrypt (
   //
   // Expands AES Key for encryption.
   //
-  // MU_CHANGE Start - CodeQL Change
-  Status = AesExpandKey (Key, 128, &AesKey);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  // MU_CHANGE End - CodeQL Change
+  AesExpandKey (Key, 128, &AesKey);
 
   Nr = AesKey.Nk + 6;
   Ek = AesKey.EncKey;

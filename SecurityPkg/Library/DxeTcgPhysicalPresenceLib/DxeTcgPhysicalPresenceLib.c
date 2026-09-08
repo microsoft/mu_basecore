@@ -540,7 +540,7 @@ UserConfirm (
   CHAR16   *TmpStr2;
   UINTN    BufSize;
   BOOLEAN  CautionKey;
-  UINTN    Index; // MU_CHANGE - CodeQL change - comparison-with-wider-type
+  UINT16   Index;
   CHAR16   DstStr[81];
 
   TmpStr2     = NULL;

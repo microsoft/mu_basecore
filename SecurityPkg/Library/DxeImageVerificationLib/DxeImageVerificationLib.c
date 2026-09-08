@@ -883,9 +883,7 @@ IsCertHashFoundInDbx (
     return Status;
   }
 
-  // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
-  while ((DbxSize > 0) && (SignatureListSize >= (UINTN)DbxList->SignatureListSize)) {
-    // MU_CHANGE End - CodeQL change - comparison-with-wider-type
+  while ((DbxSize > 0) && (SignatureListSize >= DbxList->SignatureListSize)) {
     //
     // Determine Hash Algorithm of Certificate in the forbidden database.
     //
@@ -1030,9 +1028,7 @@ IsSignatureFoundInDatabase (
   // Enumerate all signature data in SigDB to check if signature exists for executable.
   //
   CertList = (EFI_SIGNATURE_LIST *)Data;
-  // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
-  while ((DataSize > 0) && (DataSize >= (UINTN)CertList->SignatureListSize)) {
-    // MU_CHANGE End - CodeQL change - comparison-with-wider-type
+  while ((DataSize > 0) && (DataSize >= CertList->SignatureListSize)) {
     CertCount = (CertList->SignatureListSize - sizeof (EFI_SIGNATURE_LIST) - CertList->SignatureHeaderSize) / CertList->SignatureSize;
     Cert      = (EFI_SIGNATURE_DATA *)((UINT8 *)CertList + sizeof (EFI_SIGNATURE_LIST) + CertList->SignatureHeaderSize);
     if ((CertList->SignatureSize == sizeof (EFI_SIGNATURE_DATA) - 1 + SignatureSize) && (CompareGuid (&CertList->SignatureType, CertType))) {
@@ -1197,9 +1193,7 @@ PassTimestampCheck (
   }
 
   CertList = (EFI_SIGNATURE_LIST *)DbtData;
-  // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
-  while ((DbtDataSize > 0) && (DbtDataSize >= (UINTN)CertList->SignatureListSize)) {
-    // MU_CHANGE End - CodeQL change - comparison-with-wider-type
+  while ((DbtDataSize > 0) && (DbtDataSize >= CertList->SignatureListSize)) {
     if (CompareGuid (&CertList->SignatureType, &gEfiCertX509Guid)) {
       Cert      = (EFI_SIGNATURE_DATA *)((UINT8 *)CertList + sizeof (EFI_SIGNATURE_LIST) + CertList->SignatureHeaderSize);
       CertCount = (CertList->SignatureListSize - sizeof (EFI_SIGNATURE_LIST) - CertList->SignatureHeaderSize) / CertList->SignatureSize;
@@ -1325,9 +1319,7 @@ IsForbiddenByDbx (
   //
   CertList     = (EFI_SIGNATURE_LIST *)Data;
   CertListSize = DataSize;
-  // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
-  while ((CertListSize > 0) && (CertListSize >= (UINTN)CertList->SignatureListSize)) {
-    // MU_CHANGE End - CodeQL change - comparison-with-wider-type
+  while ((CertListSize > 0) && (CertListSize >= CertList->SignatureListSize)) {
     if (CompareGuid (&CertList->SignatureType, &gEfiCertX509Guid)) {
       CertData  = (EFI_SIGNATURE_DATA *)((UINT8 *)CertList + sizeof (EFI_SIGNATURE_LIST) + CertList->SignatureHeaderSize);
       CertCount = (CertList->SignatureListSize - sizeof (EFI_SIGNATURE_LIST) - CertList->SignatureHeaderSize) / CertList->SignatureSize;
@@ -1532,9 +1524,7 @@ IsAllowedByDb (
   // Find X509 certificate in Signature List to verify the signature in pkcs7 signed data.
   //
   CertList = (EFI_SIGNATURE_LIST *)Data;
-  // MU_CHANGE Start - CodeQL change - comparison-with-wider-type
-  while ((DataSize > 0) && (DataSize >= (UINTN)CertList->SignatureListSize)) {
-    // MU_CHANGE End - CodeQL change - comparison-with-wider-type
+  while ((DataSize > 0) && (DataSize >= CertList->SignatureListSize)) {
     if (CompareGuid (&CertList->SignatureType, &gEfiCertX509Guid)) {
       CertData  = (EFI_SIGNATURE_DATA *)((UINT8 *)CertList + sizeof (EFI_SIGNATURE_LIST) + CertList->SignatureHeaderSize);
       CertCount = (CertList->SignatureListSize - sizeof (EFI_SIGNATURE_LIST) - CertList->SignatureHeaderSize) / CertList->SignatureSize;
@@ -2071,15 +2061,11 @@ Failed:
   // executable information table in either case.
   //
   NameStr = ConvertDevicePathToText (File, FALSE, TRUE);
-
-  // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
+  AddImageExeInfo (Action, NameStr, File, SignatureList, SignatureListSize);
   if (NameStr != NULL) {
-    AddImageExeInfo (Action, NameStr, File, SignatureList, SignatureListSize);
     DEBUG ((DEBUG_INFO, "The image doesn't pass verification: %s\n", NameStr));
     FreePool (NameStr);
   }
-
-  // MU_CHANGE End - CodeQL change - unguardednullreturndereference
 
   if (SignatureList != NULL) {
     FreePool (SignatureList);
