@@ -655,7 +655,7 @@ DumpEventLog (
   TCG_PCR_EVENT_HDR         *EventHdr;
   TCG_PCR_EVENT2            *TcgPcrEvent2;
   TCG_EfiSpecIDEventStruct  *TcgEfiSpecIdEventStruct;
-  UINT64                    NumberOfEvents; // MU_CHANGE - CodeQL Change - comparison-with-wider-type
+  UINTN                     NumberOfEvents;
 
   if (!DebugPrintLevelEnabled (DEBUG_SECURITY)) {
     return;
@@ -666,8 +666,7 @@ DumpEventLog (
   switch (EventLogFormat) {
     case EFI_TCG2_EVENT_LOG_FORMAT_TCG_1_2:
       EventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
-      while ((EFI_PHYSICAL_ADDRESS)(UINTN)EventHdr <= EventLogLastEntry) {
-        // MU_CHANGE - CodeQL Change
+      while ((UINTN)EventHdr <= EventLogLastEntry) {
         DumpEvent (EventHdr);
         EventHdr = (TCG_PCR_EVENT_HDR *)((UINTN)EventHdr + sizeof (TCG_PCR_EVENT_HDR) + EventHdr->EventSize);
       }
@@ -698,8 +697,7 @@ DumpEventLog (
       DumpTcgEfiSpecIdEventStruct (TcgEfiSpecIdEventStruct);
 
       TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
-      while ((EFI_PHYSICAL_ADDRESS)(UINTN)TcgPcrEvent2 <= EventLogLastEntry) {
-        // MU_CHANGE -  CodeQL
+      while ((UINTN)TcgPcrEvent2 <= EventLogLastEntry) {
         DumpEvent2 (TcgPcrEvent2);
         TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgPcrEvent2 + GetPcrEvent2Size (TcgPcrEvent2));
       }

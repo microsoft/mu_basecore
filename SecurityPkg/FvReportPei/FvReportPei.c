@@ -71,13 +71,7 @@ InstallPreHashFvPpi (
             + HashSize;
 
   PreHashedFvPpi = AllocatePool (PpiSize);
-  // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
-  if (PreHashedFvPpi == NULL) {
-    ASSERT (PreHashedFvPpi != NULL);
-    return;
-  }
-
-  // MU_CHANGE End - CodeQL change - unguardednullreturndereference
+  ASSERT (PreHashedFvPpi != NULL);
 
   PreHashedFvPpi->FvBase   = (UINT32)(UINTN)FvBuffer;
   PreHashedFvPpi->FvLength = (UINT32)FvLength;
@@ -89,14 +83,7 @@ InstallPreHashFvPpi (
   CopyMem (HASH_VALUE_PTR (HashInfo), HashValue, HashSize);
 
   FvInfoPpiDescriptor = AllocatePool (sizeof (EFI_PEI_PPI_DESCRIPTOR));
-  // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
-  if (FvInfoPpiDescriptor == NULL) {
-    ASSERT (FvInfoPpiDescriptor != NULL);
-    FreePool (PreHashedFvPpi);
-    return;
-  }
-
-  // MU_CHANGE End - CodeQL change - unguardednullreturndereference
+  ASSERT (FvInfoPpiDescriptor != NULL);
 
   FvInfoPpiDescriptor->Guid  = &gEdkiiPeiFirmwareVolumeInfoPrehashedFvPpiGuid;
   FvInfoPpiDescriptor->Flags = EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST;
@@ -215,14 +202,8 @@ VerifyHashedFv (
     // Copy FV to permanent memory to avoid potential TOC/TOU.
     //
     FvBuffer = AllocatePages (EFI_SIZE_TO_PAGES ((UINTN)FvInfo[FvIndex].Length));
-    // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
-    if (FvBuffer == NULL) {
-      ASSERT (FvBuffer != NULL);
-      Status = EFI_OUT_OF_RESOURCES;
-      goto Done;
-    }
 
-    // MU_CHANGE End - CodeQL change - unguardednullreturndereference
+    ASSERT (FvBuffer != NULL);
 
     if (FvShadowPpi != NULL) {
       Status = FvShadowPpi->FirmwareVolumeShadow (
@@ -419,19 +400,12 @@ CheckStoredHashFv (
                       );
   if (!EFI_ERROR (Status) && (StoredHashFvPpi != NULL) && (StoredHashFvPpi->FvNumber > 0)) {
     HashInfo = GetHashInfo (StoredHashFvPpi, BootMode);
-    // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
-    if (HashInfo != NULL) {
-      Status = VerifyHashedFv (
+    Status   = VerifyHashedFv (
                  HashInfo,
                  StoredHashFvPpi->FvInfo,
                  StoredHashFvPpi->FvNumber,
                  BootMode
                  );
-    } else {
-      Status = EFI_NOT_FOUND;
-    }
-
-    // MU_CHANGE End - CodeQL change - unguardednullreturndereference
     if (!EFI_ERROR (Status)) {
       DEBUG ((DEBUG_INFO, "OBB verification passed (%r)\r\n", Status));
 

@@ -106,9 +106,7 @@ MeasureFirmwareBlob (
   {
     if (Description != NULL) {
       AsciiSPrint ((CHAR8 *)FvBlob2.BlobDescription, sizeof (FvBlob2.BlobDescription), "%a", Description);
-      // MU_CHANGE Start - CodeQL change - unguardednullreturndereference
-    } else if (FvName != NULL) {
-      // MU_CHANGE End - CodeQL change - unguardednullreturndereference
+    } else {
       AsciiSPrint ((CHAR8 *)FvBlob2.BlobDescription, sizeof (FvBlob2.BlobDescription), "Fv(%g)", FvName);
     }
 
