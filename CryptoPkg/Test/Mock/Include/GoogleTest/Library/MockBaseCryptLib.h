@@ -978,6 +978,15 @@ struct MockBaseCryptLib {
     );
 
   MOCK_FUNCTION_DECLARATION (
+    UINTN,
+    CmsGetSignerInfoNum,
+    (
+     IN  CONST UINT8  *P7Data,
+     IN  UINTN        P7Length
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
     BOOLEAN,
     Pkcs7Encrypt,
     (

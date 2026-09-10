@@ -3058,6 +3058,19 @@ Pkcs7Verify (
 }
 
 /**
+  See BaseCryptLib.h CmsGetSignerInfoNum().
+**/
+UINTN
+EFIAPI
+CmsGetSignerInfoNum (
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length
+  )
+{
+  CALL_CRYPTO_SERVICE (CmsGetSignerInfoNum, (P7Data, P7Length), 0, 1, 1);
+}
+
+/**
   See BaseCryptLib.h CmsVerify().
 **/
 BOOLEAN
