@@ -3354,6 +3354,19 @@ CmsVerify (
 }
 
 /**
+  EDKII_CRYPTO_PROTOCOL does not expose the CMS signer count service.
+**/
+UINTN
+EFIAPI
+CmsGetSignerInfoNum (
+  IN CONST UINT8  *P7Data,
+  IN UINTN        P7Length
+  )
+{
+  return 0;
+}
+
+/**
   This function receives a PKCS7 formatted signature, and then verifies that
   the specified Enhanced or Extended Key Usages (EKU's) are present in the end-entity
   leaf signing certificate.

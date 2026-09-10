@@ -2326,6 +2326,27 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_VERIFY)(
   );
 
 /**
+  Get the number of SignerInfo structures in a PKCS#7/CMS SignedData structure.
+
+  If P7Data is NULL, then return 0.
+  If P7Length is 0, then return 0.
+  If this interface is not supported, then return 0.
+
+  @param[in]  P7Data    Pointer to the PKCS#7/CMS message.
+  @param[in]  P7Length  Length of the PKCS#7/CMS message in bytes.
+
+  @retval  >0  Number of SignerInfo structures.
+  @retval  0   Error or no SignerInfo found.
+
+  @since 1.1
+  @ingroup PKCS
+**/
+typedef UINTN (EFIAPI *ONE_CRYPTO_CMS_GET_SIGNER_INFO_NUM)(
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length
+  );
+
+/**
   Verify a PKCS#7/CMS SignedData structure and optionally return the verified
   signer certificate chain in EFI_CERT_STACK form.
 
@@ -5660,6 +5681,7 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_HASH_ALL_BY_GUID                        HashAllByGuid;
   /// v1.1 CMS ---------------------------------------------------------------
   ONE_CRYPTO_CMS_VERIFY                              CmsVerify;
+  ONE_CRYPTO_CMS_GET_SIGNER_INFO_NUM                 CmsGetSignerInfoNum;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */

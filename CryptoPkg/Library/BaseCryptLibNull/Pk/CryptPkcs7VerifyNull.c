@@ -134,6 +134,28 @@ Pkcs7Verify (
 }
 
 /**
+  Get the number of SignerInfo structures in a PKCS#7/CMS SignedData structure.
+
+  The null implementation does not provide this interface.
+
+  @param[in]  P7Data    Pointer to the PKCS#7/CMS message.
+  @param[in]  P7Length  Length of the PKCS#7/CMS message in bytes.
+
+  @retval  0  This interface is not supported.
+**/
+UINTN
+EFIAPI
+CmsGetSignerInfoNum (
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length
+  )
+{
+  (VOID)P7Data;
+  (VOID)P7Length;
+  return 0;
+}
+
+/**
   Extracts the attached content from a PKCS#7 signed data if existed. The input signed
   data could be wrapped in a ContentInfo structure.
 

@@ -663,6 +663,61 @@ TestVerifyPkcs7SignVerifyNonSelfIssued (
   return UNIT_TEST_PASSED;
 }
 
+/**
+  Verify that a CMS SignedData created with one signer reports one SignerInfo.
+**/
+UNIT_TEST_STATUS
+EFIAPI
+TestCmsGetSignerInfoNum (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  BOOLEAN  Status;
+  UINT8    *P7SignedData;
+  UINTN    P7SignedDataSize;
+
+  P7SignedData = NULL;
+
+  Status = Pkcs7Sign (
+             TestKeyPem,
+             sizeof (TestKeyPem),
+             (CONST UINT8 *)PemPass,
+             (UINT8 *)Payload,
+             AsciiStrLen (Payload),
+             TestCert,
+             sizeof (TestCert),
+             NULL,
+             &P7SignedData,
+             &P7SignedDataSize
+             );
+  UT_ASSERT_TRUE (Status);
+  UT_ASSERT_NOT_EQUAL (P7SignedDataSize, 0);
+  UT_ASSERT_EQUAL (CmsGetSignerInfoNum (P7SignedData, P7SignedDataSize), 1);
+
+  if (P7SignedData != NULL) {
+    FreePool (P7SignedData);
+  }
+
+  return UNIT_TEST_PASSED;
+}
+
+/**
+  Verify that malformed CMS data reports no SignerInfo structures.
+**/
+UNIT_TEST_STATUS
+EFIAPI
+TestCmsGetSignerInfoNumInvalidData (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  UINT8  InvalidData[] = { 0x30, 0x82, 0x00, 0x01, 0x00 };
+
+  UT_ASSERT_EQUAL (CmsGetSignerInfoNum (NULL, 0), 0);
+  UT_ASSERT_EQUAL (CmsGetSignerInfoNum (InvalidData, sizeof (InvalidData)), 0);
+
+  return UNIT_TEST_PASSED;
+}
+
 TEST_DESC  mRsaCertTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function-----------------Pre---Post--Context
@@ -678,6 +733,8 @@ TEST_DESC  mPkcs7Test[] = {
   //
   { "TestVerifyPkcs7SignVerify()",              "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerify,              NULL, NULL, NULL },
   { "TestVerifyPkcs7SignVerifyNonSelfIssued()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerifyNonSelfIssued, NULL, NULL, NULL },
+  { "TestCmsGetSignerInfoNum()",                "CryptoPkg.BaseCryptLib.Pkcs7", TestCmsGetSignerInfoNum,                NULL, NULL, NULL },
+  { "TestCmsGetSignerInfoNumInvalidData()",     "CryptoPkg.BaseCryptLib.Pkcs7", TestCmsGetSignerInfoNumInvalidData,     NULL, NULL, NULL },
 };
 
 UINTN  mPkcs7TestNum = ARRAY_SIZE (mPkcs7Test);
