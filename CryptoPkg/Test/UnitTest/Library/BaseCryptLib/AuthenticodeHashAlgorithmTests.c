@@ -5,7 +5,7 @@
   encapContentInfo carries an SpcIndirectDataContent
   (OID 1.3.6.1.4.1.311.2.1.4) with a chosen digestAlgorithm OID, then
   assert that GetAuthenticodeHashAlgorithm() recovers the matching
-  signature-type GUID. All four supported digest algorithms are covered,
+  hash-algorithm GUID. All four supported digest algorithms are covered,
   along with bad-parameter, malformed-input, wrong-content-type, and
   unsupported-algorithm cases.
 
@@ -18,6 +18,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "TestBaseCryptLib.h"
 #include <Guid/ImageAuthentication.h>
+#include <Protocol/Hash.h>
 
 //
 // Digest size (in bytes) of the dummy messageDigest OCTET STRING. The
@@ -55,13 +56,13 @@ STATIC CONST UINT8  mAlgOidMd5[] = {
 };
 
 //
-// Expected signature-type GUIDs, materialized locally so the test does
-// not depend on the gEfiCert*Guid link symbols.
+// Expected hash-algorithm GUIDs, materialized locally so the test does
+// not depend on the gEfiHashAlgorithm*Guid link symbols.
 //
-STATIC CONST EFI_GUID  mAlgExpectSha1Guid   = EFI_CERT_SHA1_GUID;
-STATIC CONST EFI_GUID  mAlgExpectSha256Guid = EFI_CERT_SHA256_GUID;
-STATIC CONST EFI_GUID  mAlgExpectSha384Guid = EFI_CERT_SHA384_GUID;
-STATIC CONST EFI_GUID  mAlgExpectSha512Guid = EFI_CERT_SHA512_GUID;
+STATIC CONST EFI_GUID  mAlgExpectSha1Guid   = EFI_HASH_ALGORITHM_SHA1_GUID;
+STATIC CONST EFI_GUID  mAlgExpectSha256Guid = EFI_HASH_ALGORITHM_SHA256_GUID;
+STATIC CONST EFI_GUID  mAlgExpectSha384Guid = EFI_HASH_ALGORITHM_SHA384_GUID;
+STATIC CONST EFI_GUID  mAlgExpectSha512Guid = EFI_HASH_ALGORITHM_SHA512_GUID;
 
 //
 // ASN.1 DER tag bytes.
@@ -542,7 +543,7 @@ Done:
 
   @param[in]  AlgOid      digestAlgorithm OID value bytes.
   @param[in]  AlgOidLen   Length of AlgOid.
-  @param[in]  ExpectGuid  Expected signature-type GUID.
+  @param[in]  ExpectGuid  Expected hash-algorithm GUID.
 
   @retval UNIT_TEST_PASSED on success (asserts otherwise).
 **/
@@ -585,7 +586,7 @@ RunPositiveAlgCase (
 }
 
 /**
-  SHA-1 digest algorithm resolves to gEfiCertSha1Guid.
+  SHA-1 digest algorithm resolves to gEfiHashAlgorithmSha1Guid.
 **/
 UNIT_TEST_STATUS
 EFIAPI
@@ -597,7 +598,7 @@ TestAuthAlgSha1 (
 }
 
 /**
-  SHA-256 digest algorithm resolves to gEfiCertSha256Guid.
+  SHA-256 digest algorithm resolves to gEfiHashAlgorithmSha256Guid.
 **/
 UNIT_TEST_STATUS
 EFIAPI
@@ -609,7 +610,7 @@ TestAuthAlgSha256 (
 }
 
 /**
-  SHA-384 digest algorithm resolves to gEfiCertSha384Guid.
+  SHA-384 digest algorithm resolves to gEfiHashAlgorithmSha384Guid.
 **/
 UNIT_TEST_STATUS
 EFIAPI
@@ -621,7 +622,7 @@ TestAuthAlgSha384 (
 }
 
 /**
-  SHA-512 digest algorithm resolves to gEfiCertSha512Guid.
+  SHA-512 digest algorithm resolves to gEfiHashAlgorithmSha512Guid.
 **/
 UNIT_TEST_STATUS
 EFIAPI
