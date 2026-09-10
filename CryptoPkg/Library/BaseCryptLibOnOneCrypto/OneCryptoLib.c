@@ -3078,6 +3078,19 @@ Pkcs7Verify (
 }
 
 /**
+  See BaseCryptLib.h CmsGetSignerInfoNum().
+**/
+UINTN
+EFIAPI
+CmsGetSignerInfoNum (
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length
+  )
+{
+  CALL_CRYPTO_SERVICE (CmsGetSignerInfoNum, (P7Data, P7Length), 0, 2, 0);
+}
+
+/**
   Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
   that wraps content encrypted for secure transmission to one or more recipients.
 

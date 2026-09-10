@@ -5677,6 +5677,8 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_X509_GET_TBS_CERT_HASH                  X509GetTbsCertHash;
   ONE_CRYPTO_AUTHENTICODE_VERIFY_EX                  AuthenticodeVerifyEx;
   ONE_CRYPTO_HASH_ALL_BY_GUID                        HashAllByGuid;
+  /// v2.0 CMS ---------------------------------------------------------------
+  ONE_CRYPTO_CMS_GET_SIGNER_INFO_NUM                 CmsGetSignerInfoNum;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */
