@@ -2441,6 +2441,27 @@ Pkcs7Verify (
   );
 
 /**
+  Get the number of SignerInfo structures in a PKCS#7/CMS SignedData structure.
+
+  If P7Data is NULL, then return 0.
+  If P7Length is 0, then return 0.
+  If this interface is not supported, then return 0.
+
+  @param[in]  P7Data    Pointer to the PKCS#7/CMS message.
+  @param[in]  P7Length  Length of the PKCS#7/CMS message in bytes.
+
+  @retval  >0  Number of SignerInfo structures.
+  @retval  0   Error or no SignerInfo found.
+
+**/
+UINTN
+EFIAPI
+CmsGetSignerInfoNum (
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length
+  );
+
+/**
   Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
   that wraps content encrypted for secure transmission to one or more recipients.
 
