@@ -48,33 +48,8 @@ typedef struct {
 typedef enum {
   AuthVarTypePk,
   AuthVarTypeKek,
-  AuthVarTypePriv,
   AuthVarTypePayload
 } AUTHVAR_TYPE;
-
-///
-///  "certdb" variable stores the signer's certificates for non PK/KEK/DB/DBX
-/// variables with EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS|EFI_VARIABLE_NON_VOLATILE set.
-///  "certdbv" variable stores the signer's certificates for non PK/KEK/DB/DBX
-/// variables with EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS set
-///
-/// GUID: gEfiCertDbGuid
-///
-/// We need maintain atomicity.
-///
-/// Format:
-/// +----------------------------+
-/// | UINT32                     | <-- CertDbListSize, including this UINT32
-/// +----------------------------+
-/// | AUTH_CERT_DB_DATA          | <-- First CERT
-/// +----------------------------+
-/// | ........                   |
-/// +----------------------------+
-/// | AUTH_CERT_DB_DATA          | <-- Last CERT
-/// +----------------------------+
-///
-#define EFI_CERT_DB_NAME           L"certdb"
-#define EFI_CERT_DB_VOLATILE_NAME  L"certdbv"
 
 #pragma pack(1)
 typedef struct {
@@ -133,44 +108,6 @@ VerifyTimeBasedPayloadAndUpdate (
   IN     UINT32        Attributes,
   IN     AUTHVAR_TYPE  AuthVarType,
   OUT    BOOLEAN       *VarDel
-  );
-
-/**
-  Delete matching signer's certificates when deleting common authenticated
-  variable by corresponding VariableName and VendorGuid from "certdb" or
-  "certdbv" according to authenticated variable attributes.
-
-  @param[in]  VariableName   Name of authenticated Variable.
-  @param[in]  VendorGuid     Vendor GUID of authenticated Variable.
-  @param[in]  Attributes        Attributes of authenticated variable.
-
-  @retval  EFI_INVALID_PARAMETER Any input parameter is invalid.
-  @retval  EFI_NOT_FOUND         Fail to find "certdb"/"certdbv" or matching certs.
-  @retval  EFI_OUT_OF_RESOURCES  The operation is failed due to lack of resources.
-  @retval  EFI_SUCCESS           The operation is completed successfully.
-
-**/
-EFI_STATUS
-DeleteCertsFromDb (
-  IN     CHAR16    *VariableName,
-  IN     EFI_GUID  *VendorGuid,
-  IN     UINT32    Attributes
-  );
-
-/**
-  Clean up signer's certificates for common authenticated variable
-  by corresponding VariableName and VendorGuid from "certdb".
-  System may break down during Timebased Variable update & certdb update,
-  make them inconsistent,  this function is called in AuthVariable Init to ensure
-  consistency
-
-  @retval  EFI_NOT_FOUND         Fail to find matching certs.
-  @retval  EFI_SUCCESS           Find matching certs and output parameters.
-
-**/
-EFI_STATUS
-CleanCertsFromDb (
-  VOID
   );
 
 /**
@@ -257,7 +194,7 @@ ProcessVarWithKek (
   );
 
 /**
-  Process variable with EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS set
+  Process variable other than Secure Boot Policy Variables.
 
   Caution: This function may receive untrusted input.
   This function may be invoked in SMM mode, and datasize and data are external input.
