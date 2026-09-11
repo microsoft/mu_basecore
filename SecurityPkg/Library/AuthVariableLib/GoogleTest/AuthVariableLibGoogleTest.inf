@@ -1,0 +1,29 @@
+## @file
+# Unit tests for AuthVariableLib using Google Test.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = AuthVariableLibGoogleTest
+  FILE_GUID                      = B13AEE4C-E3CE-4111-A699-A30F9BD1A476
+  MODULE_TYPE                    = HOST_APPLICATION
+  VERSION_STRING                 = 1.0
+
+[Sources]
+  AuthVariableLibGoogleTest.cpp
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  SecurityPkg/SecurityPkg.dec
+  CryptoPkg/CryptoPkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  GoogleTestLib
+  AuthVariableLib
+  BaseMemoryLib
+  MemoryAllocationLib
