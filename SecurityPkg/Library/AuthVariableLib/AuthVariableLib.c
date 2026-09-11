@@ -69,28 +69,6 @@ VARIABLE_ENTRY_PROPERTY  mAuthVarEntry[] = {
       sizeof (UINT8)
     }
   },
-  {
-    &gEfiCertDbGuid,
-    EFI_CERT_DB_NAME,
-    {
-      VAR_CHECK_VARIABLE_PROPERTY_REVISION,
-      VAR_CHECK_VARIABLE_PROPERTY_READ_ONLY,
-      VARIABLE_ATTRIBUTE_NV_BS_RT_AT,
-      sizeof (UINT32),
-      MAX_UINTN
-    }
-  },
-  {
-    &gEfiCertDbGuid,
-    EFI_CERT_DB_VOLATILE_NAME,
-    {
-      VAR_CHECK_VARIABLE_PROPERTY_REVISION,
-      VAR_CHECK_VARIABLE_PROPERTY_READ_ONLY,
-      VARIABLE_ATTRIBUTE_BS_RT_AT,
-      sizeof (UINT32),
-      MAX_UINTN
-    }
-  },
 };
 
 VOID  **mAuthVarAddressPointer[11];
@@ -119,13 +97,11 @@ AuthVariableLibInitialize (
   )
 {
   EFI_STATUS  Status;
-  UINT32      VarAttr;
   UINT8       *Data;
   UINTN       DataSize;
   UINT8       SecureBootMode;
   UINT8       SecureBootEnable;
   UINT8       CustomMode;
-  UINT32      ListSize;
 
   if ((AuthVarLibContextIn == NULL) || (AuthVarLibContextOut == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -148,16 +124,6 @@ AuthVariableLibInitialize (
 
   mHashSha512Ctx = AllocateRuntimePool (Sha512GetContextSize ());
   if (mHashSha512Ctx == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  //
-  // Reserve runtime buffer for certificate database. The size excludes variable header and name size.
-  // Use EFI_CERT_DB_VOLATILE_NAME size since it is longer.
-  //
-  mMaxCertDbSize = (UINT32)(mAuthVarLibContextIn->MaxAuthVariableSize - sizeof (EFI_CERT_DB_VOLATILE_NAME));
-  mCertDbStore   = AllocateRuntimePool (mMaxCertDbSize);
-  if (mCertDbStore == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -289,57 +255,6 @@ AuthVariableLibInitialize (
   }
 
   DEBUG ((DEBUG_INFO, "Variable %s is %x\n", EFI_CUSTOM_MODE_NAME, CustomMode));
-
-  //
-  // Check "certdb" variable's existence.
-  // If it doesn't exist, then create a new one with
-  // EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS set.
-  //
-  Status = AuthServiceInternalFindVariable (
-             EFI_CERT_DB_NAME,
-             &gEfiCertDbGuid,
-             (VOID **)&Data,
-             &DataSize
-             );
-  if (EFI_ERROR (Status)) {
-    VarAttr  = EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS;
-    ListSize = sizeof (UINT32);
-    Status   = AuthServiceInternalUpdateVariable (
-                 EFI_CERT_DB_NAME,
-                 &gEfiCertDbGuid,
-                 &ListSize,
-                 sizeof (UINT32),
-                 VarAttr
-                 );
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
-  } else {
-    //
-    // Clean up Certs to make certDB & Time based auth variable consistent
-    //
-    Status = CleanCertsFromDb ();
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "Clean up CertDB fail! Status %x\n", Status));
-      return Status;
-    }
-  }
-
-  //
-  // Create "certdbv" variable with RT+BS+AT set.
-  //
-  VarAttr  = EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS;
-  ListSize = sizeof (UINT32);
-  Status   = AuthServiceInternalUpdateVariable (
-               EFI_CERT_DB_VOLATILE_NAME,
-               &gEfiCertDbGuid,
-               &ListSize,
-               sizeof (UINT32),
-               VarAttr
-               );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
 
   //
   // Check "VendorKeysNv" variable's existence and create "VendorKeys" variable accordingly.

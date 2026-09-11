@@ -72,6 +72,21 @@ GetScratchBufferOutOfResources (
   return EFI_OUT_OF_RESOURCES;
 }
 
+STATIC
+EFI_STATUS
+EFIAPI
+FindVariableNotFound (
+  IN  CHAR16              *VariableName,
+  IN  EFI_GUID            *VendorGuid,
+  OUT AUTH_VARIABLE_INFO  *AuthVariableInfo
+  )
+{
+  (VOID)VariableName;
+  (VOID)VendorGuid;
+  (VOID)AuthVariableInfo;
+  return EFI_NOT_FOUND;
+}
+
 class VerifyTimeBasedPayloadSignerInfoTest : public ::testing::Test {
 protected:
   MockBaseCryptLib  BaseCryptLibMock;
@@ -85,6 +100,7 @@ protected:
     ) override
   {
     ZeroMem (&AuthVarContext, sizeof (AuthVarContext));
+    AuthVarContext.FindVariable     = FindVariableNotFound;
     AuthVarContext.GetScratchBuffer = GetScratchBufferOutOfResources;
     mAuthVarLibContextIn             = &AuthVarContext;
     Payload     = NULL;
@@ -132,6 +148,21 @@ TEST_F (VerifyTimeBasedPayloadSignerInfoTest, RejectsMultipleSignerInfos) {
 
 TEST_F (VerifyTimeBasedPayloadSignerInfoTest, AcceptsOneSignerInfo) {
   EXPECT_EQ (VerifyWithSignerInfoCount (1), EFI_OUT_OF_RESOURCES);
+}
+
+TEST_F (VerifyTimeBasedPayloadSignerInfoTest, RejectsPrivateTimeBasedVariable) {
+  UINT8  Data = 0;
+
+  EXPECT_EQ (
+    ProcessVariable (
+      mVariableName,
+      &VendorGuid,
+      &Data,
+      sizeof (Data),
+      EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS
+      ),
+    EFI_UNSUPPORTED
+    );
 }
 
 int
