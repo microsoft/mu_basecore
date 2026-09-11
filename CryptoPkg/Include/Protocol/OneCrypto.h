@@ -3930,6 +3930,18 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_GET_SIGNATURE_ALGORITHM)(
   );
 
 /**
+  Report whether the subject public-key algorithm in Cert is supported.
+  See BaseCryptLib.h X509IsPublicKeySupported().
+
+  @since 1.1
+  @ingroup X509
+**/
+typedef BOOLEAN (EFIAPI *ONE_CRYPTO_X509_IS_PUBLIC_KEY_SUPPORTED)(
+  IN CONST UINT8  *Cert,
+  IN UINTN        CertSize
+  );
+
+/**
   Retrieve the Extended Key Usage from one X.509 certificate.
 
   @param[in]      Cert             Pointer to the DER-encoded X509 certificate.
@@ -5682,6 +5694,8 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   /// v1.1 CMS ---------------------------------------------------------------
   ONE_CRYPTO_CMS_VERIFY                              CmsVerify;
   ONE_CRYPTO_CMS_GET_SIGNER_INFO_NUM                 CmsGetSignerInfoNum;
+  /// v1.1 X509 --------------------------------------------------------------
+  ONE_CRYPTO_X509_IS_PUBLIC_KEY_SUPPORTED            X509IsPublicKeySupported;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */

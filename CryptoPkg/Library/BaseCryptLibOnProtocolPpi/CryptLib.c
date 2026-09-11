@@ -3367,6 +3367,19 @@ CmsGetSignerInfoNum (
 }
 
 /**
+  EDKII_CRYPTO_PROTOCOL does not expose public-key capability reporting.
+**/
+BOOLEAN
+EFIAPI
+X509IsPublicKeySupported (
+  IN CONST UINT8  *Cert,
+  IN UINTN        CertSize
+  )
+{
+  return FALSE;
+}
+
+/**
   This function receives a PKCS7 formatted signature, and then verifies that
   the specified Enhanced or Extended Key Usages (EKU's) are present in the end-entity
   leaf signing certificate.

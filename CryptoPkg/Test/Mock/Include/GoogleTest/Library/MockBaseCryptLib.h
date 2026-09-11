@@ -1208,6 +1208,14 @@ struct MockBaseCryptLib {
     (
     )
     );
+  MOCK_FUNCTION_DECLARATION (
+    BOOLEAN,
+    X509IsPublicKeySupported,
+    (
+     IN CONST UINT8  *Cert,
+     IN UINTN        CertSize
+    )
+    );
 
   MOCK_FUNCTION_DECLARATION (
     VOID,
