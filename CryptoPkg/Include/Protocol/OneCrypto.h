@@ -5679,6 +5679,8 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_HASH_ALL_BY_GUID                        HashAllByGuid;
   /// v2.0 CMS ---------------------------------------------------------------
   ONE_CRYPTO_CMS_GET_SIGNER_INFO_NUM                 CmsGetSignerInfoNum;
+  /// v2.0 X509 --------------------------------------------------------------
+  ONE_CRYPTO_X509_IS_PUBLIC_KEY_SUPPORTED            X509IsPublicKeySupported;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */
