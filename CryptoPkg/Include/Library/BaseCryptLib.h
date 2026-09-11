@@ -3039,6 +3039,25 @@ X509GetSignatureAlgorithm (
   );
 
 /**
+  Determine whether the certificate subject public key is supported for a
+  signature operation by the active crypto provider.
+
+  @param[in]  Cert      Pointer to the DER-encoded X.509 certificate.
+  @param[in]  CertSize  Size of Cert in bytes.
+
+  @retval TRUE   The certificate is valid and its subject public key supports
+                  a signature operation.
+  @retval FALSE  The certificate is invalid or its subject public key is not
+                  supported for a signature operation.
+**/
+BOOLEAN
+EFIAPI
+X509IsPublicKeySupported (
+  IN CONST UINT8  *Cert,
+  IN UINTN        CertSize
+  );
+
+/**
   Retrieve Extension data from one X.509 certificate.
 
   @param[in]      Cert             Pointer to the DER-encoded X509 certificate.

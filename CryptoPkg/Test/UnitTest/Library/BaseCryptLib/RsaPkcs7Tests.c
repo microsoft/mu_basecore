@@ -524,6 +524,24 @@ Exit:
   return TestStatus;
 }
 
+/**
+  Verify that supported and malformed X.509 subject public keys are identified.
+**/
+UNIT_TEST_STATUS
+EFIAPI
+TestX509IsPublicKeySupported (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  UINT8  InvalidCert[] = { 0x30, 0x82, 0x00, 0x01, 0x00 };
+
+  UT_ASSERT_TRUE (X509IsPublicKeySupported (TestCert, sizeof (TestCert)));
+  UT_ASSERT_FALSE (X509IsPublicKeySupported (NULL, 0));
+  UT_ASSERT_FALSE (X509IsPublicKeySupported (InvalidCert, sizeof (InvalidCert)));
+
+  return UNIT_TEST_PASSED;
+}
+
 UNIT_TEST_STATUS
 EFIAPI
 TestVerifyPkcs7SignVerify (
@@ -723,6 +741,7 @@ TEST_DESC  mRsaCertTest[] = {
   // -----Description--------------------------------------Class----------------------Function-----------------Pre---Post--Context
   //
   { "TestVerifyRsaCertPkcs1SignVerify()", "CryptoPkg.BaseCryptLib.RsaCert", TestVerifyRsaCertPkcs1SignVerify, NULL, NULL, NULL },
+  { "TestX509IsPublicKeySupported()",     "CryptoPkg.BaseCryptLib.RsaCert", TestX509IsPublicKeySupported,     NULL, NULL, NULL },
 };
 
 UINTN  mRsaCertTestNum = ARRAY_SIZE (mRsaCertTest);
