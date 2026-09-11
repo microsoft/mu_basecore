@@ -74,12 +74,6 @@
   ## PRODUCES            ## Variable:L"CustomMode"
   gEfiCustomModeEnableGuid
 
-  ## CONSUMES            ## Variable:L"certdb"
-  ## CONSUMES            ## Variable:L"certdbv"
-  ## PRODUCES            ## Variable:L"certdb"
-  ## PRODUCES            ## Variable:L"certdbv"
-  gEfiCertDbGuid
-
   ## CONSUMES            ## Variable:L"VendorKeysNv"
   ## PRODUCES            ## Variable:L"VendorKeysNv"
   gEfiVendorKeysNvGuid
