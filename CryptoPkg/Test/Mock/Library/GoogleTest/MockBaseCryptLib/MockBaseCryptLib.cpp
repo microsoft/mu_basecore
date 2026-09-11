@@ -96,6 +96,7 @@ MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, Pkcs7GetCertificatesList, 6, EFIAPI)
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, Pkcs7Sign, 10, EFIAPI);
 // MU_CHANGE [TCBZ3925] - Pkcs7Sign is broken
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, Pkcs7Verify, 6, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, CmsGetSignerInfoNum, 2, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, Pkcs7Encrypt, 7, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, VerifyEKUsInPkcs7Signature, 5, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, Pkcs7GetAttachedContent, 4, EFIAPI);
