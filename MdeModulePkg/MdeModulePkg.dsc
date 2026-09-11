@@ -234,6 +234,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdRecoveryFileName|L"FVMAIN.FV"
 
 [Components]
+  MdeModulePkg/Universal/Acpi/RmemAcpiDxe/RmemAcpiDxe.inf
   MdeModulePkg/Application/HelloWorld/HelloWorld.inf
   MdeModulePkg/Application/DumpDynPcd/DumpDynPcd.inf
   MdeModulePkg/Library/ParallelLzmaCustomDecompressLib/ParallelLzmaCustomDecompressLib.inf       ## MU_CHANGE
