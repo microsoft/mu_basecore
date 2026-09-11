@@ -52,10 +52,10 @@ extern EFI_GUID  gOneCryptoProtocolGuid;
 **/
 
 // =============================================================================
-// Protocol version: 1.1
+// Protocol version: 2.0
 // =============================================================================
-#define ONE_CRYPTO_VERSION_MAJOR  1ULL
-#define ONE_CRYPTO_VERSION_MINOR  1ULL
+#define ONE_CRYPTO_VERSION_MAJOR  2ULL
+#define ONE_CRYPTO_VERSION_MINOR  0ULL
 
 // ============================================================================
 // Typedef Declarations
@@ -5677,6 +5677,10 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_X509_GET_TBS_CERT_HASH                  X509GetTbsCertHash;
   ONE_CRYPTO_AUTHENTICODE_VERIFY_EX                  AuthenticodeVerifyEx;
   ONE_CRYPTO_HASH_ALL_BY_GUID                        HashAllByGuid;
+  /// v2.0 CMS ---------------------------------------------------------------
+  ONE_CRYPTO_CMS_GET_SIGNER_INFO_NUM                 CmsGetSignerInfoNum;
+  /// v2.0 X509 --------------------------------------------------------------
+  ONE_CRYPTO_X509_IS_PUBLIC_KEY_SUPPORTED            X509IsPublicKeySupported;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */
