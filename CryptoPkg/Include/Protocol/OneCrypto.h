@@ -52,10 +52,10 @@ extern EFI_GUID  gOneCryptoProtocolGuid;
 **/
 
 // =============================================================================
-// Protocol version: 1.1
+// Protocol version: 2.0
 // =============================================================================
-#define ONE_CRYPTO_VERSION_MAJOR  1ULL
-#define ONE_CRYPTO_VERSION_MINOR  1ULL
+#define ONE_CRYPTO_VERSION_MAJOR  2ULL
+#define ONE_CRYPTO_VERSION_MINOR  0ULL
 
 // ============================================================================
 // Typedef Declarations
