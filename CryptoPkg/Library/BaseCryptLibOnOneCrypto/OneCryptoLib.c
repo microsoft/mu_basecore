@@ -4949,6 +4949,19 @@ X509GetSignatureAlgorithm (
 }
 
 /**
+  See BaseCryptLib.h X509IsPublicKeySupported().
+**/
+BOOLEAN
+EFIAPI
+X509IsPublicKeySupported (
+  IN CONST UINT8  *Cert,
+  IN UINTN        CertSize
+  )
+{
+  CALL_CRYPTO_SERVICE (X509IsPublicKeySupported, (Cert, CertSize), FALSE, 2, 0);
+}
+
+/**
   Retrieve the Extended Key Usage from one X.509 certificate.
 
   @param[in]      Cert             Pointer to the DER-encoded X509 certificate.
