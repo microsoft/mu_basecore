@@ -45,16 +45,48 @@ BuildAuthenticatedVariableData (
   VOID
   )
 {
-  CONST UINTN                         SigDataSize = 22;
-  std::vector<UINT8>                  Data (OFFSET_OF_AUTHINFO2_CERT_DATA + SigDataSize + 1, 0);
-  EFI_VARIABLE_AUTHENTICATION_2       *Authentication;
+  CONST UINTN                    SigDataSize = 22;
+  std::vector<UINT8>             Data (OFFSET_OF_AUTHINFO2_CERT_DATA + SigDataSize + 1, 0);
+  EFI_VARIABLE_AUTHENTICATION_2  *Authentication;
 
-  Authentication                                      = reinterpret_cast<EFI_VARIABLE_AUTHENTICATION_2 *>(Data.data ());
-  Authentication->AuthInfo.Hdr.dwLength                = OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData) + SigDataSize;
-  Authentication->AuthInfo.Hdr.wCertificateType        = WIN_CERT_TYPE_EFI_GUID;
-  Authentication->AuthInfo.CertType                    = gEfiCertPkcs7Guid;
-  Authentication->AuthInfo.CertData[1]                 = TWO_BYTE_ENCODE;
+  Authentication                                = reinterpret_cast<EFI_VARIABLE_AUTHENTICATION_2 *>(Data.data ());
+  Authentication->AuthInfo.Hdr.dwLength         = OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData) + SigDataSize;
+  Authentication->AuthInfo.Hdr.wCertificateType = WIN_CERT_TYPE_EFI_GUID;
+  Authentication->AuthInfo.CertType             = gEfiCertPkcs7Guid;
+  Authentication->AuthInfo.CertData[1]          = TWO_BYTE_ENCODE;
   CopyMem (Authentication->AuthInfo.CertData + 13, mSha256Oid, sizeof (mSha256Oid));
+
+  return Data;
+}
+
+STATIC std::vector<UINT8>
+BuildAuthenticatedX509SignatureListData (
+  VOID
+  )
+{
+  CONST UINTN                    SigDataSize       = 22;
+  CONST UINTN                    CertSize          = 1;
+  CONST UINTN                    SignatureSize     = sizeof (EFI_GUID) + CertSize;
+  CONST UINTN                    SignatureListSize = sizeof (EFI_SIGNATURE_LIST) + SignatureSize;
+  std::vector<UINT8>             Data (OFFSET_OF_AUTHINFO2_CERT_DATA + SigDataSize + SignatureListSize, 0);
+  EFI_VARIABLE_AUTHENTICATION_2  *Authentication;
+  EFI_SIGNATURE_LIST             *SignatureList;
+  EFI_SIGNATURE_DATA             *SignatureData;
+
+  Authentication                                = reinterpret_cast<EFI_VARIABLE_AUTHENTICATION_2 *>(Data.data ());
+  Authentication->AuthInfo.Hdr.dwLength         = OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData) + SigDataSize;
+  Authentication->AuthInfo.Hdr.wCertificateType = WIN_CERT_TYPE_EFI_GUID;
+  Authentication->AuthInfo.CertType             = gEfiCertPkcs7Guid;
+  Authentication->AuthInfo.CertData[1]          = TWO_BYTE_ENCODE;
+  CopyMem (Authentication->AuthInfo.CertData + 13, mSha256Oid, sizeof (mSha256Oid));
+
+  SignatureList                      = reinterpret_cast<EFI_SIGNATURE_LIST *>(Data.data () + OFFSET_OF_AUTHINFO2_CERT_DATA + SigDataSize);
+  SignatureList->SignatureType       = gEfiCertX509Guid;
+  SignatureList->SignatureListSize   = (UINT32)SignatureListSize;
+  SignatureList->SignatureHeaderSize = 0;
+  SignatureList->SignatureSize       = (UINT32)SignatureSize;
+  SignatureData                      = reinterpret_cast<EFI_SIGNATURE_DATA *>((UINT8 *)SignatureList + sizeof (EFI_SIGNATURE_LIST));
+  SignatureData->SignatureData[0]    = 0;
 
   return Data;
 }
@@ -89,11 +121,12 @@ FindVariableNotFound (
 
 class VerifyTimeBasedPayloadSignerInfoTest : public ::testing::Test {
 protected:
-  MockBaseCryptLib  BaseCryptLibMock;
-  AUTH_VAR_LIB_CONTEXT_IN  AuthVarContext;
-  EFI_GUID          VendorGuid = { 0 };
-  UINT8             *Payload;
-  UINTN             PayloadSize;
+  MockBaseCryptLib BaseCryptLibMock;
+  AUTH_VAR_LIB_CONTEXT_IN AuthVarContext;
+  EFI_GUID VendorGuid = { 0 };
+  UINT8 *Payload;
+  UINTN PayloadSize;
+  UINT32 OriginalPlatformMode;
 
   VOID
   SetUp (
@@ -102,9 +135,10 @@ protected:
     ZeroMem (&AuthVarContext, sizeof (AuthVarContext));
     AuthVarContext.FindVariable     = FindVariableNotFound;
     AuthVarContext.GetScratchBuffer = GetScratchBufferOutOfResources;
-    mAuthVarLibContextIn             = &AuthVarContext;
-    Payload     = NULL;
-    PayloadSize = 0;
+    mAuthVarLibContextIn            = &AuthVarContext;
+    Payload                         = NULL;
+    PayloadSize                     = 0;
+    OriginalPlatformMode            = mPlatformMode;
   }
 
   VOID
@@ -112,6 +146,7 @@ protected:
     ) override
   {
     mAuthVarLibContextIn = NULL;
+    mPlatformMode        = OriginalPlatformMode;
   }
 
   EFI_STATUS
@@ -162,6 +197,26 @@ TEST_F (VerifyTimeBasedPayloadSignerInfoTest, RejectsPrivateTimeBasedVariable) {
       EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS
       ),
     EFI_UNSUPPORTED
+    );
+}
+
+TEST_F (VerifyTimeBasedPayloadSignerInfoTest, RejectsUnsupportedX509PublicKey) {
+  std::vector<UINT8>  Data = BuildAuthenticatedX509SignatureListData ();
+
+  mPlatformMode = SETUP_MODE;
+  EXPECT_CALL (BaseCryptLibMock, X509IsPublicKeySupported (_, _))
+    .WillOnce (Return (FALSE));
+
+  EXPECT_EQ (
+    ProcessVarWithPk (
+      mVariableName,
+      &VendorGuid,
+      Data.data (),
+      Data.size (),
+      EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS,
+      FALSE
+      ),
+    EFI_INVALID_PARAMETER
     );
 }
 

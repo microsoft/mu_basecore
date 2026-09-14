@@ -1172,7 +1172,6 @@ AuthServiceInternalCompareTimeStamp (
   return (BOOLEAN)(FirstTime->Second <= SecondTime->Second);
 }
 
-
 /**
   Find hash algorithm index.
 
@@ -1276,12 +1275,12 @@ VerifyTimeBasedPayload (
   // 2. TrustedCert is the certificate which firmware trusts. It could be saved in protected
   //     storage or PK payload on PK init
   //
-  VerifyStatus  = FALSE;
-  CertData      = NULL;
-  NewData       = NULL;
-  Attr          = Attributes;
-  SignerCerts   = NULL;
-  TopLevelCert  = NULL;
+  VerifyStatus = FALSE;
+  CertData     = NULL;
+  NewData      = NULL;
+  Attr         = Attributes;
+  SignerCerts  = NULL;
+  TopLevelCert = NULL;
 
   //
   // When the attribute EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS is
