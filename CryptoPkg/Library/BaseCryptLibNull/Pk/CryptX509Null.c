@@ -10,6 +10,29 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "InternalCryptLib.h"
 
 /**
+  Determine whether the certificate subject public key is supported for a
+  signature operation by the active crypto provider.
+
+  The null implementation does not provide this interface.
+
+  @param[in]  Cert      Pointer to the DER-encoded X.509 certificate.
+  @param[in]  CertSize  Size of Cert in bytes.
+
+  @retval FALSE  This interface is not supported.
+**/
+BOOLEAN
+EFIAPI
+X509IsPublicKeySupported (
+  IN CONST UINT8  *Cert,
+  IN UINTN        CertSize
+  )
+{
+  (VOID)Cert;
+  (VOID)CertSize;
+  return FALSE;
+}
+
+/**
   Construct a X509 object from DER-encoded certificate data.
 
   Return FALSE to indicate this interface is not supported.
