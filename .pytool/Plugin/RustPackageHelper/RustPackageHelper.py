@@ -39,21 +39,21 @@ class RustWorkspace:
     def __set_members(self):
         """Finds all members of the workspace."""
         workspace = self.toml.get("workspace")
-        members = set()
+        member_paths = set()
 
         # Grab all members specifically specified in the workspace
         for member in workspace["members"]:
-            members.add(RustPackage(self.path / member))
+            member_paths.add(self.path / member)
 
         # Build a dep list that only contains dependencies with a path. These are workspace
         # members.
         dep_list = workspace["dependencies"]
-        dep_list = [dep_list[dep] for dep in dep_list if type(dep_list[dep]) != str and dep_list[dep].get("path")]
+        dep_list = [dep_list[dep] for dep in dep_list if not isinstance(dep_list[dep], str) and dep_list[dep].get("path")]
 
         for dep in dep_list:
-            members.add(RustPackage(self.path / dep["path"]))
+            member_paths.add(self.path / dep["path"])
 
-        self.members = list(members)
+        self.members = [RustPackage(path) for path in member_paths]
 
     def test(self, pkg_list: list[str] = None, ignore_list: list[str] = None, report_type: str = "html", coverage: bool = True):
         """Runs tests on a list of rust packages / crates.
