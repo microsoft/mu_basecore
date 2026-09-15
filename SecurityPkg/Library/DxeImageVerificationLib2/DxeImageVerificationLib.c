@@ -61,7 +61,9 @@ ValidateImage (
   SIGNATURE_DATABASES    Databases;
   WIN_CERT_ITER          CertIter;
   CONST WIN_CERTIFICATE  *Cert;
-  IMAGE_CERT_EVALUATION  CertEval;
+  CONST UINT8            *AuthData;
+  UINTN                  AuthDataSize;
+  IMAGE_CERT_EVALUATION  Evaluation;
 
   //
   // Setup digest cache for the image. This prevents redundant authenticode hash computations
@@ -70,10 +72,10 @@ ValidateImage (
   ZeroMem (&Cache, sizeof (Cache));
 
   //
-  // Zeroed up front so every Exit path can safely release CertEval.Authority, even if the
+  // Zeroed up front so every Exit path can safely release Evaluation.Authority, even if the
   // certificate walk never runs (unsigned image) or an earlier step rejects.
   //
-  ZeroMem (&CertEval, sizeof (CertEval));
+  ZeroMem (&Evaluation, sizeof (Evaluation));
 
   Status = LoadSignatureDatabases (&Databases);
   if (EFI_ERROR (Status)) {
@@ -110,8 +112,20 @@ ValidateImage (
   }
 
   while ((Cert = WinCertIterNext (&CertIter)) != NULL) {
-    Status = EvaluateImageCertificate (Cert, &Cache, &Databases, &CertEval);
-    if (!EFI_ERROR (Status) && (CertEval.Verdict == ImageCertApproved)) {
+    Status = ExtractAuthData (Cert, &AuthData, &AuthDataSize);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_WARN, "DxeImageVerificationLib: WIN_CERTIFICATE not usable (type=0x%04x, %r).\n", Cert->wCertificateType, Status));
+      continue;
+    }
+
+    Status = EvaluateSignature (
+               AuthData,
+               AuthDataSize,
+               &Cache,
+               &Databases,
+               &Evaluation
+               );
+    if (!EFI_ERROR (Status) && (Evaluation.Verdict == ImageCertApproved)) {
       //
       // Measure the `db` certificate that authorized the image into PCR 7.
       //
@@ -119,7 +133,7 @@ ValidateImage (
         Measured,
         EFI_IMAGE_SECURITY_DATABASE,
         &gEfiImageSecurityDatabaseGuid,
-        &CertEval.Authority
+        &Evaluation.Authority
         );
       Status = EFI_SUCCESS;
       goto Exit;
@@ -141,7 +155,7 @@ Reject:
   Status = EFI_ACCESS_DENIED;
 
 Exit:
-  FreeImageAuthority (&CertEval.Authority);
+  FreeImageAuthority (&Evaluation.Authority);
 
   FreeDigestCache (&Cache);
 

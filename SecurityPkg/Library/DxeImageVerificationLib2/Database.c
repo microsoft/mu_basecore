@@ -826,70 +826,6 @@ IsCertInDbx (
 }
 
 /**
-  Extract the DER-encoded PKCS#7 SignedData payload from a single WIN_CERTIFICATE entry.
-
-  @param[in]   Cert          The certificate to inspect.
-  @param[out]  AuthData      On success, set to point at the PKCS#7 payload inside Cert.
-  @param[out]  AuthDataSize  On success, set to the PKCS#7 payload length in bytes.
-
-  @retval EFI_SUCCESS            AuthData/AuthDataSize were populated.
-  @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
-  @retval EFI_UNSUPPORTED        Unsupported WIN_CERTIFICATE type.
-  @retval EFI_VOLUME_CORRUPTED   dwLength is too small to contain the required header for the
-                                 declared type.
-**/
-EFI_STATUS
-ExtractAuthData (
-  IN  CONST WIN_CERTIFICATE  *Cert,
-  OUT CONST UINT8            **AuthData,
-  OUT UINTN                  *AuthDataSize
-  )
-{
-  CONST WIN_CERTIFICATE_UEFI_GUID  *UefiGuidCert;
-
-  if ((Cert == NULL) || (AuthData == NULL) || (AuthDataSize == NULL)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  switch (Cert->wCertificateType) {
-    case WIN_CERT_TYPE_PKCS_SIGNED_DATA:
-      //
-      // The certificate is a bare DER-encoded PKCS#7 SignedData prefixed
-      // by the WIN_CERTIFICATE header.
-      //
-      if (Cert->dwLength <= sizeof (WIN_CERTIFICATE)) {
-        return EFI_VOLUME_CORRUPTED;
-      }
-
-      *AuthData     = (CONST UINT8 *)Cert + sizeof (WIN_CERTIFICATE);
-      *AuthDataSize = Cert->dwLength - sizeof (WIN_CERTIFICATE);
-      return EFI_SUCCESS;
-
-    case WIN_CERT_TYPE_EFI_GUID:
-      //
-      // The certificate is a WIN_CERTIFICATE_UEFI_GUID; the embedded
-      // payload format is identified by CertType. Only the PKCS#7
-      // SignedData GUID is supported.
-      //
-      if (Cert->dwLength <= OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData)) {
-        return EFI_VOLUME_CORRUPTED;
-      }
-
-      UefiGuidCert = (CONST WIN_CERTIFICATE_UEFI_GUID *)Cert;
-      if (!CompareGuid (&UefiGuidCert->CertType, &gEfiCertPkcs7Guid)) {
-        return EFI_UNSUPPORTED;
-      }
-
-      *AuthData     = UefiGuidCert->CertData;
-      *AuthDataSize = Cert->dwLength - OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData);
-      return EFI_SUCCESS;
-
-    default:
-      return EFI_UNSUPPORTED;
-  }
-}
-
-/**
   Determine whether the verified certificate chain that authorizes an image is revoked.
 
   Reports the chain revoked if any certificate in it is enrolled in the revoke-list (by
@@ -1130,9 +1066,10 @@ EvaluateAnchorEntry (
 }
 
 /**
-  Evaluate a single WIN_CERTIFICATE against an allow-list and a revoke-list..
+  Evaluate an Authenticode signature against an allow-list and a revoke-list.
 
-  @param[in]      Cert        The WIN_CERTIFICATE to evaluate.
+  @param[in]      AuthData      Authenticode signature data.
+  @param[in]      AuthDataSize  Size of AuthData in bytes.
   @param[in,out]  Cache       Image digest cache bound to the image buffer; the cache may memoize
                               one digest per algorithm across calls.
   @param[in]      Databases   The allow-list / revoke-list databases to evaluate against.
@@ -1144,22 +1081,23 @@ EvaluateAnchorEntry (
                                  from GetHash); no verdict was produced.
 **/
 EFI_STATUS
-EvaluateImageCertificate (
-  IN     CONST WIN_CERTIFICATE      *Cert,
+EvaluateSignature (
+  IN     CONST UINT8                *AuthData,
+  IN     UINTN                      AuthDataSize,
   IN OUT DIGEST_CACHE               *Cache,
   IN     CONST SIGNATURE_DATABASES  *Databases,
   OUT    IMAGE_CERT_EVALUATION      *Evaluation
   )
 {
   EFI_STATUS               Status;
-  CONST UINT8              *AuthData;
-  UINTN                    AuthDataSize;
   EFI_GUID                 HashAlgorithm;
   CONST UINT8              *ImageHash;
   UINTN                    ImageHashSize;
   EVALUATE_ANCHOR_CONTEXT  AnchorCtx;
 
-  if ((Cert == NULL) || (Cache == NULL) || (Databases == NULL) || (Evaluation == NULL)) {
+  if ((AuthData == NULL) || (AuthDataSize == 0) || (Cache == NULL) ||
+      (Databases == NULL) || (Evaluation == NULL))
+  {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -1168,12 +1106,6 @@ EvaluateImageCertificate (
   Evaluation->Authority.Data = NULL;
   Evaluation->Authority.Size = 0;
   ZeroMem (&Evaluation->Authority.SignatureType, sizeof (EFI_GUID));
-
-  Status = ExtractAuthData (Cert, &AuthData, &AuthDataSize);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_WARN, "DxeImageVerificationLib: WIN_CERTIFICATE not usable (type=0x%04x, %r).\n", Cert->wCertificateType, Status));
-    return EFI_SUCCESS;
-  }
 
   Status = GetAuthenticodeHashAlgorithm (AuthData, AuthDataSize, &HashAlgorithm);
   if (EFI_ERROR (Status)) {

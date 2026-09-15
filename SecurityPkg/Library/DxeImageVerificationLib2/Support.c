@@ -8,6 +8,69 @@
 #include "Support.h"
 
 /**
+  Extract the Authenticode signature from a single WIN_CERTIFICATE entry.
+
+  @param[in]   Cert          The certificate to inspect.
+  @param[out]  AuthData      On success, set to point at the Authenticode signature inside Cert.
+  @param[out]  AuthDataSize  On success, set to the Authenticode signature length in bytes.
+
+  @retval EFI_SUCCESS            AuthData/AuthDataSize were populated.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
+  @retval EFI_UNSUPPORTED        Unsupported WIN_CERTIFICATE type.
+  @retval EFI_VOLUME_CORRUPTED   dwLength is too small to contain the required header for the
+                                 declared type.
+**/
+EFI_STATUS
+ExtractAuthData (
+  IN  CONST WIN_CERTIFICATE  *Cert,
+  OUT CONST UINT8            **AuthData,
+  OUT UINTN                  *AuthDataSize
+  )
+{
+  CONST WIN_CERTIFICATE_UEFI_GUID  *UefiGuidCert;
+
+  if ((Cert == NULL) || (AuthData == NULL) || (AuthDataSize == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  switch (Cert->wCertificateType) {
+    case WIN_CERT_TYPE_PKCS_SIGNED_DATA:
+      //
+      // The Authenticode signature is prefixed by the WIN_CERTIFICATE header.
+      //
+      if (Cert->dwLength <= sizeof (WIN_CERTIFICATE)) {
+        return EFI_VOLUME_CORRUPTED;
+      }
+
+      *AuthData     = (CONST UINT8 *)Cert + sizeof (WIN_CERTIFICATE);
+      *AuthDataSize = Cert->dwLength - sizeof (WIN_CERTIFICATE);
+      return EFI_SUCCESS;
+
+    case WIN_CERT_TYPE_EFI_GUID:
+      //
+      // The certificate is a WIN_CERTIFICATE_UEFI_GUID; the embedded
+      // payload format is identified by CertType. Only the Authenticode
+      // signature GUID is supported.
+      //
+      if (Cert->dwLength <= OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData)) {
+        return EFI_VOLUME_CORRUPTED;
+      }
+
+      UefiGuidCert = (CONST WIN_CERTIFICATE_UEFI_GUID *)Cert;
+      if (!CompareGuid (&UefiGuidCert->CertType, &gEfiCertPkcs7Guid)) {
+        return EFI_UNSUPPORTED;
+      }
+
+      *AuthData     = UefiGuidCert->CertData;
+      *AuthDataSize = Cert->dwLength - OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData);
+      return EFI_SUCCESS;
+
+    default:
+      return EFI_UNSUPPORTED;
+  }
+}
+
+/**
   Populate Authority with a newly allocated V1 EFI_SIGNATURE_DATA that wraps a certificate payload.
 
   The allocation is a 16-byte SignatureOwner followed by a copy of Payload. It is owned by the

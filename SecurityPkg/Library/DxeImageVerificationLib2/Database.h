@@ -72,8 +72,8 @@ typedef struct {
 } SIGNATURE_DATABASES;
 
 //
-// The verdict from evaluating a single image WIN_CERTIFICATE against the `db`
-// and `dbx` databases.
+// The verdict from evaluating an Authenticode image signature against the `db` and
+// `dbx` databases.
 //
 typedef enum {
   //
@@ -91,15 +91,15 @@ typedef enum {
   //
   ImageCertNotInDb,
   //
-  // The WIN_CERTIFICATE could not be evaluated: an unsupported certificate
-  // type, a malformed PKCS#7 payload, an unrecognized Authenticode hash
-  // algorithm, or another failure before trust-anchor evaluation.
+  // The Authenticode signature could not be evaluated: the payload is malformed, its
+  // Authenticode hash algorithm is unrecognized, or another failure occurred
+  // before trust-anchor evaluation.
   //
   ImageCertUnusable
 } IMAGE_CERT_VERDICT;
 
 //
-// The result of EvaluateImageCertificate: the evaluation verdict plus, for
+// The result of EvaluateSignature: the evaluation verdict plus, for
 // ImageCertApproved, the `db` certificate that authorized the image (for
 // measurement). A revoked or unauthorized image records no authority.
 //
@@ -225,9 +225,10 @@ IsCertInDbx (
   );
 
 /**
-  Evaluate a single WIN_CERTIFICATE against an allow-list and a revoke-list..
+  Evaluate an Authenticode signature against an allow-list and a revoke-list.
 
-  @param[in]      Cert        The WIN_CERTIFICATE to evaluate.
+  @param[in]      AuthData      Authenticode signature data.
+  @param[in]      AuthDataSize  Size of AuthData in bytes.
   @param[in,out]  Cache       Image digest cache bound to the image buffer; the cache may memoize
                               one digest per algorithm across calls.
   @param[in]      Databases   The allow-list / revoke-list databases to evaluate against.
@@ -239,8 +240,9 @@ IsCertInDbx (
                                  from GetHash); no verdict was produced.
 **/
 EFI_STATUS
-EvaluateImageCertificate (
-  IN     CONST WIN_CERTIFICATE      *Cert,
+EvaluateSignature (
+  IN     CONST UINT8                *AuthData,
+  IN     UINTN                      AuthDataSize,
   IN OUT DIGEST_CACHE               *Cache,
   IN     CONST SIGNATURE_DATABASES  *Databases,
   OUT    IMAGE_CERT_EVALUATION      *Evaluation

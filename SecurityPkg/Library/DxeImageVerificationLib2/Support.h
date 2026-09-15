@@ -8,6 +8,7 @@
 #pragma once
 
 #include "DxeImageVerificationLib.h"
+#include <Guid/WinCertificate.h>
 
 //
 // A memoized digest owned by a `DIGEST_CACHE`, allocated on demand by GetHash () and released by
@@ -77,6 +78,26 @@ typedef enum {
   SignatureKindX509Cert,       // DER X.509 certificate       (EFI_CERT_X509      / EFI_CERT_V2_X509)
   SignatureKindX509TbsHash     // X.509 TBSCertificate digest (EFI_CERT_X509_SHA* / EFI_CERT_V2_X509_SHA*)
 } SIGNATURE_KIND;
+
+/**
+  Extract the Authenticode signature from a single WIN_CERTIFICATE entry.
+
+  @param[in]   Cert          The certificate to inspect.
+  @param[out]  AuthData      On success, set to point at the Authenticode signature inside Cert.
+  @param[out]  AuthDataSize  On success, set to the Authenticode signature length in bytes.
+
+  @retval EFI_SUCCESS            AuthData/AuthDataSize were populated.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
+  @retval EFI_UNSUPPORTED        Unsupported WIN_CERTIFICATE type.
+  @retval EFI_VOLUME_CORRUPTED   dwLength is too small to contain the required header for the
+                                 declared type.
+**/
+EFI_STATUS
+ExtractAuthData (
+  IN  CONST WIN_CERTIFICATE  *Cert,
+  OUT CONST UINT8            **AuthData,
+  OUT UINTN                  *AuthDataSize
+  );
 
 /**
   Populate Authority with a newly allocated V1 EFI_SIGNATURE_DATA that wraps a certificate payload.

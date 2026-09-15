@@ -100,8 +100,9 @@ Notes:
    in `dbx` via `IsImageHashInDbx`. A hit - or a `dbx` that cannot be fully
    parsed (fail-closed) - rejects the image.
 2. **Per-`WIN_CERTIFICATE` walk.** For each embedded `WIN_CERTIFICATE`,
-   ask `EvaluateImageCertificate` for a verdict; the first certificate
-   whose verdict is `ImageCertApproved` authorizes the image.
+   extract its Authenticode signature data and ask `EvaluateSignature` for a verdict;
+   the first signature whose verdict is `ImageCertApproved` authorizes the
+   image.
 3. **Image-hash fallback.** If no embedded signature authorizes the
    image, look up the image's digest in `db` via `IsImageHashInDb`. A hit
    authorizes on the image-hash path.
@@ -119,7 +120,8 @@ flowchart TD
     S1Q -- yes --> R[Reject]
     S1Q -- no  --> D1[WinCertIterNext: next WIN_CERTIFICATE]
     D1 --> D2{{Entry?}}
-    D2 -- yes --> IA[EvaluateImageCertificate]
+    D2 -- yes --> EA[ExtractAuthData]
+    EA --> IA[EvaluateSignature]
     IA --> IA1{{Approved?}}
     IA1 -- yes --> G[SecureBootHook]
     IA1 -- no --> D1
@@ -196,13 +198,15 @@ Callers: `ValidateImage` uses `IsImageHashInDbx` (revocation) and
 `IsImageHashInDb` (allow-list fallback); `IsChainRevoked` uses `IsCertInDbx` and
 `IsTbsHashInDbx` per chain certificate.
 
-## 4. `EvaluateImageCertificate`
+## 4. `EvaluateSignature`
 
-Evaluates a single `WIN_CERTIFICATE` and reports a verdict as an
+Evaluates the Authenticode signature data extracted from a single `WIN_CERTIFICATE` and
+reports a verdict as an
 `IMAGE_CERT_EVALUATION` out-parameter. The `EFI_STATUS` return indicates
 whether evaluation could be performed; the security outcome is the verdict.
 
-`EvaluateImageCertificate` extracts the `AuthData` from the `WIN_CERTIFICATE`
+`ValidateImage` extracts `AuthData` from each `WIN_CERTIFICATE` via
+`ExtractAuthData`; unusable certificate entries are skipped. `EvaluateSignature`
 then walks the `db`. This `db` walk supports both X509 and X509 hash signature
 list signature types. When the signature list signature type is an X509 hash,
 the underlying X509 is derived; then in both scenarios, the X509 bytes are
@@ -222,15 +226,14 @@ The verdict (`Evaluation->Verdict`) is one of:
 | `ImageCertApproved` | A `db` anchor verified the image with an un-revoked chain. `Evaluation->Authority` wraps the authorizing certificate (an owned V1 `EFI_SIGNATURE_DATA`) for PCR 7 measurement. |
 | `ImageCertRevokedByDbx` | A `db` anchor verified the image, but a certificate in its verified chain is enrolled in `dbx`, and no other anchor authorizes it. |
 | `ImageCertNotInDb` | No `db` anchor verifies the image. |
-| `ImageCertUnusable` | The certificate could not be evaluated before trust-anchor processing: unsupported `WIN_CERTIFICATE` type, malformed PKCS#7, or unrecognized hash algorithm. |
+| `ImageCertUnusable` | The Authenticode signature could not be evaluated before trust-anchor processing because its data is malformed or its hash algorithm is unrecognized. |
 
 Evaluation is only valid if the return is `EFI_SUCCESS`. Any `EFI_ERROR`
 indicates that there was an error and the Evaluation cannot be trusted.[8-5]
 
 ```mermaid
 flowchart TD
-    A[EvaluateImageCertificate Cert, Cache, Databases] --> P[ExtractAuthData]
-    P --> HA[GetAuthenticodeHashAlgorithm]
+    A[EvaluateSignature AuthData, Cache, Databases] --> HA[GetAuthenticodeHashAlgorithm]
     HA --> GH[GetHash]
     GH --> DL[DatabaseIterNext: next EFI_SIGNATURE_LIST]
     DL --> DL1{{Entry?}}
