@@ -20,7 +20,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "DxeImageVerificationLib.h"
 #include "Database.h"
-#include "Iterator.h"
 #include "Support.h"
 
 /**
