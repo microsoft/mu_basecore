@@ -1,5 +1,5 @@
 /** @file
-  Unit tests for the iterators in Iterator.c:
+  Unit tests for the iterators in Database.c:
   DatabaseIterInit/Next, SigListIterInit/Next, and WinCertIterInit/Next.
 
   All three iterators follow the same contract: Init validates the
@@ -21,7 +21,41 @@ extern "C" {
   #include <Guid/ImageAuthentication.h>
   #include <IndustryStandard/PeImage.h>
   #include <Library/BaseMemoryLib.h>
-  #include "../Iterator.h"
+  #include "../Database.h"
+
+  typedef struct {
+    CONST UINT8    *Cursor;
+    UINTN          Remaining;
+  } SIG_DATABASE_ITER;
+
+  typedef struct {
+    CONST UINT8    *Cursor;
+    UINTN          Stride;
+    UINTN          Remaining;
+  } SIG_LIST_ITER;
+
+  BOOLEAN
+  DatabaseIterInit (
+    OUT SIG_DATABASE_ITER  *Iter,
+    IN  CONST VOID         *Buffer,
+    IN  UINTN              BufferSize
+    );
+
+  CONST EFI_SIGNATURE_LIST *
+  DatabaseIterNext (
+    IN OUT SIG_DATABASE_ITER  *Iter
+    );
+
+  BOOLEAN
+  SigListIterInit (
+    OUT SIG_LIST_ITER             *Iter,
+    IN  CONST EFI_SIGNATURE_LIST  *List
+    );
+
+  CONST EFI_SIGNATURE_DATA *
+  SigListIterNext (
+    IN OUT SIG_LIST_ITER  *Iter
+    );
 }
 
 // ---------------------------------------------------------------------------
