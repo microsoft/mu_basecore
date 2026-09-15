@@ -968,35 +968,11 @@ struct MockBaseCryptLib {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
-    GetAuthenticodeHash,
-    (
-     IN  VOID            *FileBuffer,
-     IN  UINTN           FileSize,
-     IN  CONST EFI_GUID  *HashType,
-     OUT UINT8           *Digest,
-     OUT UINTN           *DigestSize
-    )
-    );
-
-  MOCK_FUNCTION_DECLARATION (
-    EFI_STATUS,
     GetAuthenticodeHashAlgorithm,
     (
      IN  CONST UINT8  *AuthData,
      IN  UINTN        AuthDataSize,
      OUT EFI_GUID     *HashType
-    )
-    );
-
-  MOCK_FUNCTION_DECLARATION (
-    EFI_STATUS,
-    X509GetTbsCertHash,
-    (
-     IN  VOID            *Cert,
-     IN  UINTN           CertSize,
-     IN  CONST EFI_GUID  *HashType,
-     OUT UINT8           *Digest,
-     OUT UINTN           *DigestSize
     )
     );
 

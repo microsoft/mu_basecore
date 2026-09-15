@@ -250,8 +250,7 @@ MakePkcsSignedDataCert (
   return Buffer;
 }
 
-// Tiny throwaway "image" buffer for the digest cache; mocks of
-// GetAuthenticodeHash never dereference it.
+// Tiny throwaway "image" buffer for the digest cache.
 static UINT8  kFakeImage[16] = { 0 };
 
 static void
