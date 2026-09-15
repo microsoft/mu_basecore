@@ -1987,45 +1987,6 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_AUTHENTICODE_VERIFY)(
   );
 
 /**
-  Compute the PE/COFF Authenticode-style image hash of a loaded image,
-  as described in the "Windows Authenticode Portable Executable
-  Signature Format" specification.
-
-  The caller selects the digest algorithm by HashType (e.g.
-  gEfiCertSha256Guid, gEfiCertSha384Guid). The digest is written to
-  Digest, which must be large enough to hold the largest supported
-  digest (at least SHA512_DIGEST_SIZE bytes).
-
-  @param[in]   FileBuffer  Pointer to the in-memory PE/COFF image.
-  @param[in]   FileSize    Size of FileBuffer in bytes.
-  @param[in]   HashType    Signature-type GUID identifying the hash
-                           algorithm to use.
-  @param[out]  Digest      Caller-provided buffer that receives the
-                           computed digest. Must be at least
-                           SHA512_DIGEST_SIZE bytes.
-  @param[out]  DigestSize  On success, receives the digest length in
-                           bytes.
-
-  @retval EFI_SUCCESS            Digest was computed successfully.
-  @retval EFI_INVALID_PARAMETER  A required pointer is NULL or
-                                 FileSize is 0.
-  @retval EFI_UNSUPPORTED        HashType is not a recognized image
-                                 hash algorithm, or this interface is
-                                 not supported by the underlying
-                                 library instance.
-
-  @since 1.1
-  @ingroup PKCS
-**/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_GET_AUTHENTICODE_HASH)(
-  IN  VOID            *FileBuffer,
-  IN  UINTN           FileSize,
-  IN  CONST EFI_GUID  *HashType,
-  OUT UINT8           *Digest,
-  OUT UINTN           *DigestSize
-  );
-
-/**
   Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
   TBSCertificate digest matches a caller-supplied hash, and return that
   certificate as a newly allocated DER-encoded buffer.
@@ -2089,15 +2050,14 @@ typedef VOID (EFIAPI *ONE_CRYPTO_FREE_TRUST_ANCHOR_X509_CACHE)(
   Parses the PKCS#7 SignedData blob's SpcIndirectDataContent
   (OID 1.3.6.1.4.1.311.2.1.4) and reads the digestAlgorithm of its
   embedded messageDigest DigestInfo, mapping it to the corresponding
-  signature-type GUID. The recovered GUID can be passed directly to
-  GetAuthenticodeHash() as its HashType.
+  generic hash-algorithm GUID.
 
   Caution: AuthData is untrusted. The ASN.1 DER is parsed with
   bounds-checked length decoding to avoid out-of-bounds reads.
 
   @param[in]   AuthData      Pointer to the PKCS#7 SignedData blob.
   @param[in]   AuthDataSize  Size of AuthData in bytes.
-  @param[out]  HashType      On success, receives the signature-type
+  @param[out]  HashType      On success, receives the hash-algorithm
                              GUID identifying the digest algorithm.
 
   @retval EFI_SUCCESS            The hash algorithm was identified.
@@ -2112,41 +2072,6 @@ typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_GET_AUTHENTICODE_HASH_ALGORITHM)(
   IN  CONST UINT8  *AuthData,
   IN  UINTN        AuthDataSize,
   OUT EFI_GUID     *HashType
-  );
-
-/**
-  Compute the digest of the TBSCertificate of an X.509 certificate.
-
-  Extracts the TBSCertificate (the to-be-signed portion) of the given
-  DER-encoded certificate and hashes it with the algorithm selected by
-  HashType. The recovered digest uniquely identifies the certificate
-  independent of the issuer signature and can be matched against the
-  TbsCertHash argument of GetTrustAnchorX509FromAuthData().
-
-  @param[in]   Cert        Pointer to the DER-encoded X.509 certificate.
-  @param[in]   CertSize    Size of Cert in bytes.
-  @param[in]   HashType    Signature-type GUID identifying the hash
-                           algorithm to use.
-  @param[out]  Digest      Caller-provided buffer that receives the
-                           computed TBSCertificate digest. Must be at
-                           least SHA512_DIGEST_SIZE bytes.
-  @param[out]  DigestSize  On success, receives the digest length in
-                           bytes.
-
-  @retval EFI_SUCCESS            Digest was computed successfully.
-  @retval EFI_INVALID_PARAMETER  Bad parameter or malformed certificate.
-  @retval EFI_UNSUPPORTED        Unrecognized hash algorithm, or
-                                 interface not supported.
-
-  @since 1.1
-  @ingroup PKCS
-**/
-typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_X509_GET_TBS_CERT_HASH)(
-  IN  VOID            *Cert,
-  IN  UINTN           CertSize,
-  IN  CONST EFI_GUID  *HashType,
-  OUT UINT8           *Digest,
-  OUT UINTN           *DigestSize
   );
 
 /**
@@ -5696,11 +5621,9 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   /// v1.0 Info --------------------------------------------------------------
   ONE_CRYPTO_GET_CRYPTO_PROVIDER_VERSION_STRING      GetCryptoProviderVersionString;
   /// v1.1 PKCS --------------------------------------------------------------
-  ONE_CRYPTO_GET_AUTHENTICODE_HASH                   GetAuthenticodeHash;
   ONE_CRYPTO_GET_TRUST_ANCHOR_X509_FROM_AUTH_DATA    GetTrustAnchorX509FromAuthData;
   ONE_CRYPTO_FREE_TRUST_ANCHOR_X509_CACHE            FreeTrustAnchorX509Cache;
   ONE_CRYPTO_GET_AUTHENTICODE_HASH_ALGORITHM         GetAuthenticodeHashAlgorithm;
-  ONE_CRYPTO_X509_GET_TBS_CERT_HASH                  X509GetTbsCertHash;
   ONE_CRYPTO_AUTHENTICODE_VERIFY_EX                  AuthenticodeVerifyEx;
   ONE_CRYPTO_HASH_ALL_BY_GUID                        HashAllByGuid;
   /// v2.0 CMS ---------------------------------------------------------------
