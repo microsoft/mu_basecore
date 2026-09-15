@@ -3,9 +3,9 @@
   DxeImageVerificationLib (Database.c): IsImageHashInDb, IsImageHashInDbx,
   IsTbsHashInDb, IsTbsHashInDbx, IsCertInDbx,
   LoadSignatureDatabase, LoadSignatureDatabases,
-  IsChainRevoked,
-  ExtractAuthData, and
-  EvaluateImageCertificate. The database helpers are exercised against
+  IsChainRevoked, and
+  EvaluateSignature. ExtractAuthData from Support.c is also covered. The
+  database helpers are exercised against
   synthetic in-memory EFI_SIGNATURE_LIST buffers built by helpers in
   this file; the variable loaders against a mocked GetVariable2; and the
   certificate helpers against a mocked BaseCryptLib.
@@ -43,13 +43,6 @@ extern "C" {
     IN  UINTN        CertChainSize,
     IN  CONST VOID   *Dbx,
     IN  UINTN        DbxSize
-    );
-
-  EFI_STATUS
-  ExtractAuthData (
-    IN  CONST WIN_CERTIFICATE  *Cert,
-    OUT CONST UINT8            **AuthData,
-    OUT UINTN                  *AuthDataSize
     );
 }
 
@@ -228,13 +221,13 @@ MakeCertStack (
 }
 
 //
-// Default PKCS#7 auth-data / image-hash payloads shared by the
+// Default Authenticode signature / image-hash payloads shared by the
 // certificate-authorization tests.
 //
 static const std::vector<UINT8>  kAuthDataDefault  = std::vector<UINT8>(16, 0xA1);
 static const std::vector<UINT8>  kImageHashDefault = std::vector<UINT8>(SHA256_DIGEST_SIZE, 0x55);
 
-// Build a PKCS_SIGNED_DATA WIN_CERTIFICATE wrapping `Payload`.
+// Build a WIN_CERTIFICATE wrapping an Authenticode signature payload.
 static std::vector<UINT8>
 MakePkcsSignedDataCert (
   const std::vector<UINT8>  &Payload
@@ -250,7 +243,30 @@ MakePkcsSignedDataCert (
   return Buffer;
 }
 
-// Tiny throwaway "image" buffer for the digest cache.
+STATIC
+EFI_STATUS
+EvaluatePkcsSignedDataSignature (
+  IN     CONST WIN_CERTIFICATE      *Cert,
+  IN OUT DIGEST_CACHE               *Cache,
+  IN     CONST SIGNATURE_DATABASES  *Databases,
+  OUT    IMAGE_CERT_EVALUATION      *Evaluation
+  )
+{
+  if ((Cert == NULL) || (Cert->dwLength <= sizeof (WIN_CERTIFICATE))) {
+    return EvaluateSignature (NULL, 0, Cache, Databases, Evaluation);
+  }
+
+  return EvaluateSignature (
+           (CONST UINT8 *)Cert + sizeof (WIN_CERTIFICATE),
+           Cert->dwLength - sizeof (WIN_CERTIFICATE),
+           Cache,
+           Databases,
+           Evaluation
+           );
+}
+
+// Tiny throwaway "image" buffer for the digest cache; mocks of
+// GetAuthenticodeHash never dereference it.
 static UINT8  kFakeImage[16] = { 0 };
 
 static void
@@ -1449,7 +1465,7 @@ TEST (IsChainRevokedTest, MalformedChain_ReturnsTrue) {
 }
 
 // ---------------------------------------------------------------------------
-// ExtractAuthData
+// ExtractAuthData (Support.c)
 // ---------------------------------------------------------------------------
 
 TEST (ExtractAuthDataTest, NullCert_ReturnsInvalidParameter) {
@@ -1510,7 +1526,7 @@ TEST (ExtractAuthDataTest, PkcsSignedData_HeaderOnly_ReturnsCorrupted) {
     );
 }
 
-TEST (ExtractAuthDataTest, EfiGuidPkcs7_ExtractsPayload) {
+TEST (ExtractAuthDataTest, EfiGuidAuthenticodeSignature_ExtractsPayload) {
   const UINT8                Payload[]  = { 0x11, 0x22, 0x33 };
   const size_t               HeaderSize = OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData);
   std::vector<UINT8>         Buffer (HeaderSize + sizeof (Payload), 0);
@@ -1533,7 +1549,7 @@ TEST (ExtractAuthDataTest, EfiGuidPkcs7_ExtractsPayload) {
   EXPECT_EQ (0, std::memcmp (AuthData, Payload, sizeof (Payload)));
 }
 
-TEST (ExtractAuthDataTest, EfiGuidNonPkcs7_ReturnsUnsupported) {
+TEST (ExtractAuthDataTest, EfiGuidOtherSignatureType_ReturnsUnsupported) {
   const size_t               HeaderSize = OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData);
   std::vector<UINT8>         Buffer (HeaderSize + 4, 0);
   WIN_CERTIFICATE_UEFI_GUID  *UefiCert = (WIN_CERTIFICATE_UEFI_GUID *)Buffer.data ();
@@ -1583,7 +1599,7 @@ TEST (ExtractAuthDataTest, UnknownCertType_ReturnsUnsupported) {
 }
 
 // ---------------------------------------------------------------------------
-// EvaluateImageCertificate -- end-to-end PKCS#7 + database scenarios
+// EvaluateSignature -- end-to-end Authenticode signature + database scenarios
 // ---------------------------------------------------------------------------
 
 //
@@ -1609,10 +1625,10 @@ ExpectSignedImagePrelude (
 }
 
 //
-// A NULL certificate pointer is rejected up front with EFI_INVALID_PARAMETER;
+// A NULL AuthData pointer is rejected up front with EFI_INVALID_PARAMETER;
 // no crypto is consulted and no verdict is produced.
 //
-TEST (EvaluateImageCertificateTest, NullCert_ReturnsInvalidParameter) {
+TEST (EvaluateSignatureTest, NullAuthData_ReturnsInvalidParameter) {
   DIGEST_CACHE           Cache;
   SIGNATURE_DATABASES    Databases = { NULL, 0, NULL, 0 };
   IMAGE_CERT_EVALUATION  Eval;
@@ -1620,22 +1636,25 @@ TEST (EvaluateImageCertificateTest, NullCert_ReturnsInvalidParameter) {
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
 
-  EXPECT_EQ (EvaluateImageCertificate (NULL, &Cache, &Databases, &Eval), EFI_INVALID_PARAMETER);
+  EXPECT_EQ (
+    EvaluateSignature (NULL, kAuthDataDefault.size (), &Cache, &Databases, &Eval),
+    EFI_INVALID_PARAMETER
+    );
 }
 
 //
 // A NULL digest cache is rejected up front with EFI_INVALID_PARAMETER.
 //
-TEST (EvaluateImageCertificateTest, NullCache_ReturnsInvalidParameter) {
-  std::vector<UINT8>     CertBuf   = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+TEST (EvaluateSignatureTest, NullCache_ReturnsInvalidParameter) {
   SIGNATURE_DATABASES    Databases = { NULL, 0, NULL, 0 };
   IMAGE_CERT_EVALUATION  Eval;
 
   ZeroMem (&Eval, sizeof (Eval));
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
-      (CONST WIN_CERTIFICATE *)CertBuf.data (),
+    EvaluateSignature (
+      kAuthDataDefault.data (),
+      kAuthDataDefault.size (),
       NULL,
       &Databases,
       &Eval
@@ -1647,8 +1666,7 @@ TEST (EvaluateImageCertificateTest, NullCache_ReturnsInvalidParameter) {
 //
 // A NULL databases pointer is rejected up front with EFI_INVALID_PARAMETER.
 //
-TEST (EvaluateImageCertificateTest, NullDatabases_ReturnsInvalidParameter) {
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+TEST (EvaluateSignatureTest, NullDatabases_ReturnsInvalidParameter) {
   DIGEST_CACHE           Cache;
   IMAGE_CERT_EVALUATION  Eval;
 
@@ -1656,8 +1674,9 @@ TEST (EvaluateImageCertificateTest, NullDatabases_ReturnsInvalidParameter) {
   ZeroMem (&Eval, sizeof (Eval));
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
-      (CONST WIN_CERTIFICATE *)CertBuf.data (),
+    EvaluateSignature (
+      kAuthDataDefault.data (),
+      kAuthDataDefault.size (),
       &Cache,
       NULL,
       &Eval
@@ -1670,16 +1689,16 @@ TEST (EvaluateImageCertificateTest, NullDatabases_ReturnsInvalidParameter) {
 // A NULL evaluation output pointer is rejected up front with
 // EFI_INVALID_PARAMETER.
 //
-TEST (EvaluateImageCertificateTest, NullEvaluation_ReturnsInvalidParameter) {
-  std::vector<UINT8>   CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+TEST (EvaluateSignatureTest, NullEvaluation_ReturnsInvalidParameter) {
   DIGEST_CACHE         Cache;
   SIGNATURE_DATABASES  Databases = { NULL, 0, NULL, 0 };
 
   InitImageCache (Cache);
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
-      (CONST WIN_CERTIFICATE *)CertBuf.data (),
+    EvaluateSignature (
+      kAuthDataDefault.data (),
+      kAuthDataDefault.size (),
       &Cache,
       &Databases,
       NULL
@@ -1689,27 +1708,20 @@ TEST (EvaluateImageCertificateTest, NullEvaluation_ReturnsInvalidParameter) {
 }
 
 //
-// An unknown WIN_CERTIFICATE type cannot be parsed into a PKCS#7 payload, so
-// the certificate is unusable. No crypto is consulted and no anchor is
-// inspected.
+// An empty AuthData buffer is rejected up front with EFI_INVALID_PARAMETER.
 //
-TEST (EvaluateImageCertificateTest, UnsupportedCertType_Unusable) {
-  MockBaseCryptLib       BaseCryptLibMock;
+TEST (EvaluateSignatureTest, EmptyAuthData_ReturnsInvalidParameter) {
   DIGEST_CACHE           Cache;
-  WIN_CERTIFICATE        Cert      = { sizeof (WIN_CERTIFICATE) + 8, 0x0200, WIN_CERT_TYPE_EFI_PKCS115 };
   SIGNATURE_DATABASES    Databases = { NULL, 0, NULL, 0 };
   IMAGE_CERT_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
 
-  EXPECT_CALL (BaseCryptLibMock, GetAuthenticodeHashAlgorithm (_, _, _)).Times (0);
-  EXPECT_CALL (BaseCryptLibMock, HashAllByGuid (_, _, _, _, _)).Times (0);
-  EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
-
-  EXPECT_EQ (EvaluateImageCertificate (&Cert, &Cache, &Databases, &Eval), EFI_SUCCESS);
-  EXPECT_EQ (Eval.Verdict, ImageCertUnusable);
-  EXPECT_EQ (Eval.Authority.Data, nullptr);
+  EXPECT_EQ (
+    EvaluateSignature (kAuthDataDefault.data (), 0, &Cache, &Databases, &Eval),
+    EFI_INVALID_PARAMETER
+    );
 }
 
 //
@@ -1717,7 +1729,7 @@ TEST (EvaluateImageCertificateTest, UnsupportedCertType_Unusable) {
 // determined and the certificate is unusable. The image hash is never computed
 // and no anchor is verified.
 //
-TEST (EvaluateImageCertificateTest, HashAlgorithmFails_Unusable) {
+TEST (EvaluateSignatureTest, HashAlgorithmFails_Unusable) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf   = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -1733,7 +1745,7 @@ TEST (EvaluateImageCertificateTest, HashAlgorithmFails_Unusable) {
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -1747,10 +1759,10 @@ TEST (EvaluateImageCertificateTest, HashAlgorithmFails_Unusable) {
 
 //
 // The image hash cannot be computed: HashAllByGuid fails, GetHash
-// surfaces the error, and EvaluateImageCertificate propagates it.
+// surfaces the error, and EvaluateSignature propagates it.
 // This is the only non-INVALID_PARAMETER error path; no verdict is asserted.
 //
-TEST (EvaluateImageCertificateTest, ImageHashFails_ReturnsError) {
+TEST (EvaluateSignatureTest, ImageHashFails_ReturnsError) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf   = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -1774,7 +1786,7 @@ TEST (EvaluateImageCertificateTest, ImageHashFails_ReturnsError) {
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -1788,7 +1800,7 @@ TEST (EvaluateImageCertificateTest, ImageHashFails_ReturnsError) {
 // Signer extraction is no longer a separate prerequisite. With an empty db,
 // evaluation completes without invoking a verifier.
 //
-TEST (EvaluateImageCertificateTest, SignerExtractionNotRequired_NotInDb) {
+TEST (EvaluateSignatureTest, SignerExtractionNotRequired_NotInDb) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf   = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -1803,7 +1815,7 @@ TEST (EvaluateImageCertificateTest, SignerExtractionNotRequired_NotInDb) {
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -1818,7 +1830,7 @@ TEST (EvaluateImageCertificateTest, SignerExtractionNotRequired_NotInDb) {
 //
 // The evaluator never calls the legacy signer-extraction API.
 //
-TEST (EvaluateImageCertificateTest, LegacySignerApiNotCalled_NotInDb) {
+TEST (EvaluateSignatureTest, LegacySignerApiNotCalled_NotInDb) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf   = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -1834,7 +1846,7 @@ TEST (EvaluateImageCertificateTest, LegacySignerApiNotCalled_NotInDb) {
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -1851,7 +1863,7 @@ TEST (EvaluateImageCertificateTest, LegacySignerApiNotCalled_NotInDb) {
 // anchor matches, so the verdict is ImageCertNotInDb and AuthenticodeVerifyEx is
 // never called.
 //
-TEST (EvaluateImageCertificateTest, EmptyDb_NotInDb) {
+TEST (EvaluateSignatureTest, EmptyDb_NotInDb) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf   = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -1865,7 +1877,7 @@ TEST (EvaluateImageCertificateTest, EmptyDb_NotInDb) {
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -1882,7 +1894,7 @@ TEST (EvaluateImageCertificateTest, EmptyDb_NotInDb) {
 // dbx (so no chain is built). The image is approved and the authority points
 // at the matching db entry.
 //
-TEST (EvaluateImageCertificateTest, X509VerifiesNoDbx_Approved) {
+TEST (EvaluateSignatureTest, X509VerifiesNoDbx_Approved) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -1903,7 +1915,7 @@ TEST (EvaluateImageCertificateTest, X509VerifiesNoDbx_Approved) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -1922,7 +1934,7 @@ TEST (EvaluateImageCertificateTest, X509VerifiesNoDbx_Approved) {
 // V1 EFI_SIGNATURE_DATA by prepending a zeroed owner GUID, so its size is the certificate plus a
 // SignatureOwner.
 //
-TEST (EvaluateImageCertificateTest, V2X509VerifiesNoDbx_Approved) {
+TEST (EvaluateSignatureTest, V2X509VerifiesNoDbx_Approved) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -1943,7 +1955,7 @@ TEST (EvaluateImageCertificateTest, V2X509VerifiesNoDbx_Approved) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -1963,7 +1975,7 @@ TEST (EvaluateImageCertificateTest, V2X509VerifiesNoDbx_Approved) {
 // TimeOfRevocation). The full hash region is passed to GetTrustAnchorX509FromAuthData; this asserts
 // the size passed reflects the ownerless entry.
 //
-TEST (EvaluateImageCertificateTest, V2X509HashListResolvesAnchor_Approved) {
+TEST (EvaluateSignatureTest, V2X509HashListResolvesAnchor_Approved) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2001,7 +2013,7 @@ TEST (EvaluateImageCertificateTest, V2X509HashListResolvesAnchor_Approved) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2017,7 +2029,7 @@ TEST (EvaluateImageCertificateTest, V2X509HashListResolvesAnchor_Approved) {
 // A single EFI_CERT_X509 trust anchor is present but AuthenticodeVerifyEx rejects
 // the image. No anchor authorizes it, so the verdict is ImageCertNotInDb.
 //
-TEST (EvaluateImageCertificateTest, X509DoesNotVerify_NotInDb) {
+TEST (EvaluateSignatureTest, X509DoesNotVerify_NotInDb) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2038,7 +2050,7 @@ TEST (EvaluateImageCertificateTest, X509DoesNotVerify_NotInDb) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2056,7 +2068,7 @@ TEST (EvaluateImageCertificateTest, X509DoesNotVerify_NotInDb) {
 // other anchor, the verdict is ImageCertRevokedByDbx and the authority names the
 // revoking dbx entry.
 //
-TEST (EvaluateImageCertificateTest, X509VerifiesChainRevoked_RevokedByDbx) {
+TEST (EvaluateSignatureTest, X509VerifiesChainRevoked_RevokedByDbx) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2094,7 +2106,7 @@ TEST (EvaluateImageCertificateTest, X509VerifiesChainRevoked_RevokedByDbx) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), Dbx.data (), Dbx.size () };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2111,7 +2123,7 @@ TEST (EvaluateImageCertificateTest, X509VerifiesChainRevoked_RevokedByDbx) {
 // An EFI_CERT_X509 anchor verifies the image and none of the signer's chain
 // certs are in dbx. The image is approved.
 //
-TEST (EvaluateImageCertificateTest, X509VerifiesChainClean_Approved) {
+TEST (EvaluateSignatureTest, X509VerifiesChainClean_Approved) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2149,7 +2161,7 @@ TEST (EvaluateImageCertificateTest, X509VerifiesChainClean_Approved) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), Dbx.data (), Dbx.size () };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2167,7 +2179,7 @@ TEST (EvaluateImageCertificateTest, X509VerifiesChainClean_Approved) {
 // dbx. The image is approved; the resolver's cache handle is released via
 // FreeTrustAnchorX509Cache.
 //
-TEST (EvaluateImageCertificateTest, X509HashListResolvesAnchor_Approved) {
+TEST (EvaluateSignatureTest, X509HashListResolvesAnchor_Approved) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2205,7 +2217,7 @@ TEST (EvaluateImageCertificateTest, X509HashListResolvesAnchor_Approved) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2222,7 +2234,7 @@ TEST (EvaluateImageCertificateTest, X509HashListResolvesAnchor_Approved) {
 // a trust anchor from the auth data (EFI_NOT_FOUND). Both entries are walked
 // and no anchor authorizes: ImageCertNotInDb.
 //
-TEST (EvaluateImageCertificateTest, X509HashListAllNotFound_NotInDb) {
+TEST (EvaluateSignatureTest, X509HashListAllNotFound_NotInDb) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2244,7 +2256,7 @@ TEST (EvaluateImageCertificateTest, X509HashListAllNotFound_NotInDb) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2261,7 +2273,7 @@ TEST (EvaluateImageCertificateTest, X509HashListAllNotFound_NotInDb) {
 // hard error (not EFI_NOT_FOUND). The entry is skipped and no anchor
 // authorizes: ImageCertNotInDb.
 //
-TEST (EvaluateImageCertificateTest, X509HashListHardError_NotInDb) {
+TEST (EvaluateSignatureTest, X509HashListHardError_NotInDb) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2282,7 +2294,7 @@ TEST (EvaluateImageCertificateTest, X509HashListHardError_NotInDb) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2299,7 +2311,7 @@ TEST (EvaluateImageCertificateTest, X509HashListHardError_NotInDb) {
 // dbx; the second verifies with a clean chain. The image is approved via the
 // second anchor.
 //
-TEST (EvaluateImageCertificateTest, TwoAnchorsFirstRevokedSecondClean_Approved) {
+TEST (EvaluateSignatureTest, TwoAnchorsFirstRevokedSecondClean_Approved) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2349,7 +2361,7 @@ TEST (EvaluateImageCertificateTest, TwoAnchorsFirstRevokedSecondClean_Approved) 
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), Dbx.data (), Dbx.size () };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2365,7 +2377,7 @@ TEST (EvaluateImageCertificateTest, TwoAnchorsFirstRevokedSecondClean_Approved) 
 // db contains only a non-X.509 (image-hash) list. It is skipped and, with no
 // trust anchors, the verdict is ImageCertNotInDb.
 //
-TEST (EvaluateImageCertificateTest, DbHasOnlyNonX509List_NotInDb) {
+TEST (EvaluateSignatureTest, DbHasOnlyNonX509List_NotInDb) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2384,7 +2396,7 @@ TEST (EvaluateImageCertificateTest, DbHasOnlyNonX509List_NotInDb) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2400,7 +2412,7 @@ TEST (EvaluateImageCertificateTest, DbHasOnlyNonX509List_NotInDb) {
 // db contains an EFI_CERT_X509 list whose SignatureSize equals sizeof(EFI_GUID)
 // (no cert payload). The list is skipped and the verdict is ImageCertNotInDb.
 //
-TEST (EvaluateImageCertificateTest, DbX509ListNoCertPayload_NotInDb) {
+TEST (EvaluateSignatureTest, DbX509ListNoCertPayload_NotInDb) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2419,7 +2431,7 @@ TEST (EvaluateImageCertificateTest, DbX509ListNoCertPayload_NotInDb) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2436,7 +2448,7 @@ TEST (EvaluateImageCertificateTest, DbX509ListNoCertPayload_NotInDb) {
 // DatabaseIterInit truncates it to an empty range. The verdict is
 // ImageCertNotInDb.
 //
-TEST (EvaluateImageCertificateTest, MalformedDb_NotInDb) {
+TEST (EvaluateSignatureTest, MalformedDb_NotInDb) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2453,7 +2465,7 @@ TEST (EvaluateImageCertificateTest, MalformedDb_NotInDb) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2471,7 +2483,7 @@ TEST (EvaluateImageCertificateTest, MalformedDb_NotInDb) {
 // is approved with a non-NULL authority whose SignatureType is the authorizing
 // db list's type.
 //
-TEST (EvaluateImageCertificateTest, AuthorizedByDb_Approved) {
+TEST (EvaluateSignatureTest, AuthorizedByDb_Approved) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2492,7 +2504,7 @@ TEST (EvaluateImageCertificateTest, AuthorizedByDb_Approved) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2512,7 +2524,7 @@ TEST (EvaluateImageCertificateTest, AuthorizedByDb_Approved) {
 // verdict is ImageCertRevokedByDbx and no authority is recorded (Data is NULL,
 // Size is 0, and SignatureType stays zeroed).
 //
-TEST (EvaluateImageCertificateTest, RevokedByDbx_RevokedByDbx) {
+TEST (EvaluateSignatureTest, RevokedByDbx_RevokedByDbx) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2551,7 +2563,7 @@ TEST (EvaluateImageCertificateTest, RevokedByDbx_RevokedByDbx) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), Dbx.data (), Dbx.size () };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
@@ -2568,7 +2580,7 @@ TEST (EvaluateImageCertificateTest, RevokedByDbx_RevokedByDbx) {
 // The prelude succeeds, the dbx is empty (nothing revoked), but no db anchor
 // verifies the signature. The verdict is ImageCertNotInDb.
 //
-TEST (EvaluateImageCertificateTest, NotRevokedNotAuthorized_NotInDb) {
+TEST (EvaluateSignatureTest, NotRevokedNotAuthorized_NotInDb) {
   MockBaseCryptLib       BaseCryptLibMock;
   DIGEST_CACHE           Cache;
   std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
@@ -2591,7 +2603,7 @@ TEST (EvaluateImageCertificateTest, NotRevokedNotAuthorized_NotInDb) {
   SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
-    EvaluateImageCertificate (
+    EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
       &Databases,
