@@ -546,25 +546,23 @@ TestX509IsPublicKeySupported (
   UINT8  InvalidCert[] = { 0x30, 0x82, 0x00, 0x01, 0x00 };
   UINT8  *UnsupportedPublicKeyCert;
   UINTN  Index;
-  UINTN  RsaOidCount;
+  UINTN  SubjectPublicKeyInfoOidCount;
 
   UnsupportedPublicKeyCert = AllocateCopyPool (sizeof (TestCert), TestCert);
   UT_ASSERT_NOT_NULL (UnsupportedPublicKeyCert);
 
-  RsaOidCount = 0;
+  SubjectPublicKeyInfoOidCount = 0;
   for (Index = 0; Index <= sizeof (TestCert) - sizeof (mRsaSubjectPublicKeyInfoOid); Index++) {
     if (CompareMem (UnsupportedPublicKeyCert + Index, mRsaSubjectPublicKeyInfoOid, sizeof (mRsaSubjectPublicKeyInfoOid)) == 0) {
-      RsaOidCount++;
-      if (RsaOidCount == 2) {
-        CopyMem (UnsupportedPublicKeyCert + Index, mUnsupportedSubjectPublicKeyInfoOid, sizeof (mUnsupportedSubjectPublicKeyInfoOid));
-        break;
-      }
+      SubjectPublicKeyInfoOidCount++;
+      CopyMem (UnsupportedPublicKeyCert + Index, mUnsupportedSubjectPublicKeyInfoOid, sizeof (mUnsupportedSubjectPublicKeyInfoOid));
+      break;
     }
   }
 
   UT_ASSERT_TRUE (X509IsPublicKeySupported (TestCert, sizeof (TestCert)));
   UT_ASSERT_TRUE (X509IsPublicKeySupported (mTrustAnchorTestCert, sizeof (mTrustAnchorTestCert)));
-  UT_ASSERT_EQUAL (RsaOidCount, 2);
+  UT_ASSERT_EQUAL (SubjectPublicKeyInfoOidCount, 1);
   UT_ASSERT_FALSE (X509IsPublicKeySupported (UnsupportedPublicKeyCert, sizeof (TestCert)));
   UT_ASSERT_FALSE (X509IsPublicKeySupported (NULL, 0));
   UT_ASSERT_FALSE (X509IsPublicKeySupported (InvalidCert, sizeof (InvalidCert)));
