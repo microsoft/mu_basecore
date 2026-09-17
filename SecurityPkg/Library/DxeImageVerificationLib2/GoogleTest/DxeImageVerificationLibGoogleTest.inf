@@ -19,6 +19,7 @@
 #
 
 [Sources]
+  CacheGoogleTest.cpp
   DatabaseGoogleTest.cpp
   DxeImageVerificationLibGoogleTest.cpp
   IteratorGoogleTest.cpp
