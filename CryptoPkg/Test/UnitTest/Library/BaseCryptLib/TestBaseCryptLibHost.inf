@@ -44,9 +44,11 @@
   BnTests.c
   EcTests.c
   X509Tests.c
-  EdDsaTests.c
-  MlDsaTests.c
-  SlhDsaTests.c
+  # // MU_CHANGE - Start - Make Tests Compatible with mu_crypto_release
+  # EdDsaTests.c
+  # MlDsaTests.c
+  # SlhDsaTests.c
+  # // MU_CHANGE - End - Make Tests Compatible with mu_crypto_release
 
 [Packages]
   MdePkg/MdePkg.dec
