@@ -1,5 +1,5 @@
 /** @file
-  Implement image verification services for secure boot service
+  Image verification services for secure boot service
 
   Caution: This file requires additional review when modified.
   This library will have external input - PE/COFF image.
@@ -11,27 +11,22 @@
   prepared Authenticode byte stream and the image's WIN_CERTIFICATE table;
   the handler passes both directly to ValidateImage().
 
-Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
-(C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
-
 **/
 
 #include "DxeImageVerificationLib.h"
 #include "Database.h"
-#include "Iterator.h"
 #include "Support.h"
 
 /**
-  Validate a prepared Authenticode image and WIN_CERTIFICATE table against
-  the platform signature databases.
+  Validate a prepared Authenticode image and WIN_CERTIFICATE table against the platform signature
+  databases.
 
-    1. Reject immediately if the image's Authenticode hash is enrolled in the `dbx`.
-    2. Walk each WIN_CERTIFICATE to determine if the Auth Data from it is not revoked by the `dbx`
-       and is authorized by the `db`. Only one WIN_CERTIFICATE needs to authorize the image for it
-       to be validated.
-    3. Authorize the image if the image's Authenticode hash is enrolled in the `db`.
+    1. Reject immediately if the image's Authenticode hash is enrolled in `dbx`.
+    2. Walk each WIN_CERTIFICATE to determine if its signature is not revoked by `dbx` and is
+       authorized by `db`. Only one WIN_CERTIFICATE needs to authorize the image for validation.
+    3. Authorize the image if its Authenticode hash is enrolled in `db`.
 
   @param[in]   AuthenticodeImage      The assembled Authenticode image (the exact bytes the
                                       image-hash checks hash).
@@ -57,70 +52,65 @@ ValidateImage (
   IN OUT MEASURED_AUTHORITIES   *Measured
   )
 {
-  EFI_STATUS             Status;
-  DIGEST_CACHE           Cache;
-  SIGNATURE_DATABASES    Databases;
-  WIN_CERT_ITER          CertIter;
-  CONST WIN_CERTIFICATE  *Cert;
-  IMAGE_CERT_EVALUATION  CertEval;
+  EFI_STATUS                  Status;
+  DIGEST_CACHE                Cache;
+  SIGNATURE_LISTS             Lists;
+  WIN_CERT_ITER               CertIter;
+  CONST WIN_CERTIFICATE       *Cert;
+  CONST UINT8                 *SignatureData;
+  UINTN                       SignatureDataSize;
+  IMAGE_SIGNATURE_EVALUATION  Evaluation;
 
-  //
-  // Setup digest cache for the image. This prevents redundant authenticode hash computations
-  // across the image-hash revocation check, per-cert authorization, and the image-hash fallback.
-  //
   ZeroMem (&Cache, sizeof (Cache));
+  ZeroMem (&Evaluation, sizeof (Evaluation));
 
-  //
-  // Zeroed up front so every Exit path can safely release CertEval.Authority, even if the
-  // certificate walk never runs (unsigned image) or an earlier step rejects.
-  //
-  ZeroMem (&CertEval, sizeof (CertEval));
-
-  Status = LoadSignatureDatabases (&Databases);
+  Status = LoadDbAndDbx (&Lists);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: Failed to load signature databases (%r).\n", Status));
+    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: failed to load db and dbx (%r).\n", Status));
     goto Reject;
   }
 
-  //
-  // Bind the digest cache to the caller-supplied Authenticode image (the exact bytes the image-hash
-  // checks hash).
-  //
+  // The digest cache prevents redundant Authenticode hash computations against db and dbx.
   Cache.Buffer     = AuthenticodeImage;
   Cache.BufferSize = AuthenticodeImageSize;
 
   //
-  // Step 1: Reject the image if its Authenticode hash is found in the `dbx`. A `dbx` that cannot
-  // be fully parsed fails closed (IsImageHashInDbx returns TRUE), rejecting the image.
+  // Step 1: Reject the image if its Authenticode hash is found in dbx, passed to the generic
+  // revoke-list search. An unparseable dbx fails closed.
   //
-  if (IsImageHashInDbx (&Cache, Databases.Dbx, Databases.DbxSize)) {
-    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: Image hash is forbidden by DBX.\n"));
+  if (IsImageHashInRevokeList (&Cache, Lists.RevokeList, Lists.RevokeListSize)) {
+    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: image hash is forbidden by dbx.\n"));
     goto Reject;
   }
 
   //
-  // Step 2: For each WIN_CERTIFICATE, extract the auth data and check if it authorizes the image
-  // per the `db` and `dbx`. Exit on the first authorization.
-  //
-  // Note: If the image is unsigned, the iterator is empty and this step is a no-op. A malformed
-  // certificate table only truncates the walk to its valid prefix (best-effort); the certificates
-  // that parse cleanly are still evaluated, and the image can still be authorized by Step 3.
+  // Step 2: For each WIN_CERTIFICATE, extract its signature data and evaluate it against db and
+  // dbx. Exit on the first authorization.
   //
   if (!WinCertIterInit (&CertIter, WinCertificates, WinCertificatesLength)) {
     DEBUG ((DEBUG_WARN, "DxeImageVerificationLib: certificate table truncated at a malformed entry; evaluating the valid prefix.\n"));
   }
 
   while ((Cert = WinCertIterNext (&CertIter)) != NULL) {
-    Status = EvaluateImageCertificate (Cert, &Cache, &Databases, &CertEval);
-    if (!EFI_ERROR (Status) && (CertEval.Verdict == ImageCertApproved)) {
-      //
-      // Measure the `db` certificate that authorized the image into PCR 7.
-      //
+    Status = ExtractSignatureData (Cert, &SignatureData, &SignatureDataSize);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_WARN, "DxeImageVerificationLib: WIN_CERTIFICATE not usable (type=0x%04x, %r).\n", Cert->wCertificateType, Status));
+      continue;
+    }
+
+    Status = EvaluateSignature (
+               SignatureData,
+               SignatureDataSize,
+               &Cache,
+               &Lists,
+               &Evaluation
+               );
+    if (!EFI_ERROR (Status) && (Evaluation.Verdict == ImageSignatureAllowed)) {
       SecureBootHook (
         Measured,
         EFI_IMAGE_SECURITY_DATABASE,
         &gEfiImageSecurityDatabaseGuid,
-        &CertEval.Authority
+        &Evaluation.Authority
         );
       Status = EFI_SUCCESS;
       goto Exit;
@@ -128,51 +118,41 @@ ValidateImage (
   }
 
   //
-  // Step 3: Authorize the image if the image authenticode hash is in the `db`. Image-hash
-  // authorization is intentionally not measured into PCR 7 - only certificate authorities are.
+  // Step 3: Authorize the image if its Authenticode hash is found in db, passed to the generic
+  // allow-list search.
   //
-  if (IsImageHashInDb (&Cache, Databases.Db, Databases.DbSize)) {
+  if (IsImageHashInAllowList (&Cache, Lists.AllowList, Lists.AllowListSize)) {
     Status = EFI_SUCCESS;
     goto Exit;
   }
 
-  DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: Image is not authorized by DB.\n"));
+  DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: image is not authorized by db.\n"));
 
 Reject:
   Status = EFI_ACCESS_DENIED;
 
 Exit:
-  FreeImageAuthority (&CertEval.Authority);
+  FreeImageAuthority (&Evaluation.Authority);
 
   FreeDigestCache (&Cache);
 
-  if (Databases.Db != NULL) {
-    FreePool (Databases.Db);
+  if (Lists.AllowList != NULL) {
+    FreePool (Lists.AllowList);
   }
 
-  if (Databases.Dbx != NULL) {
-    FreePool (Databases.Dbx);
+  if (Lists.RevokeList != NULL) {
+    FreePool (Lists.RevokeList);
   }
 
   return Status;
 }
 
 /**
-  Provide verification service for signed images, which include both signature validation
-  and platform policy control. For signature types, both UEFI WIN_CERTIFICATE_UEFI_GUID and
-  MSFT Authenticode type signatures are supported.
+  Provide verification service for signed images.
 
-  In this implementation, only verify external executables when in USER MODE.
-  Executables from FV is bypass, so pass in AuthenticationStatus is ignored.
-
-  The image verification policy is:
-    If the image is signed,
-      At least one valid signature or at least one hash value of the image must match a record
-      in the security database "db", and no valid signature nor any hash value of the image may
-      be reflected in the security database "dbx".
-    Otherwise, the image is not signed,
-      The hash value of the image must match a record in the security database "db", and
-      not be reflected in the security data base "dbx".
+  If platform policy enforces image validation, this handler attempts to authorize
+  the image based on its image authenticode digest, or any signatures present in the
+  image's security data directory.
 
   Caution: This function may receive untrusted input.
   PE/COFF image is external input, so this function will validate its data structure
@@ -216,9 +196,6 @@ DxeImageVerificationHandler (
   CONST WIN_CERTIFICATE  *WinCertificates;
   UINTN                  WinCertificatesLength;
 
-  //
-  // Sanity check.
-  //
   if (File == NULL) {
     return EFI_INVALID_PARAMETER;
   }
@@ -234,25 +211,14 @@ DxeImageVerificationHandler (
     return Status;
   }
 
-  //
-  // Policy unconditionally permits execution; no further checks needed.
-  //
   if (Policy == ALWAYS_EXECUTE) {
     return EFI_SUCCESS;
   }
 
-  //
-  // Secure Boot is the gate for all remaining checks. When it is not
-  // enabled, the platform has opted out of image authorization.
-  //
   if (!IsSecureBootEnabled ()) {
     return EFI_SUCCESS;
   }
 
-  //
-  // Assemble the Authenticode image and locate the embedded WIN_CERTIFICATE table. Any failure to
-  // parse the image is treated as a verification failure.
-  //
   Status = BuildAuthenticodeImage (FileBuffer, FileSize, &AuthImage, &AuthImageSize);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: Failed to assemble the Authenticode image (%r).\n", Status));
@@ -266,10 +232,6 @@ DxeImageVerificationHandler (
     return EFI_ACCESS_DENIED;
   }
 
-  //
-  // Run image verification. The unified path handles both signed and unsigned images; an unsigned
-  // image simply produces an empty WIN_CERTIFICATE iteration inside ValidateImage.
-  //
   Status = ValidateImage (AuthImage, AuthImageSize, WinCertificates, WinCertificatesLength, GetMeasuredAuthorities ());
 
   FreePool (AuthImage);

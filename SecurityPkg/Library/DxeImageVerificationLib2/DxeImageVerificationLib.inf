@@ -24,15 +24,11 @@
   CONSTRUCTOR                    = DxeImageVerificationLibConstructor
 
 [Sources]
-  Cache.c
   Database.c
   Database.h
   DxeImageVerificationLib.c
   DxeImageVerificationLib.h
-  Iterator.c
-  Iterator.h
   Measurement.c
-  Policy.c
   Support.c
   Support.h
 

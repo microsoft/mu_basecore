@@ -8,45 +8,7 @@
 #include <GoogleTest/Library/MockUefiBootServicesTableLib.h>
 
 extern "C" {
-  #include <Uefi.h>
-  #include <Library/BaseLib.h>
-  #include <Library/BaseMemoryLib.h>
-  #include <Library/DebugLib.h>
-  #include <Protocol/DevicePath.h>
-
-  //
-  // Authorization policy bit definition
-  //
-  #define ALWAYS_EXECUTE                      0x00000000
-  #define DENY_EXECUTE_ON_SECURITY_VIOLATION  0x00000001
-
-  //
-  // Image type definitions
-  //
-  #define IMAGE_UNKNOWN  0x00000000
-  #define IMAGE_FROM_FV  0x00000001
-
-  EFI_STATUS
-  IsFromFv (
-    IN  CONST EFI_DEVICE_PATH_PROTOCOL  *File
-    );
-
-  EFI_STATUS
-  GetImageType (
-    IN  CONST EFI_DEVICE_PATH_PROTOCOL  *File,
-    OUT UINT32                          *ImageType
-    );
-
-  UINT32
-  GetPolicyForImageType (
-    IN UINT32  ImageType
-    );
-
-  EFI_STATUS
-  GetExecutionPolicy (
-    IN  CONST EFI_DEVICE_PATH_PROTOCOL  *File,
-    OUT UINT32                          *Policy
-    );
+  #include "../Support.h"
 }
 
 using ::testing::_;
