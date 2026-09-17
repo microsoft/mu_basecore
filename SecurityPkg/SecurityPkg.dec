@@ -496,12 +496,25 @@
   # gEfiSecurityPkgTokenSpaceGuid.PcdFirmwareDebuggerInitialized|FALSE|BOOLEAN|0x00010009
   # MU_CHANGE [END]
 
+  ## MU_CHANGE
   ## This PCD indicates the initialization policy for TPM 2.0.<BR><BR>
   #  If 0, no initialization needed - most likely used for chipset SRTM solution, in which TPM is already initialized.<BR>
   #  If 1, initialization needed.<BR>
+  #  Platforms should configure this PCD as FixedAtBuild overriding it to 1 for
+  #  the module responsible for initialization.<BR> 
   # @Prompt TPM 2.0 device initialization policy.<BR>
   # @ValidRange 0x80000001 | 0x00 - 0x1
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy|1|UINT8|0x0001000A
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy|0|UINT8|0x0001000A
+
+  ## MU_CHANGE
+  ## This PCD indicates the PCR bank synchronization policy for TPM 2.0.<BR><BR>
+  #  If 0, do not synchronize PCR banks in the consuming module.<BR>
+  #  If 1, perform PCR bank synchronization in the consuming module.<BR>
+  #  Platforms should configure this PCD as FixedAtBuild overriding it to 1 for
+  #  the module responsible for synchronization.<BR>
+  # @Prompt TPM 2.0 PCR bank synchronization policy.<BR>
+  # @ValidRange 0x80000001 | 0x00 - 0x1
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2SyncPolicy|0|UINT8|0x0001002E
 
   ## This PCD indicates the initialization policy for TPM 1.2.<BR><BR>
   #  If 0, no initialization needed - most likely used for chipset SRTM solution, in which TPM is already initialized.<BR>
@@ -566,6 +579,23 @@
   #  0 means dynamic get from supported HASH algorithm
   # @Prompt OEM configured number of PCR banks.
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2NumberOfPCRBanks|0x0|UINT32|0x00010015
+
+  ## MU_CHANGE
+  ## This PCD declares the bitmap of hash algorithms whose HashInstanceLib
+  #  instances are linked into the platform build via the
+  #  HashLibBaseCryptoRouter framework. Bit definition strictly follows
+  #  TCG Algorithm Registry.<BR><BR>
+  #    BIT0  -  SHA1.<BR>
+  #    BIT1  -  SHA256.<BR>
+  #    BIT2  -  SHA384.<BR>
+  #    BIT3  -  SHA512.<BR>
+  #    BIT4  -  SM3_256.<BR>
+  #  This PCD is a static, platform-owned declaration of the maximum set of
+  #  algorithms the firmware is built to support. At least one bit must be
+  #  set: a platform MUST support at least one hash algorithm.
+  # @Prompt Bitmap of hash algorithms whose HashInstanceLib instances are linked in.
+  # @ValidRange 0x80000001 | 0x00000001 - 0x0000001F
+  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashLibSupportMask|0x0000001F|UINT32|0x0001002D
 
   ## Provides one or more SHA 256 Hashes of the RSA 2048 public keys used to verify Recovery and Capsule Update images
   #  WARNING: The default value is treated as test key. Please do not use default value in the production.
@@ -647,8 +677,7 @@
   # @Prompt Skip Hdd Password prompt.
   gEfiSecurityPkgTokenSpaceGuid.PcdSkipHddPasswordPrompt|FALSE|BOOLEAN|0x00010021
 
-[PcdsDynamic, PcdsDynamicEx]
-
+  ## MU_CHANGE
   ## This PCD indicates Hash mask for TPM 2.0. Bit definition strictly follows TCG Algorithm Registry.<BR><BR>
   #  If this bit is set, that means this algorithm is needed to extend to PCR.<BR>
   #  If this bit is clear, that means this algorithm is NOT needed to extend to PCR.<BR>
@@ -662,9 +691,9 @@
   # @ValidRange 0x80000001 | 0x00000000 - 0x0000001F
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask|0x0000001F|UINT32|0x00010010
 
-  ## This PCD indicated final BIOS supported Hash mask.
-  #    Bios may choose to register a subset of PcdTpm2HashMask.
-  #    So this PCD is final value of how many hash algo is extended to PCR.
+[PcdsDynamic, PcdsDynamicEx]
+  ## MU_CHANGE
+  ## This PCD indicates final BIOS supported Hash mask.
   # If software HashLib(HashLibBaseCryptoRouter) solution is chosen, this PCD
   # has no need to be configured in platform dsc and will be set to correct
   # value by the HashLib instance according to the HashInstanceLib instances

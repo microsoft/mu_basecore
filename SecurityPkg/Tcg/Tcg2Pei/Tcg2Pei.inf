@@ -49,11 +49,12 @@
   Tpm2CommandLib
   PeiServicesTablePointerLib
   Tpm2DeviceLib
+  Tpm2StartupLib  # MU_CHANGE
   HashLib
   PerformanceLib
   MemoryAllocationLib
   ReportStatusCodeLib
-  ResetSystemLib
+  # ResetSystemLib # MU_CHANGE
   PrintLib
 ## MU_CHANGE_23086
 ## MU_CHANGE [BEGIN] - Add the OemTpm2InitLib
@@ -93,6 +94,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdTcgPfpMeasurementRevision          ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid                     ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy            ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2SyncPolicy                      ## CONSUMES  # MU_CHANGE
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2SelfTestPolicy                  ## SOMETIMES_CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2ScrtmPolicy                     ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice         ## SOMETIMES_CONSUMES
@@ -100,6 +102,7 @@
   ## SOMETIMES_PRODUCES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashAlgorithmBitmap                  ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashLibSupportMask               ## CONSUMES  # MU_CHANGE
   ## MU_CHANGE - Update PCR order, add PCD, enable deallocate *and* allocate.
   gEfiSecurityPkgTokenSpaceGuid.PcdForceReallocatePcrBanks             ## CONSUMES
 

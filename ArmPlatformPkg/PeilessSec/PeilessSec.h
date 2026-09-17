@@ -18,6 +18,7 @@
 #include <Library/DebugAgentLib.h>
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
+#include <Library/PcdLib.h>                // MU_CHANGE
 #include <Library/PerformanceLib.h>
 #include <Library/PeilessSecMeasureLib.h>
 #include <Library/PrePiHobListPointerLib.h>
@@ -25,7 +26,9 @@
 #include <Library/PrintLib.h>
 #include <Library/SerialPortLib.h>
 #include <Library/TimerLib.h>
+#include <Library/Tpm2StartupLib.h>        // MU_CHANGE
 #include <Library/ArmTransferListLib.h>
+#include <Guid/TcgEventHob.h>              // MU_CHANGE
 #include <Guid/TransferListHob.h>
 
 #include <Ppi/ArmMpCoreInfo.h>
