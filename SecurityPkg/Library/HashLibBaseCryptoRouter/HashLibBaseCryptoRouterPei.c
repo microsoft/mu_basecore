@@ -1,7 +1,6 @@
 /** @file
   This library is BaseCrypto router. It will redirect hash request to each individual
   hash handler registered, such as SHA1, SHA256.
-  Platform can use PcdTpm2HashMask to mask some hash engines.
 
 Copyright (c) 2013 - 2021, Intel Corporation. All rights reserved. <BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -18,6 +17,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/HobLib.h>
 #include <Library/HashLib.h>
 #include <Guid/ZeroGuid.h>
+#include <Protocol/Tcg2Protocol.h> // MU_CHANGE
 
 #include "HashLibBaseCryptoRouterCommon.h"
 
@@ -38,6 +38,7 @@ typedef struct {
   UINTN             HashInterfaceCount;
   HASH_INTERFACE    HashInterface[HASH_COUNT];
   UINT32            SupportedHashMask;
+  UINT32            ActivePcrBanks; // MU_CHANGE
 } HASH_INTERFACE_HOB;
 
 /**
@@ -145,6 +146,20 @@ HashStart (
   HASH_HANDLE         *HashCtx;
   UINTN               Index;
   UINT32              HashMask;
+  // MU_CHANGE - [BEGIN]
+  EFI_STATUS                       Status;
+  EFI_TCG2_EVENT_ALGORITHM_BITMAP  TpmHashAlgorithmBitmap;
+  UINT32                           TpmActivePcrBanks;
+
+  // Acquire the active banks and TPM supported hashing algorithms.
+  Status = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &TpmActivePcrBanks);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - Failed to determine TPM capabilities!\n", __func__));
+    ASSERT_EFI_ERROR (Status);
+    return Status;
+  }
+
+  // MU_CHANGE - [END]
 
   HashInterfaceHob = InternalGetHashInterfaceHob (&gEfiCallerIdGuid);
   if (HashInterfaceHob == NULL) {
@@ -154,6 +169,8 @@ HashStart (
   if (HashInterfaceHob->HashInterfaceCount == 0) {
     return EFI_UNSUPPORTED;
   }
+
+  HashInterfaceHob->ActivePcrBanks = TpmActivePcrBanks; // MU_CHANGE
 
   CheckSupportedHashMaskMismatch (HashInterfaceHob);
 
@@ -168,7 +185,8 @@ HashStart (
 
   for (Index = 0; Index < HashInterfaceHob->HashInterfaceCount; Index++) {
     HashMask = Tpm2GetHashMaskFromAlgo (&HashInterfaceHob->HashInterface[Index].HashGuid);
-    if ((HashMask & PcdGet32 (PcdTpm2HashMask)) != 0) {
+    // MU_CHANGE
+    if ((HashMask & HashInterfaceHob->ActivePcrBanks) != 0) {
       HashInterfaceHob->HashInterface[Index].HashInit (&HashCtx[Index]);
     }
   }
@@ -215,7 +233,8 @@ HashUpdate (
 
   for (Index = 0; Index < HashInterfaceHob->HashInterfaceCount; Index++) {
     HashMask = Tpm2GetHashMaskFromAlgo (&HashInterfaceHob->HashInterface[Index].HashGuid);
-    if ((HashMask & PcdGet32 (PcdTpm2HashMask)) != 0) {
+    // MU_CHANGE
+    if ((HashMask & HashInterfaceHob->ActivePcrBanks) != 0) {
       HashInterfaceHob->HashInterface[Index].HashUpdate (HashCtx[Index], DataToHash, DataToHashLen);
     }
   }
@@ -267,7 +286,8 @@ HashCompleteAndExtend (
 
   for (Index = 0; Index < HashInterfaceHob->HashInterfaceCount; Index++) {
     HashMask = Tpm2GetHashMaskFromAlgo (&HashInterfaceHob->HashInterface[Index].HashGuid);
-    if ((HashMask & PcdGet32 (PcdTpm2HashMask)) != 0) {
+    // MU_CHANGE
+    if ((HashMask & HashInterfaceHob->ActivePcrBanks) != 0) {
       HashInterfaceHob->HashInterface[Index].HashUpdate (HashCtx[Index], DataToHash, DataToHashLen);
       HashInterfaceHob->HashInterface[Index].HashFinal (HashCtx[Index], &Digest);
       Tpm2SetHashToDigestList (DigestList, &Digest);
@@ -353,13 +373,15 @@ RegisterHashInterfaceLib (
   UINTN               Index;
   HASH_INTERFACE_HOB  *HashInterfaceHob;
   UINT32              HashMask;
-  UINT32              Tpm2HashMask;
-  EFI_STATUS          Status;
+  // UINT32              Tpm2HashMask; // MU_CHANGE
+  EFI_STATUS  Status;
 
   //
   // Check allow
   //
-  HashMask     = Tpm2GetHashMaskFromAlgo (&HashInterface->HashGuid);
+  // MU_CHANGE - [BEGIN]
+  HashMask = Tpm2GetHashMaskFromAlgo (&HashInterface->HashGuid);
+ #if 0
   Tpm2HashMask = PcdGet32 (PcdTpm2HashMask);
 
   if ((Tpm2HashMask != 0) &&
@@ -367,6 +389,9 @@ RegisterHashInterfaceLib (
   {
     return EFI_UNSUPPORTED;
   }
+
+ #endif
+  // MU_CHANGE - [END]
 
   HashInterfaceHob = InternalGetHashInterfaceHob (&gEfiCallerIdGuid);
   if (HashInterfaceHob == NULL) {
