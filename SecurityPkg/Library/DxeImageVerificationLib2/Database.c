@@ -1,13 +1,9 @@
 /** @file
-  Secureboot DB/DBX helpers and structural iterators,
+  Secureboot allow-list / revoke-list (EFI_SIGNATURE_LIST[]) helpers and structural iterators,
   including signed-image (certificate / Authenticode) validation, for the DXE
   Image Verification Library.
 
-  Caution: This file consumes external input (the PE/COFF image and the
-  Secure Boot signature databases). All inputs must be treated as
-  attacker-controlled.
-
-  Copyright (C) Microsoft Corporation. All rights reserved.<BR>
+  Copyright (C) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -444,43 +440,50 @@ LoadSignatureDatabase (
 }
 
 /**
-  Load the platform's db and dbx signature databases.
+  Load the platform's db and dbx signature databases into a generic signature-list pair.
 
-  The Db / Dbx buffers in the returned structure are allocated using AllocatePool(). The caller is
-  responsible for freeing them with FreePool().
+  The db and dbx buffers are allocated using AllocatePool(). The caller is responsible for freeing
+  Lists->AllowList and Lists->RevokeList with FreePool().
 
-  @param[out]  Databases  On success, receives pool-allocated copies of the `db` and `dbx`
-                          variable contents. Either Db or Dbx may be NULL (with a 0 size) if the
-                          corresponding variable is absent.
+  @param[out]  Lists  On success, receives db as the allow-list and dbx as the revoke-list. Either
+                      list may be NULL (with a 0 size) if the corresponding variable is absent.
 
-  @retval EFI_SUCCESS            Databases loaded. Db / Dbx may still be NULL if the
+  @retval EFI_SUCCESS            db and dbx were loaded. Either list may still be NULL if the
                                  corresponding variable was absent.
-  @retval EFI_INVALID_PARAMETER  Databases is NULL.
+  @retval EFI_INVALID_PARAMETER  Lists is NULL.
   @retval Other                  Failure status from gRT->GetVariable.
 **/
 EFI_STATUS
-LoadSignatureDatabases (
-  OUT SIGNATURE_DATABASES  *Databases
+LoadDbAndDbx (
+  OUT SIGNATURE_LISTS  *Lists
   )
 {
   EFI_STATUS  Status;
 
-  if (Databases == NULL) {
+  if (Lists == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Databases->Db      = NULL;
-  Databases->DbSize  = 0;
-  Databases->Dbx     = NULL;
-  Databases->DbxSize = 0;
+  Lists->AllowList      = NULL;
+  Lists->AllowListSize  = 0;
+  Lists->RevokeList     = NULL;
+  Lists->RevokeListSize = 0;
 
-  Status = LoadSignatureDatabase (EFI_IMAGE_SECURITY_DATABASE, &Databases->Db, &Databases->DbSize);
+  Status = LoadSignatureDatabase (
+             EFI_IMAGE_SECURITY_DATABASE,
+             &Lists->AllowList,
+             &Lists->AllowListSize
+             );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: failed to load db - %r\n", Status));
     goto Error;
   }
 
-  Status = LoadSignatureDatabase (EFI_IMAGE_SECURITY_DATABASE1, &Databases->Dbx, &Databases->DbxSize);
+  Status = LoadSignatureDatabase (
+             EFI_IMAGE_SECURITY_DATABASE1,
+             &Lists->RevokeList,
+             &Lists->RevokeListSize
+             );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: failed to load dbx - %r\n", Status));
     goto Error;
@@ -489,16 +492,16 @@ LoadSignatureDatabases (
   return EFI_SUCCESS;
 
 Error:
-  if (Databases->Db != NULL) {
-    FreePool (Databases->Db);
-    Databases->Db     = NULL;
-    Databases->DbSize = 0;
+  if (Lists->AllowList != NULL) {
+    FreePool (Lists->AllowList);
+    Lists->AllowList     = NULL;
+    Lists->AllowListSize = 0;
   }
 
-  if (Databases->Dbx != NULL) {
-    FreePool (Databases->Dbx);
-    Databases->Dbx     = NULL;
-    Databases->DbxSize = 0;
+  if (Lists->RevokeList != NULL) {
+    FreePool (Lists->RevokeList);
+    Lists->RevokeList     = NULL;
+    Lists->RevokeListSize = 0;
   }
 
   return Status;
@@ -650,18 +653,18 @@ MatchCertEntry (
 /**
   Determine whether the image digest bound to Cache is present in the allow-list
 
-  @param[in,out]  Cache   Digest cache bound to the Authenticode image bytes.
-  @param[in]      Db      Raw allow-list contents, or NULL for an empty database.
-  @param[in]      DbSize  Size of Db in bytes; 0 when Db is NULL.
+  @param[in,out]  Cache          Digest cache bound to the Authenticode image bytes.
+  @param[in]      AllowList      Raw allow-list contents, or NULL for an empty list.
+  @param[in]      AllowListSize  Size of AllowList in bytes; 0 when AllowList is NULL.
 
-  @retval TRUE   The image digest matches an image-hash entry in the valid prefix of Db.
+  @retval TRUE   The image digest matches an image-hash entry in the valid prefix of AllowList.
   @retval FALSE  It is absent, or Cache is unusable.
 **/
 BOOLEAN
-IsImageHashInDb (
+IsImageHashInAllowList (
   IN OUT DIGEST_CACHE  *Cache,
-  IN     CONST VOID    *Db,
-  IN     UINTN         DbSize
+  IN     CONST VOID    *AllowList,
+  IN     UINTN         AllowListSize
   )
 {
   MATCH_HASH_CONTEXT  Ctx;
@@ -675,7 +678,7 @@ IsImageHashInDb (
   Ctx.MapCount    = ARRAY_SIZE (mImageHashSignatures);
   Ctx.DigestError = FALSE;
 
-  return WalkDatabase (Db, DbSize, MatchHashEntry, &Ctx, NULL);
+  return WalkDatabase (AllowList, AllowListSize, MatchHashEntry, &Ctx, NULL);
 }
 
 /**
@@ -683,18 +686,18 @@ IsImageHashInDb (
 
   A malformed revoke-list or an uncomputable digest reports the image present.
 
-  @param[in,out]  Cache    Digest cache bound to the Authenticode image bytes.
-  @param[in]      Dbx      Raw revoke-list contents, or NULL for an empty database.
-  @param[in]      DbxSize  Size of Dbx in bytes; 0 when Dbx is NULL.
+  @param[in,out]  Cache           Digest cache bound to the Authenticode image bytes.
+  @param[in]      RevokeList      Raw revoke-list contents, or NULL for an empty list.
+  @param[in]      RevokeListSize  Size of RevokeList in bytes; 0 when RevokeList is NULL.
 
   @retval TRUE   The image digest matches an image-hash entry, or the revoke-list could not be fully parsed.
-  @retval FALSE  It is definitively absent (including an absent/empty Dbx).
+  @retval FALSE  It is definitively absent (including an absent/empty RevokeList).
 **/
 BOOLEAN
-IsImageHashInDbx (
+IsImageHashInRevokeList (
   IN OUT DIGEST_CACHE  *Cache,
-  IN     CONST VOID    *Dbx,
-  IN     UINTN         DbxSize
+  IN     CONST VOID    *RevokeList,
+  IN     UINTN         RevokeListSize
   )
 {
   MATCH_HASH_CONTEXT  Ctx;
@@ -710,27 +713,27 @@ IsImageHashInDbx (
   Ctx.MapCount    = ARRAY_SIZE (mImageHashSignatures);
   Ctx.DigestError = FALSE;
 
-  Found = WalkDatabase (Dbx, DbxSize, MatchHashEntry, &Ctx, &Truncated);
+  Found = WalkDatabase (RevokeList, RevokeListSize, MatchHashEntry, &Ctx, &Truncated);
 
-  // If the database was truncated or there was an error calculating a digest, treat the image as present.
+  // If the revoke-list was truncated or there was an error calculating a digest, treat the image as present.
   return (BOOLEAN)(Found || Truncated || Ctx.DigestError);
 }
 
 /**
   Determine whether the TBSCertificate digest bound to Cache is present in the allow-list.
 
-  @param[in,out]  Cache   Digest cache bound to a certificate's TBSCertificate bytes.
-  @param[in]      Db      Raw allow-list contents, or NULL for an empty database.
-  @param[in]      DbSize  Size of Db in bytes; 0 when Db is NULL.
+  @param[in,out]  Cache          Digest cache bound to a certificate's TBSCertificate bytes.
+  @param[in]      AllowList      Raw allow-list contents, or NULL for an empty list.
+  @param[in]      AllowListSize  Size of AllowList in bytes; 0 when AllowList is NULL.
 
-  @retval TRUE   The TBS digest matches a cert-hash entry in the valid prefix of Db.
+  @retval TRUE   The TBS digest matches a cert-hash entry in the valid prefix of AllowList.
   @retval FALSE  It is absent, or Cache is unusable.
 **/
 BOOLEAN
-IsTbsHashInDb (
+IsTbsHashInAllowList (
   IN OUT DIGEST_CACHE  *Cache,
-  IN     CONST VOID    *Db,
-  IN     UINTN         DbSize
+  IN     CONST VOID    *AllowList,
+  IN     UINTN         AllowListSize
   )
 {
   MATCH_HASH_CONTEXT  Ctx;
@@ -744,7 +747,7 @@ IsTbsHashInDb (
   Ctx.MapCount    = ARRAY_SIZE (mTbsHashSignatures);
   Ctx.DigestError = FALSE;
 
-  return WalkDatabase (Db, DbSize, MatchHashEntry, &Ctx, NULL);
+  return WalkDatabase (AllowList, AllowListSize, MatchHashEntry, &Ctx, NULL);
 }
 
 /**
@@ -752,18 +755,18 @@ IsTbsHashInDb (
 
   Fails closed: a malformed revoke-list or an uncomputable digest reports the certificate present.
 
-  @param[in,out]  Cache    Digest cache bound to a certificate's TBSCertificate bytes.
-  @param[in]      Dbx      Raw revoke-list contents, or NULL for an empty database.
-  @param[in]      DbxSize  Size of Dbx in bytes; 0 when Dbx is NULL.
+  @param[in,out]  Cache           Digest cache bound to a certificate's TBSCertificate bytes.
+  @param[in]      RevokeList      Raw revoke-list contents, or NULL for an empty list.
+  @param[in]      RevokeListSize  Size of RevokeList in bytes; 0 when RevokeList is NULL.
 
   @retval TRUE   The TBS digest matches a cert-hash entry, or the revoke-list could not be fully parsed.
-  @retval FALSE  It is definitively absent (including an absent/empty Dbx).
+  @retval FALSE  It is definitively absent (including an absent/empty RevokeList).
 **/
 BOOLEAN
-IsTbsHashInDbx (
+IsTbsHashInRevokeList (
   IN OUT DIGEST_CACHE  *Cache,
-  IN     CONST VOID    *Dbx,
-  IN     UINTN         DbxSize
+  IN     CONST VOID    *RevokeList,
+  IN     UINTN         RevokeListSize
   )
 {
   MATCH_HASH_CONTEXT  Ctx;
@@ -779,9 +782,9 @@ IsTbsHashInDbx (
   Ctx.MapCount    = ARRAY_SIZE (mTbsHashSignatures);
   Ctx.DigestError = FALSE;
 
-  Found = WalkDatabase (Dbx, DbxSize, MatchHashEntry, &Ctx, &Truncated);
+  Found = WalkDatabase (RevokeList, RevokeListSize, MatchHashEntry, &Ctx, &Truncated);
 
-  // If the database was truncated or there was an error calculating a digest, treat the hash as present.
+  // If the revoke-list was truncated or there was an error calculating a digest, treat the hash as present.
   return (BOOLEAN)(Found || Truncated || Ctx.DigestError);
 }
 
@@ -789,24 +792,25 @@ IsTbsHashInDbx (
   Determine whether a raw DER certificate is present in a revoke-list by exact match.
 
   Compares the certificate byte-for-byte against the EFI_CERT_X509 (full-certificate) lists. This
-  covers identity revocation only; TBS-cert-hash revocation is a hash match handled by IsTbsHashInDbx.
+  covers identity revocation only; TBS-cert-hash revocation is a hash match handled by
+  IsTbsHashInRevokeList.
   Fails closed: an unusable certificate or an un-parseable revoke-list reports the certificate present.
 
-  @param[in]  Cert       DER-encoded certificate to search for.
-  @param[in]  CertSize   Size of Cert in bytes.
-  @param[in]  Dbx        Raw revoke-list contents, or NULL for an empty database.
-  @param[in]  DbxSize    Size of Dbx in bytes; 0 when Dbx is NULL.
+  @param[in]  Cert            DER-encoded certificate to search for.
+  @param[in]  CertSize        Size of Cert in bytes.
+  @param[in]  RevokeList      Raw revoke-list contents, or NULL for an empty list.
+  @param[in]  RevokeListSize  Size of RevokeList in bytes; 0 when RevokeList is NULL.
 
   @retval TRUE   The certificate matches an EFI_CERT_X509 entry, or the revoke-list could not be fully
                  parsed.
-  @retval FALSE  The certificate is definitively absent (including an absent/empty Dbx).
+  @retval FALSE  The certificate is definitively absent (including an absent/empty RevokeList).
 **/
 BOOLEAN
-IsCertInDbx (
+IsCertInRevokeList (
   IN  CONST UINT8  *Cert,
   IN  UINTN        CertSize,
-  IN  CONST VOID   *Dbx,
-  IN  UINTN        DbxSize
+  IN  CONST VOID   *RevokeList,
+  IN  UINTN        RevokeListSize
   )
 {
   MATCH_CERT_CONTEXT  Ctx;
@@ -820,7 +824,7 @@ IsCertInDbx (
   Ctx.Cert     = Cert;
   Ctx.CertSize = CertSize;
 
-  Found = WalkDatabase (Dbx, DbxSize, MatchCertEntry, &Ctx, &Truncated);
+  Found = WalkDatabase (RevokeList, RevokeListSize, MatchCertEntry, &Ctx, &Truncated);
 
   return (BOOLEAN)(Found || Truncated);
 }
@@ -829,12 +833,12 @@ IsCertInDbx (
   Determine whether the verified certificate chain that authorizes an image is revoked.
 
   Reports the chain revoked if any certificate in it is enrolled in the revoke-list (by
-  exact DER via IsCertInDbx or by TBS-cert hash via IsTbsHashInDbx).
+  exact DER via IsCertInRevokeList or by TBS-cert hash via IsTbsHashInRevokeList).
 
   @param[in]  CertChain          EFI_CERT_STACK ordered signer..anchor.
   @param[in]  CertChainSize      Size of CertChain in bytes.
-  @param[in]  Dbx                Raw revoke-list contents, or NULL.
-  @param[in]  DbxSize            Size of Dbx in bytes; 0 when Dbx is NULL.
+  @param[in]  RevokeList         Raw revoke-list contents, or NULL.
+  @param[in]  RevokeListSize     Size of RevokeList in bytes; 0 when RevokeList is NULL.
 
   @retval TRUE   A certificate in the chain is revoked, or the chain could not be parsed (fail
                  closed).
@@ -844,8 +848,8 @@ BOOLEAN
 IsChainRevoked (
   IN  CONST UINT8  *CertChain,
   IN  UINTN        CertChainSize,
-  IN  CONST VOID   *Dbx,
-  IN  UINTN        DbxSize
+  IN  CONST VOID   *RevokeList,
+  IN  UINTN        RevokeListSize
   )
 {
   CONST UINT8   *Walker;
@@ -858,7 +862,7 @@ IsChainRevoked (
   UINT8         *Tbs;
   UINTN         TbsSize;
 
-  if ((Dbx == NULL) || (DbxSize == 0)) {
+  if ((RevokeList == NULL) || (RevokeListSize == 0)) {
     return FALSE;
   }
 
@@ -897,8 +901,8 @@ IsChainRevoked (
     CertCache.Buffer     = Tbs;
     CertCache.BufferSize = TbsSize;
 
-    Revoked = (BOOLEAN)(IsCertInDbx (Walker, CertLen, Dbx, DbxSize) ||
-                        IsTbsHashInDbx (&CertCache, Dbx, DbxSize));
+    Revoked = (BOOLEAN)(IsCertInRevokeList (Walker, CertLen, RevokeList, RevokeListSize) ||
+                        IsTbsHashInRevokeList (&CertCache, RevokeList, RevokeListSize));
 
     FreeDigestCache (&CertCache);
 
@@ -917,14 +921,14 @@ IsChainRevoked (
 // Context for EvaluateAnchorEntry visitor callback for the WalkDatabase function.
 //
 typedef struct {
-  CONST UINT8                  *AuthData;      // Pointer to the authentication data
-  UINTN                        AuthDataSize;   // Size of the authentication data
-  CONST UINT8                  *ImageHash;     // Pointer to the Image's hash, matching the hash type
-                                               // specified in the certificate.
-  UINTN                        ImageHashSize;  // Size of the image's hash
-  CONST SIGNATURE_DATABASES    *Databases;     // Pointer to the signature databases (allow-list and revoke-list).
-  VOID                         *CacheHandle;   // Pointer to an opaque cache structure used by GetTrustAnchorX509FromAuthData.
-  IMAGE_CERT_EVALUATION        *Evaluation;    // Pointer to the structure containing the results of the image certificate evaluation.
+  CONST UINT8                   *SignatureData;    // Pointer to the Authenticode signature data
+  UINTN                         SignatureDataSize; // Size of the Authenticode signature data
+  CONST UINT8                   *ImageHash;        // Pointer to the Image's hash, matching the hash type
+                                                   // specified in the certificate.
+  UINTN                         ImageHashSize;     // Size of the image's hash
+  CONST SIGNATURE_LISTS         *Lists;            // Pointer to the allow-list and revoke-list.
+  VOID                          *CacheHandle;      // Pointer to an opaque cache structure used by GetTrustAnchorX509FromAuthData.
+  IMAGE_SIGNATURE_EVALUATION    *Evaluation;       // Pointer to the structure containing the signature evaluation results.
 } EVALUATE_ANCHOR_CONTEXT;
 
 /**
@@ -941,7 +945,7 @@ typedef struct {
   @param[in]      EntrySize      The entry size (the list's SignatureSize).
   @param[in,out]  Context        An EVALUATE_ANCHOR_CONTEXT.
 
-  @retval WalkStop      The image was authorized (ImageCertApproved).
+  @retval WalkStop      The image was authorized (ImageSignatureAllowed).
   @retval WalkSkipList  This list cannot authorize the image (unsupported, or an image-hash list).
   @retval WalkContinue  This entry did not authorize the image; try the next.
 **/
@@ -1015,8 +1019,8 @@ EvaluateAnchorEntry (
                &Ctx->CacheHandle,
                (CONST UINT8 *)Entry + OwnerSize,
                TbsHashSize,
-               Ctx->AuthData,
-               Ctx->AuthDataSize,
+               Ctx->SignatureData,
+               Ctx->SignatureDataSize,
                &Anchor,
                &AnchorSize
                );
@@ -1028,8 +1032,8 @@ EvaluateAnchorEntry (
   CertChain     = NULL;
   CertChainSize = 0;
   Status        = AuthenticodeVerifyEx (
-                    Ctx->AuthData,
-                    Ctx->AuthDataSize,
+                    Ctx->SignatureData,
+                    Ctx->SignatureDataSize,
                     Anchor,
                     AnchorSize,
                     Ctx->ImageHash,
@@ -1038,10 +1042,16 @@ EvaluateAnchorEntry (
                     &CertChainSize
                     );
   if (!EFI_ERROR (Status)) {
-    if (IsChainRevoked (CertChain, CertChainSize, Ctx->Databases->Dbx, Ctx->Databases->DbxSize)) {
-      Ctx->Evaluation->Verdict = ImageCertRevokedByDbx;
+    if (IsChainRevoked (
+          CertChain,
+          CertChainSize,
+          Ctx->Lists->RevokeList,
+          Ctx->Lists->RevokeListSize
+          ))
+    {
+      Ctx->Evaluation->Verdict = ImageSignatureRevoked;
     } else {
-      Ctx->Evaluation->Verdict = ImageCertApproved;
+      Ctx->Evaluation->Verdict = ImageSignatureAllowed;
 
       BuildImageAuthority (
         (OwnerSize == sizeof (EFI_GUID)) ? (CONST EFI_GUID *)Entry : NULL,
@@ -1062,17 +1072,17 @@ EvaluateAnchorEntry (
     FreePool (Anchor);
   }
 
-  return (Ctx->Evaluation->Verdict == ImageCertApproved) ? WalkStop : WalkContinue;
+  return (Ctx->Evaluation->Verdict == ImageSignatureAllowed) ? WalkStop : WalkContinue;
 }
 
 /**
   Evaluate an Authenticode signature against an allow-list and a revoke-list.
 
-  @param[in]      AuthData      Authenticode signature data.
-  @param[in]      AuthDataSize  Size of AuthData in bytes.
+  @param[in]      SignatureData      Authenticode signature data.
+  @param[in]      SignatureDataSize  Size of SignatureData in bytes.
   @param[in,out]  Cache       Image digest cache bound to the image buffer; the cache may memoize
                               one digest per algorithm across calls.
-  @param[in]      Databases   The allow-list / revoke-list databases to evaluate against.
+  @param[in]      Lists       The allow-list and revoke-list to evaluate against.
   @param[out]     Evaluation  Evaluation data when EFI_SUCCESS is returned.
 
   @retval EFI_SUCCESS            Evaluation completed; inspect Evaluation->Verdict.
@@ -1082,11 +1092,11 @@ EvaluateAnchorEntry (
 **/
 EFI_STATUS
 EvaluateSignature (
-  IN     CONST UINT8                *AuthData,
-  IN     UINTN                      AuthDataSize,
-  IN OUT DIGEST_CACHE               *Cache,
-  IN     CONST SIGNATURE_DATABASES  *Databases,
-  OUT    IMAGE_CERT_EVALUATION      *Evaluation
+  IN     CONST UINT8                 *SignatureData,
+  IN     UINTN                       SignatureDataSize,
+  IN OUT DIGEST_CACHE                *Cache,
+  IN     CONST SIGNATURE_LISTS       *Lists,
+  OUT    IMAGE_SIGNATURE_EVALUATION  *Evaluation
   )
 {
   EFI_STATUS               Status;
@@ -1095,19 +1105,19 @@ EvaluateSignature (
   UINTN                    ImageHashSize;
   EVALUATE_ANCHOR_CONTEXT  AnchorCtx;
 
-  if ((AuthData == NULL) || (AuthDataSize == 0) || (Cache == NULL) ||
-      (Databases == NULL) || (Evaluation == NULL))
+  if ((SignatureData == NULL) || (SignatureDataSize == 0) || (Cache == NULL) ||
+      (Lists == NULL) || (Evaluation == NULL))
   {
     return EFI_INVALID_PARAMETER;
   }
 
   // Set default verdict to unusable so if we fail any parsing step we can simply return early.
-  Evaluation->Verdict        = ImageCertUnusable;
+  Evaluation->Verdict        = ImageSignatureUnusable;
   Evaluation->Authority.Data = NULL;
   Evaluation->Authority.Size = 0;
   ZeroMem (&Evaluation->Authority.SignatureType, sizeof (EFI_GUID));
 
-  Status = GetAuthenticodeHashAlgorithm (AuthData, AuthDataSize, &HashAlgorithm);
+  Status = GetAuthenticodeHashAlgorithm (SignatureData, SignatureDataSize, &HashAlgorithm);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_WARN, "DxeImageVerificationLib: unrecognized Authenticode hash algorithm (%r).\n", Status));
     return EFI_SUCCESS;
@@ -1119,18 +1129,24 @@ EvaluateSignature (
     return Status;
   }
 
-  Evaluation->Verdict = ImageCertNotInDb;
+  Evaluation->Verdict = ImageSignatureNotAuthorized;
 
   ZeroMem (&AnchorCtx, sizeof (AnchorCtx));
-  AnchorCtx.AuthData      = AuthData;
-  AnchorCtx.AuthDataSize  = AuthDataSize;
-  AnchorCtx.ImageHash     = ImageHash;
-  AnchorCtx.ImageHashSize = ImageHashSize;
-  AnchorCtx.Databases     = Databases;
-  AnchorCtx.Evaluation    = Evaluation;
+  AnchorCtx.SignatureData     = SignatureData;
+  AnchorCtx.SignatureDataSize = SignatureDataSize;
+  AnchorCtx.ImageHash         = ImageHash;
+  AnchorCtx.ImageHashSize     = ImageHashSize;
+  AnchorCtx.Lists             = Lists;
+  AnchorCtx.Evaluation        = Evaluation;
 
-  // Walk the allow-list for trust-anchors that verify the image and are not revoked by the revoke-list
-  WalkDatabase (Databases->Db, Databases->DbSize, EvaluateAnchorEntry, &AnchorCtx, NULL);
+  // Walk the allow-list for trust anchors that verify the image and are not revoked.
+  WalkDatabase (
+    Lists->AllowList,
+    Lists->AllowListSize,
+    EvaluateAnchorEntry,
+    &AnchorCtx,
+    NULL
+    );
 
   if (AnchorCtx.CacheHandle != NULL) {
     FreeTrustAnchorX509Cache (AnchorCtx.CacheHandle);

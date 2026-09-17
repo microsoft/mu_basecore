@@ -1,10 +1,10 @@
 /** @file
   Unit tests for the signature-database helpers in
-  DxeImageVerificationLib (Database.c): IsImageHashInDb, IsImageHashInDbx,
-  IsTbsHashInDb, IsTbsHashInDbx, IsCertInDbx,
-  LoadSignatureDatabase, LoadSignatureDatabases,
+  DxeImageVerificationLib (Database.c): IsImageHashInAllowList, IsImageHashInRevokeList,
+  IsTbsHashInAllowList, IsTbsHashInRevokeList, IsCertInRevokeList,
+  LoadSignatureDatabase, LoadDbAndDbx,
   IsChainRevoked, and
-  EvaluateSignature. ExtractAuthData from Support.c is also covered. The
+  EvaluateSignature. ExtractSignatureData from Support.c is also covered. The
   database helpers are exercised against
   synthetic in-memory EFI_SIGNATURE_LIST buffers built by helpers in
   this file; the variable loaders against a mocked GetVariable2; and the
@@ -41,8 +41,8 @@ extern "C" {
   IsChainRevoked (
     IN  CONST UINT8  *CertChain,
     IN  UINTN        CertChainSize,
-    IN  CONST VOID   *Dbx,
-    IN  UINTN        DbxSize
+    IN  CONST VOID   *RevokeList,
+    IN  UINTN        RevokeListSize
     );
 }
 
@@ -80,8 +80,9 @@ static UINT8  mSubjectBuffer[8] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x
 
 //
 // Bind a subject digest cache to mSubjectBuffer and arrange for its computed SHA-256 digest to be
-// Digest. The caller enrolls the same bytes in a db/dbx entry to force a hash-membership match (or a
-// different Digest to deny one). Release the returned cache with FreeDigestCache ().
+// Digest. The caller enrolls the same bytes in an allow-list/revoke-list entry to force a
+// hash-membership match (or a different Digest to deny one). Release the returned cache with
+// FreeDigestCache ().
 //
 static DIGEST_CACHE
 BindDigest (
@@ -224,8 +225,8 @@ MakeCertStack (
 // Default Authenticode signature / image-hash payloads shared by the
 // certificate-authorization tests.
 //
-static const std::vector<UINT8>  kAuthDataDefault  = std::vector<UINT8>(16, 0xA1);
-static const std::vector<UINT8>  kImageHashDefault = std::vector<UINT8>(SHA256_DIGEST_SIZE, 0x55);
+static const std::vector<UINT8>  kSignatureDataDefault = std::vector<UINT8>(16, 0xA1);
+static const std::vector<UINT8>  kImageHashDefault     = std::vector<UINT8>(SHA256_DIGEST_SIZE, 0x55);
 
 // Build a WIN_CERTIFICATE wrapping an Authenticode signature payload.
 static std::vector<UINT8>
@@ -246,21 +247,21 @@ MakePkcsSignedDataCert (
 STATIC
 EFI_STATUS
 EvaluatePkcsSignedDataSignature (
-  IN     CONST WIN_CERTIFICATE      *Cert,
-  IN OUT DIGEST_CACHE               *Cache,
-  IN     CONST SIGNATURE_DATABASES  *Databases,
-  OUT    IMAGE_CERT_EVALUATION      *Evaluation
+  IN     CONST WIN_CERTIFICATE       *Cert,
+  IN OUT DIGEST_CACHE                *Cache,
+  IN     CONST SIGNATURE_LISTS       *Lists,
+  OUT    IMAGE_SIGNATURE_EVALUATION  *Evaluation
   )
 {
   if ((Cert == NULL) || (Cert->dwLength <= sizeof (WIN_CERTIFICATE))) {
-    return EvaluateSignature (NULL, 0, Cache, Databases, Evaluation);
+    return EvaluateSignature (NULL, 0, Cache, Lists, Evaluation);
   }
 
   return EvaluateSignature (
            (CONST UINT8 *)Cert + sizeof (WIN_CERTIFICATE),
            Cert->dwLength - sizeof (WIN_CERTIFICATE),
            Cache,
-           Databases,
+           Lists,
            Evaluation
            );
 }
@@ -280,50 +281,50 @@ InitImageCache (
 }
 
 // ---------------------------------------------------------------------------
-// IsImageHashInDb (allow-list, image-hash lists)
+// IsImageHashInAllowList (image-hash lists)
 // ---------------------------------------------------------------------------
 
-TEST (IsImageHashInDbTest, NullDatabaseWithNonZeroSize_NotFound) {
+TEST (IsImageHashInAllowListTest, NullDatabaseWithNonZeroSize_NotFound) {
   DIGEST_CACHE  Cache;
 
   ZeroMem (&Cache, sizeof (Cache));
   Cache.Buffer     = (const VOID *)(UINTN)1;
   Cache.BufferSize = 1;
 
-  EXPECT_FALSE (IsImageHashInDb (&Cache, NULL, 1));
+  EXPECT_FALSE (IsImageHashInAllowList (&Cache, NULL, 1));
   // Validate that Cache remains consistent
   EXPECT_EQ (Cache.Buffer, (const VOID *)(UINTN)1);
   EXPECT_EQ (Cache.BufferSize, (UINTN)1);
 }
 
-TEST (IsImageHashInDbTest, NullDatabaseWithZeroSize_NotFound) {
+TEST (IsImageHashInAllowListTest, NullDatabaseWithZeroSize_NotFound) {
   DIGEST_CACHE  Cache;
 
   ZeroMem (&Cache, sizeof (Cache));
   Cache.Buffer     = (const VOID *)(UINTN)1;
   Cache.BufferSize = 1;
 
-  EXPECT_FALSE (IsImageHashInDb (&Cache, NULL, 0));
+  EXPECT_FALSE (IsImageHashInAllowList (&Cache, NULL, 0));
   // Validate that Cache remains consistent
   EXPECT_EQ (Cache.Buffer, (const VOID *)(UINTN)1);
   EXPECT_EQ (Cache.BufferSize, (UINTN)1);
 }
 
-TEST (IsImageHashInDbTest, NullCache_NotFound) {
+TEST (IsImageHashInAllowListTest, NullCache_NotFound) {
   UINT8  Dummy = 0;
 
-  EXPECT_FALSE (IsImageHashInDb (NULL, &Dummy, 1));
+  EXPECT_FALSE (IsImageHashInAllowList (NULL, &Dummy, 1));
 }
 
-TEST (IsImageHashInDbTest, UnboundCache_NotFound) {
+TEST (IsImageHashInAllowListTest, UnboundCache_NotFound) {
   UINT8         Dummy = 0;
   DIGEST_CACHE  Cache;
 
   ZeroMem (&Cache, sizeof (Cache));
-  EXPECT_FALSE (IsImageHashInDb (&Cache, &Dummy, 1));
+  EXPECT_FALSE (IsImageHashInAllowList (&Cache, &Dummy, 1));
 }
 
-TEST (IsImageHashInDbTest, ZeroSizeCache_NotFound) {
+TEST (IsImageHashInAllowListTest, ZeroSizeCache_NotFound) {
   UINT8         Dummy = 0;
   DIGEST_CACHE  Cache;
 
@@ -331,10 +332,10 @@ TEST (IsImageHashInDbTest, ZeroSizeCache_NotFound) {
   Cache.Buffer     = (const VOID *)(UINTN)1;
   Cache.BufferSize = 0;
 
-  EXPECT_FALSE (IsImageHashInDb (&Cache, &Dummy, 1));
+  EXPECT_FALSE (IsImageHashInAllowList (&Cache, &Dummy, 1));
 }
 
-TEST (IsImageHashInDbTest, HashComputationFailure_NotAuthorized) {
+TEST (IsImageHashInAllowListTest, HashComputationFailure_NotAuthorized) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Db;
 
@@ -350,10 +351,10 @@ TEST (IsImageHashInDbTest, HashComputationFailure_NotAuthorized) {
     .WillOnce (Return (EFI_DEVICE_ERROR));
 
   // A hash failure means this list cannot authorize; a best-effort allow-list search reports absent.
-  EXPECT_FALSE (IsImageHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_FALSE (IsImageHashInAllowList (&Cache, Db.data (), Db.size ()));
 }
 
-TEST (IsImageHashInDbTest, ExactMatch_Found) {
+TEST (IsImageHashInAllowListTest, ExactMatch_Found) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Db;
   size_t              Off = AppendSignatureList (Db, gEfiCertSha256Guid, 0, kSha256EntrySize, 2);
@@ -363,11 +364,11 @@ TEST (IsImageHashInDbTest, ExactMatch_Found) {
 
   DIGEST_CACHE  Cache = BindDigest (BaseCryptLibMock, Target);
 
-  EXPECT_TRUE (IsImageHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_TRUE (IsImageHashInAllowList (&Cache, Db.data (), Db.size ()));
   FreeDigestCache (&Cache);
 }
 
-TEST (IsImageHashInDbTest, V2ImageHashExactMatch_Found) {
+TEST (IsImageHashInAllowListTest, V2ImageHashExactMatch_Found) {
   // A V2 (EFI_SIGNATURE_V2_DATA) image-hash list stores the digest with no SignatureOwner prefix,
   // so the payload must be read from the entry start rather than sizeof (EFI_GUID) bytes in.
   MockBaseCryptLib    BaseCryptLibMock;
@@ -379,11 +380,11 @@ TEST (IsImageHashInDbTest, V2ImageHashExactMatch_Found) {
 
   DIGEST_CACHE  Cache = BindDigest (BaseCryptLibMock, Target);
 
-  EXPECT_TRUE (IsImageHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_TRUE (IsImageHashInAllowList (&Cache, Db.data (), Db.size ()));
   FreeDigestCache (&Cache);
 }
 
-TEST (IsImageHashInDbTest, NoMatchingEntry_NotFound) {
+TEST (IsImageHashInAllowListTest, NoMatchingEntry_NotFound) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Db;
   size_t              Off = AppendSignatureList (Db, gEfiCertSha256Guid, 0, kSha256EntrySize, 1);
@@ -394,11 +395,11 @@ TEST (IsImageHashInDbTest, NoMatchingEntry_NotFound) {
   std::vector<UINT8>  Digest (kSha256DigestSize, 0xBB);
   DIGEST_CACHE        Cache = BindDigest (BaseCryptLibMock, Digest);
 
-  EXPECT_FALSE (IsImageHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_FALSE (IsImageHashInAllowList (&Cache, Db.data (), Db.size ()));
   FreeDigestCache (&Cache);
 }
 
-TEST (IsImageHashInDbTest, UnknownSignatureTypeList_Skipped) {
+TEST (IsImageHashInAllowListTest, UnknownSignatureTypeList_Skipped) {
   std::vector<UINT8>  Db;
 
   AppendSignatureList (Db, gEfiCertX509Guid, 0, sizeof (EFI_GUID) + 16, 1);
@@ -411,10 +412,10 @@ TEST (IsImageHashInDbTest, UnknownSignatureTypeList_Skipped) {
   Cache.Buffer     = mSubjectBuffer;
   Cache.BufferSize = sizeof (mSubjectBuffer);
 
-  EXPECT_FALSE (IsImageHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_FALSE (IsImageHashInAllowList (&Cache, Db.data (), Db.size ()));
 }
 
-TEST (IsImageHashInDbTest, MismatchedSignatureSize_Skipped) {
+TEST (IsImageHashInAllowListTest, MismatchedSignatureSize_Skipped) {
   // A list whose SignatureType is a supported image-hash GUID but whose per-entry size does not match
   // that algorithm's entry layout is skipped entirely - even when the leading bytes hold the exact
   // search digest - because the entry size must match exactly.
@@ -429,11 +430,11 @@ TEST (IsImageHashInDbTest, MismatchedSignatureSize_Skipped) {
 
   DIGEST_CACHE  Cache = BindDigest (BaseCryptLibMock, Digest);
 
-  EXPECT_FALSE (IsImageHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_FALSE (IsImageHashInAllowList (&Cache, Db.data (), Db.size ()));
   FreeDigestCache (&Cache);
 }
 
-TEST (IsImageHashInDbTest, MatchInSecondList_Found) {
+TEST (IsImageHashInAllowListTest, MatchInSecondList_Found) {
   // First list is a full-certificate list (skipped), second list contains the target digest.
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Db;
@@ -447,11 +448,11 @@ TEST (IsImageHashInDbTest, MatchInSecondList_Found) {
 
   DIGEST_CACHE  Cache = BindDigest (BaseCryptLibMock, Target);
 
-  EXPECT_TRUE (IsImageHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_TRUE (IsImageHashInAllowList (&Cache, Db.data (), Db.size ()));
   FreeDigestCache (&Cache);
 }
 
-TEST (IsImageHashInDbTest, NonZeroSignatureHeaderSize_EntryMathCorrect) {
+TEST (IsImageHashInAllowListTest, NonZeroSignatureHeaderSize_EntryMathCorrect) {
   // SignatureHeaderSize is non-zero: the per-list header occupies
   // additional bytes between EFI_SIGNATURE_LIST and the first entry.
   // A naive cursor that forgets to skip it would either miss the
@@ -472,11 +473,11 @@ TEST (IsImageHashInDbTest, NonZeroSignatureHeaderSize_EntryMathCorrect) {
 
   DIGEST_CACHE  Cache = BindDigest (BaseCryptLibMock, Target);
 
-  EXPECT_TRUE (IsImageHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_TRUE (IsImageHashInAllowList (&Cache, Db.data (), Db.size ()));
   FreeDigestCache (&Cache);
 }
 
-TEST (IsImageHashInDbTest, ZeroEntryList_NotFound) {
+TEST (IsImageHashInAllowListTest, ZeroEntryList_NotFound) {
   // A well-formed list with zero entries must be skipped without a
   // false positive (EntryCount == 0 means the inner loop never runs).
   std::vector<UINT8>  Db;
@@ -489,14 +490,14 @@ TEST (IsImageHashInDbTest, ZeroEntryList_NotFound) {
   Cache.Buffer     = mSubjectBuffer;
   Cache.BufferSize = sizeof (mSubjectBuffer);
 
-  EXPECT_FALSE (IsImageHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_FALSE (IsImageHashInAllowList (&Cache, Db.data (), Db.size ()));
 }
 
 //
-// A malformed db (the sole list overruns the buffer) truncates to an empty
+// A malformed allow-list (the sole list overruns the buffer) truncates to an empty
 // prefix; a best-effort allow-list search simply finds no authority.
 //
-TEST (IsImageHashInDbTest, MalformedDb_BestEffortNotFound) {
+TEST (IsImageHashInAllowListTest, MalformedDb_BestEffortNotFound) {
   std::vector<UINT8>  Db;
 
   AppendSignatureList (Db, gEfiCertSha256Guid, 0, kSha256EntrySize, 1);
@@ -508,14 +509,14 @@ TEST (IsImageHashInDbTest, MalformedDb_BestEffortNotFound) {
   Cache.Buffer     = mSubjectBuffer;
   Cache.BufferSize = sizeof (mSubjectBuffer);
 
-  EXPECT_FALSE (IsImageHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_FALSE (IsImageHashInAllowList (&Cache, Db.data (), Db.size ()));
 }
 
 //
 // A well-formed authorizing list followed by a malformed trailing fragment:
 // the valid prefix still authorizes (best-effort allow-list search).
 //
-TEST (IsImageHashInDbTest, MalformedTail_ValidPrefixAuthorizes) {
+TEST (IsImageHashInAllowListTest, MalformedTail_ValidPrefixAuthorizes) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Db;
   size_t              Off = AppendSignatureList (Db, gEfiCertSha256Guid, 0, kSha256EntrySize, 1);
@@ -528,11 +529,11 @@ TEST (IsImageHashInDbTest, MalformedTail_ValidPrefixAuthorizes) {
 
   DIGEST_CACHE  Cache = BindDigest (BaseCryptLibMock, Target);
 
-  EXPECT_TRUE (IsImageHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_TRUE (IsImageHashInAllowList (&Cache, Db.data (), Db.size ()));
   FreeDigestCache (&Cache);
 }
 
-TEST (IsImageHashInDbTest, ZeroSizeNonNullDatabase_EmptyDatabaseNotFound) {
+TEST (IsImageHashInAllowListTest, ZeroSizeNonNullDatabase_EmptyDatabaseNotFound) {
   UINT8         Dummy = 0;
   DIGEST_CACHE  Cache;
 
@@ -540,16 +541,16 @@ TEST (IsImageHashInDbTest, ZeroSizeNonNullDatabase_EmptyDatabaseNotFound) {
   Cache.Buffer     = (const VOID *)(UINTN)1;
   Cache.BufferSize = 1;
 
-  EXPECT_FALSE (IsImageHashInDb (&Cache, &Dummy, 0));
+  EXPECT_FALSE (IsImageHashInAllowList (&Cache, &Dummy, 0));
 }
 
 //
-// A db list whose SignatureType is a supported image-hash GUID (so GetHash
+// An allow-list whose SignatureType is a supported image-hash GUID (so GetHash
 // succeeds against the bound cache) but whose SignatureHeaderSize is
 // inflated so SigListIterInit yields an empty range for it. The list must be
 // skipped and no authority returned.
 //
-TEST (IsImageHashInDbTest, MalformedListHeader_Skipped) {
+TEST (IsImageHashInAllowListTest, MalformedListHeader_Skipped) {
   DIGEST_CACHE  Cache;
 
   ZeroMem (&Cache, sizeof (Cache));
@@ -569,14 +570,14 @@ TEST (IsImageHashInDbTest, MalformedListHeader_Skipped) {
   List->SignatureHeaderSize = ListSize;        // > ListSize - sizeof (EFI_SIGNATURE_LIST)
   List->SignatureSize       = EntrySize;
 
-  EXPECT_FALSE (IsImageHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_FALSE (IsImageHashInAllowList (&Cache, Db.data (), Db.size ()));
 }
 
 // ---------------------------------------------------------------------------
-// IsTbsHashInDb (allow-list, X.509 TBS-cert-hash lists)
+// IsTbsHashInAllowList (X.509 TBS-cert-hash lists)
 // ---------------------------------------------------------------------------
 
-TEST (IsTbsHashInDbTest, V1TbsHashMatch_Found) {
+TEST (IsTbsHashInAllowListTest, V1TbsHashMatch_Found) {
   // A V1 EFI_CERT_X509_SHA256 entry is owner GUID + 32-byte TBS hash + EFI_TIME; only the leading
   // 32-byte hash is compared.
   MockBaseCryptLib    BaseCryptLibMock;
@@ -588,11 +589,11 @@ TEST (IsTbsHashInDbTest, V1TbsHashMatch_Found) {
 
   DIGEST_CACHE  Cache = BindDigest (BaseCryptLibMock, TbsHash);
 
-  EXPECT_TRUE (IsTbsHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_TRUE (IsTbsHashInAllowList (&Cache, Db.data (), Db.size ()));
   FreeDigestCache (&Cache);
 }
 
-TEST (IsTbsHashInDbTest, V2TbsHashMatch_Found) {
+TEST (IsTbsHashInAllowListTest, V2TbsHashMatch_Found) {
   // A V2 EFI_CERT_V2_X509_SHA256 entry stores the TBS hash with neither the owner GUID nor a v1
   // TimeOfRevocation trailer.
   MockBaseCryptLib    BaseCryptLibMock;
@@ -604,13 +605,13 @@ TEST (IsTbsHashInDbTest, V2TbsHashMatch_Found) {
 
   DIGEST_CACHE  Cache = BindDigest (BaseCryptLibMock, TbsHash);
 
-  EXPECT_TRUE (IsTbsHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_TRUE (IsTbsHashInAllowList (&Cache, Db.data (), Db.size ()));
   FreeDigestCache (&Cache);
 }
 
-TEST (IsTbsHashInDbTest, ImageHashList_Ignored) {
-  // IsTbsHashInDb matches only X.509 TBS-cert-hash lists; an image-hash list is not its subject and
-  // is skipped without computing the digest.
+TEST (IsTbsHashInAllowListTest, ImageHashList_Ignored) {
+  // IsTbsHashInAllowList matches only X.509 TBS-cert-hash lists; an image-hash list is not its
+  // subject and is skipped without computing the digest.
   std::vector<UINT8>  Db;
 
   AppendSignatureList (Db, gEfiCertSha256Guid, 0, kSha256EntrySize, 1);
@@ -621,7 +622,7 @@ TEST (IsTbsHashInDbTest, ImageHashList_Ignored) {
   Cache.Buffer     = mSubjectBuffer;
   Cache.BufferSize = sizeof (mSubjectBuffer);
 
-  EXPECT_FALSE (IsTbsHashInDb (&Cache, Db.data (), Db.size ()));
+  EXPECT_FALSE (IsTbsHashInAllowList (&Cache, Db.data (), Db.size ()));
 }
 
 // ---------------------------------------------------------------------------
@@ -727,10 +728,10 @@ TEST_F (LoadSignatureDatabaseTest, GetVariableUnexpectedError_PropagatedVerbatim
 }
 
 // ---------------------------------------------------------------------------
-// LoadSignatureDatabases (db + dbx)
+// LoadDbAndDbx (db + dbx)
 // ---------------------------------------------------------------------------
 
-class LoadSignatureDatabasesTest : public ::testing::Test {
+class LoadDbAndDbxTest : public ::testing::Test {
 protected:
   MockUefiLib UefiLibMock;
 };
@@ -738,7 +739,7 @@ protected:
 //
 // Lambda factory: a GetVariable2 action that allocates a copy of the
 // supplied payload and returns EFI_SUCCESS. Used to feed synthetic
-// db/dbx buffers into LoadSignatureDatabases through the mock.
+// db/dbx buffers into LoadDbAndDbx through the mock.
 //
 static auto
 ReturnVariablePayload (
@@ -762,35 +763,35 @@ ReturnVariablePayload (
            );
 }
 
-TEST_F (LoadSignatureDatabasesTest, NullDatabases_ReturnsInvalidParameter) {
+TEST_F (LoadDbAndDbxTest, NullLists_ReturnsInvalidParameter) {
   EXPECT_EQ (
-    LoadSignatureDatabases (NULL),
+    LoadDbAndDbx (NULL),
     EFI_INVALID_PARAMETER
     );
 }
 
-TEST_F (LoadSignatureDatabasesTest, BothVariablesMissing_Success) {
+TEST_F (LoadDbAndDbxTest, BothVariablesMissing_Success) {
   EXPECT_CALL (UefiLibMock, GetVariable2 (_, _, _, _))
     .WillOnce (Return (EFI_NOT_FOUND))   // db
     .WillOnce (Return (EFI_NOT_FOUND));  // dbx
 
   // Pre-set to bogus values: must be cleared.
-  SIGNATURE_DATABASES  Databases = {
+  SIGNATURE_LISTS  Lists = {
     (VOID *)(UINTN)0xDEADBEEF, 0xAA,
     (VOID *)(UINTN)0xCAFEF00D, 0xBB
   };
 
   EXPECT_EQ (
-    LoadSignatureDatabases (&Databases),
+    LoadDbAndDbx (&Lists),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Databases.Db, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbSize, 0u);
-  EXPECT_EQ (Databases.Dbx, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbxSize, 0u);
+  EXPECT_EQ (Lists.AllowList, (VOID *)NULL);
+  EXPECT_EQ (Lists.AllowListSize, 0u);
+  EXPECT_EQ (Lists.RevokeList, (VOID *)NULL);
+  EXPECT_EQ (Lists.RevokeListSize, 0u);
 }
 
-TEST_F (LoadSignatureDatabasesTest, OnlyDbPresent_DbAllocated) {
+TEST_F (LoadDbAndDbxTest, OnlyDbPresent_DbAllocated) {
   std::vector<UINT8>  DbBuf;
 
   AppendSignatureList (DbBuf, gEfiCertSha256Guid, 0, kSha256EntrySize, 1);
@@ -799,20 +800,20 @@ TEST_F (LoadSignatureDatabasesTest, OnlyDbPresent_DbAllocated) {
     .WillOnce (ReturnVariablePayload (DbBuf.data (), DbBuf.size ()))  // db
     .WillOnce (Return (EFI_NOT_FOUND));                               // dbx
 
-  SIGNATURE_DATABASES  Databases = { NULL, 0, NULL, 0 };
+  SIGNATURE_LISTS  Lists = { NULL, 0, NULL, 0 };
 
   EXPECT_EQ (
-    LoadSignatureDatabases (&Databases),
+    LoadDbAndDbx (&Lists),
     EFI_SUCCESS
     );
-  ASSERT_NE (Databases.Db, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbSize, DbBuf.size ());
-  EXPECT_EQ (Databases.Dbx, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbxSize, 0u);
-  FreePool (Databases.Db);
+  ASSERT_NE (Lists.AllowList, (VOID *)NULL);
+  EXPECT_EQ (Lists.AllowListSize, DbBuf.size ());
+  EXPECT_EQ (Lists.RevokeList, (VOID *)NULL);
+  EXPECT_EQ (Lists.RevokeListSize, 0u);
+  FreePool (Lists.AllowList);
 }
 
-TEST_F (LoadSignatureDatabasesTest, OnlyDbxPresent_DbxAllocated) {
+TEST_F (LoadDbAndDbxTest, OnlyDbxPresent_DbxAllocated) {
   std::vector<UINT8>  DbxBuf;
 
   AppendSignatureList (DbxBuf, gEfiCertSha384Guid, 0, kSha384EntrySize, 1);
@@ -821,20 +822,20 @@ TEST_F (LoadSignatureDatabasesTest, OnlyDbxPresent_DbxAllocated) {
     .WillOnce (Return (EFI_NOT_FOUND))                                  // db
     .WillOnce (ReturnVariablePayload (DbxBuf.data (), DbxBuf.size ())); // dbx
 
-  SIGNATURE_DATABASES  Databases = { NULL, 0, NULL, 0 };
+  SIGNATURE_LISTS  Lists = { NULL, 0, NULL, 0 };
 
   EXPECT_EQ (
-    LoadSignatureDatabases (&Databases),
+    LoadDbAndDbx (&Lists),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Databases.Db, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbSize, 0u);
-  ASSERT_NE (Databases.Dbx, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbxSize, DbxBuf.size ());
-  FreePool (Databases.Dbx);
+  EXPECT_EQ (Lists.AllowList, (VOID *)NULL);
+  EXPECT_EQ (Lists.AllowListSize, 0u);
+  ASSERT_NE (Lists.RevokeList, (VOID *)NULL);
+  EXPECT_EQ (Lists.RevokeListSize, DbxBuf.size ());
+  FreePool (Lists.RevokeList);
 }
 
-TEST_F (LoadSignatureDatabasesTest, BothPresent_BuffersAllocated) {
+TEST_F (LoadDbAndDbxTest, BothPresent_BuffersAllocated) {
   std::vector<UINT8>  DbBuf;
   std::vector<UINT8>  DbxBuf;
 
@@ -845,39 +846,39 @@ TEST_F (LoadSignatureDatabasesTest, BothPresent_BuffersAllocated) {
     .WillOnce (ReturnVariablePayload (DbBuf.data (), DbBuf.size ()))    // db
     .WillOnce (ReturnVariablePayload (DbxBuf.data (), DbxBuf.size ())); // dbx
 
-  SIGNATURE_DATABASES  Databases = { NULL, 0, NULL, 0 };
+  SIGNATURE_LISTS  Lists = { NULL, 0, NULL, 0 };
 
   EXPECT_EQ (
-    LoadSignatureDatabases (&Databases),
+    LoadDbAndDbx (&Lists),
     EFI_SUCCESS
     );
-  ASSERT_NE (Databases.Db, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbSize, DbBuf.size ());
-  ASSERT_NE (Databases.Dbx, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbxSize, DbxBuf.size ());
-  FreePool (Databases.Db);
-  FreePool (Databases.Dbx);
+  ASSERT_NE (Lists.AllowList, (VOID *)NULL);
+  EXPECT_EQ (Lists.AllowListSize, DbBuf.size ());
+  ASSERT_NE (Lists.RevokeList, (VOID *)NULL);
+  EXPECT_EQ (Lists.RevokeListSize, DbxBuf.size ());
+  FreePool (Lists.AllowList);
+  FreePool (Lists.RevokeList);
 }
 
-TEST_F (LoadSignatureDatabasesTest, DbLoadFails_ErrorPropagatedNothingAllocated) {
+TEST_F (LoadDbAndDbxTest, DbLoadFails_ErrorPropagatedNothingAllocated) {
   // The db lookup fails with a non-NOT_FOUND status; dbx must not even
   // be attempted, and both out-pointers must be NULL.
   EXPECT_CALL (UefiLibMock, GetVariable2 (_, _, _, _))
     .WillOnce (Return (EFI_DEVICE_ERROR));
 
-  SIGNATURE_DATABASES  Databases = { NULL, 0, NULL, 0 };
+  SIGNATURE_LISTS  Lists = { NULL, 0, NULL, 0 };
 
   EXPECT_EQ (
-    LoadSignatureDatabases (&Databases),
+    LoadDbAndDbx (&Lists),
     EFI_DEVICE_ERROR
     );
-  EXPECT_EQ (Databases.Db, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbSize, 0u);
-  EXPECT_EQ (Databases.Dbx, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbxSize, 0u);
+  EXPECT_EQ (Lists.AllowList, (VOID *)NULL);
+  EXPECT_EQ (Lists.AllowListSize, 0u);
+  EXPECT_EQ (Lists.RevokeList, (VOID *)NULL);
+  EXPECT_EQ (Lists.RevokeListSize, 0u);
 }
 
-TEST_F (LoadSignatureDatabasesTest, DbxLoadFails_DbFreedAndErrorPropagated) {
+TEST_F (LoadDbAndDbxTest, DbxLoadFails_DbFreedAndErrorPropagated) {
   std::vector<UINT8>  DbBuf;
 
   AppendSignatureList (DbBuf, gEfiCertSha256Guid, 0, kSha256EntrySize, 1);
@@ -887,19 +888,19 @@ TEST_F (LoadSignatureDatabasesTest, DbxLoadFails_DbFreedAndErrorPropagated) {
     .WillOnce (ReturnVariablePayload (DbBuf.data (), DbBuf.size ()))  // db
     .WillOnce (Return (EFI_DEVICE_ERROR));                            // dbx
 
-  SIGNATURE_DATABASES  Databases = { NULL, 0, NULL, 0 };
+  SIGNATURE_LISTS  Lists = { NULL, 0, NULL, 0 };
 
   EXPECT_EQ (
-    LoadSignatureDatabases (&Databases),
+    LoadDbAndDbx (&Lists),
     EFI_DEVICE_ERROR
     );
-  EXPECT_EQ (Databases.Db, (VOID *)NULL);   // freed and nulled
-  EXPECT_EQ (Databases.DbSize, 0u);
-  EXPECT_EQ (Databases.Dbx, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbxSize, 0u);
+  EXPECT_EQ (Lists.AllowList, (VOID *)NULL);   // freed and nulled
+  EXPECT_EQ (Lists.AllowListSize, 0u);
+  EXPECT_EQ (Lists.RevokeList, (VOID *)NULL);
+  EXPECT_EQ (Lists.RevokeListSize, 0u);
 }
 
-TEST_F (LoadSignatureDatabasesTest, DbxLoadFailsWithAllocatedBuffer_DbxFreedAndNulled) {
+TEST_F (LoadDbAndDbxTest, DbxLoadFailsWithAllocatedBuffer_DbxFreedAndNulled) {
   std::vector<UINT8>  DbBuf;
 
   AppendSignatureList (DbBuf, gEfiCertSha256Guid, 0, kSha256EntrySize, 1);
@@ -923,26 +924,26 @@ TEST_F (LoadSignatureDatabasesTest, DbxLoadFailsWithAllocatedBuffer_DbxFreedAndN
          )
        );
 
-  SIGNATURE_DATABASES  Databases = { NULL, 0, NULL, 0 };
+  SIGNATURE_LISTS  Lists = { NULL, 0, NULL, 0 };
 
   EXPECT_EQ (
-    LoadSignatureDatabases (&Databases),
+    LoadDbAndDbx (&Lists),
     EFI_DEVICE_ERROR
     );
-  EXPECT_EQ (Databases.Db, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbSize, 0u);
-  EXPECT_EQ (Databases.Dbx, (VOID *)NULL);
-  EXPECT_EQ (Databases.DbxSize, 0u);
+  EXPECT_EQ (Lists.AllowList, (VOID *)NULL);
+  EXPECT_EQ (Lists.AllowListSize, 0u);
+  EXPECT_EQ (Lists.RevokeList, (VOID *)NULL);
+  EXPECT_EQ (Lists.RevokeListSize, 0u);
 }
 
 // ---------------------------------------------------------------------------
-// IsImageHashInDbx (deny-list, image-hash lists)
+// IsImageHashInRevokeList (image-hash lists)
 // ---------------------------------------------------------------------------
 
 //
 // An unusable subject cache (NULL buffer) is treated as present (fail closed).
 //
-TEST (IsImageHashInDbxTest, UnusableCacheNullBuffer_ReturnsTrue) {
+TEST (IsImageHashInRevokeListTest, UnusableCacheNullBuffer_ReturnsTrue) {
   std::vector<UINT8>  Dbx (32, 0);
   DIGEST_CACHE        Cache;
 
@@ -950,13 +951,13 @@ TEST (IsImageHashInDbxTest, UnusableCacheNullBuffer_ReturnsTrue) {
   Cache.Buffer     = NULL;
   Cache.BufferSize = 4;
 
-  EXPECT_TRUE (IsImageHashInDbx (&Cache, Dbx.data (), Dbx.size ()));
+  EXPECT_TRUE (IsImageHashInRevokeList (&Cache, Dbx.data (), Dbx.size ()));
 }
 
 //
 // An unusable subject cache (zero size) is treated as present (fail closed).
 //
-TEST (IsImageHashInDbxTest, UnusableCacheZeroSize_ReturnsTrue) {
+TEST (IsImageHashInRevokeListTest, UnusableCacheZeroSize_ReturnsTrue) {
   UINT8               SubjectByte = 0x30;
   std::vector<UINT8>  Dbx (32, 0);
   DIGEST_CACHE        Cache;
@@ -965,13 +966,13 @@ TEST (IsImageHashInDbxTest, UnusableCacheZeroSize_ReturnsTrue) {
   Cache.Buffer     = &SubjectByte;
   Cache.BufferSize = 0;
 
-  EXPECT_TRUE (IsImageHashInDbx (&Cache, Dbx.data (), Dbx.size ()));
+  EXPECT_TRUE (IsImageHashInRevokeList (&Cache, Dbx.data (), Dbx.size ()));
 }
 
 //
-// An image subject whose digest is enrolled in the dbx is revoked.
+// An image subject whose digest is enrolled in the revoke-list is revoked.
 //
-TEST (IsImageHashInDbxTest, ImageHashMatch_ReturnsTrue) {
+TEST (IsImageHashInRevokeListTest, ImageHashMatch_ReturnsTrue) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Dbx;
   size_t              Off = AppendSignatureList (Dbx, gEfiCertSha256Guid, 0, kSha256EntrySize, 1);
@@ -981,15 +982,15 @@ TEST (IsImageHashInDbxTest, ImageHashMatch_ReturnsTrue) {
 
   DIGEST_CACHE  Cache = BindDigest (BaseCryptLibMock, Digest);
 
-  EXPECT_TRUE (IsImageHashInDbx (&Cache, Dbx.data (), Dbx.size ()));
+  EXPECT_TRUE (IsImageHashInRevokeList (&Cache, Dbx.data (), Dbx.size ()));
   FreeDigestCache (&Cache);
 }
 
 //
-// A V2 (EFI_SIGNATURE_V2_DATA) image-hash dbx entry honors the ownerless layout the same as the
+// A V2 (EFI_SIGNATURE_V2_DATA) image-hash revoke-list entry honors the ownerless layout the same as the
 // allow-list.
 //
-TEST (IsImageHashInDbxTest, V2ImageHashExactMatch_ReturnsTrue) {
+TEST (IsImageHashInRevokeListTest, V2ImageHashExactMatch_ReturnsTrue) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Dbx;
   size_t              Off = AppendSignatureList (Dbx, gEfiCertV2Sha256Guid, 0, kSha256V2EntrySize, 1);
@@ -999,14 +1000,14 @@ TEST (IsImageHashInDbxTest, V2ImageHashExactMatch_ReturnsTrue) {
 
   DIGEST_CACHE  Cache = BindDigest (BaseCryptLibMock, Target);
 
-  EXPECT_TRUE (IsImageHashInDbx (&Cache, Dbx.data (), Dbx.size ()));
+  EXPECT_TRUE (IsImageHashInRevokeList (&Cache, Dbx.data (), Dbx.size ()));
   FreeDigestCache (&Cache);
 }
 
 //
-// An image subject whose digest is not in the dbx is not revoked.
+// An image subject whose digest is not in the revoke-list is not revoked.
 //
-TEST (IsImageHashInDbxTest, ImageHashNoMatch_ReturnsFalse) {
+TEST (IsImageHashInRevokeListTest, ImageHashNoMatch_ReturnsFalse) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Dbx;
   size_t              Off = AppendSignatureList (Dbx, gEfiCertSha256Guid, 0, kSha256EntrySize, 1);
@@ -1016,7 +1017,7 @@ TEST (IsImageHashInDbxTest, ImageHashNoMatch_ReturnsFalse) {
   std::vector<UINT8>  Digest (kSha256DigestSize, 0xD4);
   DIGEST_CACHE        Cache = BindDigest (BaseCryptLibMock, Digest);
 
-  EXPECT_FALSE (IsImageHashInDbx (&Cache, Dbx.data (), Dbx.size ()));
+  EXPECT_FALSE (IsImageHashInRevokeList (&Cache, Dbx.data (), Dbx.size ()));
   FreeDigestCache (&Cache);
 }
 
@@ -1024,7 +1025,7 @@ TEST (IsImageHashInDbxTest, ImageHashNoMatch_ReturnsFalse) {
 // A supported image-hash list whose digest cannot be computed fails closed (the entry might have
 // matched).
 //
-TEST (IsImageHashInDbxTest, HashComputationFailure_FailsClosed) {
+TEST (IsImageHashInRevokeListTest, HashComputationFailure_FailsClosed) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Dbx;
 
@@ -1039,7 +1040,7 @@ TEST (IsImageHashInDbxTest, HashComputationFailure_FailsClosed) {
   EXPECT_CALL (BaseCryptLibMock, HashAllByGuid (_, _, _, _, _))
     .WillOnce (Return (EFI_DEVICE_ERROR));
 
-  EXPECT_TRUE (IsImageHashInDbx (&Cache, Dbx.data (), Dbx.size ()));
+  EXPECT_TRUE (IsImageHashInRevokeList (&Cache, Dbx.data (), Dbx.size ()));
 }
 
 //
@@ -1047,7 +1048,7 @@ TEST (IsImageHashInDbxTest, HashComputationFailure_FailsClosed) {
 // closed: even though the subject is not in the valid prefix, the dropped tail
 // might have matched it.
 //
-TEST (IsImageHashInDbxTest, MalformedTail_FailsClosed) {
+TEST (IsImageHashInRevokeListTest, MalformedTail_FailsClosed) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Dbx;
   size_t              Off = AppendSignatureList (Dbx, gEfiCertSha256Guid, 0, kSha256EntrySize, 1);
@@ -1060,18 +1061,18 @@ TEST (IsImageHashInDbxTest, MalformedTail_FailsClosed) {
   std::vector<UINT8>  Digest (kSha256DigestSize, 0x99);   // not the enrolled entry
   DIGEST_CACHE        Cache = BindDigest (BaseCryptLibMock, Digest);
 
-  EXPECT_TRUE (IsImageHashInDbx (&Cache, Dbx.data (), Dbx.size ()));
+  EXPECT_TRUE (IsImageHashInRevokeList (&Cache, Dbx.data (), Dbx.size ()));
   FreeDigestCache (&Cache);
 }
 
 // ---------------------------------------------------------------------------
-// IsTbsHashInDbx (deny-list, X.509 TBS-cert-hash lists)
+// IsTbsHashInRevokeList (X.509 TBS-cert-hash lists)
 // ---------------------------------------------------------------------------
 
 //
-// An EFI_CERT_X509_SHA256 dbx list whose entry holds the subject's TBS hash marks it revoked.
+// An EFI_CERT_X509_SHA256 revoke-list whose entry holds the subject's TBS hash marks it revoked.
 //
-TEST (IsTbsHashInDbxTest, TbsHashMatch_ReturnsTrue) {
+TEST (IsTbsHashInRevokeListTest, TbsHashMatch_ReturnsTrue) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Dbx;
   size_t              Off = AppendSignatureList (Dbx, gEfiCertX509Sha256Guid, 0, kSha256TbsV1EntrySize, 1);
@@ -1081,15 +1082,15 @@ TEST (IsTbsHashInDbxTest, TbsHashMatch_ReturnsTrue) {
 
   DIGEST_CACHE  Cache = BindDigest (BaseCryptLibMock, TbsHash);
 
-  EXPECT_TRUE (IsTbsHashInDbx (&Cache, Dbx.data (), Dbx.size ()));
+  EXPECT_TRUE (IsTbsHashInRevokeList (&Cache, Dbx.data (), Dbx.size ()));
   FreeDigestCache (&Cache);
 }
 
 //
-// An EFI_CERT_X509_SHA256 dbx list whose entry digest differs from the subject's TBS hash is not a
+// An EFI_CERT_X509_SHA256 revoke-list whose entry digest differs from the subject's TBS hash is not a
 // match.
 //
-TEST (IsTbsHashInDbxTest, TbsHashDiffers_ReturnsFalse) {
+TEST (IsTbsHashInRevokeListTest, TbsHashDiffers_ReturnsFalse) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Dbx;
   size_t              Off = AppendSignatureList (Dbx, gEfiCertX509Sha256Guid, 0, kSha256TbsV1EntrySize, 1);
@@ -1099,14 +1100,14 @@ TEST (IsTbsHashInDbxTest, TbsHashDiffers_ReturnsFalse) {
   std::vector<UINT8>  TbsHash (kSha256DigestSize, 0x77);
   DIGEST_CACHE        Cache = BindDigest (BaseCryptLibMock, TbsHash);
 
-  EXPECT_FALSE (IsTbsHashInDbx (&Cache, Dbx.data (), Dbx.size ()));
+  EXPECT_FALSE (IsTbsHashInRevokeList (&Cache, Dbx.data (), Dbx.size ()));
   FreeDigestCache (&Cache);
 }
 
 //
 // If the subject's TBS hash cannot be computed for a cert-hash list, the search fails closed.
 //
-TEST (IsTbsHashInDbxTest, TbsHashComputeFails_ReturnsTrue) {
+TEST (IsTbsHashInRevokeListTest, TbsHashComputeFails_ReturnsTrue) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Dbx;
 
@@ -1121,56 +1122,56 @@ TEST (IsTbsHashInDbxTest, TbsHashComputeFails_ReturnsTrue) {
   EXPECT_CALL (BaseCryptLibMock, HashAllByGuid (_, _, _, _, _))
     .WillOnce (Return (EFI_DEVICE_ERROR));
 
-  EXPECT_TRUE (IsTbsHashInDbx (&Cache, Dbx.data (), Dbx.size ()));
+  EXPECT_TRUE (IsTbsHashInRevokeList (&Cache, Dbx.data (), Dbx.size ()));
 }
 
 // ---------------------------------------------------------------------------
-// IsCertInDbx (deny-list, full X.509 certificate lists)
+// IsCertInRevokeList (full X.509 certificate lists)
 // ---------------------------------------------------------------------------
 
 //
 // An unusable certificate is treated as present (fail closed).
 //
-TEST (IsCertInDbxTest, UnusableCert_ReturnsTrue) {
+TEST (IsCertInRevokeListTest, UnusableCert_ReturnsTrue) {
   std::vector<UINT8>  Dbx (32, 0);
 
-  EXPECT_TRUE (IsCertInDbx (NULL, 0, Dbx.data (), Dbx.size ()));
+  EXPECT_TRUE (IsCertInRevokeList (NULL, 0, Dbx.data (), Dbx.size ()));
 }
 
 //
-// A NULL dbx means nothing is revoked.
+// A NULL revoke-list means nothing is revoked.
 //
-TEST (IsCertInDbxTest, NullDbx_ReturnsFalse) {
+TEST (IsCertInRevokeListTest, NullRevokeList_ReturnsFalse) {
   std::vector<UINT8>  Cert = { 0x30, 0x82 };
 
-  EXPECT_FALSE (IsCertInDbx (Cert.data (), Cert.size (), NULL, 0));
+  EXPECT_FALSE (IsCertInRevokeList (Cert.data (), Cert.size (), NULL, 0));
 }
 
 //
-// An empty dbx means nothing is revoked.
+// An empty revoke-list means nothing is revoked.
 //
-TEST (IsCertInDbxTest, EmptyDbx_ReturnsFalse) {
+TEST (IsCertInRevokeListTest, EmptyRevokeList_ReturnsFalse) {
   std::vector<UINT8>  Cert = { 0x30, 0x82 };
   std::vector<UINT8>  Dbx (32, 0);
 
-  EXPECT_FALSE (IsCertInDbx (Cert.data (), Cert.size (), Dbx.data (), 0));
+  EXPECT_FALSE (IsCertInRevokeList (Cert.data (), Cert.size (), Dbx.data (), 0));
 }
 
 //
-// A dbx too small to contain a signature-list header must fail closed.
+// A revoke-list too small to contain a signature-list header must fail closed.
 //
-TEST (IsCertInDbxTest, MalformedDbx_ReturnsTrue) {
+TEST (IsCertInRevokeListTest, MalformedRevokeList_ReturnsTrue) {
   std::vector<UINT8>  Cert = { 0x30, 0x82 };
   std::vector<UINT8>  Dbx (4, 0);
 
-  EXPECT_TRUE (IsCertInDbx (Cert.data (), Cert.size (), Dbx.data (), Dbx.size ()));
+  EXPECT_TRUE (IsCertInRevokeList (Cert.data (), Cert.size (), Dbx.data (), Dbx.size ()));
 }
 
 //
 // An EFI_CERT_X509 list whose entry payload matches the certificate byte-for-byte (same length)
 // marks the certificate as revoked.
 //
-TEST (IsCertInDbxTest, X509ExactMatch_ReturnsTrue) {
+TEST (IsCertInRevokeListTest, X509ExactMatch_ReturnsTrue) {
   std::vector<UINT8>  Cert (16, 0x11);
   std::vector<UINT8>  Dbx;
 
@@ -1178,14 +1179,14 @@ TEST (IsCertInDbxTest, X509ExactMatch_ReturnsTrue) {
 
   SetEntryPayload (Dbx, Off, 0, Cert);
 
-  EXPECT_TRUE (IsCertInDbx (Cert.data (), Cert.size (), Dbx.data (), Dbx.size ()));
+  EXPECT_TRUE (IsCertInRevokeList (Cert.data (), Cert.size (), Dbx.data (), Dbx.size ()));
 }
 
 //
-// A V2 (EFI_SIGNATURE_V2_DATA) full-certificate dbx list stores the DER certificate with no owner
+// A V2 (EFI_SIGNATURE_V2_DATA) full-certificate revoke-list stores the DER certificate with no owner
 // prefix.
 //
-TEST (IsCertInDbxTest, V2X509ExactMatch_ReturnsTrue) {
+TEST (IsCertInRevokeListTest, V2X509ExactMatch_ReturnsTrue) {
   std::vector<UINT8>  Cert (24, 0xC7);
   std::vector<UINT8>  Dbx;
 
@@ -1193,13 +1194,13 @@ TEST (IsCertInDbxTest, V2X509ExactMatch_ReturnsTrue) {
 
   SetV2EntryPayload (Dbx, Off, 0, Cert);
 
-  EXPECT_TRUE (IsCertInDbx (Cert.data (), Cert.size (), Dbx.data (), Dbx.size ()));
+  EXPECT_TRUE (IsCertInRevokeList (Cert.data (), Cert.size (), Dbx.data (), Dbx.size ()));
 }
 
 //
 // An EFI_CERT_X509 list whose entry payload differs from the certificate is not a match.
 //
-TEST (IsCertInDbxTest, X509BytesDiffer_ReturnsFalse) {
+TEST (IsCertInRevokeListTest, X509BytesDiffer_ReturnsFalse) {
   std::vector<UINT8>  Cert (16, 0x11);
   std::vector<UINT8>  Dbx;
 
@@ -1207,14 +1208,14 @@ TEST (IsCertInDbxTest, X509BytesDiffer_ReturnsFalse) {
 
   SetEntryPayload (Dbx, Off, 0, std::vector<UINT8>(16, 0x22));
 
-  EXPECT_FALSE (IsCertInDbx (Cert.data (), Cert.size (), Dbx.data (), Dbx.size ()));
+  EXPECT_FALSE (IsCertInRevokeList (Cert.data (), Cert.size (), Dbx.data (), Dbx.size ()));
 }
 
 //
 // An EFI_CERT_X509 list whose entry payload size differs from the certificate size is skipped (not
 // a match).
 //
-TEST (IsCertInDbxTest, X509PayloadSizeMismatch_ReturnsFalse) {
+TEST (IsCertInRevokeListTest, X509PayloadSizeMismatch_ReturnsFalse) {
   std::vector<UINT8>  Cert (16, 0x11);
   std::vector<UINT8>  Dbx;
 
@@ -1222,20 +1223,20 @@ TEST (IsCertInDbxTest, X509PayloadSizeMismatch_ReturnsFalse) {
 
   SetEntryPayload (Dbx, Off, 0, std::vector<UINT8>(32, 0x11));
 
-  EXPECT_FALSE (IsCertInDbx (Cert.data (), Cert.size (), Dbx.data (), Dbx.size ()));
+  EXPECT_FALSE (IsCertInRevokeList (Cert.data (), Cert.size (), Dbx.data (), Dbx.size ()));
 }
 
 //
 // A list whose type is not EFI_CERT_X509 (here an image-hash list) is not a full-certificate list
 // and is skipped.
 //
-TEST (IsCertInDbxTest, NonX509List_ReturnsFalse) {
+TEST (IsCertInRevokeListTest, NonX509List_ReturnsFalse) {
   std::vector<UINT8>  Cert (8, 0x30);
   std::vector<UINT8>  Dbx;
 
   AppendSignatureList (Dbx, gEfiCertSha256Guid, 0, kSha256EntrySize, 1);
 
-  EXPECT_FALSE (IsCertInDbx (Cert.data (), Cert.size (), Dbx.data (), Dbx.size ()));
+  EXPECT_FALSE (IsCertInRevokeList (Cert.data (), Cert.size (), Dbx.data (), Dbx.size ()));
 }
 
 // ---------------------------------------------------------------------------
@@ -1245,8 +1246,8 @@ TEST (IsCertInDbxTest, NonX509List_ReturnsFalse) {
 //
 // Mock X509GetTBSCert () to hand back the whole certificate as its own TBSCertificate. IsChainRevoked
 // pre-extracts the TBSCertificate of every chain certificate; the exact bytes are irrelevant to
-// these tests, where chain revocation is decided by the exact-DER IsCertInDbx path (or a parse
-// failure) rather than a TBS-cert-hash match.
+// these tests, where chain revocation is decided by the exact-DER IsCertInRevokeList path (or a
+// parse failure) rather than a TBS-cert-hash match.
 //
 static void
 ExpectTbsExtractionPassthrough (
@@ -1265,7 +1266,7 @@ ExpectTbsExtractionPassthrough (
        );
 }
 
-TEST (IsChainRevokedTest, NullAuthData_ReturnsTrue) {
+TEST (IsChainRevokedTest, NullCertChain_ReturnsTrue) {
   std::vector<UINT8>  Dbx (32, 0);
 
   EXPECT_TRUE (
@@ -1278,12 +1279,12 @@ TEST (IsChainRevokedTest, NullAuthData_ReturnsTrue) {
     );
 }
 
-TEST (IsChainRevokedTest, ZeroAuthDataSize_ReturnsTrue) {
+TEST (IsChainRevokedTest, ZeroCertChainSize_ReturnsTrue) {
   std::vector<UINT8>  Dbx (32, 0);
 
   EXPECT_TRUE (
     IsChainRevoked (
-      kAuthDataDefault.data (),
+      kSignatureDataDefault.data (),
       0,
       Dbx.data (),
       Dbx.size ()
@@ -1318,10 +1319,10 @@ TEST (IsChainRevokedTest, NullAnchor_ReturnsTrue) {
 }
 
 //
-// With valid inputs but no dbx, nothing is revoked and the chain is
+// With valid inputs but no revoke-list, nothing is revoked and the chain is
 // never built.
 //
-TEST (IsChainRevokedTest, NullDbx_ReturnsFalse) {
+TEST (IsChainRevokedTest, NullRevokeList_ReturnsFalse) {
   std::vector<UINT8>  Stack = MakeCertStack ({ std::vector<UINT8>(8, 0x22) });
 
   EXPECT_FALSE (
@@ -1334,7 +1335,7 @@ TEST (IsChainRevokedTest, NullDbx_ReturnsFalse) {
     );
 }
 
-TEST (IsChainRevokedTest, EmptyDbx_ReturnsFalse) {
+TEST (IsChainRevokedTest, EmptyRevokeList_ReturnsFalse) {
   std::vector<UINT8>  Stack = MakeCertStack ({ std::vector<UINT8>(8, 0x22) });
   std::vector<UINT8>  Dbx;
 
@@ -1385,9 +1386,9 @@ TEST (IsChainRevokedTest, EmptyChain_ReturnsTrue) {
 }
 
 //
-// A chain cert that is listed in dbx (exact DER match) revokes the chain.
+// A chain cert that is listed in the revoke-list (exact DER match) revokes the chain.
 //
-TEST (IsChainRevokedTest, ChainCertInDbx_ReturnsTrue) {
+TEST (IsChainRevokedTest, ChainCertInRevokeList_ReturnsTrue) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  ChainCert (16, 0x11);
   std::vector<UINT8>  Dbx;
@@ -1411,9 +1412,9 @@ TEST (IsChainRevokedTest, ChainCertInDbx_ReturnsTrue) {
 }
 
 //
-// A chain whose certs are not in dbx is not revoked.
+// A chain whose certs are not in the revoke-list is not revoked.
 //
-TEST (IsChainRevokedTest, ChainCertNotInDbx_ReturnsFalse) {
+TEST (IsChainRevokedTest, ChainCertNotInRevokeList_ReturnsFalse) {
   MockBaseCryptLib    BaseCryptLibMock;
   std::vector<UINT8>  Dbx;
 
@@ -1465,35 +1466,35 @@ TEST (IsChainRevokedTest, MalformedChain_ReturnsTrue) {
 }
 
 // ---------------------------------------------------------------------------
-// ExtractAuthData (Support.c)
+// ExtractSignatureData (Support.c)
 // ---------------------------------------------------------------------------
 
-TEST (ExtractAuthDataTest, NullCert_ReturnsInvalidParameter) {
-  const UINT8  *AuthData    = NULL;
-  UINTN        AuthDataSize = 0;
+TEST (ExtractSignatureDataTest, NullCert_ReturnsInvalidParameter) {
+  const UINT8  *SignatureData    = NULL;
+  UINTN        SignatureDataSize = 0;
 
   EXPECT_EQ (
-    ExtractAuthData (NULL, &AuthData, &AuthDataSize),
+    ExtractSignatureData (NULL, &SignatureData, &SignatureDataSize),
     EFI_INVALID_PARAMETER
     );
 }
 
-TEST (ExtractAuthDataTest, NullOutputs_ReturnsInvalidParameter) {
-  WIN_CERTIFICATE  Cert         = { sizeof (WIN_CERTIFICATE) + 1, 0x0200, WIN_CERT_TYPE_PKCS_SIGNED_DATA };
-  const UINT8      *AuthData    = NULL;
-  UINTN            AuthDataSize = 0;
+TEST (ExtractSignatureDataTest, NullOutputs_ReturnsInvalidParameter) {
+  WIN_CERTIFICATE  Cert              = { sizeof (WIN_CERTIFICATE) + 1, 0x0200, WIN_CERT_TYPE_PKCS_SIGNED_DATA };
+  const UINT8      *SignatureData    = NULL;
+  UINTN            SignatureDataSize = 0;
 
   EXPECT_EQ (
-    ExtractAuthData (&Cert, NULL, &AuthDataSize),
+    ExtractSignatureData (&Cert, NULL, &SignatureDataSize),
     EFI_INVALID_PARAMETER
     );
   EXPECT_EQ (
-    ExtractAuthData (&Cert, &AuthData, NULL),
+    ExtractSignatureData (&Cert, &SignatureData, NULL),
     EFI_INVALID_PARAMETER
     );
 }
 
-TEST (ExtractAuthDataTest, PkcsSignedData_ExtractsPayload) {
+TEST (ExtractSignatureDataTest, PkcsSignedData_ExtractsPayload) {
   // Build a WIN_CERTIFICATE followed by 4 bytes of payload.
   const UINT8         Payload[] = { 0xAA, 0xBB, 0xCC, 0xDD };
   std::vector<UINT8>  Buffer (sizeof (WIN_CERTIFICATE) + sizeof (Payload), 0);
@@ -1504,29 +1505,29 @@ TEST (ExtractAuthDataTest, PkcsSignedData_ExtractsPayload) {
   Cert->wCertificateType = WIN_CERT_TYPE_PKCS_SIGNED_DATA;
   std::memcpy (Buffer.data () + sizeof (WIN_CERTIFICATE), Payload, sizeof (Payload));
 
-  const UINT8  *AuthData    = NULL;
-  UINTN        AuthDataSize = 0;
+  const UINT8  *SignatureData    = NULL;
+  UINTN        SignatureDataSize = 0;
 
   EXPECT_EQ (
-    ExtractAuthData (Cert, &AuthData, &AuthDataSize),
+    ExtractSignatureData (Cert, &SignatureData, &SignatureDataSize),
     EFI_SUCCESS
     );
-  ASSERT_EQ (AuthDataSize, sizeof (Payload));
-  EXPECT_EQ (0, std::memcmp (AuthData, Payload, sizeof (Payload)));
+  ASSERT_EQ (SignatureDataSize, sizeof (Payload));
+  EXPECT_EQ (0, std::memcmp (SignatureData, Payload, sizeof (Payload)));
 }
 
-TEST (ExtractAuthDataTest, PkcsSignedData_HeaderOnly_ReturnsCorrupted) {
-  WIN_CERTIFICATE  Cert         = { sizeof (WIN_CERTIFICATE), 0x0200, WIN_CERT_TYPE_PKCS_SIGNED_DATA };
-  const UINT8      *AuthData    = NULL;
-  UINTN            AuthDataSize = 0;
+TEST (ExtractSignatureDataTest, PkcsSignedData_HeaderOnly_ReturnsCorrupted) {
+  WIN_CERTIFICATE  Cert              = { sizeof (WIN_CERTIFICATE), 0x0200, WIN_CERT_TYPE_PKCS_SIGNED_DATA };
+  const UINT8      *SignatureData    = NULL;
+  UINTN            SignatureDataSize = 0;
 
   EXPECT_EQ (
-    ExtractAuthData (&Cert, &AuthData, &AuthDataSize),
+    ExtractSignatureData (&Cert, &SignatureData, &SignatureDataSize),
     EFI_VOLUME_CORRUPTED
     );
 }
 
-TEST (ExtractAuthDataTest, EfiGuidAuthenticodeSignature_ExtractsPayload) {
+TEST (ExtractSignatureDataTest, EfiGuidAuthenticodeSignature_ExtractsPayload) {
   const UINT8                Payload[]  = { 0x11, 0x22, 0x33 };
   const size_t               HeaderSize = OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData);
   std::vector<UINT8>         Buffer (HeaderSize + sizeof (Payload), 0);
@@ -1538,18 +1539,18 @@ TEST (ExtractAuthDataTest, EfiGuidAuthenticodeSignature_ExtractsPayload) {
   CopyMem (&UefiCert->CertType, &gEfiCertPkcs7Guid, sizeof (EFI_GUID));
   std::memcpy (Buffer.data () + HeaderSize, Payload, sizeof (Payload));
 
-  const UINT8  *AuthData    = NULL;
-  UINTN        AuthDataSize = 0;
+  const UINT8  *SignatureData    = NULL;
+  UINTN        SignatureDataSize = 0;
 
   EXPECT_EQ (
-    ExtractAuthData (&UefiCert->Hdr, &AuthData, &AuthDataSize),
+    ExtractSignatureData (&UefiCert->Hdr, &SignatureData, &SignatureDataSize),
     EFI_SUCCESS
     );
-  ASSERT_EQ (AuthDataSize, sizeof (Payload));
-  EXPECT_EQ (0, std::memcmp (AuthData, Payload, sizeof (Payload)));
+  ASSERT_EQ (SignatureDataSize, sizeof (Payload));
+  EXPECT_EQ (0, std::memcmp (SignatureData, Payload, sizeof (Payload)));
 }
 
-TEST (ExtractAuthDataTest, EfiGuidOtherSignatureType_ReturnsUnsupported) {
+TEST (ExtractSignatureDataTest, EfiGuidOtherSignatureType_ReturnsUnsupported) {
   const size_t               HeaderSize = OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData);
   std::vector<UINT8>         Buffer (HeaderSize + 4, 0);
   WIN_CERTIFICATE_UEFI_GUID  *UefiCert = (WIN_CERTIFICATE_UEFI_GUID *)Buffer.data ();
@@ -1561,16 +1562,16 @@ TEST (ExtractAuthDataTest, EfiGuidOtherSignatureType_ReturnsUnsupported) {
   UefiCert->Hdr.wCertificateType = WIN_CERT_TYPE_EFI_GUID;
   CopyMem (&UefiCert->CertType, &OtherGuid, sizeof (EFI_GUID));
 
-  const UINT8  *AuthData    = NULL;
-  UINTN        AuthDataSize = 0;
+  const UINT8  *SignatureData    = NULL;
+  UINTN        SignatureDataSize = 0;
 
   EXPECT_EQ (
-    ExtractAuthData (&UefiCert->Hdr, &AuthData, &AuthDataSize),
+    ExtractSignatureData (&UefiCert->Hdr, &SignatureData, &SignatureDataSize),
     EFI_UNSUPPORTED
     );
 }
 
-TEST (ExtractAuthDataTest, EfiGuid_HeaderOnly_ReturnsCorrupted) {
+TEST (ExtractSignatureDataTest, EfiGuid_HeaderOnly_ReturnsCorrupted) {
   WIN_CERTIFICATE_UEFI_GUID  UefiCert;
 
   ZeroMem (&UefiCert, sizeof (UefiCert));
@@ -1578,22 +1579,22 @@ TEST (ExtractAuthDataTest, EfiGuid_HeaderOnly_ReturnsCorrupted) {
   UefiCert.Hdr.wRevision        = 0x0200;
   UefiCert.Hdr.wCertificateType = WIN_CERT_TYPE_EFI_GUID;
 
-  const UINT8  *AuthData    = NULL;
-  UINTN        AuthDataSize = 0;
+  const UINT8  *SignatureData    = NULL;
+  UINTN        SignatureDataSize = 0;
 
   EXPECT_EQ (
-    ExtractAuthData (&UefiCert.Hdr, &AuthData, &AuthDataSize),
+    ExtractSignatureData (&UefiCert.Hdr, &SignatureData, &SignatureDataSize),
     EFI_VOLUME_CORRUPTED
     );
 }
 
-TEST (ExtractAuthDataTest, UnknownCertType_ReturnsUnsupported) {
-  WIN_CERTIFICATE  Cert         = { sizeof (WIN_CERTIFICATE) + 8, 0x0200, WIN_CERT_TYPE_EFI_PKCS115 };
-  const UINT8      *AuthData    = NULL;
-  UINTN            AuthDataSize = 0;
+TEST (ExtractSignatureDataTest, UnknownCertType_ReturnsUnsupported) {
+  WIN_CERTIFICATE  Cert              = { sizeof (WIN_CERTIFICATE) + 8, 0x0200, WIN_CERT_TYPE_EFI_PKCS115 };
+  const UINT8      *SignatureData    = NULL;
+  UINTN            SignatureDataSize = 0;
 
   EXPECT_EQ (
-    ExtractAuthData (&Cert, &AuthData, &AuthDataSize),
+    ExtractSignatureData (&Cert, &SignatureData, &SignatureDataSize),
     EFI_UNSUPPORTED
     );
 }
@@ -1603,7 +1604,7 @@ TEST (ExtractAuthDataTest, UnknownCertType_ReturnsUnsupported) {
 // ---------------------------------------------------------------------------
 
 //
-// Install the mock expectations shared by every db-walk scenario: the image
+// Install the mock expectations shared by every allow-list walk scenario: the image
 // hash algorithm resolves to SHA-256 and the image hash is produced.
 //
 static void
@@ -1625,19 +1626,19 @@ ExpectSignedImagePrelude (
 }
 
 //
-// A NULL AuthData pointer is rejected up front with EFI_INVALID_PARAMETER;
+// A NULL SignatureData pointer is rejected up front with EFI_INVALID_PARAMETER;
 // no crypto is consulted and no verdict is produced.
 //
-TEST (EvaluateSignatureTest, NullAuthData_ReturnsInvalidParameter) {
-  DIGEST_CACHE           Cache;
-  SIGNATURE_DATABASES    Databases = { NULL, 0, NULL, 0 };
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, NullSignatureData_ReturnsInvalidParameter) {
+  DIGEST_CACHE                Cache;
+  SIGNATURE_LISTS             Lists = { NULL, 0, NULL, 0 };
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
 
   EXPECT_EQ (
-    EvaluateSignature (NULL, kAuthDataDefault.size (), &Cache, &Databases, &Eval),
+    EvaluateSignature (NULL, kSignatureDataDefault.size (), &Cache, &Lists, &Eval),
     EFI_INVALID_PARAMETER
     );
 }
@@ -1646,17 +1647,17 @@ TEST (EvaluateSignatureTest, NullAuthData_ReturnsInvalidParameter) {
 // A NULL digest cache is rejected up front with EFI_INVALID_PARAMETER.
 //
 TEST (EvaluateSignatureTest, NullCache_ReturnsInvalidParameter) {
-  SIGNATURE_DATABASES    Databases = { NULL, 0, NULL, 0 };
-  IMAGE_CERT_EVALUATION  Eval;
+  SIGNATURE_LISTS             Lists = { NULL, 0, NULL, 0 };
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   ZeroMem (&Eval, sizeof (Eval));
 
   EXPECT_EQ (
     EvaluateSignature (
-      kAuthDataDefault.data (),
-      kAuthDataDefault.size (),
+      kSignatureDataDefault.data (),
+      kSignatureDataDefault.size (),
       NULL,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_INVALID_PARAMETER
@@ -1666,17 +1667,17 @@ TEST (EvaluateSignatureTest, NullCache_ReturnsInvalidParameter) {
 //
 // A NULL databases pointer is rejected up front with EFI_INVALID_PARAMETER.
 //
-TEST (EvaluateSignatureTest, NullDatabases_ReturnsInvalidParameter) {
-  DIGEST_CACHE           Cache;
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, NullLists_ReturnsInvalidParameter) {
+  DIGEST_CACHE                Cache;
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
 
   EXPECT_EQ (
     EvaluateSignature (
-      kAuthDataDefault.data (),
-      kAuthDataDefault.size (),
+      kSignatureDataDefault.data (),
+      kSignatureDataDefault.size (),
       &Cache,
       NULL,
       &Eval
@@ -1690,17 +1691,17 @@ TEST (EvaluateSignatureTest, NullDatabases_ReturnsInvalidParameter) {
 // EFI_INVALID_PARAMETER.
 //
 TEST (EvaluateSignatureTest, NullEvaluation_ReturnsInvalidParameter) {
-  DIGEST_CACHE         Cache;
-  SIGNATURE_DATABASES  Databases = { NULL, 0, NULL, 0 };
+  DIGEST_CACHE     Cache;
+  SIGNATURE_LISTS  Lists = { NULL, 0, NULL, 0 };
 
   InitImageCache (Cache);
 
   EXPECT_EQ (
     EvaluateSignature (
-      kAuthDataDefault.data (),
-      kAuthDataDefault.size (),
+      kSignatureDataDefault.data (),
+      kSignatureDataDefault.size (),
       &Cache,
-      &Databases,
+      &Lists,
       NULL
       ),
     EFI_INVALID_PARAMETER
@@ -1708,18 +1709,18 @@ TEST (EvaluateSignatureTest, NullEvaluation_ReturnsInvalidParameter) {
 }
 
 //
-// An empty AuthData buffer is rejected up front with EFI_INVALID_PARAMETER.
+// An empty SignatureData buffer is rejected up front with EFI_INVALID_PARAMETER.
 //
-TEST (EvaluateSignatureTest, EmptyAuthData_ReturnsInvalidParameter) {
-  DIGEST_CACHE           Cache;
-  SIGNATURE_DATABASES    Databases = { NULL, 0, NULL, 0 };
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, EmptySignatureData_ReturnsInvalidParameter) {
+  DIGEST_CACHE                Cache;
+  SIGNATURE_LISTS             Lists = { NULL, 0, NULL, 0 };
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
 
   EXPECT_EQ (
-    EvaluateSignature (kAuthDataDefault.data (), 0, &Cache, &Databases, &Eval),
+    EvaluateSignature (kSignatureDataDefault.data (), 0, &Cache, &Lists, &Eval),
     EFI_INVALID_PARAMETER
     );
 }
@@ -1730,11 +1731,11 @@ TEST (EvaluateSignatureTest, EmptyAuthData_ReturnsInvalidParameter) {
 // and no anchor is verified.
 //
 TEST (EvaluateSignatureTest, HashAlgorithmFails_Unusable) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf   = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  SIGNATURE_DATABASES    Databases = { NULL, 0, NULL, 0 };
-  IMAGE_CERT_EVALUATION  Eval;
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  SIGNATURE_LISTS             Lists   = { NULL, 0, NULL, 0 };
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -1748,12 +1749,12 @@ TEST (EvaluateSignatureTest, HashAlgorithmFails_Unusable) {
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertUnusable);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureUnusable);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
 }
 
@@ -1763,11 +1764,11 @@ TEST (EvaluateSignatureTest, HashAlgorithmFails_Unusable) {
 // This is the only non-INVALID_PARAMETER error path; no verdict is asserted.
 //
 TEST (EvaluateSignatureTest, ImageHashFails_ReturnsError) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf   = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  SIGNATURE_DATABASES    Databases = { NULL, 0, NULL, 0 };
-  IMAGE_CERT_EVALUATION  Eval;
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  SIGNATURE_LISTS             Lists   = { NULL, 0, NULL, 0 };
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -1789,7 +1790,7 @@ TEST (EvaluateSignatureTest, ImageHashFails_ReturnsError) {
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_DEVICE_ERROR
@@ -1797,15 +1798,15 @@ TEST (EvaluateSignatureTest, ImageHashFails_ReturnsError) {
 }
 
 //
-// Signer extraction is no longer a separate prerequisite. With an empty db,
+// Signer extraction is no longer a separate prerequisite. With an empty allow-list,
 // evaluation completes without invoking a verifier.
 //
-TEST (EvaluateSignatureTest, SignerExtractionNotRequired_NotInDb) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf   = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  SIGNATURE_DATABASES    Databases = { NULL, 0, NULL, 0 };
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, SignerExtractionNotRequired_NotAuthorized) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  SIGNATURE_LISTS             Lists   = { NULL, 0, NULL, 0 };
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -1818,24 +1819,24 @@ TEST (EvaluateSignatureTest, SignerExtractionNotRequired_NotInDb) {
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertNotInDb);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureNotAuthorized);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
 }
 
 //
 // The evaluator never calls the legacy signer-extraction API.
 //
-TEST (EvaluateSignatureTest, LegacySignerApiNotCalled_NotInDb) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf   = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  SIGNATURE_DATABASES    Databases = { NULL, 0, NULL, 0 };
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, LegacySignerApiNotCalled_NotAuthorized) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  SIGNATURE_LISTS             Lists   = { NULL, 0, NULL, 0 };
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -1849,26 +1850,26 @@ TEST (EvaluateSignatureTest, LegacySignerApiNotCalled_NotInDb) {
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertNotInDb);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureNotAuthorized);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
 }
 
 //
-// The prelude succeeds and a signer is available, but the db is empty. No
-// anchor matches, so the verdict is ImageCertNotInDb and AuthenticodeVerifyEx is
+// The prelude succeeds and a signer is available, but the allow-list is empty. No
+// anchor matches, so the verdict is ImageSignatureNotAuthorized and AuthenticodeVerifyEx is
 // never called.
 //
-TEST (EvaluateSignatureTest, EmptyDb_NotInDb) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf   = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  SIGNATURE_DATABASES    Databases = { NULL, 0, NULL, 0 };
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, EmptyAllowList_NotAuthorized) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  SIGNATURE_LISTS             Lists   = { NULL, 0, NULL, 0 };
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -1880,25 +1881,25 @@ TEST (EvaluateSignatureTest, EmptyDb_NotInDb) {
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertNotInDb);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureNotAuthorized);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
 }
 
 //
-// A single EFI_CERT_X509 db trust anchor verifies the image and there is no
-// dbx (so no chain is built). The image is approved and the authority points
-// at the matching db entry.
+// A single EFI_CERT_X509 allow-list trust anchor verifies the image and there is no
+// revoke-list (so no chain is built). The signature is allowed and the authority points
+// at the matching allow-list entry.
 //
-TEST (EvaluateSignatureTest, X509VerifiesNoDbx_Approved) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, X509VerifiesNoRevokeList_Allowed) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -1912,33 +1913,33 @@ TEST (EvaluateSignatureTest, X509VerifiesNoDbx_Approved) {
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _))
     .WillOnce (Return (EFI_SUCCESS));
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertApproved);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureAllowed);
   EXPECT_NE (Eval.Authority.Data, nullptr);
   EXPECT_EQ (Eval.Authority.Size, (UINTN)(sizeof (EFI_GUID) + 16));
 }
 
 //
-// A V2 (EFI_SIGNATURE_V2_DATA) full-certificate db anchor carries no owner GUID; the whole entry
+// A V2 (EFI_SIGNATURE_V2_DATA) full-certificate allow-list anchor carries no owner GUID; the whole entry
 // is the DER certificate handed to AuthenticodeVerifyEx. The recorded authority normalizes it to a
 // V1 EFI_SIGNATURE_DATA by prepending a zeroed owner GUID, so its size is the certificate plus a
 // SignatureOwner.
 //
-TEST (EvaluateSignatureTest, V2X509VerifiesNoDbx_Approved) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, V2X509VerifiesNoRevokeList_Allowed) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -1952,18 +1953,18 @@ TEST (EvaluateSignatureTest, V2X509VerifiesNoDbx_Approved) {
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _))
     .WillOnce (Return (EFI_SUCCESS));
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertApproved);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureAllowed);
   EXPECT_NE (Eval.Authority.Data, nullptr);
   // The V2 anchor carries no owner GUID, so the authority prepends a zeroed one to the certificate.
   EXPECT_EQ (Eval.Authority.Size, (UINTN)(sizeof (EFI_GUID) + 16));
@@ -1971,15 +1972,15 @@ TEST (EvaluateSignatureTest, V2X509VerifiesNoDbx_Approved) {
 }
 
 //
-// A V2 (EFI_SIGNATURE_V2_DATA) TBS-cert-hash db entry holds only the hash (no owner GUID, no v1
+// A V2 (EFI_SIGNATURE_V2_DATA) TBS-cert-hash allow-list entry holds only the hash (no owner GUID, no v1
 // TimeOfRevocation). The full hash region is passed to GetTrustAnchorX509FromAuthData; this asserts
 // the size passed reflects the ownerless entry.
 //
-TEST (EvaluateSignatureTest, V2X509HashListResolvesAnchor_Approved) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, V2X509HashListResolvesAnchor_Allowed) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -2010,30 +2011,30 @@ TEST (EvaluateSignatureTest, V2X509HashListResolvesAnchor_Approved) {
     .WillOnce (Return (EFI_SUCCESS));
   EXPECT_CALL (BaseCryptLibMock, FreeTrustAnchorX509Cache (_)).Times (1);
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertApproved);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureAllowed);
   EXPECT_NE (Eval.Authority.Data, nullptr);
 }
 
 //
 // A single EFI_CERT_X509 trust anchor is present but AuthenticodeVerifyEx rejects
-// the image. No anchor authorizes it, so the verdict is ImageCertNotInDb.
+// the image. No anchor authorizes it, so the verdict is ImageSignatureNotAuthorized.
 //
-TEST (EvaluateSignatureTest, X509DoesNotVerify_NotInDb) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, X509DoesNotVerify_NotAuthorized) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -2047,32 +2048,32 @@ TEST (EvaluateSignatureTest, X509DoesNotVerify_NotInDb) {
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _))
     .WillOnce (Return (EFI_SECURITY_VIOLATION));
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertNotInDb);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureNotAuthorized);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
 }
 
 //
 // An EFI_CERT_X509 anchor verifies the image, but a certificate in the signer's
-// chain is enrolled in dbx. The anchor is verified-but-revoked and, with no
-// other anchor, the verdict is ImageCertRevokedByDbx and the authority names the
-// revoking dbx entry.
+// chain is enrolled in the revoke-list. The anchor is verified-but-revoked and, with no
+// other anchor, the verdict is ImageSignatureRevoked and the authority names the
+// revoke-list entry.
 //
-TEST (EvaluateSignatureTest, X509VerifiesChainRevoked_RevokedByDbx) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, X509VerifiesChainRevoked_Revoked) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -2082,7 +2083,7 @@ TEST (EvaluateSignatureTest, X509VerifiesChainRevoked_RevokedByDbx) {
 
   SetEntryPayload (Db, DbOff, 0, std::vector<UINT8>(16, 0x11));
 
-  // dbx: one X509 list holding the (20-byte) chain cert exactly.
+  // Revoke-list: one X509 list holding the (20-byte) chain cert exactly.
   std::vector<UINT8>  Dbx;
   size_t              DbxOff = AppendSignatureList (Dbx, gEfiCertX509Guid, 0, (UINT32)(sizeof (EFI_GUID) + 20), 1);
 
@@ -2103,31 +2104,31 @@ TEST (EvaluateSignatureTest, X509VerifiesChainRevoked_RevokedByDbx) {
          )
        );
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), Dbx.data (), Dbx.size () };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), Dbx.data (), Dbx.size () };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertRevokedByDbx);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureRevoked);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
   EXPECT_EQ (Eval.Authority.Size, (UINTN)0);
 }
 
 //
 // An EFI_CERT_X509 anchor verifies the image and none of the signer's chain
-// certs are in dbx. The image is approved.
+// certs are in the revoke-list. The image is approved.
 //
-TEST (EvaluateSignatureTest, X509VerifiesChainClean_Approved) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, X509VerifiesChainClean_Allowed) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -2137,7 +2138,7 @@ TEST (EvaluateSignatureTest, X509VerifiesChainClean_Approved) {
 
   SetEntryPayload (Db, DbOff, 0, std::vector<UINT8>(16, 0x11));
 
-  // dbx holds an unrelated cert, so the chain is clean.
+  // The revoke-list holds an unrelated cert, so the chain is clean.
   std::vector<UINT8>  Dbx;
   size_t              DbxOff = AppendSignatureList (Dbx, gEfiCertX509Guid, 0, (UINT32)(sizeof (EFI_GUID) + 16), 1);
 
@@ -2158,32 +2159,32 @@ TEST (EvaluateSignatureTest, X509VerifiesChainClean_Approved) {
          )
        );
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), Dbx.data (), Dbx.size () };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), Dbx.data (), Dbx.size () };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertApproved);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureAllowed);
   EXPECT_NE (Eval.Authority.Data, nullptr);
 }
 
 //
-// db holds an EFI_CERT_X509_SHA256 (TBS-cert-hash) list. A trust anchor is
-// recovered from the auth data, it authenticates the image, and there is no
-// dbx. The image is approved; the resolver's cache handle is released via
+// The allow-list holds an EFI_CERT_X509_SHA256 (TBS-cert-hash) list. A trust anchor is
+// recovered from the signature data, it authenticates the image, and there is no
+// revoke-list. The signature is allowed; the resolver's cache handle is released via
 // FreeTrustAnchorX509Cache.
 //
-TEST (EvaluateSignatureTest, X509HashListResolvesAnchor_Approved) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, X509HashListResolvesAnchor_Allowed) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -2214,31 +2215,31 @@ TEST (EvaluateSignatureTest, X509HashListResolvesAnchor_Approved) {
     .WillOnce (Return (EFI_SUCCESS));
   EXPECT_CALL (BaseCryptLibMock, FreeTrustAnchorX509Cache (_)).Times (1);
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertApproved);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureAllowed);
   EXPECT_NE (Eval.Authority.Data, nullptr);
 }
 
 //
-// db holds an EFI_CERT_X509_SHA256 list with two entries, but neither recovers
+// The allow-list holds an EFI_CERT_X509_SHA256 list with two entries, but neither recovers
 // a trust anchor from the auth data (EFI_NOT_FOUND). Both entries are walked
-// and no anchor authorizes: ImageCertNotInDb.
+// and no anchor authorizes: ImageSignatureNotAuthorized.
 //
-TEST (EvaluateSignatureTest, X509HashListAllNotFound_NotInDb) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, X509HashListAllNotFound_NotAuthorized) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -2253,31 +2254,31 @@ TEST (EvaluateSignatureTest, X509HashListAllNotFound_NotInDb) {
     .WillRepeatedly (Return (EFI_NOT_FOUND));
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertNotInDb);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureNotAuthorized);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
 }
 
 //
-// db holds an EFI_CERT_X509_SHA256 list; the trust-anchor lookup fails with a
+// The allow-list holds an EFI_CERT_X509_SHA256 list; the trust-anchor lookup fails with a
 // hard error (not EFI_NOT_FOUND). The entry is skipped and no anchor
-// authorizes: ImageCertNotInDb.
+// authorizes: ImageSignatureNotAuthorized.
 //
-TEST (EvaluateSignatureTest, X509HashListHardError_NotInDb) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, X509HashListHardError_NotAuthorized) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -2291,43 +2292,43 @@ TEST (EvaluateSignatureTest, X509HashListHardError_NotInDb) {
     .WillOnce (Return (EFI_DEVICE_ERROR));
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertNotInDb);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureNotAuthorized);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
 }
 
 //
 // Two EFI_CERT_X509 anchors: the first verifies but its chain is revoked by
-// dbx; the second verifies with a clean chain. The image is approved via the
+// the revoke-list; the second verifies with a clean chain. The image is approved via the
 // second anchor.
 //
-TEST (EvaluateSignatureTest, TwoAnchorsFirstRevokedSecondClean_Approved) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, TwoAnchorsFirstRevokedSecondClean_Allowed) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
 
-  // db: one X509 list with two anchors (payload 0x11 and 0x22).
+  // Allow-list: one X509 list with two anchors (payload 0x11 and 0x22).
   std::vector<UINT8>  Db;
   size_t              DbOff = AppendSignatureList (Db, gEfiCertX509Guid, 0, (UINT32)(sizeof (EFI_GUID) + 16), 2);
 
   SetEntryPayload (Db, DbOff, 0, std::vector<UINT8>(16, 0x11));
   SetEntryPayload (Db, DbOff, 1, std::vector<UINT8>(16, 0x22));
 
-  // dbx: holds the revoked chain cert (24 bytes 0xDD).
+  // Revoke-list: holds the revoked chain cert (24 bytes 0xDD).
   std::vector<UINT8>  Dbx;
   size_t              DbxOff = AppendSignatureList (Dbx, gEfiCertX509Guid, 0, (UINT32)(sizeof (EFI_GUID) + 24), 1);
 
@@ -2358,30 +2359,30 @@ TEST (EvaluateSignatureTest, TwoAnchorsFirstRevokedSecondClean_Approved) {
          )
        );
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), Dbx.data (), Dbx.size () };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), Dbx.data (), Dbx.size () };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertApproved);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureAllowed);
   EXPECT_NE (Eval.Authority.Data, nullptr);
 }
 
 //
-// db contains only a non-X.509 (image-hash) list. It is skipped and, with no
-// trust anchors, the verdict is ImageCertNotInDb.
+// The allow-list contains only a non-X.509 (image-hash) list. It is skipped and, with no
+// trust anchors, the verdict is ImageSignatureNotAuthorized.
 //
-TEST (EvaluateSignatureTest, DbHasOnlyNonX509List_NotInDb) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, AllowListHasOnlyNonX509List_NotAuthorized) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -2393,30 +2394,30 @@ TEST (EvaluateSignatureTest, DbHasOnlyNonX509List_NotInDb) {
   ExpectSignedImagePrelude (BaseCryptLibMock);
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertNotInDb);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureNotAuthorized);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
 }
 
 //
-// db contains an EFI_CERT_X509 list whose SignatureSize equals sizeof(EFI_GUID)
-// (no cert payload). The list is skipped and the verdict is ImageCertNotInDb.
+// The allow-list contains an EFI_CERT_X509 list whose SignatureSize equals sizeof(EFI_GUID)
+// (no cert payload). The list is skipped and the verdict is ImageSignatureNotAuthorized.
 //
-TEST (EvaluateSignatureTest, DbX509ListNoCertPayload_NotInDb) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, AllowListX509ListNoCertPayload_NotAuthorized) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -2428,31 +2429,31 @@ TEST (EvaluateSignatureTest, DbX509ListNoCertPayload_NotInDb) {
   ExpectSignedImagePrelude (BaseCryptLibMock);
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertNotInDb);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureNotAuthorized);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
 }
 
 //
-// db is malformed (smaller than one EFI_SIGNATURE_LIST header) so
+// The allow-list is malformed (smaller than one EFI_SIGNATURE_LIST header) so
 // DatabaseIterInit truncates it to an empty range. The verdict is
-// ImageCertNotInDb.
+// ImageSignatureNotAuthorized.
 //
-TEST (EvaluateSignatureTest, MalformedDb_NotInDb) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, MalformedAllowList_NotAuthorized) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -2462,32 +2463,32 @@ TEST (EvaluateSignatureTest, MalformedDb_NotInDb) {
   ExpectSignedImagePrelude (BaseCryptLibMock);
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertNotInDb);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureNotAuthorized);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
 }
 
 //
-// Happy path: the prelude succeeds, the single db trust anchor verifies via
-// AuthenticodeVerifyEx, and the empty dbx makes the chain check pass. The image
+// Happy path: the prelude succeeds, the single allow-list trust anchor verifies via
+// AuthenticodeVerifyEx, and the empty revoke-list makes the chain check pass. The image
 // is approved with a non-NULL authority whose SignatureType is the authorizing
-// db list's type.
+// allow-list type.
 //
-TEST (EvaluateSignatureTest, AuthorizedByDb_Approved) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, AuthorizedByAllowList_Allowed) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -2501,45 +2502,45 @@ TEST (EvaluateSignatureTest, AuthorizedByDb_Approved) {
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _))
     .WillOnce (Return (EFI_SUCCESS));
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertApproved);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureAllowed);
   EXPECT_NE (Eval.Authority.Data, nullptr);
   EXPECT_EQ (Eval.Authority.Size, (UINTN)(sizeof (EFI_GUID) + 16));
   EXPECT_TRUE (CompareGuid (&Eval.Authority.SignatureType, &gEfiCertX509Guid));
 }
 
 //
-// A db anchor verifies the image, but a certificate in its verified chain is
-// enrolled in the dbx, so the chain is revoked. With no other anchor the
-// verdict is ImageCertRevokedByDbx and no authority is recorded (Data is NULL,
+// An allow-list anchor verifies the image, but a certificate in its verified chain is
+// enrolled in the revoke-list, so the chain is revoked. With no other anchor the
+// verdict is ImageSignatureRevoked and no authority is recorded (Data is NULL,
 // Size is 0, and SignatureType stays zeroed).
 //
-TEST (EvaluateSignatureTest, RevokedByDbx_RevokedByDbx) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, RevokedByRevokeList_Revoked) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
 
-  // db: one X509 trust anchor that verifies the image.
+  // Allow-list: one X509 trust anchor that verifies the image.
   std::vector<UINT8>  Db;
   size_t              DbOff = AppendSignatureList (Db, gEfiCertX509Guid, 0, (UINT32)(sizeof (EFI_GUID) + 16), 1);
 
   SetEntryPayload (Db, DbOff, 0, std::vector<UINT8>(16, 0x11));
 
-  // dbx: one X509 list holding the (20-byte) chain cert exactly.
+  // Revoke-list: one X509 list holding the (20-byte) chain cert exactly.
   std::vector<UINT8>  Dbx;
   size_t              DbxOff = AppendSignatureList (Dbx, gEfiCertX509Guid, 0, (UINT32)(sizeof (EFI_GUID) + 20), 1);
 
@@ -2560,31 +2561,31 @@ TEST (EvaluateSignatureTest, RevokedByDbx_RevokedByDbx) {
          )
        );
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), Dbx.data (), Dbx.size () };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), Dbx.data (), Dbx.size () };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertRevokedByDbx);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureRevoked);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
   EXPECT_EQ (Eval.Authority.Size, (UINTN)0);
 }
 
 //
-// The prelude succeeds, the dbx is empty (nothing revoked), but no db anchor
-// verifies the signature. The verdict is ImageCertNotInDb.
+// The prelude succeeds, the revoke-list is empty, but no allow-list anchor
+// verifies the signature. The verdict is ImageSignatureNotAuthorized.
 //
-TEST (EvaluateSignatureTest, NotRevokedNotAuthorized_NotInDb) {
-  MockBaseCryptLib       BaseCryptLibMock;
-  DIGEST_CACHE           Cache;
-  std::vector<UINT8>     CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
-  IMAGE_CERT_EVALUATION  Eval;
+TEST (EvaluateSignatureTest, NotRevokedNotAuthorized_NotAuthorized) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  IMAGE_SIGNATURE_EVALUATION  Eval;
 
   InitImageCache (Cache);
   ZeroMem (&Eval, sizeof (Eval));
@@ -2600,17 +2601,17 @@ TEST (EvaluateSignatureTest, NotRevokedNotAuthorized_NotInDb) {
     .Times (2)
     .WillRepeatedly (Return (EFI_SECURITY_VIOLATION));
 
-  SIGNATURE_DATABASES  Databases = { Db.data (), Db.size (), NULL, 0 };
+  SIGNATURE_LISTS  Lists = { Db.data (), Db.size (), NULL, 0 };
 
   EXPECT_EQ (
     EvaluatePkcsSignedDataSignature (
       (CONST WIN_CERTIFICATE *)CertBuf.data (),
       &Cache,
-      &Databases,
+      &Lists,
       &Eval
       ),
     EFI_SUCCESS
     );
-  EXPECT_EQ (Eval.Verdict, ImageCertNotInDb);
+  EXPECT_EQ (Eval.Verdict, ImageSignatureNotAuthorized);
   EXPECT_EQ (Eval.Authority.Data, nullptr);
 }

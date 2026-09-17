@@ -5,7 +5,7 @@
   tests) to share prototypes for the constructor and the Security2
   verification handler.
 
-  Copyright (C) Microsoft Corporation. All rights reserved.<BR>
+  Copyright (C) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -150,21 +150,6 @@ typedef struct {
 MEASURED_AUTHORITIES *
 GetMeasuredAuthorities (
   VOID
-  );
-
-/**
-  Resolve an image's authorization policy.
-
-  @param[in]   File    Device path describing the image origin.
-  @param[out]  Policy  On success, filled with the resolved policy value.
-
-  @retval EFI_SUCCESS            Policy contains a valid policy value.
-  @retval EFI_INVALID_PARAMETER  File or Policy is NULL.
-**/
-EFI_STATUS
-GetExecutionPolicy (
-  IN  CONST EFI_DEVICE_PATH_PROTOCOL  *File,
-  OUT UINT32                          *Policy
   );
 
 /**
