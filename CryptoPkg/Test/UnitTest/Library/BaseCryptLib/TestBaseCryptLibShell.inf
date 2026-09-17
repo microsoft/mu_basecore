@@ -40,9 +40,11 @@
   AeadAesGcmTests.c
   BnTests.c
   EcTests.c
-  EdDsaTests.c
-  MlDsaTests.c
-  SlhDsaTests.c
+  # // MU_CHANGE - Start - Make Tests Compatible with mu_crypto_release
+  # EdDsaTests.c
+  # MlDsaTests.c
+  # SlhDsaTests.c
+  # // MU_CHANGE - End - Make Tests Compatible with mu_crypto_release
   X509Tests.c
   Pkcs7AttachedContentTest.c
 

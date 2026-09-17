@@ -184,79 +184,73 @@ TestVerifyRsaPssSignVerify (
   return UNIT_TEST_PASSED;
 }
 
-UNIT_TEST_STATUS
-EFIAPI
-TestVerifyRsaPssSignVerifyDigest (
-  IN UNIT_TEST_CONTEXT  Context
-  )
-{
-  UINT8    HashValue[SHA256_DIGEST_SIZE];
-  UINT8    *Signature;
-  UINTN    SigSize;
-  BOOLEAN  Status;
-
-  Status = RsaSetKey (mRsa, RsaKeyN, RsaPssN, sizeof (RsaPssN));
-  UT_ASSERT_TRUE (Status);
-
-  Status = RsaSetKey (mRsa, RsaKeyE, RsaPssE, sizeof (RsaPssE));
-  UT_ASSERT_TRUE (Status);
-
-  Status = RsaSetKey (mRsa, RsaKeyD, RsaPssD, sizeof (RsaPssD));
-  UT_ASSERT_TRUE (Status);
-
-  Status = Sha256HashAll (PssMessage, sizeof (PssMessage), HashValue);
-  UT_ASSERT_TRUE (Status);
-
-  //
-  // Query required signature buffer size
-  //
-  SigSize = 0;
-  Status  = RsaPssSignDigest (mRsa, HashValue, sizeof (HashValue), NULL, &SigSize);
-  UT_ASSERT_FALSE (Status);
-  UT_ASSERT_NOT_EQUAL (SigSize, 0);
-
-  Signature = AllocatePool (SigSize);
-  if (Signature == NULL) {
-    UT_LOG_ERROR ("Failed to allocate memory for Signature");
-    return UNIT_TEST_ERROR_TEST_FAILED;
-  }
-
-  //
-  // Sign the precomputed digest
-  //
-  Status = RsaPssSignDigest (mRsa, HashValue, sizeof (HashValue), Signature, &SigSize);
-  UT_ASSERT_TRUE (Status);
-
-  //
-  // Verify the signature using the digest-based verify API
-  //
-  Status = RsaPssVerifyDigest (mRsa, HashValue, sizeof (HashValue), Signature, SigSize);
-  UT_ASSERT_TRUE (Status);
-
-  //
-  // Corrupting one byte should fail digest-based verification
-  //
-  Signature[0] ^= 0xFF;
-  Status        = RsaPssVerifyDigest (mRsa, HashValue, sizeof (HashValue), Signature, SigSize);
-  UT_ASSERT_FALSE (Status);
-
-  FreePool (Signature);
-
-  //
-  // Verify NIST FIPS 186-3 RSA test vector signature with precomputed digest
-  //
-  Status = RsaPssVerifyDigest (mRsa, HashValue, sizeof (HashValue), TestVectorSignature, sizeof (TestVectorSignature));
-  UT_ASSERT_TRUE (Status);
-
-  return UNIT_TEST_PASSED;
-}
+// MU_CHANGE - Start - Make Tests Compatible with mu_crypto_release
+// UNIT_TEST_STATUS
+// EFIAPI
+// TestVerifyRsaPssSignVerifyDigest (
+//   IN UNIT_TEST_CONTEXT  Context
+//   )
+// {
+//   UINT8    HashValue[SHA256_DIGEST_SIZE];
+//   UINT8    *Signature;
+//   UINTN    SigSize;
+//   BOOLEAN  Status;
+//
+//   Status = RsaSetKey (mRsa, RsaKeyN, RsaPssN, sizeof (RsaPssN));
+//   UT_ASSERT_TRUE (Status);
+//
+//   Status = RsaSetKey (mRsa, RsaKeyE, RsaPssE, sizeof (RsaPssE));
+//   UT_ASSERT_TRUE (Status);
+//
+//   Status = RsaSetKey (mRsa, RsaKeyD, RsaPssD, sizeof (RsaPssD));
+//   UT_ASSERT_TRUE (Status);
+//
+//   Status = Sha256HashAll (PssMessage, sizeof (PssMessage), HashValue);
+//   UT_ASSERT_TRUE (Status);
+//
+//   // Query required signature buffer size
+//   SigSize = 0;
+//   Status  = RsaPssSignDigest (mRsa, HashValue, sizeof (HashValue), NULL, &SigSize);
+//   UT_ASSERT_FALSE (Status);
+//   UT_ASSERT_NOT_EQUAL (SigSize, 0);
+//
+//   Signature = AllocatePool (SigSize);
+//   if (Signature == NULL) {
+//     UT_LOG_ERROR ("Failed to allocate memory for Signature");
+//     return UNIT_TEST_ERROR_TEST_FAILED;
+//   }
+//
+//   // Sign the precomputed digest
+//   Status = RsaPssSignDigest (mRsa, HashValue, sizeof (HashValue), Signature, &SigSize);
+//   UT_ASSERT_TRUE (Status);
+//
+//   // Verify the signature using the digest-based verify API
+//   Status = RsaPssVerifyDigest (mRsa, HashValue, sizeof (HashValue), Signature, SigSize);
+//   UT_ASSERT_TRUE (Status);
+//
+//   // Corrupting one byte should fail digest-based verification
+//   Signature[0] ^= 0xFF;
+//   Status        = RsaPssVerifyDigest (mRsa, HashValue, sizeof (HashValue), Signature, SigSize);
+//   UT_ASSERT_FALSE (Status);
+//
+//   FreePool (Signature);
+//
+//   // Verify NIST FIPS 186-3 RSA test vector signature with precomputed digest
+//   Status = RsaPssVerifyDigest (mRsa, HashValue, sizeof (HashValue), TestVectorSignature, sizeof (TestVectorSignature));
+//   UT_ASSERT_TRUE (Status);
+//
+//   return UNIT_TEST_PASSED;
+// }
+// MU_CHANGE - End - Make Tests Compatible with mu_crypto_release
 
 TEST_DESC  mRsaPssTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function---------------------------------Pre---------------------Post---------Context
   //
-  { "TestVerifyRsaPssSignVerify()",       "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaPssSignVerify,       TestVerifyRsaPssPreReq, TestVerifyRsaPssCleanUp, NULL },
-  { "TestVerifyRsaPssSignVerifyDigest()", "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaPssSignVerifyDigest, TestVerifyRsaPssPreReq, TestVerifyRsaPssCleanUp, NULL },
+  { "TestVerifyRsaPssSignVerify()", "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaPssSignVerify, TestVerifyRsaPssPreReq, TestVerifyRsaPssCleanUp, NULL },
+  // MU_CHANGE - Start - Make Tests Compatible with mu_crypto_release
+  // { "TestVerifyRsaPssSignVerifyDigest()", "CryptoPkg.BaseCryptLib.Rsa", TestVerifyRsaPssSignVerifyDigest, TestVerifyRsaPssPreReq, TestVerifyRsaPssCleanUp, NULL },
+  // MU_CHANGE - End - Make Tests Compatible with mu_crypto_release
 };
 
 UINTN  mRsaPssTestNum = ARRAY_SIZE (mRsaPssTest);
