@@ -27,3 +27,7 @@
   AuthVariableLib
   BaseMemoryLib
   MemoryAllocationLib
+
+[Guids]
+  ## SOMETIMES_CONSUMES   ## Variable:L"KEK"
+  gEfiGlobalVariableGuid
