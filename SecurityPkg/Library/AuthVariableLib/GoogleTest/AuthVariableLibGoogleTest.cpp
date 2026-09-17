@@ -12,9 +12,11 @@
 
 extern "C" {
   #include <Uefi.h>
+  #include <Guid/GlobalVariable.h>
   #include <Guid/ImageAuthentication.h>
   #include <Guid/WinCertificate.h>
   #include <Library/BaseMemoryLib.h>
+  #include <Library/VariablePolicyLib.h>
   #include "../AuthServiceInternal.h"
 
   /**
@@ -31,6 +33,26 @@ extern "C" {
     @param[out] VarPayloadSize  Receives the payload length on success.
     @return Status of payload verification.
   **/
+  /**
+    Process a variable update using the installed authentication context.
+
+    @param[in] VariableName  Variable to update.
+    @param[in] VendorGuid    Variable namespace.
+    @param[in] Data          Update buffer.
+    @param[in] DataSize      Buffer length in bytes.
+    @param[in] Attributes    Requested variable attributes.
+    @return Status of the authenticated update.
+  **/
+  EFI_STATUS
+  EFIAPI
+  AuthVariableLibProcessVariable (
+    IN CHAR16    *VariableName,
+    IN EFI_GUID  *VendorGuid,
+    IN VOID      *Data,
+    IN UINTN     DataSize,
+    IN UINT32    Attributes
+    );
+
   EFI_STATUS
   VerifyTimeBasedPayload (
     IN     CHAR16        *VariableName,
@@ -74,6 +96,43 @@ BuildAuthenticatedVariableData (
   Authentication->AuthInfo.CertType             = gEfiCertPkcs7Guid;
   Authentication->AuthInfo.CertData[1]          = TWO_BYTE_ENCODE;
   CopyMem (Authentication->AuthInfo.CertData + 13, mSha256Oid, sizeof (mSha256Oid));
+
+  return Data;
+}
+
+/**
+  Build an authenticated update containing a mock X.509 signature list.
+
+  @return Buffer containing the descriptor and signature list.
+**/
+STATIC std::vector<UINT8>
+BuildAuthenticatedX509SignatureListData (
+  VOID
+  )
+{
+  CONST UINTN                    SigDataSize       = 22;
+  CONST UINTN                    CertSize          = 1;
+  CONST UINTN                    SignatureSize     = sizeof (EFI_GUID) + CertSize;
+  CONST UINTN                    SignatureListSize = sizeof (EFI_SIGNATURE_LIST) + SignatureSize;
+  std::vector<UINT8>             Data (OFFSET_OF_AUTHINFO2_CERT_DATA + SigDataSize + SignatureListSize, 0);
+  EFI_VARIABLE_AUTHENTICATION_2  *Authentication;
+  EFI_SIGNATURE_LIST             *SignatureList;
+  EFI_SIGNATURE_DATA             *SignatureData;
+
+  Authentication                                = reinterpret_cast<EFI_VARIABLE_AUTHENTICATION_2 *>(Data.data ());
+  Authentication->AuthInfo.Hdr.dwLength         = OFFSET_OF (WIN_CERTIFICATE_UEFI_GUID, CertData) + SigDataSize;
+  Authentication->AuthInfo.Hdr.wCertificateType = WIN_CERT_TYPE_EFI_GUID;
+  Authentication->AuthInfo.CertType             = gEfiCertPkcs7Guid;
+  Authentication->AuthInfo.CertData[1]          = TWO_BYTE_ENCODE;
+  CopyMem (Authentication->AuthInfo.CertData + 13, mSha256Oid, sizeof (mSha256Oid));
+
+  SignatureList                      = reinterpret_cast<EFI_SIGNATURE_LIST *>(Data.data () + OFFSET_OF_AUTHINFO2_CERT_DATA + SigDataSize);
+  SignatureList->SignatureType       = gEfiCertX509Guid;
+  SignatureList->SignatureListSize   = (UINT32)SignatureListSize;
+  SignatureList->SignatureHeaderSize = 0;
+  SignatureList->SignatureSize       = (UINT32)SignatureSize;
+  SignatureData                      = reinterpret_cast<EFI_SIGNATURE_DATA *>((UINT8 *)SignatureList + sizeof (EFI_SIGNATURE_LIST));
+  SignatureData->SignatureData[0]    = 0;
 
   return Data;
 }
@@ -169,6 +228,265 @@ TEST_F (VerifyTimeBasedPayloadSignerInfoTest, RejectsMultipleSignerInfos) {
 /** A single signer passes the count check and reaches scratch allocation. **/
 TEST_F (VerifyTimeBasedPayloadSignerInfoTest, AcceptsOneSignerInfo) {
   EXPECT_EQ (VerifyWithSignerInfoCount (1), EFI_OUT_OF_RESOURCES);
+}
+
+//
+// KEK self-signed append (edk2#12159): when updating KEK with
+// EFI_VARIABLE_APPEND_WRITE set, a signature that fails PK verification
+// shall be retried against the existing KEK database before being rejected.
+//
+STATIC CHAR16  mKekVariableName[] = { 'K', 'E', 'K', 0 };
+
+STATIC std::vector<UINT8>  mExistingKekSignatureList;
+
+/**
+  Look up the fixture's existing KEK database.
+
+  @param[in]  VariableName      Name to look up.
+  @param[in]  VendorGuid        Namespace to look up.
+  @param[out] AuthVariableInfo  Receives the fixture data on success.
+  @retval EFI_SUCCESS           The request identifies KEK.
+  @retval EFI_NOT_FOUND         The requested variable is not present.
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+FindVariableKekOnly (
+  IN  CHAR16              *VariableName,
+  IN  EFI_GUID            *VendorGuid,
+  OUT AUTH_VARIABLE_INFO  *AuthVariableInfo
+  )
+{
+  if ((VendorGuid != NULL) && CompareGuid (VendorGuid, &gEfiGlobalVariableGuid) &&
+      (StrCmp (VariableName, mKekVariableName) == 0))
+  {
+    AuthVariableInfo->Data      = mExistingKekSignatureList.data ();
+    AuthVariableInfo->DataSize  = mExistingKekSignatureList.size ();
+    AuthVariableInfo->TimeStamp = NULL;
+    return EFI_SUCCESS;
+  }
+
+  return EFI_NOT_FOUND;
+}
+
+STATIC UINT8  mScratchBuffer[512];
+STATIC UINTN  mUpdateVariableCallCount;
+
+/**
+  Lend the fixture's scratch buffer to the verifier.
+
+  @param[in,out] ScratchBufferSize  Requested size in bytes; unchanged.
+  @param[out]    ScratchBuffer      Receives the fixture buffer on success.
+  @retval EFI_SUCCESS               The request fits the buffer.
+  @retval EFI_OUT_OF_RESOURCES      The request is too large.
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+GetScratchBufferSuccess (
+  IN OUT UINTN  *ScratchBufferSize,
+  OUT    VOID   **ScratchBuffer
+  )
+{
+  if (*ScratchBufferSize > sizeof (mScratchBuffer)) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  *ScratchBuffer = mScratchBuffer;
+  return EFI_SUCCESS;
+}
+
+/**
+  Count a variable write without modifying a variable store.
+
+  @param[in,out] AuthVariableInfo  Unused update descriptor.
+  @retval EFI_SUCCESS              Always returned by this stub.
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+UpdateVariableCountingSuccess (
+  IN OUT AUTH_VARIABLE_INFO  *AuthVariableInfo
+  )
+{
+  (VOID)AuthVariableInfo;
+  mUpdateVariableCallCount++;
+  return EFI_SUCCESS;
+}
+
+/**
+  Build a signature list containing one mock X.509 entry.
+
+  @param[in] CertByte  Byte to use as the mock certificate.
+  @return Serialized signature list.
+**/
+STATIC std::vector<UINT8>
+BuildX509SignatureListEntry (
+  IN UINT8  CertByte
+  )
+{
+  CONST UINTN         CertSize          = 1;
+  CONST UINTN         SignatureSize     = sizeof (EFI_GUID) + CertSize;
+  CONST UINTN         SignatureListSize = sizeof (EFI_SIGNATURE_LIST) + SignatureSize;
+  std::vector<UINT8>  Data (SignatureListSize, 0);
+  EFI_SIGNATURE_LIST  *SignatureList;
+  EFI_SIGNATURE_DATA  *SignatureData;
+
+  SignatureList                      = reinterpret_cast<EFI_SIGNATURE_LIST *>(Data.data ());
+  SignatureList->SignatureType       = gEfiCertX509Guid;
+  SignatureList->SignatureListSize   = (UINT32)SignatureListSize;
+  SignatureList->SignatureHeaderSize = 0;
+  SignatureList->SignatureSize       = (UINT32)SignatureSize;
+  SignatureData                      = reinterpret_cast<EFI_SIGNATURE_DATA *>(Data.data () + sizeof (EFI_SIGNATURE_LIST));
+  SignatureData->SignatureData[0]    = CertByte;
+
+  return Data;
+}
+
+/**
+  Simulate an empty variable store for the variable policy library.
+
+  @param[in]     VariableName  Unused variable name.
+  @param[in]     VendorGuid    Unused namespace.
+  @param[out]    Attributes    Unused optional attributes.
+  @param[in,out] DataSize      Unused buffer size.
+  @param[out]    Data          Unused optional data buffer.
+  @retval EFI_NOT_FOUND        No variable is present.
+**/
+STATIC
+EFI_STATUS
+EFIAPI
+PolicyGetVariableNotFound (
+  IN CHAR16     *VariableName,
+  IN EFI_GUID   *VendorGuid,
+  OUT UINT32    *Attributes OPTIONAL,
+  IN OUT UINTN  *DataSize,
+  OUT VOID      *Data OPTIONAL
+  )
+{
+  return EFI_NOT_FOUND;
+}
+
+class KekSelfSignedAppendTest : public ::testing::Test {
+protected:
+  MockBaseCryptLib BaseCryptLibMock;
+  AUTH_VAR_LIB_CONTEXT_IN AuthVarContext;
+  EFI_GUID VendorGuid = gEfiGlobalVariableGuid;
+  UINT32 OriginalPlatformMode;
+
+  /** Enable variable policy in user mode with an existing KEK. **/
+  VOID
+  SetUp (
+    ) override
+  {
+    ZeroMem (&AuthVarContext, sizeof (AuthVarContext));
+    AuthVarContext.FindVariable     = FindVariableKekOnly;
+    AuthVarContext.GetScratchBuffer = GetScratchBufferSuccess;
+    AuthVarContext.UpdateVariable   = UpdateVariableCountingSuccess;
+    mAuthVarLibContextIn            = &AuthVarContext;
+    OriginalPlatformMode            = mPlatformMode;
+    mPlatformMode                   = USER_MODE;
+    mUpdateVariableCallCount        = 0;
+    mExistingKekSignatureList       = BuildX509SignatureListEntry (0xAA);
+    ASSERT_EQ (InitVariablePolicyLib (PolicyGetVariableNotFound), EFI_SUCCESS);
+    ASSERT_TRUE (IsVariablePolicyEnabled ());
+  }
+
+  /** Restore the platform mode and release variable policy state. **/
+  VOID
+  TearDown (
+    ) override
+  {
+    mAuthVarLibContextIn = NULL;
+    mPlatformMode        = OriginalPlatformMode;
+    EXPECT_EQ (DeinitVariablePolicyLib (), EFI_SUCCESS);
+  }
+};
+
+/** A KEK-authorized append may proceed when PK verification fails. **/
+TEST_F (KekSelfSignedAppendTest, AcceptsSelfSignedAppendWhenPkVerificationFails) {
+  std::vector<UINT8>  Data       = BuildAuthenticatedX509SignatureListData ();
+  CONST UINT32        Attributes = EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS |
+                                   EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS |
+                                   EFI_VARIABLE_APPEND_WRITE;
+
+  // PK verification is attempted first and fails to extract signers.
+  EXPECT_CALL (BaseCryptLibMock, CmsGetSignerInfoNum (_, _))
+    .WillRepeatedly (Return (1));
+  EXPECT_CALL (BaseCryptLibMock, Pkcs7GetSigners (_, _, _, _, _, _))
+    .WillOnce (Return (FALSE));
+
+  // Fallback KEK verification succeeds against the existing KEK database.
+  EXPECT_CALL (BaseCryptLibMock, Pkcs7Verify (_, _, _, _, _, _))
+    .WillOnce (Return (TRUE));
+  EXPECT_CALL (BaseCryptLibMock, RsaGetPublicKeyFromX509 (_, _, _))
+    .WillOnce (Return (TRUE));
+
+  EXPECT_EQ (
+    AuthVariableLibProcessVariable (
+      mKekVariableName,
+      &VendorGuid,
+      Data.data (),
+      Data.size (),
+      Attributes
+      ),
+    EFI_SUCCESS
+    );
+  EXPECT_GT (mUpdateVariableCallCount, (UINTN)0);
+}
+
+/** Neither verification path authorizes a write if both signatures fail. **/
+TEST_F (KekSelfSignedAppendTest, RejectsAppendWhenNeitherPkNorKekSignerIsValid) {
+  std::vector<UINT8>  Data       = BuildAuthenticatedX509SignatureListData ();
+  CONST UINT32        Attributes = EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS |
+                                   EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS |
+                                   EFI_VARIABLE_APPEND_WRITE;
+
+  EXPECT_CALL (BaseCryptLibMock, CmsGetSignerInfoNum (_, _))
+    .WillRepeatedly (Return (1));
+  EXPECT_CALL (BaseCryptLibMock, Pkcs7GetSigners (_, _, _, _, _, _))
+    .WillOnce (Return (FALSE));
+  EXPECT_CALL (BaseCryptLibMock, Pkcs7Verify (_, _, _, _, _, _))
+    .WillOnce (Return (FALSE));
+
+  EXPECT_EQ (
+    AuthVariableLibProcessVariable (
+      mKekVariableName,
+      &VendorGuid,
+      Data.data (),
+      Data.size (),
+      Attributes
+      ),
+    EFI_SECURITY_VIOLATION
+    );
+  EXPECT_EQ (mUpdateVariableCallCount, (UINTN)0);
+}
+
+/** Replacing KEK must not fall back to KEK self-authorization. **/
+TEST_F (KekSelfSignedAppendTest, RejectsReplaceWithoutPkWhenNotAppending) {
+  std::vector<UINT8>  Data       = BuildAuthenticatedX509SignatureListData ();
+  CONST UINT32        Attributes = EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS |
+                                   EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS;
+
+  // Not an append: the KEK self-signed fallback must never be attempted.
+  EXPECT_CALL (BaseCryptLibMock, CmsGetSignerInfoNum (_, _))
+    .WillOnce (Return (1));
+  EXPECT_CALL (BaseCryptLibMock, Pkcs7GetSigners (_, _, _, _, _, _))
+    .WillOnce (Return (FALSE));
+  EXPECT_CALL (BaseCryptLibMock, Pkcs7Verify (_, _, _, _, _, _))
+    .Times (0);
+
+  EXPECT_EQ (
+    AuthVariableLibProcessVariable (
+      mKekVariableName,
+      &VendorGuid,
+      Data.data (),
+      Data.size (),
+      Attributes
+      ),
+    EFI_SECURITY_VIOLATION
+    );
+  EXPECT_EQ (mUpdateVariableCallCount, (UINTN)0);
 }
 
 /**
