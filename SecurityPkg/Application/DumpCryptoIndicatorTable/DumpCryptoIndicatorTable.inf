@@ -1,0 +1,43 @@
+## @file
+#  Dump the EFI Crypto Indicator Table (ECIT).
+#
+#  UEFI shell application that locates the ECIT configuration table, validates
+#  its header/checksum, and prints the header and every entry to the console and
+#  the debug log.
+#
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = DumpCryptoIndicatorTable
+  FILE_GUID                      = 3B2E9D7A-1C64-4F08-8E5B-9A71C2D6E430
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = DumpCryptoIndicatorTableEntryPoint
+
+[Sources]
+  DumpCryptoIndicatorTable.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SecurityPkg/SecurityPkg.dec
+
+[LibraryClasses]
+  UefiApplicationEntryPoint
+  UefiLib
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  PrintLib
+
+[Guids]
+  gEfiCryptoIndicatorTableGuid                          ## CONSUMES ## SystemTable
+  gEfiEcitFeatureImageVerificationGuid                  ## CONSUMES
+  gEfiEcitFeatureSecureBootAuthorizationGuid            ## CONSUMES
+  gEfiEcitFeatureSecureBootServicingAuthorizationGuid   ## CONSUMES
+  gEfiEcitFeatureImageRevocationGuid                    ## CONSUMES
+  gEfiEcitFeatureAuthenticatedVariableGuid              ## CONSUMES
+  gEfiEcitFeatureSystemFirmwareUpdateGuid               ## CONSUMES
+  gEfiEcitFeatureEsrtFirmwareUpdateGuid                 ## CONSUMES

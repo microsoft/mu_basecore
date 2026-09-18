@@ -135,6 +135,8 @@
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
   ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLibNull/BaseCryptLibNull.inf
+  CryptoIndicatorRegistrationLib|SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibDxe.inf
+  EcitReportLib|SecurityPkg/Library/EcitReportLibNull/EcitReportLibNull.inf
   HashLib|SecurityPkg/Library/HashLibBaseCryptoRouter/HashLibBaseCryptoRouterDxe.inf
   Tpm12DeviceLib|SecurityPkg/Library/Tpm12DeviceLibTcg/Tpm12DeviceLibTcg.inf
   Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibTcg2/Tpm2DeviceLibTcg2.inf
@@ -211,6 +213,15 @@
   SecurityPkg/Library/DxeImageVerificationLib2/DxeImageVerificationLib.inf
   SecurityPkg/Library/DxeImageAuthenticationStatusLib/DxeImageAuthenticationStatusLib.inf
   SecurityPkg/Library/ImageSecureBootVerificationResultTableLib/ImageSecureBootVerificationResultTableLib.inf
+
+  #
+  # ECIT (EFI Crypto Indicator Table)
+  #
+  SecurityPkg/CryptoIndicatorTable/CryptoIndicatorTableDxe.inf
+  SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibDxe.inf
+  SecurityPkg/Library/EcitReportLib/EcitReportLib.inf
+  SecurityPkg/Library/EcitReportLibNull/EcitReportLibNull.inf
+  SecurityPkg/Application/DumpCryptoIndicatorTable/DumpCryptoIndicatorTable.inf
 
   #
   # TPM

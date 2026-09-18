@@ -43,6 +43,7 @@
   X509Tests.c
   TrustAnchorTests.c # MU_CHANGE
   AuthenticodeHashAlgorithmTests.c # MU_CHANGE
+  CryptoOpCapabilityTests.c # MU_CHANGE
   PerformanceBenchmarkTests.c # MU_CHANGE - performance benchmarks
 
 [Packages]
@@ -104,3 +105,6 @@
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesInit                     ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesCbcEncrypt               ## CONSUMES
   gEfiCryptoPkgTokenSpaceGuid.PcdCryptoServiceAesCbcDecrypt               ## CONSUMES
+
+[Guids]
+  gCryptoOpCmsContentDigestGuid  ## CONSUMES  # MU_CHANGE

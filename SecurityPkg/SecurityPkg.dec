@@ -38,6 +38,15 @@
   #
   PlatformSecureLib|Include/Library/PlatformSecureLib.h
 
+  ##  @libraryclass  Submit crypto-capability records to the ECIT collector.
+  #
+  CryptoIndicatorRegistrationLib|Include/Library/CryptoIndicatorRegistrationLib.h
+
+  ##  @libraryclass  Query a crypto operation's capability and report it to the
+  #   ECIT collector under a feature identifier. A Null instance is a no-op.
+  #
+  EcitReportLib|Include/Library/EcitReportLib.h
+
   ##  @libraryclass  Provides interfaces to handle TPM 1.2 request.
   #
   TcgPhysicalPresenceLib|Include/Library/TcgPhysicalPresenceLib.h
@@ -309,6 +318,20 @@
   #  Include/Guid/Tpm2ServiceFfa.h
   gTpm2ServiceFfaGuid = { 0x17b862a4, 0x1806, 0x4faf, { 0x86, 0xb3, 0x08, 0x9a, 0x58, 0x35, 0x38, 0x61 } }
 
+  ## EFI Crypto Indicator Table (ECIT) - EFI_CONFIGURATION_TABLE GUID and
+  #  well-known feature identifier GUIDs (Code First draft, tianocore/edk2#12408).
+  #  Include/Guid/CryptoIndicatorTable.h
+  gEfiCryptoIndicatorTableGuid                        = { 0x1768b8b1, 0x1605, 0x401a, { 0xbc, 0x49, 0xd6, 0x12, 0xd2, 0xb9, 0x8c, 0x4e } }
+  gEfiEcitFeatureImageVerificationGuid               = { 0x08324cfc, 0xefe6, 0x4211, { 0xa8, 0x58, 0xd4, 0xca, 0xc8, 0x91, 0x5a, 0xef } }
+  gEfiEcitFeatureSecureBootAuthorizationGuid         = { 0x335f880f, 0x180f, 0x43d9, { 0x8e, 0xd9, 0xce, 0x58, 0x4e, 0xd9, 0xb6, 0xf0 } }
+  gEfiEcitFeatureSecureBootServicingAuthorizationGuid = { 0x304b3849, 0x4906, 0x40ea, { 0x8a, 0xde, 0x75, 0x1d, 0x6d, 0xa7, 0xd4, 0xf9 } }
+  gEfiEcitFeatureImageRevocationGuid                 = { 0x02913331, 0x2f71, 0x43db, { 0x82, 0x77, 0x7b, 0xe8, 0x8e, 0xcc, 0x65, 0x1c } }
+  gEfiEcitFeatureAuthenticatedVariableGuid           = { 0x03092d2c, 0x9a52, 0x4c5c, { 0x8b, 0xf5, 0xea, 0xf0, 0x4f, 0x45, 0x22, 0x9d } }
+  gEfiEcitFeatureSystemFirmwareUpdateGuid            = { 0x8417f337, 0x8e42, 0x4657, { 0xae, 0xae, 0x9b, 0x21, 0xa4, 0xb9, 0x02, 0x58 } }
+  gEfiEcitFeatureEsrtFirmwareUpdateGuid              = { 0x41c7bd17, 0x6bd4, 0x4df5, { 0xaa, 0xad, 0x89, 0x87, 0x16, 0x4e, 0xad, 0x4c } }
+  ## GUID of the ECIT MM->DXE bridge MMI handler (used to drain MM-collected records).
+  gEcitMmBridgeHandlerGuid                            = { 0x7b1e2c9a, 0x4f83, 0x4a16, { 0x9d, 0x5c, 0x3e, 0x77, 0x21, 0x0b, 0x64, 0xa8 } }
+
 [Protocols]
   ## MU_CHANGE - START - Add a new protocol to support Log-only events.
   # Include/Protocol/MuTcg2Protocol.h
@@ -321,6 +344,11 @@
   # Tcg/TcgLogTest/TcgLogTest.h
   gTcgLogTestProtocolGuid            = {0xa3c12f80, 0x7d9e, 0x4b5a, { 0x91, 0xe4, 0x6c, 0xf8, 0x2d, 0xa1, 0xb7, 0x03 }}
   ## MU_CHANGE - [END]
+
+  ## Protocol produced by the ECIT collector; feature owners use it to register
+  #  their crypto-capability records (tianocore/edk2#12408).
+  # Include/Protocol/CryptoIndicatorRegistration.h
+  gEfiCryptoIndicatorRegistrationProtocolGuid = {0x2b9a1f74, 0x3c6e, 0x4d18, { 0x9a, 0x2f, 0xd7, 0x0e, 0x4c, 0x11, 0x83, 0x55 }}
 
 [Ppis]
   ## The PPI GUID for that TPM physical presence should be locked.

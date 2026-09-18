@@ -2462,6 +2462,26 @@ CmsGetSignerInfoNum (
   );
 
 /**
+  Verify a PKCS#7/CMS SignedData structure and optionally return the verified
+  signer certificate chain in EFI_CERT_STACK form.
+
+  @retval TRUE   The specified PKCS#7/CMS signed data is valid.
+  @retval FALSE  The signed data is invalid or the interface is unsupported.
+**/
+BOOLEAN
+EFIAPI
+CmsVerify (
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertLength,
+  IN  CONST UINT8  *InData,
+  IN  UINTN        DataLength,
+  OUT UINT8        **SignerChain      OPTIONAL,
+  OUT UINTN        *SignerChainSize   OPTIONAL
+  );
+
+/**
   Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
   that wraps content encrypted for secure transmission to one or more recipients.
 
@@ -4624,5 +4644,45 @@ EFIAPI
 BaseCryptInit (
   VOID
   );
+
+// MU_CHANGE [BEGIN] - ECIT capability reporting.
+
+/**
+  Return the capability descriptor for a given crypto operation (ECIT).
+
+  GetCryptoOpCapability() lets a caller ask the linked crypto binary which
+  algorithms it will actually accept for the operation named by OpIdGuid
+  (see <Guid/CryptoOpId.h> for known op-ID GUIDs, e.g.
+  gCryptoOpCmsVerifyGuid). For the verification operations the payload is
+  a CSV-encoded, NUL-terminated ASCII string of dotted-decimal algorithm
+  OIDs (e.g. "1.2.840.113549.1.1.11,1.2.840.10045.4.3.2"). The OIDs are an
+  UNORDERED SET: callers must not infer preference from position. An empty
+  payload (a single NUL byte) means the linked provider supports no
+  algorithm the operation's verify pipeline accepts in this build.
+
+  Standard sizing pattern:
+    1. Call with Buffer == NULL to learn the required size in *BufferSize.
+    2. Allocate a buffer of that size.
+    3. Call again with Buffer != NULL to fetch the payload.
+
+  @param[in]      OpIdGuid    GUID identifying the crypto operation.
+  @param[out]     Buffer      NULL to probe required size, else receives payload.
+  @param[in,out]  BufferSize  In: size of Buffer. Out: bytes written or required
+                              (always includes the trailing NUL).
+
+  @retval EFI_SUCCESS           Buffer populated (or size returned if Buffer NULL).
+  @retval EFI_BUFFER_TOO_SMALL  Buffer too small; *BufferSize set to required.
+  @retval EFI_NOT_FOUND         OpIdGuid is unknown to this binary.
+  @retval EFI_INVALID_PARAMETER OpIdGuid or BufferSize is NULL.
+**/
+EFI_STATUS
+EFIAPI
+GetCryptoOpCapability (
+  IN     CONST EFI_GUID  *OpIdGuid,
+  OUT    VOID            *Buffer       OPTIONAL,
+  IN OUT UINTN           *BufferSize
+  );
+
+// MU_CHANGE [END]
 
 #endif // __BASE_CRYPT_LIB_H__

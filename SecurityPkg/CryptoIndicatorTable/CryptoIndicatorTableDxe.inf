@@ -1,0 +1,45 @@
+## @file
+#  ECIT collector driver.
+#
+#  Produces the crypto-indicator registration protocol, accumulates feature
+#  records, and at ready-to-boot assembles and publishes the
+#  EFI_CRYPTO_INDICATOR_TABLE as an EFI_CONFIGURATION_TABLE and, when the ACPI
+#  table protocol is available, as a native ACPI table.
+#
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = CryptoIndicatorTableDxe
+  FILE_GUID                      = 7A1E5C92-4B83-4D0A-B12C-9E540F3A8671
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = CryptoIndicatorTableDxeEntryPoint
+
+[Sources]
+  CryptoIndicatorTableDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  SecurityPkg/SecurityPkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  UefiLib
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  DebugLib
+
+[Protocols]
+  gEfiCryptoIndicatorRegistrationProtocolGuid   ## PRODUCES
+  gEfiAcpiTableProtocolGuid                     ## SOMETIMES_CONSUMES
+
+[Guids]
+  gEfiCryptoIndicatorTableGuid                  ## PRODUCES ## SystemTable
+
+[Depex]
+  TRUE
