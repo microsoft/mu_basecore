@@ -64,10 +64,7 @@
         "ExtendWords": [
             "FMPSTATE",
             "loongarch",
-            # MU_CHANGE - Start
-            "loongson",
-            "fstack"
-            # MU_CHANGE - End
+            "loongson"
         ]
     },
     "Defines": {
