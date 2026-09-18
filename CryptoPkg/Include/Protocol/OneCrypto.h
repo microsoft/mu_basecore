@@ -2433,6 +2433,11 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_VERIFY)(
   );
 
 /**
+  @defgroup CMS Cryptographic Message Syntax
+  @brief Functions for Cryptographic Message Syntax signed data.
+**/
+
+/**
   Get the number of SignerInfo structures in a PKCS#7/CMS SignedData structure.
 
   If P7Data is NULL, then return 0.
@@ -2446,11 +2451,41 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_VERIFY)(
   @retval  0   Error or no SignerInfo found.
 
   @since 1.2
-  @ingroup PKCS
+  @ingroup CMS
 **/
 typedef UINTN (EFIAPI *ONE_CRYPTO_CMS_GET_SIGNER_INFO_NUM)(
   IN  CONST UINT8  *P7Data,
   IN  UINTN        P7Length
+  );
+
+/**
+  Verify a PKCS#7/CMS SignedData structure and optionally return the verified
+  signer certificate chain in EFI_CERT_STACK form.
+
+  @since 2.0
+  @ingroup CMS
+**/
+typedef BOOLEAN (EFIAPI *ONE_CRYPTO_CMS_VERIFY)(
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertLength,
+  IN  CONST UINT8  *InData,
+  IN  UINTN        DataLength,
+  OUT UINT8        **SignerChain      OPTIONAL,
+  OUT UINTN        *SignerChainSize   OPTIONAL
+  );
+
+/**
+  Query algorithms supported by an ECIT crypto operation.
+
+  @since 2.0
+  @ingroup Info
+**/
+typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_GET_CRYPTO_OP_CAPABILITY)(
+  IN     CONST EFI_GUID  *OpIdGuid,
+  OUT    VOID            *Buffer       OPTIONAL,
+  IN OUT UINTN           *BufferSize
   );
 
 /**
@@ -5628,6 +5663,9 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_HASH_ALL_BY_GUID                        HashAllByGuid;
   /// v2.0 CMS ---------------------------------------------------------------
   ONE_CRYPTO_CMS_GET_SIGNER_INFO_NUM                 CmsGetSignerInfoNum;
+  ONE_CRYPTO_CMS_VERIFY                              CmsVerify;
+  /// v2.0 Info ----------------------------------------------------------------
+  ONE_CRYPTO_GET_CRYPTO_OP_CAPABILITY                GetCryptoOpCapability;
   /// v2.0 X509 --------------------------------------------------------------
   ONE_CRYPTO_X509_IS_PUBLIC_KEY_SUPPORTED            X509IsPublicKeySupported;
 } ONE_CRYPTO_PROTOCOL;
