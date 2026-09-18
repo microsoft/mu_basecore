@@ -2433,6 +2433,11 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_VERIFY)(
   );
 
 /**
+  @defgroup CMS Cryptographic Message Syntax
+  @brief Functions for Cryptographic Message Syntax signed data.
+**/
+
+/**
   Get the number of SignerInfo structures in a PKCS#7/CMS SignedData structure.
 
   If P7Data is NULL, then return 0.
@@ -2446,7 +2451,7 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_VERIFY)(
   @retval  0   Error or no SignerInfo found.
 
   @since 1.2
-  @ingroup PKCS
+  @ingroup CMS
 **/
 typedef UINTN (EFIAPI *ONE_CRYPTO_CMS_GET_SIGNER_INFO_NUM)(
   IN  CONST UINT8  *P7Data,
@@ -2458,7 +2463,7 @@ typedef UINTN (EFIAPI *ONE_CRYPTO_CMS_GET_SIGNER_INFO_NUM)(
   signer certificate chain in EFI_CERT_STACK form.
 
   @since 2.0
-  @ingroup PKCS
+  @ingroup CMS
 **/
 typedef BOOLEAN (EFIAPI *ONE_CRYPTO_CMS_VERIFY)(
   IN  CONST UINT8  *P7Data,
@@ -5660,7 +5665,7 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_CMS_GET_SIGNER_INFO_NUM                 CmsGetSignerInfoNum;
   ONE_CRYPTO_CMS_VERIFY                              CmsVerify;
   /// v2.0 Info ----------------------------------------------------------------
-  ONE_CRYPTO_GET_CRYPTO_OP_CAPABILITY                 GetCryptoOpCapability;
+  ONE_CRYPTO_GET_CRYPTO_OP_CAPABILITY                GetCryptoOpCapability;
   /// v2.0 X509 --------------------------------------------------------------
   ONE_CRYPTO_X509_IS_PUBLIC_KEY_SUPPORTED            X509IsPublicKeySupported;
 } ONE_CRYPTO_PROTOCOL;
