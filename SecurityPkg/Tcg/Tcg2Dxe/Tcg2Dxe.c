@@ -45,6 +45,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PcdLib.h>
 #include <Library/UefiLib.h>
 #include <Library/Tpm2DeviceLib.h>
+#include <Library/Tpm2StartupLib.h> // MU_CHANGE
 #include <Library/HashLib.h>
 #include <Library/PerformanceLib.h>
 #include <Library/ReportStatusCodeLib.h>
@@ -3249,26 +3250,61 @@ DriverEntry (
   EFI_TCG2_EVENT_ALGORITHM_BITMAP  TpmHashAlgorithmBitmap;
   UINT32                           ActivePCRBanks;
   UINT32                           NumberOfPCRBanks;
+  UINT32                           PlatformHashMask;   // MU_CHANGE
+  UINT32                           RegisteredHashMask; // MU_CHANGE
 
   mImageHandle = ImageHandle;
 
-  if (CompareGuid (PcdGetPtr (PcdTpmInstanceGuid), &gEfiTpmDeviceInstanceNoneGuid) ||
-      CompareGuid (PcdGetPtr (PcdTpmInstanceGuid), &gEfiTpmDeviceInstanceTpm12Guid))
-  {
-    DEBUG ((DEBUG_INFO, "No TPM2 instance required!\n"));
+  // MU_CHANGE - [BEGIN]
+  // Only continue if TPM is supported.
+  if (!Tpm2StartupIsTpmSupported ()) {
     return EFI_UNSUPPORTED;
   }
 
-  if (GetFirstGuidHob (&gTpmErrorHobGuid) != NULL) {
-    DEBUG ((DEBUG_ERROR, "TPM2 error!\n"));
-    return EFI_DEVICE_ERROR;
+  // Platform support must match what was registered to the hash library.
+  PlatformHashMask   = PcdGet32 (PcdTcg2HashLibSupportMask);
+  RegisteredHashMask = PcdGet32 (PcdTcg2HashAlgorithmBitmap);
+  if ((PlatformHashMask == 0) || (RegisteredHashMask != PlatformHashMask)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a - Registered hash algorithms 0x%X do not match platform support 0x%X\n",
+      __func__,
+      RegisteredHashMask,
+      PlatformHashMask
+      ));
+    return EFI_UNSUPPORTED;
   }
 
-  Status = Tpm2RequestUseTpm ();
+  Status = Tpm2StartupRequest ();
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "TPM2 not detected!\n"));
+    DEBUG ((DEBUG_ERROR, "%a - TPM failed StartupRequest!\n", __func__));
     return Status;
   }
+
+  if (PcdGet8 (PcdTpm2InitializationPolicy) == 1) {
+    // TODO: Need to figure out what to do if S3ErrorReport returns TRUE.
+    Status = Tpm2StartupInit (GetBootModeHob () == BOOT_ON_S3_RESUME, NULL);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - TPM failed StartupInit!\n", __func__));
+      return Status;
+    }
+  }
+
+  Status = Tpm2StartupSecuritySync ();
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a - TPM failed StartupSecuritySync!\n", __func__));
+    return Status;
+  }
+
+  if (PcdGet8 (PcdTpm2SyncPolicy) == 1) {
+    Status = Tpm2StartupIntentSync (PcdGet32 (PcdTpm2HashMask));
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - TPM failed StartupIntentSync!\n", __func__));
+      return Status;
+    }
+  }
+
+  // MU_CHANGE - [END]
 
   //
   // Fill information

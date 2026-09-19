@@ -7,7 +7,6 @@
 **/
 
 #include "PeilessSec.h"
-#include <Library/Tpm2StartupLib.h> // MU_CHANGE
 
 #define IS_XIP()  (((UINT64)FixedPcdGet64 (PcdFdBaseAddress) > mSystemMemoryEnd) ||\
                   ((FixedPcdGet64 (PcdFdBaseAddress) + FixedPcdGet32 (PcdFdSize)) <= FixedPcdGet64 (PcdSystemMemoryBase)))
@@ -206,29 +205,46 @@ SecMain (
   // SEC phase needs to run library constructors by hand.
   ProcessLibraryConstructorList ();
 
-  // MU_CHANGE [BEGIN] - Add Tpm2StartupInit call
-  // Initialize the TPM before loading the DXE core
-  Status = Tpm2StartupInit ();
-
-  /* NOTE: EFI_UNSUPPORTED is treated as a success due to the possibility of there
-   *       not being a TPM on the system and if so, the NULL instance of the startup
-   *       lib should be linked in which returns UNSUPPORTED. Also, even if TPM is
-   *       enabled, Tpm2StartupInit could return UNSUPPORTED depending on the TPM
-   *       instance. */
-  if ((Status != EFI_SUCCESS) && (Status != EFI_UNSUPPORTED)) {
-    DEBUG ((DEBUG_ERROR, "Failed to initialize the TPM\n"));
-    ASSERT_EFI_ERROR (Status);
-  }
-
-  // MU_CHANGE [END]
-
-  // MU_CHANGE [BEGIN] - Remove DXE Core FV placement assumption
-
-  // Decompress firmware volumes and load the DXE Core
+  // MU_CHANGE - [BEGIN]
+  // Decompress firmware volumes.
   DecompressFvs ();
 
-  Status = MeasurePeilessSec ();
-  ASSERT_EFI_ERROR (Status);
+  // Initialize the TPM before loading the DXE core, if supported.
+  if (Tpm2StartupIsTpmSupported ()) {
+    Status = Tpm2StartupRequest ();
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - TPM2 access request failed: %r\n", __func__, Status));
+      goto Error;
+    }
+
+    if (PcdGet8 (PcdTpm2InitializationPolicy) == 1) {
+      // TODO: Need to figure out what to do if S3ErrorReport returns TRUE.
+      Status = Tpm2StartupInit (GetBootMode () == BOOT_ON_S3_RESUME, NULL);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a - TPM failed StartupInit: %r\n", __func__, Status));
+        goto Error;
+      }
+    }
+
+    // NOTE: PeilessSec can not perform IntentSync as it does not have access to User Intent.
+    Status = Tpm2StartupSecuritySync ();
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - TPM failed StartupSecuritySync!\n", __func__));
+      goto Error;
+    }
+
+Error:
+    if (EFI_ERROR (Status)) {
+      // Signal downstream phases that TPM startup failed.
+      BuildGuidHob (&gTpmErrorHobGuid, 0);
+    } else {
+      Status = MeasurePeilessSec ();
+      ASSERT_EFI_ERROR (Status);
+    }
+  }
+
+  // MU_CHANGE [BEGIN] - Remove DXE Core FV placement assumption
+  // MU_CHANGE - [END]
 
   // Load the DXE Core and transfer control to it
   Status = LoadDxeCoreFromFv (NULL, 0);
