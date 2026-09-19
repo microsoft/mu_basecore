@@ -20,7 +20,7 @@
 name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
 
-commitish: refs/heads/release/202502
+commitish: refs/heads/release/202511
 filter-by-commitish: true
 
 template: |
