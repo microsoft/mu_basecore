@@ -322,7 +322,7 @@ TEST_F (ValidateImageTest, UnsignedImageHashInDb_AuthorizesImage) {
   EXPECT_EQ (Measured.Count, (UINTN)0);
 }
 
-TEST_F (ValidateImageTest, MalformedCertificateTable_DbHashStillAuthorizesImage) {
+TEST_F (ValidateImageTest, MalformedCertificateTable_DbHashAuthorizesBeforeCertificateEvaluation) {
   std::vector<UINT8>  Digest (kSha256DigestSize, 0x42);
   std::vector<UINT8>  Db               = BuildSignatureDatabase (gEfiCertSha256Guid, Digest);
   std::vector<UINT8>  CertificateTable = BuildWinCertificate (
@@ -337,6 +337,7 @@ TEST_F (ValidateImageTest, MalformedCertificateTable_DbHashStillAuthorizesImage)
     .WillOnce (Return (EFI_NOT_FOUND));
   EXPECT_CALL (BaseCryptLibMock, HashAllByGuid (_, _, _, _, _))
     .WillOnce (ReturnSha256Digest (Digest));
+  EXPECT_CALL (BaseCryptLibMock, GetAuthenticodeHashAlgorithm (_, _, _)).Times (0);
 
   EXPECT_EQ (
     ValidateImage (
@@ -350,7 +351,7 @@ TEST_F (ValidateImageTest, MalformedCertificateTable_DbHashStillAuthorizesImage)
     );
 }
 
-TEST_F (ValidateImageTest, UnusableCertificate_DbHashFallbackAuthorizesImage) {
+TEST_F (ValidateImageTest, UnusableCertificate_DbHashAuthorizesBeforeCertificateEvaluation) {
   std::vector<UINT8>  Digest (kSha256DigestSize, 0x24);
   std::vector<UINT8>  Db          = BuildSignatureDatabase (gEfiCertSha256Guid, Digest);
   std::vector<UINT8>  Certificate = BuildWinCertificate (
@@ -363,6 +364,7 @@ TEST_F (ValidateImageTest, UnusableCertificate_DbHashFallbackAuthorizesImage) {
     .WillOnce (Return (EFI_NOT_FOUND));
   EXPECT_CALL (BaseCryptLibMock, HashAllByGuid (_, _, _, _, _))
     .WillOnce (ReturnSha256Digest (Digest));
+  EXPECT_CALL (BaseCryptLibMock, GetAuthenticodeHashAlgorithm (_, _, _)).Times (0);
 
   EXPECT_EQ (
     ValidateImage (
@@ -376,7 +378,7 @@ TEST_F (ValidateImageTest, UnusableCertificate_DbHashFallbackAuthorizesImage) {
     );
 }
 
-TEST_F (ValidateImageTest, CertificateHashFailure_DbHashRetryAuthorizesImage) {
+TEST_F (ValidateImageTest, DbHashFailure_SignatureWithoutTrustAnchorDeniesImage) {
   std::vector<UINT8>  Digest (kSha256DigestSize, 0x81);
   std::vector<UINT8>  Db          = BuildSignatureDatabase (gEfiCertSha256Guid, Digest);
   std::vector<UINT8>  Certificate = BuildWinCertificate (
@@ -401,6 +403,10 @@ TEST_F (ValidateImageTest, CertificateHashFailure_DbHashRetryAuthorizesImage) {
     .WillOnce (ReturnSha256Digest (Digest));
   EXPECT_CALL (TpmMeasurementLibMock, TpmMeasureAndLogData (_, _, _, _, _, _)).Times (0);
 
+  //
+  // The db hash lookup fails before signature evaluation. Signature evaluation can recompute the
+  // image hash, but this db contains no certificate trust anchor, so the signature cannot authorize.
+  //
   EXPECT_EQ (
     ValidateImage (
       mAuthenticodeImage,
@@ -409,7 +415,7 @@ TEST_F (ValidateImageTest, CertificateHashFailure_DbHashRetryAuthorizesImage) {
       Certificate.size (),
       &Measured
       ),
-    EFI_SUCCESS
+    EFI_ACCESS_DENIED
     );
 }
 
