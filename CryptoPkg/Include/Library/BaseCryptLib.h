@@ -2676,6 +2676,44 @@ Pkcs7Verify (
 // MU_CHANGE - Start - Add Pkcs7Encrypt and Pkcs7Decrypt- #12519
 
 /**
+  Verify a PKCS#7/CMS SignedData structure and optionally return the verified
+  signer certificate chain in EFI_CERT_STACK form.
+
+  SignerChain and SignerChainSize must both be NULL or both be non-NULL.
+  When requested, the returned chain contains only certificates used by the
+  verifier, ordered leaf to trust anchor. It is not the unverified certificate
+  collection returned by Pkcs7GetSigners(). The caller frees it with FreePool().
+  Chain capture is best-effort: successful verification may return NULL and
+  zero when a verified chain cannot be captured or serialized.
+  On failure, every supplied output is reset to NULL or zero.
+
+  @param[in]  P7Data           PKCS#7/CMS SignedData message.
+  @param[in]  P7Length         Size of P7Data in bytes.
+  @param[in]  TrustedCert      DER-encoded trust anchor.
+  @param[in]  CertLength       Size of TrustedCert in bytes.
+  @param[in]  InData           Content to verify.
+  @param[in]  DataLength       Size of InData in bytes.
+  @param[out] SignerChain      Optional caller-owned verified EFI_CERT_STACK.
+  @param[out] SignerChainSize  Optional size of SignerChain in bytes.
+
+  @retval TRUE   The specified PKCS#7/CMS signed data is valid.
+  @retval FALSE  The signed data or parameters are invalid, verification failed,
+                 or the interface or requested chain output is unsupported.
+**/
+BOOLEAN
+EFIAPI
+CmsVerify (
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertLength,
+  IN  CONST UINT8  *InData,
+  IN  UINTN        DataLength,
+  OUT UINT8        **SignerChain      OPTIONAL,
+  OUT UINTN        *SignerChainSize   OPTIONAL
+  );
+
+/**
   Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
   that wraps content encrypted for secure transmission to one or more recipients.
 

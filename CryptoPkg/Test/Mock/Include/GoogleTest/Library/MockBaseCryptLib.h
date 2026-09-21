@@ -19,6 +19,21 @@ struct MockBaseCryptLib {
   MOCK_INTERFACE_DECLARATION (MockBaseCryptLib);
 
   MOCK_FUNCTION_DECLARATION (
+    BOOLEAN,
+    CmsVerify,
+    (
+     IN CONST UINT8  *P7Data,
+     IN UINTN        P7Length,
+     IN CONST UINT8  *TrustedCert,
+     IN UINTN        CertLength,
+     IN CONST UINT8  *InData,
+     IN UINTN        DataLength,
+     OUT UINT8       **SignerChain OPTIONAL,
+     OUT UINTN       *SignerChainSize OPTIONAL
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
     GetTrustAnchorX509FromAuthData,
     (

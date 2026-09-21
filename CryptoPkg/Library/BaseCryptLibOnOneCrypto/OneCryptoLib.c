@@ -3058,6 +3058,38 @@ Pkcs7Verify (
 }
 
 /**
+  See BaseCryptLib.h CmsVerify().
+**/
+BOOLEAN
+EFIAPI
+CmsVerify (
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertLength,
+  IN  CONST UINT8  *InData,
+  IN  UINTN        DataLength,
+  OUT UINT8        **SignerChain      OPTIONAL,
+  OUT UINTN        *SignerChainSize   OPTIONAL
+  )
+{
+  if (SignerChain != NULL) {
+    *SignerChain = NULL;
+  }
+
+  if (SignerChainSize != NULL) {
+    *SignerChainSize = 0;
+  }
+
+  if ((SignerChain == NULL) != (SignerChainSize == NULL)) {
+    return FALSE;
+  }
+
+  // The provider validates the message, trust anchor, content and lengths.
+  CALL_CRYPTO_SERVICE (CmsVerify, (P7Data, P7Length, TrustedCert, CertLength, InData, DataLength, SignerChain, SignerChainSize), FALSE, 1, 1);
+}
+
+/**
   Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
   that wraps content encrypted for secure transmission to one or more recipients.
 
