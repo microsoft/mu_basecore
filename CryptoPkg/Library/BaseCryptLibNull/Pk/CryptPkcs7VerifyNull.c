@@ -183,3 +183,25 @@ Pkcs7GetAttachedContent (
   ASSERT (FALSE);
   return FALSE;
 }
+
+/**
+  See BaseCryptLib.h CmsVerify().
+
+  @retval FALSE  This interface is not supported.
+**/
+BOOLEAN
+EFIAPI
+CmsVerify (
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertLength,
+  IN  CONST UINT8  *InData,
+  IN  UINTN        DataLength,
+  OUT UINT8        **SignerChain      OPTIONAL,
+  OUT UINTN        *SignerChainSize   OPTIONAL
+  )
+{
+  ASSERT (FALSE);
+  return FALSE;
+}

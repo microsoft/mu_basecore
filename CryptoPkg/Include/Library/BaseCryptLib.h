@@ -2462,6 +2462,26 @@ CmsGetSignerInfoNum (
   );
 
 /**
+  Verify a PKCS#7/CMS SignedData structure and optionally return the verified
+  signer certificate chain in EFI_CERT_STACK form.
+
+  @retval TRUE   The specified PKCS#7/CMS signed data is valid.
+  @retval FALSE  The signed data is invalid or the interface is unsupported.
+**/
+BOOLEAN
+EFIAPI
+CmsVerify (
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertLength,
+  IN  CONST UINT8  *InData,
+  IN  UINTN        DataLength,
+  OUT UINT8        **SignerChain      OPTIONAL,
+  OUT UINTN        *SignerChainSize   OPTIONAL
+  );
+
+/**
   Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
   that wraps content encrypted for secure transmission to one or more recipients.
 
