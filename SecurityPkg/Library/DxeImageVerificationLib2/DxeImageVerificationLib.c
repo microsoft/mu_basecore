@@ -24,9 +24,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   databases.
 
     1. Reject immediately if the image's Authenticode hash is enrolled in `dbx`.
-    2. Walk each WIN_CERTIFICATE to determine if its signature is not revoked by `dbx` and is
+    2. Authorize the image if its Authenticode hash is enrolled in `db`.
+    3. Walk each WIN_CERTIFICATE to determine if its signature is not revoked by `dbx` and is
        authorized by `db`. Only one WIN_CERTIFICATE needs to authorize the image for validation.
-    3. Authorize the image if its Authenticode hash is enrolled in `db`.
 
   @param[in]   AuthenticodeImage      The assembled Authenticode image (the exact bytes the
                                       image-hash checks hash).
@@ -84,7 +84,16 @@ ValidateImage (
   }
 
   //
-  // Step 2: For each WIN_CERTIFICATE, extract its signature data and evaluate it against db and
+  // Step 2: Authorize the image if its Authenticode hash is found in db, passed to the generic
+  // allow-list search.
+  //
+  if (IsImageHashInAllowList (&Cache, Lists.AllowList, Lists.AllowListSize)) {
+    Status = EFI_SUCCESS;
+    goto Exit;
+  }
+
+  //
+  // Step 3: For each WIN_CERTIFICATE, extract its signature data and evaluate it against db and
   // dbx. Exit on the first authorization.
   //
   if (!WinCertIterInit (&CertIter, WinCertificates, WinCertificatesLength)) {
@@ -115,15 +124,6 @@ ValidateImage (
       Status = EFI_SUCCESS;
       goto Exit;
     }
-  }
-
-  //
-  // Step 3: Authorize the image if its Authenticode hash is found in db, passed to the generic
-  // allow-list search.
-  //
-  if (IsImageHashInAllowList (&Cache, Lists.AllowList, Lists.AllowListSize)) {
-    Status = EFI_SUCCESS;
-    goto Exit;
   }
 
   DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: image is not authorized by db.\n"));
