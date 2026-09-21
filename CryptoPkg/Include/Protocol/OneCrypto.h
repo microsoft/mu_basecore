@@ -2326,6 +2326,28 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_PKCS7_VERIFY)(
   );
 
 /**
+  Verify a PKCS#7/CMS SignedData structure and optionally return the verified
+  signer certificate chain in EFI_CERT_STACK form.
+
+  Uses the CmsVerify() allocation and error contract in BaseCryptLib.h.
+  Both optional outputs must be supplied together. Only a verified chain is
+  returned; the caller releases it with FreePool().
+
+  @since 1.1
+  @ingroup PKCS
+**/
+typedef BOOLEAN (EFIAPI *ONE_CRYPTO_CMS_VERIFY)(
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertLength,
+  IN  CONST UINT8  *InData,
+  IN  UINTN        DataLength,
+  OUT UINT8        **SignerChain      OPTIONAL,
+  OUT UINTN        *SignerChainSize   OPTIONAL
+  );
+
+/**
   Creates a DER-encoded PKCS#7 ContentInfo containing an envelopedData structure
   that wraps content encrypted for secure transmission to one or more recipients.
 
@@ -5636,6 +5658,8 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_GET_AUTHENTICODE_HASH_ALGORITHM         GetAuthenticodeHashAlgorithm;
   /// v1.1 Hash --------------------------------------------------------------
   ONE_CRYPTO_HASH_ALL_BY_GUID                        HashAllByGuid;
+  /// v1.1 CMS ---------------------------------------------------------------
+  ONE_CRYPTO_CMS_VERIFY                              CmsVerify;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */
