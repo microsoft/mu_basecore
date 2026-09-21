@@ -99,13 +99,13 @@ Notes:
 1. **Image-hash revocation.** Pass `dbx` to `IsImageHashInRevokeList` as the
    revoke-list and look up the image's Authenticode digest. A hit—or a `dbx`
    that cannot be fully parsed (fail-closed)—rejects the image.
-2. **Per-`WIN_CERTIFICATE` walk.** For each embedded `WIN_CERTIFICATE`,
-   extract its Authenticode signature data and ask `EvaluateSignature` for a verdict;
-   the first signature whose verdict is `ImageSignatureAllowed` authorizes the
-   image.
-3. **Image-hash fallback.** If no embedded signature authorizes the image,
-   pass `db` to `IsImageHashInAllowList` as the allow-list and look up the
-   image's digest. A hit authorizes on the image-hash path.
+2. **Image-hash authorization.** Pass `db` to `IsImageHashInAllowList` as the
+   allow-list and look up the image's digest. A hit authorizes immediately on
+   the image-hash path.
+3. **Per-`WIN_CERTIFICATE` walk.** If the image hash is not authorized, walk
+   each embedded `WIN_CERTIFICATE`, extract its Authenticode signature data,
+   and ask `EvaluateSignature` for a verdict. The first signature whose verdict
+   is `ImageSignatureAllowed` authorizes the image.
 
 When the image is authorized by a certificate, the authorizing certificate
 is measured into PCR 7 via `SecureBootHook` and the function returns
@@ -118,17 +118,17 @@ flowchart TD
     B --> S1[IsImageHashInRevokeList]
     S1 --> S1Q{{Found or unparsable?}}
     S1Q -- yes --> R[Reject]
-    S1Q -- no  --> D1[WinCertIterNext: next WIN_CERTIFICATE]
+    S1Q -- no  --> H[IsImageHashInAllowList]
+    H --> H1{{Found?}}
+    H1 -- yes --> S
+    H1 -- no  --> D1[WinCertIterNext: next WIN_CERTIFICATE]
     D1 --> D2{{Entry?}}
     D2 -- yes --> EA[ExtractSignatureData]
     EA --> IA[EvaluateSignature]
-    IA --> IA1{{Approved?}}
+    IA --> IA1{{Allowed?}}
     IA1 -- yes --> G[SecureBootHook]
     IA1 -- no --> D1
-    D2 -- no  --> H[IsImageHashInAllowList]
-    H --> H1{{Found?}}
-    H1 -- yes --> S
-    H1 -- no  --> R
+    D2 -- no  --> R
     G --> S[return EFI_SUCCESS]
     R --> X[return EFI_ACCESS_DENIED]
 
@@ -138,11 +138,13 @@ flowchart TD
 
 Notes:
 
-- `dbx` is consulted **before** the certificate walk and the `db` hash
-  fallback. A revoked image hash is denied regardless of any certificates.
+- `dbx` is consulted **before** both authorization paths. A revoked image hash
+  is denied regardless of any `db` image-hash entry or embedded signature.
+- A matching image hash in `db` authorizes immediately, so embedded
+  certificates are not parsed or measured on that path.
 - The first `WIN_CERTIFICATE` that authorizes wins; the walk is empty
   when `WinCertificates == NULL` and `WinCertificatesLength == 0`, so an
-  unsigned image can only be authorized by the `db` image-hash fallback.
+  unsigned image can only be authorized by the `db` image-hash path.
 - Only certificate authorization flows through `SecureBootHook`; an image-hash
   authorization returns success without measuring an authority into PCR 7.
 
