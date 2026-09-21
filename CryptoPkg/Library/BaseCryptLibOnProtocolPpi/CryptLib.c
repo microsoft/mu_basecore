@@ -709,6 +709,42 @@ Pkcs7Verify (
   CALL_CRYPTO_SERVICE (Pkcs7Verify, (P7Data, P7Length, TrustedCert, CertLength, InData, DataLength), FALSE);
 }
 
+// MU_CHANGE [BEGIN]
+
+/**
+  Implements CmsVerify() using Pkcs7Verify() because EDKII_CRYPTO_PROTOCOL
+  does not expose CmsVerify(). Signer-chain output is not supported.
+**/
+BOOLEAN
+EFIAPI
+CmsVerify (
+  IN  CONST UINT8  *P7Data,
+  IN  UINTN        P7Length,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertLength,
+  IN  CONST UINT8  *InData,
+  IN  UINTN        DataLength,
+  OUT UINT8        **SignerChain      OPTIONAL,
+  OUT UINTN        *SignerChainSize   OPTIONAL
+  )
+{
+  if (SignerChain != NULL) {
+    *SignerChain = NULL;
+  }
+
+  if (SignerChainSize != NULL) {
+    *SignerChainSize = 0;
+  }
+
+  if ((SignerChain != NULL) || (SignerChainSize != NULL)) {
+    return FALSE;
+  }
+
+  return Pkcs7Verify (P7Data, P7Length, TrustedCert, CertLength, InData, DataLength);
+}
+
+// MU_CHANGE [END]
+
 /**
   This function receives a PKCS7 formatted signature, and then verifies that
   the specified Enhanced or Extended Key Usages (EKU's) are present in the end-entity
