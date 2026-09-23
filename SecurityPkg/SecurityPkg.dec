@@ -38,6 +38,10 @@
   #
   PlatformSecureLib|Include/Library/PlatformSecureLib.h
 
+  ##  @libraryclass  Submit crypto-capability records to the ECIT collector.
+  #
+  CryptoIndicatorRegistrationLib|Include/Library/CryptoIndicatorRegistrationLib.h
+
   ##  @libraryclass  Provides interfaces to handle TPM 1.2 request.
   #
   TcgPhysicalPresenceLib|Include/Library/TcgPhysicalPresenceLib.h
@@ -321,6 +325,11 @@
   # Tcg/TcgLogTest/TcgLogTest.h
   gTcgLogTestProtocolGuid            = {0xa3c12f80, 0x7d9e, 0x4b5a, { 0x91, 0xe4, 0x6c, 0xf8, 0x2d, 0xa1, 0xb7, 0x03 }}
   ## MU_CHANGE - [END]
+
+  ## Protocol produced by the ECIT collector; feature owners use it to register
+  #  their crypto-capability records (tianocore/edk2#12408).
+  # Include/Protocol/CryptoIndicatorRegistration.h
+  gEfiCryptoIndicatorRegistrationProtocolGuid = {0x2b9a1f74, 0x3c6e, 0x4d18, { 0x9a, 0x2f, 0xd7, 0x0e, 0x4c, 0x11, 0x83, 0x55 }}
 
 [Ppis]
   ## The PPI GUID for that TPM physical presence should be locked.
