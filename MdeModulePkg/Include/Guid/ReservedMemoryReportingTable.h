@@ -20,7 +20,7 @@
 typedef enum {
   RmemCategoryUnknown            = 0,
   RmemCategorySecurity           = 1,
-  RmemCategorySharedComms        = 2,
+  RmemCategorySharedMemory       = 2,
   RmemCategoryDisplayFramebuffer = 3,
   RmemCategoryGpuReserved        = 4,
   RmemCategoryNpuReserved        = 5,

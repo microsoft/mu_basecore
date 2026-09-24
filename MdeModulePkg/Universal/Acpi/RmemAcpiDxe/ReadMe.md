@@ -18,7 +18,7 @@ standard.
 ## Motivation
 
 Firmware can reserve physical memory for security services, device operation,
-firmware runtime use, shared communication, crash handling, and other platform
+firmware runtime use, shared memory, crash handling, and other platform
 functions. Operating systems generally report an aggregate hardware-reserved
 amount without explaining the purpose of each range.
 
@@ -154,7 +154,7 @@ Revision 1 proposes the following wire values:
 | ---: | --- | --- |
 | 0 | Unknown | Invalid sentinel for missing or uninitialized values |
 | 1 | Security | Isolated execution, security processors, or protected services |
-| 2 | SharedComms | Buffers shared across firmware execution environments |
+| 2 | SharedMemory | Memory shared across firmware execution environments |
 | 3 | DisplayFramebuffer | Pre-OS or persistent display framebuffer memory |
 | 4 | GpuReserved | Memory reserved for graphics use |
 | 5 | NpuReserved | Memory reserved for neural-processing use |
@@ -249,7 +249,7 @@ function Resolve-RmemCategory {
 
   switch ($Value) {
     1 { "Security" }
-    2 { "SharedComms" }
+    2 { "SharedMemory" }
     3 { "DisplayFramebuffer" }
     4 { "GpuReserved" }
     5 { "NpuReserved" }
@@ -353,7 +353,7 @@ Index Base               SizeBytes SizeMiB Category        Label
 ----- ----               --------- ------- --------        -----
   0 0x0000000010000000 536870912 512.000 GpuReserved     iGPU Shared VRAM
   1 0x0000000030000000 267386880 255.000 Security        Security Processor
-  2 0x000000003FF00000   1048576   1.000 SharedComms     MM Communication Buffer
+  2 0x000000003FF00000   1048576   1.000 SharedMemory    MM Communication Buffer
   3 0x0000000040000000  16777216  16.000 FirmwareRuntime Offline Crash Dump
 ```
 
