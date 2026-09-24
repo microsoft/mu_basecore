@@ -268,7 +268,8 @@ EvaluatePkcsSignedDataSignature (
 
 // Tiny throwaway "image" buffer for the digest cache; mocks of
 // GetAuthenticodeHash never dereference it.
-static UINT8  kFakeImage[16] = { 0 };
+static UINT8           kFakeImage[16]         = { 0 };
+static CONST EFI_GUID  mSha1HashAlgorithmGuid = EFI_HASH_ALGORITHM_SHA1_GUID;
 
 static void
 InitImageCache (
@@ -1742,6 +1743,41 @@ TEST (EvaluateSignatureTest, HashAlgorithmFails_Unusable) {
 
   EXPECT_CALL (BaseCryptLibMock, GetAuthenticodeHashAlgorithm (_, _, _))
     .WillOnce (Return (EFI_UNSUPPORTED));
+  EXPECT_CALL (BaseCryptLibMock, HashAllByGuid (_, _, _, _, _)).Times (0);
+  EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
+
+  EXPECT_EQ (
+    EvaluatePkcsSignedDataSignature (
+      (CONST WIN_CERTIFICATE *)CertBuf.data (),
+      &Cache,
+      &Lists,
+      &Eval
+      ),
+    EFI_SUCCESS
+    );
+  EXPECT_EQ (Eval.Verdict, ImageSignatureUnusable);
+  EXPECT_EQ (Eval.Authority.Data, nullptr);
+}
+
+TEST (EvaluateSignatureTest, Sha1HashAlgorithm_Unusable) {
+  MockBaseCryptLib            BaseCryptLibMock;
+  DIGEST_CACHE                Cache;
+  std::vector<UINT8>          CertBuf = MakePkcsSignedDataCert (std::vector<UINT8>(16, 0xA1));
+  SIGNATURE_LISTS             Lists   = { NULL, 0, NULL, 0 };
+  IMAGE_SIGNATURE_EVALUATION  Eval;
+
+  InitImageCache (Cache);
+  ZeroMem (&Eval, sizeof (Eval));
+
+  EXPECT_CALL (BaseCryptLibMock, GetAuthenticodeHashAlgorithm (_, _, _))
+    .WillOnce (
+       Invoke (
+         [] (CONST UINT8 *, UINTN, EFI_GUID *Out) -> EFI_STATUS {
+    CopyMem (Out, &mSha1HashAlgorithmGuid, sizeof (EFI_GUID));
+    return EFI_SUCCESS;
+  }
+         )
+       );
   EXPECT_CALL (BaseCryptLibMock, HashAllByGuid (_, _, _, _, _)).Times (0);
   EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _)).Times (0);
 
