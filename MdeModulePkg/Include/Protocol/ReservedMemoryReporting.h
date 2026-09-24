@@ -8,7 +8,7 @@
 #ifndef RESERVED_MEMORY_REPORTING_PROTOCOL_H_
 #define RESERVED_MEMORY_REPORTING_PROTOCOL_H_
 
-#include <IndustryStandard/ReservedMemoryReportingTable.h>
+#include <Guid/ReservedMemoryReportingTable.h>
 
 #define EDKII_RMEM_REGISTRATION_PROTOCOL_GUID \
   { 0x0cb661d3, 0x3c81, 0x4074, { 0xa6, 0xa8, 0xc9, 0x75, 0x9c, 0xc5, 0x12, 0x07 } }

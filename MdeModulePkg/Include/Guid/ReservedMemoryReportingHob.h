@@ -8,7 +8,7 @@
 #ifndef RESERVED_MEMORY_REPORTING_HOB_H_
 #define RESERVED_MEMORY_REPORTING_HOB_H_
 
-#include <IndustryStandard/ReservedMemoryReportingTable.h>
+#include <Guid/ReservedMemoryReportingTable.h>
 
 #define EDKII_RMEM_RECORD_HOB_GUID \
   { 0x089dcec6, 0x097b, 0x4dbf, { 0x8d, 0xb4, 0x68, 0x23, 0x61, 0xc8, 0x4a, 0x1e } }

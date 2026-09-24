@@ -11,7 +11,7 @@
 
 #include <Guid/EventGroup.h>
 #include <Guid/ReservedMemoryReportingHob.h>
-#include <IndustryStandard/ReservedMemoryReportingTable.h>
+#include <Guid/ReservedMemoryReportingTable.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
@@ -30,6 +30,10 @@ STATIC BOOLEAN     mFinalized;
 STATIC BOOLEAN     mRegistrationFailed;
 STATIC EFI_EVENT   mPublicationEvent;
 
+/**
+  Checks that a range is nonempty and that its inclusive end address does not
+  overflow the physical address space.
+**/
 STATIC
 BOOLEAN
 RmemRangeIsValid (
@@ -40,6 +44,10 @@ RmemRangeIsValid (
   return (Size != 0) && (Base <= (MAX_UINT64 - (Size - 1)));
 }
 
+/**
+  Checks whether two valid ranges share at least one byte. Ranges that only
+  touch at adjacent endpoints do not overlap.
+**/
 STATIC
 BOOLEAN
 RmemRangesOverlap (
@@ -53,6 +61,10 @@ RmemRangesOverlap (
          (SecondBase <= (FirstBase + FirstSize - 1));
 }
 
+/**
+  Checks whether a registered entry and a requested range are exact duplicates.
+  This allows callers to distinguish duplicate registration from other overlap.
+**/
 STATIC
 BOOLEAN
 RmemEntriesAreIdentical (

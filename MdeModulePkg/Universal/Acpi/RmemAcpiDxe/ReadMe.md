@@ -91,7 +91,7 @@ reservation source. A gap in the UEFI memory map is not sufficient evidence
 that a range is reserved DRAM.
 
 The HOB record is defined in
-`MdePkg/Include/Guid/ReservedMemoryReportingHob.h`.
+`MdeModulePkg/Include/Guid/ReservedMemoryReportingHob.h`.
 
 ### DXE Producers
 
@@ -100,7 +100,7 @@ A DXE producer locates `EDKII_RMEM_REGISTRATION_PROTOCOL` and calls
 during DXE. The publisher copies the label before returning.
 
 The registration protocol is defined in
-`MdePkg/Include/Protocol/ReservedMemoryReporting.h`.
+`MdeModulePkg/Include/Protocol/ReservedMemoryReporting.h`.
 
 ### Common Publisher
 
@@ -144,7 +144,7 @@ Each entry has the following layout:
 | 20 | 32 | `Label` | Null-terminated, zero-padded ASCII label |
 
 The authoritative structure definitions are in
-`MdePkg/Include/IndustryStandard/ReservedMemoryReportingTable.h`.
+`MdeModulePkg/Include/Guid/ReservedMemoryReportingTable.h`.
 
 ## Categories
 

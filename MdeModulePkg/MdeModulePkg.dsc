@@ -235,7 +235,9 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdRecoveryFileName|L"FVMAIN.FV"
 
 [Components]
+  # MU_CHANGE [BEGIN] - Add reserved-memory reporting support.
   MdeModulePkg/Universal/Acpi/RmemAcpiDxe/RmemAcpiDxe.inf
+  # MU_CHANGE [END] - Add reserved-memory reporting support.
   MdeModulePkg/Application/HelloWorld/HelloWorld.inf
   MdeModulePkg/Application/DumpDynPcd/DumpDynPcd.inf
   MdeModulePkg/Library/ParallelLzmaCustomDecompressLib/ParallelLzmaCustomDecompressLib.inf       ## MU_CHANGE
