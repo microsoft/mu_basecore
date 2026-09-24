@@ -77,7 +77,7 @@ RmemEntriesAreIdentical (
 {
   return (Existing->Base == Base) &&
          (Existing->Size == Size) &&
-         (Existing->Category == (UINT32)Category) &&
+         (Existing->Category == (UINT8)Category) &&
          (AsciiStrCmp (Existing->Label, Label) == 0);
 }
 
@@ -150,9 +150,10 @@ RmemAddReservedRange (
     return EFI_OUT_OF_RESOURCES;
   }
 
+  ZeroMem (&mEntries[mEntryCount], sizeof (mEntries[mEntryCount]));
   mEntries[mEntryCount].Base     = Base;
   mEntries[mEntryCount].Size     = Size;
-  mEntries[mEntryCount].Category = (UINT32)Category;
+  mEntries[mEntryCount].Category = (UINT8)Category;
   CopyMem (
     mEntries[mEntryCount].Label,
     EffectiveLabel,
@@ -189,7 +190,10 @@ RmemImportHobs (
       return EFI_INCOMPATIBLE_VERSION;
     }
 
-    if ((Record->Reserved != 0) || (Record->Reserved2 != 0)) {
+    if ((Record->Reserved != 0) ||
+        (Record->Reserved2 != 0) ||
+        (Record->Reserved3 != 0))
+    {
       return EFI_COMPROMISED_DATA;
     }
 

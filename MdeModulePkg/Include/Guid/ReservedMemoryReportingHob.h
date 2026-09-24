@@ -29,11 +29,14 @@ typedef struct {
   UINT32    Category;
   UINT32    Reserved2;
   CHAR8     Label[RMEM_LABEL_MAX_LEN];
+  UINT32    Reserved3;
 } RMEM_HOB_RECORD;
 
 #pragma pack()
 
 STATIC_ASSERT (sizeof (RMEM_HOB_RECORD) == 64, "Unexpected RMEM HOB record size");
+STATIC_ASSERT (OFFSET_OF (RMEM_HOB_RECORD, Label) == 32, "Unexpected RMEM HOB label offset");
+STATIC_ASSERT (OFFSET_OF (RMEM_HOB_RECORD, Reserved3) == 60, "Unexpected RMEM HOB reserved offset");
 
 extern EFI_GUID  gEdkiiRmemRecordHobGuid;
 

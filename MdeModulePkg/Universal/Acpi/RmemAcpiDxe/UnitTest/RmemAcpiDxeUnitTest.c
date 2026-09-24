@@ -180,6 +180,8 @@ ValidRangesAreRegistered (
   UT_ASSERT_EQUAL (mEntries[0].Base, 0x1000);
   UT_ASSERT_EQUAL (mEntries[0].Size, 0x1000);
   UT_ASSERT_EQUAL (mEntries[0].Category, RmemCategorySecurity);
+  UT_ASSERT_TRUE (IsZeroBuffer (mEntries[0].Reserved, sizeof (mEntries[0].Reserved)));
+  UT_ASSERT_EQUAL (mEntries[0].Reserved2, 0);
   UT_ASSERT_EQUAL (AsciiStrCmp (mEntries[0].Label, "Secure"), 0);
 
   Status = RmemAddReservedRange (
@@ -351,6 +353,31 @@ InvalidRangesAndCategoriesAreRejected (
 STATIC
 UNIT_TEST_STATUS
 EFIAPI
+MaximumLengthLabelsAreAccepted (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  CHAR8       Label[RMEM_LABEL_MAX_LEN];
+  EFI_STATUS  Status;
+
+  SetMem (Label, RMEM_LABEL_MAX_LEN - 1, 'A');
+  Label[RMEM_LABEL_MAX_LEN - 1] = '\0';
+  Status                        = RmemAddReservedRange (
+                                    &mRmemProtocol,
+                                    0x1000,
+                                    0x1000,
+                                    RmemCategoryOther,
+                                    Label
+                                    );
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+  UT_ASSERT_EQUAL (AsciiStrCmp (mEntries[0].Label, Label), 0);
+
+  return UNIT_TEST_PASSED;
+}
+
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
 OversizedLabelsAreRejected (
   IN UNIT_TEST_CONTEXT  Context
   )
@@ -467,6 +494,8 @@ TableIsSerializedAndInstalled (
   UT_ASSERT_EQUAL (Entry->Base, 0x1000);
   UT_ASSERT_EQUAL (Entry->Size, 0x2000);
   UT_ASSERT_EQUAL (Entry->Category, RmemCategorySecurity);
+  UT_ASSERT_TRUE (IsZeroBuffer (Entry->Reserved, sizeof (Entry->Reserved)));
+  UT_ASSERT_EQUAL (Entry->Reserved2, 0);
   UT_ASSERT_EQUAL (AsciiStrCmp (Entry->Label, "Secure"), 0);
 
   return UNIT_TEST_PASSED;
@@ -655,6 +684,15 @@ UnitTestingEntry (
     "Invalid ranges and categories are rejected",
     "Validation",
     InvalidRangesAndCategoriesAreRejected,
+    ResetRmemState,
+    NULL,
+    NULL
+    );
+  AddTestCase (
+    RegistrationTests,
+    "Maximum-length labels are accepted",
+    "LabelBoundary",
+    MaximumLengthLabelsAreAccepted,
     ResetRmemState,
     NULL,
     NULL

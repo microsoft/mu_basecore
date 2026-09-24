@@ -119,11 +119,11 @@ The Revision 1 table contains a standard 36-byte ACPI description header, a
 4-byte entry count, and zero or more packed 52-byte entries.
 
 ```text
-+----------------------+------------+----------+----------+----------+------------+
-| ACPI header          | EntryCount | Base     | Size     | Category | Label      |
-| 36 bytes             | 4 bytes    | 8 bytes  | 8 bytes  | 4 bytes  | 32 bytes   |
-+----------------------+------------+----------+----------+----------+------------+
-|<---- table header: 40 bytes ----->|<------- each entry: 52 bytes ------------->|
++----------------------+------------+----------+----------+----------+----------+----------+-----------+
+| ACPI header          | EntryCount | Base     | Size     | Category | Reserved | Label    | Reserved2 |
+| 36 bytes             | 4 bytes    | 8 bytes  | 8 bytes  | 1 byte   | 3 bytes  | 28 bytes | 4 bytes   |
++----------------------+------------+----------+----------+----------+----------+----------+-----------+
+|<---- table header: 40 bytes ----->|<---------------- each entry: 52 bytes ---------------->|
 ```
 
 The total table length is `40 + (52 * EntryCount)` bytes.
@@ -140,8 +140,10 @@ Each entry has the following layout:
 | ---: | ---: | --- | --- |
 | 0 | 8 | `Base` | First physical byte of the reserved range |
 | 8 | 8 | `Size` | Range length in bytes |
-| 16 | 4 | `Category` | Numeric purpose category |
-| 20 | 32 | `Label` | Null-terminated, zero-padded ASCII label |
+| 16 | 1 | `Category` | Numeric purpose category |
+| 17 | 3 | `Reserved` | Must be zero in Revision 1 |
+| 20 | 28 | `Label` | Null-terminated, zero-padded ASCII label |
+| 48 | 4 | `Reserved2` | Must be zero in Revision 1 |
 
 The authoritative structure definitions are in
 `MdeModulePkg/Include/Guid/ReservedMemoryReportingTable.h`.
@@ -317,14 +319,22 @@ $entries = for ($index = 0; $index -lt $entryCount; $index++) {
   $offset = $headerSize + ($index * $entrySize)
   [uint64]$base = [BitConverter]::ToUInt64($table, $offset)
   [uint64]$rangeSize = [BitConverter]::ToUInt64($table, $offset + 8)
-  [uint32]$category = [BitConverter]::ToUInt32($table, $offset + 16)
+  [uint32]$category = $table[$offset + 16]
+  [uint32]$reserved2 = [BitConverter]::ToUInt32($table, $offset + 48)
 
   if (($rangeSize -eq 0) -or
       ($base -gt ([uint64]::MaxValue - ($rangeSize - 1)))) {
     throw "RMEM entry $index contains an invalid physical range."
   }
 
-  $labelBytes = $table[($offset + 20)..($offset + 51)]
+  if (($table[$offset + 17] -ne 0) -or
+      ($table[$offset + 18] -ne 0) -or
+      ($table[$offset + 19] -ne 0) -or
+      ($reserved2 -ne 0)) {
+    throw "RMEM entry $index contains nonzero reserved fields."
+  }
+
+  $labelBytes = $table[($offset + 20)..($offset + 47)]
   $terminator = [Array]::IndexOf($labelBytes, [byte]0)
   if ($terminator -lt 0) {
     throw "RMEM entry $index has no null-terminated label."

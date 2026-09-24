@@ -16,7 +16,7 @@
 ///
 /// Maximum serialized label size in bytes, including the null terminator.
 ///
-#define RMEM_LABEL_MAX_LEN  32
+#define RMEM_LABEL_MAX_LEN  28
 
 ///
 /// Identifies the purpose of a reserved-memory range.
@@ -49,13 +49,18 @@ typedef struct {
 typedef struct {
   UINT64    Base;
   UINT64    Size;
-  UINT32    Category;
+  UINT8     Category;
+  UINT8     Reserved[3];
   CHAR8     Label[RMEM_LABEL_MAX_LEN];
+  UINT32    Reserved2;
 } RMEM_ENTRY;
 
 #pragma pack()
 
 STATIC_ASSERT (sizeof (RMEM_TABLE_HEADER) == 40, "Unexpected RMEM table header size");
 STATIC_ASSERT (sizeof (RMEM_ENTRY) == 52, "Unexpected RMEM entry size");
+STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Category) == 16, "Unexpected RMEM category offset");
+STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Label) == 20, "Unexpected RMEM label offset");
+STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Reserved2) == 48, "Unexpected RMEM reserved offset");
 
 #endif
