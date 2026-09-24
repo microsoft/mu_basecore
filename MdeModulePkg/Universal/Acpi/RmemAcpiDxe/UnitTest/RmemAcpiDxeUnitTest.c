@@ -181,7 +181,7 @@ ValidRangesAreRegistered (
   UT_ASSERT_EQUAL (mEntries[0].Size, 0x1000);
   UT_ASSERT_EQUAL (mEntries[0].Category, RmemCategorySecurity);
   UT_ASSERT_TRUE (IsZeroBuffer (mEntries[0].Reserved, sizeof (mEntries[0].Reserved)));
-  UT_ASSERT_EQUAL (mEntries[0].Reserved2, 0);
+  UT_ASSERT_TRUE (IsZeroBuffer (mEntries[0].Reserved2, sizeof (mEntries[0].Reserved2)));
   UT_ASSERT_EQUAL (AsciiStrCmp (mEntries[0].Label, "Secure"), 0);
 
   Status = RmemAddReservedRange (
@@ -490,12 +490,13 @@ TableIsSerializedAndInstalled (
   UT_ASSERT_EQUAL (Table->Header.Length, sizeof (mInstalledTable));
   UT_ASSERT_EQUAL (Table->Header.Revision, RMEM_TABLE_REVISION);
   UT_ASSERT_EQUAL (Table->EntryCount, 1);
+  UT_ASSERT_TRUE (IsZeroBuffer (Table->Reserved, sizeof (Table->Reserved)));
   UT_ASSERT_EQUAL (CalculateSum8 (mInstalledTable, mInstalledTableSize), 0);
   UT_ASSERT_EQUAL (Entry->Base, 0x1000);
   UT_ASSERT_EQUAL (Entry->Size, 0x2000);
   UT_ASSERT_EQUAL (Entry->Category, RmemCategorySecurity);
   UT_ASSERT_TRUE (IsZeroBuffer (Entry->Reserved, sizeof (Entry->Reserved)));
-  UT_ASSERT_EQUAL (Entry->Reserved2, 0);
+  UT_ASSERT_TRUE (IsZeroBuffer (Entry->Reserved2, sizeof (Entry->Reserved2)));
   UT_ASSERT_EQUAL (AsciiStrCmp (Entry->Label, "Secure"), 0);
 
   return UNIT_TEST_PASSED;

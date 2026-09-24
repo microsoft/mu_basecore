@@ -41,6 +41,7 @@ typedef enum {
 typedef struct {
   EFI_ACPI_DESCRIPTION_HEADER    Header;
   UINT32                         EntryCount;
+  UINT8                          Reserved[24];
 } RMEM_TABLE_HEADER;
 
 ///
@@ -52,13 +53,15 @@ typedef struct {
   UINT8     Category;
   UINT8     Reserved[3];
   CHAR8     Label[RMEM_LABEL_MAX_LEN];
-  UINT32    Reserved2;
+  UINT8     Reserved2[16];
 } RMEM_ENTRY;
 
 #pragma pack()
 
-STATIC_ASSERT (sizeof (RMEM_TABLE_HEADER) == 40, "Unexpected RMEM table header size");
-STATIC_ASSERT (sizeof (RMEM_ENTRY) == 52, "Unexpected RMEM entry size");
+STATIC_ASSERT (sizeof (RMEM_TABLE_HEADER) == 64, "Unexpected RMEM table header size");
+STATIC_ASSERT (OFFSET_OF (RMEM_TABLE_HEADER, EntryCount) == 36, "Unexpected RMEM entry count offset");
+STATIC_ASSERT (OFFSET_OF (RMEM_TABLE_HEADER, Reserved) == 40, "Unexpected RMEM header reserved offset");
+STATIC_ASSERT (sizeof (RMEM_ENTRY) == 64, "Unexpected RMEM entry size");
 STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Category) == 16, "Unexpected RMEM category offset");
 STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Label) == 20, "Unexpected RMEM label offset");
 STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Reserved2) == 48, "Unexpected RMEM reserved offset");

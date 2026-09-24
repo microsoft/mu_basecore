@@ -116,23 +116,26 @@ The registration protocol is defined in
 ## Revision 1 Table Layout
 
 The Revision 1 table contains a standard 36-byte ACPI description header, a
-4-byte entry count, and zero or more packed 52-byte entries.
+4-byte entry count, 24 reserved bytes, and zero or more packed 64-byte entries.
 
 ```text
-+----------------------+------------+----------+----------+----------+----------+----------+-----------+
-| ACPI header          | EntryCount | Base     | Size     | Category | Reserved | Label    | Reserved2 |
-| 36 bytes             | 4 bytes    | 8 bytes  | 8 bytes  | 1 byte   | 3 bytes  | 28 bytes | 4 bytes   |
-+----------------------+------------+----------+----------+----------+----------+----------+-----------+
-|<---- table header: 40 bytes ----->|<---------------- each entry: 52 bytes ---------------->|
++----------------------+------------+----------------+----------+----------+----------+----------+----------+------------+
+| ACPI header          | EntryCount | Reserved       | Base     | Size     | Category | Reserved | Label    | Reserved2  |
+| 36 bytes             | 4 bytes    | 24 bytes       | 8 bytes  | 8 bytes  | 1 byte   | 3 bytes  | 28 bytes | 16 bytes   |
++----------------------+------------+----------------+----------+----------+----------+----------+----------+------------+
+|<------------- table header: 64 bytes ------------>|<---------------- each entry: 64 bytes ----------------->|
 ```
 
-The total table length is `40 + (52 * EntryCount)` bytes.
+The total table length is `64 + (64 * EntryCount)` bytes.
+Each entry begins at a 64-byte offset from the start of the table and therefore
+preserves the alignment of the table base address.
 
 | Table offset | Size | Field | Description |
 | ---: | ---: | --- | --- |
 | 0 | 36 | `Header` | Standard ACPI description header |
 | 36 | 4 | `EntryCount` | Number of entries following the header |
-| 40 | `52 * EntryCount` | `Entries` | Packed array of RMEM entries |
+| 40 | 24 | `Reserved` | Must be zero in Revision 1 |
+| 64 | `64 * EntryCount` | `Entries` | Packed array of RMEM entries |
 
 Each entry has the following layout:
 
@@ -143,7 +146,7 @@ Each entry has the following layout:
 | 16 | 1 | `Category` | Numeric purpose category |
 | 17 | 3 | `Reserved` | Must be zero in Revision 1 |
 | 20 | 28 | `Label` | Null-terminated, zero-padded ASCII label |
-| 48 | 4 | `Reserved2` | Must be zero in Revision 1 |
+| 48 | 16 | `Reserved2` | Must be zero in Revision 1 |
 
 The authoritative structure definitions are in
 `MdeModulePkg/Include/Guid/ReservedMemoryReportingTable.h`.
@@ -285,8 +288,8 @@ finally {
   [Runtime.InteropServices.Marshal]::FreeHGlobal($buffer)
 }
 
-$headerSize = 40
-$entrySize = 52
+$headerSize = 64
+$entrySize = 64
 if ($table.Length -lt $headerSize) {
   throw "RMEM table is shorter than its $headerSize-byte header."
 }
@@ -315,12 +318,15 @@ if ($checksum -ne 0) {
   throw "RMEM checksum is invalid."
 }
 
+if ($table[40..63] | Where-Object { $_ -ne 0 }) {
+  throw "RMEM header contains nonzero reserved bytes."
+}
+
 $entries = for ($index = 0; $index -lt $entryCount; $index++) {
   $offset = $headerSize + ($index * $entrySize)
   [uint64]$base = [BitConverter]::ToUInt64($table, $offset)
   [uint64]$rangeSize = [BitConverter]::ToUInt64($table, $offset + 8)
   [uint32]$category = $table[$offset + 16]
-  [uint32]$reserved2 = [BitConverter]::ToUInt32($table, $offset + 48)
 
   if (($rangeSize -eq 0) -or
       ($base -gt ([uint64]::MaxValue - ($rangeSize - 1)))) {
@@ -330,7 +336,8 @@ $entries = for ($index = 0; $index -lt $entryCount; $index++) {
   if (($table[$offset + 17] -ne 0) -or
       ($table[$offset + 18] -ne 0) -or
       ($table[$offset + 19] -ne 0) -or
-      ($reserved2 -ne 0)) {
+      ($table[($offset + 48)..($offset + 63)] |
+        Where-Object { $_ -ne 0 })) {
     throw "RMEM entry $index contains nonzero reserved fields."
   }
 
