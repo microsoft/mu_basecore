@@ -5,15 +5,15 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 ## Status
 
-Reserved-Memory Reporting (RMEM) is a proposed firmware interface for reporting
-reserved physical-memory ranges to operating-system diagnostic software. This
-implementation supports design discussion and platform evaluation. The `RMEM`
-ACPI signature, wire format, category values, GUIDs, and publication policy are
-not standardized and may change based on review.
+Reserved-Memory Reporting (RMEM) Revision 1 is the Microsoft-recommended
+firmware interface for silicon partners and OEMs to report reserved
+physical-memory ranges on Windows devices. This document defines the `RMEM`
+ACPI signature, wire format, category values, producer interfaces, validation
+rules, and publication policy.
 
-The ACPI table definition requires review by the appropriate standards body and
-an official signature allocation before it can be treated as an industry
-standard.
+RMEM is defined by EDK II/Mu and is not currently an ACPI or UEFI industry
+standard. Industry-standard designation would require approval by the
+appropriate standards body and an official ACPI signature allocation.
 
 ## Motivation
 
@@ -22,7 +22,7 @@ firmware runtime use, shared memory, crash handling, and other platform
 functions. Operating systems generally report an aggregate hardware-reserved
 amount without explaining the purpose of each range.
 
-RMEM is intended to help:
+RMEM helps:
 
 - Explain differences between installed and operating-system-visible memory.
 - Diagnose unexpectedly large reservations.
@@ -75,8 +75,8 @@ flowchart LR
   Publisher -->|"InstallAcpiTable()"| Table
   Table --> Consumer
 
-  classDef proposed fill:#1e3a5f,stroke:#0f172a,color:#fff
-  class Hob,Publisher,Table proposed
+  classDef rmem fill:#1e3a5f,stroke:#0f172a,color:#fff
+  class Hob,Publisher,Table rmem
   style CommonDriver fill:#1e3a5f,stroke:#0f172a,stroke-width:3px,color:#fff
 ```
 
@@ -115,7 +115,7 @@ The registration protocol is defined in
 
 ## Revision 1 Table Layout
 
-The proposed table contains a standard 36-byte ACPI description header, a
+The Revision 1 table contains a standard 36-byte ACPI description header, a
 4-byte entry count, and zero or more packed 52-byte entries.
 
 ```text
@@ -181,8 +181,8 @@ The publisher currently:
 - Suppresses publication after an invalid range, invalid category, oversized
   label, overlap, or capacity failure.
 
-The failure policy, duplicate policy, overlap policy, and entry limit remain
-subjects for design review.
+Revision 1 producers and consumers must follow these policies to ensure
+consistent validation and publication behavior.
 
 ## Security and Privacy
 
@@ -201,9 +201,9 @@ decisions.
 ## Windows PowerShell Retrieval
 
 Windows exposes ACPI tables to user mode through `GetSystemFirmwareTable`. The
-following PowerShell example retrieves the experimental `RMEM` table, validates
-its Revision 1 header and checksum, and prints each decoded entry. It reads only
-the table metadata and does not access the reported physical ranges.
+following PowerShell example retrieves the Revision 1 `RMEM` table, validates
+its header and checksum, and prints each decoded entry. It reads only the table
+metadata and does not access the reported physical ranges.
 
 ```powershell
 $ErrorActionPreference = "Stop"
