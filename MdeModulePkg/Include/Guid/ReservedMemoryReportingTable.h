@@ -12,7 +12,11 @@
 
 #define RMEM_TABLE_SIGNATURE  SIGNATURE_32 ('R', 'M', 'E', 'M')
 #define RMEM_TABLE_REVISION   1
-#define RMEM_LABEL_MAX_LEN    32
+
+///
+/// Maximum serialized label size in bytes, including the null terminator.
+///
+#define RMEM_LABEL_MAX_LEN  32
 
 ///
 /// Identifies the purpose of a reserved-memory range.

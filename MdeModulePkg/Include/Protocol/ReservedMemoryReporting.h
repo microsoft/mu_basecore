@@ -29,12 +29,16 @@ typedef struct _EDKII_RMEM_REGISTRATION_PROTOCOL EDKII_RMEM_REGISTRATION_PROTOCO
   @param[in] Base      The physical address of the first byte in the range.
   @param[in] Size      The size of the range in bytes.
   @param[in] Category  The purpose category assigned to the range.
-  @param[in] Label     An optional null-terminated ASCII diagnostic label.
+  @param[in] Label     An optional null-terminated ASCII diagnostic label. The
+                       label, including its null terminator, must fit within
+                       RMEM_LABEL_MAX_LEN bytes. Therefore, the label may
+                       contain at most RMEM_LABEL_MAX_LEN - 1 characters.
 
   @retval EFI_SUCCESS           The range was registered.
   @retval EFI_ALREADY_STARTED   An identical range is already registered.
   @retval EFI_INVALID_PARAMETER A parameter or category value is invalid.
-  @retval EFI_BAD_BUFFER_SIZE   The label exceeds RMEM_LABEL_MAX_LEN.
+  @retval EFI_BAD_BUFFER_SIZE   The label and its null terminator do not fit
+                                within RMEM_LABEL_MAX_LEN bytes.
   @retval EFI_ACCESS_DENIED     Registration is finalized or the range overlaps
                                 an existing entry.
   @retval EFI_OUT_OF_RESOURCES  The registration capacity has been reached.
