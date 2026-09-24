@@ -1123,6 +1123,14 @@ EvaluateSignature (
     return EFI_SUCCESS;
   }
 
+  if (!CompareGuid (&HashAlgorithm, &gEfiHashAlgorithmSha256Guid) &&
+      !CompareGuid (&HashAlgorithm, &gEfiHashAlgorithmSha384Guid) &&
+      !CompareGuid (&HashAlgorithm, &gEfiHashAlgorithmSha512Guid))
+  {
+    DEBUG ((DEBUG_WARN, "DxeImageVerificationLib: forbidden Authenticode hash algorithm %g.\n", &HashAlgorithm));
+    return EFI_SUCCESS;
+  }
+
   Status = GetHash (&HashAlgorithm, Cache, &ImageHash, &ImageHashSize);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: failed to compute image hash (type=%g, %r).\n", &HashAlgorithm, Status));
