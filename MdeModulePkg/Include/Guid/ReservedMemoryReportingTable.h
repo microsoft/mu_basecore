@@ -22,15 +22,15 @@
 /// Identifies the purpose of a reserved-memory range.
 ///
 typedef enum {
-  RmemCategoryUnknown            = 0,
-  RmemCategorySecurity           = 1,
-  RmemCategorySharedMemory       = 2,
-  RmemCategoryDisplayFramebuffer = 3,
-  RmemCategoryGpuReserved        = 4,
-  RmemCategoryNpuReserved        = 5,
-  RmemCategoryFirmwareRuntime    = 6,
-  RmemCategoryOther              = 7,
-  RmemCategoryMax                = 8
+  RmemCategoryUnknown               = 0,
+  RmemCategorySecurity              = 1,
+  RmemCategorySharedMemory          = 2,
+  RmemCategoryDisplayFramebuffer    = 3,
+  RmemCategoryGpuReserved           = 4,
+  RmemCategoryAiAcceleratorReserved = 5,
+  RmemCategoryFirmwareRuntime       = 6,
+  RmemCategoryOther                 = 7,
+  RmemCategoryMax                   = 8
 } RMEM_CATEGORY;
 
 #pragma pack(1)

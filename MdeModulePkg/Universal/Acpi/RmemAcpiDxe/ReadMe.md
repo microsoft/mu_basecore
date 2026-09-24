@@ -148,7 +148,7 @@ The authoritative structure definitions are in
 
 ## Categories
 
-Revision 1 proposes the following wire values:
+Revision 1 defines the following wire values:
 
 | Value | Category | Intended use |
 | ---: | --- | --- |
@@ -157,7 +157,7 @@ Revision 1 proposes the following wire values:
 | 2 | SharedMemory | Memory shared across firmware execution environments |
 | 3 | DisplayFramebuffer | Pre-OS or persistent display framebuffer memory |
 | 4 | GpuReserved | Memory reserved for graphics use |
-| 5 | NpuReserved | Memory reserved for neural-processing use |
+| 5 | AiAcceleratorReserved | Memory reserved for AI acceleration |
 | 6 | FirmwareRuntime | Runtime data, services, or crash diagnostics |
 | 7 | Other | A reservation that does not fit another category |
 
@@ -252,7 +252,7 @@ function Resolve-RmemCategory {
     2 { "SharedMemory" }
     3 { "DisplayFramebuffer" }
     4 { "GpuReserved" }
-    5 { "NpuReserved" }
+    5 { "AiAcceleratorReserved" }
     6 { "FirmwareRuntime" }
     7 { "Other" }
     default { "Unknown ($Value)" }
