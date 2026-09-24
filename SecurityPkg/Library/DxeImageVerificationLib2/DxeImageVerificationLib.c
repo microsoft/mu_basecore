@@ -19,6 +19,39 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "Database.h"
 #include "Support.h"
 
+#include <Guid/CryptoIndicatorTable.h>
+#include <Guid/CryptoOpId.h>
+#include <Library/EcitReportLib.h>
+
+//
+// Crypto operations used to verify image signatures and hashes.
+//
+STATIC CONST EFI_GUID  *mImageVerificationOps[] = {
+  &gCryptoOpAuthenticodeVerifyGuid,
+  &gCryptoOpAuthenticodeHashGuid
+};
+
+//
+// Signature-list types accepted from the authorized and forbidden signature
+// databases.
+//
+STATIC CONST EFI_GUID  mSecureBootImageDatabaseTypes[] = {
+  EFI_CERT_X509_GUID,
+  EFI_CERT_V2_X509_GUID,
+  EFI_CERT_SHA256_GUID,
+  EFI_CERT_V2_SHA256_GUID,
+  EFI_CERT_SHA384_GUID,
+  EFI_CERT_V2_SHA384_GUID,
+  EFI_CERT_SHA512_GUID,
+  EFI_CERT_V2_SHA512_GUID,
+  EFI_CERT_X509_SHA256_GUID,
+  EFI_CERT_V2_X509_SHA256_GUID,
+  EFI_CERT_X509_SHA384_GUID,
+  EFI_CERT_V2_X509_SHA384_GUID,
+  EFI_CERT_X509_SHA512_GUID,
+  EFI_CERT_V2_X509_SHA512_GUID
+};
+
 /**
   Validate a prepared Authenticode image and WIN_CERTIFICATE table against the platform signature
   databases.
@@ -239,7 +272,7 @@ DxeImageVerificationHandler (
 }
 
 /**
-  Register security measurement handler.
+  Register the image security handler and report its ECIT capabilities.
 
   @param  ImageHandle   ImageHandle of the loaded driver.
   @param  SystemTable   Pointer to the EFI System Table.
@@ -253,6 +286,24 @@ DxeImageVerificationLibConstructor (
   IN  EFI_SYSTEM_TABLE  *SystemTable
   )
 {
+  EcitReportCryptoOpCapabilities (
+    &gEfiEcitFeatureSbImageVerificationGuid,
+    mImageVerificationOps,
+    ARRAY_SIZE (mImageVerificationOps)
+    );
+
+  EcitReportCapability (
+    &gEfiEcitFeatureSbImageAuthorizationGuid,
+    mSecureBootImageDatabaseTypes,
+    sizeof (mSecureBootImageDatabaseTypes)
+    );
+
+  EcitReportCapability (
+    &gEfiEcitFeatureSbImageRevocationGuid,
+    mSecureBootImageDatabaseTypes,
+    sizeof (mSecureBootImageDatabaseTypes)
+    );
+
   return RegisterSecurity2Handler (
            DxeImageVerificationHandler,
            EFI_AUTH_OPERATION_VERIFY_IMAGE | EFI_AUTH_OPERATION_IMAGE_REQUIRED
