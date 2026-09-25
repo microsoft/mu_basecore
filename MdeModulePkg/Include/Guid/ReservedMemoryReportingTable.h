@@ -5,8 +5,7 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef RESERVED_MEMORY_REPORTING_TABLE_H_
-#define RESERVED_MEMORY_REPORTING_TABLE_H_
+#pragma once
 
 #include <IndustryStandard/Acpi.h>
 
@@ -70,5 +69,3 @@ STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Category) == 16, "Unexpected RMEM category
 STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Flags) == 17, "Unexpected RMEM flags offset");
 STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Label) == 20, "Unexpected RMEM label offset");
 STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Reserved2) == 48, "Unexpected RMEM reserved offset");
-
-#endif

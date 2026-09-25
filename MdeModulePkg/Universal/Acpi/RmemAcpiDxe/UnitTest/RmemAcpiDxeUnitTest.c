@@ -135,10 +135,10 @@ ResetRmemState (
   )
 {
   ZeroMem (mEntries, sizeof (mEntries));
-  mEntryCount         = 0;
-  mFinalized          = FALSE;
-  mRegistrationFailed = FALSE;
-  mPublicationEvent   = NULL;
+  mEntryCount             = 0;
+  mFinalized              = FALSE;
+  mPublicationEvent       = NULL;
+  mMaximumPhysicalAddress = MAX_UINT64;
 
   ZeroMem (&MockBoot, sizeof (MockBoot));
   MockBoot.LocateProtocol             = MockLocateProtocol;
@@ -196,7 +196,6 @@ ValidRangesAreRegistered (
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
   UT_ASSERT_EQUAL (mEntryCount, 2);
   UT_ASSERT_EQUAL (mEntries[1].Label[0], '\0');
-  UT_ASSERT_FALSE (mRegistrationFailed);
 
   return UNIT_TEST_PASSED;
 }
@@ -204,7 +203,7 @@ ValidRangesAreRegistered (
 STATIC
 UNIT_TEST_STATUS
 EFIAPI
-DuplicateRangesAreIgnored (
+DuplicateRangesAreRejected (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
@@ -228,9 +227,8 @@ DuplicateRangesAreIgnored (
              0,
              "Secure"
              );
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_ALREADY_STARTED);
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_ACCESS_DENIED);
   UT_ASSERT_EQUAL (mEntryCount, 1);
-  UT_ASSERT_FALSE (mRegistrationFailed);
 
   return UNIT_TEST_PASSED;
 }
@@ -247,7 +245,7 @@ OverlappingRangesAreRejected (
   Status = RmemAddReservedRange (
              &mRmemProtocol,
              0x1000,
-             0x1000,
+             0x2000,
              RmemCategorySecurity,
              0,
              "Secure"
@@ -256,7 +254,7 @@ OverlappingRangesAreRejected (
 
   Status = RmemAddReservedRange (
              &mRmemProtocol,
-             0x1800,
+             0x2000,
              0x1000,
              RmemCategoryOther,
              0,
@@ -264,7 +262,6 @@ OverlappingRangesAreRejected (
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_ACCESS_DENIED);
   UT_ASSERT_EQUAL (mEntryCount, 1);
-  UT_ASSERT_TRUE (mRegistrationFailed);
 
   return UNIT_TEST_PASSED;
 }
@@ -288,7 +285,6 @@ InvalidParametersAreRejected (
              NULL
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
-  UT_ASSERT_FALSE (mRegistrationFailed);
 
   InvalidProtocol = mRmemProtocol;
   InvalidProtocol.Revision++;
@@ -301,7 +297,6 @@ InvalidParametersAreRejected (
              NULL
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
-  UT_ASSERT_FALSE (mRegistrationFailed);
 
   Status = RmemAddReservedRange (
              &mRmemProtocol,
@@ -312,7 +307,6 @@ InvalidParametersAreRejected (
              NULL
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
-  UT_ASSERT_TRUE (mRegistrationFailed);
 
   return UNIT_TEST_PASSED;
 }
@@ -328,48 +322,74 @@ InvalidRangesAndCategoriesAreRejected (
 
   Status = RmemAddReservedRange (
              &mRmemProtocol,
-             MAX_UINT64,
-             2,
+             0xFFFFFFFFFFFFF000,
+             0x2000,
              RmemCategorySecurity,
              0,
              NULL
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
 
-  mRegistrationFailed = FALSE;
-  Status              = RmemAddReservedRange (
-                          &mRmemProtocol,
-                          0x1000,
-                          0x1000,
-                          RmemCategoryUnknown,
-                          0,
-                          NULL
-                          );
+  Status = RmemAddReservedRange (
+             &mRmemProtocol,
+             0x1001,
+             0x1000,
+             RmemCategorySecurity,
+             0,
+             NULL
+             );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
 
-  mRegistrationFailed = FALSE;
-  Status              = RmemAddReservedRange (
-                          &mRmemProtocol,
-                          0x1000,
-                          0x1000,
-                          RmemCategoryMax,
-                          0,
-                          NULL
-                          );
+  Status = RmemAddReservedRange (
+             &mRmemProtocol,
+             0x1000,
+             0x1001,
+             RmemCategorySecurity,
+             0,
+             NULL
+             );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
-  UT_ASSERT_TRUE (mRegistrationFailed);
 
-  mRegistrationFailed = FALSE;
-  Status              = RmemAddReservedRange (
-                          &mRmemProtocol,
-                          0x1000,
-                          0x1000,
-                          RmemCategoryOther,
-                          BIT1,
-                          NULL
-                          );
+  mMaximumPhysicalAddress = 0x3FFF;
+  Status                  = RmemAddReservedRange (
+                              &mRmemProtocol,
+                              0x3000,
+                              0x2000,
+                              RmemCategorySecurity,
+                              0,
+                              NULL
+                              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
-  UT_ASSERT_TRUE (mRegistrationFailed);
+
+  Status = RmemAddReservedRange (
+             &mRmemProtocol,
+             0x1000,
+             0x1000,
+             RmemCategoryUnknown,
+             0,
+             NULL
+             );
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
+
+  Status = RmemAddReservedRange (
+             &mRmemProtocol,
+             0x1000,
+             0x1000,
+             RmemCategoryMax,
+             0,
+             NULL
+             );
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
+
+  Status = RmemAddReservedRange (
+             &mRmemProtocol,
+             0x1000,
+             0x1000,
+             RmemCategoryOther,
+             BIT1,
+             NULL
+             );
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
 
   return UNIT_TEST_PASSED;
 }
@@ -422,7 +442,6 @@ OversizedLabelsAreRejected (
                                 );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_BAD_BUFFER_SIZE);
   UT_ASSERT_EQUAL (mEntryCount, 0);
-  UT_ASSERT_TRUE (mRegistrationFailed);
 
   return UNIT_TEST_PASSED;
 }
@@ -459,7 +478,6 @@ CapacityIsEnforced (
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_OUT_OF_RESOURCES);
   UT_ASSERT_EQUAL (mEntryCount, RMEM_MAX_ENTRIES);
-  UT_ASSERT_TRUE (mRegistrationFailed);
 
   return UNIT_TEST_PASSED;
 }
@@ -484,7 +502,6 @@ FinalizationPreventsRegistration (
                  );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_ACCESS_DENIED);
   UT_ASSERT_EQUAL (mEntryCount, 0);
-  UT_ASSERT_FALSE (mRegistrationFailed);
 
   return UNIT_TEST_PASSED;
 }
@@ -583,14 +600,13 @@ HiddenRangesStillRejectOverlap (
 
   Status = RmemAddReservedRange (
              &mRmemProtocol,
-             0x1800,
+             0x2000,
              0x1000,
              RmemCategoryOther,
              0,
              "Overlap"
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_ACCESS_DENIED);
-  UT_ASSERT_TRUE (mRegistrationFailed);
 
   return UNIT_TEST_PASSED;
 }
@@ -607,19 +623,14 @@ PublicationFailuresAreReturned (
   Status = RmemPublishTable ();
   UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
 
-  mRegistrationFailed = TRUE;
-  Status              = RmemPublishTable ();
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_COMPROMISED_DATA);
-
-  mRegistrationFailed = FALSE;
-  Status              = RmemAddReservedRange (
-                          &mRmemProtocol,
-                          0x1000,
-                          0x1000,
-                          RmemCategoryOther,
-                          0,
-                          NULL
-                          );
+  Status = RmemAddReservedRange (
+             &mRmemProtocol,
+             0x1000,
+             0x1000,
+             RmemCategoryOther,
+             0,
+             NULL
+             );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
   mLocateProtocolStatus = EFI_NOT_FOUND;
@@ -630,6 +641,41 @@ PublicationFailuresAreReturned (
   mInstallAcpiTableStatus = EFI_ACCESS_DENIED;
   Status                  = RmemPublishTable ();
   UT_ASSERT_STATUS_EQUAL (Status, EFI_ACCESS_DENIED);
+
+  return UNIT_TEST_PASSED;
+}
+
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
+RejectedRegistrationDoesNotBlockPublication (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = RmemAddReservedRange (
+             &mRmemProtocol,
+             0x1001,
+             0x1000,
+             RmemCategoryOther,
+             0,
+             NULL
+             );
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
+
+  Status = RmemAddReservedRange (
+             &mRmemProtocol,
+             0x2000,
+             0x1000,
+             RmemCategoryOther,
+             0,
+             NULL
+             );
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+
+  Status = RmemPublishTable ();
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
   return UNIT_TEST_PASSED;
 }
@@ -749,9 +795,9 @@ UnitTestingEntry (
     );
   AddTestCase (
     RegistrationTests,
-    "Duplicate ranges are ignored",
+    "Duplicate ranges are rejected",
     "Duplicate",
-    DuplicateRangesAreIgnored,
+    DuplicateRangesAreRejected,
     ResetRmemState,
     NULL,
     NULL
@@ -851,6 +897,15 @@ UnitTestingEntry (
     "Publication failures are returned",
     "PublishFailure",
     PublicationFailuresAreReturned,
+    ResetRmemState,
+    NULL,
+    NULL
+    );
+  AddTestCase (
+    RegistrationTests,
+    "Rejected registration does not block publication",
+    "RejectedRegistration",
+    RejectedRegistrationDoesNotBlockPublication,
     ResetRmemState,
     NULL,
     NULL

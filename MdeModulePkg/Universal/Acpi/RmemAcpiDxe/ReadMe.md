@@ -187,20 +187,20 @@ table. All undefined flag bits must be zero.
 
 The publisher currently:
 
-- Rejects HOBs with an unexpected payload size, revision, or nonzero reserved
-  field.
-- Rejects zero-sized ranges and physical-address arithmetic overflow.
+- Logs, asserts in debug builds, and skips HOBs with an unexpected payload
+  size, revision, nonzero reserved field, or invalid entry.
+- Requires base addresses and sizes to be aligned to 4 KiB.
+- Rejects zero-sized ranges, physical-address arithmetic overflow, and ranges
+  beyond the address width reported by the CPU HOB.
 - Rejects unknown, maximum, and out-of-range categories.
 - Rejects undefined flag bits.
 - Rejects labels that are not null-terminated within the fixed label field.
-- Returns `EFI_ALREADY_STARTED` for an exact duplicate.
-- Rejects any other overlap.
+- Rejects all overlaps, including exact duplicates.
 - Applies overlap validation to actual addresses before redacting hidden
   addresses.
 - Rejects registration after finalization.
 - Limits the table to 64 entries.
-- Suppresses publication after an invalid range, invalid category, oversized
-  label, overlap, or capacity failure.
+- Continues publishing valid entries after rejecting an invalid registration.
 
 Revision 1 producers and consumers must follow these policies to ensure
 consistent validation and publication behavior.
@@ -351,6 +351,8 @@ $entries = for ($index = 0; $index -lt $entryCount; $index++) {
 
   $addressHidden = ($flags -band 0x01) -ne 0
   if (($rangeSize -eq 0) -or
+      (($base % 0x1000) -ne 0) -or
+      (($rangeSize % 0x1000) -ne 0) -or
       ($addressHidden -and ($base -ne 0)) -or
       (-not $addressHidden -and
        ($base -gt ([uint64]::MaxValue - ($rangeSize - 1))))) {

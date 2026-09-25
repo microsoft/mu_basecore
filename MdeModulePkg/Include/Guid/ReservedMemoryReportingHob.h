@@ -5,8 +5,7 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef RESERVED_MEMORY_REPORTING_HOB_H_
-#define RESERVED_MEMORY_REPORTING_HOB_H_
+#pragma once
 
 #include <Guid/ReservedMemoryReportingTable.h>
 
@@ -41,5 +40,3 @@ STATIC_ASSERT (OFFSET_OF (RMEM_HOB_RECORD, Label) == 32, "Unexpected RMEM HOB la
 STATIC_ASSERT (OFFSET_OF (RMEM_HOB_RECORD, Reserved3) == 60, "Unexpected RMEM HOB reserved offset");
 
 extern EFI_GUID  gEdkiiRmemRecordHobGuid;
-
-#endif

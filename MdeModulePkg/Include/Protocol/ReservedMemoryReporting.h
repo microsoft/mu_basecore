@@ -5,8 +5,7 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
-#ifndef RESERVED_MEMORY_REPORTING_PROTOCOL_H_
-#define RESERVED_MEMORY_REPORTING_PROTOCOL_H_
+#pragma once
 
 #include <Guid/ReservedMemoryReportingTable.h>
 
@@ -28,8 +27,10 @@ typedef struct _EDKII_RMEM_REGISTRATION_PROTOCOL EDKII_RMEM_REGISTRATION_PROTOCO
                        instance.
   @param[in] Base      The physical address of the first byte in the range.
                        This must be the actual address even when
-                       RMEM_ENTRY_FLAG_ADDRESS_HIDDEN is set.
-  @param[in] Size      The size of the range in bytes.
+                       RMEM_ENTRY_FLAG_ADDRESS_HIDDEN is set and must be aligned
+                       to EFI_PAGE_SIZE.
+  @param[in] Size      The size of the range in bytes. This must be aligned to
+                       EFI_PAGE_SIZE.
   @param[in] Category  The purpose category assigned to the range.
   @param[in] Flags     RMEM entry flags. Unsupported bits must be zero.
   @param[in] Label     An optional null-terminated ASCII diagnostic label. The
@@ -38,7 +39,6 @@ typedef struct _EDKII_RMEM_REGISTRATION_PROTOCOL EDKII_RMEM_REGISTRATION_PROTOCO
                        contain at most RMEM_LABEL_MAX_LEN - 1 characters.
 
   @retval EFI_SUCCESS           The range was registered.
-  @retval EFI_ALREADY_STARTED   An identical range is already registered.
   @retval EFI_INVALID_PARAMETER A parameter, category, or flag value is invalid.
   @retval EFI_BAD_BUFFER_SIZE   The label and its null terminator do not fit
                                 within RMEM_LABEL_MAX_LEN bytes.
@@ -67,5 +67,3 @@ struct _EDKII_RMEM_REGISTRATION_PROTOCOL {
 };
 
 extern EFI_GUID  gEdkiiRmemRegistrationProtocolGuid;
-
-#endif

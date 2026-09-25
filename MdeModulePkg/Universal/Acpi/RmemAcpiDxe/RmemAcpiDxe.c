@@ -27,12 +27,44 @@
 STATIC RMEM_ENTRY  mEntries[RMEM_MAX_ENTRIES];
 STATIC UINT32      mEntryCount;
 STATIC BOOLEAN     mFinalized;
-STATIC BOOLEAN     mRegistrationFailed;
 STATIC EFI_EVENT   mPublicationEvent;
+STATIC UINT64      mMaximumPhysicalAddress = MAX_UINT64;
 
 /**
-  Checks that a range is nonempty and that its inclusive end address does not
-  overflow the physical address space.
+  Sets the maximum physical address from the CPU HOB when it is available.
+**/
+STATIC
+VOID
+RmemInitializeMaximumPhysicalAddress (
+  VOID
+  )
+{
+  EFI_HOB_CPU  *CpuHob;
+  UINT8        PhysicalAddressBits;
+
+  CpuHob = (EFI_HOB_CPU *)GetFirstHob (EFI_HOB_TYPE_CPU);
+  if (CpuHob == NULL) {
+    DEBUG ((DEBUG_WARN, "RMEM: CPU HOB not found; using the full physical-address type range\n"));
+    return;
+  }
+
+  PhysicalAddressBits = CpuHob->SizeOfMemorySpace;
+  if ((PhysicalAddressBits == 0) || (PhysicalAddressBits > 64)) {
+    DEBUG ((DEBUG_ERROR, "RMEM: CPU HOB contains invalid physical-address width %u\n", PhysicalAddressBits));
+    ASSERT ((PhysicalAddressBits > 0) && (PhysicalAddressBits <= 64));
+    return;
+  }
+
+  if (PhysicalAddressBits < 64) {
+    mMaximumPhysicalAddress = LShiftU64 (1, PhysicalAddressBits) - 1;
+  } else {
+    mMaximumPhysicalAddress = MAX_UINT64;
+  }
+}
+
+/**
+  Checks that a range is page-aligned, nonempty, and contained within the
+  platform physical address space.
 **/
 STATIC
 BOOLEAN
@@ -41,7 +73,15 @@ RmemRangeIsValid (
   IN UINT64                Size
   )
 {
-  return (Size != 0) && (Base <= (MAX_UINT64 - (Size - 1)));
+  if ((Size == 0) ||
+      ((Base & EFI_PAGE_MASK) != 0) ||
+      ((Size & EFI_PAGE_MASK) != 0) ||
+      ((Size - 1) > mMaximumPhysicalAddress))
+  {
+    return FALSE;
+  }
+
+  return Base <= (mMaximumPhysicalAddress - (Size - 1));
 }
 
 /**
@@ -61,28 +101,6 @@ RmemRangesOverlap (
          (SecondBase <= (FirstBase + FirstSize - 1));
 }
 
-/**
-  Checks whether a registered entry and a requested range are exact duplicates.
-  This allows callers to distinguish duplicate registration from other overlap.
-**/
-STATIC
-BOOLEAN
-RmemEntriesAreIdentical (
-  IN CONST RMEM_ENTRY  *Existing,
-  IN UINT64            Base,
-  IN UINT64            Size,
-  IN RMEM_CATEGORY     Category,
-  IN UINT8             Flags,
-  IN CONST CHAR8       *Label
-  )
-{
-  return (Existing->Base == Base) &&
-         (Existing->Size == Size) &&
-         (Existing->Category == (UINT8)Category) &&
-         (Existing->Flags == Flags) &&
-         (AsciiStrCmp (Existing->Label, Label) == 0);
-}
-
 STATIC
 EFI_STATUS
 EFIAPI
@@ -99,45 +117,56 @@ RmemAddReservedRange (
   UINTN        LabelLength;
   UINT32       Index;
 
-  if ((This == NULL) ||
-      (This->Revision != EDKII_RMEM_REGISTRATION_PROTOCOL_REVISION))
-  {
+  if (This == NULL) {
+    DEBUG ((DEBUG_ERROR, "RMEM: Registration protocol pointer is NULL\n"));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (This->Revision != EDKII_RMEM_REGISTRATION_PROTOCOL_REVISION) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "RMEM: Unsupported registration protocol revision %u\n",
+      This->Revision
+      ));
     return EFI_INVALID_PARAMETER;
   }
 
   if (mFinalized) {
+    DEBUG ((DEBUG_WARN, "RMEM: Registration attempted after table finalization\n"));
     return EFI_ACCESS_DENIED;
   }
 
-  if (!RmemRangeIsValid (Base, Size) ||
-      ((UINT32)Category <= (UINT32)RmemCategoryUnknown) ||
-      ((UINT32)Category >= (UINT32)RmemCategoryMax) ||
-      ((Flags & ~RMEM_ENTRY_FLAG_VALID_MASK) != 0))
+  if (!RmemRangeIsValid (Base, Size)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "RMEM: Invalid range base=0x%lx size=0x%lx maximum=0x%lx\n",
+      Base,
+      Size,
+      mMaximumPhysicalAddress
+      ));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (((UINT32)Category <= (UINT32)RmemCategoryUnknown) ||
+      ((UINT32)Category >= (UINT32)RmemCategoryMax))
   {
-    mRegistrationFailed = TRUE;
+    DEBUG ((DEBUG_ERROR, "RMEM: Invalid category %u\n", (UINT32)Category));
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if ((Flags & ~RMEM_ENTRY_FLAG_VALID_MASK) != 0) {
+    DEBUG ((DEBUG_ERROR, "RMEM: Unsupported flags 0x%02x\n", Flags));
     return EFI_INVALID_PARAMETER;
   }
 
   EffectiveLabel = (Label == NULL) ? "" : Label;
   LabelLength    = AsciiStrnLenS (EffectiveLabel, RMEM_LABEL_MAX_LEN);
   if (LabelLength >= RMEM_LABEL_MAX_LEN) {
-    mRegistrationFailed = TRUE;
+    DEBUG ((DEBUG_ERROR, "RMEM: Label exceeds %u bytes including its terminator\n", RMEM_LABEL_MAX_LEN));
     return EFI_BAD_BUFFER_SIZE;
   }
 
   for (Index = 0; Index < mEntryCount; Index++) {
-    if (RmemEntriesAreIdentical (
-          &mEntries[Index],
-          Base,
-          Size,
-          Category,
-          Flags,
-          EffectiveLabel
-          ))
-    {
-      return EFI_ALREADY_STARTED;
-    }
-
     if (RmemRangesOverlap (
           mEntries[Index].Base,
           mEntries[Index].Size,
@@ -145,13 +174,19 @@ RmemAddReservedRange (
           Size
           ))
     {
-      mRegistrationFailed = TRUE;
+      DEBUG ((
+        DEBUG_ERROR,
+        "RMEM: Range base=0x%lx size=0x%lx overlaps entry %u\n",
+        Base,
+        Size,
+        Index
+        ));
       return EFI_ACCESS_DENIED;
     }
   }
 
   if (mEntryCount >= RMEM_MAX_ENTRIES) {
-    mRegistrationFailed = TRUE;
+    DEBUG ((DEBUG_ERROR, "RMEM: Registration capacity of %u entries has been reached\n", RMEM_MAX_ENTRIES));
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -176,31 +211,60 @@ STATIC EDKII_RMEM_REGISTRATION_PROTOCOL  mRmemProtocol = {
 };
 
 STATIC
-EFI_STATUS
+VOID
 RmemImportHobs (
   VOID
   )
 {
   EFI_HOB_GUID_TYPE  *GuidHob;
+  EFI_HOB_GUID_TYPE  *NextGuidHob;
   RMEM_HOB_RECORD    *Record;
   EFI_STATUS         Status;
+  UINT32             HobIndex;
 
-  GuidHob = GetFirstGuidHob (&gEdkiiRmemRecordHobGuid);
+  HobIndex = 0;
+  GuidHob  = GetFirstGuidHob (&gEdkiiRmemRecordHobGuid);
   while (GuidHob != NULL) {
+    NextGuidHob = GetNextGuidHob (
+                    &gEdkiiRmemRecordHobGuid,
+                    GET_NEXT_HOB (GuidHob)
+                    );
+
     if (GET_GUID_HOB_DATA_SIZE (GuidHob) != sizeof (RMEM_HOB_RECORD)) {
-      return EFI_COMPROMISED_DATA;
+      DEBUG ((
+        DEBUG_ERROR,
+        "RMEM: HOB %u has invalid payload size %u\n",
+        HobIndex,
+        (UINT32)GET_GUID_HOB_DATA_SIZE (GuidHob)
+        ));
+      ASSERT (GET_GUID_HOB_DATA_SIZE (GuidHob) == sizeof (RMEM_HOB_RECORD));
+      GuidHob = NextGuidHob;
+      HobIndex++;
+      continue;
     }
 
     Record = (RMEM_HOB_RECORD *)GET_GUID_HOB_DATA (GuidHob);
     if (Record->Revision != RMEM_HOB_REVISION) {
-      return EFI_INCOMPATIBLE_VERSION;
+      DEBUG ((DEBUG_ERROR, "RMEM: HOB %u has unsupported revision %u\n", HobIndex, Record->Revision));
+      ASSERT (Record->Revision == RMEM_HOB_REVISION);
+      GuidHob = NextGuidHob;
+      HobIndex++;
+      continue;
     }
 
     if ((Record->Reserved != 0) ||
         !IsZeroBuffer (Record->Reserved2, sizeof (Record->Reserved2)) ||
         (Record->Reserved3 != 0))
     {
-      return EFI_COMPROMISED_DATA;
+      DEBUG ((DEBUG_ERROR, "RMEM: HOB %u has nonzero reserved fields\n", HobIndex));
+      ASSERT (
+        (Record->Reserved == 0) &&
+        IsZeroBuffer (Record->Reserved2, sizeof (Record->Reserved2)) &&
+        (Record->Reserved3 == 0)
+        );
+      GuidHob = NextGuidHob;
+      HobIndex++;
+      continue;
     }
 
     Status = RmemAddReservedRange (
@@ -211,17 +275,14 @@ RmemImportHobs (
                Record->Flags,
                Record->Label
                );
-    if ((Status != EFI_ALREADY_STARTED) && EFI_ERROR (Status)) {
-      return Status;
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "RMEM: HOB %u was rejected: %r\n", HobIndex, Status));
+      ASSERT_EFI_ERROR (Status);
     }
 
-    GuidHob = GetNextGuidHob (
-                &gEdkiiRmemRecordHobGuid,
-                GET_NEXT_HOB (GuidHob)
-                );
+    GuidHob = NextGuidHob;
+    HobIndex++;
   }
-
-  return EFI_SUCCESS;
 }
 
 STATIC
@@ -237,10 +298,6 @@ RmemPublishTable (
   UINT32                   Index;
   UINTN                    TableKey;
   UINTN                    TableSize;
-
-  if (mRegistrationFailed) {
-    return EFI_COMPROMISED_DATA;
-  }
 
   if (mEntryCount == 0) {
     return EFI_NOT_FOUND;
@@ -334,14 +391,13 @@ RmemAcpiDxeEntryPoint (
   EFI_HANDLE  ProtocolHandle;
   EFI_STATUS  Status;
 
+  // Required by the UEFI driver entry-point ABI but unused by this driver.
   (VOID)ImageHandle;
   (VOID)SystemTable;
 
-  Status = RmemImportHobs ();
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "RMEM: Failed to import HOB records: %r\n", Status));
-    return Status;
-  }
+  RmemInitializeMaximumPhysicalAddress ();
+
+  RmemImportHobs ();
 
   ProtocolHandle = NULL;
   Status         = gBS->InstallProtocolInterface (
