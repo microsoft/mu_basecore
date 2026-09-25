@@ -13,6 +13,9 @@
 #define RMEM_TABLE_SIGNATURE  SIGNATURE_32 ('R', 'M', 'E', 'M')
 #define RMEM_TABLE_REVISION   1
 
+#define RMEM_ENTRY_FLAG_ADDRESS_HIDDEN  BIT0
+#define RMEM_ENTRY_FLAG_VALID_MASK      RMEM_ENTRY_FLAG_ADDRESS_HIDDEN
+
 ///
 /// Maximum serialized label size in bytes, including the null terminator.
 ///
@@ -51,7 +54,8 @@ typedef struct {
   UINT64    Base;
   UINT64    Size;
   UINT8     Category;
-  UINT8     Reserved[3];
+  UINT8     Flags;
+  UINT8     Reserved[2];
   CHAR8     Label[RMEM_LABEL_MAX_LEN];
   UINT8     Reserved2[16];
 } RMEM_ENTRY;
@@ -63,6 +67,7 @@ STATIC_ASSERT (OFFSET_OF (RMEM_TABLE_HEADER, EntryCount) == 36, "Unexpected RMEM
 STATIC_ASSERT (OFFSET_OF (RMEM_TABLE_HEADER, Reserved) == 40, "Unexpected RMEM header reserved offset");
 STATIC_ASSERT (sizeof (RMEM_ENTRY) == 64, "Unexpected RMEM entry size");
 STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Category) == 16, "Unexpected RMEM category offset");
+STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Flags) == 17, "Unexpected RMEM flags offset");
 STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Label) == 20, "Unexpected RMEM label offset");
 STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Reserved2) == 48, "Unexpected RMEM reserved offset");
 

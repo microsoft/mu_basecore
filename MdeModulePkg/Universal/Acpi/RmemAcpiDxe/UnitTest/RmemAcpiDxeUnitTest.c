@@ -173,6 +173,7 @@ ValidRangesAreRegistered (
              0x1000,
              0x1000,
              RmemCategorySecurity,
+             0,
              "Secure"
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
@@ -189,6 +190,7 @@ ValidRangesAreRegistered (
              0x2000,
              0x1000,
              RmemCategoryFirmwareRuntime,
+             0,
              NULL
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
@@ -213,6 +215,7 @@ DuplicateRangesAreIgnored (
              0x1000,
              0x1000,
              RmemCategorySecurity,
+             0,
              "Secure"
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
@@ -222,6 +225,7 @@ DuplicateRangesAreIgnored (
              0x1000,
              0x1000,
              RmemCategorySecurity,
+             0,
              "Secure"
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_ALREADY_STARTED);
@@ -245,6 +249,7 @@ OverlappingRangesAreRejected (
              0x1000,
              0x1000,
              RmemCategorySecurity,
+             0,
              "Secure"
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
@@ -254,6 +259,7 @@ OverlappingRangesAreRejected (
              0x1800,
              0x1000,
              RmemCategoryOther,
+             0,
              "Overlap"
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_ACCESS_DENIED);
@@ -278,6 +284,7 @@ InvalidParametersAreRejected (
              0x1000,
              0x1000,
              RmemCategorySecurity,
+             0,
              NULL
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
@@ -290,6 +297,7 @@ InvalidParametersAreRejected (
              0x1000,
              0x1000,
              RmemCategorySecurity,
+             0,
              NULL
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
@@ -300,6 +308,7 @@ InvalidParametersAreRejected (
              0x1000,
              0,
              RmemCategorySecurity,
+             0,
              NULL
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
@@ -322,6 +331,7 @@ InvalidRangesAndCategoriesAreRejected (
              MAX_UINT64,
              2,
              RmemCategorySecurity,
+             0,
              NULL
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
@@ -332,6 +342,7 @@ InvalidRangesAndCategoriesAreRejected (
                           0x1000,
                           0x1000,
                           RmemCategoryUnknown,
+                          0,
                           NULL
                           );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
@@ -342,6 +353,19 @@ InvalidRangesAndCategoriesAreRejected (
                           0x1000,
                           0x1000,
                           RmemCategoryMax,
+                          0,
+                          NULL
+                          );
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
+  UT_ASSERT_TRUE (mRegistrationFailed);
+
+  mRegistrationFailed = FALSE;
+  Status              = RmemAddReservedRange (
+                          &mRmemProtocol,
+                          0x1000,
+                          0x1000,
+                          RmemCategoryOther,
+                          BIT1,
                           NULL
                           );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
@@ -367,6 +391,7 @@ MaximumLengthLabelsAreAccepted (
                                     0x1000,
                                     0x1000,
                                     RmemCategoryOther,
+                                    0,
                                     Label
                                     );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
@@ -392,6 +417,7 @@ OversizedLabelsAreRejected (
                                 0x1000,
                                 0x1000,
                                 RmemCategoryOther,
+                                0,
                                 Label
                                 );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_BAD_BUFFER_SIZE);
@@ -417,6 +443,7 @@ CapacityIsEnforced (
                (UINT64)Index * 0x1000,
                0x1000,
                RmemCategoryOther,
+               0,
                NULL
                );
     UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
@@ -427,6 +454,7 @@ CapacityIsEnforced (
              (UINT64)RMEM_MAX_ENTRIES * 0x1000,
              0x1000,
              RmemCategoryOther,
+             0,
              NULL
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_OUT_OF_RESOURCES);
@@ -451,6 +479,7 @@ FinalizationPreventsRegistration (
                  0x1000,
                  0x1000,
                  RmemCategoryOther,
+                 0,
                  NULL
                  );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_ACCESS_DENIED);
@@ -476,6 +505,7 @@ TableIsSerializedAndInstalled (
              0x1000,
              0x2000,
              RmemCategorySecurity,
+             0,
              "Secure"
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
@@ -505,6 +535,69 @@ TableIsSerializedAndInstalled (
 STATIC
 UNIT_TEST_STATUS
 EFIAPI
+HiddenAddressesAreRedacted (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  RMEM_ENTRY  *Entry;
+  EFI_STATUS  Status;
+
+  Status = RmemAddReservedRange (
+             &mRmemProtocol,
+             0x1000,
+             0x2000,
+             RmemCategorySecurity,
+             RMEM_ENTRY_FLAG_ADDRESS_HIDDEN,
+             "Secure"
+             );
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+  UT_ASSERT_EQUAL (mEntries[0].Base, 0x1000);
+
+  Status = RmemPublishTable ();
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+  Entry = (RMEM_ENTRY *)(mInstalledTable + sizeof (RMEM_TABLE_HEADER));
+  UT_ASSERT_EQUAL (Entry->Base, 0);
+  UT_ASSERT_EQUAL (Entry->Flags, RMEM_ENTRY_FLAG_ADDRESS_HIDDEN);
+
+  return UNIT_TEST_PASSED;
+}
+
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
+HiddenRangesStillRejectOverlap (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = RmemAddReservedRange (
+             &mRmemProtocol,
+             0x1000,
+             0x2000,
+             RmemCategorySecurity,
+             RMEM_ENTRY_FLAG_ADDRESS_HIDDEN,
+             "Secure"
+             );
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
+
+  Status = RmemAddReservedRange (
+             &mRmemProtocol,
+             0x1800,
+             0x1000,
+             RmemCategoryOther,
+             0,
+             "Overlap"
+             );
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_ACCESS_DENIED);
+  UT_ASSERT_TRUE (mRegistrationFailed);
+
+  return UNIT_TEST_PASSED;
+}
+
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
 PublicationFailuresAreReturned (
   IN UNIT_TEST_CONTEXT  Context
   )
@@ -524,6 +617,7 @@ PublicationFailuresAreReturned (
                           0x1000,
                           0x1000,
                           RmemCategoryOther,
+                          0,
                           NULL
                           );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
@@ -730,6 +824,24 @@ UnitTestingEntry (
     "Table is serialized and installed",
     "Publish",
     TableIsSerializedAndInstalled,
+    ResetRmemState,
+    NULL,
+    NULL
+    );
+  AddTestCase (
+    RegistrationTests,
+    "Hidden addresses are redacted during serialization",
+    "HiddenAddress",
+    HiddenAddressesAreRedacted,
+    ResetRmemState,
+    NULL,
+    NULL
+    );
+  AddTestCase (
+    RegistrationTests,
+    "Hidden ranges still reject overlap",
+    "HiddenOverlap",
+    HiddenRangesStillRejectOverlap,
     ResetRmemState,
     NULL,
     NULL

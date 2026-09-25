@@ -119,11 +119,11 @@ The Revision 1 table contains a standard 36-byte ACPI description header, a
 4-byte entry count, 24 reserved bytes, and zero or more packed 64-byte entries.
 
 ```text
-+----------------------+------------+----------------+----------+----------+----------+----------+----------+------------+
-| ACPI header          | EntryCount | Reserved       | Base     | Size     | Category | Reserved | Label    | Reserved2  |
-| 36 bytes             | 4 bytes    | 24 bytes       | 8 bytes  | 8 bytes  | 1 byte   | 3 bytes  | 28 bytes | 16 bytes   |
-+----------------------+------------+----------------+----------+----------+----------+----------+----------+------------+
-|<------------- table header: 64 bytes ------------>|<---------------- each entry: 64 bytes ----------------->|
++----------------------+------------+----------------+----------+----------+----------+-------+----------+----------+------------+
+| ACPI header          | EntryCount | Reserved       | Base     | Size     | Category | Flags | Reserved | Label    | Reserved2  |
+| 36 bytes             | 4 bytes    | 24 bytes       | 8 bytes  | 8 bytes  | 1 byte   | 1 byte | 2 bytes  | 28 bytes | 16 bytes   |
++----------------------+------------+----------------+----------+----------+----------+-------+----------+----------+------------+
+|<------------- table header: 64 bytes ------------>|<-------------------- each entry: 64 bytes -------------------->|
 ```
 
 The total table length is `64 + (64 * EntryCount)` bytes.
@@ -144,7 +144,8 @@ Each entry has the following layout:
 | 0 | 8 | `Base` | First physical byte of the reserved range |
 | 8 | 8 | `Size` | Range length in bytes |
 | 16 | 1 | `Category` | Numeric purpose category |
-| 17 | 3 | `Reserved` | Must be zero in Revision 1 |
+| 17 | 1 | `Flags` | Entry attributes |
+| 18 | 2 | `Reserved` | Must be zero in Revision 1 |
 | 20 | 28 | `Label` | Null-terminated, zero-padded ASCII label |
 | 48 | 16 | `Reserved2` | Must be zero in Revision 1 |
 
@@ -170,6 +171,18 @@ Revision 1 defines the following wire values:
 value. Producers must provide a category greater than `RmemCategoryUnknown` and
 less than `RmemCategoryMax`.
 
+## Flags
+
+Revision 1 defines `RMEM_ENTRY_FLAG_ADDRESS_HIDDEN` in bit 0. When this flag is
+clear, `Base` contains the first physical byte of the range. When this flag is
+set, the serialized `Base` field must be zero and consumers must treat the
+address as intentionally redacted.
+
+Producers must provide the actual base address to the GUID HOB or registration
+protocol even when the address is hidden. The publisher uses the actual address
+for range and overlap validation and redacts it only when constructing the ACPI
+table. All undefined flag bits must be zero.
+
 ## Validation and Conflict Policy
 
 The publisher currently:
@@ -178,9 +191,12 @@ The publisher currently:
   field.
 - Rejects zero-sized ranges and physical-address arithmetic overflow.
 - Rejects unknown, maximum, and out-of-range categories.
+- Rejects undefined flag bits.
 - Rejects labels that are not null-terminated within the fixed label field.
 - Returns `EFI_ALREADY_STARTED` for an exact duplicate.
 - Rejects any other overlap.
+- Applies overlap validation to actual addresses before redacting hidden
+  addresses.
 - Rejects registration after finalization.
 - Limits the table to 64 entries.
 - Suppresses publication after an invalid range, invalid category, oversized
@@ -327,14 +343,21 @@ $entries = for ($index = 0; $index -lt $entryCount; $index++) {
   [uint64]$base = [BitConverter]::ToUInt64($table, $offset)
   [uint64]$rangeSize = [BitConverter]::ToUInt64($table, $offset + 8)
   [uint32]$category = $table[$offset + 16]
+  [byte]$flags = $table[$offset + 17]
 
+  if (($flags -band 0xFE) -ne 0) {
+    throw "RMEM entry $index contains unsupported flags 0x$($flags.ToString('X2'))."
+  }
+
+  $addressHidden = ($flags -band 0x01) -ne 0
   if (($rangeSize -eq 0) -or
-      ($base -gt ([uint64]::MaxValue - ($rangeSize - 1)))) {
+      ($addressHidden -and ($base -ne 0)) -or
+      (-not $addressHidden -and
+       ($base -gt ([uint64]::MaxValue - ($rangeSize - 1))))) {
     throw "RMEM entry $index contains an invalid physical range."
   }
 
-  if (($table[$offset + 17] -ne 0) -or
-      ($table[$offset + 18] -ne 0) -or
+  if (($table[$offset + 18] -ne 0) -or
       ($table[$offset + 19] -ne 0) -or
       ($table[($offset + 48)..($offset + 63)] |
         Where-Object { $_ -ne 0 })) {
@@ -349,10 +372,11 @@ $entries = for ($index = 0; $index -lt $entryCount; $index++) {
 
   [pscustomobject]@{
     Index = $index
-    Base = "0x{0:X16}" -f $base
+    Base = if ($addressHidden) { "<hidden>" } else { "0x{0:X16}" -f $base }
     SizeBytes = $rangeSize
     SizeMiB = [Math]::Round($rangeSize / 1MB, 3)
     Category = Resolve-RmemCategory $category
+    Flags = "0x{0:X2}" -f $flags
     Label = [Text.Encoding]::ASCII.GetString($labelBytes, 0, $terminator)
   }
 }
@@ -366,12 +390,12 @@ The values below are illustrative. Actual addresses, sizes, categories, and
 labels depend on the platform firmware and boot configuration.
 
 ```text
-Index Base               SizeBytes SizeMiB Category        Label
------ ----               --------- ------- --------        -----
-  0 0x0000000010000000 536870912 512.000 GpuReserved     iGPU Shared VRAM
-  1 0x0000000030000000 267386880 255.000 Security        Security Processor
-  2 0x000000003FF00000   1048576   1.000 SharedMemory    MM Communication Buffer
-  3 0x0000000040000000  16777216  16.000 FirmwareRuntime Offline Crash Dump
+Index Base               SizeBytes SizeMiB Category        Flags Label
+----- ----               --------- ------- --------        ----- -----
+  0 0x0000000010000000 536870912 512.000 GpuReserved     0x00  iGPU Shared VRAM
+  1 <hidden>            267386880 255.000 Security        0x01  Security Processor
+  2 0x000000003FF00000   1048576   1.000 SharedMemory    0x00  MM Communication Buffer
+  3 0x0000000040000000  16777216  16.000 FirmwareRuntime 0x00  Offline Crash Dump
 ```
 
 If the currently booted firmware does not publish RMEM, the script terminates

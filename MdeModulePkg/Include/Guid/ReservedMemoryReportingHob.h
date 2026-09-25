@@ -27,7 +27,8 @@ typedef struct {
   UINT64    Base;
   UINT64    Size;
   UINT32    Category;
-  UINT32    Reserved2;
+  UINT8     Flags;
+  UINT8     Reserved2[3];
   CHAR8     Label[RMEM_LABEL_MAX_LEN];
   UINT32    Reserved3;
 } RMEM_HOB_RECORD;
@@ -35,6 +36,7 @@ typedef struct {
 #pragma pack()
 
 STATIC_ASSERT (sizeof (RMEM_HOB_RECORD) == 64, "Unexpected RMEM HOB record size");
+STATIC_ASSERT (OFFSET_OF (RMEM_HOB_RECORD, Flags) == 28, "Unexpected RMEM HOB flags offset");
 STATIC_ASSERT (OFFSET_OF (RMEM_HOB_RECORD, Label) == 32, "Unexpected RMEM HOB label offset");
 STATIC_ASSERT (OFFSET_OF (RMEM_HOB_RECORD, Reserved3) == 60, "Unexpected RMEM HOB reserved offset");
 

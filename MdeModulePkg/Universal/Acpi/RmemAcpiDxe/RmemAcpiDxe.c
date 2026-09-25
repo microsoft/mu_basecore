@@ -72,12 +72,14 @@ RmemEntriesAreIdentical (
   IN UINT64            Base,
   IN UINT64            Size,
   IN RMEM_CATEGORY     Category,
+  IN UINT8             Flags,
   IN CONST CHAR8       *Label
   )
 {
   return (Existing->Base == Base) &&
          (Existing->Size == Size) &&
          (Existing->Category == (UINT8)Category) &&
+         (Existing->Flags == Flags) &&
          (AsciiStrCmp (Existing->Label, Label) == 0);
 }
 
@@ -89,6 +91,7 @@ RmemAddReservedRange (
   IN EFI_PHYSICAL_ADDRESS              Base,
   IN UINT64                            Size,
   IN RMEM_CATEGORY                     Category,
+  IN UINT8                             Flags,
   IN CONST CHAR8                       *Label OPTIONAL
   )
 {
@@ -108,7 +111,8 @@ RmemAddReservedRange (
 
   if (!RmemRangeIsValid (Base, Size) ||
       ((UINT32)Category <= (UINT32)RmemCategoryUnknown) ||
-      ((UINT32)Category >= (UINT32)RmemCategoryMax))
+      ((UINT32)Category >= (UINT32)RmemCategoryMax) ||
+      ((Flags & ~RMEM_ENTRY_FLAG_VALID_MASK) != 0))
   {
     mRegistrationFailed = TRUE;
     return EFI_INVALID_PARAMETER;
@@ -127,6 +131,7 @@ RmemAddReservedRange (
           Base,
           Size,
           Category,
+          Flags,
           EffectiveLabel
           ))
     {
@@ -154,6 +159,7 @@ RmemAddReservedRange (
   mEntries[mEntryCount].Base     = Base;
   mEntries[mEntryCount].Size     = Size;
   mEntries[mEntryCount].Category = (UINT8)Category;
+  mEntries[mEntryCount].Flags    = Flags;
   CopyMem (
     mEntries[mEntryCount].Label,
     EffectiveLabel,
@@ -191,7 +197,7 @@ RmemImportHobs (
     }
 
     if ((Record->Reserved != 0) ||
-        (Record->Reserved2 != 0) ||
+        !IsZeroBuffer (Record->Reserved2, sizeof (Record->Reserved2)) ||
         (Record->Reserved3 != 0))
     {
       return EFI_COMPROMISED_DATA;
@@ -202,6 +208,7 @@ RmemImportHobs (
                Record->Base,
                Record->Size,
                (RMEM_CATEGORY)Record->Category,
+               Record->Flags,
                Record->Label
                );
     if ((Status != EFI_ALREADY_STARTED) && EFI_ERROR (Status)) {
@@ -225,7 +232,9 @@ RmemPublishTable (
 {
   EFI_ACPI_TABLE_PROTOCOL  *AcpiTableProtocol;
   RMEM_TABLE_HEADER        *Table;
+  RMEM_ENTRY               *TableEntries;
   EFI_STATUS               Status;
+  UINT32                   Index;
   UINTN                    TableKey;
   UINTN                    TableSize;
 
@@ -266,6 +275,13 @@ RmemPublishTable (
     mEntries,
     (UINTN)mEntryCount * sizeof (RMEM_ENTRY)
     );
+  TableEntries = (RMEM_ENTRY *)((UINT8 *)Table + sizeof (RMEM_TABLE_HEADER));
+  for (Index = 0; Index < mEntryCount; Index++) {
+    if ((TableEntries[Index].Flags & RMEM_ENTRY_FLAG_ADDRESS_HIDDEN) != 0) {
+      TableEntries[Index].Base = 0;
+    }
+  }
+
   Table->Header.Checksum = CalculateCheckSum8 ((UINT8 *)Table, TableSize);
 
   Status = gBS->LocateProtocol (
