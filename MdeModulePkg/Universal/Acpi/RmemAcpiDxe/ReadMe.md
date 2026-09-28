@@ -192,6 +192,8 @@ The publisher currently:
 - Requires base addresses and sizes to be aligned to 4 KiB.
 - Rejects zero-sized ranges, physical-address arithmetic overflow, and ranges
   beyond the address width reported by the CPU HOB.
+- Does not start if the CPU HOB is missing or reports an invalid physical
+  address width.
 - Rejects unknown, maximum, and out-of-range categories.
 - Rejects undefined flag bits.
 - Rejects labels that are not null-terminated within the fixed label field.

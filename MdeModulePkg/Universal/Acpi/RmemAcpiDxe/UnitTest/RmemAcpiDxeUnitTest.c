@@ -701,13 +701,13 @@ PublicationEventFinalizesRegistration (
 STATIC
 UNIT_TEST_STATUS
 EFIAPI
-EntryPointInstallsProtocolAndEvent (
+ProtocolAndEventAreInstalled (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
   EFI_STATUS  Status;
 
-  Status = RmemAcpiDxeEntryPoint (NULL, NULL);
+  Status = RmemInstallProtocolAndEvent ();
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
   UT_ASSERT_EQUAL (mPublicationEvent, (EFI_EVENT)(UINTN)2);
   UT_ASSERT_EQUAL (mUninstallProtocolCalls, 0);
@@ -718,14 +718,14 @@ EntryPointInstallsProtocolAndEvent (
 STATIC
 UNIT_TEST_STATUS
 EFIAPI
-EntryPointCleansUpAfterEventFailure (
+ProtocolIsRemovedAfterEventFailure (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
   EFI_STATUS  Status;
 
   mCreateEventStatus = EFI_OUT_OF_RESOURCES;
-  Status             = RmemAcpiDxeEntryPoint (NULL, NULL);
+  Status             = RmemInstallProtocolAndEvent ();
   UT_ASSERT_STATUS_EQUAL (Status, EFI_OUT_OF_RESOURCES);
   UT_ASSERT_EQUAL (mUninstallProtocolCalls, 1);
 
@@ -735,16 +735,47 @@ EntryPointCleansUpAfterEventFailure (
 STATIC
 UNIT_TEST_STATUS
 EFIAPI
-EntryPointReturnsProtocolInstallFailure (
+ProtocolInstallFailureIsReturned (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
   EFI_STATUS  Status;
 
   mInstallProtocolStatus = EFI_OUT_OF_RESOURCES;
-  Status                 = RmemAcpiDxeEntryPoint (NULL, NULL);
+  Status                 = RmemInstallProtocolAndEvent ();
   UT_ASSERT_STATUS_EQUAL (Status, EFI_OUT_OF_RESOURCES);
   UT_ASSERT_EQUAL (mUninstallProtocolCalls, 0);
+
+  return UNIT_TEST_PASSED;
+}
+
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
+EntryPointReturnsAddressInitializationFailure (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = RmemAcpiDxeEntryPoint (NULL, NULL);
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
+  UT_ASSERT_EQUAL (mPublicationEvent, NULL);
+
+  return UNIT_TEST_PASSED;
+}
+
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
+HobImportWithoutRecordsSucceeds (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = RmemImportHobs ();
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
 
   return UNIT_TEST_PASSED;
 }
@@ -921,27 +952,45 @@ UnitTestingEntry (
     );
   AddTestCase (
     RegistrationTests,
-    "Entry point installs protocol and event",
-    "EntryPoint",
-    EntryPointInstallsProtocolAndEvent,
+    "Protocol and event are installed",
+    "ProtocolAndEvent",
+    ProtocolAndEventAreInstalled,
     ResetRmemState,
     NULL,
     NULL
     );
   AddTestCase (
     RegistrationTests,
-    "Entry point cleans up after event failure",
-    "EntryPointCleanup",
-    EntryPointCleansUpAfterEventFailure,
+    "Protocol is removed after event failure",
+    "ProtocolCleanup",
+    ProtocolIsRemovedAfterEventFailure,
     ResetRmemState,
     NULL,
     NULL
     );
   AddTestCase (
     RegistrationTests,
-    "Entry point returns protocol install failure",
-    "EntryPointFailure",
-    EntryPointReturnsProtocolInstallFailure,
+    "Protocol install failure is returned",
+    "ProtocolFailure",
+    ProtocolInstallFailureIsReturned,
+    ResetRmemState,
+    NULL,
+    NULL
+    );
+  AddTestCase (
+    RegistrationTests,
+    "Entry point returns address initialization failure",
+    "EntryPointInitialization",
+    EntryPointReturnsAddressInitializationFailure,
+    ResetRmemState,
+    NULL,
+    NULL
+    );
+  AddTestCase (
+    RegistrationTests,
+    "HOB import without records succeeds",
+    "HobImport",
+    HobImportWithoutRecordsSucceeds,
     ResetRmemState,
     NULL,
     NULL

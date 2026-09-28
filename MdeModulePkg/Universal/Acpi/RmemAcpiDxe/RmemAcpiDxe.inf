@@ -31,8 +31,8 @@
   UefiDriverEntryPoint
 
 [Guids]
-  gEdkiiRmemRecordHobGuid                 ## CONSUMES  ## HOB
-  gEfiEventReadyToBootGuid               ## CONSUMES  ## Event
+  gEdkiiRmemRecordHobGuid                 ## CONSUMES ## HOB
+  gEfiEventReadyToBootGuid                ## CONSUMES ## Event
 
 [Protocols]
   gEdkiiRmemRegistrationProtocolGuid      ## PRODUCES

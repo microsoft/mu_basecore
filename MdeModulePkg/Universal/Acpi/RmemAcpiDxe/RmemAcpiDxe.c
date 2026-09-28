@@ -31,10 +31,10 @@ STATIC EFI_EVENT   mPublicationEvent;
 STATIC UINT64      mMaximumPhysicalAddress = MAX_UINT64;
 
 /**
-  Sets the maximum physical address from the CPU HOB when it is available.
+  Sets the maximum physical address from the CPU HOB.
 **/
 STATIC
-VOID
+EFI_STATUS
 RmemInitializeMaximumPhysicalAddress (
   VOID
   )
@@ -44,15 +44,15 @@ RmemInitializeMaximumPhysicalAddress (
 
   CpuHob = (EFI_HOB_CPU *)GetFirstHob (EFI_HOB_TYPE_CPU);
   if (CpuHob == NULL) {
-    DEBUG ((DEBUG_WARN, "RMEM: CPU HOB not found; using the full physical-address type range\n"));
-    return;
+    DEBUG ((DEBUG_ERROR, "RMEM: CPU HOB not found\n"));
+    return EFI_NOT_FOUND;
   }
 
   PhysicalAddressBits = CpuHob->SizeOfMemorySpace;
   if ((PhysicalAddressBits == 0) || (PhysicalAddressBits > 64)) {
     DEBUG ((DEBUG_ERROR, "RMEM: CPU HOB contains invalid physical-address width %u\n", PhysicalAddressBits));
     ASSERT ((PhysicalAddressBits > 0) && (PhysicalAddressBits <= 64));
-    return;
+    return EFI_COMPROMISED_DATA;
   }
 
   if (PhysicalAddressBits < 64) {
@@ -60,6 +60,8 @@ RmemInitializeMaximumPhysicalAddress (
   } else {
     mMaximumPhysicalAddress = MAX_UINT64;
   }
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -136,14 +138,29 @@ RmemAddReservedRange (
     return EFI_ACCESS_DENIED;
   }
 
+  if ((Flags & ~RMEM_ENTRY_FLAG_VALID_MASK) != 0) {
+    DEBUG ((DEBUG_ERROR, "RMEM: Unsupported flags 0x%02x\n", Flags));
+    return EFI_INVALID_PARAMETER;
+  }
+
   if (!RmemRangeIsValid (Base, Size)) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "RMEM: Invalid range base=0x%lx size=0x%lx maximum=0x%lx\n",
-      Base,
-      Size,
-      mMaximumPhysicalAddress
-      ));
+    if ((Flags & RMEM_ENTRY_FLAG_ADDRESS_HIDDEN) != 0) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "RMEM: Invalid hidden range size=0x%lx maximum=0x%lx\n",
+        Size,
+        mMaximumPhysicalAddress
+        ));
+    } else {
+      DEBUG ((
+        DEBUG_ERROR,
+        "RMEM: Invalid range base=0x%lx size=0x%lx maximum=0x%lx\n",
+        Base,
+        Size,
+        mMaximumPhysicalAddress
+        ));
+    }
+
     return EFI_INVALID_PARAMETER;
   }
 
@@ -151,11 +168,6 @@ RmemAddReservedRange (
       ((UINT32)Category >= (UINT32)RmemCategoryMax))
   {
     DEBUG ((DEBUG_ERROR, "RMEM: Invalid category %u\n", (UINT32)Category));
-    return EFI_INVALID_PARAMETER;
-  }
-
-  if ((Flags & ~RMEM_ENTRY_FLAG_VALID_MASK) != 0) {
-    DEBUG ((DEBUG_ERROR, "RMEM: Unsupported flags 0x%02x\n", Flags));
     return EFI_INVALID_PARAMETER;
   }
 
@@ -174,13 +186,23 @@ RmemAddReservedRange (
           Size
           ))
     {
-      DEBUG ((
-        DEBUG_ERROR,
-        "RMEM: Range base=0x%lx size=0x%lx overlaps entry %u\n",
-        Base,
-        Size,
-        Index
-        ));
+      if ((Flags & RMEM_ENTRY_FLAG_ADDRESS_HIDDEN) != 0) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "RMEM: Hidden range size=0x%lx overlaps entry %u\n",
+          Size,
+          Index
+          ));
+      } else {
+        DEBUG ((
+          DEBUG_ERROR,
+          "RMEM: Range base=0x%lx size=0x%lx overlaps entry %u\n",
+          Base,
+          Size,
+          Index
+          ));
+      }
+
       return EFI_ACCESS_DENIED;
     }
   }
@@ -211,7 +233,7 @@ STATIC EDKII_RMEM_REGISTRATION_PROTOCOL  mRmemProtocol = {
 };
 
 STATIC
-VOID
+EFI_STATUS
 RmemImportHobs (
   VOID
   )
@@ -283,6 +305,8 @@ RmemImportHobs (
     GuidHob = NextGuidHob;
     HobIndex++;
   }
+
+  return EFI_SUCCESS;
 }
 
 STATIC
@@ -381,23 +405,14 @@ RmemOnPublicationEvent (
   mPublicationEvent = NULL;
 }
 
+STATIC
 EFI_STATUS
-EFIAPI
-RmemAcpiDxeEntryPoint (
-  IN EFI_HANDLE        ImageHandle,
-  IN EFI_SYSTEM_TABLE  *SystemTable
+RmemInstallProtocolAndEvent (
+  VOID
   )
 {
   EFI_HANDLE  ProtocolHandle;
   EFI_STATUS  Status;
-
-  // Required by the UEFI driver entry-point ABI but unused by this driver.
-  (VOID)ImageHandle;
-  (VOID)SystemTable;
-
-  RmemInitializeMaximumPhysicalAddress ();
-
-  RmemImportHobs ();
 
   ProtocolHandle = NULL;
   Status         = gBS->InstallProtocolInterface (
@@ -427,4 +442,30 @@ RmemAcpiDxeEntryPoint (
   }
 
   return Status;
+}
+
+EFI_STATUS
+EFIAPI
+RmemAcpiDxeEntryPoint (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
+  )
+{
+  EFI_STATUS  Status;
+
+  // Required by the UEFI driver entry-point ABI but unused by this driver.
+  (VOID)ImageHandle;
+  (VOID)SystemTable;
+
+  Status = RmemInitializeMaximumPhysicalAddress ();
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = RmemImportHobs ();
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  return RmemInstallProtocolAndEvent ();
 }
