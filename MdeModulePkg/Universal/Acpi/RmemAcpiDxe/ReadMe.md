@@ -225,21 +225,46 @@ decisions.
 
 Windows exposes ACPI tables to user mode through `GetSystemFirmwareTable`. The
 following PowerShell example retrieves the Revision 1 `RMEM` table, validates
-its header and checksum, and prints each decoded entry. It reads only the table
+its contents, compares its total with Windows' estimated hardware-reserved
+memory, and prints each decoded entry. It reads only system accounting and table
 metadata and does not access the reported physical ranges.
 
 ```powershell
 $ErrorActionPreference = "Stop"
 
-if (-not ("RmemReader.NativeMethods" -as [type])) {
+if (-not ("RmemComparison.NativeMethods" -as [type])) {
   Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
 
-namespace RmemReader
+namespace RmemComparison
 {
+  [StructLayout(LayoutKind.Sequential)]
+  public struct MemoryStatusEx
+  {
+    public uint Length;
+    public uint MemoryLoad;
+    public ulong TotalPhysical;
+    public ulong AvailablePhysical;
+    public ulong TotalPageFile;
+    public ulong AvailablePageFile;
+    public ulong TotalVirtual;
+    public ulong AvailableVirtual;
+    public ulong AvailableExtendedVirtual;
+  }
+
   public static class NativeMethods
   {
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetPhysicallyInstalledSystemMemory(
+      out ulong totalMemoryKilobytes);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GlobalMemoryStatusEx(
+      ref MemoryStatusEx buffer);
+
     [DllImport("kernel32.dll", SetLastError = true)]
     public static extern uint GetSystemFirmwareTable(
       uint providerSignature,
@@ -267,8 +292,14 @@ function ConvertTo-TableId {
   [BitConverter]::ToUInt32([Text.Encoding]::ASCII.GetBytes($Text), 0)
 }
 
+function Format-ByteCount {
+  param([Parameter(Mandatory)] [uint64]$Bytes)
+
+  "{0:N3} MiB (0x{1:X})" -f ($Bytes / 1MB), $Bytes
+}
+
 function Resolve-RmemCategory {
-  param([Parameter(Mandatory)] [uint32]$Value)
+  param([Parameter(Mandatory)] [byte]$Value)
 
   switch ($Value) {
     1 { "Security" }
@@ -282,21 +313,72 @@ function Resolve-RmemCategory {
   }
 }
 
+function Add-UInt64Checked {
+  param(
+    [Parameter(Mandatory)] [uint64]$Left,
+    [Parameter(Mandatory)] [uint64]$Right,
+    [Parameter(Mandatory)] [string]$Description
+  )
+
+  if ($Left -gt ([uint64]::MaxValue - $Right)) {
+    throw "$Description overflows UInt64."
+  }
+
+  $Left + $Right
+}
+
+[uint64]$installedKilobytes = 0
+if (-not [RmemComparison.NativeMethods]::GetPhysicallyInstalledSystemMemory(
+    [ref]$installedKilobytes)) {
+  $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+  throw "GetPhysicallyInstalledSystemMemory failed (Win32 error $errorCode)."
+}
+
+if ($installedKilobytes -gt ([uint64]::MaxValue / 1KB)) {
+  throw "The installed-memory byte count overflows UInt64."
+}
+
+$memoryStatus = [RmemComparison.MemoryStatusEx]::new()
+$memoryStatus.Length = [Runtime.InteropServices.Marshal]::SizeOf(
+  [type][RmemComparison.MemoryStatusEx])
+if (-not [RmemComparison.NativeMethods]::GlobalMemoryStatusEx(
+    [ref]$memoryStatus)) {
+  $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+  throw "GlobalMemoryStatusEx failed (Win32 error $errorCode)."
+}
+
+[uint64]$installedBytes = $installedKilobytes * 1KB
+[uint64]$windowsBytes = $memoryStatus.TotalPhysical
+if ($installedBytes -lt $windowsBytes) {
+  throw "Windows reports more usable memory than physically installed memory."
+}
+
+[uint64]$hardwareReservedBytes = $installedBytes - $windowsBytes
+
 $provider = ConvertTo-ProviderSignature "ACPI"
 $tableId = ConvertTo-TableId "RMEM"
-$size = [RmemReader.NativeMethods]::GetSystemFirmwareTable(
+$size = [RmemComparison.NativeMethods]::GetSystemFirmwareTable(
   $provider, $tableId, [IntPtr]::Zero, 0)
 
 if ($size -eq 0) {
   throw "The currently booted firmware does not expose an RMEM ACPI table."
 }
 
+if ($size -gt [int]::MaxValue) {
+  throw "The RMEM table is too large to retrieve safely."
+}
+
 $buffer = [Runtime.InteropServices.Marshal]::AllocHGlobal([int]$size)
 try {
-  $written = [RmemReader.NativeMethods]::GetSystemFirmwareTable(
+  $written = [RmemComparison.NativeMethods]::GetSystemFirmwareTable(
     $provider, $tableId, $buffer, $size)
+  if ($written -eq 0) {
+    $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+    throw "GetSystemFirmwareTable failed (Win32 error $errorCode)."
+  }
+
   if ($written -ne $size) {
-    throw "GetSystemFirmwareTable returned $written bytes; expected $size."
+    throw "RMEM table size changed while reading: requested=$size written=$written."
   }
 
   $table = [byte[]]::new($written)
@@ -318,13 +400,15 @@ $revision = $table[8]
 $entryCount = [BitConverter]::ToUInt32($table, 36)
 $expectedLength = [uint64]$headerSize + ([uint64]$entryCount * $entrySize)
 
-if ($signature -ne "RMEM") {
-  throw "Unexpected ACPI signature '$signature'."
+if ($entryCount -gt 64) {
+  throw "RMEM entry count $entryCount exceeds the Revision 1 limit of 64."
 }
 
-if (($revision -ne 1) -or ($tableLength -ne $expectedLength) -or
+if (($signature -ne "RMEM") -or
+    ($revision -ne 1) -or
+    ($tableLength -ne $expectedLength) -or
     ($tableLength -ne $table.Length)) {
-  throw "Invalid RMEM header: revision=$revision length=$tableLength entries=$entryCount."
+  throw "RMEM header is inconsistent: signature=$signature revision=$revision length=$tableLength entries=$entryCount."
 }
 
 $checksum = 0
@@ -340,12 +424,16 @@ if ($table[40..63] | Where-Object { $_ -ne 0 }) {
   throw "RMEM header contains nonzero reserved bytes."
 }
 
-$entries = for ($index = 0; $index -lt $entryCount; $index++) {
+$entries = @(for ($index = 0; $index -lt $entryCount; $index++) {
   $offset = $headerSize + ($index * $entrySize)
   [uint64]$base = [BitConverter]::ToUInt64($table, $offset)
   [uint64]$rangeSize = [BitConverter]::ToUInt64($table, $offset + 8)
-  [uint32]$category = $table[$offset + 16]
+  [byte]$category = $table[$offset + 16]
   [byte]$flags = $table[$offset + 17]
+
+  if (($category -lt 1) -or ($category -gt 7)) {
+    throw "RMEM entry $index contains unsupported category $category."
+  }
 
   if (($flags -band 0xFE) -ne 0) {
     throw "RMEM entry $index contains unsupported flags 0x$($flags.ToString('X2'))."
@@ -376,16 +464,101 @@ $entries = for ($index = 0; $index -lt $entryCount; $index++) {
 
   [pscustomobject]@{
     Index = $index
-    Base = if ($addressHidden) { "<hidden>" } else { "0x{0:X16}" -f $base }
-    SizeBytes = $rangeSize
-    SizeMiB = [Math]::Round($rangeSize / 1MB, 3)
+    Base = $base
+    End = if ($addressHidden) {
+      [decimal]0
+    } else {
+      [decimal]$base + [decimal]$rangeSize
+    }
+    Size = $rangeSize
     Category = Resolve-RmemCategory $category
-    Flags = "0x{0:X2}" -f $flags
+    Flags = $flags
+    AddressHidden = $addressHidden
     Label = [Text.Encoding]::ASCII.GetString($labelBytes, 0, $terminator)
+  }
+})
+
+[uint64]$rawTotal = 0
+[uint64]$visibleTotal = 0
+[uint64]$hiddenTotal = 0
+foreach ($entry in $entries) {
+  $rawTotal = Add-UInt64Checked $rawTotal $entry.Size "RMEM total"
+  if ($entry.AddressHidden) {
+    $hiddenTotal = Add-UInt64Checked `
+      $hiddenTotal $entry.Size "RMEM hidden total"
+  } else {
+    $visibleTotal = Add-UInt64Checked `
+      $visibleTotal $entry.Size "RMEM visible total"
   }
 }
 
-$entries | Format-Table -AutoSize
+$visibleEntries = @(
+  $entries |
+    Where-Object { -not $_.AddressHidden } |
+    Sort-Object Base
+)
+
+for ($index = 1; $index -lt $visibleEntries.Count; $index++) {
+  $previous = $visibleEntries[$index - 1]
+  $current = $visibleEntries[$index]
+  if ([decimal]$current.Base -lt $previous.End) {
+    throw "RMEM entries $($previous.Index) and $($current.Index) overlap."
+  }
+}
+
+[decimal]$difference =
+  [decimal]$rawTotal - [decimal]$hardwareReservedBytes
+
+Write-Host "Windows memory accounting"
+Write-Host "  Physically installed : $(Format-ByteCount $installedBytes)"
+Write-Host "  OS-usable physical   : $(Format-ByteCount $windowsBytes)"
+Write-Host "  Hardware reserved    : $(Format-ByteCount $hardwareReservedBytes)"
+Write-Host ""
+
+Write-Host "RMEM accounting"
+Write-Host "  Entries              : $entryCount"
+Write-Host "  Visible entry total  : $(Format-ByteCount $visibleTotal)"
+Write-Host "  Hidden entry total   : $(Format-ByteCount $hiddenTotal)"
+Write-Host "  RMEM total           : $(Format-ByteCount $rawTotal)"
+Write-Host ("  RMEM - Windows       : {0:N3} MiB" -f ($difference / 1MB))
+Write-Host ""
+
+if ($hiddenTotal -ne 0) {
+  Write-Warning "Hidden entries are included by size, but their overlap cannot be independently checked."
+}
+
+Write-Warning "The Windows hardware-reserved value is an estimate. A nonzero difference may indicate missing RMEM coverage or a difference in reporting scope."
+
+Write-Host ""
+Write-Host "RMEM totals by category"
+$entries |
+  Group-Object Category |
+  ForEach-Object {
+    [uint64]$categoryTotal = 0
+    foreach ($entry in $_.Group) {
+      $categoryTotal = Add-UInt64Checked `
+        $categoryTotal $entry.Size "RMEM category total"
+    }
+
+    [pscustomobject]@{
+      Category = $_.Name
+      Entries = $_.Count
+      TotalMiB = [Math]::Round($categoryTotal / 1MB, 3)
+    }
+  } |
+  Format-Table -AutoSize
+
+Write-Host "RMEM entries"
+$entries |
+  Select-Object Index,
+    @{Name = "Base"; Expression = {
+      if ($_.AddressHidden) { "<hidden>" } else { "0x{0:X16}" -f $_.Base }
+    }},
+    @{Name = "SizeMiB"; Expression = { [Math]::Round($_.Size / 1MB, 3) }},
+    Category,
+    @{Name = "Flags"; Expression = { "0x{0:X2}" -f $_.Flags }},
+    Label |
+  Format-Table -AutoSize
 ```
 
 ### Expected PowerShell Output
@@ -394,12 +567,33 @@ The values below are illustrative. Actual addresses, sizes, categories, and
 labels depend on the platform firmware and boot configuration.
 
 ```text
-Index Base               SizeBytes SizeMiB Category        Flags Label
------ ----               --------- ------- --------        ----- -----
-  0 0x0000000010000000 536870912 512.000 GpuReserved     0x00  iGPU Shared VRAM
-  1 <hidden>            267386880 255.000 Security        0x01  Security Processor
-  2 0x000000003FF00000   1048576   1.000 SharedMemory    0x00  MM Communication Buffer
-  3 0x0000000040000000  16777216  16.000 FirmwareRuntime 0x00  Offline Crash Dump
+Windows memory accounting
+  Physically installed : 8,192.000 MiB (0x200000000)
+  OS-usable physical   : 7,408.000 MiB (0x1CF000000)
+  Hardware reserved    : 784.000 MiB (0x31000000)
+
+RMEM accounting
+  Entries              : 4
+  Visible entry total  : 529.000 MiB (0x21100000)
+  Hidden entry total   : 255.000 MiB (0xFF00000)
+  RMEM total           : 784.000 MiB (0x31000000)
+  RMEM - Windows       : 0.000 MiB
+
+RMEM totals by category
+Category        Entries TotalMiB
+--------        ------- --------
+GpuReserved           1      512
+Security              1      255
+SharedMemory          1        1
+FirmwareRuntime       1       16
+
+RMEM entries
+Index Base               SizeMiB Category        Flags Label
+----- ----               ------- --------        ----- -----
+  0 0x0000000010000000 512.000 GpuReserved     0x00  iGPU Shared VRAM
+  1 <hidden>            255.000 Security        0x01  Security Processor
+  2 0x000000003FF00000   1.000 SharedMemory    0x00  MM Communication Buffer
+  3 0x0000000040000000  16.000 FirmwareRuntime 0x00  Offline Crash Dump
 ```
 
 If the currently booted firmware does not publish RMEM, the script terminates
