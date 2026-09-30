@@ -116,26 +116,26 @@ The registration protocol is defined in
 ## Revision 1 Table Layout
 
 The Revision 1 table contains a standard 36-byte ACPI description header, a
-4-byte entry count, 24 reserved bytes, and zero or more packed 64-byte entries.
+4-byte entry count, a 4-byte entry offset, and zero or more packed 48-byte
+entries.
 
 ```text
-+----------------------+------------+----------------+----------+----------+----------+-------+----------+----------+------------+
-| ACPI header          | EntryCount | Reserved       | Base     | Size     | Category | Flags | Reserved | Label    | Reserved2  |
-| 36 bytes             | 4 bytes    | 24 bytes       | 8 bytes  | 8 bytes  | 1 byte   | 1 byte | 2 bytes  | 28 bytes | 16 bytes   |
-+----------------------+------------+----------------+----------+----------+----------+-------+----------+----------+------------+
-|<------------- table header: 64 bytes ------------>|<-------------------- each entry: 64 bytes -------------------->|
++----------------------+------------+-------------+----------+----------+----------+---------+----------+
+| ACPI header          | EntryCount | EntryOffset | Base     | Size     | Category | Flags   | Label    |
+| 36 bytes             | 4 bytes    | 4 bytes     | 8 bytes  | 8 bytes  | 2 bytes  | 2 bytes | 28 bytes |
++----------------------+------------+-------------+----------+----------+----------+---------+----------+
+|<----------- table header: 44 bytes ----------->|<------------ each entry: 48 bytes ------------>|
 ```
 
-The total table length is `64 + (64 * EntryCount)` bytes.
-Each entry begins at a 64-byte offset from the start of the table and therefore
-preserves the alignment of the table base address.
+For Revision 1, `EntryOffset` is 44 and the total table length is
+`EntryOffset + (48 * EntryCount)` bytes.
 
 | Table offset | Size | Field | Description |
 | ---: | ---: | --- | --- |
 | 0 | 36 | `Header` | Standard ACPI description header |
 | 36 | 4 | `EntryCount` | Number of entries following the header |
-| 40 | 24 | `Reserved` | Must be zero in Revision 1 |
-| 64 | `64 * EntryCount` | `Entries` | Packed array of RMEM entries |
+| 40 | 4 | `EntryOffset` | Byte offset from the table start to the first entry |
+| 44 | `48 * EntryCount` | `Entries` | Packed array of RMEM entries |
 
 Each entry has the following layout:
 
@@ -143,11 +143,9 @@ Each entry has the following layout:
 | ---: | ---: | --- | --- |
 | 0 | 8 | `Base` | First physical byte of the reserved range |
 | 8 | 8 | `Size` | Range length in bytes |
-| 16 | 1 | `Category` | Numeric purpose category |
-| 17 | 1 | `Flags` | Entry attributes |
-| 18 | 2 | `Reserved` | Must be zero in Revision 1 |
+| 16 | 2 | `Category` | Numeric purpose category |
+| 18 | 2 | `Flags` | Entry attributes |
 | 20 | 28 | `Label` | Null-terminated, zero-padded ASCII label |
-| 48 | 16 | `Reserved2` | Must be zero in Revision 1 |
 
 The authoritative structure definitions are in
 `MdeModulePkg/Include/Guid/ReservedMemoryReportingTable.h`.
@@ -188,7 +186,7 @@ table. All undefined flag bits must be zero.
 The publisher currently:
 
 - Logs, asserts in debug builds, and skips HOBs with an unexpected payload
-  size, revision, nonzero reserved field, or invalid entry.
+  size or invalid entry.
 - Requires base addresses and sizes to be aligned to 4 KiB.
 - Rejects zero-sized ranges, physical-address arithmetic overflow, and ranges
   beyond the address width reported by the CPU HOB.
@@ -299,7 +297,7 @@ function Format-ByteCount {
 }
 
 function Resolve-RmemCategory {
-  param([Parameter(Mandatory)] [byte]$Value)
+  param([Parameter(Mandatory)] [uint16]$Value)
 
   switch ($Value) {
     1 { "Security" }
@@ -388,17 +386,18 @@ finally {
   [Runtime.InteropServices.Marshal]::FreeHGlobal($buffer)
 }
 
-$headerSize = 64
-$entrySize = 64
+$headerSize = 44
+$entrySize = 48
 if ($table.Length -lt $headerSize) {
-  throw "RMEM table is shorter than its $headerSize-byte header."
+  throw "RMEM table is shorter than its $headerSize-byte Revision 1 header."
 }
 
 $signature = [Text.Encoding]::ASCII.GetString($table, 0, 4)
 $tableLength = [BitConverter]::ToUInt32($table, 4)
 $revision = $table[8]
 $entryCount = [BitConverter]::ToUInt32($table, 36)
-$expectedLength = [uint64]$headerSize + ([uint64]$entryCount * $entrySize)
+$entryOffset = [BitConverter]::ToUInt32($table, 40)
+$expectedLength = [uint64]$entryOffset + ([uint64]$entryCount * $entrySize)
 
 if ($entryCount -gt 64) {
   throw "RMEM entry count $entryCount exceeds the Revision 1 limit of 64."
@@ -406,9 +405,10 @@ if ($entryCount -gt 64) {
 
 if (($signature -ne "RMEM") -or
     ($revision -ne 1) -or
+    ($entryOffset -ne $headerSize) -or
     ($tableLength -ne $expectedLength) -or
     ($tableLength -ne $table.Length)) {
-  throw "RMEM header is inconsistent: signature=$signature revision=$revision length=$tableLength entries=$entryCount."
+  throw "RMEM header is inconsistent: signature=$signature revision=$revision length=$tableLength entries=$entryCount entryOffset=$entryOffset."
 }
 
 $checksum = 0
@@ -420,23 +420,19 @@ if ($checksum -ne 0) {
   throw "RMEM checksum is invalid."
 }
 
-if ($table[40..63] | Where-Object { $_ -ne 0 }) {
-  throw "RMEM header contains nonzero reserved bytes."
-}
-
 $entries = @(for ($index = 0; $index -lt $entryCount; $index++) {
-  $offset = $headerSize + ($index * $entrySize)
+  $offset = $entryOffset + ($index * $entrySize)
   [uint64]$base = [BitConverter]::ToUInt64($table, $offset)
   [uint64]$rangeSize = [BitConverter]::ToUInt64($table, $offset + 8)
-  [byte]$category = $table[$offset + 16]
-  [byte]$flags = $table[$offset + 17]
+  [uint16]$category = [BitConverter]::ToUInt16($table, $offset + 16)
+  [uint16]$flags = [BitConverter]::ToUInt16($table, $offset + 18)
 
   if (($category -lt 1) -or ($category -gt 7)) {
     throw "RMEM entry $index contains unsupported category $category."
   }
 
-  if (($flags -band 0xFE) -ne 0) {
-    throw "RMEM entry $index contains unsupported flags 0x$($flags.ToString('X2'))."
+  if (($flags -band 0xFFFE) -ne 0) {
+    throw "RMEM entry $index contains unsupported flags 0x$($flags.ToString('X4'))."
   }
 
   $addressHidden = ($flags -band 0x01) -ne 0
@@ -447,13 +443,6 @@ $entries = @(for ($index = 0; $index -lt $entryCount; $index++) {
       (-not $addressHidden -and
        ($base -gt ([uint64]::MaxValue - ($rangeSize - 1))))) {
     throw "RMEM entry $index contains an invalid physical range."
-  }
-
-  if (($table[$offset + 18] -ne 0) -or
-      ($table[$offset + 19] -ne 0) -or
-      ($table[($offset + 48)..($offset + 63)] |
-        Where-Object { $_ -ne 0 })) {
-    throw "RMEM entry $index contains nonzero reserved fields."
   }
 
   $labelBytes = $table[($offset + 20)..($offset + 47)]
@@ -556,7 +545,7 @@ $entries |
     }},
     @{Name = "SizeMiB"; Expression = { [Math]::Round($_.Size / 1MB, 3) }},
     Category,
-    @{Name = "Flags"; Expression = { "0x{0:X2}" -f $_.Flags }},
+    @{Name = "Flags"; Expression = { "0x{0:X4}" -f $_.Flags }},
     Label |
   Format-Table -AutoSize
 ```
@@ -590,10 +579,10 @@ FirmwareRuntime       1       16
 RMEM entries
 Index Base               SizeMiB Category        Flags Label
 ----- ----               ------- --------        ----- -----
-  0 0x0000000010000000 512.000 GpuReserved     0x00  iGPU Shared VRAM
-  1 <hidden>            255.000 Security        0x01  Security Processor
-  2 0x000000003FF00000   1.000 SharedMemory    0x00  MM Communication Buffer
-  3 0x0000000040000000  16.000 FirmwareRuntime 0x00  Offline Crash Dump
+  0 0x0000000010000000 512.000 GpuReserved     0x0000 iGPU Shared VRAM
+  1 <hidden>            255.000 Security        0x0001 Security Processor
+  2 0x000000003FF00000   1.000 SharedMemory    0x0000 MM Communication Buffer
+  3 0x0000000040000000  16.000 FirmwareRuntime 0x0000 Offline Crash Dump
 ```
 
 If the currently booted firmware does not publish RMEM, the script terminates

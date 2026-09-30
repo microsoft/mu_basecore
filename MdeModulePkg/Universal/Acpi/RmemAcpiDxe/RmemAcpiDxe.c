@@ -89,6 +89,9 @@ RmemRangeIsValid (
 /**
   Checks whether two valid ranges share at least one byte. Ranges that only
   touch at adjacent endpoints do not overlap.
+
+  Both ranges must first pass RmemRangeIsValid() so the inclusive end-address
+  calculations cannot overflow.
 **/
 STATIC
 BOOLEAN
@@ -111,7 +114,7 @@ RmemAddReservedRange (
   IN EFI_PHYSICAL_ADDRESS              Base,
   IN UINT64                            Size,
   IN RMEM_CATEGORY                     Category,
-  IN UINT8                             Flags,
+  IN UINT16                            Flags,
   IN CONST CHAR8                       *Label OPTIONAL
   )
 {
@@ -139,7 +142,7 @@ RmemAddReservedRange (
   }
 
   if ((Flags & ~RMEM_ENTRY_FLAG_VALID_MASK) != 0) {
-    DEBUG ((DEBUG_ERROR, "RMEM: Unsupported flags 0x%02x\n", Flags));
+    DEBUG ((DEBUG_ERROR, "RMEM: Unsupported flags 0x%04x\n", Flags));
     return EFI_INVALID_PARAMETER;
   }
 
@@ -164,7 +167,7 @@ RmemAddReservedRange (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (((UINT32)Category <= (UINT32)RmemCategoryUnknown) ||
+  if ((Category == RmemCategoryUnknown) ||
       ((UINT32)Category >= (UINT32)RmemCategoryMax))
   {
     DEBUG ((DEBUG_ERROR, "RMEM: Invalid category %u\n", (UINT32)Category));
@@ -215,7 +218,7 @@ RmemAddReservedRange (
   ZeroMem (&mEntries[mEntryCount], sizeof (mEntries[mEntryCount]));
   mEntries[mEntryCount].Base     = Base;
   mEntries[mEntryCount].Size     = Size;
-  mEntries[mEntryCount].Category = (UINT8)Category;
+  mEntries[mEntryCount].Category = (UINT16)Category;
   mEntries[mEntryCount].Flags    = Flags;
   CopyMem (
     mEntries[mEntryCount].Label,
@@ -266,29 +269,6 @@ RmemImportHobs (
     }
 
     Record = (RMEM_HOB_RECORD *)GET_GUID_HOB_DATA (GuidHob);
-    if (Record->Revision != RMEM_HOB_REVISION) {
-      DEBUG ((DEBUG_ERROR, "RMEM: HOB %u has unsupported revision %u\n", HobIndex, Record->Revision));
-      ASSERT (Record->Revision == RMEM_HOB_REVISION);
-      GuidHob = NextGuidHob;
-      HobIndex++;
-      continue;
-    }
-
-    if ((Record->Reserved != 0) ||
-        !IsZeroBuffer (Record->Reserved2, sizeof (Record->Reserved2)) ||
-        (Record->Reserved3 != 0))
-    {
-      DEBUG ((DEBUG_ERROR, "RMEM: HOB %u has nonzero reserved fields\n", HobIndex));
-      ASSERT (
-        (Record->Reserved == 0) &&
-        IsZeroBuffer (Record->Reserved2, sizeof (Record->Reserved2)) &&
-        (Record->Reserved3 == 0)
-        );
-      GuidHob = NextGuidHob;
-      HobIndex++;
-      continue;
-    }
-
     Status = RmemAddReservedRange (
                &mRmemProtocol,
                Record->Base,
@@ -350,13 +330,14 @@ RmemPublishTable (
   Table->Header.CreatorId       = PcdGet32 (PcdAcpiDefaultCreatorId);
   Table->Header.CreatorRevision = PcdGet32 (PcdAcpiDefaultCreatorRevision);
   Table->EntryCount             = mEntryCount;
+  Table->EntryOffset            = (UINT32)sizeof (RMEM_TABLE_HEADER);
 
   CopyMem (
-    (UINT8 *)Table + sizeof (RMEM_TABLE_HEADER),
+    (UINT8 *)Table + Table->EntryOffset,
     mEntries,
     (UINTN)mEntryCount * sizeof (RMEM_ENTRY)
     );
-  TableEntries = (RMEM_ENTRY *)((UINT8 *)Table + sizeof (RMEM_TABLE_HEADER));
+  TableEntries = (RMEM_ENTRY *)((UINT8 *)Table + Table->EntryOffset);
   for (Index = 0; Index < mEntryCount; Index++) {
     if ((TableEntries[Index].Flags & RMEM_ENTRY_FLAG_ADDRESS_HIDDEN) != 0) {
       TableEntries[Index].Base = 0;

@@ -25,10 +25,8 @@ typedef struct _EDKII_RMEM_REGISTRATION_PROTOCOL EDKII_RMEM_REGISTRATION_PROTOCO
 
   @param[in] This      A pointer to the EDKII_RMEM_REGISTRATION_PROTOCOL
                        instance.
-  @param[in] Base      The physical address of the first byte in the range.
-                       This must be the actual address even when
-                       RMEM_ENTRY_FLAG_ADDRESS_HIDDEN is set and must be aligned
-                       to EFI_PAGE_SIZE.
+  @param[in] Base      The actual physical address of the first byte in the
+                       range. This must be aligned to EFI_PAGE_SIZE.
   @param[in] Size      The size of the range in bytes. This must be aligned to
                        EFI_PAGE_SIZE.
   @param[in] Category  The purpose category assigned to the range.
@@ -53,7 +51,7 @@ EFI_STATUS
   IN EFI_PHYSICAL_ADDRESS              Base,
   IN UINT64                            Size,
   IN RMEM_CATEGORY                     Category,
-  IN UINT8                             Flags,
+  IN UINT16                            Flags,
   IN CONST CHAR8                       *Label OPTIONAL
   );
 

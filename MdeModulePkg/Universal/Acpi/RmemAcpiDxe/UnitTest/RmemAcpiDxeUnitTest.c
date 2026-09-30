@@ -181,9 +181,13 @@ ValidRangesAreRegistered (
   UT_ASSERT_EQUAL (mEntries[0].Base, 0x1000);
   UT_ASSERT_EQUAL (mEntries[0].Size, 0x1000);
   UT_ASSERT_EQUAL (mEntries[0].Category, RmemCategorySecurity);
-  UT_ASSERT_TRUE (IsZeroBuffer (mEntries[0].Reserved, sizeof (mEntries[0].Reserved)));
-  UT_ASSERT_TRUE (IsZeroBuffer (mEntries[0].Reserved2, sizeof (mEntries[0].Reserved2)));
   UT_ASSERT_EQUAL (AsciiStrCmp (mEntries[0].Label, "Secure"), 0);
+  UT_ASSERT_TRUE (
+    IsZeroBuffer (
+      &mEntries[0].Label[sizeof ("Secure")],
+      sizeof (mEntries[0].Label) - sizeof ("Secure")
+      )
+    );
 
   Status = RmemAddReservedRange (
              &mRmemProtocol,
@@ -386,7 +390,7 @@ InvalidRangesAndCategoriesAreRejected (
              0x1000,
              0x1000,
              RmemCategoryOther,
-             BIT1,
+             BIT15,
              NULL
              );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
@@ -532,18 +536,16 @@ TableIsSerializedAndInstalled (
   UT_ASSERT_EQUAL (mInstalledTableSize, sizeof (mInstalledTable));
 
   Table = (RMEM_TABLE_HEADER *)mInstalledTable;
-  Entry = (RMEM_ENTRY *)(mInstalledTable + sizeof (RMEM_TABLE_HEADER));
+  Entry = (RMEM_ENTRY *)(mInstalledTable + Table->EntryOffset);
   UT_ASSERT_EQUAL (Table->Header.Signature, RMEM_TABLE_SIGNATURE);
   UT_ASSERT_EQUAL (Table->Header.Length, sizeof (mInstalledTable));
   UT_ASSERT_EQUAL (Table->Header.Revision, RMEM_TABLE_REVISION);
   UT_ASSERT_EQUAL (Table->EntryCount, 1);
-  UT_ASSERT_TRUE (IsZeroBuffer (Table->Reserved, sizeof (Table->Reserved)));
+  UT_ASSERT_EQUAL (Table->EntryOffset, sizeof (RMEM_TABLE_HEADER));
   UT_ASSERT_EQUAL (CalculateSum8 (mInstalledTable, mInstalledTableSize), 0);
   UT_ASSERT_EQUAL (Entry->Base, 0x1000);
   UT_ASSERT_EQUAL (Entry->Size, 0x2000);
   UT_ASSERT_EQUAL (Entry->Category, RmemCategorySecurity);
-  UT_ASSERT_TRUE (IsZeroBuffer (Entry->Reserved, sizeof (Entry->Reserved)));
-  UT_ASSERT_TRUE (IsZeroBuffer (Entry->Reserved2, sizeof (Entry->Reserved2)));
   UT_ASSERT_EQUAL (AsciiStrCmp (Entry->Label, "Secure"), 0);
 
   return UNIT_TEST_PASSED;
@@ -572,7 +574,10 @@ HiddenAddressesAreRedacted (
 
   Status = RmemPublishTable ();
   UT_ASSERT_STATUS_EQUAL (Status, EFI_SUCCESS);
-  Entry = (RMEM_ENTRY *)(mInstalledTable + sizeof (RMEM_TABLE_HEADER));
+  Entry = (RMEM_ENTRY *)(
+                         mInstalledTable +
+                         ((RMEM_TABLE_HEADER *)mInstalledTable)->EntryOffset
+                         );
   UT_ASSERT_EQUAL (Entry->Base, 0);
   UT_ASSERT_EQUAL (Entry->Flags, RMEM_ENTRY_FLAG_ADDRESS_HIDDEN);
 
