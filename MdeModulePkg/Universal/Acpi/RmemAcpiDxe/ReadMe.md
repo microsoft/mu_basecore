@@ -225,8 +225,10 @@ decisions.
 
 Windows exposes ACPI tables to user mode through `GetSystemFirmwareTable`. The
 following PowerShell example retrieves the Revision 1 `RMEM` table, validates
-its contents, compares its total with Windows' estimated hardware-reserved
-memory, and prints each decoded entry. It reads only system accounting and table
+its contents, compares its total with Windows' hardware-reserved memory, and
+prints each decoded entry. The hardware-reserved value is calculated from the
+Windows-reported physically installed memory minus the physical memory available
+to the operating system. The script reads only system accounting and table
 metadata and does not access the reported physical ranges.
 
 ```powershell
@@ -518,7 +520,7 @@ if ($hiddenTotal -ne 0) {
   Write-Warning "Hidden entries are included by size, but their overlap cannot be independently checked."
 }
 
-Write-Warning "The Windows hardware-reserved value is an estimate. A nonzero difference may indicate missing RMEM coverage or a difference in reporting scope."
+Write-Warning "A nonzero RMEM - Windows difference may indicate missing RMEM coverage or a difference in reporting scope."
 
 Write-Host ""
 Write-Host "RMEM totals by category"
