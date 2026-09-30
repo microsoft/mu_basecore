@@ -24,8 +24,10 @@
 
 #define RMEM_MAX_ENTRIES  64
 
+STATIC_ASSERT (RMEM_MAX_ENTRIES <= MAX_UINT16, "RMEM entry count does not fit in the table header");
+
 STATIC RMEM_ENTRY  mEntries[RMEM_MAX_ENTRIES];
-STATIC UINT32      mEntryCount;
+STATIC UINT16      mEntryCount;
 STATIC BOOLEAN     mFinalized;
 STATIC EFI_EVENT   mPublicationEvent;
 STATIC UINT64      mMaximumPhysicalAddress = MAX_UINT64;
@@ -330,7 +332,7 @@ RmemPublishTable (
   Table->Header.CreatorId       = PcdGet32 (PcdAcpiDefaultCreatorId);
   Table->Header.CreatorRevision = PcdGet32 (PcdAcpiDefaultCreatorRevision);
   Table->EntryCount             = mEntryCount;
-  Table->EntryOffset            = (UINT32)sizeof (RMEM_TABLE_HEADER);
+  Table->EntryOffset            = (UINT16)sizeof (RMEM_TABLE_HEADER);
 
   CopyMem (
     (UINT8 *)Table + Table->EntryOffset,

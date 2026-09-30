@@ -116,26 +116,28 @@ The registration protocol is defined in
 ## Revision 1 Table Layout
 
 The Revision 1 table contains a standard 36-byte ACPI description header, a
-4-byte entry count, a 4-byte entry offset, and zero or more packed 48-byte
+2-byte entry count, a 2-byte entry offset, and zero or more packed 48-byte
 entries.
 
 ```text
 +----------------------+------------+-------------+----------+----------+----------+---------+----------+
 | ACPI header          | EntryCount | EntryOffset | Base     | Size     | Category | Flags   | Label    |
-| 36 bytes             | 4 bytes    | 4 bytes     | 8 bytes  | 8 bytes  | 2 bytes  | 2 bytes | 28 bytes |
+| 36 bytes             | 2 bytes    | 2 bytes     | 8 bytes  | 8 bytes  | 2 bytes  | 2 bytes | 28 bytes |
 +----------------------+------------+-------------+----------+----------+----------+---------+----------+
-|<----------- table header: 44 bytes ----------->|<------------ each entry: 48 bytes ------------>|
+|<----------- table header: 40 bytes ----------->|<------------ each entry: 48 bytes ------------>|
 ```
 
-For Revision 1, `EntryOffset` is 44 and the total table length is
+For Revision 1, `EntryOffset` is 40 and the total table length is
 `EntryOffset + (48 * EntryCount)` bytes.
+The entry array therefore begins at an 8-byte-aligned offset from the table
+base.
 
 | Table offset | Size | Field | Description |
 | ---: | ---: | --- | --- |
 | 0 | 36 | `Header` | Standard ACPI description header |
-| 36 | 4 | `EntryCount` | Number of entries following the header |
-| 40 | 4 | `EntryOffset` | Byte offset from the table start to the first entry |
-| 44 | `48 * EntryCount` | `Entries` | Packed array of RMEM entries |
+| 36 | 2 | `EntryCount` | Number of entries following the header |
+| 38 | 2 | `EntryOffset` | Byte offset from the table start to the first entry |
+| 40 | `48 * EntryCount` | `Entries` | Packed array of RMEM entries |
 
 Each entry has the following layout:
 
@@ -386,7 +388,7 @@ finally {
   [Runtime.InteropServices.Marshal]::FreeHGlobal($buffer)
 }
 
-$headerSize = 44
+$headerSize = 40
 $entrySize = 48
 if ($table.Length -lt $headerSize) {
   throw "RMEM table is shorter than its $headerSize-byte Revision 1 header."
@@ -395,8 +397,8 @@ if ($table.Length -lt $headerSize) {
 $signature = [Text.Encoding]::ASCII.GetString($table, 0, 4)
 $tableLength = [BitConverter]::ToUInt32($table, 4)
 $revision = $table[8]
-$entryCount = [BitConverter]::ToUInt32($table, 36)
-$entryOffset = [BitConverter]::ToUInt32($table, 40)
+$entryCount = [BitConverter]::ToUInt16($table, 36)
+$entryOffset = [BitConverter]::ToUInt16($table, 38)
 $expectedLength = [uint64]$entryOffset + ([uint64]$entryCount * $entrySize)
 
 if ($entryCount -gt 64) {

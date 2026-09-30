@@ -89,8 +89,8 @@ typedef enum {
 ///
 typedef struct {
   EFI_ACPI_DESCRIPTION_HEADER    Header;
-  UINT32                         EntryCount;
-  UINT32                         EntryOffset;
+  UINT16                         EntryCount;
+  UINT16                         EntryOffset;
 } RMEM_TABLE_HEADER;
 
 ///
@@ -108,9 +108,9 @@ typedef struct {
 
 STATIC_ASSERT (RmemCategoryMax <= MAX_UINT16, "RMEM categories do not fit in the wire-format field");
 STATIC_ASSERT (RMEM_ENTRY_FLAG_VALID_MASK <= MAX_UINT16, "RMEM flags do not fit in the wire-format field");
-STATIC_ASSERT (sizeof (RMEM_TABLE_HEADER) == 44, "Unexpected RMEM table header size");
+STATIC_ASSERT (sizeof (RMEM_TABLE_HEADER) == 40, "Unexpected RMEM table header size");
 STATIC_ASSERT (OFFSET_OF (RMEM_TABLE_HEADER, EntryCount) == 36, "Unexpected RMEM entry count offset");
-STATIC_ASSERT (OFFSET_OF (RMEM_TABLE_HEADER, EntryOffset) == 40, "Unexpected RMEM entry offset field");
+STATIC_ASSERT (OFFSET_OF (RMEM_TABLE_HEADER, EntryOffset) == 38, "Unexpected RMEM entry offset field");
 STATIC_ASSERT (sizeof (RMEM_ENTRY) == 48, "Unexpected RMEM entry size");
 STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Category) == 16, "Unexpected RMEM category offset");
 STATIC_ASSERT (OFFSET_OF (RMEM_ENTRY, Flags) == 18, "Unexpected RMEM flags offset");
