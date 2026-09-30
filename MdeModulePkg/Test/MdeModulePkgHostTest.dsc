@@ -71,6 +71,14 @@
       PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
   }
 
+  # MU_CHANGE [BEGIN] - Add reserved-memory reporting host tests.
+  MdeModulePkg/Universal/Acpi/RmemAcpiDxe/UnitTest/RmemAcpiDxeUnitTestHost.inf {
+    <LibraryClasses>
+      HobLib|MdePkg/Test/Mock/Library/Stub/StubHobLib/StubHobLib.inf
+      UefiBootServicesTableLib|MdePkg/Test/Mock/Library/Cmocka/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf
+  }
+  # MU_CHANGE [END] - Add reserved-memory reporting host tests.
+
   MdeModulePkg/Bus/Pci/NvmExpressDxe/UnitTest/MediaSanitizeUnitTestHost.inf {
     <LibraryClasses>
       NvmExpressDxe|MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe.inf
