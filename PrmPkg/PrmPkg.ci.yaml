@@ -109,16 +109,7 @@
           "prmopreg",
           "prmpecofflib",
           "prmpkg",
-          # MU_CHANGE - Start
-          "prmssdtinstall",
-          "fstack",
-          "dlink",
-          "prmconfig",
-          "prmcontextbufferlib",
-          "prminfo",
-          "prmloader",
-          "prmmodulediscoverylib"
-          # MU_CHANGE - End
+          "prmssdtinstall"
         ],
         "IgnoreStandardPaths": [],   # Standard Plugin defined paths that
                                      # should be ignore
@@ -128,7 +119,7 @@
 
     ## options defined .pytool/Plugin/MarkdownLintCheck
     "MarkdownLintCheck": {
-        "AuditOnly": True,           # If True, log all errors and then mark as skipped
+        "AuditOnly": False,          # If True, log all errors and then mark as skipped
         "IgnoreFiles": []            # package root relative file, folder, or glob pattern to ignore
     }
 }

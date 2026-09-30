@@ -17,7 +17,7 @@ on:
       - reopened
       - synchronize
     branches:
-      - release/202511
+      - release/202608
 
 permissions:
   contents: read

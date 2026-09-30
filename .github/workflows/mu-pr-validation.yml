@@ -80,12 +80,25 @@ jobs:
             exit 0
           fi
 
+          base_ref=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}" \
+            --jq '.base.ref')
+          default_branch=$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.default_branch')
+
+          if [[ "$base_ref" != "$default_branch" ]]; then
+            echo "::notice::PR #${pr_number} targets ${base_ref}, not ${default_branch}. Skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
+            echo "skip_reason=wrong_target_branch" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           echo "skip=false" >> "$GITHUB_OUTPUT"
 
           echo "::group::PR Information"
           echo "  - PR Number: $pr_number"
           echo "  - Head SHA:  $HEAD_SHA"
           echo "  - Head Ref:  $HEAD_REF"
+          echo "  - Target:    $base_ref"
           echo "  - Source:    $HEAD_REPO"
           echo "::endgroup::"
 
