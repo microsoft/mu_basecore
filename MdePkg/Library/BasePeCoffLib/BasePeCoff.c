@@ -319,7 +319,7 @@ PeCoffLoaderGetPeHeader (
           CopyMem (
             &ImageContext->SecurityDataDirectory,
             &Hdr.Pe32->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY],
-            sizeof (EFI_IMAGE_DATA_DIRECTORY)
+            sizeof (ImageContext->SecurityDataDirectory)
             );
         }
       }
