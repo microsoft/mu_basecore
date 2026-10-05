@@ -14,7 +14,7 @@
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = HashLib|SEC
-  #CONSTRUCTOR                    = HasLibTpm2PeilessSecLibConstructor # MU_CHANGE
+  CONSTRUCTOR                    = HasLibTpm2PeilessSecLibConstructor
 
 #
 # The following information is for reference only and not required by the build tools.
@@ -42,7 +42,6 @@
   PrePiLib
   Tpm2DeviceLib
   Tpm2CommandLib
-  Tpm2HelpLib # MU_CHANGE
 
 [Guids]
   gTpmErrorHobGuid
