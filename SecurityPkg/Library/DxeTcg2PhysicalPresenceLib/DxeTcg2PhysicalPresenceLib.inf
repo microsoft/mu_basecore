@@ -51,7 +51,6 @@
   Tpm2CommandLib
   Tcg2PpVendorLib
   VariablePolicyHelperLib
-  Tcg2PhysicalPresencePromptLib       ## MU_CHANGE
 
 [Protocols]
   gEfiTcg2ProtocolGuid                 ## SOMETIMES_CONSUMES
