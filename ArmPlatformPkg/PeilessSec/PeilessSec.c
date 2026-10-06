@@ -48,40 +48,34 @@ GetPlatformPpi (
   return EFI_NOT_FOUND;
 }
 
+// MU_CHANGE [BEGIN] - Remove DXE Core FV placement assumption
+
 /**
-  Decompress firmware volumes only until the DXE Core is found.
+  Decompress all discovered firmware volumes.
 
 **/
 STATIC
 VOID
-DecompressFvsUntilDxeCoreFound (
+DecompressFvs (
   VOID
   )
 {
   UINTN                Instance;
   EFI_PEI_FV_HANDLE    VolumeHandle;
   EFI_PEI_FILE_HANDLE  FileHandle;
-  EFI_PEI_FV_HANDLE    DxeVolumeHandle;
-  EFI_PEI_FILE_HANDLE  DxeFileHandle;
 
-  if (!EFI_ERROR (FfsAnyFvFindFirstFile (EFI_FV_FILETYPE_DXE_CORE, &DxeVolumeHandle, &DxeFileHandle))) {
-    DEBUG ((DEBUG_INFO, "DXE Core already found, skipping FV decompression.\n\r"));
-    return;
-  }
-
+  //
+  // Decompress all firmware volume images found across all FVs.
+  //
   for (Instance = 0; !EFI_ERROR (FfsFindNextVolume (Instance, &VolumeHandle)); Instance++) {
     FileHandle = NULL;
-    DEBUG ((DEBUG_INFO, "Processing next firmware volume instance %u.\n\r", Instance));
     while (!EFI_ERROR (FfsFindNextFile (EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE, VolumeHandle, &FileHandle))) {
       FfsProcessFvFile (FileHandle, VolumeHandle);
-      DEBUG ((DEBUG_INFO, "Processed firmware volume image file.\n\r"));
-      if (!EFI_ERROR (FfsAnyFvFindFirstFile (EFI_FV_FILETYPE_DXE_CORE, &DxeVolumeHandle, &DxeFileHandle))) {
-        DEBUG ((DEBUG_INFO, "DXE Core found, stopping FV decompression.\n\r"));
-        return;
-      }
     }
   }
 }
+
+// MU_CHANGE [END] - Remove DXE Core FV placement assumption
 
 /**
   SEC main routine.
@@ -228,8 +222,10 @@ SecMain (
 
   // MU_CHANGE [END]
 
+  // MU_CHANGE [BEGIN] - Remove DXE Core FV placement assumption
+
   // Decompress firmware volumes and load the DXE Core
-  DecompressFvsUntilDxeCoreFound ();
+  DecompressFvs ();
 
   Status = MeasurePeilessSec ();
   ASSERT_EFI_ERROR (Status);
@@ -238,6 +234,8 @@ SecMain (
   Status = LoadDxeCoreFromFv (NULL, 0);
   DEBUG ((DEBUG_ERROR, "Failed to load DXE Core from any FV\n"));
   ASSERT_EFI_ERROR (Status);
+
+  // MU_CHANGE [END] - Remove DXE Core FV placement assumption
 }
 
 /**
