@@ -46,6 +46,10 @@
   #
   EcitReportLib|Include/Library/EcitReportLib.h
 
+  ## @libraryclass Encodes structured capabilities as ECIT EntryData.
+  #
+  EcitEncodingLib|Include/Library/EcitEncodingLib.h
+
   ##  @libraryclass  Provides interfaces to handle TPM 1.2 request.
   #
   TcgPhysicalPresenceLib|Include/Library/TcgPhysicalPresenceLib.h
