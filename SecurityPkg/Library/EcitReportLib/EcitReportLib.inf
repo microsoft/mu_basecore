@@ -24,6 +24,7 @@
 
 [LibraryClasses]
   BaseCryptLib
-  MemoryAllocationLib
-  DebugLib
   CryptoIndicatorRegistrationLib
+  DebugLib
+  EcitEncodingLib
+  MemoryAllocationLib
