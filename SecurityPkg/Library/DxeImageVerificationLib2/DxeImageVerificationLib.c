@@ -21,7 +21,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Guid/CryptoIndicatorTable.h>
 #include <Guid/CryptoOpId.h>
-#include <Library/EcitReportLib.h>
+#include <Library/BaseCryptLib.h>
+#include <Library/CryptoIndicatorRegistrationLib.h>
+#include <Library/EcitEncodingLib.h>
 
 //
 // Crypto operations used to verify image signatures and hashes.
@@ -30,6 +32,113 @@ STATIC CONST EFI_GUID  *mImageVerificationOps[] = {
   &gCryptoOpAuthenticodeVerifyGuid,
   &gCryptoOpAuthenticodeHashGuid
 };
+
+/**
+  Build and report the image-verification crypto-operation capability payload.
+**/
+STATIC
+VOID
+ReportImageVerificationCapabilities (
+  VOID
+  )
+{
+  EFI_STATUS                Status;
+  UINTN                     Index;
+  BASE_CRYPT_OP_CAPABILITY  *OpCapabilities[ARRAY_SIZE (mImageVerificationOps)]    = { 0 };
+  UINTN                     OpCapabilityCounts[ARRAY_SIZE (mImageVerificationOps)] = { 0 };
+  UINTN                     TotalCapabilityCount;
+  BASE_CRYPT_OP_CAPABILITY  *Capabilities;
+  UINTN                     CapabilityOffset;
+  VOID                      *Payload;
+  UINTN                     PayloadSize;
+
+  TotalCapabilityCount = 0;
+  Capabilities         = NULL;
+  Payload              = NULL;
+  for (Index = 0; Index < ARRAY_SIZE (mImageVerificationOps); Index++) {
+    Status = GetCryptoOpCapability (
+               mImageVerificationOps[Index],
+               &OpCapabilities[Index],
+               &OpCapabilityCounts[Index]
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_WARN,
+        "DxeImageVerificationLib: ECIT op %g unavailable (%r)\n",
+        mImageVerificationOps[Index],
+        Status
+        ));
+      continue;
+    }
+
+    if (TotalCapabilityCount > (MAX_UINTN - OpCapabilityCounts[Index])) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Cleanup;
+    }
+
+    TotalCapabilityCount += OpCapabilityCounts[Index];
+  }
+
+  if (TotalCapabilityCount != 0) {
+    if (TotalCapabilityCount > (MAX_UINTN / sizeof (*Capabilities))) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Cleanup;
+    }
+
+    Capabilities = AllocatePool (TotalCapabilityCount * sizeof (*Capabilities));
+    if (Capabilities == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Cleanup;
+    }
+
+    CapabilityOffset = 0;
+    for (Index = 0; Index < ARRAY_SIZE (mImageVerificationOps); Index++) {
+      if (OpCapabilityCounts[Index] == 0) {
+        continue;
+      }
+
+      CopyMem (
+        &Capabilities[CapabilityOffset],
+        OpCapabilities[Index],
+        OpCapabilityCounts[Index] * sizeof (*Capabilities)
+        );
+      CapabilityOffset += OpCapabilityCounts[Index];
+    }
+  }
+
+  Status = EcitEncodeOidSet (
+             Capabilities,
+             TotalCapabilityCount,
+             &Payload,
+             &PayloadSize
+             );
+  if (!EFI_ERROR (Status)) {
+    Status = EcitRegisterCryptoCapability (
+               &gEfiEcitFeatureSbImageVerificationGuid,
+               Payload,
+               PayloadSize
+               );
+  }
+
+Cleanup:
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: failed to report ECIT capability - %r\n", Status));
+  }
+
+  if (Payload != NULL) {
+    FreePool (Payload);
+  }
+
+  if (Capabilities != NULL) {
+    FreePool (Capabilities);
+  }
+
+  for (Index = 0; Index < ARRAY_SIZE (mImageVerificationOps); Index++) {
+    if (OpCapabilities[Index] != NULL) {
+      FreePool (OpCapabilities[Index]);
+    }
+  }
+}
 
 //
 // Signature-list types accepted from the authorized and forbidden signature
@@ -286,19 +395,15 @@ DxeImageVerificationLibConstructor (
   IN  EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EcitReportCryptoOpCapabilities (
-    &gEfiEcitFeatureSbImageVerificationGuid,
-    mImageVerificationOps,
-    ARRAY_SIZE (mImageVerificationOps)
-    );
+  ReportImageVerificationCapabilities ();
 
-  EcitReportCapability (
+  EcitRegisterCryptoCapability (
     &gEfiEcitFeatureSbImageAuthorizationGuid,
     mSecureBootImageDatabaseTypes,
     sizeof (mSecureBootImageDatabaseTypes)
     );
 
-  EcitReportCapability (
+  EcitRegisterCryptoCapability (
     &gEfiEcitFeatureSbImageRevocationGuid,
     mSecureBootImageDatabaseTypes,
     sizeof (mSecureBootImageDatabaseTypes)

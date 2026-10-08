@@ -11,10 +11,12 @@
 #include <Library/UefiLib.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
+#include <Library/HobLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/DebugLib.h>
 #include <Library/PcdLib.h>
 #include <Guid/CryptoIndicatorTable.h>
+#include <Guid/EcitCapabilityHob.h>
 #include <Protocol/CryptoIndicatorRegistration.h>
 #include <Protocol/AcpiTable.h>
 
@@ -22,6 +24,7 @@
 // Keep the configuration table available after ExitBootServices.
 //
 #define ECIT_TABLE_MEMORY_TYPE  EfiACPIReclaimMemory
+#define ECIT_ENTRY_ALIGNMENT    8
 
 typedef struct {
   LIST_ENTRY    Link;
@@ -34,6 +37,32 @@ STATIC LIST_ENTRY  mEntryList        = INITIALIZE_LIST_HEAD_VARIABLE (mEntryList
 STATIC UINTN       mNumberOfEntries  = 0;
 STATIC BOOLEAN     mSealed           = FALSE;
 STATIC EFI_EVENT   mReadyToBootEvent = NULL;
+
+STATIC
+EFI_STATUS
+GetAlignedEntryLength (
+  IN  UINTN  EntryDataSize,
+  OUT UINTN  *EntryLength
+  )
+{
+  UINTN  UnalignedLength;
+
+  if (EntryLength == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (EntryDataSize > (MAX_UINT16 - sizeof (EFI_CRYPTO_INDICATOR_ENTRY))) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  UnalignedLength = sizeof (EFI_CRYPTO_INDICATOR_ENTRY) + EntryDataSize;
+  if (UnalignedLength > (MAX_UINT16 - (ECIT_ENTRY_ALIGNMENT - 1))) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *EntryLength = ALIGN_VALUE (UnalignedLength, ECIT_ENTRY_ALIGNMENT);
+  return EFI_SUCCESS;
+}
 
 /**
   Register an ECIT capability record with the collector.
@@ -67,6 +96,7 @@ EcitRegisterEntry (
 {
   LIST_ENTRY       *Link;
   ECIT_ENTRY_NODE  *Node;
+  UINTN            EntryLength;
 
   if ((This == NULL) || (FeatureIdentifier == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -77,10 +107,10 @@ EcitRegisterEntry (
   }
 
   //
-  // Each entry's EntryLength is a UINT16, and the table's NumberOfEntries is a
-  // UINT8; reject anything that would not fit.
+  // Each aligned entry length is a UINT16, and the table's NumberOfEntries is
+  // a UINT8; reject anything that would not fit.
   //
-  if ((sizeof (EFI_CRYPTO_INDICATOR_ENTRY) + EntryDataSize) > MAX_UINT16) {
+  if (EFI_ERROR (GetAlignedEntryLength (EntryDataSize, &EntryLength))) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -128,6 +158,112 @@ STATIC EFI_CRYPTO_INDICATOR_REGISTRATION_PROTOCOL  mRegistration = {
   EFI_CRYPTO_INDICATOR_REGISTRATION_PROTOCOL_REVISION,
   EcitRegisterEntry
 };
+
+/**
+  Import ECIT capability records produced in PEI.
+
+  @retval EFI_SUCCESS            All PEI capability HOBs were imported.
+  @retval EFI_COMPROMISED_DATA   A capability HOB is malformed.
+  @retval EFI_UNSUPPORTED        A capability HOB revision is unsupported.
+  @retval EFI_INVALID_PARAMETER  A capability HOB contains an invalid feature.
+  @retval Others                 Registering a capability record failed.
+**/
+STATIC
+EFI_STATUS
+EcitImportPeiHobs (
+  VOID
+  )
+{
+  EFI_STATUS                 Status;
+  EFI_HOB_GUID_TYPE          *GuidHob;
+  EDKII_ECIT_CAPABILITY_HOB  *CapabilityHob;
+  UINTN                      HobDataSize;
+  UINTN                      ExpectedHobDataSize;
+  UINTN                      EntryDataSize;
+  CONST VOID                 *EntryData;
+
+  GuidHob = GetFirstGuidHob (&gEdkiiEcitCapabilityHobGuid);
+  while (GuidHob != NULL) {
+    HobDataSize = GET_GUID_HOB_DATA_SIZE (GuidHob);
+    if (HobDataSize < sizeof (EDKII_ECIT_CAPABILITY_HOB)) {
+      DEBUG ((DEBUG_ERROR, "ECIT: PEI capability HOB is too small (%u bytes)\n", (UINT32)HobDataSize));
+      return EFI_COMPROMISED_DATA;
+    }
+
+    CapabilityHob = GET_GUID_HOB_DATA (GuidHob);
+    if (CapabilityHob->Revision != EDKII_ECIT_CAPABILITY_HOB_REVISION) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "ECIT: unsupported PEI capability HOB revision %u\n",
+        CapabilityHob->Revision
+        ));
+      return EFI_UNSUPPORTED;
+    }
+
+    if ((CapabilityHob->HeaderSize < sizeof (EDKII_ECIT_CAPABILITY_HOB)) ||
+        (CapabilityHob->HeaderSize > HobDataSize))
+    {
+      DEBUG ((
+        DEBUG_ERROR,
+        "ECIT: invalid PEI capability HOB header size %u (HOB data %u)\n",
+        CapabilityHob->HeaderSize,
+        (UINT32)HobDataSize
+        ));
+      return EFI_COMPROMISED_DATA;
+    }
+
+    if (CapabilityHob->EntryDataSize > (HobDataSize - CapabilityHob->HeaderSize)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "ECIT: PEI capability HOB payload size %u exceeds %u\n",
+        CapabilityHob->EntryDataSize,
+        (UINT32)(HobDataSize - CapabilityHob->HeaderSize)
+        ));
+      return EFI_COMPROMISED_DATA;
+    }
+
+    EntryDataSize       = CapabilityHob->EntryDataSize;
+    ExpectedHobDataSize = ALIGN_VALUE (CapabilityHob->HeaderSize + EntryDataSize, 8);
+    if (HobDataSize != ExpectedHobDataSize) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "ECIT: PEI capability HOB size %u does not match aligned size %u\n",
+        (UINT32)HobDataSize,
+        (UINT32)ExpectedHobDataSize
+        ));
+      return EFI_COMPROMISED_DATA;
+    }
+
+    if (IsZeroGuid (&CapabilityHob->FeatureIdentifier)) {
+      DEBUG ((DEBUG_ERROR, "ECIT: PEI capability HOB has a zero feature identifier\n"));
+      return EFI_INVALID_PARAMETER;
+    }
+
+    EntryData = (CONST UINT8 *)CapabilityHob + CapabilityHob->HeaderSize;
+    Status    = EcitRegisterEntry (
+                  &mRegistration,
+                  &CapabilityHob->FeatureIdentifier,
+                  EntryData,
+                  EntryDataSize
+                  );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "ECIT: failed to import PEI feature %g - %r\n",
+        &CapabilityHob->FeatureIdentifier,
+        Status
+        ));
+      return Status;
+    }
+
+    GuidHob = GetNextGuidHob (
+                &gEdkiiEcitCapabilityHobGuid,
+                GET_NEXT_HOB (GuidHob)
+                );
+  }
+
+  return EFI_SUCCESS;
+}
 
 /**
   Publish ECIT as a native ACPI table when ACPI support is available.
@@ -189,11 +325,18 @@ EcitPublishTable (
   UINT8                       *Cursor;
   UINT8                       *TableBytes;
   UINT64                      OemTableId;
+  UINTN                       EntryLength;
 
   TotalSize = sizeof (EFI_CRYPTO_INDICATOR_TABLE);
   for (Link = GetFirstNode (&mEntryList); !IsNull (&mEntryList, Link); Link = GetNextNode (&mEntryList, Link)) {
-    Node       = BASE_CR (Link, ECIT_ENTRY_NODE, Link);
-    TotalSize += sizeof (EFI_CRYPTO_INDICATOR_ENTRY) + Node->DataSize;
+    Node   = BASE_CR (Link, ECIT_ENTRY_NODE, Link);
+    Status = GetAlignedEntryLength (Node->DataSize, &EntryLength);
+    ASSERT_EFI_ERROR (Status);
+    if (EFI_ERROR (Status) || (TotalSize > (MAX_UINTN - EntryLength))) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    TotalSize += EntryLength;
   }
 
   if (TotalSize > MAX_UINT32) {
@@ -231,12 +374,19 @@ EcitPublishTable (
     Node  = BASE_CR (Link, ECIT_ENTRY_NODE, Link);
     Entry = (EFI_CRYPTO_INDICATOR_ENTRY *)Cursor;
     CopyGuid (&Entry->FeatureIdentifier, &Node->FeatureIdentifier);
-    Entry->EntryLength = (UINT16)(sizeof (EFI_CRYPTO_INDICATOR_ENTRY) + Node->DataSize);
+    Status = GetAlignedEntryLength (Node->DataSize, &EntryLength);
+    ASSERT_EFI_ERROR (Status);
+    if (EFI_ERROR (Status)) {
+      gBS->FreePool (Table);
+      return EFI_COMPROMISED_DATA;
+    }
+
+    Entry->EntryLength = (UINT16)EntryLength;
     if (Node->DataSize != 0) {
       CopyMem (Cursor + sizeof (EFI_CRYPTO_INDICATOR_ENTRY), Node->Data, Node->DataSize);
     }
 
-    Cursor += Entry->EntryLength;
+    Cursor += EntryLength;
   }
 
   //
@@ -349,6 +499,13 @@ CryptoIndicatorTableDxeEntryPoint (
   EFI_STATUS  Status;
   EFI_HANDLE  Handle;
 
+  Status = EcitImportPeiHobs ();
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "ECIT: failed to import PEI capability HOBs - %r\n", Status));
+    EcitFreeEntries ();
+    return Status;
+  }
+
   Status = EfiCreateEventReadyToBootEx (
              TPL_CALLBACK,
              EcitOnReadyToBoot,
@@ -357,6 +514,7 @@ CryptoIndicatorTableDxeEntryPoint (
              );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "ECIT: failed to create ready-to-boot event - %r\n", Status));
+    EcitFreeEntries ();
     return Status;
   }
 
@@ -371,6 +529,7 @@ CryptoIndicatorTableDxeEntryPoint (
     DEBUG ((DEBUG_ERROR, "ECIT: failed to install registration protocol - %r\n", Status));
     gBS->CloseEvent (mReadyToBootEvent);
     mReadyToBootEvent = NULL;
+    EcitFreeEntries ();
     return Status;
   }
 

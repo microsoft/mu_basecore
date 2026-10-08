@@ -1,0 +1,30 @@
+## @file
+#  PEI instance of CryptoIndicatorRegistrationLib.
+#
+#  Copyright (c) Microsoft Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = CryptoIndicatorRegistrationLibPei
+  FILE_GUID                      = 913D621E-9FA8-489F-84AF-56C70A92C83B
+  MODULE_TYPE                    = PEIM
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = CryptoIndicatorRegistrationLib|PEIM
+
+[Sources]
+  CryptoIndicatorRegistrationLibPei.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  SecurityPkg/SecurityPkg.dec
+
+[LibraryClasses]
+  BaseMemoryLib
+  DebugLib
+  HobLib
+
+[Guids]
+  gEdkiiEcitCapabilityHobGuid

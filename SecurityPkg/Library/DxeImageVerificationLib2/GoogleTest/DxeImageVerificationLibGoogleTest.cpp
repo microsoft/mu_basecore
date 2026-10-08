@@ -613,9 +613,27 @@ TEST_F (DxeImageVerificationHandlerTest, ValidUnsignedImageHashInDb_AuthorizesIm
 
 TEST (DxeImageVerificationLibConstructorTest, RegistersSecurity2HandlerAndReturnsStatus) {
   MockSecurityManagementLib              SecurityManagementLibMock;
+  MockBaseCryptLib                       BaseCryptLibMock;
   SECURITY2_FILE_AUTHENTICATION_HANDLER  RegisteredHandler;
 
   RegisteredHandler = NULL;
+  EXPECT_CALL (BaseCryptLibMock, GetCryptoOpCapability (_, _, _))
+    .Times (2)
+    .WillRepeatedly (
+       Invoke (
+         [] (
+             CONST EFI_GUID            *OpIdGuid,
+             BASE_CRYPT_OP_CAPABILITY  **Capabilities,
+             UINTN                     *CapabilityCount
+         ) -> EFI_STATUS {
+    (VOID)OpIdGuid;
+    *Capabilities    = NULL;
+    *CapabilityCount = 0;
+    return EFI_NOT_FOUND;
+  }
+         )
+       );
+
   EXPECT_CALL (
     SecurityManagementLibMock,
     RegisterSecurity2Handler (

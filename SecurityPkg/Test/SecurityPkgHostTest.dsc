@@ -29,13 +29,13 @@
   SecurityPkg/Library/DxeTpm2MeasureBootLib/InternalUnitTest/DxeTpm2MeasureBootLibSanitizationTestHost.inf
   SecurityPkg/Library/DxeTpmMeasureBootLib/InternalUnitTest/DxeTpmMeasureBootLibSanitizationTestHost.inf
   SecurityPkg/Test/Mock/Library/GoogleTest/MockSecureBootVariableLib/MockSecureBootVariableLib.inf
+  #
+  # Build SecurityPkg HOST_APPLICATION Tests
+  #
   SecurityPkg/Library/EcitEncodingLib/UnitTest/EcitEncodingLibUnitTest.inf {
     <LibraryClasses>
       EcitEncodingLib|SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf
   }
-  #
-  # Build SecurityPkg HOST_APPLICATION Tests
-  #
   SecurityPkg/Library/SecureBootVariableLib/UnitTest/SecureBootVariableLibUnitTest.inf {
     <LibraryClasses>
       SecureBootVariableLib|SecurityPkg/Library/SecureBootVariableLib/SecureBootVariableLib.inf
@@ -82,7 +82,8 @@ SecurityPkg/Library/DxeImageVerificationLib2/GoogleTest/DxeImageVerificationLibG
       PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
       PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
       TpmMeasurementLib|MdeModulePkg/Test/Mock/Library/GoogleTest/MockTpmMeasurementLib/MockTpmMeasurementLib.inf
-      EcitReportLib|SecurityPkg/Library/EcitReportLibNull/EcitReportLibNull.inf
+      CryptoIndicatorRegistrationLib|SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibNull.inf
+      EcitEncodingLib|SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf
   }
 
   SecurityPkg/Library/ImageSecureBootVerificationResultTableLib/GoogleTest/ImageSecureBootVerificationResultTableLibGoogleTest.inf {
@@ -103,7 +104,8 @@ SecurityPkg/Library/DxeImageVerificationLib2/GoogleTest/DxeImageVerificationLibG
       BaseCryptLib|CryptoPkg/Test/Mock/Library/GoogleTest/MockBaseCryptLib/MockBaseCryptLib.inf
       PlatformSecureLib|SecurityPkg/Library/PlatformSecureLibNull/PlatformSecureLibNull.inf
       VariablePolicyLib|MdeModulePkg/Library/VariablePolicyLib/VariablePolicyLib.inf
-      EcitReportLib|SecurityPkg/Library/EcitReportLibNull/EcitReportLibNull.inf
+      CryptoIndicatorRegistrationLib|SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibNull.inf
+      EcitEncodingLib|SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf
         SecurityLockAuditLib|MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf
   }
 

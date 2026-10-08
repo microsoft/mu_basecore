@@ -53,7 +53,8 @@
   SecurityManagementLib
   PeCoffLib
   TpmMeasurementLib
-  EcitReportLib
+  CryptoIndicatorRegistrationLib
+  EcitEncodingLib
 
 [Protocols]
   gEfiFirmwareVolume2ProtocolGuid       ## SOMETIMES_CONSUMES
