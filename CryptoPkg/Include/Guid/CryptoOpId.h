@@ -2,7 +2,7 @@
   ECIT (EFI Crypto Indicator Table) crypto-operation identifier GUIDs.
 
   Identifiers for ECIT crypto operations queried with GetCryptoOpCapability().
-  Each capability is an unordered, NUL-terminated CSV of algorithm OIDs.
+  Each capability is an unordered array of algorithm OID records.
 
   Copyright (C) Microsoft Corporation
   SPDX-License-Identifier: BSD-2-Clause-Patent

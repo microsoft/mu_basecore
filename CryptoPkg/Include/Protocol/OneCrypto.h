@@ -2483,9 +2483,9 @@ typedef BOOLEAN (EFIAPI *ONE_CRYPTO_CMS_VERIFY)(
   @ingroup Info
 **/
 typedef EFI_STATUS (EFIAPI *ONE_CRYPTO_GET_CRYPTO_OP_CAPABILITY)(
-  IN     CONST EFI_GUID  *OpIdGuid,
-  OUT    VOID            *Buffer       OPTIONAL,
-  IN OUT UINTN           *BufferSize
+  IN  CONST EFI_GUID            *OpIdGuid,
+  OUT BASE_CRYPT_OP_CAPABILITY  **Capabilities,
+  OUT UINTN                     *CapabilityCount
   );
 
 /**

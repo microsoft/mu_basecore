@@ -3032,12 +3032,24 @@ CmsVerify (
 EFI_STATUS
 EFIAPI
 GetCryptoOpCapability (
-  IN     CONST EFI_GUID  *OpIdGuid,
-  OUT    VOID            *Buffer       OPTIONAL,
-  IN OUT UINTN           *BufferSize
+  IN  CONST EFI_GUID            *OpIdGuid,
+  OUT BASE_CRYPT_OP_CAPABILITY  **Capabilities,
+  OUT UINTN                     *CapabilityCount
   )
 {
-  CALL_CRYPTO_SERVICE (GetCryptoOpCapability, (OpIdGuid, Buffer, BufferSize), EFI_UNSUPPORTED, 2, 0);
+  if (Capabilities != NULL) {
+    *Capabilities = NULL;
+  }
+
+  if (CapabilityCount != NULL) {
+    *CapabilityCount = 0;
+  }
+
+  if ((Capabilities == NULL) || (CapabilityCount == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  CALL_CRYPTO_SERVICE (GetCryptoOpCapability, (OpIdGuid, Capabilities, CapabilityCount), EFI_UNSUPPORTED, 2, 0);
 }
 
 /**
