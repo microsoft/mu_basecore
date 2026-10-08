@@ -1,10 +1,9 @@
 /** @file
   ECIT capability reporting unit tests -- CMS content-digest op.
 
-  Exercises GetCryptoOpCapability(gCryptoOpCmsContentDigestGuid): the sizing
-  probe / fetch round-trip, the EFI_BUFFER_TOO_SMALL contract, presence of a
-  provider digest OID (SHA-256), and the dispatcher error paths (unknown op
-  GUID, NULL BufferSize). The content-digest op is accept-all, so it reports
+  Exercises GetCryptoOpCapability(gCryptoOpCmsContentDigestGuid): allocated
+  capability ownership, presence of a provider digest OID (SHA-256), and the
+  dispatcher error paths. The content-digest op is accept-all, so it reports
   exactly the linked provider's message-digest set.
 
   Copyright (C) Microsoft Corporation
@@ -18,8 +17,8 @@
 #define OID_SHA256  "2.16.840.1.101.3.4.2.1"
 
 /**
-  Sizing probe then fetch: the CMS content-digest op reports a non-empty,
-  NUL-terminated CSV that includes the SHA-256 OID.
+  The CMS content-digest op returns an allocated, non-empty capability array
+  that includes the SHA-256 OID.
 **/
 STATIC
 UNIT_TEST_STATUS
@@ -28,60 +27,38 @@ TestCmsContentDigestReport (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  EFI_STATUS  Status;
-  UINTN       Size;
-  CHAR8       *Buffer;
+  EFI_STATUS                Status;
+  BASE_CRYPT_OP_CAPABILITY  *Capabilities;
+  UINTN                     CapabilityCount;
+  UINTN                     Index;
+  BOOLEAN                   FoundSha256;
 
-  Size   = 0;
-  Buffer = NULL;
-
-  //
-  // Sizing probe (Buffer == NULL): required size includes the trailing NUL,
-  // so a populated set is > 1 byte.
-  //
-  Status = GetCryptoOpCapability (&gCryptoOpCmsContentDigestGuid, NULL, &Size);
+  Capabilities    = NULL;
+  CapabilityCount = 0;
+  Status          = GetCryptoOpCapability (
+                      &gCryptoOpCmsContentDigestGuid,
+                      &Capabilities,
+                      &CapabilityCount
+                      );
   UT_ASSERT_NOT_EFI_ERROR (Status);
-  UT_ASSERT_TRUE (Size > 1);
+  UT_ASSERT_NOT_NULL (Capabilities);
+  UT_ASSERT_TRUE (CapabilityCount > 0);
 
-  Buffer = AllocatePool (Size);
-  UT_ASSERT_NOT_NULL (Buffer);
+  FoundSha256 = FALSE;
+  for (Index = 0; Index < CapabilityCount; Index++) {
+    UT_ASSERT_TRUE (Capabilities[Index].AlgorithmOid != NULL);
+    UT_ASSERT_EQUAL (
+      Capabilities[Index].AlgorithmOidSize,
+      AsciiStrSize (Capabilities[Index].AlgorithmOid)
+      );
+    if (AsciiStrCmp (Capabilities[Index].AlgorithmOid, OID_SHA256) == 0) {
+      FoundSha256 = TRUE;
+    }
+  }
 
-  //
-  // Exact-fit fetch.
-  //
-  Status = GetCryptoOpCapability (&gCryptoOpCmsContentDigestGuid, Buffer, &Size);
-  UT_ASSERT_NOT_EFI_ERROR (Status);
-  UT_ASSERT_EQUAL (Buffer[Size - 1], '\0');
+  UT_ASSERT_TRUE (FoundSha256);
 
-  //
-  // Any conformant OpenSSL build publishes SHA-256, so it must appear.
-  //
-  UT_ASSERT_NOT_NULL (AsciiStrStr (Buffer, OID_SHA256));
-
-  FreePool (Buffer);
-  return UNIT_TEST_PASSED;
-}
-
-/**
-  A one-byte buffer cannot hold the payload: expect EFI_BUFFER_TOO_SMALL
-  with the required size reported back.
-**/
-STATIC
-UNIT_TEST_STATUS
-EFIAPI
-TestCmsContentDigestBufferTooSmall (
-  IN UNIT_TEST_CONTEXT  Context
-  )
-{
-  EFI_STATUS  Status;
-  UINTN       Size;
-  CHAR8       Tiny[1];
-
-  Size   = sizeof (Tiny);
-  Status = GetCryptoOpCapability (&gCryptoOpCmsContentDigestGuid, Tiny, &Size);
-  UT_ASSERT_STATUS_EQUAL (Status, EFI_BUFFER_TOO_SMALL);
-  UT_ASSERT_TRUE (Size > sizeof (Tiny));
-
+  FreePool (Capabilities);
   return UNIT_TEST_PASSED;
 }
 
@@ -95,45 +72,69 @@ TestGetCryptoOpCapabilityUnknownOp (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  EFI_STATUS      Status;
-  UINTN           Size;
-  CONST EFI_GUID  Unknown = {
+  EFI_STATUS                Status;
+  BASE_CRYPT_OP_CAPABILITY  *Capabilities;
+  UINTN                     CapabilityCount;
+  CONST EFI_GUID            Unknown = {
     0x00000000, 0x1111, 0x2222, { 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa }
   };
 
-  Size   = 0;
-  Status = GetCryptoOpCapability (&Unknown, NULL, &Size);
+  Capabilities    = (BASE_CRYPT_OP_CAPABILITY *)(UINTN)1;
+  CapabilityCount = MAX_UINTN;
+  Status          = GetCryptoOpCapability (
+                      &Unknown,
+                      &Capabilities,
+                      &CapabilityCount
+                      );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_NOT_FOUND);
+  UT_ASSERT_TRUE (Capabilities == NULL);
+  UT_ASSERT_EQUAL (CapabilityCount, 0);
 
   return UNIT_TEST_PASSED;
 }
 
 /**
-  A NULL BufferSize is rejected with EFI_INVALID_PARAMETER.
+  NULL output arguments are rejected with EFI_INVALID_PARAMETER.
 **/
 STATIC
 UNIT_TEST_STATUS
 EFIAPI
-TestGetCryptoOpCapabilityNullSize (
+TestGetCryptoOpCapabilityNullOutputs (
   IN UNIT_TEST_CONTEXT  Context
   )
 {
-  EFI_STATUS  Status;
+  EFI_STATUS                Status;
+  BASE_CRYPT_OP_CAPABILITY  *Capabilities;
+  UINTN                     CapabilityCount;
 
-  Status = GetCryptoOpCapability (&gCryptoOpCmsContentDigestGuid, NULL, NULL);
+  CapabilityCount = MAX_UINTN;
+  Status          = GetCryptoOpCapability (
+                      &gCryptoOpCmsContentDigestGuid,
+                      NULL,
+                      &CapabilityCount
+                      );
   UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
+  UT_ASSERT_EQUAL (CapabilityCount, 0);
+
+  Capabilities = (BASE_CRYPT_OP_CAPABILITY *)(UINTN)1;
+  Status       = GetCryptoOpCapability (
+                   &gCryptoOpCmsContentDigestGuid,
+                   &Capabilities,
+                   NULL
+                   );
+  UT_ASSERT_STATUS_EQUAL (Status, EFI_INVALID_PARAMETER);
+  UT_ASSERT_TRUE (Capabilities == NULL);
 
   return UNIT_TEST_PASSED;
 }
 
 TEST_DESC  mCryptoOpCapabilityTest[] = {
   //
-  // Description                                Class                            Function                             PreReq  CleanUp  Context
+  // Description                              Class                            Function                             PreReq  CleanUp  Context
   //
-  { "CMS content-digest reports SHA-256",   "CryptoPkg.BaseCryptLib.OpCap", TestCmsContentDigestReport,         NULL, NULL, NULL },
-  { "CMS content-digest honours too-small", "CryptoPkg.BaseCryptLib.OpCap", TestCmsContentDigestBufferTooSmall, NULL, NULL, NULL },
-  { "GetCryptoOpCapability unknown op",     "CryptoPkg.BaseCryptLib.OpCap", TestGetCryptoOpCapabilityUnknownOp, NULL, NULL, NULL },
-  { "GetCryptoOpCapability NULL size",      "CryptoPkg.BaseCryptLib.OpCap", TestGetCryptoOpCapabilityNullSize,  NULL, NULL, NULL },
+  { "CMS content-digest reports SHA-256", "CryptoPkg.BaseCryptLib.OpCap", TestCmsContentDigestReport,           NULL, NULL, NULL },
+  { "GetCryptoOpCapability unknown op",   "CryptoPkg.BaseCryptLib.OpCap", TestGetCryptoOpCapabilityUnknownOp,   NULL, NULL, NULL },
+  { "GetCryptoOpCapability NULL outputs", "CryptoPkg.BaseCryptLib.OpCap", TestGetCryptoOpCapabilityNullOutputs, NULL, NULL, NULL },
 };
 
 UINTN  mCryptoOpCapabilityTestNum = ARRAY_SIZE (mCryptoOpCapabilityTest);

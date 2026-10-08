@@ -4648,27 +4648,44 @@ BaseCryptInit (
 // MU_CHANGE [BEGIN] - ECIT capability reporting.
 
 /**
-  Returns the supported algorithm OIDs for a crypto operation.
+  Describes one algorithm supported by a cryptographic operation.
 
-  The capability is returned as a NUL-terminated ASCII CSV. The OIDs are an
-  unordered set. An empty string indicates that no algorithms are supported.
+  AlgorithmOid points into the same allocation as the capability array.
+  AlgorithmOidSize includes the trailing NUL.
+**/
+typedef struct {
+  CONST CHAR8    *AlgorithmOid;
+  UINTN          AlgorithmOidSize;
+} BASE_CRYPT_OP_CAPABILITY;
 
-  @param[in]      OpIdGuid    GUID identifying the crypto operation.
-  @param[out]     Buffer      NULL to probe required size, else receives payload.
-  @param[in,out]  BufferSize  In: size of Buffer. Out: bytes written or required
-                              (always includes the trailing NUL).
+/**
+  Returns the algorithms supported for a crypto operation.
 
-  @retval EFI_SUCCESS           Buffer populated (or size returned if Buffer NULL).
-  @retval EFI_BUFFER_TOO_SMALL  Buffer too small; *BufferSize set to required.
-  @retval EFI_NOT_FOUND         OpIdGuid is unknown to this binary.
-  @retval EFI_INVALID_PARAMETER OpIdGuid or BufferSize is NULL.
+  On success, Capabilities points to a newly allocated unordered array of
+  CapabilityCount elements. The caller must release the allocation with
+  FreePool(). The AlgorithmOid strings are part of the same allocation and
+  must not be freed separately.
+
+  If the operation supports no algorithms, the function returns EFI_SUCCESS
+  with Capabilities set to NULL and CapabilityCount set to zero.
+
+  On error, Capabilities is set to NULL and CapabilityCount is set to zero.
+
+  @param[in]  OpIdGuid        GUID identifying the crypto operation.
+  @param[out] Capabilities    Allocated array of supported algorithms.
+  @param[out] CapabilityCount Number of elements in Capabilities.
+
+  @retval EFI_SUCCESS            The capability array was returned.
+  @retval EFI_NOT_FOUND          OpIdGuid is unknown to this binary.
+  @retval EFI_OUT_OF_RESOURCES   The capability array could not be allocated.
+  @retval EFI_INVALID_PARAMETER  An argument is NULL.
 **/
 EFI_STATUS
 EFIAPI
 GetCryptoOpCapability (
-  IN     CONST EFI_GUID  *OpIdGuid,
-  OUT    VOID            *Buffer       OPTIONAL,
-  IN OUT UINTN           *BufferSize
+  IN  CONST EFI_GUID            *OpIdGuid,
+  OUT BASE_CRYPT_OP_CAPABILITY  **Capabilities,
+  OUT UINTN                     *CapabilityCount
   );
 
 // MU_CHANGE [END]

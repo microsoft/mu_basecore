@@ -186,3 +186,4 @@ MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, EcGetPublicKeyFromX509, 3, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, EcDsaSign, 6, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, EcDsaVerify, 6, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, GetCryptoProviderVersionString, 2, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, GetCryptoOpCapability, 3, EFIAPI);
