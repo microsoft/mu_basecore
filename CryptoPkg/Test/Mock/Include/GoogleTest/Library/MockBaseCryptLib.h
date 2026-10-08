@@ -1828,6 +1828,16 @@ struct MockBaseCryptLib {
      IN OUT UINTN  *BufferSize
     )
     );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    GetCryptoOpCapability,
+    (
+     IN  CONST EFI_GUID            *OpIdGuid,
+     OUT BASE_CRYPT_OP_CAPABILITY  **Capabilities,
+     OUT UINTN                     *CapabilityCount
+    )
+    );
 };
 
 #endif
