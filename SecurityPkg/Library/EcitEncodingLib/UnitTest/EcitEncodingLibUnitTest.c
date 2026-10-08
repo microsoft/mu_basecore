@@ -147,7 +147,7 @@ TestInvalidOutputs (
   return UNIT_TEST_PASSED;
 }
 
-INT32
+EFI_STATUS
 EFIAPI
 UefiTestMain (
   VOID
@@ -203,5 +203,5 @@ main (
   char  *Argv[]
   )
 {
-  return UefiTestMain ();
+  return (int)UefiTestMain ();
 }

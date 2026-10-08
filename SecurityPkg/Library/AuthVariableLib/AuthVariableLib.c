@@ -18,7 +18,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "AuthServiceInternal.h"
 
-#include <Library/EcitReportLib.h>
+#include <Library/BaseCryptLib.h>
+#include <Library/CryptoIndicatorRegistrationLib.h>
+#include <Library/EcitEncodingLib.h>
 #include <Guid/CryptoIndicatorTable.h>
 #include <Guid/CryptoOpId.h>
 
@@ -40,18 +42,126 @@ VOID  *mHashSha384Ctx = NULL;
 VOID  *mHashSha512Ctx = NULL;
 
 //
-// Crypto operation used to verify Secure Boot database updates.
-//
-STATIC CONST EFI_GUID  *mSecureBootDatabaseUpdateVerificationOps[] = {
-  &gCryptoOpCmsVerifyGuid
-};
-
-//
 // Signature types accepted when authorizing Secure Boot database updates.
 //
 STATIC CONST EFI_GUID  mSecureBootDatabaseUpdateAuthorizationTypes[] = {
   EFI_CERT_X509_GUID
 };
+
+//
+// Crypto operations used to verify authenticated variable updates.
+//
+STATIC CONST EFI_GUID  *mDatabaseUpdateVerificationOps[] = {
+  &gCryptoOpCmsVerifyGuid,
+  &gCryptoOpCmsContentDigestGuid
+};
+
+/**
+  Build and report the database-update verification capability payload.
+**/
+STATIC
+VOID
+ReportDatabaseUpdateVerificationCapability (
+  VOID
+  )
+{
+  EFI_STATUS                Status;
+  UINTN                     Index;
+  BASE_CRYPT_OP_CAPABILITY  *OpCapabilities[ARRAY_SIZE (mDatabaseUpdateVerificationOps)]    = { 0 };
+  UINTN                     OpCapabilityCounts[ARRAY_SIZE (mDatabaseUpdateVerificationOps)] = { 0 };
+  UINTN                     TotalCapabilityCount;
+  BASE_CRYPT_OP_CAPABILITY  *Capabilities;
+  UINTN                     CapabilityOffset;
+  VOID                      *Payload;
+  UINTN                     PayloadSize;
+
+  TotalCapabilityCount = 0;
+  Capabilities         = NULL;
+  Payload              = NULL;
+  for (Index = 0; Index < ARRAY_SIZE (mDatabaseUpdateVerificationOps); Index++) {
+    Status = GetCryptoOpCapability (
+               mDatabaseUpdateVerificationOps[Index],
+               &OpCapabilities[Index],
+               &OpCapabilityCounts[Index]
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_WARN,
+        "AuthVariableLib: ECIT op %g unavailable (%r)\n",
+        mDatabaseUpdateVerificationOps[Index],
+        Status
+        ));
+      goto Cleanup;
+    }
+
+    if (TotalCapabilityCount > (MAX_UINTN - OpCapabilityCounts[Index])) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Cleanup;
+    }
+
+    TotalCapabilityCount += OpCapabilityCounts[Index];
+  }
+
+  if (TotalCapabilityCount != 0) {
+    if (TotalCapabilityCount > (MAX_UINTN / sizeof (*Capabilities))) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Cleanup;
+    }
+
+    Capabilities = AllocatePool (TotalCapabilityCount * sizeof (*Capabilities));
+    if (Capabilities == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Cleanup;
+    }
+
+    CapabilityOffset = 0;
+    for (Index = 0; Index < ARRAY_SIZE (mDatabaseUpdateVerificationOps); Index++) {
+      if (OpCapabilityCounts[Index] == 0) {
+        continue;
+      }
+
+      CopyMem (
+        &Capabilities[CapabilityOffset],
+        OpCapabilities[Index],
+        OpCapabilityCounts[Index] * sizeof (*Capabilities)
+        );
+      CapabilityOffset += OpCapabilityCounts[Index];
+    }
+  }
+
+  Status = EcitEncodeOidSet (
+             Capabilities,
+             TotalCapabilityCount,
+             &Payload,
+             &PayloadSize
+             );
+  if (!EFI_ERROR (Status)) {
+    Status = EcitRegisterCryptoCapability (
+               &gEfiEcitFeatureSbDatabaseUpdateVerificationGuid,
+               Payload,
+               PayloadSize
+               );
+  }
+
+Cleanup:
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "AuthVariableLib: failed to report ECIT capability - %r\n", Status));
+  }
+
+  if (Payload != NULL) {
+    FreePool (Payload);
+  }
+
+  if (Capabilities != NULL) {
+    FreePool (Capabilities);
+  }
+
+  for (Index = 0; Index < ARRAY_SIZE (mDatabaseUpdateVerificationOps); Index++) {
+    if (OpCapabilities[Index] != NULL) {
+      FreePool (OpCapabilities[Index]);
+    }
+  }
+}
 
 VARIABLE_ENTRY_PROPERTY  mAuthVarEntry[] = {
   {
@@ -337,13 +447,9 @@ AuthVariableLibInitialize (
   //
   // Report authenticated-variable update capabilities.
   //
-  EcitReportCryptoOpCapabilities (
-    &gEfiEcitFeatureSbDatabaseUpdateVerificationGuid,
-    mSecureBootDatabaseUpdateVerificationOps,
-    ARRAY_SIZE (mSecureBootDatabaseUpdateVerificationOps)
-    );
+  ReportDatabaseUpdateVerificationCapability ();
 
-  EcitReportCapability (
+  EcitRegisterCryptoCapability (
     &gEfiEcitFeatureSbDatabaseUpdateAuthorizationGuid,
     mSecureBootDatabaseUpdateAuthorizationTypes,
     sizeof (mSecureBootDatabaseUpdateAuthorizationTypes)
