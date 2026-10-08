@@ -29,6 +29,10 @@
   SecurityPkg/Library/DxeTpm2MeasureBootLib/InternalUnitTest/DxeTpm2MeasureBootLibSanitizationTestHost.inf
   SecurityPkg/Library/DxeTpmMeasureBootLib/InternalUnitTest/DxeTpmMeasureBootLibSanitizationTestHost.inf
   SecurityPkg/Test/Mock/Library/GoogleTest/MockSecureBootVariableLib/MockSecureBootVariableLib.inf
+  SecurityPkg/Library/EcitEncodingLib/UnitTest/EcitEncodingLibUnitTest.inf {
+    <LibraryClasses>
+      EcitEncodingLib|SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf
+  }
   #
   # Build SecurityPkg HOST_APPLICATION Tests
   #

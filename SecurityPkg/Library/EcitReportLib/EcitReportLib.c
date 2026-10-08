@@ -7,12 +7,12 @@
 
 #include <Uefi.h>
 #include <Library/BaseCryptLib.h>
-#include <Library/MemoryAllocationLib.h>
-#include <Library/DebugLib.h>
-#include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/CryptoIndicatorRegistrationLib.h>
+#include <Library/DebugLib.h>
+#include <Library/EcitEncodingLib.h>
 #include <Library/EcitReportLib.h>
+#include <Library/MemoryAllocationLib.h>
 #include <Guid/CryptoIndicatorTable.h>
 
 /**
@@ -37,17 +37,20 @@ EcitReportCryptoOpCapability (
   IN CONST EFI_GUID  *OpId
   )
 {
-  EFI_STATUS  Status;
-  UINTN       PayloadSize;
-  VOID        *Payload;
+  EFI_STATUS                Status;
+  BASE_CRYPT_OP_CAPABILITY  *Capabilities;
+  UINTN                     CapabilityCount;
+  UINTN                     PayloadSize;
+  VOID                      *Payload;
 
   if ((FeatureId == NULL) || (OpId == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  PayloadSize = 0;
-  Status      = GetCryptoOpCapability (OpId, NULL, &PayloadSize);
-  if (EFI_ERROR (Status) || (PayloadSize == 0)) {
+  Capabilities    = NULL;
+  CapabilityCount = 0;
+  Status          = GetCryptoOpCapability (OpId, &Capabilities, &CapabilityCount);
+  if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_WARN,
       "EcitReport: op %g capability unavailable (%r); nothing reported for feature %g\n",
@@ -55,18 +58,15 @@ EcitReportCryptoOpCapability (
       Status,
       FeatureId
       ));
-    return EFI_ERROR (Status) ? Status : EFI_NOT_FOUND;
+    return Status;
   }
 
-  Payload = AllocatePool (PayloadSize);
-  if (Payload == NULL) {
-    return EFI_OUT_OF_RESOURCES;
+  Status = EcitEncodeOidSet (Capabilities, CapabilityCount, &Payload, &PayloadSize);
+  if (Capabilities != NULL) {
+    FreePool (Capabilities);
   }
 
-  Status = GetCryptoOpCapability (OpId, Payload, &PayloadSize);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "EcitReport: failed to read op %g capability - %r\n", OpId, Status));
-    FreePool (Payload);
     return Status;
   }
 
@@ -108,103 +108,122 @@ EcitReportCryptoOpCapabilities (
   IN UINTN           OpCount
   )
 {
-  EFI_STATUS  Status;
-  UINTN       Index;
-  UINTN       *OpSizes;
-  UINTN       PayloadSize;
-  UINT8       *Payload;
-  UINT8       *Cursor;
+  EFI_STATUS                Status;
+  EFI_STATUS                QueryStatus;
+  UINTN                     Index;
+  UINTN                     CapabilityIndex;
+  UINTN                     TotalCapabilityCount;
+  BASE_CRYPT_OP_CAPABILITY  **CapabilitySets;
+  BASE_CRYPT_OP_CAPABILITY  *FlattenedCapabilities;
+  UINTN                     *CapabilityCounts;
+  UINTN                     PayloadSize;
+  VOID                      *Payload;
 
   if ((FeatureId == NULL) || (Ops == NULL) || (OpCount == 0)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  OpSizes = AllocateZeroPool (OpCount * sizeof (UINTN));
-  if (OpSizes == NULL) {
+  CapabilitySets = AllocateZeroPool (OpCount * sizeof (*CapabilitySets));
+  if (CapabilitySets == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  //
-  // Size each non-empty OID list without its trailing NUL.
-  //
-  PayloadSize = 0;
-  for (Index = 0; Index < OpCount; Index++) {
-    UINTN  OpSize;
+  CapabilityCounts = AllocateZeroPool (OpCount * sizeof (*CapabilityCounts));
+  if (CapabilityCounts == NULL) {
+    FreePool (CapabilitySets);
+    return EFI_OUT_OF_RESOURCES;
+  }
 
+  TotalCapabilityCount = 0;
+  Status               = EFI_SUCCESS;
+  for (Index = 0; Index < OpCount; Index++) {
     if (Ops[Index] == NULL) {
       continue;
     }
 
-    OpSize = 0;
-    Status = GetCryptoOpCapability (Ops[Index], NULL, &OpSize);
-    if (EFI_ERROR (Status) || (OpSize <= 1)) {
-      DEBUG ((DEBUG_WARN, "EcitReport: op %g unavailable or empty (%r)\n", Ops[Index], Status));
+    QueryStatus = GetCryptoOpCapability (
+                    Ops[Index],
+                    &CapabilitySets[Index],
+                    &CapabilityCounts[Index]
+                    );
+    if (EFI_ERROR (QueryStatus)) {
+      DEBUG ((DEBUG_WARN, "EcitReport: op %g unavailable or empty (%r)\n", Ops[Index], QueryStatus));
+      CapabilitySets[Index]   = NULL;
+      CapabilityCounts[Index] = 0;
       continue;
     }
 
-    OpSizes[Index] = OpSize;
-    if (PayloadSize != 0) {
-      PayloadSize += 1;             // comma separator between operations
+    if (CapabilityCounts[Index] > (MAX_UINTN - TotalCapabilityCount)) {
+      Status = EFI_OUT_OF_RESOURCES;
+      break;
     }
 
-    PayloadSize += OpSize - 1;      // OID content, excluding this op's NUL
+    TotalCapabilityCount += CapabilityCounts[Index];
   }
 
-  PayloadSize += 1;                 // final NUL
-
-  Payload = AllocatePool (PayloadSize);
-  if (Payload == NULL) {
-    FreePool (OpSizes);
-    return EFI_OUT_OF_RESOURCES;
+  FlattenedCapabilities = NULL;
+  if (!EFI_ERROR (Status) && (TotalCapabilityCount != 0)) {
+    if (TotalCapabilityCount > (MAX_UINTN / sizeof (*FlattenedCapabilities))) {
+      Status = EFI_OUT_OF_RESOURCES;
+    } else {
+      FlattenedCapabilities = AllocatePool (
+                                TotalCapabilityCount * sizeof (*FlattenedCapabilities)
+                                );
+      if (FlattenedCapabilities == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+      }
+    }
   }
 
-  Cursor = Payload;
+  if (!EFI_ERROR (Status)) {
+    CapabilityIndex = 0;
+    for (Index = 0; Index < OpCount; Index++) {
+      if (CapabilityCounts[Index] == 0) {
+        continue;
+      }
+
+      CopyMem (
+        &FlattenedCapabilities[CapabilityIndex],
+        CapabilitySets[Index],
+        CapabilityCounts[Index] * sizeof (*FlattenedCapabilities)
+        );
+      CapabilityIndex += CapabilityCounts[Index];
+    }
+
+    Status = EcitEncodeOidSet (
+               FlattenedCapabilities,
+               TotalCapabilityCount,
+               &Payload,
+               &PayloadSize
+               );
+  }
+
+  if (FlattenedCapabilities != NULL) {
+    FreePool (FlattenedCapabilities);
+  }
 
   for (Index = 0; Index < OpCount; Index++) {
-    CHAR8  *OpCsv;
-    UINTN  OpSize;
-
-    if (OpSizes[Index] == 0) {
-      continue;
+    if (CapabilitySets[Index] != NULL) {
+      FreePool (CapabilitySets[Index]);
     }
-
-    OpSize = OpSizes[Index];
-    OpCsv  = AllocatePool (OpSize);
-    if (OpCsv == NULL) {
-      FreePool (Payload);
-      FreePool (OpSizes);
-      return EFI_OUT_OF_RESOURCES;
-    }
-
-    Status = GetCryptoOpCapability (Ops[Index], OpCsv, &OpSize);
-    if (EFI_ERROR (Status) || (OpSize <= 1) || (OpSize > OpSizes[Index])) {
-      FreePool (OpCsv);
-      continue;
-    }
-
-    if (Cursor != Payload) {
-      *Cursor++ = ',';
-    }
-
-    CopyMem (Cursor, OpCsv, OpSize - 1);   // append OIDs, excluding this op's NUL
-    Cursor += OpSize - 1;
-
-    FreePool (OpCsv);
   }
 
-  *Cursor++ = '\0';
+  FreePool (CapabilityCounts);
+  FreePool (CapabilitySets);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
-  Status = EcitRegisterCryptoCapability (FeatureId, Payload, (UINTN)(Cursor - Payload));
+  Status = EcitRegisterCryptoCapability (FeatureId, Payload, PayloadSize);
   DEBUG ((
     DEBUG_INFO,
     "EcitReport: feature %g reported OID list (%u byte payload) - %r\n",
     FeatureId,
-    (UINT32)(Cursor - Payload),
+    (UINT32)PayloadSize,
     Status
     ));
 
   FreePool (Payload);
-  FreePool (OpSizes);
   return Status;
 }
 
