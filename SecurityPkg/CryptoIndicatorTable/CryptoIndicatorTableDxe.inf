@@ -27,6 +27,7 @@
   UefiLib
   BaseLib
   BaseMemoryLib
+  HobLib
   MemoryAllocationLib
   DebugLib
   PcdLib
@@ -44,6 +45,7 @@
 
 [Guids]
   gEfiCryptoIndicatorTableGuid                  ## PRODUCES ## SystemTable
+  gEdkiiEcitCapabilityHobGuid                   ## CONSUMES
 
 [Depex]
   TRUE
