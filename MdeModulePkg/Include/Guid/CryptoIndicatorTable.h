@@ -54,7 +54,7 @@ typedef struct {
 ///
 typedef struct {
   EFI_GUID    FeatureIdentifier;  ///< The feature this entry describes.
-  UINT16      EntryLength;        ///< sizeof (EFI_CRYPTO_INDICATOR_ENTRY) + sizeof (EntryData).
+  UINT16      EntryLength;        ///< Complete entry size, including EntryData and 8-byte alignment padding.
   UINT8       Reserved[6];        ///< Reserved for future use; must be zero.
   // UINT8    EntryData[];
 } EFI_CRYPTO_INDICATOR_ENTRY;

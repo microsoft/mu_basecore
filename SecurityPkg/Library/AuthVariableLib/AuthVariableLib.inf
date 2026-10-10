@@ -43,7 +43,8 @@
   BaseCryptLib
   PlatformSecureLib
   VariablePolicyLib
-  EcitReportLib
+  CryptoIndicatorRegistrationLib
+  EcitEncodingLib
 
 # MU_CHANGE [BEGIN] - TCBZ2506
 [FeaturePcd]

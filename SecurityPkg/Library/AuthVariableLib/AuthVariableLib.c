@@ -18,7 +18,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "AuthServiceInternal.h"
 
-#include <Library/EcitReportLib.h>
+#include <Library/BaseCryptLib.h>
+#include <Library/CryptoIndicatorRegistrationLib.h>
+#include <Library/EcitEncodingLib.h>
 #include <Guid/CryptoIndicatorTable.h>
 #include <Guid/CryptoOpId.h>
 
@@ -40,18 +42,61 @@ VOID  *mHashSha384Ctx = NULL;
 VOID  *mHashSha512Ctx = NULL;
 
 //
-// Crypto operation used to verify Secure Boot database updates.
-//
-STATIC CONST EFI_GUID  *mSecureBootDatabaseUpdateVerificationOps[] = {
-  &gCryptoOpCmsVerifyGuid
-};
-
-//
 // Signature types accepted when authorizing Secure Boot database updates.
 //
 STATIC CONST EFI_GUID  mSecureBootDatabaseUpdateAuthorizationTypes[] = {
   EFI_CERT_X509_GUID
 };
+
+/**
+  Build and report the database-update verification capability payload.
+**/
+STATIC
+VOID
+ReportDatabaseUpdateVerificationCapability (
+  VOID
+  )
+{
+  EFI_STATUS                Status;
+  BASE_CRYPT_OP_CAPABILITY  *Capabilities;
+  UINTN                     CapabilityCount;
+  VOID                      *Payload;
+  UINTN                     PayloadSize;
+
+  Capabilities    = NULL;
+  CapabilityCount = 0;
+  Status          = GetCryptoOpCapability (
+                      &gCryptoOpCmsVerifyGuid,
+                      &Capabilities,
+                      &CapabilityCount
+                      );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_WARN, "AuthVariableLib: failed to query ECIT capability - %r\n", Status));
+    return;
+  }
+
+  Status = EcitEncodeOidSet (
+             Capabilities,
+             CapabilityCount,
+             &Payload,
+             &PayloadSize
+             );
+  if (Capabilities != NULL) {
+    FreePool (Capabilities);
+  }
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "AuthVariableLib: failed to encode ECIT capability - %r\n", Status));
+    return;
+  }
+
+  EcitRegisterCryptoCapability (
+    &gEfiEcitFeatureSbDatabaseUpdateVerificationGuid,
+    Payload,
+    PayloadSize
+    );
+  FreePool (Payload);
+}
 
 VARIABLE_ENTRY_PROPERTY  mAuthVarEntry[] = {
   {
@@ -337,13 +382,9 @@ AuthVariableLibInitialize (
   //
   // Report authenticated-variable update capabilities.
   //
-  EcitReportCryptoOpCapabilities (
-    &gEfiEcitFeatureSbDatabaseUpdateVerificationGuid,
-    mSecureBootDatabaseUpdateVerificationOps,
-    ARRAY_SIZE (mSecureBootDatabaseUpdateVerificationOps)
-    );
+  ReportDatabaseUpdateVerificationCapability ();
 
-  EcitReportCapability (
+  EcitRegisterCryptoCapability (
     &gEfiEcitFeatureSbDatabaseUpdateAuthorizationGuid,
     mSecureBootDatabaseUpdateAuthorizationTypes,
     sizeof (mSecureBootDatabaseUpdateAuthorizationTypes)
