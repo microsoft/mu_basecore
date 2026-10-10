@@ -190,15 +190,21 @@
   HobLib|StandaloneMmPkg/Library/StandaloneMmHobLib/StandaloneMmHobLib.inf
   MemoryAllocationLib|StandaloneMmPkg/Library/StandaloneMmMemoryAllocationLib/StandaloneMmMemoryAllocationLib.inf
 
+  ## MU_CHANGE - [BEGIN]
+[PcdsFixedAtBuild.common.DEFAULT]
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy|0
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2SyncPolicy|0
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask|3
+  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashLibSupportMask|0x1F
+  ## MU_CHANGE - [END]
+
 [PcdsDynamicDefault.common.DEFAULT]
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid|{0xb6, 0xe5, 0x01, 0x8b, 0x19, 0x4f, 0xe8, 0x46, 0xab, 0x93, 0x1c, 0x53, 0x67, 0x1b, 0x90, 0xcc}
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy|1
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2SelfTestPolicy|1
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2ScrtmPolicy|1
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInitializationPolicy|1
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmScrtmPolicy|1
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask|3
-  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashAlgorithmBitmap|3
+  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashAlgorithmBitmap|0  # MU_CHANGE
 
 [PcdsDynamicHii.common.DEFAULT]
   gEfiSecurityPkgTokenSpaceGuid.PcdTcgPhysicalPresenceInterfaceVer|L"TCG2_VERSION"|gTcg2ConfigFormSetGuid|0x0|"1.3"|NV,BS
@@ -352,6 +358,11 @@
       Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibDTpm/Tpm2DeviceLibDTpm.inf
   }
   SecurityPkg/Tcg/Tcg2Pei/Tcg2Pei.inf {
+    ## MU_CHANGE - [BEGIN]
+    <PcdsFixedAtBuild>
+      gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy|1
+      gEfiSecurityPkgTokenSpaceGuid.PcdTpm2SyncPolicy|1
+    ## MU_CHANGE - [END]
     <LibraryClasses>
       Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibRouter/Tpm2DeviceLibRouterPei.inf
       NULL|SecurityPkg/Library/Tpm2DeviceLibDTpm/Tpm2InstanceLibDTpm.inf

@@ -61,6 +61,7 @@
   PrintLib
   UefiLib
   Tpm2DeviceLib
+  Tpm2StartupLib          # MU_CHANGE
   HashLib
   PerformanceLib
   ReportStatusCodeLib
@@ -89,11 +90,11 @@
   gEfiImageSecurityDatabaseGuid
 
   gTcgEventEntryHobGuid                              ## SOMETIMES_CONSUMES  ## HOB
-  gTpmErrorHobGuid                                   ## SOMETIMES_CONSUMES  ## HOB
+  # gTpmErrorHobGuid                                   ## SOMETIMES_CONSUMES  ## HOB # MU_CHANGE
   gEfiEventExitBootServicesGuid                      ## CONSUMES            ## Event
   gEventExitBootServicesFailedGuid                   ## SOMETIMES_CONSUMES  ## Event
-  gEfiTpmDeviceInstanceNoneGuid                      ## SOMETIMES_CONSUMES  ## GUID       # TPM device identifier
-  gEfiTpmDeviceInstanceTpm12Guid                     ## SOMETIMES_CONSUMES  ## GUID       # TPM device identifier
+  # gEfiTpmDeviceInstanceNoneGuid                      ## SOMETIMES_CONSUMES  ## GUID       # TPM device identifier # MU_CHANGE
+  # gEfiTpmDeviceInstanceTpm12Guid                     ## SOMETIMES_CONSUMES  ## GUID       # TPM device identifier # MU_CHANGE
 
   gTcgEvent2EntryHobGuid                             ## SOMETIMES_CONSUMES  ## HOB
   gTpm2StartupLocalityHobGuid                        ## SOMETIMES_CONSUMES  ## HOB
@@ -112,9 +113,13 @@
 [Pcd]
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmPlatformClass                         ## SOMETIMES_CONSUMES
   # gEfiSecurityPkgTokenSpaceGuid.PcdFirmwareDebuggerInitialized            ## SOMETIMES_CONSUMES # MU_CHANGE - Remove PCD
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid                          ## CONSUMES
+  # gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid                        ## CONSUMES # MU_CHANGE
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask                             ## SOMETIMES_CONSUMES # MU_CHANGE
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy                 ## CONSUMES # MU_CHANGE
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2SyncPolicy                           ## CONSUMES # MU_CHANGE
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice              ## SOMETIMES_CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashAlgorithmBitmap                  ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashLibSupportMask                   ## CONSUMES  # MU_CHANGE
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2NumberOfPCRBanks                     ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTcgLogAreaMinLen                         ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2FinalLogAreaLen                      ## CONSUMES

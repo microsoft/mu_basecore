@@ -40,13 +40,14 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PerformanceLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/ReportStatusCodeLib.h>
-#include <Library/ResetSystemLib.h>
+// #include <Library/ResetSystemLib.h> // MU_CHANGE
 #include <Library/PrintLib.h>
 
 // MU_CHANGE_23086
 // MU_CHANGE [BEGIN] - Add the OemTpm2InitLib
 #include <Library/OemTpm2InitLib.h>
 // MU_CHANGE [END]
+#include <Library/Tpm2StartupLib.h> // MU_CHANGE
 // MU_CHANGE_131467
 // MU_CHANGE [BEGIN] - Move to 256-bit PCRs.
 #include <Library/Tcg2PreUefiEventLogLib.h>
@@ -341,6 +342,9 @@ EndofPeiSignalNotifyCallBack (
   return EFI_SUCCESS;
 }
 
+// MU_CHANGE - [BEGIN]
+#if 0
+
 /**
   Make sure that the current PCR allocations, the TPM supported PCRs,
   and the PcdTpm2HashMask are all in agreement.
@@ -460,6 +464,9 @@ SyncPcrAllocationsAndPcrMask (
   }
 }
 
+#endif
+// MU_CHANGE - [END]
+
 /**
   Add a new entry to the Event Log.
 
@@ -482,8 +489,18 @@ LogHashEvent (
   UINTN           Index;
   EFI_STATUS      RetStatus;
   UINT32          SupportedEventLogs;
+  UINT32          TpmHashAlgorithmBitmap; // MU_CHANGE
+  UINT32          ActivePcrBanks;         // MU_CHANGE
   TCG_PCR_EVENT2  *TcgPcrEvent2;
   UINT8           *DigestBuffer;
+
+  // MU_CHANGE - [BEGIN]
+  Status = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &ActivePcrBanks);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  // MU_CHANGE - [END]
 
   SupportedEventLogs = EFI_TCG2_EVENT_LOG_FORMAT_TCG_1_2 | EFI_TCG2_EVENT_LOG_FORMAT_TCG_2;
 
@@ -528,7 +545,7 @@ LogHashEvent (
           TcgPcrEvent2->PCRIndex  = NewEventHdr->PCRIndex;
           TcgPcrEvent2->EventType = NewEventHdr->EventType;
           DigestBuffer            = (UINT8 *)&TcgPcrEvent2->Digest;
-          DigestBuffer            = CopyDigestListToBuffer (DigestBuffer, DigestList, PcdGet32 (PcdTpm2HashMask));
+          DigestBuffer            = CopyDigestListToBuffer (DigestBuffer, DigestList, ActivePcrBanks); // MU_CHANGE
           CopyMem (DigestBuffer, &NewEventHdr->EventSize, sizeof (TcgPcrEvent2->EventSize));
           DigestBuffer = DigestBuffer + sizeof (TcgPcrEvent2->EventSize);
           CopyMem (DigestBuffer, NewEventData, NewEventHdr->EventSize);
@@ -754,7 +771,8 @@ MeasureFvImage (
   VOID                                                   *FvName;
   TCG_PCR_EVENT_HDR                                      TcgEventHdr;
   UINT32                                                 Instance;
-  UINT32                                                 Tpm2HashMask;
+  UINT32                                                 TpmHashAlgorithmBitmap; // MU_CHANGE
+  UINT32                                                 ActivePcrBanks;         // MU_CHANGE
   TPML_DIGEST_VALUES                                     DigestList;
   UINT32                                                 DigestCount;
   EFI_PEI_FIRMWARE_VOLUME_INFO_MEASUREMENT_EXCLUDED_PPI  *MeasurementExcludedFvPpi;
@@ -806,8 +824,15 @@ MeasureFvImage (
   //
   // Check pre-hashed FV list
   //
-  Instance     = 0;
-  Tpm2HashMask = PcdGet32 (PcdTpm2HashMask);
+  // MU_CHANGE - [BEGIN]
+  Instance = 0;
+  Status   = Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &ActivePcrBanks);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  // MU_CHANGE - [END]
+
   do {
     Status = PeiServicesLocatePpi (
                &gEdkiiPeiFirmwareVolumeInfoPrehashedFvPpiGuid,
@@ -825,7 +850,8 @@ MeasureFvImage (
       for (Index = 0, DigestCount = 0; Index < PrehashedFvPpi->Count; Index++) {
         DEBUG ((DEBUG_INFO, "Hash Algo ID in PrehashedFvPpi=0x%x\n", PreHashInfo->HashAlgoId));
         HashAlgoMask = GetHashMaskFromAlgo (PreHashInfo->HashAlgoId);
-        if ((Tpm2HashMask & HashAlgoMask) != 0 ) {
+        if ((ActivePcrBanks & HashAlgoMask) != 0 ) {
+          // MU_CHANGE
           //
           // Hash is required, copy it to DigestList
           //
@@ -839,7 +865,7 @@ MeasureFvImage (
           //
           // Clean the corresponding Hash Algo mask bit
           //
-          Tpm2HashMask &= ~HashAlgoMask;
+          ActivePcrBanks &= ~HashAlgoMask; // MU_CHANGE
         }
 
         PreHashInfo = (HASH_INFO *)((UINT8 *)(PreHashInfo + 1) + PreHashInfo->HashSize);
@@ -900,7 +926,8 @@ MeasureFvImage (
     EventData             = &FvBlob;
   }
 
-  if (Tpm2HashMask == 0) {
+  if (ActivePcrBanks == 0) {
+    // MU_CHANGE
     //
     // FV pre-hash algos comply with current TPM hash requirement
     // Skip hashing step in measure, only extend DigestList to PCR and log event
@@ -1194,7 +1221,11 @@ PeimEntryMA (
   EFI_BOOT_MODE  BootMode;
   TPM_PCRINDEX   PcrIndex;
   BOOLEAN        S3ErrorReport;
+  // MU_CHANGE - [BEGIN]
+  UINT32  PlatformHashMask;
+  UINT32  RegisteredHashMask;
 
+ #if 0
   if (CompareGuid (PcdGetPtr (PcdTpmInstanceGuid), &gEfiTpmDeviceInstanceNoneGuid) ||
       CompareGuid (PcdGetPtr (PcdTpmInstanceGuid), &gEfiTpmDeviceInstanceTpm12Guid))
   {
@@ -1206,6 +1237,30 @@ PeimEntryMA (
     DEBUG ((DEBUG_ERROR, "TPM2 error!\n"));
     return EFI_DEVICE_ERROR;
   }
+
+ #endif
+
+  // Only continue if TPM is supported.
+  if (!Tpm2StartupIsTpmSupported ()) {
+    return EFI_UNSUPPORTED;
+  }
+
+  // Platform support must match what was registered to the hash library.
+  PlatformHashMask   = PcdGet32 (PcdTcg2HashLibSupportMask);
+  RegisteredHashMask = PcdGet32 (PcdTcg2HashAlgorithmBitmap);
+  if ((PlatformHashMask == 0) || (RegisteredHashMask != PlatformHashMask)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a - Registered hash algorithms 0x%X do not match platform support 0x%X\n",
+      __func__,
+      RegisteredHashMask,
+      PlatformHashMask
+      ));
+    Status = EFI_UNSUPPORTED;
+    goto Done;
+  }
+
+  // MU_CHANGE - [END]
 
   Status = PeiServicesGetBootMode (&BootMode);
   ASSERT_EFI_ERROR (Status);
@@ -1227,9 +1282,9 @@ PeimEntryMA (
     //
     // Initialize TPM device
     //
-    Status = Tpm2RequestUseTpm ();
+    Status = Tpm2StartupRequest (); // MU_CHANGE
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "TPM2 not detected!\n"));
+      DEBUG ((DEBUG_ERROR, "%a - TPM failed StartupRequest!\n", __func__)); // MU_CHANGE
       goto Done;
     }
 
@@ -1244,22 +1299,11 @@ PeimEntryMA (
     // MU_CHANGE [END]
     S3ErrorReport = FALSE;
     if (PcdGet8 (PcdTpm2InitializationPolicy) == 1) {
-      if (BootMode == BOOT_ON_S3_RESUME) {
-        Status = Tpm2Startup (TPM_SU_STATE);
-        if (EFI_ERROR (Status)) {
-          Status = Tpm2Startup (TPM_SU_CLEAR);
-          if (!EFI_ERROR (Status)) {
-            S3ErrorReport = TRUE;
-          }
-        }
-      } else {
-        Status = Tpm2Startup (TPM_SU_CLEAR);
-      }
-
+      Status = Tpm2StartupInit ((BootMode == BOOT_ON_S3_RESUME), &S3ErrorReport); // MU_CHANGE
       if (EFI_ERROR (Status)) {
         // MU_CHANGE_58957
         // MU_CHANGE [BEGIN] - Make sure that TPM2_Startup() can report an error.
-        DEBUG ((DEBUG_ERROR, "Tcg2Pei::%a - TPM failed Startup!\n", __func__));
+        DEBUG ((DEBUG_ERROR, "%a - TPM failed StartupInit!\n", __func__)); // MU_CHANGE
         ASSERT_EFI_ERROR (Status);
         // MU_CHANGE [END]
         goto Done;
@@ -1269,7 +1313,25 @@ PeimEntryMA (
     //
     // Update Tpm2HashMask according to PCR bank.
     //
-    SyncPcrAllocationsAndPcrMask ();
+    // SyncPcrAllocationsAndPcrMask (); // MU_CHANGE
+    // MU_CHANGE - [BEGIN]
+    Status = Tpm2StartupSecuritySync ();
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a - TPM failed StartupSecuritySync!\n", __func__));
+      ASSERT_EFI_ERROR (Status);
+      goto Done;
+    }
+
+    if (PcdGet8 (PcdTpm2SyncPolicy) == 1) {
+      Status = Tpm2StartupIntentSync (PcdGet32 (PcdTpm2HashMask));
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a - TPM failed StartupIntentSync!\n", __func__));
+        ASSERT_EFI_ERROR (Status);
+        goto Done;
+      }
+    }
+
+    // MU_CHANGE - [END]
 
     if (S3ErrorReport) {
       //
