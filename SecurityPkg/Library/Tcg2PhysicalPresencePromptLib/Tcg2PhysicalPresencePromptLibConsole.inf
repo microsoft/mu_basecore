@@ -1,11 +1,10 @@
-## @file Tcg2PhysicalPresencePromptLibConsole.inf
-# This instance of the Tcg2PhysicalPresencePromptLib uses the console and basic key input
-# to prompt the user.
+## @file
+#  This instance of the Tcg2PhysicalPresencePromptLib uses the
+#  console and basic key input to prompt the user.
 #
-##
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
-##
+#
 
 [Defines]
   INF_VERSION         = 0x00010017
@@ -21,15 +20,13 @@
 #  VALID_ARCHITECTURES           = IA32 X64
 #
 
-
 [Sources]
   Tcg2PhysicalPresencePromptLibConsole.c
-
 
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
-
+  SecurityPkg/SecurityPkg.dec
 
 [LibraryClasses]
   BaseLib

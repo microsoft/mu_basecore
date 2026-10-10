@@ -1,6 +1,5 @@
 /** @file
 
-MU_CHANGE
 A UEFI shell application for testing TPM 2.0 Physical Presence Interface
 operations, including querying and configuring PCR banks.
 
@@ -178,7 +177,7 @@ RequestSetPcrBanks (
 **/
 STATIC
 EFI_STATUS
-RequestLogAllDigests (
+RequestEnableAllPcrBanks (
   IN EFI_TCG2_PROTOCOL  *Tcg2Protocol
   )
 {
@@ -861,13 +860,13 @@ PrintUsage (
   Print (L"TpmShellApp - TPM 2.0 Physical Presence Test Utility\n");
   Print (L"\n");
   Print (L"Usage:\n");
-  Print (L"  TpmShellApp help             - Show usage\n");
-  Print (L"  TpmShellApp info             - Show PCR banks\n");
-  Print (L"  TpmShellApp setpcr <mask>    - Request PCR bank change (hex bitmask)\n");
-  Print (L"  TpmShellApp logall           - Enable all supported PCR banks\n");
-  Print (L"  TpmShellApp eventlog         - Dump the TCG2 event log\n");
-  Print (L"  TpmShellApp replay           - Replay event log and verify PCRs\n");
-  Print (L"  TpmShellApp lastresponse     - Show last SetActivePcrBanks result\n");
+  Print (L"  TpmShellApp help                        - Show usage\n");
+  Print (L"  TpmShellApp get_active_pcr_banks        - Display active PCR banks\n");
+  Print (L"  TpmShellApp set_active_pcr_banks <mask> - Request active PCR bank change (hex bitmask)\n");
+  Print (L"  TpmShellApp enable_all_pcr_banks        - Enable all supported PCR banks\n");
+  Print (L"  TpmShellApp dump_event_log              - Dump the TCG2 event log\n");
+  Print (L"  TpmShellApp replay_event_log            - Replay event log and verify PCRs\n");
+  Print (L"  TpmShellApp get_last_result             - Show last SetActivePcrBanks result\n");
   Print (L"\n");
   Print (L"PCR bank bitmask values:\n");
   Print (L"  0x00000001 = SHA1\n");
@@ -876,8 +875,8 @@ PrintUsage (
   Print (L"  0x00000008 = SHA512\n");
   Print (L"  0x00000010 = SM3_256\n");
   Print (L"\n");
-  Print (L"Example: TpmShellApp setpcr 0x2   (enable SHA256 only)\n");
-  Print (L"Example: TpmShellApp setpcr 0x6   (enable SHA256 + SHA384)\n");
+  Print (L"Example: TpmShellApp set_active_pcr_banks 0x2   (enable SHA256 only)\n");
+  Print (L"Example: TpmShellApp set_active_pcr_banks 0x6   (enable SHA256 + SHA384)\n");
 }
 
 /**
@@ -930,6 +929,12 @@ TpmShellAppEntry (
 
   // Acquire the command value.
   Command = ShellCommandLineGetRawValue (ParamPackage, 1);
+  if (Command == NULL) {
+    Print (L"\n[Invalid Usage]\n");
+    Print (L"  Use 'TpmShellApp help' for usage.\n");
+    Status = EFI_INVALID_PARAMETER;
+    goto Exit;
+  }
 
   // Locate TCG2 Protocol it is required for this test app to function
   Status = gBS->LocateProtocol (&gEfiTcg2ProtocolGuid, NULL, (VOID **)&Tcg2Protocol);
@@ -944,14 +949,14 @@ TpmShellAppEntry (
     Print (L"\n[TPM 2.0 Help]\n\n");
     PrintUsage ();
     goto Exit;
-  } else if (StrCmp (Command, L"info") == 0) {
+  } else if (StrCmp (Command, L"get_active_pcr_banks") == 0) {
     Print (L"\n[TPM 2.0 Information]\n\n");
     ShowPcrBanks (Tcg2Protocol);
-  } else if (StrCmp (Command, L"setpcr") == 0) {
+  } else if (StrCmp (Command, L"set_active_pcr_banks") == 0) {
     Print (L"\n[Set PCR Banks]\n\n");
     if (Argc < 3) {
-      Print (L"setpcr requires a hex bitmask parameter.\n");
-      Print (L"  Example: TpmShellApp setpcr 0x2\n");
+      Print (L"set_active_pcr_banks requires a hex bitmask parameter.\n");
+      Print (L"  Example: TpmShellApp set_active_pcr_banks 0x2\n");
       Status = EFI_INVALID_PARAMETER;
       goto Exit;
     }
@@ -969,16 +974,16 @@ TpmShellAppEntry (
     }
 
     Status = RequestSetPcrBanks (Tcg2Protocol, (UINT32)PcrMaskVal);
-  } else if (StrCmp (Command, L"logall") == 0) {
+  } else if (StrCmp (Command, L"enable_all_pcr_banks") == 0) {
     Print (L"\n[Enable All PCR Banks]\n\n");
-    Status = RequestLogAllDigests (Tcg2Protocol);
-  } else if (StrCmp (Command, L"eventlog") == 0) {
+    Status = RequestEnableAllPcrBanks (Tcg2Protocol);
+  } else if (StrCmp (Command, L"dump_event_log") == 0) {
     Print (L"\n[TCG2 Event Log]\n\n");
     Status = DumpEventLog (Tcg2Protocol);
-  } else if (StrCmp (Command, L"replay") == 0) {
+  } else if (StrCmp (Command, L"replay_event_log") == 0) {
     Print (L"\n[Event Log Replay]\n\n");
     Status = ReplayAndVerifyEventLog (Tcg2Protocol);
-  } else if (StrCmp (Command, L"lastresponse") == 0) {
+  } else if (StrCmp (Command, L"get_last_result") == 0) {
     Print (L"\n[Last SetActivePcrBanks Result]\n\n");
     Status = Tcg2Protocol->GetResultOfSetActivePcrBanks (Tcg2Protocol, &OperationPresent, &Response);
     if (EFI_ERROR (Status)) {

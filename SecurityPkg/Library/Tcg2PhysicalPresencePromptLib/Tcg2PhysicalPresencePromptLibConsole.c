@@ -1,6 +1,7 @@
-/** @file -- Tcg2PhysicalPresencePromptLibConsole.c
-This instance of the Tcg2PhysicalPresencePromptLib uses the console and basic key input
-to prompt the user.
+/** @file
+
+  This instance of the Tcg2PhysicalPresencePromptLib uses the
+  console and basic key input to prompt the user.
 
 Copyright (c) Microsoft Corporation.
 SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -10,66 +11,91 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/BaseLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <Library/Tcg2PhysicalPresencePromptLib.h>
 
 /**
-  Read the specified key for user confirmation.
+  Simple function to inform any callers of whether the lib is ready to present a prompt.
+  Since the prompt itself only returns TRUE or FALSE, make sure all other technical requirements
+  are out of the way.
 
-  @param[in]  CautionKey  If true,  F12 is used as confirm key;
+  @retval     EFI_SUCCESS       Prompt is ready.
+  @retval     EFI_NOT_READY     Prompt is not ready.
+  @retval     EFI_DEVICE_ERROR  Library failed to prepare resources.
+
+**/
+EFI_STATUS
+EFIAPI
+Tcg2IsPromptReady (
+  VOID
+  )
+{
+  return EFI_SUCCESS;
+}
+
+/**
+  Read the specified key for user confirmation as specified by
+  TCG PC Client Platform Physical Presence Interface Specification
+  version 1.3 Revision 00.52.
+
+  @param[in]  CautionKey  If true, F12 is used as confirm key.
                           If false, F10 is used as confirm key.
 
   @retval     TRUE        User confirmed the changes by input.
   @retval     FALSE       User discarded the changes.
 **/
+STATIC
 BOOLEAN
-Tcg2ReadUserKey (
+ReadUserKey (
   IN     BOOLEAN  CautionKey
   )
 {
   EFI_STATUS     Status;
   EFI_INPUT_KEY  Key;
-  UINT16         InputKey;
 
-  InputKey = 0;
-  do {
+  while (TRUE) {
     Status = gBS->CheckEvent (gST->ConIn->WaitForKey);
-    if (!EFI_ERROR (Status)) {
-      Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
-      if (Key.ScanCode == SCAN_ESC) {
-        InputKey = Key.ScanCode;
-      }
-
-      if ((Key.ScanCode == SCAN_F10) && !CautionKey) {
-        InputKey = Key.ScanCode;
-      }
-
-      if ((Key.ScanCode == SCAN_F12) && CautionKey) {
-        InputKey = Key.ScanCode;
-      }
+    if (EFI_ERROR (Status)) {
+      continue;
     }
-  } while (InputKey == 0);
 
-  if (InputKey != SCAN_ESC) {
-    return TRUE;
+    Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
+
+    if (Key.ScanCode == SCAN_ESC) {
+      return FALSE;
+    }
+
+    if ((Key.ScanCode == SCAN_F10) && !CautionKey) {
+      return TRUE;
+    }
+
+    if ((Key.ScanCode == SCAN_F12) && CautionKey) {
+      return TRUE;
+    }
   }
-
-  return FALSE;
 }
 
 /**
-  This function will take in a prompt string to present to the user in a
-  OK/Cancel dialog box and return TRUE if the user actively pressed OK. Returns
-  FALSE on Cancel or any errors.
+  Presents the given prompt string to the user and returns whether the user
+  confirmed the requested action.
 
   @param[in]  PromptString  The string that should occupy the body of the prompt.
+  @param[in]  CautionKey    If TRUE, the caller has instructed the user to press
+                            the CAUTION key to confirm.
+                            If FALSE, the caller has instructed the user to press
+                            the ACCEPT key to confirm.
 
-  @retval     TRUE    User confirmed action.
-  @retval     FALSE   User rejected action or a failure occurred.
+  @retval     TRUE    User confirmed the action.
+  @retval     FALSE   User rejected the action or a failure occurred.
 
 **/
 BOOLEAN
 EFIAPI
-PromptForUserConfirmation (
-  IN  CHAR16  *PromptString
+Tcg2PromptForUserConfirmation (
+  IN  CHAR16   *PromptString,
+  IN  BOOLEAN  CautionKey
   )
 {
   UINTN   Index;
@@ -81,10 +107,9 @@ PromptForUserConfirmation (
     Print (DstStr);
   }
 
-  // if (Tcg2ReadUserKey (CautionKey)) {
-  if (Tcg2ReadUserKey (FALSE)) {
+  if (ReadUserKey (CautionKey)) {
     return TRUE;
   }
 
   return FALSE;
-} // PromptForUserConfirmation()
+}
