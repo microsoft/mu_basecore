@@ -6,6 +6,8 @@
 **/
 
 #include <Uefi.h>
+#include <Pi/PiBootMode.h>
+#include <Pi/PiHob.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiLib.h>
