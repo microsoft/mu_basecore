@@ -1,8 +1,10 @@
 ## @file
-#  DXE instance of CryptoIndicatorRegistrationLib.
+#  Boot-time DXE instance of CryptoIndicatorRegistrationLib.
 #
 #  Submits ECIT feature records to the collector, deferring via a protocol
 #  notify when the collector is not yet available.
+#  This instance uses boot services and does not support DXE_RUNTIME_DRIVER
+#  consumers.
 #
 #  Copyright (c) Microsoft Corporation.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent

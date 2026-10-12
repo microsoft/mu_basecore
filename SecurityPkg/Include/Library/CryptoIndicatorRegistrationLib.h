@@ -1,6 +1,9 @@
 /** @file
   Library for submitting EFI Crypto Indicator Table records.
 
+  Functional instances are provided for PEIM, boot-time DXE/UEFI driver, and
+  Standalone MM modules. DXE-runtime modules must use the null instance.
+
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
