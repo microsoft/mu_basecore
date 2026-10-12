@@ -32,6 +32,11 @@
   #
   # Build SecurityPkg HOST_APPLICATION Tests
   #
+  SecurityPkg/Library/CryptoIndicatorRegistrationLib/GoogleTest/CryptoIndicatorRegistrationLibPeiGoogleTest.inf {
+    <LibraryClasses>
+      CryptoIndicatorRegistrationLib|SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibPei.inf
+      HobLib|MdePkg/Test/Mock/Library/GoogleTest/MockHobLib/MockHobLib.inf
+  }
   SecurityPkg/Library/EcitEncodingLib/UnitTest/EcitEncodingLibUnitTest.inf {
     <LibraryClasses>
       EcitEncodingLib|SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf
