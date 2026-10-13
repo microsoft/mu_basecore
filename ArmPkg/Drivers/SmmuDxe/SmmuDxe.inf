@@ -29,6 +29,7 @@
 
 [Packages]
   ArmPkg/ArmPkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
   MdeModulePkg/MdeModulePkg.dec
   MdePkg/MdePkg.dec
 
@@ -45,6 +46,9 @@
 [Protocols]
   gEdkiiIoMmuProtocolGuid                         ## PRODUCES
   gEfiAcpiTableProtocolGuid                       ## CONSUMES
+  gEfiPciIoProtocolGuid                           ## CONSUMES
+  gHardwareInterrupt2ProtocolGuid                 ## CONSUMES
 
 [Depex]
-  gEfiAcpiTableProtocolGuid                       ## CONSUMES
+  gEfiAcpiTableProtocolGuid                       AND
+  gHardwareInterrupt2ProtocolGuid

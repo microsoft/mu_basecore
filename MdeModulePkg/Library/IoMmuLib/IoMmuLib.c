@@ -18,6 +18,10 @@ EFI_EVENT             mIoMmuEvent;
 VOID                  *mIoMmuRegistration;
 EDKII_IOMMU_PROTOCOL  *mIoMmuProtocol = NULL;
 
+// TRUE only when the located IoMmu producer is at a revision that includes
+// the SetAttributeById entry point and actually populates it.
+BOOLEAN  mSetAttributeByIdSupported = FALSE;
+
 /**
   Returns True if the IoMmu protocol is available, otherwise returns False.
 
@@ -60,7 +64,7 @@ IoMmuMap (
 {
   if (mIoMmuProtocol == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: IoMmuProtocol is NULL\n", __func__));
-    ASSERT (FALSE);
+    ASSERT (mIoMmuProtocol != NULL);
     return EFI_NOT_READY;
   }
 
@@ -85,7 +89,7 @@ IoMmuUnmap (
 {
   if (mIoMmuProtocol == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: IoMmuProtocol is NULL\n", __func__));
-    ASSERT (FALSE);
+    ASSERT (mIoMmuProtocol != NULL);
     return EFI_NOT_READY;
   }
 
@@ -111,7 +115,7 @@ IoMmuFreeBuffer (
 {
   if (mIoMmuProtocol == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: IoMmuProtocol is NULL\n", __func__));
-    ASSERT (FALSE);
+    ASSERT (mIoMmuProtocol != NULL);
     return EFI_NOT_READY;
   }
 
@@ -144,7 +148,7 @@ IoMmuAllocateBuffer (
 {
   if (mIoMmuProtocol == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: IoMmuProtocol is NULL\n", __func__));
-    ASSERT (FALSE);
+    ASSERT (mIoMmuProtocol != NULL);
     return EFI_NOT_READY;
   }
 
@@ -173,11 +177,47 @@ IoMmuSetAttribute (
 {
   if (mIoMmuProtocol == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: IoMmuProtocol is NULL\n", __func__));
-    ASSERT (FALSE);
+    ASSERT (mIoMmuProtocol != NULL);
     return EFI_NOT_READY;
   }
 
   return mIoMmuProtocol->SetAttribute (mIoMmuProtocol, DeviceHandle, Mapping, IoMmuAccess);
+}
+
+/**
+  Set the R/W access attributes for Mapping in the Page Table for a caller
+  that explicitly specifies (IommuBase, DmaId) instead of an EFI_HANDLE.
+
+  @param [in]  IommuBase     Base MMIO address of the IOMMU that owns DmaId.
+  @param [in]  DmaId         DMA identifier emitted by the calling DMA agent (e.g. StreamID on Arm SMMU, RequesterID on VT-d).
+  @param [in]  Mapping       The mapping to set attributes for. Returned from IoMmuMap.
+  @param [in]  IoMmuAccess   The IOMMU access attributes.
+
+  @retval EFI_SUCCESS        Success
+  @retval EFI_NOT_READY      The IoMmu protocol is not ready.
+  @retval Other              Other errors as defined by the IoMmu protocol.
+**/
+EFI_STATUS
+EFIAPI
+IoMmuSetAttributeById (
+  IN UINT64  IommuBase,
+  IN UINT32  DmaId,
+  IN VOID    *Mapping,
+  IN UINT64  IoMmuAccess
+  )
+{
+  if (mIoMmuProtocol == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: IoMmuProtocol is NULL\n", __func__));
+    ASSERT (mIoMmuProtocol != NULL);
+    return EFI_NOT_READY;
+  }
+
+  if (!mSetAttributeByIdSupported) {
+    DEBUG ((DEBUG_WARN, "%a: SetAttributeById not implemented by IoMmu producer.\n", __func__));
+    return EFI_UNSUPPORTED;
+  }
+
+  return mIoMmuProtocol->SetAttributeById (mIoMmuProtocol, IommuBase, DmaId, Mapping, IoMmuAccess);
 }
 
 /**
@@ -197,6 +237,10 @@ IoMmuProtocolCallback (
 
   Status = gBS->LocateProtocol (&gEdkiiIoMmuProtocolGuid, NULL, (VOID **)&mIoMmuProtocol);
   if (!EFI_ERROR (Status)) {
+    mSetAttributeByIdSupported = ((mIoMmuProtocol != NULL) &&
+                                  (mIoMmuProtocol->Revision >= EDKII_IOMMU_PROTOCOL_REVISION) &&
+                                  (mIoMmuProtocol->SetAttributeById != NULL)
+                                  );
     gBS->CloseEvent (mIoMmuEvent);
   }
 }
@@ -250,6 +294,22 @@ IoMmuLibInit (
       ASSERT_EFI_ERROR (Status);
       gBS->CloseEvent (mIoMmuEvent);
     }
+
+    return EFI_SUCCESS;
+  }
+
+  // The library remains fully functional with older IoMmu revisions.
+  // If revision < EDKII_IOMMU_PROTOCOL_REVISION, then
+  // IoMmuSetAttributeById will return EFI_UNSUPPORTED
+  if ((mIoMmuProtocol != NULL) && (mIoMmuProtocol->Revision >= EDKII_IOMMU_PROTOCOL_REVISION) && (mIoMmuProtocol->SetAttributeById != NULL)) {
+    mSetAttributeByIdSupported = TRUE;
+  } else {
+    DEBUG ((
+      DEBUG_WARN,
+      "%a: IoMmuProtocol revision 0x%llx does not support SetAttributeById. IoMmuSetAttributeById will return EFI_UNSUPPORTED.\n",
+      __func__,
+      mIoMmuProtocol->Revision
+      ));
   }
 
   return Status;

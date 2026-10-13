@@ -1,4 +1,4 @@
-﻿/** @file -- Tcg2PhysicalPresencePromptLib.h
+/** @file -- Tcg2PhysicalPresencePromptLib.h
 This library abstracts the action of prompting the user so that it may be overridden in a platform-specific way.
 Rather than just printing to the screen.
 
@@ -15,29 +15,33 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
   are out of the way.
 
   @retval     EFI_SUCCESS       Prompt is ready.
-  @retval     EFI_NOT_READY     Prompt does not have sufficient resources at this time.
+  @retval     EFI_NOT_READY     Prompt is not ready.
   @retval     EFI_DEVICE_ERROR  Library failed to prepare resources.
 
 **/
 EFI_STATUS
 EFIAPI
-IsPromptReady (
+Tcg2IsPromptReady (
   VOID
   );
 
 /**
-  This function will take in a prompt string to present to the user in a
-  OK/Cancel dialog box and return TRUE if the user actively pressed OK. Returns
-  FALSE on Cancel or any errors.
+  Presents the given prompt string to the user and returns whether the user
+  confirmed the requested action.
 
   @param[in]  PromptString  The string that should occupy the body of the prompt.
+  @param[in]  CautionKey    If TRUE, the caller has instructed the user to press
+                            the CAUTION key to confirm.
+                            If FALSE, the caller has instructed the user to press
+                            the ACCEPT key to confirm.
 
-  @retval     TRUE    User confirmed action.
-  @retval     FALSE   User rejected action or a failure occurred.
+  @retval     TRUE    User confirmed the action.
+  @retval     FALSE   User rejected the action or a failure occurred.
 
 **/
 BOOLEAN
 EFIAPI
-PromptForUserConfirmation (
-  IN  CHAR16  *PromptString
+Tcg2PromptForUserConfirmation (
+  IN  CHAR16   *PromptString,
+  IN  BOOLEAN  CautionKey
   );

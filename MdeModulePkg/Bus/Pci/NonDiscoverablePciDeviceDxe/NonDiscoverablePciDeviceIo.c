@@ -862,7 +862,7 @@ CoherentPciIoMap (
   }
 
   Status = IoMmuSetAttribute (
-             NULL,
+             Dev->Handle, // MU_CHANGE: pass controller handle for DMA-id resolution
              MapInfo->IoMmuContext,
              IoMmuAttribute
              );
@@ -916,7 +916,7 @@ CoherentPciIoUnmap (
 
   MapInfo = Mapping;
 
-  Status = IoMmuSetAttribute (NULL, MapInfo->IoMmuContext, 0);
+  Status = IoMmuSetAttribute (NON_DISCOVERABLE_PCI_DEVICE_FROM_PCI_IO (This)->Handle, MapInfo->IoMmuContext, 0); // MU_CHANGE
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
     ASSERT (FALSE);
@@ -1556,7 +1556,7 @@ NonCoherentPciIoMap (
   }
 
   Status = IoMmuSetAttribute (
-             NULL,
+             Dev->Handle, // MU_CHANGE: pass controller handle for DMA-id resolution
              MapInfo->IoMmuContext,
              IoMmuAttribute
              );
@@ -1610,7 +1610,7 @@ NonCoherentPciIoUnmap (
   MapInfo = Mapping;
 
   // MU_CHANGE [BEGIN]
-  Status = IoMmuSetAttribute (NULL, MapInfo->IoMmuContext, 0);
+  Status = IoMmuSetAttribute (NON_DISCOVERABLE_PCI_DEVICE_FROM_PCI_IO (This)->Handle, MapInfo->IoMmuContext, 0); // MU_CHANGE
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a - IoMmuSetAttribute failed.\n", __func__));
     ASSERT (FALSE);

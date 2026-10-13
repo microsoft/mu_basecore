@@ -27,20 +27,20 @@ console.
 ## Commands
 
 ```text
-TpmShellApp help             Show usage information
-TpmShellApp info             Show supported and active PCR banks
-TpmShellApp setpcr <mask>    Request a PCR bank configuration change
-TpmShellApp logall           Request enabling all supported PCR banks
-TpmShellApp eventlog         Dump the TCG2 event log
-TpmShellApp replay           Replay event log and verify PCRs
-TpmShellApp lastresponse     Show the result of the last SetActivePcrBanks call
+TpmShellApp help                        Show usage information
+TpmShellApp get_active_pcr_banks        Show supported and active PCR banks
+TpmShellApp set_active_pcr_banks <mask> Request a PCR bank configuration change
+TpmShellApp enable_all_pcr_banks        Request enabling all supported PCR banks
+TpmShellApp dump_event_log              Dump the TCG2 event log
+TpmShellApp replay_event_log            Replay event log and verify PCRs
+TpmShellApp get_last_result             Show the result of the last SetActivePcrBanks call
 ```
 
 ### `help`
 
 Prints usage information, PCR bank bitmask values, and examples.
 
-### `info`
+### `get_active_pcr_banks`
 
 Calls `Tcg2Protocol->GetCapability()` and displays:
 
@@ -62,7 +62,7 @@ Active PCR banks: 2
  * SHA256
 ```
 
-### `setpcr <mask>`
+### `set_active_pcr_banks <mask>`
 
 Calls `Tcg2Protocol->SetActivePcrBanks()` with the provided hex bitmask. The mask is a
 combination of `EFI_TCG2_BOOT_HASH_ALG_*` values:
@@ -80,22 +80,22 @@ Values can be combined: `0x06` = SHA256 + SHA384.
 The mask parameter accepts hex with or without a `0x` prefix.
 
 ```text
-TpmShellApp setpcr 0x2       Enable SHA256 only
-TpmShellApp setpcr 0x6       Enable SHA256 + SHA384
-TpmShellApp setpcr 2         Also valid (no prefix)
+TpmShellApp set_active_pcr_banks 0x2       Enable SHA256 only
+TpmShellApp set_active_pcr_banks 0x6       Enable SHA256 + SHA384
+TpmShellApp set_active_pcr_banks 2         Also valid (no prefix)
 ```
 
 > **Note**: `SetActivePcrBanks` submits a Physical Presence request. The actual bank
 > change takes effect on the next reboot, processed by
 > `Tcg2PhysicalPresenceLibProcessRequest()` during BDS.
 
-### `logall`
+### `enable_all_pcr_banks`
 
 Calls `GetCapability()` to discover all supported hash algorithms, then calls
 `SetActivePcrBanks()` with the full `HashAlgorithmBitmap`. This is equivalent to
 requesting that all supported PCR banks be enabled.
 
-### `eventlog`
+### `dump_event_log`
 
 Calls `Tcg2Protocol->GetEventLog()` with `EFI_TCG2_EVENT_LOG_FORMAT_TCG_2` (crypto-agile
 format) to retrieve the firmware's TCG2 event log. Parses the Spec ID Event header to
@@ -110,7 +110,7 @@ displaying:
 
 Prints a total event count at the end.
 
-### `replay`
+### `replay_event_log`
 
 Replays the TCG2 event log to compute expected PCR values, then reads the
 actual PCR values from the TPM via `SubmitCommand` (TPM2_PCR_Read) and
@@ -128,7 +128,7 @@ Prints a summary with total verified, passed, and failed counts.
 Supports SHA1, SHA256, SHA384, and SHA512 for replay hashing. Algorithms
 not supported by `BaseCryptLib` (e.g., SM3_256) are skipped.
 
-### `lastresponse`
+### `get_last_result`
 
 Calls `Tcg2Protocol->GetResultOfSetActivePcrBanks()` which queries the Physical Presence
 library for the result of the most recent `SetActivePcrBanks` operation. Displays:
@@ -206,11 +206,11 @@ TCG2 Protocol not found - Not Found
 
 | Function | Command | Purpose |
 | -------- | ------- | ------- |
-| `GetCapability` | `info`, `logall` | Query supported/active PCR banks |
-| `SetActivePcrBanks` | `setpcr`, `logall` | Submit PP request for bank change |
-| `GetEventLog` | `eventlog`, `replay` | Retrieve the crypto-agile event log |
-| `SubmitCommand` | `replay` | Send TPM2_PCR_Read to read actual PCR values |
-| `GetResultOfSetActivePcrBanks` | `lastresponse` | Query result of last bank change request |
+| `GetCapability` | `get_active_pcr_banks`, `enable_all_pcr_banks` | Query supported/active PCR banks |
+| `SetActivePcrBanks` | `set_active_pcr_banks`, `enable_all_pcr_banks` | Submit PP request for bank change |
+| `GetEventLog` | `dump_event_log`, `replay_event_log` | Retrieve the crypto-agile event log |
+| `SubmitCommand` | `replay_event_log` | Send TPM2_PCR_Read to read actual PCR values |
+| `GetResultOfSetActivePcrBanks` | `get_last_result` | Query result of last bank change request |
 
 ### Hash Algorithm Filtering
 

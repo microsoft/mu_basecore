@@ -1,5 +1,4 @@
 ## @file
-# MU_CHANGE
 # TpmShellApp.inf
 #
 # UEFI shell application for testing TPM 2.0 Physical Presence Interface
