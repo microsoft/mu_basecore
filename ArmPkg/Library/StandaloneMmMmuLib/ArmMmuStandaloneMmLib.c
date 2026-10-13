@@ -262,11 +262,12 @@ RequestMemoryPermissionChange (
   ARM_SVC_ARGS  SvcArgs;
   UINTN         Fid;
   // MU_CHANGE Starts: Added Status variable to hold the return status of the memory permission request.
-  EFI_STATUS    Status;
+  EFI_STATUS  Status;
 
   if ((Length & EFI_PAGE_MASK) || (BaseAddress & EFI_PAGE_MASK)) {
     return EFI_INVALID_PARAMETER;
   }
+
   // MU_CHANGE Ends.
 
   // Prepare the message parameters.
@@ -291,6 +292,7 @@ RequestMemoryPermissionChange (
     BaseAddress += EFI_PAGE_SIZE;
     Length      -= EFI_PAGE_SIZE;
   }
+
   // MU_CHANGE Ends.
 
   return EFI_SUCCESS;
