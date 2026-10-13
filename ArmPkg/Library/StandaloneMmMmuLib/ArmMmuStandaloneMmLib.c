@@ -274,7 +274,7 @@ RequestMemoryPermissionChange (
   // See [3], Section 2.9 FFA_MEM_PERM_SET
   Fid = (UseFfaAbis) ? ARM_FID_FFA_MEM_PERM_SET : ARM_FID_SPM_MM_SP_SET_MEM_ATTRIBUTES;
 
-  // MU_CHANGE Starts: Added Status variable to hold the return status of the memory permission request.
+  // MU_CHANGE Starts: Added loop to handle memory permission requests for each page.
   while (Length > 0) {
     ZeroMem (&SvcArgs, sizeof (ARM_SVC_ARGS));
 
