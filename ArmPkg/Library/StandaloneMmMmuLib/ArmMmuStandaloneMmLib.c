@@ -261,20 +261,39 @@ RequestMemoryPermissionChange (
   INT32         Ret;
   ARM_SVC_ARGS  SvcArgs;
   UINTN         Fid;
+  // MU_CHANGE Starts: Added Status variable to hold the return status of the memory permission request.
+  EFI_STATUS    Status;
+
+  if ((Length & EFI_PAGE_MASK) || (BaseAddress & EFI_PAGE_MASK)) {
+    return EFI_INVALID_PARAMETER;
+  }
+  // MU_CHANGE Ends.
 
   // Prepare the message parameters.
   // See [1], Section 13.5.5.2 MM_SP_MEMORY_ATTRIBUTES_SET_AARCH64.
   // See [3], Section 2.9 FFA_MEM_PERM_SET
   Fid = (UseFfaAbis) ? ARM_FID_FFA_MEM_PERM_SET : ARM_FID_SPM_MM_SP_SET_MEM_ATTRIBUTES;
 
-  ZeroMem (&SvcArgs, sizeof (ARM_SVC_ARGS));
+  // MU_CHANGE Starts: Added Status variable to hold the return status of the memory permission request.
+  while (Length > 0) {
+    ZeroMem (&SvcArgs, sizeof (ARM_SVC_ARGS));
 
-  SvcArgs.Arg0 = Fid;
-  SvcArgs.Arg1 = BaseAddress;
-  SvcArgs.Arg2 = EFI_SIZE_TO_PAGES (Length);
-  SvcArgs.Arg3 = Permissions;
+    SvcArgs.Arg0 = Fid;
+    SvcArgs.Arg1 = BaseAddress;
+    SvcArgs.Arg2 = 1;
+    SvcArgs.Arg3 = Permissions;
 
-  return SendMemoryPermissionRequest (UseFfaAbis, &SvcArgs, &Ret);
+    Status = SendMemoryPermissionRequest (UseFfaAbis, &SvcArgs, &Ret);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    BaseAddress += EFI_PAGE_SIZE;
+    Length      -= EFI_PAGE_SIZE;
+  }
+  // MU_CHANGE Ends.
+
+  return EFI_SUCCESS;
 }
 
 /**
