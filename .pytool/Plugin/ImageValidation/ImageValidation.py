@@ -5,25 +5,32 @@
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
+import logging
 import os
 import re
-from pathlib import Path
-from pefile import PE, SUBSYSTEM_TYPE
-from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
-from edk2toolext.image_validation import (
-    Result, TestManager, TestInterface, TestWriteExecuteFlags,
-    TestSectionAlignment, MACHINE_TYPE
-)
-from edk2toollib.uefi.edk2.parsers.fdf_parser import FdfParser
-from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
-from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
-from edk2toollib.gitignore_parser import parse_gitignore_lines
-import yaml
-from typing import List, Optional
-import logging
 from datetime import datetime
+from pathlib import Path
+from typing import Optional, Union
+
+import yaml
+from edk2toolext.environment.plugintypes.uefi_build_plugin import IUefiBuildPlugin
+from edk2toolext.environment.uefi_build import UefiBuilder
+from edk2toolext.image_validation import (
+    MACHINE_TYPE,
+    Result,
+    TestInterface,
+    TestManager,
+    TestSectionAlignment,
+    TestWriteExecuteFlags,
+)
+from edk2toollib.gitignore_parser import parse_gitignore_lines
+from edk2toollib.uefi.edk2.parsers.dsc_parser import DscParser
+from edk2toollib.uefi.edk2.parsers.fdf_parser import FdfParser
+from edk2toollib.uefi.edk2.parsers.inf_parser import InfParser
+from pefile import PE, SUBSYSTEM_TYPE
 
 DEFAULT_CONFIG_FILE_PATH = Path(__file__).parent.resolve() / "image_validation.cfg"
+
 
 class TestImageBase(TestInterface):
     """Image base verification test.
@@ -38,12 +45,13 @@ class TestImageBase(TestInterface):
         @Warn: Image Alignment value is not found in the Optional Header
         @Fail: Image base does not match the expected value
     """
+
     def name(self) -> str:
-        """Returns the name of the test."""
-        return 'Image Base verification'
+        """Return the name of the test."""
+        return "Image Base verification"
 
     def execute(self, pe: PE, config_data: dict) -> Result:
-        """Executes the test on the pefile.
+        """Execute the test on the pefile.
 
         Arguments:
             pe (PE): a parsed PE/COFF image file
@@ -66,14 +74,14 @@ class TestImageBase(TestInterface):
 
         if image_base != required_base:
             logging.error(
-                f'[{Result.FAIL}]: Image Base address Expected: {hex(required_base)}, Found: {hex(image_base)}'
+                f"[{Result.FAIL}]: Image Base address Expected: {hex(required_base)}, Found: {hex(image_base)}"
             )
             return Result.FAIL
         return Result.PASS
 
 
 class ImageValidation(IUefiBuildPlugin):
-    def __init__(self):
+    def __init__(self) -> None:
         self.test_manager = TestManager()
 
         # Default tests provided by edk2toolext.image_validation
@@ -82,15 +90,12 @@ class ImageValidation(IUefiBuildPlugin):
         self.test_manager.add_test(TestImageBase())
         # Add additional Tests here
 
-    def do_post_build(self, thebuilder):
+    def do_post_build(self, thebuilder: UefiBuilder) -> int:
 
         starttime = datetime.now()
-        logging.info(
-            "---------------------------------------------------------")
-        logging.info(
-            "-----------Postbuild Image Validation Starting-----------")
-        logging.info(
-            "---------------------------------------------------------")
+        logging.info("---------------------------------------------------------")
+        logging.info("-----------Postbuild Image Validation Starting-----------")
+        logging.info("---------------------------------------------------------")
 
         # Load Configuration Data
         config_path = thebuilder.env.GetValue("PE_VALIDATION_PATH", None)
@@ -116,8 +121,7 @@ class ImageValidation(IUefiBuildPlugin):
         try:
             if config_path:
                 with open(config_path) as f:
-                    config_data = ImageValidation.merge_config(
-                        config_data, yaml.safe_load(f))
+                    config_data = self.merge_config(config_data, yaml.safe_load(f))
 
         except Exception as e:
             logging.error(f"Error parsing {config_path}: [{e}]")
@@ -125,8 +129,9 @@ class ImageValidation(IUefiBuildPlugin):
 
         self.test_manager.config_data = config_data
         self.config_data = config_data
-        self.ignore = parse_gitignore_lines(config_data.get("IGNORE_LIST", []), os.path.join(
-            thebuilder.ws, "nofile.txt"), thebuilder.ws)
+        self.ignore = parse_gitignore_lines(
+            config_data.get("IGNORE_LIST", []), os.path.join(thebuilder.ws, "nofile.txt"), thebuilder.ws
+        )
 
         self.arch_dict = config_data["TARGET_ARCH"]
 
@@ -138,10 +143,8 @@ class ImageValidation(IUefiBuildPlugin):
 
         edk2 = thebuilder.edk2path
 
-        ActiveDsc = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
-            thebuilder.env.GetValue("ACTIVE_PLATFORM"))
-        ActiveFdf = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
-            thebuilder.env.GetValue("FLASH_DEFINITION"))
+        ActiveDsc = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(thebuilder.env.GetValue("ACTIVE_PLATFORM"))
+        ActiveFdf = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(thebuilder.env.GetValue("FLASH_DEFINITION"))
 
         if ActiveFdf is None:
             logging.info("No FDF found - PE Image Validation skipped")
@@ -165,18 +168,20 @@ class ImageValidation(IUefiBuildPlugin):
                 if "PE32" in fv_file:  # Any PE32 section in the FV contains a path to the efi
                     # could have multiple PE32 sections
                     for efi_path in fv_file["PE32"]:
-                        efi_path = self._resolve_vars(thebuilder, efi_path)
-                        efi_path = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(
-                            efi_path)
+                        try:
+                            efi_path = self._resolve_vars(thebuilder, efi_path)
+                        except ValueError as error:
+                            logging.error("Failed to resolve pre-compiled image path: %s", error)
+                            result = Result.FAIL
+                            continue
+                        efi_path = edk2.GetAbsolutePathOnThisSystemFromEdk2RelativePath(efi_path)
                         if efi_path is None:
-                            logging.warning(
-                                "Unable to parse the path to the pre-compiled efi")
+                            logging.warning("Unable to parse the path to the pre-compiled efi")
                             continue
                         if self.ignore(efi_path):
                             continue
-                        logging.debug(
-                            f'Performing Image Verification ... {os.path.basename(efi_path)}')
-                        
+                        logging.debug(f"Performing Image Verification ... {os.path.basename(efi_path)}")
+
                         # fv_file["type"] can be multiple values. One value is "DRIVER", which is vague and technically
                         # means it could be a DXE_DRIVER or DXE_RUNTIME_DRIVER. If we see this value, we will instead
                         # determine the profile by parsing the subsystem type from the binary (done in _validate_image).
@@ -184,16 +189,16 @@ class ImageValidation(IUefiBuildPlugin):
                         if profile == "DRIVER":
                             profile = None
                         if self._validate_image(efi_path, profile) == Result.FAIL:
-                            logging.error(f'{os.path.basename(efi_path)} Failed Image Validation.')
+                            logging.error(f"{os.path.basename(efi_path)} Failed Image Validation.")
                             result = Result.FAIL
                         count += 1
         # End Pre-Compiled Image Verification
 
         # Start Build Time Compiled Image Verification
-        result = Result.PASS
         for arch in thebuilder.env.GetValue("TARGET_ARCH").split():
             efi_path_list = self._walk_directory_for_extension(
-                ['.efi'], f'{os.path.join(thebuilder.env.GetValue("BUILD_OUTPUT_BASE"), arch)}')
+                [".efi"], f"{os.path.join(thebuilder.env.GetValue('BUILD_OUTPUT_BASE'), arch)}"
+            )
 
             for efi_path in efi_path_list:
                 if self.ignore(efi_path):
@@ -201,118 +206,148 @@ class ImageValidation(IUefiBuildPlugin):
 
                 # Perform Image Verification on any output efi's
                 # Grab profile from makefile
+                # Mixed source/binary modules may not have an as-built INF.
                 if "OUTPUT" in efi_path:
-                    efi_inf = Path(efi_path).with_suffix('.inf')
-                    if not efi_inf.is_file():
-                        logging.warning(
-                            f"Cannot find {os.path.basename(efi_inf)} for {os.path.basename(efi_path)}, Skipping...")
-                        continue
-                    infp = InfParser().SetEdk2Path(thebuilder.edk2path)
-                    infp.ParseFile(efi_inf)
-                    profile = infp.Dict.get("MODULE_TYPE", "DEFAULT")
-                    if profile == "DEFAULT":
-                        logging.debug("Failed to parse MODULE_TYPE from INF, using DEFAULT")
+                    efi_inf = Path(efi_path).with_suffix(".inf")
+                    if efi_inf.is_file():
+                        infp = InfParser().SetEdk2Path(thebuilder.edk2path)
+                        infp.ParseFile(efi_inf)
+                        profile = infp.Dict.get("MODULE_TYPE", "DEFAULT")
+                        if profile == "DEFAULT":
+                            logging.debug("Failed to parse MODULE_TYPE from INF, using DEFAULT")
+                    else:
+                        profile = self._get_profile_from_makefile(Path(efi_path))
+                        if profile is None:
+                            logging.warning(
+                                f"Cannot find {efi_inf.name} for {os.path.basename(efi_path)}, Skipping...")
+                            continue
 
-                    logging.debug(
-                        f'Performing Image Verification ... {os.path.basename(efi_path)}')
+                    logging.debug(f"Performing Image Verification ... {os.path.basename(efi_path)}")
                     if self._validate_image(efi_path, profile) == Result.FAIL:
-                        logging.error(f'{os.path.basename(efi_path)} Failed Image Validation.')
+                        logging.error(f"{os.path.basename(efi_path)} Failed Image Validation.")
                         result = Result.FAIL
                     count += 1
         # End Built Time Compiled Image Verification
 
         endtime = datetime.now()
         delta = endtime - starttime
+        logging.info("---------------------------------------------------------")
+        logging.info("-----------Postbuild Image Validation Finished-----------")
+        logging.info("------------------{:04d} Images Verified-------------------".format(count))
         logging.info(
-            "---------------------------------------------------------")
-        logging.info(
-            "-----------Postbuild Image Validation Finished-----------")
-        logging.info(
-            "------------------{:04d} Images Verified-------------------".format(count))
-        logging.info(
-            "-------------- Running Time (mm:ss): {0[0]:02}:{0[1]:02} --------------".format(divmod(delta.seconds, 60)))
-        logging.info(
-            "---------------------------------------------------------")
+            "-------------- Running Time (mm:ss): {0[0]:02}:{0[1]:02} --------------".format(divmod(delta.seconds, 60))
+        )
+        logging.info("---------------------------------------------------------")
 
         if result == Result.FAIL:
             return 1
         else:
             return 0
 
+    @staticmethod
+    def _get_profile_from_makefile(efi_path: Path) -> Optional[str]:
+        """Read a matching module's type when its as-built INF is unavailable.
+
+        Mixed source/binary modules may produce an EFI image without an
+        as-built INF. Their generated Makefile can supply the module type
+        needed to select an image-validation profile.
+
+        Arguments:
+            efi_path (Path): Image at <module>/OUTPUT/<name>.efi. Makefiles
+                are located in <module>, two directory levels above the file.
+
+        Returns:
+            Optional[str]: MODULE_TYPE from the first matching GNUmakefile or
+                Makefile, in that order, or None if neither has usable metadata.
+
+        """
+        for filename in ("GNUmakefile", "Makefile"):
+            makefile = efi_path.parent.parent / filename
+            if not makefile.is_file():
+                continue
+
+            # Read literal assignments with optional whitespace and comments.
+            # This is not a Makefile evaluator: variable references are rejected.
+            metadata = dict(re.findall(
+                r"^[ \t]*(MODULE_NAME|MODULE_TYPE)[ \t]*=[ \t]*([A-Za-z0-9_]+)[ \t]*(?:#.*)?$",
+                makefile.read_text(encoding="utf-8"),
+                re.MULTILINE,
+            ))
+
+            # Do not apply metadata belonging to a differently named module.
+            if metadata.get("MODULE_NAME") == efi_path.stem and "MODULE_TYPE" in metadata:
+                logging.debug("Using MODULE_TYPE from %s for %s", makefile, efi_path.name)
+                return metadata["MODULE_TYPE"]
+        return None
+
     # Executes run_tests() on the efi. If the profile is None, attempts to select the profile via the subsystem type
     # in the binary. Otherwise uses the default profile.
-    def _validate_image(self, efi_path, profile=None):
+    def _validate_image(self, efi_path: str, profile: Optional[str] = None) -> Result:
         try:
             pe = PE(efi_path, fast_load=True)
         except Exception:
-            logging.error(f'Failed to parse {os.path.basename(efi_path)}')
+            logging.error(f"Failed to parse {os.path.basename(efi_path)}")
             return Result.FAIL
-        
+
         if profile is None:
             profile = self._try_get_supported_subsystem(pe)
-        
+
         if profile is None:
-            logging.debug(f'Could not determine profile for {os.path.basename(efi_path)}. Using DEFAULT profile.')
+            logging.debug(f"Could not determine profile for {os.path.basename(efi_path)}. Using DEFAULT profile.")
             profile = "DEFAULT"
 
-        target_config = self.config_data[MACHINE_TYPE[pe.FILE_HEADER.Machine]].get(
-            profile)
+        target_config = self.config_data[MACHINE_TYPE[pe.FILE_HEADER.Machine]].get(profile)
         if target_config == {}:  # The target_config is present, but empty, therefore, override to default
-            logging.debug(f'No custom configuration for profile {profile} in {MACHINE_TYPE[pe.FILE_HEADER.Machine]}. '
-                          'Switching to DEFAULT profile.')
+            logging.debug(
+                f"No custom configuration for profile {profile} in {MACHINE_TYPE[pe.FILE_HEADER.Machine]}. "
+                "Switching to DEFAULT profile."
+            )
             profile = "DEFAULT"
 
         return self.test_manager.run_tests(pe, profile)
-    
+
     # Returns the subsystem type if it is supported, otherwise returns None.
     def _try_get_supported_subsystem(self, pe: PE) -> Optional[str]:
         try:
             subsystem = pe.OPTIONAL_HEADER.Subsystem
         except Exception:
             return None
-        
-        SUPPORTED_SUBSYSTEMS = {
-            "IMAGE_SUBSYSTEM_EFI_APPLICATION",
-            "IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER",
-            "IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER",
+
+        subsystem_map = {
+            SUBSYSTEM_TYPE["IMAGE_SUBSYSTEM_EFI_APPLICATION"]: "UEFI_APPLICATION",
+            SUBSYSTEM_TYPE["IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER"]: "DXE_DRIVER",
+            SUBSYSTEM_TYPE["IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER"]: "DXE_RUNTIME_DRIVER",
         }
 
-        SUBSYSTEM_MAP = {
-            "IMAGE_SUBSYSTEM_EFI_APPLICATION": "UEFI_APPLICATION",
-            "IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER": "DXE_DRIVER",
-            "IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER": "DXE_RUNTIME_DRIVER",
-        }
-    
-        if SUBSYSTEM_TYPE[subsystem] in SUPPORTED_SUBSYSTEMS:
-            return SUBSYSTEM_MAP[SUBSYSTEM_TYPE[subsystem]]
-        
-        return None
+        return subsystem_map.get(subsystem)
 
     # Resolves variable names matching the $(...) pattern.
-    def _resolve_vars(self, thebuilder, s):
-        var_pattern = re.compile(r'\$\([^)]*\)')  # Detect $(...) pattern
+    def _resolve_vars(self, thebuilder: UefiBuilder, s: str) -> str:
+        var_pattern = re.compile(r"\$\([^)]*\)")  # Detect $(...) pattern
         env = thebuilder.env
         rs = s
         for match in var_pattern.findall(s):
             var_name = match[2:-1]
-            env_var = env.GetValue(var_name) if env.GetValue(
-                var_name) is not None else env.GetBuildValue(var_name)
+            env_var = env.GetValue(var_name)
             if env_var is None:
-                pass
+                env_var = env.GetBuildValue(var_name)
+            if env_var is None:
+                raise ValueError(f"Undefined variable '{var_name}' in image path '{s}'")
             rs = rs.replace(match, env_var)
         return rs
 
-    def _walk_directory_for_extension(self, extensionlist: List[str], directory: os.PathLike,
-                                      ignorelist: List[str] = None) -> List[os.PathLike]:
-        ''' Walks a file directory recursively for all items ending in certain extension
-            @extensionlist: List[str] list of file extensions
-            @directory: Path - absolute path to directory to start looking
-            @ignorelist: List[str] or None.  optional - default is None: a list of case insensitive filenames to ignore
-            @returns a List of file paths to matching files
-        '''
+    def _walk_directory_for_extension(
+        self, extensionlist: list[str], directory: Union[str, os.PathLike[str]], ignorelist: Optional[list[str]] = None
+    ) -> list[str]:
+        """Walk a file directory recursively for all items ending in certain extension.
+
+        @extensionlist: List[str] list of file extensions
+        @directory: str or PathLike[str] - absolute path to directory to start looking
+        @ignorelist: List[str] or None.  optional - default is None: a list of case insensitive filenames to ignore
+        @returns a list of string paths to matching files
+        """
         if not isinstance(extensionlist, list):
-            logging.critical("Expected list but got " +
-                             str(type(extensionlist)))
+            logging.critical("Expected list but got " + str(type(extensionlist)))
             raise TypeError("extensionlist must be a list")
 
         if directory is None:
@@ -327,13 +362,12 @@ class ImageValidation(IUefiBuildPlugin):
             logging.critical(f"Directory {directory} is invalid")
             raise ValueError(f"directory {directory} is not a valid directory path")
 
+        ignorelist_lower: list[str] = []
         if ignorelist is not None:
             if not isinstance(ignorelist, list):
-                logging.critical("Expected list but got " +
-                                 str(type(ignorelist)))
+                logging.critical("Expected list but got " + str(type(ignorelist)))
                 raise TypeError("ignorelist must be a list")
 
-            ignorelist_lower = list()
             for item in ignorelist:
                 ignorelist_lower.append(item.lower())
 
@@ -342,14 +376,14 @@ class ImageValidation(IUefiBuildPlugin):
             extensionlist_lower.append(item.lower())
 
         returnlist = list()
-        for Root, Dirs, Files in os.walk(directory):
+        for Root, _, Files in os.walk(directory):
             for File in Files:
                 for Extension in extensionlist_lower:
                     if File.lower().endswith(Extension):
                         ignoreIt = False
-                        if(ignorelist is not None):
+                        if ignorelist is not None:
                             for c in ignorelist_lower:
-                                if(File.lower().startswith(c)):
+                                if File.lower().startswith(c):
                                     ignoreIt = True
                                     break
                         if not ignoreIt:
@@ -360,6 +394,7 @@ class ImageValidation(IUefiBuildPlugin):
     # Merged two configuration dictionaries, with the provided configuration taking precedence
     # config = { **default, **provided } is shallow and merged only top level entries. We want
     # to be able to replace individual profiles per architecture.
+    @staticmethod
     def merge_config(default: dict, provided: dict) -> dict:
 
         ret_dict = {}
@@ -376,20 +411,14 @@ class ImageValidation(IUefiBuildPlugin):
         ret_dict["IMAGE_FILE_MACHINE_ARM"] = default["IMAGE_FILE_MACHINE_ARM"]
 
         # Update the default configuration with the provided configuration
-        ret_dict["IMAGE_FILE_MACHINE_AMD64"].update(
-            provided.get("IMAGE_FILE_MACHINE_AMD64", provided.get("X64", {}))
-        )
+        ret_dict["IMAGE_FILE_MACHINE_AMD64"].update(provided.get("IMAGE_FILE_MACHINE_AMD64", provided.get("X64", {})))
 
         ret_dict["IMAGE_FILE_MACHINE_ARM64"].update(
             provided.get("IMAGE_FILE_MACHINE_ARM64", provided.get("AARCH64", {}))
         )
 
-        ret_dict["IMAGE_FILE_MACHINE_I386"].update(
-            provided.get("IMAGE_FILE_MACHINE_I386", provided.get("IA32", {}))
-        )
+        ret_dict["IMAGE_FILE_MACHINE_I386"].update(provided.get("IMAGE_FILE_MACHINE_I386", provided.get("IA32", {})))
 
-        ret_dict["IMAGE_FILE_MACHINE_ARM"].update(
-            provided.get("IMAGE_FILE_MACHINE_ARM", provided.get("ARM", {}))
-        )
+        ret_dict["IMAGE_FILE_MACHINE_ARM"].update(provided.get("IMAGE_FILE_MACHINE_ARM", provided.get("ARM", {})))
 
         return ret_dict

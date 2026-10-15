@@ -59,6 +59,29 @@ X64:
 
 **See Example below for customizing Image Validation**
 
+## Image Selection and Failure Handling
+
+The plugin validates precompiled PE32 images listed in the FDF and compiled EFI
+images in build output directories. For compiled images, the as-built INF's
+`MODULE_TYPE` takes precedence. If the INF is absent, the plugin checks the
+module directory's `GNUmakefile`, then `Makefile`, for a matching `MODULE_NAME`
+and a literal `MODULE_TYPE`. Images without usable metadata are warned about
+and skipped.
+
+For precompiled images whose FDF type is `DRIVER`, the profile is inferred from
+the PE subsystem. Unsupported or unknown subsystem values use the `DEFAULT`
+profile and still run its validation checks. An explicitly selected profile
+that is absent from the configuration remains an error.
+
+Paths can contain `$(VARIABLE)` references. Environment values take precedence
+over build values, including explicitly empty environment values. If a variable
+is undefined in both sources, the plugin logs the variable name and image path
+and fails the post-build step.
+
+A failure in either precompiled or compiled image validation fails the post-build
+step. Remaining images are still checked, and later successful images cannot
+erase an earlier failure.
+
 ## Ignoring Files
 
 If your platform deems a particular binary does not, and cannot meet the
