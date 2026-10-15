@@ -41,9 +41,19 @@ typedef struct {
   EFI_GUID    SigType;
   // Expected SignatureHeader size in Bytes.
   UINT32      SigHeaderSize;
+  // Expected SignatureOwner size in Bytes.
+  UINT32      SigOwnerSize;
   // Expected SignatureData size in Bytes.
   UINT32      SigDataSize;
 } EFI_SIGNATURE_ITEM;
+
+EFI_STATUS
+CheckSignatureListFormat (
+  IN CHAR16    *VariableName,
+  IN EFI_GUID  *VendorGuid,
+  IN VOID      *Data,
+  IN UINTN     DataSize
+  );
 
 typedef enum {
   AuthVarTypePk,
