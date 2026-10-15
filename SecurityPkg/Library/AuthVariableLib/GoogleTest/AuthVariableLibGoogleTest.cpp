@@ -119,6 +119,77 @@ BuildAuthenticatedX509SignatureListData (
   return Data;
 }
 
+STATIC std::vector<UINT8>
+BuildSignatureList (
+  IN CONST EFI_GUID  *SignatureType,
+  IN UINT32          SignatureSize
+  )
+{
+  CONST UINTN         SignatureListSize = sizeof (EFI_SIGNATURE_LIST) + SignatureSize;
+  std::vector<UINT8>  Data (SignatureListSize, 0);
+  EFI_SIGNATURE_LIST  *SignatureList;
+
+  SignatureList                      = reinterpret_cast<EFI_SIGNATURE_LIST *>(Data.data ());
+  SignatureList->SignatureType       = *SignatureType;
+  SignatureList->SignatureListSize   = (UINT32)SignatureListSize;
+  SignatureList->SignatureHeaderSize = 0;
+  SignatureList->SignatureSize       = SignatureSize;
+  return Data;
+}
+
+STATIC CHAR16  mDbVariableName[] = { 'd', 'b', 0 };
+
+TEST (CheckSignatureListFormatTest, AcceptsV1X509Sha512) {
+  std::vector<UINT8>  Data = BuildSignatureList (
+                               &gEfiCertX509Sha512Guid,
+                               sizeof (EFI_GUID) + SHA512_DIGEST_SIZE + sizeof (EFI_TIME)
+                               );
+
+  EXPECT_EQ (
+    CheckSignatureListFormat (
+      mDbVariableName,
+      &gEfiImageSecurityDatabaseGuid,
+      Data.data (),
+      Data.size ()
+      ),
+    EFI_SUCCESS
+    );
+}
+
+TEST (CheckSignatureListFormatTest, AcceptsV2X509Sha512WithoutOwner) {
+  std::vector<UINT8>  Data = BuildSignatureList (
+                               &gEfiCertV2X509Sha512Guid,
+                               SHA512_DIGEST_SIZE
+                               );
+
+  EXPECT_EQ (
+    CheckSignatureListFormat (
+      mDbVariableName,
+      &gEfiImageSecurityDatabaseGuid,
+      Data.data (),
+      Data.size ()
+      ),
+    EFI_SUCCESS
+    );
+}
+
+TEST (CheckSignatureListFormatTest, RejectsV2X509Sha512WithOwner) {
+  std::vector<UINT8>  Data = BuildSignatureList (
+                               &gEfiCertV2X509Sha512Guid,
+                               sizeof (EFI_GUID) + SHA512_DIGEST_SIZE
+                               );
+
+  EXPECT_EQ (
+    CheckSignatureListFormat (
+      mDbVariableName,
+      &gEfiImageSecurityDatabaseGuid,
+      Data.data (),
+      Data.size ()
+      ),
+    EFI_INVALID_PARAMETER
+    );
+}
+
 STATIC
 EFI_STATUS
 EFIAPI

@@ -87,6 +87,7 @@
   gEfiCertTypeRsa2048Sha256Guid  ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the type of the certificate.
   gEfiCertPkcs7Guid              ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the type of the certificate.
   gEfiCertX509Guid               ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the type of the signature.
+  gEfiCertV2X509Guid             ## SOMETIMES_CONSUMES   ## GUID  # Unique ID for the V2 type of the signature.
 
   ## CONSUMES   ## GUID    # ECIT feature identifiers reported by this library.
   gEfiEcitFeatureSbDatabaseUpdateVerificationGuid
