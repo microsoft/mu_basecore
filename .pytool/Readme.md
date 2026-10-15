@@ -103,6 +103,17 @@ Quick notes:
     * etc.
 * Detailed reports and logs per package are captured in the `Build` directory.
 
+## Python Tool Unit Tests
+
+The [Tests](Tests) directory contains `unittest` tests for the Python tools and
+plugins themselves, separate from the firmware checks performed by CI plugins.
+Install the dependencies and run the tests from the repository root:
+
+```console
+python -m pip install -r pip-requirements.txt
+python .pytool/Tests/PythonToolsTests.py
+```
+
 ## Current PyTool Test Capabilities
 
 All CI tests are instances of EDKII Tools plugins. Documentation on the plugin
