@@ -31,3 +31,6 @@
 [Guids]
   ## SOMETIMES_CONSUMES   ## Variable:L"KEK"
   gEfiGlobalVariableGuid
+  gEfiImageSecurityDatabaseGuid
+  gEfiCertX509Sha512Guid
+  gEfiCertV2X509Sha512Guid

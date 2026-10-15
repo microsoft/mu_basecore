@@ -155,19 +155,26 @@ EFI_HASH_INFO  mHashInfo[] = {
 // These data are used to perform SignatureList format check while setting PK/KEK variable.
 //
 EFI_SIGNATURE_ITEM  mSupportSigItem[] = {
-  // {SigType,                       SigHeaderSize,   SigDataSize  }
-  { EFI_CERT_SHA256_GUID,         0, 32            },
-  { EFI_CERT_RSA2048_GUID,        0, 256           },
-  { EFI_CERT_RSA2048_SHA256_GUID, 0, 256           },
-  { EFI_CERT_SHA1_GUID,           0, 20            },
-  { EFI_CERT_RSA2048_SHA1_GUID,   0, 256           },
-  { EFI_CERT_X509_GUID,           0, ((UINT32) ~0) },
-  { EFI_CERT_SHA224_GUID,         0, 28            },
-  { EFI_CERT_SHA384_GUID,         0, 48            },
-  { EFI_CERT_SHA512_GUID,         0, 64            },
-  { EFI_CERT_X509_SHA256_GUID,    0, 48            },
-  { EFI_CERT_X509_SHA384_GUID,    0, 64            },
-  { EFI_CERT_X509_SHA512_GUID,    0, 80            }
+  // {SigType,                       SigHeaderSize, SigOwnerSize,       SigDataSize  }
+  { EFI_CERT_SHA256_GUID,         0, sizeof (EFI_GUID), 32            },
+  { EFI_CERT_RSA2048_GUID,        0, sizeof (EFI_GUID), 256           },
+  { EFI_CERT_RSA2048_SHA256_GUID, 0, sizeof (EFI_GUID), 256           },
+  { EFI_CERT_SHA1_GUID,           0, sizeof (EFI_GUID), 20            },
+  { EFI_CERT_RSA2048_SHA1_GUID,   0, sizeof (EFI_GUID), 256           },
+  { EFI_CERT_X509_GUID,           0, sizeof (EFI_GUID), ((UINT32) ~0) },
+  { EFI_CERT_SHA224_GUID,         0, sizeof (EFI_GUID), 28            },
+  { EFI_CERT_SHA384_GUID,         0, sizeof (EFI_GUID), 48            },
+  { EFI_CERT_SHA512_GUID,         0, sizeof (EFI_GUID), 64            },
+  { EFI_CERT_X509_SHA256_GUID,    0, sizeof (EFI_GUID), 48            },
+  { EFI_CERT_X509_SHA384_GUID,    0, sizeof (EFI_GUID), 64            },
+  { EFI_CERT_X509_SHA512_GUID,    0, sizeof (EFI_GUID), 80            },
+  { EFI_CERT_V2_X509_GUID,        0, 0,                 ((UINT32) ~0) },
+  { EFI_CERT_V2_SHA256_GUID,      0, 0,                 32            },
+  { EFI_CERT_V2_SHA384_GUID,      0, 0,                 48            },
+  { EFI_CERT_V2_SHA512_GUID,      0, 0,                 64            },
+  { EFI_CERT_V2_X509_SHA256_GUID, 0, 0,                 32            },
+  { EFI_CERT_V2_X509_SHA384_GUID, 0, 0,                 48            },
+  { EFI_CERT_V2_X509_SHA512_GUID, 0, 0,                 64            }
 };
 
 /**
@@ -522,7 +529,7 @@ CheckSignatureListFormat (
   UINT32              Index;
   UINT32              SigCount;
   BOOLEAN             IsPk;
-  EFI_SIGNATURE_DATA  *CertData;
+  UINT8               *CertData;
   UINTN               CertLen;
 
   if (DataSize == 0) {
@@ -555,11 +562,15 @@ CheckSignatureListFormat (
     for (Index = 0; Index < (sizeof (mSupportSigItem) / sizeof (EFI_SIGNATURE_ITEM)); Index++ ) {
       if (CompareGuid (&SigList->SignatureType, &mSupportSigItem[Index].SigType)) {
         //
-        // The value of SignatureSize should always be 16 (size of SignatureOwner
-        // component) add the data length according to signature type.
+        // SignatureSize includes the V1 SignatureOwner when the selected
+        // signature-list format defines one.
         //
+        if (SigList->SignatureSize < mSupportSigItem[Index].SigOwnerSize) {
+          return EFI_INVALID_PARAMETER;
+        }
+
         if ((mSupportSigItem[Index].SigDataSize != ((UINT32) ~0)) &&
-            ((SigList->SignatureSize - sizeof (EFI_GUID)) != mSupportSigItem[Index].SigDataSize))
+            ((SigList->SignatureSize - mSupportSigItem[Index].SigOwnerSize) != mSupportSigItem[Index].SigDataSize))
         {
           return EFI_INVALID_PARAMETER;
         }
@@ -581,15 +592,16 @@ CheckSignatureListFormat (
       return EFI_INVALID_PARAMETER;
     }
 
-    if (CompareGuid (&SigList->SignatureType, &gEfiCertX509Guid)) {
+    if (CompareGuid (&SigList->SignatureType, &gEfiCertX509Guid) ||
+        CompareGuid (&SigList->SignatureType, &gEfiCertV2X509Guid))
+    {
       //
-      // Try to retrieve the RSA public key from the X.509 certificate.
-      // If this operation fails, it's not a valid certificate.
+      // Verify that the X.509 certificate contains a supported public key.
       //
-      CertData = (EFI_SIGNATURE_DATA *)((UINT8 *)SigList + sizeof (EFI_SIGNATURE_LIST) + SigList->SignatureHeaderSize);
-      CertLen  = SigList->SignatureSize - sizeof (EFI_GUID);
+      CertData = (UINT8 *)SigList + sizeof (EFI_SIGNATURE_LIST) + SigList->SignatureHeaderSize + mSupportSigItem[Index].SigOwnerSize;
+      CertLen  = SigList->SignatureSize - mSupportSigItem[Index].SigOwnerSize;
 
-      if (!X509IsPublicKeySupported (CertData->SignatureData, CertLen)) {
+      if (!X509IsPublicKeySupported (CertData, CertLen)) {
         DEBUG ((DEBUG_ERROR, "CheckSignatureListFormat - X509 public key unsupported\n"));
         return EFI_INVALID_PARAMETER;
       }
