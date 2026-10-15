@@ -40,6 +40,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdSrIovSupport
   gEfiMdeModulePkgTokenSpaceGuid.PcdSrIovSystemPageSize
   gEfiMdeModulePkgTokenSpaceGuid.PcdDeferBME                    ## MU_CHANGE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPcieInitializeMps           ## MU_CHANGE: Add support for initializing PCIe MPS
 
 
 [Protocols]
