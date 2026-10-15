@@ -39,6 +39,8 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdPcieResizableBarSupport
   gEfiMdeModulePkgTokenSpaceGuid.PcdSrIovSupport
   gEfiMdeModulePkgTokenSpaceGuid.PcdSrIovSystemPageSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDeferBME                    ## MU_CHANGE
+
 
 [Protocols]
   gEfiDevicePathProtocolGuid
