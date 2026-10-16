@@ -12,7 +12,7 @@
 //
 struct DIGEST_CACHE_ENTRY {
   DIGEST_CACHE_ENTRY    *Next;                     // The next entry in the linked list.
-  CONST EFI_GUID        *Algorithm;                // The hash algorithm GUID.
+  EFI_GUID              Algorithm;                 // The hash algorithm GUID.
   UINT8                 Digest[MAX_DIGEST_SIZE];   // The computed hash digest.
   UINTN                 DigestSize;                // The size of the computed hash digest.
 };
@@ -51,7 +51,7 @@ GetHash (
 
   // Return a cached digest if available
   for (Entry = Cache->Entries; Entry != NULL; Entry = Entry->Next) {
-    if (CompareGuid (Entry->Algorithm, HashAlgorithm)) {
+    if (CompareGuid (&Entry->Algorithm, HashAlgorithm)) {
       *Digest     = Entry->Digest;
       *DigestSize = Entry->DigestSize;
       return EFI_SUCCESS;
@@ -69,9 +69,9 @@ GetHash (
     return Status;
   }
 
-  Entry->Algorithm = HashAlgorithm;
-  Entry->Next      = Cache->Entries;
-  Cache->Entries   = Entry;
+  CopyGuid (&Entry->Algorithm, HashAlgorithm);
+  Entry->Next    = Cache->Entries;
+  Cache->Entries = Entry;
 
   *Digest     = Entry->Digest;
   *DigestSize = Entry->DigestSize;
