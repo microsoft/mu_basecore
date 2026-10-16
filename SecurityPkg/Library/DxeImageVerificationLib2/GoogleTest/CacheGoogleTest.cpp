@@ -170,6 +170,36 @@ TEST (GetHashTest, HashFailure_PropagatesErrorAndLeavesCacheEmpty) {
   EXPECT_EQ (Cache.Entries, nullptr);
 }
 
+TEST (GetHashTest, CallerOwnedAlgorithmMutation_DoesNotChangeCacheIdentity) {
+  MockBaseCryptLib  BaseCryptLibMock;
+  EFI_GUID          Algorithm;
+  DIGEST_CACHE      Cache;
+  CONST UINT8       *Digest256    = NULL;
+  CONST UINT8       *Digest512    = NULL;
+  UINTN             DigestSize256 = 0;
+  UINTN             DigestSize512 = 0;
+
+  ZeroMem (&Cache, sizeof (Cache));
+  Cache.Buffer     = mCacheBuffer;
+  Cache.BufferSize = sizeof (mCacheBuffer);
+  CopyGuid (&Algorithm, &gEfiHashAlgorithmSha256Guid);
+
+  EXPECT_CALL (BaseCryptLibMock, HashAllByGuid (_, _, _, _, _))
+    .WillOnce (Invoke (FillDigest (SHA256_DIGEST_SIZE, 0x25)))
+    .WillOnce (Invoke (FillDigest (SHA512_DIGEST_SIZE, 0x51)));
+
+  EXPECT_EQ (GetHash (&Algorithm, &Cache, &Digest256, &DigestSize256), EFI_SUCCESS);
+
+  CopyGuid (&Algorithm, &gEfiHashAlgorithmSha512Guid);
+  EXPECT_EQ (GetHash (&Algorithm, &Cache, &Digest512, &DigestSize512), EFI_SUCCESS);
+  EXPECT_EQ (DigestSize256, (UINTN)SHA256_DIGEST_SIZE);
+  EXPECT_EQ (DigestSize512, (UINTN)SHA512_DIGEST_SIZE);
+  EXPECT_EQ (Digest256[0], (UINT8)0x25);
+  EXPECT_EQ (Digest512[0], (UINT8)0x51);
+
+  FreeDigestCache (&Cache);
+}
+
 TEST (GetHashTest, DistinctAlgorithms_MemoizedSeparately) {
   MockBaseCryptLib  BaseCryptLibMock;
   DIGEST_CACHE      Cache;
