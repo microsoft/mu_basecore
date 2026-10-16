@@ -1,9 +1,9 @@
 ## @file
 #  Handles TPM 2.0 Startup/Initialization.
 #
-#  Includes setup of initial TPM state as well as any pre-DXE
-#  measurements. Also handles any pre-DXE logging by generating
-#  HOBs.
+#  Includes setup of initial TPM state. Callers are responsible for
+#  signalling downstream phases on failure (e.g. producing gTpmErrorHobGuid
+#  in PEI, or withholding a Tcg2 protocol/PPI producer in later phases).
 #
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -37,16 +37,16 @@
   BaseMemoryLib
   DebugLib
   HobLib
-  ReportStatusCodeLib
+  ResetSystemLib
   Tpm2CommandLib
   Tpm2DeviceLib
 
 [Pcd]
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid              ## CONSUMES
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy     ## CONSUMES
-  gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice  ## SOMETIMES_CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask                 ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashLibSupportMask       ## CONSUMES
 
 [Guids]
-  gTpmErrorHobGuid                ## SOMETIMES_PRODUCES     ## HOB
   gEfiTpmDeviceInstanceNoneGuid   ## SOMETIMES_PRODUCES     ## GUID       # TPM device identifier
   gEfiTpmDeviceInstanceTpm12Guid  ## SOMETIMES_PRODUCES     ## GUID       # TPM device identifier
+  gTpmErrorHobGuid                ## SOMETIMES_CONSUMES     ## HOB
