@@ -146,7 +146,7 @@ jobs:
           SOURCE_URL: ${{ env.ARTIFACT_BASE_URL }}/${{ env.TAG_NAME }}/basetools-${{ env.TAG_NAME }}.tar.gz
           VERSION: ${{ env.TAG_NAME }}
           SHA256: ${{ steps.sha256.outputs.sha256 }}
-        uses: mikefarah/yq@1b9b4ac5187171d2e5e3129be0cfa827c7f9d53d # v4.53.3
+        uses: mikefarah/yq@c14f446382944492701b16c1ddb48bb9dbe683e3 # v4.53.6
         with:
           cmd: yq -i -P '.source = strenv(SOURCE_URL) | .version = strenv(VERSION) | .sha256 = strenv(SHA256)' ${BASETOOLS_PATH}
         
