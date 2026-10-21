@@ -9,7 +9,7 @@
 #
 ##
 
-#Override : 00000002 | SecurityPkg/Library/DxeTcg2PhysicalPresenceLib/DxeTcg2PhysicalPresenceLib.inf | 5e42604eac5a91919862500ab2f24e4a | 2026-10-06T18-50-25 | 1eb75d754a66316e9da12a5af5acea36c5b51c50
+#Override : 00000002 | SecurityPkg/Library/DxeTcg2PhysicalPresenceLib/DxeTcg2PhysicalPresenceLib.inf | cb7396c4da8083790712ad5498379154 | 2026-10-21T22-33-59 | 03a88fbae200682b831e111845dc7db7c1380553
 
 [Defines]
   INF_VERSION                    = 0x00010005
