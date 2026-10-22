@@ -592,7 +592,8 @@ Done:
   @param[in]  SupportedPCRBanks Supported PCR banks
   @param[in]  PCRBanks          PCR banks
 
-  @retval EFI_SUCCESS Operation completed successfully.
+  @retval EFI_SUCCESS       Operation completed successfully.
+  @retval EFI_DEVICE_ERROR  Allocation was not successful.
 **/
 EFI_STATUS
 EFIAPI
@@ -717,6 +718,11 @@ Tpm2PcrAllocateBanks (
   DEBUG ((DEBUG_INFO, "Tpm2PcrAllocateBanks call Tpm2PcrAllocate - %r\n", Status));
   if (EFI_ERROR (Status)) {
     goto Done;
+  }
+
+  // MU_CHANGE
+  if (AllocationSuccess == NO) {
+    Status = EFI_DEVICE_ERROR;
   }
 
   DEBUG ((DEBUG_INFO, "AllocationSuccess - %02x\n", AllocationSuccess));
