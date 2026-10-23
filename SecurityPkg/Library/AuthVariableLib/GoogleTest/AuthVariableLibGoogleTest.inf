@@ -28,6 +28,10 @@
   BaseMemoryLib
   MemoryAllocationLib
   VariablePolicyLib
+  PcdLib
+
+[FeaturePcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRequireSelfSignedPk
 
 [Guids]
   ## SOMETIMES_CONSUMES   ## Variable:L"KEK"
