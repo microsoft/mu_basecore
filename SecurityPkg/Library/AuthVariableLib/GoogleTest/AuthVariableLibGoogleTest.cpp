@@ -1,5 +1,5 @@
 /** @file
-  Unit tests for the AuthVariableLib SignerInfo cardinality policy.
+  Unit tests for AuthVariableLib authentication and signature-list policy.
 
   Copyright (c) Microsoft Corporation.
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -9,6 +9,7 @@
 #include <GoogleTest/Library/MockBaseCryptLib.h>
 
 #include <vector>
+#include <tuple>
 
 extern "C" {
   #include <Uefi.h>
@@ -16,6 +17,7 @@ extern "C" {
   #include <Guid/ImageAuthentication.h>
   #include <Guid/WinCertificate.h>
   #include <Library/BaseMemoryLib.h>
+  #include <Library/PcdLib.h>
   #include "../AuthServiceInternal.h"
 
   EFI_STATUS
@@ -426,8 +428,10 @@ FindVariableKekOnly (
   return EFI_NOT_FOUND;
 }
 
-STATIC UINT8  mScratchBuffer[512];
-STATIC UINTN  mUpdateVariableCallCount;
+STATIC UINT8               mScratchBuffer[512];
+STATIC UINTN               mUpdateVariableCallCount;
+STATIC std::vector<UINT8>  mUpdatedAuthenticatedPayload;
+STATIC UINT32              mUpdatedAuthenticatedAttributes;
 
 STATIC
 EFI_STATUS
@@ -452,8 +456,13 @@ UpdateVariableCountingSuccess (
   IN OUT AUTH_VARIABLE_INFO  *AuthVariableInfo
   )
 {
-  (VOID)AuthVariableInfo;
   mUpdateVariableCallCount++;
+  if (AuthVariableInfo->TimeStamp != NULL) {
+    UINT8  *Data = static_cast<UINT8 *>(AuthVariableInfo->Data);
+    mUpdatedAuthenticatedPayload.assign (Data, Data + AuthVariableInfo->DataSize);
+    mUpdatedAuthenticatedAttributes = AuthVariableInfo->Attributes;
+  }
+
   return EFI_SUCCESS;
 }
 
@@ -593,6 +602,406 @@ TEST_F (KekSelfSignedAppendTest, RejectsReplaceWithoutPkWhenNotAppending) {
     );
   EXPECT_EQ (mUpdateVariableCallCount, (UINTN)0);
 }
+
+STATIC CHAR16  mPkVariableName[]        = { 'P', 'K', 0 };
+STATIC CHAR16  mSetupModeVariableName[] = { 'S', 'e', 't', 'u', 'p', 'M', 'o', 'd', 'e', 0 };
+STATIC CHAR16  mDbxVariableName[]       = { 'd', 'b', 'x', 0 };
+STATIC CHAR16  mDbtVariableName[]       = { 'd', 'b', 't', 0 };
+
+STATIC struct {
+  CHAR16      *Name;
+  EFI_GUID    *Guid;
+} mSignatureListVariables[] = {
+  { mPkVariableName,  &gEfiGlobalVariableGuid        },
+  { mKekVariableName, &gEfiGlobalVariableGuid        },
+  { mDbVariableName,  &gEfiImageSecurityDatabaseGuid },
+  { mDbxVariableName, &gEfiImageSecurityDatabaseGuid },
+  { mDbtVariableName, &gEfiImageSecurityDatabaseGuid }
+};
+
+// These bytes are not DER certificates: this suite tests the mocked crypto boundary.
+STATIC CONST UINTN  mMockCertificateSize = 3;
+
+STATIC std::vector<UINT8>
+BuildMockCertificateList (
+  IN bool   V2,
+  IN UINTN  Count
+  )
+{
+  UINTN               OwnerSize = V2 ? 0 : sizeof (EFI_GUID);
+  UINTN               EntrySize = OwnerSize + mMockCertificateSize;
+  std::vector<UINT8>  Data (sizeof (EFI_SIGNATURE_LIST) + Count * EntrySize, 0xA5);
+  EFI_SIGNATURE_LIST  *List = reinterpret_cast<EFI_SIGNATURE_LIST *>(Data.data ());
+
+  List->SignatureType       = V2 ? gEfiCertV2X509Guid : gEfiCertX509Guid;
+  List->SignatureListSize   = (UINT32)Data.size ();
+  List->SignatureHeaderSize = 0;
+  List->SignatureSize       = (UINT32)EntrySize;
+  for (UINTN Index = 0; Index < Count; Index++) {
+    SetMem (Data.data () + sizeof (*List) + Index * EntrySize + OwnerSize, mMockCertificateSize, (UINT8)(Index + 1));
+  }
+
+  return Data;
+}
+
+STATIC
+EFI_STATUS
+EFIAPI
+FindVariableTrustedKeys (
+  IN  CHAR16              *VariableName,
+  IN  EFI_GUID            *VendorGuid,
+  OUT AUTH_VARIABLE_INFO  *AuthVariableInfo
+  )
+{
+  STATIC UINT8  SetupMode;
+
+  if (CompareGuid (VendorGuid, &gEfiGlobalVariableGuid) &&
+      (StrCmp (VariableName, mSetupModeVariableName) == 0))
+  {
+    SetupMode                   = (UINT8)mPlatformMode;
+    AuthVariableInfo->Data      = &SetupMode;
+    AuthVariableInfo->DataSize  = sizeof (SetupMode);
+    AuthVariableInfo->TimeStamp = NULL;
+    return EFI_SUCCESS;
+  }
+
+  if (CompareGuid (VendorGuid, &gEfiGlobalVariableGuid) &&
+      ((StrCmp (VariableName, mPkVariableName) == 0) || (StrCmp (VariableName, mKekVariableName) == 0)))
+  {
+    AuthVariableInfo->Data      = mExistingKekSignatureList.data ();
+    AuthVariableInfo->DataSize  = mExistingKekSignatureList.size ();
+    AuthVariableInfo->TimeStamp = NULL;
+    return EFI_SUCCESS;
+  }
+
+  return EFI_NOT_FOUND;
+}
+
+class FullX509SignatureListTest : public ::testing::TestWithParam<std::tuple<UINTN, bool> > {
+protected:
+  MockBaseCryptLib BaseCryptLibMock;
+  AUTH_VAR_LIB_CONTEXT_IN AuthVarContext;
+  AUTH_VAR_LIB_CONTEXT_IN *OriginalContext;
+  UINT32 OriginalPlatformMode;
+
+  VOID
+  SetUp (
+    ) override
+  {
+    OriginalContext      = mAuthVarLibContextIn;
+    OriginalPlatformMode = mPlatformMode;
+    ZeroMem (&AuthVarContext, sizeof (AuthVarContext));
+    AuthVarContext.FindVariable     = FindVariableTrustedKeys;
+    AuthVarContext.GetScratchBuffer = GetScratchBufferSuccess;
+    AuthVarContext.UpdateVariable   = UpdateVariableCountingSuccess;
+    AuthVarContext.AtRuntime        = AtRuntimeFalse;
+    mAuthVarLibContextIn            = &AuthVarContext;
+    mExistingKekSignatureList       = BuildX509SignatureListEntry (0xAA);
+    mUpdateVariableCallCount        = 0;
+  }
+
+  VOID
+  TearDown (
+    ) override
+  {
+    mAuthVarLibContextIn = OriginalContext;
+    mPlatformMode        = OriginalPlatformMode;
+  }
+
+  EFI_STATUS
+  Check (
+    IN std::vector<UINT8>  &Data
+    )
+  {
+    auto  &Variable = mSignatureListVariables[std::get<0> (GetParam ())];
+
+    return CheckSignatureListFormat (Variable.Name, Variable.Guid, Data.data (), Data.size ());
+  }
+
+  VOID
+  ExpectCertificates (
+    IN UINT8  *Data,
+    IN UINTN  Count,
+    IN bool   V2,
+    IN bool   LastSupported
+    )
+  {
+    UINTN  OwnerSize = V2 ? 0 : sizeof (EFI_GUID);
+
+    for (UINTN Index = 0; Index < Count; Index++) {
+      EXPECT_CALL (
+        BaseCryptLibMock,
+        X509IsPublicKeySupported (
+          Data + sizeof (EFI_SIGNATURE_LIST) + Index * (OwnerSize + mMockCertificateSize) + OwnerSize,
+          mMockCertificateSize
+          )
+        )
+        .WillOnce (Return (((Index + 1 < Count) || LastSupported) ? TRUE : FALSE));
+    }
+  }
+
+  VOID
+  CheckThroughProcessVariable (
+    IN std::vector<UINT8>  &Payload,
+    IN UINTN               Count,
+    IN bool                LaterList,
+    IN bool                Supported = false
+    )
+  {
+    auto          &Variable  = mSignatureListVariables[std::get<0> (GetParam ())];
+    bool          V2         = std::get<1> (GetParam ());
+    CONST UINT32  Attributes = EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS |
+                               EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS;
+
+    for (UINTN Mode = 0; Mode < 2; Mode++) {
+      SCOPED_TRACE (Mode == 0 ? "SetupMode" : "authenticated UserMode");
+      std::vector<UINT8>  Data = BuildAuthenticatedVariableData ();
+      Data.pop_back ();
+      UINTN  PayloadOffset = Data.size ();
+      Data.insert (Data.end (), Payload.begin (), Payload.end ());
+      mPlatformMode            = Mode == 0 ? SETUP_MODE : USER_MODE;
+      mUpdateVariableCallCount = 0;
+      mUpdatedAuthenticatedPayload.clear ();
+      mUpdatedAuthenticatedAttributes = 0;
+
+      // db/dbx/dbt retry with KEK after PK rejects the payload.
+      UINTN  Passes = (!Supported && (std::get<0> (GetParam ()) >= 2)) ? 2 : 1;
+      if ((Mode != 0) || ((std::get<0> (GetParam ()) == 0) && FeaturePcdGet (PcdRequireSelfSignedPk))) {
+        EXPECT_CALL (BaseCryptLibMock, CmsGetSignerInfoNum (_, _))
+          .Times (Passes).WillRepeatedly (Return (1));
+        EXPECT_CALL (BaseCryptLibMock, Pkcs7Verify (_, _, _, _, _, _))
+          .Times (Passes).WillRepeatedly (Return (TRUE));
+        if (Mode != 0) {
+          UINT8  *TrustedCert = mExistingKekSignatureList.data () + sizeof (EFI_SIGNATURE_LIST) + sizeof (EFI_GUID);
+          EXPECT_CALL (BaseCryptLibMock, Pkcs7GetSigners (_, _, _, _, _, _))
+            .WillOnce (
+               ::testing::DoAll (
+                            ::testing::SetArgPointee<4> (TrustedCert),
+                            ::testing::SetArgPointee<5> ((UINTN)1),
+                            Return (TRUE)
+                            )
+               );
+          EXPECT_CALL (BaseCryptLibMock, Pkcs7FreeSigners (TrustedCert)).Times (1);
+        }
+      } else {
+        EXPECT_CALL (BaseCryptLibMock, CmsGetSignerInfoNum (_, _)).Times (0);
+        EXPECT_CALL (BaseCryptLibMock, Pkcs7Verify (_, _, _, _, _, _)).Times (0);
+      }
+
+      {
+        ::testing::InSequence  Sequence;
+        if (Count == 0) {
+          EXPECT_CALL (BaseCryptLibMock, X509IsPublicKeySupported (_, _)).Times (0);
+        }
+
+        for (UINTN Pass = 0; Pass < Passes; Pass++) {
+          UINT8  *List = Data.data () + PayloadOffset;
+          if (LaterList) {
+            ExpectCertificates (List, 1, V2, true);
+            List += reinterpret_cast<EFI_SIGNATURE_LIST *>(List)->SignatureListSize;
+            ExpectCertificates (List, Count, !V2, Supported);
+          } else if (Count != 0) {
+            ExpectCertificates (List, Count, V2, Supported);
+          }
+        }
+      }
+
+      EXPECT_EQ (
+        AuthVariableLibProcessVariable (Variable.Name, Variable.Guid, Data.data (), Data.size (), Attributes),
+        Supported ? EFI_SUCCESS : EFI_INVALID_PARAMETER
+        );
+      if (Supported) {
+        EXPECT_GT (mUpdateVariableCallCount, (UINTN)0);
+        EXPECT_EQ (mUpdatedAuthenticatedPayload, Payload);
+        EXPECT_EQ (mUpdatedAuthenticatedAttributes, Attributes);
+      } else {
+        EXPECT_EQ (mUpdateVariableCallCount, (UINTN)0);
+      }
+
+      ::testing::Mock::VerifyAndClearExpectations (&BaseCryptLibMock);
+    }
+  }
+};
+
+TEST_P (FullX509SignatureListTest, AcceptsSupportedCertificateWithExactCryptoSpan) {
+  bool                V2   = std::get<1> (GetParam ());
+  std::vector<UINT8>  Data = BuildMockCertificateList (V2, 1);
+
+  ExpectCertificates (Data.data (), 1, V2, true);
+  EXPECT_EQ (Check (Data), EFI_SUCCESS);
+}
+
+TEST_P (FullX509SignatureListTest, RejectsUnsupportedFirstCertificate) {
+  bool                V2   = std::get<1> (GetParam ());
+  std::vector<UINT8>  Data = BuildMockCertificateList (V2, 1);
+
+  ExpectCertificates (Data.data (), 1, V2, false);
+  EXPECT_EQ (Check (Data), EFI_INVALID_PARAMETER);
+}
+
+TEST_P (FullX509SignatureListTest, ChecksEveryCertificateInLaterMixedFormatList) {
+  bool                V2          = std::get<1> (GetParam ());
+  std::vector<UINT8>  Data        = BuildMockCertificateList (V2, 1);
+  UINTN               LaterCount  = V2 ? 2 : 1;
+  std::vector<UINT8>  Later       = BuildMockCertificateList (!V2, LaterCount);
+  UINTN               LaterOffset = Data.size ();
+
+  Data.insert (Data.end (), Later.begin (), Later.end ());
+  ::testing::InSequence  Sequence;
+
+  ExpectCertificates (Data.data (), 1, V2, true);
+  ExpectCertificates (Data.data () + LaterOffset, LaterCount, !V2, false);
+  EXPECT_EQ (Check (Data), EFI_INVALID_PARAMETER);
+}
+
+TEST_P (FullX509SignatureListTest, AcceptsSupportedMixedFormatListsExceptMultiplePk) {
+  bool                V2          = std::get<1> (GetParam ());
+  std::vector<UINT8>  Data        = BuildMockCertificateList (V2, 1);
+  UINTN               LaterCount  = V2 ? 2 : 1;
+  std::vector<UINT8>  Later       = BuildMockCertificateList (!V2, LaterCount);
+  UINTN               LaterOffset = Data.size ();
+
+  Data.insert (Data.end (), Later.begin (), Later.end ());
+  ::testing::InSequence  Sequence;
+
+  ExpectCertificates (Data.data (), 1, V2, true);
+  ExpectCertificates (Data.data () + LaterOffset, LaterCount, !V2, true);
+  EXPECT_EQ (Check (Data), std::get<0> (GetParam ()) == 0 ? EFI_INVALID_PARAMETER : EFI_SUCCESS);
+}
+
+TEST_P (FullX509SignatureListTest, RejectsMalformedListsBeforeCrypto) {
+  bool  V2 = std::get<1> (GetParam ());
+
+  EXPECT_CALL (BaseCryptLibMock, X509IsPublicKeySupported (_, _)).Times (0);
+
+  for (UINTN Case = 0; Case < (V2 ? 15 : 13); Case++) {
+    SCOPED_TRACE (Case);
+    std::vector<UINT8>  Data  = BuildMockCertificateList (V2, 1);
+    EFI_SIGNATURE_LIST  *List = reinterpret_cast<EFI_SIGNATURE_LIST *>(Data.data ());
+    switch (Case) {
+      case 0:
+        List->SignatureListSize = 0;
+        break;
+      case 1:
+        List->SignatureSize = 0;
+        break;
+      case 2:
+        Data.resize (sizeof (EFI_SIGNATURE_LIST) - 1);
+        break;
+      case 3:
+        List->SignatureListSize = sizeof (EFI_SIGNATURE_LIST) - 1;
+        break;
+      case 4:
+        List->SignatureListSize++;
+        break;
+      case 5:
+        List->SignatureHeaderSize = List->SignatureListSize;
+        break;
+      case 6:
+        List->SignatureHeaderSize = MAX_UINT32;
+        break;
+      case 7:
+        List->SignatureSize = MAX_UINT32;
+        break;
+      case 8:
+        // A complete owner with no certificate (or zero-sized V2 entry).
+        List->SignatureSize     = V2 ? 0 : sizeof (EFI_GUID);
+        List->SignatureListSize = sizeof (EFI_SIGNATURE_LIST) + List->SignatureSize;
+        break;
+      case 9:
+        // V1 owner is truncated; V2 certificate entry exceeds the list.
+        List->SignatureSize     = V2 ? mMockCertificateSize + 1 : sizeof (EFI_GUID) - 1;
+        List->SignatureListSize = sizeof (EFI_SIGNATURE_LIST) + (V2 ? mMockCertificateSize : List->SignatureSize);
+        break;
+      case 10:
+        Data.push_back (0);
+        reinterpret_cast<EFI_SIGNATURE_LIST *>(Data.data ())->SignatureListSize++;
+        break;
+      case 11:
+        List->SignatureHeaderSize = 1;
+        break;
+      case 12:
+        Data = BuildMockCertificateList (V2, 0);
+        break;
+      default:
+        // V2 X.509 permits one certificate, not two or three.
+        Data = BuildMockCertificateList (true, Case - 11);
+        break;
+    }
+
+    EXPECT_EQ (Check (Data), EFI_INVALID_PARAMETER);
+  }
+}
+
+TEST_P (FullX509SignatureListTest, RejectsTruncatedTrailingList) {
+  bool                V2   = std::get<1> (GetParam ());
+  std::vector<UINT8>  Data = BuildMockCertificateList (V2, 1);
+
+  Data.push_back (0);
+
+  ExpectCertificates (Data.data (), 1, V2, true);
+  EXPECT_EQ (Check (Data), EFI_INVALID_PARAMETER);
+}
+
+TEST_P (FullX509SignatureListTest, AcceptsEmptyDeletionWithoutCrypto) {
+  std::vector<UINT8>  Data;
+
+  EXPECT_CALL (BaseCryptLibMock, X509IsPublicKeySupported (_, _)).Times (0);
+  EXPECT_EQ (Check (Data), EFI_SUCCESS);
+}
+
+TEST_P (FullX509SignatureListTest, ProcessVariableRejectsUnsupportedFirstWithoutUpdate) {
+  std::vector<UINT8>  Data = BuildMockCertificateList (std::get<1> (GetParam ()), 1);
+
+  CheckThroughProcessVariable (Data, 1, false);
+}
+
+TEST_P (FullX509SignatureListTest, ProcessVariableWritesSupportedCertificate) {
+  std::vector<UINT8>  Data = BuildMockCertificateList (std::get<1> (GetParam ()), 1);
+
+  CheckThroughProcessVariable (Data, 1, false, true);
+}
+
+TEST_P (FullX509SignatureListTest, ProcessVariableRejectsEmptyCertificateListWithoutUpdate) {
+  std::vector<UINT8>  Data = BuildMockCertificateList (std::get<1> (GetParam ()), 0);
+
+  CheckThroughProcessVariable (Data, 0, false);
+}
+
+TEST_P (FullX509SignatureListTest, ProcessVariableRejectsUnsupportedLaterV1OrMalformedV2WithoutUpdate) {
+  bool                V2   = std::get<1> (GetParam ());
+  std::vector<UINT8>  Data = BuildMockCertificateList (V2, 3);
+
+  CheckThroughProcessVariable (Data, V2 ? 0 : 3, false);
+}
+
+TEST_P (FullX509SignatureListTest, ProcessVariableRejectsUnsupportedLaterListWithoutUpdate) {
+  bool                V2         = std::get<1> (GetParam ());
+  std::vector<UINT8>  Data       = BuildMockCertificateList (V2, 1);
+  UINTN               LaterCount = V2 ? 2 : 1;
+  std::vector<UINT8>  Later      = BuildMockCertificateList (!V2, LaterCount);
+
+  Data.insert (Data.end (), Later.begin (), Later.end ());
+
+  CheckThroughProcessVariable (Data, LaterCount, true);
+}
+
+TEST_P (FullX509SignatureListTest, ProcessVariableRejectsMalformedListWithoutUpdate) {
+  std::vector<UINT8>  Data = BuildMockCertificateList (std::get<1> (GetParam ()), 1);
+
+  reinterpret_cast<EFI_SIGNATURE_LIST *>(Data.data ())->SignatureSize = 0;
+
+  CheckThroughProcessVariable (Data, 0, false);
+}
+
+INSTANTIATE_TEST_SUITE_P (
+  PkKekDbDbxDbtV1V2,
+  FullX509SignatureListTest,
+  ::testing::Combine (
+               ::testing::Values ((UINTN)0, (UINTN)1, (UINTN)2, (UINTN)3, (UINTN)4),
+               ::testing::Bool ()
+               )
+  );
 
 int
 main (
