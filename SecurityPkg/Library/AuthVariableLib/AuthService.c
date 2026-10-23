@@ -527,7 +527,9 @@ CheckSignatureListFormat (
   EFI_SIGNATURE_LIST  *SigList;
   UINTN               SigDataSize;
   UINT32              Index;
-  UINT32              SigCount;
+  UINTN               SigCount;
+  UINTN               ListDataSize;
+  UINTN               CertIndex;
   BOOLEAN             IsPk;
   UINT8               *CertData;
   UINTN               CertLen;
@@ -558,7 +560,21 @@ CheckSignatureListFormat (
   // Walk through the input signature list and check the data format.
   // If any signature is incorrectly formed, the whole check will fail.
   //
-  while ((SigDataSize > 0) && (SigDataSize >= SigList->SignatureListSize)) {
+  while (SigDataSize > 0) {
+    if ((SigDataSize < sizeof (EFI_SIGNATURE_LIST)) ||
+        (SigList->SignatureListSize < sizeof (EFI_SIGNATURE_LIST)) ||
+        (SigList->SignatureListSize > SigDataSize) ||
+        (SigList->SignatureHeaderSize > SigList->SignatureListSize - sizeof (EFI_SIGNATURE_LIST)) ||
+        (SigList->SignatureSize == 0))
+    {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    ListDataSize = SigList->SignatureListSize - sizeof (EFI_SIGNATURE_LIST) - SigList->SignatureHeaderSize;
+    if ((ListDataSize % SigList->SignatureSize) != 0) {
+      return EFI_INVALID_PARAMETER;
+    }
+
     for (Index = 0; Index < (sizeof (mSupportSigItem) / sizeof (EFI_SIGNATURE_ITEM)); Index++ ) {
       if (CompareGuid (&SigList->SignatureType, &mSupportSigItem[Index].SigType)) {
         //
@@ -595,30 +611,39 @@ CheckSignatureListFormat (
     if (CompareGuid (&SigList->SignatureType, &gEfiCertX509Guid) ||
         CompareGuid (&SigList->SignatureType, &gEfiCertV2X509Guid))
     {
+      // V2 X.509 requires exactly one certificate per signature list.
+      if (CompareGuid (&SigList->SignatureType, &gEfiCertV2X509Guid) &&
+          (ListDataSize != SigList->SignatureSize))
+      {
+        DEBUG ((DEBUG_ERROR, "CheckSignatureListFormat - V2 X509 list must contain one certificate\n"));
+        return EFI_INVALID_PARAMETER;
+      }
+
       //
-      // Verify that the X.509 certificate contains a supported public key.
+      // Verify every certificate, excluding the owner only in the V1 format.
       //
-      CertData = (UINT8 *)SigList + sizeof (EFI_SIGNATURE_LIST) + SigList->SignatureHeaderSize + mSupportSigItem[Index].SigOwnerSize;
+      CertData = (UINT8 *)SigList + sizeof (EFI_SIGNATURE_LIST) + SigList->SignatureHeaderSize;
       CertLen  = SigList->SignatureSize - mSupportSigItem[Index].SigOwnerSize;
 
-      if (!X509IsPublicKeySupported (CertData, CertLen)) {
-        DEBUG ((DEBUG_ERROR, "CheckSignatureListFormat - X509 public key unsupported\n"));
+      if ((CertLen == 0) || (ListDataSize == 0)) {
+        DEBUG ((DEBUG_ERROR, "CheckSignatureListFormat - empty X509 certificate or list\n"));
         return EFI_INVALID_PARAMETER;
+      }
+
+      for (CertIndex = 0; CertIndex < ListDataSize / SigList->SignatureSize; CertIndex++) {
+        if (!X509IsPublicKeySupported (CertData + mSupportSigItem[Index].SigOwnerSize, CertLen)) {
+          DEBUG ((DEBUG_ERROR, "CheckSignatureListFormat - X509 public key unsupported\n"));
+          return EFI_INVALID_PARAMETER;
+        }
+
+        CertData += SigList->SignatureSize;
       }
     }
 
-    if ((SigList->SignatureListSize - sizeof (EFI_SIGNATURE_LIST) - SigList->SignatureHeaderSize) % SigList->SignatureSize != 0) {
-      return EFI_INVALID_PARAMETER;
-    }
-
-    SigCount += (SigList->SignatureListSize - sizeof (EFI_SIGNATURE_LIST) - SigList->SignatureHeaderSize) / SigList->SignatureSize;
+    SigCount += ListDataSize / SigList->SignatureSize;
 
     SigDataSize -= SigList->SignatureListSize;
     SigList      = (EFI_SIGNATURE_LIST *)((UINT8 *)SigList + SigList->SignatureListSize);
-  }
-
-  if (((UINTN)SigList - (UINTN)Data) != DataSize) {
-    return EFI_INVALID_PARAMETER;
   }
 
   if (IsPk && (SigCount > 1)) {
