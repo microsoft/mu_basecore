@@ -415,13 +415,18 @@ UsbSelectConfig (
   //
   // Create interfaces for each USB interface descriptor.
   //
-  for (Index = 0; Index < ConfigDesc->Desc.NumInterfaces; Index++) {
+  for (Index = 0; Index < Device->ActiveConfig->Desc.NumInterfaces; Index++) {
+    //
+    // A driver's Start() may reset the device and replace its descriptors.
+    //
+    ConfigDesc = Device->ActiveConfig;
+
     //
     // First select the default interface setting, and reset
     // the endpoint toggles to zero for its endpoints.
     //
     IfDesc = ConfigDesc->Interfaces[Index];
-    UsbSelectSetting (IfDesc, IfDesc->Settings[0]->Desc.AlternateSetting);
+    UsbSelectSetting (IfDesc, IfDesc->Settings[IfDesc->ActiveIndex]->Desc.AlternateSetting);
 
     //
     // Create a USB_INTERFACE and install USB_IO and other protocols

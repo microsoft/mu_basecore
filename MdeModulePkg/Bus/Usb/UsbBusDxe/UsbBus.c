@@ -896,8 +896,149 @@ ON_EXIT:
 }
 
 /**
+  Refresh the active configuration without replacing USB I/O handles or
+  connecting drivers. Interface numbers must remain unchanged.
+
+  @param  Dev                   The device to reconfigure.
+
+  @retval EFI_SUCCESS           The configuration and descriptors are refreshed.
+  @retval EFI_DEVICE_ERROR      The new configuration cannot use the existing handles.
+  @retval Others                Failed to read descriptors or configure the device.
+
+**/
+STATIC
+EFI_STATUS
+UsbResetConfig (
+  IN USB_DEVICE  *Dev
+  )
+{
+  USB_DEVICE             NewDev;
+  USB_DEVICE_DESC        *OldDesc;
+  USB_CONFIG_DESC        *ConfigDesc;
+  USB_INTERFACE_DESC     *IfDesc;
+  USB_INTERFACE_SETTING  *Setting;
+  USB_INTERFACE          *UsbIf;
+  EFI_STATUS             Status;
+  UINTN                  Index;
+  UINTN                  SettingIndex;
+  UINT8                  Config;
+
+  //
+  // Build into a temporary device so failures leave all cached pointers valid.
+  //
+  CopyMem (&NewDev, Dev, sizeof (NewDev));
+  NewDev.DevDesc     = NULL;
+  NewDev.IsSSDev     = FALSE;
+  NewDev.TotalLangId = 0;
+  ZeroMem (NewDev.LangId, sizeof (NewDev.LangId));
+
+  Status = UsbGetMaxPacketSize0 (&NewDev);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "UsbResetConfig: failed to get max packet size - %r\n", Status));
+    return Status;
+  }
+
+  Status = UsbBuildDescTable (&NewDev);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "UsbResetConfig: failed to build descriptor table - %r\n", Status));
+    goto ON_ERROR;
+  }
+
+  Config     = Dev->ActiveConfig->Desc.ConfigurationValue;
+  ConfigDesc = NULL;
+  for (Index = 0; Index < NewDev.DevDesc->Desc.NumConfigurations; Index++) {
+    if ((NewDev.DevDesc->Configs[Index] != NULL) &&
+        (NewDev.DevDesc->Configs[Index]->Desc.ConfigurationValue == Config))
+    {
+      ConfigDesc = NewDev.DevDesc->Configs[Index];
+      break;
+    }
+  }
+
+  Status = EFI_DEVICE_ERROR;
+  if ((ConfigDesc == NULL) ||
+      (ConfigDesc->Desc.NumInterfaces != Dev->ActiveConfig->Desc.NumInterfaces) ||
+      (ConfigDesc->Desc.NumInterfaces > USB_MAX_INTERFACE))
+  {
+    DEBUG ((DEBUG_ERROR, "UsbResetConfig: incompatible configuration after reset\n"));
+    goto ON_ERROR;
+  }
+
+  for (Index = 0; Index < ConfigDesc->Desc.NumInterfaces; Index++) {
+    IfDesc = ConfigDesc->Interfaces[Index];
+    if (IfDesc == NULL) {
+      DEBUG ((DEBUG_ERROR, "UsbResetConfig: missing interface %d\n", (UINT32)Index));
+      goto ON_ERROR;
+    }
+
+    //
+    // SET_CONFIGURATION selects alternate setting zero, not the old setting.
+    //
+    Setting = NULL;
+    for (SettingIndex = 0; SettingIndex < IfDesc->NumOfSetting; SettingIndex++) {
+      Setting = IfDesc->Settings[SettingIndex];
+      if ((Setting != NULL) && (Setting->Desc.AlternateSetting == 0)) {
+        break;
+      }
+    }
+
+    if ((SettingIndex == IfDesc->NumOfSetting) ||
+        (Setting->Desc.InterfaceNumber != Index) ||
+        (Setting->Desc.InterfaceClass == USB_HUB_CLASS_CODE))
+    {
+      DEBUG ((DEBUG_ERROR, "UsbResetConfig: incompatible interface %d after reset\n", (UINT32)Index));
+      goto ON_ERROR;
+    }
+
+    UsbIf = Dev->Interfaces[Index];
+    if ((UsbIf != NULL) &&
+        (UsbIf->IsHub || (UsbIf->IfSetting->Desc.InterfaceNumber != Index)))
+    {
+      DEBUG ((DEBUG_ERROR, "UsbResetConfig: cannot preserve interface %d\n", (UINT32)Index));
+      goto ON_ERROR;
+    }
+
+    IfDesc->ActiveIndex = SettingIndex;
+  }
+
+  Status = UsbSetConfig (&NewDev, Config);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "UsbResetConfig: failed to set configuration - %r\n", Status));
+    goto ON_ERROR;
+  }
+
+  OldDesc           = Dev->DevDesc;
+  Dev->DevDesc      = NewDev.DevDesc;
+  Dev->ActiveConfig = ConfigDesc;
+  Dev->MaxPacket0   = NewDev.MaxPacket0;
+  Dev->IsSSDev      = NewDev.IsSSDev;
+  Dev->TotalLangId  = NewDev.TotalLangId;
+  CopyMem (Dev->LangId, NewDev.LangId, sizeof (Dev->LangId));
+
+  for (Index = 0; Index < ConfigDesc->Desc.NumInterfaces; Index++) {
+    UsbIf = Dev->Interfaces[Index];
+    if (UsbIf != NULL) {
+      UsbIf->IfDesc    = ConfigDesc->Interfaces[Index];
+      UsbIf->IfSetting = UsbIf->IfDesc->Settings[UsbIf->IfDesc->ActiveIndex];
+    }
+  }
+
+  UsbFreeDevDesc (OldDesc);
+  return EFI_SUCCESS;
+
+ON_ERROR:
+  if (NewDev.DevDesc != NULL) {
+    UsbFreeDevDesc (NewDev.DevDesc);
+  }
+
+  return Status;
+}
+
+/**
   Reset the device, then if that succeeds, reconfigure the
   device with its address and current active configuration.
+  Refresh descriptors in place when the interface layout is compatible.
+  A changed interface layout requires re-enumeration instead.
 
   @param  This                   The USB IO instance.
 
@@ -911,14 +1052,12 @@ UsbIoPortReset (
   IN EFI_USB_IO_PROTOCOL  *This
   )
 {
-  USB_INTERFACE    *UsbIf;
-  USB_INTERFACE    *HubIf;
-  USB_DEVICE       *Dev;
-  EFI_TPL          OldTpl;
-  EFI_STATUS       Status;
-  UINT8            DevAddress;
-  UINT8            Config;
-  USB_DEVICE_DESC  *DevDesc;
+  USB_INTERFACE  *UsbIf;
+  USB_INTERFACE  *HubIf;
+  USB_DEVICE     *Dev;
+  EFI_TPL        OldTpl;
+  EFI_STATUS     Status;
+  UINT8          DevAddress;
 
   OldTpl = gBS->RaiseTPL (USB_BUS_TPL);
 
@@ -982,55 +1121,16 @@ UsbIoPortReset (
 
   DEBUG ((DEBUG_INFO, "UsbIoPortReset: device is now ADDRESSED at %d\n", Dev->Address));
 
-  // MU_CHANGE [BEGIN] 291137
-  //
-  // Endpoint descriptor state needs to be updated following a reset.
-  //
-  UsbUpdateDescriptors (Dev);
-  // MU_CHANGE [END]
-
   //
   // Reset the current active configure, after this device
   // is in CONFIGURED state.
   //
   if (Dev->ActiveConfig != NULL) {
-    Status = UsbGetMaxPacketSize0 (Dev);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "UsbIoPortReset: Failed to get max packet size - %r\n", Status));
-    }
-
-    // Expect the Device Descriptor should not be changed.
-    // UEFI spec 2.11 Ch. 17.2.18 EFI_USB_IO_PROTOCOL.UsbPortReset
-    // This Reset function does not change the bus topology.
-
-    // Save the device descriptor before resetting and then restore it after build descriptor table
-    DevDesc      = Dev->DevDesc;
-    Dev->DevDesc = NULL;
-
-    Status = UsbBuildDescTable (Dev);
-
-    if (Dev->DevDesc != NULL) {
-      UsbFreeDevDesc (Dev->DevDesc);
-    }
-
-    Dev->DevDesc = DevDesc;
-
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "UsbIoPortReset: Failed to build descriptor table - %r\n", Status));
-      goto ON_EXIT;
-    }
-
-    Config = Dev->DevDesc->Configs[0]->Desc.ConfigurationValue;
-
-    Status = UsbSetConfig (Dev, Config);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "UsbIoPortReset: failed to set configure for device %d - %r\n",
-        Dev->Address,
-        Status
-        ));
-    }
+    Status = UsbResetConfig (Dev);
+  } else {
+    // MU_CHANGE [BEGIN] 291137
+    UsbUpdateDescriptors (Dev);
+    // MU_CHANGE [END]
   }
 
 ON_EXIT:
