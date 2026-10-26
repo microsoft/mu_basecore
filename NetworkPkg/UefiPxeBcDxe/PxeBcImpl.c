@@ -1586,9 +1586,11 @@ EfiPxeBcUdpRead (
   if (Mode->UsingIpv6) {
     Private->Udp6Read->Cancel (Private->Udp6Read, &Private->Udp6Token);
     gBS->CloseEvent (Private->Udp6Token.Event);
+    Private->Udp6Token.Event = NULL;
   } else {
     Private->Udp4Read->Cancel (Private->Udp4Read, &Private->Udp4Token);
     gBS->CloseEvent (Private->Udp4Token.Event);
+    Private->Udp4Token.Event = NULL;
   }
 
   // MU_CHANGE [END] - Track UDP completion tokens
