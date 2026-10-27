@@ -123,7 +123,7 @@ UsbSelectSetting (
 
   @param  Device                The device to select configuration.
   @param  ConfigIndex           The index of the configuration ( != 0).
-  @param  ConnectDrivers        Whether to connect function drivers immediately.
+  @param  ConnectDrivers        Whether to connect function drivers.
 
   @retval EFI_NOT_FOUND         There is no configuration with the index.
   @retval EFI_OUT_OF_RESOURCES  Failed to allocate resource.
@@ -138,67 +138,10 @@ UsbSelectConfig (
   );
 
 /**
-  Connect an interface while pinning its device across driver binding.
-
-  @param UsbIf                  The interface to connect.
-
-  @retval EFI_NOT_READY         Reset or recursive binding blocks connection.
-  @retval Others                The result of connecting the interface.
+  Connect an interface, guarding bus-owned driver binding against reset teardown.
 **/
 EFI_STATUS
 UsbConnectDriver (
-  IN USB_INTERFACE  *UsbIf
-  );
-
-/**
-  Check that software-requested replacement will not stop an active consumer.
-
-  @param Device                 The old device, whose objects remain installed.
-
-  @retval EFI_SUCCESS           No driver ownership or asynchronous work remains.
-  @retval Others                The device cannot yet be safely retired.
-**/
-EFI_STATUS
-UsbDeviceIsQuiesced (
-  IN USB_DEVICE  *Device
-  );
-
-/**
-  Clean up disconnected interfaces and their retained descriptor trees.
-
-  @param Device                 The device retaining old interface generations.
-  @param DisconnectDrivers      Whether normal teardown may stop their drivers.
-
-  @retval EFI_SUCCESS           All retired configurations were removed.
-  @retval Others                Active consumers or teardown failure retained state.
-**/
-EFI_STATUS
-UsbRemoveRetiredConfigs (
-  IN USB_DEVICE  *Device,
-  IN BOOLEAN     DisconnectDrivers
-  );
-
-/**
-  Check that an interface's consumers have released it before retirement.
-
-  @param UsbIf                  The interface to retire.
-  @retval EFI_SUCCESS           No owner or asynchronous work remains.
-  @retval Others                The interface cannot yet be safely retired.
-**/
-EFI_STATUS
-UsbInterfaceIsQuiesced (
-  IN USB_INTERFACE  *UsbIf
-  );
-
-/**
-  Free an interface after its consumers and transfers have released it.
-
-  @param UsbIf                  The interface to free.
-  @retval EFI_SUCCESS           The interface was uninstalled and freed.
-  @retval Others                The interface remains installed.
-**/
-EFI_STATUS
-UsbFreeInterface (
   IN USB_INTERFACE  *UsbIf
   );
 
@@ -207,8 +150,7 @@ UsbFreeInterface (
 
   @param  Device                The USB device to remove configuration from.
 
-  @retval EFI_SUCCESS           All interfaces were retired.
-  @retval Others                Active work or teardown failure retained old state.
+  @return None.
 
 **/
 EFI_STATUS
@@ -222,7 +164,6 @@ UsbRemoveConfig (
   @param  Device                The device to remove.
 
   @retval EFI_SUCCESS           The device is removed.
-  @retval EFI_NOT_READY         A reset, binding, or asynchronous callback is active.
 
 **/
 EFI_STATUS

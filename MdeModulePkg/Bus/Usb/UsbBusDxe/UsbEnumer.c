@@ -55,18 +55,6 @@ UsbFreeInterface (
   )
 {
   EFI_STATUS  Status;
-  UINTN       Index;
-
-  if (UsbIf->Device->AsyncCallbacks != 0) {
-    return EFI_NOT_READY;
-  }
-
-  for (Index = 0; Index < ARRAY_SIZE (UsbIf->AsyncTransfers); Index++) {
-    if (UsbIf->AsyncTransfers[Index] != NULL) {
-      DEBUG ((DEBUG_ERROR, "UsbFreeInterface: asynchronous transfer is still queued\n"));
-      return EFI_NOT_READY;
-    }
-  }
 
   UsbCloseHostProtoByChild (UsbIf->Device->Bus, UsbIf->Handle);
 
@@ -98,13 +86,17 @@ UsbFreeInterface (
   @param  Device                The device has the interface descriptor.
   @param  IfDesc                The interface descriptor.
 
-  @return The created USB interface for the descriptor, or NULL.
+  @param  Result                The published interface on success.
+
+  @retval EFI_SUCCESS           The interface was published.
+  @retval Others                Allocation or protocol installation failed.
 
 **/
-USB_INTERFACE *
+EFI_STATUS
 UsbCreateInterface (
   IN USB_DEVICE          *Device,
-  IN USB_INTERFACE_DESC  *IfDesc
+  IN USB_INTERFACE_DESC  *IfDesc,
+  OUT USB_INTERFACE      **Result
   )
 {
   USB_DEVICE_PATH  UsbNode;
@@ -115,7 +107,7 @@ UsbCreateInterface (
   UsbIf = AllocateZeroPool (sizeof (USB_INTERFACE));
 
   if (UsbIf == NULL) {
-    return NULL;
+    return EFI_OUT_OF_RESOURCES;
   }
 
   UsbIf->Signature = USB_INTERFACE_SIGNATURE;
@@ -185,18 +177,8 @@ UsbCreateInterface (
     goto ON_ERROR;
   }
 
-  DEBUG ((
-    DEBUG_INFO,
-    "UsbCreateInterface: published %04x:%04x interface %d at port %d@hub %d, handle %p\n",
-    Device->DevDesc->Desc.IdVendor,
-    Device->DevDesc->Desc.IdProduct,
-    UsbIf->IfSetting->Desc.InterfaceNumber,
-    Device->ParentPort,
-    Device->ParentAddr,
-    UsbIf->Handle
-    ));
-
-  return UsbIf;
+  *Result = UsbIf;
+  return EFI_SUCCESS;
 
 ON_ERROR:
   if (UsbIf->DevicePath != NULL) {
@@ -204,7 +186,7 @@ ON_ERROR:
   }
 
   FreePool (UsbIf);
-  return NULL;
+  return Status;
 }
 
 /**
@@ -218,8 +200,6 @@ UsbFreeDevice (
   IN USB_DEVICE  *Device
   )
 {
-  ASSERT (Device->RetiredConfigs == NULL);
-
   if (Device->DevDesc != NULL) {
     UsbFreeDevDesc (Device->DevDesc);
   }
@@ -285,18 +265,13 @@ UsbConnectDriver (
   EFI_STATUS  Status;
   EFI_TPL     OldTpl;
 
-  if (UsbIf->Device->ResetInProgress || (UsbIf->Device->BindingInProgress != 0)) {
-    DEBUG ((DEBUG_INFO, "UsbConnectDriver: reset or binding is in progress\n"));
+  if (!UsbIf->Device->Connected || UsbIf->Device->ResetInProgress || UsbIf->Device->BindingInProgress) {
+    DEBUG ((DEBUG_INFO, "UsbConnectDriver: device offline or reset/binding active\n"));
     return EFI_NOT_READY;
   }
 
-  if (!UsbIf->Device->Connected || UsbIf->Disconnected) {
-    DEBUG ((DEBUG_ERROR, "UsbConnectDriver: device %d is offline\n", UsbIf->Device->Address));
-    return EFI_DEVICE_ERROR;
-  }
-
-  UsbIf->Device->BindingInProgress++;
-  Status = EFI_SUCCESS;
+  UsbIf->Device->BindingInProgress = TRUE;
+  Status                           = EFI_SUCCESS;
 
   //
   // Hub is maintained by the USB bus driver. Otherwise try to
@@ -337,7 +312,7 @@ UsbConnectDriver (
     }
   }
 
-  UsbIf->Device->BindingInProgress--;
+  UsbIf->Device->BindingInProgress = FALSE;
   return Status;
 }
 
@@ -407,7 +382,7 @@ UsbSelectSetting (
 
   @param  Device                The device to select configuration.
   @param  ConfigValue           The index of the configuration ( != 0).
-  @param  ConnectDrivers        Whether to connect function drivers immediately.
+  @param  ConnectDrivers        Whether to connect function drivers.
 
   @retval EFI_NOT_FOUND         There is no configuration with the index.
   @retval EFI_OUT_OF_RESOURCES  Failed to allocate resource.
@@ -474,33 +449,21 @@ UsbSelectConfig (
     // the endpoint toggles to zero for its endpoints.
     //
     IfDesc = ConfigDesc->Interfaces[Index];
-    Status = UsbSelectSetting (IfDesc, 0);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "UsbSelectConfig: no default setting for interface %d - %r\n", Index, Status));
-      return Status;
-    }
+    UsbSelectSetting (IfDesc, IfDesc->Settings[IfDesc->ActiveIndex]->Desc.AlternateSetting);
 
     //
     // Create a USB_INTERFACE and install USB_IO and other protocols
     //
-    UsbIf = Device->Interfaces[Index];
-    if (UsbIf == NULL) {
-      UsbIf = UsbCreateInterface (Device, ConfigDesc->Interfaces[Index]);
-      if (UsbIf == NULL) {
-        if (ConnectDrivers) {
-          Device->NumOfInterface = Index;
-        }
+    Status = UsbCreateInterface (Device, ConfigDesc->Interfaces[Index], &UsbIf);
 
-        return EFI_OUT_OF_RESOURCES;
-      }
-
-      Device->Interfaces[Index] = UsbIf;
+    if (EFI_ERROR (Status)) {
+      Device->NumOfInterface = Index;
+      return Status;
     }
 
     ASSERT (Index < USB_MAX_INTERFACE);
-    if (ConnectDrivers) {
-      Device->NumOfInterface = (UINT8)(Index + 1);
-    }
+    Device->Interfaces[Index] = UsbIf;
+    Device->NumOfInterface    = (UINT8)(Index + 1);
 
     if (!ConnectDrivers) {
       continue;
@@ -525,13 +488,6 @@ UsbSelectConfig (
       DEBUG ((DEBUG_ERROR, "UsbSelectConfig: device went offline during driver binding\n"));
       return EFI_DEVICE_ERROR;
     }
-
-    if (Device->ActiveConfig != ConfigDesc) {
-      //
-      // Reset already published the new configuration without driver binding.
-      //
-      return EFI_SUCCESS;
-    }
   }
 
   Device->NumOfInterface = Index;
@@ -543,13 +499,11 @@ UsbSelectConfig (
   Disconnect the USB interface with its driver.
 
   @param  UsbIf                 The interface to disconnect driver from.
-  @param  Force                 Disconnect drivers even if not connected by the bus.
 
 **/
 EFI_STATUS
 UsbDisconnectDriver (
-  IN USB_INTERFACE  *UsbIf,
-  IN BOOLEAN        Force
+  IN USB_INTERFACE  *UsbIf
   )
 {
   EFI_TPL     OldTpl;
@@ -562,7 +516,7 @@ UsbDisconnectDriver (
   Status = EFI_SUCCESS;
   if (UsbIf->IsHub) {
     Status = UsbIf->HubApi->Release (UsbIf);
-  } else if (UsbIf->IsManaged || Force) {
+  } else {
     //
     // This function is called in both UsbIoControlTransfer and
     // the timer callback in hub enumeration. So, at least it is
@@ -573,7 +527,9 @@ UsbDisconnectDriver (
     OldTpl = UsbGetCurrentTpl ();
     DEBUG ((DEBUG_INFO, "UsbDisconnectDriver: old TPL is %d, %p\n", (UINT32)OldTpl, UsbIf->Handle));
 
-    gBS->RestoreTPL (TPL_CALLBACK);
+    if (OldTpl > TPL_CALLBACK) {
+      gBS->RestoreTPL (TPL_CALLBACK);
+    }
 
     Status = gBS->DisconnectController (UsbIf->Handle, NULL, NULL);
     if (!EFI_ERROR (Status)) {
@@ -581,192 +537,14 @@ UsbDisconnectDriver (
     }
 
     DEBUG ((DEBUG_INFO, "UsbDisconnectDriver: TPL after disconnect is %d, %d\n", (UINT32)UsbGetCurrentTpl (), Status));
-    ASSERT (UsbGetCurrentTpl () == TPL_CALLBACK);
+    ASSERT (UsbGetCurrentTpl () == ((OldTpl > TPL_CALLBACK) ? TPL_CALLBACK : OldTpl));
 
-    gBS->RaiseTPL (OldTpl);
+    if (OldTpl > TPL_CALLBACK) {
+      gBS->RaiseTPL (OldTpl);
+    }
   }
 
   return Status;
-}
-
-/**
-  Require consumers to release an interface before software-driven replacement.
-**/
-EFI_STATUS
-UsbInterfaceIsQuiesced (
-  IN USB_INTERFACE  *UsbIf
-  )
-{
-  EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  *Entries;
-  EFI_GUID                             *Protocols[2];
-  USB_DEVICE                           *Device;
-  EFI_STATUS                           Status;
-  UINTN                                ProtocolIndex;
-  UINTN                                EntryIndex;
-  UINTN                                EntryCount;
-  UINTN                                TransferIndex;
-
-  Device = UsbIf->Device;
-  if ((Device->BindingInProgress != 0) || (Device->AsyncCallbacks != 0)) {
-    DEBUG ((DEBUG_INFO, "UsbInterfaceIsQuiesced: device %d has an active binding or callback\n", Device->Address));
-    return EFI_NOT_READY;
-  }
-
-  if (UsbIf->IsHub) {
-    DEBUG ((DEBUG_ERROR, "UsbInterfaceIsQuiesced: cannot replace a hub interface\n"));
-    return EFI_ACCESS_DENIED;
-  }
-
-  for (TransferIndex = 0; TransferIndex < ARRAY_SIZE (UsbIf->AsyncTransfers); TransferIndex++) {
-    if (UsbIf->AsyncTransfers[TransferIndex] != NULL) {
-      DEBUG ((DEBUG_INFO, "UsbInterfaceIsQuiesced: device %d still has asynchronous transfers\n", Device->Address));
-      return EFI_NOT_READY;
-    }
-  }
-
-  Protocols[0] = &gEfiUsbIoProtocolGuid;
-  Protocols[1] = &gEfiDevicePathProtocolGuid;
-  for (ProtocolIndex = 0; ProtocolIndex < ARRAY_SIZE (Protocols); ProtocolIndex++) {
-    Status = gBS->OpenProtocolInformation (UsbIf->Handle, Protocols[ProtocolIndex], &Entries, &EntryCount);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "UsbInterfaceIsQuiesced: failed to query interface ownership - %r\n", Status));
-      return Status;
-    }
-
-    Status = EFI_SUCCESS;
-    for (EntryIndex = 0; EntryIndex < EntryCount; EntryIndex++) {
-      if ((Entries[EntryIndex].Attributes &
-           (EFI_OPEN_PROTOCOL_BY_DRIVER | EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER | EFI_OPEN_PROTOCOL_EXCLUSIVE)) != 0)
-      {
-        Status = EFI_ACCESS_DENIED;
-        break;
-      }
-    }
-
-    if (Entries != NULL) {
-      FreePool (Entries);
-    }
-
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_INFO, "UsbInterfaceIsQuiesced: device %d interface %d still has an owner\n", Device->Address, UsbIf->IfSetting->Desc.InterfaceNumber));
-      return Status;
-    }
-  }
-
-  return EFI_SUCCESS;
-}
-
-/**
-  Check all remaining interfaces before deferred whole-device recovery.
-**/
-EFI_STATUS
-UsbDeviceIsQuiesced (
-  IN USB_DEVICE  *Device
-  )
-{
-  EFI_STATUS          Status;
-  UINTN               Index;
-  USB_RETIRED_CONFIG  *Retired;
-
-  if ((Device->BindingInProgress != 0) || (Device->AsyncCallbacks != 0)) {
-    return EFI_NOT_READY;
-  }
-
-  for (Index = 0; Index < Device->NumOfInterface; Index++) {
-    if (Device->Interfaces[Index] == NULL) {
-      continue;
-    }
-
-    Status = UsbInterfaceIsQuiesced (Device->Interfaces[Index]);
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
-  }
-
-  for (Retired = Device->RetiredConfigs; Retired != NULL; Retired = Retired->Next) {
-    for (Index = 0; Index < Retired->NumOfInterface; Index++) {
-      if (Retired->Interfaces[Index] == NULL) {
-        continue;
-      }
-
-      Status = UsbInterfaceIsQuiesced (Retired->Interfaces[Index]);
-      if (EFI_ERROR (Status)) {
-        return Status;
-      }
-    }
-  }
-
-  return EFI_SUCCESS;
-}
-
-/**
-  Remove retained interfaces after their consumers release them, or as part
-  of normal configuration teardown when DisconnectDrivers is TRUE.
-**/
-EFI_STATUS
-UsbRemoveRetiredConfigs (
-  IN USB_DEVICE  *Device,
-  IN BOOLEAN     DisconnectDrivers
-  )
-{
-  USB_RETIRED_CONFIG  **Link;
-  USB_RETIRED_CONFIG  *Retired;
-  USB_INTERFACE       *UsbIf;
-  EFI_STATUS          Status;
-  EFI_STATUS          ReturnStatus;
-  BOOLEAN             Empty;
-  UINTN               Index;
-
-  if (Device->ResetInProgress || (Device->BindingInProgress != 0) || (Device->AsyncCallbacks != 0)) {
-    return EFI_NOT_READY;
-  }
-
-  ReturnStatus = EFI_SUCCESS;
-  Link         = &Device->RetiredConfigs;
-  while (*Link != NULL) {
-    Retired = *Link;
-    Empty   = TRUE;
-    for (Index = 0; Index < Retired->NumOfInterface; Index++) {
-      UsbIf = Retired->Interfaces[Index];
-      if (UsbIf == NULL) {
-        continue;
-      }
-
-      Status = DisconnectDrivers ? EFI_SUCCESS : UsbInterfaceIsQuiesced (UsbIf);
-      if (!EFI_ERROR (Status)) {
-        //
-        // Stop() and protocol removal can dispatch notifications.
-        //
-        Device->BindingInProgress++;
-        Status = UsbDisconnectDriver (UsbIf, DisconnectDrivers);
-        if (!EFI_ERROR (Status)) {
-          Status = UsbFreeInterface (UsbIf);
-        }
-
-        Device->BindingInProgress--;
-        if (EFI_ERROR (Status)) {
-          DEBUG ((DEBUG_ERROR, "UsbRemoveRetiredConfigs: interface teardown failed - %r\n", Status));
-        }
-      }
-
-      if (EFI_ERROR (Status)) {
-        ReturnStatus = Status;
-        Empty        = FALSE;
-      } else {
-        Retired->Interfaces[Index] = NULL;
-      }
-    }
-
-    if (Empty) {
-      *Link = Retired->Next;
-      UsbFreeDevDesc (Retired->DevDesc);
-      FreePool (Retired);
-    } else {
-      Link = &Retired->Next;
-    }
-  }
-
-  return ReturnStatus;
 }
 
 /**
@@ -785,11 +563,6 @@ UsbRemoveConfig (
   EFI_STATUS     Status;
   EFI_STATUS     ReturnStatus;
 
-  if (Device->ResetInProgress || (Device->BindingInProgress != 0) || (Device->AsyncCallbacks != 0)) {
-    DEBUG ((DEBUG_ERROR, "UsbRemoveConfig: binding or callback is still executing\n"));
-    return EFI_NOT_READY;
-  }
-
   //
   // Remove each interface of the device
   //
@@ -802,15 +575,10 @@ UsbRemoveConfig (
       continue;
     }
 
-    Status = UsbRemoveRetiredConfigs (Device, TRUE);
-    if (EFI_ERROR (Status)) {
-      ReturnStatus = Status;
-    }
-
-    Status = UsbDisconnectDriver (UsbIf, (BOOLEAN) !Device->Connected);
+    Status = UsbDisconnectDriver (UsbIf);
     if (!EFI_ERROR (Status)) {
       Status = UsbFreeInterface (UsbIf);
-      if (EFI_ERROR (Status) && Device->Connected && !UsbIf->Disconnected) {
+      if (EFI_ERROR (Status) && Device->Connected && !Device->ResetInProgress) {
         UsbConnectDriver (UsbIf);
       }
     }
@@ -823,7 +591,8 @@ UsbRemoveConfig (
   }
 
   if (!EFI_ERROR (ReturnStatus)) {
-    Device->ActiveConfig = NULL;
+    Device->ActiveConfig   = NULL;
+    Device->NumOfInterface = 0;
   }
 
   return ReturnStatus;
@@ -835,7 +604,6 @@ UsbRemoveConfig (
   @param  Device                The device to remove.
 
   @retval EFI_SUCCESS           The device is removed.
-  @retval EFI_NOT_READY         A reset, binding, or asynchronous callback is active.
 
 **/
 EFI_STATUS
@@ -849,8 +617,8 @@ UsbRemoveDevice (
   EFI_STATUS  ReturnStatus;
   UINTN       Index;
 
-  if (Device->ResetInProgress || (Device->BindingInProgress != 0) || (Device->AsyncCallbacks != 0)) {
-    DEBUG ((DEBUG_ERROR, "UsbRemoveDevice: reset, binding, or callback in progress for device %d\n", Device->Address));
+  if (Device->ResetInProgress || Device->BindingInProgress) {
+    DEBUG ((DEBUG_INFO, "UsbRemoveDevice: reset or binding active\n"));
     return EFI_NOT_READY;
   }
 
@@ -1199,7 +967,7 @@ ON_ERROR:
   OriginalStatus = Status;
   if ((Child != NULL) && (Child->NumOfInterface != 0)) {
     //
-    // Installed interfaces still own the descriptor tree. Do not retry in place.
+    // Installed interfaces still reference these descriptors.
     //
     return OriginalStatus;
   }
@@ -1243,8 +1011,7 @@ ON_ERROR:
 }
 
 /**
-  Process the events on the port, including software-requested reset recovery.
-  Recovery does not require hardware change bits and always resets the port.
+  Process the events on the port.
 
   @param  HubIf                 The HUB that has the device connected.
   @param  Port                  The port index of the hub (started with zero).
@@ -1264,23 +1031,11 @@ UsbEnumeratePort (
   USB_DEVICE           *Child;
   EFI_USB_PORT_STATUS  PortState;
   EFI_STATUS           Status;
-  EFI_STATUS           RemoveStatus;
-  USB_BUS              *Bus;
-  BOOLEAN              Recover;
-  BOOLEAN              RecoveryInProgress;
-  UINTN                Index;
 
-  Bus     = HubIf->Device->Bus;
-  Child   = UsbFindChild (HubIf, Port);
-  HubApi  = HubIf->HubApi;
-  Recover = (BOOLEAN)((Child != NULL) && Child->Reenumerate);
+  EFI_STATUS  RemoveStatus;
 
-  if ((Child != NULL) &&
-      (Child->ResetInProgress || (Child->BindingInProgress != 0) || (Child->AsyncCallbacks != 0)))
-  {
-    DEBUG ((DEBUG_INFO, "UsbEnumeratePort: device operation in progress on port %d\n", Port));
-    return EFI_NOT_READY;
-  }
+  Child  = NULL;
+  HubApi = HubIf->HubApi;
 
   // Zero out PortState in case GetPortStatus does not set
   // it and we continue on the EFI_DEVICE_ERROR path
@@ -1292,31 +1047,16 @@ UsbEnumeratePort (
   //
   Status = HubApi->GetPortStatus (HubIf, Port, &PortState);
 
-  if (EFI_ERROR (Status) && (Recover || (Status != EFI_DEVICE_ERROR))) {
+  if (EFI_ERROR (Status) && (Status != EFI_DEVICE_ERROR)) {
     DEBUG ((DEBUG_ERROR, "UsbEnumeratePort: failed to get state of port %d\n", Port));
     return Status;
-  }
-
-  if (Recover && USB_BIT_IS_SET (PortState.PortStatus, USB_PORT_STAT_CONNECTION)) {
-    RemoveStatus = UsbDeviceIsQuiesced (Child);
-    if (EFI_ERROR (RemoveStatus)) {
-      return RemoveStatus;
-    }
-
-    for (Index = 0; Index < Child->NumOfInterface; Index++) {
-      if (Child->Interfaces[Index] != NULL) {
-        Child->Interfaces[Index]->IsManaged = FALSE;
-      }
-    }
   }
 
   //
   // Only handle connection/enable/overcurrent/reset change.
   // Usb super speed hub may report other changes, such as warm reset change. Ignore them.
   //
-  if (!Recover &&
-      ((PortState.PortChangeStatus & (USB_PORT_STAT_C_CONNECTION | USB_PORT_STAT_C_ENABLE | USB_PORT_STAT_C_OVERCURRENT | USB_PORT_STAT_C_RESET)) == 0))
-  {
+  if ((PortState.PortChangeStatus & (USB_PORT_STAT_C_CONNECTION | USB_PORT_STAT_C_ENABLE | USB_PORT_STAT_C_OVERCURRENT | USB_PORT_STAT_C_RESET)) == 0) {
     return EFI_SUCCESS;
   }
 
@@ -1379,15 +1119,11 @@ UsbEnumeratePort (
   //
   Child = UsbFindChild (HubIf, Port);
 
-  if (Recover) {
-    DEBUG ((DEBUG_INFO, "UsbEnumeratePort: starting deferred recovery on port %d@hub %d\n", Port, HubIf->Device->Address));
-  }
-
   if (Child != NULL) {
     DEBUG ((DEBUG_INFO, "UsbEnumeratePort: device at port %d removed from root hub %p\n", Port, HubIf));
     RemoveStatus = UsbRemoveDevice (Child);
     if (EFI_ERROR (RemoveStatus)) {
-      DEBUG ((DEBUG_ERROR, "UsbEnumeratePort: failed to remove device on port %d - %r\n", Port, RemoveStatus));
+      DEBUG ((DEBUG_ERROR, "UsbEnumeratePort: old device removal failed - %r\n", RemoveStatus));
       return RemoveStatus;
     }
   }
@@ -1397,24 +1133,15 @@ UsbEnumeratePort (
     // Now, new device connected, enumerate and configure the device
     //
     DEBUG ((DEBUG_INFO, "UsbEnumeratePort: new device connected at port %d\n", Port));
-    RecoveryInProgress      = Bus->RecoveryInProgress;
-    Bus->RecoveryInProgress = (BOOLEAN)(RecoveryInProgress || Recover);
-    if (!Recover &&
-        USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_RESET) &&
+    if (USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_RESET) &&
         (Status != EFI_DEVICE_ERROR))
     {
       Status = UsbEnumerateNewDev (HubIf, Port, FALSE);
     } else {
       Status = UsbEnumerateNewDev (HubIf, Port, TRUE);
     }
-
-    Bus->RecoveryInProgress = RecoveryInProgress;
   } else {
     DEBUG ((DEBUG_INFO, "UsbEnumeratePort: device disconnected event on port %d\n", Port));
-  }
-
-  if (Recover) {
-    DEBUG ((DEBUG_INFO, "UsbEnumeratePort: deferred recovery on port %d@hub %d finished - %r\n", Port, HubIf->Device->Address, Status));
   }
 
   HubApi->ClearPortChange (HubIf, Port);
@@ -1447,7 +1174,7 @@ UsbHubEnumeration (
 
   for (Index = 0; Index < HubIf->NumOfPort; Index++) {
     Child = UsbFindChild (HubIf, Index);
-    if ((Child != NULL) && (Child->DisconnectFail == TRUE) && !Child->Reenumerate) {
+    if ((Child != NULL) && (Child->DisconnectFail == TRUE)) {
       DEBUG ((DEBUG_INFO, "UsbEnumeratePort: The device disconnect fails at port %d from hub %p, try again\n", Index, HubIf));
       UsbRemoveDevice (Child);
     }
@@ -1495,12 +1222,8 @@ UsbRootHubEnumeration (
   USB_INTERFACE  *RootHub;
   UINT8          Index;
   USB_DEVICE     *Child;
-  USB_BUS        *Bus;
-  UINTN          Address;
-  EFI_STATUS     Status;
 
   RootHub = (USB_INTERFACE *)Context;
-  Bus     = RootHub->Device->Bus;
 
   // MU_CHANGE [BEGIN]
   // MU_CHANGE Implement Enumeration delay
@@ -1510,38 +1233,8 @@ UsbRootHubEnumeration (
 
   // MU_CHANGE [END]
 
-  //
-  // The root timer also services devices behind external hubs, even when their
-  // interrupt endpoint reports no port changes. No separate event owns a child.
-  //
-  for (Address = 1; Address < Bus->MaxDevices; Address++) {
-    Child = Bus->Devices[Address];
-    if ((Child != NULL) && Child->Reenumerate) {
-      Status = UsbEnumeratePort (Child->ParentIf, Child->ParentPort);
-      if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "UsbRootHubEnumeration: deferred recovery failed - %r\n", Status));
-      }
-    }
-  }
-
-  for (Address = 1; Address < Bus->MaxDevices; Address++) {
-    Child = Bus->Devices[Address];
-    if ((Child == NULL) || (Child->RetiredConfigs == NULL)) {
-      continue;
-    }
-
-    Status = UsbRemoveRetiredConfigs (Child, FALSE);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_INFO, "UsbRootHubEnumeration: retained interfaces await cleanup - %r\n", Status));
-    }
-  }
-
   for (Index = 0; Index < RootHub->NumOfPort; Index++) {
     Child = UsbFindChild (RootHub, Index);
-    if ((Child != NULL) && Child->Reenumerate) {
-      continue;
-    }
-
     if ((Child != NULL) && (Child->DisconnectFail == TRUE)) {
       DEBUG ((DEBUG_INFO, "UsbEnumeratePort: The device disconnect fails at port %d from root hub %p, try again\n", Index, RootHub));
       UsbRemoveDevice (Child);

@@ -82,7 +82,7 @@ UsbIoControlTransfer (
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
   // MU_CHANGE [BEGIN]
-  if ((Dev->Connected == FALSE) || UsbIf->Disconnected) {
+  if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoControlTransfer No media\n"));
     goto ON_EXIT;
@@ -190,12 +190,7 @@ UsbIoControlTransfer (
     if (Dev->ActiveConfig != NULL) {
       Status = UsbRemoveConfig (Dev);
       if (EFI_ERROR (Status)) {
-        Dev->Connected = FALSE;
-        if (!Dev->Bus->RecoveryInProgress) {
-          Dev->Reenumerate = TRUE;
-        }
-
-        DEBUG ((DEBUG_ERROR, "UsbIoControlTransfer: failed to remove old configuration - %r\n", Status));
+        DEBUG ((DEBUG_ERROR, "UsbIoControlTransfer: configuration teardown failed - %r\n", Status));
         goto ON_EXIT;
       }
     }
@@ -283,7 +278,7 @@ UsbIoBulkTransfer (
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
   // MU_CHANGE [BEGIN]
-  if ((Dev->Connected == FALSE) || UsbIf->Disconnected) {
+  if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoBulkTransfer No media\n"));
     goto ON_EXIT;
@@ -383,7 +378,7 @@ UsbIoSyncInterruptTransfer (
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
   // MU_CHANGE [BEGIN]
-  if ((Dev->Connected == FALSE) || UsbIf->Disconnected) {
+  if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoSyncInterruptTransfer No media\n"));
     goto ON_EXIT;
@@ -416,35 +411,6 @@ UsbIoSyncInterruptTransfer (
 
 ON_EXIT:
   gBS->RestoreTPL (OldTpl);
-  return Status;
-}
-
-/**
-  Pin device and request state across a callback, including self-cancellation.
-**/
-STATIC
-EFI_STATUS
-EFIAPI
-UsbAsyncInterruptCallback (
-  IN VOID    *Data,
-  IN UINTN   DataLength,
-  IN VOID    *Context,
-  IN UINT32  Result
-  )
-{
-  USB_ASYNC_REQUEST  *Request;
-  EFI_STATUS         Status;
-
-  Request = Context;
-  Request->InCallback++;
-  Request->Device->AsyncCallbacks++;
-  Status = Request->Callback (Data, DataLength, Request->Context, Result);
-  Request->Device->AsyncCallbacks--;
-  Request->InCallback--;
-  if (Request->Cancelled && (Request->InCallback == 0)) {
-    FreePool (Request);
-  }
-
   return Status;
 }
 
@@ -486,8 +452,6 @@ UsbIoAsyncInterruptTransfer (
   EFI_TPL            OldTpl;
   UINT8              Toggle;
   EFI_STATUS         Status;
-  USB_ASYNC_REQUEST  *Request;
-  UINTN              AsyncIndex;
 
   if ((USB_ENDPOINT_ADDR (Endpoint) == 0) || (USB_ENDPOINT_ADDR (Endpoint) > 15)) {
     return EFI_INVALID_PARAMETER;
@@ -497,42 +461,18 @@ UsbIoAsyncInterruptTransfer (
   UsbIf  = USB_INTERFACE_FROM_USBIO (This);
   Dev    = UsbIf->Device;
   // MU_CHANGE [BEGIN]
-  if (((Dev->Connected == FALSE) || UsbIf->Disconnected) && (IsNewTransfer == TRUE)) {
+  if ((Dev->Connected == FALSE) && (IsNewTransfer == TRUE)) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoAsyncInterruptTransfer No media\n"));
     goto ON_EXIT;
   }
 
   // MU_CHANGE [END]
-  AsyncIndex = USB_ENDPOINT_ADDR (Endpoint) + (((Endpoint & 0x80) != 0) ? 16 : 0);
-  Request    = UsbIf->AsyncTransfers[AsyncIndex];
-  if (!IsNewTransfer && (Request != NULL)) {
-    EpDesc = &Request->Endpoint;
-  } else {
-    EpDesc = UsbGetEndpointDesc (UsbIf, Endpoint);
-  }
+  EpDesc = UsbGetEndpointDesc (UsbIf, Endpoint);
 
   if ((EpDesc == NULL) || (USB_ENDPOINT_TYPE (&EpDesc->Desc) != USB_ENDPOINT_INTERRUPT)) {
     Status = EFI_INVALID_PARAMETER;
     goto ON_EXIT;
-  }
-
-  if (IsNewTransfer) {
-    if ((Request != NULL) || (Callback == NULL)) {
-      Status = EFI_INVALID_PARAMETER;
-      goto ON_EXIT;
-    }
-
-    Request = AllocateZeroPool (sizeof (*Request));
-    if (Request == NULL) {
-      Status = EFI_OUT_OF_RESOURCES;
-      goto ON_EXIT;
-    }
-
-    Request->Device   = Dev;
-    Request->Endpoint = *EpDesc;
-    Request->Callback = Callback;
-    Request->Context  = Context;
   }
 
   Toggle = EpDesc->Toggle;
@@ -547,25 +487,11 @@ UsbIoAsyncInterruptTransfer (
              PollInterval,
              DataLength,
              &Dev->Translator,
-             IsNewTransfer ? UsbAsyncInterruptCallback : NULL,
-             IsNewTransfer ? Request : NULL
+             Callback,
+             Context
              );
 
   EpDesc->Toggle = Toggle;
-  if (IsNewTransfer) {
-    if (EFI_ERROR (Status)) {
-      FreePool (Request);
-    } else {
-      Request->Endpoint.Toggle          = Toggle;
-      UsbIf->AsyncTransfers[AsyncIndex] = Request;
-    }
-  } else if (!EFI_ERROR (Status) && (Request != NULL)) {
-    UsbIf->AsyncTransfers[AsyncIndex] = NULL;
-    Request->Cancelled                = TRUE;
-    if (Request->InCallback == 0) {
-      FreePool (Request);
-    }
-  }
 
 ON_EXIT:
   gBS->RestoreTPL (OldTpl);
@@ -658,7 +584,7 @@ UsbIoGetDeviceDescriptor (
   // MU_CHANGE [BEGIN]
   Status = EFI_SUCCESS;
 
-  if ((Dev->Connected == FALSE) || UsbIf->Disconnected) {
+  if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
@@ -705,7 +631,7 @@ UsbIoGetActiveConfigDescriptor (
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
   // MU_CHANGE [BEGIN]
-  if ((Dev->Connected == FALSE) || UsbIf->Disconnected) {
+  if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
@@ -756,7 +682,7 @@ UsbIoGetInterfaceDescriptor (
   Dev    = UsbIf->Device;
   Status = EFI_SUCCESS;
 
-  if ((Dev->Connected == FALSE) || UsbIf->Disconnected) {
+  if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
@@ -802,7 +728,7 @@ UsbIoGetEndpointDescriptor (
   Dev    = UsbIf->Device;
   Status = EFI_SUCCESS;
 
-  if ((Dev->Connected == FALSE) || UsbIf->Disconnected) {
+  if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
@@ -864,7 +790,7 @@ UsbIoGetSupportedLanguages (
   // MU_CHANGE [BEGIN]
   Status = EFI_SUCCESS;
 
-  if ((Dev->Connected == FALSE) || UsbIf->Disconnected) {
+  if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
@@ -917,7 +843,7 @@ UsbIoGetStringDescriptor (
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
   // MU_CHANGE [BEGIN]
-  if ((Dev->Connected == FALSE) || UsbIf->Disconnected) {
+  if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
@@ -974,7 +900,7 @@ ON_EXIT:
 }
 
 /**
-  Compare default interface layouts before reusing a USB I/O instance.
+  Compare the default function and endpoints before retaining an interface.
 **/
 STATIC
 BOOLEAN
@@ -987,7 +913,7 @@ UsbInterfaceIsCompatible (
   USB_INTERFACE_SETTING  *Setting;
   UINTN                  Index;
 
-  if (UsbIf->Disconnected || UsbIf->IsHub) {
+  if (UsbIf->IsHub) {
     return FALSE;
   }
 
@@ -1027,21 +953,22 @@ UsbInterfaceIsCompatible (
 }
 
 /**
-  Reconcile fresh descriptors with existing USB I/O instances without binding.
-  Compatible interfaces survive; incompatible interfaces stay offline until
-  their owners release them and they can be safely retired.
+  Refresh compatible interfaces, or disconnect and replace a changed personality
+  without connecting drivers. The caller must coordinate safe consumer teardown.
 
   @param  Dev                   The device to reconfigure.
+  @param  CanReplace            The caller's TPL permits synchronous teardown.
 
   @retval EFI_SUCCESS           The configuration and descriptors are refreshed.
-  @retval EFI_DEVICE_ERROR      The new personality could not be synchronized.
+  @retval EFI_NOT_READY         Changed interfaces cannot be replaced during binding.
   @retval Others                Failed to read descriptors or configure the device.
 
 **/
 STATIC
 EFI_STATUS
 UsbResetConfig (
-  IN USB_DEVICE  *Dev
+  IN USB_DEVICE  *Dev,
+  IN BOOLEAN     CanReplace
   )
 {
   USB_DEVICE             NewDev;
@@ -1054,12 +981,8 @@ UsbResetConfig (
   UINTN                  Index;
   UINTN                  SettingIndex;
   UINT8                  Config;
-  BOOLEAN                IdentityCompatible;
-  BOOLEAN                KeepInterface[USB_MAX_INTERFACE];
-  USB_RETIRED_CONFIG     *Retired;
+  BOOLEAN                Replace;
 
-  Retired = NULL;
-  ZeroMem (KeepInterface, sizeof (KeepInterface));
   //
   // Build into a temporary device so failures leave all cached pointers valid.
   //
@@ -1081,24 +1004,9 @@ UsbResetConfig (
     goto ON_ERROR;
   }
 
-  DEBUG ((
-    DEBUG_INFO,
-    "UsbResetConfig: device %d identity %04x:%04x -> %04x:%04x\n",
-    Dev->Address,
-    Dev->DevDesc->Desc.IdVendor,
-    Dev->DevDesc->Desc.IdProduct,
-    NewDev.DevDesc->Desc.IdVendor,
-    NewDev.DevDesc->Desc.IdProduct
-    ));
-
-  IdentityCompatible = (BOOLEAN)(
-                                 (NewDev.DevDesc->Desc.IdVendor == Dev->DevDesc->Desc.IdVendor) &&
-                                 (NewDev.DevDesc->Desc.IdProduct == Dev->DevDesc->Desc.IdProduct) &&
-                                 (NewDev.DevDesc->Desc.DeviceClass == Dev->DevDesc->Desc.DeviceClass) &&
-                                 (NewDev.DevDesc->Desc.DeviceSubClass == Dev->DevDesc->Desc.DeviceSubClass) &&
-                                 (NewDev.DevDesc->Desc.DeviceProtocol == Dev->DevDesc->Desc.DeviceProtocol)
-                                 );
-
+  Replace = (BOOLEAN)(
+                      (CompareMem (&NewDev.DevDesc->Desc, &Dev->DevDesc->Desc, sizeof (EFI_USB_DEVICE_DESCRIPTOR)) != 0)
+                      );
   Config     = Dev->ActiveConfig->Desc.ConfigurationValue;
   ConfigDesc = NULL;
   for (Index = 0; Index < NewDev.DevDesc->Desc.NumConfigurations; Index++) {
@@ -1112,6 +1020,7 @@ UsbResetConfig (
 
   if ((ConfigDesc == NULL) && (NewDev.DevDesc->Desc.NumConfigurations != 0)) {
     ConfigDesc = NewDev.DevDesc->Configs[0];
+    Replace    = TRUE;
   }
 
   Status = EFI_DEVICE_ERROR;
@@ -1119,12 +1028,13 @@ UsbResetConfig (
       (ConfigDesc->Desc.NumInterfaces == 0) ||
       (ConfigDesc->Desc.NumInterfaces > USB_MAX_INTERFACE))
   {
-    DEBUG ((DEBUG_ERROR, "UsbResetConfig: invalid configuration after reset\n"));
+    DEBUG ((DEBUG_ERROR, "UsbResetConfig: incompatible configuration after reset\n"));
     goto ON_ERROR;
   }
 
-  IdentityCompatible = (BOOLEAN)(IdentityCompatible && (ConfigDesc->Desc.ConfigurationValue == Config));
-  Config             = ConfigDesc->Desc.ConfigurationValue;
+  Replace = (BOOLEAN)(Replace ||
+                      (ConfigDesc->Desc.NumInterfaces != Dev->ActiveConfig->Desc.NumInterfaces));
+  Config = ConfigDesc->Desc.ConfigurationValue;
 
   for (Index = 0; Index < ConfigDesc->Desc.NumInterfaces; Index++) {
     IfDesc = ConfigDesc->Interfaces[Index];
@@ -1154,22 +1064,26 @@ UsbResetConfig (
 
     IfDesc->ActiveIndex = SettingIndex;
     UsbIf               = Dev->Interfaces[Index];
-    if (UsbIf != NULL) {
-      KeepInterface[Index] = (BOOLEAN)(IdentityCompatible && UsbInterfaceIsCompatible (UsbIf, IfDesc));
+    if ((UsbIf != NULL) && !UsbInterfaceIsCompatible (UsbIf, IfDesc)) {
+      Replace = TRUE;
     }
   }
 
-  for (Index = 0; Index < Dev->NumOfInterface; Index++) {
-    UsbIf = Dev->Interfaces[Index];
-    if ((UsbIf != NULL) && !KeepInterface[Index]) {
-      Retired = AllocateZeroPool (sizeof (*Retired));
-      if (Retired == NULL) {
-        Status = EFI_OUT_OF_RESOURCES;
-        DEBUG ((DEBUG_ERROR, "UsbResetConfig: failed to retain old interfaces\n"));
-        goto ON_ERROR;
-      }
+  if (Replace) {
+    if (Dev->BindingInProgress || !CanReplace) {
+      Status = EFI_NOT_READY;
+      DEBUG ((DEBUG_ERROR, "UsbResetConfig: changed personality requires coordinated teardown outside binding\n"));
+      goto ON_ERROR;
+    }
 
-      break;
+    //
+    // Keep descriptors alive until every old USB I/O and device path is removed.
+    //
+    Dev->Connected = FALSE;
+    Status         = UsbRemoveConfig (Dev);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "UsbResetConfig: old interface teardown failed - %r\n", Status));
+      goto ON_ERROR;
     }
   }
 
@@ -1177,23 +1091,6 @@ UsbResetConfig (
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "UsbResetConfig: failed to set configuration - %r\n", Status));
     goto ON_ERROR;
-  }
-
-  if (Retired != NULL) {
-    Retired->DevDesc        = Dev->DevDesc;
-    Retired->NumOfInterface = Dev->NumOfInterface;
-    for (Index = 0; Index < Dev->NumOfInterface; Index++) {
-      UsbIf = Dev->Interfaces[Index];
-      if ((UsbIf != NULL) && !KeepInterface[Index]) {
-        UsbIf->Disconnected        = TRUE;
-        Retired->Interfaces[Index] = UsbIf;
-        Dev->Interfaces[Index]     = NULL;
-        DEBUG ((DEBUG_INFO, "UsbResetConfig: retained disconnected interface %d\n", (UINT32)Index));
-      }
-    }
-
-    Retired->Next       = Dev->RetiredConfigs;
-    Dev->RetiredConfigs = Retired;
   }
 
   OldDesc           = Dev->DevDesc;
@@ -1213,18 +1110,20 @@ UsbResetConfig (
     }
   }
 
-  if (Retired == NULL) {
-    UsbFreeDevDesc (OldDesc);
+  UsbFreeDevDesc (OldDesc);
+  if (Replace) {
+    Status = UsbSelectConfig (Dev, Config, FALSE);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "UsbResetConfig: replacement publication failed - %r\n", Status));
+      return Status;
+    }
+
+    Dev->Connected = TRUE;
   }
 
-  Dev->NumOfInterface = ConfigDesc->Desc.NumInterfaces;
-  return UsbSelectConfig (Dev, Config, FALSE);
+  return EFI_SUCCESS;
 
 ON_ERROR:
-  if (Retired != NULL) {
-    FreePool (Retired);
-  }
-
   if (NewDev.DevDesc != NULL) {
     UsbFreeDevDesc (NewDev.DevDesc);
   }
@@ -1235,19 +1134,16 @@ ON_ERROR:
 /**
   Reset the device, then if that succeeds, reconfigure the
   device with its address and current active configuration.
-  Refresh compatible interface instances and publish missing ones. Keep
-  incompatible instances disconnected until their consumers release them.
-  Once a port reset is attempted, failures defer replacement of the device's
-  interfaces to bus enumeration unless recovery is already in progress.
-  Personality replacement publishes fresh USB I/O interfaces synchronously
-  without connecting drivers or stopping old consumers. Callers must acquire
-  fresh USB I/O after replacement.
+  Refresh compatible interfaces in place. A changed personality requires caller-
+  coordinated driver disconnection and invalidates old USB I/O pointers.
+  Replacement publishes interfaces without connecting drivers. It is rejected
+  during bus-owned binding or above TPL_CALLBACK. Failures leave the device
+  offline; no automatic recovery or reconnect is scheduled.
 
   @param  This                   The USB IO instance.
 
   @retval EFI_SUCCESS            The device is reset and configured.
-  @retval EFI_NOT_READY          A reset is already active.
-  @retval Others                 Failed to reset the device. Recovery may be pending.
+  @retval Others                 Failed to reset the device.
 
 **/
 EFI_STATUS
@@ -1269,22 +1165,14 @@ UsbIoPortReset (
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
-  DEBUG ((
-    DEBUG_INFO,
-    "UsbIoPortReset: device %d interface %d caller TPL %d\n",
-    Dev->Address,
-    UsbIf->IfSetting->Desc.InterfaceNumber,
-    (UINT32)OldTpl
-    ));
-
   if (Dev->ResetInProgress) {
     Status = EFI_NOT_READY;
-    DEBUG ((DEBUG_ERROR, "UsbIoPortReset: reset already in progress for device %d\n", Dev->Address));
+    DEBUG ((DEBUG_ERROR, "UsbIoPortReset: reset already active\n"));
     goto ON_EXIT;
   }
 
   // MU_CHANGE [BEGIN]
-  if ((Dev->Connected == FALSE) || UsbIf->Disconnected) {
+  if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoPortReset No media\n"));
     goto ON_EXIT;
@@ -1310,7 +1198,7 @@ UsbIoPortReset (
       Status
       ));
 
-    goto RECOVER;
+    goto ON_EXIT;
   }
 
   HubIf->HubApi->ClearPortChange (HubIf, Dev->ParentPort);
@@ -1338,7 +1226,7 @@ UsbIoPortReset (
       Status
       ));
 
-    goto RECOVER;
+    goto ON_EXIT;
   }
 
   DEBUG ((DEBUG_INFO, "UsbIoPortReset: device is now ADDRESSED at %d\n", Dev->Address));
@@ -1348,34 +1236,18 @@ UsbIoPortReset (
   // is in CONFIGURED state.
   //
   if (Dev->ActiveConfig != NULL) {
-    Status = UsbResetConfig (Dev);
+    Status = UsbResetConfig (Dev, (BOOLEAN)(OldTpl <= TPL_CALLBACK));
   } else {
     // MU_CHANGE [BEGIN] 291137
     UsbUpdateDescriptors (Dev);
     // MU_CHANGE [END]
   }
 
-  if (!EFI_ERROR (Status)) {
-    goto ON_EXIT;
-  }
-
-RECOVER:
-  //
-  // Keep old descriptors alive for driver teardown and transfer cancellation.
-  // A reset from a recovery-started driver must not create a reconnect loop.
-  //
-  Dev->Connected = FALSE;
-  if (!Dev->Bus->RecoveryInProgress) {
-    Dev->Reenumerate = TRUE;
-    DEBUG ((DEBUG_INFO, "UsbIoPortReset: queued recovery for device %d - %r\n", Dev->Address, Status));
-  } else {
-    DEBUG ((DEBUG_ERROR, "UsbIoPortReset: reset failed during recovery for device %d - %r\n", Dev->Address, Status));
-  }
-
 ON_EXIT:
-  //
-  // Restoring TPL may dispatch enumeration before this function returns.
-  //
+  if (ResetStarted && EFI_ERROR (Status)) {
+    Dev->Connected = FALSE;
+  }
+
   gBS->RestoreTPL (OldTpl);
   if (ResetStarted) {
     Dev->ResetInProgress = FALSE;

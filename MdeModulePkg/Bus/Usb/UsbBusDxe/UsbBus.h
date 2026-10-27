@@ -207,29 +207,10 @@ struct _USB_DEVICE {
   BOOLEAN                               Connected; // MU_CHANGE
   BOOLEAN                               DisconnectFail;
   BOOLEAN                               ResetInProgress;
-  BOOLEAN                               Reenumerate;
-  UINTN                                 BindingInProgress;
-  UINTN                                 AsyncCallbacks;
-  struct _USB_RETIRED_CONFIG            *RetiredConfigs;
+  BOOLEAN                               BindingInProgress;
   UINT8                                 EnumScript;
   BOOLEAN                               IsSSDev;
 };
-
-typedef struct _USB_RETIRED_CONFIG {
-  struct _USB_RETIRED_CONFIG    *Next;
-  USB_DEVICE_DESC               *DevDesc;
-  UINT8                         NumOfInterface;
-  USB_INTERFACE                 *Interfaces[USB_MAX_INTERFACE];
-} USB_RETIRED_CONFIG;
-
-typedef struct {
-  USB_DEVICE                         *Device;
-  USB_ENDPOINT_DESC                  Endpoint;
-  EFI_ASYNC_USB_TRANSFER_CALLBACK    Callback;
-  VOID                               *Context;
-  UINTN                              InCallback;
-  BOOLEAN                            Cancelled;
-} USB_ASYNC_REQUEST;
 
 //
 // Stands for different functions of USB device
@@ -247,8 +228,6 @@ struct _USB_INTERFACE {
   EFI_USB_IO_PROTOCOL         UsbIo;
   EFI_DEVICE_PATH_PROTOCOL    *DevicePath;
   BOOLEAN                     IsManaged;
-  BOOLEAN                     Disconnected;
-  USB_ASYNC_REQUEST           *AsyncTransfers[32];
 
   //
   // Hub device special data
@@ -303,7 +282,6 @@ struct _USB_BUS {
   // for root hub. Device with address i is at Devices[i].
   //
   USB_DEVICE                  *Devices[256];
-  BOOLEAN                     RecoveryInProgress;
 
   //
   // USB Bus driver need to control the recursive connect policy of the bus, only those wanted
@@ -687,19 +665,15 @@ UsbIoGetStringDescriptor (
 /**
   Reset the device, then if that succeeds, reconfigure the
   device with its address and current active configuration.
-  Compatible interfaces retain existing handles even when the layout changes.
-  Incompatible instances are marked offline and retired only after consumers
-  release ownership and asynchronous work. Missing interfaces are published
-  immediately on the same device without stopping old drivers or binding new ones.
-  Failures schedule deferred recovery.
-  Callers must acquire fresh USB I/O after replacement. Driver binding during
-  recovery cannot schedule another recovery.
+  Changed personalities disconnect and uninstall all old interfaces before
+  publishing replacements, without connecting drivers. Callers must coordinate
+  safe teardown, cancel outstanding transfers, and reacquire USB I/O afterward.
+  Replacement is rejected during bus-owned binding or above TPL_CALLBACK.
 
   @param  This                   The USB IO instance.
 
   @retval EFI_SUCCESS            The device is reset and configured.
-  @retval EFI_NOT_READY          A reset is already active.
-  @retval Others                 Failed to reset the device. Recovery may be pending.
+  @retval Others                 Failed to reset the device.
 
 **/
 EFI_STATUS
