@@ -1100,8 +1100,11 @@ UsbBusRecursivelyConnectWantedUsbIo (
         // Recursively connect the wanted Usb Io handle
         //
         DEBUG ((DEBUG_INFO, "UsbBusRecursivelyConnectWantedUsbIo: TPL before connect is %d\n", (UINT32)UsbGetCurrentTpl ()));
-        Status           = gBS->ConnectController (UsbIf->Handle, NULL, NULL, TRUE);
-        UsbIf->IsManaged = (BOOLEAN) !EFI_ERROR (Status);
+        Status = UsbConnectDriver (UsbIf);
+        if (EFI_ERROR (Status)) {
+          DEBUG ((DEBUG_WARN, "UsbBusRecursivelyConnectWantedUsbIo: connection failed - %r\n", Status));
+        }
+
         DEBUG ((DEBUG_INFO, "UsbBusRecursivelyConnectWantedUsbIo: TPL after connect is %d\n", (UINT32)UsbGetCurrentTpl ()));
       }
     }
