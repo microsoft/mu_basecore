@@ -81,14 +81,11 @@ UsbIoControlTransfer (
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoControlTransfer No media\n"));
     goto ON_EXIT;
   }
-
-  // MU_CHANGE [END]
 
   RequestedDataLength = DataLength;
   Status              = UsbHcControlTransfer (
@@ -277,7 +274,6 @@ UsbIoBulkTransfer (
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoBulkTransfer No media\n"));
@@ -377,7 +373,6 @@ UsbIoSyncInterruptTransfer (
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoSyncInterruptTransfer No media\n"));
@@ -460,14 +455,12 @@ UsbIoAsyncInterruptTransfer (
   OldTpl = gBS->RaiseTPL (USB_BUS_TPL);
   UsbIf  = USB_INTERFACE_FROM_USBIO (This);
   Dev    = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
-  if ((Dev->Connected == FALSE) && (IsNewTransfer == TRUE)) {
+  if (!Dev->Connected && IsNewTransfer) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoAsyncInterruptTransfer No media\n"));
     goto ON_EXIT;
   }
 
-  // MU_CHANGE [END]
   EpDesc = UsbGetEndpointDesc (UsbIf, Endpoint);
 
   if ((EpDesc == NULL) || (USB_ENDPOINT_TYPE (&EpDesc->Desc) != USB_ENDPOINT_INTERRUPT)) {
@@ -579,17 +572,14 @@ UsbIoGetDeviceDescriptor (
 
   OldTpl = gBS->RaiseTPL (USB_BUS_TPL);
 
-  UsbIf = USB_INTERFACE_FROM_USBIO (This);
-  Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
+  UsbIf  = USB_INTERFACE_FROM_USBIO (This);
+  Dev    = UsbIf->Device;
   Status = EFI_SUCCESS;
 
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
-
-  // MU_CHANGE [END]
 
   CopyMem (Descriptor, &Dev->DevDesc->Desc, sizeof (EFI_USB_DEVICE_DESCRIPTOR));
 
@@ -630,7 +620,6 @@ UsbIoGetActiveConfigDescriptor (
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
@@ -677,8 +666,7 @@ UsbIoGetInterfaceDescriptor (
 
   OldTpl = gBS->RaiseTPL (USB_BUS_TPL);
 
-  UsbIf = USB_INTERFACE_FROM_USBIO (This);
-  // MU_CHANGE [BEGIN]
+  UsbIf  = USB_INTERFACE_FROM_USBIO (This);
   Dev    = UsbIf->Device;
   Status = EFI_SUCCESS;
 
@@ -686,8 +674,6 @@ UsbIoGetInterfaceDescriptor (
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
-
-  // MU_CHANGE [END]
 
   CopyMem (Descriptor, &(UsbIf->IfSetting->Desc), sizeof (EFI_USB_INTERFACE_DESCRIPTOR));
 
@@ -723,8 +709,7 @@ UsbIoGetEndpointDescriptor (
 
   OldTpl = gBS->RaiseTPL (USB_BUS_TPL);
 
-  UsbIf = USB_INTERFACE_FROM_USBIO (This);
-  // MU_CHANGE [BEGIN]
+  UsbIf  = USB_INTERFACE_FROM_USBIO (This);
   Dev    = UsbIf->Device;
   Status = EFI_SUCCESS;
 
@@ -732,8 +717,6 @@ UsbIoGetEndpointDescriptor (
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
-
-  // MU_CHANGE [END]
 
   if ((Descriptor == NULL) || (Index > 15)) {
     // MU_CHANGE [BEGIN]
@@ -785,17 +768,14 @@ UsbIoGetSupportedLanguages (
 
   OldTpl = gBS->RaiseTPL (USB_BUS_TPL);
 
-  UsbIf = USB_INTERFACE_FROM_USBIO (This);
-  Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
+  UsbIf  = USB_INTERFACE_FROM_USBIO (This);
+  Dev    = UsbIf->Device;
   Status = EFI_SUCCESS;
 
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
-
-  // MU_CHANGE [END]
 
   *LangIDTable = Dev->LangId;
   *TableSize   = (UINT16)(Dev->TotalLangId * sizeof (UINT16));
@@ -842,13 +822,10 @@ UsbIoGetStringDescriptor (
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
-  // MU_CHANGE [BEGIN]
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     goto ON_EXIT;
   }
-
-  // MU_CHANGE [END]
 
   //
   // Check whether language ID is supported
@@ -901,6 +878,13 @@ ON_EXIT:
 
 /**
   Compare the default function and endpoints before retaining an interface.
+
+  @param  UsbIf         The USB IO instance.
+  @param  IfDesc        The language ID of the string to retrieve.
+
+  @retval TRUE
+  @retval FALSE
+
 **/
 STATIC
 BOOLEAN
@@ -1007,6 +991,9 @@ UsbResetConfig (
   Replace = (BOOLEAN)(
                       (CompareMem (&NewDev.DevDesc->Desc, &Dev->DevDesc->Desc, sizeof (EFI_USB_DEVICE_DESCRIPTOR)) != 0)
                       );
+  //
+  // Select and validate fresh descriptors even when replacement is already required.
+  //
   Config     = Dev->ActiveConfig->Desc.ConfigurationValue;
   ConfigDesc = NULL;
   for (Index = 0; Index < NewDev.DevDesc->Desc.NumConfigurations; Index++) {
@@ -1054,7 +1041,8 @@ UsbResetConfig (
       }
     }
 
-    if ((SettingIndex == IfDesc->NumOfSetting) ||
+    if ((Setting == NULL) ||
+        (SettingIndex == IfDesc->NumOfSetting) ||
         (Setting->Desc.InterfaceNumber != Index) ||
         (Setting->Desc.InterfaceClass == USB_HUB_CLASS_CODE))
     {
@@ -1064,7 +1052,7 @@ UsbResetConfig (
 
     IfDesc->ActiveIndex = SettingIndex;
     UsbIf               = Dev->Interfaces[Index];
-    if ((UsbIf != NULL) && !UsbInterfaceIsCompatible (UsbIf, IfDesc)) {
+    if (!Replace && (UsbIf != NULL) && !UsbInterfaceIsCompatible (UsbIf, IfDesc)) {
       Replace = TRUE;
     }
   }
@@ -1158,10 +1146,10 @@ UsbIoPortReset (
   EFI_TPL        OldTpl;
   EFI_STATUS     Status;
   UINT8          DevAddress;
-  BOOLEAN        ResetStarted;
+  BOOLEAN        OwnsResetGuard;
 
-  ResetStarted = FALSE;
-  OldTpl       = gBS->RaiseTPL (USB_BUS_TPL);
+  OwnsResetGuard = FALSE;
+  OldTpl         = gBS->RaiseTPL (USB_BUS_TPL);
 
   UsbIf = USB_INTERFACE_FROM_USBIO (This);
   Dev   = UsbIf->Device;
@@ -1171,7 +1159,6 @@ UsbIoPortReset (
     goto ON_EXIT;
   }
 
-  // MU_CHANGE [BEGIN]
   if (Dev->Connected == FALSE) {
     Status = EFI_DEVICE_ERROR;
     DEBUG ((DEBUG_ERROR, "UsbIoPortReset No media\n"));
@@ -1185,7 +1172,7 @@ UsbIoPortReset (
   }
 
   Dev->ResetInProgress = TRUE;
-  ResetStarted         = TRUE;
+  OwnsResetGuard       = TRUE;
   HubIf                = Dev->ParentIf;
   Status               = HubIf->HubApi->ResetPort (HubIf, Dev->ParentPort);
 
@@ -1247,12 +1234,15 @@ UsbIoPortReset (
   }
 
 ON_EXIT:
-  if (ResetStarted && EFI_ERROR (Status)) {
+  if (OwnsResetGuard && EFI_ERROR (Status)) {
     Dev->Connected = FALSE;
   }
 
   gBS->RestoreTPL (OldTpl);
-  if (ResetStarted) {
+  //
+  // A rejected nested call must not clear the outer invocation's reset guard.
+  //
+  if (OwnsResetGuard) {
     Dev->ResetInProgress = FALSE;
   }
 
