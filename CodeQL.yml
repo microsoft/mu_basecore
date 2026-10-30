@@ -1,0 +1,27 @@
+queries:
+  # Exclude Weak Hashes failure for policy management tools as the hash is used for diff detection only
+  -exclude:
+     path:
+       - "PolicyServicePkg/Plugins"
+     opaqueid:
+       - "SM02167"
+
+  # For build tools the weak hash test can be excluded as MD5 is commonly used for diff detection
+  -exclude:
+     path:
+       - "BaseTools/**/*.py"
+     opaqueid:
+       - "SM02167"
+
+  # Ignore external code and tools used for tests.
+  -exclude:
+     path:
+      - "MdeModulePkg/Library/BrotliCustomDecompressLib/brotli"
+      - "BaseTools/Source/C/BrotliCompress/brotli"
+      - "MdePkg/Library/BaseFdtLib/libfdt"
+      - "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma"
+      - "MdePkg/Library/MipiSysTLib/mipisyst"
+      - "SecurityPkg/DeviceSecurity/SpdmLib/libspdm"
+      - "UnitTestFrameworkPkg/Library/CmockaLib/cmocka"
+      - "UnitTestFrameworkPkg/Library/GoogleTestLib/googletest"
+      - "UnitTestFrameworkPkg/Library/SubhookLib/subhook"
