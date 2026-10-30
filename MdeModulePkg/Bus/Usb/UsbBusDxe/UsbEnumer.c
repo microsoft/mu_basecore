@@ -86,13 +86,17 @@ UsbFreeInterface (
   @param  Device                The device has the interface descriptor.
   @param  IfDesc                The interface descriptor.
 
-  @return The created USB interface for the descriptor, or NULL.
+  @param  Result                The published interface on success.
+
+  @retval EFI_SUCCESS           The interface was published.
+  @retval Others                Allocation or protocol installation failed.
 
 **/
-USB_INTERFACE *
+EFI_STATUS
 UsbCreateInterface (
   IN USB_DEVICE          *Device,
-  IN USB_INTERFACE_DESC  *IfDesc
+  IN USB_INTERFACE_DESC  *IfDesc,
+  OUT USB_INTERFACE      **Result
   )
 {
   USB_DEVICE_PATH  UsbNode;
@@ -103,7 +107,7 @@ UsbCreateInterface (
   UsbIf = AllocateZeroPool (sizeof (USB_INTERFACE));
 
   if (UsbIf == NULL) {
-    return NULL;
+    return EFI_OUT_OF_RESOURCES;
   }
 
   UsbIf->Signature = USB_INTERFACE_SIGNATURE;
@@ -173,7 +177,8 @@ UsbCreateInterface (
     goto ON_ERROR;
   }
 
-  return UsbIf;
+  *Result = UsbIf;
+  return EFI_SUCCESS;
 
 ON_ERROR:
   if (UsbIf->DevicePath != NULL) {
@@ -181,7 +186,7 @@ ON_ERROR:
   }
 
   FreePool (UsbIf);
-  return NULL;
+  return Status;
 }
 
 /**
@@ -260,7 +265,13 @@ UsbConnectDriver (
   EFI_STATUS  Status;
   EFI_TPL     OldTpl;
 
-  Status = EFI_SUCCESS;
+  if (!UsbIf->Device->Connected || UsbIf->Device->ResetInProgress || UsbIf->Device->BindingInProgress) {
+    DEBUG ((DEBUG_INFO, "UsbConnectDriver: device offline or reset/binding active\n"));
+    return EFI_NOT_READY;
+  }
+
+  UsbIf->Device->BindingInProgress = TRUE;
+  Status                           = EFI_SUCCESS;
 
   //
   // Hub is maintained by the USB bus driver. Otherwise try to
@@ -285,18 +296,23 @@ UsbConnectDriver (
       OldTpl = UsbGetCurrentTpl ();
       DEBUG ((DEBUG_INFO, "UsbConnectDriver: TPL before connect is %d, %p\n", (UINT32)OldTpl, UsbIf->Handle));
 
-      gBS->RestoreTPL (TPL_CALLBACK);
+      if (OldTpl > TPL_CALLBACK) {
+        gBS->RestoreTPL (TPL_CALLBACK);
+      }
 
       Status           = gBS->ConnectController (UsbIf->Handle, NULL, NULL, TRUE);
       UsbIf->IsManaged = (BOOLEAN) !EFI_ERROR (Status);
 
       DEBUG ((DEBUG_INFO, "UsbConnectDriver: TPL after connect is %d\n", (UINT32)UsbGetCurrentTpl ()));
-      ASSERT (UsbGetCurrentTpl () == TPL_CALLBACK);
+      ASSERT (UsbGetCurrentTpl () == ((OldTpl > TPL_CALLBACK) ? TPL_CALLBACK : OldTpl));
 
-      gBS->RaiseTPL (OldTpl);
+      if (OldTpl > TPL_CALLBACK) {
+        gBS->RaiseTPL (OldTpl);
+      }
     }
   }
 
+  UsbIf->Device->BindingInProgress = FALSE;
   return Status;
 }
 
@@ -366,6 +382,7 @@ UsbSelectSetting (
 
   @param  Device                The device to select configuration.
   @param  ConfigValue           The index of the configuration ( != 0).
+  @param  ConnectDrivers        Whether to connect function drivers.
 
   @retval EFI_NOT_FOUND         There is no configuration with the index.
   @retval EFI_OUT_OF_RESOURCES  Failed to allocate resource.
@@ -375,7 +392,8 @@ UsbSelectSetting (
 EFI_STATUS
 UsbSelectConfig (
   IN USB_DEVICE  *Device,
-  IN UINT8       ConfigValue
+  IN UINT8       ConfigValue,
+  IN BOOLEAN     ConnectDrivers
   )
 {
   USB_DEVICE_DESC     *DevDesc;
@@ -403,6 +421,11 @@ UsbSelectConfig (
     return EFI_NOT_FOUND;
   }
 
+  if (ConfigDesc->Desc.NumInterfaces > USB_MAX_INTERFACE) {
+    DEBUG ((DEBUG_ERROR, "UsbSelectConfig: too many interfaces\n"));
+    return EFI_UNSUPPORTED;
+  }
+
   Device->ActiveConfig = ConfigDesc;
 
   DEBUG ((
@@ -415,26 +438,36 @@ UsbSelectConfig (
   //
   // Create interfaces for each USB interface descriptor.
   //
-  for (Index = 0; Index < ConfigDesc->Desc.NumInterfaces; Index++) {
+  for (Index = 0; Index < Device->ActiveConfig->Desc.NumInterfaces; Index++) {
+    //
+    // A driver's Start() may reset the device and replace its descriptors.
+    //
+    ConfigDesc = Device->ActiveConfig;
+
     //
     // First select the default interface setting, and reset
     // the endpoint toggles to zero for its endpoints.
     //
     IfDesc = ConfigDesc->Interfaces[Index];
-    UsbSelectSetting (IfDesc, IfDesc->Settings[0]->Desc.AlternateSetting);
+    UsbSelectSetting (IfDesc, IfDesc->Settings[IfDesc->ActiveIndex]->Desc.AlternateSetting);
 
     //
     // Create a USB_INTERFACE and install USB_IO and other protocols
     //
-    UsbIf = UsbCreateInterface (Device, ConfigDesc->Interfaces[Index]);
+    Status = UsbCreateInterface (Device, ConfigDesc->Interfaces[Index], &UsbIf);
 
-    if (UsbIf == NULL) {
+    if (EFI_ERROR (Status)) {
       Device->NumOfInterface = Index;
-      return EFI_OUT_OF_RESOURCES;
+      return Status;
     }
 
     ASSERT (Index < USB_MAX_INTERFACE);
     Device->Interfaces[Index] = UsbIf;
+    Device->NumOfInterface    = (UINT8)(Index + 1);
+
+    if (!ConnectDrivers) {
+      continue;
+    }
 
     //
     // Connect the device to drivers, if it failed, ignore
@@ -449,6 +482,11 @@ UsbSelectConfig (
         "UsbSelectConfig: failed to connect driver - %r, ignored\n",
         Status
         ));
+    }
+
+    if (!Device->Connected) {
+      DEBUG ((DEBUG_ERROR, "UsbSelectConfig: device went offline during driver binding\n"));
+      return EFI_DEVICE_ERROR;
     }
   }
 
@@ -478,7 +516,7 @@ UsbDisconnectDriver (
   Status = EFI_SUCCESS;
   if (UsbIf->IsHub) {
     Status = UsbIf->HubApi->Release (UsbIf);
-  } else if (UsbIf->IsManaged) {
+  } else {
     //
     // This function is called in both UsbIoControlTransfer and
     // the timer callback in hub enumeration. So, at least it is
@@ -489,7 +527,9 @@ UsbDisconnectDriver (
     OldTpl = UsbGetCurrentTpl ();
     DEBUG ((DEBUG_INFO, "UsbDisconnectDriver: old TPL is %d, %p\n", (UINT32)OldTpl, UsbIf->Handle));
 
-    gBS->RestoreTPL (TPL_CALLBACK);
+    if (OldTpl > TPL_CALLBACK) {
+      gBS->RestoreTPL (TPL_CALLBACK);
+    }
 
     Status = gBS->DisconnectController (UsbIf->Handle, NULL, NULL);
     if (!EFI_ERROR (Status)) {
@@ -497,9 +537,11 @@ UsbDisconnectDriver (
     }
 
     DEBUG ((DEBUG_INFO, "UsbDisconnectDriver: TPL after disconnect is %d, %d\n", (UINT32)UsbGetCurrentTpl (), Status));
-    ASSERT (UsbGetCurrentTpl () == TPL_CALLBACK);
+    ASSERT (UsbGetCurrentTpl () == ((OldTpl > TPL_CALLBACK) ? TPL_CALLBACK : OldTpl));
 
-    gBS->RaiseTPL (OldTpl);
+    if (OldTpl > TPL_CALLBACK) {
+      gBS->RaiseTPL (OldTpl);
+    }
   }
 
   return Status;
@@ -536,7 +578,7 @@ UsbRemoveConfig (
     Status = UsbDisconnectDriver (UsbIf);
     if (!EFI_ERROR (Status)) {
       Status = UsbFreeInterface (UsbIf);
-      if (EFI_ERROR (Status)) {
+      if (EFI_ERROR (Status) && Device->Connected && !Device->ResetInProgress) {
         UsbConnectDriver (UsbIf);
       }
     }
@@ -548,7 +590,11 @@ UsbRemoveConfig (
     }
   }
 
-  Device->ActiveConfig = NULL;
+  if (!EFI_ERROR (ReturnStatus)) {
+    Device->ActiveConfig   = NULL;
+    Device->NumOfInterface = 0;
+  }
+
   return ReturnStatus;
 }
 
@@ -570,6 +616,11 @@ UsbRemoveDevice (
   EFI_STATUS  Status;
   EFI_STATUS  ReturnStatus;
   UINTN       Index;
+
+  if (Device->ResetInProgress || Device->BindingInProgress) {
+    DEBUG ((DEBUG_INFO, "UsbRemoveDevice: reset or binding active\n"));
+    return EFI_NOT_READY;
+  }
 
   Bus = Device->Bus;
 
@@ -892,7 +943,7 @@ DeviceRetry:
   //
   // Host assigns and loads a device driver.
   //
-  Status = UsbSelectConfig (Child, Config);
+  Status = UsbSelectConfig (Child, Config, TRUE);
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "UsbEnumerateNewDev: failed to create interfaces - %r\n", Status));
@@ -914,7 +965,14 @@ ON_ERROR:
   // Do the error handling with retry counter.
   //
   OriginalStatus = Status;
-  Status         = HubApi->GetPortStatus (HubIf, Port, &PortState);
+  if ((Child != NULL) && (Child->NumOfInterface != 0)) {
+    //
+    // Installed interfaces still reference these descriptors.
+    //
+    return OriginalStatus;
+  }
+
+  Status = HubApi->GetPortStatus (HubIf, Port, &PortState);
   if (EFI_ERROR (Status) || (!USB_BIT_IS_SET (PortState.PortStatus, USB_PORT_STAT_CONNECTION))) {
     DEBUG ((DEBUG_ERROR, "Device is gone. Don't reset the port\n"));
     Status = EFI_NOT_FOUND;
@@ -973,6 +1031,8 @@ UsbEnumeratePort (
   USB_DEVICE           *Child;
   EFI_USB_PORT_STATUS  PortState;
   EFI_STATUS           Status;
+
+  EFI_STATUS  RemoveStatus;
 
   Child  = NULL;
   HubApi = HubIf->HubApi;
@@ -1061,7 +1121,11 @@ UsbEnumeratePort (
 
   if (Child != NULL) {
     DEBUG ((DEBUG_INFO, "UsbEnumeratePort: device at port %d removed from root hub %p\n", Port, HubIf));
-    UsbRemoveDevice (Child);
+    RemoveStatus = UsbRemoveDevice (Child);
+    if (EFI_ERROR (RemoveStatus)) {
+      DEBUG ((DEBUG_ERROR, "UsbEnumeratePort: old device removal failed - %r\n", RemoveStatus));
+      return RemoveStatus;
+    }
   }
 
   if (USB_BIT_IS_SET (PortState.PortStatus, USB_PORT_STAT_CONNECTION)) {

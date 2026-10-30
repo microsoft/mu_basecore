@@ -24,6 +24,13 @@
   SecurityLockAuditLib|MdeModulePkg/Library/SecurityLockAuditLibNull/SecurityLockAuditLibNull.inf    # MU_CHANGE
 
 [Components]
+  MdeModulePkg/Bus/Usb/UsbBusDxe/GoogleTest/UsbBusDxeGoogleTest.inf {
+    <LibraryClasses>
+      DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+      UefiLib|MdePkg/Test/Mock/Library/Stub/StubUefiLib/StubUefiLib.inf
+      ReportStatusCodeLib|MdePkg/Library/BaseReportStatusCodeLibNull/BaseReportStatusCodeLibNull.inf
+  }
+
   # MdeModulePkg/Library/DxeResetSystemLib/UnitTest/MockUefiRuntimeServicesTableLib.inf # MU_CHANGE - Move lib to correct home
 
   #
