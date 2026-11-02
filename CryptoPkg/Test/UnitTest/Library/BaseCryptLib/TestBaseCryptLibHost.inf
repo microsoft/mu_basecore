@@ -24,6 +24,7 @@
   UnitTestMainHost.c
   BaseCryptLibUnitTests.c
   TestBaseCryptLib.h
+  Pkcs7LengthTestData.h
   HashTests.c
   HmacTests.c
   BlockCipherTests.c
