@@ -32,10 +32,11 @@ jobs:
     if: |
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'failure'
-    uses: microsoft/mu_devops/.github/workflows/PullRequestFormattingValidatorPost.yml@894949127ade038c299c30790741f36e1a5436fe # v18.0.9
+    uses: microsoft/mu_devops/.github/workflows/PullRequestFormattingValidatorPost.yml@9720bedf20a0e78a93b79f9d43a7bbfc2be38a62 # v18.0.10
     with:
       app-id: ${{ vars.MU_ACCESS_APP_ID }}
       head-sha: ${{ github.event.workflow_run.head_sha }}
       triggering-run-id: ${{ github.event.workflow_run.id }}
     secrets:
       private-key: ${{ secrets.MU_ACCESS_APP_PRIVATE_KEY }}
+

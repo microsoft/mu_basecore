@@ -34,16 +34,18 @@ concurrency:
   group: label-issues-post-${{ github.event_name == 'issues' && format('issue-{0}', github.event.issue.number) || github.event.workflow_run.head_sha }}
   cancel-in-progress: true
 
+
 jobs:
   apply:
     if: |
       github.event_name == 'issues' ||
       (github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'pull_request')
-    uses: microsoft/mu_devops/.github/workflows/Labeler.yml@894949127ade038c299c30790741f36e1a5436fe # v18.0.9
+    uses: microsoft/mu_devops/.github/workflows/Labeler.yml@9720bedf20a0e78a93b79f9d43a7bbfc2be38a62 # v18.0.10
     with:
       app-id: ${{ vars.MU_ACCESS_APP_ID }}
       head-sha: ${{ github.event.workflow_run.head_sha }}
       triggering-run-id: ${{ github.event.workflow_run.id || 0 }}
     secrets:
       private-key: ${{ secrets.MU_ACCESS_APP_PRIVATE_KEY }}
+
