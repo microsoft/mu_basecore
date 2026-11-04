@@ -49,12 +49,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
 
 
     - name: Install Python
-      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: '3.12'
 
@@ -102,12 +102,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
 
 
     - name: Install Python
-      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: '3.12'
         cache: 'pip'
@@ -222,7 +222,7 @@ jobs:
     # and need to be investigated
     # - name: Attempt to Load cargo-make From Cache
     #   id: cargo_make_cache
-    #   uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+    #   uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
     #   with:
     #     path: ${{ steps.get_cargo_tool_details.outputs.cargo_bin_path }}
     #     key: ${{ steps.get_cargo_tool_details.outputs.cargo_make_cache_key }}
@@ -274,7 +274,7 @@ jobs:
       run: stuart_setup -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }}
 
     - name: Upload Setup Log As An Artifact
-      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: (success() || failure()) && steps.get_ci_file_operations.outputs.setup_supported == 'true'
       with:
         name: ${{ matrix.package }}-Setup-Log
@@ -288,7 +288,7 @@ jobs:
       run: stuart_ci_setup -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }}
 
     - name: Upload CI Setup Log As An Artifact
-      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: (success() || failure()) && steps.get_ci_file_operations.outputs.ci_setup_supported == 'true'
       with:
         name: ${{ matrix.package }}-CI-Setup-Log
@@ -301,7 +301,7 @@ jobs:
       run: stuart_update -c .pytool/CISettings.py -t DEBUG -a ${{ matrix.archs }} TOOL_CHAIN_TAG=${{ matrix.tool_chain_tag }}
 
     - name: Upload Update Log As An Artifact
-      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: success() || failure()
       with:
         name: ${{ matrix.package }}-Update-Log
@@ -367,7 +367,7 @@ jobs:
 
     - name: Attempt to Load CodeQL CLI From Cache
       id: codeqlcli_cache
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ steps.cache_key_gen.outputs.codeql_cli_ext_dep_dir }}
         key: ${{ steps.cache_key_gen.outputs.codeql_cli_cache_key }}
@@ -453,7 +453,7 @@ jobs:
         delete_dirs(build_path)
 
     - name: Upload Build Logs As An Artifact
-      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: success() || failure()
       with:
         name: ${{ matrix.package }}-Build-Logs
@@ -484,7 +484,7 @@ jobs:
             print(f'sarif_file_path={sarif_path}', file=fh)
 
     - name: Upload CodeQL Results (SARIF) As An Artifact
-      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: ${{ matrix.package }}-CodeQL-SARIF
         path: ${{ steps.env_data.outputs.sarif_file_path }}
@@ -492,7 +492,7 @@ jobs:
         if-no-files-found: warn
 
     - name: Upload CodeQL Results (SARIF) To GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@311b4ee155dcdab395044f00946f664bd51ff173 # v4
+      uses: github/codeql-action/upload-sarif@1fc58d04a4d4374f921bdac573c3811c240f9c26 # v4.39.2
       with:
         # Path to SARIF file relative to the root of the repository.
         sarif_file: ${{ steps.env_data.outputs.sarif_file_path }}
@@ -513,7 +513,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Create Empty SARIF
       shell: python
@@ -540,7 +540,7 @@ jobs:
             json.dump(sarif, f)
 
     - name: Upload Empty SARIF To GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@311b4ee155dcdab395044f00946f664bd51ff173 # v4
+      uses: github/codeql-action/upload-sarif@1fc58d04a4d4374f921bdac573c3811c240f9c26 # v4.39.2
       with:
         sarif_file: empty.sarif
         category: no-packages
