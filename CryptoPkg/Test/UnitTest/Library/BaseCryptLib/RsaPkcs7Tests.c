@@ -8,6 +8,7 @@
 **/
 
 #include "TestBaseCryptLib.h"
+#include "Pkcs7LengthTestData.h"
 
 //
 // Password-protected PEM Key data for RSA Private Key Retrieving (encryption key is "client").
@@ -663,6 +664,82 @@ TestVerifyPkcs7SignVerifyNonSelfIssued (
   return UNIT_TEST_PASSED;
 }
 
+/**
+  Reject truncated inputs using exact-sized allocations.
+**/
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
+TestPkcs7ShortInput (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  UINT8    *Input;
+  UINTN    Size;
+  BOOLEAN  Verified;
+
+  for (Size = 0; Size < 19; Size++) {
+    Input = AllocateCopyPool ((Size == 0) ? 1 : Size, mPkcs7LengthPrefix16);
+    UT_ASSERT_NOT_NULL (Input);
+    Verified = Pkcs7Verify (Input, Size, TestCACert, sizeof (TestCACert), (UINT8 *)Payload, AsciiStrLen (Payload));
+    FreePool (Input);
+    UT_ASSERT_FALSE (Verified);
+  }
+
+  return UNIT_TEST_PASSED;
+}
+
+typedef struct {
+  CONST UINT8    *Prefix;
+  UINTN          PrefixSize;
+  UINTN          CertificateCount;
+  UINTN          RawOffset;
+} PKCS7_LENGTH_CASE;
+
+STATIC PKCS7_LENGTH_CASE  mPkcs7LengthCases[] = {
+  { mPkcs7LengthPrefix16, sizeof (mPkcs7LengthPrefix16), PKCS7_LENGTH16_CERT_COUNT, PKCS7_LENGTH16_RAW_OFFSET },
+  { mPkcs7LengthPrefix24, sizeof (mPkcs7LengthPrefix24), PKCS7_LENGTH24_CERT_COUNT, PKCS7_LENGTH24_RAW_OFFSET },
+};
+
+/**
+  Verify wrapped and bare SignedData on both sides of the 64 KiB boundary.
+**/
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
+TestPkcs7LengthEncoding (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  PKCS7_LENGTH_CASE  *Test;
+  UINT8              *Data;
+  UINTN              Size;
+  UINTN              Offset;
+  UINTN              Index;
+  BOOLEAN            WrappedVerified;
+  BOOLEAN            RawVerified;
+
+  Test = Context;
+  Size = Test->PrefixSize + Test->CertificateCount * sizeof (TestCACert) + sizeof (mPkcs7LengthSuffix);
+  UT_ASSERT_EQUAL (Size > MAX_UINT16, Test == &mPkcs7LengthCases[1]);
+  Data = AllocatePool (Size);
+  UT_ASSERT_NOT_NULL (Data);
+  CopyMem (Data, Test->Prefix, Test->PrefixSize);
+  Offset = Test->PrefixSize;
+  for (Index = 0; Index < Test->CertificateCount; Index++) {
+    CopyMem (Data + Offset, TestCACert, sizeof (TestCACert));
+    Offset += sizeof (TestCACert);
+  }
+
+  CopyMem (Data + Offset, mPkcs7LengthSuffix, sizeof (mPkcs7LengthSuffix));
+  WrappedVerified = Pkcs7Verify (Data, Size, TestCACert, sizeof (TestCACert), (UINT8 *)Payload, AsciiStrLen (Payload));
+  RawVerified     = Pkcs7Verify (Data + Test->RawOffset, Size - Test->RawOffset, TestCACert, sizeof (TestCACert), (UINT8 *)Payload, AsciiStrLen (Payload));
+  FreePool (Data);
+  UT_ASSERT_TRUE (WrappedVerified);
+  UT_ASSERT_TRUE (RawVerified);
+  return UNIT_TEST_PASSED;
+}
+
 TEST_DESC  mRsaCertTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function-----------------Pre---Post--Context
@@ -676,8 +753,11 @@ TEST_DESC  mPkcs7Test[] = {
   //
   // -----Description--------------------------------------Class----------------------Function-----------------Pre---Post--Context
   //
-  { "TestVerifyPkcs7SignVerify()",              "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerify,              NULL, NULL, NULL },
-  { "TestVerifyPkcs7SignVerifyNonSelfIssued()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerifyNonSelfIssued, NULL, NULL, NULL },
+  { "TestVerifyPkcs7SignVerify()",              "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerify,              NULL, NULL, NULL                  },
+  { "TestVerifyPkcs7SignVerifyNonSelfIssued()", "CryptoPkg.BaseCryptLib.Pkcs7", TestVerifyPkcs7SignVerifyNonSelfIssued, NULL, NULL, NULL                  },
+  { "Reject short PKCS7 inputs",                "CryptoPkg.BaseCryptLib.Pkcs7", TestPkcs7ShortInput,                    NULL, NULL, NULL                  },
+  { "Verify PKCS7 below 64 KiB",                "CryptoPkg.BaseCryptLib.Pkcs7", TestPkcs7LengthEncoding,                NULL, NULL, &mPkcs7LengthCases[0] },
+  { "Verify PKCS7 above 64 KiB",                "CryptoPkg.BaseCryptLib.Pkcs7", TestPkcs7LengthEncoding,                NULL, NULL, &mPkcs7LengthCases[1] },
 };
 
 UINTN  mPkcs7TestNum = ARRAY_SIZE (mPkcs7Test);

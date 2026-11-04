@@ -992,11 +992,42 @@ TestVerifyAuthenticodeVerify (
   return UNIT_TEST_PASSED;
 }
 
+/**
+  Reject an SPC_INDIRECT_DATA ContentInfo containing a BOOLEAN, not a SEQUENCE.
+**/
+STATIC
+UNIT_TEST_STATUS
+EFIAPI
+TestAuthenticodeContentType (
+  IN UNIT_TEST_CONTEXT  Context
+  )
+{
+  STATIC CONST UINT8  BooleanContent[] = {
+    0x30, 0x29, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x07, 0x02,
+    0xA0, 0x1C, 0x30, 0x1A, 0x02, 0x01, 0x01, 0x31, 0x00, 0x30, 0x11, 0x06, 0x0A,
+    0x2B, 0x06, 0x01, 0x04, 0x01, 0x82, 0x37, 0x02, 0x01, 0x04, 0xA0, 0x03, 0x01,
+    0x01, 0xFF, 0x31, 0x00
+  };
+
+  UT_ASSERT_FALSE (
+    AuthenticodeVerify (
+      BooleanContent,
+      sizeof (BooleanContent),
+      TestRootCert2,
+      sizeof (TestRootCert2),
+      PeSha256Hash,
+      sizeof (PeSha256Hash)
+      )
+    );
+  return UNIT_TEST_PASSED;
+}
+
 TEST_DESC  mAuthenticodeTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function-----------------Pre---Post--Context
   //
   { "TestVerifyAuthenticodeVerify()", "CryptoPkg.BaseCryptLib.Authenticode", TestVerifyAuthenticodeVerify, NULL, NULL, NULL },
+  { "Reject non-SEQUENCE content",    "CryptoPkg.BaseCryptLib.Authenticode", TestAuthenticodeContentType,  NULL, NULL, NULL },
 };
 
 UINTN  mAuthenticodeTestNum = ARRAY_SIZE (mAuthenticodeTest);
