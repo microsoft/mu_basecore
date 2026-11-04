@@ -1,0 +1,43 @@
+## @file
+# Host tests for USB reset personality transitions.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010017
+  BASE_NAME      = UsbBusDxeGoogleTest
+  FILE_GUID      = 4D361CEA-33F9-4B91-B989-EA64B02CED3F
+  MODULE_TYPE    = HOST_APPLICATION
+  VERSION_STRING = 1.0
+
+[Sources]
+  UsbBusDxeGoogleTest.cpp
+  ../UsbBus.c
+  ../UsbEnumer.c
+  ../UsbDesc.c
+  ../UsbUtility.c
+  ../UsbHub.c
+  ../ComponentName.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  GoogleTestLib
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  DevicePathLib
+  UefiBootServicesTableLib
+  UefiLib
+  ReportStatusCodeLib
+
+[Protocols]
+  gEfiUsbIoProtocolGuid
+  gEfiDevicePathProtocolGuid
+  gEfiUsb2HcProtocolGuid
+
