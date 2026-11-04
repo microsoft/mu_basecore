@@ -38,7 +38,8 @@
     },
     ## options defined .pytool/Plugin/HostUnitTestCompilerPlugin
     "HostUnitTestCompilerPlugin": {
-        #"DscPath": "Test/CryptoPkgHostUnitTest.dsc"  # MU_CHANGE - Move to OneCrypto
+        # MU_CHANGE - Run provider-independent OneCrypto capability tests instead of the legacy provider suite.
+        "DscPath": "Test/UnitTest/Library/BaseCryptLibOnOneCrypto/CapabilityTest.dsc"
     },
     "CharEncodingCheck": {
         "IgnoreFiles": []
