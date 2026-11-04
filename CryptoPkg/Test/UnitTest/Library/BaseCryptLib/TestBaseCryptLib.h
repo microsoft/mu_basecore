@@ -114,6 +114,16 @@ extern TEST_DESC  mX509Test[];
 extern UINTN      mPkcs7ContentTestNum;
 extern TEST_DESC  mPkcs7ContentTest[];
 
+extern UINTN      mCryptoOpCapabilityTestNum;
+extern TEST_DESC  mCryptoOpCapabilityTest[];
+
+/** Validates provider-independent capability arrays, including empty sets. **/
+UNIT_TEST_STATUS
+EFIAPI
+TestCryptoOpCapabilityArrays (
+  IN UNIT_TEST_CONTEXT  Context
+  );
+
 //
 // Test Case only for MbedTls.
 //

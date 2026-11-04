@@ -23,6 +23,7 @@
   UnitTestMain.c
   BaseCryptLibUnitTests.c
   TestBaseCryptLib.h
+  CryptoOpCapabilityTests.c
   HashTests.c
   HmacTests.c
   BlockCipherTests.c
@@ -59,3 +60,9 @@
   UnitTestLib
   PrintLib
   BaseCryptLib
+
+[Guids]
+  gCryptoOpCmsVerifyGuid
+  gCryptoOpCmsContentDigestGuid
+  gCryptoOpAuthenticodeVerifyGuid
+  gCryptoOpAuthenticodeHashGuid
