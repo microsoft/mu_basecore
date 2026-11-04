@@ -8,6 +8,7 @@
 #include <GoogleTest/Library/MockBaseCryptLib.h>
 
 MOCK_INTERFACE_DEFINITION (MockBaseCryptLib);
+MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, GetCryptoOpCapability, 3, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, Md5GetContextSize, 0, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, Md5Init, 1, EFIAPI);
 MOCK_FUNCTION_DEFINITION (MockBaseCryptLib, Md5Duplicate, 2, EFIAPI);

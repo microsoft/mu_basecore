@@ -19,6 +19,16 @@ struct MockBaseCryptLib {
   MOCK_INTERFACE_DECLARATION (MockBaseCryptLib);
 
   MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    GetCryptoOpCapability,
+    (
+     IN  CONST EFI_GUID            *OpIdGuid,
+     OUT BASE_CRYPT_OP_CAPABILITY  **Capabilities,
+     OUT UINTN                     *CapabilityCount
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
     UINTN,
     Md5GetContextSize,
     (
