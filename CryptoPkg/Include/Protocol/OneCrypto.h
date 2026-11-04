@@ -5,8 +5,8 @@
   Copyright (C) Microsoft Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  UPDATED: 2025-Nov-11
-  VERSION: 1.0
+  UPDATED: 2026-Nov-12
+  VERSION: 1.1
 
   ============================================================================
   IMPORTANT: PLATFORM CODE SHOULD NOT USE THIS PROTOCOL DIRECTLY
@@ -52,10 +52,10 @@ extern EFI_GUID  gOneCryptoProtocolGuid;
 **/
 
 // =============================================================================
-// Protocol version: 1.0
+// Protocol version: 1.1
 // =============================================================================
 #define ONE_CRYPTO_VERSION_MAJOR  1ULL
-#define ONE_CRYPTO_VERSION_MINOR  0ULL
+#define ONE_CRYPTO_VERSION_MINOR  1ULL
 
 // ============================================================================
 // Typedef Declarations
@@ -5211,6 +5211,36 @@ EFI_STATUS
   IN OUT UINTN   *BufferSize
   );
 
+/**
+  Returns provider algorithm capabilities for one cryptographic operation.
+
+  Uses the GetCryptoOpCapability() allocation and status contract. The returned
+  array and its NUL-terminated dotted-decimal OID strings share one allocation,
+  which the caller releases once with FreePool(). An empty supported set
+  returns EFI_SUCCESS, a NULL array, and zero count. On error, every non-NULL
+  output argument is cleared; no allocation is returned.
+
+  @param[in]  OpIdGuid         GUID identifying the crypto operation.
+  @param[out] Capabilities     Receives the caller-owned capability array.
+  @param[out] CapabilityCount  Receives the number of array elements.
+
+  @retval EFI_SUCCESS            The query succeeded, possibly with an empty set.
+  @retval EFI_NOT_FOUND          The provider does not implement OpIdGuid.
+  @retval EFI_UNSUPPORTED        The provider does not expose capability reporting.
+  @retval EFI_OUT_OF_RESOURCES   The capability array could not be allocated.
+  @retval EFI_INVALID_PARAMETER  Any argument is NULL.
+
+  @since 1.1
+  @ingroup Info
+**/
+typedef
+EFI_STATUS
+(EFIAPI *ONE_CRYPTO_GET_CRYPTO_OP_CAPABILITY)(
+  IN  CONST EFI_GUID            *OpIdGuid,
+  OUT BASE_CRYPT_OP_CAPABILITY  **Capabilities,
+  OUT UINTN                     *CapabilityCount
+  );
+
 /** @} */
 
 // =============================================================================
@@ -5229,6 +5259,7 @@ EFI_STATUS
 
   Supports functions from versions:
    - 1.0
+   - 1.1
 
   @since 1.0
   @ingroup OneCryptoProtocol
@@ -5471,6 +5502,8 @@ typedef struct _ONE_CRYPTO_PROTOCOL {
   ONE_CRYPTO_IMAGE_TIMESTAMP_VERIFY                 ImageTimestampVerify;
   /// v1.0 Info --------------------------------------------------------------
   ONE_CRYPTO_GET_CRYPTO_PROVIDER_VERSION_STRING     GetCryptoProviderVersionString;
+  /// v1.1 Info --------------------------------------------------------------
+  ONE_CRYPTO_GET_CRYPTO_OP_CAPABILITY               GetCryptoOpCapability;
 } ONE_CRYPTO_PROTOCOL;
 
 /** @} */

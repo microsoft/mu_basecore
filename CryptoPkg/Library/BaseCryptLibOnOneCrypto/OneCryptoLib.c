@@ -21,6 +21,61 @@
 ONE_CRYPTO_PROTOCOL  *gCryptoProtocol = NULL;
 
 /**
+  Queries the optional capability service in a compatible OneCrypto protocol.
+
+  Checks the protocol version before accessing the appended 1.1 field, so
+  older or incompatible layouts are never read at that offset. Later 1.x
+  minor versions retain the same layout. A missing optional service returns
+  EFI_UNSUPPORTED without asserting.
+
+  Provider results use the GetCryptoOpCapability() contract: the caller frees
+  a successful array once with FreePool(), and OID strings share that allocation.
+
+  @param[in]  OpIdGuid         GUID identifying the crypto operation.
+  @param[out] Capabilities     Receives the caller-owned capability array.
+  @param[out] CapabilityCount  Receives the number of array elements.
+
+  @retval EFI_UNSUPPORTED        The protocol is absent, is not compatible with
+                                 version 1.1, or has no capability service.
+  @retval EFI_INVALID_PARAMETER  Any argument is NULL.
+  @return                       Otherwise, the status returned by the provider.
+**/
+EFI_STATUS
+EFIAPI
+GetCryptoOpCapability (
+  IN  CONST EFI_GUID            *OpIdGuid,
+  OUT BASE_CRYPT_OP_CAPABILITY  **Capabilities,
+  OUT UINTN                     *CapabilityCount
+  )
+{
+  if (Capabilities != NULL) {
+    *Capabilities = NULL;
+  }
+
+  if (CapabilityCount != NULL) {
+    *CapabilityCount = 0;
+  }
+
+  if ((OpIdGuid == NULL) || (Capabilities == NULL) || (CapabilityCount == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if ((gCryptoProtocol == NULL) ||
+      (gCryptoProtocol->Major != 1) || (gCryptoProtocol->Minor < 1))
+  {
+    DEBUG ((DEBUG_WARN, "[%a] Protocol 1.1 capability reporting is unavailable\n", gEfiCallerBaseName));
+    return EFI_UNSUPPORTED;
+  }
+
+  if (gCryptoProtocol->GetCryptoOpCapability == NULL) {
+    DEBUG ((DEBUG_WARN, "[%a] GetCryptoOpCapability is unavailable\n", gEfiCallerBaseName));
+    return EFI_UNSUPPORTED;
+  }
+
+  return gCryptoProtocol->GetCryptoOpCapability (OpIdGuid, Capabilities, CapabilityCount);
+}
+
+/**
   Internal worker function that validates the crypto protocol version meets
   minimum requirements for a specific function.
 
