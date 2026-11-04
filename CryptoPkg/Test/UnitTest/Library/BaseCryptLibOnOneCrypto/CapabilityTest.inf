@@ -1,0 +1,40 @@
+## @file
+# Host tests for OneCrypto capability forwarding.
+#
+# Copyright (C) Microsoft Corporation
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = OneCryptoCapabilityTest
+  FILE_GUID      = 11c0fa84-c31c-46c1-8cda-437c5f469617
+  MODULE_TYPE    = HOST_APPLICATION
+  VERSION_STRING = 1.0
+
+[Sources]
+  CapabilityTest.c
+  ../BaseCryptLib/CryptoOpCapabilityTests.c
+  ../../../../Library/BaseCryptLibOnOneCrypto/OneCryptoLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  CryptoPkg/CryptoPkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  UnitTestLib
+
+[Guids]
+  gCryptoOpCmsVerifyGuid
+  gCryptoOpCmsContentDigestGuid
+  gCryptoOpAuthenticodeVerifyGuid
+  gCryptoOpAuthenticodeHashGuid
+
+[BuildOptions]
+  # Avoid the Windows kernel32 TlsFree symbol when linking the host test.
+  MSFT:*_*_*_CC_FLAGS = /DTlsFree=OneCryptoTestTlsFree
