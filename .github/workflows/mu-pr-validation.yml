@@ -1,6 +1,6 @@
 # Runs QEMU-based platform validation on pull requests.
 #
-# Triggered by the completion of the "CLANGPDB Package CI" workflow.
+# Triggered directly by pull requests targeting the test validation branch.
 #
 # Gathers PR metadata and calls the reusable MuPrValidation workflow in
 # mu_devops to build and boot mu_basecore changes on QEMU Q35 and SBSA.
@@ -30,10 +30,10 @@ jobs:
     uses: microsoft/mu_devops/.github/workflows/MuPrValidation.yml@kvm_q35
     with:
       app-id: ${{ vars.MU_ACCESS_APP_ID }}
-      caller-ref: ${{ github.event.workflow_run.head_sha }}
+      caller-ref: ${{ github.event.pull_request.head.sha }}
       caller-repo: ${{ github.event.pull_request.head.repo.full_name }}
       caller-repo-name: mu_basecore
-      head-sha: ${{ github.event.workflow_run.head_sha }}
+      head-sha: ${{ github.event.pull_request.head.sha }}
       pr-number: ${{ github.event.pull_request.number }}
       submodule-path: MU_BASECORE
     secrets:
