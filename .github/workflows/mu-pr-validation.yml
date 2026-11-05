@@ -11,9 +11,8 @@
 name: Mu QEMU PR Validation
 
 on:
-  workflow_run:
-    workflows: ["CLANGPDB Package CI"]
-    types: ["completed"]
+  push:
+    branches: [test_validation_target]
 
 concurrency:
   group: mu-qemu-pr-${{ github.event.workflow_run.head_branch }}
@@ -132,7 +131,7 @@ jobs:
     name: Run Mu QEMU Validation
     needs: [prepare]
     if: needs.prepare.result == 'success' && needs.prepare.outputs.skip != 'true'
-    uses: microsoft/mu_devops/.github/workflows/MuPrValidation.yml@main
+    uses: microsoft/mu_devops/.github/workflows/MuPrValidation.yml@kvm_q35
     with:
       app-id: ${{ vars.MU_ACCESS_APP_ID }}
       caller-ref: ${{ github.event.workflow_run.head_sha }}
