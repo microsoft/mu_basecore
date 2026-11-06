@@ -22,7 +22,6 @@
         ],
         # use gitignore syntax to ignore errors in matching files
         "IgnoreFiles": [
-            "Source/C/BrotliCompress",
         ],
         # words to extend to the dictionary for this package
         "ExtendWords": [],
@@ -33,7 +32,6 @@
     "MarkdownLintCheck": {
         # package root relative file, folder, or glob pattern to ignore
         "IgnoreFiles": [
-            "Source/C/BrotliCompress/brotli",
             "BaseToolsBuild"        # MU_CHANGE - Ignore build logs.
         ]
     },

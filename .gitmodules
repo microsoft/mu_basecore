@@ -1,16 +1,6 @@
 [submodule "UnitTestFrameworkPkg/Library/CmockaLib/cmocka"]
 	path = UnitTestFrameworkPkg/Library/CmockaLib/cmocka
 	url = https://github.com/tianocore/edk2-cmocka.git
-[submodule "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma"]
-	path = MdeModulePkg/Universal/RegularExpressionDxe/oniguruma
-	url = https://github.com/kkos/oniguruma
-[submodule "MdeModulePkg/Library/BrotliCustomDecompressLib/brotli"]
-	path = MdeModulePkg/Library/BrotliCustomDecompressLib/brotli
-	url = https://github.com/google/brotli
-[submodule "BaseTools/Source/C/BrotliCompress/brotli"]
-	path = BaseTools/Source/C/BrotliCompress/brotli
-	url = https://github.com/google/brotli
-	ignore = untracked
 [submodule "UnitTestFrameworkPkg/Library/GoogleTestLib/googletest"]
 	path = UnitTestFrameworkPkg/Library/GoogleTestLib/googletest
 	url = https://github.com/google/googletest.git
@@ -23,6 +13,3 @@
 [submodule "MdePkg/Library/MipiSysTLib/mipisyst"]
 	path = MdePkg/Library/MipiSysTLib/mipisyst
 	url = https://github.com/MIPI-Alliance/public-mipi-sys-t.git
-[submodule "SecurityPkg/DeviceSecurity/SpdmLib/libspdm"]
-	path = SecurityPkg/DeviceSecurity/SpdmLib/libspdm
-	url = https://github.com/DMTF/libspdm.git

@@ -81,19 +81,6 @@
   OemTpm2InitLib|SecurityPkg/Library/OemTpm2InitLibNull/OemTpm2InitLib.inf               ## MU_CHANGE
   Hash2CryptoLib|SecurityPkg/Library/BaseHash2CryptoLibNull/BaseHash2CryptoLibNull.inf   ## MU_CHANGE
 
-  SpdmSecurityLib|SecurityPkg/DeviceSecurity/SpdmSecurityLib/SpdmSecurityLib.inf
-  SpdmDeviceSecretLib|SecurityPkg/DeviceSecurity/SpdmLib/SpdmDeviceSecretLibNull.inf
-  SpdmCryptLib|SecurityPkg/DeviceSecurity/SpdmLib/SpdmCryptLib.inf
-  SpdmCommonLib|SecurityPkg/DeviceSecurity/SpdmLib/SpdmCommonLib.inf
-  SpdmRequesterLib|SecurityPkg/DeviceSecurity/SpdmLib/SpdmRequesterLib.inf
-  SpdmResponderLib|SecurityPkg/DeviceSecurity/SpdmLib/SpdmResponderLib.inf
-  SpdmSecuredMessageLib|SecurityPkg/DeviceSecurity/SpdmLib/SpdmSecuredMessageLib.inf
-  SpdmTransportMctpLib|SecurityPkg/DeviceSecurity/SpdmLib/SpdmTransportMctpLib.inf
-  SpdmTransportPciDoeLib|SecurityPkg/DeviceSecurity/SpdmLib/SpdmTransportPciDoeLib.inf
-  CryptlibWrapper|SecurityPkg/DeviceSecurity/OsStub/CryptlibWrapper/CryptlibWrapper.inf
-  PlatformLibWrapper|SecurityPkg/DeviceSecurity/OsStub/PlatformLibWrapper/PlatformLibWrapper.inf
-  MemLibWrapper|SecurityPkg/DeviceSecurity/OsStub/MemLibWrapper/MemLibWrapper.inf
-
   ## MU_CHANGE [BEGIN] - Measure Firmware Debugger Enabled
   DeviceStateLib|MdeModulePkg/Library/DeviceStateLib/DeviceStateLib.inf 
   PanicLib|MdePkg/Library/BasePanicLibNull/BasePanicLibNull.inf 
@@ -305,22 +292,6 @@
   #
   SecurityPkg/RandomNumberGenerator/RngPei/RngPei.inf
   SecurityPkg/RandomNumberGenerator/RngDxe/RngDxe.inf
-
-  #
-  # SPDM
-  #
-  SecurityPkg/DeviceSecurity/SpdmSecurityLib/SpdmSecurityLib.inf
-  SecurityPkg/DeviceSecurity/SpdmLib/SpdmDeviceSecretLibNull.inf
-  SecurityPkg/DeviceSecurity/SpdmLib/SpdmCryptLib.inf
-  SecurityPkg/DeviceSecurity/SpdmLib/SpdmCommonLib.inf
-  SecurityPkg/DeviceSecurity/SpdmLib/SpdmRequesterLib.inf
-  SecurityPkg/DeviceSecurity/SpdmLib/SpdmResponderLib.inf
-  SecurityPkg/DeviceSecurity/SpdmLib/SpdmSecuredMessageLib.inf
-  SecurityPkg/DeviceSecurity/SpdmLib/SpdmTransportMctpLib.inf
-  SecurityPkg/DeviceSecurity/SpdmLib/SpdmTransportPciDoeLib.inf
-  SecurityPkg/DeviceSecurity/OsStub/CryptlibWrapper/CryptlibWrapper.inf
-  SecurityPkg/DeviceSecurity/OsStub/PlatformLibWrapper/PlatformLibWrapper.inf
-  SecurityPkg/DeviceSecurity/OsStub/MemLibWrapper/MemLibWrapper.inf
 
 [Components.IA32, Components.X64]
   SecurityPkg/VariableAuthenticated/SecureBootConfigDxe/SecureBootConfigDxe.inf

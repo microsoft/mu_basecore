@@ -1544,12 +1544,6 @@ RELEASE_XCODE5_X64_CC_FLAGS   = -target x86_64-pc-win32-macho -c    -Os       -W
 *_*_*_RSA2048SHA256SIGN_GUID = A7717414-C616-4977-9420-844712A735BF
 
 ##################
-# BrotliCompress tool definitions
-##################
-*_*_*_BROTLI_PATH        = BrotliCompress
-*_*_*_BROTLI_GUID        = 3D532050-5CDA-4FD0-879E-0F7F630D5AFB
-
-##################
 # LzmaCompress tool definitions
 ##################
 *_*_*_LZMA_PATH          = LzmaCompress
