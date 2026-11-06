@@ -99,7 +99,6 @@ class GUIDTools:
         struct2stream(ModifyGuidFormat("ee4e5898-3914-4259-9d6e-dc7bd79403cf")): GUIDTool("ee4e5898-3914-4259-9d6e-dc7bd79403cf", "LZMA", "LzmaCompress"),
         struct2stream(ModifyGuidFormat("fc1bcdb0-7d31-49aa-936a-a4600d9dd083")): GUIDTool("fc1bcdb0-7d31-49aa-936a-a4600d9dd083", "CRC32", "GenCrc32"),
         struct2stream(ModifyGuidFormat("d42ae6bd-1352-4bfb-909a-ca72a6eae889")): GUIDTool("d42ae6bd-1352-4bfb-909a-ca72a6eae889", "LZMAF86", "LzmaF86Compress"),
-        struct2stream(ModifyGuidFormat("3d532050-5cda-4fd0-879e-0f7f630d5afb")): GUIDTool("3d532050-5cda-4fd0-879e-0f7f630d5afb", "BROTLI", "BrotliCompress"),
     }
 
     def __init__(self, tooldef_file: str=None) -> None:

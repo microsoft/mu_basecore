@@ -30,8 +30,14 @@ Branch Status - release/202608
 Branch Changes - release/202608
 ===============================
 
-Breaking Changes-dev
+Breaking Changes
 --------------------
+
+- Submodules
+
+  - Mu drops submodules that consumers are not using to reduce the noise of automated code scanning finding
+    vulnerabilities in unused submodules. Brotli, Oniguruma, and libspdm are all removed, including their edk2 glue
+    layers.
 
 - Header include guards
 

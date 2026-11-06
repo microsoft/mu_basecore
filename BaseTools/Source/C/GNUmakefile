@@ -24,7 +24,6 @@ all: makerootdir subdirs
 # MU_CHANGE [BEGIN] - Add the GenStm application
 LIBRARIES = Common
 APPLICATIONS = \
-  BrotliCompress \
   VfrCompile \
   EfiRom \
   GenFfs \
