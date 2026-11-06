@@ -125,6 +125,16 @@
                                                                                                    "The value is FALSE as default for compatibility that variable driver tries to reclaim variable space at ReadyToBoot event.<BR>\n"
                                                                                                    "If the value is set to TRUE, variable driver tries to reclaim variable space at EndOfDxe event.<BR>"
 
+// MU_CHANGE [BEGIN] - Allow platforms to disable runtime NV reclaim.
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdRuntimeNvReclaimOnce_PROMPT  #language en-US "Allow one runtime non-volatile variable store reclaim attempt per boot"
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdRuntimeNvReclaimOnce_HELP  #language en-US "Allow one non-volatile variable store reclaim attempt at OS runtime per boot.<BR><BR>\n"
+                                                                                              "TRUE preserves the existing allowance of at most one runtime reclaim attempt per boot.<BR>\n"
+                                                                                              "The allowance is consumed even if the reclaim attempt fails.<BR>\n"
+                                                                                              "FALSE prevents runtime reclaim and returns EFI_OUT_OF_RESOURCES when variable space is insufficient.<BR>\n"
+                                                                                              "Boot-time reclaim is not affected by this setting.<BR>"
+// MU_CHANGE [END]
+
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdVariableStoreSize_PROMPT  #language en-US "Variable storage size"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdVariableStoreSize_HELP  #language en-US "The size of volatile buffer. This buffer is used to store VOLATILE attribute variables."

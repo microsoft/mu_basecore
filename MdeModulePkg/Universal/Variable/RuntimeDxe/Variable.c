@@ -1374,10 +1374,10 @@ CheckRemainingSpaceForConsistencyInternal (
     return TRUE;
   } else if (AtRuntime ()) {
     // MU_CHANGE [BEGIN] - 279849 // MU_CHANGE - Allow Reclaim once at Runtime
-    if (mReclaimedAtRuntime) {
+    if (!PcdGetBool (PcdRuntimeNvReclaimOnce) || mReclaimedAtRuntime) {
       //
-      // At runtime, only allow one reclaim.
-      // The original variable space of Variables can't be reused.
+      // The original variable space cannot be reused when runtime reclaim
+      // is disabled or has already been attempted.
       //
       return FALSE;
     }
@@ -2224,8 +2224,8 @@ UpdateVariable (
       // MU_CHANGE Ends
       if (AtRuntime ()) {
         // MU_CHANGE [BEGIN] 279849
-        // MU_CHANGE -- Allow reclaim once at Runtime.
-        if (!mReclaimedAtRuntime) {
+        // MU_CHANGE -- Allow reclaim once at Runtime when enabled.
+        if (PcdGetBool (PcdRuntimeNvReclaimOnce) && !mReclaimedAtRuntime) {
           mReclaimedAtRuntime = TRUE;
         } else {
           // MU_CHANGE [END] - 279849
