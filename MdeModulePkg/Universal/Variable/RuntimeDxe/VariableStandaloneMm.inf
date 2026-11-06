@@ -130,6 +130,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxUserNvVariableSpaceSize           ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdBoottimeReservedNvVariableSpaceSize  ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdReclaimVariableSpaceAtEndOfDxe   ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRuntimeNvReclaimOnce            ## CONSUMES   MU_CHANGE - Allow platforms to disable runtime NV reclaim.
   gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable          ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvStoreReserved       ## SOMETIMES_CONSUMES
 
