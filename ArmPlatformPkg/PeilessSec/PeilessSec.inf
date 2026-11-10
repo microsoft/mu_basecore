@@ -41,6 +41,7 @@
   DebugLib
   HobLib
   MemoryInitPeiLib
+  PcdLib                # MU_CHANGE
   PeilessSecMeasureLib
   PerformanceLib
   PlatformPeiLib
@@ -60,6 +61,7 @@
   gArmMpCoreInfoGuid
   gEfiFirmwarePerformanceGuid
   gArmTransferListHobGuid
+  gTpmErrorHobGuid  # MU_CHANGE
 
 [FeaturePcd]
   gEmbeddedTokenSpaceGuid.PcdPrePiProduceMemoryTypeInformationHob
@@ -77,3 +79,4 @@
   gArmTokenSpaceGuid.PcdSystemMemoryBase
   gArmTokenSpaceGuid.PcdSystemMemorySize
   gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2InitializationPolicy  # MU_CHANGE
