@@ -1,5 +1,5 @@
 ## @file
-# Host tests for OneCrypto capability forwarding.
+# Host tests for OneCrypto capability and Authenticode forwarding.
 #
 # Copyright (C) Microsoft Corporation
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -14,6 +14,7 @@
 
 [Sources]
   CapabilityTest.c
+  AuthenticodeTest.c
   ../BaseCryptLib/CryptoOpCapabilityTests.c
   ../../../../Library/BaseCryptLibOnOneCrypto/OneCryptoLib.c
 
