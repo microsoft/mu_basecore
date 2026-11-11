@@ -26,6 +26,10 @@
   DeviceSecurity/SpdmLib/libspdm/include
 
 [LibraryClasses]
+  ##  @libraryclass  Utilities for working with a PE/COFF image's Windows Authenticode signature.
+  #
+  AuthenticodeLib|Include/Library/AuthenticodeLib.h
+
   ##  @libraryclass  Provides hash interfaces from different implementations.
   #
   HashLib|Include/Library/HashLib.h
