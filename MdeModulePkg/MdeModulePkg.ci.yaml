@@ -28,9 +28,7 @@
         ],
         ## Both file path and directory path are accepted.
         "IgnoreFiles": [
-            "Library/LzmaCustomDecompressLib",
-            "Library/BrotliCustomDecompressLib",
-            "Universal/RegularExpressionDxe"
+            "Library/LzmaCustomDecompressLib"
         ]
     },
     ## options defined .pytool/Plugin/CompilerPlugin
@@ -44,10 +42,7 @@
 
     ## options defined .pytool/Plugin/CharEncodingCheck
     "CharEncodingCheck": {
-        "IgnoreFiles": [
-            "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma/test/testc.c",
-            "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma/windows/testc.c"
-        ]
+        "IgnoreFiles": []
     },
 
     ## options defined .pytool/Plugin/DependencyCheck
@@ -130,8 +125,6 @@
     ## options defined .pytool/Plugin/MarkdownLintCheck
     "MarkdownLintCheck": {
         "AuditOnly": True,          # If True, log all errors and then mark as skipped
-        "IgnoreFiles": [ "Universal/RegularExpressionDxe/oniguruma",  # submodule outside of control
-                         "Library/BrotliCustomDecompressLib/brotli"   # submodule outside of control
-        ]
+        "IgnoreFiles": []
     }
 }

@@ -22,8 +22,6 @@
 [Includes]
   Include
   Test/Mock/Include
-  DeviceSecurity/SpdmLib/Include
-  DeviceSecurity/SpdmLib/libspdm/include
 
 [LibraryClasses]
   ##  @libraryclass  Provides hash interfaces from different implementations.
@@ -138,10 +136,6 @@
   ## @libraryclass  Provides platform abstraction for physical presence prompting.
   #
   Tcg2PhysicalPresencePromptLib|Include/Library/Tcg2PhysicalPresencePromptLib.h
-
-  ##  @libraryclass Perform SPDM (following SPDM spec) and measure data to TPM (following TCG PFP spec).
-  ##
-  SpdmSecurityLib|Include/Library/SpdmSecurityLib.h
 
   ##  @libraryclass  Provides measurement interface for PeilessSec.
   #
@@ -279,9 +273,6 @@
 
   ## GUID used to specify section with default dbt content
   gDefaultdbtFileGuid                = { 0x36c513ee, 0xa338, 0x4976, { 0xa0, 0xfb, 0x6d, 0xdb, 0xa3, 0xda, 0xfe, 0x87 } }
-
-  ## GUID used to generate Spdm Uid
-  gEfiDeviceSecuritySpdmUidGuid = {0xe37b5665, 0x5ef9, 0x4e7e, {0xb4, 0x91, 0xd6, 0x78, 0xab, 0xff, 0xfb, 0xcb }}
 
   ## GUID used to tag the HOB indicating the TPM instance.
   ## The GUIDed HOB contains the same value as PcdGetPtr (PcdTpmInstanceGuid).

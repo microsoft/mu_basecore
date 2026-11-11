@@ -10,9 +10,7 @@
         "DscPath": "SecurityPkg.dsc",
     },
     "LicenseCheck": {
-        "IgnoreFiles": [
-            "DeviceSecurity/SpdmLib/Include",
-        ]
+        "IgnoreFiles": []
     },
     "EccCheck": {
         ## Exception sample looks like below:
@@ -29,9 +27,6 @@
             "Library/TcgStorageCoreLib/TcgStorageUtil.c",
             "Library/TcgStorageCoreLib/TcgStorageCore.c",
             "Library/Tpm2CommandLib/Tpm2NVStorage.c",
-            "DeviceSecurity/SpdmLib/Include",
-            "DeviceSecurity/SpdmLib/libspdm",
-            "DeviceSecurity/OsStub",
             # Ignore test binary files in headers
             "Library/DxeImageVerificationLib/GoogleTest"
         ]
@@ -87,10 +82,7 @@
         ]
     },
     "LibraryClassCheck": {
-        "IgnoreHeaderFile": [
-            "DeviceSecurity/SpdmLib/Include/library",
-            "DeviceSecurity/SpdmLib/libspdm/include/library",
-        ],
+        "IgnoreHeaderFile": [],
         "skip": True
     },
 
@@ -151,9 +143,7 @@
             "loongson"
         ],
         "IgnoreStandardPaths": [],   # Standard Plugin defined paths that should be ignore
-        "IgnoreFiles": [
-          "DeviceSecurity/SpdmLib/libspdm"
-        ],
+        "IgnoreFiles": [],
         "AdditionalIncludePaths": [] # Additional paths to spell check (wildcards supported)
     },
 

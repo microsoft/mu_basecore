@@ -14,7 +14,6 @@ HOST_ARCH = IA32
 LIBRARIES = Common
 APPLICATIONS = \
   VfrCompile \
-  BrotliCompress \
   EfiRom \
   GenCrc32 \
   GenFfs \

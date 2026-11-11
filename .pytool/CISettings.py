@@ -179,19 +179,11 @@ class Settings(CiBuildSettingsManager, UpdateSettingsManager, SetupSettingsManag
         rs.append(RequiredSubmodule(
             "UnitTestFrameworkPkg/Library/GoogleTestLib/googletest", False))
         rs.append(RequiredSubmodule(
-            "MdeModulePkg/Universal/RegularExpressionDxe/oniguruma", False))
-        rs.append(RequiredSubmodule(
-            "MdeModulePkg/Library/BrotliCustomDecompressLib/brotli", False))
-        rs.append(RequiredSubmodule(
-            "BaseTools/Source/C/BrotliCompress/brotli", False))
-        rs.append(RequiredSubmodule(
             "UnitTestFrameworkPkg/Library/SubhookLib/subhook", False))
         rs.append(RequiredSubmodule(
             "MdePkg/Library/BaseFdtLib/libfdt", False))
         rs.append(RequiredSubmodule(
             "MdePkg/Library/MipiSysTLib/mipisyst", False))
-        rs.append(RequiredSubmodule(
-            "SecurityPkg/DeviceSecurity/SpdmLib/libspdm", False))
         return rs
 
     def GetName(self):
