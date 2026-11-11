@@ -1,5 +1,5 @@
 ## @file
-# Standalone host test platform for OneCrypto capability forwarding.
+# Standalone host test platform for OneCrypto service forwarding.
 #
 # Copyright (C) Microsoft Corporation
 # SPDX-License-Identifier: BSD-2-Clause-Patent
