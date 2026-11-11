@@ -70,6 +70,18 @@ extern TEST_DESC  mPkcs5Test[];
 extern UINTN      mAuthenticodeTestNum;
 extern TEST_DESC  mAuthenticodeTest[];
 
+extern UINTN      mAuthenticodeVerifyExTestNum;
+extern TEST_DESC  mAuthenticodeVerifyExTest[];
+
+extern UINTN      mTrustAnchorTestNum;
+extern TEST_DESC  mTrustAnchorTest[];
+
+extern UINTN      mAuthenticodeHashAlgorithmTestNum;
+extern TEST_DESC  mAuthenticodeHashAlgorithmTest[];
+
+extern UINTN      mHashAllByGuidTestNum;
+extern TEST_DESC  mHashAllByGuidTest[];
+
 extern UINTN      mImageTimestampTestNum;
 extern TEST_DESC  mImageTimestampTest[];
 

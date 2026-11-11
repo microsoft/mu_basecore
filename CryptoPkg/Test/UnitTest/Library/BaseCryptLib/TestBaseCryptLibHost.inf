@@ -26,12 +26,16 @@
   TestBaseCryptLib.h
   CryptoOpCapabilityTests.c
   HashTests.c
+  HashAllByGuidTests.c
   HmacTests.c
   BlockCipherTests.c
   RsaTests.c
   RsaPkcs7Tests.c
   Pkcs5Pbkdf2Tests.c
   AuthenticodeTests.c
+  AuthenticodeVerifyExTests.c
+  TrustAnchorTests.c
+  AuthenticodeHashAlgorithmTests.c
   TSTests.c
   DhTests.c
   RandTests.c

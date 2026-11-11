@@ -992,6 +992,9 @@ TestVerifyAuthenticodeVerify (
   return UNIT_TEST_PASSED;
 }
 
+GLOBAL_REMOVE_IF_UNREFERENCED CONST UINTN  AuthenticodeWithSha256Size = sizeof (AuthenticodeWithSha256);
+GLOBAL_REMOVE_IF_UNREFERENCED CONST UINTN  TestRootCert2Size          = sizeof (TestRootCert2);
+
 TEST_DESC  mAuthenticodeTest[] = {
   //
   // -----Description--------------------------------------Class----------------------Function-----------------Pre---Post--Context
