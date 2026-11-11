@@ -1,0 +1,61 @@
+## @file
+# Host regression tests for image-verification ECIT reporting.
+#
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = DxeImageVerificationLibEcitGoogleTest
+  FILE_GUID                      = 9E8C1644-CABC-4446-A9E8-F868CB54CA0D
+  MODULE_TYPE                    = HOST_APPLICATION
+  VERSION_STRING                 = 1.0
+
+[Sources]
+  DxeImageVerificationLibEcitGoogleTest.cpp
+  ../Ecit.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  CryptoPkg/CryptoPkg.dec
+  SecurityPkg/SecurityPkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  BaseCryptLib
+  DebugLib
+  EcitEncodingLib
+  GoogleTestLib
+  MemoryAllocationLib
+  SafeIntLib
+
+[Guids]
+  gCryptoOpAuthenticodeVerifyGuid
+  gCryptoOpAuthenticodeHashGuid
+  gEfiEcitFeatureSbImageVerificationGuid
+  gEfiEcitFeatureSbImageAuthorizationGuid
+  gEfiEcitFeatureSbImageRevocationGuid
+  gEfiCertSha256Guid
+  gEfiCertSha384Guid
+  gEfiCertSha512Guid
+  gEfiCertX509Guid
+  gEfiCertX509Sha256Guid
+  gEfiCertX509Sha384Guid
+  gEfiCertX509Sha512Guid
+  gEfiCertV2Sha256Guid
+  gEfiCertV2Sha384Guid
+  gEfiCertV2Sha512Guid
+  gEfiCertV2X509Guid
+  gEfiCertV2X509Sha256Guid
+  gEfiCertV2X509Sha384Guid
+  gEfiCertV2X509Sha512Guid
+  gEfiHashAlgorithmSha256Guid
+  gEfiHashAlgorithmSha384Guid
+  gEfiHashAlgorithmSha512Guid
+
+[BuildOptions]
+  MSFT:*_*_*_CC_FLAGS = /EHsc
