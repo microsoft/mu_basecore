@@ -215,7 +215,6 @@
   # MU_CHANGE [BEGIN]
   SecurityPkg/Library/BaseAuthenticodeLib/BaseAuthenticodeLib.inf
   # MU_CHANGE [END]
-
   # MU_CHANGE [BEGIN] - ECIT components.
   SecurityPkg/CryptoIndicatorTable/CryptoIndicatorBridgeDxe.inf
   SecurityPkg/CryptoIndicatorTable/CryptoIndicatorTableDxe.inf
@@ -227,7 +226,6 @@
   SecurityPkg/Application/DumpCryptoIndicatorTable/DumpCryptoIndicatorTable.inf
   # MU_CHANGE [END]
 
-  SecurityPkg/Library/DxeImageVerificationLib/DxeImageVerificationLib.inf
   SecurityPkg/Library/DxeImageAuthenticationStatusLib/DxeImageAuthenticationStatusLib.inf
   SecurityPkg/Library/ImageSecureBootVerificationResultTableLib/ImageSecureBootVerificationResultTableLib.inf
 
