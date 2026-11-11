@@ -11,6 +11,11 @@
 
 extern ONE_CRYPTO_PROTOCOL  *gCryptoProtocol;
 
+EFI_STATUS
+AddAuthenticodeForwardingTests (
+  IN UNIT_TEST_SUITE_HANDLE  Suite
+  );
+
 VOID
 EFIAPI
 ProcessLibraryConstructorList (
@@ -301,6 +306,10 @@ main (
 
   if (!EFI_ERROR (Status)) {
     Status = AddTestCase (Suite, "Invalid arguments clear available outputs", "CryptoPkg.OneCrypto.Capability", TestInvalidArguments, NULL, NULL, NULL);
+  }
+
+  if (!EFI_ERROR (Status)) {
+    Status = AddAuthenticodeForwardingTests (Suite);
   }
 
   if (!EFI_ERROR (Status)) {
