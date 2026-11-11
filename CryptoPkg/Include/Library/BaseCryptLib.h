@@ -2826,6 +2826,211 @@ AuthenticodeVerify (
   );
 
 /**
+  Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
+  TBSCertificate digest matches a caller-supplied hash, and return that
+  certificate as a newly allocated DER-encoded buffer.
+
+  The hash algorithm is selected by TbsCertHashSize:
+    20 -> SHA-1, 32 -> SHA-256, 48 -> SHA-384, 64 -> SHA-512.
+
+  An optional cache may be passed via CacheHandle. CacheHandle is a
+  pointer to a caller-owned VOID *:
+    - If CacheHandle is NULL, no caching is performed.
+    - If *CacheHandle is NULL, this function allocates a new cache and
+      writes its handle to *CacheHandle. The caller releases it with
+      FreeTrustAnchorX509Cache().
+    - Otherwise, *CacheHandle is reused. The cache may be reused across
+      different AuthData inputs; entries are de-duplicated by the cert
+      DER bytes.
+
+  Caution: AuthData is untrusted. The PKCS#7 ASN.1 DER is parsed with
+  bounds-checked length decoding to avoid out-of-bounds reads.
+
+  @param[in,out] CacheHandle        Optional cache handle pointer.
+  @param[in]     TbsCertHash        Pointer to the target TBSCertificate
+                                    digest bytes to match.
+  @param[in]     TbsCertHashSize    Length of TbsCertHash in bytes; this
+                                    selects the hash algorithm.
+  @param[in]     AuthData           Pointer to the PKCS#7 SignedData
+                                    blob (DER-encoded).
+  @param[in]     AuthDataSize       Size of AuthData in bytes.
+  @param[out]    TrustAnchorX509    On success, *TrustAnchorX509 points
+                                    to a newly allocated buffer
+                                    containing the matching X.509
+                                    certificate in DER form. The caller
+                                    must release it with FreePool().
+  @param[out]    TrustAnchorX509Size  On success, receives the length
+                                      of the certificate in bytes.
+
+  @retval EFI_SUCCESS            A matching certificate was found and
+                                 returned.
+  @retval EFI_NOT_FOUND          No certificate in AuthData has a
+                                 TBSCertificate digest equal to the
+                                 supplied TbsCertHash.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL, a size
+                                 parameter is 0, the hash size is not a
+                                 supported value, or AuthData is not a
+                                 valid PKCS#7 SignedData blob.
+  @retval EFI_OUT_OF_RESOURCES   Memory allocation failed.
+  @retval EFI_UNSUPPORTED        This interface is not supported by the
+                                 current library instance.
+**/
+EFI_STATUS
+EFIAPI
+GetTrustAnchorX509FromAuthData (
+  IN OUT VOID      **CacheHandle  OPTIONAL,
+  IN  CONST UINT8  *TbsCertHash,
+  IN  UINTN        TbsCertHashSize,
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT UINT8        **TrustAnchorX509,
+  OUT UINTN        *TrustAnchorX509Size
+  );
+
+/**
+  Release a trust-anchor cache previously allocated by
+  GetTrustAnchorX509FromAuthData().
+
+  @param[in]  CacheHandle  Cache handle returned by a previous call to
+                           GetTrustAnchorX509FromAuthData(). May be
+                           NULL, in which case the function is a no-op.
+**/
+VOID
+EFIAPI
+FreeTrustAnchorX509Cache (
+  IN  VOID  *CacheHandle  OPTIONAL
+  );
+
+/**
+  Verifies a PE/COFF Authenticode Signature and, on success, additionally
+  returns the cryptographically-verified signer certificate chain (as the
+  underlying verifier built and used it) in EFI_CERT_STACK form, ordered
+  signer(0)..trust anchor(N-1). This lets a caller obtain the chain for
+  per-certificate revocation (dbx) checks without a separate, redundant
+  certificate-chain pass over the same signature.
+
+  If AuthData, TrustedCert or ImageHash is NULL, returns
+  EFI_INVALID_PARAMETER.
+
+  @param[in]   AuthData       Authenticode signature from the signed image.
+  @param[in]   DataSize       Size of AuthData in bytes.
+  @param[in]   TrustedCert    DER trust anchor used for chain verification.
+  @param[in]   CertSize       Size of TrustedCert in bytes.
+  @param[in]   ImageHash      Precomputed Authenticode image hash.
+  @param[in]   HashSize       Size of ImageHash in bytes.
+  @param[out]  CertChain      Optional. On EFI_SUCCESS, receives a newly
+                              allocated EFI_CERT_STACK ordered
+                              signer..anchor; caller frees with FreePool().
+                              NULL to skip chain extraction.
+  @param[out]  CertChainSize  Optional. Receives the CertChain length.
+
+  Both output pointers must be supplied to receive the chain. Supplying
+  only one still verifies the signature without returning a chain.
+
+  @retval EFI_SUCCESS            The signature is valid (chain returned if
+                                 requested).
+  @retval EFI_SECURITY_VIOLATION The signature is invalid.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
+  @retval EFI_UNSUPPORTED        This interface is not supported.
+**/
+EFI_STATUS
+EFIAPI
+AuthenticodeVerifyEx (
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        DataSize,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertSize,
+  IN  CONST UINT8  *ImageHash,
+  IN  UINTN        HashSize,
+  OUT UINT8        **CertChain      OPTIONAL,
+  OUT UINTN        *CertChainSize   OPTIONAL
+  );
+
+/**
+  Determine the image-hash algorithm used by an Authenticode signature.
+
+  Parses the PKCS#7 SignedData blob's SpcIndirectDataContent
+  (OID 1.3.6.1.4.1.311.2.1.4) and reads the digestAlgorithm of its
+  embedded messageDigest DigestInfo, mapping it to the corresponding
+  hash-algorithm GUID:
+
+    SpcIndirectDataContent ::= SEQUENCE {
+        data           SpcAttributeTypeAndOptionalValue,
+        messageDigest  DigestInfo }
+    DigestInfo ::= SEQUENCE {
+        digestAlgorithm  AlgorithmIdentifier,
+        digest           OCTET STRING }
+
+  The recovered GUID identifies the digest required to validate the
+  Authenticode signature.
+
+  Caution: AuthData is untrusted. The ASN.1 DER is parsed with
+  bounds-checked length decoding to avoid out-of-bounds reads.
+
+  @param[in]   AuthData      Pointer to the PKCS#7 SignedData blob
+                             (DER-encoded Authenticode signature).
+  @param[in]   AuthDataSize  Size of AuthData in bytes.
+  @param[out]  HashType      On success, receives the hash-algorithm
+                             GUID identifying the digest algorithm
+                             (e.g. gEfiHashAlgorithmSha256Guid).
+
+  @retval EFI_SUCCESS            The hash algorithm was identified.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL,
+                                 AuthDataSize is 0, or AuthData is not a
+                                 well-formed Authenticode SignedData
+                                 blob.
+  @retval EFI_UNSUPPORTED        The digest algorithm is not a
+                                 recognized image hash algorithm, or
+                                 this interface is not supported by the
+                                 current library instance.
+**/
+EFI_STATUS
+EFIAPI
+GetAuthenticodeHashAlgorithm (
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT EFI_GUID     *HashType
+  );
+
+/**
+  Compute the digest of a buffer using the algorithm selected by
+  HashType.
+
+  The caller selects the digest algorithm with a generic hash-algorithm
+  GUID (as defined in Protocol/Hash.h, e.g. gEfiHashAlgorithmSha256Guid).
+  The entire buffer is hashed in a single operation and the digest is
+  written to Digest, which must be large enough to hold the largest
+  supported digest (at least SHA512_DIGEST_SIZE bytes).
+
+  @param[in]   HashType    Hash-algorithm GUID identifying the digest
+                           algorithm to use.
+  @param[in]   Buffer      Pointer to the data to be hashed.
+  @param[in]   BufferSize  Size of Buffer in bytes.
+  @param[out]  Digest      Caller-provided buffer that receives the
+                           computed digest. Must be at least
+                           SHA512_DIGEST_SIZE bytes.
+  @param[out]  DigestSize  On success, receives the digest length in
+                           bytes.
+
+  @retval EFI_SUCCESS            Digest was computed successfully.
+  @retval EFI_INVALID_PARAMETER  A required pointer is NULL.
+  @retval EFI_UNSUPPORTED        HashType is not a recognized hash
+                                 algorithm, or this interface is not
+                                 supported by the underlying library
+                                 instance.
+  @retval EFI_DEVICE_ERROR       The hash primitive failed.
+**/
+EFI_STATUS
+EFIAPI
+HashAllByGuid (
+  IN  CONST EFI_GUID  *HashType,
+  IN  CONST VOID      *Buffer,
+  IN  UINTN           BufferSize,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  );
+
+/**
   Verifies the validity of a RFC3161 Timestamp CounterSignature embedded in PE/COFF Authenticode
   signature.
 

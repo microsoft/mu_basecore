@@ -43,3 +43,128 @@ AuthenticodeVerify (
   ASSERT (FALSE);
   return FALSE;
 }
+
+/**
+  Locate, in a PKCS#7 SignedData blob, the X.509 certificate whose
+  TBSCertificate digest matches a caller-supplied hash.
+
+  Return EFI_UNSUPPORTED to indicate this interface is not supported.
+
+  @retval EFI_UNSUPPORTED  This interface is not supported.
+
+**/
+EFI_STATUS
+EFIAPI
+GetTrustAnchorX509FromAuthData (
+  IN OUT VOID      **CacheHandle  OPTIONAL,
+  IN  CONST UINT8  *TbsCertHash,
+  IN  UINTN        TbsCertHashSize,
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT UINT8        **TrustAnchorX509,
+  OUT UINTN        *TrustAnchorX509Size
+  )
+{
+  ASSERT (FALSE);
+  return EFI_UNSUPPORTED;
+}
+
+/**
+  Release a trust-anchor cache. No-op for the Null instance.
+
+**/
+VOID
+EFIAPI
+FreeTrustAnchorX509Cache (
+  IN  VOID  *CacheHandle  OPTIONAL
+  )
+{
+  if (CacheHandle != NULL) {
+    ASSERT (FALSE);
+  }
+}
+
+/**
+  Verifies a PE/COFF Authenticode Signature and optionally returns the
+  verified signer chain.
+
+  Return EFI_UNSUPPORTED to indicate this interface is not supported.
+
+  @param[in]   AuthData       Authenticode signature.
+  @param[in]   DataSize       Size of AuthData in bytes.
+  @param[in]   TrustedCert    DER trust anchor.
+  @param[in]   CertSize       Size of TrustedCert in bytes.
+  @param[in]   ImageHash      Precomputed Authenticode image hash.
+  @param[in]   HashSize       Size of ImageHash in bytes.
+  @param[out]  CertChain      Optional EFI_CERT_STACK output.
+  @param[out]  CertChainSize  Optional length of CertChain.
+
+  @retval EFI_UNSUPPORTED  This interface is not supported.
+**/
+EFI_STATUS
+EFIAPI
+AuthenticodeVerifyEx (
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        DataSize,
+  IN  CONST UINT8  *TrustedCert,
+  IN  UINTN        CertSize,
+  IN  CONST UINT8  *ImageHash,
+  IN  UINTN        HashSize,
+  OUT UINT8        **CertChain      OPTIONAL,
+  OUT UINTN        *CertChainSize   OPTIONAL
+  )
+{
+  ASSERT (FALSE);
+
+  if (CertChain != NULL) {
+    *CertChain = NULL;
+  }
+
+  if (CertChainSize != NULL) {
+    *CertChainSize = 0;
+  }
+
+  return EFI_UNSUPPORTED;
+}
+
+/**
+  Determine the image-hash algorithm used by an Authenticode signature.
+
+  Return EFI_UNSUPPORTED to indicate this interface is not supported.
+
+  @retval EFI_UNSUPPORTED  This interface is not supported.
+
+**/
+EFI_STATUS
+EFIAPI
+GetAuthenticodeHashAlgorithm (
+  IN  CONST UINT8  *AuthData,
+  IN  UINTN        AuthDataSize,
+  OUT EFI_GUID     *HashType
+  )
+{
+  ASSERT (FALSE);
+  return EFI_UNSUPPORTED;
+}
+
+/**
+  Compute the digest of a buffer using a generic hash-algorithm GUID.
+
+  Return EFI_UNSUPPORTED to indicate this interface is not supported.
+
+  @retval EFI_UNSUPPORTED  This interface is not supported.
+
+**/
+EFI_STATUS
+EFIAPI
+HashAllByGuid (
+  IN  CONST EFI_GUID  *HashType,
+  IN  CONST VOID      *Buffer,
+  IN  UINTN           BufferSize,
+  OUT UINT8           *Digest,
+  OUT UINTN           *DigestSize
+  )
+{
+  ASSERT (FALSE);
+  return EFI_UNSUPPORTED;
+}
