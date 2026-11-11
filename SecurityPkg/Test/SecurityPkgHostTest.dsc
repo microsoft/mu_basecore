@@ -52,6 +52,11 @@
     <LibraryClasses>
       MmServicesTableLib|MdePkg/Test/Mock/Library/GoogleTest/MockMmServicesTableLib/MockMmServicesTableLib.inf
   }
+  SecurityPkg/Library/DxeImageVerificationLib/GoogleTest/DxeImageVerificationLibEcitGoogleTest.inf {
+    <LibraryClasses>
+      BaseCryptLib|CryptoPkg/Test/Mock/Library/GoogleTest/MockBaseCryptLib/MockBaseCryptLib.inf
+      EcitEncodingLib|SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf
+  }
   # MU_CHANGE [END]
 
   SecurityPkg/Library/SecureBootVariableLib/UnitTest/MockUefiRuntimeServicesTableLib.inf
@@ -95,6 +100,25 @@
       SafeIntLib|MdePkg/Test/Mock/Library/GoogleTest/MockSafeIntLib/MockSafeIntLib.inf
   }
   # MU_CHANGE [END]
+
+  SecurityPkg/Library/DxeImageVerificationLib/GoogleTest/DxeImageVerificationLibGoogleTest.inf {
+    <LibraryClasses>
+      UefiRuntimeServicesTableLib|MdePkg/Test/Mock/Library/GoogleTest/MockUefiRuntimeServicesTableLib/MockUefiRuntimeServicesTableLib.inf
+      UefiBootServicesTableLib|MdePkg/Test/Mock/Library/GoogleTest/MockUefiBootServicesTableLib/MockUefiBootServicesTableLib.inf
+      DevicePathLib|MdePkg/Test/Mock/Library/GoogleTest/MockDevicePathLib/MockDevicePathLib.inf
+      DxeImageVerificationLib|SecurityPkg/Library/DxeImageVerificationLib/DxeImageVerificationLib.inf
+      ImageSecureBootVerificationResultTableLib|SecurityPkg/Library/ImageSecureBootVerificationResultTableLib/ImageSecureBootVerificationResultTableLib.inf
+      AuthenticodeLib|SecurityPkg/Library/BaseAuthenticodeLib/BaseAuthenticodeLib.inf
+      CryptoIndicatorRegistrationLib|SecurityPkg/Library/CryptoIndicatorRegistrationLib/CryptoIndicatorRegistrationLibNull.inf
+      EcitEncodingLib|SecurityPkg/Library/EcitEncodingLib/EcitEncodingLib.inf
+      BaseCryptLib|CryptoPkg/Test/Mock/Library/GoogleTest/MockBaseCryptLib/MockBaseCryptLib.inf
+      UefiLib|MdePkg/Test/Mock/Library/GoogleTest/MockUefiLib/MockUefiLib.inf
+      SecureBootVariableLib|SecurityPkg/Test/Mock/Library/GoogleTest/MockSecureBootVariableLib/MockSecureBootVariableLib.inf
+      SecurityManagementLib|MdeModulePkg/Test/Mock/Library/GoogleTest/MockSecurityManagementLib/MockSecurityManagementLib.inf
+      PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
+      PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
+      TpmMeasurementLib|MdeModulePkg/Test/Mock/Library/GoogleTest/MockTpmMeasurementLib/MockTpmMeasurementLib.inf
+  }
 
   SecurityPkg/Library/ImageSecureBootVerificationResultTableLib/GoogleTest/ImageSecureBootVerificationResultTableLibGoogleTest.inf {
     <LibraryClasses>
