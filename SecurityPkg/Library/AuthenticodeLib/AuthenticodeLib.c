@@ -25,6 +25,15 @@ typedef struct {
   UINTN          Size;
 } AUTHENTICODE_IMAGE_HANDLE;
 
+typedef struct {
+  UINTN                             ChecksumOffset;
+  UINTN                             SecurityDirectoryOffset;
+  UINT32                            NumberOfRvaAndSizes;
+  UINT32                            SizeOfHeaders;
+  CONST EFI_IMAGE_SECTION_HEADER    *SectionTable;
+  UINT16                            NumberOfSections;
+} AUTHENTICODE_IMAGE_LAYOUT;
+
 /**
   Bounds-checked PE_COFF_LOADER_READ_FILE implementation over an in-memory image.
 
@@ -115,23 +124,205 @@ AppendImageRegion (
 }
 
 /**
-  Assemble the Authenticode image (the byte stream the Windows Authenticode algorithm hashes) for a
-  PE/COFF image.
+  Locate the Authenticode header exclusions and section table in a validated PE image.
+**/
+STATIC
+EFI_STATUS
+GetAuthenticodeImageLayout (
+  IN  CONST UINT8                         *Image,
+  IN  UINTN                               FileSize,
+  IN  CONST PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext,
+  OUT AUTHENTICODE_IMAGE_LAYOUT           *Layout
+  )
+{
+  CONST EFI_IMAGE_NT_HEADERS32  *Nt32;
+  CONST EFI_IMAGE_NT_HEADERS64  *Nt64;
+  UINT32                        PeOffset;
+  UINT16                        Magic;
+  UINTN                         SectionTableOffset;
 
-  Produces the exact bytes hashed for the Authenticode digest: the image with the optional-header
-  CheckSum field, the Certificate Table data-directory entry, and the trailing attribute-certificate
-  table excluded.
+  if (ImageContext->IsTeImage) {
+    return EFI_UNSUPPORTED;
+  }
+
+  PeOffset              = ImageContext->PeCoffHeaderOffset;
+  Layout->SizeOfHeaders = (UINT32)ImageContext->SizeOfHeaders;
+
+  if ((PeOffset > FileSize) || (FileSize - PeOffset < sizeof (EFI_IMAGE_NT_HEADERS32))) {
+    return EFI_VOLUME_CORRUPTED;
+  }
+
+  Nt32  = (CONST EFI_IMAGE_NT_HEADERS32 *)(Image + PeOffset);
+  Magic = Nt32->OptionalHeader.Magic;
+
+  if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    Layout->NumberOfRvaAndSizes     = Nt32->OptionalHeader.NumberOfRvaAndSizes;
+    Layout->ChecksumOffset          = (CONST UINT8 *)&Nt32->OptionalHeader.CheckSum - Image;
+    Layout->SecurityDirectoryOffset = (CONST UINT8 *)&Nt32->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY] - Image;
+  } else if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+    if (FileSize - PeOffset < sizeof (EFI_IMAGE_NT_HEADERS64)) {
+      return EFI_VOLUME_CORRUPTED;
+    }
+
+    Nt64                            = (CONST EFI_IMAGE_NT_HEADERS64 *)(Image + PeOffset);
+    Layout->NumberOfRvaAndSizes     = Nt64->OptionalHeader.NumberOfRvaAndSizes;
+    Layout->ChecksumOffset          = (CONST UINT8 *)&Nt64->OptionalHeader.CheckSum - Image;
+    Layout->SecurityDirectoryOffset = (CONST UINT8 *)&Nt64->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY] - Image;
+  } else {
+    return EFI_VOLUME_CORRUPTED;
+  }
+
+  Layout->NumberOfSections = Nt32->FileHeader.NumberOfSections;
+  SectionTableOffset       = (UINTN)PeOffset + sizeof (UINT32) + sizeof (EFI_IMAGE_FILE_HEADER) + Nt32->FileHeader.SizeOfOptionalHeader;
+
+  if ((SectionTableOffset > FileSize) ||
+      ((FileSize - SectionTableOffset) / sizeof (EFI_IMAGE_SECTION_HEADER) < Layout->NumberOfSections))
+  {
+    return EFI_VOLUME_CORRUPTED;
+  }
+
+  Layout->SectionTable = (CONST EFI_IMAGE_SECTION_HEADER *)(Image + SectionTableOffset);
+  return EFI_SUCCESS;
+}
+
+/**
+  Append headers, excluding the checksum and any Certificate Table directory entry.
+**/
+STATIC
+EFI_STATUS
+AppendAuthenticodeHeaders (
+  IN     CONST UINT8                      *Image,
+  IN     UINTN                            FileSize,
+  IN     CONST AUTHENTICODE_IMAGE_LAYOUT  *Layout,
+  OUT    UINT8                            *Out,
+  IN OUT UINTN                            *OutPos
+  )
+{
+  EFI_STATUS  Status;
+  UINTN       ChecksumEnd;
+  UINTN       SecurityDirectoryEnd;
+
+  ChecksumEnd = Layout->ChecksumOffset + sizeof (UINT32);
+
+  //
+  // From file offset zero through the optional-header fields preceding CheckSum.
+  // Includes the DOS header/stub when present, PE signature, and COFF file header.
+  //
+  Status = AppendImageRegion (Image, FileSize, 0, Layout->ChecksumOffset, Out, OutPos);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if (Layout->NumberOfRvaAndSizes <= EFI_IMAGE_DIRECTORY_ENTRY_SECURITY) {
+    if (Layout->SizeOfHeaders < ChecksumEnd) {
+      return EFI_VOLUME_CORRUPTED;
+    }
+
+    //
+    // No Certificate Table directory entry exists: include everything after CheckSum
+    // through SizeOfHeaders, including section headers and header padding.
+    //
+    return AppendImageRegion (Image, FileSize, ChecksumEnd, Layout->SizeOfHeaders - ChecksumEnd, Out, OutPos);
+  }
+
+  if (Layout->SecurityDirectoryOffset < ChecksumEnd) {
+    return EFI_VOLUME_CORRUPTED;
+  }
+
+  //
+  // Skip CheckSum; include the remaining optional-header fields and data directories
+  // preceding the Certificate Table entry, stopping before that entry.
+  //
+  Status = AppendImageRegion (Image, FileSize, ChecksumEnd, Layout->SecurityDirectoryOffset - ChecksumEnd, Out, OutPos);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  SecurityDirectoryEnd = Layout->SecurityDirectoryOffset + sizeof (EFI_IMAGE_DATA_DIRECTORY);
+  if (Layout->SizeOfHeaders < SecurityDirectoryEnd) {
+    return EFI_VOLUME_CORRUPTED;
+  }
+
+  //
+  // Skip the Certificate Table directory entry; include the remaining data directories,
+  // section headers, and header padding through SizeOfHeaders.
+  //
+  return AppendImageRegion (Image, FileSize, SecurityDirectoryEnd, Layout->SizeOfHeaders - SecurityDirectoryEnd, Out, OutPos);
+}
+
+/**
+  Append sections in raw-file-offset order and update the combined header and raw-section size.
+**/
+STATIC
+EFI_STATUS
+AppendSections (
+  IN     CONST UINT8                      *Image,
+  IN     UINTN                            FileSize,
+  IN     CONST AUTHENTICODE_IMAGE_LAYOUT  *Layout,
+  OUT    UINT8                            *Out,
+  IN OUT UINTN                            *OutPos,
+  IN OUT UINTN                            *HeaderAndSectionSize
+  )
+{
+  EFI_IMAGE_SECTION_HEADER  *Sorted;
+  UINTN                     Index;
+  UINTN                     Pos;
+  EFI_STATUS                Status;
+
+  if (Layout->NumberOfSections == 0) {
+    return EFI_SUCCESS;
+  }
+
+  Sorted = AllocateZeroPool ((UINTN)Layout->NumberOfSections * sizeof (EFI_IMAGE_SECTION_HEADER));
+  if (Sorted == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  //
+  // Insertion-sort header copies by PointerToRawData: Authenticode requires raw section
+  // data in ascending file-offset order, which may differ from section-header order.
+  //
+  for (Index = 0; Index < Layout->NumberOfSections; Index++) {
+    Pos = Index;
+    while ((Pos > 0) && (Layout->SectionTable[Index].PointerToRawData < Sorted[Pos - 1].PointerToRawData)) {
+      CopyMem (&Sorted[Pos], &Sorted[Pos - 1], sizeof (EFI_IMAGE_SECTION_HEADER));
+      Pos--;
+    }
+
+    CopyMem (&Sorted[Pos], &Layout->SectionTable[Index], sizeof (EFI_IMAGE_SECTION_HEADER));
+  }
+
+  Status = EFI_SUCCESS;
+  for (Index = 0; Index < Layout->NumberOfSections; Index++) {
+    if (Sorted[Index].SizeOfRawData == 0) {
+      continue;
+    }
+
+    Status = AppendImageRegion (Image, FileSize, Sorted[Index].PointerToRawData, Sorted[Index].SizeOfRawData, Out, OutPos);
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+
+    *HeaderAndSectionSize += Sorted[Index].SizeOfRawData;
+  }
+
+  FreePool (Sorted);
+  return Status;
+}
+
+/**
+  Assemble the Authenticode byte stream, excluding the checksum, Certificate Table
+  directory entry, and trailing attribute-certificate table.
 
   @param[in]   FileBuffer     In-memory PE/COFF image.
   @param[in]   FileSize       Size of FileBuffer in bytes.
-  @param[out]  AuthImage      On success, a pool-allocated buffer (caller frees with FreePool ())
-                              holding the assembled Authenticode image.
-  @param[out]  AuthImageSize  On success, the length of AuthImage in bytes.
+  @param[out]  AuthImage      Pool-allocated buffer; caller frees with FreePool ().
+  @param[out]  AuthImageSize  Length of AuthImage in bytes.
 
-  @retval EFI_SUCCESS            AuthImage / AuthImageSize were populated.
+  @retval EFI_SUCCESS            The Authenticode image was assembled.
   @retval EFI_INVALID_PARAMETER  A required pointer is NULL or FileSize is 0.
-  @retval EFI_UNSUPPORTED        FileBuffer is an unsupported image type with no Authenticode form.
-  @retval EFI_VOLUME_CORRUPTED   FileBuffer could not be parsed as a PE/COFF image.
+  @retval EFI_UNSUPPORTED        The image has no Authenticode form.
+  @retval EFI_VOLUME_CORRUPTED   The image could not be parsed.
   @retval EFI_OUT_OF_RESOURCES   An allocation failed.
 **/
 EFI_STATUS
@@ -143,31 +334,16 @@ BuildAuthenticodeImage (
   OUT UINTN       *AuthImageSize
   )
 {
-  RETURN_STATUS                   PeCoffStatus;
-  PE_COFF_LOADER_IMAGE_CONTEXT    ImageContext;
-  AUTHENTICODE_IMAGE_HANDLE       Handle;
-  CONST UINT8                     *Image;
-  CONST EFI_IMAGE_NT_HEADERS32    *Nt32;
-  CONST EFI_IMAGE_NT_HEADERS64    *Nt64;
-  CONST EFI_IMAGE_SECTION_HEADER  *SectionTable;
-  EFI_IMAGE_SECTION_HEADER        *Sorted;
-  UINT8                           *Out;
-  UINT32                          PeOffset;
-  UINT16                          Magic;
-  UINT16                          NumberOfSections;
-  UINT16                          SizeOfOptionalHeader;
-  UINT32                          NumberOfRvaAndSizes;
-  UINT32                          SizeOfHeaders;
-  UINT32                          CertSize;
-  UINTN                           ChecksumOffset;
-  UINTN                           SecDirOffset;
-  UINTN                           SectionTableOffset;
-  UINTN                           OutPos;
-  UINTN                           SumOfBytesHashed;
-  UINTN                           Remaining;
-  UINTN                           Index;
-  UINTN                           Pos;
-  EFI_STATUS                      Status;
+  RETURN_STATUS                 PeCoffStatus;
+  PE_COFF_LOADER_IMAGE_CONTEXT  ImageContext;
+  AUTHENTICODE_IMAGE_HANDLE     Handle;
+  AUTHENTICODE_IMAGE_LAYOUT     Layout;
+  UINT8                         *Out;
+  UINTN                         OutPos;
+  UINTN                         HeaderAndSectionSize;
+  UINTN                         Remaining;
+  UINT32                        CertSize;
+  EFI_STATUS                    Status;
 
   if ((FileBuffer == NULL) || (AuthImage == NULL) || (AuthImageSize == NULL) || (FileSize == 0)) {
     return EFI_INVALID_PARAMETER;
@@ -175,18 +351,9 @@ BuildAuthenticodeImage (
 
   *AuthImage     = NULL;
   *AuthImageSize = 0;
-  Image          = (CONST UINT8 *)FileBuffer;
-  Nt64           = NULL;
-  Sorted         = NULL;
-  Out            = NULL;
 
-  //
-  // Delegate DOS/PE header validation to PeCoffLib. It records the PE header offset, the total
-  // header size, and the bounds-checked Certificate Table data-directory entry, letting this
-  // routine skip the hand-rolled DOS-stub, PE-signature, and data-directory parsing.
-  //
   ZeroMem (&ImageContext, sizeof (ImageContext));
-  Handle.Base            = Image;
+  Handle.Base            = FileBuffer;
   Handle.Size            = FileSize;
   ImageContext.Handle    = &Handle;
   ImageContext.ImageRead = AuthenticodeImageRead;
@@ -197,158 +364,36 @@ BuildAuthenticodeImage (
     return EFI_VOLUME_CORRUPTED;
   }
 
-  //
-  // The Authenticode layout is defined for PE images; a TE image has no equivalent form.
-  //
-  if (ImageContext.IsTeImage) {
-    return EFI_UNSUPPORTED;
+  Status = GetAuthenticodeImageLayout (FileBuffer, FileSize, &ImageContext, &Layout);
+  if (EFI_ERROR (Status)) {
+    return Status;
   }
 
-  PeOffset      = ImageContext.PeCoffHeaderOffset;
-  SizeOfHeaders = (UINT32)ImageContext.SizeOfHeaders;
-  CertSize      = ImageContext.SecurityDataDirectory.Size;
-
-  //
-  // PeCoffLib validated the headers; the manual reads below only locate the CheckSum field, the
-  // Certificate Table entry, and the section table. Confirm each read fits the image first.
-  //
-  if ((PeOffset > FileSize) || (FileSize - PeOffset < sizeof (EFI_IMAGE_NT_HEADERS32))) {
-    return EFI_VOLUME_CORRUPTED;
-  }
-
-  Nt32  = (CONST EFI_IMAGE_NT_HEADERS32 *)(Image + PeOffset);
-  Magic = Nt32->OptionalHeader.Magic;
-
-  if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
-    NumberOfRvaAndSizes = Nt32->OptionalHeader.NumberOfRvaAndSizes;
-    ChecksumOffset      = (CONST UINT8 *)&Nt32->OptionalHeader.CheckSum - Image;
-    SecDirOffset        = (CONST UINT8 *)&Nt32->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY] - Image;
-  } else if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
-    if (FileSize - PeOffset < sizeof (EFI_IMAGE_NT_HEADERS64)) {
-      return EFI_VOLUME_CORRUPTED;
-    }
-
-    Nt64                = (CONST EFI_IMAGE_NT_HEADERS64 *)(Image + PeOffset);
-    NumberOfRvaAndSizes = Nt64->OptionalHeader.NumberOfRvaAndSizes;
-    ChecksumOffset      = (CONST UINT8 *)&Nt64->OptionalHeader.CheckSum - Image;
-    SecDirOffset        = (CONST UINT8 *)&Nt64->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY] - Image;
-  } else {
-    return EFI_VOLUME_CORRUPTED;
-  }
-
-  NumberOfSections     = Nt32->FileHeader.NumberOfSections;
-  SizeOfOptionalHeader = Nt32->FileHeader.SizeOfOptionalHeader;
-  SectionTableOffset   = (UINTN)PeOffset + sizeof (UINT32) + sizeof (EFI_IMAGE_FILE_HEADER) + SizeOfOptionalHeader;
-
-  if ((SectionTableOffset > FileSize) ||
-      ((FileSize - SectionTableOffset) / sizeof (EFI_IMAGE_SECTION_HEADER) < NumberOfSections))
-  {
-    return EFI_VOLUME_CORRUPTED;
-  }
-
-  SectionTable = (CONST EFI_IMAGE_SECTION_HEADER *)(Image + SectionTableOffset);
-
-  //
-  // The message only omits bytes (the checksum, the security directory entry, and the attribute
-  // certificate table), so it never exceeds the image size.
-  //
   Out = AllocatePool (FileSize);
   if (Out == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
   OutPos = 0;
-
-  //
-  // Header up to the CheckSum field (the 4-byte CheckSum is then skipped).
-  //
-  Status = AppendImageRegion (Image, FileSize, 0, ChecksumOffset, Out, &OutPos);
+  Status = AppendAuthenticodeHeaders (FileBuffer, FileSize, &Layout, Out, &OutPos);
   if (EFI_ERROR (Status)) {
     goto Done;
   }
 
-  if (NumberOfRvaAndSizes <= EFI_IMAGE_DIRECTORY_ENTRY_SECURITY) {
-    //
-    // No Certificate Table directory entry: append the rest of the headers.
-    //
-    if (SizeOfHeaders < ChecksumOffset + sizeof (UINT32)) {
-      Status = EFI_VOLUME_CORRUPTED;
-      goto Done;
-    }
-
-    Status = AppendImageRegion (Image, FileSize, ChecksumOffset + sizeof (UINT32), SizeOfHeaders - (ChecksumOffset + sizeof (UINT32)), Out, &OutPos);
-    if (EFI_ERROR (Status)) {
-      goto Done;
-    }
-  } else {
-    //
-    // Append from after the CheckSum to the Certificate Table directory entry, skip that 8-byte
-    // entry, then append the remaining headers.
-    //
-    if (SecDirOffset < ChecksumOffset + sizeof (UINT32)) {
-      Status = EFI_VOLUME_CORRUPTED;
-      goto Done;
-    }
-
-    Status = AppendImageRegion (Image, FileSize, ChecksumOffset + sizeof (UINT32), SecDirOffset - (ChecksumOffset + sizeof (UINT32)), Out, &OutPos);
-    if (EFI_ERROR (Status)) {
-      goto Done;
-    }
-
-    if (SizeOfHeaders < SecDirOffset + sizeof (EFI_IMAGE_DATA_DIRECTORY)) {
-      Status = EFI_VOLUME_CORRUPTED;
-      goto Done;
-    }
-
-    Status = AppendImageRegion (Image, FileSize, SecDirOffset + sizeof (EFI_IMAGE_DATA_DIRECTORY), SizeOfHeaders - (SecDirOffset + sizeof (EFI_IMAGE_DATA_DIRECTORY)), Out, &OutPos);
-    if (EFI_ERROR (Status)) {
-      goto Done;
-    }
-  }
-
-  SumOfBytesHashed = SizeOfHeaders;
-
-  //
-  // Append each section's raw data in ascending PointerToRawData order.
-  //
-  if (NumberOfSections > 0) {
-    Sorted = AllocateZeroPool ((UINTN)NumberOfSections * sizeof (EFI_IMAGE_SECTION_HEADER));
-    if (Sorted == NULL) {
-      Status = EFI_OUT_OF_RESOURCES;
-      goto Done;
-    }
-
-    for (Index = 0; Index < NumberOfSections; Index++) {
-      Pos = Index;
-      while ((Pos > 0) && (SectionTable[Index].PointerToRawData < Sorted[Pos - 1].PointerToRawData)) {
-        CopyMem (&Sorted[Pos], &Sorted[Pos - 1], sizeof (EFI_IMAGE_SECTION_HEADER));
-        Pos--;
-      }
-
-      CopyMem (&Sorted[Pos], &SectionTable[Index], sizeof (EFI_IMAGE_SECTION_HEADER));
-    }
-
-    for (Index = 0; Index < NumberOfSections; Index++) {
-      if (Sorted[Index].SizeOfRawData == 0) {
-        continue;
-      }
-
-      Status = AppendImageRegion (Image, FileSize, Sorted[Index].PointerToRawData, Sorted[Index].SizeOfRawData, Out, &OutPos);
-      if (EFI_ERROR (Status)) {
-        goto Done;
-      }
-
-      SumOfBytesHashed += Sorted[Index].SizeOfRawData;
-    }
+  HeaderAndSectionSize = Layout.SizeOfHeaders;
+  Status               = AppendSections (FileBuffer, FileSize, &Layout, Out, &OutPos, &HeaderAndSectionSize);
+  if (EFI_ERROR (Status)) {
+    goto Done;
   }
 
   //
   // Trailing data after the sections, excluding the attribute-certificate table (CertSize bytes).
   //
-  if (FileSize > SumOfBytesHashed) {
-    Remaining = FileSize - SumOfBytesHashed;
+  CertSize = ImageContext.SecurityDataDirectory.Size;
+  if (FileSize > HeaderAndSectionSize) {
+    Remaining = FileSize - HeaderAndSectionSize;
     if (Remaining > CertSize) {
-      Status = AppendImageRegion (Image, FileSize, SumOfBytesHashed, Remaining - CertSize, Out, &OutPos);
+      Status = AppendImageRegion (FileBuffer, FileSize, HeaderAndSectionSize, Remaining - CertSize, Out, &OutPos);
       if (EFI_ERROR (Status)) {
         goto Done;
       }
@@ -364,10 +409,6 @@ BuildAuthenticodeImage (
   Status         = EFI_SUCCESS;
 
 Done:
-  if (Sorted != NULL) {
-    FreePool (Sorted);
-  }
-
   if (Out != NULL) {
     FreePool (Out);
   }
