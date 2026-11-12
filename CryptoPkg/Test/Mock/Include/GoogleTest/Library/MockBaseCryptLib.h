@@ -20,6 +20,65 @@ struct MockBaseCryptLib {
 
   MOCK_FUNCTION_DECLARATION (
     EFI_STATUS,
+    GetTrustAnchorX509FromAuthData,
+    (
+     IN OUT VOID      **CacheHandle OPTIONAL,
+     IN CONST UINT8   *TbsCertHash,
+     IN UINTN         TbsCertHashSize,
+     IN CONST UINT8   *AuthData,
+     IN UINTN         AuthDataSize,
+     OUT UINT8        **TrustAnchorX509,
+     OUT UINTN        *TrustAnchorX509Size
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    VOID,
+    FreeTrustAnchorX509Cache,
+    (
+     IN VOID  *CacheHandle OPTIONAL
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    AuthenticodeVerifyEx,
+    (
+     IN CONST UINT8  *AuthData,
+     IN UINTN        DataSize,
+     IN CONST UINT8  *TrustedCert,
+     IN UINTN        CertSize,
+     IN CONST UINT8  *ImageHash,
+     IN UINTN        HashSize,
+     OUT UINT8       **CertChain OPTIONAL,
+     OUT UINTN       *CertChainSize OPTIONAL
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    GetAuthenticodeHashAlgorithm,
+    (
+     IN CONST UINT8  *AuthData,
+     IN UINTN        AuthDataSize,
+     OUT EFI_GUID    *HashType
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
+    HashAllByGuid,
+    (
+     IN CONST EFI_GUID  *HashType,
+     IN CONST VOID      *Buffer,
+     IN UINTN           BufferSize,
+     OUT UINT8          *Digest,
+     OUT UINTN          *DigestSize
+    )
+    );
+
+  MOCK_FUNCTION_DECLARATION (
+    EFI_STATUS,
     GetCryptoOpCapability,
     (
      IN  CONST EFI_GUID            *OpIdGuid,
