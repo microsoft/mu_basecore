@@ -22,6 +22,7 @@
 #include <IndustryStandard/UefiTcgPlatform.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/BaseMemoryLib.h>
+#include <Library/SafeIntLib.h>
 #include <Library/TpmMeasurementLib.h>
 
 //
@@ -281,7 +282,7 @@ AddDataMeasured (
   @param[in]  VarSize     Size, in bytes, of VarData.
 
   @retval EFI_SUCCESS            The measurement completed successfully.
-  @retval EFI_INVALID_PARAMETER  A required pointer was NULL.
+  @retval EFI_INVALID_PARAMETER  A required pointer was NULL or the event size exceeds MAX_UINT32.
   @retval EFI_OUT_OF_RESOURCES   A required allocation failed.
   @retval EFI_DEVICE_ERROR       The measurement was unsuccessful.
 **/
@@ -296,6 +297,7 @@ MeasureVariable (
   EFI_STATUS          Status;
   UINTN               VarNameLength;
   UEFI_VARIABLE_DATA  *VarLog;
+  UINTN               VarLogSizeNative;
   UINT32              VarLogSize;
 
   if ((VarName == NULL) || (VendorGuid == NULL) || (VarData == NULL)) {
@@ -308,8 +310,20 @@ MeasureVariable (
   // used to validate the image.
   //
   VarNameLength = StrLen (VarName);
-  VarLogSize    = (UINT32)(sizeof (*VarLog) + VarNameLength * sizeof (*VarName) + VarSize
-                           - sizeof (VarLog->UnicodeName) - sizeof (VarLog->VariableData));
+  if (EFI_ERROR (SafeUintnMult (VarNameLength, sizeof (*VarName), &VarLogSizeNative)) ||
+      EFI_ERROR (
+        SafeUintnAdd (
+          VarLogSizeNative,
+          sizeof (*VarLog) - sizeof (VarLog->UnicodeName) - sizeof (VarLog->VariableData),
+          &VarLogSizeNative
+          )
+        ) ||
+      EFI_ERROR (SafeUintnAdd (VarLogSizeNative, VarSize, &VarLogSizeNative)) ||
+      EFI_ERROR (SafeUintnToUint32 (VarLogSizeNative, &VarLogSize)))
+  {
+    DEBUG ((DEBUG_ERROR, "DxeImageVerificationLib: authority event exceeds size limit.\n"));
+    return EFI_INVALID_PARAMETER;
+  }
 
   VarLog = (UEFI_VARIABLE_DATA *)AllocateZeroPool (VarLogSize);
   if (VarLog == NULL) {

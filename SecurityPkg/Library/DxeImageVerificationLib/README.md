@@ -19,6 +19,17 @@ architectural protocol. From then on, every image the DXE core loads is
 routed through that handler, which returns `EFI_SUCCESS` to permit
 execution or `EFI_ACCESS_DENIED` to block it.
 
+### Crypto provider requirements
+
+The `BaseCryptLib` instance must implement `HashAllByGuid`,
+`GetAuthenticodeHashAlgorithm`, `AuthenticodeVerifyEx`,
+`GetTrustAnchorX509FromAuthData`, and `FreeTrustAnchorX509Cache`. Platforms
+using `BaseCryptLibOnOneCrypto` must deploy a provider with all the OneCrypto
+1.1 slots defined by the corresponding `BaseCryptLib` API. A 1.0 provider is
+incompatible, and an older, shorter 1.1 provider cannot be distinguished by
+version alone because the protocol has no size field. Update the provider and
+consumer together before enabling this library.
+
 ### Recording the outcome
 
 Image status reporting is done through the config table called
@@ -29,6 +40,9 @@ in the image that were evaluated.
 The handler uses `ImageSecureBootVerificationResultTableLib` to append one record
 for every image that enters full verification, including malformed and rejected
 images. Firmware-volume and Secure Boot-disabled policy bypasses are not recorded.
+If an internal signature-evaluation error prevents a complete, accurate record,
+the error is logged and the image record is discarded; other signatures can still
+authorize the image.
 Each record contains a copy of the device path and, when available, the image
 name. If the image has no device path, the record has no name and uses an
 end-of-entire-device-path node to represent its unknown origin. Digest-based
@@ -214,9 +228,11 @@ the raw certificate and compares it byte-for-byte, so it needs no cache.
 A static map (`mImageHashSignatures`, `mTbsHashSignatures`, `mX509CertSignatures`)
 pairs each supported signature type with the algorithm to hash the subject under
 and the per-entry `SignatureOwner` size (`sizeof (EFI_GUID)` for a V1
-`EFI_SIGNATURE_DATA`, 0 for a V2 `EFI_SIGNATURE_V2_DATA`). A visitor
-(`MatchHashEntry` or `MatchCertEntry`) consults the map for the current list's
-type and skips any list whose type it does not carry.
+`EFI_SIGNATURE_DATA`, 0 for a V2 `EFI_SIGNATURE_V2_DATA`). For hash types, the
+map also specifies the expected digest size. A recognized hash list with the
+wrong entry size is malformed, even if it is empty; V1 TBS-hash entries also
+include an `EFI_TIME`. A visitor (`MatchHashEntry` or `MatchCertEntry`) consults
+the map for the current list's type and skips types it does not carry.
 
 The allow-list and revoke-list differ only in how they treat an incomplete walk:
 
@@ -278,6 +294,8 @@ The verdict (`Evaluation->Verdict`) is one of:
 
 Evaluation is only valid if the return is `EFI_SUCCESS`. Any `EFI_ERROR`
 indicates that there was an error and the Evaluation cannot be trusted.[8-5]
+An authority-construction failure is returned as an error rather than authorizing
+the image without the measurement authority.
 
 ```mermaid
 flowchart TD

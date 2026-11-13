@@ -489,6 +489,147 @@ TEST_F (ValidateImageTest, UnalignedCertificateTablePassesRawSignatureToVerifier
     );
 }
 
+TEST_F (ValidateImageTest, AuthorityConstructionFailure_DiscardsRecordAndDeniesImage) {
+  std::vector<UINT8>  ImageDigest (kSha256DigestSize, 0x55);
+  std::vector<UINT8>  Db = BuildSignatureDatabase (
+                             gEfiCertX509Sha256Guid,
+                             std::vector<UINT8>(kSha256DigestSize + sizeof (EFI_TIME), 0xA7)
+                             );
+  std::vector<UINT8>  Certificate = BuildWinCertificate (
+                                      WIN_CERT_TYPE_PKCS_SIGNED_DATA,
+                                      std::vector<UINT8>(8, 0x6B)
+                                      );
+
+  EXPECT_CALL (UefiLibMock, GetVariable2 (_, _, _, _))
+    .WillOnce (ReturnVariablePayload (Db))
+    .WillOnce (Return (EFI_NOT_FOUND));
+  EXPECT_CALL (BaseCryptLibMock, GetAuthenticodeHashAlgorithm (_, _, _))
+    .WillOnce (
+       Invoke (
+         [] (CONST UINT8 *, UINTN, EFI_GUID *HashType) -> EFI_STATUS {
+    CopyGuid (HashType, &gEfiHashAlgorithmSha256Guid);
+    return EFI_SUCCESS;
+  }
+         )
+       );
+  EXPECT_CALL (BaseCryptLibMock, HashAllByGuid (_, _, _, _, _))
+    .WillOnce (ReturnSha256Digest (ImageDigest));
+  EXPECT_CALL (BaseCryptLibMock, GetTrustAnchorX509FromAuthData (_, _, _, _, _, _, _, _))
+    .WillOnce (
+       Invoke (
+         [] (VOID **, CONST EFI_GUID *HashType, CONST UINT8 *, UINTN HashSize, CONST UINT8 *, UINTN, UINT8 **Anchor, UINTN *AnchorSize) -> EFI_STATUS {
+    EXPECT_TRUE (CompareGuid (HashType, &gEfiHashAlgorithmSha256Guid));
+    EXPECT_EQ (HashSize, kSha256DigestSize);
+    *Anchor     = (UINT8 *)AllocateZeroPool (1);
+    *AnchorSize = MAX_UINTN;
+    return EFI_SUCCESS;
+  }
+         )
+       );
+  EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _))
+    .WillOnce (Return (EFI_SUCCESS));
+  EXPECT_CALL (TpmMeasurementLibMock, TpmMeasureAndLogData (_, _, _, _, _, _)).Times (0);
+
+  EXPECT_EQ (
+    ValidateImage (
+      mAuthenticodeImage,
+      sizeof (mAuthenticodeImage),
+      Certificate.data (),
+      Certificate.size (),
+      &Measured,
+      &Info
+      ),
+    EFI_ACCESS_DENIED
+    );
+  EXPECT_EQ (Info.Image, nullptr);
+  EXPECT_EQ (Info.Status, (UINT32)EFI_IMAGE_VERIFICATION_STATUS_REJECTED_NO_AUTHORITY);
+  EXPECT_EQ (Measured.Count, (UINTN)0);
+}
+
+TEST_F (ValidateImageTest, SignatureEvaluationFailure_AnotherSignatureCanAuthorize) {
+  std::vector<UINT8>  ImageDigest (kSha256DigestSize, 0x55);
+  std::vector<UINT8>  Db           = BuildSignatureDatabase (gEfiCertX509Guid, std::vector<UINT8>(16, 0xA7));
+  std::vector<UINT8>  Certificates = BuildWinCertificate (
+                                       WIN_CERT_TYPE_PKCS_SIGNED_DATA,
+                                       std::vector<UINT8>(8, 0x6B)
+                                       );
+  auto  Second = BuildWinCertificate (
+                   WIN_CERT_TYPE_PKCS_SIGNED_DATA,
+                   std::vector<UINT8>(8, 0x7C)
+                   );
+
+  Certificates.insert (Certificates.end (), Second.begin (), Second.end ());
+  EXPECT_CALL (UefiLibMock, GetVariable2 (_, _, _, _))
+    .WillOnce (ReturnVariablePayload (Db))
+    .WillOnce (Return (EFI_NOT_FOUND));
+  EXPECT_CALL (BaseCryptLibMock, GetAuthenticodeHashAlgorithm (_, _, _))
+    .Times (2)
+    .WillRepeatedly (
+       Invoke (
+         [] (CONST UINT8 *, UINTN, EFI_GUID *HashType) -> EFI_STATUS {
+    CopyGuid (HashType, &gEfiHashAlgorithmSha256Guid);
+    return EFI_SUCCESS;
+  }
+         )
+       );
+  EXPECT_CALL (BaseCryptLibMock, HashAllByGuid (_, _, _, _, _))
+    .WillOnce (Return (EFI_DEVICE_ERROR))
+    .WillOnce (ReturnSha256Digest (ImageDigest));
+  EXPECT_CALL (BaseCryptLibMock, AuthenticodeVerifyEx (_, _, _, _, _, _, _, _))
+    .WillOnce (Return (EFI_SUCCESS));
+  EXPECT_CALL (BaseCryptLibMock, X509GetTBSCert (_, _, _, _))
+    .WillOnce (Return (FALSE));
+  EXPECT_CALL (TpmMeasurementLibMock, TpmMeasureAndLogData ((UINT32)7, (UINT32)EV_EFI_VARIABLE_AUTHORITY, _, _, _, _))
+    .WillOnce (Return (EFI_SUCCESS));
+
+  EXPECT_EQ (
+    ValidateImage (
+      mAuthenticodeImage,
+      sizeof (mAuthenticodeImage),
+      Certificates.data (),
+      Certificates.size (),
+      &Measured,
+      &Info
+      ),
+    EFI_SUCCESS
+    );
+  EXPECT_EQ (Info.Image, nullptr);
+  EXPECT_EQ (Info.Status, (UINT32)EFI_IMAGE_VERIFICATION_STATUS_AUTHORIZED_BY_AUTHORITY);
+  EXPECT_EQ (Measured.Count, (UINTN)1);
+}
+
+TEST_F (ValidateImageTest, SignatureEvaluationFailure_OptionalReportMayBeNull) {
+  auto  Certificate = BuildWinCertificate (WIN_CERT_TYPE_PKCS_SIGNED_DATA, std::vector<UINT8>(8, 0x6B));
+
+  EXPECT_CALL (UefiLibMock, GetVariable2 (_, _, _, _))
+    .WillRepeatedly (Return (EFI_NOT_FOUND));
+  EXPECT_CALL (BaseCryptLibMock, GetAuthenticodeHashAlgorithm (_, _, _))
+    .WillOnce (
+       Invoke (
+         [] (CONST UINT8 *, UINTN, EFI_GUID *HashType) -> EFI_STATUS {
+    CopyGuid (HashType, &gEfiHashAlgorithmSha256Guid);
+    return EFI_SUCCESS;
+  }
+         )
+       );
+  EXPECT_CALL (BaseCryptLibMock, HashAllByGuid (_, _, _, _, _))
+    .WillOnce (Return (EFI_DEVICE_ERROR));
+  EXPECT_CALL (TpmMeasurementLibMock, TpmMeasureAndLogData (_, _, _, _, _, _)).Times (0);
+
+  EXPECT_EQ (
+    ValidateImage (
+      mAuthenticodeImage,
+      sizeof (mAuthenticodeImage),
+      Certificate.data (),
+      Certificate.size (),
+      &Measured,
+      NULL
+      ),
+    EFI_ACCESS_DENIED
+    );
+  EXPECT_NE (Info.Image, nullptr);
+}
+
 TEST_F (ValidateImageTest, CertificateAuthority_AuthorizesAndMeasuresImage) {
   std::vector<UINT8>  ImageDigest (kSha256DigestSize, 0x55);
   std::vector<UINT8>  Anchor (16, 0xA7);
