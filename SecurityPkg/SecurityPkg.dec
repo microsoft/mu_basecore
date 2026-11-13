@@ -26,9 +26,11 @@
   DeviceSecurity/SpdmLib/libspdm/include
 
 [LibraryClasses]
+  # MU_CHANGE [BEGIN]
   ##  @libraryclass  Utilities for working with a PE/COFF image's Windows Authenticode signature.
   #
   AuthenticodeLib|Include/Library/AuthenticodeLib.h
+  # MU_CHANGE [END]
 
   ##  @libraryclass  Provides hash interfaces from different implementations.
   #

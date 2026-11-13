@@ -1,3 +1,5 @@
+<!-- MU_CHANGE - NEW FILE -->
+
 # AuthenticodeLib
 
 `AuthenticodeLib` provides functionality to extract the Authenticode image

@@ -68,6 +68,7 @@
 #  }
 # MU_CHANGE - Problems with Consuming OpensslLibFull and UnitTestHostBaseCryptLib from CryptoPkg
 
+  # MU_CHANGE [BEGIN]
   SecurityPkg/Library/AuthenticodeLib/GoogleTest/AuthenticodeLibGoogleTest.inf {
     <LibraryClasses>
       AuthenticodeLib|SecurityPkg/Library/AuthenticodeLib/AuthenticodeLib.inf
@@ -81,6 +82,7 @@
       PeCoffLib|MdePkg/Test/Mock/Library/GoogleTest/MockPeCoffLib/MockPeCoffLib.inf
       SafeIntLib|MdePkg/Test/Mock/Library/GoogleTest/MockSafeIntLib/MockSafeIntLib.inf
   }
+  # MU_CHANGE [END]
 
 [PcdsPatchableInModule]
   gEfiSecurityPkgTokenSpaceGuid.PcdOptionRomImageVerificationPolicy|0x04

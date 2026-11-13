@@ -5,6 +5,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
+// MU_CHANGE - NEW FILE
+
 #include "../AuthenticodeLib.c"
 #include "AuthenticodeLibInternalTest.h"
 

@@ -7,6 +7,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
+// MU_CHANGE - NEW FILE
+
 #include <Uefi.h>
 
 #include <Guid/WinCertificate.h>

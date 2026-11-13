@@ -9,6 +9,8 @@
 #
 ##
 
+# MU_CHANGE - NEW FILE
+
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = AuthenticodeLib

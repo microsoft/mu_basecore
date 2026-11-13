@@ -9,6 +9,8 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
+// MU_CHANGE - NEW FILE
+
 #include <Library/GoogleTestLib.h>
 
 #include <cstring>

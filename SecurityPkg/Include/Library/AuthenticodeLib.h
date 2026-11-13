@@ -9,6 +9,8 @@
 
 #pragma once
 
+// MU_CHANGE - NEW FILE
+
 #include <Uefi.h>
 #include <Guid/WinCertificate.h>
 
